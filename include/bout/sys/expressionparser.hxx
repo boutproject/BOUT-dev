@@ -27,6 +27,7 @@
 #ifndef __EXPRESSION_PARSER_H__
 #define __EXPRESSION_PARSER_H__
 
+#include "bout/format.hxx"
 #include "unused.hxx"
 
 #include <exception>
@@ -198,7 +199,7 @@ private:
 
 class ParseException : public std::exception {
 public:
-  ParseException(const char*, ...);
+  ParseException(const char*, ...) BOUT_FORMAT_ARGS(2, 3);
   ~ParseException() override = default;
 
   const char* what() const noexcept override;

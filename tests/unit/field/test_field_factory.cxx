@@ -28,6 +28,8 @@ public:
     // un-field-align the result
     mesh->setParallelTransform(
         bout::utils::make_unique<ParallelTransformIdentity>(*mesh));
+    mesh_staggered->setParallelTransform(
+        bout::utils::make_unique<ParallelTransformIdentity>(*mesh_staggered));
   }
 
   FieldFactory factory;
@@ -77,6 +79,29 @@ TYPED_TEST(FieldFactoryCreationTest, CreateFromPointerGenerator) {
   auto output = this->create(generator(&value));
 
   EXPECT_TRUE(IsFieldEqual(output, value));
+}
+
+TYPED_TEST(FieldFactoryCreationTest, CreateFromFunction) {
+  FuncPtr function = [](BoutReal, BoutReal x, BoutReal, BoutReal) -> BoutReal {
+    return x + 1.;
+  };
+
+  auto generator = std::make_shared<FieldFunction>(FieldFunction{function});
+
+  auto output = this->create(generator);
+
+  auto expected = makeField<TypeParam>(
+      [](typename TypeParam::ind_type& index) -> BoutReal { return index.x() + 1.; },
+      mesh);
+
+  EXPECT_TRUE(IsFieldEqual(output, expected));
+}
+
+TYPED_TEST(FieldFactoryCreationTest, CreateNull) {
+  FieldNull null{};
+  auto output = this->create(null.clone({}));
+
+  EXPECT_TRUE(IsFieldEqual(output, 0.0));
 }
 
 TYPED_TEST(FieldFactoryCreationTest, CreatePi) {
@@ -164,8 +189,9 @@ TYPED_TEST(FieldFactoryCreationTest, CreateZ) {
 }
 
 TYPED_TEST(FieldFactoryCreationTest, CreateXStaggered) {
-  bout::globals::mesh->StaggerGrids = true;
-  auto output = this->create("x", nullptr, bout::globals::mesh, CELL_XLOW);
+  // Need this->mesh_staggered to access member of base FakeMeshFixture because
+  // derived FieldFactoryCreationTest is a template clas
+  auto output = this->create("x", nullptr, this->mesh_staggered, CELL_XLOW);
 
   auto expected = makeField<TypeParam>(
       [](typename TypeParam::ind_type& index) -> BoutReal { return index.x() - 0.5; },
@@ -176,8 +202,9 @@ TYPED_TEST(FieldFactoryCreationTest, CreateXStaggered) {
 }
 
 TYPED_TEST(FieldFactoryCreationTest, CreateYStaggered) {
-  bout::globals::mesh->StaggerGrids = true;
-  auto output = this->create("y", nullptr, bout::globals::mesh, CELL_YLOW);
+  // Need this->mesh_staggered to access member of base FakeMeshFixture because
+  // derived FieldFactoryCreationTest is a template clas
+  auto output = this->create("y", nullptr, this->mesh_staggered, CELL_YLOW);
 
   auto expected = makeField<TypeParam>(
       [](typename TypeParam::ind_type& index) -> BoutReal {
@@ -190,8 +217,9 @@ TYPED_TEST(FieldFactoryCreationTest, CreateYStaggered) {
 }
 
 TYPED_TEST(FieldFactoryCreationTest, CreateZStaggered) {
-  bout::globals::mesh->StaggerGrids = true;
-  auto output = this->create("z", nullptr, bout::globals::mesh, CELL_ZLOW);
+  // Need this->mesh_staggered to access member of base FakeMeshFixture because
+  // derived FieldFactoryCreationTest is a template clas
+  auto output = this->create("z", nullptr, this->mesh_staggered, CELL_ZLOW);
 
   auto expected = makeField<TypeParam>(
       [](typename TypeParam::ind_type& index) -> BoutReal {
@@ -276,6 +304,18 @@ TYPED_TEST(FieldFactoryCreationTest, CreateAtanX) {
   auto expected = makeField<TypeParam>(
       [](typename TypeParam::ind_type& index) -> BoutReal {
         return std::atan(index.x());
+      },
+      mesh);
+
+  EXPECT_TRUE(IsFieldEqual(output, expected));
+}
+
+TYPED_TEST(FieldFactoryCreationTest, CreateAtanX2) {
+  auto output = this->create("atan(x, 2)");
+
+  auto expected = makeField<TypeParam>(
+      [](typename TypeParam::ind_type& index) -> BoutReal {
+        return std::atan2(index.x(), 2.);
       },
       mesh);
 
@@ -543,6 +583,16 @@ public:
   FieldFactory factory;
 };
 
+TEST_F(FieldFactoryTest, RequireMesh) {
+  delete bout::globals::mesh;
+  bout::globals::mesh = nullptr;
+
+  FieldFactory local_factory{nullptr, nullptr};
+
+  EXPECT_THROW(local_factory.create2D("x", nullptr, nullptr), BoutException);
+  EXPECT_THROW(local_factory.create3D("x", nullptr, nullptr), BoutException);
+}
+
 TEST_F(FieldFactoryTest, CleanCache) {
 
   auto a_value = int{6};
@@ -564,12 +614,14 @@ TEST_F(FieldFactoryTest, ParseSelfReference) {
 
   output.disable();
   output_info.disable();
+  output_error.disable();
 
   auto options = Options{};
   options["a"] = "a";
 
   EXPECT_THROW(factory.parse("a", &options), BoutException);
 
+  output_error.enable();
   output_info.enable();
   output.enable();
 }

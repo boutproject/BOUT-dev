@@ -170,18 +170,16 @@ Coordinates::Coordinates(Mesh* mesh)
 
   if (mesh->get(dz, "dz")) {
     // Couldn't read dz from input
-    int zperiod;
     BoutReal ZMIN, ZMAX;
     Options* options = Options::getRoot();
     if (options->isSet("zperiod")) {
+      int zperiod;
       OPTION(options, zperiod, 1);
       ZMIN = 0.0;
       ZMAX = 1.0 / static_cast<BoutReal>(zperiod);
     } else {
       OPTION(options, ZMIN, 0.0);
       OPTION(options, ZMAX, 1.0);
-
-      zperiod = ROUND(1.0 / (ZMAX - ZMIN));
     }
 
     dz = (ZMAX - ZMIN) * TWOPI / nz;
@@ -316,6 +314,9 @@ Coordinates::Coordinates(Mesh* mesh)
       IntShiftTorsion = 0.0;
     }
     IntShiftTorsion = interpolateAndExtrapolate(IntShiftTorsion, location);
+  } else {
+    // IntShiftTorsion will not be used, but set to zero to avoid uninitialized field
+    IntShiftTorsion = 0.;
   }
 }
 
@@ -391,6 +392,9 @@ Coordinates::Coordinates(Mesh* mesh, const CELL_LOC loc, const Coordinates* coor
 
   if (mesh->IncIntShear) {
     IntShiftTorsion = interpolateAndExtrapolate(coords_in->IntShiftTorsion, location);
+  } else {
+    // IntShiftTorsion will not be used, but set to zero to avoid uninitialized field
+    IntShiftTorsion = 0.;
   }
 }
 
@@ -762,13 +766,14 @@ const Field2D Coordinates::DDY(const Field2D& f, CELL_LOC loc, const std::string
   return bout::derivatives::index::DDY(f, loc, method, region) / dy;
 }
 
-const Field2D Coordinates::DDZ(MAYBE_UNUSED(const Field2D& f), MAYBE_UNUSED(CELL_LOC loc),
+const Field2D Coordinates::DDZ(MAYBE_UNUSED(const Field2D& f), CELL_LOC loc,
                                const std::string& UNUSED(method), REGION UNUSED(region)) {
   ASSERT1(location == loc || loc == CELL_DEFAULT);
   ASSERT1(f.getMesh() == localmesh);
-  auto result = Field2D(0.0, localmesh);
-  result.setLocation(location);
-  return result;
+  if (loc == CELL_DEFAULT) {
+    loc = f.getLocation();
+  }
+  return zeroFrom(f).setLocation(loc);
 }
 
 #include <derivs.hxx>
@@ -878,15 +883,12 @@ const Field3D Coordinates::Grad2_par2(const Field3D& f, CELL_LOC outloc,
   }
   ASSERT1(location == outloc);
 
-  Field2D sg(localmesh);
-  Field3D result(localmesh), r2(localmesh);
-
-  sg = sqrt(g_22);
+  Field2D sg = sqrt(g_22);
   sg = DDY(1. / sg, outloc, method) / sg;
 
-  result = ::DDY(f, outloc, method);
+  Field3D result = ::DDY(f, outloc, method);
 
-  r2 = D2DY2(f, outloc, method) / g_22;
+  Field3D r2 = D2DY2(f, outloc, method) / g_22;
 
   result = sg * result + r2;
 
@@ -925,9 +927,7 @@ const Field3D Coordinates::Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT)
   }
   ASSERT2(localmesh->xstart > 0); // Need at least one guard cell
 
-  Field3D result(localmesh);
-  result.allocate();
-  result.setLocation(outloc);
+  Field3D result{emptyFrom(f).setLocation(outloc)};
 
   if (useFFT) {
     int ncz = localmesh->LocalNz;
@@ -990,9 +990,7 @@ const FieldPerp Coordinates::Delp2(const FieldPerp& f, CELL_LOC outloc, bool use
   }
   ASSERT2(localmesh->xstart > 0); // Need at least one guard cell
 
-  FieldPerp result(localmesh);
-  result.allocate();
-  result.setLocation(outloc);
+  FieldPerp result{emptyFrom(f).setLocation(outloc)};
 
   int jy = f.getIndex();
   result.setIndex(jy);

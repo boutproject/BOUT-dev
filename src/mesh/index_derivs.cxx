@@ -58,6 +58,7 @@ STAGGER Mesh::getStagger(const CELL_LOC inloc, const CELL_LOC outloc,
 STAGGER Mesh::getStagger(const CELL_LOC vloc, MAYBE_UNUSED(const CELL_LOC inloc),
                          const CELL_LOC outloc, const CELL_LOC allowedStaggerLoc) const {
   TRACE("Mesh::getStagger -- four arguments");
+  ASSERT1(inloc == outloc);
   ASSERT1(vloc == inloc || (vloc == CELL_CENTRE && inloc == allowedStaggerLoc)
           || (vloc == allowedStaggerLoc && inloc == CELL_CENTRE));
   return getStagger(vloc, outloc, allowedStaggerLoc);
@@ -274,6 +275,18 @@ REGISTER_FLUX_DERIVATIVE(FDDX_U1, "U1", 1, DERIV::Flux) { // No vec
   return result - std::get<0>(vSplit) * f.c + std::get<1>(vSplit) * f.p;
 }
 
+REGISTER_FLUX_DERIVATIVE(FDDX_U2, "U2", 2, DERIV::Flux) { // No vec
+
+  // Velocity at lower end
+  BoutReal vs = 0.5 * (v.m + v.c);
+  BoutReal result = (vs >= 0.0) ? vs * (1.5*f.m - 0.5*f.mm) : vs * (1.5*f.c - 0.5*f.p);
+  // and at upper
+  vs = 0.5 * (v.c + v.p);
+  // Existing form doesn't vectorise due to branching
+  result -= (vs >= 0.0) ? vs * (1.5*f.c - 0.5*f.m) : vs * (1.5*f.p - 0.5*f.pp);
+  return -result;
+}
+
 REGISTER_FLUX_DERIVATIVE(FDDX_C2, "C2", 2, DERIV::Flux) {
   return 0.5 * (v.p * f.p - v.m * f.m);
 }
@@ -378,6 +391,19 @@ REGISTER_FLUX_DERIVATIVE_STAGGERED(FDDX_U1_stag, "U1", 1, DERIV::Flux) {
   return -result;
 }
 
+REGISTER_FLUX_DERIVATIVE_STAGGERED(FDDX_U2_stag, "U2", 2, DERIV::Flux) {
+  // Calculate d(v*f)/dx = (v*f)[i+1/2] - (v*f)[i-1/2]
+
+  // Upper cell boundary
+  BoutReal result =
+      (v.p >= 0.) ? v.p * (1.5 * f.c - 0.5 * f.m) : v.p * (1.5 * f.p - 0.5 * f.pp);
+
+  // Lower cell boundary
+  result -= (v.m >= 0.) ? v.m * (1.5 * f.m - 0.5 * f.mm) : v.m * (1.5 * f.c - 0.5 * f.p);
+
+  return result;
+}
+
 /////////////////////////////////////////////////////////////////////////////////////
 /// Here's an example of defining and registering a custom method that doesn't fit
 /// into the standard stencil based approach.
@@ -395,7 +421,7 @@ public:
     ASSERT2((std::is_base_of<Field3D,
                              T>::value)); // Should never need to call this with Field2D
 
-    const auto region_str = REGION_STRING(region);
+    const auto region_str = toString(region);
 
     // Only allow a whitelist of regions for now
     ASSERT2(region_str == "RGN_ALL" || region_str == "RGN_NOBNDRY"
@@ -467,7 +493,7 @@ public:
     ASSERT2((std::is_base_of<Field3D,
                              T>::value)); // Should never need to call this with Field2D
 
-    const auto region_str = REGION_STRING(region);
+    const auto region_str = toString(region);
 
     // Only allow a whitelist of regions for now
     ASSERT2(region_str == "RGN_ALL" || region_str == "RGN_NOBNDRY"

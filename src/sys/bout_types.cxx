@@ -1,7 +1,7 @@
-#include <boutexception.hxx>
-#include <msg_stack.hxx>
 #include <bout_types.hxx>
+#include <boutexception.hxx>
 #include <map>
+#include <msg_stack.hxx>
 
 template <typename T>
 const std::string& safeAt(const std::map<T, std::string>& mymap, T t) {
@@ -13,7 +13,7 @@ const std::string& safeAt(const std::map<T, std::string>& mymap, T t) {
   return found->second;
 }
 
-const std::string& CELL_LOC_STRING(CELL_LOC location) {
+std::string toString(CELL_LOC location) {
   AUTO_TRACE();
   const static std::map<CELL_LOC, std::string> CELL_LOCtoString = {
       ENUMSTR(CELL_DEFAULT), ENUMSTR(CELL_CENTRE), ENUMSTR(CELL_XLOW),
@@ -22,7 +22,7 @@ const std::string& CELL_LOC_STRING(CELL_LOC location) {
   return safeAt(CELL_LOCtoString, location);
 }
 
-const std::string& DIFF_METHOD_STRING(DIFF_METHOD location) {
+std::string toString(DIFF_METHOD location) {
   AUTO_TRACE();
   const static std::map<DIFF_METHOD, std::string> DIFF_METHODtoString = {
       {DIFF_DEFAULT, "DEFAULT"}, {DIFF_U1, "U1"},   {DIFF_U2, "U2"},      {DIFF_U3, "U3"},
@@ -32,7 +32,7 @@ const std::string& DIFF_METHOD_STRING(DIFF_METHOD location) {
   return safeAt(DIFF_METHODtoString, location);
 }
 
-const std::string& REGION_STRING(REGION region) {
+std::string toString(REGION region) {
   AUTO_TRACE();
   const static std::map<REGION, std::string> REGIONtoString = {
       ENUMSTR(RGN_ALL), ENUMSTR(RGN_NOBNDRY), ENUMSTR(RGN_NOX), ENUMSTR(RGN_NOY),
@@ -40,7 +40,7 @@ const std::string& REGION_STRING(REGION region) {
   return safeAt(REGIONtoString, region);
 }
 
-const std::string& DIRECTION_STRING(DIRECTION direction) {
+std::string toString(DIRECTION direction) {
   AUTO_TRACE();
   const static std::map<DIRECTION, std::string> DIRECTIONtoString = {
       {DIRECTION::X, "X"},
@@ -52,7 +52,49 @@ const std::string& DIRECTION_STRING(DIRECTION direction) {
   return safeAt(DIRECTIONtoString, direction);
 }
 
-const std::string& STAGGER_STRING(STAGGER stagger) {
+void swap(DirectionTypes& first, DirectionTypes& second) {
+  DirectionTypes temp = first;
+  first = second;
+  second = temp;
+}
+
+bool areDirectionsCompatible(const DirectionTypes& d1, const DirectionTypes& d2) {
+  if (d1.y == d2.y && d1.z == d2.z) {
+    // direction types are the same, most common case, return immediately
+    return true;
+  }
+
+  if (d2.z == ZDirectionType::Average && d2.y == YDirectionType::Standard
+      && (d1.y == YDirectionType::Standard || d1.y == YDirectionType::Aligned)
+      && d1.z == ZDirectionType::Standard) {
+    // If d2 has ZDirectionType::Average, then it's compatible with d1 having
+    // YDirectionType::Aligned as well as YDirectionType::Standard.  If d1 has
+    // YDirectionType::Aligned, it should always have ZDirectionType::Standard,
+    // and if d1 has ZDirectionType::Average it must have
+    // YDirectionType::Standard and have been caught in the first condition
+    // where d1 and d2 are identical, so only allow
+    // 'd1.z == ZDirectionType::Standard' here.
+    return true;
+  }
+
+  if (d1.z == ZDirectionType::Average && d1.y == YDirectionType::Standard
+      && (d2.y == YDirectionType::Standard || d2.y == YDirectionType::Aligned)
+      && d2.z == ZDirectionType::Standard) {
+    // If d1 has ZDirectionType::Average, then it's compatible with d2 having
+    // YDirectionType::Aligned as well as YDirectionType::Standard.  If d2 has
+    // YDirectionType::Aligned, it should always have ZDirectionType::Standard,
+    // and if d2 has ZDirectionType::Average it must have
+    // YDirectionType::Standard and have been caught in the first condition
+    // where d1 and d2 are identical, so only allow
+    // 'd2.z == ZDirectionType::Standard' here.
+    return true;
+  }
+
+  // No compatible cases found
+  return false;
+}
+
+std::string toString(STAGGER stagger) {
   AUTO_TRACE();
   const static std::map<STAGGER, std::string> STAGGERtoString = {
       {STAGGER::None, "No staggering"},
@@ -62,7 +104,7 @@ const std::string& STAGGER_STRING(STAGGER stagger) {
   return safeAt(STAGGERtoString, stagger);
 }
 
-const std::string& DERIV_STRING(DERIV deriv) {
+std::string toString(DERIV deriv) {
   AUTO_TRACE();
   const static std::map<DERIV, std::string> DERIVtoString = {
       {DERIV::Standard, "Standard"},

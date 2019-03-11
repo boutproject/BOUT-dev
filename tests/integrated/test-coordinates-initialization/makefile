@@ -1,6 +1,6 @@
 
 BOUT_TOP	= ../../..
 
-SOURCEC		= test-difops.cxx
+SOURCEC		= test-coordinates-initialization.cxx
 
 include $(BOUT_TOP)/make.config

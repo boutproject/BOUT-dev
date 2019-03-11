@@ -62,9 +62,9 @@ protected:
     mesh->get(Bxyz, "B");
 
     auto options = Options::root()["fciwave"];
-    OPTION(options, div_integrate, true);
-    OPTION(options, log_density, false);
-    OPTION(options, background, false);
+    div_integrate = options["div_integrate"].withDefault(true);
+    log_density = options["log_density"].withDefault(false);
+    background = options["background"].withDefault(false);
     log_background = log(background);
 
     // Neumann boundaries simplifies parallel derivatives

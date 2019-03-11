@@ -886,34 +886,34 @@ bool Datafile::write() {
     // is written, since this happens after the first rhs evaluation
     // 2D fields
     for (const auto& var : f2d_arr) {
-      file->setAttribute(var.name, "cell_location", CELL_LOC_STRING(var.ptr->getLocation()));
+      file->setAttribute(var.name, "cell_location", toString(var.ptr->getLocation()));
     }
 
     // 3D fields
     for (const auto& var : f3d_arr) {
-      file->setAttribute(var.name, "cell_location", CELL_LOC_STRING(var.ptr->getLocation()));
+      file->setAttribute(var.name, "cell_location", toString(var.ptr->getLocation()));
     }
 
     // 2D vectors
     for(const auto& var : v2d_arr) {
       Vector2D v  = *(var.ptr);
       file->setAttribute(var.name+"_x", "cell_location",
-                         CELL_LOC_STRING(v.x.getLocation()));
+                         toString(v.x.getLocation()));
       file->setAttribute(var.name+"_y", "cell_location",
-                         CELL_LOC_STRING(v.y.getLocation()));
+                         toString(v.y.getLocation()));
       file->setAttribute(var.name+"_z", "cell_location",
-                         CELL_LOC_STRING(v.z.getLocation()));
+                         toString(v.z.getLocation()));
     }
 
     // 3D vectors
     for(const auto& var : v3d_arr) {
       Vector3D v  = *(var.ptr);
       file->setAttribute(var.name+"_x", "cell_location",
-                         CELL_LOC_STRING(v.x.getLocation()));
+                         toString(v.x.getLocation()));
       file->setAttribute(var.name+"_y", "cell_location",
-                         CELL_LOC_STRING(v.y.getLocation()));
+                         toString(v.y.getLocation()));
       file->setAttribute(var.name+"_z", "cell_location",
-                         CELL_LOC_STRING(v.z.getLocation()));
+                         toString(v.z.getLocation()));
     }
   }
 
@@ -1002,7 +1002,7 @@ bool Datafile::write(const char *format, ...) const {
   // Create a new datafile
   Datafile tmp(*this);
 
-  tmp.openw(filename);
+  tmp.openw("%s",filename);
   bool ret = tmp.write();
   tmp.close();
 
@@ -1200,7 +1200,7 @@ bool Datafile::write_f3d(const std::string &name, Field3D *f, bool save_repeat) 
   }
 
   //Deal with shifting the output
-  Field3D f_out(f->getMesh());
+  Field3D f_out{emptyFrom(*f)};
   if(shiftOutput) {
     f_out = mesh->toFieldAligned(*f);
   }else {

@@ -167,7 +167,9 @@ class Field3D : public Field, public FieldData {
    * Note: the global "mesh" can't be passed here because
    * fields may be created before the mesh is.
    */
-  Field3D(Mesh *localmesh = nullptr);
+  Field3D(Mesh *localmesh = nullptr, CELL_LOC location_in=CELL_CENTRE,
+          DirectionTypes directions_in =
+            {YDirectionType::Standard, ZDirectionType::Standard});
 
   /*!
    * Copy constructor
@@ -189,7 +191,7 @@ class Field3D : public Field, public FieldData {
   /*!
    * Ensures that memory is allocated and unique
    */
-  void allocate();
+  Field3D& allocate();
   
   /*!
    * Test if data is allocated
@@ -216,6 +218,16 @@ class Field3D : public Field, public FieldData {
    * Return the number of nz points
    */
   int getNz() const override {return nz;};
+
+  // these methods return Field3D to allow method chaining
+  Field3D& setLocation(CELL_LOC location) {
+    Field::setLocation(location);
+    return *this;
+  }
+  Field3D& setDirectionY(YDirectionType d) {
+    Field::setDirectionY(d);
+    return *this;
+  }
 
   /*!
    * Ensure that this field has separate fields
@@ -262,15 +274,6 @@ class Field3D : public Field, public FieldData {
   Field3D& ynext(int offset);
   const Field3D& ynext(int offset) const;
 
-  /// Set variable location for staggered grids to @param new_location
-  ///
-  /// Throws BoutException if new_location is not `CELL_CENTRE` and
-  /// staggered grids are turned off and checks are on. If checks are
-  /// off, silently sets location to ``CELL_CENTRE`` instead.
-  void setLocation(CELL_LOC new_location) override;
-  /// Get variable location
-  CELL_LOC getLocation() const override;
-  
   /////////////////////////////////////////////////////////
   // Data access
 
@@ -457,14 +460,15 @@ class Field3D : public Field, public FieldData {
 
   friend void swap(Field3D& first, Field3D& second) noexcept {
     using std::swap;
+
+    // Swap base class members
+    swap(static_cast<Field&>(first), static_cast<Field&>(second));
+
     swap(first.data, second.data);
-    swap(first.fieldmesh, second.fieldmesh);
-    swap(first.fieldCoordinates, second.fieldCoordinates);
     swap(first.background, second.background);
     swap(first.nx, second.nx);
     swap(first.ny, second.ny);
     swap(first.nz, second.nz);
-    swap(first.location, second.location);
     swap(first.deriv, second.deriv);
     swap(first.yup_fields, second.yup_fields);
     swap(first.ydown_fields, second.ydown_fields);
@@ -484,9 +488,6 @@ private:
 
   /// Internal data array. Handles allocation/freeing of memory
   Array<BoutReal> data;
-
-  /// Location of the variable in the cell
-  CELL_LOC location{CELL_CENTRE};
   
   /// Time derivative (may be nullptr)
   Field3D *deriv{nullptr};

@@ -64,7 +64,7 @@ const Vector3D Grad(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
 const Vector3D Grad_perp(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
                          const std::string& method = "DEFAULT");
 inline const Vector3D Grad_perp(const Field3D& f, CELL_LOC outloc, DIFF_METHOD method) {
-  return Grad_perp(f, outloc, DIFF_METHOD_STRING(method));
+  return Grad_perp(f, outloc, toString(method));
 }
 
 /// Divergence of a vector \p v, returning a scalar
@@ -81,8 +81,8 @@ const Field2D Div(const Vector2D& v, CELL_LOC outloc = CELL_DEFAULT,
 const Field3D Div(const Vector3D& v, CELL_LOC outloc = CELL_DEFAULT,
                   const std::string& method = "DEFAULT");
 
-const Field2D Div(const Vector2D &v, const Field2D &f);
-
+const Field2D Div(const Vector2D& v, const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+                  const std::string& method = "DEFAULT");
 const Field3D Div(const Vector3D& v, const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
                   const std::string& method = "DEFAULT");
 DEPRECATED(inline const Field3D Div(const Vector3D& v, const Field3D& f,
@@ -92,11 +92,11 @@ DEPRECATED(inline const Field3D Div(const Vector3D& v, const Field3D& f,
 }
 inline const Field3D Div(const Vector3D& v, const Field3D& f, CELL_LOC outloc,
                          DIFF_METHOD method = DIFF_DEFAULT) {
-  return Div(v, f, outloc, DIFF_METHOD_STRING(method));
+  return Div(v, f, outloc, toString(method));
 };
 DEPRECATED(inline const Field3D Div(const Vector3D& v, const Field3D& f,
                                     DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT)) {
-  return Div(v, f, outloc, DIFF_METHOD_STRING(method));
+  return Div(v, f, outloc, toString(method));
 };
 
 /// Curl of a vector

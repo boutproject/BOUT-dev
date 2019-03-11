@@ -7,21 +7,10 @@
 #include <interpolation.hxx>
 
 // Provide the C++ wrapper for multiplication of Field3D and Field3D
-Field3D operator*(const Field3D &lhs, const Field3D &rhs) {
-#if CHECK > 0
-  if (lhs.getLocation() != rhs.getLocation()) {
-    throw BoutException("Error in operator*(Field3D, Field3D): fields at different "
-                        "locations. lhs is at %s, rhs is at %s!",
-                        strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
-  }
-#endif
+Field3D operator*(const Field3D& lhs, const Field3D& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
-  Mesh *localmesh = lhs.getMesh();
-
-  ASSERT1(localmesh == rhs.getMesh());
-
-  Field3D result(localmesh);
-  result.allocate();
+  Field3D result{emptyFrom(lhs)};
   checkData(lhs);
   checkData(rhs);
 
@@ -29,28 +18,16 @@ Field3D operator*(const Field3D &lhs, const Field3D &rhs) {
     result[index] = lhs[index] * rhs[index];
   }
 
-  result.setLocation(rhs.getLocation());
-
   checkData(result);
   return result;
 }
 
 // Provide the C++ operator to update Field3D by multiplication with Field3D
-Field3D &Field3D::operator*=(const Field3D &rhs) {
+Field3D& Field3D::operator*=(const Field3D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-
-#if CHECK > 0
-    if (this->getLocation() != rhs.getLocation()) {
-      throw BoutException("Error in Field3D::operator*=(Field3D): fields at different "
-                          "locations. lhs is at %s, rhs is at %s!",
-                          strLocation(this->getLocation()),
-                          strLocation(rhs.getLocation()));
-    }
-#endif
-
-    ASSERT1(fieldmesh == rhs.getMesh());
+    ASSERT1(areFieldsCompatible(*this, rhs));
 
     checkData(*this);
     checkData(rhs);
@@ -66,21 +43,10 @@ Field3D &Field3D::operator*=(const Field3D &rhs) {
 }
 
 // Provide the C++ wrapper for division of Field3D and Field3D
-Field3D operator/(const Field3D &lhs, const Field3D &rhs) {
-#if CHECK > 0
-  if (lhs.getLocation() != rhs.getLocation()) {
-    throw BoutException("Error in operator/(Field3D, Field3D): fields at different "
-                        "locations. lhs is at %s, rhs is at %s!",
-                        strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
-  }
-#endif
+Field3D operator/(const Field3D& lhs, const Field3D& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
-  Mesh *localmesh = lhs.getMesh();
-
-  ASSERT1(localmesh == rhs.getMesh());
-
-  Field3D result(localmesh);
-  result.allocate();
+  Field3D result{emptyFrom(lhs)};
   checkData(lhs);
   checkData(rhs);
 
@@ -88,28 +54,16 @@ Field3D operator/(const Field3D &lhs, const Field3D &rhs) {
     result[index] = lhs[index] / rhs[index];
   }
 
-  result.setLocation(rhs.getLocation());
-
   checkData(result);
   return result;
 }
 
 // Provide the C++ operator to update Field3D by division with Field3D
-Field3D &Field3D::operator/=(const Field3D &rhs) {
+Field3D& Field3D::operator/=(const Field3D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-
-#if CHECK > 0
-    if (this->getLocation() != rhs.getLocation()) {
-      throw BoutException("Error in Field3D::operator/=(Field3D): fields at different "
-                          "locations. lhs is at %s, rhs is at %s!",
-                          strLocation(this->getLocation()),
-                          strLocation(rhs.getLocation()));
-    }
-#endif
-
-    ASSERT1(fieldmesh == rhs.getMesh());
+    ASSERT1(areFieldsCompatible(*this, rhs));
 
     checkData(*this);
     checkData(rhs);
@@ -125,21 +79,10 @@ Field3D &Field3D::operator/=(const Field3D &rhs) {
 }
 
 // Provide the C++ wrapper for addition of Field3D and Field3D
-Field3D operator+(const Field3D &lhs, const Field3D &rhs) {
-#if CHECK > 0
-  if (lhs.getLocation() != rhs.getLocation()) {
-    throw BoutException("Error in operator+(Field3D, Field3D): fields at different "
-                        "locations. lhs is at %s, rhs is at %s!",
-                        strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
-  }
-#endif
+Field3D operator+(const Field3D& lhs, const Field3D& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
-  Mesh *localmesh = lhs.getMesh();
-
-  ASSERT1(localmesh == rhs.getMesh());
-
-  Field3D result(localmesh);
-  result.allocate();
+  Field3D result{emptyFrom(lhs)};
   checkData(lhs);
   checkData(rhs);
 
@@ -147,28 +90,16 @@ Field3D operator+(const Field3D &lhs, const Field3D &rhs) {
     result[index] = lhs[index] + rhs[index];
   }
 
-  result.setLocation(rhs.getLocation());
-
   checkData(result);
   return result;
 }
 
 // Provide the C++ operator to update Field3D by addition with Field3D
-Field3D &Field3D::operator+=(const Field3D &rhs) {
+Field3D& Field3D::operator+=(const Field3D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-
-#if CHECK > 0
-    if (this->getLocation() != rhs.getLocation()) {
-      throw BoutException("Error in Field3D::operator+=(Field3D): fields at different "
-                          "locations. lhs is at %s, rhs is at %s!",
-                          strLocation(this->getLocation()),
-                          strLocation(rhs.getLocation()));
-    }
-#endif
-
-    ASSERT1(fieldmesh == rhs.getMesh());
+    ASSERT1(areFieldsCompatible(*this, rhs));
 
     checkData(*this);
     checkData(rhs);
@@ -184,21 +115,10 @@ Field3D &Field3D::operator+=(const Field3D &rhs) {
 }
 
 // Provide the C++ wrapper for subtraction of Field3D and Field3D
-Field3D operator-(const Field3D &lhs, const Field3D &rhs) {
-#if CHECK > 0
-  if (lhs.getLocation() != rhs.getLocation()) {
-    throw BoutException("Error in operator-(Field3D, Field3D): fields at different "
-                        "locations. lhs is at %s, rhs is at %s!",
-                        strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
-  }
-#endif
+Field3D operator-(const Field3D& lhs, const Field3D& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
-  Mesh *localmesh = lhs.getMesh();
-
-  ASSERT1(localmesh == rhs.getMesh());
-
-  Field3D result(localmesh);
-  result.allocate();
+  Field3D result{emptyFrom(lhs)};
   checkData(lhs);
   checkData(rhs);
 
@@ -206,28 +126,16 @@ Field3D operator-(const Field3D &lhs, const Field3D &rhs) {
     result[index] = lhs[index] - rhs[index];
   }
 
-  result.setLocation(rhs.getLocation());
-
   checkData(result);
   return result;
 }
 
 // Provide the C++ operator to update Field3D by subtraction with Field3D
-Field3D &Field3D::operator-=(const Field3D &rhs) {
+Field3D& Field3D::operator-=(const Field3D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-
-#if CHECK > 0
-    if (this->getLocation() != rhs.getLocation()) {
-      throw BoutException("Error in Field3D::operator-=(Field3D): fields at different "
-                          "locations. lhs is at %s, rhs is at %s!",
-                          strLocation(this->getLocation()),
-                          strLocation(rhs.getLocation()));
-    }
-#endif
-
-    ASSERT1(fieldmesh == rhs.getMesh());
+    ASSERT1(areFieldsCompatible(*this, rhs));
 
     checkData(*this);
     checkData(rhs);
@@ -243,23 +151,14 @@ Field3D &Field3D::operator-=(const Field3D &rhs) {
 }
 
 // Provide the C++ wrapper for multiplication of Field3D and Field2D
-Field3D operator*(const Field3D &lhs, const Field2D &rhs) {
-#if CHECK > 0
-  if (lhs.getLocation() != rhs.getLocation()) {
-    throw BoutException("Error in operator*(Field3D, Field2D): fields at different "
-                        "locations. lhs is at %s, rhs is at %s!",
-                        strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
-  }
-#endif
+Field3D operator*(const Field3D& lhs, const Field2D& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
-  Mesh *localmesh = lhs.getMesh();
-
-  ASSERT1(localmesh == rhs.getMesh());
-
-  Field3D result(localmesh);
-  result.allocate();
+  Field3D result{emptyFrom(lhs)};
   checkData(lhs);
   checkData(rhs);
+
+  Mesh* localmesh = lhs.getMesh();
 
   BOUT_FOR(index, rhs.getRegion("RGN_ALL")) {
     const auto base_ind = localmesh->ind2Dto3D(index);
@@ -268,28 +167,16 @@ Field3D operator*(const Field3D &lhs, const Field2D &rhs) {
     }
   }
 
-  result.setLocation(rhs.getLocation());
-
   checkData(result);
   return result;
 }
 
 // Provide the C++ operator to update Field3D by multiplication with Field2D
-Field3D &Field3D::operator*=(const Field2D &rhs) {
+Field3D& Field3D::operator*=(const Field2D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-
-#if CHECK > 0
-    if (this->getLocation() != rhs.getLocation()) {
-      throw BoutException("Error in Field3D::operator*=(Field2D): fields at different "
-                          "locations. lhs is at %s, rhs is at %s!",
-                          strLocation(this->getLocation()),
-                          strLocation(rhs.getLocation()));
-    }
-#endif
-
-    ASSERT1(fieldmesh == rhs.getMesh());
+    ASSERT1(areFieldsCompatible(*this, rhs));
 
     checkData(*this);
     checkData(rhs);
@@ -310,23 +197,14 @@ Field3D &Field3D::operator*=(const Field2D &rhs) {
 }
 
 // Provide the C++ wrapper for division of Field3D and Field2D
-Field3D operator/(const Field3D &lhs, const Field2D &rhs) {
-#if CHECK > 0
-  if (lhs.getLocation() != rhs.getLocation()) {
-    throw BoutException("Error in operator/(Field3D, Field2D): fields at different "
-                        "locations. lhs is at %s, rhs is at %s!",
-                        strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
-  }
-#endif
+Field3D operator/(const Field3D& lhs, const Field2D& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
-  Mesh *localmesh = lhs.getMesh();
-
-  ASSERT1(localmesh == rhs.getMesh());
-
-  Field3D result(localmesh);
-  result.allocate();
+  Field3D result{emptyFrom(lhs)};
   checkData(lhs);
   checkData(rhs);
+
+  Mesh* localmesh = lhs.getMesh();
 
   BOUT_FOR(index, rhs.getRegion("RGN_ALL")) {
     const auto base_ind = localmesh->ind2Dto3D(index);
@@ -336,28 +214,16 @@ Field3D operator/(const Field3D &lhs, const Field2D &rhs) {
     }
   }
 
-  result.setLocation(rhs.getLocation());
-
   checkData(result);
   return result;
 }
 
 // Provide the C++ operator to update Field3D by division with Field2D
-Field3D &Field3D::operator/=(const Field2D &rhs) {
+Field3D& Field3D::operator/=(const Field2D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-
-#if CHECK > 0
-    if (this->getLocation() != rhs.getLocation()) {
-      throw BoutException("Error in Field3D::operator/=(Field2D): fields at different "
-                          "locations. lhs is at %s, rhs is at %s!",
-                          strLocation(this->getLocation()),
-                          strLocation(rhs.getLocation()));
-    }
-#endif
-
-    ASSERT1(fieldmesh == rhs.getMesh());
+    ASSERT1(areFieldsCompatible(*this, rhs));
 
     checkData(*this);
     checkData(rhs);
@@ -379,23 +245,14 @@ Field3D &Field3D::operator/=(const Field2D &rhs) {
 }
 
 // Provide the C++ wrapper for addition of Field3D and Field2D
-Field3D operator+(const Field3D &lhs, const Field2D &rhs) {
-#if CHECK > 0
-  if (lhs.getLocation() != rhs.getLocation()) {
-    throw BoutException("Error in operator+(Field3D, Field2D): fields at different "
-                        "locations. lhs is at %s, rhs is at %s!",
-                        strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
-  }
-#endif
+Field3D operator+(const Field3D& lhs, const Field2D& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
-  Mesh *localmesh = lhs.getMesh();
-
-  ASSERT1(localmesh == rhs.getMesh());
-
-  Field3D result(localmesh);
-  result.allocate();
+  Field3D result{emptyFrom(lhs)};
   checkData(lhs);
   checkData(rhs);
+
+  Mesh* localmesh = lhs.getMesh();
 
   BOUT_FOR(index, rhs.getRegion("RGN_ALL")) {
     const auto base_ind = localmesh->ind2Dto3D(index);
@@ -404,28 +261,16 @@ Field3D operator+(const Field3D &lhs, const Field2D &rhs) {
     }
   }
 
-  result.setLocation(rhs.getLocation());
-
   checkData(result);
   return result;
 }
 
 // Provide the C++ operator to update Field3D by addition with Field2D
-Field3D &Field3D::operator+=(const Field2D &rhs) {
+Field3D& Field3D::operator+=(const Field2D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-
-#if CHECK > 0
-    if (this->getLocation() != rhs.getLocation()) {
-      throw BoutException("Error in Field3D::operator+=(Field2D): fields at different "
-                          "locations. lhs is at %s, rhs is at %s!",
-                          strLocation(this->getLocation()),
-                          strLocation(rhs.getLocation()));
-    }
-#endif
-
-    ASSERT1(fieldmesh == rhs.getMesh());
+    ASSERT1(areFieldsCompatible(*this, rhs));
 
     checkData(*this);
     checkData(rhs);
@@ -446,23 +291,14 @@ Field3D &Field3D::operator+=(const Field2D &rhs) {
 }
 
 // Provide the C++ wrapper for subtraction of Field3D and Field2D
-Field3D operator-(const Field3D &lhs, const Field2D &rhs) {
-#if CHECK > 0
-  if (lhs.getLocation() != rhs.getLocation()) {
-    throw BoutException("Error in operator-(Field3D, Field2D): fields at different "
-                        "locations. lhs is at %s, rhs is at %s!",
-                        strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
-  }
-#endif
+Field3D operator-(const Field3D& lhs, const Field2D& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
-  Mesh *localmesh = lhs.getMesh();
-
-  ASSERT1(localmesh == rhs.getMesh());
-
-  Field3D result(localmesh);
-  result.allocate();
+  Field3D result{emptyFrom(lhs)};
   checkData(lhs);
   checkData(rhs);
+
+  Mesh* localmesh = lhs.getMesh();
 
   BOUT_FOR(index, rhs.getRegion("RGN_ALL")) {
     const auto base_ind = localmesh->ind2Dto3D(index);
@@ -471,28 +307,16 @@ Field3D operator-(const Field3D &lhs, const Field2D &rhs) {
     }
   }
 
-  result.setLocation(rhs.getLocation());
-
   checkData(result);
   return result;
 }
 
 // Provide the C++ operator to update Field3D by subtraction with Field2D
-Field3D &Field3D::operator-=(const Field2D &rhs) {
+Field3D& Field3D::operator-=(const Field2D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-
-#if CHECK > 0
-    if (this->getLocation() != rhs.getLocation()) {
-      throw BoutException("Error in Field3D::operator-=(Field2D): fields at different "
-                          "locations. lhs is at %s, rhs is at %s!",
-                          strLocation(this->getLocation()),
-                          strLocation(rhs.getLocation()));
-    }
-#endif
-
-    ASSERT1(fieldmesh == rhs.getMesh());
+    ASSERT1(areFieldsCompatible(*this, rhs));
 
     checkData(*this);
     checkData(rhs);
@@ -513,25 +337,20 @@ Field3D &Field3D::operator-=(const Field2D &rhs) {
 }
 
 // Provide the C++ wrapper for multiplication of Field3D and BoutReal
-Field3D operator*(const Field3D &lhs, const BoutReal rhs) {
+Field3D operator*(const Field3D& lhs, const BoutReal rhs) {
 
-  Mesh *localmesh = lhs.getMesh();
-
-  Field3D result(localmesh);
-  result.allocate();
+  Field3D result{emptyFrom(lhs)};
   checkData(lhs);
   checkData(rhs);
 
   BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs[index] * rhs; }
-
-  result.setLocation(lhs.getLocation());
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ operator to update Field3D by multiplication with BoutReal
-Field3D &Field3D::operator*=(const BoutReal rhs) {
+Field3D& Field3D::operator*=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -550,25 +369,20 @@ Field3D &Field3D::operator*=(const BoutReal rhs) {
 }
 
 // Provide the C++ wrapper for division of Field3D and BoutReal
-Field3D operator/(const Field3D &lhs, const BoutReal rhs) {
+Field3D operator/(const Field3D& lhs, const BoutReal rhs) {
 
-  Mesh *localmesh = lhs.getMesh();
-
-  Field3D result(localmesh);
-  result.allocate();
+  Field3D result{emptyFrom(lhs)};
   checkData(lhs);
   checkData(rhs);
 
   BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs[index] / rhs; }
-
-  result.setLocation(lhs.getLocation());
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ operator to update Field3D by division with BoutReal
-Field3D &Field3D::operator/=(const BoutReal rhs) {
+Field3D& Field3D::operator/=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -587,25 +401,20 @@ Field3D &Field3D::operator/=(const BoutReal rhs) {
 }
 
 // Provide the C++ wrapper for addition of Field3D and BoutReal
-Field3D operator+(const Field3D &lhs, const BoutReal rhs) {
+Field3D operator+(const Field3D& lhs, const BoutReal rhs) {
 
-  Mesh *localmesh = lhs.getMesh();
-
-  Field3D result(localmesh);
-  result.allocate();
+  Field3D result{emptyFrom(lhs)};
   checkData(lhs);
   checkData(rhs);
 
   BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs[index] + rhs; }
-
-  result.setLocation(lhs.getLocation());
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ operator to update Field3D by addition with BoutReal
-Field3D &Field3D::operator+=(const BoutReal rhs) {
+Field3D& Field3D::operator+=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -624,25 +433,20 @@ Field3D &Field3D::operator+=(const BoutReal rhs) {
 }
 
 // Provide the C++ wrapper for subtraction of Field3D and BoutReal
-Field3D operator-(const Field3D &lhs, const BoutReal rhs) {
+Field3D operator-(const Field3D& lhs, const BoutReal rhs) {
 
-  Mesh *localmesh = lhs.getMesh();
-
-  Field3D result(localmesh);
-  result.allocate();
+  Field3D result{emptyFrom(lhs)};
   checkData(lhs);
   checkData(rhs);
 
   BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs[index] - rhs; }
-
-  result.setLocation(lhs.getLocation());
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ operator to update Field3D by subtraction with BoutReal
-Field3D &Field3D::operator-=(const BoutReal rhs) {
+Field3D& Field3D::operator-=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -661,23 +465,14 @@ Field3D &Field3D::operator-=(const BoutReal rhs) {
 }
 
 // Provide the C++ wrapper for multiplication of Field2D and Field3D
-Field3D operator*(const Field2D &lhs, const Field3D &rhs) {
-#if CHECK > 0
-  if (lhs.getLocation() != rhs.getLocation()) {
-    throw BoutException("Error in operator*(Field2D, Field3D): fields at different "
-                        "locations. lhs is at %s, rhs is at %s!",
-                        strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
-  }
-#endif
+Field3D operator*(const Field2D& lhs, const Field3D& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
-  Mesh *localmesh = lhs.getMesh();
-
-  ASSERT1(localmesh == rhs.getMesh());
-
-  Field3D result(localmesh);
-  result.allocate();
+  Field3D result{emptyFrom(rhs)};
   checkData(lhs);
   checkData(rhs);
+
+  Mesh* localmesh = lhs.getMesh();
 
   BOUT_FOR(index, lhs.getRegion("RGN_ALL")) {
     const auto base_ind = localmesh->ind2Dto3D(index);
@@ -686,30 +481,19 @@ Field3D operator*(const Field2D &lhs, const Field3D &rhs) {
     }
   }
 
-  result.setLocation(rhs.getLocation());
-
   checkData(result);
   return result;
 }
 
 // Provide the C++ wrapper for division of Field2D and Field3D
-Field3D operator/(const Field2D &lhs, const Field3D &rhs) {
-#if CHECK > 0
-  if (lhs.getLocation() != rhs.getLocation()) {
-    throw BoutException("Error in operator/(Field2D, Field3D): fields at different "
-                        "locations. lhs is at %s, rhs is at %s!",
-                        strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
-  }
-#endif
+Field3D operator/(const Field2D& lhs, const Field3D& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
-  Mesh *localmesh = lhs.getMesh();
-
-  ASSERT1(localmesh == rhs.getMesh());
-
-  Field3D result(localmesh);
-  result.allocate();
+  Field3D result{emptyFrom(rhs)};
   checkData(lhs);
   checkData(rhs);
+
+  Mesh* localmesh = lhs.getMesh();
 
   BOUT_FOR(index, lhs.getRegion("RGN_ALL")) {
     const auto base_ind = localmesh->ind2Dto3D(index);
@@ -718,30 +502,19 @@ Field3D operator/(const Field2D &lhs, const Field3D &rhs) {
     }
   }
 
-  result.setLocation(rhs.getLocation());
-
   checkData(result);
   return result;
 }
 
 // Provide the C++ wrapper for addition of Field2D and Field3D
-Field3D operator+(const Field2D &lhs, const Field3D &rhs) {
-#if CHECK > 0
-  if (lhs.getLocation() != rhs.getLocation()) {
-    throw BoutException("Error in operator+(Field2D, Field3D): fields at different "
-                        "locations. lhs is at %s, rhs is at %s!",
-                        strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
-  }
-#endif
+Field3D operator+(const Field2D& lhs, const Field3D& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
-  Mesh *localmesh = lhs.getMesh();
-
-  ASSERT1(localmesh == rhs.getMesh());
-
-  Field3D result(localmesh);
-  result.allocate();
+  Field3D result{emptyFrom(rhs)};
   checkData(lhs);
   checkData(rhs);
+
+  Mesh* localmesh = lhs.getMesh();
 
   BOUT_FOR(index, lhs.getRegion("RGN_ALL")) {
     const auto base_ind = localmesh->ind2Dto3D(index);
@@ -750,30 +523,19 @@ Field3D operator+(const Field2D &lhs, const Field3D &rhs) {
     }
   }
 
-  result.setLocation(rhs.getLocation());
-
   checkData(result);
   return result;
 }
 
 // Provide the C++ wrapper for subtraction of Field2D and Field3D
-Field3D operator-(const Field2D &lhs, const Field3D &rhs) {
-#if CHECK > 0
-  if (lhs.getLocation() != rhs.getLocation()) {
-    throw BoutException("Error in operator-(Field2D, Field3D): fields at different "
-                        "locations. lhs is at %s, rhs is at %s!",
-                        strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
-  }
-#endif
+Field3D operator-(const Field2D& lhs, const Field3D& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
-  Mesh *localmesh = lhs.getMesh();
-
-  ASSERT1(localmesh == rhs.getMesh());
-
-  Field3D result(localmesh);
-  result.allocate();
+  Field3D result{emptyFrom(rhs)};
   checkData(lhs);
   checkData(rhs);
+
+  Mesh* localmesh = lhs.getMesh();
 
   BOUT_FOR(index, lhs.getRegion("RGN_ALL")) {
     const auto base_ind = localmesh->ind2Dto3D(index);
@@ -782,28 +544,15 @@ Field3D operator-(const Field2D &lhs, const Field3D &rhs) {
     }
   }
 
-  result.setLocation(rhs.getLocation());
-
   checkData(result);
   return result;
 }
 
 // Provide the C++ wrapper for multiplication of Field2D and Field2D
-Field2D operator*(const Field2D &lhs, const Field2D &rhs) {
-#if CHECK > 0
-  if (lhs.getLocation() != rhs.getLocation()) {
-    throw BoutException("Error in operator*(Field2D, Field2D): fields at different "
-                        "locations. lhs is at %s, rhs is at %s!",
-                        strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
-  }
-#endif
+Field2D operator*(const Field2D& lhs, const Field2D& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
-  Mesh *localmesh = lhs.getMesh();
-
-  ASSERT1(localmesh == rhs.getMesh());
-
-  Field2D result(localmesh);
-  result.allocate();
+  Field2D result{emptyFrom(lhs)};
   checkData(lhs);
   checkData(rhs);
 
@@ -811,28 +560,16 @@ Field2D operator*(const Field2D &lhs, const Field2D &rhs) {
     result[index] = lhs[index] * rhs[index];
   }
 
-  result.setLocation(rhs.getLocation());
-
   checkData(result);
   return result;
 }
 
 // Provide the C++ operator to update Field2D by multiplication with Field2D
-Field2D &Field2D::operator*=(const Field2D &rhs) {
+Field2D& Field2D::operator*=(const Field2D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-
-#if CHECK > 0
-    if (this->getLocation() != rhs.getLocation()) {
-      throw BoutException("Error in Field2D::operator*=(Field2D): fields at different "
-                          "locations. lhs is at %s, rhs is at %s!",
-                          strLocation(this->getLocation()),
-                          strLocation(rhs.getLocation()));
-    }
-#endif
-
-    ASSERT1(fieldmesh == rhs.getMesh());
+    ASSERT1(areFieldsCompatible(*this, rhs));
 
     checkData(*this);
     checkData(rhs);
@@ -848,21 +585,10 @@ Field2D &Field2D::operator*=(const Field2D &rhs) {
 }
 
 // Provide the C++ wrapper for division of Field2D and Field2D
-Field2D operator/(const Field2D &lhs, const Field2D &rhs) {
-#if CHECK > 0
-  if (lhs.getLocation() != rhs.getLocation()) {
-    throw BoutException("Error in operator/(Field2D, Field2D): fields at different "
-                        "locations. lhs is at %s, rhs is at %s!",
-                        strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
-  }
-#endif
+Field2D operator/(const Field2D& lhs, const Field2D& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
-  Mesh *localmesh = lhs.getMesh();
-
-  ASSERT1(localmesh == rhs.getMesh());
-
-  Field2D result(localmesh);
-  result.allocate();
+  Field2D result{emptyFrom(lhs)};
   checkData(lhs);
   checkData(rhs);
 
@@ -870,28 +596,16 @@ Field2D operator/(const Field2D &lhs, const Field2D &rhs) {
     result[index] = lhs[index] / rhs[index];
   }
 
-  result.setLocation(rhs.getLocation());
-
   checkData(result);
   return result;
 }
 
 // Provide the C++ operator to update Field2D by division with Field2D
-Field2D &Field2D::operator/=(const Field2D &rhs) {
+Field2D& Field2D::operator/=(const Field2D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-
-#if CHECK > 0
-    if (this->getLocation() != rhs.getLocation()) {
-      throw BoutException("Error in Field2D::operator/=(Field2D): fields at different "
-                          "locations. lhs is at %s, rhs is at %s!",
-                          strLocation(this->getLocation()),
-                          strLocation(rhs.getLocation()));
-    }
-#endif
-
-    ASSERT1(fieldmesh == rhs.getMesh());
+    ASSERT1(areFieldsCompatible(*this, rhs));
 
     checkData(*this);
     checkData(rhs);
@@ -907,21 +621,10 @@ Field2D &Field2D::operator/=(const Field2D &rhs) {
 }
 
 // Provide the C++ wrapper for addition of Field2D and Field2D
-Field2D operator+(const Field2D &lhs, const Field2D &rhs) {
-#if CHECK > 0
-  if (lhs.getLocation() != rhs.getLocation()) {
-    throw BoutException("Error in operator+(Field2D, Field2D): fields at different "
-                        "locations. lhs is at %s, rhs is at %s!",
-                        strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
-  }
-#endif
+Field2D operator+(const Field2D& lhs, const Field2D& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
-  Mesh *localmesh = lhs.getMesh();
-
-  ASSERT1(localmesh == rhs.getMesh());
-
-  Field2D result(localmesh);
-  result.allocate();
+  Field2D result{emptyFrom(lhs)};
   checkData(lhs);
   checkData(rhs);
 
@@ -929,28 +632,16 @@ Field2D operator+(const Field2D &lhs, const Field2D &rhs) {
     result[index] = lhs[index] + rhs[index];
   }
 
-  result.setLocation(rhs.getLocation());
-
   checkData(result);
   return result;
 }
 
 // Provide the C++ operator to update Field2D by addition with Field2D
-Field2D &Field2D::operator+=(const Field2D &rhs) {
+Field2D& Field2D::operator+=(const Field2D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-
-#if CHECK > 0
-    if (this->getLocation() != rhs.getLocation()) {
-      throw BoutException("Error in Field2D::operator+=(Field2D): fields at different "
-                          "locations. lhs is at %s, rhs is at %s!",
-                          strLocation(this->getLocation()),
-                          strLocation(rhs.getLocation()));
-    }
-#endif
-
-    ASSERT1(fieldmesh == rhs.getMesh());
+    ASSERT1(areFieldsCompatible(*this, rhs));
 
     checkData(*this);
     checkData(rhs);
@@ -966,21 +657,10 @@ Field2D &Field2D::operator+=(const Field2D &rhs) {
 }
 
 // Provide the C++ wrapper for subtraction of Field2D and Field2D
-Field2D operator-(const Field2D &lhs, const Field2D &rhs) {
-#if CHECK > 0
-  if (lhs.getLocation() != rhs.getLocation()) {
-    throw BoutException("Error in operator-(Field2D, Field2D): fields at different "
-                        "locations. lhs is at %s, rhs is at %s!",
-                        strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
-  }
-#endif
+Field2D operator-(const Field2D& lhs, const Field2D& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
-  Mesh *localmesh = lhs.getMesh();
-
-  ASSERT1(localmesh == rhs.getMesh());
-
-  Field2D result(localmesh);
-  result.allocate();
+  Field2D result{emptyFrom(lhs)};
   checkData(lhs);
   checkData(rhs);
 
@@ -988,28 +668,16 @@ Field2D operator-(const Field2D &lhs, const Field2D &rhs) {
     result[index] = lhs[index] - rhs[index];
   }
 
-  result.setLocation(rhs.getLocation());
-
   checkData(result);
   return result;
 }
 
 // Provide the C++ operator to update Field2D by subtraction with Field2D
-Field2D &Field2D::operator-=(const Field2D &rhs) {
+Field2D& Field2D::operator-=(const Field2D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-
-#if CHECK > 0
-    if (this->getLocation() != rhs.getLocation()) {
-      throw BoutException("Error in Field2D::operator-=(Field2D): fields at different "
-                          "locations. lhs is at %s, rhs is at %s!",
-                          strLocation(this->getLocation()),
-                          strLocation(rhs.getLocation()));
-    }
-#endif
-
-    ASSERT1(fieldmesh == rhs.getMesh());
+    ASSERT1(areFieldsCompatible(*this, rhs));
 
     checkData(*this);
     checkData(rhs);
@@ -1025,25 +693,20 @@ Field2D &Field2D::operator-=(const Field2D &rhs) {
 }
 
 // Provide the C++ wrapper for multiplication of Field2D and BoutReal
-Field2D operator*(const Field2D &lhs, const BoutReal rhs) {
+Field2D operator*(const Field2D& lhs, const BoutReal rhs) {
 
-  Mesh *localmesh = lhs.getMesh();
-
-  Field2D result(localmesh);
-  result.allocate();
+  Field2D result{emptyFrom(lhs)};
   checkData(lhs);
   checkData(rhs);
 
   BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs[index] * rhs; }
-
-  result.setLocation(lhs.getLocation());
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ operator to update Field2D by multiplication with BoutReal
-Field2D &Field2D::operator*=(const BoutReal rhs) {
+Field2D& Field2D::operator*=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -1062,25 +725,20 @@ Field2D &Field2D::operator*=(const BoutReal rhs) {
 }
 
 // Provide the C++ wrapper for division of Field2D and BoutReal
-Field2D operator/(const Field2D &lhs, const BoutReal rhs) {
+Field2D operator/(const Field2D& lhs, const BoutReal rhs) {
 
-  Mesh *localmesh = lhs.getMesh();
-
-  Field2D result(localmesh);
-  result.allocate();
+  Field2D result{emptyFrom(lhs)};
   checkData(lhs);
   checkData(rhs);
 
   BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs[index] / rhs; }
-
-  result.setLocation(lhs.getLocation());
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ operator to update Field2D by division with BoutReal
-Field2D &Field2D::operator/=(const BoutReal rhs) {
+Field2D& Field2D::operator/=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -1099,25 +757,20 @@ Field2D &Field2D::operator/=(const BoutReal rhs) {
 }
 
 // Provide the C++ wrapper for addition of Field2D and BoutReal
-Field2D operator+(const Field2D &lhs, const BoutReal rhs) {
+Field2D operator+(const Field2D& lhs, const BoutReal rhs) {
 
-  Mesh *localmesh = lhs.getMesh();
-
-  Field2D result(localmesh);
-  result.allocate();
+  Field2D result{emptyFrom(lhs)};
   checkData(lhs);
   checkData(rhs);
 
   BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs[index] + rhs; }
-
-  result.setLocation(lhs.getLocation());
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ operator to update Field2D by addition with BoutReal
-Field2D &Field2D::operator+=(const BoutReal rhs) {
+Field2D& Field2D::operator+=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -1136,25 +789,20 @@ Field2D &Field2D::operator+=(const BoutReal rhs) {
 }
 
 // Provide the C++ wrapper for subtraction of Field2D and BoutReal
-Field2D operator-(const Field2D &lhs, const BoutReal rhs) {
+Field2D operator-(const Field2D& lhs, const BoutReal rhs) {
 
-  Mesh *localmesh = lhs.getMesh();
-
-  Field2D result(localmesh);
-  result.allocate();
+  Field2D result{emptyFrom(lhs)};
   checkData(lhs);
   checkData(rhs);
 
   BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs[index] - rhs; }
-
-  result.setLocation(lhs.getLocation());
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ operator to update Field2D by subtraction with BoutReal
-Field2D &Field2D::operator-=(const BoutReal rhs) {
+Field2D& Field2D::operator-=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -1173,144 +821,104 @@ Field2D &Field2D::operator-=(const BoutReal rhs) {
 }
 
 // Provide the C++ wrapper for multiplication of BoutReal and Field3D
-Field3D operator*(const BoutReal lhs, const Field3D &rhs) {
+Field3D operator*(const BoutReal lhs, const Field3D& rhs) {
 
-  Mesh *localmesh = rhs.getMesh();
-
-  Field3D result(localmesh);
-  result.allocate();
+  Field3D result{emptyFrom(rhs)};
   checkData(lhs);
   checkData(rhs);
 
   BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs * rhs[index]; }
-
-  result.setLocation(rhs.getLocation());
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ wrapper for division of BoutReal and Field3D
-Field3D operator/(const BoutReal lhs, const Field3D &rhs) {
+Field3D operator/(const BoutReal lhs, const Field3D& rhs) {
 
-  Mesh *localmesh = rhs.getMesh();
-
-  Field3D result(localmesh);
-  result.allocate();
+  Field3D result{emptyFrom(rhs)};
   checkData(lhs);
   checkData(rhs);
 
   BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs / rhs[index]; }
-
-  result.setLocation(rhs.getLocation());
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ wrapper for addition of BoutReal and Field3D
-Field3D operator+(const BoutReal lhs, const Field3D &rhs) {
+Field3D operator+(const BoutReal lhs, const Field3D& rhs) {
 
-  Mesh *localmesh = rhs.getMesh();
-
-  Field3D result(localmesh);
-  result.allocate();
+  Field3D result{emptyFrom(rhs)};
   checkData(lhs);
   checkData(rhs);
 
   BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs + rhs[index]; }
-
-  result.setLocation(rhs.getLocation());
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ wrapper for subtraction of BoutReal and Field3D
-Field3D operator-(const BoutReal lhs, const Field3D &rhs) {
+Field3D operator-(const BoutReal lhs, const Field3D& rhs) {
 
-  Mesh *localmesh = rhs.getMesh();
-
-  Field3D result(localmesh);
-  result.allocate();
+  Field3D result{emptyFrom(rhs)};
   checkData(lhs);
   checkData(rhs);
 
   BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs - rhs[index]; }
-
-  result.setLocation(rhs.getLocation());
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ wrapper for multiplication of BoutReal and Field2D
-Field2D operator*(const BoutReal lhs, const Field2D &rhs) {
+Field2D operator*(const BoutReal lhs, const Field2D& rhs) {
 
-  Mesh *localmesh = rhs.getMesh();
-
-  Field2D result(localmesh);
-  result.allocate();
+  Field2D result{emptyFrom(rhs)};
   checkData(lhs);
   checkData(rhs);
 
   BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs * rhs[index]; }
-
-  result.setLocation(rhs.getLocation());
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ wrapper for division of BoutReal and Field2D
-Field2D operator/(const BoutReal lhs, const Field2D &rhs) {
+Field2D operator/(const BoutReal lhs, const Field2D& rhs) {
 
-  Mesh *localmesh = rhs.getMesh();
-
-  Field2D result(localmesh);
-  result.allocate();
+  Field2D result{emptyFrom(rhs)};
   checkData(lhs);
   checkData(rhs);
 
   BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs / rhs[index]; }
-
-  result.setLocation(rhs.getLocation());
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ wrapper for addition of BoutReal and Field2D
-Field2D operator+(const BoutReal lhs, const Field2D &rhs) {
+Field2D operator+(const BoutReal lhs, const Field2D& rhs) {
 
-  Mesh *localmesh = rhs.getMesh();
-
-  Field2D result(localmesh);
-  result.allocate();
+  Field2D result{emptyFrom(rhs)};
   checkData(lhs);
   checkData(rhs);
 
   BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs + rhs[index]; }
-
-  result.setLocation(rhs.getLocation());
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ wrapper for subtraction of BoutReal and Field2D
-Field2D operator-(const BoutReal lhs, const Field2D &rhs) {
+Field2D operator-(const BoutReal lhs, const Field2D& rhs) {
 
-  Mesh *localmesh = rhs.getMesh();
-
-  Field2D result(localmesh);
-  result.allocate();
+  Field2D result{emptyFrom(rhs)};
   checkData(lhs);
   checkData(rhs);
 
   BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs - rhs[index]; }
-
-  result.setLocation(rhs.getLocation());
 
   checkData(result);
   return result;
