@@ -6,9 +6,9 @@ FUNCTION int_y, var, mesh, loop=loop, nosmooth=nosmooth, simple=simple
   nx = s[0]
   loop = FLTARR(nx)
   
-  status = gen_surface(mesh=mesh) ; Start generator
+  status = gen_surface_hypnotoad(mesh=mesh) ; Start generator
   REPEAT BEGIN
-    yi = gen_surface(last=last, xi=xi, period=period)
+    yi = gen_surface_hypnotoad(last=last, xi=xi, period=period)
 
     IF period THEN BEGIN
        ; Add first point onto the end so wraps around for integration
