@@ -8,6 +8,7 @@ class BoutException;
 #include <string>
 
 #include "bout/deprecated.hxx"
+#include "bout/format.hxx"
 
 /// Throw BoutRhsFail with \p message if any one process has non-zero
 /// \p status
@@ -15,10 +16,8 @@ void BoutParallelThrowRhsFail(int status, const char* message);
 
 class BoutException : public std::exception {
 public:
-  BoutException(const char *, ...);
-  BoutException(std::string msg) : message(std::move(msg)) {
-    makeBacktrace();
-  }
+  BoutException(const char*, ...) BOUT_FORMAT_ARGS(2, 3);
+  BoutException(std::string msg) : message(std::move(msg)) { makeBacktrace(); }
   ~BoutException() override;
 
   const char* what() const noexcept override {
@@ -50,12 +49,12 @@ protected:
 
 class BoutRhsFail : public BoutException {
 public:
-  BoutRhsFail(const char *, ...);
+  BoutRhsFail(const char*, ...) BOUT_FORMAT_ARGS(2, 3);
 };
 
 class BoutIterationFail : public BoutException {
 public:
-  BoutIterationFail(const char *, ...);
+  BoutIterationFail(const char*, ...) BOUT_FORMAT_ARGS(2, 3);
 };
 
 #endif

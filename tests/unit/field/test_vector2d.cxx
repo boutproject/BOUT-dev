@@ -43,11 +43,21 @@ protected:
     mesh->addBoundary(new BoundaryRegionYUp("upper_target", 1, nx - 2, mesh));
     mesh->addBoundary(new BoundaryRegionYDown("lower_target", 1, nx - 2, mesh));
 
-    dynamic_cast<FakeMesh*>(mesh)->setCoordinates(std::make_shared<Coordinates>(
+    static_cast<FakeMesh*>(mesh)->setCoordinates(std::make_shared<Coordinates>(
         mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{0.0},
         Field2D{1.0}, Field2D{2.0}, Field2D{3.0}, Field2D{4.0}, Field2D{5.0},
         Field2D{6.0}, Field2D{1.0}, Field2D{2.0}, Field2D{3.0}, Field2D{4.0},
         Field2D{5.0}, Field2D{6.0}, Field2D{0.0}, Field2D{0.0}, false));
+
+    if (mesh_staggered != nullptr) {
+      delete mesh_staggered;
+      mesh_staggered = nullptr;
+    }
+    mesh_staggered = new FakeMesh(nx, ny, nz);
+    mesh_staggered->StaggerGrids = true;
+    output_info.disable();
+    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_XLOW);
+    mesh_staggered->createDefaultRegions();
   }
 
   ~Vector2DTest() {
@@ -59,12 +69,16 @@ protected:
       delete mesh;
       mesh = nullptr;
     }
+    delete mesh_staggered;
+    mesh_staggered = nullptr;
   }
 
 public:
   static constexpr int nx = 5;
   static constexpr int ny = 5;
   static constexpr int nz = 1;
+
+  Mesh* mesh_staggered = nullptr;
 };
 
 constexpr int Vector2DTest::nx;
@@ -124,6 +138,20 @@ TEST_F(Vector2DTest, TimeDeriv) {
   EXPECT_EQ(&(ddt(vector)), deriv);
 }
 
+TEST_F(Vector2DTest, TimeDerivComponents) {
+  Vector2D vector;
+
+  // Make time derivatives for components first, then check we rectify
+  vector.x.timeDeriv();
+  vector.y.timeDeriv();
+  vector.z.timeDeriv();
+  vector.timeDeriv();
+
+  EXPECT_EQ(&(ddt(vector).x), &(ddt(vector.x)));
+  EXPECT_EQ(&(ddt(vector).y), &(ddt(vector.y)));
+  EXPECT_EQ(&(ddt(vector).z), &(ddt(vector.z)));
+}
+
 TEST_F(Vector2DTest, SetLocationNonStaggered) {
   Vector2D vector;
   EXPECT_EQ(vector.getLocation(), CELL_CENTRE);
@@ -135,9 +163,8 @@ TEST_F(Vector2DTest, SetLocationNonStaggered) {
 }
 
 TEST_F(Vector2DTest, SetLocationXLOW) {
-  Vector2D vector;
+  Vector2D vector(mesh_staggered);
   CELL_LOC targetLoc = CELL_XLOW;
-  vector.x.getMesh()->StaggerGrids = true;
   EXPECT_EQ(vector.getLocation(), CELL_CENTRE);
   EXPECT_NO_THROW(vector.setLocation(targetLoc));
   EXPECT_EQ(vector.getLocation(), targetLoc);
@@ -147,9 +174,11 @@ TEST_F(Vector2DTest, SetLocationXLOW) {
 }
 
 TEST_F(Vector2DTest, SetLocationYLOW) {
-  Vector2D vector;
+  FakeMesh local_mesh{Vector2DTest::nx,Vector2DTest::ny,Vector2DTest::nz};
+  local_mesh.StaggerGrids = true;
+  local_mesh.setCoordinates(nullptr, CELL_YLOW);
+  Vector2D vector(&local_mesh);
   CELL_LOC targetLoc = CELL_YLOW;
-  vector.x.getMesh()->StaggerGrids = true;
   EXPECT_EQ(vector.getLocation(), CELL_CENTRE);
   EXPECT_NO_THROW(vector.setLocation(targetLoc));
   EXPECT_EQ(vector.getLocation(), targetLoc);
@@ -159,9 +188,11 @@ TEST_F(Vector2DTest, SetLocationYLOW) {
 }
 
 TEST_F(Vector2DTest, SetLocationZLOW) {
-  Vector2D vector;
+  FakeMesh local_mesh{Vector2DTest::nx,Vector2DTest::ny,Vector2DTest::nz};
+  local_mesh.StaggerGrids = true;
+  local_mesh.setCoordinates(nullptr, CELL_ZLOW);
+  Vector2D vector(&local_mesh);
   CELL_LOC targetLoc = CELL_ZLOW;
-  vector.x.getMesh()->StaggerGrids = true;
   EXPECT_EQ(vector.getLocation(), CELL_CENTRE);
   EXPECT_NO_THROW(vector.setLocation(targetLoc));
   EXPECT_EQ(vector.getLocation(), targetLoc);
@@ -171,8 +202,12 @@ TEST_F(Vector2DTest, SetLocationZLOW) {
 }
 
 TEST_F(Vector2DTest, SetLocationVSHIFT) {
-  Vector2D vector;
-  vector.x.getMesh()->StaggerGrids = true;
+  FakeMesh local_mesh{Vector2DTest::nx,Vector2DTest::ny,Vector2DTest::nz};
+  local_mesh.StaggerGrids = true;
+  local_mesh.setCoordinates(nullptr, CELL_XLOW);
+  local_mesh.setCoordinates(nullptr, CELL_YLOW);
+  local_mesh.setCoordinates(nullptr, CELL_ZLOW);
+  Vector2D vector(&local_mesh);
   EXPECT_EQ(vector.getLocation(), CELL_CENTRE);
   EXPECT_NO_THROW(vector.setLocation(CELL_VSHIFT));
   EXPECT_EQ(vector.getLocation(), CELL_VSHIFT);
@@ -204,9 +239,7 @@ TEST_F(Vector2DTest, AssignFromBoutReal) {
 }
 
 TEST_F(Vector2DTest, AssignFromVector2D) {
-  Vector2D vector1, vector2;
-
-  vector1.x.getMesh()->StaggerGrids = true;
+  Vector2D vector1(mesh_staggered), vector2(mesh_staggered);
 
   vector1.x = 1.0;
   vector1.y = 2.0;
@@ -222,14 +255,12 @@ TEST_F(Vector2DTest, AssignFromVector2D) {
 }
 
 TEST_F(Vector2DTest, CreateFromVector2D) {
-  Vector2D vector1;
-
-  vector1.x.getMesh()->StaggerGrids = true;
+  Vector2D vector1(mesh_staggered);
 
   vector1.x = 4.0;
   vector1.y = 5.0;
   vector1.z = 6.0;
-  vector1.setLocation(CELL_YLOW);
+  vector1.setLocation(CELL_XLOW);
 
   Vector2D vector2{vector1};
 
@@ -431,6 +462,51 @@ TEST_F(Vector2DTest, MultiplyVector2DField3D) {
   Field3D field{4.0};
 
   Vector3D result = vector * field;
+
+  EXPECT_TRUE(IsFieldEqual(result.x, 4.0));
+  EXPECT_TRUE(IsFieldEqual(result.y, 8.0));
+  EXPECT_TRUE(IsFieldEqual(result.z, 12.0));
+}
+
+TEST_F(Vector2DTest, MultiplyBoutRealVector2D) {
+  Vector2D vector;
+  vector.x = 1.0;
+  vector.y = 2.0;
+  vector.z = 3.0;
+
+  BoutReal real {2.0};
+
+  Vector2D result = real * vector;
+
+  EXPECT_TRUE(IsFieldEqual(result.x, 2.0));
+  EXPECT_TRUE(IsFieldEqual(result.y, 4.0));
+  EXPECT_TRUE(IsFieldEqual(result.z, 6.0));
+}
+
+TEST_F(Vector2DTest, MultiplyField2DVector2D) {
+  Vector2D vector;
+  vector.x = 1.0;
+  vector.y = 2.0;
+  vector.z = 3.0;
+
+  Field2D field{3.0};
+
+  Vector2D result = field * vector;
+
+  EXPECT_TRUE(IsFieldEqual(result.x, 3.0));
+  EXPECT_TRUE(IsFieldEqual(result.y, 6.0));
+  EXPECT_TRUE(IsFieldEqual(result.z, 9.0));
+}
+
+TEST_F(Vector2DTest, MultiplyField3DVector2D) {
+  Vector2D vector;
+  vector.x = 1.0;
+  vector.y = 2.0;
+  vector.z = 3.0;
+
+  Field3D field{4.0};
+
+  Vector3D result = field * vector;
 
   EXPECT_TRUE(IsFieldEqual(result.x, 4.0));
   EXPECT_TRUE(IsFieldEqual(result.y, 8.0));

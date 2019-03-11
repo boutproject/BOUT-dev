@@ -118,6 +118,7 @@ TEST_F(Field2DTest, CopyCheckFieldmesh) {
   EXPECT_EQ(field2.getNx(), test_nx);
   EXPECT_EQ(field2.getNy(), test_ny);
   EXPECT_EQ(field2.getNz(), 1);
+  EXPECT_TRUE(areFieldsCompatible(field, field2));
 }
 
 #if CHECK > 0
@@ -184,6 +185,41 @@ TEST_F(Field2DTest, TimeDeriv) {
   EXPECT_EQ(deriv, deriv2);
 
   EXPECT_EQ(&(ddt(field)), deriv);
+}
+
+TEST_F(Field2DTest, SetGetLocation) {
+  Field2D field(mesh_staggered);
+
+  field.setLocation(CELL_XLOW);
+  EXPECT_EQ(field.getLocation(), CELL_XLOW);
+
+  field.setLocation(CELL_DEFAULT);
+  EXPECT_EQ(field.getLocation(), CELL_CENTRE);
+
+  EXPECT_THROW(field.setLocation(CELL_VSHIFT), BoutException);
+}
+
+TEST_F(Field2DTest, SetGetLocationNonStaggered) {
+  Field2D field;
+
+  field.getMesh()->StaggerGrids = false;
+
+#if CHECK > 0
+  EXPECT_THROW(field.setLocation(CELL_XLOW), BoutException);
+  EXPECT_THROW(field.setLocation(CELL_VSHIFT), BoutException);
+
+  field.setLocation(CELL_DEFAULT);
+  EXPECT_EQ(field.getLocation(), CELL_CENTRE);
+#else
+  field.setLocation(CELL_XLOW);
+  EXPECT_EQ(field.getLocation(), CELL_CENTRE);
+
+  field.setLocation(CELL_DEFAULT);
+  EXPECT_EQ(field.getLocation(), CELL_CENTRE);
+
+  field.setLocation(CELL_VSHIFT);
+  EXPECT_EQ(field.getLocation(), CELL_CENTRE);
+#endif
 }
 
 /// This test is split into two parts: a very basic sanity check first
@@ -1087,11 +1123,8 @@ TEST_F(Field2DTest, Max) {
 }
 
 TEST_F(Field2DTest, Swap) {
-  auto backup = mesh->StaggerGrids;
-  mesh->StaggerGrids = true;
-
   // First field
-  Field2D first(1., mesh);
+  Field2D first(1., mesh_staggered);
 
   first.setLocation(CELL_XLOW);
 
@@ -1129,7 +1162,7 @@ TEST_F(Field2DTest, Swap) {
 
   // Mesh properties
   EXPECT_EQ(first.getMesh(), &second_mesh);
-  EXPECT_EQ(second.getMesh(), mesh);
+  EXPECT_EQ(second.getMesh(), mesh_staggered);
 
   EXPECT_EQ(first.getNx(), second_nx);
   EXPECT_EQ(first.getNy(), second_ny);
@@ -1144,16 +1177,11 @@ TEST_F(Field2DTest, Swap) {
 
   // We don't check the boundaries, but the data is protected and
   // there are no inquiry functions
-
-  mesh->StaggerGrids = backup;
 }
 
 TEST_F(Field2DTest, MoveCtor) {
-  auto backup = mesh->StaggerGrids;
-  mesh->StaggerGrids = true;
-
   // First field
-  Field2D first(1., mesh);
+  Field2D first(1., mesh_staggered);
 
   first.setLocation(CELL_XLOW);
 
@@ -1168,7 +1196,7 @@ TEST_F(Field2DTest, MoveCtor) {
   EXPECT_TRUE(IsFieldEqual(ddt(second), 1.1));
 
   // Mesh properties
-  EXPECT_EQ(second.getMesh(), mesh);
+  EXPECT_EQ(second.getMesh(), mesh_staggered);
 
   EXPECT_EQ(second.getNx(), Field2DTest::nx);
   EXPECT_EQ(second.getNy(), Field2DTest::ny);
@@ -1178,8 +1206,6 @@ TEST_F(Field2DTest, MoveCtor) {
 
   // We don't check the boundaries, but the data is protected and
   // there are no inquiry functions
-
-  mesh->StaggerGrids = backup;
 }
 
 TEST_F(Field2DTest, FillField) {
@@ -1198,4 +1224,54 @@ TEST_F(Field2DTest, FillField) {
   EXPECT_TRUE(IsFieldEqual(f, g));
 }
 
+TEST_F(Field2DTest, OperatorEqualsField2D) {
+  Field2D field;
+
+  // Create field with non-default arguments so we can check they get copied
+  // to 'field'.
+  // Note that Aligned y-direction type is not really allowed for Field2D, but
+  // we don't check anywhere at the moment.
+  Field2D field2{mesh_staggered, CELL_XLOW, {YDirectionType::Aligned, ZDirectionType::Average}};
+
+  field = field2;
+
+  EXPECT_TRUE(areFieldsCompatible(field, field2));
+  EXPECT_EQ(field.getMesh(), field2.getMesh());
+  EXPECT_EQ(field.getLocation(), field2.getLocation());
+  EXPECT_EQ(field.getDirectionY(), field2.getDirectionY());
+  EXPECT_EQ(field.getDirectionZ(), field2.getDirectionZ());
+}
+
+TEST_F(Field2DTest, EmptyFrom) {
+  // Create field with non-default arguments so we can check they get copied
+  // to 'field2'.
+  // Note that Aligned y-direction type is not really allowed for Field2D, but
+  // we don't check anywhere at the moment.
+  Field2D field{mesh_staggered, CELL_XLOW, {YDirectionType::Aligned, ZDirectionType::Average}};
+  field = 5.;
+
+  Field2D field2{emptyFrom(field)};
+  EXPECT_EQ(field2.getMesh(), mesh_staggered);
+  EXPECT_EQ(field2.getLocation(), CELL_XLOW);
+  EXPECT_EQ(field2.getDirectionY(), YDirectionType::Aligned);
+  EXPECT_EQ(field2.getDirectionZ(), ZDirectionType::Average);
+  EXPECT_TRUE(field2.isAllocated());
+}
+
+TEST_F(Field2DTest, ZeroFrom) {
+  // Create field with non-default arguments so we can check they get copied
+  // to 'field2'.
+  // Note that Aligned y-direction type is not really allowed for Field2D, but
+  // we don't check anywhere at the moment.
+  Field2D field{mesh_staggered, CELL_XLOW, {YDirectionType::Aligned, ZDirectionType::Average}};
+  field = 5.;
+
+  Field2D field2{zeroFrom(field)};
+  EXPECT_EQ(field2.getMesh(), mesh_staggered);
+  EXPECT_EQ(field2.getLocation(), CELL_XLOW);
+  EXPECT_EQ(field2.getDirectionY(), YDirectionType::Aligned);
+  EXPECT_EQ(field2.getDirectionZ(), ZDirectionType::Average);
+  EXPECT_TRUE(field2.isAllocated());
+  EXPECT_TRUE(IsFieldEqual(field2, 0.));
+}
 #pragma GCC diagnostic pop

@@ -157,8 +157,7 @@ const Field3D Laplacian::solve(const Field3D &b) {
     ye -= extra_yguards_upper;
   }
 
-  Field3D x(localmesh);
-  x.allocate();
+  Field3D x{emptyFrom(b)};
 
   int status = 0;
   try {
@@ -171,8 +170,6 @@ const Field3D Laplacian::solve(const Field3D &b) {
     status = 1;
   }
   BoutParallelThrowRhsFail(status, "Laplacian inversion took too many iterations.");
-
-  x.setLocation(b.getLocation());
 
   return x;
 }
@@ -212,8 +209,7 @@ const Field3D Laplacian::solve(const Field3D &b, const Field3D &x0) {
   if(localmesh->hasBndryUpperY() && include_yguards)
     ye = localmesh->LocalNy-1; // Contains upper boundary
 
-  Field3D x(localmesh);
-  x.allocate();
+  Field3D x{emptyFrom(b)};
 
   int status = 0;
   try {
@@ -226,8 +222,6 @@ const Field3D Laplacian::solve(const Field3D &b, const Field3D &x0) {
     status = 1;
   }
   BoutParallelThrowRhsFail(status, "Laplacian inversion took too many iterations.");
-
-  x.setLocation(b.getLocation());
 
   return x; // Return the result of the inversion
 }
