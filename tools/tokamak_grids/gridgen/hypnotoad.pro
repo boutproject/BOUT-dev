@@ -150,7 +150,8 @@ PRO popup_event, event
                          /nrad_flexible, $
                          single_rad_grid=base_info.single_rad_grid, $
                          critical=(*(base_info.rz_grid)).critical, $
-                         xpt_only=base_info.xpt_only, /simple)
+                         xpt_only=base_info.xpt_only, /simple, $
+                         y_boundary_guards=y_boundary_guards)
     END
   ENDCASE
       
@@ -367,6 +368,7 @@ PRO event_handler, event
       PRINT, "xpt_mul = ", xpt_mul
 
       widget_control, info.y_boundary_guards, get_value=y_boundary_guards
+
       ; Check if a simplified boundary should be used
       IF info.simple_bndry THEN BEGIN
         ; Simplify the boundary to a square box
@@ -388,7 +390,7 @@ PRO event_handler, event
                          single_rad_grid=info.single_rad_grid, $
                          critical=(*(info.rz_grid)).critical, $
                          fast=info.fast, xpt_mul=xpt_mul, $
-                         fpsi = fpsi, /simple, y_boundary_guards = y_boundary_guards)
+                         fpsi = fpsi, /simple, y_boundary_guards=y_boundary_guards)
       IF mesh.error EQ 0 THEN BEGIN
         PRINT, "Successfully generated mesh"
         WIDGET_CONTROL, info.status, set_value="Successfully generated mesh. All glory to the Hypnotoad!"
@@ -431,6 +433,7 @@ PRO event_handler, event
                     nonorthogonal_weight_decay_power:info.nonorthogonal_weight_decay_power}
       ENDELSE
       
+      widget_control, info.y_boundary_guards, get_value=y_boundary_guards
 
       ; Check if a simplified boundary should be used
       IF info.simple_bndry THEN BEGIN
@@ -447,7 +450,8 @@ PRO event_handler, event
                          boundary=boundary, strict=info.strict_bndry, $
                          /nrad_flexible, $
                          single_rad_grid=info.single_rad_grid, $
-                         critical=(*(info.rz_grid)).critical, xpt_only=info.xpt_only, /simple)
+                         critical=(*(info.rz_grid)).critical, xpt_only=info.xpt_only, /simple, $
+                         y_boundary_guards=y_boundary_guards)
       IF mesh.error EQ 0 THEN BEGIN
         PRINT, "Successfully generated non-orthogonal mesh"
         WIDGET_CONTROL, info.status, set_value="Successfully generated mesh. All glory to the Hypnotoad!"
