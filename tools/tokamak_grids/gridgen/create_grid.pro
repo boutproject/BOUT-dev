@@ -1286,7 +1286,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
                         rad_peaking:settings.rad_peaking, pol_peaking:settings.pol_peaking}
         RETURN, create_grid(F, R, Z, new_settings, critical=critical, $
                             boundary=boundary, iter=iter+1, nrad_flexible=nrad_flexible, $
-                            single_rad_grid=single_rad_grid, fast=fast)
+                            single_rad_grid=single_rad_grid, fast=fast, simple=simple)
       ENDIF
       dpsi = sol_psi_vals[i,TOTAL(nrad,/int)-nsol-1] - sol_psi_vals[i,TOTAL(nrad,/int)-nsol-2]
       sol_psi_vals[i,(TOTAL(nrad,/int)-nsol):*] = radial_grid(nsol, $
@@ -1893,7 +1893,8 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
       RETURN, create_grid(F, R, Z, new_settings, critical=critical, $
                           boundary=boundary, strictbndry=strictbndry, $
                           iter=iter+1, nrad_flexible=nrad_flexible, $
-                          single_rad_grid=single_rad_grid, fast=fast)
+                          single_rad_grid=single_rad_grid, fast=fast, $
+                          simple=simple)
       
     ENDIF
     
