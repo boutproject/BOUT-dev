@@ -27,10 +27,16 @@ FUNCTION hypnotoad_version
   ;         Enable 'Detailed settings' dialog for non-orthogonal grids, add
   ;         setting to change the exponent of the power-law decrease of the
   ;         weight of non-orthogonal vectors.
+  ; 1.1.4 - For non-orthogonal, always refine of starting locations (previously
+  ;         was only done for grids with only closed field lines) - improves
+  ;         robustness especially around X-points.
+  ;         Pass 'simple' setting through when restarting grid generation.
+  ;         Option to save y-boundary guard cells (defaults to 0 for backward
+  ;         compatibility with versions of BOUT++ before 4.3).
   
   major_version = 1
   minor_version = 1
-  patch_number = 3
+  patch_number = 4
 
   RETURN, LONG([major_version, minor_version, patch_number])
 
