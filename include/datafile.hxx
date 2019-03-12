@@ -24,6 +24,7 @@ class Datafile;
 #include <cstdarg>
 #include <cstdio>
 class Mesh;
+class Field;
 class Field2D;
 class Field3D;
 class Vector2D;
@@ -137,8 +138,7 @@ class Datafile {
 
   /// Write out the meta-data of a field as attributes of the variable in
   /// 'file'.
-  template <typename T>
-  void writeFieldAttributes(const std::string name, T* f);
+  void writeFieldAttributes(const std::string& name, const Field& f);
 
   /// Check if a variable has already been added
   bool varAdded(const std::string &name);

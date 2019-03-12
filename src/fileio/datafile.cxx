@@ -849,11 +849,10 @@ bool Datafile::read() {
   return true;
 }
 
-template <typename T>
-void Datafile::writeFieldAttributes(const std::string name, T* f) {
-  file->setAttribute(name, "cell_location", toString(f->getLocation()));
-  file->setAttribute(name, "direction_y", toString(f->getDirectionY()));
-  file->setAttribute(name, "direction_z", toString(f->getDirectionZ()));
+void Datafile::writeFieldAttributes(const std::string& name, const Field& f) {
+  file->setAttribute(name, "cell_location", toString(f.getLocation()));
+  file->setAttribute(name, "direction_y", toString(f.getDirectionY()));
+  file->setAttribute(name, "direction_z", toString(f.getDirectionZ()));
 }
 
 bool Datafile::write() {
@@ -893,28 +892,28 @@ bool Datafile::write() {
     // output is written, since this happens after the first rhs evaluation
     // 2D fields
     for (const auto& var : f2d_arr) {
-      writeFieldAttributes(var.name, var.ptr);
+      writeFieldAttributes(var.name, *var.ptr);
     }
 
     // 3D fields
     for (const auto& var : f3d_arr) {
-      writeFieldAttributes(var.name, var.ptr);
+      writeFieldAttributes(var.name, *var.ptr);
     }
 
     // 2D vectors
     for(const auto& var : v2d_arr) {
       Vector2D v  = *(var.ptr);
-      writeFieldAttributes(var.name+"_x", &v.x);
-      writeFieldAttributes(var.name+"_y", &v.y);
-      writeFieldAttributes(var.name+"_z", &v.z);
+      writeFieldAttributes(var.name+"_x", v.x);
+      writeFieldAttributes(var.name+"_y", v.y);
+      writeFieldAttributes(var.name+"_z", v.z);
     }
 
     // 3D vectors
     for(const auto& var : v3d_arr) {
       Vector3D v  = *(var.ptr);
-      writeFieldAttributes(var.name+"_x", &v.x);
-      writeFieldAttributes(var.name+"_y", &v.y);
-      writeFieldAttributes(var.name+"_z", &v.z);
+      writeFieldAttributes(var.name+"_x", v.x);
+      writeFieldAttributes(var.name+"_y", v.y);
+      writeFieldAttributes(var.name+"_z", v.z);
     }
   }
 
