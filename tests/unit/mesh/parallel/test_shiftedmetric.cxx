@@ -15,20 +15,16 @@ extern Mesh* mesh;
 class ShiftedMetricTest : public ::testing::Test {
 public:
   ShiftedMetricTest() {
-    // Delete any existing mesh
-    if (mesh != nullptr) {
-      delete mesh;
-      mesh = nullptr;
-    }
+    WithQuietOutput quiet{output_info};
+
+    delete mesh;
     mesh = new FakeMesh(nx, ny, nz);
 
     // Use two y-guards to test multiple parallel slices
     mesh->ystart = 2;
     mesh->yend = mesh->LocalNy - 3;
 
-    output_info.disable();
     mesh->createDefaultRegions();
-    output_info.enable();
 
     zShift = Field2D{mesh};
 
@@ -80,7 +76,7 @@ public:
     input = std::move(input_temp);
   }
 
-  ~ShiftedMetricTest() {
+  virtual ~ShiftedMetricTest() {
     delete mesh;
     mesh = nullptr;
   }

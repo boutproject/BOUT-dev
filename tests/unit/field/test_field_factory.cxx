@@ -71,11 +71,13 @@ public:
   T create(Args&&... args) {
     return createDispatch(std::is_base_of<Field3D, T>{}, std::forward<Args>(args)...);
   }
+
+  WithQuietOutput quiet{output_info};
 };
 
 using Fields = ::testing::Types<Field2D, Field3D>;
 
-TYPED_TEST_CASE(FieldFactoryCreationTest, Fields);
+TYPED_TEST_SUITE(FieldFactoryCreationTest, Fields);
 
 TYPED_TEST(FieldFactoryCreationTest, CreateFromValueGenerator) {
   auto value = BoutReal{4.};
@@ -525,11 +527,9 @@ TYPED_TEST(FieldFactoryCreationTest, CreateRoundX) {
 TYPED_TEST(FieldFactoryCreationTest, CreateWithLookup) {
   auto a_value = int{6};
 
-  output_info.disable();
   auto options = Options{};
   options["a"] = a_value;
   auto output = this->create("x + a", &options);
-  output_info.enable();
 
   auto expected = makeField<TypeParam>(
       [&a_value](typename TypeParam::ind_type& index) -> BoutReal {
@@ -543,11 +543,9 @@ TYPED_TEST(FieldFactoryCreationTest, CreateWithLookup) {
 TYPED_TEST(FieldFactoryCreationTest, ParseFromCache) {
   auto a_value = int{6};
 
-  output_info.disable();
   auto options = Options{};
   options["a"] = a_value;
   this->factory.parse("x + a", &options);
-  output_info.enable();
 
   auto output = this->create("x + a");
 
@@ -595,8 +593,11 @@ TYPED_TEST(FieldFactoryCreationTest, CreateOnMesh) {
 class FieldFactoryTest : public FakeMeshFixture {
 public:
   FieldFactoryTest() : FakeMeshFixture{}, factory{mesh} {}
+  virtual ~FieldFactoryTest() {}
 
   FieldFactory factory;
+
+  WithQuietOutput quiet_info{output_info}, quiet{output}, quiet_error{output_error};
 };
 
 TEST_F(FieldFactoryTest, RequireMesh) {
@@ -610,14 +611,11 @@ TEST_F(FieldFactoryTest, RequireMesh) {
 }
 
 TEST_F(FieldFactoryTest, CleanCache) {
-
   auto a_value = int{6};
 
-  output_info.disable();
   auto options = Options{};
   options["a"] = a_value;
   factory.parse("x + a", &options);
-  output_info.enable();
 
   factory.cleanCache();
 
@@ -627,19 +625,10 @@ TEST_F(FieldFactoryTest, CleanCache) {
 TEST_F(FieldFactoryTest, ParseSelfReference) {
   // This one doesn't need to be typed, but easier than creating a
   // whole new test suite for this one test
-
-  output.disable();
-  output_info.disable();
-  output_error.disable();
-
   auto options = Options{};
   options["a"] = "a";
 
   EXPECT_THROW(factory.parse("a", &options), BoutException);
-
-  output_error.enable();
-  output_info.enable();
-  output.enable();
 }
 
 TEST_F(FieldFactoryTest, SinArgs) {

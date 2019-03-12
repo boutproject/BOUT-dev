@@ -27,14 +27,10 @@ public:
 
     mesh->getCoordinates()->setParallelTransform(
         bout::utils::make_unique<ParallelTransformIdentity>(*mesh));
-
-    output_info.disable();
   }
 
-  ~InitialProfileTest() {
-    Options::cleanup();
-    output_info.enable();
-  }
+  virtual ~InitialProfileTest() { Options::cleanup(); }
+  WithQuietOutput quiet{output_info};
 };
 
 TEST_F(InitialProfileTest, Field2D) {

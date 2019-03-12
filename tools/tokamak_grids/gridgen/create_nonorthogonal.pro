@@ -288,7 +288,8 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
                       sep_down=sep_down, sep_line_down=sep_line_down, $     ;Separatrix location and line
                       vec_in_up=vec_in_up, vec_out_up=vec_out_up, $         ;
                       sep_up=sep_up, sep_line_up=sep_line_up, $             ;
-                      sp_loc=sp_loc, orthdown=orthdown, orthup=orthup
+                      sp_loc=sp_loc, orthdown=orthdown, orthup=orthup, $
+                      nonorthogonal_weight_decay_power=nonorthogonal_weight_decay_power
                       
   
   nsurf = N_ELEMENTS(fvals)
@@ -374,11 +375,12 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
        ENDIF ELSE sep_line = FLTARR(2,2)
     ENDELSE
 
+    IF NOT KEYWORD_SET(nonorthogonal_weight_decay_power) THEN nonorthogonal_weight_decay_power = 0
     IF NOT KEYWORD_SET(orthup) THEN orthup=0
-    IF orthup EQ 1 THEN weight_up = 0 ELSE weight_up = (i/(npar-1.))^2.7
+    IF orthup EQ 1 THEN weight_up = 0 ELSE weight_up = (i/(npar-1.))^nonorthogonal_weight_decay_power
 
     IF NOT KEYWORD_SET(orthdown) THEN orthdown=0
-    IF orthdown EQ 1 THEN weight_down = 0 ELSE weight_down = (1.-i/(npar-1.))^2.7
+    IF orthdown EQ 1 THEN weight_down = 0 ELSE weight_down = (1.-i/(npar-1.))^nonorthogonal_weight_decay_power
     
     ; Refine the location of the starting point
 ;     follow_gradient_nonorth, interp_data, R, Z, rii[i], zii[i], f0, ri1, zi1, vec=vec_in, weight=weight
@@ -889,6 +891,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
     str_check_present, settings, 'rad_peaking', 0.0
     str_check_present, settings, 'pol_peaking', 0.0
     str_check_present, settings, 'parweight', 0.0
+    str_check_present, settings, 'nororthogonal_weight_decay_power', 2.7
   ENDELSE
 
   s = SIZE(F, /DIMENSION)
@@ -2053,7 +2056,8 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
                       ffirst=ffirst, flast=flast1, fpsi=fpsi, yup_dist=xpt_dist[xpt, 0], /oplot, $
                       vec_in_up=vec_in_up1, vec_out_up=vec_out_up1, sep_up=critical.xpt_f[xpt], $
                       vec_in_down=-vec_in_down1, vec_out_down=vec_out_down1, $
-                      ydown_dist=0,orthup=orthup,orthdown=orthdown)
+                      ydown_dist=0,orthup=orthup,orthdown=orthdown, $
+                      nonorthogonal_weight_decay_power=settings.nonorthogonal_weight_decay_power)
       Rxy[*, ypos:(ypos+npol[3*i]-1)] = a.Rxy
       Zxy[*, ypos:(ypos+npol[3*i]-1)] = a.Zxy
       Rixy[*, ypos:(ypos+npol[3*i]-1)] = a.Rixy
@@ -2161,7 +2165,8 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
                       sep_down=critical.xpt_f[xpt], $
                       sep_line_down=sep_line_down, $
                       vec_in_up=vec_in_up2, vec_out_up=vec_out_up2, $
-                      sep_up=critical.xpt_f[xpt2], sep_line_up=sep_line_up)
+                      sep_up=critical.xpt_f[xpt2], sep_line_up=sep_line_up, $
+                      nonorthogonal_weight_decay_power=settings.nonorthogonal_weight_decay_power)
       
       Rxy[*, ypos:(ypos+npol[3*i+1]-1)] = a.Rxy
       Zxy[*, ypos:(ypos+npol[3*i+1]-1)] = a.Zxy
@@ -2284,7 +2289,8 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
                       ydown_dist=xpt_dist[xpt, 3], /oplot, $
                       vec_in_down=vec_in_down3, vec_out_down=vec_out_down3, sep_down=critical.xpt_f[xpt], $
                       vec_in_up=vec_in_up3, vec_out_up=vec_out_up3, $
-                      yup_dist=0,orthup=orthup,orthdown=orthdown)
+                      yup_dist=0,orthup=orthup,orthdown=orthdown, $
+                      nonorthogonal_weight_decay_power=settings.nonorthogonal_weight_decay_power)
       Rxy[*, ypos:(ypos+npol[3*i+2]-1)] = a.Rxy
       Zxy[*, ypos:(ypos+npol[3*i+2]-1)] = a.Zxy
       Rixy[*, ypos:(ypos+npol[3*i+2]-1)] = a.Rixy

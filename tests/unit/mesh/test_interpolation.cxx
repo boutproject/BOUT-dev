@@ -49,12 +49,8 @@ protected:
   }
 
   static void SetUpTestCase() {
-
-    // Delete any existing mesh
-    if (mesh != nullptr) {
-      delete mesh;
-      mesh = nullptr;
-    }
+    WithQuietOutput quiet{output_info};
+    delete mesh;
     mesh = new FakeMesh(nx, ny, nz);
     mesh->StaggerGrids = true;
     mesh->xstart = 2;
@@ -62,9 +58,7 @@ protected:
     mesh->xend = nx - 3;
     mesh->yend = ny - 3;
 
-    output_info.disable();
     mesh->createDefaultRegions();
-    output_info.enable();
 
     // We need Coordinates so a parallel transform is available as
     // FieldFactory::create3D wants to un-field-align the result

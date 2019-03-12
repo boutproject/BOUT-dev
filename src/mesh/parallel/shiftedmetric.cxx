@@ -167,7 +167,7 @@ const Field3D ShiftedMetric::shiftZ(const Field3D& f, const Tensor<dcomplex>& ph
 
   Field3D result{emptyFrom(f).setDirectionY(y_direction_out)};
 
-  BOUT_FOR(i, mesh.getRegion2D(REGION_STRING(region))) {
+  BOUT_FOR(i, mesh.getRegion2D(toString(region))) {
     shiftZ(&f(i, 0), &phs(i.x(), i.y(), 0), &result(i, 0));
   }
 
@@ -270,7 +270,7 @@ const Field3D ShiftedMetric::shiftZ(const Field3D& f, const Field2D& zangle,
   // (Note valgrind complains about corner guard cells if we try to loop over
   // the whole grid, because zShift is not initialized in the corner guard
   // cells.)
-  BOUT_FOR(i, mesh.getRegion2D(REGION_STRING(region))) {
+  BOUT_FOR(i, mesh.getRegion2D(toString(region))) {
     shiftZ(&f(i, 0), mesh.LocalNz, zangle[i], &result(i, 0));
   }
 
