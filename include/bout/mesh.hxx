@@ -196,6 +196,12 @@ class Mesh {
 
   /// Wrapper for GridDataSource::hasVar
   bool sourceHasVar(const std::string &name);
+
+  /// Wrapper for GridDataSource::hasXBoundaryGuards
+  bool sourceHasXBoundaryGuards();
+
+  /// Wrapper for GridDataSource::hasYBoundaryGuards
+  bool sourceHasYBoundaryGuards();
   
   // Communications
   /*!

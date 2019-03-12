@@ -421,6 +421,19 @@ bool GridFile::get(Mesh *UNUSED(m), std::vector<BoutReal> &var, const std::strin
   return true;
 }
 
+bool GridFile::hasXBoundaryGuards(Mesh* m) {
+  // Global (x,y) dimensions of some field
+  // a grid file should always contain "dx"
+  const auto field_dimensions = file->getSize("dx");
+
+  if (field_dimensions.empty()) {
+    // handle case where "dx" is not present - non-standard grid file
+    // - e.g. for tests
+    return false;
+  }
+
+  return field_dimensions[0] > m->GlobalNx - 2*m->xstart;
+}
 
 /////////////////////////////////////////////////////////////
 // Private routines
