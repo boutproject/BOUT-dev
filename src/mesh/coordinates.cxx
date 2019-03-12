@@ -715,10 +715,8 @@ void Coordinates::setParallelTransform(Options* options) {
       throw BoutException("FCITransform is not available on staggered grids.");
     }
 
-    Options *fci_options = Options::getRoot()->getSection("fci");
     // Flux Coordinate Independent method
-    bool fci_zperiodic;
-    fci_options->get("z_periodic", fci_zperiodic, true);
+    const bool fci_zperiodic = Options::root()["fci"]["z_periodic"].withDefault(true);
     transform = bout::utils::make_unique<FCITransform>(*localmesh, fci_zperiodic);
 
   } else {
