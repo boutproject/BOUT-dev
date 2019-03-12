@@ -83,8 +83,12 @@ public:
   bool get(Mesh *m, int &ival, const std::string &name) override; ///< Get an integer
   bool get(Mesh *m, BoutReal &rval,
            const std::string &name) override; ///< Get a BoutReal number
-  bool get(Mesh *m, Field2D &var, const std::string &name, BoutReal def = 0.0) override;
-  bool get(Mesh *m, Field3D &var, const std::string &name, BoutReal def = 0.0) override;
+  bool get(Mesh *m, Field2D &var, const std::string &name, BoutReal def = 0.0) override {
+    return getField(m, var, name, def);
+  }
+  bool get(Mesh *m, Field3D &var, const std::string &name, BoutReal def = 0.0) override {
+    return getField(m, var, name, def);
+  }
 
   bool get(Mesh *m, std::vector<int> &var, const std::string &name, int len, int offset = 0,
            GridDataSource::Direction dir = GridDataSource::X) override;
@@ -98,10 +102,20 @@ private:
   int ny_inner{0};
 
   bool readgrid_3dvar_fft(Mesh *m, const std::string &name, int yread, int ydest, int ysize,
-                          int xge, int xlt, Field3D &var);
+                          int xread, int xdest, int xsize, Field3D &var);
 
-  bool readgrid_3dvar_real(Mesh *m, const std::string &name, int yread, int ydest, int ysize,
-                           int xge, int xlt, Field3D &var);
+  bool readgrid_3dvar_real(const std::string &name, int yread, int ydest, int ysize,
+                           int xread, int xdest, int xsize, Field3D &var);
+
+  // convenience template method to remove code duplication between Field2D and
+  // Field3D versions of get
+  template<typename T>
+  bool getField(Mesh* m, T& var, const std::string& name, BoutReal def = 0.0);
+  // utility method with specializations for Field2D and Field3D to implement
+  // unshared parts of getField
+  template<typename T>
+  void readField(Mesh* m, const std::string& name, int ys, int yd, int ny_to_read,
+      int xs, int xd, int nx_to_read, const std::vector<int>& size, T& var);
 };
 
 /*!
