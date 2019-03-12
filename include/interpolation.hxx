@@ -82,8 +82,8 @@ const T interp_to(const T& var, CELL_LOC loc, REGION region = RGN_ALL) {
   T result{emptyFrom(var).setLocation(loc)};
 
   // Staggered grids enabled, and need to perform interpolation
-  TRACE("Interpolating %s -> %s", CELL_LOC_STRING(var.getLocation()).c_str(),
-        CELL_LOC_STRING(loc).c_str());
+  TRACE("Interpolating %s -> %s", toString(var.getLocation()).c_str(),
+        toString(loc).c_str());
 
   if (region != RGN_NOBNDRY) {
     // result is requested in some boundary region(s)
@@ -177,7 +177,7 @@ const T interp_to(const T& var, CELL_LOC loc, REGION region = RGN_ALL) {
       // This should never happen
       throw BoutException("Unsupported direction of interpolation\n"
                           " - don't know how to interpolate to %s",
-                          CELL_LOC_STRING(loc).c_str());
+                          toString(loc).c_str());
     }
     };
 

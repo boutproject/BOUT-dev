@@ -6467,6 +6467,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 else
   extra_prefix="$with_fftw"
 fi
+  LIBS="$save_LIBS $EXTRA_LIBS"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -6488,11 +6489,12 @@ if ac_fn_cxx_try_link "$LINENO"; then :
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
+  LIBS=$save_LIBS
 
   # Now try with explicitly linking library
   if test $BACL_found != yes; then :
 
-    LIBS="$save_LIBS -lfftw3"
+    LIBS="$save_LIBS $EXTRA_LIBS -lfftw3"
     if test ."$with_fftw" = .yes; then :
   extra_prefix=""
 else
@@ -6530,7 +6532,7 @@ fi
       do
         if test -d $path; then :
 
-          LIBS="$save_LIBS -lfftw3"
+          LIBS="$save_LIBS $EXTRA_LIBS -lfftw3"
           LDFLAGS="$save_LDFLAGS -L$path"
 
 
@@ -6891,6 +6893,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 else
   extra_prefix="$with_netcdf"
 fi
+  LIBS="$save_LIBS $EXTRA_LIBS"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -6912,11 +6915,12 @@ if ac_fn_cxx_try_link "$LINENO"; then :
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
+  LIBS=$save_LIBS
 
   # Now try with explicitly linking library
   if test $BACL_found != yes; then :
 
-    LIBS="$save_LIBS -lnetcdf"
+    LIBS="$save_LIBS $EXTRA_LIBS -lnetcdf"
     if test ."$with_netcdf" = .yes; then :
   extra_prefix=""
 else
@@ -6954,7 +6958,7 @@ fi
       do
         if test -d $path; then :
 
-          LIBS="$save_LIBS -lnetcdf"
+          LIBS="$save_LIBS $EXTRA_LIBS -lnetcdf"
           LDFLAGS="$save_LDFLAGS -L$path"
 
 
@@ -7024,6 +7028,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 else
   extra_prefix="$with_netcdf"
 fi
+  LIBS="$save_LIBS $EXTRA_LIBS"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -7045,11 +7050,12 @@ if ac_fn_cxx_try_link "$LINENO"; then :
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
+  LIBS=$save_LIBS
 
   # Now try with explicitly linking library
   if test $BACL_found != yes; then :
 
-    LIBS="$save_LIBS -lnetcdf_c++"
+    LIBS="$save_LIBS $EXTRA_LIBS -lnetcdf_c++"
     if test ."$with_netcdf" = .yes; then :
   extra_prefix=""
 else
@@ -7087,7 +7093,7 @@ fi
       do
         if test -d $path; then :
 
-          LIBS="$save_LIBS -lnetcdf_c++"
+          LIBS="$save_LIBS $EXTRA_LIBS -lnetcdf_c++"
           LDFLAGS="$save_LDFLAGS -L$path"
 
 
@@ -8964,6 +8970,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 else
   extra_prefix="$lapack_path"
 fi
+  LIBS="$save_LIBS $EXTRA_LIBS"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -8985,11 +8992,12 @@ if ac_fn_cxx_try_link "$LINENO"; then :
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
+  LIBS=$save_LIBS
 
   # Now try with explicitly linking library
   if test $BACL_found != yes; then :
 
-    LIBS="$save_LIBS -lblas"
+    LIBS="$save_LIBS $EXTRA_LIBS -lblas"
     if test ."$lapack_path" = .yes; then :
   extra_prefix=""
 else
@@ -9027,7 +9035,7 @@ fi
       do
         if test -d $path; then :
 
-          LIBS="$save_LIBS -lblas"
+          LIBS="$save_LIBS $EXTRA_LIBS -lblas"
           LDFLAGS="$save_LDFLAGS -L$path"
 
 
@@ -9114,6 +9122,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 else
   extra_prefix="$lapack_path"
 fi
+  LIBS="$save_LIBS $EXTRA_LIBS"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9135,11 +9144,12 @@ if ac_fn_cxx_try_link "$LINENO"; then :
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
+  LIBS=$save_LIBS
 
   # Now try with explicitly linking library
   if test $BACL_found != yes; then :
 
-    LIBS="$save_LIBS -llapack"
+    LIBS="$save_LIBS $EXTRA_LIBS -llapack"
     if test ."$lapack_path" = .yes; then :
   extra_prefix=""
 else
@@ -9177,7 +9187,7 @@ fi
       do
         if test -d $path; then :
 
-          LIBS="$save_LIBS -llapack"
+          LIBS="$save_LIBS $EXTRA_LIBS -llapack"
           LDFLAGS="$save_LDFLAGS -L$path"
 
 

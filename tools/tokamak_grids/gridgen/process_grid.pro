@@ -288,6 +288,7 @@ FUNCTION my_int_y, var, yaxis, mesh, loop=loop, nosmooth=nosmooth, simple=simple
   s = SIZE(var, /dim)
   nx = s[0]
   loop = FLTARR(nx)
+  loop[*] = !VALUES.F_NAN ; Prevent accidental use of unset values
   
   status = gen_surface(mesh=mesh) ; Start generator
   REPEAT BEGIN
@@ -297,7 +298,13 @@ FUNCTION my_int_y, var, yaxis, mesh, loop=loop, nosmooth=nosmooth, simple=simple
     IF NOT KEYWORD_SET(nosmooth) THEN BEGIN
       f[xi,yi] = SMOOTH(SMOOTH(f[xi,yi], 5, /edge_truncate), 5, /edge_truncate)
     ENDIF
-    loop[xi] = f[xi,yi[N_ELEMENTS(yi)-1]] - f[xi,yi[0]]
+    
+    IF period THEN BEGIN
+      ;; Only set loop integral in closed (periodic) domains i.e. the
+      ;; core. Otherwise it may be overwritten by values in a PF region
+       
+      loop[xi] = f[xi,yi[N_ELEMENTS(yi)-1]] - f[xi,yi[0]]
+    ENDIF
   ENDREP UNTIL last
   
   RETURN, f
