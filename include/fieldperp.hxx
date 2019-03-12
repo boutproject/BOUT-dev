@@ -118,7 +118,10 @@ class FieldPerp : public Field {
    *
    * This is used in arithmetic operations
    */
-  void setIndex(int y) { yindex = y; }
+  FieldPerp& setIndex(int y) {
+    yindex = y;
+    return *this;
+  }
 
   // these methods return FieldPerp to allow method chaining
   FieldPerp& setLocation(CELL_LOC location) {

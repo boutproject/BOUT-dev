@@ -108,9 +108,8 @@ TEST_F(Field2DTest, CopyCheckFieldmesh) {
   FakeMesh fieldmesh{test_nx, test_ny, test_nz};
 
   // createDefaultRegions is noisy
-  output_info.disable();
+  WithQuietOutput quiet{output_info};
   fieldmesh.createDefaultRegions();
-  output_info.enable();
 
   Field2D field{1.0, &fieldmesh};
   Field2D field2{field};
@@ -1123,7 +1122,8 @@ TEST_F(Field2DTest, Max) {
 }
 
 TEST_F(Field2DTest, Swap) {
-  // First field
+  WithQuietOutput quiet{output_info};
+
   Field2D first(1., mesh_staggered);
 
   first.setLocation(CELL_XLOW);
@@ -1137,9 +1137,7 @@ TEST_F(Field2DTest, Swap) {
 
   FakeMesh second_mesh{second_nx, second_ny, second_nz};
   second_mesh.StaggerGrids = false;
-  output_info.disable();
   second_mesh.createDefaultRegions();
-  output_info.enable();
 
   // Second field
   Field2D second(2., &second_mesh);
