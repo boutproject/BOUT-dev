@@ -24,7 +24,9 @@ namespace {
 /// Boundary guard cells are set by extrapolating from the grid, like
 /// 'free_o3' boundary conditions
 /// Corner guard cells are set to BoutNaN
-Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location) {
+Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
+    bool extrapolate_x = true, bool extrapolate_y = true) {
+
   Mesh* localmesh = f.getMesh();
   Field2D result = interp_to(f, location, RGN_NOBNDRY);
   // Ensure result's data is unique. Otherwise result might be a duplicate of
@@ -37,66 +39,68 @@ Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location) {
   result.allocate();
   localmesh->communicate(result);
 
-  // Extrapolate into boundaries so that differential geometry terms can be
-  // interpolated if necessary
+  // Extrapolate into boundaries (if requested) so that differential geometry
+  // terms can be interpolated if necessary
   // Note: cannot use applyBoundary("free_o3") here because applyBoundary()
   // would try to create a new Coordinates object since we have not finished
   // initializing yet, leading to an infinite recursion.
   // Also, here we interpolate for the boundary points at xstart/ystart and
   // (xend+1)/(yend+1) instead of extrapolating.
   for (auto bndry : localmesh->getBoundaries()) {
-    int extrap_start = 0;
-    if ((location == CELL_XLOW) && (bndry->bx > 0)) {
-      extrap_start = 1;
-    } else if ((location == CELL_YLOW) && (bndry->by > 0)) {
-      extrap_start = 1;
-    }
-    for (bndry->first(); !bndry->isDone(); bndry->next1d()) {
-      // interpolate extra boundary point that is missed by interp_to, if
-      // necessary.
-      // Only interpolate this point if we are actually changing location. E.g.
-      // when we use this function to extrapolate J and Bxy on staggered grids,
-      // this point should already be set correctly because the metric
-      // components have been interpolated to here.
-      if (extrap_start > 0 and f.getLocation() != location) {
-        // note that either bx or by is >0 here
-        result(bndry->x, bndry->y) =
-            (9. * (f(bndry->x - bndry->bx, bndry->y - bndry->by) + f(bndry->x, bndry->y))
-             - f(bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by)
-             - f(bndry->x + bndry->bx, bndry->y + bndry->by))
-            / 16.;
+    if ((extrapolate_x and bndry->bx != 0) or (extrapolate_y and bndry->by != 0)) {
+      int extrap_start = 0;
+      if ((location == CELL_XLOW) && (bndry->bx > 0)) {
+        extrap_start = 1;
+      } else if ((location == CELL_YLOW) && (bndry->by > 0)) {
+        extrap_start = 1;
       }
+      for (bndry->first(); !bndry->isDone(); bndry->next1d()) {
+        // interpolate extra boundary point that is missed by interp_to, if
+        // necessary.
+        // Only interpolate this point if we are actually changing location. E.g.
+        // when we use this function to extrapolate J and Bxy on staggered grids,
+        // this point should already be set correctly because the metric
+        // components have been interpolated to here.
+        if (extrap_start > 0 and f.getLocation() != location) {
+          // note that either bx or by is >0 here
+          result(bndry->x, bndry->y) =
+              (9. * (f(bndry->x - bndry->bx, bndry->y - bndry->by) + f(bndry->x, bndry->y))
+               - f(bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by)
+               - f(bndry->x + bndry->bx, bndry->y + bndry->by))
+              / 16.;
+        }
 
-      // set boundary guard cells
-      if ((bndry->bx != 0 && localmesh->GlobalNx - 2 * bndry->width >= 3)
-          || (bndry->by != 0 && localmesh->GlobalNy - 2 * bndry->width >= 3)) {
-        if (bndry->bx != 0 && localmesh->LocalNx == 1 && bndry->width == 1) {
-          throw BoutException(
-              "Not enough points in the x-direction on this "
-              "processor for extrapolation needed to use staggered grids. "
-              "Increase number of x-guard cells MXG or decrease number of "
-              "processors in the x-direction NXPE.");
-        }
-        if (bndry->by != 0 && localmesh->LocalNy == 1 && bndry->width == 1) {
-          throw BoutException(
-              "Not enough points in the y-direction on this "
-              "processor for extrapolation needed to use staggered grids. "
-              "Increase number of y-guard cells MYG or decrease number of "
-              "processors in the y-direction NYPE.");
-        }
-        // extrapolate into boundary guard cells if there are enough grid points
-        for (int i = extrap_start; i < bndry->width; i++) {
-          int xi = bndry->x + i * bndry->bx;
-          int yi = bndry->y + i * bndry->by;
-          result(xi, yi) = 3.0 * result(xi - bndry->bx, yi - bndry->by)
-                           - 3.0 * result(xi - 2 * bndry->bx, yi - 2 * bndry->by)
-                           + result(xi - 3 * bndry->bx, yi - 3 * bndry->by);
-        }
-      } else {
-        // not enough grid points to extrapolate, set equal to last grid point
-        for (int i = extrap_start; i < bndry->width; i++) {
-          result(bndry->x + i * bndry->bx, bndry->y + i * bndry->by) =
-              result(bndry->x - bndry->bx, bndry->y - bndry->by);
+        // set boundary guard cells
+        if ((bndry->bx != 0 && localmesh->GlobalNx - 2 * bndry->width >= 3)
+            || (bndry->by != 0 && localmesh->GlobalNy - 2 * bndry->width >= 3)) {
+          if (bndry->bx != 0 && localmesh->LocalNx == 1 && bndry->width == 1) {
+            throw BoutException(
+                "Not enough points in the x-direction on this "
+                "processor for extrapolation needed to use staggered grids. "
+                "Increase number of x-guard cells MXG or decrease number of "
+                "processors in the x-direction NXPE.");
+          }
+          if (bndry->by != 0 && localmesh->LocalNy == 1 && bndry->width == 1) {
+            throw BoutException(
+                "Not enough points in the y-direction on this "
+                "processor for extrapolation needed to use staggered grids. "
+                "Increase number of y-guard cells MYG or decrease number of "
+                "processors in the y-direction NYPE.");
+          }
+          // extrapolate into boundary guard cells if there are enough grid points
+          for (int i = extrap_start; i < bndry->width; i++) {
+            int xi = bndry->x + i * bndry->bx;
+            int yi = bndry->y + i * bndry->by;
+            result(xi, yi) = 3.0 * result(xi - bndry->bx, yi - bndry->by)
+                             - 3.0 * result(xi - 2 * bndry->bx, yi - 2 * bndry->by)
+                             + result(xi - 3 * bndry->bx, yi - 3 * bndry->by);
+          }
+        } else {
+          // not enough grid points to extrapolate, set equal to last grid point
+          for (int i = extrap_start; i < bndry->width; i++) {
+            result(bndry->x + i * bndry->bx, bndry->y + i * bndry->by) =
+                result(bndry->x - bndry->bx, bndry->y - bndry->by);
+          }
         }
       }
     }
@@ -165,24 +169,38 @@ Coordinates::Coordinates(Mesh* mesh)
       G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), ShiftTorsion(mesh),
       IntShiftTorsion(mesh), localmesh(mesh), location(CELL_CENTRE) {
 
-  // Note: use 'interpolateAndExtrapolate' to set the boundary cells of the
-  // loaded fields. Ensures that derivatives are smooth at all the boundaries.
+  // Note: If boundary cells were not loaded from the grid file, use
+  // 'interpolateAndExtrapolate' to set them. Ensures that derivatives are
+  // smooth at all the boundaries.
+
+  const bool extrapolate_x = not mesh->sourceHasXBoundaryGuards();
+  const bool extrapolate_y = not mesh->sourceHasYBoundaryGuards();
+
+  if (extrapolate_x) {
+    output_warn.write(_("WARNING: extrapolating input mesh quantities into x-boundary "
+          "cells\n"));
+  }
+
+  if (extrapolate_y) {
+    output_warn.write(_("WARNING: extrapolating input mesh quantities into y-boundary "
+          "cells\n"));
+  }
 
   if (mesh->get(dx, "dx")) {
-    output_warn.write("\tWARNING: differencing quantity 'dx' not found. Set to 1.0\n");
+    output_warn.write(_("\tWARNING: differencing quantity 'dx' not found. Set to 1.0\n"));
     dx = 1.0;
   }
-  dx = interpolateAndExtrapolate(dx, location);
+  dx = interpolateAndExtrapolate(dx, location, extrapolate_x, extrapolate_y);
 
   if (mesh->periodicX) {
     mesh->communicate(dx);
   }
 
   if (mesh->get(dy, "dy")) {
-    output_warn.write("\tWARNING: differencing quantity 'dy' not found. Set to 1.0\n");
+    output_warn.write(_("\tWARNING: differencing quantity 'dy' not found. Set to 1.0\n"));
     dy = 1.0;
   }
-  dy = interpolateAndExtrapolate(dy, location);
+  dy = interpolateAndExtrapolate(dy, location, extrapolate_x, extrapolate_y);
 
   nz = mesh->LocalNz;
 
@@ -205,19 +223,19 @@ Coordinates::Coordinates(Mesh* mesh)
 
   // Diagonal components of metric tensor g^{ij} (default to 1)
   mesh->get(g11, "g11", 1.0);
-  g11 = interpolateAndExtrapolate(g11, location);
+  g11 = interpolateAndExtrapolate(g11, location, extrapolate_x, extrapolate_y);
   mesh->get(g22, "g22", 1.0);
-  g22 = interpolateAndExtrapolate(g22, location);
+  g22 = interpolateAndExtrapolate(g22, location, extrapolate_x, extrapolate_y);
   mesh->get(g33, "g33", 1.0);
-  g33 = interpolateAndExtrapolate(g33, location);
+  g33 = interpolateAndExtrapolate(g33, location, extrapolate_x, extrapolate_y);
 
   // Off-diagonal elements. Default to 0
   mesh->get(g12, "g12", 0.0);
-  g12 = interpolateAndExtrapolate(g12, location);
+  g12 = interpolateAndExtrapolate(g12, location, extrapolate_x, extrapolate_y);
   mesh->get(g13, "g13", 0.0);
-  g13 = interpolateAndExtrapolate(g13, location);
+  g13 = interpolateAndExtrapolate(g13, location, extrapolate_x, extrapolate_y);
   mesh->get(g23, "g23", 0.0);
-  g23 = interpolateAndExtrapolate(g23, location);
+  g23 = interpolateAndExtrapolate(g23, location, extrapolate_x, extrapolate_y);
 
   // Check input metrics
   if ((!finite(g11, RGN_NOBNDRY)) || (!finite(g22, RGN_NOBNDRY))
@@ -268,12 +286,12 @@ Coordinates::Coordinates(Mesh* mesh)
   }
   // More robust to extrapolate derived quantities directly, rather than
   // deriving from extrapolated covariant metric components
-  g_11 = interpolateAndExtrapolate(g_11, location);
-  g_22 = interpolateAndExtrapolate(g_22, location);
-  g_33 = interpolateAndExtrapolate(g_33, location);
-  g_12 = interpolateAndExtrapolate(g_12, location);
-  g_13 = interpolateAndExtrapolate(g_13, location);
-  g_23 = interpolateAndExtrapolate(g_23, location);
+  g_11 = interpolateAndExtrapolate(g_11, location, extrapolate_x, extrapolate_y);
+  g_22 = interpolateAndExtrapolate(g_22, location, extrapolate_x, extrapolate_y);
+  g_33 = interpolateAndExtrapolate(g_33, location, extrapolate_x, extrapolate_y);
+  g_12 = interpolateAndExtrapolate(g_12, location, extrapolate_x, extrapolate_y);
+  g_13 = interpolateAndExtrapolate(g_13, location, extrapolate_x, extrapolate_y);
+  g_23 = interpolateAndExtrapolate(g_23, location, extrapolate_x, extrapolate_y);
 
   /// Calculate Jacobian and Bxy
   if (jacobian())
@@ -308,8 +326,8 @@ Coordinates::Coordinates(Mesh* mesh)
   }
   // More robust to extrapolate derived quantities directly, rather than
   // deriving from extrapolated covariant metric components
-  J = interpolateAndExtrapolate(J, location);
-  Bxy = interpolateAndExtrapolate(Bxy, location);
+  J = interpolateAndExtrapolate(J, location, extrapolate_x, extrapolate_y);
+  Bxy = interpolateAndExtrapolate(Bxy, location, extrapolate_x, extrapolate_y);
 
   //////////////////////////////////////////////////////
   /// Calculate Christoffel symbols. Needs communication
@@ -322,7 +340,7 @@ Coordinates::Coordinates(Mesh* mesh)
         "\tWARNING: No Torsion specified for zShift. Derivatives may not be correct\n");
     ShiftTorsion = 0.0;
   }
-  ShiftTorsion = interpolateAndExtrapolate(ShiftTorsion, location);
+  ShiftTorsion = interpolateAndExtrapolate(ShiftTorsion, location, extrapolate_x, extrapolate_y);
 
   //////////////////////////////////////////////////////
 
@@ -331,7 +349,7 @@ Coordinates::Coordinates(Mesh* mesh)
       output_warn.write("\tWARNING: No Integrated torsion specified\n");
       IntShiftTorsion = 0.0;
     }
-    IntShiftTorsion = interpolateAndExtrapolate(IntShiftTorsion, location);
+    IntShiftTorsion = interpolateAndExtrapolate(IntShiftTorsion, location, extrapolate_x, extrapolate_y);
   } else {
     // IntShiftTorsion will not be used, but set to zero to avoid uninitialized field
     IntShiftTorsion = 0.;
@@ -376,7 +394,24 @@ Coordinates::Coordinates(Mesh* mesh, const CELL_LOC loc, const Coordinates* coor
 
   dz = coords_in->dz;
 
+  // Default to true in case staggered quantities are not read from file
+  bool extrapolate_x = true;
+  bool extrapolate_y = true;
+
   if (!force_interpolate_from_centre && mesh->sourceHasVar("dx"+suffix)) {
+
+    extrapolate_x = not mesh->sourceHasXBoundaryGuards();
+    extrapolate_y = not mesh->sourceHasYBoundaryGuards();
+
+    if (extrapolate_x) {
+      output_warn.write(_("WARNING: extrapolating input mesh quantities into x-boundary "
+            "cells\n"));
+    }
+
+    if (extrapolate_y) {
+      output_warn.write(_("WARNING: extrapolating input mesh quantities into y-boundary "
+            "cells\n"));
+    }
 
     checkStaggeredGet(mesh, "dx", suffix);
     if (mesh->get(dx, "dx"+suffix)) {
@@ -385,6 +420,7 @@ Coordinates::Coordinates(Mesh* mesh, const CELL_LOC loc, const Coordinates* coor
       dx = 1.0;
     }
     dx.setLocation(location);
+    dx = interpolateAndExtrapolate(dx, location, extrapolate_x, extrapolate_y);
 
     if (mesh->periodicX) {
       mesh->communicate(dx);
@@ -397,15 +433,22 @@ Coordinates::Coordinates(Mesh* mesh, const CELL_LOC loc, const Coordinates* coor
       dy = 1.0;
     }
     dy.setLocation(location);
+    dy = interpolateAndExtrapolate(dy, location, extrapolate_x, extrapolate_y);
 
     // grid data source has staggered fields, so read instead of interpolating
     // Diagonal components of metric tensor g^{ij} (default to 1)
     getAtLoc(mesh, g11, "g11", suffix, location, 1.0);
+    g11 = interpolateAndExtrapolate(g11, location, extrapolate_x, extrapolate_y);
     getAtLoc(mesh, g22, "g22", suffix, location, 1.0);
+    g22 = interpolateAndExtrapolate(g22, location, extrapolate_x, extrapolate_y);
     getAtLoc(mesh, g33, "g33", suffix, location, 1.0);
+    g33 = interpolateAndExtrapolate(g33, location, extrapolate_x, extrapolate_y);
     getAtLoc(mesh, g12, "g12", suffix, location, 0.0);
+    g12 = interpolateAndExtrapolate(g12, location, extrapolate_x, extrapolate_y);
     getAtLoc(mesh, g13, "g13", suffix, location, 0.0);
+    g13 = interpolateAndExtrapolate(g13, location, extrapolate_x, extrapolate_y);
     getAtLoc(mesh, g23, "g23", suffix, location, 0.0);
+    g23 = interpolateAndExtrapolate(g23, location, extrapolate_x, extrapolate_y);
 
     /// Find covariant metric components
     auto covariant_component_names = {"g_11", "g_22", "g_33", "g_12", "g_13", "g_23"};
@@ -443,6 +486,14 @@ Coordinates::Coordinates(Mesh* mesh, const CELL_LOC loc, const Coordinates* coor
         throw BoutException("Error in staggered calcCovariant call");
       }
     }
+    // More robust to extrapolate derived quantities directly, rather than
+    // deriving from extrapolated covariant metric components
+    g_11 = interpolateAndExtrapolate(g_11, location, extrapolate_x, extrapolate_y);
+    g_22 = interpolateAndExtrapolate(g_22, location, extrapolate_x, extrapolate_y);
+    g_33 = interpolateAndExtrapolate(g_33, location, extrapolate_x, extrapolate_y);
+    g_12 = interpolateAndExtrapolate(g_12, location, extrapolate_x, extrapolate_y);
+    g_13 = interpolateAndExtrapolate(g_13, location, extrapolate_x, extrapolate_y);
+    g_23 = interpolateAndExtrapolate(g_23, location, extrapolate_x, extrapolate_y);
 
     checkStaggeredGet(mesh, "ShiftTorsion", suffix);
     if (mesh->get(ShiftTorsion, "ShiftTorsion"+suffix)) {
@@ -450,6 +501,7 @@ Coordinates::Coordinates(Mesh* mesh, const CELL_LOC loc, const Coordinates* coor
       ShiftTorsion = 0.0;
     }
     ShiftTorsion.setLocation(location);
+    ShiftTorsion = interpolateAndExtrapolate(ShiftTorsion, location, extrapolate_x, extrapolate_y);
 
     //////////////////////////////////////////////////////
 
@@ -460,6 +512,7 @@ Coordinates::Coordinates(Mesh* mesh, const CELL_LOC loc, const Coordinates* coor
         IntShiftTorsion = 0.0;
       }
       IntShiftTorsion.setLocation(location);
+      IntShiftTorsion = interpolateAndExtrapolate(IntShiftTorsion, location, extrapolate_x, extrapolate_y);
     } else {
       // IntShiftTorsion will not be used, but set to zero to avoid uninitialized field
       IntShiftTorsion = 0.;
@@ -516,8 +569,8 @@ Coordinates::Coordinates(Mesh* mesh, const CELL_LOC loc, const Coordinates* coor
     throw BoutException("Error in jacobian call while constructing staggered Coordinates");
   // More robust to extrapolate derived quantities directly, rather than
   // deriving from extrapolated covariant metric components
-  J = interpolateAndExtrapolate(J, location);
-  Bxy = interpolateAndExtrapolate(Bxy, location);
+  J = interpolateAndExtrapolate(J, location, extrapolate_x, extrapolate_y);
+  Bxy = interpolateAndExtrapolate(Bxy, location, extrapolate_x, extrapolate_y);
 
   //////////////////////////////////////////////////////
   /// Calculate Christoffel symbols. Needs communication
