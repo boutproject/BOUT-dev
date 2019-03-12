@@ -235,16 +235,32 @@ class Field3D : public Field, public FieldData {
    */
   void splitParallelSlices();
 
+  [[gnu::deprecated("Please use Field3D::splitParallelSlices instead")]]
+  void splitYupYdown() {
+    splitParallelSlices();
+  }
+
   /*!
    * Clear the parallel slices, yup and ydown
    */
   void clearParallelSlices();
   
+  [[gnu::deprecated("Please use Field3D::clearParallelSlices instead")]]
+  void mergeYupYdown() {
+    clearParallelSlices();
+  }
+
   /// Check if this field has yup and ydown fields
   bool hasParallelSlices() const {
     return !yup_fields.empty() and !ydown_fields.empty();
   }
 
+  [[gnu::deprecated("Please use Field3D::hasParallelSlices instead")]]
+  bool hasYupYdown() const {
+    return hasParallelSlices();
+  }
+
+  /// Check if this field has yup and ydown fields
   /// Return reference to yup field
   Field3D &yup(std::vector<Field3D>::size_type index = 0) {
     ASSERT2(index < yup_fields.size());

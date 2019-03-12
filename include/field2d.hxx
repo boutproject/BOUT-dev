@@ -123,6 +123,11 @@ class Field2D : public Field, public FieldData {
   bool hasParallelSlices() const {
     return true;
   }
+
+  [[gnu::deprecated("Please use Field2D::hasParallelSlices instead")]]
+  bool hasYupYdown() const {
+    return hasParallelSlices();
+  }
   
   Field2D& yup(std::vector<Field2D>::size_type UNUSED(index) = 0) {
     return *this;

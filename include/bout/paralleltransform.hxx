@@ -28,10 +28,20 @@ public:
   /// Given a 3D field, calculate and set the Y up down fields
   virtual void calcParallelSlices(Field3D &f) = 0;
 
+  [[gnu::deprecated("Please use ParallelTransform::calcParallelSlices instead")]]
+  void calcYupYdown(Field3D& f) {
+    calcParallelSlices(f);
+  }
+
   /// Calculate Yup and Ydown fields by integrating over mapped points
   /// This should be used for parallel divergence operators
   virtual void integrateParallelSlices(Field3D &f) {
     return calcParallelSlices(f);
+  }
+
+  [[gnu::deprecated("Please use ParallelTransform::integrateParallelSlices instead")]]
+  void integrateYupYdown(Field3D& f) {
+    integrateParallelSlices(f);
   }
   
   /// Convert a 3D field into field-aligned coordinates
