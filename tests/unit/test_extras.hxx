@@ -109,6 +109,24 @@ auto IsFieldEqual(const T& field, BoutReal reference,
   return ::testing::AssertionSuccess();
 }
 
+/// Disable a ConditionalOutput during a scope; reenable it on
+/// exit. You must give the variable a name!
+///
+///     {
+///       WithQuietoutput quiet{output};
+///       // output disabled during this scope
+///     }
+///     // output now enabled
+class WithQuietOutput {
+public:
+  explicit WithQuietOutput(ConditionalOutput& output_in) : output(output_in) {
+    output.disable();
+  }
+
+  ~WithQuietOutput() { output.enable(); }
+  ConditionalOutput& output;
+};
+
 class Options;
 
 /// FakeMesh has just enough information to create fields
@@ -255,23 +273,15 @@ private:
 class FakeMeshFixture : public ::testing::Test {
 public:
   FakeMeshFixture() {
-    // Delete any existing mesh
-    if (bout::globals::mesh != nullptr) {
-      delete bout::globals::mesh;
-      bout::globals::mesh = nullptr;
-    }
+    WithQuietOutput quiet{output_info};
+
+    delete bout::globals::mesh;
     bout::globals::mesh = new FakeMesh(nx, ny, nz);
     bout::globals::mesh->setParallelTransform(
         bout::utils::make_unique<ParallelTransformIdentity>(*bout::globals::mesh));
-    output_info.disable();
     bout::globals::mesh->createDefaultRegions();
-    output_info.enable();
 
-    // Delete any existing mesh_staggered
-    if (mesh_staggered != nullptr) {
-      delete mesh_staggered;
-      mesh_staggered = nullptr;
-    }
+    delete mesh_staggered;
     mesh_staggered = new FakeMesh(nx, ny, nz);
     mesh_staggered->StaggerGrids = true;
     mesh_staggered->setParallelTransform(
@@ -279,9 +289,7 @@ public:
     static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_XLOW);
     static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_YLOW);
     static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_ZLOW);
-    output_info.disable();
     mesh_staggered->createDefaultRegions();
-    output_info.enable();
   }
 
   virtual ~FakeMeshFixture() {
