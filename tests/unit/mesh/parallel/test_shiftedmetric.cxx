@@ -2,7 +2,6 @@
 
 #include "fft.hxx"
 #include "test_extras.hxx"
-#include "../src/mesh/parallel/shiftedmetric.hxx"
 
 // The unit tests use the global mesh
 using namespace bout::globals;

@@ -6,9 +6,8 @@
  *
  */
 
-#include "identity.hxx"
-
 #include "bout/mesh.hxx"
+#include "bout/paralleltransform.hxx"
 
 void ParallelTransformIdentity::calcParallelSlices(Field3D& f) {
   f.splitParallelSlices();

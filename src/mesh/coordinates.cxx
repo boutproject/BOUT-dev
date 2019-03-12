@@ -17,8 +17,6 @@
 
 #include <globals.hxx>
 
-#include "parallel/identity.hxx"
-#include "parallel/shiftedmetric.hxx"
 #include "parallel/fci.hxx"
 
 Coordinates::Coordinates(Mesh* mesh, Field2D dx, Field2D dy, BoutReal dz, Field2D J,

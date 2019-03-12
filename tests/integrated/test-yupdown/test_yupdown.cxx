@@ -1,7 +1,6 @@
 #include <bout.hxx>
 
-#include <../src/mesh/parallel/shiftedmetric.hxx>
-
+#include <bout/paralleltransform.hxx>
 #include <derivs.hxx>
 
 // Y derivative using yup() and ydown() fields
