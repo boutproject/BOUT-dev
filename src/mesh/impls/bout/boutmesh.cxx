@@ -2026,7 +2026,7 @@ bool BoutMesh::periodicY(int jx, BoutReal &ts) const {
   return false;
 }
 
-bool BoutMesh::hasBranchCutLower(int jx, BoutReal& global_shift) const {
+std::pair<bool, BoutReal> BoutMesh::hasBranchCutLower(int jx) const {
   if ( (TS_down_in and DDATA_INDEST != -1 and jx < DDATA_XSPLIT)
       or (TS_down_out and DDATA_OUTDEST != -1 and jx >= DDATA_XSPLIT) ) {
     // this processor has branch cut at lower boundary for jx
@@ -2034,16 +2034,14 @@ bool BoutMesh::hasBranchCutLower(int jx, BoutReal& global_shift) const {
       // This function should only be called during initialization, so always check
       throw BoutException("BoutMesh failed to read ShiftAngle from the grid");
     }
-    global_shift = ShiftAngle[jx];
-    return true;
+    return std::make_pair(true, ShiftAngle[jx]);
   }
 
-  global_shift = 0.;
-  return false;
+  return std::make_pair(false, 0.);
 }
 
 
-bool BoutMesh::hasBranchCutUpper(int jx, BoutReal& global_shift) const {
+std::pair<bool, BoutReal> BoutMesh::hasBranchCutUpper(int jx) const {
   if ( (TS_up_in and UDATA_INDEST != -1 and jx < UDATA_XSPLIT)
       or (TS_up_out and UDATA_OUTDEST != -1 and jx >= UDATA_XSPLIT) ) {
     // this processor has branch cut at upper boundary for jx
@@ -2051,12 +2049,10 @@ bool BoutMesh::hasBranchCutUpper(int jx, BoutReal& global_shift) const {
       // This function should only be called during initialization, so always check
       throw BoutException("BoutMesh failed to read ShiftAngle from the grid");
     }
-    global_shift = ShiftAngle[jx];
-    return true;
+    return std::make_pair(true, ShiftAngle[jx]);
   }
 
-  global_shift = 0.;
-  return false;
+  return std::make_pair(false, 0.);
 }
 
 int BoutMesh::ySize(int xpos) const {

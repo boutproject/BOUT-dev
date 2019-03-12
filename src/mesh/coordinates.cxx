@@ -693,15 +693,16 @@ void Coordinates::setParallelTransform(Options* options) {
 
     // Correct guard cells for discontinuity of zShift at poloidal branch cut
     for (int x = 0; x < localmesh->LocalNx; x++) {
-      BoutReal global_shift = 0.;
-      if (localmesh->hasBranchCutLower(x, global_shift)) {
+      const auto lower = localmesh->hasBranchCutLower(x);
+      if (lower.first) {
         for (int y = 0; y < localmesh->ystart; y++) {
-          zShift(x, y) -= global_shift;
+          zShift(x, y) -= lower.second;
         }
       }
-      if (localmesh->hasBranchCutUpper(x, global_shift)) {
+      const auto upper = localmesh->hasBranchCutUpper(x);
+      if (upper.first) {
         for (int y = localmesh->yend + 1; y < localmesh->LocalNy; y++) {
-          zShift(x, y) += global_shift;
+          zShift(x, y) += upper.second;
         }
       }
     }

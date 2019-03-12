@@ -331,19 +331,21 @@ class Mesh {
   /// \param[out] ts  The Twist-Shift angle if periodic
   virtual bool periodicY(int jx, BoutReal &ts) const = 0;
 
-  /// Is there a branch cut at this processor's lower boundary?
+  /// Is there a branch cut at this processor's lower y-boundary?
   ///
   /// @param[in] jx             The local (on this processor) index in X
-  /// @param[out] global_shift  The total zShift for a 2pi poloidal circuit,
-  ///                           non-zero if there is a branch-cut
-  virtual bool hasBranchCutLower(int jx, BoutReal& global_shift) const = 0;
+  /// @returns pair<bool, BoutReal> - bool is true if there is a branch cut,
+  ///                                 BoutReal gives the total zShift for a 2pi
+  ///                                 poloidal circuit if there is a branch cut
+  virtual std::pair<bool, BoutReal> hasBranchCutLower(int jx) const = 0;
 
-  /// Is there a branch cut at this processor's upper boundary?
+  /// Is there a branch cut at this processor's upper y-boundary?
   ///
   /// @param[in] jx             The local (on this processor) index in X
-  /// @param[out] global_shift  The total zShift for a 2pi poloidal circuit,
-  ///                           non-zero if there is a branch-cut
-  virtual bool hasBranchCutUpper(int jx, BoutReal& global_shift) const = 0;
+  /// @returns pair<bool, BoutReal> - bool is true if there is a branch cut,
+  ///                                 BoutReal gives the total zShift for a 2pi
+  ///                                 poloidal circuit if there is a branch cut
+  virtual std::pair<bool, BoutReal> hasBranchCutUpper(int jx) const = 0;
   
   virtual int ySize(int jx) const; ///< The number of points in Y at fixed X index \p jx
 
