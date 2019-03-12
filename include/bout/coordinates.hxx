@@ -50,7 +50,7 @@ class Mesh;
 class Coordinates {
 public:
   /// Standard constructor from input
-  Coordinates(Mesh *mesh, Options* options);
+  Coordinates(Mesh *mesh, Options* options = nullptr);
 
   /// Constructor interpolating from another Coordinates object
   Coordinates(Mesh *mesh, Options* options, const CELL_LOC loc, const Coordinates* coords_in);

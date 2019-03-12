@@ -50,6 +50,10 @@ Coordinates::Coordinates(Mesh *mesh, Options* options)
       G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), ShiftTorsion(mesh),
       IntShiftTorsion(mesh), localmesh(mesh), location(CELL_CENTRE) {
 
+  if (options == nullptr) {
+    options = Options::getRoot()->getSection("mesh");
+  }
+
   if (mesh->get(dx, "dx")) {
     output_warn.write("\tWARNING: differencing quantity 'dx' not found. Set to 1.0\n");
     dx = 1.0;
