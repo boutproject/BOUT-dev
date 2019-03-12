@@ -237,6 +237,14 @@ int BoutMesh::load() {
   // For now don't parallelise z
   NZPE = 1;
 
+  if (jyseps1_1 < 0 and jyseps2_2 >= ny - 1) {
+    numberOfXPoints = 0;
+  } else if (jyseps2_1 == jyseps1_2) {
+    numberOfXPoints = 1;
+  } else {
+    numberOfXPoints = 2;
+  }
+
   if (options->isSet("NXPE")) {    // Specified NXPE
     options->get("NXPE", NXPE, 1); // Decomposition in the radial direction
     if ((NPES % NXPE) != 0) {

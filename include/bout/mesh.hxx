@@ -446,6 +446,8 @@ class Mesh {
   /// Include integrated shear (if shifting X)
   bool IncIntShear{false};
 
+  int numberOfXPoints{0};
+
   /// Coordinate system
   Coordinates *getCoordinates(const CELL_LOC location = CELL_CENTRE) {
     return getCoordinatesSmart(location).get();

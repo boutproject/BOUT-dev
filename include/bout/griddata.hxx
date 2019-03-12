@@ -94,6 +94,8 @@ public:
 private:
   std::unique_ptr<DataFormat> file;
   std::string filename;
+  int grid_yguards{0};
+  int ny_inner{0};
 
   bool readgrid_3dvar_fft(Mesh *m, const std::string &name, int yread, int ydest, int ysize,
                           int xge, int xlt, Field3D &var);

@@ -34,6 +34,19 @@ GridFile::GridFile(std::unique_ptr<DataFormat> format, std::string gridfilename)
 
   file->setGlobalOrigin(); // Set default global origin
 
+  // Get number of y-boundary guard cells saved in the grid file
+  if (!file->read(&grid_yguards, "y_boundary_guards", 1, 1)) {
+    // not found in file, default to zero
+    grid_yguards = 0;
+  }
+
+  // Get number ny_inner from the grid file.
+  // Is already read in BoutMesh, but this way we don't have to the Mesh API to
+  // get it from there.
+  if (!file->read(&ny_inner, "ny_inner", 1, 1)) {
+    // not found in file, default to zero
+    ny_inner = 0;
+  }
 }
 
 GridFile::~GridFile() {
@@ -206,7 +219,19 @@ bool GridFile::get(Mesh *m, Field2D &var,   const std::string &name, BoutReal de
 
   // Index offsets into source array
   int xs = m->OffsetX;
+  // Need to increase offset by 2*(# boundary guards) for each target position
+  // we pass
   int ys = m->OffsetY;
+  if (m->numberOfXPoints > 1) {
+    ASSERT1(m->numberOfXPoints == 2);
+    // Need to check if we are before or after the target in the middle of the
+    // y-domain, and increase ys for the extra boundary guard cells at that
+    // target if we are after it.
+    if (m->OffsetY >= ny_inner) {
+      // Note: neither ny_inner nor OffsetY include guard cells
+      ys += 2*grid_yguards;
+    }
+  }
 
   // Index offsets into destination
   int xd = -1;
@@ -227,26 +252,31 @@ bool GridFile::get(Mesh *m, Field2D &var,   const std::string &name, BoutReal de
   int ny_to_read = -1;
 
   ///Check if field dimensions are correct. x-direction
-  if (field_dimensions[0] == m->GlobalNx) { ///including ghostpoints
+  if (field_dimensions[0] >= m->GlobalNx) { ///including ghostpoints
+    ASSERT1( (field_dimensions[0] - (m->GlobalNx - 2*mxg)) % 2 == 0 );
+    int grid_xguards = (field_dimensions[0] - (m->GlobalNx - 2*mxg)) / 2;
+
     nx_to_read = m->LocalNx;
-    xd = 0;
-  } else if ( field_dimensions[0] == m->GlobalNx - 2*mxg ) {///including ghostpoints
+    xd = grid_xguards - mxg;
+    ASSERT1(xd >= 0);
+  } else if (field_dimensions[0] == m->GlobalNx - 2*mxg) { ///excluding ghostpoints
     nx_to_read = m->LocalNx - 2*mxg;
     xd = mxg;
   } else {
-    throw BoutException("Could not read '%s' from file: x-dimension = %i do neither match nx = %i"
+    throw BoutException("Could not read '%s' from file: x-dimension = %i neither matches nx <= %i"
                 "nor nx-2*mxg = %i ", name.c_str(), field_dimensions[0], m->GlobalNx, m->GlobalNx-2*mxg);
   }
 
   ///Check if field dimensions are correct. y-direction
-  if (field_dimensions[1] == m->GlobalNy) { ///including ghostpoints
+  if (field_dimensions[1] >= m->GlobalNy) { ///including ghostpoints
     ny_to_read = m->LocalNy;
-    yd = 0;
-  } else if ( field_dimensions[1] == m->GlobalNy - 2*myg ) {///including ghostpoints
+    yd = grid_yguards - myg;
+    ASSERT1(yd >= 0);
+  } else if (field_dimensions[1] == m->GlobalNy - 2*myg) { ///excluding ghostpoints
     ny_to_read = m->LocalNy - 2*myg;
     yd = myg;
   } else {
-    throw BoutException("Could not read '%s' from file: y-dimension = %i do neither match ny = %i"
+    throw BoutException("Could not read '%s' from file: y-dimension = %i neither matches ny <= %i"
                 "nor ny-2*myg = %i ", name.c_str(), field_dimensions[1], m->GlobalNy, m->GlobalNy-2*myg);
   }
 
@@ -258,9 +288,20 @@ bool GridFile::get(Mesh *m, Field2D &var,   const std::string &name, BoutReal de
     }
   }
 
+  ///If field does not include ghost points in x-direction ->
+  ///Upper and lower X boundaries copied from nearest point
+  if (field_dimensions[0] == m->GlobalNx - 2*mxg ) {
+    for(int y=0;y<m->LocalNy;y++) {
+      for(int x=0;x<m->xstart;x++)
+        var(x, y) = var(m->xstart, y);
+      for(int x=m->xend+1;x<m->LocalNx;x++)
+        var(x, y) = var(m->xend, y);
+    }
+  }
+
   ///If field does not include ghost points in y-direction ->
   ///Upper and lower Y boundaries copied from nearest point
-  if (field_dimensions[1] == m->GlobalNy - 2*myg ) {
+  if (grid_yguards == 0) {
     for(int x=0;x<m->LocalNx;x++) {
       for(int y=0;y<m->ystart;y++)
         var(x, y) = var(x, m->ystart);
