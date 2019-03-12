@@ -124,17 +124,17 @@ class Field2D : public Field, public FieldData {
     return true;
   }
   
-  Field2D& yup() {
+  Field2D& yup(std::vector<Field2D>::size_type UNUSED(index) = 0) {
     return *this;
   }
-  const Field2D& yup() const {
+  const Field2D& yup(std::vector<Field2D>::size_type UNUSED(index) = 0) const {
     return *this;
   }
 
-  Field2D& ydown() {
+  Field2D& ydown(std::vector<Field2D>::size_type UNUSED(index) = 0) {
     return *this;
   }
-  const Field2D& ydown() const {
+  const Field2D& ydown(std::vector<Field2D>::size_type UNUSED(index) = 0) const {
     return *this;
   }
 
