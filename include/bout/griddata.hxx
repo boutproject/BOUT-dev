@@ -64,6 +64,12 @@ public:
                    Direction dir = GridDataSource::X) = 0;
   virtual bool get(Mesh *m, std::vector<BoutReal> &var, const std::string &name, int len,
                    int offset = 0, Direction dir = GridDataSource::X) = 0;
+
+  /// Are x-boundary guard cells read from the source?
+  virtual bool hasXBoundaryGuards(Mesh* m) = 0;
+
+  /// Are y-boundary guard cells read from the source?
+  virtual bool hasYBoundaryGuards() = 0;
 };
 
 /// Interface to grid data in a file
@@ -94,6 +100,12 @@ public:
            GridDataSource::Direction dir = GridDataSource::X) override;
   bool get(Mesh *m, std::vector<BoutReal> &var, const std::string &name, int len, int offset = 0,
            GridDataSource::Direction dir = GridDataSource::X) override;
+
+  /// Are x-boundary guard cells read from the source?
+  bool hasXBoundaryGuards(Mesh* m) override;
+
+  /// Are y-boundary guard cells read from the source?
+  bool hasYBoundaryGuards() override { return grid_yguards > 0; }
 
 private:
   std::unique_ptr<DataFormat> file;
@@ -225,6 +237,12 @@ public:
    */
   bool get(Mesh *mesh, std::vector<BoutReal> &var, const std::string &name, int len, int offset = 0,
            GridDataSource::Direction dir = GridDataSource::X) override;
+
+  /// Are x-boundary guard cells read from the source?
+  bool hasXBoundaryGuards(Mesh* UNUSED(m)) override { return true; }
+
+  /// Are y-boundary guard cells read from the source?
+  bool hasYBoundaryGuards() override { return true; }
 
 private:
   /// The options section to use. Could be nullptr
