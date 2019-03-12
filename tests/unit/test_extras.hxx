@@ -286,6 +286,19 @@ public:
     output_info.disable();
     mesh_staggered->createDefaultRegions();
     output_info.enable();
+
+    test_coords = std::make_shared<Coordinates>(
+        bout::globals::mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0},
+        Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
+        Field2D{0.0}, Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0},
+        Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0},
+        false);
+    test_coords_staggered = std::make_shared<Coordinates>(
+        mesh_staggered, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0},
+        Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
+        Field2D{0.0}, Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0},
+        Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0},
+        false);
   }
 
   virtual ~FakeMeshFixture() {
@@ -300,6 +313,9 @@ public:
   static constexpr int nz = 7;
 
   Mesh* mesh_staggered = nullptr;
+
+  std::shared_ptr<Coordinates> test_coords{nullptr};
+  std::shared_ptr<Coordinates> test_coords_staggered{nullptr};
 };
 
 #endif //  TEST_EXTRAS_H__
