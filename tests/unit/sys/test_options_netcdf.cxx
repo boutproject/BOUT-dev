@@ -10,12 +10,14 @@
 #include "options_netcdf.hxx"
 
 /// Global mesh
-extern Mesh *mesh;
+namespace bout {
+namespace globals {
+extern Mesh* mesh;
+}
+} // namespace bout
 
 // Reuse the "standard" fixture for FakeMesh
 using OptionsNetCDFTest = FakeMeshFixture;
-
-
 
 TEST_F(OptionsNetCDFTest, ReadWriteInt) {
   // Temporary file
@@ -66,7 +68,7 @@ TEST_F(OptionsNetCDFTest, ReadWriteField2D) {
   // Read file
   Options data = OptionsNetCDF(filename).read();
 
-  Field2D value = data["test"].as<Field2D>(mesh);
+  Field2D value = data["test"].as<Field2D>(bout::globals::mesh);
   
   EXPECT_DOUBLE_EQ(value(0,1), 1.0);
   EXPECT_DOUBLE_EQ(value(1,0), 1.0);
@@ -86,7 +88,7 @@ TEST_F(OptionsNetCDFTest, ReadWriteField3D) {
   // Read file
   Options data = OptionsNetCDF(filename).read();
 
-  Field3D value = data["test"].as<Field3D>(mesh);
+  Field3D value = data["test"].as<Field3D>(bout::globals::mesh);
   
   EXPECT_DOUBLE_EQ(value(0,1,0), 2.4);
   EXPECT_DOUBLE_EQ(value(1,0,1), 2.4);
