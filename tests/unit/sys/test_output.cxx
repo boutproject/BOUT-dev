@@ -13,7 +13,7 @@ public:
     std::cout.rdbuf(buffer.rdbuf());
   }
 
-  ~OutputTest() {
+  virtual ~OutputTest() {
     // Clear buffer
     buffer.str("");
     // When done redirect cout to its old self
@@ -54,7 +54,7 @@ TEST_F(OutputTest, OpenFile) {
 
   std::string test_output = "To stdout and file\n";
 
-  local_output.open(filename);
+  local_output.open("%s", filename);
   local_output << test_output;
 
   std::ifstream test_file(filename);
@@ -76,8 +76,8 @@ TEST_F(OutputTest, JustPrint) {
 
   std::string test_output = "To stdout only\n";
 
-  local_output.open(filename);
-  local_output.print(test_output.c_str());
+  local_output.open("%s", filename);
+  local_output.print("%s",test_output.c_str());
 
   std::ifstream test_file(filename);
   std::stringstream test_buffer;
@@ -100,7 +100,7 @@ TEST_F(OutputTest, DisableEnableStdout) {
   std::string file_and_stdout = "To stdout and file\n";
 
   // Open temporary file and close stdout
-  local_output.open(filename);
+  local_output.open("%s", filename);
   local_output.disable();
 
   local_output << file_only;
@@ -194,18 +194,22 @@ TEST_F(OutputTest, ConditionalJustStdOutGlobalInstances) {
   EXPECT_EQ(buffer.str(), "warn output\n");
 
   buffer.str("");
+  output_info.enable();
   output_info << "info output\n";
   EXPECT_EQ(buffer.str(), "info output\n");
 
   buffer.str("");
+  output_progress.enable();
   output_progress << "progress output\n";
   EXPECT_EQ(buffer.str(), "progress output\n");
 
   buffer.str("");
+  output_error.enable();
   output_error << "error output\n";
   EXPECT_EQ(buffer.str(), "error output\n");
 
   buffer.str("");
+  output_debug.enable();
   output_debug << "debug output\n";
 #ifdef DEBUG_ENABLED
   EXPECT_EQ(buffer.str(), "debug output\n");
@@ -223,8 +227,8 @@ TEST_F(OutputTest, ConditionalJustPrint) {
 
   std::string test_output = "To stdout only\n";
 
-  local_output.open(filename);
-  local_output.print(test_output.c_str());
+  local_output.open("%s", filename);
+  local_output.print("%s", test_output.c_str());
 
   std::ifstream test_file(filename);
   std::stringstream test_buffer;
@@ -271,11 +275,11 @@ TEST_F(OutputTest, DummyCheckEnableDoesntWork) {
   DummyOutput dummy;
 
   EXPECT_FALSE(dummy.isEnabled());
-  EXPECT_THROW(dummy.enable(), BoutException);
+  dummy.enable();
   EXPECT_FALSE(dummy.isEnabled());
-  EXPECT_THROW(dummy.enable(true), BoutException);
+  dummy.enable(true);
   EXPECT_FALSE(dummy.isEnabled());
-  EXPECT_NO_THROW(dummy.enable(false));
+  dummy.enable(false);
   EXPECT_FALSE(dummy.isEnabled());
   dummy.disable();
   EXPECT_FALSE(dummy.isEnabled());
@@ -297,8 +301,8 @@ TEST_F(OutputTest, DummyJustPrint) {
 
   std::string test_output = "To stdout only\n";
 
-  dummy.open(filename);
-  dummy.print(test_output.c_str());
+  dummy.open("%s", filename);
+  dummy.print("%s", test_output.c_str());
 
   std::ifstream test_file(filename);
   std::stringstream test_buffer;

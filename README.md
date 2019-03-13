@@ -181,3 +181,8 @@ used in the creation of [configure](configure) from
 [configure.ac](configure.ac), and are provided as a courtesy to
 developers. You are free to substitute them with other autoconf macros
 that provide equivalent functionality.
+
+BOUT++ links by default with some GPL licensed libraries. Thus if you
+compile BOUT++ with any of them, BOUT++ will automatically be licensed
+as GPL. Thus if you want to use BOUT++ with GPL non-compatible code,
+make sure to compile without GPLed code.

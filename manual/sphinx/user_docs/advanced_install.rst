@@ -417,7 +417,7 @@ debugging.
               --download-mumps \
               --download-scalapack \
               --download-blacs \
-              --download-f-blas-lapack=1 \
+              --download-fblas-lapack=1 \
               --download-parmetis \
               --download-ptscotch \
               --download-metis

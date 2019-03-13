@@ -88,6 +88,9 @@ using std::make_unique;
 /// Helper class for 2D arrays
 ///
 /// Allows bounds checking through `operator()` with CHECK > 1
+///
+/// If either \p n1 or \p n2 are 0, the Matrix is empty and should not
+/// be indexed
 template <typename T>
 class Matrix {
 public:
@@ -96,11 +99,26 @@ public:
   
   Matrix() : n1(0), n2(0){};
   Matrix(size_type n1, size_type n2) : n1(n1), n2(n2) {
-    data = Array<T>(n1*n2);
+    ASSERT2(n1 >= 0);
+    ASSERT2(n2 >= 0);
+
+    data.reallocate(n1 * n2);
   }
   Matrix(const Matrix &other) : data(other.data), n1(other.n1), n2(other.n2) {
     // Prevent copy on write for Matrix
     data.ensureUnique();
+  }
+
+  /// Reallocate the Matrix to shape \p new_size_1 by \p new_size_2
+  ///
+  /// Note that this invalidates the existing data!
+  void reallocate(size_type new_size_1, size_type new_size_2) {
+    ASSERT2(new_size_1 >= 0);
+    ASSERT2(new_size_2 >= 0);
+
+    n1 = new_size_1;
+    n2 = new_size_2;
+    data.reallocate(new_size_1 * new_size_2);
   }
 
   Matrix& operator=(const Matrix &other) {
@@ -135,11 +153,9 @@ public:
   T* end() { return std::end(data);};
   const T* end() const { return std::end(data);};
 
-  std::tuple<size_type, size_type> shape() const { return std::make_tuple(n1, n2);};
+  std::tuple<size_type, size_type> shape() const { return std::make_tuple(n1, n2); };
 
-  bool empty() const {
-    return n1*n2 == 0;
-  }
+  bool empty() const { return n1 * n2 == 0; }
 
   /*!
    * Ensures that this Matrix does not share data with another
@@ -159,6 +175,9 @@ private:
 /// Helper class for 3D arrays
 ///
 /// Allows bounds checking through `operator()` with CHECK > 1
+///
+/// If any of \p n1, \p n2 or \p n3 are 0, the Tensor is empty and
+/// should not be indexed
 template <typename T>
 class Tensor {
 public:
@@ -167,11 +186,28 @@ public:
 
   Tensor() : n1(0), n2(0), n3(0) {};
   Tensor(size_type n1, size_type n2, size_type n3) : n1(n1), n2(n2), n3(n3) {
-    data = Array<T>(n1*n2*n3);
+    ASSERT2(n1 >= 0);
+    ASSERT2(n2 >= 0);
+    ASSERT2(n3 >= 0);
+    data.reallocate(n1 * n2 * n3);
   }
   Tensor(const Tensor &other) : data(other.data), n1(other.n1), n2(other.n2), n3(other.n3) {
     // Prevent copy on write for Tensor
     data.ensureUnique();
+  }
+
+  /// Reallocate the Tensor with shape \p new_size_1 by \p new_size_2 by \p new_size_3
+  ///
+  /// Note that this invalidates the existing data!
+  void reallocate(size_type new_size_1, size_type new_size_2, size_type new_size_3) {
+    ASSERT2(new_size_1 >= 0);
+    ASSERT2(new_size_2 >= 0);
+    ASSERT2(new_size_3 >= 0);
+
+    n1 = new_size_1;
+    n2 = new_size_2;
+    n3 = new_size_3;
+    data.reallocate(new_size_1 * new_size_2 * new_size_3);
   }
 
   Tensor& operator=(const Tensor &other) {
@@ -208,13 +244,13 @@ public:
   const T* begin() const { return std::begin(data);};
   T* end() { return std::end(data);};
   const T* end() const { return std::end(data);};
-  
-  std::tuple<size_type, size_type, size_type> shape() const { return std::make_tuple(n1, n2, n3);};
-  
-  bool empty() const {
-    return n1*n2*n3 == 0;
-  }
-  
+
+  std::tuple<size_type, size_type, size_type> shape() const {
+    return std::make_tuple(n1, n2, n3);
+  };
+
+  bool empty() const { return n1 * n2 * n3 == 0; }
+
   /*!
    * Ensures that this Tensor does not share data with another
    * This should be called before performing any write operations
@@ -387,8 +423,7 @@ std::string toString(const T& val) {
 /// Simple case where input is already a string
 /// This is so that toString can be used in templates
 /// where the type may be std::string.
-template <>
-inline std::string toString<>(const std::string& val) {
+inline std::string toString(const std::string& val) {
   return val;
 }
 
@@ -408,8 +443,7 @@ inline std::string toString<>(const Tensor<BoutReal>& UNUSED(val)) {
 }
 
 /// Convert a bool to "true" or "false"
-template <>
-inline std::string toString<>(const bool& val) {
+inline std::string toString(const bool& val) {
   if (val) {
     return "true";
   }
@@ -418,8 +452,7 @@ inline std::string toString<>(const bool& val) {
 
 /// Convert a time stamp to a string
 /// This uses std::localtime and std::put_time
-template <>
-std::string toString<>(const time_t& time);
+std::string toString(const time_t& time);
 
 /*!
  * Convert a string to lower case

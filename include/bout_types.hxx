@@ -22,10 +22,10 @@
 #ifndef __BOUT_TYPES_H__
 #define __BOUT_TYPES_H__
 
-#include <vector>
-#include <string>
-#include <map>
+#include "bout/deprecated.hxx"
+
 #include <limits>
+#include <string>
 
 /// Size of real numbers
 typedef double BoutReal;
@@ -38,94 +38,81 @@ const BoutReal BoutNaN = std::numeric_limits<BoutReal>::quiet_NaN();
 /// 4 possible variable locations. Default is for passing to functions
 enum CELL_LOC {CELL_DEFAULT=0, CELL_CENTRE=1, CELL_CENTER=1, CELL_XLOW=2, CELL_YLOW=3, CELL_ZLOW=4, CELL_VSHIFT=5};
 
-const std::map<CELL_LOC, std::string> CELL_LOCtoString = {
-  ENUMSTR(CELL_DEFAULT),
-  ENUMSTR(CELL_CENTRE),
-  ENUMSTR(CELL_XLOW),
-  ENUMSTR(CELL_YLOW),
-  ENUMSTR(CELL_ZLOW),
-  ENUMSTR(CELL_VSHIFT)
-};
-
-inline const std::string& CELL_LOC_STRING(CELL_LOC location) {
-  return CELL_LOCtoString.at(location);
+std::string toString(CELL_LOC location);
+DEPRECATED(inline std::string CELL_LOC_STRING(CELL_LOC location)) {
+  return toString(location);
 }
 
 /// Differential methods. Both central and upwind
 enum DIFF_METHOD {DIFF_DEFAULT, DIFF_U1, DIFF_U2, DIFF_C2, DIFF_W2, DIFF_W3, DIFF_C4, DIFF_U3, DIFF_FFT, DIFF_SPLIT, DIFF_S2};
 
-const std::map<DIFF_METHOD, std::string> DIFF_METHODtoString = {
-  {DIFF_DEFAULT, "DEFAULT"},
-  {DIFF_U1, "U1"}, {DIFF_U2, "U2"}, {DIFF_U3, "U3"},
-  {DIFF_C2, "C2"}, {DIFF_C4, "C4"}, {DIFF_S2, "S2"},
-  {DIFF_W2, "W2"}, {DIFF_W3, "W3"}, {DIFF_FFT, "FFT"},
-  {DIFF_SPLIT, "SPLIT"}
-};
-
-inline const std::string& DIFF_METHOD_STRING(DIFF_METHOD location) {
-  return DIFF_METHODtoString.at(location);
+std::string toString(DIFF_METHOD location);
+DEPRECATED(inline std::string DIFF_METHOD_STRING(DIFF_METHOD location)) {
+  return toString(location);
 }
 
 /// Specify grid region for looping
-enum REGION {RGN_ALL, RGN_NOBNDRY, RGN_NOX, RGN_NOY, RGN_NOZ};
+enum REGION { RGN_ALL, RGN_NOBNDRY, RGN_NOX, RGN_NOY, RGN_NOZ };
 
-const std::map<REGION, std::string> REGIONtoString = {
-  ENUMSTR(RGN_ALL),
-  ENUMSTR(RGN_NOBNDRY),
-  ENUMSTR(RGN_NOX),
-  ENUMSTR(RGN_NOY),
-  ENUMSTR(RGN_NOZ)
-};
+std::string toString(REGION region);
+DEPRECATED(inline std::string REGION_STRING(REGION region)) { return toString(region); }
 
-inline const std::string& REGION_STRING(REGION region) {
-  return REGIONtoString.at(region);
+/// To identify particular directions (in index space):
+///   - X, Y, Z are the coordinate directions
+///   - YAligned is a special case of Y, indicating a field-aligned grid, where
+///     the x- and z- axes are not necessarily orthogonal
+///   - YOrthogonal is a special case of Y, indicating a grid where the x and z
+///     axes are orthogonal but the y-direction is not necessarily
+///     field-aligned
+enum class DIRECTION { X, Y, Z, YAligned, YOrthogonal };
+
+std::string toString(DIRECTION direction);
+DEPRECATED(inline std::string DIRECTION_STRING(DIRECTION direction)) {
+  return toString(direction);
 }
 
-/// To identify particular directions (in index space)
-enum class DIRECTION { X = 0, Y = 1, Z = 3, YAligned = 4, YOrthogonal = 5 };
+/// Identify kind of a field's y-direction
+/// - Standard is the default for the Mesh/Coordinates/ParallelTransform
+/// - Aligned indicates that the field has been transformed to field-aligned
+///   coordinates
+enum class YDirectionType { Standard, Aligned };
 
-const std::map<DIRECTION, std::string> DIRECTIONtoString = {
-  {DIRECTION::X, "X"},
-  {DIRECTION::Y, "Y"},
-  {DIRECTION::Z, "Z"},
-  {DIRECTION::YAligned, "Y - field aligned"},
-  {DIRECTION::YOrthogonal, "Y - orthogonal"}
+std::string toString(YDirectionType d);
 
+/// Identify kind of a field's z-direction
+/// - Standard is the default
+/// - Average indicates that the field represents an average over the
+///   z-direction, rather than having a particular z-position (i.e. is a
+///   Field2D)
+enum class ZDirectionType { Standard, Average };
+
+std::string toString(ZDirectionType d);
+
+/// Container for direction types
+struct DirectionTypes {
+  YDirectionType y;
+  ZDirectionType z;
 };
 
-inline const std::string& DIRECTION_STRING(DIRECTION direction) {
-  return DIRECTIONtoString.at(direction);
-}
+/// Check whether direction types are compatible, so two fields with attributes
+/// d1 and d2 respectively can be added, subtracted, etc.
+bool areDirectionsCompatible(const DirectionTypes& d1, const DirectionTypes& d2);
+
+void swap(const DirectionTypes& first, const DirectionTypes& second);
 
 /// To identify valid staggering combinations
-enum class STAGGER { None = 0, C2L = 1, L2C = 2};
+enum class STAGGER { None, C2L, L2C };
 
-const std::map<STAGGER, std::string> STAGGERtoString = {
-  {STAGGER::None, "No staggering"},
-  {STAGGER::C2L, "Centre to Low"},
-  {STAGGER::L2C, "Low to Centre"}
-
-};
-
-inline const std::string& STAGGER_STRING(STAGGER stagger) {
-  return STAGGERtoString.at(stagger);
+std::string toString(STAGGER stagger);
+DEPRECATED(inline std::string STAGGER_STRING(STAGGER stagger)) {
+  return toString(stagger);
 }
 
 /// To identify types of derivative method combinations
-enum class DERIV { Standard = 0, StandardSecond = 1, StandardFourth = 2,
-		   Upwind = 3, Flux = 4 };
+enum class DERIV { Standard, StandardSecond, StandardFourth, Upwind, Flux };
 
-static std::map<DERIV, std::string> DERIVtoString = {
-  {DERIV::Standard, "Standard"},
-  {DERIV::StandardSecond, "Standard -- second order"},
-  {DERIV::StandardFourth, "Standard -- fourth order"},
-  {DERIV::Upwind, "Upwind"},
-  {DERIV::Flux, "Flux"}  
-};
-
-inline const std::string& DERIV_STRING(DERIV deriv) {
-  return DERIVtoString.at(deriv);
-}
+std::string toString(DERIV deriv);
+DEPRECATED(inline std::string DERIV_STRING(DERIV deriv)) { return toString(deriv); }
 
 // A small struct that can be used to wrap a specific enum value, giving
 // it a unique type that can be passed as a valid type to templates and
@@ -138,6 +125,6 @@ struct enumWrapper {
 };
 
 /// Boundary condition function
-typedef BoutReal (*FuncPtr)(BoutReal t, BoutReal x, BoutReal y, BoutReal z);
+using FuncPtr = BoutReal(*)(BoutReal t, BoutReal x, BoutReal y, BoutReal z);
 
 #endif // __BOUT_TYPES_H__

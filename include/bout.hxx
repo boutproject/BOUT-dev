@@ -38,6 +38,7 @@
 
 #include "boutcomm.hxx"
 
+#include <bout/mesh.hxx>
 #include "globals.hxx"
 
 #include "field2d.hxx"
@@ -64,6 +65,13 @@
 #include "utils.hxx"
 
 const BoutReal BOUT_VERSION = BOUT_VERSION_DOUBLE;  ///< Version number
+
+#ifndef BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
+// Include using statement by default in user code.
+// Macro allows us to include bout.hxx or physicsmodel.hxx without the using
+// statement in library code.
+using namespace bout::globals;
+#endif // BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 
 // BOUT++ main functions
 
@@ -108,8 +116,15 @@ int bout_run(Solver *solver, rhsfunc physics_run);
  * This is added to the solver in bout_run (for C-style models)
  * or in bout/physicsmodel.hxx
  */
-class BoutMonitor: public Monitor{
-  int call(Solver *solver, BoutReal t, int iter, int NOUT) override;
+class BoutMonitor: public Monitor {
+public:
+  BoutMonitor(BoutReal timestep = -1) : Monitor(timestep) {
+    // Add wall clock time etc to dump file
+    run_data.outputVars(bout::globals::dump);
+  }
+private:
+  int call(Solver* solver, BoutReal t, int iter, int NOUT) override;
+  RunMetrics run_data;
 };
 
 /*!

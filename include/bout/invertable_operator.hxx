@@ -35,6 +35,7 @@ class InvertableOperator;
 
 #ifdef BOUT_HAS_PETSC
 
+#include <bout/mesh.hxx>
 #include <bout/sys/timer.hxx>
 #include <boutcomm.hxx>
 #include <boutexception.hxx>
@@ -133,7 +134,7 @@ public:
       : operatorFunction(func), preconditionerFunction(func),
         opt(optIn == nullptr ? optIn
                              : Options::getRoot()->getSection("invertableOperator")),
-        localmesh(localmeshIn == nullptr ? mesh : localmeshIn), doneSetup(false) {
+        localmesh(localmeshIn == nullptr ? bout::globals::mesh : localmeshIn), doneSetup(false) {
     AUTO_TRACE();
   };
 
@@ -426,8 +427,7 @@ public:
     output_debug << "KSPSolve finished with converged reason : " << reason << endl;
 
     // lhs to lhsField -- first make the output field and ensure it has space allocated
-    T lhsField(localmesh);
-    lhsField.allocate();
+    T lhsField{emptyFrom(rhsField)};
 
     ierr = petscVecToField(lhs, lhsField);
     CHKERRQ(ierr);

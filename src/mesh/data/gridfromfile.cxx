@@ -59,6 +59,47 @@ bool GridFile::hasVar(const std::string &name) {
 }
 
 /*!
+ * Read a string from file. If the string is not
+ * found, then string is set to "" and false is returned.
+ *
+ * Inputs
+ * ------
+ *
+ *   m     Pointer to mesh, not used
+ *   name  String containing name of variable
+ *   
+ * Outputs
+ * -------
+ * 
+ *   sval   Reference to string
+ *
+ * Returns
+ * -------
+ * 
+ *   Boolean. True on success.
+ * 
+ */
+bool GridFile::get(Mesh *UNUSED(m), std::string &sval, const std::string &name) {
+  Timer timer("io");
+  TRACE("GridFile::get(std::string)");
+  
+  if (!file->is_valid()) {
+    throw BoutException("File cannot be read");
+  }
+  
+  // strings must be written as attributes, so read from attribute
+  bool success = file->getAttribute("", name, sval);
+  if (success) {
+    output_info << "\tOption " << name  << " = " << sval << " (" << filename <<")" << endl;
+  } else {
+    sval = "";
+  }
+
+  return success;
+
+}
+
+/*!
  * Read a single integer from file. If the integer is not
  * found, then ival is set to zero and false is returned.
  *
@@ -154,8 +195,8 @@ bool GridFile::get(Mesh *m, Field2D &var,   const std::string &name, BoutReal de
     break;
   }
   default: {
-    output_warn.write("WARNING: Variable '%s' should be 2D, but has %d dimensions. Ignored\n", 
-                      name.c_str(), size.size());
+    output_warn.write("WARNING: Variable '%s' should be 2D, but has %lu dimensions. Ignored\n",
+                      name.c_str(), static_cast<unsigned long>(size.size()));
     var = def;
     return false;
   }
@@ -313,8 +354,8 @@ bool GridFile::get(Mesh *m, Field3D &var,   const std::string &name, BoutReal de
     break;
   }
   default: {
-    throw BoutException("Error: Variable '%s' should be 3D, but has %d dimensions\n", 
-			name.c_str(), size.size());
+    throw BoutException("Error: Variable '%s' should be 3D, but has %lu dimensions\n",
+			name.c_str(), static_cast<unsigned long>(size.size()));
   }
   };
 

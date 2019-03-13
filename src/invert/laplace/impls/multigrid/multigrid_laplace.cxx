@@ -28,6 +28,7 @@
  **************************************************************************/
 
 #include "multigrid_laplace.hxx"
+#include <bout/mesh.hxx>
 #include <msg_stack.hxx>
 #include <bout/openmpwrap.hxx>
 
@@ -172,8 +173,8 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt, const CELL_LOC loc, Mesh *mesh_
 
   // Set up Multigrid Cycle
 
-  x = Array<BoutReal>((Nx_local + 2) * (Nz_local + 2));
-  b = Array<BoutReal>((Nx_local + 2) * (Nz_local + 2));
+  x.reallocate((Nx_local + 2) * (Nz_local + 2));
+  b.reallocate((Nx_local + 2) * (Nz_local + 2));
 
   if (mgcount == 0) {  
     output<<" Smoothing type is ";
@@ -202,6 +203,8 @@ const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &
   TRACE("LaplaceMultigrid::solve(const FieldPerp, const FieldPerp)");
 
   ASSERT1(localmesh == b_in.getMesh() && localmesh == x0.getMesh());
+  ASSERT1(b_in.getLocation() == location);
+  ASSERT1(x0.getLocation() == location);
 
   checkData(b_in);
   checkData(x0);
@@ -422,9 +425,7 @@ BOUT_OMP(for)
     }
   }
 
-  FieldPerp result(localmesh);
-  result.allocate();
-  result.setIndex(yindex);
+  FieldPerp result{emptyFrom(b_in)};
 
 #if CHECK > 2
   // Make any unused elements NaN so that user does not try to do calculations with them
