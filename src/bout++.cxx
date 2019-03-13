@@ -623,20 +623,19 @@ int BoutMonitor::call(Solver *solver, BoutReal t, int iter, int NOUT) {
   simtime = t;
   iteration = iter;
 
-  /// Write dump file
-  bout::globals::dump.write();
-
   /// Collect timing information
-  BoutReal wtime        = Timer::resetTime("run");
-  int ncalls            = solver->resetRHSCounter();
-  int ncalls_e		= solver->resetRHSCounter_e();
-  int ncalls_i		= solver->resetRHSCounter_i();
+  run_data.wtime        = Timer::resetTime("run");
+  run_data.ncalls       = solver->resetRHSCounter();
+  run_data.ncalls_e	= solver->resetRHSCounter_e();
+  run_data.ncalls_i	= solver->resetRHSCounter_i();
 
   bool output_split     = solver->splitOperator();
-  BoutReal wtime_rhs    = Timer::resetTime("rhs");
-  BoutReal wtime_invert = Timer::resetTime("invert");
-  BoutReal wtime_comms  = Timer::resetTime("comms");  // Time spent communicating (part of RHS)
-  BoutReal wtime_io     = Timer::resetTime("io");      // Time spend on I/O
+  run_data.wtime_rhs    = Timer::resetTime("rhs");
+  run_data.wtime_invert = Timer::resetTime("invert");
+  run_data.wtime_comms  = Timer::resetTime("comms");  // Time spent communicating (part of RHS)
+  run_data.wtime_io     = Timer::resetTime("io");      // Time spend on I/O
+
+  run_data.calculateDerivedMetrics();
 
   output_progress.print("\r"); // Only goes to screen
 
@@ -659,7 +658,7 @@ int BoutMonitor::call(Solver *solver, BoutReal t, int iter, int NOUT) {
     }
 
     /// Record the starting time
-    mpi_start_time = MPI_Wtime() - wtime;
+    mpi_start_time = MPI_Wtime() - run_data.wtime;
 
     first_time = false;
 
@@ -673,40 +672,27 @@ int BoutMonitor::call(Solver *solver, BoutReal t, int iter, int NOUT) {
     }
   }
 
-  if (!output_split) {
-    output_progress.write("%.3e      %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n", 
-               simtime, ncalls, wtime,
-               100.0*(wtime_rhs - wtime_comms - wtime_invert)/wtime,
-               100.*wtime_invert/wtime,  // Inversions
-               100.0*wtime_comms/wtime,  // Communications
-               100.* wtime_io / wtime,      // I/O
-               100.*(wtime - wtime_io - wtime_rhs)/wtime); // Everything else
-
-  } else {
-    output_progress.write("%.3e      %5d            %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n",
-               simtime, ncalls_e, ncalls_i, wtime,
-               100.0*(wtime_rhs - wtime_comms - wtime_invert)/wtime,
-               100.*wtime_invert/wtime,  // Inversions
-               100.0*wtime_comms/wtime,  // Communications
-               100.* wtime_io / wtime,      // I/O
-               100.*(wtime - wtime_io - wtime_rhs)/wtime); // Everything else
-  }
+  run_data.writeProgress(simtime, output_split);
 
   // This bit only to screen, not log file
 
-  BoutReal t_elapsed = MPI_Wtime() - mpi_start_time;
-  output_progress.print("%c  Step %d of %d. Elapsed %s", get_spin(), iteration+1, NOUT, (time_to_hms(t_elapsed)).c_str());
-  output_progress.print(" ETA %s", (time_to_hms(wtime * static_cast<BoutReal>(NOUT - iteration - 1))).c_str());
+  run_data.t_elapsed = MPI_Wtime() - mpi_start_time;
+
+  output_progress.print("%c  Step %d of %d. Elapsed %s", get_spin(), iteration+1, NOUT, (time_to_hms(run_data.t_elapsed)).c_str());
+  output_progress.print(" ETA %s", (time_to_hms(run_data.wtime * static_cast<BoutReal>(NOUT - iteration - 1))).c_str());
+
+  /// Write dump file
+  bout::globals::dump.write();
 
   if (wall_limit > 0.0) {
     // Check if enough time left
 
     BoutReal t_remain = mpi_start_time + wall_limit - MPI_Wtime();
-    if (t_remain < wtime) {
-      // Less than 1 time-step left
-      output_warn.write(_("Only %e seconds left. Quitting\n"), t_remain);
-
-      return 1; // Return an error code to quit
+    if (t_remain < run_data.wtime * 2) {
+      // Less than 2 time-steps left
+      output_warn.write(_("Only %e seconds (%.2f steps) left. Quitting\n"), t_remain,
+                        t_remain / run_data.wtime);
+      user_requested_exit = true;
     } else {
       output_progress.print(" Wall %s", (time_to_hms(t_remain)).c_str());
     }
@@ -718,7 +704,7 @@ int BoutMonitor::call(Solver *solver, BoutReal t, int iter, int NOUT) {
     if (f.good()) {
       output << "\n" << "File " << stopCheckName
              << " exists -- triggering exit." << endl;
-      return 1;
+      user_requested_exit=true;
     }
   }
 
@@ -798,4 +784,54 @@ char get_spin() {
   }
   i = (i+1) % 4;
   return c;
+}
+
+/**************************************************************************
+ * Functions for writing run information
+ **************************************************************************/
+
+/*!
+ * Adds variables to the output file, for post-processing
+ */
+void RunMetrics::outputVars(Datafile &file) {
+  file.add(t_elapsed, "wall_time", true);
+  file.add(wtime, "wtime", true);
+  file.add(ncalls, "ncalls", true);
+  file.add(ncalls_e, "ncalls_e", true);
+  file.add(ncalls_i, "ncalls_i", true);
+  file.add(wtime_rhs, "wtime_rhs", true);
+  file.add(wtime_invert, "wtime_invert", true);
+  file.add(wtime_comms, "wtime_comms", true);
+  file.add(wtime_io, "wtime_io", true);
+  file.add(wtime_per_rhs, "wtime_per_rhs", true);
+  file.add(wtime_per_rhs_e, "wtime_per_rhs_e", true);
+  file.add(wtime_per_rhs_i, "wtime_per_rhs_i", true);
+}
+
+void RunMetrics::calculateDerivedMetrics() {
+  wtime_per_rhs = wtime / ncalls;
+  wtime_per_rhs_e = wtime / ncalls_e;
+  wtime_per_rhs_i = wtime / ncalls_i;
+}
+
+void RunMetrics::writeProgress(BoutReal simtime, bool output_split) {
+  if (!output_split) {
+    output_progress.write(
+        "%.3e      %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n", simtime, ncalls,
+        wtime, 100. * (wtime_rhs - wtime_comms - wtime_invert) / wtime,
+        100. * wtime_invert / wtime,                    // Inversions
+        100. * wtime_comms / wtime,                     // Communications
+        100. * wtime_io / wtime,                        // I/O
+        100. * (wtime - wtime_io - wtime_rhs) / wtime); // Everything else
+
+  } else {
+    output_progress.write(
+        "%.3e      %5d            %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n",
+        simtime, ncalls_e, ncalls_i, wtime,
+        100. * (wtime_rhs - wtime_comms - wtime_invert) / wtime,
+        100. * wtime_invert / wtime,                    // Inversions
+        100. * wtime_comms / wtime,                     // Communications
+        100. * wtime_io / wtime,                        // I/O
+        100. * (wtime - wtime_io - wtime_rhs) / wtime); // Everything else
+  }
 }

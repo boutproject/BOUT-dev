@@ -37,11 +37,11 @@ int main(int argc, char **argv) {
   std::vector<Duration> times;
 
   // Get options root
-  Options *globalOptions = Options::getRoot();
-  Options *modelOpts = globalOptions->getSection("tuningRegionBlockSize");
+  auto globalOptions = Options::root();
+  auto modelOpts = globalOptions["tuningRegionBlockSize"];
   int NUM_LOOPS, numSteps;
-  OPTION(modelOpts, NUM_LOOPS, 100);
-  OPTION(modelOpts, numSteps, 16);
+  NUM_LOOPS = modelOpts["NUM_LOOPS"].withDefault(100);
+  numSteps = modelOpts["numSteps"].withDefault(16);
 
   ConditionalOutput time_output(Output::getInstance());
   time_output.enable(true);

@@ -117,7 +117,7 @@ int BoutMesh::load() {
     if (!is_pow2(MZ)) {
       // Should be a power of 2 for efficient FFTs
       output_warn.write(_("WARNING: Number of toroidal points should be 2^n for efficient "
-                          "FFT performance -- consider changing MZ if using FFTs\n"),
+                          "FFT performance -- consider changing MZ (%d) if using FFTs\n"),
                         MZ);
     }
   } else {
@@ -201,9 +201,9 @@ int BoutMesh::load() {
     jyseps1_1 = -1;
   }
 
-  if (jyseps2_1 <= jyseps1_1) {
+  if (jyseps2_1 < jyseps1_1) {
     output_warn.write(
-        "\tWARNING: jyseps2_1 (%d) must be > jyseps1_1 (%d). Setting to %d\n", jyseps2_1,
+        "\tWARNING: jyseps2_1 (%d) must be >= jyseps1_1 (%d). Setting to %d\n", jyseps2_1,
         jyseps1_1, jyseps1_1 + 1);
     jyseps2_1 = jyseps1_1 + 1;
   }
@@ -689,24 +689,34 @@ int BoutMesh::load() {
 
     // Core region
     TRACE("Creating core communicators");
-    proc[0] = PROC_NUM(i, YPROC(jyseps1_1 + 1));
-    proc[1] = PROC_NUM(i, YPROC(jyseps2_1));
+    if (jyseps2_1 > jyseps1_1) {
+      proc[0] = PROC_NUM(i, YPROC(jyseps1_1 + 1));
+      proc[1] = PROC_NUM(i, YPROC(jyseps2_1));
 
-    output_debug << "CORE1 " << proc[0] << ", " << proc[1] << endl;
+      output_debug << "CORE1 " << proc[0] << ", " << proc[1] << endl;
 
-    if ((proc[0] < 0) || (proc[1] < 0))
-      throw BoutException("Invalid processor range for core processors");
-    MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
-
-    proc[0] = PROC_NUM(i, YPROC(jyseps1_2 + 1));
-    proc[1] = PROC_NUM(i, YPROC(jyseps2_2));
-
-    output_debug << "CORE2 " << proc[0] << ", " << proc[1] << endl;
-
-    if ((proc[0] < 0) || (proc[1] < 0)) {
-      group_tmp2 = MPI_GROUP_EMPTY;
+      if ((proc[0] < 0) || (proc[1] < 0))
+        throw BoutException("Invalid processor range for core processors");
+      MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
     } else {
-      MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
+      // no core region between jyseps1_1 and jyseps2_1
+      group_tmp1 = MPI_GROUP_EMPTY;
+    }
+
+    if (jyseps2_2 > jyseps1_2) {
+      proc[0] = PROC_NUM(i, YPROC(jyseps1_2 + 1));
+      proc[1] = PROC_NUM(i, YPROC(jyseps2_2));
+
+      output_debug << "CORE2 " << proc[0] << ", " << proc[1] << endl;
+
+      if ((proc[0] < 0) || (proc[1] < 0)) {
+        group_tmp2 = MPI_GROUP_EMPTY;
+      } else {
+        MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
+      }
+    } else {
+      // no core region between jyseps1_2 and jyseps2_2
+      group_tmp2 = MPI_GROUP_EMPTY;
     }
 
     MPI_Group_union(group_tmp1, group_tmp2, &group);
@@ -839,20 +849,8 @@ int BoutMesh::load() {
   // Add boundary regions
   addBoundaryRegions();
 
-  // Initialize Coordinates at all locations, temporary fix for bug causing
-  // BOUT++ to hang
-  getCoordinates(CELL_CENTRE);
-  if (StaggerGrids) {
-    if (xstart >= 2) {
-      getCoordinates(CELL_XLOW);
-    }
-    if (ystart >= 2) {
-      getCoordinates(CELL_YLOW);
-    }
-    if (LocalNz > 3) {
-      getCoordinates(CELL_ZLOW);
-    }
-  }
+  // Initialize default coordinates
+  getCoordinates();
 
   output_info.write(_("\tdone\n"));
 
@@ -1871,17 +1869,17 @@ BoutMesh::CommHandle *BoutMesh::get_handle(int xlen, int ylen) {
       i = MPI_REQUEST_NULL;
 
     if (ylen > 0) {
-      ch->umsg_sendbuff = Array<BoutReal>(ylen);
-      ch->dmsg_sendbuff = Array<BoutReal>(ylen);
-      ch->umsg_recvbuff = Array<BoutReal>(ylen);
-      ch->dmsg_recvbuff = Array<BoutReal>(ylen);
+      ch->umsg_sendbuff.reallocate(ylen);
+      ch->dmsg_sendbuff.reallocate(ylen);
+      ch->umsg_recvbuff.reallocate(ylen);
+      ch->dmsg_recvbuff.reallocate(ylen);
     }
 
     if (xlen > 0) {
-      ch->imsg_sendbuff = Array<BoutReal>(xlen);
-      ch->omsg_sendbuff = Array<BoutReal>(xlen);
-      ch->imsg_recvbuff = Array<BoutReal>(xlen);
-      ch->omsg_recvbuff = Array<BoutReal>(xlen);
+      ch->imsg_sendbuff.reallocate(xlen);
+      ch->omsg_sendbuff.reallocate(xlen);
+      ch->imsg_recvbuff.reallocate(xlen);
+      ch->omsg_recvbuff.reallocate(xlen);
     }
 
     ch->xbufflen = xlen;
@@ -1898,18 +1896,18 @@ BoutMesh::CommHandle *BoutMesh::get_handle(int xlen, int ylen) {
 
   // Check that the buffers are big enough (NOTE: Could search list for bigger buffers)
   if (ch->ybufflen < ylen) {
-    ch->umsg_sendbuff = Array<BoutReal>(ylen);
-    ch->dmsg_sendbuff = Array<BoutReal>(ylen);
-    ch->umsg_recvbuff = Array<BoutReal>(ylen);
-    ch->dmsg_recvbuff = Array<BoutReal>(ylen);
+    ch->umsg_sendbuff.reallocate(ylen);
+    ch->dmsg_sendbuff.reallocate(ylen);
+    ch->umsg_recvbuff.reallocate(ylen);
+    ch->dmsg_recvbuff.reallocate(ylen);
 
     ch->ybufflen = ylen;
   }
   if (ch->xbufflen < xlen) {
-    ch->imsg_sendbuff = Array<BoutReal>(xlen);
-    ch->omsg_sendbuff = Array<BoutReal>(xlen);
-    ch->imsg_recvbuff = Array<BoutReal>(xlen);
-    ch->omsg_recvbuff = Array<BoutReal>(xlen);
+    ch->imsg_sendbuff.reallocate(xlen);
+    ch->omsg_sendbuff.reallocate(xlen);
+    ch->imsg_recvbuff.reallocate(xlen);
+    ch->omsg_recvbuff.reallocate(xlen);
 
     ch->xbufflen = xlen;
   }
@@ -2404,9 +2402,8 @@ void BoutMesh::addBoundaryPar(BoundaryRegionPar *bndry) {
 }
 
 const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {
-  Field3D result(f);
+  Field3D result{emptyFrom(f)};
   if ((ixseps_inner > 0) && (ixseps_inner < nx - 1)) {
-    result.allocate();
     if (XPROC(ixseps_inner) == PE_XIND) {
       int x = XLOCAL(ixseps_inner);
       for (int y = 0; y < LocalNy; y++)
@@ -2423,7 +2420,6 @@ const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {
     }
   }
   if ((ixseps_outer > 0) && (ixseps_outer < nx - 1) && (ixseps_outer != ixseps_inner)) {
-    result.allocate();
     if (XPROC(ixseps_outer) == PE_XIND) {
       int x = XLOCAL(ixseps_outer);
       for (int y = 0; y < LocalNy; y++)

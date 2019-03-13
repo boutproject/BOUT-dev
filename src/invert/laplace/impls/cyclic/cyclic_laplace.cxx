@@ -74,11 +74,11 @@ LaplaceCyclic::LaplaceCyclic(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
   int n = xe - xs + 1;  // Number of X points on this processor,
                         // including boundaries but not guard cells
 
-  a = Matrix<dcomplex>(nmode, n);
-  b = Matrix<dcomplex>(nmode, n);
-  c = Matrix<dcomplex>(nmode, n);
-  xcmplx = Matrix<dcomplex>(nmode, n);
-  bcmplx = Matrix<dcomplex>(nmode, n);
+  a.reallocate(nmode, n);
+  b.reallocate(nmode, n);
+  c.reallocate(nmode, n);
+  xcmplx.reallocate(nmode, n);
+  bcmplx.reallocate(nmode, n);
 
   // Create a cyclic reduction object, operating on dcomplex values
   cr = new CyclicReduce<dcomplex>(localmesh->getXcomm(), n);
@@ -95,8 +95,7 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
   ASSERT1(rhs.getLocation() == location);
   ASSERT1(x0.getLocation() == location);
 
-  FieldPerp x(localmesh); // Result
-  x.allocate();
+  FieldPerp x{emptyFrom(rhs)}; // Result
 
   int jy = rhs.getIndex();  // Get the Y index
   x.setIndex(jy);
@@ -126,7 +125,7 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
         // Take DST in Z direction and put result in k1d
 
         if (((ix < inbndry) && (inner_boundary_flags & INVERT_SET) && localmesh->firstX()) ||
-            ((xe - ix < outbndry) && (outer_boundary_flags & INVERT_SET) &&
+            ((localmesh->LocalNx - ix - 1 < outbndry) && (outer_boundary_flags & INVERT_SET) &&
              localmesh->lastX())) {
           // Use the values in x0 in the boundary
           DST(x0[ix] + 1, localmesh->LocalNz - 2, std::begin(k1d));
@@ -194,7 +193,7 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
         // Take FFT in Z direction, apply shift, and put result in k1d
 
         if (((ix < inbndry) && (inner_boundary_flags & INVERT_SET) && localmesh->firstX()) ||
-            ((xe - ix < outbndry) && (outer_boundary_flags & INVERT_SET) &&
+            ((localmesh->LocalNx - ix - 1 < outbndry) && (outer_boundary_flags & INVERT_SET) &&
              localmesh->lastX())) {
           // Use the values in x0 in the boundary
           rfft(x0[ix], localmesh->LocalNz, std::begin(k1d));
@@ -256,9 +255,7 @@ const Field3D LaplaceCyclic::solve(const Field3D &rhs, const Field3D &x0) {
 
   Timer timer("invert");
 
-  Field3D x(localmesh); // Result
-  x.allocate();
-  x.setLocation(location);
+  Field3D x{emptyFrom(rhs)}; // Result
 
   // Get the width of the boundary
 
@@ -319,7 +316,7 @@ const Field3D LaplaceCyclic::solve(const Field3D &rhs, const Field3D &x0) {
         // Take DST in Z direction and put result in k1d
 
         if (((ix < inbndry) && (inner_boundary_flags & INVERT_SET) && localmesh->firstX()) ||
-            ((xe - ix < outbndry) && (outer_boundary_flags & INVERT_SET) &&
+            ((localmesh->LocalNx - ix - 1 < outbndry) && (outer_boundary_flags & INVERT_SET) &&
              localmesh->lastX())) {
           // Use the values in x0 in the boundary
           DST(x0(ix, iy) + 1, localmesh->LocalNz - 2, std::begin(k1d));
@@ -401,7 +398,7 @@ const Field3D LaplaceCyclic::solve(const Field3D &rhs, const Field3D &x0) {
         // Take FFT in Z direction, apply shift, and put result in k1d
 
         if (((ix < inbndry) && (inner_boundary_flags & INVERT_SET) && localmesh->firstX()) ||
-            ((xe - ix < outbndry) && (outer_boundary_flags & INVERT_SET) &&
+            ((localmesh->LocalNx - ix - 1 < outbndry) && (outer_boundary_flags & INVERT_SET) &&
              localmesh->lastX())) {
           // Use the values in x0 in the boundary
           rfft(x0(ix, iy), localmesh->LocalNz, std::begin(k1d));

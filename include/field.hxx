@@ -30,6 +30,7 @@ class Field;
 #define __FIELD_H__
 
 #include <cstdio>
+#include <memory>
 
 #include "bout_types.hxx"
 #include "boutexception.hxx"
@@ -55,18 +56,35 @@ class Coordinates;
 class Field {
  public:
   Field() = default;
-  Field(Mesh * localmesh);
+
+  Field(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in);
+
+  // Copy constructor
+  Field(const Field& f)
+    : name(f.name), fieldmesh(f.fieldmesh),
+      fieldCoordinates(f.fieldCoordinates), location(f.location),
+      directions(f.directions) {}
+
   virtual ~Field() { }
 
-  virtual void setLocation(CELL_LOC UNUSED(loc)) {
-    AUTO_TRACE();
-    throw BoutException(
-        "Calling Field::setLocation which is intentionally not fully implemented.");
+  /// Set variable location for staggered grids to @param new_location
+  ///
+  /// Throws BoutException if new_location is not `CELL_CENTRE` and
+  /// staggered grids are turned off and checks are on. If checks are
+  /// off, silently sets location to ``CELL_CENTRE`` instead.
+  void setLocation(CELL_LOC new_location);
+  /// Get variable location
+  CELL_LOC getLocation() const;
+
+  /// Getters for DIRECTION types
+  DirectionTypes getDirections() const {
+    return directions;
   }
-  virtual CELL_LOC getLocation() const {
-    AUTO_TRACE();
-    throw BoutException(
-        "Calling Field::getLocation which is intentionally not fully implemented.");
+  YDirectionType getDirectionY() const {
+    return directions.y;
+  }
+  ZDirectionType getDirectionZ() const {
+    return directions.z;
   }
 
   std::string name;
@@ -94,6 +112,11 @@ class Field {
     if (fieldmesh){
       return fieldmesh;
     } else {
+      // Don't set fieldmesh=mesh here, so that fieldmesh==nullptr until
+      // allocate() is called in one of the derived classes. fieldmesh==nullptr
+      // indicates that some initialization that would be done in the
+      // constructor if fieldmesh was a valid Mesh object still needs to be
+      // done.
       return bout::globals::mesh;
     }
   }
@@ -120,10 +143,68 @@ class Field {
    */
   virtual int getNz() const;
 
+  friend void swap(Field& first, Field& second) noexcept {
+    using std::swap;
+    swap(first.name, second.name);
+    swap(first.fieldmesh, second.fieldmesh);
+    swap(first.fieldCoordinates, second.fieldCoordinates);
+    swap(first.location, second.location);
+    swap(first.directions, second.directions);
+  }
 protected:
   Mesh* fieldmesh{nullptr};
-  mutable Coordinates* fieldCoordinates{nullptr};
+  mutable std::shared_ptr<Coordinates> fieldCoordinates{nullptr};
+
+  /// Location of the variable in the cell
+  CELL_LOC location{CELL_CENTRE};
+
+  /// Copy the members from another Field
+  void copyFieldMembers(const Field& f) {
+    name = f.name;
+    fieldmesh = f.fieldmesh;
+    fieldCoordinates = f.fieldCoordinates;
+    location = f.location;
+    directions = f.directions;
+  }
+
+  /// Setters for *DirectionType
+  void setDirectionY(YDirectionType y_type) {
+    directions.y = y_type;
+  }
+  void setDirectionZ(ZDirectionType z_type) {
+    directions.z = z_type;
+  }
+
+private:
+  DirectionTypes directions{YDirectionType::Standard, ZDirectionType::Standard};
 };
+
+/// Check if Fields have compatible meta-data
+inline bool areFieldsCompatible(const Field& field1, const Field& field2) {
+  return
+      field1.getCoordinates() == field2.getCoordinates() &&
+      field1.getMesh() == field2.getMesh() &&
+      field1.getLocation() == field2.getLocation() &&
+      areDirectionsCompatible(field1.getDirections(), field2.getDirections());
+}
+
+/// Return an empty shell field of some type derived from Field, with metadata
+/// copied and a data array that is allocated but not initialised.
+template<typename T>
+inline T emptyFrom(const T& f) {
+  static_assert(std::is_base_of<Field, T>::value, "emptyFrom only works on Fields");
+  return T(f.getMesh(), f.getLocation(), {f.getDirectionY(), f.getDirectionZ()}).allocate();
+}
+
+/// Return a field of some type derived from Field, with metadata copied from
+/// another field and a data array allocated and initialised to zero.
+template<typename T>
+inline T zeroFrom(const T& f) {
+  static_assert(std::is_base_of<Field, T>::value, "emptyFrom only works on Fields");
+  T result{emptyFrom(f)};
+  result = 0.;
+  return result;
+}
 
 /// Unary + operator. This doesn't do anything
 template<typename T>
