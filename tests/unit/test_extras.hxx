@@ -169,8 +169,6 @@ public:
     StaggerGrids = false;
     IncIntShear = false;
     maxregionblocksize = MAXREGIONBLOCKSIZE;
-
-    setCoordinates(nullptr);
   }
 
   void setCoordinates(std::shared_ptr<Coordinates> coords, CELL_LOC location = CELL_CENTRE) {
@@ -277,6 +275,7 @@ public:
 
     delete bout::globals::mesh;
     bout::globals::mesh = new FakeMesh(nx, ny, nz);
+    static_cast<FakeMesh*>(bout::globals::mesh)->setCoordinates(nullptr);
     bout::globals::mesh->setParallelTransform(
         bout::utils::make_unique<ParallelTransformIdentity>(*bout::globals::mesh));
     bout::globals::mesh->createDefaultRegions();
@@ -286,6 +285,7 @@ public:
     mesh_staggered->StaggerGrids = true;
     mesh_staggered->setParallelTransform(
         bout::utils::make_unique<ParallelTransformIdentity>(*mesh_staggered));
+    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr);
     static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_XLOW);
     static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_YLOW);
     static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_ZLOW);

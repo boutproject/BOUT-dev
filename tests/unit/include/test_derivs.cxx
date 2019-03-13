@@ -93,6 +93,7 @@ public:
     }
 
     mesh = new FakeMesh(nx, ny, nz);
+    static_cast<FakeMesh*>(mesh)->setCoordinates(nullptr);
 
     mesh->xstart = x_guards;
     mesh->xend = nx - (x_guards + 1);

@@ -94,6 +94,7 @@ TEST_F(Field3DTest, CreateOnGivenMesh) {
   int test_nz = Field3DTest::nz + 2;
 
   FakeMesh fieldmesh{test_nx, test_ny, test_nz};
+  fieldmesh.setCoordinates(nullptr);
 
   Field3D field{&fieldmesh};
 
@@ -110,6 +111,7 @@ TEST_F(Field3DTest, CopyCheckFieldmesh) {
   int test_nz = Field3DTest::nz + 2;
 
   FakeMesh fieldmesh{test_nx, test_ny, test_nz};
+  fieldmesh.setCoordinates(nullptr);
   fieldmesh.createDefaultRegions();
 
   Field3D field{0.0, &fieldmesh};
@@ -256,6 +258,7 @@ TEST_F(Field3DTest, SplitThenMergeYupYDown) {
 
 TEST_F(Field3DTest, MultipleYupYdown) {
   FakeMesh newmesh{3, 5, 7};
+  newmesh.setCoordinates(nullptr);
   newmesh.ystart = 2;
   newmesh.createDefaultRegions();
 
@@ -326,6 +329,8 @@ TEST_F(Field3DTest, GetGlobalMesh) {
 
 TEST_F(Field3DTest, GetLocalMesh) {
   FakeMesh myMesh{nx + 1, ny + 2, nz + 3};
+  myMesh.setCoordinates(nullptr);
+
   Field3D field(&myMesh);
 
   auto localmesh = field.getMesh();
@@ -1907,6 +1912,7 @@ TEST_F(Field3DTest, Swap) {
   constexpr int second_nz = Field3DTest::nz + 2;
 
   FakeMesh second_mesh{second_nx, second_ny, second_nz};
+  second_mesh.setCoordinates(nullptr);
   second_mesh.StaggerGrids = false;
   second_mesh.createDefaultRegions();
 
