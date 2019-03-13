@@ -6,6 +6,7 @@
 #include "bout/mesh.hxx"
 #include "field3d.hxx"
 #include "test_extras.hxx"
+#include "unused.hxx"
 
 /// Global mesh
 namespace bout {
@@ -67,7 +68,7 @@ TEST_F(OptionsFieldTest, RetrieveBoutRealfromField3D) {
   Field3D field = 1.2;
   options = field;
 
-  EXPECT_THROW(BoutReal value = options, BoutException);
+  EXPECT_THROW(BoutReal UNUSED(value) = options, BoutException);
 }
 
 TEST_F(OptionsFieldTest, RetrieveField2DfromField3D) {
