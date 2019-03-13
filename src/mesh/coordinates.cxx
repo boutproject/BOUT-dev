@@ -307,25 +307,27 @@ Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coor
 }
 
 void Coordinates::outputVars(Datafile &file) {
-  file.add(dx, "dx", false);
-  file.add(dy, "dy", false);
-  file.add(dz, "dz", false);
+  const std::string loc_string = (location == CELL_CENTRE) ? "" : "_"+toString(location);
 
-  file.add(g11, "g11", false);
-  file.add(g22, "g22", false);
-  file.add(g33, "g33", false);
-  file.add(g12, "g12", false);
-  file.add(g13, "g13", false);
-  file.add(g23, "g23", false);
+  file.addOnce(dx, "dx" + loc_string);
+  file.addOnce(dy, "dy" + loc_string);
+  file.addOnce(dz, "dz" + loc_string);
 
-  file.add(g_11, "g_11", false);
-  file.add(g_22, "g_22", false);
-  file.add(g_33, "g_33", false);
-  file.add(g_12, "g_12", false);
-  file.add(g_13, "g_13", false);
-  file.add(g_23, "g_23", false);
+  file.addOnce(g11, "g11" + loc_string);
+  file.addOnce(g22, "g22" + loc_string);
+  file.addOnce(g33, "g33" + loc_string);
+  file.addOnce(g12, "g12" + loc_string);
+  file.addOnce(g13, "g13" + loc_string);
+  file.addOnce(g23, "g23" + loc_string);
 
-  file.add(J, "J", false);
+  file.addOnce(g_11, "g_11" + loc_string);
+  file.addOnce(g_22, "g_22" + loc_string);
+  file.addOnce(g_33, "g_33" + loc_string);
+  file.addOnce(g_12, "g_12" + loc_string);
+  file.addOnce(g_13, "g_13" + loc_string);
+  file.addOnce(g_23, "g_23" + loc_string);
+
+  file.addOnce(J, "J" + loc_string);
 }
 
 int Coordinates::geometry() {
