@@ -21,7 +21,7 @@
 // std::variant added in C++17
 //#include <variant>
 
-#include "external/mpark/variant.hpp"
+#include "mpark/variant.hpp"
 
 #include "utils.hxx"
 
