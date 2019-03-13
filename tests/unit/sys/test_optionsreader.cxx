@@ -28,6 +28,8 @@ public:
 
     // Make sure options singleton is clean
     Options::cleanup();
+
+    std::remove(filename.c_str());
   }
 
   // Write cout to buffer instead of stdout
@@ -36,6 +38,8 @@ public:
   std::streambuf *sbuf;
 
   WithQuietOutput quiet{output_info};
+  // A temporary filename
+  std::string filename{std::tmpnam(nullptr)};
 };
 
 TEST_F(OptionsReaderTest, BadFilename) {
@@ -251,14 +255,13 @@ real_key = 42.34e-67
 bool_key = false
 )";
 
-  char *filename = std::tmpnam(nullptr);
   std::ofstream test_file(filename, std::ios::out);
   test_file << text;
   test_file.close();
 
   OptionsReader reader;
   Options *options = Options::getRoot();
-  reader.read(options, "%s", filename);
+  reader.read(options, "%s", filename.c_str());
 
   ASSERT_TRUE(options->isSet("flag"));
 
@@ -293,15 +296,12 @@ bool_key = false
   subsection2->get("bool_key", bool_value, true);
 
   EXPECT_FALSE(bool_value);
-
-  std::remove(filename);
 }
 
 TEST_F(OptionsReaderTest, ReadBadFile) {
-  char *filename = std::tmpnam(nullptr);
   OptionsReader reader;
   Options *options = Options::getRoot();
-  EXPECT_THROW(reader.read(options, "%s", filename), BoutException);
+  EXPECT_THROW(reader.read(options, "%s", filename.c_str()), BoutException);
 }
 
 TEST_F(OptionsReaderTest, ReadBadFileSectionIncomplete) {
@@ -310,14 +310,13 @@ TEST_F(OptionsReaderTest, ReadBadFileSectionIncomplete) {
 int_key = 34
 )";
 
-  char *filename = std::tmpnam(nullptr);
-  std::ofstream test_file(filename, std::ios::out);
+  std::ofstream test_file(filename.c_str(), std::ios::out);
   test_file << text;
   test_file.close();
 
   OptionsReader reader;
   Options *options = Options::getRoot();
-  EXPECT_THROW(reader.read(options, "%s", filename), BoutException);
+  EXPECT_THROW(reader.read(options, "%s", filename.c_str()), BoutException);
 };
 
 TEST_F(OptionsReaderTest, ReadBadFileSectionEmptyName) {
@@ -326,18 +325,16 @@ TEST_F(OptionsReaderTest, ReadBadFileSectionEmptyName) {
 int_key = 34
 )";
 
-  char *filename = std::tmpnam(nullptr);
   std::ofstream test_file(filename, std::ios::out);
   test_file << text;
   test_file.close();
 
   OptionsReader reader;
   Options *options = Options::getRoot();
-  EXPECT_THROW(reader.read(options, "%s", filename), BoutException);
+  EXPECT_THROW(reader.read(options, "%s", filename.c_str()), BoutException);
 };
 
 TEST_F(OptionsReaderTest, WriteFile) {
-  char *filename = std::tmpnam(nullptr);
   OptionsReader reader;
   Options *options = Options::getRoot();
 
@@ -348,7 +345,7 @@ TEST_F(OptionsReaderTest, WriteFile) {
   Options *subsection2 = section1->getSection("subsection2");
   subsection2->set("string_key", "BOUT++", "test");
 
-  reader.write(options, "%s", filename);
+  reader.write(options, "%s", filename.c_str());
 
   std::ifstream test_file(filename);
   std::stringstream test_buffer;
@@ -362,13 +359,10 @@ TEST_F(OptionsReaderTest, WriteFile) {
   for (auto &result : expected) {
     EXPECT_TRUE(IsSubString(test_buffer.str(), result));
   }
-
-  std::remove(filename);
 }
 
 TEST_F(OptionsReaderTest, WriteBadFile) {
-  std::string filename1 = std::tmpnam(nullptr);
-  std::string filename = filename1 + std::tmpnam(nullptr);
+  std::string filename1 = filename + std::tmpnam(nullptr);
   OptionsReader reader;
   Options *options = Options::getRoot();
 
@@ -376,9 +370,9 @@ TEST_F(OptionsReaderTest, WriteBadFile) {
   Options *section1 = options->getSection("section1");
   section1->set("int_key", 17, "test");
 
-  EXPECT_THROW(reader.write(options, "%s", filename.c_str()), BoutException);
+  EXPECT_THROW(reader.write(options, "%s", filename1.c_str()), BoutException);
 
-  std::remove(filename.c_str());
+  std::remove(filename1.c_str());
 }
 
 TEST_F(OptionsReaderTest, ReadEmptyString) {
@@ -386,7 +380,6 @@ const std::string text = R"(
 value =
 )";
 
-  char *filename = std::tmpnam(nullptr);
   std::ofstream test_file(filename, std::ios::out);
   test_file << text;
   test_file.close();
@@ -394,7 +387,7 @@ value =
   Options opt;
   OptionsReader reader;
 
-  reader.read(&opt, "%s", filename);
+  reader.read(&opt, "%s", filename.c_str());
 
   std::string val = opt["value"];
   EXPECT_TRUE(val.empty());
@@ -417,14 +410,12 @@ test5 = `h2+`:another                # Escape only start of sequence
 test6 = h2`+`:on`e-`more             # Escape sequences in the middle
 )";
 
-  char *filename = std::tmpnam(nullptr);
   std::ofstream test_file(filename, std::ios::out);
   test_file << text;
   test_file.close();
 
   OptionsReader reader;
-  reader.read(Options::getRoot(), "%s", filename);
-  std::remove(filename);
+  reader.read(Options::getRoot(), "%s", filename.c_str());
 
   auto options = Options::root()["tests"];
   
@@ -444,15 +435,13 @@ TEST_F(OptionsReaderTest, ReadFileVariablesNoColons) {
 some:value = 3 
 )";
 
-  char *filename = std::tmpnam(nullptr);
   std::ofstream test_file(filename, std::ios::out);
   test_file << text;
   test_file.close();
 
   OptionsReader reader;
   
-  EXPECT_THROW(reader.read(Options::getRoot(), "%s", filename), BoutException);
-  std::remove(filename);
+  EXPECT_THROW(reader.read(Options::getRoot(), "%s", filename.c_str()), BoutException);
 }
 
 TEST_F(OptionsReaderTest, ReadUnicodeNames) {
@@ -467,14 +456,12 @@ value = α*(1 + 重要的數字)
 twopi = 2 * π   # Unicode symbol defined for pi
 )";
 
-  char *filename = std::tmpnam(nullptr);
   std::ofstream test_file(filename, std::ios::out);
   test_file << text;
   test_file.close();
 
   OptionsReader reader;
-  reader.read(Options::getRoot(), "%s", filename);
-  std::remove(filename);
+  reader.read(Options::getRoot(), "%s", filename.c_str());
 
   auto options = Options::root()["tests"];
   

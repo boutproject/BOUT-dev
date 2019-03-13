@@ -9,6 +9,8 @@
 #include "test_extras.hxx"
 #include "options_netcdf.hxx"
 
+#include <cstdio>
+
 /// Global mesh
 namespace bout {
 namespace globals {
@@ -17,11 +19,19 @@ extern Mesh* mesh;
 } // namespace bout
 
 // Reuse the "standard" fixture for FakeMesh
-using OptionsNetCDFTest = FakeMeshFixture;
+class OptionsNetCDFTest: public FakeMeshFixture {
+public:
+  OptionsNetCDFTest() : FakeMeshFixture() {}
+  virtual ~OptionsNetCDFTest() { std::remove(filename.c_str()); }
+
+  // A temporary filename
+  std::string filename{std::tmpnam(nullptr)};
+  WithQuietOutput quiet{output_info};
+};
 
 TEST_F(OptionsNetCDFTest, ReadWriteInt) {
   // Temporary file
-  OptionsNetCDF file(std::tmpnam(nullptr));
+  OptionsNetCDF file(filename);
 
   {
     Options options;
@@ -38,8 +48,6 @@ TEST_F(OptionsNetCDFTest, ReadWriteInt) {
 }
 
 TEST_F(OptionsNetCDFTest, ReadWriteString) {
-  std::string filename = std::tmpnam(nullptr);
-
   {
     Options options;
     options["test"] = "hello";
@@ -55,8 +63,6 @@ TEST_F(OptionsNetCDFTest, ReadWriteString) {
 }
 
 TEST_F(OptionsNetCDFTest, ReadWriteField2D) {
-  std::string filename = std::tmpnam(nullptr);
-
   {
     Options options;
     options["test"] = Field2D(1.0);
@@ -75,9 +81,7 @@ TEST_F(OptionsNetCDFTest, ReadWriteField2D) {
 }
 
 TEST_F(OptionsNetCDFTest, ReadWriteField3D) {
-  std::string filename = std::tmpnam(nullptr);
-
-  {
+ {
     Options options;
     options["test"] = Field3D(2.4);
     
@@ -96,8 +100,6 @@ TEST_F(OptionsNetCDFTest, ReadWriteField3D) {
 }
 
 TEST_F(OptionsNetCDFTest, Groups) {
-  std::string filename = std::tmpnam(nullptr);
-
   {
     Options options;
     options["test"]["key"] = 42;
@@ -112,8 +114,6 @@ TEST_F(OptionsNetCDFTest, Groups) {
 }
 
 TEST_F(OptionsNetCDFTest, AttributeInt) {
-  std::string filename = std::tmpnam(nullptr);
-
   {
     Options options;
     options["test"] = 3;
@@ -129,8 +129,6 @@ TEST_F(OptionsNetCDFTest, AttributeInt) {
 }
 
 TEST_F(OptionsNetCDFTest, AttributeBoutReal) {
-  std::string filename = std::tmpnam(nullptr);
-
   {
     Options options;
     options["test"] = 3;
@@ -146,8 +144,6 @@ TEST_F(OptionsNetCDFTest, AttributeBoutReal) {
 }
 
 TEST_F(OptionsNetCDFTest, AttributeString) {
-  std::string filename = std::tmpnam(nullptr);
-
   {
     Options options;
     options["test"] = 3;
@@ -163,8 +159,6 @@ TEST_F(OptionsNetCDFTest, AttributeString) {
 }
 
 TEST_F(OptionsNetCDFTest, Field2DWriteCellCentre) {
-  std::string filename = std::tmpnam(nullptr);
-
   {
     Options options;
     options["f2d"] = Field2D(2.0);
@@ -180,8 +174,6 @@ TEST_F(OptionsNetCDFTest, Field2DWriteCellCentre) {
 }
 
 TEST_F(OptionsNetCDFTest, Field2DWriteCellYLow) {
-  std::string filename = std::tmpnam(nullptr);
-
   {
     Options options;
     options["f2d"] = Field2D(2.0, mesh_staggered).setLocation(CELL_YLOW);
@@ -197,8 +189,6 @@ TEST_F(OptionsNetCDFTest, Field2DWriteCellYLow) {
 }
 
 TEST_F(OptionsNetCDFTest, Field3DWriteCellCentre) {
-  std::string filename = std::tmpnam(nullptr);
-
   {
     Options options;
     options["f3d"] = Field3D(2.0);
@@ -214,8 +204,6 @@ TEST_F(OptionsNetCDFTest, Field3DWriteCellCentre) {
 }
 
 TEST_F(OptionsNetCDFTest, Field3DWriteCellYLow) {
-  std::string filename = std::tmpnam(nullptr);
-
   {
     Options options;
     options["f3d"] = Field3D(2.0, mesh_staggered).setLocation(CELL_YLOW);
