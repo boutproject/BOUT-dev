@@ -327,14 +327,16 @@ Coordinates::Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coor
     getAtLoc(mesh, g23, "g23", suffix, location, 0.0);
 
     /// Find covariant metric components
+    auto covariant_component_names = {"g_11", "g_22", "g_33", "g_12", "g_13", "g_23"};
+    auto source_has_component = [&suffix, &mesh] (const std::string& name) {
+      return mesh->sourceHasVar(name + suffix);
+    };
     // Check if any of the components are present
-    if (mesh->sourceHasVar("g_11"+suffix) or mesh->sourceHasVar("g_22"+suffix) or
-        mesh->sourceHasVar("g_33"+suffix) or mesh->sourceHasVar("g_12"+suffix) or
-        mesh->sourceHasVar("g_13"+suffix) or mesh->sourceHasVar("g_23"+suffix)) {
+    if (std::any_of(begin(covariant_component_names), end(covariant_component_names),
+                    source_has_component)) {
       // Check that all components are present
-      if (mesh->sourceHasVar("g_11"+suffix) and mesh->sourceHasVar("g_22"+suffix) and
-          mesh->sourceHasVar("g_33"+suffix) and mesh->sourceHasVar("g_12"+suffix) and
-          mesh->sourceHasVar("g_13"+suffix) and mesh->sourceHasVar("g_23"+suffix)) {
+      if (std::all_of(begin(covariant_component_names), end(covariant_component_names),
+                      source_has_component)) {
 
         getAtLoc(mesh, g_11, "g_11", suffix, location);
         getAtLoc(mesh, g_22, "g_22", suffix, location);
