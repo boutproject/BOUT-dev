@@ -84,6 +84,7 @@ TEST_F(OptionsFieldTest, RetrieveStringfromField3D) {
   Field3D field = 1.2;
   options = field;
 
+  WithQuietOutput quiet{output_info};
   EXPECT_EQ(options.as<std::string>(), "<Field3D>");
 }
 
@@ -92,6 +93,7 @@ TEST_F(OptionsFieldTest, RetrieveStringfromField2D) {
   Field2D field = 1.2;
   options = field;
 
+  WithQuietOutput quiet{output_info};
   EXPECT_EQ(options.as<std::string>(), "<Field2D>");
 }
 
