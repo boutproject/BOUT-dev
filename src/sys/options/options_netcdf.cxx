@@ -406,8 +406,8 @@ void writeGroup(const Options& options, NcGroup group,
 
           // Same number of dimensions?
           if (var_dims.size() != dims.size()) {
-            throw BoutException("Changed dimensions for variable '%s'\nIn file has %d "
-                                "dimensions, now writing %d\n",
+            throw BoutException("Changed dimensions for variable '%s'\nIn file has %zu "
+                                "dimensions, now writing %zu\n",
                                 name.c_str(), var_dims.size(), dims.size());
           }
           // Dimensions compatible?
