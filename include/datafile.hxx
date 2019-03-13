@@ -15,7 +15,6 @@ class Datafile;
 #define __DATAFILE_H__
 
 #include "bout_types.hxx"
-#include "options.hxx"
 #include "bout/macro_for_each.hxx"
 
 #include "dataformat.hxx"
@@ -27,6 +26,7 @@ class Mesh;
 class Field;
 class Field2D;
 class Field3D;
+class Options;
 class Vector2D;
 class Vector3D;
 
