@@ -87,8 +87,10 @@ class Field2D : public Field, public FieldData {
   Field2D(BoutReal val, Mesh *localmesh = nullptr);
   
   /// Constructor from Array and Mesh
-  Field2D(Array<BoutReal> data, Mesh *localmesh, CELL_LOC location = CELL_CENTRE);
-  
+  Field2D(Array<BoutReal> data, Mesh* localmesh, CELL_LOC location = CELL_CENTRE,
+          DirectionTypes directions_in = {YDirectionType::Standard,
+                                          ZDirectionType::Average});
+
   /*!
    * Destructor
    */

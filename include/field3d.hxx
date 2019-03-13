@@ -186,7 +186,9 @@ class Field3D : public Field, public FieldData {
   /// Constructor from value
   Field3D(BoutReal val, Mesh *localmesh = nullptr);
   /// Constructor from Array and Mesh
-  Field3D(Array<BoutReal> data, Mesh *localmesh, CELL_LOC location = CELL_CENTRE);
+  Field3D(Array<BoutReal> data, Mesh* localmesh, CELL_LOC location = CELL_CENTRE,
+          DirectionTypes directions_in = {YDirectionType::Standard,
+                                          ZDirectionType::Standard});
   /// Destructor
   ~Field3D() override;
 
