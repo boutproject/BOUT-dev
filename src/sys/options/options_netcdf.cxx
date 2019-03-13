@@ -269,7 +269,7 @@ void NcPutVarVisitor::operator()<Field2D>(const Field2D& value) {
   // Pointer to data. Assumed to be contiguous array
   var.putVar(&value(0, 0));
   // Set cell location attribute
-  var.putAtt("cell_location", CELL_LOC_STRING(value.getLocation()));
+  var.putAtt("cell_location", toString(value.getLocation()));
 }
   
 /// In addition to writing the data, set the "cell_location" attribute
@@ -279,7 +279,7 @@ void NcPutVarVisitor::operator()<Field3D>(const Field3D& value) {
   var.putVar(&value(0, 0, 0));
 
   // Set cell location attribute
-  var.putAtt("cell_location", CELL_LOC_STRING(value.getLocation()));
+  var.putAtt("cell_location", toString(value.getLocation()));
 }
 
 /// Visit a variant type, and put the data into a NcVar

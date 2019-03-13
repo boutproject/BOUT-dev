@@ -176,7 +176,7 @@ TEST_F(OptionsNetCDFTest, Field2DWriteCellCentre) {
   // Read file
   Options data = OptionsNetCDF(filename).read();
 
-  EXPECT_EQ(data["f2d"].attributes["cell_location"].as<std::string>(), CELL_LOC_STRING(CELL_CENTRE));
+  EXPECT_EQ(data["f2d"].attributes["cell_location"].as<std::string>(), toString(CELL_CENTRE));
 }
 
 TEST_F(OptionsNetCDFTest, Field2DWriteCellYLow) {
@@ -199,7 +199,7 @@ TEST_F(OptionsNetCDFTest, Field2DWriteCellYLow) {
   // Read file
   Options data = OptionsNetCDF(filename).read();
 
-  EXPECT_EQ(data["f2d"].attributes["cell_location"].as<std::string>(), CELL_LOC_STRING(CELL_YLOW));
+  EXPECT_EQ(data["f2d"].attributes["cell_location"].as<std::string>(), toString(CELL_YLOW));
 }
 
 TEST_F(OptionsNetCDFTest, Field3DWriteCellCentre) {
@@ -216,7 +216,7 @@ TEST_F(OptionsNetCDFTest, Field3DWriteCellCentre) {
   // Read file
   Options data = OptionsNetCDF(filename).read();
 
-  EXPECT_EQ(data["f3d"].attributes["cell_location"].as<std::string>(), CELL_LOC_STRING(CELL_CENTRE));
+  EXPECT_EQ(data["f3d"].attributes["cell_location"].as<std::string>(), toString(CELL_CENTRE));
 }
 
 TEST_F(OptionsNetCDFTest, Field3DWriteCellYLow) {
@@ -239,7 +239,7 @@ TEST_F(OptionsNetCDFTest, Field3DWriteCellYLow) {
   // Read file
   Options data = OptionsNetCDF(filename).read();
 
-  EXPECT_EQ(data["f3d"].attributes["cell_location"].as<std::string>(), CELL_LOC_STRING(CELL_YLOW));
+  EXPECT_EQ(data["f3d"].attributes["cell_location"].as<std::string>(), toString(CELL_YLOW));
 }
 
 
