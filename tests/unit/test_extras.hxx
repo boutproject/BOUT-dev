@@ -175,6 +175,18 @@ public:
     coords_map[location] = coords;
   }
 
+  void setGridDataSource(GridDataSource* source_in) {
+    source = source_in;
+  }
+
+  // Use this if the FakeMesh needs x- and y-boundaries
+  void createBoundaries() {
+    addBoundary(new BoundaryRegionXIn("core", ystart, yend, this));
+    addBoundary(new BoundaryRegionXOut("sol", ystart, yend, this));
+    addBoundary(new BoundaryRegionYUp("upper_target", xstart, xend, this));
+    addBoundary(new BoundaryRegionYDown("lower_target", xstart, xend, this));
+  }
+
   comm_handle send(FieldGroup &UNUSED(g)) { return nullptr; };
   int wait(comm_handle UNUSED(handle)) { return 0; }
   MPI_Request sendToProc(int UNUSED(xproc), int UNUSED(yproc), BoutReal *UNUSED(buffer),
