@@ -182,15 +182,9 @@ TEST_F(OptionsNetCDFTest, Field2DWriteCellCentre) {
 TEST_F(OptionsNetCDFTest, Field2DWriteCellYLow) {
   std::string filename = std::tmpnam(nullptr);
 
-  // Enable staggered grids
-  mesh->StaggerGrids = true;
-  
   {
-    Field2D f(2.0);
-    f.setLocation(CELL_YLOW);
-    
     Options options;
-    options["f2d"] = f;
+    options["f2d"] = Field2D(2.0, mesh_staggered).setLocation(CELL_YLOW);
     
     // Write file
     OptionsNetCDF(filename).write(options);
@@ -222,15 +216,9 @@ TEST_F(OptionsNetCDFTest, Field3DWriteCellCentre) {
 TEST_F(OptionsNetCDFTest, Field3DWriteCellYLow) {
   std::string filename = std::tmpnam(nullptr);
 
-  // Enable staggered grids
-  mesh->StaggerGrids = true;
-  
   {
-    Field3D f(2.0);
-    f.setLocation(CELL_YLOW);
-    
     Options options;
-    options["f3d"] = f;
+    options["f3d"] = Field3D(2.0, mesh_staggered).setLocation(CELL_YLOW);
     
     // Write file
     OptionsNetCDF(filename).write(options);
