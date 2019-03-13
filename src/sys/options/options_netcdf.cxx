@@ -52,7 +52,7 @@ void readGroup(const std::string& filename, NcGroup group, Options& result) {
     }
     case 1: {
       if (var_type == ncDouble) {
-        Array<double> value{dims[0].getSize()};
+        Array<double> value(dims[0].getSize());
         var.getVar(value.begin());
         result[var_name] = value;
         result[var_name].attributes["source"] = filename;
@@ -61,7 +61,7 @@ void readGroup(const std::string& filename, NcGroup group, Options& result) {
     }
     case 2: {
       if (var_type == ncDouble) {
-        Matrix<double> value{dims[0].getSize(), dims[1].getSize()};
+        Matrix<double> value(dims[0].getSize(), dims[1].getSize());
         var.getVar(value.begin());
         result[var_name] = value;
         result[var_name].attributes["source"] = filename;
@@ -70,7 +70,7 @@ void readGroup(const std::string& filename, NcGroup group, Options& result) {
     }
     case 3: {
       if (var_type == ncDouble) {
-        Tensor<double> value{dims[0].getSize(), dims[1].getSize(), dims[2].getSize()};
+        Tensor<double> value(dims[0].getSize(), dims[1].getSize(), dims[2].getSize());
         var.getVar(value.begin());
         result[var_name] = value;
         result[var_name].attributes["source"] = filename;
