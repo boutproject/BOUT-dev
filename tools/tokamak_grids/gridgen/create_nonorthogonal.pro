@@ -1901,6 +1901,8 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       
       npol = npol2
     ENDELSE
+
+    npol_total = TOTAL(npol+n_y_boundary_guards, /int)
     
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ; Poloidal spacing. Need to ensure regular spacing
@@ -2072,7 +2074,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
     ENDIF
     
     ; Create 2D arrays for the grid
-    Rxy = FLTARR(TOTAL(nrad,/int), TOTAL(npol+n_y_boundary_guards,/int))
+    Rxy = FLTARR(TOTAL(nrad,/int), npol_total)
     Zxy = Rxy
     Rixy = Rxy
     Zixy = Rxy
@@ -2488,13 +2490,13 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
                     rad_peaking:settings.rad_peaking, pol_peaking:settings.pol_peaking}
     
     ; Calculate magnetic field components
-    dpsidR = FLTARR(TOTAL(nrad, /int), TOTAL(npol, /int))
+    dpsidR = FLTARR(TOTAL(nrad, /int), npol_total)
     dpsidZ = dpsidR
 
     interp_data.method = 2
 
     FOR i=0,TOTAL(nrad,/int)-1 DO BEGIN
-      FOR j=0,TOTAL(npol,/int)-1 DO BEGIN
+      FOR j=0,npol_total-1 DO BEGIN
         local_gradient, interp_data, Rixy[i,j], Zixy[i,j], status=status, $
           dfdr=dfdr, dfdz=dfdz
         ; dfd* are derivatives wrt the indices. Need to multiply by dr/di etc
@@ -2506,6 +2508,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
     result = {error:0, $ ; Signals success
               psi_inner:psi_inner, psi_outer:psi_outer, $ ; Range of psi
               nrad:nrad, npol:npol+n_y_boundary_guards, $  ; Number of points in each domain
+              y_boundary_guards:y_boundary_guards, $ ; Number of boundary cells included at y-boundaries
               Rixy:Rixy, Zixy:Zixy, $  ; Indices into R and Z of each point
               Rxy:Rxy, Zxy:Zxy, $ ; Location of each grid point
               psixy:psixy, $ ; Normalised psi for each point
