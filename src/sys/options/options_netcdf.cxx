@@ -390,7 +390,8 @@ void writeGroup(const Options& options, NcGroup group,
         if (var.isNull()) {
           // Variable doesn't exist yet
           // Create variable
-          var = group.addVar(name, nctype, dims);
+          // Temporary NcType as a workaround for bug in NetCDF 4.4.0 and NetCDF-CXX4 4.2.0
+          var = group.addVar(name, NcType{group, nctype.getId()}, dims);
         } else {
           // Variable does exist
 
