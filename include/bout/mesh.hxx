@@ -124,6 +124,14 @@ class Mesh {
   
   // Get routines to request data from mesh file
   
+  /// Get a string from the input source
+  /// 
+  /// @param[out] sval  The value will be put into this variable
+  /// @param[in] name   The name of the variable to read
+  ///
+  /// @returns zero if successful, non-zero on failure
+  int get(std::string &sval, const std::string &name);
+
   /// Get an integer from the input source
   /// 
   /// @param[out] ival  The value will be put into this variable
@@ -276,7 +284,9 @@ class Mesh {
   // X communications
   virtual bool firstX() = 0;  ///< Is this processor first in X? i.e. is there a boundary to the left in X?
   virtual bool lastX() = 0; ///< Is this processor last in X? i.e. is there a boundary to the right in X?
-  bool periodicX; ///< Domain is periodic in X?
+
+  /// Domain is periodic in X?
+  bool periodicX{false};
 
   int NXPE, PE_XIND; ///< Number of processors in X, and X processor index
 
@@ -428,25 +438,36 @@ class Mesh {
   
   /// Local ranges of data (inclusive), excluding guard cells
   int xstart, xend, ystart, yend, zstart, zend;
-
-  bool StaggerGrids;    ///< Enable staggered grids (Centre, Lower). Otherwise all vars are cell centred (default).
   
-  bool IncIntShear; ///< Include integrated shear (if shifting X)
+  /// Enable staggered grids (Centre, Lower). Otherwise all vars are
+  /// cell centred (default).
+  bool StaggerGrids{false};
+  
+  /// Include integrated shear (if shifting X)
+  bool IncIntShear{false};
 
   /// Coordinate system
   Coordinates *getCoordinates(const CELL_LOC location = CELL_CENTRE) {
+    return getCoordinatesSmart(location).get();
+  };
+
+  std::shared_ptr<Coordinates>
+  getCoordinatesSmart(const CELL_LOC location = CELL_CENTRE) {
     ASSERT1(location != CELL_DEFAULT);
     ASSERT1(location != CELL_VSHIFT);
 
-    if (coords_map.count(location)) { // True branch most common, returns immediately
-      return coords_map[location].get();
-    } else {
-      // No coordinate system set. Create default
-      // Note that this can't be allocated here due to incomplete type
-      // (circular dependency between Mesh and Coordinates)
-      coords_map.emplace(location, createDefaultCoordinates(location));
-      return coords_map[location].get();
+    auto found = coords_map.find(location);
+    if (found != coords_map.end()) {
+      // True branch most common, returns immediately
+      return found->second;
     }
+
+    // No coordinate system set. Create default
+    // Note that this can't be allocated here due to incomplete type
+    // (circular dependency between Mesh and Coordinates)
+    auto inserted = coords_map.emplace(location, nullptr);
+    inserted.first->second = createDefaultCoordinates(location);
+    return inserted.first->second;
   }
 
   /// Returns the non-CELL_CENTRE location
@@ -503,13 +524,17 @@ class Mesh {
     }
   };
 
+  /// Re-calculate staggered Coordinates, useful if CELL_CENTRE Coordinates are changed
+  void recalculateStaggeredCoordinates();
+
   ///////////////////////////////////////////////////////////
   // INDEX DERIVATIVE OPERATORS
   ///////////////////////////////////////////////////////////
 
   ////// Utilties and parameters
   
-  BoutReal fft_derivs_filter; ///< Fraction of modes to filter. This is set in derivs_init from option "ddz:fft_filter"
+  /// Fraction of modes to filter. This is set in derivs_init from option "ddz:fft_filter"
+  BoutReal fft_derivs_filter{0.0};
 
   /// Determines the resultant output stagger location in derivatives
   /// given the input and output location. Also checks that the
@@ -680,18 +705,18 @@ class Mesh {
   ///////////////////////////////////////////////////////////
 
   /// Transform a field into field-aligned coordinates
-  const Field3D toFieldAligned(const Field3D &f) {
-    return getParallelTransform().toFieldAligned(f);
+  const Field3D toFieldAligned(const Field3D &f, const REGION region = RGN_ALL) {
+    return getParallelTransform().toFieldAligned(f, region);
   }
-  const Field2D toFieldAligned(const Field2D &f) {
+  const Field2D toFieldAligned(const Field2D &f, const REGION UNUSED(region) = RGN_ALL) {
     return f;
   }
   
   /// Convert back into standard form
-  const Field3D fromFieldAligned(const Field3D &f) {
-    return getParallelTransform().fromFieldAligned(f);
+  const Field3D fromFieldAligned(const Field3D &f, const REGION region = RGN_ALL) {
+    return getParallelTransform().fromFieldAligned(f, region);
   }
-  const Field2D fromFieldAligned(const Field2D &f) {
+  const Field2D fromFieldAligned(const Field2D &f, const REGION UNUSED(region) = RGN_ALL) {
     return f;
   }
 
@@ -740,6 +765,11 @@ class Mesh {
   const Region<Ind2D> &getRegion2D(const std::string &region_name) const;
   const Region<IndPerp> &getRegionPerp(const std::string &region_name) const;
 
+  /// Indicate if named region has already been defined
+  bool hasRegion3D(const std::string& region_name) const;
+  bool hasRegion2D(const std::string& region_name) const;
+  bool hasRegionPerp(const std::string& region_name) const;
+
   /// Add a new region to the region_map for the data iterator
   ///
   /// Outputs an error message if region_name already exists
@@ -781,16 +811,22 @@ class Mesh {
   /// Creates RGN_{ALL,NOBNDRY,NOX,NOY}
   void createDefaultRegions();
     
- protected:
-  
-  GridDataSource *source; ///< Source for grid data
-  
-  std::map<CELL_LOC, std::shared_ptr<Coordinates> > coords_map; ///< Coordinate systems at different CELL_LOCs
+protected:
 
-  Options *options; ///< Mesh options section
-  
+  /// Source for grid data
+  GridDataSource* source{nullptr};
 
-  PTptr transform; ///< Handles calculation of yup and ydown
+  /// Coordinate systems at different CELL_LOCs
+  std::map<CELL_LOC, std::shared_ptr<Coordinates>> coords_map;
+
+  /// Mesh options section
+  Options *options{nullptr};
+
+  /// Set whether to call calcYUpDown on all communicated fields (true) or not (false)
+  bool calcYUpDown_on_communicate{true};
+
+  /// Handles calculation of yup and ydown
+  PTptr transform{nullptr};
 
   /// Read a 1D array of integers
   const std::vector<int> readInts(const std::string &name, int n);

@@ -132,7 +132,8 @@ private:
 
 class LaplaceMultigrid : public Laplacian {
 public:
-  LaplaceMultigrid(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = mesh);
+  LaplaceMultigrid(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE,
+      Mesh *mesh_in = nullptr);
   ~LaplaceMultigrid() {};
   
   void setCoefA(const Field2D &val) override {
@@ -194,10 +195,7 @@ public:
   const FieldPerp solve(const FieldPerp &b) override {
     ASSERT1(localmesh == b.getMesh());
 
-    FieldPerp zero(localmesh);
-    zero = 0.;
-    zero.setIndex(b.getIndex());
-    return solve(b, zero);
+    return solve(b, zeroFrom(b));
   }
   const FieldPerp solve(const FieldPerp &b_in, const FieldPerp &x0) override;
 

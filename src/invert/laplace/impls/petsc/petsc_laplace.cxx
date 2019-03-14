@@ -27,6 +27,7 @@
 
 #include "petsc_laplace.hxx"
 
+#include <bout/mesh.hxx>
 #include <bout/sys/timer.hxx>
 #include <boutcomm.hxx>
 #include <bout/assert.hxx>
@@ -346,6 +347,8 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
   TRACE("LaplacePetsc::solve");
 
   ASSERT1(localmesh == b.getMesh() && localmesh == x0.getMesh());
+  ASSERT1(b.getLocation() == location);
+  ASSERT1(x0.getLocation() == location);
   
   #if CHECK > 0
     // Checking flags are set to something which is not implemented (see

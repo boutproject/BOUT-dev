@@ -28,6 +28,7 @@
 #include <utils.hxx>
 #include <cmath>
 
+#include <bout/mesh.hxx>
 #include <output.hxx>
 #include <msg_stack.hxx>
 
@@ -37,7 +38,7 @@ using std::vector;
 // Define this to see loads of info messages
 //#define NCDF_VERBOSE
 
-NcFormat::NcFormat() {
+NcFormat::NcFormat(Mesh* mesh_in) : DataFormat(mesh_in) {
   dataFile = nullptr;
   x0 = y0 = z0 = t0 = 0;
   recDimList = new const NcDim*[4];
@@ -50,7 +51,7 @@ NcFormat::NcFormat() {
   fname = nullptr;
 }
 
-NcFormat::NcFormat(const char *name) {
+NcFormat::NcFormat(const char *name, Mesh* mesh_in) : DataFormat(mesh_in) {
   dataFile = nullptr;
   x0 = y0 = z0 = t0 = 0;
   recDimList = new const NcDim*[4];
@@ -102,8 +103,10 @@ bool NcFormat::openr(const char *name) {
     xDim = nullptr;
   } else if (mesh != nullptr) {
     // Check that the dimension size is correct
-    if(xDim->size() != mesh->LocalNx) {
-      throw BoutException("X dimension incorrect. Expected %d, got %d", mesh->LocalNx, xDim->size());
+    if (xDim->size() != mesh->LocalNx) {
+      throw BoutException("X dimension incorrect. Expected %lu, got %lu",
+                          static_cast<long unsigned>(mesh->LocalNx),
+                          static_cast<long unsigned>(xDim->size()));
     }
   }
   
@@ -118,7 +121,9 @@ bool NcFormat::openr(const char *name) {
   } else if (mesh != nullptr) {
     // Check that the dimension size is correct
     if(yDim->size() != mesh->LocalNy) {
-      throw BoutException("Y dimension incorrect. Expected %d, got %d", mesh->LocalNy, yDim->size());
+      throw BoutException("Y dimension incorrect. Expected %lu, got %lu",
+                          static_cast<long unsigned>(mesh->LocalNy),
+                          static_cast<long unsigned>(yDim->size()));
     }
   }
   
@@ -131,7 +136,9 @@ bool NcFormat::openr(const char *name) {
   } else if (mesh != nullptr) {
     // Check that the dimension size is correct
     if(zDim->size() != mesh->LocalNz) {
-      throw BoutException("Z dimension incorrect. Expected %d, got %d", mesh->LocalNz, zDim->size());
+      throw BoutException("Z dimension incorrect. Expected %lu, got %lu",
+                          static_cast<long unsigned>(mesh->LocalNz),
+                          static_cast<long unsigned>(zDim->size()));
     }
   }
   
@@ -900,7 +907,7 @@ void NcFormat::setAttribute(const std::string &varname, const std::string &attrn
   } else {
     // variable attribute
     NcVar* var = dataFile->get_var(varname.c_str());
-    if (!var->is_valid()) {
+    if (var == nullptr or !var->is_valid()) {
       throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
     }
 
@@ -933,7 +940,7 @@ void NcFormat::setAttribute(const std::string &varname, const std::string &attrn
   } else {
     // attribute of variable
     NcVar* var = dataFile->get_var(varname.c_str());
-    if (!var->is_valid()) {
+    if (var == nullptr or !var->is_valid()) {
       throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
     }
 
@@ -966,7 +973,7 @@ void NcFormat::setAttribute(const std::string &varname, const std::string &attrn
   } else {
     // attribute of variable
     NcVar* var = dataFile->get_var(varname.c_str());
-    if (!var->is_valid()) {
+    if (var == nullptr or !var->is_valid()) {
       throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
     }
 
@@ -995,7 +1002,7 @@ bool NcFormat::getAttribute(const std::string &varname, const std::string &attrn
     return true;
   } else {
     NcVar* var = dataFile->get_var(varname.c_str());
-    if (!var->is_valid()) {
+    if (var == nullptr or !var->is_valid()) {
       throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
     }
 

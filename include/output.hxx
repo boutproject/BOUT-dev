@@ -37,6 +37,7 @@ class Output;
 #include "bout/assert.hxx"
 #include "boutexception.hxx"
 #include "unused.hxx"
+#include "bout/format.hxx"
 #include "bout/sys/gettext.hxx"  // for gettext _() macro
 
 using std::endl;
@@ -65,7 +66,7 @@ public:
   Output() : multioutbuf_init(), std::basic_ostream<char, _Tr>(multioutbuf_init::buf()) {
     buffer_len = BUFFER_LEN;
     buffer = new char[buffer_len];
-    enable();
+    Output::enable();
   }
 
   /// Specify a log file to open
@@ -73,8 +74,8 @@ public:
       : multioutbuf_init(), std::basic_ostream<char, _Tr>(multioutbuf_init::buf()) {
     buffer_len = BUFFER_LEN;
     buffer = new char[buffer_len];
-    enable();
-    open(fname);
+    Output::enable();
+    open("%s",fname);
   }
   ~Output() override {
     close();
@@ -84,12 +85,15 @@ public:
   virtual void enable();  ///< Enables writing to stdout (default)
   virtual void disable(); ///< Disables stdout
 
-  int open(const char *fname, ...); ///< Open an output log file
+  int open(const char *fname, ...)
+    BOUT_FORMAT_ARGS( 2, 3); ///< Open an output log file
   void close();                     ///< Close the log file
 
-  virtual void write(const char *string, ...); ///< Write a string using C printf format
+  virtual void write(const char *string, ...)
+    BOUT_FORMAT_ARGS( 2, 3); ///< Write a string using C printf format
 
-  virtual void print(const char *string, ...); ///< Same as write, but only to screen
+  virtual void print(const char *string, ...)
+    BOUT_FORMAT_ARGS( 2, 3); ///< Same as write, but only to screen
 
   virtual void vwrite(const char *string,
                       va_list args); ///< Write a string using C vprintf format
@@ -128,15 +132,9 @@ class DummyOutput : public Output {
 public:
   void write(const char *UNUSED(str), ...) override{};
   void print(const char *UNUSED(str), ...) override{};
-  void enable() override {
-    throw BoutException("DummyOutput cannot be enabled.\nTry compiling with "
-                        "--enable-debug or be less verbose?");
-  };
+  void enable() override{};
   void disable() override{};
-  void enable(bool enable) {
-    if (enable)
-      this->enable();
-  };
+  void enable(MAYBE_UNUSED(bool enable)){};
   bool isEnabled() override { return false; }
 };
 
@@ -148,7 +146,8 @@ public:
 class ConditionalOutput : public Output {
 public:
   /// @param[in] base    The Output object which will be written to if enabled
-  ConditionalOutput(Output *base) : base(base), enabled(true) {};
+  /// @param[in] enabled Should this be enabled by default?
+  ConditionalOutput(Output *base, bool enabled = true) : base(base), enabled(enabled) {};
 
   /// Constuctor taking ConditionalOutput. This allows several layers of conditions
   /// 
@@ -160,7 +159,8 @@ public:
   /// If enabled, writes a string using C printf formatting
   /// by calling base->vwrite
   /// This string is then sent to log file and stdout (on processor 0)
-  void write(const char *str, ...) override;
+  void write(const char *str, ...) override
+    BOUT_FORMAT_ARGS( 2, 3);
   void vwrite(const char *str, va_list va) override {
     if (enabled) {
       ASSERT1(base != nullptr);
@@ -170,7 +170,8 @@ public:
 
   /// If enabled, print a string to stdout using C printf formatting
   /// note: unlike write, this is not also sent to log files
-  void print(const char *str, ...) override;
+  void print(const char *str, ...) override
+    BOUT_FORMAT_ARGS( 2, 3);
   void vprint(const char *str, va_list va) override {
     if (enabled) {
       ASSERT1(base != nullptr);
@@ -259,6 +260,7 @@ extern ConditionalOutput output_warn;  ///< warnings
 extern ConditionalOutput output_progress;  ///< progress
 extern ConditionalOutput output_info;  ///< information 
 extern ConditionalOutput output_error; ///< errors
+extern ConditionalOutput output_verbose; ///< less interesting messages
 
 /// Generic output, given the same level as output_progress
 extern ConditionalOutput output;

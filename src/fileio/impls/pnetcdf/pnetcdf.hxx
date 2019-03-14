@@ -52,9 +52,10 @@ class PncFormat;
 
 class PncFormat : public DataFormat {
  public:
-  PncFormat();
-  PncFormat(const char *name);
-  PncFormat(const std::string &name) : PncFormat(name.c_str()) {}
+  PncFormat(Mesh* mesh_in = nullptr);
+  PncFormat(const char *name, Mesh* mesh_in = nullptr);
+  PncFormat(const std::string &name, Mesh* mesh_in = nullptr)
+    : PncFormat(name.c_str(), mesh_in) {}
   ~PncFormat();
 
   bool openr(const char *name) override;

@@ -24,24 +24,24 @@ private:
   // Simple implementation of 4th order perpendicular Laplacian
   Field3D Delp4(const Field3D &var) {
     Field3D tmp;
-    tmp = Delp2(var, 0.0);
+    tmp = Delp2(var);
     mesh->communicate(tmp);
     tmp.applyBoundary("neumann");
-    return Delp2(tmp, 0.0);
-    
+    return Delp2(tmp);
+
     //return Delp2(var);
   }
   
 protected:
   int init(bool restart) {
-  
-    Options *options = Options::getRoot()->getSection("hw");
-    OPTION(options, alpha, 1.0);
-    OPTION(options, kappa, 0.1);
-    OPTION(options, Dvort, 1e-2);
-    OPTION(options, Dn,    1e-2);
-  
-    OPTION(options, modified, false);
+
+    auto options = Options::root()["hw"];
+    alpha = options["alpha"].withDefault(1.0);
+    kappa = options["kappa"].withDefault(0.1);
+    Dvort = options["Dvort"].withDefault(1e-2);
+    Dn = options["Dn"].withDefault(1e-2);
+
+    modified = options["modified"].withDefault(false);
 
     SOLVE_FOR2(n, vort);
     SAVE_REPEAT(phi);
@@ -56,7 +56,7 @@ protected:
     
     // Choose method to use for Poisson bracket advection terms
     int bracket;
-    OPTION(options, bracket, 0);
+    bracket = options["bracket"].withDefault(0);
     switch(bracket) {
     case 0: {
       bm = BRACKET_STD; 

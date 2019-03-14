@@ -1,0 +1,7 @@
+#!/bin/bash
+
+set -e
+
+make
+# Kill the test after 3 seconds, if it hasn't already exited
+OMP_NUM_THREADS=1 mpirun -n 3 timeout 3s ./test-coordinates-initialization

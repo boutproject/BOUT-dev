@@ -37,7 +37,7 @@ class LaplaceNaulin;
  */
 class LaplaceNaulin : public Laplacian {
 public:
-  LaplaceNaulin(Options *opt = NULL, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = mesh);
+  LaplaceNaulin(Options *opt = NULL, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr);
   ~LaplaceNaulin();
   
   // ACoef is not implemented because the delp2solver that we use can probably
@@ -110,10 +110,7 @@ public:
   }
   const Field3D solve(const Field3D &b, const Field3D &x0) override;
   const Field3D solve(const Field3D &b) override {
-    Field3D x0(b.getMesh());
-    x0 = 0.;
-    x0.setLocation(b.getLocation());
-    return solve(b, Field3D(0.));
+    return solve(b, zeroFrom(b));
   }
 
   // Override flag-setting methods to set delp2solver's flags as well

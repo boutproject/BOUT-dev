@@ -126,7 +126,7 @@ FUNCTION poloidal_grid, interp_data, R, Z, ri, zi, n, fpsi=fpsi, parweight=parwe
     dzdi = DERIV(INTERPOLATE(Z, zi))
     
     dldi = SQRT(drdi^2 + dzdi^2)
-    poldist = int_func(findgen(np), dldi) ; Poloidal distance along line
+    poldist = int_func(findgen(np), dldi, /simple) ; Poloidal distance along line
   ENDIF ELSE BEGIN
     rpos = INTERPOLATE(R, ri)
     zpos = INTERPOLATE(Z, zi)
@@ -276,8 +276,8 @@ FUNCTION grid_region, interp_data, R, Z, $
   rii = INTERPOLATE(ri, ind)
   zii = INTERPOLATE(zi, ind)
 
-  ;rii = int_func(SMOOTH(deriv(rii), 3)) + rii[0]
-  ;zii = int_func(SMOOTH(deriv(zii), 3)) + zii[0]
+  ;rii = int_func(SMOOTH(deriv(rii), 3), /simple) + rii[0]
+  ;zii = int_func(SMOOTH(deriv(zii), 3), /simple) + zii[0]
   ;STOP
   
   ; Refine the location of the starting point
@@ -386,10 +386,24 @@ PRO oplot_line, interp_data, R, Z, ri0, zi0, fto, npt=npt, color=color, _extra=_
 END
 
 FUNCTION line_dist, R, Z, ri, zi
-  drdi = DERIV(INTERPOLATE(R, ri))
-  dzdi = DERIV(INTERPOLATE(Z, zi))
-  dldi = SQRT(drdi^2 + dzdi^2)
-  RETURN, int_func(findgen(N_ELEMENTS(dldi)), dldi)
+  IF 0 THEN BEGIN
+    ; derivatives drdi and dzdi may be very inaccurate because the contour
+    ; given by ri and zi is not necessarily uniformly spaced, it may not even
+    ; have a smoothly varying grid spacing. Therefore don't use this branch
+    drdi = DERIV(INTERPOLATE(R, ri))
+    dzdi = DERIV(INTERPOLATE(Z, zi))
+    dldi = SQRT(drdi^2 + dzdi^2)
+    RETURN, int_func(findgen(N_ELEMENTS(dldi)), dldi, /simple)
+  ENDIF ELSE BEGIN
+    np = N_ELEMENTS(ri)
+    rpos = INTERPOLATE(R, ri)
+    zpos = INTERPOLATE(Z, zi)
+    dd = SQRT((zpos[1:*] - zpos[0:(np-2)])^2 + (rpos[1:*] - rpos[0:(np-2)])^2)
+    dd = [dd, SQRT((zpos[0] - zpos[np-1])^2 + (rpos[0] - rpos[np-1])^2)]
+    result = FLTARR(np)
+    FOR i=1,np-1 DO result[i] = result[i-1] + dd[i-1]
+    RETURN, result
+  ENDELSE
 END
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -634,7 +648,8 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
                       fpsi = fpsi, $ ; f(psi) = R*Bt current function
                       nrad_flexible=nrad_flexible, $
                       single_rad_grid=single_rad_grid, fast=fast, $
-                      xpt_mindist=xpt_mindist, xpt_mul=xpt_mul
+                      xpt_mindist=xpt_mindist, xpt_mul=xpt_mul, $
+                      simple=simple
 
   IF SIZE(nrad_flexible, /TYPE) EQ 0 THEN nrad_flexible = 0
 
@@ -1109,9 +1124,6 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
     ; now have (start_ri, start_zi). For each x-point, find the radial
     ; line going through the x-point
     
-    fri = FFT(start_ri) ; for interpolating periodic functions
-    fzi = FFT(start_zi)
-
     xpt_ind = FLTARR(critical.n_xpoint)  ; index into start_*i
     
     pf_info = PTRARR(critical.n_xpoint)  ; Pointers to PF for each X-point
@@ -1124,16 +1136,17 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
                                opt_ri[primary_opt], opt_zi[primary_opt], boundary=bndryi)
       
       ; Go a little way along each core separatrix and follow
+      ; Note: add starting point to end of 'boundary' so we find intersections with a closed contour
       follow_gradient, interp_data, R, Z, $
                        legsep.core1[2,0], legsep.core1[2,1], $
                        0.95 * f_cont + 0.05*opt_f[primary_opt], $
                        rhit, zhit, $
-                       boundary=TRANSPOSE([[start_ri], [start_zi]]), ibndry=hit_ind1
+                       boundary=TRANSPOSE([[start_ri, start_ri[0]], [start_zi, start_zi[0]]]), ibndry=hit_ind1
       follow_gradient, interp_data, R, Z, $
                        legsep.core2[2,0], legsep.core2[2,1], $
                        0.95 * f_cont + 0.05*opt_f[primary_opt], $
                        rhit, zhit, $
-                       boundary=TRANSPOSE([[start_ri], [start_zi]]), ibndry=hit_ind2
+                       boundary=TRANSPOSE([[start_ri, start_ri[0]], [start_zi, start_zi[0]]]), ibndry=hit_ind2
       
       ni = N_ELEMENTS(start_ri)
       
@@ -1180,9 +1193,9 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
         
       ; Plot the line to the x-point
       oplot_line, interp_data, R, Z, $
-        fft_interp(fri, mini), fft_interp(fzi, mini), critical.xpt_f[i]
+        INTERPOLATE(start_ri, mini), INTERPOLATE(start_zi, mini), critical.xpt_f[i]
       oplot_line, interp_data, R, Z, $
-        fft_interp(fri, mini), fft_interp(fzi, mini), f_inner
+        INTERPOLATE(start_ri, mini), INTERPOLATE(start_zi, mini), f_inner
 
       ; Get tangent vector
       drdi = INTERPOLATE((DERIV(INTERPOLATE(R, start_ri))), mini)
@@ -1201,34 +1214,34 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
     sol_info = PTRARR(critical.n_xpoint)
     FOR i=0, critical.n_xpoint-1 DO BEGIN
       IF i NE (critical.n_xpoint-1) THEN BEGIN
-        ri = [ fft_interp(fri,xpt_ind[ci[i]]), $
+        ri = [ INTERPOLATE(start_ri,xpt_ind[ci[i]]), $
                start_ri[FIX(xpt_ind[ci[i]]+1.0):FIX(xpt_ind[ci[i+1]])], $
-               fft_interp(fri,xpt_ind[ci[i+1]]) ]
+               INTERPOLATE(start_ri,xpt_ind[ci[i+1]]) ]
         
-        zi = [ fft_interp(fzi,xpt_ind[ci[i]]), $
+        zi = [ INTERPOLATE(start_zi,xpt_ind[ci[i]]), $
                start_zi[FIX(xpt_ind[ci[i]]+1.0):FIX(xpt_ind[ci[i+1]])], $
-               fft_interp(fzi,xpt_ind[ci[i+1]]) ]
+               INTERPOLATE(start_zi,xpt_ind[ci[i+1]]) ]
       ENDIF ELSE BEGIN
         ; Index wraps around
         IF xpt_ind[ci[i]] GT N_ELEMENTS(start_ri)-2 THEN BEGIN
-          ri = [ fft_interp(fri,xpt_ind[ci[i]]), $
+          ri = [ INTERPOLATE(start_ri,xpt_ind[ci[i]]), $
                  start_ri[0:FIX(xpt_ind[ci[0]])], $
-                 fft_interp(fri,xpt_ind[ci[0]]) ]
+                 INTERPOLATE(start_ri,xpt_ind[ci[0]]) ]
           
-          zi = [ fft_interp(fzi,xpt_ind[ci[i]]), $
+          zi = [ INTERPOLATE(start_zi,xpt_ind[ci[i]]), $
                  start_zi[0:FIX(xpt_ind[ci[0]])], $
-                 fft_interp(fzi,xpt_ind[ci[0]]) ]
+                 INTERPOLATE(start_zi,xpt_ind[ci[0]]) ]
           
         ENDIF ELSE BEGIN
-          ri = [ fft_interp(fri,xpt_ind[ci[i]]), $
+          ri = [ INTERPOLATE(start_ri,xpt_ind[ci[i]]), $
                  start_ri[FIX(xpt_ind[ci[i]]+1.0):*], $
                  start_ri[0:FIX(xpt_ind[ci[0]])], $
-                 fft_interp(fri,xpt_ind[ci[0]]) ]
+                 INTERPOLATE(start_ri,xpt_ind[ci[0]]) ]
           
-          zi = [ fft_interp(fzi,xpt_ind[ci[i]]), $
+          zi = [ INTERPOLATE(start_zi,xpt_ind[ci[i]]), $
                  start_zi[FIX(xpt_ind[ci[i]]+1.0):*], $
                  start_zi[0:FIX(xpt_ind[ci[0]])], $
-                 fft_interp(fzi,xpt_ind[ci[0]]) ]
+                 INTERPOLATE(start_zi,xpt_ind[ci[0]]) ]
         ENDELSE
       ENDELSE
       
@@ -1236,7 +1249,11 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
       drdi = DERIV(INTERPOLATE(R, ri))
       dzdi = DERIV(INTERPOLATE(Z, zi))
       dldi = SQRT(drdi^2 + dzdi^2)
-      length = INT_TABULATED(findgen(N_ELEMENTS(dldi)), dldi)
+      IF KEYWORD_SET(simple) THEN BEGIN
+        length = INT_TRAPEZOID(findgen(N_ELEMENTS(dldi)), dldi)
+      ENDIF ELSE BEGIN
+        length = INT_TABULATED(findgen(N_ELEMENTS(dldi)), dldi)
+      ENDELSE
 
       ; Change the grid in the far SOL
       w = WHERE(ci EQ primary_xpt)
@@ -1402,9 +1419,17 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
 
       ; Calculate length of each section
       dldi = SQRT(DERIV(INTERPOLATE(R, tmp.ri0))^2 + DERIV(INTERPOLATE(Z, tmp.zi0))^2)
-      len0 = INT_TABULATED(FINDGEN(N_ELEMENTS(dldi)), dldi)
+      IF KEYWORD_SET(simple) THEN BEGIN
+        len0 = INT_TRAPEZOID(FINDGEN(N_ELEMENTS(dldi)), dldi)
+      ENDIF ELSE BEGIN
+        len0 = INT_TABULATED(FINDGEN(N_ELEMENTS(dldi)), dldi)
+      ENDELSE
       dldi = SQRT(DERIV(INTERPOLATE(R, tmp.ri1))^2 + DERIV(INTERPOLATE(Z, tmp.zi1))^2)
-      len1 = INT_TABULATED(FINDGEN(N_ELEMENTS(dldi)), dldi)
+      IF KEYWORD_SET(simple) THEN BEGIN
+        len1 = INT_TRAPEZOID(FINDGEN(N_ELEMENTS(dldi)), dldi)
+      ENDIF ELSE BEGIN
+        len1 = INT_TABULATED(FINDGEN(N_ELEMENTS(dldi)), dldi)
+      ENDELSE
       tmp = CREATE_STRUCT(tmp, 'len0', len0, 'len1', len1)
       
       PTR_FREE, pf_info[xind]
@@ -1600,7 +1625,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
       line = get_line(interp_data, R, Z, $
                       INTERPOLATE((*sep_info[xpt2]).core1_ri, sepi), $
                       INTERPOLATE((*sep_info[xpt2]).core1_zi, sepi), $
-                      0.95*f_cont + 0.05*faxis, npt=20)
+                      0.95*f_cont + 0.05*faxis, npt=30)
       ; Find intersection of this line with starting line
       cpos = line_crossings((*sol_info[solid]).ri, (*sol_info[solid]).zi, 0, $
                             line[*,0], line[*,1], 0, ncross=ncross, inds1=start_ind)

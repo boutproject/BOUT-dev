@@ -91,9 +91,9 @@ location :math:`\theta_0`:
 
 .. math::
 
-   zShift = \int_{\theta_0}^\theta \frac{B_\phi h_\theta}{B_\theta R} d\theta
+   \mathtt{zShift} = \int_{\theta_0}^\theta \frac{B_\phi h_\theta}{B_\theta R} d\theta
 
-Note that here :math:`theta_0` does not need to be constant in X
+Note that here :math:`\theta_0` does not need to be constant in X
 (radius), since it is only the relative shifts between Y locations
 which matters.
 

@@ -31,6 +31,7 @@ Mesh::Mesh(GridDataSource *s, Options* opt) : source(s), options(opt) {
   /// Get mesh options
   OPTION(options, StaggerGrids,   false); // Stagger grids
   OPTION(options, maxregionblocksize, MAXREGIONBLOCKSIZE);
+  OPTION(options, calcYUpDown_on_communicate, true);
   // Initialise derivatives
   derivs_init(options);  // in index_derivs.cxx for now
 }
@@ -47,6 +48,16 @@ Mesh::~Mesh() {
  * These functions are delegated to a GridDataSource object,
  * which may then read from a file, options, or other sources.
  **************************************************************************/
+
+/// Get a string
+int Mesh::get(std::string &sval, const std::string &name) {
+  TRACE("Mesh::get(sval, %s)", name.c_str());
+
+  if (source == nullptr or !source->get(this, sval, name))
+    return 1;
+
+  return 0;
+}
 
 /// Get an integer
 int Mesh::get(int &ival, const std::string &name) {
@@ -183,8 +194,11 @@ void Mesh::communicate(FieldGroup &g) {
   wait(h);
 
   // Calculate yup and ydown fields for 3D fields
-  for(const auto& fptr : g.field3d())
-    getParallelTransform().calcYUpDown(*fptr);
+  if (calcYUpDown_on_communicate) {
+    for(const auto& fptr : g.field3d()) {
+      getParallelTransform().calcYUpDown(*fptr);
+    }
+  }
 }
 
 /// This is a bit of a hack for now to get FieldPerp communications
@@ -295,11 +309,11 @@ void Mesh::setParallelTransform() {
     
   if(ptstr == "identity") {
     // Identity method i.e. no transform needed
-    transform = bout::utils::make_unique<ParallelTransformIdentity>();
+    transform = bout::utils::make_unique<ParallelTransformIdentity>(*this);
       
   }else if(ptstr == "shifted") {
     // Shifted metric method
-  transform = bout::utils::make_unique<ShiftedMetric>(*this);
+    transform = bout::utils::make_unique<ShiftedMetric>(*this);
       
   }else if(ptstr == "fci") {
 
@@ -326,12 +340,13 @@ ParallelTransform& Mesh::getParallelTransform() {
 }
 
 std::shared_ptr<Coordinates> Mesh::createDefaultCoordinates(const CELL_LOC location) {
-  if (location == CELL_CENTRE || location == CELL_DEFAULT)
+  if (location == CELL_CENTRE || location == CELL_DEFAULT) {
     // Initialize coordinates from input
     return std::make_shared<Coordinates>(this);
-  else
+  } else {
     // Interpolate coordinates from CELL_CENTRE version
     return std::make_shared<Coordinates>(this, location, getCoordinates(CELL_CENTRE));
+  }
 }
 
 
@@ -359,13 +374,25 @@ const Region<IndPerp> &Mesh::getRegionPerp(const std::string &region_name) const
   return found->second;
 }
 
+bool Mesh::hasRegion3D(const std::string& region_name) const {
+  return regionMap3D.find(region_name) != std::end(regionMap3D);
+}
+
+bool Mesh::hasRegion2D(const std::string& region_name) const {
+  return regionMap2D.find(region_name) != std::end(regionMap2D);
+}
+
+bool Mesh::hasRegionPerp(const std::string& region_name) const {
+  return regionMapPerp.find(region_name) != std::end(regionMapPerp);
+}
+
 void Mesh::addRegion3D(const std::string &region_name, const Region<> &region) {
   if (regionMap3D.count(region_name)) {
     throw BoutException(_("Trying to add an already existing region %s to regionMap3D"), region_name.c_str());
   }
   regionMap3D[region_name] = region;
-  output_info << _("Registered region 3D ") << region_name << ": \n";
-  output_info << "\t" << region.getStats() << "\n";
+  output_verbose.write(_("Registered region 3D %s"),region_name.c_str());
+  output_verbose << "\n:\t" << region.getStats() << "\n";
 }
 
 void Mesh::addRegion2D(const std::string &region_name, const Region<Ind2D> &region) {
@@ -373,8 +400,8 @@ void Mesh::addRegion2D(const std::string &region_name, const Region<Ind2D> &regi
     throw BoutException(_("Trying to add an already existing region %s to regionMap2D"), region_name.c_str());
   }
   regionMap2D[region_name] = region;
-  output_info << _("Registered region 2D ") << region_name << ": \n";
-  output_info << "\t" << region.getStats() << "\n";
+  output_verbose.write(_("Registered region 2D %s"),region_name.c_str());
+  output_verbose << "\n:\t" << region.getStats() << "\n";
 }
 
 void Mesh::addRegionPerp(const std::string &region_name, const Region<IndPerp> &region) {
@@ -382,8 +409,8 @@ void Mesh::addRegionPerp(const std::string &region_name, const Region<IndPerp> &
     throw BoutException(_("Trying to add an already existing region %s to regionMapPerp"), region_name.c_str());
   }
   regionMapPerp[region_name] = region;
-  output_info << _("Registered region Perp ") << region_name << ": \n";
-  output_info << "\t" << region.getStats() << "\n";
+  output_verbose.write(_("Registered region Perp %s"),region_name.c_str());
+  output_verbose << "\n:\t" << region.getStats() << "\n";
 }
 
 void Mesh::createDefaultRegions(){
@@ -429,5 +456,18 @@ void Mesh::createDefaultRegions(){
   indexLookup3Dto2D = Array<int>(LocalNx*LocalNy*LocalNz);
   BOUT_FOR(ind3D, getRegion3D("RGN_ALL")) {
     indexLookup3Dto2D[ind3D.ind] = ind3Dto2D(ind3D).ind;
+  }
+}
+
+void Mesh::recalculateStaggeredCoordinates() {
+  for (auto &i : coords_map) {
+    CELL_LOC location = i.first;
+
+    if (location == CELL_CENTRE) {
+      // Only reset staggered locations
+      continue;
+    }
+
+    std::swap(*coords_map[location], *createDefaultCoordinates(location));
   }
 }

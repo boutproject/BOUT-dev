@@ -3,37 +3,129 @@
 
 #include "gtest/gtest.h"
 
+#include <functional>
 #include <iostream>
 #include <mpi.h>
+#include <vector>
 
 #include "bout/mesh.hxx"
+#include "bout/coordinates.hxx"
 #include "field3d.hxx"
 #include "unused.hxx"
 
-const BoutReal BoutRealTolerance = 1e-15;
+static constexpr BoutReal BoutRealTolerance{1e-15};
+// FFTs have a slightly looser tolerance than other functions
+static constexpr BoutReal FFTTolerance{1.e-12};
 
 /// Does \p str contain \p substring?
 ::testing::AssertionResult IsSubString(const std::string &str,
                                        const std::string &substring);
 
-/// Is \p field equal to \p number, with a tolerance of \p tolerance?
-::testing::AssertionResult IsField3DEqualBoutReal(const Field3D &field, BoutReal number,
-                                                  BoutReal tolerance = BoutRealTolerance);
+void fillField(Field3D& f, std::vector<std::vector<std::vector<BoutReal>>> values);
+void fillField(Field2D& f, std::vector<std::vector<BoutReal>> values);
 
-/// Is \p field equal to \p number, with a tolerance of \p tolerance?
-::testing::AssertionResult IsField2DEqualBoutReal(const Field2D &field, BoutReal number,
-                                                  BoutReal tolerance = BoutRealTolerance);
+/// Enable a function if T is a subclass of Field
+template <class T>
+using EnableIfField = typename std::enable_if<std::is_base_of<Field, T>::value>::type;
 
-/// Is \p field equal to \p number, with a tolerance of \p tolerance?
-::testing::AssertionResult IsFieldPerpEqualBoutReal(const FieldPerp &field, BoutReal number,
-                                                  BoutReal tolerance = BoutRealTolerance);
+/// Returns a field filled with the result of \p fill_function at each point
+/// Arbitrary arguments can be passed to the field constructor
+template <class T, class... Args, typename = EnableIfField<T>>
+T makeField(const std::function<BoutReal(typename T::ind_type&)>& fill_function,
+            Args&&... args) {
+  T result{std::forward<Args>(args)...};
+  result.allocate();
 
+  for (auto i : result) {
+    result[i] = fill_function(i);
+  }
+
+  return result;
+}
 
 /// Teach googletest how to print SpecificInds
 template<IND_TYPE N>
 inline std::ostream& operator<< (std::ostream &out, const SpecificInd<N> &index) {
   return out << index.ind;
 }
+
+/// Helpers to get the type of a Field as a string
+auto inline getFieldType(MAYBE_UNUSED(const Field2D& field)) -> std::string {
+  return "Field2D";
+}
+auto inline getFieldType(MAYBE_UNUSED(const Field3D& field)) -> std::string {
+  return "Field3D";
+}
+auto inline getFieldType(MAYBE_UNUSED(const FieldPerp& field)) -> std::string {
+  return "FieldPerp";
+}
+
+/// Helpers to get the (x, y, z) index values, along with the
+/// single-index of a Field index
+auto inline getIndexXYZ(const Ind2D& index) -> std::string {
+  std::stringstream ss;
+  ss << index.x() << ", " << index.y() << "; [" << index.ind << "]";
+  return ss.str();
+}
+auto inline getIndexXYZ(const Ind3D& index) -> std::string {
+  std::stringstream ss;
+  ss << index.x() << ", " << index.y() << ", " << index.z() << "; [" << index.ind << "]";
+  return ss.str();
+}
+auto inline getIndexXYZ(const IndPerp& index) -> std::string {
+  std::stringstream ss;
+  ss << index.x() << ", " << index.y() << ", " << index.z() << "; [" << index.ind << "]";
+  return ss.str();
+}
+
+/// Is \p field equal to \p reference, with a tolerance of \p tolerance?
+template <class T, class U, typename = EnableIfField<T>, typename = EnableIfField<U>>
+auto IsFieldEqual(const T& field, const U& reference,
+                  const std::string& region = "RGN_ALL",
+                  BoutReal tolerance = BoutRealTolerance) -> ::testing::AssertionResult {
+  for (auto i : field.getRegion(region)) {
+    if (fabs(field[i] - reference[i]) > tolerance) {
+      return ::testing::AssertionFailure()
+             << getFieldType(field) << "(" << getIndexXYZ(i) << ") == " << field[i]
+             << "; Expected: " << reference[i];
+    }
+  }
+  return ::testing::AssertionSuccess();
+}
+
+/// Is \p field equal to \p reference, with a tolerance of \p tolerance?
+/// Overload for BoutReals
+template <class T, typename = EnableIfField<T>>
+auto IsFieldEqual(const T& field, BoutReal reference,
+                  const std::string& region = "RGN_ALL",
+                  BoutReal tolerance = BoutRealTolerance) -> ::testing::AssertionResult {
+  for (auto i : field.getRegion(region)) {
+    if (fabs(field[i] - reference) > tolerance) {
+      return ::testing::AssertionFailure()
+             << getFieldType(field) << "(" << getIndexXYZ(i) << ") == " << field[i]
+             << "; Expected: " << reference;
+    }
+  }
+  return ::testing::AssertionSuccess();
+}
+
+/// Disable a ConditionalOutput during a scope; reenable it on
+/// exit. You must give the variable a name!
+///
+///     {
+///       WithQuietoutput quiet{output};
+///       // output disabled during this scope
+///     }
+///     // output now enabled
+class WithQuietOutput {
+public:
+  explicit WithQuietOutput(ConditionalOutput& output_in) : output(output_in) {
+    output.disable();
+  }
+
+  ~WithQuietOutput() { output.enable(); }
+  ConditionalOutput& output;
+};
 
 class Options;
 
@@ -59,6 +151,10 @@ public:
     LocalNx = nx;
     LocalNy = ny;
     LocalNz = nz;
+    OffsetX = 0;
+    OffsetY = 0;
+    OffsetZ = 0;
+
     // Small "inner" region
     xstart = 1;
     xend = nx - 2;
@@ -75,6 +171,12 @@ public:
     StaggerGrids = false;
     IncIntShear = false;
     maxregionblocksize = MAXREGIONBLOCKSIZE;
+
+    setCoordinates(nullptr);
+  }
+
+  void setCoordinates(std::shared_ptr<Coordinates> coords, CELL_LOC location = CELL_CENTRE) {
+    coords_map[location] = coords;
   }
 
   comm_handle send(FieldGroup &UNUSED(g)) { return nullptr; };
@@ -149,10 +251,10 @@ public:
   void addBoundary(BoundaryRegion* region) {boundaries.push_back(region);}
   std::vector<BoundaryRegion *> getBoundaries() { return boundaries; }
   std::vector<BoundaryRegionPar *> getBoundariesPar() { return std::vector<BoundaryRegionPar *>(); }
-  BoutReal GlobalX(int UNUSED(jx)) const { return 0; }
-  BoutReal GlobalY(int UNUSED(jy)) const { return 0; }
-  BoutReal GlobalX(BoutReal UNUSED(jx)) const { return 0; }
-  BoutReal GlobalY(BoutReal UNUSED(jy)) const { return 0; }
+  BoutReal GlobalX(int jx) const { return jx; }
+  BoutReal GlobalY(int jy) const { return jy; }
+  BoutReal GlobalX(BoutReal jx) const { return jx; }
+  BoutReal GlobalY(BoutReal jy) const { return jy; }
   int XGLOBAL(int UNUSED(xloc)) const { return 0; }
   int YGLOBAL(int UNUSED(yloc)) const { return 0; }
 
@@ -165,32 +267,45 @@ private:
 };
 
 /// Test fixture to make sure the global mesh is our fake
-/// one. Multiple tests have exactly the same fixture, so use a type
+/// one. Also initialize the global mesh_staggered for use in tests with
+/// staggering. Multiple tests have exactly the same fixture, so use a type
 /// alias to make a new test:
 ///
 ///     using MyTest = FakeMeshFixture;
 class FakeMeshFixture : public ::testing::Test {
 public:
   FakeMeshFixture() {
-    // Delete any existing mesh
-    if (mesh != nullptr) {
-      delete mesh;
-      mesh = nullptr;
-    }
-    mesh = new FakeMesh(nx, ny, nz);
-    output_info.disable();
-    mesh->createDefaultRegions();
-    output_info.enable();
+    WithQuietOutput quiet{output_info};
+
+    delete bout::globals::mesh;
+    bout::globals::mesh = new FakeMesh(nx, ny, nz);
+    bout::globals::mesh->setParallelTransform(
+        bout::utils::make_unique<ParallelTransformIdentity>(*bout::globals::mesh));
+    bout::globals::mesh->createDefaultRegions();
+
+    delete mesh_staggered;
+    mesh_staggered = new FakeMesh(nx, ny, nz);
+    mesh_staggered->StaggerGrids = true;
+    mesh_staggered->setParallelTransform(
+        bout::utils::make_unique<ParallelTransformIdentity>(*mesh_staggered));
+    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_XLOW);
+    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_YLOW);
+    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_ZLOW);
+    mesh_staggered->createDefaultRegions();
   }
 
-  ~FakeMeshFixture() {
-    delete mesh;
-    mesh = nullptr;
+  virtual ~FakeMeshFixture() {
+    delete bout::globals::mesh;
+    bout::globals::mesh = nullptr;
+    delete mesh_staggered;
+    mesh_staggered = nullptr;
   }
 
   static constexpr int nx = 3;
   static constexpr int ny = 5;
   static constexpr int nz = 7;
+
+  Mesh* mesh_staggered = nullptr;
 };
 
 #endif //  TEST_EXTRAS_H__

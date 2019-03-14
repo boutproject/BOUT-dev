@@ -41,10 +41,13 @@
 /// All locations supported
 ///
 /// @param[in] f  The field to differentiate
-/// @param[in] outloc The location where the result is desired (if staggered meshes are enabled)
-///                   By default this is the same location as the input \p f
-const Vector2D Grad(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT);
-const Vector3D Grad(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT);
+/// @param[in] outloc  The location where the result is desired
+///                    By default this is the same location as the input \p f
+/// @param[in] method  The method to use. The default is set in the options.
+const Vector2D Grad(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+                    const std::string& method = "DEFAULT");
+const Vector3D Grad(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+                    const std::string& method = "DEFAULT");
 
 /// Perpendicular gradient of scalar field \p f
 ///
@@ -56,8 +59,13 @@ const Vector3D Grad(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT);
 ///
 /// @param[in] f  The field to differentiate
 /// @param[in] outloc  The cell location where the result is desired
+/// @param[in] method  The method to use. The default is set in the options.
 ///
-const Vector3D Grad_perp(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT);
+const Vector3D Grad_perp(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+                         const std::string& method = "DEFAULT");
+inline const Vector3D Grad_perp(const Field3D& f, CELL_LOC outloc, DIFF_METHOD method) {
+  return Grad_perp(f, outloc, toString(method));
+}
 
 /// Divergence of a vector \p v, returning a scalar
 ///
@@ -66,24 +74,29 @@ const Vector3D Grad_perp(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT);
 ///
 /// @param[in] v  The vector to differentiate
 /// @param[in] outloc  The cell location where the result is desired
+/// @param[in] method  The method to use. The default is set in the options.
 ///
-const Field2D Div(const Vector2D &v, CELL_LOC outloc = CELL_DEFAULT);
-const Field3D Div(const Vector3D &v, CELL_LOC outloc = CELL_DEFAULT);
-
-const Field2D Div(const Vector2D &v, const Field2D &f);
-const Field3D Div(const Vector3D &v, const Field3D &f);
-
-const Field3D Div(const Vector3D& v, const Field3D& f, CELL_LOC outloc,
+const Field2D Div(const Vector2D& v, CELL_LOC outloc = CELL_DEFAULT,
                   const std::string& method = "DEFAULT");
-DEPRECATED(const Field3D Div(const Vector3D& v, const Field3D& f,
-                             const std::string& method, CELL_LOC outloc = CELL_DEFAULT));
+const Field3D Div(const Vector3D& v, CELL_LOC outloc = CELL_DEFAULT,
+                  const std::string& method = "DEFAULT");
+
+const Field2D Div(const Vector2D& v, const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+                  const std::string& method = "DEFAULT");
+const Field3D Div(const Vector3D& v, const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+                  const std::string& method = "DEFAULT");
+DEPRECATED(inline const Field3D Div(const Vector3D& v, const Field3D& f,
+                                    const std::string& method,
+                                    CELL_LOC outloc = CELL_DEFAULT)) {
+  return Div(v, f, outloc, method);
+}
 inline const Field3D Div(const Vector3D& v, const Field3D& f, CELL_LOC outloc,
                          DIFF_METHOD method = DIFF_DEFAULT) {
-  return Div(v, f, outloc, DIFF_METHOD_STRING(method));
+  return Div(v, f, outloc, toString(method));
 };
 DEPRECATED(inline const Field3D Div(const Vector3D& v, const Field3D& f,
                                     DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT)) {
-  return Div(v, f, outloc, DIFF_METHOD_STRING(method));
+  return Div(v, f, outloc, toString(method));
 };
 
 /// Curl of a vector

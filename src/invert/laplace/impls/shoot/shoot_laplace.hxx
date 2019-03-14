@@ -37,7 +37,7 @@ class LaplaceShoot;
 
 class LaplaceShoot : public Laplacian {
 public:
-  LaplaceShoot(Options *opt = nullptr, const CELL_LOC = CELL_CENTRE, Mesh *mesh_in = mesh);
+  LaplaceShoot(Options *opt = nullptr, const CELL_LOC = CELL_CENTRE, Mesh *mesh_in = nullptr);
   ~LaplaceShoot(){};
   
   using Laplacian::setCoefA;
