@@ -50,7 +50,7 @@ TEST_F(OptionsNetCDFTest, ReadWriteInt) {
 TEST_F(OptionsNetCDFTest, ReadWriteString) {
   {
     Options options;
-    options["test"] = "hello";
+    options["test"] = std::string{"hello"};
 
     // Write file
     OptionsNetCDF(filename).write(options);
