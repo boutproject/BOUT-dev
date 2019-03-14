@@ -426,7 +426,7 @@ int BoutMesh::load() {
   }
 
   MZSUB = MZ / NZPE;
-  if ((MY % NYPE) != 0) {
+  if ((MZ % NZPE) != 0) {
     throw BoutException(
         _("\tERROR: Cannot split %d Z points equally between %d processors\n"), MZ, NZPE);
   }
