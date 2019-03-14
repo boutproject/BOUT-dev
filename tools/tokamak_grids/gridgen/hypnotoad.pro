@@ -37,8 +37,8 @@ PRO oplot_mesh, rz_mesh, flux_mesh
   
   ypos = 0
   FOR i=0, N_ELEMENTS(flux_mesh.npol)-1 DO BEGIN
-    plot_region, flux_mesh.rxy, flux_mesh.zxy, ypos, ypos+flux_mesh.npol[i]-1, color=i+1
-    ypos = ypos + flux_mesh.npol[i]
+    plot_region, flux_mesh.rxy, flux_mesh.zxy, ypos, ypos+flux_mesh.npol[i]+flux_mesh.n_y_boundary_guards[i]-1, color=i+1
+    ypos = ypos + flux_mesh.npol[i]+flux_mesh.n_y_boundary_guards[i]
   ENDFOR
 END
 
@@ -599,8 +599,8 @@ PRO event_handler, event
       
       m = MIN( (REFORM((*info.flux_mesh).rxy - r))^2 + $
                (REFORM((*info.flux_mesh).zxy - r))^2 , ind)
-      xi = FIX(ind / TOTAL((*info.flux_mesh).npol))
-      yi = FIX(ind MOD TOTAL((*info.flux_mesh).npol))
+      xi = FIX(ind / TOTAL((*info.flux_mesh).npol + (*info.flux_mesh).n_y_boundary_guards))
+      yi = FIX(ind MOD TOTAL((*info.flux_mesh).npol + (*info.flux_mesh).n_y_boundary_guards))
       PRINT, xi, yi
     END
     'detail': BEGIN

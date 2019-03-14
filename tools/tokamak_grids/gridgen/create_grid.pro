@@ -2015,7 +2015,8 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
 
     result = {error:0, $ ; Signals success
               psi_inner:psi_inner, psi_outer:psi_outer, $ ; Range of psi
-              nrad:nrad, npol:npol+n_y_boundary_guards, $ ; Number of points in each domain
+              nrad:nrad, npol:npol, $ ; Number of points in each domain
+              n_y_boundary_guards:n_y_boundary_guards, $ ; Number of y-boundary cells in each domain
               y_boundary_guards:y_boundary_guards, $ ; Number of boundary cells included at y-boundaries
               Rixy:Rixy, Zixy:Zixy, $  ; Indices into R and Z of each point
               Rxy:Rxy, Zxy:Zxy, $ ; Location of each grid point
