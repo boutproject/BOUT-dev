@@ -14,9 +14,9 @@
 // The unit tests use the global mesh
 using namespace bout::globals;
 
-class GridFromOptionsTest : public FakeMeshFixture {
+class GridFromOptionsTest : public ::testing::Test {
 public:
-  GridFromOptionsTest() : FakeMeshFixture(), options(), griddata(nullptr) {
+  GridFromOptionsTest() : options(), griddata(nullptr) {
 
     mesh_from_options.StaggerGrids = true;
     mesh_from_options.xstart = 2;
@@ -51,17 +51,17 @@ public:
 
     mesh_from_options.getCoordinates();
 
-    expected_2d = {makeField<Field2D>(
+    expected_2d = makeField<Field2D>(
         [](Field2D::ind_type& index) {
           return index.x() + (TWOPI * index.y()) + (TWOPI * index.z() / nz) + 3;
         },
-        &mesh_from_options)};
+        &mesh_from_options);
 
-    expected_3d = {makeField<Field3D>(
+    expected_3d = makeField<Field3D>(
         [](Field3D::ind_type& index) {
           return index.x() + (TWOPI * index.y()) + (TWOPI * index.z() / nz) + 3;
         },
-        &mesh_from_options)};
+        &mesh_from_options);
   }
 
   ~GridFromOptionsTest() {
@@ -364,11 +364,11 @@ TEST_F(GridFromOptionsTest, CoordinatesXlowInterp) {
 
   auto coords = mesh_from_options.getCoordinates(CELL_XLOW);
 
-  Field2D expected_xlow = {makeField<Field2D>(
+  Field2D expected_xlow = makeField<Field2D>(
       [](Field2D::ind_type& index) {
         return index.x() - 0.5 + (TWOPI * index.y()) + (TWOPI * index.z() / nz) + 3;
       },
-      &mesh_from_options)};
+      &mesh_from_options);
 
   mesh_from_options.communicate(expected_xlow);
 
@@ -400,11 +400,11 @@ TEST_F(GridFromOptionsTest, CoordinatesXlowRead) {
 
   auto coords = mesh_from_options.getCoordinates(CELL_XLOW);
 
-  Field2D expected_xlow = {makeField<Field2D>(
+  Field2D expected_xlow = makeField<Field2D>(
       [](Field2D::ind_type& index) {
         return (nx - index.x()) + (TWOPI * index.y()) + (TWOPI * index.z() / nz) + 3;
       },
-      &mesh_from_options)};
+      &mesh_from_options);
 
   mesh_from_options.communicate(expected_xlow);
 
@@ -425,11 +425,11 @@ TEST_F(GridFromOptionsTest, CoordinatesYlowInterp) {
 
   auto coords = mesh_from_options.getCoordinates(CELL_XLOW);
 
-  Field2D expected_ylow = {makeField<Field2D>(
+  Field2D expected_ylow = makeField<Field2D>(
       [](Field2D::ind_type& index) {
         return index.x() + (TWOPI * index.y() - 0.5) + (TWOPI * index.z() / nz) + 3;
       },
-      &mesh_from_options)};
+      &mesh_from_options);
 
   mesh_from_options.communicate(expected_ylow);
 
@@ -462,11 +462,11 @@ TEST_F(GridFromOptionsTest, CoordinatesYlowRead) {
 
   auto coords = mesh_from_options.getCoordinates(CELL_YLOW);
 
-  Field2D expected_ylow = {makeField<Field2D>(
+  Field2D expected_ylow = makeField<Field2D>(
       [](Field2D::ind_type& index) {
         return index.x() + (TWOPI * (ny - index.y())) + (TWOPI * index.z() / nz) + 3;
       },
-      &mesh_from_options)};
+      &mesh_from_options);
 
   mesh_from_options.communicate(expected_ylow);
 
