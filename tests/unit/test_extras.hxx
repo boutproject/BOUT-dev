@@ -160,6 +160,8 @@ public:
     xend = nx - 2;
     ystart = 1;
     yend = ny - 2;
+    zstart = 0;
+    zend = nz - 1;
 
     StaggerGrids=true;
     // Unused variables
