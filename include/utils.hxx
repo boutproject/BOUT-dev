@@ -104,7 +104,7 @@ public:
 
     data.reallocate(n1 * n2);
   }
-  Matrix(const Matrix &other) : data(other.data), n1(other.n1), n2(other.n2) {
+  Matrix(const Matrix &other) : n1(other.n1), n2(other.n2), data(other.data) {
     // Prevent copy on write for Matrix
     data.ensureUnique();
   }
@@ -166,10 +166,14 @@ public:
     data.ensureUnique();
   }
   
-  /// Underlying 1D storage array
-  Array<T> data;
+  /// Access the underlying storage
+  Array<T>& getData() { return data; }
+  const Array<T>& getData() const { return data; }
+
 private:
   size_type n1, n2;
+  /// Underlying 1D storage array
+  Array<T> data;
 };
 
 /// Helper class for 3D arrays
@@ -191,7 +195,7 @@ public:
     ASSERT2(n3 >= 0);
     data.reallocate(n1 * n2 * n3);
   }
-  Tensor(const Tensor &other) : data(other.data), n1(other.n1), n2(other.n2), n3(other.n3) {
+  Tensor(const Tensor &other) : n1(other.n1), n2(other.n2), n3(other.n3), data(other.data) {
     // Prevent copy on write for Tensor
     data.ensureUnique();
   }
@@ -260,10 +264,14 @@ public:
     data.ensureUnique();
   }
 
-  /// Underlying 1D storage array
-  Array<T> data;
+  /// Access the underlying storage
+  Array<T>& getData() { return data; }
+  const Array<T>& getData() const { return data; }
+
 private:
   size_type n1, n2, n3;
+  /// Underlying 1D storage array
+  Array<T> data;
 };
 
 
