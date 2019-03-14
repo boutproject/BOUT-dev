@@ -327,7 +327,7 @@ Field3D FCIMap::integrate(Field3D &f) const {
 void FCITransform::checkInputGrid() {
   std::string coordinates_type = "";
   if (!mesh.get(coordinates_type, "coordinates_type")) {
-    if (coordinates_type != "fci") {
+    if (strcmp(coordinates_type.c_str(), "fci") != 0) {
       throw BoutException("Incorrect coordinate system type "+coordinates_type+" used "
           "to generate metric components for FCITransform. Should be 'fci.");
     }

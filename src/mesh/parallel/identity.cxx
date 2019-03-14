@@ -21,7 +21,7 @@ void ParallelTransformIdentity::calcYUpDown(Field3D& f) {
 void ParallelTransformIdentity::checkInputGrid() {
   std::string coordinates_type = "";
   if (!mesh.get(coordinates_type, "coordinates_type")) {
-    if (coordinates_type != "field_aligned") {
+    if (strcmp(coordinates_type.c_str(), "field_aligned") != 0) {
       throw BoutException("Incorrect coordinate system type "+coordinates_type+" used "
           "to generate metric components for ParallelTransformIdentity. Should be "
           "'field_aligned.");
