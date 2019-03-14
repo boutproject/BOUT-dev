@@ -30,19 +30,16 @@ public:
 };
 
 TEST_F(OptionsNetCDFTest, ReadWriteInt) {
-  // Temporary file
-  OptionsNetCDF file(filename);
-
   {
     Options options;
     options["test"] = 42;
-    
+
     // Write the file
-    file.write(options);
+    OptionsNetCDF(filename).write(options);
   }
 
   // Read again
-  Options data = file.read();
+  Options data = OptionsNetCDF(filename).read();
 
   EXPECT_EQ(data["test"], 42);
 }
