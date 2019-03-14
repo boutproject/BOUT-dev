@@ -481,7 +481,8 @@ PRO event_handler, event
         ; Get settings
         settings = {calcp:info.calcp, calcbt:info.calcbt, $
                     calchthe:info.calchthe, calcjpar:info.calcjpar, $
-                    orthogonal_coordinates_output:info.orthogonal_coordinates_output}
+                    orthogonal_coordinates_output:info.orthogonal_coordinates_output, $
+                    y_boundary_guards:(*info.flux_mesh).y_boundary_guards}
         
         process_grid, *(info.rz_grid), *(info.flux_mesh), $
                       output=filename, poorquality=poorquality, /gui, parent=info.draw, $
