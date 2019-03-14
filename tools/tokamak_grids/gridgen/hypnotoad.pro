@@ -367,7 +367,7 @@ PRO event_handler, event
       widget_control, info.xpt_dist_field, get_value=xpt_mul
       PRINT, "xpt_mul = ", xpt_mul
 
-      widget_control, info.y_boundary_guards, get_value=y_boundary_guards
+      widget_control, info.y_boundary_guards_field, get_value=y_boundary_guards
 
       ; Check if a simplified boundary should be used
       IF info.simple_bndry THEN BEGIN
@@ -1215,7 +1215,7 @@ PRO hypnotoad
            rad_peak_field:rad_peak_field, $
            parweight_field:parweight_field, $
            xpt_dist_field:xpt_dist_field, $
-           y_boundary_guards:y_boundary_guards_field, $
+           y_boundary_guards_field:y_boundary_guards_field, $
            status:status_box, $
            leftbargeom:leftbargeom, $
            $;;; Options tab 
