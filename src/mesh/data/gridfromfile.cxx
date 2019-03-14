@@ -35,7 +35,7 @@ GridFile::GridFile(std::unique_ptr<DataFormat> format, std::string gridfilename)
   file->setGlobalOrigin(); // Set default global origin
 
   // Get number of y-boundary guard cells saved in the grid file
-  if (!file->read(&grid_yguards, "boundary_y_guards", 1, 1)) {
+  if (!file->read(&grid_yguards, "y_boundary_guards", 1, 1)) {
     // not found in file, default to zero
     grid_yguards = 0;
   }
