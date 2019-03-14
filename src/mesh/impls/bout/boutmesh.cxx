@@ -2567,14 +2567,17 @@ void BoutMesh::outputVars(Datafile &file) {
   file.add(zperiod, "zperiod", false);
   file.add(MXSUB, "MXSUB", false);
   file.add(MYSUB, "MYSUB", false);
+  file.add(MZSUB, "MZSUB", false);
   file.add(MXG, "MXG", false);
   file.add(MYG, "MYG", false);
+  file.add(MZG, "MZG", false);
   file.add(nx, "nx", false);
   file.add(ny, "ny", false);
   file.add(nz, "nz", false);
   file.add(MZ, "MZ", false);
   file.add(NXPE, "NXPE", false);
   file.add(NYPE, "NYPE", false);
+  file.add(NZPE, "NZPE", false);
   file.add(ZMAX, "ZMAX", false);
   file.add(ZMIN, "ZMIN", false);
   file.add(ixseps1, "ixseps1", false);
