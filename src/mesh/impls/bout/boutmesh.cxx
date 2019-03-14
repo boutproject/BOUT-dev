@@ -2571,8 +2571,8 @@ void BoutMesh::outputVars(Datafile &file) {
   file.add(MYG, "MYG", false);
   file.add(nx, "nx", false);
   file.add(ny, "ny", false);
-  file.add(LocalNz, "nz", false);
-  file.add(LocalNz, "MZ", false);
+  file.add(nz, "nz", false);
+  file.add(MZ, "MZ", false);
   file.add(NXPE, "NXPE", false);
   file.add(NYPE, "NYPE", false);
   file.add(ZMAX, "ZMAX", false);
