@@ -199,35 +199,36 @@ const Field3D Div_par(const Field3D &f, const std::string &method, CELL_LOC outl
   return f.getCoordinates(outloc)->Div_par(f, outloc, method);
 }
 
-const Field3D Div_par(const Field3D &f, const Field3D &v) {
+const Field3D Div_par(const Field3D& f, const Field3D& v) {
   ASSERT1(areFieldsCompatible(f, v));
 
   // Parallel divergence, using velocities at cell boundaries
   // Note: Not guaranteed to be flux conservative
-  Mesh *mesh = f.getMesh();
+  Mesh* mesh = f.getMesh();
 
   Field3D result{emptyFrom(f)};
 
-  Coordinates *coord = f.getCoordinates();
-  
-  for(int i=mesh->xstart;i<=mesh->xend;i++)
-    for(int j=mesh->ystart;j<=mesh->yend;j++) {
-      for (int k = mesh->zstart; k <= mesh->zend; k++) {
+  Coordinates* coord = f.getCoordinates();
 
+  for (int i = mesh->xstart; i <= mesh->xend; i++)
+    for (int j = mesh->ystart; j <= mesh->yend; j++) {
+      for (int k = mesh->zstart; k <= mesh->zend; k++) {
         // Value of f and v at left cell face
-	BoutReal fL = 0.5*(f(i,j,k) + f.ydown()(i,j-1,k));
-	BoutReal vL = 0.5*(v(i,j,k) + v.ydown()(i,j-1,k));
-	
-	BoutReal fR = 0.5*(f(i,j,k) + f.yup()(i,j+1,k));
-	BoutReal vR = 0.5*(v(i,j,k) + v.yup()(i,j+1,k));
-	
+        BoutReal fL = 0.5 * (f(i, j, k) + f.ydown()(i, j - 1, k));
+        BoutReal vL = 0.5 * (v(i, j, k) + v.ydown()(i, j - 1, k));
+
+        BoutReal fR = 0.5 * (f(i, j, k) + f.yup()(i, j + 1, k));
+        BoutReal vR = 0.5 * (v(i, j, k) + v.yup()(i, j + 1, k));
+
         // Calculate flux at right boundary (y+1/2)
-	BoutReal fluxRight = fR * vR * (coord->J(i,j) + coord->J(i,j+1)) / (sqrt(coord->g_22(i,j))+ sqrt(coord->g_22(i,j+1)));
-	
+        BoutReal fluxRight = fR * vR * (coord->J(i, j) + coord->J(i, j + 1))
+                             / (sqrt(coord->g_22(i, j)) + sqrt(coord->g_22(i, j + 1)));
+
         // Calculate at left boundary (y-1/2)
-	BoutReal fluxLeft = fL * vL * (coord->J(i,j) + coord->J(i,j-1)) / (sqrt(coord->g_22(i,j)) + sqrt(coord->g_22(i,j-1)));
-	
-	result(i,j,k)   = (fluxRight - fluxLeft) / (coord->dy(i,j)*coord->J(i,j));
+        BoutReal fluxLeft = fL * vL * (coord->J(i, j) + coord->J(i, j - 1))
+                            / (sqrt(coord->g_22(i, j)) + sqrt(coord->g_22(i, j - 1)));
+
+        result(i, j, k) = (fluxRight - fluxLeft) / (coord->dy(i, j) * coord->J(i, j));
       }
     }
 
