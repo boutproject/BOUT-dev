@@ -2,7 +2,7 @@
 
 from __future__ import print_function
 
-from boututils.run_wrapper import shell, launch, getmpirun
+from boututils.run_wrapper import shell, launch
 from boutdata.collect import collect
 from sys import stdout, exit
 
@@ -18,7 +18,7 @@ print("Making test")
 shell("make > make.log")
 
 print("Running test")
-s, out = launch("./test -d "+path, runcmd=getmpirun(), nproc=1, pipe=True)
+s, out = launch("./test -d "+path, nproc=1, pipe=True)
 
 # Analyse data
 

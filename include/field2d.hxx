@@ -64,7 +64,9 @@ class Field2D : public Field, public FieldData {
    * 
    * By default the global Mesh pointer (mesh) is used.
    */ 
-  Field2D(Mesh *localmesh = nullptr);
+  Field2D(Mesh *localmesh = nullptr, CELL_LOC location_in=CELL_CENTRE,
+          DirectionTypes directions_in =
+          {YDirectionType::Standard, ZDirectionType::Average});
 
   /*!
    * Copy constructor. After this both fields
@@ -85,8 +87,10 @@ class Field2D : public Field, public FieldData {
   Field2D(BoutReal val, Mesh *localmesh = nullptr);
   
   /// Constructor from Array and Mesh
-  Field2D(Array<BoutReal> data, Mesh *localmesh, CELL_LOC location = CELL_CENTRE);
-  
+  Field2D(Array<BoutReal> data, Mesh* localmesh, CELL_LOC location = CELL_CENTRE,
+          DirectionTypes directions_in = {YDirectionType::Standard,
+                                          ZDirectionType::Average});
+
   /*!
    * Destructor
    */
@@ -96,7 +100,7 @@ class Field2D : public Field, public FieldData {
   using value_type = BoutReal;
 
   /// Ensure data is allocated
-  void allocate();
+  Field2D& allocate();
   bool isAllocated() const { return !data.empty(); } ///< Test if data is allocated
 
   /// Return a pointer to the time-derivative field
@@ -114,6 +118,12 @@ class Field2D : public Field, public FieldData {
    * Return the number of nz points
    */
   int getNz() const override {return 1;};
+
+  // these methods return Field2D to allow method chaining
+  Field2D& setLocation(CELL_LOC location) {
+    Field::setLocation(location);
+    return *this;
+  }
 
   /// Check if this field has yup and ydown fields
   bool hasYupYdown() const {
@@ -133,7 +143,10 @@ class Field2D : public Field, public FieldData {
   const Field2D& ydown() const {
     return *this;
   }
-  
+
+  Field2D& ynext(int UNUSED(dir)) { return *this; }
+  const Field2D& ynext(int UNUSED(dir)) const { return *this; }
+
   // Operators
   
   /*!
@@ -143,22 +156,12 @@ class Field2D : public Field, public FieldData {
    * function.
    */
   Field2D & operator=(const Field2D &rhs);
-  Field2D & operator=(Field2D &&rhs) = default;
 
   /*!
    * Allocates data if not already allocated, then
    * sets all cells to \p rhs
    */ 
   Field2D & operator=(BoutReal rhs);
-
-  /// Set variable location for staggered grids to @param new_location
-  ///
-  /// Throws BoutException if new_location is not `CELL_CENTRE` and
-  /// staggered grids are turned off and checks are on. If checks are
-  /// off, silently sets location to ``CELL_CENTRE`` instead.
-  void setLocation(CELL_LOC new_location) override;
-  /// Get variable location
-  CELL_LOC getLocation() const override;
 
   /////////////////////////////////////////////////////////
   // Data access
@@ -261,12 +264,13 @@ class Field2D : public Field, public FieldData {
 
   friend void swap(Field2D& first, Field2D& second) noexcept {
     using std::swap;
+
+    // Swap base class members
+    swap(static_cast<Field&>(first), static_cast<Field&>(second));
+
     swap(first.data, second.data);
-    swap(first.fieldmesh, second.fieldmesh);
-    swap(first.fieldCoordinates, second.fieldCoordinates);
     swap(first.nx, second.nx);
     swap(first.ny, second.ny);
-    swap(first.location, second.location);
     swap(first.deriv, second.deriv);
     swap(first.bndry_op, second.bndry_op);
     swap(first.boundaryIsCopy, second.boundaryIsCopy);
@@ -281,9 +285,6 @@ private:
 
   /// Internal data array. Handles allocation/freeing of memory
   Array<BoutReal> data;
-  
-  /// Location of the variable in the cell
-  CELL_LOC location{CELL_CENTRE};
 
   /// Time-derivative, can be nullptr
   Field2D *deriv{nullptr};

@@ -153,7 +153,7 @@ class Options;
 class Options {
 public:
   /// Constructor. This is called to create the root object
-  Options() {}
+  Options() = default;
   
   /// Constructor used to create non-root objects
   ///
@@ -164,6 +164,8 @@ public:
 
   /// Copy constructor
   Options(const Options& other);
+
+  ~Options() = default;
 
   /// Get a reference to the only root instance
   static Options &root();
@@ -189,14 +191,14 @@ public:
     using Base = bout::utils::variant<bool, int, BoutReal, std::string>;
 
     /// Constructor
-    AttributeType() {}
+    AttributeType() = default;
     /// Copy constructor
     AttributeType(const AttributeType& other) : Base(other) {}
     /// Move constructor
-    AttributeType(AttributeType&& other) : Base(other) {}
+    AttributeType(AttributeType&& other) : Base(std::move(other)) {}
 
     /// Destructor
-    ~AttributeType() {}
+    ~AttributeType() = default;
 
     /// Assignment operator, including move assignment
     using Base::operator=;

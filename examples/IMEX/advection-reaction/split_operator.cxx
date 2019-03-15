@@ -36,9 +36,9 @@ int physics_init(bool restarting) {
   solver->setSplitOperator(physics_run, reaction);
   
   // Get options
-  Options *options = Options::getRoot();
-  options = options->getSection("split");
-  OPTION(options, rate, 1.0);
+  auto globalOptions = Options::root();
+  auto options = globalOptions["split"];
+  rate = options["rate"].withDefault(1.0);
 
   // Get phi settings from BOUT.inp
   phi.setBoundary("phi");

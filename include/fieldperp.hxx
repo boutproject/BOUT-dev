@@ -52,14 +52,17 @@ class FieldPerp : public Field {
   /*!
    * Constructor
    */
-  FieldPerp(Mesh * fieldmesh = nullptr);
+  FieldPerp(Mesh * fieldmesh = nullptr, CELL_LOC location_in=CELL_CENTRE,
+            int yindex_in=-1,
+            DirectionTypes directions_in =
+              {YDirectionType::Standard, ZDirectionType::Standard});
 
   /*!
    * Copy constructor. After this the data
    * will be shared (non unique)
    */
-  FieldPerp(const FieldPerp &f)
-      : Field(f.fieldmesh), yindex(f.yindex), nx(f.nx), nz(f.nz), data(f.data) {}
+  FieldPerp(const FieldPerp& f)
+      : Field(f), yindex(f.yindex), nx(f.nx), nz(f.nz), data(f.data) {}
 
   /*!
    * Move constructor
@@ -115,12 +118,25 @@ class FieldPerp : public Field {
    *
    * This is used in arithmetic operations
    */
-  void setIndex(int y) { yindex = y; }
+  FieldPerp& setIndex(int y) {
+    yindex = y;
+    return *this;
+  }
+
+  // these methods return FieldPerp to allow method chaining
+  FieldPerp& setLocation(CELL_LOC location) {
+    Field::setLocation(location);
+    return *this;
+  }
+  FieldPerp& setDirectionY(YDirectionType d) {
+    Field::setDirectionY(d);
+    return *this;
+  }
 
   /*!
    * Ensure that data array is allocated and unique
    */
-  void allocate();
+  FieldPerp& allocate();
 
   /*!
    * True if the underlying data array is allocated.
@@ -404,6 +420,14 @@ BoutReal max(const FieldPerp &f, bool allpe=false, REGION rgn=RGN_NOX);
 /// Loops over the entire domain including boundaries by
 /// default (can be changed using the \p rgn argument)
 bool finite(const FieldPerp &f, REGION rgn=RGN_ALL);
+
+// Specialize newEmptyField templates for FieldPerp
+/// Return an empty shell field of some type derived from Field, with metadata
+/// copied and a data array that is allocated but not initialised.
+template<>
+inline FieldPerp emptyFrom<FieldPerp>(const FieldPerp& f) {
+  return FieldPerp(f.getMesh(), f.getLocation(), f.getIndex(), {f.getDirectionY(), f.getDirectionZ()}).allocate();
+}
 
 #if CHECK > 0
 void checkData(const FieldPerp &f, REGION region = RGN_NOX);

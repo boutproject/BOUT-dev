@@ -9,15 +9,9 @@
 
 class OptionsTest : public ::testing::Test {
 public:
-  OptionsTest() {
-    output_info.disable();
-    output_warn.disable();
-  }
-
-  ~OptionsTest() {
-    output_info.enable();
-    output_warn.enable();
-  }
+  virtual ~OptionsTest() = default;
+  WithQuietOutput quiet_info{output_info};
+  WithQuietOutput quiet_warn{output_warn};
 };
 
 TEST_F(OptionsTest, IsSet) {
@@ -365,11 +359,10 @@ TEST_F(OptionsTest, SetSameOptionTwice) {
   Options options;
   options.set("key", "value", "code");
   EXPECT_THROW(options.set("key", "new value", "code"),BoutException);
-  output_warn.disable();
+
   options.set("key", "value", "code");
   EXPECT_NO_THROW(options.forceSet("key", "new value", "code"));
   EXPECT_NO_THROW(options.set("key", "value", "code",true));
-  output_warn.enable();
 }
 
 /// New interface

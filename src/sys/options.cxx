@@ -336,7 +336,7 @@ template <> Field3D Options::as<Field3D>(Mesh* localmesh) const {
       if (tensor.shape() == std::make_tuple(localmesh->LocalNx,
                                             localmesh->LocalNy,
                                             localmesh->LocalNz)) {
-        return Field3D(tensor.data, localmesh);
+        return Field3D(tensor.getData(), localmesh);
       }
       // If dimension sizes not the same, may be able
       // to select a region from it using Mesh e.g. if this
@@ -371,7 +371,7 @@ template <> Field2D Options::as<Field2D>(Mesh* localmesh) const {
       // Check if the dimension sizes are the same as a Field3D
       if (matrix.shape() == std::make_tuple(localmesh->LocalNx,
                                             localmesh->LocalNy)) {
-        return Field2D(matrix.data, localmesh);
+        return Field2D(matrix.getData(), localmesh);
       }
     }
   }

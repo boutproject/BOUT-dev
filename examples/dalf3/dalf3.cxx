@@ -73,12 +73,14 @@ private:
   bool smooth_separatrix;
   
   FieldGroup comms;
-  
+
+  Laplacian *phiSolver; // Laplacian solver in X-Z
+  Laplacian *aparSolver; // Laplacian solver in X-Z for Apar
   LaplaceXY *laplacexy; // Laplacian solver in X-Y (n=0)
   Field2D phi2D;   // Axisymmetric potential, used when split_n0=true
 
 protected:
-  int init(bool restarting) {
+  int init(bool UNUSED(restarting)) {
     
     /////////////////////////////////////////////////////
     // Load data from the grid
@@ -115,31 +117,31 @@ protected:
     
     //////////////////////////////////////////////////////////////
     // Options
-    
-    Options *globalOptions = Options::getRoot();
-    Options *options = globalOptions->getSection("dalf3");
-    
-    OPTION(options, phi_flags, 0);
-    OPTION(options, apar_flags, 0);
-    OPTION(options, split_n0, false);
-    OPTION(options, estatic, false);
-    OPTION(options, ZeroElMass, false);
-    OPTION(options, jpar_noderiv, true);
-    OPTION(options, curv_kappa, false);
-    OPTION(options, flat_resist, false);
-    OPTION(options, mul_resist, 1.0);
-    OPTION(options, viscosity, -1.0);
-    OPTION(options, hyper_viscosity, -1.0);
-    OPTION(options, viscosity_par, -1.0);
-    OPTION(options, smooth_separatrix, false);
-    
-    OPTION(options, filter_z, false);
-    
-    OPTION(options, parallel_lc, true);
-    OPTION(options, nonlinear, true);
-    
+
+    auto globalOptions = Options::root();
+    auto options = globalOptions["dalf3"];
+
+    phi_flags = options["phi_flags"].withDefault(0);
+    apar_flags = options["apar_flags"].withDefault(0);
+    split_n0 = options["split_n0"].withDefault(false);
+    estatic = options["estatic"].withDefault(false);
+    ZeroElMass = options["ZeroElMass"].withDefault(false);
+    jpar_noderiv = options["jpar_noderiv"].withDefault(true);
+    curv_kappa = options["curv_kappa"].withDefault(false);
+    flat_resist = options["flat_resist"].withDefault(false);
+    mul_resist = options["mul_resist"].withDefault(1.0);
+    viscosity = options["viscosity"].withDefault(-1.0);
+    hyper_viscosity = options["hyper_viscosity"].withDefault(-1.0);
+    viscosity_par = options["viscosity_par"].withDefault(-1.0);
+    smooth_separatrix = options["smooth_separatrix"].withDefault(false);
+
+    filter_z = options["filter_z"].withDefault(false);
+
+    parallel_lc = options["parallel_lc"].withDefault(true);
+    nonlinear = options["nonlinear"].withDefault(true);
+
     int bracket_method;
-    OPTION(options, bracket_method, 0);
+    bracket_method = options["bracket_method"].withDefault(0);
     switch(bracket_method) {
     case 0: {
       bm = BRACKET_STD; 
@@ -171,7 +173,7 @@ protected:
     // SHIFTED RADIAL COORDINATES
 
     // Check type of parallel transform
-    string ptstr;
+    std::string ptstr;
     Options::getRoot()->getSection("mesh")->get("paralleltransform", ptstr, "identity");
 
     if(lowercase(ptstr) == "shifted") {
@@ -294,6 +296,10 @@ protected:
       SAVE_ONCE(eta);
     }
     
+    // Create a solver for the Laplacian
+    phiSolver = Laplacian::create();
+    phiSolver->setFlags(phi_flags);
+    
     // LaplaceXY for n=0 solve
     if (split_n0) {
       // Create an XY solver for n=0 component
@@ -301,6 +307,13 @@ protected:
       phi2D = 0.0; // Starting guess
     }
 
+    // Solver for Apar
+    // ajpar = beta_hat*apar + mu_hat*jpar
+    aparSolver = Laplacian::create();
+    aparSolver->setFlags(apar_flags);
+    aparSolver->setCoefA(beta_hat);
+    aparSolver->setCoefD(-mu_hat);
+    
     return 0;
   }
   
@@ -346,7 +359,7 @@ protected:
     return result;
   }
   
-  int rhs(BoutReal time) {
+  int rhs(BoutReal UNUSED(time)) {
     
     // Invert vorticity to get electrostatic potential
     if (split_n0) {
@@ -354,10 +367,10 @@ protected:
       phi2D = laplacexy->solve(Vort2D, phi2D);
       
       // Solve non-axisymmetric part using X-Z solver
-      phi = invert_laplace((Vort-Vort2D)*B0, phi_flags);
+      phi = phiSolver->solve((Vort-Vort2D)*B0);
       phi += phi2D; // Add axisymmetric part
     } else {
-      phi = invert_laplace(Vort*B0, phi_flags);
+      phi = phiSolver->solve(Vort*B0);
     }
     phi.applyBoundary();
     
@@ -386,9 +399,7 @@ protected:
       } else {
         // All terms - solve Helmholtz equation
         // ajpar = beta_hat*apar + mu_hat*jpar
-        Field2D a = beta_hat;
-        Field2D d = -mu_hat;
-        apar = invert_laplace(Ajpar, apar_flags, &a, NULL, &d);
+        apar = aparSolver->solve(Ajpar);
         apar.applyBoundary();
         
         mesh->communicate(comms);

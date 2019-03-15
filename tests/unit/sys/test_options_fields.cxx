@@ -6,9 +6,14 @@
 #include "bout/mesh.hxx"
 #include "field3d.hxx"
 #include "test_extras.hxx"
+#include "unused.hxx"
 
 /// Global mesh
-extern Mesh *mesh;
+namespace bout {
+namespace globals {
+extern Mesh* mesh;
+}
+} // namespace bout
 
 // Reuse the "standard" fixture for FakeMesh
 using OptionsFieldTest = FakeMeshFixture;
@@ -63,7 +68,7 @@ TEST_F(OptionsFieldTest, RetrieveBoutRealfromField3D) {
   Field3D field = 1.2;
   options = field;
 
-  EXPECT_THROW(BoutReal value = options, BoutException);
+  EXPECT_THROW(BoutReal UNUSED(value) = options, BoutException);
 }
 
 TEST_F(OptionsFieldTest, RetrieveField2DfromField3D) {
@@ -71,7 +76,7 @@ TEST_F(OptionsFieldTest, RetrieveField2DfromField3D) {
   Field3D field = 1.2;
   options = field;
 
-  EXPECT_THROW(Field2D value = options.as<Field2D>(mesh), BoutException);
+  EXPECT_THROW(Field2D value = options.as<Field2D>(bout::globals::mesh), BoutException);
 }
 
 TEST_F(OptionsFieldTest, RetrieveStringfromField3D) {
@@ -79,6 +84,7 @@ TEST_F(OptionsFieldTest, RetrieveStringfromField3D) {
   Field3D field = 1.2;
   options = field;
 
+  WithQuietOutput quiet{output_info};
   EXPECT_EQ(options.as<std::string>(), "<Field3D>");
 }
 
@@ -87,6 +93,7 @@ TEST_F(OptionsFieldTest, RetrieveStringfromField2D) {
   Field2D field = 1.2;
   options = field;
 
+  WithQuietOutput quiet{output_info};
   EXPECT_EQ(options.as<std::string>(), "<Field2D>");
 }
 
@@ -94,7 +101,7 @@ TEST_F(OptionsFieldTest, RetrieveField3DfromString) {
   Options options;
   options = "1 + 2";
 
-  Field3D other = options.as<Field3D>(mesh);
+  Field3D other = options.as<Field3D>(bout::globals::mesh);
 
   EXPECT_DOUBLE_EQ(other(0,1,0), 3.0);
   EXPECT_DOUBLE_EQ(other(0,0,1), 3.0);
@@ -104,7 +111,7 @@ TEST_F(OptionsFieldTest, RetrieveField2DfromString) {
   Options options;
   options = "1 + 2";
 
-  Field2D other = options.as<Field2D>(mesh);
+  Field2D other = options.as<Field2D>(bout::globals::mesh);
 
   EXPECT_DOUBLE_EQ(other(0,1,0), 3.0);
   EXPECT_DOUBLE_EQ(other(0,0,1), 3.0);
@@ -114,6 +121,6 @@ TEST_F(OptionsFieldTest, RetrieveField2DfromBadString) {
   Options options;
   options = "1 + ";
 
-  EXPECT_THROW(Field2D other = options.as<Field2D>(mesh), ParseException);
+  EXPECT_THROW(Field2D other = options.as<Field2D>(bout::globals::mesh), ParseException);
 }
 

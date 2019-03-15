@@ -21,7 +21,7 @@
 // std::variant added in C++17
 //#include <variant>
 
-#include "external/mpark/variant.hpp"
+#include "mpark/variant.hpp"
 
 #include "utils.hxx"
 
@@ -88,26 +88,6 @@ bool variantEqualTo(const Variant& v, const T& t) {
 // Variant casting
 
 namespace details {
-
-/// Helper class for casting between two types
-/// The general case is that casting can't be done
-///
-/// Note: This must be a class/struct because partial
-/// specialisation is not allowed for functions
-template <typename Target, typename Source, bool>
-struct _StaticCastOrThrow {
-  Target operator()(Source&& UNUSED(source)) { throw std::bad_cast{}; }
-};
-
-/// Specialised case (bool = true)
-/// This version is used when casting can be done
-template <typename Target, typename Source>
-struct _StaticCastOrThrow<Target, Source, true> {
-  Target operator()(Source&& source) {
-    return static_cast<Target>(std::forward<Source>(source));
-  }
-};
-
 /// Functor to perform static casting with std::visit
 /// If the Target cannot be constructed from the Source
 /// then an exception (std::bad_cast) will be thrown at run time.
@@ -118,9 +98,16 @@ template <typename Target>
 struct StaticCastOrThrow {
   template <typename Source>
   Target operator()(Source&& source) const {
-    return _StaticCastOrThrow<Target, Source,
-                              std::is_constructible<Target, Source>::value>()(
-        std::forward<Source>(source));
+    return StaticCastOrThrow<Target>()(std::forward<Source>(source),
+                                       std::is_constructible<Target, Source>{});
+  }
+  template <typename Source>
+  Target operator()(Source&& UNUSED(source), std::false_type) {
+    throw std::bad_cast{};
+  }
+  template <typename Source>
+  Target operator()(Source&& source, std::true_type) {
+    return static_cast<Target>(std::forward<Source>(source));
   }
 };
 } // namespace details

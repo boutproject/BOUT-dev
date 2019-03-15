@@ -52,7 +52,7 @@ void readGroup(const std::string& filename, NcGroup group, Options& result) {
     }
     case 1: {
       if (var_type == ncDouble) {
-        Array<double> value{dims[0].getSize()};
+        Array<double> value(dims[0].getSize());
         var.getVar(value.begin());
         result[var_name] = value;
         result[var_name].attributes["source"] = filename;
@@ -61,7 +61,7 @@ void readGroup(const std::string& filename, NcGroup group, Options& result) {
     }
     case 2: {
       if (var_type == ncDouble) {
-        Matrix<double> value{dims[0].getSize(), dims[1].getSize()};
+        Matrix<double> value(dims[0].getSize(), dims[1].getSize());
         var.getVar(value.begin());
         result[var_name] = value;
         result[var_name].attributes["source"] = filename;
@@ -70,7 +70,7 @@ void readGroup(const std::string& filename, NcGroup group, Options& result) {
     }
     case 3: {
       if (var_type == ncDouble) {
-        Tensor<double> value{dims[0].getSize(), dims[1].getSize(), dims[2].getSize()};
+        Tensor<double> value(dims[0].getSize(), dims[1].getSize(), dims[2].getSize());
         var.getVar(value.begin());
         result[var_name] = value;
         result[var_name].attributes["source"] = filename;
@@ -269,7 +269,7 @@ void NcPutVarVisitor::operator()<Field2D>(const Field2D& value) {
   // Pointer to data. Assumed to be contiguous array
   var.putVar(&value(0, 0));
   // Set cell location attribute
-  var.putAtt("cell_location", CELL_LOC_STRING(value.getLocation()));
+  var.putAtt("cell_location", toString(value.getLocation()));
 }
   
 /// In addition to writing the data, set the "cell_location" attribute
@@ -279,7 +279,7 @@ void NcPutVarVisitor::operator()<Field3D>(const Field3D& value) {
   var.putVar(&value(0, 0, 0));
 
   // Set cell location attribute
-  var.putAtt("cell_location", CELL_LOC_STRING(value.getLocation()));
+  var.putAtt("cell_location", toString(value.getLocation()));
 }
 
 /// Visit a variant type, and put the data into a NcVar
@@ -390,7 +390,8 @@ void writeGroup(const Options& options, NcGroup group,
         if (var.isNull()) {
           // Variable doesn't exist yet
           // Create variable
-          var = group.addVar(name, nctype, dims);
+          // Temporary NcType as a workaround for bug in NetCDF 4.4.0 and NetCDF-CXX4 4.2.0
+          var = group.addVar(name, NcType{group, nctype.getId()}, dims);
         } else {
           // Variable does exist
 
@@ -406,8 +407,8 @@ void writeGroup(const Options& options, NcGroup group,
 
           // Same number of dimensions?
           if (var_dims.size() != dims.size()) {
-            throw BoutException("Changed dimensions for variable '%s'\nIn file has %d "
-                                "dimensions, now writing %d\n",
+            throw BoutException("Changed dimensions for variable '%s'\nIn file has %zu "
+                                "dimensions, now writing %zu\n",
                                 name.c_str(), var_dims.size(), dims.size());
           }
           // Dimensions compatible?
