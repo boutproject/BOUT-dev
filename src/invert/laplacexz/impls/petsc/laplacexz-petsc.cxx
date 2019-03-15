@@ -597,9 +597,7 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
   Field3D b = bin;
   Field3D x0 = x0in;
 
-  Field3D result;
-  result.allocate();
-  result.setLocation(location);
+  Field3D result{emptyFrom(bin)};
 
   for (auto &it : slice) {
     /// Get y index

@@ -10,7 +10,8 @@
 ;  o Automatic default settings when not
 ;    supplied. 
 ;
-; Author: Ben Dudson, University of York, Nov 2009
+; Author: Jarrod Leddy, Brendan Shanahan, Ben Dudson, University of York,
+;         2015-2016
 ; 
 ;
 ; NOTE: Throughout, "F" means un-normalised psi,
@@ -287,7 +288,8 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
                       sep_down=sep_down, sep_line_down=sep_line_down, $     ;Separatrix location and line
                       vec_in_up=vec_in_up, vec_out_up=vec_out_up, $         ;
                       sep_up=sep_up, sep_line_up=sep_line_up, $             ;
-                      sp_loc=sp_loc, orthdown=orthdown, orthup=orthup
+                      sp_loc=sp_loc, orthdown=orthdown, orthup=orthup, $
+                      nonorthogonal_weight_decay_power=nonorthogonal_weight_decay_power
                       
   
   nsurf = N_ELEMENTS(fvals)
@@ -350,9 +352,6 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
   FOR i=0, npar-1 DO BEGIN
 
     IF i GE npar/2 THEN BEGIN
-       IF KEYWORD_SET(vec_in_up) THEN vec_in = vec_in_up
-       IF KEYWORD_SET(vec_out_up) THEN vec_out = vec_out_up
-
        IF KEYWORD_SET(sep_up) THEN BEGIN
           sep = sep_up
        ENDIF ELSE sep = fvals[nin]
@@ -362,13 +361,8 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
                 INTERPOLATE(Z, REFORM(sep_line_up[1,*])), $
                 thick=2,color=3
        ENDIF ELSE sep_line = FLTARR(2,2)
-       IF NOT KEYWORD_SET(orthup) THEN orthup=0
-       IF orthup EQ 1 THEN weight = 0 ELSE weight = ((2.*i/(npar-1))-1)^1.35
     ENDIF ELSE BEGIN
 ;        PRINT, "***** DOWN *****" 
-       IF KEYWORD_SET(vec_in_down) THEN vec_in = vec_in_down
-       IF KEYWORD_SET(vec_out_down) THEN vec_out = vec_out_down
-
        IF KEYWORD_SET(sep_down) THEN BEGIN
           sep = sep_down
        ENDIF ELSE sep = fvals[nin]
@@ -379,9 +373,14 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
                 INTERPOLATE(Z, REFORM(sep_line_down[1,*])), $
                 thick=2,color=2
        ENDIF ELSE sep_line = FLTARR(2,2)
-       IF NOT KEYWORD_SET(orthdown) THEN orthdown=0
-       IF orthdown EQ 1 THEN weight = 0 ELSE weight = (1-(2.*i)/(npar-1))^1.35
     ENDELSE
+
+    IF NOT KEYWORD_SET(nonorthogonal_weight_decay_power) THEN nonorthogonal_weight_decay_power = 0
+    IF NOT KEYWORD_SET(orthup) THEN orthup=0
+    IF orthup EQ 1 THEN weight_up = 0 ELSE weight_up = (i/(npar-1.))^nonorthogonal_weight_decay_power
+
+    IF NOT KEYWORD_SET(orthdown) THEN orthdown=0
+    IF orthdown EQ 1 THEN weight_down = 0 ELSE weight_down = (1.-i/(npar-1.))^nonorthogonal_weight_decay_power
     
     ; Refine the location of the starting point
 ;     follow_gradient_nonorth, interp_data, R, Z, rii[i], zii[i], f0, ri1, zi1, vec=vec_in, weight=weight
@@ -396,7 +395,8 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
       ftarg = fvals[nin]
       follow_gradient_nonorth, interp_data, R, Z, rii[i], zii[i], $
         ftarg, rinext, zinext, status=status, $
-                       vec=vec_in, weight=weight
+                       vec_up=vec_in_up, weight_up=weight_up, $
+                       vec_down=vec_in_down, weight_down=weight_down
       rixy[nin, i] = rinext
       zixy[nin, i] = zinext
     ENDELSE
@@ -408,7 +408,9 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
 ;          PRINT, "FOLLOWING INNER i, j = ", i, j
          follow_gradient_nonorth, interp_data, R, Z, rixy[nin+j, i], zixy[nin+j, i], $
                           sep, rinext, zinext, status=status, $
-                          boundary=sep_line, fbndry=fbndry, vec=vec_in, weight=weight, /bndry_noperiodic
+                          boundary=sep_line, fbndry=fbndry, $
+                          vec_up=vec_in_up, weight_up=weight_up, $
+                          vec_down=vec_in_down, weight_down=weight_down, /bndry_noperiodic
          ; If hits the separatrix, should now continue from
          ; the separatrix line
          OPLOT, [INTERPOLATE(R, rinext)], [INTERPOLATE(Z, zinext)], psym=4, color=5
@@ -416,18 +418,24 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
 ;          PRINT, "FOLLOWING OUTER"
          follow_gradient_nonorth, interp_data, R, Z, rinext, zinext, $
                           ftarg, rinext, zinext, status=status, $
-                          boundary=boundary, fbndry=fbndry, vec=vec_out, weight=weight
+                          boundary=boundary, fbndry=fbndry, $
+                          vec_up=vec_out_up, weight_up=weight_up, $
+                          vec_down=vec_out_down, weight_down=weight_down
       ENDIF ELSE BEGIN
          
          IF fvals[nin+j] GT sep THEN BEGIN
-            vec = vec_out
+            vec_down = vec_out_down
+            vec_up = vec_out_up
          ENDIF ELSE BEGIN
-            vec = vec_in
+            vec_down = vec_in_down
+            vec_up = vec_in_up
          ENDELSE
          
          follow_gradient_nonorth, interp_data, R, Z, rixy[nin+j, i], zixy[nin+j, i], $
                           ftarg, rinext, zinext, status=status, $
-                          boundary=boundary, fbndry=fbndry, vec=vec, weight=weight
+                          boundary=boundary, fbndry=fbndry, $
+                          vec_up=vec_up, weight_up=weight_up, $
+                          vec_down=vec_down, weight_down=weight_down
       ENDELSE
       
       IF status EQ 1 THEN BEGIN
@@ -452,15 +460,18 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
       ftarg = fvals[nin-j-1]
       
       IF ftarg GT sep THEN BEGIN
-         vec = vec_out
+        vec_down = vec_out_down
+        vec_up = vec_out_up
       ENDIF ELSE BEGIN
-         vec = vec_in
+        vec_down = vec_in_down
+        vec_up = vec_in_up
       ENDELSE
       
       follow_gradient_nonorth, interp_data, R, Z, rixy[nin-j, i], zixy[nin-j, i], $
         ftarg, rinext, zinext,  status=status, $
         boundary=boundary, fbndry=fbndry, $
-        vec=vec, weight=weight
+        vec_up=vec_up, weight_up=weight_up, $
+        vec_down=vec_down, weight_down=weight_down
       
       IF status EQ 1 THEN BEGIN
         rixy[nin-j-1, i] = -1.0
@@ -519,7 +530,9 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
        ENDIF
     ENDIF ELSE BEGIN
        ; Probably not near an X-point. Follow gradient to refine location
-       follow_gradient_nonorth, interp_data, R, Z, rixy[nin,i], zixy[nin,i], f0, ri1, zi1, vec=vec_in, weight=weight
+       follow_gradient_nonorth, interp_data, R, Z, rixy[nin,i], zixy[nin,i], f0, ri1, zi1, $
+                                vec_up=vec_in_up, weight_up=weight_up, $
+                                vec_down=vec_in_down, weight_down=weight_down
        rixy[nin,i] = ri1
        zixy[nin,i] = zi1
     ENDELSE
@@ -565,10 +578,24 @@ PRO oplot_line, interp_data, R, Z, ri0, zi0, fto, npt=npt, color=color, _extra=_
 END
 
 FUNCTION line_dist, R, Z, ri, zi
-  drdi = DERIV(INTERPOLATE(R, ri))
-  dzdi = DERIV(INTERPOLATE(Z, zi))
-  dldi = SQRT(drdi^2 + dzdi^2)
-  RETURN, int_func(findgen(N_ELEMENTS(dldi)), dldi, /simple)
+  IF 0 THEN BEGIN
+    ; derivatives drdi and dzdi may be very inaccurate because the contour
+    ; given by ri and zi is not necessarily uniformly spaced, it may not even
+    ; have a smoothly varying grid spacing. Therefore don't use this branch
+    drdi = DERIV(INTERPOLATE(R, ri))
+    dzdi = DERIV(INTERPOLATE(Z, zi))
+    dldi = SQRT(drdi^2 + dzdi^2)
+    RETURN, int_func(findgen(N_ELEMENTS(dldi)), dldi, /simple)
+  ENDIF ELSE BEGIN
+    np = N_ELEMENTS(ri)
+    rpos = INTERPOLATE(R, ri)
+    zpos = INTERPOLATE(Z, zi)
+    dd = SQRT((zpos[1:*] - zpos[0:(np-2)])^2 + (rpos[1:*] - rpos[0:(np-2)])^2)
+    dd = [dd, SQRT((zpos[0] - zpos[np-1])^2 + (rpos[0] - rpos[np-1])^2)]
+    result = FLTARR(np)
+    FOR i=1,np-1 DO result[i] = result[i-1] + dd[i-1]
+    RETURN, result
+  ENDELSE
 END
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -818,6 +845,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
 
 
   strictbndry=0
+  nboundary = N_ELEMENTS(boundary[0,*])
 
   IF SIZE(nrad_flexible, /TYPE) EQ 0 THEN nrad_flexible = 0
 
@@ -863,6 +891,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
     str_check_present, settings, 'rad_peaking', 0.0
     str_check_present, settings, 'pol_peaking', 0.0
     str_check_present, settings, 'parweight', 0.0
+    str_check_present, settings, 'nororthogonal_weight_decay_power', 2.7
   ENDELSE
 
   s = SIZE(F, /DIMENSION)
@@ -904,6 +933,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
     IF (N_ELEMENTS(s) NE 2) OR (s[0] NE 2) THEN BEGIN
       PRINT, "WARNING: boundary must be a 2D array: [2, n]. Ignoring"
       boundary = 0
+      nboundary = 0
     ENDIF ELSE BEGIN
     
       ; Calculate indices
@@ -1301,9 +1331,6 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
     ; now have (start_ri, start_zi). For each x-point, find the radial
     ; line going through the x-point
     
-    fri = FFT(start_ri) ; for interpolating periodic functions
-    fzi = FFT(start_zi)
-
     xpt_ind = FLTARR(critical.n_xpoint)  ; index into start_*i
 
     pf_info = PTRARR(critical.n_xpoint)
@@ -1325,8 +1352,10 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       ;; oplot, centerliner, centerlinez, thick=5
       ;; stop
 
-      nflux_leg1 = n_elements(legsep.leg1[*,0])
-      nflux_leg2 = n_elements(legsep.leg2[*,0])
+      ;; set nflux_* here to the minimum of the number of points in the leg and core
+      ;; lines, because we need elements from both at each step when we loop below
+      nflux_leg1 = min([n_elements(legsep.leg1[*,0]), n_elements(legsep.core2[*,0])])
+      nflux_leg2 = min([n_elements(legsep.leg2[*,0]), n_elements(legsep.core1[*,0])])
       meanr1 = fltarr(nflux_leg1)
       meanz1 = fltarr(nflux_leg1)
 
@@ -1394,16 +1423,17 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       ;; stop
 
       ; Go a little way along each core separatrix and follow
+      ; Note: add starting point to end of 'boundary' so we find intersections with a closed contour
       follow_gradient, interp_data, R, Z, $
                        legsep.core1[2,0], legsep.core1[2,1], $
                        0.95 * f_cont + 0.05*opt_f[primary_opt], $
                        rhit, zhit, $
-                       boundary=TRANSPOSE([[start_ri], [start_zi]]), ibndry=hit_ind1
+                       boundary=TRANSPOSE([[start_ri, start_ri[0]], [start_zi, start_zi[0]]]), ibndry=hit_ind1
       follow_gradient, interp_data, R, Z, $
                        legsep.core2[2,0], legsep.core2[2,1], $
                        0.95 * f_cont + 0.05*opt_f[primary_opt], $
                        rhit, zhit, $
-                       boundary=TRANSPOSE([[start_ri], [start_zi]]), ibndry=hit_ind2
+                       boundary=TRANSPOSE([[start_ri, start_ri[0]], [start_zi, start_zi[0]]]), ibndry=hit_ind2
       
       ni = N_ELEMENTS(start_ri)
       
@@ -1464,9 +1494,9 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       
       ; Plot the line to the x-point
       oplot_line, interp_data, R, Z, $
-        fft_interp(fri, mini), fft_interp(fzi, mini), critical.xpt_f[i], color=125
+        INTERPOLATE(start_ri, mini), INTERPOLATE(start_zi, mini), critical.xpt_f[i], color=125
       oplot_line, interp_data, R, Z, $
-        fft_interp(fri, mini), fft_interp(fzi, mini), f_inner, color=125
+        INTERPOLATE(start_ri, mini), INTERPOLATE(start_zi, mini), f_inner, color=125
 
 
       ; Get tangent vector
@@ -1486,34 +1516,34 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
     sol_info = PTRARR(critical.n_xpoint)
     FOR i=0, critical.n_xpoint-1 DO BEGIN
       IF i NE (critical.n_xpoint-1) THEN BEGIN
-        ri = [ fft_interp(fri,xpt_ind[ci[i]]), $
+        ri = [ INTERPOLATE(start_ri,xpt_ind[ci[i]]), $
                start_ri[FIX(xpt_ind[ci[i]]+1.0):FIX(xpt_ind[ci[i+1]])], $
-               fft_interp(fri,xpt_ind[ci[i+1]]) ]
+               INTERPOLATE(start_ri,xpt_ind[ci[i+1]]) ]
         
-        zi = [ fft_interp(fzi,xpt_ind[ci[i]]), $
+        zi = [ INTERPOLATE(start_zi,xpt_ind[ci[i]]), $
                start_zi[FIX(xpt_ind[ci[i]]+1.0):FIX(xpt_ind[ci[i+1]])], $
-               fft_interp(fzi,xpt_ind[ci[i+1]]) ]
+               INTERPOLATE(start_zi,xpt_ind[ci[i+1]]) ]
       ENDIF ELSE BEGIN
         ; Index wraps around
         IF xpt_ind[ci[i]] GT N_ELEMENTS(start_ri)-2 THEN BEGIN
-          ri = [ fft_interp(fri,xpt_ind[ci[i]]), $
+          ri = [ INTERPOLATE(start_ri,xpt_ind[ci[i]]), $
                  start_ri[0:FIX(xpt_ind[ci[0]])], $
-                 fft_interp(fri,xpt_ind[ci[0]]) ]
+                 INTERPOLATE(start_ri,xpt_ind[ci[0]]) ]
           
-          zi = [ fft_interp(fzi,xpt_ind[ci[i]]), $
+          zi = [ INTERPOLATE(start_zi,xpt_ind[ci[i]]), $
                  start_zi[0:FIX(xpt_ind[ci[0]])], $
-                 fft_interp(fzi,xpt_ind[ci[0]]) ]
+                 INTERPOLATE(start_zi,xpt_ind[ci[0]]) ]
           
         ENDIF ELSE BEGIN
-          ri = [ fft_interp(fri,xpt_ind[ci[i]]), $
+          ri = [ INTERPOLATE(start_ri,xpt_ind[ci[i]]), $
                  start_ri[FIX(xpt_ind[ci[i]]+1.0):*], $
                  start_ri[0:FIX(xpt_ind[ci[0]])], $
-                 fft_interp(fri,xpt_ind[ci[0]]) ]
+                 INTERPOLATE(start_ri,xpt_ind[ci[0]]) ]
           
-          zi = [ fft_interp(fzi,xpt_ind[ci[i]]), $
+          zi = [ INTERPOLATE(start_zi,xpt_ind[ci[i]]), $
                  start_zi[FIX(xpt_ind[ci[i]]+1.0):*], $
                  start_zi[0:FIX(xpt_ind[ci[0]])], $
-                 fft_interp(fzi,xpt_ind[ci[0]]) ]
+                 INTERPOLATE(start_zi,xpt_ind[ci[0]]) ]
         ENDELSE
       ENDELSE
       
@@ -1556,7 +1586,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
         new_settings = {psi_inner:psi_inner, psi_outer:(max(xpt_psi)+0.02), $
                         nrad:nrad, npol:settings.npol, $
                         rad_peaking:settings.rad_peaking, pol_peaking:settings.pol_peaking}
-        RETURN, create_grid(F, R, Z, new_settings, critical=critical, $
+        RETURN, create_nonorthogonal(F, R, Z, new_settings, critical=critical, $
                             boundary=boundary, iter=iter+1, nrad_flexible=nrad_flexible, $
                             single_rad_grid=single_rad_grid, fast=fast, simple=simple)
       ENDIF
@@ -1792,7 +1822,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       poldist = line_dist(R, Z, (*pf_info[xpt]).ri0, (*pf_info[xpt]).zi0) ; Poloidal distance along line
       xdist = MAX(poldist) * 0.5 / FLOAT(npol[3*i]) ; Equal spacing
 
-      xpt_dist[xpt, 0] = 0.03 ;;xdist
+      xpt_dist[xpt, 0] = xdist
       
       ; SOL
       solid = (*pf_info[xpt]).sol[0]
@@ -1802,8 +1832,8 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       
       xpt2 = (*sol_info[solid]).xpt2
       
-      xpt_dist[xpt, 1] = 0.03 ;;xdist
-      xpt_dist[xpt2, 2] =0.03 ;;xdist
+      xpt_dist[xpt, 1] = xdist
+      xpt_dist[xpt2, 2] = xdist
 
       ; Second PF region
       xpt = xpt2
@@ -1811,7 +1841,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       poldist = line_dist(R, Z, (*pf_info[xpt]).ri0, (*pf_info[xpt]).zi0)
       xdist = MAX(poldist) * 0.5 / FLOAT(npol[3*i])
       
-      xpt_dist[xpt, 3] = 0.03 ;;xdist
+      xpt_dist[xpt, 3] = xdist
 
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -1865,7 +1895,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       line = get_line_nonorth(interp_data, R, Z, $
                       INTERPOLATE((*sep_info[xpt]).core2_ri, sepi), $
                       INTERPOLATE((*sep_info[xpt]).core2_zi, sepi), $
-                      0.95*f_cont + 0.05*faxis, npt=30, vec=vec_in_down2, weight=1)
+                      0.95*f_cont + 0.05*faxis, npt=30, vec_down=vec_in_down2, weight_down=1)
       
       OPLOT, INTERPOLATE(R, line[*,0]), INTERPOLATE(Z, line[*,1]), $
              color=4, _extra=_extra
@@ -1896,8 +1926,8 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       line = get_line_nonorth(interp_data, R, Z, $
                       INTERPOLATE((*sep_info[xpt2]).core1_ri, sepi), $
                       INTERPOLATE((*sep_info[xpt2]).core1_zi, sepi), $
-                      0.95*f_cont + 0.05*faxis, npt=20, $
-                      vec=vec_in_up2, weight=1)
+                      0.95*f_cont + 0.05*faxis, npt=30, $
+                      vec_up=vec_in_up2, weight_up=1)
       
       OPLOT, INTERPOLATE(R, line[*,0]), INTERPOLATE(Z, line[*,1]), $
              color=2, _extra=_extra
@@ -1959,6 +1989,8 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
     ypos = 0
     rerun = 0   ; Flag. If 1 then have to re-run the grid generator
     FOR i=0, critical.n_xpoint-1 DO BEGIN
+       ; This section grids the first divertor leg associated with this X-point
+
        pvtfluxliner = [R[(*pf_info[i]).ri0[N_ELEMENTS((*pf_info[i]).ri0)-1]], R[(*pf_info[i]).ri0[0]]] 
        pvtfluxlinez = [Z[(*pf_info[i]).zi0[N_ELEMENTS((*pf_info[i]).zi0)-1]], Z[(*pf_info[i]).zi0[0]]] 
 
@@ -1974,21 +2006,30 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
 
        bndcrosspos = line_crossings( boundary[0,*], boundary[1,*], 1, pvtfluxliner, pvtfluxlinez, 0, ncross=ncross, inds1=bndrycrossi)
 
+       ; vec_in_down1 and vec_out_down1 are a unit vector parallel to the wall
+       ; where the separatrix intersects the wall, it gives the angle of the
+       ; line where this section of grid begins.
+       ; vec_in_up1 is a unit vector along the line from the X-point into the
+       ; private flux region where this section of the grid ends
+       ; vec_out_up1 is a unit vector along the line from the X-point into the
+       ; SOL where this section of the grid ends
        IF i EQ 0 THEN BEGIN
-          vec_in_down_r = boundary[0,bndrycrossi+1] -boundary[0,bndrycrossi]
-          vec_in_down_z = boundary[1,bndrycrossi+1] -boundary[1,bndrycrossi]
-          vec_in_down_r = vec_in_down_r / SQRT(vec_in_down_r^2 + vec_in_down_z^2)
-          vec_in_down_z = vec_in_down_z / SQRT(vec_in_down_r^2 + vec_in_down_z^2)
+          vec_in_down_r = boundary[0,(bndrycrossi+1) MOD nboundary] -boundary[0,bndrycrossi]
+          vec_in_down_z = boundary[1,(bndrycrossi+1) MOD nboundary] -boundary[1,bndrycrossi]
+          vec_length = SQRT(vec_in_down_r^2 + vec_in_down_z^2)
+          vec_in_down_r = vec_in_down_r / vec_length
+          vec_in_down_z = vec_in_down_z / vec_length
           vec_in_down1 = [vec_in_down_r, vec_in_down_z] 
           vec_out_down1= -vec_in_down1 ;; [-1,1]/(SQRT(2.))
           vec_in_up1 = TRANSPOSE(-vecpvt[0,*])
           vec_out_up1 = TRANSPOSE(vec2[0,*])
           sp_loc = -1
        ENDIF ELSE BEGIN
-          vec_in_down_r = boundary[0,bndrycrossi+1] -boundary[0,bndrycrossi]
-          vec_in_down_z = boundary[1,bndrycrossi+1] -boundary[1,bndrycrossi]
-          vec_in_down_r = vec_in_down_r / SQRT(vec_in_down_r^2 + vec_in_down_z^2)
-          vec_in_down_z = vec_in_down_z / SQRT(vec_in_down_r^2 + vec_in_down_z^2)
+          vec_in_down_r = boundary[0,(bndrycrossi+1) MOD nboundary] -boundary[0,bndrycrossi]
+          vec_in_down_z = boundary[1,(bndrycrossi+1) MOD nboundary] -boundary[1,bndrycrossi]
+          vec_length = SQRT(vec_in_down_r^2 + vec_in_down_z^2)
+          vec_in_down_r = vec_in_down_r / vec_length
+          vec_in_down_z = vec_in_down_z / vec_length
           vec_in_down1 = [-1,0] ;;[vec_in_down_r, vec_in_down_z] 
           vec_out_down1= -vec_in_down1 ;;[1,0]
           vec_in_up1 = TRANSPOSE(-vecpvt[i,*])
@@ -2015,7 +2056,8 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
                       ffirst=ffirst, flast=flast1, fpsi=fpsi, yup_dist=xpt_dist[xpt, 0], /oplot, $
                       vec_in_up=vec_in_up1, vec_out_up=vec_out_up1, sep_up=critical.xpt_f[xpt], $
                       vec_in_down=-vec_in_down1, vec_out_down=vec_out_down1, $
-                      ydown_dist=0,orthup=orthup,orthdown=orthdown)
+                      ydown_dist=0,orthup=orthup,orthdown=orthdown, $
+                      nonorthogonal_weight_decay_power=settings.nonorthogonal_weight_decay_power)
       Rxy[*, ypos:(ypos+npol[3*i]-1)] = a.Rxy
       Zxy[*, ypos:(ypos+npol[3*i]-1)] = a.Zxy
       Rixy[*, ypos:(ypos+npol[3*i]-1)] = a.Rixy
@@ -2033,7 +2075,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       
       IF (flast1 - faxis)/fnorm LT xpt_psi_max THEN BEGIN
         PRINT, "WARNING: Due to intersections with the boundary,"
-        PRINT, "         the SOL can't cover both x-points"
+        PRINT, "         the SOL can't cover both x-points. (1)"
         IF KEYWORD_SET(strictbndry) THEN BEGIN
           PRINT, "** Switching off strict boundary"
           strictbndry = 0
@@ -2063,6 +2105,9 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
         rerun = 1  ; Signal that the grid needs to be rerun
       ENDIF
 
+      ; This part grids the region around the core, including SOL field lines
+      ; radially outside the core
+
       ; SOL region
       solid = (*pf_info[xpt]).sol[0]
       
@@ -2088,6 +2133,14 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       sep_line_up[1,*] = (*sep_info[xpt2]).core1_zi
       
       
+      ; vec_in_down2 is a unit vector along the line from the X-point into the
+      ; core where this section of the grid begins
+      ; vec_out_down2 is a unit vector along the line from the X-point into the
+      ; SOL where this section of the grid begins
+      ; vec_in_up2 is a unit vector along the line from the X-point into the
+      ; core where this section of the grid ends
+      ; vec_out_up2 is a unit vector along the line from the X-point into the
+      ; SOL where this section of the grid ends
       vec_in_down2 = TRANSPOSE(veccore[xpt,*])
       vec_out_down2 = TRANSPOSE(vec2[xpt,*])
       vec_in_up2 = TRANSPOSE(veccore[xpt2,*])
@@ -2112,7 +2165,8 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
                       sep_down=critical.xpt_f[xpt], $
                       sep_line_down=sep_line_down, $
                       vec_in_up=vec_in_up2, vec_out_up=vec_out_up2, $
-                      sep_up=critical.xpt_f[xpt2], sep_line_up=sep_line_up)
+                      sep_up=critical.xpt_f[xpt2], sep_line_up=sep_line_up, $
+                      nonorthogonal_weight_decay_power=settings.nonorthogonal_weight_decay_power)
       
       Rxy[*, ypos:(ypos+npol[3*i+1]-1)] = a.Rxy
       Zxy[*, ypos:(ypos+npol[3*i+1]-1)] = a.Zxy
@@ -2130,7 +2184,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
 
       IF (flast2 - faxis)/fnorm LT xpt_psi_max THEN BEGIN
         PRINT, "WARNING: Due to intersections with the boundary,"
-        PRINT, "         the SOL can't cover both x-points"
+        PRINT, "         the SOL can't cover both x-points. (2)"
         IF KEYWORD_SET(strictbndry) THEN BEGIN
           PRINT, "** Switching off strict boundary"
           strictbndry = 0
@@ -2152,7 +2206,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
          vec_in_up1=[1,0]
          vec_out_up1=[1,0]
       END
-      ; Second PF region
+      ; This section grids the second divertor leg associated with this X-point
       xpt = (*sol_info[solid]).xpt2
 
       pvtfluxliner = [R[(*pf_info[xpt]).ri1[N_ELEMENTS((*pf_info[xpt]).ri1)-1]], R[(*pf_info[xpt]).ri1[0]]] 
@@ -2170,17 +2224,30 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
 
       bndcrosspos = line_crossings( boundary[0,*], boundary[1,*], 1,pvtfluxliner, pvtfluxlinez, 0, ncross=ncross, inds1=bndrycrossi)
       
+      ; vec_in_down3 is a unit vector along the line from the X-point into the
+      ; private flux region where this section of the grid begins
+      ; vec_out_down3 is a unit vector along the line from the X-point into the
+      ; SOL where this section of the grid begins
+      ; vec_in_up3 and vec_out_up3 are a unit vector parallel to the wall
+      ; where the separatrix intersects the wall, it gives the angle of the
+      ; line where this section of grid ends.
       IF critical.n_xpoint EQ 1 THEN BEGIN
          vec_in_down3 = TRANSPOSE(-vecpvt[0,*])
          vec_out_down3 = TRANSPOSE(vec1[0,*])
-         vec_in_up3 = [1,0]
-         vec_out_up3 = [1,0]
+         vec_in_up_r = boundary[0,(bndrycrossi+1) MOD nboundary] -boundary[0,bndrycrossi]
+         vec_in_up_z = boundary[1,(bndrycrossi+1) MOD nboundary] -boundary[1,bndrycrossi]
+         veclength = SQRT(vec_in_up_r^2 + vec_in_up_z^2)
+         vec_in_up_r = vec_in_up_r / veclength
+         vec_in_up_z = vec_in_up_z / veclength
+         vec_in_up3 = [vec_in_up_r, vec_in_up_z]
+         vec_out_up3 = vec_in_up3
       ENDIF ELSE BEGIN
          IF i EQ 0 THEN BEGIN
-             vec_in_up_r = boundary[0,bndrycrossi+1] -boundary[0,bndrycrossi]
-             vec_in_up_z = boundary[1,bndrycrossi+1] -boundary[1,bndrycrossi]
-             vec_in_up_r = vec_in_up_r / SQRT(vec_in_up_r^2 + vec_in_up_z^2)
-             vec_in_up_z = vec_in_up_z / SQRT(vec_in_up_r^2 + vec_in_up_z^2)
+             vec_in_up_r = boundary[0,(bndrycrossi+1) MOD nboundary] -boundary[0,bndrycrossi]
+             vec_in_up_z = boundary[1,(bndrycrossi+1) MOD nboundary] -boundary[1,bndrycrossi]
+             veclength = SQRT(vec_in_up_r^2 + vec_in_up_z^2)
+             vec_in_up_r = vec_in_up_r / veclength
+             vec_in_up_z = vec_in_up_z / veclength
              vec_in_up3 = [vec_in_up_r, vec_in_down_z] 
             vec_in_down3 = TRANSPOSE(-vecpvt[1,*])
             vec_out_down3 = TRANSPOSE(vec1[1,*])
@@ -2191,10 +2258,11 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
          IF i EQ 1 THEN BEGIN
             vec_in_down3 = TRANSPOSE(-vecpvt[0,*])
             vec_out_down3 = TRANSPOSE(vec1[0,*])
-            vec_in_up_r = boundary[0,bndrycrossi+1] -boundary[0,bndrycrossi]
-            vec_in_up_z = boundary[1,bndrycrossi+1] -boundary[1,bndrycrossi]
-            vec_in_up_r = vec_in_up_r / SQRT(vec_in_up_r^2 + vec_in_up_z^2)
-            vec_in_up_z = vec_in_up_z / SQRT(vec_in_up_r^2 + vec_in_up_z^2)
+            vec_in_up_r = boundary[0,(bndrycrossi+1) MOD nboundary] -boundary[0,bndrycrossi]
+            vec_in_up_z = boundary[1,(bndrycrossi+1) MOD nboundary] -boundary[1,bndrycrossi]
+            veclength = SQRT(vec_in_up_r^2 + vec_in_up_z^2)
+            vec_in_up_r = vec_in_up_r / veclength
+            vec_in_up_z = vec_in_up_z / veclength
             vec_in_up3 = [vec_in_up_r, vec_in_up_z] 
 
            ;; vec_in_up3 = [1,0] ;;TRANSPOSE(veccore[0,*])
@@ -2221,7 +2289,8 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
                       ydown_dist=xpt_dist[xpt, 3], /oplot, $
                       vec_in_down=vec_in_down3, vec_out_down=vec_out_down3, sep_down=critical.xpt_f[xpt], $
                       vec_in_up=vec_in_up3, vec_out_up=vec_out_up3, $
-                      yup_dist=0,orthup=orthup,orthdown=orthdown)
+                      yup_dist=0,orthup=orthup,orthdown=orthdown, $
+                      nonorthogonal_weight_decay_power=settings.nonorthogonal_weight_decay_power)
       Rxy[*, ypos:(ypos+npol[3*i+2]-1)] = a.Rxy
       Zxy[*, ypos:(ypos+npol[3*i+2]-1)] = a.Zxy
       Rixy[*, ypos:(ypos+npol[3*i+2]-1)] = a.Rixy
@@ -2239,7 +2308,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
 
       IF (flast3 - faxis)/fnorm LT xpt_psi_max THEN BEGIN
         PRINT, "WARNING: Due to intersections with the boundary,"
-        PRINT, "         the SOL can't cover both x-points"
+        PRINT, "         the SOL can't cover both x-points. (3)"
         IF KEYWORD_SET(strictbndry) THEN BEGIN
           PRINT, "** Switching off strict boundary"
           strictbndry = 0

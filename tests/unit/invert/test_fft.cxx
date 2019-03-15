@@ -15,9 +15,6 @@ public:
   FFTTest()
       : size(GetParam()), nmodes((size / 2) + 1), real_signal(size), fft_signal(nmodes) {
 
-    // Make sure fft functions are quiet by setting fft_measure to false
-    bout::fft::fft_init(false);
-
     // Make grid indices from [0, size - 1]
     Array<BoutReal> indices{size};
     std::iota(indices.begin(), indices.end(), 0.0);
@@ -34,6 +31,8 @@ public:
     fft_signal[2] = dcomplex{0.5, 0.};
   };
 
+  virtual ~FFTTest() = default;
+
   const int size;
   const int nmodes;
 
@@ -42,7 +41,7 @@ public:
 };
 
 // Test the FFT functions with both even- and odd-length real signals
-INSTANTIATE_TEST_CASE_P(FFTEvenAndOddSamples, FFTTest, ::testing::Values(8, 9));
+INSTANTIATE_TEST_SUITE_P(FFTEvenAndOddSamples, FFTTest, ::testing::Values(8, 9));
 
 TEST_P(FFTTest, rfft) {
 

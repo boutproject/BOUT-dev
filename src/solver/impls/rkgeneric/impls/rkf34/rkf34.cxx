@@ -16,9 +16,9 @@ RKF34Scheme::RKF34Scheme(Options *options):RKScheme(options){
   }
 
   //Allocate coefficient arrays
-  stageCoeffs = Matrix<BoutReal>(numStages, numStages);
-  resultCoeffs = Matrix<BoutReal>(numStages, numOrders);
-  timeCoeffs = Array<BoutReal>(numStages);
+  stageCoeffs.reallocate(numStages, numStages);
+  resultCoeffs.reallocate(numStages, numOrders);
+  timeCoeffs.reallocate(numStages);
 
   //Zero out arrays (shouldn't be needed, but do for testing)
   for(int i=0;i<numStages;i++){

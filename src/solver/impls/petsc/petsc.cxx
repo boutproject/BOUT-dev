@@ -125,7 +125,6 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   nout = NOUT;
   tstep = TIMESTEP;
 
-  PetscInt n3d = n3Dvars();       // Number of 3D variables
   PetscInt local_N = getLocalN(); // Number of evolving variables on this processor
 
   /********** Get total problem size **********/

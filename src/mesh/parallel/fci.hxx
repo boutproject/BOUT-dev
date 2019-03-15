@@ -58,7 +58,7 @@ public:
   BoutMask corner_boundary_mask;
   
   Field3D interpolate(Field3D& f) const {
-    ASSERT3(&map_mesh == f.getMesh());
+    ASSERT1(&map_mesh == f.getMesh());
     return interp->interpolate(f);
   }
 
@@ -70,7 +70,10 @@ public:
 class FCITransform : public ParallelTransform {
 public:
   FCITransform() = delete;
-  FCITransform(Mesh& mesh, bool zperiodic = true) {
+  FCITransform(Mesh& mesh, bool zperiodic = true) : ParallelTransform(mesh) {
+
+    // check the coordinate system used for the grid data source
+    checkInputGrid();
 
     auto forward_boundary = new BoundaryRegionPar("FCI_forward", BNDRY_PAR_FWD, +1, &mesh);
     auto backward_boundary = new BoundaryRegionPar("FCI_backward", BNDRY_PAR_BKWD, -1, &mesh);
@@ -90,15 +93,19 @@ public:
   
   void integrateYUpDown(Field3D &f) override;
   
-  const Field3D toFieldAligned(const Field3D &UNUSED(f)) override {
+  const Field3D toFieldAligned(const Field3D &UNUSED(f), const REGION UNUSED(region)) override {
     throw BoutException("FCI method cannot transform into field aligned grid");
   }
 
-  const Field3D fromFieldAligned(const Field3D &UNUSED(f)) override {
+  const Field3D fromFieldAligned(const Field3D &UNUSED(f), const REGION UNUSED(region)) override {
     throw BoutException("FCI method cannot transform into field aligned grid");
   }
 
   bool canToFromFieldAligned() override { return false; }
+
+protected:
+  void checkInputGrid() override;
+
 
 private:
   /// FCI maps for each of the parallel slices

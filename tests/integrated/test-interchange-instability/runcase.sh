@@ -9,7 +9,7 @@ OPTERROR=65
 
 
 ##-setting defaults
-MPIEXEC="mpirun -np "
+test ".$MPIRUN" = . && MPIRUN="mpirun -np"
 NP=4
 
 
@@ -19,30 +19,27 @@ n)
    NP=$OPTARG;
    ;;
 m) 
-   MPIEXEC=$OPTARG;
+   MPIRUN=$OPTARG;
    ;;
   esac
 done
 
 
-echo "Running command: " $MPIEXEC $NP
+echo "Running command: " $MPIRUN $NP
 
 
 #-compile/build local executable
 make
 
-#-run the case       
+#-run the cases
 echo Running with NP = $NP       
 
-ln -s data_1 data
-$MPIEXEC $NP ./2fluid
+$MPIRUN $NP ./2fluid -d data_1
 rm -f data
 
-ln -s data_10 data
-$MPIEXEC $NP ./2fluid
+$MPIRUN $NP ./2fluid -d data_10
 rm -f data
 
 
 #-check the result
 idl runidl.pro
-

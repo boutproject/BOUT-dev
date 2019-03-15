@@ -2,7 +2,7 @@
 
 from __future__ import print_function
 from builtins import str
-from boututils.run_wrapper import shell, launch, getmpirun
+from boututils.run_wrapper import shell, launch
 from boutdata.collect import collect
 
 import numpy as np
@@ -12,8 +12,8 @@ shell("make > make.log")
 
 # Run simulation
 nproc = 2
-MPIRUN = getmpirun()
-s, out = launch("./elm_pb ", runcmd=MPIRUN, nproc=nproc, pipe=True)
+
+s, out = launch("./elm_pb ", nproc=nproc, pipe=True)
 
 with open("run.log", "w") as f:
     f.write(out)

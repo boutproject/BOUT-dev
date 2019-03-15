@@ -73,11 +73,13 @@ FCIMap::FCIMap(Mesh& mesh, int offset_, BoundaryRegionPar* boundary, bool zperio
   auto k_corner = Tensor<int>(map_mesh.LocalNx, map_mesh.LocalNy, map_mesh.LocalNz);
 
   // Index-space coordinates of forward/backward points
-  Field3D xt_prime(&map_mesh), zt_prime(&map_mesh);
+  Field3D xt_prime{&map_mesh}, zt_prime{&map_mesh};
+
   // Real-space coordinates of grid points
-  Field3D R(&map_mesh), Z(&map_mesh);
+  Field3D R{&map_mesh}, Z{&map_mesh};
+
   // Real-space coordinates of forward/backward points
-  Field3D R_prime(&map_mesh), Z_prime(&map_mesh);
+  Field3D R_prime{&map_mesh}, Z_prime{&map_mesh};
 
   map_mesh.get(R, "R", 0.0, false);
   map_mesh.get(Z, "Z", 0.0, false);
@@ -116,42 +118,48 @@ FCIMap::FCIMap(Mesh& mesh, int offset_, BoundaryRegionPar* boundary, bool zperio
   }
 
   // Cell corners
-  Field3D xt_prime_corner(&map_mesh), zt_prime_corner(&map_mesh);
-  xt_prime_corner.allocate();
-  zt_prime_corner.allocate();
+  Field3D xt_prime_corner{emptyFrom(xt_prime)};
+  Field3D zt_prime_corner{emptyFrom(xt_prime)};
 
-  for (int x = map_mesh.xstart; x <= map_mesh.xend; x++) {
-    for (int y = map_mesh.ystart; y <= map_mesh.yend; y++) {
-      for (int z = 0; z < map_mesh.LocalNz - 1; z++) {
-        // Point interpolated from (x+1/2, z+1/2)
+  BOUT_FOR(i, xt_prime_corner.getRegion("RGN_NOBNDRY")) {
+    // Point interpolated from (x+1/2, z+1/2)
 
-        if ((xt_prime(x, y, z) < 0.0) || (xt_prime(x + 1, y, z) < 0.0) ||
-            (xt_prime(x + 1, y, z + 1) < 0.0) || (xt_prime(x, y, z + 1) < 0.0)) {
-          // Hit a boundary
-          corner_boundary_mask(x, y, z) = true;
+    // Cache the offsets
+    auto i_xplus = i.xp();
+    auto i_zplus = i.zp();
+    auto i_xzplus = i_zplus.xp();
 
-          xt_prime_corner(x, y, z) = -1.0;
-          zt_prime_corner(x, y, z) = -1.0;
-          continue;
-        }
+    if ((xt_prime[i] < 0.0) || (xt_prime[i_xplus] < 0.0) || (xt_prime[i_xzplus] < 0.0) ||
+        (xt_prime[i_zplus] < 0.0)) {
+      // Hit a boundary
+      corner_boundary_mask(i.x(), i.y(), i.z()) = true;
 
-        xt_prime_corner(x, y, z) =
-            0.25 * (xt_prime(x, y, z) + xt_prime(x + 1, y, z) + xt_prime(x, y, z + 1) +
-                    xt_prime(x + 1, y, z + 1));
-
-        zt_prime_corner(x, y, z) =
-            0.25 * (zt_prime(x, y, z) + zt_prime(x + 1, y, z) + zt_prime(x, y, z + 1) +
-                    zt_prime(x + 1, y, z + 1));
-      }
+      xt_prime_corner[i] = -1.0;
+      zt_prime_corner[i] = -1.0;
+      continue;
     }
+
+    xt_prime_corner[i] =
+        0.25 * (xt_prime[i] + xt_prime[i_xplus] + xt_prime[i_zplus] + xt_prime[i_xzplus]);
+
+    zt_prime_corner[i] =
+        0.25 * (zt_prime[i] + zt_prime[i_xplus] + zt_prime[i_zplus] + zt_prime[i_xzplus]);
   }
 
   interp_corner->setMask(corner_boundary_mask);
-  interp_corner->calcWeights(xt_prime_corner, zt_prime_corner);
 
-  interp->calcWeights(xt_prime, zt_prime);
+  {
+    TRACE("FCImap: calculating corner weights");
+    interp_corner->calcWeights(xt_prime_corner, zt_prime_corner);
+  }
+
+  {
+    TRACE("FCImap: calculating weights");
+    interp->calcWeights(xt_prime, zt_prime);
+  }
 
   int ncz = map_mesh.LocalNz;
+
   BoutReal t_x, t_z;
 
   Coordinates &coord = *(map_mesh.getCoordinates());
@@ -180,6 +188,19 @@ FCIMap::FCIMap(Mesh& mesh, int offset_, BoundaryRegionPar* boundary, bool zperio
         // calculated by taking the remainder of the floating point index
         t_x = xt_prime(x, y, z) - static_cast<BoutReal>(i_corner(x, y, z));
         t_z = zt_prime(x, y, z) - static_cast<BoutReal>(k_corner(x, y, z));
+
+        // Check that t_x and t_z are in range
+        if ((t_x < 0.0) || (t_x > 1.0)) {
+          throw BoutException(
+              "t_x=%e out of range at (%d,%d,%d) (xt_prime=%e, i_corner=%d)", t_x, x, y,
+              z, xt_prime(x, y, z), i_corner(x, y, z));
+        }
+
+        if ((t_z < 0.0) || (t_z > 1.0)) {
+          throw BoutException(
+              "t_z=%e out of range at (%d,%d,%d) (zt_prime=%e, k_corner=%d)", t_z, x, y,
+              z, zt_prime(x, y, z), k_corner(x, y, z));
+        }
 
         //----------------------------------------
         // Boundary stuff
@@ -237,15 +258,6 @@ FCIMap::FCIMap(Mesh& mesh, int offset_, BoundaryRegionPar* boundary, bool zperio
                               PI   // Right-angle intersection
                               );
         }
-
-        //----------------------------------------
-
-        // Check that t_x and t_z are in range
-        if ((t_x < 0.0) || (t_x > 1.0))
-          throw BoutException("t_x=%e out of range at (%d,%d,%d)", t_x, x, y, z);
-
-        if ((t_z < 0.0) || (t_z > 1.0))
-          throw BoutException("t_z=%e out of range at (%d,%d,%d)", t_z, x, y, z);
       }
     }
   }
@@ -256,7 +268,8 @@ FCIMap::FCIMap(Mesh& mesh, int offset_, BoundaryRegionPar* boundary, bool zperio
 Field3D FCIMap::integrate(Field3D &f) const {
   TRACE("FCIMap::integrate");
 
-  ASSERT3(&map_mesh == f.getMesh());
+  ASSERT1(f.getDirectionY() == YDirectionType::Standard);
+  ASSERT1(&map_mesh == f.getMesh());
 
   // Cell centre values
   Field3D centre = interp->interpolate(f);
@@ -264,9 +277,7 @@ Field3D FCIMap::integrate(Field3D &f) const {
   // Cell corner values (x+1/2, z+1/2)
   Field3D corner = interp_corner->interpolate(f);
 
-  Field3D result;
-  result.allocate();
-  result.setLocation(f.getLocation());
+  Field3D result{emptyFrom(f)};
 
   int nz = map_mesh.LocalNz;
 
@@ -313,8 +324,24 @@ Field3D FCIMap::integrate(Field3D &f) const {
   return result;
 }
 
+void FCITransform::checkInputGrid() {
+  std::string coordinates_type = "";
+  if (!mesh.get(coordinates_type, "coordinates_type")) {
+    if (coordinates_type != "fci") {
+      throw BoutException("Incorrect coordinate system type "+coordinates_type+" used "
+          "to generate metric components for FCITransform. Should be 'fci.");
+    }
+  } // else: coordinate_system variable not found in grid input, indicates older input
+    //       file so must rely on the user having ensured the type is correct
+}
+
 void FCITransform::calcYUpDown(Field3D& f) {
   TRACE("FCITransform::calcYUpDown");
+
+  ASSERT1(f.getDirectionY() == YDirectionType::Standard);
+  // Only have forward_map/backward_map for CELL_CENTRE, so can only deal with
+  // CELL_CENTRE inputs
+  ASSERT1(f.getLocation() == CELL_CENTRE);
 
   // Ensure that yup and ydown are different fields
   f.splitYupYdown();
@@ -327,6 +354,11 @@ void FCITransform::calcYUpDown(Field3D& f) {
 
 void FCITransform::integrateYUpDown(Field3D& f) {
   TRACE("FCITransform::integrateYUpDown");
+
+  ASSERT1(f.getDirectionY() == YDirectionType::Standard);
+  // Only have forward_map/backward_map for CELL_CENTRE, so can only deal with
+  // CELL_CENTRE inputs
+  ASSERT1(f.getLocation() == CELL_CENTRE);
 
   // Ensure that yup and ydown are different fields
   f.splitYupYdown();

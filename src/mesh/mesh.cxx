@@ -31,6 +31,7 @@ Mesh::Mesh(GridDataSource *s, Options* opt) : source(s), options(opt) {
   /// Get mesh options
   OPTION(options, StaggerGrids,   false); // Stagger grids
   OPTION(options, maxregionblocksize, MAXREGIONBLOCKSIZE);
+  OPTION(options, calcYUpDown_on_communicate, true);
   // Initialise derivatives
   derivs_init(options);  // in index_derivs.cxx for now
 }
@@ -47,6 +48,16 @@ Mesh::~Mesh() {
  * These functions are delegated to a GridDataSource object,
  * which may then read from a file, options, or other sources.
  **************************************************************************/
+
+/// Get a string
+int Mesh::get(std::string &sval, const std::string &name) {
+  TRACE("Mesh::get(sval, %s)", name.c_str());
+
+  if (source == nullptr or !source->get(this, sval, name))
+    return 1;
+
+  return 0;
+}
 
 /// Get an integer
 int Mesh::get(int &ival, const std::string &name) {
@@ -183,8 +194,11 @@ void Mesh::communicate(FieldGroup &g) {
   wait(h);
 
   // Calculate yup and ydown fields for 3D fields
-  for(const auto& fptr : g.field3d())
-    getParallelTransform().calcYUpDown(*fptr);
+  if (calcYUpDown_on_communicate) {
+    for(const auto& fptr : g.field3d()) {
+      getParallelTransform().calcYUpDown(*fptr);
+    }
+  }
 }
 
 /// This is a bit of a hack for now to get FieldPerp communications
@@ -295,11 +309,11 @@ void Mesh::setParallelTransform() {
     
   if(ptstr == "identity") {
     // Identity method i.e. no transform needed
-    transform = bout::utils::make_unique<ParallelTransformIdentity>();
+    transform = bout::utils::make_unique<ParallelTransformIdentity>(*this);
       
   }else if(ptstr == "shifted") {
     // Shifted metric method
-  transform = bout::utils::make_unique<ShiftedMetric>(*this);
+    transform = bout::utils::make_unique<ShiftedMetric>(*this);
       
   }else if(ptstr == "fci") {
 
@@ -325,13 +339,17 @@ ParallelTransform& Mesh::getParallelTransform() {
   return *transform;
 }
 
-std::shared_ptr<Coordinates> Mesh::createDefaultCoordinates(const CELL_LOC location) {
-  if (location == CELL_CENTRE || location == CELL_DEFAULT)
+std::shared_ptr<Coordinates> Mesh::createDefaultCoordinates(const CELL_LOC location,
+    bool force_interpolate_from_centre) {
+
+  if (location == CELL_CENTRE || location == CELL_DEFAULT) {
     // Initialize coordinates from input
     return std::make_shared<Coordinates>(this);
-  else
+  } else {
     // Interpolate coordinates from CELL_CENTRE version
-    return std::make_shared<Coordinates>(this, location, getCoordinates(CELL_CENTRE));
+    return std::make_shared<Coordinates>(this, location, getCoordinates(CELL_CENTRE),
+        force_interpolate_from_centre);
+  }
 }
 
 
@@ -402,13 +420,14 @@ void Mesh::createDefaultRegions(){
   //3D regions
   addRegion3D("RGN_ALL", Region<Ind3D>(0, LocalNx - 1, 0, LocalNy - 1, 0, LocalNz - 1,
                                        LocalNy, LocalNz, maxregionblocksize));
-  addRegion3D("RGN_NOBNDRY", Region<Ind3D>(xstart, xend, ystart, yend, 0, LocalNz - 1,
+  addRegion3D("RGN_NOBNDRY", Region<Ind3D>(xstart, xend, ystart, yend, zstart, zend,
                                            LocalNy, LocalNz, maxregionblocksize));
   addRegion3D("RGN_NOX", Region<Ind3D>(xstart, xend, 0, LocalNy - 1, 0, LocalNz - 1,
                                        LocalNy, LocalNz, maxregionblocksize));
   addRegion3D("RGN_NOY", Region<Ind3D>(0, LocalNx - 1, ystart, yend, 0, LocalNz - 1,
                                        LocalNy, LocalNz, maxregionblocksize));
-  addRegion3D("RGN_NOZ", getRegion3D("RGN_ALL")); // Currently the same as ALL
+  addRegion3D("RGN_NOZ", Region<Ind3D>(0, LocalNx - 1, 0, LocalNy - 1, zstart, zend,
+                                       LocalNy, LocalNz, maxregionblocksize));
   addRegion3D("RGN_GUARDS", mask(getRegion3D("RGN_ALL"), getRegion3D("RGN_NOBNDRY")));
 
   //2D regions
@@ -426,18 +445,33 @@ void Mesh::createDefaultRegions(){
   // Perp regions
   addRegionPerp("RGN_ALL", Region<IndPerp>(0, LocalNx - 1, 0, 0, 0, LocalNz - 1, 1,
                                            LocalNz, maxregionblocksize));
-  addRegionPerp("RGN_NOBNDRY", Region<IndPerp>(xstart, xend, 0, 0, 0, LocalNz - 1, 1,
+  addRegionPerp("RGN_NOBNDRY", Region<IndPerp>(xstart, xend, 0, 0, zstart, zend, 1,
                                                LocalNz, maxregionblocksize));
   addRegionPerp("RGN_NOX", Region<IndPerp>(xstart, xend, 0, 0, 0, LocalNz - 1, 1, LocalNz,
                                            maxregionblocksize)); // Same as NOBNDRY
   addRegionPerp("RGN_NOY", Region<IndPerp>(0, LocalNx - 1, 0, 0, 0, LocalNz - 1, 1,
-                                           LocalNz, maxregionblocksize)); // Same as ALL
-  addRegionPerp("RGN_NOZ", getRegionPerp("RGN_ALL")); // Currently the same as ALL
+                                           LocalNz, maxregionblocksize));
+
+  addRegionPerp("RGN_NOZ", Region<IndPerp>(0, LocalNx - 1, 0, 0, zstart, zend, 1, LocalNz,
+                                           maxregionblocksize));
   addRegionPerp("RGN_GUARDS", mask(getRegionPerp("RGN_ALL"), getRegionPerp("RGN_NOBNDRY")));
 
   // Construct index lookup for 3D-->2D
   indexLookup3Dto2D = Array<int>(LocalNx*LocalNy*LocalNz);
   BOUT_FOR(ind3D, getRegion3D("RGN_ALL")) {
     indexLookup3Dto2D[ind3D.ind] = ind3Dto2D(ind3D).ind;
+  }
+}
+
+void Mesh::recalculateStaggeredCoordinates() {
+  for (auto &i : coords_map) {
+    CELL_LOC location = i.first;
+
+    if (location == CELL_CENTRE) {
+      // Only reset staggered locations
+      continue;
+    }
+
+    std::swap(*coords_map[location], *createDefaultCoordinates(location, true));
   }
 }

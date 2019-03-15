@@ -166,86 +166,86 @@ protected:
     time_step = globalOptions["TIMESTEP"].withDefault(1.0);
 
     auto options = globalOptions["2fluid"];
-    OPTION(options, AA, 4.0); // <=> AA = options["AA"].withDefault(1.0);
-    OPTION(options, ZZ, 1.0);
-    
-    OPTION(options, estatic,     false);
-    OPTION(options, ZeroElMass,  false);
-    OPTION(options, zeff,        1.0);
-    OPTION(options, nu_perp,     0.0); 
-    OPTION(options, ShearFactor, 1.0); 
-    OPTION(options, nuIonNeutral, -1.);
-    OPTION(options, arakawa,     false);
-    OPTION(options, bout_exb,    false);
-  
-    OPTION(options, niprofile, false);
-    OPTION(options, evolve_source_ni, false);
-    OPTION(options, evolve_source_te, false);
-    OPTION(options, source_response, 1.0);
-    OPTION(options, source_converge, -1);
-    
-    OPTION(options, ni_perpdiff, 0.0);
-    OPTION(options, rho_perpdiff, 0.0);
-    OPTION(options, te_perpdiff, 0.0);
-    
-    OPTION(options, input_source, false);
-    OPTION(options, remove_tor_av_ni, false);
-    OPTION(options, remove_tor_av_te, false);
-    
-    OPTION(options, phi_flags,   0);
-    OPTION(options, apar_flags,  0);
-    
-    OPTION(options, nonlinear, true);
-    
+    AA = options["AA"].withDefault(4.0); // <=> AA = options["AA"].withDefault(1.0);
+    ZZ = options["ZZ"].withDefault(1.0);
+
+    estatic = options["estatic"].withDefault(false);
+    ZeroElMass = options["ZeroElMass"].withDefault(false);
+    zeff = options["zeff"].withDefault(1.0);
+    nu_perp = options["nu_perp"].withDefault(0.0);
+    ShearFactor = options["ShearFactor"].withDefault(1.0);
+    nuIonNeutral = options["nuIonNeutral"].withDefault(-1.);
+    arakawa = options["arakawa"].withDefault(false);
+    bout_exb = options["bout_exb"].withDefault(false);
+
+    niprofile = options["niprofile"].withDefault(false);
+    evolve_source_ni = options["evolve_source_ni"].withDefault(false);
+    evolve_source_te = options["evolve_source_te"].withDefault(false);
+    source_response = options["source_response"].withDefault(1.0);
+    source_converge = options["source_converge"].withDefault(-1);
+
+    ni_perpdiff = options["ni_perpdiff"].withDefault(0.0);
+    rho_perpdiff = options["rho_perpdiff"].withDefault(0.0);
+    te_perpdiff = options["te_perpdiff"].withDefault(0.0);
+
+    input_source = options["input_source"].withDefault(false);
+    remove_tor_av_ni = options["remove_tor_av_ni"].withDefault(false);
+    remove_tor_av_te = options["remove_tor_av_te"].withDefault(false);
+
+    phi_flags = options["phi_flags"].withDefault(0);
+    apar_flags = options["apar_flags"].withDefault(0);
+
+    nonlinear = options["nonlinear"].withDefault(true);
+
     // Toroidal filtering
-    OPTION(options, filter_z,          false);  // Filter a single n
-    OPTION(options, filter_z_mode,     1);
-    
+    filter_z = options["filter_z"].withDefault(false); // Filter a single n
+    filter_z_mode = options["filter_z_mode"].withDefault(1);
+
     // Set default values for terms in each equation
     // Allows default to be overridden in BOUT.inp file
     auto option_rho = globalOptions["rho"];
-    OPTION(option_rho, evolve_rho,    true);
-    OPTION(option_rho, rho_jpar1,     false);
-    OPTION(option_rho, rho_nuin_rho1, false);
-    OPTION(option_rho, rho_rho1,      false);
-    OPTION(option_rho, rho_rho0_phi1, false);
-    OPTION(option_rho, rho_rho1_phi0, false);
-    OPTION(option_rho, rho_ve2lin,    false);
-    OPTION(option_rho, rho_rho1_phi1, false);
-    OPTION(option_rho, rho_ve2t,      false);
-    OPTION(option_rho, rho_diff,      false);
-    
+    evolve_rho = option_rho["evolve_rho"].withDefault(true);
+    rho_jpar1 = option_rho["rho_jpar1"].withDefault(false);
+    rho_nuin_rho1 = option_rho["rho_nuin_rho1"].withDefault(false);
+    rho_rho1 = option_rho["rho_rho1"].withDefault(false);
+    rho_rho0_phi1 = option_rho["rho_rho0_phi1"].withDefault(false);
+    rho_rho1_phi0 = option_rho["rho_rho1_phi0"].withDefault(false);
+    rho_ve2lin = option_rho["rho_ve2lin"].withDefault(false);
+    rho_rho1_phi1 = option_rho["rho_rho1_phi1"].withDefault(false);
+    rho_ve2t = option_rho["rho_ve2t"].withDefault(false);
+    rho_diff = option_rho["rho_diff"].withDefault(false);
+
     auto option_ni = globalOptions["ni"];
-    OPTION(option_ni, evolve_ni,   true);
-    OPTION(option_ni, ni_jpar1,    false);
-    OPTION(option_ni, ni_ni0_phi1, false);
-    OPTION(option_ni, ni_ni1_phi0, false);
-    OPTION(option_ni, ni_ni1_phi1, false);
-    OPTION(option_ni, ni_src_ni0,  false);
-    OPTION(option_ni, ni_diff,      false);
-    
+    evolve_ni = option_ni["evolve_ni"].withDefault(true);
+    ni_jpar1 = option_ni["ni_jpar1"].withDefault(false);
+    ni_ni0_phi1 = option_ni["ni_ni0_phi1"].withDefault(false);
+    ni_ni1_phi0 = option_ni["ni_ni1_phi0"].withDefault(false);
+    ni_ni1_phi1 = option_ni["ni_ni1_phi1"].withDefault(false);
+    ni_src_ni0 = option_ni["ni_src_ni0"].withDefault(false);
+    ni_diff = option_ni["ni_diff"].withDefault(false);
+
     auto option_ajpar = globalOptions["ajpar"];
-    OPTION(option_ajpar, evolve_ajpar,     true);
-    OPTION(option_ajpar, ajpar_phi1,       false);
-    OPTION(option_ajpar, ajpar_jpar1,      false);
-    OPTION(option_ajpar, ajpar_te_ni,      false);
-    OPTION(option_ajpar, ajpar_te,         false);
-    OPTION(option_ajpar, ajpar_ajpar1_phi0,false);
-    OPTION(option_ajpar, ajpar_ajpar1_phi1,false);
-    OPTION(option_ajpar, ajpar_ve1_ve1,    false);
-    
+    evolve_ajpar = option_ajpar["evolve_ajpar"].withDefault(true);
+    ajpar_phi1 = option_ajpar["ajpar_phi1"].withDefault(false);
+    ajpar_jpar1 = option_ajpar["ajpar_jpar1"].withDefault(false);
+    ajpar_te_ni = option_ajpar["ajpar_te_ni"].withDefault(false);
+    ajpar_te = option_ajpar["ajpar_te"].withDefault(false);
+    ajpar_ajpar1_phi0 = option_ajpar["ajpar_ajpar1_phi0"].withDefault(false);
+    ajpar_ajpar1_phi1 = option_ajpar["ajpar_ajpar1_phi1"].withDefault(false);
+    ajpar_ve1_ve1 = option_ajpar["ajpar_ve1_ve1"].withDefault(false);
+
     auto option_te = globalOptions["te"];
-    OPTION(option_te, evolve_te,    true);
-    OPTION(option_te, te_te1_phi0,  false);
-    OPTION(option_te, te_te0_phi1,  false);
-    OPTION(option_te, te_te1_phi1,  false);
-    OPTION(option_te, te_ajpar_te,  false);
-    OPTION(option_te, te_te_ajpar,  false);
-    OPTION(option_te, te_nu_te1,    false);
-    OPTION(option_te, te_nu_tet,    false);
-    OPTION(option_te, te_jpar,      false);
-    OPTION(option_te, te_diff,      false);
-    
+    evolve_te = option_te["evolve_te"].withDefault(true);
+    te_te1_phi0 = option_te["te_te1_phi0"].withDefault(false);
+    te_te0_phi1 = option_te["te_te0_phi1"].withDefault(false);
+    te_te1_phi1 = option_te["te_te1_phi1"].withDefault(false);
+    te_ajpar_te = option_te["te_ajpar_te"].withDefault(false);
+    te_te_ajpar = option_te["te_te_ajpar"].withDefault(false);
+    te_nu_te1 = option_te["te_nu_te1"].withDefault(false);
+    te_nu_tet = option_te["te_nu_tet"].withDefault(false);
+    te_jpar = option_te["te_jpar"].withDefault(false);
+    te_diff = option_te["te_diff"].withDefault(false);
+
     if (ZeroElMass) {
       evolve_ajpar = false; // Don't need ajpar - calculated from ohm's law
     }
