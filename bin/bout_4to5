@@ -180,6 +180,20 @@ then
             $printordo sed -i "s|\.\./||" $f
         fi
     done
+
+    pydir=$DIR/../tools/pylib/_boutcore_build
+    for f in $pydir/*in
+    do
+	matched=$(grep '[/_a-z$A-Z0-9]*.hxx' -o $f|sort -u)
+	for h in $matched
+	do
+	    test -f $pydir/$h && continue
+	    #test  b=${h::5} = bout/ && continue
+	    test $h = bout.hxx && continue
+	    echo "$h" | $GREP -q '/' && continue
+	    sed -i "s|$h|bout/$h|" $f
+	done
+    done
 fi
 
 
