@@ -2278,7 +2278,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       Zxy[*, ypos:(ypos+npol[3*i+1]+n_y_boundary_guards[3*i+1]-1)] = a.Zxy
       Rixy[*, ypos:(ypos+npol[3*i+1]+n_y_boundary_guards[3*i+1]-1)] = a.Rixy
       Zixy[*, ypos:(ypos+npol[3*i+1]+n_y_boundary_guards[3*i+1]-1)] = a.Zixy
-      FOR j=ypos, ypos+npol[3*i+1]+n_y_boundary_guards[3*i+1]-1 DO Psixy[*, j] = pf_psi_vals[xpt,0,*]
+      FOR j=ypos, ypos+npol[3*i+1]+n_y_boundary_guards[3*i+1]-1 DO Psixy[*, j] = sol_psi_vals[solid,*]
       ypos = ypos + npol[3*i+1]+n_y_boundary_guards[3*i+1]
 
       ydown_xsplit[3*i+1] = (*pf_info[xpt]).npf
@@ -2403,7 +2403,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       Zxy[*, ypos:(ypos+npol[3*i+2]+n_y_boundary_guards[3*i+2]-1)] = a.Zxy
       Rixy[*, ypos:(ypos+npol[3*i+2]+n_y_boundary_guards[3*i+2]-1)] = a.Rixy
       Zixy[*, ypos:(ypos+npol[3*i+2]+n_y_boundary_guards[3*i+2]-1)] = a.Zixy
-      FOR j=ypos, ypos+npol[3*i+2]+n_y_boundary_guards[3*i+2]-1 DO Psixy[*, j] = pf_psi_vals[xpt,0,*]
+      FOR j=ypos, ypos+npol[3*i+2]+n_y_boundary_guards[3*i+2]-1 DO Psixy[*, j] = pf_psi_vals[xpt,1,*]
       ypos = ypos + npol[3*i+2]+n_y_boundary_guards[3*i+2]
 
       ; Set topology
