@@ -30,7 +30,7 @@ FUNCTION gen_surface_hypnotoad, mesh=mesh, period=period, last=last, xi=xi
     
     ; Running total of npol to get starting y index
     ys = LONARR(nd)
-    FOR i=1, nd-1 DO ys[i] = ys[i-1] + mesh.npol[i-1]
+    FOR i=1, nd-1 DO ys[i] = ys[i-1] + mesh.npol[i-1] + mesh.n_y_boundary_guards[i-1]
     
     ; visited marks which domains have been used
     visited = INTARR(nd)
@@ -56,9 +56,9 @@ FUNCTION gen_surface_hypnotoad, mesh=mesh, period=period, last=last, xi=xi
     ENDIF
     
     ; Get the range of indices for this domain
-    yi = [range(ys[domain], ys[domain]+m.npol[domain]-1)]
+    yi = [range(ys[domain], ys[domain] + m.npol[domain] + m.n_y_boundary_guards[domain] - 1)]
     IF ny EQ 0 THEN yinds = yi ELSE yinds = [yinds, yi]
-    ny = ny + m.npol[domain]
+    ny = ny + m.npol[domain] + m.n_y_boundary_guards[domain]
     
     visited[domain] = 1 ; Mark domain as visited
     
