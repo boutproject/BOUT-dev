@@ -777,13 +777,12 @@ PRO event_handler, event
         ENDIF ELSE BEGIN
           FOR i=0, nnpol-1 DO BEGIN
             IF i MOD 3 EQ 1 THEN title='Core: ' ELSE title  = 'Private Flux: '
-            npol_field[i] = CW_FIELD( pol_base,                                      $
-                                      title  = title,                                $
-                                      uvalue = 'npol',                               $
-                                      /long,                                         $
-                                      value = (*info.flux_mesh).npol[i]              $
-                                              - (*info.flux_mesh).y_boundary_guards, $
-                                      xsize=8                                        $
+            npol_field[i] = CW_FIELD( pol_base,                           $
+                                      title  = title,                     $
+                                      uvalue = 'npol',                    $
+                                      /long,                              $
+                                      value = (*info.flux_mesh).npol[i],  $
+                                      xsize=8                             $
                                     )
           ENDFOR
         ENDELSE
