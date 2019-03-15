@@ -100,26 +100,13 @@ const T interp_to(const T& var, CELL_LOC loc, REGION region = RGN_ALL) {
         // At least 2 boundary cells needed for interpolation in x-direction
         ASSERT0(fieldmesh->xstart >= 2);
 
-	REGION realregion;
-	switch (region){
-	case RGN_ALL:
-	case RGN_NOZ:
-	  realregion = RGN_NOX;
-	  break;
-	case RGN_NOX:
-	  realregion = RGN_NOBNDRY;
-	  break;
-	default:
-	  realregion = region;
-	  break;
-	}
         if ((location == CELL_CENTRE) && (loc == CELL_XLOW)) { // C2L
-          BOUT_FOR(i, result.getRegion(realregion)) {
+          BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
             // Producing a stencil centred around a lower X value
             result[i] = interp(populateStencil<DIRECTION::X, STAGGER::C2L, 2>(var, i));
           }
         } else if (location == CELL_XLOW) { // L2C
-          BOUT_FOR(i, result.getRegion(realregion)) {
+          BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
             // Stencil centred around a cell centre
             result[i] = interp(populateStencil<DIRECTION::X, STAGGER::L2C, 2>(var, i));
           }
@@ -130,20 +117,6 @@ const T interp_to(const T& var, CELL_LOC loc, REGION region = RGN_ALL) {
       case CELL_YLOW: {
         // At least 2 boundary cells needed for interpolation in y-direction
         ASSERT0(fieldmesh->ystart >= 2);
-
-	REGION realregion;
-	switch (region){
-	case RGN_ALL:
-	case RGN_NOZ:
-	  realregion = RGN_NOY;
-	  break;
-	case RGN_NOX:
-	  realregion = RGN_NOBNDRY;
-	  break;
-	default:
-	  realregion = region;
-	  break;
-	}
 
         // We can't interpolate in y unless we're field-aligned
         // FIXME: Add check once we label fields as orthogonal/aligned
@@ -162,13 +135,13 @@ const T interp_to(const T& var, CELL_LOC loc, REGION region = RGN_ALL) {
         }
 
         if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) { // C2L
-          BOUT_FOR(i, result.getRegion(realregion)) {
+          BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
             // Producing a stencil centred around a lower X value
             result[i] =
                 interp(populateStencil<DIRECTION::YAligned, STAGGER::C2L, 2>(var_fa, i));
           }
         } else if (location == CELL_YLOW) { // L2C
-          BOUT_FOR(i, result.getRegion(realregion)) {
+          BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
             // Stencil centred around a cell centre
             result[i] =
                 interp(populateStencil<DIRECTION::YAligned, STAGGER::L2C, 2>(var_fa, i));
