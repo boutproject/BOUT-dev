@@ -51,6 +51,9 @@ done
 
 if test $UPDATE_SCRIPT -gt 0
 then
+    # Make sure the header list is up to date
+    diff  <(cd include/;ls *xx|grep -v ^bout.hxx|sort) bin/bout_4to5_header_file_list
+
     bin/bout_4to5 -f
 fi
 
