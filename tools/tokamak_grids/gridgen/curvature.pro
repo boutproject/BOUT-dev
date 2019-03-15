@@ -112,9 +112,9 @@ PRO curvature, nx, ny, Rxy, Zxy, BRxy, BZxy, BPHIxy, PSIxy, THETAxy, HTHExy, $
    vec2={psi:0.,theta:0.,phi:0.}
    bxcv=REPLICATE(vec2,nx,ny)
 
-   status = gen_surface(mesh=mesh) ; Start generator
+   status = gen_surface_hypnotoad(mesh=mesh) ; Start generator
    REPEAT BEGIN
-     yi = gen_surface(last=last, xi=x, period=period)
+     yi = gen_surface_hypnotoad(last=last, xi=x, period=period)
      nys = N_ELEMENTS(yi)
 
      ; Get vector along the surface

@@ -20,10 +20,10 @@ FUNCTION smooth_nl, input, mesh, iter=iter
   
   it = 0
   REPEAT BEGIN  
-    status = gen_surface(mesh=mesh) ; Start generator
+    status = gen_surface_hypnotoad(mesh=mesh) ; Start generator
     REPEAT BEGIN
       ; Get the next domain
-      yi = gen_surface(period=period, last=last, x=x)
+      yi = gen_surface_hypnotoad(period=period, last=last, x=x)
       
       IF x GT 0 AND x LT nx-1 THEN BEGIN
         n = N_ELEMENTS(yi)
@@ -63,10 +63,10 @@ FUNCTION smooth_nl, input, mesh, iter=iter
     markx = (0.5*mxn / MEAN(mxn)) < 1.0
     marky = (0.5*myn / MEAN(myn)) < 1.0
     
-    status = gen_surface(mesh=mesh) ; Start generator
+    status = gen_surface_hypnotoad(mesh=mesh) ; Start generator
     REPEAT BEGIN
       ; Get the next domain
-      yi = gen_surface(period=period, last=last, x=x)
+      yi = gen_surface_hypnotoad(period=period, last=last, x=x)
       
       IF x GT 0 AND x LT nx-1 THEN BEGIN
         n = N_ELEMENTS(yi)

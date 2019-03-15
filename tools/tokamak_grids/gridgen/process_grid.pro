@@ -29,9 +29,9 @@
 
 FUNCTION surface_average, var, mesh
   f = var
-  status = gen_surface(mesh=mesh) ; Start generator
+  status = gen_surface_hypnotoad(mesh=mesh) ; Start generator
   REPEAT BEGIN
-    yi = gen_surface(last=last, xi=xi)
+    yi = gen_surface_hypnotoad(last=last, xi=xi)
     f[xi,yi] = MEAN(var[xi,yi]) ; Average over this surface
   ENDREP UNTIL last
   RETURN, f
@@ -119,9 +119,9 @@ function calc_beta, Rxy, Zxy, mesh, rz_grid, method
 	endif else if(method EQ 1) then begin
 		npol = round(total(mesh.npol,/cumulative))
 		Nnpol = n_elements(npol)
-		status = gen_surface(mesh=mesh) ; Start generator
+		status = gen_surface_hypnotoad(mesh=mesh) ; Start generator
 		REPEAT BEGIN
-			yi = gen_surface(last=last, xi=xi, period=period)
+			yi = gen_surface_hypnotoad(last=last, xi=xi, period=period)
 			; find beta using one field line at xi, with y range yi
 			; for better angle calculation, need to split yi into sections based on gridding
 			if (xi GE mesh.nrad[0]) then begin  ; if outside the separatrix
@@ -290,9 +290,9 @@ FUNCTION my_int_y, var, yaxis, mesh, loop=loop, nosmooth=nosmooth, simple=simple
   loop = FLTARR(nx)
   loop[*] = !VALUES.F_NAN ; Prevent accidental use of unset values
   
-  status = gen_surface(mesh=mesh) ; Start generator
+  status = gen_surface_hypnotoad(mesh=mesh) ; Start generator
   REPEAT BEGIN
-    yi = gen_surface(last=last, xi=xi, period=period)
+    yi = gen_surface_hypnotoad(last=last, xi=xi, period=period)
     
     f[xi,yi] = inty(yaxis[xi,yi],var[xi,yi], /simple)
     IF NOT KEYWORD_SET(nosmooth) THEN BEGIN
@@ -318,9 +318,9 @@ function dfdy, f, y, mesh
 	ny = s[1]
 	result = dblarr(nx,ny)
 
-	status = gen_surface(mesh=mesh) ; Start generator
+	status = gen_surface_hypnotoad(mesh=mesh) ; Start generator
 	REPEAT BEGIN
-		yi = gen_surface(last=last, xi=xi)
+		yi = gen_surface_hypnotoad(last=last, xi=xi)
 		result[xi,yi] = DERIV(y[xi,yi],f[xi,yi])
 	ENDREP UNTIL last
 	return, result
@@ -445,10 +445,10 @@ FUNCTION fit_profiles, mesh, psixy, Rxy, hthe, Bpxy, Btxy, dpdx
   ; Map between location in xy and surface number
   indxy = INTARR(nx, ny)
   
-  status = gen_surface(mesh=mesh) ; Start generator
+  status = gen_surface_hypnotoad(mesh=mesh) ; Start generator
   i = 0
   REPEAT BEGIN
-    yi = gen_surface(last=last, xi=xi, period=period)
+    yi = gen_surface_hypnotoad(last=last, xi=xi, period=period)
     indxy[xi,yi] = i
     
     IF i EQ 0 THEN BEGIN
@@ -477,10 +477,10 @@ FUNCTION fit_profiles, mesh, psixy, Rxy, hthe, Bpxy, Btxy, dpdx
   Btxy2 = FLTARR(nx, ny)
   dpdx2 = FLTARR(nx, ny)
   
-  status = gen_surface(mesh=mesh) ; Start generator
+  status = gen_surface_hypnotoad(mesh=mesh) ; Start generator
   i = 0
   REPEAT BEGIN
-    yi = gen_surface(last=last, xi=xi, period=period)
+    yi = gen_surface_hypnotoad(last=last, xi=xi, period=period)
     Btxy2[xi, yi] = profiles[nsurf+i] / Rxy[xi,yi]
     dpdx2[xi, yi] = profiles[i]
     i = i + 1
@@ -680,9 +680,9 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
 
   ; Find the midplane
   ymid = 0
-  status = gen_surface(mesh=mesh) ; Start generator
+  status = gen_surface_hypnotoad(mesh=mesh) ; Start generator
   REPEAT BEGIN
-    yi = gen_surface(period=period, last=last, xi=xi)
+    yi = gen_surface_hypnotoad(period=period, last=last, xi=xi)
     IF period THEN BEGIN
       rm = MAX(mesh.Rxy[xi,yi], ymid)
       ymid = yi[ymid]
@@ -702,10 +702,10 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   pressure = FLTARR(nx, ny_total)
   
   ; Use splines to interpolate pressure profile
-  status = gen_surface(mesh=mesh) ; Start generator
+  status = gen_surface_hypnotoad(mesh=mesh) ; Start generator
   REPEAT BEGIN
     ; Get the next domain
-    yi = gen_surface(period=period, last=last, xi=xi)
+    yi = gen_surface_hypnotoad(period=period, last=last, xi=xi)
     IF period AND (psixy_eq[xi,yi[0]] GE 0) AND (psixy_eq[xi,yi[0]] LE 1) THEN BEGIN
       ; Pressure only given on core surfaces
       ; Since psi normalised differently, it might go out of range 
@@ -736,10 +736,10 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
         
         p2 = pressure
         FOR i=0, 5 DO BEGIN
-          status = gen_surface(mesh=mesh) ; Start generator
+          status = gen_surface_hypnotoad(mesh=mesh) ; Start generator
           REPEAT BEGIN
             ; Get the next domain
-            yi = gen_surface(period=period, last=last, xi=xi)
+            yi = gen_surface_hypnotoad(period=period, last=last, xi=xi)
             
             IF (xi GT 0) AND (xi LT (nx-1)) THEN BEGIN
               FOR j=0,N_ELEMENTS(yi)-1 DO BEGIN
@@ -822,10 +822,10 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   Btxy = FLTARR(nx, ny_total)
   fprime = Btxy
   fp = DERIV(rz_grid.npsigrid*(rz_grid.sibdry - rz_grid.simagx), rz_grid.fpol)
-  status = gen_surface(mesh=mesh) ; Start generator
+  status = gen_surface_hypnotoad(mesh=mesh) ; Start generator
   REPEAT BEGIN
     ; Get the next domain
-    yi = gen_surface(period=period, last=last, xi=xi)
+    yi = gen_surface_hypnotoad(period=period, last=last, xi=xi)
 
     IF period AND (psixy_eq[xi,yi[0]] GE 0) AND (psixy_eq[xi,yi[0]] LE 1) THEN BEGIN
       ; In the core
@@ -849,10 +849,10 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   hthe = FLTARR(nx, ny_total)
 
   ; Pick a midplane index
-  status = gen_surface(mesh=mesh) ; Start generator
+  status = gen_surface_hypnotoad(mesh=mesh) ; Start generator
   REPEAT BEGIN
     ; Get the next domain
-    yi = gen_surface(period=period, last=last, xi=xi)
+    yi = gen_surface_hypnotoad(period=period, last=last, xi=xi)
     
     IF period THEN BEGIN
       ; In the core
@@ -862,10 +862,10 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     ENDIF
   ENDREP UNTIL last
 
-  status = gen_surface(mesh=mesh) ; Start generator
+  status = gen_surface_hypnotoad(mesh=mesh) ; Start generator
   REPEAT BEGIN
     ; Get the next domain
-    yi = gen_surface(period=period, last=last, xi=xi)
+    yi = gen_surface_hypnotoad(period=period, last=last, xi=xi)
     
     n = N_ELEMENTS(yi)
     
@@ -942,10 +942,10 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
       pres[*,i] = pres[*,i] - pres[nx-1,i]
     ENDFOR
     
-    status = gen_surface(mesh=mesh) ; Start generator
+    status = gen_surface_hypnotoad(mesh=mesh) ; Start generator
     REPEAT BEGIN
       ; Get the next domain
-      yi = gen_surface(period=period, last=last, xi=xi)
+      yi = gen_surface_hypnotoad(period=period, last=last, xi=xi)
       
       ma = MAX(pres[xi,yi])
       FOR i=0, N_ELEMENTS(yi)-1 DO BEGIN
@@ -1050,10 +1050,10 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
         hthe[*,i] = SMOOTH(SMOOTH(hthe[*,i],10),10)
       ENDFOR
       
-      status = gen_surface(mesh=mesh) ; Start generator
+      status = gen_surface_hypnotoad(mesh=mesh) ; Start generator
       REPEAT BEGIN
         ; Get the next domain
-        yi = gen_surface(period=period, last=last, xi=xi)
+        yi = gen_surface_hypnotoad(period=period, last=last, xi=xi)
         
         n = N_ELEMENTS(yi)
         
@@ -1068,10 +1068,10 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
 
   ; Need yxy values at all points for nonorthogonal calculations
   yxy = FLTARR(nx, ny_total)
-  status = gen_surface(mesh=mesh) ; Start generator
+  status = gen_surface_hypnotoad(mesh=mesh) ; Start generator
   REPEAT BEGIN
     ; Get the next domain
-    yi = gen_surface(period=period, last=last, xi=xi)
+    yi = gen_surface_hypnotoad(period=period, last=last, xi=xi)
     yxy[xi,yi] = DINDGEN(N_ELEMENTS(yi))*dtheta
   ENDREP UNTIL last
 
@@ -1145,10 +1145,10 @@ retrybetacalc:
   
   PRINT, "MIDPLANE INDEX = ", ymidplane
   
-  status = gen_surface(mesh=mesh) ; Start generator
+  status = gen_surface_hypnotoad(mesh=mesh) ; Start generator
   REPEAT BEGIN
     ; Get the next domain
-    yi = gen_surface(period=period, last=last, xi=xi)
+    yi = gen_surface_hypnotoad(period=period, last=last, xi=xi)
     
     w = WHERE(yi EQ ymidplane, count)
     IF count GT 0 THEN BEGIN
@@ -1325,10 +1325,10 @@ retrybetacalc:
   jpar0 = - Bxy * fprime / MU - Rxy*Btxy * dpdpsi / Bxy
   
   ; Set to zero in PF and SOL
-  status = gen_surface(mesh=mesh) ; Start generator
+  status = gen_surface_hypnotoad(mesh=mesh) ; Start generator
   REPEAT BEGIN
     ; Get the next domain
-    yi = gen_surface(period=period, last=last, xi=xi)
+    yi = gen_surface_hypnotoad(period=period, last=last, xi=xi)
     
     IF NOT period THEN jpar0[xi,yi] = 0.0
   ENDREP UNTIL last

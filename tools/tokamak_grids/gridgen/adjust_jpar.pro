@@ -45,9 +45,9 @@ PRO adjust_jpar, grid, smoothp=smoothp, jpar=jpar, noplot=noplot
   ; Matching here rather than outboard produces more realistic results
   ; (current doesn't reverse direction at edge)
   mid_ind = -1
-  status = gen_surface(mesh=data) ; Start generator
+  status = gen_surface_hypnotoad(mesh=data) ; Start generator
   REPEAT BEGIN
-    yi = gen_surface(last=last, xi=xi, period=period)
+    yi = gen_surface_hypnotoad(last=last, xi=xi, period=period)
   
     IF period THEN BEGIN
       mr = MIN(data.rxy[xi, yi], mid_ind)
@@ -89,9 +89,9 @@ PRO adjust_jpar, grid, smoothp=smoothp, jpar=jpar, noplot=noplot
   IF count GT 0 THEN dj[w] = 0.0 ; just zero in this region
 
   jpar = ps
-  status = gen_surface(mesh=data) ; Start generator
+  status = gen_surface_hypnotoad(mesh=data) ; Start generator
   REPEAT BEGIN
-    yi = gen_surface(last=last, xi=xi, period=period)
+    yi = gen_surface_hypnotoad(last=last, xi=xi, period=period)
     
     IF NOT period THEN BEGIN
       ; Due to multi-point differencing, dp/dx can be non-zero outside separatrix

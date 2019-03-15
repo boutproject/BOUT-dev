@@ -2,9 +2,9 @@
 ; Generator of continuous surfaces
 ;
 ; First call: 
-;   status = gen_surface(mesh=mesh)     - Initialisation
+;   status = gen_surface_hypnotoad(mesh=mesh)     - Initialisation
 ; Subsequent calls
-;   yi = gen_surface(period=period, last=last, xi=xi)
+;   yi = gen_surface_hypnotoad(period=period, last=last, xi=xi)
 ;
 ; period - Set to 1 if the surface is periodic, 0 otherwise
 ; last   - Set to 1 if this is the last surface
@@ -19,7 +19,7 @@ FUNCTION range, first, last
   ENDELSE
 END
 
-FUNCTION gen_surface, mesh=mesh, period=period, last=last, xi=xi
+FUNCTION gen_surface_hypnotoad, mesh=mesh, period=period, last=last, xi=xi
   COMMON gen_surf_com, m, ys, xind, nd, domain, visited
   IF KEYWORD_SET(mesh) THEN BEGIN
     ; Starting

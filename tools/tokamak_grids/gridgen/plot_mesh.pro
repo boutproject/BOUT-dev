@@ -6,9 +6,9 @@ PRO plot_mesh, mesh, overplot=overplot, _extra=_extra
   IF KEYWORD_SET(overplot) THEN over = 1
   
   ; Plot flux surfaces
-  status = gen_surface(mesh=mesh) ; Start generator
+  status = gen_surface_hypnotoad(mesh=mesh) ; Start generator
   REPEAT BEGIN
-    yi = gen_surface(last=last, xi=xi, period=period)
+    yi = gen_surface_hypnotoad(last=last, xi=xi, period=period)
     IF period THEN yi = [yi, yi[0]]
     IF over EQ 0 THEN BEGIN
       PLOT, mesh.Rxy[xi, yi], mesh.Zxy[xi, yi], $
