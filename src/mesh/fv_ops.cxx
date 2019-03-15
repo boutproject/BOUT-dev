@@ -14,8 +14,7 @@ namespace FV {
 
     Mesh *mesh = a.getMesh();
 
-    Field3D result(mesh);
-    result = 0.0;
+    Field3D result{zeroFrom(f)};
 
     Coordinates *coord = f.getCoordinates();
     
@@ -170,7 +169,7 @@ namespace FV {
     ASSERT2(Kin.getLocation() == fin.getLocation());
 
     Mesh *mesh = Kin.getMesh();
-    Field3D result(0.0, mesh);
+    Field3D result{zeroFrom(fin)};
 
     bool use_yup_ydown = (Kin.hasYupYdown() && fin.hasYupYdown());
 
@@ -228,13 +227,11 @@ namespace FV {
   }
 
   const Field3D D4DY4(const Field3D &d_in, const Field3D &f_in) {
-    ASSERT2(d_in.getLocation() == f_in.getLocation());
+    ASSERT1(areFieldsCompatible(d_in, f_in));
 
     Mesh* mesh = d_in.getMesh();
-    ASSERT1(mesh = f_in.getMesh());
 
-    Field3D result = 0.0;
-    result.setLocation(f_in.getLocation());
+    Field3D result{zeroFrom(f_in)};
     
     Coordinates *coord = f_in.getCoordinates();
     
@@ -283,8 +280,7 @@ namespace FV {
   }
 
   const Field3D D4DY4_Index(const Field3D &f_in, bool bndry_flux) {
-    Field3D result = 0.0;
-    result.setLocation(f_in.getLocation());
+    Field3D result{zeroFrom(f_in)};
     
     Mesh* mesh = f_in.getMesh();
 

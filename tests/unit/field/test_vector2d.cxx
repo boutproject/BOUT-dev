@@ -23,6 +23,7 @@ using namespace bout::globals;
 class Vector2DTest : public ::testing::Test {
 protected:
   Vector2DTest() {
+    WithQuietOutput quiet{output_info};
     // Delete any existing mesh
     if (mesh != nullptr) {
       // Delete boundary regions
@@ -34,9 +35,8 @@ protected:
       mesh = nullptr;
     }
     mesh = new FakeMesh(nx, ny, nz);
-    output_info.disable();
+    static_cast<FakeMesh*>(mesh)->setCoordinates(nullptr);
     mesh->createDefaultRegions();
-    output_info.enable();
 
     mesh->addBoundary(new BoundaryRegionXIn("core", 1, ny - 2, mesh));
     mesh->addBoundary(new BoundaryRegionXOut("sol", 1, ny - 2, mesh));
@@ -49,18 +49,15 @@ protected:
         Field2D{6.0}, Field2D{1.0}, Field2D{2.0}, Field2D{3.0}, Field2D{4.0},
         Field2D{5.0}, Field2D{6.0}, Field2D{0.0}, Field2D{0.0}, false));
 
-    if (mesh_staggered != nullptr) {
-      delete mesh_staggered;
-      mesh_staggered = nullptr;
-    }
+    delete mesh_staggered;
     mesh_staggered = new FakeMesh(nx, ny, nz);
     mesh_staggered->StaggerGrids = true;
-    output_info.disable();
+    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr);
     static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_XLOW);
     mesh_staggered->createDefaultRegions();
   }
 
-  ~Vector2DTest() {
+  virtual ~Vector2DTest() {
     if (mesh != nullptr) {
       // Delete boundary regions
       for (auto &r : mesh->getBoundaries()) {
@@ -175,6 +172,7 @@ TEST_F(Vector2DTest, SetLocationXLOW) {
 
 TEST_F(Vector2DTest, SetLocationYLOW) {
   FakeMesh local_mesh{Vector2DTest::nx,Vector2DTest::ny,Vector2DTest::nz};
+  local_mesh.setCoordinates(nullptr);
   local_mesh.StaggerGrids = true;
   local_mesh.setCoordinates(nullptr, CELL_YLOW);
   Vector2D vector(&local_mesh);
@@ -189,6 +187,7 @@ TEST_F(Vector2DTest, SetLocationYLOW) {
 
 TEST_F(Vector2DTest, SetLocationZLOW) {
   FakeMesh local_mesh{Vector2DTest::nx,Vector2DTest::ny,Vector2DTest::nz};
+  local_mesh.setCoordinates(nullptr);
   local_mesh.StaggerGrids = true;
   local_mesh.setCoordinates(nullptr, CELL_ZLOW);
   Vector2D vector(&local_mesh);
@@ -203,6 +202,7 @@ TEST_F(Vector2DTest, SetLocationZLOW) {
 
 TEST_F(Vector2DTest, SetLocationVSHIFT) {
   FakeMesh local_mesh{Vector2DTest::nx,Vector2DTest::ny,Vector2DTest::nz};
+  local_mesh.setCoordinates(nullptr);
   local_mesh.StaggerGrids = true;
   local_mesh.setCoordinates(nullptr, CELL_XLOW);
   local_mesh.setCoordinates(nullptr, CELL_YLOW);

@@ -109,6 +109,24 @@ auto IsFieldEqual(const T& field, BoutReal reference,
   return ::testing::AssertionSuccess();
 }
 
+/// Disable a ConditionalOutput during a scope; reenable it on
+/// exit. You must give the variable a name!
+///
+///     {
+///       WithQuietoutput quiet{output};
+///       // output disabled during this scope
+///     }
+///     // output now enabled
+class WithQuietOutput {
+public:
+  explicit WithQuietOutput(ConditionalOutput& output_in) : output(output_in) {
+    output.disable();
+  }
+
+  ~WithQuietOutput() { output.enable(); }
+  ConditionalOutput& output;
+};
+
 class Options;
 
 /// FakeMesh has just enough information to create fields
@@ -142,6 +160,8 @@ public:
     xend = nx - 2;
     ystart = 1;
     yend = ny - 2;
+    zstart = 0;
+    zend = nz - 1;
 
     StaggerGrids=true;
     // Unused variables
@@ -151,12 +171,22 @@ public:
     StaggerGrids = false;
     IncIntShear = false;
     maxregionblocksize = MAXREGIONBLOCKSIZE;
-
-    setCoordinates(nullptr);
   }
 
   void setCoordinates(std::shared_ptr<Coordinates> coords, CELL_LOC location = CELL_CENTRE) {
     coords_map[location] = coords;
+  }
+
+  void setGridDataSource(GridDataSource* source_in) {
+    source = source_in;
+  }
+
+  // Use this if the FakeMesh needs x- and y-boundaries
+  void createBoundaries() {
+    addBoundary(new BoundaryRegionXIn("core", ystart, yend, this));
+    addBoundary(new BoundaryRegionXOut("sol", ystart, yend, this));
+    addBoundary(new BoundaryRegionYUp("upper_target", xstart, xend, this));
+    addBoundary(new BoundaryRegionYDown("lower_target", xstart, xend, this));
   }
 
   comm_handle send(FieldGroup &UNUSED(g)) { return nullptr; };
@@ -255,29 +285,25 @@ private:
 class FakeMeshFixture : public ::testing::Test {
 public:
   FakeMeshFixture() {
-    // Delete any existing mesh
-    if (bout::globals::mesh != nullptr) {
-      delete bout::globals::mesh;
-      bout::globals::mesh = nullptr;
-    }
-    bout::globals::mesh = new FakeMesh(nx, ny, nz);
-    output_info.disable();
-    bout::globals::mesh->createDefaultRegions();
-    output_info.enable();
+    WithQuietOutput quiet{output_info};
 
-    // Delete any existing mesh_staggered
-    if (mesh_staggered != nullptr) {
-      delete mesh_staggered;
-      mesh_staggered = nullptr;
-    }
+    delete bout::globals::mesh;
+    bout::globals::mesh = new FakeMesh(nx, ny, nz);
+    static_cast<FakeMesh*>(bout::globals::mesh)->setCoordinates(nullptr);
+    bout::globals::mesh->setParallelTransform(
+        bout::utils::make_unique<ParallelTransformIdentity>(*bout::globals::mesh));
+    bout::globals::mesh->createDefaultRegions();
+
+    delete mesh_staggered;
     mesh_staggered = new FakeMesh(nx, ny, nz);
     mesh_staggered->StaggerGrids = true;
+    mesh_staggered->setParallelTransform(
+        bout::utils::make_unique<ParallelTransformIdentity>(*mesh_staggered));
+    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr);
     static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_XLOW);
     static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_YLOW);
     static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_ZLOW);
-    output_info.disable();
     mesh_staggered->createDefaultRegions();
-    output_info.enable();
   }
 
   virtual ~FakeMeshFixture() {

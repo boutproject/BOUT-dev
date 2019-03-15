@@ -849,6 +849,12 @@ bool Datafile::read() {
   return true;
 }
 
+void Datafile::writeFieldAttributes(const std::string& name, const Field& f) {
+  file->setAttribute(name, "cell_location", toString(f.getLocation()));
+  file->setAttribute(name, "direction_y", toString(f.getDirectionY()));
+  file->setAttribute(name, "direction_z", toString(f.getDirectionZ()));
+}
+
 bool Datafile::write() {
   if(!enabled)
     return true; // Just pretend it worked
@@ -881,39 +887,33 @@ bool Datafile::write() {
   if (first_time) {
     first_time = false;
 
-    // Set the cell location attributes.
-    // Location must have been set for all fields before the first time output
-    // is written, since this happens after the first rhs evaluation
+    // Set the field attributes from field meta-data.
+    // Attributes must have been set for all fields before the first time
+    // output is written, since this happens after the first rhs evaluation
     // 2D fields
     for (const auto& var : f2d_arr) {
-      file->setAttribute(var.name, "cell_location", CELL_LOC_STRING(var.ptr->getLocation()));
+      writeFieldAttributes(var.name, *var.ptr);
     }
 
     // 3D fields
     for (const auto& var : f3d_arr) {
-      file->setAttribute(var.name, "cell_location", CELL_LOC_STRING(var.ptr->getLocation()));
+      writeFieldAttributes(var.name, *var.ptr);
     }
 
     // 2D vectors
     for(const auto& var : v2d_arr) {
       Vector2D v  = *(var.ptr);
-      file->setAttribute(var.name+"_x", "cell_location",
-                         CELL_LOC_STRING(v.x.getLocation()));
-      file->setAttribute(var.name+"_y", "cell_location",
-                         CELL_LOC_STRING(v.y.getLocation()));
-      file->setAttribute(var.name+"_z", "cell_location",
-                         CELL_LOC_STRING(v.z.getLocation()));
+      writeFieldAttributes(var.name+"_x", v.x);
+      writeFieldAttributes(var.name+"_y", v.y);
+      writeFieldAttributes(var.name+"_z", v.z);
     }
 
     // 3D vectors
     for(const auto& var : v3d_arr) {
       Vector3D v  = *(var.ptr);
-      file->setAttribute(var.name+"_x", "cell_location",
-                         CELL_LOC_STRING(v.x.getLocation()));
-      file->setAttribute(var.name+"_y", "cell_location",
-                         CELL_LOC_STRING(v.y.getLocation()));
-      file->setAttribute(var.name+"_z", "cell_location",
-                         CELL_LOC_STRING(v.z.getLocation()));
+      writeFieldAttributes(var.name+"_x", v.x);
+      writeFieldAttributes(var.name+"_y", v.y);
+      writeFieldAttributes(var.name+"_z", v.z);
     }
   }
 
@@ -1200,7 +1200,7 @@ bool Datafile::write_f3d(const std::string &name, Field3D *f, bool save_repeat) 
   }
 
   //Deal with shifting the output
-  Field3D f_out(f->getMesh());
+  Field3D f_out{emptyFrom(*f)};
   if(shiftOutput) {
     f_out = mesh->toFieldAligned(*f);
   }else {

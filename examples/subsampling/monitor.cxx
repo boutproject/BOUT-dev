@@ -11,24 +11,26 @@
 // correct folder, and should throw if it possible to detect the error.
 class SimpleDatafile: public Datafile{
 public:
-  SimpleDatafile(std::string section):SimpleDatafile(Options::getRoot()->getSection(section.c_str())
-                                                     ,section){};
-    SimpleDatafile(Options* ops,std::string section="Default"):Datafile(ops){
+  SimpleDatafile(std::string section)
+      : SimpleDatafile(Options::root()[section], section){};
+  SimpleDatafile(Options& ops, std::string section = "Default") : Datafile(&ops) {
     // Open a file for the output
-    std::string datadir;
-    if (ops->isSet("path")){
-      ops->get("path",datadir,"data");// default never needed
+    std::string datadir = "data";
+    if (ops.isSet("path")) {
+      datadir = ops["path"].withDefault(datadir); // default never needed
     } else {
-      OPTION(Options::getRoot(),datadir,"data"); // I need to know data is default :(
+      datadir = Options::root()["datadir"].withDefault(
+          datadir); // I need to know data is default :(
     }
     std::string file;
     file = section+".dmp";
-    OPTION(ops,file,file);
+    file = ops["file"].withDefault(file);
     bool append;
-    if (ops->isSet("append")){
-      OPTION(ops,append,false);
+    if (ops.isSet("append")) {
+      append = ops["append"].withDefault(false);
     } else {
-      OPTION(Options::getRoot(),append,false); // I hope that is the correct default
+      append = Options::root()["append"].withDefault(
+          false); // I hope that is the correct default
     }
     std::string dump_ext="nc"; // bad style, but I only use nc
 
@@ -80,7 +82,7 @@ protected:
     // In case the monitor should be relative to the timestep, the
     // timestep needs to be read first:
     BoutReal timestep;
-    OPTION(Options::getRoot(),timestep,-1);
+    timestep = Options::root()["timestep"].withDefault(-1);
     // There is no 'slow' section in BOUT.inp, therfore it will write
     // to data/slow.dmp.0.nc
     Monitor1dDump * slow=new Monitor1dDump(timestep*2,"slow");

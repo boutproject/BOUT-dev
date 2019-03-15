@@ -28,9 +28,9 @@
 #include <vector>
 
 HermiteSpline::HermiteSpline(int y_offset, Mesh *mesh)
-    : Interpolation(y_offset, mesh), h00_x(localmesh), h01_x(localmesh), h10_x(localmesh),
-      h11_x(localmesh), h00_z(localmesh), h01_z(localmesh), h10_z(localmesh),
-      h11_z(localmesh) {
+    : Interpolation(y_offset, mesh),
+      h00_x(localmesh), h01_x(localmesh), h10_x(localmesh), h11_x(localmesh),
+      h00_z(localmesh), h01_z(localmesh), h10_z(localmesh), h11_z(localmesh) {
 
   // Index arrays contain guard cells in order to get subscripts right
   i_corner.reallocate(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
@@ -115,8 +115,7 @@ void HermiteSpline::calcWeights(const Field3D &delta_x, const Field3D &delta_z, 
 Field3D HermiteSpline::interpolate(const Field3D &f) const {
 
   ASSERT1(f.getMesh() == localmesh);
-  Field3D f_interp(f.getMesh());
-  f_interp.allocate();
+  Field3D f_interp{emptyFrom(f)};
 
   // Derivatives are used for tension and need to be on dimensionless
   // coordinates

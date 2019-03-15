@@ -73,11 +73,13 @@ FCIMap::FCIMap(Mesh& mesh, int offset_, BoundaryRegionPar* boundary, bool zperio
   auto k_corner = Tensor<int>(map_mesh.LocalNx, map_mesh.LocalNy, map_mesh.LocalNz);
 
   // Index-space coordinates of forward/backward points
-  Field3D xt_prime(&map_mesh), zt_prime(&map_mesh);
+  Field3D xt_prime{&map_mesh}, zt_prime{&map_mesh};
+
   // Real-space coordinates of grid points
-  Field3D R(&map_mesh), Z(&map_mesh);
+  Field3D R{&map_mesh}, Z{&map_mesh};
+
   // Real-space coordinates of forward/backward points
-  Field3D R_prime(&map_mesh), Z_prime(&map_mesh);
+  Field3D R_prime{&map_mesh}, Z_prime{&map_mesh};
 
   map_mesh.get(R, "R", 0.0, false);
   map_mesh.get(Z, "Z", 0.0, false);
@@ -116,9 +118,8 @@ FCIMap::FCIMap(Mesh& mesh, int offset_, BoundaryRegionPar* boundary, bool zperio
   }
 
   // Cell corners
-  Field3D xt_prime_corner(&map_mesh), zt_prime_corner(&map_mesh);
-  xt_prime_corner.allocate();
-  zt_prime_corner.allocate();
+  Field3D xt_prime_corner{emptyFrom(xt_prime)};
+  Field3D zt_prime_corner{emptyFrom(xt_prime)};
 
   BOUT_FOR(i, xt_prime_corner.getRegion("RGN_NOBNDRY")) {
     // Point interpolated from (x+1/2, z+1/2)
@@ -267,6 +268,7 @@ FCIMap::FCIMap(Mesh& mesh, int offset_, BoundaryRegionPar* boundary, bool zperio
 Field3D FCIMap::integrate(Field3D &f) const {
   TRACE("FCIMap::integrate");
 
+  ASSERT1(f.getDirectionY() == YDirectionType::Standard);
   ASSERT1(&map_mesh == f.getMesh());
 
   // Cell centre values
@@ -275,9 +277,7 @@ Field3D FCIMap::integrate(Field3D &f) const {
   // Cell corner values (x+1/2, z+1/2)
   Field3D corner = interp_corner->interpolate(f);
 
-  Field3D result;
-  result.allocate();
-  result.setLocation(f.getLocation());
+  Field3D result{emptyFrom(f)};
 
   int nz = map_mesh.LocalNz;
 
@@ -338,6 +338,7 @@ void FCITransform::checkInputGrid() {
 void FCITransform::calcYUpDown(Field3D& f) {
   TRACE("FCITransform::calcYUpDown");
 
+  ASSERT1(f.getDirectionY() == YDirectionType::Standard);
   // Only have forward_map/backward_map for CELL_CENTRE, so can only deal with
   // CELL_CENTRE inputs
   ASSERT1(f.getLocation() == CELL_CENTRE);
@@ -354,6 +355,7 @@ void FCITransform::calcYUpDown(Field3D& f) {
 void FCITransform::integrateYUpDown(Field3D& f) {
   TRACE("FCITransform::integrateYUpDown");
 
+  ASSERT1(f.getDirectionY() == YDirectionType::Standard);
   // Only have forward_map/backward_map for CELL_CENTRE, so can only deal with
   // CELL_CENTRE inputs
   ASSERT1(f.getLocation() == CELL_CENTRE);

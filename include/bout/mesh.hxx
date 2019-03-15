@@ -437,7 +437,7 @@ class Mesh {
   int LocalNx, LocalNy, LocalNz;
   
   /// Local ranges of data (inclusive), excluding guard cells
-  int xstart, xend, ystart, yend;
+  int xstart, xend, ystart, yend, zstart, zend;
   
   /// Enable staggered grids (Centre, Lower). Otherwise all vars are
   /// cell centred (default).
@@ -822,6 +822,9 @@ protected:
   /// Mesh options section
   Options *options{nullptr};
 
+  /// Set whether to call calcYUpDown on all communicated fields (true) or not (false)
+  bool calcYUpDown_on_communicate{true};
+
   /// Handles calculation of yup and ydown
   PTptr transform{nullptr};
 
@@ -837,7 +840,13 @@ protected:
 private:
 
   /// Allocates default Coordinates objects
-  std::shared_ptr<Coordinates> createDefaultCoordinates(const CELL_LOC location);
+  /// By default attempts to read staggered Coordinates from grid data source,
+  /// interpolating from CELL_CENTRE if not present. Set
+  /// force_interpolate_from_centre argument to true to always interpolate
+  /// (useful if CELL_CENTRE Coordinates have been changed, so reading from file
+  /// would not be correct).
+  std::shared_ptr<Coordinates> createDefaultCoordinates(const CELL_LOC location,
+      bool force_interpolate_from_centre=false);
 
   //Internal region related information
   std::map<std::string, Region<Ind3D>> regionMap3D;

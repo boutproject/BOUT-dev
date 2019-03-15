@@ -18,10 +18,9 @@ public:
   OptionsReaderTest() : sbuf(std::cout.rdbuf()) {
     // Redirect cout to our stringstream buffer or any other ostream
     std::cout.rdbuf(buffer.rdbuf());
-    output_info.disable();
   }
 
-  ~OptionsReaderTest() {
+  virtual ~OptionsReaderTest() {
     // Clear buffer
     buffer.str("");
     // When done redirect cout to its old self
@@ -29,14 +28,14 @@ public:
 
     // Make sure options singleton is clean
     Options::cleanup();
-
-    output_info.enable();
   }
 
   // Write cout to buffer instead of stdout
   std::stringstream buffer;
   // Save cout's buffer here
   std::streambuf *sbuf;
+
+  WithQuietOutput quiet{output_info};
 };
 
 TEST_F(OptionsReaderTest, BadFilename) {
@@ -424,7 +423,7 @@ test6 = h2`+`:on`e-`more             # Escape sequences in the middle
   test_file.close();
 
   OptionsReader reader;
-  reader.read(Options::getRoot(), filename);
+  reader.read(Options::getRoot(), "%s", filename);
   std::remove(filename);
 
   auto options = Options::root()["tests"];
@@ -452,7 +451,7 @@ some:value = 3
 
   OptionsReader reader;
   
-  EXPECT_THROW(reader.read(Options::getRoot(), filename), BoutException);
+  EXPECT_THROW(reader.read(Options::getRoot(), "%s", filename), BoutException);
   std::remove(filename);
 }
 
@@ -474,7 +473,7 @@ twopi = 2 * π   # Unicode symbol defined for pi
   test_file.close();
 
   OptionsReader reader;
-  reader.read(Options::getRoot(), filename);
+  reader.read(Options::getRoot(), "%s", filename);
   std::remove(filename);
 
   auto options = Options::root()["tests"];
