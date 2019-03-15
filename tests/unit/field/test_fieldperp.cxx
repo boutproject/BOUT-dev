@@ -113,6 +113,7 @@ TEST_F(FieldPerpTest, CreateOnGivenMesh) {
   int test_nz = FieldPerpTest::nz + 2;
 
   FakeMesh fieldmesh{test_nx, test_ny, test_nz};
+  fieldmesh.setCoordinates(nullptr);
   fieldmesh.createDefaultRegions();
 
   FieldPerp field{&fieldmesh};
@@ -132,6 +133,7 @@ TEST_F(FieldPerpTest, CopyCheckFieldmesh) {
   int test_nz = FieldPerpTest::nz + 2;
 
   FakeMesh fieldmesh{test_nx, test_ny, test_nz};
+  fieldmesh.setCoordinates(nullptr);
   fieldmesh.createDefaultRegions();
 
   FieldPerp field{&fieldmesh};

@@ -34,6 +34,7 @@ protected:
       mesh = nullptr;
     }
     mesh = new FakeMesh(nx, ny, nz);
+    static_cast<FakeMesh*>(mesh)->setCoordinates(nullptr);
     mesh->createDefaultRegions();
 
     mesh->addBoundary(new BoundaryRegionXIn("core", 1, ny - 2, mesh));
@@ -50,6 +51,7 @@ protected:
     delete mesh_staggered;
     mesh_staggered = new FakeMesh(nx, ny, nz);
     mesh_staggered->StaggerGrids = true;
+    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr);
     static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_XLOW);
     mesh_staggered->createDefaultRegions();
   }
@@ -169,6 +171,7 @@ TEST_F(Vector3DTest, SetLocationXLOW) {
 
 TEST_F(Vector3DTest, SetLocationYLOW) {
   FakeMesh local_mesh{Vector3DTest::nx,Vector3DTest::ny,Vector3DTest::nz};
+  local_mesh.setCoordinates(nullptr);
   local_mesh.StaggerGrids = true;
   local_mesh.setCoordinates(nullptr, CELL_YLOW);
   Vector3D vector(&local_mesh);
@@ -183,6 +186,7 @@ TEST_F(Vector3DTest, SetLocationYLOW) {
 
 TEST_F(Vector3DTest, SetLocationZLOW) {
   FakeMesh local_mesh{Vector3DTest::nx,Vector3DTest::ny,Vector3DTest::nz};
+  local_mesh.setCoordinates(nullptr);
   local_mesh.StaggerGrids = true;
   local_mesh.setCoordinates(nullptr, CELL_ZLOW);
   Vector3D vector(&local_mesh);
@@ -197,6 +201,7 @@ TEST_F(Vector3DTest, SetLocationZLOW) {
 
 TEST_F(Vector3DTest, SetLocationVSHIFT) {
   FakeMesh local_mesh{Vector3DTest::nx,Vector3DTest::ny,Vector3DTest::nz};
+  local_mesh.setCoordinates(nullptr);
   local_mesh.StaggerGrids = true;
   local_mesh.setCoordinates(nullptr, CELL_XLOW);
   local_mesh.setCoordinates(nullptr, CELL_YLOW);

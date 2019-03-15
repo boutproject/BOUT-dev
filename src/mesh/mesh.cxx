@@ -339,13 +339,16 @@ ParallelTransform& Mesh::getParallelTransform() {
   return *transform;
 }
 
-std::shared_ptr<Coordinates> Mesh::createDefaultCoordinates(const CELL_LOC location) {
+std::shared_ptr<Coordinates> Mesh::createDefaultCoordinates(const CELL_LOC location,
+    bool force_interpolate_from_centre) {
+
   if (location == CELL_CENTRE || location == CELL_DEFAULT) {
     // Initialize coordinates from input
     return std::make_shared<Coordinates>(this);
   } else {
     // Interpolate coordinates from CELL_CENTRE version
-    return std::make_shared<Coordinates>(this, location, getCoordinates(CELL_CENTRE));
+    return std::make_shared<Coordinates>(this, location, getCoordinates(CELL_CENTRE),
+        force_interpolate_from_centre);
   }
 }
 
@@ -468,6 +471,6 @@ void Mesh::recalculateStaggeredCoordinates() {
       continue;
     }
 
-    std::swap(*coords_map[location], *createDefaultCoordinates(location));
+    std::swap(*coords_map[location], *createDefaultCoordinates(location, true));
   }
 }
