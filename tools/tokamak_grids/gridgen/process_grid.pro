@@ -791,7 +791,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     xcoord = -xcoord
   ENDIF
 
-  dtheta = 2.*!PI / FLOAT(ny_total)
+  dtheta = 2.*!PI / FLOAT(ny)
   dy = FLTARR(nx, ny_total) + dtheta
   
   ; B field components
