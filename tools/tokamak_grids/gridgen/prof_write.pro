@@ -31,7 +31,7 @@ pro prof_write, height=height, bottom=bottom, filename=filename
   jysep1 = g.jyseps1_1
   jysep2 = g.jyseps2_2
 
-  result = fltarr(nx, ny)
+  result = dblarr(nx, ny)
   maxr = max(g.rxy[nx-1,*], kk)
   maxy = kk
 
@@ -48,7 +48,7 @@ pro prof_write, height=height, bottom=bottom, filename=filename
   endfor
   width = ixbig-ixsmall
   
-  tmpt = exp(float(-center)/width)
+  tmpt = exp(double(-center)/width)
   dmpt = (tmpt - 1.0/tmpt) / (tmpt + 1.0/tmpt)
   h_real = 2.*(height - bottom) / (1. - dmpt)
 
@@ -64,15 +64,15 @@ pro prof_write, height=height, bottom=bottom, filename=filename
            endif
 ;           print,mgx, xlimit, j, jysep1, jysep2
            rlx = mgx - center
-           temp = exp(float(rlx)/width)
+           temp = exp(double(rlx)/width)
            dampr = (temp - 1.0/temp) / (temp + 1.0/temp)
            result[i,j] = 0.5*(1.0 - dampr) * h_real + bottom
-;           print,rlx, width, float(rlx)/width, temp, dampr
+;           print,rlx, width, double(rlx)/width, temp, dampr
         endfor
      endfor
   endif else begin             ;circular geometry
      for i=0, nx-1 do begin
-        mgx = float(i)
+        mgx = double(i)
         xlimit = sep_circle * nx
         if (mgx gt xlimit) then begin
            mgx =xlimit

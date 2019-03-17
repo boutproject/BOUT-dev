@@ -160,7 +160,7 @@ FUNCTION poloidal_grid, interp_data, R, Z, ri, zi, n, fpsi=fpsi, parweight=parwe
     zpos = INTERPOLATE(Z, zi)
     dd = SQRT((zpos[1:*] - zpos[0:(np-2)])^2 + (rpos[1:*] - rpos[0:(np-2)])^2)
     dd = [dd, SQRT((zpos[0] - zpos[np-1])^2 + (rpos[0] - rpos[np-1])^2)]
-    poldist = FLTARR(np)
+    poldist = DBLARR(np)
     FOR i=1,np-1 DO poldist[i] = poldist[i-1] + dd[i-1]
 
     ; reset poldist to start at zero at the ydown wall (if one is present)
@@ -171,8 +171,8 @@ FUNCTION poloidal_grid, interp_data, R, Z, ri, zi, n, fpsi=fpsi, parweight=parwe
     ; Parallel distance along line
     ; Need poloidal and toroidal field
     ni = N_ELEMENTS(ri)
-    bp = FLTARR(ni)
-    bt = FLTARR(ni)
+    bp = DBLARR(ni)
+    bt = DBLARR(ni)
     m = interp_data.method
     interp_data.method = 2
     FOR i=0, ni-1 DO BEGIN
@@ -192,7 +192,7 @@ FUNCTION poloidal_grid, interp_data, R, Z, ri, zi, n, fpsi=fpsi, parweight=parwe
     interp_data.method = m
     b = SQRT(bt^2 + bp^2)
     ddpar = dd * b / bp
-    pardist = FLTARR(np)
+    pardist = DBLARR(np)
     FOR i=1,np-1 DO BEGIN
       ip = (i + 1) MOD np
       pardist[i] = pardist[i-1] + ddpar[i] ;0.5*(ddpar[i-1] + ddpar[ip])
@@ -210,15 +210,15 @@ FUNCTION poloidal_grid, interp_data, R, Z, ri, zi, n, fpsi=fpsi, parweight=parwe
   IF n GE 2 THEN BEGIN
     ; note dist[ydown_firstind] should be 0., but include here anyway
     total_dist = dist[yup_lastind] - dist[ydown_firstind]
-    IF SIZE(ydown_dist, /TYPE) EQ 0 THEN ydown_dist = total_dist * 0.5 / FLOAT(n)
-    IF SIZE(yup_dist, /TYPE) EQ 0 THEN yup_dist = total_dist * 0.5 / FLOAT(n)
+    IF SIZE(ydown_dist, /TYPE) EQ 0 THEN ydown_dist = total_dist * 0.5 / DOUBLE(n)
+    IF SIZE(yup_dist, /TYPE) EQ 0 THEN yup_dist = total_dist * 0.5 / DOUBLE(n)
 
     IF SIZE(ydown_space, /TYPE) EQ 0 THEN ydown_space = ydown_dist
     IF SIZE(yup_space, /TYPE) EQ 0 THEN yup_space = ydown_dist
-    ;dloc = (dist[np-1] - ydown_dist - yup_dist) * FINDGEN(n)/FLOAT(n-1) + ydown_dist  ; Distance locations
+    ;dloc = (dist[np-1] - ydown_dist - yup_dist) * FINDGEN(n)/DOUBLE(n-1) + ydown_dist  ; Distance locations
     
     
-    fn = FLOAT(n-1)
+    fn = DOUBLE(n-1)
     d = (total_dist - ydown_dist - yup_dist) ; Distance between first and last
     i = FINDGEN(n + boundary_guards_ydown + boundary_guards_yup)
 
@@ -344,8 +344,8 @@ FUNCTION grid_region, interp_data, R, Z, $
 
   ; From each starting point, follow gradient in both directions
   
-  rixy = FLTARR(nsurf, npar_total)
-  zixy = FLTARR(nsurf, npar_total)
+  rixy = DBLARR(nsurf, npar_total)
+  zixy = DBLARR(nsurf, npar_total)
   FOR i=0, npar_total-1 DO BEGIN
     IF sind GE 0 THEN BEGIN
       rixy[nin, i] = rii[i]
@@ -455,7 +455,7 @@ FUNCTION line_dist, R, Z, ri, zi
     zpos = INTERPOLATE(Z, zi)
     dd = SQRT((zpos[1:*] - zpos[0:(np-2)])^2 + (rpos[1:*] - rpos[0:(np-2)])^2)
     dd = [dd, SQRT((zpos[0] - zpos[np-1])^2 + (rpos[0] - rpos[np-1])^2)]
-    result = FLTARR(np)
+    result = DBLARR(np)
     FOR i=1,np-1 DO result[i] = result[i-1] + dd[i-1]
     RETURN, result
   ENDELSE
@@ -592,15 +592,15 @@ FUNCTION solve_xpt_hthe, dctF, R, Z, sep_info, dist0, pf_f, core_f, sol_in_f, so
   ; Internal error: Bad variable type encountered in no_name_var().
   ; when NEWTON is combined with LSODE
 
-  dfdx = FLTARR(4,4)
+  dfdx = DBLARR(4,4)
   delta = 1e-3
 
   REPEAT BEGIN
   xp0 = xpt_hthe_newt(dist)
-  response = FLTARR(4)
+  response = DBLARR(4)
   FOR i=0, 3 DO BEGIN
     ; Calculate partial derivatives using finite-differences
-    d = FLTARR(4)
+    d = DBLARR(4)
     d[i] = delta
     dfdx[*,i] = (xpt_hthe_newt(dist+d) - xp0) / delta
     response[i] = MIN([dfdx[i,i], dfdx[(i+1) MOD 4,i]])
@@ -613,7 +613,7 @@ FUNCTION solve_xpt_hthe, dctF, R, Z, sep_info, dist0, pf_f, core_f, sol_in_f, so
   
 ;  ; Invert using SVD
 ;  SVDC, dfdx, W, U, V
-;  WP = FLTARR(4, 4)
+;  WP = DBLARR(4, 4)
 ;  for i=0,2 do wp[i,i] = 1.0/w[i]
 ;  ddist = V ## WP ## TRANSPOSE(U) # xp0
 ;  
@@ -801,7 +801,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
   ENDIF
   
   IF NOT KEYWORD_SET(bndryi) THEN BEGIN
-    bndryi = FLTARR(2,4)
+    bndryi = DBLARR(2,4)
     bndryi[0,*] = [1, nx-2, nx-2, 1]
     bndryi[1,*] = [1, 1, ny-2, ny-2]
   ENDIF
@@ -822,7 +822,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
   nlev = 100
   minf = MIN(f)
   maxf = MAX(f)
-  levels = findgen(nlev)*(maxf-minf)/FLOAT(nlev-1) + minf
+  levels = findgen(nlev)*(maxf-minf)/DOUBLE(nlev-1) + minf
 
   safe_colors, /first
   CONTOUR, F, R, Z, levels=levels, color=1, /iso, xstyl=1, ysty=1
@@ -954,11 +954,11 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
     ENDFOR
     
     ; Get other useful variables
-    Psixy = FLTARR(nrad, npol)
+    Psixy = DBLARR(nrad, npol)
     FOR i=0, npol-1 DO psixy[*,i] = (fvals - faxis)/fnorm ; to get normalised psi
     
     ; Calculate magnetic field components
-    dpsidR = FLTARR(nrad, npol)
+    dpsidR = DBLARR(nrad, npol)
     dpsidZ = dpsidR
     
     interp_data.method = 2
@@ -1046,7 +1046,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
       fac = 2.*(xpt_f[inner_sep] - f_inner)/(1.+rad_peaking)
       FOR i=1, critical.n_xpoint-1 DO fac = fac + (xpt_f[si[i]] - xpt_f[si[i-1]])/rad_peaking
       fac = fac + 2.*(f_outer - xpt_f[si[critical.n_xpoint-1]])/(1.+rad_peaking)
-      dx0 = fac / FLOAT(n)  ; Inner grid spacing
+      dx0 = fac / DOUBLE(n)  ; Inner grid spacing
       
       ; Calculate number of grid points
       nrad = LONARR(critical.n_xpoint + 1)
@@ -1090,7 +1090,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
                              in_dp=2.*(fvals[0]-xpt_f[inner_sep])/rad_peaking), fvals]
       ENDIF ELSE BEGIN
         ; Only a single separatrix
-        dp0 = (xpt_f[inner_sep] - f_inner)*2./ (FLOAT(nrad[0])*(1. + rad_peaking))
+        dp0 = (xpt_f[inner_sep] - f_inner)*2./ (DOUBLE(nrad[0])*(1. + rad_peaking))
         fvals = radial_grid(nrad[0], f_inner, xpt_f[inner_sep], $
                             1, 0, xpt_f, rad_peaking, $
                             out_dp=rad_peaking*dp0, $
@@ -1110,8 +1110,8 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ; Create arrays of psi values for each region
     
-    sol_psi_vals = FLTARR(critical.n_xpoint, TOTAL(nrad,/int))
-    pf_psi_vals  = FLTARR(critical.n_xpoint, 2, TOTAL(nrad,/int))
+    sol_psi_vals = DBLARR(critical.n_xpoint, TOTAL(nrad,/int))
+    pf_psi_vals  = DBLARR(critical.n_xpoint, 2, TOTAL(nrad,/int))
     FOR i=0, critical.n_xpoint-1 DO BEGIN
       sol_psi_vals[i,*]  = psi_vals
       pf_psi_vals[i,0,*] = psi_vals
@@ -1127,7 +1127,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
       ENDIF
       PRINT, "Keeping same inner psi for all regions"
       
-      psi_inner = FLTARR(critical.n_xpoint+1) + MIN(settings.psi_inner)
+      psi_inner = DBLARR(critical.n_xpoint+1) + MIN(settings.psi_inner)
     ENDELSE
     
     IF N_ELEMENTS(settings.psi_outer) EQ critical.n_xpoint THEN BEGIN
@@ -1139,7 +1139,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
       ENDIF 
       PRINT, "Keeping same outer psi for all regions"
       
-      psi_outer = FLTARR(critical.n_xpoint) + MAX(settings.psi_outer)
+      psi_outer = DBLARR(critical.n_xpoint) + MAX(settings.psi_outer)
     ENDELSE
     
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1179,7 +1179,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
     ; now have (start_ri, start_zi). For each x-point, find the radial
     ; line going through the x-point
     
-    xpt_ind = FLTARR(critical.n_xpoint)  ; index into start_*i
+    xpt_ind = DBLARR(critical.n_xpoint)  ; index into start_*i
     
     pf_info = PTRARR(critical.n_xpoint)  ; Pointers to PF for each X-point
     
@@ -1546,7 +1546,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
       n_y_boundary_guards = LONARR(3*critical.n_xpoint)
       
       ; Get lengths
-      length = FLTARR(3*critical.n_xpoint)
+      length = DBLARR(3*critical.n_xpoint)
       FOR i=0, critical.n_xpoint-1 DO BEGIN
         ; PF regions
         length[i]                     = (*pf_info[i]).len0
@@ -1558,9 +1558,9 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
       FOR i=0, nnpol-1 DO BEGIN
         ; Add an extra point to the longest length
         
-        dl = length / FLOAT(npol)
+        dl = length / DOUBLE(npol)
         dl[0:(2*critical.n_xpoint-1)] = length[0:(2*critical.n_xpoint-1)] $
-          / (FLOAT(npol[0:(2*critical.n_xpoint-1)]) - 0.5)
+          / (DOUBLE(npol[0:(2*critical.n_xpoint-1)]) - 0.5)
         
         m = MAX(dl, ind)
         npol[ind] = npol[ind] + 1
@@ -1600,7 +1600,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
 
     ; Calculate distance for equal spacing in each region
     xpt = si[0] ; Start with the innermost x-point
-    xpt_dist = FLTARR(critical.n_xpoint, 4) ; Distance between x-point and first grid point
+    xpt_dist = DBLARR(critical.n_xpoint, 4) ; Distance between x-point and first grid point
     
     ; NOTE: xpt_dist indices go clockwise around the X-point, starting
     ; from the lower left leg when the core is at the top.
@@ -1621,7 +1621,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
       
       wallind = (*pf_info[xpt]).wallind0
       poldist = line_dist(R, Z, (*pf_info[xpt]).ri0[wallind:*], (*pf_info[xpt]).zi0[wallind:*]) ; Poloidal distance along line
-      xdist = MAX(poldist) * 0.5 / FLOAT(npol[3*i]) ; Equal spacing
+      xdist = MAX(poldist) * 0.5 / DOUBLE(npol[3*i]) ; Equal spacing
       
       xpt_dist[xpt, 0] = xdist
       
@@ -1629,7 +1629,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
       solid = (*pf_info[xpt]).sol[0]
       
       poldist = line_dist(R, Z, (*sol_info[solid]).ri, (*sol_info[solid]).zi)
-      xdist = MAX(poldist) * 0.5 / FLOAT(npol[3*i+1])
+      xdist = MAX(poldist) * 0.5 / DOUBLE(npol[3*i+1])
 
       PRINT, "S :", solid, max(poldist), npol[3*i+1]
       
@@ -1643,7 +1643,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
       
       wallind = (*pf_info[xpt]).wallind1
       poldist = line_dist(R, Z, (*pf_info[xpt]).ri1[0:wallind], (*pf_info[xpt]).zi1[0:wallind])
-      xdist = MAX(poldist) * 0.5 / FLOAT(npol[3*i+2])
+      xdist = MAX(poldist) * 0.5 / DOUBLE(npol[3*i+2])
       
       xpt_dist[xpt, 3] = xdist
     ENDFOR
@@ -1746,14 +1746,14 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
         gridbndry = bndryi
       ENDIF ELSE BEGIN
         ; Grid can leave boundary
-        gridbndry = FLTARR(2,4)
+        gridbndry = DBLARR(2,4)
         gridbndry[0,*] = [0, 0, nx-1, nx-1]
         gridbndry[1,*] = [0, ny-1, ny-1, 0]
       ENDELSE
     ENDIF
     
     ; Create 2D arrays for the grid
-    Rxy = FLTARR(TOTAL(nrad,/int), npol_total)
+    Rxy = DBLARR(TOTAL(nrad,/int), npol_total)
     Zxy = Rxy
     Rixy = Rxy
     Zixy = Rxy
@@ -1998,7 +1998,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
                     rad_peaking:settings.rad_peaking, pol_peaking:settings.pol_peaking}
     
     ; Calculate magnetic field components
-    dpsidR = FLTARR(TOTAL(nrad, /int), npol_total)
+    dpsidR = DBLARR(TOTAL(nrad, /int), npol_total)
     dpsidZ = dpsidR
 
     interp_data.method = 2

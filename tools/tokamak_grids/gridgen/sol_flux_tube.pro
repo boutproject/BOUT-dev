@@ -3,20 +3,20 @@
 ; Inputs
 ;
 ;   gfile   [string]             Name of the file to read
-;   psinorm [float, optional]    Normalised psi of the flux surface
+;   psinorm [double, optional]   Normalised psi of the flux surface
 ;                                psinorm = (psi - psi_axis)/(psi_sep - psi_axis)
 ;
 ; Keywords
 ;   output [string]       Name of the output file
 ;   nx [int]              Number of radial grid points
 ;   ny [int]              Number of points along field-line
-;   psiwidth [float]      Radial width of the box in normalised psi
+;   psiwidth [double]     Radial width of the box in normalised psi
 ;   /equ  [true/false]    Force input file to be a .equ file. Normally
 ;                            goes on file ending.
 ;
 ;   wall_file [string]    File containing wall coordinates if not given in gfile
 ;   flip_Bt [Bool]        Set this to artificially reverse the sign of the toroidal field
-;   scaleX [float]        Linearly scale the x domain. Needed for Zshift calculation
+;   scaleX [double]       Linearly scale the x domain. Needed for Zshift calculation
 ;
 ; Features
 ;   Uses derivatives along field line curve to calculate curvature and 
@@ -100,7 +100,7 @@ PRO sol_flux_tube, gfile, psinorm, output=output, nx=nx, ny=ny, psiwidth=psiwidt
   nlev = 100
   minf = MIN(rzgrid.psi)
   maxf = MAX(rzgrid.psi)
-  levels = findgen(nlev)*(maxf-minf)/FLOAT(nlev-1) + minf
+  levels = findgen(nlev)*(maxf-minf)/DOUBLE(nlev-1) + minf
   
   safe_colors, /first
   
@@ -189,13 +189,13 @@ PRO sol_flux_tube, gfile, psinorm, output=output, nx=nx, ny=ny, psiwidth=psiwidt
   if zpos[0] LT zpos[N_ELEMENTS(zpos)-1] THEN BEGIN
 	;Need to reverse indices
 	print,"Reversing indices"
-	dummy = FLTARR(n_elements(ri))
+	dummy = DBLARR(n_elements(ri))
 	for i=0,n_elements(ri)-1 do begin
 		dummy[i] = ri[n_elements(ri)-1-i]
 	ENDFOR
 	ri = dummy
 
-        dummy = FLTARR(n_elements(zi))
+        dummy = DBLARR(n_elements(zi))
         for i=0,n_elements(zi)-1 do begin
                 dummy[i] = zi[n_elements(zi)-1-i]
         ENDFOR
@@ -228,7 +228,7 @@ PRO sol_flux_tube, gfile, psinorm, output=output, nx=nx, ny=ny, psiwidth=psiwidt
   ENDIF ELSE BEGIN
     PRINT, "WARNING: No boundary found, please enter boundary indices: "
     Print, "Total no points: ",n_elements(rpos)
-    inds = FLTARR(2)
+    inds = DBLARR(2)
     inds_ok = 'N'
     oplot, rpos, zpos, color=4, thick=2
     IF KEYWORD_SET(wall_file) THEN BEGIN ;Plot wall
@@ -265,7 +265,7 @@ PRO sol_flux_tube, gfile, psinorm, output=output, nx=nx, ny=ny, psiwidth=psiwidt
   ;;;;;;;;;;; Toroidal field
   ; f = RBt and f'
   ngrid = n_elements(rzgrid.fpol)
-  psigrid = psi_axis + (psi_sep - psi_axis)*FINDGEN(ngrid)/FLOAT(ngrid)
+  psigrid = psi_axis + (psi_sep - psi_axis)*FINDGEN(ngrid)/DOUBLE(ngrid)
 
   f = INTERPOLATE(rzgrid.fpol, psinorm*ngrid)
   ;Term not included in .equ file, needs checking
@@ -274,12 +274,12 @@ PRO sol_flux_tube, gfile, psinorm, output=output, nx=nx, ny=ny, psiwidth=psiwidt
   ;;;;;;;;;;; Poloidal field
 
   npoints = N_ELEMENTS(ri)
-  Bpol = FLTARR(npoints)
-  drposdpsi = FLTARR(npoints)
-  dzdpsi = FLTARR(npoints)
-  dBpoldpsi = FLTARR(npoints)
-  dBpdz = FLTARR(npoints)
-  dBpdr = FLTARR(npoints)
+  Bpol = DBLARR(npoints)
+  drposdpsi = DBLARR(npoints)
+  dzdpsi = DBLARR(npoints)
+  dBpoldpsi = DBLARR(npoints)
+  dBpdz = DBLARR(npoints)
+  dBpdr = DBLARR(npoints)
 
   IF NOT KEYWORD_SET(equ) THEN dfdpsi = dfdpsi
   FOR i=0, npoints-1 DO BEGIN
@@ -436,7 +436,7 @@ PRO sol_flux_tube, gfile, psinorm, output=output, nx=nx, ny=ny, psiwidth=psiwidt
   ;;;;;;;;;;;;;;;; RADIAL MESH ;;;;;;;;;;;;;;;;;;
   
   ; Convert normalised psi to psi
-  dpsi = (psiwidth * (psi_sep - psi_axis)) / FLOAT(nx-1)
+  dpsi = (psiwidth * (psi_sep - psi_axis)) / DOUBLE(nx-1)
  
   ;;;;;;;;;;;;;;;; INTERPOLATE ALL QUANTITIES ONTO FIELD LINE ;;;;;
 
@@ -465,7 +465,7 @@ PRO sol_flux_tube, gfile, psinorm, output=output, nx=nx, ny=ny, psiwidth=psiwidt
   kphi = kp[inds[0]:inds[1]]
  
   L = int_func(dldi, /simple) 
-  lpos = max(L) * FINDGEN(ny)/FLOAT(ny-1)
+  lpos = max(L) * FINDGEN(ny)/DOUBLE(ny-1)
 
   ;Interpolate onto grid equally spaced in poloidal angle
  
@@ -503,9 +503,9 @@ PRO sol_flux_tube, gfile, psinorm, output=output, nx=nx, ny=ny, psiwidth=psiwidt
   ; Put everything into 2D arrays
   
   ; B field components
-  Bpxy = FLTARR(nx, ny)
-  Btxy = FLTARR(nx, ny)
-  Bxy  = FLTARR(nx, ny)
+  Bpxy = DBLARR(nx, ny)
+  Btxy = DBLARR(nx, ny)
+  Bxy  = DBLARR(nx, ny)
   FOR i=0, nx-1 DO BEGIN
      Bpxy[i,*] = Bpol
      Btxy[i,*] = Btor
@@ -513,13 +513,13 @@ PRO sol_flux_tube, gfile, psinorm, output=output, nx=nx, ny=ny, psiwidth=psiwidt
   ENDFOR
   
   ; Grid spacing
-  dx = FLTARR(nx, ny) + dpsi
-  dy = FLTARR(nx, ny) + 2.*!PI/FLOAT(ny)
+  dx = DBLARR(nx, ny) + dpsi
+  dy = DBLARR(nx, ny) + 2.*!PI/DOUBLE(ny)
   
   ; Geometrical quantities
-  hxy = FLTARR(nx, ny)
-  Rxy = FLTARR(nx, ny)
-  Zxy = FLTARR(nx, ny)
+  hxy = DBLARR(nx, ny)
+  Rxy = DBLARR(nx, ny)
+  Zxy = DBLARR(nx, ny)
   
   FOR i=0, nx-1 DO BEGIN
     hxy[i,*] = hthe
@@ -528,7 +528,7 @@ PRO sol_flux_tube, gfile, psinorm, output=output, nx=nx, ny=ny, psiwidth=psiwidt
   ENDFOR
   
   ; Curvature and other quantities
-  bxcvx = FLTARR(nx, ny)
+  bxcvx = DBLARR(nx, ny)
   bxcvy = bxcvx
   bxcvz = bxcvx
   sinty2 = bxcvx

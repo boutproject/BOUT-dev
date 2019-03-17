@@ -12,7 +12,7 @@ FUNCTION smooth_nl, input, mesh, iter=iter
 
   tmp = output
 
-  markx = FLTARR(nx, ny)
+  markx = DBLARR(nx, ny)
   marky = markx
   
   mxn = markx

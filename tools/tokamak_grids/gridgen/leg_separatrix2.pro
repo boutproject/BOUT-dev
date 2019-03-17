@@ -29,7 +29,7 @@ FUNCTION leg_separatrix2, interp_data, R, Z, xpt_ri, xpt_zi, $
   nz = interp_data.ny
 
   IF NOT KEYWORD_SET(boundary) THEN BEGIN
-    bndry = FLTARR(2,4)
+    bndry = DBLARR(2,4)
     bndry[0,*] = [1, nr-2, nr-2, 1]
     bndry[1,*] = [1, 1, nz-2, nz-2]
   ENDIF ELSE bndry = boundary

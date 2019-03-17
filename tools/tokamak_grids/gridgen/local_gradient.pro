@@ -49,7 +49,7 @@ PRO local_gradient, interp_data, ri, zi, status=status, $
         
         n = N_ELEMENTS(r)
 
-        A = TRANSPOSE([[FLTARR(n)+1.], $
+        A = TRANSPOSE([[DBLARR(n)+1.], $
                        [r], $
                        [z], $
                        [r*r], $
@@ -81,7 +81,7 @@ PRO local_gradient, interp_data, ri, zi, status=status, $
         
         PRINT, "Calculating derivatives for local gradient (method 2)"
 
-        ddr = FLTARR(nr, nz)
+        ddr = DBLARR(nr, nz)
         ddz = ddr
         FOR i=0, nz-1 DO ddr[*,i] = DERIV(interp_data.f[*,i])
         FOR i=0, nr-1 DO ddz[i,*] = DERIV(interp_data.f[i,*])

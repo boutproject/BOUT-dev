@@ -2,7 +2,7 @@ FUNCTION simple_psi, r, z, r0, z0, mag
   nx = N_ELEMENTS(r)
   ny = N_ELEMENTS(z)
   
-  f = FLTARR(nx,ny)
+  f = DBLARR(nx,ny)
   
   mind = 5*SQRT((r[1]-r[0])^2 + (z[1]-z[0])^2)
   FOR i=0, nx-1 DO BEGIN
@@ -19,8 +19,8 @@ PRO gridgen, debug=debug, settings=settings
   nx = 200
   ny = 200
 
-  R = FINDGEN(nx) / FLOAT(nx-1)
-  Z = (FINDGEN(ny) / FLOAT(ny-1)) - 0.5
+  R = FINDGEN(nx) / DOUBLE(nx-1)
+  Z = (FINDGEN(ny) / DOUBLE(ny-1)) - 0.5
 
   f = simple_psi(R, Z, 0.5, 0.0, -1.0) $
     + simple_psi(R, Z, 0.3, -0.55, -0.39) $
