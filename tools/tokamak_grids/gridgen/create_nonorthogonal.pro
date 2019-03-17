@@ -278,7 +278,7 @@ FUNCTION poloidal_grid, interp_data, R, Z, ri, zi, n, fpsi=fpsi, parweight=parwe
     a = yd*2.D
     b = (2.D*yu - a) / fn
     c = d/fn - a - 0.5D*b*fn
-    dloc = ydown_dist + a*igrid + 0.5*b*igrid^2 + c*[igrid - SIN(2.D*!DPI*igrid / fn)*fn/(2.D*!DPI)]
+    dloc = ydown_dist + a*igrid + 0.5D*b*igrid^2 + c*[igrid - SIN(2.D*!DPI*igrid / fn)*fn/(2.D*!DPI)]
     ddloc = a + b*igrid + c*[1.D - COS(2.D*!DPI*igrid / fn)]
 
     
@@ -444,7 +444,7 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
     IF orthup EQ 1 THEN weight_up = 0 ELSE weight_up = (iweight/(npar-1.D))^nonorthogonal_weight_decay_power
 
     IF NOT KEYWORD_SET(orthdown) THEN orthdown=0
-    IF orthdown EQ 1 THEN weight_down = 0 ELSE weight_down = (1.D-iweight/(npar-1.))^nonorthogonal_weight_decay_power
+    IF orthdown EQ 1 THEN weight_down = 0 ELSE weight_down = (1.D-iweight/(npar-1.D))^nonorthogonal_weight_decay_power
     
     ; Refine the location of the starting point
     follow_gradient_nonorth, interp_data, R, Z, rii[i], zii[i], f0, ri1, zi1, $
