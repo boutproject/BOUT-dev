@@ -272,6 +272,8 @@ FUNCTION grid_region, interp_data, R, Z, $
                       ydown_dist=ydown_dist, yup_dist=yup_dist, $
                       ydown_space=ydown_space, yup_space=yup_space, $
                       parweight=parweight)
+print,'ind in grid_region'
+print,ind,format='(d20.16)'
   
   rii = INTERPOLATE(ri, ind)
   zii = INTERPOLATE(zi, ind)
@@ -1357,6 +1359,14 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
       ; Get the lines from the x-point to the target plates
       legsep = leg_separatrix2(interp_data, R, Z, xpt_ri[i], xpt_zi[i], $
                                opt_ri[primary_opt], opt_zi[primary_opt], boundary=bndryi)
+      print,'leg1'
+      print,legsep.leg1[*,0],format='(d20.16)'
+      print,''
+      print,legsep.leg1[*,1],format='(d20.16)'
+      print,'leg2'
+      print,legsep.leg2[*,0],format='(d20.16)'
+      print,''
+      print,legsep.leg2[*,1],format='(d20.16)'
       
       pf_ri = [REVERSE(legsep.leg1[*,0]), xpt_ri[i], legsep.leg2[*,0]]
       pf_zi = [REVERSE(legsep.leg1[*,1]), xpt_zi[i], legsep.leg2[*,1]]
@@ -1391,6 +1401,14 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
       core1_dist = line_dist(R, Z, xpt_sep.core1_ri, xpt_sep.core1_zi)
       core2_dist = line_dist(R, Z, xpt_sep.core2_ri, xpt_sep.core2_zi)
       xpt_sep = CREATE_STRUCT(xpt_sep, "leg1_dist", leg1_dist, "leg2_dist", leg2_dist, "core1_dist", core1_dist, "core2_dist", core2_dist)
+      print,'xpt_sep'
+      print,xpt_sep.leg1_dist,format='(d20.16)'
+      print,''
+      print,xpt_sep.leg2_dist,format='(d20.16)'
+      print,''
+      print,xpt_sep.core1_dist,format='(d20.16)'
+      print,''
+      print,xpt_sep.core2_dist,format='(d20.16)'
       sep_info[i] = PTR_NEW(xpt_sep)
 
       ; Make sure that the PF sections point to the correct SOLs
@@ -1430,6 +1448,10 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
       ENDIF ELSE BEGIN
         len1 = INT_TABULATED(FINDGEN(N_ELEMENTS(dldi)), dldi)
       ENDELSE
+      print,'len0'
+      print,len0,format='(d20.16)'
+      print,'len1'
+      print,len1,format='(d20.16)'
       tmp = CREATE_STRUCT(tmp, 'len0', len0, 'len1', len1)
       
       PTR_FREE, pf_info[xind]
@@ -1688,7 +1710,23 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
       PRINT, "Gridding regions "+STR(3*i)+" to " +STR(3*i+2)
       ; Grid the lower PF region
       PRINT, "   x-point index ", xpt
-      a = grid_region(interp_data, R, Z, $
+print,'ri0'
+print, (*pf_info[xpt]).ri0,format='(d20.16)'
+print,'zi0'
+print, (*pf_info[xpt]).zi0,format='(d20.16)'
+print,'psin'
+print,faxis + fnorm*pf_psi_vals[xpt,0,*],format='(d20.16)'
+print,'npf-1'
+print,(*pf_info[xpt]).npf-1,format='(d20.16)'
+print,'npol'
+print,npol[3*i]
+print,'gridbndry'
+print,gridbndry,format='(d20.16)'
+;print,'ffirst flast1 fpsi'
+;print,ffirst,flast1,fpsi,format='(d20.16)'
+print,'yup_dist'
+print,xpt_dist[xpt, 0],format='(d20.16)'
+       a = grid_region(interp_data, R, Z, $
                       (*pf_info[xpt]).ri0, (*pf_info[xpt]).zi0, $
                       faxis + fnorm*pf_psi_vals[xpt,0,*], $
                       (*pf_info[xpt]).npf-1, $
@@ -1698,6 +1736,8 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
                       boundary=gridbndry, $
                       ffirst=ffirst, flast=flast1, fpsi=fpsi, yup_dist=xpt_dist[xpt, 0], /oplot)
       Rxy[*, ypos:(ypos+npol[3*i]-1)] = a.Rxy
+print,'Rxy[0,*]'
+print,Rxy[0,*],format='(d20.16)'
       Zxy[*, ypos:(ypos+npol[3*i]-1)] = a.Zxy
       Rixy[*, ypos:(ypos+npol[3*i]-1)] = a.Rixy
       Zixy[*, ypos:(ypos+npol[3*i]-1)] = a.Zixy
