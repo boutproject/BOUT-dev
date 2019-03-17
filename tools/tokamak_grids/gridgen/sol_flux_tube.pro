@@ -363,7 +363,7 @@ PRO sol_flux_tube, gfile, psinorm, output=output, nx=nx, ny=ny, psiwidth=psiwidt
   s = int_func(dsdi, /simple)
   
   ;Calculate hthe, ensuring that theta = 0,2*pi is at the divertor targets
-  hthe = (L[inds[1]] - L[inds[0]])/(2*!Pi)  
+  hthe = (L[inds[1]] - L[inds[0]])/(2*!DPi)  
   print,"hthe = ",hthe
 
   ;;;;;;;;;;;;;;;;;;;; CURVATURE ;;;;;;;;;;;;;;;;;;;;;;;
@@ -482,7 +482,7 @@ PRO sol_flux_tube, gfile, psinorm, output=output, nx=nx, ny=ny, psiwidth=psiwidt
   dnudpsi =  INTERPOLATE(dnudpsi, inds, /DOUBLE)
   dpsidR =  INTERPOLATE(dpsidR, inds, /DOUBLE)
   dpsidZ = INTERPOLATE(dpsidZ,inds, /DOUBLE)
-  hthe = MAX(lpos)/(2*!Pi)
+  hthe = MAX(lpos)/(2*!DPi)
   qinty =  INTERPOLATE(qinty, inds, /DOUBLE)
   qinty = qinty - qinty[FLOOR(ny/2)]
   dBdpsi = INTERPOLATE(dBdpsi,inds, /DOUBLE)

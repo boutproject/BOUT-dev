@@ -581,9 +581,9 @@ FUNCTION solve_xpt_hthe, dctF, R, Z, sep_info, dist0, pf_f, core_f, sol_in_f, so
 
   med = MEDIAN(response)
   w = WHERE(response LT 0.1D*med, count1)
-  IF count1 GT 0 THEN dist[w] = dist[w] * 2.
-  wD = WHERE(response GT 10.*medD, count2)
-  IF count2 GT 0 THEN dist[w] = dist[w] * 0.D75
+  IF count1 GT 0 THEN dist[w] = dist[w] * 2.D
+  wD = WHERE(response GT 10.D*medD, count2)
+  IF count2 GT 0 THEN dist[w] = dist[w] * 0.75D
   
   ENDREP UNTIL count1+count2 EQ 0
   
@@ -613,10 +613,10 @@ FUNCTION increase_xpt_hthe, dctF, R, Z, sep_info, dist0, pf_f, core_f, sol_in_f,
       
       IF xd[(ind+1) MOD 4] LT xd[(ind+3) MOD 4] THEN BEGIN
         ; Increase dist[ind]
-        dist[ind] = dist[ind] * 1.D1
+        dist[ind] = dist[ind] * 1.1D
       ENDIF ELSE BEGIN
         ; Increase dist[ind-1]
-        dist[(ind+3) MOD 4] = dist[(ind+3) MOD 4] * 1.D1
+        dist[(ind+3) MOD 4] = dist[(ind+3) MOD 4] * 1.1D
       ENDELSE
     ENDIF
     xd = xpt_hthe(dctF, R, Z, sep_info, dist, pf_f, core_f, sol_in_f, sol_out_f, boundary=boundary, psi=psi)
