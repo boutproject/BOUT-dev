@@ -193,8 +193,8 @@ FUNCTION analyse_equil, F, R, Z
       PRINT, "   Starting index: " + STR(rex[e])+", "+STR(zex[e])
       PRINT, "   Refined  index: " + STR(rinew)+", "+STR(zinew)
       
-      rnew = INTERPOLATE(R, rinew)
-      znew = INTERPOLATE(Z, zinew)
+      rnew = INTERPOLATE(R, rinew, /DOUBLE)
+      znew = INTERPOLATE(Z, zinew, /DOUBLE)
       
       PRINT, "   Position: " + STR(rnew)+", "+STR(znew)
       PRINT, "   F = "+STR(fnew)
@@ -267,8 +267,8 @@ FUNCTION analyse_equil, F, R, Z
   ENDFOR
   
   primary_opt = ind
-  PRINT, "Primary O-point is at "+STR(INTERPOLATE(R, opt_ri[ind])) + $
-    ", " + STR(INTERPOLATE(Z, opt_zi[ind]))
+  PRINT, "Primary O-point is at "+STR(INTERPOLATE(R, opt_ri[ind], /DOUBLE)) + $
+    ", " + STR(INTERPOLATE(Z, opt_zi[ind], /DOUBLE))
   PRINT, ""
   
   IF n_xpoint GT 0 THEN BEGIN
@@ -286,7 +286,7 @@ FUNCTION analyse_equil, F, R, Z
       dz = (xpt_zi[i] - opt_zi[primary_opt]) / DOUBLE(n)
       FOR j=0, n-1 DO BEGIN
         ; interpolate f at this location
-        farr[j] = INTERPOLATE(F, opt_ri[primary_opt] + dr*DOUBLE(j), opt_zi[primary_opt] + dz*DOUBLE(j))
+        farr[j] = INTERPOLATE(F, opt_ri[primary_opt] + dr*DOUBLE(j), opt_zi[primary_opt] + dz*DOUBLE(j), /DOUBLE)
       ENDFOR
       
       IF farr[n-1] LT farr[0] THEN BEGIN

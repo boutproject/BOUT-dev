@@ -36,8 +36,8 @@ FUNCTION radial_differential_nonorth, fcur, pos
     ENDIF
   ENDIF
   
-  dRdi = INTERPOLATE(DERIV(R), pos[0])
-  dZdi = INTERPOLATE(DERIV(Z), pos[1])
+  dRdi = INTERPOLATE(DERIV(R), pos[0], /DOUBLE)
+  dZdi = INTERPOLATE(DERIV(Z), pos[1], /DOUBLE)
   
   ; Check mismatch between fcur and f ? 
   Br = dfdz/dZdi

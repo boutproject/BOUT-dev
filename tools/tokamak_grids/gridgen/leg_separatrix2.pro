@@ -82,8 +82,8 @@ FUNCTION leg_separatrix2, interp_data, R, Z, xpt_ri, xpt_zi, $
     PRINT, "Intersections: ", ncross
     FOR j = 0, ncross-1 DO BEGIN
       ; Intersection. Get location
-      cri = INTERPOLATE(sep_ri, inds[j])
-      czi = INTERPOLATE(sep_zi, inds[j])
+      cri = INTERPOLATE(sep_ri, inds[j], /DOUBLE)
+      czi = INTERPOLATE(sep_zi, inds[j], /DOUBLE)
       
       IF KEYWORD_SET(debug) THEN oplot, [cri], [czi], psym=2
 
@@ -96,8 +96,8 @@ FUNCTION leg_separatrix2, interp_data, R, Z, xpt_ri, xpt_zi, $
       ; the X-point, so this should not affect them.
       ; Need to add +2 to inds[j] because we added two points onto the
       ; beginning of sep_ri/sep_zi.
-      drdi = INTERPOLATE(DERIV([sep_ri[-2:*],sep_ri,sep_ri[0:2]]), inds[j]+2)
-      dzdi = INTERPOLATE(DERIV([sep_zi[-2:*],sep_zi,sep_zi[0:2]]), inds[j]+2)
+      drdi = INTERPOLATE(DERIV([sep_ri[-2:*],sep_ri,sep_ri[0:2]]), inds[j]+2, /DOUBLE)
+      dzdi = INTERPOLATE(DERIV([sep_zi[-2:*],sep_zi,sep_zi[0:2]]), inds[j]+2, /DOUBLE)
       
       ; First check if this is towards or away from the X-point
       dir = 1 ; direction to go away from x-point
@@ -129,13 +129,13 @@ FUNCTION leg_separatrix2, interp_data, R, Z, xpt_ri, xpt_zi, $
           si = [si, reverse(indgen(in+1))]
         ENDELSE
       ENDELSE
-      sepri = INTERPOLATE(sep_ri, si)
-      sepzi = INTERPOLATE(sep_zi, si)
+      sepri = INTERPOLATE(sep_ri, si, /DOUBLE)
+      sepzi = INTERPOLATE(sep_zi, si, /DOUBLE)
       
       ; Then check if this is towards the O-point (core) or away (PF)
       
       d = drdi*dir * (opt_ri - xpt_ri)*drpdi^2 + dzdi*dir * (opt_zi - xpt_zi) * dzpdi^2
-      ;OPLOT, INTERPOLATE(R, xpt_ri) + [0., drdi*dir*drpdi * 100], INTERPOLATE(Z, xpt_zi) + [0., dzdi*dir*dzpdi * 100], color=2
+      ;OPLOT, INTERPOLATE(R, xpt_ri, /DOUBLE) + [0., drdi*dir*drpdi * 100], INTERPOLATE(Z, xpt_zi, /DOUBLE) + [0., dzdi*dir*dzpdi * 100], color=2
       
       IF d GT 0 THEN BEGIN
         ; Core
@@ -172,8 +172,8 @@ FUNCTION leg_separatrix2, interp_data, R, Z, xpt_ri, xpt_zi, $
       ENDIF ELSE BEGIN
         ; PF
         
-        sepri = INTERPOLATE(sep_ri, si)
-        sepzi = INTERPOLATE(sep_zi, si)
+        sepri = INTERPOLATE(sep_ri, si, /DOUBLE)
+        sepzi = INTERPOLATE(sep_zi, si, /DOUBLE)
         
         ; Find where it crosses a boundary
         
@@ -208,11 +208,11 @@ FUNCTION leg_separatrix2, interp_data, R, Z, xpt_ri, xpt_zi, $
   IF KEYWORD_SET(debug) THEN BEGIN
     STOP
   ENDIF ELSE BEGIN
-    OPLOT, INTERPOLATE(R, pf1[*,0]), INTERPOLATE(Z, pf1[*,1]), color=3, thick=2
-    OPLOT, INTERPOLATE(R, pf2[*,0]), INTERPOLATE(Z, pf2[*,1]), color=4, thick=2
+    OPLOT, INTERPOLATE(R, pf1[*,0], /DOUBLE), INTERPOLATE(Z, pf1[*,1], /DOUBLE), color=3, thick=2
+    OPLOT, INTERPOLATE(R, pf2[*,0], /DOUBLE), INTERPOLATE(Z, pf2[*,1], /DOUBLE), color=4, thick=2
     
-    OPLOT, INTERPOLATE(R, core1[*,0]), INTERPOLATE(Z, core1[*,1]), color=3, thick=2
-    OPLOT, INTERPOLATE(R, core2[*,0]), INTERPOLATE(Z, core2[*,1]), color=4, thick=2
+    OPLOT, INTERPOLATE(R, core1[*,0], /DOUBLE), INTERPOLATE(Z, core1[*,1], /DOUBLE), color=3, thick=2
+    OPLOT, INTERPOLATE(R, core2[*,0], /DOUBLE), INTERPOLATE(Z, core2[*,1], /DOUBLE), color=4, thick=2
   ENDELSE
 
   RETURN, {leg1:pf1, leg2:pf2, core1:core1, core2:core2, ri:xpt_ri, zi:xpt_zi}

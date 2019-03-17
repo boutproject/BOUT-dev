@@ -106,8 +106,8 @@ function calc_beta, Rxy, Zxy, mesh, rz_grid, method
 			dZdr = DERIV(Zxy[*,j])
 			for i=0,nx-1 do begin
 				local_gradient, interp_data, mesh.Rixy[i,j], mesh.Zixy[i,j], status=status, dfdr=dfdr, dfdz=dfdz
-				dPsidR = dfdr/INTERPOLATE(DERIV(rz_grid.r),i)
-				dPsidZ = dfdz/INTERPOLATE(DERIV(rz_grid.z),j)
+				dPsidR = dfdr/INTERPOLATE(DERIV(rz_grid.r),i, /DOUBLE, /DOUBLE)
+				dPsidZ = dfdz/INTERPOLATE(DERIV(rz_grid.z),j, /DOUBLE, /DOUBLE)
 	
 				angle1 = atan(dPsidR,dPsidZ)
 				angle2 = atan(dZdr[i],-dRdr[i])
@@ -1254,9 +1254,9 @@ retrybetacalc:
     
     ; DCT methods cause spurious oscillations
     ; Linear interpolation seems to be more robust
-    bxcv_psi = INTERPOLATE(bxcv.psi, mesh.Rixy, mesh.Zixy)
-    bxcv_theta = INTERPOLATE(bxcv.theta, mesh.Rixy, mesh.Zixy) / hthe
-    bxcv_phi = INTERPOLATE(bxcv.phi, mesh.Rixy, mesh.Zixy)
+    bxcv_psi = INTERPOLATE(bxcv.psi, mesh.Rixy, mesh.Zixy, /DOUBLE)
+    bxcv_theta = INTERPOLATE(bxcv.theta, mesh.Rixy, mesh.Zixy, /DOUBLE) / hthe
+    bxcv_phi = INTERPOLATE(bxcv.phi, mesh.Rixy, mesh.Zixy, /DOUBLE)
     
     ; If Bp is reversed, then Grad x = - Grad psi
     bxcvx = bpsign*bxcv_psi
