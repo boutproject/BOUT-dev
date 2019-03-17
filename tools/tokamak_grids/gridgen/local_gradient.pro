@@ -91,9 +91,9 @@ PRO local_gradient, interp_data, ri, zi, status=status, $
         interp_data = CREATE_STRUCT(interp_data, "method2", d)
       ENDIF ELSE d = interp_data.method2
       
-      IF ARG_PRESENT(f)    THEN f    = INTERPOLATE(interp_data.f, ri, zi, cubic=-0.5)
-      IF ARG_PRESENT(dfdr) THEN dfdr = INTERPOLATE(d.ddr, ri, zi, cubic=-0.5)
-      IF ARG_PRESENT(dfdz) THEN dfdz = INTERPOLATE(d.ddz, ri, zi, cubic=-0.5)
+      IF ARG_PRESENT(f)    THEN f    = INTERPOLATE(interp_data.f, ri, zi, cubic=-0.5, /DOUBLE)
+      IF ARG_PRESENT(dfdr) THEN dfdr = INTERPOLATE(d.ddr, ri, zi, cubic=-0.5, /DOUBLE)
+      IF ARG_PRESENT(dfdz) THEN dfdz = INTERPOLATE(d.ddz, ri, zi, cubic=-0.5, /DOUBLE)
     END
     ELSE: BEGIN
       PRINT, "ERROR: unknown method in local_gradient"

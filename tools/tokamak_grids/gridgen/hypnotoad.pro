@@ -27,12 +27,12 @@ PRO oplot_mesh, rz_mesh, flux_mesh
   FOR i=0, flux_mesh.critical.n_xpoint-1 DO BEGIN
     ; plot the separatrix contour
     CONTOUR, rz_mesh.psi, rz_mesh.R, rz_mesh.Z, levels=[flux_mesh.critical.xpt_f[i]], c_colors=2, /overplot
-    oplot, [INTERPOLATE(rz_mesh.R, flux_mesh.critical.xpt_ri[i])], [INTERPOLATE(rz_mesh.Z, flux_mesh.critical.xpt_zi[i])], psym=7, color=2
+    oplot, [INTERPOLATE(rz_mesh.R, flux_mesh.critical.xpt_ri[i], /DOUBLE)], [INTERPOLATE(rz_mesh.Z, flux_mesh.critical.xpt_zi[i], /DOUBLE)], psym=7, color=2
   ENDFOR
 
   ; Plot O-points
   FOR i=0, flux_mesh.critical.n_opoint-1 DO BEGIN
-    oplot, [INTERPOLATE(rz_mesh.R, flux_mesh.critical.opt_ri[i])], [INTERPOLATE(rz_mesh.Z, flux_mesh.critical.opt_zi[i])], psym=7, color=3
+    oplot, [INTERPOLATE(rz_mesh.R, flux_mesh.critical.opt_ri[i], /DOUBLE)], [INTERPOLATE(rz_mesh.Z, flux_mesh.critical.opt_zi[i], /DOUBLE)], psym=7, color=3
   ENDFOR
   
   ypos = 0

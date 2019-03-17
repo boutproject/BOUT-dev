@@ -121,22 +121,22 @@ PRO flux_tube, gfile, psinorm, output=output
   ;zi = REAL_PART(fft_filter(zi, nfreq))
 
   ; Plot the flux surface
-  OPLOT, INTERPOLATE(rzgrid.R, ri), INTERPOLATE(rzgrid.Z, zi), color=4, thick=2
+  OPLOT, INTERPOLATE(rzgrid.R, ri, /DOUBLE), INTERPOLATE(rzgrid.Z, zi, /DOUBLE), color=4, thick=2
   
   ; Get quantities from g-eqdsk
   ngrid = N_ELEMENTS(g.fpol)
   gpos = psinorm * ngrid ; Index into the psi grid. CHECK THIS
   psigrid = psi_axis + (psi_sep - psi_axis)*FINDGEN(ngrid)/DOUBLE(ngrid)
-  fpol = INTERPOLATE(g.fpol, gpos) ; Poloidal current function
-  pres = INTERPOLATE(g.pres, gpos) ; Pressure [Pascals]
-  dpdpsi = INTERPOLATE(DERIV(psigrid, g.pres), gpos)
-  dfdpsi = INTERPOLATE(DERIV(psigrid, g.fpol), gpos)
-  qsafe = INTERPOLATE(g.qpsi, gpos) ; q
+  fpol = INTERPOLATE(g.fpol, gpos, /DOUBLE) ; Poloidal current function
+  pres = INTERPOLATE(g.pres, gpos, /DOUBLE) ; Pressure [Pascals]
+  dpdpsi = INTERPOLATE(DERIV(psigrid, g.pres), gpos, /DOUBLE)
+  dfdpsi = INTERPOLATE(DERIV(psigrid, g.fpol), gpos, /DOUBLE)
+  qsafe = INTERPOLATE(g.qpsi, gpos, /DOUBLE) ; q
   
   PRINT, "Pressure [Pa]: " + STR(pres)
   PRINT, "Safety factor: " + STR(qsafe)
   
-  Rmaj = INTERPOLATE(rzgrid.R, ri) ; Major radius
+  Rmaj = INTERPOLATE(rzgrid.R, ri, /DOUBLE) ; Major radius
 
   ; Use DCT to get local gradients of psi for Bp
   np = N_ELEMENTS(ri)
@@ -164,8 +164,8 @@ PRO flux_tube, gfile, psinorm, output=output
   ; distance along field-line
   
   ; Poloidal distance dl/di (i = index)
-  drdi = REAL_PART(fft_deriv(INTERPOLATE(rzgrid.R, ri)))
-  dzdi = REAL_PART(fft_deriv(INTERPOLATE(rzgrid.Z, zi)))
+  drdi = REAL_PART(fft_deriv(INTERPOLATE(rzgrid.R, ri, /DOUBLE)))
+  dzdi = REAL_PART(fft_deriv(INTERPOLATE(rzgrid.Z, zi, /DOUBLE)))
   dldi = SQRT(drdi^2 + dzdi^2)
 
   ; Integrate to get distance in poloidal direction
@@ -224,16 +224,16 @@ PRO flux_tube, gfile, psinorm, output=output
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ; Interpolate everything onto grid
   
-  ri   = INTERPOLATE(ri, inds)
-  zi   = INTERPOLATE(zi, inds)
-  Bpol = INTERPOLATE(Bpol, inds)
-  Btor = INTERPOLATE(Btor, inds)
+  ri   = INTERPOLATE(ri, inds, /DOUBLE)
+  zi   = INTERPOLATE(zi, inds, /DOUBLE)
+  Bpol = INTERPOLATE(Bpol, inds, /DOUBLE)
+  Btor = INTERPOLATE(Btor, inds, /DOUBLE)
   B    = SQRT(Bpol^2 + Btor^2)
-  Rmaj = INTERPOLATE(rzgrid.R, ri)
-  Zpos = INTERPOLATE(rzgrid.Z, zi)
-  qinty = INTERPOLATE(qinty, inds)
-  s = INTERPOLATE(s, inds) ; parallel distance
-  l = INTERPOLATE(l, inds) ; poloidal distance
+  Rmaj = INTERPOLATE(rzgrid.R, ri, /DOUBLE)
+  Zpos = INTERPOLATE(rzgrid.Z, zi, /DOUBLE)
+  qinty = INTERPOLATE(qinty, inds, /DOUBLE)
+  s = INTERPOLATE(s, inds, /DOUBLE) ; parallel distance
+  l = INTERPOLATE(l, inds, /DOUBLE) ; poloidal distance
   hthe = DERIV(l) / (2.*!PI / DOUBLE(npar))
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

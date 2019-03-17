@@ -30,11 +30,11 @@ FUNCTION leg_separatrix, dctF, R, Z, xpt_ri, xpt_zi, $
   fyy = d[4]
   fxy = d[5]
   
-  xr = INTERPOLATE(r,xpt_ri)
-  xz = INTERPOLATE(z,xpt_zi)
+  xr = INTERPOLATE(r,xpt_ri, /DOUBLE)
+  xz = INTERPOLATE(z,xpt_zi, /DOUBLE)
   
-  drdi = INTERPOLATE(DERIV(R), xpt_ri)
-  dzdi = INTERPOLATE(DERIV(Z), xpt_zi)
+  drdi = INTERPOLATE(DERIV(R), xpt_ri, /DOUBLE)
+  dzdi = INTERPOLATE(DERIV(Z), xpt_zi, /DOUBLE)
 
   ; Use finite-differencing
   ;di = 2.
@@ -133,11 +133,11 @@ FUNCTION leg_separatrix, dctF, R, Z, xpt_ri, xpt_zi, $
                       xpt_ri - di*v2[0], xpt_zi - di*v2[1], $
                       sign*di, 100, psi=psi)
 
-  OPLOT, INTERPOLATE(R, line1[*,0]), INTERPOLATE(Z, line1[*,1]), color=3, thick=2
-  OPLOT, INTERPOLATE(R, line2[*,0]), INTERPOLATE(Z, line2[*,1]), color=4, thick=2
+  OPLOT, INTERPOLATE(R, line1[*,0], /DOUBLE), INTERPOLATE(Z, line1[*,1], /DOUBLE), color=3, thick=2
+  OPLOT, INTERPOLATE(R, line2[*,0], /DOUBLE), INTERPOLATE(Z, line2[*,1], /DOUBLE), color=4, thick=2
   
-  OPLOT, INTERPOLATE(R, core1[*,0]), INTERPOLATE(Z, core1[*,1]), color=3, thick=2
-  OPLOT, INTERPOLATE(R, core2[*,0]), INTERPOLATE(Z, core2[*,1]), color=4, thick=2
+  OPLOT, INTERPOLATE(R, core1[*,0], /DOUBLE), INTERPOLATE(Z, core1[*,1], /DOUBLE), color=3, thick=2
+  OPLOT, INTERPOLATE(R, core2[*,0], /DOUBLE), INTERPOLATE(Z, core2[*,1], /DOUBLE), color=4, thick=2
   
   RETURN, {leg1:line1, leg2:line2, core1:core1, core2:core2, ri:xpt_ri, zi:xpt_zi}
 END

@@ -180,8 +180,8 @@ PRO sol_flux_tube, gfile, psinorm, output=output, nx=nx, ny=ny, psiwidth=psiwidt
 
  ENDFOR
 
-  rpos = INTERPOLATE(rzgrid.R, ri)
-  zpos = INTERPOLATE(rzgrid.Z, zi)
+  rpos = INTERPOLATE(rzgrid.R, ri, /DOUBLE)
+  zpos = INTERPOLATE(rzgrid.Z, zi, /DOUBLE)
 
 
   ;Check that indexing is assending in poloidal angle
@@ -200,8 +200,8 @@ PRO sol_flux_tube, gfile, psinorm, output=output, nx=nx, ny=ny, psiwidth=psiwidt
                 dummy[i] = zi[n_elements(zi)-1-i]
         ENDFOR
         zi = dummy
-  rpos = INTERPOLATE(rzgrid.R, ri)
-  zpos = INTERPOLATE(rzgrid.Z, zi)
+  rpos = INTERPOLATE(rzgrid.R, ri, /DOUBLE)
+  zpos = INTERPOLATE(rzgrid.Z, zi, /DOUBLE)
  ENDIF
 
   ; Smooth positions
@@ -267,9 +267,9 @@ PRO sol_flux_tube, gfile, psinorm, output=output, nx=nx, ny=ny, psiwidth=psiwidt
   ngrid = n_elements(rzgrid.fpol)
   psigrid = psi_axis + (psi_sep - psi_axis)*FINDGEN(ngrid)/DOUBLE(ngrid)
 
-  f = INTERPOLATE(rzgrid.fpol, psinorm*ngrid)
+  f = INTERPOLATE(rzgrid.fpol, psinorm*ngrid, /DOUBLE)
   ;Term not included in .equ file, needs checking
-  IF NOT KEYWORD_SET(equ) THEN dfdpsi = INTERPOLATE(DERIV(psigrid,rzgrid.fpol), psinorm*ngrid)
+  IF NOT KEYWORD_SET(equ) THEN dfdpsi = INTERPOLATE(DERIV(psigrid,rzgrid.fpol), psinorm*ngrid, /DOUBLE)
   
   ;;;;;;;;;;; Poloidal field
 
@@ -470,34 +470,34 @@ PRO sol_flux_tube, gfile, psinorm, output=output, nx=nx, ny=ny, psiwidth=psiwidt
   ;Interpolate onto grid equally spaced in poloidal angle
  
   inds = INTERPOL(findgen(N_ELEMENTS(L)), L, lpos)
-  rpos = INTERPOLATE(rpos, inds)
-  zpos = INTERPOLATE(zpos, inds)
-  s = INTERPOLATE(s,inds)
-  B = INTERPOLATE(B, inds)
-  Btor = INTERPOLATE(Btor, inds)
-  Bpol = INTERPOLATE(Bpol, inds)
-  nu = INTERPOLATE(nu, inds)
-  sinty = INTERPOLATE(sinty, inds)
+  rpos = INTERPOLATE(rpos, inds, /DOUBLE)
+  zpos = INTERPOLATE(zpos, inds, /DOUBLE)
+  s = INTERPOLATE(s,inds, /DOUBLE)
+  B = INTERPOLATE(B, inds, /DOUBLE)
+  Btor = INTERPOLATE(Btor, inds, /DOUBLE)
+  Bpol = INTERPOLATE(Bpol, inds, /DOUBLE)
+  nu = INTERPOLATE(nu, inds, /DOUBLE)
+  sinty = INTERPOLATE(sinty, inds, /DOUBLE)
   sinty = sinty - sinty[ny/2] ; take theta_0 at outboard midplane
-  dnudpsi =  INTERPOLATE(dnudpsi, inds)
-  dpsidR =  INTERPOLATE(dpsidR, inds)
-  dpsidZ = INTERPOLATE(dpsidZ,inds)
+  dnudpsi =  INTERPOLATE(dnudpsi, inds, /DOUBLE)
+  dpsidR =  INTERPOLATE(dpsidR, inds, /DOUBLE)
+  dpsidZ = INTERPOLATE(dpsidZ,inds, /DOUBLE)
   hthe = MAX(lpos)/(2*!Pi)
-  qinty =  INTERPOLATE(qinty, inds)
+  qinty =  INTERPOLATE(qinty, inds, /DOUBLE)
   qinty = qinty - qinty[FLOOR(ny/2)]
-  dBdpsi = INTERPOLATE(dBdpsi,inds)
-  dBdR = INTERPOLATE(dBdR,inds)  
-  dBdZ = INTERPOLATE(dBdZ,inds)
+  dBdpsi = INTERPOLATE(dBdpsi,inds, /DOUBLE)
+  dBdR = INTERPOLATE(dBdR,inds, /DOUBLE)  
+  dBdZ = INTERPOLATE(dBdZ,inds, /DOUBLE)
   
 
   ;Add in missing terms in curvature
-  bxcvx1d =  INTERPOLATE(bxcvx1d, inds)
-  bxcvy1d =  INTERPOLATE(bxcvy1d, inds)
-  bxcvz1d =  INTERPOLATE(bxcvz1d, inds) - (sinty*bxcvx1d + nu*bxcvy1d)
+  bxcvx1d =  INTERPOLATE(bxcvx1d, inds, /DOUBLE)
+  bxcvy1d =  INTERPOLATE(bxcvy1d, inds, /DOUBLE)
+  bxcvz1d =  INTERPOLATE(bxcvz1d, inds, /DOUBLE) - (sinty*bxcvx1d + nu*bxcvy1d)
 
-  kpsi = INTERPOLATE(kpsi,inds)
-  ktheta = INTERPOLATE(ktheta,inds)
-  kphi = INTERPOLATE(kphi,inds)
+  kpsi = INTERPOLATE(kpsi,inds, /DOUBLE)
+  ktheta = INTERPOLATE(ktheta,inds, /DOUBLE)
+  kphi = INTERPOLATE(kphi,inds, /DOUBLE)
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ; Put everything into 2D arrays

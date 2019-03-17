@@ -186,8 +186,8 @@ FUNCTION poloidal_grid, interp_data, R, Z, ri, zi, n, fpsi=fpsi, parweight=parwe
 
   IF 0 THEN BEGIN ; Always false
     ; Calculate poloidal distance along starting line
-    drdi = DERIV(INTERPOLATE(R, ri))
-    dzdi = DERIV(INTERPOLATE(Z, zi))
+    drdi = DERIV(INTERPOLATE(R, ri, /DOUBLE))
+    dzdi = DERIV(INTERPOLATE(Z, zi, /DOUBLE))
     
     dldi = SQRT(drdi^2 + dzdi^2)
     poldist = int_func(findgen(np), dldi, /simple) ; Poloidal distance along line
@@ -195,8 +195,8 @@ FUNCTION poloidal_grid, interp_data, R, Z, ri, zi, n, fpsi=fpsi, parweight=parwe
     ; reset poldist to start at zero at the ydown wall (if one is present)
     poldist = poldist - poldist[ydown_firstind]
   ENDIF ELSE BEGIN
-    rpos = INTERPOLATE(R, ri)
-    zpos = INTERPOLATE(Z, zi)
+    rpos = INTERPOLATE(R, ri, /DOUBLE)
+    zpos = INTERPOLATE(Z, zi, /DOUBLE)
     dd = SQRT((zpos[1:*] - zpos[0:(np-2)])^2 + (rpos[1:*] - rpos[0:(np-2)])^2)
     dd = [dd, SQRT((zpos[0] - zpos[np-1])^2 + (rpos[0] - rpos[np-1])^2)]
     poldist = DBLARR(np)
@@ -218,15 +218,15 @@ FUNCTION poloidal_grid, interp_data, R, Z, ri, zi, n, fpsi=fpsi, parweight=parwe
       local_gradient, interp_data, ri[i], zi[i], status=status, $
         f=f, dfdr=dfdr, dfdz=dfdz
       ; dfd* are derivatives wrt the indices. Need to multiply by dr/di etc
-      dfdr /= INTERPOLATE(DERIV(R),ri[i])
-      dfdz /= INTERPOLATE(DERIV(Z),zi[i])
+      dfdr /= INTERPOLATE(DERIV(R),ri[i], /DOUBLE)
+      dfdz /= INTERPOLATE(DERIV(Z),zi[i], /DOUBLE)
       
       IF i EQ 0 THEN BEGIN
         btr = INTERPOL(REFORM(fpsi[1,*]), REFORM(fpsi[0,*]), f)
       ENDIF
       
-      bp[i] = SQRT(dfdr^2 + dfdz^2) / INTERPOLATE(R, ri[i])
-      bt[i] = ABS( btr / INTERPOLATE(R, ri[i]))
+      bp[i] = SQRT(dfdr^2 + dfdz^2) / INTERPOLATE(R, ri[i], /DOUBLE)
+      bt[i] = ABS( btr / INTERPOLATE(R, ri[i], /DOUBLE))
     ENDFOR
     interp_data.method = m
     b = SQRT(bt^2 + bp^2)
@@ -386,8 +386,8 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
                       ydown_firstind=ydown_firstind, $
                       yup_lastind=yup_lastind)
   
-  rii = INTERPOLATE(ri, ind)
-  zii = INTERPOLATE(zi, ind)
+  rii = INTERPOLATE(ri, ind, /DOUBLE)
+  zii = INTERPOLATE(zi, ind, /DOUBLE)
 
   ;rii = int_func(SMOOTH(deriv(rii), 3), /simple) + rii[0]
   ;zii = int_func(SMOOTH(deriv(zii), 3), /simple) + zii[0]
@@ -416,8 +416,8 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
        ENDIF ELSE sep = fvals[nin]
        IF KEYWORD_SET(sep_line_up) THEN BEGIN
          sep_line = sep_line_up
-         OPLOT, INTERPOLATE(R, REFORM(sep_line_up[0,*])), $
-                INTERPOLATE(Z, REFORM(sep_line_up[1,*])), $
+         OPLOT, INTERPOLATE(R, REFORM(sep_line_up[0,*]), /DOUBLE), $
+                INTERPOLATE(Z, REFORM(sep_line_up[1,*]), /DOUBLE), $
                 thick=2,color=3
        ENDIF ELSE sep_line = DBLARR(2,2)
     ENDIF ELSE BEGIN
@@ -428,8 +428,8 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
        IF KEYWORD_SET(sep_line_down) THEN BEGIN
          sep_line = sep_line_down
          
-         OPLOT, INTERPOLATE(R, REFORM(sep_line_down[0,*])), $
-                INTERPOLATE(Z, REFORM(sep_line_down[1,*])), $
+         OPLOT, INTERPOLATE(R, REFORM(sep_line_down[0,*]), /DOUBLE), $
+                INTERPOLATE(Z, REFORM(sep_line_down[1,*]), /DOUBLE), $
                 thick=2,color=2
        ENDIF ELSE sep_line = DBLARR(2,2)
     ENDELSE
@@ -479,7 +479,7 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
                           vec_down=vec_in_down, weight_down=weight_down, /bndry_noperiodic
          ; If hits the separatrix, should now continue from
          ; the separatrix line
-         OPLOT, [INTERPOLATE(R, rinext)], [INTERPOLATE(Z, zinext)], psym=4, color=5
+         OPLOT, [INTERPOLATE(R, rinext, /DOUBLE)], [INTERPOLATE(Z, zinext, /DOUBLE)], psym=4, color=5
          
 ;          PRINT, "FOLLOWING OUTER"
          follow_gradient_nonorth, interp_data, R, Z, rinext, zinext, $
@@ -604,18 +604,18 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
     ENDELSE
     
     IF KEYWORD_SET(oplot) THEN BEGIN
-       OPLOT, INTERPOLATE(R, rixy[*, i]), INTERPOLATE(Z, zixy[*, i]), color=4
+       OPLOT, INTERPOLATE(R, rixy[*, i], /DOUBLE), INTERPOLATE(Z, zixy[*, i], /DOUBLE), color=4
     ENDIF 
     
-    ;PLOT, INTERPOLATE(R, rixy[*, i]), INTERPOLATE(Z, zixy[*, i]), color=1,psym=1
-    ;OPLOT, [INTERPOLATE(R, rixy[nin, i])], [INTERPOLATE(Z, zixy[nin, i])], color=4,psym=4
+    ;PLOT, INTERPOLATE(R, rixy[*, i], /DOUBLE), INTERPOLATE(Z, zixy[*, i], /DOUBLE), color=1,psym=1
+    ;OPLOT, [INTERPOLATE(R, rixy[nin, i], /DOUBLE)], [INTERPOLATE(Z, zixy[nin, i], /DOUBLE)], color=4,psym=4
     ;IF ncross EQ 1 THEN BEGIN
-    ;   OPLOT, [INTERPOLATE(R, cross[0,0])], [INTERPOLATE(Z, cross[1,0])],psym=2,color=2
+    ;   OPLOT, [INTERPOLATE(R, cross[0,0], /DOUBLE)], [INTERPOLATE(Z, cross[1,0], /DOUBLE)],psym=2,color=2
     ;ENDIF
     ;CURSOR, ax,by, /down
  ENDFOR
 
-  RETURN, {rixy:rixy, zixy:zixy, rxy:INTERPOLATE(R, rixy), zxy:INTERPOLATE(Z, zixy)}
+  RETURN, {rixy:rixy, zixy:zixy, rxy:INTERPOLATE(R, rixy, /DOUBLE), zxy:INTERPOLATE(Z, zixy, /DOUBLE)}
 END
 
 PRO plot_grid_section, a, _extra=_extra
@@ -639,7 +639,7 @@ PRO oplot_line, interp_data, R, Z, ri0, zi0, fto, npt=npt, color=color, _extra=_
   
   pos = get_line_nonorth(interp_data, R, Z, ri0, zi0, fto, npt=npt)
   
-  OPLOT, INTERPOLATE(R, pos[*,0]), INTERPOLATE(Z, pos[*,1]), $
+  OPLOT, INTERPOLATE(R, pos[*,0], /DOUBLE), INTERPOLATE(Z, pos[*,1], /DOUBLE), $
     color=color, _extra=_extra
 END
 
@@ -648,14 +648,14 @@ FUNCTION line_dist, R, Z, ri, zi
     ; derivatives drdi and dzdi may be very inaccurate because the contour
     ; given by ri and zi is not necessarily uniformly spaced, it may not even
     ; have a smoothly varying grid spacing. Therefore don't use this branch
-    drdi = DERIV(INTERPOLATE(R, ri))
-    dzdi = DERIV(INTERPOLATE(Z, zi))
+    drdi = DERIV(INTERPOLATE(R, ri, /DOUBLE))
+    dzdi = DERIV(INTERPOLATE(Z, zi, /DOUBLE))
     dldi = SQRT(drdi^2 + dzdi^2)
     RETURN, int_func(findgen(N_ELEMENTS(dldi)), dldi, /simple)
   ENDIF ELSE BEGIN
     np = N_ELEMENTS(ri)
-    rpos = INTERPOLATE(R, ri)
-    zpos = INTERPOLATE(Z, zi)
+    rpos = INTERPOLATE(R, ri, /DOUBLE)
+    zpos = INTERPOLATE(Z, zi, /DOUBLE)
     dd = SQRT((zpos[1:*] - zpos[0:(np-2)])^2 + (rpos[1:*] - rpos[0:(np-2)])^2)
     dd = [dd, SQRT((zpos[0] - zpos[np-1])^2 + (rpos[0] - rpos[np-1])^2)]
     result = DBLARR(np)
@@ -674,8 +674,8 @@ FUNCTION xpt_hthe, dctF, R, Z, sep_info, dist, pf_f, core_f, sol_in_f, sol_out_f
 
   darr = sep_info.leg1_dist
   ind = INTERPOL(FINDGEN(N_ELEMENTS(darr)), darr, dist[0])
-  ri = INTERPOLATE(sep_info.leg1_ri, ind)
-  zi = INTERPOLATE(sep_info.leg1_zi, ind)
+  ri = INTERPOLATE(sep_info.leg1_ri, ind, /DOUBLE)
+  zi = INTERPOLATE(sep_info.leg1_zi, ind, /DOUBLE)
 
   ; Go inwards to PF
   follow_gradient_nonorth, dctF, R, Z, ri, zi, $
@@ -691,8 +691,8 @@ FUNCTION xpt_hthe, dctF, R, Z, sep_info, dist, pf_f, core_f, sol_in_f, sol_out_f
   
   darr = sep_info.leg2_dist
   ind = INTERPOL(FINDGEN(N_ELEMENTS(darr)), darr, dist[3])
-  ri = INTERPOLATE(sep_info.leg2_ri, ind)
-  zi = INTERPOLATE(sep_info.leg2_zi, ind)
+  ri = INTERPOLATE(sep_info.leg2_ri, ind, /DOUBLE)
+  zi = INTERPOLATE(sep_info.leg2_zi, ind, /DOUBLE)
   
   ; Go inwards to PF
   follow_gradient_nonorth, dctF, R, Z, ri, zi, $
@@ -706,8 +706,8 @@ FUNCTION xpt_hthe, dctF, R, Z, sep_info, dist, pf_f, core_f, sol_in_f, sol_out_f
   
   darr = sep_info.core1_dist
   ind = INTERPOL(FINDGEN(N_ELEMENTS(darr)), darr, dist[2])
-  ri = INTERPOLATE(sep_info.core1_ri, ind)
-  zi = INTERPOLATE(sep_info.core1_zi, ind)
+  ri = INTERPOLATE(sep_info.core1_ri, ind, /DOUBLE)
+  zi = INTERPOLATE(sep_info.core1_zi, ind, /DOUBLE)
   
   ; Go inwards to core
   follow_gradient_nonorth, dctF, R, Z, ri, zi, $
@@ -724,8 +724,8 @@ FUNCTION xpt_hthe, dctF, R, Z, sep_info, dist, pf_f, core_f, sol_in_f, sol_out_f
   
   darr = sep_info.core2_dist
   ind = INTERPOL(FINDGEN(N_ELEMENTS(darr)), darr, dist[1])
-  ri = INTERPOLATE(sep_info.core2_ri, ind)
-  zi = INTERPOLATE(sep_info.core2_zi, ind)
+  ri = INTERPOLATE(sep_info.core2_ri, ind, /DOUBLE)
+  zi = INTERPOLATE(sep_info.core2_zi, ind, /DOUBLE)
   
   ; Go inwards to core
   follow_gradient_nonorth, dctF, R, Z, ri, zi, $
@@ -738,29 +738,29 @@ FUNCTION xpt_hthe, dctF, R, Z, sep_info, dist, pf_f, core_f, sol_in_f, sol_out_f
   
   ; Get distances between end points
   
-  OPLOT, INTERPOLATE(R, [pf_ri1, pf_ri2]), $
-    INTERPOLATE(Z, [pf_zi1, pf_zi2]), thick=2, color=1
+  OPLOT, INTERPOLATE(R, [pf_ri1, pf_ri2], /DOUBLE), $
+    INTERPOLATE(Z, [pf_zi1, pf_zi2], /DOUBLE), thick=2, color=1
 
-  d1 = (INTERPOLATE(R, pf_ri1) - INTERPOLATE(R, pf_ri2))^2 + $
-       (INTERPOLATE(Z, pf_zi1) - INTERPOLATE(Z, pf_zi2))^2
+  d1 = (INTERPOLATE(R, pf_ri1, /DOUBLE) - INTERPOLATE(R, pf_ri2, /DOUBLE))^2 + $
+       (INTERPOLATE(Z, pf_zi1, /DOUBLE) - INTERPOLATE(Z, pf_zi2, /DOUBLE))^2
   
-  d2 = (INTERPOLATE(R, core_ri1) - INTERPOLATE(R, core_ri2))^2 + $
-       (INTERPOLATE(Z, core_zi1) - INTERPOLATE(Z, core_zi2))^2
+  d2 = (INTERPOLATE(R, core_ri1, /DOUBLE) - INTERPOLATE(R, core_ri2, /DOUBLE))^2 + $
+       (INTERPOLATE(Z, core_zi1, /DOUBLE) - INTERPOLATE(Z, core_zi2, /DOUBLE))^2
   
-  OPLOT, INTERPOLATE(R, [core_ri1, core_ri2]), $
-    INTERPOLATE(Z, [core_zi1, core_zi2]), thick=2, color=2
+  OPLOT, INTERPOLATE(R, [core_ri1, core_ri2], /DOUBLE), $
+    INTERPOLATE(Z, [core_zi1, core_zi2], /DOUBLE), thick=2, color=2
 
-  d3 = (INTERPOLATE(R, sol_in_ri1) - INTERPOLATE(R, sol_in_ri2))^2 + $
-       (INTERPOLATE(Z, sol_in_zi1) - INTERPOLATE(Z, sol_in_zi2))^2
+  d3 = (INTERPOLATE(R, sol_in_ri1, /DOUBLE) - INTERPOLATE(R, sol_in_ri2, /DOUBLE))^2 + $
+       (INTERPOLATE(Z, sol_in_zi1, /DOUBLE) - INTERPOLATE(Z, sol_in_zi2, /DOUBLE))^2
 
-  OPLOT, INTERPOLATE(R, [sol_in_ri1, sol_in_ri2]), $
-    INTERPOLATE(Z, [sol_in_zi1, sol_in_zi2]), thick=2, color=3
+  OPLOT, INTERPOLATE(R, [sol_in_ri1, sol_in_ri2], /DOUBLE), $
+    INTERPOLATE(Z, [sol_in_zi1, sol_in_zi2], /DOUBLE), thick=2, color=3
 
-  d4 = (INTERPOLATE(R, sol_out_ri1) - INTERPOLATE(R, sol_out_ri2))^2 + $
-       (INTERPOLATE(Z, sol_out_zi1) - INTERPOLATE(Z, sol_out_zi2))^2
+  d4 = (INTERPOLATE(R, sol_out_ri1, /DOUBLE) - INTERPOLATE(R, sol_out_ri2, /DOUBLE))^2 + $
+       (INTERPOLATE(Z, sol_out_zi1, /DOUBLE) - INTERPOLATE(Z, sol_out_zi2, /DOUBLE))^2
 
-  OPLOT, INTERPOLATE(R, [sol_out_ri1, sol_out_ri2]), $
-    INTERPOLATE(Z, [sol_out_zi1, sol_out_zi2]), thick=2, color=4
+  OPLOT, INTERPOLATE(R, [sol_out_ri1, sol_out_ri2], /DOUBLE), $
+    INTERPOLATE(Z, [sol_out_zi1, sol_out_zi2], /DOUBLE), thick=2, color=4
   
   ;cursor, x, y, /down
 
@@ -1129,8 +1129,8 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
 
     ; Make sure that the line goes clockwise
     
-    m = MAX(INTERPOLATE(Z, start_zi), ind)
-    IF (DERIV(INTERPOLATE(R, start_ri)))[ind] LT 0.0 THEN BEGIN
+    m = MAX(INTERPOLATE(Z, start_zi, /DOUBLE), ind)
+    IF (DERIV(INTERPOLATE(R, start_ri, /DOUBLE)))[ind] LT 0.0 THEN BEGIN
       ; R should be increasing at the top. Need to reverse
       start_ri = REVERSE(start_ri)
       start_zi = REVERSE(start_zi)
@@ -1187,8 +1187,8 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
         local_gradient, interp_data, a.Rixy[i,j], a.Zixy[i,j], status=status, $
           dfdr=dfdr, dfdz=dfdz
         ; dfd* are derivatives wrt the indices. Need to multiply by dr/di etc
-        dpsidR[i,j] = dfdr/INTERPOLATE(DERIV(R),a.Rixy[i,j]) 
-        dpsidZ[i,j] = dfdz/INTERPOLATE(DERIV(Z),a.Zixy[i,j]) 
+        dpsidR[i,j] = dfdr/INTERPOLATE(DERIV(R),a.Rixy[i,j], /DOUBLE) 
+        dpsidZ[i,j] = dfdz/INTERPOLATE(DERIV(Z),a.Zixy[i,j], /DOUBLE) 
       ENDFOR
     ENDFOR
 
@@ -1237,8 +1237,8 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
     primary_xpt = si[0]
 
     PRINT, "Primary X-point is number "+STR(primary_xpt)
-    PRINT, "   at R = "+STR(INTERPOLATE(R, critical.xpt_ri[primary_xpt])) $
-      +" Z = "+STR(INTERPOLATE(Z, critical.xpt_zi[primary_xpt]))
+    PRINT, "   at R = "+STR(INTERPOLATE(R, critical.xpt_ri[primary_xpt], /DOUBLE)) $
+      +" Z = "+STR(INTERPOLATE(Z, critical.xpt_zi[primary_xpt], /DOUBLE))
     
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ; work out where to put the surfaces
@@ -1387,8 +1387,8 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
 
     ; Make sure that the line goes clockwise
     
-    m = MAX(INTERPOLATE(Z, start_zi), ind)
-    IF (DERIV(INTERPOLATE(R, start_ri)))[ind] LT 0.0 THEN BEGIN
+    m = MAX(INTERPOLATE(Z, start_zi, /DOUBLE), ind)
+    IF (DERIV(INTERPOLATE(R, start_ri, /DOUBLE)))[ind] LT 0.0 THEN BEGIN
       ; R should be increasing at the top. Need to reverse
       start_ri = REVERSE(start_ri)
       start_zi = REVERSE(start_zi)
@@ -1413,8 +1413,8 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
                                opt_ri[primary_opt], opt_zi[primary_opt], boundary=bndryi)
       
       ;; ;BS
-      centerliner = INTERPOLATE(R, [opt_ri[0],xpt_ri[i]])
-      centerlinez = INTERPOLATE(Z, [opt_zi[0],xpt_zi[i]])
+      centerliner = INTERPOLATE(R, [opt_ri[0],xpt_ri[i]], /DOUBLE)
+      centerlinez = INTERPOLATE(Z, [opt_zi[0],xpt_zi[i]], /DOUBLE)
       ;; oplot, centerliner, centerlinez, thick=5
       ;; stop
 
@@ -1482,9 +1482,9 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       vecpvt[i,0] = (meanrpvt[nflux_pvt/2]-meanrpvt[0])/lengthpvt
       vecpvt[i,1] = (meanzpvt[nflux_pvt/2]-meanzpvt[0])/lengthpvt
      
-      ;; oplot, INTERPOLATE(R,[meanr1[0],meanr1[nflux_leg1/2]]),INTERPOLATE(Z,[meanz1[0],meanz1[nflux_leg1/2]]), thick=5
-      ;; oplot, INTERPOLATE(R,[meanr2[0],meanr2[nflux_leg2/2]]),INTERPOLATE(Z,[meanz2[0],meanz2[nflux_leg2/2]]), thick=5
-      ;; oplot, INTERPOLATE(R,[meanrpvt[0],meanrpvt[nflux_pvt/2]]),INTERPOLATE(Z,[meanzpvt[0],meanzpvt[nflux_pvt/2]]), thick=5
+      ;; oplot, INTERPOLATE(R,[meanr1[0],meanr1[nflux_leg1/2]], /DOUBLE),INTERPOLATE(Z,[meanz1[0],meanz1[nflux_leg1/2]], /DOUBLE), thick=5
+      ;; oplot, INTERPOLATE(R,[meanr2[0],meanr2[nflux_leg2/2]], /DOUBLE),INTERPOLATE(Z,[meanz2[0],meanz2[nflux_leg2/2]], /DOUBLE), thick=5
+      ;; oplot, INTERPOLATE(R,[meanrpvt[0],meanrpvt[nflux_pvt/2]], /DOUBLE),INTERPOLATE(Z,[meanzpvt[0],meanzpvt[nflux_pvt/2]], /DOUBLE), thick=5
       
       ;; stop
 
@@ -1520,16 +1520,16 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       ;;       IF mini LT 0. THEN mini = mini + ni
       ;;     ENDIF ELSE mini = (hit_ind1 + hit_ind2) / 2.
           
-      ;;     OPLOT, [INTERPOLATE(R, INTERPOLATE(start_ri, mini))], [INTERPOLATE(Z, INTERPOLATE(start_zi, mini))], psym=2, color=4
+      ;;     OPLOT, [INTERPOLATE(R, INTERPOLATE(start_ri, mini), /DOUBLE)], [INTERPOLATE(Z, INTERPOLATE(start_zi, mini), /DOUBLE)], psym=2, color=4
           
       ;;     PRINT, "Theta location: " + STR(hit_ind1) + "," + STR(hit_ind2) + " -> " + STR(mini)
           
       ;;     ;  Get line a little bit beyond the X-point
       ;;     pos = get_line_nonorth(interp_data, R, Z, $
-      ;;                    INTERPOLATE(start_ri, mini), INTERPOLATE(start_zi, mini), $
+      ;;                    INTERPOLATE(start_ri, mini, /DOUBLE), INTERPOLATE(start_zi, mini, /DOUBLE), $
       ;;                    critical.xpt_f[i] + (critical.xpt_f[i] - opt_f[primary_opt]) * 0.05)
           
-      ;;     ;OPLOT, INTERPOLATE(R, pos[*,0]), INTERPOLATE(Z, pos[*,1]), color=4, thick=2
+      ;;     ;OPLOT, INTERPOLATE(R, pos[*,0], /DOUBLE), INTERPOLATE(Z, pos[*,1], /DOUBLE), color=4, thick=2
           
       ;;     ; Find which separatrix line this intersected with
       ;;     cpos = line_crossings([xpt_ri[i], legsep.core1[*,0]], $
@@ -1560,14 +1560,14 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       
       ; Plot the line to the x-point
       oplot_line, interp_data, R, Z, $
-        INTERPOLATE(start_ri, mini), INTERPOLATE(start_zi, mini), critical.xpt_f[i], color=125
+        INTERPOLATE(start_ri, mini, /DOUBLE), INTERPOLATE(start_zi, mini, /DOUBLE), critical.xpt_f[i], color=125
       oplot_line, interp_data, R, Z, $
-        INTERPOLATE(start_ri, mini), INTERPOLATE(start_zi, mini), f_inner, color=125
+        INTERPOLATE(start_ri, mini, /DOUBLE), INTERPOLATE(start_zi, mini, /DOUBLE), f_inner, color=125
 
 
       ; Get tangent vector
-      drdi = INTERPOLATE((DERIV(INTERPOLATE(R, start_ri))), mini)
-      dzdi = INTERPOLATE((DERIV(INTERPOLATE(Z, start_zi))), mini)
+      drdi = INTERPOLATE((DERIV(INTERPOLATE(R, start_ri))), mini, /DOUBLE)
+      dzdi = INTERPOLATE((DERIV(INTERPOLATE(Z, start_zi))), mini, /DOUBLE)
       
       tmp = {core_ind:mini, drdi:drdi, dzdi:dzdi, $ ; Core index and tangent vector
              sol:LONARR(2)} ; Array to store SOL indices
@@ -1582,40 +1582,40 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
     sol_info = PTRARR(critical.n_xpoint)
     FOR i=0, critical.n_xpoint-1 DO BEGIN
       IF i NE (critical.n_xpoint-1) THEN BEGIN
-        ri = [ INTERPOLATE(start_ri,xpt_ind[ci[i]]), $
+        ri = [ INTERPOLATE(start_ri,xpt_ind[ci[i]], /DOUBLE), $
                start_ri[FIX(xpt_ind[ci[i]]+1.0):FIX(xpt_ind[ci[i+1]])], $
-               INTERPOLATE(start_ri,xpt_ind[ci[i+1]]) ]
+               INTERPOLATE(start_ri,xpt_ind[ci[i+1]], /DOUBLE) ]
         
-        zi = [ INTERPOLATE(start_zi,xpt_ind[ci[i]]), $
+        zi = [ INTERPOLATE(start_zi,xpt_ind[ci[i]], /DOUBLE), $
                start_zi[FIX(xpt_ind[ci[i]]+1.0):FIX(xpt_ind[ci[i+1]])], $
-               INTERPOLATE(start_zi,xpt_ind[ci[i+1]]) ]
+               INTERPOLATE(start_zi,xpt_ind[ci[i+1]], /DOUBLE) ]
       ENDIF ELSE BEGIN
         ; Index wraps around
         IF xpt_ind[ci[i]] GT N_ELEMENTS(start_ri)-2 THEN BEGIN
-          ri = [ INTERPOLATE(start_ri,xpt_ind[ci[i]]), $
+          ri = [ INTERPOLATE(start_ri,xpt_ind[ci[i]], /DOUBLE), $
                  start_ri[0:FIX(xpt_ind[ci[0]])], $
-                 INTERPOLATE(start_ri,xpt_ind[ci[0]]) ]
+                 INTERPOLATE(start_ri,xpt_ind[ci[0]], /DOUBLE) ]
           
-          zi = [ INTERPOLATE(start_zi,xpt_ind[ci[i]]), $
+          zi = [ INTERPOLATE(start_zi,xpt_ind[ci[i]], /DOUBLE), $
                  start_zi[0:FIX(xpt_ind[ci[0]])], $
-                 INTERPOLATE(start_zi,xpt_ind[ci[0]]) ]
+                 INTERPOLATE(start_zi,xpt_ind[ci[0]], /DOUBLE) ]
           
         ENDIF ELSE BEGIN
-          ri = [ INTERPOLATE(start_ri,xpt_ind[ci[i]]), $
+          ri = [ INTERPOLATE(start_ri,xpt_ind[ci[i]], /DOUBLE), $
                  start_ri[FIX(xpt_ind[ci[i]]+1.0):*], $
                  start_ri[0:FIX(xpt_ind[ci[0]])], $
-                 INTERPOLATE(start_ri,xpt_ind[ci[0]]) ]
+                 INTERPOLATE(start_ri,xpt_ind[ci[0]], /DOUBLE) ]
           
-          zi = [ INTERPOLATE(start_zi,xpt_ind[ci[i]]), $
+          zi = [ INTERPOLATE(start_zi,xpt_ind[ci[i]], /DOUBLE), $
                  start_zi[FIX(xpt_ind[ci[i]]+1.0):*], $
                  start_zi[0:FIX(xpt_ind[ci[0]])], $
-                 INTERPOLATE(start_zi,xpt_ind[ci[0]]) ]
+                 INTERPOLATE(start_zi,xpt_ind[ci[0]], /DOUBLE) ]
         ENDELSE
       ENDELSE
       
       ; Calculate length of the line
-      drdi = DERIV(INTERPOLATE(R, ri))
-      dzdi = DERIV(INTERPOLATE(Z, zi))
+      drdi = DERIV(INTERPOLATE(R, ri, /DOUBLE))
+      dzdi = DERIV(INTERPOLATE(Z, zi, /DOUBLE))
       dldi = SQRT(drdi^2 + dzdi^2)
       IF KEYWORD_SET(simple) THEN BEGIN
         length = INT_TRAPEZOID(findgen(N_ELEMENTS(dldi)), dldi)
@@ -1737,8 +1737,8 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       ; Use the tangent vector to determine direction
       ; relative to core and so get direction of positive theta
       
-      drdi = INTERPOLATE((DERIV(INTERPOLATE(R, pf_ri))), mini)
-      dzdi = INTERPOLATE((DERIV(INTERPOLATE(Z, pf_zi))), mini)
+      drdi = INTERPOLATE((DERIV(INTERPOLATE(R, pf_ri))), mini, /DOUBLE)
+      dzdi = INTERPOLATE((DERIV(INTERPOLATE(Z, pf_zi))), mini, /DOUBLE)
       
       IF drdi * (*pf_info[xind]).drdi + dzdi * (*pf_info[xind]).dzdi GT 0.0 THEN BEGIN
         ; Line is parallel to the core. Need to reverse
@@ -1792,21 +1792,21 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       ; Put the starting line into the pf_info structure
       tmp = CREATE_STRUCT(*(pf_info[xind]), $
                           'npf', npf, $ ; Number of radial points in this PF region
-                          'ri0', [pf_ri[0:mini], INTERPOLATE(pf_ri, mini)], $
-                          'zi0', [pf_zi[0:mini], INTERPOLATE(pf_zi, mini)], $
+                          'ri0', [pf_ri[0:mini], INTERPOLATE(pf_ri, mini, /DOUBLE)], $
+                          'zi0', [pf_zi[0:mini], INTERPOLATE(pf_zi, mini, /DOUBLE)], $
                           'wallind0', pf_wallind1, $
-                          'ri1', [INTERPOLATE(pf_ri, mini), pf_ri[(mini+1):*]], $
-                          'zi1', [INTERPOLATE(pf_zi, mini), pf_zi[(mini+1):*]], $
+                          'ri1', [INTERPOLATE(pf_ri, mini, /DOUBLE), pf_ri[(mini+1):*]], $
+                          'zi1', [INTERPOLATE(pf_zi, mini, /DOUBLE), pf_zi[(mini+1):*]], $
                           'wallind1', pf_wallind2 - mini)
 
       ; Calculate length of each section
-      dldi = SQRT(DERIV(INTERPOLATE(R, tmp.ri0[tmp.wallind0:*]))^2 + DERIV(INTERPOLATE(Z, tmp.zi0[tmp.wallind0:*]))^2)
+      dldi = SQRT(DERIV(INTERPOLATE(R, tmp.ri0[tmp.wallind0:*], /DOUBLE))^2 + DERIV(INTERPOLATE(Z, tmp.zi0[tmp.wallind0:*], /DOUBLE))^2)
       IF KEYWORD_SET(simple) THEN BEGIN
         len0 = INT_TRAPEZOID(FINDGEN(N_ELEMENTS(dldi)), dldi)
       ENDIF ELSE BEGIN
         len0 = INT_TABULATED(FINDGEN(N_ELEMENTS(dldi)), dldi)
       ENDELSE
-      dldi = SQRT(DERIV(INTERPOLATE(R, tmp.ri1[0:tmp.wallind1]))^2 + DERIV(INTERPOLATE(Z, tmp.zi1[0:tmp.wallind1]))^2)
+      dldi = SQRT(DERIV(INTERPOLATE(R, tmp.ri1[0:tmp.wallind1], /DOUBLE))^2 + DERIV(INTERPOLATE(Z, tmp.zi1[0:tmp.wallind1], /DOUBLE))^2)
       IF KEYWORD_SET(simple) THEN BEGIN
         len1 = INT_TRAPEZOID(FINDGEN(N_ELEMENTS(dldi)), dldi)
       ENDIF ELSE BEGIN
@@ -1997,11 +1997,11 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
 
       vec_in_down2 = TRANSPOSE(veccore[xpt,*])
       line = get_line_nonorth(interp_data, R, Z, $
-                      INTERPOLATE((*sep_info[xpt]).core2_ri, sepi), $
-                      INTERPOLATE((*sep_info[xpt]).core2_zi, sepi), $
+                      INTERPOLATE((*sep_info[xpt]).core2_ri, sepi, /DOUBLE), $
+                      INTERPOLATE((*sep_info[xpt]).core2_zi, sepi, /DOUBLE), $
                       0.95*f_cont + 0.05*faxis, npt=30, vec_down=vec_in_down2, weight_down=1)
       
-      OPLOT, INTERPOLATE(R, line[*,0]), INTERPOLATE(Z, line[*,1]), $
+      OPLOT, INTERPOLATE(R, line[*,0], /DOUBLE), INTERPOLATE(Z, line[*,1], /DOUBLE), $
              color=4, _extra=_extra
 
       ; Find intersection of this line with starting line
@@ -2014,7 +2014,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
         start_ind = start_ind[0] ; Got index into the starting line
         ; Find out distance along starting line
         dist = line_dist(R, Z, (*sol_info[solid]).ri, (*sol_info[solid]).zi)
-        d = INTERPOLATE(dist, start_ind)
+        d = INTERPOLATE(dist, start_ind, /DOUBLE)
         ydown_dist = MIN([d, dist[N_ELEMENTS(dist)-1] - d])
       ENDELSE
 
@@ -2028,12 +2028,12 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       ; Follow from sep_info[i]->core1 to just inside starting f
       vec_in_up2 = TRANSPOSE(veccore[xpt2,*])
       line = get_line_nonorth(interp_data, R, Z, $
-                      INTERPOLATE((*sep_info[xpt2]).core1_ri, sepi), $
-                      INTERPOLATE((*sep_info[xpt2]).core1_zi, sepi), $
+                      INTERPOLATE((*sep_info[xpt2]).core1_ri, sepi, /DOUBLE), $
+                      INTERPOLATE((*sep_info[xpt2]).core1_zi, sepi, /DOUBLE), $
                       0.95*f_cont + 0.05*faxis, npt=30, $
                       vec_up=vec_in_up2, weight_up=1)
       
-      OPLOT, INTERPOLATE(R, line[*,0]), INTERPOLATE(Z, line[*,1]), $
+      OPLOT, INTERPOLATE(R, line[*,0], /DOUBLE), INTERPOLATE(Z, line[*,1], /DOUBLE), $
              color=2, _extra=_extra
 
       ; Find intersection of this line with starting line
@@ -2045,7 +2045,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
         start_ind = start_ind[0] ; Got index into the starting line
         ; Find out distance along starting line
         dist = line_dist(R, Z, (*sol_info[solid]).ri, (*sol_info[solid]).zi)
-        yup_dist = MAX(dist) - INTERPOLATE(dist, start_ind)
+        yup_dist = MAX(dist) - INTERPOLATE(dist, start_ind, /DOUBLE)
       ENDELSE
       
       xpt_dist[xpt2, 2] = yup_dist
@@ -2500,8 +2500,8 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
         local_gradient, interp_data, Rixy[i,j], Zixy[i,j], status=status, $
           dfdr=dfdr, dfdz=dfdz
         ; dfd* are derivatives wrt the indices. Need to multiply by dr/di etc
-        dpsidR[i,j] = dfdr/INTERPOLATE(DERIV(R),Rixy[i,j]) 
-        dpsidZ[i,j] = dfdz/INTERPOLATE(DERIV(Z),Zixy[i,j]) 
+        dpsidR[i,j] = dfdr/INTERPOLATE(DERIV(R),Rixy[i,j], /DOUBLE) 
+        dpsidZ[i,j] = dfdz/INTERPOLATE(DERIV(Z),Zixy[i,j], /DOUBLE) 
       ENDFOR
     ENDFOR
 
