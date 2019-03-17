@@ -216,7 +216,7 @@ FUNCTION newton_Bt, psixy, Rxy, Btxy, Bpxy, pxy, hthe, mesh
   axy = DDX(psixy, Rxy) / Rxy
   bxy = MU*DDX(psixy, pxy) - Bpxy*DDX(psixy, Bpxy*hthe)/hthe
   
-  Btxy2 = FLTARR(nx, ny)
+  Btxy2 = DBLARR(nx, ny)
   FOR i=0, ny-1 DO BEGIN
     psi = psixy[*,i]
     a = axy[*,i]
@@ -287,7 +287,7 @@ FUNCTION my_int_y, var, yaxis, mesh, loop=loop, nosmooth=nosmooth, simple=simple
   
   s = SIZE(var, /dim)
   nx = s[0]
-  loop = FLTARR(nx)
+  loop = DBLARR(nx)
   loop[*] = !VALUES.F_NAN ; Prevent accidental use of unset values
   
   status = gen_surface(mesh=mesh) ; Start generator
@@ -474,8 +474,8 @@ FUNCTION fit_profiles, mesh, psixy, Rxy, hthe, Bpxy, Btxy, dpdx
                  profiles, $
                  function_name="jxb_funct", /noder)
   
-  Btxy2 = FLTARR(nx, ny)
-  dpdx2 = FLTARR(nx, ny)
+  Btxy2 = DBLARR(nx, ny)
+  dpdx2 = DBLARR(nx, ny)
   
   status = gen_surface(mesh=mesh) ; Start generator
   i = 0
@@ -587,7 +587,7 @@ FUNCTION grid_newt, data
   
   n = nx*ny
   dxin = REFORM(data, nx-1, ny)
-  dx = FLTARR(nx, ny)
+  dx = DBLARR(nx, ny)
   IF xfix LE 0 THEN BEGIN
      dx[1:*,*] = dxin
   ENDIF ELSE IF xfix GE (nx-1) THEN BEGIN
@@ -600,7 +600,7 @@ FUNCTION grid_newt, data
   xpos = dx
   FOR i=0, nx-1 DO xpos[i,*] = xpos[i,*] + i
 
-  Rxy = FLTARR(nx, ny)
+  Rxy = DBLARR(nx, ny)
   Zxy = Rxy
   
   FOR y=0, ny-1 DO BEGIN
@@ -697,7 +697,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   psixy = mesh.psixy*mesh.fnorm + mesh.faxis                              ; Non-normalised psi
   psixy_eq = (psixy - rz_grid.simagx) / (rz_grid.sibdry - rz_grid.simagx) ; Normalised using EQDSK file conventions
   
-  pressure = FLTARR(nx, ny)
+  pressure = DBLARR(nx, ny)
   
   ; Use splines to interpolate pressure profile
   status = gen_surface(mesh=mesh) ; Start generator
@@ -774,7 +774,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   ;ENDIF
 
   ; Grid spacing
-  dx = FLTARR(nx, ny)
+  dx = DBLARR(nx, ny)
   FOR y=0, ny-1 DO BEGIN
     dx[0:(nx-2),y] = psixy[1:*,y] - psixy[0:(nx-2),y]
     dx[nx-1,y] = dx[nx-2,y]
@@ -789,8 +789,8 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     xcoord = -xcoord
   ENDIF
 
-  dtheta = 2.*!PI / FLOAT(ny)
-  dy = FLTARR(nx, ny) + dtheta
+  dtheta = 2.*!PI / DOUBLE(ny)
+  dy = DBLARR(nx, ny) + dtheta
   
   ; B field components
   ; Following signs mean that psi increasing outwards from
@@ -817,7 +817,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   ENDELSE
 
   ; Get toroidal field from poloidal current function fpol
-  Btxy = FLTARR(nx, ny)
+  Btxy = DBLARR(nx, ny)
   fprime = Btxy
   fp = DERIV(rz_grid.npsigrid*(rz_grid.sibdry - rz_grid.simagx), rz_grid.fpol)
   status = gen_surface(mesh=mesh) ; Start generator
@@ -844,7 +844,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ; Go through the domains to get a starting estimate
   ; of hthe
-  hthe = FLTARR(nx, ny)
+  hthe = DBLARR(nx, ny)
 
   ; Pick a midplane index
   status = gen_surface(mesh=mesh) ; Start generator
@@ -933,7 +933,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     ; Surface average
     dpdx2 = surface_average(dpdx, mesh)
     
-    pres = FLTARR(nx, ny)
+    pres = DBLARR(nx, ny)
     ; Integrate to get pressure
     FOR i=0, ny-1 DO BEGIN
       pres[*,i] = int_func(psixy[*,i], dpdx2[*,i], /simple)
@@ -1065,7 +1065,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   ENDIF
 
   ; Need yxy values at all points for nonorthogonal calculations
-  yxy = FLTARR(nx, ny)
+  yxy = DBLARR(nx, ny)
   status = gen_surface(mesh=mesh) ; Start generator
   REPEAT BEGIN
     ; Get the next domain
@@ -1135,7 +1135,7 @@ retrybetacalc:
 ;   H = dfdy(qinty,thetaxy,mesh)
 
   ; NOTE: This is only valid in the core
-  pol_angle = FLTARR(nx,ny)
+  pol_angle = DBLARR(nx,ny)
   FOR i=0, nx-1 DO pol_angle[i, *] = 2.0*!PI * qinty[i,*] / qloop[i]
   
   ;;;;;;;;;;;;;;;;;;;; THETA_ZERO ;;;;;;;;;;;;;;;;;;;;;;
@@ -1226,8 +1226,8 @@ retrybetacalc:
     PRINT, "*** Calculating curvature in toroidal coordinates"
     
     
-    curvature, nx, ny, FLOAT(Rxy), FLOAT(Zxy), FLOAT(brxy), FLOAT(bzxy), FLOAT(btxy), $
-      FLOAT(psixy), FLOAT(thetaxy), hthe, $
+    curvature, nx, ny, DOUBLE(Rxy), DOUBLE(Zxy), DOUBLE(brxy), DOUBLE(bzxy), DOUBLE(btxy), $
+      DOUBLE(psixy), DOUBLE(thetaxy), hthe, $
       bxcv=bxcv, mesh=mesh
 
     bxcvx = bpsign*bxcv.psi 
@@ -1502,7 +1502,7 @@ retrybetacalc:
       done = get_yesno("Is this ok?")
     ENDREP UNTIL done EQ 1
     
-    Te = FLTARR(nx, ny)+Te_x
+    Te = DBLARR(nx, ny)+Te_x
     Ti = Te
     Ni_x = MAX(Ni)
     Ti_x = Te_x
@@ -1519,7 +1519,7 @@ retrybetacalc:
     ENDREP UNTIL get_yesno("Is this ok?") EQ 1
     
     Ti = Te
-    Ni = FLTARR(nx, ny) + ni_x
+    Ni = DBLARR(nx, ny) + ni_x
     Te_x = MAX(Te)
     Ti_x = Te_x
   ENDIF ELSE BEGIN

@@ -23,7 +23,7 @@
 
 
 FUNCTION grad_par, var, mesh
-  dtheta = 2.*!PI / FLOAT(TOTAL(mesh.npol))
+  dtheta = 2.*!PI / DOUBLE(TOTAL(mesh.npol))
   RETURN, (mesh.Bpxy / (mesh.Bxy * mesh.hthe)) * ddy(var, mesh)*dtheta / mesh.dy
 END
 

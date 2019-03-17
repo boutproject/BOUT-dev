@@ -39,12 +39,12 @@ FUNCTION analyse_equil, F, R, Z
   ; and X-points (saddle points)
   ;
   
-  dfdr = FLTARR(nx, ny)
+  dfdr = DBLARR(nx, ny)
   FOR j=0, ny-1 DO BEGIN
     dfdr[*,j] = diff(f[*,j])
   ENDFOR
   
-  dfdz = FLTARR(nx, ny)
+  dfdz = DBLARR(nx, ny)
   FOR i=0, nx-1 DO BEGIN
     dfdz[i,*] = diff(f[i,*])
   ENDFOR
@@ -109,7 +109,7 @@ FUNCTION analyse_equil, F, R, Z
   zio = [ 0,-1, 0, 1, 0, 1] ; Z index offsets
   
   ; Fitting a + br + cz + drz + er^2 + fz^2
-  A = TRANSPOSE([[FLTARR(6)+1], $
+  A = TRANSPOSE([[DBLARR(6)+1], $
                  [rio], $
                  [zio], $
                  [rio*zio], $
@@ -124,7 +124,7 @@ FUNCTION analyse_equil, F, R, Z
     
     valid = 1
 
-    localf = FLTARR(6)
+    localf = DBLARR(6)
     FOR i=0, 5 DO BEGIN
       ; Get the f value in a stencil around this point
       xi = ((rex[e]+rio[i]) > 0) < (nx-1) ; Zero-gradient at edges
@@ -256,10 +256,10 @@ FUNCTION analyse_equil, F, R, Z
   ; Find the O-point closest to the middle of the grid
   dR = R[1] - R[0]
   dZ = Z[1] - Z[0]
-  mind = dR^2 * (opt_ri[0] - (FLOAT(nx)/2.))^2 + dZ^2*(opt_zi[0] - (FLOAT(ny)/2.))^2
+  mind = dR^2 * (opt_ri[0] - (DOUBLE(nx)/2.))^2 + dZ^2*(opt_zi[0] - (DOUBLE(ny)/2.))^2
   ind = 0
   FOR i=1, n_opoint-1 DO BEGIN
-    d = dR^2*(opt_ri[i] - (FLOAT(nx)/2.))^2 + dZ^2*(opt_zi[i] - (FLOAT(ny)/2.))^2
+    d = dR^2*(opt_ri[i] - (DOUBLE(nx)/2.))^2 + dZ^2*(opt_zi[i] - (DOUBLE(ny)/2.))^2
     IF d LT mind THEN BEGIN
       ind = i
       mind = d
@@ -281,12 +281,12 @@ FUNCTION analyse_equil, F, R, Z
       ; Draw a line between the O-point and X-point
       
       n = 100 ; Number of points
-      farr = FLTARR(n)
-      dr = (xpt_ri[i] - opt_ri[primary_opt]) / FLOAT(n)
-      dz = (xpt_zi[i] - opt_zi[primary_opt]) / FLOAT(n)
+      farr = DBLARR(n)
+      dr = (xpt_ri[i] - opt_ri[primary_opt]) / DOUBLE(n)
+      dz = (xpt_zi[i] - opt_zi[primary_opt]) / DOUBLE(n)
       FOR j=0, n-1 DO BEGIN
         ; interpolate f at this location
-        farr[j] = INTERPOLATE(F, opt_ri[primary_opt] + dr*FLOAT(j), opt_zi[primary_opt] + dz*FLOAT(j))
+        farr[j] = INTERPOLATE(F, opt_ri[primary_opt] + dr*DOUBLE(j), opt_zi[primary_opt] + dz*DOUBLE(j))
       ENDFOR
       
       IF farr[n-1] LT farr[0] THEN BEGIN

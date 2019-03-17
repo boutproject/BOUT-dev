@@ -77,14 +77,14 @@ PRO popup_event, event
       ENDFOR
 
       ninpsi = N_ELEMENTS(info.in_psi_field)
-      psi_inner = FLTARR(ninpsi)
+      psi_inner = DBLARR(ninpsi)
       FOR i=0, ninpsi-1 DO BEGIN
         widget_control, info.in_psi_field[i], get_value=inp
         psi_inner[i] = inp
       ENDFOR
 
       noutpsi = N_ELEMENTS(info.out_psi_field)
-      psi_outer = FLTARR(noutpsi)
+      psi_outer = DBLARR(noutpsi)
       FOR i=0, noutpsi-1 DO BEGIN
         widget_control, info.out_psi_field[i], get_value=inp
         psi_outer[i] = inp
@@ -373,7 +373,7 @@ PRO event_handler, event
         
       WIDGET_CONTROL, info.status, set_value="Generating mesh ..."
       
-      fpsi = FLTARR(2, N_ELEMENTS((*(info.rz_grid)).fpol))
+      fpsi = DBLARR(2, N_ELEMENTS((*(info.rz_grid)).fpol))
       fpsi[0,*] = (*(info.rz_grid)).simagx + (*(info.rz_grid)).npsigrid * ( (*(info.rz_grid)).sibdry - (*(info.rz_grid)).simagx )
       fpsi[1,*] = (*(info.rz_grid)).fpol
 
@@ -608,7 +608,7 @@ PRO event_handler, event
         critical = (*(info.rz_grid)).critical
         IF (*(info.rz_grid)).nlim GT 2 THEN BEGIN
           ; Check that the critical points are inside the boundary
-          bndryi = FLTARR(2, (*(info.rz_grid)).nlim)
+          bndryi = DBLARR(2, (*(info.rz_grid)).nlim)
           bndryi[0,*] = INTERPOL(FINDGEN((*(info.rz_grid)).nr), (*(info.rz_grid)).R, (*(info.rz_grid)).rlim)
           bndryi[1,*] = INTERPOL(FINDGEN((*(info.rz_grid)).nz), (*(info.rz_grid)).Z, (*(info.rz_grid)).zlim)
           critical = critical_bndry(critical, bndryi)
@@ -699,13 +699,13 @@ PRO event_handler, event
         psi_inner = (*info.flux_mesh).psi_inner
       ENDIF ELSE BEGIN
         widget_control, info.psi_inner_field, get_value=psi_in
-        psi_inner = FLTARR(n_xpoint+1) + psi_in
+        psi_inner = DBLARR(n_xpoint+1) + psi_in
       ENDELSE
       
       in_psi_field[0] = CW_FIELD( in_psi_base,                    $
                                   title  = 'Core: ',              $ 
                                   uvalue = 'in_psi',              $ 
-                                  /float,                          $ 
+                                  /double,                        $ 
                                   value = psi_inner[0],           $
                                   xsize=8                         $
                                 )
@@ -713,7 +713,7 @@ PRO event_handler, event
         in_psi_field[i] = CW_FIELD( in_psi_base,                    $
                                     title  = 'PF '+STRTRIM(STRING(i),2)+': ', $ 
                                     uvalue = 'in_psi',              $ 
-                                    /float,                          $ 
+                                    /double,                        $ 
                                     value = psi_inner[i],           $
                                     xsize=8                         $
                                   )
@@ -729,7 +729,7 @@ PRO event_handler, event
         psi_outer = (*info.flux_mesh).psi_outer
       ENDIF ELSE BEGIN
         widget_control, info.psi_outer_field, get_value=psi_out
-        psi_outer = FLTARR(n_xpoint) + psi_out
+        psi_outer = DBLARR(n_xpoint) + psi_out
       ENDELSE
       
       out_psi_field = LONARR(N_ELEMENTS(psi_outer))
@@ -738,7 +738,7 @@ PRO event_handler, event
         out_psi_field[i] = CW_FIELD( out_psi_base,                    $
                                      title  = 'SOL '+STRTRIM(STRING(i),2)+': ', $ 
                                      uvalue = 'out_psi',              $ 
-                                     /float,                          $ 
+                                     /double,                         $ 
                                      value = psi_outer[i],            $
                                      xsize=8                          $
                                   )
@@ -1013,14 +1013,14 @@ PRO hypnotoad
   psi_inner_field = CW_FIELD( tab1,                            $
                               title  = 'Inner psi:',          $ 
                               uvalue = 'inner_psi',           $ 
-                              /floating,                      $ 
+                              /double,                        $ 
                               value = 0.9,                    $
                               xsize=8                         $
                             )
   psi_outer_field = CW_FIELD( tab1,                            $
                               title  = 'Outer psi:',          $ 
                               uvalue = 'outer_psi',           $ 
-                              /floating,                      $ 
+                              /double,                        $ 
                               value = 1.1,                    $
                               xsize=8                         $
                             )
@@ -1029,7 +1029,7 @@ PRO hypnotoad
   rad_peak_field = CW_FIELD( tab1,                            $
                              title  = 'Sep. spacing:',          $ 
                              uvalue = 'rad_peak',           $ 
-                             /floating,                      $ 
+                             /double,                        $ 
                              value = 1,                    $
                              xsize=8                         $
                            )
@@ -1037,7 +1037,7 @@ PRO hypnotoad
   parweight_field = CW_FIELD( tab1,                            $
                              title  = 'Par. vs pol:',          $ 
                              uvalue = 'parweight',           $ 
-                             /floating,                      $ 
+                             /double,                        $ 
                              value = 0.0,                    $
                              xsize=8                         $
                            )
@@ -1045,7 +1045,7 @@ PRO hypnotoad
   xpt_dist_field = CW_FIELD( tab1,                            $
                              title  = 'Xpt dist x:',          $ 
                              uvalue = 'xpt_mul',           $ 
-                             /floating,                      $ 
+                             /double,                        $ 
                              value = 1,                    $
                              xsize=8                         $
                            )

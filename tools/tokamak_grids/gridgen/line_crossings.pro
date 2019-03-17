@@ -55,21 +55,21 @@ FUNCTION line_crossings, r1, z1, period1, r2, z2, period2, ncross=ncross, $
         z = z1[i] + alpha * c
         
         IF ncross EQ 0 THEN BEGIN
-          result = FLTARR(2,1)
+          result = DBLARR(2,1)
           result[0,0] = r
           result[1,0] = z
           
-          inds1 = [FLOAT(i)+alpha]
-          inds2 = [FLOAT(j)+beta]
+          inds1 = [DOUBLE(i)+alpha]
+          inds2 = [DOUBLE(j)+beta]
         ENDIF ELSE BEGIN
           rold = result
-          result = FLTARR(2, ncross+1)
+          result = DBLARR(2, ncross+1)
           result[*,0:(ncross-1)] = rold
           result[0,ncross] = r
           result[1,ncross] = z
 
-          inds1 = [inds1, FLOAT(i)+alpha]
-          inds2 = [inds2, FLOAT(j)+beta]
+          inds1 = [inds1, DOUBLE(i)+alpha]
+          inds2 = [inds2, DOUBLE(j)+beta]
         ENDELSE
         ncross = ncross + 1
       ENDIF

@@ -43,7 +43,7 @@ PRO flux_tube, gfile, psinorm, output=output
   nlev = 100
   minf = MIN(rzgrid.psi)
   maxf = MAX(rzgrid.psi)
-  levels = findgen(nlev)*(maxf-minf)/FLOAT(nlev-1) + minf
+  levels = findgen(nlev)*(maxf-minf)/DOUBLE(nlev-1) + minf
   
   safe_colors, /first
   CONTOUR, rzgrid.psi, rzgrid.R, rzgrid.Z, $
@@ -126,7 +126,7 @@ PRO flux_tube, gfile, psinorm, output=output
   ; Get quantities from g-eqdsk
   ngrid = N_ELEMENTS(g.fpol)
   gpos = psinorm * ngrid ; Index into the psi grid. CHECK THIS
-  psigrid = psi_axis + (psi_sep - psi_axis)*FINDGEN(ngrid)/FLOAT(ngrid)
+  psigrid = psi_axis + (psi_sep - psi_axis)*FINDGEN(ngrid)/DOUBLE(ngrid)
   fpol = INTERPOLATE(g.fpol, gpos) ; Poloidal current function
   pres = INTERPOLATE(g.pres, gpos) ; Pressure [Pascals]
   dpdpsi = INTERPOLATE(DERIV(psigrid, g.pres), gpos)
@@ -140,7 +140,7 @@ PRO flux_tube, gfile, psinorm, output=output
 
   ; Use DCT to get local gradients of psi for Bp
   np = N_ELEMENTS(ri)
-  Bpol = FLTARR(np)
+  Bpol = DBLARR(np)
   FOR i=0, np-1 DO BEGIN
     grad = local_gradient(dctpsi, ri[i], zi[i], status=status)
     IF status THEN BEGIN
@@ -218,7 +218,7 @@ PRO flux_tube, gfile, psinorm, output=output
     END
   ENDCASE
   
-  pos = tot * FINDGEN(npar)/FLOAT(npar)
+  pos = tot * FINDGEN(npar)/DOUBLE(npar)
   inds = INTERPOL(FINDGEN(np), dist, pos)
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -234,17 +234,17 @@ PRO flux_tube, gfile, psinorm, output=output
   qinty = INTERPOLATE(qinty, inds)
   s = INTERPOLATE(s, inds) ; parallel distance
   l = INTERPOLATE(l, inds) ; poloidal distance
-  hthe = DERIV(l) / (2.*!PI / FLOAT(npar))
+  hthe = DERIV(l) / (2.*!PI / DOUBLE(npar))
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ; Calculate psi derivatives
   
-  dpsidR  = FLTARR(npar)
-  dpsidZ  = FLTARR(npar)
-  dRdpsi  = FLTARR(npar) ; dR / dpsi
-  dZdpsi  = FLTARR(npar) ; dZ / dpsi
-  dBpdR   = FLTARR(npar)
-  dBpdZ   = FLTARR(npar)
+  dpsidR  = DBLARR(npar)
+  dpsidZ  = DBLARR(npar)
+  dRdpsi  = DBLARR(npar) ; dR / dpsi
+  dZdpsi  = DBLARR(npar) ; dZ / dpsi
+  dBpdR   = DBLARR(npar)
+  dBpdZ   = DBLARR(npar)
   FOR i=0, npar-1 DO BEGIN
     ; Get gradients of psi
     grad = EvalCosP(dctpsi, x0=ri[i], y0=zi[i])
@@ -281,8 +281,8 @@ PRO flux_tube, gfile, psinorm, output=output
   dnudpsi = - ( (MU0*hthe*dpdpsi/Bpol) + pitch*( 2.*Rmaj*B*dBdpsi/Bpol + B^2*dRdpsi/Bpol - B^2*Rmaj*dBpdpsi/(Bpol^2) ) ) / (Rmaj*Bpol^2 / Btor)
   
   ; Integrate this to get the integrated shear sinty
-  sinty = REAL_PART(fft_integrate(dnudpsi, loop=sloop)) * 2.*!PI/FLOAT(npar) 
-  sloop = REAL_PART(sloop) * 2.*!PI/FLOAT(npar)
+  sinty = REAL_PART(fft_integrate(dnudpsi, loop=sloop)) * 2.*!PI/DOUBLE(npar) 
+  sloop = REAL_PART(sloop) * 2.*!PI/DOUBLE(npar)
 
   ; Want this shift to be zero at the outboard midplane,
   ; and matching location on inboard side
@@ -380,28 +380,28 @@ PRO flux_tube, gfile, psinorm, output=output
   PRINT, ""
   
   ; Convert into cell width
-  dr    = dr / FLOAT(nrad)
-  dpsi  = dpsi / FLOAT(nrad)
-  dpsin = dpsin / FLOAT(nrad)
+  dr    = dr / DOUBLE(nrad)
+  dpsi  = dpsi / DOUBLE(nrad)
+  dpsin = dpsin / DOUBLE(nrad)
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ; Put everything into 2D arrays
   
-  rmid = FLOAT(nrad) / 2.
+  rmid = DOUBLE(nrad) / 2.
   rpsi = (FINDGEN(nrad) - rmid) * dpsi
 
   ; Pressure profile. Only gradient used as drive term
-  pressure = FLTARR(nrad, npar)
-  Jpar0 = FLTARR(nrad, npar)
+  pressure = DBLARR(nrad, npar)
+  Jpar0 = DBLARR(nrad, npar)
   FOR i=0, nrad-1 DO BEGIN
     pressure[i,*] = pres + rpsi[i]*dpdpsi ; Linear in x
     Jpar0[i,*] = Jpar ; Constant in x
   ENDFOR
   
   ; B field components
-  Bpxy = FLTARR(nrad, npar)
-  Btxy = FLTARR(nrad, npar)
-  Bxy  = FLTARR(nrad, npar)
+  Bpxy = DBLARR(nrad, npar)
+  Btxy = DBLARR(nrad, npar)
+  Bxy  = DBLARR(nrad, npar)
   FOR i=0, nrad-1 DO BEGIN
     Bpxy[i,*] = Bpol
     Btxy[i,*] = Btor
@@ -409,13 +409,13 @@ PRO flux_tube, gfile, psinorm, output=output
   ENDFOR
   
   ; Grid spacing
-  dx = FLTARR(nrad, npar) + dpsi
-  dy = FLTARR(nrad, npar) + 2.*!PI/FLOAT(npar)
+  dx = DBLARR(nrad, npar) + dpsi
+  dy = DBLARR(nrad, npar) + 2.*!PI/DOUBLE(npar)
 
   ; Geometrical quantities
-  hxy = FLTARR(nrad, npar)
-  Rxy = FLTARR(nrad, npar)
-  Zxy = FLTARR(nrad, npar)
+  hxy = DBLARR(nrad, npar)
+  Rxy = DBLARR(nrad, npar)
+  Zxy = DBLARR(nrad, npar)
   FOR i=0, nrad-1 DO BEGIN
     hxy[i,*] = hthe
     Rxy[i,*] = Rmaj
@@ -423,7 +423,7 @@ PRO flux_tube, gfile, psinorm, output=output
   ENDFOR
   
   ; Curvature
-  bxcvx = FLTARR(nrad, npar)
+  bxcvx = DBLARR(nrad, npar)
   bxcvy = bxcvx
   bxcvz = bxcvx
   FOR i=0, nrad-1 DO BEGIN
@@ -437,12 +437,12 @@ PRO flux_tube, gfile, psinorm, output=output
   ShiftAngle = qloop + rpsi * sloop
   
   ; Integrated shear
-  sinty2 = FLTARR(nrad, npar)
+  sinty2 = DBLARR(nrad, npar)
   FOR i=0, nrad-1 DO sinty2[i,*] = sinty
 
   ; Toroidal shift for shifted radial derivatives (optional)
   ; As with twist-shift, this is a linear expansion
-  zShift = FLTARR(nrad, npar)
+  zShift = DBLARR(nrad, npar)
   FOR i=0, nrad-1 DO BEGIN
     zShift[i,*] = qinty-qinty[rmaxi] + rpsi[i]*sinty
   ENDFOR

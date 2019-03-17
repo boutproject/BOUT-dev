@@ -15,7 +15,7 @@ FUNCTION pdiff_rz, rxy, zxy, fxy, i, j, jp, jm
    
    ;IF j EQ 0 THEN STOP
 
-   A=TRANSPOSE([[fltarr(4)+1],[r-r(0)],[z-z(0)]])
+   A=TRANSPOSE([[DBLARR(4)+1],[r-r(0)],[z-z(0)]])
 
    SVDC, A,W,U,V
 

@@ -4,7 +4,7 @@ FUNCTION int_y, var, mesh, loop=loop, nosmooth=nosmooth, simple=simple
   
   s = SIZE(var, /dim)
   nx = s[0]
-  loop = FLTARR(nx)
+  loop = DBLARR(nx)
   
   status = gen_surface(mesh=mesh) ; Start generator
   REPEAT BEGIN

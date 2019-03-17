@@ -9,7 +9,7 @@ ny=nsig
 
 IF NOT KEYWORD_SET(INVERSE) THEN BEGIN ;---direct transform---
 
-  fsig=fltarr(nx,ny)
+  fsig=dblarr(nx,ny)
 
   for iu=0,Nx-1 do begin
    for jv=0,Ny-1 do begin
@@ -35,7 +35,7 @@ IF NOT KEYWORD_SET(INVERSE) THEN BEGIN ;---direct transform---
 
 ENDIF ELSE BEGIN ;---inverse transform---
 
-  sig=fltarr(nx,ny)
+  sig=dblarr(nx,ny)
 
   for ix=0,Nx-1 do begin
    for jy=0,Ny-1 do begin
@@ -120,10 +120,10 @@ function EvalCosPfast, fsig, nsig, x0=x0,y0=y0
 ;and the partial derivatives
 ;--------------------------------------------
 
-  cuvec=fltarr(nsig)+1.
+  cuvec=dblarr(nsig)+1.
    cuvec[0]=0.707107
 
-  cvvec=fltarr(nsig)+1.
+  cvvec=dblarr(nsig)+1.
    cvvec[0]=0.707107
  
 

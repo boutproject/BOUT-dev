@@ -17,7 +17,7 @@ FUNCTION radial_grid, n, pin, pout, include_in, include_out, seps, sep_factor, $
   ENDIF
 
   x = FINDGEN(n)
-  m = FLOAT(n-1)
+  m = DOUBLE(n-1)
   IF NOT include_in THEN BEGIN
     x = x + 0.5
     m = m + 0.5

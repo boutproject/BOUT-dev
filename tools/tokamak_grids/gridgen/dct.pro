@@ -73,7 +73,7 @@ FUNCTION DCT, x, inverse=inverse
     yf[0] = yf[0] / SQRT(2.)
     y = REAL_PART(FFT(yf, /inverse, /double))
     
-    result = FLTARR(n)
+    result = DBLARR(n)
     
     FOR i=0, n/2 - 1 DO BEGIN
       result[2*i] = y[i]

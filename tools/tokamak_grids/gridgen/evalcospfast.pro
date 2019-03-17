@@ -14,10 +14,10 @@ function EvalCosPfast, fsig, x0=x0,y0=y0
   nx=s[0]
   ny=s[1]
 
-  cuvec=fltarr(nx)+1.
+  cuvec=DBLARR(nx)+1.
   cuvec[0]=1./SQRT(2.)
 
-  cvvec=fltarr(ny)+1.
+  cvvec=DBLARR(ny)+1.
   cvvec[0]=1./SQRT(2.)
   
   uvec=COS(!PI*findgen(nx)*(x0+0.5)/nx)
