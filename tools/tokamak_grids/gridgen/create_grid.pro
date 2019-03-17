@@ -116,7 +116,7 @@ FUNCTION poloidal_grid, interp_data, R, Z, ri, zi, n, fpsi=fpsi, parweight=parwe
                         ydown_dist=ydown_dist, yup_dist=yup_dist, $
                         ydown_space=ydown_space, yup_space=yup_space
   
-  IF NOT KEYWORD_SET(parweight) THEN parweight = 0.0  ; Default is poloidal distance
+  IF NOT KEYWORD_SET(parweight) THEN parweight = 0.0D  ; Default is poloidal distance
 
   np = N_ELEMENTS(ri)
 
@@ -164,18 +164,18 @@ FUNCTION poloidal_grid, interp_data, R, Z, ri, zi, n, fpsi=fpsi, parweight=parwe
     pardist = DBLARR(np)
     FOR i=1,np-1 DO BEGIN
       ip = (i + 1) MOD np
-      pardist[i] = pardist[i-1] + ddpar[i] ;0.5*(ddpar[i-1] + ddpar[ip])
+      pardist[i] = pardist[i-1] + ddpar[i] ;0.5D*(ddpar[i-1] + ddpar[ip])
     ENDFOR
   ENDIF ELSE pardist = poldist ; Just use the same poloidal distance
 
   PRINT, "PARWEIGHT: ", parweight
 
-  dist = parweight*pardist + (1. - parweight)*poldist
+  dist = parweight*pardist + (1.D - parweight)*poldist
 
   ; Divide up distance. No points at the end (could be x-point)
   IF n GE 2 THEN BEGIN
-    IF SIZE(ydown_dist, /TYPE) EQ 0 THEN ydown_dist = dist[np-1]* 0.5 / DOUBLE(n)
-    IF SIZE(yup_dist, /TYPE) EQ 0 THEN yup_dist = dist[np-1] * 0.5 / DOUBLE(n)
+    IF SIZE(ydown_dist, /TYPE) EQ 0 THEN ydown_dist = dist[np-1]* 0.5D / DOUBLE(n)
+    IF SIZE(yup_dist, /TYPE) EQ 0 THEN yup_dist = dist[np-1] * 0.5D / DOUBLE(n)
 
     IF SIZE(ydown_space, /TYPE) EQ 0 THEN ydown_space = ydown_dist
     IF SIZE(yup_space, /TYPE) EQ 0 THEN yup_space = ydown_dist
@@ -186,18 +186,18 @@ FUNCTION poloidal_grid, interp_data, R, Z, ri, zi, n, fpsi=fpsi, parweight=parwe
     d = (dist[np-1] - ydown_dist - yup_dist) ; Distance between first and last
     i = FINDGEN(n)
     
-    yd = ydown_space < 0.5*d/fn
-    yu = yup_space < 0.5*d/fn
+    yd = ydown_space < 0.5D*d/fn
+    yu = yup_space < 0.5D*d/fn
     ; Fit to ai + bi^2 + c[i-sin(2pi*i/(n-1))*(n-1)/(2pi)]
-    a = yd*2.
-    b = (2.*yu - a) / fn
-    c = d/fn - a - 0.5*b*fn
-    dloc = ydown_dist + a*i + 0.5*b*i^2 + c*[i - SIN(2.*!PI*i / fn)*fn/(2.*!PI)]
-    ddloc = a + b*i + c*[1 - COS(2.*!PI*i / fn)]
+    a = yd*2.D
+    b = (2.D*yu - a) / fn
+    c = d/fn - a - 0.5D*b*fn
+    dloc = ydown_dist + a*i + 0.5D*b*i^2 + c*[i - SIN(2.D*!DPI*i / fn)*fn/(2.D*!DPI)]
+    ddloc = a + b*i + c*[1 - COS(2.D*!DPI*i / fn)]
     
     ; Fit to dist = a*i^3 + b*i^2 + c*i
-    ;c = ydown_dist*2.
-    ;b = 3.*(d/fn^2 - c/fn) - 2.*yup_dist/fn + c/fn
+    ;c = ydown_dist*2.D
+    ;b = 3.D*(d/fn^2 - c/fn) - 2.D*yup_dist/fn + c/fn
     ;a = d/fn^3 - c/fn^2 - b/fn
     ;dloc = ydown_dist + c*i + b*i^2 + a*i^3
     
@@ -313,17 +313,17 @@ print,ind,format='(d20.16)'
         boundary=boundary, fbndry=fbndry
 
       IF status EQ 1 THEN BEGIN
-        rixy[nin+j+1, i] = -1.0
+        rixy[nin+j+1, i] = -1.0D
         IF nin+j LT slast THEN slast = nin+j ; last good surface index
         fbndry = fvals[slast]
-        IF (fvals[1] - fvals[0])*(flast - fbndry) GT 0 THEN flast = 0.95*fbndry + 0.05*f0
+        IF (fvals[1] - fvals[0])*(flast - fbndry) GT 0 THEN flast = 0.95D*fbndry + 0.05D*f0
         BREAK
       ENDIF ELSE IF status EQ 2 THEN BEGIN
         ; Hit a boundary 
         rixy[nin+j+1, i] = rinext
         zixy[nin+j+1, i] = zinext
         IF nin+j LT slast THEN slast = nin+j ; Set the last point
-        IF (fvals[1] - fvals[0])*(flast - fbndry) GT 0 THEN flast = 0.95*fbndry + 0.05*f0
+        IF (fvals[1] - fvals[0])*(flast - fbndry) GT 0 THEN flast = 0.95D*fbndry + 0.05D*f0
         BREAK
       ENDIF ELSE BEGIN
         rixy[nin+j+1, i] = rinext
@@ -338,10 +338,10 @@ print,ind,format='(d20.16)'
         boundary=boundary, fbndry=fbndry
       
       IF status EQ 1 THEN BEGIN
-        rixy[nin-j-1, i] = -1.0
+        rixy[nin-j-1, i] = -1.0D
         IF nin-j GT sfirst THEN sfirst = nin-j
         fbndry = fvals[sfirst]
-        IF (fvals[1] - fvals[0])*(ffirst - fbndry) LT 0 THEN ffirst = 0.95*fbndry + 0.05*f0
+        IF (fvals[1] - fvals[0])*(ffirst - fbndry) LT 0 THEN ffirst = 0.95D*fbndry + 0.05D*f0
         BREAK
       ENDIF
 
@@ -350,7 +350,7 @@ print,ind,format='(d20.16)'
 
       IF status EQ 2 THEN BEGIN
         IF nin-j GT sfirst THEN sfirst = nin-j
-        IF (fvals[1] - fvals[0])*(ffirst - fbndry) LT 0 THEN ffirst = 0.95*fbndry + 0.05*f0
+        IF (fvals[1] - fvals[0])*(ffirst - fbndry) LT 0 THEN ffirst = 0.95D*fbndry + 0.05D*f0
         BREAK
       ENDIF
     ENDFOR
@@ -555,7 +555,7 @@ FUNCTION solve_xpt_hthe, dctF, R, Z, sep_info, dist0, pf_f, core_f, sol_in_f, so
     response[i] = MIN([dfdx[i,i], dfdx[(i+1) MOD 4,i]])
   ENDFOR
 
-  IF MIN(dfdx) LT 0.0 THEN BEGIN
+  IF MIN(dfdx) LT 0.0D THEN BEGIN
     PRINT, "WARNING: ILL-BEHAVED FITTING"
     RETURN, dist0 ; Don't modify
   ENDIF
@@ -563,12 +563,12 @@ FUNCTION solve_xpt_hthe, dctF, R, Z, sep_info, dist0, pf_f, core_f, sol_in_f, so
 ;  ; Invert using SVD
 ;  SVDC, dfdx, W, U, V
 ;  WP = DBLARR(4, 4)
-;  for i=0,2 do wp[i,i] = 1.0/w[i]
+;  for i=0,2 do wp[i,i] = 1.0D/w[i]
 ;  ddist = V ## WP ## TRANSPOSE(U) # xp0
 ;  
 ;  ;ddist = INVERT(dfdx) # xp0
-;  w = WHERE(ABS(ddist) GT 0.5*dist, count)
-;  IF count GT 0 THEN ddist[w] = ddist[w] * 0.5*dist[w] / ABS(ddist[w])
+;  w = WHERE(ABS(ddist) GT 0.5D*dist, count)
+;  IF count GT 0 THEN ddist[w] = ddist[w] * 0.5D*dist[w] / ABS(ddist[w])
 ;  dist = dist - ddist
 ;  
   PRINT, "DIST =", REFORM(dist)
@@ -580,10 +580,10 @@ FUNCTION solve_xpt_hthe, dctF, R, Z, sep_info, dist0, pf_f, core_f, sol_in_f, so
   ; If too low, move out, too high move in
 
   med = MEDIAN(response)
-  w = WHERE(response LT 0.1*med, count1)
+  w = WHERE(response LT 0.1D*med, count1)
   IF count1 GT 0 THEN dist[w] = dist[w] * 2.
-  w = WHERE(response GT 10.*med, count2)
-  IF count2 GT 0 THEN dist[w] = dist[w] * 0.75
+  wD = WHERE(response GT 10.*medD, count2)
+  IF count2 GT 0 THEN dist[w] = dist[w] * 0.D75
   
   ENDREP UNTIL count1+count2 EQ 0
   
@@ -613,14 +613,14 @@ FUNCTION increase_xpt_hthe, dctF, R, Z, sep_info, dist0, pf_f, core_f, sol_in_f,
       
       IF xd[(ind+1) MOD 4] LT xd[(ind+3) MOD 4] THEN BEGIN
         ; Increase dist[ind]
-        dist[ind] = dist[ind] * 1.1
+        dist[ind] = dist[ind] * 1.D1
       ENDIF ELSE BEGIN
         ; Increase dist[ind-1]
-        dist[(ind+3) MOD 4] = dist[(ind+3) MOD 4] * 1.1
+        dist[(ind+3) MOD 4] = dist[(ind+3) MOD 4] * 1.D1
       ENDELSE
     ENDIF
     xd = xpt_hthe(dctF, R, Z, sep_info, dist, pf_f, core_f, sol_in_f, sol_out_f, boundary=boundary, psi=psi)
-  ENDREP UNTIL (MIN(xd) GE xd_target) OR ( ABS(MIN(xd) - m) LT 1.e-5 )
+  ENDREP UNTIL (MIN(xd) GE xd_target) OR ( ABS(MIN(xd) - m) LT 1.d-5 )
   
   ; Reduce spacing until one goes below target
   REPEAT BEGIN
@@ -629,9 +629,9 @@ FUNCTION increase_xpt_hthe, dctF, R, Z, sep_info, dist0, pf_f, core_f, sol_in_f,
     IF m GT xd_target THEN BEGIN
       ; Decrease distance 
       IF xd[(ind+1) MOD 4] GT xd[(ind+3) MOD 4] THEN BEGIN
-        dist[ind] = dist[ind] / 1.1
+        dist[ind] = dist[ind] / 1.1D
       ENDIF ELSE BEGIN
-        dist[(ind+3) MOD 4] = dist[(ind+3) MOD 4] / 1.1
+        dist[(ind+3) MOD 4] = dist[(ind+3) MOD 4] / 1.1D
       ENDELSE
     ENDIF
     xd = xpt_hthe(dctF, R, Z, sep_info, dist, pf_f, core_f, sol_in_f, sol_out_f, boundary=boundary, psi=psi)
@@ -682,23 +682,23 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
   ENDIF ELSE IF N_PARAMS() LT 4 THEN BEGIN
     ; Settings omitted. Set defaults
     PRINT, "Settings not given -> using default values"
-    settings = {psi_inner:0.9, $
-                psi_outer:1.1, $
+    settings = {psi_inner:0.9D, $
+                psi_outer:1.1D, $
                 nrad:36, $
                 npol:64, $
-                rad_peaking:0.0, $
-                pol_peaking:0.0, $
-                parweight:0.0}
+                rad_peaking:0.0D, $
+                pol_peaking:0.0D, $
+                parweight:0.0D}
   ENDIF ELSE BEGIN
     PRINT, "Checking settings"
     settings = in_settings ; So the input isn't changed
-    str_check_present, settings, 'psi_inner', 0.9
-    str_check_present, settings, 'psi_outer', 1.1
+    str_check_present, settings, 'psi_inner', 0.9D
+    str_check_present, settings, 'psi_outer', 1.1D
     str_check_present, settings, 'nrad', 36
     str_check_present, settings, 'npol', 64
-    str_check_present, settings, 'rad_peaking', 0.0
-    str_check_present, settings, 'pol_peaking', 0.0
-    str_check_present, settings, 'parweight', 0.0
+    str_check_present, settings, 'rad_peaking', 0.0D
+    str_check_present, settings, 'pol_peaking', 0.0D
+    str_check_present, settings, 'parweight', 0.0D
   ENDELSE
 
   s = SIZE(F, /DIMENSION)
@@ -860,7 +860,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
     ; Make sure that the line goes clockwise
     
     m = MAX(INTERPOLATE(Z, start_zi, /DOUBLE), ind)
-    IF (DERIV(INTERPOLATE(R, start_ri, /DOUBLE)))[ind] LT 0.0 THEN BEGIN
+    IF (DERIV(INTERPOLATE(R, start_ri, /DOUBLE)))[ind] LT 0.0D THEN BEGIN
       ; R should be increasing at the top. Need to reverse
       start_ri = REVERSE(start_ri)
       start_zi = REVERSE(start_zi)
@@ -992,15 +992,15 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
       PRINT, "Distributing radial points automatically"
       
       n = TOTAL(nrad,/int)
-      fac = 2.*(xpt_f[inner_sep] - f_inner)/(1.+rad_peaking)
+      fac = 2.D*(xpt_f[inner_sep] - f_inner)/(1.D+rad_peaking)
       FOR i=1, critical.n_xpoint-1 DO fac = fac + (xpt_f[si[i]] - xpt_f[si[i-1]])/rad_peaking
-      fac = fac + 2.*(f_outer - xpt_f[si[critical.n_xpoint-1]])/(1.+rad_peaking)
+      fac = fac + 2.D*(f_outer - xpt_f[si[critical.n_xpoint-1]])/(1.D+rad_peaking)
       dx0 = fac / DOUBLE(n)  ; Inner grid spacing
       
       ; Calculate number of grid points
       nrad = LONARR(critical.n_xpoint + 1)
-      nrad[0] = FIX( 2.*(xpt_f[inner_sep] - f_inner) / ( (1.+rad_peaking)*dx0 ) + 0.5)
-      FOR i=1, critical.n_xpoint-1 DO nrad[i] = FIX((xpt_f[si[i]] - xpt_f[si[i-1]])/(rad_peaking*dx0)-0.5) 
+      nrad[0] = FIX( 2.D*(xpt_f[inner_sep] - f_inner) / ( (1.D+rad_peaking)*dx0 ) + 0.5D)
+      FOR i=1, critical.n_xpoint-1 DO nrad[i] = FIX((xpt_f[si[i]] - xpt_f[si[i-1]])/(rad_peaking*dx0)-0.5D) 
       nrad[critical.n_xpoint] = n - TOTAL(nrad,/int)
       
       ;fvals = radial_grid(TOTAL(nrad), f_inner, f_outer, 1, 1, xpt_f, rad_peaking)
@@ -1033,13 +1033,13 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
         
         FOR i=2, critical.n_xpoint-1 DO fvals = [fvals, radial_grid(nrad[i], xpt_f[si[i-1]], xpt_f[si[i]], 0, 0, xpt_f, rad_peaking)]
         ; Core
-        fvals = [radial_grid(nrad[0], f_inner, 2.*xpt_f[inner_sep]-fvals[0], $
+        fvals = [radial_grid(nrad[0], f_inner, 2.D*xpt_f[inner_sep]-fvals[0], $
                              1, 1, xpt_f, rad_peaking, $
-                             out_dp=2.*(fvals[0]-xpt_f[inner_sep]), $
-                             in_dp=2.*(fvals[0]-xpt_f[inner_sep])/rad_peaking), fvals]
+                             out_dp=2.D*(fvals[0]-xpt_f[inner_sep]), $
+                             in_dp=2.D*(fvals[0]-xpt_f[inner_sep])/rad_peaking), fvals]
       ENDIF ELSE BEGIN
         ; Only a single separatrix
-        dp0 = (xpt_f[inner_sep] - f_inner)*2./ (DOUBLE(nrad[0])*(1. + rad_peaking))
+        dp0 = (xpt_f[inner_sep] - f_inner)*2.D/ (DOUBLE(nrad[0])*(1.D + rad_peaking))
         fvals = radial_grid(nrad[0], f_inner, xpt_f[inner_sep], $
                             1, 0, xpt_f, rad_peaking, $
                             out_dp=rad_peaking*dp0, $
@@ -1048,7 +1048,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
 
       ; SOL
       n = N_ELEMENTS(fvals)
-      dpsi = 2.*(xpt_f[si[critical.n_xpoint-1]] - fvals[n-1])
+      dpsi = 2.D*(xpt_f[si[critical.n_xpoint-1]] - fvals[n-1])
       fvals = [fvals, radial_grid(nrad[critical.n_xpoint], $
                                   fvals[n-1]+dpsi, f_outer, 1, 1, xpt_f, rad_peaking, $
                                   in_dp=dpsi, out_dp=dpsi/rad_peaking)]  
@@ -1099,7 +1099,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
     ;sind = FIX(nrad[0]/2) ;nrad[0]-1 ; the last point inside core
     ;sind = nrad[0]-1
     ;f_cont = fvals[sind]
-    f_cont = faxis + fnorm*(0.1*psi_inner[0] + 0.9)
+    f_cont = faxis + fnorm*(0.1D*psi_inner[0] + 0.9D)
 
     contour_lines, F, findgen(nx), findgen(ny), levels=[f_cont], $
       path_info=info, path_xy=xy
@@ -1119,7 +1119,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
     ; Make sure that the line goes clockwise
     
     m = MAX(INTERPOLATE(Z, start_zi, /DOUBLE), ind) ; Find the top (maximum Z)
-    IF (DERIV(INTERPOLATE(R, start_ri, /DOUBLE)))[ind] LT 0.0 THEN BEGIN
+    IF (DERIV(INTERPOLATE(R, start_ri, /DOUBLE)))[ind] LT 0.0D THEN BEGIN
       ; R should be increasing at the top. Need to reverse
       start_ri = REVERSE(start_ri)
       start_zi = REVERSE(start_zi)
@@ -1143,12 +1143,12 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
       ; Note: add starting point to end of 'boundary' so we find intersections with a closed contour
       follow_gradient, interp_data, R, Z, $
                        legsep.core1[2,0], legsep.core1[2,1], $
-                       0.95 * f_cont + 0.05*opt_f[primary_opt], $
+                       0.95D * f_cont + 0.05D*opt_f[primary_opt], $
                        rhit, zhit, $
                        boundary=TRANSPOSE([[start_ri, start_ri[0]], [start_zi, start_zi[0]]]), ibndry=hit_ind1
       follow_gradient, interp_data, R, Z, $
                        legsep.core2[2,0], legsep.core2[2,1], $
-                       0.95 * f_cont + 0.05*opt_f[primary_opt], $
+                       0.95D * f_cont + 0.05D*opt_f[primary_opt], $
                        rhit, zhit, $
                        boundary=TRANSPOSE([[start_ri, start_ri[0]], [start_zi, start_zi[0]]]), ibndry=hit_ind2
       
@@ -1158,9 +1158,9 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
       REPEAT BEGIN
         IF MIN([ni - hit_ind2 + hit_ind1, ni - hit_ind1 + hit_ind2]) LT ABS(hit_ind2 - hit_ind1) THEN BEGIN
           ; One at the beginning and one at the end (across the join)
-          mini = (hit_ind2 + hit_ind1 - ni) / 2.
-          IF mini LT 0. THEN mini = mini + ni
-        ENDIF ELSE mini = (hit_ind1 + hit_ind2) / 2.
+          mini = (hit_ind2 + hit_ind1 - ni) / 2.D
+          IF mini LT 0.D THEN mini = mini + ni
+        ENDIF ELSE mini = (hit_ind1 + hit_ind2) / 2.D
         
         ;OPLOT, [INTERPOLATE(R[start_ri], hit_ind1, /DOUBLE)], [INTERPOLATE(Z[start_zi], hit_ind1, /DOUBLE)], psym=2, color=2
         ;OPLOT, [INTERPOLATE(R[start_ri], hit_ind2, /DOUBLE)], [INTERPOLATE(Z[start_zi], hit_ind2, /DOUBLE)], psym=2, color=2
@@ -1171,7 +1171,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
         ;  Get line a little bit beyond the X-point
         pos = get_line(interp_data, R, Z, $
                        INTERPOLATE(start_ri, mini, /DOUBLE), INTERPOLATE(start_zi, mini, /DOUBLE), $
-                       critical.xpt_f[i] + (critical.xpt_f[i] - opt_f[primary_opt]) * 0.05)
+                       critical.xpt_f[i] + (critical.xpt_f[i] - opt_f[primary_opt]) * 0.05D)
         
         ;OPLOT, INTERPOLATE(R, pos[*,0], /DOUBLE), INTERPOLATE(Z, pos[*,1], /DOUBLE), color=4, thick=2
         
@@ -1186,12 +1186,12 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
           hit_ind2 = mini
         ENDELSE
         dist = MIN([ni - hit_ind2 + hit_ind1, ni - hit_ind1 + hit_ind2, ABS([hit_ind2 - hit_ind1])])
-      ENDREP UNTIL dist LT 0.1
+      ENDREP UNTIL dist LT 0.1D
       IF MIN([ni - hit_ind2 + hit_ind1, ni - hit_ind1 + hit_ind2]) LT ABS(hit_ind2 - hit_ind1) THEN BEGIN
         ; One at the beginning and one at the end (across the join)
-        mini = (hit_ind2 + hit_ind1 - ni) / 2.
-        IF mini LT 0. THEN mini = mini + ni
-      ENDIF ELSE mini = (hit_ind1 + hit_ind2) / 2.
+        mini = (hit_ind2 + hit_ind1 - ni) / 2.D
+        IF mini LT 0.D THEN mini = mini + ni
+      ENDIF ELSE mini = (hit_ind1 + hit_ind2) / 2.D
         
       xpt_ind[i] = mini  ; Record the index
         
@@ -1219,11 +1219,11 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
     FOR i=0, critical.n_xpoint-1 DO BEGIN
       IF i NE (critical.n_xpoint-1) THEN BEGIN
         ri = [ INTERPOLATE(start_ri,xpt_ind[ci[i]], /DOUBLE), $
-               start_ri[FIX(xpt_ind[ci[i]]+1.0):FIX(xpt_ind[ci[i+1]])], $
+               start_ri[FIX(xpt_ind[ci[i]]+1.0D):FIX(xpt_ind[ci[i+1]])], $
                INTERPOLATE(start_ri,xpt_ind[ci[i+1]], /DOUBLE) ]
         
         zi = [ INTERPOLATE(start_zi,xpt_ind[ci[i]], /DOUBLE), $
-               start_zi[FIX(xpt_ind[ci[i]]+1.0):FIX(xpt_ind[ci[i+1]])], $
+               start_zi[FIX(xpt_ind[ci[i]]+1.0D):FIX(xpt_ind[ci[i+1]])], $
                INTERPOLATE(start_zi,xpt_ind[ci[i+1]], /DOUBLE) ]
       ENDIF ELSE BEGIN
         ; Index wraps around
@@ -1238,12 +1238,12 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
           
         ENDIF ELSE BEGIN
           ri = [ INTERPOLATE(start_ri,xpt_ind[ci[i]], /DOUBLE), $
-                 start_ri[FIX(xpt_ind[ci[i]]+1.0):*], $
+                 start_ri[FIX(xpt_ind[ci[i]]+1.0D):*], $
                  start_ri[0:FIX(xpt_ind[ci[0]])], $
                  INTERPOLATE(start_ri,xpt_ind[ci[0]], /DOUBLE) ]
           
           zi = [ INTERPOLATE(start_zi,xpt_ind[ci[i]], /DOUBLE), $
-                 start_zi[FIX(xpt_ind[ci[i]]+1.0):*], $
+                 start_zi[FIX(xpt_ind[ci[i]]+1.0D):*], $
                  start_zi[0:FIX(xpt_ind[ci[0]])], $
                  INTERPOLATE(start_zi,xpt_ind[ci[0]], /DOUBLE) ]
         ENDELSE
@@ -1285,7 +1285,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
           
         IF KEYWORD_SET(nrad_flexible) THEN nrad = TOTAL(nrad,/int) ; Allow nrad to change again
 
-        new_settings = {psi_inner:psi_inner, psi_outer:(max(xpt_psi)+0.02), $
+        new_settings = {psi_inner:psi_inner, psi_outer:(max(xpt_psi)+0.02D), $
                         nrad:nrad, npol:settings.npol, $
                         rad_peaking:settings.rad_peaking, pol_peaking:settings.pol_peaking}
         RETURN, create_grid(F, R, Z, new_settings, critical=critical, $
@@ -1330,14 +1330,14 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
         ; Gridding as one region
         IF (npf+1) LT TOTAL(nrad,/int) THEN BEGIN
           dpsi = pf_psi_vals[xind,0,npf+1] - pf_psi_vals[xind,0,npf]
-          pf_psi_out = (pf_psi_vals[xind,0,npf] - 0.5*dpsi) < xpt_psi[xind]
+          pf_psi_out = (pf_psi_vals[xind,0,npf] - 0.5D*dpsi) < xpt_psi[xind]
           pf_psi_vals[xind,0,0:(npf-1)] = radial_grid(npf, psi_inner[id+1], $
                                                       pf_psi_out, $
                                                       1, 0, $
                                                       [xpt_psi[xind]], settings.rad_peaking, $
                                                       out_dp=dpsi)
         ENDIF ELSE BEGIN
-          pf_psi_out = (pf_psi_vals[xind,0,npf] - 0.5*dpsi) < xpt_psi[xind]
+          pf_psi_out = (pf_psi_vals[xind,0,npf] - 0.5D*dpsi) < xpt_psi[xind]
           pf_psi_vals[xind,0,0:(npf-1)] = radial_grid(npf, psi_inner[id+1], $
                                                       pf_psi_out, $
                                                       1, 0, $
@@ -1380,11 +1380,11 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
       drdi = INTERPOLATE((DERIV(INTERPOLATE(R, pf_ri, /DOUBLE))), mini, /DOUBLE)
       dzdi = INTERPOLATE((DERIV(INTERPOLATE(Z, pf_zi, /DOUBLE))), mini, /DOUBLE)
       
-      IF drdi * (*pf_info[xind]).drdi + dzdi * (*pf_info[xind]).dzdi GT 0.0 THEN BEGIN
+      IF drdi * (*pf_info[xind]).drdi + dzdi * (*pf_info[xind]).dzdi GT 0.0D THEN BEGIN
         ; Line is parallel to the core. Need to reverse
         pf_ri = REVERSE(pf_ri)
         pf_zi = REVERSE(pf_zi)
-        mini = N_ELEMENTS(pf_ri) - 1. - mini
+        mini = N_ELEMENTS(pf_ri) - 1.D - mini
 
         ; Structure for x-point grid spacing info
         xpt_sep = {leg1_ri:[xpt_ri[i], legsep.leg2[*,0]], leg1_zi:[xpt_zi[i], legsep.leg2[*,1]], $
@@ -1501,7 +1501,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
         
         dl = length / DOUBLE(npol)
         dl[0:(2*critical.n_xpoint-1)] = length[0:(2*critical.n_xpoint-1)] $
-          / (DOUBLE(npol[0:(2*critical.n_xpoint-1)]) - 0.5)
+          / (DOUBLE(npol[0:(2*critical.n_xpoint-1)]) - 0.5D)
         
         m = MAX(dl, ind)
         npol[ind] = npol[ind] + 1
@@ -1557,7 +1557,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
       ; - If xpt is the upper x-point then this is the upper outer leg
       
       poldist = line_dist(R, Z, (*pf_info[xpt]).ri0, (*pf_info[xpt]).zi0) ; Poloidal distance along line
-      xdist = MAX(poldist) * 0.5 / DOUBLE(npol[3*i]) ; Equal spacing
+      xdist = MAX(poldist) * 0.5D / DOUBLE(npol[3*i]) ; Equal spacing
       
       xpt_dist[xpt, 0] = xdist
       
@@ -1565,7 +1565,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
       solid = (*pf_info[xpt]).sol[0]
       
       poldist = line_dist(R, Z, (*sol_info[solid]).ri, (*sol_info[solid]).zi)
-      xdist = MAX(poldist) * 0.5 / DOUBLE(npol[3*i+1])
+      xdist = MAX(poldist) * 0.5D / DOUBLE(npol[3*i+1])
 
       PRINT, "S :", solid, max(poldist), npol[3*i+1]
       
@@ -1578,7 +1578,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
       xpt = xpt2
       
       poldist = line_dist(R, Z, (*pf_info[xpt]).ri1, (*pf_info[xpt]).zi1)
-      xdist = MAX(poldist) * 0.5 / DOUBLE(npol[3*i+2])
+      xdist = MAX(poldist) * 0.5D / DOUBLE(npol[3*i+2])
       
       xpt_dist[xpt, 3] = xdist
     ENDFOR
@@ -1586,7 +1586,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
     
     FOR i=0, critical.n_xpoint-1 DO BEGIN
       md = MAX(xpt_dist[i,*])
-      xpt_dist[i,*] = 0.5*xpt_dist[i,*] + 0.5*md
+      xpt_dist[i,*] = 0.5D*xpt_dist[i,*] + 0.5D*md
     ENDFOR
     
     ; Try to equalise
@@ -1623,7 +1623,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
       line = get_line(interp_data, R, Z, $
                       INTERPOLATE((*sep_info[xpt]).core2_ri, sepi, /DOUBLE), $
                       INTERPOLATE((*sep_info[xpt]).core2_zi, sepi, /DOUBLE), $
-                      0.95*f_cont + 0.05*faxis, npt=30)
+                      0.95D*f_cont + 0.05D*faxis, npt=30)
       ; Find intersection of this line with starting line
       cpos = line_crossings((*sol_info[solid]).ri, (*sol_info[solid]).zi, 0, $
                             line[*,0], line[*,1], 0, ncross=ncross, inds1=start_ind)
@@ -1649,7 +1649,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
       line = get_line(interp_data, R, Z, $
                       INTERPOLATE((*sep_info[xpt2]).core1_ri, sepi, /DOUBLE), $
                       INTERPOLATE((*sep_info[xpt2]).core1_zi, sepi, /DOUBLE), $
-                      0.95*f_cont + 0.05*faxis, npt=30)
+                      0.95D*f_cont + 0.05D*faxis, npt=30)
       ; Find intersection of this line with starting line
       cpos = line_crossings((*sol_info[solid]).ri, (*sol_info[solid]).zi, 0, $
                             line[*,0], line[*,1], 0, ncross=ncross, inds1=start_ind)
@@ -1797,8 +1797,8 @@ print,Rxy[0,*],format='(d20.16)'
       ydown_dist = xpt_dist[xpt, 1]
       yup_dist = xpt_dist[xpt2, 2]
       ; Grid spacing
-      ydown_space = MAX([xpt_dist[xpt, 1], xpt_dist[xpt, 2]]) ;0.5*(xpt_dist[xpt, 1] + xpt_dist[xpt, 2])
-      yup_space   = MAX([xpt_dist[xpt2, 1], xpt_dist[xpt2, 2]]) ;0.5*(xpt_dist[xpt2, 1] + xpt_dist[xpt2, 2])
+      ydown_space = MAX([xpt_dist[xpt, 1], xpt_dist[xpt, 2]]) ;0.5D*(xpt_dist[xpt, 1] + xpt_dist[xpt, 2])
+      yup_space   = MAX([xpt_dist[xpt2, 1], xpt_dist[xpt2, 2]]) ;0.5D*(xpt_dist[xpt2, 1] + xpt_dist[xpt2, 2])
       
       a = grid_region(interp_data, R, Z, $
                       (*sol_info[solid]).ri, (*sol_info[solid]).zi, $

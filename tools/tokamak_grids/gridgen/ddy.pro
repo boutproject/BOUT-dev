@@ -2,7 +2,7 @@
 FUNCTION ddy, var, mesh
   f = var
 
-  dtheta = 2.*!PI / DOUBLE(TOTAL(mesh.npol))
+  dtheta = 2.D*!DPI / DOUBLE(TOTAL(mesh.npol))
 
   status = gen_surface(mesh=mesh) ; Start generator
   REPEAT BEGIN

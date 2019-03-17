@@ -14,7 +14,7 @@ FUNCTION get_line, interp_data, R, Z, ri0, zi0, fto, npt=npt, vec=vec, weight=we
   zixpt[0] = zi0
   FOR j=0, npt-1 DO BEGIN
     d = DOUBLE(j+1)/DOUBLE(npt)
-    ftarg = d*fto + (1.0 - d)*ffrom
+    ftarg = d*fto + (1.0D - d)*ffrom
     follow_gradient, interp_data, R, Z, rixpt[j], zixpt[j], $
       ftarg, rinext, zinext
     rixpt[j+1] = rinext
