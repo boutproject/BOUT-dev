@@ -40,15 +40,15 @@ FUNCTION line_crossings, r1, z1, period1, r2, z2, period2, ncross=ncross, $
       det = a*d - b*c
       
       ; Get location along the line segments
-      IF ABS(det) GT 1.e-6 THEN BEGIN
+      IF ABS(det) GT 1.d-6 THEN BEGIN
         alpha = (d*dr - b*dz)/det
         beta =  (a*dz - c*dr)/det
       ENDIF ELSE BEGIN
-        alpha = -1.
-        beta = -1.
+        alpha = -1.D
+        beta = -1.D
       ENDELSE
       
-      IF (alpha GE 0.0) AND (alpha LE 1.0) AND (beta GE 0.0) AND (beta LE 1.0) THEN BEGIN
+      IF (alpha GE 0.0D) AND (alpha LE 1.0D) AND (beta GE 0.0D) AND (beta LE 1.0D) THEN BEGIN
         ; Intersection
         
         r = r1[i] + alpha * a

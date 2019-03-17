@@ -13,16 +13,16 @@ pro prof_write, height=height, bottom=bottom, filename=filename
 
   ON_ERROR, 2
 
-  IF NOT KEYWORD_SET(height) THEN height = 0.3
-  IF NOT KEYWORD_SET(bottom) THEN bottom = 0.02
+  IF NOT KEYWORD_SET(height) THEN height = 0.3D
+  IF NOT KEYWORD_SET(bottom) THEN bottom = 0.02D
   IF NOT KEYWORD_SET(filename) THEN begin 
      print, "Please input grid file name!"
   endif
 
-  kb = 1.38e-23
-  sep_circlie = 0.81
-  density = 1e20
-  ev_k = 11605.
+  kb = 1.38d-23
+  sep_circlie = 0.81D
+  density = 1d20
+  ev_k = 11605.D
 
   g=file_import(filename)
   nx = g.nx
@@ -39,18 +39,18 @@ pro prof_write, height=height, bottom=bottom, filename=filename
   maxp = max(dp, k)
   center = k
   for i=1, nx-2 do begin
-     if (dp[i] lt maxp*0.75) and (dp[i+1] gt maxp*0.75) then begin
+     if (dp[i] lt maxp*0.75D) and (dp[i+1] gt maxp*0.75D) then begin
         ixsmall = i
      endif
-     if (dp[i] gt maxp*0.75) and (dp[i+1] lt maxp*0.75) then begin
+     if (dp[i] gt maxp*0.75D) and (dp[i+1] lt maxp*0.75D) then begin
         ixbig = i
      endif
   endfor
   width = ixbig-ixsmall
   
   tmpt = exp(double(-center)/width)
-  dmpt = (tmpt - 1.0/tmpt) / (tmpt + 1.0/tmpt)
-  h_real = 2.*(height - bottom) / (1. - dmpt)
+  dmpt = (tmpt - 1.0D/tmpt) / (tmpt + 1.0D/tmpt)
+  h_real = 2.D*(height - bottom) / (1.D - dmpt)
 
 ;  print, ixsep, jysep1, jysep2, maxy, center, width
 
@@ -65,8 +65,8 @@ pro prof_write, height=height, bottom=bottom, filename=filename
 ;           print,mgx, xlimit, j, jysep1, jysep2
            rlx = mgx - center
            temp = exp(double(rlx)/width)
-           dampr = (temp - 1.0/temp) / (temp + 1.0/temp)
-           result[i,j] = 0.5*(1.0 - dampr) * h_real + bottom
+           dampr = (temp - 1.0D/temp) / (temp + 1.0D/temp)
+           result[i,j] = 0.5D*(1.0D - dampr) * h_real + bottom
 ;           print,rlx, width, double(rlx)/width, temp, dampr
         endfor
      endfor
@@ -79,20 +79,20 @@ pro prof_write, height=height, bottom=bottom, filename=filename
         endif
         rlx = mgx - center
         temp = exp(rlx/width)
-        dampr = (temp - 1.0/temp) / (temp + 1.0/temp)        
+        dampr = (temp - 1.0D/temp) / (temp + 1.0D/temp)        
         for j=0, ny-1 do begin
-           result[i,j] = 0.5*(1.0 - dampr) * h_real + bottom
+           result[i,j] = 0.5D*(1.0D - dampr) * h_real + bottom
         endfor
      endfor
   endelse
 
   profn = result*density
-  proft= g.pressure/(kb*profn*ev_k)/2.
+  proft= g.pressure/(kb*profn*ev_k)/2.D
 
   window,0
   surface,result,chars=3, title="N!ii0!n (10!e20!n m!e-3!n)"
   window,1
-  ;plot,result[*,maxy],chars=1.5
+  ;plot,result[*,maxy],chars=1.5D
   surface,proft,chars=3, title="T!ii0!n (eV)"
 
   handle = file_open(filename, /write)

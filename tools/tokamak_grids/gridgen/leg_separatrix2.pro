@@ -61,8 +61,8 @@ FUNCTION leg_separatrix2, interp_data, R, Z, xpt_ri, xpt_zi, $
     
     ; Create a circle around the x-point
     di = 2 ; Radius of 2 grid points
-    IF (md GT di) AND (md LT 6) THEN di = md * 1.25
-    dthe = 2.*!PI*FINDGEN(6)/6.
+    IF (md GT di) AND (md LT 6) THEN di = md * 1.25D
+    dthe = 2.D*!DPI*FINDGEN(6)/6.D
     ri = xpt_ri + di*COS(dthe)
     zi = xpt_zi + di*SIN(dthe)
     
@@ -103,7 +103,7 @@ FUNCTION leg_separatrix2, interp_data, R, Z, xpt_ri, xpt_zi, $
       dir = 1 ; direction to go away from x-point
       
       d = drdi*(cri - xpt_ri) + dzdi*(czi - xpt_zi) ; Dot-product
-      IF d LT 0. THEN dir = -1
+      IF d LT 0.D THEN dir = -1
       
       ; Get the indices for a line radiating from the x-point
       si = [inds[j]]
@@ -135,7 +135,7 @@ FUNCTION leg_separatrix2, interp_data, R, Z, xpt_ri, xpt_zi, $
       ; Then check if this is towards the O-point (core) or away (PF)
       
       d = drdi*dir * (opt_ri - xpt_ri)*drpdi^2 + dzdi*dir * (opt_zi - xpt_zi) * dzpdi^2
-      ;OPLOT, INTERPOLATE(R, xpt_ri, /DOUBLE) + [0., drdi*dir*drpdi * 100], INTERPOLATE(Z, xpt_zi, /DOUBLE) + [0., dzdi*dir*dzpdi * 100], color=2
+      ;OPLOT, INTERPOLATE(R, xpt_ri, /DOUBLE) + [0.D, drdi*dir*drpdi * 100], INTERPOLATE(Z, xpt_zi, /DOUBLE) + [0.D, dzdi*dir*dzpdi * 100], color=2
       
       IF d GT 0 THEN BEGIN
         ; Core
@@ -152,8 +152,8 @@ FUNCTION leg_separatrix2, interp_data, R, Z, xpt_ri, xpt_zi, $
         dz = DERIV(sepzi)
         dz = dz[1:*] * dz[0:(n-2)]
 
-        inr = MIN(WHERE(dr[1:*] LE 0.0)) + 1
-        inz = MIN(WHERE(dz[1:*] LE 0.0)) + 1
+        inr = MIN(WHERE(dr[1:*] LE 0.0D)) + 1
+        inz = MIN(WHERE(dz[1:*] LE 0.0D)) + 1
         in = MAX([inr, inz])
         
         if in GT 0 THEN BEGIN

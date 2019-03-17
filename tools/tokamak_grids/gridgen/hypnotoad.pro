@@ -808,7 +808,7 @@ PRO event_handler, event
                     title = 'Exponent: ', $
                     uvalue = 'nonorthogonal_weight_decay_power', $
                     /double, $
-                    value = 2.7, $
+                    value = 2.7D, $
                     xsize = 8 $
                   )
       
@@ -1025,14 +1025,14 @@ PRO hypnotoad
                               title  = 'Inner psi:',          $ 
                               uvalue = 'inner_psi',           $ 
                               /double,                        $ 
-                              value = 0.9,                    $
+                              value = 0.9D,                    $
                               xsize=8                         $
                             )
   psi_outer_field = CW_FIELD( tab1,                            $
                               title  = 'Outer psi:',          $ 
                               uvalue = 'outer_psi',           $ 
                               /double,                        $ 
-                              value = 1.1,                    $
+                              value = 1.1D,                    $
                               xsize=8                         $
                             )
   
@@ -1049,7 +1049,7 @@ PRO hypnotoad
                              title  = 'Par. vs pol:',          $ 
                              uvalue = 'parweight',           $ 
                              /double,                        $ 
-                             value = 0.0,                    $
+                             value = 0.0D,                    $
                              xsize=8                         $
                            )
 
@@ -1228,7 +1228,7 @@ PRO hypnotoad
            simple_bndry:0, $ ; Use simplified boundary?
            xptonly_check:xptonly_check, $ ; 
            xpt_only:0, $ ; x-point only non-orthogonal
-           nonorthogonal_weight_decay_power:2.7, $ ; how fast to decay towards orthogonal mesh
+           nonorthogonal_weight_decay_power:2.7D, $ ; how fast to decay towards orthogonal mesh
            radgrid_check:radgrid_check, $
            single_rad_grid:1, $
            smoothP_check:smoothP_check, $

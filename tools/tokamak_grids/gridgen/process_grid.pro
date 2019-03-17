@@ -44,7 +44,7 @@ function calc_angle, x1, x2, x3, y1, y2, y3
 	P13 = sqrt((x1-x3)^2 + (y1-y3)^2)
 	P23 = sqrt((x2-x3)^2 + (y2-y3)^2)
 	;calculate angle
-	return, acos((P12^2 + P13^2 - P23^2)/(2.*P12*P13))
+	return, acos((P12^2 + P13^2 - P23^2)/(2.D*P12*P13))
 end
 
 function calc_beta_withgrid, r, z, x
@@ -57,33 +57,33 @@ function calc_beta_withgrid, r, z, x
 	if (x eq 0) then begin
 		for j=1,ny-2 do begin
 			beta[j] = calc_angle(r[x,j],r[x+1,j],r[x,j+1],z[x,j],z[x+1,j],z[x,j+1])
-			beta[j] += !PI - calc_angle(r[x,j],r[x+1,j],r[x,j-1],z[x,j],z[x+1,j],z[x,j-1])
-			beta[j] /= 2.0
+			beta[j] += !DPI - calc_angle(r[x,j],r[x+1,j],r[x,j-1],z[x,j],z[x+1,j],z[x,j-1])
+			beta[j] /= 2.0D
 		endfor
 		beta[0] = calc_angle(r[x,0],r[x+1,0],r[x,1],z[x,0],z[x+1,0],z[x,1])
-		beta[ny-1] = !PI - calc_angle(r[x,ny-1],r[x+1,ny-1],r[x,ny-2],z[x,ny-1],z[x+1,ny-1],z[x,ny-2])
+		beta[ny-1] = !DPI - calc_angle(r[x,ny-1],r[x+1,ny-1],r[x,ny-2],z[x,ny-1],z[x+1,ny-1],z[x,ny-2])
 	endif else if (x eq nx-1) then begin
 		for j=1,ny-2 do begin
 			; average angle across the grid point
 			beta[j] = calc_angle(r[x,j],r[x-1,j],r[x,j-1],z[x,j],z[x-1,j],z[x,j-1])
-			beta[j] += !PI - calc_angle(r[x,j],r[x-1,j],r[x,j+1],z[x,j],z[x-1,j],z[x,j+1])
-			beta[j] /= 2.0
+			beta[j] += !DPI - calc_angle(r[x,j],r[x-1,j],r[x,j+1],z[x,j],z[x-1,j],z[x,j+1])
+			beta[j] /= 2.0D
 		endfor
-		beta[0] = !PI - calc_angle(r[x,0],r[x-1,0],r[x,1],z[x,0],z[x-1,0],z[x,1])
+		beta[0] = !DPI - calc_angle(r[x,0],r[x-1,0],r[x,1],z[x,0],z[x-1,0],z[x,1])
 		beta[ny-1] = calc_angle(r[x,ny-1],r[x-1,ny-1],r[x,ny-2],z[x,ny-1],z[x-1,ny-1],z[x,ny-2])
 	endif else begin
 		for j=1,ny-2 do begin
 			; average angle across the grid point
 			beta[j] = calc_angle(r[x,j],r[x-1,j],r[x,j-1],z[x,j],z[x-1,j],z[x,j-1])
 			beta[j] += calc_angle(r[x,j],r[x+1,j],r[x,j+1],z[x,j],z[x+1,j],z[x,j+1])
-			beta[j] += !PI - calc_angle(r[x,j],r[x-1,j],r[x,j+1],z[x,j],z[x-1,j],z[x,j+1])
-			beta[j] += !PI - calc_angle(r[x,j],r[x+1,j],r[x,j-1],z[x,j],z[x+1,j],z[x,j-1])
-			beta[j] /= 4.0
+			beta[j] += !DPI - calc_angle(r[x,j],r[x-1,j],r[x,j+1],z[x,j],z[x-1,j],z[x,j+1])
+			beta[j] += !DPI - calc_angle(r[x,j],r[x+1,j],r[x,j-1],z[x,j],z[x+1,j],z[x,j-1])
+			beta[j] /= 4.0D
 		endfor
-		beta[0] = 0.5*calc_angle(r[x,0],r[x+1,0],r[x,1],z[x,0],z[x+1,0],z[x,1])
-		beta[0] = beta[0] + 0.5*(!PI - calc_angle(r[x,0],r[x-1,0],r[x,1],z[x,0],z[x-1,0],z[x,1]))
-		beta[ny-1] = 0.5*calc_angle(r[x,ny-1],r[x-1,ny-1],r[x,ny-2],z[x,ny-1],z[x-1,ny-1],z[x,ny-2])
-		beta[ny-1] = beta[ny-1] + 0.5*(!PI - calc_angle(r[x,ny-1],r[x+1,ny-1],r[x,ny-2],z[x,ny-1],z[x+1,ny-1],z[x,ny-2]))
+		beta[0] = 0.5D*calc_angle(r[x,0],r[x+1,0],r[x,1],z[x,0],z[x+1,0],z[x,1])
+		beta[0] = beta[0] + 0.5D*(!DPI - calc_angle(r[x,0],r[x-1,0],r[x,1],z[x,0],z[x-1,0],z[x,1]))
+		beta[ny-1] = 0.5D*calc_angle(r[x,ny-1],r[x-1,ny-1],r[x,ny-2],z[x,ny-1],z[x-1,ny-1],z[x,ny-2])
+		beta[ny-1] = beta[ny-1] + 0.5D*(!DPI - calc_angle(r[x,ny-1],r[x+1,ny-1],r[x,ny-2],z[x,ny-1],z[x+1,ny-1],z[x,ny-2]))
 	endelse
 	
 	return, beta
@@ -112,7 +112,7 @@ function calc_beta, Rxy, Zxy, mesh, rz_grid, method
 				angle1 = atan(dPsidR,dPsidZ)
 				angle2 = atan(dZdr[i],-dRdr[i])
 	
-				beta[i,j] = angle1 - angle2 - !PI/2.
+				beta[i,j] = angle1 - angle2 - !DPI/2.D
 			endfor
 		endfor	
 
@@ -129,22 +129,22 @@ function calc_beta, Rxy, Zxy, mesh, rz_grid, method
 					loc = where((yi GE npol[i-1]) AND (yi LT npol[i]))
 					if(total(loc) NE -1) then begin
 					yi_curr = yi[loc]
-					beta[xi,yi_curr] = !PI/2. - calc_beta_withgrid(Rxy[*,yi_curr], Zxy[*,yi_curr], xi)
+					beta[xi,yi_curr] = !DPI/2.D - calc_beta_withgrid(Rxy[*,yi_curr], Zxy[*,yi_curr], xi)
 					endif
 				endfor
 				loc = where(yi LT mesh.npol[0])
 				if(total(loc) NE -1) then begin
 					yi_curr = yi[loc]
-					beta[xi,yi_curr] = !PI/2. - calc_beta_withgrid(Rxy[*,yi_curr], Zxy[*,yi_curr], xi)
+					beta[xi,yi_curr] = !DPI/2.D - calc_beta_withgrid(Rxy[*,yi_curr], Zxy[*,yi_curr], xi)
 				endif
 			endif else begin
-				beta[xi,yi] = !PI/2. - calc_beta_withgrid(Rxy[*,yi], Zxy[*,yi], xi)
+				beta[xi,yi] = !DPI/2.D - calc_beta_withgrid(Rxy[*,yi], Zxy[*,yi], xi)
 			endelse
 		ENDREP UNTIL last
 		beta = smooth(beta,5) ; smooth beta, it's ugly
 	endif else begin
 		print,"*** ERROR: UNKNOWN METHOD FOR BETA CALCULATION ***"
-		beta = 0.0
+		beta = 0.0D
 	endelse
 
 	return, beta
@@ -167,7 +167,7 @@ END
 
 FUNCTION solve_f, Rxy, psixy, pxy, Bpxy, hthe
   
-  MU = 4.e-7*!PI
+  MU = 4.d-7*!DPI
   
   s = SIZE(Rxy, /dim)
   nx = s[0]
@@ -186,7 +186,7 @@ FUNCTION solve_f, Rxy, psixy, pxy, Bpxy, hthe
 END
 
 FUNCTION force_balance, psixy, Rxy, Bpxy, Btxy, hthe, pxy
-  MU =4.e-7*!PI
+  MU =4.d-7*!DPI
   
   a = DDX(psixy, Rxy) / Rxy
   b = MU*DDX(psixy, pxy) - Bpxy*DDX(psixy, Bpxy*hthe)/hthe
@@ -207,7 +207,7 @@ END
 
 FUNCTION newton_Bt, psixy, Rxy, Btxy, Bpxy, pxy, hthe, mesh
   COMMON fnewt_com, psi, a, b
-  MU = 4.e-7*!PI
+  MU = 4.d-7*!DPI
   
   s = SIZE(Rxy, /dim)
   nx = s[0]
@@ -238,11 +238,11 @@ function intx, Rxy, data, simple=simple
   nx = nx[0]
 
   result = dblarr(nx,ny)
-  result[*,*] = 0.0
+  result[*,*] = 0.0D
   if keyword_set(simple) then begin
     for i=0, ny-1 do begin
       for j=1, nx-1 do begin
-        result[j, i] = result[j-1, i] + 0.5*(Rxy[j, i] - Rxy[j-1, i])*(data[j, i] + data[j-1, i])
+        result[j, i] = result[j-1, i] + 0.5D*(Rxy[j, i] - Rxy[j-1, i])*(data[j, i] + data[j-1, i])
       endfor
     endfor
   endif else begin
@@ -263,11 +263,11 @@ function inty, Zxy, data, simple=simple
   nx = nx[0]
 
   result = dblarr(nx,ny)
-  result[*,*] = 0.0
+  result[*,*] = 0.0D
   if keyword_set(simple) then begin
     for i=1, ny-1 do begin
       for j=0, nx-1 do begin
-        result[j, i] = result[j, i-1] + 0.5*(Zxy[j, i] - Zxy[j, i-1])*(data[j, i] + data[j, i-1])
+        result[j, i] = result[j, i-1] + 0.5D*(Zxy[j, i] - Zxy[j, i-1])*(data[j, i] + data[j, i-1])
       endfor
     endfor
   endif else begin
@@ -354,7 +354,7 @@ function dfdx, f, x
 	nx = nx[0]
 
 	result = dblarr(nx,ny)
-	result[*,*] = 0.0
+	result[*,*] = 0.0D
 	for i=0, ny-1 do begin
 		result[*,i] = DERIV(reform(x[*,i]),reform(f[*,i]));
 	endfor
@@ -402,7 +402,7 @@ PRO jxb_funct, X, profiles, force, pder
 
   ; Diagonal dependencies (dF / dfi)
   dFdfi = (hthe/Rxy)*DDX(psixy, Btxy) $
-         + 2.*fxy*axy
+         + 2.D*fxy*axy
   
   ; Set the elements of pder
   FOR x=0, nx-1 DO BEGIN
@@ -432,7 +432,7 @@ END
 FUNCTION fit_profiles, mesh, psixy, Rxy, hthe, Bpxy, Btxy, dpdx
   COMMON jxb_com, nx, ny, indxy, psi, R, h, axy
   
-  MU = 4.e-7*!PI
+  MU = 4.d-7*!DPI
   
   psi = psixy
   r = Rxy
@@ -523,7 +523,7 @@ FUNCTION correct_hthe, Rxy, psixy, Btxy, Bpxy, hthe, pressure, fixhthe=fixhthe
   nx = s[0]
   ny = s[1]
 
-  MU = 4.e-7*!PI
+  MU = 4.d-7*!DPI
 
   IF NOT KEYWORD_SET(fixhthe) THEN fixhthe = 0
   IF fixhthe LT 0 THEN fixhthe = 0
@@ -567,7 +567,7 @@ FUNCTION correct_hthe, Rxy, psixy, Btxy, Bpxy, hthe, pressure, fixhthe=fixhthe
       nh[(fixhthe+1):*, i]  = htmp[fixhthe:*]
     ENDELSE
     
-    w = WHERE(nh[*,i] LT 0.0, count)
+    w = WHERE(nh[*,i] LT 0.0D, count)
     IF count GT 0 THEN BEGIN
       PRINT, "Error in hthe solver: Negative solution at y = ", i
       ;STOP
@@ -615,11 +615,11 @@ FUNCTION grid_newt, data
   hthe = calc_hthe(Rxy, Zxy)
   Bpxy = calc_bp(psixy, Rxy, Zxy)
   
-  F = -1.0*calc_force(psixy, Bpxy, Btxy, hthe, Rxy, dpdpsi)
+  F = -1.0D*calc_force(psixy, Bpxy, Btxy, hthe, Rxy, dpdpsi)
 
   fm = MAX(ABS(F))
 
-  IF (fm LT min_f) OR (min_f LT 0.0) THEN BEGIN
+  IF (fm LT min_f) OR (min_f LT 0.0D) THEN BEGIN
       min_f = fm
       PRINT, MAX(ABS(Rxy - R0)), MAX(ABS(Zxy - Z0)), MAX(ABS(F))
   ENDIF
@@ -667,7 +667,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   ;  RETURN
   ;ENDIF
 
-  MU = 4.e-7*!PI
+  MU = 4.d-7*!DPI
 
   poorquality = 0
 
@@ -716,7 +716,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   ENDREP UNTIL last
   
   ; Add a minimum amount
-  IF MIN(pressure) LT 1.0e-2*MAX(pressure) THEN BEGIN
+  IF MIN(pressure) LT 1.0d-2*MAX(pressure) THEN BEGIN
     PRINT, "****Minimum pressure is very small:", MIN(pressure)
     PRINT, "****Setting minimum pressure to 1% of maximum"
     pressure = pressure + 1e-2*MAX(pressure)
@@ -743,8 +743,8 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
             
             IF (xi GT 0) AND (xi LT (nx-1)) THEN BEGIN
               FOR j=0,N_ELEMENTS(yi)-1 DO BEGIN
-                p2[xi,yi[j]] = 0.5*pressure[xi,yi[j]] + $
-                  0.25*(pressure[xi-1,yi[j]] + pressure[xi+1,yi[j]])
+                p2[xi,yi[j]] = 0.5D*pressure[xi,yi[j]] + $
+                  0.25D*(pressure[xi-1,yi[j]] + pressure[xi+1,yi[j]])
               ENDFOR
             ENDIF
             
@@ -757,7 +757,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     ENDREP UNTIL sm EQ 0
   ENDIF
 
-  IF MIN(pressure) LT 0.0 THEN BEGIN
+  IF MIN(pressure) LT 0.0D THEN BEGIN
     PRINT, ""
     PRINT, "============= WARNING =============="
     PRINT, "Poor quality equilibrium: Pressure is negative"
@@ -767,7 +767,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   
   dpdpsi = DDX(psixy, pressure)
 
-  ;IF MAX(dpdpsi)*mesh.fnorm GT 0.0 THEN BEGIN
+  ;IF MAX(dpdpsi)*mesh.fnorm GT 0.0D THEN BEGIN
   ;  PRINT, ""
   ;  PRINT, "============= WARNING =============="
   ;  PRINT, "Poor quality equilibrium: Pressure is increasing radially"
@@ -783,15 +783,15 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   ENDFOR
   
   ; Sign
-  bpsign = 1.
+  bpsign = 1.D
   xcoord = psixy
-  IF MIN(dx) LT 0. THEN BEGIN
-    bpsign = -1.
+  IF MIN(dx) LT 0.D THEN BEGIN
+    bpsign = -1.D
     dx = -dx ; dx always positive
     xcoord = -xcoord
   ENDIF
 
-  dtheta = 2.*!PI / DOUBLE(ny)
+  dtheta = 2.D*!DPI / DOUBLE(ny)
   dy = DBLARR(nx, ny_total) + dtheta
   
   ; B field components
@@ -808,14 +808,14 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     Bzxy[0,ymid]*(Zxy[0,ymid+1] - Zxy[0,ymid-1])
   
   
-  IF dot LT 0. THEN BEGIN
+  IF dot LT 0.D THEN BEGIN
     PRINT, "**** Poloidal field is in opposite direction to Grad Theta -> Bp negative"
     Bpxy = -Bpxy
     IF bpsign GT 0 THEN STOP ; Should be negative
-    bpsign = -1.0
+    bpsign = -1.0D
   ENDIF ELSE BEGIN
     IF bpsign LT 0 THEN STOP ; Should be positive
-    bpsign = 1.
+    bpsign = 1.D
   ENDELSE
 
   ; Get toroidal field from poloidal current function fpol
@@ -835,7 +835,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     ENDIF ELSE BEGIN
       ; Outside core. Could be PF or SOL
       fpol = rz_grid.fpol[N_ELEMENTS(rz_grid.fpol)-1]
-      fprime[xi,yi] = 0.
+      fprime[xi,yi] = 0.D
     ENDELSE
     Btxy[xi,yi] = fpol / Rxy[xi,yi]
   ENDREP UNTIL last
@@ -1017,7 +1017,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     PRINT, "Force imbalance: ", MEAN(ABS(fb0)), MAX(ABS(fb0))
     
     PRINT, "Maximum difference in hthe: ", MAX(ABS(hthe - nh))
-    PRINT, "Maximum percentage difference: ", 100.*MAX(ABS((hthe - nh)/hthe))
+    PRINT, "Maximum percentage difference: ", 100.D*MAX(ABS((hthe - nh)/hthe))
 
     !P.multi=[0,0,1,0,0]
     PLOT, hthe[*,0], title="Poloidal arc length at midplane. line is initial estimate", color=1
@@ -1101,8 +1101,8 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
         z2 = Zxy[i,j]
         r3 = Rxy[i+1,j]
         z3 = Zxy[i+1,j]
-	hrad[i,j] = hrad[i-1,j] + sqrt(((r2-r1)/2. + (r3-r2)/2.)^2+((z2-z1)/2. + (z3-z2)/2.)^2)
-	dhrad[i,j] = sqrt(((r2-r1)/2. + (r3-r2)/2.)^2+((z2-z1)/2. + (z3-z2)/2.)^2)
+	hrad[i,j] = hrad[i-1,j] + sqrt(((r2-r1)/2.D + (r3-r2)/2.D)^2+((z2-z1)/2.D + (z3-z2)/2.D)^2)
+	dhrad[i,j] = sqrt(((r2-r1)/2.D + (r3-r2)/2.D)^2+((z2-z1)/2.D + (z3-z2)/2.D)^2)
       endelse
     endfor
   endfor
@@ -1119,9 +1119,9 @@ retrybetacalc:
   yshift = intx(hrad, eta, /simple) ; b/c angle was calculated real space, integrate in real space as well (hrad instead of psixy)
   thetaxy = yxy + yshift
 
-  G = 1. - dfdy_seps(yshift,thetaxy,mesh)
+  G = 1.D - dfdy_seps(yshift,thetaxy,mesh)
   dyshiftdy = dfdy_seps(yshift,yxy,mesh)
-;   G = 1. - dfdy(yshift,thetaxy,mesh)
+;   G = 1.D - dfdy(yshift,thetaxy,mesh)
 ;   dyshiftdy = dfdy(yshift,yxy,mesh)
 
   ; Calculate field-line pitch
@@ -1131,14 +1131,14 @@ retrybetacalc:
   dqdpsi = DDX(psixy, pitch)
 
   ; Calculate zshift (qinty), sinty = d(zshift)/dpsi, and H = d(zshift)/dtheta
-  qinty = my_int_y(pitch*(1.+dyshiftdy), yxy, mesh, /nosmooth, loop=qloop)
+  qinty = my_int_y(pitch*(1.D+dyshiftdy), yxy, mesh, /nosmooth, loop=qloop)
   sinty = DDX(psixy,qinty)
   H = dfdy_seps(qinty,thetaxy,mesh)
 ;   H = dfdy(qinty,thetaxy,mesh)
 
   ; NOTE: This is only valid in the core
   pol_angle = DBLARR(nx,ny_total)
-  FOR i=0, nx-1 DO pol_angle[i, *] = 2.0*!PI * qinty[i,*] / qloop[i]
+  FOR i=0, nx-1 DO pol_angle[i, *] = 2.0D*!DPI * qinty[i,*] / qloop[i]
   
   ;;;;;;;;;;;;;;;;;;;; THETA_ZERO ;;;;;;;;;;;;;;;;;;;;;;
   ; re-set zshift to be zero at the outboard midplane
@@ -1175,7 +1175,7 @@ retrybetacalc:
     print,"******************************************************************"
     print,""
     ; for orthogonal coordinates
-    I = 0.
+    I = 0.D
   ENDIF ELSE BEGIN
     ; for field-aligned coordinates
     I = sinty
@@ -1183,14 +1183,14 @@ retrybetacalc:
 
   g11 = (Rxy*Bpxy)^2;
   g22 = G^2/hthe^2 + eta^2*g11;
-  g33 = I^2*g11 + H^2/hthe^2 + 1.0/Rxy^2;
+  g33 = I^2*g11 + H^2/hthe^2 + 1.0D/Rxy^2;
   g12 = -eta*g11;
   g13 = -I*g11;
   g23 = I*eta*g11 - G*H/hthe^2;
 
   J = hthe / Bpxy / G
 
-  g_11 = 1.0/g11 + (hthe*eta/G)^2 + (Rxy*H*eta/G + I*Rxy)^2;
+  g_11 = 1.0D/g11 + (hthe*eta/G)^2 + (Rxy*H*eta/G + I*Rxy)^2;
   g_22 = hthe^2/G^2 + Rxy^2*H^2/G^2;
   g_33 = Rxy^2;
   g_12 = hthe^2*eta/G^2 + Rxy^2*H/G*(H*eta/G + I);
@@ -1198,8 +1198,8 @@ retrybetacalc:
   g_23 = H*Rxy^2/G;
 
   ; check to make sure jacobian is good
-  Jcheck = 1. / sqrt(g11*g22*g33 + 2.0*g12*g13*g23 - g11*g23*g23 - g22*g13*g13 - g33*g12*g12);
-  whr = where(abs(J-Jcheck) gt 0.01,count)
+  Jcheck = 1.D / sqrt(g11*g22*g33 + 2.0D*g12*g13*g23 - g11*g23*g23 - g22*g13*g13 - g33*g12*g12);
+  whr = where(abs(J-Jcheck) gt 0.01D,count)
   if(count gt 0) then begin
     if(beta_method EQ 0) then begin
 	print,""
@@ -1267,9 +1267,9 @@ retrybetacalc:
   ENDIF ELSE IF curv EQ 2 THEN BEGIN
     ; Curvature from Curl(b/B)
     
-    bxcvx = bpsign*(Bpxy * Btxy*Rxy * DDY(1. / Bxy, mesh) / hthe)
-    bxcvy = -bpsign*Bxy*Bpxy * DDX(xcoord, Btxy*Rxy/Bxy^2) / (2.*hthe)
-    bxcvz = Bpxy^3 * DDX(xcoord, hthe/Bpxy) / (2.*hthe*Bxy) - Btxy*Rxy*DDX(xcoord, Btxy/Rxy) / (2.*Bxy) - sinty*bxcvx
+    bxcvx = bpsign*(Bpxy * Btxy*Rxy * DDY(1.D / Bxy, mesh) / hthe)
+    bxcvy = -bpsign*Bxy*Bpxy * DDX(xcoord, Btxy*Rxy/Bxy^2) / (2.D*hthe)
+    bxcvz = Bpxy^3 * DDX(xcoord, hthe/Bpxy) / (2.D*hthe*Bxy) - Btxy*Rxy*DDX(xcoord, Btxy/Rxy) / (2.D*Bxy) - sinty*bxcvx
     
   ENDIF ELSE BEGIN
     ; calculate in flux coordinates.
@@ -1283,7 +1283,7 @@ retrybetacalc:
     ENDFOR
     dpb = dpb + DDX(xcoord, Bxy)
 
-    bxcvx = bpsign*(Bpxy * Btxy*Rxy * DDY(1. / Bxy, mesh) / hthe)
+    bxcvx = bpsign*(Bpxy * Btxy*Rxy * DDY(1.D / Bxy, mesh) / hthe)
     bxcvy = bpsign*(Bpxy*Btxy*Rxy*dpb / (hthe*Bxy^2))
     bxcvz = -dpb - sinty*bxcvx
   ENDELSE
@@ -1330,7 +1330,7 @@ retrybetacalc:
     ; Get the next domain
     yi = gen_surface_hypnotoad(period=period, last=last, xi=xi)
     
-    IF NOT period THEN jpar0[xi,yi] = 0.0
+    IF NOT period THEN jpar0[xi,yi] = 0.0D
   ENDREP UNTIL last
   
   ; Curl(B) expression for Jpar0 (very noisy usually)
@@ -1351,7 +1351,7 @@ retrybetacalc:
   surface, jpar0, xtitle="X", ytitle="Y", title="Jpar from F' and P'", chars=2, color=1
   surface, jpar, xtitle="X", ytitle="Y", title="Jpar from curvature", chars=2, color=1
   
-  PLOT, jpar0[0,*], tit="jpar at x=0. Solid from f' and p'", yr=[MIN([jpar0[0,*],jpar[0,*]]), $
+  PLOT, jpar0[0,*], tit="jpar at x=0.D Solid from f' and p'", yr=[MIN([jpar0[0,*],jpar[0,*]]), $
                                                                  MAX([jpar0[0,*],jpar[0,*]])]
   OPLOT, jpar[0,*], psym=1
   
@@ -1376,12 +1376,12 @@ retrybetacalc:
       j = jpar0[*,y]
       js = j
       ma = MAX(ABS(j), ip)
-      IF (ma LT 1.e-4) OR (ip EQ 0) THEN BEGIN
+      IF (ma LT 1.d-4) OR (ip EQ 0) THEN BEGIN
         jps[*,y] = j
         CONTINUE
       ENDIF
       
-      level = 1.
+      level = 1.D
       ;i0 = MAX(WHERE(ABS(j[0:ip]) LT level))
       i1 = MIN(WHERE(ABS(j[ip:*]) LT level))
       
@@ -1401,7 +1401,7 @@ retrybetacalc:
       
       ; Calculate spline interpolation of inner part
       js[0:ip] = spline_mono(inds, j[inds], INDGEN(ip+1), $
-                             yp0=(j[i0] - j[i0-1]), ypn_1=0.0)
+                             yp0=(j[i0] - j[i0-1]), ypn_1=0.0D)
       
       inds = [ip] ; peak point
       FOR i=ip+div, i1-div, div DO BEGIN
@@ -1410,7 +1410,7 @@ retrybetacalc:
       
       inds = [inds, i1] ; Last point
       js[ip:i1] = spline_mono(inds, j[inds], ip+INDGEN(i1-ip+1), $
-                              yp0=0.0, ypn_1=(j[i1+1]-j[i1]))
+                              yp0=0.0D, ypn_1=(j[i1+1]-j[i1]))
       
       jps[*,y] = js
     ENDFOR
@@ -1497,7 +1497,7 @@ retrybetacalc:
       
       
       ; get density
-      Ni = pressure / (2.*Te_x* 1.602e-19*1.0e20)
+      Ni = pressure / (2.D*Te_x* 1.602d-19*1.0d20)
       
       PRINT, "Maximum density (10^20 m^-3):", MAX(Ni)
       
@@ -1515,7 +1515,7 @@ retrybetacalc:
       ni_x = get_float("Density [10^20 m^-3]:")
       
       ; get temperature
-      Te = pressure / (2.*ni_x* 1.602e-19*1.0e20)
+      Te = pressure / (2.D*ni_x* 1.602d-19*1.0d20)
       
       PRINT, "Maximum temperature (eV):", MAX(Te)
     ENDREP UNTIL get_yesno("Is this ok?") EQ 1
@@ -1529,7 +1529,7 @@ retrybetacalc:
     
     REPEAT BEGIN
       te_x = get_float("Maximum temperature [eV]:")
-      ni_x = max(pressure) / (2.*Te_x* 1.602e-19*1.0e20)
+      ni_x = max(pressure) / (2.D*Te_x* 1.602d-19*1.0d20)
       
       PRINT, "Maximum density [10^20 m^-3]:", ni_x
 

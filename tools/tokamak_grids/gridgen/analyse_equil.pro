@@ -51,10 +51,10 @@ FUNCTION analyse_equil, F, R, Z
 
   ; Use contour to get crossing-points where dfdr = dfdz = 0
   
-  contour_lines, dfdr, findgen(nx), findgen(ny), levels=[0.0], $
+  contour_lines, dfdr, findgen(nx), findgen(ny), levels=[0.0D], $
     path_info=rinfo, path_xy=rxy
   
-  contour_lines, dfdz, findgen(nx), findgen(ny), levels=[0.0], $
+  contour_lines, dfdz, findgen(nx), findgen(ny), levels=[0.0D], $
     path_info=zinfo, path_xy=zxy
   
   ; Find where these two cross
@@ -137,9 +137,9 @@ FUNCTION analyse_equil, F, R, Z
     ;                  [0,1,2,3,4,5]
 
     ; This determines whether saddle or extremum
-    det = 4.*res[4]*res[5] - res[3]^2
+    det = 4.D*res[4]*res[5] - res[3]^2
     
-    IF det LT 0.0 THEN BEGIN
+    IF det LT 0.0D THEN BEGIN
       PRINT, "   X-point"
     ENDIF ELSE BEGIN
       PRINT, "   O-point"
@@ -147,15 +147,15 @@ FUNCTION analyse_equil, F, R, Z
     
     ; Get location (2x2 matrix of coefficients)
     
-    rinew = (res[3]*res[2] - 2.*res[1]*res[5]) / det
-    zinew = (res[3]*res[1] - 2.*res[4]*res[2]) / det
+    rinew = (res[3]*res[2] - 2.D*res[1]*res[5]) / det
+    zinew = (res[3]*res[1] - 2.D*res[4]*res[2]) / det
 
-    IF (ABS(rinew) GT 1.) OR (ABS(zinew) GT 1.0) THEN BEGIN
+    IF (ABS(rinew) GT 1.D) OR (ABS(zinew) GT 1.0D) THEN BEGIN
       ; Method has gone slightly wrong. Try a different method.
       ; Get a contour line starting at this point. Should
       ; produce a circle around the real o-point. 
       PRINT, "   Fitted location deviates too much"
-      IF det LT 0.0 THEN BEGIN
+      IF det LT 0.0D THEN BEGIN
         PRINT, "   => X-point probably not valid"
         PRINT, "      deviation = "+STR(rinew)+","+STR(zinew)
         ;valid = 0
@@ -170,15 +170,15 @@ FUNCTION analyse_equil, F, R, Z
           info = info[ind]
         ENDIF ELSE info = info[0]
         
-        rinew = 0.5*(MAX(xy[0, info.offset:(info.offset + info.n - 1)]) + $
+        rinew = 0.5D*(MAX(xy[0, info.offset:(info.offset + info.n - 1)]) + $
                      MIN(xy[0, info.offset:(info.offset + info.n - 1)])) - rex[e]
-        zinew = 0.5*(MAX(xy[1, info.offset:(info.offset + info.n - 1)]) + $
+        zinew = 0.5D*(MAX(xy[1, info.offset:(info.offset + info.n - 1)]) + $
                      MIN(xy[1, info.offset:(info.offset + info.n - 1)])) - zex[e]
         
-        IF (ABS(rinew) GT 2.) OR (ABS(zinew) GT 2.0) THEN BEGIN
+        IF (ABS(rinew) GT 2.D) OR (ABS(zinew) GT 2.0D) THEN BEGIN
           PRINT, "   Backup method also failed. Keeping initial guess"
-          rinew = 0.
-          zinew = 0.
+          rinew = 0.D
+          zinew = 0.D
         ENDIF
       ENDELSE
     ENDIF
@@ -199,7 +199,7 @@ FUNCTION analyse_equil, F, R, Z
       PRINT, "   Position: " + STR(rnew)+", "+STR(znew)
       PRINT, "   F = "+STR(fnew)
       
-      IF det LT 0.0 THEN BEGIN
+      IF det LT 0.0D THEN BEGIN
         
         IF n_xpoint EQ 0 THEN BEGIN
           xpt_ri = [rinew]
@@ -210,7 +210,7 @@ FUNCTION analyse_equil, F, R, Z
           ; Check if this duplicates an existing point
           
           m = MIN((xpt_ri - rinew)^2 + (xpt_zi - zinew)^2, ind)
-          IF m LT 2. THEN BEGIN
+          IF m LT 2.D THEN BEGIN
             PRINT, "   Duplicates existing X-point."
           ENDIF ELSE BEGIN
             xpt_ri = [xpt_ri, rinew]
@@ -231,7 +231,7 @@ FUNCTION analyse_equil, F, R, Z
           ; Check if this duplicates an existing point
           
           m = MIN((opt_ri - rinew)^2 + (opt_zi - zinew)^2, ind)
-          IF m LT 2. THEN BEGIN
+          IF m LT 2.D THEN BEGIN
             PRINT, "   Duplicates existing O-point"
           ENDIF ELSE BEGIN
             opt_ri = [opt_ri, rinew]
@@ -256,10 +256,10 @@ FUNCTION analyse_equil, F, R, Z
   ; Find the O-point closest to the middle of the grid
   dR = R[1] - R[0]
   dZ = Z[1] - Z[0]
-  mind = dR^2 * (opt_ri[0] - (DOUBLE(nx)/2.))^2 + dZ^2*(opt_zi[0] - (DOUBLE(ny)/2.))^2
+  mind = dR^2 * (opt_ri[0] - (DOUBLE(nx)/2.D))^2 + dZ^2*(opt_zi[0] - (DOUBLE(ny)/2.D))^2
   ind = 0
   FOR i=1, n_opoint-1 DO BEGIN
-    d = dR^2*(opt_ri[i] - (DOUBLE(nx)/2.))^2 + dZ^2*(opt_zi[i] - (DOUBLE(ny)/2.))^2
+    d = dR^2*(opt_ri[i] - (DOUBLE(nx)/2.D))^2 + dZ^2*(opt_zi[i] - (DOUBLE(ny)/2.D))^2
     IF d LT mind THEN BEGIN
       ind = i
       mind = d
@@ -290,7 +290,7 @@ FUNCTION analyse_equil, F, R, Z
       ENDFOR
       
       IF farr[n-1] LT farr[0] THEN BEGIN
-        farr *= -1.0 ; Reverse, so maximum is always at the X-point
+        farr *= -1.0D ; Reverse, so maximum is always at the X-point
       ENDIF
       ; farr should be monotonic, and shouldn't cross any other separatrices
       
@@ -300,8 +300,8 @@ FUNCTION analyse_equil, F, R, Z
       ; Discard if there is more than a 5% discrepancy in normalised
       ; psi between the maximum and the X-point, or the minimum and
       ; the O-point.
-      IF (ma - farr[n-1])/(ma - farr[0]) GT 0.05 THEN continue
-      IF (farr[0] - mi)/(farr[n-1] - mi) GT 0.05 THEN continue
+      IF (ma - farr[n-1])/(ma - farr[0]) GT 0.05D THEN continue
+      IF (farr[0] - mi)/(farr[n-1] - mi) GT 0.05D THEN continue
       
       ; Monotonic, so add this to a list of x-points to keep
       IF nkeep EQ 0 THEN keep = [i] ELSE keep = [keep, i]
@@ -323,7 +323,7 @@ FUNCTION analyse_equil, F, R, Z
       REPEAT BEGIN
         ; note here MIN() sets the value of 'ind' to the index where the minimum was found
         m = MIN((xpt_ri[0:(i-1)] - xpt_ri[i])^2 + (xpt_zi[0:(i-1)] - xpt_zi[i])^2, ind)
-        IF m LT 4. THEN BEGIN
+        IF m LT 4.D THEN BEGIN
           PRINT, "Duplicates: ", i, ind
           
           IF ABS(opt_f[primary_opt] - xpt_f[i]) LT ABS(opt_f[primary_opt] - xpt_f[ind]) THEN BEGIN
@@ -356,7 +356,7 @@ FUNCTION analyse_equil, F, R, Z
   ENDIF ELSE BEGIN
     ; No x-points. Pick mid-point in f
    
-    xpt_f = 0.5*(MAX(F) + MIN(F))
+    xpt_f = 0.5D*(MAX(F) + MIN(F))
     
     PRINT, "WARNING: No X-points. Setting separatrix to F = "+STR(xpt_f)
 

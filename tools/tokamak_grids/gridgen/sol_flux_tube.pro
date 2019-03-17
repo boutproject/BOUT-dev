@@ -41,7 +41,7 @@ PRO sol_flux_tube, gfile, psinorm, output=output, nx=nx, ny=ny, psiwidth=psiwidt
     RETURN
   ENDIF ELSE IF N_PARAMS() EQ 1 THEN BEGIN
     ; No psinorm
-    psinorm = 1.05
+    psinorm = 1.05D
   ENDIF
 
   IF NOT KEYWORD_SET(output) THEN output="fluxtube"+STR(psinorm)+".grd.nc"
@@ -49,9 +49,9 @@ PRO sol_flux_tube, gfile, psinorm, output=output, nx=nx, ny=ny, psiwidth=psiwidt
   IF NOT KEYWORD_SET(nx) THEN nx = 132
   IF NOT KEYWORD_SET(ny) THEN ny = 128
 
-  IF NOT KEYWORD_SET(psiwidth) THEN psiwidth = 0.05
+  IF NOT KEYWORD_SET(psiwidth) THEN psiwidth = 0.05D
 
-  IF psinorm LE 1.0 THEN BEGIN
+  IF psinorm LE 1.0D THEN BEGIN
     PRINT, "Error: Normalised psi must be greater than 1"
     RETURN
   ENDIF
@@ -388,7 +388,7 @@ PRO sol_flux_tube, gfile, psinorm, output=output, nx=nx, ny=ny, psiwidth=psiwidt
   ; Components of curvature in cylindrical coordinates
   kr = SMOOTH(d2r - rpos*dp^2,4)
   kz = SMOOTH(d2z,4)
-  kp = SMOOTH(2.*dr*dp + rpos*d2p,4)
+  kp = SMOOTH(2.D*dr*dp + rpos*d2p,4)
   
   ;Components of curvature in toroidal coordinates
   ;Not needed for calculation but useful for diagnostic purposes
@@ -514,7 +514,7 @@ PRO sol_flux_tube, gfile, psinorm, output=output, nx=nx, ny=ny, psiwidth=psiwidt
   
   ; Grid spacing
   dx = DBLARR(nx, ny) + dpsi
-  dy = DBLARR(nx, ny) + 2.*!PI/DOUBLE(ny)
+  dy = DBLARR(nx, ny) + 2.D*!DPI/DOUBLE(ny)
   
   ; Geometrical quantities
   hxy = DBLARR(nx, ny)
