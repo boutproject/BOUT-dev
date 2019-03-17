@@ -992,14 +992,14 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
       PRINT, "Distributing radial points automatically"
       
       n = TOTAL(nrad,/int)
-      fac = 2.D*(xpt_f[inner_sep] - f_inner)/(1.D+rad_peaking)
+      fac = 2.D*(xpt_f[inner_sep] - f_inner)/(1.D + rad_peaking)
       FOR i=1, critical.n_xpoint-1 DO fac = fac + (xpt_f[si[i]] - xpt_f[si[i-1]])/rad_peaking
-      fac = fac + 2.D*(f_outer - xpt_f[si[critical.n_xpoint-1]])/(1.D+rad_peaking)
+      fac = fac + 2.D*(f_outer - xpt_f[si[critical.n_xpoint-1]])/(1.D + rad_peaking)
       dx0 = fac / DOUBLE(n)  ; Inner grid spacing
       
       ; Calculate number of grid points
       nrad = LONARR(critical.n_xpoint + 1)
-      nrad[0] = FIX( 2.D*(xpt_f[inner_sep] - f_inner) / ( (1.D+rad_peaking)*dx0 ) + 0.5D)
+      nrad[0] = FIX( 2.D*(xpt_f[inner_sep] - f_inner) / ( (1.D + rad_peaking)*dx0 ) + 0.5D)
       FOR i=1, critical.n_xpoint-1 DO nrad[i] = FIX((xpt_f[si[i]] - xpt_f[si[i-1]])/(rad_peaking*dx0)-0.5D) 
       nrad[critical.n_xpoint] = n - TOTAL(nrad,/int)
       

@@ -380,7 +380,7 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
     IF orthup EQ 1 THEN weight_up = 0 ELSE weight_up = (i/(npar-1.D))^nonorthogonal_weight_decay_power
 
     IF NOT KEYWORD_SET(orthdown) THEN orthdown=0
-    IF orthdown EQ 1 THEN weight_down = 0 ELSE weight_down = (1.D-i/(npar-1.D))^nonorthogonal_weight_decay_power
+    IF orthdown EQ 1 THEN weight_down = 0 ELSE weight_down = (1.D - i/(npar - 1.D))^nonorthogonal_weight_decay_power
     
     ; Refine the location of the starting point
 ;     follow_gradient_nonorth, interp_data, R, Z, rii[i], zii[i], f0, ri1, zi1, vec=vec_in, weight=weight
@@ -1195,14 +1195,14 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       PRINT, "Distributing radial points automatically"
       
       n = TOTAL(nrad,/int)
-      fac = 2.D*(xpt_f[inner_sep] - f_inner)/(1.D+rad_peaking)
+      fac = 2.D*(xpt_f[inner_sep] - f_inner)/(1.D + rad_peaking)
       FOR i=1, critical.n_xpoint-1 DO fac = fac + (xpt_f[si[i]] - xpt_f[si[i-1]])/rad_peaking
-      fac = fac + 2.D*(f_outer - xpt_f[si[critical.n_xpoint-1]])/(1.D+rad_peaking)
+      fac = fac + 2.D*(f_outer - xpt_f[si[critical.n_xpoint-1]])/(1.D + rad_peaking)
       dx0 = fac / DOUBLE(n)  ; Inner grid spacing
       
       ; Calculate number of grid points
       nrad = LONARR(critical.n_xpoint + 1)
-      nrad[0] = FIX( 2.D*(xpt_f[inner_sep] - f_inner) / ( (1.D+rad_peaking)*dx0 ) + 0.5D)
+      nrad[0] = FIX( 2.D*(xpt_f[inner_sep] - f_inner) / ( (1.D + rad_peaking)*dx0 ) + 0.5D)
       FOR i=1, critical.n_xpoint-1 DO nrad[i] = FIX((xpt_f[si[i]] - xpt_f[si[i-1]])/(rad_peaking*dx0)-0.5D)
       nrad[critical.n_xpoint] = n - TOTAL(nrad,/int)
       
