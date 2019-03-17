@@ -358,6 +358,8 @@ print,ind,format='(d20.16)'
       OPLOT, INTERPOLATE(R, rixy[*, i]), INTERPOLATE(Z, zixy[*, i]), color=4
     ENDIF
   ENDFOR
+  print, 'rixy'
+  print,rixy[0,*],format='(d20.16)'
 
   RETURN, {rixy:rixy, zixy:zixy, rxy:INTERPOLATE(R, rixy), zxy:INTERPOLATE(Z, zixy)}
 END
