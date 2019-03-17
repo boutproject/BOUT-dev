@@ -91,7 +91,7 @@ FUNCTION smooth_nl, input, mesh, iter=iter
                      marky[x-1,y] + marky[x+1,y] + $
                      marky[x,ym] + marky[x, yp])
           
-          tmp[x,y] = (1.0D-mx-my)*output[x,y] $
+          tmp[x,y] = (1.0D - mx-my)*output[x,y] $
             + mx*0.5D*(output[x-1,y] + output[x+1,y])  $
             + my*0.5D*(output[x,ym] + output[x,yp])
         ENDFOR

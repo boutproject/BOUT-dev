@@ -53,7 +53,7 @@ FUNCTION radial_grid, n, pin, pout, include_in, include_out, seps, sep_factor, $
     df = out_dp / norm
     b = 0.25D < df  ; Make sure a > 0
     a = (df - b) / (1.D - b)
-    vals = pin + (pout - pin)*( (1.D-b)*x^a + b*x )
+    vals = pin + (pout - pin)*( (1.D - b)*x^a + b*x )
     RETURN, vals
   ENDELSE
   

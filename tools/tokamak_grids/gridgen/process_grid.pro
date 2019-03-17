@@ -106,8 +106,8 @@ function calc_beta, Rxy, Zxy, mesh, rz_grid, method
 			dZdr = DERIV(Zxy[*,j])
 			for i=0,nx-1 do begin
 				local_gradient, interp_data, mesh.Rixy[i,j], mesh.Zixy[i,j], status=status, dfdr=dfdr, dfdz=dfdz
-				dPsidR = dfdr/INTERPOLATE(DERIV(rz_grid.r),i, /DOUBLE, /DOUBLE)
-				dPsidZ = dfdz/INTERPOLATE(DERIV(rz_grid.z),j, /DOUBLE, /DOUBLE)
+				dPsidR = dfdr/INTERPOLATE(DERIV(rz_grid.r),i, /DOUBLE)
+				dPsidZ = dfdz/INTERPOLATE(DERIV(rz_grid.z),j, /DOUBLE)
 	
 				angle1 = atan(dPsidR,dPsidZ)
 				angle2 = atan(dZdr[i],-dRdr[i])
@@ -1131,7 +1131,7 @@ retrybetacalc:
   dqdpsi = DDX(psixy, pitch)
 
   ; Calculate zshift (qinty), sinty = d(zshift)/dpsi, and H = d(zshift)/dtheta
-  qinty = my_int_y(pitch*(1.D+dyshiftdy), yxy, mesh, /nosmooth, loop=qloop)
+  qinty = my_int_y(pitch*(1.D + dyshiftdy), yxy, mesh, /nosmooth, loop=qloop)
   sinty = DDX(psixy,qinty)
   H = dfdy_seps(qinty,thetaxy,mesh)
 ;   H = dfdy(qinty,thetaxy,mesh)
