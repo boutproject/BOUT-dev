@@ -13,16 +13,16 @@ PRO plot_mesh, mesh, overplot=overplot, _extra=_extra
     IF over EQ 0 THEN BEGIN
       PLOT, mesh.Rxy[xi, yi], mesh.Zxy[xi, yi], $
         xr=[MIN(mesh.Rxy), MAX(mesh.Rxy)], yr=[MIN(mesh.Zxy), MAX(mesh.Zxy)], $
-        /iso, thick=0.5, _extra=_extra
+        /iso, thick=0.5D, _extra=_extra
       over = 1
     ENDIF ELSE BEGIN
-      OPLOT, mesh.Rxy[xi, yi], mesh.Zxy[xi, yi], thick=0.5
+      OPLOT, mesh.Rxy[xi, yi], mesh.Zxy[xi, yi], thick=0.5D
     ENDELSE  
   ENDREP UNTIL last
   
   ; Plot radial lines
   
   FOR i=0,TOTAL(mesh.npol)-1 DO BEGIN
-    OPLOT, mesh.Rxy[*,i], mesh.Zxy[*,i], thick=1.5
+    OPLOT, mesh.Rxy[*,i], mesh.Zxy[*,i], thick=1.5D
   ENDFOR
 END

@@ -14,13 +14,13 @@
 ;
 ; NOTE: Inverse not working!
 FUNCTION DCTany, x, inverse=inverse
-  j = DCOMPLEX(0.0, 1.0)
+  j = DCOMPLEX(0.0D, 1.0D)
   
   n = N_ELEMENTS(x)
   
   data = x
   IF KEYWORD_SET(inverse) THEN BEGIN
-    data[0] = data[0] / SQRT(2)
+    data[0] = data[0] / SQRT(2.D)
     PRINT, "SORRY, NOT WORKING YET"
     STOP
   ENDIF
@@ -30,9 +30,9 @@ FUNCTION DCTany, x, inverse=inverse
   
   ; Take FFT of 2N
   f = FFT(x2, /double)
-  result = REAL_PART(f[0:(N-1)] * EXP(-j*DINDGEN(N)*!PI / (2.*N)) )
+  result = REAL_PART(f[0:(N-1)] * EXP(-j*DINDGEN(N)*!DPI / (2.D*N)) )
   
-  IF NOT KEYWORD_SET(inverse) THEN result[0] = result[0] / SQRT(2)
+  IF NOT KEYWORD_SET(inverse) THEN result[0] = result[0] / SQRT(2.D)
   
   RETURN, result
 END
@@ -47,7 +47,7 @@ FUNCTION DCT, x, inverse=inverse
     RETURN, DCTany(x, inverse=inverse)
   ENDIF
 
-  j = DCOMPLEX(0.0, 1.0)
+  j = DCOMPLEX(0.0D, 1.0D)
 
   IF NOT KEYWORD_SET(inverse) THEN BEGIN
     
@@ -62,24 +62,24 @@ FUNCTION DCT, x, inverse=inverse
     yf = FFT(DOUBLE(y), /double)
     
     ; Multiply by phase
-    result = REAL_PART(yf * EXP(-j*DINDGEN(n)*!PI/(2.*DOUBLE(n))) )
+    result = REAL_PART(yf * EXP(-j*DINDGEN(n)*!DPI/(2.D*DOUBLE(n))) )
     
     result[0] = result[0] / SQRT(2.d)
     
     RETURN, result
   ENDIF ELSE BEGIN
     
-    yf = DCOMPLEX(x) * EXP(j*DINDGEN(n)*!PI/(2.*DOUBLE(n)))
-    yf[0] = yf[0] / SQRT(2.)
+    yf = DCOMPLEX(x) * EXP(j*DINDGEN(n)*!DPI/(2.D*DOUBLE(n)))
+    yf[0] = yf[0] / SQRT(2.D)
     y = REAL_PART(FFT(yf, /inverse, /double))
     
-    result = FLTARR(n)
+    result = DBLARR(n)
     
     FOR i=0, n/2 - 1 DO BEGIN
       result[2*i] = y[i]
       result[2*i+1] = y[n-1-i]
     ENDFOR
     
-    RETURN, 2.*result
+    RETURN, 2.D*result
   ENDELSE
 END

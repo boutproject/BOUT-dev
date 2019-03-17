@@ -12,7 +12,7 @@ FUNCTION smooth_nl, input, mesh, iter=iter
 
   tmp = output
 
-  markx = FLTARR(nx, ny)
+  markx = DBLARR(nx, ny)
   marky = markx
   
   mxn = markx
@@ -50,18 +50,18 @@ FUNCTION smooth_nl, input, mesh, iter=iter
           
           ;markx[x,y] = ABS
           
-          mxn[x,y] = 0.5*(ABS(dxm) + ABS(dxp))
-          myn[x,y] = 0.5*(ABS(dym) + ABS(dyp))
+          mxn[x,y] = 0.5D*(ABS(dxm) + ABS(dxp))
+          myn[x,y] = 0.5D*(ABS(dym) + ABS(dyp))
           
         ENDFOR
       ENDIF
     ENDREP UNTIL last
     
-    ;markx = (markx / MEAN(mxn)^2) < 1.0
-    ;marky = (marky / MEAN(myn)^2) < 1.0
+    ;markx = (markx / MEAN(mxn)^2) < 1.0D
+    ;marky = (marky / MEAN(myn)^2) < 1.0D
     
-    markx = (0.5*mxn / MEAN(mxn)) < 1.0
-    marky = (0.5*myn / MEAN(myn)) < 1.0
+    markx = (0.5D*mxn / MEAN(mxn)) < 1.0D
+    marky = (0.5D*myn / MEAN(myn)) < 1.0D
     
     status = gen_surface_hypnotoad(mesh=mesh) ; Start generator
     REPEAT BEGIN
@@ -83,17 +83,17 @@ FUNCTION smooth_nl, input, mesh, iter=iter
           yp = yi[jp]
           
           ; Smooth the smoothing mask
-          mx = 0.1*(markx[x,y] + $
+          mx = 0.1D*(markx[x,y] + $
                     markx[x-1,y] + markx[x+1,y] + $
                     markx[x,ym] + markx[x, yp])
           
-          my = 0.1*(marky[x,y] + $
+          my = 0.1D*(marky[x,y] + $
                      marky[x-1,y] + marky[x+1,y] + $
                      marky[x,ym] + marky[x, yp])
           
-          tmp[x,y] = (1.0-mx-my)*output[x,y] $
-            + mx*0.5*(output[x-1,y] + output[x+1,y])  $
-            + my*0.5*(output[x,ym] + output[x,yp])
+          tmp[x,y] = (1.0D - mx-my)*output[x,y] $
+            + mx*0.5D*(output[x-1,y] + output[x+1,y])  $
+            + my*0.5D*(output[x,ym] + output[x,yp])
         ENDFOR
       ENDIF
     ENDREP UNTIL last
