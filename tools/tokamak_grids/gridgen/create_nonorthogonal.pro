@@ -1850,9 +1850,9 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
         PRINT, "   => Increasing npol to "+ STR(npol)
       ENDIF
     
-      nnpol = npol
+      n_update = npol - 6*critical.n_xpoint ; Extra points to divide up
       npol = LONARR(3*critical.n_xpoint) + 2
-      nnpol = nnpol - 6*critical.n_xpoint ; Extra points to divide up
+      nnpol = N_ELEMENTS(npol)
       n_y_boundary_guards = LONARR(3*critical.n_xpoint)
       
       ; Get lengths
@@ -1865,7 +1865,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
         length[2*critical.n_xpoint + i] = (*sol_info[i]).length
       ENDFOR
       
-      FOR i=0, nnpol-1 DO BEGIN
+      FOR i=0, n_update-1 DO BEGIN
         ; Add an extra point to the longest length
         
         dl = length / DOUBLE(npol)
