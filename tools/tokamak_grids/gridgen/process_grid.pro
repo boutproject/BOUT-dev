@@ -296,6 +296,13 @@ FUNCTION my_int_y, var, yaxis, mesh, loop=loop, nosmooth=nosmooth, simple=simple
     yi = gen_surface_hypnotoad(last=last, xi=xi, period=period)
     
     f[xi,yi] = inty(yaxis[xi,yi],var[xi,yi], /simple)
+
+    IF ~period THEN BEGIN
+      ; reset integral to zero at the first grid point, subtracting intgral
+      ; through y-boundary guard cells
+      f[xi,yi] = f[xi,yi] - f[xi,yi[mesh.y_boundary_guards]]
+    ENDIF
+
     IF NOT KEYWORD_SET(nosmooth) THEN BEGIN
       f[xi,yi] = SMOOTH(SMOOTH(f[xi,yi], 5, /edge_truncate), 5, /edge_truncate)
     ENDIF
@@ -1168,8 +1175,9 @@ retrybetacalc:
 ;       H[xi, yi] = H[xi, yi] - H[xi, ymidplane]
     ENDIF ELSE BEGIN
       ; Doesn't include a point at the midplane
-      qinty[xi, yi] = qinty[xi, yi] - qinty[xi,yi[0]]
-      sinty[xi, yi] = sinty[xi, yi] - sinty[xi,yi[0]]
+      ; Set the value at the first grid-point to zero
+      qinty[xi, yi] = qinty[xi, yi] - qinty[xi,yi[settings.y_boundary_guards]]
+      sinty[xi, yi] = sinty[xi, yi] - sinty[xi,yi[settings.y_boundary_guards]]
 ;       H[xi, yi] = H[xi, yi] - H[xi,yi[0]]
     ENDELSE
   ENDREP UNTIL last
