@@ -657,7 +657,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   str_check_present, settings, 'calchthe', -1
   str_check_present, settings, 'calcjpar', -1
   str_check_present, settings, 'orthogonal_coordinates_output', -1
-  str_check_present, settings, 'y_boundary_guards', -1
+  ; settings.y_boundary_guards is required, so don't set default value
   
   ;CATCH, err
   ;IF err NE 0 THEN BEGIN
@@ -1072,7 +1072,13 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   REPEAT BEGIN
     ; Get the next domain
     yi = gen_surface_hypnotoad(period=period, last=last, xi=xi)
-    yxy[xi,yi] = DINDGEN(N_ELEMENTS(yi))*dtheta
+    IF period EQ 0 THEN BEGIN
+      ; not periodic, set yxy to zero after y-boundary guard cells
+      yxy[xi,yi] = (DINDGEN(N_ELEMENTS(yi)) - settings.y_boundary_guards)*dtheta
+    ENDIF ELSE BEGIN
+      ; periodic, no y-boundary guard cells
+      yxy[xi,yi] = (DINDGEN(N_ELEMENTS(yi)))*dtheta
+    ENDELSE
   ENDREP UNTIL last
 
   ; Calculate hrad and dhrad for thetaxy calculation
