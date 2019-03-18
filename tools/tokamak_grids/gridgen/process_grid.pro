@@ -1171,8 +1171,9 @@ retrybetacalc:
 ;       H[xi, yi] = H[xi, yi] - H[xi, ymidplane]
     ENDIF ELSE BEGIN
       ; Doesn't include a point at the midplane
-      qinty[xi, yi] = qinty[xi, yi] - qinty[xi,yi[0]]
-      sinty[xi, yi] = sinty[xi, yi] - sinty[xi,yi[0]]
+      ; Set the value at the first grid-point to zero
+      qinty[xi, yi] = qinty[xi, yi] - qinty[xi,yi[settings.y_boundary_guards]]
+      sinty[xi, yi] = sinty[xi, yi] - sinty[xi,yi[settings.y_boundary_guards]]
 ;       H[xi, yi] = H[xi, yi] - H[xi,yi[0]]
     ENDELSE
   ENDREP UNTIL last
