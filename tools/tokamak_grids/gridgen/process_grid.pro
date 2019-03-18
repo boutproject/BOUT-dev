@@ -295,6 +295,13 @@ FUNCTION my_int_y, var, yaxis, mesh, loop=loop, nosmooth=nosmooth, simple=simple
     yi = gen_surface_hypnotoad(last=last, xi=xi, period=period)
     
     f[xi,yi] = inty(yaxis[xi,yi],var[xi,yi], /simple)
+
+    IF ~period THEN BEGIN
+      ; reset integral to zero at the first grid point, subtracting intgral
+      ; through y-boundary guard cells
+      f[xi,yi] = f[xi,yi] - f[xi,mesh.y_boundary_guards]
+    ENDIF
+
     IF NOT KEYWORD_SET(nosmooth) THEN BEGIN
       f[xi,yi] = SMOOTH(SMOOTH(f[xi,yi], 5, /edge_truncate), 5, /edge_truncate)
     ENDIF
