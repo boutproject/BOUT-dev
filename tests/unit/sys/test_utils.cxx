@@ -163,6 +163,29 @@ TEST(MatrixTest, ConstIndexing) {
   EXPECT_EQ(matrix2(1, 1), 3);
 }
 
+TEST(MatrixTest, GetData) {
+  Matrix<int> matrix(3, 5);
+  matrix = 3;
+
+  auto data = matrix.getData();
+
+  EXPECT_TRUE(std::all_of(std::begin(data), std::end(data), [](int a) { return a == 3; }));
+
+  data[0] = 4;
+
+  EXPECT_EQ(matrix(0, 0), 4);
+}
+
+TEST(MatrixTest, ConstGetData) {
+  Matrix<int> matrix(3, 5);
+  matrix = 3;
+
+  const auto data = matrix.getData();
+
+  EXPECT_TRUE(std::all_of(std::begin(data), std::end(data), [](int a) { return a == 3; }));
+  EXPECT_TRUE(std::all_of(std::begin(matrix), std::end(matrix), [](int a) { return a == 3; }));
+}
+
 TEST(TensorTest, DefaultShape) {
   Tensor<int> tensor;
 
@@ -331,6 +354,29 @@ TEST(TensorTest, ConstIndexing) {
   const Tensor<int> tensor2(tensor);
 
   EXPECT_EQ(tensor2(1, 1, 1), 3);
+}
+
+TEST(TensorTest, GetData) {
+  Tensor<int> tensor(3, 5, 7);
+  tensor = 3;
+
+  auto data = tensor.getData();
+
+  EXPECT_TRUE(std::all_of(std::begin(data), std::end(data), [](int a) { return a == 3; }));
+
+  data[0] = 4;
+
+  EXPECT_EQ(tensor(0, 0, 0), 4);
+}
+
+TEST(TensorTest, ConstGetData) {
+  Tensor<int> tensor(3, 5, 7);
+  tensor = 3;
+
+  const auto data = tensor.getData();
+
+  EXPECT_TRUE(std::all_of(std::begin(data), std::end(data), [](int a) { return a == 3; }));
+  EXPECT_TRUE(std::all_of(std::begin(tensor), std::end(tensor), [](int a) { return a == 3; }));
 }
 
 TEST(Invert3x3Test, Identity) {

@@ -26,6 +26,19 @@ void Options::cleanup() {
   root_instance = nullptr;
 }
 
+Options::Options(const Options& other)
+    : value(other.value), attributes(other.attributes),
+      parent_instance(other.parent_instance), full_name(other.full_name),
+      is_section(other.is_section), children(other.children), is_value(other.is_value),
+      value_used(other.value_used) {
+
+  // Ensure that this is the parent of all children,
+  // otherwise will point to the original Options instance
+  for (auto& child : children) {
+    child.second.parent_instance = this;
+  }
+}
+
 Options &Options::operator[](const std::string &name) {
   // Mark this object as being a section
   is_section = true;
@@ -73,42 +86,23 @@ const Options &Options::operator[](const std::string &name) const {
   return it->second;
 }
 
-template <> void Options::assign<bool>(bool val, const std::string source) {
-  if (val) {
-    _set("true", source, false);
-  } else {
-    _set("false", source, false);
+Options& Options::operator=(const Options& other) {
+  // Note: Here can't do copy-and-swap because pointers to parents are stored
+
+  value = other.value;
+  attributes = other.attributes;
+  full_name = other.full_name;
+  is_section = other.is_section;
+  children = other.children;
+  is_value = other.is_value;
+  value_used = other.value_used;
+
+  // Ensure that this is the parent of all children,
+  // otherwise will point to the original Options instance
+  for (auto& child : children) {
+    child.second.parent_instance = this;
   }
-}
-
-template <> void Options::assign<BoutReal>(BoutReal val, const std::string source) {
-  std::stringstream ss;
-  // Make sure the precision is large enough to hold a BoutReal
-  ss << std::scientific << std::setprecision(17) << val;
-  _set(ss.str(), source, false);
-}
-
-void Options::_set(std::string val, std::string source, bool force) {
-  if (isSet()) {
-    // Check if current value the same as new value
-    if (value.value != val) {
-      if (force or value.source != source) {
-        output_warn.write(
-            _("\tOption %s = %s (%s) overwritten with:\n\t\t%s = %s (%s)\n"),
-            full_name.c_str(), value.value.c_str(), value.source.c_str(),
-            full_name.c_str(), val.c_str(), source.c_str());
-      } else {
-        throw BoutException(_("Options: Setting a value from same source (%s) to new value "
-                              "'%s' - old value was '%s'."),
-                            source.c_str(), val.c_str(), value.value.c_str());
-      }
-    }
-  }
-
-  value.value = std::move(val);
-  value.source = std::move(source);
-  value.used = false;
-  is_value = true;
+  return *this;
 }
 
 bool Options::isSet() const {
@@ -118,128 +112,288 @@ bool Options::isSet() const {
   }
 
   // Ignore if set from default
-  if (value.source == DEFAULT_SOURCE) {
+  if (bout::utils::variantEqualTo(attributes.at("source"), DEFAULT_SOURCE)) {
     return false;
   }
 
   return true;
 }
 
-template <> std::string Options::as<std::string>() const {
+template <>
+void Options::assign<>(Field2D val, const std::string source) {
+  value = std::move(val);
+  attributes["source"] = std::move(source);
+  value_used = false;
+  is_value = true;
+}
+template <>
+void Options::assign<>(Field3D val, const std::string source) {
+  value = std::move(val);
+  attributes["source"] = std::move(source);
+  value_used = false;
+  is_value = true;
+}
+template <>
+void Options::assign<>(Array<BoutReal> val, const std::string source) {
+  value = std::move(val);
+  attributes["source"] = std::move(source);
+  value_used = false;
+  is_value = true;
+}
+template <>
+void Options::assign<>(Matrix<BoutReal> val, const std::string source) {
+  value = std::move(val);
+  attributes["source"] = std::move(source);
+  value_used = false;
+  is_value = true;
+}
+template <>
+void Options::assign<>(Tensor<BoutReal> val, const std::string source) {
+  value = std::move(val);
+  attributes["source"] = std::move(source);
+  value_used = false;
+  is_value = true;
+}
+
+template <> std::string Options::as<std::string>(Mesh* UNUSED(mesh)) const {
   if (!is_value) {
     throw BoutException(_("Option %s has no value"), full_name.c_str());
   }
 
   // Mark this option as used
-  value.used = true;
+  value_used = true;
 
-  output_info << _("\tOption ") << full_name << " = " << value.value;
-  if (!value.source.empty()) {
+  std::string result = bout::utils::variantToString(value);
+  
+  output_info << _("\tOption ") << full_name << " = " << result;
+  if (attributes.count("source")) {
     // Specify the source of the setting
-    output_info << " (" << value.source << ")";
+    output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
   }
   output_info << endl;
 
-  return value.value;
+  return result;
 }
 
-template <> int Options::as<int>() const {
+template <> int Options::as<int>(Mesh* UNUSED(mesh)) const {
   if (!is_value) {
     throw BoutException(_("Option %s has no value"), full_name.c_str());
   }
 
-  // Use FieldFactory to evaluate expression
-  // Parse the string, giving this Option pointer for the context
-  // then generate a value at t,x,y,z = 0,0,0,0
-  auto gen = FieldFactory::get()->parse(value.value, this);
-  if (!gen) {
-    throw BoutException(_("Couldn't get integer from option %s = '%s'"), full_name.c_str(),
-                        value.value.c_str());
-  }
-  BoutReal rval = gen->generate(0, 0, 0, 0);
+  int result;
 
-  // Convert to int by rounding
-  int val = ROUND(rval);
-
-  // Check that the value is close to an integer
-  if (fabs(rval - static_cast<BoutReal>(val)) > 1e-3) {
-    throw BoutException(_("Value for option %s = %e is not an integer"),
-                        full_name.c_str(), rval);
-  }
-
-  value.used = true;
-
-  output_info << _("\tOption ") << full_name << " = " << val;
-  if (!value.source.empty()) {
-    // Specify the source of the setting
-    output_info << " (" << value.source << ")";
-  }
-  output_info << endl;
-
-  return val;
-}
-
-template <> BoutReal Options::as<BoutReal>() const {
-  if (!is_value) {
-    throw BoutException(_("Option %s has no value"), full_name.c_str());
-  }
-
-  // Use FieldFactory to evaluate expression
-  // Parse the string, giving this Option pointer for the context
-  // then generate a value at t,x,y,z = 0,0,0,0
-  std::shared_ptr<FieldGenerator> gen = FieldFactory::get()->parse(value.value, this);
-  if (!gen) {
-    throw BoutException(_("Couldn't get BoutReal from option %s = '%s'"), full_name.c_str(),
-                        value.value.c_str());
-  }
-  BoutReal val = gen->generate(0, 0, 0, 0);
-
-  // Mark this option as used
-  value.used = true;
-
-  output_info << _("\tOption ") << full_name << " = " << val;
-  if (!value.source.empty()) {
-    // Specify the source of the setting
-    output_info << " (" << value.source << ")";
-  }
-  output_info << endl;
-
-  return val;
-}
-
-template <> bool Options::as<bool>() const {
-  if (!is_value) {
-    throw BoutException(_("Option %s has no value"), full_name.c_str());
-  }
-
-  value.used = true;
-
-  bool val;
-  char c = static_cast<char>(toupper((value.value)[0]));
-  if ((c == 'Y') || (c == 'T') || (c == '1')) {
-    val = true;
-    output_info << _("\tOption ") << full_name << " = true";
-  } else if ((c == 'N') || (c == 'F') || (c == '0')) {
-    val = false;
-    output_info << _("\tOption ") << full_name << " = false";
+  if (bout::utils::holds_alternative<int>(value)) {
+    result = bout::utils::get<int>(value);
+    
   } else {
-    throw BoutException(_("\tOption '%s': Boolean expected. Got '%s'\n"), full_name.c_str(),
-                        value.value.c_str());
+    // Cases which get a BoutReal then check if close to an integer
+    BoutReal rval;
+    
+    if (bout::utils::holds_alternative<BoutReal>(value)) {
+      rval = bout::utils::get<BoutReal>(value);
+    
+    } else if (bout::utils::holds_alternative<std::string>(value)) {
+      // Use FieldFactory to evaluate expression
+      // Parse the string, giving this Option pointer for the context
+      // then generate a value at t,x,y,z = 0,0,0,0
+      auto gen = FieldFactory::get()->parse(bout::utils::get<std::string>(value), this);
+      if (!gen) {
+        throw BoutException(_("Couldn't get integer from option %s = '%s'"),
+                            full_name.c_str(), bout::utils::variantToString(value).c_str());
+      }
+      rval = gen->generate(0, 0, 0, 0);
+    } else {
+      // Another type which can't be converted
+      throw BoutException(_("Value for option %s is not an integer"),
+                            full_name.c_str());
+    }
+    
+    // Convert to int by rounding
+    result = ROUND(rval);
+    
+    // Check that the value is close to an integer
+    if (fabs(rval - static_cast<BoutReal>(result)) > 1e-3) {
+      throw BoutException(_("Value for option %s = %e is not an integer"),
+                          full_name.c_str(), rval);
+    }
   }
-  if (!value.source.empty()) {
+
+  value_used = true;
+
+  output_info << _("\tOption ") << full_name << " = " << result;
+  if (attributes.count("source")) {
     // Specify the source of the setting
-    output_info << " (" << value.source << ")";
+    output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
   }
   output_info << endl;
 
-  return val;
+  return result;
+}
+
+template <> BoutReal Options::as<BoutReal>(Mesh* UNUSED(mesh)) const {
+  if (!is_value) {
+    throw BoutException(_("Option %s has no value"), full_name.c_str());
+  }
+
+  BoutReal result;
+  
+  if (bout::utils::holds_alternative<int>(value)) {
+    result = static_cast<BoutReal>(bout::utils::get<int>(value));
+    
+  } else if (bout::utils::holds_alternative<BoutReal>(value)) {
+    result = bout::utils::get<BoutReal>(value);
+      
+  } else if (bout::utils::holds_alternative<std::string>(value)) {
+    
+    // Use FieldFactory to evaluate expression
+    // Parse the string, giving this Option pointer for the context
+    // then generate a value at t,x,y,z = 0,0,0,0
+    auto gen = FieldFactory::get()->parse(bout::utils::get<std::string>(value), this);
+    if (!gen) {
+      throw BoutException(_("Couldn't get BoutReal from option %s = '%s'"), full_name.c_str(),
+                          bout::utils::get<std::string>(value).c_str());
+    }
+    result = gen->generate(0, 0, 0, 0);
+  } else {
+    throw BoutException(_("Value for option %s cannot be converted to a BoutReal"),
+                        full_name.c_str());
+  }
+  
+  // Mark this option as used
+  value_used = true;
+  
+  output_info << _("\tOption ") << full_name << " = " << result;
+  if (attributes.count("source")) {
+    // Specify the source of the setting
+    output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
+  }
+  output_info << endl;
+  
+  return result;
+}
+
+template <> bool Options::as<bool>(Mesh* UNUSED(mesh)) const {
+  if (!is_value) {
+    throw BoutException(_("Option %s has no value"), full_name.c_str());
+  }
+  
+  bool result;
+  
+  if (bout::utils::holds_alternative<bool>(value)) {
+    result = bout::utils::get<bool>(value);
+  
+  } else if(bout::utils::holds_alternative<std::string>(value)) {
+    auto strvalue = bout::utils::get<std::string>(value);
+  
+    auto c = static_cast<char>(toupper((strvalue)[0]));
+    if ((c == 'Y') || (c == 'T') || (c == '1')) {
+      result = true;
+    } else if ((c == 'N') || (c == 'F') || (c == '0')) {
+      result = false;
+    } else {
+      throw BoutException(_("\tOption '%s': Boolean expected. Got '%s'\n"), full_name.c_str(),
+                          strvalue.c_str());
+    }
+  } else {
+    throw BoutException(_("Value for option %s cannot be converted to a bool"),
+                        full_name.c_str());
+  }
+  
+  value_used = true;
+  
+  output_info << _("\tOption ") << full_name << " = " << toString(result);
+  
+  if (attributes.count("source")) {
+    // Specify the source of the setting
+    output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
+  }
+  output_info << endl;
+
+  return result;
+}
+
+template <> Field3D Options::as<Field3D>(Mesh* localmesh) const {
+  if (!is_value) {
+    throw BoutException("Option %s has no value", full_name.c_str());
+  }
+  
+  try {
+    return bout::utils::variantStaticCastOrThrow<ValueType, Field3D>(value);
+  } catch (const std::bad_cast &e) {
+    
+    // Convert from a string using FieldFactory
+    if (bout::utils::holds_alternative<std::string>(value)) {
+      return FieldFactory::get()->create3D( bout::utils::get<std::string>(value), this, localmesh);
+    } else if (bout::utils::holds_alternative<Tensor<BoutReal>>(value)) {
+      if (!localmesh) {
+        throw BoutException("mesh must be supplied when converting Tensor to Field3D");
+      }
+
+      // Get a reference, to try and avoid copying
+      const auto& tensor = bout::utils::get<Tensor<BoutReal>>(value);
+      
+      // Check if the dimension sizes are the same as a Field3D
+      if (tensor.shape() == std::make_tuple(localmesh->LocalNx,
+                                            localmesh->LocalNy,
+                                            localmesh->LocalNz)) {
+        return Field3D(tensor.getData(), localmesh);
+      }
+      // If dimension sizes not the same, may be able
+      // to select a region from it using Mesh e.g. if this
+      // is from the input grid file.
+
+    }
+  }
+  throw BoutException(_("Value for option %s cannot be converted to a Field3D"),
+                      full_name.c_str());
+}
+
+template <> Field2D Options::as<Field2D>(Mesh* localmesh) const {
+  if (!is_value) {
+    throw BoutException("Option %s has no value", full_name.c_str());
+  }
+  
+  try {
+    return bout::utils::variantStaticCastOrThrow<ValueType, Field2D>(value);
+  } catch (const std::bad_cast &e) {
+    
+    // Convert from a string using FieldFactory
+    if (bout::utils::holds_alternative<std::string>(value)) {
+      return FieldFactory::get()->create2D( bout::utils::get<std::string>(value), this, localmesh);
+    } else if (bout::utils::holds_alternative<Matrix<BoutReal>>(value)) {
+      if (!localmesh) {
+        throw BoutException("mesh must be supplied when converting Matrix to Field2D");
+      }
+
+      // Get a reference, to try and avoid copying
+      const auto& matrix = bout::utils::get<Matrix<BoutReal>>(value);
+
+      // Check if the dimension sizes are the same as a Field3D
+      if (matrix.shape() == std::make_tuple(localmesh->LocalNx,
+                                            localmesh->LocalNy)) {
+        return Field2D(matrix.getData(), localmesh);
+      }
+    }
+  }
+  throw BoutException(_("Value for option %s cannot be converted to a Field2D"),
+                      full_name.c_str());
+}
+
+// Note: This is defined here rather than in the header
+// to avoid using as<string> before specialising it.
+bool Options::operator==(const char* other) const {
+  return as<std::string>() == std::string(other);
+}
+
+bool Options::operator<(const char* other) const {
+  return as<std::string>() < std::string(other);
 }
 
 void Options::printUnused() const {
   bool allused = true;
   // Check if any options are unused
   for (const auto &it : children) {
-    if (it.second.is_value && !it.second.value.used) {
+    if (it.second.is_value && !it.second.value_used) {
       allused = false;
       break;
     }
@@ -249,11 +403,11 @@ void Options::printUnused() const {
   } else {
     output_info << _("Unused options:\n");
     for (const auto &it : children) {
-      if (it.second.is_value && !it.second.value.used) {
+      if (it.second.is_value && !it.second.value_used) {
         output_info << "\t" << full_name << ":" << it.first << " = "
-                    << it.second.value.value;
-        if (!it.second.value.source.empty())
-          output_info << " (" << it.second.value.source << ")";
+                    << bout::utils::variantToString(it.second.value);
+        if (it.second.attributes.count("source"))
+          output_info << " (" << bout::utils::variantToString(it.second.attributes.at("source")) << ")";
         output_info << endl;
       }
     }
@@ -269,9 +423,11 @@ void Options::cleanCache() { FieldFactory::get()->cleanCache(); }
 
 std::map<std::string, Options::OptionValue> Options::values() const {
   std::map<std::string, OptionValue> options;
-  for (const auto &it : children) {
+  for (const auto& it : children) {
     if (it.second.is_value) {
-      options[it.first] = it.second.value;
+      options.emplace(it.first, OptionValue { bout::utils::variantToString(it.second.value),
+                                               bout::utils::variantToString(it.second.attributes.at("source")),
+                                               it.second.value_used});
     }
   }
   return options;

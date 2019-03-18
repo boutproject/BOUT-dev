@@ -163,14 +163,17 @@ public:
     zstart = 0;
     zend = nz - 1;
 
-    StaggerGrids=true;
+    StaggerGrids=false;
+    
     // Unused variables
     periodicX = false;
     NXPE = 1;
     PE_XIND = 0;
-    StaggerGrids = false;
     IncIntShear = false;
     maxregionblocksize = MAXREGIONBLOCKSIZE;
+
+    // Need some options for parallelTransform
+    options = Options::getRoot();
   }
 
   void setCoordinates(std::shared_ptr<Coordinates> coords, CELL_LOC location = CELL_CENTRE) {

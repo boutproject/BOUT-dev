@@ -92,6 +92,20 @@ Field3D::Field3D(const BoutReal val, Mesh* localmesh) : Field3D(localmesh) {
   *this = val;
 }
 
+Field3D::Field3D(Array<BoutReal> data, Mesh* localmesh, CELL_LOC datalocation,
+                 DirectionTypes directions_in)
+    : Field(localmesh, datalocation, directions_in), data(data) {
+  TRACE("Field3D: Copy constructor from Array and Mesh");
+
+  nx = fieldmesh->LocalNx;
+  ny = fieldmesh->LocalNy;
+  nz = fieldmesh->LocalNz;
+
+  ASSERT1(data.size() == nx * ny * nz);
+
+  setLocation(datalocation);
+}
+
 Field3D::~Field3D() {
   /// Delete the time derivative variable if allocated
   if (deriv != nullptr) {

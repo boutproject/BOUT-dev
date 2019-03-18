@@ -649,6 +649,7 @@ BOUT_VERSION
 PYTHONCONFIGPATH
 IDLCONFIGPATH
 PREFIX
+MPARK_VARIANT_INCLUDE_PATH
 BOUT_INCLUDE_PATH
 BOUT_LIB_PATH
 CONFIG_LDFLAGS
@@ -15887,6 +15888,8 @@ CONFIG_LDFLAGS=`$MAKE ldflags -f output.make`
 # If make install is run then that replaces these paths
 BOUT_LIB_PATH=$PWD/lib
 BOUT_INCLUDE_PATH=$PWD/include
+MPARK_VARIANT_INCLUDE_PATH=$PWD/externalpackages/mpark.variant/include
+
 
 
 
