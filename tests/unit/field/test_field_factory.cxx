@@ -554,6 +554,7 @@ TYPED_TEST(FieldFactoryCreationTest, CreateOnMesh) {
   constexpr auto nz = int{1};
 
   FakeMesh localmesh{nx, ny, nz};
+  localmesh.setCoordinates(nullptr);
   localmesh.createDefaultRegions();
   localmesh.setParallelTransform(
       bout::utils::make_unique<ParallelTransformIdentity>(localmesh));

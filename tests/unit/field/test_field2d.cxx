@@ -92,6 +92,7 @@ TEST_F(Field2DTest, CreateOnGivenMesh) {
   int test_nz = Field2DTest::nz + 2;
 
   FakeMesh fieldmesh{test_nx, test_ny, test_nz};
+  fieldmesh.setCoordinates(nullptr);
 
   Field2D field{&fieldmesh};
 
@@ -106,6 +107,7 @@ TEST_F(Field2DTest, CopyCheckFieldmesh) {
   int test_nz = Field2DTest::nz + 2;
 
   FakeMesh fieldmesh{test_nx, test_ny, test_nz};
+  fieldmesh.setCoordinates(nullptr);
 
   // createDefaultRegions is noisy
   WithQuietOutput quiet{output_info};
@@ -1136,6 +1138,7 @@ TEST_F(Field2DTest, Swap) {
   constexpr int second_nz = Field2DTest::nz + 2;
 
   FakeMesh second_mesh{second_nx, second_ny, second_nz};
+  second_mesh.setCoordinates(nullptr);
   second_mesh.StaggerGrids = false;
   second_mesh.createDefaultRegions();
 

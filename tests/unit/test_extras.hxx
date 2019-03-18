@@ -160,6 +160,8 @@ public:
     xend = nx - 2;
     ystart = 1;
     yend = ny - 2;
+    zstart = 0;
+    zend = nz - 1;
 
     StaggerGrids=false;
     
@@ -172,12 +174,22 @@ public:
 
     // Need some options for parallelTransform
     options = Options::getRoot();
-
-    setCoordinates(nullptr);
   }
 
   void setCoordinates(std::shared_ptr<Coordinates> coords, CELL_LOC location = CELL_CENTRE) {
     coords_map[location] = coords;
+  }
+
+  void setGridDataSource(GridDataSource* source_in) {
+    source = source_in;
+  }
+
+  // Use this if the FakeMesh needs x- and y-boundaries
+  void createBoundaries() {
+    addBoundary(new BoundaryRegionXIn("core", ystart, yend, this));
+    addBoundary(new BoundaryRegionXOut("sol", ystart, yend, this));
+    addBoundary(new BoundaryRegionYUp("upper_target", xstart, xend, this));
+    addBoundary(new BoundaryRegionYDown("lower_target", xstart, xend, this));
   }
 
   comm_handle send(FieldGroup &UNUSED(g)) { return nullptr; };
@@ -280,6 +292,7 @@ public:
 
     delete bout::globals::mesh;
     bout::globals::mesh = new FakeMesh(nx, ny, nz);
+    static_cast<FakeMesh*>(bout::globals::mesh)->setCoordinates(nullptr);
     bout::globals::mesh->setParallelTransform(
         bout::utils::make_unique<ParallelTransformIdentity>(*bout::globals::mesh));
     bout::globals::mesh->createDefaultRegions();
@@ -289,6 +302,7 @@ public:
     mesh_staggered->StaggerGrids = true;
     mesh_staggered->setParallelTransform(
         bout::utils::make_unique<ParallelTransformIdentity>(*mesh_staggered));
+    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr);
     static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_XLOW);
     static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_YLOW);
     static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_ZLOW);
