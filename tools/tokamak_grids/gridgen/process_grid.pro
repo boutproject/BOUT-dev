@@ -117,7 +117,8 @@ function calc_beta, Rxy, Zxy, mesh, rz_grid, method
 		endfor	
 
 	endif else if(method EQ 1) then begin
-		npol = round(total(mesh.npol,/cumulative))
+		npol_withguards = mesh.npol + mesh.n_y_boundary_guards
+		npol = round(total(npol_withguards,/cumulative))
 		Nnpol = n_elements(npol)
 		status = gen_surface_hypnotoad(mesh=mesh) ; Start generator
 		REPEAT BEGIN
@@ -132,7 +133,7 @@ function calc_beta, Rxy, Zxy, mesh, rz_grid, method
 					beta[xi,yi_curr] = !DPI/2.D - calc_beta_withgrid(Rxy[*,yi_curr], Zxy[*,yi_curr], xi)
 					endif
 				endfor
-				loc = where(yi LT mesh.npol[0])
+				loc = where(yi LT npol_withguards[0])
 				if(total(loc) NE -1) then begin
 					yi_curr = yi[loc]
 					beta[xi,yi_curr] = !DPI/2.D - calc_beta_withgrid(Rxy[*,yi_curr], Zxy[*,yi_curr], xi)
