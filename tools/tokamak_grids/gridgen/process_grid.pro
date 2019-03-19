@@ -345,9 +345,9 @@ function dfdy_seps, f, y, mesh
 	for j=0,nx-1 do begin
 		ylow = 0
 		for i=0,N_ints-1 do begin
-			ylocs = indgen(mesh.npol[i])+ylow
+			ylocs = indgen(mesh.npol[i] + mesh.n_y_boundary_guards[i])+ylow
 			result[j,ylocs] = DERIV(y[j,ylocs],f[j,ylocs])
-			ylow += mesh.npol[i]
+			ylow += mesh.npol[i] + mesh.n_y_boundary_guards[i]
 		endfor
 	endfor
 	return, result
