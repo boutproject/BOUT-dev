@@ -141,7 +141,7 @@ function calc_beta, Rxy, Zxy, mesh, rz_grid, method
 				beta[xi,yi] = !DPI/2.D - calc_beta_withgrid(Rxy[*,yi], Zxy[*,yi], xi)
 			endelse
 		ENDREP UNTIL last
-		beta = smooth(beta,5) ; smooth beta, it's ugly
+		;beta = smooth(beta,5) ; smooth beta, it's ugly
 	endif else begin
 		print,"*** ERROR: UNKNOWN METHOD FOR BETA CALCULATION ***"
 		beta = 0.0D
