@@ -42,8 +42,10 @@ class IdaSolver;
 #include <vector2d.hxx>
 #include <vector3d.hxx>
 
-// NOTE: MPI must be included before SUNDIALS, otherwise complains
-#include "mpi.h"
+#include <sundials/sundials_config.h>
+#if SUNDIALS_VERSION_MAJOR >= 3
+#include <sunlinsol/sunlinsol_spgmr.h>
+#endif
 
 #include <nvector/nvector_parallel.h>
 
@@ -76,6 +78,11 @@ class IdaSolver : public Solver {
   
   BoutReal pre_Wtime; // Time in preconditioner
   BoutReal pre_ncalls; // Number of calls to preconditioner
+
+#if SUNDIALS_VERSION_MAJOR >= 3
+  /// SPGMR solver structure
+  SUNLinearSolver sun_solver{nullptr};
+#endif
 };
 
 #endif // __IDA_SOLVER_H__

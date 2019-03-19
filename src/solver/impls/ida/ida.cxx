@@ -37,7 +37,14 @@
 #include <boutexception.hxx>
 
 #include <ida/ida.h>
+
+#if SUNDIALS_VERSION_MAJOR >= 3
+#include <ida/ida_spils.h>
+#include <sunlinsol/sunlinsol_spgmr.h>
+#else
 #include <ida/ida_spgmr.h>
+#endif
+
 #include <ida/ida_bbdpre.h>
 #include <nvector/nvector_parallel.h>
 #include <sundials/sundials_dense.h>
@@ -58,17 +65,31 @@ typedef int IDAINT;
 static int idares(BoutReal t, N_Vector u, N_Vector du, N_Vector rr, void *user_data);
 static int ida_bbd_res(IDAINT Nlocal, BoutReal t, 
 		       N_Vector u, N_Vector du, N_Vector rr, void *user_data);
-static int ida_pre(BoutReal t, N_Vector yy, 	 
-		   N_Vector yp, N_Vector rr, 	 
-		   N_Vector rvec, N_Vector zvec, 	 
-		   BoutReal cj, BoutReal delta, 
-		   void *user_data, N_Vector tmp);
+
+static int ida_pre(BoutReal t, N_Vector yy, N_Vector yp, N_Vector rr, N_Vector rvec,
+                   N_Vector zvec, BoutReal cj, BoutReal delta, void* user_data);
+
+#if SUNDIALS_VERSION_MAJOR < 3
+// Shim for earlier versions
+inline static int ida_pre_shim(BoutReal t, N_Vector yy, N_Vector yp, N_Vector rr,
+                               N_Vector rvec, N_Vector zvec, BoutReal cj,
+                               BoutReal delta, void* user_data, N_Vector UNUSED(tmp)) {
+  return ida_pre(t, yy, yp, rr, rvec, zvec, cj, delta, user_data);
+}
+#else
+// Alias for newer versions
+constexpr auto& ida_pre_shim = ida_pre;
+#endif
 
 IdaSolver::IdaSolver(Options *opts) : Solver(opts) {
   has_constraints = true; ///< This solver has constraints
 }
 
-IdaSolver::~IdaSolver() { }
+IdaSolver::~IdaSolver() {
+#if SUNDIALS_VERSION_MAJOR >= 3
+  SUNLinSolFree(sun_solver);
+#endif
+}
 
 /**************************************************************************
  * Initialise
@@ -175,8 +196,15 @@ IdaSolver::~IdaSolver() { }
   IDASetMaxNumSteps(idamem, mxsteps);
 
   // Call IDASpgmr to specify the IDA linear solver IDASPGMR
-  if( IDASpgmr(idamem, maxl) )
+#if SUNDIALS_VERSION_MAJOR >= 3
+  if ((sun_solver = SUNSPGMR(static_cast<N_Vector>(uvec), PREC_NONE, maxl)) == nullptr)
+    throw BoutException("ERROR: SUNSPGMR failed\n");
+  if (IDASpilsSetLinearSolver(idamem, sun_solver) != IDASPILS_SUCCESS)
+    throw BoutException("ERROR: IDASpilsSetLinearSolver failed\n");
+#else
+  if (IDASpgmr(idamem, maxl))
     throw BoutException("ERROR: IDASpgmr failed\n");
+#endif
 
   if(use_precon) {
     if(!have_user_precon()) {
@@ -186,7 +214,7 @@ IdaSolver::~IdaSolver() { }
         throw BoutException("ERROR: IDABBDPrecInit failed\n");
     }else {
       output.write("\tUsing user-supplied preconditioner\n");
-      if (IDASpilsSetPreconditioner(idamem, nullptr, ida_pre))
+      if (IDASpilsSetPreconditioner(idamem, nullptr, ida_pre_shim))
         throw BoutException("ERROR: IDASpilsSetPreconditioner failed\n");
     }
   }
@@ -346,7 +374,7 @@ static int ida_bbd_res(IDAINT UNUSED(Nlocal), BoutReal t, N_Vector u, N_Vector d
 // Preconditioner function
 static int ida_pre(BoutReal t, N_Vector yy, N_Vector UNUSED(yp), N_Vector UNUSED(rr),
                    N_Vector rvec, N_Vector zvec, BoutReal cj, BoutReal delta,
-                   void *user_data, N_Vector UNUSED(tmp)) {
+                   void* user_data) {
   BoutReal *udata = NV_DATA_P(yy);
   BoutReal *rdata = NV_DATA_P(rvec);
   BoutReal *zdata = NV_DATA_P(zvec);

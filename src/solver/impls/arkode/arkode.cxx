@@ -34,7 +34,18 @@
 #include <boutexception.hxx>
 #include <msg_stack.hxx>
 
+#if SUNDIALS_VERSION_MAJOR >= 4
+#include <arkode/arkode_arkstep.h>
+#else
 #include <arkode/arkode.h>
+#endif
+
+#if SUNDIALS_VERSION_MAJOR >= 3
+#include <arkode/arkode_spils.h>
+#else
+#include <arkode/arkode_spgmr.h>
+#endif
+
 #include <arkode/arkode_bbdpre.h>
 #include <nvector/nvector_parallel.h>
 #include <sundials/sundials_types.h>
@@ -57,15 +68,31 @@ static int arkode_rhs(BoutReal t, N_Vector u, N_Vector du, void *user_data);
 
 static int arkode_bbd_rhs(ARKODEINT Nlocal, BoutReal t, N_Vector u, N_Vector du, 
 			 void *user_data);
+static int arkode_pre(BoutReal t, N_Vector yy, N_Vector yp, N_Vector rvec, N_Vector zvec,
+                      BoutReal gamma, BoutReal delta, int lr, void* user_data);
+#if SUNDIALS_VERSION_MAJOR < 3
+// Shim for earlier versions
+inline static int arkode_pre_shim(BoutReal t, N_Vector yy, N_Vector yp, N_Vector rvec,
+                             N_Vector zvec, BoutReal gamma, BoutReal delta, int lr,
+                             void* user_data, N_Vector UNUSED(tmp)) {
+  return arkode_pre(t, yy, yp, rvec, zvec, gamma, delta, lr, user_data);
+}
+#else
+// Alias for newer versions
+constexpr auto& arkode_pre_shim = arkode_pre;
+#endif
 
-static int arkode_pre(BoutReal t, N_Vector yy, N_Vector yp,
-		     N_Vector rvec, N_Vector zvec,
-		     BoutReal gamma, BoutReal delta, int lr,
-		     void *user_data, N_Vector tmp);
 
 static int arkode_jac(N_Vector v, N_Vector Jv,
 		     realtype t, N_Vector y, N_Vector fy,
 		     void *user_data, N_Vector tmp);
+#if SUNDIALS_VERSION_MAJOR < 3
+// Shim for earlier versions
+inline int ARKSpilsSetJacTimes(void* arkode_mem, std::nullptr_t,
+                               ARKSpilsJacTimesVecFn jtimes) {
+  return ARKSpilsSetJacTimesVecFn(arkode_mem, jtimes);
+}
+#endif
 
 ArkodeSolver::ArkodeSolver(Options *opts) : Solver(opts) {
   has_constraints = false; ///< This solver doesn't have constraints
@@ -74,9 +101,12 @@ ArkodeSolver::ArkodeSolver(Options *opts) : Solver(opts) {
 }
 
 ArkodeSolver::~ArkodeSolver() {
-  if(initialised) {
+  if (initialised) {
     N_VDestroy_Parallel(uvec);
     ARKodeFree(&arkode_mem);
+#if SUNDIALS_VERSION_MAJOR >= 3
+    SUNLinSolFree(sun_solver);
+#endif
   }
 }
 
@@ -354,9 +384,16 @@ int ArkodeSolver::init(int nout, BoutReal tstep) {
       options->get("rightprec", rightprec, false);
       if(rightprec)
         prectype = PREC_RIGHT;
-      
-      if( ARKSpgmr(arkode_mem, prectype, maxl) != ARKSPILS_SUCCESS )
+
+#if SUNDIALS_VERSION_MAJOR >= 3
+      if ((sun_solver = SUNSPGMR(static_cast<N_Vector>(uvec), prectype, maxl)) == nullptr)
+        throw BoutException("ERROR: SUNSPGMR failed\n");
+      if (ARKSpilsSetLinearSolver(arkode_mem, sun_solver) != ARKSPILS_SUCCESS)
+        throw BoutException("ERROR: ARKSpilsSetLinearSolver failed\n");
+#else
+      if (ARKSpgmr(arkode_mem, prectype, maxl) != ARKSPILS_SUCCESS)
         throw BoutException("ERROR: ARKSpgmr failed\n");
+#endif
 
       if(!have_user_precon()) {
         output.write("\tUsing BBD preconditioner\n");
@@ -368,7 +405,7 @@ int ArkodeSolver::init(int nout, BoutReal tstep) {
       } else {
         output.write("\tUsing user-supplied preconditioner\n");
 
-        if (ARKSpilsSetPreconditioner(arkode_mem, nullptr, arkode_pre) !=
+        if (ARKSpilsSetPreconditioner(arkode_mem, nullptr, arkode_pre_shim) !=
             ARKSPILS_SUCCESS)
           throw BoutException("ERROR: ARKSpilsSetPreconditioner failed\n");
       }
@@ -377,17 +414,25 @@ int ArkodeSolver::init(int nout, BoutReal tstep) {
 
       output.write("\tNo preconditioning\n");
 
-      if( ARKSpgmr(arkode_mem, PREC_NONE, maxl) != ARKSPILS_SUCCESS )
+#if SUNDIALS_VERSION_MAJOR >= 3
+      if ((sun_solver = SUNSPGMR(static_cast<N_Vector>(uvec), PREC_NONE, maxl))
+          == nullptr)
+        throw BoutException("ERROR: SUNSPGMR failed\n");
+      if (ARKSpilsSetLinearSolver(arkode_mem, sun_solver) != ARKSPILS_SUCCESS)
+        throw BoutException("ERROR: ARKSpilsSetLinearSolver failed\n");
+#else
+      if (ARKSpgmr(arkode_mem, PREC_NONE, maxl) != ARKSPILS_SUCCESS)
         throw BoutException("ERROR: ARKSpgmr failed\n");
+#endif
     }
- 
+
     /// Set Jacobian-vector multiplication function
 
     if (use_jacobian && jacfunc) {
       output.write("\tUsing user-supplied Jacobian function\n");
 
       TRACE("Setting Jacobian-vector multiply");
-      if( ARKSpilsSetJacTimesVecFn(arkode_mem, arkode_jac) != ARKSPILS_SUCCESS )
+      if (ARKSpilsSetJacTimes(arkode_mem, nullptr, arkode_jac) != ARKSPILS_SUCCESS)
         throw BoutException("ERROR: ARKSpilsSetJacTimesVecFn failed\n");
     }else
       output.write("\tUsing difference quotient approximation for Jacobian\n"); 
@@ -686,7 +731,7 @@ static int arkode_bbd_rhs(ARKODEINT UNUSED(Nlocal), BoutReal t, N_Vector u, N_Ve
 /// Preconditioner function
 static int arkode_pre(BoutReal t, N_Vector yy, N_Vector UNUSED(yp), N_Vector rvec,
                       N_Vector zvec, BoutReal gamma, BoutReal delta, int UNUSED(lr),
-                      void *user_data, N_Vector UNUSED(tmp)) {
+                      void *user_data) {
   BoutReal *udata = NV_DATA_P(yy);
   BoutReal *rdata = NV_DATA_P(rvec);
   BoutReal *zdata = NV_DATA_P(zvec);

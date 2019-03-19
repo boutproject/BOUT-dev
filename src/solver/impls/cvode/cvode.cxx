@@ -34,6 +34,15 @@
 #include <msg_stack.hxx>
 
 #include <cvode/cvode.h>
+
+#if SUNDIALS_VERSION_MAJOR >= 3
+#include <cvode/cvode_spils.h>
+#include <sunlinsol/sunlinsol_spgmr.h>
+#else
+#include <cvode/cvode_spgmr.h>
+#endif
+
+#include <cvode/cvode.h>
 #include <cvode/cvode_bbdpre.h>
 #include <nvector/nvector_parallel.h>
 #include <sundials/sundials_types.h>
@@ -54,14 +63,32 @@ static int cvode_rhs(BoutReal t, N_Vector u, N_Vector du, void *user_data);
 static int cvode_bbd_rhs(CVODEINT Nlocal, BoutReal t, N_Vector u, N_Vector du, 
 			 void *user_data);
 
-static int cvode_pre(BoutReal t, N_Vector yy, N_Vector yp,
-		     N_Vector rvec, N_Vector zvec,
-		     BoutReal gamma, BoutReal delta, int lr,
-		     void *user_data, N_Vector tmp);
+static int cvode_pre(BoutReal t, N_Vector yy, N_Vector yp, N_Vector rvec, N_Vector zvec,
+                     BoutReal gamma, BoutReal delta, int lr, void* user_data);
+
+#if SUNDIALS_VERSION_MAJOR < 3
+// Shim for earlier versions
+inline static int cvode_pre_shim(BoutReal t, N_Vector yy, N_Vector yp, N_Vector rvec,
+                            N_Vector zvec, BoutReal gamma, BoutReal delta, int lr,
+                            void* user_data, N_Vector UNUSED(tmp)) {
+  return cvode_pre(t, yy, yp, rvec, zvec, gamma, delta, lr, user_data);
+}
+#else
+// Alias for newer versions
+constexpr auto& cvode_pre_shim = cvode_pre;
+#endif
 
 static int cvode_jac(N_Vector v, N_Vector Jv,
 		     realtype t, N_Vector y, N_Vector fy,
 		     void *user_data, N_Vector tmp);
+
+#if SUNDIALS_VERSION_MAJOR < 3
+// Shim for earlier versions
+inline int CVSpilsSetJacTimes(void* arkode_mem, std::nullptr_t,
+                              CVSpilsJacTimesVecFn jtimes) {
+  return CVSpilsSetJacTimesVecFn(arkode_mem, jtimes);
+}
+#endif
 
 CvodeSolver::CvodeSolver(Options *opts) : Solver(opts) {
   has_constraints = false; ///< This solver doesn't have constraints
@@ -75,6 +102,9 @@ CvodeSolver::~CvodeSolver() {
   if(initialised) {
     N_VDestroy_Parallel(uvec);
     CVodeFree(&cvode_mem);
+#if SUNDIALS_VERSION_MAJOR >= 3
+    SUNLinSolFree(sun_solver);
+#endif
   }
 }
 
@@ -279,8 +309,16 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
       if (rightprec)
         prectype = PREC_RIGHT;
       
-      if ( CVSpgmr(cvode_mem, prectype, maxl) != CVSPILS_SUCCESS )
+#if SUNDIALS_VERSION_MAJOR >= 3
+      if ((sun_solver = SUNSPGMR(static_cast<N_Vector>(uvec), prectype, maxl))
+          == nullptr)
+        throw BoutException("ERROR: SUNSPGMR failed\n");
+      if (CVSpilsSetLinearSolver(cvode_mem, sun_solver) != CVSPILS_SUCCESS)
+        throw BoutException("ERROR: CVSpilsSetLinearSolver failed\n");
+#else
+      if (CVSpgmr(cvode_mem, prectype, maxl) != CVSPILS_SUCCESS)
         throw BoutException("ERROR: CVSpgmr failed\n");
+#endif
 
       if (!have_user_precon()) {
         output_info.write("\tUsing BBD preconditioner\n");
@@ -292,7 +330,7 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
       } else {
         output_info.write("\tUsing user-supplied preconditioner\n");
 
-        if (CVSpilsSetPreconditioner(cvode_mem, nullptr, cvode_pre))
+        if (CVSpilsSetPreconditioner(cvode_mem, nullptr, cvode_pre_shim))
           throw BoutException("ERROR: CVSpilsSetPreconditioner failed\n");
       }
     }else {
@@ -300,8 +338,16 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
 
       output_info.write("\tNo preconditioning\n");
 
-      if( CVSpgmr(cvode_mem, PREC_NONE, maxl) != CVSPILS_SUCCESS )
+#if SUNDIALS_VERSION_MAJOR >= 3
+      if ((sun_solver = SUNSPGMR(static_cast<N_Vector>(uvec), PREC_NONE, maxl))
+          == nullptr)
+        throw BoutException("ERROR: SUNSPGMR failed\n");
+      if (CVSpilsSetLinearSolver(cvode_mem, sun_solver) != CVSPILS_SUCCESS)
+        throw BoutException("ERROR: CVSpilsSetLinearSolver failed\n");
+#else
+      if (CVSpgmr(cvode_mem, PREC_NONE, maxl) != CVSPILS_SUCCESS)
         throw BoutException("ERROR: CVSpgmr failed\n");
+#endif
     }
 
     /// Set Jacobian-vector multiplication function
@@ -310,9 +356,9 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
       output_info.write("\tUsing user-supplied Jacobian function\n");
 
       TRACE("Setting Jacobian-vector multiply");
-      if( CVSpilsSetJacTimesVecFn(cvode_mem, cvode_jac) != CVSPILS_SUCCESS )
+      if (CVSpilsSetJacTimes(cvode_mem, nullptr, cvode_jac) != CVSPILS_SUCCESS)
         throw BoutException("ERROR: CVSpilsSetJacTimesVecFn failed\n");
-    }else
+    } else
       output_info.write("\tUsing difference quotient approximation for Jacobian\n");
   }else {
     output_info.write("\tUsing Functional iteration\n");
@@ -557,7 +603,7 @@ static int cvode_bbd_rhs(CVODEINT UNUSED(Nlocal), BoutReal t, N_Vector u, N_Vect
 /// Preconditioner function
 static int cvode_pre(BoutReal t, N_Vector yy, N_Vector UNUSED(yp), N_Vector rvec,
                      N_Vector zvec, BoutReal gamma, BoutReal delta, int UNUSED(lr),
-                     void *user_data, N_Vector UNUSED(tmp)) {
+                     void *user_data) {
   BoutReal *udata = NV_DATA_P(yy);
   BoutReal *rdata = NV_DATA_P(rvec);
   BoutReal *zdata = NV_DATA_P(zvec);

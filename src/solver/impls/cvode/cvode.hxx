@@ -32,9 +32,6 @@ class CvodeSolver;
 #ifndef __SUNDIAL_SOLVER_H__
 #define __SUNDIAL_SOLVER_H__
 
-// NOTE: MPI must be included before SUNDIALS, otherwise complains
-#include "mpi.h"
-
 #include "bout_types.hxx"
 #include "field2d.hxx"
 #include "field3d.hxx"
@@ -43,11 +40,14 @@ class CvodeSolver;
 
 #include "bout/solver.hxx"
 
-#include <cvode/cvode_spgmr.h>
-#include <cvode/cvode_bbdpre.h>
-#include <nvector/nvector_parallel.h>
-
 #include <vector>
+
+#include <sundials/sundials_config.h>
+#if SUNDIALS_VERSION_MAJOR >= 3
+#include <sunlinsol/sunlinsol_spgmr.h>
+#endif
+
+#include <nvector/nvector_parallel.h>
 
 #include <bout/solverfactory.hxx>
 namespace {
@@ -93,6 +93,11 @@ class CvodeSolver : public Solver {
     void loop_abstol_values_op(Ind2D i2d, BoutReal *abstolvec_data, int &p,
                                std::vector<BoutReal> &f2dtols,
                                std::vector<BoutReal> &f3dtols, bool bndry);
+#if SUNDIALS_VERSION_MAJOR >= 3
+  /// SPGMR solver structure
+  SUNLinearSolver sun_solver{nullptr};
+#endif
+
 };
 
 #endif // __SUNDIAL_SOLVER_H__
