@@ -46,10 +46,11 @@ FUNCTION hypnotoad_version
   ;           differentiating, then integrating. Does change the outputs a bit.
   ;           Less sensitive to small changes in implementation (e.g. changes
   ;           in indexing due to different number of y-boundary guard cells).
+  ; 1.2.1   * Don't smooth 'beta' after calculating
   
   major_version = 1
   minor_version = 2
-  patch_number = 0
+  patch_number = 1
 
   RETURN, LONG([major_version, minor_version, patch_number])
 
