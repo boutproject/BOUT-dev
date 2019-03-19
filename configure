@@ -10238,38 +10238,6 @@ See \`config.log' for more details" "$LINENO" 5; }
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
-  # Version 3.0.0 changed the name of this define to just SUNDIALS_VERSION
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SUNDIALS major version" >&5
-$as_echo_n "checking for SUNDIALS major version... " >&6; }
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-    #include "sundials/sundials_config.h"
-    #ifdef SUNDIALS_PACKAGE_VERSION
-      yes
-    #endif
-
-_ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "yes" >/dev/null 2>&1; then :
-  sundials_major_ver=2
-else
-  sundials_major_ver=3
-fi
-rm -f conftest*
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $sundials_major_ver" >&5
-$as_echo "$sundials_major_ver" >&6; }
-
-  if test $sundials_major_ver = 3; then :
-
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
-$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "*** Unsupported SUNDIALS version: Only 2.6-2.7 are supported currently
-See \`config.log' for more details" "$LINENO" 5; }
-
-fi
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SUNDIALS minor version" >&5
 $as_echo_n "checking for SUNDIALS minor version... " >&6; }
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -10282,10 +10250,10 @@ $as_echo_n "checking for SUNDIALS minor version... " >&6; }
 
 _ACEOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "^ *\"? *2\.[67]\." >/dev/null 2>&1; then :
-  sundials_minor_ver=ok
-else
+  $EGREP "^ *\"? *[12]\.[0-5]\." >/dev/null 2>&1; then :
   sundials_minor_ver="too low"
+else
+  sundials_minor_ver=ok
 fi
 rm -f conftest*
 
@@ -10298,7 +10266,7 @@ $as_echo "$sundials_minor_ver" >&6; }
 
     { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "*** Unsupported SUNDIALS version: Only 2.6-2.7 are supported currently
+as_fn_error $? "*** Unsupported SUNDIALS version: Requires at least 2.6
 See \`config.log' for more details" "$LINENO" 5; }
 
 fi
@@ -10994,7 +10962,13 @@ $as_echo_n "checking if we can compile with SUNDIALS $module_upper... " >&6; }
 int
 main ()
 {
-CVodeCreate(0, 0);
+
+    #if SUNDIALS_VERSION_MAJOR >= 4
+    CVodeCreate(0);
+    #else
+    CVodeCreate(0, 0);
+    #endif
+
   ;
   return 0;
 }
@@ -11358,7 +11332,13 @@ $as_echo_n "checking if SUNDIALS $module_upper library path is $sundials_module_
 int
 main ()
 {
-CVodeCreate(0, 0);
+
+    #if SUNDIALS_VERSION_MAJOR >= 4
+    CVodeCreate(0);
+    #else
+    CVodeCreate(0, 0);
+    #endif
+
   ;
   return 0;
 }
@@ -11564,14 +11544,24 @@ $as_echo_n "checking if we can compile with SUNDIALS $module_upper... " >&6; }
 
 
     #include <nvector/nvector_parallel.h>
+    #if SUNDIALS_VERSION_MAJOR >= 4
+    #include <arkode/arkode_arkstep.h>
+    #else
     #include <arkode/arkode.h>
+    #endif
     extern void foo(N_Vector);
 
 
 int
 main ()
 {
-ARKodeCreate();
+
+    #if SUNDIALS_VERSION_MAJOR >= 4
+    ARKStepCreate(0, 0, 0, 0);
+    #else
+    ARKodeCreate();
+    #endif
+
   ;
   return 0;
 }
@@ -11928,14 +11918,24 @@ $as_echo_n "checking if SUNDIALS $module_upper library path is $sundials_module_
 
 
     #include <nvector/nvector_parallel.h>
+    #if SUNDIALS_VERSION_MAJOR >= 4
+    #include <arkode/arkode_arkstep.h>
+    #else
     #include <arkode/arkode.h>
+    #endif
     extern void foo(N_Vector);
 
 
 int
 main ()
 {
-ARKodeCreate();
+
+    #if SUNDIALS_VERSION_MAJOR >= 4
+    ARKStepCreate(0, 0, 0, 0);
+    #else
+    ARKodeCreate();
+    #endif
+
   ;
   return 0;
 }
