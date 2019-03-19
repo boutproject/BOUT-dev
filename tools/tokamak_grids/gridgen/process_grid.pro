@@ -1235,7 +1235,7 @@ retrybetacalc:
 
     bxcvx = bpsign*bxcv.psi 
     bxcvy = bxcv.theta
-    bxcvz = bpsign*(bxcv.phi - sinty*bxcv.psi - pitch*bxcv.theta)
+    bxcvz = bpsign*(bxcv.phi - I*bxcv.psi - pitch*bxcv.theta)
 
     ; x borders
     bxcvx[0,*] = bxcvx[1,*]
@@ -1264,13 +1264,13 @@ retrybetacalc:
     ; If Bp is reversed, then Grad x = - Grad psi
     bxcvx = bpsign*bxcv_psi
     bxcvy = bxcv_theta
-    bxcvz = bpsign*(bxcv_phi - sinty*bxcv_psi - pitch*bxcv_theta)
+    bxcvz = bpsign*(bxcv_phi - I*bxcv_psi - pitch*bxcv_theta)
   ENDIF ELSE IF curv EQ 2 THEN BEGIN
     ; Curvature from Curl(b/B)
     
     bxcvx = bpsign*(Bpxy * Btxy*Rxy * DDY(1.D / Bxy, mesh) / hthe)
     bxcvy = -bpsign*Bxy*Bpxy * DDX(xcoord, Btxy*Rxy/Bxy^2) / (2.D*hthe)
-    bxcvz = Bpxy^3 * DDX(xcoord, hthe/Bpxy) / (2.D*hthe*Bxy) - Btxy*Rxy*DDX(xcoord, Btxy/Rxy) / (2.D*Bxy) - sinty*bxcvx
+    bxcvz = Bpxy^3 * DDX(xcoord, hthe/Bpxy) / (2.D*hthe*Bxy) - Btxy*Rxy*DDX(xcoord, Btxy/Rxy) / (2.D*Bxy) - I*bxcvx
     
   ENDIF ELSE BEGIN
     ; calculate in flux coordinates.
@@ -1286,7 +1286,7 @@ retrybetacalc:
 
     bxcvx = bpsign*(Bpxy * Btxy*Rxy * DDY(1.D / Bxy, mesh) / hthe)
     bxcvy = bpsign*(Bpxy*Btxy*Rxy*dpb / (hthe*Bxy^2))
-    bxcvz = -dpb - sinty*bxcvx
+    bxcvz = -dpb - I*bxcvx
   ENDELSE
   
 
@@ -1296,7 +1296,7 @@ retrybetacalc:
     ; Nonlinear smoothing. Tries to smooth only regions with large
     ; changes in gradient
     
-    bz = bxcvz + sinty * bxcvx
+    bz = bxcvz + I * bxcvx
     
     PRINT, "Smoothing bxcvx..."
     bxcvx = smooth_nl(bxcvx, mesh)
@@ -1305,7 +1305,7 @@ retrybetacalc:
     PRINT, "Smoothing bxcvz..."
     bz = smooth_nl(bz, mesh)
     
-    bxcvz = bz - sinty * bxcvx
+    bxcvz = bz - I * bxcvx
   ENDIF
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
