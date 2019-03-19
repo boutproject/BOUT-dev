@@ -1555,10 +1555,12 @@ retrybetacalc:
     Ti_x = Te_x
   ENDELSE
   
-  rmag = MAX(ABS(Rxy))
+  ; excluding y-boundary guard cells
+  rmag = MAX(ABS([[Rxy[*,settings.y_boundary_guards:ny_inner+settings.y_boundary_guards-1]], [Rxy[*,ny_inner+3*settings.y_boundary_guards:-settings.y_boundary_guards-1]]]))
   PRINT, "Setting rmag = ", rmag
   
-  bmag = MAX(ABS(Bxy))
+  ; excluding y-boundary guard cells
+  bmag = MAX(ABS([[Bxy[*,settings.y_boundary_guards:ny_inner+settings.y_boundary_guards-1]], [Bxy[*,ny_inner+3*settings.y_boundary_guards:-settings.y_boundary_guards-1]]]))
   PRINT, "Setting bmag = ", bmag
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
