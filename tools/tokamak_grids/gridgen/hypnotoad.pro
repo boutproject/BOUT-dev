@@ -433,7 +433,7 @@ PRO event_handler, event
                     nonorthogonal_weight_decay_power:info.nonorthogonal_weight_decay_power}
       ENDELSE
       
-      widget_control, info.y_boundary_guards, get_value=y_boundary_guards
+      widget_control, info.y_boundary_guards_field, get_value=y_boundary_guards
 
       ; Check if a simplified boundary should be used
       IF info.simple_bndry THEN BEGIN
