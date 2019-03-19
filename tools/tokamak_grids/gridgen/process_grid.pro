@@ -299,7 +299,7 @@ FUNCTION my_int_y, var, yaxis, mesh, loop=loop, nosmooth=nosmooth, simple=simple
     IF ~period THEN BEGIN
       ; reset integral to zero at the first grid point, subtracting intgral
       ; through y-boundary guard cells
-      f[xi,yi] = f[xi,yi] - f[xi,mesh.y_boundary_guards]
+      f[xi,yi] = f[xi,yi] - f[xi,yi[mesh.y_boundary_guards]]
     ENDIF
 
     IF NOT KEYWORD_SET(nosmooth) THEN BEGIN
