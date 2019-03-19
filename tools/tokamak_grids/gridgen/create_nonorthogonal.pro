@@ -253,13 +253,13 @@ FUNCTION poloidal_grid, interp_data, R, Z, ri, zi, n, fpsi=fpsi, parweight=parwe
     IF SIZE(yup_dist, /TYPE) EQ 0 THEN yup_dist = total_dist * 0.5D / DOUBLE(n)
 
     IF SIZE(ydown_space, /TYPE) EQ 0 THEN BEGIN
-       IF ydown_dist LT 1e-5 THEN BEGIN
+       IF ydown_dist LT 1d-5 THEN BEGIN
           ; Small (probably zero) dist
           ydown_space = dist[np-1]* 0.5D / DOUBLE(n-1)
        ENDIF ELSE ydown_space = ydown_dist
     ENDIF
     IF SIZE(yup_space, /TYPE) EQ 0 THEN BEGIN
-       IF yup_dist LT 1e-5 THEN BEGIN
+       IF yup_dist LT 1d-5 THEN BEGIN
           yup_space = dist[np-1] * 0.5D / DOUBLE(n-1)
        ENDIF ELSE yup_space = yup_dist
     ENDIF
@@ -439,7 +439,7 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
     IF iweight LT 0 THEN iweight = 0
     IF iweight GT npar - 1 THEN iweight = npar - 1
 
-    IF NOT KEYWORD_SET(nonorthogonal_weight_decay_power) THEN nonorthogonal_weight_decay_power = 0
+    IF NOT KEYWORD_SET(nonorthogonal_weight_decay_power) THEN nonorthogonal_weight_decay_power = 0.D
     IF NOT KEYWORD_SET(orthup) THEN orthup=0
     IF orthup EQ 1 THEN weight_up = 0 ELSE weight_up = (iweight/(npar-1.D))^nonorthogonal_weight_decay_power
 
@@ -563,17 +563,17 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
 
     dr = rixy[nin-1,i] - rixy[nin-2,i]
     dz = zixy[nin-1,i] - zixy[nin-2,i]
-    r1 = [ rixy[nin-1,i] - 1000*dr, rixy[nin-1,i] + 1000*dr ]
-    z1 = [ zixy[nin-1,i] - 1000*dz, zixy[nin-1,i] + 1000*dz ]
+    r1 = [ rixy[nin-1,i] - 1000.D*dr, rixy[nin-1,i] + 1000.D*dr ]
+    z1 = [ zixy[nin-1,i] - 1000.D*dz, zixy[nin-1,i] + 1000.D*dz ]
     
     ; Second line going through first point in SOL, along line vec_out
-    ;r2 = [ rixy[nin+1,i] - 1000*vec_out[0], rixy[nin+1,i] + 1000*vec_out[0] ]
-    ;z2 = [ zixy[nin+1,i] - 1000*vec_out[1], zixy[nin+1,i] + 1000*vec_out[1] ]
+    ;r2 = [ rixy[nin+1,i] - 1000.D*vec_out[0], rixy[nin+1,i] + 1000.D*vec_out[0] ]
+    ;z2 = [ zixy[nin+1,i] - 1000.D*vec_out[1], zixy[nin+1,i] + 1000.D*vec_out[1] ]
 
     dr = rixy[nin+1,i] - rixy[nin+2,i]
     dz = zixy[nin+1,i] - zixy[nin+2,i]
-    r2 = [ rixy[nin+1,i] - 1000*dr, rixy[nin+1,i] + 1000*dr ]
-    z2 = [ zixy[nin+1,i] - 1000*dz, zixy[nin+1,i] + 1000*dz ]
+    r2 = [ rixy[nin+1,i] - 1000.D*dr, rixy[nin+1,i] + 1000.D*dr ]
+    z2 = [ zixy[nin+1,i] - 1000.D*dz, zixy[nin+1,i] + 1000.D*dz ]
     
     ; Check the angle between the two lines
     dr1 = r1[1] - r1[0]
@@ -777,7 +777,7 @@ FUNCTION solve_xpt_hthe, dctF, R, Z, sep_info, dist0, pf_f, core_f, sol_in_f, so
 
   dist = dist0
 
-  IF KEYWORD_SET(psi) THEN Fc = psi ELSE Fc = 0
+  IF KEYWORD_SET(psi) THEN Fc = psi ELSE Fc = 0.D
   dctFc = dctF
   Rc = R
   Zc = Z
@@ -796,7 +796,7 @@ FUNCTION solve_xpt_hthe, dctF, R, Z, sep_info, dist0, pf_f, core_f, sol_in_f, so
   ; when NEWTON is combined with LSODE
 
   dfdx = DBLARR(4,4)
-  delta = 1e-3
+  delta = 1d-3
 
   REPEAT BEGIN
   xp0 = xpt_hthe_newt(dist)
@@ -1520,7 +1520,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       ;;       IF mini LT 0.D THEN mini = mini + ni
       ;;     ENDIF ELSE mini = (hit_ind1 + hit_ind2) / 2.D
           
-      ;;     OPLOT, [INTERPOLATE(R, INTERPOLATE(start_ri, mini), /DOUBLE)], [INTERPOLATE(Z, INTERPOLATE(start_zi, mini), /DOUBLE)], psym=2, color=4
+      ;;     OPLOT, [INTERPOLATE(R, INTERPOLATE(start_ri, mini, /DOUBLE), /DOUBLE)], [INTERPOLATE(Z, INTERPOLATE(start_zi, mini, /DOUBLE), /DOUBLE)], psym=2, color=4
           
       ;;     PRINT, "Theta location: " + STR(hit_ind1) + "," + STR(hit_ind2) + " -> " + STR(mini)
           
@@ -1566,8 +1566,8 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
 
 
       ; Get tangent vector
-      drdi = INTERPOLATE((DERIV(INTERPOLATE(R, start_ri))), mini, /DOUBLE)
-      dzdi = INTERPOLATE((DERIV(INTERPOLATE(Z, start_zi))), mini, /DOUBLE)
+      drdi = INTERPOLATE((DERIV(INTERPOLATE(R, start_ri, /DOUBLE))), mini, /DOUBLE)
+      dzdi = INTERPOLATE((DERIV(INTERPOLATE(Z, start_zi, /DOUBLE))), mini, /DOUBLE)
       
       tmp = {core_ind:mini, drdi:drdi, dzdi:dzdi, $ ; Core index and tangent vector
              sol:LONARR(2)} ; Array to store SOL indices
@@ -1737,14 +1737,14 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       ; Use the tangent vector to determine direction
       ; relative to core and so get direction of positive theta
       
-      drdi = INTERPOLATE((DERIV(INTERPOLATE(R, pf_ri))), mini, /DOUBLE)
-      dzdi = INTERPOLATE((DERIV(INTERPOLATE(Z, pf_zi))), mini, /DOUBLE)
+      drdi = INTERPOLATE((DERIV(INTERPOLATE(R, pf_ri, /DOUBLE))), mini, /DOUBLE)
+      dzdi = INTERPOLATE((DERIV(INTERPOLATE(Z, pf_zi, /DOUBLE))), mini, /DOUBLE)
       
       IF drdi * (*pf_info[xind]).drdi + dzdi * (*pf_info[xind]).dzdi GT 0.0D THEN BEGIN
         ; Line is parallel to the core. Need to reverse
         pf_ri = REVERSE(pf_ri)
         pf_zi = REVERSE(pf_zi)
-        mini = N_ELEMENTS(pf_ri) - 1.D - mini
+        mini = N_ELEMENTS(pf_ri) - 1 - mini
         temp = N_ELEMENTS(pf_ri) - 1 - pf_wallind2
         pf_wallind2 = N_ELEMENTS(pf_ri) - 1 - pf_wallind1
         pf_wallind1 = temp
