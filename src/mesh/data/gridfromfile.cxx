@@ -39,6 +39,14 @@ GridFile::GridFile(std::unique_ptr<DataFormat> format, std::string gridfilename)
     // not found in file, default to zero
     grid_yguards = 0;
   }
+
+  // Get number ny_inner from the grid file.
+  // Is already read in BoutMesh, but this way we don't have to the Mesh API to
+  // get it from there.
+  if (!file->read(&ny_inner, "ny_inner", 1, 1)) {
+    // not found in file, default to zero
+    ny_inner = 0;
+  }
 }
 
 GridFile::~GridFile() {
@@ -241,8 +249,8 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def) 
     // Need to check if we are before or after the target in the middle of the
     // y-domain, and increase ys for the extra boundary guard cells at that
     // target if we are after it.
-    if (m->OffsetY > ny_inner - myg) {
-      // Note: ny_inner includes lower guard cells, but OffsetY does not
+    if (m->OffsetY >= ny_inner) {
+      // Note: neither ny_inner nor OffsetY include guard cells
       ys += 2*grid_yguards;
     }
   }
