@@ -194,7 +194,7 @@ void Mesh::communicate(FieldGroup &g) {
   // Calculate yup and ydown fields for 3D fields
   if (calcParallelSlices_on_communicate) {
     for(const auto& fptr : g.field3d()) {
-      fptr->getCoordinates()->getParallelTransform().calcParallelSlices(*fptr);
+      fptr->calcParallelSlices();
     }
   }
 }
