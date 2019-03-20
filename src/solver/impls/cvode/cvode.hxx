@@ -47,6 +47,10 @@ class CvodeSolver;
 #include <sunlinsol/sunlinsol_spgmr.h>
 #endif
 
+#if SUNDIALS_VERSION_MAJOR >= 4
+#include <sunnonlinsol/sunnonlinsol_fixedpoint.h>
+#endif
+
 #include <nvector/nvector_parallel.h>
 
 #include <bout/solverfactory.hxx>
@@ -96,6 +100,10 @@ class CvodeSolver : public Solver {
 #if SUNDIALS_VERSION_MAJOR >= 3
   /// SPGMR solver structure
   SUNLinearSolver sun_solver{nullptr};
+#endif
+#if SUNDIALS_VERSION_MAJOR >= 4
+  /// Solver for functional iterations for Adams-Moulton
+  SUNNonlinearSolver nonlinear_solver{nullptr};
 #endif
 
 };

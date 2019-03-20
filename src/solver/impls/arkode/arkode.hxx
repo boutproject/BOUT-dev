@@ -48,6 +48,10 @@ class ArkodeSolver;
 #include <sunlinsol/sunlinsol_spgmr.h>
 #endif
 
+#if SUNDIALS_VERSION_MAJOR >= 4
+#include <sundials/sundials_nonlinearsolver.h>
+#endif
+
 #include <nvector/nvector_parallel.h>
 
 #include <bout/solverfactory.hxx>
@@ -98,6 +102,10 @@ class ArkodeSolver : public Solver {
 #if SUNDIALS_VERSION_MAJOR >= 3
   /// SPGMR solver structure
   SUNLinearSolver sun_solver{nullptr};
+#endif
+#if SUNDIALS_VERSION_MAJOR >= 4
+  /// Solver for functional iterations for Adams-Moulton
+  SUNNonlinearSolver nonlinear_solver{nullptr};
 #endif
 
 };

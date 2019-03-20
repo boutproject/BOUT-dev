@@ -199,7 +199,7 @@ IdaSolver::~IdaSolver() {
 #if SUNDIALS_VERSION_MAJOR >= 3
   if ((sun_solver = SUNSPGMR(static_cast<N_Vector>(uvec), PREC_NONE, maxl)) == nullptr)
     throw BoutException("ERROR: SUNSPGMR failed\n");
-  if (IDASpilsSetLinearSolver(idamem, sun_solver) != IDASPILS_SUCCESS)
+  if (IDASpilsSetLinearSolver(idamem, sun_solver) != IDA_SUCCESS)
     throw BoutException("ERROR: IDASpilsSetLinearSolver failed\n");
 #else
   if (IDASpgmr(idamem, maxl))

@@ -42,7 +42,6 @@
 #include <cvode/cvode_spgmr.h>
 #endif
 
-#include <cvode/cvode.h>
 #include <cvode/cvode_bbdpre.h>
 #include <nvector/nvector_parallel.h>
 #include <sundials/sundials_types.h>
@@ -90,6 +89,17 @@ inline int CVSpilsSetJacTimes(void* arkode_mem, std::nullptr_t,
 }
 #endif
 
+#if SUNDIALS_VERSION_MAJOR >= 4
+// Shim for newer versions
+inline void* CVodeCreate(int lmm, int UNUSED(iter)) { return CVodeCreate(lmm); }
+constexpr auto CV_FUNCTIONAL = 0;
+constexpr auto CV_NEWTON = 0;
+#elif SUNDIALS_VERSION_MAJOR == 3
+namespace {
+constexpr auto& SUNLinSol_SPGMR = SUNSPGMR;
+}
+#endif
+
 CvodeSolver::CvodeSolver(Options *opts) : Solver(opts) {
   has_constraints = false; ///< This solver doesn't have constraints
 
@@ -104,6 +114,9 @@ CvodeSolver::~CvodeSolver() {
     CVodeFree(&cvode_mem);
 #if SUNDIALS_VERSION_MAJOR >= 3
     SUNLinSolFree(sun_solver);
+#endif
+#if SUNDIALS_VERSION_MAJOR >= 4
+    SUNNonlinSolFree(nonlinear_solver);
 #endif
   }
 }
@@ -176,7 +189,6 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
   int mxsteps; // Maximum number of steps to take between outputs
   int mxorder; // Maximum lmm order to be used by the solver
   int lmm = CV_BDF;
-  int iter = CV_NEWTON;
 
   {TRACE("Getting options");
     options->get("mudq", mudq, band_width_default);
@@ -231,12 +243,10 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
       options->get("func_iter", func_iter, false); 
     }
 
-    if(func_iter)
-      iter = CV_FUNCTIONAL;
   }//End of options TRACE
 
-  // Call CVodeCreate
   {TRACE("Calling CVodeCreate");
+    const auto iter = func_iter ? CV_FUNCTIONAL : CV_NEWTON;
     if ((cvode_mem = CVodeCreate(lmm, iter)) == nullptr)
       throw BoutException("CVodeCreate failed\n");
   }
@@ -251,6 +261,13 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
       throw BoutException("CVodeInit failed\n");
   }
 
+#if SUNDIALS_VERSION_MAJOR >= 4
+  if ((nonlinear_solver = SUNNonlinSol_FixedPoint(uvec, 0)) == nullptr)
+    throw BoutException("SUNNonlinSol_FixedPoint failed\n");
+
+  if (CVodeSetNonlinearSolver(cvode_mem, nonlinear_solver))
+    throw BoutException("CVodeSetNonlinearSolver failed\n");
+#endif
   
   if (max_order>0) {
     TRACE("Calling CVodeSetMaxOrder");
@@ -310,10 +327,9 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
         prectype = PREC_RIGHT;
       
 #if SUNDIALS_VERSION_MAJOR >= 3
-      if ((sun_solver = SUNSPGMR(static_cast<N_Vector>(uvec), prectype, maxl))
-          == nullptr)
+      if ((sun_solver = SUNLinSol_SPGMR(uvec, prectype, maxl)) == nullptr)
         throw BoutException("ERROR: SUNSPGMR failed\n");
-      if (CVSpilsSetLinearSolver(cvode_mem, sun_solver) != CVSPILS_SUCCESS)
+      if (CVSpilsSetLinearSolver(cvode_mem, sun_solver) != CV_SUCCESS)
         throw BoutException("ERROR: CVSpilsSetLinearSolver failed\n");
 #else
       if (CVSpgmr(cvode_mem, prectype, maxl) != CVSPILS_SUCCESS)
@@ -339,10 +355,9 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
       output_info.write("\tNo preconditioning\n");
 
 #if SUNDIALS_VERSION_MAJOR >= 3
-      if ((sun_solver = SUNSPGMR(static_cast<N_Vector>(uvec), PREC_NONE, maxl))
-          == nullptr)
+      if ((sun_solver = SUNLinSol_SPGMR(uvec, PREC_NONE, maxl)) == nullptr)
         throw BoutException("ERROR: SUNSPGMR failed\n");
-      if (CVSpilsSetLinearSolver(cvode_mem, sun_solver) != CVSPILS_SUCCESS)
+      if (CVSpilsSetLinearSolver(cvode_mem, sun_solver) != CV_SUCCESS)
         throw BoutException("ERROR: CVSpilsSetLinearSolver failed\n");
 #else
       if (CVSpgmr(cvode_mem, PREC_NONE, maxl) != CVSPILS_SUCCESS)
@@ -356,7 +371,7 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
       output_info.write("\tUsing user-supplied Jacobian function\n");
 
       TRACE("Setting Jacobian-vector multiply");
-      if (CVSpilsSetJacTimes(cvode_mem, nullptr, cvode_jac) != CVSPILS_SUCCESS)
+      if (CVSpilsSetJacTimes(cvode_mem, nullptr, cvode_jac) != CV_SUCCESS)
         throw BoutException("ERROR: CVSpilsSetJacTimesVecFn failed\n");
     } else
       output_info.write("\tUsing difference quotient approximation for Jacobian\n");
