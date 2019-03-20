@@ -41,6 +41,11 @@ FUNCTION hypnotoad_version
   ;           harmlessly filled with zeros).
   ;         * Option to save y-boundary guard cells (defaults to 0 for backward
   ;           compatibility with versions of BOUT++ before 4.3).
+  ; 1.2.0   * Use double precision everywhere - significantly reduces numerical
+  ;           errors which may result when for example interpolating, then
+  ;           differentiating, then integrating. Does change the outputs a bit.
+  ;           Less sensitive to small changes in implementation (e.g. changes
+  ;           in indexing due to different number of y-boundary guard cells).
   
   major_version = 1
   minor_version = 2
