@@ -2594,6 +2594,7 @@ void BoutMesh::outputVars(Datafile &file) {
   file.add(jyseps1_2, "jyseps1_2", false);
   file.add(jyseps2_1, "jyseps2_1", false);
   file.add(jyseps2_2, "jyseps2_2", false);
+  file.add(ny_inner, "ny_inner", false);
 
   getCoordinates()->outputVars(file);
 }
