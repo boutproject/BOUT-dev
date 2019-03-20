@@ -101,10 +101,7 @@ constexpr auto& SUNLinSol_SPGMR = SUNSPGMR;
 #endif
 
 CvodeSolver::CvodeSolver(Options *opts) : Solver(opts) {
-  has_constraints = false; ///< This solver doesn't have constraints
-
-  jacfunc = nullptr;
-
+  has_constraints = false; // This solver doesn't have constraints
   canReset = true;
 }
 
@@ -470,7 +467,7 @@ BoutReal CvodeSolver::run(BoutReal tout) {
   MPI_Barrier(BoutComm::get());
 
   pre_Wtime = 0.0;
-  pre_ncalls = 0.0;
+  pre_ncalls = 0;
 
   int flag;
   if (!monitor_timestep) {

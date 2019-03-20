@@ -85,14 +85,14 @@ private:
   BoutReal TIMESTEP; // Time between outputs
   BoutReal hcur;     // Current internal timestep
 
-  Jacobian jacfunc; // Jacobian - vector function
-  bool diagnose;    // Output additional diagnostics
+  Jacobian jacfunc{nullptr}; // Jacobian - vector function
+  bool diagnose{false};      // Output additional diagnostics
 
-  N_Vector uvec; // Values
-  void* cvode_mem;
+  N_Vector uvec{nullptr};   // Values
+  void* cvode_mem{nullptr}; // CVODE internal memory block
 
-  BoutReal pre_Wtime;  // Time in preconditioner
-  BoutReal pre_ncalls; // Number of calls to preconditioner
+  BoutReal pre_Wtime{0.0}; // Time in preconditioner
+  int pre_ncalls{0};       // Number of calls to preconditioner
 
   void set_abstol_values(BoutReal* abstolvec_data, std::vector<BoutReal>& f2dtols,
                          std::vector<BoutReal>& f3dtols);
@@ -109,5 +109,5 @@ private:
 #endif
 };
 
-#endif  // BOUT_HAS_CVODE
-#endif  // __SUNDIAL_SOLVER_H__
+#endif // BOUT_HAS_CVODE
+#endif // __SUNDIAL_SOLVER_H__

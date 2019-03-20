@@ -75,11 +75,13 @@ private:
   int NOUT;          // Number of outputs. Specified in init, needed in run
   BoutReal TIMESTEP; // Time between outputs
 
-  N_Vector uvec, duvec, id; // Values, time-derivatives, and equation type
-  void* idamem;
+  N_Vector uvec{nullptr};  // Values
+  N_Vector duvec{nullptr}; // Time-derivatives
+  N_Vector id{nullptr};    // Equation type
+  void* idamem{nullptr};   // IDA internal memory block
 
-  BoutReal pre_Wtime;  // Time in preconditioner
-  BoutReal pre_ncalls; // Number of calls to preconditioner
+  BoutReal pre_Wtime{0.0}; // Time in preconditioner
+  int pre_ncalls{0};       // Number of calls to preconditioner
 
 #if SUNDIALS_VERSION_MAJOR >= 3
   /// SPGMR solver structure
@@ -87,5 +89,5 @@ private:
 #endif
 };
 
-#endif  // BOUT_HAS_IDA
-#endif  // __IDA_SOLVER_H__
+#endif // BOUT_HAS_IDA
+#endif // __IDA_SOLVER_H__

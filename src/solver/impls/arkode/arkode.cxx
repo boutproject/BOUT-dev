@@ -155,9 +155,7 @@ constexpr auto& ARKStepSetUserData = ARKodeSetUserData;
 #endif
 
 ArkodeSolver::ArkodeSolver(Options *opts) : Solver(opts) {
-  has_constraints = false; ///< This solver doesn't have constraints
-
-  jacfunc = nullptr;
+  has_constraints = false; // This solver doesn't have constraints
 }
 
 ArkodeSolver::~ArkodeSolver() {
@@ -585,7 +583,7 @@ BoutReal ArkodeSolver::run(BoutReal tout) {
   MPI_Barrier(BoutComm::get());
 
   pre_Wtime = 0.0;
-  pre_ncalls = 0.0;
+  pre_ncalls = 0;
 
   int flag;
   if(!monitor_timestep) {
@@ -698,8 +696,7 @@ void ArkodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal *uda
   // Load state from udata (as with res function)
   load_vars(udata);
 
-  // Load vector t:q
-  // o be inverted into F_vars
+  // Load vector to be inverted into F_vars
   load_derivs(rvec);
   
   run_precon(t, gamma, delta);

@@ -82,7 +82,7 @@ constexpr auto& ida_pre_shim = ida_pre;
 #endif
 
 IdaSolver::IdaSolver(Options *opts) : Solver(opts) {
-  has_constraints = true; ///< This solver has constraints
+  has_constraints = true; // This solver has constraints
 }
 
 IdaSolver::~IdaSolver() {
@@ -268,7 +268,7 @@ BoutReal IdaSolver::run(BoutReal tout) {
     throw BoutException("ERROR: Running IDA solver without initialisation\n");
 
   pre_Wtime = 0.0;
-  pre_ncalls = 0.0;
+  pre_ncalls = 0;
 
   int flag = IDASolve(idamem, tout, &simtime, uvec, duvec, IDA_NORMAL);
 
