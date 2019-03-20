@@ -177,16 +177,18 @@ class BoutMesh : public Mesh {
 
  private:
   std::string gridname;
-  int nx, ny;        ///< Size of the grid in the input file
-  int MX, MY;        ///< size of the grid excluding boundary regions
+  int nx, ny, nz; ///< Size of the grid in the input file
+  int MX, MY, MZ; ///< size of the grid excluding boundary regions
 
-  int MYSUB, MXSUB;  ///< Size of the grid on this processor
+  int MYSUB, MXSUB, MZSUB; ///< Size of the grid on this processor
 
   int NPES; ///< Number of processors
   int MYPE; ///< Rank of this processor
 
   int PE_YIND; ///< Y index of this processor
   int NYPE; // Number of processors in the Y direction
+
+  int NZPE;
 
   int MYPE_IN_CORE;  // 1 if processor in core
 
@@ -223,7 +225,7 @@ class BoutMesh : public Mesh {
   int  zperiod;
   BoutReal ZMIN, ZMAX;   // Range of the Z domain (in fractions of 2pi)
 
-  int  MXG, MYG;     // Boundary sizes
+  int MXG, MYG, MZG; // Boundary sizes
 
   void default_connections();
   void set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts = false);

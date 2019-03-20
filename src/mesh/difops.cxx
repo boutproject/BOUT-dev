@@ -200,37 +200,38 @@ const Field3D Div_par(const Field3D &f, const std::string &method, CELL_LOC outl
   return f.getCoordinates(outloc)->Div_par(f, outloc, method);
 }
 
-const Field3D Div_par(const Field3D &f, const Field3D &v) {
+const Field3D Div_par(const Field3D& f, const Field3D& v) {
   ASSERT1(areFieldsCompatible(f, v));
   ASSERT1(f.hasParallelSlices());
   ASSERT1(v.hasParallelSlices());
 
   // Parallel divergence, using velocities at cell boundaries
   // Note: Not guaranteed to be flux conservative
-  Mesh *mesh = f.getMesh();
+  Mesh* mesh = f.getMesh();
 
   Field3D result{emptyFrom(f)};
 
-  Coordinates *coord = f.getCoordinates();
-  
-  for(int i=mesh->xstart;i<=mesh->xend;i++)
-    for(int j=mesh->ystart;j<=mesh->yend;j++) {
-      for(int k=0;k<mesh->LocalNz;k++) {
-	
-	// Value of f and v at left cell face
-	BoutReal fL = 0.5*(f(i,j,k) + f.ydown()(i,j-1,k));
-	BoutReal vL = 0.5*(v(i,j,k) + v.ydown()(i,j-1,k));
-	
-	BoutReal fR = 0.5*(f(i,j,k) + f.yup()(i,j+1,k));
-	BoutReal vR = 0.5*(v(i,j,k) + v.yup()(i,j+1,k));
-	
+  Coordinates* coord = f.getCoordinates();
+
+  for (int i = mesh->xstart; i <= mesh->xend; i++)
+    for (int j = mesh->ystart; j <= mesh->yend; j++) {
+      for (int k = mesh->zstart; k <= mesh->zend; k++) {
+        // Value of f and v at left cell face
+        BoutReal fL = 0.5 * (f(i, j, k) + f.ydown()(i, j - 1, k));
+        BoutReal vL = 0.5 * (v(i, j, k) + v.ydown()(i, j - 1, k));
+
+        BoutReal fR = 0.5 * (f(i, j, k) + f.yup()(i, j + 1, k));
+        BoutReal vR = 0.5 * (v(i, j, k) + v.yup()(i, j + 1, k));
+
         // Calculate flux at right boundary (y+1/2)
-	BoutReal fluxRight = fR * vR * (coord->J(i,j) + coord->J(i,j+1)) / (sqrt(coord->g_22(i,j))+ sqrt(coord->g_22(i,j+1)));
-	
+        BoutReal fluxRight = fR * vR * (coord->J(i, j) + coord->J(i, j + 1))
+                             / (sqrt(coord->g_22(i, j)) + sqrt(coord->g_22(i, j + 1)));
+
         // Calculate at left boundary (y-1/2)
-	BoutReal fluxLeft = fL * vL * (coord->J(i,j) + coord->J(i,j-1)) / (sqrt(coord->g_22(i,j)) + sqrt(coord->g_22(i,j-1)));
-	
-	result(i,j,k)   = (fluxRight - fluxLeft) / (coord->dy(i,j)*coord->J(i,j));
+        BoutReal fluxLeft = fL * vL * (coord->J(i, j) + coord->J(i, j - 1))
+                            / (sqrt(coord->g_22(i, j)) + sqrt(coord->g_22(i, j - 1)));
+
+        result(i, j, k) = (fluxRight - fluxLeft) / (coord->dy(i, j) * coord->J(i, j));
       }
     }
 
@@ -784,8 +785,8 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
     int ncz = mesh->LocalNz;
     for(int x=mesh->xstart;x<=mesh->xend;x++)
       for(int y=mesh->ystart;y<=mesh->yend;y++) {
-	for(int z=0;z<ncz;z++) {
-	  int zm = (z - 1 + ncz) % ncz;
+        for (int z = 0; z < mesh->LocalNz; z++) {
+          int zm = (z - 1 + ncz) % ncz;
 	  int zp = (z + 1) % ncz;
           
 	  BoutReal gp, gm;
@@ -851,7 +852,7 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
       }
 
       // The middle block
-      for (int jz = 1; jz < ncz - 1; jz++) {
+      for (int jz = 1; jz < mesh->LocalNz - 1; jz++) {
         const int jzp = jz + 1;
         const int jzm = jz - 1;
 
@@ -890,8 +891,8 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
     for(int jx=mesh->xstart;jx<=mesh->xend;jx++){
       for(int jy=mesh->ystart;jy<=mesh->yend;jy++){
 	const BoutReal spacingFactor = partialFactor / metric->dx(jx,jy);
-	for(int jz=0;jz<ncz;jz++) {
-	  const int jzp = jz+1 < ncz ? jz + 1 : 0;
+        for (int jz = 0; jz < mesh->LocalNz; jz++) {
+          const int jzp = jz+1 < ncz ? jz + 1 : 0;
 	  //Above is alternative to const int jzp = (jz + 1) % ncz;
 	  const int jzm = jz-1 >=  0 ? jz - 1 : ncz-1;
 	  //Above is alternative to const int jzmTmp = (jz - 1 + ncz) % ncz;
@@ -1013,7 +1014,7 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
     int ncz = mesh->LocalNz;
     for(int y=mesh->ystart;y<=mesh->yend;y++) {
       for(int x=1;x<=mesh->LocalNx-2;x++) {
-        for(int z=0;z<ncz;z++) {
+        for (int z = 0; z < mesh->LocalNz; z++) {
           int zm = (z - 1 + ncz) % ncz;
           int zp = (z + 1) % ncz;
           
@@ -1136,7 +1137,7 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
         result(jx, jy, jz) = (Jpp + Jpx + Jxp) * spacingFactor;
       }
 
-      for (int jz = 1; jz < ncz - 1; jz++) {
+      for (int jz = 1; jz < mesh->LocalNz - 1; jz++) {
         const int jzp = jz + 1;
         const int jzm = jz - 1;
 
@@ -1203,8 +1204,8 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
         const BoutReal *Gxm = g_temp(jx-1, jy);
         const BoutReal *Gx  = g_temp(jx,   jy);
         const BoutReal *Gxp = g_temp(jx+1, jy);
-        for(int jz=0;jz<ncz;jz++) {
-	  const int jzp = jz+1 < ncz ? jz + 1 : 0;
+        for (int jz = 0; jz < mesh->LocalNz; jz++) {
+          const int jzp = jz+1 < ncz ? jz + 1 : 0;
 	  //Above is alternative to const int jzp = (jz + 1) % ncz;
 	  const int jzm = jz-1 >=  0 ? jz - 1 : ncz-1;
 	  //Above is alternative to const int jzm = (jz - 1 + ncz) % ncz;

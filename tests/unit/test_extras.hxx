@@ -160,21 +160,36 @@ public:
     xend = nx - 2;
     ystart = 1;
     yend = ny - 2;
+    zstart = 0;
+    zend = nz - 1;
 
-    StaggerGrids=true;
+    StaggerGrids=false;
+    
     // Unused variables
     periodicX = false;
     NXPE = 1;
     PE_XIND = 0;
-    StaggerGrids = false;
     IncIntShear = false;
     maxregionblocksize = MAXREGIONBLOCKSIZE;
 
-    setCoordinates(nullptr);
+    // Need some options for parallelTransform
+    options = Options::getRoot();
   }
 
   void setCoordinates(std::shared_ptr<Coordinates> coords, CELL_LOC location = CELL_CENTRE) {
     coords_map[location] = coords;
+  }
+
+  void setGridDataSource(GridDataSource* source_in) {
+    source = source_in;
+  }
+
+  // Use this if the FakeMesh needs x- and y-boundaries
+  void createBoundaries() {
+    addBoundary(new BoundaryRegionXIn("core", ystart, yend, this));
+    addBoundary(new BoundaryRegionXOut("sol", ystart, yend, this));
+    addBoundary(new BoundaryRegionYUp("upper_target", xstart, xend, this));
+    addBoundary(new BoundaryRegionYDown("lower_target", xstart, xend, this));
   }
 
   comm_handle send(FieldGroup &UNUSED(g)) { return nullptr; };
@@ -284,27 +299,40 @@ public:
     delete bout::globals::mesh;
     bout::globals::mesh = new FakeMesh(nx, ny, nz);
     bout::globals::mesh->createDefaultRegions();
-
-    delete mesh_staggered;
-    mesh_staggered = new FakeMesh(nx, ny, nz);
-    mesh_staggered->StaggerGrids = true;
-    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_XLOW);
-    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_YLOW);
-    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_ZLOW);
-    mesh_staggered->createDefaultRegions();
-
+    static_cast<FakeMesh*>(bout::globals::mesh)->setCoordinates(nullptr);
     test_coords = std::make_shared<Coordinates>(
         bout::globals::mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0},
         Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
         Field2D{0.0}, Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0},
         Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0},
         false);
+    static_cast<FakeMesh*>(bout::globals::mesh)->setCoordinates(test_coords);
+    // May need a ParallelTransform to create fields, because create3D calls
+    // fromFieldAligned
+    test_coords->setParallelTransform(
+        bout::utils::make_unique<ParallelTransformIdentity>(*bout::globals::mesh));
+
+    delete mesh_staggered;
+    mesh_staggered = new FakeMesh(nx, ny, nz);
+    mesh_staggered->StaggerGrids = true;
+    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr);
+    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_XLOW);
+    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_YLOW);
+    static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_ZLOW);
+    mesh_staggered->createDefaultRegions();
+
     test_coords_staggered = std::make_shared<Coordinates>(
-        mesh_staggered, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0},
-        Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
-        Field2D{0.0}, Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0},
-        Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0},
-        false);
+        mesh_staggered, Field2D{1.0, mesh_staggered}, Field2D{1.0, mesh_staggered},
+        BoutReal{1.0}, Field2D{1.0, mesh_staggered}, Field2D{0.0, mesh_staggered},
+        Field2D{1.0, mesh_staggered}, Field2D{1.0, mesh_staggered},
+        Field2D{1.0, mesh_staggered}, Field2D{0.0, mesh_staggered},
+        Field2D{0.0, mesh_staggered}, Field2D{0.0, mesh_staggered},
+        Field2D{1.0, mesh_staggered}, Field2D{1.0, mesh_staggered},
+        Field2D{1.0, mesh_staggered}, Field2D{0.0, mesh_staggered},
+        Field2D{0.0, mesh_staggered}, Field2D{0.0, mesh_staggered},
+        Field2D{0.0, mesh_staggered}, Field2D{0.0, mesh_staggered}, false);
+    test_coords_staggered->setParallelTransform(
+        bout::utils::make_unique<ParallelTransformIdentity>(*mesh_staggered));
   }
 
   virtual ~FakeMeshFixture() {

@@ -19,6 +19,7 @@ public:
 
     delete mesh;
     mesh = new FakeMesh(nx, ny, nz);
+    static_cast<FakeMesh*>(mesh)->setCoordinates(nullptr);
 
     // Use two y-guards to test multiple parallel slices
     mesh->ystart = 2;

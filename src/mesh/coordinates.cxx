@@ -245,9 +245,28 @@ namespace {
 
     return result;
   }
+
+  // If the CELL_CENTRE variable was read, the staggered version is required to
+  // also exist for consistency
+  void checkStaggeredGet(Mesh* mesh, std::string name, std::string suffix) {
+    if (mesh->sourceHasVar(name) != mesh->sourceHasVar(name+suffix)) {
+      throw BoutException("Attempting to read staggered fields from grid, but " + name
+          + " is not present in both CELL_CENTRE and staggered versions.");
+    }
+  }
+
+  // convenience function for repeated code
+  void getAtLoc(Mesh* mesh, Field2D &var, std::string name, std::string suffix,
+      CELL_LOC location, BoutReal default_value = 0.) {
+
+    checkStaggeredGet(mesh, name, suffix);
+    mesh->get(var, name+suffix, default_value);
+    var.setLocation(location);
+  }
 }
 
-Coordinates::Coordinates(Mesh *mesh, Options* options, const CELL_LOC loc, const Coordinates* coords_in)
+Coordinates::Coordinates(Mesh *mesh, Options* options, const CELL_LOC loc,
+      const Coordinates* coords_in, bool force_interpolate_from_centre)
     : dx(1, mesh), dy(1, mesh), dz(1), d1_dx(mesh), d1_dy(mesh), J(1, mesh), Bxy(1, mesh),
       // Identity metric tensor
       g11(1, mesh), g22(1, mesh), g33(1, mesh), g12(0, mesh), g13(0, mesh), g23(0, mesh),
@@ -258,87 +277,198 @@ Coordinates::Coordinates(Mesh *mesh, Options* options, const CELL_LOC loc, const
       G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), ShiftTorsion(mesh),
       IntShiftTorsion(mesh), localmesh(mesh), location(loc) {
 
-  dx = interpolateAndNeumann(coords_in->dx, location);
-  dy = interpolateAndNeumann(coords_in->dy, location);
+  std::string suffix = "";
+  switch (location) {
+  case CELL_XLOW: {
+      suffix = "_xlow";
+      break;
+    }
+  case CELL_YLOW: {
+      suffix = "_ylow";
+      break;
+    }
+  case CELL_ZLOW: {
+      // geometrical quantities are Field2D, so CELL_ZLOW version is the same
+      // as CELL_CENTRE
+      suffix = "";
+      break;
+    }
+  default: {
+      throw BoutException("Incorrect location passed to "
+          "Coordinates(Mesh*,const CELL_LOC,const Coordinates*) constructor.");
+    }
+  }
 
   nz = mesh->LocalNz;
 
   dz = coords_in->dz;
 
-  // Diagonal components of metric tensor g^{ij}
-  g11 = interpolateAndNeumann(coords_in->g11, location);
-  g22 = interpolateAndNeumann(coords_in->g22, location);
-  g33 = interpolateAndNeumann(coords_in->g33, location);
+  if (!force_interpolate_from_centre && mesh->sourceHasVar("dx"+suffix)) {
 
-  // Off-diagonal elements.
-  g12 = interpolateAndNeumann(coords_in->g12, location);
-  g13 = interpolateAndNeumann(coords_in->g13, location);
-  g23 = interpolateAndNeumann(coords_in->g23, location);
+    checkStaggeredGet(mesh, "dx", suffix);
+    if (mesh->get(dx, "dx"+suffix)) {
+      output_warn.write(
+          "\tWARNING: differencing quantity 'dx%s' not found. Set to 1.0\n", suffix.c_str());
+      dx = 1.0;
+    }
+    dx.setLocation(location);
+
+    if (mesh->periodicX) {
+      mesh->communicate(dx);
+    }
+
+    checkStaggeredGet(mesh, "dy", suffix);
+    if (mesh->get(dy, "dy"+suffix)) {
+      output_warn.write(
+          "\tWARNING: differencing quantity 'dy%s' not found. Set to 1.0\n", suffix.c_str());
+      dy = 1.0;
+    }
+    dy.setLocation(location);
+
+    // grid data source has staggered fields, so read instead of interpolating
+    // Diagonal components of metric tensor g^{ij} (default to 1)
+    getAtLoc(mesh, g11, "g11", suffix, location, 1.0);
+    getAtLoc(mesh, g22, "g22", suffix, location, 1.0);
+    getAtLoc(mesh, g33, "g33", suffix, location, 1.0);
+    getAtLoc(mesh, g12, "g12", suffix, location, 0.0);
+    getAtLoc(mesh, g13, "g13", suffix, location, 0.0);
+    getAtLoc(mesh, g23, "g23", suffix, location, 0.0);
+
+    /// Find covariant metric components
+    auto covariant_component_names = {"g_11", "g_22", "g_33", "g_12", "g_13", "g_23"};
+    auto source_has_component = [&suffix, &mesh] (const std::string& name) {
+      return mesh->sourceHasVar(name + suffix);
+    };
+    // Check if any of the components are present
+    if (std::any_of(begin(covariant_component_names), end(covariant_component_names),
+                    source_has_component)) {
+      // Check that all components are present
+      if (std::all_of(begin(covariant_component_names), end(covariant_component_names),
+                      source_has_component)) {
+
+        getAtLoc(mesh, g_11, "g_11", suffix, location);
+        getAtLoc(mesh, g_22, "g_22", suffix, location);
+        getAtLoc(mesh, g_33, "g_33", suffix, location);
+        getAtLoc(mesh, g_12, "g_12", suffix, location);
+        getAtLoc(mesh, g_13, "g_13", suffix, location);
+        getAtLoc(mesh, g_23, "g_23", suffix, location);
+
+        output_warn.write("\tWARNING! Staggered covariant components of metric tensor set manually. "
+                          "Contravariant components NOT recalculated\n");
+
+      } else {
+        output_warn.write("Not all staggered covariant components of metric tensor found. "
+                          "Calculating all from the contravariant tensor\n");
+        /// Calculate contravariant metric components if not found
+        if (calcCovariant()) {
+          throw BoutException("Error in staggered calcCovariant call");
+        }
+      }
+    } else {
+      /// Calculate contravariant metric components if not found
+      if (calcCovariant()) {
+        throw BoutException("Error in staggered calcCovariant call");
+      }
+    }
+
+    checkStaggeredGet(mesh, "ShiftTorsion", suffix);
+    if (mesh->get(ShiftTorsion, "ShiftTorsion"+suffix)) {
+      output_warn.write("\tWARNING: No Torsion specified for zShift. Derivatives may not be correct\n");
+      ShiftTorsion = 0.0;
+    }
+    ShiftTorsion.setLocation(location);
+
+    //////////////////////////////////////////////////////
+
+    if (mesh->IncIntShear) {
+      checkStaggeredGet(mesh, "IntShiftTorsion", suffix);
+      if (mesh->get(IntShiftTorsion, "IntShiftTorsion"+suffix)) {
+        output_warn.write("\tWARNING: No Integrated torsion specified\n");
+        IntShiftTorsion = 0.0;
+      }
+      IntShiftTorsion.setLocation(location);
+    } else {
+      // IntShiftTorsion will not be used, but set to zero to avoid uninitialized field
+      IntShiftTorsion = 0.;
+    }
+  } else {
+    // Interpolate fields from coords_in
+
+    dx = interpolateAndNeumann(coords_in->dx, location);
+    dy = interpolateAndNeumann(coords_in->dy, location);
+
+    // Diagonal components of metric tensor g^{ij}
+    g11 = interpolateAndNeumann(coords_in->g11, location);
+    g22 = interpolateAndNeumann(coords_in->g22, location);
+    g33 = interpolateAndNeumann(coords_in->g33, location);
+
+    // Off-diagonal elements.
+    g12 = interpolateAndNeumann(coords_in->g12, location);
+    g13 = interpolateAndNeumann(coords_in->g13, location);
+    g23 = interpolateAndNeumann(coords_in->g23, location);
+
+    ShiftTorsion = interpolateAndNeumann(coords_in->ShiftTorsion, location);
+
+    if (mesh->IncIntShear) {
+      IntShiftTorsion = interpolateAndNeumann(coords_in->IntShiftTorsion, location);
+    }
+
+    /// Always calculate contravariant metric components so that they are
+    /// consistent with the interpolated covariant components
+    if (calcCovariant()) {
+      throw BoutException("Error in calcCovariant call while constructing staggered Coordinates");
+    }
+  }
 
   // Check input metrics
   if ((!finite(g11, RGN_NOBNDRY)) || (!finite(g22, RGN_NOBNDRY)) || (!finite(g33, RGN_NOBNDRY))) {
-    throw BoutException("\tERROR: Interpolated diagonal metrics are not finite!\n");
+    throw BoutException("\tERROR: Staggered diagonal metrics are not finite!\n");
   }
   if ((min(g11) <= 0.0) || (min(g22) <= 0.0) || (min(g33) <= 0.0)) {
-    throw BoutException("\tERROR: Interpolated diagonal metrics are negative!\n");
+    throw BoutException("\tERROR: Staggered diagonal metrics are negative!\n");
   }
   if ((!finite(g12, RGN_NOBNDRY)) || (!finite(g13, RGN_NOBNDRY)) || (!finite(g23, RGN_NOBNDRY))) {
-    throw BoutException("\tERROR: Interpolated off-diagonal metrics are not finite!\n");
-  }
-
-  /// Always calculate contravariant metric components so that they are
-  /// consistent with the interpolated covariant components
-  if (calcCovariant()) {
-    throw BoutException("Error in calcCovariant call");
+    throw BoutException("\tERROR: Staggered off-diagonal metrics are not finite!\n");
   }
 
   /// Calculate Jacobian and Bxy
   if (jacobian())
-    throw BoutException("Error in jacobian call");
+    throw BoutException("Error in jacobian call while constructing staggered Coordinates");
 
   //////////////////////////////////////////////////////
   /// Calculate Christoffel symbols. Needs communication
   if (geometry()) {
-    throw BoutException("Differential geometry failed\n");
-  }
-
-  ShiftTorsion = interpolateAndNeumann(coords_in->ShiftTorsion, location);
-
-  //////////////////////////////////////////////////////
-
-  if (mesh->IncIntShear) {
-    IntShiftTorsion = interpolateAndNeumann(coords_in->IntShiftTorsion, location);
-  } else {
-    // IntShiftTorsion will not be used, but set to zero to avoid uninitialized field
-    IntShiftTorsion = 0.;
+    throw BoutException("Differential geometry failed while constructing staggered Coordinates");
   }
 
   setParallelTransform(options);
 }
 
 void Coordinates::outputVars(Datafile &file) {
-  file.add(dx, "dx", false);
-  file.add(dy, "dy", false);
-  file.add(dz, "dz", false);
+  const std::string loc_string = (location == CELL_CENTRE) ? "" : "_"+toString(location);
 
-  file.add(g11, "g11", false);
-  file.add(g22, "g22", false);
-  file.add(g33, "g33", false);
-  file.add(g12, "g12", false);
-  file.add(g13, "g13", false);
-  file.add(g23, "g23", false);
+  file.addOnce(dx, "dx" + loc_string);
+  file.addOnce(dy, "dy" + loc_string);
+  file.addOnce(dz, "dz" + loc_string);
 
-  file.add(g_11, "g_11", false);
-  file.add(g_22, "g_22", false);
-  file.add(g_33, "g_33", false);
-  file.add(g_12, "g_12", false);
-  file.add(g_13, "g_13", false);
-  file.add(g_23, "g_23", false);
+  file.addOnce(g11, "g11" + loc_string);
+  file.addOnce(g22, "g22" + loc_string);
+  file.addOnce(g33, "g33" + loc_string);
+  file.addOnce(g12, "g12" + loc_string);
+  file.addOnce(g13, "g13" + loc_string);
+  file.addOnce(g23, "g23" + loc_string);
 
-  file.add(J, "J", false);
+  file.addOnce(g_11, "g_11" + loc_string);
+  file.addOnce(g_22, "g_22" + loc_string);
+  file.addOnce(g_33, "g_33" + loc_string);
+  file.addOnce(g_12, "g_12" + loc_string);
+  file.addOnce(g_13, "g_13" + loc_string);
+  file.addOnce(g_23, "g_23" + loc_string);
+
+  file.addOnce(J, "J" + loc_string);
 }
 
-int Coordinates::geometry() {
+int Coordinates::geometry(bool recalculate_staggered) {
   TRACE("Coordinates::geometry");
 
   output_progress.write("Calculating differential geometry terms\n");
@@ -500,7 +630,7 @@ int Coordinates::geometry() {
     d1_dy = -d2y / (dy * dy);
   }
 
-  if (location == CELL_CENTRE) {
+  if (location == CELL_CENTRE && recalculate_staggered) {
     // Re-calculate interpolated Coordinates at staggered locations
     localmesh->recalculateStaggeredCoordinates();
   }

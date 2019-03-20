@@ -80,6 +80,20 @@ Field2D::Field2D(BoutReal val, Mesh* localmesh) : Field2D(localmesh) {
   *this = val;
 }
 
+Field2D::Field2D(Array<BoutReal> data, Mesh* localmesh, CELL_LOC datalocation,
+                 DirectionTypes directions_in)
+    : Field(localmesh, datalocation, directions_in), data(data) {
+
+  ASSERT1(fieldmesh != nullptr);
+
+  nx = fieldmesh->LocalNx;
+  ny = fieldmesh->LocalNy;
+
+  ASSERT1(data.size() == nx * ny);
+
+  setLocation(datalocation);
+}
+
 Field2D::~Field2D() {
   if(deriv)
     delete deriv;

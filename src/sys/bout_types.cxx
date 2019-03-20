@@ -115,3 +115,21 @@ std::string toString(DERIV deriv) {
 
   return safeAt(DERIVtoString, deriv);
 }
+
+std::string toString(YDirectionType d) {
+  AUTO_TRACE();
+  const static std::map<YDirectionType, std::string> YDirectionTypeToString = {
+      {YDirectionType::Standard, "Standard"},
+      {YDirectionType::Aligned, "Aligned"}};
+
+  return safeAt(YDirectionTypeToString, d);
+}
+
+std::string toString(ZDirectionType d) {
+  AUTO_TRACE();
+  const static std::map<ZDirectionType, std::string> ZDirectionTypeToString = {
+      {ZDirectionType::Standard, "Standard"},
+      {ZDirectionType::Average, "Average"}};
+
+  return safeAt(ZDirectionTypeToString, d);
+}

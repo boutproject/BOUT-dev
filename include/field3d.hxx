@@ -40,7 +40,10 @@ class Mesh;  // #include "bout/mesh.hxx"
 
 #include "bout/field_visitor.hxx"
 
+#include "utils.hxx"
+
 #include <vector>
+
 
 /// Class for 3D X-Y-Z scalar fields
 /*!
@@ -182,6 +185,10 @@ class Field3D : public Field, public FieldData {
   Field3D(const Field2D& f);
   /// Constructor from value
   Field3D(BoutReal val, Mesh *localmesh = nullptr);
+  /// Constructor from Array and Mesh
+  Field3D(Array<BoutReal> data, Mesh* localmesh, CELL_LOC location = CELL_CENTRE,
+          DirectionTypes directions_in = {YDirectionType::Standard,
+                                          ZDirectionType::Standard});
   /// Destructor
   ~Field3D() override;
 
@@ -786,6 +793,13 @@ inline void invalidateGuards(Field3D &UNUSED(var)) {}
 /// Wrapper around member function f.timeDeriv()
 inline Field3D& ddt(Field3D &f) {
   return *(f.timeDeriv());
+}
+
+/// toString template specialisation
+/// Defined in utils.hxx
+template <>
+inline std::string toString<>(const Field3D& UNUSED(val)) {
+  return "<Field3D>";
 }
 
 #endif /* __FIELD3D_H__ */

@@ -18,12 +18,16 @@ public:
     buffer.str("");
     // When done redirect cout to its old self
     std::cout.rdbuf(sbuf);
+
+    std::remove(filename.c_str());
   }
 
   // Write cout to buffer instead of stdout
   std::stringstream buffer;
   // Save cout's buffer here
   std::streambuf *sbuf;
+  // A temporary filename
+  std::string filename{std::tmpnam(nullptr)};
 };
 
 TEST_F(OutputTest, JustStdOutCpp) {
@@ -49,12 +53,9 @@ TEST_F(OutputTest, JustStdOutGlobalInstance) {
 TEST_F(OutputTest, OpenFile) {
   Output local_output;
 
-  // Get a filename for a temporary file
-  char *filename = std::tmpnam(nullptr);
-
   std::string test_output = "To stdout and file\n";
 
-  local_output.open("%s", filename);
+  local_output.open("%s", filename.c_str());
   local_output << test_output;
 
   std::ifstream test_file(filename);
@@ -64,19 +65,14 @@ TEST_F(OutputTest, OpenFile) {
 
   EXPECT_EQ(test_output, test_buffer.str());
   EXPECT_EQ(test_output, buffer.str());
-
-  std::remove(filename);
 }
 
 TEST_F(OutputTest, JustPrint) {
   Output local_output;
 
-  // Get a filename for a temporary file
-  char *filename = std::tmpnam(nullptr);
-
   std::string test_output = "To stdout only\n";
 
-  local_output.open("%s", filename);
+  local_output.open("%s", filename.c_str());
   local_output.print("%s",test_output.c_str());
 
   std::ifstream test_file(filename);
@@ -86,21 +82,16 @@ TEST_F(OutputTest, JustPrint) {
 
   EXPECT_EQ("", test_buffer.str());
   EXPECT_EQ(test_output, buffer.str());
-
-  std::remove(filename);
 }
 
 TEST_F(OutputTest, DisableEnableStdout) {
   Output local_output;
 
-  // Get a filename for a temporary file
-  char *filename = std::tmpnam(nullptr);
-
-  std::string file_only = "To file only\n";
+ std::string file_only = "To file only\n";
   std::string file_and_stdout = "To stdout and file\n";
 
   // Open temporary file and close stdout
-  local_output.open("%s", filename);
+  local_output.open("%s", filename.c_str());
   local_output.disable();
 
   local_output << file_only;
@@ -123,7 +114,6 @@ TEST_F(OutputTest, DisableEnableStdout) {
   EXPECT_EQ(file_and_stdout, buffer.str());
 
   test_file.close();
-  std::remove(filename);
 }
 
 TEST_F(OutputTest, GetInstance) {
@@ -222,12 +212,9 @@ TEST_F(OutputTest, ConditionalJustPrint) {
   Output local_output_base;
   ConditionalOutput local_output(&local_output_base);
 
-  // Get a filename for a temporary file
-  char *filename = std::tmpnam(nullptr);
-
   std::string test_output = "To stdout only\n";
 
-  local_output.open("%s", filename);
+  local_output.open("%s", filename.c_str());
   local_output.print("%s", test_output.c_str());
 
   std::ifstream test_file(filename);
@@ -237,8 +224,6 @@ TEST_F(OutputTest, ConditionalJustPrint) {
 
   EXPECT_EQ("", test_buffer.str());
   EXPECT_EQ(test_output, buffer.str());
-
-  std::remove(filename);
 }
 
 TEST_F(OutputTest, ConditionalMultipleLayersGetBase) {
@@ -296,12 +281,9 @@ TEST_F(OutputTest, DummyOutputStdOut) {
 TEST_F(OutputTest, DummyJustPrint) {
   DummyOutput dummy;
 
-  // Get a filename for a temporary file
-  char *filename = std::tmpnam(nullptr);
-
   std::string test_output = "To stdout only\n";
 
-  dummy.open("%s", filename);
+  dummy.open("%s", filename.c_str());
   dummy.print("%s", test_output.c_str());
 
   std::ifstream test_file(filename);
@@ -311,6 +293,4 @@ TEST_F(OutputTest, DummyJustPrint) {
 
   EXPECT_EQ("", test_buffer.str());
   EXPECT_EQ("", buffer.str());
-
-  std::remove(filename);
 }

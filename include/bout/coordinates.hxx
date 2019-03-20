@@ -53,7 +53,13 @@ public:
   Coordinates(Mesh *mesh, Options* options = nullptr);
 
   /// Constructor interpolating from another Coordinates object
-  Coordinates(Mesh *mesh, Options* options, const CELL_LOC loc, const Coordinates* coords_in);
+  /// By default attempts to read staggered Coordinates from grid data source,
+  /// interpolating from CELL_CENTRE if not present. Set
+  /// force_interpolate_from_centre argument to true to always interpolate
+  /// (useful if CELL_CENTRE Coordinates have been changed, so reading from file
+  /// would not be correct).
+  Coordinates(Mesh *mesh, Options* options, const CELL_LOC loc, const Coordinates* coords_in,
+      bool force_interpolate_from_centre=false);
 
   /// A constructor useful for testing purposes. To use it, inherit
   /// from Coordinates. If \p calculate_geometry is true (default),
@@ -106,7 +112,7 @@ public:
   Field2D IntShiftTorsion; ///< Integrated shear (I in BOUT notation)
 
   /// Calculate differential geometry quantities from the metric tensor
-  int geometry();
+  int geometry(bool recalculate_staggered = true);
   int calcCovariant(); ///< Inverts contravatiant metric to get covariant
   int calcContravariant(); ///< Invert covariant metric to get contravariant
   int jacobian(); ///< Calculate J and Bxy

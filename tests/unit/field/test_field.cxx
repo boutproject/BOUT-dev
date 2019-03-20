@@ -31,6 +31,7 @@ TEST_F(FieldTest, GetGlobalMesh) {
 
 TEST_F(FieldTest, GetLocalMesh) {
   FakeMesh myMesh{nx + 1, ny + 2, nz + 3};
+  myMesh.setCoordinates(nullptr);
   Field field(&myMesh, CELL_CENTRE, {YDirectionType::Standard, ZDirectionType::Standard});
 
   auto localmesh = field.getMesh();
@@ -64,6 +65,7 @@ TEST_F(FieldTest, AreFieldsCompatibleFalseMesh) {
   Field field;
 
   FakeMesh myMesh{nx + 1, ny + 2, nz + 3};
+  myMesh.setCoordinates(nullptr);
 
   // Create a field with all members set explicitly, and a non-default mesh
   Field field2{&myMesh, CELL_CENTRE, {YDirectionType::Standard, ZDirectionType::Standard}};

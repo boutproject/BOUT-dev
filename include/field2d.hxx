@@ -41,6 +41,7 @@ class Field3D; //#include "field3d.hxx"
 
 #include "bout/array.hxx"
 #include "bout/region.hxx"
+#include "utils.hxx"
 
 #include "unused.hxx"
 
@@ -84,6 +85,11 @@ class Field2D : public Field, public FieldData {
    * boundary cells.
    */ 
   Field2D(BoutReal val, Mesh *localmesh = nullptr);
+  
+  /// Constructor from Array and Mesh
+  Field2D(Array<BoutReal> data, Mesh* localmesh, CELL_LOC location = CELL_CENTRE,
+          DirectionTypes directions_in = {YDirectionType::Standard,
+                                          ZDirectionType::Average});
 
   /*!
    * Destructor
@@ -468,6 +474,13 @@ inline void invalidateGuards(Field2D &UNUSED(var)) {}
 /// Wrapper around member function f.timeDeriv()
 inline Field2D& ddt(Field2D &f) {
   return *(f.timeDeriv());
+}
+
+/// toString template specialisation
+/// Defined in utils.hxx
+template <>
+inline std::string toString<>(const Field2D& UNUSED(val)) {
+  return "<Field2D>";
 }
 
 #endif /* __FIELD2D_H__ */

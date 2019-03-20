@@ -15,7 +15,6 @@ class Datafile;
 #define __DATAFILE_H__
 
 #include "bout_types.hxx"
-#include "options.hxx"
 #include "bout/macro_for_each.hxx"
 
 #include "dataformat.hxx"
@@ -24,8 +23,10 @@ class Datafile;
 #include <cstdarg>
 #include <cstdio>
 class Mesh;
+class Field;
 class Field2D;
 class Field3D;
+class Options;
 class Vector2D;
 class Vector3D;
 
@@ -134,6 +135,10 @@ class Datafile {
   bool write_real(const std::string &name, BoutReal *f, bool save_repeat);
   bool write_f2d(const std::string &name, Field2D *f, bool save_repeat);
   bool write_f3d(const std::string &name, Field3D *f, bool save_repeat);
+
+  /// Write out the meta-data of a field as attributes of the variable in
+  /// 'file'.
+  void writeFieldAttributes(const std::string& name, const Field& f);
 
   /// Check if a variable has already been added
   bool varAdded(const std::string &name);
