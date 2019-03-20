@@ -242,7 +242,7 @@ private:
   std::unique_ptr<ParallelTransform> transform{nullptr};
 
   /// Set the parallel (y) transform from the options file.
-  /// Usual way to create the transform object.
+  /// Used in the constructor to create the transform object.
   void setParallelTransform(Options* options);
 };
 
