@@ -29,7 +29,6 @@
 
 #ifdef BOUT_HAS_ARKODE
 
-#include "bout/mesh.hxx"
 #include "boutcomm.hxx"
 #include "boutexception.hxx"
 #include "field3d.hxx"
@@ -37,6 +36,7 @@
 #include "options.hxx"
 #include "output.hxx"
 #include "unused.hxx"
+#include "bout/mesh.hxx"
 
 #if SUNDIALS_VERSION_MAJOR >= 4
 #include <arkode/arkode_arkstep.h>
@@ -68,8 +68,8 @@ class Field2D;
 using ARKODEINT = int;
 #endif
 
-static int arkode_rhs_e(BoutReal t, N_Vector u, N_Vector du, void* user_data);
-static int arkode_rhs_i(BoutReal t, N_Vector u, N_Vector du, void* user_data);
+static int arkode_rhs_explicit(BoutReal t, N_Vector u, N_Vector du, void* user_data);
+static int arkode_rhs_implicit(BoutReal t, N_Vector u, N_Vector du, void* user_data);
 static int arkode_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data);
 
 static int arkode_bbd_rhs(ARKODEINT Nlocal, BoutReal t, N_Vector u, N_Vector du,
@@ -216,48 +216,42 @@ int ArkodeSolver::init(int nout, BoutReal tstep) {
   // Use ImEx capability
   const auto imex = (*options)["imex"].withDefault(true);
   // Solve only explicit part
-  const auto expl = (*options)["explicit"].withDefault(true);
+  const auto solve_explicit = (*options)["explicit"].withDefault(true);
   // Solve only implicit part
-  const auto impl = (*options)["implicit"].withDefault(true);
+  const auto solve_implicit = (*options)["implicit"].withDefault(true);
 
-  if (imex) { // Use ImEx solver
-    TRACE("ARKStep ImEx");
-    output.write("\tUsing ARKode ImEx solver \n");
-    // arkode_rhs_e holds the explicit part, arkode_rhs_i holds the implicit part
-    if ((arkode_mem = ARKStepCreate(arkode_rhs_e, arkode_rhs_i, simtime, uvec))
-        == nullptr)
-      throw BoutException("ARKStepCreate failed\n");
+  ASSERT1(solve_explicit or solve_implicit);
 
-    if (expl && impl) {
-      if (ARKStepSetImEx(arkode_mem) != ARK_SUCCESS)
-        throw BoutException("ARKStepSetImEx failed\n");
-    } else if (expl) {
-      if (ARKStepSetExplicit(arkode_mem) != ARK_SUCCESS)
-        throw BoutException("ARKStepSetExplicit failed\n");
+  const auto& explicit_rhs = [imex, solve_explicit]() {
+    if (imex) {
+      return arkode_rhs_explicit;
     } else {
-      if (ARKStepSetImplicit(arkode_mem) != ARK_SUCCESS)
-        throw BoutException("ARKStepSetImplicit failed\n");
+      return solve_explicit ? arkode_rhs : nullptr;
     }
+  }();
+  const auto& implicit_rhs = [imex, solve_implicit]() {
+    if (imex) {
+      return arkode_rhs_implicit;
+    } else {
+      return solve_implicit ? arkode_rhs : nullptr;
+    }
+  }();
+
+  if ((arkode_mem = ARKStepCreate(explicit_rhs, implicit_rhs, simtime, uvec)) == nullptr)
+    throw BoutException("ARKStepCreate failed\n");
+
+  if (imex and solve_explicit and solve_implicit) {
+    output_info.write("\tUsing ARKode ImEx solver \n");
+    if (ARKStepSetImEx(arkode_mem) != ARK_SUCCESS)
+      throw BoutException("ARKStepSetImEx failed\n");
+  } else if (solve_explicit) {
+    output_info.write("\tUsing ARKStep Explicit solver \n");
+    if (ARKStepSetExplicit(arkode_mem) != ARK_SUCCESS)
+      throw BoutException("ARKStepSetExplicit failed\n");
   } else {
-    if (expl) { // Use purely explicit solver
-      TRACE("ARKStep Explicit");
-      output.write("\tUsing ARKStep Explicit solver \n");
-      // arkode_rhs_e holds the explicit part, arkode_rhs_i holds
-      // the implicit part
-      if ((arkode_mem = ARKStepCreate(arkode_rhs, nullptr, simtime, uvec)) == nullptr)
-        throw BoutException("ARKStepCreate failed\n");
-      if (ARKStepSetExplicit(arkode_mem) != ARK_SUCCESS)
-        throw BoutException("ARKStepSetExplicit failed\n");
-    } else { // Use purely implicit solver
-      TRACE("ARKStep Implicit");
-      output.write("\tUsing ARKStep Implicit solver \n");
-      // arkode_rhs_e holds the explicit part, arkode_rhs_i holds
-      // the implicit part
-      if ((arkode_mem = ARKStepCreate(nullptr, arkode_rhs, simtime, uvec)) == nullptr)
-        throw BoutException("ARKStepCreate failed\n");
-      if (ARKStepSetImplicit(arkode_mem) != ARK_SUCCESS)
-        throw BoutException("ARKStepSetImplicit failed\n");
-    }
+    output_info.write("\tUsing ARKStep Implicit solver \n");
+    if (ARKStepSetImplicit(arkode_mem) != ARK_SUCCESS)
+      throw BoutException("ARKStepSetImplicit failed\n");
   }
 
   // For callbacks, need pointer to solver object
@@ -692,7 +686,7 @@ void ArkodeSolver::jac(BoutReal t, BoutReal* ydata, BoutReal* vdata, BoutReal* J
  * ARKODE explicit RHS functions
  **************************************************************************/
 
-static int arkode_rhs_e(BoutReal t, N_Vector u, N_Vector du, void* user_data) {
+static int arkode_rhs_explicit(BoutReal t, N_Vector u, N_Vector du, void* user_data) {
 
   BoutReal* udata = NV_DATA_P(u);
   BoutReal* dudata = NV_DATA_P(du);
@@ -708,7 +702,7 @@ static int arkode_rhs_e(BoutReal t, N_Vector u, N_Vector du, void* user_data) {
   return 0;
 }
 
-static int arkode_rhs_i(BoutReal t, N_Vector u, N_Vector du, void* user_data) {
+static int arkode_rhs_implicit(BoutReal t, N_Vector u, N_Vector du, void* user_data) {
 
   BoutReal* udata = NV_DATA_P(u);
   BoutReal* dudata = NV_DATA_P(du);
@@ -743,7 +737,7 @@ static int arkode_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data) {
 /// RHS function for BBD preconditioner
 static int arkode_bbd_rhs(ARKODEINT UNUSED(Nlocal), BoutReal t, N_Vector u, N_Vector du,
                           void* user_data) {
-  return arkode_rhs_i(t, u, du, user_data);
+  return arkode_rhs_implicit(t, u, du, user_data);
 }
 
 /// Preconditioner function
