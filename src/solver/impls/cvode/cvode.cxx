@@ -55,7 +55,7 @@
 #define ONE         RCONST(1.0)
 
 #ifndef CVODEINT
-typedef int CVODEINT;
+using CVODEINT = int;
 #endif
 
 static int cvode_rhs(BoutReal t, N_Vector u, N_Vector du, void *user_data);

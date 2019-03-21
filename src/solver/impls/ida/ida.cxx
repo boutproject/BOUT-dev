@@ -56,7 +56,7 @@
 #define ONE RCONST(1.0)
 
 #ifndef IDAINT
-typedef int IDAINT;
+using IDAINT = int;
 #endif
 
 static int idares(BoutReal t, N_Vector u, N_Vector du, N_Vector rr, void* user_data);

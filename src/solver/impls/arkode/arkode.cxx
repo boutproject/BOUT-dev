@@ -60,7 +60,7 @@
 #define ONE         RCONST(1.0)
 
 #ifndef ARKODEINT
-typedef int ARKODEINT;
+using ARKODEINT = int;
 #endif
 
 static int arkode_rhs_e(BoutReal t, N_Vector u, N_Vector du, void *user_data);
