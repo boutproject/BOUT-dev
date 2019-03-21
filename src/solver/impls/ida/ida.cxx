@@ -89,9 +89,15 @@ IdaSolver::IdaSolver(Options* opts) : Solver(opts) {
 }
 
 IdaSolver::~IdaSolver() {
+  if (initialised) {
+    N_VDestroy_Parallel(uvec);
+    N_VDestroy_Parallel(duvec);
+    N_VDestroy_Parallel(id);
+    IDAFree(&idamem);
 #if SUNDIALS_VERSION_MAJOR >= 3
-  SUNLinSolFree(sun_solver);
+    SUNLinSolFree(sun_solver);
 #endif
+  }
 }
 
 /**************************************************************************
