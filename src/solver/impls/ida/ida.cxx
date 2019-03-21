@@ -81,6 +81,12 @@ inline static int ida_pre_shim(BoutReal t, N_Vector yy, N_Vector yp, N_Vector rr
 constexpr auto& ida_pre_shim = ida_pre;
 #endif
 
+#if SUNDIALS_VERSION_MAJOR == 3
+namespace {
+constexpr auto& SUNLinSol_SPGMR = SUNSPGMR;
+}
+#endif
+
 IdaSolver::IdaSolver(Options *opts) : Solver(opts) {
   has_constraints = true; // This solver has constraints
 }
@@ -197,7 +203,7 @@ IdaSolver::~IdaSolver() {
 
   // Call IDASpgmr to specify the IDA linear solver IDASPGMR
 #if SUNDIALS_VERSION_MAJOR >= 3
-  if ((sun_solver = SUNSPGMR(static_cast<N_Vector>(uvec), PREC_NONE, maxl)) == nullptr)
+  if ((sun_solver = SUNLinSol_SPGMR(uvec, PREC_NONE, maxl)) == nullptr)
     throw BoutException("ERROR: SUNSPGMR failed\n");
   if (IDASpilsSetLinearSolver(idamem, sun_solver) != IDA_SUCCESS)
     throw BoutException("ERROR: IDASpilsSetLinearSolver failed\n");
