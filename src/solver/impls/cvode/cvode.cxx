@@ -143,7 +143,7 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
   // Get total problem size
   int neq;
   if (MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
-    throw BoutException("ERROR: MPI_Allreduce failed!\n");
+    throw BoutException("Allreduce localN -> GlobalN failed!\n");
   }
 
   output_info.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n", n3Dvars(),
@@ -151,7 +151,7 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
 
   // Allocate memory
   if ((uvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == nullptr)
-    throw BoutException("ERROR: SUNDIALS memory allocation failed\n");
+    throw BoutException("SUNDIALS memory allocation failed\n");
 
   // Put the variables into uvec
   save_vars(NV_DATA_P(uvec));
@@ -199,7 +199,7 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
       (*options)["cvode_stability_limit_detection"].withDefault(false);
   if (stablimdet) {
     if (CVodeSetStabLimDet(cvode_mem, stablimdet) < 0)
-      throw BoutException("CVodeSetstabLimDet failed\n");
+      throw BoutException("CVodeSetStabLimDet failed\n");
   }
 
   const auto abstol = (*options)["ATOL"].withDefault(1.0e-12);
@@ -234,7 +234,7 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
     set_abstol_values(NV_DATA_P(abstolvec), f2dtols, f3dtols);
 
     if (CVodeSVtolerances(cvode_mem, reltol, abstolvec) < 0)
-      throw BoutException("CVodeSStolerances failed\n");
+      throw BoutException("CVodeSVtolerances failed\n");
 
     N_VDestroy_Parallel(abstolvec);
   } else {
@@ -279,12 +279,12 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
 
 #if SUNDIALS_VERSION_MAJOR >= 3
       if ((sun_solver = SUNLinSol_SPGMR(uvec, prectype, maxl)) == nullptr)
-        throw BoutException("ERROR: SUNSPGMR failed\n");
+        throw BoutException("Creating SUNDIALS linear solver failed\n");
       if (CVSpilsSetLinearSolver(cvode_mem, sun_solver) != CV_SUCCESS)
-        throw BoutException("ERROR: CVSpilsSetLinearSolver failed\n");
+        throw BoutException("CVSpilsSetLinearSolver failed\n");
 #else
       if (CVSpgmr(cvode_mem, prectype, maxl) != CVSPILS_SUCCESS)
-        throw BoutException("ERROR: CVSpgmr failed\n");
+        throw BoutException("CVSpgmr failed\n");
 #endif
 
       if (!have_user_precon()) {
@@ -310,25 +310,25 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
 
         if (CVBBDPrecInit(cvode_mem, local_N, mudq, mldq, mukeep, mlkeep, ZERO,
                           cvode_bbd_rhs, nullptr))
-          throw BoutException("ERROR: CVBBDPrecInit failed\n");
+          throw BoutException("CVBBDPrecInit failed\n");
 
       } else {
         output_info.write("\tUsing user-supplied preconditioner\n");
 
         if (CVSpilsSetPreconditioner(cvode_mem, nullptr, cvode_pre_shim))
-          throw BoutException("ERROR: CVSpilsSetPreconditioner failed\n");
+          throw BoutException("CVSpilsSetPreconditioner failed\n");
       }
     } else {
       output_info.write("\tNo preconditioning\n");
 
 #if SUNDIALS_VERSION_MAJOR >= 3
       if ((sun_solver = SUNLinSol_SPGMR(uvec, PREC_NONE, maxl)) == nullptr)
-        throw BoutException("ERROR: SUNSPGMR failed\n");
+        throw BoutException("Creating SUNDIALS linear solver failed\n");
       if (CVSpilsSetLinearSolver(cvode_mem, sun_solver) != CV_SUCCESS)
-        throw BoutException("ERROR: CVSpilsSetLinearSolver failed\n");
+        throw BoutException("CVSpilsSetLinearSolver failed\n");
 #else
       if (CVSpgmr(cvode_mem, PREC_NONE, maxl) != CVSPILS_SUCCESS)
-        throw BoutException("ERROR: CVSpgmr failed\n");
+        throw BoutException("CVSpgmr failed\n");
 #endif
     }
 
@@ -338,7 +338,7 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
       output_info.write("\tUsing user-supplied Jacobian function\n");
 
       if (CVSpilsSetJacTimes(cvode_mem, nullptr, cvode_jac) != CV_SUCCESS)
-        throw BoutException("ERROR: CVSpilsSetJacTimesVecFn failed\n");
+        throw BoutException("CVSpilsSetJacTimesVecFn failed\n");
     } else
       output_info.write("\tUsing difference quotient approximation for Jacobian\n");
   } else {
@@ -540,7 +540,7 @@ void CvodeSolver::jac(BoutReal t, BoutReal* ydata, BoutReal* vdata, BoutReal* Jv
   TRACE("Running Jacobian: CvodeSolver::jac(%e)", t);
 
   if (jacfunc == nullptr)
-    throw BoutException("ERROR: No jacobian function supplied!\n");
+    throw BoutException("No jacobian function supplied!\n");
 
   // Load state from ydate
   load_vars(ydata);

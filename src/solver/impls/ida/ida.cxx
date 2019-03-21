@@ -134,13 +134,12 @@ int IdaSolver::init(int nout, BoutReal tstep) {
                local_N);
 
   // Allocate memory
-
   if ((uvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == nullptr)
-    throw BoutException("ERROR: SUNDIALS memory allocation failed\n");
+    throw BoutException("SUNDIALS memory allocation failed\n");
   if ((duvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == nullptr)
-    throw BoutException("ERROR: SUNDIALS memory allocation failed\n");
+    throw BoutException("SUNDIALS memory allocation failed\n");
   if ((id = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == nullptr)
-    throw BoutException("ERROR: SUNDIALS memory allocation failed\n");
+    throw BoutException("SUNDIALS memory allocation failed\n");
 
   // Put the variables into uvec
   save_vars(NV_DATA_P(uvec));
@@ -156,22 +155,22 @@ int IdaSolver::init(int nout, BoutReal tstep) {
 
   // Call IDACreate to initialise
   if ((idamem = IDACreate()) == nullptr)
-    throw BoutException("ERROR: IDACreate failed\n");
+    throw BoutException("IDACreate failed\n");
 
   // For callbacks, need pointer to solver object
   if (IDASetUserData(idamem, this) < 0)
-    throw BoutException("ERROR: IDASetUserData failed\n");
+    throw BoutException("IDASetUserData failed\n");
 
   if (IDASetId(idamem, id) < 0)
-    throw BoutException("ERROR: IDASetID failed\n");
+    throw BoutException("IDASetID failed\n");
 
   if (IDAInit(idamem, idares, simtime, uvec, duvec) < 0)
-    throw BoutException("ERROR: IDAInit failed\n");
+    throw BoutException("IDAInit failed\n");
 
   const auto abstol = (*options)["ATOL"].withDefault(1.0e-12);
   const auto reltol = (*options)["RTOL"].withDefault(1.0e-5);
   if (IDASStolerances(idamem, reltol, abstol) < 0)
-    throw BoutException("ERROR: IDASStolerances failed\n");
+    throw BoutException("IDASStolerances failed\n");
 
   // Maximum number of steps to take between outputs
   const auto mxsteps = (*options)["mxstep"].withDefault(500);
@@ -181,12 +180,12 @@ int IdaSolver::init(int nout, BoutReal tstep) {
   const auto maxl = (*options)["maxl"].withDefault(6 * n3d);
 #if SUNDIALS_VERSION_MAJOR >= 3
   if ((sun_solver = SUNLinSol_SPGMR(uvec, PREC_NONE, maxl)) == nullptr)
-    throw BoutException("ERROR: SUNSPGMR failed\n");
+    throw BoutException("Creating SUNDIALS linear solver failed\n");
   if (IDASpilsSetLinearSolver(idamem, sun_solver) != IDA_SUCCESS)
-    throw BoutException("ERROR: IDASpilsSetLinearSolver failed\n");
+    throw BoutException("IDASpilsSetLinearSolver failed\n");
 #else
   if (IDASpgmr(idamem, maxl))
-    throw BoutException("ERROR: IDASpgmr failed\n");
+    throw BoutException("IDASpgmr failed\n");
 #endif
 
   const auto use_precon = (*options)["use_precon"].withDefault(false);
@@ -212,11 +211,11 @@ int IdaSolver::init(int nout, BoutReal tstep) {
       const auto mlkeep = (*options)["mlkeep"].withDefault(n3d);
       if (IDABBDPrecInit(idamem, local_N, mudq, mldq, mukeep, mlkeep, ZERO, ida_bbd_res,
                          nullptr))
-        throw BoutException("ERROR: IDABBDPrecInit failed\n");
+        throw BoutException("IDABBDPrecInit failed\n");
     } else {
       output.write("\tUsing user-supplied preconditioner\n");
       if (IDASpilsSetPreconditioner(idamem, nullptr, ida_pre_shim))
-        throw BoutException("ERROR: IDASpilsSetPreconditioner failed\n");
+        throw BoutException("IDASpilsSetPreconditioner failed\n");
     }
   }
 
@@ -224,7 +223,7 @@ int IdaSolver::init(int nout, BoutReal tstep) {
   const auto correct_start = (*options)["correct_start"].withDefault(true);
   if (correct_start) {
     if (IDACalcIC(idamem, IDA_YA_YDP_INIT, 1e-6))
-      throw BoutException("ERROR: IDACalcIC failed\n");
+      throw BoutException("IDACalcIC failed\n");
   }
 
   return 0;
@@ -267,7 +266,7 @@ BoutReal IdaSolver::run(BoutReal tout) {
   TRACE("Running solver: solver::run(%e)", tout);
 
   if (!initialised)
-    throw BoutException("ERROR: Running IDA solver without initialisation\n");
+    throw BoutException("Running IDA solver without initialisation\n");
 
   pre_Wtime = 0.0;
   pre_ncalls = 0;
