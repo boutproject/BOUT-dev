@@ -28,10 +28,14 @@
 
 #ifdef BOUT_HAS_CVODE
 
-#include <boutcomm.hxx>
-#include <boutexception.hxx>
-#include <interpolation.hxx> // Cell interpolation
-#include <msg_stack.hxx>
+#include "boutcomm.hxx"
+#include "boutexception.hxx"
+#include "field3d.hxx"
+#include "msg_stack.hxx"
+#include "options.hxx"
+#include "output.hxx"
+#include "unused.hxx"
+#include "bout/mesh.hxx"
 
 #include <cvode/cvode.h>
 
@@ -44,15 +48,13 @@
 
 #include <cvode/cvode_bbdpre.h>
 #include <nvector/nvector_parallel.h>
-#include <sundials/sundials_math.h>
 #include <sundials/sundials_types.h>
-
-#include <output.hxx>
-
-#include "unused.hxx"
 
 #include <algorithm>
 #include <numeric>
+#include <string>
+
+class Field2D;
 
 #define ZERO RCONST(0.)
 #define ONE RCONST(1.0)
