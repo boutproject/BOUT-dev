@@ -140,25 +140,19 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
 
   // Get total problem size
   int neq;
-  {TRACE("Allreduce localN -> GlobalN");
     if (MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
       throw BoutException("ERROR: MPI_Allreduce failed!\n");
     }
-  }
 
   output_info.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n",
                     n3Dvars(), n2Dvars(), neq, local_N);
 
   // Allocate memory
-  {TRACE("Allocating memory with N_VNew_Parallel");
     if ((uvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == nullptr)
       throw BoutException("ERROR: SUNDIALS memory allocation failed\n");
-  }
 
   // Put the variables into uvec
-  {TRACE("Saving variables into uvec");
     save_vars(NV_DATA_P(uvec));
-  }
 
   /// Get options
   BoutReal abstol, reltol;
@@ -187,7 +181,6 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
   int mxorder; // Maximum lmm order to be used by the solver
   int lmm = CV_BDF;
 
-  {TRACE("Getting options");
     options->get("mudq", mudq, band_width_default);
     options->get("mldq", mldq, band_width_default);
     options->get("mukeep", mukeep, n3Dvars()+n2Dvars());
@@ -240,23 +233,15 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
       options->get("func_iter", func_iter, false); 
     }
 
-  }//End of options TRACE
-
-  {TRACE("Calling CVodeCreate");
     const auto iter = func_iter ? CV_FUNCTIONAL : CV_NEWTON;
     if ((cvode_mem = CVodeCreate(lmm, iter)) == nullptr)
       throw BoutException("CVodeCreate failed\n");
-  }
 
-  {TRACE("Calling CVodeSetUserData");
     if( CVodeSetUserData(cvode_mem, this) < 0 ) // For callbacks, need pointer to solver object
       throw BoutException("CVodeSetUserData failed\n");
-  }
 
-  {TRACE("Calling CVodeInit");
     if( CVodeInit(cvode_mem, cvode_rhs, simtime, uvec) < 0 )
       throw BoutException("CVodeInit failed\n");
-  }
 
 #if SUNDIALS_VERSION_MAJOR >= 4
   if ((nonlinear_solver = SUNNonlinSol_FixedPoint(uvec, 0)) == nullptr)
@@ -267,24 +252,20 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
 #endif
   
   if (max_order>0) {
-    TRACE("Calling CVodeSetMaxOrder");
     if ( CVodeSetMaxOrd(cvode_mem, max_order) < 0)
       throw BoutException("CVodeSetMaxOrder failed\n");
   }
    
   if (stablimdet) {
-    TRACE("Calling CVodeSetstabLimDet");
     if ( CVodeSetStabLimDet(cvode_mem, stablimdet) < 0)
       throw BoutException("CVodeSetstabLimDet failed\n");
   }
   
   if (use_vector_abstol) {
-    TRACE("Calling CVodeSVtolerances");
     if( CVodeSVtolerances(cvode_mem, reltol, abstolvec) < 0 )
       throw BoutException("CVodeSStolerances failed\n");
   }
   else {
-    TRACE("Calling CVodeSStolerances");
     if( CVodeSStolerances(cvode_mem, reltol, abstol) < 0 )
       throw BoutException("CVodeSStolerances failed\n");
   }
@@ -367,7 +348,6 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
     if ((use_jacobian) && (jacfunc != nullptr)) {
       output_info.write("\tUsing user-supplied Jacobian function\n");
 
-      TRACE("Setting Jacobian-vector multiply");
       if (CVSpilsSetJacTimes(cvode_mem, nullptr, cvode_jac) != CV_SUCCESS)
         throw BoutException("ERROR: CVSpilsSetJacTimesVecFn failed\n");
     } else
