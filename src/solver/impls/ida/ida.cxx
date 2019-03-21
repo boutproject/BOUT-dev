@@ -154,37 +154,12 @@ int IdaSolver::init(int nout, BoutReal tstep) {
   // Set the equation type in id(Differential or Algebraic. This is optional)
   set_id(NV_DATA_P(id));
 
-  /// Get options
-  // Compute band_width_default from actually added fields, to allow for multiple Mesh
-  // objects
-  //
-  // Previous implementation was equivalent to:
-  //   int MXSUB = mesh->xend - mesh->xstart + 1;
-  //   int band_width_default = n3Dvars()*(MXSUB+2);
-  const int band_width_default =
-      std::accumulate(begin(f3d), end(f3d), 0, [](int a, const VarStr<Field3D>& fvar) {
-        Mesh* localmesh = fvar.var->getMesh();
-        return a + localmesh->xend - localmesh->xstart + 3;
-      });
-
-  const auto abstol = (*options)["ATOL"].withDefault(1.0e-12);
-  const auto reltol = (*options)["RTOL"].withDefault(1.0e-5);
-  const auto maxl = (*options)["maxl"].withDefault(6 * n3d);
-  const auto mudq = (*options)["mudq"].withDefault(band_width_default);
-  const auto mldq = (*options)["mldq"].withDefault(band_width_default);
-  const auto mukeep = (*options)["mukeep"].withDefault(n3d);
-  const auto mlkeep = (*options)["mlkeep"].withDefault(n3d);
-  const auto use_precon = (*options)["use_precon"].withDefault(false);
-  const auto correct_start = (*options)["correct_start"].withDefault(true);
-  // Maximum number of steps to take between outputs
-  const auto mxsteps = (*options)["mxstep"].withDefault(500);
-
-  // Call IDACreate and IDAMalloc to initialise
-
+  // Call IDACreate to initialise
   if ((idamem = IDACreate()) == nullptr)
     throw BoutException("ERROR: IDACreate failed\n");
 
-  if (IDASetUserData(idamem, this) < 0) // For callbacks, need pointer to solver object
+  // For callbacks, need pointer to solver object
+  if (IDASetUserData(idamem, this) < 0)
     throw BoutException("ERROR: IDASetUserData failed\n");
 
   if (IDASetId(idamem, id) < 0)
@@ -193,12 +168,17 @@ int IdaSolver::init(int nout, BoutReal tstep) {
   if (IDAInit(idamem, idares, simtime, uvec, duvec) < 0)
     throw BoutException("ERROR: IDAInit failed\n");
 
+  const auto abstol = (*options)["ATOL"].withDefault(1.0e-12);
+  const auto reltol = (*options)["RTOL"].withDefault(1.0e-5);
   if (IDASStolerances(idamem, reltol, abstol) < 0)
     throw BoutException("ERROR: IDASStolerances failed\n");
 
+  // Maximum number of steps to take between outputs
+  const auto mxsteps = (*options)["mxstep"].withDefault(500);
   IDASetMaxNumSteps(idamem, mxsteps);
 
   // Call IDASpgmr to specify the IDA linear solver IDASPGMR
+  const auto maxl = (*options)["maxl"].withDefault(6 * n3d);
 #if SUNDIALS_VERSION_MAJOR >= 3
   if ((sun_solver = SUNLinSol_SPGMR(uvec, PREC_NONE, maxl)) == nullptr)
     throw BoutException("ERROR: SUNSPGMR failed\n");
@@ -209,9 +189,27 @@ int IdaSolver::init(int nout, BoutReal tstep) {
     throw BoutException("ERROR: IDASpgmr failed\n");
 #endif
 
+  const auto use_precon = (*options)["use_precon"].withDefault(false);
   if (use_precon) {
     if (!have_user_precon()) {
       output.write("\tUsing BBD preconditioner\n");
+      /// Get options
+      // Compute band_width_default from actually added fields, to allow for multiple Mesh
+      // objects
+      //
+      // Previous implementation was equivalent to:
+      //   int MXSUB = mesh->xend - mesh->xstart + 1;
+      //   int band_width_default = n3Dvars()*(MXSUB+2);
+      const int band_width_default = std::accumulate(
+          begin(f3d), end(f3d), 0, [](int a, const VarStr<Field3D>& fvar) {
+            Mesh* localmesh = fvar.var->getMesh();
+            return a + localmesh->xend - localmesh->xstart + 3;
+          });
+
+      const auto mudq = (*options)["mudq"].withDefault(band_width_default);
+      const auto mldq = (*options)["mldq"].withDefault(band_width_default);
+      const auto mukeep = (*options)["mukeep"].withDefault(n3d);
+      const auto mlkeep = (*options)["mlkeep"].withDefault(n3d);
       if (IDABBDPrecInit(idamem, local_N, mudq, mldq, mukeep, mlkeep, ZERO, ida_bbd_res,
                          nullptr))
         throw BoutException("ERROR: IDABBDPrecInit failed\n");
@@ -223,6 +221,7 @@ int IdaSolver::init(int nout, BoutReal tstep) {
   }
 
   // Call IDACalcIC (with default options) to correct the initial values
+  const auto correct_start = (*options)["correct_start"].withDefault(true);
   if (correct_start) {
     if (IDACalcIC(idamem, IDA_YA_YDP_INIT, 1e-6))
       throw BoutException("ERROR: IDACalcIC failed\n");
