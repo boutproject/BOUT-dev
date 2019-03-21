@@ -51,6 +51,9 @@
 
 #include "unused.hxx"
 
+#include <algorithm>
+#include <numeric>
+
 #define ZERO RCONST(0.)
 #define ONE RCONST(1.0)
 
@@ -135,7 +138,7 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
   output_progress.write("Initialising SUNDIALS' CVODE solver\n");
 
   // Calculate number of variables (in generic_solver)
-  int local_N = getLocalN();
+  const int local_N = getLocalN();
 
   // Get total problem size
   int neq;
@@ -153,92 +156,26 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
   // Put the variables into uvec
   save_vars(NV_DATA_P(uvec));
 
-  /// Get options
-  BoutReal abstol, reltol;
-  // Initialise abstolvec to nullptr to avoid compiler maybed-uninitialised warning
-  N_Vector abstolvec = nullptr;
-  int maxl;
-  int mudq, mldq;
-  int mukeep, mlkeep;
-  int max_order;
-  bool use_precon, use_jacobian, use_vector_abstol, stablimdet;
-  BoutReal start_timestep, max_timestep;
-  bool adams_moulton, func_iter; // Time-integration method
-
-  // Compute band_width_default from actually added fields, to allow for multiple Mesh
-  // objects
-  //
-  // Previous implementation was equivalent to:
-  //   int MXSUB = mesh->xend - mesh->xstart + 1;
-  //   int band_width_default = n3Dvars()*(MXSUB+2);
-  int band_width_default = 0;
-  for (auto fvar : f3d) {
-    Mesh* localmesh = fvar.var->getMesh();
-    band_width_default += localmesh->xend - localmesh->xstart + 3;
-  }
-
-  int mxsteps; // Maximum number of steps to take between outputs
-  int mxorder; // Maximum lmm order to be used by the solver
-  int lmm = CV_BDF;
-
-  options->get("mudq", mudq, band_width_default);
-  options->get("mldq", mldq, band_width_default);
-  options->get("mukeep", mukeep, n3Dvars() + n2Dvars());
-  options->get("mlkeep", mlkeep, n3Dvars() + n2Dvars());
-  options->get("ATOL", abstol, 1.0e-12);
-  options->get("RTOL", reltol, 1.0e-5);
-  options->get("cvode_max_order", max_order, -1);
-  options->get("cvode_stability_limit_detection", stablimdet, false);
-  options->get("use_vector_abstol", use_vector_abstol, false);
-  if (use_vector_abstol) {
-    Options* abstol_options = Options::getRoot();
-    BoutReal tempabstol;
-    if ((abstolvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == nullptr)
-      throw BoutException("ERROR: SUNDIALS memory allocation (abstol vector) failed\n");
-    std::vector<BoutReal> f2dtols;
-    std::vector<BoutReal> f3dtols;
-    BoutReal* abstolvec_data = NV_DATA_P(abstolvec);
-    for (const auto& f : f2d) {
-      abstol_options = Options::getRoot()->getSection(f.name);
-      abstol_options->get("abstol", tempabstol, abstol);
-      f2dtols.push_back(tempabstol);
-    }
-    for (const auto& f : f3d) {
-      abstol_options = Options::getRoot()->getSection(f.name);
-      abstol_options->get("atol", tempabstol, abstol);
-      f3dtols.push_back(tempabstol);
-    }
-    set_abstol_values(abstolvec_data, f2dtols, f3dtols);
-  }
-
-  options->get("maxl", maxl, 5);
-  OPTION(options, use_precon, false);
-  OPTION(options, use_jacobian, false);
-  OPTION(options, max_timestep, -1.);
-  OPTION(options, start_timestep, -1);
-  OPTION(options, diagnose, false);
-
-  options->get("mxstep", mxsteps, 500);
-  options->get("mxorder", mxorder, -1);
-  options->get("adams_moulton", adams_moulton, false);
+  diagnose = (*options)["diagnose"].withDefault(false);
+  const auto adams_moulton = (*options)["adams_moulton"].withDefault(false);
 
   if (adams_moulton) {
     // By default use functional iteration for Adams-Moulton
-    lmm = CV_ADAMS;
     output_info.write("\tUsing Adams-Moulton implicit multistep method\n");
-    options->get("func_iter", func_iter, true);
   } else {
-    output_info.write("\tUsing BDF method\n");
     // Use Newton iteration for BDF
-    options->get("func_iter", func_iter, false);
+    output_info.write("\tUsing BDF method\n");
   }
 
+  const auto lmm = adams_moulton ? CV_ADAMS : CV_BDF;
+  const auto func_iter = (*options)["func_iter"].withDefault(adams_moulton);
   const auto iter = func_iter ? CV_FUNCTIONAL : CV_NEWTON;
+
   if ((cvode_mem = CVodeCreate(lmm, iter)) == nullptr)
     throw BoutException("CVodeCreate failed\n");
 
-  if (CVodeSetUserData(cvode_mem, this)
-      < 0) // For callbacks, need pointer to solver object
+  // For callbacks, need pointer to solver object
+  if (CVodeSetUserData(cvode_mem, this) < 0)
     throw BoutException("CVodeSetUserData failed\n");
 
   if (CVodeInit(cvode_mem, cvode_rhs, simtime, uvec) < 0)
@@ -252,57 +189,93 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
     throw BoutException("CVodeSetNonlinearSolver failed\n");
 #endif
 
+  const auto max_order = (*options)["cvode_max_order"].withDefault(-1);
   if (max_order > 0) {
     if (CVodeSetMaxOrd(cvode_mem, max_order) < 0)
       throw BoutException("CVodeSetMaxOrder failed\n");
   }
 
+  const auto stablimdet =
+      (*options)["cvode_stability_limit_detection"].withDefault(false);
   if (stablimdet) {
     if (CVodeSetStabLimDet(cvode_mem, stablimdet) < 0)
       throw BoutException("CVodeSetstabLimDet failed\n");
   }
 
+  const auto abstol = (*options)["ATOL"].withDefault(1.0e-12);
+  const auto reltol = (*options)["RTOL"].withDefault(1.0e-5);
+  const auto use_vector_abstol = (*options)["use_vector_abstol"].withDefault(false);
   if (use_vector_abstol) {
+    std::vector<BoutReal> f2dtols;
+    f2dtols.reserve(f2d.size());
+    std::transform(begin(f2d), end(f2d), std::back_inserter(f2dtols),
+                   [abstol](const VarStr<Field2D>& f2) {
+                     auto f2_options = Options::root()[f2.name];
+                     const auto wrong_name = f2_options.isSet("abstol");
+                     if (wrong_name) {
+                       output_warn << "WARNING: Option 'abstol' for field " << f2.name
+                                   << " is deprecated. Please use 'atol' instead\n";
+                     }
+                     const std::string atol_name = wrong_name ? "abstol" : "atol";
+                     return f2_options[atol_name].withDefault(abstol);
+                   });
+
+    std::vector<BoutReal> f3dtols;
+    f3dtols.reserve(f3d.size());
+    std::transform(begin(f3d), end(f3d), std::back_inserter(f3dtols),
+                   [abstol](const VarStr<Field3D>& f3) {
+                     return Options::root()[f3.name]["atol"].withDefault(abstol);
+                   });
+
+    N_Vector abstolvec = N_VNew_Parallel(BoutComm::get(), local_N, neq);
+    if (abstolvec == nullptr)
+      throw BoutException("SUNDIALS memory allocation (abstol vector) failed\n");
+
+    set_abstol_values(NV_DATA_P(abstolvec), f2dtols, f3dtols);
+
     if (CVodeSVtolerances(cvode_mem, reltol, abstolvec) < 0)
       throw BoutException("CVodeSStolerances failed\n");
+
+    N_VDestroy_Parallel(abstolvec);
   } else {
     if (CVodeSStolerances(cvode_mem, reltol, abstol) < 0)
       throw BoutException("CVodeSStolerances failed\n");
   }
 
+  const auto mxsteps = (*options)["mxstep"].withDefault(500);
   CVodeSetMaxNumSteps(cvode_mem, mxsteps);
 
+  const auto max_timestep = (*options)["max_timestep"].withDefault(-1.);
   if (max_timestep > 0.0) {
-    // Setting a maximum timestep
     CVodeSetMaxStep(cvode_mem, max_timestep);
   }
 
+  const auto min_timestep = (*options)["min_timestep"].withDefault(-1);
+  if (min_timestep > 0.0) {
+    CVodeSetMinStep(cvode_mem, min_timestep);
+  }
+
+  const auto start_timestep = (*options)["start_timestep"].withDefault(-1);
   if (start_timestep > 0.0) {
-    // Setting a user-supplied initial guess for the appropriate timestep
     CVodeSetInitStep(cvode_mem, start_timestep);
   }
 
-  if (start_timestep > 0.0) {
-    CVodeSetInitStep(cvode_mem, start_timestep);
-  }
-
+  const auto mxorder = (*options)["mxorder"].withDefault(-1);
   if (mxorder > 0) {
-    // Setting the maximum solver order
     CVodeSetMaxOrd(cvode_mem, mxorder);
   }
 
   /// Newton method can include Preconditioners and Jacobian function
   if (!func_iter) {
     output_info.write("\tUsing Newton iteration\n");
-    /// Set Preconditioner
     TRACE("Setting preconditioner");
+    const auto maxl = (*options)["maxl"].withDefault(5);
+    const auto use_precon = (*options)["use_precon"].withDefault(false);
+
     if (use_precon) {
 
-      int prectype = PREC_LEFT;
-      bool rightprec;
-      options->get("rightprec", rightprec, false);
-      if (rightprec)
-        prectype = PREC_RIGHT;
+      const auto rightprec = (*options)["rightprec"].withDefault(false);
+      const int prectype = rightprec ? PREC_RIGHT : PREC_LEFT;
 
 #if SUNDIALS_VERSION_MAJOR >= 3
       if ((sun_solver = SUNLinSol_SPGMR(uvec, prectype, maxl)) == nullptr)
@@ -317,6 +290,24 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
       if (!have_user_precon()) {
         output_info.write("\tUsing BBD preconditioner\n");
 
+        /// Get options
+        // Compute band_width_default from actually added fields, to allow for multiple
+        // Mesh objects
+        //
+        // Previous implementation was equivalent to:
+        //   int MXSUB = mesh->xend - mesh->xstart + 1;
+        //   int band_width_default = n3Dvars()*(MXSUB+2);
+        const int band_width_default = std::accumulate(
+            begin(f3d), end(f3d), 0, [](int a, const VarStr<Field3D>& fvar) {
+              Mesh* localmesh = fvar.var->getMesh();
+              return a + localmesh->xend - localmesh->xstart + 3;
+            });
+
+        const auto mudq = (*options)["mudq"].withDefault(band_width_default);
+        const auto mldq = (*options)["mldq"].withDefault(band_width_default);
+        const auto mukeep = (*options)["mukeep"].withDefault(n3Dvars() + n2Dvars());
+        const auto mlkeep = (*options)["mlkeep"].withDefault(n3Dvars() + n2Dvars());
+
         if (CVBBDPrecInit(cvode_mem, local_N, mudq, mldq, mukeep, mlkeep, ZERO,
                           cvode_bbd_rhs, nullptr))
           throw BoutException("ERROR: CVBBDPrecInit failed\n");
@@ -328,8 +319,6 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
           throw BoutException("ERROR: CVSpilsSetPreconditioner failed\n");
       }
     } else {
-      // Not using preconditioning
-
       output_info.write("\tNo preconditioning\n");
 
 #if SUNDIALS_VERSION_MAJOR >= 3
@@ -344,7 +333,7 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
     }
 
     /// Set Jacobian-vector multiplication function
-
+    const auto use_jacobian = (*options)["use_jacobian"].withDefault(false);
     if ((use_jacobian) && (jacfunc != nullptr)) {
       output_info.write("\tUsing user-supplied Jacobian function\n");
 
