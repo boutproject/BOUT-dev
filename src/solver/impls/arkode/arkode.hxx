@@ -31,17 +31,9 @@
 
 #ifdef BOUT_HAS_ARKODE
 
-class ArkodeSolver;
-
 #include "bout_types.hxx"
-#include "field2d.hxx"
-#include "field3d.hxx"
-#include "vector2d.hxx"
-#include "vector3d.hxx"
-
 #include "bout/solver.hxx"
-
-#include <vector>
+#include "bout/solverfactory.hxx"
 
 #include <sundials/sundials_config.h>
 #if SUNDIALS_VERSION_MAJOR >= 3
@@ -54,7 +46,11 @@ class ArkodeSolver;
 
 #include <nvector/nvector_parallel.h>
 
-#include <bout/solverfactory.hxx>
+#include <vector>
+
+class ArkodeSolver;
+class Options;
+
 namespace {
 RegisterSolver<ArkodeSolver> registersolverarkode("arkode");
 }

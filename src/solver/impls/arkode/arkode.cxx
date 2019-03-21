@@ -29,10 +29,14 @@
 
 #ifdef BOUT_HAS_ARKODE
 
-#include <boutcomm.hxx>
-#include <boutexception.hxx>
-#include <interpolation.hxx> // Cell interpolation
-#include <msg_stack.hxx>
+#include "bout/mesh.hxx"
+#include "boutcomm.hxx"
+#include "boutexception.hxx"
+#include "field3d.hxx"
+#include "msg_stack.hxx"
+#include "options.hxx"
+#include "output.hxx"
+#include "unused.hxx"
 
 #if SUNDIALS_VERSION_MAJOR >= 4
 #include <arkode/arkode_arkstep.h>
@@ -52,12 +56,10 @@
 #include <sundials/sundials_math.h>
 #include <sundials/sundials_types.h>
 
-#include <output.hxx>
-
-#include "unused.hxx"
-
 #include <algorithm>
 #include <numeric>
+
+class Field2D;
 
 #define ZERO RCONST(0.)
 #define ONE RCONST(1.0)
