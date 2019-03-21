@@ -55,6 +55,8 @@
 
 #include "unused.hxx"
 
+#include <numeric>
+
 #define ZERO        RCONST(0.)
 #define ONE         RCONST(1.0)
 
@@ -116,9 +118,9 @@ IdaSolver::~IdaSolver() {
   output.write("Initialising IDA solver\n");
 
   // Calculate number of variables
-  int n2d = f2d.size();
-  int n3d = f3d.size();
-  int local_N = getLocalN();
+  const int n2d = f2d.size();
+  const int n3d = f3d.size();
+  const int local_N = getLocalN();
 
   // Get total problem size
   int neq;
@@ -157,30 +159,23 @@ IdaSolver::~IdaSolver() {
   // Previous implementation was equivalent to:
   //   int MXSUB = mesh->xend - mesh->xstart + 1;
   //   int band_width_default = n3Dvars()*(MXSUB+2);
-  int band_width_default = 0;
-  for (auto fvar : f3d) {
-    Mesh* localmesh = fvar.var->getMesh();
-    band_width_default += localmesh->xend - localmesh->xstart + 3;
-  }
+  const int band_width_default =
+      std::accumulate(begin(f3d), end(f3d), 0, [](int a, const VarStr<Field3D>& fvar) {
+        Mesh* localmesh = fvar.var->getMesh();
+        return a + localmesh->xend - localmesh->xstart + 3;
+      });
 
-  BoutReal abstol, reltol;
-  int maxl;
-  int mudq, mldq;
-  int mukeep, mlkeep;
-  bool use_precon;
-  bool correct_start;
-
-  OPTION(options, mudq, band_width_default);
-  OPTION(options, mldq, band_width_default);
-  OPTION(options, mukeep, n3d);
-  OPTION(options, mlkeep, n3d);
-  options->get("ATOL", abstol, 1.0e-12);
-  options->get("RTOL", reltol, 1.0e-5);
-  OPTION(options, maxl, 6*n3d);
-  OPTION(options, use_precon, false);
-  OPTION(options, correct_start, true);
-  int mxsteps; // Maximum number of steps to take between outputs
-  options->get("mxstep", mxsteps, 500);
+  const auto abstol = (*options)["ATOL"].withDefault(1.0e-12);
+  const auto reltol = (*options)["RTOL"].withDefault(1.0e-5);
+  const auto maxl = (*options)["maxl"].withDefault(6 * n3d);
+  const auto mudq = (*options)["mudq"].withDefault(band_width_default);
+  const auto mldq = (*options)["mldq"].withDefault(band_width_default);
+  const auto mukeep = (*options)["mukeep"].withDefault(n3d);
+  const auto mlkeep = (*options)["mlkeep"].withDefault(n3d);
+  const auto use_precon = (*options)["use_precon"].withDefault(false);
+  const auto correct_start = (*options)["correct_start"].withDefault(true);
+  // Maximum number of steps to take between outputs
+  const auto mxsteps = (*options)["mxstep"].withDefault(500);
 
   // Call IDACreate and IDAMalloc to initialise
 
@@ -276,7 +271,7 @@ BoutReal IdaSolver::run(BoutReal tout) {
   pre_Wtime = 0.0;
   pre_ncalls = 0;
 
-  int flag = IDASolve(idamem, tout, &simtime, uvec, duvec, IDA_NORMAL);
+  const int flag = IDASolve(idamem, tout, &simtime, uvec, duvec, IDA_NORMAL);
 
   // Copy variables
   load_vars(NV_DATA_P(uvec));
@@ -310,8 +305,8 @@ void IdaSolver::res(BoutReal t, BoutReal *udata, BoutReal *dudata, BoutReal *rda
   save_derivs(rdata);
   
   // If a differential equation, subtract dudata
-  int N = NV_LOCLENGTH_P(id);
-  BoutReal *idd = NV_DATA_P(id);
+  const int N = NV_LOCLENGTH_P(id);
+  const BoutReal *idd = NV_DATA_P(id);
   for(int i=0;i<N;i++) {
     if(idd[i] > 0.5) // 1 -> differential, 0 -> algebraic
       rdata[i] -= dudata[i];
@@ -325,9 +320,9 @@ void IdaSolver::res(BoutReal t, BoutReal *udata, BoutReal *dudata, BoutReal *rda
 void IdaSolver::pre(BoutReal t, BoutReal cj, BoutReal delta, BoutReal *udata, BoutReal *rvec, BoutReal *zvec) {
   TRACE("Running preconditioner: IdaSolver::pre(%e)", t);
 
-  BoutReal tstart = MPI_Wtime();
+  const BoutReal tstart = MPI_Wtime();
 
-  int N = NV_LOCLENGTH_P(id);
+  const int N = NV_LOCLENGTH_P(id);
   
   if(!have_user_precon()) {
     // Identity (but should never happen)
