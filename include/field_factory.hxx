@@ -96,6 +96,9 @@ private:
   /// The default mesh for create functions.
   Mesh* fieldmesh;
 
+  /// Should we transform input from field-aligned coordinates (if possible)?
+  bool transform_from_field_aligned{true};
+
   /// The default options used in resolve(), can be *temporarily*
   /// overridden in parse()/create2D()/create3D()
   mutable const Options* options;
