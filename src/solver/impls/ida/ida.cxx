@@ -318,12 +318,10 @@ void IdaSolver::pre(BoutReal t, BoutReal cj, BoutReal delta, BoutReal* udata,
 
   const BoutReal tstart = MPI_Wtime();
 
-  const int N = NV_LOCLENGTH_P(id);
-
   if (!have_user_precon()) {
     // Identity (but should never happen)
-    for (int i = 0; i < N; i++)
-      zvec[i] = rvec[i];
+    const int N = NV_LOCLENGTH_P(id);
+    std::copy(rvec, rvec + N, zvec);
     return;
   }
 
