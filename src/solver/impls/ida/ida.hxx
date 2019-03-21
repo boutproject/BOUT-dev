@@ -32,15 +32,8 @@
 
 #ifdef BOUT_HAS_IDA
 
-class IdaSolver;
-
-#include <bout/solver.hxx>
-
-#include <bout_types.hxx>
-#include <field2d.hxx>
-#include <field3d.hxx>
-#include <vector2d.hxx>
-#include <vector3d.hxx>
+#include "bout/solver.hxx"
+#include "bout_types.hxx"
 
 #include <sundials/sundials_config.h>
 #if SUNDIALS_VERSION_MAJOR >= 3
@@ -49,7 +42,8 @@ class IdaSolver;
 
 #include <nvector/nvector_parallel.h>
 
-#include <vector>
+class IdaSolver;
+class Options;
 
 #include <bout/solverfactory.hxx>
 namespace {

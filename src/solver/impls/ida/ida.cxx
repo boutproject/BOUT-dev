@@ -31,12 +31,11 @@
 
 #ifdef BOUT_HAS_IDA
 
+#include "boutcomm.hxx"
+#include "boutexception.hxx"
+#include "msg_stack.hxx"
+#include "output.hxx"
 #include "unused.hxx"
-#include <boutcomm.hxx>
-#include <boutexception.hxx>
-#include <interpolation.hxx> // Cell interpolation
-#include <msg_stack.hxx>
-#include <output.hxx>
 
 #include <ida/ida.h>
 
@@ -49,8 +48,6 @@
 
 #include <ida/ida_bbdpre.h>
 #include <nvector/nvector_parallel.h>
-#include <sundials/sundials_dense.h>
-#include <sundials/sundials_math.h>
 #include <sundials/sundials_types.h>
 
 #include <numeric>
