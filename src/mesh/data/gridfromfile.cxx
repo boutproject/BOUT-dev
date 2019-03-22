@@ -215,16 +215,16 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def) 
   case 3: {
     // Check size if getting Field3D
     if (std::is_base_of<Field2D, T>::value) {
-      output_warn.write("WARNING: Variable '%s' should be 2D, but has %lu dimensions. Ignored\n",
-                        name.c_str(), static_cast<unsigned long>(size.size()));
+      output_warn.write("WARNING: Variable '%s' should be 2D, but has %zu dimensions. Ignored\n",
+                        name.c_str(), size.size());
       var = def;
       return false;
     }
     break;
   }
   default: {
-    output_warn.write("WARNING: Variable '%s' should be 2D, but has %lu dimensions. Ignored\n",
-                      name.c_str(), static_cast<unsigned long>(size.size()));
+    output_warn.write("WARNING: Variable '%s' should be 2D or 3D, but has %zu dimensions. Ignored\n",
+                      name.c_str(), size.size());
     var = def;
     return false;
   }
@@ -233,8 +233,8 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def) 
   var.allocate(); // Make sure data allocated
 
   ///Ghost region widths.
-  int mxg = (m->LocalNx - (m->xend - m->xstart + 1)) / 2;
-  int myg = (m->LocalNy - (m->yend - m->ystart + 1)) / 2;
+  const int mxg = (m->LocalNx - (m->xend - m->xstart + 1)) / 2;
+  const int myg = (m->LocalNy - (m->yend - m->ystart + 1)) / 2;
   ///Check that ghost region widths are in fact integers
   ASSERT1((m->LocalNx - (m->xend - m->xstart + 1)) % 2 == 0);
   ASSERT1((m->LocalNy - (m->yend - m->ystart + 1)) % 2 == 0);
@@ -305,12 +305,16 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def) 
   ///If field does not include ghost points in x-direction ->
   ///Upper and lower X boundaries copied from nearest point
   if (field_dimensions[0] == m->GlobalNx - 2*mxg ) {
-    for (int y=0; y<m->LocalNy; y++) {
-      for (int z=0; z<var.getNz(); z++) {
-        for (int x=0; x<m->xstart; x++) {
+    for (int x=0; x<m->xstart; x++) {
+      for (int y=0; y<m->LocalNy; y++) {
+        for (int z=0; z<var.getNz(); z++) {
           var(x, y, z) = var(m->xstart, y, z);
         }
-        for (int x=m->xend+1;x<m->LocalNx;x++) {
+      }
+    }
+    for (int x=m->xend+1;x<m->LocalNx;x++) {
+      for (int y=0; y<m->LocalNy; y++) {
+        for (int z=0; z<var.getNz(); z++) {
           var(x, y, z) = var(m->xend, y, z);
         }
       }
@@ -321,11 +325,13 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def) 
   ///Upper and lower Y boundaries copied from nearest point
   if (grid_yguards == 0) {
     for(int x=0; x<m->LocalNx; x++) {
-      for (int z=0; z<var.getNz(); z++) {
-        for(int y=0; y<m->ystart; y++) {
+      for(int y=0; y<m->ystart; y++) {
+        for (int z=0; z<var.getNz(); z++) {
           var(x, y, z) = var(x, m->ystart, z);
         }
-        for(int y=m->yend+1; y<m->LocalNy; y++) {
+      }
+      for(int y=m->yend+1; y<m->LocalNy; y++) {
+        for (int z=0; z<var.getNz(); z++) {
           var(x, y, z) = var(x, m->yend, z);
         }
       }
@@ -335,8 +341,7 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def) 
   return true;
 }
 
-template<>
-void GridFile::readField<>(Mesh* UNUSED(m), const std::string& name, int ys, int yd,
+void GridFile::readField(Mesh* UNUSED(m), const std::string& name, int ys, int yd,
     int ny_to_read, int xs, int xd, int nx_to_read, const std::vector<int>& UNUSED(size),
     Field2D& var) {
 
@@ -349,8 +354,7 @@ void GridFile::readField<>(Mesh* UNUSED(m), const std::string& name, int ys, int
   file->setGlobalOrigin();
 }
 
-template<>
-void GridFile::readField<>(Mesh* m, const std::string& name, int ys, int yd,
+void GridFile::readField(Mesh* m, const std::string& name, int ys, int yd,
     int ny_to_read, int xs, int xd, int nx_to_read, const std::vector<int>& size,
     Field3D& var) {
 

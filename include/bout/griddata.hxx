@@ -123,11 +123,12 @@ private:
   // Field3D versions of get
   template<typename T>
   bool getField(Mesh* m, T& var, const std::string& name, BoutReal def = 0.0);
-  // utility method with specializations for Field2D and Field3D to implement
-  // unshared parts of getField
-  template<typename T>
+  // utility method for Field2D to implement unshared parts of getField
   void readField(Mesh* m, const std::string& name, int ys, int yd, int ny_to_read,
-      int xs, int xd, int nx_to_read, const std::vector<int>& size, T& var);
+      int xs, int xd, int nx_to_read, const std::vector<int>& size, Field2D& var);
+  // utility method for Field3D to implement unshared parts of getField
+  void readField(Mesh* m, const std::string& name, int ys, int yd, int ny_to_read,
+      int xs, int xd, int nx_to_read, const std::vector<int>& size, Field3D& var);
 };
 
 /*!
