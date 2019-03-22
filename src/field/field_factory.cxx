@@ -53,7 +53,7 @@ FieldFactory::FieldFactory(Mesh* localmesh, Options* opt)
   // Set options
   // Note: don't use 'options' here because 'options' is a 'const Options*'
   // pointer, so this would fail if the "input" section is not present.
-  Options nonconst_options{opt == nullptr ? Options::root() : *opt};
+  Options& nonconst_options{opt == nullptr ? Options::root() : *opt};
   transform_from_field_aligned
     = nonconst_options["input"]["transform_from_field_aligned"].withDefault(true);
 
