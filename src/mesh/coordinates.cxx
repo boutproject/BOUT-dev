@@ -252,14 +252,16 @@ Coordinates::Coordinates(Mesh* mesh)
   }
 
   /// Find covariant metric components
+  auto covariant_component_names = {"g_11", "g_22", "g_33", "g_12", "g_13", "g_23"};
+  auto source_has_component = [&mesh] (const std::string& name) {
+    return mesh->sourceHasVar(name);
+  };
   // Check if any of the components are present
-  if (mesh->sourceHasVar("g_11") or mesh->sourceHasVar("g_22")
-      or mesh->sourceHasVar("g_33") or mesh->sourceHasVar("g_12")
-      or mesh->sourceHasVar("g_13") or mesh->sourceHasVar("g_23")) {
+  if (std::any_of(begin(covariant_component_names), end(covariant_component_names),
+                  source_has_component)) {
     // Check that all components are present
-    if (mesh->sourceHasVar("g_11") and mesh->sourceHasVar("g_22")
-        and mesh->sourceHasVar("g_33") and mesh->sourceHasVar("g_12")
-        and mesh->sourceHasVar("g_13") and mesh->sourceHasVar("g_23")) {
+    if (std::all_of(begin(covariant_component_names), end(covariant_component_names),
+                    source_has_component)) {
       mesh->get(g_11, "g_11");
       mesh->get(g_22, "g_22");
       mesh->get(g_33, "g_33");
