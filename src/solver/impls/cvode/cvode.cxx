@@ -183,14 +183,6 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
   if (CVodeInit(cvode_mem, cvode_rhs, simtime, uvec) < 0)
     throw BoutException("CVodeInit failed\n");
 
-#if SUNDIALS_VERSION_MAJOR >= 4
-  if ((nonlinear_solver = SUNNonlinSol_FixedPoint(uvec, 0)) == nullptr)
-    throw BoutException("SUNNonlinSol_FixedPoint failed\n");
-
-  if (CVodeSetNonlinearSolver(cvode_mem, nonlinear_solver))
-    throw BoutException("CVodeSetNonlinearSolver failed\n");
-#endif
-
   const auto max_order = (*options)["cvode_max_order"].withDefault(-1);
   if (max_order > 0) {
     if (CVodeSetMaxOrd(cvode_mem, max_order) < 0)
@@ -345,6 +337,13 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
       output_info.write("\tUsing difference quotient approximation for Jacobian\n");
   } else {
     output_info.write("\tUsing Functional iteration\n");
+#if SUNDIALS_VERSION_MAJOR >= 4
+    if ((nonlinear_solver = SUNNonlinSol_FixedPoint(uvec, 0)) == nullptr)
+      throw BoutException("SUNNonlinSol_FixedPoint failed\n");
+
+    if (CVodeSetNonlinearSolver(cvode_mem, nonlinear_solver))
+      throw BoutException("CVodeSetNonlinearSolver failed\n");
+#endif
   }
 
   return 0;
