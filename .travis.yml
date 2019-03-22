@@ -93,6 +93,7 @@ matrix:
     env:
       - CONFIGURE_OPTIONS="--enable-code-coverage --enable-debug --enable-track --enable-checks=3 --with-petsc --with-lapack --with-slepc --enable-openmp --with-sundials=$HOME/local"
       - OMP_NUM_THREADS=2
+      - LD_LIBRARY_PATH=$HOME/local/lib:$LD_LIBRARY_PATH
       - *coverage_vars
       - *petsc_vars
       - *codecov_secure
