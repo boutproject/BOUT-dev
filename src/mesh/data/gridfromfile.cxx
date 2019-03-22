@@ -267,32 +267,36 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def) 
   int ny_to_read = -1;
 
   ///Check if field dimensions are correct. x-direction
-  if (field_dimensions[0] >= m->GlobalNx) { ///including ghostpoints
-    ASSERT1( (field_dimensions[0] - (m->GlobalNx - 2*mxg)) % 2 == 0 );
-    int grid_xguards = (field_dimensions[0] - (m->GlobalNx - 2*mxg)) / 2;
-
+  int grid_xguards = (field_dimensions[0] - (m->GlobalNx - 2*mxg)) / 2;
+  // Check there is no rounding in calculation of grid_xguards
+  ASSERT1( (field_dimensions[0] - (m->GlobalNx - 2*mxg)) % 2 == 0 );
+  if (grid_xguards >= 0) { ///including ghostpoints
     nx_to_read = m->LocalNx;
     xd = grid_xguards - mxg;
     ASSERT1(xd >= 0);
-  } else if (field_dimensions[0] == m->GlobalNx - 2*mxg) { ///excluding ghostpoints
+  } else if (grid_xguards == 0) { ///excluding ghostpoints
     nx_to_read = m->LocalNx - 2*mxg;
     xd = mxg;
   } else {
-    throw BoutException("Could not read '%s' from file: x-dimension = %i neither matches nx <= %i"
-                "nor nx-2*mxg = %i ", name.c_str(), field_dimensions[0], m->GlobalNx, m->GlobalNx-2*mxg);
+    throw BoutException("Could not read '%s' from file: number of x-boundary guard cells "
+                "in the grid file grid_xguards=%i neither matches grid_xguards >= mxg=%i "
+                "nor grid_xguards = 0", name.c_str(), grid_xguards, mxg);
   }
 
   ///Check if field dimensions are correct. y-direction
-  if (field_dimensions[1] >= m->GlobalNy) { ///including ghostpoints
+  if (grid_yguards > 0) { ///including ghostpoints
+    ASSERT1(field_dimensions[1] == m->GlobalNy - 2*myg + grid_yguards);
     ny_to_read = m->LocalNy;
     yd = grid_yguards - myg;
     ASSERT1(yd >= 0);
-  } else if (field_dimensions[1] == m->GlobalNy - 2*myg) { ///excluding ghostpoints
+  } else if (grid_yguards == 0) { ///excluding ghostpoints
+    ASSERT1(field_dimensions[1] == m->GlobalNy - 2*myg);
     ny_to_read = m->LocalNy - 2*myg;
     yd = myg;
   } else {
-    throw BoutException("Could not read '%s' from file: y-dimension = %i neither matches ny <= %i"
-                "nor ny-2*myg = %i ", name.c_str(), field_dimensions[1], m->GlobalNy, m->GlobalNy-2*myg);
+    throw BoutException("Could not read '%s' from file: number of y-boundary guard cells "
+                "in the grid file grid_yguards=%i neither matches grid_yguards >= myg=%i "
+                "nor grid_yguards = 0", name.c_str(), grid_yguards, myg);
   }
 
   // Now read data from file
