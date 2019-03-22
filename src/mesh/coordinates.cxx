@@ -46,7 +46,7 @@ Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
   // initializing yet, leading to an infinite recursion.
   // Also, here we interpolate for the boundary points at xstart/ystart and
   // (xend+1)/(yend+1) instead of extrapolating.
-  for (auto bndry : localmesh->getBoundaries()) {
+  for (auto& bndry : localmesh->getBoundaries()) {
     if ((extrapolate_x and bndry->bx != 0) or (extrapolate_y and bndry->by != 0)) {
       int extrap_start = 0;
       if ((location == CELL_XLOW) && (bndry->bx > 0)) {
@@ -62,6 +62,8 @@ Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
         // this point should already be set correctly because the metric
         // components have been interpolated to here.
         if (extrap_start > 0 and f.getLocation() != location) {
+          ASSERT1(bndry->bx == 0 or localmesh->xstart > 1);
+          ASSERT1(bndry->by == 0 or localmesh->ystart > 1);
           // note that either bx or by is >0 here
           result(bndry->x, bndry->y) =
               (9. * (f(bndry->x - bndry->bx, bndry->y - bndry->by) + f(bndry->x, bndry->y))
