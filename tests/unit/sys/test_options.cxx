@@ -32,6 +32,20 @@ TEST_F(OptionsTest, IsSetDefault) {
   ASSERT_FALSE(options.isSet("default_value"));
 }
 
+TEST_F(OptionsTest, IsSection) {
+  Options options;
+
+  // make sure options is initialized as a section
+  options["testkey"] = 1.;
+
+  ASSERT_TRUE(options.isSection(""));
+  ASSERT_FALSE(options.isSection("subsection"));
+
+  options["subsection"]["testkey"] = 1.;
+
+  ASSERT_TRUE(options.isSection("subsection"));
+}
+
 TEST_F(OptionsTest, SetGetInt) {
   Options options;
   options.set("int_key", 42, "code");
