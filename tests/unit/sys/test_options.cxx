@@ -38,6 +38,8 @@ TEST_F(OptionsTest, IsSection) {
   // make sure options is initialized as a section
   options["testkey"] = 1.;
 
+  ASSERT_TRUE(options.isSection());
+  ASSERT_FALSE(options["testkey"].isSection());
   ASSERT_TRUE(options.isSection(""));
   ASSERT_FALSE(options.isSection("subsection"));
 
