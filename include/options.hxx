@@ -545,9 +545,7 @@ public:
   bool isValue() const {
     return is_value;
   }
-  bool isSection() const {
-    return is_section;
-  }
+  bool isSection(const std::string name = "") const;
  private:
   
   /// The source label given to default values
