@@ -119,7 +119,7 @@ bool Options::isSet() const {
   return true;
 }
 
-bool Options::isSection(const std::string name) const {
+bool Options::isSection(const std::string& name) const {
   if (name == "") {
     // Test this object
     return is_section;
