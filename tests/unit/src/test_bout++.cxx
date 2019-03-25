@@ -109,6 +109,23 @@ TEST(ParseCommandLineArgs, SettingsFileBad) {
                BoutException);
 }
 
+TEST(ParseCommandLineArgs, OptionsAndSettingsFilesSame) {
+  std::vector<std::string> v_args{"test", "-o", "same", "-f", "same"};
+  auto c_args = get_c_string_vector(v_args);
+  char** argv = c_args.data();
+
+  EXPECT_THROW(bout::experimental::parseCommandLineArgs(c_args.size(), argv),
+               BoutException);
+}
+
+TEST(ParseCommandLineArgs, OptionsAndSettingsFilesDifferent) {
+  std::vector<std::string> v_args{"test", "-o", "same", "-f", "different"};
+  auto c_args = get_c_string_vector(v_args);
+  char** argv = c_args.data();
+
+  EXPECT_NO_THROW(bout::experimental::parseCommandLineArgs(c_args.size(), argv));
+}
+
 TEST(ParseCommandLineArgs, LogFile) {
   std::vector<std::string> v_args{"test", "-l", "test_log_file"};
   auto v_args_copy = v_args;
@@ -128,6 +145,126 @@ TEST(ParseCommandLineArgs, LogFileBad) {
 
   EXPECT_THROW(bout::experimental::parseCommandLineArgs(c_args.size(), argv),
                BoutException);
+}
+
+TEST(ParseCommandLineArgs, VerbosityShort) {
+  std::vector<std::string> v_args{"test", "-v"};
+  auto v_args_copy = v_args;
+  auto c_args = get_c_string_vector(v_args_copy);
+  char** argv = c_args.data();
+
+  auto args = bout::experimental::parseCommandLineArgs(c_args.size(), argv);
+
+  EXPECT_EQ(args.verbosity, 5);
+  EXPECT_EQ(args.original_argv, v_args);
+}
+
+TEST(ParseCommandLineArgs, VerbosityShortMultiple) {
+  std::vector<std::string> v_args{"test", "-v", "-v"};
+  auto v_args_copy = v_args;
+  auto c_args = get_c_string_vector(v_args_copy);
+  char** argv = c_args.data();
+
+  auto args = bout::experimental::parseCommandLineArgs(c_args.size(), argv);
+
+  EXPECT_EQ(args.verbosity, 6);
+  EXPECT_EQ(args.original_argv, v_args);
+}
+
+TEST(ParseCommandLineArgs, VerbosityLong) {
+  std::vector<std::string> v_args{"test", "--verbose"};
+  auto v_args_copy = v_args;
+  auto c_args = get_c_string_vector(v_args_copy);
+  char** argv = c_args.data();
+
+  auto args = bout::experimental::parseCommandLineArgs(c_args.size(), argv);
+
+  EXPECT_EQ(args.verbosity, 5);
+  EXPECT_EQ(args.original_argv, v_args);
+}
+
+TEST(ParseCommandLineArgs, VerbosityLongMultiple) {
+  std::vector<std::string> v_args{"test", "--verbose", "--verbose"};
+  auto v_args_copy = v_args;
+  auto c_args = get_c_string_vector(v_args_copy);
+  char** argv = c_args.data();
+
+  auto args = bout::experimental::parseCommandLineArgs(c_args.size(), argv);
+
+  EXPECT_EQ(args.verbosity, 6);
+  EXPECT_EQ(args.original_argv, v_args);
+}
+
+TEST(ParseCommandLineArgs, QuietShort) {
+  std::vector<std::string> v_args{"test", "-q"};
+  auto v_args_copy = v_args;
+  auto c_args = get_c_string_vector(v_args_copy);
+  char** argv = c_args.data();
+
+  auto args = bout::experimental::parseCommandLineArgs(c_args.size(), argv);
+
+  EXPECT_EQ(args.verbosity, 3);
+  EXPECT_EQ(args.original_argv, v_args);
+}
+
+TEST(ParseCommandLineArgs, QuietShortMultiple) {
+  std::vector<std::string> v_args{"test", "-q", "-q"};
+  auto v_args_copy = v_args;
+  auto c_args = get_c_string_vector(v_args_copy);
+  char** argv = c_args.data();
+
+  auto args = bout::experimental::parseCommandLineArgs(c_args.size(), argv);
+
+  EXPECT_EQ(args.verbosity, 2);
+  EXPECT_EQ(args.original_argv, v_args);
+}
+
+TEST(ParseCommandLineArgs, QuietLong) {
+  std::vector<std::string> v_args{"test", "--quiet"};
+  auto v_args_copy = v_args;
+  auto c_args = get_c_string_vector(v_args_copy);
+  char** argv = c_args.data();
+
+  auto args = bout::experimental::parseCommandLineArgs(c_args.size(), argv);
+
+  EXPECT_EQ(args.verbosity, 3);
+  EXPECT_EQ(args.original_argv, v_args);
+}
+
+TEST(ParseCommandLineArgs, QuietLongMultiple) {
+  std::vector<std::string> v_args{"test", "--quiet", "--quiet"};
+  auto v_args_copy = v_args;
+  auto c_args = get_c_string_vector(v_args_copy);
+  char** argv = c_args.data();
+
+  auto args = bout::experimental::parseCommandLineArgs(c_args.size(), argv);
+
+  EXPECT_EQ(args.verbosity, 2);
+  EXPECT_EQ(args.original_argv, v_args);
+}
+
+TEST(ParseCommandLineArgs, ColorShort) {
+  std::vector<std::string> v_args{"test", "-c"};
+  auto v_args_copy = v_args;
+  auto c_args = get_c_string_vector(v_args_copy);
+  char** argv = c_args.data();
+
+  auto args = bout::experimental::parseCommandLineArgs(c_args.size(), argv);
+
+  EXPECT_TRUE(args.color_output);
+  EXPECT_EQ(args.original_argv, v_args);
+}
+
+TEST(ParseCommandLineArgs, ColorLong) {
+  std::vector<std::string> v_args{"test", "--color"};
+  auto v_args_copy = v_args;
+  auto c_args = get_c_string_vector(v_args_copy);
+  char** argv = c_args.data();
+
+  auto args = bout::experimental::parseCommandLineArgs(c_args.size(), argv);
+
+  EXPECT_TRUE(args.color_output);
+  EXPECT_EQ(args.original_argv, v_args);
 }
 
 class PrintStartupTest : public ::testing::Test {
@@ -193,3 +330,26 @@ TEST_F(SignalHandlerTest, SegFault) {
   EXPECT_DEATH(std::raise(SIGSEGV), "SEGMENTATION FAULT");
 }
 #endif
+
+TEST(BoutInitialiseFunctions, SetRunInfo) {
+  WithQuietOutput quiet{output_info};
+
+  Options options;
+
+  bout::experimental::setRunInfo(options);
+
+  auto run_section = options["run"];
+
+  EXPECT_TRUE(run_section.isSet("version"));
+  EXPECT_TRUE(run_section.isSet("revision"));
+  EXPECT_TRUE(run_section.isSet("started"));
+}
+
+TEST(BoutInitialiseFunctions, CheckDataDirectoryIsAccessible) {
+  using namespace bout::experimental;
+  EXPECT_THROW(checkDataDirectoryIsAccessible("./bad/non/existent/directory"),
+               BoutException);
+  EXPECT_THROW(checkDataDirectoryIsAccessible(__FILE__), BoutException);
+  EXPECT_NO_THROW(checkDataDirectoryIsAccessible("."));
+}
+
