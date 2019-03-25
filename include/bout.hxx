@@ -167,6 +167,10 @@ bool setupBoutLogColor(bool color_output, int MYPE);
 /// `run` section of \p options. This is mainly so it can be easily
 /// read in post-processing
 void setRunInfo(Options& options);
+
+/// Setup the output dump files from \p options using the \p
+/// mesh. Files are created in the \p data_dir directory
+Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir);
 } // namespace experimental
 } // namespace bout
 

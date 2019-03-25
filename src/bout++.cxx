@@ -110,8 +110,6 @@ char get_spin();                    // Produces a spinning bar
  */
 int BoutInitialise(int &argc, char **&argv) {
 
-  string dump_ext; ///< Extensions for restart and dump files
-
   bout::experimental::setupSignalHandler(bout_signal_handler);
 
   bout::experimental::setupGetText();
@@ -192,39 +190,11 @@ int BoutInitialise(int &argc, char **&argv) {
     bout::globals::mesh = Mesh::create();  ///< Create the mesh
     bout::globals::mesh->load();           ///< Load from sources. Required for Field initialisation
     bout::globals::mesh->setParallelTransform(); ///< Set the parallel transform from options
-    /////////////////////////////////////////////
-    /// Get some settings
 
-    // Check if restarting
-    bool append;
-    OPTION(options, append, false);
 
-    /// Get file extensions
-    options->get("dump_format", dump_ext, "nc");
-    
-    ////////////////////////////////////////////
+    bout::globals::dump = bout::experimental::setupDumpFile(
+        Options::root(), *bout::globals::mesh, args.data_dir);
 
-    // Set up the "dump" data output file
-    output << "Setting up output (dump) file\n";
-
-    bout::globals::dump = Datafile(options->getSection("output"), bout::globals::mesh);
-    
-    /// Open a file for the output
-    if(append) {
-      bout::globals::dump.opena("%s/BOUT.dmp.%s", args.data_dir.c_str(), dump_ext.c_str());
-    }else {
-      bout::globals::dump.openw("%s/BOUT.dmp.%s", args.data_dir.c_str(), dump_ext.c_str());
-    }
-
-    /// Add book-keeping variables to the output files
-    bout::globals::dump.add(const_cast<BoutReal&>(BOUT_VERSION), "BOUT_VERSION", false);
-    bout::globals::dump.add(simtime, "t_array", true); // Appends the time of dumps into an array
-    bout::globals::dump.add(iteration, "iteration", false);
-
-    ////////////////////////////////////////////
-
-    bout::globals::mesh->outputVars(bout::globals::dump); ///< Save mesh configuration into output file
-    
   }catch(BoutException &e) {
     output_error.write(_("Error encountered during initialisation: %s\n"), e.what());
     throw;
@@ -569,6 +539,35 @@ void setRunInfo(Options& options) {
 
   time_t start_time = time(nullptr);
   runinfo["started"].force(ctime(&start_time), "");
+}
+
+Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir) {
+  // Check if restarting
+  const bool append = options["append"].withDefault(false);
+
+  // Get file extensions
+  const auto dump_ext = options["dump_format"].withDefault(std::string{"nc"});
+
+  output_progress << "Setting up output (dump) file\n";
+
+  auto dump_file = Datafile(&(options["output"]), &mesh);
+
+  if (append) {
+    dump_file.opena("%s/BOUT.dmp.%s", data_dir.c_str(), dump_ext.c_str());
+  } else {
+    dump_file.openw("%s/BOUT.dmp.%s", data_dir.c_str(), dump_ext.c_str());
+  }
+
+  // Add book-keeping variables to the output files
+  dump_file.add(const_cast<BoutReal&>(BOUT_VERSION), "BOUT_VERSION", false);
+  // Appends the time of dumps into an array
+  dump_file.add(simtime, "t_array", true);
+  dump_file.add(iteration, "iteration", false);
+
+  // Save mesh configuration into output file
+  mesh.outputVars(dump_file);
+
+  return dump_file;
 }
 
 } // namespace experimental
