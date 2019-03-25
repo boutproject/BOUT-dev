@@ -110,20 +110,22 @@ char get_spin();                    // Produces a spinning bar
  */
 int BoutInitialise(int& argc, char**& argv) {
 
-  bout::experimental::setupSignalHandler(bout_signal_handler);
+  using namespace bout::experimental;
 
-  bout::experimental::setupGetText();
+  setupSignalHandler(bout_signal_handler);
 
-  bout::experimental::CommandLineArgs args;
+  setupGetText();
+
+  CommandLineArgs args;
   try {
-    args = bout::experimental::parseCommandLineArgs(argc, argv);
+    args = parseCommandLineArgs(argc, argv);
   } catch (BoutException& e) {
     output_error << _("Bad command line arguments:\n") << e.what() << std::endl;
     return 1;
   }
 
   try {
-    bout::experimental::checkDataDirectoryIsAccessible(args.data_dir);
+    checkDataDirectoryIsAccessible(args.data_dir);
 
     // Set the command-line arguments
     SlepcLib::setArgs(argc, argv); // SLEPc initialisation
@@ -133,16 +135,16 @@ int BoutInitialise(int& argc, char**& argv) {
 
     const int MYPE = BoutComm::rank();
 
-    bout::experimental::setupBoutLogColor(args.color_output, MYPE);
+    setupBoutLogColor(args.color_output, MYPE);
 
-    bout::experimental::setupOutput(args.data_dir, args.log_file, args.verbosity, MYPE);
+    setupOutput(args.data_dir, args.log_file, args.verbosity, MYPE);
 
-    bout::experimental::savePIDtoFile(args.data_dir, MYPE);
+    savePIDtoFile(args.data_dir, MYPE);
 
     // Print the different parts of the startup info
-    bout::experimental::printStartupHeader(MYPE, BoutComm::size());
-    bout::experimental::printCompileTimeOptions();
-    bout::experimental::printCommandLineArguments(args.original_argv);
+    printStartupHeader(MYPE, BoutComm::size());
+    printCompileTimeOptions();
+    printCommandLineArguments(args.original_argv);
 
     // Load settings file
     OptionsReader* reader = OptionsReader::getInstance();
@@ -157,7 +159,7 @@ int BoutInitialise(int& argc, char**& argv) {
     Options::root()["optionfile"].force(args.opt_file);
     Options::root()["settingsfile"].force(args.set_file);
 
-    bout::experimental::setRunInfo(Options::root());
+    setRunInfo(Options::root());
 
     // Save settings
     if (BoutComm::rank() == 0) {
@@ -172,8 +174,8 @@ int BoutInitialise(int& argc, char**& argv) {
     // Set the parallel transform from options
     bout::globals::mesh->setParallelTransform();
 
-    bout::globals::dump = bout::experimental::setupDumpFile(
-        Options::root(), *bout::globals::mesh, args.data_dir);
+    bout::globals::dump =
+        setupDumpFile(Options::root(), *bout::globals::mesh, args.data_dir);
 
   } catch (BoutException& e) {
     output_error.write(_("Error encountered during initialisation: %s\n"), e.what());
