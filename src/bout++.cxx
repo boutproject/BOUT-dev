@@ -739,15 +739,13 @@ int BoutMonitor::call(Solver *solver, BoutReal t, int iter, int NOUT) {
 
 /// Signal handler - handles all signals
 void bout_signal_handler(int sig) {
-  /// Set signal handler back to default to prevent possible infinite loop
+  // Set signal handler back to default to prevent possible infinite loop
   signal(SIGSEGV, SIG_DFL);
   // print number of process to stderr, so the user knows which log to check
-  int world_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
-  fprintf(stderr,"\nSighandler called on process %d with sig %d\n"
-          ,world_rank,sig);
+  fprintf(stderr, "\nSighandler called on process %d with sig %d\n", BoutComm::rank(),
+          sig);
 
-  switch (sig){
+  switch (sig) {
   case SIGSEGV:
     throw BoutException("\n****** SEGMENTATION FAULT CAUGHT ******\n\n");
     break;
@@ -762,10 +760,10 @@ void bout_signal_handler(int sig) {
     throw BoutException("\n****** SigKill caught ******\n\n");
     break;
   case SIGUSR1:
-    user_requested_exit=true;
+    user_requested_exit = true;
     break;
   default:
-    throw BoutException("\n****** Signal %d  caught ******\n\n",sig);
+    throw BoutException("\n****** Signal %d  caught ******\n\n", sig);
     break;
   }
 }
