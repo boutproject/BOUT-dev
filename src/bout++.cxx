@@ -409,19 +409,16 @@ int BoutInitialise(int &argc, char **&argv) {
 namespace bout {
 namespace experimental {
 auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
-  /// Check command-line arguments
   /// NB: "restart" and "append" are now caught by options
   /// Check for help flag separately
   for (int i = 1; i < argc; i++) {
     if (string(argv[i]) == "-h" || string(argv[i]) == "--help") {
       // Print help message -- note this will be displayed once per processor as we've not
       // started MPI yet.
-      fprintf(stdout,
-              _("Usage: %s [-d <data directory>] [-f <options filename>] [restart "
-                "[append]] [VAR=VALUE]\n"),
-              argv[0]);
-      fprintf(
-          stdout,
+      output.write(_("Usage: %s [-d <data directory>] [-f <options filename>] [restart "
+                     "[append]] [VAR=VALUE]\n"),
+                   argv[0]);
+      output.write(
           _("\n"
             "  -d <data directory>\tLook in <data directory> for input/output files\n"
             "  -f <options filename>\tUse OPTIONS given in <options filename>\n"
@@ -430,16 +427,16 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
             "  -v, --verbose\t\tIncrease verbosity\n"
             "  -q, --quiet\t\tDecrease verbosity\n"));
 #ifdef LOGCOLOR
-      fprintf(stdout, _("  -c, --color\t\tColor output using bout-log-color\n"));
+      output.write(_("  -c, --color\t\tColor output using bout-log-color\n"));
 #endif
-      fprintf(stdout,
-              _("  -h, --help\t\tThis message\n"
-                "  restart [append]\tRestart the simulation. If append is specified, "
-                "append to the existing output files, otherwise overwrite them\n"
-                "  VAR=VALUE\t\tSpecify a VALUE for input parameter VAR\n"
-                "\nFor all possible input parameters, see the user manual and/or the "
-                "physics model source (e.g. %s.cxx)\n"),
-              argv[0]);
+      output.write(
+          _("  -h, --help\t\tThis message\n"
+            "  restart [append]\tRestart the simulation. If append is specified, "
+            "append to the existing output files, otherwise overwrite them\n"
+            "  VAR=VALUE\t\tSpecify a VALUE for input parameter VAR\n"
+            "\nFor all possible input parameters, see the user manual and/or the "
+            "physics model source (e.g. %s.cxx)\n"),
+          argv[0]);
 
       std::exit(EXIT_SUCCESS);
     }

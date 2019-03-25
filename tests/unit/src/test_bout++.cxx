@@ -5,6 +5,7 @@
 #include "utils.hxx"
 
 #include <algorithm>
+#include <iostream>
 #include <string>
 #include <vector>
 
@@ -20,8 +21,13 @@ TEST(ParseCommandLineArgs, HelpShortOption) {
   auto c_args = get_c_string_vector(v_args);
   char** argv = c_args.data();
 
+  auto cout_buf = std::cout.rdbuf();
+  std::cout.rdbuf(std::cerr.rdbuf());
+
   EXPECT_EXIT(bout::experimental::parseCommandLineArgs(c_args.size(), argv),
-              ::testing::ExitedWithCode(0), "");
+              ::testing::ExitedWithCode(0), "Usage:");
+
+  std::cout.rdbuf(cout_buf);
 }
 
 TEST(ParseCommandLineArgs, HelpLongOption) {
@@ -29,8 +35,13 @@ TEST(ParseCommandLineArgs, HelpLongOption) {
   auto c_args = get_c_string_vector(v_args);
   char** argv = c_args.data();
 
+  auto cout_buf = std::cout.rdbuf();
+  std::cout.rdbuf(std::cerr.rdbuf());
+
   EXPECT_EXIT(bout::experimental::parseCommandLineArgs(c_args.size(), argv),
-              ::testing::ExitedWithCode(0), "");
+              ::testing::ExitedWithCode(0), "Usage:");
+
+  std::cout.rdbuf(cout_buf);
 }
 
 TEST(ParseCommandLineArgs, DataDir) {
