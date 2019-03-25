@@ -127,6 +127,9 @@ void printCompileTimeOptions();
 /// Print the arguments given on the command line
 void printCommandLineArguments(const std::vector<std::string>& original_argv);
 
+/// Setup the pipe etc and run stdout through bout-log-color. Return
+/// true if it was successful
+bool setupBoutLogColor(bool color_output, int MYPE);
 } // namespace experimental
 } // namespace bout
 

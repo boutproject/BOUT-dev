@@ -177,40 +177,7 @@ int BoutInitialise(int &argc, char **&argv) {
 
   const int MYPE = BoutComm::rank();
 
-#ifdef LOGCOLOR
-  if (args.color_output && (MYPE == 0)) {
-    // Color stdout by piping through bout-log-color script
-    // Only done on processor 0, since this is the only processor which writes to stdout
-    // This uses popen, fileno and dup2 functions, which are POSIX
-    bool success = false;
-
-    // Run bout-log-color through the shell. This should share stdout with BOUT++,
-    // and read stdin from the pipe
-    FILE *outpipe = popen("bout-log-color", "w");
-
-    if (outpipe != nullptr) {
-      // Valid pipe
-      // Get the integer file descriptor
-      int fno = fileno(outpipe);
-      if (fno != -1) {
-        // Valid file descriptor
-
-        // Note: We can get to here if bout-log-color failed to run
-        // This seems to cause code to fail later
-        
-        // Replace stdout with the pipe.
-        int status = dup2(fno, STDOUT_FILENO);
-        if (status != -1) {
-          success = true;
-        }
-      }
-    }
-    if (!success) {
-      // Failed . Probably not important enough to stop the simulation
-      fprintf(stderr, _("Could not run bout-log-color. Make sure it is in your PATH\n"));
-    }
-  }
-#endif // LOGCOLOR
+  bout::experimental::setupBoutLogColor(args.color_output, MYPE);
   
   /// Set up the output, accessing underlying Output object
   {
@@ -525,6 +492,45 @@ void printCommandLineArguments(const std::vector<std::string>& original_argv) {
     output_info << arg << " ";
   }
   output_info.write("\n");
+}
+
+bool setupBoutLogColor(bool color_output, int MYPE) {
+#ifdef LOGCOLOR
+  if (args.color_output && (MYPE == 0)) {
+    // Color stdout by piping through bout-log-color script
+    // Only done on processor 0, since this is the only processor which writes to stdout
+    // This uses popen, fileno and dup2 functions, which are POSIX
+    bool success = false;
+
+    // Run bout-log-color through the shell. This should share stdout with BOUT++,
+    // and read stdin from the pipe
+    FILE* outpipe = popen("bout-log-color", "w");
+
+    if (outpipe != nullptr) {
+      // Valid pipe
+      // Get the integer file descriptor
+      int fno = fileno(outpipe);
+      if (fno != -1) {
+        // Valid file descriptor
+
+        // Note: We can get to here if bout-log-color failed to run
+        // This seems to cause code to fail later
+
+        // Replace stdout with the pipe.
+        int status = dup2(fno, STDOUT_FILENO);
+        if (status != -1) {
+          success = true;
+        }
+      }
+    }
+    if (!success) {
+      // Failed . Probably not important enough to stop the simulation
+      fprintf(stderr, _("Could not run bout-log-color. Make sure it is in your PATH\n"));
+    }
+    return success;
+  }
+#endif // LOGCOLOR
+  return false;
 }
 
 } // namespace experimental
