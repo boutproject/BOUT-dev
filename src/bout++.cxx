@@ -114,30 +114,8 @@ int BoutInitialise(int &argc, char **&argv) {
 
   bout::experimental::setupSignalHandler(bout_signal_handler);
 
-#if BOUT_HAS_GETTEXT
-  // Setting the i18n environment
-  //
-  // For libraries:
-  // https://www.gnu.org/software/gettext/manual/html_node/Libraries.html
-  //
-  try {
-    // Note: Would like to use std::locale::global
-    //    std::locale::global(std::locale(""));
-    // but the Numeric aspect causes problems parsing input strings
-    //
-    // Note: Since BOUT++ is a library, it shouldn't really call setlocale;
-    //       that should be part of main().
-    std::setlocale(LC_ALL, "");
-    std::setlocale(LC_NUMERIC, "C");
-    
-    bindtextdomain (GETTEXT_PACKAGE, BUILDFLAG(BOUT_LOCALE_PATH));
-    
-    fprintf(stderr, "LOCALE_PATH = '%s'\n", BUILDFLAG(BOUT_LOCALE_PATH));
-  } catch (const std::runtime_error &e) {
-    fprintf(stderr, "WARNING: Could not set locale. Try a different LANG setting\n");
-  }
-#endif // BOUT_HAS_GETTEXT
-  
+  bout::experimental::setupGetText();
+
   bout::experimental::CommandLineArgs args;
   try {
     args = bout::experimental::parseCommandLineArgs(argc, argv);
@@ -312,6 +290,32 @@ void setupSignalHandler(SignalHandler signal_handler) {
 // This is currently just an alias to the existing handler
 void defaultSignalHandler(int sig) {
   bout_signal_handler(sig);
+}
+
+void setupGetText() {
+#if BOUT_HAS_GETTEXT
+  // Setting the i18n environment
+  //
+  // For libraries:
+  // https://www.gnu.org/software/gettext/manual/html_node/Libraries.html
+  //
+  try {
+    // Note: Would like to use std::locale::global
+    //    std::locale::global(std::locale(""));
+    // but the Numeric aspect causes problems parsing input strings
+    //
+    // Note: Since BOUT++ is a library, it shouldn't really call setlocale;
+    //       that should be part of main().
+    std::setlocale(LC_ALL, "");
+    std::setlocale(LC_NUMERIC, "C");
+
+    bindtextdomain(GETTEXT_PACKAGE, BUILDFLAG(BOUT_LOCALE_PATH));
+
+    fprintf(stderr, "LOCALE_PATH = '%s'\n", BUILDFLAG(BOUT_LOCALE_PATH));
+  } catch (const std::runtime_error& e) {
+    fprintf(stderr, "WARNING: Could not set locale. Try a different LANG setting\n");
+  }
+#endif // BOUT_HAS_GETTEXT
 }
 
 auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {

@@ -117,6 +117,9 @@ void setupSignalHandler(SignalHandler signal_handler);
 /// appropriate message
 void defaultSignalHandler(int sig);
 
+/// Set up the i18n environment
+void setupGetText();
+
 /// Results of parsing the command line arguments
 struct CommandLineArgs {
   int verbosity{4};
