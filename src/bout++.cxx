@@ -525,7 +525,7 @@ bool setupBoutLogColor(bool color_output, int MYPE) {
     }
     if (!success) {
       // Failed . Probably not important enough to stop the simulation
-      fprintf(stderr, _("Could not run bout-log-color. Make sure it is in your PATH\n"));
+      std::cerr << _("Could not run bout-log-color. Make sure it is in your PATH\n");
     }
     return success;
   }
