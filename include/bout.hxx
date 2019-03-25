@@ -135,6 +135,11 @@ struct CommandLineArgs {
 /// Parse the "fixed" command line arguments, like --help and -d
 CommandLineArgs parseCommandLineArgs(int argc, char** argv);
 
+/// Throw an exception if \p data_dir is either not a directory or not
+/// accessible. We do not check whether we can write, as it is
+/// sufficient that the files we need are writeable
+void checkDataDirectoryIsAccessible(const std::string& data_dir);
+
 /// Print the initial header
 void printStartupHeader(int MYPE, int NPES);
 

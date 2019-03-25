@@ -125,17 +125,7 @@ int BoutInitialise(int &argc, char **&argv) {
     return 1;
   }
 
-  // Check that data_dir exists. We do not check whether we can write, as it is
-  // sufficient that the files we need are writeable ...
-  struct stat test;
-  if (stat(args.data_dir.c_str(), &test) == 0) {
-    if (!S_ISDIR(test.st_mode)) {
-      throw BoutException(_("DataDir \"%s\" is not a directory\n"), args.data_dir.c_str());
-    }
-  } else {
-    throw BoutException(_("DataDir \"%s\" does not exist or is not accessible\n"),
-                        args.data_dir.c_str());
-  }
+  bout::experimental::checkDataDirectoryIsAccessible(args.data_dir);
 
   // Set the command-line arguments
   SlepcLib::setArgs(argc, argv); // SLEPc initialisation
@@ -428,6 +418,18 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
   }
 
   return args;
+}
+
+void checkDataDirectoryIsAccessible(const std::string& data_dir) {
+  struct stat test;
+  if (stat(data_dir.c_str(), &test) == 0) {
+    if (!S_ISDIR(test.st_mode)) {
+      throw BoutException(_("DataDir \"%s\" is not a directory\n"), data_dir.c_str());
+    }
+  } else {
+    throw BoutException(_("DataDir \"%s\" does not exist or is not accessible\n"),
+                        data_dir.c_str());
+  }
 }
 
 void printStartupHeader(int MYPE, int NPES) {
