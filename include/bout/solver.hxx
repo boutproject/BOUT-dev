@@ -349,7 +349,7 @@ protected:
   std::vector<VarStr<Vector2D>> v2d;
   std::vector<VarStr<Vector3D>> v3d;
 
-  bool has_constraints; ///< Can this solver.hxxandle constraints? Set to true if so.
+  bool has_constraints; ///< Can this solver handle constraints? Set to true if so.
   bool initialised; ///< Has init been called yet?
 
   BoutReal simtime;  ///< Current simulation time
