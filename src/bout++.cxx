@@ -496,7 +496,7 @@ void printCommandLineArguments(const std::vector<std::string>& original_argv) {
 
 bool setupBoutLogColor(bool color_output, int MYPE) {
 #ifdef LOGCOLOR
-  if (args.color_output && (MYPE == 0)) {
+  if (color_output && (MYPE == 0)) {
     // Color stdout by piping through bout-log-color script
     // Only done on processor 0, since this is the only processor which writes to stdout
     // This uses popen, fileno and dup2 functions, which are POSIX
