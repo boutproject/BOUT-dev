@@ -140,6 +140,12 @@ CommandLineArgs parseCommandLineArgs(int argc, char** argv);
 /// sufficient that the files we need are writeable
 void checkDataDirectoryIsAccessible(const std::string& data_dir);
 
+/// Set up the output: open the log file for each processor, enable or
+/// disable the default outputs based on \p verbosity, disable writing
+/// to stdout for \p MYPE != 0
+void setupOutput(const std::string& data_dir, const std::string& log_file, int verbosity,
+                 int MYPE = 0);
+
 /// Print the initial header
 void printStartupHeader(int MYPE, int NPES);
 

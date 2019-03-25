@@ -137,28 +137,7 @@ int BoutInitialise(int &argc, char **&argv) {
 
   bout::experimental::setupBoutLogColor(args.color_output, MYPE);
   
-  /// Set up the output, accessing underlying Output object
-  {
-    Output &output = *Output::getInstance();
-    if (MYPE == 0) output.enable(); // Enable writing to stdout
-    else output.disable(); // No writing to stdout
-
-    /// Open an output file to echo everything to
-    /// On processor 0 anything written to output will go to stdout and the file
-    if (output.open("%s/%s.%d", args.data_dir.c_str(), args.log_file.c_str(), MYPE)) {
-      return 1;
-    }
-  }
-
-  output_error.enable(args.verbosity > 0);
-  output_warn.enable(args.verbosity > 1);
-  output_progress.enable(args.verbosity > 2);
-  output_info.enable(args.verbosity > 3);
-  output_verbose.enable(args.verbosity > 4);
-  output_debug.enable(args.verbosity > 5); // Only actually enabled if also compiled with DEBUG
-
-  // The backward-compatible output object same as output_progress
-  output.enable(args.verbosity>2);
+  bout::experimental::setupOutput(args.data_dir, args.log_file, args.verbosity, MYPE);
 
   // Save the PID of this process to file, so it can be shut down by user signal
   {
@@ -545,6 +524,35 @@ bool setupBoutLogColor(bool color_output, int MYPE) {
   }
 #endif // LOGCOLOR
   return false;
+}
+
+void setupOutput(const std::string& data_dir, const std::string& log_file, int verbosity,
+                 int MYPE) {
+  {
+    Output& output = *Output::getInstance();
+    if (MYPE == 0) {
+      output.enable(); // Enable writing to stdout
+    } else {
+      output.disable(); // No writing to stdout
+    }
+    /// Open an output file to echo everything to
+    /// On processor 0 anything written to output will go to stdout and the file
+    if (output.open("%s/%s.%d", data_dir.c_str(), log_file.c_str(), MYPE)) {
+      throw BoutException(_("Could not open %s/%s.%d for writing"), data_dir.c_str(),
+                          log_file.c_str(), MYPE);
+    }
+  }
+
+  output_error.enable(verbosity > 0);
+  output_warn.enable(verbosity > 1);
+  output_progress.enable(verbosity > 2);
+  output_info.enable(verbosity > 3);
+  output_verbose.enable(verbosity > 4);
+  // Only actually enabled if also compiled with DEBUG
+  output_debug.enable(verbosity > 5);
+
+  // The backward-compatible output object same as output_progress
+  output.enable(verbosity > 2);
 }
 
 } // namespace experimental
