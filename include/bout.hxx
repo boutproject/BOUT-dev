@@ -101,6 +101,25 @@ using namespace bout::globals;
  */
 int BoutInitialise(int &argc, char **&argv);
 
+namespace bout {
+namespace experimental {
+/// Results of parsing the command line arguments
+struct CommandLineArgs {
+  int verbosity{4};
+  bool color_output{false};
+  std::string data_dir{"data"};          ///< Directory for data input/output
+  std::string opt_file{"BOUT.inp"};      ///< Filename for the options file
+  std::string set_file{"BOUT.settings"}; ///< Filename for the options file
+  std::string log_file{"BOUT.log"};      ///< File name for the log file
+  /// The original set of command line arguments
+  std::vector<std::string> original_argv;
+};
+
+/// Parse the "fixed" command line arguments, like --help and -d
+CommandLineArgs parseCommandLineArgs(int argc, char** argv);
+} // namespace experimental
+} // namespace bout
+
 /*!
  * Run the given solver. This function is only used
  * for old-style physics models with standalone C functions

@@ -26,9 +26,6 @@
  **************************************************************************/
 
 const char DEFAULT_DIR[] = "data";
-const char DEFAULT_OPT[] = "BOUT.inp";
-const char DEFAULT_SET[] = "BOUT.settings";
-const char DEFAULT_LOG[] = "BOUT.log";
 
 // Value passed at compile time
 // Used for MD5SUM, BOUT_LOCALE_PATH, and REVISION
@@ -115,11 +112,6 @@ int BoutInitialise(int &argc, char **&argv) {
 
   string dump_ext; ///< Extensions for restart and dump files
 
-  std::string data_dir{DEFAULT_DIR}; ///< Directory for data input/output
-  std::string opt_file{DEFAULT_OPT}; ///< Filename for the options file
-  std::string set_file{DEFAULT_SET}; ///< Filename for the options file
-  std::string log_file{DEFAULT_LOG}; ///< File name for the log file
-
 #ifdef SIGHANDLE
   /// Set a signal handler for segmentation faults
   signal(SIGSEGV, bout_signal_handler);
@@ -156,133 +148,25 @@ int BoutInitialise(int &argc, char **&argv) {
   }
 #endif // BOUT_HAS_GETTEXT
   
-  int verbosity=4;
-  /// Check command-line arguments
-  /// NB: "restart" and "append" are now caught by options
-  /// Check for help flag separately
-  for (int i=1;i<argc;i++) {
-    if (string(argv[i]) == "-h" ||
-    	string(argv[i]) == "--help") {
-      // Print help message -- note this will be displayed once per processor as we've not started MPI yet.
-      fprintf(stdout, _("Usage: %s [-d <data directory>] [-f <options filename>] [restart [append]] [VAR=VALUE]\n"), argv[0]);
-      fprintf(stdout,
-              _("\n"
-                "  -d <data directory>\tLook in <data directory> for input/output files\n"
-                "  -f <options filename>\tUse OPTIONS given in <options filename>\n"
-                "  -o <settings filename>\tSave used OPTIONS given to <options filename>\n"
-                "  -l, --log <log filename>\tPrint log to <log filename>\n"
-                "  -v, --verbose\t\tIncrease verbosity\n"
-                "  -q, --quiet\t\tDecrease verbosity\n"));
-#ifdef LOGCOLOR
-      fprintf(stdout,
-              _("  -c, --color\t\tColor output using bout-log-color\n"));
-#endif
-      fprintf(stdout,
-              _("  -h, --help\t\tThis message\n"
-                "  restart [append]\tRestart the simulation. If append is specified, "
-                "append to the existing output files, otherwise overwrite them\n"
-                "  VAR=VALUE\t\tSpecify a VALUE for input parameter VAR\n"
-                "\nFor all possible input parameters, see the user manual and/or the "
-                "physics model source (e.g. %s.cxx)\n"),
-              argv[0]);
-
-      std::exit(EXIT_SUCCESS);
-    }
-  }
-
-  bool color_output = false; // Will be set true if -c is in the options
-  std::vector<std::string> original_argv;
-  original_argv.reserve(argc);
-
-  for (int i = 0; i < argc; i++) {
-    original_argv.emplace_back(argv[i]);
-  }
-
-  for (int i=1;i<argc;i++) {
-    if (string(argv[i]) == "-d") {
-      // Set data directory
-      if (i+1 >= argc) {
-        fprintf(stderr, _("Usage is %s -d <data directory>\n"), argv[0]);
-        return 1;
-      }
-
-      data_dir = argv[++i];
-
-      argv[i - 1][0] = 0;
-      argv[i][0] = 0;
-
-    } else if (string(argv[i]) == "-f") {
-      // Set options file
-      if (i+1 >= argc) {
-        fprintf(stderr, _("Usage is %s -f <options filename>\n"), argv[0]);
-        return 1;
-      }
-
-      opt_file = argv[++i];
-
-      argv[i - 1][0] = 0;
-      argv[i][0] = 0;
-      
-    } else if (string(argv[i]) == "-o") {
-      // Set options file
-      if (i+1 >= argc) {
-        fprintf(stderr, _("Usage is %s -o <settings filename>\n"), argv[0]);
-        return 1;
-      }
-
-      set_file = argv[++i];
-
-      argv[i - 1][0] = 0;
-      argv[i][0] = 0;
-
-    } else if ((string(argv[i]) == "-l") || (string(argv[i]) == "--log")) {
-      if (i + 1 >= argc) {
-        fprintf(stderr, _("Usage is %s -l <log filename>\n"), argv[0]);
-        return 1;
-      }
-
-      log_file = argv[++i];
-
-      argv[i - 1][0] = 0;
-      argv[i][0] = 0;
-
-    } else if ( (string(argv[i]) == "-v") ||
-                (string(argv[i]) == "--verbose") ){
-      verbosity++;
-
-      argv[i][0] = 0;
-      
-    } else if ( (string(argv[i]) == "-q") ||
-                (string(argv[i]) == "--quiet")) {
-      verbosity--;
-
-      argv[i][0] = 0;
-      
-    } else if ( (string(argv[i]) == "-c") ||
-                (string(argv[i]) == "--color") ) {
-      // Add color to the output by piping through bout-log-color
-      // This is done after checking all command-line inputs
-      // in case -c is set multiple times
-      color_output = true;
-
-      argv[i][0] = 0;
-    }
-  }
-  
-  if (std::string(set_file) == std::string(opt_file)){
-    throw BoutException(_("Input and output file for settings must be different.\nProvide -o <settings file> to avoid this issue.\n"));
+  bout::experimental::CommandLineArgs args;
+  try {
+    args = bout::experimental::parseCommandLineArgs(argc, argv);
+  } catch (BoutException& e) {
+    output_error << _("Bad command line arguments\n");
+    output_error << e.what() << endl;
+    return 1;
   }
 
   // Check that data_dir exists. We do not check whether we can write, as it is
   // sufficient that the files we need are writeable ...
   struct stat test;
-  if (stat(data_dir.c_str(), &test) == 0) {
+  if (stat(args.data_dir.c_str(), &test) == 0) {
     if (!S_ISDIR(test.st_mode)) {
-      throw BoutException(_("DataDir \"%s\" is not a directory\n"), data_dir.c_str());
+      throw BoutException(_("DataDir \"%s\" is not a directory\n"), args.data_dir.c_str());
     }
   } else {
     throw BoutException(_("DataDir \"%s\" does not exist or is not accessible\n"),
-                        data_dir.c_str());
+                        args.data_dir.c_str());
   }
 
   // Set the command-line arguments
@@ -295,7 +179,7 @@ int BoutInitialise(int &argc, char **&argv) {
   int MYPE = BoutComm::rank();
   
 #ifdef LOGCOLOR
-  if (color_output && (MYPE == 0)) {
+  if (args.color_output && (MYPE == 0)) {
     // Color stdout by piping through bout-log-color script
     // Only done on processor 0, since this is the only processor which writes to stdout
     // This uses popen, fileno and dup2 functions, which are POSIX
@@ -337,25 +221,25 @@ int BoutInitialise(int &argc, char **&argv) {
 
     /// Open an output file to echo everything to
     /// On processor 0 anything written to output will go to stdout and the file
-    if (output.open("%s/%s.%d", data_dir.c_str(), log_file.c_str(), MYPE)) {
+    if (output.open("%s/%s.%d", args.data_dir.c_str(), args.log_file.c_str(), MYPE)) {
       return 1;
     }
   }
 
-  output_error.enable(verbosity > 0);
-  output_warn.enable(verbosity > 1);
-  output_progress.enable(verbosity > 2);
-  output_info.enable(verbosity > 3);
-  output_verbose.enable(verbosity > 4);
-  output_debug.enable(verbosity > 5); // Only actually enabled if also compiled with DEBUG
+  output_error.enable(args.verbosity > 0);
+  output_warn.enable(args.verbosity > 1);
+  output_progress.enable(args.verbosity > 2);
+  output_info.enable(args.verbosity > 3);
+  output_verbose.enable(args.verbosity > 4);
+  output_debug.enable(args.verbosity > 5); // Only actually enabled if also compiled with DEBUG
 
   // The backward-compatible output object same as output_progress
-  output.enable(verbosity>2);
+  output.enable(args.verbosity>2);
 
   // Save the PID of this process to file, so it can be shut down by user signal
   {
     std::string filename;
-    std::stringstream(filename) << data_dir << "/.BOUT.pid." << MYPE;
+    std::stringstream(filename) << args.data_dir << "/.BOUT.pid." << MYPE;
     std::ofstream pid_file;
     pid_file.open(filename, std::ios::out);
     if (pid_file.is_open()) {
@@ -432,7 +316,7 @@ int BoutInitialise(int &argc, char **&argv) {
   
   // Print command line options
   output_info.write(_("\tCommand line options for this run : "));
-  for (auto& arg : original_argv) {
+  for (auto& arg : args.original_argv) {
     output_info << arg << " ";
   }
   output_info.write("\n");
@@ -443,15 +327,15 @@ int BoutInitialise(int &argc, char **&argv) {
   try {
     /// Load settings file
     OptionsReader *reader = OptionsReader::getInstance();
-    reader->read(options, "%s/%s", data_dir.c_str(), opt_file.c_str());
+    reader->read(options, "%s/%s", args.data_dir.c_str(), args.opt_file.c_str());
 
     // Get options override from command-line
     reader->parseCommandLine(options, argc, argv);
 
     // Override options set from short option from the command-line
-    Options::root()["datadir"].force(data_dir);
-    Options::root()["optionfile"].force(opt_file);
-    Options::root()["settingsfile"].force(set_file);
+    Options::root()["datadir"].force(args.data_dir);
+    Options::root()["optionfile"].force(args.opt_file);
+    Options::root()["settingsfile"].force(args.set_file);
 
     // Put some run information in the options.
     // This is mainly so it can be easily read in post-processing
@@ -467,7 +351,7 @@ int BoutInitialise(int &argc, char **&argv) {
     
     // Save settings
     if (BoutComm::rank() == 0) {
-      reader->write(options, "%s/%s", data_dir.c_str(), set_file.c_str());
+      reader->write(options, "%s/%s", args.data_dir.c_str(), args.set_file.c_str());
     }
   } catch (BoutException &e) {
     output << _("Error encountered during initialisation\n");
@@ -500,9 +384,9 @@ int BoutInitialise(int &argc, char **&argv) {
     
     /// Open a file for the output
     if(append) {
-      bout::globals::dump.opena("%s/BOUT.dmp.%s", data_dir.c_str(), dump_ext.c_str());
+      bout::globals::dump.opena("%s/BOUT.dmp.%s", args.data_dir.c_str(), dump_ext.c_str());
     }else {
-      bout::globals::dump.openw("%s/BOUT.dmp.%s", data_dir.c_str(), dump_ext.c_str());
+      bout::globals::dump.openw("%s/BOUT.dmp.%s", args.data_dir.c_str(), dump_ext.c_str());
     }
 
     /// Add book-keeping variables to the output files
@@ -521,6 +405,125 @@ int BoutInitialise(int &argc, char **&argv) {
   
   return 0;
 }
+
+namespace bout {
+namespace experimental {
+auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
+  /// Check command-line arguments
+  /// NB: "restart" and "append" are now caught by options
+  /// Check for help flag separately
+  for (int i = 1; i < argc; i++) {
+    if (string(argv[i]) == "-h" || string(argv[i]) == "--help") {
+      // Print help message -- note this will be displayed once per processor as we've not
+      // started MPI yet.
+      fprintf(stdout,
+              _("Usage: %s [-d <data directory>] [-f <options filename>] [restart "
+                "[append]] [VAR=VALUE]\n"),
+              argv[0]);
+      fprintf(
+          stdout,
+          _("\n"
+            "  -d <data directory>\tLook in <data directory> for input/output files\n"
+            "  -f <options filename>\tUse OPTIONS given in <options filename>\n"
+            "  -o <settings filename>\tSave used OPTIONS given to <options filename>\n"
+            "  -l, --log <log filename>\tPrint log to <log filename>\n"
+            "  -v, --verbose\t\tIncrease verbosity\n"
+            "  -q, --quiet\t\tDecrease verbosity\n"));
+#ifdef LOGCOLOR
+      fprintf(stdout, _("  -c, --color\t\tColor output using bout-log-color\n"));
+#endif
+      fprintf(stdout,
+              _("  -h, --help\t\tThis message\n"
+                "  restart [append]\tRestart the simulation. If append is specified, "
+                "append to the existing output files, otherwise overwrite them\n"
+                "  VAR=VALUE\t\tSpecify a VALUE for input parameter VAR\n"
+                "\nFor all possible input parameters, see the user manual and/or the "
+                "physics model source (e.g. %s.cxx)\n"),
+              argv[0]);
+
+      std::exit(EXIT_SUCCESS);
+    }
+  }
+
+  CommandLineArgs args;
+
+  args.original_argv.reserve(argc);
+  std::copy(argv, argv + argc, std::back_inserter(args.original_argv));
+
+  for (int i = 1; i < argc; i++) {
+    if (string(argv[i]) == "-d") {
+      // Set data directory
+      if (i + 1 >= argc) {
+        throw BoutException(_("Usage is %s -d <data directory>\n"), argv[0]);
+      }
+
+      args.data_dir = argv[++i];
+
+      argv[i - 1][0] = 0;
+      argv[i][0] = 0;
+
+    } else if (string(argv[i]) == "-f") {
+      // Set options file
+      if (i + 1 >= argc) {
+        throw BoutException(_("Usage is %s -f <options filename>\n"), argv[0]);
+      }
+
+      args.opt_file = argv[++i];
+
+      argv[i - 1][0] = 0;
+      argv[i][0] = 0;
+
+    } else if (string(argv[i]) == "-o") {
+      // Set options file
+      if (i + 1 >= argc) {
+        throw BoutException(_("Usage is %s -o <settings filename>\n"), argv[0]);
+      }
+
+      args.set_file = argv[++i];
+
+      argv[i - 1][0] = 0;
+      argv[i][0] = 0;
+
+    } else if ((string(argv[i]) == "-l") || (string(argv[i]) == "--log")) {
+      if (i + 1 >= argc) {
+        throw BoutException(_("Usage is %s -l <log filename>\n"), argv[0]);
+      }
+
+      args.log_file = argv[++i];
+
+      argv[i - 1][0] = 0;
+      argv[i][0] = 0;
+
+    } else if ((string(argv[i]) == "-v") || (string(argv[i]) == "--verbose")) {
+      args.verbosity++;
+
+      argv[i][0] = 0;
+
+    } else if ((string(argv[i]) == "-q") || (string(argv[i]) == "--quiet")) {
+      args.verbosity--;
+
+      argv[i][0] = 0;
+
+    } else if ((string(argv[i]) == "-c") || (string(argv[i]) == "--color")) {
+      // Add color to the output by piping through bout-log-color
+      // This is done after checking all command-line inputs
+      // in case -c is set multiple times
+      args.color_output = true;
+
+      argv[i][0] = 0;
+    }
+  }
+
+  if (args.set_file == args.opt_file) {
+    throw BoutException(
+        _("Input and output file for settings must be different.\nProvide -o <settings "
+          "file> to avoid this issue.\n"));
+  }
+
+  return args;
+}
+} // namespace experimental
+} // namespace bout
 
 int bout_run(Solver *solver, rhsfunc physics_run) {
   
