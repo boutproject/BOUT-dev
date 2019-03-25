@@ -1579,6 +1579,14 @@ retrybetacalc:
   s = file_write(handle, "nx", nx)
   s = file_write(handle, "ny", ny)
   s = file_write(handle, "y_boundary_guards", settings.y_boundary_guards)
+  IF settings.y_boundary_guards GT 0 THEN BEGIN
+    ; set number of y-guard cells, instead of allowing this to be set in
+    ; BOUT.inp or by default. Ensures only compatibile grids with
+    ; y_boundary_guards=0 or y_boundary_guards=MYG can be loaded by versions of
+    ; BOUT++ older than v4.3. Note double-null grids with y_boundary_guards>0
+    ; cannot be read by versions of BOUT++ earlier than v4.3.
+    s = file_write(handle, "MYG", settings.y_boundary_guards)
+  ENDIF
 
   ; Topology for original scheme
   s = file_write(handle, "ixseps1", ixseps1)
