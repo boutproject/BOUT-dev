@@ -125,7 +125,13 @@ int BoutInitialise(int &argc, char **&argv) {
     return 1;
   }
 
-  bout::experimental::checkDataDirectoryIsAccessible(args.data_dir);
+  try {
+    bout::experimental::checkDataDirectoryIsAccessible(args.data_dir);
+  } catch (BoutException& e) {
+    output << _("Error encountered during initialisation\n");
+    output << e.what() << endl;
+    return 1;
+  }
 
   // Set the command-line arguments
   SlepcLib::setArgs(argc, argv); // SLEPc initialisation
@@ -136,9 +142,13 @@ int BoutInitialise(int &argc, char **&argv) {
   const int MYPE = BoutComm::rank();
 
   bout::experimental::setupBoutLogColor(args.color_output, MYPE);
-  
-  bout::experimental::setupOutput(args.data_dir, args.log_file, args.verbosity, MYPE);
 
+  try {
+    bout::experimental::setupOutput(args.data_dir, args.log_file, args.verbosity, MYPE);
+  } catch (BoutException& e) {
+    output << _("Error encountered during initialisation\n");
+    output << e.what() << endl;
+    return 1;
   }
 
   bout::experimental::savePIDtoFile(args.data_dir, MYPE);
