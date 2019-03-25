@@ -2,6 +2,7 @@
 
 #include "bout.hxx"
 #include "boutexception.hxx"
+#include "test_extras.hxx"
 #include "utils.hxx"
 
 #include <algorithm>
@@ -25,7 +26,7 @@ TEST(ParseCommandLineArgs, HelpShortOption) {
   std::cout.rdbuf(std::cerr.rdbuf());
 
   EXPECT_EXIT(bout::experimental::parseCommandLineArgs(c_args.size(), argv),
-              ::testing::ExitedWithCode(0), "Usage:");
+              ::testing::ExitedWithCode(0), _("Usage:"));
 
   std::cout.rdbuf(cout_buf);
 }
@@ -39,7 +40,7 @@ TEST(ParseCommandLineArgs, HelpLongOption) {
   std::cout.rdbuf(std::cerr.rdbuf());
 
   EXPECT_EXIT(bout::experimental::parseCommandLineArgs(c_args.size(), argv),
-              ::testing::ExitedWithCode(0), "Usage:");
+              ::testing::ExitedWithCode(0), _("Usage:"));
 
   std::cout.rdbuf(cout_buf);
 }
@@ -126,4 +127,50 @@ TEST(ParseCommandLineArgs, LogFileBad) {
 
   EXPECT_THROW(bout::experimental::parseCommandLineArgs(c_args.size(), argv),
                BoutException);
+}
+
+class PrintStartupTest : public ::testing::Test {
+public:
+  PrintStartupTest() : sbuf(std::cout.rdbuf()) {
+    // Redirect cout to our stringstream buffer or any other ostream
+    std::cout.rdbuf(buffer.rdbuf());
+  }
+
+  virtual ~PrintStartupTest() {
+    // Clear buffer
+    buffer.str("");
+    // When done redirect cout to its old self
+    std::cout.rdbuf(sbuf);
+  }
+
+  // Write cout to buffer instead of stdout
+  std::stringstream buffer;
+  // Save cout's buffer here
+  std::streambuf* sbuf;
+};
+
+TEST_F(PrintStartupTest, Header) {
+  bout::experimental::printStartupHeader(4, 8);
+
+  EXPECT_TRUE(IsSubString(buffer.str(), BOUT_VERSION_STRING));
+  EXPECT_TRUE(IsSubString(buffer.str(), _("4 of 8")));
+}
+
+TEST_F(PrintStartupTest, CompileTimeOptions) {
+  bout::experimental::printCompileTimeOptions();
+
+  EXPECT_TRUE(IsSubString(buffer.str(), _("Compile-time options:\n")));
+  EXPECT_TRUE(IsSubString(buffer.str(), _("Signal")));
+  EXPECT_TRUE(IsSubString(buffer.str(), "netCDF"));
+  EXPECT_TRUE(IsSubString(buffer.str(), "OpenMP"));
+  EXPECT_TRUE(IsSubString(buffer.str(), _("Compiled with flags")));
+}
+
+TEST_F(PrintStartupTest, CommandLineArguments) {
+  std::vector<std::string> args{"-d", "test1", "test2", "test3"};
+  bout::experimental::printCommandLineArguments(args);
+
+  for (auto& arg : args) {
+    EXPECT_TRUE(IsSubString(buffer.str(), arg));
+  }
 }

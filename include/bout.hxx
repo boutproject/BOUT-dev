@@ -117,6 +117,16 @@ struct CommandLineArgs {
 
 /// Parse the "fixed" command line arguments, like --help and -d
 CommandLineArgs parseCommandLineArgs(int argc, char** argv);
+
+/// Print the initial header
+void printStartupHeader(int MYPE, int NPES);
+
+/// Print the compile-time options
+void printCompileTimeOptions();
+
+/// Print the arguments given on the command line
+void printCommandLineArguments(const std::vector<std::string>& original_argv);
+
 } // namespace experimental
 } // namespace bout
 

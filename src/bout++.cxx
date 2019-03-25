@@ -175,9 +175,8 @@ int BoutInitialise(int &argc, char **&argv) {
   Solver::setArgs(argc, argv);   // Solver initialisation
   BoutComm::setArgs(argc, argv); // MPI initialisation
 
-  int NPES = BoutComm::size();
-  int MYPE = BoutComm::rank();
-  
+  const int MYPE = BoutComm::rank();
+
 #ifdef LOGCOLOR
   if (args.color_output && (MYPE == 0)) {
     // Color stdout by piping through bout-log-color script
@@ -247,79 +246,11 @@ int BoutInitialise(int &argc, char **&argv) {
       pid_file.close();
     }
   }
-  
-  /// Print intro
-  output_progress.write(_("BOUT++ version %s\n"), BOUT_VERSION_STRING);
-#ifdef REVISION
-  output_progress.write(_("Revision: %s\n"), BUILDFLAG(REVISION));
-#endif
-#ifdef MD5SUM
-  output_progress.write("MD5 checksum: %s\n", BUILDFLAG(MD5SUM));
-#endif
-  output_progress.write(_("Code compiled on %s at %s\n\n"), __DATE__, __TIME__);
-  output_info.write("B.Dudson (University of York), M.Umansky (LLNL) 2007\n");
-  output_info.write("Based on BOUT by Xueqiao Xu, 1999\n\n");
 
-  output_info.write(_("Processor number: %d of %d\n\n"), MYPE, NPES);
-
-  output_info.write("pid: %d\n\n",getpid());
-
-  /// Print compile-time options
-
-  output_info.write(_("Compile-time options:\n"));
-
-#if CHECK > 0
-  output_info.write(_("\tChecking enabled, level %d\n"), CHECK);
-#else
-  output_info.write(_("\tChecking disabled\n"));
-#endif
-
-#ifdef SIGHANDLE
-  output_info.write(_("\tSignal handling enabled\n"));
-#else
-  output_info.write(_("\tSignal handling disabled\n"));
-#endif
-
-#ifdef NCDF
-  output_info.write(_("\tnetCDF support enabled\n"));
-#else
-#ifdef NCDF4
-  output_info.write(_("\tnetCDF4 support enabled\n"));
-#else
-  output_info.write(_("\tnetCDF support disabled\n"));
-#endif
-#endif
-
-#ifdef PNCDF
-  output_info.write(_("\tParallel NetCDF support enabled\n"));
-#else
-  output_info.write(_("\tParallel NetCDF support disabled\n"));
-#endif
-
-#ifdef _OPENMP
-  output_info.write(_("\tOpenMP parallelisation enabled, using %d threads\n"),omp_get_max_threads());
-#else
-  output_info.write(_("\tOpenMP parallelisation disabled\n"));
-#endif
-
-#ifdef METRIC3D
-  output_info.write("\tRUNNING IN 3D-METRIC MODE\n");
-#endif
-
-#ifdef BOUT_FPE
-  output_info.write("\tFloatingPointExceptions enabled\n");
-#endif
-
-  //The stringify is needed here as BOUT_FLAGS_STRING may already contain quoted strings
-  //which could cause problems (e.g. terminate strings).
-  output_info.write(_("\tCompiled with flags : %s\n"),STRINGIFY(BOUT_FLAGS_STRING));
-  
-  // Print command line options
-  output_info.write(_("\tCommand line options for this run : "));
-  for (auto& arg : args.original_argv) {
-    output_info << arg << " ";
-  }
-  output_info.write("\n");
+  // Print the different parts of the startup info
+  bout::experimental::printStartupHeader(MYPE, BoutComm::size());
+  bout::experimental::printCompileTimeOptions();
+  bout::experimental::printCommandLineArguments(args.original_argv);
 
   /// Get the options tree
   Options *options = Options::getRoot();
@@ -519,6 +450,83 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
 
   return args;
 }
+
+void printStartupHeader(int MYPE, int NPES) {
+  output_progress.write(_("BOUT++ version %s\n"), BOUT_VERSION_STRING);
+#ifdef REVISION
+  output_progress.write(_("Revision: %s\n"), BUILDFLAG(REVISION));
+#endif
+#ifdef MD5SUM
+  output_progress.write("MD5 checksum: %s\n", BUILDFLAG(MD5SUM));
+#endif
+  output_progress.write(_("Code compiled on %s at %s\n\n"), __DATE__, __TIME__);
+  output_info.write("B.Dudson (University of York), M.Umansky (LLNL) 2007\n");
+  output_info.write("Based on BOUT by Xueqiao Xu, 1999\n\n");
+
+  output_info.write(_("Processor number: %d of %d\n\n"), MYPE, NPES);
+
+  output_info.write("pid: %d\n\n", getpid());
+}
+
+void printCompileTimeOptions() {
+  output_info.write(_("Compile-time options:\n"));
+
+#if CHECK > 0
+  output_info.write(_("\tChecking enabled, level %d\n"), CHECK);
+#else
+  output_info.write(_("\tChecking disabled\n"));
+#endif
+
+#ifdef SIGHANDLE
+  output_info.write(_("\tSignal handling enabled\n"));
+#else
+  output_info.write(_("\tSignal handling disabled\n"));
+#endif
+
+#ifdef NCDF
+  output_info.write(_("\tnetCDF support enabled\n"));
+#else
+#ifdef NCDF4
+  output_info.write(_("\tnetCDF4 support enabled\n"));
+#else
+  output_info.write(_("\tnetCDF support disabled\n"));
+#endif
+#endif
+
+#ifdef PNCDF
+  output_info.write(_("\tParallel NetCDF support enabled\n"));
+#else
+  output_info.write(_("\tParallel NetCDF support disabled\n"));
+#endif
+
+#ifdef _OPENMP
+  output_info.write(_("\tOpenMP parallelisation enabled, using %d threads\n"),
+                    omp_get_max_threads());
+#else
+  output_info.write(_("\tOpenMP parallelisation disabled\n"));
+#endif
+
+#ifdef METRIC3D
+  output_info.write("\tRUNNING IN 3D-METRIC MODE\n");
+#endif
+
+#ifdef BOUT_FPE
+  output_info.write("\tFloatingPointExceptions enabled\n");
+#endif
+
+  // The stringify is needed here as BOUT_FLAGS_STRING may already contain quoted strings
+  // which could cause problems (e.g. terminate strings).
+  output_info.write(_("\tCompiled with flags : %s\n"), STRINGIFY(BOUT_FLAGS_STRING));
+}
+
+void printCommandLineArguments(const std::vector<std::string>& original_argv) {
+  output_info.write(_("\tCommand line options for this run : "));
+  for (auto& arg : original_argv) {
+    output_info << arg << " ";
+  }
+  output_info.write("\n");
+}
+
 } // namespace experimental
 } // namespace bout
 
