@@ -345,6 +345,13 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
   npar_total = npar + nguards_ydown + nguards_yup
 
   nsurf = N_ELEMENTS(fvals)
+
+  ; refine location of starting line
+  FOR i=0, N_ELEMENTS(ri)-1 DO BEGIN
+    follow_gradient_nonorth, interp_data, R, Z, ri[i], zi[i], fvals[sind], ri1, zi1
+    ri[i] = ri1
+    zi[i] = zi1
+  ENDFOR
   
   IF sind GE 0 THEN BEGIN
     ; starting position is on one of the output surfaces
@@ -1145,12 +1152,6 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
     s = 3
     start_ri = (SMOOTH([start_ri[(np-s):(np-1)], start_ri, start_ri[0:(s-1)]], s))[s:(np-1+s)]
     start_zi = (SMOOTH([start_zi[(np-s):(np-1)], start_zi, start_zi[0:(s-1)]], s))[s:(np-1+s)]
-    
-    ;FOR i=0, np-1 DO BEGIN
-    ;  follow_gradient_nonorth, interp_data, R, Z, start_ri[i], start_zi[i], start_f, ri1, zi1
-    ;  start_ri[i] = ri1
-    ;  start_zi[i] = zi1
-    ;ENDFOR
     
     oplot_contour, info, xy, R, Z, /periodic, color=2, thick=1.5D
     
