@@ -113,7 +113,7 @@ PRO adjust_jpar, grid, smoothp=smoothp, jpar=jpar, noplot=noplot
     !P.multi=[0,2,2,0,0]
     SURFACE, data.jpar0, tit="Input Jpar0", chars=2
     SURFACE, jpar, tit="New Jpar0", chars=2
-    PLOT, data.jpar0[0,*], tit="jpar at x=0.D Solid=input", yr=[MIN([data.jpar0[0,*],jpar[0,*]]), $
+    PLOT, data.jpar0[0,*], tit="jpar at x=0 Solid=input", yr=[MIN([data.jpar0[0,*],jpar[0,*]]), $
                                                                MAX([data.jpar0[0,*],jpar[0,*]])]
     OPLOT, jpar[0,*], psym=1
   
