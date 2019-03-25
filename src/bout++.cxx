@@ -112,17 +112,7 @@ int BoutInitialise(int &argc, char **&argv) {
 
   string dump_ext; ///< Extensions for restart and dump files
 
-#ifdef SIGHANDLE
-  /// Set a signal handler for segmentation faults
-  signal(SIGSEGV, bout_signal_handler);
-#endif
-#ifdef BOUT_FPE
-  signal(SIGFPE,  bout_signal_handler);
-  feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
-#endif
-
-  /// Trap SIGUSR1 to allow a clean exit after next write
-  signal(SIGUSR1, bout_signal_handler);
+  bout::experimental::setupSignalHandler(bout_signal_handler);
 
 #if BOUT_HAS_GETTEXT
   // Setting the i18n environment
@@ -306,6 +296,19 @@ int BoutInitialise(int &argc, char **&argv) {
 
 namespace bout {
 namespace experimental {
+void setupSignalHandler(SignalHandler signal_handler) {
+#ifdef SIGHANDLE
+  std::signal(SIGSEGV, signal_handler);
+#endif
+#ifdef BOUT_FPE
+  std::signal(SIGFPE, signal_handler);
+  feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+#endif
+
+  /// Trap SIGUSR1 to allow a clean exit after next write
+  std::signal(SIGUSR1, signal_handler);
+}
+
 auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
   /// NB: "restart" and "append" are now caught by options
   /// Check for help flag separately

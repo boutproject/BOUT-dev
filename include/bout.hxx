@@ -103,6 +103,12 @@ int BoutInitialise(int &argc, char **&argv);
 
 namespace bout {
 namespace experimental {
+/// Function type for handling signals
+using SignalHandler = void(*)(int);
+
+/// Set a signal handler for segmentation faults
+void setupSignalHandler(SignalHandler signal_handler);
+
 /// Results of parsing the command line arguments
 struct CommandLineArgs {
   int verbosity{4};
