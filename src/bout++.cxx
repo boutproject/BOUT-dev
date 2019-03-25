@@ -119,7 +119,7 @@ int BoutInitialise(int& argc, char**& argv) {
   CommandLineArgs args;
   try {
     args = parseCommandLineArgs(argc, argv);
-  } catch (BoutException& e) {
+  } catch (const BoutException& e) {
     output_error << _("Bad command line arguments:\n") << e.what() << std::endl;
     return 1;
   }
@@ -173,7 +173,7 @@ int BoutInitialise(int& argc, char**& argv) {
     bout::globals::dump =
         setupDumpFile(Options::root(), *bout::globals::mesh, args.data_dir);
 
-  } catch (BoutException& e) {
+  } catch (const BoutException& e) {
     output_error.write(_("Error encountered during initialisation: %s\n"), e.what());
     throw;
   }
