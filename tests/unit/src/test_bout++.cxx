@@ -6,6 +6,7 @@
 #include "utils.hxx"
 
 #include <algorithm>
+#include <csignal>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -174,3 +175,21 @@ TEST_F(PrintStartupTest, CommandLineArguments) {
     EXPECT_TRUE(IsSubString(buffer.str(), arg));
   }
 }
+
+#ifdef SIGHANDLE
+class SignalHandlerTest : public ::testing::Test {
+public:
+  SignalHandlerTest() = default;
+  virtual ~SignalHandlerTest() {
+    std::signal(SIGUSR1, SIG_DFL);
+    std::signal(SIGFPE, SIG_DFL);
+    std::signal(SIGSEGV, SIG_DFL);
+  }
+};
+
+TEST_F(SignalHandlerTest, SegFault) {
+  bout::experimental::setupSignalHandler(bout::experimental::defaultSignalHandler);
+  // This test is *incredibly* expensive, maybe as much as 1s, so only test the one signal
+  EXPECT_DEATH(std::raise(SIGSEGV), "SEGMENTATION FAULT");
+}
+#endif

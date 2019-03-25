@@ -106,8 +106,16 @@ namespace experimental {
 /// Function type for handling signals
 using SignalHandler = void(*)(int);
 
-/// Set a signal handler for segmentation faults
+/// Set a signal handler for user-requested clean exit, and
+/// (optionally) segmentation faults and floating point errors
+///
+/// - For segmentation faults, compile with `--enable-signal`.
+/// - For floating point errors, compile with `--enable-sigfpe`
 void setupSignalHandler(SignalHandler signal_handler);
+
+/// The default BOUT++ signal handler: throw an exception with an
+/// appropriate message
+void defaultSignalHandler(int sig);
 
 /// Results of parsing the command line arguments
 struct CommandLineArgs {

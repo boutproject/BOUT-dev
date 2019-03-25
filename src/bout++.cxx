@@ -309,6 +309,11 @@ void setupSignalHandler(SignalHandler signal_handler) {
   std::signal(SIGUSR1, signal_handler);
 }
 
+// This is currently just an alias to the existing handler
+void defaultSignalHandler(int sig) {
+  bout_signal_handler(sig);
+}
+
 auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
   /// NB: "restart" and "append" are now caught by options
   /// Check for help flag separately
