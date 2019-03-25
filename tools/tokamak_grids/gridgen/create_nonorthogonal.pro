@@ -396,19 +396,7 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
   rii = INTERPOLATE(ri, ind, /DOUBLE)
   zii = INTERPOLATE(zi, ind, /DOUBLE)
 
-  ;rii = int_func(SMOOTH(deriv(rii), 3), /simple) + rii[0]
-  ;zii = int_func(SMOOTH(deriv(zii), 3), /simple) + zii[0]
-  ;STOP
-  
-  ; Refine the location of the starting point
-  ;FOR i=0, npar_total-1 DO BEGIN
-  ;  follow_gradient_nonorth, interp_data, R, Z, rii[i], zii[i], f0, ri1, zi1
-  ;  rii[i] = ri1
-  ;  zii[i] = zi1
-  ;ENDFOR
-
   ; From each starting point, follow gradient in both directions
-  
   rixy = DBLARR(nsurf, npar_total)
   zixy = DBLARR(nsurf, npar_total)
   FOR i=0, npar_total-1 DO BEGIN
@@ -574,9 +562,6 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
     z1 = [ zixy[nin-1,i] - 1000.D*dz, zixy[nin-1,i] + 1000.D*dz ]
     
     ; Second line going through first point in SOL, along line vec_out
-    ;r2 = [ rixy[nin+1,i] - 1000.D*vec_out[0], rixy[nin+1,i] + 1000.D*vec_out[0] ]
-    ;z2 = [ zixy[nin+1,i] - 1000.D*vec_out[1], zixy[nin+1,i] + 1000.D*vec_out[1] ]
-
     dr = rixy[nin+1,i] - rixy[nin+2,i]
     dz = zixy[nin+1,i] - zixy[nin+2,i]
     r2 = [ rixy[nin+1,i] - 1000.D*dr, rixy[nin+1,i] + 1000.D*dr ]
@@ -614,12 +599,6 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
        OPLOT, INTERPOLATE(R, rixy[*, i], /DOUBLE), INTERPOLATE(Z, zixy[*, i], /DOUBLE), color=4
     ENDIF 
     
-    ;PLOT, INTERPOLATE(R, rixy[*, i], /DOUBLE), INTERPOLATE(Z, zixy[*, i], /DOUBLE), color=1,psym=1
-    ;OPLOT, [INTERPOLATE(R, rixy[nin, i], /DOUBLE)], [INTERPOLATE(Z, zixy[nin, i], /DOUBLE)], color=4,psym=4
-    ;IF ncross EQ 1 THEN BEGIN
-    ;   OPLOT, [INTERPOLATE(R, cross[0,0], /DOUBLE)], [INTERPOLATE(Z, cross[1,0], /DOUBLE)],psym=2,color=2
-    ;ENDIF
-    ;CURSOR, ax,by, /down
  ENDFOR
 
   RETURN, {rixy:rixy, zixy:zixy, rxy:INTERPOLATE(R, rixy, /DOUBLE), zxy:INTERPOLATE(Z, zixy, /DOUBLE)}
@@ -821,17 +800,6 @@ FUNCTION solve_xpt_hthe, dctF, R, Z, sep_info, dist0, pf_f, core_f, sol_in_f, so
     RETURN, dist0 ; Don't modify
   ENDIF
   
-;  ; Invert using SVD
-;  SVDC, dfdx, W, U, V
-;  WP = DBLARR(4, 4)
-;  for i=0,2 do wp[i,i] = 1.0D/w[i]
-;  ddist = V ## WP ## TRANSPOSE(U) # xp0
-;  
-;  ;ddist = INVERT(dfdx) # xp0
-;  w = WHERE(ABS(ddist) GT 0.5D*dist, count)
-;  IF count GT 0 THEN ddist[w] = ddist[w] * 0.5D*dist[w] / ABS(ddist[w])
-;  dist = dist - ddist
-;  
   PRINT, "DIST =", REFORM(dist)
   PRINT, "RESP = ", response
 ;  PRINT, "CHANGE = ", ddist
@@ -1483,12 +1451,6 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       vecpvt[i,0] = (meanrpvt[nflux_pvt/2]-meanrpvt[0])/lengthpvt
       vecpvt[i,1] = (meanzpvt[nflux_pvt/2]-meanzpvt[0])/lengthpvt
      
-      ;; oplot, INTERPOLATE(R,[meanr1[0],meanr1[nflux_leg1/2]], /DOUBLE),INTERPOLATE(Z,[meanz1[0],meanz1[nflux_leg1/2]], /DOUBLE), thick=5
-      ;; oplot, INTERPOLATE(R,[meanr2[0],meanr2[nflux_leg2/2]], /DOUBLE),INTERPOLATE(Z,[meanz2[0],meanz2[nflux_leg2/2]], /DOUBLE), thick=5
-      ;; oplot, INTERPOLATE(R,[meanrpvt[0],meanrpvt[nflux_pvt/2]], /DOUBLE),INTERPOLATE(Z,[meanzpvt[0],meanzpvt[nflux_pvt/2]], /DOUBLE), thick=5
-      
-      ;; stop
-
       ; Go a little way along each core separatrix and follow
       ; Note: add starting point to end of 'boundary' so we find intersections with a closed contour
       follow_gradient, interp_data, R, Z, $
@@ -1511,45 +1473,6 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       ENDIF ELSE mini = (hit_ind1 + hit_ind2) / 2.D
 
       PRINT, hit_ind1, hit_ind2, mini
-
-      ;; IF 0 THEN BEGIN ;; Disabled for now, as doesn't seem to work well
-      ;;   ; Refine the theta index of the X-point using divide and conquer
-      ;;   REPEAT BEGIN
-      ;;     IF MIN([ni - hit_ind2 + hit_ind1, ni - hit_ind1 + hit_ind2]) LT ABS(hit_ind2 - hit_ind1) THEN BEGIN
-      ;;       ; One at the beginning and one at the end (across the join)
-      ;;       mini = (hit_ind2 + hit_ind1 - ni) / 2.D
-      ;;       IF mini LT 0.D THEN mini = mini + ni
-      ;;     ENDIF ELSE mini = (hit_ind1 + hit_ind2) / 2.D
-          
-      ;;     OPLOT, [INTERPOLATE(R, INTERPOLATE(start_ri, mini, /DOUBLE), /DOUBLE)], [INTERPOLATE(Z, INTERPOLATE(start_zi, mini, /DOUBLE), /DOUBLE)], psym=2, color=4
-          
-      ;;     PRINT, "Theta location: " + STR(hit_ind1) + "," + STR(hit_ind2) + " -> " + STR(mini)
-          
-      ;;     ;  Get line a little bit beyond the X-point
-      ;;     pos = get_line_nonorth(interp_data, R, Z, $
-      ;;                    INTERPOLATE(start_ri, mini, /DOUBLE), INTERPOLATE(start_zi, mini, /DOUBLE), $
-      ;;                    critical.xpt_f[i] + (critical.xpt_f[i] - opt_f[primary_opt]) * 0.05D)
-          
-      ;;     ;OPLOT, INTERPOLATE(R, pos[*,0], /DOUBLE), INTERPOLATE(Z, pos[*,1], /DOUBLE), color=4, thick=2
-          
-      ;;     ; Find which separatrix line this intersected with
-      ;;     cpos = line_crossings([xpt_ri[i], legsep.core1[*,0]], $
-      ;;                           [xpt_zi[i], legsep.core1[*,1]], 0, $
-      ;;                           pos[*,0], pos[*,1], 0, $
-      ;;                           ncross=ncross, inds1=inds)
-      ;;     IF ncross GT 0 THEN BEGIN
-      ;;       hit_ind1 = mini
-      ;;     ENDIF ELSE BEGIN
-      ;;       hit_ind2 = mini
-      ;;     ENDELSE
-      ;;     dist = MIN([ni - hit_ind2 + hit_ind1, ni - hit_ind1 + hit_ind2, ABS([hit_ind2 - hit_ind1])])
-      ;;   ENDREP UNTIL dist LT 0.1D
-      ;;   IF MIN([ni - hit_ind2 + hit_ind1, ni - hit_ind1 + hit_ind2]) LT ABS(hit_ind2 - hit_ind1) THEN BEGIN
-      ;;     ; One at the beginning and one at the end (across the join)
-      ;;     mini = (hit_ind2 + hit_ind1 - ni) / 2.D
-      ;;     IF mini LT 0.D THEN mini = mini + ni
-      ;;   ENDIF ELSE mini = (hit_ind1 + hit_ind2) / 2.D
-      ;; ENDIF
 
       xpt_ind[i] = mini  ; Record the index
       

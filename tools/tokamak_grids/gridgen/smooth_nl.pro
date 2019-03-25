@@ -45,20 +45,12 @@ FUNCTION smooth_nl, input, mesh, iter=iter
           dym = output[x,y] - output[x,ym]
           dyp = output[x,yp] - output[x,y]
           
-          ;markx[x,y] = ABS(dxm - dxp)^2
-          ;marky[x,y] = ABS(dym - dyp)^2
-          
-          ;markx[x,y] = ABS
-          
           mxn[x,y] = 0.5D*(ABS(dxm) + ABS(dxp))
           myn[x,y] = 0.5D*(ABS(dym) + ABS(dyp))
           
         ENDFOR
       ENDIF
     ENDREP UNTIL last
-    
-    ;markx = (markx / MEAN(mxn)^2) < 1.0D
-    ;marky = (marky / MEAN(myn)^2) < 1.0D
     
     markx = (0.5D*mxn / MEAN(mxn)) < 1.0D
     marky = (0.5D*myn / MEAN(myn)) < 1.0D

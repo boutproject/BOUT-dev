@@ -36,17 +36,6 @@ FUNCTION leg_separatrix, dctF, R, Z, xpt_ri, xpt_zi, $
   drdi = INTERPOLATE(DERIV(R), xpt_ri, /DOUBLE)
   dzdi = INTERPOLATE(DERIV(Z), xpt_zi, /DOUBLE)
 
-  ; Use finite-differencing
-  ;di = 2.DD
-  ;axp = local_gradient(dctF, xpt_ri + di, xpt_zi)
-  ;axm = local_gradient(dctF, xpt_ri - di, xpt_zi)
-  ;ayp = local_gradient(dctF, xpt_ri, xpt_zi + di)
-  ;aym = local_gradient(dctF, xpt_ri, xpt_zi - di)
-
-  ;fxx = 0.5D*(axp.dfdr - axm.dfdr)/di
-  ;fyy = 0.5D*(ayp.dfdz - aym.dfdz)/di
-  ;fxy = 0.25D*( (axp.dfdz - axm.dfdz) + (ayp.dfdr - aym.dfdr) ) / di
-  
   IF ABS(fyy) GT 1e-4 THEN BEGIN
     ; Get gradients 1 and 2 (solutions y = g1 * x and y = g2 * x)
     

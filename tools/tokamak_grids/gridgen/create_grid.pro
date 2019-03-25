@@ -611,17 +611,6 @@ FUNCTION solve_xpt_hthe, dctF, R, Z, sep_info, dist0, pf_f, core_f, sol_in_f, so
     RETURN, dist0 ; Don't modify
   ENDIF
   
-;  ; Invert using SVD
-;  SVDC, dfdx, W, U, V
-;  WP = DBLARR(4, 4)
-;  for i=0,2 do wp[i,i] = 1.0D/w[i]
-;  ddist = V ## WP ## TRANSPOSE(U) # xp0
-;  
-;  ;ddist = INVERT(dfdx) # xp0
-;  w = WHERE(ABS(ddist) GT 0.5D*dist, count)
-;  IF count GT 0 THEN ddist[w] = ddist[w] * 0.5D*dist[w] / ABS(ddist[w])
-;  dist = dist - ddist
-;  
   PRINT, "DIST =", REFORM(dist)
   PRINT, "RESP = ", response
 ;  PRINT, "CHANGE = ", ddist
@@ -1213,18 +1202,12 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
           IF mini LT 0.D THEN mini = mini + ni
         ENDIF ELSE mini = (hit_ind1 + hit_ind2) / 2.D
         
-        ;OPLOT, [INTERPOLATE(R[start_ri], hit_ind1, /DOUBLE)], [INTERPOLATE(Z[start_zi], hit_ind1, /DOUBLE)], psym=2, color=2
-        ;OPLOT, [INTERPOLATE(R[start_ri], hit_ind2, /DOUBLE)], [INTERPOLATE(Z[start_zi], hit_ind2, /DOUBLE)], psym=2, color=2
-        ;OPLOT, [INTERPOLATE(R[start_ri], mini, /DOUBLE)], [INTERPOLATE(Z[start_zi], mini, /DOUBLE)], psym=2, color=4
-        
         PRINT, "Theta location: " + STR(hit_ind1) + "," + STR(hit_ind2) + " -> " + STR(mini)
 
         ;  Get line a little bit beyond the X-point
         pos = get_line(interp_data, R, Z, $
                        INTERPOLATE(start_ri, mini, /DOUBLE), INTERPOLATE(start_zi, mini, /DOUBLE), $
                        critical.xpt_f[i] + (critical.xpt_f[i] - opt_f[primary_opt]) * 0.05D)
-        
-        ;OPLOT, INTERPOLATE(R, pos[*,0], /DOUBLE), INTERPOLATE(Z, pos[*,1], /DOUBLE), color=4, thick=2
         
         ; Find which separatrix line this intersected with
         cpos = line_crossings([xpt_ri[i], legsep.core1[*,0]], $
