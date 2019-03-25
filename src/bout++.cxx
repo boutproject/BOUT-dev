@@ -7,7 +7,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -38,57 +38,46 @@ const char DEFAULT_DIR[] = "data";
 #define INDIRECT0_BOUTMAIN(...) INDIRECT1_BOUTMAIN(#__VA_ARGS__)
 #define STRINGIFY(a) INDIRECT0_BOUTMAIN(a)
 
-#include "mpi.h"
-
-#include <boutcomm.hxx>
-#include <datafile.hxx>
-#include <bout/solver.hxx>
-#include <boutexception.hxx>
-#include <optionsreader.hxx>
-#include <msg_stack.hxx>
+#include "boundary_factory.hxx"
+#include "boutcomm.hxx"
+#include "boutexception.hxx"
+#include "datafile.hxx"
+#include "invert_laplace.hxx"
+#include "msg_stack.hxx"
+#include "optionsreader.hxx"
+#include "output.hxx"
+#include "bout/openmpwrap.hxx"
+#include "bout/petsclib.hxx"
+#include "bout/slepclib.hxx"
+#include "bout/solver.hxx"
+#include "bout/sys/timer.hxx"
 
 #define BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
-#include <bout.hxx>
+#include "bout.hxx"
 #undef BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 
-#include <bout/sys/timer.hxx>
-
-#include <boundary_factory.hxx>
-
-#include <invert_laplace.hxx>
-
-#include <bout/slepclib.hxx>
-#include <bout/petsclib.hxx>
-
+#include <csignal>
 #include <ctime>
-
-#include <strings.h>
 #include <string>
 #include <vector>
-using std::string;
-#include <sys/types.h>
+
+// POSIX headers
 #include <sys/stat.h>
 #include <unistd.h>
 
-#ifdef _OPENMP
-#include <omp.h>
-#endif
-
-#include <csignal>
-void bout_signal_handler(int sig);  // Handles signals
 #ifdef BOUT_FPE
 #include <fenv.h>
 #endif
 
+using std::string;
 
-#include <output.hxx>
+BoutReal simtime{0.0};
+int iteration{0};
+bool user_requested_exit = false;
 
-BoutReal simtime;
-int iteration;
-bool user_requested_exit=false;
-
-const string time_to_hms(BoutReal t);   // Converts to h:mm:ss.s format
-char get_spin();                    // Produces a spinning bar
+void bout_signal_handler(int sig);   // Handles signals
+std::string time_to_hms(BoutReal t); // Converts to h:mm:ss.s format
+char get_spin();                     // Produces a spinning bar
 
 /*!
   Initialise BOUT++
@@ -197,9 +186,7 @@ void setupSignalHandler(SignalHandler signal_handler) {
 }
 
 // This is currently just an alias to the existing handler
-void defaultSignalHandler(int sig) {
-  bout_signal_handler(sig);
-}
+void defaultSignalHandler(int sig) { bout_signal_handler(sig); }
 
 void setupGetText() {
 #if BOUT_HAS_GETTEXT
@@ -567,13 +554,13 @@ void writeSettingsFile(Options& options, const std::string& data_dir,
 } // namespace experimental
 } // namespace bout
 
-int bout_run(Solver *solver, rhsfunc physics_run) {
-  
+int bout_run(Solver* solver, rhsfunc physics_run) {
+
   /// Set the RHS function
   solver->setRHS(physics_run);
-  
+
   /// Add the monitor function
-  Monitor * bout_monitor = new BoutMonitor();
+  Monitor* bout_monitor = new BoutMonitor();
   solver->addMonitor(bout_monitor, Solver::BACK);
 
   /// Run the simulation
@@ -618,10 +605,10 @@ int BoutFinalise(bool write_settings) {
   Array<fcmplx>::cleanup();
   Array<int>::cleanup();
   Array<unsigned long>::cleanup();
-  
+
   // Cleanup boundary factory
   BoundaryFactory::cleanup();
-  
+
   // Cleanup timer
   Timer::cleanup();
 
@@ -640,7 +627,7 @@ int BoutFinalise(bool write_settings) {
 
   // MPI communicator, including MPI_Finalize()
   BoutComm::cleanup();
-  
+
   return 0;
 }
 
@@ -650,32 +637,34 @@ int BoutFinalise(bool write_settings) {
  * Called each timestep by the solver
  **************************************************************************/
 
-int BoutMonitor::call(Solver *solver, BoutReal t, int iter, int NOUT) {
+int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
   TRACE("BoutMonitor::call(%e, %d, %d)", t, iter, NOUT);
 
   // Data used for timing
   static bool first_time = true;
   static BoutReal wall_limit, mpi_start_time; // Keep track of remaining wall time
-  
-  static bool stopCheck;       // Check for file, exit if exists?
+
+  static bool stopCheck;            // Check for file, exit if exists?
   static std::string stopCheckName; // File checked, whose existence triggers a stop
-  
+
   // Set the global variables. This is done because they need to be
   // written to the output file before the first step (initial condition)
   simtime = t;
   iteration = iter;
 
   /// Collect timing information
-  run_data.wtime        = Timer::resetTime("run");
-  run_data.ncalls       = solver->resetRHSCounter();
-  run_data.ncalls_e	= solver->resetRHSCounter_e();
-  run_data.ncalls_i	= solver->resetRHSCounter_i();
+  run_data.wtime = Timer::resetTime("run");
+  run_data.ncalls = solver->resetRHSCounter();
+  run_data.ncalls_e = solver->resetRHSCounter_e();
+  run_data.ncalls_i = solver->resetRHSCounter_i();
 
-  bool output_split     = solver->splitOperator();
-  run_data.wtime_rhs    = Timer::resetTime("rhs");
+  bool output_split = solver->splitOperator();
+  run_data.wtime_rhs = Timer::resetTime("rhs");
   run_data.wtime_invert = Timer::resetTime("invert");
-  run_data.wtime_comms  = Timer::resetTime("comms");  // Time spent communicating (part of RHS)
-  run_data.wtime_io     = Timer::resetTime("io");      // Time spend on I/O
+  // Time spent communicating (part of RHS)
+  run_data.wtime_comms = Timer::resetTime("comms");
+  // Time spend on I/O
+  run_data.wtime_io = Timer::resetTime("io");
 
   run_data.calculateDerivedMetrics();
 
@@ -685,7 +674,7 @@ int BoutMonitor::call(Solver *solver, BoutReal t, int iter, int NOUT) {
     /// First time the monitor has been called
 
     /// Get some options
-    Options *options = Options::getRoot();
+    Options* options = Options::getRoot();
     OPTION(options, wall_limit, -1.0); // Wall time limit. By default, no limit
     wall_limit *= 60.0 * 60.0;         // Convert from hours to seconds
 
@@ -720,8 +709,12 @@ int BoutMonitor::call(Solver *solver, BoutReal t, int iter, int NOUT) {
 
   run_data.t_elapsed = MPI_Wtime() - mpi_start_time;
 
-  output_progress.print("%c  Step %d of %d. Elapsed %s", get_spin(), iteration+1, NOUT, (time_to_hms(run_data.t_elapsed)).c_str());
-  output_progress.print(" ETA %s", (time_to_hms(run_data.wtime * static_cast<BoutReal>(NOUT - iteration - 1))).c_str());
+  output_progress.print("%c  Step %d of %d. Elapsed %s", get_spin(), iteration + 1, NOUT,
+                        (time_to_hms(run_data.t_elapsed)).c_str());
+  output_progress.print(
+      " ETA %s",
+      (time_to_hms(run_data.wtime * static_cast<BoutReal>(NOUT - iteration - 1)))
+          .c_str());
 
   /// Write dump file
   bout::globals::dump.write();
@@ -744,9 +737,8 @@ int BoutMonitor::call(Solver *solver, BoutReal t, int iter, int NOUT) {
   if (stopCheck) {
     std::ifstream f(stopCheckName);
     if (f.good()) {
-      output << "\n" << "File " << stopCheckName
-             << " exists -- triggering exit." << endl;
-      user_requested_exit=true;
+      output << "\nFile " << stopCheckName << " exists -- triggering exit." << endl;
+      user_requested_exit = true;
     }
   }
 
@@ -793,7 +785,7 @@ void bout_signal_handler(int sig) {
  **************************************************************************/
 
 /// Write a time in h:mm:ss.s format
-const string time_to_hms(BoutReal t) {
+std::string time_to_hms(BoutReal t) {
   int h, m;
 
   h = static_cast<int>(t / 3600);
@@ -812,17 +804,21 @@ char get_spin() {
   static int i = 0;
   char c = '|'; // Doesn't need to be assigned; squash warning
 
-  switch(i) {
-  case 0: 
-    c = '|'; break;
+  switch (i) {
+  case 0:
+    c = '|';
+    break;
   case 1:
-    c = '/'; break;
+    c = '/';
+    break;
   case 2:
-    c = '-'; break;
+    c = '-';
+    break;
   case 3:
-    c = '\\'; break;
+    c = '\\';
+    break;
   }
-  i = (i+1) % 4;
+  i = (i + 1) % 4;
   return c;
 }
 
@@ -833,7 +829,7 @@ char get_spin() {
 /*!
  * Adds variables to the output file, for post-processing
  */
-void RunMetrics::outputVars(Datafile &file) {
+void RunMetrics::outputVars(Datafile& file) {
   file.add(t_elapsed, "wall_time", true);
   file.add(wtime, "wtime", true);
   file.add(ncalls, "ncalls", true);
