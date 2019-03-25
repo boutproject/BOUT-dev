@@ -108,7 +108,7 @@ char get_spin();                    // Produces a spinning bar
   value of BoutInitialise.
 
  */
-int BoutInitialise(int &argc, char **&argv) {
+int BoutInitialise(int& argc, char**& argv) {
 
   bout::experimental::setupSignalHandler(bout_signal_handler);
 
@@ -118,54 +118,39 @@ int BoutInitialise(int &argc, char **&argv) {
   try {
     args = bout::experimental::parseCommandLineArgs(argc, argv);
   } catch (BoutException& e) {
-    output_error << _("Bad command line arguments\n");
-    output_error << e.what() << endl;
+    output_error << _("Bad command line arguments:\n") << e.what() << std::endl;
     return 1;
   }
 
   try {
     bout::experimental::checkDataDirectoryIsAccessible(args.data_dir);
-  } catch (BoutException& e) {
-    output << _("Error encountered during initialisation\n");
-    output << e.what() << endl;
-    return 1;
-  }
 
-  // Set the command-line arguments
-  SlepcLib::setArgs(argc, argv); // SLEPc initialisation
-  PetscLib::setArgs(argc, argv); // PETSc initialisation
-  Solver::setArgs(argc, argv);   // Solver initialisation
-  BoutComm::setArgs(argc, argv); // MPI initialisation
+    // Set the command-line arguments
+    SlepcLib::setArgs(argc, argv); // SLEPc initialisation
+    PetscLib::setArgs(argc, argv); // PETSc initialisation
+    Solver::setArgs(argc, argv);   // Solver initialisation
+    BoutComm::setArgs(argc, argv); // MPI initialisation
 
-  const int MYPE = BoutComm::rank();
+    const int MYPE = BoutComm::rank();
 
-  bout::experimental::setupBoutLogColor(args.color_output, MYPE);
+    bout::experimental::setupBoutLogColor(args.color_output, MYPE);
 
-  try {
     bout::experimental::setupOutput(args.data_dir, args.log_file, args.verbosity, MYPE);
-  } catch (BoutException& e) {
-    output << _("Error encountered during initialisation\n");
-    output << e.what() << endl;
-    return 1;
-  }
 
-  bout::experimental::savePIDtoFile(args.data_dir, MYPE);
+    bout::experimental::savePIDtoFile(args.data_dir, MYPE);
 
-  // Print the different parts of the startup info
-  bout::experimental::printStartupHeader(MYPE, BoutComm::size());
-  bout::experimental::printCompileTimeOptions();
-  bout::experimental::printCommandLineArguments(args.original_argv);
+    // Print the different parts of the startup info
+    bout::experimental::printStartupHeader(MYPE, BoutComm::size());
+    bout::experimental::printCompileTimeOptions();
+    bout::experimental::printCommandLineArguments(args.original_argv);
 
-  /// Get the options tree
-  Options *options = Options::getRoot();
-
-  try {
-    /// Load settings file
-    OptionsReader *reader = OptionsReader::getInstance();
-    reader->read(options, "%s/%s", args.data_dir.c_str(), args.opt_file.c_str());
+    // Load settings file
+    OptionsReader* reader = OptionsReader::getInstance();
+    reader->read(Options::getRoot(), "%s/%s", args.data_dir.c_str(),
+                 args.opt_file.c_str());
 
     // Get options override from command-line
-    reader->parseCommandLine(options, argc, argv);
+    reader->parseCommandLine(Options::getRoot(), argc, argv);
 
     // Override options set from short option from the command-line
     Options::root()["datadir"].force(args.data_dir);
@@ -176,30 +161,25 @@ int BoutInitialise(int &argc, char **&argv) {
 
     // Save settings
     if (BoutComm::rank() == 0) {
-      reader->write(options, "%s/%s", args.data_dir.c_str(), args.set_file.c_str());
+      reader->write(Options::getRoot(), "%s/%s", args.data_dir.c_str(),
+                    args.set_file.c_str());
     }
-  } catch (BoutException &e) {
-    output << _("Error encountered during initialisation\n");
-    output << e.what() << endl;
-    return 1;
-  }
 
-  try {
-    /////////////////////////////////////////////
-    
-    bout::globals::mesh = Mesh::create();  ///< Create the mesh
-    bout::globals::mesh->load();           ///< Load from sources. Required for Field initialisation
-    bout::globals::mesh->setParallelTransform(); ///< Set the parallel transform from options
-
+    // Create the mesh
+    bout::globals::mesh = Mesh::create();
+    // Load from sources. Required for Field initialisation
+    bout::globals::mesh->load();
+    // Set the parallel transform from options
+    bout::globals::mesh->setParallelTransform();
 
     bout::globals::dump = bout::experimental::setupDumpFile(
         Options::root(), *bout::globals::mesh, args.data_dir);
 
-  }catch(BoutException &e) {
+  } catch (BoutException& e) {
     output_error.write(_("Error encountered during initialisation: %s\n"), e.what());
     throw;
   }
-  
+
   return 0;
 }
 
