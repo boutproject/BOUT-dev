@@ -139,17 +139,9 @@ int BoutInitialise(int &argc, char **&argv) {
   
   bout::experimental::setupOutput(args.data_dir, args.log_file, args.verbosity, MYPE);
 
-  // Save the PID of this process to file, so it can be shut down by user signal
-  {
-    std::string filename;
-    std::stringstream(filename) << args.data_dir << "/.BOUT.pid." << MYPE;
-    std::ofstream pid_file;
-    pid_file.open(filename, std::ios::out);
-    if (pid_file.is_open()) {
-      pid_file << getpid() << "\n";
-      pid_file.close();
-    }
   }
+
+  bout::experimental::savePIDtoFile(args.data_dir, MYPE);
 
   // Print the different parts of the startup info
   bout::experimental::printStartupHeader(MYPE, BoutComm::size());
@@ -408,6 +400,17 @@ void checkDataDirectoryIsAccessible(const std::string& data_dir) {
   } else {
     throw BoutException(_("DataDir \"%s\" does not exist or is not accessible\n"),
                         data_dir.c_str());
+  }
+}
+
+void savePIDtoFile(const std::string& data_dir, int MYPE) {
+  std::string filename;
+  std::stringstream(filename) << data_dir << "/.BOUT.pid." << MYPE;
+  std::ofstream pid_file;
+  pid_file.open(filename, std::ios::out);
+  if (pid_file.is_open()) {
+    pid_file << getpid() << "\n";
+    pid_file.close();
   }
 }
 
