@@ -162,6 +162,11 @@ void printCommandLineArguments(const std::vector<std::string>& original_argv);
 /// Setup the pipe etc and run stdout through bout-log-color. Return
 /// true if it was successful
 bool setupBoutLogColor(bool color_output, int MYPE);
+
+/// Set BOUT++ version information, along with current time, into
+/// `run` section of \p options. This is mainly so it can be easily
+/// read in post-processing
+void setRunInfo(Options& options);
 } // namespace experimental
 } // namespace bout
 

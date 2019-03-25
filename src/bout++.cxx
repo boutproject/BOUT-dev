@@ -174,18 +174,8 @@ int BoutInitialise(int &argc, char **&argv) {
     Options::root()["optionfile"].force(args.opt_file);
     Options::root()["settingsfile"].force(args.set_file);
 
-    // Put some run information in the options.
-    // This is mainly so it can be easily read in post-processing
-    auto &runinfo = Options::root()["run"];
-      
-    // Note: have to force value, since may already be set if a previously
-    // output BOUT.settings file was used as input
-    runinfo["version"].force(BOUT_VERSION_STRING, "");
-    runinfo["revision"].force(BUILDFLAG(REVISION), "");
-    
-    time_t start_time = time(nullptr);
-    runinfo["started"].force(ctime(&start_time), "");
-    
+    bout::experimental::setRunInfo(Options::root());
+
     // Save settings
     if (BoutComm::rank() == 0) {
       reader->write(options, "%s/%s", args.data_dir.c_str(), args.set_file.c_str());
@@ -566,6 +556,19 @@ void setupOutput(const std::string& data_dir, const std::string& log_file, int v
 
   // The backward-compatible output object same as output_progress
   output.enable(verbosity > 2);
+}
+
+void setRunInfo(Options& options) {
+  // Put some run information in the options.
+  auto& runinfo = options["run"];
+
+  // Note: have to force value, since may already be set if a previously
+  // output BOUT.settings file was used as input
+  runinfo["version"].force(BOUT_VERSION_STRING, "");
+  runinfo["revision"].force(BUILDFLAG(REVISION), "");
+
+  time_t start_time = time(nullptr);
+  runinfo["started"].force(ctime(&start_time), "");
 }
 
 } // namespace experimental
