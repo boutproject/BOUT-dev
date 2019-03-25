@@ -331,18 +331,30 @@ TEST_F(SignalHandlerTest, SegFault) {
 }
 #endif
 
-TEST(BoutInitialiseFunctions, SetRunInfo) {
+TEST(BoutInitialiseFunctions, SetRunStartInfo) {
   WithQuietOutput quiet{output_info};
 
   Options options;
 
-  bout::experimental::setRunInfo(options);
+  bout::experimental::setRunStartInfo(options);
 
   auto run_section = options["run"];
 
+  ASSERT_TRUE(run_section.isSection());
   EXPECT_TRUE(run_section.isSet("version"));
   EXPECT_TRUE(run_section.isSet("revision"));
   EXPECT_TRUE(run_section.isSet("started"));
+}
+
+TEST(BoutInitialiseFunctions, SetRunFinishInfo) {
+  WithQuietOutput quiet{output_info};
+
+  Options options;
+
+  bout::experimental::setRunFinishInfo(options);
+
+  ASSERT_TRUE(options["run"].isSection());
+  EXPECT_TRUE(options["run"].isSet("finished"));
 }
 
 TEST(BoutInitialiseFunctions, CheckDataDirectoryIsAccessible) {

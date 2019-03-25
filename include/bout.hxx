@@ -165,10 +165,18 @@ void printCommandLineArguments(const std::vector<std::string>& original_argv);
 /// true if it was successful
 bool setupBoutLogColor(bool color_output, int MYPE);
 
-/// Set BOUT++ version information, along with current time, into
-/// `run` section of \p options. This is mainly so it can be easily
-/// read in post-processing
-void setRunInfo(Options& options);
+/// Set BOUT++ version information, along with current time (as
+/// `started`), into `run` section of \p options
+void setRunStartInfo(Options& options);
+
+/// Set the current time (as `finished`) into `run` section of \p
+/// options
+void setRunFinishInfo(Options& options);
+
+/// Write \p options to \p settings_file in directory \p
+/// data_dir. Actually writes only if \p write is true
+void writeSettingsFile(Options& options, const std::string& data_dir,
+                       const std::string& settings_file, bool write = true);
 
 /// Setup the output dump files from \p options using the \p
 /// mesh. Files are created in the \p data_dir directory
@@ -209,7 +217,12 @@ private:
  * Frees memory, flushes buffers, and closes files.
  * If BOUT++ initialised MPI or external libraries,
  * then these are also finalised.
+ *
+ * If \p write_settings is true, output the settings, showing which
+ * options were used. This overwrites the file written during
+ * initialisation (BOUT.settings by default)
+ *
  */
-int BoutFinalise();
+int BoutFinalise(bool write_settings = true);
 
 #endif // __BOUT_H__

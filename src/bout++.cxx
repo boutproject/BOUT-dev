@@ -159,13 +159,9 @@ int BoutInitialise(int& argc, char**& argv) {
     Options::root()["optionfile"].force(args.opt_file);
     Options::root()["settingsfile"].force(args.set_file);
 
-    setRunInfo(Options::root());
+    setRunStartInfo(Options::root());
 
-    // Save settings
-    if (BoutComm::rank() == 0) {
-      reader->write(Options::getRoot(), "%s/%s", args.data_dir.c_str(),
-                    args.set_file.c_str());
-    }
+    writeSettingsFile(Options::root(), args.data_dir, args.set_file, MYPE == 0);
 
     // Create the mesh
     bout::globals::mesh = Mesh::create();
@@ -513,8 +509,7 @@ void setupOutput(const std::string& data_dir, const std::string& log_file, int v
   output.enable(verbosity > 2);
 }
 
-void setRunInfo(Options& options) {
-  // Put some run information in the options.
+void setRunStartInfo(Options& options) {
   auto& runinfo = options["run"];
 
   // Note: have to force value, since may already be set if a previously
@@ -524,6 +519,11 @@ void setRunInfo(Options& options) {
 
   time_t start_time = time(nullptr);
   runinfo["started"].force(ctime(&start_time), "");
+}
+
+void setRunFinishInfo(Options& options) {
+  time_t end_time = time(nullptr);
+  options["run"]["finished"].force(ctime(&end_time), "");
 }
 
 Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir) {
@@ -555,6 +555,15 @@ Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir
   return dump_file;
 }
 
+void writeSettingsFile(Options& options, const std::string& data_dir,
+                       const std::string& settings_file, bool write) {
+  if (not write) {
+    return;
+  }
+  OptionsReader::getInstance()->write(&options, "%s/%s", data_dir.c_str(),
+                                      settings_file.c_str());
+}
+
 } // namespace experimental
 } // namespace bout
 
@@ -571,27 +580,24 @@ int bout_run(Solver *solver, rhsfunc physics_run) {
   return solver->solve();
 }
 
-int BoutFinalise() {
+int BoutFinalise(bool write_settings) {
 
   // Output the settings, showing which options were used
   // This overwrites the file written during initialisation
-  try {
-    if (BoutComm::rank() == 0) {
-      string data_dir;
-      Options::getRoot()->get("datadir", data_dir, "data");
+  if (write_settings) {
+    try {
+      using namespace bout::experimental;
+      auto& options = Options::root();
 
-      // Set the end time in the settings file
-      time_t end_time = time(nullptr);
-      Options::root()["run"]["finished"].force(ctime(&end_time), "");
-      
-      OptionsReader *reader = OptionsReader::getInstance();
-      std::string settingsfile;
-      OPTION(Options::getRoot(), settingsfile, "");
-      reader->write(Options::getRoot(), "%s/%s", data_dir.c_str(), settingsfile.c_str());
+      setRunFinishInfo(options);
+
+      const auto data_dir = options["datadir"].withDefault(std::string{DEFAULT_DIR});
+      const auto set_file = options["settingsfile"].withDefault("");
+
+      writeSettingsFile(options, data_dir, set_file, BoutComm::rank() == 0);
+    } catch (const BoutException& e) {
+      output_error << _("Error whilst writing settings") << e.what() << endl;
     }
-  } catch (BoutException &e) {
-    output_error << _("Error whilst writing settings") << endl;
-    output_error << e.what() << endl;
   }
 
   // Delete the mesh
