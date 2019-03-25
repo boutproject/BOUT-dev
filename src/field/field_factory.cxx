@@ -50,6 +50,13 @@ FieldFactory::FieldFactory(Mesh* localmesh, Options* opt)
     : fieldmesh(localmesh == nullptr ? bout::globals::mesh : localmesh),
       options(opt == nullptr ? Options::getRoot() : opt) {
 
+  // Set options
+  // Note: don't use 'options' here because 'options' is a 'const Options*'
+  // pointer, so this would fail if the "input" section is not present.
+  Options& nonconst_options{opt == nullptr ? Options::root() : *opt};
+  transform_from_field_aligned
+    = nonconst_options["input"]["transform_from_field_aligned"].withDefault(true);
+
   // Useful values
   addGenerator("pi", std::make_shared<FieldValue>(PI));
   addGenerator("π", std::make_shared<FieldValue>(PI));
@@ -215,7 +222,7 @@ Field3D FieldFactory::create3D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC 
   }
   };
 
-  if (localmesh->canToFromFieldAligned()) {
+  if (transform_from_field_aligned and localmesh->canToFromFieldAligned()) {
     // Transform from field aligned coordinates, to be compatible with
     // older BOUT++ inputs. This is not a particularly "nice" solution.
     result = localmesh->fromFieldAligned(result, RGN_ALL);

@@ -82,6 +82,8 @@ const int Vector3DTest::ny = 5;
 const int Vector3DTest::nz = 3;
 
 TEST_F(Vector3DTest, ApplyBoundaryString) {
+  WithQuietOutput quiet{output_info};
+
   Vector3D v;
   v = 0.0;
   v.applyBoundary("dirichlet(1.0)");

@@ -101,6 +101,8 @@ TEST_F(OptionsFieldTest, RetrieveField3DfromString) {
   Options options;
   options = "1 + 2";
 
+  WithQuietOutput quiet{output_info};
+
   Field3D other = options.as<Field3D>(bout::globals::mesh);
 
   EXPECT_DOUBLE_EQ(other(0,1,0), 3.0);
