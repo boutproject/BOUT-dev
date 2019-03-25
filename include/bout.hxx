@@ -146,8 +146,10 @@ void checkDataDirectoryIsAccessible(const std::string& data_dir);
 void setupOutput(const std::string& data_dir, const std::string& log_file, int verbosity,
                  int MYPE = 0);
 
-/// Save the process ID for processor N = \p MYPE to file BOUT.pid.N
+/// Save the process ID for processor N = \p MYPE to file ".BOUT.pid.N"
 /// in \p data_dir, so it can be shut down by user signal
+///
+/// Throws if it was not possible to create the file
 void savePIDtoFile(const std::string& data_dir, int MYPE);
 
 /// Print the initial header

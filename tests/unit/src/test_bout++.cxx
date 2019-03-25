@@ -353,3 +353,23 @@ TEST(BoutInitialiseFunctions, CheckDataDirectoryIsAccessible) {
   EXPECT_NO_THROW(checkDataDirectoryIsAccessible("."));
 }
 
+TEST(BoutInitialiseFunctions, SavePIDtoFile) {
+  WithQuietOutput quiet{output_info};
+
+  EXPECT_NO_THROW(bout::experimental::savePIDtoFile("/tmp", 1));
+
+  std::string filename{"/tmp/.BOUT.pid.1"};
+  std::ifstream pid_file;
+  pid_file.open(filename);
+
+  EXPECT_TRUE(pid_file.good());
+
+  std::stringstream contents;
+  contents << pid_file.rdbuf();
+
+  EXPECT_GT(contents.str().length(), 0);
+
+  std::remove(filename.c_str());
+
+  EXPECT_THROW(bout::experimental::savePIDtoFile("/", 2), BoutException);
+}

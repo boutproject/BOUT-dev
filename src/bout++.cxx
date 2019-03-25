@@ -356,14 +356,17 @@ void checkDataDirectoryIsAccessible(const std::string& data_dir) {
 }
 
 void savePIDtoFile(const std::string& data_dir, int MYPE) {
-  std::string filename;
-  std::stringstream(filename) << data_dir << "/.BOUT.pid." << MYPE;
+  std::stringstream filename;
+  filename << data_dir << "/.BOUT.pid." << MYPE;
   std::ofstream pid_file;
-  pid_file.open(filename, std::ios::out);
-  if (pid_file.is_open()) {
-    pid_file << getpid() << "\n";
-    pid_file.close();
+  pid_file.open(filename.str(), std::ios::out | std::ios::trunc);
+
+  if (not pid_file.is_open()) {
+    throw BoutException(_("Could not create PID file %s"), filename.str().c_str());
   }
+
+  pid_file << getpid() << "\n";
+  pid_file.close();
 }
 
 void printStartupHeader(int MYPE, int NPES) {
