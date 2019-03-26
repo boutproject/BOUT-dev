@@ -216,6 +216,17 @@ void OptionINI::writeSection(const Options *options, std::ofstream &fout) {
         }
         fout << it.second.attributes.at("type").as<std::string>();
       }
+      
+      if (it.second.attributes.count("doc")) {
+        if (!in_comment) {
+          fout << "\t\t# ";
+          in_comment = true;
+        } else {
+          fout << ", doc: ";
+        }
+        fout << it.second.attributes.at("doc").as<std::string>();
+      }
+      fout << endl;
     }
   }
   

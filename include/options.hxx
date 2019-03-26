@@ -239,6 +239,9 @@ public:
   /// 
   ///  - type             [string] The type the Option is converted to
   ///                     when used.
+  /// 
+  ///  - doc              [string] Documentation, describing what the variable does
+  ///
   std::map<std::string, AttributeType> attributes;
   
   /// Get a sub-section or value
@@ -562,6 +565,14 @@ public:
   
   /// If the option value has been used anywhere
   bool valueUsed() const { return value_used; }
+
+
+  /// Set a documentation string as an attribute "doc"
+  /// Returns a reference to this, to allow chaining
+  Options& doc(const std::string& docstring) {
+    attributes["doc"] = docstring;
+    return *this;
+  }
   
  private:
   
