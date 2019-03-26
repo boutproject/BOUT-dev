@@ -599,8 +599,8 @@ int Solver::init(int UNUSED(nout), BoutReal UNUSED(tstep)) {
 
   output_progress.write(_("Initialising solver\n"));
 
-  MPI_Comm_size(BoutComm::get(), &NPES);
-  MPI_Comm_rank(BoutComm::get(), &MYPE);
+  NPES = BoutComm::size();
+  MYPE = BoutComm::rank();
   
   /// Mark as initialised. No more variables can be added
   initialised = true;
@@ -818,11 +818,11 @@ int Solver::getLocalN() {
   return local_N;
 }
 
-Solver* Solver::create(Options *opts) {  
+Solver* Solver::create(Options* opts) {
   return SolverFactory::getInstance()->createSolver(opts);
 }
 
-Solver* Solver::create(SolverType &type, Options *opts) {  
+Solver* Solver::create(const SolverType& type, Options* opts) {
   return SolverFactory::getInstance()->createSolver(type, opts);
 }
 

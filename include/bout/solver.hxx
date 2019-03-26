@@ -304,7 +304,7 @@ class Solver {
   /*!
    * Create a Solver object, specifying the type
    */
-  static Solver *create(SolverType &type, Options *opts = nullptr);
+  static Solver* create(const SolverType& type, Options* opts = nullptr);
 
   /*!
    * Pass the command-line arguments. This static function is
