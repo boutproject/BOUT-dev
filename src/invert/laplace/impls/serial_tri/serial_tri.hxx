@@ -41,19 +41,19 @@ public:
   using Laplacian::setCoefA;
   void setCoefA(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
-    ASSERT1(localmesh = val.getMesh());
+    ASSERT1(localmesh == val.getMesh());
     A = val;
   }
   using Laplacian::setCoefC;
   void setCoefC(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
-    ASSERT1(localmesh = val.getMesh());
+    ASSERT1(localmesh == val.getMesh());
     C = val;
   }
   using Laplacian::setCoefD;
   void setCoefD(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
-    ASSERT1(localmesh = val.getMesh());
+    ASSERT1(localmesh == val.getMesh());
     D = val;
   }
   using Laplacian::setCoefEx;
