@@ -331,6 +331,9 @@ template <> Field3D Options::as<Field3D>(Mesh* localmesh) const {
   if (!is_value) {
     throw BoutException("Option %s has no value", full_name.c_str());
   }
+
+  // Mark value as used
+  value_used = true;
   
   try {
     return bout::utils::variantStaticCastOrThrow<ValueType, Field3D>(value);
@@ -367,6 +370,9 @@ template <> Field2D Options::as<Field2D>(Mesh* localmesh) const {
   if (!is_value) {
     throw BoutException("Option %s has no value", full_name.c_str());
   }
+  
+  // Mark value as used
+  value_used = true;
   
   try {
     return bout::utils::variantStaticCastOrThrow<ValueType, Field2D>(value);

@@ -50,8 +50,8 @@ protected:
 
     /******************Reading options *****************/
 
-    auto globalOptions = Options::root();
-    auto options = globalOptions["model"];
+    auto& globalOptions = Options::root();
+    auto& options = globalOptions["model"];
 
     // Load system parameters
     Te0 = options["Te0"].doc("Temperature in eV").withDefault(30);
