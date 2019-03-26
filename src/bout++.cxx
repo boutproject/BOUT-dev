@@ -616,9 +616,6 @@ int BoutFinalise(bool write_settings) {
   Options::cleanup();
   OptionsReader::cleanup();
 
-  // Debugging message stack
-  msg_stack.clear();
-
   // Call SlepcFinalize if not already called
   SlepcLib::cleanup();
 
@@ -627,6 +624,9 @@ int BoutFinalise(bool write_settings) {
 
   // MPI communicator, including MPI_Finalize()
   BoutComm::cleanup();
+
+  // Debugging message stack
+  msg_stack.clear();
 
   return 0;
 }
