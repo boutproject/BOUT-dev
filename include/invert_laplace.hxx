@@ -216,10 +216,10 @@ protected:
                    const Field2D *ccoef = nullptr, const Field2D *d = nullptr,
                    CELL_LOC loc = CELL_DEFAULT);
 
-  void tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec, dcomplex **bk,
-                    int jy, int flags, int inner_boundary_flags, int outer_boundary_flags,
-                    const Field2D *a = nullptr, const Field2D *ccoef = nullptr,
-                    const Field2D *d = nullptr);
+  void DEPRECATED(tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
+                    dcomplex **bk, int jy, int flags, int inner_boundary_flags,
+                    int outer_boundary_flags, const Field2D *a = nullptr,
+                    const Field2D *ccoef = nullptr, const Field2D *d = nullptr));
 
   void tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
                     dcomplex *bk, int jy, int kz, BoutReal kwave, 
