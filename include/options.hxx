@@ -44,6 +44,8 @@ class Options;
 #include "output.hxx"
 #include "utils.hxx"
 #include "bout/sys/variant.hxx"
+#include "bout/sys/type_name.hxx"
+#include "bout/deprecated.hxx"
 #include "field2d.hxx"
 #include "field3d.hxx"
 
@@ -96,7 +98,7 @@ class Options;
  *     int other;
  *     options.get("otherkey", other, 2.0); // Sets other to 2 because "otherkey" not found
  *
- * Internally, all values are stored as strings, so conversion is performed silently:
+ * Conversion is performed silently:
  *
  *     options.set("value", "2.34", "here"); // Set a string
  *
@@ -231,6 +233,12 @@ public:
   ///                     do not need to be forced. The string will be used
   ///                     when writing the output as the name of the time
   ///                     dimension (unlimited first dimension in NetCDF files).
+  ///
+  ///  - source           [string] Describes where the value came from
+  ///                     e.g. a file name, or "default".
+  /// 
+  ///  - type             [string] The type the Option is converted to
+  ///                     when used.
   std::map<std::string, AttributeType> attributes;
   
   /// Get a sub-section or value
@@ -379,6 +387,10 @@ public:
   /// Get the value of this option. If not found,
   /// set to the default value
   template <typename T> T withDefault(T def) {
+
+    // Set the type
+    attributes["type"] = bout::utils::typeName<T>();
+    
     if (!is_value) {
       // Option not found
       assign(def, DEFAULT_SOURCE);
@@ -535,7 +547,8 @@ public:
 
   /// Read-only access to internal options and sections
   /// to allow iteration over the tree
-  std::map<std::string, OptionValue> values() const;
+  using ValuesMap = std::map<std::string, OptionValue>;
+  DEPRECATED(ValuesMap values() const);
   std::map<std::string, const Options*> subsections() const;
 
   const std::map<std::string, Options>& getChildren() const {
@@ -546,6 +559,10 @@ public:
     return is_value;
   }
   bool isSection(const std::string& name = "") const;
+  
+  /// If the option value has been used anywhere
+  bool valueUsed() const { return value_used; }
+  
  private:
   
   /// The source label given to default values
