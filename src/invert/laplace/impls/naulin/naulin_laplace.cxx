@@ -118,11 +118,13 @@
  */
 
 #include <boutexception.hxx>
+#include "bout/constants.hxx"
 #include <bout/mesh.hxx>
 #include <bout/coordinates.hxx>
 #include <bout/sys/timer.hxx>
 #include <derivs.hxx>
 #include <difops.hxx>
+#include "fft.hxx"
 #include <globals.hxx>
 #include <output.hxx>
 
@@ -261,7 +263,154 @@ const Field3D LaplaceNaulin::solve(const Field3D &rhs, const Field3D &x0) {
   return x;
 }
 
+const FieldPerp LaplaceNaulin::solve(const FieldPerp &rhs, const FieldPerp &x0) {
+  // Rearrange equation so first term is just Delp2(x):
+  //   D*Delp2(x) + 1/C1*Grad_perp(C2).Grad_perp(phi) = rhs
+  //   -> Delp2(x) + 1/(C1*D)*Grad_perp(C2).Grad_perp(phi) = rhs/D
+
+  Timer timer("invert"); ///< Start timer
+
+  ASSERT1(rhs.getLocation() == location);
+  ASSERT1(x0.getLocation() == location);
+  ASSERT1(rhs.getIndex() == x0.getIndex());
+  ASSERT1(Dcoef.getLocation() == location);
+  ASSERT1(C1coef.getLocation() == location);
+  ASSERT1(C2coef.getLocation() == location);
+  ASSERT1(Acoef.getLocation() == location);
+  ASSERT1(localmesh == rhs.getMesh() && localmesh == x0.getMesh());
+
+  FieldPerp x(x0); // Result
+
+  int yind = rhs.getIndex();
+  auto coords = rhs.getCoordinates();
+
+  FieldPerp rhsOverD = rhs/sliceXZ(Dcoef, yind);
+
+  Field3D  AOverD = Acoef/Dcoef;
+
+
+  // Split coefficients into DC and AC parts so that delp2solver can use DC part.
+  // This allows all-Neumann boundary conditions as long as AOverD_DC is non-zero
+  // Not optimal to re-calculate DC(...) for each call to solve(FieldPerp,FieldPerp).
+
+  Field2D C1coefTimesD_DC = DC(C1coef*Dcoef);
+  Field2D C2coef_DC = DC(C2coef);
+
+  // x-component of 1./(C1*D) * Grad_perp(C2)
+  FieldPerp coef_x{emptyFrom(rhs)};
+  // z-component of 1./(C1*D) * Grad_perp(C2)
+  FieldPerp coef_z{emptyFrom(rhs)};
+  // Our naming is slightly misleading here, as coef_x_AC may actually have a
+  // DC component, as the AC components of C2coef and C1coefTimesD are not
+  // necessarily in phase.
+  // This is the piece that cannot be passed to an FFT-based Laplacian solver
+  // (through our current interface).
+  FieldPerp coef_x_AC{emptyFrom(rhs)};
+  // coef_z is a z-derivative so must already have zero DC component
+  Field2D AOverD_DC = DC(AOverD);
+  FieldPerp AOverD_AC{emptyFrom(rhs)};
+  // Initial values for derivatives of x
+  Field3D ddx_C2 = DDX(C2coef, location, "C2");
+  Field3D ddz_C2 = DDZ(C2coef, location, "FFT");
+  Field2D ddx_C2_DC = DDX(C2coef_DC, location, "C2");
+  FieldPerp ddx_x{emptyFrom(rhs)};
+  FieldPerp ddz_x{emptyFrom(rhs)};
+  const int nz = localmesh->LocalNz;
+  coef_x = (sliceXZ(ddx_C2, yind)/C1coef)/Dcoef;
+  coef_z = (sliceXZ(ddz_C2, yind)/C1coef)/Dcoef;
+  coef_x_AC = coef_x - ddx_C2_DC/C1coefTimesD_DC;
+  AOverD_AC = sliceXZ(AOverD, yind) - AOverD_DC;
+  BOUT_FOR(i, coef_x.getRegion("RGN_NOBNDRY")) {
+    const auto i2d = localmesh->indPerpto2D(i, yind);
+    ddx_x[i] = (x[i.xp()] - x[i.xm()])/2./coords->dx[i2d];
+  }
+  BOUT_OMP(parallel)
+  {
+    Array<dcomplex> cv(nz / 2 + 1);
+    BOUT_OMP(for)
+    for (int ix = localmesh->xstart; ix <= localmesh->xend; ix++) {
+      // Take FFT in Z direction
+      rfft(x[ix], nz, cv.begin()); // Forward FFT
+
+      for (int jz = 0; jz < nz / 2 + 1; jz++) {
+        const BoutReal kwave = jz * TWOPI / nz; // wave number is 1/[rad]
+        cv[jz] *= dcomplex(0, kwave);
+      }
+
+      irfft(cv.begin(), nz, ddz_x[ix]); // Reverse FFT
+    }
+  }
+  ddz_x /= coords->dz;
+
+  delp2solver->setCoefA(AOverD_DC);
+  delp2solver->setCoefC1(C1coefTimesD_DC);
+  delp2solver->setCoefC2(C2coef_DC);
+
+  // Use this below to normalize error for relative error estimate
+  BoutReal RMS_rhsOverD = sqrt(mean(SQ(rhsOverD), true, RGN_NOBNDRY)); // use sqrt(mean(SQ)) to make sure we do not divide by zero at a point
+
+  BoutReal error_rel = 1e20, error_abs=1e20;
+  int count = 0;
+
+  FieldPerp b = rhsOverD - (coords->g11*coef_x_AC*ddx_x + coords->g33*coef_z*ddz_x + coords->g13*(coef_x_AC*ddz_x + coef_z*ddx_x)) - AOverD_AC*x;
+
+  while (error_rel>rtol && error_abs>atol) {
+
+    if ( (inner_boundary_flags & INVERT_SET) || (outer_boundary_flags & INVERT_SET) )
+      // This passes in the boundary conditions from x0's guard cells
+      copy_x_boundaries(x, x0, localmesh);
+
+    // NB need to pass x in case boundary flags require 'x0', even if
+    // delp2solver is not iterative and does not use an initial guess
+    x = delp2solver->solve(b, x);
+    localmesh->communicate(x);
+
+    // re-calculate the rhs from the new solution
+    // Use here to calculate an error, can also use for the next iteration
+    BOUT_FOR(i, coef_x.getRegion("RGN_NOBNDRY")) {
+      int ix = i.x();
+      ddx_x[i] = (x[i.xp()] - x[i.xm()])/2./coords->dx(ix, yind);
+    }
+    BOUT_OMP(parallel)
+    {
+      Array<dcomplex> cv(nz / 2 + 1);
+      BOUT_OMP(for)
+      for (int ix = localmesh->xstart; ix <= localmesh->xend; ix++) {
+        // Take FFT in Z direction
+        rfft(x[ix], nz, cv.begin()); // Forward FFT
+
+        for (int jz = 0; jz < nz / 2 + 1; jz++) {
+          const BoutReal kwave = jz * TWOPI / nz; // wave number is 1/[rad]
+          cv[jz] *= dcomplex(0, kwave);
+        }
+
+        irfft(cv.begin(), nz, ddz_x[ix]); // Reverse FFT
+      }
+    }
+    ddz_x /= coords->dz;
+
+    FieldPerp bnew = rhsOverD - (coords->g11*coef_x_AC*ddx_x + coords->g33*coef_z*ddz_x + coords->g13*(coef_x_AC*ddz_x + coef_z*ddx_x)) - AOverD_AC*x;
+
+    FieldPerp errorPerp = b - bnew;
+    error_abs = max(abs(errorPerp, RGN_NOBNDRY), true, RGN_NOBNDRY);
+    error_rel = error_abs / RMS_rhsOverD;
+
+    b = bnew;
+
+    count++;
+    if (count>maxits)
+      throw BoutException("LaplaceNaulin error: Took more than maxits=%i iterations to converge.", maxits);
+  }
+
+  ncalls++;
+  naulinsolver_mean_its = (naulinsolver_mean_its*BoutReal(ncalls-1) + BoutReal(count))/BoutReal(ncalls);
+
+  return x;
+}
+
 void LaplaceNaulin::copy_x_boundaries(Field3D &x, const Field3D &x0, Mesh *localmesh) {
+  ASSERT1(areFieldsCompatible(x, x0));
+
   if (localmesh->firstX()) {
     for (int i=localmesh->xstart-1; i>=0; i--)
       for (int j=localmesh->ystart; j<=localmesh->yend; j++)
@@ -273,5 +422,20 @@ void LaplaceNaulin::copy_x_boundaries(Field3D &x, const Field3D &x0, Mesh *local
       for (int j=localmesh->ystart; j<=localmesh->yend; j++)
         for (int k=0; k<localmesh->LocalNz; k++)
           x(i, j, k) = x0(i, j, k);
+  }
+}
+
+void LaplaceNaulin::copy_x_boundaries(FieldPerp &x, const FieldPerp &x0, Mesh *localmesh) {
+  ASSERT1(areFieldsCompatible(x, x0));
+
+  if (localmesh->firstX()) {
+    for (int i=localmesh->xstart-1; i>=0; i--)
+      for (int k=0; k<localmesh->LocalNz; k++)
+        x(i, k) = x0(i, k);
+  }
+  if (localmesh->lastX()) {
+    for (int i=localmesh->xend+1; i<localmesh->LocalNx; i++)
+      for (int k=0; k<localmesh->LocalNz; k++)
+        x(i, k) = x0(i, k);
   }
 }

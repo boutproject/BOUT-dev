@@ -102,12 +102,8 @@ public:
     throw BoutException("LaplaceNaulin does not have Ez coefficient");
   }
 
-  const FieldPerp solve(const FieldPerp &b) override {return solve(b,b);}
-  const FieldPerp solve(const FieldPerp &UNUSED(b),
-                        const FieldPerp &UNUSED(x0)) override {
-    throw BoutException(
-        "LaplaceNaulin has no solve(FieldPerp), must call solve(Field3D)");
-  }
+  const FieldPerp solve(const FieldPerp &b) override {return solve(b, zeroFrom(b));}
+  const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override;
   const Field3D solve(const Field3D &b, const Field3D &x0) override;
   const Field3D solve(const Field3D &b) override {
     return solve(b, zeroFrom(b));
@@ -130,6 +126,7 @@ private:
   int ncalls;
 
   void copy_x_boundaries(Field3D &x, const Field3D &x0, Mesh *mesh);
+  void copy_x_boundaries(FieldPerp &x, const FieldPerp &x0, Mesh *mesh);
 };
 
 #endif // __LAP_NAULIN_H__
