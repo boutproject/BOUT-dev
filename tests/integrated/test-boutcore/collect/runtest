@@ -48,3 +48,5 @@ if not ((p==pn).all()):
     errorlist+="multiplication not working\n"
 print(p.shape)
 print(pn.shape)
+
+bc.finalise()
