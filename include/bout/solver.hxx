@@ -33,7 +33,6 @@
  *
  **************************************************************************/
 
-class Solver;
 
 #include <bout_types.hxx>
 #include <boutexception.hxx>
@@ -50,20 +49,19 @@ class Solver;
 ///////////////////////////////////////////////////////////////////
 // C function pointer types
 
+class Solver;
+
 /// RHS function pointer
-typedef int (*rhsfunc)(BoutReal); // C-style function pointer
+using rhsfunc = int (*)(BoutReal);
 
 /// User-supplied preconditioner function
-typedef int (*PhysicsPrecon)(BoutReal t, BoutReal gamma, BoutReal delta);
+using PhysicsPrecon = int (*)(BoutReal t, BoutReal gamma, BoutReal delta);
 
 /// User-supplied Jacobian function
-typedef int (*Jacobian)(BoutReal t);
-
+using Jacobian = int (*)(BoutReal t);
 
 /// Solution monitor, called each timestep
-typedef int (*TimestepMonitorFunc)(Solver *solver, BoutReal simtime, BoutReal lastdt);
-
-
+using TimestepMonitorFunc = int (*)(Solver* solver, BoutReal simtime, BoutReal lastdt);
 
 //#include "globals.hxx"
 #include "field2d.hxx"
@@ -78,7 +76,7 @@ typedef int (*TimestepMonitorFunc)(Solver *solver, BoutReal simtime, BoutReal la
 #include <string>
 #include <list>
 
-typedef std::string SolverType;
+using SolverType = std::string;
 #define SOLVERCVODE       "cvode"
 #define SOLVERPVODE       "pvode"
 #define SOLVERIDA         "ida"
