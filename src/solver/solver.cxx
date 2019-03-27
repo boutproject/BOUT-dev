@@ -137,11 +137,9 @@ void Solver::add(Field2D &v, const std::string name) {
 
   VarStr<Field2D> d;
   
-  d.constraint = false;
   d.var = &v;
   d.F_var = &ddt(v);
   d.location = v.getLocation();
-  d.covariant = false;
   d.name = name;
   
 #ifdef TRACK
@@ -203,11 +201,9 @@ void Solver::add(Field3D &v, const std::string name) {
 
   VarStr<Field3D> d;
   
-  d.constraint = false;
   d.var = &v;
   d.F_var = &ddt(v);
   d.location = v.getLocation();
-  d.covariant = false;
   d.name = name;
   
 #ifdef TRACK
@@ -255,10 +251,8 @@ void Solver::add(Vector2D &v, const std::string name) {
   
   VarStr<Vector2D> d;
   
-  d.constraint = false;
   d.var = &v;
   d.F_var = &ddt(v);
-  d.location = CELL_DEFAULT;
   d.covariant = v.covariant;
   d.name = name;
 
@@ -297,10 +291,8 @@ void Solver::add(Vector3D &v, const std::string name) {
 
   VarStr<Vector3D> d;
   
-  d.constraint = false;
   d.var = &v;
   d.F_var = &ddt(v);
-  d.location = CELL_DEFAULT;
   d.covariant = v.covariant;
   d.name = name;
   

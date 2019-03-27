@@ -332,15 +332,14 @@ protected:
   /// A structure to hold an evolving variable
   template <class T>
   struct VarStr {
-    bool constraint;
-    T* var{nullptr};
-    T* F_var{nullptr};
-    T* MMS_err{nullptr}; // Error for MMS
-    CELL_LOC location;   // For fields and vector components
-    bool covariant;      // For vectors
-    bool evolve_bndry;   // Are the boundary regions being evolved?
-
-    std::string name; // Name of the variable
+    bool constraint{false};          /// Does F_var represent a constraint?
+    T* var{nullptr};                 /// The evolving variable
+    T* F_var{nullptr};               /// The time derivative or constraint on var
+    T* MMS_err{nullptr};             /// Error for MMS
+    CELL_LOC location{CELL_DEFAULT}; /// For fields and vector components
+    bool covariant{false};           /// For vectors
+    bool evolve_bndry{false};        /// Are the boundary regions being evolved?
+    std::string name;                /// Name of the variable
   };
 
   /// Vectors of variables to evolve
