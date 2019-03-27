@@ -1,5 +1,8 @@
 #include "bout/sys/type_name.hxx"
 
+#include "field2d.hxx"
+#include "field3d.hxx"
+
 namespace bout {
 namespace utils {
 

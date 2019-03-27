@@ -12,6 +12,7 @@ public:
   virtual ~OptionsTest() = default;
   WithQuietOutput quiet_info{output_info};
   WithQuietOutput quiet_warn{output_warn};
+  WithQuietOutput quiet_progress{output_progress};
 };
 
 TEST_F(OptionsTest, IsSet) {
@@ -723,4 +724,126 @@ TEST_F(OptionsTest, ComparisonString) {
 
   EXPECT_TRUE(option < "ccc");
   EXPECT_FALSE(option < "aaa");
+}
+
+TEST_F(OptionsTest, WithDefaultIntThrow) {
+  // If given an integer as default, will try to cast to int
+
+  Options option;
+  option = "4.32";
+  
+  EXPECT_THROW(option.withDefault(0), BoutException);
+}
+
+TEST_F(OptionsTest, TypeAttributeBool) {
+  Options option;
+  option = "true";
+
+  // Getting into bool using withDefault should modify the "type" attribute
+  bool value = option.withDefault(false);
+
+  EXPECT_TRUE(value);
+  EXPECT_EQ(option.attributes["type"].as<std::string>(), "bool");
+}
+
+TEST_F(OptionsTest, AsNoTypeAttribute) {
+  Options option;
+  option = "true";
+
+  // as is const so doesn't set the type attribute
+  bool value = option.as<bool>();
+
+  EXPECT_TRUE(value);
+  EXPECT_EQ(option.attributes.count("type"), 0);
+}
+
+TEST_F(OptionsTest, TypeAttributeInt) {
+  Options option;
+  option = "42";
+
+  // Casting to bool should modify the "type" attribute
+  int value = option.withDefault<int>(-1);
+
+  EXPECT_EQ(value, 42);
+  EXPECT_EQ(option.attributes["type"].as<std::string>(), "int");
+}
+
+TEST_F(OptionsTest, TypeAttributeField2D) {
+  // Note: Need a Mesh to create Field2D
+  FakeMesh fieldmesh(6,6,2);
+  fieldmesh.createDefaultRegions();
+
+  Options option;
+  option = "42";
+
+  // Casting to bool should modify the "type" attribute
+  Field2D value = option.withDefault<Field2D>(Field2D(-1,&fieldmesh));
+
+  EXPECT_EQ(value(0,0), 42);
+  EXPECT_EQ(option.attributes["type"].as<std::string>(), "Field2D");
+}
+
+TEST_F(OptionsTest, TypeAttributeField3D) {
+  // Note: Need a Mesh to create Field3D
+  FakeMesh fieldmesh(6,6,2);
+  fieldmesh.createDefaultRegions();
+  
+  Options option;
+  option = "42";
+
+  // Casting to bool should modify the "type" attribute
+  Field3D value = option.withDefault<Field3D>(Field3D(-1,&fieldmesh));
+
+  EXPECT_EQ(value(0,0,0), 42);
+  EXPECT_EQ(option.attributes["type"].as<std::string>(), "Field3D");
+}
+
+TEST_F(OptionsTest, DocString) {
+  Options option;
+
+  option.doc("test string");
+
+  EXPECT_EQ(option.attributes["doc"].as<std::string>(), "test string");
+}
+
+TEST_F(OptionsTest, DocStringAssignTo) {
+  Options option;
+  
+  option.doc("test string") = 42;
+
+  EXPECT_EQ(option.attributes["doc"].as<std::string>(), "test string");
+  EXPECT_EQ(option.as<int>(), 42);
+}
+
+TEST_F(OptionsTest, DocStringAssignFrom) {
+  Options option;
+  option = 42;
+  
+  int value = option.doc("test string");
+
+  EXPECT_EQ(option.attributes["doc"].as<std::string>(), "test string");
+  EXPECT_EQ(value, 42);
+}
+
+TEST_F(OptionsTest, DocStringWithDefault) {
+  Options option;
+  option = 42;
+
+  int value = option.doc("some value").withDefault(2);
+
+  EXPECT_EQ(value, 42);
+  EXPECT_EQ(option.attributes["doc"].as<std::string>(), "some value"); 
+}
+
+TEST_F(OptionsTest, DocStringNotCopied) {
+  Options option;
+  option = 32;
+
+  Options option2 = option;
+
+  int value = option2.doc("test value");
+  
+  EXPECT_EQ(value, 32);
+  EXPECT_EQ(option2.attributes["doc"].as<std::string>(), "test value");
+  EXPECT_EQ(option.attributes.count("doc"), 0);
 }

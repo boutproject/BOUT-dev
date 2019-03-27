@@ -8,11 +8,11 @@
 #include <string>
 #include "bout_types.hxx"
 
+class Field2D;
+class Field3D;
+
 namespace bout {
 namespace utils {
-
-  class Field2D;
-  class Field3D;
   
   template <typename T>
   std::string typeName() {

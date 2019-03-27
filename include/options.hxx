@@ -56,6 +56,28 @@ class Options;
 #include <utility>
 #include <cmath>
 
+namespace bout {
+namespace utils {
+
+  /// Get a mesh pointer from the given object.
+  /// In most cases this is nullptr
+  template <typename T>
+  Mesh* meshFromValue(const T& UNUSED(value)) {
+    return nullptr;
+  }
+  
+  template <>
+  Mesh* meshFromValue<Field2D>(const Field2D& value) {
+    return value.getMesh();
+  }
+  template <>
+  Mesh* meshFromValue<Field3D>(const Field3D& value) {
+    return value.getMesh();
+  }
+  
+}
+}
+
 /// Class to represent hierarchy of options
 /*!
  *
@@ -403,7 +425,7 @@ public:
                   << ")" << std::endl;
       return def;
     }
-    T val = as<T>();
+    T val = as<T>(bout::utils::meshFromValue(def));
     // Check if this was previously set as a default option
     if (bout::utils::variantEqualTo(attributes.at("source"), DEFAULT_SOURCE)) {
       // Check that the default values are the same
@@ -430,7 +452,7 @@ public:
                   << ")" << std::endl;
       return def;
     }
-    T val = as<T>();
+    T val = as<T>(bout::utils::meshFromValue(def));
     // Check if this was previously set as a default option
     if (bout::utils::variantEqualTo(attributes.at("source"), DEFAULT_SOURCE)) {
       // Check that the default values are the same
