@@ -166,8 +166,6 @@ void Solver::add(Field2D &v, const std::string name) {
   if (mms) {
     // Allocate storage for error variable
     d.MMS_err = new Field2D{zeroFrom(v)};
-  } else {
-    d.MMS_err = nullptr;
   }
   
   // Check if the boundary regions should be evolved
@@ -228,8 +226,6 @@ void Solver::add(Field3D &v, const std::string name) {
   
   if (mms) {
     d.MMS_err = new Field3D{zeroFrom(v)};
-  } else {
-    d.MMS_err = nullptr;
   }
   
   // Check if the boundary regions should be evolved
@@ -265,8 +261,6 @@ void Solver::add(Vector2D &v, const std::string name) {
   d.location = CELL_DEFAULT;
   d.covariant = v.covariant;
   d.name = name;
-  // MMS errors set on individual components
-  d.MMS_err = nullptr;
 
   v2d.push_back(d);
 
@@ -309,8 +303,6 @@ void Solver::add(Vector3D &v, const std::string name) {
   d.location = CELL_DEFAULT;
   d.covariant = v.covariant;
   d.name = name;
-  // MMS errors set on individual components
-  d.MMS_err = nullptr;
   
   v3d.push_back(d);
 

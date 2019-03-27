@@ -333,12 +333,12 @@ protected:
   template <class T>
   struct VarStr {
     bool constraint;
-    T *var;
-    T *F_var;
-    T *MMS_err;        // Error for MMS
-    CELL_LOC location; // For fields and vector components
-    bool covariant;    // For vectors
-    bool evolve_bndry; // Are the boundary regions being evolved?
+    T* var{nullptr};
+    T* F_var{nullptr};
+    T* MMS_err{nullptr}; // Error for MMS
+    CELL_LOC location;   // For fields and vector components
+    bool covariant;      // For vectors
+    bool evolve_bndry;   // Are the boundary regions being evolved?
 
     std::string name; // Name of the variable
   };
