@@ -801,6 +801,11 @@ class Mesh {
     return { (indPerp.ind - jz) * LocalNy + LocalNz * jy + jz , LocalNy, LocalNz};
   }
   
+  /// Converts an IndPerp to an Ind2D using calculation
+  Ind2D indPerpto2D(const IndPerp& indPerp, int jy = 0) {
+    return { (indPerp.ind / LocalNz) * LocalNy + jy, LocalNy, 1};
+  }
+
   /// Converts an Ind3D to an Ind2D representing a 2D index using a lookup -- to be used with care
   Ind2D map3Dto2D(const Ind3D &ind3D){
     return {indexLookup3Dto2D[ind3D.ind], LocalNy, 1};
