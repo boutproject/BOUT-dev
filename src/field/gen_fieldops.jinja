@@ -1,5 +1,5 @@
 // Provide the C++ wrapper for {{operator_name}} of {{lhs}} and {{rhs}}
-{{out}} operator{{operator}}(const {{lhs.passByReference}}, const {{rhs.passByReference}}) {
+{{out}} operator{{operator}}({{lhs.passByReference}}, {{rhs.passByReference}}) {
   {% if lhs != "BoutReal" and rhs != "BoutReal" %}
     ASSERT1(areFieldsCompatible(lhs, rhs));
   {% endif %}
@@ -51,7 +51,7 @@
 
 {% if out.field_type == lhs.field_type %}
 // Provide the C++ operator to update {{lhs}} by {{operator_name}} with {{rhs}}
-{{lhs}} &{{lhs}}::operator{{operator}}=(const {{rhs.passByReference}}) {
+{{lhs}} &{{lhs}}::operator{{operator}}=({{rhs.passByReference}}) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
