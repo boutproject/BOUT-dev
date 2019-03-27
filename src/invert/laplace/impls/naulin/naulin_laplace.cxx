@@ -57,15 +57,19 @@
  * In fact we allow for the slightly more general form
  *
  * \f{eqnarray}{
- * \nabla_\perp^2 \phi + <\frac{A}{D}>\phi
- * &=& rhs/D - \frac{1}{D\,C1} \nabla_\perp C2\cdot\nabla_\perp \phi - (\frac{A}{D} - <\frac{A}{D}>)*\phi
+ * \nabla_\perp^2 \phi + <\frac{1}{D\,C1}> \nabla_\perp <C2>\cdot\nabla_\perp \phi + <\frac{A}{D}>\phi
+ * &=& rhs/D - \left(\frac{1}{D\,C1} \nabla_\perp C2 - <\frac{1}{D\,C1}> \nabla_\perp <C2> \right)\cdot\nabla_\perp \phi
+ * &&  - (\frac{A}{D} - <\frac{A}{D}>)*\phi
  * \f}
  *
  * The iteration now works as follows:
  *      1. Get the vorticity from
  *         \code{.cpp}
  *         vort = (vortD/n) - grad_perp(ln_n)*grad_perp(phiCur)
- *         [Delp2(phiNext) + DC(A/D)*phiNext = b(phiCur) = (rhs/D) - 1/C1*grad_perp(C2)*grad_perp(phiCur) - (A/D - DC(A/D))*phiCur]
+ *         [Delp2(phiNext) + 1/DC(D*C1)*grad_perp(DC(C2))*grad_perp(phiNext) + DC(A/D)*phiNext
+ *          = b(phiCur)
+ *          = (rhs/D) - (1/(D*C1)*grad_perp(C2) - 1/DC(D*C1)*grad_perp(DC(C2)))*grad_perp(phiCur)
+*             - (A/D - DC(A/D))*phiCur]
  *         \endcode
  *         where phiCur is phi of the current iteration
  *         [and DC(f) is the constant-in-z component of f]
@@ -80,8 +84,12 @@
  *         \code{.cpp}
  *         error3D = Delp2(phiNext) + 1/C1*grad_perp(C2)*grad_perp(phiNext) + A/D*phiNext - rhs/D
  *                 = b(phiCur) - b(phiNext)
- *         as b(phiCur) = Delp2(phiNext) + DC(A/D)*phiNext up to rounding errors
  *         \endcode
+ *         as
+ *         \code{.cpp}
+ *         b(phiCur) = Delp2(phiNext) + 1/(DC(D*C1))*grad_perp(DC(C2))*grad_perp(phiNext) + DC(A/D)*phiNext
+ *         \endcode
+ *         up to rounding errors
  *      4. Calculate the infinity norms of the error
  *         \code{.cpp}
  *         EAbsLInf = max(error3D)
