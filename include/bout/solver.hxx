@@ -286,8 +286,8 @@ class Solver {
    */ 
   bool splitOperator() {return split_operator;}
 
-  bool canReset;
-  
+  bool canReset{false};
+
   /// Add evolving variables to output (dump) file or restart file
   ///
   /// @param[inout] outputfile   The file to add variable to
@@ -321,14 +321,17 @@ protected:
   static int* pargc;
   static char*** pargv;
 
-  // Settings to use during initialisation (set by constructor)
-  Options *options;
+  /// Settings to use during initialisation (set by constructor)
+  Options* options{nullptr};
 
-  int NPES, MYPE; ///< Number of processors and this processor's index
-  
+  /// Number of processors
+  int NPES{1};
+  /// This processor's index
+  int MYPE{0};
+
   /// Calculate the number of evolving variables on this processor
   int getLocalN();
-  
+
   /// A structure to hold an evolving variable
   template <class T>
   struct VarStr {
@@ -348,19 +351,28 @@ protected:
   std::vector<VarStr<Vector2D>> v2d;
   std::vector<VarStr<Vector3D>> v3d;
 
-  bool has_constraints; ///< Can this solver handle constraints? Set to true if so.
-  bool initialised; ///< Has init been called yet?
+  /// Can this solver handle constraints? Set to true if so.
+  bool has_constraints{false};
+  /// Has init been called yet?
+  bool initialised{false};
 
-  BoutReal simtime;  ///< Current simulation time
-  int iteration; ///< Current iteration (output time-step) number
+  /// Current simulation time
+  BoutReal simtime{0.0};
+  /// Current iteration (output time-step) number
+  int iteration{0};
 
-  int run_rhs(BoutReal t); ///< Run the user's RHS function
-  int run_convective(BoutReal t); ///< Calculate only the convective parts
-  int run_diffusive(BoutReal t, bool linear=true); ///< Calculate only the diffusive parts
-  
-  int call_monitors(BoutReal simtime, int iter, int NOUT); ///< Calls all monitor functions
-  
-  bool monitor_timestep; ///< Should timesteps be monitored?
+  /// Run the user's RHS function
+  int run_rhs(BoutReal t);
+  /// Calculate only the convective parts
+  int run_convective(BoutReal t);
+  /// Calculate only the diffusive parts
+  int run_diffusive(BoutReal t, bool linear = true);
+
+  /// Calls all monitor functions
+  int call_monitors(BoutReal simtime, int iter, int NOUT);
+
+  /// Should timesteps be monitored?
+  bool monitor_timestep{false};
   int call_timestep_monitors(BoutReal simtime, BoutReal lastdt);
 
   bool have_user_precon(); // Do we have a user preconditioner?
@@ -375,23 +387,42 @@ protected:
   
   // 
   const Field3D globalIndex(int localStart);
-  
-  BoutReal max_dt; ///< Maximum internal timestep
-  
+
+  /// Maximum internal timestep
+  BoutReal max_dt{-1.0};
+
 private:
-  int rhs_ncalls,rhs_ncalls_e,rhs_ncalls_i; ///< Number of calls to the RHS function
-  bool initCalled=false; ///< Has the init function of the solver been called?
-  int freqDefault=1;     ///< Default sampling rate at which to call monitors - same as output to screen
-  BoutReal timestep=-1; ///< timestep - shouldn't be changed after init is called.
-  PhysicsModel *model;    ///< physics model being evolved
+  /// Number of calls to the RHS function
+  int rhs_ncalls{0};
+  /// Number of calls to the explicit (convective) RHS function
+  int rhs_ncalls_e{0};
+  /// Number of calls to the implicit (diffusive) RHS function
+  int rhs_ncalls_i{0};
+  /// Has the init function of the solver been called?
+  bool initCalled{false};
+  /// Default sampling rate at which to call monitors - same as output to screen
+  int freqDefault{1};
+  /// timestep - shouldn't be changed after init is called.
+  BoutReal timestep{-1};
+  /// Physics model being evolved
+  PhysicsModel* model{nullptr};
 
-  rhsfunc phys_run;       ///< The user's RHS function
-  PhysicsPrecon prefunc;  // Preconditioner
-  bool split_operator;
-  rhsfunc phys_conv, phys_diff; ///< Convective and Diffusive parts (if split operator)
+  /// The user's RHS function
+  rhsfunc phys_run{nullptr};
+  /// The user's preconditioner function
+  PhysicsPrecon prefunc{nullptr};
+  /// Is the physics model using separate convective (explicit) and
+  /// diffusive (implicit) RHS functions?
+  bool split_operator{false};
+  /// Convective part (if split operator)
+  rhsfunc phys_conv{nullptr};
+  /// Diffusive part (if split operator)
+  rhsfunc phys_diff{nullptr};
 
-  bool mms; ///< Enable sources and solutions for Method of Manufactured Solutions
-  bool mms_initialise; ///< Initialise variables to the manufactured solution
+  /// Enable sources and solutions for Method of Manufactured Solutions
+  bool mms{false};
+  /// Initialise variables to the manufactured solution
+  bool mms_initialise{false};
 
   void add_mms_sources(BoutReal t);
   void calculate_mms_error(BoutReal t);

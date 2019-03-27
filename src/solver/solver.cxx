@@ -50,35 +50,11 @@ char ***Solver::pargv = nullptr;
  * Constructor
  **************************************************************************/
 
-Solver::Solver(Options *opts) : options(opts), model(nullptr), prefunc(nullptr) {
-  if(options == nullptr)
-    options = Options::getRoot()->getSection("solver");
-
-  // Set flags to defaults
-  has_constraints = false;
-  initialised = false;
-  canReset = false;
-
-  // Zero timing
-  rhs_ncalls = 0;
-  rhs_ncalls_e = 0;
-  rhs_ncalls_i = 0;
-  
-  // Split operator
-  split_operator = false;
-  max_dt = -1.0;
-  
-  // Set simulation time and iteration count
-  // This may be modified by restart
-  simtime = 0.0; iteration = 0;
-  
-  // Output monitor
-  options->get("monitor_timestep", monitor_timestep, false);
-  
-  // Method of Manufactured Solutions (MMS)
-  options->get("mms", mms, false);
-  options->get("mms_initialise", mms_initialise, mms);
-}
+Solver::Solver(Options* opts)
+    : options(opts == nullptr ? &Options::root()["solver"] : opts),
+      monitor_timestep((*options)["monitor_timestep"].withDefault(false)),
+      mms((*options)["mms"].withDefault(false)),
+      mms_initialise((*options)["mms_initialise"].withDefault(mms)) {}
 
 /**************************************************************************
  * Destructor
