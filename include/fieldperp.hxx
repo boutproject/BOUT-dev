@@ -412,6 +412,18 @@ BoutReal min(const FieldPerp &f, bool allpe=false, REGION rgn=RGN_NOX);
 /// @param[in] rgn    The region to calculate the result over
 BoutReal max(const FieldPerp &f, bool allpe=false, REGION rgn=RGN_NOX);
 
+/// Calculates the mean of a field, excluding
+/// the boundary/guard cells by default (this can be
+/// changed with the rgn argument).
+/// By default this is only on the local processor,
+/// but setting allpe=true does a collective Allreduce
+/// over all processors.
+///
+/// @param[in] f      The field to loop over
+/// @param[in] allpe  Minimum over all processors?
+/// @param[in] rgn    The region to calculate the result over
+BoutReal mean(const FieldPerp &f, bool allpe=false, REGION rgn=RGN_NOX);
+
 /// Test if all values of this field are finite
 /// Loops over the entire domain including boundaries by
 /// default (can be changed using the \p rgn argument)

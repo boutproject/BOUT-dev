@@ -210,7 +210,8 @@ BoutReal min(const FieldPerp &f, bool allpe, REGION rgn) {
   if (allpe) {
     // MPI reduce
     BoutReal localresult = result;
-    MPI_Allreduce(&localresult, &result, 1, MPI_DOUBLE, MPI_MIN, BoutComm::get());
+    MPI_Allreduce(&localresult, &result, 1, MPI_DOUBLE, MPI_MIN,
+                  f.getMesh()->getXcomm(f.getIndex()));
   }
 
   return result;
@@ -233,10 +234,38 @@ BoutReal max(const FieldPerp &f, bool allpe, REGION rgn) {
   if (allpe) {
     // MPI reduce
     BoutReal localresult = result;
-    MPI_Allreduce(&localresult, &result, 1, MPI_DOUBLE, MPI_MAX, BoutComm::get());
+    MPI_Allreduce(&localresult, &result, 1, MPI_DOUBLE, MPI_MAX,
+                  f.getMesh()->getXcomm(f.getIndex()));
   }
 
   return result;
+}
+
+BoutReal mean(const FieldPerp &f, bool allpe, REGION rgn) {
+  TRACE("FieldPerp::mean() %s",allpe? "over all PEs" : "");
+
+  checkData(f);
+
+  // Intitialise the cummulative sum and counter
+  BoutReal result = 0.;
+  int count = 0;
+
+  BOUT_FOR_OMP(i, f.getRegion(rgn), parallel for reduction(+:result,count)) {
+    result += f[i];
+    count += 1;
+  }
+
+  if(allpe) {
+    // MPI reduce
+    BoutReal localresult = result;
+    MPI_Allreduce(&localresult, &result, 1, MPI_DOUBLE, MPI_SUM,
+                  f.getMesh()->getXcomm(f.getIndex()));
+    int localcount = count;
+    MPI_Allreduce(&localcount, &count, 1, MPI_INT, MPI_SUM,
+                  f.getMesh()->getXcomm(f.getIndex()));
+  }
+
+  return result / static_cast<BoutReal>(count);
 }
 
 bool finite(const FieldPerp &f, REGION rgn) {
