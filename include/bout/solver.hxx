@@ -77,20 +77,20 @@ using TimestepMonitorFunc = int (*)(Solver* solver, BoutReal simtime, BoutReal l
 #include <list>
 
 using SolverType = std::string;
-#define SOLVERCVODE       "cvode"
-#define SOLVERPVODE       "pvode"
-#define SOLVERIDA         "ida"
-#define SOLVERPETSC       "petsc"
-#define SOLVERSLEPC       "slepc"
-#define SOLVERKARNIADAKIS "karniadakis"
-#define SOLVERRK4         "rk4"
-#define SOLVEREULER       "euler"
-#define SOLVERRK3SSP      "rk3ssp"
-#define SOLVERPOWER       "power"
-#define SOLVERARKODE	  "arkode"
-#define SOLVERIMEXBDF2    "imexbdf2"
-#define SOLVERSNES        "snes"
-#define SOLVERRKGENERIC   "rkgeneric"
+constexpr auto SOLVERCVODE = "cvode";
+constexpr auto SOLVERPVODE = "pvode";
+constexpr auto SOLVERIDA = "ida";
+constexpr auto SOLVERPETSC = "petsc";
+constexpr auto SOLVERSLEPC = "slepc";
+constexpr auto SOLVERKARNIADAKIS = "karniadakis";
+constexpr auto SOLVERRK4 = "rk4";
+constexpr auto SOLVEREULER = "euler";
+constexpr auto SOLVERRK3SSP = "rk3ssp";
+constexpr auto SOLVERPOWER = "power";
+constexpr auto SOLVERARKODE = "arkode";
+constexpr auto SOLVERIMEXBDF2 = "imexbdf2";
+constexpr auto SOLVERSNES = "snes";
+constexpr auto SOLVERRKGENERIC = "rkgeneric";
 
 enum SOLVER_VAR_OP {LOAD_VARS, LOAD_DERIVS, SET_ID, SAVE_VARS, SAVE_DERIVS};
 
