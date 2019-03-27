@@ -69,10 +69,11 @@ Laplacian::Laplacian(Options *options, const CELL_LOC loc, Mesh *mesh_in)
   coords = localmesh->getCoordinates(location);
 
   // Communication option. Controls if asyncronous sends are used
-  options->get("async", async_send, true);
+  async_send = (*options)["async"].doc("Use asyncronous MPI send?").withDefault(true);
 
-  BoutReal filter; ///< Fraction of Z modes to filter out. Between 0 and 1
-  OPTION(options, filter, 0.0);
+  BoutReal filter = (*options)["filter"]
+                        .doc("Fraction of Z modes to filter out. Between 0 and 1")
+                        .withDefault(0.0);
   int ncz = localmesh->LocalNz;
   // convert filtering into an integer number of modes
   maxmode = ROUND((1.0 - filter) * static_cast<BoutReal>(ncz / 2));
@@ -83,17 +84,19 @@ Laplacian::Laplacian(Options *options, const CELL_LOC loc, Mesh *mesh_in)
 
   OPTION(options, low_mem, false);
 
-  OPTION(options, nonuniform,
-         coords->non_uniform); // Default is the mesh setting
+  nonuniform = (*options)["nonuniform"]
+                   .doc("Use non-uniform grid corrections? Default is the mesh setting.")
+                   .withDefault(coords->non_uniform);
 
-  OPTION(options, all_terms, true); // Include first derivative terms
+  all_terms = (*options)["all_terms"].doc("Include first derivative terms?").withDefault(true);
 
   if (options->isSet("flags")) {
     if ( options->isSet("global_flags") || options->isSet("inner_boundary_flags") || options->isSet("outer_boundary_flags") ) {
       throw BoutException("Should not use old flags as well as new global_flags/inner_boundary_flags/outer_boundary_flags");
     }
-    int flags;
-    OPTION(options, flags, 0);
+    int flags = (*options)["flags"]
+                    .doc("Flags to control inner and outer boundaries.")
+                    .withDefault(0);
     setFlags(flags);
   }
   else {

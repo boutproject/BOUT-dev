@@ -479,16 +479,20 @@ void Solver::constraint(Vector3D &v, Vector3D &C_v, const std::string name) {
 
 int Solver::solve(int NOUT, BoutReal TIMESTEP) {
   
-  Options *globaloptions = Options::getRoot(); // Default from global options
+  Options& globaloptions = Options::root(); // Default from global options
   
   if(NOUT < 0) {
     /// Get options
-    OPTION(globaloptions, NOUT, 1);
-    OPTION(globaloptions, TIMESTEP, 1.0);
+    NOUT = globaloptions["NOUT"].doc("Number of output steps").withDefault(1);
+    TIMESTEP = globaloptions["TIMESTEP"].doc("Output time step size").withDefault(1.0);
     
     // Check specific solver options, which override global options
-    OPTION(options, NOUT, NOUT);
-    options->get("output_step", TIMESTEP, TIMESTEP);
+    NOUT = (*options)["NOUT"]
+               .doc("Number of output steps. Overrides global setting.")
+               .withDefault(NOUT);
+    TIMESTEP = (*options)["output_step"]
+                   .doc("Output time step size. Overrides global TIMESTEP setting.")
+                   .withDefault(TIMESTEP);
   }
 
   /// syncronize timestep with those set to the monitors
@@ -535,13 +539,16 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
   output_progress.write(_("\nRun started at  : %s\n"), toString(start_time).c_str());
   
   Timer timer("run"); // Start timer
-  
-  bool restart;
-  OPTION(globaloptions, restart, false);
-  bool append;
-  OPTION(globaloptions, append, false);
-  bool dump_on_restart;
-  OPTION(globaloptions, dump_on_restart, !restart || !append);
+
+  bool restart = globaloptions["restart"]
+    .doc("Load state from restart files?").withDefault(false);
+
+  bool append = globaloptions["append"]
+          .doc("Add new outputs to the end of existing files? If false, overwrite files.")
+          .withDefault(false);
+  bool dump_on_restart = globaloptions["dump_on_restart"]
+                             .doc("Write initial state as time point 0?")
+                             .withDefault(!restart || !append);
   if ( dump_on_restart ) {
     /// Write initial state as time-point 0
     

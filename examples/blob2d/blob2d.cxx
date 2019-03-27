@@ -54,18 +54,18 @@ protected:
     auto& options = globalOptions["model"];
 
     // Load system parameters
-    Te0 = options["Te0"].doc("Temperature in eV").withDefault(30);
+    Te0 = options["Te0"].doc("Temperature in eV").withDefault(30.0);
     
     e = options["e"].withDefault(1.602e-19);
     m_i = options["m_i"].withDefault(2 * 1.667e-27);
     m_e = options["m_e"].withDefault(9.11e-31);
 
     n0 = options["n0"].doc("Background density in cubic m").withDefault(1e19);
-    D_vort = options["D_vort"].doc("Viscous diffusion coefficient").withDefault(0);
-    D_n = options["D_n"].doc("Density diffusion coefficient").withDefault(0);
+    D_vort = options["D_vort"].doc("Viscous diffusion coefficient").withDefault(0.0);
+    D_n = options["D_n"].doc("Density diffusion coefficient").withDefault(0.0);
 
     R_c = options["R_c"].doc("Radius of curvature").withDefault(1.5);
-    L_par = options["L_par"].doc("Parallel connection length").withDefault(10);
+    L_par = options["L_par"].doc("Parallel connection length").withDefault(10.0);
 
     B0 = options["B0"].doc("Value of magnetic field strength").withDefault(0.35);
 

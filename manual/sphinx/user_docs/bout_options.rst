@@ -444,17 +444,20 @@ tree structure there is the `Options` class defined in
 
 To access the options, there is a static function (singleton)::
 
-    auto options = Options::root();
+    auto& options = Options::root();
 
-which returns a reference (type ``Options&``). Options can be set by
+which returns a reference (type ``Options&``). Note that without
+the ``&`` the options tree will be copied, so any changes made will not
+be retained in the global tree. Options can be set by
 assigning, treating options as a map or dictionary::
 
     options["nout"] = 10;    // Integer
     options["restart"] = true;  // bool
     
-Internally these values are converted to strings. Any type can be
-assigned, so long as it can be streamed to a string (using ``<<``
-operator and a ``std::stringstream``).
+Internally these values are stored in a variant type, which supports commonly
+used types including strings, integers, real numbers and fields (2D and
+3D). Since strings can be stored, any type can be assigned, so long as it can be
+streamed to a string (using ``<<`` operator and a ``std::stringstream``).
 
 Often it’s useful to see where an option setting has come from e.g. the
 name of the options file or “command line”. To specify a source, use
@@ -473,7 +476,7 @@ any)::
 Sub-sections are created as they are accessed, so a value in a
 sub-section could be set using::
 
-    auto section = options["mysection"];
+    auto& section = options["mysection"];
     section["myswitch"] = true;
 
 or just::
@@ -494,6 +497,15 @@ If ``options`` is not ``const``, then the given default value will be
 cached. If a default value has already been cached for this option,
 then the default values must be consistent: A ``BoutException`` is
 thrown if inconsistent default values are detected.
+
+Note that if the result should be a real number (e.g. ``BoutReal``) then ``withDefault``
+should be given a real. Otherwise it will convert the number to an integer::
+
+  BoutReal value = options["value"].withDefault(42);  // Convert to integer
+
+  BoutReal value = options["value"].withDefault(42.0); // ok
+
+  auto value = options["value"].withDefault<BoutReal>(42); // ok
 
 It is common for BOUT++ models to read in many settings which have the
 same variable name as option setting (e.g. "nout" here). A convenient
@@ -526,11 +538,28 @@ inferred from the argument::
 
     BoutReal nout = options["nout"].withDefault<BoutReal>(1);
 
+Documentation
+~~~~~~~~~~~~~
+
+Options can be given a ``doc`` attribute describing what they do. This documentation
+will then be written to the ``BOUT.settings`` file at the end of a run::
+
+  Te0 = options["Te0"].doc("Temperature in eV").withDefault(30.0);
+
+The ``.doc()`` function returns a reference ``Options&`` so can be chained
+with ``withDefault`` or ``as`` functions, or as part of an assignment::
+
+  options["value"].doc("Useful setting info") = 42;
+
+This string is stored in the attributes of the option::
+
+  std::string docstring = options["value"].attributes["doc"];
+
 
 Older interface
 ~~~~~~~~~~~~~~~
 
-Most code in BOUT++ currently uses an older interface to ``Options``
+Some code in BOUT++ currently uses an older interface to ``Options``
 which uses pointers rather than references. Both interfaces are
 currently supported, but use of the newer interface above is
 encouraged.
