@@ -2,20 +2,20 @@
  * Base class for all solvers. Specifies required interface functions
  *
  * Changelog:
- * 
+ *
  * 2009-08 Ben Dudson, Sean Farley
  *    * Major overhaul, and changed API. Trying to make consistent
  *      interface to PETSc and SUNDIALS solvers
- * 
+ *
  * 2013-08 Ben Dudson
  *    * Added OO-style API, to allow multiple physics models to coexist
  *      For now both APIs are supported
- * 
+ *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -33,18 +33,15 @@
  *
  **************************************************************************/
 
-
-#include <bout_types.hxx>
-#include <boutexception.hxx>
-#include <unused.hxx>
-#include "bout/monitor.hxx"
-#include "options.hxx"
-#include "datafile.hxx"
-
-///////////////////////////////////////////////////////////////////
-
 #ifndef __SOLVER_H__
 #define __SOLVER_H__
+
+#include "bout_types.hxx"
+#include "boutexception.hxx"
+#include "datafile.hxx"
+#include "options.hxx"
+#include "unused.hxx"
+#include "bout/monitor.hxx"
 
 ///////////////////////////////////////////////////////////////////
 // C function pointer types
@@ -73,8 +70,8 @@ using TimestepMonitorFunc = int (*)(Solver* solver, BoutReal simtime, BoutReal l
 #include "physicsmodel.hxx"
 #undef BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 
-#include <string>
 #include <list>
+#include <string>
 
 using SolverType = std::string;
 constexpr auto SOLVERCVODE = "cvode";
@@ -99,24 +96,24 @@ enum SOLVER_VAR_OP {LOAD_VARS, LOAD_DERIVS, SET_ID, SAVE_VARS, SAVE_DERIVS};
 /*!
  * Interface to integrators, mainly for time integration
  *
- * 
+ *
  * Creation
  * --------
- * 
+ *
  * Solver is a base class and can't be created directly:
- * 
+ *
  *     Solver *solver = Solver(); // Error
- * 
+ *
  * Instead, use the create() static function:
- * 
+ *
  *     Solver *solver = Solver::create(); // ok
  *
  * By default this will use the options in the "solver" section
  * of the options, equivalent to:
- * 
+ *
  *     Options *opts = Options::getRoot()->getSection("solver");
  *     Solver *solver = Solver::create(opts);
- * 
+ *
  * To use a different set of options, for example if there are
  * multiple solvers, use a different option section:
  *
@@ -125,7 +122,7 @@ enum SOLVER_VAR_OP {LOAD_VARS, LOAD_DERIVS, SET_ID, SAVE_VARS, SAVE_DERIVS};
  *
  * Problem specification
  * ---------------------
- * 
+ *
  * The equations to be solved are specified in a PhysicsModel object
  *
  *     class MyProblem : public PhysicsModel {
@@ -146,131 +143,128 @@ enum SOLVER_VAR_OP {LOAD_VARS, LOAD_DERIVS, SET_ID, SAVE_VARS, SAVE_DERIVS};
  *       private:
  *         Field3D f; // A variable to evolve
  *     }
- * 
+ *
  * The init() and rhs() functions must be defined, but there
  * are other functions which can be defined. See PhysicsModel
  * documentation for details.
- * 
+ *
  * Create an object, then add to the solver:
- * 
+ *
  *     MyProblem *prob = MyProblem();
  *     solver->setModel(prob);
- * 
+ *
  * Running simulation
  * ------------------
- * 
+ *
  * To run a calculation
- * 
+ *
  *     solver->solve();
- * 
- * This will use NOUT and TIMESTEP in the solver options 
+ *
+ * This will use NOUT and TIMESTEP in the solver options
  * (specified during creation). If these are not present
  * then the global options will be used.
- * 
+ *
  * To specify NOUT and TIMESTEP, pass the values to solve:
  *
  *     solver->solve(NOUT, TIMESTEP);
  */
 class Solver {
- public:
-  Solver(Options *opts = nullptr);
+public:
+  Solver(Options* opts = nullptr);
   virtual ~Solver();
 
   /////////////////////////////////////////////
   // New API
-  
-  /*!
-   * Specify physics model to solve. Currently only one model
-   * can be evolved by a Solver.
-   */ 
-  virtual void setModel(PhysicsModel *model);
+
+  /// Specify physics model to solve. Currently only one model can be
+  /// evolved by a Solver.
+  virtual void setModel(PhysicsModel* model);
 
   /////////////////////////////////////////////
   // Old API
-  
-  virtual void setRHS(rhsfunc f) { phys_run = f; } ///< Set the RHS function
-  void setPrecon(PhysicsPrecon f) {prefunc = f;} ///< Specify a preconditioner (optional)
-  virtual void setJacobian(Jacobian UNUSED(j)) {} ///< Specify a Jacobian (optional)
-  virtual void setSplitOperator(rhsfunc fC, rhsfunc fD); ///< Split operator solves
-  
+
+  /// Set the RHS function
+  virtual void setRHS(rhsfunc f) { phys_run = f; }
+  /// Specify a preconditioner (optional)
+  void setPrecon(PhysicsPrecon f) { prefunc = f; }
+  /// Specify a Jacobian (optional)
+  virtual void setJacobian(Jacobian UNUSED(j)) {}
+  /// Split operator solves
+  virtual void setSplitOperator(rhsfunc fC, rhsfunc fD);
+
   /////////////////////////////////////////////
   // Monitors
-  
-  enum MonitorPosition {BACK, FRONT}; ///< A type to set where in the list monitors are added
+
+  /// A type to set where in the list monitors are added
+  enum MonitorPosition { BACK, FRONT };
 
   /// Add a monitor to be called every output
-  void addMonitor(Monitor * f, MonitorPosition pos=FRONT);
-  void removeMonitor(Monitor * f);  ///< Remove a monitor function previously added
+  void addMonitor(Monitor* f, MonitorPosition pos = FRONT);
+  /// Remove a monitor function previously added
+  void removeMonitor(Monitor* f);
 
-  void addTimestepMonitor(TimestepMonitorFunc f);    ///< Add a monitor function to be called every timestep
-  void removeTimestepMonitor(TimestepMonitorFunc f); ///< Remove a previously added timestep monitor
+  /// Add a monitor function to be called every timestep
+  void addTimestepMonitor(TimestepMonitorFunc f);
+  /// Remove a previously added timestep monitor
+  void removeTimestepMonitor(TimestepMonitorFunc f);
 
   /////////////////////////////////////////////
   // Routines to add variables. Solvers can just call these
   // (or leave them as-is)
-  
-  /*!
-   * Add a variable to be solved. This must be done
-   * in the initialisation stage, before the simulation starts.
-   */ 
-  virtual void add(Field2D &v, const std::string name);
-  virtual void add(Field3D &v, const std::string name);
-  virtual void add(Vector2D &v, const std::string name);
-  virtual void add(Vector3D &v, const std::string name);
-  
-  /*!
-   * Returns true if constraints available
-   */ 
-  virtual bool constraints() {return has_constraints; }
-  
-  /*!
-   * Add constraint functions (optional). These link a variable
-   * v to a control parameter C_v such that v is adjusted 
-   * to keep C_v = 0.
-   */
-  virtual void constraint(Field2D &v, Field2D &C_v, const std::string name);
-  virtual void constraint(Field3D &v, Field3D &C_v, const std::string name);
-  virtual void constraint(Vector2D &v, Vector2D &C_v, const std::string name);
-  virtual void constraint(Vector3D &v, Vector3D &C_v, const std::string name);
-  
+
+  /// Add a variable to be solved. This must be done in the
+  /// initialisation stage, before the simulation starts.
+  virtual void add(Field2D& v, const std::string name);
+  virtual void add(Field3D& v, const std::string name);
+  virtual void add(Vector2D& v, const std::string name);
+  virtual void add(Vector3D& v, const std::string name);
+
+  /// Returns true if constraints available
+  virtual bool constraints() { return has_constraints; }
+
+  /// Add constraint functions (optional). These link a variable v to
+  /// a control parameter C_v such that v is adjusted to keep C_v = 0.
+  virtual void constraint(Field2D& v, Field2D& C_v, const std::string name);
+  virtual void constraint(Field3D& v, Field3D& C_v, const std::string name);
+  virtual void constraint(Vector2D& v, Vector2D& C_v, const std::string name);
+  virtual void constraint(Vector3D& v, Vector3D& C_v, const std::string name);
+
   /// Set a maximum internal timestep (only for explicit schemes)
-  virtual void setMaxTimestep(BoutReal dt) {max_dt = dt;}
-  /// Return the current internal timestep 
-  virtual BoutReal getCurrentTimestep() {return 0.0;}
-  
-  /*!
-   * Start the solver. By default solve() uses options
-   * to determine the number of steps and the output timestep.
-   * If nout and dt are specified here then the options are not used
-   * 
-   * @param[in] nout   Number of output timesteps
-   * @param[in] dt     The time between outputs
-   */
-  int solve(int nout=-1, BoutReal dt=0.0);
+  virtual void setMaxTimestep(BoutReal dt) { max_dt = dt; }
+  /// Return the current internal timestep
+  virtual BoutReal getCurrentTimestep() { return 0.0; }
+
+  /// Start the solver. By default solve() uses options
+  /// to determine the number of steps and the output timestep.
+  /// If nout and dt are specified here then the options are not used
+  ///
+  /// @param[in] nout   Number of output timesteps
+  /// @param[in] dt     The time between outputs
+  int solve(int nout = -1, BoutReal dt = 0.0);
 
   /// Initialise the solver
   /// NOTE: nout and tstep should be passed to run, not init.
   ///       Needed because of how the PETSc TS code works
   virtual int init(int nout, BoutReal tstep);
 
-  /*!
-   * Run the solver, calling monitors nout times, at intervals of tstep 
-   * This function is called by solve(), and is specific to each solver type
-   * 
-   * This should probably be protected, since it shouldn't be called
-   * by users. 
-   */
+  /// Run the solver, calling monitors nout times, at intervals of
+  /// tstep. This function is called by solve(), and is specific to
+  /// each solver type
+  ///
+  /// This should probably be protected, since it shouldn't be called
+  /// by users.
   virtual int run() = 0;
 
-  //Should wipe out internal field vector and reset from current field object data
-  virtual void resetInternalFields(){
-    throw BoutException("resetInternalFields not supported by this Solver");}
+  /// Should wipe out internal field vector and reset from current field object data
+  virtual void resetInternalFields() {
+    throw BoutException("resetInternalFields not supported by this Solver");
+  }
 
   // Solver status. Optional functions used to query the solver
   /// Number of 2D variables. Vectors count as 3
-  virtual int n2Dvars() const {return f2d.size();}
+  virtual int n2Dvars() const { return f2d.size(); }
   /// Number of 3D variables. Vectors count as 3
-  virtual int n3Dvars() const {return f3d.size();}
+  virtual int n3Dvars() const { return f3d.size(); }
 
   /// Get and reset the number of calls to the RHS function
   int resetRHSCounter();
@@ -278,11 +272,9 @@ class Solver {
   int resetRHSCounter_e();
   /// Same but fur implicit timestep counter - for IMEX
   int resetRHSCounter_i();
-  
-  /*!
-   * Test if this solver supports split operators (e.g. implicit/explicit)
-   */ 
-  bool splitOperator() {return split_operator;}
+
+  /// Test if this solver supports split operators (e.g. implicit/explicit)
+  bool splitOperator() { return split_operator; }
 
   bool canReset{false};
 
@@ -290,33 +282,28 @@ class Solver {
   ///
   /// @param[inout] outputfile   The file to add variable to
   /// @param[in] save_repeat    If true, add variables with time dimension
-  virtual void outputVars(Datafile &outputfile, bool save_repeat=true);
+  virtual void outputVars(Datafile& outputfile, bool save_repeat = true);
 
-  /*!
-   * Create a Solver object. This uses the "type" option
-   * in the given Option section to determine which solver
-   * type to create.
-   */
-  static Solver *create(Options *opts = nullptr);
+  /// Create a Solver object. This uses the "type" option in the given
+  /// Option section to determine which solver type to create.
+  static Solver* create(Options* opts = nullptr);
 
-  /*!
-   * Create a Solver object, specifying the type
-   */
+  /// Create a Solver object, specifying the type
   static Solver* create(const SolverType& type, Options* opts = nullptr);
 
-  /*!
-   * Pass the command-line arguments. This static function is
-   * called by BoutInitialise, and puts references
-   * into protected variables. These may then be used by Solvers
-   * to control behavior
-   * 
-   */ 
-  static void setArgs(int &c, char **&v) { pargc = &c; pargv = &v;}
-  
+  /// Pass the command-line arguments. This static function is
+  /// called by BoutInitialise, and puts references
+  /// into protected variables. These may then be used by Solvers
+  /// to control behavior
+  static void setArgs(int& c, char**& v) {
+    pargc = &c;
+    pargv = &v;
+  }
+
 protected:
-  
-  // Command-line arguments
+  /// Number of command-line arguments
   static int* pargc;
+  /// Command-line arguments
   static char*** pargv;
 
   /// Settings to use during initialisation (set by constructor)
@@ -373,18 +360,19 @@ protected:
   bool monitor_timestep{false};
   int call_timestep_monitors(BoutReal simtime, BoutReal lastdt);
 
-  bool have_user_precon(); // Do we have a user preconditioner?
+  /// Do we have a user preconditioner?
+  bool have_user_precon();
   int run_precon(BoutReal t, BoutReal gamma, BoutReal delta);
-  
+
   // Loading data from BOUT++ to/from solver
-  void load_vars(BoutReal *udata);
-  void load_derivs(BoutReal *udata);
-  void save_vars(BoutReal *udata);
-  void save_derivs(BoutReal *dudata);
-  void set_id(BoutReal *udata);
-  
-  // 
-  const Field3D globalIndex(int localStart);
+  void load_vars(BoutReal* udata);
+  void load_derivs(BoutReal* udata);
+  void save_vars(BoutReal* udata);
+  void save_derivs(BoutReal* dudata);
+  void set_id(BoutReal* udata);
+
+  /// Returns a Field3D containing the global indices
+  Field3D globalIndex(int localStart);
 
   /// Maximum internal timestep
   BoutReal max_dt{-1.0};
@@ -424,18 +412,23 @@ private:
 
   void add_mms_sources(BoutReal t);
   void calculate_mms_error(BoutReal t);
-  
-  std::list<Monitor*> monitors; ///< List of monitor functions
-  std::list<TimestepMonitorFunc> timestep_monitors; ///< List of timestep monitor functions
 
-  void pre_rhs(BoutReal t); // Should be run before user RHS is called
-  void post_rhs(BoutReal t); // Should be run after user RHS is called
-  
-  // Loading data from BOUT++ to/from solver
-  void loop_vars_op(Ind2D i2d, BoutReal *udata, int &p, SOLVER_VAR_OP op, bool bndry);
-  void loop_vars(BoutReal *udata, SOLVER_VAR_OP op);
+  /// List of monitor functions
+  std::list<Monitor*> monitors;
+  /// List of timestep monitor functions
+  std::list<TimestepMonitorFunc> timestep_monitors;
 
-  bool varAdded(const std::string &name); // Check if a variable has already been added
+  /// Should be run before user RHS is called
+  void pre_rhs(BoutReal t);
+  /// Should be run after user RHS is called
+  void post_rhs(BoutReal t);
+
+  /// Loading data from BOUT++ to/from solver
+  void loop_vars_op(Ind2D i2d, BoutReal* udata, int& p, SOLVER_VAR_OP op, bool bndry);
+  void loop_vars(BoutReal* udata, SOLVER_VAR_OP op);
+
+  /// Check if a variable has already been added
+  bool varAdded(const std::string& name);
 };
 
 #endif // __SOLVER_H__

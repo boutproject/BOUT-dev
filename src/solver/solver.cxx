@@ -1040,12 +1040,7 @@ void Solver::set_id(BoutReal *udata) {
   loop_vars(udata, SET_ID);
 }
 
-
-/*!
- * Returns a Field3D containing the global indices
- *
- */
-const Field3D Solver::globalIndex(int localStart) {
+Field3D Solver::globalIndex(int localStart) {
   // Use global mesh: FIX THIS!
   Mesh* mesh = bout::globals::mesh;
 
