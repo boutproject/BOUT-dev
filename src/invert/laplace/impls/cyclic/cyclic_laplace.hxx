@@ -55,9 +55,20 @@ public:
   }
   using Laplacian::setCoefC;
   void setCoefC(const Field2D &val) override {
+    setCoefC1(val);
+    setCoefC2(val);
+  }
+  using Laplacian::setCoefC1;
+  void setCoefC1(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
-    Ccoef = val;
+    C1coef = val;
+  }
+  using Laplacian::setCoefC2;
+  void setCoefC2(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
+    C2coef = val;
   }
   using Laplacian::setCoefD;
   void setCoefD(const Field2D &val) override {
@@ -81,7 +92,7 @@ public:
   const Field3D solve(const Field3D &b) override {return solve(b,b);}
   const Field3D solve(const Field3D &b, const Field3D &x0) override;
 private:
-  Field2D Acoef, Ccoef, Dcoef;
+  Field2D Acoef, C1coef, C2coef, Dcoef;
   
   int nmode;  // Number of modes being solved
   int xs, xe; // Start and end X indices
