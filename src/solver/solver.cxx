@@ -125,8 +125,10 @@ void Solver::setModel(PhysicsModel *m) {
 void Solver::add(Field2D &v, const std::string name) {
   TRACE("Adding 2D field: Solver::add(%s)", name.c_str());
 
+#if CHECK > 0
   if (varAdded(name))
     throw BoutException("Variable '%s' already added to Solver", name.c_str());
+#endif
 
   if (initialised)
     throw BoutException("Error: Cannot add to solver after initialisation\n");
@@ -317,12 +319,11 @@ void Solver::add(Vector3D &v, const std::string name) {
  **************************************************************************/
 
 void Solver::constraint(Field2D &v, Field2D &C_v, const std::string name) {
+  TRACE("Constrain 2D scalar: Solver::constraint(%s)", name.c_str());
 
   if (name.empty()) {
     throw BoutException("ERROR: Constraint requested for variable with empty name\n");
   }
-
-  TRACE("Constrain 2D scalar: Solver::constraint(%s)", name.c_str());
 
 #if CHECK > 0  
   if (varAdded(name))
@@ -346,12 +347,11 @@ void Solver::constraint(Field2D &v, Field2D &C_v, const std::string name) {
 }
 
 void Solver::constraint(Field3D &v, Field3D &C_v, const std::string name) {
+  TRACE("Constrain 3D scalar: Solver::constraint(%s)", name.c_str());
 
   if (name.empty()) {
     throw BoutException("ERROR: Constraint requested for variable with empty name\n");
   }
-
-  TRACE("Constrain 3D scalar: Solver::constraint(%s)", name.c_str());
 
 #if CHECK > 0
   if (varAdded(name))
@@ -376,12 +376,11 @@ void Solver::constraint(Field3D &v, Field3D &C_v, const std::string name) {
 }
 
 void Solver::constraint(Vector2D &v, Vector2D &C_v, const std::string name) {
+  TRACE("Constrain 2D vector: Solver::constraint(%s)", name.c_str());
 
   if (name.empty()) {
     throw BoutException("ERROR: Constraint requested for variable with empty name\n");
   }
-
-  TRACE("Constrain 2D vector: Solver::constraint(%s)", name.c_str());
 
 #if CHECK > 0  
   if (varAdded(name))
@@ -417,12 +416,11 @@ void Solver::constraint(Vector2D &v, Vector2D &C_v, const std::string name) {
 }
 
 void Solver::constraint(Vector3D &v, Vector3D &C_v, const std::string name) {
+  TRACE("Constrain 3D vector: Solver::constraint(%s)", name.c_str());
 
   if (name.empty()) {
     throw BoutException("ERROR: Constraint requested for variable with empty name\n");
   }
-
-  TRACE("Constrain 3D vector: Solver::constraint(%s)", name.c_str());
 
 #if CHECK > 0  
   if (varAdded(name))
