@@ -27,6 +27,18 @@
         {% endif %}
 	}
 	}
+  {% elif out == "FieldPerp" and (lhs == "Field2D" or lhs == "Field3D" or rhs == "Field2D" or rhs == "Field3D")%}
+    Mesh *localmesh = {{lhs.name if lhs.field_type != "BoutReal" else rhs.name}}.getMesh();
+
+    {{region_loop}}({{index_var}}, {{out.name}}.getRegion({{region_name}})) {
+            int yind = {{lhs.name if lhs == "FieldPerp" else rhs.name}}.getIndex();
+            const auto {{mixed_base_ind}} = localmesh->indPerpto3D({{index_var}}, yind);
+            {% if lhs != "FieldPerp" %}
+	    {{out.index}} = {{lhs.base_index}} {{operator}} {{rhs.index}};
+            {% else %}
+	    {{out.index}} = {{lhs.index}} {{operator}} {{rhs.base_index}};
+            {% endif %}
+	}
   {% else %}
     {{region_loop}}({{index_var}}, {{out.name}}.getRegion({{region_name}})) {
 	    {{out.index}} = {{lhs.index}} {{operator}} {{rhs.index}};
@@ -50,7 +62,7 @@
     checkData(*this);
     checkData({{rhs.name}});
 
-  {% if (out == "Field3D") and (rhs =="Field2D") %}  
+  {% if (lhs == "Field3D") and (rhs =="Field2D") %}
     {{region_loop}}({{index_var}}, {{rhs.name}}.getRegion({{region_name}})) {
 	const auto {{mixed_base_ind}} = fieldmesh->ind2Dto3D({{index_var}});
 	{% if (operator == "/") and (rhs == "Field2D") %}
@@ -62,6 +74,22 @@
 	           (*this)[{{mixed_base_ind}} + {{jz_var}}] {{operator}}= {{rhs.index}};
         {% endif %}
 	}
+	}
+  {% elif lhs == "FieldPerp" and (rhs == "Field3D" or rhs == "Field2D")%}
+    Mesh *localmesh = this->getMesh();
+
+    {{region_loop}}({{index_var}}, this->getRegion({{region_name}})) {
+            int yind = this->getIndex();
+            const auto {{mixed_base_ind}} = localmesh->indPerpto3D({{index_var}}, yind);
+            (*this)[{{index_var}}] {{operator}}= {{rhs.base_index}};
+	}
+  {% elif rhs == "FieldPerp" and (lhs == "Field3D" or lhs == "Field2D")%}
+    Mesh *localmesh = this->getMesh();
+
+    {{region_loop}}({{index_var}}, {{rhs.name}}.getRegion({{region_name}})) {
+            int yind = {{rhs.name}}.getIndex();
+            const auto {{mixed_base_ind}} = localmesh->indPerpto3D({{index_var}}, yind);
+            (*this)[{{base_ind_var}}] {{operator}}= {{rhs.index}};
 	}
   {% else %}
     {{region_loop}}({{index_var}}, this->getRegion({{region_name}})) {
