@@ -8,6 +8,8 @@
 #include "bout/solverfactory.hxx"
 
 #include <algorithm>
+#include <vector>
+#include <string>
 
 namespace {
 class FakeSolver : public Solver {
@@ -17,6 +19,36 @@ public:
   }
   ~FakeSolver() = default;
   int run() { return (*options)["number"].withDefault(42); }
+
+  void changeHasConstraints(bool new_value) { has_constraints = new_value; }
+
+  auto listField2DNames() -> std::vector<std::string> {
+    std::vector<std::string> result{};
+    std::transform(begin(f2d), end(f2d), std::back_inserter(result),
+                   [](const VarStr<Field2D>& f) { return f.name; });
+    return result;
+  }
+
+  auto listField3DNames() -> std::vector<std::string> {
+    std::vector<std::string> result{};
+    std::transform(begin(f3d), end(f3d), std::back_inserter(result),
+                   [](const VarStr<Field3D>& f) { return f.name; });
+    return result;
+  }
+
+  auto listVector2DNames() -> std::vector<std::string> {
+    std::vector<std::string> result{};
+    std::transform(begin(v2d), end(v2d), std::back_inserter(result),
+                   [](const VarStr<Vector2D>& f) { return f.name; });
+    return result;
+  }
+
+  auto listVector3DNames() -> std::vector<std::string> {
+    std::vector<std::string> result{};
+    std::transform(begin(v3d), end(v3d), std::back_inserter(result),
+                   [](const VarStr<Vector3D>& f) { return f.name; });
+    return result;
+  }
 };
 
 RegisterSolver<FakeSolver> register_fake("fake_solver");
@@ -144,6 +176,9 @@ TEST_F(SolverTest, AddField2D) {
   EXPECT_EQ(solver.n2Dvars(), 2);
   EXPECT_EQ(solver.n3Dvars(), 0);
   EXPECT_TRUE(IsFieldEqual(field2, 3.0));
+
+  const auto expected_names = std::vector<std::string>{"field", "another_field"};
+  EXPECT_EQ(solver.listField2DNames(), expected_names);
 }
 
 TEST_F(SolverTest, AddField2DMMS) {
@@ -168,6 +203,9 @@ TEST_F(SolverTest, AddField2DMMS) {
   EXPECT_EQ(solver.n2Dvars(), 2);
   EXPECT_EQ(solver.n3Dvars(), 0);
   EXPECT_TRUE(IsFieldEqual(field2, 4.0));
+
+  const auto expected_names = std::vector<std::string>{"field", "another_field"};
+  EXPECT_EQ(solver.listField2DNames(), expected_names);
 }
 
 TEST_F(SolverTest, AddField3D) {
@@ -190,6 +228,9 @@ TEST_F(SolverTest, AddField3D) {
   EXPECT_EQ(solver.n2Dvars(), 0);
   EXPECT_EQ(solver.n3Dvars(), 2);
   EXPECT_TRUE(IsFieldEqual(field2, 3.0));
+
+  const auto expected_names = std::vector<std::string>{"field", "another_field"};
+  EXPECT_EQ(solver.listField3DNames(), expected_names);
 }
 
 TEST_F(SolverTest, AddField3DMMS) {
@@ -214,6 +255,9 @@ TEST_F(SolverTest, AddField3DMMS) {
   EXPECT_EQ(solver.n2Dvars(), 0);
   EXPECT_EQ(solver.n3Dvars(), 2);
   EXPECT_TRUE(IsFieldEqual(field2, 4.0));
+
+  const auto expected_names = std::vector<std::string>{"field", "another_field"};
+  EXPECT_EQ(solver.listField3DNames(), expected_names);
 }
 
 TEST_F(SolverTest, AddVector2D) {
@@ -241,6 +285,9 @@ TEST_F(SolverTest, AddVector2D) {
   EXPECT_TRUE(IsFieldEqual(vector2.x, 8.0));
   EXPECT_TRUE(IsFieldEqual(vector2.y, 9.0));
   EXPECT_TRUE(IsFieldEqual(vector2.z, 10.0));
+
+  const auto expected_names = std::vector<std::string>{"vector", "another_vector"};
+  EXPECT_EQ(solver.listVector2DNames(), expected_names);
 }
 
 TEST_F(SolverTest, AddVector3D) {
@@ -268,6 +315,9 @@ TEST_F(SolverTest, AddVector3D) {
   EXPECT_TRUE(IsFieldEqual(vector2.x, 8.0));
   EXPECT_TRUE(IsFieldEqual(vector2.y, 9.0));
   EXPECT_TRUE(IsFieldEqual(vector2.z, 10.0));
+
+  const auto expected_names = std::vector<std::string>{"vector", "another_vector"};
+  EXPECT_EQ(solver.listVector3DNames(), expected_names);
 }
 
 TEST_F(SolverTest, ConstraintField2D) {
@@ -283,14 +333,24 @@ TEST_F(SolverTest, ConstraintField2D) {
   EXPECT_THROW(solver.constraint(field2, field2, "field"), BoutException);
   EXPECT_EQ(solver.n2Dvars(), 1);
   EXPECT_EQ(solver.n3Dvars(), 0);
+
   EXPECT_THROW(solver.constraint(field2, field2, ""), BoutException);
   EXPECT_EQ(solver.n2Dvars(), 1);
   EXPECT_EQ(solver.n3Dvars(), 0);
+
+  solver.changeHasConstraints(false);
+  EXPECT_THROW(solver.constraint(field2, field2, "some_other_name"), BoutException);
+  EXPECT_EQ(solver.n2Dvars(), 1);
+  EXPECT_EQ(solver.n3Dvars(), 0);
+  solver.changeHasConstraints(true);
 #endif
 
   EXPECT_NO_THROW(solver.constraint(field2, field2, "another_field"));
   EXPECT_EQ(solver.n2Dvars(), 2);
   EXPECT_EQ(solver.n3Dvars(), 0);
+
+  const auto expected_names = std::vector<std::string>{"field", "another_field"};
+  EXPECT_EQ(solver.listField2DNames(), expected_names);
 }
 
 TEST_F(SolverTest, ConstraintField3D) {
@@ -306,14 +366,24 @@ TEST_F(SolverTest, ConstraintField3D) {
   EXPECT_THROW(solver.constraint(field2, field2, "field"), BoutException);
   EXPECT_EQ(solver.n2Dvars(), 0);
   EXPECT_EQ(solver.n3Dvars(), 1);
+
   EXPECT_THROW(solver.constraint(field2, field2, ""), BoutException);
   EXPECT_EQ(solver.n2Dvars(), 0);
   EXPECT_EQ(solver.n3Dvars(), 1);
+
+  solver.changeHasConstraints(false);
+  EXPECT_THROW(solver.constraint(field2, field2, "some_other_name"), BoutException);
+  EXPECT_EQ(solver.n2Dvars(), 0);
+  EXPECT_EQ(solver.n3Dvars(), 1);
+  solver.changeHasConstraints(true);
 #endif
 
   EXPECT_NO_THROW(solver.constraint(field2, field2, "another_field"));
   EXPECT_EQ(solver.n2Dvars(), 0);
   EXPECT_EQ(solver.n3Dvars(), 2);
+
+  const auto expected_names = std::vector<std::string>{"field", "another_field"};
+  EXPECT_EQ(solver.listField3DNames(), expected_names);
 }
 
 TEST_F(SolverTest, ConstraintVector2D) {
@@ -329,15 +399,25 @@ TEST_F(SolverTest, ConstraintVector2D) {
   EXPECT_THROW(solver.constraint(vector2, vector2, "vector"), BoutException);
   EXPECT_EQ(solver.n2Dvars(), 3);
   EXPECT_EQ(solver.n3Dvars(), 0);
+
   EXPECT_THROW(solver.constraint(vector2, vector2, ""), BoutException);
   EXPECT_EQ(solver.n2Dvars(), 3);
   EXPECT_EQ(solver.n3Dvars(), 0);
+
+  solver.changeHasConstraints(false);
+  EXPECT_THROW(solver.constraint(vector2, vector2, "some_other_name"), BoutException);
+  EXPECT_EQ(solver.n2Dvars(), 3);
+  EXPECT_EQ(solver.n3Dvars(), 0);
+  solver.changeHasConstraints(true);
 #endif
 
   vector2.covariant = false;
   EXPECT_NO_THROW(solver.constraint(vector2, vector2, "another_vector"));
   EXPECT_EQ(solver.n2Dvars(), 6);
   EXPECT_EQ(solver.n3Dvars(), 0);
+
+  const auto expected_names = std::vector<std::string>{"vector", "another_vector"};
+  EXPECT_EQ(solver.listVector2DNames(), expected_names);
 }
 
 TEST_F(SolverTest, ConstraintVector3D) {
@@ -353,15 +433,25 @@ TEST_F(SolverTest, ConstraintVector3D) {
   EXPECT_THROW(solver.constraint(vector2, vector2, "vector"), BoutException);
   EXPECT_EQ(solver.n2Dvars(), 0);
   EXPECT_EQ(solver.n3Dvars(), 3);
+
   EXPECT_THROW(solver.constraint(vector2, vector2, ""), BoutException);
   EXPECT_EQ(solver.n2Dvars(), 0);
   EXPECT_EQ(solver.n3Dvars(), 3);
+
+  solver.changeHasConstraints(false);
+  EXPECT_THROW(solver.constraint(vector2, vector2, "some_other_name"), BoutException);
+  EXPECT_EQ(solver.n2Dvars(), 0);
+  EXPECT_EQ(solver.n3Dvars(), 3);
+  solver.changeHasConstraints(true);
 #endif
 
   vector2.covariant = false;
   EXPECT_NO_THROW(solver.constraint(vector2, vector2, "another_vector"));
   EXPECT_EQ(solver.n2Dvars(), 0);
   EXPECT_EQ(solver.n3Dvars(), 6);
+
+  const auto expected_names = std::vector<std::string>{"vector", "another_vector"};
+  EXPECT_EQ(solver.listVector3DNames(), expected_names);
 }
 
 TEST_F(SolverTest, NoInitTwice) {
@@ -430,4 +520,15 @@ TEST_F(SolverTest, GetCurrentTimestep) {
   FakeSolver solver{&options};
 
   EXPECT_EQ(solver.getCurrentTimestep(), 0.0);
+}
+
+TEST_F(SolverTest, HasConstraints) {
+  Options options;
+  FakeSolver solver{&options};
+
+  EXPECT_TRUE(solver.constraints());
+
+  solver.changeHasConstraints(false);
+
+  EXPECT_FALSE(solver.constraints());
 }
