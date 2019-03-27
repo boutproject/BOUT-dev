@@ -182,7 +182,7 @@ int main(int argc, char** argv) {
   try {
     sol3 = invert->solve(b3, x0);
     mesh->communicate(sol3);
-    bcheck3 = d3*Delp2(sol3) + this_Grad_perp_dot_Grad_perp(c3,f3)/c3 + a3*sol3;
+    bcheck3 = d3*Delp2(sol3) + this_Grad_perp_dot_Grad_perp(c3,sol3)/c3 + a3*sol3;
     absolute_error3 = f3-sol3;
     max_error3 = max_error_at_ystart(abs(absolute_error3, RGN_NOBNDRY));
   } catch (BoutException &err) {
@@ -270,6 +270,197 @@ int main(int argc, char** argv) {
   dump.add(bcheck4,"bcheck4");
   dump.add(absolute_error4,"absolute_error4");
   dump.add(max_error4,"max_error4");
+  delete invert;
+
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  invert = new LaplaceNaulin(options); // reinitialize here to reset iteration counter
+  Field3D sol5,bcheck5;
+  Field3D absolute_error5;
+  BoutReal max_error5; //Output of test
+  // Test 5: zero-value Dirichlet boundaries, FieldPerp solve
+
+  sol5 = 0.;
+
+  invert->setInnerBoundaryFlags(0);
+  invert->setOuterBoundaryFlags(0);
+  invert->setCoefA(a1);
+  invert->setCoefC(c1);
+  invert->setCoefD(d1);
+
+  try {
+    for (int y=mesh->ystart; y<=mesh->yend; y++) {
+      sol5 = invert->solve(sliceXZ(b1, y));
+    }
+    mesh->communicate(sol5);
+    checkData(sol5);
+    bcheck5 = d1*Delp2(sol5) + this_Grad_perp_dot_Grad_perp(c1,sol5)/c1 + a1*sol5;
+    absolute_error5 = f1-sol5;
+    max_error5 = max_error_at_ystart(abs(absolute_error5, RGN_NOBNDRY));
+  } catch (BoutException &err) {
+    output << "BoutException occured in invert->solve(b1): " << err.what() << endl
+           << "Laplacian inversion failed to converge (probably)" << endl;
+    max_error5 = -1;
+    sol5 = -1.;
+    bcheck5 = -1.;
+    absolute_error5 = -1.;
+  }
+
+  output<<endl<<"Test 5: zero Dirichlet, FieldPerp solve"<<endl;
+  output<<"Magnitude of maximum absolute error is "<<max_error5<<endl;
+  output<<"Solver took "<<invert->getMeanIterations()<<" iterations to converge"<<endl;
+
+  dump.add(sol5,"sol5");
+  dump.add(bcheck5,"bcheck5");
+  dump.add(absolute_error5,"absolute_error5");
+  dump.add(max_error5,"max_error5");
+  delete invert;
+
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  invert = new LaplaceNaulin(options); // reinitialize here to reset iteration counter
+  Field3D sol6,bcheck6;
+  Field3D absolute_error6;
+  BoutReal max_error6; //Output of test
+  // Test 6: zero-value Neumann boundaries, FieldPerp solve
+
+  sol6 = 0.;
+
+  invert->setInnerBoundaryFlags(INVERT_DC_GRAD + INVERT_AC_GRAD);
+  invert->setOuterBoundaryFlags(INVERT_DC_GRAD + INVERT_AC_GRAD);
+  invert->setCoefA(a2);
+  invert->setCoefC(c2);
+  invert->setCoefD(d2);
+
+  try {
+    for (int y=mesh->ystart; y<=mesh->yend; y++) {
+      sol6 = invert->solve(sliceXZ(b2, y));
+    }
+    mesh->communicate(sol6);
+    bcheck6 = d2*Delp2(sol6) + this_Grad_perp_dot_Grad_perp(c2,sol6)/c2 + a2*sol6;
+    absolute_error6 = f2-sol6;
+    max_error6 = max_error_at_ystart(abs(absolute_error6, RGN_NOBNDRY));
+  } catch (BoutException &err) {
+    output << "BoutException occured in invert->solve(b2): " << err.what() << endl
+           << "Laplacian inversion failed to converge (probably)" << endl;
+    max_error6 = -1;
+    sol6 = -1.;
+    bcheck6 = -1.;
+    absolute_error6 = -1.;
+  }
+
+  output<<endl<<"Test 6: zero Neumann, FieldPerp solve"<<endl;
+  output<<"Magnitude of maximum absolute error is "<<max_error2<<endl;
+  output<<"Solver took "<<invert->getMeanIterations()<<" iterations to converge"<<endl;
+
+  dump.add(sol6,"sol6");
+  dump.add(bcheck6,"bcheck6");
+  dump.add(absolute_error6,"absolute_error6");
+  dump.add(max_error6,"max_error6");
+  delete invert;
+
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  invert = new LaplaceNaulin(options); // reinitialize here to reset iteration counter
+  Field3D sol7,bcheck7;
+  Field3D absolute_error7;
+  BoutReal max_error7; //Output of test
+  // Test 7: set-value Dirichlet boundaries, FieldPerp solve
+
+  sol7 = 0.;
+
+  invert->setInnerBoundaryFlags(INVERT_SET);
+  invert->setOuterBoundaryFlags(INVERT_SET);
+  invert->setCoefA(a3);
+  invert->setCoefC(c3);
+  invert->setCoefD(d3);
+
+  // make field to pass in boundary conditions
+  x0 = 0.;
+  if (mesh->firstX())
+    for (int k=0;k<mesh->LocalNz;k++)
+      x0(mesh->xstart-1,mesh->ystart,k) = 0.5*(f3(mesh->xstart-1,mesh->ystart,k)+f3(mesh->xstart,mesh->ystart,k));
+  if (mesh->lastX())
+    for (int k=0;k<mesh->LocalNz;k++)
+      x0(mesh->xend+1,mesh->ystart,k) = 0.5*(f3(mesh->xend+1,mesh->ystart,k)+f3(mesh->xend,mesh->ystart,k));
+
+  try {
+    for (int y=mesh->ystart; y<=mesh->yend; y++) {
+      sol7 = invert->solve(sliceXZ(b3, y), sliceXZ(x0, y));
+    }
+    mesh->communicate(sol7);
+    bcheck7 = d3*Delp2(sol7) + this_Grad_perp_dot_Grad_perp(c3,sol7)/c3 + a3*sol7;
+    absolute_error7 = f3-sol7;
+    max_error7 = max_error_at_ystart(abs(absolute_error7, RGN_NOBNDRY));
+  } catch (BoutException &err) {
+    output << "BoutException occured in invert->solve(b3): " << err.what() << endl
+           << "Laplacian inversion failed to converge (probably)" << endl;
+    max_error7 = -1;
+    sol7 = -1.;
+    bcheck7 = -1.;
+    absolute_error7 = -1.;
+  }
+
+  output<<endl<<"Test 7: set Dirichlet, FieldPerp solve"<<endl;
+  output<<"Magnitude of maximum absolute error is "<<max_error7<<endl;
+  output<<"Solver took "<<invert->getMeanIterations()<<" iterations to converge"<<endl;
+
+  dump.add(sol7,"sol7");
+  dump.add(bcheck7,"bcheck7");
+  dump.add(absolute_error7,"absolute_error7");
+  dump.add(max_error7,"max_error7");
+  delete invert;
+
+  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  invert = new LaplaceNaulin(options); // reinitialize here to reset iteration counter
+  Field3D sol8,bcheck8;
+  Field3D absolute_error8;
+  BoutReal max_error8; //Output of test
+  // Test 8: set-value Neumann boundaries, FieldPerp solve
+
+  sol8 = 0.;
+
+  invert->setInnerBoundaryFlags(INVERT_DC_GRAD + INVERT_AC_GRAD + INVERT_SET);
+  invert->setOuterBoundaryFlags(INVERT_DC_GRAD + INVERT_AC_GRAD + INVERT_SET);
+  invert->setCoefA(a4);
+  invert->setCoefC(c4);
+  invert->setCoefD(d4);
+
+  // make field to pass in boundary conditions
+  x0 = 0.;
+  if (mesh->firstX())
+    for (int k=0;k<mesh->LocalNz;k++)
+      x0(mesh->xstart-1,mesh->ystart,k) = (f4(mesh->xstart,mesh->ystart,k)-f4(mesh->xstart-1,mesh->ystart,k))
+                                        /mesh->getCoordinates()->dx(mesh->xstart,mesh->ystart)
+                                        /sqrt(mesh->getCoordinates()->g_11(mesh->xstart,mesh->ystart));
+  if (mesh->lastX())
+    for (int k=0;k<mesh->LocalNz;k++)
+      x0(mesh->xend+1,mesh->ystart,k) = (f4(mesh->xend+1,mesh->ystart,k)-f4(mesh->xend,mesh->ystart,k))
+                                        /mesh->getCoordinates()->dx(mesh->xend,mesh->ystart)
+                                        /sqrt(mesh->getCoordinates()->g_11(mesh->xend,mesh->ystart));
+
+  try {
+    for (int y=mesh->ystart; y<=mesh->yend; y++) {
+      sol8 = invert->solve(sliceXZ(b4, y), sliceXZ(x0, y));
+    }
+    mesh->communicate(sol8);
+    bcheck8 = d4*Delp2(sol8) + this_Grad_perp_dot_Grad_perp(c4,sol8)/c4 + a4*sol8;
+    absolute_error8 = f4-sol8;
+    max_error8 = max_error_at_ystart(abs(absolute_error8, RGN_NOBNDRY));
+  } catch (BoutException &err) {
+    output << "BoutException occured in invert->solve(b4): " << err.what() << endl
+           << "Laplacian inversion failed to converge (probably)" << endl;
+    max_error8 = -1;
+    sol8 = -1.;
+    bcheck8 = -1.;
+    absolute_error8 = -1.;
+  }
+
+  output<<endl<<"Test 8: set Neumann, FieldPerp solve"<<endl;
+  output<<"Magnitude of maximum absolute error is "<<max_error4<<endl;
+  output<<"Solver took "<<invert->getMeanIterations()<<" iterations to converge"<<endl;
+
+  dump.add(sol8,"sol8");
+  dump.add(bcheck8,"bcheck8");
+  dump.add(absolute_error8,"absolute_error8");
+  dump.add(max_error8,"max_error8");
   delete invert;
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
