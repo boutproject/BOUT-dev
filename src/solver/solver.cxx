@@ -486,7 +486,6 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
   if (init(NOUT, TIMESTEP)) {
     throw BoutException(_("Failed to initialise solver-> Aborting\n"));
   }
-  initCalled=true;
   
   /// Run the solver
   output_info.write(_("Running simulation\n\n"));
@@ -596,7 +595,7 @@ void Solver::outputVars(Datafile &outputfile, bool save_repeat) {
 /// as the timestep cannot be changed afterwards
 void Solver::addMonitor(Monitor * mon, MonitorPosition pos) {
   if (mon->timestep > 0){ // not default
-    if (!initCalled && timestep < 0){
+    if (!initialised && timestep < 0) {
       timestep = mon->timestep;
     }
     if (!isMultiple(timestep,mon->timestep))
@@ -605,7 +604,7 @@ void Solver::addMonitor(Monitor * mon, MonitorPosition pos) {
     if (mon->timestep > timestep*1.5){
       mon->freq=(mon->timestep/timestep)+.5;
     } else { // mon.timestep is truly smaller
-      if (initCalled)
+      if (initialised)
         throw BoutException(_("Solver::addMonitor: Cannot reduce timestep \
 (from %g to %g) after init is called!")
                             ,timestep,mon->timestep);

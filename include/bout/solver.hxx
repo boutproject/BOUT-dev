@@ -414,8 +414,6 @@ private:
   int rhs_ncalls_e{0};
   /// Number of calls to the implicit (diffusive) RHS function
   int rhs_ncalls_i{0};
-  /// Has the init function of the solver been called?
-  bool initCalled{false};
   /// Default sampling rate at which to call monitors - same as output to screen
   int freqDefault{1};
   /// timestep - shouldn't be changed after init is called.
