@@ -7,6 +7,19 @@
 #include <iomanip>
 #include <sstream>
 
+namespace bout {
+namespace utils {
+  template <>
+  Mesh* meshFromValue<Field2D>(const Field2D& value) {
+    return value.getMesh();
+  }
+  template <>
+  Mesh* meshFromValue<Field3D>(const Field3D& value) {
+    return value.getMesh();
+  }
+}
+}
+
 /// The source label given to default values
 const std::string Options::DEFAULT_SOURCE{_("default")};
 Options *Options::root_instance{nullptr};

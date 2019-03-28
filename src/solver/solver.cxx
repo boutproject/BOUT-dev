@@ -173,8 +173,8 @@ void Solver::add(Field2D &v, const std::string name) {
   // Check if the boundary regions should be evolved
   // First get option from section "All"
   // then use that as default for specific section
-  Options::getRoot()->getSection("all")->get("evolve_bndry", d.evolve_bndry, false);
-  Options::getRoot()->getSection(name)->get("evolve_bndry", d.evolve_bndry, d.evolve_bndry);
+  d.evolve_bndry = Options::root()["all"]["evolve_bndry"].withDefault(false);
+  d.evolve_bndry = Options::root()[name]["evolve_bndry"].withDefault(d.evolve_bndry);
 
   v.applyBoundary(true);
 
@@ -220,7 +220,7 @@ void Solver::add(Field3D &v, const std::string name) {
     // Load solution at t = 0
     FieldFactory *fact = FieldFactory::get();
     
-    v = fact->create3D("solution", Options::getRoot()->getSection(name), mesh, v.getLocation());
+    v = fact->create3D("solution", &Options::root()[name], mesh, v.getLocation());
     
   } else {
     initial_profile(name, v);
@@ -235,8 +235,8 @@ void Solver::add(Field3D &v, const std::string name) {
   // Check if the boundary regions should be evolved
   // First get option from section "All"
   // then use that as default for specific section
-  Options::getRoot()->getSection("all")->get("evolve_bndry", d.evolve_bndry, false);
-  Options::getRoot()->getSection(name)->get("evolve_bndry", d.evolve_bndry, d.evolve_bndry);
+  d.evolve_bndry = Options::root()["all"]["evolve_bndry"].withDefault(false);
+  d.evolve_bndry = Options::root()[name]["evolve_bndry"].withDefault(d.evolve_bndry);
 
   v.applyBoundary(true); // Make sure initial profile obeys boundary conditions
   v.setLocation(d.location); // Restore location if changed

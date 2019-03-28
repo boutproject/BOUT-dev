@@ -67,14 +67,9 @@ namespace utils {
   }
   
   template <>
-  Mesh* meshFromValue<Field2D>(const Field2D& value) {
-    return value.getMesh();
-  }
+  Mesh* meshFromValue<Field2D>(const Field2D& value);
   template <>
-  Mesh* meshFromValue<Field3D>(const Field3D& value) {
-    return value.getMesh();
-  }
-  
+  Mesh* meshFromValue<Field3D>(const Field3D& value);
 }
 }
 

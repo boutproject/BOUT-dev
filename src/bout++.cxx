@@ -643,17 +643,21 @@ int BoutMonitor::call(Solver *solver, BoutReal t, int iter, int NOUT) {
     /// First time the monitor has been called
 
     /// Get some options
-    Options *options = Options::getRoot();
-    OPTION(options, wall_limit, -1.0); // Wall time limit. By default, no limit
-    wall_limit *= 60.0 * 60.0;         // Convert from hours to seconds
+    auto& options = Options::root();
+    wall_limit = options["wall_limit"]
+                     .doc("Wall time limit in hours. By default (< 0), no limit")
+                     .withDefault(-1.0);
+    wall_limit *= 60.0 * 60.0; // Convert from hours to seconds
 
-    OPTION(options, stopCheck, false);
+    stopCheck = options["stopCheck"]
+                    .doc("Check if a file exists, and exit if it does.")
+                    .withDefault(false);
     if (stopCheck) {
-      // Get name of file whose existence triggers a stop
-      OPTION(options, stopCheckName, "BOUT.stop");
+      stopCheckName = options["stopCheckName"]
+                          .doc("Name of file whose existence triggers a stop")
+                          .withDefault("BOUT.stop");
       // Now add data directory to start of name to ensure we look in a run specific location
-      std::string data_dir;
-      Options::getRoot()->get("datadir", data_dir, string(DEFAULT_DIR));
+      std::string data_dir = Options::root()["datadir"].withDefault(DEFAULT_DIR);
       stopCheckName = data_dir + "/" + stopCheckName;
     }
 

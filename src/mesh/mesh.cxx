@@ -317,10 +317,9 @@ void Mesh::setParallelTransform() {
       
   }else if(ptstr == "fci") {
 
-    Options *fci_options = Options::getRoot()->getSection("fci");
+    auto& fci_options = Options::root()["fci"];
     // Flux Coordinate Independent method
-    bool fci_zperiodic;
-    fci_options->get("z_periodic", fci_zperiodic, true);
+    bool fci_zperiodic = fci_options["z_periodic"].withDefault(true);
     transform = bout::utils::make_unique<FCITransform>(*this, fci_zperiodic);
       
   }else {

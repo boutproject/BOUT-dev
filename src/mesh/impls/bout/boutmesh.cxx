@@ -53,8 +53,7 @@
 BoutMesh::BoutMesh(GridDataSource *s, Options *opt) : Mesh(s, opt) {
   OPTION(options, symmetricGlobalX, true);
   if (!options->isSet("symmetricGlobalY")) {
-    std::string optionfile;
-    OPTION(Options::getRoot(), optionfile, "");
+    std::string optionfile = Options::root()["optionfile"].withDefault("");
     output_warn << "WARNING: The default of this option has changed in release 4.1.\n\
 If you want the old setting, you have to specify mesh:symmetricGlobalY=false in "
                 << optionfile << "\n";
@@ -91,7 +90,7 @@ int BoutMesh::load() {
   output_progress << _("Loading mesh") << endl;
 
   // Use root level options
-  Options *options = Options::getRoot();
+  auto& options = Options::root();
 
   //////////////
   // Number of processors
@@ -133,12 +132,12 @@ int BoutMesh::load() {
   // get from options
   if (Mesh::get(MXG, "MXG")) {
     // Error code returned
-    options->get("MXG", MXG, 2);
+    MXG = options["MXG"].doc("Number of guard cells on each side in X").withDefault(2);
   }
   ASSERT0(MXG >= 0);
 
   if (Mesh::get(MYG, "MYG")) {
-    options->get("MYG", MYG, 2);
+    MYG = options["MYG"].doc("Number of guard cells on each side in Y").withDefault(2);
   }
   ASSERT0(MYG >= 0);
 
@@ -237,8 +236,11 @@ int BoutMesh::load() {
   // For now don't parallelise z
   NZPE = 1;
 
-  if (options->isSet("NXPE")) {    // Specified NXPE
-    options->get("NXPE", NXPE, 1); // Decomposition in the radial direction
+  if (options.isSet("NXPE")) {    // Specified NXPE
+    NXPE = options["NXPE"]
+               .doc("Decomposition in the radial direction. If not given then calculated "
+                    "automatically.")
+               .withDefault(1);
     if ((NPES % NXPE) != 0) {
       throw BoutException(
           _("Number of processors (%d) not divisible by NPs in x direction (%d)\n"), NPES,
@@ -433,9 +435,11 @@ int BoutMesh::load() {
 
   /// Get mesh options
   OPTION(options, IncIntShear, false);
-  OPTION(options, periodicX, false); // Periodic in X
+  periodicX = options["periodicX"].doc("Make grid periodic in X?").withDefault(false);
 
-  OPTION(options, async_send, false); // Whether to use asyncronous sends
+  async_send = options["async_send"]
+                   .doc("Whether to use asyncronous MPI sends")
+                   .withDefault(false);
 
   // Set global offsets
 
@@ -443,7 +447,7 @@ int BoutMesh::load() {
   OffsetY = PE_YIND * MYSUB;
   OffsetZ = 0;
 
-  if (options->isSet("zperiod")) {
+  if (options.isSet("zperiod")) {
     OPTION(options, zperiod, 1);
     ZMIN = 0.0;
     ZMAX = 1.0 / static_cast<BoutReal>(zperiod);
@@ -474,7 +478,9 @@ int BoutMesh::load() {
   /// Call topology to set layout of grid
   topology();
 
-  OPTION(options, TwistShift, false);
+  TwistShift = options["TwistShift"]
+                   .doc("Apply a Twist-Shift boundary using ShiftAngle?")
+                   .withDefault(false);
 
   if (TwistShift) {
     output_info.write("Applying Twist-Shift condition. Interpolation: FFT\n");
