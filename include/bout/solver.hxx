@@ -400,6 +400,13 @@ protected:
   /// Maximum internal timestep
   BoutReal max_dt{-1.0};
 
+  /// Get the list of monitors
+  auto getMonitors() const -> const std::list<Monitor*>& { return monitors; }
+  /// Get the list of timestep monitors
+  auto getTimestepMonitors() const -> const std::list<TimestepMonitorFunc>& {
+    return timestep_monitors;
+  }
+
 private:
   /// Number of calls to the RHS function
   int rhs_ncalls{0};

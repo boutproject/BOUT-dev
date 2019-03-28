@@ -8,15 +8,13 @@
 #include "bout/solverfactory.hxx"
 
 #include <algorithm>
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace {
 class FakeSolver : public Solver {
 public:
-  FakeSolver(Options* options) : Solver(options) {
-    has_constraints = true;
-  }
+  FakeSolver(Options* options) : Solver(options) { has_constraints = true; }
   ~FakeSolver() = default;
   int run() { return (*options)["number"].withDefault(42); }
 
@@ -50,10 +48,33 @@ public:
     return result;
   }
 
-  int getLocalNHelper() { return getLocalN(); }
+  // Shims for protected functions
+  auto getMaxTimestepShim() const -> BoutReal { return max_dt; }
+  auto getLocalNShim() -> int { return getLocalN(); }
+  auto haveUserPreconShim() -> bool { return have_user_precon(); }
+  auto runPreconShim(BoutReal t, BoutReal gamma, BoutReal delta) -> int {
+    return run_precon(t, gamma, delta);
+  }
+  auto globalIndexShim(int local_start) -> Field3D { return globalIndex(local_start); }
+  auto getMonitorsShim() const -> const std::list<Monitor*>& { return getMonitors(); }
+  auto getTimestepMonitorsShim() const -> const std::list<TimestepMonitorFunc>& {
+    return getTimestepMonitors();
+  }
 };
 
 RegisterSolver<FakeSolver> register_fake("fake_solver");
+
+class FakeMonitor : public Monitor {
+public:
+  FakeMonitor(BoutReal timestep = -1) : Monitor(timestep) {}
+  ~FakeMonitor() = default;
+  auto call(Solver*, BoutReal time, int iter, int nout) -> int {
+    return static_cast<int>(time + iter + nout);
+  }
+  auto getTimestepShim() -> BoutReal { return getTimestep(); }
+  auto setTimestepShim(BoutReal timestep) -> void { setTimestep(timestep); }
+};
+
 } // namespace
 
 class SolverTest : public FakeMeshFixture {
@@ -502,7 +523,7 @@ TEST_F(SolverTest, SplitOperator) {
 
   EXPECT_FALSE(solver.splitOperator());
 
-  rhsfunc fake_rhs = [](BoutReal) -> int { return 0;};
+  rhsfunc fake_rhs = [](BoutReal) -> int { return 0; };
   solver.setSplitOperator(fake_rhs, fake_rhs);
 
   EXPECT_TRUE(solver.splitOperator());
@@ -519,7 +540,9 @@ TEST_F(SolverTest, SetMaxTimestep) {
   Options options;
   FakeSolver solver{&options};
 
-  EXPECT_NO_THROW(solver.setMaxTimestep(4.5));
+  auto expected = 4.5;
+  EXPECT_NO_THROW(solver.setMaxTimestep(expected));
+  EXPECT_EQ(solver.getMaxTimestepShim(), expected);
 }
 
 TEST_F(SolverTest, GetCurrentTimestep) {
@@ -554,6 +577,7 @@ TEST_F(SolverTest, GetLocalN) {
   FakeMesh localmesh{localmesh_nx, localmesh_ny, localmesh_nz};
   localmesh.createDefaultRegions();
   localmesh.createBoundaryRegions();
+  localmesh.setCoordinates(nullptr);
 
   Field2D field1{bout::globals::mesh};
   Field2D field2{&localmesh};
@@ -579,5 +603,143 @@ TEST_F(SolverTest, GetLocalN) {
       + (localmesh_nx_no_boundry * localmesh_ny_no_boundry * localmesh_nz)
       + (nx * ny * nz);
 
-  EXPECT_EQ(solver.getLocalNHelper(), expected_total);
+  EXPECT_EQ(solver.getLocalNShim(), expected_total);
 }
+
+TEST_F(SolverTest, HavePreconditioner) {
+  PhysicsPrecon preconditioner = [](BoutReal time, BoutReal gamma,
+                                    BoutReal delta) -> int {
+    return static_cast<int>(time + gamma + delta);
+  };
+
+  Options options;
+  FakeSolver solver{&options};
+
+  EXPECT_FALSE(solver.haveUserPreconShim());
+
+  solver.setPrecon(preconditioner);
+
+  EXPECT_TRUE(solver.haveUserPreconShim());
+}
+
+TEST_F(SolverTest, RunPreconditioner) {
+  PhysicsPrecon preconditioner = [](BoutReal time, BoutReal gamma,
+                                    BoutReal delta) -> int {
+    return static_cast<int>(time + gamma + delta);
+  };
+
+  Options options;
+  FakeSolver solver{&options};
+
+  solver.setPrecon(preconditioner);
+
+  constexpr auto time = 1.0;
+  constexpr auto gamma = 2.0;
+  constexpr auto delta = 3.0;
+  constexpr auto expected = time + gamma + delta;
+
+  EXPECT_EQ(solver.runPreconShim(time, gamma, delta), expected);
+}
+
+TEST_F(SolverTest, AddMonitor) {
+  Options options;
+  FakeSolver solver{&options};
+
+  FakeMonitor monitor;
+  EXPECT_NO_THROW(monitor.setTimestepShim(10.0));
+  EXPECT_EQ(monitor.getTimestepShim(), 10.0);
+
+  EXPECT_NO_THROW(solver.addMonitor(&monitor));
+
+  EXPECT_THROW(monitor.setTimestepShim(20.0), BoutException);
+
+  std::list<Monitor*> expected{&monitor};
+
+  EXPECT_EQ(solver.getMonitorsShim(), expected);
+}
+
+TEST_F(SolverTest, AddMonitorFront) {
+  Options options;
+  FakeSolver solver{&options};
+
+  FakeMonitor monitor1;
+  FakeMonitor monitor2;
+  EXPECT_NO_THROW(solver.addMonitor(&monitor1, Solver::FRONT));
+  EXPECT_NO_THROW(solver.addMonitor(&monitor2, Solver::FRONT));
+
+  std::list<Monitor*> expected{&monitor2, &monitor1};
+
+  EXPECT_EQ(solver.getMonitorsShim(), expected);
+}
+
+TEST_F(SolverTest, AddMonitorBack) {
+  Options options;
+  FakeSolver solver{&options};
+
+  FakeMonitor monitor1;
+  FakeMonitor monitor2;
+  EXPECT_NO_THROW(solver.addMonitor(&monitor1, Solver::BACK));
+  EXPECT_NO_THROW(solver.addMonitor(&monitor2, Solver::BACK));
+
+  std::list<Monitor*> expected{&monitor1, &monitor2};
+
+  EXPECT_EQ(solver.getMonitorsShim(), expected);
+}
+
+TEST_F(SolverTest, RemoveMonitor) {
+  Options options;
+  FakeSolver solver{&options};
+
+  FakeMonitor monitor1;
+  FakeMonitor monitor2;
+  EXPECT_NO_THROW(solver.addMonitor(&monitor1, Solver::BACK));
+  EXPECT_NO_THROW(solver.addMonitor(&monitor2, Solver::BACK));
+
+  solver.removeMonitor(&monitor1);
+
+  std::list<Monitor*> expected{&monitor2};
+  EXPECT_EQ(solver.getMonitorsShim(), expected);
+
+  // Removing same monitor again should be a no-op
+  solver.removeMonitor(&monitor1);
+  EXPECT_EQ(solver.getMonitorsShim(), expected);
+}
+
+TEST_F(SolverTest, AddTimestepMonitor) {
+  Options options;
+  FakeSolver solver{&options};
+
+  TimestepMonitorFunc monitor1 = [](Solver*, BoutReal simtime, BoutReal lastdt) -> int {
+                                  return static_cast<int>(simtime + lastdt);};
+  TimestepMonitorFunc monitor2 = [](Solver*, BoutReal simtime, BoutReal lastdt) -> int {
+                                  return static_cast<int>(simtime * lastdt);};
+
+  EXPECT_NO_THROW(solver.addTimestepMonitor(monitor1));
+  EXPECT_NO_THROW(solver.addTimestepMonitor(monitor2));
+
+  std::list<TimestepMonitorFunc> expected{monitor2, monitor1};
+
+  EXPECT_EQ(solver.getTimestepMonitorsShim(), expected);
+}
+
+TEST_F(SolverTest, RemoveTimestepMonitor) {
+  Options options;
+  FakeSolver solver{&options};
+
+  TimestepMonitorFunc monitor1 = [](Solver*, BoutReal simtime, BoutReal lastdt) -> int {
+                                  return static_cast<int>(simtime + lastdt);};
+  TimestepMonitorFunc monitor2 = [](Solver*, BoutReal simtime, BoutReal lastdt) -> int {
+                                  return static_cast<int>(simtime * lastdt);};
+
+  EXPECT_NO_THROW(solver.addTimestepMonitor(monitor1));
+  EXPECT_NO_THROW(solver.addTimestepMonitor(monitor2));
+
+  solver.removeTimestepMonitor(monitor1);
+  std::list<TimestepMonitorFunc> expected{monitor2};
+
+  EXPECT_EQ(solver.getTimestepMonitorsShim(), expected);
+
+  solver.removeTimestepMonitor(monitor1);
+  EXPECT_EQ(solver.getTimestepMonitorsShim(), expected);
+}
+
