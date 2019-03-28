@@ -648,6 +648,87 @@ has a method::
 
 This is currently quite rudimentary and needs improving.
 
+Reading and writing to NetCDF
+-----------------------------
+
+If NetCDF4 support is enabled, then the ``OptionsNetCDF`` class
+provides an experimental way to read and write options.
+
+Examples are in integrated test ``tests/integrated/test-options-netcdf/``
+
+To write the current ``Options`` tree (e.g. from ``BOUT.inp``) to a
+NetCDF file::
+
+  OptionsNetCDF("settings.nc").write(Options::root());
+
+and to read it in again::
+
+  Options data = OptionsNetCDF("settings.nc").read();
+
+Fields can also be stored and written::
+
+  Options fields;
+  fields["f2d"] = Field2D(1.0);
+  fields["f3d"] = Field3D(2.0);
+  OptionsNetCDF("fields.nc").write(fields);
+
+This should allow the input settings and evolving variables to be
+combined into a single tree (see above on joining trees) and written
+to the output dump or restart files.
+
+Reading fields is a bit more difficult. Currently 1D data is read as
+an ``Array<BoutReal>``, 2D as ``Matrix<BoutReal>`` and 3D as
+``Tensor<BoutReal>``. These can be extracted directly from the
+``Options`` tree, or converted to a Field if given a ``Mesh``::
+
+  Options fields_in = OptionsNetCDF("fields.nc").read();
+  Field2D f2d = fields_in["f2d"].as<Field2D>(mesh);
+  Field3D f3d = fields_in["f3d"].as<Field3D>(mesh);
+
+Currently this only works if the data in the ``Matrix`` or ``Tensor`` is the
+same size as the ``Field``. In the case of grid files, the fields only
+needs a part of the global values. Some kind of mapping from the global
+index to local index is needed, probably defined by ``Mesh``. For now it
+should be possible to be compatible with the current system, so that
+all quantities from the grid file are accessed through Mesh::get.
+
+Time dependence
+~~~~~~~~~~~~~~~
+
+When writing NetCDF files, some variables should have a time
+dimension added, and then be added to each time they are written. This
+has been implemented using an attribute: If variables in the ``Options``
+tree have an attribute "time_dimension" then that is used as the name
+of the time dimension in the output file. This allows multiple time
+dimensions e.g. high frequency diagnostics and low frequency outputs,
+to exist in the same file::
+
+  Options data;
+  data["scalar"] = 1.0;
+  data["scalar"].attributes["time_dimension"] = "t";
+  
+  data["field"] = Field3D(2.0);
+  data["field"].attributes["time_dimension"] = "t";
+  
+  OptionsNetCDF("time.nc").write(data);
+  
+  // Update time-dependent values. This can be done without `force` if the time_dimension
+  // attribute is set
+  data["scalar"] = 2.0;
+  data["field"] = Field3D(3.0);
+  
+  // Append data to file
+  OptionsNetCDF("time.nc", OptionsNetCDF::FileMode::append).write(data);
+
+Some issues:
+
+* Currently all variables in the Options tree are written when passed
+  to ``OptionsNetCDF::write``. This means that the variables with
+  different time dimensions should be stored in different Options
+  trees, so they can be written at different times. One possibility is
+  to have an optional argument to write, so that only variables with
+  one specified time dimension are updated.
+
 
 FFT
 ---
