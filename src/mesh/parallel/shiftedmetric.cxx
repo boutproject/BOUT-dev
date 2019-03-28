@@ -27,8 +27,12 @@ ShiftedMetric::ShiftedMetric(Mesh& m) : ParallelTransform(m), zShift(&m) {
 
   // TwistShift needs to be set for derivatives to be correct at the jump where
   // poloidal angle theta goes 2pi->0
-  bool twistshift = Options::root()["TwistShift"].withDefault(false);
-  bool shift_without_twist = Options::root()["ShiftWithoutTwist"].withDefault(false);
+  bool twistshift = Options::root()["TwistShift"]
+                        .doc("Enable twist-shift boundary condition in core region?")
+                        .withDefault(false);
+  bool shift_without_twist = Options::root()["ShiftWithoutTwist"]
+                                 .doc("Use ShiftedMetric without TwistShift?")
+                                 .withDefault(false);
   if (!twistshift and !shift_without_twist) {
     throw BoutException(
         "ShiftedMetric usually requires the option TwistShift=true\n"

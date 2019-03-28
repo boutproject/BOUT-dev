@@ -32,7 +32,7 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
 
   if (opt == nullptr) {
     // If no options supplied, use default
-    opt = Options::getRoot()->getSection("laplacexy");
+    opt = &(Options::root()["laplacexy"]);
   }
   
   // Get MPI communicator
@@ -212,8 +212,7 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
   
   // Configure Linear Solver
   
-  bool direct;
-  OPTION(opt, direct, false);
+  bool direct = (*opt)["direct"].doc("Use a direct LU solver").withDefault(false);
   
   if(direct) {
     KSPGetPC(ksp,&pc);
@@ -227,21 +226,22 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
     
     // Convergence Parameters. Solution is considered converged if |r_k| < max( rtol * |b| , atol )
     // where r_k = b - Ax_k. The solution is considered diverged if |r_k| > dtol * |b|.
-    BoutReal rtol, atol, dtol;
-    int maxits; ///< Maximum iterations
-    
-    OPTION(opt, rtol, 1e-5);     // Relative tolerance 
-    OPTION(opt, atol, 1e-10);    // Absolute tolerance
-    OPTION(opt, dtol, 1e3);      // Diverged threshold
-    OPTION(opt, maxits, 100000); // Maximum iterations
-    
+
+    BoutReal rtol = (*opt)["rtol"].doc("Relative tolerance").withDefault(1e-5);
+    BoutReal atol = (*opt)["atol"]
+            .doc("Absolute tolerance. The solution is considered converged if |Ax-b| "
+                 "< max( rtol * |b| , atol )")
+            .withDefault(1e-10);
+    BoutReal dtol = (*opt)["dtol"]
+                        .doc("The solution is considered diverged if |Ax-b| > dtol * |b|")
+                        .withDefault(1e3);
+    int maxits = (*opt)["maxits"].doc("Maximum iterations").withDefault(100000);
+
     // Get KSP Solver Type
-    std::string ksptype;
-    opt->get("ksptype", ksptype, "gmres");
+    std::string ksptype = (*opt)["ksptype"].doc("KSP solver type").withDefault("gmres");
     
     // Get PC type
-    std::string pctype;
-    opt->get("pctype", pctype, "none", true);
+    std::string pctype = (*opt)["pctype"].doc("Preconditioner type").withDefault("none");
 
     KSPSetType( ksp, ksptype.c_str() );
     KSPSetTolerances( ksp, rtol, atol, dtol, maxits );
@@ -256,12 +256,12 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
       PCShellSetApply(pc,laplacePCapply);
       PCShellSetContext(pc,this);
       
-      bool rightprec;
-      OPTION(opt, rightprec, true);
-      if(rightprec) {
+      bool rightprec = (*opt)["rightprec"].doc("Use right preconditioning?").withDefault(true);
+      if (rightprec) {
         KSPSetPCSide(ksp, PC_RIGHT); // Right preconditioning
-      }else
+      } else {
         KSPSetPCSide(ksp, PC_LEFT);  // Left preconditioning
+      }
     }
   }
   
@@ -269,10 +269,10 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
 
   ///////////////////////////////////////////////////
   // Decide boundary condititions
-  if(localmesh->periodicY(localmesh->xstart)) {
+  if (localmesh->periodicY(localmesh->xstart)) {
     // Periodic in Y, so in the core
     opt->get("core_bndry_dirichlet", x_inner_dirichlet, false);
-  }else {
+  } else {
     // Non-periodic, so in the PF region
     opt->get("pf_bndry_dirichlet", x_inner_dirichlet, true);
   }
@@ -281,8 +281,10 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
   ///////////////////////////////////////////////////
   // Including Y derivatives?
 
-  OPTION(opt, include_y_derivs, true);
-  
+  include_y_derivs = (*opt)["include_y_derivs"]
+                         .doc("Include Y derivatives in operator to invert?")
+                         .withDefault(true);
+
   ///////////////////////////////////////////////////
   // Set the default coefficients
   Field2D one(1., localmesh);

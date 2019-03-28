@@ -58,12 +58,12 @@ int RKGenericSolver::init(int nout, BoutReal tstep) {
 	       n3Dvars(), n2Dvars(), neq, nlocal);
   
   // Get options
-  OPTION(options, atol, 1.e-5); // Absolute tolerance
-  OPTION(options, rtol, 1.e-3); // Relative tolerance
-  OPTION(options, max_timestep, tstep); // Maximum timestep
-  OPTION(options, timestep, max_timestep); // Starting timestep
-  OPTION(options, mxstep, 500); // Maximum number of steps between outputs
-  OPTION(options, adaptive, true); // Prefer adaptive scheme
+  atol = (*options)["atol"].doc("Absolute tolerance").withDefault(1.e-5);
+  rtol = (*options)["rtol"].doc("Relative tolerance").withDefault(1.e-3);
+  max_timestep = (*options)["max_timestep"].doc("Maximum timestep").withDefault(tstep);
+  timestep = (*options)["timestep"].doc("Starting timestep").withDefault(max_timestep);
+  mxstep = (*options)["mxstep"].doc("Maximum number of steps between outputs").withDefault(500);
+  adaptive = (*options)["adaptive"].doc("Adapt internal timestep using ATOL and RTOL.").withDefault(true);
 
   // Allocate memory
   f0.reallocate(nlocal); // Input

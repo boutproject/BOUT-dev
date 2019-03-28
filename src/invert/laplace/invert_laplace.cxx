@@ -105,7 +105,9 @@ Laplacian::Laplacian(Options *options, const CELL_LOC loc, Mesh *mesh_in)
     OPTION(options, outer_boundary_flags, 0);
   }
 
-  OPTION(options, include_yguards, false);
+  include_yguards = (*options)["include_yguards"]
+                        .doc("Solve Laplacian in Y guard cells?")
+                        .withDefault(false);
 
   OPTION2(options, extra_yguards_lower, extra_yguards_upper, 0);
 }
