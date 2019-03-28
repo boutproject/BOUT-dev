@@ -83,5 +83,13 @@ if errlist:
     print(errlist)
     exit(1)
 
+# FIXME: this is a workaround for a strange bug, MPI_Comm_free after
+# MPI_Finalize. Seems to be from the global mesh getting destroyed
+# after/at the same time as finalise is called -- hence explicitly
+# deleting it here
+mesh = bc.Mesh.getGlobal()
+del mesh
+bc.finalise()
+
 print("All tests passed")
 exit(0)
