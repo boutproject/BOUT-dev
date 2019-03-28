@@ -547,8 +547,18 @@ TEST_F(SolverTest, GetLocalN) {
   Options::root()["field2"]["evolve_bndry"] = true;
   Options::root()["field4"]["evolve_bndry"] = true;
 
-  Field2D field1{}, field2{};
-  Field3D field3{}, field4{};
+  constexpr auto localmesh_nx = 5;
+  constexpr auto localmesh_ny = 7;
+  constexpr auto localmesh_nz = 9;
+
+  FakeMesh localmesh{localmesh_nx, localmesh_ny, localmesh_nz};
+  localmesh.createDefaultRegions();
+  localmesh.createBoundaryRegions();
+
+  Field2D field1{bout::globals::mesh};
+  Field2D field2{&localmesh};
+  Field3D field3{&localmesh};
+  Field3D field4{bout::globals::mesh};
 
   solver.add(field1, "field1");
   solver.add(field2, "field2");
@@ -559,10 +569,15 @@ TEST_F(SolverTest, GetLocalN) {
 
   static_cast<FakeMesh*>(field1.getMesh())->createBoundaryRegions();
 
-  constexpr auto nx_no_boundry = nx - 2;
-  constexpr auto ny_no_boundry = ny - 2;
-  constexpr auto expected_total = (nx_no_boundry * ny_no_boundry) + (nx * ny)
-                                  + (nx_no_boundry * ny_no_boundry * nz) + (nx * ny * nz);
+  constexpr auto globalmesh_nx_no_boundry = SolverTest::nx - 2;
+  constexpr auto globalmesh_ny_no_boundry = SolverTest::ny - 2;
+  constexpr auto localmesh_nx_no_boundry = localmesh_nx - 2;
+  constexpr auto localmesh_ny_no_boundry = localmesh_ny - 2;
+  constexpr auto expected_total =
+      (globalmesh_nx_no_boundry * globalmesh_ny_no_boundry)
+      + (localmesh_nx * localmesh_ny)
+      + (localmesh_nx_no_boundry * localmesh_ny_no_boundry * localmesh_nz)
+      + (nx * ny * nz);
 
   EXPECT_EQ(solver.getLocalNHelper(), expected_total);
 }
