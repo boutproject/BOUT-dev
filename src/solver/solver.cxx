@@ -41,6 +41,8 @@
 #include <bout/array.hxx>
 #include "bout/region.hxx"
 
+#include <numeric>
+
 // Static member variables
 
 int *Solver::pargc = nullptr;
@@ -732,45 +734,28 @@ int Solver::call_timestep_monitors(BoutReal simtime, BoutReal lastdt) {
  * Useful routines (protected)
  **************************************************************************/
 
+template <class T>
+int local_N_sum(int value, const Solver::VarStr<T>& f) {
+  const auto boundary_size = f.evolve_bndry ? size(f.var->getRegion("RGN_BNDRY")) : 0;
+  return value + boundary_size + size(f.var->getRegion("RGN_NOBNDRY"));
+}
+
 int Solver::getLocalN() {
 
-  // Use global mesh: FIX THIS!
-  Mesh* mesh = bout::globals::mesh;
-
-  /// Cache the value, so this is not repeatedly called.
-  /// This value should not change after initialisation
-  static int cacheLocalN = -1;
-  if(cacheLocalN != -1) {
+  // Cache the value, so this is not repeatedly called.
+  // This value should not change after initialisation
+  static int cacheLocalN{-1};
+  if (cacheLocalN != -1) {
     return cacheLocalN;
   }
-  
-  ASSERT0(initialised); // Must be initialised
-  
-  int n2d = n2Dvars();
-  int n3d = n3Dvars();
-  
-  int local_N = size(mesh->getRegion2D("RGN_NOBNDRY")) * (n2d + mesh->LocalNz*n3d);
-  
-  //////////// How many variables have evolving boundaries?
-  
-  int n2dbndry = 0;
-  for(const auto& f : f2d) {
-    if(f.evolve_bndry)
-      n2dbndry++;
-  }
-  
-  int n3dbndry = 0;
-  for(const auto& f : f3d) {
-    if(f.evolve_bndry)
-      n3dbndry++;
-  }
 
-  //////////// Find boundary regions ////////////
-  
-  // Add the points which will be evolved in the boundaries
-  local_N += size(mesh->getRegion2D("RGN_BNDRY")) * n2dbndry
-      + size(mesh->getRegion3D("RGN_BNDRY")) * n3dbndry;
-  
+  // Must be initialised
+  ASSERT0(initialised);
+
+  const auto local_N_2D = std::accumulate(begin(f2d), end(f2d), 0, local_N_sum<Field2D>);
+  const auto local_N_3D = std::accumulate(begin(f3d), end(f3d), 0, local_N_sum<Field3D>);
+  const auto local_N = local_N_2D + local_N_3D;
+
   cacheLocalN = local_N;
 
   return local_N;

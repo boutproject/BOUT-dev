@@ -343,6 +343,16 @@ protected:
     return in_vars != end(vars);
   }
 
+  /// Helper function for getLocalN: return the number of points to
+  /// evolve in \p f, plus the accumulator \p value
+  ///
+  /// If f.evolve_bndry, includes the boundary (NB: not guard!) points
+  ///
+  /// FIXME: This could be a lambda local to getLocalN with an `auto`
+  /// argument in C++14
+  template <class T>
+  friend int local_N_sum(int value, const VarStr<T>& f);
+
   /// Vectors of variables to evolve
   std::vector<VarStr<Field2D>> f2d;
   std::vector<VarStr<Field3D>> f3d;
