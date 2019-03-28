@@ -330,6 +330,19 @@ protected:
     std::string name;                /// Name of the variable
   };
 
+  /// Does \p var represent field \p name?
+  template<class T>
+  friend bool operator==(const VarStr<T>& var, const std::string& name) {
+    return var.name == name;
+  }
+
+  /// Does \p vars contain a field with \p name?
+  template<class T>
+  bool contains(const std::vector<VarStr<T>>& vars, const std::string& name) {
+    const auto in_vars = std::find(begin(vars), end(vars), name);
+    return in_vars != end(vars);
+  }
+
   /// Vectors of variables to evolve
   std::vector<VarStr<Field2D>> f2d;
   std::vector<VarStr<Field3D>> f3d;

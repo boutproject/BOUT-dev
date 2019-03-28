@@ -1276,28 +1276,9 @@ void Solver::post_rhs(BoutReal UNUSED(t)) {
 #endif
 }
 
-bool Solver::varAdded(const std::string &name) {
-  for(const auto& f : f2d) {
-    if(f.name == name)
-      return true;
-  }
-  
-  for(const auto& f : f3d) {
-    if(f.name == name)
-      return true;
-  }
-  
-  for(const auto& f : v2d) {
-    if(f.name == name)
-      return true;
-  }
-  
-  for(const auto& f : v3d) {
-    if(f.name == name)
-      return true;
-  }
-  
-  return false;
+bool Solver::varAdded(const std::string& name) {
+  return contains(f2d, name) || contains(f3d, name) || contains(v2d, name)
+         || contains(v3d, name);
 }
 
 bool Solver::have_user_precon() {
