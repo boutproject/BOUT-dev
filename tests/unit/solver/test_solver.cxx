@@ -49,6 +49,8 @@ public:
                    [](const VarStr<Vector3D>& f) { return f.name; });
     return result;
   }
+
+  int getLocalNHelper() { return getLocalN(); }
 };
 
 RegisterSolver<FakeSolver> register_fake("fake_solver");
@@ -536,4 +538,31 @@ TEST_F(SolverTest, HasConstraints) {
   solver.changeHasConstraints(false);
 
   EXPECT_FALSE(solver.constraints());
+}
+
+TEST_F(SolverTest, GetLocalN) {
+  Options options;
+  FakeSolver solver{&options};
+
+  Options::root()["field2"]["evolve_bndry"] = true;
+  Options::root()["field4"]["evolve_bndry"] = true;
+
+  Field2D field1{}, field2{};
+  Field3D field3{}, field4{};
+
+  solver.add(field1, "field1");
+  solver.add(field2, "field2");
+  solver.add(field3, "field3");
+  solver.add(field4, "field4");
+
+  solver.init(0, 0);
+
+  static_cast<FakeMesh*>(field1.getMesh())->createBoundaryRegions();
+
+  constexpr auto nx_no_boundry = nx - 2;
+  constexpr auto ny_no_boundry = ny - 2;
+  constexpr auto expected_total = (nx_no_boundry * ny_no_boundry) + (nx * ny)
+                                  + (nx_no_boundry * ny_no_boundry * nz) + (nx * ny * nz);
+
+  EXPECT_EQ(solver.getLocalNHelper(), expected_total);
 }
