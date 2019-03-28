@@ -14,26 +14,26 @@ function EvalCosPfast, fsig, x0=x0,y0=y0
   nx=s[0]
   ny=s[1]
 
-  cuvec=fltarr(nx)+1.
-  cuvec[0]=1./SQRT(2.)
+  cuvec=DBLARR(nx)+1.D
+  cuvec[0]=1.D/SQRT(2.D)
 
-  cvvec=fltarr(ny)+1.
-  cvvec[0]=1./SQRT(2.)
+  cvvec=DBLARR(ny)+1.D
+  cvvec[0]=1.D/SQRT(2.D)
   
-  uvec=COS(!PI*findgen(nx)*(x0+0.5)/nx)
-  uvex=(-findgen(nx)*!PI/nx)*SIN(!PI*findgen(nx)*(x0+0.5)/nx)
+  uvec=COS(!DPI*findgen(nx)*(x0+0.5D)/nx)
+  uvex=(-findgen(nx)*!DPI/nx)*SIN(!DPI*findgen(nx)*(x0+0.5D)/nx)
   
-  vvec=COS(!PI*findgen(ny)*(y0+0.5)/ny)
-  vvey=(-findgen(ny)*!PI/ny)*SIN(!PI*findgen(ny)*(y0+0.5)/ny)
+  vvec=COS(!DPI*findgen(ny)*(y0+0.5D)/ny)
+  vvey=(-findgen(ny)*!DPI/ny)*SIN(!DPI*findgen(ny)*(y0+0.5D)/ny)
   
   ;-value
-  res=SQRT(2./nx)*SQRT(2./ny) * TOTAL(((cuvec # cvvec) * fsig) * (uvec # vvec))  
+  res=SQRT(2.D/nx)*SQRT(2.D/ny) * TOTAL(((cuvec # cvvec) * fsig) * (uvec # vvec))  
   
   ;d/dx
-  rex=SQRT(2./nx)*SQRT(2./ny) * TOTAL(((cuvec # cvvec) * fsig) * (uvex # vvec))  
+  rex=SQRT(2.D/nx)*SQRT(2.D/ny) * TOTAL(((cuvec # cvvec) * fsig) * (uvex # vvec))  
   
   ;d/dy
-  rey=SQRT(2./nx)*SQRT(2./ny) * TOTAL(((cuvec # cvvec) * fsig) * (uvec # vvey))  
+  rey=SQRT(2.D/nx)*SQRT(2.D/ny) * TOTAL(((cuvec # cvvec) * fsig) * (uvec # vvey))  
   
 ;
 ;

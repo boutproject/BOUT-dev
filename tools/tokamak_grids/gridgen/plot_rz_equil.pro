@@ -4,7 +4,7 @@ PRO plot_rz_equil, data, _extra=_extra
   nlev = 100
   minf = MIN(data.psi)
   maxf = MAX(data.psi)
-  levels = findgen(nlev)*(maxf-minf)/FLOAT(nlev-1) + minf
+  levels = findgen(nlev)*(maxf-minf)/DOUBLE(nlev-1) + minf
   
   safe_colors, /first
   CONTOUR, data.psi, data.r, data.z, levels=levels, /iso, color=1, $
@@ -19,7 +19,7 @@ PRO plot_rz_equil, data, _extra=_extra
           thick=2,color=2
         
         ; Check that the critical points are inside the boundary
-        bndryi = FLTARR(2, data.nlim)
+        bndryi = DBLARR(2, data.nlim)
         bndryi[0,*] = INTERPOL(FINDGEN(data.nr), data.R, data.rlim)
         bndryi[1,*] = INTERPOL(FINDGEN(data.nz), data.Z, data.zlim)
         

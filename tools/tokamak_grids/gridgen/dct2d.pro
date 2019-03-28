@@ -26,9 +26,9 @@ FUNCTION DCT2D, sig, inverse=inverse
   ENDFOR
   
   IF NOT KEYWORD_SET(inverse) THEN BEGIN
-    result = result * 2. * SQRT(nx*ny)
+    result = result * 2.D * SQRT(nx*ny)
   ENDIF ELSE BEGIN
-    result = result / (2.* SQRT(nx*ny))
+    result = result / (2.D* SQRT(nx*ny))
   ENDELSE
 
   RETURN, result
