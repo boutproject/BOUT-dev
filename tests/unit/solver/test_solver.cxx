@@ -499,6 +499,11 @@ TEST_F(SolverTest, SplitOperator) {
   FakeSolver solver{&options};
 
   EXPECT_FALSE(solver.splitOperator());
+
+  rhsfunc fake_rhs = [](BoutReal) -> int { return 0;};
+  solver.setSplitOperator(fake_rhs, fake_rhs);
+
+  EXPECT_TRUE(solver.splitOperator());
 }
 
 TEST_F(SolverTest, ResetInternalFields) {
