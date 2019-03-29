@@ -22,6 +22,7 @@ class Options;
 ///                                   std::function<Solver*(Options*)>>;
 class SolverFactory : public Factory<Solver, std::function<Solver*(Options*)>> {
 public:
+  /// Return the name of the default Solver type
   static SolverType getDefaultSolverType();
 
   static SolverFactory* getInstance();

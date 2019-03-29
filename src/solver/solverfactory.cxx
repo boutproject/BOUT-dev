@@ -25,8 +25,8 @@ SolverFactory* SolverFactory::getInstance() {
   return instance;
 }
 
-inline SolverType SolverFactory::getDefaultSolverType() {
-  SolverType type =
+SolverType SolverFactory::getDefaultSolverType() {
+  return
 #if defined BOUT_HAS_CVODE
       SOLVERCVODE;
 #elif defined BOUT_HAS_IDA
@@ -34,8 +34,6 @@ inline SolverType SolverFactory::getDefaultSolverType() {
 #else
       SOLVERPVODE;
 #endif
-
-  return type;
 }
 
 Solver* SolverFactory::createSolver(Options* options) {
