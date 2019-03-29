@@ -150,7 +150,9 @@ int BoutInitialise(int& argc, char**& argv) {
 
     setRunStartInfo(Options::root());
 
-    writeSettingsFile(Options::root(), args.data_dir, args.set_file, MYPE == 0);
+    if (MYPE == 0) {
+      writeSettingsFile(Options::root(), args.data_dir, args.set_file);
+    }
 
     // Create the mesh
     bout::globals::mesh = Mesh::create();
@@ -543,10 +545,7 @@ Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir
 }
 
 void writeSettingsFile(Options& options, const std::string& data_dir,
-                       const std::string& settings_file, bool write) {
-  if (not write) {
-    return;
-  }
+                       const std::string& settings_file) {
   OptionsReader::getInstance()->write(&options, "%s/%s", data_dir.c_str(),
                                       settings_file.c_str());
 }
@@ -581,7 +580,9 @@ int BoutFinalise(bool write_settings) {
       const auto data_dir = options["datadir"].withDefault(std::string{DEFAULT_DIR});
       const auto set_file = options["settingsfile"].withDefault("");
 
-      writeSettingsFile(options, data_dir, set_file, BoutComm::rank() == 0);
+      if (BoutComm::rank() == 0) {
+        writeSettingsFile(options, data_dir, set_file);
+      }
     } catch (const BoutException& e) {
       output_error << _("Error whilst writing settings") << e.what() << endl;
     }
