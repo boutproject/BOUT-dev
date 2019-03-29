@@ -731,21 +731,20 @@ void Solver::removeTimestepMonitor(TimestepMonitorFunc f) {
 }
 
 int Solver::call_timestep_monitors(BoutReal simtime, BoutReal lastdt) {
-  if(!monitor_timestep)
+  if (!monitor_timestep)
     return 0;
-  
-  for(const auto& monitor : timestep_monitors) {
-    // Call each monitor one by one
-    int ret = monitor(this, simtime, lastdt);
-    if(ret)
+
+  for (const auto& monitor : timestep_monitors) {
+    const int ret = monitor(this, simtime, lastdt);
+    if (ret != 0)
       return ret; // Return first time an error is encountered
   }
-  
+
   // Call physics model monitor
-  if(model) {
-    int ret = model->runTimestepMonitor(simtime, lastdt);
-    if(ret)
-      return ret; // Return first time an error is encountered
+  if (model != nullptr) {
+    const int ret = model->runTimestepMonitor(simtime, lastdt);
+    if (ret)
+      return ret;
   }
   return 0;
 }

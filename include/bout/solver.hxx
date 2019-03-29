@@ -414,10 +414,6 @@ protected:
 
   /// Get the list of monitors
   auto getMonitors() const -> const std::list<Monitor*>& { return monitors; }
-  /// Get the list of timestep monitors
-  auto getTimestepMonitors() const -> const std::list<TimestepMonitorFunc>& {
-    return timestep_monitors;
-  }
   /// Get a list of the iteration frequencies of monitors
   auto getMonitorFrequencies() const -> std::vector<int> {
     std::vector<int> frequencies{};

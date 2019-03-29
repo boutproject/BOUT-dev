@@ -57,14 +57,14 @@ public:
   }
   auto globalIndexShim(int local_start) -> Field3D { return globalIndex(local_start); }
   auto getMonitorsShim() const -> const std::list<Monitor*>& { return getMonitors(); }
-  auto getTimestepMonitorsShim() const -> const std::list<TimestepMonitorFunc>& {
-    return getTimestepMonitors();
-  }
   auto getMonitorFrequenciesShim() const -> std::vector<int> {
     return getMonitorFrequencies();
   }
   auto getMonitorTimestepsShim() const -> std::vector<BoutReal> {
     return getMonitorTimesteps();
+  }
+  auto callTimestepMonitorsShim(BoutReal simtime, BoutReal lastdt) -> int {
+    return call_timestep_monitors(simtime, lastdt);
   }
 };
 
@@ -745,44 +745,57 @@ TEST_F(SolverTest, RemoveMonitor) {
   EXPECT_EQ(solver.getMonitorsShim(), expected);
 }
 
+namespace {
+auto timestep_monitor1(Solver*, BoutReal simtime, BoutReal lastdt) -> int {
+  return simtime * lastdt < 0. ? 1 : 0;
+}
+auto timestep_monitor2(Solver*, BoutReal simtime, BoutReal lastdt) -> int {
+  return simtime + lastdt < 0. ? 2 : 0;
+}
+} // namespace
+
 TEST_F(SolverTest, AddTimestepMonitor) {
   Options options;
+  options["monitor_timestep"] = true;
   FakeSolver solver{&options};
 
-  TimestepMonitorFunc monitor1 = [](Solver*, BoutReal simtime, BoutReal lastdt) -> int {
-    return static_cast<int>(simtime + lastdt);
-  };
-  TimestepMonitorFunc monitor2 = [](Solver*, BoutReal simtime, BoutReal lastdt) -> int {
-    return static_cast<int>(simtime * lastdt);
-  };
+  EXPECT_NO_THROW(solver.addTimestepMonitor(timestep_monitor1));
+  EXPECT_NO_THROW(solver.addTimestepMonitor(timestep_monitor2));
 
-  EXPECT_NO_THROW(solver.addTimestepMonitor(monitor1));
-  EXPECT_NO_THROW(solver.addTimestepMonitor(monitor2));
-
-  std::list<TimestepMonitorFunc> expected{monitor2, monitor1};
-
-  EXPECT_EQ(solver.getTimestepMonitorsShim(), expected);
+  EXPECT_EQ(solver.callTimestepMonitorsShim(1., 1.), 0);
+  EXPECT_EQ(solver.callTimestepMonitorsShim(1., -1.), 1);
+  EXPECT_EQ(solver.callTimestepMonitorsShim(-1., -1.), 2);
 }
 
 TEST_F(SolverTest, RemoveTimestepMonitor) {
   Options options;
+  options["monitor_timestep"] = true;
   FakeSolver solver{&options};
 
-  TimestepMonitorFunc monitor1 = [](Solver*, BoutReal simtime, BoutReal lastdt) -> int {
-    return static_cast<int>(simtime + lastdt);
-  };
-  TimestepMonitorFunc monitor2 = [](Solver*, BoutReal simtime, BoutReal lastdt) -> int {
-    return static_cast<int>(simtime * lastdt);
-  };
+  EXPECT_NO_THROW(solver.addTimestepMonitor(timestep_monitor1));
+  EXPECT_NO_THROW(solver.addTimestepMonitor(timestep_monitor2));
 
-  EXPECT_NO_THROW(solver.addTimestepMonitor(monitor1));
-  EXPECT_NO_THROW(solver.addTimestepMonitor(monitor2));
+  solver.removeTimestepMonitor(timestep_monitor1);
 
-  solver.removeTimestepMonitor(monitor1);
-  std::list<TimestepMonitorFunc> expected{monitor2};
+  EXPECT_EQ(solver.callTimestepMonitorsShim(1., 1.), 0);
+  EXPECT_EQ(solver.callTimestepMonitorsShim(1., -1.), 0);
+  EXPECT_EQ(solver.callTimestepMonitorsShim(-1., -1.), 2);
 
-  EXPECT_EQ(solver.getTimestepMonitorsShim(), expected);
+  solver.removeTimestepMonitor(timestep_monitor1);
 
-  solver.removeTimestepMonitor(monitor1);
-  EXPECT_EQ(solver.getTimestepMonitorsShim(), expected);
+  EXPECT_EQ(solver.callTimestepMonitorsShim(1., 1.), 0);
+  EXPECT_EQ(solver.callTimestepMonitorsShim(1., -1.), 0);
+  EXPECT_EQ(solver.callTimestepMonitorsShim(-1., -1.), 2);
+}
+
+TEST_F(SolverTest, DontCallTimestepMonitors) {
+  Options options;
+  FakeSolver solver{&options};
+
+  EXPECT_NO_THROW(solver.addTimestepMonitor(timestep_monitor1));
+  EXPECT_NO_THROW(solver.addTimestepMonitor(timestep_monitor2));
+
+  EXPECT_EQ(solver.callTimestepMonitorsShim(1., 1.), 0);
+  EXPECT_EQ(solver.callTimestepMonitorsShim(1., -1.), 0);
+  EXPECT_EQ(solver.callTimestepMonitorsShim(-1., -1.), 0);
 }
