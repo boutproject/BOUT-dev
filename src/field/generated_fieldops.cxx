@@ -417,7 +417,7 @@ FieldPerp operator-(const Field3D& lhs, const FieldPerp& rhs) {
 }
 
 // Provide the C++ wrapper for multiplication of Field3D and BoutReal
-Field3D operator*(const Field3D& lhs, BoutReal rhs) {
+Field3D operator*(const Field3D& lhs, const BoutReal rhs) {
 
   Field3D result{emptyFrom(lhs)};
   checkData(lhs);
@@ -430,7 +430,7 @@ Field3D operator*(const Field3D& lhs, BoutReal rhs) {
 }
 
 // Provide the C++ operator to update Field3D by multiplication with BoutReal
-Field3D& Field3D::operator*=(BoutReal rhs) {
+Field3D& Field3D::operator*=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -449,7 +449,7 @@ Field3D& Field3D::operator*=(BoutReal rhs) {
 }
 
 // Provide the C++ wrapper for division of Field3D and BoutReal
-Field3D operator/(const Field3D& lhs, BoutReal rhs) {
+Field3D operator/(const Field3D& lhs, const BoutReal rhs) {
 
   Field3D result{emptyFrom(lhs)};
   checkData(lhs);
@@ -462,7 +462,7 @@ Field3D operator/(const Field3D& lhs, BoutReal rhs) {
 }
 
 // Provide the C++ operator to update Field3D by division with BoutReal
-Field3D& Field3D::operator/=(BoutReal rhs) {
+Field3D& Field3D::operator/=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -481,7 +481,7 @@ Field3D& Field3D::operator/=(BoutReal rhs) {
 }
 
 // Provide the C++ wrapper for addition of Field3D and BoutReal
-Field3D operator+(const Field3D& lhs, BoutReal rhs) {
+Field3D operator+(const Field3D& lhs, const BoutReal rhs) {
 
   Field3D result{emptyFrom(lhs)};
   checkData(lhs);
@@ -494,7 +494,7 @@ Field3D operator+(const Field3D& lhs, BoutReal rhs) {
 }
 
 // Provide the C++ operator to update Field3D by addition with BoutReal
-Field3D& Field3D::operator+=(BoutReal rhs) {
+Field3D& Field3D::operator+=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -513,7 +513,7 @@ Field3D& Field3D::operator+=(BoutReal rhs) {
 }
 
 // Provide the C++ wrapper for subtraction of Field3D and BoutReal
-Field3D operator-(const Field3D& lhs, BoutReal rhs) {
+Field3D operator-(const Field3D& lhs, const BoutReal rhs) {
 
   Field3D result{emptyFrom(lhs)};
   checkData(lhs);
@@ -526,7 +526,7 @@ Field3D operator-(const Field3D& lhs, BoutReal rhs) {
 }
 
 // Provide the C++ operator to update Field3D by subtraction with BoutReal
-Field3D& Field3D::operator-=(BoutReal rhs) {
+Field3D& Field3D::operator-=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -853,7 +853,7 @@ FieldPerp operator-(const Field2D& lhs, const FieldPerp& rhs) {
 }
 
 // Provide the C++ wrapper for multiplication of Field2D and BoutReal
-Field2D operator*(const Field2D& lhs, BoutReal rhs) {
+Field2D operator*(const Field2D& lhs, const BoutReal rhs) {
 
   Field2D result{emptyFrom(lhs)};
   checkData(lhs);
@@ -866,7 +866,7 @@ Field2D operator*(const Field2D& lhs, BoutReal rhs) {
 }
 
 // Provide the C++ operator to update Field2D by multiplication with BoutReal
-Field2D& Field2D::operator*=(BoutReal rhs) {
+Field2D& Field2D::operator*=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -885,7 +885,7 @@ Field2D& Field2D::operator*=(BoutReal rhs) {
 }
 
 // Provide the C++ wrapper for division of Field2D and BoutReal
-Field2D operator/(const Field2D& lhs, BoutReal rhs) {
+Field2D operator/(const Field2D& lhs, const BoutReal rhs) {
 
   Field2D result{emptyFrom(lhs)};
   checkData(lhs);
@@ -898,7 +898,7 @@ Field2D operator/(const Field2D& lhs, BoutReal rhs) {
 }
 
 // Provide the C++ operator to update Field2D by division with BoutReal
-Field2D& Field2D::operator/=(BoutReal rhs) {
+Field2D& Field2D::operator/=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -917,7 +917,7 @@ Field2D& Field2D::operator/=(BoutReal rhs) {
 }
 
 // Provide the C++ wrapper for addition of Field2D and BoutReal
-Field2D operator+(const Field2D& lhs, BoutReal rhs) {
+Field2D operator+(const Field2D& lhs, const BoutReal rhs) {
 
   Field2D result{emptyFrom(lhs)};
   checkData(lhs);
@@ -930,7 +930,7 @@ Field2D operator+(const Field2D& lhs, BoutReal rhs) {
 }
 
 // Provide the C++ operator to update Field2D by addition with BoutReal
-Field2D& Field2D::operator+=(BoutReal rhs) {
+Field2D& Field2D::operator+=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -949,7 +949,7 @@ Field2D& Field2D::operator+=(BoutReal rhs) {
 }
 
 // Provide the C++ wrapper for subtraction of Field2D and BoutReal
-Field2D operator-(const Field2D& lhs, BoutReal rhs) {
+Field2D operator-(const Field2D& lhs, const BoutReal rhs) {
 
   Field2D result{emptyFrom(lhs)};
   checkData(lhs);
@@ -962,7 +962,7 @@ Field2D operator-(const Field2D& lhs, BoutReal rhs) {
 }
 
 // Provide the C++ operator to update Field2D by subtraction with BoutReal
-Field2D& Field2D::operator-=(BoutReal rhs) {
+Field2D& Field2D::operator-=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -1493,7 +1493,7 @@ FieldPerp& FieldPerp::operator-=(const FieldPerp& rhs) {
 }
 
 // Provide the C++ wrapper for multiplication of FieldPerp and BoutReal
-FieldPerp operator*(const FieldPerp& lhs, BoutReal rhs) {
+FieldPerp operator*(const FieldPerp& lhs, const BoutReal rhs) {
 
   FieldPerp result{emptyFrom(lhs)};
   checkData(lhs);
@@ -1506,7 +1506,7 @@ FieldPerp operator*(const FieldPerp& lhs, BoutReal rhs) {
 }
 
 // Provide the C++ operator to update FieldPerp by multiplication with BoutReal
-FieldPerp& FieldPerp::operator*=(BoutReal rhs) {
+FieldPerp& FieldPerp::operator*=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -1525,7 +1525,7 @@ FieldPerp& FieldPerp::operator*=(BoutReal rhs) {
 }
 
 // Provide the C++ wrapper for division of FieldPerp and BoutReal
-FieldPerp operator/(const FieldPerp& lhs, BoutReal rhs) {
+FieldPerp operator/(const FieldPerp& lhs, const BoutReal rhs) {
 
   FieldPerp result{emptyFrom(lhs)};
   checkData(lhs);
@@ -1538,7 +1538,7 @@ FieldPerp operator/(const FieldPerp& lhs, BoutReal rhs) {
 }
 
 // Provide the C++ operator to update FieldPerp by division with BoutReal
-FieldPerp& FieldPerp::operator/=(BoutReal rhs) {
+FieldPerp& FieldPerp::operator/=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -1557,7 +1557,7 @@ FieldPerp& FieldPerp::operator/=(BoutReal rhs) {
 }
 
 // Provide the C++ wrapper for addition of FieldPerp and BoutReal
-FieldPerp operator+(const FieldPerp& lhs, BoutReal rhs) {
+FieldPerp operator+(const FieldPerp& lhs, const BoutReal rhs) {
 
   FieldPerp result{emptyFrom(lhs)};
   checkData(lhs);
@@ -1570,7 +1570,7 @@ FieldPerp operator+(const FieldPerp& lhs, BoutReal rhs) {
 }
 
 // Provide the C++ operator to update FieldPerp by addition with BoutReal
-FieldPerp& FieldPerp::operator+=(BoutReal rhs) {
+FieldPerp& FieldPerp::operator+=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -1589,7 +1589,7 @@ FieldPerp& FieldPerp::operator+=(BoutReal rhs) {
 }
 
 // Provide the C++ wrapper for subtraction of FieldPerp and BoutReal
-FieldPerp operator-(const FieldPerp& lhs, BoutReal rhs) {
+FieldPerp operator-(const FieldPerp& lhs, const BoutReal rhs) {
 
   FieldPerp result{emptyFrom(lhs)};
   checkData(lhs);
@@ -1602,7 +1602,7 @@ FieldPerp operator-(const FieldPerp& lhs, BoutReal rhs) {
 }
 
 // Provide the C++ operator to update FieldPerp by subtraction with BoutReal
-FieldPerp& FieldPerp::operator-=(BoutReal rhs) {
+FieldPerp& FieldPerp::operator-=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -1621,7 +1621,7 @@ FieldPerp& FieldPerp::operator-=(BoutReal rhs) {
 }
 
 // Provide the C++ wrapper for multiplication of BoutReal and Field3D
-Field3D operator*(BoutReal lhs, const Field3D& rhs) {
+Field3D operator*(const BoutReal lhs, const Field3D& rhs) {
 
   Field3D result{emptyFrom(rhs)};
   checkData(lhs);
@@ -1634,7 +1634,7 @@ Field3D operator*(BoutReal lhs, const Field3D& rhs) {
 }
 
 // Provide the C++ wrapper for division of BoutReal and Field3D
-Field3D operator/(BoutReal lhs, const Field3D& rhs) {
+Field3D operator/(const BoutReal lhs, const Field3D& rhs) {
 
   Field3D result{emptyFrom(rhs)};
   checkData(lhs);
@@ -1647,7 +1647,7 @@ Field3D operator/(BoutReal lhs, const Field3D& rhs) {
 }
 
 // Provide the C++ wrapper for addition of BoutReal and Field3D
-Field3D operator+(BoutReal lhs, const Field3D& rhs) {
+Field3D operator+(const BoutReal lhs, const Field3D& rhs) {
 
   Field3D result{emptyFrom(rhs)};
   checkData(lhs);
@@ -1660,7 +1660,7 @@ Field3D operator+(BoutReal lhs, const Field3D& rhs) {
 }
 
 // Provide the C++ wrapper for subtraction of BoutReal and Field3D
-Field3D operator-(BoutReal lhs, const Field3D& rhs) {
+Field3D operator-(const BoutReal lhs, const Field3D& rhs) {
 
   Field3D result{emptyFrom(rhs)};
   checkData(lhs);
@@ -1673,7 +1673,7 @@ Field3D operator-(BoutReal lhs, const Field3D& rhs) {
 }
 
 // Provide the C++ wrapper for multiplication of BoutReal and Field2D
-Field2D operator*(BoutReal lhs, const Field2D& rhs) {
+Field2D operator*(const BoutReal lhs, const Field2D& rhs) {
 
   Field2D result{emptyFrom(rhs)};
   checkData(lhs);
@@ -1686,7 +1686,7 @@ Field2D operator*(BoutReal lhs, const Field2D& rhs) {
 }
 
 // Provide the C++ wrapper for division of BoutReal and Field2D
-Field2D operator/(BoutReal lhs, const Field2D& rhs) {
+Field2D operator/(const BoutReal lhs, const Field2D& rhs) {
 
   Field2D result{emptyFrom(rhs)};
   checkData(lhs);
@@ -1699,7 +1699,7 @@ Field2D operator/(BoutReal lhs, const Field2D& rhs) {
 }
 
 // Provide the C++ wrapper for addition of BoutReal and Field2D
-Field2D operator+(BoutReal lhs, const Field2D& rhs) {
+Field2D operator+(const BoutReal lhs, const Field2D& rhs) {
 
   Field2D result{emptyFrom(rhs)};
   checkData(lhs);
@@ -1712,7 +1712,7 @@ Field2D operator+(BoutReal lhs, const Field2D& rhs) {
 }
 
 // Provide the C++ wrapper for subtraction of BoutReal and Field2D
-Field2D operator-(BoutReal lhs, const Field2D& rhs) {
+Field2D operator-(const BoutReal lhs, const Field2D& rhs) {
 
   Field2D result{emptyFrom(rhs)};
   checkData(lhs);
@@ -1725,7 +1725,7 @@ Field2D operator-(BoutReal lhs, const Field2D& rhs) {
 }
 
 // Provide the C++ wrapper for multiplication of BoutReal and FieldPerp
-FieldPerp operator*(BoutReal lhs, const FieldPerp& rhs) {
+FieldPerp operator*(const BoutReal lhs, const FieldPerp& rhs) {
 
   FieldPerp result{emptyFrom(rhs)};
   checkData(lhs);
@@ -1738,7 +1738,7 @@ FieldPerp operator*(BoutReal lhs, const FieldPerp& rhs) {
 }
 
 // Provide the C++ wrapper for division of BoutReal and FieldPerp
-FieldPerp operator/(BoutReal lhs, const FieldPerp& rhs) {
+FieldPerp operator/(const BoutReal lhs, const FieldPerp& rhs) {
 
   FieldPerp result{emptyFrom(rhs)};
   checkData(lhs);
@@ -1751,7 +1751,7 @@ FieldPerp operator/(BoutReal lhs, const FieldPerp& rhs) {
 }
 
 // Provide the C++ wrapper for addition of BoutReal and FieldPerp
-FieldPerp operator+(BoutReal lhs, const FieldPerp& rhs) {
+FieldPerp operator+(const BoutReal lhs, const FieldPerp& rhs) {
 
   FieldPerp result{emptyFrom(rhs)};
   checkData(lhs);
@@ -1764,7 +1764,7 @@ FieldPerp operator+(BoutReal lhs, const FieldPerp& rhs) {
 }
 
 // Provide the C++ wrapper for subtraction of BoutReal and FieldPerp
-FieldPerp operator-(BoutReal lhs, const FieldPerp& rhs) {
+FieldPerp operator-(const BoutReal lhs, const FieldPerp& rhs) {
 
   FieldPerp result{emptyFrom(rhs)};
   checkData(lhs);

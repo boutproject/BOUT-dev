@@ -106,8 +106,7 @@ class Field(object):
         in which case just returns "Type name"
 
         """
-        return "{maybe_const}{self.field_type}{ref} {self.name}".format(
-            maybe_const="const " if self.field_type != "BoutReal" else "",
+        return "{self.field_type}{ref} {self.name}".format(
             self=self, ref="&" if self.field_type != "BoutReal" else "")
 
     @property
