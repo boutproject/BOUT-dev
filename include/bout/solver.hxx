@@ -198,15 +198,27 @@ public:
   /// A type to set where in the list monitors are added
   enum MonitorPosition { BACK, FRONT };
 
-  /// Add a monitor to be called every output
-  void addMonitor(Monitor* f, MonitorPosition pos = FRONT);
+  /// Add a \p monitor to be called regularly
+  ///
+  /// The frequency at which the \p monitor is called is set by
+  /// `Monitor::timestep`. By default this is every output
+  /// timestep. When a new Monitor with a smaller timestep is added,
+  /// the solver attemps to adjust its internal timestep to match, as
+  /// well as adjusting the timesteps of the current set of Monitors
+  /// to be multiples of the new timestep. If this is not possible,
+  /// `addMonitor` will throw an exception.
+  ///
+  /// Adding new Monitors after the Solver has been initialised is
+  /// only possible if their timestep is a multiple of the Solver's
+  /// timestep. Smaller timesteps will throw an exception.
+  void addMonitor(Monitor* monitor, MonitorPosition pos = FRONT);
   /// Remove a monitor function previously added
-  void removeMonitor(Monitor* f);
+  void removeMonitor(Monitor* monitor);
 
   /// Add a monitor function to be called every timestep
-  void addTimestepMonitor(TimestepMonitorFunc f);
+  void addTimestepMonitor(TimestepMonitorFunc monitor);
   /// Remove a previously added timestep monitor
-  void removeTimestepMonitor(TimestepMonitorFunc f);
+  void removeTimestepMonitor(TimestepMonitorFunc monitor);
 
   /////////////////////////////////////////////
   // Routines to add variables. Solvers can just call these
@@ -410,7 +422,7 @@ protected:
   auto getMonitorFrequencies() const -> std::vector<int> {
     std::vector<int> frequencies{};
     std::transform(begin(monitors), end(monitors), back_inserter(frequencies),
-                   [](const Monitor* monitor) { return monitor->freq; });
+                   [](const Monitor* monitor) { return monitor->frequency; });
     return frequencies;
   }
   /// Get a list of the physical timesteps of monitors
@@ -429,7 +441,7 @@ private:
   /// Number of calls to the implicit (diffusive) RHS function
   int rhs_ncalls_i{0};
   /// Default sampling rate at which to call monitors - same as output to screen
-  int freqDefault{1};
+  int default_monitor_frequency{1};
   /// timestep - shouldn't be changed after init is called.
   BoutReal timestep{-1};
   /// Physics model being evolved

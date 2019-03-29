@@ -457,30 +457,30 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
       throw BoutException("A monitor requested a timestep not compatible with the output_step!");
     }
     if (timestep < TIMESTEP*1.5){
-      freqDefault=TIMESTEP/timestep+.5;
-      NOUT*=freqDefault;
+      default_monitor_frequency=TIMESTEP/timestep+.5;
+      NOUT*=default_monitor_frequency;
       TIMESTEP=timestep;
     } else {
-      freqDefault = 1;
+      default_monitor_frequency = 1;
       // update old monitors
       int fac=timestep/TIMESTEP+.5;
       for (const auto &i: monitors){
-        i->freq=i->freq*fac;
+        i->frequency=i->frequency*fac;
       }
     }
   }
   for (const auto &i: monitors){
     if (i->timestep < 0){
-      i->timestep=timestep*freqDefault;
-      i->freq=freqDefault;
+      i->timestep=timestep*default_monitor_frequency;
+      i->frequency=default_monitor_frequency;
     }
   }
 
 
   output_progress.write(_("Solver running for %d outputs with output timestep of %e\n"), NOUT, TIMESTEP);
-  if (freqDefault > 1)
+  if (default_monitor_frequency > 1)
     output_progress.write(_("Solver running for %d outputs with monitor timestep of %e\n"),
-                          NOUT/freqDefault, TIMESTEP*freqDefault);
+                          NOUT/default_monitor_frequency, TIMESTEP*default_monitor_frequency);
   
   // Initialise
   if (init(NOUT, TIMESTEP)) {
@@ -594,7 +594,7 @@ BoutReal Solver::adjustMonitorFrequencies(Monitor* new_monitor) {
 
   if (new_monitor->timestep < 0) {
     // The timestep will get adjusted when we call solve
-    new_monitor->freq = freqDefault;
+    new_monitor->frequency = default_monitor_frequency;
     return timestep;
   }
 
@@ -610,7 +610,7 @@ BoutReal Solver::adjustMonitorFrequencies(Monitor* new_monitor) {
 
   if (new_monitor->timestep > timestep * 1.5) {
     // Monitor has a larger timestep
-    new_monitor->freq = (new_monitor->timestep / timestep) + .5;
+    new_monitor->frequency = (new_monitor->timestep / timestep) + .5;
     return timestep;
   }
 
@@ -626,12 +626,12 @@ BoutReal Solver::adjustMonitorFrequencies(Monitor* new_monitor) {
   // This is the relative increase in timestep
   const int multiplier = timestep / new_monitor->timestep + .5;
   for (const auto& monitor : monitors) {
-    monitor->freq *= multiplier;
+    monitor->frequency *= multiplier;
   }
 
   // Update default_monitor_frequency so that monitors with no
   // timestep are called at the output frequency
-  freqDefault *= multiplier;
+  default_monitor_frequency *= multiplier;
 
   // This monitor is now the fastest monitor
   return new_monitor->timestep;
@@ -670,9 +670,9 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
   try {
     // Call monitors
     for (const auto &it : monitors){
-      if ((iter % it->freq)==0){
+      if ((iter % it->frequency)==0){
         // Call each monitor one by one
-        int ret = it->call(this, simtime,iter/it->freq-1, NOUT/it->freq);
+        int ret = it->call(this, simtime,iter/it->frequency-1, NOUT/it->frequency);
         if(ret)
           throw BoutException(_("Monitor signalled to quit"));
       }
