@@ -60,6 +60,12 @@ public:
   auto getTimestepMonitorsShim() const -> const std::list<TimestepMonitorFunc>& {
     return getTimestepMonitors();
   }
+  auto getMonitorFrequenciesShim() const -> std::vector<int> {
+    return getMonitorFrequencies();
+  }
+  auto getMonitorTimestepsShim() const -> std::vector<BoutReal> {
+    return getMonitorTimesteps();
+  }
 };
 
 RegisterSolver<FakeSolver> register_fake("fake_solver");
@@ -686,6 +692,40 @@ TEST_F(SolverTest, AddMonitorBack) {
   EXPECT_EQ(solver.getMonitorsShim(), expected);
 }
 
+TEST_F(SolverTest, AddMonitorCheckFrequencies) {
+  Options options;
+  FakeSolver solver{&options};
+
+  FakeMonitor default_timestep;
+  FakeMonitor smaller_timestep{0.01};
+  FakeMonitor larger_timestep{2.};
+  FakeMonitor incompatible_timestep{3.14259};
+
+  EXPECT_NO_THROW(solver.addMonitor(&default_timestep));
+  EXPECT_NO_THROW(solver.addMonitor(&smaller_timestep));
+  EXPECT_NO_THROW(solver.addMonitor(&larger_timestep));
+  EXPECT_THROW(solver.addMonitor(&incompatible_timestep), BoutException);
+
+  std::vector<int> expected_frequencies{200, 1, 1};
+  std::vector<BoutReal> expected_timesteps{2., 0.01, -1};
+
+  EXPECT_EQ(solver.getMonitorFrequenciesShim(), expected_frequencies);
+  EXPECT_EQ(solver.getMonitorTimestepsShim(), expected_timesteps);
+
+  solver.init(0, 0);
+
+  FakeMonitor too_small_postinit_timestep{0.001};
+  EXPECT_THROW(solver.addMonitor(&too_small_postinit_timestep), BoutException);
+  FakeMonitor larger_postinit_timestep{4.};
+  EXPECT_NO_THROW(solver.addMonitor(&larger_postinit_timestep, Solver::BACK));
+
+  expected_frequencies.push_back(400);
+  expected_timesteps.push_back(4.);
+
+  EXPECT_EQ(solver.getMonitorFrequenciesShim(), expected_frequencies);
+  EXPECT_EQ(solver.getMonitorTimestepsShim(), expected_timesteps);
+}
+
 TEST_F(SolverTest, RemoveMonitor) {
   Options options;
   FakeSolver solver{&options};
@@ -710,9 +750,11 @@ TEST_F(SolverTest, AddTimestepMonitor) {
   FakeSolver solver{&options};
 
   TimestepMonitorFunc monitor1 = [](Solver*, BoutReal simtime, BoutReal lastdt) -> int {
-                                  return static_cast<int>(simtime + lastdt);};
+    return static_cast<int>(simtime + lastdt);
+  };
   TimestepMonitorFunc monitor2 = [](Solver*, BoutReal simtime, BoutReal lastdt) -> int {
-                                  return static_cast<int>(simtime * lastdt);};
+    return static_cast<int>(simtime * lastdt);
+  };
 
   EXPECT_NO_THROW(solver.addTimestepMonitor(monitor1));
   EXPECT_NO_THROW(solver.addTimestepMonitor(monitor2));
@@ -727,9 +769,11 @@ TEST_F(SolverTest, RemoveTimestepMonitor) {
   FakeSolver solver{&options};
 
   TimestepMonitorFunc monitor1 = [](Solver*, BoutReal simtime, BoutReal lastdt) -> int {
-                                  return static_cast<int>(simtime + lastdt);};
+    return static_cast<int>(simtime + lastdt);
+  };
   TimestepMonitorFunc monitor2 = [](Solver*, BoutReal simtime, BoutReal lastdt) -> int {
-                                  return static_cast<int>(simtime * lastdt);};
+    return static_cast<int>(simtime * lastdt);
+  };
 
   EXPECT_NO_THROW(solver.addTimestepMonitor(monitor1));
   EXPECT_NO_THROW(solver.addTimestepMonitor(monitor2));
@@ -742,4 +786,3 @@ TEST_F(SolverTest, RemoveTimestepMonitor) {
   solver.removeTimestepMonitor(monitor1);
   EXPECT_EQ(solver.getTimestepMonitorsShim(), expected);
 }
-

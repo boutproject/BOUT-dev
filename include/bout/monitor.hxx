@@ -66,10 +66,12 @@ protected:
   }
 
 private:
-  bool is_added = false; ///< Set to true when Monitor is added to a Solver
-  BoutReal timestep;
-  int freq;
-
+  /// Set to true when Monitor is added to a Solver
+  bool is_added{false};
+  /// The desired physical timestep
+  BoutReal timestep{-1};
+  /// How often this monitor should be called, in internal Solver steps
+  int freq{1};
 };
 
 struct RunMetrics {

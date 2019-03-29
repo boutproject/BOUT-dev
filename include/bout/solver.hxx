@@ -406,6 +406,20 @@ protected:
   auto getTimestepMonitors() const -> const std::list<TimestepMonitorFunc>& {
     return timestep_monitors;
   }
+  /// Get a list of the iteration frequencies of monitors
+  auto getMonitorFrequencies() const -> std::vector<int> {
+    std::vector<int> frequencies{};
+    std::transform(begin(monitors), end(monitors), back_inserter(frequencies),
+                   [](const Monitor* monitor) { return monitor->freq; });
+    return frequencies;
+  }
+  /// Get a list of the physical timesteps of monitors
+  auto getMonitorTimesteps() const -> std::vector<BoutReal> {
+    std::vector<BoutReal> timesteps{};
+    std::transform(begin(monitors), end(monitors), back_inserter(timesteps),
+                   [](const Monitor* monitor) { return monitor->timestep; });
+    return timesteps;
+  }
 
 private:
   /// Number of calls to the RHS function
@@ -457,6 +471,10 @@ private:
 
   /// Check if a variable has already been added
   bool varAdded(const std::string& name);
+
+  /// (Possibly) adjust the frequencies of \p monitor, and the
+  /// `monitors` timesteps, returning the new Solver timestep
+  BoutReal adjustMonitorFrequencies(Monitor* monitor);
 };
 
 #endif // __SOLVER_H__

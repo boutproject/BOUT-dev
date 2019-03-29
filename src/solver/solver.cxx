@@ -590,43 +590,64 @@ void Solver::outputVars(Datafile &outputfile, bool save_repeat) {
 
 /////////////////////////////////////////////////////
 
-/// Method to add a Monitor to the Solver
-/// Note that behaviour changes if init() is called,
-/// as the timestep cannot be changed afterwards
-void Solver::addMonitor(Monitor * mon, MonitorPosition pos) {
-  if (mon->timestep > 0){ // not default
-    if (!initialised && timestep < 0) {
-      timestep = mon->timestep;
-    }
-    if (!isMultiple(timestep,mon->timestep))
-      throw BoutException(_("Couldn't add Monitor: %g is not a multiple of %g!")
-                          ,timestep,mon->timestep);
-    if (mon->timestep > timestep*1.5){
-      mon->freq=(mon->timestep/timestep)+.5;
-    } else { // mon.timestep is truly smaller
-      if (initialised)
-        throw BoutException(_("Solver::addMonitor: Cannot reduce timestep \
-(from %g to %g) after init is called!")
-                            ,timestep,mon->timestep);
-      int multi = timestep/mon->timestep+.5;
-      timestep=mon->timestep;
-      for (const auto &i: monitors){
-        i->freq=i->freq*multi;
-      }
-      // update freqDefault so that monitors with no timestep are called at the
-      // output frequency
-      freqDefault *= multi;
+BoutReal Solver::adjustMonitorFrequencies(Monitor* new_monitor) {
 
-      mon->freq=1;
-    }
-  } else {
-    mon->freq = freqDefault;
+  if (new_monitor->timestep < 0) {
+    // The timestep will get adjusted when we call solve
+    new_monitor->freq = freqDefault;
+    return timestep;
   }
-  mon->is_added = true; // Records that monitor has been added to solver so timestep should not be updated
-  if(pos == Solver::FRONT) {
-    monitors.push_front(mon);
-  }else
-    monitors.push_back(mon);
+
+  if (!initialised && timestep < 0) {
+    // This is the first monitor to be added
+    return new_monitor->timestep;
+  }
+
+  if (!isMultiple(timestep, new_monitor->timestep)) {
+    throw BoutException(_("Couldn't add Monitor: %g is not a multiple of %g!"), timestep,
+                        new_monitor->timestep);
+  }
+
+  if (new_monitor->timestep > timestep * 1.5) {
+    // Monitor has a larger timestep
+    new_monitor->freq = (new_monitor->timestep / timestep) + .5;
+    return timestep;
+  }
+
+  // Monitor timestep is smaller, so we need to adjust our timestep,
+  // along with that of all of the other monitors
+
+  if (initialised) {
+    throw BoutException(_("Solver::addMonitor: Cannot reduce timestep (from %g to %g) "
+                          "after init is called!"),
+                        timestep, new_monitor->timestep);
+  }
+
+  // This is the relative increase in timestep
+  const int multiplier = timestep / new_monitor->timestep + .5;
+  for (const auto& monitor : monitors) {
+    monitor->freq *= multiplier;
+  }
+
+  // Update default_monitor_frequency so that monitors with no
+  // timestep are called at the output frequency
+  freqDefault *= multiplier;
+
+  // This monitor is now the fastest monitor
+  return new_monitor->timestep;
+}
+
+void Solver::addMonitor(Monitor* monitor, MonitorPosition pos) {
+
+  timestep = adjustMonitorFrequencies(monitor);
+
+  monitor->is_added = true;
+
+  if (pos == Solver::FRONT) {
+    monitors.push_front(monitor);
+  } else {
+    monitors.push_back(monitor);
+  }
 }
 
 void Solver::removeMonitor(Monitor * f) {
