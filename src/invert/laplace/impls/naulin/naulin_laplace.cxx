@@ -4,11 +4,14 @@
  * \brief Iterative solver to handle non-constant-in-z coefficients
  *
  * Scheme suggested by Volker Naulin: solve
- * Delp2(phi[i+1]) + DC(A/D)*phi[i+1] = rhs(phi[i]) + DC(A/D)*phi[i]
+ * Delp2(phi[i+1]) + 1/DC(C1*D)*Grad_perp(DC(C2))*Grad_perp(phi[i+1]) + DC(A/D)*phi[i+1]
+ *   = rhs(phi[i]) + 1/DC(C1*D)*Grad_perp(DC(C2))*Grad_perp(phi[i]) + DC(A/D)*phi[i]
  * using standard FFT-based solver, iterating to include other terms by
  * evaluating them on rhs using phi from previous iteration.
- * DC part (i.e. Field2D part) of A/D is kept in the FFT inversion so that all
- * Neumann boundary conditions can be used at least when DC(A/D)!=0.
+ * DC part (i.e. Field2D part) of C1*D, C2 and A/D is kept in the FFT inversion
+ * to improve convergence by including as much as possible in the direct solve
+ * and so that all Neumann boundary conditions can be used at least when
+ * DC(A/D)!=0.
  *
  * CHANGELOG
  * =========
@@ -65,7 +68,9 @@
  *      1. Get the vorticity from
  *         \code{.cpp}
  *         vort = (vortD/n) - grad_perp(ln_n)*grad_perp(phiCur)
- *         [Delp2(phiNext) + DC(A/D)*phiNext = b(phiCur) = (rhs/D) - 1/C1*grad_perp(C2)*grad_perp(phiCur) - (A/D - DC(A/D))*phiCur]
+ *         [Delp2(phiNext) + 1/DC(C2*D)*grad_perp(DC(C2))*grad_perp(phiNext) + DC(A/D)*phiNext
+ *          = b(phiCur)
+ *          = (rhs/D) - (1/C1/D*grad_perp(C2)*grad_perp(phiCur) - 1/DC(C2*D)*grad_perp(DC(C2))*grad_perp(phiNext)) - (A/D - DC(A/D))*phiCur]
  *         \endcode
  *         where phiCur is phi of the current iteration
  *         [and DC(f) is the constant-in-z component of f]
@@ -73,14 +78,17 @@
  *         \code{.cpp}
  *         phiNext = invert_laplace_perp(vort)
  *         [set Acoef of laplace_perp solver to DC(A/D)
- *         phiNext = invert_laplace_perp(b)]
+ *          and C1coef of laplace_perp solver to DC(C1*D)
+ *          and C2coef of laplace_perp solver to DC(C2)
+ *          then phiNext = invert_laplace_perp(b)]
  *         \endcode
  *         where phiNext is the newly obtained \f$phi\f$
  *      3. Calculate the error at phi=phiNext
  *         \code{.cpp}
  *         error3D = Delp2(phiNext) + 1/C1*grad_perp(C2)*grad_perp(phiNext) + A/D*phiNext - rhs/D
  *                 = b(phiCur) - b(phiNext)
- *         as b(phiCur) = Delp2(phiNext) + DC(A/D)*phiNext up to rounding errors
+ *         as b(phiCur) = Delp2(phiNext) + 1/DC(C2*D)*grad_perp(DC(C2))*grad_perp(phiNext) + DC(A/D)*phiNext
+ *         up to rounding errors
  *         \endcode
  *      4. Calculate the infinity norms of the error
  *         \code{.cpp}
