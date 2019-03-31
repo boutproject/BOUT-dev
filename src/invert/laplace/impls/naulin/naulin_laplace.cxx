@@ -154,11 +154,10 @@ LaplaceNaulin::LaplaceNaulin(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
   delp2solver->setInnerBoundaryFlags(inner_boundary_flags);
   delp2solver->setOuterBoundaryFlags(outer_boundary_flags);
 
-  static bool first = true;
-  if (first) {
-    SAVE_REPEAT(naulinsolver_mean_its);
-    first = false;
-  }
+  static int naulinsolver_count = 1;
+  bout::globals::dump.addRepeat(naulinsolver_mean_its,
+      "naulinsolver"+std::to_string(naulinsolver_count)+"_mean_its");
+  naulinsolver_count++;
 }
 
 LaplaceNaulin::~LaplaceNaulin() {
