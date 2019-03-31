@@ -1,19 +1,28 @@
 #include "bout/sys/timer.hxx"
 
 Timer::Timer() : timing(getInfo("")) {
-  timing.started = clock_type::now();
-  timing.running = true;
+  if (timing.counter == 0) {
+    timing.started = clock_type::now();
+    timing.running = true;
+  }
+  timing.counter += 1;
 }
 
 Timer::Timer(const std::string& label) : timing(getInfo(label)) {
-  timing.started = clock_type::now();
-  timing.running = true;
+  if (timing.counter == 0) {
+    timing.started = clock_type::now();
+    timing.running = true;
+  }
+  timing.counter += 1;
 }
 
 Timer::~Timer() {
-  auto finished = clock_type::now();
-  timing.running = false;
-  timing.time += finished - timing.started;
+  timing.counter -= 1;
+  if (timing.counter == 0) {
+    auto finished = clock_type::now();
+    timing.running = false;
+    timing.time += finished - timing.started;
+  }
 }
 
 void Timer::cleanup() { info.clear(); }

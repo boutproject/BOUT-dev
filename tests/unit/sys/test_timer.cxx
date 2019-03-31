@@ -60,6 +60,26 @@ TEST(TimerTest, GetTimeLabelOutOfScope) {
               bout::testing::TimerTolerance);
 }
 
+TEST(TimerTest, GetTimeLabelSubScope) {
+  auto start = Timer::clock_type::now();
+
+  Timer timer{"GetTimeLabelSubScope test"};
+
+  {
+    Timer timer{"GetTimeLabelSubScope test"};
+
+    std::this_thread::sleep_for(bout::testing::sleep_length);
+  }
+
+  std::this_thread::sleep_for(bout::testing::sleep_length);
+
+  auto end = Timer::clock_type::now();
+  Timer::seconds elapsed = end - start;
+
+  EXPECT_NEAR(Timer::getTime("GetTimeLabelSubScope test"), elapsed.count(),
+              bout::testing::TimerTolerance);
+}
+
 TEST(TimerTest, GetTimeLabelRepeat) {
   auto start = Timer::clock_type::now();
 
