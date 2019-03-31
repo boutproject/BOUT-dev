@@ -64,6 +64,13 @@
  * &=& rhs/D - \frac{1}{D\,C1} \nabla_\perp C2\cdot\nabla_\perp \phi - (\frac{A}{D} - <\frac{A}{D}>)*\phi
  * \f}
  *
+ * The iteration can be under-relaxed to help it converge. Amount of under-relaxation is
+ * set by the parameter 'underrelax_factor'. 0<underrelax_factor<=1, with
+ * underrelax_factor=1 corresponding to no under-relaxation. The amount of
+ * under-relaxation is temporarily increased if the iteration starts diverging, the
+ * starting value uof underrelax_factor can be set with the initial_underrelax_factor
+ * option.
+ *
  * The iteration now works as follows:
  *      1. Get the vorticity from
  *         \code{.cpp}
@@ -80,7 +87,9 @@
  *         [set Acoef of laplace_perp solver to DC(A/D)
  *          and C1coef of laplace_perp solver to DC(C1*D)
  *          and C2coef of laplace_perp solver to DC(C2)
- *          then phiNext = invert_laplace_perp(b)]
+ *          then phiNext = invert_laplace_perp(underrelax_factor*b(phiCur) - (1-underrelax_factor)*b(phiPrev))]
+ *          where b(phiPrev) is the previous rhs value, which (up to rounding errors) is
+ *          the same as the lhs of the direct solver applied to phiCur.
  *         \endcode
  *         where phiNext is the newly obtained \f$phi\f$
  *      3. Calculate the error at phi=phiNext
@@ -105,12 +114,22 @@
  *                ERelLInf > rtol
  *                \endcode
  *              * If yes
- *                  * Set
- *                    \code{.cpp}
- *                    phiCur = phiNext
- *                    \endcode
- *                    increase curCount and start from step 1
- *                  * If number of iteration is above maxit, throw exception
+ *                  * Check whether
+ *                  \code{.cpp}
+ *                  EAbsLInf > EAbsLInf(previous step)
+ *                  \endcode
+ *                    * If yes
+ *                      \code{.cpp}
+ *                      underrelax_factor *= 0.9
+ *                      \endcode
+ *                      Restart iteration
+ *                    * If no
+ *                      * Set
+ *                        \code{.cpp}
+ *                        phiCur = phiNext
+ *                        \endcode
+ *                        increase curCount and start from step 1
+ *                      * If number of iteration is above maxit, throw exception
  *              * If no
  *                  * Stop: Function returns phiNext
  *          * if no
@@ -143,6 +162,8 @@ LaplaceNaulin::LaplaceNaulin(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
   OPTION(opt, rtol, 1.e-7);
   OPTION(opt, atol, 1.e-20);
   OPTION(opt, maxits, 100);
+  OPTION(opt, initial_underrelax_factor, 1.);
+  ASSERT0(initial_underrelax_factor > 0. and initial_underrelax_factor <= 1.);
   delp2solver = create(opt->getSection("delp2solver"), location, localmesh);
   std::string delp2type;
   opt->getSection("delp2solver")->get("type", delp2type, "cyclic");
@@ -157,6 +178,8 @@ LaplaceNaulin::LaplaceNaulin(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
   static int naulinsolver_count = 1;
   bout::globals::dump.addRepeat(naulinsolver_mean_its,
       "naulinsolver"+std::to_string(naulinsolver_count)+"_mean_its");
+  bout::globals::dump.addRepeat(naulinsolver_mean_underrelax_counts,
+      "naulinsolver"+std::to_string(naulinsolver_count)+"_mean_underrelax_counts");
   naulinsolver_count++;
 }
 
@@ -218,8 +241,10 @@ const Field3D LaplaceNaulin::solve(const Field3D &rhs, const Field3D &x0) {
   // Use this below to normalize error for relative error estimate
   BoutReal RMS_rhsOverD = sqrt(mean(SQ(rhsOverD), true, RGN_NOBNDRY)); // use sqrt(mean(SQ)) to make sure we do not divide by zero at a point
 
-  BoutReal error_rel = 1e20, error_abs=1e20;
+  BoutReal error_rel = 1e20, error_abs=1e20, last_error=error_abs;
   int count = 0;
+  int underrelax_count = 0;
+  BoutReal underrelax_factor = initial_underrelax_factor;
 
   // Initial values for derivatives of x
   Field3D ddx_x = DDX(x, location, DIFF_C2);
@@ -241,13 +266,33 @@ const Field3D LaplaceNaulin::solve(const Field3D &rhs, const Field3D &x0) {
     // Use here to calculate an error, can also use for the next iteration
     ddx_x = DDX(x, location, DIFF_C2); // can be used also for the next iteration
     ddz_x = DDZ(x, location, DIFF_FFT);
-    Field3D bnew = rhsOverD - (coords->g11*coef_x_AC*ddx_x + coords->g33*coef_z*ddz_x + coords->g13*(coef_x_AC*ddz_x + coef_z*ddx_x)) - AOverD_AC*x;
+
+    Field3D bnew = rhsOverD
+                   - (coords->g11*coef_x_AC*ddx_x + coords->g33*coef_z*ddz_x
+                      + coords->g13*(coef_x_AC*ddz_x + coef_z*ddx_x))
+                   - AOverD_AC*x;
 
     Field3D error3D = b - bnew;
     error_abs = max(abs(error3D, RGN_NOBNDRY), true, RGN_NOBNDRY);
     error_rel = error_abs / RMS_rhsOverD;
 
-    b = bnew;
+    b = underrelax_factor*bnew + (1. - underrelax_factor)*b;
+
+    if (error_abs > last_error) {
+      // Iteration seems to be diverging... try underrelaxing and restart
+      underrelax_factor *= .9;
+      underrelax_count++;
+
+      // Set x back to initial guess to restart iteration
+      x = x0;
+      ddx_x = DDX(x, location, DIFF_C2);
+      ddz_x = DDZ(x, location, DIFF_FFT);
+      b = rhsOverD - (coords->g11*coef_x_AC*ddx_x + coords->g33*coef_z*ddz_x + coords->g13*(coef_x_AC*ddz_x + coef_z*ddx_x)) - AOverD_AC*x;
+
+      last_error = 1.e20;
+    } else {
+      last_error = error_abs;
+    }
 
     count++;
     if (count>maxits)
@@ -255,7 +300,10 @@ const Field3D LaplaceNaulin::solve(const Field3D &rhs, const Field3D &x0) {
   }
 
   ncalls++;
-  naulinsolver_mean_its = (naulinsolver_mean_its*BoutReal(ncalls-1) + BoutReal(count))/BoutReal(ncalls);
+  naulinsolver_mean_its = (naulinsolver_mean_its * BoutReal(ncalls-1)
+                           + BoutReal(count))/BoutReal(ncalls);
+  naulinsolver_mean_underrelax_counts = (naulinsolver_mean_underrelax_counts * BoutReal(ncalls - 1)
+                                         + BoutReal(underrelax_count)) / BoutReal(ncalls);
 
   return x;
 }

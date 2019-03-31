@@ -123,12 +123,31 @@ private:
   LaplaceNaulin(const LaplaceNaulin&);
   LaplaceNaulin& operator=(const LaplaceNaulin&);
   Field3D Acoef, C1coef, C2coef, Dcoef;
+
+  /// Laplacian solver used to solve the equation with constant-in-z coefficients
   Laplacian* delp2solver;
+
+  /// Solver tolerances
   BoutReal rtol, atol;
+
+  /// Maximum number of iterations
   int maxits;
+
+  /// Initial choice for under-relaxation factor, should be greater than 0 and
+  /// less than or equal to 1. Value of 1 means no underrelaxation
+  BoutReal initial_underrelax_factor{1.};
+
+  /// Mean number of iterations taken by the solver
   BoutReal naulinsolver_mean_its;
+
+  /// Mean number of times the underrelaxation factor is reduced
+  BoutReal naulinsolver_mean_underrelax_counts{0.};
+
+  /// Counter for the number of times the solver has been called
   int ncalls;
 
+  /// Copy the boundary guard cells from the input 'initial guess' x0 into x.
+  /// These may be used to set non-zero-value boundary conditions
   void copy_x_boundaries(Field3D &x, const Field3D &x0, Mesh *mesh);
 };
 
