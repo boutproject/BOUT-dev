@@ -8,8 +8,8 @@
 namespace bout {
 namespace testing {
 using ms = std::chrono::duration<double, std::chrono::milliseconds::period>;
-constexpr double TimerTolerance{1e-3};
-constexpr auto sleep_length = ms(0.5);
+constexpr double TimerTolerance{0.5e-3};
+constexpr auto sleep_length = ms(1.);
 } // namespace testing
 } // namespace bout
 
