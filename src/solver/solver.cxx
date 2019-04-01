@@ -452,35 +452,35 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
   }
 
   /// syncronize timestep with those set to the monitors
-  if (timestep > 0){
-    if (!isMultiple(timestep,TIMESTEP)){
+  if (internal_timestep > 0){
+    if (!isMultiple(internal_timestep,TIMESTEP)){
       throw BoutException("A monitor requested a timestep not compatible with the output_step!");
     }
-    if (timestep < TIMESTEP*1.5){
-      default_monitor_frequency=TIMESTEP/timestep+.5;
-      NOUT*=default_monitor_frequency;
-      TIMESTEP=timestep;
+    if (internal_timestep < TIMESTEP*1.5){
+      default_monitor_period=TIMESTEP/internal_timestep+.5;
+      NOUT*=default_monitor_period;
+      TIMESTEP=internal_timestep;
     } else {
-      default_monitor_frequency = 1;
+      default_monitor_period = 1;
       // update old monitors
-      int fac=timestep/TIMESTEP+.5;
+      int fac=internal_timestep/TIMESTEP+.5;
       for (const auto &i: monitors){
-        i->frequency=i->frequency*fac;
+        i->period=i->period*fac;
       }
     }
   }
   for (const auto &i: monitors){
     if (i->timestep < 0){
-      i->timestep=timestep*default_monitor_frequency;
-      i->frequency=default_monitor_frequency;
+      i->timestep=internal_timestep*default_monitor_period;
+      i->period=default_monitor_period;
     }
   }
 
 
   output_progress.write(_("Solver running for %d outputs with output timestep of %e\n"), NOUT, TIMESTEP);
-  if (default_monitor_frequency > 1)
+  if (default_monitor_period > 1)
     output_progress.write(_("Solver running for %d outputs with monitor timestep of %e\n"),
-                          NOUT/default_monitor_frequency, TIMESTEP*default_monitor_frequency);
+                          NOUT/default_monitor_period, TIMESTEP*default_monitor_period);
   
   // Initialise
   if (init(NOUT, TIMESTEP)) {
@@ -594,24 +594,24 @@ BoutReal Solver::adjustMonitorFrequencies(Monitor* new_monitor) {
 
   if (new_monitor->timestep < 0) {
     // The timestep will get adjusted when we call solve
-    new_monitor->frequency = default_monitor_frequency;
-    return timestep;
+    new_monitor->period = default_monitor_period;
+    return internal_timestep;
   }
 
-  if (!initialised && timestep < 0) {
+  if (!initialised && internal_timestep < 0) {
     // This is the first monitor to be added
     return new_monitor->timestep;
   }
 
-  if (!isMultiple(timestep, new_monitor->timestep)) {
-    throw BoutException(_("Couldn't add Monitor: %g is not a multiple of %g!"), timestep,
+  if (!isMultiple(internal_timestep, new_monitor->timestep)) {
+    throw BoutException(_("Couldn't add Monitor: %g is not a multiple of %g!"), internal_timestep,
                         new_monitor->timestep);
   }
 
-  if (new_monitor->timestep > timestep * 1.5) {
+  if (new_monitor->timestep > internal_timestep * 1.5) {
     // Monitor has a larger timestep
-    new_monitor->frequency = (new_monitor->timestep / timestep) + .5;
-    return timestep;
+    new_monitor->period = (new_monitor->timestep / internal_timestep) + .5;
+    return internal_timestep;
   }
 
   // Monitor timestep is smaller, so we need to adjust our timestep,
@@ -620,18 +620,18 @@ BoutReal Solver::adjustMonitorFrequencies(Monitor* new_monitor) {
   if (initialised) {
     throw BoutException(_("Solver::addMonitor: Cannot reduce timestep (from %g to %g) "
                           "after init is called!"),
-                        timestep, new_monitor->timestep);
+                        internal_timestep, new_monitor->timestep);
   }
 
   // This is the relative increase in timestep
-  const int multiplier = timestep / new_monitor->timestep + .5;
+  const int multiplier = internal_timestep / new_monitor->timestep + .5;
   for (const auto& monitor : monitors) {
-    monitor->frequency *= multiplier;
+    monitor->period *= multiplier;
   }
 
   // Update default_monitor_frequency so that monitors with no
   // timestep are called at the output frequency
-  default_monitor_frequency *= multiplier;
+  default_monitor_period *= multiplier;
 
   // This monitor is now the fastest monitor
   return new_monitor->timestep;
@@ -639,7 +639,7 @@ BoutReal Solver::adjustMonitorFrequencies(Monitor* new_monitor) {
 
 void Solver::addMonitor(Monitor* monitor, MonitorPosition pos) {
 
-  timestep = adjustMonitorFrequencies(monitor);
+  internal_timestep = adjustMonitorFrequencies(monitor);
 
   monitor->is_added = true;
 
@@ -657,28 +657,29 @@ void Solver::removeMonitor(Monitor * f) {
 extern bool user_requested_exit;
 int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
   bool abort;
-  MPI_Allreduce(&user_requested_exit,&abort,1,MPI_C_BOOL,MPI_LOR,MPI_COMM_WORLD);
-  if(abort){
-    NOUT=iter+1;
+  MPI_Allreduce(&user_requested_exit, &abort, 1, MPI_C_BOOL, MPI_LOR, MPI_COMM_WORLD);
+  if (abort) {
+    NOUT = iter + 1;
   }
-  if(mms) {
+  if (mms) {
     // Calculate MMS errors
     calculate_mms_error(simtime);
   }
-  
+
   ++iter;
   try {
     // Call monitors
-    for (const auto &it : monitors){
-      if ((iter % it->frequency)==0){
+    for (const auto& monitor : monitors) {
+      if ((iter % monitor->period) == 0) {
         // Call each monitor one by one
-        int ret = it->call(this, simtime,iter/it->frequency-1, NOUT/it->frequency);
-        if(ret)
+        int ret = monitor->call(this, simtime, iter / monitor->period - 1,
+                                NOUT / monitor->period);
+        if (ret)
           throw BoutException(_("Monitor signalled to quit"));
       }
     }
-  } catch (BoutException &e) {
-    for (const auto &it : monitors){
+  } catch (BoutException& e) {
+    for (const auto& it : monitors) {
       it->cleanup();
     }
     output_error.write(_("Monitor signalled to quit\n"));
@@ -686,10 +687,10 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
   }
 
   // Check if any of the monitors has asked to quit
-  MPI_Allreduce(&user_requested_exit,&abort,1,MPI_C_BOOL,MPI_LOR,MPI_COMM_WORLD);
+  MPI_Allreduce(&user_requested_exit, &abort, 1, MPI_C_BOOL, MPI_LOR, MPI_COMM_WORLD);
 
-  if ( iter == NOUT || abort ){
-    for (const auto &it : monitors){
+  if (iter == NOUT || abort) {
+    for (const auto& it : monitors) {
       it->cleanup();
     }
   }

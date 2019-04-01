@@ -423,9 +423,9 @@ private:
   /// Number of calls to the implicit (diffusive) RHS function
   int rhs_ncalls_i{0};
   /// Default sampling rate at which to call monitors - same as output to screen
-  int default_monitor_frequency{1};
+  int default_monitor_period{1};
   /// timestep - shouldn't be changed after init is called.
-  BoutReal timestep{-1};
+  BoutReal internal_timestep{-1};
   /// Physics model being evolved
   PhysicsModel* model{nullptr};
 

@@ -71,7 +71,7 @@ private:
   /// The desired physical timestep
   BoutReal timestep{-1};
   /// How often this monitor should be called, in internal Solver steps
-  int frequency{1};
+  int period{1};
 };
 
 struct RunMetrics {
