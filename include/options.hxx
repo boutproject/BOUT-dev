@@ -351,8 +351,12 @@ public:
   /// option["test"] = 2.0;
   /// int value = option["test"].as<int>();
   ///
+  /// An optional argument is an object which the result should be similar to.
+  /// The main use for this is in Field2D and Field3D specialisations,
+  /// where the Mesh and cell location are taken from this input.
+  /// 
   template <typename T>
-  T as(Mesh* UNUSED(mesh) = nullptr) const {
+  T as(T&& UNUSED(similar_to) = {}) const {
     if (!is_value) {
       throw BoutException("Option %s has no value", full_name.c_str());
     }
@@ -420,7 +424,7 @@ public:
                   << ")" << std::endl;
       return def;
     }
-    T val = as<T>(bout::utils::meshFromValue(def));
+    T val = as<T>(std::forward<T>(def));
     // Check if this was previously set as a default option
     if (bout::utils::variantEqualTo(attributes.at("source"), DEFAULT_SOURCE)) {
       // Check that the default values are the same
@@ -447,7 +451,7 @@ public:
                   << ")" << std::endl;
       return def;
     }
-    T val = as<T>(bout::utils::meshFromValue(def));
+    T val = as<T>(std::forward<T>(def));
     // Check if this was previously set as a default option
     if (bout::utils::variantEqualTo(attributes.at("source"), DEFAULT_SOURCE)) {
       // Check that the default values are the same
@@ -662,12 +666,12 @@ template<> void Options::assign<>(Tensor<BoutReal> val, const std::string source
 template <> inline bool Options::similar<BoutReal>(BoutReal a, BoutReal b) const { return fabs(a - b) < 1e-10; }
 
 /// Specialised as routines
-template <> std::string Options::as<std::string>(Mesh* mesh) const;
-template <> int Options::as<int>(Mesh* mesh) const;
-template <> BoutReal Options::as<BoutReal>(Mesh* mesh) const;
-template <> bool Options::as<bool>(Mesh* mesh) const;
-template <> Field2D Options::as<Field2D>(Mesh* mesh) const;
-template <> Field3D Options::as<Field3D>(Mesh* mesh) const;
+template <> std::string Options::as<std::string>(std::string&& similar_to) const;
+template <> int Options::as<int>(int&& similar_to) const;
+template <> BoutReal Options::as<BoutReal>(BoutReal&& similar_to) const;
+template <> bool Options::as<bool>(bool&& similar_to) const;
+template <> Field2D Options::as<Field2D>(Field2D&& similar_to) const;
+template <> Field3D Options::as<Field3D>(Field3D&& similar_to) const;
 
 /// Define for reading options which passes the variable name
 #define OPTION(options, var, def)  \

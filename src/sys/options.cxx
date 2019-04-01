@@ -7,19 +7,6 @@
 #include <iomanip>
 #include <sstream>
 
-namespace bout {
-namespace utils {
-  template <>
-  Mesh* meshFromValue<Field2D>(const Field2D& value) {
-    return value.getMesh();
-  }
-  template <>
-  Mesh* meshFromValue<Field3D>(const Field3D& value) {
-    return value.getMesh();
-  }
-}
-}
-
 /// The source label given to default values
 const std::string Options::DEFAULT_SOURCE{_("default")};
 Options *Options::root_instance{nullptr};
@@ -183,7 +170,7 @@ void Options::assign<>(Tensor<BoutReal> val, const std::string source) {
   is_value = true;
 }
 
-template <> std::string Options::as<std::string>(Mesh* UNUSED(mesh)) const {
+template <> std::string Options::as<std::string>(std::string&& UNUSED(similar_to)) const {
   if (!is_value) {
     throw BoutException(_("Option %s has no value"), full_name.c_str());
   }
@@ -203,7 +190,7 @@ template <> std::string Options::as<std::string>(Mesh* UNUSED(mesh)) const {
   return result;
 }
 
-template <> int Options::as<int>(Mesh* UNUSED(mesh)) const {
+template <> int Options::as<int>(int&& UNUSED(similar_to)) const {
   if (!is_value) {
     throw BoutException(_("Option %s has no value"), full_name.c_str());
   }
@@ -258,7 +245,7 @@ template <> int Options::as<int>(Mesh* UNUSED(mesh)) const {
   return result;
 }
 
-template <> BoutReal Options::as<BoutReal>(Mesh* UNUSED(mesh)) const {
+template <> BoutReal Options::as<BoutReal>(BoutReal&& UNUSED(similar_to)) const {
   if (!is_value) {
     throw BoutException(_("Option %s has no value"), full_name.c_str());
   }
@@ -300,7 +287,7 @@ template <> BoutReal Options::as<BoutReal>(Mesh* UNUSED(mesh)) const {
   return result;
 }
 
-template <> bool Options::as<bool>(Mesh* UNUSED(mesh)) const {
+template <> bool Options::as<bool>(bool&& UNUSED(similar_to)) const {
   if (!is_value) {
     throw BoutException(_("Option %s has no value"), full_name.c_str());
   }
@@ -340,22 +327,47 @@ template <> bool Options::as<bool>(Mesh* UNUSED(mesh)) const {
   return result;
 }
 
-template <> Field3D Options::as<Field3D>(Mesh* localmesh) const {
+template <> Field3D Options::as<Field3D>(Field3D&& similar_to) const {
   if (!is_value) {
     throw BoutException("Option %s has no value", full_name.c_str());
   }
 
   // Mark value as used
   value_used = true;
+
+  if (bout::utils::holds_alternative<Field3D>(value)) {
+    Field3D stored_value = bout::utils::get<Field3D>(value);
+    
+    // Check that meta-data is consistent
+    ASSERT1(areFieldsCompatible(stored_value, similar_to));
+    
+    return stored_value;
+  }
+
+  if (bout::utils::holds_alternative<Field2D>(value)) {
+    Field2D stored_value = bout::utils::get<Field2D>(value);
+    
+    // Check that meta-data is consistent
+    ASSERT1(areFieldsCompatible(stored_value, similar_to));
+
+    return Field3D(stored_value);
+  }
   
   try {
-    return bout::utils::variantStaticCastOrThrow<ValueType, Field3D>(value);
+    BoutReal scalar_value = bout::utils::variantStaticCastOrThrow<ValueType, BoutReal>(value);
+    
+    Field3D result {emptyFrom(similar_to)}; // Make a field with correct metadata
+    result = scalar_value; // Fill with the scalar value
+    return result;
   } catch (const std::bad_cast &e) {
     
     // Convert from a string using FieldFactory
     if (bout::utils::holds_alternative<std::string>(value)) {
-      return FieldFactory::get()->create3D( bout::utils::get<std::string>(value), this, localmesh);
+      return FieldFactory::get()->create3D(bout::utils::get<std::string>(value), this,
+                                           similar_to.getMesh(),
+                                           similar_to.getLocation());
     } else if (bout::utils::holds_alternative<Tensor<BoutReal>>(value)) {
+      auto localmesh = similar_to.getMesh();
       if (!localmesh) {
         throw BoutException("mesh must be supplied when converting Tensor to Field3D");
       }
@@ -367,7 +379,8 @@ template <> Field3D Options::as<Field3D>(Mesh* localmesh) const {
       if (tensor.shape() == std::make_tuple(localmesh->LocalNx,
                                             localmesh->LocalNy,
                                             localmesh->LocalNz)) {
-        return Field3D(tensor.getData(), localmesh);
+        return Field3D(tensor.getData(), localmesh, similar_to.getLocation(),
+                       {similar_to.getDirectionY(), similar_to.getDirectionZ()});
       }
       // If dimension sizes not the same, may be able
       // to select a region from it using Mesh e.g. if this
@@ -379,22 +392,38 @@ template <> Field3D Options::as<Field3D>(Mesh* localmesh) const {
                       full_name.c_str());
 }
 
-template <> Field2D Options::as<Field2D>(Mesh* localmesh) const {
+template <> Field2D Options::as<Field2D>(Field2D&& similar_to) const {
   if (!is_value) {
     throw BoutException("Option %s has no value", full_name.c_str());
   }
   
   // Mark value as used
   value_used = true;
+
+  if (bout::utils::holds_alternative<Field2D>(value)) {
+    Field2D stored_value = bout::utils::get<Field2D>(value);
+    
+    // Check that meta-data is consistent
+    ASSERT1(areFieldsCompatible(stored_value, similar_to));
+
+    return stored_value;
+  }
   
   try {
-    return bout::utils::variantStaticCastOrThrow<ValueType, Field2D>(value);
+    BoutReal scalar_value = bout::utils::variantStaticCastOrThrow<ValueType, BoutReal>(value);
+
+    Field2D result {emptyFrom(similar_to)}; // Make a field with correct metadata
+    result = scalar_value; // Fill with the scalar value
+    return result;
   } catch (const std::bad_cast &e) {
     
     // Convert from a string using FieldFactory
     if (bout::utils::holds_alternative<std::string>(value)) {
-      return FieldFactory::get()->create2D( bout::utils::get<std::string>(value), this, localmesh);
+      return FieldFactory::get()->create2D(bout::utils::get<std::string>(value), this,
+                                           similar_to.getMesh(),
+                                           similar_to.getLocation());
     } else if (bout::utils::holds_alternative<Matrix<BoutReal>>(value)) {
+      auto localmesh = similar_to.getMesh();
       if (!localmesh) {
         throw BoutException("mesh must be supplied when converting Matrix to Field2D");
       }
@@ -405,7 +434,8 @@ template <> Field2D Options::as<Field2D>(Mesh* localmesh) const {
       // Check if the dimension sizes are the same as a Field3D
       if (matrix.shape() == std::make_tuple(localmesh->LocalNx,
                                             localmesh->LocalNy)) {
-        return Field2D(matrix.getData(), localmesh);
+        return Field2D(matrix.getData(), localmesh, similar_to.getLocation(),
+                       {similar_to.getDirectionY(), similar_to.getDirectionZ()});
       }
     }
   }

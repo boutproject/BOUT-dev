@@ -785,6 +785,7 @@ inline std::string toString<>(const Field3D& UNUSED(val)) {
 /// the minimum absolute difference between them
 bool operator==(const Field3D &a, const Field3D &b);
 
+/// Output a string describing a Field3D to a stream
 std::ostream& operator<<(std::ostream &out, const Field3D &value);
 
 #endif /* __FIELD3D_H__ */

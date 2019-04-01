@@ -679,18 +679,29 @@ to the output dump or restart files.
 Reading fields is a bit more difficult. Currently 1D data is read as
 an ``Array<BoutReal>``, 2D as ``Matrix<BoutReal>`` and 3D as
 ``Tensor<BoutReal>``. These can be extracted directly from the
-``Options`` tree, or converted to a Field if given a ``Mesh``::
+``Options`` tree, or converted to a Field::
 
   Options fields_in = OptionsNetCDF("fields.nc").read();
-  Field2D f2d = fields_in["f2d"].as<Field2D>(mesh);
-  Field3D f3d = fields_in["f3d"].as<Field3D>(mesh);
+  Field2D f2d = fields_in["f2d"].as<Field2D>();
+  Field3D f3d = fields_in["f3d"].as<Field3D>();
 
-Currently this only works if the data in the ``Matrix`` or ``Tensor`` is the
-same size as the ``Field``. In the case of grid files, the fields only
-needs a part of the global values. Some kind of mapping from the global
-index to local index is needed, probably defined by ``Mesh``. For now it
-should be possible to be compatible with the current system, so that
-all quantities from the grid file are accessed through Mesh::get.
+Note that by default reading as ``Field2D`` or ``Field3D`` will use the global
+``bout::globals::mesh``. To use a different mesh, or different cell location,
+pass a field which the result should be similar to::
+
+  Field3D example = ... // Some existing field
+  
+  Field3D f3d = fields_in["f3d"].as<Field3D>(example);
+
+Meta data like ``Mesh`` pointer, will be taken from ``example``. 
+
+Currently converting from ``Matrix`` or ``Tensor`` types only works if
+the data in the ``Matrix`` or ``Tensor`` is the same size as the
+``Field``. In the case of grid files, the fields only needs a part of
+the global values. Some kind of mapping from the global index to local
+index is needed, probably defined by ``Mesh``. For now it should be
+possible to be compatible with the current system, so that all
+quantities from the grid file are accessed through Mesh::get.
 
 Time dependence
 ~~~~~~~~~~~~~~~
