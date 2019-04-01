@@ -57,11 +57,8 @@ public:
   }
   auto globalIndexShim(int local_start) -> Field3D { return globalIndex(local_start); }
   auto getMonitorsShim() const -> const std::list<Monitor*>& { return getMonitors(); }
-  auto getMonitorFrequenciesShim() const -> std::vector<int> {
-    return getMonitorFrequencies();
-  }
-  auto getMonitorTimestepsShim() const -> std::vector<BoutReal> {
-    return getMonitorTimesteps();
+  auto callMonitorsShim(BoutReal simtime, int iter, int NOUT) -> int {
+    return call_monitors(simtime, iter, NOUT);
   }
   auto callTimestepMonitorsShim(BoutReal simtime, BoutReal lastdt) -> int {
     return call_timestep_monitors(simtime, lastdt);
@@ -70,15 +67,29 @@ public:
 
 RegisterSolver<FakeSolver> register_fake("fake_solver");
 
+/// A sentinel value for whether a `FakeMonitor` has been called or not
+constexpr static int called_sentinel{-999};
+
+/// A `Monitor` that returns a bad value when called past its \p
+/// trigger_time_
 class FakeMonitor : public Monitor {
 public:
-  FakeMonitor(BoutReal timestep = -1) : Monitor(timestep) {}
+  FakeMonitor(BoutReal timestep = -1, BoutReal trigger_time_ = 0.)
+      : Monitor(timestep), trigger_time(trigger_time_) {}
   ~FakeMonitor() = default;
-  auto call(Solver*, BoutReal time, int iter, int nout) -> int {
-    return static_cast<int>(time + iter + nout);
+  auto call(Solver*, BoutReal time, int iter, int) -> int {
+    last_called = iter;
+    return time > trigger_time ? -1 : 0;
   }
   auto getTimestepShim() -> BoutReal { return getTimestep(); }
   auto setTimestepShim(BoutReal timestep) -> void { setTimestep(timestep); }
+  void cleanup() { cleaned = true; }
+
+  int last_called{called_sentinel};
+  bool cleaned{false};
+
+private:
+  BoutReal trigger_time{0.0};
 };
 
 } // namespace
@@ -659,12 +670,13 @@ TEST_F(SolverTest, AddMonitor) {
 
   EXPECT_THROW(monitor.setTimestepShim(20.0), BoutException);
 
-  std::list<Monitor*> expected{&monitor};
+  EXPECT_NO_THROW(solver.callMonitorsShim(0.0, 0, 0));
 
-  EXPECT_EQ(solver.getMonitorsShim(), expected);
+  EXPECT_EQ(monitor.last_called, 0);
 }
 
 TEST_F(SolverTest, AddMonitorFront) {
+  WithQuietOutput quiet{output_error};
   Options options;
   FakeSolver solver{&options};
 
@@ -673,12 +685,29 @@ TEST_F(SolverTest, AddMonitorFront) {
   EXPECT_NO_THROW(solver.addMonitor(&monitor1, Solver::FRONT));
   EXPECT_NO_THROW(solver.addMonitor(&monitor2, Solver::FRONT));
 
-  std::list<Monitor*> expected{&monitor2, &monitor1};
+  // Everything's fine
+  EXPECT_NO_THROW(solver.callMonitorsShim(0.0, 0, 0));
 
-  EXPECT_EQ(solver.getMonitorsShim(), expected);
+  EXPECT_EQ(monitor1.last_called, 0);
+  EXPECT_EQ(monitor2.last_called, 0);
+
+  // One monitor signals to quit
+  EXPECT_THROW(solver.callMonitorsShim(5.0, 1, 0), BoutException);
+
+  EXPECT_EQ(monitor1.last_called, 0);
+  EXPECT_EQ(monitor2.last_called, 1);
+
+  // Last timestep
+  EXPECT_NO_THROW(solver.callMonitorsShim(0.0, 9, 10));
+
+  EXPECT_EQ(monitor1.last_called, 9);
+  EXPECT_EQ(monitor2.last_called, 9);
+  EXPECT_TRUE(monitor1.cleaned);
+  EXPECT_TRUE(monitor2.cleaned);
 }
 
 TEST_F(SolverTest, AddMonitorBack) {
+  WithQuietOutput quiet{output_error};
   Options options;
   FakeSolver solver{&options};
 
@@ -687,9 +716,25 @@ TEST_F(SolverTest, AddMonitorBack) {
   EXPECT_NO_THROW(solver.addMonitor(&monitor1, Solver::BACK));
   EXPECT_NO_THROW(solver.addMonitor(&monitor2, Solver::BACK));
 
-  std::list<Monitor*> expected{&monitor1, &monitor2};
+  // Everything's fine
+  EXPECT_NO_THROW(solver.callMonitorsShim(0.0, 0, 0));
 
-  EXPECT_EQ(solver.getMonitorsShim(), expected);
+  EXPECT_EQ(monitor1.last_called, 0);
+  EXPECT_EQ(monitor2.last_called, 0);
+
+  // One monitor signals to quit
+  EXPECT_THROW(solver.callMonitorsShim(5.0, 1, 0), BoutException);
+
+  EXPECT_EQ(monitor1.last_called, 1);
+  EXPECT_EQ(monitor2.last_called, 0);
+
+  // Last timestep
+  EXPECT_NO_THROW(solver.callMonitorsShim(0.0, 9, 10));
+
+  EXPECT_EQ(monitor1.last_called, 9);
+  EXPECT_EQ(monitor2.last_called, 9);
+  EXPECT_TRUE(monitor1.cleaned);
+  EXPECT_TRUE(monitor2.cleaned);
 }
 
 TEST_F(SolverTest, AddMonitorCheckFrequencies) {
@@ -697,20 +742,56 @@ TEST_F(SolverTest, AddMonitorCheckFrequencies) {
   FakeSolver solver{&options};
 
   FakeMonitor default_timestep;
-  FakeMonitor smaller_timestep{0.01};
+  FakeMonitor smaller_timestep{0.1};
+  FakeMonitor even_smaller_timestep{0.01};
   FakeMonitor larger_timestep{2.};
   FakeMonitor incompatible_timestep{3.14259};
 
   EXPECT_NO_THROW(solver.addMonitor(&default_timestep));
   EXPECT_NO_THROW(solver.addMonitor(&smaller_timestep));
+  EXPECT_NO_THROW(solver.addMonitor(&even_smaller_timestep));
   EXPECT_NO_THROW(solver.addMonitor(&larger_timestep));
   EXPECT_THROW(solver.addMonitor(&incompatible_timestep), BoutException);
 
-  std::vector<int> expected_frequencies{200, 1, 1};
-  std::vector<BoutReal> expected_timesteps{2., 0.01, -1};
+  EXPECT_NO_THROW(solver.callMonitorsShim(0.0, -1, 0));
 
-  EXPECT_EQ(solver.getMonitorFrequenciesShim(), expected_frequencies);
-  EXPECT_EQ(solver.getMonitorTimestepsShim(), expected_timesteps);
+  EXPECT_EQ(default_timestep.last_called, -1);
+  EXPECT_EQ(smaller_timestep.last_called, -1);
+  EXPECT_EQ(even_smaller_timestep.last_called, -1);
+  EXPECT_EQ(larger_timestep.last_called, -1);
+  EXPECT_EQ(incompatible_timestep.last_called, called_sentinel);
+
+  EXPECT_NO_THROW(solver.callMonitorsShim(0.0, 9, 0));
+
+  EXPECT_EQ(default_timestep.last_called, 0);
+  EXPECT_EQ(smaller_timestep.last_called, 0);
+  EXPECT_EQ(even_smaller_timestep.last_called, 9);
+  EXPECT_EQ(larger_timestep.last_called, -1);
+  EXPECT_EQ(incompatible_timestep.last_called, called_sentinel);
+
+  EXPECT_NO_THROW(solver.callMonitorsShim(0.0, 10, 0));
+
+  EXPECT_EQ(default_timestep.last_called, 0);
+  EXPECT_EQ(smaller_timestep.last_called, 0);
+  EXPECT_EQ(even_smaller_timestep.last_called, 10);
+  EXPECT_EQ(larger_timestep.last_called, -1);
+  EXPECT_EQ(incompatible_timestep.last_called, called_sentinel);
+
+  EXPECT_NO_THROW(solver.callMonitorsShim(0.0, 199, 0));
+
+  EXPECT_EQ(default_timestep.last_called, 19);
+  EXPECT_EQ(smaller_timestep.last_called, 19);
+  EXPECT_EQ(even_smaller_timestep.last_called, 199);
+  EXPECT_EQ(larger_timestep.last_called, 0);
+  EXPECT_EQ(incompatible_timestep.last_called, called_sentinel);
+
+  EXPECT_NO_THROW(solver.callMonitorsShim(0.0, 399, 0));
+
+  EXPECT_EQ(default_timestep.last_called, 39);
+  EXPECT_EQ(smaller_timestep.last_called, 39);
+  EXPECT_EQ(even_smaller_timestep.last_called, 399);
+  EXPECT_EQ(larger_timestep.last_called, 1);
+  EXPECT_EQ(incompatible_timestep.last_called, called_sentinel);
 
   solver.init(0, 0);
 
@@ -719,11 +800,14 @@ TEST_F(SolverTest, AddMonitorCheckFrequencies) {
   FakeMonitor larger_postinit_timestep{4.};
   EXPECT_NO_THROW(solver.addMonitor(&larger_postinit_timestep, Solver::BACK));
 
-  expected_frequencies.push_back(400);
-  expected_timesteps.push_back(4.);
+  EXPECT_NO_THROW(solver.callMonitorsShim(0.0, 399, 0));
 
-  EXPECT_EQ(solver.getMonitorFrequenciesShim(), expected_frequencies);
-  EXPECT_EQ(solver.getMonitorTimestepsShim(), expected_timesteps);
+  EXPECT_EQ(default_timestep.last_called, 39);
+  EXPECT_EQ(smaller_timestep.last_called, 39);
+  EXPECT_EQ(even_smaller_timestep.last_called, 399);
+  EXPECT_EQ(larger_timestep.last_called, 1);
+  EXPECT_EQ(larger_postinit_timestep.last_called, 0);
+  EXPECT_EQ(incompatible_timestep.last_called, called_sentinel);
 }
 
 TEST_F(SolverTest, RemoveMonitor) {

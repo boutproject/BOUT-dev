@@ -414,20 +414,6 @@ protected:
 
   /// Get the list of monitors
   auto getMonitors() const -> const std::list<Monitor*>& { return monitors; }
-  /// Get a list of the iteration frequencies of monitors
-  auto getMonitorFrequencies() const -> std::vector<int> {
-    std::vector<int> frequencies{};
-    std::transform(begin(monitors), end(monitors), back_inserter(frequencies),
-                   [](const Monitor* monitor) { return monitor->frequency; });
-    return frequencies;
-  }
-  /// Get a list of the physical timesteps of monitors
-  auto getMonitorTimesteps() const -> std::vector<BoutReal> {
-    std::vector<BoutReal> timesteps{};
-    std::transform(begin(monitors), end(monitors), back_inserter(timesteps),
-                   [](const Monitor* monitor) { return monitor->timestep; });
-    return timesteps;
-  }
 
 private:
   /// Number of calls to the RHS function
