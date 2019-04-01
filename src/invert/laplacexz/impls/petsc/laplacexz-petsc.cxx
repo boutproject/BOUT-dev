@@ -129,23 +129,23 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt, const CELL_LOC loc)
   // Convergence Parameters. Solution is considered converged if |r_k| < max( rtol * |b| , atol )
   // where r_k = b - Ax_k. The solution is considered diverged if |r_k| > dtol * |b|.
 
-  BoutReal rtol = (*opt)["rtol"].doc("Relative tolerance").withDefault(1e-5);
-  BoutReal atol = (*opt)["atol"]
+  const BoutReal rtol = (*opt)["rtol"].doc("Relative tolerance").withDefault(1e-5);
+  const BoutReal atol = (*opt)["atol"]
           .doc("Absolute tolerance. The solution is considered converged if |Ax-b| "
                "< max( rtol * |b| , atol )")
           .withDefault(1e-10);
-  BoutReal dtol = (*opt)["dtol"]
+  const BoutReal dtol = (*opt)["dtol"]
                       .doc("The solution is considered diverged if |Ax-b| > dtol * |b|")
                       .withDefault(1e3);
-  int maxits = (*opt)["maxits"].doc("Maximum iterations").withDefault(100000);
+  const int maxits = (*opt)["maxits"].doc("Maximum iterations").withDefault(100000);
 
   // Get KSP Solver Type
-  std::string ksptype = (*opt)["ksptype"].doc("KSP solver type").withDefault("gmres");
+  const std::string ksptype = (*opt)["ksptype"].doc("KSP solver type").withDefault("gmres");
   
   // Get PC type
-  std::string pctype = (*opt)["pctype"].doc("Preconditioner type").withDefault("none");
+  const std::string pctype = (*opt)["pctype"].doc("Preconditioner type").withDefault("none");
 
-  std::string factor_package = (*opt)["factor_package"]
+  const std::string factor_package = (*opt)["factor_package"]
           .doc("Package to use in preconditioner. Passed to PCFactorSetMatSolver")
           .withDefault("petsc");
 

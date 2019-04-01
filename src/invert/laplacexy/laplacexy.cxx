@@ -227,21 +227,21 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
     // Convergence Parameters. Solution is considered converged if |r_k| < max( rtol * |b| , atol )
     // where r_k = b - Ax_k. The solution is considered diverged if |r_k| > dtol * |b|.
 
-    BoutReal rtol = (*opt)["rtol"].doc("Relative tolerance").withDefault(1e-5);
-    BoutReal atol = (*opt)["atol"]
+    const BoutReal rtol = (*opt)["rtol"].doc("Relative tolerance").withDefault(1e-5);
+    const BoutReal atol = (*opt)["atol"]
             .doc("Absolute tolerance. The solution is considered converged if |Ax-b| "
                  "< max( rtol * |b| , atol )")
             .withDefault(1e-10);
-    BoutReal dtol = (*opt)["dtol"]
+    const BoutReal dtol = (*opt)["dtol"]
                         .doc("The solution is considered diverged if |Ax-b| > dtol * |b|")
                         .withDefault(1e3);
-    int maxits = (*opt)["maxits"].doc("Maximum iterations").withDefault(100000);
+    const int maxits = (*opt)["maxits"].doc("Maximum iterations").withDefault(100000);
 
     // Get KSP Solver Type
-    std::string ksptype = (*opt)["ksptype"].doc("KSP solver type").withDefault("gmres");
+    const std::string ksptype = (*opt)["ksptype"].doc("KSP solver type").withDefault("gmres");
     
     // Get PC type
-    std::string pctype = (*opt)["pctype"].doc("Preconditioner type").withDefault("none");
+    const std::string pctype = (*opt)["pctype"].doc("Preconditioner type").withDefault("none");
 
     KSPSetType( ksp, ksptype.c_str() );
     KSPSetTolerances( ksp, rtol, atol, dtol, maxits );
@@ -251,12 +251,12 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
     KSPGetPC(ksp,&pc);
     PCSetType(pc, pctype.c_str());
 
-    if(pctype == "shell") {
+    if (pctype == "shell") {
       // Using tridiagonal solver as preconditioner
       PCShellSetApply(pc,laplacePCapply);
       PCShellSetContext(pc,this);
       
-      bool rightprec = (*opt)["rightprec"].doc("Use right preconditioning?").withDefault(true);
+      const bool rightprec = (*opt)["rightprec"].doc("Use right preconditioning?").withDefault(true);
       if (rightprec) {
         KSPSetPCSide(ksp, PC_RIGHT); // Right preconditioning
       } else {
