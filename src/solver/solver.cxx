@@ -438,61 +438,59 @@ void Solver::constraint(Vector3D &v, Vector3D &C_v, const std::string name) {
  **************************************************************************/
 
 int Solver::solve(int NOUT, BoutReal TIMESTEP) {
-  
-  Options *globaloptions = Options::getRoot(); // Default from global options
-  
-  if(NOUT < 0) {
-    /// Get options
-    OPTION(globaloptions, NOUT, 1);
-    OPTION(globaloptions, TIMESTEP, 1.0);
-    
-    // Check specific solver options, which override global options
-    OPTION(options, NOUT, NOUT);
-    options->get("output_step", TIMESTEP, TIMESTEP);
-  }
 
+  Options* globaloptions = Options::getRoot(); // Default from global options
+
+  if (NOUT < 0) {
+    NOUT = (*globaloptions)["NOUT"].withDefault(1);
+    TIMESTEP = (*globaloptions)["TIMESTEP"].withDefault(1.0);
+
+    // Check specific solver options, which override global options
+    NOUT = (*options)["NOUT"].withDefault(NOUT);
+    TIMESTEP = (*options)["output_step"].withDefault(TIMESTEP);
   }
 
   finaliseMonitorPeriods(NOUT, TIMESTEP);
 
-  output_progress.write(_("Solver running for %d outputs with output timestep of %e\n"), NOUT, TIMESTEP);
+  output_progress.write(_("Solver running for %d outputs with output timestep of %e\n"),
+                        NOUT, TIMESTEP);
   if (default_monitor_period > 1)
-    output_progress.write(_("Solver running for %d outputs with monitor timestep of %e\n"),
-                          NOUT/default_monitor_period, TIMESTEP*default_monitor_period);
-  
+    output_progress.write(
+        _("Solver running for %d outputs with monitor timestep of %e\n"),
+        NOUT / default_monitor_period, TIMESTEP * default_monitor_period);
+
   // Initialise
   if (init(NOUT, TIMESTEP)) {
     throw BoutException(_("Failed to initialise solver-> Aborting\n"));
   }
-  
+
   /// Run the solver
   output_info.write(_("Running simulation\n\n"));
 
   time_t start_time = time(nullptr);
   output_progress.write(_("\nRun started at  : %s\n"), toString(start_time).c_str());
-  
+
   Timer timer("run"); // Start timer
-  
-  bool restart;
-  OPTION(globaloptions, restart, false);
-  bool append;
-  OPTION(globaloptions, append, false);
-  bool dump_on_restart;
-  OPTION(globaloptions, dump_on_restart, !restart || !append);
-  if ( dump_on_restart ) {
+
+  const bool restart = (*globaloptions)["restart"].withDefault(false);
+  const bool append = (*globaloptions)["append"].withDefault(false);
+  const bool dump_on_restart =
+      (*globaloptions)["dump_on_restart"].withDefault(!restart || !append);
+
+  if (dump_on_restart) {
     /// Write initial state as time-point 0
-    
+
     // Run RHS once to ensure all variables set
     if (run_rhs(simtime)) {
       throw BoutException("Physics RHS call failed\n");
     }
-    
+
     // Call monitors so initial values are written to output dump files
-    if (call_monitors(simtime, -1, NOUT)){
+    if (call_monitors(simtime, -1, NOUT)) {
       throw BoutException("Initial monitor call failed!");
     }
   }
-  
+
   int status;
   try {
     status = run();
@@ -505,15 +503,15 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
     int i = static_cast<int>(dt / (60. * 60.));
     if (i > 0) {
       output_progress.write("%d h ", i);
-      dt -= i*60*60;
+      dt -= i * 60 * 60;
     }
     i = static_cast<int>(dt / 60.);
     if (i > 0) {
       output_progress.write("%d m ", i);
-      dt -= i*60;
+      dt -= i * 60;
     }
     output_progress.write("%d s\n", dt);
-  } catch (BoutException &e) {
+  } catch (BoutException& e) {
     output_error << "Error encountered in solver run\n";
     output_error << e.what() << endl;
     throw;
@@ -521,7 +519,6 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
 
   return status;
 }
-
 
 /**************************************************************************
  * Initialisation
