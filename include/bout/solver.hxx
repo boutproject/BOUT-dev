@@ -389,6 +389,22 @@ protected:
   int run_diffusive(BoutReal t, bool linear = true);
 
   /// Calls all monitor functions
+  ///
+  /// There are two important things to note about how \p iter is
+  /// passed along to each monitor:
+  /// - The solvers all start their iteration numbering from zero, so the
+  ///   initial state is calculated at \p iter = -1
+  /// - Secondly, \p iter is passed along to each monitor *relative to
+  ///   that monitor's period*
+  ///
+  /// In practice, this means that each monitor is called like:
+  ///
+  ///     monitor->call(solver, simulation_time,
+  ///                   ((iter + 1) / monitor->period) - 1,
+  ///                   NOUT / monitor->period);
+  ///
+  /// e.g. for a monitor with period 10, passing \p iter = 9 will
+  /// result in it being called with a value of `(9 + 1)/10 - 1 == 0`
   int call_monitors(BoutReal simtime, int iter, int NOUT);
 
   /// Should timesteps be monitored?
