@@ -43,6 +43,8 @@
 #include "unused.hxx"
 #include "bout/monitor.hxx"
 
+#include <memory>
+
 ///////////////////////////////////////////////////////////////////
 // C function pointer types
 
@@ -171,7 +173,7 @@ enum SOLVER_VAR_OP {LOAD_VARS, LOAD_DERIVS, SET_ID, SAVE_VARS, SAVE_DERIVS};
 class Solver {
 public:
   Solver(Options* opts = nullptr);
-  virtual ~Solver();
+  virtual ~Solver() = default;
 
   /////////////////////////////////////////////
   // New API
@@ -332,14 +334,14 @@ protected:
   /// A structure to hold an evolving variable
   template <class T>
   struct VarStr {
-    bool constraint{false};          /// Does F_var represent a constraint?
-    T* var{nullptr};                 /// The evolving variable
-    T* F_var{nullptr};               /// The time derivative or constraint on var
-    T* MMS_err{nullptr};             /// Error for MMS
-    CELL_LOC location{CELL_DEFAULT}; /// For fields and vector components
-    bool covariant{false};           /// For vectors
-    bool evolve_bndry{false};        /// Are the boundary regions being evolved?
-    std::string name;                /// Name of the variable
+    bool constraint{false};              /// Does F_var represent a constraint?
+    T* var{nullptr};                     /// The evolving variable
+    T* F_var{nullptr};                   /// The time derivative or constraint on var
+    std::unique_ptr<T> MMS_err{nullptr}; /// Error for MMS
+    CELL_LOC location{CELL_DEFAULT};     /// For fields and vector components
+    bool covariant{false};               /// For vectors
+    bool evolve_bndry{false};            /// Are the boundary regions being evolved?
+    std::string name;                    /// Name of the variable
   };
 
   /// Does \p var represent field \p name?

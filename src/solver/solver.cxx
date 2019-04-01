@@ -54,24 +54,6 @@ Solver::Solver(Options* opts)
       mms_initialise((*options)["mms_initialise"].withDefault(mms)) {}
 
 /**************************************************************************
- * Destructor
- **************************************************************************/
-Solver::~Solver(){
-  //Ensure all MMS_err fields allocated here are destroyed etc.
-  for(const auto& f : f3d) {
-    if(f.MMS_err) {
-      delete f.MMS_err;
-    }
-  }
-
-  for(const auto& f : f2d) {
-    if(f.MMS_err) {
-      delete f.MMS_err;
-    }
-  }
-}
-
-/**************************************************************************
  * Add physics models
  **************************************************************************/
 
@@ -138,7 +120,7 @@ void Solver::add(Field2D &v, const std::string name) {
   
   if (mms) {
     // Allocate storage for error variable
-    d.MMS_err = new Field2D{zeroFrom(v)};
+    d.MMS_err = bout::utils::make_unique<Field2D>(zeroFrom(v));
   }
   
   // Check if the boundary regions should be evolved
@@ -149,7 +131,7 @@ void Solver::add(Field2D &v, const std::string name) {
 
   v.applyBoundary(true);
 
-  f2d.push_back(d);
+  f2d.emplace_back(std::move(d));
 }
 
 void Solver::add(Field3D &v, const std::string name) {
@@ -196,7 +178,7 @@ void Solver::add(Field3D &v, const std::string name) {
   }
   
   if (mms) {
-    d.MMS_err = new Field3D{zeroFrom(v)};
+    d.MMS_err = bout::utils::make_unique<Field3D>(zeroFrom(v));
   }
   
   // Check if the boundary regions should be evolved
@@ -208,12 +190,12 @@ void Solver::add(Field3D &v, const std::string name) {
   v.applyBoundary(true); // Make sure initial profile obeys boundary conditions
   v.setLocation(d.location); // Restore location if changed
   
-  f3d.push_back(d);
+  f3d.emplace_back(std::move(d));
 }
 
-void Solver::add(Vector2D &v, const std::string name) {
+void Solver::add(Vector2D& v, const std::string name) {
   TRACE("Adding 2D vector: Solver::add(%s)", name.c_str());
-  
+
   if (varAdded(name))
     throw BoutException("Variable '%s' already added to Solver", name.c_str());
 
@@ -223,68 +205,66 @@ void Solver::add(Vector2D &v, const std::string name) {
   // Set boundary conditions
   v.setBoundary(name);
   ddt(v).copyBoundary(v); // Set boundary to be the same as v
-  
+
   VarStr<Vector2D> d;
-  
+
   d.var = &v;
   d.F_var = &ddt(v);
   d.covariant = v.covariant;
   d.name = name;
 
-  v2d.push_back(d);
-
   /// NOTE: No initial_profile call, because this will be done for each
   ///       component individually.
-  
+
   /// Add suffix, depending on co- /contravariance
   if (v.covariant) {
-    add(v.x, d.name+"_x");
-    add(v.y, d.name+"_y");
-    add(v.z, d.name+"_z");
+    add(v.x, d.name + "_x");
+    add(v.y, d.name + "_y");
+    add(v.z, d.name + "_z");
   } else {
-    add(v.x, d.name+"x");
-    add(v.y, d.name+"y");
-    add(v.z, d.name+"z");
+    add(v.x, d.name + "x");
+    add(v.y, d.name + "y");
+    add(v.z, d.name + "z");
   }
-  
+
   /// Make sure initial profile obeys boundary conditions
   v.applyBoundary(true);
+  v2d.emplace_back(std::move(d));
 }
 
-void Solver::add(Vector3D &v, const std::string name) {
+void Solver::add(Vector3D& v, const std::string name) {
   TRACE("Adding 3D vector: Solver::add(%s)", name.c_str());
-  
+
   if (varAdded(name))
     throw BoutException("Variable '%s' already added to Solver", name.c_str());
 
   if (initialised)
     throw BoutException("Error: Cannot add to solver after initialisation\n");
-  
+
   // Set boundary conditions
   v.setBoundary(name);
   ddt(v).copyBoundary(v); // Set boundary to be the same as v
 
   VarStr<Vector3D> d;
-  
+
   d.var = &v;
   d.F_var = &ddt(v);
   d.covariant = v.covariant;
   d.name = name;
-  
-  v3d.push_back(d);
 
   // Add suffix, depending on co- /contravariance
   if (v.covariant) {
-    add(v.x, d.name+"_x");
-    add(v.y, d.name+"_y");
-    add(v.z, d.name+"_z");
+    add(v.x, d.name + "_x");
+    add(v.y, d.name + "_y");
+    add(v.z, d.name + "_z");
   } else {
-    add(v.x, d.name+"x");
-    add(v.y, d.name+"y");
-    add(v.z, d.name+"z");
+    add(v.x, d.name + "x");
+    add(v.y, d.name + "y");
+    add(v.z, d.name + "z");
   }
 
   v.applyBoundary(true);
+  v3d.emplace_back(std::move(d));
 }
 
 /**************************************************************************
@@ -316,7 +296,7 @@ void Solver::constraint(Field2D &v, Field2D &C_v, const std::string name) {
   d.F_var = &C_v;
   d.name = name;
 
-  f2d.push_back(d);
+  f2d.emplace_back(std::move(d));
 }
 
 void Solver::constraint(Field3D &v, Field3D &C_v, const std::string name) {
@@ -345,7 +325,7 @@ void Solver::constraint(Field3D &v, Field3D &C_v, const std::string name) {
   d.location = v.getLocation();
   d.name = name;
   
-  f3d.push_back(d);
+  f3d.emplace_back(std::move(d));
 }
 
 void Solver::constraint(Vector2D &v, Vector2D &C_v, const std::string name) {
@@ -374,7 +354,7 @@ void Solver::constraint(Vector2D &v, Vector2D &C_v, const std::string name) {
   d.covariant = v.covariant;
   d.name = name;
   
-  v2d.push_back(d);
+  v2d.emplace_back(std::move(d));
 
   // Add suffix, depending on co- /contravariance
   if (v.covariant) {
@@ -414,7 +394,7 @@ void Solver::constraint(Vector3D &v, Vector3D &C_v, const std::string name) {
   d.covariant = v.covariant;
   d.name = name;
   
-  v3d.push_back(d);
+  v3d.emplace_back(std::move(d));
 
   // Add suffix, depending on co- /contravariance
   if (v.covariant) {
