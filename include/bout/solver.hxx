@@ -482,9 +482,13 @@ private:
   /// Check if a variable has already been added
   bool varAdded(const std::string& name);
 
-  /// (Possibly) adjust the frequencies of \p monitor, and the
-  /// `monitors` timesteps, returning the new Solver timestep
-  BoutReal adjustMonitorFrequencies(Monitor* monitor);
+  /// (Possibly) adjust the periods of \p monitor, and the `monitors`
+  /// timesteps, returning the new Solver timestep
+  BoutReal adjustMonitorPeriods(Monitor* monitor);
+
+  /// Fix all the monitor periods based on \p output_timestep, as well
+  /// as adjusting \p NOUT and \p output_timestep to be consistent
+  void finaliseMonitorPeriods(int& NOUT, BoutReal& output_timestep);
 };
 
 #endif // __SOLVER_H__

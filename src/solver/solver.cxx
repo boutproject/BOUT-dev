@@ -451,31 +451,9 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
     options->get("output_step", TIMESTEP, TIMESTEP);
   }
 
-  /// syncronize timestep with those set to the monitors
-  if (internal_timestep > 0){
-    if (!isMultiple(internal_timestep,TIMESTEP)){
-      throw BoutException("A monitor requested a timestep not compatible with the output_step!");
-    }
-    if (internal_timestep < TIMESTEP*1.5){
-      default_monitor_period=TIMESTEP/internal_timestep+.5;
-      NOUT*=default_monitor_period;
-      TIMESTEP=internal_timestep;
-    } else {
-      default_monitor_period = 1;
-      // update old monitors
-      int fac=internal_timestep/TIMESTEP+.5;
-      for (const auto &i: monitors){
-        i->period=i->period*fac;
-      }
-    }
-  }
-  for (const auto &i: monitors){
-    if (i->timestep < 0){
-      i->timestep=internal_timestep*default_monitor_period;
-      i->period=default_monitor_period;
-    }
   }
 
+  finaliseMonitorPeriods(NOUT, TIMESTEP);
 
   output_progress.write(_("Solver running for %d outputs with output timestep of %e\n"), NOUT, TIMESTEP);
   if (default_monitor_period > 1)
@@ -590,7 +568,7 @@ void Solver::outputVars(Datafile &outputfile, bool save_repeat) {
 
 /////////////////////////////////////////////////////
 
-BoutReal Solver::adjustMonitorFrequencies(Monitor* new_monitor) {
+BoutReal Solver::adjustMonitorPeriods(Monitor* new_monitor) {
 
   if (new_monitor->timestep < 0) {
     // The timestep will get adjusted when we call solve
@@ -637,9 +615,38 @@ BoutReal Solver::adjustMonitorFrequencies(Monitor* new_monitor) {
   return new_monitor->timestep;
 }
 
+void Solver::finaliseMonitorPeriods(int& NOUT, BoutReal& output_timestep) {
+  // Synchronise timestep with those of the monitors
+  if (internal_timestep > 0) {
+    if (!isMultiple(internal_timestep, output_timestep)) {
+      throw BoutException(
+          "A monitor requested a timestep not compatible with the output_step!");
+    }
+    if (internal_timestep < output_timestep * 1.5) {
+      default_monitor_period = output_timestep / internal_timestep + .5;
+      NOUT *= default_monitor_period;
+      output_timestep = internal_timestep;
+    } else {
+      default_monitor_period = 1;
+      // update old monitors
+      int multiplier = internal_timestep / output_timestep + .5;
+      for (const auto& i : monitors) {
+        i->period = i->period * multiplier;
+      }
+    }
+  }
+  // Now set any monitors which still have the default timestep/period
+  for (const auto& i : monitors) {
+    if (i->timestep < 0) {
+      i->timestep = internal_timestep * default_monitor_period;
+      i->period = default_monitor_period;
+    }
+  }
+}
+
 void Solver::addMonitor(Monitor* monitor, MonitorPosition pos) {
 
-  internal_timestep = adjustMonitorFrequencies(monitor);
+  internal_timestep = adjustMonitorPeriods(monitor);
 
   monitor->is_added = true;
 
