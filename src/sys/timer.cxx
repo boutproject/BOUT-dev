@@ -33,7 +33,7 @@ Timer::timer_info& Timer::getInfo(const std::string& label) {
   auto it = info.find(label);
   if (it == info.end()) {
     auto timer = info.emplace(
-      label, timer_info{seconds{0}, false, clock_type::now()});
+      label, timer_info{seconds{0}, false, clock_type::now(), 0});
     return timer.first->second;
   }
   return it->second;
