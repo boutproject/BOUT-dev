@@ -16,7 +16,21 @@ class FakeSolver : public Solver {
 public:
   FakeSolver(Options* options) : Solver(options) { has_constraints = true; }
   ~FakeSolver() = default;
-  int run() { return (*options)["number"].withDefault(42); }
+
+  int run() override {
+    run_called = true;
+    return 0;
+  }
+  bool run_called{false};
+
+  int init(int nout, BoutReal tstep) override {
+    init_called = true;
+    if (Solver::init(nout, tstep)) {
+      return 1;
+    }
+    return 0;
+  }
+  bool init_called{false};
 
   void changeHasConstraints(bool new_value) { has_constraints = new_value; }
 
@@ -882,4 +896,45 @@ TEST_F(SolverTest, DontCallTimestepMonitors) {
   EXPECT_EQ(solver.callTimestepMonitorsShim(1., 1.), 0);
   EXPECT_EQ(solver.callTimestepMonitorsShim(1., -1.), 0);
   EXPECT_EQ(solver.callTimestepMonitorsShim(-1., -1.), 0);
+}
+
+TEST_F(SolverTest, BasicSolve) {
+  Options options;
+  FakeSolver solver{&options};
+
+  Options::root()["dump_on_restart"] = false;
+
+  EXPECT_NO_THROW(solver.solve());
+
+  EXPECT_TRUE(solver.init_called);
+  EXPECT_TRUE(solver.run_called);
+}
+
+TEST_F(SolverTest, SolveFixDefaultTimestep) {
+  Options options;
+  FakeSolver solver{&options};
+
+  Options::root()["dump_on_restart"] = false;
+
+  FakeMonitor default_timestep;
+  FakeMonitor smaller_timestep{0.1};
+  FakeMonitor even_smaller_timestep{0.01};
+  FakeMonitor larger_timestep{2.};
+
+  solver.addMonitor(&default_timestep);
+  solver.addMonitor(&smaller_timestep);
+  solver.addMonitor(&even_smaller_timestep);
+  solver.addMonitor(&larger_timestep);
+
+  EXPECT_NO_THROW(solver.solve(100, 1.));
+
+  EXPECT_TRUE(solver.init_called);
+  EXPECT_TRUE(solver.run_called);
+
+  EXPECT_NO_THROW(solver.callMonitorsShim(0.0, 99, 0));
+
+  EXPECT_EQ(default_timestep.last_called, 0);
+  EXPECT_EQ(smaller_timestep.last_called, 9);
+  EXPECT_EQ(even_smaller_timestep.last_called, 99);
+  EXPECT_EQ(larger_timestep.last_called, called_sentinel);
 }
