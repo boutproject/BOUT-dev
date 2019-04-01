@@ -20,27 +20,22 @@
  *
  **************************************************************************/
 
-#include <boutcomm.hxx>
-#include <bout/solver.hxx>
+#include "bout/solver.hxx"
+#include "boutcomm.hxx"
+#include "boutexception.hxx"
+#include "field_factory.hxx"
+#include "initialprofiles.hxx"
+#include "interpolation.hxx"
+#include "msg_stack.hxx"
+#include "output.hxx"
+#include "bout/array.hxx"
+#include "bout/assert.hxx"
+#include "bout/region.hxx"
+#include "bout/solverfactory.hxx"
+#include "bout/sys/timer.hxx"
+
 #include <cstring>
 #include <ctime>
-
-#include <initialprofiles.hxx>
-#include <interpolation.hxx>
-#include <boutexception.hxx>
-
-#include <field_factory.hxx>
-
-#include "bout/solverfactory.hxx"
-
-#include <bout/sys/timer.hxx>
-#include <msg_stack.hxx>
-#include <output.hxx>
-#include <bout/assert.hxx>
-
-#include <bout/array.hxx>
-#include "bout/region.hxx"
-
 #include <numeric>
 
 // Static member variables
