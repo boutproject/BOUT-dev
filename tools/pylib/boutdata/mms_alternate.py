@@ -46,6 +46,7 @@ class Metric(object):
         # expressions for these must average to 1.
         self.scalex = 1.0
         self.scaley = 1.0
+        self.orthogonal = False
 
 metric = Metric()
 
@@ -60,7 +61,10 @@ def DDX(f):
     return diff(f, metric.x)/metric.psiwidth/metric.scalex
 
 def DDY(f):
-    return diff(f, metric.y)/metric.scaley
+    if not metric.orthogonal:
+        return diff(f, metric.y)/metric.scaley
+    else:
+        return (diff(f, metric.y) + diff(metric.zShift, metric.y) * DDZ(f))/metric.scaley
 
 def DDZ(f):
     return diff(f, metric.z)*metric.zperiod
@@ -82,7 +86,12 @@ def D4DX4(f):
     return diff(f, metric.x, 4)/metric.psiwidth**4/metric.scalex**4
 
 def D4DY4(f):
-    return diff(f, metric.y, 4)/metric.scaley**4
+    if not metric.orthogonal:
+        return diff(f, metric.y, 4)/metric.scaley**4
+    else:
+        def temp_ddy(f):
+            return diff(f, metric.y) + diff(metric.zShift, metric.y) * DDZ(f)
+        return temp_ddy(temp_ddy(temp_ddy(temp_ddy(f))))/metric.scaley**4
 
 def D4DZ4(f):
     return diff(f, metric.z, 4)*metric.zperiod**4
@@ -302,7 +311,7 @@ class BaseTokamak(object):
         self.sinty
 
         # If true, set integrated shear to zero in metric (for shifted-metric schemes)
-        self.shifted
+        self.orthogonal
 
         # Extra expressions to add to grid file
         self._extra
@@ -411,6 +420,7 @@ class BaseTokamak(object):
 
         metric.zShift = self.zShift
         metric.shiftAngle = self.shiftAngle
+        metric.orthogonal = self.orthogonal
 
         metric.J = self.hthe / self.Bpxy
         metric.B = self.Bxy
@@ -506,6 +516,8 @@ class BaseTokamak(object):
         print("G1 = "+exprToStr(metric.G1))
         print("G2 = "+exprToStr(metric.G2))
         print("G3 = "+exprToStr(metric.G3))
+        print("zShift = "+exprToStr(metric.zShift))
+        print("shiftAngle = "+exprToStr(metric.shiftAngle))
 
         print("Lx = "+exprToStr(metric.psiwidth))
         print("Lz = "+exprToStr((2.*pi*self.R/metric.zperiod).evalf()))
@@ -527,6 +539,83 @@ class BaseTokamak(object):
             metric.scaley = expr
 
 ##################################
+class SlabGeometry(BaseTokamak):
+    """
+    Slab Geometry
+    """
+    def __init__(self):
+        """
+        Coordinates:
+        x - Radial, [0,1]
+        y - Poloidal, [0,2pi]. Origin is at inboard midplane.
+        """
+        # Have we calculated metric components yet?
+        self.metric_is_set = False
+
+        self.x = x
+        self.y = y
+        self.zperiod = 1 + 0*x
+        self.r0 = 1 + 0*x
+
+        self.R = 1 + 0*x
+
+        self.dr = 1 + 0*x
+
+        # Minor radius
+        self.r = 1 + 0*x
+
+        # dpsi = Bp * R * dr  -- width of the box in psi space
+        self.psiwidth = 1 + 0*x
+        self.psi0 = 1 + 0*x
+
+        # Get safety factor
+        self.q = 0 + 0*x
+
+        # Toroidal angle of a field-line as function
+        # of poloidal angle y
+        self.zShift = 0 + 0*x
+
+        # Field-line pitch
+        self.nu = 0 + 0*x
+
+        # Coordinates of grid points
+        self.Rxy = 1 + 0*x
+        self.Zxy = 0 + 0*x
+
+        # Poloidal arc length
+        self.hthe = 1 + 0*x
+
+        # Toroidal magnetic field
+        self.Btxy = 0 + 0*x
+
+        # Poloidal magnetic field
+        self.Bpxy = 1 + 0*x
+
+        # Total magnetic field
+        self.Bxy = 1 + 0*x
+
+        # Integrated shear
+        self.sinty = 0 + 0*x
+
+        # Convert all "x" symbols from flux to [0,1]
+        xsub = metric.x * self.psiwidth
+
+        self.q = self.q.subs(x, xsub)
+        self.zShift = self.zShift.subs(x, xsub)
+        self.nu = self.nu.subs(x, xsub)
+        self.Rxy = self.Rxy.subs(x, xsub)
+        self.Zxy = self.Zxy.subs(x, xsub)
+        self.hthe = self.hthe.subs(x, xsub)
+        self.Btxy = self.Btxy.subs(x, xsub)
+        self.Bpxy = self.Bpxy.subs(x, xsub)
+        self.Bxy = self.Bxy.subs(x, xsub)
+        self.sinty = self.sinty.subs(x, xsub)
+
+        # Extra expressions to add to grid file
+        self._extra = {}
+
+        # Calculate metric terms
+        self.metric()
 
 class SimpleTokamak(BaseTokamak):
     """
@@ -535,7 +624,7 @@ class SimpleTokamak(BaseTokamak):
     NOTE: This is NOT an equilibrium calculation. The input
     is intended solely for testing with MMS
     """
-    def __init__(self, R = 2, Bt = 1.0, eps = 0.1, dr=0.02, psiN0=0.5, zperiod=1, r0=1., q = lambda psiN:2+psiN**2, lower_legs_fraction=0., upper_legs_fraction=0., shifted=False):
+    def __init__(self, R = 2, Bt = 1.0, eps = 0.1, dr=0.02, psiN0=0.5, zperiod=1, r0=1., q = lambda psiN:2+psiN**2, lower_legs_fraction=0., upper_legs_fraction=0., orthogonal=False):
         """
         R    - Major radius [metric]
 
@@ -568,14 +657,14 @@ class SimpleTokamak(BaseTokamak):
 
         self.x = x
         self.y = y
-        self.zperiod = zperiod
-        self.r0 = r0
-        self.R = R
+        self.zperiod = zperiod + 0*x
+        self.r0 = r0 + 0*x
+        self.R = R + 0*x
         self.dr = dr
         self.psiN0 = psiN0
         self.lower_legs_fraction = lower_legs_fraction
         self.upper_legs_fraction = upper_legs_fraction
-        self.shifted = shifted
+        self.orthogonal = orthogonal
 
         # Minor radius
         self.r = R * eps
@@ -617,7 +706,7 @@ class SimpleTokamak(BaseTokamak):
         self.Bxy = sqrt(self.Btxy**2 + self.Bpxy**2)
 
         # Integrated shear
-        if shifted:
+        if orthogonal:
             self.sinty = 0*y
         else:
             self.sinty = diff(self.zShift, x)
@@ -691,7 +780,7 @@ class PeriodicGeometry(BaseTokamak):
     """
     Periodic Geometry for tests, with no branch cut in integrated shear
     """
-    def __init__(self, R = 2, Bt = 1.0, eps = 0.1, dr=0.02, psiN0=0.5, zperiod=1, r0=1., q = lambda psiN:2+psiN**2, lower_legs_fraction=0., upper_legs_fraction=0., shifted=False):
+    def __init__(self, R = 2, Bt = 1.0, eps = 0.1, dr=0.02, psiN0=0.5, zperiod=1, r0=1., q = lambda psiN:2+psiN**2, lower_legs_fraction=0., upper_legs_fraction=0., orthogonal=False):
         """
         R    - Major radius [metric]
 
@@ -731,7 +820,7 @@ class PeriodicGeometry(BaseTokamak):
         self.psiN0 = psiN0
         self.lower_legs_fraction = lower_legs_fraction
         self.upper_legs_fraction = upper_legs_fraction
-        self.shifted = shifted
+        self.orthogonal = orthogonal
 
         # Minor radius
         self.r = R * eps
@@ -773,7 +862,7 @@ class PeriodicGeometry(BaseTokamak):
         self.Bxy = sqrt(self.Btxy**2 + self.Bpxy**2)
 
         # Integrated shear
-        if shifted:
+        if orthogonal:
             self.sinty = 0*y
         else:
             self.sinty = diff(self.zShift, x)
