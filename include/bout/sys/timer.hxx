@@ -86,7 +86,7 @@ private:
     seconds time;                   ///< Total time
     bool running;                   ///< Is the timer currently running?
     clock_type::time_point started; ///< Start time
-    uint counter{0};                ///< Number of Timer objects associated with this
+    unsigned int counter{0};        ///< Number of Timer objects associated with this
                                     ///  timer_info
   };
 
