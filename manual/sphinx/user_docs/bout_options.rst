@@ -652,7 +652,10 @@ Reading and writing to NetCDF
 -----------------------------
 
 If NetCDF4 support is enabled, then the ``OptionsNetCDF`` class
-provides an experimental way to read and write options.
+provides an experimental way to read and write options. To use this class::
+
+  #include "options_netcdf.hxx"
+  using bout::experimental::OptionsNetCDF;
 
 Examples are in integrated test ``tests/integrated/test-options-netcdf/``
 
