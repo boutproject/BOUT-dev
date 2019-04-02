@@ -517,7 +517,9 @@ void setRunFinishInfo(Options& options) {
 
 Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir) {
   // Check if restarting
-  const bool append = options["append"].withDefault(false);
+  const bool append = options["append"]
+                        .doc("Add output data to existing (dump) files?")
+                        .withDefault(false);
 
   // Get file extensions
   const auto dump_ext = options["dump_format"].withDefault(std::string{"nc"});
@@ -677,16 +679,16 @@ int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
     /// Get some options
     auto& options = Options::root();
     wall_limit = options["wall_limit"]
-                     .doc("Wall time limit in hours. By default (< 0), no limit")
+                     .doc(_("Wall time limit in hours. By default (< 0), no limit"))
                      .withDefault(-1.0);
     wall_limit *= 60.0 * 60.0; // Convert from hours to seconds
 
     stopCheck = options["stopCheck"]
-                    .doc("Check if a file exists, and exit if it does.")
+                    .doc(_("Check if a file exists, and exit if it does."))
                     .withDefault(false);
     if (stopCheck) {
       stopCheckName = options["stopCheckName"]
-                          .doc("Name of file whose existence triggers a stop")
+                          .doc(_("Name of file whose existence triggers a stop"))
                           .withDefault("BOUT.stop");
       // Now add data directory to start of name to ensure we look in a run specific location
       std::string data_dir = Options::root()["datadir"].withDefault(DEFAULT_DIR);
