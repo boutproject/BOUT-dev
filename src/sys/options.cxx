@@ -356,9 +356,8 @@ template <> Field3D Options::as<Field3D>(Field3D&& similar_to) const {
   try {
     BoutReal scalar_value = bout::utils::variantStaticCastOrThrow<ValueType, BoutReal>(value);
     
-    Field3D result {emptyFrom(similar_to)}; // Make a field with correct metadata
-    result = scalar_value; // Fill with the scalar value
-    return result;
+    // Get metadata from similar_to, fill field with scalar_value
+    return filledFrom(similar_to, scalar_value);
   } catch (const std::bad_cast &e) {
     
     // Convert from a string using FieldFactory
@@ -412,9 +411,8 @@ template <> Field2D Options::as<Field2D>(Field2D&& similar_to) const {
   try {
     BoutReal scalar_value = bout::utils::variantStaticCastOrThrow<ValueType, BoutReal>(value);
 
-    Field2D result {emptyFrom(similar_to)}; // Make a field with correct metadata
-    result = scalar_value; // Fill with the scalar value
-    return result;
+    // Get metadata from similar_to, fill field with scalar_value
+    return filledFrom(similar_to, scalar_value);
   } catch (const std::bad_cast &e) {
     
     // Convert from a string using FieldFactory
