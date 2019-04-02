@@ -49,7 +49,7 @@ PRO local_gradient, interp_data, ri, zi, status=status, $
         
         n = N_ELEMENTS(r)
 
-        A = TRANSPOSE([[FLTARR(n)+1.], $
+        A = TRANSPOSE([[DBLARR(n)+1.D], $
                        [r], $
                        [z], $
                        [r*r], $
@@ -81,7 +81,7 @@ PRO local_gradient, interp_data, ri, zi, status=status, $
         
         PRINT, "Calculating derivatives for local gradient (method 2)"
 
-        ddr = FLTARR(nr, nz)
+        ddr = DBLARR(nr, nz)
         ddz = ddr
         FOR i=0, nz-1 DO ddr[*,i] = DERIV(interp_data.f[*,i])
         FOR i=0, nr-1 DO ddz[i,*] = DERIV(interp_data.f[i,*])
@@ -91,9 +91,9 @@ PRO local_gradient, interp_data, ri, zi, status=status, $
         interp_data = CREATE_STRUCT(interp_data, "method2", d)
       ENDIF ELSE d = interp_data.method2
       
-      IF ARG_PRESENT(f)    THEN f    = INTERPOLATE(interp_data.f, ri, zi, cubic=-0.5)
-      IF ARG_PRESENT(dfdr) THEN dfdr = INTERPOLATE(d.ddr, ri, zi, cubic=-0.5)
-      IF ARG_PRESENT(dfdz) THEN dfdz = INTERPOLATE(d.ddz, ri, zi, cubic=-0.5)
+      IF ARG_PRESENT(f)    THEN f    = INTERPOLATE(interp_data.f, ri, zi, cubic=-0.5D, /DOUBLE)
+      IF ARG_PRESENT(dfdr) THEN dfdr = INTERPOLATE(d.ddr, ri, zi, cubic=-0.5D, /DOUBLE)
+      IF ARG_PRESENT(dfdz) THEN dfdz = INTERPOLATE(d.ddz, ri, zi, cubic=-0.5D, /DOUBLE)
     END
     ELSE: BEGIN
       PRINT, "ERROR: unknown method in local_gradient"

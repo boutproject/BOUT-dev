@@ -260,12 +260,12 @@ void Laplacian::tridagCoefs(int jx, int jy, int jz,
 
 void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
                             dcomplex &a, dcomplex &b, dcomplex &c,
-                            const Field2D *ccoef, const Field2D *d,
-                            CELL_LOC loc) {
+                            const Field2D *c1coef, const Field2D *c2coef,
+                            const Field2D *d, CELL_LOC loc) {
   /* Function: Laplacian::tridagCoef
    * Purpose:  - Set the matrix components of A in Ax=b, solving
    *
-   *             D*Laplace_perp(x) + (1/C)Grad_perp(C)*Grad_perp(x) + Ax = B
+   *             D*Laplace_perp(x) + (1/C1)Grad_perp(C2)*Grad_perp(x) + Ax = B
    *
    *             for each fourier component.
    *             NOTE: A in the equation above is not added here.
@@ -280,13 +280,15 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
    * a         - Lower diagonal of the tridiagonal matrix. DO NOT CONFUSE WITH A
    * b         - The main diagonal
    * c         - The upper diagonal. DO NOT CONFUSE WITH C (called ccoef here)
-   * ccoef     - C in the equation above. DO NOT CONFUSE WITH c
+   * c1coef    - C1 in the equation above. DO NOT CONFUSE WITH c
+   * c2coef    - C2 in the equation above. DO NOT CONFUSE WITH c
    * d         - D in the equation above
    *
    * Output:
    * a         - Lower diagonal of the tridiagonal matrix. DO NOT CONFUSE WITH A
    * b         - The main diagonal
-   * c         - The upper diagonal. DO NOT CONFUSE WITH C (called ccoef here)
+   * c         - The upper diagonal. DO NOT CONFUSE WITH C1, C2 (called c1coef, c2coef
+   *             here)
    */
 
   Coordinates* localcoords;
@@ -297,7 +299,10 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
     localcoords = localmesh->getCoordinates(loc);
   }
 
-  ASSERT1(ccoef == nullptr || ccoef->getLocation() == loc);
+  ASSERT1(c1coef == nullptr || c1coef->getLocation() == loc);
+  ASSERT1(c2coef == nullptr || c2coef->getLocation() == loc);
+  ASSERT1( (c1coef == nullptr and c2coef == nullptr)
+           or (c1coef != nullptr and c2coef != nullptr) );
   ASSERT1(d == nullptr || d->getLocation() == loc);
 
   BoutReal coef1, coef2, coef3, coef4, coef5;
@@ -330,10 +335,10 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
     }
   }
 
-  if (ccoef != nullptr) {
+  if (c1coef != nullptr) {
     // A first order derivative term
     if((jx > 0) && (jx < (localmesh->LocalNx-1)))
-      coef4 += localcoords->g11(jx,jy) * ((*ccoef)(jx+1,jy) - (*ccoef)(jx-1,jy)) / (2.*localcoords->dx(jx,jy)*((*ccoef)(jx,jy)));
+      coef4 += localcoords->g11(jx,jy) * ((*c2coef)(jx+1,jy) - (*c2coef)(jx-1,jy)) / (2.*localcoords->dx(jx,jy)*((*c1coef)(jx,jy)));
   }
 
   if(localmesh->IncIntShear) {
@@ -384,7 +389,7 @@ void Laplacian::tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
  * This function will
  *      1. Calling tridagCoef, solving
  *
- *         D*Laplace_perp(x) + (1/C)Grad_perp(C)*Grad_perp(x) + Ax = B
+ *         D*Laplace_perp(x) + (1/C1)Grad_perp(C2)*Grad_perp(x) + Ax = B
  *
  *         for each fourier component
  *      2. Set the boundary conditions by setting the first and last rows
@@ -404,7 +409,8 @@ void Laplacian::tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
  * \param[in] inner_boundary_flags  Flags used to set the inner boundary
  * \param[in] outer_boundary_flags  Flags used to set the outer boundary
  * \param[in] a         A in the equation above. DO NOT CONFUSE WITH avec
- * \param[in] ccoef     C in the equation above. DO NOT CONFUSE WITH cvec
+ * \param[in] c1coef    C1 in the equation above. DO NOT CONFUSE WITH cvec
+ * \param[in] c2coef    C2 in the equation above. DO NOT CONFUSE WITH cvec
  * \param[in] d         D in the equation above
  * \param[in] includeguards Whether or not the guard points in x should be used
  *
@@ -417,12 +423,13 @@ void Laplacian::tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
 void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
                              dcomplex *bk, int jy, int kz, BoutReal kwave,
                              int global_flags, int inner_boundary_flags, int outer_boundary_flags,
-                             const Field2D *a, const Field2D *ccoef,
+                             const Field2D *a, const Field2D *c1coef, const Field2D *c2coef,
                              const Field2D *d,
                              bool includeguards) {
 
   ASSERT1(a->getLocation() == location);
-  ASSERT1(ccoef->getLocation() == location);
+  ASSERT1(c1coef->getLocation() == location);
+  ASSERT1(c2coef->getLocation() == location);
   ASSERT1(d->getLocation() == location);
 
   int xs = 0;            // xstart set to the start of x on this processor (including ghost points)
@@ -456,7 +463,7 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
   // The boundaries will be set according to the if-statements below.
   for(int ix=0;ix<=ncx;ix++) {
     // Actually set the metric coefficients
-    tridagCoefs(xs+ix, jy, kwave, avec[ix], bvec[ix], cvec[ix], ccoef, d);
+    tridagCoefs(xs+ix, jy, kwave, avec[ix], bvec[ix], cvec[ix], c1coef, c2coef, d);
     if (a != nullptr)
       // Add A to bvec (the main diagonal in the matrix)
       bvec[ix] += (*a)(xs+ix,jy);

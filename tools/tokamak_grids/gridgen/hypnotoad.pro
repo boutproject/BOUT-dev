@@ -27,18 +27,18 @@ PRO oplot_mesh, rz_mesh, flux_mesh
   FOR i=0, flux_mesh.critical.n_xpoint-1 DO BEGIN
     ; plot the separatrix contour
     CONTOUR, rz_mesh.psi, rz_mesh.R, rz_mesh.Z, levels=[flux_mesh.critical.xpt_f[i]], c_colors=2, /overplot
-    oplot, [INTERPOLATE(rz_mesh.R, flux_mesh.critical.xpt_ri[i])], [INTERPOLATE(rz_mesh.Z, flux_mesh.critical.xpt_zi[i])], psym=7, color=2
+    oplot, [INTERPOLATE(rz_mesh.R, flux_mesh.critical.xpt_ri[i], /DOUBLE)], [INTERPOLATE(rz_mesh.Z, flux_mesh.critical.xpt_zi[i], /DOUBLE)], psym=7, color=2
   ENDFOR
 
   ; Plot O-points
   FOR i=0, flux_mesh.critical.n_opoint-1 DO BEGIN
-    oplot, [INTERPOLATE(rz_mesh.R, flux_mesh.critical.opt_ri[i])], [INTERPOLATE(rz_mesh.Z, flux_mesh.critical.opt_zi[i])], psym=7, color=3
+    oplot, [INTERPOLATE(rz_mesh.R, flux_mesh.critical.opt_ri[i], /DOUBLE)], [INTERPOLATE(rz_mesh.Z, flux_mesh.critical.opt_zi[i], /DOUBLE)], psym=7, color=3
   ENDFOR
   
   ypos = 0
   FOR i=0, N_ELEMENTS(flux_mesh.npol)-1 DO BEGIN
-    plot_region, flux_mesh.rxy, flux_mesh.zxy, ypos, ypos+flux_mesh.npol[i]-1, color=i+1
-    ypos = ypos + flux_mesh.npol[i]
+    plot_region, flux_mesh.rxy, flux_mesh.zxy, ypos, ypos+flux_mesh.npol[i]+flux_mesh.n_y_boundary_guards[i]-1, color=i+1
+    ypos = ypos + flux_mesh.npol[i]+flux_mesh.n_y_boundary_guards[i]
   ENDFOR
 END
 
@@ -77,14 +77,14 @@ PRO popup_event, event
       ENDFOR
 
       ninpsi = N_ELEMENTS(info.in_psi_field)
-      psi_inner = FLTARR(ninpsi)
+      psi_inner = DBLARR(ninpsi)
       FOR i=0, ninpsi-1 DO BEGIN
         widget_control, info.in_psi_field[i], get_value=inp
         psi_inner[i] = inp
       ENDFOR
 
       noutpsi = N_ELEMENTS(info.out_psi_field)
-      psi_outer = FLTARR(noutpsi)
+      psi_outer = DBLARR(noutpsi)
       FOR i=0, noutpsi-1 DO BEGIN
         widget_control, info.out_psi_field[i], get_value=inp
         psi_outer[i] = inp
@@ -102,6 +102,8 @@ PRO popup_event, event
       widget_control, base_info.xpt_dist_field, get_value=xpt_mul
 
       widget_control, info.nonorthogonal_weight_decay_power, get_value=nonorthogonal_weight_decay_power
+
+      widget_control, base_info.y_boundary_guards_field, get_value=y_boundary_guards
 
       PRINT, "HYP: psi_inner =", psi_inner
 
@@ -135,7 +137,8 @@ PRO popup_event, event
                          boundary=boundary, strict=base_info.strict_bndry, $
                          single_rad_grid=base_info.single_rad_grid, $
                          critical=(*(base_info.rz_grid)).critical, $
-                         fast=base_info.fast, xpt_mul=xpt_mul, /simple)
+                         fast=base_info.fast, xpt_mul=xpt_mul, /simple, $
+                         y_boundary_guards=y_boundary_guards)
     END
     'mesh2': BEGIN
       ; Non-orthogonal mesh button was pushed
@@ -147,7 +150,8 @@ PRO popup_event, event
                          /nrad_flexible, $
                          single_rad_grid=base_info.single_rad_grid, $
                          critical=(*(base_info.rz_grid)).critical, $
-                         xpt_only=base_info.xpt_only, /simple)
+                         xpt_only=base_info.xpt_only, /simple, $
+                         y_boundary_guards=y_boundary_guards)
     END
   ENDCASE
       
@@ -362,6 +366,9 @@ PRO event_handler, event
       
       widget_control, info.xpt_dist_field, get_value=xpt_mul
       PRINT, "xpt_mul = ", xpt_mul
+
+      widget_control, info.y_boundary_guards_field, get_value=y_boundary_guards
+
       ; Check if a simplified boundary should be used
       IF info.simple_bndry THEN BEGIN
         ; Simplify the boundary to a square box
@@ -373,7 +380,7 @@ PRO event_handler, event
         
       WIDGET_CONTROL, info.status, set_value="Generating mesh ..."
       
-      fpsi = FLTARR(2, N_ELEMENTS((*(info.rz_grid)).fpol))
+      fpsi = DBLARR(2, N_ELEMENTS((*(info.rz_grid)).fpol))
       fpsi[0,*] = (*(info.rz_grid)).simagx + (*(info.rz_grid)).npsigrid * ( (*(info.rz_grid)).sibdry - (*(info.rz_grid)).simagx )
       fpsi[1,*] = (*(info.rz_grid)).fpol
 
@@ -383,7 +390,7 @@ PRO event_handler, event
                          single_rad_grid=info.single_rad_grid, $
                          critical=(*(info.rz_grid)).critical, $
                          fast=info.fast, xpt_mul=xpt_mul, $
-                         fpsi = fpsi, /simple)
+                         fpsi = fpsi, /simple, y_boundary_guards=y_boundary_guards)
       IF mesh.error EQ 0 THEN BEGIN
         PRINT, "Successfully generated mesh"
         WIDGET_CONTROL, info.status, set_value="Successfully generated mesh. All glory to the Hypnotoad!"
@@ -426,6 +433,7 @@ PRO event_handler, event
                     nonorthogonal_weight_decay_power:info.nonorthogonal_weight_decay_power}
       ENDELSE
       
+      widget_control, info.y_boundary_guards_field, get_value=y_boundary_guards
 
       ; Check if a simplified boundary should be used
       IF info.simple_bndry THEN BEGIN
@@ -442,7 +450,8 @@ PRO event_handler, event
                          boundary=boundary, strict=info.strict_bndry, $
                          /nrad_flexible, $
                          single_rad_grid=info.single_rad_grid, $
-                         critical=(*(info.rz_grid)).critical, xpt_only=info.xpt_only, /simple)
+                         critical=(*(info.rz_grid)).critical, xpt_only=info.xpt_only, /simple, $
+                         y_boundary_guards=y_boundary_guards)
       IF mesh.error EQ 0 THEN BEGIN
         PRINT, "Successfully generated non-orthogonal mesh"
         WIDGET_CONTROL, info.status, set_value="Successfully generated mesh. All glory to the Hypnotoad!"
@@ -472,7 +481,8 @@ PRO event_handler, event
         ; Get settings
         settings = {calcp:info.calcp, calcbt:info.calcbt, $
                     calchthe:info.calchthe, calcjpar:info.calcjpar, $
-                    orthogonal_coordinates_output:info.orthogonal_coordinates_output}
+                    orthogonal_coordinates_output:info.orthogonal_coordinates_output, $
+                    y_boundary_guards:(*info.flux_mesh).y_boundary_guards}
         
         process_grid, *(info.rz_grid), *(info.flux_mesh), $
                       output=filename, poorquality=poorquality, /gui, parent=info.draw, $
@@ -590,8 +600,8 @@ PRO event_handler, event
       
       m = MIN( (REFORM((*info.flux_mesh).rxy - r))^2 + $
                (REFORM((*info.flux_mesh).zxy - r))^2 , ind)
-      xi = FIX(ind / TOTAL((*info.flux_mesh).npol))
-      yi = FIX(ind MOD TOTAL((*info.flux_mesh).npol))
+      xi = FIX(ind / TOTAL((*info.flux_mesh).npol + (*info.flux_mesh).n_y_boundary_guards))
+      yi = FIX(ind MOD TOTAL((*info.flux_mesh).npol + (*info.flux_mesh).n_y_boundary_guards))
       PRINT, xi, yi
     END
     'detail': BEGIN
@@ -608,7 +618,7 @@ PRO event_handler, event
         critical = (*(info.rz_grid)).critical
         IF (*(info.rz_grid)).nlim GT 2 THEN BEGIN
           ; Check that the critical points are inside the boundary
-          bndryi = FLTARR(2, (*(info.rz_grid)).nlim)
+          bndryi = DBLARR(2, (*(info.rz_grid)).nlim)
           bndryi[0,*] = INTERPOL(FINDGEN((*(info.rz_grid)).nr), (*(info.rz_grid)).R, (*(info.rz_grid)).rlim)
           bndryi[1,*] = INTERPOL(FINDGEN((*(info.rz_grid)).nz), (*(info.rz_grid)).Z, (*(info.rz_grid)).zlim)
           critical = critical_bndry(critical, bndryi)
@@ -699,13 +709,13 @@ PRO event_handler, event
         psi_inner = (*info.flux_mesh).psi_inner
       ENDIF ELSE BEGIN
         widget_control, info.psi_inner_field, get_value=psi_in
-        psi_inner = FLTARR(n_xpoint+1) + psi_in
+        psi_inner = DBLARR(n_xpoint+1) + psi_in
       ENDELSE
       
       in_psi_field[0] = CW_FIELD( in_psi_base,                    $
                                   title  = 'Core: ',              $ 
                                   uvalue = 'in_psi',              $ 
-                                  /float,                          $ 
+                                  /double,                        $ 
                                   value = psi_inner[0],           $
                                   xsize=8                         $
                                 )
@@ -713,7 +723,7 @@ PRO event_handler, event
         in_psi_field[i] = CW_FIELD( in_psi_base,                    $
                                     title  = 'PF '+STRTRIM(STRING(i),2)+': ', $ 
                                     uvalue = 'in_psi',              $ 
-                                    /float,                          $ 
+                                    /double,                        $ 
                                     value = psi_inner[i],           $
                                     xsize=8                         $
                                   )
@@ -729,7 +739,7 @@ PRO event_handler, event
         psi_outer = (*info.flux_mesh).psi_outer
       ENDIF ELSE BEGIN
         widget_control, info.psi_outer_field, get_value=psi_out
-        psi_outer = FLTARR(n_xpoint) + psi_out
+        psi_outer = DBLARR(n_xpoint) + psi_out
       ENDELSE
       
       out_psi_field = LONARR(N_ELEMENTS(psi_outer))
@@ -738,7 +748,7 @@ PRO event_handler, event
         out_psi_field[i] = CW_FIELD( out_psi_base,                    $
                                      title  = 'SOL '+STRTRIM(STRING(i),2)+': ', $ 
                                      uvalue = 'out_psi',              $ 
-                                     /float,                          $ 
+                                     /double,                         $ 
                                      value = psi_outer[i],            $
                                      xsize=8                          $
                                   )
@@ -767,12 +777,12 @@ PRO event_handler, event
         ENDIF ELSE BEGIN
           FOR i=0, nnpol-1 DO BEGIN
             IF i MOD 3 EQ 1 THEN title='Core: ' ELSE title  = 'Private Flux: '
-            npol_field[i] = CW_FIELD( pol_base,                          $
-                                      title  = title,                    $ 
-                                      uvalue = 'npol',                   $ 
-                                      /long,                             $ 
-                                      value = (*info.flux_mesh).npol[i], $
-                                      xsize=8                            $
+            npol_field[i] = CW_FIELD( pol_base,                           $
+                                      title  = title,                     $
+                                      uvalue = 'npol',                    $
+                                      /long,                              $
+                                      value = (*info.flux_mesh).npol[i],  $
+                                      xsize=8                             $
                                     )
           ENDFOR
         ENDELSE
@@ -798,7 +808,7 @@ PRO event_handler, event
                     title = 'Exponent: ', $
                     uvalue = 'nonorthogonal_weight_decay_power', $
                     /double, $
-                    value = 2.7, $
+                    value = 2.7D, $
                     xsize = 8 $
                   )
       
@@ -853,7 +863,8 @@ PRO event_handler, event
         str_set, info, "rad_peak_field", oldinfo.rad_peak_field, /over
         str_set, info, "xpt_dist_field", oldinfo.xpt_dist_field, /over
         str_set, info, "nonorthogonal_weight_decay_power", oldinfo.nonorthogonal_weight_decay_power, /over
-        
+        str_set, info, "y_boundary_guards_field", oldinfo.y_boundary_guards_field, /over
+
         str_set, info, "status", oldinfo.status, /over
         str_set, info, "leftbargeom", oldinfo.leftbargeom, /over
 
@@ -1013,15 +1024,15 @@ PRO hypnotoad
   psi_inner_field = CW_FIELD( tab1,                            $
                               title  = 'Inner psi:',          $ 
                               uvalue = 'inner_psi',           $ 
-                              /floating,                      $ 
-                              value = 0.9,                    $
+                              /double,                        $ 
+                              value = 0.9D,                    $
                               xsize=8                         $
                             )
   psi_outer_field = CW_FIELD( tab1,                            $
                               title  = 'Outer psi:',          $ 
                               uvalue = 'outer_psi',           $ 
-                              /floating,                      $ 
-                              value = 1.1,                    $
+                              /double,                        $ 
+                              value = 1.1D,                    $
                               xsize=8                         $
                             )
   
@@ -1029,7 +1040,7 @@ PRO hypnotoad
   rad_peak_field = CW_FIELD( tab1,                            $
                              title  = 'Sep. spacing:',          $ 
                              uvalue = 'rad_peak',           $ 
-                             /floating,                      $ 
+                             /double,                        $ 
                              value = 1,                    $
                              xsize=8                         $
                            )
@@ -1037,18 +1048,31 @@ PRO hypnotoad
   parweight_field = CW_FIELD( tab1,                            $
                              title  = 'Par. vs pol:',          $ 
                              uvalue = 'parweight',           $ 
-                             /floating,                      $ 
-                             value = 0.0,                    $
+                             /double,                        $ 
+                             value = 0.0D,                    $
                              xsize=8                         $
                            )
 
   xpt_dist_field = CW_FIELD( tab1,                            $
                              title  = 'Xpt dist x:',          $ 
                              uvalue = 'xpt_mul',           $ 
-                             /floating,                      $ 
+                             /double,                        $ 
                              value = 1,                    $
                              xsize=8                         $
                            )
+
+  y_boundary_guards_field = CW_FIELD( tab1,                               $
+                                      title = '# y-boundary guard cells', $
+                                      uvalue = 'y_boundary_guards',       $
+                                      /long,                              $
+                                      value = 0,                          $
+                                      xsize = 3                           $
+                                    )
+
+  l = WIDGET_LABEL(tab1, value = '(default 0 for backward compatibility,' + STRING(10B) $
+                                 + 'recommended to set to number of' + STRING(10B)      $
+                                 + 'y-guards in your simulation, e.g. 2)',              $
+                                 /ALIGN_LEFT)
   
   detail_button = WIDGET_BUTTON(tab1, VALUE='Detailed settings', $
                                 uvalue='detail', $
@@ -1192,6 +1216,7 @@ PRO hypnotoad
            rad_peak_field:rad_peak_field, $
            parweight_field:parweight_field, $
            xpt_dist_field:xpt_dist_field, $
+           y_boundary_guards_field:y_boundary_guards_field, $
            status:status_box, $
            leftbargeom:leftbargeom, $
            $;;; Options tab 
@@ -1203,7 +1228,7 @@ PRO hypnotoad
            simple_bndry:0, $ ; Use simplified boundary?
            xptonly_check:xptonly_check, $ ; 
            xpt_only:0, $ ; x-point only non-orthogonal
-           nonorthogonal_weight_decay_power:2.7, $ ; how fast to decay towards orthogonal mesh
+           nonorthogonal_weight_decay_power:2.7D, $ ; how fast to decay towards orthogonal mesh
            radgrid_check:radgrid_check, $
            single_rad_grid:1, $
            smoothP_check:smoothP_check, $

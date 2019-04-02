@@ -825,11 +825,35 @@ TEST_F(FieldPerpTest, AddFieldPerpField2D) {
   EXPECT_TRUE(IsFieldEqual(c, 3.0));
 }
 
+TEST_F(FieldPerpTest, AddField2DFieldPerp) {
+  FieldPerp b, c;
+  Field2D a;
+
+  b.setIndex(1);
+  a = 1.0;
+  b = 2.0;
+  c = a + b;
+
+  EXPECT_TRUE(IsFieldEqual(c, 3.0));
+}
+
 TEST_F(FieldPerpTest, AddFieldPerpField3D) {
   FieldPerp a, c;
   Field3D b;
 
   a.setIndex(1);
+  a = 1.0;
+  b = 2.0;
+  c = a + b;
+
+  EXPECT_TRUE(IsFieldEqual(c, 3.0));
+}
+
+TEST_F(FieldPerpTest, AddField3DFieldPerp) {
+  FieldPerp b, c;
+  Field3D a;
+
+  b.setIndex(1);
   a = 1.0;
   b = 2.0;
   c = a + b;
@@ -961,11 +985,35 @@ TEST_F(FieldPerpTest, MultiplyFieldPerpField2D) {
   EXPECT_TRUE(IsFieldEqual(c, 32.0));
 }
 
+TEST_F(FieldPerpTest, MultiplyField2DFieldPerp) {
+  FieldPerp b, c;
+  Field2D a;
+
+  b.setIndex(1);
+  a = 4.0;
+  b = 8.0;
+  c = a * b;
+
+  EXPECT_TRUE(IsFieldEqual(c, 32.0));
+}
+
 TEST_F(FieldPerpTest, MultiplyFieldPerpField3D) {
   FieldPerp a, c;
   Field3D b;
 
   a.setIndex(1);
+  a = 4.0;
+  b = 8.0;
+  c = a * b;
+
+  EXPECT_TRUE(IsFieldEqual(c, 32.0));
+}
+
+TEST_F(FieldPerpTest, MultiplyField3DFieldPerp) {
+  FieldPerp b, c;
+  Field3D a;
+
+  b.setIndex(1);
   a = 4.0;
   b = 8.0;
   c = a * b;
@@ -1097,11 +1145,35 @@ TEST_F(FieldPerpTest, SubtractFieldPerpField2D) {
   EXPECT_TRUE(IsFieldEqual(c, -10.0));
 }
 
+TEST_F(FieldPerpTest, SubtractField2DFieldPerp) {
+  FieldPerp b, c;
+  Field2D a;
+
+  b.setIndex(1);
+  a = 10.0;
+  b = 20.0;
+  c = a - b;
+
+  EXPECT_TRUE(IsFieldEqual(c, -10.0));
+}
+
 TEST_F(FieldPerpTest, SubtractFieldPerpField3D) {
   FieldPerp a, c;
   Field3D b;
 
   a.setIndex(1);
+  a = 10.0;
+  b = 20.0;
+  c = a - b;
+
+  EXPECT_TRUE(IsFieldEqual(c, -10.0));
+}
+
+TEST_F(FieldPerpTest, SubtractField3DFieldPerp) {
+  FieldPerp b, c;
+  Field3D a;
+
+  b.setIndex(1);
   a = 10.0;
   b = 20.0;
   c = a - b;
@@ -1233,11 +1305,35 @@ TEST_F(FieldPerpTest, DivideFieldPerpField2D) {
   EXPECT_TRUE(IsFieldEqual(c, 4.0));
 }
 
+TEST_F(FieldPerpTest, DivideField2DFieldPerp) {
+  FieldPerp b, c;
+  Field2D a;
+
+  b.setIndex(1);
+  a = 32.0;
+  b = 8.0;
+  c = a / b;
+
+  EXPECT_TRUE(IsFieldEqual(c, 4.0));
+}
+
 TEST_F(FieldPerpTest, DivideFieldPerpField3D) {
   FieldPerp a, c;
   Field3D b;
 
   a.setIndex(1);
+  a = 32.0;
+  b = 8.0;
+  c = a / b;
+
+  EXPECT_TRUE(IsFieldEqual(c, 4.0));
+}
+
+TEST_F(FieldPerpTest, DivideField3DFieldPerp) {
+  FieldPerp b, c;
+  Field3D a;
+
+  b.setIndex(1);
   a = 32.0;
   b = 8.0;
   c = a / b;
