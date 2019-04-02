@@ -339,32 +339,14 @@ const Field2D D2DYDZ(const Field2D &f, CELL_LOC outloc,
   return zeroFrom(f).setLocation(outloc);
 }
 
-const Field3D D2DYDZ(const Field3D& f, CELL_LOC outloc,
-                     MAYBE_UNUSED(const std::string& method), REGION UNUSED(region)) {
-  Coordinates *coords = f.getCoordinates(outloc);
-
-  Field3D result{emptyFrom(f)};
-  ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
-  result.allocate();
-  result.setLocation(f.getLocation());
-  ASSERT1(method == "DEFAULT");
-  for(int i=f.getMesh()->xstart;i<=f.getMesh()->xend;i++)
-    for(int j=f.getMesh()->ystart;j<=f.getMesh()->yend;j++)
-      for(int k=0;k<f.getMesh()->LocalNz;k++) {
-        int kp = (k+1) % (f.getMesh()->LocalNz);
-        int km = (k-1+f.getMesh()->LocalNz) % (f.getMesh()->LocalNz);
-        result(i,j,k) = 0.25*( +(f(i,j+1,kp) - f(i,j-1,kp))
-                               -(f(i,j+1,km) - f(i,j-1,km)) )
-                    / (coords->dy(i,j) * coords->dz);
-      }
-  // TODO: use region aware implementation
-  // BOUT_FOR(i, f.getRegion(region)) {
-  // result[i] = 0.25*( +(f[i.offset(0,1, 1)] - f[i.offset(0,-1, 1)])
-  //                              / (coords->dy[i.yp()])
-  //                    -(f[i.offset(0,1,-1)] - f[i.offset(0,-1,-1)])
-  //                              / (coords->dy[i.ym()]))
-  //   / coords->dz; }
-  return result;
+const Field3D D2DYDZ(const Field3D& f, CELL_LOC outloc, const std::string& method,
+                     REGION region) {
+  if (outloc == CELL_ZLOW || f.getLocation() == CELL_ZLOW) {
+    // Staggering in z, so take y-derivative at f's location.
+    return DDZ(DDY(f, CELL_DEFAULT, method, region), outloc, method, region);
+  } else {
+    return DDZ(DDY(f, outloc, method, region), outloc, method, region);
+  }
 }
 
 /*******************************************************************************
