@@ -442,6 +442,8 @@ class BaseTokamak(object):
             metric.g_12 /= self.r0**2
             metric.g_13 /= self.r0**2
             metric.g_23 /= self.r0**2
+            metric.J /= self.r0**3
+            metric.B *= self.r0**2
 
         self.metric_is_set = True
 
@@ -552,6 +554,8 @@ class SlabGeometry(BaseTokamak):
         # Have we calculated metric components yet?
         self.metric_is_set = False
 
+        self.orthogonal = False
+
         self.x = x
         self.y = y
         self.zperiod = 1 + 0*x
@@ -574,6 +578,7 @@ class SlabGeometry(BaseTokamak):
         # Toroidal angle of a field-line as function
         # of poloidal angle y
         self.zShift = 0 + 0*x
+        self.shiftAngle = 0 + 0*x
 
         # Field-line pitch
         self.nu = 0 + 0*x
