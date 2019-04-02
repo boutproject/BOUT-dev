@@ -202,12 +202,13 @@ const Field3D LaplaceNaulin::solve(const Field3D &rhs, const Field3D &x0) {
   ASSERT1(Acoef.getLocation() == location);
   ASSERT1(localmesh == rhs.getMesh() && localmesh == x0.getMesh());
 
-  Field3D x(x0); // Result
-
   Field3D rhsOverD = rhs/Dcoef;
 
   // x-component of 1./(C1*D) * Grad_perp(C2)
   Field3D coef_x = DDX(C2coef, location, DIFF_C2)/C1coef/Dcoef;
+
+  // y-component of 1./(C1*D) * Grad_perp(C2)
+  Field3D coef_y = DDY(C2coef, location, DIFF_C2)/C1coef/Dcoef;
 
   // z-component of 1./(C1*D) * Grad_perp(C2)
   Field3D coef_z = DDZ(C2coef, location, DIFF_FFT)/C1coef/Dcoef;
@@ -246,57 +247,86 @@ const Field3D LaplaceNaulin::solve(const Field3D &rhs, const Field3D &x0) {
   int underrelax_count = 0;
   BoutReal underrelax_factor = initial_underrelax_factor;
 
-  // Initial values for derivatives of x
-  Field3D ddx_x = DDX(x, location, DIFF_C2);
-  Field3D ddz_x = DDZ(x, location, DIFF_FFT);
-  Field3D b = rhsOverD - (coords->g11*coef_x_AC*ddx_x + coords->g33*coef_z*ddz_x + coords->g13*(coef_x_AC*ddz_x + coef_z*ddx_x)) - AOverD_AC*x;
+  auto calc_b_guess = [&] (const Field3D& x_in) {
+    // Derivatives of x
+    Field3D ddx_x = DDX(x_in, location, DIFF_C2);
+    Field3D ddz_x = DDZ(x_in, location, DIFF_FFT);
+    return rhsOverD - (coords->g11*coef_x_AC*ddx_x + coords->g33*coef_z*ddz_x
+        + coords->g13*(coef_x_AC*ddz_x + coef_z*ddx_x)) - AOverD_AC*x_in;
+  };
 
-  while (error_rel>rtol && error_abs>atol) {
+  auto calc_b_x_pair = [&, this] (Field3D b, Field3D& x_guess) {
+    // Note take a copy of the 'b' argument, because we want to return a copy of it in the
+    // result
+    // Is it dangerous to take x_guess by reference, if we will call something like
+    // b_x_pair = calc_b_x_pair(b_guess, b_x_pair.second);
+    // ???
 
-    if ( (inner_boundary_flags & INVERT_SET) || (outer_boundary_flags & INVERT_SET) )
+    if ( (inner_boundary_flags & INVERT_SET) || (outer_boundary_flags & INVERT_SET) ) {
       // This passes in the boundary conditions from x0's guard cells
-      copy_x_boundaries(x, x0, localmesh);
+      copy_x_boundaries(x_guess, x0, localmesh);
+    }
 
-    // NB need to pass x in case boundary flags require 'x0', even if
-    // delp2solver is not iterative and does not use an initial guess
-    x = delp2solver->solve(b, x);
+    // NB need to pass x_guess in case boundary flags require 'x0', even if delp2solver is
+    // not iterative and does not use an initial guess
+    Field3D x = delp2solver->solve(b, x_guess);
     localmesh->communicate(x);
 
-    // re-calculate the rhs from the new solution
-    // Use here to calculate an error, can also use for the next iteration
-    ddx_x = DDX(x, location, DIFF_C2); // can be used also for the next iteration
-    ddz_x = DDZ(x, location, DIFF_FFT);
+    return std::pair<Field3D,Field3D>(b, x);
+  };
 
-    Field3D bnew = rhsOverD
-                   - (coords->g11*coef_x_AC*ddx_x + coords->g33*coef_z*ddz_x
-                      + coords->g13*(coef_x_AC*ddz_x + coef_z*ddx_x))
-                   - AOverD_AC*x;
+  Field3D b = calc_b_guess(x0);
+  // Need to make a copy of x0 here to make sure we don't change x0
+  auto b_x_pair = calc_b_x_pair(b, Field3D(x0).allocate());
+  auto b_x_pair_old = b_x_pair;
 
-    Field3D error3D = b - bnew;
+  while (true) {
+    Field3D bnew = calc_b_guess(b_x_pair.second);
+
+    Field3D error3D = b_x_pair.first - bnew;
     error_abs = max(abs(error3D, RGN_NOBNDRY), true, RGN_NOBNDRY);
     error_rel = error_abs / RMS_rhsOverD;
 
-    b = underrelax_factor*bnew + (1. - underrelax_factor)*b;
+    if (error_rel<rtol or error_abs<atol) break;
 
-    if (error_abs > last_error) {
+    count++;
+    if (count>maxits) {
+      throw BoutException("LaplaceNaulin error: Took more than maxits=%i iterations to converge.", maxits);
+    }
+
+    output<<underrelax_factor<<" "<<count<<" "<<error_abs<<" "<<error_rel<<endl;
+
+    while (error_abs > last_error) {
       // Iteration seems to be diverging... try underrelaxing and restart
       underrelax_factor *= .9;
       underrelax_count++;
 
-      // Set x back to initial guess to restart iteration
-      x = x0;
-      ddx_x = DDX(x, location, DIFF_C2);
-      ddz_x = DDZ(x, location, DIFF_FFT);
-      b = rhsOverD - (coords->g11*coef_x_AC*ddx_x + coords->g33*coef_z*ddz_x + coords->g13*(coef_x_AC*ddz_x + coef_z*ddx_x)) - AOverD_AC*x;
+      // Restart from b_x_pair_old - that was our best guess
+      bnew = calc_b_guess(b_x_pair_old.second);
+      b_x_pair = calc_b_x_pair(underrelax_factor*bnew + (1. - underrelax_factor)*b_x_pair_old.first, b_x_pair_old.second);
 
-      last_error = 1.e20;
-    } else {
-      last_error = error_abs;
+      bnew = calc_b_guess(b_x_pair.second);
+
+      error3D = b_x_pair.first - bnew;
+      error_abs = max(abs(error3D, RGN_NOBNDRY), true, RGN_NOBNDRY);
+      error_rel = error_abs / RMS_rhsOverD;
+
+      // effectively another iteration, so increment the counter
+      count++;
+      if (count>maxits) {
+        throw BoutException("LaplaceNaulin error: Took more than maxits=%i iterations to converge.", maxits);
+      }
+
+      output<<underrelax_factor<<" "<<count<<" "<<error_abs<<" "<<error_rel<<endl;
     }
 
-    count++;
-    if (count>maxits)
-      throw BoutException("LaplaceNaulin error: Took more than maxits=%i iterations to converge.", maxits);
+    // Might have met convergence criterion while in underrelaxation loop
+    if (error_rel<rtol or error_abs<atol) break;
+
+    last_error = error_abs;
+    b_x_pair_old = b_x_pair;
+    b_x_pair = calc_b_x_pair(underrelax_factor*bnew + (1. - underrelax_factor)*b_x_pair.first, b_x_pair.second);
+
   }
 
   ncalls++;
@@ -305,7 +335,7 @@ const Field3D LaplaceNaulin::solve(const Field3D &rhs, const Field3D &x0) {
   naulinsolver_mean_underrelax_counts = (naulinsolver_mean_underrelax_counts * BoutReal(ncalls - 1)
                                          + BoutReal(underrelax_count)) / BoutReal(ncalls);
 
-  return x;
+  return b_x_pair.second;
 }
 
 void LaplaceNaulin::copy_x_boundaries(Field3D &x, const Field3D &x0, Mesh *localmesh) {
