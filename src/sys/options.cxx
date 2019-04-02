@@ -170,7 +170,7 @@ void Options::assign<>(Tensor<BoutReal> val, const std::string source) {
   is_value = true;
 }
 
-template <> std::string Options::as<std::string>(std::string&& UNUSED(similar_to)) const {
+template <> std::string Options::as<std::string>(const std::string& UNUSED(similar_to)) const {
   if (!is_value) {
     throw BoutException(_("Option %s has no value"), full_name.c_str());
   }
@@ -190,7 +190,7 @@ template <> std::string Options::as<std::string>(std::string&& UNUSED(similar_to
   return result;
 }
 
-template <> int Options::as<int>(int&& UNUSED(similar_to)) const {
+template <> int Options::as<int>(const int& UNUSED(similar_to)) const {
   if (!is_value) {
     throw BoutException(_("Option %s has no value"), full_name.c_str());
   }
@@ -245,7 +245,7 @@ template <> int Options::as<int>(int&& UNUSED(similar_to)) const {
   return result;
 }
 
-template <> BoutReal Options::as<BoutReal>(BoutReal&& UNUSED(similar_to)) const {
+template <> BoutReal Options::as<BoutReal>(const BoutReal& UNUSED(similar_to)) const {
   if (!is_value) {
     throw BoutException(_("Option %s has no value"), full_name.c_str());
   }
@@ -287,7 +287,7 @@ template <> BoutReal Options::as<BoutReal>(BoutReal&& UNUSED(similar_to)) const 
   return result;
 }
 
-template <> bool Options::as<bool>(bool&& UNUSED(similar_to)) const {
+template <> bool Options::as<bool>(const bool& UNUSED(similar_to)) const {
   if (!is_value) {
     throw BoutException(_("Option %s has no value"), full_name.c_str());
   }
@@ -327,7 +327,7 @@ template <> bool Options::as<bool>(bool&& UNUSED(similar_to)) const {
   return result;
 }
 
-template <> Field3D Options::as<Field3D>(Field3D&& similar_to) const {
+template <> Field3D Options::as<Field3D>(const Field3D& similar_to) const {
   if (!is_value) {
     throw BoutException("Option %s has no value", full_name.c_str());
   }
@@ -391,7 +391,7 @@ template <> Field3D Options::as<Field3D>(Field3D&& similar_to) const {
                       full_name.c_str());
 }
 
-template <> Field2D Options::as<Field2D>(Field2D&& similar_to) const {
+template <> Field2D Options::as<Field2D>(const Field2D& similar_to) const {
   if (!is_value) {
     throw BoutException("Option %s has no value", full_name.c_str());
   }

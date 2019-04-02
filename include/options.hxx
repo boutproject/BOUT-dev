@@ -356,7 +356,7 @@ public:
   /// where the Mesh and cell location are taken from this input.
   /// 
   template <typename T>
-  T as(T&& UNUSED(similar_to) = {}) const {
+  T as(const T& UNUSED(similar_to) = {}) const {
     if (!is_value) {
       throw BoutException("Option %s has no value", full_name.c_str());
     }
@@ -424,7 +424,7 @@ public:
                   << ")" << std::endl;
       return def;
     }
-    T val = as<T>(std::forward<T>(def));
+    T val = as<T>(def);
     // Check if this was previously set as a default option
     if (bout::utils::variantEqualTo(attributes.at("source"), DEFAULT_SOURCE)) {
       // Check that the default values are the same
@@ -451,7 +451,7 @@ public:
                   << ")" << std::endl;
       return def;
     }
-    T val = as<T>(std::forward<T>(def));
+    T val = as<T>(def);
     // Check if this was previously set as a default option
     if (bout::utils::variantEqualTo(attributes.at("source"), DEFAULT_SOURCE)) {
       // Check that the default values are the same
@@ -666,12 +666,12 @@ template<> void Options::assign<>(Tensor<BoutReal> val, const std::string source
 template <> inline bool Options::similar<BoutReal>(BoutReal a, BoutReal b) const { return fabs(a - b) < 1e-10; }
 
 /// Specialised as routines
-template <> std::string Options::as<std::string>(std::string&& similar_to) const;
-template <> int Options::as<int>(int&& similar_to) const;
-template <> BoutReal Options::as<BoutReal>(BoutReal&& similar_to) const;
-template <> bool Options::as<bool>(bool&& similar_to) const;
-template <> Field2D Options::as<Field2D>(Field2D&& similar_to) const;
-template <> Field3D Options::as<Field3D>(Field3D&& similar_to) const;
+template <> std::string Options::as<std::string>(const std::string& similar_to) const;
+template <> int Options::as<int>(const int& similar_to) const;
+template <> BoutReal Options::as<BoutReal>(const BoutReal& similar_to) const;
+template <> bool Options::as<bool>(const bool& similar_to) const;
+template <> Field2D Options::as<Field2D>(const Field2D& similar_to) const;
+template <> Field3D Options::as<Field3D>(const Field3D& similar_to) const;
 
 /// Define for reading options which passes the variable name
 #define OPTION(options, var, def)  \
