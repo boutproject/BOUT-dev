@@ -17,7 +17,10 @@ public:
 
   int run() override {
     run_called = true;
-    return (*options)["number"].withDefault(0);
+    if ((*options)["throw_run"].withDefault(false)) {
+      throw BoutException("Deliberate exception in FakeSolver::run");
+    }
+    return (*options)["fail_run"].withDefault(0);
   }
   bool run_called{false};
 
@@ -26,7 +29,7 @@ public:
     if (Solver::init(nout, tstep)) {
       return 1;
     }
-    return 0;
+    return (*options)["fail_init"].withDefault(0);
   }
   bool init_called{false};
 

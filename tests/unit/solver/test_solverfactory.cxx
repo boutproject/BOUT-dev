@@ -58,11 +58,11 @@ TEST(SolverFactoryTest, CreateFromOptions) {
 TEST(SolverFactoryTest, CreateFromName) {
   WithQuietOutput quiet{output_info};
 
-  constexpr auto number = 13;
-  Options::root()["solver"]["number"] = number;
+  constexpr auto fail_run = 13;
+  Options::root()["solver"]["fail_run"] = fail_run;
   auto solver = SolverFactory::getInstance()->createSolver("fake_solver");
 
-  EXPECT_EQ(solver->run(), number);
+  EXPECT_EQ(solver->run(), fail_run);
 
   Options::cleanup();
 }
@@ -70,12 +70,12 @@ TEST(SolverFactoryTest, CreateFromName) {
 TEST(SolverFactoryTest, CreateFromNameAndOptions) {
   WithQuietOutput quiet{output_info};
 
-  constexpr auto number = 13;
+  constexpr auto fail_run = 31;
   Options options;
-  options["number"] = number;
+  options["fail_run"] = fail_run;
   auto solver = SolverFactory::getInstance()->createSolver("fake_solver", &options);
 
-  EXPECT_EQ(solver->run(), number);
+  EXPECT_EQ(solver->run(), fail_run);
 }
 
 TEST(SolverFactoryTest, BadCreate) {

@@ -96,11 +96,11 @@ TEST_F(SolverTest, CreateFromOptions) {
 TEST_F(SolverTest, CreateFromName) {
   WithQuietOutput quiet{output_info};
 
-  constexpr auto number = 13;
-  Options::root()["solver"]["number"] = number;
+  constexpr auto fail_run = 13;
+  Options::root()["solver"]["fail_run"] = fail_run;
   auto solver = Solver::create("fake_solver");
 
-  EXPECT_EQ(solver->run(), number);
+  EXPECT_EQ(solver->run(), fail_run);
 
   Options::cleanup();
 }
@@ -108,12 +108,12 @@ TEST_F(SolverTest, CreateFromName) {
 TEST_F(SolverTest, CreateFromNameAndOptions) {
   WithQuietOutput quiet{output_info};
 
-  constexpr auto number = 13;
+  constexpr auto fail_run = 13;
   Options options;
-  options["number"] = number;
+  options["fail_run"] = fail_run;
   auto solver = Solver::create("fake_solver", &options);
 
-  EXPECT_EQ(solver->run(), number);
+  EXPECT_EQ(solver->run(), fail_run);
 }
 
 TEST_F(SolverTest, BadCreate) {
@@ -846,6 +846,47 @@ TEST_F(SolverTest, BasicSolve) {
   EXPECT_TRUE(solver.run_called);
 }
 
+TEST_F(SolverTest, SolveBadInit) {
+  Options options;
+  options["fail_init"] = -1;
+  FakeSolver solver{&options};
+
+  Options::root()["dump_on_restart"] = false;
+
+  EXPECT_THROW(solver.solve(), BoutException);
+
+  EXPECT_TRUE(solver.init_called);
+  EXPECT_FALSE(solver.run_called);
+}
+
+TEST_F(SolverTest, SolveBadRun) {
+  Options options;
+  options["fail_run"] = -1;
+  FakeSolver solver{&options};
+
+  Options::root()["dump_on_restart"] = false;
+
+  EXPECT_EQ(solver.solve(), -1);
+
+  EXPECT_TRUE(solver.init_called);
+  EXPECT_TRUE(solver.run_called);
+}
+
+TEST_F(SolverTest, SolveThrowRun) {
+  WithQuietOutput quiet_error{output_error};
+
+  Options options;
+  options["throw_run"] = true;
+  FakeSolver solver{&options};
+
+  Options::root()["dump_on_restart"] = false;
+
+  EXPECT_THROW(solver.solve(), BoutException);
+
+  EXPECT_TRUE(solver.init_called);
+  EXPECT_TRUE(solver.run_called);
+}
+
 TEST_F(SolverTest, SolveFixDefaultTimestep) {
   Options options;
   FakeSolver solver{&options};
@@ -873,4 +914,68 @@ TEST_F(SolverTest, SolveFixDefaultTimestep) {
   EXPECT_EQ(smaller_timestep.last_called, 9);
   EXPECT_EQ(even_smaller_timestep.last_called, 99);
   EXPECT_EQ(larger_timestep.last_called, called_sentinel);
+}
+
+TEST_F(SolverTest, SolveFixDefaultTimestepBad) {
+  Options options;
+  FakeSolver solver{&options};
+
+  Options::root()["dump_on_restart"] = false;
+
+  FakeMonitor default_timestep;
+  FakeMonitor smaller_timestep{0.1};
+
+  solver.addMonitor(&default_timestep);
+  solver.addMonitor(&smaller_timestep);
+
+  EXPECT_THROW(solver.solve(100, 3.142), BoutException);
+
+  EXPECT_FALSE(solver.init_called);
+  EXPECT_FALSE(solver.run_called);
+}
+
+TEST_F(SolverTest, SolveFixDefaultTimestepSmaller) {
+  Options options;
+  FakeSolver solver{&options};
+
+  Options::root()["dump_on_restart"] = false;
+
+  FakeMonitor default_timestep;
+  FakeMonitor smaller_timestep{0.1};
+
+  solver.addMonitor(&default_timestep);
+  solver.addMonitor(&smaller_timestep);
+
+  EXPECT_NO_THROW(solver.solve(100, 0.01));
+
+  EXPECT_TRUE(solver.init_called);
+  EXPECT_TRUE(solver.run_called);
+
+  EXPECT_NO_THROW(solver.callMonitorsShim(0.0, 99, 0));
+
+  EXPECT_EQ(default_timestep.last_called, 99);
+  EXPECT_EQ(smaller_timestep.last_called, 9);
+}
+
+TEST_F(SolverTest, SolveFixDefaultTimestepLarger) {
+  Options options;
+  FakeSolver solver{&options};
+
+  Options::root()["dump_on_restart"] = false;
+
+  FakeMonitor default_timestep;
+  FakeMonitor smaller_timestep{0.1};
+
+  solver.addMonitor(&default_timestep);
+  solver.addMonitor(&smaller_timestep);
+
+  EXPECT_NO_THROW(solver.solve(100, 1.));
+
+  EXPECT_TRUE(solver.init_called);
+  EXPECT_TRUE(solver.run_called);
+
+  EXPECT_NO_THROW(solver.callMonitorsShim(0.0, 99, 0));
+
+  EXPECT_EQ(default_timestep.last_called, 9);
+  EXPECT_EQ(smaller_timestep.last_called, 99);
 }
