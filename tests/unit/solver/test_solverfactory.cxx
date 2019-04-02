@@ -2,21 +2,11 @@
 
 #include "boutexception.hxx"
 #include "test_extras.hxx"
+#include "test_fakesolver.hxx"
 #include "bout/solver.hxx"
 #include "bout/solverfactory.hxx"
 
 #include <algorithm>
-
-namespace {
-class FakeSolver : public Solver {
-public:
-  FakeSolver(Options* options) : Solver(options) {}
-  ~FakeSolver() = default;
-  int run() { return (*options)["number"].withDefault(42); }
-};
-
-RegisterSolver<FakeSolver> register_fake("fake_solver");
-} // namespace
 
 TEST(SolverFactoryTest, GetInstance) { EXPECT_NE(SolverFactory::getInstance(), nullptr); }
 
@@ -38,7 +28,9 @@ TEST(SolverFactoryTest, Create) {
   Options::root()["solver"]["type"] = "fake_solver";
   auto solver = SolverFactory::getInstance()->createSolver();
 
-  EXPECT_EQ(solver->run(), 42);
+  solver->run();
+
+  EXPECT_TRUE(static_cast<FakeSolver*>(solver)->run_called);
 
   Options::cleanup();
 }
@@ -58,7 +50,9 @@ TEST(SolverFactoryTest, CreateFromOptions) {
   options["type"] = "fake_solver";
   auto solver = SolverFactory::getInstance()->createSolver(&options);
 
-  EXPECT_EQ(solver->run(), 42);
+  solver->run();
+
+  EXPECT_TRUE(static_cast<FakeSolver*>(solver)->run_called);
 }
 
 TEST(SolverFactoryTest, CreateFromName) {
@@ -111,5 +105,6 @@ TEST(SolverFactoryTest, BadCreateFromNameAndOptions) {
   WithQuietOutput quiet{output_info};
 
   Options options;
-  EXPECT_THROW(SolverFactory::getInstance()->createSolver("bad_solver", &options), BoutException);
+  EXPECT_THROW(SolverFactory::getInstance()->createSolver("bad_solver", &options),
+               BoutException);
 }
