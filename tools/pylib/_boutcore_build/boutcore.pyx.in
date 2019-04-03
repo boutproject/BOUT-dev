@@ -923,7 +923,7 @@ cdef class FieldFactory:
     def __mydealloc__(self):
         if self.cobj != <c.FieldFactory*>0:
             del self.cobj
-	    self.cobj = NULL
+            self.cobj = NULL
 
     # @classmethod
     # def fromPtr(cls,FieldFactory * cobj_):
@@ -963,7 +963,7 @@ cdef class PythonModelCallback:
     def __mydealloc__(self):
         if self.thisptr:
             del self.thisptr
-	    self.thisptr = NULL
+            self.thisptr = NULL
 
     cpdef void execute(self, parameter):
         # 'parameter' :: The parameter to be passed to the 'method'
@@ -1513,19 +1513,19 @@ cdef class Options:
 
     def __init__(self,name=""):
         """
-	Get a section from the global options tree
+        Get a section from the global options tree
 
-	Parameters
-	----------
-	name : string, optional
-	    The name of the section. Can contain ':' to specify subsections.
-	    Defaults to the root section ''.
+        Parameters
+        ----------
+        name : string, optional
+            The name of the section. Can contain ':' to specify subsections.
+            Defaults to the root section ''.
 
-	Returns
-	-------
-	Options
-	    The Options object
-	"""
+        Returns
+        -------
+        Options
+            The Options object
+        """
         checkInit()
         self.cobj = c.Options.getRoot()
         cdef c.string sec_
