@@ -180,7 +180,7 @@ LaplaceNaulin::LaplaceNaulin(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
       "naulinsolver"+std::to_string(naulinsolver_count)+"_mean_its");
   bout::globals::dump.addRepeat(naulinsolver_mean_underrelax_counts,
       "naulinsolver"+std::to_string(naulinsolver_count)+"_mean_underrelax_counts");
-  naulinsolver_count++;
+  ++naulinsolver_count;
 }
 
 LaplaceNaulin::~LaplaceNaulin() {
@@ -204,14 +204,16 @@ const Field3D LaplaceNaulin::solve(const Field3D &rhs, const Field3D &x0) {
 
   Field3D rhsOverD = rhs/Dcoef;
 
+  Field3D C1TimesD = C1coef*Dcoef; // This is needed several times
+
   // x-component of 1./(C1*D) * Grad_perp(C2)
-  Field3D coef_x = DDX(C2coef, location, DIFF_C2)/(C1coef*Dcoef);
+  Field3D coef_x = DDX(C2coef, location, DIFF_C2)/C1TimesD;
 
   // y-component of 1./(C1*D) * Grad_perp(C2)
-  Field3D coef_y = DDY(C2coef, location, DIFF_C2)/(C1coef*Dcoef);
+  Field3D coef_y = DDY(C2coef, location, DIFF_C2)/C1TimesD;
 
   // z-component of 1./(C1*D) * Grad_perp(C2)
-  Field3D coef_z = DDZ(C2coef, location, DIFF_FFT)/(C1coef*Dcoef);
+  Field3D coef_z = DDZ(C2coef, location, DIFF_FFT)/C1TimesD;
 
   Field3D AOverD = Acoef/Dcoef;
 
@@ -219,7 +221,7 @@ const Field3D LaplaceNaulin::solve(const Field3D &rhs, const Field3D &x0) {
   // Split coefficients into DC and AC parts so that delp2solver can use DC part.
   // This allows all-Neumann boundary conditions as long as AOverD_DC is non-zero
 
-  Field2D C1coefTimesD_DC = DC(C1coef*Dcoef);
+  Field2D C1coefTimesD_DC = DC(C1TimesD);
   Field2D C2coef_DC = DC(C2coef);
 
   // Our naming is slightly misleading here, as coef_x_AC may actually have a
@@ -255,12 +257,9 @@ const Field3D LaplaceNaulin::solve(const Field3D &rhs, const Field3D &x0) {
         + coords->g13*(coef_x_AC*ddz_x + coef_z*ddx_x)) - AOverD_AC*x_in;
   };
 
-  auto calc_b_x_pair = [&, this] (Field3D b, Field3D& x_guess) {
+  auto calc_b_x_pair = [&, this] (Field3D b, Field3D x_guess) {
     // Note take a copy of the 'b' argument, because we want to return a copy of it in the
     // result
-    // Is it dangerous to take x_guess by reference, if we will call something like
-    // b_x_pair = calc_b_x_pair(b_guess, b_x_pair.second);
-    // ???
 
     if ( (inner_boundary_flags & INVERT_SET) || (outer_boundary_flags & INVERT_SET) ) {
       // This passes in the boundary conditions from x0's guard cells
@@ -272,12 +271,12 @@ const Field3D LaplaceNaulin::solve(const Field3D &rhs, const Field3D &x0) {
     Field3D x = delp2solver->solve(b, x_guess);
     localmesh->communicate(x);
 
-    return std::pair<Field3D,Field3D>(b, x);
+    return std::make_pair(b, x);
   };
 
   Field3D b = calc_b_guess(x0);
   // Need to make a copy of x0 here to make sure we don't change x0
-  auto b_x_pair = calc_b_x_pair(b, Field3D(x0).allocate());
+  auto b_x_pair = calc_b_x_pair(b, x0);
   auto b_x_pair_old = b_x_pair;
 
   while (true) {
@@ -289,7 +288,7 @@ const Field3D LaplaceNaulin::solve(const Field3D &rhs, const Field3D &x0) {
 
     if (error_rel<rtol or error_abs<atol) break;
 
-    count++;
+    ++count;
     if (count>maxits) {
       throw BoutException("LaplaceNaulin error: Not converged within maxits=%i iterations.", maxits);
     }
@@ -299,7 +298,7 @@ const Field3D LaplaceNaulin::solve(const Field3D &rhs, const Field3D &x0) {
     while (error_abs > last_error) {
       // Iteration seems to be diverging... try underrelaxing and restart
       underrelax_factor *= .9;
-      underrelax_count++;
+      ++underrelax_count;
 
       // Restart from b_x_pair_old - that was our best guess
       bnew = calc_b_guess(b_x_pair_old.second);
@@ -312,7 +311,7 @@ const Field3D LaplaceNaulin::solve(const Field3D &rhs, const Field3D &x0) {
       error_rel = error_abs / RMS_rhsOverD;
 
       // effectively another iteration, so increment the counter
-      count++;
+      ++count;
       if (count>maxits) {
         throw BoutException("LaplaceNaulin error: Not converged within maxits=%i iterations.", maxits);
       }
@@ -329,7 +328,7 @@ const Field3D LaplaceNaulin::solve(const Field3D &rhs, const Field3D &x0) {
 
   }
 
-  ncalls++;
+  ++ncalls;
   naulinsolver_mean_its = (naulinsolver_mean_its * BoutReal(ncalls-1)
                            + BoutReal(count))/BoutReal(ncalls);
   naulinsolver_mean_underrelax_counts = (naulinsolver_mean_underrelax_counts * BoutReal(ncalls - 1)
@@ -340,15 +339,15 @@ const Field3D LaplaceNaulin::solve(const Field3D &rhs, const Field3D &x0) {
 
 void LaplaceNaulin::copy_x_boundaries(Field3D &x, const Field3D &x0, Mesh *localmesh) {
   if (localmesh->firstX()) {
-    for (int i=localmesh->xstart-1; i>=0; i--)
-      for (int j=localmesh->ystart; j<=localmesh->yend; j++)
-        for (int k=0; k<localmesh->LocalNz; k++)
+    for (int i=localmesh->xstart-1; i>=0; --i)
+      for (int j=localmesh->ystart; j<=localmesh->yend; ++j)
+        for (int k=0; k<localmesh->LocalNz; ++k)
           x(i, j, k) = x0(i, j, k);
   }
   if (localmesh->lastX()) {
-    for (int i=localmesh->xend+1; i<localmesh->LocalNx; i++)
-      for (int j=localmesh->ystart; j<=localmesh->yend; j++)
-        for (int k=0; k<localmesh->LocalNz; k++)
+    for (int i=localmesh->xend+1; i<localmesh->LocalNx; ++i)
+      for (int j=localmesh->ystart; j<=localmesh->yend; ++j)
+        for (int k=0; k<localmesh->LocalNz; ++k)
           x(i, j, k) = x0(i, j, k);
   }
 }
