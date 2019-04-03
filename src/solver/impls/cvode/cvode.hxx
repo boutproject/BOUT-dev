@@ -1,13 +1,13 @@
 /**************************************************************************
  * Interface to SUNDIALS CVODE
- * 
+ *
  * NOTE: Only one solver can currently be compiled in
  *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -25,77 +25,85 @@
  *
  **************************************************************************/
 
-#ifdef BOUT_HAS_CVODE
-
-class CvodeSolver;
-
 #ifndef __SUNDIAL_SOLVER_H__
 #define __SUNDIAL_SOLVER_H__
 
-// NOTE: MPI must be included before SUNDIALS, otherwise complains
-#include "mpi.h"
+#ifdef BOUT_HAS_CVODE
 
 #include "bout_types.hxx"
-#include "field2d.hxx"
-#include "field3d.hxx"
-#include "vector2d.hxx"
-#include "vector3d.hxx"
-
 #include "bout/solver.hxx"
+#include "bout/solverfactory.hxx"
 
-#include <cvode/cvode_spgmr.h>
-#include <cvode/cvode_bbdpre.h>
+#include <sundials/sundials_config.h>
+#if SUNDIALS_VERSION_MAJOR >= 3
+#include <sunlinsol/sunlinsol_spgmr.h>
+#endif
+
+#if SUNDIALS_VERSION_MAJOR >= 4
+#include <sunnonlinsol/sunnonlinsol_fixedpoint.h>
+#endif
+
 #include <nvector/nvector_parallel.h>
 
 #include <vector>
 
-#include <bout/solverfactory.hxx>
+class CvodeSolver;
+class Options;
+
 namespace {
 RegisterSolver<CvodeSolver> registersolvercvode("cvode");
 }
 
 class CvodeSolver : public Solver {
-  public:
-    CvodeSolver(Options *opts = nullptr);
-    ~CvodeSolver();
+public:
+  CvodeSolver(Options* opts = nullptr);
+  ~CvodeSolver();
 
-    void setJacobian(Jacobian j) override { jacfunc = j; }
+  void setJacobian(Jacobian j) override { jacfunc = j; }
 
-    BoutReal getCurrentTimestep() override { return hcur; }
+  BoutReal getCurrentTimestep() override { return hcur; }
 
-    int init(int nout, BoutReal tstep) override;
+  int init(int nout, BoutReal tstep) override;
 
-    int run() override;
-    BoutReal run(BoutReal tout);
-    
-    void resetInternalFields() override;
+  int run() override;
+  BoutReal run(BoutReal tout);
 
-    // These functions used internally (but need to be public)
-    void rhs(BoutReal t, BoutReal *udata, BoutReal *dudata);
-    void pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal *udata, BoutReal *rvec, BoutReal *zvec);
-    void jac(BoutReal t, BoutReal *ydata, BoutReal *vdata, BoutReal *Jvdata);
-  private:
-    int NOUT; // Number of outputs. Specified in init, needed in run
-    BoutReal TIMESTEP; // Time between outputs
-    BoutReal hcur; // Current internal timestep
-  
-    Jacobian jacfunc; // Jacobian - vector function
-    bool diagnose; // Output additional diagnostics
-  
-    N_Vector uvec; // Values
-    void *cvode_mem;
+  void resetInternalFields() override;
 
-    BoutReal pre_Wtime; // Time in preconditioner
-    BoutReal pre_ncalls; // Number of calls to preconditioner
+  // These functions used internally (but need to be public)
+  void rhs(BoutReal t, BoutReal* udata, BoutReal* dudata);
+  void pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* udata, BoutReal* rvec,
+           BoutReal* zvec);
+  void jac(BoutReal t, BoutReal* ydata, BoutReal* vdata, BoutReal* Jvdata);
 
-    void set_abstol_values(BoutReal *abstolvec_data, std::vector<BoutReal> &f2dtols,
-                           std::vector<BoutReal> &f3dtols);
-    void loop_abstol_values_op(Ind2D i2d, BoutReal *abstolvec_data, int &p,
-                               std::vector<BoutReal> &f2dtols,
-                               std::vector<BoutReal> &f3dtols, bool bndry);
+private:
+  int NOUT;          // Number of outputs. Specified in init, needed in run
+  BoutReal TIMESTEP; // Time between outputs
+  BoutReal hcur;     // Current internal timestep
+
+  Jacobian jacfunc{nullptr}; // Jacobian - vector function
+  bool diagnose{false};      // Output additional diagnostics
+
+  N_Vector uvec{nullptr};   // Values
+  void* cvode_mem{nullptr}; // CVODE internal memory block
+
+  BoutReal pre_Wtime{0.0}; // Time in preconditioner
+  int pre_ncalls{0};       // Number of calls to preconditioner
+
+  void set_abstol_values(BoutReal* abstolvec_data, std::vector<BoutReal>& f2dtols,
+                         std::vector<BoutReal>& f3dtols);
+  void loop_abstol_values_op(Ind2D i2d, BoutReal* abstolvec_data, int& p,
+                             std::vector<BoutReal>& f2dtols,
+                             std::vector<BoutReal>& f3dtols, bool bndry);
+#if SUNDIALS_VERSION_MAJOR >= 3
+  /// SPGMR solver structure
+  SUNLinearSolver sun_solver{nullptr};
+#endif
+#if SUNDIALS_VERSION_MAJOR >= 4
+  /// Solver for functional iterations for Adams-Moulton
+  SUNNonlinearSolver nonlinear_solver{nullptr};
+#endif
 };
 
+#endif // BOUT_HAS_CVODE
 #endif // __SUNDIAL_SOLVER_H__
-
-#endif
-

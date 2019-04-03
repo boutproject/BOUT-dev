@@ -43,7 +43,7 @@ clean ::
 
 # Download Google Test
 $(GTEST_SENTINEL) :
-	echo "Downloading Google Test"
+	@echo "Downloading Google Test"
 	git submodule update --init --recursive
 
 # For simplicity and to avoid depending on Google Test's
@@ -78,6 +78,8 @@ $(TARGET): makefile $(BOUT_TOP)/make.config $(OBJ) $(SUB_LIBS) bout_test_main.a
 
 TEST_SOURCES = $(shell find $(BOUT_TEST_DIR) -type f -name "test_*.cxx" 2> /dev/null)
 TEST_OBJECTS = $(TEST_SOURCES:%.cxx=%.o)
+
+$(TEST_OBJECTS): | $(GTEST_SENTINEL)
 
 serial_tests: makefile $(BOUT_TOP)/make.config $(OBJ) $(LIB) checklib \
               $(SUB_LIBS) $(TEST_OBJECTS) bout_test_main.a
