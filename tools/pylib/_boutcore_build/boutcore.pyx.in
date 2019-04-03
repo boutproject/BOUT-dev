@@ -712,7 +712,6 @@ cdef class Mesh:
             if self.cobj == NULL:
                 raise MemoryError('Not enough memory, allocation failed.')
             self.cobj.load()
-            self.cobj.setParallelTransform()
 
     @classmethod
     def getGlobal(cls):

@@ -11,19 +11,19 @@ extern Mesh* mesh;
 
 using ParallelTransformTest = FakeMeshFixture;
 
-TEST_F(ParallelTransformTest, IdentityCalcYUpDown) {
+TEST_F(ParallelTransformTest, IdentityCalcParallelSlices) {
 
   ParallelTransformIdentity transform{*bout::globals::mesh};
 
   Field3D field{1.0};
 
-  transform.calcYUpDown(field);
+  transform.calcParallelSlices(field);
 
   EXPECT_TRUE(IsFieldEqual(field.yup(), 1.0));
   EXPECT_TRUE(IsFieldEqual(field.ydown(), 1.0));
 }
 
-TEST_F(ParallelTransformTest, IdentityCalcYUpDownTwoSlices) {
+TEST_F(ParallelTransformTest, IdentityCalcTwoParallelSlices) {
 
   ParallelTransformIdentity transform{*bout::globals::mesh};
 
@@ -31,7 +31,7 @@ TEST_F(ParallelTransformTest, IdentityCalcYUpDownTwoSlices) {
 
   Field3D field{1.0};
 
-  transform.calcYUpDown(field);
+  transform.calcParallelSlices(field);
 
   EXPECT_TRUE(IsFieldEqual(field.yup(0), 1.0));
   EXPECT_TRUE(IsFieldEqual(field.yup(1), 1.0));

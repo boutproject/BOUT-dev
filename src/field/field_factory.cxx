@@ -222,10 +222,11 @@ Field3D FieldFactory::create3D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC 
   }
   };
 
-  if (transform_from_field_aligned and localmesh->canToFromFieldAligned()) {
+  if (transform_from_field_aligned
+        and result.getCoordinates()->getParallelTransform().canToFromFieldAligned()) {
     // Transform from field aligned coordinates, to be compatible with
     // older BOUT++ inputs. This is not a particularly "nice" solution.
-    result = localmesh->fromFieldAligned(result, RGN_ALL);
+    result = fromFieldAligned(result, RGN_ALL);
   }
 
   return result;

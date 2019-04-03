@@ -158,8 +158,6 @@ int BoutInitialise(int& argc, char**& argv) {
     bout::globals::mesh = Mesh::create();
     // Load from sources. Required for Field initialisation
     bout::globals::mesh->load();
-    // Set the parallel transform from options
-    bout::globals::mesh->setParallelTransform();
 
     bout::globals::dump =
         setupDumpFile(Options::root(), *bout::globals::mesh, args.data_dir);

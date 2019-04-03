@@ -404,12 +404,13 @@ const Field3D nl_filter_y(const Field3D &f, BoutReal w) {
   TRACE("nl_filter_x( Field3D )");
 
   Mesh *mesh = f.getMesh();
+
   Field3D result{emptyFrom(f)};
 
   rvec v(mesh->LocalNy); // Temporary array
   
   // Transform into field-aligned coordinates
-  Field3D fs = mesh->toFieldAligned(f);
+  Field3D fs = toFieldAligned(f);
 
   for (int jx=0;jx<mesh->LocalNx;jx++) {
     for (int jz=0;jz<mesh->LocalNz;jz++) {
@@ -424,7 +425,7 @@ const Field3D nl_filter_y(const Field3D &f, BoutReal w) {
   }
   
   // Tranform the field back from field aligned coordinates
-  return mesh->fromFieldAligned(result);
+  return fromFieldAligned(result);
 }
 
 const Field3D nl_filter_z(const Field3D &fs, BoutReal w) {

@@ -89,9 +89,9 @@ public:
     }
   }
 
-  void calcYUpDown(Field3D &f) override;
+  void calcParallelSlices(Field3D &f) override;
   
-  void integrateYUpDown(Field3D &f) override;
+  void integrateParallelSlices(Field3D &f) override;
   
   const Field3D toFieldAligned(const Field3D &UNUSED(f), const REGION UNUSED(region)) override {
     throw BoutException("FCI method cannot transform into field aligned grid");
