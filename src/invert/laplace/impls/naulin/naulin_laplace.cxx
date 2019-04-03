@@ -143,7 +143,6 @@
 #include <derivs.hxx>
 #include <difops.hxx>
 #include <globals.hxx>
-#include <output.hxx>
 
 #include "naulin_laplace.hxx"
 
@@ -293,8 +292,6 @@ const Field3D LaplaceNaulin::solve(const Field3D &rhs, const Field3D &x0) {
       throw BoutException("LaplaceNaulin error: Not converged within maxits=%i iterations.", maxits);
     }
 
-    output<<underrelax_factor<<" "<<count<<" "<<error_abs<<" "<<error_rel<<endl;
-
     while (error_abs > last_error) {
       // Iteration seems to be diverging... try underrelaxing and restart
       underrelax_factor *= .9;
@@ -315,8 +312,6 @@ const Field3D LaplaceNaulin::solve(const Field3D &rhs, const Field3D &x0) {
       if (count>maxits) {
         throw BoutException("LaplaceNaulin error: Not converged within maxits=%i iterations.", maxits);
       }
-
-      output<<underrelax_factor<<" "<<count<<" "<<error_abs<<" "<<error_rel<<endl;
     }
 
     // Might have met convergence criterion while in underrelaxation loop
