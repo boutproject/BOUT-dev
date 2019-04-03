@@ -9,53 +9,53 @@ ny=nsig
 
 IF NOT KEYWORD_SET(INVERSE) THEN BEGIN ;---direct transform---
 
-  fsig=fltarr(nx,ny)
+  fsig=dblarr(nx,ny)
 
   for iu=0,Nx-1 do begin
    for jv=0,Ny-1 do begin
 
-        if (iu eq 0) then cu=0.707107 else cu=1.
-        if (jv eq 0) then cv=0.707107 else cv=1.
+        if (iu eq 0) then cu=0.707107D else cu=1.D
+        if (jv eq 0) then cv=0.707107D else cv=1.D
 
-          sum=0.0
+          sum=0.0D
  
           for jy=0,Ny-1 do begin
            for ix=0,Nx-1 do begin
            ;     
-            sum=sum + sig[ix,jy]*cos(jv*!PI*(2*jy+1)/(2*Ny))*$
-                                  cos(iu*!PI*(2*ix+1)/(2*Nx))
+            sum=sum + sig[ix,jy]*cos(jv*!DPI*(2*jy+1)/(2*Ny))*$
+                                  cos(iu*!DPI*(2*ix+1)/(2*Nx))
            ;
            endfor
          endfor
         
-      fsig[iu,jv]=(2./nsig)*cv*cu*sum
+      fsig[iu,jv]=(2.D/nsig)*cv*cu*sum
 
    endfor
   endfor
 
 ENDIF ELSE BEGIN ;---inverse transform---
 
-  sig=fltarr(nx,ny)
+  sig=dblarr(nx,ny)
 
   for ix=0,Nx-1 do begin
    for jy=0,Ny-1 do begin
 
-        sum=0.0
+        sum=0.0D
 
         for iu=0,Nx-1 do begin
            for jv=0,Ny-1 do begin
            ;     
-           if (iu eq 0) then cu=0.707107 else cu=1.
-           if (jv eq 0) then cv=0.707107 else cv=1.
+           if (iu eq 0) then cu=0.707107D else cu=1.D
+           if (jv eq 0) then cv=0.707107D else cv=1.D
 
-            sum=sum + cv*cu*fsig[iu,jv]*cos(jv*!PI*(2*jy+1)/(2*Ny))*$
-                                         cos(iu*!PI*(2*ix+1)/(2*Nx))
+            sum=sum + cv*cu*fsig[iu,jv]*cos(jv*!DPI*(2*jy+1)/(2*Ny))*$
+                                         cos(iu*!DPI*(2*ix+1)/(2*Nx))
 
            ;
            endfor
         endfor
 
-       sig[ix,jy]=(2./nsig)*sum
+       sig[ix,jy]=(2.D/nsig)*sum
    
      ;STOP
    endfor
@@ -80,32 +80,32 @@ function EvalCosP, fsig, nsig, x0=x0,y0=y0
 nx=nsig
 ny=nsig
 
-        sum=0.0
-        sumx=0.0
-        sumy=0.0
+        sum=0.0D
+        sumx=0.0D
+        sumy=0.0D
 
         for iu=0,Nx-1 do begin
            for jv=0,Ny-1 do begin
            ;     
-           if (iu eq 0) then cu=0.707107 else cu=1.
-           if (jv eq 0) then cv=0.707107 else cv=1.
+           if (iu eq 0) then cu=0.707107D else cu=1.D
+           if (jv eq 0) then cv=0.707107D else cv=1.D
 
             sum=sum + cv*cu*fsig[iu,jv]*$
-              COS(jv*!PI*(2*y0+1)/(2*Ny))*COS(iu*!PI*(2*x0+1)/(2*Nx))
+              COS(jv*!DPI*(2*y0+1)/(2*Ny))*COS(iu*!DPI*(2*x0+1)/(2*Nx))
 
             sumx=sumx + cv*cu*fsig[iu,jv]*$
-               COS(jv*!PI*(2*y0+1)/(2*Ny))*SIN(iu*!PI*(2*x0+1)/(2*Nx))*$
-                (-iu*!PI/Nx)
+               COS(jv*!DPI*(2*y0+1)/(2*Ny))*SIN(iu*!DPI*(2*x0+1)/(2*Nx))*$
+                (-iu*!DPI/Nx)
 
             sumy=sumy + cv*cu*fsig[iu,jv]*$
-              SIN(jv*!PI*(2*y0+1)/(2*Ny))*COS(iu*!PI*(2*x0+1)/(2*Nx))*$
-               (-jv*!PI/Ny)
+              SIN(jv*!DPI*(2*y0+1)/(2*Ny))*COS(iu*!DPI*(2*x0+1)/(2*Nx))*$
+               (-jv*!DPI/Ny)
 
            ;
            endfor
         endfor
 
-   res=(2./nsig)*[sum,sumx,sumy]   
+   res=(2.D/nsig)*[sum,sumx,sumy]   
 
 ;
 ;
@@ -120,30 +120,30 @@ function EvalCosPfast, fsig, nsig, x0=x0,y0=y0
 ;and the partial derivatives
 ;--------------------------------------------
 
-  cuvec=fltarr(nsig)+1.
-   cuvec[0]=0.707107
+  cuvec=dblarr(nsig)+1.D
+   cuvec[0]=0.707107D
 
-  cvvec=fltarr(nsig)+1.
-   cvvec[0]=0.707107
+  cvvec=dblarr(nsig)+1.D
+   cvvec[0]=0.707107D
  
 
      uvec=findgen(nsig)
-     uvec=COS(!PI*findgen(nsig)*(x0+0.5)/nsig)
-     uvex=(-findgen(nsig)*!PI/nsig)*SIN(!PI*findgen(nsig)*(x0+0.5)/nsig)
+     uvec=COS(!DPI*findgen(nsig)*(x0+0.5D)/nsig)
+     uvex=(-findgen(nsig)*!DPI/nsig)*SIN(!DPI*findgen(nsig)*(x0+0.5D)/nsig)
 
      vvec=findgen(nsig)
-     vvec=COS(!PI*vvec*(y0+0.5)/nsig)
-     vvey=(-findgen(nsig)*!PI/nsig)*SIN(!PI*findgen(nsig)*(y0+0.5)/nsig)
+     vvec=COS(!DPI*vvec*(y0+0.5D)/nsig)
+     vvey=(-findgen(nsig)*!DPI/nsig)*SIN(!DPI*findgen(nsig)*(y0+0.5D)/nsig)
 
 
        ;-value
-       res=(2./nsig) * TOTAL(((cuvec # cvvec) * fsig) * (uvec # vvec))  
+       res=(2.D/nsig) * TOTAL(((cuvec # cvvec) * fsig) * (uvec # vvec))  
 
        ;d/dx
-       rex=(2./nsig) * TOTAL(((cuvec # cvvec) * fsig) * (uvex # vvec))  
+       rex=(2.D/nsig) * TOTAL(((cuvec # cvvec) * fsig) * (uvex # vvec))  
 
        ;d/dy
-       rey=(2./nsig) * TOTAL(((cuvec # cvvec) * fsig) * (uvec # vvey))  
+       rey=(2.D/nsig) * TOTAL(((cuvec # cvvec) * fsig) * (uvec # vvey))  
 
 ;
 ;

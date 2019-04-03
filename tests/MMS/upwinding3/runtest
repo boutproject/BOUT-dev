@@ -106,6 +106,8 @@ derivatives=[
 
 runtests(functions,derivatives,directions,stag=True,msg="DD")
 
+boutcore.finalise()
+
 if errorlist:
     for error in errorlist:
         print(error)

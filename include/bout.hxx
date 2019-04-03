@@ -162,10 +162,9 @@ void setRunStartInfo(Options& options);
 /// options
 void setRunFinishInfo(Options& options);
 
-/// Write \p options to \p settings_file in directory \p
-/// data_dir. Actually writes only if \p write is true
+/// Write \p options to \p settings_file in directory \p data_dir
 void writeSettingsFile(Options& options, const std::string& data_dir,
-                       const std::string& settings_file, bool write = true);
+                       const std::string& settings_file);
 
 /// Setup the output dump files from \p options using the \p
 /// mesh. Files are created in the \p data_dir directory
