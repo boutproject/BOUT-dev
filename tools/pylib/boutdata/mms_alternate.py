@@ -58,9 +58,11 @@ def ddt(f):
 
 def DDX(f):
     # psiwidth = dx/dx_in
+    raise TypeError("scalex is not the right way to handle non-uniform grids. Should not take derivatives of non-uniform scale factors. Instead just shift the solutions and derivatives to the points on the non-uniform grid.")
     return diff(f, metric.x)/metric.psiwidth/metric.scalex
 
 def DDY(f):
+    raise TypeError("scaley is not the right way to handle non-uniform grids. Should not take derivatives of non-uniform scale factors. Instead just shift the solutions and derivatives to the points on the non-uniform grid.")
     if not metric.orthogonal:
         return diff(f, metric.y)/metric.scaley
     else:
