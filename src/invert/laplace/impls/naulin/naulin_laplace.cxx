@@ -205,13 +205,13 @@ const Field3D LaplaceNaulin::solve(const Field3D &rhs, const Field3D &x0) {
   Field3D rhsOverD = rhs/Dcoef;
 
   // x-component of 1./(C1*D) * Grad_perp(C2)
-  Field3D coef_x = DDX(C2coef, location, DIFF_C2)/C1coef/Dcoef;
+  Field3D coef_x = DDX(C2coef, location, DIFF_C2)/(C1coef*Dcoef);
 
   // y-component of 1./(C1*D) * Grad_perp(C2)
-  Field3D coef_y = DDY(C2coef, location, DIFF_C2)/C1coef/Dcoef;
+  Field3D coef_y = DDY(C2coef, location, DIFF_C2)/(C1coef*Dcoef);
 
   // z-component of 1./(C1*D) * Grad_perp(C2)
-  Field3D coef_z = DDZ(C2coef, location, DIFF_FFT)/C1coef/Dcoef;
+  Field3D coef_z = DDZ(C2coef, location, DIFF_FFT)/(C1coef*Dcoef);
 
   Field3D AOverD = Acoef/Dcoef;
 
@@ -291,7 +291,7 @@ const Field3D LaplaceNaulin::solve(const Field3D &rhs, const Field3D &x0) {
 
     count++;
     if (count>maxits) {
-      throw BoutException("LaplaceNaulin error: Took more than maxits=%i iterations to converge.", maxits);
+      throw BoutException("LaplaceNaulin error: Not converged within maxits=%i iterations.", maxits);
     }
 
     output<<underrelax_factor<<" "<<count<<" "<<error_abs<<" "<<error_rel<<endl;
@@ -314,7 +314,7 @@ const Field3D LaplaceNaulin::solve(const Field3D &rhs, const Field3D &x0) {
       // effectively another iteration, so increment the counter
       count++;
       if (count>maxits) {
-        throw BoutException("LaplaceNaulin error: Took more than maxits=%i iterations to converge.", maxits);
+        throw BoutException("LaplaceNaulin error: Not converged within maxits=%i iterations.", maxits);
       }
 
       output<<underrelax_factor<<" "<<count<<" "<<error_abs<<" "<<error_rel<<endl;
