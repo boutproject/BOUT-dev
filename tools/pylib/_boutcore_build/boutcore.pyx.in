@@ -961,9 +961,9 @@ cdef class PythonModelCallback:
         self.__mydealloc__()
 
     def __mydealloc__(self):
-        if self.thisptr:
-            del self.thisptr
-            self.thisptr = NULL
+        if self.cobj:
+            del self.cobj
+            self.cobj = NULL
 
     cpdef void execute(self, parameter):
         # 'parameter' :: The parameter to be passed to the 'method'
