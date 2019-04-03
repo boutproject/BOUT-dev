@@ -58,7 +58,7 @@ cat <<EOF
 cimport boutcpp as c
 import numpy as np
 cimport numpy as np
-#import atexit
+import atexit
 cimport resolve_enum as benum
 from libc.stdlib cimport malloc, free
 import copy
@@ -597,6 +597,9 @@ cat <<EOF
             self.cobj.applyBoundary()
 
     def __dealloc__(self):
+        self.__mydealloc__()
+
+    def __mydealloc__(self):
         if self.isSelfOwned and self.cobj!=NULL:
             del self.cobj
             self.cobj=NULL
@@ -731,8 +734,12 @@ cdef class Mesh:
         return msh
 
     def __dealloc__(self):
+        self.__mydealloc__()
+
+    def __mydealloc__(self):
         if self.cobj and not self.isGlobal:
             del self.cobj
+            self.cobj = NULL
 
     cdef getFactory(self):
         """
@@ -911,8 +918,13 @@ cdef class FieldFactory:
         checkInit()
         cobj=< c.FieldFactory*>0
     def __dealloc__(self):
+        self.__mydealloc__()
+
+    def __mydealloc__(self):
         if self.cobj != <c.FieldFactory*>0:
             del self.cobj
+	    self.cobj = NULL
+
     # @classmethod
     # def fromPtr(cls,FieldFactory * cobj_):
     #     fu=cls()
@@ -946,8 +958,12 @@ cdef class PythonModelCallback:
         self.cobj = new c.PythonModelCallback(callback, <void*>method)
 
     def __dealloc__(self):
+        self.__mydealloc__()
+
+    def __mydealloc__(self):
         if self.thisptr:
             del self.thisptr
+	    self.thisptr = NULL
 
     cpdef void execute(self, parameter):
         # 'parameter' :: The parameter to be passed to the 'method'
@@ -1015,6 +1031,9 @@ cdef class PhysicsModelBase(object):
         self.cmodel.set_init_func(self.callbackinit)
 
     def __dealloc__(self):
+        self.__mydealloc__()
+
+    def __mydealloc__(self):
         if self.cmodel != <c.PythonModel *> 0:
             self.cmodel.free()
             del self.cmodel
@@ -1118,17 +1137,29 @@ def init(args=[]):
         raise RuntimeError("Failed to initialise the BOUT++ Library (Error code %d)"%ret)
     else:
         _isInit=True
-    #atexit.register(finalise)
+    atexit.register(finalise)
 
 def finalise():
     """
     Finalize BOUT++ and also MPI.
     After this most objects and functions are not valid anymore.
     """
-    checkInit()
-    BoutFinalise()
     global _isInit
-    _isInit=False
+    import gc
+    ls = gc.get_objects()
+    #im=(Coordinates, Field2D, Field3D, Laplacian, Mesh, Options, PhysicsModel, PhysicsModelBase, Vector2D, Vector3D, PythonModelCallback)
+    # list of class with custom deallocation
+    # May need to be extended if other classes also have MPI calls in
+    # dealloc, and thus need to be called before finalise
+    im=(Field2D, Field3D, Mesh, FieldFactory, PhysicsModelBase, PythonModelCallback)
+    print("isInit is",_isInit)
+    for i in ls:
+        if isinstance(i,im):
+            i.__mydealloc__()
+    del ls
+    if _isInit:
+       BoutFinalise()
+    _isInit = False
 
 def checkInit():
     """
