@@ -353,7 +353,6 @@ cat <<EOF
         nx=self.cobj.getNx()
         ny=self.cobj.getNy()
         nz=self.cobj.getNz()
-        #print(nx,ny,nz)
         cdef np.ndarray[double, mode="c", ndim=$ndim] data_ = np.ascontiguousarray(np.zeros(($nxlist)))
         c_get_${fdd}_all(self.cobj,&data_[$zeros]);
         return data_
@@ -508,7 +507,6 @@ do
     #o=${f#*:}
     cat <<EOF
     def __${n}__(self,other):
-        #print("call __${n}__")
         fu=$ftype()
         import numbers
         if isinstance(self,$ftype) and isinstance(other,$ftype):
@@ -1184,15 +1182,14 @@ def finalise():
     """
     global _isInit
     import gc
-    ls = gc.get_objects()
-    im=(Coordinates, Field2D, Field3D, Laplacian, Mesh, Options,
-        PhysicsModel, PhysicsModelBase, Vector2D, Vector3D,
-        PythonModelCallback)
-    print("isInit is",_isInit)
-    for i in ls:
-        if isinstance(i,im):
-            i.__mydealloc__()
-    del ls
+    objects = gc.get_objects()
+    ourClasses = (Coordinates, Field2D, Field3D, Laplacian, Mesh, Options,
+                  PhysicsModel, PhysicsModelBase, Vector2D, Vector3D,
+                  PythonModelCallback)
+    for obj in objects:
+        if isinstance(obj,ourClasses):
+            obj.__mydealloc__()
+    del objects
     if _isInit:
        BoutFinalise()
     _isInit = False
@@ -1658,15 +1655,12 @@ cdef class Options:
         cdef c.string ret_str
 
         if isinstance(default,bool):
-            #print("isbool")
             opt.get(key,ret_bool, <c.bool> default)
             return ret_bool
         elif isinstance(default,numbers.Number):
-            #print("isreal")
             opt.get(key,ret_real,<double> default)
             return ret_real
         else:
-            #print("isstr")
             default_= str(default).encode('ascii')
             opt.get(key,ret_str, default_)
             return ret_str
@@ -1695,13 +1689,6 @@ cdef class Datafile:
         cdef c.Field3D * f3d
         t2=str.encode(name)
         tmp=t2
-        # import numbers
-        # if isinstance(data,int):
-        #     #c_datafile_add_int(self.cobj,
-        #     self.cobj.add(<int>data,tmp,<c.bool>save_repeat)
-        # elif isinstance(data,numbers.Number):
-        #     self.cobj.add(dbl,tmp,<c.bool>save_repeat)
-        # el
         if isinstance(data,Field3D):
             f3d=(<Field3D>data).cobj
             self.cobj.add(f3d[0],tmp,<c.bool>save_repeat)
