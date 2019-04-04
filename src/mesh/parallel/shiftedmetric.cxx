@@ -8,44 +8,30 @@
 
 #include <bout/constants.hxx>
 #include <bout/mesh.hxx>
-#include <bout/paralleltransform.hxx>
+#include "bout/paralleltransform.hxx"
 #include <fft.hxx>
 
 #include <cmath>
 
 #include <output.hxx>
 
-ShiftedMetric::ShiftedMetric(Mesh& m) : ParallelTransform(m), zShift(&m) {
+ShiftedMetric::ShiftedMetric(Mesh& m, CELL_LOC location_in, Field2D zShift_,
+    BoutReal zlength_in)
+    : ParallelTransform(m), location(location_in), zShift(std::move(zShift_)),
+      zlength(zlength_in) {
+  ASSERT1(zShift.getLocation() == location);
   // check the coordinate system used for the grid data source
   checkInputGrid();
 
-  // Read the zShift angle from the mesh
-  if (mesh.get(zShift, "zShift")) {
-    // No zShift variable. Try qinty in BOUT grid files
-    mesh.get(zShift, "qinty");
-  }
-
-  // TwistShift needs to be set for derivatives to be correct at the jump where
-  // poloidal angle theta goes 2pi->0
+  // TwistShift should not be set for derivatives to be correct at the jump where
+  // poloidal angle theta goes 2pi->0. zShift has been corrected for the jump
+  // already in Coordinates::Coordinates
   bool twistshift = Options::root()["TwistShift"]
                         .doc("Enable twist-shift boundary condition in core region?")
                         .withDefault(false);
-  bool shift_without_twist = Options::root()["ShiftWithoutTwist"]
-                                 .doc("Use ShiftedMetric without TwistShift?")
-                                 .withDefault(false);
-  if (!twistshift and !shift_without_twist) {
-    throw BoutException(
-        "ShiftedMetric usually requires the option TwistShift=true\n"
-        "    Set ShiftWithoutTwist=true to use ShiftedMetric without TwistShift");
+  if (twistshift) {
+    throw BoutException("ShiftedMetric requires the option TwistShift=false");
   }
-
-  cachePhases();
-}
-
-ShiftedMetric::ShiftedMetric(Mesh& m, Field2D zShift_)
-    : ParallelTransform(m), zShift(std::move(zShift_)) {
-  // check the coordinate system used for the grid data source
-  checkInputGrid();
 
   cachePhases();
 }
@@ -73,7 +59,6 @@ void ShiftedMetric::cachePhases() {
   // not change once we've been created so precalculate the complex
   // phases used in transformations
   nmodes = mesh.LocalNz / 2 + 1;
-  BoutReal zlength = mesh.getCoordinates()->zlength();
 
   // Allocate storage for our 3d phase information.
   fromAlignedPhs = Tensor<dcomplex>(mesh.LocalNx, mesh.LocalNy, nmodes);
@@ -176,9 +161,8 @@ const Field3D ShiftedMetric::fromFieldAligned(const Field3D& f, const REGION reg
 const Field3D ShiftedMetric::shiftZ(const Field3D& f, const Tensor<dcomplex>& phs,
                                     const YDirectionType y_direction_out,
                                     const REGION region) const {
-  ASSERT1(&mesh == f.getMesh());
-  // only have zShift for CELL_CENTRE, so can only deal with CELL_CENTRE inputs
-  ASSERT1(f.getLocation() == CELL_CENTRE);
+  ASSERT1(f.getMesh() == &mesh);
+  ASSERT1(f.getLocation() == location);
 
   if (mesh.LocalNz == 1)
     return f; // Shifting makes no difference
@@ -210,18 +194,13 @@ void ShiftedMetric::shiftZ(const BoutReal* in, const dcomplex* phs, BoutReal* ou
   irfft(&cmplx[0], mesh.LocalNz, out); // Reverse FFT
 }
 
-void ShiftedMetric::calcYUpDown(Field3D& f) {
-
-  ASSERT1(f.getDirectionY() == YDirectionType::Standard);
-  ASSERT1(&mesh == f.getMesh());
-  // only have zShift for CELL_CENTRE, so can only deal with CELL_CENTRE inputs
-  ASSERT1(f.getLocation() == CELL_CENTRE);
+void ShiftedMetric::calcParallelSlices(Field3D& f) {
 
   auto results = shiftZ(f, parallel_slice_phases);
 
   ASSERT3(results.size() == parallel_slice_phases.size());
 
-  f.splitYupYdown();
+  f.splitParallelSlices();
 
   for (std::size_t i = 0; i < results.size(); ++i) {
     f.ynext(parallel_slice_phases[i].y_offset) = std::move(results[i]);
@@ -231,6 +210,9 @@ void ShiftedMetric::calcYUpDown(Field3D& f) {
 std::vector<Field3D>
 ShiftedMetric::shiftZ(const Field3D& f,
                       const std::vector<ParallelSlicePhase>& phases) const {
+  ASSERT1(f.getMesh() == &mesh);
+  ASSERT1(f.getLocation() == location);
+  ASSERT1(f.getDirectionY() == YDirectionType::Standard);
 
   const int nmodes = mesh.LocalNz / 2 + 1;
 
@@ -308,7 +290,6 @@ void ShiftedMetric::shiftZ(const BoutReal* in, int len, BoutReal zangle,
   rfft(in, len, &cmplxLoc[0]);
 
   // Apply phase shift
-  BoutReal zlength = mesh.getCoordinates()->zlength();
   for (int jz = 1; jz < nmodes; jz++) {
     BoutReal kwave = jz * 2.0 * PI / zlength; // wave number is 1/[rad]
     cmplxLoc[jz] *= dcomplex(cos(kwave * zangle), -sin(kwave * zangle));

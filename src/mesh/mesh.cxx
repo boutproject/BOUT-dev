@@ -12,8 +12,6 @@
 
 #include <output.hxx>
 
-#include "parallel/fci.hxx"
-
 Mesh* Mesh::create(GridDataSource *s, Options *opt) {
   return MeshFactory::getInstance()->createMesh(s, opt);
 }
@@ -31,7 +29,7 @@ Mesh::Mesh(GridDataSource *s, Options* opt) : source(s), options(opt) {
   /// Get mesh options
   OPTION(options, StaggerGrids,   false); // Stagger grids
   OPTION(options, maxregionblocksize, MAXREGIONBLOCKSIZE);
-  OPTION(options, calcYUpDown_on_communicate, true);
+  OPTION(options, calcParallelSlices_on_communicate, true);
   // Initialise derivatives
   derivs_init(options);  // in index_derivs.cxx for now
 }
@@ -194,9 +192,9 @@ void Mesh::communicate(FieldGroup &g) {
   wait(h);
 
   // Calculate yup and ydown fields for 3D fields
-  if (calcYUpDown_on_communicate) {
+  if (calcParallelSlices_on_communicate) {
     for(const auto& fptr : g.field3d()) {
-      getParallelTransform().calcYUpDown(*fptr);
+      fptr->calcParallelSlices();
     }
   }
 }
@@ -299,60 +297,20 @@ const std::vector<int> Mesh::readInts(const std::string &name, int n) {
   return result;
 }
 
-void Mesh::setParallelTransform() {
-
-  std::string ptstr;
-  options->get("paralleltransform", ptstr, "identity");
-
-  // Convert to lower case for comparison
-  ptstr = lowercase(ptstr);
-    
-  if(ptstr == "identity") {
-    // Identity method i.e. no transform needed
-    transform = bout::utils::make_unique<ParallelTransformIdentity>(*this);
-      
-  }else if(ptstr == "shifted") {
-    // Shifted metric method
-    transform = bout::utils::make_unique<ShiftedMetric>(*this);
-      
-  }else if(ptstr == "fci") {
-
-    auto& fci_options = Options::root()["fci"];
-    // Flux Coordinate Independent method
-    bool fci_zperiodic = fci_options["z_periodic"].withDefault(true);
-    transform = bout::utils::make_unique<FCITransform>(*this, fci_zperiodic);
-      
-  }else {
-    throw BoutException(_("Unrecognised paralleltransform option.\n"
-                          "Valid choices are 'identity', 'shifted', 'fci'"));
-  }
-}
-
-ParallelTransform& Mesh::getParallelTransform() {
-  if(!transform) {
-    // No ParallelTransform object yet. Set from options
-    setParallelTransform();
-  }
-  
-  // Return a reference to the ParallelTransform object
-  return *transform;
-}
-
 std::shared_ptr<Coordinates> Mesh::createDefaultCoordinates(const CELL_LOC location,
     bool force_interpolate_from_centre) {
 
   if (location == CELL_CENTRE || location == CELL_DEFAULT) {
     // Initialize coordinates from input
-    return std::make_shared<Coordinates>(this);
+    return std::make_shared<Coordinates>(this, options);
   } else {
     // Interpolate coordinates from CELL_CENTRE version
-    return std::make_shared<Coordinates>(this, location, getCoordinates(CELL_CENTRE),
-        force_interpolate_from_centre);
+    return std::make_shared<Coordinates>(this, options, location,
+        getCoordinates(CELL_CENTRE), force_interpolate_from_centre);
   }
 }
 
-
-const Region<> & Mesh::getRegion3D(const std::string &region_name) const {
+const Region<>& Mesh::getRegion3D(const std::string& region_name) const {
   const auto found = regionMap3D.find(region_name);
   if (found == end(regionMap3D)) {
     throw BoutException(_("Couldn't find region %s in regionMap3D"), region_name.c_str());
@@ -360,7 +318,7 @@ const Region<> & Mesh::getRegion3D(const std::string &region_name) const {
   return found->second;
 }
 
-const Region<Ind2D> & Mesh::getRegion2D(const std::string &region_name) const {
+const Region<Ind2D>& Mesh::getRegion2D(const std::string& region_name) const {
   const auto found = regionMap2D.find(region_name);
   if (found == end(regionMap2D)) {
     throw BoutException(_("Couldn't find region %s in regionMap2D"), region_name.c_str());
@@ -368,10 +326,11 @@ const Region<Ind2D> & Mesh::getRegion2D(const std::string &region_name) const {
   return found->second;
 }
 
-const Region<IndPerp> &Mesh::getRegionPerp(const std::string &region_name) const {
+const Region<IndPerp>& Mesh::getRegionPerp(const std::string& region_name) const {
   const auto found = regionMapPerp.find(region_name);
   if (found == end(regionMapPerp)) {
-    throw BoutException(_("Couldn't find region %s in regionMapPerp"), region_name.c_str());
+    throw BoutException(_("Couldn't find region %s in regionMapPerp"),
+                        region_name.c_str());
   }
   return found->second;
 }
@@ -470,6 +429,6 @@ void Mesh::recalculateStaggeredCoordinates() {
       continue;
     }
 
-    std::swap(*coords_map[location], *createDefaultCoordinates(location, true));
+    *coords_map[location] = std::move(*createDefaultCoordinates(location, true));
   }
 }

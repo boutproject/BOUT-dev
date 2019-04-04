@@ -3,11 +3,12 @@
 
 #include "gtest/gtest.h"
 
+#include <numeric>
 #include <functional>
 #include <iostream>
-#include <mpi.h>
 #include <vector>
 
+#include "boutcomm.hxx"
 #include "bout/mesh.hxx"
 #include "bout/coordinates.hxx"
 #include "field3d.hxx"
@@ -221,6 +222,12 @@ public:
   MPI_Comm getYcomm(int UNUSED(jx)) const { return MPI_COMM_NULL; }
   bool periodicY(int UNUSED(jx)) const { return true; }
   bool periodicY(int UNUSED(jx), BoutReal &UNUSED(ts)) const { return true; }
+  std::pair<bool, BoutReal> hasBranchCutLower(int UNUSED(jx)) const {
+    return std::make_pair(false, 0.);
+  }
+  std::pair<bool, BoutReal> hasBranchCutUpper(int UNUSED(jx)) const {
+    return std::make_pair(false, 0.);
+  }
   bool firstY() const { return true; }
   bool lastY() const { return true; }
   bool firstY(int UNUSED(xpos)) const { return true; }
@@ -275,6 +282,46 @@ public:
     StaggerGrids=true;
     derivs_init(opt);
   }
+
+  void createBoundaryRegions() {
+    addRegion2D("RGN_LOWER_Y",
+                Region<Ind2D>(0, LocalNx - 1, 0, ystart - 1, 0, 0, LocalNy, 1));
+    addRegion3D("RGN_LOWER_Y", Region<Ind3D>(0, LocalNx - 1, 0, ystart - 1, 0,
+                                             LocalNz - 1, LocalNy, LocalNz));
+    addRegion2D("RGN_UPPER_Y",
+                Region<Ind2D>(0, LocalNx - 1, yend + 1, LocalNy - 1, 0, 0, LocalNy, 1));
+    addRegion3D("RGN_UPPER_Y", Region<Ind3D>(0, LocalNx - 1, yend + 1, LocalNy - 1, 0,
+                                             LocalNz - 1, LocalNy, LocalNz));
+    addRegion2D("RGN_INNER_X",
+                Region<Ind2D>(0, xstart - 1, 0, LocalNy - 1, 0, 0, LocalNy, 1));
+    addRegion3D("RGN_INNER_X", Region<Ind3D>(0, xstart - 1, 0, LocalNy - 1, 0,
+                                             LocalNz - 1, LocalNy, LocalNz));
+    addRegion2D("RGN_OUTER_X",
+                Region<Ind2D>(xend + 1, LocalNx - 1, 0, LocalNy - 1, 0, 0, LocalNy, 1));
+    addRegion3D("RGN_OUTER_X", Region<Ind3D>(xend + 1, LocalNx - 1, 0, LocalNy - 1, 0,
+                                             LocalNz - 1, LocalNy, LocalNz));
+
+    const auto boundary_names = {"RGN_LOWER_Y", "RGN_UPPER_Y", "RGN_INNER_X",
+                                 "RGN_OUTER_X"};
+
+    // Sum up and get unique points in the boundaries defined above
+    addRegion2D("RGN_BNDRY",
+                std::accumulate(begin(boundary_names), end(boundary_names),
+                                Region<Ind2D>{},
+                                [this](Region<Ind2D>& a, const std::string& b) {
+                                  return a + getRegion2D(b);
+                                })
+                    .unique());
+
+    addRegion3D("RGN_BNDRY",
+                std::accumulate(begin(boundary_names), end(boundary_names),
+                                Region<Ind3D>{},
+                                [this](Region<Ind3D>& a, const std::string& b) {
+                                  return a + getRegion3D(b);
+                                })
+                    .unique());
+  }
+
 private:
   std::vector<BoundaryRegion *> boundaries;
 };
@@ -292,21 +339,41 @@ public:
 
     delete bout::globals::mesh;
     bout::globals::mesh = new FakeMesh(nx, ny, nz);
-    static_cast<FakeMesh*>(bout::globals::mesh)->setCoordinates(nullptr);
-    bout::globals::mesh->setParallelTransform(
-        bout::utils::make_unique<ParallelTransformIdentity>(*bout::globals::mesh));
     bout::globals::mesh->createDefaultRegions();
+    static_cast<FakeMesh*>(bout::globals::mesh)->setCoordinates(nullptr);
+    test_coords = std::make_shared<Coordinates>(
+        bout::globals::mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0},
+        Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
+        Field2D{0.0}, Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0},
+        Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0},
+        false);
+    static_cast<FakeMesh*>(bout::globals::mesh)->setCoordinates(test_coords);
+    // May need a ParallelTransform to create fields, because create3D calls
+    // fromFieldAligned
+    test_coords->setParallelTransform(
+        bout::utils::make_unique<ParallelTransformIdentity>(*bout::globals::mesh));
 
     delete mesh_staggered;
     mesh_staggered = new FakeMesh(nx, ny, nz);
     mesh_staggered->StaggerGrids = true;
-    mesh_staggered->setParallelTransform(
-        bout::utils::make_unique<ParallelTransformIdentity>(*mesh_staggered));
     static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr);
     static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_XLOW);
     static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_YLOW);
     static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(nullptr, CELL_ZLOW);
     mesh_staggered->createDefaultRegions();
+
+    test_coords_staggered = std::make_shared<Coordinates>(
+        mesh_staggered, Field2D{1.0, mesh_staggered}, Field2D{1.0, mesh_staggered},
+        BoutReal{1.0}, Field2D{1.0, mesh_staggered}, Field2D{0.0, mesh_staggered},
+        Field2D{1.0, mesh_staggered}, Field2D{1.0, mesh_staggered},
+        Field2D{1.0, mesh_staggered}, Field2D{0.0, mesh_staggered},
+        Field2D{0.0, mesh_staggered}, Field2D{0.0, mesh_staggered},
+        Field2D{1.0, mesh_staggered}, Field2D{1.0, mesh_staggered},
+        Field2D{1.0, mesh_staggered}, Field2D{0.0, mesh_staggered},
+        Field2D{0.0, mesh_staggered}, Field2D{0.0, mesh_staggered},
+        Field2D{0.0, mesh_staggered}, Field2D{0.0, mesh_staggered}, false);
+    test_coords_staggered->setParallelTransform(
+        bout::utils::make_unique<ParallelTransformIdentity>(*mesh_staggered));
   }
 
   virtual ~FakeMeshFixture() {
@@ -321,6 +388,9 @@ public:
   static constexpr int nz = 7;
 
   Mesh* mesh_staggered = nullptr;
+
+  std::shared_ptr<Coordinates> test_coords{nullptr};
+  std::shared_ptr<Coordinates> test_coords_staggered{nullptr};
 };
 
 #endif //  TEST_EXTRAS_H__

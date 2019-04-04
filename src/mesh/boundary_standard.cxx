@@ -3314,17 +3314,16 @@ void BoundaryToFieldAligned::apply(Field2D &f, BoutReal t) {
 }
 
 void BoundaryToFieldAligned::apply(Field3D &f, BoutReal t) {
-  Mesh* mesh = bndry->localmesh;
-  ASSERT1(mesh = f.getMesh());
+  ASSERT1(bndry->localmesh = f.getMesh());
 
   //NOTE: This is not very efficient... updating entire field
-  f = mesh->fromFieldAligned(f); 
+  f = fromFieldAligned(f);
 
   // Apply the boundary to shifted field
   op->apply(f, t);
 
   //Shift back
-  f = mesh->toFieldAligned(f);
+  f = toFieldAligned(f);
 
   //This is inefficient -- could instead use the shiftZ just in the bndry
   //but this is not portable to other parallel transforms -- we could instead
@@ -3336,12 +3335,12 @@ void BoundaryToFieldAligned::apply_ddt(Field2D &f) {
 }
 
 void BoundaryToFieldAligned::apply_ddt(Field3D &f) {
-  Mesh* mesh = bndry->localmesh;
-  ASSERT1(mesh = f.getMesh());
-  f = mesh->fromFieldAligned(f);
-  ddt(f) = mesh->fromFieldAligned(ddt(f));
+  ASSERT1(bndry->localmesh = f.getMesh());
+
+  f = fromFieldAligned(f);
+  ddt(f) = fromFieldAligned(ddt(f));
   op->apply_ddt(f);
-  ddt(f) = mesh->toFieldAligned(ddt(f));
+  ddt(f) = toFieldAligned(ddt(f));
 }
 
 
@@ -3362,16 +3361,16 @@ void BoundaryFromFieldAligned::apply(Field2D &f, BoutReal t) {
 }
 
 void BoundaryFromFieldAligned::apply(Field3D &f, BoutReal t) {
-  Mesh* mesh = bndry->localmesh;
-  ASSERT1(mesh = f.getMesh());
+  ASSERT1(bndry->localmesh = f.getMesh());
+
   //NOTE: This is not very efficient... shifting entire field
-  f = mesh->toFieldAligned(f); 
+  f = toFieldAligned(f);
 
   // Apply the boundary to shifted field
   op->apply(f, t);
 
   //Shift back
-  f = mesh->fromFieldAligned(f);
+  f = fromFieldAligned(f);
 
   //This is inefficient -- could instead use the shiftZ just in the bndry
   //but this is not portable to other parallel transforms -- we could instead
@@ -3383,10 +3382,10 @@ void BoundaryFromFieldAligned::apply_ddt(Field2D &f) {
 }
 
 void BoundaryFromFieldAligned::apply_ddt(Field3D &f) {
-  Mesh* mesh = bndry->localmesh;
-  ASSERT1(mesh = f.getMesh());
-  f = mesh->toFieldAligned(f);
-  ddt(f) = mesh->toFieldAligned(ddt(f));
+  ASSERT1(bndry->localmesh = f.getMesh());
+
+  f = toFieldAligned(f);
+  ddt(f) = toFieldAligned(ddt(f));
   op->apply_ddt(f);
-  ddt(f) = mesh->fromFieldAligned(ddt(f));
+  ddt(f) = fromFieldAligned(ddt(f));
 }
