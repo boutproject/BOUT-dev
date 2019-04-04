@@ -3,11 +3,12 @@
 
 #include "gtest/gtest.h"
 
+#include <numeric>
 #include <functional>
 #include <iostream>
-#include <mpi.h>
 #include <vector>
 
+#include "boutcomm.hxx"
 #include "bout/mesh.hxx"
 #include "bout/coordinates.hxx"
 #include "field3d.hxx"
@@ -281,6 +282,46 @@ public:
     StaggerGrids=true;
     derivs_init(opt);
   }
+
+  void createBoundaryRegions() {
+    addRegion2D("RGN_LOWER_Y",
+                Region<Ind2D>(0, LocalNx - 1, 0, ystart - 1, 0, 0, LocalNy, 1));
+    addRegion3D("RGN_LOWER_Y", Region<Ind3D>(0, LocalNx - 1, 0, ystart - 1, 0,
+                                             LocalNz - 1, LocalNy, LocalNz));
+    addRegion2D("RGN_UPPER_Y",
+                Region<Ind2D>(0, LocalNx - 1, yend + 1, LocalNy - 1, 0, 0, LocalNy, 1));
+    addRegion3D("RGN_UPPER_Y", Region<Ind3D>(0, LocalNx - 1, yend + 1, LocalNy - 1, 0,
+                                             LocalNz - 1, LocalNy, LocalNz));
+    addRegion2D("RGN_INNER_X",
+                Region<Ind2D>(0, xstart - 1, 0, LocalNy - 1, 0, 0, LocalNy, 1));
+    addRegion3D("RGN_INNER_X", Region<Ind3D>(0, xstart - 1, 0, LocalNy - 1, 0,
+                                             LocalNz - 1, LocalNy, LocalNz));
+    addRegion2D("RGN_OUTER_X",
+                Region<Ind2D>(xend + 1, LocalNx - 1, 0, LocalNy - 1, 0, 0, LocalNy, 1));
+    addRegion3D("RGN_OUTER_X", Region<Ind3D>(xend + 1, LocalNx - 1, 0, LocalNy - 1, 0,
+                                             LocalNz - 1, LocalNy, LocalNz));
+
+    const auto boundary_names = {"RGN_LOWER_Y", "RGN_UPPER_Y", "RGN_INNER_X",
+                                 "RGN_OUTER_X"};
+
+    // Sum up and get unique points in the boundaries defined above
+    addRegion2D("RGN_BNDRY",
+                std::accumulate(begin(boundary_names), end(boundary_names),
+                                Region<Ind2D>{},
+                                [this](Region<Ind2D>& a, const std::string& b) {
+                                  return a + getRegion2D(b);
+                                })
+                    .unique());
+
+    addRegion3D("RGN_BNDRY",
+                std::accumulate(begin(boundary_names), end(boundary_names),
+                                Region<Ind3D>{},
+                                [this](Region<Ind3D>& a, const std::string& b) {
+                                  return a + getRegion3D(b);
+                                })
+                    .unique());
+  }
+
 private:
   std::vector<BoundaryRegion *> boundaries;
 };
