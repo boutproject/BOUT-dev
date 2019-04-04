@@ -1179,8 +1179,20 @@ def finalise():
     """
     Finalize BOUT++ and also MPI.
     After this most objects and functions are not valid anymore.
+
+    Note that this deallocates the C++ objects, thus the python
+    objects might not work any more.
     """
+    # Go through all living objects, find the ones from boutcore, so
+    # that we can free them.
+    # We cannot rely on python, as
+    #  * Python does not even garantee that they are freed
+    #  * MPI routines are invalid after finalise, and some destructors
+    #    include calls to MPI
+    # first set _isInit to False, so no further bc objects can be created
     global _isInit
+    wasInit = _isInit
+    _isInit = False
     import gc
     objects = gc.get_objects()
     ourClasses = (Coordinates, Field2D, Field3D, Laplacian, Mesh, Options,
@@ -1190,9 +1202,9 @@ def finalise():
         if isinstance(obj,ourClasses):
             obj.__mydealloc__()
     del objects
-    if _isInit:
+    # Actually finalise
+    if wasInit:
        BoutFinalise()
-    _isInit = False
 
 def checkInit():
     """
