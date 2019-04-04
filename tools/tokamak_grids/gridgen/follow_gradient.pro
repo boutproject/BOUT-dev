@@ -36,8 +36,8 @@ FUNCTION radial_differential, fcur, pos
     ENDIF
   ENDIF
   
-  dRdi = INTERPOLATE(DERIV(R), pos[0])
-  dZdi = INTERPOLATE(DERIV(Z), pos[1])
+  dRdi = INTERPOLATE(DERIV(R), pos[0], /DOUBLE)
+  dZdi = INTERPOLATE(DERIV(Z), pos[1], /DOUBLE)
   
   ; Check mismatch between fcur and f ? 
   Br = dfdz/dZdi
@@ -63,7 +63,7 @@ PRO follow_gradient, interp_data, R, Z, ri0, zi0, ftarget, ri, zi, status=status
                      boundary=boundary, fbndry=fbndry, ibndry=ibndry
   COMMON rd_com, idata, lastgoodf, lastgoodpos, Rpos, Zpos, ood, bndry, ri0c, zi0c, tol
   
-  tol = 0.1
+  tol = 0.1D
 
   Rpos = R
   Zpos = Z
@@ -152,7 +152,7 @@ PRO follow_gradient, interp_data, R, Z, ri0, zi0, ftarget, ri, zi, status=status
       ; Repeat to verify that this does work
       rzold = [ri0, zi0]
       CATCH, theError
-      fbndry = lastgoodf - 0.1*(ftarget - f0)
+      fbndry = lastgoodf - 0.1D*(ftarget - f0)
       IF theError NE 0 THEN BEGIN
         PRINT, "   Error again at ", fbndry
       ENDIF
@@ -171,11 +171,11 @@ PRO follow_gradient, interp_data, R, Z, ri0, zi0, ftarget, ri, zi, status=status
     cpos = line_crossings([ri0, ri], [zi0, zi], 0, $
                           boundary[0,*], boundary[1,*], 1, ncross=ncross, inds2=inds2)
     IF (ncross MOD 2) EQ 1 THEN BEGIN ; Odd number of boundary crossings
-      IF SQRT( (ri - cpos[0,0])^2 + (zi - cpos[1,0])^2 ) GT 0.1 THEN BEGIN
+      IF SQRT( (ri - cpos[0,0])^2 + (zi - cpos[1,0])^2 ) GT 0.1D THEN BEGIN
         ;PRINT, "FINDING BOUNDARY", SQRT( (ri - cpos[0,0])^2 + (zi - cpos[1,0])^2 )
         ; Use divide-and-conquer to find crossing point
         
-        tol = 1e-4 ; Make the boundary crossing stricter
+        tol = 1d-4 ; Make the boundary crossing stricter
         
         ibndry = inds2[0] ; Index in boundary where hit
         
@@ -200,7 +200,7 @@ PRO follow_gradient, interp_data, R, Z, ri0, zi0, ftarget, ri, zi, status=status
             
             CATCH, /cancel
           ENDELSE
-        ENDREP UNTIL ABS(fmax - fcur) LT 0.01*ABS(ftarget - f0)
+        ENDREP UNTIL ABS(fmax - fcur) LT 0.01D*ABS(ftarget - f0)
         ri = rzcur[0]
         zi = rzcur[1]
         fbndry = fcur

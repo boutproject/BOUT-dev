@@ -484,16 +484,22 @@ int BoutMesh::load() {
 
   OPTION(options, TwistShift, false);
 
+  // Try to read the shift angle from the grid file
+  // NOTE: All processors should know the twist-shift angle (for invert_parderiv)
+  // NOTE: Always read ShiftAngle as Coordinates will use hasBranchCutLower and
+  //       hasBranchCutUpper to set zShift for ShiftedMetric
+
+  ShiftAngle.resize(LocalNx);
+
+  if (!source->get(this, ShiftAngle, "ShiftAngle", LocalNx, XGLOBAL(0))) {
+    ShiftAngle.clear();
+  }
+
   if (TwistShift) {
     output_info.write("Applying Twist-Shift condition. Interpolation: FFT\n");
-
-    // Try to read the shift angle from the grid file
-    // NOTE: All processors should know the twist-shift angle (for invert_parderiv)
-
-    ShiftAngle.resize(LocalNx);
-
-    if (!source->get(this, ShiftAngle, "ShiftAngle", LocalNx, XGLOBAL(0))) {
-      throw BoutException("ERROR: Twist-shift angle 'ShiftAngle' not found.");
+    if (ShiftAngle.empty()) {
+      throw BoutException("ERROR: Twist-shift angle 'ShiftAngle' not found. "
+          "Required when TwistShift==true.");
     }
   }
 
@@ -2045,6 +2051,35 @@ bool BoutMesh::periodicY(int jx, BoutReal &ts) const {
     return true;
   }
   return false;
+}
+
+std::pair<bool, BoutReal> BoutMesh::hasBranchCutLower(int jx) const {
+  if ( (TS_down_in and DDATA_INDEST != -1 and jx < DDATA_XSPLIT)
+      or (TS_down_out and DDATA_OUTDEST != -1 and jx >= DDATA_XSPLIT) ) {
+    // this processor has branch cut at lower boundary for jx
+    if (ShiftAngle.empty()) {
+      // This function should only be called during initialization, so always check
+      throw BoutException("BoutMesh failed to read ShiftAngle from the grid");
+    }
+    return std::make_pair(true, ShiftAngle[jx]);
+  }
+
+  return std::make_pair(false, 0.);
+}
+
+
+std::pair<bool, BoutReal> BoutMesh::hasBranchCutUpper(int jx) const {
+  if ( (TS_up_in and UDATA_INDEST != -1 and jx < UDATA_XSPLIT)
+      or (TS_up_out and UDATA_OUTDEST != -1 and jx >= UDATA_XSPLIT) ) {
+    // this processor has branch cut at upper boundary for jx
+    if (ShiftAngle.empty()) {
+      // This function should only be called during initialization, so always check
+      throw BoutException("BoutMesh failed to read ShiftAngle from the grid");
+    }
+    return std::make_pair(true, ShiftAngle[jx]);
+  }
+
+  return std::make_pair(false, 0.);
 }
 
 int BoutMesh::ySize(int xpos) const {

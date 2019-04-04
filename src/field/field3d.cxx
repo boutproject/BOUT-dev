@@ -140,12 +140,12 @@ Field3D* Field3D::timeDeriv() {
   return deriv;
 }
 
-void Field3D::splitYupYdown() {
-  TRACE("Field3D::splitYupYdown");
+void Field3D::splitParallelSlices() {
+  TRACE("Field3D::splitParallelSlices");
   
 #if CHECK > 2
   if (yup_fields.size() != ydown_fields.size()) {
-    throw BoutException("Field3D::splitYupYdown: forward/backward parallel slices not in sync.\n"
+    throw BoutException("Field3D::splitParallelSlices: forward/backward parallel slices not in sync.\n"
                         "    This is an internal library error");
   }
 #endif
@@ -162,8 +162,8 @@ void Field3D::splitYupYdown() {
   }
 }
 
-void Field3D::mergeYupYdown() {
-  TRACE("Field3D::mergeYupYdown");
+void Field3D::clearParallelSlices() {
+  TRACE("Field3D::clearParallelSlices");
 
 #if CHECK > 2
   if (yup_fields.size() != ydown_fields.size()) {
@@ -296,6 +296,11 @@ Field3D & Field3D::operator=(const BoutReal val) {
 
   BOUT_FOR(i, getRegion("RGN_ALL")) { (*this)[i] = val; }
 
+  return *this;
+}
+
+Field3D& Field3D::calcParallelSlices() {
+  getCoordinates()->getParallelTransform().calcParallelSlices(*this);
   return *this;
 }
 
@@ -573,6 +578,14 @@ void Field3D::applyParallelBoundary(const std::string &region, const std::string
 Field3D operator-(const Field3D &f) { return -1.0 * f; }
 
 //////////////// NON-MEMBER FUNCTIONS //////////////////
+
+Field3D toFieldAligned(const Field3D& f, const REGION region) {
+  return f.getCoordinates()->getParallelTransform().toFieldAligned(f, region);
+}
+
+Field3D fromFieldAligned(const Field3D& f, const REGION region) {
+  return f.getCoordinates()->getParallelTransform().fromFieldAligned(f, region);
+}
 
 Field3D pow(const Field3D &lhs, const Field3D &rhs, REGION rgn) {
   TRACE("pow(Field3D, Field3D)");

@@ -6,6 +6,6 @@ PRO oplot_contour, info, xy, R, Z, periodic=periodic, _extra=_extra
     ri = [ri, ri[0]]
     zi = [zi, zi[0]]
   ENDIF
-  OPLOT, INTERPOLATE(R, ri), INTERPOLATE(Z, zi), _extra=_extra
+  OPLOT, INTERPOLATE(R, ri, /DOUBLE), INTERPOLATE(Z, zi, /DOUBLE), _extra=_extra
 END
 

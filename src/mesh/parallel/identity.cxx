@@ -6,11 +6,11 @@
  *
  */
 
-#include <bout/mesh.hxx>
-#include <bout/paralleltransform.hxx>
+#include "bout/mesh.hxx"
+#include "bout/paralleltransform.hxx"
 
-void ParallelTransformIdentity::calcYUpDown(Field3D& f) {
-  f.splitYupYdown();
+void ParallelTransformIdentity::calcParallelSlices(Field3D& f) {
+  f.splitParallelSlices();
 
   for (int i = 0; i < f.getMesh()->ystart; ++i) {
     f.yup(i) = f;

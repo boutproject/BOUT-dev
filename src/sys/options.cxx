@@ -119,6 +119,21 @@ bool Options::isSet() const {
   return true;
 }
 
+bool Options::isSection(const std::string& name) const {
+  if (name == "") {
+    // Test this object
+    return is_section;
+  }
+
+  // Is there a child section?
+  auto it = children.find(name);
+  if (it == children.end()) {
+    return false;
+  } else {
+    return it->second.isSection();
+  }
+}
+
 template <>
 void Options::assign<>(Field2D val, const std::string source) {
   value = std::move(val);

@@ -8,8 +8,8 @@ class SolverFactory;
 #include "bout/solver.hxx"
 
 #include <functional>
-#include <string>
 #include <iostream>
+#include <string>
 
 class Options;
 
@@ -21,34 +21,36 @@ class Options;
 ///     using SolverFactory = Factory<Solver, SolverType,
 ///                                   std::function<Solver*(Options*)>>;
 class SolverFactory : public Factory<Solver, std::function<Solver*(Options*)>> {
- public:
-  SolverType getDefaultSolverType();
-  
-  static SolverFactory *getInstance();
+public:
+  /// Return the name of the default Solver type
+  static SolverType getDefaultSolverType();
 
-  Solver* createSolver(Options *options = nullptr);
-  Solver* createSolver(SolverType &name) {
+  static SolverFactory* getInstance();
+
+  Solver* createSolver(Options* options = nullptr);
+  Solver* createSolver(const SolverType& name) {
     return createSolver(name, Options::getRoot()->getSection("solver"));
   }
-  Solver* createSolver(SolverType &name, Options *options) {
+  Solver* createSolver(const SolverType& name, Options* options) {
     try {
       return create(name, options);
-    } catch (const BoutException &e) {
+    } catch (const BoutException& e) {
       throw BoutException("Error when trying to create a Solver: %s", e.what());
     }
   }
+
 private:
   SolverFactory() {}
   static SolverFactory* instance;
 };
 
 /// Specialisation of Factory registration helper class
-template<typename DerivedType>
+template <typename DerivedType>
 class RegisterInFactory<Solver, DerivedType> {
 public:
-  RegisterInFactory(const std::string &name) {
+  RegisterInFactory(const std::string& name) {
     SolverFactory::getInstance()->add(
-        name, [](Options *options) -> Solver * { return new DerivedType(options); });
+        name, [](Options* options) -> Solver* { return new DerivedType(options); });
   }
 };
 
@@ -60,8 +62,7 @@ public:
 ///     namespace {
 ///     RegisterSolver<MySolver> registersolvermine("mysolver");
 ///     }
-template<typename DerivedType>
+template <typename DerivedType>
 using RegisterSolver = RegisterInFactory<Solver, DerivedType>;
 
 #endif // __SOLVER_FACTORY_H__
-

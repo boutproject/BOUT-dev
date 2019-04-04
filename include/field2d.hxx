@@ -126,21 +126,26 @@ class Field2D : public Field, public FieldData {
   }
 
   /// Check if this field has yup and ydown fields
-  bool hasYupYdown() const {
+  bool hasParallelSlices() const {
     return true;
   }
+
+  [[gnu::deprecated("Please use Field2D::hasParallelSlices instead")]]
+  bool hasYupYdown() const {
+    return hasParallelSlices();
+  }
   
-  Field2D& yup() {
+  Field2D& yup(std::vector<Field2D>::size_type UNUSED(index) = 0) {
     return *this;
   }
-  const Field2D& yup() const {
+  const Field2D& yup(std::vector<Field2D>::size_type UNUSED(index) = 0) const {
     return *this;
   }
 
-  Field2D& ydown() {
+  Field2D& ydown(std::vector<Field2D>::size_type UNUSED(index) = 0) {
     return *this;
   }
-  const Field2D& ydown() const {
+  const Field2D& ydown(std::vector<Field2D>::size_type UNUSED(index) = 0) const {
     return *this;
   }
 
@@ -319,6 +324,9 @@ Field2D operator/(BoutReal lhs, const Field2D &rhs);
 Field2D operator-(const Field2D &f);
 
 // Non-member functions
+
+inline Field2D toFieldAligned(const Field2D& f, const REGION UNUSED(region)) { return f; }
+inline Field2D fromFieldAligned(const Field2D& f, const REGION UNUSED(region)) { return f; }
 
 /// Square root of \p f over region \p rgn
 ///

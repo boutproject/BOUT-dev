@@ -34,7 +34,7 @@ IF NOT KEYWORD_SET(INVERSE) THEN BEGIN ;---direct transform---
     endfor
   endfor
 
-  fsig *= 2/SQRT(double(Nx*Ny))
+  fsig *= 2.D/SQRT(double(Nx*Ny))
   fsig[0,*] *= SQRT(0.5d0)
   fsig[*,0] *= SQRT(0.5d0)
 
@@ -60,7 +60,7 @@ ENDIF ELSE BEGIN ;---inverse transform---
    endfor
   endfor
 
-  sig *= 2/SQRT(double(NX*NY))
+  sig *= 2.D/SQRT(double(NX*NY))
 
 ENDELSE
  

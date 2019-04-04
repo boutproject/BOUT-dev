@@ -17,6 +17,8 @@
 
 #include <globals.hxx>
 
+#include "parallel/fci.hxx"
+
 // use anonymous namespace so this utility function is not available outside this file
 namespace {
 /// Interpolate a Field2D to a new CELL_LOC with interp_to.
@@ -160,7 +162,7 @@ Coordinates::Coordinates(Mesh* mesh, Field2D dx, Field2D dy, BoutReal dz, Field2
   }
 }
 
-Coordinates::Coordinates(Mesh* mesh)
+Coordinates::Coordinates(Mesh* mesh, Options* options)
     : dx(1, mesh), dy(1, mesh), dz(1), d1_dx(mesh), d1_dy(mesh), J(1, mesh), Bxy(1, mesh),
       // Identity metric tensor
       g11(1, mesh), g22(1, mesh), g33(1, mesh), g12(0, mesh), g13(0, mesh), g23(0, mesh),
@@ -170,6 +172,10 @@ Coordinates::Coordinates(Mesh* mesh)
       G2_23(mesh), G3_11(mesh), G3_22(mesh), G3_33(mesh), G3_12(mesh), G3_13(mesh),
       G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), ShiftTorsion(mesh),
       IntShiftTorsion(mesh), localmesh(mesh), location(CELL_CENTRE) {
+
+  if (options == nullptr) {
+    options = Options::getRoot()->getSection("mesh");
+  }
 
   // Note: If boundary cells were not loaded from the grid file, use
   // 'interpolateAndExtrapolate' to set them. Ensures that derivatives are
@@ -358,10 +364,12 @@ Coordinates::Coordinates(Mesh* mesh)
     // IntShiftTorsion will not be used, but set to zero to avoid uninitialized field
     IntShiftTorsion = 0.;
   }
+
+  setParallelTransform(options);
 }
 
-Coordinates::Coordinates(Mesh* mesh, const CELL_LOC loc, const Coordinates* coords_in,
-      bool force_interpolate_from_centre)
+Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
+      const Coordinates* coords_in, bool force_interpolate_from_centre)
     : dx(1, mesh), dy(1, mesh), dz(1), d1_dx(mesh), d1_dy(mesh), J(1, mesh), Bxy(1, mesh),
       // Identity metric tensor
       g11(1, mesh), g22(1, mesh), g33(1, mesh), g12(0, mesh), g13(0, mesh), g23(0, mesh),
@@ -581,6 +589,8 @@ Coordinates::Coordinates(Mesh* mesh, const CELL_LOC loc, const Coordinates* coor
   if (geometry()) {
     throw BoutException("Differential geometry failed while constructing staggered Coordinates");
   }
+
+  setParallelTransform(options);
 }
 
 void Coordinates::outputVars(Datafile& file) {
@@ -936,6 +946,75 @@ int Coordinates::jacobian() {
   return 0;
 }
 
+void Coordinates::setParallelTransform(Options* options) {
+
+  std::string ptstr;
+  options->get("paralleltransform", ptstr, "identity");
+
+  // Convert to lower case for comparison
+  ptstr = lowercase(ptstr);
+
+  if(ptstr == "identity") {
+    // Identity method i.e. no transform needed
+    transform = bout::utils::make_unique<ParallelTransformIdentity>(*localmesh);
+
+  } else if (ptstr == "shifted") {
+    // Shifted metric method
+
+    Field2D zShift{localmesh};
+
+    // Read the zShift angle from the mesh
+    if (localmesh->get(zShift, "zShift")) {
+      // No zShift variable. Try qinty in BOUT grid files
+      localmesh->get(zShift, "qinty");
+    }
+
+    zShift = interpolateAndNeumann(zShift, location);
+
+    // make sure zShift has been communicated
+    localmesh->communicate(zShift);
+
+    // Correct guard cells for discontinuity of zShift at poloidal branch cut
+    for (int x = 0; x < localmesh->LocalNx; x++) {
+      const auto lower = localmesh->hasBranchCutLower(x);
+      if (lower.first) {
+        for (int y = 0; y < localmesh->ystart; y++) {
+          zShift(x, y) -= lower.second;
+        }
+      }
+      const auto upper = localmesh->hasBranchCutUpper(x);
+      if (upper.first) {
+        for (int y = localmesh->yend + 1; y < localmesh->LocalNy; y++) {
+          zShift(x, y) += upper.second;
+        }
+      }
+    }
+
+    transform = bout::utils::make_unique<ShiftedMetric>(*localmesh, location, zShift,
+        zlength());
+
+  } else if (ptstr == "fci") {
+
+    if (location != CELL_CENTRE) {
+      throw BoutException("FCITransform is not available on staggered grids.");
+    }
+
+    // Flux Coordinate Independent method
+    const bool fci_zperiodic = Options::root()["fci"]["z_periodic"].withDefault(true);
+    transform = bout::utils::make_unique<FCITransform>(*localmesh, fci_zperiodic);
+
+  } else {
+    throw BoutException(_("Unrecognised paralleltransform option.\n"
+                          "Valid choices are 'identity', 'shifted', 'fci'"));
+  }
+}
+
+ParallelTransform& Coordinates::getParallelTransform() {
+  // Return a reference to the ParallelTransform object
+  return *transform;
+}
+
+
 /*******************************************************************************
  * Operators
  *
@@ -1026,7 +1105,7 @@ const Field3D Coordinates::Div_par(const Field3D& f, CELL_LOC outloc,
   // Coordinates object
   Field2D Bxy_floc = f.getCoordinates()->Bxy;
 
-  if (!f.hasYupYdown()) {
+  if (!f.hasParallelSlices()) {
     // No yup/ydown fields. The Grad_par operator will
     // shift to field aligned coordinates
     return Bxy * Grad_par(f / Bxy_floc, outloc, method);
@@ -1034,15 +1113,9 @@ const Field3D Coordinates::Div_par(const Field3D& f, CELL_LOC outloc,
 
   // Need to modify yup and ydown fields
   Field3D f_B = f / Bxy_floc;
-  if (&f.yup() == &f) {
-    // Identity, yup and ydown point to same field
-    f_B.mergeYupYdown();
-  } else {
-    // Distinct fields
-    f_B.splitYupYdown();
-    f_B.yup() = f.yup() / Bxy_floc;
-    f_B.ydown() = f.ydown() / Bxy_floc;
-  }
+  f_B.splitParallelSlices();
+  f_B.yup() = f.yup() / Bxy_floc;
+  f_B.ydown() = f.ydown() / Bxy_floc;
   return Bxy * Grad_par(f_B, outloc, method);
 }
 

@@ -61,7 +61,7 @@ namespace FV {
     Field3D yzresult(mesh);
     yzresult.allocate();
 
-    if (f.hasYupYdown() && a.hasYupYdown()) {
+    if (f.hasParallelSlices() && a.hasParallelSlices()) {
       // Both inputs have yup and ydown
 
       fup = f.yup();
@@ -73,8 +73,8 @@ namespace FV {
       // At least one input doesn't have yup/ydown fields.
       // Need to shift to/from field aligned coordinates
 
-      fup = fdown = fc = mesh->toFieldAligned(f);
-      aup = adown = ac = mesh->toFieldAligned(a);
+      fup = fdown = fc = toFieldAligned(f);
+      aup = adown = ac = toFieldAligned(a);
     }
 
     // Y flux
@@ -154,10 +154,10 @@ namespace FV {
       }
     }
     // Check if we need to transform back
-    if (f.hasYupYdown() && a.hasYupYdown()) {
+    if (f.hasParallelSlices() && a.hasParallelSlices()) {
       result += yzresult;
     } else {
-      result += mesh->fromFieldAligned(yzresult);
+      result += fromFieldAligned(yzresult);
     }
     
     return result;
@@ -171,16 +171,16 @@ namespace FV {
     Mesh *mesh = Kin.getMesh();
     Field3D result{zeroFrom(fin)};
 
-    bool use_yup_ydown = (Kin.hasYupYdown() && fin.hasYupYdown());
+    bool use_parallel_slices = (Kin.hasParallelSlices() && fin.hasParallelSlices());
 
-    const auto& K = use_yup_ydown ? Kin : mesh->toFieldAligned(Kin, RGN_NOX);
-    const auto& f = use_yup_ydown ? fin : mesh->toFieldAligned(fin, RGN_NOX);
+    const auto& K = use_parallel_slices ? Kin : toFieldAligned(Kin, RGN_NOX);
+    const auto& f = use_parallel_slices ? fin : toFieldAligned(fin, RGN_NOX);
 
     // K and f fields in yup and ydown directions
-    const auto& Kup = use_yup_ydown ? Kin.yup() : K;
-    const auto& Kdown = use_yup_ydown ? Kin.ydown() : K;
-    const auto& fup = use_yup_ydown ? fin.yup() : f;
-    const auto& fdown = use_yup_ydown ? fin.ydown() : f;
+    const auto& Kup = use_parallel_slices ? Kin.yup() : K;
+    const auto& Kdown = use_parallel_slices ? Kin.ydown() : K;
+    const auto& fup = use_parallel_slices ? fin.yup() : f;
+    const auto& fdown = use_parallel_slices ? fin.ydown() : f;
     
     Coordinates *coord = fin.getCoordinates();
 
@@ -218,9 +218,9 @@ namespace FV {
       }
     }
     
-    if (!use_yup_ydown) {
+    if (!use_parallel_slices) {
       // Shifted to field aligned coordinates, so need to shift back
-      result = mesh->fromFieldAligned(result, RGN_NOBNDRY);
+      result = fromFieldAligned(result, RGN_NOBNDRY);
     }
     
     return result;
@@ -236,8 +236,8 @@ namespace FV {
     Coordinates *coord = f_in.getCoordinates();
     
     // Convert to field aligned coordinates
-    Field3D d = mesh->toFieldAligned(d_in, RGN_NOX);
-    Field3D f = mesh->toFieldAligned(f_in, RGN_NOX);
+    Field3D d = toFieldAligned(d_in, RGN_NOX);
+    Field3D f = toFieldAligned(f_in, RGN_NOX);
     
     for(int i=mesh->xstart;i<=mesh->xend;i++)
       for(int j=mesh->ystart;j<=mesh->yend;j++) {
@@ -276,7 +276,7 @@ namespace FV {
       }
     
     // Convert result back to non-aligned coordinates
-    return mesh->fromFieldAligned(result, RGN_NOBNDRY);
+    return fromFieldAligned(result, RGN_NOBNDRY);
   }
 
   const Field3D D4DY4_Index(const Field3D &f_in, bool bndry_flux) {
@@ -285,7 +285,7 @@ namespace FV {
     Mesh* mesh = f_in.getMesh();
 
     // Convert to field aligned coordinates
-    Field3D f = mesh->toFieldAligned(f_in, RGN_NOX);
+    Field3D f = toFieldAligned(f_in, RGN_NOX);
 
     Coordinates *coord = f_in.getCoordinates();
     
@@ -386,7 +386,7 @@ namespace FV {
     }
     
     // Convert result back to non-aligned coordinates
-    return mesh->fromFieldAligned(result, RGN_NOBNDRY);
+    return fromFieldAligned(result, RGN_NOBNDRY);
   }
 
   void communicateFluxes(Field3D &f) {
