@@ -587,6 +587,22 @@ TYPED_TEST(FieldFactoryCreationTest, CreateOnMesh) {
   EXPECT_EQ(output.getNz(), nz);
 }
 
+TYPED_TEST(FieldFactoryCreationTest, CreateOnMeshWithoutCoordinates) {
+  constexpr auto nx = int{1};
+  constexpr auto ny = int{1};
+  constexpr auto nz = int{1};
+
+  FakeMesh localmesh{nx, ny, nz};
+  localmesh.setCoordinates(nullptr);
+  localmesh.createDefaultRegions();
+  localmesh.setCoordinates(nullptr);
+
+  // Field2D version doesn't try to transform back
+  if (std::is_base_of<Field3D, TypeParam>::value) {
+    EXPECT_THROW(this->create("x", nullptr, &localmesh), BoutException);
+  }
+}
+
 // The following tests still use the FieldFactory, but don't need to
 // be typed and make take longer as they check that exceptions get
 // thrown. Doing these twice will slow down the test unnecessarily
