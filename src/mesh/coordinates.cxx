@@ -857,7 +857,9 @@ void Coordinates::setParallelTransform(Options* options) {
 }
 
 ParallelTransform& Coordinates::getParallelTransform() {
-  // Return a reference to the ParallelTransform object
+  if (transform == nullptr) {
+    setParallelTransform(Options::getRoot());
+  }
   return *transform;
 }
 
