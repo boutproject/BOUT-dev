@@ -140,6 +140,29 @@ void getAtLoc(Mesh* mesh, Field2D &var, std::string name, std::string suffix,
   mesh->get(var, name+suffix, default_value);
   var.setLocation(location);
 }
+
+std::string getLocationSuffix(CELL_LOC location) {
+  switch (location) {
+  case CELL_CENTRE: {
+      return "";
+    }
+  case CELL_XLOW: {
+      return "_xlow";
+    }
+  case CELL_YLOW: {
+      return "_ylow";
+    }
+  case CELL_ZLOW: {
+      // geometrical quantities are Field2D, so CELL_ZLOW version is the same
+      // as CELL_CENTRE
+      return "";
+    }
+  default: {
+      throw BoutException("Incorrect location passed to "
+          "Coordinates(Mesh*,const CELL_LOC,const Coordinates*) constructor.");
+    }
+  }
+}
 }
 
 Coordinates::Coordinates(Mesh* mesh, Field2D dx, Field2D dy, BoutReal dz, Field2D J,
@@ -380,27 +403,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
       G3_23(mesh), G1(mesh), G2(mesh), G3(mesh), ShiftTorsion(mesh),
       IntShiftTorsion(mesh), localmesh(mesh), location(loc) {
 
-  std::string suffix = "";
-  switch (location) {
-  case CELL_XLOW: {
-      suffix = "_xlow";
-      break;
-    }
-  case CELL_YLOW: {
-      suffix = "_ylow";
-      break;
-    }
-  case CELL_ZLOW: {
-      // geometrical quantities are Field2D, so CELL_ZLOW version is the same
-      // as CELL_CENTRE
-      suffix = "";
-      break;
-    }
-  default: {
-      throw BoutException("Incorrect location passed to "
-          "Coordinates(Mesh*,const CELL_LOC,const Coordinates*) constructor.");
-    }
-  }
+  std::string suffix = getLocationSuffix(location);
 
   nz = mesh->LocalNz;
 
@@ -964,12 +967,33 @@ void Coordinates::setParallelTransform(Options* options) {
     Field2D zShift{localmesh};
 
     // Read the zShift angle from the mesh
-    if (localmesh->get(zShift, "zShift")) {
-      // No zShift variable. Try qinty in BOUT grid files
-      localmesh->get(zShift, "qinty");
-    }
+    std::string suffix = getLocationSuffix(location);
+    if (localmesh->sourceHasVar("dx"+suffix)) {
+      // Grid file has variables at this location, so should be able to read
+      checkStaggeredGet(localmesh, "zShift", suffix);
+      if (localmesh->get(zShift, "zShift"+suffix)) {
+        // No zShift variable. Try qinty in BOUT grid files
+        if (localmesh->get(zShift, "qinty"+suffix)) {
+          // Failed to find either variable, cannot use ShiftedMetric
+          throw BoutException("Could not read zShift"+suffix+" from grid file");
+        }
+      }
 
-    zShift = interpolateAndNeumann(zShift, location);
+      // extrapolate into boundary guard cells if necessary
+      interpolateAndExtrapolate(zShift, location,
+          not localmesh->sourceHasXBoundaryGuards(),
+          not localmesh->sourceHasYBoundaryGuards());
+    } else {
+      if (localmesh->get(zShift, "zShift")) {
+        // No zShift variable. Try qinty in BOUT grid files
+        if (localmesh->get(zShift, "qinty")) {
+          // Failed to find either variable, cannot use ShiftedMetric
+          throw BoutException("Could not read zShift"+suffix+" from grid file");
+        }
+      }
+
+      zShift = interpolateAndExtrapolate(zShift, location);
+    }
 
     // make sure zShift has been communicated
     localmesh->communicate(zShift);
