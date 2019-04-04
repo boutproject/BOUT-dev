@@ -192,6 +192,8 @@ public:
     D = val;
   }
 
+  virtual bool uses3DCoefs() const override { return true; }
+
   const FieldPerp solve(const FieldPerp &b) override {
     ASSERT1(localmesh == b.getMesh());
 
