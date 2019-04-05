@@ -856,13 +856,6 @@ void Coordinates::setParallelTransform(Options* options) {
   }
 }
 
-ParallelTransform& Coordinates::getParallelTransform() {
-  if (transform == nullptr) {
-    throw BoutException(_("Coordinates instance does not have parallel transform set"));
-  }
-  return *transform;
-}
-
 /*******************************************************************************
  * Operators
  *
