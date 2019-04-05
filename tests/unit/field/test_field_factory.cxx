@@ -564,7 +564,6 @@ TYPED_TEST(FieldFactoryCreationTest, CreateOnMesh) {
   constexpr auto nz = int{1};
 
   FakeMesh localmesh{nx, ny, nz};
-  localmesh.setCoordinates(nullptr);
   localmesh.createDefaultRegions();
   localmesh.setCoordinates(std::make_shared<Coordinates>(
       &localmesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{0.0},
@@ -595,7 +594,6 @@ TYPED_TEST(FieldFactoryCreationTest, CreateOnMeshWithoutCoordinates) {
   FakeMesh localmesh{nx, ny, nz};
   localmesh.setCoordinates(nullptr);
   localmesh.createDefaultRegions();
-  localmesh.setCoordinates(nullptr);
 
   // Field2D version doesn't try to transform back
   if (std::is_base_of<Field3D, TypeParam>::value) {
