@@ -856,12 +856,6 @@ void Coordinates::setParallelTransform(Options* options) {
   }
 }
 
-ParallelTransform& Coordinates::getParallelTransform() {
-  // Return a reference to the ParallelTransform object
-  return *transform;
-}
-
-
 /*******************************************************************************
  * Operators
  *

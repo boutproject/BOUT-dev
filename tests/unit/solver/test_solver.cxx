@@ -536,6 +536,7 @@ TEST_F(SolverTest, GetLocalN) {
 
   Options::root()["field2"]["evolve_bndry"] = true;
   Options::root()["field4"]["evolve_bndry"] = true;
+  Options::root()["input"]["transform_from_field_aligned"] = false;
 
   constexpr auto localmesh_nx = 5;
   constexpr auto localmesh_ny = 7;

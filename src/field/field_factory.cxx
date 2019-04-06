@@ -222,11 +222,16 @@ Field3D FieldFactory::create3D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC 
   }
   };
 
-  if (transform_from_field_aligned
-        and result.getCoordinates()->getParallelTransform().canToFromFieldAligned()) {
-    // Transform from field aligned coordinates, to be compatible with
-    // older BOUT++ inputs. This is not a particularly "nice" solution.
-    result = fromFieldAligned(result, RGN_ALL);
+  if (transform_from_field_aligned) {
+    auto coords = result.getCoordinates();
+    if (coords == nullptr) {
+      throw BoutException("Unable to transform result: Mesh does not have Coordinates set");
+    }
+    if (coords->getParallelTransform().canToFromFieldAligned()) {
+      // Transform from field aligned coordinates, to be compatible with
+      // older BOUT++ inputs. This is not a particularly "nice" solution.
+      result = fromFieldAligned(result, RGN_ALL);
+    }
   }
 
   return result;

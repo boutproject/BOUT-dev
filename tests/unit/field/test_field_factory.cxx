@@ -564,7 +564,6 @@ TYPED_TEST(FieldFactoryCreationTest, CreateOnMesh) {
   constexpr auto nz = int{1};
 
   FakeMesh localmesh{nx, ny, nz};
-  localmesh.setCoordinates(nullptr);
   localmesh.createDefaultRegions();
   localmesh.setCoordinates(std::make_shared<Coordinates>(
       &localmesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{0.0},
@@ -585,6 +584,21 @@ TYPED_TEST(FieldFactoryCreationTest, CreateOnMesh) {
   EXPECT_EQ(output.getNx(), nx);
   EXPECT_EQ(output.getNy(), ny);
   EXPECT_EQ(output.getNz(), nz);
+}
+
+TYPED_TEST(FieldFactoryCreationTest, CreateOnMeshWithoutCoordinates) {
+  constexpr auto nx = int{1};
+  constexpr auto ny = int{1};
+  constexpr auto nz = int{1};
+
+  FakeMesh localmesh{nx, ny, nz};
+  localmesh.setCoordinates(nullptr);
+  localmesh.createDefaultRegions();
+
+  // Field2D version doesn't try to transform back
+  if (std::is_base_of<Field3D, TypeParam>::value) {
+    EXPECT_THROW(this->create("x", nullptr, &localmesh), BoutException);
+  }
 }
 
 // The following tests still use the FieldFactory, but don't need to
