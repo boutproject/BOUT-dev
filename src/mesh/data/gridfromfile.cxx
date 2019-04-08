@@ -244,6 +244,10 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def) 
   // Need to increase offset by 2*(# boundary guards) for each target position
   // we pass
   int ys = m->OffsetY;
+
+  // Total number of y-boundary cells in grid file, used for check later.
+  // Value depends on if we are double-null or not.
+  int total_grid_yguards = 2*grid_yguards;
   if (m->numberOfXPoints > 1) {
     ASSERT1(m->numberOfXPoints == 2);
     // Need to check if we are before or after the target in the middle of the
@@ -253,6 +257,9 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def) 
       // Note: neither ny_inner nor OffsetY include guard cells
       ys += 2*grid_yguards;
     }
+
+    // Add y-boundary guard cells at upper target
+    total_grid_yguards += 2*grid_yguards;
   }
 
   // Index offsets into destination
@@ -285,7 +292,7 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def) 
 
   ///Check if field dimensions are correct. y-direction
   if (grid_yguards > 0) { ///including ghostpoints
-    ASSERT1(field_dimensions[1] == m->GlobalNy - 2*myg + grid_yguards);
+    ASSERT1(field_dimensions[1] == m->GlobalNy - 2*myg + total_grid_yguards);
     ny_to_read = m->LocalNy;
     yd = grid_yguards - myg;
     ASSERT1(yd >= 0);
