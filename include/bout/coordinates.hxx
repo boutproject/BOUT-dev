@@ -123,15 +123,16 @@ public:
   ///////////////////////////////////////////////////////////
 
   /// Set the parallel (y) transform for this mesh.
-  /// Unique pointer used so that ParallelTransform will be deleted.
   /// Mostly useful for tests.
   void setParallelTransform(std::unique_ptr<ParallelTransform> pt) {
     transform = std::move(pt);
   }
 
-  /// Return the parallel transform, setting it if need be
-  ParallelTransform& getParallelTransform();
-
+  /// Return the parallel transform
+  ParallelTransform& getParallelTransform() {
+    ASSERT1(transform != nullptr);
+    return *transform;
+  }
 
   ///////////////////////////////////////////////////////////
   // Operators
