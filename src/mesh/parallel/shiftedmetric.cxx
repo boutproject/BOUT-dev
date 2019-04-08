@@ -37,14 +37,10 @@ ShiftedMetric::ShiftedMetric(Mesh& m, CELL_LOC location_in, Field2D zShift_,
 void ShiftedMetric::checkInputGrid() {
   std::string coordinates_type = "";
   if (!mesh.get(coordinates_type, "coordinates_type")) {
-    // Note: using strcmp here because coordinates_type may have a length that is one
-    // greater than it should be (probably due to either IDL's string-attribute writing or
-    // netCDF's string-attribute reading). This makes the comparison
-    // operator==(std::string,std::string) fail.
-    if (strcmp(coordinates_type.c_str(), "orthogonal") != 0) {
-      throw BoutException("Incorrect coordinate system type " + coordinates_type
-                          + " used to generate metric components for ShiftedMetric. "
-                            "Should be 'orthogonal.");
+    if (coordinates_type != "orthogonal") {
+      throw BoutException("Incorrect coordinate system type '" + coordinates_type
+                          + "' used to generate metric components for ShiftedMetric. "
+                            "Should be 'orthogonal'.");
     }
   } // else: coordinate_system variable not found in grid input, indicates older input
     //       file so must rely on the user having ensured the type is correct

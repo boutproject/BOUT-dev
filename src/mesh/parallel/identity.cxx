@@ -21,14 +21,10 @@ void ParallelTransformIdentity::calcParallelSlices(Field3D& f) {
 void ParallelTransformIdentity::checkInputGrid() {
   std::string coordinates_type = "";
   if (!mesh.get(coordinates_type, "coordinates_type")) {
-    // Note: using strcmp here because coordinates_type may have a length that is one
-    // greater than it should be (probably due to either IDL's string-attribute writing or
-    // netCDF's string-attribute reading). This makes the comparison
-    // operator==(std::string,std::string) fail.
-    if (strcmp(coordinates_type.c_str(), "field_aligned") != 0) {
-      throw BoutException("Incorrect coordinate system type "+coordinates_type+" used "
+    if (coordinates_type != "field_aligned") {
+      throw BoutException("Incorrect coordinate system type '"+coordinates_type+"' used "
           "to generate metric components for ParallelTransformIdentity. Should be "
-          "'field_aligned.");
+          "'field_aligned'.");
     }
   } // else: coordinate_system variable not found in grid input, indicates older input
     //       file so must rely on the user having ensured the type is correct
