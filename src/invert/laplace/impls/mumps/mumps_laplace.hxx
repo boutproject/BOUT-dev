@@ -172,7 +172,7 @@ public:
     issetE = true;
   }
   
-  virtual bool uses3DCoefs() const override { return true; }
+  bool uses3DCoefs() const override { return true; }
 
   void setFlags(int f) {throw BoutException("May not change the value of flags during run in LaplaceMumps as it might change the number of non-zero matrix elements: flags may only be set in the options file.");}
   

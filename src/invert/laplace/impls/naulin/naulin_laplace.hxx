@@ -102,7 +102,7 @@ public:
     throw BoutException("LaplaceNaulin does not have Ez coefficient");
   }
 
-  virtual bool uses3DCoefs() const override { return true; }
+  bool uses3DCoefs() const override { return true; }
 
   const FieldPerp solve(const FieldPerp &b) override {return solve(b,b);}
   const FieldPerp solve(const FieldPerp &UNUSED(b),
