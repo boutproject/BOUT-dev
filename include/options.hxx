@@ -56,23 +56,6 @@ class Options;
 #include <utility>
 #include <cmath>
 
-namespace bout {
-namespace utils {
-
-  /// Get a mesh pointer from the given object.
-  /// In most cases this is nullptr
-  template <typename T>
-  Mesh* meshFromValue(const T& UNUSED(value)) {
-    return nullptr;
-  }
-  
-  template <>
-  Mesh* meshFromValue<Field2D>(const Field2D& value);
-  template <>
-  Mesh* meshFromValue<Field3D>(const Field3D& value);
-}
-}
-
 /// Class to represent hierarchy of options
 /*!
  *
