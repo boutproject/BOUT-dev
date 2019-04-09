@@ -11,6 +11,9 @@
 #include "boutexception.hxx"
 #include "options.hxx"
 
+namespace bout {
+namespace experimental {
+
 class OptionsNetCDF {
 public:
   enum class FileMode {
@@ -31,11 +34,17 @@ public:
   }
 };
 
+}
+}
+
 #else
 
 #include <string>
 
 #include "options.hxx"
+
+namespace bout {
+namespace experimental {
 
 class OptionsNetCDF {
 public:
@@ -61,6 +70,9 @@ private:
   /// index being written for each time dimension
   std::map<int, size_t> time_index;
 };
+
+}
+}
 
 #endif
 

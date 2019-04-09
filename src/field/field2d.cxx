@@ -522,3 +522,15 @@ void invalidateGuards(Field2D &var) {
   BOUT_FOR(i, var.getRegion("RGN_GUARDS")) { var[i] = BoutNaN; }
 }
 #endif
+
+bool operator==(const Field2D &a, const Field2D &b) {
+  if (!a.isAllocated() || !b.isAllocated()) {
+    return false;
+  }
+  return min(abs(a - b)) < 1e-10;
+}
+
+std::ostream& operator<<(std::ostream &out, const Field2D &value) {
+  out << toString(value);
+  return out;
+}

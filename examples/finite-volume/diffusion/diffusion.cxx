@@ -6,7 +6,7 @@
 
 class Diffusion : public PhysicsModel {
 protected:
-  int init(bool restarting) override {
+  int init(bool UNUSED(restarting)) override {
     GRID_LOAD(k);
     mesh->communicate(k);
     
@@ -15,7 +15,7 @@ protected:
     return 0;
   }
 
-  int rhs(BoutReal time) override {
+  int rhs(BoutReal UNUSED(time)) override {
     mesh->communicate(f);
     
     ddt(f) = FV::Div_par_K_Grad_par(k, f);

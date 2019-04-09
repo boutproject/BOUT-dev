@@ -255,6 +255,16 @@ inline T zeroFrom(const T& f) {
   return result;
 }
 
+/// Return a field of some type derived from Field, with metadata copied from
+/// another field and a data array allocated and filled with the given value.
+template<typename T>
+inline T filledFrom(const T& f, BoutReal fill_value) {
+  static_assert(std::is_base_of<Field, T>::value, "emptyFrom only works on Fields");
+  T result{emptyFrom(f)};
+  result = fill_value;
+  return result;
+}
+
 /// Unary + operator. This doesn't do anything
 template<typename T>
 T operator+(const T& f) {return f;}

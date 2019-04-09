@@ -109,9 +109,9 @@ private:
     /*************** READ OPTIONS *************************/
     // Read some parameters
 
-    auto globalOptions = Options::root();
-    auto options = globalOptions["2fluid"];
-    AA = options["AA"].withDefault(4.0); // <=> options["AA"].withDefault(1.0);
+    auto& globalOptions = Options::root();
+    auto& options = globalOptions["2fluid"];
+    AA = options["AA"].withDefault(4.0);
     ZZ = options["ZZ"].withDefault(1.0);
 
     zeff = options["zeff"].withDefault(1.0);
