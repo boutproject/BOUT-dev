@@ -1,13 +1,13 @@
 /*!*************************************************************************
  * \file where.hxx
- * 
+ *
  * A set of functions which choose between two values
  *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -46,11 +46,7 @@ auto where(const T& test, const U& gt0, const V& le0) -> ResultType {
   ResultType result{emptyFrom(test)};
 
   BOUT_FOR(i, result.getRegion("RGN_ALL")) {
-    if (test[i] > 0.0) {
-      result[i] = gt0[i];
-    } else {
-      result[i] = le0[i];
-    }
+    result[i] = (test[i] > 0.0) ? gt0[i] : le0[i];
   }
   return result;
 }
@@ -61,12 +57,8 @@ auto where(const T& test, const U& gt0, BoutReal le0) -> ResultType {
 
   ResultType result{emptyFrom(test)};
 
-  BOUT_FOR(i, result.getRegion("RGN_ALL")) {
-    if (test[i] > 0.0) {
-      result[i] = gt0[i];
-    } else {
-      result[i] = le0;
-    }
+  BOUT_FOR(i, result.getRegion("RGN_ALL")) { // clang-format: ignore
+    result[i] = (test[i] > 0.0) ? gt0[i] : le0;
   }
   return result;
 }
@@ -77,27 +69,18 @@ auto where(const T& test, BoutReal gt0, const V& le0) -> ResultType {
 
   ResultType result{emptyFrom(test)};
 
-  BOUT_FOR(i, result.getRegion("RGN_ALL")) {
-    if (test[i] > 0.0) {
-      result[i] = gt0;
-    } else {
-      result[i] = le0[i];
-    }
+  BOUT_FOR(i, result.getRegion("RGN_ALL")) { // clang-format: ignore
+    result[i] = (test[i] > 0.0) ? gt0 : le0[i];
   }
   return result;
 }
 
 template <class T, class ResultType = T>
 auto where(const T& test, BoutReal gt0, BoutReal le0) -> ResultType {
-
   ResultType result{emptyFrom(test)};
 
-  BOUT_FOR(i, result.getRegion("RGN_ALL")) {
-    if (test[i] > 0.0) {
-      result[i] = gt0;
-    } else {
-      result[i] = le0;
-    }
+  BOUT_FOR(i, result.getRegion("RGN_ALL")) { // clang-format: ignore
+    result[i] = (test[i] > 0.0) ? gt0 : le0;
   }
   return result;
 }
