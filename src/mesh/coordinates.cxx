@@ -125,7 +125,7 @@ Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
 
 // If the CELL_CENTRE variable was read, the staggered version is required to
 // also exist for consistency
-void checkStaggeredGet(Mesh* mesh, std::string name, std::string suffix) {
+void checkStaggeredGet(Mesh* mesh, const std::string& name, const std::string& suffix) {
   if (mesh->sourceHasVar(name) != mesh->sourceHasVar(name+suffix)) {
     throw BoutException("Attempting to read staggered fields from grid, but " + name
         + " is not present in both CELL_CENTRE and staggered versions.");
@@ -133,8 +133,8 @@ void checkStaggeredGet(Mesh* mesh, std::string name, std::string suffix) {
 }
 
 // convenience function for repeated code
-void getAtLoc(Mesh* mesh, Field2D &var, std::string name, std::string suffix,
-    CELL_LOC location, BoutReal default_value = 0.) {
+void getAtLoc(Mesh* mesh, Field2D &var, const std::string& name,
+    const std::string& suffix, CELL_LOC location, BoutReal default_value = 0.) {
 
   checkStaggeredGet(mesh, name, suffix);
   mesh->get(var, name+suffix, default_value);
