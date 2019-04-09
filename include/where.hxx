@@ -28,8 +28,9 @@
 #ifndef __WHERE_H__
 #define __WHERE_H__
 
-#include "field3d.hxx"
+#include "field.hxx"
 #include "field2d.hxx"
+#include "field3d.hxx"
 
 /// For each point, choose between two inputs based on a third input
 ///
@@ -37,7 +38,7 @@
 /// @param[in] gt0    Uses this value if test > 0.0
 /// @param[in] le0    Uses this value if test <= 0.0
 template <class T, class U, class V,
-          class ResultType = typename std::common_type<T, U, V>::type>
+          class ResultType = typename bout::utils::EnableIfField<T, U, V>>
 auto where(const T& test, const U& gt0, const V& le0) -> ResultType {
   ASSERT1(areFieldsCompatible(test, gt0));
   ASSERT1(areFieldsCompatible(test, le0));
@@ -54,8 +55,7 @@ auto where(const T& test, const U& gt0, const V& le0) -> ResultType {
   return result;
 }
 
-template <class T, class U,
-          class ResultType = typename std::common_type<T, U>::type>
+template <class T, class U, class ResultType = typename bout::utils::EnableIfField<T, U>>
 auto where(const T& test, const U& gt0, BoutReal le0) -> ResultType {
   ASSERT1(areFieldsCompatible(test, gt0));
 
@@ -71,8 +71,7 @@ auto where(const T& test, const U& gt0, BoutReal le0) -> ResultType {
   return result;
 }
 
-template <class T, class V,
-          class ResultType = typename std::common_type<T, V>::type>
+template <class T, class V, class ResultType = typename bout::utils::EnableIfField<T, V>>
 auto where(const T& test, BoutReal gt0, const V& le0) -> ResultType {
   ASSERT1(areFieldsCompatible(test, le0));
 

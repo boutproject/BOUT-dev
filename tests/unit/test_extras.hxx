@@ -25,9 +25,7 @@ static constexpr BoutReal FFTTolerance{1.e-12};
 void fillField(Field3D& f, std::vector<std::vector<std::vector<BoutReal>>> values);
 void fillField(Field2D& f, std::vector<std::vector<BoutReal>> values);
 
-/// Enable a function if T is a subclass of Field
-template <class T>
-using EnableIfField = typename std::enable_if<std::is_base_of<Field, T>::value>::type;
+using bout::utils::EnableIfField;
 
 /// Returns a field filled with the result of \p fill_function at each point
 /// Arbitrary arguments can be passed to the field constructor
@@ -80,7 +78,7 @@ auto inline getIndexXYZ(const IndPerp& index) -> std::string {
 }
 
 /// Is \p field equal to \p reference, with a tolerance of \p tolerance?
-template <class T, class U, typename = EnableIfField<T>, typename = EnableIfField<U>>
+template <class T, class U, typename = EnableIfField<T, U>>
 auto IsFieldEqual(const T& field, const U& reference,
                   const std::string& region = "RGN_ALL",
                   BoutReal tolerance = BoutRealTolerance) -> ::testing::AssertionResult {
