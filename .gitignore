@@ -38,4 +38,4 @@ bout-coverage/
 src/.libfast
 .*.mk
 *.mo
-
+.BOUT.pid.*
