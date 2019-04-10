@@ -38,7 +38,7 @@ for nproc in [1]:
   dr = float(rwidth) / nx
 
   # Test value of dx
-  if np.min(np.abs(dx - dr * Bpxy * Rxy)) > 1e-7:
+  if np.max(np.abs(dx - dr * Bpxy * Rxy)) > 1e-7:
     print("Failed: dx does not match")
     exit(1)
 
