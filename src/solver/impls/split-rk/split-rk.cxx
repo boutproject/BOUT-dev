@@ -106,14 +106,14 @@ void SplitRK::take_diffusion_step(BoutReal curtime, BoutReal dt, Array<BoutReal>
   }
   
   // Stage j = 2
-  // mu = 0.75, nu terms cancel
+  // mu = 1.5, nu terms cancel
   load_vars(std::begin(u2));
-  run_diffusive(curtime);
+  run_diffusive(curtime + (weight/3.0) * dt);
   save_derivs(std::begin(u3)); // f(y_m2) -> u3
   
   BOUT_OMP(parallel for)
   for (int i = 0; i < u3.size(); i++) {
-    u1[i] = 0.75 * (u2[i] + weight * u3[i]) + 0.25 * start[i] - 0.5 * weight * dydt[i];
+    u1[i] = 1.5 * (u2[i] + weight * u3[i]) - 0.5 * start[i] - weight * dydt[i];
   }
   
   BoutReal b_jm2 = 1. / 3; // b_{j - 2}

@@ -55,5 +55,9 @@ adaptive = true
 # This solver currently fails this test without adaptive timestepping
 adaptive = true
 
+[splitrk]
+timestep = end / (NOUT * 500)
+nstages = 3
+
 [field]
 bndry_all = none
