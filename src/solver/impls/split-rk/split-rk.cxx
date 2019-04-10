@@ -13,7 +13,12 @@ int SplitRK::init(int nout, BoutReal tstep) {
   out_timestep = tstep;
 
   // Calculate number of variables
-  const int nlocal = getLocalN();
+  nlocal = getLocalN();
+  
+  // Get total problem size
+  if(MPI_Allreduce(&nlocal, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
+    throw BoutException("MPI_Allreduce failed!");
+  }
   
   // Allocate memory
   state.reallocate(nlocal);
@@ -27,15 +32,39 @@ int SplitRK::init(int nout, BoutReal tstep) {
   // Put starting values into f
   save_vars(std::begin(state));
 
-  // Get options
+  // Get options. Default values for many of these are set in constructor.
   auto &opt = *options;
   timestep = opt["timestep"]
                  .doc("Internal timestep. This may be rounded down.")
                  .withDefault(out_timestep);
 
-  ninternal_steps = static_cast<int>(std::ceil(out_timestep / timestep));
-  ASSERT0(ninternal_steps > 0);
+  adaptive = opt["adaptive"].doc("Use accuracy tolerances to adapt timestep?").withDefault(adaptive);
 
+  atol = opt["atol"].doc("Absolute tolerance").withDefault(atol);
+  rtol = opt["rtol"].doc("Relative tolerance").withDefault(rtol);
+
+  max_timestep = opt["max_timestep"].doc("Maximum timestep. Negative means no limit.").withDefault(out_timestep);
+
+  mxstep = opt["mxstep"]
+               .doc("Maximum number of internal steps between outputs")
+               .withDefault(mxstep);
+  ASSERT0(mxstep > 0);
+
+  adapt_period = opt["adapt_period"]
+          .doc("Number of steps between tolerance checks. 1 means check every step.")
+          .withDefault(adapt_period);
+
+  if (adaptive) {
+    // Need additional storage to compare results after time steps
+    state1.reallocate(nlocal);
+    state2.reallocate(nlocal);
+  }
+  
+  ASSERT0(adapt_period > 0);
+  
+  int ninternal_steps = static_cast<int>(std::ceil(out_timestep / timestep));
+  ASSERT0(ninternal_steps > 0);
+  
   timestep = out_timestep / ninternal_steps;
   output.write(_("\tUsing a timestep %e\n"), timestep);
   
@@ -51,15 +80,86 @@ int SplitRK::run() {
   for (int step = 0; step < nsteps; step++) {
     // Take an output step
 
-    for (int internal_step = 0; internal_step < ninternal_steps; internal_step++) {
-      // Take a single step
-      take_step(simtime, timestep, state, state);
-      
-      simtime += timestep;
-      
-      call_timestep_monitors(simtime, timestep);
-    }
+    BoutReal target = simtime + out_timestep;
 
+    BoutReal dt;  // The next timestep to take
+    bool running = true;  // Changed to false to break out of inner loop
+    int internal_steps = 0;  // Quit if this exceeds mxstep
+    
+    do {
+      // Take a single time step
+
+      if (adaptive and (internal_steps % adapt_period == 0)) {
+        do {
+          // Keep adapting the timestep until the error is within tolerances
+          
+          dt = timestep;
+          running = true; // Reset after maybe adapting timestep
+          if ((simtime + dt) >= target) {
+            dt = target - simtime; // Make sure the last timestep is on the output 
+            running = false; // Fall out of this inner loop after this step
+          }
+          
+          // Take two half-steps
+          take_step(simtime,          0.5*dt, state, state1);
+          take_step(simtime + 0.5*dt, 0.5*dt, state1, state2);
+          
+          // Take a full step
+          take_step(simtime, dt, state, state1);
+
+          // Check accuracy
+          BoutReal local_err = 0.;
+          BOUT_OMP(parallel for reduction(+: local_err)   )
+          for (int i = 0; i < nlocal; i++) {
+            local_err += fabs(state2[i] - state1[i]) / (fabs(state1[i]) + fabs(state2[i]) + atol);
+          }
+
+          // Average over all processors
+          BoutReal err;
+          if (MPI_Allreduce(&local_err, &err, 1, MPI_DOUBLE, MPI_SUM, BoutComm::get())) {
+            throw BoutException("MPI_Allreduce failed");
+          }
+
+          err /= static_cast<BoutReal>(neq);
+
+          internal_steps++;
+          if (internal_steps > mxstep) {
+            throw BoutException("ERROR: MXSTEP exceeded. timestep = %e, err=%e\n",
+                                timestep, err);
+          }
+
+          if ((err > rtol) || (err < 0.1 * rtol)) {
+            // Need to change timestep. Error ~ dt^2
+            timestep /= sqrt(err / (0.5 * rtol));
+
+            if ((max_timestep > 0) && (timestep > max_timestep)) {
+              timestep = max_timestep;
+            }
+          }
+          if (err < rtol) {
+            swap(state, state2); // Put result in state
+            break; // Acceptable accuracy
+          }
+        } while (true);
+      } else {
+        // No adaptive timestepping. Take a single step
+
+        dt = timestep;
+        running = true; // Reset after maybe adapting timestep
+        if ((simtime + dt) >= target) {
+          dt = target - simtime; // Make sure the last timestep is on the output 
+          running = false; // Fall out of this inner loop after this step
+        }
+        
+        take_step(simtime, timestep, state, state);
+        internal_steps++;
+      }
+      
+      simtime += dt;
+      call_timestep_monitors(simtime, timestep);
+      
+    } while (running);
+      
     load_vars(std::begin(state)); // Put result into variables
     // Call rhs function to get extra variables at this time
     run_rhs(simtime);

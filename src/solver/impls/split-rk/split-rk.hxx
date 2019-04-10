@@ -42,7 +42,7 @@ RegisterSolver<SplitRK> registersolversplitrk("splitrk");
 
 class SplitRK : public Solver {
 public:
-  SplitRK(Options *opt = nullptr) : Solver(opt) {}
+  explicit SplitRK(Options *opt = nullptr) : Solver(opt) {}
   ~SplitRK() = default;
 
   int init(int nout, BoutReal tstep) override;
@@ -53,10 +53,18 @@ private:
   
   BoutReal out_timestep; ///< The output timestep
   int nsteps; ///< Number of output steps
-
-  int ninternal_steps; ///< Number of internal timesteps
+  
   BoutReal timestep; ///< The internal timestep
 
+  bool adaptive{true};   ///< Adapt timestep using tolerances?
+  BoutReal atol{1e-10};  ///< Absolute tolerance
+  BoutReal rtol{1e-5};   ///< Relative tolerance
+  BoutReal max_timestep; ///< Maximum timestep
+  int mxstep{1000};      ///< Maximum number of internal steps between outputs
+  int adapt_period{1};   ///< Number of steps between checks
+
+  int nlocal, neq; ///< Number of variables on local processor and in total
+  
   /// System state
   Array<BoutReal> state;
   
@@ -64,6 +72,9 @@ private:
   /// These are used by both diffusion and advection time-step routines 
   Array<BoutReal> u1, u2, u3, dydt;
 
+  /// Arrays used for adaptive timestepping
+  Array<BoutReal> state1, state2;
+  
   /// Take a combined step
   /// Uses 2nd order Strang splitting
   ///

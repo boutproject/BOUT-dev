@@ -58,6 +58,8 @@ adaptive = true
 [splitrk]
 timestep = end / (NOUT * 500)
 nstages = 3
+mxstep = 10000
+adaptive=false
 
 [field]
 bndry_all = none
