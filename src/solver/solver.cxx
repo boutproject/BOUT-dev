@@ -126,8 +126,8 @@ void Solver::add(Field2D &v, const std::string name) {
   // Check if the boundary regions should be evolved
   // First get option from section "All"
   // then use that as default for specific section
-  Options::getRoot()->getSection("all")->get("evolve_bndry", d.evolve_bndry, false);
-  Options::getRoot()->getSection(name)->get("evolve_bndry", d.evolve_bndry, d.evolve_bndry);
+  d.evolve_bndry = Options::root()["all"]["evolve_bndry"].withDefault(false);
+  d.evolve_bndry = Options::root()[name]["evolve_bndry"].withDefault(d.evolve_bndry);
 
   v.applyBoundary(true);
 
@@ -171,7 +171,7 @@ void Solver::add(Field3D &v, const std::string name) {
     // Load solution at t = 0
     FieldFactory *fact = FieldFactory::get();
     
-    v = fact->create3D("solution", Options::getRoot()->getSection(name), mesh, v.getLocation());
+    v = fact->create3D("solution", &Options::root()[name], mesh, v.getLocation());
     
   } else {
     initial_profile(name, v);
@@ -184,8 +184,8 @@ void Solver::add(Field3D &v, const std::string name) {
   // Check if the boundary regions should be evolved
   // First get option from section "All"
   // then use that as default for specific section
-  Options::getRoot()->getSection("all")->get("evolve_bndry", d.evolve_bndry, false);
-  Options::getRoot()->getSection(name)->get("evolve_bndry", d.evolve_bndry, d.evolve_bndry);
+  d.evolve_bndry = Options::root()["all"]["evolve_bndry"].withDefault(false);
+  d.evolve_bndry = Options::root()[name]["evolve_bndry"].withDefault(d.evolve_bndry);
 
   v.applyBoundary(true); // Make sure initial profile obeys boundary conditions
   v.setLocation(d.location); // Restore location if changed
@@ -413,16 +413,21 @@ void Solver::constraint(Vector3D &v, Vector3D &C_v, const std::string name) {
  **************************************************************************/
 
 int Solver::solve(int NOUT, BoutReal TIMESTEP) {
-
-  Options* globaloptions = Options::getRoot(); // Default from global options
-
+  
+  Options& globaloptions = Options::root(); // Default from global options
+  
   if (NOUT < 0) {
-    NOUT = (*globaloptions)["NOUT"].withDefault(1);
-    TIMESTEP = (*globaloptions)["TIMESTEP"].withDefault(1.0);
-
+    /// Get options
+    NOUT = globaloptions["NOUT"].doc("Number of output steps").withDefault(1);
+    TIMESTEP = globaloptions["TIMESTEP"].doc("Output time step size").withDefault(1.0);
+    
     // Check specific solver options, which override global options
-    NOUT = (*options)["NOUT"].withDefault(NOUT);
-    TIMESTEP = (*options)["output_step"].withDefault(TIMESTEP);
+    NOUT = (*options)["NOUT"]
+               .doc("Number of output steps. Overrides global setting.")
+               .withDefault(NOUT);
+    TIMESTEP = (*options)["output_step"]
+                   .doc("Output time step size. Overrides global TIMESTEP setting.")
+                   .withDefault(TIMESTEP);
   }
 
   finaliseMonitorPeriods(NOUT, TIMESTEP);
@@ -447,12 +452,19 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
 
   Timer timer("run"); // Start timer
 
-  const bool restart = (*globaloptions)["restart"].withDefault(false);
-  const bool append = (*globaloptions)["append"].withDefault(false);
-  const bool dump_on_restart =
-      (*globaloptions)["dump_on_restart"].withDefault(!restart || !append);
+  const bool restart = globaloptions["restart"]
+               .doc("Load state from restart files?")
+               .withDefault(false);
+
+  const bool append = globaloptions["append"]
+          .doc("Add new outputs to the end of existing files? If false, overwrite files.")
+          .withDefault(false);
+  const bool dump_on_restart = globaloptions["dump_on_restart"]
+                                   .doc("Write initial state as time point 0?")
+                                   .withDefault(!restart || !append);
 
   if (dump_on_restart) {
+
     /// Write initial state as time-point 0
 
     // Run RHS once to ensure all variables set

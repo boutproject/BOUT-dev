@@ -9,7 +9,7 @@ export PATH=$BOUT_TOP/bin:$PATH
 error=0
 
 failed=
-for target in $(find $BOUT_TOP/examples/ -name makefile)
+for target in $(find $BOUT_TOP/examples/ -name makefile | grep -v doc)
 do
     dir=$(dirname ${target})
     echo "Trying to compile ${dir}"

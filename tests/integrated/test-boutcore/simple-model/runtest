@@ -18,5 +18,3 @@ class MyModel(PhysicsModel):
 
 model = MyModel()
 model.solve()
-
-finalise()

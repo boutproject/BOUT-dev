@@ -186,19 +186,50 @@ void OptionINI::writeSection(const Options *options, std::ofstream &fout) {
     fout << "[" << section_name << "]" << endl;
   }
   // Iterate over all values
-  for(const auto& it : options->values()) {
-    fout << it.first << " = " << it.second.value;
-    if (it.second.value.empty()) {
-      // Print an empty string as ""
-      fout << "\"\""; 
-    }
-    if (! it.second.used ) {
-      fout << "  # not used , from: "
-	   << it.second.source;
-    }
-    fout << endl;
-  }
+  for(const auto& it : options->getChildren()) {
+    if (it.second.isValue()) {
+      auto value = bout::utils::variantToString(it.second.value);
+      fout << it.first << " = " << value;
 
+      if (value.empty()) {
+        // Print an empty string as ""
+        fout << "\"\""; 
+      }
+      bool in_comment = false; // Has a '#' been printed yet?
+      
+      if (! it.second.valueUsed() ) {
+        fout << "\t\t# not used ";
+        in_comment = true;
+          
+        if (it.second.attributes.count("source")) {
+          fout << ", from: "
+               << it.second.attributes.at("source").as<std::string>();
+        }
+      }
+
+      if (it.second.attributes.count("type")) {
+        if (!in_comment) {
+          fout << "\t\t# type: ";
+          in_comment = true;
+        } else {
+          fout << ", type: ";
+        }
+        fout << it.second.attributes.at("type").as<std::string>();
+      }
+      
+      if (it.second.attributes.count("doc")) {
+        if (!in_comment) {
+          fout << "\t\t# ";
+          in_comment = true;
+        } else {
+          fout << ", doc: ";
+        }
+        fout << it.second.attributes.at("doc").as<std::string>();
+      }
+      fout << endl;
+    }
+  }
+  
   // Iterate over sub-sections
   for(const auto& it : options->subsections()) {
     fout << endl;

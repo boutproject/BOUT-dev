@@ -56,12 +56,12 @@ private:
   }
 
 protected:
-  int init(bool restarting) override {
+  int init(bool UNUSED(restarting)) override {
 
     // Get the magnetic field
     mesh->get(Bxyz, "B");
 
-    auto options = Options::root()["fciwave"];
+    auto& options = Options::root()["fciwave"];
     div_integrate = options["div_integrate"].withDefault(true);
     log_density = options["log_density"].withDefault(false);
     background = options["background"].withDefault(false);
@@ -85,7 +85,7 @@ protected:
     return 0;
   }
 
-  int rhs(BoutReal t) override {
+  int rhs(BoutReal UNUSED(time)) override {
     if (log_density) {
       mesh->communicate(logn, nv);
       // Apply boundary condition to log(n)

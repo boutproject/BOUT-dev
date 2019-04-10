@@ -173,6 +173,9 @@ public:
   virtual void setGlobalFlags(int f) { global_flags = f; }
   virtual void setInnerBoundaryFlags(int f) { inner_boundary_flags = f; }
   virtual void setOuterBoundaryFlags(int f) { outer_boundary_flags = f; }
+
+  /// Does this solver use Field3D coefficients (true) or only their DC component (false)
+  virtual bool uses3DCoefs() const { return false; }
   
   virtual const FieldPerp solve(const FieldPerp &b) = 0;
   virtual const Field3D solve(const Field3D &b);

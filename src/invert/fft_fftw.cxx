@@ -59,7 +59,9 @@ void fft_init(Options* options) {
   if (options == nullptr) {
     options = Options::getRoot()->getSection("fft");
   }
-  fft_init((*options)["fft_measure"].withDefault(false));
+  fft_init((*options)["fft_measure"]
+               .doc("Perform speed measurements to optimise settings?")
+               .withDefault(false));
 }
 
 void fft_init(bool fft_measure) {
