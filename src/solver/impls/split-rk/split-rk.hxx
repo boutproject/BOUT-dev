@@ -60,22 +60,30 @@ private:
   /// System state
   Array<BoutReal> state;
   
-  // Temporary time-stepping arrays
-  Array<BoutReal> u1, u2, u3, L;
+  /// Temporary time-stepping arrays
+  /// These are used by both diffusion and advection time-step routines 
+  Array<BoutReal> u1, u2, u3, dydt;
 
   /// Take a combined step
   /// Uses 2nd order Strang splitting
-  Array<BoutReal> take_step(BoutReal curtime, BoutReal dt, Array<BoutReal>& start);
+  ///
+  /// Note: start and result can be the same
+  void take_step(BoutReal curtime, BoutReal dt, Array<BoutReal>& start,
+                 Array<BoutReal>& result);
 
   /// Take a step of the diffusion terms
   /// Uses the Runge-Kutta-Legendre 2nd order method
-  Array<BoutReal> take_diffusion_step(BoutReal curtime, BoutReal dt,
-                                      Array<BoutReal>& start);
+  ///
+  /// Note: start and result can be the same
+  void take_diffusion_step(BoutReal curtime, BoutReal dt,
+                                      Array<BoutReal>& start, Array<BoutReal>& result);
 
   /// Take a step of the advection terms
   /// Uses the Strong Stability Preserving Runge-Kutta 3rd order method
-  Array<BoutReal> take_advection_step(BoutReal curtime, BoutReal dt,
-                                      Array<BoutReal>& start);
+  ///
+  /// Note: start and result can be the same
+  void take_advection_step(BoutReal curtime, BoutReal dt, Array<BoutReal>& start,
+                           Array<BoutReal>& result);
 };
 
 #endif

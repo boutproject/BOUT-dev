@@ -14,6 +14,7 @@
 #include "impls/rkgeneric/rkgeneric.hxx"
 #include "impls/slepc/slepc.hxx"
 #include "impls/snes/snes.hxx"
+#include "impls/split-rk/split-rk.hxx"
 
 SolverFactory* SolverFactory::instance = nullptr;
 

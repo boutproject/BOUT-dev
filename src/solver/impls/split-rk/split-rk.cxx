@@ -22,7 +22,7 @@ int SplitRK::init(int nout, BoutReal tstep) {
   u1.reallocate(nlocal);
   u2.reallocate(nlocal);
   u3.reallocate(nlocal);
-  L.reallocate(nlocal);
+  dydt.reallocate(nlocal);
   
   // Put starting values into f
   save_vars(std::begin(state));
@@ -34,11 +34,10 @@ int SplitRK::init(int nout, BoutReal tstep) {
                  .withDefault(out_timestep);
 
   ninternal_steps = static_cast<int>(std::ceil(out_timestep / timestep));
-
   ASSERT0(ninternal_steps > 0);
 
   timestep = out_timestep / ninternal_steps;
-  output.write(_("\tUsing a timestep %e"), timestep);
+  output.write(_("\tUsing a timestep %e\n"), timestep);
   
   nstages = opt["nstages"].doc("Number of stages in RKL step. Must be > 1").withDefault(10);
   ASSERT0(nstages > 1);
@@ -54,7 +53,7 @@ int SplitRK::run() {
 
     for (int internal_step = 0; internal_step < ninternal_steps; internal_step++) {
       // Take a single step
-      state = take_step(simtime, timestep, state);
+      take_step(simtime, timestep, state, state);
       
       simtime += timestep;
       
@@ -77,26 +76,33 @@ int SplitRK::run() {
   return 0;
 }
 
-Array<BoutReal> SplitRK::take_step(BoutReal curtime, BoutReal dt, Array<BoutReal>& start) {
-  return take_diffusion_step(curtime + 0.5*dt, 0.5*dt,  // Half step
-                             take_advection_step(curtime, dt,  // Full step
-                                                 take_diffusion_step(curtime, 0.5*dt, start))); // Half step
+void SplitRK::take_step(BoutReal curtime, BoutReal dt, Array<BoutReal>& start,
+                        Array<BoutReal>& result) {
+  // Half step
+  take_diffusion_step(curtime, 0.5*dt, start, result);
+  
+  // Full step
+  take_advection_step(curtime, dt, result, result);
+
+  // Half step
+  take_diffusion_step(curtime + 0.5*dt, 0.5*dt, result, result);
 }
 
-Array<BoutReal> SplitRK::take_diffusion_step(BoutReal curtime, BoutReal dt, Array<BoutReal>& start) {
+void SplitRK::take_diffusion_step(BoutReal curtime, BoutReal dt, Array<BoutReal>& start,
+                                  Array<BoutReal>& result) {
 
   const BoutReal weight = dt * 4./(SQ(nstages) + nstages - 2);
   
   load_vars(std::begin(start));
   run_diffusive(curtime);
-  save_derivs(std::begin(L));   // L = f(y0)
+  save_derivs(std::begin(dydt));   // dydt = f(y0)
 
   // Stage j = 1
   // y_m2 = y0 + weight/3.0 * f(y0)  -> u2
 
   BOUT_OMP(parallel for)
-  for (int i = 0; i < L.size(); i++) {
-    u2[i] = start[i] + (weight/3.0) * L[i];
+  for (int i = 0; i < dydt.size(); i++) {
+    u2[i] = start[i] + (weight/3.0) * dydt[i];
   }
   
   // Stage j = 2
@@ -107,7 +113,7 @@ Array<BoutReal> SplitRK::take_diffusion_step(BoutReal curtime, BoutReal dt, Arra
   
   BOUT_OMP(parallel for)
   for (int i = 0; i < u3.size(); i++) {
-    u1[i] = 0.75 * u2[i] + 0.25 * start[i] + 0.75 * weight * u3[i] - 0.5 * weight * L[i];
+    u1[i] = 0.75 * (u2[i] + weight * u3[i]) + 0.25 * start[i] - 0.5 * weight * dydt[i];
   }
   
   BoutReal b_jm2 = 1. / 3; // b_{j - 2}
@@ -128,8 +134,8 @@ Array<BoutReal> SplitRK::take_diffusion_step(BoutReal curtime, BoutReal dt, Arra
     BOUT_OMP(parallel for)
     for (int i = 0; i < u3.size(); i++) {
       // Next stage result in u3
-      u3[i] = mu * u1[i] + nu * u2[i] + (1. - mu - nu) * start[i]
-        + mu * weight * u3[i] - a_jm1 * mu * weight * L[i];
+      u3[i] = mu * (u1[i] + weight * (u3[i] - a_jm1 * dydt[i])) + nu * u2[i]
+              + (1. - mu - nu) * start[i];
     }
 
     // Cycle values
@@ -138,40 +144,39 @@ Array<BoutReal> SplitRK::take_diffusion_step(BoutReal curtime, BoutReal dt, Arra
 
     // Cycle u2 <- u1 <- u3 <- u2
     // so that no new memory is allocated, and no arrays point to the same data
-    Array<BoutReal> tmp = u2;
-    u2 = u1;
-    u1 = u3;
-    u3 = tmp;
+    swap(u1, u2);
+    swap(u1, u3); 
 
     // Most recent now in u1, then u2, then u3
   }
-  return u1;
+  swap(u1, result);
 }
 
-Array<BoutReal> SplitRK::take_advection_step(BoutReal curtime, BoutReal dt, Array<BoutReal>& start) {
+void SplitRK::take_advection_step(BoutReal curtime, BoutReal dt, Array<BoutReal>& start,
+                                  Array<BoutReal>& result) {
   const int nlocal = getLocalN();
   
   load_vars(std::begin(start));
   run_convective(curtime);
-  save_derivs(std::begin(L));
+  save_derivs(std::begin(dydt));
 
   BOUT_OMP(parallel for)
   for(int i=0;i<nlocal;i++)
-    u1[i] = start[i] + dt*L[i];
+    u1[i] = start[i] + dt*dydt[i];
 
   load_vars(std::begin(u1));
   run_convective(curtime + dt);
-  save_derivs(std::begin(L));
+  save_derivs(std::begin(dydt));
 
   BOUT_OMP(parallel for )
   for(int i=0;i<nlocal;i++)
-    u2[i] = 0.75*start[i] + 0.25*u1[i] + 0.25*dt*L[i];
+    u2[i] = 0.75*start[i] + 0.25*u1[i] + 0.25*dt*dydt[i];
 
   load_vars(std::begin(u2));
   run_convective(curtime + 0.5*dt);
-  save_derivs(std::begin(L));
+  save_derivs(std::begin(dydt));
 
   BOUT_OMP(parallel for)
   for(int i=0;i<nlocal;i++)
-    result[i] = (1./3)*start[i] + (2./3.)*(u2[i] + dt*L[i]);
+    result[i] = (1./3)*start[i] + (2./3.)*(u2[i] + dt*dydt[i]);
 }
