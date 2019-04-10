@@ -39,10 +39,10 @@ if "only_petsc" in sys.argv:
 else:
     options = [
         ("solver:type=euler", "Euler", "-^",1)
-        ,("solver:type=karniadakis", "Karniadakis", "-x",2) # Whats the expected order?
         ,("solver:type=rk3ssp", "RK3-SSP", "-s",3)
         ,("solver:type=rk4", "RK4", "-o",4)
         ,("solver:type=rkgeneric", "RK-generic", "-o",4)
+        ,("solver:type=splitrk", "SplitRK", "-x", 2)
     ]
 
 #Missing: cvode, ida, slepc, power, arkode, snes
