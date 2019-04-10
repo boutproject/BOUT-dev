@@ -27,7 +27,8 @@ namespace {
 /// 'free_o3' boundary conditions
 /// Corner guard cells are set to BoutNaN
 Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
-    bool extrapolate_x = true, bool extrapolate_y = true) {
+    bool extrapolate_x = true, bool extrapolate_y = true,
+    bool no_extra_interpolate = false) {
 
   Mesh* localmesh = f.getMesh();
   Field2D result = interp_to(f, location, RGN_NOBNDRY);
@@ -51,10 +52,15 @@ Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
   for (auto& bndry : localmesh->getBoundaries()) {
     if ((extrapolate_x and bndry->bx != 0) or (extrapolate_y and bndry->by != 0)) {
       int extrap_start = 0;
-      if ((location == CELL_XLOW) && (bndry->bx > 0)) {
-        extrap_start = 1;
-      } else if ((location == CELL_YLOW) && (bndry->by > 0)) {
-        extrap_start = 1;
+      if (not no_extra_interpolate) {
+        // Can use no_extra_interpolate argument to skip the extra interpolation when we
+        // want to extrapolate the Christoffel symbol terms which come from derivatives so
+        // don't have the extra point set already
+        if ((location == CELL_XLOW) && (bndry->bx > 0)) {
+          extrap_start = 1;
+        } else if ((location == CELL_YLOW) && (bndry->by > 0)) {
+          extrap_start = 1;
+        }
       }
       for (bndry->first(); !bndry->isDone(); bndry->next1d()) {
         // interpolate extra boundary point that is missed by interp_to, if
@@ -589,7 +595,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
 
   //////////////////////////////////////////////////////
   /// Calculate Christoffel symbols. Needs communication
-  if (geometry()) {
+  if (geometry(false, force_interpolate_from_centre)) {
     throw BoutException("Differential geometry failed while constructing staggered Coordinates");
   }
 
@@ -620,7 +626,8 @@ void Coordinates::outputVars(Datafile& file) {
   file.addOnce(J, "J" + loc_string);
 }
 
-int Coordinates::geometry(bool recalculate_staggered) {
+int Coordinates::geometry(bool recalculate_staggered,
+    bool force_interpolate_from_centre) {
   TRACE("Coordinates::geometry");
 
   output_progress.write("Calculating differential geometry terms\n");
@@ -757,6 +764,41 @@ int Coordinates::geometry(bool recalculate_staggered) {
 
   localmesh->communicate(com);
 
+  // Set boundary guard cells of Christoffel symbol terms
+  // Ideally, when location is staggered, we would set the upper/outer boundary point
+  // correctly rather than by extrapolating here: e.g. if location==CELL_YLOW and we are
+  // at the upper y-boundary the x- and z-derivatives at yend+1 at the boundary can be
+  // calculated because the guard cells are available, while the y-derivative could be
+  // calculated from the CELL_CENTRE metric components (which have guard cells available
+  // past the boundary location). This would avoid the problem that the y-boundary on the
+  // CELL_YLOW grid is at a 'guard cell' location (yend+1).
+  // However, the above would require lots of special handling, so just extrapolate for
+  // now.
+  G1_11 = interpolateAndExtrapolate(G1_11, location, true, true, true);
+  G1_22 = interpolateAndExtrapolate(G1_22, location, true, true, true);
+  G1_33 = interpolateAndExtrapolate(G1_33, location, true, true, true);
+  G1_12 = interpolateAndExtrapolate(G1_12, location, true, true, true);
+  G1_13 = interpolateAndExtrapolate(G1_13, location, true, true, true);
+  G1_23 = interpolateAndExtrapolate(G1_23, location, true, true, true);
+
+  G2_11 = interpolateAndExtrapolate(G2_11, location, true, true, true);
+  G2_22 = interpolateAndExtrapolate(G2_22, location, true, true, true);
+  G2_33 = interpolateAndExtrapolate(G2_33, location, true, true, true);
+  G2_12 = interpolateAndExtrapolate(G2_12, location, true, true, true);
+  G2_13 = interpolateAndExtrapolate(G2_13, location, true, true, true);
+  G2_23 = interpolateAndExtrapolate(G2_23, location, true, true, true);
+
+  G3_11 = interpolateAndExtrapolate(G3_11, location, true, true, true);
+  G3_22 = interpolateAndExtrapolate(G3_22, location, true, true, true);
+  G3_33 = interpolateAndExtrapolate(G3_33, location, true, true, true);
+  G3_12 = interpolateAndExtrapolate(G3_12, location, true, true, true);
+  G3_13 = interpolateAndExtrapolate(G3_13, location, true, true, true);
+  G3_23 = interpolateAndExtrapolate(G3_23, location, true, true, true);
+
+  G1 = interpolateAndExtrapolate(G1, location, true, true, true);
+  G2 = interpolateAndExtrapolate(G2, location, true, true, true);
+  G3 = interpolateAndExtrapolate(G3, location, true, true, true);
+
   //////////////////////////////////////////////////////
   /// Non-uniform meshes. Need to use DDX, DDY
 
@@ -766,9 +808,9 @@ int Coordinates::geometry(bool recalculate_staggered) {
   // Read correction for non-uniform meshes
   std::string suffix = getLocationSuffix(location);
   if (CELL_CENTRE or (!force_interpolate_from_centre
-                      and mesh->sourceHasVar("dx"+suffix))) {
-    extrapolate_x = not mesh->sourceHasXBoundaryGuards();
-    extrapolate_y = not mesh->sourceHasYBoundaryGuards();
+                      and localmesh->sourceHasVar("dx"+suffix))) {
+    bool extrapolate_x = not localmesh->sourceHasXBoundaryGuards();
+    bool extrapolate_y = not localmesh->sourceHasYBoundaryGuards();
 
     if (localmesh->get(d2x, "d2x"+suffix)) {
       output_warn.write(
@@ -776,7 +818,7 @@ int Coordinates::geometry(bool recalculate_staggered) {
       d1_dx = bout::derivatives::index::DDX(1. / dx); // d/di(1/dx)
 
       localmesh->communicate(d1_dx);
-      d1_dx = interpolateAndExtrapolate(d1_dx, location);
+      d1_dx = interpolateAndExtrapolate(d1_dx, location, true, true, true);
     } else {
       // set boundary cells if necessary
       d2x = interpolateAndExtrapolate(d2x, location, extrapolate_x, extrapolate_y);
@@ -790,7 +832,7 @@ int Coordinates::geometry(bool recalculate_staggered) {
       d1_dy = bout::derivatives::index::DDY(1. / dy); // d/di(1/dy)
 
       localmesh->communicate(d1_dy);
-      d1_dy = interpolateAndExtrapolate(d1_dy, location);
+      d1_dy = interpolateAndExtrapolate(d1_dy, location, true, true, true);
     } else {
       // Shift d2y to our location
       d2y = interpolateAndExtrapolate(d2y, location, extrapolate_x, extrapolate_y);
@@ -804,7 +846,7 @@ int Coordinates::geometry(bool recalculate_staggered) {
       d1_dx = bout::derivatives::index::DDX(1. / dx); // d/di(1/dx)
 
       localmesh->communicate(d1_dx);
-      d1_dx = interpolateAndExtrapolate(d1_dx, location);
+      d1_dx = interpolateAndExtrapolate(d1_dx, location, true, true, true);
     } else {
       // Shift d2x to our location
       d2x = interpolateAndExtrapolate(d2x, location);
@@ -818,7 +860,7 @@ int Coordinates::geometry(bool recalculate_staggered) {
       d1_dy = bout::derivatives::index::DDY(1. / dy); // d/di(1/dy)
 
       localmesh->communicate(d1_dy);
-      d1_dy = interpolateAndExtrapolate(d1_dy, location);
+      d1_dy = interpolateAndExtrapolate(d1_dy, location, true, true, true);
     } else {
       // Shift d2y to our location
       d2y = interpolateAndExtrapolate(d2y, location);
