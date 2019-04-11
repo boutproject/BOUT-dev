@@ -2,6 +2,7 @@
 
 #requires: all_tests
 #requires: not make
+#requires: petsc
 
 BOUT_TOP=../../..
 export PATH=$(pwd)/$BOUT_TOP/bin:$PATH
@@ -14,9 +15,6 @@ do
     dir=$(dirname ${target})
     if grep ":.*requires_petsc" $target -q;
     then
-	#grep petsc_
-	echo "Skipping $dir - requires PETSc"
-    else
 	echo "Trying to compile ${dir}"
 
 	(cd ${dir} && make 2>&1)
@@ -28,6 +26,8 @@ do
             error=1
 	    failed="$failed\n$(basename $dir) failed"
 	fi
+    else
+	echo "Skipping $dir - requires PETSc"
     fi
 done
 
