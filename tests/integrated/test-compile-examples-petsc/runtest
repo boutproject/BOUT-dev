@@ -15,19 +15,19 @@ do
     dir=$(dirname ${target})
     if grep ":.*requires_petsc" $target -q;
     then
-	echo "Trying to compile ${dir}"
+        echo "Trying to compile ${dir}"
 
-	(cd ${dir} && make 2>&1)
-	ex=$?
-    
-	if test $ex -gt 0
-	then
+        (cd ${dir} && make 2>&1)
+        ex=$?
+
+        if test $ex -gt 0
+        then
             echo $(basename $dir) failed
             error=1
-	    failed="$failed\n$(basename $dir) failed"
-	fi
+            failed="$failed\n$(basename $dir) failed"
+        fi
     else
-	echo "Skipping $dir - requires PETSc"
+        echo "Skipping $dir - requires PETSc"
     fi
 done
 
