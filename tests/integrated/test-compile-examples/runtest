@@ -3,7 +3,7 @@
 #requires: all_tests
 #requires: not make
 
-BOUT_TOP=../../..
+BOUT_TOP=$(pwd)/../../..
 export PATH=$BOUT_TOP/bin:$PATH
 
 error=0
