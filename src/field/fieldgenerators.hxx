@@ -24,8 +24,7 @@ public:
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> UNUSED(args)) override {
     return std::make_shared<FieldValuePtr>(ptr);
   }
-  BoutReal generate(double UNUSED(x), double UNUSED(y), double UNUSED(z),
-                    double UNUSED(t)) override {
+  BoutReal generate(Position UNUSED(pos)) override {
     return *ptr;
   }
 
@@ -42,7 +41,7 @@ public:
   FieldSin(FieldGeneratorPtr g) : gen(g) {}
 
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override;
-  BoutReal generate(double x, double y, double z, double t) override;
+  BoutReal generate(Position pos) override;
   std::string str() const override {
     return std::string("sin(") + gen->str() + std::string(")");
   }
@@ -57,7 +56,7 @@ public:
   FieldCos(FieldGeneratorPtr g) : gen(g) {}
 
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override;
-  BoutReal generate(double x, double y, double z, double t) override;
+  BoutReal generate(Position pos) override;
 
   std::string str() const override {
     return std::string("cos(") + gen->str() + std::string(")");
@@ -81,8 +80,8 @@ public:
     }
     return std::make_shared<FieldGenOneArg<Op>>(args.front());
   }
-  BoutReal generate(double x, double y, double z, double t) override {
-    return Op(gen->generate(x, y, z, t));
+  BoutReal generate(Position pos) override {
+    return Op(gen->generate(pos));
   }
   std::string str() const override {
     return std::string("func(") + gen->str() + std::string(")");
@@ -106,8 +105,8 @@ public:
     }
     return std::make_shared<FieldGenTwoArg<Op>>(args.front(), args.back());
   }
-  BoutReal generate(double x, double y, double z, double t) override {
-    return Op(A->generate(x, y, z, t), B->generate(x, y, z, t));
+  BoutReal generate(Position pos) override {
+    return Op(A->generate(pos), B->generate(pos));
   }
   std::string str() const override {
     return std::string("cos(") + A->str() + "," + B->str() + std::string(")");
@@ -131,10 +130,10 @@ public:
         "Incorrect number of arguments to atan function. Expecting 1 or 2, got %lu",
         static_cast<unsigned long>(args.size()));
   }
-  BoutReal generate(double x, double y, double z, double t) override {
+  BoutReal generate(Position pos) override {
     if (B == nullptr)
-      return atan(A->generate(x, y, z, t));
-    return atan2(A->generate(x, y, z, t), B->generate(x, y, z, t));
+      return atan(A->generate(pos));
+    return atan2(A->generate(pos), B->generate(pos));
   }
 
 private:
@@ -147,7 +146,7 @@ public:
   FieldSinh(FieldGeneratorPtr g) : gen(g) {}
 
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override;
-  BoutReal generate(double x, double y, double z, double t) override;
+  BoutReal generate(Position pos) override;
 
 private:
   FieldGeneratorPtr gen;
@@ -159,7 +158,7 @@ public:
   FieldCosh(FieldGeneratorPtr g) : gen(g) {}
 
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override;
-  BoutReal generate(double x, double y, double z, double t) override;
+  BoutReal generate(Position pos) override;
 
 private:
   FieldGeneratorPtr gen;
@@ -171,7 +170,7 @@ public:
   FieldTanh(FieldGeneratorPtr g = nullptr) : gen(g) {}
 
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override;
-  BoutReal generate(double x, double y, double z, double t) override;
+  BoutReal generate(Position pos) override;
 
 private:
   FieldGeneratorPtr gen;
@@ -183,7 +182,7 @@ public:
   FieldGaussian(FieldGeneratorPtr xin, FieldGeneratorPtr sin) : X(xin), s(sin) {}
 
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override;
-  BoutReal generate(double x, double y, double z, double t) override;
+  BoutReal generate(Position pos) override;
 
 private:
   FieldGeneratorPtr X, s;
@@ -195,7 +194,7 @@ public:
   FieldAbs(FieldGeneratorPtr g) : gen(g) {}
 
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override;
-  BoutReal generate(double x, double y, double z, double t) override;
+  BoutReal generate(Position pos) override;
 
 private:
   FieldGeneratorPtr gen;
@@ -207,7 +206,7 @@ public:
   FieldSqrt(FieldGeneratorPtr g) : gen(g) {}
 
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override;
-  BoutReal generate(double x, double y, double z, double t) override;
+  BoutReal generate(Position pos) override;
 
 private:
   FieldGeneratorPtr gen;
@@ -219,7 +218,7 @@ public:
   FieldHeaviside(FieldGeneratorPtr g) : gen(g) {}
 
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override;
-  BoutReal generate(double x, double y, double z, double t) override;
+  BoutReal generate(Position pos) override;
   std::string str() const override {
     return std::string("H(") + gen->str() + std::string(")");
   }
@@ -234,7 +233,7 @@ public:
   FieldErf(FieldGeneratorPtr g) : gen(g) {}
 
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override;
-  BoutReal generate(double x, double y, double z, double t) override;
+  BoutReal generate(Position pos) override;
 
 private:
   FieldGeneratorPtr gen;
@@ -251,11 +250,11 @@ public:
     }
     return std::make_shared<FieldMin>(args);
   }
-  BoutReal generate(double x, double y, double z, double t) override {
+  BoutReal generate(Position pos) override {
     auto it = input.begin();
-    BoutReal result = (*it)->generate(x, y, z, t);
+    BoutReal result = (*it)->generate(pos);
     for (; it != input.end(); it++) {
-      BoutReal val = (*it)->generate(x, y, z, t);
+      BoutReal val = (*it)->generate(pos);
       if (val < result)
         result = val;
     }
@@ -277,11 +276,11 @@ public:
     }
     return std::make_shared<FieldMax>(args);
   }
-  BoutReal generate(double x, double y, double z, double t) override {
+  BoutReal generate(Position pos) override {
     auto it = input.begin();
-    BoutReal result = (*it)->generate(x, y, z, t);
+    BoutReal result = (*it)->generate(pos);
     for (; it != input.end(); it++) {
-      BoutReal val = (*it)->generate(x, y, z, t);
+      BoutReal val = (*it)->generate(pos);
       if (val > result)
         result = val;
     }
@@ -303,8 +302,8 @@ public:
     }
     return std::make_shared<FieldRound>(args.front());
   }
-  BoutReal generate(double x, double y, double z, double t) override {
-    BoutReal val = gen->generate(x, y, z, t);
+  BoutReal generate(Position pos) override {
+    BoutReal val = gen->generate(pos);
     if (val > 0.0) {
       return static_cast<int>(val + 0.5);
     }
@@ -327,7 +326,7 @@ public:
   FieldBallooning(Mesh* m, FieldGeneratorPtr a = nullptr, int n = 3)
       : mesh(m), arg(a), ball_n(n) {}
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override;
-  BoutReal generate(double x, double y, double z, double t) override;
+  BoutReal generate(Position pos) override;
 
 private:
   Mesh* mesh;
@@ -343,7 +342,7 @@ class FieldMixmode : public FieldGenerator {
 public:
   FieldMixmode(FieldGeneratorPtr a = nullptr, BoutReal seed = 0.5);
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override;
-  BoutReal generate(double x, double y, double z, double t) override;
+  BoutReal generate(Position pos) override;
 
 private:
   /// Generate a random number between 0 and 1 (exclusive)
@@ -367,7 +366,7 @@ public:
       : X(xin), width(widthin), center(centerin), steepness(steepnessin) {};
   // Clone containing the list of arguments
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override;
-  BoutReal generate(double x, double y, double z, double t) override;
+  BoutReal generate(Position pos) override;
 
 private:
   // The (x,y,z,t) field

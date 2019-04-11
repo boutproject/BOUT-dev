@@ -40,9 +40,8 @@ public:
   FieldGeneratorPtr clone(const list<FieldGeneratorPtr> UNUSED(args)) override {
     return std::make_shared<FieldX>();
   }
-  double generate(double x, double UNUSED(y), double UNUSED(z),
-                  double UNUSED(t)) override {
-    return x;
+  double generate(Position pos) override {
+    return pos.x();
   }
   std::string str() const override { return std::string("x"); }
 };
@@ -52,9 +51,8 @@ public:
   FieldGeneratorPtr clone(const list<FieldGeneratorPtr> UNUSED(args)) override {
     return std::make_shared<FieldY>();
   }
-  double generate(double UNUSED(x), double y, double UNUSED(z),
-                  double UNUSED(t)) override {
-    return y;
+  double generate(Position pos) override {
+    return pos.y();
   }
   std::string str() const override { return std::string("y"); }
 };
@@ -64,9 +62,8 @@ public:
   FieldGeneratorPtr clone(const list<FieldGeneratorPtr> UNUSED(args)) override {
     return std::make_shared<FieldZ>();
   }
-  double generate(double UNUSED(x), double UNUSED(y), double z,
-                  double UNUSED(t)) override {
-    return z;
+  double generate(Position pos) override {
+    return pos.z();
   }
   std::string str() const override { return std::string("z"); }
 };
@@ -76,9 +73,8 @@ public:
   FieldGeneratorPtr clone(const list<FieldGeneratorPtr> UNUSED(args)) override {
     return std::make_shared<FieldT>();
   }
-  double generate(double UNUSED(x), double UNUSED(y), double UNUSED(z),
-                  double t) override {
-    return t;
+  double generate(Position pos) override {
+    return pos.t();
   }
   std::string str() const override { return std::string("t"); }
 };
@@ -92,9 +88,9 @@ FieldGeneratorPtr FieldBinary::clone(const list<FieldGeneratorPtr> args) {
   return std::make_shared<FieldBinary>(args.front(), args.back(), op);
 }
 
-BoutReal FieldBinary::generate(double x, double y, double z, double t) {
-  BoutReal lval = lhs->generate(x, y, z, t);
-  BoutReal rval = rhs->generate(x, y, z, t);
+BoutReal FieldBinary::generate(Position pos) {
+  BoutReal lval = lhs->generate(pos);
+  BoutReal rval = rhs->generate(pos);
   switch(op) {
   case '+': return lval + rval;
   case '-': return lval - rval;

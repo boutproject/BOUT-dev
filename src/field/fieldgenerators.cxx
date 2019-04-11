@@ -16,8 +16,8 @@ FieldGeneratorPtr FieldSin::clone(const std::list<FieldGeneratorPtr> args) {
   return std::make_shared<FieldSin>(args.front());
 }
 
-BoutReal FieldSin::generate(double x, double y, double z, double t) {
-  return sin(gen->generate(x, y, z, t));
+BoutReal FieldSin::generate(Position pos) {
+  return sin(gen->generate(pos));
 }
 
 FieldGeneratorPtr FieldCos::clone(const std::list<FieldGeneratorPtr> args) {
@@ -30,8 +30,8 @@ FieldGeneratorPtr FieldCos::clone(const std::list<FieldGeneratorPtr> args) {
   return std::make_shared<FieldCos>(args.front());
 }
 
-BoutReal FieldCos::generate(double x, double y, double z, double t) {
-  return cos(gen->generate(x, y, z, t));
+BoutReal FieldCos::generate(Position pos) {
+  return cos(gen->generate(pos));
 }
 
 FieldGeneratorPtr FieldSinh::clone(const std::list<FieldGeneratorPtr> args) {
@@ -44,8 +44,8 @@ FieldGeneratorPtr FieldSinh::clone(const std::list<FieldGeneratorPtr> args) {
   return std::make_shared<FieldSinh>(args.front());
 }
 
-BoutReal FieldSinh::generate(double x, double y, double z, double t) {
-  return sinh(gen->generate(x, y, z, t));
+BoutReal FieldSinh::generate(Position pos) {
+  return sinh(gen->generate(pos));
 }
 
 FieldGeneratorPtr FieldCosh::clone(const std::list<FieldGeneratorPtr> args) {
@@ -58,8 +58,8 @@ FieldGeneratorPtr FieldCosh::clone(const std::list<FieldGeneratorPtr> args) {
   return std::make_shared<FieldCosh>(args.front());
 }
 
-BoutReal FieldCosh::generate(double x, double y, double z, double t) {
-  return cosh(gen->generate(x, y, z, t));
+BoutReal FieldCosh::generate(Position pos) {
+  return cosh(gen->generate(pos));
 }
 
 FieldGeneratorPtr FieldTanh::clone(const std::list<FieldGeneratorPtr> args) {
@@ -71,8 +71,8 @@ FieldGeneratorPtr FieldTanh::clone(const std::list<FieldGeneratorPtr> args) {
   return std::make_shared<FieldTanh>(args.front());
 }
 
-BoutReal FieldTanh::generate(double x, double y, double z, double t) {
-  return tanh(gen->generate(x, y, z, t));
+BoutReal FieldTanh::generate(Position pos) {
+  return tanh(gen->generate(pos));
 }
 
 FieldGeneratorPtr FieldGaussian::clone(const std::list<FieldGeneratorPtr> args) {
@@ -92,9 +92,9 @@ FieldGeneratorPtr FieldGaussian::clone(const std::list<FieldGeneratorPtr> args) 
   return std::make_shared<FieldGaussian>(xin, sin);
 }
 
-BoutReal FieldGaussian::generate(double x, double y, double z, double t) {
-  BoutReal sigma = s->generate(x,y,z,t);
-  return exp(-SQ(X->generate(x,y,z,t)/sigma)/2.) / (sqrt(TWOPI) * sigma);
+BoutReal FieldGaussian::generate(Position pos) {
+  BoutReal sigma = s->generate(pos);
+  return exp(-SQ(X->generate(pos)/sigma)/2.) / (sqrt(TWOPI) * sigma);
 }
 
 FieldGeneratorPtr FieldAbs::clone(const std::list<FieldGeneratorPtr> args) {
@@ -107,8 +107,8 @@ FieldGeneratorPtr FieldAbs::clone(const std::list<FieldGeneratorPtr> args) {
   return std::make_shared<FieldAbs>(args.front());
 }
 
-BoutReal FieldAbs::generate(double x, double y, double z, double t) {
-  return std::fabs(gen->generate(x, y, z, t));
+BoutReal FieldAbs::generate(Position pos) {
+  return std::fabs(gen->generate(pos));
 }
 
 FieldGeneratorPtr FieldSqrt::clone(const std::list<FieldGeneratorPtr> args) {
@@ -121,8 +121,8 @@ FieldGeneratorPtr FieldSqrt::clone(const std::list<FieldGeneratorPtr> args) {
   return std::make_shared<FieldSqrt>(args.front());
 }
 
-BoutReal FieldSqrt::generate(double x, double y, double z, double t) {
-  return sqrt(gen->generate(x, y, z, t));
+BoutReal FieldSqrt::generate(Position pos) {
+  return sqrt(gen->generate(pos));
 }
 
 FieldGeneratorPtr FieldHeaviside::clone(const std::list<FieldGeneratorPtr> args) {
@@ -135,8 +135,8 @@ FieldGeneratorPtr FieldHeaviside::clone(const std::list<FieldGeneratorPtr> args)
   return std::make_shared<FieldHeaviside>(args.front());
 }
 
-BoutReal FieldHeaviside::generate(double x, double y, double z, double t) {
-  return (gen->generate(x, y, z, t) > 0.0) ? 1.0 : 0.0;
+BoutReal FieldHeaviside::generate(Position pos) {
+  return (gen->generate(pos) > 0.0) ? 1.0 : 0.0;
 }
 
 FieldGeneratorPtr FieldErf::clone(const std::list<FieldGeneratorPtr> args) {
@@ -149,8 +149,8 @@ FieldGeneratorPtr FieldErf::clone(const std::list<FieldGeneratorPtr> args) {
   return std::make_shared<FieldErf>(args.front());
 }
 
-BoutReal FieldErf::generate(double x, double y, double z, double t) {
-  return erf(gen->generate(x,y,z,t));
+BoutReal FieldErf::generate(Position pos) {
+  return erf(gen->generate(pos));
 }
 
 //////////////////////////////////////////////////////////
@@ -163,7 +163,7 @@ FieldGeneratorPtr FieldBallooning::clone(const std::list<FieldGeneratorPtr> args
   case 2: {
     // Second optional argument is ball_n, an integer
     // This should probably warn if arg isn't constant
-    n = ROUND( args.back()->generate(0,0,0,0) );
+    n = ROUND( args.back()->generate(Position()) );
   } // Fall through
   case 1: {
     return std::make_shared<FieldBallooning>(mesh, args.front(), n);
@@ -173,7 +173,7 @@ FieldGeneratorPtr FieldBallooning::clone(const std::list<FieldGeneratorPtr> args
   throw ParseException("ballooning function must have one or two arguments");
 }
 
-BoutReal FieldBallooning::generate(double x, double y, double z, double t) {
+BoutReal FieldBallooning::generate(Position pos) {
   if(!mesh)
     throw BoutException("ballooning function needs a valid mesh");
   if(ball_n < 1)
@@ -182,22 +182,22 @@ BoutReal FieldBallooning::generate(double x, double y, double z, double t) {
   BoutReal ts; // Twist-shift angle
   Coordinates* coords = mesh->getCoordinates();
 
-  // Need to find the nearest flux surface (x index)
-  // This assumes that mesh->GlobalX is linear in x index
-  BoutReal dx = (mesh->GlobalX(mesh->xend) - mesh->GlobalX(mesh->xstart)) /
-    (mesh->xend - mesh->xstart);
-  int jx = ROUND((x - mesh->GlobalX(0)) / dx);
-
+  int jx = pos.getIx();
+  
   if(mesh->periodicY(jx, ts)) {
     // Start with the value at this point
-    BoutReal value = arg->generate(x,y,z,t);
+    BoutReal value = arg->generate(pos);
 
     for(int i=1; i<= ball_n; i++) {
       // y - i * 2pi
-      value += arg->generate(x,y - i*TWOPI,z + i*ts*TWOPI/coords->zlength(),t);
-
-      // y + i * 2pi
-      value += arg->generate(x,y + i*TWOPI,z - i*ts*TWOPI/coords->zlength(),t);
+      Position cp = pos;
+      cp.setY(pos.y() - i*TWOPI);
+      cp.setZ(pos.z() + i*ts*TWOPI/coords->zlength());
+      value += arg->generate(cp);
+      
+      cp.setY(pos.y() + i*TWOPI);
+      cp.setZ(pos.z() - i*ts*TWOPI/coords->zlength());
+      value += arg->generate(cp);
     }
     return value;
   }
@@ -221,7 +221,7 @@ FieldGeneratorPtr FieldMixmode::clone(const std::list<FieldGeneratorPtr> args) {
   switch(args.size()) {
   case 2: {
     // Second optional argument is the seed, which should be a constant
-    seed = args.back()->generate(0,0,0,0);
+    seed = args.back()->generate(Position());
   } // Fall through
   case 1: {
     return std::make_shared<FieldMixmode>(args.front(), seed);
@@ -231,14 +231,14 @@ FieldGeneratorPtr FieldMixmode::clone(const std::list<FieldGeneratorPtr> args) {
   throw ParseException("mixmode function must have one or two arguments");
 }
 
-BoutReal FieldMixmode::generate(double x, double y, double z, double t) {
+BoutReal FieldMixmode::generate(Position pos) {
   BoutReal result = 0.0;
 
   // A mixture of mode numbers
   for(int i=0;i<14;i++) {
     // This produces a spectrum which is peaked around mode number 4
     result += ( 1./SQ(1. + std::abs(i - 4)) ) *
-      cos(i * arg->generate(x,y,z,t) + phase[i]);
+      cos(i * arg->generate(pos) + phase[i]);
   }
 
   return result;
@@ -290,13 +290,13 @@ FieldGeneratorPtr FieldTanhHat::clone(const std::list<FieldGeneratorPtr> args) {
   return std::make_shared<FieldTanhHat>(xin, widthin, centerin, steepnessin);
 }
 
-BoutReal FieldTanhHat::generate(double x, double y, double z, double t) {
+BoutReal FieldTanhHat::generate(Position pos) {
   // The following are constants
-  BoutReal w = width    ->generate(0,0,0,0);
-  BoutReal c = center   ->generate(0,0,0,0);
-  BoutReal s = steepness->generate(0,0,0,0);
+  BoutReal w = width    ->generate(Position());
+  BoutReal c = center   ->generate(Position());
+  BoutReal s = steepness->generate(Position());
   return 0.5*(
-                 tanh( s*(X->generate(x,y,z,t) - (c - 0.5*w)) )
-               - tanh( s*(X->generate(x,y,z,t) - (c + 0.5*w)) )
+                 tanh( s*(X->generate(pos) - (c - 0.5*w)) )
+               - tanh( s*(X->generate(pos) - (c + 0.5*w)) )
              );
 }

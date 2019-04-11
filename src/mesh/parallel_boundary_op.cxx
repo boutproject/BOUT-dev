@@ -9,10 +9,6 @@ BoutReal BoundaryOpPar::getValue(int x, int y, int z, BoutReal t) {
 
   Mesh* mesh = bndry->localmesh;
 
-  BoutReal xnorm;
-  BoutReal ynorm;
-  BoutReal znorm;
-
   BoutReal value;
 
   switch (value_type) {
@@ -20,10 +16,7 @@ BoutReal BoundaryOpPar::getValue(int x, int y, int z, BoutReal t) {
     // This works but doesn't quite do the right thing... should
     // generate value on the boundary, but that gives wrong
     // answer. This instead generates the value at the gridpoint
-    xnorm = mesh->GlobalX(x);
-    ynorm = mesh->GlobalY(y);
-    znorm = static_cast<BoutReal>(z) / (mesh->LocalNz);
-    return gen_values->generate(xnorm, TWOPI*ynorm, TWOPI*znorm, t);
+    return gen_values->generate(Position(x, y, z, CELL_CENTRE, mesh, t));
   case FIELD:
     value = (*field_values)(x,y,z);
     return value;
@@ -39,19 +32,11 @@ BoutReal BoundaryOpPar::getValue(const BoundaryRegionPar &bndry, BoutReal t) {
 
   Mesh* mesh = bndry.localmesh;
 
-  BoutReal xnorm;
-  BoutReal ynorm;
-  BoutReal znorm;
-
   BoutReal value;
 
   switch (value_type) {
   case GEN:
-    // Need to use GlobalX, except with BoutReal as argument...
-    xnorm = mesh->GlobalX(bndry.s_x);
-    ynorm = mesh->GlobalY(bndry.s_y);
-    znorm = bndry.s_z/(mesh->LocalNz);
-    return gen_values->generate(xnorm, TWOPI*ynorm, TWOPI*znorm, t);
+    return gen_values->generate(Position(bndry.s_x, bndry.s_y, bndry.s_z, CELL_CENTRE, mesh, t));
   case FIELD:
     // FIXME: Interpolate to s_x, s_y, s_z...
     value = (*field_values)(bndry.x,bndry.y,bndry.z);

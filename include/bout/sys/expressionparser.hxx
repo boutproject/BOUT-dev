@@ -38,6 +38,8 @@
 #include <string>
 #include <utility>
 
+#include "position.hxx"
+
 class FieldGenerator;
 using FieldGeneratorPtr = std::shared_ptr<FieldGenerator>;
 
@@ -62,7 +64,7 @@ public:
 
   /// Generate a value at the given coordinates (x,y,z,t)
   /// This should be deterministic, always returning the same value given the same inputs
-  virtual double generate(double x, double y, double z, double t) = 0;
+  virtual double generate(Position pos) = 0;
 
   /// Create a string representation of the generator, for debugging output
   virtual std::string str() const { return std::string("?"); }
@@ -160,7 +162,7 @@ public:
   FieldBinary(FieldGeneratorPtr l, FieldGeneratorPtr r, char o)
       : lhs(std::move(l)), rhs(std::move(r)), op(o) {}
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override;
-  double generate(double x, double y, double z, double t) override;
+  double generate(Position pos) override;
 
   std::string str() const override {
     return std::string("(") + lhs->str() + std::string(1, op) + rhs->str()
@@ -181,8 +183,7 @@ public:
     return std::make_shared<FieldValue>(value);
   }
 
-  double generate(double UNUSED(x), double UNUSED(y), double UNUSED(z),
-                  double UNUSED(t)) override {
+  double generate(Position UNUSED(pos)) override {
     return value;
   }
   std::string str() const override {

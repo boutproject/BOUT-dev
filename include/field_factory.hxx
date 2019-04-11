@@ -122,8 +122,8 @@ class FieldFunction : public FieldGenerator {
 public:
   FieldFunction() = delete;
   FieldFunction(FuncPtr userfunc) : func(userfunc) {}
-  BoutReal generate(BoutReal x, BoutReal y, BoutReal z, BoutReal t) override {
-    return func(t, x, y, z);
+  BoutReal generate(Position pos) override {
+    return func(pos.t(), pos.x(), pos.y(), pos.z());
   }
 
 private:
@@ -136,8 +136,7 @@ private:
 class FieldNull : public FieldGenerator {
 public:
   FieldNull() = default;
-  BoutReal generate(BoutReal UNUSED(x), BoutReal UNUSED(y), BoutReal UNUSED(z),
-                    BoutReal UNUSED(t)) override {
+  BoutReal generate(Position UNUSED(pos)) override {
     return 0.0;
   }
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> UNUSED(args)) override {
