@@ -49,8 +49,9 @@ dz = 1 / (nz-4)
 [solver]
 
 type = splitrk
-timestep = 1e-3   # Fixed internal timestep
+timestep = 1e-4   # Internal timestep
 nstages = 9       # Stages in RKL steps for diffusive component
+adapt_period = 5  # Internal steps between accuracy checks
 
 ##################################################
 # settings for split operator model

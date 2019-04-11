@@ -45,6 +45,11 @@ int SplitRK::init(int nout, BoutReal tstep) {
 
   max_timestep = opt["max_timestep"].doc("Maximum timestep. Negative means no limit.").withDefault(out_timestep);
 
+  max_timestep_change = opt["max_timestep_change"]
+                            .doc("Maximum factor by which the timestep should be changed. Must be >1")
+                            .withDefault(max_timestep_change);
+  ASSERT0(max_timestep_change > 1.0);
+  
   mxstep = opt["mxstep"]
                .doc("Maximum number of internal steps between outputs")
                .withDefault(mxstep);
@@ -70,7 +75,9 @@ int SplitRK::init(int nout, BoutReal tstep) {
   
   nstages = opt["nstages"].doc("Number of stages in RKL step. Must be > 1").withDefault(10);
   ASSERT0(nstages > 1);
-  
+
+  diagnose = opt["diagnose"].doc("Print diagnostic information?").withDefault(diagnose);
+
   return 0;
 }
 
@@ -113,7 +120,7 @@ int SplitRK::run() {
           for (int i = 0; i < nlocal; i++) {
             local_err += fabs(state2[i] - state1[i]) / (fabs(state1[i]) + fabs(state2[i]) + atol);
           }
-
+          
           // Average over all processors
           BoutReal err;
           if (MPI_Allreduce(&local_err, &err, 1, MPI_DOUBLE, MPI_SUM, BoutComm::get())) {
@@ -121,19 +128,36 @@ int SplitRK::run() {
           }
 
           err /= static_cast<BoutReal>(neq);
-
+          
           internal_steps++;
           if (internal_steps > mxstep) {
             throw BoutException("ERROR: MXSTEP exceeded. timestep = %e, err=%e\n",
                                 timestep, err);
           }
 
+          if (diagnose) {
+            output.write("\nError: %e. atol=%e, rtol=%e\n", err, atol, rtol);
+          }
+
           if ((err > rtol) || (err < 0.1 * rtol)) {
             // Need to change timestep. Error ~ dt^2
-            timestep /= sqrt(err / (0.5 * rtol));
+
+            BoutReal factor = pow((0.5 * rtol) / err, 1./3);
+
+            if (factor > max_timestep_change) {
+              factor = max_timestep_change;
+            } else if (factor < 1. / max_timestep_change) {
+              factor = 1. / max_timestep_change;
+            }
+
+            timestep *= factor;
 
             if ((max_timestep > 0) && (timestep > max_timestep)) {
               timestep = max_timestep;
+            }
+
+            if (diagnose) {
+              output.write("\tAdapting. timestep %e (factor %e). Max=%e\n", timestep, factor, max_timestep);
             }
           }
           if (err < rtol) {

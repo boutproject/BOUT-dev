@@ -59,10 +59,13 @@ private:
   bool adaptive{true};   ///< Adapt timestep using tolerances?
   BoutReal atol{1e-10};  ///< Absolute tolerance
   BoutReal rtol{1e-5};   ///< Relative tolerance
-  BoutReal max_timestep; ///< Maximum timestep
+  BoutReal max_timestep{1.0}; ///< Maximum timestep
+  BoutReal max_timestep_change{2.0};  ///< Maximum factor by which the timestep should be changed
   int mxstep{1000};      ///< Maximum number of internal steps between outputs
   int adapt_period{1};   ///< Number of steps between checks
 
+  bool diagnose{false};  ///< Turn on diagnostic output
+  
   int nlocal, neq; ///< Number of variables on local processor and in total
   
   /// System state
