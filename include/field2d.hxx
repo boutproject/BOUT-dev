@@ -483,4 +483,10 @@ inline std::string toString<>(const Field2D& UNUSED(val)) {
   return "<Field2D>";
 }
 
+/// Test if two fields are the same, by calculating
+/// the minimum absolute difference between them
+bool operator==(const Field2D &a, const Field2D &b);
+
+std::ostream& operator<<(std::ostream &out, const Field2D &value);
+
 #endif /* __FIELD2D_H__ */

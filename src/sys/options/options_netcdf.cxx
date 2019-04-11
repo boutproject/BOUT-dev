@@ -116,6 +116,10 @@ void readGroup(const std::string& filename, NcGroup group, Options& result) {
 }
 } // namespace
 
+
+namespace bout {
+namespace experimental {
+
 Options OptionsNetCDF::read() {
   // Open file
   NcFile dataFile(filename, NcFile::read);
@@ -129,6 +133,9 @@ Options OptionsNetCDF::read() {
 
   return result;
 }
+
+} // experimental
+} // bout
 
 namespace {
 
@@ -505,6 +512,9 @@ void writeGroup(const Options& options, NcGroup group,
 
 } // namespace
 
+namespace bout {
+namespace experimental {
+
 /// Write options to file
 void OptionsNetCDF::write(const Options& options) {
   // Check the file mode to use
@@ -521,5 +531,8 @@ void OptionsNetCDF::write(const Options& options) {
 
   writeGroup(options, dataFile, time_index);
 }
+
+} // experimental
+} // bout
 
 #endif // NCDF4

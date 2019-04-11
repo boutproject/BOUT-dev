@@ -36,8 +36,7 @@ Interpolation* InterpolationFactory::create(Options *options, Mesh *mesh) {
   if (options == nullptr)
     options = Options::getRoot()->getSection("interpolation");
 
-  std::string interp_option;
-  options->get("type", interp_option, type);
+  std::string interp_option = (*options)["type"].withDefault(type);
 
   if (!interp_option.empty()) type = interp_option.c_str();
 
