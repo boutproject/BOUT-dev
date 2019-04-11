@@ -30,14 +30,14 @@
 
 #include <globals.hxx>
 
-#include <stdlib.h>
+#include <cstdlib>
 
 #include <interpolation.hxx> // Cell interpolation
 #include <msg_stack.hxx>
 #include <output.hxx>
 #include <boutcomm.hxx>
 
-string formatEig(BoutReal reEig, BoutReal imEig);
+std::string formatEig(BoutReal reEig, BoutReal imEig);
 
 //The callback function for the shell matrix-multiply operation
 //A simple wrapper around the SlepcSolver advanceStep routine
@@ -117,8 +117,8 @@ PetscErrorCode stBackTransformWrapper(ST st, PetscInt nEig, PetscScalar *eigr,
 
 
 //Helper function
-string formatEig(BoutReal reEig, BoutReal imEig){
-  string rePad, imPad;
+std::string formatEig(BoutReal reEig, BoutReal imEig){
+  std::string rePad, imPad;
 
   if(reEig<0){
     rePad="-";
@@ -137,7 +137,7 @@ string formatEig(BoutReal reEig, BoutReal imEig){
   //Note we use abs here and put the -/+ into pads to cope with
   //the case where the Eig is -0.000/0.000 which require different
   //padding but evaluate as the same number when doing comparisons
-  tmp<<rePad<<abs(reEig)<<imPad<<abs(imEig)<<"i";
+  tmp<<rePad<<std::abs(reEig)<<imPad<<std::abs(imEig)<<"i";
   return tmp.str();
 }
 
@@ -245,7 +245,7 @@ int SlepcSolver::init(int NOUT, BoutReal TIMESTEP) {
     PetscScalar slepcRe,slepcIm;
     boutToSlepc(targRe,targIm,slepcRe,slepcIm);
     dcomplex tmp(slepcRe,slepcIm);
-    target=abs(tmp);
+    target=std::abs(tmp);
   }
 
   //Read options
@@ -262,8 +262,8 @@ int SlepcSolver::init(int NOUT, BoutReal TIMESTEP) {
   //Also create vector for derivs etc. if SLEPc in charge of solving
   if(selfSolve && !ddtMode){
     // Allocate memory
-    f0 = Array<BoutReal>(localSize);
-    f1 = Array<BoutReal>(localSize);
+    f0.reallocate(localSize);
+    f1.reallocate(localSize);
   }
 
   // Get total problem size
@@ -584,7 +584,7 @@ void SlepcSolver::monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[],
   BoutReal reEigBout, imEigBout;
   slepcToBout(eigr[nconv],eigi[nconv],reEigBout,imEigBout);
 
-  string joinNum, joinNumSlepc;
+  std::string joinNum, joinNumSlepc;
   if(imEigBout<0){
     joinNum="";
   }else{
@@ -606,10 +606,10 @@ void SlepcSolver::monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[],
       output<<formatEig(reEigBout,imEigBout)<<endl;
       if(eigenValOnly){
         simtime=reEigBout;
-        dump.write();
+        bout::globals::dump.write();
         iteration++;
         simtime=imEigBout;
-        dump.write();
+        bout::globals::dump.write();
         iteration++;
       }
     }
@@ -651,7 +651,7 @@ void SlepcSolver::slepcToBout(PetscScalar &reEigIn, PetscScalar &imEigIn,
     boutEig=slepcEig*ci;
   }else{
     //Protect against the 0,0 trivial eigenvalue
-    if(abs(slepcEig)<1.0e-10){
+    if(std::abs(slepcEig)<1.0e-10){
       reEigOut=0.0;
       imEigOut=0.0;
       return;
@@ -724,7 +724,7 @@ void SlepcSolver::analyseResults(){
       dcomplex slepcEig(reEig,imEig);
 
       //Report
-      output<<"\t"<<iEig<<"\t"<<formatEig(reEig,imEig)<<"\t("<<abs(slepcEig)<<")";
+      output<<"\t"<<iEig<<"\t"<<formatEig(reEig,imEig)<<"\t("<<std::abs(slepcEig)<<")";
 
       //Get BOUT eigenvalue
       BoutReal reEigBout, imEigBout;
@@ -732,7 +732,7 @@ void SlepcSolver::analyseResults(){
       dcomplex boutEig(reEigBout,imEigBout);
 
       //Report
-      output<<"\t"<<formatEig(reEigBout,imEigBout)<<"\t("<<abs(boutEig)<<")"<<endl;
+      output<<"\t"<<formatEig(reEigBout,imEigBout)<<"\t("<<std::abs(boutEig)<<")"<<endl;
 
       //Get eigenvector
       EPSGetEigenvector(eps,iEig,vecReal,vecImag);
@@ -747,7 +747,7 @@ void SlepcSolver::analyseResults(){
       run_rhs(0.0);
 
       //Write to file
-      dump.write();
+      bout::globals::dump.write();
       iteration++;
 
       //Now write imaginary part of eigen data
@@ -757,7 +757,7 @@ void SlepcSolver::analyseResults(){
       simtime=imEigBout;
 
       //Write to file
-      dump.write();
+      bout::globals::dump.write();
       iteration++;
     }
 

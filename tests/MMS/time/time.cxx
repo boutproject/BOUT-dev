@@ -7,11 +7,11 @@
 
 
 #include <bout/physicsmodel.hxx>
-
+#include "unused.hxx"
 
 class TimeTest : public PhysicsModel {
 public:
-  int init(bool restart) {
+  int init(MAYBE_UNUSED(bool restart)) {
     solver->add(f, "f"); // Solve a single 3D field
     
     setSplitOperator();
@@ -19,17 +19,16 @@ public:
     return 0;
   }
   
-  int rhs(BoutReal time) {
+  int rhs(MAYBE_UNUSED(BoutReal time)) {
     ddt(f) = f;
-    //ddt(f) = 0.0; // No RHS here, only the MMS source
     return 0;
   }
   
-  int convective(BoutReal time) {
+  int convective(MAYBE_UNUSED(BoutReal time)) {
     ddt(f) = f;
     return 0;
   }
-  int diffusive(BoutReal time) {
+  int diffusive(MAYBE_UNUSED(BoutReal time)) {
     ddt(f) = 0;
     return 0;
   }

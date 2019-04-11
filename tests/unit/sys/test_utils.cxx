@@ -21,6 +21,26 @@ TEST(MatrixTest, CreateGivenSize) {
   EXPECT_EQ(shape1, 5);
 }
 
+TEST(MatrixTest, Reallocate) {
+  Matrix<int> matrix{};
+
+  ASSERT_TRUE(matrix.empty());
+
+  matrix.reallocate(3, 5);
+
+  int shape0, shape1;
+  std::tie(shape0, shape1) = matrix.shape();
+
+  EXPECT_EQ(shape0, 3);
+  EXPECT_EQ(shape1, 5);
+
+  matrix.reallocate(5, 3);
+  std::tie(shape0, shape1) = matrix.shape();
+
+  EXPECT_EQ(shape0, 5);
+  EXPECT_EQ(shape1, 3);
+}
+
 TEST(MatrixTest, Empty) {
   Matrix<int> matrix;
   EXPECT_TRUE(matrix.empty());
@@ -143,6 +163,29 @@ TEST(MatrixTest, ConstIndexing) {
   EXPECT_EQ(matrix2(1, 1), 3);
 }
 
+TEST(MatrixTest, GetData) {
+  Matrix<int> matrix(3, 5);
+  matrix = 3;
+
+  auto data = matrix.getData();
+
+  EXPECT_TRUE(std::all_of(std::begin(data), std::end(data), [](int a) { return a == 3; }));
+
+  data[0] = 4;
+
+  EXPECT_EQ(matrix(0, 0), 4);
+}
+
+TEST(MatrixTest, ConstGetData) {
+  Matrix<int> matrix(3, 5);
+  matrix = 3;
+
+  const auto data = matrix.getData();
+
+  EXPECT_TRUE(std::all_of(std::begin(data), std::end(data), [](int a) { return a == 3; }));
+  EXPECT_TRUE(std::all_of(std::begin(matrix), std::end(matrix), [](int a) { return a == 3; }));
+}
+
 TEST(TensorTest, DefaultShape) {
   Tensor<int> tensor;
 
@@ -161,6 +204,28 @@ TEST(TensorTest, CreateGivenSize) {
   EXPECT_EQ(shape0, 3);
   EXPECT_EQ(shape1, 5);
   EXPECT_EQ(shape2, 7);
+}
+
+TEST(TensorTest, Reallocate) {
+  Tensor<int> tensor{};
+
+  ASSERT_TRUE(tensor.empty());
+
+  tensor.reallocate(3, 5, 7);
+
+  int shape0, shape1, shape2;
+  std::tie(shape0, shape1, shape2) = tensor.shape();
+
+  EXPECT_EQ(shape0, 3);
+  EXPECT_EQ(shape1, 5);
+  EXPECT_EQ(shape2, 7);
+
+  tensor.reallocate(5, 7, 3);
+  std::tie(shape0, shape1, shape2) = tensor.shape();
+
+  EXPECT_EQ(shape0, 5);
+  EXPECT_EQ(shape1, 7);
+  EXPECT_EQ(shape2, 3);
 }
 
 TEST(TensorTest, Empty) {
@@ -289,6 +354,29 @@ TEST(TensorTest, ConstIndexing) {
   const Tensor<int> tensor2(tensor);
 
   EXPECT_EQ(tensor2(1, 1, 1), 3);
+}
+
+TEST(TensorTest, GetData) {
+  Tensor<int> tensor(3, 5, 7);
+  tensor = 3;
+
+  auto data = tensor.getData();
+
+  EXPECT_TRUE(std::all_of(std::begin(data), std::end(data), [](int a) { return a == 3; }));
+
+  data[0] = 4;
+
+  EXPECT_EQ(tensor(0, 0, 0), 4);
+}
+
+TEST(TensorTest, ConstGetData) {
+  Tensor<int> tensor(3, 5, 7);
+  tensor = 3;
+
+  const auto data = tensor.getData();
+
+  EXPECT_TRUE(std::all_of(std::begin(data), std::end(data), [](int a) { return a == 3; }));
+  EXPECT_TRUE(std::all_of(std::begin(tensor), std::end(tensor), [](int a) { return a == 3; }));
 }
 
 TEST(Invert3x3Test, Identity) {
@@ -516,6 +604,24 @@ TEST(StringUtilitiesTest, StringToIntFail) {
   std::string number_string = "Not a number";
 
   EXPECT_THROW(stringToInt(number_string), BoutException);
+}
+
+TEST(StringUtilitiesTest, BoolToString) {
+  std::string true_string = "true";
+  std::string false_string = "false";
+
+  EXPECT_EQ(true_string, toString(true));
+  EXPECT_EQ(false_string, toString(false));
+}
+
+TEST(StringUtilitiesTest, ConstCharToString) {
+  EXPECT_EQ(std::string("hello"), toString("hello"));
+}
+
+TEST(StringUtilitiesTest, StringToString) {
+  std::string test_string = "dlkjl872kj";
+
+  EXPECT_EQ( test_string, toString(test_string) );
 }
 
 TEST(StringUtilitiesTest, IntToString) {

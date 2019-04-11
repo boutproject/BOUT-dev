@@ -23,9 +23,9 @@
  *
  **************************************************************************/
 
-#include <stdarg.h>
-#include <stdio.h>
-#include <string.h>
+#include <cstdarg>
+#include <cstdio>
+#include <cstring>
 #include <output.hxx>
 #include <utils.hxx>
 
@@ -41,7 +41,7 @@ void Output::disable() {
 
 int Output::open(const char *fname, ...) {
 
-  if (fname == (const char *)nullptr) {
+  if (fname == nullptr) {
     return 1;
   }
 
@@ -150,6 +150,7 @@ ConditionalOutput output_warn(Output::getInstance());
 ConditionalOutput output_info(Output::getInstance());
 ConditionalOutput output_progress(Output::getInstance());
 ConditionalOutput output_error(Output::getInstance());
+ConditionalOutput output_verbose(Output::getInstance(), false);
 ConditionalOutput output(Output::getInstance());
 
 #undef bout_vsnprint_pre

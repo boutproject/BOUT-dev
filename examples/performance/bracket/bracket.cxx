@@ -39,15 +39,15 @@ int main(int argc, char **argv) {
   std::vector<Duration> times;
 
   // Get options root
-  Options *globalOptions = Options::getRoot();
-  Options *modelOpts = globalOptions->getSection("performance");
+  auto globalOptions = Options::root();
+  auto modelOpts = globalOptions["performance"];
   int NUM_LOOPS;
-  OPTION(modelOpts, NUM_LOOPS, 100);
+  NUM_LOOPS = modelOpts["NUM_LOOPS"].withDefault(100);
   bool profileMode, includeHeader, do2D3D, do3D3D;
-  OPTION(modelOpts, profileMode, false);
-  OPTION(modelOpts, includeHeader, false);
-  OPTION(modelOpts, do2D3D, false);
-  OPTION(modelOpts, do3D3D, false);
+  profileMode = modelOpts["profileMode"].withDefault(false);
+  includeHeader = modelOpts["includeHeader"].withDefault(false);
+  do2D3D = modelOpts["do2D3D"].withDefault(false);
+  do3D3D = modelOpts["do3D3D"].withDefault(false);
 
   ConditionalOutput time_output(Output::getInstance());
   time_output.enable(true);

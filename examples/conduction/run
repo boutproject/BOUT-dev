@@ -11,12 +11,12 @@ from boutdata.collect import collect
 import numpy as np
 
 nproc = 2  # Number of processors to use
-MPIRUN = getmpirun()
+
 
 print("Making conduction example")
 shell("make > make.log")
 
-s, out = launch("./conduction ", runcmd=MPIRUN, nproc=nproc, pipe=True)
+s, out = launch("./conduction ", nproc=nproc, pipe=True)
 f = open("run.log", "w") # Save the output in a log file
 f.write(out)
 f.close()

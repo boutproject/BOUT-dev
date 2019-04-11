@@ -7,10 +7,16 @@
 #include <strings.h>
 
 LaplaceXZ* LaplaceXZ::create(Mesh *m, Options *options, const CELL_LOC loc) {
-  if (options == nullptr)
-    options = Options::getRoot()->getSection("laplacexz");
+  if (m == nullptr) {
+    // use global mesh
+    m = bout::globals::mesh;
+  }
 
-  string type;
+  if (options == nullptr) {
+    options = Options::getRoot()->getSection("laplacexz");
+  }
+
+  std::string type;
   options->get("type", type, "cyclic");
 
   if(strcasecmp(type.c_str(), "cyclic") == 0) {

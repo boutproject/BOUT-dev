@@ -41,20 +41,42 @@
 
 #include "bout_types.hxx"
 
+#include "bout/deprecated.hxx"
 #include "bout/solver.hxx"
 
 /*!
  * Parallel derivative (central differencing) in Y
- * along unperturbed field 
+ * along unperturbed field
  *
  * @param[in] var  The field to be differentiated
- * @param[in] outloc  The cell location where the output is needed (if staggered grids is enabled)
- * @param[in] method  The method to use. The default is set in the options. 
+ * @param[in] outloc  The cell location where the output is needed (if staggered grids is
+ * enabled)
+ * @param[in] method  The method to use. The default is set in the options.
  */
-const Field2D Grad_par(const Field2D &var, CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
-const Field2D Grad_par(const Field2D &var, DIFF_METHOD method, CELL_LOC outloc=CELL_DEFAULT);
-const Field3D Grad_par(const Field3D &var, CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
-const Field3D Grad_par(const Field3D &var, DIFF_METHOD method, CELL_LOC outloc=CELL_DEFAULT);
+const Field2D Grad_par(const Field2D& var, CELL_LOC outloc = CELL_DEFAULT,
+                       const std::string& method = "DEFAULT");
+DEPRECATED(const Field2D Grad_par(const Field2D& var, const std::string& method,
+                                  CELL_LOC outloc = CELL_DEFAULT));
+inline const Field2D Grad_par(const Field2D& var, CELL_LOC outloc, DIFF_METHOD method) {
+  return Grad_par(var, outloc, toString(method));
+};
+DEPRECATED(inline const Field2D Grad_par(const Field2D& var, DIFF_METHOD method,
+                                         CELL_LOC outloc)) {
+  return Grad_par(var, outloc, toString(method));
+};
+
+const Field3D Grad_par(const Field3D& var, CELL_LOC outloc = CELL_DEFAULT,
+                       const std::string& method = "DEFAULT");
+DEPRECATED(const Field3D Grad_par(const Field3D& var, const std::string& method,
+                                  CELL_LOC outloc = CELL_DEFAULT));
+inline const DEPRECATED(Field3D Grad_par(const Field3D& var, CELL_LOC outloc,
+                                         DIFF_METHOD method)) {
+  return Grad_par(var, outloc, toString(method));
+};
+DEPRECATED(inline const DEPRECATED(
+    Field3D Grad_par(const Field3D& var, DIFF_METHOD method, CELL_LOC outloc))) {
+  return Grad_par(var, outloc, toString(method));
+};
 
 /*!
  * Derivative along perturbed magnetic field
@@ -66,114 +88,111 @@ const Field3D Grad_par(const Field3D &var, DIFF_METHOD method, CELL_LOC outloc=C
  * Combines the parallel and perpendicular calculation to include
  * grid-points at the corners.
  */
-const Field3D Grad_parP(const Field3D &apar, const Field3D &f);
+const Field3D Grad_parP(const Field3D& apar, const Field3D& f);
 
 /*!
  * vpar times parallel derivative along unperturbed B-field (upwinding)
  *
- * \f[ 
+ * \f[
  *    v\mathbf{b}_0 \cdot \nabla f
  * \f]
  * 
- * @param[in] v  The velocity in y direction
- * @param[in] f  The scalar field to be differentiated
- * 
- */
-const Field2D Vpar_Grad_par(const Field2D &v, const Field2D &f);
-
-/*!
- * vpar times parallel derivative along unperturbed B-field (upwinding)
  *
- * \f[ 
- *    v\mathbf{b}_0 \cdot \nabla f
- * \f]
- * 
  * @param[in] v  The velocity in y direction
  * @param[in] f  The scalar field to be differentiated
  * @param[in] outloc  The cell location of the output. By default this is the same as \p f
  * @param[in] method  The numerical method to use. The default is set in the options
- * 
- */
-const Field3D Vpar_Grad_par(const Field3D &v, const Field3D &f, 
-			    CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
-
-/*!
- * vpar times parallel derivative along unperturbed B-field (upwinding)
  *
- * \f[ 
- *    v\mathbf{b}_0 \cdot \nabla f
- * \f]
- * 
- * @param[in] v  The velocity in y direction
- * @param[in] f  The scalar field to be differentiated
- * @param[in] outloc  The cell location of the output. By default this is the same as \p f
- * @param[in] method  The numerical method to use. The default is set in the options
- * 
  */
-const Field3D Vpar_Grad_par(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc=CELL_DEFAULT);
+const Field2D Vpar_Grad_par(const Field2D& v, const Field2D& f,
+                            CELL_LOC outloc = CELL_DEFAULT,
+                            const std::string& method = "DEFAULT");
+DEPRECATED(const Field2D Vpar_Grad_par(const Field2D& v, const Field2D& f,
+                                       const std::string& method,
+                                       CELL_LOC outloc = CELL_DEFAULT));
+inline const Field2D Vpar_Grad_par(const Field2D& v, const Field2D& f, CELL_LOC outloc,
+                                   DIFF_METHOD method) {
+  return Vpar_Grad_par(v, f, outloc, toString(method));
+};
+DEPRECATED(inline const Field2D Vpar_Grad_par(const Field2D& v, const Field2D& f,
+                                              DIFF_METHOD method, CELL_LOC outloc)) {
+  return Vpar_Grad_par(v, f, outloc, toString(method));
+};
 
+const Field3D Vpar_Grad_par(const Field3D& v, const Field3D& f,
+                            CELL_LOC outloc = CELL_DEFAULT,
+                            const std::string& method = "DEFAULT");
+DEPRECATED(const Field3D Vpar_Grad_par(const Field3D& v, const Field3D& f,
+                                       const std::string& method,
+                                       CELL_LOC outloc = CELL_DEFAULT));
+inline const Field3D Vpar_Grad_par(const Field3D& v, const Field3D& f, CELL_LOC outloc,
+                                   DIFF_METHOD method) {
+  return Vpar_Grad_par(v, f, outloc, toString(method));
+};
+DEPRECATED(inline const Field3D Vpar_Grad_par(const Field3D& v, const Field3D& f,
+                                              DIFF_METHOD method, CELL_LOC outloc)) {
+  return Vpar_Grad_par(v, f, outloc, toString(method));
+};
 
 /*!
  * parallel divergence operator
- * 
+ *
  * \f[
  *  B \partial_{||}(f/B) = B \nabla\cdot (\mathbf{b}f/B )
  * \f]
- * 
- * @param[in] f  The component of a vector along the magnetic field 
- * 
- */
-const Field2D Div_par(const Field2D &f);
-
-/*!
- * parallel divergence operator
- * 
- * \f[
- *  B \partial_{||}(f/B) = B \nabla\cdot (\mathbf{b}f/B )
- * \f]
- * 
- * @param[in] f  The component of a vector along the magnetic field 
+ *
+ * @param[in] f  The component of a vector along the magnetic field
  * @param[in] outloc  The cell location for the result. By default the same as \p f
  * @param[in] method  The numerical method to use
- * 
+ *
  */
-const Field3D Div_par(const Field3D &f, 
-		      CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
+const Field2D Div_par(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+                      const std::string& method = "DEFAULT");
+DEPRECATED(const Field2D Div_par(const Field2D& f, const std::string& method,
+                                 CELL_LOC outloc = CELL_DEFAULT));
+inline const Field2D Div_par(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method) {
+  return Div_par(f, outloc, toString(method));
+};
+DEPRECATED(inline const Field2D Div_par(const Field2D& f, DIFF_METHOD method,
+                                        CELL_LOC outloc)) {
+  return Div_par(f, outloc, toString(method));
+};
 
-/*!
- * parallel divergence operator
- * 
- * \f[
- *  B \partial_{||}(f/B) = B \nabla\cdot (\mathbf{b}f/B )
- * \f]
- * 
- * @param[in] f  The component of a vector along the magnetic field 
- * @param[in] outloc  The cell location for the result. By default the same as \p f
- * @param[in] method  The numerical method to use
- * 
- */
-const Field3D Div_par(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT);
-
-// Flux methods. Model divergence of flux: df/dt =  Div(v * f)
-const Field3D Div_par_flux(const Field3D &v, const Field3D &f, 
-		      CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
-const Field3D Div_par_flux(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT);
+const Field3D Div_par(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+                      const std::string& method = "DEFAULT");
+DEPRECATED(const Field3D Div_par(const Field3D& f, const std::string& method,
+                                 CELL_LOC outloc = CELL_DEFAULT));
+inline const Field3D Div_par(const Field3D& f, CELL_LOC outloc, DIFF_METHOD method) {
+  return Div_par(f, outloc, toString(method));
+};
+DEPRECATED(inline const Field3D Div_par(const Field3D& f, DIFF_METHOD method,
+                                        CELL_LOC outloc)) {
+  return Div_par(f, outloc, toString(method));
+};
 
 // Divergence of a parallel flow: Div(f*v)
 // Both f and v are interpolated onto cell boundaries
 // using 2nd order central difference, then multiplied together
 // to get the flux at the boundary.
-const Field3D Div_par(const Field3D &f, const Field3D &v);
+const Field3D Div_par(const Field3D& f, const Field3D& v);
 
-/*!
- * second parallel derivative
- * \f[
- *    (\mathbf{b} dot \nabla)(\mathbf{b} dot \nabla)
- * \f]
- *
- * Note: For parallel Laplacian use LaplacePar
- */
-const Field2D Grad2_par2(const Field2D &f, CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
+// Flux methods. Model divergence of flux: df/dt =  Div(v * f)
+// TODO : Should we add Field2D versions?
+const Field3D Div_par_flux(const Field3D& v, const Field3D& f,
+                           CELL_LOC outloc = CELL_DEFAULT,
+                           const std::string& method = "DEFAULT");
+DEPRECATED(const Field3D Div_par_flux(const Field3D& v, const Field3D& f,
+                                      const std::string& method,
+                                      CELL_LOC outloc = CELL_DEFAULT));
+inline const Field3D Div_par_flux(const Field3D& v, const Field3D& f, CELL_LOC outloc,
+                                  DIFF_METHOD method) {
+  return Div_par_flux(v, f, outloc, toString(method));
+};
+DEPRECATED(inline const Field3D Div_par_flux(const Field3D& v, const Field3D& f,
+                                             DIFF_METHOD method,
+                                             CELL_LOC outloc = CELL_DEFAULT)) {
+  return Div_par_flux(v, f, outloc, toString(method));
+};
 
 /*!
  * second parallel derivative
@@ -184,9 +203,19 @@ const Field2D Grad2_par2(const Field2D &f, CELL_LOC outloc=CELL_DEFAULT, DIFF_ME
  * Note: For parallel Laplacian use LaplacePar
  *
  * @param[in] f The field to be differentiated
- * @param[in] outloc The cell location of the result 
+ * @param[in] outloc The cell location of the result
  */
-const Field3D Grad2_par2(const Field3D &f, CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
+const Field2D Grad2_par2(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+                         const std::string& method = "DEFAULT");
+inline const Field2D Grad2_par2(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method) {
+  return Grad2_par2(f, outloc, toString(method));
+};
+
+const Field3D Grad2_par2(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+                         const std::string& method = "DEFAULT");
+inline const Field3D Grad2_par2(const Field3D& f, CELL_LOC outloc, DIFF_METHOD method) {
+  return Grad2_par2(f, outloc, toString(method));
+};
 
 /*!
  * Parallel derivatives, converting between cell-centred and lower cell boundary
@@ -228,9 +257,10 @@ const Field3D Div_par_K_Grad_par(const Field3D &kY, const Field3D &f, CELL_LOC o
  *
  * For the full perpendicular Laplacian, use Laplace_perp
  */
-const Field2D Delp2(const Field2D &f, CELL_LOC outloc=CELL_DEFAULT);
-const Field3D Delp2(const Field3D &f, BoutReal zsmooth=-1.0, CELL_LOC outloc=CELL_DEFAULT);
-const FieldPerp Delp2(const FieldPerp &f, BoutReal zsmooth=-1.0, CELL_LOC outloc=CELL_DEFAULT);
+const Field2D Delp2(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT, bool useFFT = true);
+const Field3D Delp2(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, bool useFFT = true);
+const FieldPerp Delp2(const FieldPerp& f, CELL_LOC outloc = CELL_DEFAULT,
+                      bool useFFT = true);
 
 /*!
  * Perpendicular Laplacian, keeping y derivatives

@@ -23,7 +23,7 @@
 
 
 FUNCTION grad_par, var, mesh
-  dtheta = 2.*!PI / FLOAT(TOTAL(mesh.npol))
+  dtheta = 2.D*!DPI / DOUBLE(TOTAL(mesh.npol))
   RETURN, (mesh.Bpxy / (mesh.Bxy * mesh.hthe)) * ddy(var, mesh)*dtheta / mesh.dy
 END
 
@@ -45,9 +45,9 @@ PRO adjust_jpar, grid, smoothp=smoothp, jpar=jpar, noplot=noplot
   ; Matching here rather than outboard produces more realistic results
   ; (current doesn't reverse direction at edge)
   mid_ind = -1
-  status = gen_surface(mesh=data) ; Start generator
+  status = gen_surface_hypnotoad(mesh=data) ; Start generator
   REPEAT BEGIN
-    yi = gen_surface(last=last, xi=xi, period=period)
+    yi = gen_surface_hypnotoad(last=last, xi=xi, period=period)
   
     IF period THEN BEGIN
       mr = MIN(data.rxy[xi, yi], mid_ind)
@@ -62,7 +62,7 @@ PRO adjust_jpar, grid, smoothp=smoothp, jpar=jpar, noplot=noplot
   
   ; Calculate 2*b0xk dot Grad P
   
-  kp = 2.*data.bxcvx*DDX(data.psixy, data.pressure)
+  kp = 2.D*data.bxcvx*DDX(data.psixy, data.pressure)
   
   ; Calculate B^2 Grad_par(Jpar0)
   
@@ -72,7 +72,7 @@ PRO adjust_jpar, grid, smoothp=smoothp, jpar=jpar, noplot=noplot
   ; Grad_par = (Bp / (B*hthe))*d/dy
   
   gparj = -kp * data.hthe / (data.Bxy * data.Bpxy)
-  ps = data.Bxy * int_y(gparj, data, /nosmooth) * data.dy
+  ps = data.Bxy * int_y(gparj, data, /nosmooth, /simple) * data.dy
   
   
   ; In core region add divergence-free parallel current to match input at
@@ -85,18 +85,18 @@ PRO adjust_jpar, grid, smoothp=smoothp, jpar=jpar, noplot=noplot
   m = MAX(ABS(dj), ind)
   s = SIGN(dj[ind])
 
-  w = WHERE(dj * s LT 0.0, count) ; find where contribution reverses
-  IF count GT 0 THEN dj[w] = 0.0 ; just zero in this region
+  w = WHERE(dj * s LT 0.0D, count) ; find where contribution reverses
+  IF count GT 0 THEN dj[w] = 0.0D ; just zero in this region
 
   jpar = ps
-  status = gen_surface(mesh=data) ; Start generator
+  status = gen_surface_hypnotoad(mesh=data) ; Start generator
   REPEAT BEGIN
-    yi = gen_surface(last=last, xi=xi, period=period)
+    yi = gen_surface_hypnotoad(last=last, xi=xi, period=period)
     
     IF NOT period THEN BEGIN
       ; Due to multi-point differencing, dp/dx can be non-zero outside separatrix
-      ps[xi,yi] = 0.0
-      jpar[xi,yi] = 0.0
+      ps[xi,yi] = 0.0D
+      jpar[xi,yi] = 0.0D
     ENDIF
 
     w = WHERE(yi EQ mid_ind, count)
@@ -113,7 +113,7 @@ PRO adjust_jpar, grid, smoothp=smoothp, jpar=jpar, noplot=noplot
     !P.multi=[0,2,2,0,0]
     SURFACE, data.jpar0, tit="Input Jpar0", chars=2
     SURFACE, jpar, tit="New Jpar0", chars=2
-    PLOT, data.jpar0[0,*], tit="jpar at x=0. Solid=input", yr=[MIN([data.jpar0[0,*],jpar[0,*]]), $
+    PLOT, data.jpar0[0,*], tit="jpar at x=0 Solid=input", yr=[MIN([data.jpar0[0,*],jpar[0,*]]), $
                                                                MAX([data.jpar0[0,*],jpar[0,*]])]
     OPLOT, jpar[0,*], psym=1
   

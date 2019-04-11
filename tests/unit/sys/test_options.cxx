@@ -9,15 +9,9 @@
 
 class OptionsTest : public ::testing::Test {
 public:
-  OptionsTest() {
-    output_info.disable();
-    output_warn.disable();
-  }
-
-  ~OptionsTest() {
-    output_info.enable();
-    output_warn.enable();
-  }
+  virtual ~OptionsTest() = default;
+  WithQuietOutput quiet_info{output_info};
+  WithQuietOutput quiet_warn{output_warn};
 };
 
 TEST_F(OptionsTest, IsSet) {
@@ -36,6 +30,22 @@ TEST_F(OptionsTest, IsSetDefault) {
   ASSERT_FALSE(options.isSet("default_value"));
   options.get("default_value", value, 42);
   ASSERT_FALSE(options.isSet("default_value"));
+}
+
+TEST_F(OptionsTest, IsSection) {
+  Options options;
+
+  // make sure options is initialized as a section
+  options["testkey"] = 1.;
+
+  ASSERT_TRUE(options.isSection());
+  ASSERT_FALSE(options["testkey"].isSection());
+  ASSERT_TRUE(options.isSection(""));
+  ASSERT_FALSE(options.isSection("subsection"));
+
+  options["subsection"]["testkey"] = 1.;
+
+  ASSERT_TRUE(options.isSection("subsection"));
 }
 
 TEST_F(OptionsTest, SetGetInt) {
@@ -365,11 +375,10 @@ TEST_F(OptionsTest, SetSameOptionTwice) {
   Options options;
   options.set("key", "value", "code");
   EXPECT_THROW(options.set("key", "new value", "code"),BoutException);
-  output_warn.disable();
+
   options.set("key", "value", "code");
   EXPECT_NO_THROW(options.forceSet("key", "new value", "code"));
   EXPECT_NO_THROW(options.set("key", "value", "code",true));
-  output_warn.enable();
 }
 
 /// New interface
@@ -437,6 +446,13 @@ TEST_F(OptionsTest, NewDefaultValueInt) {
   EXPECT_EQ(value, 99);
 }
 
+TEST_F(OptionsTest, WithDefaultString) {
+  Options options;
+
+  std::string value = options.withDefault("hello");
+  EXPECT_EQ(value, "hello");
+}
+
 TEST_F(OptionsTest, OptionsMacroPointer) {
   Options options;
 
@@ -477,3 +493,234 @@ TEST_F(OptionsTest, OptionsMacroConstReference) {
   EXPECT_EQ(val, 42);
 }
 
+/// Copy constructor copies value
+TEST_F(OptionsTest, CopyOption) {
+  Options option1;
+
+  option1 = 42;
+
+  Options option2(option1);
+
+  EXPECT_EQ(option2.as<int>(), 42);
+}
+
+/// Copy constructor makes independent copy
+TEST_F(OptionsTest, CopyOptionDistinct) {
+  Options option1;
+  option1 = 42;
+
+  Options option2(option1);
+
+  option1.force(23);
+  
+  EXPECT_EQ(option1.as<int>(), 23);
+  EXPECT_EQ(option2.as<int>(), 42);
+}
+
+/// Copies of sections get values
+TEST_F(OptionsTest, CopySection) {
+  Options option1;
+
+  option1["key"] = 42;   // option1 now a section
+
+  Options option2(option1);
+
+  EXPECT_EQ(option2["key"].as<int>(), 42);
+}
+
+/// The parent should be updated when copied
+TEST_F(OptionsTest, CopySectionParent) {
+  Options option1;
+
+  option1["key"] = 42;
+
+  Options option2(option1);
+  
+  EXPECT_TRUE( &option2["key"].parent() == &option2 );
+}
+
+TEST_F(OptionsTest, AssignOption) {
+  Options option1, option2;
+
+  option1 = 42;
+  
+  option2 = option1;
+
+  EXPECT_EQ(option2.as<int>(), 42);
+}
+
+TEST_F(OptionsTest, AssignSection) {
+  Options option1, option2;
+
+  option1["key"] = 42;
+  
+  option2 = option1;
+
+  EXPECT_EQ(option2["key"].as<int>(), 42);
+}
+
+TEST_F(OptionsTest, AssignSectionReplace) {
+  Options option1, option2;
+
+  option1["key"] = 42;
+  option2["key"] = 23;
+  
+  option2 = option1;
+
+  EXPECT_EQ(option2["key"].as<int>(), 42);
+}
+
+TEST_F(OptionsTest, AssignSectionParent) {
+  Options option1, option2;
+
+  option1["key"] = 42;
+  
+  option2 = option1;
+  
+  EXPECT_TRUE( &option2["key"].parent() == &option2 );
+}
+
+TEST_F(OptionsTest, AssignSubSection) {
+  Options option1, option2;
+
+  option1["key1"] = 42;
+  
+  option2["key2"] = option1;
+
+  EXPECT_EQ(option2["key2"]["key1"].as<int>(), 42);
+}
+
+TEST_F(OptionsTest, AssignSubSectionParent) {
+  Options option1, option2;
+
+  option1["key1"] = 42;
+  
+  option2["key2"] = option1;
+
+  EXPECT_EQ(&option2["key2"].parent(), &option2);
+  EXPECT_EQ(&option2["key2"]["key1"].parent(), &option2["key2"]);
+}
+
+TEST_F(OptionsTest, AttributeMissingBool) {
+  Options option;
+
+  bool a = option.attributes["test"];
+  EXPECT_EQ(a, false);
+}
+
+TEST_F(OptionsTest, AttributeMissingInt) {
+  Options option;
+
+  int a = option.attributes["test"];
+  EXPECT_EQ(a, 0);
+}
+
+TEST_F(OptionsTest, AttributeMissingBoutReal) {
+  Options option;
+
+  BoutReal a = option.attributes["test"];
+  EXPECT_DOUBLE_EQ(a, 0.0);
+}
+
+TEST_F(OptionsTest, AttributeMissingString) {
+  Options option;
+
+  EXPECT_THROW(option.attributes["test"].as<std::string>(), std::bad_cast);
+}
+
+TEST_F(OptionsTest, AttributeStoreBool) {
+  Options option;
+  option.attributes["test"] = true;
+
+  EXPECT_TRUE(option.attributes["test"].as<bool>());
+
+  option.attributes["test"] = false;
+  EXPECT_FALSE(option.attributes["test"].as<bool>());
+}
+
+TEST_F(OptionsTest, AttributeStoreInt) {
+  Options option;
+  option.attributes["test"] = 42;
+
+  int value = option.attributes["test"];
+  EXPECT_EQ(value, 42);
+}
+
+TEST_F(OptionsTest, AttributeStoreBoutReal) {
+  Options option;
+  option.attributes["test"] = 3.1415;
+
+  BoutReal value = option.attributes["test"];
+  EXPECT_DOUBLE_EQ(value, 3.1415);
+}
+
+TEST_F(OptionsTest, AttributeStoreConstChars) {
+  Options option;
+  option.attributes["test"] = "hello";
+
+  std::string test = option.attributes["test"];
+  EXPECT_EQ(test, "hello");
+}
+
+TEST_F(OptionsTest,  AttributeTimeDimension) {
+  Options option;
+
+  option = 3;
+  EXPECT_EQ(option.as<int>(), 3);
+  
+  option.attributes["time_dimension"] = "t";
+
+  option = 4;
+
+  EXPECT_EQ(option.as<int>(), 4);
+}
+
+TEST_F(OptionsTest, EqualityBool) {
+  Options option;
+
+  option = true;
+
+  EXPECT_TRUE(option == true);
+  EXPECT_FALSE(option == false);
+
+  option.force(false);
+
+  EXPECT_TRUE(option == false);
+  EXPECT_FALSE(option == true);
+}
+
+TEST_F(OptionsTest, EqualityInt) {
+  Options option;
+
+  option = 3;
+
+  EXPECT_TRUE(option == 3);
+  EXPECT_FALSE(option == 4);
+}
+
+TEST_F(OptionsTest, EqualityString) {
+  Options option;
+
+  option = "hello";
+
+  EXPECT_TRUE(option == "hello");
+  EXPECT_FALSE(option == "goodbye");
+}
+
+TEST_F(OptionsTest, ComparisonInt) {
+  Options option;
+
+  option = 3;
+
+  EXPECT_TRUE(option < 4);
+  EXPECT_FALSE(option < 3);
+}
+
+TEST_F(OptionsTest, ComparisonString) {
+  Options option;
+
+  option = "bbb";
+
+  EXPECT_TRUE(option < "ccc");
+  EXPECT_FALSE(option < "aaa");
+}

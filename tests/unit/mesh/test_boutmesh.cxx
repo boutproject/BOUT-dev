@@ -9,27 +9,30 @@ class FakeGridDataSource : public GridDataSource {
 public:
   FakeGridDataSource(){};
   ~FakeGridDataSource(){};
-  bool hasVar(const string &UNUSED(name)) { return false; };
-  bool get(Mesh *UNUSED(m), int &UNUSED(ival), const string &UNUSED(name)) {
+  bool hasVar(const std::string &UNUSED(name)) { return false; };
+  bool get(Mesh *UNUSED(m), std::string &UNUSED(sval), const std::string &UNUSED(name)) {
     return true;
   };
-  bool get(Mesh *UNUSED(m), BoutReal &UNUSED(rval), const string &UNUSED(name)) {
+  bool get(Mesh *UNUSED(m), int &UNUSED(ival), const std::string &UNUSED(name)) {
+    return true;
+  };
+  bool get(Mesh *UNUSED(m), BoutReal &UNUSED(rval), const std::string &UNUSED(name)) {
     return true;
   }
-  bool get(Mesh *UNUSED(m), Field2D &UNUSED(var), const string &UNUSED(name),
+  bool get(Mesh *UNUSED(m), Field2D &UNUSED(var), const std::string &UNUSED(name),
            BoutReal UNUSED(def) = 0.0) {
     return true;
   }
-  bool get(Mesh *UNUSED(m), Field3D &UNUSED(var), const string &UNUSED(name),
+  bool get(Mesh *UNUSED(m), Field3D &UNUSED(var), const std::string &UNUSED(name),
            BoutReal UNUSED(def) = 0.0) {
     return true;
   }
-  bool get(Mesh *UNUSED(m), vector<int> &UNUSED(var), const string &UNUSED(name),
+  bool get(Mesh *UNUSED(m), std::vector<int> &UNUSED(var), const std::string &UNUSED(name),
            int UNUSED(len), int UNUSED(offset) = 0,
            Direction UNUSED(dir) = GridDataSource::X) {
     return true;
   }
-  bool get(Mesh *UNUSED(m), vector<BoutReal> &UNUSED(var), const string &UNUSED(name),
+  bool get(Mesh *UNUSED(m), std::vector<BoutReal> &UNUSED(var), const std::string &UNUSED(name),
            int UNUSED(len), int UNUSED(offset) = 0,
            Direction UNUSED(dir) = GridDataSource::X) {
     return true;

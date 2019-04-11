@@ -15,7 +15,7 @@ from boutdata.collect import collect
 
 from numpy import sqrt, max, abs, mean, array, log, concatenate
 
-MPIRUN = getmpirun()
+
 
 print("Making fluid model MMS test")
 shell("make > make.log")
@@ -45,7 +45,7 @@ for ny in nylist:
     # Command to run
     cmd = "./fluid -d mms "+args
     # Launch using MPI
-    s, out = launch(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
+    s, out = launch(cmd, nproc=nproc, pipe=True)
 
     # Save output to log file
     f = open("run.log."+str(ny), "w")

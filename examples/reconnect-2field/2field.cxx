@@ -56,6 +56,9 @@ private:
   // Coordinate system metric
   Coordinates *coord;
 
+  // Inverts a Laplacian to get potential
+  Laplacian *phiSolver;
+  
 protected:
   int init(bool UNUSED(restarting)) override {
 
@@ -64,29 +67,29 @@ protected:
     Ni0 *= 1e20; // To m^-3
     
     // Coordinate system
-    coord = mesh->coordinates();
+    coord = mesh->getCoordinates();
 
     // Load metrics
     GRID_LOAD(Rxy, Bpxy, Btxy, hthe);
     mesh->get(coord->Bxy, "Bxy");
 
     // Read some parameters
-    Options *globalOptions = Options::getRoot();
-    Options *options = globalOptions->getSection("2field");
+    auto globalOptions = Options::root();
+    auto options = globalOptions["2field"];
 
     // normalisation values
-    OPTION(options, nonlinear, false);
-    OPTION(options, parallel_lc, true);
-    OPTION(options, include_jpar0, true);
-    OPTION(options, jpar_bndry, 0);
+    nonlinear = options["nonlinear"].withDefault(false);
+    parallel_lc = options["parallel_lc"].withDefault(true);
+    include_jpar0 = options["include_jpar0"].withDefault(true);
+    jpar_bndry = options["jpar_bndry"].withDefault(0);
 
-    OPTION(options, eta, 1e-3); // Normalised resistivity
-    OPTION(options, mu, 1.e-3); // Normalised vorticity
+    eta = options["eta"].withDefault(1e-3); // Normalised resistivity
+    mu = options["mu"].withDefault(1.e-3);  // Normalised vorticity
 
-    OPTION(options, phi_flags, 0);
+    phi_flags = options["phi_flags"].withDefault(0);
 
     int bracket_method;
-    OPTION(options, bracket_method, 0);
+    bracket_method = options["bracket_method"].withDefault(0);
     switch (bracket_method) {
     case 0: {
       bm = BRACKET_STD;
@@ -207,6 +210,10 @@ protected:
     U.setBoundary("U");
     Apar.setBoundary("Apar");
 
+    // Create a solver for the Laplacian
+    phiSolver = Laplacian::create();
+    phiSolver->setFlags(phi_flags);
+    
     return 0;
   }
 
@@ -251,7 +258,7 @@ protected:
     // Solve EM fields
 
     // U = (1/B) * Delp2(phi)
-    phi = invert_laplace(coord->Bxy * U, phi_flags);
+    phi = phiSolver->solve(coord->Bxy * U);
     phi.applyBoundary(); // For target plates only
 
     mesh->communicate(U, phi, Apar);
@@ -345,7 +352,7 @@ public:
     ddt(U) = inv->solve(U1);
     ddt(U).applyBoundary();
 
-    Field3D phip = invert_laplace(coord->Bxy * ddt(U), phi_flags);
+    Field3D phip = phiSolver->solve(coord->Bxy * ddt(U));
     mesh->communicate(phip);
 
     ddt(Apar) = ddt(Apar) - (gamma / beta_hat) * Grad_par_CtoL(phip);

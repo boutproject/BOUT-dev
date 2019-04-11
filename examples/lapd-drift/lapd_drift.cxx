@@ -106,12 +106,14 @@ private:
   // Communication object
   FieldGroup comms;
 
+  // Laplacian inversion object
+  Laplacian *phiSolver;
 protected:
   
   /// Function called once at the start of the simulation
   ///
   /// @param[in] restarting  True if simulation is restarting
-  int init(bool restarting) {
+  int init(bool UNUSED(restarting)) {
     Field2D I; // Shear factor 
     
     output.write("Solving LAPD drift test case\n");
@@ -133,7 +135,7 @@ protected:
     b0xcv.covariant = false; // Read contravariant components
     mesh->get(b0xcv, "bxcv"); // b0xkappa terms
 
-    Coordinates *coord = mesh->coordinates();
+    Coordinates *coord = mesh->getCoordinates();
     
     // Load metrics
     mesh->get(Rxy,  "Rxy");
@@ -153,98 +155,97 @@ protected:
     // Get separatrix location
     mesh->get(my_ixseps, "ixseps1");
     
-    
     Ni_x *= 1.0e14;
     bmag *= 1.0e4;
 
     /*************** READ OPTIONS *************************/
     // Read some parameters
     
-    Options *globalOptions = Options::getRoot();
+    auto globalOptions = Options::root();
     
-    globalOptions->get("TIMESTEP", time_step, 1.0);
+    time_step = globalOptions["TIMESTEP"].withDefault(1.0);
 
-    Options *options = globalOptions->getSection("2fluid");
-    OPTION(options, AA, 4.0); // <=> options.get("AA", AA, 1.0);
-    OPTION(options, ZZ, 1.0);
-    
-    OPTION(options, estatic,     false);
-    OPTION(options, ZeroElMass,  false);
-    OPTION(options, zeff,        1.0);
-    OPTION(options, nu_perp,     0.0); 
-    OPTION(options, ShearFactor, 1.0); 
-    OPTION(options, nuIonNeutral, -1.);
-    OPTION(options, arakawa,     false);
-    OPTION(options, bout_exb,    false);
-  
-    OPTION(options, niprofile, false);
-    OPTION(options, evolve_source_ni, false);
-    OPTION(options, evolve_source_te, false);
-    OPTION(options, source_response, 1.0);
-    OPTION(options, source_converge, -1);
-    
-    OPTION(options, ni_perpdiff, 0.0);
-    OPTION(options, rho_perpdiff, 0.0);
-    OPTION(options, te_perpdiff, 0.0);
-    
-    OPTION(options, input_source, false);
-    OPTION(options, remove_tor_av_ni, false);
-    OPTION(options, remove_tor_av_te, false);
-    
-    OPTION(options, phi_flags,   0);
-    OPTION(options, apar_flags,  0);
-    
-    OPTION(options, nonlinear, true);
-    
+    auto options = globalOptions["2fluid"];
+    AA = options["AA"].withDefault(4.0); // <=> AA = options["AA"].withDefault(1.0);
+    ZZ = options["ZZ"].withDefault(1.0);
+
+    estatic = options["estatic"].withDefault(false);
+    ZeroElMass = options["ZeroElMass"].withDefault(false);
+    zeff = options["zeff"].withDefault(1.0);
+    nu_perp = options["nu_perp"].withDefault(0.0);
+    ShearFactor = options["ShearFactor"].withDefault(1.0);
+    nuIonNeutral = options["nuIonNeutral"].withDefault(-1.);
+    arakawa = options["arakawa"].withDefault(false);
+    bout_exb = options["bout_exb"].withDefault(false);
+
+    niprofile = options["niprofile"].withDefault(false);
+    evolve_source_ni = options["evolve_source_ni"].withDefault(false);
+    evolve_source_te = options["evolve_source_te"].withDefault(false);
+    source_response = options["source_response"].withDefault(1.0);
+    source_converge = options["source_converge"].withDefault(-1);
+
+    ni_perpdiff = options["ni_perpdiff"].withDefault(0.0);
+    rho_perpdiff = options["rho_perpdiff"].withDefault(0.0);
+    te_perpdiff = options["te_perpdiff"].withDefault(0.0);
+
+    input_source = options["input_source"].withDefault(false);
+    remove_tor_av_ni = options["remove_tor_av_ni"].withDefault(false);
+    remove_tor_av_te = options["remove_tor_av_te"].withDefault(false);
+
+    phi_flags = options["phi_flags"].withDefault(0);
+    apar_flags = options["apar_flags"].withDefault(0);
+
+    nonlinear = options["nonlinear"].withDefault(true);
+
     // Toroidal filtering
-    OPTION(options, filter_z,          false);  // Filter a single n
-    OPTION(options, filter_z_mode,     1);
-    
+    filter_z = options["filter_z"].withDefault(false); // Filter a single n
+    filter_z_mode = options["filter_z_mode"].withDefault(1);
+
     // Set default values for terms in each equation
     // Allows default to be overridden in BOUT.inp file
-    Options *option_rho = globalOptions->getSection("rho");
-    OPTION(option_rho, evolve_rho,    true);
-    OPTION(option_rho, rho_jpar1,     false);
-    OPTION(option_rho, rho_nuin_rho1, false);
-    OPTION(option_rho, rho_rho1,      false);
-    OPTION(option_rho, rho_rho0_phi1, false);
-    OPTION(option_rho, rho_rho1_phi0, false);
-    OPTION(option_rho, rho_ve2lin,    false);
-    OPTION(option_rho, rho_rho1_phi1, false);
-    OPTION(option_rho, rho_ve2t,      false);
-    OPTION(option_rho, rho_diff,      false);
-    
-    Options *option_ni = globalOptions->getSection("ni");
-    OPTION(option_ni, evolve_ni,   true);
-    OPTION(option_ni, ni_jpar1,    false);
-    OPTION(option_ni, ni_ni0_phi1, false);
-    OPTION(option_ni, ni_ni1_phi0, false);
-    OPTION(option_ni, ni_ni1_phi1, false);
-    OPTION(option_ni, ni_src_ni0,  false);
-    OPTION(option_ni, ni_diff,      false);
-    
-    Options *option_ajpar = globalOptions->getSection("ajpar");
-    OPTION(option_ajpar, evolve_ajpar,     true);
-    OPTION(option_ajpar, ajpar_phi1,       false);
-    OPTION(option_ajpar, ajpar_jpar1,      false);
-    OPTION(option_ajpar, ajpar_te_ni,      false);
-    OPTION(option_ajpar, ajpar_te,         false);
-    OPTION(option_ajpar, ajpar_ajpar1_phi0,false);
-    OPTION(option_ajpar, ajpar_ajpar1_phi1,false);
-    OPTION(option_ajpar, ajpar_ve1_ve1,    false);
-    
-    Options *option_te = globalOptions->getSection("te");
-    OPTION(option_te, evolve_te,    true);
-    OPTION(option_te, te_te1_phi0,  false);
-    OPTION(option_te, te_te0_phi1,  false);
-    OPTION(option_te, te_te1_phi1,  false);
-    OPTION(option_te, te_ajpar_te,  false);
-    OPTION(option_te, te_te_ajpar,  false);
-    OPTION(option_te, te_nu_te1,    false);
-    OPTION(option_te, te_nu_tet,    false);
-    OPTION(option_te, te_jpar,      false);
-    OPTION(option_te, te_diff,      false);
-    
+    auto option_rho = globalOptions["rho"];
+    evolve_rho = option_rho["evolve_rho"].withDefault(true);
+    rho_jpar1 = option_rho["rho_jpar1"].withDefault(false);
+    rho_nuin_rho1 = option_rho["rho_nuin_rho1"].withDefault(false);
+    rho_rho1 = option_rho["rho_rho1"].withDefault(false);
+    rho_rho0_phi1 = option_rho["rho_rho0_phi1"].withDefault(false);
+    rho_rho1_phi0 = option_rho["rho_rho1_phi0"].withDefault(false);
+    rho_ve2lin = option_rho["rho_ve2lin"].withDefault(false);
+    rho_rho1_phi1 = option_rho["rho_rho1_phi1"].withDefault(false);
+    rho_ve2t = option_rho["rho_ve2t"].withDefault(false);
+    rho_diff = option_rho["rho_diff"].withDefault(false);
+
+    auto option_ni = globalOptions["ni"];
+    evolve_ni = option_ni["evolve_ni"].withDefault(true);
+    ni_jpar1 = option_ni["ni_jpar1"].withDefault(false);
+    ni_ni0_phi1 = option_ni["ni_ni0_phi1"].withDefault(false);
+    ni_ni1_phi0 = option_ni["ni_ni1_phi0"].withDefault(false);
+    ni_ni1_phi1 = option_ni["ni_ni1_phi1"].withDefault(false);
+    ni_src_ni0 = option_ni["ni_src_ni0"].withDefault(false);
+    ni_diff = option_ni["ni_diff"].withDefault(false);
+
+    auto option_ajpar = globalOptions["ajpar"];
+    evolve_ajpar = option_ajpar["evolve_ajpar"].withDefault(true);
+    ajpar_phi1 = option_ajpar["ajpar_phi1"].withDefault(false);
+    ajpar_jpar1 = option_ajpar["ajpar_jpar1"].withDefault(false);
+    ajpar_te_ni = option_ajpar["ajpar_te_ni"].withDefault(false);
+    ajpar_te = option_ajpar["ajpar_te"].withDefault(false);
+    ajpar_ajpar1_phi0 = option_ajpar["ajpar_ajpar1_phi0"].withDefault(false);
+    ajpar_ajpar1_phi1 = option_ajpar["ajpar_ajpar1_phi1"].withDefault(false);
+    ajpar_ve1_ve1 = option_ajpar["ajpar_ve1_ve1"].withDefault(false);
+
+    auto option_te = globalOptions["te"];
+    evolve_te = option_te["evolve_te"].withDefault(true);
+    te_te1_phi0 = option_te["te_te1_phi0"].withDefault(false);
+    te_te0_phi1 = option_te["te_te0_phi1"].withDefault(false);
+    te_te1_phi1 = option_te["te_te1_phi1"].withDefault(false);
+    te_ajpar_te = option_te["te_ajpar_te"].withDefault(false);
+    te_te_ajpar = option_te["te_te_ajpar"].withDefault(false);
+    te_nu_te1 = option_te["te_nu_te1"].withDefault(false);
+    te_nu_tet = option_te["te_nu_tet"].withDefault(false);
+    te_jpar = option_te["te_jpar"].withDefault(false);
+    te_diff = option_te["te_diff"].withDefault(false);
+
     if (ZeroElMass) {
       evolve_ajpar = false; // Don't need ajpar - calculated from ohm's law
     }
@@ -252,8 +253,7 @@ protected:
     /************* SHIFTED RADIAL COORDINATES ************/
     
     // Check type of parallel transform
-    string ptstr;
-    Options::getRoot()->getSection("mesh")->get("paralleltransform", ptstr, "identity");
+    std::string ptstr = Options::root()["mesh"]["paralleltransform"].withDefault<std::string>("identity");
 
     if (lowercase(ptstr) == "shifted") {
       ShearFactor = 0.0;  // I disappears from metric
@@ -408,17 +408,23 @@ protected:
     /*************** DUMP VARIABLES TO OUTPUT**********/
     dump.add(phi,  "phi",  1);  dump.add(jpar, "jpar", 1);
     
-    SAVE_ONCE4(Ni0,Te0,phi0,rho0);
-    SAVE_ONCE5(Rxy,Bpxy,Btxy,Zxy,hthe);
-    dump.add(coord->Bxy, "Bxy", 0);  dump.add(my_ixseps, "ixseps", 0);
+    SAVE_ONCE(Ni0,Te0,phi0,rho0);
+    SAVE_ONCE(Rxy,Bpxy,Btxy,Zxy,hthe);
+    dump.addOnce(coord->Bxy, "Bxy");
+    dump.addOnce(my_ixseps, "ixseps");
     
-    SAVE_ONCE3(Te_x,Ti_x,Ni_x);
-    SAVE_ONCE6(AA,ZZ,zeff,rho_s,wci,bmag);
-    dump.add(mesh->LocalNx, "ngx", 0);
-    dump.add(mesh->LocalNy, "ngy", 0); 
-    dump.add(mesh->LocalNz, "ngz", 0);
-    SAVE_ONCE6(mui_hat,nu_hat,nuIonNeutral,beta_p,time_step,hthe0);
-    SAVE_ONCE3(ni_perpdiff,rho_perpdiff,te_perpdiff);
+    SAVE_ONCE(Te_x,Ti_x,Ni_x);
+    SAVE_ONCE(AA,ZZ,zeff,rho_s,wci,bmag);
+    dump.addOnce(mesh->LocalNx, "ngx");
+    dump.addOnce(mesh->LocalNy, "ngy"); 
+    dump.addOnce(mesh->LocalNz, "ngz");
+    SAVE_ONCE(mui_hat,nu_hat,nuIonNeutral,beta_p,time_step,hthe0);
+    SAVE_ONCE(ni_perpdiff,rho_perpdiff,te_perpdiff);
+
+    // Laplacian inversion solver
+    phiSolver = Laplacian::create();
+    phiSolver->setFlags(phi_flags);
+    phiSolver->setCoefC(Ni0);
     
     return 0;
   }
@@ -431,7 +437,7 @@ protected:
   /// Time derivatives calculated here
   int rhs(BoutReal t) {
 
-    Coordinates *coord = mesh->coordinates();
+    Coordinates *coord = mesh->getCoordinates();
     
     // Invert vorticity to get phi
     
@@ -439,9 +445,9 @@ protected:
     // Arguments are:   (b,   bit-field, a,    c)
     // Passing NULL -> missing term
     if (nonlinear) {
-      phi = invert_laplace(rho/(Ni0+ni), phi_flags, NULL, &Ni0);
+      phi = phiSolver->solve(rho/(Ni0+ni));
     } else {
-      phi = invert_laplace(rho/Ni0, phi_flags, NULL, &Ni0);
+      phi = phiSolver->solve(rho/Ni0);
     }
     
     // Communicate variables
@@ -548,7 +554,7 @@ protected:
       }
       
       if (ni_diff) {
-        ddt(ni) += ni_perpdiff * Delp2(ni,-1.0);
+        ddt(ni) += ni_perpdiff * Delp2(ni);
       }
 
       if (evolve_source_ni) {
@@ -577,11 +583,11 @@ protected:
       }
       
       if (rho_rho1) {
-        ddt(rho) += mu_i*Delp2(rho,-1.0);  //Check second argument meaning in difops.cpp
+        ddt(rho) += mu_i * Delp2(rho);
       }
       
       if (rho_diff) {
-        ddt(rho) += rho_perpdiff * Delp2(rho,-1.0);
+        ddt(rho) += rho_perpdiff * Delp2(rho);
       }
       
       if (rho_rho1_phi1) {
@@ -684,7 +690,7 @@ protected:
       }
       
       if (te_diff) {
-        ddt(te) += te_perpdiff * Delp2(te,-1.0);
+        ddt(te) += te_perpdiff * Delp2(te);
       }
       
       if (remove_tor_av_te) {
@@ -727,7 +733,7 @@ protected:
   /****************SPECIAL DIFFERENTIAL OPERATORS******************/
   const Field2D Perp_Grad_dot_Grad(const Field2D &p, const Field2D &f) {
     
-    return DDX(p)*DDX(f)*mesh->coordinates()->g11;
+    return DDX(p)*DDX(f)*mesh->getCoordinates()->g11;
   }
   
   
@@ -743,13 +749,13 @@ protected:
     } else {
       // Use full expression with all terms
       
-      result = b0xGrad_dot_Grad(p, f) / mesh->coordinates()->Bxy;
+      result = b0xGrad_dot_Grad(p, f) / mesh->getCoordinates()->Bxy;
     }
     return result;
   }
 
   const Field3D vE_Grad(const Field2D &f, const Field3D &p) {
-    Coordinates *coord = mesh->coordinates();
+    Coordinates *coord = mesh->getCoordinates();
     Field3D result;
     if (arakawa) {
       // Arakawa scheme for perpendicular flow. Here as a test
@@ -803,7 +809,7 @@ protected:
       result = VDDZ(-DDX(p), f);
     } else {
       // Use full expression with all terms
-      result = b0xGrad_dot_Grad(p, f) / mesh->coordinates()->Bxy;
+      result = b0xGrad_dot_Grad(p, f) / mesh->getCoordinates()->Bxy;
     }
     return result;
   }
@@ -811,7 +817,7 @@ protected:
   const Field3D vE_Grad(const Field3D &f, const Field3D &p) {
     Field3D result;
     
-    Coordinates *coord = mesh->coordinates();
+    Coordinates *coord = mesh->getCoordinates();
     if (arakawa) {
       // Arakawa scheme for perpendicular flow. Here as a test
       

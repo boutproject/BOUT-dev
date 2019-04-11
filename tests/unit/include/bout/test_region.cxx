@@ -15,7 +15,14 @@
 #include <type_traits>
 
 /// Global mesh
+namespace bout{
+namespace globals{
 extern Mesh *mesh;
+} // namespace globals
+} // namespace bout
+
+// The unit tests use the global mesh
+using namespace bout::globals;
 
 /// Test fixture to make sure the global mesh is our fake one
 using RegionTest = FakeMeshFixture;
@@ -1163,13 +1170,11 @@ TEST(RegionIndex3DTest, NonMemberSize) {
 
 template <typename T> class RegionIndexTest : public ::testing::Test {
 public:
-  typedef std::list<T> List;
-  static T shared_;
-  T value_;
+  virtual ~RegionIndexTest() = default;
 };
 
 typedef ::testing::Types<Ind2D, Ind3D, IndPerp> RegionIndexTypes;
-TYPED_TEST_CASE(RegionIndexTest, RegionIndexTypes);
+TYPED_TEST_SUITE(RegionIndexTest, RegionIndexTypes);
 
 TYPED_TEST(RegionIndexTest, Begin) {
   typename Region<TypeParam>::RegionIndices region{
@@ -1483,14 +1488,12 @@ TYPED_TEST(RegionIndexTest, RangeBasedForLoop) {
 
 template <typename T>
 class FieldIndexTest : public ::testing::Test {
- public:
-  typedef std::list<T> List;
-  static T shared_;
-  T value_;
+public:
+  virtual ~FieldIndexTest() = default;
 };
 
 typedef ::testing::Types<Ind2D, Ind3D> FieldIndexTypes;
-TYPED_TEST_CASE(FieldIndexTest, FieldIndexTypes);
+TYPED_TEST_SUITE(FieldIndexTest, FieldIndexTypes);
 
 TYPED_TEST(FieldIndexTest, Constructor) {
   TypeParam index(1);
@@ -1658,18 +1661,13 @@ TYPED_TEST(FieldIndexTest, Modulus) {
 class IndexOffsetTest : public ::testing::Test {
 protected:
   IndexOffsetTest() {
-    // Delete any existing mesh
-    if (mesh != nullptr) {
-      delete mesh;
-      mesh = nullptr;
-    }
+    WithQuietOutput quiet{output_info};
+    delete mesh;
     mesh = new FakeMesh(nx, ny, nz);
-    output_info.disable();
     mesh->createDefaultRegions();
-    output_info.enable();
   }
 
-  ~IndexOffsetTest() {
+  virtual ~IndexOffsetTest() {
     delete mesh;
     mesh = nullptr;
   }
@@ -1802,6 +1800,79 @@ TEST_F(IndexOffsetTest, ZPlusOne) {
   }
 }
 
+TEST_F(IndexOffsetTest, XPlusOneGeneric) {
+  const auto &region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(index->x(), i);
+        EXPECT_EQ(index->y(), j);
+        EXPECT_EQ(index->z(), k);
+
+        if (i >= (nx - 1)) {
+          // skip this point
+        } else {
+          EXPECT_EQ((index->plus<1, DIRECTION::X>().x()), i + 1);
+          EXPECT_EQ((index->plus<1, DIRECTION::X>().y()), j);
+          EXPECT_EQ((index->plus<1, DIRECTION::X>().z()), k);
+        }
+        ++index;
+      }
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, YPlusOneGeneric) {
+  const auto &region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(index->x(), i);
+        EXPECT_EQ(index->y(), j);
+        EXPECT_EQ(index->z(), k);
+
+        if (j >= (ny - 1)) {
+#if CHECK > 3
+          EXPECT_THROW(index->yp(), BoutException);
+#endif
+        } else {
+          EXPECT_EQ((index->plus<1, DIRECTION::Y>().x()), i);
+          EXPECT_EQ((index->plus<1, DIRECTION::Y>().y()), j + 1);
+          EXPECT_EQ((index->plus<1, DIRECTION::Y>().z()), k);
+        }
+        ++index;
+      }
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, ZPlusOneGeneric) {
+  const auto &region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(index->x(), i);
+        EXPECT_EQ(index->y(), j);
+        EXPECT_EQ(index->z(), k);
+
+        EXPECT_EQ((index->plus<1, DIRECTION::Z>().x()), i);
+        EXPECT_EQ((index->plus<1, DIRECTION::Z>().y()), j);
+        EXPECT_EQ((index->plus<1, DIRECTION::Z>().z()), (k + 1) % nz);
+        ++index;
+      }
+    }
+  }
+}
+
 TEST_F(IndexOffsetTest, XMinusOne) {
   const auto &region = mesh->getRegion3D("RGN_ALL");
 
@@ -1869,6 +1940,79 @@ TEST_F(IndexOffsetTest, ZMinusOne) {
         EXPECT_EQ(index->zm().x(), i);
         EXPECT_EQ(index->zm().y(), j);
         EXPECT_EQ(index->zm().z(), (k - 1 + nz) % nz);
+        ++index;
+      }
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, XMinusOneGeneric) {
+  const auto &region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(index->x(), i);
+        EXPECT_EQ(index->y(), j);
+        EXPECT_EQ(index->z(), k);
+
+        if (i < 1) {
+          // skip this point
+        } else {
+          EXPECT_EQ((index->minus<1, DIRECTION::X>().x()), i - 1);
+          EXPECT_EQ((index->minus<1, DIRECTION::X>().y()), j);
+          EXPECT_EQ((index->minus<1, DIRECTION::X>().z()), k);
+        }
+        ++index;
+      }
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, YMinusOneGeneric) {
+  const auto &region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(index->x(), i);
+        EXPECT_EQ(index->y(), j);
+        EXPECT_EQ(index->z(), k);
+
+        if (j < 1) {
+#if CHECK > 3
+          EXPECT_THROW(index->ym(), BoutException);
+#endif
+        } else {
+          EXPECT_EQ((index->minus<1, DIRECTION::Y>().x()), i);
+          EXPECT_EQ((index->minus<1, DIRECTION::Y>().y()), j - 1);
+          EXPECT_EQ((index->minus<1, DIRECTION::Y>().z()), k);
+        }
+        ++index;
+      }
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, ZMinusOneGeneric) {
+  const auto &region = mesh->getRegion3D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      for (int k = 0; k < nz; ++k) {
+        EXPECT_EQ(index->x(), i);
+        EXPECT_EQ(index->y(), j);
+        EXPECT_EQ(index->z(), k);
+
+        EXPECT_EQ((index->minus<1, DIRECTION::Z>().x()), i);
+        EXPECT_EQ((index->minus<1, DIRECTION::Z>().y()), j);
+        EXPECT_EQ((index->minus<1, DIRECTION::Z>().z()), (k - 1 + nz) % nz);
         ++index;
       }
     }
@@ -2198,6 +2342,73 @@ TEST_F(IndexOffsetTest, ZPlusOneInd2D) {
   }
 }
 
+TEST_F(IndexOffsetTest, XPlusOneInd2DGeneric) {
+  const auto &region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      EXPECT_EQ(index->x(), i);
+      EXPECT_EQ(index->y(), j);
+      EXPECT_EQ(index->z(), 0);
+
+      if (i >= (nx - 1)) {
+        // skip this point
+      } else {
+        EXPECT_EQ((index->plus<1, DIRECTION::X>().x()), i + 1);
+        EXPECT_EQ((index->plus<1, DIRECTION::X>().y()), j);
+        EXPECT_EQ((index->plus<1, DIRECTION::X>().z()), 0);
+      }
+      ++index;
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, YPlusOneInd2DGeneric) {
+  const auto &region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      EXPECT_EQ(index->x(), i);
+      EXPECT_EQ(index->y(), j);
+      EXPECT_EQ(index->z(), 0);
+
+      if (j >= (ny - 1)) {
+#if CHECK > 3
+        EXPECT_THROW(index->yp(), BoutException);
+#endif
+      } else {
+        EXPECT_EQ((index->plus<1, DIRECTION::Y>().x()), i);
+        EXPECT_EQ((index->plus<1, DIRECTION::Y>().y()), j + 1);
+        EXPECT_EQ((index->plus<1, DIRECTION::Y>().z()), 0);
+      }
+      ++index;
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, ZPlusOneInd2DGeneric) {
+  const auto &region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      EXPECT_EQ(index->x(), i);
+      EXPECT_EQ(index->y(), j);
+      EXPECT_EQ(index->z(), 0);
+
+      EXPECT_EQ((index->plus<1, DIRECTION::Z>().x()), i);
+      EXPECT_EQ((index->plus<1, DIRECTION::Z>().y()), j);
+      EXPECT_EQ((index->plus<1, DIRECTION::Z>().z()), 0);
+      ++index;
+    }
+  }
+}
+
 TEST_F(IndexOffsetTest, XMinusOneInd2D) {
   const auto &region = mesh->getRegion2D("RGN_ALL");
 
@@ -2260,6 +2471,73 @@ TEST_F(IndexOffsetTest, ZMinusOneInd2D) {
       EXPECT_EQ(index->zm().x(), i);
       EXPECT_EQ(index->zm().y(), j);
       EXPECT_EQ(index->zm().z(), 0);
+      ++index;
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, XMinusOneInd2DGeneric) {
+  const auto &region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      EXPECT_EQ(index->x(), i);
+      EXPECT_EQ(index->y(), j);
+      EXPECT_EQ(index->z(), 0);
+
+      if (i < 1) {
+        // skip this point
+      } else {
+        EXPECT_EQ((index->minus<1, DIRECTION::X>().x()), i - 1);
+        EXPECT_EQ((index->minus<1, DIRECTION::X>().y()), j);
+        EXPECT_EQ((index->minus<1, DIRECTION::X>().z()), 0);
+      }
+      ++index;
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, YMinusOneInd2DGeneric) {
+  const auto &region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      EXPECT_EQ(index->x(), i);
+      EXPECT_EQ(index->y(), j);
+      EXPECT_EQ(index->z(), 0);
+
+      if (j < 1) {
+#if CHECK > 3
+        EXPECT_THROW(index->ym(), BoutException);
+#endif
+      } else {
+        EXPECT_EQ((index->minus<1, DIRECTION::Y>().x()), i);
+        EXPECT_EQ((index->minus<1, DIRECTION::Y>().y()), j - 1);
+        EXPECT_EQ((index->minus<1, DIRECTION::Y>().z()), 0);
+      }
+      ++index;
+    }
+  }
+}
+
+TEST_F(IndexOffsetTest, ZMinusOneInd2DGeneric) {
+  const auto &region = mesh->getRegion2D("RGN_ALL");
+
+  auto index = region.cbegin();
+
+  for (int i = 0; i < nx; ++i) {
+    for (int j = 0; j < ny; ++j) {
+      EXPECT_EQ(index->x(), i);
+      EXPECT_EQ(index->y(), j);
+      EXPECT_EQ(index->z(), 0);
+
+      EXPECT_EQ((index->minus<1, DIRECTION::Z>().x()), i);
+      EXPECT_EQ((index->minus<1, DIRECTION::Z>().y()), j);
+      EXPECT_EQ((index->minus<1, DIRECTION::Z>().z()), 0);
       ++index;
     }
   }

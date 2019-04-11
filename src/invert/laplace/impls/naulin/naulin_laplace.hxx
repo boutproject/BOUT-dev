@@ -37,7 +37,7 @@ class LaplaceNaulin;
  */
 class LaplaceNaulin : public Laplacian {
 public:
-  LaplaceNaulin(Options *opt = NULL, const CELL_LOC loc = CELL_CENTRE);
+  LaplaceNaulin(Options *opt = NULL, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr);
   ~LaplaceNaulin();
   
   // ACoef is not implemented because the delp2solver that we use can probably
@@ -45,44 +45,54 @@ public:
   // where we allow Dcoef to be a Field3D
   void setCoefA(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     Acoef = val;
   }
   void setCoefA(const Field3D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     Acoef = val;
   }
   void setCoefC(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     setCoefC1(val);
     setCoefC2(val);
   }
   void setCoefC(const Field3D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     setCoefC1(val);
     setCoefC2(val);
   }
   void setCoefC1(const Field3D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     C1coef = val;
   }
   void setCoefC1(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     C1coef = val;
   }
   void setCoefC2(const Field3D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     C2coef = val;
   }
   void setCoefC2(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     C2coef = val;
   }
   void setCoefD(const Field3D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     Dcoef = val;
   }
   void setCoefD(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     Dcoef = val;
   }
   void setCoefEx(const Field2D &UNUSED(val)) override {
@@ -100,10 +110,7 @@ public:
   }
   const Field3D solve(const Field3D &b, const Field3D &x0) override;
   const Field3D solve(const Field3D &b) override {
-    Field3D x0(b.getMesh());
-    x0 = 0.;
-    x0.setLocation(b.getLocation());
-    return solve(b, Field3D(0.));
+    return solve(b, zeroFrom(b));
   }
 
   // Override flag-setting methods to set delp2solver's flags as well

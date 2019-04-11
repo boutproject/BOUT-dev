@@ -132,28 +132,34 @@ private:
 
 class LaplaceMultigrid : public Laplacian {
 public:
-  LaplaceMultigrid(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE);
+  LaplaceMultigrid(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE,
+      Mesh *mesh_in = nullptr);
   ~LaplaceMultigrid() {};
   
   void setCoefA(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     A = val;
   }
   void setCoefC(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     C1 = val;
     C2 = val;
   }
   void setCoefC1(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     C1 = val;
   }
   void setCoefC2(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     C2 = val;
   }
   void setCoefD(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     D = val;
   }
   void setCoefEx(const Field2D &UNUSED(val)) override { throw BoutException("setCoefEx is not implemented in LaplaceMultigrid"); }
@@ -161,31 +167,35 @@ public:
   
   void setCoefA(const Field3D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     A = val;
   }
   void setCoefC(const Field3D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     C1 = val;
     C2 = val;
   }
   void setCoefC1(const Field3D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     C1 = val;
   }
   void setCoefC2(const Field3D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     C2 = val;
   }
   void setCoefD(const Field3D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     D = val;
   }
 
   const FieldPerp solve(const FieldPerp &b) override {
-    FieldPerp zero(b.getMesh());
-    zero = 0.;
-    zero.setIndex(b.getIndex());
-    return solve(b, zero);
+    ASSERT1(localmesh == b.getMesh());
+
+    return solve(b, zeroFrom(b));
   }
   const FieldPerp solve(const FieldPerp &b_in, const FieldPerp &x0) override;
 

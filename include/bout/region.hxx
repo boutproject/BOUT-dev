@@ -226,6 +226,46 @@ public:
   int y() const { return (ind / nz) % ny; }
   int z() const { return (ind % nz); }
 
+  /// Templated routine to return index.?p(offset), where `?` is one of {x,y,z}
+  /// and is determined by the `dir` template argument. The offset corresponds
+  /// to the `dd` template argument.
+  template<int dd, DIRECTION dir>
+  const inline SpecificInd plus() const{
+    static_assert(dir == DIRECTION::X || dir == DIRECTION::Y || dir == DIRECTION::Z
+                      || dir == DIRECTION::YAligned || dir == DIRECTION::YOrthogonal,
+                  "Unhandled DIRECTION in SpecificInd::plus");
+    switch(dir) {
+    case(DIRECTION::X):
+      return xp(dd);
+    case(DIRECTION::Y):
+    case(DIRECTION::YAligned):
+    case(DIRECTION::YOrthogonal):
+      return yp(dd);
+    case(DIRECTION::Z):
+      return zp(dd);
+    }
+  }
+
+  /// Templated routine to return index.?m(offset), where `?` is one of {x,y,z}
+  /// and is determined by the `dir` template argument. The offset corresponds
+  /// to the `dd` template argument.
+  template<int dd, DIRECTION dir>
+  const inline SpecificInd minus() const{
+    static_assert(dir == DIRECTION::X || dir == DIRECTION::Y || dir == DIRECTION::Z
+                      || dir == DIRECTION::YAligned || dir == DIRECTION::YOrthogonal,
+                  "Unhandled DIRECTION in SpecificInd::minus");
+    switch(dir) {
+    case(DIRECTION::X):
+      return xm(dd);
+    case(DIRECTION::Y):
+    case(DIRECTION::YAligned):
+    case(DIRECTION::YOrthogonal):
+      return ym(dd);
+    case(DIRECTION::Z):
+      return zm(dd);
+    }
+  }
+
   const inline SpecificInd xp(int dx = 1) const { return {ind + (dx * ny * nz), ny, nz}; }
   /// The index one point -1 in x
   const inline SpecificInd xm(int dx = 1) const { return xp(-dx); }
@@ -661,7 +701,7 @@ public:
     const BoutReal smallSizeFrac = 0.5;
     result.numSmallBlocks =
       std::count_if(std::begin(blockSizes), std::end(blockSizes),
-		    [&blockSizes, &result, smallSizeFrac](int theSize) {
+		    [&result, smallSizeFrac](int theSize) {
 		      return theSize < smallSizeFrac * result.maxBlockSize;
 		    });
 

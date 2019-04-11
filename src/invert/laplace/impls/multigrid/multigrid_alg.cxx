@@ -29,6 +29,7 @@
 
 #include "multigrid_laplace.hxx"
 #include <bout/openmpwrap.hxx>
+#include "unused.hxx"
 
 // Define basic multigrid algorithm
 
@@ -38,11 +39,11 @@ MultigridAlg::MultigridAlg(int level, int lx, int lz, int gx, int gz, MPI_Comm c
 
   if(pcheck > 0) output<<"Construct MG "<<level<<endl; 
 
-  /* Momory allocate for Multigrid */
-  gnx = Array<int>(mglevel);
-  gnz = Array<int>(mglevel);
-  lnx = Array<int>(mglevel);
-  lnz = Array<int>(mglevel);
+  // Memory allocate for Multigrid
+  gnx.reallocate(mglevel);
+  gnz.reallocate(mglevel);
+  lnx.reallocate(mglevel);
+  lnz.reallocate(mglevel);
 
   gnx[mglevel-1] = gx;
   gnz[mglevel-1] = gz;
@@ -611,9 +612,10 @@ BOUT_OMP(for collapse(2))
 }
 
 void MultigridAlg::communications(BoutReal* x, int level) {
- 
-  MPI_Status  status[4];
-  int stag,rtag,ierr;
+
+  MPI_Status status[4];
+  int stag, rtag;
+  MAYBE_UNUSED(int ierr);
 
   if(zNP > 1) {
     MPI_Datatype xvector;

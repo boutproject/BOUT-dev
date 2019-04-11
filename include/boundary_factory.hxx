@@ -11,8 +11,6 @@ class BoundaryFactory;
 
 #include <string>
 #include <map>
-using std::string;
-using std::map;
 
 /// Create BoundaryOp objects on demand
 /*!
@@ -69,18 +67,18 @@ class BoundaryFactory {
   static void cleanup(); ///< Frees all memory
 
   /// Create a boundary operation object
-  BoundaryOpBase* create(const string &name, BoundaryRegionBase *region);
+  BoundaryOpBase* create(const std::string &name, BoundaryRegionBase *region);
   BoundaryOpBase* create(const char* name, BoundaryRegionBase *region);
 
   /// Create a boundary object using the options file
-  BoundaryOpBase* createFromOptions(const string &varname, BoundaryRegionBase *region);
+  BoundaryOpBase* createFromOptions(const std::string &varname, BoundaryRegionBase *region);
   BoundaryOpBase* createFromOptions(const char* varname, BoundaryRegionBase *region);
 
   /*!
    * Add available boundary conditions and modifiers
    * Supply an object, and the name to be used
    */
-  void add(BoundaryOp* bop, const string &name);
+  void add(BoundaryOp* bop, const std::string &name);
   
   /*!
    * Add a boundary condition.
@@ -92,7 +90,7 @@ class BoundaryFactory {
   /*!
    * Add a boundary condition modifier
    */
-  void addMod(BoundaryModifier* bmod, const string &name);
+  void addMod(BoundaryModifier* bmod, const std::string &name);
   
   /*!
    * Note: This method should be removed, as the string method is sufficient
@@ -100,7 +98,7 @@ class BoundaryFactory {
   void addMod(BoundaryModifier* bmod, const char *name);
   
   // Parallel boundaries
-  void add(BoundaryOpPar* bop, const string &name);
+  void add(BoundaryOpPar* bop, const std::string &name);
   void add(BoundaryOpPar* bop, const char *name);
 
  private:
@@ -111,18 +109,18 @@ class BoundaryFactory {
   static BoundaryFactory* instance; ///< The only instance of this class (Singleton)
 
   // Database of available boundary conditions and modifiers
-  map<string, BoundaryOp*> opmap;
-  map<string, BoundaryModifier*> modmap;
+  std::map<std::string, BoundaryOp*> opmap;
+  std::map<std::string, BoundaryModifier*> modmap;
   // Parallel boundary conditions
-  map<string, BoundaryOpPar*> par_opmap;
+  std::map<std::string, BoundaryOpPar*> par_opmap;
   // Modifiers to be implemented...
   // map<string, BoundaryModifier*> par_modmap;
 
   // Functions to look up operations and modifiers
-  BoundaryOp* findBoundaryOp(const string &s);
-  BoundaryModifier* findBoundaryMod(const string &s);
+  BoundaryOp* findBoundaryOp(const std::string &s);
+  BoundaryModifier* findBoundaryMod(const std::string &s);
   // Parallel boundary conditions
-  BoundaryOpPar* findBoundaryOpPar(const string &s);
+  BoundaryOpPar* findBoundaryOpPar(const std::string &s);
   // To be implemented...
   // BoundaryModifier* findBoundaryMod(const string &s);
 

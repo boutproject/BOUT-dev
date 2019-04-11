@@ -1,35 +1,37 @@
 #!/usr/bin/env python3
 
-#requires: all_tests
-
-from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
+from boututils.run_wrapper import shell, shell_safe, launch_safe
 from boutdata.collect import collect
-from sys import stdout, exit
+from sys import exit
 
 from numpy import max, abs
 
-MPIRUN=getmpirun()
+
 
 shell_safe("make > make.log")
 
 
-s, out = launch_safe("./test_yupdown", runcmd=MPIRUN, nproc=1, pipe=True, verbose=True)
+s, out = launch_safe("./test_yupdown", nproc=1, pipe=True, verbose=True)
 
 with open("run.log", "w") as f:
   f.write(out)
 
-vars = [ ("ddy", "ddy2") ]
-for v1, v2 in vars:
-  stdout.write("Testing %s and %s ... " % (v1, v2) )
-  ddy = collect(v1, path="data", xguards=False, yguards=False, info=False)
-  ddy2 = collect(v2, path="data", xguards=False, yguards=False, info=False)
+vars = [ ("ddy", "ddy_check"), ("ddy2", "ddy_check") ]
+success = True
+for v, v_check in vars:
+  print("Testing %s and %s ... " % (v, v_check) )
+  ddy = collect(v, path="data", xguards=False, yguards=False, info=False)
+  ddy_check = collect(v_check, path="data", xguards=False, yguards=False, info=False)
 
-  diff = max(abs(ddy - ddy2))
+  diff = max(abs(ddy - ddy_check))
 
   if diff < 1e-8:
-    print("Passed (Max difference %e)" % (diff))
+    print(v+" passed (Max difference %e)" % (diff))
   else:
-    print("Failed (Max difference %e)" % (diff))
+    print(v+" failed (Max difference %e)" % (diff))
+    success = False
+
+if success:
+    exit(0)
+else:
     exit(1)
-  
-exit(0)

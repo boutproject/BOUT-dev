@@ -50,18 +50,19 @@ class GridDataSource {
 public:
   virtual ~GridDataSource() {}
 
-  virtual bool hasVar(const string &name) = 0; ///< Test if source can supply a variable
+  virtual bool hasVar(const std::string &name) = 0; ///< Test if source can supply a variable
 
-  virtual bool get(Mesh *m, int &ival, const string &name) = 0; ///< Get an integer
+  virtual bool get(Mesh *m, std::string &sval, const std::string &name) = 0; ///< Get a string
+  virtual bool get(Mesh *m, int &ival, const std::string &name) = 0; ///< Get an integer
   virtual bool get(Mesh *m, BoutReal &rval,
-                   const string &name) = 0; ///< Get a BoutReal number
-  virtual bool get(Mesh *m, Field2D &var, const string &name, BoutReal def = 0.0) = 0;
-  virtual bool get(Mesh *m, Field3D &var, const string &name, BoutReal def = 0.0) = 0;
+                   const std::string &name) = 0; ///< Get a BoutReal number
+  virtual bool get(Mesh *m, Field2D &var, const std::string &name, BoutReal def = 0.0) = 0;
+  virtual bool get(Mesh *m, Field3D &var, const std::string &name, BoutReal def = 0.0) = 0;
 
   enum Direction { X = 1, Y = 2, Z = 3 };
-  virtual bool get(Mesh *m, vector<int> &var, const string &name, int len, int offset = 0,
+  virtual bool get(Mesh *m, std::vector<int> &var, const std::string &name, int len, int offset = 0,
                    Direction dir = GridDataSource::X) = 0;
-  virtual bool get(Mesh *m, vector<BoutReal> &var, const string &name, int len,
+  virtual bool get(Mesh *m, std::vector<BoutReal> &var, const std::string &name, int len,
                    int offset = 0, Direction dir = GridDataSource::X) = 0;
 };
 
@@ -73,30 +74,31 @@ public:
 class GridFile : public GridDataSource {
 public:
   GridFile() = delete;
-  GridFile(std::unique_ptr<DataFormat> format, string gridfilename);
+  GridFile(std::unique_ptr<DataFormat> format, std::string gridfilename);
   ~GridFile() override;
 
-  bool hasVar(const string &name) override;
+  bool hasVar(const std::string &name) override;
 
-  bool get(Mesh *m, int &ival, const string &name) override; ///< Get an integer
+  bool get(Mesh *m, std::string &sval, const std::string &name) override; ///< Get a string
+  bool get(Mesh *m, int &ival, const std::string &name) override; ///< Get an integer
   bool get(Mesh *m, BoutReal &rval,
-           const string &name) override; ///< Get a BoutReal number
-  bool get(Mesh *m, Field2D &var, const string &name, BoutReal def = 0.0) override;
-  bool get(Mesh *m, Field3D &var, const string &name, BoutReal def = 0.0) override;
+           const std::string &name) override; ///< Get a BoutReal number
+  bool get(Mesh *m, Field2D &var, const std::string &name, BoutReal def = 0.0) override;
+  bool get(Mesh *m, Field3D &var, const std::string &name, BoutReal def = 0.0) override;
 
-  bool get(Mesh *m, vector<int> &var, const string &name, int len, int offset = 0,
+  bool get(Mesh *m, std::vector<int> &var, const std::string &name, int len, int offset = 0,
            GridDataSource::Direction dir = GridDataSource::X) override;
-  bool get(Mesh *m, vector<BoutReal> &var, const string &name, int len, int offset = 0,
+  bool get(Mesh *m, std::vector<BoutReal> &var, const std::string &name, int len, int offset = 0,
            GridDataSource::Direction dir = GridDataSource::X) override;
 
 private:
   std::unique_ptr<DataFormat> file;
-  string filename;
+  std::string filename;
 
-  bool readgrid_3dvar_fft(Mesh *m, const string &name, int yread, int ydest, int ysize,
+  bool readgrid_3dvar_fft(Mesh *m, const std::string &name, int yread, int ydest, int ysize,
                           int xge, int xlt, Field3D &var);
 
-  bool readgrid_3dvar_real(Mesh *m, const string &name, int yread, int ydest, int ysize,
+  bool readgrid_3dvar_real(Mesh *m, const std::string &name, int yread, int ydest, int ysize,
                            int xge, int xlt, Field3D &var);
 };
 
@@ -118,7 +120,19 @@ public:
   /*!
    * Checks if the options has a given variable
    */
-  bool hasVar(const string &name) override;
+  bool hasVar(const std::string &name) override;
+
+  /*!
+   * Reads strings from options. Uses Options::get to handle
+   * expressions
+   *
+   * @param[in] mesh   Not used
+   * @param[in] name   Name of variable
+   * @param[out] sval  Always given a value, defaults to 0
+   *
+   * @return True if option is set, false if ival is default (0)
+   */
+  bool get(Mesh *mesh, std::string &sval, const std::string &name) override;
 
   /*!
    * Reads integers from options. Uses Options::get to handle
@@ -130,7 +144,7 @@ public:
    *
    * @return True if option is set, false if ival is default (0)
    */
-  bool get(Mesh *mesh, int &ival, const string &name) override;
+  bool get(Mesh *mesh, int &ival, const std::string &name) override;
 
   /*!
    * Reads BoutReal from options. Uses Options::get to handle
@@ -142,7 +156,7 @@ public:
    *
    * @return True if option is set, false if ival is default (0)
    */
-  bool get(Mesh *mesh, BoutReal &rval, const string &name) override;
+  bool get(Mesh *mesh, BoutReal &rval, const std::string &name) override;
 
   /*!
    * Get a Field2D object by finding the option with the given name,
@@ -153,7 +167,7 @@ public:
    * @param[in] name  The name in the options. Not case sensitive
    * @param[in] def   Default value to use if option not found
    */
-  bool get(Mesh *mesh, Field2D &var, const string &name, BoutReal def = 0.0) override;
+  bool get(Mesh *mesh, Field2D &var, const std::string &name, BoutReal def = 0.0) override;
 
   /*!
    * Get a Field3D object by finding the option with the given name,
@@ -164,7 +178,7 @@ public:
    * @param[in] name  The name in the options. Not case sensitive
    * @param[in] def   Default value to use if option not found
    */
-  bool get(Mesh *mesh, Field3D &var, const string &name, BoutReal def = 0.0) override;
+  bool get(Mesh *mesh, Field3D &var, const std::string &name, BoutReal def = 0.0) override;
 
   /*!
    * Get an array of integers. Currently reads a single
@@ -177,7 +191,7 @@ public:
    * @param[in] offset Not currently used
    * @param[in] dir  The direction (X,Y,Z) of the array
    */
-  bool get(Mesh *mesh, vector<int> &var, const string &name, int len, int offset = 0,
+  bool get(Mesh *mesh, std::vector<int> &var, const std::string &name, int len, int offset = 0,
            GridDataSource::Direction dir = GridDataSource::X) override;
 
   /*!
@@ -193,7 +207,7 @@ public:
    *                   dir is X.
    * @param[in] dir  The direction (X,Y,Z) of the array
    */
-  bool get(Mesh *mesh, vector<BoutReal> &var, const string &name, int len, int offset = 0,
+  bool get(Mesh *mesh, std::vector<BoutReal> &var, const std::string &name, int len, int offset = 0,
            GridDataSource::Direction dir = GridDataSource::X) override;
 
 private:

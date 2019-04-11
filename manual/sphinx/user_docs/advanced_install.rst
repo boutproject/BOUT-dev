@@ -326,40 +326,33 @@ solver. Currently, BOUT++ also supports the SUNDIALS solvers CVODE, IDA
 and ARKODE which are available from
 https://computation.llnl.gov/casc/sundials/main.html.
 
-.. note:: SUNDIALS is only downloadable from the home page, as submitting your
-   name and e-mail is required for the download. As for the date of this
-   typing, SUNDIALS version :math:`3.0.0` is the newest. In order for a
-   smooth install it is recommended to install SUNDIALS from an install
-   directory. The full installation guide is found in the downloaded
-   ``.tar.gz``, but we will provide a step-by-step guide to install it
-   and make it compatible with BOUT++ here
+.. note:: BOUT++ currently supports SUNDIALS > 2.6, up to 4.1.0 as of
+          March 2019. It is advisable to use the highest possible
+          version
 
-.. warning:: BOUT++ currently only supports SUNDIALS 2.6 - 2.7!
-             Support for versions past 2.7 has yet to be
-             implemented. It is unlikely that we will support versions
-             before 2.6.
-
-::
+In order for a smooth install it is recommended to install SUNDIALS
+from an install directory. The full installation guide is found in the
+downloaded ``.tar.gz``, but we will provide a step-by-step guide to
+install it and make it compatible with BOUT++ here::
 
      $ cd ~
-     $ mkdir -p local/examples
      $ mkdir -p install/sundials-install
      $ cd install/sundials-install
-     $ # Move the downloaded sundials-2.6.0.tar.gz to sundials-install
-     $ tar -xzvf sundials-2.6.0.tar.gz
-     $ mkdir build
-     $ cd build
+     $ # Move the downloaded sundials-4.1.0.tar.gz to sundials-install
+     $ tar -xzvf sundials-4.1.0.tar.gz
+     $ mkdir build && cd build
 
      $ cmake \
        -DCMAKE_INSTALL_PREFIX=$HOME/local \
-       -DEXAMPLES_INSTALL_PATH=$HOME/local/examples \
-       -DCMAKE_LINKER=$HOME/local/lib \
        -DLAPACK_ENABLE=ON \
        -DOPENMP_ENABLE=ON \
        -DMPI_ENABLE=ON \
-       ../sundials-2.6.0
+       -DCMAKE_C_COMPILER=$(which mpicc) \
+       -DCMAKE_CXX_COMPILER=$(which mpicxx) \
+       ../sundials-4.1.0
 
      $ make
+     $ make test
      $ make install
 
 The SUNDIALS IDA solver is a Differential-Algebraic Equation (DAE)
@@ -367,11 +360,11 @@ solver, which evolves a system of the form
 :math:`\mathbf{f}(\mathbf{u},\dot{\mathbf{u}},t) = 0`. This allows
 algebraic constraints on variables to be specified.
 
-To configure BOUT++ with SUNDIALS only (see section :ref:`sec-PETSc-install` on how
-to build PETSc with SUNDIALS), go to the root directory of BOUT++ and
-type::
+To configure BOUT++ with SUNDIALS only (see section
+:ref:`sec-PETSc-install` on how to build PETSc with SUNDIALS), go to
+the root directory of BOUT++ and type::
 
-    $ ./configure --with-sundials
+    $ ./configure --with-sundials=/path/to/sundials/install
 
 SUNDIALS will allow you to select at run-time which solver to use. See
 :ref:`sec-timeoptions` for more details on how to do this.
@@ -417,7 +410,7 @@ debugging.
               --download-mumps \
               --download-scalapack \
               --download-blacs \
-              --download-f-blas-lapack=1 \
+              --download-fblas-lapack=1 \
               --download-parmetis \
               --download-ptscotch \
               --download-metis

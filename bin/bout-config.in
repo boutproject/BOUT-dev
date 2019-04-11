@@ -12,7 +12,7 @@
 
 BOUT_LIB_PATH=@BOUT_LIB_PATH@
 BOUT_INCLUDE_PATH=@BOUT_INCLUDE_PATH@
-
+MPARK_VARIANT_INCLUDE_PATH=@MPARK_VARIANT_INCLUDE_PATH@
 BOUT_CONFIG_FILE=@PREFIX@/make.config
 
 cc="@MPICXX@"
@@ -40,6 +40,7 @@ has_mumps="@HAS_MUMPS@"
 has_arkode="@HAS_ARKODE@"
 has_openmp="@HAS_OPENMP@"
 has_nls="@HAS_NLS@"
+has_fftw="@HAS_FFTW@"
 
 petsc_has_sundials="@PETSC_HAS_SUNDIALS@"
 

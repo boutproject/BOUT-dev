@@ -1,7 +1,10 @@
 
+#include <bout/mesh.hxx>
 #include <globals.hxx>
 #include <boundary_region.hxx>
 #include <utils.hxx>
+
+using std::swap;
 
 BoundaryRegionXIn::BoundaryRegionXIn(std::string name, int ymin, int ymax, Mesh* passmesh)
   : BoundaryRegion(name, -1, 0, passmesh), ys(ymin), ye(ymax)

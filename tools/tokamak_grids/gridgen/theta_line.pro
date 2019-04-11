@@ -12,8 +12,8 @@ FUNCTION theta_line, dctF, ri0, zi0, di0, nstep, boundary=boundary, dir=dir, psi
   IF KEYWORD_SET(dir) THEN BEGIN
     ; Set direction to go in
     
-    dt = theta_differential(0., pos)
-    IF TOTAL(dt*dir) LT 0. THEN di = -di
+    dt = theta_differential(0.D, pos)
+    IF TOTAL(dt*dir) LT 0.D THEN di = -di
   ENDIF
   
   FOR i=1, nstep DO BEGIN
