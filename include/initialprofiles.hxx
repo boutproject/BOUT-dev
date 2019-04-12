@@ -26,6 +26,8 @@
 #ifndef __INITIALPROF_H__
 #define __INITIALPROF_H__
 
+#include <string>
+
 class Field3D;
 class Field2D;
 class Vector2D;
