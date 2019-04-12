@@ -244,7 +244,11 @@ Field3D & Field3D::operator=(const Field3D &rhs) {
     return(*this); // skip this assignment
 
   TRACE("Field3D: Assignment from Field3D");
-  
+
+  // Delete existing parallel slices. We don't copy parallel slices, so any
+  // that currently exist will be incorrect.
+  clearParallelSlices();
+
   copyFieldMembers(rhs);
 
   // Copy the data and data sizes
@@ -262,6 +266,10 @@ Field3D & Field3D::operator=(const Field2D &rhs) {
 
   /// Check that the data is allocated
   ASSERT1(rhs.isAllocated());
+
+  // Delete existing parallel slices. We don't copy parallel slices, so any
+  // that currently exist will be incorrect.
+  clearParallelSlices();
 
   setLocation(rhs.getLocation());
 
@@ -282,6 +290,10 @@ void Field3D::operator=(const FieldPerp &rhs) {
   /// Check that the data is allocated
   ASSERT1(rhs.isAllocated());
 
+  // Delete existing parallel slices. We don't copy parallel slices, so any
+  // that currently exist will be incorrect.
+  clearParallelSlices();
+
   /// Make sure there's a unique array to copy data into
   allocate();
 
@@ -291,6 +303,10 @@ void Field3D::operator=(const FieldPerp &rhs) {
 
 Field3D & Field3D::operator=(const BoutReal val) {
   TRACE("Field3D = BoutReal");
+
+  // Delete existing parallel slices. We don't copy parallel slices, so any
+  // that currently exist will be incorrect.
+  clearParallelSlices();
 
   allocate();
 

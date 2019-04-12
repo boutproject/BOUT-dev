@@ -29,6 +29,10 @@ Field3D& Field3D::operator*=(const Field3D& rhs) {
   if (data.unique()) {
     ASSERT1(areFieldsCompatible(*this, rhs));
 
+    // Delete existing parallel slices. We don't copy parallel slices, so any
+    // that currently exist will be incorrect.
+    clearParallelSlices();
+
     checkData(*this);
     checkData(rhs);
 
@@ -64,6 +68,10 @@ Field3D& Field3D::operator/=(const Field3D& rhs) {
   // otherwise just call the non-inplace version
   if (data.unique()) {
     ASSERT1(areFieldsCompatible(*this, rhs));
+
+    // Delete existing parallel slices. We don't copy parallel slices, so any
+    // that currently exist will be incorrect.
+    clearParallelSlices();
 
     checkData(*this);
     checkData(rhs);
@@ -101,6 +109,10 @@ Field3D& Field3D::operator+=(const Field3D& rhs) {
   if (data.unique()) {
     ASSERT1(areFieldsCompatible(*this, rhs));
 
+    // Delete existing parallel slices. We don't copy parallel slices, so any
+    // that currently exist will be incorrect.
+    clearParallelSlices();
+
     checkData(*this);
     checkData(rhs);
 
@@ -136,6 +148,10 @@ Field3D& Field3D::operator-=(const Field3D& rhs) {
   // otherwise just call the non-inplace version
   if (data.unique()) {
     ASSERT1(areFieldsCompatible(*this, rhs));
+
+    // Delete existing parallel slices. We don't copy parallel slices, so any
+    // that currently exist will be incorrect.
+    clearParallelSlices();
 
     checkData(*this);
     checkData(rhs);
@@ -177,6 +193,10 @@ Field3D& Field3D::operator*=(const Field2D& rhs) {
   // otherwise just call the non-inplace version
   if (data.unique()) {
     ASSERT1(areFieldsCompatible(*this, rhs));
+
+    // Delete existing parallel slices. We don't copy parallel slices, so any
+    // that currently exist will be incorrect.
+    clearParallelSlices();
 
     checkData(*this);
     checkData(rhs);
@@ -225,6 +245,10 @@ Field3D& Field3D::operator/=(const Field2D& rhs) {
   if (data.unique()) {
     ASSERT1(areFieldsCompatible(*this, rhs));
 
+    // Delete existing parallel slices. We don't copy parallel slices, so any
+    // that currently exist will be incorrect.
+    clearParallelSlices();
+
     checkData(*this);
     checkData(rhs);
 
@@ -272,6 +296,10 @@ Field3D& Field3D::operator+=(const Field2D& rhs) {
   if (data.unique()) {
     ASSERT1(areFieldsCompatible(*this, rhs));
 
+    // Delete existing parallel slices. We don't copy parallel slices, so any
+    // that currently exist will be incorrect.
+    clearParallelSlices();
+
     checkData(*this);
     checkData(rhs);
 
@@ -317,6 +345,10 @@ Field3D& Field3D::operator-=(const Field2D& rhs) {
   // otherwise just call the non-inplace version
   if (data.unique()) {
     ASSERT1(areFieldsCompatible(*this, rhs));
+
+    // Delete existing parallel slices. We don't copy parallel slices, so any
+    // that currently exist will be incorrect.
+    clearParallelSlices();
 
     checkData(*this);
     checkData(rhs);
@@ -435,6 +467,10 @@ Field3D& Field3D::operator*=(const BoutReal rhs) {
   // otherwise just call the non-inplace version
   if (data.unique()) {
 
+    // Delete existing parallel slices. We don't copy parallel slices, so any
+    // that currently exist will be incorrect.
+    clearParallelSlices();
+
     checkData(*this);
     checkData(rhs);
 
@@ -466,6 +502,10 @@ Field3D& Field3D::operator/=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
+
+    // Delete existing parallel slices. We don't copy parallel slices, so any
+    // that currently exist will be incorrect.
+    clearParallelSlices();
 
     checkData(*this);
     checkData(rhs);
@@ -499,6 +539,10 @@ Field3D& Field3D::operator+=(const BoutReal rhs) {
   // otherwise just call the non-inplace version
   if (data.unique()) {
 
+    // Delete existing parallel slices. We don't copy parallel slices, so any
+    // that currently exist will be incorrect.
+    clearParallelSlices();
+
     checkData(*this);
     checkData(rhs);
 
@@ -530,6 +574,10 @@ Field3D& Field3D::operator-=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
+
+    // Delete existing parallel slices. We don't copy parallel slices, so any
+    // that currently exist will be incorrect.
+    clearParallelSlices();
 
     checkData(*this);
     checkData(rhs);

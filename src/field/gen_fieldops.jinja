@@ -59,6 +59,12 @@
       ASSERT1(areFieldsCompatible(*this, rhs));
     {% endif %}
 
+    {% if (lhs == "Field3D") %}
+      // Delete existing parallel slices. We don't copy parallel slices, so any
+      // that currently exist will be incorrect.
+      clearParallelSlices();
+
+    {% endif %}
     checkData(*this);
     checkData({{rhs.name}});
 
