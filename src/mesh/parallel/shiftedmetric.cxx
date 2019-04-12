@@ -40,9 +40,9 @@ void ShiftedMetric::checkInputGrid() {
   std::string coordinates_type = "";
   if (!mesh.get(coordinates_type, "coordinates_type")) {
     if (coordinates_type != "orthogonal") {
-      throw BoutException("Incorrect coordinate system type " + coordinates_type
-                          + " used to generate metric components for ShiftedMetric. "
-                            "Should be 'orthogonal.");
+      throw BoutException("Incorrect coordinate system type '" + coordinates_type
+                          + "' used to generate metric components for ShiftedMetric. "
+                            "Should be 'orthogonal'.");
     }
   } // else: coordinate_system variable not found in grid input, indicates older input
     //       file so must rely on the user having ensured the type is correct

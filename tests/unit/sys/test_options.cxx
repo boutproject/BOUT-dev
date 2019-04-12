@@ -7,7 +7,7 @@
 
 #include <string>
 
-class OptionsTest : public ::testing::Test {
+class OptionsTest : public FakeMeshFixture {
 public:
   virtual ~OptionsTest() = default;
   WithQuietOutput quiet_info{output_info};
@@ -769,30 +769,22 @@ TEST_F(OptionsTest, TypeAttributeInt) {
 }
 
 TEST_F(OptionsTest, TypeAttributeField2D) {
-  // Note: Need a Mesh to create Field2D
-  FakeMesh fieldmesh(6,6,2);
-  fieldmesh.createDefaultRegions();
-
   Options option;
   option = "42";
 
   // Casting to bool should modify the "type" attribute
-  Field2D value = option.withDefault<Field2D>(Field2D(-1,&fieldmesh));
+  Field2D value = option.withDefault<Field2D>(Field2D(-1, bout::globals::mesh));
 
   EXPECT_EQ(value(0,0), 42);
   EXPECT_EQ(option.attributes["type"].as<std::string>(), "Field2D");
 }
 
 TEST_F(OptionsTest, TypeAttributeField3D) {
-  // Note: Need a Mesh to create Field3D
-  FakeMesh fieldmesh(6,6,2);
-  fieldmesh.createDefaultRegions();
-  
   Options option;
   option = "42";
 
   // Casting to bool should modify the "type" attribute
-  Field3D value = option.withDefault<Field3D>(Field3D(-1,&fieldmesh));
+  Field3D value = option.withDefault<Field3D>(Field3D(-1, bout::globals::mesh));
 
   EXPECT_EQ(value(0,0,0), 42);
   EXPECT_EQ(option.attributes["type"].as<std::string>(), "Field3D");

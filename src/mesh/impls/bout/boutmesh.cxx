@@ -236,6 +236,14 @@ int BoutMesh::load() {
   // For now don't parallelise z
   NZPE = 1;
 
+  if (jyseps1_1 < 0 and jyseps2_2 >= ny - 1) {
+    numberOfXPoints = 0;
+  } else if (jyseps2_1 == jyseps1_2) {
+    numberOfXPoints = 1;
+  } else {
+    numberOfXPoints = 2;
+  }
+
   if (options.isSet("NXPE")) {    // Specified NXPE
     NXPE = options["NXPE"]
                .doc("Decomposition in the radial direction. If not given then calculated "
@@ -2627,6 +2635,7 @@ void BoutMesh::outputVars(Datafile &file) {
   file.add(jyseps1_2, "jyseps1_2", false);
   file.add(jyseps2_1, "jyseps2_1", false);
   file.add(jyseps2_2, "jyseps2_2", false);
+  file.add(ny_inner, "ny_inner", false);
 
   getCoordinates()->outputVars(file);
 }

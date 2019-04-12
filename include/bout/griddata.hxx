@@ -64,6 +64,12 @@ public:
                    Direction dir = GridDataSource::X) = 0;
   virtual bool get(Mesh *m, std::vector<BoutReal> &var, const std::string &name, int len,
                    int offset = 0, Direction dir = GridDataSource::X) = 0;
+
+  /// Are x-boundary guard cells read from the source?
+  virtual bool hasXBoundaryGuards(Mesh* m) = 0;
+
+  /// Are y-boundary guard cells read from the source?
+  virtual bool hasYBoundaryGuards() = 0;
 };
 
 /// Interface to grid data in a file
@@ -83,23 +89,46 @@ public:
   bool get(Mesh *m, int &ival, const std::string &name) override; ///< Get an integer
   bool get(Mesh *m, BoutReal &rval,
            const std::string &name) override; ///< Get a BoutReal number
-  bool get(Mesh *m, Field2D &var, const std::string &name, BoutReal def = 0.0) override;
-  bool get(Mesh *m, Field3D &var, const std::string &name, BoutReal def = 0.0) override;
+  bool get(Mesh *m, Field2D &var, const std::string &name, BoutReal def = 0.0) override {
+    return getField(m, var, name, def);
+  }
+  bool get(Mesh *m, Field3D &var, const std::string &name, BoutReal def = 0.0) override {
+    return getField(m, var, name, def);
+  }
 
   bool get(Mesh *m, std::vector<int> &var, const std::string &name, int len, int offset = 0,
            GridDataSource::Direction dir = GridDataSource::X) override;
   bool get(Mesh *m, std::vector<BoutReal> &var, const std::string &name, int len, int offset = 0,
            GridDataSource::Direction dir = GridDataSource::X) override;
 
+  /// Are x-boundary guard cells read from the source?
+  bool hasXBoundaryGuards(Mesh* m) override;
+
+  /// Are y-boundary guard cells read from the source?
+  bool hasYBoundaryGuards() override { return grid_yguards > 0; }
+
 private:
   std::unique_ptr<DataFormat> file;
   std::string filename;
+  int grid_yguards{0};
+  int ny_inner{0};
 
   bool readgrid_3dvar_fft(Mesh *m, const std::string &name, int yread, int ydest, int ysize,
-                          int xge, int xlt, Field3D &var);
+                          int xread, int xdest, int xsize, Field3D &var);
 
-  bool readgrid_3dvar_real(Mesh *m, const std::string &name, int yread, int ydest, int ysize,
-                           int xge, int xlt, Field3D &var);
+  bool readgrid_3dvar_real(const std::string &name, int yread, int ydest, int ysize,
+                           int xread, int xdest, int xsize, Field3D &var);
+
+  // convenience template method to remove code duplication between Field2D and
+  // Field3D versions of get
+  template<typename T>
+  bool getField(Mesh* m, T& var, const std::string& name, BoutReal def = 0.0);
+  // utility method for Field2D to implement unshared parts of getField
+  void readField(Mesh* m, const std::string& name, int ys, int yd, int ny_to_read,
+      int xs, int xd, int nx_to_read, const std::vector<int>& size, Field2D& var);
+  // utility method for Field3D to implement unshared parts of getField
+  void readField(Mesh* m, const std::string& name, int ys, int yd, int ny_to_read,
+      int xs, int xd, int nx_to_read, const std::vector<int>& size, Field3D& var);
 };
 
 /*!
@@ -209,6 +238,12 @@ public:
    */
   bool get(Mesh *mesh, std::vector<BoutReal> &var, const std::string &name, int len, int offset = 0,
            GridDataSource::Direction dir = GridDataSource::X) override;
+
+  /// Are x-boundary guard cells read from the source?
+  bool hasXBoundaryGuards(Mesh* UNUSED(m)) override { return true; }
+
+  /// Are y-boundary guard cells read from the source?
+  bool hasYBoundaryGuards() override { return true; }
 
 private:
   /// The options section to use. Could be nullptr

@@ -168,6 +168,16 @@ bool Mesh::sourceHasVar(const std::string &name) {
   return source->hasVar(name);
 }
 
+/// Wrapper for GridDataSource::hasXBoundaryGuards
+bool Mesh::sourceHasXBoundaryGuards() {
+  return source->hasXBoundaryGuards(this);
+}
+
+/// Wrapper for GridDataSource::hasYBoundaryGuards
+bool Mesh::sourceHasYBoundaryGuards() {
+  return source->hasYBoundaryGuards();
+}
+
 /**************************************************************************
  * Communications
  **************************************************************************/

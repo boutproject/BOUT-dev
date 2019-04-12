@@ -112,7 +112,8 @@ public:
   Field2D IntShiftTorsion; ///< Integrated shear (I in BOUT notation)
 
   /// Calculate differential geometry quantities from the metric tensor
-  int geometry(bool recalculate_staggered = true);
+  int geometry(bool recalculate_staggered = true,
+      bool force_interpolate_from_centre = false);
   int calcCovariant(); ///< Inverts contravatiant metric to get covariant
   int calcContravariant(); ///< Invert covariant metric to get contravariant
   int jacobian(); ///< Calculate J and Bxy

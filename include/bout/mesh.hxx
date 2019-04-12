@@ -194,6 +194,12 @@ class Mesh {
 
   /// Wrapper for GridDataSource::hasVar
   bool sourceHasVar(const std::string &name);
+
+  /// Wrapper for GridDataSource::hasXBoundaryGuards
+  bool sourceHasXBoundaryGuards();
+
+  /// Wrapper for GridDataSource::hasYBoundaryGuards
+  bool sourceHasYBoundaryGuards();
   
   // Communications
   /*!
@@ -459,6 +465,8 @@ class Mesh {
   
   /// Include integrated shear (if shifting X)
   bool IncIntShear{false};
+
+  int numberOfXPoints{0};
 
   /// Coordinate system
   Coordinates *getCoordinates(const CELL_LOC location = CELL_CENTRE) {

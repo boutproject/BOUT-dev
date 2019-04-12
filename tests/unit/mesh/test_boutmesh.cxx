@@ -37,6 +37,8 @@ public:
            Direction UNUSED(dir) = GridDataSource::X) {
     return true;
   }
+  bool hasXBoundaryGuards(Mesh* UNUSED(m)) { return false; }
+  bool hasYBoundaryGuards() { return false; }
 };
 
 TEST(BoutMeshTest, NullOptionsCheck) {
