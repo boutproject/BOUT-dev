@@ -55,7 +55,7 @@ def verify(f1, f2):
                 continue
             if v.startswith("wtime") or v.startswith("ncalls"):
                 continue
-            if not np.allclose(d1[v], d2[v]):
+            if not np.allclose(d1[v], d2[v], equal_nan=True):
                 err = ""
                 dimensions = [range(x) for x in d1[v].shape]
                 for i in itertools.product(*dimensions):
