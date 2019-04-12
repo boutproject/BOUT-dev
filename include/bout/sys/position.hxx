@@ -2,6 +2,13 @@
 
 #include "bout/region.hxx"
 
+#if defined(__GNUC__)
+# define BOUT_FALL_THROUGH __attribute__ ((fallthrough));
+#else
+# define BOUT_FALL_THROUGH
+#endif
+
+
 class BoundaryRegion;
 class Mesh;
 
@@ -43,11 +50,8 @@ public:
     _z = val;
     fz = VALUE;
   }
-  Mesh * getMesh() {
-    return msh;
-  }
 private:
-  enum flags { DEFAULT = 0, VALUE = 1};
+  enum flags { DEFAULT, VALUE, ONE, TWOPI, REAL};
   //CELL_LOC loc;
   int ix;
   int iy;
@@ -58,6 +62,6 @@ private:
   bool sx;
   bool sy;
   bool sz;
-  BoutReal _x, _y, _z;
+  BoutReal _x = BoutNaN, _y = BoutNaN, _z = BoutNaN;
   flags fx, fy, fz;
 };

@@ -1,5 +1,6 @@
-#include "boundary_region.hxx"
 #include "bout/sys/position.hxx"
+#include "boundary_region.hxx"
+#include "bout/constants.hxx"
 #include "bout/mesh.hxx"
 
 Position::Position(const BoundaryRegion* bndry, int iz, CELL_LOC loc, BoutReal _t)
@@ -34,18 +35,61 @@ Position::Position(const BoundaryRegion* bndry, int iz, CELL_LOC loc, BoutReal _
   }
 };
 
-
-BoutReal Position::x(){
+BoutReal Position::x() {
+  BoutReal fac = 1;
   switch (fx) {
+  case TWOPI:
+    fac = 2 * PI;
+    BOUT_FALL_THROUGH;
   case DEFAULT:
+  case ONE:
     if (sx) {
-      return 0.5 * (msh->GlobalX(ix) + msh->GlobalX(ix-1));
+      return fac * 0.5 * (msh->GlobalX(ix) + msh->GlobalX(ix - 1));
     } else {
-      return msh->GlobalX(ix);
+      return fac * msh->GlobalX(ix);
     }
-    break;
   case VALUE:
     return _x;
-    }
+  case REAL:
+    throw BoutException("Not implemented");
+  }
+}
 
+BoutReal Position::y() {
+  BoutReal fac = 2 * PI;
+  switch (fy) {
+  case ONE:
+    fac = 1;
+    BOUT_FALL_THROUGH;
+  case TWOPI:
+  case DEFAULT:
+    if (sy) {
+      return fac * 0.5 * (msh->GlobalY(iy) + msh->GlobalY(iy - 1));
+    } else {
+      return fac * msh->GlobalY(iy);
+    }
+  case VALUE:
+    return _y;
+  case REAL:
+    throw BoutException("Not implemented");
+  }
+}
+BoutReal Position::z() {
+  BoutReal fac = 2 * PI;
+  switch (fz) {
+  case ONE:
+    fac = 1;
+    BOUT_FALL_THROUGH;
+  case TWOPI:
+  case DEFAULT:
+    if (sz) {
+      return fac * (iz - 0.5) / static_cast<BoutReal>(msh->LocalNz);
+    } else {
+      return fac * iz / static_cast<BoutReal>(msh->LocalNz);
+    }
+  case VALUE:
+    return _z;
+  case REAL:
+    throw BoutException("Not implemented");
+  }
 }
