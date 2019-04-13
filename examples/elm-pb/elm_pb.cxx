@@ -1062,7 +1062,6 @@ int physics_init(bool restarting) {
 
   aparSolver = Laplacian::create();
   aparSolver->setFlags(apar_flags);
-  aparSolver->setCoefA(-delta_e_inv * N0 * N0);
 
   /////////////// CHECK VACUUM ///////////////////////
   // In vacuum region, initial vorticity should equal zero
