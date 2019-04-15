@@ -807,9 +807,7 @@ Field3D filter(const Field3D &var, int N0, REGION rgn) {
   
   checkData(var);
 
-  Mesh *localmesh = var.getMesh();
-
-  int ncz = localmesh->LocalNz;
+  int ncz = var.getNz();
 
   Field3D result{emptyFrom(var)};
 
@@ -819,7 +817,7 @@ Field3D filter(const Field3D &var, int N0, REGION rgn) {
   ASSERT2(region_str == "RGN_ALL" || region_str == "RGN_NOBNDRY" ||
           region_str == "RGN_NOX" || region_str == "RGN_NOY");
 
-  const Region<Ind2D> &region = localmesh->getRegion2D(region_str);
+  const Region<Ind2D> &region = var.getRegion2D(region_str);
 
   BOUT_OMP(parallel)
   {
@@ -854,8 +852,7 @@ Field3D lowPass(const Field3D &var, int zmax, bool keep_zonal, REGION rgn) {
   TRACE("lowPass(Field3D, %d, %d)", zmax, keep_zonal);
 
   checkData(var);
-  Mesh *localmesh = var.getMesh();
-  int ncz = localmesh->LocalNz;
+  int ncz = var.getNz();
 
   if (((zmax >= ncz / 2) || (zmax < 0)) && keep_zonal) {
     // Removing nothing
@@ -870,7 +867,7 @@ Field3D lowPass(const Field3D &var, int zmax, bool keep_zonal, REGION rgn) {
   ASSERT2(region_str == "RGN_ALL" || region_str == "RGN_NOBNDRY" ||
           region_str == "RGN_NOX" || region_str == "RGN_NOY");
 
-  const Region<Ind2D> &region = localmesh->getRegion2D(region_str);
+  const Region<Ind2D> &region = var.getRegion2D(region_str);
 
   BOUT_OMP(parallel) {
     Array<dcomplex> f(ncz / 2 + 1);
@@ -931,7 +928,7 @@ void shiftZ(Field3D &var, double zangle, REGION rgn) {
   ASSERT2(region_str == "RGN_ALL" || region_str == "RGN_NOBNDRY" ||
           region_str == "RGN_NOX" || region_str == "RGN_NOY");
 
-  const Region<Ind2D> &region = var.getMesh()->getRegion2D(region_str);
+  const Region<Ind2D> &region = var.getRegion2D(region_str);
 
   // Could be OpenMP if shiftZ(Field3D, int, int, double) didn't throw
   BOUT_FOR_SERIAL(i, region) {
