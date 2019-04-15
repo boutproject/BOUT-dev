@@ -337,8 +337,8 @@ protected:
     // Prints out what values are assigned
     /////////////////////////////////////////////////////////////
 
-    auto globalOptions = Options::root();
-    auto options = globalOptions["highbeta"];
+    auto& globalOptions = Options::root();
+    auto& options = globalOptions["highbeta"];
 
     constn0 = options["constn0"].withDefault(true);
     // use the hyperbolic profile of n0. If both  n0_fake_prof and
@@ -358,12 +358,14 @@ protected:
     // the amplitude of constant temperature, in percentage
     Tconst = options["Tconst"].withDefault(-1.0);
 
-    density = options["density"].withDefault(1.0e19); // Number density [m^-3]
+    density = options["density"].doc("Number density [m^-3]").withDefault(1.0e19);
 
-    // If true, evolve J raher than Psi
-    evolve_jpar = options["evolve_jpar"].withDefault(false);
-    // Use solver constraint for phi
-    phi_constraint = options["phi_constraint"].withDefault(false);
+    evolve_jpar = options["evolve_jpar"]
+                       .doc("If true, evolve J raher than Psi")
+                       .withDefault(false);
+    phi_constraint = options["phi_constraint"]
+                         .doc("Use solver constraint for phi?")
+                         .withDefault(false);
 
     // Effects to include/exclude
     include_curvature = options["include_curvature"].withDefault(true);
@@ -373,7 +375,7 @@ protected:
 
     compress0 = options["compress0"].withDefault(false);
     gyroviscous = options["gyroviscous"].withDefault(false);
-    nonlinear = options["nonlinear"].withDefault(false);
+    nonlinear = options["nonlinear"].doc("Include nonlinear terms?").withDefault(false);
 
     // option for ExB Poisson Bracket
     bm_exb_flag = options["bm_exb_flag"].withDefault(0);
@@ -402,9 +404,8 @@ protected:
       output << "ERROR: Invalid choice of bracket method. Must be 0 - 3\n";
       return 1;
     }
-
-    // option for magnetic flutter Poisson Bracket
-    bm_mag_flag = options["bm_mag_flag"].withDefault(0);
+    
+    bm_mag_flag = options["bm_mag_flag"].doc("magnetic flutter Poisson Bracket").withDefault(0);
     switch (bm_mag_flag) {
     case 0: {
       bm_mag = BRACKET_STD;
@@ -431,18 +432,19 @@ protected:
       return 1;
     }
 
-    // electron Hall or electron parallel pressue gradient effects?
-    eHall = options["eHall"].withDefault(false);
-    AA = options["AA"].withDefault(1.0); // ion mass in units of proton mass
-
-    // Diamagnetic effects?
-    diamag = options["diamag"].withDefault(false);
-    // Grad_par(Te) term in Psi equation
-    diamag_grad_t = options["diamag_grad_t"].withDefault(diamag);
-    // Include equilibrium phi0
-    diamag_phi0 = options["diamag_phi0"].withDefault(diamag);
-    // Scale diamagnetic effects by this factor
-    dia_fact = options["dia_fact"].withDefault(1.0);
+    eHall = options["eHall"]
+                .doc("electron Hall or electron parallel pressue gradient effects?")
+                .withDefault(false);
+    AA = options["AA"].doc("ion mass in units of proton mass").withDefault(1.0);
+    
+    diamag = options["diamag"].doc("Diamagnetic effects?").withDefault(false);
+    diamag_grad_t = options["diamag_grad_t"]
+                        .doc("Grad_par(Te) term in Psi equation")
+                        .withDefault(diamag);
+    diamag_phi0 = options["diamag_phi0"].doc("Include equilibrium phi0").withDefault(diamag);
+    dia_fact = options["dia_fact"]
+                   .doc("Scale diamagnetic effects by this factor")
+                   .withDefault(1.0);
 
     // withflow or not
     withflow = options["withflow"].withDefault(false);
@@ -468,15 +470,15 @@ protected:
     relax_j_tconst = options["relax_j_tconst"].withDefault(0.1);
 
     // Toroidal filtering
-    filter_z = options["filter_z"].withDefault(false); // Filter a single n
+    filter_z = options["filter_z"].doc("Filter a single toroidal mode number?").withDefault(false);
     filter_z_mode = options["filter_z_mode"].withDefault(1);
-    low_pass_z = options["low_pass_z"].withDefault(false);   // Low-pass filter
+    low_pass_z = options["low_pass_z"].doc("Low-pass filter").withDefault(false);
     zonal_flow = options["zonal_flow"].withDefault(false);   // zonal flow filter
     zonal_field = options["zonal_field"].withDefault(false); // zonal field filter
     zonal_bkgd = options["zonal_bkgd"].withDefault(false);   // zonal background P filter
 
     // Radial smoothing
-    smooth_j_x = options["smooth_j_x"].withDefault(false); // Smooth Jpar in x
+    smooth_j_x = options["smooth_j_x"].doc("Smooth Jpar in x").withDefault(false);
 
     // Jpar boundary region
     jpar_bndry_width = options["jpar_bndry_width"].withDefault(-1);
@@ -489,7 +491,7 @@ protected:
     // RMP-related options
     include_rmp = options["include_rmp"].withDefault(false); // Read RMP data from grid
 
-    simple_rmp = options["simple_rmp"].withDefault(false); // Include a simple RMP model
+    simple_rmp = options["simple_rmp"].doc("Include a simple RMP model?").withDefault(false);
     rmp_factor = options["rmp_factor"].withDefault(1.0);
     rmp_ramp = options["rmp_ramp"].withDefault(-1.0);
     rmp_freq = options["rmp_freq"].withDefault(-1.0);
@@ -502,12 +504,11 @@ protected:
     vacuum_trans = options["vacuum_trans"].withDefault(0.005);
 
     // Resistivity and hyper-resistivity options
-    vac_lund = options["vac_lund"].withDefault(0.0); // Lundquist number in vacuum region
-    core_lund = options["core_lund"].withDefault(0.0); // Lundquist number in core region
+    vac_lund = options["vac_lund"].doc("Lundquist number in vacuum region").withDefault(0.0);
+    core_lund = options["core_lund"].doc("Lundquist number in core region").withDefault(0.0);
     hyperresist = options["hyperresist"].withDefault(-1.0);
     ehyperviscos = options["ehyperviscos"].withDefault(-1.0);
-    // Use Spitzer resistivity
-    spitzer_resist = options["spitzer_resist"].withDefault(false);
+    spitzer_resist = options["spitzer_resist"].doc("Use Spitzer resistivity?").withDefault(false);
     Zeff = options["Zeff"].withDefault(2.0); // Z effective
 
     // Inner boundary damping
@@ -515,11 +516,10 @@ protected:
     damp_t_const = options["damp_t_const"].withDefault(0.1);
 
     // Viscosity and hyper-viscosity
-    viscos_par = options["viscos_par"].withDefault(-1.0);   // Parallel viscosity
-    viscos_perp = options["viscos_perp"].withDefault(-1.0); // Perpendicular viscosity
-    hyperviscos = options["hyperviscos"].withDefault(-1.0); // Radial hyperviscosity
-
-    // parallel pressure diffusion
+    viscos_par = options["viscos_par"].doc("Parallel viscosity").withDefault(-1.0);
+    viscos_perp = options["viscos_perp"].doc("Perpendicular viscosity").withDefault(-1.0);
+    hyperviscos = options["hyperviscos"].doc("Radial hyperviscosity").withDefault(-1.0);
+    
     // Parallel pressure diffusion
     diffusion_par = options["diffusion_par"].withDefault(-1.0);
     // xqx: parallel hyper-viscous diffusion for pressure
