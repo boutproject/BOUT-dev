@@ -6,11 +6,11 @@
  *
  */
 
-#include <bout/mesh.hxx>
-#include <bout/paralleltransform.hxx>
+#include "bout/mesh.hxx"
+#include "bout/paralleltransform.hxx"
 
-void ParallelTransformIdentity::calcYUpDown(Field3D& f) {
-  f.splitYupYdown();
+void ParallelTransformIdentity::calcParallelSlices(Field3D& f) {
+  f.splitParallelSlices();
 
   for (int i = 0; i < f.getMesh()->ystart; ++i) {
     f.yup(i) = f;
@@ -22,9 +22,9 @@ void ParallelTransformIdentity::checkInputGrid() {
   std::string coordinates_type = "";
   if (!mesh.get(coordinates_type, "coordinates_type")) {
     if (coordinates_type != "field_aligned") {
-      throw BoutException("Incorrect coordinate system type "+coordinates_type+" used "
+      throw BoutException("Incorrect coordinate system type '"+coordinates_type+"' used "
           "to generate metric components for ParallelTransformIdentity. Should be "
-          "'field_aligned.");
+          "'field_aligned'.");
     }
   } // else: coordinate_system variable not found in grid input, indicates older input
     //       file so must rely on the user having ensured the type is correct

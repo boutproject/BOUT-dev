@@ -6,7 +6,7 @@ MZ = 16
 ZMAX = 1
 
 MXG = 2
-MYG = 1
+MYG = 0
 
 [mesh]
 

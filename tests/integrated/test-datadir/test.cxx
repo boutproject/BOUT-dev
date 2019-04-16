@@ -1,5 +1,7 @@
 #include <bout.hxx>
 
 int main(int argc, char **argv) {
-  return BoutInitialise(argc, argv);
+  auto ret = BoutInitialise(argc, argv);
+  BoutFinalise(false);
+  return ret;
 }

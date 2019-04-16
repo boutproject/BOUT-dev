@@ -25,7 +25,6 @@
 autom4te.cache/
 aclocal.m4
 /bin/bout-config
-/externalpackages/
 /include/pvode
 /lib/
 /manual/*.pdf
@@ -39,4 +38,4 @@ bout-coverage/
 src/.libfast
 .*.mk
 *.mo
-
+.BOUT.pid.*

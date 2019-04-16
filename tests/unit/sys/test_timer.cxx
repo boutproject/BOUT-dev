@@ -8,8 +8,8 @@
 namespace bout {
 namespace testing {
 using ms = std::chrono::duration<double, std::chrono::milliseconds::period>;
-constexpr double TimerTolerance{1e-3};
-constexpr auto sleep_length = ms(0.5);
+constexpr double TimerTolerance{0.5e-3};
+constexpr auto sleep_length = ms(1.);
 } // namespace testing
 } // namespace bout
 
@@ -57,6 +57,26 @@ TEST(TimerTest, GetTimeLabelOutOfScope) {
   Timer::seconds elapsed = end - start;
 
   EXPECT_NEAR(Timer::getTime("GetTimeLabelOutOfScope test"), elapsed.count(),
+              bout::testing::TimerTolerance);
+}
+
+TEST(TimerTest, GetTimeLabelSubScope) {
+  auto start = Timer::clock_type::now();
+
+  Timer timer{"GetTimeLabelSubScope test"};
+
+  {
+    Timer timer{"GetTimeLabelSubScope test"};
+
+    std::this_thread::sleep_for(bout::testing::sleep_length);
+  }
+
+  std::this_thread::sleep_for(bout::testing::sleep_length);
+
+  auto end = Timer::clock_type::now();
+  Timer::seconds elapsed = end - start;
+
+  EXPECT_NEAR(Timer::getTime("GetTimeLabelSubScope test"), elapsed.count(),
               bout::testing::TimerTolerance);
 }
 

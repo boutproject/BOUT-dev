@@ -328,15 +328,15 @@ void FCITransform::checkInputGrid() {
   std::string coordinates_type = "";
   if (!mesh.get(coordinates_type, "coordinates_type")) {
     if (coordinates_type != "fci") {
-      throw BoutException("Incorrect coordinate system type "+coordinates_type+" used "
-          "to generate metric components for FCITransform. Should be 'fci.");
+      throw BoutException("Incorrect coordinate system type '"+coordinates_type+"' used "
+          "to generate metric components for FCITransform. Should be 'fci'.");
     }
   } // else: coordinate_system variable not found in grid input, indicates older input
     //       file so must rely on the user having ensured the type is correct
 }
 
-void FCITransform::calcYUpDown(Field3D& f) {
-  TRACE("FCITransform::calcYUpDown");
+void FCITransform::calcParallelSlices(Field3D& f) {
+  TRACE("FCITransform::calcParallelSlices");
 
   ASSERT1(f.getDirectionY() == YDirectionType::Standard);
   // Only have forward_map/backward_map for CELL_CENTRE, so can only deal with
@@ -344,7 +344,7 @@ void FCITransform::calcYUpDown(Field3D& f) {
   ASSERT1(f.getLocation() == CELL_CENTRE);
 
   // Ensure that yup and ydown are different fields
-  f.splitYupYdown();
+  f.splitParallelSlices();
 
   // Interpolate f onto yup and ydown fields
   for (const auto& map : field_line_maps) {
@@ -352,8 +352,8 @@ void FCITransform::calcYUpDown(Field3D& f) {
   }
 }
 
-void FCITransform::integrateYUpDown(Field3D& f) {
-  TRACE("FCITransform::integrateYUpDown");
+void FCITransform::integrateParallelSlices(Field3D& f) {
+  TRACE("FCITransform::integrateParallelSlices");
 
   ASSERT1(f.getDirectionY() == YDirectionType::Standard);
   // Only have forward_map/backward_map for CELL_CENTRE, so can only deal with
@@ -361,7 +361,7 @@ void FCITransform::integrateYUpDown(Field3D& f) {
   ASSERT1(f.getLocation() == CELL_CENTRE);
 
   // Ensure that yup and ydown are different fields
-  f.splitYupYdown();
+  f.splitParallelSlices();
 
   // Integrate f onto yup and ydown fields
   for (const auto& map : field_line_maps) {

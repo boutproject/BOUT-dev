@@ -80,6 +80,20 @@ Field2D::Field2D(BoutReal val, Mesh* localmesh) : Field2D(localmesh) {
   *this = val;
 }
 
+Field2D::Field2D(Array<BoutReal> data, Mesh* localmesh, CELL_LOC datalocation,
+                 DirectionTypes directions_in)
+    : Field(localmesh, datalocation, directions_in), data(data) {
+
+  ASSERT1(fieldmesh != nullptr);
+
+  nx = fieldmesh->LocalNx;
+  ny = fieldmesh->LocalNy;
+
+  ASSERT1(data.size() == nx * ny);
+
+  setLocation(datalocation);
+}
+
 Field2D::~Field2D() {
   if(deriv)
     delete deriv;
@@ -508,3 +522,15 @@ void invalidateGuards(Field2D &var) {
   BOUT_FOR(i, var.getRegion("RGN_GUARDS")) { var[i] = BoutNaN; }
 }
 #endif
+
+bool operator==(const Field2D &a, const Field2D &b) {
+  if (!a.isAllocated() || !b.isAllocated()) {
+    return false;
+  }
+  return min(abs(a - b)) < 1e-10;
+}
+
+std::ostream& operator<<(std::ostream &out, const Field2D &value) {
+  out << toString(value);
+  return out;
+}

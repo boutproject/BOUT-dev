@@ -12,7 +12,10 @@ TIMESTEP = 0.05   # time between outputs
 MXG = 0   # Guard cells in X
 MYG = 2   # Guard cells in Y
 
+
 [mesh]
+
+staggergrids = true
 
 ixseps1 = 5
 ixseps2 = 5

@@ -24,8 +24,7 @@ private:
     Vector2D v0, B0;
 
     // read options
-    auto globalOptions = Options::root();
-    auto options = globalOptions["mhd"];
+    auto& options = Options::root()["mhd"];
     g = options["g"].withDefault(5.0 / 3.0);
     include_viscos = options["include_viscos"].withDefault(false);
     viscos = options["viscos"].withDefault(0.1);
@@ -86,7 +85,7 @@ private:
     return 0;
   }
 
-  int rhs(BoutReal t) override {
+  int rhs(BoutReal UNUSED(time)) override {
     // Communicate variables
 
     mesh->communicate(v, B, p, rho);

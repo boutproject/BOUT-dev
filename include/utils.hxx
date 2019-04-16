@@ -166,8 +166,13 @@ public:
     data.ensureUnique();
   }
   
+  /// Access the underlying storage
+  Array<T>& getData() { return data; }
+  const Array<T>& getData() const { return data; }
+
 private:
   size_type n1, n2;
+  /// Underlying 1D storage array
   Array<T> data;
 };
 
@@ -258,11 +263,17 @@ public:
   void ensureUnique() {
     data.ensureUnique();
   }
- 
+
+  /// Access the underlying storage
+  Array<T>& getData() { return data; }
+  const Array<T>& getData() const { return data; }
+
 private:
   size_type n1, n2, n3;
+  /// Underlying 1D storage array
   Array<T> data;
 };
+
 
 /**************************************************************************
  * Matrix routines
@@ -422,6 +433,21 @@ std::string toString(const T& val) {
 /// where the type may be std::string.
 inline std::string toString(const std::string& val) {
   return val;
+}
+
+template <>
+inline std::string toString<>(const Array<BoutReal>& UNUSED(val)) {
+  return "<Array>";
+}
+
+template <>
+inline std::string toString<>(const Matrix<BoutReal>& UNUSED(val)) {
+  return "<Matrix>";
+}
+
+template <>
+inline std::string toString<>(const Tensor<BoutReal>& UNUSED(val)) {
+  return "<Tensor>";
 }
 
 /// Convert a bool to "true" or "false"

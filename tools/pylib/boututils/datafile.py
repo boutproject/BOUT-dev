@@ -596,12 +596,15 @@ class DataFile_netCDF(DataFile):
                 raise Exception("Couldn't create variable")
 
         # Write the data
-        try:
-            # Some libraries allow this for arrays
-            var.assignValue(data)
-        except:
-            # And some others only this
-            var[:] = data
+        if t == 'str':
+            var[0] = data
+        else:
+            try:
+                # Some libraries allow this for arrays
+                var.assignValue(data)
+            except:
+                # And some others only this
+                var[:] = data
 
         # Write attributes, if present
         try:

@@ -26,11 +26,6 @@ public:
 
     mesh_from_options.createDefaultRegions();
 
-    // We need a parallel transform as FieldFactory::create3D wants to
-    // un-field-align the result
-    mesh_from_options.setParallelTransform(
-        bout::utils::make_unique<ParallelTransformIdentity>(mesh_from_options));
-
     griddata = new GridFromOptions(&options);
     mesh_from_options.setGridDataSource(griddata);
 
@@ -50,6 +45,11 @@ public:
     options["g23"] = expected_string;
 
     mesh_from_options.getCoordinates();
+
+    // We need a parallel transform as FieldFactory::create3D wants to
+    // un-field-align the result
+    mesh_from_options.getCoordinates()->setParallelTransform(
+        bout::utils::make_unique<ParallelTransformIdentity>(mesh_from_options));
 
     expected_2d = makeField<Field2D>(
         [](Field2D::ind_type& index) {
@@ -76,6 +76,7 @@ public:
   static const int ny{11};
   static const int nz{5};
 
+  std::shared_ptr<Coordinates> test_coords;
   Options options;
   GridFromOptions* griddata;
   std::string expected_string{"x + y + z + 3"};

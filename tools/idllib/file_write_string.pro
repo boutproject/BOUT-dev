@@ -26,7 +26,7 @@ FUNCTION file_write_string, handle, varname, data
 
   NCDF_CONTROL, handle.id, /REDEF
 
-  NCDF_ATTPUT, handle.id, /GLOBAL, varname, data
+  NCDF_ATTPUT, handle.id, /GLOBAL, varname, data, /CHAR
     
   NCDF_CONTROL, handle.id, /ENDEF
   

@@ -92,6 +92,20 @@ Field3D::Field3D(const BoutReal val, Mesh* localmesh) : Field3D(localmesh) {
   *this = val;
 }
 
+Field3D::Field3D(Array<BoutReal> data, Mesh* localmesh, CELL_LOC datalocation,
+                 DirectionTypes directions_in)
+    : Field(localmesh, datalocation, directions_in), data(data) {
+  TRACE("Field3D: Copy constructor from Array and Mesh");
+
+  nx = fieldmesh->LocalNx;
+  ny = fieldmesh->LocalNy;
+  nz = fieldmesh->LocalNz;
+
+  ASSERT1(data.size() == nx * ny * nz);
+
+  setLocation(datalocation);
+}
+
 Field3D::~Field3D() {
   /// Delete the time derivative variable if allocated
   if (deriv != nullptr) {
@@ -126,12 +140,12 @@ Field3D* Field3D::timeDeriv() {
   return deriv;
 }
 
-void Field3D::splitYupYdown() {
-  TRACE("Field3D::splitYupYdown");
+void Field3D::splitParallelSlices() {
+  TRACE("Field3D::splitParallelSlices");
   
 #if CHECK > 2
   if (yup_fields.size() != ydown_fields.size()) {
-    throw BoutException("Field3D::splitYupYdown: forward/backward parallel slices not in sync.\n"
+    throw BoutException("Field3D::splitParallelSlices: forward/backward parallel slices not in sync.\n"
                         "    This is an internal library error");
   }
 #endif
@@ -148,8 +162,8 @@ void Field3D::splitYupYdown() {
   }
 }
 
-void Field3D::mergeYupYdown() {
-  TRACE("Field3D::mergeYupYdown");
+void Field3D::clearParallelSlices() {
+  TRACE("Field3D::clearParallelSlices");
 
 #if CHECK > 2
   if (yup_fields.size() != ydown_fields.size()) {
@@ -230,7 +244,11 @@ Field3D & Field3D::operator=(const Field3D &rhs) {
     return(*this); // skip this assignment
 
   TRACE("Field3D: Assignment from Field3D");
-  
+
+  // Delete existing parallel slices. We don't copy parallel slices, so any
+  // that currently exist will be incorrect.
+  clearParallelSlices();
+
   copyFieldMembers(rhs);
 
   // Copy the data and data sizes
@@ -248,6 +266,10 @@ Field3D & Field3D::operator=(const Field2D &rhs) {
 
   /// Check that the data is allocated
   ASSERT1(rhs.isAllocated());
+
+  // Delete existing parallel slices. We don't copy parallel slices, so any
+  // that currently exist will be incorrect.
+  clearParallelSlices();
 
   setLocation(rhs.getLocation());
 
@@ -268,6 +290,10 @@ void Field3D::operator=(const FieldPerp &rhs) {
   /// Check that the data is allocated
   ASSERT1(rhs.isAllocated());
 
+  // Delete existing parallel slices. We don't copy parallel slices, so any
+  // that currently exist will be incorrect.
+  clearParallelSlices();
+
   /// Make sure there's a unique array to copy data into
   allocate();
 
@@ -278,10 +304,19 @@ void Field3D::operator=(const FieldPerp &rhs) {
 Field3D & Field3D::operator=(const BoutReal val) {
   TRACE("Field3D = BoutReal");
 
+  // Delete existing parallel slices. We don't copy parallel slices, so any
+  // that currently exist will be incorrect.
+  clearParallelSlices();
+
   allocate();
 
   BOUT_FOR(i, getRegion("RGN_ALL")) { (*this)[i] = val; }
 
+  return *this;
+}
+
+Field3D& Field3D::calcParallelSlices() {
+  getCoordinates()->getParallelTransform().calcParallelSlices(*this);
   return *this;
 }
 
@@ -559,6 +594,14 @@ void Field3D::applyParallelBoundary(const std::string &region, const std::string
 Field3D operator-(const Field3D &f) { return -1.0 * f; }
 
 //////////////// NON-MEMBER FUNCTIONS //////////////////
+
+Field3D toFieldAligned(const Field3D& f, const REGION region) {
+  return f.getCoordinates()->getParallelTransform().toFieldAligned(f, region);
+}
+
+Field3D fromFieldAligned(const Field3D& f, const REGION region) {
+  return f.getCoordinates()->getParallelTransform().fromFieldAligned(f, region);
+}
 
 Field3D pow(const Field3D &lhs, const Field3D &rhs, REGION rgn) {
   TRACE("pow(Field3D, Field3D)");
@@ -978,3 +1021,15 @@ void invalidateGuards(Field3D &var) {
   BOUT_FOR(i, var.getRegion("RGN_GUARDS")) { var[i] = BoutNaN; }
 }
 #endif
+
+bool operator==(const Field3D &a, const Field3D &b) {
+  if (!a.isAllocated() || !b.isAllocated()) {
+    return false;
+  }
+  return min(abs(a - b)) < 1e-10;
+}
+
+std::ostream& operator<<(std::ostream &out, const Field3D &value) {
+  out << toString(value);
+  return out;
+}

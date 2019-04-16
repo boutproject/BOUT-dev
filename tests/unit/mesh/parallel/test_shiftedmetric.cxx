@@ -2,7 +2,6 @@
 
 #include "fft.hxx"
 #include "test_extras.hxx"
-#include "bout/paralleltransform.hxx"
 
 // The unit tests use the global mesh
 using namespace bout::globals;
@@ -40,7 +39,10 @@ public:
         Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
         Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, false));
 
-    mesh->setParallelTransform(bout::utils::make_unique<ShiftedMetric>(*mesh, zShift));
+    auto coords = mesh->getCoordinates();
+    coords->setParallelTransform(
+        bout::utils::make_unique<ShiftedMetric>(*mesh, CELL_CENTRE, zShift,
+            coords->zlength()));
 
     Field3D input_temp{mesh};
 
@@ -116,11 +118,11 @@ TEST_F(ShiftedMetricTest, ToFieldAligned) {
                         {4., 5., 1., 3., 2.},
                         {2., 4., 3., 5., 1.}}});
 
-  Field3D result = mesh->toFieldAligned(input);
+  Field3D result = toFieldAligned(input);
 
   EXPECT_TRUE(IsFieldEqual(result, expected, "RGN_ALL",
                            FFTTolerance));
-  EXPECT_TRUE(IsFieldEqual(mesh->fromFieldAligned(input), input));
+  EXPECT_TRUE(IsFieldEqual(fromFieldAligned(input), input));
   EXPECT_TRUE(areFieldsCompatible(result, expected));
   EXPECT_FALSE(areFieldsCompatible(result, input));
 }
@@ -157,29 +159,29 @@ TEST_F(ShiftedMetricTest, FromFieldAligned) {
                         {2., 4., 5., 1., 3.},
                         {5., 1., 2., 4., 3.}}});
 
-  Field3D result = mesh->fromFieldAligned(input);
+  Field3D result = fromFieldAligned(input);
 
   // Loosen tolerance a bit due to FFTs
   EXPECT_TRUE(IsFieldEqual(result, expected, "RGN_ALL",
                            FFTTolerance));
-  EXPECT_TRUE(IsFieldEqual(mesh->toFieldAligned(input), input));
+  EXPECT_TRUE(IsFieldEqual(toFieldAligned(input), input));
   EXPECT_TRUE(areFieldsCompatible(result, expected));
   EXPECT_FALSE(areFieldsCompatible(result, input));
 }
 
 TEST_F(ShiftedMetricTest, FromToFieldAligned) {
-  EXPECT_TRUE(IsFieldEqual(mesh->fromFieldAligned(mesh->toFieldAligned(input)), input, "RGN_ALL",
+  EXPECT_TRUE(IsFieldEqual(fromFieldAligned(toFieldAligned(input)), input, "RGN_ALL",
                            FFTTolerance));
 }
 
 TEST_F(ShiftedMetricTest, ToFromFieldAligned) {
   input.setDirectionY(YDirectionType::Aligned);
 
-  EXPECT_TRUE(IsFieldEqual(mesh->toFieldAligned(mesh->fromFieldAligned(input)), input, "RGN_ALL",
+  EXPECT_TRUE(IsFieldEqual(toFieldAligned(fromFieldAligned(input)), input, "RGN_ALL",
                            FFTTolerance));
 }
 
-TEST_F(ShiftedMetricTest, CalcYUpDown) {
+TEST_F(ShiftedMetricTest, CalcParallelSlices) {
   // We don't shift in the guard cells, and the parallel slices are
   // stored offset in y, therefore we need to make new regions that we
   // can compare the expected and actual outputs over
@@ -200,7 +202,7 @@ TEST_F(ShiftedMetricTest, CalcYUpDown) {
   output_info.enable();
 
   // Actual interesting bit here!
-  mesh->getParallelTransform().calcYUpDown(input);
+  input.getCoordinates()->getParallelTransform().calcParallelSlices(input);
   // Expected output values
 
   Field3D expected_up_1{mesh};

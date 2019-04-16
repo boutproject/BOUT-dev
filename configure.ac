@@ -993,33 +993,19 @@ AS_IF([test "x$with_sundials" != "x" && test "x$with_sundials" != "xno"], [
     [AC_MSG_RESULT([no])
      AC_MSG_FAILURE([*** Could not determine SUNDIALS version])])
 
-  # Version 3.0.0 changed the name of this define to just SUNDIALS_VERSION
-  AC_MSG_CHECKING([for SUNDIALS major version])
-  AC_EGREP_CPP([yes], [
-    #include "sundials/sundials_config.h"
-    #ifdef SUNDIALS_PACKAGE_VERSION
-      yes
-    #endif
-  ], [sundials_major_ver=2], [sundials_major_ver=3])
-  AC_MSG_RESULT([$sundials_major_ver])
-
-  AS_IF([test $sundials_major_ver = 3], [
-    AC_MSG_FAILURE([*** Unsupported SUNDIALS version: Only 2.6-2.7 are supported currently])
-  ])
-
   AC_MSG_CHECKING([for SUNDIALS minor version])
-  AC_EGREP_CPP([^ *\"? *2\.[67]\.], [
+  AC_EGREP_CPP([^ *\"? *[12]\.[0-5]\.], [
     #include "sundials/sundials_config.h"
     #ifdef SUNDIALS_PACKAGE_VERSION
     SUNDIALS_PACKAGE_VERSION
     #endif
-  ], [sundials_minor_ver=ok], [sundials_minor_ver="too low"])
+  ], [sundials_minor_ver="too low"], [sundials_minor_ver=ok])
   AC_MSG_RESULT([$sundials_minor_ver])
 
   CPPFLAGS=$save_CPPFLAGS
 
   AS_IF([test "$sundials_minor_ver" = "too low"], [
-    AC_MSG_FAILURE([*** Unsupported SUNDIALS version: Only 2.6-2.7 are supported currently])
+    AC_MSG_FAILURE([*** Unsupported SUNDIALS version: Requires at least 2.6])
   ])
 
   # Set both IDA and CVODE if not set already
@@ -1052,7 +1038,13 @@ AS_IF([test "x$with_cvode" != "x" && test "x$with_cvode" != "xno"], [
     #include <nvector/nvector_parallel.h>
     #include <cvode/cvode.h>
     extern void foo(N_Vector);
-  ], [CVodeCreate(0, 0);], [
+  ], [
+    #if SUNDIALS_VERSION_MAJOR >= 4
+    CVodeCreate(0);
+    #else
+    CVodeCreate(0, 0);
+    #endif
+  ], [
     #include <cvode/cvode_bbdpre.h>
     extern int cvode_bbd_rhs(CVODEINT, double, N_Vector, N_Vector, void *);
   ], [CVBBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, cvode_bbd_rhs, nullptr);])
@@ -1061,9 +1053,19 @@ AS_IF([test "x$with_cvode" != "x" && test "x$with_cvode" != "xno"], [
 AS_IF([test "x$with_arkode" != "x" && test "x$with_arkode" != "xno"], [
   BOUT_FIND_SUNDIALS_MODULE([arkode], [
     #include <nvector/nvector_parallel.h>
+    #if SUNDIALS_VERSION_MAJOR >= 4
+    #include <arkode/arkode_arkstep.h>
+    #else
     #include <arkode/arkode.h>
+    #endif
     extern void foo(N_Vector);
-  ], [ARKodeCreate();], [
+  ], [
+    #if SUNDIALS_VERSION_MAJOR >= 4
+    ARKStepCreate(0, 0, 0, 0);
+    #else
+    ARKodeCreate();
+    #endif
+  ], [
     #include <arkode/arkode_bbdpre.h>
     extern int arkode_bbd_rhs(ARKODEINT, double, N_Vector, N_Vector, void *);
   ], [ARKBBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, arkode_bbd_rhs, nullptr);])
@@ -1267,8 +1269,10 @@ AC_SUBST(CONFIG_LDFLAGS)
 # If make install is run then that replaces these paths
 BOUT_LIB_PATH=$PWD/lib
 BOUT_INCLUDE_PATH=$PWD/include
+MPARK_VARIANT_INCLUDE_PATH=$PWD/externalpackages/mpark.variant/include
 AC_SUBST(BOUT_LIB_PATH)
 AC_SUBST(BOUT_INCLUDE_PATH)
+AC_SUBST(MPARK_VARIANT_INCLUDE_PATH)
 
 AC_SUBST(PREFIX)
 AC_SUBST(IDLCONFIGPATH)

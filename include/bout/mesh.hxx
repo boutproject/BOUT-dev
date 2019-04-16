@@ -67,8 +67,6 @@ class Mesh;
 
 #include "coordinates.hxx"    // Coordinates class
 
-#include "paralleltransform.hxx" // ParallelTransform class
-
 #include "unused.hxx"
 
 #include <bout/region.hxx>
@@ -196,6 +194,12 @@ class Mesh {
 
   /// Wrapper for GridDataSource::hasVar
   bool sourceHasVar(const std::string &name);
+
+  /// Wrapper for GridDataSource::hasXBoundaryGuards
+  bool sourceHasXBoundaryGuards();
+
+  /// Wrapper for GridDataSource::hasYBoundaryGuards
+  bool sourceHasYBoundaryGuards();
   
   // Communications
   /*!
@@ -332,6 +336,22 @@ class Mesh {
   /// \param[in] jx   The local (on this processor) index in X
   /// \param[out] ts  The Twist-Shift angle if periodic
   virtual bool periodicY(int jx, BoutReal &ts) const = 0;
+
+  /// Is there a branch cut at this processor's lower y-boundary?
+  ///
+  /// @param[in] jx             The local (on this processor) index in X
+  /// @returns pair<bool, BoutReal> - bool is true if there is a branch cut,
+  ///                                 BoutReal gives the total zShift for a 2pi
+  ///                                 poloidal circuit if there is a branch cut
+  virtual std::pair<bool, BoutReal> hasBranchCutLower(int jx) const = 0;
+
+  /// Is there a branch cut at this processor's upper y-boundary?
+  ///
+  /// @param[in] jx             The local (on this processor) index in X
+  /// @returns pair<bool, BoutReal> - bool is true if there is a branch cut,
+  ///                                 BoutReal gives the total zShift for a 2pi
+  ///                                 poloidal circuit if there is a branch cut
+  virtual std::pair<bool, BoutReal> hasBranchCutUpper(int jx) const = 0;
   
   virtual int ySize(int jx) const; ///< The number of points in Y at fixed X index \p jx
 
@@ -445,6 +465,8 @@ class Mesh {
   
   /// Include integrated shear (if shifting X)
   bool IncIntShear{false};
+
+  int numberOfXPoints{0};
 
   /// Coordinate system
   Coordinates *getCoordinates(const CELL_LOC location = CELL_CENTRE) {
@@ -700,52 +722,49 @@ class Mesh {
     return bout::derivatives::index::FDDZ(vel, f, outloc, method, region);
   }
 
-  ///////////////////////////////////////////////////////////
-  // PARALLEL TRANSFORMS
-  ///////////////////////////////////////////////////////////
-
-  /// Transform a field into field-aligned coordinates
+  [[gnu::deprecated("Please use free function toFieldAligned instead")]]
   const Field3D toFieldAligned(const Field3D &f, const REGION region = RGN_ALL) {
-    return getParallelTransform().toFieldAligned(f, region);
+    return ::toFieldAligned(f, region);
   }
-  const Field2D toFieldAligned(const Field2D &f, const REGION UNUSED(region) = RGN_ALL) {
-    return f;
-  }
-  
-  /// Convert back into standard form
+
+  [[gnu::deprecated("Please use free function fromFieldAligned instead")]]
   const Field3D fromFieldAligned(const Field3D &f, const REGION region = RGN_ALL) {
-    return getParallelTransform().fromFieldAligned(f, region);
-  }
-  const Field2D fromFieldAligned(const Field2D &f, const REGION UNUSED(region) = RGN_ALL) {
-    return f;
+    return ::fromFieldAligned(f, region);
   }
 
+  [[gnu::deprecated("Please use free function toFieldAligned instead")]]
+  const Field2D toFieldAligned(const Field2D &f, const REGION region = RGN_ALL) {
+    return ::toFieldAligned(f, region);
+  }
+
+  [[gnu::deprecated("Please use free function fromFieldAligned instead")]]
+  const Field2D fromFieldAligned(const Field2D &f, const REGION region = RGN_ALL) {
+    return ::fromFieldAligned(f, region);
+  }
+
+  [[gnu::deprecated("Please use "
+      "Coordinates::getParallelTransform().canToFromFieldAligned instead")]]
   bool canToFromFieldAligned() {
-    return getParallelTransform().canToFromFieldAligned();
+    return getCoordinates()->getParallelTransform().canToFromFieldAligned();
   }
 
-  /*!
-   * Unique pointer to ParallelTransform object
-   */
-  typedef std::unique_ptr<ParallelTransform> PTptr;
-  
-  /*!
-   * Set the parallel (y) transform for this mesh.
-   * Unique pointer used so that ParallelTransform will be deleted
-   */
-  void setParallelTransform(PTptr pt) {
-    transform = std::move(pt);
+  [[gnu::deprecated("Please use Coordinates::setParallelTransform instead")]]
+  void setParallelTransform(std::unique_ptr<ParallelTransform> pt) {
+    getCoordinates()->setParallelTransform(std::move(pt));
   }
-  /*!
-   * Set the parallel (y) transform from the options file
-   */
-  void setParallelTransform();
 
-  /*!
-   * Return the parallel transform, setting it if need be
-   */
-  ParallelTransform& getParallelTransform();
-  
+  [[gnu::deprecated("This call is now unnecessary")]]
+  void setParallelTransform() {
+    // The ParallelTransform is set from options in the Coordinates
+    // constructor, so this method doesn't need to do anything
+  }
+
+  [[gnu::deprecated("Please use Coordinates::getParallelTransform instead")]]
+  ParallelTransform& getParallelTransform() {
+    return getCoordinates()->getParallelTransform();
+  }
+
+
   ///////////////////////////////////////////////////////////
   // REGION RELATED ROUTINES
   ///////////////////////////////////////////////////////////
@@ -822,11 +841,8 @@ protected:
   /// Mesh options section
   Options *options{nullptr};
 
-  /// Set whether to call calcYUpDown on all communicated fields (true) or not (false)
-  bool calcYUpDown_on_communicate{true};
-
-  /// Handles calculation of yup and ydown
-  PTptr transform{nullptr};
+  /// Set whether to call calcParallelSlices on all communicated fields (true) or not (false)
+  bool calcParallelSlices_on_communicate{true};
 
   /// Read a 1D array of integers
   const std::vector<int> readInts(const std::string &name, int n);

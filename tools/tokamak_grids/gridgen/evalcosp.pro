@@ -16,48 +16,48 @@ function EvalCosP, fsig, x0=x0,y0=y0
   nx=s[0]
   ny=s[1]
 
-  sum=0.0
+  sum=0.0D
   ; First derivatives
-  sumx=0.0
-  sumy=0.0
+  sumx=0.0D
+  sumy=0.0D
   ; Second derivatives
-  sumxx = 0.0
-  sumyy = 0.0
-  sumxy = 0.0
+  sumxx = 0.0D
+  sumyy = 0.0D
+  sumxy = 0.0D
   
   for iu=0,Nx-1 do begin
     for jv=0,Ny-1 do begin
       ;     
-      if (iu eq 0) then cu=0.707107 else cu=1.
-      if (jv eq 0) then cv=0.707107 else cv=1.
+      if (iu eq 0) then cu=0.707107D else cu=1.D
+      if (jv eq 0) then cv=0.707107D else cv=1.D
       
       sum=sum + cv*cu*fsig[iu,jv]*$
-        COS(jv*!PI*(2*y0+1)/(2*Ny))*COS(iu*!PI*(2*x0+1)/(2*Nx))
+        COS(jv*!DPI*(2*y0+1)/(2*Ny))*COS(iu*!DPI*(2*x0+1)/(2*Nx))
       
       sumx=sumx + cv*cu*fsig[iu,jv]*$
-        COS(jv*!PI*(2*y0+1)/(2*Ny))*SIN(iu*!PI*(2*x0+1)/(2*Nx))*$
-        (-iu*!PI/Nx)
+        COS(jv*!DPI*(2*y0+1)/(2*Ny))*SIN(iu*!DPI*(2*x0+1)/(2*Nx))*$
+        (-iu*!DPI/Nx)
       
       sumy=sumy + cv*cu*fsig[iu,jv]*$
-        SIN(jv*!PI*(2*y0+1)/(2*Ny))*COS(iu*!PI*(2*x0+1)/(2*Nx))*$
-        (-jv*!PI/Ny)
+        SIN(jv*!DPI*(2*y0+1)/(2*Ny))*COS(iu*!DPI*(2*x0+1)/(2*Nx))*$
+        (-jv*!DPI/Ny)
       
       sumxx = sumxx - cv*cu*fsig[iu,jv]*$
-        COS(jv*!PI*(2*y0+1)/(2*Ny))*COS(iu*!PI*(2*x0+1)/(2*Nx))*$
-        (iu*!PI/Nx)^2
+        COS(jv*!DPI*(2*y0+1)/(2*Ny))*COS(iu*!DPI*(2*x0+1)/(2*Nx))*$
+        (iu*!DPI/Nx)^2
       
       sumyy = sumyy - cv*cu*fsig[iu,jv]*$
-        COS(jv*!PI*(2*y0+1)/(2*Ny))*COS(iu*!PI*(2*x0+1)/(2*Nx))*$
-        (jv*!PI/Ny)^2
+        COS(jv*!DPI*(2*y0+1)/(2*Ny))*COS(iu*!DPI*(2*x0+1)/(2*Nx))*$
+        (jv*!DPI/Ny)^2
       
       sumxy = sumxy + cv*cu*fsig[iu,jv]*$
-        SIN(jv*!PI*(2*y0+1)/(2*Ny))*SIN(iu*!PI*(2*x0+1)/(2*Nx))*$
-        (iu*!PI/Nx)*(jv*!PI/Ny)
+        SIN(jv*!DPI*(2*y0+1)/(2*Ny))*SIN(iu*!DPI*(2*x0+1)/(2*Nx))*$
+        (iu*!DPI/Nx)*(jv*!DPI/Ny)
       ;
     endfor
   endfor
   
-  res=SQRT(2./Nx)*SQRT(2./Ny)*[sum, sumx,sumy, sumxx,sumyy,sumxy]   
+  res=SQRT(2.D/Nx)*SQRT(2.D/Ny)*[sum, sumx,sumy, sumxx,sumyy,sumxy]   
 ;
 ;
 ;

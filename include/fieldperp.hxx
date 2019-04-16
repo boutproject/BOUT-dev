@@ -271,33 +271,29 @@ private:
   
 // Non-member overloaded operators
   
-const FieldPerp operator+(const FieldPerp &lhs, const FieldPerp &rhs);
-const FieldPerp operator+(const FieldPerp &lhs, const Field3D &rhs);
-const FieldPerp operator+(const FieldPerp &lhs, const Field2D &rhs);
-const FieldPerp operator+(const FieldPerp &lhs, BoutReal rhs);
-inline const FieldPerp operator+(BoutReal lhs, const FieldPerp &rhs) {
-  return rhs + lhs;
-}
+FieldPerp operator+(const FieldPerp &lhs, const FieldPerp &rhs);
+FieldPerp operator+(const FieldPerp &lhs, const Field3D &rhs);
+FieldPerp operator+(const FieldPerp &lhs, const Field2D &rhs);
+FieldPerp operator+(const FieldPerp &lhs, BoutReal rhs);
+FieldPerp operator+(BoutReal lhs, const FieldPerp &rhs);
 
-const FieldPerp operator-(const FieldPerp &lhs, const FieldPerp &other);
-const FieldPerp operator-(const FieldPerp &lhs, const Field3D &other);
-const FieldPerp operator-(const FieldPerp &lhs, const Field2D &other);
-const FieldPerp operator-(const FieldPerp &lhs, BoutReal rhs);
-const FieldPerp operator-(BoutReal lhs, const FieldPerp &rhs);
+FieldPerp operator-(const FieldPerp &lhs, const FieldPerp &rhs);
+FieldPerp operator-(const FieldPerp &lhs, const Field3D &rhs);
+FieldPerp operator-(const FieldPerp &lhs, const Field2D &rhs);
+FieldPerp operator-(const FieldPerp &lhs, BoutReal rhs);
+FieldPerp operator-(BoutReal lhs, const FieldPerp &rhs);
 
-const FieldPerp operator*(const FieldPerp &lhs, const FieldPerp &other);
-const FieldPerp operator*(const FieldPerp &lhs, const Field3D &other);
-const FieldPerp operator*(const FieldPerp &lhs, const Field2D &other);
-const FieldPerp operator*(const FieldPerp &lhs, BoutReal rhs);
-inline const FieldPerp operator*(BoutReal lhs, const FieldPerp &rhs) {
-  return rhs * lhs;
-}
+FieldPerp operator*(const FieldPerp &lhs, const FieldPerp &rhs);
+FieldPerp operator*(const FieldPerp &lhs, const Field3D &rhs);
+FieldPerp operator*(const FieldPerp &lhs, const Field2D &rhs);
+FieldPerp operator*(const FieldPerp &lhs, BoutReal rhs);
+FieldPerp operator*(BoutReal lhs, const FieldPerp &rhs);
 
-const FieldPerp operator/(const FieldPerp &lhs, const FieldPerp &other);
-const FieldPerp operator/(const FieldPerp &lhs, const Field3D &other);
-const FieldPerp operator/(const FieldPerp &lhs, const Field2D &other);
-const FieldPerp operator/(const FieldPerp &lhs, BoutReal rhs);
-const FieldPerp operator/(BoutReal lhs, const FieldPerp &rhs);
+FieldPerp operator/(const FieldPerp &lhs, const FieldPerp &rhs);
+FieldPerp operator/(const FieldPerp &lhs, const Field3D &rhs);
+FieldPerp operator/(const FieldPerp &lhs, const Field2D &rhs);
+FieldPerp operator/(const FieldPerp &lhs, BoutReal rhs);
+FieldPerp operator/(BoutReal lhs, const FieldPerp &rhs);
 
 /*!
  * Unary minus. Returns the negative of given field,
