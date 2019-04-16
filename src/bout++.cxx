@@ -209,7 +209,8 @@ void setupGetText() {
   } catch (const std::runtime_error& e) {
     fprintf(stderr, "WARNING: Could not set locale. Check the LANG environment variable "
         "(get available values by running 'locale -a'). If LANG is correct, there may be "
-        "a problem with the BOUT_LOCALE_PATH that BOUT++ was compiled with.\n");
+        "a problem with the BOUT_LOCALE_PATH=%s that BOUT++ was compiled with.\n",
+        BUILDFLAG(BOUT_LOCALE_PATH));
   }
 #endif // BOUT_HAS_GETTEXT
 }
