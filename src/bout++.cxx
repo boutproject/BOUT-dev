@@ -207,7 +207,9 @@ void setupGetText() {
 
     bindtextdomain(GETTEXT_PACKAGE, BUILDFLAG(BOUT_LOCALE_PATH));
   } catch (const std::runtime_error& e) {
-    fprintf(stderr, "WARNING: Could not set locale. Try a different LANG setting\n");
+    fprintf(stderr, "WARNING: Could not set locale. Check the LANG environment variable "
+        "(get available values by running 'locale -a'). If LANG is correct, there may be "
+        "a problem with the BOUT_LOCALE_PATH that BOUT++ was compiled with.\n");
   }
 #endif // BOUT_HAS_GETTEXT
 }
