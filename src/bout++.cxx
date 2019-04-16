@@ -206,8 +206,6 @@ void setupGetText() {
     std::setlocale(LC_NUMERIC, "C");
 
     bindtextdomain(GETTEXT_PACKAGE, BUILDFLAG(BOUT_LOCALE_PATH));
-
-    fprintf(stderr, "LOCALE_PATH = '%s'\n", BUILDFLAG(BOUT_LOCALE_PATH));
   } catch (const std::runtime_error& e) {
     fprintf(stderr, "WARNING: Could not set locale. Try a different LANG setting\n");
   }
