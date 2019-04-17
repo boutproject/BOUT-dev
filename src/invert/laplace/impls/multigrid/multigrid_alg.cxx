@@ -73,6 +73,11 @@ MultigridAlg::~MultigridAlg() {
 
 void MultigridAlg::getSolution(BoutReal *x,BoutReal *b,int flag) {
 
+  // swap ghost cells of initial guess
+  communications(x, mglevel-1);
+  // don't think the ghost cells of the rhs are used, so don't need to be communicated
+  // /JTO 17-4-2019
+
   if(flag == 0) {
     //Solve exaclty
     if(mglevel == 1) pGMRES(x,b,mglevel-1,1);
@@ -132,14 +137,12 @@ BOUT_OMP(for)
 
     smoothings(level,sol,rhs);
   }
-  communications(sol,level);
   return;
 }
 
 void MultigridAlg::projection(int level,BoutReal *r,BoutReal *pr) 
 {
 
-  communications(r,level);
 BOUT_OMP(parallel default(shared))
   {
 BOUT_OMP(for)
@@ -166,7 +169,6 @@ BOUT_OMP(for collapse(2))
 
 void MultigridAlg::prolongation(int level,BoutReal *x,BoutReal *ix) {
 
-  communications(x,level);
 BOUT_OMP(parallel default(shared))
   {
 BOUT_OMP(for)
@@ -202,7 +204,6 @@ void MultigridAlg::smoothings(int level, BoutReal *x, BoutReal *b) {
   dim = mm*(lnx[level]+2);
   if(mgsm == 0) {
     Array<BoutReal> x0(dim);
-    communications(x,level);
 BOUT_OMP(parallel default(shared))
     for(int num =0;num < 2;num++) {
 BOUT_OMP(for)
@@ -228,7 +229,6 @@ BOUT_OMP(for collapse(2))
     }
   }
   else {
-    communications(x,level);    
     for(int i = 1;i<lnx[level]+1;i++)
       for(int k=1;k<lnz[level]+1;k++) {
         int nn = i*mm+k;
@@ -282,7 +282,6 @@ BOUT_OMP(for)
   for(int i = 0;i<ldim;i++) sol[i] = 0.0;
   int num = 0;
 
-  communications(rhs,level);
   ini_e = sqrt(vectorProd(level,rhs,rhs));
   if((pcheck == 1) && (rProcI == 0)) {
     output<<numP<<"--In GMRES ini "<<ini_e<<endl;
@@ -504,7 +503,6 @@ BOUT_OMP(for reduction(+:ini_e) collapse(2))
 
 void MultigridAlg::multiAVec(int level, BoutReal *x, BoutReal *b) {
 
-  communications(x,level);
   int mm = lnz[level]+2;
 BOUT_OMP(parallel default(shared))
   {
@@ -532,7 +530,6 @@ void MultigridAlg::residualVec(int level, BoutReal *x, BoutReal *b,
 BoutReal *r) {
 
   int mm;
-  communications(x,level);
   mm = lnz[level]+2;
 BOUT_OMP(parallel default(shared))
   {
@@ -722,7 +719,6 @@ BOUT_OMP(parallel default(shared))
 BOUT_OMP(for)
   for(int i = 0;i<ldim;i++) sol[i] = 0.0;
 
-  communications(rhs,level);
   ini_e = vectorProd(level,rhs,rhs);
   if(ini_e < 0.0)
     throw BoutException("In MG Initial Error %10.4e \n",ini_e);
