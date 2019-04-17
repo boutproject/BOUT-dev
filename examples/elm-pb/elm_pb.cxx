@@ -244,10 +244,9 @@ private:
       for (auto i : result) {
         BoutReal mgx = mesh->GlobalX(i.x());
         BoutReal xgrid_num = (Jxsep + 1.) / Grid_NX;
-        // output.write("mgx = %e xgrid_num = %e\n", mgx);
 
         int globaly = mesh->YGLOBAL(i.y());
-        // output.write("local y = %i;   global y: %i\n", i.y, globaly);
+
         if (mgx > xgrid_num || (globaly <= int(Jysep) - 4) || (globaly > int(Jysep2)))
           mgx = xgrid_num;
         BoutReal rlx = mgx - n0_center;
@@ -310,12 +309,10 @@ protected:
 
     // Load metrics
     if (mesh->get(Rxy, "Rxy")) { // m
-      output_error.write("Error: Cannot read Rxy from grid\n");
-      return 1;
+      throw BoutException("Error: Cannot read Rxy from grid\n");
     }
     if (mesh->get(Bpxy, "Bpxy")) { // T
-      output_error.write("Error: Cannot read Bpxy from grid\n");
-      return 1;
+      throw BoutException("Error: Cannot read Bpxy from grid\n");
     }
     mesh->get(Btxy, "Btxy");          // T
     mesh->get(B0, "Bxy");             // T
@@ -326,17 +323,6 @@ protected:
     mesh->get(Psibndry, "psi_bndry"); // edge flux
 
     //////////////////////////////////////////////////////////////
-    // Read parameters from the options file
-    //
-    // Options.get ( NAME,    VARIABLE,    DEFAULT VALUE)
-    //
-    // or if NAME = "VARIABLE" then just
-    //
-    // OPTION(VARIABLE, DEFAULT VALUE)
-    //
-    // Prints out what values are assigned
-    /////////////////////////////////////////////////////////////
-
     auto& globalOptions = Options::root();
     auto& options = globalOptions["highbeta"];
 
@@ -378,7 +364,9 @@ protected:
     nonlinear = options["nonlinear"].doc("Include nonlinear terms?").withDefault(false);
 
     // option for ExB Poisson Bracket
-    bm_exb_flag = options["bm_exb_flag"].withDefault(0);
+    bm_exb_flag = options["bm_exb_flag"]
+                      .doc("ExB Poisson bracket method. 0=standard;1=simple;2=arakawa")
+                      .withDefault(0);
     switch (bm_exb_flag) {
     case 0: {
       bm_exb = BRACKET_STD;
@@ -401,8 +389,7 @@ protected:
       break;
     }
     default:
-      output << "ERROR: Invalid choice of bracket method. Must be 0 - 3\n";
-      return 1;
+      throw BoutException("Invalid choice of bracket method. Must be 0 - 3\n");
     }
     
     bm_mag_flag = options["bm_mag_flag"].doc("magnetic flutter Poisson Bracket").withDefault(0);
@@ -428,8 +415,7 @@ protected:
       break;
     }
     default:
-      output << "ERROR: Invalid choice of bracket method. Must be 0 - 3\n";
-      return 1;
+      throw BoutException("Invalid choice of bracket method. Must be 0 - 3\n");
     }
 
     eHall = options["eHall"]
@@ -465,17 +451,25 @@ protected:
 
     noshear = options["noshear"].withDefault(false);
 
-    relax_j_vac =
-        options["relax_j_vac"].withDefault(false); // Relax vacuum current to zero
-    relax_j_tconst = options["relax_j_tconst"].withDefault(0.1);
+    relax_j_vac = options["relax_j_vac"].doc("Relax vacuum current to zero").withDefault(false);
+    relax_j_tconst = options["relax_j_tconst"]
+                         .doc("Time constant for relaxation of vacuum current. Alfven "
+                              "(normalised) units")
+                         .withDefault(0.1);
 
     // Toroidal filtering
     filter_z = options["filter_z"].doc("Filter a single toroidal mode number?").withDefault(false);
     filter_z_mode = options["filter_z_mode"].withDefault(1);
     low_pass_z = options["low_pass_z"].doc("Low-pass filter").withDefault(false);
-    zonal_flow = options["zonal_flow"].withDefault(false);   // zonal flow filter
-    zonal_field = options["zonal_field"].withDefault(false); // zonal field filter
-    zonal_bkgd = options["zonal_bkgd"].withDefault(false);   // zonal background P filter
+    zonal_flow = options["zonal_flow"]
+                     .doc("Keep zonal (n=0) component of potential?")
+                     .withDefault(false);
+    zonal_field = options["zonal_field"]
+                      .doc("Keep zonal (n=0) component of magnetic potential?")
+                      .withDefault(false);
+    zonal_bkgd = options["zonal_bkgd"]
+                     .doc("Evolve zonal (n=0) pressure profile?")
+                     .withDefault(false);
 
     // Radial smoothing
     smooth_j_x = options["smooth_j_x"].doc("Smooth Jpar in x").withDefault(false);
@@ -489,7 +483,7 @@ protected:
     parallel_lr_diff = options["parallel_lr_diff"].withDefault(false);
 
     // RMP-related options
-    include_rmp = options["include_rmp"].withDefault(false); // Read RMP data from grid
+    include_rmp = options["include_rmp"].doc("Read RMP field rmp_A from grid?").withDefault(false);
 
     simple_rmp = options["simple_rmp"].doc("Include a simple RMP model?").withDefault(false);
     rmp_factor = options["rmp_factor"].withDefault(1.0);
@@ -498,10 +492,12 @@ protected:
     rmp_rotate = options["rmp_rotate"].withDefault(0.0);
 
     // Vacuum region control
-    // Fraction of peak pressure
-    vacuum_pressure = options["vacuum_pressure"].withDefault(0.02);
-    // Transition width in pressure
-    vacuum_trans = options["vacuum_trans"].withDefault(0.005);
+    vacuum_pressure = options["vacuum_pressure"]
+            .doc("Fraction of peak pressure, below which is considered vacuum.")
+            .withDefault(0.02);
+    vacuum_trans = options["vacuum_trans"]
+            .doc("Vacuum boundary transition width, as fraction of peak pressure.")
+            .withDefault(0.005);
 
     // Resistivity and hyper-resistivity options
     vac_lund = options["vac_lund"].doc("Lundquist number in vacuum region").withDefault(0.0);
@@ -512,22 +508,28 @@ protected:
     Zeff = options["Zeff"].withDefault(2.0); // Z effective
 
     // Inner boundary damping
-    damp_width = options["damp_width"].withDefault(0);
-    damp_t_const = options["damp_t_const"].withDefault(0.1);
+    damp_width = options["damp_width"]
+                     .doc("Width of the radial damping regions, in grid cells")
+                     .withDefault(0);
+    damp_t_const = options["damp_t_const"]
+            .doc("Time constant for damping in radial regions. Normalised time units.")
+            .withDefault(0.1);
 
     // Viscosity and hyper-viscosity
     viscos_par = options["viscos_par"].doc("Parallel viscosity").withDefault(-1.0);
     viscos_perp = options["viscos_perp"].doc("Perpendicular viscosity").withDefault(-1.0);
     hyperviscos = options["hyperviscos"].doc("Radial hyperviscosity").withDefault(-1.0);
     
-    // Parallel pressure diffusion
-    diffusion_par = options["diffusion_par"].withDefault(-1.0);
-    // xqx: parallel hyper-viscous diffusion for pressure
-    diffusion_p4 = options["diffusion_p4"].withDefault(-1.0);
-    // xqx: parallel hyper-viscous diffusion for vorticity
-    diffusion_u4 = options["diffusion_u4"].withDefault(-1.0);
-    // xqx: parallel hyper-viscous diffusion for vector potential
-    diffusion_a4 = options["diffusion_a4"].withDefault(-1.0);
+    diffusion_par = options["diffusion_par"].doc("Parallel pressure diffusion").withDefault(-1.0);
+    diffusion_p4 = options["diffusion_p4"]
+                       .doc("parallel hyper-viscous diffusion for pressure")
+                       .withDefault(-1.0);
+    diffusion_u4 = options["diffusion_u4"]
+                       .doc("parallel hyper-viscous diffusion for vorticity")
+                       .withDefault(-1.0);
+    diffusion_a4 = options["diffusion_a4"]
+                       .doc("parallel hyper-viscous diffusion for vector potential")
+                       .withDefault(-1.0);
 
     // heating factor in pressure
     // heating power in pressure
@@ -570,8 +572,8 @@ protected:
     su_lengthr = options["su_lengthr"].withDefault(0.15);
 
     // Compressional terms
-    phi_curv = options["phi_curv"].withDefault(true);
-    g = options["gamma"].withDefault(5.0 / 3.0);
+    phi_curv = options["phi_curv"].doc("ExB compression in P equation?").withDefault(true);
+    g = options["gamma"].doc("Ratio of specific heats").withDefault(5.0 / 3.0);
 
     // Field inversion flags
     phi_flags = options["phi_flags"].withDefault(0);
@@ -605,8 +607,8 @@ protected:
           output_warn.write("     ***WARNING: need poloidal angle for simple RMP\n");
           include_rmp = false;
         } else {
-          rmp_n = options["rmp_n"].withDefault(3);
-          rmp_m = options["rmp_m"].withDefault(9);
+          rmp_n = options["rmp_n"].doc("Simple RMP toroidal mode number").withDefault(3);
+          rmp_m = options["rmp_m"].doc("Simple RMP poloidal mode number").withDefault(9);
           rmp_polwid = options["rmp_polwid"].withDefault(-1.0);
           rmp_polpeak = options["rmp_polpeak"].withDefault(0.5);
           rmp_vac_mask = options["rmp_vac_mask"].withDefault(true);
@@ -746,58 +748,55 @@ protected:
 
     if (hyperviscos > 0.0) {
       output.write("    Hyper-viscosity coefficient: %e\n", hyperviscos);
-      dump.add(hyper_mu_x, "hyper_mu_x", 1);
+      SAVE_ONCE(hyper_mu_x);
     }
 
     if (diffusion_par > 0.0) {
       output.write("    diffusion_par: %e\n", diffusion_par);
-      dump.add(diffusion_par, "diffusion_par", 1);
+      SAVE_ONCE(diffusion_par);
     }
 
     // xqx: parallel hyper-viscous diffusion for pressure
     if (diffusion_p4 > 0.0) {
       output.write("    diffusion_p4: %e\n", diffusion_p4);
-      dump.add(diffusion_p4, "diffusion_p4", 1);
+      SAVE_ONCE(diffusion_p4);
     }
 
     // xqx: parallel hyper-viscous diffusion for vorticity
     if (diffusion_u4 > 0.0) {
       output.write("    diffusion_u4: %e\n", diffusion_u4);
-      dump.add(diffusion_u4, "diffusion_u4", 1);
+      SAVE_ONCE(diffusion_u4)
     }
 
     // xqx: parallel hyper-viscous diffusion for vector potential
     if (diffusion_a4 > 0.0) {
       output.write("    diffusion_a4: %e\n", diffusion_a4);
-      dump.add(diffusion_a4, "diffusion_a4", 1);
+      SAVE_ONCE(diffusion_a4);
     }
 
     if (heating_P > 0.0) {
       output.write("    heating_P(watts): %e\n", heating_P);
-      dump.add(heating_P, "heating_P", 1);
 
       output.write("    hp_width(%%): %e\n", hp_width);
-      dump.add(hp_width, "hp_width", 1);
 
       output.write("    hp_length(%%): %e\n", hp_length);
-      dump.add(hp_length, "hp_length", 1);
+
+      SAVE_ONCE(heating_P, hp_width, hp_length);
     }
 
     if (sink_P > 0.0) {
       output.write("    sink_P(rate): %e\n", sink_P);
-      dump.add(sink_P, "sink_P", 1);
-
       output.write("    sp_width(%%): %e\n", sp_width);
-      dump.add(sp_width, "sp_width", 1);
-
       output.write("    sp_length(%%): %e\n", sp_length);
-      dump.add(sp_length, "sp_length", 1);
+
+      SAVE_ONCE(sink_P, sp_width, sp_length);
     }
 
-    if (K_H_term)
+    if (K_H_term) {
       output.write("    keep K-H term\n");
-    else
+    } else {
       output.write("   drop K-H term\n");
+    }
 
     Field2D Te;
     Te = P0 / (2.0 * density * 1.602e-19); // Temperature in eV
@@ -838,18 +837,15 @@ protected:
         N0 = P0 / (Ti0 + Te0);
       } else {
         if (mesh->get(N0, "Niexp")) { // N_i0
-          output_error.write("Error: Cannot read Ni0 from grid\n");
-          return 1;
+          throw BoutException("Error: Cannot read Ni0 from grid\n");
         }
 
         if (mesh->get(Ti0, "Tiexp")) { // T_i0
-          output_error.write("Error: Cannot read Ti0 from grid\n");
-          return 1;
+          throw BoutException("Error: Cannot read Ti0 from grid\n");
         }
 
         if (mesh->get(Te0, "Teexp")) { // T_e0
-          output_error.write("Error: Cannot read Te0 from grid\n");
-          return 1;
+          throw BoutException("Error: Cannot read Te0 from grid\n");
         }
         N0 /= Nbar;
         Ti0 /= Tibar;
@@ -987,11 +983,11 @@ protected:
     if (evolve_jpar) {
       output.write("Solving for jpar: Inverting to get Psi\n");
       SOLVE_FOR(Jpar);
-      dump.add(Psi, "Psi", 1);
+      SAVE_REPEAT(Psi);
     } else {
       output.write("Solving for Psi, Differentiating to get jpar\n");
       SOLVE_FOR(Psi);
-      dump.add(Jpar, "jpar", 1);
+      SAVE_REPEAT(Jpar);
     }
 
     if (compress0) {
@@ -1012,9 +1008,7 @@ protected:
       // Implicit Phi solve using IDA
 
       if (!solver->constraints()) {
-        output_error.write(
-            "ERROR: Cannot constrain. Run again with phi_constraint=false\n");
-        throw BoutException("Aborting.\n");
+        throw BoutException("Cannot constrain. Run again with phi_constraint=false.\n");
       }
 
       solver->constraint(phi, C_phi, "phi");
@@ -1024,7 +1018,7 @@ protected:
 
     } else {
       // Phi solved in RHS (explicitly)
-      dump.add(phi, "phi", 1);
+      SAVE_REPEAT(phi);
 
       // Set preconditioner
       setPrecon( (preconfunc) &ELMpb::precon );
@@ -1050,8 +1044,9 @@ protected:
     SAVE_ONCE(Va, B0);
     SAVE_ONCE(Dphi0, U0);
     SAVE_ONCE(V0);
-    if (!constn0)
+    if (!constn0) {
       SAVE_ONCE(Ti0, Te0, N0);
+    }
 
     // Create a solver for the Laplacian
     phiSolver = Laplacian::create();
@@ -1062,9 +1057,6 @@ protected:
 
     /////////////// CHECK VACUUM ///////////////////////
     // In vacuum region, initial vorticity should equal zero
-
-    // ubyn.setLocation(CELL_YLOW);
-    // ubyn.setBoundary("U");
 
     if (!restarting) {
       // Only if not restarting: Check initial perturbation
@@ -1348,7 +1340,7 @@ protected:
           BoutReal jsheath = (sqrt(mi_me) / (2. * sqrt(PI))) * phisheath;
 
           // Apply boundary condition half-way between cells
-          for (int jy = mesh->yend - 1; jy >= 0; jy--) {
+          for (int jy = mesh->yend + 1; jy < mesh->LocalNy; jy++) {
             // Neumann conditions
             P(r.ind, jy, jz) = P(r.ind, mesh->yend, jz);
             phi(r.ind, jy, jz) = phisheath;
