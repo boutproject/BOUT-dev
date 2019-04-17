@@ -103,7 +103,7 @@ private:
   BoutReal Upara2;
 
   // options
-  bool include_curvature, include_jpar0, compress0;
+  bool include_curvature, include_jpar0, compress;
   bool evolve_pressure, gyroviscous;
 
   BoutReal vacuum_pressure;
@@ -359,7 +359,9 @@ protected:
     evolve_pressure = options["evolve_pressure"].withDefault(true);
     nogradparj = options["nogradparj"].withDefault(false);
 
-    compress0 = options["compress0"].withDefault(false);
+    compress = options["compress"]
+                   .doc("Include compressibility effects (evolve Vpar)?")
+                   .withDefault(false);
     gyroviscous = options["gyroviscous"].withDefault(false);
     nonlinear = options["nonlinear"].doc("Include nonlinear terms?").withDefault(false);
 
@@ -990,7 +992,7 @@ protected:
       SAVE_REPEAT(Jpar);
     }
 
-    if (compress0) {
+    if (compress) {
       output.write("Including compression (Vpar) effects\n");
 
       SOLVE_FOR(Vpar);
@@ -1592,7 +1594,7 @@ protected:
     ////////////////////////////////////////////////////
     // Compressional effects
 
-    if (compress0) {
+    if (compress) {
 
       // ddt(P) += beta*( - Grad_parP(Vpar, CELL_CENTRE) + Vpar*gradparB );
       ddt(P) -= beta * Div_par_CtoL(Vpar);
