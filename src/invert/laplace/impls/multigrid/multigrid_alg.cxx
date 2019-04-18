@@ -63,6 +63,35 @@ MultigridAlg::MultigridAlg(int level, int lx, int lz, int gx, int gz, MPI_Comm c
   for(int i = 0;i<mglevel;i++) {
     matmg[i] = new BoutReal[(lnx[i]+2)*(lnz[i]+2)*9];
   }
+
+  // Set up working vectors
+  r_array.reallocate(mglevel);
+  pr_array.reallocate(mglevel);
+  y_array.reallocate(mglevel);
+  iy_array.reallocate(mglevel);
+  for (int level=0; level<mglevel; ++level) {
+    r_array[level] = bout::utils::make_unique<MultigridVector>(*this, level);
+    pr_array[level] = bout::utils::make_unique<MultigridVector>(*this, level);
+    y_array[level] = bout::utils::make_unique<MultigridVector>(*this, level);
+    iy_array[level] = bout::utils::make_unique<MultigridVector>(*this, level);
+  }
+
+  int gmres_mglevel = 0;
+  if (mglevel == 1) {
+    gmres_mglevel = 0;
+  } else if (mgplag) {
+    gmres_mglevel = mglevel - 1;
+  }
+  if (gmres_mglevel > 0) {
+    // otherwise pGMRES is not used, so don't need to initialize these arrays
+    p_gmres = bout::utils::make_unique<MultigridVector>(*this, gmres_mglevel);
+    q_gmres = bout::utils::make_unique<MultigridVector>(*this, gmres_mglevel);
+    r_gmres = bout::utils::make_unique<MultigridVector>(*this, gmres_mglevel);
+    v_gmres.reallocate(MAXGM + 1);
+    for (int i = 0; i < MAXGM + 1; ++i) {
+      v_gmres[i] = bout::utils::make_unique<MultigridVector>(*this, gmres_mglevel);
+    }
+  }
 }
 
 MultigridAlg::~MultigridAlg() {
@@ -71,15 +100,15 @@ MultigridAlg::~MultigridAlg() {
   delete [] matmg;
 }
 
-void MultigridAlg::getSolution(BoutReal *x,BoutReal *b,int flag) {
+void MultigridAlg::getSolution(MultigridVector& x, MultigridVector& b, int flag) {
 
   // swap ghost cells of initial guess
-  communications(x, mglevel-1);
+  x.communicate();
   // don't think the ghost cells of the rhs are used, so don't need to be communicated
   // /JTO 17-4-2019
 
   if(flag == 0) {
-    //Solve exaclty
+    //Solve exactly
     if(mglevel == 1) pGMRES(x,b,mglevel-1,1);
     else if(mgplag == 1) pGMRES(x,b,mglevel-1,1);
     else solveMG(x,b,mglevel-1);
@@ -89,14 +118,17 @@ void MultigridAlg::getSolution(BoutReal *x,BoutReal *b,int flag) {
     if(flag > 1) {
       int level = mglevel-1;
       int ldim = (lnx[level]+2)*(lnz[level]+2);
-      Array<BoutReal> y(ldim);
-      Array<BoutReal> r(ldim);
+      // This is not very efficient, because we don't re-use the setup for y and r, but
+      // this branch should not generally be used since it just does two V-cycles, rather
+      // than checking a solution has been found
+      MultigridVector y(*this, level);
+      MultigridVector r(*this, level);
       for(int n = 1;n<flag;n++) {
-        residualVec(level, x, b, std::begin(r));
+        residualVec(level, x, b, r);
         BOUT_OMP(parallel default(shared))
 BOUT_OMP(for)
         for(int i = 0;i<ldim;i++) y[i] = 0.0;
-        cycleMG(level, std::begin(y), std::begin(r));
+        cycleMG(level, y, r);
         BOUT_OMP(parallel default(shared))
 BOUT_OMP(for)
         for(int i = 0;i<ldim;i++) x[i] = x[i]+y[i];
@@ -106,41 +138,41 @@ BOUT_OMP(for)
 }
 
 
-void MultigridAlg::cycleMG(int level,BoutReal *sol,BoutReal *rhs)
+void MultigridAlg::cycleMG(int level, MultigridVector& sol, MultigridVector& rhs)
 {
   if(level == 0) {
     lowestSolver(sol,rhs,0);
   }
   else {
-    Array<BoutReal> r((lnx[level] + 2) * (lnz[level] + 2));
-    Array<BoutReal> pr((lnx[level - 1] + 2) * (lnz[level - 1] + 2));
-    Array<BoutReal> y((lnx[level - 1] + 2) * (lnz[level - 1] + 2));
-    Array<BoutReal> iy((lnx[level] + 2) * (lnz[level] + 2));
-
     smoothings(level,sol,rhs);
 
-    residualVec(level, sol, rhs, std::begin(r));
+    MultigridVector& r = *r_array[level];
+    MultigridVector& pr = *pr_array[level];
+    MultigridVector& y = *y_array[level];
+    MultigridVector& iy = *iy_array[level];
 
-    projection(level, std::begin(r), std::begin(pr));
+    residualVec(level, sol, rhs, r);
+
+    projection(level, r, pr);
 
     BOUT_OMP(parallel default(shared))
 BOUT_OMP(for)
     for(int i=0;i<(lnx[level-1]+2)*(lnz[level-1]+2);i++) y[i] = 0.0;
 
-    cycleMG(level - 1, std::begin(y), std::begin(pr));
+    cycleMG(level - 1, y, pr);
 
-    prolongation(level - 1, std::begin(y), std::begin(iy));
+    prolongation(level - 1, y, iy);
     BOUT_OMP(parallel default(shared))
 BOUT_OMP(for)
     for(int i=0;i<(lnx[level]+2)*(lnz[level]+2);i++) 
        sol[i] += iy[i];
 
-    smoothings(level,sol,rhs);
+    smoothings(level, sol, rhs);
   }
   return;
 }
 
-void MultigridAlg::projection(int level,BoutReal *r,BoutReal *pr) 
+void MultigridAlg::projection(int level, MultigridVector& r, MultigridVector& pr) 
 {
 
 BOUT_OMP(parallel default(shared))
@@ -163,11 +195,11 @@ BOUT_OMP(for collapse(2))
       }
     }
   }
-  communications(pr,level-1);
+  pr.communicate();
   return;
 }
 
-void MultigridAlg::prolongation(int level,BoutReal *x,BoutReal *ix) {
+void MultigridAlg::prolongation(int level, MultigridVector& x,MultigridVector& ix) {
 
 BOUT_OMP(parallel default(shared))
   {
@@ -193,11 +225,11 @@ BOUT_OMP(for collapse(2))
       }
     }
   }
-  communications(ix,level+1);
+  ix.communicate();
   return;
 }
 
-void MultigridAlg::smoothings(int level, BoutReal *x, BoutReal *b) {
+void MultigridAlg::smoothings(int level, MultigridVector& x, MultigridVector& b) {
 
   int dim;
   int mm = lnz[level]+2;
@@ -225,7 +257,7 @@ BOUT_OMP(for collapse(2))
 
           x[nn] = (1.0-omega)*x[nn] + omega*val/matmg[level][nn*9+4];
         } 
-      communications(x,level);
+      x.communicate();
     }
   }
   else {
@@ -241,7 +273,7 @@ BOUT_OMP(for collapse(2))
             throw BoutException("Error at matmg(%d-%d)",level,nn);
         x[nn] = val/matmg[level][nn*9+4];
       } 
-    communications(x,level);
+    x.communicate();
     for(int i = lnx[level];i>0;i--)
       for(int k= lnz[level];k>0;k--) {
         int nn = i*mm+k;
@@ -254,28 +286,23 @@ BOUT_OMP(for collapse(2))
             throw BoutException("Error at matmg(%d-%d)",level,nn);
         x[nn] = val/matmg[level][nn*9+4];
       } 
-    communications(x,level);
+    x.communicate();
   }
   return;
 }
 
-void MultigridAlg::pGMRES(BoutReal *sol,BoutReal *rhs,int level,int iplag) {
+void MultigridAlg::pGMRES(MultigridVector& sol,MultigridVector& rhs, int level, int iplag) {
   int it,etest = 1,MAXIT;
   BoutReal ini_e,error,a0,a1,rederr,perror;
-  BoutReal **v;
   BoutReal c[MAXGM+1],s[MAXGM+1],y[MAXGM+1],g[MAXGM+1],h[MAXGM+1][MAXGM+1];
+  MultigridVector& p = *p_gmres;
+  MultigridVector& q = *q_gmres;
+  MultigridVector& r = *r_gmres;
 
   if((level == 0) || (iplag == 0)) MAXIT = 40000;
   else MAXIT = 500;
 
   int ldim = (lnx[level]+2)*(lnz[level]+2);
-  // Could we use a Matrix here?
-  v = new BoutReal *[MAXGM+1];
-  for(int i=0;i<MAXGM+1;i++) v[i] = new BoutReal[ldim];
-
-  Array<BoutReal> p(ldim);
-  Array<BoutReal> q(ldim);
-  Array<BoutReal> r(ldim);
 
   BOUT_OMP(parallel default(shared))
 BOUT_OMP(for)
@@ -290,26 +317,21 @@ BOUT_OMP(for)
     if((pcheck == 1) && (rProcI == 0)) {
       output<<numP<<"Don't need to solve. E= "<<ini_e<<endl;
     }
-    // Clean up memory before returning from method
-    for(int i=0;i<MAXGM+1;i++) {
-      delete [] v[i];
-    }
-    delete [] v;
     return;
   }
 BOUT_OMP(parallel default(shared))
 BOUT_OMP(for)
   for(int i = 0;i<ldim;i++) r[i] = 0.0;
   if (iplag == 0)
-    smoothings(level, std::begin(r), rhs);
+    smoothings(level, r, rhs);
   else
-    cycleMG(level, std::begin(r), rhs);
+    cycleMG(level, r, rhs);
   BOUT_OMP(parallel default(shared))
 BOUT_OMP(for)
-  for(int i = 0;i < ldim;i++) v[0][i] = r[i];
+  for(int i = 0;i < ldim;i++) (*v_gmres[0])[i] = r[i];
   perror = ini_e;
   do{
-    a1 = vectorProd(level,v[0],v[0]);
+    a1 = vectorProd(level,*v_gmres[0],*v_gmres[0]);
     a1 = sqrt(a1);
     if(fabs(a1) < atol*rtol) {
       output<<num<<" First a1 in GMRES is wrong at level "<<level<<": "<<a1<<endl;
@@ -319,27 +341,27 @@ BOUT_OMP(for)
 BOUT_OMP(parallel default(shared))
     {
 BOUT_OMP(for)
-      for(int i=0;i<ldim;i++) v[0][i] *= a0;
+      for(int i=0;i<ldim;i++) (*v_gmres[0])[i] *= a0;
 BOUT_OMP(for)
       for(int i=1;i<MAXGM+1;i++) g[i] = 0.0;
     }
     for(it = 0;it<MAXGM;it++) {
-      multiAVec(level, v[it], std::begin(q));
+      multiAVec(level, *v_gmres[it], q);
       BOUT_OMP(parallel default(shared))
 BOUT_OMP(for)
-      for(int i=0;i<ldim;i++) v[it+1][i] = 0.0;
+      for(int i=0;i<ldim;i++) (*v_gmres[it+1])[i] = 0.0;
 
       if (iplag == 0)
-        smoothings(level, v[it + 1], std::begin(q));
+        smoothings(level, *v_gmres[it + 1], q);
       else
-        cycleMG(level, v[it + 1], std::begin(q));
+        cycleMG(level, *v_gmres[it + 1], q);
 
-      for(int i=0;i<it+1;i++) h[i][it] = vectorProd(level,v[it+1],v[i]);
+      for(int i=0;i<it+1;i++) h[i][it] = vectorProd(level,*v_gmres[it+1],*v_gmres[i]);
       for(int i=0;i<it+1;i++) {
         a0 = -h[i][it];
-        for(int k=0;k<ldim;k++) v[it+1][k] += a0*v[i][k];
+        for(int k=0;k<ldim;k++) (*v_gmres[it+1])[k] += a0*(*v_gmres[i])[k];
       }
-      a1 = vectorProd(level,v[it+1],v[it+1]);
+      a1 = vectorProd(level,*v_gmres[it+1],*v_gmres[it+1]);
       a1 = sqrt(a1);
 
       // if ldim==9 then there is only one grid point at this level, so the
@@ -353,7 +375,7 @@ BOUT_OMP(for)
       h[it+1][it] = a1;
 BOUT_OMP(parallel default(shared))
 BOUT_OMP(for)
-      for(int i=0;i<ldim;i++) v[it+1][i] *= a0;
+      for(int i=0;i<ldim;i++) (*v_gmres[it+1])[i] *= a0;
 
       for(int i=0;i<it;i++) {
         a0 = c[i]*h[i][it] -s[i]*h[i+1][it];
@@ -389,12 +411,12 @@ BOUT_OMP(for)
 BOUT_OMP(for)
         for(int k=0;k<ldim;k++)
           for(int i=0;i<=it;i++)
-            p[k] += y[i]*v[i][k]; 
+            p[k] += y[i]*(*v_gmres[i])[k]; 
       }
 
       /* Get r_m and test convergence.*/
-      residualVec(level, std::begin(p), rhs, std::begin(r));
-      error = sqrt(vectorProd(level, std::begin(r), std::begin(r)));
+      residualVec(level, p, rhs, r);
+      error = sqrt(vectorProd(level, r, r));
       num += 1;
       if(error > dtol)
         throw BoutException("GMRES reached dtol with error %16.10f at iteration %d\n",error,num);
@@ -422,11 +444,11 @@ BOUT_OMP(for)
     /* Restart with new initial */
 BOUT_OMP(parallel default(shared))
 BOUT_OMP(for)
-    for(int i = 0;i<ldim;i++) v[0][i] = 0.0;
+    for(int i = 0;i<ldim;i++) (*v_gmres[0])[i] = 0.0;
     if (iplag == 0)
-      smoothings(level, v[0], std::begin(r));
+      smoothings(level, *v_gmres[0], r);
     else
-      cycleMG(level, v[0], std::begin(r));
+      cycleMG(level, *v_gmres[0], r);
 
     BOUT_OMP(parallel default(shared))
 BOUT_OMP(for)
@@ -453,10 +475,6 @@ BOUT_OMP(for)
       fflush(stdout);
     }
   }
-  for(int i=0;i<MAXGM+1;i++) {
-    delete [] v[i];
-  }
-  delete [] v;
 
   return; 
 }
@@ -473,11 +491,11 @@ void MultigridAlg::setMultigridC(int UNUSED(plag)) {
   }
 }
 
-void MultigridAlg::lowestSolver(BoutReal *x, BoutReal *b, int UNUSED(plag)) {
+void MultigridAlg::lowestSolver(MultigridVector& x, MultigridVector& b, int UNUSED(plag)) {
   pGMRES(x, b, 0, 0);
 }
 
-BoutReal MultigridAlg::vectorProd(int level,BoutReal* x,BoutReal* y) {
+BoutReal MultigridAlg::vectorProd(int level, MultigridVector& x, MultigridVector& y) {
   // nx does not include guard cells
   
   BoutReal val;
@@ -501,7 +519,7 @@ BOUT_OMP(for reduction(+:ini_e) collapse(2))
   return(val);  
 }
 
-void MultigridAlg::multiAVec(int level, BoutReal *x, BoutReal *b) {
+void MultigridAlg::multiAVec(int level, MultigridVector& x, MultigridVector& b) {
 
   int mm = lnz[level]+2;
 BOUT_OMP(parallel default(shared))
@@ -523,11 +541,11 @@ BOUT_OMP(for collapse(2))
       } 
     }
   }
-  communications(b,level);
+  b.communicate();
 }
 
-void MultigridAlg::residualVec(int level, BoutReal *x, BoutReal *b,
-BoutReal *r) {
+void MultigridAlg::residualVec(int level, MultigridVector& x, MultigridVector& b,
+    MultigridVector& r) {
 
   int mm;
   mm = lnz[level]+2;
@@ -551,8 +569,7 @@ BOUT_OMP(for collapse(2))
       } 
     }
   }
-  communications(r,level);
-
+  r.communicate();
 }
 
 void MultigridAlg::setMatrixC(int level) {
@@ -608,109 +625,7 @@ BOUT_OMP(for collapse(2))
 
 }
 
-void MultigridAlg::communications(BoutReal* x, int level) {
-  // Note: currently z-direction communications and x-direction communications are done
-  // independently. They should really be done together if zNP>1 and xNP>1 (with a single
-  // MPI_Waitall after all the MPI_Isend and MPI_Irecv calls, instead of the two
-  // MPI_Waitalls there are now. As there are never any z-communications at the moment, it
-  // is not worth implementing for now.
-
-  MPI_Status status[4];
-  int stag, rtag;
-  MAYBE_UNUSED(int ierr);
-
-  if(zNP > 1) {
-    MPI_Request requests[] = {MPI_REQUEST_NULL, MPI_REQUEST_NULL, MPI_REQUEST_NULL, MPI_REQUEST_NULL};
-    MPI_Datatype xvector;
-
-    // Create datatype to hold z-direction guard cells, which are not continuous in memory
-    ierr = MPI_Type_vector(lnx[level], 1, lnz[level]+2, MPI_DOUBLE, &xvector);
-    ASSERT1(ierr == MPI_SUCCESS);
-    
-    ierr = MPI_Type_commit(&xvector);
-    ASSERT1(ierr == MPI_SUCCESS);
-    
-    // Receive from z-
-    rtag = zProcM;
-    ierr = MPI_Irecv(&x[lnz[level]+2], 1, xvector, zProcM, rtag, commMG, &requests[2]);
-    ASSERT1(ierr == MPI_SUCCESS);
-
-    // Receive from z+
-    rtag = zProcP+numP;
-    ierr = MPI_Irecv(&x[2*(lnz[level]+2)-1], 1, xvector, zProcP, rtag, commMG,
-        &requests[3]);
-    ASSERT1(ierr == MPI_SUCCESS);
-
-    // Send to z+
-    stag = rProcI;
-    ierr = MPI_Isend(&x[2*(lnz[level]+2)-2], 1, xvector, zProcP, stag, commMG,
-        &requests[0]);
-    ASSERT1(ierr == MPI_SUCCESS);
-
-    // Send to z-
-    stag = rProcI+numP;
-    ierr = MPI_Isend(&x[lnz[level]+3], 1, xvector, zProcM, stag, commMG, &requests[1]);
-    ASSERT1(ierr == MPI_SUCCESS);
-
-    // Wait for communications to complete
-    ierr = MPI_Waitall(4, requests, status);
-    ASSERT1(ierr == MPI_SUCCESS);
-    
-    ierr = MPI_Type_free(&xvector);
-    ASSERT1(ierr == MPI_SUCCESS);
-  } else {
-    for (int i=1;i<lnx[level]+1;i++) {
-      x[i*(lnz[level]+2)] = x[(i+1)*(lnz[level]+2)-2];
-      x[(i+1)*(lnz[level]+2)-1] = x[i*(lnz[level]+2)+1];
-    }
-  }
-  if (xNP > 1) {
-    // Note: periodic x-direction not handled here
-
-    MPI_Request requests[] = {MPI_REQUEST_NULL, MPI_REQUEST_NULL, MPI_REQUEST_NULL, MPI_REQUEST_NULL};
-
-    if (xProcI > 0) {
-      // Receive from x-
-      rtag = xProcM;
-      ierr = MPI_Irecv(&x[0], lnz[level]+2, MPI_DOUBLE, xProcM, rtag, commMG, &requests[2]);
-      ASSERT1(ierr == MPI_SUCCESS);
-    }
-    
-    if (xProcI < xNP - 1) {
-      // Receive from x+
-      rtag = xProcP+xNP;;
-      ierr = MPI_Irecv(&x[(lnx[level]+1)*(lnz[level]+2)], lnz[level]+2, MPI_DOUBLE, xProcP,
-          rtag, commMG, &requests[3]);
-      ASSERT1(ierr == MPI_SUCCESS);
-
-      // Send to x+
-      stag = rProcI;
-      ierr = MPI_Isend(&x[lnx[level]*(lnz[level]+2)], lnz[level]+2, MPI_DOUBLE, xProcP,
-          stag, commMG, &requests[0]);
-      ASSERT1(ierr == MPI_SUCCESS);
-    }
-
-    if (xProcI > 0) {
-      // Send to x-
-      stag = rProcI+xNP;
-      ierr = MPI_Isend(&x[lnz[level]+2], lnz[level]+2, MPI_DOUBLE, xProcM, stag, commMG,
-          &requests[1]);
-      ASSERT1(ierr == MPI_SUCCESS);
-    }
-
-    // Wait for communications to complete
-    ierr = MPI_Waitall(4, requests, status);
-    ASSERT1(ierr == MPI_SUCCESS);
-  } else {
-    for (int i=0;i<lnz[level]+2;i++) {
-      x[i] = x[lnx[level]*(lnz[level]+2)+i];
-      x[(lnx[level]+1)*(lnz[level]+2)+i] = x[(lnz[level]+2)+i];
-    }
-  }
-}
-
-
-void MultigridAlg::solveMG(BoutReal *sol,BoutReal *rhs,int level) {
+void MultigridAlg::solveMG(MultigridVector& sol, MultigridVector& rhs, int level) {
   int m,MAXIT = 150;
   BoutReal ini_e,perror,error,rederr;
   int ldim = (lnx[level]+2)*(lnz[level]+2);
@@ -725,8 +640,8 @@ BOUT_OMP(for)
   ini_e = sqrt(ini_e);
   if((pcheck == 1) && (rProcI == 0)) 
     printf("%d \n  In MGsolve ini = %24.18f\n",numP,ini_e);
-  Array<BoutReal> y(ldim);
-  Array<BoutReal> r(ldim);
+  MultigridVector& y = *y_array[level];
+  MultigridVector& r = *r_array[level];
   BOUT_OMP(parallel default(shared))
 BOUT_OMP(for)
   for(int i = 0;i<ldim;i++) r[i] = rhs[i];
@@ -736,12 +651,12 @@ BOUT_OMP(for)
 BOUT_OMP(parallel default(shared))
 BOUT_OMP(for)
     for(int i = 0;i<ldim;i++) y[i] = 0.0;
-    cycleMG(level, std::begin(y), std::begin(r));
+    cycleMG(level, y, r);
     BOUT_OMP(parallel default(shared))
 BOUT_OMP(for)
     for(int i = 0;i<ldim;i++) sol[i] = sol[i]+y[i];
-    residualVec(level, sol, rhs, std::begin(r));
-    error = sqrt(vectorProd(level, std::begin(r), std::begin(r)));
+    residualVec(level, sol, rhs, r);
+    error = sqrt(vectorProd(level, r, r));
     if((pcheck == 1) && (rProcI == 0)) 
       printf("%d \n  In MGsolve error = %24.18f\n",m,error);
     if(error < rtol*ini_e+atol) break;
@@ -760,4 +675,159 @@ BOUT_OMP(for)
   }
 
   return;
+}
+
+MultigridVector::MultigridVector(MultigridAlg& mgAlg_in, int level)
+  : lnx(mgAlg_in.lnx[level]), lnz(mgAlg_in.lnz[level]), mgAlg(mgAlg_in) {
+
+  // Create data
+  data.reallocate((lnx + 2)*(lnz + 2));
+  data = 0.;
+
+  // Set up persistent communications
+  MAYBE_UNUSED(int ierr);
+  int rtag, stag;
+  int numP = mgAlg.xNP*mgAlg.zNP;
+  BoutReal* x = std::begin(data);
+
+  // Count instances of this class, used to make sure tags don't conflict
+  static int counter = -1;
+  ++counter;
+
+  if (mgAlg.zNP > 1) {
+    MPI_Datatype xvector;
+
+    ierr = MPI_Type_vector(lnx, 1, lnz+2, MPI_DOUBLE, &xvector);
+    ASSERT0(ierr == MPI_SUCCESS);
+
+    ierr = MPI_Type_commit(&xvector);
+    ASSERT1(ierr == MPI_SUCCESS);
+
+    // different tags for each receive on each level
+    rtag = 4*counter*numP + mgAlg.zProcM;
+    ierr = MPI_Recv_init(&x[lnz+2], 1, xvector, mgAlg.zProcM, rtag, mgAlg.commMG,
+        &(zRequests[0]));
+    ASSERT1(ierr == MPI_SUCCESS);
+
+    // Receive from z+
+    rtag = (4*counter+1)*numP + mgAlg.zProcP;
+    ierr = MPI_Recv_init(&x[2*(lnz+2)-1], 1, xvector, mgAlg.zProcP, rtag, mgAlg.commMG,
+        &(zRequests[1]));
+    ASSERT1(ierr == MPI_SUCCESS);
+
+    // Send to z+
+    stag = 4*counter*numP + mgAlg.rProcI;
+    ierr = MPI_Send_init(&x[2*(lnz+2)-2], 1, xvector, mgAlg.zProcP, stag, mgAlg.commMG,
+        &(zRequests[2]));
+    ASSERT1(ierr == MPI_SUCCESS);
+
+    // Send to z-
+    stag = (4*counter+1)*numP + mgAlg.rProcI;
+    ierr = MPI_Send_init(&x[lnz+3], 1, xvector, mgAlg.zProcM, stag, mgAlg.commMG,
+        &(zRequests[3]));
+    ASSERT1(ierr == MPI_SUCCESS);
+
+    ierr = MPI_Type_free(&xvector);
+    ASSERT1(ierr == MPI_SUCCESS);
+  }
+  if (mgAlg.xNP > 1) {
+    // Note: periodic x-direction not handled here
+    if (mgAlg.xProcI > 0) {
+      // Receive from x-
+      rtag = (4*counter+2)*numP + mgAlg.xProcM;
+      ierr = MPI_Irecv(&x[0], lnz+2, MPI_DOUBLE, mgAlg.xProcM, rtag, mgAlg.commMG,
+          &(xRequests[0]));
+      ASSERT1(ierr == MPI_SUCCESS);
+
+      // Send to x-
+      stag = (4*counter+3)*numP + mgAlg.rProcI;
+      ierr = MPI_Isend(&x[lnz+2], lnz+2, MPI_DOUBLE, mgAlg.xProcM, stag, mgAlg.commMG,
+          &(xRequests[2]));
+      ASSERT1(ierr == MPI_SUCCESS);
+    } else {
+      xRequests[0] = MPI_REQUEST_NULL;
+      xRequests[2] = MPI_REQUEST_NULL;
+    }
+
+    if (mgAlg.xProcI < mgAlg.xNP - 1) {
+      // Receive from x+
+      rtag = (4*counter+3)*numP + mgAlg.xProcP;
+      ierr = MPI_Irecv(&x[(lnx+1)*(lnz+2)], lnz+2, MPI_DOUBLE, mgAlg.xProcP, rtag,
+          mgAlg.commMG, &(xRequests[1]));
+      ASSERT1(ierr == MPI_SUCCESS);
+
+      // Send to x+
+      stag = (4*counter+2) + mgAlg.rProcI;
+      ierr = MPI_Isend(&x[lnx*(lnz+2)], lnz+2, MPI_DOUBLE, mgAlg.xProcP, stag,
+          mgAlg.commMG, &(xRequests[3]));
+      ASSERT1(ierr == MPI_SUCCESS);
+    } else {
+      xRequests[1] = MPI_REQUEST_NULL;
+      xRequests[3] = MPI_REQUEST_NULL;
+    }
+  }
+}
+
+MultigridVector::~MultigridVector() {
+  // Free persistent communications
+  if (mgAlg.zNP > 1) {
+    MPI_Request_free(&zRequests[0]);
+    MPI_Request_free(&zRequests[1]);
+    MPI_Request_free(&zRequests[2]);
+    MPI_Request_free(&zRequests[3]);
+  }
+  if (mgAlg.xNP > 1) {
+    MPI_Request_free(&xRequests[0]);
+    MPI_Request_free(&xRequests[1]);
+    MPI_Request_free(&xRequests[2]);
+    MPI_Request_free(&xRequests[3]);
+  }
+}
+
+void MultigridVector::communicate() {
+  // Note: currently z-direction communications and x-direction communications are done
+  // independently. They should really be done together if zNP>1 and xNP>1 (with a single
+  // MPI_Waitall after all the MPI_Isend and MPI_Irecv calls, instead of the two
+  // MPI_Waitalls there are now. As there are never any z-communications at the moment, it
+  // is not worth implementing for now.
+
+  MPI_Status status[4];
+  MAYBE_UNUSED(int ierr);
+
+  if(mgAlg.zNP > 1) {
+    // post receives first
+    ierr = MPI_Startall(2, zRequests);
+    ASSERT1(ierr == MPI_SUCCESS);
+
+    // start sends
+    ierr = MPI_Startall(2, &(zRequests[2]));
+    ASSERT1(ierr == MPI_SUCCESS);
+
+    // Wait for communications to complete
+    ierr = MPI_Waitall(4, zRequests, status);
+    ASSERT1(ierr == MPI_SUCCESS);
+  } else {
+    for (int i=1;i<lnx+1;i++) {
+      data[i*(lnz+2)] = data[(i+1)*(lnz+2)-2];
+      data[(i+1)*(lnz+2)-1] = data[i*(lnz+2)+1];
+    }
+  }
+  if (mgAlg.xNP > 1) {
+    // post receives first
+    ierr = MPI_Startall(2, xRequests);
+    ASSERT1(ierr == MPI_SUCCESS);
+
+    // start sends
+    ierr = MPI_Startall(2, &(xRequests[2]));
+    ASSERT1(ierr == MPI_SUCCESS);
+
+    // Wait for communications to complete
+    ierr = MPI_Waitall(4, xRequests, status);
+    ASSERT1(ierr == MPI_SUCCESS);
+  } else {
+    for (int i=0;i<lnz+2;i++) {
+      data[i] = data[lnx*(lnz+2)+i];
+      data[(lnx+1)*(lnz+2)+i] = data[(lnz+2)+i];
+    }
+  }
 }

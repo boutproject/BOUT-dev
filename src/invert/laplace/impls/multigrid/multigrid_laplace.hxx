@@ -42,6 +42,9 @@
 
 #define MAXGM 15
 
+// Forward declare so we can refer to it in MultigridAlg
+class MultigridVector;
+
 // In multigrid_alg.cxx
 
 class MultigridAlg{
@@ -50,7 +53,7 @@ public:
   virtual ~MultigridAlg();
 
   void setMultigridC(int );
-  void getSolution(BoutReal *,BoutReal *,int ); 
+  void getSolution(MultigridVector& ,MultigridVector& ,int); 
 
   int mglevel,mgplag,cftype,mgsm,pcheck,xNP,zNP,rProcI;
   BoutReal rtol,atol,dtol,omega;
@@ -63,21 +66,25 @@ protected:
 
   MPI_Comm commMG;
 
+  Array<std::unique_ptr<MultigridVector>> r_array, pr_array, y_array, iy_array, v_gmres;
+  std::unique_ptr<MultigridVector> p_gmres, q_gmres, r_gmres;
+
   void communications(BoutReal *, int );
   void setMatrixC(int );
 
-  void cycleMG(int ,BoutReal *, BoutReal *);
-  void smoothings(int , BoutReal *, BoutReal *);
-  void projection(int , BoutReal *, BoutReal *);
-  void prolongation(int ,BoutReal *, BoutReal *);
-  void pGMRES(BoutReal *, BoutReal *, int , int);
-  void solveMG(BoutReal *, BoutReal *, int );
-  void multiAVec(int , BoutReal *, BoutReal *);
-  void residualVec(int , BoutReal *, BoutReal *, BoutReal *);
-  BoutReal vectorProd(int , BoutReal *, BoutReal *); 
+  void cycleMG(int , MultigridVector&, MultigridVector&);
+  void smoothings(int , MultigridVector&, MultigridVector&);
+  void projection(int , MultigridVector&, MultigridVector&);
+  void prolongation(int , MultigridVector&, MultigridVector&);
+  void pGMRES(MultigridVector&, MultigridVector&, int , int);
+  void solveMG(MultigridVector&, MultigridVector&, int );
+  void multiAVec(int , MultigridVector&, MultigridVector&);
+  void residualVec(int , MultigridVector&, MultigridVector&, MultigridVector&);
+  BoutReal vectorProd(int , MultigridVector&, MultigridVector&); 
 
-  virtual void lowestSolver(BoutReal *, BoutReal *, int );
-  
+  virtual void lowestSolver(MultigridVector&, MultigridVector&, int );
+
+  friend class MultigridVector;
 };
 
 
@@ -105,7 +112,7 @@ public:
 private:
   std::unique_ptr<MultigridSerial> sMG;
   void convertMatrixFS(int  ); 
-  void lowestSolver(BoutReal *, BoutReal *, int );
+  void lowestSolver(MultigridVector&, MultigridVector&, int );
   
 };
 
@@ -124,11 +131,33 @@ private:
   std::unique_ptr<Multigrid2DPf1D> rMG;
   void convertMatrixF2D(int ); 
   void convertMatrixFS(int ); 
-  void lowestSolver(BoutReal *, BoutReal *, int );
+  void lowestSolver(MultigridVector&, MultigridVector&, int );
   
 };
 
+/// Array to be used at a certain level of the multigrid algorithm
+/// Implements persistent MPI communications to reduce overhead
+class MultigridVector {
+public:
+  MultigridVector(MultigridAlg& mg_in, int level);
+  ~MultigridVector();
 
+  /// get/set values
+  BoutReal& operator[](int ind) { return data[ind]; }
+
+  /// communicate guard cells
+  void communicate();
+
+  friend class Multigrid1DP;
+  friend class Multigrid2DPf1D;
+
+private:
+  int& lnx, lnz;
+  Array<BoutReal> data;
+  MPI_Request zRequests[4];
+  MPI_Request xRequests[4];
+  MultigridAlg& mgAlg;
+};
 
 class LaplaceMultigrid : public Laplacian {
 public:
@@ -205,8 +234,8 @@ private:
   Field3D A,C1,C2,D; // ODE Coefficients
   int Nx_local, Nx_global, Nz_local, Nz_global; // Local and global grid sizes
   int yindex; // y-position of the current solution phase
-  Array<BoutReal> x; // solution vector
-  Array<BoutReal> b; // RHS vector
+  std::unique_ptr<MultigridVector> x_ptr; // solution vector
+  std::unique_ptr<MultigridVector> b_ptr; // RHS vector
   std::unique_ptr<Multigrid1DP> kMG;
 
   /******* Start implementation ********/

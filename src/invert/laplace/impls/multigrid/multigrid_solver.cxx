@@ -245,13 +245,13 @@ void Multigrid1DP::setPcheck(int check) {
   }
 }
 
-void Multigrid1DP::lowestSolver(BoutReal *x, BoutReal *b, int UNUSED(plag)) {
+void Multigrid1DP::lowestSolver(MultigridVector& x, MultigridVector& b, int UNUSED(plag)) {
 
   if(kflag == 1) {
     int level = rMG->mglevel-1;
     int dim = (rMG->lnx[level]+2)*(rMG->lnz[level]+2);
-    Array<BoutReal> y(dim);
-    Array<BoutReal> r(dim);
+    MultigridVector& y = *y_array[0];
+    MultigridVector& r = *r_array[0];
 
     int ggx = rMG->lnx[level];
     int dimg = (ggx+2)*(gnz[0]+2);
@@ -302,7 +302,7 @@ BOUT_OMP(for collapse(2))
       }
     }
 
-    rMG->getSolution(std::begin(y), std::begin(r), 1);
+    rMG->getSolution(y, r, 1);
 
     BOUT_OMP(parallel default(shared)) {
 BOUT_OMP(for)
@@ -337,13 +337,13 @@ BOUT_OMP(for collapse(2))
         }
       }
     }
-    communications(x,0);
+    x.communicate();
   }
   else if(kflag == 2) {
     int level = sMG->mglevel-1;
     int dim = (sMG->lnx[level]+2)*(sMG->lnz[level]+2);
-    Array<BoutReal> y(dim);
-    Array<BoutReal> r(dim);
+    MultigridVector& y = *y_array[level];
+    MultigridVector& r = *r_array[level];
     int nx = xProcI*lnx[0];
 BOUT_OMP(parallel default(shared))
     {
@@ -363,11 +363,11 @@ BOUT_OMP(for collapse(2))
         }
       }
     }
-    MPI_Allreduce(std::begin(y), std::begin(r), dim, MPI_DOUBLE, MPI_SUM, commMG);
+    MPI_Allreduce(std::begin(y.data), std::begin(r.data), dim, MPI_DOUBLE, MPI_SUM, commMG);
     BOUT_OMP(parallel default(shared))
 BOUT_OMP(for)
     for(int i = 0;i<dim;i++) y[i] = 0.0;
-    sMG->getSolution(std::begin(y), std::begin(r), 1);
+    sMG->getSolution(y, r, 1);
 
     BOUT_OMP(parallel default(shared))
     {
@@ -382,7 +382,7 @@ BOUT_OMP(for collapse(2))
         }
       }
     }
-    communications(x,0); 
+    x.communicate();
   }
   else {
     pGMRES(x,b,0,0);
@@ -610,13 +610,13 @@ void Multigrid2DPf1D::setPcheck(int check) {
   }
 }
 
-void Multigrid2DPf1D::lowestSolver(BoutReal *x, BoutReal *b, int UNUSED(plag)) {
+void Multigrid2DPf1D::lowestSolver(MultigridVector& x, MultigridVector& b, int UNUSED(plag)) {
 
   if(kflag == 2) {
     int level = sMG->mglevel-1;
     int dim = (sMG->lnx[level]+2)*(sMG->lnz[level]+2);
-    Array<BoutReal> y(dim);
-    Array<BoutReal> r(dim);
+    MultigridVector& y = *y_array[level];
+    MultigridVector& r = *r_array[level];
     int nx = xProcI*lnx[0];
     int nz = zProcI*lnz[0];
 BOUT_OMP(parallel default(shared) )
@@ -638,11 +638,11 @@ BOUT_OMP(for collapse(2))
         }
       }
     }
-    MPI_Allreduce(std::begin(y), std::begin(r), dim, MPI_DOUBLE, MPI_SUM, commMG);
+    MPI_Allreduce(std::begin(y.data), std::begin(r.data), dim, MPI_DOUBLE, MPI_SUM, commMG);
     BOUT_OMP(parallel default(shared))
 BOUT_OMP(for)
     for(int i = 0;i<dim;i++) y[i] = 0.0;
-    sMG->getSolution(std::begin(y), std::begin(r), 1);
+    sMG->getSolution(y, r, 1);
     BOUT_OMP(parallel default(shared))
     {
       int xend = lnx[0]+1;
@@ -656,7 +656,7 @@ BOUT_OMP(for collapse(2))
         }
       }
     }
-    communications(x,0); 
+    x.communicate();
   }
   else {
     pGMRES(x,b,0,0);

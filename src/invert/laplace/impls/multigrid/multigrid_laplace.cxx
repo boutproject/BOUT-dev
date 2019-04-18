@@ -176,8 +176,8 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt, const CELL_LOC loc, Mesh *mesh_
 
   // Set up Multigrid Cycle
 
-  x.reallocate((Nx_local + 2) * (Nz_local + 2));
-  b.reallocate((Nx_local + 2) * (Nz_local + 2));
+  x_ptr = bout::utils::make_unique<MultigridVector>(*kMG, mglevel-1);
+  b_ptr = bout::utils::make_unique<MultigridVector>(*kMG, mglevel-1);
 
   if (mgcount == 0) {  
     output<<" Smoothing type is ";
@@ -214,6 +214,9 @@ const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &
   ASSERT3(b_in.getIndex() == x0.getIndex());
 
   BoutReal t0,t1;
+
+  MultigridVector& x = *x_ptr;
+  MultigridVector& b = *b_ptr;
   
   yindex = b_in.getIndex();
   int level = kMG->mglevel-1;
@@ -416,7 +419,7 @@ BOUT_OMP(for)
   mgcount++;
   if (pcheck > 0) t0 = MPI_Wtime();
 
-  kMG->getSolution(std::begin(x), std::begin(b), 0);
+  kMG->getSolution(x, b, 0);
 
   if (pcheck > 0) {
     t1 = MPI_Wtime();
@@ -553,6 +556,9 @@ void LaplaceMultigrid::generateMatrixF(int level) {
 
   TRACE("LaplaceMultigrid::generateMatrixF(int)");
   
+  MultigridVector& x = *x_ptr;
+  MultigridVector& b = *b_ptr;
+
   // Set (fine-level) matrix entries
 
   BoutReal *mat;
