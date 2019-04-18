@@ -11,6 +11,7 @@
 #include <initialprofiles.hxx>
 #include <interpolation.hxx>
 #include <invert_laplace.hxx>
+#include <bout/invert/laplacexy.hxx>
 #include <invert_parderiv.hxx>
 #include <msg_stack.hxx>
 #include <sourcex.hxx>
@@ -166,6 +167,11 @@ private:
   bool zonal_flow;
   bool zonal_field;
   bool zonal_bkgd;
+
+  bool split_n0; // Solve the n=0 component of potential
+  LaplaceXY *laplacexy; // Laplacian solver in X-Y (n=0)
+  Field2D phi2D;        // Axisymmetric phi
+  
   bool relax_j_vac;
   BoutReal relax_j_tconst; // Time-constant for j relax
   Field3D Psitarget;       // The (moving) target to relax to
@@ -473,6 +479,20 @@ protected:
                      .doc("Evolve zonal (n=0) pressure profile?")
                      .withDefault(false);
 
+    // n = 0 electrostatic potential solve
+    split_n0 = options["split_n0"]
+                   .doc("Solve zonal (n=0) component of potential using LaplaceXY?")
+                   .withDefault(false);
+    if (split_n0) {
+      // Create an XY solver for n=0 component
+      laplacexy = new LaplaceXY(mesh);
+      // Set coefficients for Boussinesq solve
+      laplacexy->setCoefs(1.0, 0.0);
+      phi2D = 0.0; // Starting guess
+      phi2D.setBoundary("phi");
+    }
+
+    
     // Radial smoothing
     smooth_j_x = options["smooth_j_x"].doc("Smooth Jpar in x").withDefault(false);
 
@@ -482,7 +502,9 @@ protected:
     sheath_boundaries = options["sheath_boundaries"].withDefault(false);
 
     // Parallel differencing
-    parallel_lr_diff = options["parallel_lr_diff"].withDefault(false);
+    parallel_lr_diff = options["parallel_lr_diff"]
+            .doc("Use left and right shifted stencils for parallel differences?")
+            .withDefault(false);
 
     // RMP-related options
     include_rmp = options["include_rmp"].doc("Read RMP field rmp_A from grid?").withDefault(false);
@@ -716,7 +738,6 @@ protected:
     if (gyroviscous) {
       omega_i = 9.58e7 * Zeff * Bbar;
       Upara2 = 0.5 / (Tbar * omega_i);
-      // Upara3 = 1.0;
       output.write("Upara2 = %e     Omega_i = %e\n", Upara2, omega_i);
     }
 
@@ -1197,9 +1218,10 @@ protected:
           rmp_Psi *= vac_mask;
       } else {
         // Set to zero in the core region
-        if (rmp_vac_mask)
-          rmp_Psi =
-              rmp_Psi0 * vac_mask; // Only in vacuum -> skin current -> diffuses inwards
+        if (rmp_vac_mask) {
+          // Only in vacuum -> skin current -> diffuses inwards
+          rmp_Psi = rmp_Psi0 * vac_mask;
+        }
       }
 
       mesh->communicate(rmp_Psi);
@@ -1228,8 +1250,26 @@ protected:
     } else {
 
       if (constn0) {
-        phi = phiSolver->solve(U);
+        if (split_n0) {
+          ////////////////////////////////////////////
+          // Boussinesq, split
+          // Split into axisymmetric and non-axisymmetric components
+          Field2D Vort2D = DC(U); // n=0 component
 
+          // Applies boundary condition for "phi".
+          phi2D.applyBoundary(t);
+
+          // Solve axisymmetric (n=0) part
+          phi2D = laplacexy->solve(Vort2D, phi2D);
+
+          // Solve non-axisymmetric part
+          phi = phiSolver->solve(U - Vort2D);
+          
+          phi += phi2D; // Add axisymmetric part
+        } else {
+          phi = phiSolver->solve(U);
+        }
+        
         if (diamag) {
           phi -= 0.5 * dnorm * P / B0;
         }
