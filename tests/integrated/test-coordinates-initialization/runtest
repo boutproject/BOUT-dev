@@ -10,7 +10,7 @@ e=$?
 if test $e -ne 0
 then
     echo "The test failed. That can be caused by a timeout."
-    echo "If this test is run on high load, it may fail occationally."
+    echo "If this test is run on high load, it may fail occasionally."
     echo "The load is:"
     uptime
 fi
