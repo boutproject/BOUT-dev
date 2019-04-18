@@ -66,8 +66,10 @@ protected:
 
   MPI_Comm commMG;
 
-  Array<std::unique_ptr<MultigridVector>> r_array, pr_array, y_array, iy_array, v_gmres;
-  std::unique_ptr<MultigridVector> p_gmres, q_gmres, r_gmres;
+  Array<std::unique_ptr<MultigridVector>> r_array, pr_array, y_array, iy_array;
+
+  Array<Array<std::unique_ptr<MultigridVector>>> v_gmres;
+  Array<std::unique_ptr<MultigridVector>>& get_v_gmres(int level);
 
   void communications(BoutReal *, int );
   void setMatrixC(int );
@@ -152,7 +154,7 @@ public:
   friend class Multigrid2DPf1D;
 
 private:
-  int& lnx, lnz;
+  int& lnx, & lnz;
   Array<BoutReal> data;
   MPI_Request zRequests[4];
   MPI_Request xRequests[4];

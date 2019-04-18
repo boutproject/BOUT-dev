@@ -76,28 +76,31 @@ MultigridAlg::MultigridAlg(int level, int lx, int lz, int gx, int gz, MPI_Comm c
     iy_array[level] = bout::utils::make_unique<MultigridVector>(*this, level);
   }
 
-  int gmres_mglevel = 0;
-  if (mglevel == 1) {
-    gmres_mglevel = 0;
-  } else if (mgplag) {
-    gmres_mglevel = mglevel - 1;
+  int gmres_max_mglevel = 0;
+  if (mgplag) {
+    gmres_max_mglevel = mglevel - 1;
   }
-  if (gmres_mglevel > 0) {
-    // otherwise pGMRES is not used, so don't need to initialize these arrays
-    p_gmres = bout::utils::make_unique<MultigridVector>(*this, gmres_mglevel);
-    q_gmres = bout::utils::make_unique<MultigridVector>(*this, gmres_mglevel);
-    r_gmres = bout::utils::make_unique<MultigridVector>(*this, gmres_mglevel);
-    v_gmres.reallocate(MAXGM + 1);
-    for (int i = 0; i < MAXGM + 1; ++i) {
-      v_gmres[i] = bout::utils::make_unique<MultigridVector>(*this, gmres_mglevel);
-    }
-  }
+  // otherwise pGMRES is not used, so don't need to initialize these arrays
+  v_gmres.reallocate(gmres_max_mglevel);
 }
 
 MultigridAlg::~MultigridAlg() {
   output<<"End deconstruction Malg AAAA "<<numP<<endl;
   for(int i = 0;i<mglevel;i++) delete [] matmg[i];
   delete [] matmg;
+}
+
+// Get array of MAXGM MultigridVector objects to be used by pGMRES.
+// Don't need these for all levels, so only create on demand.
+Array<std::unique_ptr<MultigridVector>>& MultigridAlg::get_v_gmres(int level) {
+  if (v_gmres[level].empty()) {
+    v_gmres.reallocate(MAXGM + 1);
+    for (int i = 0; i < MAXGM + 1; ++i) {
+      v_gmres[level][i] = bout::utils::make_unique<MultigridVector>(*this, level);
+    }
+  }
+
+  return v_gmres[level];
 }
 
 void MultigridAlg::getSolution(MultigridVector& x, MultigridVector& b, int flag) {
@@ -295,9 +298,10 @@ void MultigridAlg::pGMRES(MultigridVector& sol,MultigridVector& rhs, int level, 
   int it,etest = 1,MAXIT;
   BoutReal ini_e,error,a0,a1,rederr,perror;
   BoutReal c[MAXGM+1],s[MAXGM+1],y[MAXGM+1],g[MAXGM+1],h[MAXGM+1][MAXGM+1];
-  MultigridVector& p = *p_gmres;
-  MultigridVector& q = *q_gmres;
-  MultigridVector& r = *r_gmres;
+  MultigridVector& p = *pr_array[level];
+  MultigridVector& q = *y_array[level];
+  MultigridVector& r = *r_array[level];
+  auto& v = get_v_gmres(level);
 
   if((level == 0) || (iplag == 0)) MAXIT = 40000;
   else MAXIT = 500;
@@ -328,10 +332,10 @@ BOUT_OMP(for)
     cycleMG(level, r, rhs);
   BOUT_OMP(parallel default(shared))
 BOUT_OMP(for)
-  for(int i = 0;i < ldim;i++) (*v_gmres[0])[i] = r[i];
+  for(int i = 0;i < ldim;i++) (*v[0])[i] = r[i];
   perror = ini_e;
   do{
-    a1 = vectorProd(level,*v_gmres[0],*v_gmres[0]);
+    a1 = vectorProd(level,*v[0],*v[0]);
     a1 = sqrt(a1);
     if(fabs(a1) < atol*rtol) {
       output<<num<<" First a1 in GMRES is wrong at level "<<level<<": "<<a1<<endl;
@@ -341,27 +345,27 @@ BOUT_OMP(for)
 BOUT_OMP(parallel default(shared))
     {
 BOUT_OMP(for)
-      for(int i=0;i<ldim;i++) (*v_gmres[0])[i] *= a0;
+      for(int i=0;i<ldim;i++) (*v[0])[i] *= a0;
 BOUT_OMP(for)
       for(int i=1;i<MAXGM+1;i++) g[i] = 0.0;
     }
     for(it = 0;it<MAXGM;it++) {
-      multiAVec(level, *v_gmres[it], q);
+      multiAVec(level, *v[it], q);
       BOUT_OMP(parallel default(shared))
 BOUT_OMP(for)
-      for(int i=0;i<ldim;i++) (*v_gmres[it+1])[i] = 0.0;
+      for(int i=0;i<ldim;i++) (*v[it+1])[i] = 0.0;
 
       if (iplag == 0)
-        smoothings(level, *v_gmres[it + 1], q);
+        smoothings(level, *v[it + 1], q);
       else
-        cycleMG(level, *v_gmres[it + 1], q);
+        cycleMG(level, *v[it + 1], q);
 
-      for(int i=0;i<it+1;i++) h[i][it] = vectorProd(level,*v_gmres[it+1],*v_gmres[i]);
+      for(int i=0;i<it+1;i++) h[i][it] = vectorProd(level,*v[it+1],*v[i]);
       for(int i=0;i<it+1;i++) {
         a0 = -h[i][it];
-        for(int k=0;k<ldim;k++) (*v_gmres[it+1])[k] += a0*(*v_gmres[i])[k];
+        for(int k=0;k<ldim;k++) (*v[it+1])[k] += a0*(*v[i])[k];
       }
-      a1 = vectorProd(level,*v_gmres[it+1],*v_gmres[it+1]);
+      a1 = vectorProd(level,*v[it+1],*v[it+1]);
       a1 = sqrt(a1);
 
       // if ldim==9 then there is only one grid point at this level, so the
@@ -375,7 +379,7 @@ BOUT_OMP(for)
       h[it+1][it] = a1;
 BOUT_OMP(parallel default(shared))
 BOUT_OMP(for)
-      for(int i=0;i<ldim;i++) (*v_gmres[it+1])[i] *= a0;
+      for(int i=0;i<ldim;i++) (*v[it+1])[i] *= a0;
 
       for(int i=0;i<it;i++) {
         a0 = c[i]*h[i][it] -s[i]*h[i+1][it];
@@ -411,7 +415,7 @@ BOUT_OMP(for)
 BOUT_OMP(for)
         for(int k=0;k<ldim;k++)
           for(int i=0;i<=it;i++)
-            p[k] += y[i]*(*v_gmres[i])[k]; 
+            p[k] += y[i]*(*v[i])[k];
       }
 
       /* Get r_m and test convergence.*/
@@ -444,11 +448,11 @@ BOUT_OMP(for)
     /* Restart with new initial */
 BOUT_OMP(parallel default(shared))
 BOUT_OMP(for)
-    for(int i = 0;i<ldim;i++) (*v_gmres[0])[i] = 0.0;
+    for(int i = 0;i<ldim;i++) (*v[0])[i] = 0.0;
     if (iplag == 0)
-      smoothings(level, *v_gmres[0], r);
+      smoothings(level, *v[0], r);
     else
-      cycleMG(level, *v_gmres[0], r);
+      cycleMG(level, *v[0], r);
 
     BOUT_OMP(parallel default(shared))
 BOUT_OMP(for)
@@ -682,7 +686,6 @@ MultigridVector::MultigridVector(MultigridAlg& mgAlg_in, int level)
 
   // Create data
   data.reallocate((lnx + 2)*(lnz + 2));
-  data = 0.;
 
   // Set up persistent communications
   MAYBE_UNUSED(int ierr);
