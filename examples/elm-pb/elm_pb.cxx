@@ -245,7 +245,6 @@ private:
       BoutReal Jxsep, Jysep2;
       mesh->get(Jxsep, "ixseps1");
       mesh->get(Jysep2, "jyseps2_2");
-      // output.write("Jysep2_2 = %i   Ixsep1 = %i\n", int(Jysep2), int(Jxsep));
 
       for (auto i : result) {
         BoutReal mgx = mesh->GlobalX(i.x());
@@ -278,20 +277,6 @@ private:
     return result;
   }
 
-  /*!
-   * This function implements d2/dy2 where y is the poloidal coordinate theta
-   */
-  const Field3D Grad2_par2new(const Field3D& f) {
-    TRACE("Grad2_par2new( Field3D )");
-
-    Field3D result = D2DY2(f);
-
-#ifdef TRACK
-    result.name = "Grad2_par2new(" + f.name + ")";
-#endif
-
-    return result;
-  }
 protected:
   int init(bool restarting) {
     bool noshear;
@@ -466,8 +451,13 @@ protected:
                          .withDefault(0.1);
 
     // Toroidal filtering
-    filter_z = options["filter_z"].doc("Filter a single toroidal mode number?").withDefault(false);
-    filter_z_mode = options["filter_z_mode"].withDefault(1);
+    filter_z = options["filter_z"]
+                   .doc("Filter a single toroidal mode number? The mode to keep is "
+                        "filter_z_mode.")
+                   .withDefault(false);
+    filter_z_mode = options["filter_z_mode"]
+                        .doc("Single toroidal mode number to keep")
+                        .withDefault(1);
     low_pass_z = options["low_pass_z"].doc("Low-pass filter").withDefault(false);
     zonal_flow = options["zonal_flow"]
                      .doc("Keep zonal (n=0) component of potential?")
@@ -491,15 +481,18 @@ protected:
       phi2D = 0.0; // Starting guess
       phi2D.setBoundary("phi");
     }
-
     
     // Radial smoothing
     smooth_j_x = options["smooth_j_x"].doc("Smooth Jpar in x").withDefault(false);
 
     // Jpar boundary region
-    jpar_bndry_width = options["jpar_bndry_width"].withDefault(-1);
+    jpar_bndry_width = options["jpar_bndry_width"]
+                           .doc("Number of cells near the boundary where jpar = 0")
+                           .withDefault(-1);
 
-    sheath_boundaries = options["sheath_boundaries"].withDefault(false);
+    sheath_boundaries = options["sheath_boundaries"]
+                            .doc("Apply sheath boundaries in Y?")
+                            .withDefault(false);
 
     // Parallel differencing
     parallel_lr_diff = options["parallel_lr_diff"]
@@ -1441,10 +1434,10 @@ protected:
 
       // xqx: parallel hyper-viscous diffusion for vector potential
       if (diffusion_a4 > 0.0) {
-        tmpA2 = Grad2_par2new(Psi);
+        tmpA2 = D2DY2(Psi);
         mesh->communicate(tmpA2);
         tmpA2.applyBoundary();
-        ddt(Psi) -= diffusion_a4 * Grad2_par2new(tmpA2);
+        ddt(Psi) -= diffusion_a4 * D2DY2(tmpA2);
       }
 
       // Vacuum solution
@@ -1496,11 +1489,11 @@ protected:
 
     // xqx: parallel hyper-viscous diffusion for vorticity
     if (diffusion_u4 > 0.0) {
-      tmpU2 = Grad2_par2new(U);
+      tmpU2 = D2DY2(U);
       mesh->communicate(tmpU2);
       tmpU2.applyBoundary();
       //    tmpU2.applyBoundary("neumann");
-      ddt(U) -= diffusion_u4 * Grad2_par2new(tmpU2);
+      ddt(U) -= diffusion_u4 * D2DY2(tmpU2);
     }
 
     if (viscos_perp > 0.0)
@@ -1611,10 +1604,10 @@ protected:
 
     // xqx: parallel hyper-viscous diffusion for pressure
     if (diffusion_p4 > 0.0) {
-      tmpP2 = Grad2_par2new(P);
+      tmpP2 = D2DY2(P);
       mesh->communicate(tmpP2);
       tmpP2.applyBoundary();
-      ddt(P) = diffusion_p4 * Grad2_par2new(tmpP2);
+      ddt(P) = diffusion_p4 * D2DY2(tmpP2);
     }
 
     // heating source terms
