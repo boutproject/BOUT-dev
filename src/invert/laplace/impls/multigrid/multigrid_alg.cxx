@@ -304,8 +304,9 @@ void MultigridAlg::pGMRES(MultigridVector& sol,MultigridVector& rhs, int level, 
   BoutReal ini_e,error,a0,a1,rederr,perror;
   BoutReal c[MAXGM+1],s[MAXGM+1],y[MAXGM+1],g[MAXGM+1],h[MAXGM+1][MAXGM+1];
   MultigridVector& p = *pr_array[level];
-  MultigridVector& q = *y_array[level];
-  MultigridVector& r = *r_array[level];
+  // use y_array as this is passed to cycleMG y_array is named according to local
+  // variables in cycleMG
+  MultigridVector& r = *y_array[level];
   auto& v = get_v_gmres(level);
 
   if((level == 0) || (iplag == 0)) MAXIT = 40000;
@@ -355,15 +356,15 @@ BOUT_OMP(for)
       for(int i=1;i<MAXGM+1;i++) g[i] = 0.0;
     }
     for(it = 0;it<MAXGM;it++) {
-      multiAVec(level, *v[it], q);
+      multiAVec(level, *v[it], p);
       BOUT_OMP(parallel default(shared))
 BOUT_OMP(for)
       for(int i=0;i<ldim;i++) (*v[it+1])[i] = 0.0;
 
       if (iplag == 0)
-        smoothings(level, *v[it + 1], q);
+        smoothings(level, *v[it + 1], p);
       else
-        cycleMG(level, *v[it + 1], q);
+        cycleMG(level, *v[it + 1], p);
 
       for(int i=0;i<it+1;i++) h[i][it] = vectorProd(level,*v[it+1],*v[i]);
       for(int i=0;i<it+1;i++) {
