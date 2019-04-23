@@ -706,88 +706,10 @@ MultigridVector::MultigridVector(MultigridAlg& mgAlg_in, int level)
   // Create data
   data.reallocate((lnx + 2)*(lnz + 2));
 
-  // Set up persistent communications
-  MAYBE_UNUSED(int ierr);
-  int rtag, stag;
-  int numP = mgAlg.xNP*mgAlg.zNP;
-  BoutReal* x = std::begin(data);
-
   // Count instances of this class, used to make sure tags don't conflict
-  static int counter = -1;
-  ++counter;
-
-  if (mgAlg.zNP > 1) {
-    MPI_Datatype xvector;
-
-    ierr = MPI_Type_vector(lnx, 1, lnz+2, MPI_DOUBLE, &xvector);
-    ASSERT0(ierr == MPI_SUCCESS);
-
-    ierr = MPI_Type_commit(&xvector);
-    ASSERT1(ierr == MPI_SUCCESS);
-
-    // different tags for each receive on each level
-    rtag = 4*counter*numP + mgAlg.zProcM;
-    ierr = MPI_Recv_init(&x[lnz+2], 1, xvector, mgAlg.zProcM, rtag, mgAlg.commMG,
-        &(zRequests[0]));
-    ASSERT1(ierr == MPI_SUCCESS);
-
-    // Receive from z+
-    rtag = (4*counter+1)*numP + mgAlg.zProcP;
-    ierr = MPI_Recv_init(&x[2*(lnz+2)-1], 1, xvector, mgAlg.zProcP, rtag, mgAlg.commMG,
-        &(zRequests[1]));
-    ASSERT1(ierr == MPI_SUCCESS);
-
-    // Send to z+
-    stag = 4*counter*numP + mgAlg.rProcI;
-    ierr = MPI_Send_init(&x[2*(lnz+2)-2], 1, xvector, mgAlg.zProcP, stag, mgAlg.commMG,
-        &(zRequests[2]));
-    ASSERT1(ierr == MPI_SUCCESS);
-
-    // Send to z-
-    stag = (4*counter+1)*numP + mgAlg.rProcI;
-    ierr = MPI_Send_init(&x[lnz+3], 1, xvector, mgAlg.zProcM, stag, mgAlg.commMG,
-        &(zRequests[3]));
-    ASSERT1(ierr == MPI_SUCCESS);
-
-    ierr = MPI_Type_free(&xvector);
-    ASSERT1(ierr == MPI_SUCCESS);
-  }
-  if (mgAlg.xNP > 1) {
-    // Note: periodic x-direction not handled here
-    if (mgAlg.xProcI > 0) {
-      // Receive from x-
-      rtag = (4*counter+2)*numP + mgAlg.xProcM;
-      ierr = MPI_Recv_init(&x[0], lnz+2, MPI_DOUBLE, mgAlg.xProcM, rtag, mgAlg.commMG,
-          &(xRequests[0]));
-      ASSERT1(ierr == MPI_SUCCESS);
-
-      // Send to x-
-      stag = (4*counter+3)*numP + mgAlg.rProcI;
-      ierr = MPI_Send_init(&x[lnz+2], lnz+2, MPI_DOUBLE, mgAlg.xProcM, stag, mgAlg.commMG,
-          &(xRequests[2]));
-      ASSERT1(ierr == MPI_SUCCESS);
-    } else {
-      xRequests[0] = MPI_REQUEST_NULL;
-      xRequests[2] = MPI_REQUEST_NULL;
-    }
-
-    if (mgAlg.xProcI < mgAlg.xNP - 1) {
-      // Receive from x+
-      rtag = (4*counter+3)*numP + mgAlg.xProcP;
-      ierr = MPI_Recv_init(&x[(lnx+1)*(lnz+2)], lnz+2, MPI_DOUBLE, mgAlg.xProcP, rtag,
-          mgAlg.commMG, &(xRequests[1]));
-      ASSERT1(ierr == MPI_SUCCESS);
-
-      // Send to x+
-      stag = (4*counter+2)*numP + mgAlg.rProcI;
-      ierr = MPI_Send_init(&x[lnx*(lnz+2)], lnz+2, MPI_DOUBLE, mgAlg.xProcP, stag,
-          mgAlg.commMG, &(xRequests[3]));
-      ASSERT1(ierr == MPI_SUCCESS);
-    } else {
-      xRequests[1] = MPI_REQUEST_NULL;
-      xRequests[3] = MPI_REQUEST_NULL;
-    }
-  }
+  static int static_counter = -1;
+  ++static_counter;
+  counter = static_counter;
 }
 
 MultigridVector::~MultigridVector() {
@@ -815,14 +737,44 @@ void MultigridVector::communicate() {
 
   MPI_Status status[4];
   MAYBE_UNUSED(int ierr);
+  int rtag, stag;
+  int numP = mgAlg.xNP*mgAlg.zNP;
+  BoutReal* x = std::begin(data);
 
-  if(mgAlg.zNP > 1) {
-    // post receives first
-    ierr = MPI_Startall(2, zRequests);
+  if (mgAlg.zNP > 1) {
+    MPI_Datatype xvector;
+
+    ierr = MPI_Type_vector(lnx, 1, lnz+2, MPI_DOUBLE, &xvector);
     ASSERT1(ierr == MPI_SUCCESS);
 
-    // start sends
-    ierr = MPI_Startall(2, &(zRequests[2]));
+    ierr = MPI_Type_commit(&xvector);
+    ASSERT1(ierr == MPI_SUCCESS);
+
+    // different tags for each receive on each level
+    rtag = 4*counter*numP + mgAlg.zProcM;
+    ierr = MPI_Irecv(&x[lnz+2], 1, xvector, mgAlg.zProcM, rtag, mgAlg.commMG,
+        &(zRequests[0]));
+    ASSERT1(ierr == MPI_SUCCESS);
+
+    // Receive from z+
+    rtag = (4*counter+1)*numP + mgAlg.zProcP;
+    ierr = MPI_Irecv(&x[2*(lnz+2)-1], 1, xvector, mgAlg.zProcP, rtag, mgAlg.commMG,
+        &(zRequests[1]));
+    ASSERT1(ierr == MPI_SUCCESS);
+
+    // Send to z+
+    stag = 4*counter*numP + mgAlg.rProcI;
+    ierr = MPI_Isend(&x[2*(lnz+2)-2], 1, xvector, mgAlg.zProcP, stag, mgAlg.commMG,
+        &(zRequests[2]));
+    ASSERT1(ierr == MPI_SUCCESS);
+
+    // Send to z-
+    stag = (4*counter+1)*numP + mgAlg.rProcI;
+    ierr = MPI_Isend(&x[lnz+3], 1, xvector, mgAlg.zProcM, stag, mgAlg.commMG,
+        &(zRequests[3]));
+    ASSERT1(ierr == MPI_SUCCESS);
+
+    ierr = MPI_Type_free(&xvector);
     ASSERT1(ierr == MPI_SUCCESS);
 
     // Wait for communications to complete
@@ -834,36 +786,45 @@ void MultigridVector::communicate() {
       data[(i+1)*(lnz+2)-1] = data[i*(lnz+2)+1];
     }
   }
-  if (mgAlg.xNP > 1) {
-    // post receives first
-    if (mgAlg.xProcI > 0 and mgAlg.xProcI < mgAlg.xNP - 1) {
-      // need to communicate both sides
-      ierr = MPI_Startall(2, &xRequests[0]);
-      ASSERT1(ierr == MPI_SUCCESS);
-    } else if (mgAlg.xProcI == 0) {
-      // Only receive from outside
-      ierr = MPI_Start(&xRequests[1]);
-      ASSERT1(ierr == MPI_SUCCESS);
-    } else if (mgAlg.xProcI == mgAlg.xNP - 1) {
-      // Only receive from inside
-      ierr = MPI_Start(&xRequests[0]);
-      ASSERT1(ierr == MPI_SUCCESS);
-    } // else no receives to do
 
-    // start sends
-    if (mgAlg.xProcI > 0 and mgAlg.xProcI < mgAlg.xNP - 1) {
-      // need to communicate both sides
-      ierr = MPI_Startall(2, &xRequests[2]);
+  if (mgAlg.xNP > 1) {
+    // Note: periodic x-direction not handled here
+    if (mgAlg.xProcI > 0) {
+      // Receive from x-
+      rtag = (4*counter+2)*numP + mgAlg.xProcM;
+      ierr = MPI_Irecv(&x[0], lnz+2, MPI_DOUBLE, mgAlg.xProcM, rtag, mgAlg.commMG,
+          &(xRequests[0]));
       ASSERT1(ierr == MPI_SUCCESS);
-    } else if (mgAlg.xProcI == 0) {
-      // Only send out
-      ierr = MPI_Start(&xRequests[3]);
+    } else {
+      xRequests[0] = MPI_REQUEST_NULL;
+    }
+
+    if (mgAlg.xProcI < mgAlg.xNP - 1) {
+      // Receive from x+
+      rtag = (4*counter+3)*numP + mgAlg.xProcP;
+      ierr = MPI_Irecv(&x[(lnx+1)*(lnz+2)], lnz+2, MPI_DOUBLE, mgAlg.xProcP, rtag,
+          mgAlg.commMG, &(xRequests[1]));
       ASSERT1(ierr == MPI_SUCCESS);
-    } else if (mgAlg.xProcI == mgAlg.xNP - 1) {
-      // Only send in
-      ierr = MPI_Start(&xRequests[2]);
+
+      // Send to x+
+      stag = (4*counter+2)*numP + mgAlg.rProcI;
+      ierr = MPI_Isend(&x[lnx*(lnz+2)], lnz+2, MPI_DOUBLE, mgAlg.xProcP, stag,
+          mgAlg.commMG, &(xRequests[3]));
       ASSERT1(ierr == MPI_SUCCESS);
-    } // else no sends to do
+    } else {
+      xRequests[1] = MPI_REQUEST_NULL;
+      xRequests[3] = MPI_REQUEST_NULL;
+    }
+
+    if (mgAlg.xProcI > 0) {
+      // Send to x-
+      stag = (4*counter+3)*numP + mgAlg.rProcI;
+      ierr = MPI_Isend(&x[lnz+2], lnz+2, MPI_DOUBLE, mgAlg.xProcM, stag, mgAlg.commMG,
+          &(xRequests[2]));
+      ASSERT1(ierr == MPI_SUCCESS);
+    } else {
+      xRequests[2] = MPI_REQUEST_NULL;
+    }
 
     // Wait for communications to complete
     ierr = MPI_Waitall(4, xRequests, status);

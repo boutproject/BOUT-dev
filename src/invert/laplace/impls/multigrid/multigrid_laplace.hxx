@@ -171,6 +171,9 @@ public:
   friend class Multigrid2DPf1D;
 
 private:
+  // Count instances of this class, used to make sure tags don't conflict
+  int counter = -1;
+
   int& lnx, & lnz;
   Array<BoutReal> data;
   MPI_Request zRequests[4];
