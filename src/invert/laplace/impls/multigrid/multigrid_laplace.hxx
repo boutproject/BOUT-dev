@@ -52,7 +52,7 @@ public:
   MultigridAlg(int level, int lx, int lz, int gx, int gz, MPI_Comm comm, int check,
       int mgplag, int cftype, int mgsm, BoutReal rtol, BoutReal atol, BoutReal dtol,
       BoutReal omega);
-  virtual ~MultigridAlg();
+  virtual ~MultigridAlg() {}
 
   void setMultigridC(int );
   void getSolution(MultigridVector& ,MultigridVector& ,int);
@@ -60,7 +60,7 @@ public:
   int mglevel,mgplag,cftype,mgsm,pcheck,xNP,zNP,rProcI;
   BoutReal rtol,atol,dtol,omega;
   Array<int> gnx, gnz, lnx, lnz;
-  BoutReal **matmg;
+  Array<Array<BoutReal>> matmg;
 
 protected:
   /******* Start implementation ********/

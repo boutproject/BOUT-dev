@@ -461,7 +461,7 @@ void Multigrid1DP::convertMatrixFS(int level) {
 
   int dim = (gnx[0]+2)*(gnz[0]+2);
   Array<BoutReal> yl(dim * 9);
-  BoutReal *yg = sMG->matmg[level];
+  Array<BoutReal>& yg = sMG->matmg[level];
   int nx = xProcI*lnx[0];
 BOUT_OMP(parallel default(shared))
   {
@@ -483,7 +483,7 @@ BOUT_OMP(for collapse(2))
       }
     }
   }
-  MPI_Allreduce(std::begin(yl), yg, dim * 9, MPI_DOUBLE, MPI_SUM, commMG);
+  MPI_Allreduce(std::begin(yl), std::begin(yg), dim * 9, MPI_DOUBLE, MPI_SUM, commMG);
 }
 
 Multigrid2DPf1D::Multigrid2DPf1D(int level, int lx, int lz, int gx, int gz,
@@ -644,7 +644,7 @@ void Multigrid2DPf1D::convertMatrixFS(int level) {
 
   int dim = (gnx[0]+2)*(gnz[0]+2);
   Array<BoutReal> yl(dim * 9);
-  BoutReal *yg = sMG->matmg[level];
+  Array<BoutReal>& yg = sMG->matmg[level];
   int nx = xProcI*lnx[0];
   int nz = zProcI*lnz[0];
 BOUT_OMP(parallel default(shared) )
@@ -667,7 +667,7 @@ BOUT_OMP(for collapse(2))
       }
     }
   }
-  MPI_Allreduce(std::begin(yl), yg, dim * 9, MPI_DOUBLE, MPI_SUM, commMG);
+  MPI_Allreduce(std::begin(yl), std::begin(yg), dim * 9, MPI_DOUBLE, MPI_SUM, commMG);
 }
 
 MultigridSerial::MultigridSerial(int level, int gx, int gz, MPI_Comm comm,

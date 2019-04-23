@@ -553,8 +553,7 @@ void LaplaceMultigrid::generateMatrixF(int level) {
 
   // Set (fine-level) matrix entries
 
-  BoutReal *mat;
-  mat = kMG->matmg[level];
+  Array<BoutReal>& mat = kMG->matmg[level];
   int llx = kMG->lnx[level];
   int llz = kMG->lnz[level];
 

@@ -62,9 +62,9 @@ MultigridAlg::MultigridAlg(int level, int lx, int lz, int gx, int gz, MPI_Comm c
   }
 
   // Could be replaced with a Matrix
-  matmg = new BoutReal *[mglevel];
+  matmg.reallocate(mglevel);
   for(int i = 0;i<mglevel;i++) {
-    matmg[i] = new BoutReal[(lnx[i]+2)*(lnz[i]+2)*9];
+    matmg[i].reallocate((lnx[i]+2)*(lnz[i]+2)*9);
   }
 }
 
@@ -88,12 +88,6 @@ void MultigridAlg::initializeVectors() {
   p_gmres.reallocate(gmres_max_mglevel);
   r_gmres.reallocate(gmres_max_mglevel);
   v_gmres.reallocate(gmres_max_mglevel);
-}
-
-MultigridAlg::~MultigridAlg() {
-  output<<"End deconstruction Malg AAAA "<<numP<<endl;
-  for(int i = 0;i<mglevel;i++) delete [] matmg[i];
-  delete [] matmg;
 }
 
 // Get MultigridVector reference to be used by pGMRES.
