@@ -15,9 +15,6 @@ find_package(MPI REQUIRED)
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
-find_package(NetCDF)
-find_package(FFTW)
-
 add_subdirectory(externalpackages/mpark.variant)
 add_subdirectory(externalpackages/PVODE)
 
@@ -296,17 +293,32 @@ target_compile_definitions(bout
 target_compile_features(bout PUBLIC cxx_std_11)
 set_target_properties(bout PROPERTIES CXX_EXTENSIONS OFF)
 
+find_package(NetCDF)
 if (NetCDF_FOUND)
   target_compile_definitions(bout
     PUBLIC "NCDF4")
   target_link_libraries(bout PUBLIC NetCDF::NetCDF)
 endif()
 
+find_package(FFTW)
 if (FFTW_FOUND)
   target_compile_definitions(bout
-    PUBLIC "BOUT_HAS_FFTW"
-    )
+    PUBLIC "BOUT_HAS_FFTW")
   target_link_libraries(bout PUBLIC FFTW::FFTW)
+endif()
+
+find_package(LAPACK)
+if (LAPACK_FOUND)
+  target_compile_definitions(bout
+    PUBLIC "LAPACK")
+  target_link_libraries(bout PUBLIC "${LAPACK_LIBRARIES}")
+endif()
+
+find_package(PETSc)
+if (PETSC_FOUND)
+  target_compile_definitions(bout
+    PUBLIC "BOUT_HAS_PETSC")
+  target_link_libraries(bout PUBLIC PETSC::PETSc)
 endif()
 
 macro(bout_add_integrated_test TESTNAME)
