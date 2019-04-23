@@ -147,6 +147,8 @@ Multigrid1DP::Multigrid1DP(int level,int lx, int lz, int gx, int dl, int merge,
     }             
   }
   else kflag = 0;
+
+  initializeVectors();
 }
 
 void Multigrid1DP::setMultigridC(int UNUSED(plag)) {
@@ -553,6 +555,8 @@ Multigrid2DPf1D::Multigrid2DPf1D(int level,int lx,int lz, int gx, int gz,
     sMG = bout::utils::make_unique<MultigridSerial>(kk, gnx[0], gnz[0], commMG, pcheck);
   }
   else kflag = 0;
+
+  initializeVectors();
 }
 
 void Multigrid2DPf1D::setMultigridC(int UNUSED(plag)) {
@@ -714,4 +718,6 @@ MultigridSerial::MultigridSerial(int level, int gx, int gz, MPI_Comm comm, int c
       output<<i<<" Ser glo dim "<<gnx[i]<<","<<gnz[i]<<endl;
     }    
   }
+
+  initializeVectors();
 }

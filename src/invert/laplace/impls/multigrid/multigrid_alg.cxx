@@ -63,7 +63,9 @@ MultigridAlg::MultigridAlg(int level, int lx, int lz, int gx, int gz, MPI_Comm c
   for(int i = 0;i<mglevel;i++) {
     matmg[i] = new BoutReal[(lnx[i]+2)*(lnz[i]+2)*9];
   }
+}
 
+void MultigridAlg::initializeVectors() {
   // Set up working vectors
   r_array.reallocate(mglevel);
   pr_array.reallocate(mglevel);
@@ -175,7 +177,7 @@ BOUT_OMP(for)
   return;
 }
 
-void MultigridAlg::projection(int level, MultigridVector& r, MultigridVector& pr) 
+void MultigridAlg::projection(int level, MultigridVector& r, MultigridVector& pr)
 {
 
 BOUT_OMP(parallel default(shared))

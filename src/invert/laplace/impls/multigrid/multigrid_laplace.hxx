@@ -53,7 +53,7 @@ public:
   virtual ~MultigridAlg();
 
   void setMultigridC(int );
-  void getSolution(MultigridVector& ,MultigridVector& ,int); 
+  void getSolution(MultigridVector& ,MultigridVector& ,int);
 
   int mglevel,mgplag,cftype,mgsm,pcheck,xNP,zNP,rProcI;
   BoutReal rtol,atol,dtol,omega;
@@ -71,6 +71,10 @@ protected:
   Array<Array<std::unique_ptr<MultigridVector>>> v_gmres;
   Array<std::unique_ptr<MultigridVector>>& get_v_gmres(int level);
 
+  /// This method must be called in derived classes after xProcM, etc., have been
+  /// calculated
+  void initializeVectors();
+
   void communications(BoutReal *, int );
   void setMatrixC(int );
 
@@ -82,7 +86,7 @@ protected:
   void solveMG(MultigridVector&, MultigridVector&, int );
   void multiAVec(int , MultigridVector&, MultigridVector&);
   void residualVec(int , MultigridVector&, MultigridVector&, MultigridVector&);
-  BoutReal vectorProd(int , MultigridVector&, MultigridVector&); 
+  BoutReal vectorProd(int , MultigridVector&, MultigridVector&);
 
   virtual void lowestSolver(MultigridVector&, MultigridVector&, int );
 
