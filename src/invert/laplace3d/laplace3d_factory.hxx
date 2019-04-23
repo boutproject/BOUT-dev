@@ -1,6 +1,3 @@
-
-class Laplace3DFactory;
-
 #ifndef __LAPLACE3D_FACTORY_H__
 #define __LAPLACE3D_FACTORY_H__
 
