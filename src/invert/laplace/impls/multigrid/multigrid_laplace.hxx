@@ -70,6 +70,10 @@ protected:
 
   Array<std::unique_ptr<MultigridVector>> r_array, pr_array, y_array, iy_array;
 
+  Array<std::unique_ptr<MultigridVector>> p_gmres;
+  MultigridVector& get_p_gmres(int level);
+  Array<std::unique_ptr<MultigridVector>> r_gmres;
+  MultigridVector& get_r_gmres(int level);
   Array<Array<std::unique_ptr<MultigridVector>>> v_gmres;
   Array<std::unique_ptr<MultigridVector>>& get_v_gmres(int level);
 

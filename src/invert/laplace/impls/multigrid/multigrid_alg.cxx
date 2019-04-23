@@ -85,7 +85,8 @@ void MultigridAlg::initializeVectors() {
   if (mgplag) {
     gmres_max_mglevel = mglevel;
   }
-  // otherwise pGMRES is not used, so don't need to initialize these arrays
+  p_gmres.reallocate(gmres_max_mglevel);
+  r_gmres.reallocate(gmres_max_mglevel);
   v_gmres.reallocate(gmres_max_mglevel);
 }
 
@@ -93,6 +94,26 @@ MultigridAlg::~MultigridAlg() {
   output<<"End deconstruction Malg AAAA "<<numP<<endl;
   for(int i = 0;i<mglevel;i++) delete [] matmg[i];
   delete [] matmg;
+}
+
+// Get MultigridVector reference to be used by pGMRES.
+// Don't need these for all levels, so only create on demand.
+MultigridVector& MultigridAlg::get_r_gmres(int level) {
+  if (r_gmres[level] == nullptr) {
+    r_gmres[level] = bout::utils::make_unique<MultigridVector>(*this, level);
+  }
+
+  return *r_gmres[level];
+}
+
+// Get MultigridVector reference to be used by pGMRES.
+// Don't need these for all levels, so only create on demand.
+MultigridVector& MultigridAlg::get_p_gmres(int level) {
+  if (p_gmres[level] == nullptr) {
+    p_gmres[level] = bout::utils::make_unique<MultigridVector>(*this, level);
+  }
+
+  return *p_gmres[level];
 }
 
 // Get array of MAXGM MultigridVector objects to be used by pGMRES.
@@ -303,10 +324,8 @@ void MultigridAlg::pGMRES(MultigridVector& sol,MultigridVector& rhs, int level, 
   int it,etest = 1,MAXIT;
   BoutReal ini_e,error,a0,a1,rederr,perror;
   BoutReal c[MAXGM+1],s[MAXGM+1],y[MAXGM+1],g[MAXGM+1],h[MAXGM+1][MAXGM+1];
-  MultigridVector& p = *pr_array[level];
-  // use y_array as this is passed to cycleMG y_array is named according to local
-  // variables in cycleMG
-  MultigridVector& r = *y_array[level];
+  MultigridVector& p = get_p_gmres(level);
+  MultigridVector& r = get_r_gmres(level);
   auto& v = get_v_gmres(level);
 
   if((level == 0) || (iplag == 0)) MAXIT = 40000;
@@ -744,13 +763,13 @@ MultigridVector::MultigridVector(MultigridAlg& mgAlg_in, int level)
     if (mgAlg.xProcI > 0) {
       // Receive from x-
       rtag = (4*counter+2)*numP + mgAlg.xProcM;
-      ierr = MPI_Irecv(&x[0], lnz+2, MPI_DOUBLE, mgAlg.xProcM, rtag, mgAlg.commMG,
+      ierr = MPI_Recv_init(&x[0], lnz+2, MPI_DOUBLE, mgAlg.xProcM, rtag, mgAlg.commMG,
           &(xRequests[0]));
       ASSERT1(ierr == MPI_SUCCESS);
 
       // Send to x-
       stag = (4*counter+3)*numP + mgAlg.rProcI;
-      ierr = MPI_Isend(&x[lnz+2], lnz+2, MPI_DOUBLE, mgAlg.xProcM, stag, mgAlg.commMG,
+      ierr = MPI_Send_init(&x[lnz+2], lnz+2, MPI_DOUBLE, mgAlg.xProcM, stag, mgAlg.commMG,
           &(xRequests[2]));
       ASSERT1(ierr == MPI_SUCCESS);
     } else {
@@ -761,13 +780,13 @@ MultigridVector::MultigridVector(MultigridAlg& mgAlg_in, int level)
     if (mgAlg.xProcI < mgAlg.xNP - 1) {
       // Receive from x+
       rtag = (4*counter+3)*numP + mgAlg.xProcP;
-      ierr = MPI_Irecv(&x[(lnx+1)*(lnz+2)], lnz+2, MPI_DOUBLE, mgAlg.xProcP, rtag,
+      ierr = MPI_Recv_init(&x[(lnx+1)*(lnz+2)], lnz+2, MPI_DOUBLE, mgAlg.xProcP, rtag,
           mgAlg.commMG, &(xRequests[1]));
       ASSERT1(ierr == MPI_SUCCESS);
 
       // Send to x+
-      stag = (4*counter+2) + mgAlg.rProcI;
-      ierr = MPI_Isend(&x[lnx*(lnz+2)], lnz+2, MPI_DOUBLE, mgAlg.xProcP, stag,
+      stag = (4*counter+2)*numP + mgAlg.rProcI;
+      ierr = MPI_Send_init(&x[lnx*(lnz+2)], lnz+2, MPI_DOUBLE, mgAlg.xProcP, stag,
           mgAlg.commMG, &(xRequests[3]));
       ASSERT1(ierr == MPI_SUCCESS);
     } else {
@@ -823,12 +842,34 @@ void MultigridVector::communicate() {
   }
   if (mgAlg.xNP > 1) {
     // post receives first
-    ierr = MPI_Startall(2, xRequests);
-    ASSERT1(ierr == MPI_SUCCESS);
+    if (mgAlg.xProcI > 0 and mgAlg.xProcI < mgAlg.xNP - 1) {
+      // need to communicate both sides
+      ierr = MPI_Startall(2, &xRequests[0]);
+      ASSERT1(ierr == MPI_SUCCESS);
+    } else if (mgAlg.xProcI == 0) {
+      // Only receive from outside
+      ierr = MPI_Start(&xRequests[1]);
+      ASSERT1(ierr == MPI_SUCCESS);
+    } else if (mgAlg.xProcI == mgAlg.xNP - 1) {
+      // Only receive from inside
+      ierr = MPI_Start(&xRequests[0]);
+      ASSERT1(ierr == MPI_SUCCESS);
+    } // else no receives to do
 
     // start sends
-    ierr = MPI_Startall(2, &(xRequests[2]));
-    ASSERT1(ierr == MPI_SUCCESS);
+    if (mgAlg.xProcI > 0 and mgAlg.xProcI < mgAlg.xNP - 1) {
+      // need to communicate both sides
+      ierr = MPI_Startall(2, &xRequests[2]);
+      ASSERT1(ierr == MPI_SUCCESS);
+    } else if (mgAlg.xProcI == 0) {
+      // Only send out
+      ierr = MPI_Start(&xRequests[3]);
+      ASSERT1(ierr == MPI_SUCCESS);
+    } else if (mgAlg.xProcI == mgAlg.xNP - 1) {
+      // Only send in
+      ierr = MPI_Start(&xRequests[2]);
+      ASSERT1(ierr == MPI_SUCCESS);
+    } // else no sends to do
 
     // Wait for communications to complete
     ierr = MPI_Waitall(4, xRequests, status);
