@@ -31,9 +31,11 @@
 #include "unused.hxx"
 #include <bout/openmpwrap.hxx>
 
-Multigrid1DP::Multigrid1DP(int level,int lx, int lz, int gx, int dl, int merge,
-                    MPI_Comm comm,int check) : 
-                    MultigridAlg(level,lx,lz,gx,lz,comm,check) {
+Multigrid1DP::Multigrid1DP(int level, int lx, int lz, int gx, int dl, int merge,
+    MPI_Comm comm, int check, int mgplag, int cftype, int mgsm, BoutReal rtol,
+    BoutReal atol, BoutReal dtol, BoutReal omega)
+  : MultigridAlg(level, lx, lz, gx, lz, comm, check, mgplag, cftype, mgsm,
+      rtol, atol, dtol, omega) {
 
   mglevel = level;
 
@@ -126,7 +128,8 @@ Multigrid1DP::Multigrid1DP(int level,int lx, int lz, int gx, int dl, int merge,
       int keys = rProcI/nz;
       MPI_Comm_split(commMG,colors,keys,&comm2D);
       rMG = bout::utils::make_unique<Multigrid2DPf1D>(
-          kk, lx, lz, gnx[0], lnz[0], dl - kk + 1, nx, nz, commMG, pcheck);
+          kk, lx, lz, gnx[0], lnz[0], dl - kk + 1, nx, nz, commMG, pcheck,
+          mgplag, cftype, mgsm, rtol, atol, dtol, omega);
     } else {
       int nn = gnx[0];
       int mm = gnz[0];
@@ -143,7 +146,8 @@ Multigrid1DP::Multigrid1DP(int level,int lx, int lz, int gx, int dl, int merge,
         output <<"To Ser "<<kk<<" xNP="<<xNP<<"("<<zNP<<")"<<endl;
         output <<kflag<<" total dim "<<gnx[0]<<"("<< lnz[0]<<")"<<endl;
       }
-      sMG = bout::utils::make_unique<MultigridSerial>(kk, gnx[0], lnz[0], commMG, pcheck);
+      sMG = bout::utils::make_unique<MultigridSerial>(kk, gnx[0], lnz[0],
+          commMG, pcheck, mgplag, cftype, mgsm, rtol, atol, dtol, omega);
     }             
   }
   else kflag = 0;
@@ -210,29 +214,6 @@ void Multigrid1DP::setMultigridC(int UNUSED(plag)) {
         fclose(outf);
       }
     }
-  }
-}
-
-void Multigrid1DP::setValueS() {
-
-  if(kflag == 1) {
-    rMG->mgplag = mgplag;
-    rMG->mgsm = mgsm;
-    rMG->cftype = cftype;
-    rMG->rtol = rtol;
-    rMG->atol = atol;
-    rMG->dtol = dtol;
-    rMG->omega = omega;
-    rMG->setValueS();
-  }
-  else if(kflag == 2) {
-    sMG->mgplag = mgplag;
-    sMG->mgsm = mgsm;
-    sMG->cftype = cftype;
-    sMG->rtol = rtol;
-    sMG->atol = atol;
-    sMG->dtol = dtol;
-    sMG->omega = omega;
   }
 }
 
@@ -505,9 +486,11 @@ BOUT_OMP(for collapse(2))
   MPI_Allreduce(std::begin(yl), yg, dim * 9, MPI_DOUBLE, MPI_SUM, commMG);
 }
 
-Multigrid2DPf1D::Multigrid2DPf1D(int level,int lx,int lz, int gx, int gz,
-		       int dl,int px,int pz, MPI_Comm comm,int check) :
-  MultigridAlg(level,lx,lz,gx,gz,comm,check) {
+Multigrid2DPf1D::Multigrid2DPf1D(int level, int lx, int lz, int gx, int gz,
+    int dl, int px, int pz, MPI_Comm comm, int check, int mgplag, int cftype,
+    int mgsm, BoutReal rtol, BoutReal atol, BoutReal dtol, BoutReal omega) :
+  MultigridAlg(level, lx, lz, gx, gz, comm, check, mgplag, cftype, mgsm, rtol,
+      atol, dtol, omega) {
 
   mglevel = level;
 
@@ -552,7 +535,8 @@ Multigrid2DPf1D::Multigrid2DPf1D(int level,int lx,int lz, int gx, int gz,
       output <<"total dim"<<gnx[0]<<"("<< gnz[0]<<")"<<endl;
     }
     kflag = 2;
-    sMG = bout::utils::make_unique<MultigridSerial>(kk, gnx[0], gnz[0], commMG, pcheck);
+    sMG = bout::utils::make_unique<MultigridSerial>(kk, gnx[0], gnz[0], commMG,
+        pcheck, mgplag, cftype, mgsm, rtol, atol, dtol, omega);
   }
   else kflag = 0;
 
@@ -591,18 +575,6 @@ void Multigrid2DPf1D::setMultigridC(int UNUSED(plag)) {
         fclose(outf);
       }
     }
-  }
-}
-
-void Multigrid2DPf1D::setValueS() {
-  if(kflag == 2) {
-    sMG->mgplag = mgplag;
-    sMG->mgsm = mgsm;
-    sMG->cftype = cftype;
-    sMG->rtol = rtol;
-    sMG->atol = atol;
-    sMG->dtol = dtol;
-    sMG->omega = omega;
   }
 }
 
@@ -698,8 +670,11 @@ BOUT_OMP(for collapse(2))
   MPI_Allreduce(std::begin(yl), yg, dim * 9, MPI_DOUBLE, MPI_SUM, commMG);
 }
 
-MultigridSerial::MultigridSerial(int level, int gx, int gz, MPI_Comm comm, int check)
-    : MultigridAlg(level, gx, gz, gx, gz, comm, check) {
+MultigridSerial::MultigridSerial(int level, int gx, int gz, MPI_Comm comm,
+    int check, int mgplag, int cftype, int mgsm, BoutReal rtol, BoutReal atol,
+    BoutReal dtol, BoutReal omega)
+    : MultigridAlg(level, gx, gz, gx, gz, comm, check, mgplag, cftype, mgsm,
+        rtol, atol, dtol, omega) {
 
   xNP = 1;
   zNP = 1;

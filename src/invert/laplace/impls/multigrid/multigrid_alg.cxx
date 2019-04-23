@@ -34,8 +34,11 @@
 // Define basic multigrid algorithm
 
 MultigridAlg::MultigridAlg(int level, int lx, int lz, int gx, int gz, MPI_Comm comm,
-                           int check)
-    : mglevel(level), pcheck(check), commMG(comm) {
+                           int check, int mgplag, int cftype, int mgsm,
+                           BoutReal rtol, BoutReal atol, BoutReal dtol,
+                           BoutReal omega)
+    : mglevel(level), mgplag(mgplag), cftype(cftype), mgsm(mgsm), pcheck(check),
+      rtol(rtol), atol(atol), dtol(dtol), omega(omega), commMG(comm) {
 
   if(pcheck > 0) output<<"Construct MG "<<level<<endl; 
 

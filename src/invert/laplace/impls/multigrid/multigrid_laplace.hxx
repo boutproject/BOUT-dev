@@ -49,7 +49,9 @@ class MultigridVector;
 
 class MultigridAlg{
 public:
-  MultigridAlg(int ,int ,int ,int ,int ,MPI_Comm ,int);
+  MultigridAlg(int level, int lx, int lz, int gx, int gz, MPI_Comm comm, int check,
+      int mgplag, int cftype, int mgsm, BoutReal rtol, BoutReal atol, BoutReal dtol,
+      BoutReal omega);
   virtual ~MultigridAlg();
 
   void setMultigridC(int );
@@ -99,7 +101,8 @@ protected:
 
 class MultigridSerial: public MultigridAlg{
 public:
-  MultigridSerial(int level, int gx, int gz, MPI_Comm comm, int check);
+  MultigridSerial(int level, int gx, int gz, MPI_Comm comm, int check, int mgplag,
+      int cftype, int mgsm, BoutReal rtol, BoutReal atol, BoutReal dtol, BoutReal omega);
   ~MultigridSerial() {};
 
   void convertMatrixF(BoutReal *); 
@@ -107,7 +110,9 @@ public:
 
 class Multigrid2DPf1D: public MultigridAlg{
 public:
-  Multigrid2DPf1D(int ,int ,int ,int ,int ,int ,int ,int ,MPI_Comm ,int );
+  Multigrid2DPf1D(int level, int lx, int lz, int gx, int gz, int dl,
+      int px, int pz, MPI_Comm comm, int check, int mgplag, int cftype, int mgsm, BoutReal
+      rtol, BoutReal atol, BoutReal dtol, BoutReal omega);
   ~Multigrid2DPf1D() {};
 
   void setMultigridC(int );
@@ -124,7 +129,9 @@ private:
 
 class Multigrid1DP: public MultigridAlg{
 public:
-  Multigrid1DP(int ,int ,int ,int ,int ,int, MPI_Comm ,int );
+  Multigrid1DP(int level, int lx, int lz, int gx, int dl, int merge, MPI_Comm comm,
+      int check, int mgplag, int cftype, int mgsm, BoutReal rtol, BoutReal atol, BoutReal
+      dtol, BoutReal omega);
   ~Multigrid1DP() {};
   void setMultigridC(int );
   void setPcheck(int );

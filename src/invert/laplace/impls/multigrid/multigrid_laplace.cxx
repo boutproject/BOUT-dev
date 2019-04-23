@@ -164,15 +164,7 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt, const CELL_LOC loc, Mesh *mesh_
   adlevel = mglevel - aclevel;
 
   kMG = bout::utils::make_unique<Multigrid1DP>(aclevel, Nx_local, Nz_local, Nx_global,
-                                               adlevel, mgmpi, commX, pcheck);
-  kMG->mgplag = mgplag;
-  kMG->mgsm = mgsm; 
-  kMG->cftype = cftype;
-  kMG->rtol = rtol;
-  kMG->atol = atol;
-  kMG->dtol = dtol;
-  kMG->omega = omega;
-  kMG->setValueS();
+      adlevel, mgmpi, commX, pcheck, mgplag, cftype, mgsm, rtol, atol, dtol, omega);
 
   // Set up Multigrid Cycle
 
