@@ -1,0 +1,316 @@
+cmake_minimum_required(VERSION 3.1...3.12)
+
+if(${CMAKE_VERSION} VERSION_LESS 3.11)
+  cmake_policy(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
+else()
+  cmake_policy(VERSION 3.12)
+endif()
+
+project(BOUT++
+  DESCRIPTION "Fluid PDE solver framework"
+  VERSION 4.2.2
+  LANGUAGES CXX)
+
+find_package(MPI REQUIRED)
+
+set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
+
+find_package(NetCDF)
+find_package(FFTW)
+
+add_subdirectory(externalpackages/mpark.variant)
+add_subdirectory(externalpackages/PVODE)
+
+set(BOUT_SOURCES
+  ./include/boundary_factory.hxx
+  ./include/boundary_op.hxx
+  ./include/boundary_region.hxx
+  ./include/boundary_standard.hxx
+  ./include/bout.hxx
+  ./include/bout/array.hxx
+  ./include/bout/assert.hxx
+  ./include/bout/constants.hxx
+  ./include/bout/coordinates.hxx
+  ./include/bout/deprecated.hxx
+  ./include/bout/deriv_store.hxx
+  ./include/bout/expr.hxx
+  ./include/bout/field_visitor.hxx
+  ./include/bout/fieldgroup.hxx
+  ./include/bout/format.hxx
+  ./include/bout/fv_ops.hxx
+  ./include/bout/generic_factory.hxx
+  ./include/bout/globalfield.hxx
+  ./include/bout/griddata.hxx
+  ./include/bout/index_derivs.hxx
+  ./include/bout/index_derivs_interface.hxx
+  ./include/bout/invert/laplace3d.hxx
+  ./include/bout/invert/laplacexy.hxx
+  ./include/bout/invert/laplacexz.hxx
+  ./include/bout/invertable_operator.hxx
+  ./include/bout/macro_for_each.hxx
+  ./include/bout/mesh.hxx
+  ./include/bout/monitor.hxx
+  ./include/bout/openmpwrap.hxx
+  ./include/bout/paralleltransform.hxx
+  ./include/bout/petsclib.hxx
+  ./include/bout/physicsmodel.hxx
+  ./include/bout/region.hxx
+  ./include/bout/rkscheme.hxx
+  ./include/bout/rvec.hxx
+  ./include/bout/scorepwrapper.hxx
+  ./include/bout/slepclib.hxx
+  ./include/bout/solver.hxx
+  ./include/bout/solverfactory.hxx
+  ./include/bout/surfaceiter.hxx
+  ./include/bout/sys/expressionparser.hxx
+  ./include/bout/sys/gettext.hxx
+  ./include/bout/sys/range.hxx
+  ./include/bout/sys/timer.hxx
+  ./include/bout/sys/type_name.hxx
+  ./include/bout/sys/uncopyable.hxx
+  ./include/bout/sys/variant.hxx
+  ./include/bout/template_combinations.hxx
+  ./include/bout_types.hxx
+  ./include/boutcomm.hxx
+  ./include/boutexception.hxx
+  ./include/boutmain.hxx
+  ./include/cyclic_reduction.hxx
+  ./include/datafile.hxx
+  ./include/dataformat.hxx
+  ./include/dcomplex.hxx
+  ./include/derivs.hxx
+  ./include/difops.hxx
+  ./include/fft.hxx
+  ./include/field.hxx
+  ./include/field2d.hxx
+  ./include/field3d.hxx
+  ./include/field_data.hxx
+  ./include/field_factory.hxx
+  ./include/fieldperp.hxx
+  ./include/globals.hxx
+  ./include/gyro_average.hxx
+  ./include/initialprofiles.hxx
+  ./include/interpolation.hxx
+  ./include/interpolation_factory.hxx
+  ./include/invert_laplace.hxx
+  ./include/invert_parderiv.hxx
+  ./include/lapack_routines.hxx
+  ./include/mask.hxx
+  ./include/msg_stack.hxx
+  ./include/multiostream.hxx
+  ./include/options.hxx
+  ./include/options_netcdf.hxx
+  ./include/optionsreader.hxx
+  ./include/output.hxx
+  ./include/parallel_boundary_op.hxx
+  ./include/parallel_boundary_region.hxx
+  ./include/smoothing.hxx
+  ./include/sourcex.hxx
+  ./include/stencils.hxx
+  ./include/unused.hxx
+  ./include/utils.hxx
+  ./include/vecops.hxx
+  ./include/vector2d.hxx
+  ./include/vector3d.hxx
+  ./include/where.hxx
+  ./src/bout++.cxx
+  ./src/field/field.cxx
+  ./src/field/field2d.cxx
+  ./src/field/field3d.cxx
+  ./src/field/field_data.cxx
+  ./src/field/field_factory.cxx
+  ./src/field/fieldgenerators.cxx
+  ./src/field/fieldgenerators.hxx
+  ./src/field/fieldgroup.cxx
+  ./src/field/fieldperp.cxx
+  ./src/field/generated_fieldops.cxx
+  ./src/field/globalfield.cxx
+  ./src/field/initialprofiles.cxx
+  ./src/field/vecops.cxx
+  ./src/field/vector2d.cxx
+  ./src/field/vector3d.cxx
+  ./src/field/where.cxx
+  ./src/fileio/datafile.cxx
+  ./src/fileio/dataformat.cxx
+  ./src/fileio/formatfactory.cxx
+  ./src/fileio/formatfactory.hxx
+  ./src/fileio/impls/emptyformat.hxx
+  ./src/fileio/impls/hdf5/h5_format.cxx
+  ./src/fileio/impls/hdf5/h5_format.hxx
+  ./src/fileio/impls/netcdf/nc_format.cxx
+  ./src/fileio/impls/netcdf/nc_format.hxx
+  ./src/fileio/impls/netcdf4/ncxx4.cxx
+  ./src/fileio/impls/netcdf4/ncxx4.hxx
+  ./src/fileio/impls/pnetcdf/pnetcdf.cxx
+  ./src/fileio/impls/pnetcdf/pnetcdf.hxx
+  ./src/invert/fft_fftw.cxx
+  ./src/invert/lapack_routines.cxx
+  ./src/invert/laplace/impls/cyclic/cyclic_laplace.cxx
+  ./src/invert/laplace/impls/cyclic/cyclic_laplace.hxx
+  ./src/invert/laplace/impls/multigrid/multigrid_alg.cxx
+  ./src/invert/laplace/impls/multigrid/multigrid_laplace.cxx
+  ./src/invert/laplace/impls/multigrid/multigrid_laplace.hxx
+  ./src/invert/laplace/impls/multigrid/multigrid_solver.cxx
+  ./src/invert/laplace/impls/mumps/mumps_laplace.cxx
+  ./src/invert/laplace/impls/mumps/mumps_laplace.hxx
+  ./src/invert/laplace/impls/naulin/naulin_laplace.cxx
+  ./src/invert/laplace/impls/naulin/naulin_laplace.hxx
+  ./src/invert/laplace/impls/pdd/pdd.cxx
+  ./src/invert/laplace/impls/pdd/pdd.hxx
+  ./src/invert/laplace/impls/petsc/petsc_laplace.cxx
+  ./src/invert/laplace/impls/petsc/petsc_laplace.hxx
+  ./src/invert/laplace/impls/serial_band/serial_band.cxx
+  ./src/invert/laplace/impls/serial_band/serial_band.hxx
+  ./src/invert/laplace/impls/serial_tri/serial_tri.cxx
+  ./src/invert/laplace/impls/serial_tri/serial_tri.hxx
+  ./src/invert/laplace/impls/shoot/shoot_laplace.cxx
+  ./src/invert/laplace/impls/shoot/shoot_laplace.hxx
+  ./src/invert/laplace/impls/spt/spt.cxx
+  ./src/invert/laplace/impls/spt/spt.hxx
+  ./src/invert/laplace/invert_laplace.cxx
+  ./src/invert/laplace/laplacefactory.cxx
+  ./src/invert/laplace/laplacefactory.hxx
+  ./src/invert/laplace3d/impls/emptylaplace3d.hxx
+  ./src/invert/laplace3d/impls/petsc/petsc_laplace3d.cxx
+  ./src/invert/laplace3d/impls/petsc/petsc_laplace3d.hxx
+  ./src/invert/laplace3d/laplace3d.cxx
+  ./src/invert/laplace3d/laplace3d_factory.cxx
+  ./src/invert/laplace3d/laplace3d_factory.hxx
+  ./src/invert/laplacexy/laplacexy.cxx
+  ./src/invert/laplacexz/impls/cyclic/laplacexz-cyclic.cxx
+  ./src/invert/laplacexz/impls/cyclic/laplacexz-cyclic.hxx
+  ./src/invert/laplacexz/impls/petsc/laplacexz-petsc.cxx
+  ./src/invert/laplacexz/impls/petsc/laplacexz-petsc.hxx
+  ./src/invert/laplacexz/laplacexz.cxx
+  ./src/invert/parderiv/impls/cyclic/cyclic.cxx
+  ./src/invert/parderiv/impls/cyclic/cyclic.hxx
+  ./src/invert/parderiv/invert_parderiv.cxx
+  ./src/invert/parderiv/parderiv_factory.cxx
+  ./src/invert/parderiv/parderiv_factory.hxx
+  ./src/mesh/boundary_factory.cxx
+  ./src/mesh/boundary_region.cxx
+  ./src/mesh/boundary_standard.cxx
+  ./src/mesh/coordinates.cxx
+  ./src/mesh/data/gridfromfile.cxx
+  ./src/mesh/data/gridfromoptions.cxx
+  ./src/mesh/difops.cxx
+  ./src/mesh/fv_ops.cxx
+  ./src/mesh/impls/bout/boutmesh.cxx
+  ./src/mesh/impls/bout/boutmesh.hxx
+  ./src/mesh/index_derivs.cxx
+  ./src/mesh/interpolation.cxx
+  ./src/mesh/interpolation/bilinear.cxx
+  ./src/mesh/interpolation/hermite_spline.cxx
+  ./src/mesh/interpolation/interpolation_factory.cxx
+  ./src/mesh/interpolation/lagrange_4pt.cxx
+  ./src/mesh/interpolation/monotonic_hermite_spline.cxx
+  ./src/mesh/mesh.cxx
+  ./src/mesh/meshfactory.cxx
+  ./src/mesh/meshfactory.hxx
+  ./src/mesh/parallel/fci.cxx
+  ./src/mesh/parallel/fci.hxx
+  ./src/mesh/parallel/identity.cxx
+  ./src/mesh/parallel/shiftedmetric.cxx
+  ./src/mesh/parallel_boundary_op.cxx
+  ./src/mesh/parallel_boundary_region.cxx
+  ./src/mesh/surfaceiter.cxx
+  ./src/physics/gyro_average.cxx
+  ./src/physics/physicsmodel.cxx
+  ./src/physics/smoothing.cxx
+  ./src/physics/sourcex.cxx
+  ./src/solver/impls/arkode/arkode.cxx
+  ./src/solver/impls/arkode/arkode.hxx
+  ./src/solver/impls/cvode/cvode.cxx
+  ./src/solver/impls/cvode/cvode.hxx
+  ./src/solver/impls/euler/euler.cxx
+  ./src/solver/impls/euler/euler.hxx
+  ./src/solver/impls/ida/ida.cxx
+  ./src/solver/impls/ida/ida.hxx
+  ./src/solver/impls/imex-bdf2/imex-bdf2.cxx
+  ./src/solver/impls/imex-bdf2/imex-bdf2.hxx
+  ./src/solver/impls/karniadakis/karniadakis.cxx
+  ./src/solver/impls/karniadakis/karniadakis.hxx
+  ./src/solver/impls/petsc/petsc.cxx
+  ./src/solver/impls/petsc/petsc.hxx
+  ./src/solver/impls/power/power.cxx
+  ./src/solver/impls/power/power.hxx
+  ./src/solver/impls/pvode/pvode.cxx
+  ./src/solver/impls/pvode/pvode.hxx
+  ./src/solver/impls/rk3-ssp/rk3-ssp.cxx
+  ./src/solver/impls/rk3-ssp/rk3-ssp.hxx
+  ./src/solver/impls/rk4/rk4.cxx
+  ./src/solver/impls/rk4/rk4.hxx
+  ./src/solver/impls/rkgeneric/impls/cashkarp/cashkarp.cxx
+  ./src/solver/impls/rkgeneric/impls/cashkarp/cashkarp.hxx
+  ./src/solver/impls/rkgeneric/impls/rk4simple/rk4simple.cxx
+  ./src/solver/impls/rkgeneric/impls/rk4simple/rk4simple.hxx
+  ./src/solver/impls/rkgeneric/impls/rkf34/rkf34.cxx
+  ./src/solver/impls/rkgeneric/impls/rkf34/rkf34.hxx
+  ./src/solver/impls/rkgeneric/impls/rkf45/rkf45.cxx
+  ./src/solver/impls/rkgeneric/impls/rkf45/rkf45.hxx
+  ./src/solver/impls/rkgeneric/rkgeneric.cxx
+  ./src/solver/impls/rkgeneric/rkgeneric.hxx
+  ./src/solver/impls/rkgeneric/rkscheme.cxx
+  ./src/solver/impls/rkgeneric/rkschemefactory.cxx
+  ./src/solver/impls/rkgeneric/rkschemefactory.hxx
+  ./src/solver/impls/slepc/slepc.cxx
+  ./src/solver/impls/slepc/slepc.hxx
+  ./src/solver/impls/snes/snes.cxx
+  ./src/solver/impls/snes/snes.hxx
+  ./src/solver/solver.cxx
+  ./src/solver/solverfactory.cxx
+  ./src/sys/bout_types.cxx
+  ./src/sys/boutcomm.cxx
+  ./src/sys/boutexception.cxx
+  ./src/sys/derivs.cxx
+  ./src/sys/expressionparser.cxx
+  ./src/sys/msg_stack.cxx
+  ./src/sys/options.cxx
+  ./src/sys/options/optionparser.hxx
+  ./src/sys/options/options_ini.cxx
+  ./src/sys/options/options_ini.hxx
+  ./src/sys/options/options_netcdf.cxx
+  ./src/sys/optionsreader.cxx
+  ./src/sys/output.cxx
+  ./src/sys/petsclib.cxx
+  ./src/sys/range.cxx
+  ./src/sys/slepclib.cxx
+  ./src/sys/timer.cxx
+  ./src/sys/type_name.cxx
+  ./src/sys/utils.cxx
+  )
+
+add_library(bout
+  ${BOUT_SOURCES}
+  )
+target_link_libraries(bout PUBLIC MPI::MPI_CXX pvode pvpre mpark_variant)
+target_include_directories(bout PUBLIC include)
+
+target_compile_definitions(bout
+  PUBLIC "CHECK=3"
+  PUBLIC "BOUT_VERSION_STRING=\"4.2.2\""
+  PUBLIC "BOUT_VERSION_DOUBLE=4.22"
+  PUBLIC "BOUT_HAS_PVODE"
+  )
+
+target_compile_features(bout PUBLIC cxx_std_11)
+set_target_properties(bout PROPERTIES CXX_EXTENSIONS OFF)
+
+if (NetCDF_FOUND)
+  target_compile_definitions(bout
+    PUBLIC "NCDF4")
+  target_link_libraries(bout PUBLIC NetCDF::NetCDF)
+endif()
+
+if (FFTW_FOUND)
+  target_compile_definitions(bout
+    PUBLIC "BOUT_HAS_FFTW"
+    )
+  target_link_libraries(bout PUBLIC FFTW::FFTW)
+endif()
+
+option(PACKAGE_TESTS "Build the tests" ON)
+if(PACKAGE_TESTS)
+    enable_testing()
+    add_subdirectory(tests/unit)
+endif()
