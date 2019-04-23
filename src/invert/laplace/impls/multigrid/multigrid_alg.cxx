@@ -78,7 +78,7 @@ MultigridAlg::MultigridAlg(int level, int lx, int lz, int gx, int gz, MPI_Comm c
 
   int gmres_max_mglevel = 0;
   if (mgplag) {
-    gmres_max_mglevel = mglevel - 1;
+    gmres_max_mglevel = mglevel;
   }
   // otherwise pGMRES is not used, so don't need to initialize these arrays
   v_gmres.reallocate(gmres_max_mglevel);
@@ -94,7 +94,7 @@ MultigridAlg::~MultigridAlg() {
 // Don't need these for all levels, so only create on demand.
 Array<std::unique_ptr<MultigridVector>>& MultigridAlg::get_v_gmres(int level) {
   if (v_gmres[level].empty()) {
-    v_gmres.reallocate(MAXGM + 1);
+    v_gmres[level].reallocate(MAXGM + 1);
     for (int i = 0; i < MAXGM + 1; ++i) {
       v_gmres[level][i] = bout::utils::make_unique<MultigridVector>(*this, level);
     }
