@@ -3,6 +3,7 @@
 
 #include "gtest/gtest.h"
 #include "msg_stack.hxx"
+#include "test_extras.hxx"
 
 #include <iostream>
 #include <string>
@@ -128,10 +129,9 @@ TEST(MsgStackTest, TraceMacroTest) {
     std::string line = std::to_string(__LINE__ + 1);
     TRACE("Second");
     auto second = msg_stack.getDump();
-    auto second_dump = "====== Back trace ======\n -> Second on line " + line +
-                       " of 'sys/test_msg_stack.cxx'\n -> First\n";
+    auto second_dump = "====== Back trace ======\n -> Second on line " + line;
 
-    EXPECT_EQ(second_dump, second);
+    EXPECT_TRUE(IsSubString(second, second_dump));
   }
 
   // Should now contain only the first message
