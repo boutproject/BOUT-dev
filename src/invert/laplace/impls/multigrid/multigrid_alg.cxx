@@ -155,8 +155,8 @@ void MultigridAlg::cycleMG(int level, MultigridVector& sol, MultigridVector& rhs
     smoothings(level,sol,rhs);
 
     MultigridVector& r = *r_array[level];
-    MultigridVector& pr = *pr_array[level];
-    MultigridVector& y = *y_array[level];
+    MultigridVector& pr = *pr_array[level - 1];
+    MultigridVector& y = *y_array[level - 1];
     MultigridVector& iy = *iy_array[level];
 
     residualVec(level, sol, rhs, r);
