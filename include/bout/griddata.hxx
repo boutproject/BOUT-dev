@@ -89,12 +89,8 @@ public:
   bool get(Mesh *m, int &ival, const std::string &name) override; ///< Get an integer
   bool get(Mesh *m, BoutReal &rval,
            const std::string &name) override; ///< Get a BoutReal number
-  bool get(Mesh *m, Field2D &var, const std::string &name, BoutReal def = 0.0) override {
-    return getField(m, var, name, def);
-  }
-  bool get(Mesh *m, Field3D &var, const std::string &name, BoutReal def = 0.0) override {
-    return getField(m, var, name, def);
-  }
+  bool get(Mesh *m, Field2D &var, const std::string &name, BoutReal def = 0.0) override;
+  bool get(Mesh *m, Field3D &var, const std::string &name, BoutReal def = 0.0) override;
 
   bool get(Mesh *m, std::vector<int> &var, const std::string &name, int len, int offset = 0,
            GridDataSource::Direction dir = GridDataSource::X) override;
