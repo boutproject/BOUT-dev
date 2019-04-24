@@ -11,6 +11,8 @@ project(PVODE
   VERSION 0.1
   LANGUAGES CXX)
 
+find_package(MPI REQUIRED)
+
 add_library(pvode
   source/cvode.cpp
   source/nvector.cpp
@@ -34,6 +36,7 @@ add_library(pvode
   )
 
 target_include_directories(pvode PUBLIC include)
+target_link_libraries(pvode PUBLIC MPI::MPI_CXX)
 
 add_library(pvpre
   precon/pvbbdpre.cpp 
@@ -43,3 +46,4 @@ add_library(pvpre
   )
 
 target_include_directories(pvpre PUBLIC include)
+target_link_libraries(pvpre PUBLIC MPI::MPI_CXX)
