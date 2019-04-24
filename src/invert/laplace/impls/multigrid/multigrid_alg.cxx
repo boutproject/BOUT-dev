@@ -664,7 +664,7 @@ BOUT_OMP(for)
   if((pcheck == 1) && (rProcI == 0)) 
     printf("%d \n  In MGsolve ini = %24.18f\n",numP,ini_e);
   MultigridVector& y = *y_array[level];
-  MultigridVector& r = *r_array[level];
+  MultigridVector& r = *pr_array[level];
   BOUT_OMP(parallel default(shared))
 BOUT_OMP(for)
   for(int i = 0;i<ldim;i++) r[i] = rhs[i];

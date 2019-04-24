@@ -326,7 +326,7 @@ BOUT_OMP(for collapse(2))
     int level = sMG->mglevel-1;
     int dim = (sMG->lnx[level]+2)*(sMG->lnz[level]+2);
     MultigridVector& y = *(sMG->y_array)[level];
-    MultigridVector& r = *(sMG->r_array)[level];
+    MultigridVector& r = *(sMG->pr_array)[level];
     int nx = xProcI*lnx[0];
 BOUT_OMP(parallel default(shared))
     {
@@ -591,8 +591,8 @@ void Multigrid2DPf1D::lowestSolver(MultigridVector& x, MultigridVector& b, int U
   if(kflag == 2) {
     int level = sMG->mglevel-1;
     int dim = (sMG->lnx[level]+2)*(sMG->lnz[level]+2);
-    MultigridVector& y = *y_array[level];
-    MultigridVector& r = *r_array[level];
+    MultigridVector& y = *(sMG->y_array)[level];
+    MultigridVector& r = *(sMG->pr_array)[level];
     int nx = xProcI*lnx[0];
     int nz = zProcI*lnz[0];
 BOUT_OMP(parallel default(shared) )

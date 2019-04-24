@@ -98,6 +98,7 @@ protected:
 
   friend class MultigridVector;
   friend class Multigrid1DP;
+  friend class Multigrid2DPf1D;
 };
 
 
