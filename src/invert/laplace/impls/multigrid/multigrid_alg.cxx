@@ -721,10 +721,10 @@ MultigridVector::~MultigridVector() {
     MPI_Request_free(&zRequests[3]);
   }
   if (mgAlg.xNP > 1) {
-    MPI_Request_free(&xRequests[0]);
-    MPI_Request_free(&xRequests[1]);
-    MPI_Request_free(&xRequests[2]);
-    MPI_Request_free(&xRequests[3]);
+    //MPI_Request_free(&xRequests[0]);
+    //MPI_Request_free(&xRequests[1]);
+    //MPI_Request_free(&xRequests[2]);
+    //MPI_Request_free(&xRequests[3]);
   }
 }
 
