@@ -284,7 +284,6 @@ target_link_libraries(bout PUBLIC MPI::MPI_CXX pvode pvpre mpark_variant)
 target_include_directories(bout PUBLIC include)
 
 target_compile_definitions(bout
-  PUBLIC "CHECK=3"
   PUBLIC "BOUT_VERSION_STRING=\"4.2.2\""
   PUBLIC "BOUT_VERSION_DOUBLE=4.22"
   PUBLIC "BOUT_HAS_PVODE"
@@ -293,12 +292,92 @@ target_compile_definitions(bout
 target_compile_features(bout PUBLIC cxx_std_11)
 set_target_properties(bout PROPERTIES CXX_EXTENSIONS OFF)
 
+# Compile time features
+
+set(CHECK_LEVELS 0 1 2 3 4)
+set(CHECK 3 CACHE STRINGS "Set run-time checking level")
+set_property(CACHE CHECK PROPERTY STRINGS ${CHECK_LEVELS})
+if (NOT CHECK IN_LIST CHECK_LEVELS)
+  message(FATAL_ERROR "CHECK must be one of ${CHECK_LEVELS}")
+endif()
+message(STATUS "Runtime checking level: CHECK=${CHECK}")
+target_compile_definitions(bout
+  PUBLIC "CHECK=${CHECK}")
+
+option(ENABLE_SIGNAL "SegFault handling" ON)
+if (ENABLE_SIGNAL)
+  target_compile_definitions(bout
+    PUBLIC "SIGHANDLE")
+endif()
+message(STATUS "Signal handling: SIGHANDLE=${ENABLE_SIGNAL}")
+
+option(ENABLE_COLOR "Output coloring" ON)
+if (ENABLE_COLOR)
+  target_compile_definitions(bout
+    PUBLIC "LOGCOLOR")
+endif()
+message(STATUS "Output coloring: LOGCOLOR=${ENABLE_COLOR}")
+
+option(ENABLE_TRACK "Field name tracking" ON)
+if (ENABLE_TRACK)
+  target_compile_definitions(bout
+    PUBLIC "TRACK")
+endif()
+message(STATUS "Field name tracking: TRACK=${ENABLE_TRACK}")
+
+option(ENABLE_SIGFPE "Signalling floating point exceptions" ON)
+if (ENABLE_SIGFPE)
+  target_compile_definitions(bout
+    PUBLIC "BOUT_FPE")
+endif()
+message(STATUS "Signalling floating point exceptions: BOUT_FPE=${ENABLE_SIGFPE}")
+
+option(ENABLE_BACKTRACE "Enable backtrace" ON)
+if (ENABLE_BACKTRACE)
+  find_program(ADDR2LINE_FOUND addr2line)
+  if (NOT ADDR2LINE_FOUND)
+    message(FATAL_ERROR "addr2line not found")
+  endif()
+  target_compile_definitions(bout
+    PUBLIC "BACKTRACE")
+  target_link_libraries(bout PUBLIC ${CMAKE_DL_LIBS})
+endif()
+message(STATUS "Enable backtrace: SIGHANDLE=${ENABLE_BACKTRACE}")
+
+option(ENABLE_OPENMP "Enable OpenMP support" OFF)
+if (ENABLE_OPENMP)
+  find_package(OpenMP)
+  if (OpenMP_CXX_FOUND)
+    target_link_libraries(bout PUBLIC OpenMP::OpenMP_CXX)
+  else()
+    message(FATAL_ERROR "OpenMP support requested but could not be enabled")
+  endif()
+  set(possible_openmp_schedules static dynamic guided auto)
+  set(OPENMP_SCHEDULE static CACHE STRINGS "Set OpenMP schedule")
+  if (NOT OPENMP_SCHEDULE IN_LIST possible_openmp_schedules)
+    message(FATAL_ERROR "OPENMP_SCHEDULE must be one of ${possible_openmp_schedules}")
+  endif()
+  target_compile_definitions(bout
+    PUBLIC "OPENMP_SCHEDULE=${OPENMP_SCHEDULE}")
+  message(STATUS "OpenMP schedule: ${OPENMP_SCHEDULE}")
+endif()
+message(STATUS "Enable OpenMP: ${ENABLE_OPENMP}")
+
+include(GetGitRevisionDescription)
+get_git_head_revision(GIT_REFSPEC GIT_SHA1)
+message(STATUS "Git revision: ${GIT_SHA1}")
+target_compile_definitions(bout
+  PUBLIC "GIT_REVISION=${GIT_SHA1}")
+
+# Optional dependencies
+
 find_package(NetCDF)
 if (NetCDF_FOUND)
   target_compile_definitions(bout
     PUBLIC "NCDF4")
   target_link_libraries(bout PUBLIC NetCDF::NetCDF)
 endif()
+message(STATUS "NetCDF support: ${NetCDF_FOUND}")
 
 find_package(FFTW)
 if (FFTW_FOUND)
@@ -306,6 +385,7 @@ if (FFTW_FOUND)
     PUBLIC "BOUT_HAS_FFTW")
   target_link_libraries(bout PUBLIC FFTW::FFTW)
 endif()
+message(STATUS "FFTW support: ${FFTW_FOUND}")
 
 find_package(LAPACK)
 if (LAPACK_FOUND)
@@ -313,12 +393,27 @@ if (LAPACK_FOUND)
     PUBLIC "LAPACK")
   target_link_libraries(bout PUBLIC "${LAPACK_LIBRARIES}")
 endif()
+message(STATUS "LAPACK support: ${LAPACK_FOUND}")
 
 find_package(PETSc)
 if (PETSC_FOUND)
   target_compile_definitions(bout
     PUBLIC "BOUT_HAS_PETSC")
   target_link_libraries(bout PUBLIC PETSC::PETSc)
+endif()
+message(STATUS "PETSc support: ${PETSC_FOUND}")
+
+find_package(Gettext)
+if (GETTEXT_FOUND)
+  target_compile_definitions(bout
+    PUBLIC "BOUT_HAS_GETTEXT")
+  find_package(Intl)
+  if (Intl_FOUND)
+    target_link_libraries(bout
+      PUBLIC ${Intl_LIBRARIES})
+    target_include_directories(bout
+      PUBLIC ${Intl_INCLUDE_DIRS})
+  endif()
 endif()
 
 macro(bout_add_integrated_test TESTNAME)
