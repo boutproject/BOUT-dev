@@ -168,8 +168,8 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt, const CELL_LOC loc, Mesh *mesh_
 
   // Set up Multigrid Cycle
 
-  x_ptr = bout::utils::make_unique<MultigridVector>(*kMG, mglevel-1);
-  b_ptr = bout::utils::make_unique<MultigridVector>(*kMG, mglevel-1);
+  x_ptr = bout::utils::make_unique<MultigridVector>(*kMG, aclevel-1);
+  b_ptr = bout::utils::make_unique<MultigridVector>(*kMG, aclevel-1);
 
   if (mgcount == 0) {  
     output<<" Smoothing type is ";
