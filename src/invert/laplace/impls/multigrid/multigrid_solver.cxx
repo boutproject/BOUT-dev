@@ -233,7 +233,7 @@ void Multigrid1DP::lowestSolver(MultigridVector& x, MultigridVector& b, int UNUS
   if(kflag == 1) {
     int level = rMG->mglevel-1;
     int dim = (rMG->lnx[level]+2)*(rMG->lnz[level]+2);
-    MultigridVector& y = *y_array[0];
+    MultigridVector& y = *iy_array[0];
     MultigridVector& r = *r_array[0];
 
     int ggx = rMG->lnx[level];
