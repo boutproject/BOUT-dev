@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 #include "boutexception.hxx"
+#include "test_extras.hxx"
 
 #include <iostream>
 #include <string>
@@ -29,13 +30,16 @@ TEST(BoutExceptionTest, GetBacktrace) {
   try {
     throw BoutException(test_message);
   } catch (const BoutException &e) {
-    std::string expected{"[bt] #1 ./serial_tests"};
+    std::string expected_1{"[bt] #1"};
+    std::string expected_2{"serial_tests"};
 #ifdef BACKTRACE
     // Should be able to find something about backtrace
-    EXPECT_NE(e.getBacktrace().find(expected), std::string::npos);
+    EXPECT_TRUE(IsSubString(e.getBacktrace(), expected_1));
+    EXPECT_TRUE(IsSubString(e.getBacktrace(), expected_2));
 #else
     // Should *not* be able to find something about backtrace
-    EXPECT_EQ(e.getBacktrace().find(expected), std::string::npos);
+    EXPECT_FALSE(IsSubString(e.getBacktrace(), expected_1));
+    EXPECT_FALSE(IsSubString(e.getBacktrace(), expected_2));
 #endif
   }
 }
