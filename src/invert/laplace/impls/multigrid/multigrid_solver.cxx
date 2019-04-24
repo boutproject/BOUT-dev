@@ -325,8 +325,8 @@ BOUT_OMP(for collapse(2))
   else if(kflag == 2) {
     int level = sMG->mglevel-1;
     int dim = (sMG->lnx[level]+2)*(sMG->lnz[level]+2);
-    MultigridVector& y = *y_array[level];
-    MultigridVector& r = *r_array[level];
+    MultigridVector& y = *(sMG->y_array)[level];
+    MultigridVector& r = *(sMG->r_array)[level];
     int nx = xProcI*lnx[0];
 BOUT_OMP(parallel default(shared))
     {

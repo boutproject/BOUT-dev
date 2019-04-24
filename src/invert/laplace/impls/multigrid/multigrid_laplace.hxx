@@ -97,6 +97,7 @@ protected:
   virtual void lowestSolver(MultigridVector&, MultigridVector&, int );
 
   friend class MultigridVector;
+  friend class Multigrid1DP;
 };
 
 
