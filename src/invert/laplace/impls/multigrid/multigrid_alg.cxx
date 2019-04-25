@@ -254,56 +254,58 @@ BOUT_OMP(for collapse(2))
 
 void MultigridAlg::smoothings(int level, MultigridVector& x, MultigridVector& b) {
 
-  int dim;
-  int mm = lnz[level]+2;
-  dim = mm*(lnx[level]+2);
+  const int mm = lnz[level]+2;
+  const int lx = lnx[level];
+  const int lz = lnz[level];
+  const auto& mat = matmg[level];
   if(mgsm == 0) {
+    const int dim = mm*(lx+2);
     Array<BoutReal> x0(dim);
 BOUT_OMP(parallel default(shared))
     for(int num =0;num < 2;num++) {
 BOUT_OMP(for)
       for(int i = 0;i<dim;i++) x0[i] = x[i];    
 
-      int xend = lnx[level]+1;
-      int zend = lnz[level]+1;
+      const int xend = lx+1;
+      const int zend = lz+1;
 BOUT_OMP(for collapse(2))
       for(int i=1;i<xend;i++)
         for(int k=1;k<zend;k++) {
           int nn = i*mm+k;
-          BoutReal val = b[nn] - matmg[level][nn*9+3]*x0[nn-1]
-	   - matmg[level][nn*9+5]*x0[nn+1] - matmg[level][nn*9+1]*x0[nn-mm]
-           - matmg[level][nn*9+7]*x0[nn+mm] - matmg[level][nn*9]*x0[nn-mm-1]
-           - matmg[level][nn*9+2]*x0[nn-mm+1] - matmg[level][nn*9+6]*x0[nn+mm-1]
-           - matmg[level][nn*9+8]*x0[nn+mm+1];
+          BoutReal val = b[nn] - mat[nn*9+3]*x0[nn-1]
+	   - mat[nn*9+5]*x0[nn+1] - mat[nn*9+1]*x0[nn-mm]
+           - mat[nn*9+7]*x0[nn+mm] - mat[nn*9]*x0[nn-mm-1]
+           - mat[nn*9+2]*x0[nn-mm+1] - mat[nn*9+6]*x0[nn+mm-1]
+           - mat[nn*9+8]*x0[nn+mm+1];
 
-          x[nn] = (1.0-omega)*x[nn] + omega*val/matmg[level][nn*9+4];
+          x[nn] = (1.0-omega)*x[nn] + omega*val/mat[nn*9+4];
         } 
       x.communicate();
     }
   }
   else {
-    for(int i = 1;i<lnx[level]+1;i++)
-      for(int k=1;k<lnz[level]+1;k++) {
-        int nn = i*mm+k;
-        BoutReal val = b[nn] - matmg[level][nn*9+3]*x[nn-1]
-	    - matmg[level][nn*9+5]*x[nn+1] - matmg[level][nn*9+1]*x[nn-mm]
-            - matmg[level][nn*9+7]*x[nn+mm] - matmg[level][nn*9]*x[nn-mm-1]
-            - matmg[level][nn*9+2]*x[nn-mm+1] - matmg[level][nn*9+6]*x[nn+mm-1]
-            - matmg[level][nn*9+8]*x[nn+mm+1];
+    for(int i = 1;i<lx+1;i++)
+      for(int k=1;k<lz+1;k++) {
+        const int nn = i*mm+k;
+        const BoutReal val = b[nn] - mat[nn*9+3]*x[nn-1]
+	    - mat[nn*9+5]*x[nn+1] - mat[nn*9+1]*x[nn-mm]
+            - mat[nn*9+7]*x[nn+mm] - mat[nn*9]*x[nn-mm-1]
+            - mat[nn*9+2]*x[nn-mm+1] - mat[nn*9+6]*x[nn+mm-1]
+            - mat[nn*9+8]*x[nn+mm+1];
 
-        x[nn] = val/matmg[level][nn*9+4];
+        x[nn] = val/mat[nn*9+4];
       } 
     x.communicate();
-    for(int i = lnx[level];i>0;i--)
-      for(int k= lnz[level];k>0;k--) {
-        int nn = i*mm+k;
-        BoutReal val = b[nn] - matmg[level][nn*9+3]*x[nn-1]
-	    - matmg[level][nn*9+5]*x[nn+1] - matmg[level][nn*9+1]*x[nn-mm]
-            - matmg[level][nn*9+7]*x[nn+mm] - matmg[level][nn*9]*x[nn-mm-1]
-            - matmg[level][nn*9+2]*x[nn-mm+1] - matmg[level][nn*9+6]*x[nn+mm-1]
-            - matmg[level][nn*9+8]*x[nn+mm+1];
+    for(int i = lx;i>0;i--)
+      for(int k= lz;k>0;k--) {
+        const int nn = i*mm+k;
+        const BoutReal val = b[nn] - mat[nn*9+3]*x[nn-1]
+	    - mat[nn*9+5]*x[nn+1] - mat[nn*9+1]*x[nn-mm]
+            - mat[nn*9+7]*x[nn+mm] - mat[nn*9]*x[nn-mm-1]
+            - mat[nn*9+2]*x[nn-mm+1] - mat[nn*9+6]*x[nn+mm-1]
+            - mat[nn*9+8]*x[nn+mm+1];
 
-        x[nn] = val/matmg[level][nn*9+4];
+        x[nn] = val/mat[nn*9+4];
       } 
     x.communicate();
   }

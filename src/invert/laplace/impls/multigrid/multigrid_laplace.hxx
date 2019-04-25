@@ -163,6 +163,7 @@ public:
 
   /// get/set values
   BoutReal& operator[](int ind) { return data[ind]; }
+  const BoutReal& operator[](int ind) const { return data[ind]; }
 
   /// communicate guard cells
   void communicate();
