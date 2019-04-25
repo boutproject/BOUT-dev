@@ -597,7 +597,7 @@ BOUT_OMP(for collapse(2))
 
 void MultigridAlg::setMatrixC(int level) {
 
-  BoutReal ratio = 8.0; 
+  const BoutReal ratio = 1. / 8.;
 
 BOUT_OMP(parallel default(shared))
   {
@@ -625,23 +625,23 @@ BOUT_OMP(for collapse(2))
         val += matmg[level][m1*9+7] + matmg[level][m3*9+1];
         val += matmg[level][m0*9+8] + matmg[level][m3*9];
         val += matmg[level][m1*9+6] + matmg[level][m2*9+2];
-        matmg[level-1][mm*9+4] = val/ratio;
+        matmg[level-1][mm*9+4] = val*ratio;
         val = matmg[level][m0*9+1]+matmg[level][m1*9+1];
         val += matmg[level][m0*9+2]+matmg[level][m1*9];
-        matmg[level-1][mm*9+1] = val/ratio;
+        matmg[level-1][mm*9+1] = val*ratio;
         val = matmg[level][m0*9+3]+matmg[level][m2*9+3];
         val += matmg[level][m0*9+6]+matmg[level][m2*9];
-        matmg[level-1][mm*9+3] = val/ratio;
+        matmg[level-1][mm*9+3] = val*ratio;
         val = matmg[level][m1*9+5]+matmg[level][m3*9+5];
         val += matmg[level][m1*9+8]+matmg[level][m3*9+2];
-        matmg[level-1][mm*9+5] = val/ratio;
+        matmg[level-1][mm*9+5] = val*ratio;
         val = matmg[level][m2*9+7]+matmg[level][m3*9+7];
         val += matmg[level][m2*9+8]+matmg[level][m3*9+6];
-        matmg[level-1][mm*9+7] = val/ratio;
-        matmg[level-1][mm*9] = matmg[level][m0*9]/ratio;
-        matmg[level-1][mm*9+2] = matmg[level][m1*9+2]/ratio;
-        matmg[level-1][mm*9+6] = matmg[level][m2*9+6]/ratio;
-        matmg[level-1][mm*9+8] = matmg[level][m3*9+8]/ratio;      
+        matmg[level-1][mm*9+7] = val*ratio;
+        matmg[level-1][mm*9] = matmg[level][m0*9]*ratio;
+        matmg[level-1][mm*9+2] = matmg[level][m1*9+2]*ratio;
+        matmg[level-1][mm*9+6] = matmg[level][m2*9+6]*ratio;
+        matmg[level-1][mm*9+8] = matmg[level][m3*9+8]*ratio;
       }
     }
   }
