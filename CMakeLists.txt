@@ -403,6 +403,21 @@ if (PETSC_FOUND)
 endif()
 message(STATUS "PETSc support: ${PETSC_FOUND}")
 
+find_package(SUNDIALS)
+if (SUNDIALS_FOUND)
+  target_compile_definitions(bout
+    PUBLIC "BOUT_HAS_CVODE"
+    PUBLIC "CVODEINT=${SUNDIALS_cvode_INT}"
+    PUBLIC "BOUT_HAS_IDA"
+    PUBLIC "IDAINT=${SUNDIALS_ida_INT}"
+    PUBLIC "BOUT_HAS_ARKODE"
+    PUBLIC "ARKODEINT=${SUNDIALS_arkode_INT}")
+  target_link_libraries(bout PUBLIC SUNDIALS_cvode::cvode)
+  target_link_libraries(bout PUBLIC SUNDIALS_ida::ida)
+  target_link_libraries(bout PUBLIC SUNDIALS_arkode::arkode)
+endif()
+message(STATUS "SUNDIALS support: ${SUNDIALS_FOUND}")
+
 find_package(Gettext)
 if (GETTEXT_FOUND)
   target_compile_definitions(bout
