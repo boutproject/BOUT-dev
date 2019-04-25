@@ -36,9 +36,10 @@
 MultigridAlg::MultigridAlg(int level, int lx, int lz, int gx, int gz, MPI_Comm comm,
                            int check, int mgplag, int cftype, int mgsm,
                            BoutReal rtol, BoutReal atol, BoutReal dtol,
-                           BoutReal omega)
+                           BoutReal omega, int jacnsmooth)
     : mglevel(level), mgplag(mgplag), cftype(cftype), mgsm(mgsm), pcheck(check),
-      rtol(rtol), atol(atol), dtol(dtol), omega(omega), commMG(comm) {
+      rtol(rtol), atol(atol), dtol(dtol), omega(omega), jacnsmooth(jacnsmooth),
+      commMG(comm) {
 
   if(pcheck > 0) output<<"Construct MG "<<level<<endl; 
 
@@ -262,7 +263,7 @@ void MultigridAlg::smoothings(int level, MultigridVector& x, MultigridVector& b)
     const int dim = mm*(lx+2);
     Array<BoutReal> x0(dim);
 BOUT_OMP(parallel default(shared))
-    for(int num =0;num < 2;num++) {
+    for(int num = 0; num < jacnsmooth; num++) {
 BOUT_OMP(for)
       for(int i = 0;i<dim;i++) x0[i] = x[i];    
 

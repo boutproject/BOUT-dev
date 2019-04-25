@@ -33,9 +33,9 @@
 
 Multigrid1DP::Multigrid1DP(int level, int lx, int lz, int gx, int dl, int merge,
     MPI_Comm comm, int check, int mgplag, int cftype, int mgsm, BoutReal rtol,
-    BoutReal atol, BoutReal dtol, BoutReal omega)
+    BoutReal atol, BoutReal dtol, BoutReal omega, int jacnsmooth)
   : MultigridAlg(level, lx, lz, gx, lz, comm, check, mgplag, cftype, mgsm,
-      rtol, atol, dtol, omega) {
+      rtol, atol, dtol, omega, jacnsmooth) {
 
   mglevel = level;
 
@@ -129,7 +129,7 @@ Multigrid1DP::Multigrid1DP(int level, int lx, int lz, int gx, int dl, int merge,
       MPI_Comm_split(commMG,colors,keys,&comm2D);
       rMG = bout::utils::make_unique<Multigrid2DPf1D>(
           kk, lx, lz, gnx[0], lnz[0], dl - kk + 1, nx, nz, commMG, pcheck,
-          mgplag, cftype, mgsm, rtol, atol, dtol, omega);
+          mgplag, cftype, mgsm, rtol, atol, dtol, omega, jacnsmooth);
     } else {
       int nn = gnx[0];
       int mm = gnz[0];
@@ -147,7 +147,7 @@ Multigrid1DP::Multigrid1DP(int level, int lx, int lz, int gx, int dl, int merge,
         output <<kflag<<" total dim "<<gnx[0]<<"("<< lnz[0]<<")"<<endl;
       }
       sMG = bout::utils::make_unique<MultigridSerial>(kk, gnx[0], lnz[0],
-          commMG, pcheck, mgplag, cftype, mgsm, rtol, atol, dtol, omega);
+          commMG, pcheck, mgplag, cftype, mgsm, rtol, atol, dtol, omega, jacnsmooth);
     }             
   }
   else kflag = 0;
@@ -488,9 +488,9 @@ BOUT_OMP(for collapse(2))
 
 Multigrid2DPf1D::Multigrid2DPf1D(int level, int lx, int lz, int gx, int gz,
     int dl, int px, int pz, MPI_Comm comm, int check, int mgplag, int cftype,
-    int mgsm, BoutReal rtol, BoutReal atol, BoutReal dtol, BoutReal omega) :
-  MultigridAlg(level, lx, lz, gx, gz, comm, check, mgplag, cftype, mgsm, rtol,
-      atol, dtol, omega) {
+    int mgsm, BoutReal rtol, BoutReal atol, BoutReal dtol, BoutReal omega, int jacnsmooth)
+    : MultigridAlg(level, lx, lz, gx, gz, comm, check, mgplag, cftype, mgsm, rtol, atol,
+        dtol, omega, jacnsmooth) {
 
   mglevel = level;
 
@@ -536,7 +536,7 @@ Multigrid2DPf1D::Multigrid2DPf1D(int level, int lx, int lz, int gx, int gz,
     }
     kflag = 2;
     sMG = bout::utils::make_unique<MultigridSerial>(kk, gnx[0], gnz[0], commMG,
-        pcheck, mgplag, cftype, mgsm, rtol, atol, dtol, omega);
+        pcheck, mgplag, cftype, mgsm, rtol, atol, dtol, omega, jacnsmooth);
   }
   else kflag = 0;
 
@@ -672,9 +672,9 @@ BOUT_OMP(for collapse(2))
 
 MultigridSerial::MultigridSerial(int level, int gx, int gz, MPI_Comm comm,
     int check, int mgplag, int cftype, int mgsm, BoutReal rtol, BoutReal atol,
-    BoutReal dtol, BoutReal omega)
+    BoutReal dtol, BoutReal omega, int jacnsmooth)
     : MultigridAlg(level, gx, gz, gx, gz, comm, check, mgplag, cftype, mgsm,
-        rtol, atol, dtol, omega) {
+        rtol, atol, dtol, omega, jacnsmooth) {
 
   xNP = 1;
   zNP = 1;

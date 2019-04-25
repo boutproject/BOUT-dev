@@ -51,7 +51,7 @@ class MultigridAlg{
 public:
   MultigridAlg(int level, int lx, int lz, int gx, int gz, MPI_Comm comm, int check,
       int mgplag, int cftype, int mgsm, BoutReal rtol, BoutReal atol, BoutReal dtol,
-      BoutReal omega);
+      BoutReal omega, int jacnsmooth);
   virtual ~MultigridAlg() {}
 
   void setMultigridC(int );
@@ -59,6 +59,8 @@ public:
 
   int mglevel,mgplag,cftype,mgsm,pcheck,xNP,zNP,rProcI;
   BoutReal rtol,atol,dtol,omega;
+  // Number of times to apply jacobi smoother (used if smtype=0 option is set)
+  int jacnsmooth;
   Array<int> gnx, gnz, lnx, lnz;
   Array<Array<BoutReal>> matmg;
 
@@ -108,7 +110,8 @@ protected:
 class MultigridSerial: public MultigridAlg{
 public:
   MultigridSerial(int level, int gx, int gz, MPI_Comm comm, int check, int mgplag,
-      int cftype, int mgsm, BoutReal rtol, BoutReal atol, BoutReal dtol, BoutReal omega);
+      int cftype, int mgsm, BoutReal rtol, BoutReal atol, BoutReal dtol, BoutReal omega,
+      int jacnsmooth);
   ~MultigridSerial() {};
 
   void convertMatrixF(BoutReal *); 
@@ -118,7 +121,7 @@ class Multigrid2DPf1D: public MultigridAlg{
 public:
   Multigrid2DPf1D(int level, int lx, int lz, int gx, int gz, int dl,
       int px, int pz, MPI_Comm comm, int check, int mgplag, int cftype, int mgsm, BoutReal
-      rtol, BoutReal atol, BoutReal dtol, BoutReal omega);
+      rtol, BoutReal atol, BoutReal dtol, BoutReal omega, int jacnsmooth);
   ~Multigrid2DPf1D() {};
 
   void setMultigridC(int );
@@ -137,7 +140,7 @@ class Multigrid1DP: public MultigridAlg{
 public:
   Multigrid1DP(int level, int lx, int lz, int gx, int dl, int merge, MPI_Comm comm,
       int check, int mgplag, int cftype, int mgsm, BoutReal rtol, BoutReal atol, BoutReal
-      dtol, BoutReal omega);
+      dtol, BoutReal omega, int jacnsmooth);
   ~Multigrid1DP() {};
   void setMultigridC(int );
   void setPcheck(int );
@@ -264,6 +267,8 @@ private:
 
   Options *opts;
   BoutReal rtol,atol,dtol,omega;
+  // Number of times to apply jacobi smoother (used if smtype=0 option is set)
+  int jacnsmooth;
   MPI_Comm commX;
 
   int comms_tagbase;

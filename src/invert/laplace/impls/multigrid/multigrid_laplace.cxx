@@ -66,7 +66,11 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt, const CELL_LOC loc, Mesh *mesh_
                 << "         Consider using smtype=0 instead when using OpenMP threads."<<endl;
   }
 #endif
-  opts->get("jacomega",omega,0.8,true);
+  if (mgsm == 0) {
+    // These options only apply if jacobi smoothing is used
+    opts->get("jacomega",omega,0.8,true);
+    opts->get("jacnsmooth",jacnsmooth,2,true);
+  }
   opts->get("solvertype",mgplag,1,true);
   opts->get("cftype",cftype,0,true);
   opts->get("mergempi",mgmpi,63,true);
@@ -164,7 +168,8 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt, const CELL_LOC loc, Mesh *mesh_
   adlevel = mglevel - aclevel;
 
   kMG = bout::utils::make_unique<Multigrid1DP>(aclevel, Nx_local, Nz_local, Nx_global,
-      adlevel, mgmpi, commX, pcheck, mgplag, cftype, mgsm, rtol, atol, dtol, omega);
+      adlevel, mgmpi, commX, pcheck, mgplag, cftype, mgsm, rtol, atol, dtol, omega,
+      jacnsmooth);
 
   // Set up Multigrid Cycle
 
@@ -175,7 +180,7 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt, const CELL_LOC loc, Mesh *mesh_
     output<<" Smoothing type is ";
     if (mgsm == 0) {
       output<<"Jacobi smoother";
-      output<<"with omega = "<<omega<<endl;
+      output<<"with omega = "<<omega<<" and nsmooth = "<<jacnsmooth<<endl;
     }
     else if(mgsm ==1) output<<" Gauss-Seidel smoother"<<endl;
     else throw BoutException("Undefined smoother");
