@@ -428,17 +428,53 @@ if (GETTEXT_FOUND)
   endif()
 endif()
 
-macro(bout_add_integrated_test TESTNAME)
-  add_executable(${TESTNAME} ${ARGN})
+# Copy FILENAME from source directory to build directory
+# and add dependency on TARGET
+macro(bout_test_copy_file TARGET FILENAME)
+  add_custom_command(TARGET "${TARGET}" POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy
+    ${CMAKE_CURRENT_SOURCE_DIR}/"${FILENAME}"
+    ${CMAKE_CURRENT_BINARY_DIR}/"${FILENAME}")
+endmacro()
+
+# Add a new integrated test
+#
+# Required arguments:
+# - TESTNAME: name of the test
+# - SOURCES: list of source files
+# Optional arguments:
+# - USE_RUNTEST: if given, the test uses `./runtest` as the test
+#   command, otherwise it uses the executable
+function(bout_add_integrated_test TESTNAME)
+  set(options USE_RUNTEST USE_DATA_BOUT_INP)
+  set(multiValueArgs SOURCES EXTRA_FILES)
+  cmake_parse_arguments(BOUT_TEST_OPTIONS "${options}" "" "${multiValueArgs}" ${ARGN})
+  add_executable(${TESTNAME} ${BOUT_TEST_OPTIONS_SOURCES})
   target_link_libraries(${TESTNAME} bout)
   target_include_directories(${TESTNAME} PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
-  add_test(NAME ${TESTNAME} COMMAND ${TESTNAME})
+
+  if (BOUT_TEST_OPTIONS_USE_RUNTEST)
+    add_test(NAME ${TESTNAME} COMMAND ./runtest)
+    bout_test_copy_file("${TESTNAME}" runtest)
+  else()
+    add_test(NAME ${TESTNAME} COMMAND ${TESTNAME})
+  endif()
+  if (BOUT_TEST_OPTIONS_USE_DATA_BOUT_INP)
+    bout_test_copy_file("${TESTNAME}" data/BOUT.inp)
+  endif()
+  if (BOUT_TEST_OPTIONS_EXTRA_FILES)
+    foreach (FILE "${BOUT_TEST_OPTIONS_EXTRA_FILES}")
+      bout_test_copy_file("${TESTNAME}" "${FILE}")
+    endforeach()
+  endif()
   set_target_properties(${TESTNAME} PROPERTIES FOLDER tests/integrated)
-endmacro()
+endfunction()
 
 option(PACKAGE_TESTS "Build the tests" ON)
 if(PACKAGE_TESTS)
   enable_testing()
   add_subdirectory(tests/unit)
   add_subdirectory(tests/integrated/test-solver)
+  add_subdirectory(tests/integrated/test-initial)
+  add_subdirectory(tests/integrated/test-griddata)
 endif()

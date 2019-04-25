@@ -145,6 +145,7 @@ sqrt = np.sqrt
 tan = np.tan
 TanhHat = tanhhat
 pi = np.pi
+fmod = np.fmod
 
 ########################################
 # Running the test
