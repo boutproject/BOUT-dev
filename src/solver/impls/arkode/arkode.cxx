@@ -37,6 +37,7 @@
 #include "output.hxx"
 #include "unused.hxx"
 #include "bout/mesh.hxx"
+#include "utils.hxx"
 
 #if SUNDIALS_VERSION_MAJOR >= 4
 #include <arkode/arkode_arkstep.h>
@@ -65,7 +66,11 @@ class Field2D;
 #define ONE RCONST(1.0)
 
 #ifndef ARKODEINT
-using ARKODEINT = int;
+#if SUNDIALS_VERSION_MAJOR < 3
+using ARKODEINT = bout::utils::function_traits<ARKLocalFn>::arg<0>::type;
+#else
+using ARKODEINT = sunindextype;
+#endif
 #endif
 
 static int arkode_rhs_explicit(BoutReal t, N_Vector u, N_Vector du, void* user_data);
