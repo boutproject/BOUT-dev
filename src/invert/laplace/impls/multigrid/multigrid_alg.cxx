@@ -352,9 +352,13 @@ BOUT_OMP(for)
   do{
     a1 = vectorProd(level,*v[0],*v[0]);
     a1 = sqrt(a1);
-    if(fabs(a1) < atol*rtol) {
-      output<<num<<" First a1 in GMRES is wrong at level "<<level<<": "<<a1<<endl;
-    }
+    // If a1 is too small, can get wrong answers.
+    // I think should only happen if rhs is very small everywhere, this should
+    // have been already handled with the check for 'ini_e < atol*rtol' above.
+    // /JTO 25-4-2019
+    //if(fabs(a1) < atol*rtol) {
+    //  output<<num<<" First a1 in GMRES is wrong at level "<<level<<": "<<a1<<endl;
+    //}
     a0 = 1.0/a1;
     g[0] = a1;
 BOUT_OMP(parallel default(shared))
@@ -387,9 +391,7 @@ BOUT_OMP(for)
       // solution will be exact, the residual will vanish and we will exit this
       // loop on the first iteration, so the value of a0=1/a1=infinity will
       // never be used. Therefore this check is not needed in that case
-      if(fabs(a1) < atol*rtol && ldim > 9) {
-        output<<num<<" Second a1 in GMRES is wrong at level "<<level<<": "<<a1<<endl;
-      }
+      ASSERT1(fabs(a1) >= atol*rtol or ldim <=9);
       a0 = 1.0/a1;
       h[it+1][it] = a1;
 BOUT_OMP(parallel default(shared))
@@ -403,11 +405,8 @@ BOUT_OMP(for)
         h[i+1][it] = a1;
       }
       a0 = h[it][it]*h[it][it] + h[it+1][it]*h[it+1][it];
-      if(a0 < 0.0)
-        throw BoutException("a0 in GMRES is negative \n");
       a0 = sqrt(a0);   
-      if(fabs(a0) < atol*rtol)
-        throw BoutException("a0 in GMRES is wrong \n");
+      ASSERT1(fabs(a0) >= atol*rtol);
       c[it] = h[it][it]/a0;
       s[it] = -h[it+1][it]/a0;
       h[it][it] = a0;
@@ -655,8 +654,7 @@ BOUT_OMP(for)
   for(int i = 0;i<ldim;i++) sol[i] = 0.0;
 
   ini_e = vectorProd(level,rhs,rhs);
-  if(ini_e < 0.0)
-    throw BoutException("In MG Initial Error %10.4e \n",ini_e);
+  ASSERT1(ini_e >= 0.0);
   ini_e = sqrt(ini_e);
   if((pcheck == 1) && (rProcI == 0)) 
     printf("%d \n  In MGsolve ini = %24.18f\n",numP,ini_e);
