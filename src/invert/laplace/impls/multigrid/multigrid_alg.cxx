@@ -275,8 +275,6 @@ BOUT_OMP(for collapse(2))
            - matmg[level][nn*9+7]*x0[nn+mm] - matmg[level][nn*9]*x0[nn-mm-1]
            - matmg[level][nn*9+2]*x0[nn-mm+1] - matmg[level][nn*9+6]*x0[nn+mm-1]
            - matmg[level][nn*9+8]*x0[nn+mm+1];
-          if(fabs(matmg[level][nn*9+4]) <atol)
-            throw BoutException("Error at matmg(%d-%d)",level,nn);
 
           x[nn] = (1.0-omega)*x[nn] + omega*val/matmg[level][nn*9+4];
         } 
@@ -292,8 +290,7 @@ BOUT_OMP(for collapse(2))
             - matmg[level][nn*9+7]*x[nn+mm] - matmg[level][nn*9]*x[nn-mm-1]
             - matmg[level][nn*9+2]*x[nn-mm+1] - matmg[level][nn*9+6]*x[nn+mm-1]
             - matmg[level][nn*9+8]*x[nn+mm+1];
-          if(fabs(matmg[level][nn*9+4]) <atol)
-            throw BoutException("Error at matmg(%d-%d)",level,nn);
+
         x[nn] = val/matmg[level][nn*9+4];
       } 
     x.communicate();
@@ -305,8 +302,7 @@ BOUT_OMP(for collapse(2))
             - matmg[level][nn*9+7]*x[nn+mm] - matmg[level][nn*9]*x[nn-mm-1]
             - matmg[level][nn*9+2]*x[nn-mm+1] - matmg[level][nn*9+6]*x[nn+mm-1]
             - matmg[level][nn*9+8]*x[nn+mm+1];
-          if(fabs(matmg[level][nn*9+4]) <atol)
-            throw BoutException("Error at matmg(%d-%d)",level,nn);
+
         x[nn] = val/matmg[level][nn*9+4];
       } 
     x.communicate();
@@ -626,6 +622,7 @@ BOUT_OMP(for collapse(2))
         val += matmg[level][m0*9+8] + matmg[level][m3*9];
         val += matmg[level][m1*9+6] + matmg[level][m2*9+2];
         matmg[level-1][mm*9+4] = val*ratio;
+        ASSERT3(fabs(matmg[level-1][mm*9+4]) >= atol);
         val = matmg[level][m0*9+1]+matmg[level][m1*9+1];
         val += matmg[level][m0*9+2]+matmg[level][m1*9];
         matmg[level-1][mm*9+1] = val*ratio;
