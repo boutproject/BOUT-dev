@@ -171,6 +171,11 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt, const CELL_LOC loc, Mesh *mesh_
       adlevel, mgmpi, commX, pcheck, mgplag, cftype, mgsm, rtol, atol, dtol, omega,
       jacnsmooth);
 
+  static int multigrid_solver_count = 0;
+  ++multigrid_solver_count;
+  bout::globals::dump.addRepeat(kMG->multigrid_mean_its,
+      "multigrid_mean_its"+std::to_string(multigrid_solver_count));
+
   // Set up Multigrid Cycle
 
   x_ptr = bout::utils::make_unique<MultigridVector>(*kMG, aclevel-1);

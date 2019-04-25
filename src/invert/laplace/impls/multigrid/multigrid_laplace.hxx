@@ -64,9 +64,13 @@ public:
   Array<int> gnx, gnz, lnx, lnz;
   Array<Array<BoutReal>> matmg;
 
+  /// Mean number of iterations taken by the multigrid solver
+  BoutReal multigrid_mean_its{0.};
+
 protected:
   /******* Start implementation ********/
   int numP,xProcI,zProcI,xProcP,xProcM,zProcP,zProcM;
+  int ncalls{0}; // number of times multigrid solver has been called
 
   MPI_Comm commMG;
 

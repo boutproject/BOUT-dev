@@ -497,6 +497,12 @@ BOUT_OMP(for)
     }
   }
 
+  if(level > 0 and iplag > 0) {
+    // Only want to count overall iterations, not iterations of coarse-level solver
+    ++ncalls;
+    multigrid_mean_its = (multigrid_mean_its*BoutReal(ncalls-1) + BoutReal(num))/BoutReal(ncalls);
+  }
+
   return; 
 }
 
@@ -694,6 +700,9 @@ BOUT_OMP(for)
     printf("The average error reduction of MG %d: %14.8f(%18.12f)\n",m+1,rederr,error);
     fflush(stdout);
   }
+
+  ++ncalls;
+  multigrid_mean_its = (multigrid_mean_its*BoutReal(ncalls-1) + BoutReal(m))/BoutReal(ncalls);
 
   return;
 }
