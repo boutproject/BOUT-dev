@@ -1,3 +1,13 @@
+# Find SUNDIALS, the SUite of Nonlinear and DIfferential/ALgebraic equation Solvers
+#
+# Currently only actually looks for arkode, cvode and ida, as well as nvecparallel
+#
+# This module will define the following variables:
+#   SUNDIALS_FOUND: true if SUNDIALS was found on the system
+#   SUNDIALS_INCLUDE_DIRS: Location of the SUNDIALS includes
+#   SUNDIALS_LIBRARIES: Required libraries
+#   SUNDIALS_VERSION: Full version string
+
 include(FindPackageHandleStandardArgs)
 
 find_path(SUNDIALS_INCLUDE_DIR
@@ -28,7 +38,6 @@ endif()
 mark_as_advanced(SUNDIALS_nvecparallel_LIBRARY)
 
 set(SUNDIALS_COMPONENTS arkode cvode ida)
-set(SUNDIALS_INT_TYPES int64_t;"long long";long;int32_t;int;)
 
 foreach (LIB ${SUNDIALS_COMPONENTS})
   find_library(SUNDIALS_${LIB}_LIBRARY
@@ -43,8 +52,29 @@ foreach (LIB ${SUNDIALS_COMPONENTS})
   mark_as_advanced(SUNDIALS_${LIB}_LIBRARY)
 endforeach()
 
+if (SUNDIALS_INCLUDE_DIR)
+  file(READ "${SUNDIALS_INCLUDE_DIR}/sundials_config.h" SUNDIALS_CONFIG_FILE)
+  string(FIND "${SUNDIALS_CONFIG_FILE}" "SUNDIALS_PACKAGE_VERSION" index)
+  if("${index}" LESS 0)
+    # Version >3
+    set(SUNDIALS_VERSION_REGEX_PATTERN
+      ".*#define SUNDIALS_VERSION \"([0-9]+)\\.([0-9]+)\\.([0-9]+)\".*")
+  else()
+    # Version <3
+    set(SUNDIALS_VERSION_REGEX_PATTERN
+      ".*#define SUNDIALS_PACKAGE_VERSION \"([0-9]+)\\.([0-9]+)\\.([0-9]+)\".*")
+  endif()
+  string(REGEX MATCH ${SUNDIALS_VERSION_REGEX_PATTERN} _ "${SUNDIALS_CONFIG_FILE}")
+  set(SUNDIALS_VERSION_MAJOR ${CMAKE_MATCH_1})
+  set(SUNDIALS_VERSION_MINOR ${CMAKE_MATCH_2})
+  set(SUNDIALS_VERSION_PATCH ${CMAKE_MATCH_3})
+  set(SUNDIALS_VERSION "${SUNDIALS_VERSION_MAJOR}.${SUNDIALS_VERSION_MINOR}.${SUNDIALS_VERSION_PATCH}")
+endif()
+
 find_package_handle_standard_args(SUNDIALS
-  REQUIRED_VARS SUNDIALS_LIBRARIES SUNDIALS_INCLUDE_DIR SUNDIALS_INCLUDE_DIRS)
+  REQUIRED_VARS SUNDIALS_LIBRARIES SUNDIALS_INCLUDE_DIR SUNDIALS_INCLUDE_DIRS
+  VERSION_VAR SUNDIALS_VERSION
+  )
 
 mark_as_advanced(SUNDIALS_LIBRARIES SUNDIALS_INCLUDE_DIR SUNDIALS_INCLUDE_DIRS)
 
