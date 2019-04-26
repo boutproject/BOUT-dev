@@ -35,7 +35,10 @@ add_library(pvode
   include/vector.h
   )
 
-target_include_directories(pvode PUBLIC include)
+target_include_directories(pvode PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+  )
 target_link_libraries(pvode PUBLIC MPI::MPI_CXX)
 
 add_library(pvpre
@@ -45,5 +48,8 @@ add_library(pvpre
   precon/band.h
   )
 
-target_include_directories(pvpre PUBLIC include)
+target_include_directories(pvpre PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+  )
 target_link_libraries(pvpre PUBLIC MPI::MPI_CXX)

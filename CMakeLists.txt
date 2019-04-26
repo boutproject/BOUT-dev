@@ -282,13 +282,17 @@ add_library(bout++
   )
 add_library(bout++::bout++ ALIAS bout++)
 target_link_libraries(bout++ PUBLIC MPI::MPI_CXX pvode pvpre mpark_variant)
-target_include_directories(bout++ PUBLIC include)
+target_include_directories(bout++ PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+  )
 
 target_compile_definitions(bout++
   PUBLIC "BOUT_VERSION_STRING=\"4.2.2\""
   PUBLIC "BOUT_VERSION_DOUBLE=4.22"
   PUBLIC "BOUT_HAS_PVODE"
   )
+set(BOUT_HAS_PVODE TRUE)
 
 target_compile_features(bout++ PUBLIC cxx_std_11)
 set_target_properties(bout++ PROPERTIES CXX_EXTENSIONS OFF)
@@ -304,6 +308,7 @@ endif()
 message(STATUS "Runtime checking level: CHECK=${CHECK}")
 target_compile_definitions(bout++
   PUBLIC "CHECK=${CHECK}")
+set(BOUT_CHECK_LEVEL ${CHECK})
 
 option(ENABLE_SIGNAL "SegFault handling" ON)
 if (ENABLE_SIGNAL)
@@ -311,6 +316,7 @@ if (ENABLE_SIGNAL)
     PUBLIC "SIGHANDLE")
 endif()
 message(STATUS "Signal handling: SIGHANDLE=${ENABLE_SIGNAL}")
+set(BOUT_USE_SIGNAL ${ENABLE_SIGNAL})
 
 option(ENABLE_COLOR "Output coloring" ON)
 if (ENABLE_COLOR)
@@ -318,6 +324,7 @@ if (ENABLE_COLOR)
     PUBLIC "LOGCOLOR")
 endif()
 message(STATUS "Output coloring: LOGCOLOR=${ENABLE_COLOR}")
+set(BOUT_USE_COLOR ${ENABLE_COLOR})
 
 option(ENABLE_TRACK "Field name tracking" ON)
 if (ENABLE_TRACK)
@@ -325,6 +332,7 @@ if (ENABLE_TRACK)
     PUBLIC "TRACK")
 endif()
 message(STATUS "Field name tracking: TRACK=${ENABLE_TRACK}")
+set(BOUT_USE_TRACK ${ENABLE_TRACK})
 
 option(ENABLE_SIGFPE "Signalling floating point exceptions" ON)
 if (ENABLE_SIGFPE)
@@ -332,6 +340,7 @@ if (ENABLE_SIGFPE)
     PUBLIC "BOUT_FPE")
 endif()
 message(STATUS "Signalling floating point exceptions: BOUT_FPE=${ENABLE_SIGFPE}")
+set(BOUT_USE_SIGFPE ${ENABLE_SIGFPE})
 
 option(ENABLE_BACKTRACE "Enable backtrace" ON)
 if (ENABLE_BACKTRACE)
@@ -343,7 +352,8 @@ if (ENABLE_BACKTRACE)
     PUBLIC "BACKTRACE")
   target_link_libraries(bout++ PUBLIC ${CMAKE_DL_LIBS})
 endif()
-message(STATUS "Enable backtrace: SIGHANDLE=${ENABLE_BACKTRACE}")
+message(STATUS "Enable backtrace: BACKTRACE=${ENABLE_BACKTRACE}")
+set(BOUT_USE_BACKTRACE ${ENABLE_BACKTRACE})
 
 option(ENABLE_OPENMP "Enable OpenMP support" OFF)
 if (ENABLE_OPENMP)
@@ -363,12 +373,14 @@ if (ENABLE_OPENMP)
   message(STATUS "OpenMP schedule: ${OPENMP_SCHEDULE}")
 endif()
 message(STATUS "Enable OpenMP: ${ENABLE_OPENMP}")
+set(BOUT_USE_OPENMP ${ENABLE_OPENMP})
 
 include(GetGitRevisionDescription)
 get_git_head_revision(GIT_REFSPEC GIT_SHA1)
 message(STATUS "Git revision: ${GIT_SHA1}")
 target_compile_definitions(bout++
   PUBLIC "GIT_REVISION=${GIT_SHA1}")
+set(BOUT_GIT_REVISION ${GIT_SHA1})
 
 # Optional dependencies
 
@@ -379,6 +391,7 @@ if (NetCDF_FOUND)
   target_link_libraries(bout++ PUBLIC NetCDF::NetCDF)
 endif()
 message(STATUS "NetCDF support: ${NetCDF_FOUND}")
+set(BOUT_HAS_NETCDF ${NetCDF_FOUND})
 
 find_package(FFTW)
 if (FFTW_FOUND)
@@ -387,6 +400,7 @@ if (FFTW_FOUND)
   target_link_libraries(bout++ PUBLIC FFTW::FFTW)
 endif()
 message(STATUS "FFTW support: ${FFTW_FOUND}")
+set(BOUT_HAS_FFTW ${FFTW_FOUND})
 
 find_package(LAPACK)
 if (LAPACK_FOUND)
@@ -395,6 +409,7 @@ if (LAPACK_FOUND)
   target_link_libraries(bout++ PUBLIC "${LAPACK_LIBRARIES}")
 endif()
 message(STATUS "LAPACK support: ${LAPACK_FOUND}")
+set(BOUT_HAS_LAPACK ${LAPACK_FOUND})
 
 find_package(PETSc)
 if (PETSC_FOUND)
@@ -403,6 +418,7 @@ if (PETSC_FOUND)
   target_link_libraries(bout++ PUBLIC PETSC::PETSc)
 endif()
 message(STATUS "PETSc support: ${PETSC_FOUND}")
+set(BOUT_HAS_PETSC ${PETSC_FOUND})
 
 find_package(SUNDIALS)
 if (SUNDIALS_FOUND)
@@ -415,6 +431,7 @@ if (SUNDIALS_FOUND)
   target_link_libraries(bout++ PUBLIC SUNDIALS_arkode::arkode)
 endif()
 message(STATUS "SUNDIALS support: ${SUNDIALS_FOUND}")
+set(BOUT_HAS_SUNDIALS ${SUNDIALS_FOUND})
 
 find_package(Gettext)
 if (GETTEXT_FOUND)
@@ -428,6 +445,7 @@ if (GETTEXT_FOUND)
       PUBLIC ${Intl_INCLUDE_DIRS})
   endif()
 endif()
+set(BOUT_HAS_GETTEXT ${GETTEXT_FOUND})
 
 # Copy FILENAME from source directory to build directory
 # and add dependency on TARGET
@@ -479,3 +497,53 @@ if(PACKAGE_TESTS)
   add_subdirectory(tests/integrated/test-initial)
   add_subdirectory(tests/integrated/test-griddata)
 endif()
+
+##################################################
+# Installation
+
+include(GNUInstallDirs)
+install(TARGETS bout++ pvode pvpre mpark_variant
+  EXPORT bout++Targets
+  LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+  ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+  RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+  INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+  )
+install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+  bout++ConfigVersion.cmake
+  VERSION ${PACKAGE_VERSION}
+  COMPATIBILITY SameMajorVersion
+  )
+
+install(EXPORT bout++Targets
+  FILE bout++Targets.cmake
+  NAMESPACE bout++::
+  DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/bout++"
+  )
+
+configure_package_config_file(bout++Config.cmake.in bout++Config.cmake
+  INSTALL_DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/bout++Config.cmake"
+  )
+install(
+  FILES
+      "${CMAKE_CURRENT_BINARY_DIR}/bout++Config.cmake"
+      "${CMAKE_CURRENT_BINARY_DIR}/bout++ConfigVersion.cmake"
+      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/CorrectWindowsPaths.cmake"
+      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindFFTW.cmake"
+      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindNetCDF.cmake"
+      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindPackageMultipass.cmake"
+      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindPETSc.cmake"
+      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindSUNDIALS.cmake"
+      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/ResolveCompilerPaths.cmake"
+  DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/bout++"
+  )
+
+export(EXPORT bout++Targets
+  FILE "${CMAKE_CURRENT_BINARY_DIR}/bout++Targets.cmake"
+  NAMESPACE bout++::
+  )
+
+export(PACKAGE bout)

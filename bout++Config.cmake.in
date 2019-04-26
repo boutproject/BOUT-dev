@@ -1,0 +1,35 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+
+set(BOUT_USE_SIGNAL @BOUT_USE_SIGNAL@)
+set(BOUT_USE_COLOR @BOUT_USE_COLOR@)
+set(BOUT_USE_TRACK @BOUT_USE_TRACK@)
+set(BOUT_USE_SIGFPE @BOUT_USE_SIGFPE@)
+set(BOUT_USE_BACKTRACE @BOUT_USE_BACKTRACE@)
+set(BOUT_USE_OPENMP @BOUT_USE_OPENMP@)
+
+set(BOUT_HAS_PVODE @BOUT_HAS_PVODE@)
+set(BOUT_HAS_NETCDF @BOUT_HAS_NETCDF@)
+set(BOUT_HAS_FFTW @BOUT_HAS_FFTW@)
+set(BOUT_HAS_LAPACK @BOUT_HAS_LAPACK@)
+set(BOUT_HAS_PETSC @BOUT_HAS_PETSC@)
+set(BOUT_HAS_SUNDIALS @BOUT_HAS_SUNDIALS@)
+set(BOUT_HAS_GETTEXT @BOUT_HAS_GETTEXT@)
+
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}"
+  "${CMAKE_CURRENT_LIST_DIR}/../../../lib/cmake/mpark_variant"
+  )
+
+find_dependency(MPI)
+find_dependency(OpenMP)
+find_dependency(NetCDF)
+find_dependency(FFTW)
+find_dependency(LAPACK)
+find_dependency(PETSc)
+find_dependency(SUNDIALS)
+find_dependency(Gettext)
+find_dependency(Intl)
+find_dependency(mpark_variant)
+
+include("${CMAKE_CURRENT_LIST_DIR}/bout++Targets.cmake")
