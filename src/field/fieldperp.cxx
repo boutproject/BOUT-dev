@@ -106,6 +106,14 @@ const Region<IndPerp> &FieldPerp::getRegion(const std::string &region_name) cons
 
 //////////////// NON-MEMBER FUNCTIONS //////////////////
 
+FieldPerp toFieldAligned(const FieldPerp& f, const REGION region) {
+  return f.getCoordinates()->getParallelTransform().toFieldAligned(f, region);
+}
+
+FieldPerp fromFieldAligned(const FieldPerp& f, const REGION region) {
+  return f.getCoordinates()->getParallelTransform().fromFieldAligned(f, region);
+}
+
 ////////////// NON-MEMBER OVERLOADED OPERATORS //////////////
 
 // Unary minus
