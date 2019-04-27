@@ -181,6 +181,95 @@ TEST_F(ShiftedMetricTest, ToFromFieldAligned) {
                            FFTTolerance));
 }
 
+TEST_F(ShiftedMetricTest, ToFieldAlignedFieldPerp) {
+  Field3D expected{mesh};
+  expected.setDirectionY(YDirectionType::Aligned);
+
+  fillField(expected, {{{2., 3., 4., 5., 1.},
+                        {3., 4., 5., 2., 1.},
+                        {4., 5., 1., 3., 2.},
+                        {5., 1., 2., 4., 3.},
+                        {1., 2., 3., 5., 4.},
+                        {2., 3., 4., 5., 1.},
+                        {3., 4., 5., 2., 1.}},
+
+                       {{3., 4., 5., 2., 1.},
+                        {5., 1., 3., 2., 4.},
+                        {2., 4., 3., 5., 1.},
+                        {5., 4., 1., 2., 3.},
+                        {1., 2., 3., 4., 5.},
+                        {3., 4., 5., 2., 1.},
+                        {5., 1., 3., 2., 4.}},
+
+                       {{4., 5., 1., 3., 2.},
+                        {2., 4., 3., 5., 1.},
+                        {4., 1., 2., 3., 5.},
+                        {3., 4., 5., 1., 2.},
+                        {2., 1., 3., 4., 5.},
+                        {4., 5., 1., 3., 2.},
+                        {2., 4., 3., 5., 1.}}});
+
+  FieldPerp result = toFieldAligned(sliceXZ(input, 3));
+
+  EXPECT_TRUE(IsFieldEqual(result, sliceXZ(expected, 3), "RGN_ALL", FFTTolerance));
+  EXPECT_TRUE(IsFieldEqual(fromFieldAligned(sliceXZ(input,2)), sliceXZ(input, 2)));
+  EXPECT_TRUE(areFieldsCompatible(result, sliceXZ(expected, 3)));
+  EXPECT_FALSE(areFieldsCompatible(result, sliceXZ(input, 3)));
+}
+
+TEST_F(ShiftedMetricTest, FromFieldAlignedFieldPerp) {
+  // reset input.yDirectionType so that fromFieldAligned is not a null
+  // operation
+  input.setDirectionY(YDirectionType::Aligned);
+
+  Field3D expected{mesh, CELL_CENTRE};
+  expected.setDirectionY(YDirectionType::Standard);
+
+  fillField(expected, {{{5., 1., 2., 3., 4.},
+                        {4., 5., 2., 1., 3.},
+                        {2., 4., 5., 1., 3.},
+                        {2., 4., 3., 5., 1.},
+                        {1., 2., 3., 5., 4.},
+                        {5., 1., 2., 3., 4.},
+                        {4., 5., 2., 1., 3.}},
+
+                       {{4., 5., 2., 1., 3.},
+                        {3., 2., 4., 5., 1.},
+                        {5., 1., 2., 4., 3.},
+                        {3., 5., 4., 1., 2.},
+                        {1., 2., 3., 4., 5.},
+                        {4., 5., 2., 1., 3.},
+                        {3., 2., 4., 5., 1.}},
+
+                       {{2., 4., 5., 1., 3.},
+                        {5., 1., 2., 4., 3.},
+                        {2., 3., 5., 4., 1.},
+                        {4., 5., 1., 2., 3.},
+                        {2., 1., 3., 4., 5.},
+                        {2., 4., 5., 1., 3.},
+                        {5., 1., 2., 4., 3.}}});
+
+  FieldPerp result = fromFieldAligned(sliceXZ(input, 4));
+
+  // Loosen tolerance a bit due to FFTs
+  EXPECT_TRUE(IsFieldEqual(result, sliceXZ(expected, 4), "RGN_ALL", FFTTolerance));
+  EXPECT_TRUE(IsFieldEqual(toFieldAligned(sliceXZ(input, 0)), sliceXZ(input, 0)));
+  EXPECT_TRUE(areFieldsCompatible(result, sliceXZ(expected, 4)));
+  EXPECT_FALSE(areFieldsCompatible(result, sliceXZ(input, 4)));
+}
+
+TEST_F(ShiftedMetricTest, FromToFieldAlignedFieldPerp) {
+  EXPECT_TRUE(IsFieldEqual(fromFieldAligned(toFieldAligned(sliceXZ(input, 2))),
+        sliceXZ(input, 2), "RGN_ALL", FFTTolerance));
+}
+
+TEST_F(ShiftedMetricTest, ToFromFieldAlignedFieldPerp) {
+  input.setDirectionY(YDirectionType::Aligned);
+
+  EXPECT_TRUE(IsFieldEqual(toFieldAligned(fromFieldAligned(sliceXZ(input, 6))),
+        sliceXZ(input, 6), "RGN_ALL", FFTTolerance));
+}
+
 TEST_F(ShiftedMetricTest, CalcParallelSlices) {
   // We don't shift in the guard cells, and the parallel slices are
   // stored offset in y, therefore we need to make new regions that we
