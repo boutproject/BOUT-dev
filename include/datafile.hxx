@@ -147,6 +147,11 @@ class Datafile {
   /// Overload for FieldPerp so we can also write 'yindex'
   void writeFieldAttributes(const std::string& name, const FieldPerp& f);
 
+  /// Read the attributes of a field from 'file'
+  void readFieldAttributes(const std::string& name, Field& f);
+  /// Overload for FieldPerp so we can also write 'yindex'
+  void readFieldAttributes(const std::string& name, FieldPerp& f);
+
   /// Check if a variable has already been added
   bool varAdded(const std::string &name);
 

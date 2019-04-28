@@ -38,6 +38,7 @@
 #include <globals.hxx>
 #include <bout/mesh.hxx>
 #include <bout/sys/timer.hxx>
+#include "bout_types.hxx"
 #include <datafile.hxx>
 #include <boutexception.hxx>
 #include <options.hxx>
@@ -939,6 +940,34 @@ void Datafile::writeFieldAttributes(const std::string& name, const FieldPerp& f)
   }
 }
 
+void Datafile::readFieldAttributes(const std::string& name, Field& f) {
+  std::string location_string;
+  if (file->getAttribute(name, "cell_location", location_string)) {
+    f.setLocation(CELL_LOCFromString(location_string));
+  }
+
+  std::string direction_y_string;
+  if (file->getAttribute(name, "direction_y", direction_y_string)) {
+    f.setDirectionY(YDirectionTypeFromString(direction_y_string));
+  }
+
+  std::string direction_z_string;
+  if (file->getAttribute(name, "direction_z", direction_z_string)) {
+    f.setDirectionZ(ZDirectionTypeFromString(direction_z_string));
+  }
+}
+
+void Datafile::readFieldAttributes(const std::string& name, FieldPerp& f) {
+  readFieldAttributes(name, static_cast<Field&>(f));
+
+  int yindex_global = 0;
+  if (file->getAttribute(name, "yindex_global", yindex_global)) {
+    f.setIndex(mesh->YLOCAL(yindex_global));
+  } else {
+    f.setIndex(mesh->YLOCAL(0));
+  }
+}
+
 bool Datafile::write() {
   if(!enabled)
     return true; // Just pretend it worked
@@ -1195,6 +1224,8 @@ void Datafile::setAttribute(const std::string &varname, const std::string &attrn
 /////////////////////////////////////////////////////////////
 
 bool Datafile::read_f2d(const std::string &name, Field2D *f, bool save_repeat) {
+  readFieldAttributes(name, *f);
+
   f->allocate();
   
   if(save_repeat) {
@@ -1223,6 +1254,8 @@ bool Datafile::read_f2d(const std::string &name, Field2D *f, bool save_repeat) {
 }
 
 bool Datafile::read_f3d(const std::string &name, Field3D *f, bool save_repeat) {
+  readFieldAttributes(name, *f);
+
   f->allocate();
   
   if(save_repeat) {
@@ -1257,33 +1290,40 @@ bool Datafile::read_f3d(const std::string &name, Field3D *f, bool save_repeat) {
 }
 
 bool Datafile::read_fperp(const std::string &name, FieldPerp *f, bool save_repeat) {
-  f->allocate();
+  readFieldAttributes(name, *f);
 
-  if(save_repeat) {
-    if(!file->read_rec_perp(&((*f)(0,0)), name, mesh->LocalNx, mesh->LocalNz)) {
-      if(init_missing) {
-        output_warn.write("\tWARNING: Could not read FieldPerp %s. Setting to zero\n", name.c_str());
-        *f = 0.0;
-      }else {
-        throw BoutException("Missing evolving FieldPerp %s in input. Set init_missing=true to set to zero.", name.c_str());
-      }
-      return false;
-    }
-  }else {
-    if(!file->read_perp(&((*f)(0,0)), name, mesh->LocalNx, mesh->LocalNz)) {
-      if(init_missing) {
-        output_warn.write("\tWARNING: Could not read FieldPerp %s. Setting to zero\n", name.c_str());
-        *f = 0.0;
-      }else {
-        throw BoutException("Missing FieldPerp %s in input. Set init_missing=true to set to zero.", name.c_str());
-      }
-      return false;
-    }
-  }
+  int yindex = f->getIndex();
+  if (yindex >= 0 and yindex < mesh->LocalNy) {
+    // yindex is in the range of this processor, so read FieldPerp
 
-  if (shiftInput) {
-    // Input file is in field-aligned coordinates e.g. BOUT++ 3.x restart file
-    *f = fromFieldAligned(*f, RGN_ALL);
+    f->allocate();
+
+    if(save_repeat) {
+      if(!file->read_rec_perp(&((*f)(0,0)), name, mesh->LocalNx, mesh->LocalNz)) {
+        if(init_missing) {
+          output_warn.write("\tWARNING: Could not read FieldPerp %s. Setting to zero\n", name.c_str());
+          *f = 0.0;
+        }else {
+          throw BoutException("Missing evolving FieldPerp %s in input. Set init_missing=true to set to zero.", name.c_str());
+        }
+        return false;
+      }
+    }else {
+      if(!file->read_perp(&((*f)(0,0)), name, mesh->LocalNx, mesh->LocalNz)) {
+        if(init_missing) {
+          output_warn.write("\tWARNING: Could not read FieldPerp %s. Setting to zero\n", name.c_str());
+          *f = 0.0;
+        }else {
+          throw BoutException("Missing FieldPerp %s in input. Set init_missing=true to set to zero.", name.c_str());
+        }
+        return false;
+      }
+    }
+
+    if (shiftInput) {
+      // Input file is in field-aligned coordinates e.g. BOUT++ 3.x restart file
+      *f = fromFieldAligned(*f, RGN_ALL);
+    }
   }
 
   return true;
