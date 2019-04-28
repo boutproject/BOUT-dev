@@ -115,6 +115,25 @@ int Mesh::get(Field3D &var, const std::string &name, BoutReal def, bool communic
   return 0;
 }
 
+int Mesh::get(FieldPerp &var, const std::string &name, BoutReal def,
+    bool UNUSED(communicate)) {
+  TRACE("Loading FieldPerp: Mesh::get(FieldPerp, %s)", name.c_str());
+
+  // Ensure data allocated
+  var.allocate();
+
+  if (source == nullptr or !source->get(this, var, name, def))
+    return 1;
+
+  // Communicate to get guard cell data
+  Mesh::communicate(var);
+
+  // Check that the data is valid
+  checkData(var);
+
+  return 0;
+}
+
 /**************************************************************************
  * Data get routines
  **************************************************************************/

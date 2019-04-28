@@ -166,6 +166,16 @@ class Mesh {
   /// @returns zero if successful, non-zero on failure
   int get(Field3D &var, const std::string &name, BoutReal def=0.0, bool communicate=true);
 
+  /// Get a FieldPerp from the input source
+  ///
+  /// @param[out] var   This will be set to the value. Will be allocated if needed
+  /// @param[in] name   Name of the variable to read
+  /// @param[in] def    The default value if not found
+  /// @param[in] communicate  Should the field be communicated to fill guard cells?
+  ///
+  /// @returns zero if successful, non-zero on failure
+  int get(FieldPerp &var, const std::string &name, BoutReal def=0.0, bool communicate=true);
+
   /// Get a Vector2D from the input source.
   /// If \p var is covariant then this gets three
   /// Field2D variables with "_x", "_y", "_z" appended to \p name
