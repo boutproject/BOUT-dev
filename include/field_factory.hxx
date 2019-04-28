@@ -68,6 +68,12 @@ public:
   Field3D create3D(const std::string& value, const Options* opt = nullptr,
                    Mesh* m = nullptr, CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0) const;
 
+  /// Create a FieldPerp by parsing a string and evaluating the expression
+  /// using the given options \p opt, over Mesh \p m at time \p t.
+  /// The resulting field is at cell location \p loc.
+  FieldPerp createPerp(const std::string& value, const Options* opt = nullptr,
+      Mesh* m = nullptr, CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0) const;
+
   /// Parse a string into a tree of generators
   FieldGeneratorPtr parse(const std::string& input, const Options* opt = nullptr) const;
 
@@ -80,6 +86,11 @@ public:
   /// at a given cell location and time.
   Field3D create3D(FieldGeneratorPtr generator, Mesh* m = nullptr,
                    CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0) const;
+
+  /// Create a FieldPerp from a generator, over a given mesh
+  /// at a given cell location and time.
+  FieldPerp createPerp(FieldGeneratorPtr generator, Mesh* m = nullptr,
+      CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0) const;
 
   /// Get the Singleton object
   static FieldFactory* get();
