@@ -446,12 +446,19 @@ class Mesh {
   int OffsetX, OffsetY, OffsetZ;    ///< Offset of this mesh within the global array
                                     ///< so startx on this processor is OffsetX in global
   
-  /// Returns the global X index given a local indexs
+  /// Returns the global X index given a local index
   /// If the local index includes the boundary cells, then so does the global.
   virtual int XGLOBAL(int xloc) const = 0;
   /// Returns the global Y index given a local index
   /// The local index must include the boundary, the global index does not.
   virtual int YGLOBAL(int yloc) const = 0;
+
+  /// Returns the local X index given a global index
+  /// If the global index includes the boundary cells, then so does the local.
+  virtual int XLOCAL(int xglo) const = 0;
+  /// Returns the local Y index given a global index
+  /// If the global index includes the boundary cells, then so does the local.
+  virtual int YLOCAL(int yglo) const = 0;
 
   /// Size of the mesh on this processor including guard/boundary cells
   int LocalNx, LocalNy, LocalNz;
