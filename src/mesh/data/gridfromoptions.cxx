@@ -103,6 +103,7 @@ bool GridFromOptions::get(Mesh* m, std::vector<int>& var, const std::string& nam
   }
 
   // FIXME: actually implement this!
+  throw BoutException("not implemented");
   int ival;
   get(m, ival, name);
   var.resize(len, ival);
