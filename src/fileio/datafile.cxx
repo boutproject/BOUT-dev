@@ -1260,7 +1260,7 @@ bool Datafile::read_fperp(const std::string &name, FieldPerp *f, bool save_repea
   f->allocate();
 
   if(save_repeat) {
-    if(!file->read_rec(&((*f)(0,0)), name, mesh->LocalNx, 0, mesh->LocalNz)) {
+    if(!file->read_rec_perp(&((*f)(0,0)), name, mesh->LocalNx, mesh->LocalNz)) {
       if(init_missing) {
         output_warn.write("\tWARNING: Could not read FieldPerp %s. Setting to zero\n", name.c_str());
         *f = 0.0;
@@ -1270,7 +1270,7 @@ bool Datafile::read_fperp(const std::string &name, FieldPerp *f, bool save_repea
       return false;
     }
   }else {
-    if(!file->read(&((*f)(0,0)), name, mesh->LocalNx, 0, mesh->LocalNz)) {
+    if(!file->read_perp(&((*f)(0,0)), name, mesh->LocalNx, mesh->LocalNz)) {
       if(init_missing) {
         output_warn.write("\tWARNING: Could not read FieldPerp %s. Setting to zero\n", name.c_str());
         *f = 0.0;
@@ -1355,9 +1355,9 @@ bool Datafile::write_fperp(const std::string &name, FieldPerp *f, bool save_repe
   }
 
   if(save_repeat) {
-    return file->write_rec(&(f_out(0,0)), name, mesh->LocalNx, 0, mesh->LocalNz);
+    return file->write_rec_perp(&(f_out(0,0)), name, mesh->LocalNx, mesh->LocalNz);
   }else {
-    return file->write(&(f_out(0,0)), name, mesh->LocalNx, 0, mesh->LocalNz);
+    return file->write_perp(&(f_out(0,0)), name, mesh->LocalNx, mesh->LocalNz);
   }
 }
 

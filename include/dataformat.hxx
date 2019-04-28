@@ -86,11 +86,13 @@ class DataFormat {
   virtual bool read(int *var, const std::string &name, int lx = 1, int ly = 0, int lz = 0) = 0;
   virtual bool read(BoutReal *var, const char *name, int lx = 1, int ly = 0, int lz = 0) = 0;
   virtual bool read(BoutReal *var, const std::string &name, int lx = 1, int ly = 0, int lz = 0) = 0;
+  virtual bool read_perp(BoutReal *var, const std::string &name, int lx = 1, int lz = 0) = 0;
 
   virtual bool write(int *var, const char *name, int lx = 0, int ly = 0, int lz = 0) = 0;
   virtual bool write(int *var, const std::string &name, int lx = 0, int ly = 0, int lz = 0) = 0;
   virtual bool write(BoutReal *var, const char *name, int lx = 0, int ly = 0, int lz = 0) = 0;
   virtual bool write(BoutReal *var, const std::string &name, int lx = 0, int ly = 0, int lz = 0) = 0;
+  virtual bool write_perp(BoutReal *var, const std::string &name, int lx = 0, int lz = 0) = 0;
 
   // Read / Write record-based variables
 
@@ -98,11 +100,13 @@ class DataFormat {
   virtual bool read_rec(int *var, const std::string &name, int lx = 1, int ly = 0, int lz = 0) = 0;
   virtual bool read_rec(BoutReal *var, const char *name, int lx = 1, int ly = 0, int lz = 0) = 0;
   virtual bool read_rec(BoutReal *var, const std::string &name, int lx = 1, int ly = 0, int lz = 0) = 0;
+  virtual bool read_rec_perp(BoutReal *var, const std::string &name, int lx = 1, int lz = 0) = 0;
 
   virtual bool write_rec(int *var, const char *name, int lx = 0, int ly = 0, int lz = 0) = 0;
   virtual bool write_rec(int *var, const std::string &name, int lx = 0, int ly = 0, int lz = 0) = 0;
   virtual bool write_rec(BoutReal *var, const char *name, int lx = 0, int ly = 0, int lz = 0) = 0;
   virtual bool write_rec(BoutReal *var, const std::string &name, int lx = 0, int ly = 0, int lz = 0) = 0;
+  virtual bool write_rec_perp(BoutReal *var, const std::string &name, int lx = 0, int lz = 0) = 0;
 
   // Optional functions
   

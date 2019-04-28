@@ -491,6 +491,60 @@ bool H5Format::read(void *data, hid_t hdf5_type, const char *name, int lx, int l
   return true;
 }
 
+bool H5Format::read_perp(BoutReal *data, const std::string& name, int lx, int lz) {
+  TRACE("H5Format::read(void)");
+
+  hid_t hdf5_type = H5T_NATIVE_DOUBLE;
+
+  if(!is_valid())
+    return false;
+
+  if((lx < 0) || (lz < 0))
+    return false;
+
+  int nd = 0; // Number of dimensions
+  if(lx != 0) nd = 1;
+  if(lz != 0) nd = 2;
+  hsize_t counts[2],offset[2],offset_local[2],init_size_local[2];
+  counts[0]=lx; counts[1]=lz;
+  offset[0]=x0; offset[1]=z0;
+  offset_local[0]=x0_local;
+  offset_local[1]=z0_local;
+
+  // Want to be able to use without needing mesh to be initialised; makes hyperslab selection redundant
+  init_size_local[0]=offset_local[0]+counts[0];
+  init_size_local[1]=offset_local[1]+counts[1];
+
+  hid_t mem_space = H5Screate_simple(nd, init_size_local, init_size_local);
+  if (mem_space < 0)
+    throw BoutException("Failed to create mem_space");
+
+  hid_t dataSet = H5Dopen(dataFile, name.c_str(), H5P_DEFAULT);
+  if (dataSet < 0) {
+    return false;
+  }
+
+  hid_t dataSpace = H5Dget_space(dataSet);
+  if (dataSpace < 0)
+    throw BoutException("Failed to create dataSpace");
+  if (nd > 0 && !(nd==1 && lx==1))
+    if (H5Sselect_hyperslab(dataSpace, H5S_SELECT_SET, offset, /*stride=*/nullptr, counts,
+                            /*block=*/nullptr) < 0)
+      throw BoutException("Failed to select hyperslab");
+
+  if (H5Dread(dataSet, hdf5_type, mem_space, dataSpace, H5P_DEFAULT, data) < 0)
+    throw BoutException("Failed to read data");
+
+  if (H5Sclose(mem_space) < 0)
+    throw BoutException("Failed to close mem_space");
+  if (H5Sclose(dataSpace) < 0)
+    throw BoutException("Failed to close dataSpace");
+  if (H5Dclose(dataSet) < 0)
+    throw BoutException("Failed to close dataSet");
+
+  return true;
+}
+
 bool H5Format::write(int *data, const char *name, int lx, int ly, int lz) {
   return write(data, H5T_NATIVE_INT, name, lx, ly, lz);
 }
@@ -599,6 +653,72 @@ bool H5Format::write(void *data, hid_t mem_hdf5_type, const char *name, int lx, 
   return true;
 }
 
+bool H5Format::write_perp(BoutReal *data, const std::string& name, int lx, int lz) {
+  TRACE("H5Format::write_perp(void)");
+
+  hid_t mem_hdf5_type = H5T_NATIVE_DOUBLE;
+
+  if(!is_valid())
+    return false;
+
+  if((lx < 0) || (lz < 0))
+    return false;
+
+  int nd = 0; // Number of dimensions
+  if(lx != 0) nd = 1;
+  if(lz != 0) nd = 2;
+  hsize_t counts[2], offset[2], offset_local[2], init_size_local[2];
+  counts[0] = lx;
+  counts[1] = lz;
+  offset[0] = x0;
+  offset[1] = z0;
+  offset_local[0] = x0_local;
+  offset_local[1] = z0_local;
+  init_size_local[0] = mesh->LocalNx;
+  init_size_local[1] = mesh->LocalNz;
+
+  if (nd==0) {
+    // Need to write a scalar, not a 0-d array
+    nd = 1;
+    counts[0] = 1;
+    offset[0] = 0;
+    offset_local[0] = 0;
+    init_size_local[0] = 1;
+  }
+
+  hid_t mem_space = H5Screate_simple(nd, init_size_local, init_size_local);
+  if (mem_space < 0)
+    throw BoutException("Failed to create mem_space");
+  if (H5Sselect_hyperslab(mem_space, H5S_SELECT_SET, offset_local, /*stride=*/nullptr,
+                          counts, /*block=*/nullptr) < 0)
+    throw BoutException("Failed to select hyperslab");
+
+  hid_t dataSet = H5Dopen(dataFile, name.c_str(), H5P_DEFAULT);
+  if (dataSet < 0) {
+    output_error.write("ERROR: HDF5 variable '%s' has not been added to file '%s'\n", name.c_str(), fname);
+    return false;
+  }
+
+  hid_t dataSpace = H5Dget_space(dataSet);
+  if (dataSpace < 0)
+    throw BoutException("Failed to create dataSpace");
+  if (H5Sselect_hyperslab(dataSpace, H5S_SELECT_SET, offset, /*stride=*/nullptr, counts,
+                          /*block=*/nullptr) < 0)
+    throw BoutException("Failed to select hyperslab");
+
+  if (H5Dwrite(dataSet, mem_hdf5_type, mem_space, dataSpace, dataSet_plist, data) < 0)
+    throw BoutException("Failed to write data");
+
+  if (H5Sclose(mem_space) < 0)
+    throw BoutException("Failed to close mem_space");
+  if (H5Sclose(dataSpace) < 0)
+    throw BoutException("Failed to close dataSpace");
+  if (H5Dclose(dataSet) < 0)
+    throw BoutException("Failed to close dataSet");
+
+  return true;
+}
+
 /***************************************************************************
  * Record-based (time-dependent) data
  ***************************************************************************/
@@ -674,6 +794,76 @@ bool H5Format::read_rec(void *data, hid_t hdf5_type, const char *name, int lx, i
     throw BoutException("Failed to select hyperslab");
 
   hid_t dataSet = H5Dopen(dataFile, name, H5P_DEFAULT);
+  if (dataSet < 0)
+    throw BoutException("Failed to open dataSet");
+
+  hid_t dataSpace = H5Dget_space(dataSet);
+  if (dataSpace < 0)
+    throw BoutException("Failed to create dataSpace");
+  if (H5Sselect_hyperslab(dataSpace, H5S_SELECT_SET, offset, /*stride=*/nullptr, counts,
+                          /*block=*/nullptr) < 0)
+    throw BoutException("Failed to select hyperslab");
+
+  if (H5Dread(dataSet, hdf5_type, mem_space, dataSpace, H5P_DEFAULT, data) < 0)
+    throw BoutException("Failed to read data");
+
+  if (H5Sclose(mem_space) < 0)
+    throw BoutException("Failed to close mem_space");
+  if (H5Sclose(dataSpace) < 0)
+    throw BoutException("Failed to close dataSpace");
+  if (H5Dclose(dataSet) < 0)
+    throw BoutException("Failed to close dataSet");
+
+  return true;
+}
+
+bool H5Format::read_rec_perp(BoutReal *data, const std::string& name, int lx, int lz) {
+  if (!is_valid()) {
+    return false;
+  }
+
+  hid_t hdf5_type = H5T_NATIVE_DOUBLE;
+
+  if ((lx < 0) || (lz < 0)) {
+    return false;
+  }
+
+  int nd = 1; // Number of dimensions
+  if (lx != 0) {
+    nd = 2;
+  }
+  if (lz != 0) {
+    nd = 3;
+  }
+  hsize_t counts[3], offset[3];
+  hsize_t offset_local[2], init_size_local[2];
+  counts[0] = 1;
+  counts[1] = lx;
+  counts[2] = lz;
+  offset[0] = t0;
+  offset[1] = x0;
+  offset[2] = z0;
+  offset_local[0] = x0_local;
+  offset_local[1] = z0_local;
+  init_size_local[0] = mesh->LocalNx;
+  init_size_local[1] = mesh->LocalNz;
+
+  if (nd == 1) {
+    // Need to write a time-series of scalars
+    nd = 1;
+    counts[1] = 1;
+    offset[1] = 0;
+    init_size_local[0] = 1;
+  }
+
+  hid_t mem_space = H5Screate_simple(nd, init_size_local, init_size_local);
+  if (mem_space < 0)
+    throw BoutException("Failed to create mem_space");
+  if (H5Sselect_hyperslab(mem_space, H5S_SELECT_SET, offset_local, /*stride=*/nullptr,
+                          counts, /*block=*/nullptr) < 0)
+    throw BoutException("Failed to select hyperslab");
+
+  hid_t dataSet = H5Dopen(dataFile, name.c_str(), H5P_DEFAULT);
   if (dataSet < 0)
     throw BoutException("Failed to open dataSet");
 
@@ -825,6 +1015,98 @@ bool H5Format::write_rec(void *data, hid_t mem_hdf5_type, const char *name, int 
   if (H5Dclose(dataSet) < 0)
     throw BoutException("Failed to close dataSet");
   
+  return true;
+}
+
+bool H5Format::write_rec_perp(BoutReal *data, const std::string& name, int lx, int lz) {
+  if(!is_valid())
+    return false;
+
+  hid_t mem_hdf5_type = H5T_NATIVE_DOUBLE;
+
+  if((lx < 0) || (lz < 0))
+    return false;
+
+  int nd = 1; // Number of dimensions
+  if(lx != 0) nd = 2;
+  if(lz != 0) nd = 3;
+  int nd_local = nd-1;
+  hsize_t counts[3], offset[3];
+  hsize_t counts_local[2], offset_local[2], init_size_local[2];
+  counts[0] = 1;
+  counts[1] = lx;
+  counts[2] = lz;
+  counts_local[0] = lx;
+  counts_local[1] = lz;
+  // Do this later, after setting t0//  offset[0]=t0;
+  offset[1] = x0;
+  offset[2] = z0;
+  offset_local[0] = x0_local;
+  offset_local[1] = z0_local;
+  init_size_local[0] = mesh->LocalNx;
+  init_size_local[1] = mesh->LocalNz;
+
+  if (nd_local == 0) {
+    nd_local = 1;
+    // Need to write a time-series of scalars
+    counts_local[0] = 1;
+    offset_local[0] = 0;
+    init_size_local[0] = 1;
+  }
+
+  hid_t mem_space = H5Screate_simple(nd_local, init_size_local, init_size_local);
+  if (mem_space < 0)
+    throw BoutException("Failed to create mem_space");
+  if (H5Sselect_hyperslab(mem_space, H5S_SELECT_SET, offset_local, /*stride=*/nullptr,
+                          counts_local, /*block=*/nullptr) < 0)
+    throw BoutException("Failed to select hyperslab");
+
+  hid_t dataSet = H5Dopen(dataFile, name.c_str(), H5P_DEFAULT);
+  if (dataSet >= 0) { // >=0 means file exists, so open. Else error.
+
+    hsize_t dims[3] = {};
+    hid_t dataSpace = H5Dget_space(dataSet);
+    if (dataSpace < 0)
+      throw BoutException("Failed to create dataSpace");
+    if (H5Sget_simple_extent_dims(dataSpace, dims, /*maxdims=*/nullptr) < 0)
+      throw BoutException("Failed to get dims");
+    dims[0]+=1;
+    if (t0 == -1) {
+      // Want t0 to be last record
+      t0 = dims[0]-1;
+    }
+
+    if (H5Dset_extent(dataSet, dims) < 0)
+      throw BoutException("Failed to extend dataSet");
+
+    if (H5Sclose(dataSpace) < 0)
+      throw BoutException("Failed to close dataSpace");
+
+  }
+  else {
+    output_error.write("ERROR: HDF5 variable '%s' has not been added to file '%s'\n", name.c_str(), fname);
+    return false;
+  }
+
+  offset[0]=t0;
+
+  hid_t dataSpace = H5Dget_space(dataSet);
+  if (dataSpace < 0)
+    throw BoutException("Failed to create dataSpace");
+  if (H5Sselect_hyperslab(dataSpace, H5S_SELECT_SET, offset, /*stride=*/nullptr, counts,
+                          /*block=*/nullptr) < 0)
+    throw BoutException("Failed to select hyperslab");
+
+  if (H5Dwrite(dataSet, mem_hdf5_type, mem_space, dataSpace, dataSet_plist, data) < 0)
+    throw BoutException("Failed to write data");
+
+  if (H5Sclose(mem_space) < 0)
+    throw BoutException("Failed to close mem_space");
+  if (H5Sclose(dataSpace) < 0)
+    throw BoutException("Failed to close dataSpace");
+  if (H5Dclose(dataSet) < 0)
+    throw BoutException("Failed to close dataSet");
+
   return true;
 }
 
