@@ -86,6 +86,7 @@ class H5Format : public DataFormat {
   bool addVarBoutReal(const std::string &name, bool repeat) override;
   bool addVarField2D(const std::string &name, bool repeat) override;
   bool addVarField3D(const std::string &name, bool repeat) override;
+  bool addVarFieldPerp(const std::string &name, bool repeat) override;
   
   // Read / Write simple variables up to 3D
 
@@ -141,7 +142,7 @@ class H5Format : public DataFormat {
   
   hsize_t chunk_length;
 
-  bool addVar(const std::string &name, bool repeat, hid_t write_hdf5_type, int nd);
+  bool addVar(const std::string &name, bool repeat, hid_t write_hdf5_type, std::string datatype);
   bool read(void *var, hid_t hdf5_type, const char *name, int lx = 1, int ly = 0, int lz = 0);
   bool write(void *var, hid_t mem_hdf5_type, const char *name, int lx = 0, int ly = 0, int lz = 0);
   bool read_rec(void *var, hid_t hdf5_type, const char *name, int lx = 1, int ly = 0, int lz = 0);

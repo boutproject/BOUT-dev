@@ -78,6 +78,7 @@ class DataFormat {
   virtual bool addVarBoutReal(const std::string &name, bool repeat) = 0;
   virtual bool addVarField2D(const std::string &name, bool repeat) = 0;
   virtual bool addVarField3D(const std::string &name, bool repeat) = 0;
+  virtual bool addVarFieldPerp(const std::string &name, bool repeat) = 0;
   
   // Read / Write simple variables up to 3D
 

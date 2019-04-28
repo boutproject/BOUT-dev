@@ -252,6 +252,13 @@ bool Datafile::openw(const char *format, ...) {
     }
   }
 
+  // Add FieldPerps
+  for (const auto& var : fperp_arr) {
+    if (!file->addVarFieldPerp(var.name, var.save_repeat)) {
+      throw BoutException("Failed to add FieldPerp variable %s to Datafile", var.name.c_str());
+    }
+  }
+
   // 2D vectors
   for(const auto& var : v2d_arr) {
     if (!file->addVarField2D(var.name + "_x", var.save_repeat)) {
@@ -351,6 +358,13 @@ bool Datafile::opena(const char *format, ...) {
   for (const auto& var : f3d_arr) {
     if (!file->addVarField3D(var.name, var.save_repeat)) {
       throw BoutException("Failed to add Field3D variable %s to Datafile", var.name.c_str());
+    }
+  }
+
+  // Add FieldPerps
+  for (const auto& var : fperp_arr) {
+    if (!file->addVarFieldPerp(var.name, var.save_repeat)) {
+      throw BoutException("Failed to add FieldPerp variable %s to Datafile", var.name.c_str());
     }
   }
 
@@ -621,6 +635,58 @@ void Datafile::add(Field3D &f, const char *name, bool save_repeat) {
   }
 }
 
+void Datafile::add(FieldPerp &f, const char *name, bool save_repeat) {
+  AUTO_TRACE();
+  if (!enabled)
+    return;
+  if (varAdded(name)) {
+    // Check if it's the same variable
+    if (&f == varPtr(name)) {
+      output_warn.write("WARNING: variable '%s' added again to Datafile\n", name);
+    } else {
+      throw BoutException("Variable with name '%s' already added to Datafile", name);
+    }
+  }
+
+  VarStr<FieldPerp> d;
+
+  d.ptr = &f;
+  d.name = name;
+  d.save_repeat = save_repeat;
+  d.covar = false;
+
+  fperp_arr.push_back(d);
+
+  if (writable) {
+    // Otherwise will add variables when Datafile is opened for writing/appending
+    if (openclose) {
+      // Open the file
+      int MYPE;
+      MPI_Comm_rank(BoutComm::get(), &MYPE);
+      if (strcmp(filename, "") == 0)
+        throw BoutException("Datafile::add: Filename has not been set");
+      if(!file->openw(filename, MYPE, appending))
+        throw BoutException("Datafile::add: Failed to open file!");
+      appending = true;
+    }
+
+    if(!file->is_valid())
+      throw BoutException("Datafile::add: File is not valid!");
+
+    if(floats)
+      file->setLowPrecision();
+
+    // Add variable to file
+    if (!file->addVarFieldPerp(name, save_repeat)) {
+      throw BoutException("Failed to add FieldPerp variable %s to Datafile", name);
+    }
+
+    if(openclose) {
+      file->close();
+    }
+  }
+}
+
 void Datafile::add(Vector2D &f, const char *name, bool save_repeat) {
   TRACE("DataFile::add(Vector2D)");
   if (!enabled)
@@ -809,6 +875,11 @@ bool Datafile::read() {
     read_f3d(var.name, var.ptr, var.save_repeat);
   }
 
+  // Read FieldPerps
+  for(const auto& var : fperp_arr) {
+    read_fperp(var.name, var.ptr, var.save_repeat);
+  }
+
   // 2D vectors
   for(const auto& var : v2d_arr) {
     if(var.covar) {
@@ -853,6 +924,19 @@ void Datafile::writeFieldAttributes(const std::string& name, const Field& f) {
   file->setAttribute(name, "cell_location", toString(f.getLocation()));
   file->setAttribute(name, "direction_y", toString(f.getDirectionY()));
   file->setAttribute(name, "direction_z", toString(f.getDirectionZ()));
+}
+
+void Datafile::writeFieldAttributes(const std::string& name, const FieldPerp& f) {
+  writeFieldAttributes(name, static_cast<const Field&>(f));
+
+  int yindex = f.getIndex();
+  if (yindex >= 0 and yindex < f.getMesh()->LocalNy) {
+    // write global y-index as attribute
+    file->setAttribute(name, "yindex_global", f.getMesh()->YGLOBAL(f.getIndex()));
+  } else {
+    // y-index is not valid, set global y-index to -1 to indicate 'not-valid'
+    file->setAttribute(name, "yindex_global", -1);
+  }
 }
 
 bool Datafile::write() {
@@ -900,6 +984,11 @@ bool Datafile::write() {
       writeFieldAttributes(var.name, *var.ptr);
     }
 
+    // FieldPerps
+    for (const auto& var : fperp_arr) {
+      writeFieldAttributes(var.name, *var.ptr);
+    }
+
     // 2D vectors
     for(const auto& var : v2d_arr) {
       Vector2D v  = *(var.ptr);
@@ -937,6 +1026,11 @@ bool Datafile::write() {
     write_f3d(var.name, var.ptr, var.save_repeat);
   }
   
+  // Write FieldPerps
+  for (const auto& var : fperp_arr) {
+    write_fperp(var.name, var.ptr, var.save_repeat);
+  }
+
   // 2D vectors
   for(const auto& var : v2d_arr) {
     if(var.covar) {
@@ -1162,6 +1256,39 @@ bool Datafile::read_f3d(const std::string &name, Field3D *f, bool save_repeat) {
   return true;
 }
 
+bool Datafile::read_fperp(const std::string &name, FieldPerp *f, bool save_repeat) {
+  f->allocate();
+
+  if(save_repeat) {
+    if(!file->read_rec(&((*f)(0,0)), name, mesh->LocalNx, 0, mesh->LocalNz)) {
+      if(init_missing) {
+        output_warn.write("\tWARNING: Could not read FieldPerp %s. Setting to zero\n", name.c_str());
+        *f = 0.0;
+      }else {
+        throw BoutException("Missing evolving FieldPerp %s in input. Set init_missing=true to set to zero.", name.c_str());
+      }
+      return false;
+    }
+  }else {
+    if(!file->read(&((*f)(0,0)), name, mesh->LocalNx, 0, mesh->LocalNz)) {
+      if(init_missing) {
+        output_warn.write("\tWARNING: Could not read FieldPerp %s. Setting to zero\n", name.c_str());
+        *f = 0.0;
+      }else {
+        throw BoutException("Missing FieldPerp %s in input. Set init_missing=true to set to zero.", name.c_str());
+      }
+      return false;
+    }
+  }
+
+  if (shiftInput) {
+    // Input file is in field-aligned coordinates e.g. BOUT++ 3.x restart file
+    *f = fromFieldAligned(*f, RGN_ALL);
+  }
+
+  return true;
+}
+
 bool Datafile::write_int(const std::string &name, int *f, bool save_repeat) {
   if(save_repeat) {
     return file->write_rec(f, name);
@@ -1211,6 +1338,26 @@ bool Datafile::write_f3d(const std::string &name, Field3D *f, bool save_repeat) 
     return file->write_rec(&(f_out(0,0,0)), name, mesh->LocalNx, mesh->LocalNy, mesh->LocalNz);
   }else {
     return file->write(&(f_out(0,0,0)), name, mesh->LocalNx, mesh->LocalNy, mesh->LocalNz);
+  }
+}
+
+bool Datafile::write_fperp(const std::string &name, FieldPerp *f, bool save_repeat) {
+  if (!f->isAllocated()) {
+    throw BoutException("Datafile::write_fperp: FieldPerp '%s' is not allocated!", name.c_str());
+  }
+
+  //Deal with shifting the output
+  FieldPerp f_out{emptyFrom(*f)};
+  if(shiftOutput) {
+    f_out = toFieldAligned(*f);
+  }else {
+    f_out = *f;
+  }
+
+  if(save_repeat) {
+    return file->write_rec(&(f_out(0,0)), name, mesh->LocalNx, 0, mesh->LocalNz);
+  }else {
+    return file->write(&(f_out(0,0)), name, mesh->LocalNx, 0, mesh->LocalNz);
   }
 }
 

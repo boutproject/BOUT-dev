@@ -256,27 +256,47 @@ bool H5Format::setRecord(int t) {
 }
 
 // Add a variable to the file
-bool H5Format::addVar(const std::string &name, bool repeat, hid_t write_hdf5_type, int nd) {
+bool H5Format::addVar(const std::string &name, bool repeat, hid_t write_hdf5_type,
+    std::string datatype) {
   hid_t dataSet = H5Dopen(dataFile, name.c_str(), H5P_DEFAULT);
   if (dataSet >= 0) { // >=0 means variable already exists, so return.
     if (H5Dclose(dataSet) < 0)
       throw BoutException("Failed to close dataSet");
     return true;
   }
+
+  int nd = 0;
+  if (datatype == "scalar") nd = 0;
+  else if (datatype == "FieldX") nd = 1;
+  else if (datatype == "Field2D") nd = 2;
+  else if (datatype == "FieldPerp") nd = 2;
+  else if (datatype == "Field3D") nd = 3;
+  else throw BoutException("Unrecognized datatype '"+datatype+"'");
+
   if (repeat) {
-    nd += 1; // add time dimension
+    // add time dimension
+    datatype += "_t";
+    nd += 1;
 
     hsize_t init_size[4];
     if (parallel) {
       init_size[0]=0;
       init_size[1]=mesh->GlobalNx-2*mesh->xstart;
-      init_size[2]=mesh->GlobalNy-2*mesh->ystart;
+      if (datatype == "FieldPerp_t") {
+        init_size[2]=mesh->GlobalNz;
+      } else {
+        init_size[2]=mesh->GlobalNy-2*mesh->ystart;
+      }
       init_size[3]=mesh->GlobalNz;
     }
     else {
       init_size[0]=0;
       init_size[1]=mesh->LocalNx;
-      init_size[2]=mesh->LocalNy;
+      if (datatype == "FieldPerp_t") {
+        init_size[2]=mesh->LocalNz;
+      } else {
+        init_size[2]=mesh->LocalNy;
+      }
       init_size[3]=mesh->LocalNz;
     }
 
@@ -298,10 +318,6 @@ bool H5Format::addVar(const std::string &name, bool repeat, hid_t write_hdf5_typ
       throw BoutException("Failed to create dataSet");
 
     // Add attribute to say what kind of field this is
-    std::string datatype = "scalar_t";
-    if(nd > 1) datatype = "FieldX_t";
-    if(nd == 3) datatype = "Field2D_t";
-    if(nd == 4) datatype = "Field3D_t";
 
     // Create new dataspace for attribute
     hid_t attribute_dataspace = H5Screate(H5S_SCALAR);
@@ -339,19 +355,23 @@ bool H5Format::addVar(const std::string &name, bool repeat, hid_t write_hdf5_typ
       hsize_t init_size[3];
       if (parallel) {
         init_size[0] = mesh->GlobalNx - 2 * mesh->xstart;
-        init_size[1] = mesh->GlobalNy - 2 * mesh->ystart;
+        if (datatype == "FieldPerp") {
+          init_size[1] = mesh->GlobalNy - 2 * mesh->ystart;
+        } else {
+          init_size[1] = mesh->GlobalNz;
+        }
         init_size[2] = mesh->GlobalNz;
       } else {
         init_size[0] = mesh->LocalNx;
-        init_size[1] = mesh->LocalNy;
+        if (datatype == "FieldPerp") {
+          init_size[1] = mesh->LocalNz;
+        } else {
+          init_size[1] = mesh->LocalNy;
+        }
         init_size[2] = mesh->LocalNz;
       }
 
       // Create value for attribute to say what kind of field this is
-      std::string datatype = "scalar";
-      if(nd > 0) datatype = "FieldX";
-      if(nd == 2) datatype = "Field2D";
-      if(nd == 3) datatype = "Field3D";
 
       if (nd==0) {
         // Need to write a scalar, not a 0-d array
@@ -377,22 +397,27 @@ bool H5Format::addVar(const std::string &name, bool repeat, hid_t write_hdf5_typ
 }
 
 bool H5Format::addVarInt(const std::string &name, bool repeat) {
-  return addVar(name, repeat, H5T_NATIVE_INT, 0);
+  return addVar(name, repeat, H5T_NATIVE_INT, "scalar");
 }
 
 bool H5Format::addVarBoutReal(const std::string &name, bool repeat) {
   auto h5_float_type = lowPrecision ? H5T_NATIVE_FLOAT : H5T_NATIVE_DOUBLE;
-  return addVar(name, repeat, h5_float_type, 0);
+  return addVar(name, repeat, h5_float_type, "scalar");
 }
 
 bool H5Format::addVarField2D(const std::string &name, bool repeat) {
   auto h5_float_type = lowPrecision ? H5T_NATIVE_FLOAT : H5T_NATIVE_DOUBLE;
-  return addVar(name, repeat, h5_float_type, 2);
+  return addVar(name, repeat, h5_float_type, "Field2D");
 }
 
 bool H5Format::addVarField3D(const std::string &name, bool repeat) {
   auto h5_float_type = lowPrecision ? H5T_NATIVE_FLOAT : H5T_NATIVE_DOUBLE;
-  return addVar(name, repeat, h5_float_type, 3);
+  return addVar(name, repeat, h5_float_type, "Field3D");
+}
+
+bool H5Format::addVarFieldPerp(const std::string &name, bool repeat) {
+  auto h5_float_type = lowPrecision ? H5T_NATIVE_FLOAT : H5T_NATIVE_DOUBLE;
+  return addVar(name, repeat, h5_float_type, "FieldPerp");
 }
 
 bool H5Format::read(int *data, const char *name, int lx, int ly, int lz) {

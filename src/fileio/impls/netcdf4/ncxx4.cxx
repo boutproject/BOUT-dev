@@ -417,6 +417,37 @@ bool Ncxx4::addVarField3D(const string &name, bool repeat) {
   return true;
 }
 
+bool Ncxx4::addVarFieldPerp(const string &name, bool repeat) {
+  if(!is_valid())
+    return false;
+
+  NcVar var = dataFile->getVar(name);
+  if(var.isNull()) {
+    // Variable not in file, so add it.
+    if (repeat) {
+      std::vector<NcDim> vec = {*recDimList[0], *recDimList[1], *recDimList[3]};
+      if(lowPrecision) {
+        var = dataFile->addVar(name, ncFloat, vec);
+      } else {
+        var = dataFile->addVar(name, ncDouble, vec);
+      }
+    } else {
+      std::vector<NcDim> vec = {*dimList[0], *dimList[2]};
+      if(lowPrecision) {
+        var = dataFile->addVar(name, ncFloat, vec);
+      } else {
+        var = dataFile->addVar(name, ncDouble, vec);
+      }
+    }
+
+    if(var.isNull()) {
+      output_error.write("ERROR: NetCDF could not add FieldPerp '%s' to file '%s'\n", name.c_str(), fname);
+      return false;
+    }
+  }
+  return true;
+}
+
 bool Ncxx4::read(int *data, const char *name, int lx, int ly, int lz) {
   TRACE("Ncxx4::read(int)");
 

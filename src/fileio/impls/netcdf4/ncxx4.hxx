@@ -91,6 +91,7 @@ class Ncxx4 : public DataFormat {
   bool addVarBoutReal(const std::string &name, bool repeat) override;
   bool addVarField2D(const std::string &name, bool repeat) override;
   bool addVarField3D(const std::string &name, bool repeat) override;
+  bool addVarFieldPerp(const std::string &name, bool repeat) override;
 
   // Read / Write simple variables up to 3D
 
