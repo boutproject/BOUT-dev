@@ -760,9 +760,11 @@ class DataFile_HDF5(DataFile):
         bout_type = self.bout_type(varname)
         dims_dict = {
             "Field3D_t": ('t', 'x', 'y', 'z'),
+            "FieldPerp_t": ('t', 'x', 'z'),
             "Field2D_t": ('t', 'x', 'y'),
             "scalar_t": ('t',),
             "Field3D": ('x', 'y', 'z'),
+            "FieldPerp": ('x', 'z'),
             "Field2D": ('x', 'y'),
             "scalar": (),
         }
