@@ -176,6 +176,13 @@ bool GridFile::get(Mesh *UNUSED(m), BoutReal &rval, const std::string &name) {
  * Successfully reads Field2D if the variable in the file is 0-D or 2-D.
  * Successfully reads Field3D if the variable in the file is 0-D, 2-D or 3-D.
  */
+bool GridFile::get(Mesh *m, Field2D &var, const std::string &name, BoutReal def) {
+  return getField(m, var, name, def);
+}
+bool GridFile::get(Mesh *m, Field3D &var, const std::string &name, BoutReal def) {
+  return getField(m, var, name, def);
+}
+
 template<typename T>
 bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def) {
   static_assert(std::is_base_of<Field2D, T>::value || std::is_base_of<Field3D, T>::value,
