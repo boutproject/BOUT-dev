@@ -921,53 +921,6 @@ bool Datafile::read() {
   return true;
 }
 
-void Datafile::writeFieldAttributes(const std::string& name, const Field& f) {
-  file->setAttribute(name, "cell_location", toString(f.getLocation()));
-  file->setAttribute(name, "direction_y", toString(f.getDirectionY()));
-  file->setAttribute(name, "direction_z", toString(f.getDirectionZ()));
-}
-
-void Datafile::writeFieldAttributes(const std::string& name, const FieldPerp& f) {
-  writeFieldAttributes(name, static_cast<const Field&>(f));
-
-  int yindex = f.getIndex();
-  if (yindex >= 0 and yindex < f.getMesh()->LocalNy) {
-    // write global y-index as attribute
-    file->setAttribute(name, "yindex_global", f.getMesh()->YGLOBAL(f.getIndex()));
-  } else {
-    // y-index is not valid, set global y-index to -1 to indicate 'not-valid'
-    file->setAttribute(name, "yindex_global", -1);
-  }
-}
-
-void Datafile::readFieldAttributes(const std::string& name, Field& f) {
-  std::string location_string;
-  if (file->getAttribute(name, "cell_location", location_string)) {
-    f.setLocation(CELL_LOCFromString(location_string));
-  }
-
-  std::string direction_y_string;
-  if (file->getAttribute(name, "direction_y", direction_y_string)) {
-    f.setDirectionY(YDirectionTypeFromString(direction_y_string));
-  }
-
-  std::string direction_z_string;
-  if (file->getAttribute(name, "direction_z", direction_z_string)) {
-    f.setDirectionZ(ZDirectionTypeFromString(direction_z_string));
-  }
-}
-
-void Datafile::readFieldAttributes(const std::string& name, FieldPerp& f) {
-  readFieldAttributes(name, static_cast<Field&>(f));
-
-  int yindex_global = 0;
-  if (file->getAttribute(name, "yindex_global", yindex_global)) {
-    f.setIndex(mesh->YLOCAL(yindex_global));
-  } else {
-    f.setIndex(mesh->YLOCAL(0));
-  }
-}
-
 bool Datafile::write() {
   if(!enabled)
     return true; // Just pretend it worked
@@ -1005,33 +958,33 @@ bool Datafile::write() {
     // output is written, since this happens after the first rhs evaluation
     // 2D fields
     for (const auto& var : f2d_arr) {
-      writeFieldAttributes(var.name, *var.ptr);
+      file->writeFieldAttributes(var.name, *var.ptr);
     }
 
     // 3D fields
     for (const auto& var : f3d_arr) {
-      writeFieldAttributes(var.name, *var.ptr);
+      file->writeFieldAttributes(var.name, *var.ptr);
     }
 
     // FieldPerps
     for (const auto& var : fperp_arr) {
-      writeFieldAttributes(var.name, *var.ptr);
+      file->writeFieldAttributes(var.name, *var.ptr);
     }
 
     // 2D vectors
     for(const auto& var : v2d_arr) {
       Vector2D v  = *(var.ptr);
-      writeFieldAttributes(var.name+"_x", v.x);
-      writeFieldAttributes(var.name+"_y", v.y);
-      writeFieldAttributes(var.name+"_z", v.z);
+      file->writeFieldAttributes(var.name+"_x", v.x);
+      file->writeFieldAttributes(var.name+"_y", v.y);
+      file->writeFieldAttributes(var.name+"_z", v.z);
     }
 
     // 3D vectors
     for(const auto& var : v3d_arr) {
       Vector3D v  = *(var.ptr);
-      writeFieldAttributes(var.name+"_x", v.x);
-      writeFieldAttributes(var.name+"_y", v.y);
-      writeFieldAttributes(var.name+"_z", v.z);
+      file->writeFieldAttributes(var.name+"_x", v.x);
+      file->writeFieldAttributes(var.name+"_y", v.y);
+      file->writeFieldAttributes(var.name+"_z", v.z);
     }
   }
 
@@ -1224,7 +1177,7 @@ void Datafile::setAttribute(const std::string &varname, const std::string &attrn
 /////////////////////////////////////////////////////////////
 
 bool Datafile::read_f2d(const std::string &name, Field2D *f, bool save_repeat) {
-  readFieldAttributes(name, *f);
+  file->readFieldAttributes(name, *f);
 
   f->allocate();
   
@@ -1254,7 +1207,7 @@ bool Datafile::read_f2d(const std::string &name, Field2D *f, bool save_repeat) {
 }
 
 bool Datafile::read_f3d(const std::string &name, Field3D *f, bool save_repeat) {
-  readFieldAttributes(name, *f);
+  file->readFieldAttributes(name, *f);
 
   f->allocate();
   
@@ -1290,7 +1243,7 @@ bool Datafile::read_f3d(const std::string &name, Field3D *f, bool save_repeat) {
 }
 
 bool Datafile::read_fperp(const std::string &name, FieldPerp *f, bool save_repeat) {
-  readFieldAttributes(name, *f);
+  file->readFieldAttributes(name, *f);
 
   int yindex = f->getIndex();
   if (yindex >= 0 and yindex < mesh->LocalNy) {
@@ -1382,23 +1335,30 @@ bool Datafile::write_f3d(const std::string &name, Field3D *f, bool save_repeat) 
 }
 
 bool Datafile::write_fperp(const std::string &name, FieldPerp *f, bool save_repeat) {
-  if (!f->isAllocated()) {
-    throw BoutException("Datafile::write_fperp: FieldPerp '%s' is not allocated!", name.c_str());
+  int yindex = f->getIndex();
+  if (yindex >= 0 and yindex < mesh->LocalNy) {
+    if (!f->isAllocated()) {
+      throw BoutException("Datafile::write_fperp: FieldPerp '%s' is not allocated!", name.c_str());
+    }
+
+    //Deal with shifting the output
+    FieldPerp f_out{emptyFrom(*f)};
+    if(shiftOutput) {
+      f_out = toFieldAligned(*f);
+    }else {
+      f_out = *f;
+    }
+
+    if(save_repeat) {
+      return file->write_rec_perp(&(f_out(0,0)), name, mesh->LocalNx, mesh->LocalNz);
+    }else {
+      return file->write_perp(&(f_out(0,0)), name, mesh->LocalNx, mesh->LocalNz);
+    }
   }
 
-  //Deal with shifting the output
-  FieldPerp f_out{emptyFrom(*f)};
-  if(shiftOutput) {
-    f_out = toFieldAligned(*f);
-  }else {
-    f_out = *f;
-  }
-
-  if(save_repeat) {
-    return file->write_rec_perp(&(f_out(0,0)), name, mesh->LocalNx, mesh->LocalNz);
-  }else {
-    return file->write_perp(&(f_out(0,0)), name, mesh->LocalNx, mesh->LocalNz);
-  }
+  // Don't need to write f as it's y-index is not on this processor. Return
+  // without doing anything.
+  return true;
 }
 
 bool Datafile::varAdded(const std::string &name) {

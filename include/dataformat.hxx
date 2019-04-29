@@ -41,6 +41,8 @@ class DataFormat;
 #include <vector>
 
 class Mesh;
+class Field;
+class FieldPerp;
 
 // Can't copy, to control access to file
 class DataFormat {
@@ -203,6 +205,16 @@ class DataFormat {
   /// -------
   /// value                  A BoutReal attribute of the variable
   virtual bool getAttribute(const std::string &varname, const std::string &attrname, BoutReal &value) = 0;
+
+  /// Write out the meta-data of a field as attributes of the variable
+  void writeFieldAttributes(const std::string& name, const Field& f);
+  /// Overload for FieldPerp so we can also write 'yindex'
+  void writeFieldAttributes(const std::string& name, const FieldPerp& f);
+
+  /// Read the attributes of a field
+  void readFieldAttributes(const std::string& name, Field& f);
+  /// Overload for FieldPerp so we can also read 'yindex'
+  void readFieldAttributes(const std::string& name, FieldPerp& f);
 
  protected:
   Mesh* mesh;

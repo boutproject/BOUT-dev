@@ -141,17 +141,6 @@ class Datafile {
   bool write_f3d(const std::string &name, Field3D *f, bool save_repeat);
   bool write_fperp(const std::string &name, FieldPerp *f, bool save_repeat);
 
-  /// Write out the meta-data of a field as attributes of the variable in
-  /// 'file'.
-  void writeFieldAttributes(const std::string& name, const Field& f);
-  /// Overload for FieldPerp so we can also write 'yindex'
-  void writeFieldAttributes(const std::string& name, const FieldPerp& f);
-
-  /// Read the attributes of a field from 'file'
-  void readFieldAttributes(const std::string& name, Field& f);
-  /// Overload for FieldPerp so we can also write 'yindex'
-  void readFieldAttributes(const std::string& name, FieldPerp& f);
-
   /// Check if a variable has already been added
   bool varAdded(const std::string &name);
 
