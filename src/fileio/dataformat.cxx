@@ -29,6 +29,9 @@ bool DataFormat::openw(const std::string &name, int mype, bool append) {
 
 bool DataFormat::setLocalOrigin(int x, int y, int z, int UNUSED(offset_x),
                                 int UNUSED(offset_y), int UNUSED(offset_z)) {
+  // This function should not be called from the DataFormat in GridFromFile, which is
+  // created before the Mesh - then DataFormat::mesh would be nullptr.
+  ASSERT1(mesh != nullptr);
   return setGlobalOrigin(x + mesh->OffsetX, y + mesh->OffsetY, z + mesh->OffsetZ);
 }
 
@@ -72,9 +75,11 @@ void DataFormat::readFieldAttributes(const std::string& name, FieldPerp& f) {
   readFieldAttributes(name, static_cast<Field&>(f));
 
   int yindex_global = 0;
+  // Note: don't use DataFormat::mesh variable, because it may be null if the DataFormat
+  // is part of a GridFromFile, which is created before the Mesh.
   if (getAttribute(name, "yindex_global", yindex_global)) {
-    f.setIndex(mesh->YLOCAL(yindex_global));
+    f.setIndex(f.getMesh()->YLOCAL(yindex_global));
   } else {
-    f.setIndex(mesh->YLOCAL(0));
+    f.setIndex(f.getMesh()->YLOCAL(0));
   }
 }
