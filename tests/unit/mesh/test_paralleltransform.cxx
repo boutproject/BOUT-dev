@@ -39,3 +39,28 @@ TEST_F(ParallelTransformTest, IdentityCalcTwoParallelSlices) {
   EXPECT_TRUE(IsFieldEqual(field.ydown(0), 1.0));
   EXPECT_TRUE(IsFieldEqual(field.ydown(1), 1.0));
 }
+
+TEST_F(ParallelTransformTest, IdentityToFieldAligned) {
+
+  ParallelTransformIdentity transform{*bout::globals::mesh};
+
+  Field3D field{1.0};
+
+  Field3D result = transform.toFieldAligned(field, RGN_ALL);
+
+  EXPECT_TRUE(IsFieldEqual(result, 1.0));
+  EXPECT_TRUE(result.getDirectionY() == YDirectionType::Aligned);
+}
+
+TEST_F(ParallelTransformTest, IdentityFromFieldAligned) {
+
+  ParallelTransformIdentity transform{*bout::globals::mesh};
+
+  Field3D field{1.0};
+  field.setDirectionY(YDirectionType::Aligned);
+
+  Field3D result = transform.fromFieldAligned(field, RGN_ALL);
+
+  EXPECT_TRUE(IsFieldEqual(result, 1.0));
+  EXPECT_TRUE(result.getDirectionY() == YDirectionType::Standard);
+}
