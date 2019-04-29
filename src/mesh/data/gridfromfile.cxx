@@ -238,8 +238,6 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def) 
   }
   };
 
-  var.allocate(); // Make sure data allocated
-
   ///Ghost region widths.
   const int mxg = (m->LocalNx - (m->xend - m->xstart + 1)) / 2;
   const int myg = (m->LocalNy - (m->yend - m->ystart + 1)) / 2;
@@ -319,38 +317,42 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def) 
   // Now read data from file
   readField(m, name, ys, yd, ny_to_read, xs, xd, nx_to_read, size, var);
 
-  ///If field does not include ghost points in x-direction ->
-  ///Upper and lower X boundaries copied from nearest point
-  if (field_dimensions[0] == m->GlobalNx - 2*mxg ) {
-    for (int x=0; x<m->xstart; x++) {
-      for (int y=0; y<m->LocalNy; y++) {
-        for (int z=0; z<var.getNz(); z++) {
-          var(x, y, z) = var(m->xstart, y, z);
-        }
-      }
-    }
-    for (int x=m->xend+1;x<m->LocalNx;x++) {
-      for (int y=0; y<m->LocalNy; y++) {
-        for (int z=0; z<var.getNz(); z++) {
-          var(x, y, z) = var(m->xend, y, z);
-        }
-      }
-    }
-  }
+  if (var.isAllocated()) {
+    // FieldPerps might not be allocated if they are not read on this processor
 
-  if (not std::is_base_of<FieldPerp, T>::value) {
-    ///If field does not include ghost points in y-direction ->
-    ///Upper and lower Y boundaries copied from nearest point
-    if (grid_yguards == 0) {
-      for(int x=0; x<m->LocalNx; x++) {
-        for(int y=0; y<m->ystart; y++) {
+    ///If field does not include ghost points in x-direction ->
+    ///Upper and lower X boundaries copied from nearest point
+    if (field_dimensions[0] == m->GlobalNx - 2*mxg ) {
+      for (int x=0; x<m->xstart; x++) {
+        for (int y=0; y<m->LocalNy; y++) {
           for (int z=0; z<var.getNz(); z++) {
-            var(x, y, z) = var(x, m->ystart, z);
+            var(x, y, z) = var(m->xstart, y, z);
           }
         }
-        for(int y=m->yend+1; y<m->LocalNy; y++) {
+      }
+      for (int x=m->xend+1;x<m->LocalNx;x++) {
+        for (int y=0; y<m->LocalNy; y++) {
           for (int z=0; z<var.getNz(); z++) {
-            var(x, y, z) = var(x, m->yend, z);
+            var(x, y, z) = var(m->xend, y, z);
+          }
+        }
+      }
+    }
+
+    if (not std::is_base_of<FieldPerp, T>::value) {
+      ///If field does not include ghost points in y-direction ->
+      ///Upper and lower Y boundaries copied from nearest point
+      if (grid_yguards == 0) {
+        for(int x=0; x<m->LocalNx; x++) {
+          for(int y=0; y<m->ystart; y++) {
+            for (int z=0; z<var.getNz(); z++) {
+              var(x, y, z) = var(x, m->ystart, z);
+            }
+          }
+          for(int y=m->yend+1; y<m->LocalNy; y++) {
+            for (int z=0; z<var.getNz(); z++) {
+              var(x, y, z) = var(x, m->yend, z);
+            }
           }
         }
       }
@@ -365,6 +367,8 @@ void GridFile::readField(Mesh* UNUSED(m), const std::string& name, int ys, int y
     Field2D& var) {
   file->readFieldAttributes(name, var);
 
+  var.allocate();
+
   for(int x = xs; x < xs+nx_to_read; x++) {
     file->setGlobalOrigin(x,ys,0);
     if (!file->read(&var(x-xs+xd, yd), name, 1, ny_to_read) ) {
@@ -378,6 +382,8 @@ void GridFile::readField(Mesh* m, const std::string& name, int ys, int yd,
     int ny_to_read, int xs, int xd, int nx_to_read, const std::vector<int>& size,
     Field3D& var) {
   file->readFieldAttributes(name, var);
+
+  var.allocate();
 
   // Check whether "nz" is defined
   if (hasVar("nz")) {
@@ -420,31 +426,39 @@ void GridFile::readField(Mesh* m, const std::string& name, int UNUSED(ys), int U
 
   file->readFieldAttributes(name, var);
 
-  // Check whether "nz" is defined
-  if (hasVar("nz")) {
-    // Check the array is the right size
-    if (size[2] != m->LocalNz) {
-      throw BoutException("FieldPerp variable '%s' has incorrect size %d (expecting %d)",
-          name.c_str(), size[2], m->LocalNz);
-    }
+  int yindex = var.getIndex();
 
-    if (!readgrid_perpvar_real(name,
-          xs,// Start reading at global x-index
-          xd,// Insert data starting from x=xd
-          nx_to_read, // Length of data in X
-          var) ) {
-      throw BoutException("\tWARNING: Could not read '%s' from grid. Setting to zero\n",
-          name.c_str());
-    }
-  } else {
-    // No Z size specified in file. Assume FFT format
-    if (!readgrid_perpvar_fft(m, name,
-          xs,// Start reading at global x-index
-          xd,// Insert data starting from x=xd
-          nx_to_read, // Length of data in X
-          var) ) {
-      throw BoutException("\tWARNING: Could not read '%s' from grid. Setting to zero\n",
-          name.c_str());
+  if (yindex >= 0 and yindex <= m->LocalNy) {
+    // Only read if yindex is on this processor
+
+    var.allocate();
+
+    // Check whether "nz" is defined
+    if (hasVar("nz")) {
+      // Check the array is the right size
+      if (size[2] != m->LocalNz) {
+        throw BoutException("FieldPerp variable '%s' has incorrect size %d (expecting %d)",
+            name.c_str(), size[2], m->LocalNz);
+      }
+
+      if (!readgrid_perpvar_real(name,
+            xs,// Start reading at global x-index
+            xd,// Insert data starting from x=xd
+            nx_to_read, // Length of data in X
+            var) ) {
+        throw BoutException("\tWARNING: Could not read '%s' from grid. Setting to zero\n",
+            name.c_str());
+      }
+    } else {
+      // No Z size specified in file. Assume FFT format
+      if (!readgrid_perpvar_fft(m, name,
+            xs,// Start reading at global x-index
+            xd,// Insert data starting from x=xd
+            nx_to_read, // Length of data in X
+            var) ) {
+        throw BoutException("\tWARNING: Could not read '%s' from grid. Setting to zero\n",
+            name.c_str());
+      }
     }
   }
 }
