@@ -363,6 +363,7 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def) 
 void GridFile::readField(Mesh* UNUSED(m), const std::string& name, int ys, int yd,
     int ny_to_read, int xs, int xd, int nx_to_read, const std::vector<int>& UNUSED(size),
     Field2D& var) {
+  file->readFieldAttributes(name, var);
 
   for(int x = xs; x < xs+nx_to_read; x++) {
     file->setGlobalOrigin(x,ys,0);
@@ -376,6 +377,7 @@ void GridFile::readField(Mesh* UNUSED(m), const std::string& name, int ys, int y
 void GridFile::readField(Mesh* m, const std::string& name, int ys, int yd,
     int ny_to_read, int xs, int xd, int nx_to_read, const std::vector<int>& size,
     Field3D& var) {
+  file->readFieldAttributes(name, var);
 
   // Check whether "nz" is defined
   if (hasVar("nz")) {
@@ -416,6 +418,8 @@ void GridFile::readField(Mesh* m, const std::string& name, int UNUSED(ys), int U
     int UNUSED(ny_to_read), int xs, int xd, int nx_to_read, const std::vector<int>& size,
     FieldPerp& var) {
 
+  file->readFieldAttributes(name, var);
+
   // Check whether "nz" is defined
   if (hasVar("nz")) {
     // Check the array is the right size
@@ -443,9 +447,6 @@ void GridFile::readField(Mesh* m, const std::string& name, int UNUSED(ys), int U
           name.c_str());
     }
   }
-
-  // Should really try to read this from attributes in the file
-  var.setIndex(0);
 }
 
 bool GridFile::get(Mesh *UNUSED(m), std::vector<int> &var, const std::string &name,
