@@ -85,7 +85,8 @@ public:
    * does nothing
    */
   const Field3D toFieldAligned(const Field3D& f, const REGION UNUSED(region)) override {
-    return f;
+    Field3D result = f;
+    return result.setDirectionY(YDirectionType::Aligned);
   }
 
   /*!
@@ -93,7 +94,8 @@ public:
    * does nothing
    */
   const Field3D fromFieldAligned(const Field3D& f, const REGION UNUSED(region)) override {
-    return f;
+    Field3D result = f;
+    return result.setDirectionY(YDirectionType::Standard);
   }
 
   bool canToFromFieldAligned() override { return true; }
