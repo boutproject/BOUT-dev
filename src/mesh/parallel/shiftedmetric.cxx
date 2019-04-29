@@ -179,7 +179,7 @@ const FieldPerp ShiftedMetric::fromFieldAligned(const FieldPerp& f, const REGION
     // f is already in orthogonal coordinates
     return f;
   default:
-    throw BoutException("Unrecognized y-direction type for Field3D passed to "
+    throw BoutException("Unrecognized y-direction type for FieldPerp passed to "
                         "ShiftedMetric::toFieldAligned");
     // This should never happen, but use 'return f' to avoid compiler warnings
     return f;
