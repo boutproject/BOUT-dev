@@ -80,9 +80,6 @@ int Mesh::get(BoutReal &rval, const std::string &name) {
 int Mesh::get(Field2D &var, const std::string &name, BoutReal def) {
   TRACE("Loading 2D field: Mesh::get(Field2D, %s)", name.c_str());
 
-  // Ensure data allocated
-  var.allocate();
-
   if (source == nullptr or !source->get(this, var, name, def))
     return 1;
 
@@ -97,9 +94,6 @@ int Mesh::get(Field2D &var, const std::string &name, BoutReal def) {
 
 int Mesh::get(Field3D &var, const std::string &name, BoutReal def, bool communicate) {
   TRACE("Loading 3D field: Mesh::get(Field3D, %s)", name.c_str());
-
-  // Ensure data allocated
-  var.allocate();
 
   if (source == nullptr or !source->get(this, var, name, def))
     return 1;
@@ -118,9 +112,6 @@ int Mesh::get(Field3D &var, const std::string &name, BoutReal def, bool communic
 int Mesh::get(FieldPerp &var, const std::string &name, BoutReal def,
     bool UNUSED(communicate)) {
   TRACE("Loading FieldPerp: Mesh::get(FieldPerp, %s)", name.c_str());
-
-  // Ensure data allocated
-  var.allocate();
 
   if (source == nullptr or !source->get(this, var, name, def))
     return 1;
