@@ -783,6 +783,23 @@ This scheme was introduced for BOUT++ by Michael Løiten in the `CELMA code
 <https://github.com/CELMA-project/CELMA>`_ and the iterative algoritm is detailed in
 his thesis [Løiten2017]_.
 
+The iteration can be under-relaxed (see naulin_laplace.cxx for more details of the
+implementation). A factor 0<underrelax_factor<=1 is used, with a value of 1 corresponding
+to no under-relaxation. If the iteration starts to diverge (the error increases on any
+step) the underrelax_factor is reduced by a factor of 0.9, and the iteration is restarted
+from the initial guess. The initial value of underrelax_factor, which underrelax_factor is
+set to at the beginning of each call to ``solve`` can be set by the option
+``initial_underrelax_factor`` (default is 1.0) in the appropriate section of the input
+file (``[laplace]`` by default). Reducing the value of ``initial_underrelax_factor`` may
+speed up convergence in some cases. Some statistics from the solver are written to the
+output files to help in choosing this value. With ``<i>`` being the number of the
+LaplaceNaulin solver, counting in the order they are created in the physics model:
+- ``naulinsolver<i>_mean_underrelax_counts`` gives the mean number of times
+  ``underrelax_factor`` had to be reduced to get the iteration to converge. If this is
+  much above 0, it is probably worth reducing ``initial_underrelax_factor``.
+- ``naulinsolver<i>_mean_its`` is the mean number of iterations taken to converge.  Try to
+  minimise when adjusting ``initial_underrelax_factor``.
+
 .. [Løiten2017] Michael Løiten, "Global numerical modeling of magnetized plasma
    in a linear device", 2017, https://celma-project.github.io/.
 
