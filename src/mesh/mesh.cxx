@@ -116,11 +116,14 @@ int Mesh::get(FieldPerp &var, const std::string &name, BoutReal def,
   if (source == nullptr or !source->get(this, var, name, def))
     return 1;
 
-  // Communicate to get guard cell data
-  Mesh::communicate(var);
+  int yindex = var.getIndex();
+  if (yindex >= 0 and yindex < var.getMesh()->LocalNy) {
+    // Communicate to get guard cell data
+    Mesh::communicate(var);
 
-  // Check that the data is valid
-  checkData(var);
+    // Check that the data is valid
+    checkData(var);
+  }
 
   return 0;
 }
