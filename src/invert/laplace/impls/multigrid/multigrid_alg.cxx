@@ -73,6 +73,11 @@ MultigridAlg::~MultigridAlg() {
 
 void MultigridAlg::getSolution(BoutReal *x,BoutReal *b,int flag) {
 
+  // swap ghost cells of initial guess
+  communications(x, mglevel-1);
+  // don't think the ghost cells of the rhs are used, so don't need to be communicated
+  // /JTO 17-4-2019
+
   if(flag == 0) {
     //Solve exaclty
     if(mglevel == 1) pGMRES(x,b,mglevel-1,1);
@@ -132,14 +137,12 @@ BOUT_OMP(for)
 
     smoothings(level,sol,rhs);
   }
-  communications(sol,level);
   return;
 }
 
 void MultigridAlg::projection(int level,BoutReal *r,BoutReal *pr) 
 {
 
-  communications(r,level);
 BOUT_OMP(parallel default(shared))
   {
 BOUT_OMP(for)
@@ -166,7 +169,6 @@ BOUT_OMP(for collapse(2))
 
 void MultigridAlg::prolongation(int level,BoutReal *x,BoutReal *ix) {
 
-  communications(x,level);
 BOUT_OMP(parallel default(shared))
   {
 BOUT_OMP(for)
@@ -202,7 +204,6 @@ void MultigridAlg::smoothings(int level, BoutReal *x, BoutReal *b) {
   dim = mm*(lnx[level]+2);
   if(mgsm == 0) {
     Array<BoutReal> x0(dim);
-    communications(x,level);
 BOUT_OMP(parallel default(shared))
     for(int num =0;num < 2;num++) {
 BOUT_OMP(for)
@@ -228,7 +229,6 @@ BOUT_OMP(for collapse(2))
     }
   }
   else {
-    communications(x,level);    
     for(int i = 1;i<lnx[level]+1;i++)
       for(int k=1;k<lnz[level]+1;k++) {
         int nn = i*mm+k;
@@ -282,7 +282,6 @@ BOUT_OMP(for)
   for(int i = 0;i<ldim;i++) sol[i] = 0.0;
   int num = 0;
 
-  communications(rhs,level);
   ini_e = sqrt(vectorProd(level,rhs,rhs));
   if((pcheck == 1) && (rProcI == 0)) {
     output<<numP<<"--In GMRES ini "<<ini_e<<endl;
@@ -504,7 +503,6 @@ BOUT_OMP(for reduction(+:ini_e) collapse(2))
 
 void MultigridAlg::multiAVec(int level, BoutReal *x, BoutReal *b) {
 
-  communications(x,level);
   int mm = lnz[level]+2;
 BOUT_OMP(parallel default(shared))
   {
@@ -532,7 +530,6 @@ void MultigridAlg::residualVec(int level, BoutReal *x, BoutReal *b,
 BoutReal *r) {
 
   int mm;
-  communications(x,level);
   mm = lnz[level]+2;
 BOUT_OMP(parallel default(shared))
   {
@@ -612,34 +609,51 @@ BOUT_OMP(for collapse(2))
 }
 
 void MultigridAlg::communications(BoutReal* x, int level) {
+  // Note: currently z-direction communications and x-direction communications are done
+  // independently. They should really be done together if zNP>1 and xNP>1 (with a single
+  // MPI_Waitall after all the MPI_Isend and MPI_Irecv calls, instead of the two
+  // MPI_Waitalls there are now. As there are never any z-communications at the moment, it
+  // is not worth implementing for now.
 
   MPI_Status status[4];
   int stag, rtag;
   MAYBE_UNUSED(int ierr);
 
   if(zNP > 1) {
+    MPI_Request requests[] = {MPI_REQUEST_NULL, MPI_REQUEST_NULL, MPI_REQUEST_NULL, MPI_REQUEST_NULL};
     MPI_Datatype xvector;
-    //    output<<"Start Z-comm"<<endl;
+
+    // Create datatype to hold z-direction guard cells, which are not continuous in memory
     ierr = MPI_Type_vector(lnx[level], 1, lnz[level]+2, MPI_DOUBLE, &xvector);
     ASSERT1(ierr == MPI_SUCCESS);
     
     ierr = MPI_Type_commit(&xvector);
     ASSERT1(ierr == MPI_SUCCESS);
     
-    // Send to z+ and recieve from z-
-    stag = rProcI;
+    // Receive from z-
     rtag = zProcM;
-    // output<<"before to z+:"<<stag<<":"<<rtag<<endl;
-    ierr = MPI_Sendrecv(&x[2*(lnz[level]+2)-2],1,xvector,zProcP,stag,
-                        &x[lnz[level]+2],1,xvector,zProcM,rtag,commMG,status);
+    ierr = MPI_Irecv(&x[lnz[level]+2], 1, xvector, zProcM, rtag, commMG, &requests[2]);
     ASSERT1(ierr == MPI_SUCCESS);
-    // Send to z- and recieve from z+
-    stag = rProcI+numP;
+
+    // Receive from z+
     rtag = zProcP+numP;
-    // output<<"before to z-:"<<stag<<":"<<rtag<<endl;
-    ierr = MPI_Sendrecv(&x[lnz[level]+3],1,xvector,zProcM,stag,
-                        &x[2*(lnz[level]+2)-1],1,xvector,zProcP,rtag,
-                        commMG,status);
+    ierr = MPI_Irecv(&x[2*(lnz[level]+2)-1], 1, xvector, zProcP, rtag, commMG,
+        &requests[3]);
+    ASSERT1(ierr == MPI_SUCCESS);
+
+    // Send to z+
+    stag = rProcI;
+    ierr = MPI_Isend(&x[2*(lnz[level]+2)-2], 1, xvector, zProcP, stag, commMG,
+        &requests[0]);
+    ASSERT1(ierr == MPI_SUCCESS);
+
+    // Send to z-
+    stag = rProcI+numP;
+    ierr = MPI_Isend(&x[lnz[level]+3], 1, xvector, zProcM, stag, commMG, &requests[1]);
+    ASSERT1(ierr == MPI_SUCCESS);
+
+    // Wait for communications to complete
+    ierr = MPI_Waitall(4, requests, status);
     ASSERT1(ierr == MPI_SUCCESS);
     
     ierr = MPI_Type_free(&xvector);
@@ -651,22 +665,43 @@ void MultigridAlg::communications(BoutReal* x, int level) {
     }
   }
   if (xNP > 1) {
-    // Send to x+ and recieve from x-
-    stag = rProcI; 
-    rtag = xProcM;
-    ierr = MPI_Sendrecv(&x[lnx[level]*(lnz[level]+2)],lnz[level]+2,
-                MPI_DOUBLE,xProcP,stag,&x[0],lnz[level]+2,MPI_DOUBLE,
-                xProcM,rtag,commMG,status);
-    ASSERT1(ierr == MPI_SUCCESS);
+    // Note: periodic x-direction not handled here
+
+    MPI_Request requests[] = {MPI_REQUEST_NULL, MPI_REQUEST_NULL, MPI_REQUEST_NULL, MPI_REQUEST_NULL};
+
+    if (xProcI > 0) {
+      // Receive from x-
+      rtag = xProcM;
+      ierr = MPI_Irecv(&x[0], lnz[level]+2, MPI_DOUBLE, xProcM, rtag, commMG, &requests[2]);
+      ASSERT1(ierr == MPI_SUCCESS);
+    }
     
-    // Send to x- and recieve from x+
-    stag = rProcI+xNP;
-    rtag = xProcP+xNP;;
-    ierr = MPI_Sendrecv(&x[lnz[level]+2],lnz[level]+2,MPI_DOUBLE,xProcM,stag,
-                        &x[(lnx[level]+1)*(lnz[level]+2)],lnz[level]+2,
-                        MPI_DOUBLE,xProcP,rtag,commMG,status);
+    if (xProcI < xNP - 1) {
+      // Receive from x+
+      rtag = xProcP+xNP;;
+      ierr = MPI_Irecv(&x[(lnx[level]+1)*(lnz[level]+2)], lnz[level]+2, MPI_DOUBLE, xProcP,
+          rtag, commMG, &requests[3]);
+      ASSERT1(ierr == MPI_SUCCESS);
+
+      // Send to x+
+      stag = rProcI;
+      ierr = MPI_Isend(&x[lnx[level]*(lnz[level]+2)], lnz[level]+2, MPI_DOUBLE, xProcP,
+          stag, commMG, &requests[0]);
+      ASSERT1(ierr == MPI_SUCCESS);
+    }
+
+    if (xProcI > 0) {
+      // Send to x-
+      stag = rProcI+xNP;
+      ierr = MPI_Isend(&x[lnz[level]+2], lnz[level]+2, MPI_DOUBLE, xProcM, stag, commMG,
+          &requests[1]);
+      ASSERT1(ierr == MPI_SUCCESS);
+    }
+
+    // Wait for communications to complete
+    ierr = MPI_Waitall(4, requests, status);
     ASSERT1(ierr == MPI_SUCCESS);
-  }  else {
+  } else {
     for (int i=0;i<lnz[level]+2;i++) {
       x[i] = x[lnx[level]*(lnz[level]+2)+i];
       x[(lnx[level]+1)*(lnz[level]+2)+i] = x[(lnz[level]+2)+i];
@@ -684,7 +719,6 @@ BOUT_OMP(parallel default(shared))
 BOUT_OMP(for)
   for(int i = 0;i<ldim;i++) sol[i] = 0.0;
 
-  communications(rhs,level);
   ini_e = vectorProd(level,rhs,rhs);
   if(ini_e < 0.0)
     throw BoutException("In MG Initial Error %10.4e \n",ini_e);
