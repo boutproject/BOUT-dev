@@ -3,8 +3,8 @@
 #include "bout/constants.hxx"
 #include "bout/mesh.hxx"
 
-Position::Position(const BoundaryRegion* bndry, int iz, CELL_LOC loc, BoutReal _t)
-    : iz(iz), _t(_t), sx(loc == CELL_XLOW), sy(loc == CELL_YLOW), sz(loc == CELL_ZLOW) {
+Position::Position(const BoundaryRegion* bndry, int iz, CELL_LOC loc, BoutReal _t, Mesh * msh)
+  : iz(iz), _t(_t), msh(msh), sx(loc == CELL_XLOW), sy(loc == CELL_YLOW), sz(loc == CELL_ZLOW) {
   ix = bndry->x;
   iy = bndry->y;
   if (bndry->bx) {

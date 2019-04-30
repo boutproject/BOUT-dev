@@ -21,9 +21,9 @@ public:
   Position(int ix, int iy, int iz, CELL_LOC loc, Mesh * msh, BoutReal _t)
     : ix(ix), iy(iy), iz(iz), _t(_t), msh(msh), sx(loc == CELL_XLOW), sy(loc == CELL_YLOW),
       sz(loc == CELL_ZLOW){};
-  Position(const BoundaryRegion* bndry, int iz, CELL_LOC loc, BoutReal _t);
-  Position(const BoundaryRegion* bndry, CELL_LOC loc, BoutReal _t): Position(bndry, 0, loc, _t) {};
   Position(): ix(-1), iy(-1), iz(-1), _t(0), msh(nullptr), _x(0), _y(0), _z(0), fx(INVALID), fy(INVALID), fz(INVALID){};
+  Position(const BoundaryRegion* bndry, int iz, CELL_LOC loc, BoutReal t, Mesh * msh);
+  Position(const BoundaryRegion* bndry, CELL_LOC loc, BoutReal t, Mesh * msh): Position(bndry, 0, loc, t, msh) {};
   virtual BoutReal x();
   virtual BoutReal y();
   virtual BoutReal z();
