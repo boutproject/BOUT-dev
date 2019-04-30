@@ -20,7 +20,7 @@ public:
   Position(int ix, int iy, int iz, CELL_LOC loc, Mesh * msh, BoutReal _t)
     : ix(ix), iy(iy), iz(iz), _t(_t), msh(msh), sx(loc == CELL_XLOW), sy(loc == CELL_YLOW),
       sz(loc == CELL_ZLOW){};
-  Position(): valid(false) {};
+  Position(): ix(-1), iz(-1), iz(-1), (0), msh(nullptr), _x(0), _y(0), _z(0), fx(VALUE), fy(VALUE), fz(VALUE){};
   Position(const BoundaryRegion* bndry, int iz, CELL_LOC loc, BoutReal _t);
   Position(const BoundaryRegion* bndry, CELL_LOC loc, BoutReal _t): Position(bndry, 0, loc, _t) {};
   virtual BoutReal x();
@@ -57,7 +57,6 @@ private:
   int iz;
   BoutReal _t;
   Mesh * msh;
-  bool valid = true; // ignored
   bool sx = false;
   bool sy = false;
   bool sz = false;
