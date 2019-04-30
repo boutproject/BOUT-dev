@@ -50,6 +50,9 @@ BoutReal Position::x() {
     }
   case VALUE:
     return _x;
+  case INVALID:
+    printf("WARNING: Accessing zero value\n");
+    return 0;
   case REAL:
   default:
     throw BoutException("Not implemented");
@@ -71,6 +74,9 @@ BoutReal Position::y() {
     }
   case VALUE:
     return _y;
+  case INVALID:
+    printf("WARNING: Accessing zero value\n");
+    return 0;
   case REAL:
   default:
     throw BoutException("Not implemented");
@@ -91,6 +97,9 @@ BoutReal Position::z() {
     }
   case VALUE:
     return _z;
+  case INVALID:
+    printf("WARNING: Accessing zero value\n");
+    return 0;
   case REAL:
   default:
     throw BoutException("Not implemented");
