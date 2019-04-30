@@ -87,7 +87,8 @@ public:
    * does nothing
    */
   const Field3D toFieldAligned(const Field3D& f, const REGION UNUSED(region)) override {
-    return f;
+    Field3D result = f;
+    return result.setDirectionY(YDirectionType::Aligned);
   }
   const FieldPerp toFieldAligned(const FieldPerp& f, const REGION UNUSED(region)) override {
     return f;
@@ -98,7 +99,8 @@ public:
    * does nothing
    */
   const Field3D fromFieldAligned(const Field3D& f, const REGION UNUSED(region)) override {
-    return f;
+    Field3D result = f;
+    return result.setDirectionY(YDirectionType::Standard);
   }
   const FieldPerp fromFieldAligned(const FieldPerp& f, const REGION UNUSED(region)) override {
     return f;
