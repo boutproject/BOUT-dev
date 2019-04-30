@@ -52,16 +52,15 @@ public:
   }
 private:
   enum flags { DEFAULT, VALUE, ONE, TWOPI, REAL};
-  //CELL_LOC loc;
   int ix;
   int iy;
   int iz;
   BoutReal _t;
   Mesh * msh;
   bool valid = true; // ignored
-  bool sx;
-  bool sy;
-  bool sz;
+  bool sx = false;
+  bool sy = false;
+  bool sz = false;
   BoutReal _x = BoutNaN, _y = BoutNaN, _z = BoutNaN;
-  flags fx, fy, fz;
+  flags fx = DEFAULT, fy = DEFAULT, fz = DEFAULT;
 };
