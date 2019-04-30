@@ -36,6 +36,7 @@ Position::Position(const BoundaryRegion* bndry, int iz, CELL_LOC loc, BoutReal _
 };
 
 BoutReal Position::x() {
+  ASSERT2(valid);
   BoutReal fac = 1;
   switch (fx) {
   case TWOPI:
@@ -56,6 +57,7 @@ BoutReal Position::x() {
 }
 
 BoutReal Position::y() {
+  ASSERT2(valid);
   BoutReal fac = 2 * PI;
   switch (fy) {
   case ONE:
@@ -75,6 +77,7 @@ BoutReal Position::y() {
   }
 }
 BoutReal Position::z() {
+  ASSERT2(valid);
   BoutReal fac = 2 * PI;
   switch (fz) {
   case ONE:
