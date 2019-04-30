@@ -14,8 +14,10 @@ class Mesh;
 
 class Position{
 public:
-  Position(Ind2D i, CELL_LOC loc, Mesh * msh, BoutReal _t)
-    : Position(i.x(), i.y(), i.z(), loc, msh, _t), fz(INVALID) {};
+  Position(Ind2D i, CELL_LOC loc, Mesh* msh, BoutReal _t)
+    : Position(i.x(), i.y(), i.z(), loc, msh, _t){
+    fz = INVALID;
+  };
   Position(Ind3D i, CELL_LOC loc, Mesh * msh, BoutReal _t)
     : Position(i.x(), i.y(), i.z(), loc, msh, _t){};
   Position(int ix, int iy, int iz, CELL_LOC loc, Mesh * msh, BoutReal _t)
