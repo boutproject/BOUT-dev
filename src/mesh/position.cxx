@@ -8,28 +8,18 @@ Position::Position(const BoundaryRegion* bndry, int iz, CELL_LOC loc, BoutReal _
   ix = bndry->x;
   iy = bndry->y;
   if (bndry->bx) {
-    if (sx && bndry->bx > 0) {
-      sx = false;
-      ix -= 1;
-    } else if (sx && bndry->bx < 0) {
-      sx = false;
-    } else if (bndry->bx > 0) {
-      sx = true;
-    } else {
-      sx = true;
+    sx = true;
+    if (bndry->bx < 0) {
       ix += 1;
     }
   }
   if (bndry->by) {
-    if (sy && bndry->by > 0) {
-      sy = false;
-      iy -= 1;
-    } else if (sy && bndry->by < 0) {
-      sy = false;
-    } else if (bndry->by > 0) {
-      sy = true;
-    } else {
-      sy = true;
+    // iy is already outside
+    // Direction of the boundary [x+bx][y+by] is going outwards
+    // by < 0 -> same direction as staggering
+    // staggering info in boundary condition needs to be ignored
+    sy = true;
+    if (bndry->by < 0) {
       iy += 1;
     }
   }
