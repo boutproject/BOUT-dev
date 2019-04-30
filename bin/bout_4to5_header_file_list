@@ -31,6 +31,7 @@ mask.hxx
 msg_stack.hxx
 multiostream.hxx
 options.hxx
+options_netcdf.hxx
 optionsreader.hxx
 output.hxx
 parallel_boundary_op.hxx
