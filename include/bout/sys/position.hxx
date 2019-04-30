@@ -14,8 +14,9 @@ class Mesh;
 
 class Position{
 public:
-  template <IND_TYPE N>
-  Position(SpecificInd<N> i, CELL_LOC loc, Mesh * msh, BoutReal _t)
+  Position(Ind2D i, CELL_LOC loc, Mesh * msh, BoutReal _t)
+    : Position(i.x(), i.y(), i.z(), loc, msh, _t), fz(INVALID) {};
+  Position(Ind3D i, CELL_LOC loc, Mesh * msh, BoutReal _t)
     : Position(i.x(), i.y(), i.z(), loc, msh, _t){};
   Position(int ix, int iy, int iz, CELL_LOC loc, Mesh * msh, BoutReal _t)
     : ix(ix), iy(iy), iz(iz), _t(_t), msh(msh), sx(loc == CELL_XLOW), sy(loc == CELL_YLOW),
