@@ -23,6 +23,14 @@ public:
   std::vector<double> t_array = {-1., 0., 1., 5., 10., 3.14e8};
 };
 
+Position LegacyPosition(BoutReal x, BoutReal y, BoutReal z, BoutReal t){
+  Position pos{0,0,0, CELL_CENTRE, nullptr, t};
+  pos.setX(x);
+  pos.setY(y);
+  pos.setZ(z);
+  return pos;
+}
+
 /// For testing, a generator function of two inputs
 class BinaryGenerator : public FieldGenerator {
 public:
@@ -41,8 +49,8 @@ public:
     return std::make_shared<BinaryGenerator>(args.front(), args.back());
   }
 
-  BoutReal generate(BoutReal x, BoutReal y, BoutReal z, BoutReal t) {
-    return a->generate(x, y, z, t) + b->generate(x, y, z, t);
+  BoutReal generate(Position pos) {
+    return a->generate(pos) + b->generate(pos);
   }
   std::string str() const {
     return std::string{"add(" + a->str() + ", " + b->str() + ")"};
@@ -67,8 +75,8 @@ public:
     return std::make_shared<IncrementGenerator>(args.front());
   }
 
-  BoutReal generate(BoutReal x, BoutReal y, BoutReal z, BoutReal t) {
-    return gen->generate(x, y, z, t) + 1;
+  BoutReal generate(Position pos) {
+    return gen->generate(pos) + 1;
   }
   std::string str() const { return std::string{"increment(" + gen->str() + ")"}; }
 
@@ -92,8 +100,7 @@ public:
     return std::make_shared<NullaryGenerator>();
   }
 
-  BoutReal generate(BoutReal UNUSED(x), BoutReal UNUSED(y), BoutReal UNUSED(z),
-                    BoutReal UNUSED(t)) {
+  BoutReal generate(Position UNUSED(pos)) {
     return 4.0;
   }
 };
@@ -106,7 +113,8 @@ TEST_F(ExpressionParserTest, Parse2) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), 2);
+	  auto pos = LegacyPosition(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(pos), 2);
         }
       }
     }
@@ -121,7 +129,8 @@ TEST_F(ExpressionParserTest, ParseX) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), x);
+	  auto pos = LegacyPosition(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(pos), x);
         }
       }
     }
@@ -136,7 +145,8 @@ TEST_F(ExpressionParserTest, ParseY) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), y);
+	  auto pos = LegacyPosition(x, y, z, t);
+	  EXPECT_DOUBLE_EQ(fieldgen->generate(pos), y);
         }
       }
     }
@@ -151,7 +161,8 @@ TEST_F(ExpressionParserTest, ParseZ) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), z);
+	  auto pos = LegacyPosition(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(pos), z);
         }
       }
     }
@@ -166,7 +177,8 @@ TEST_F(ExpressionParserTest, ParseT) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), t);
+	  auto pos = LegacyPosition(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(pos), t);
         }
       }
     }
@@ -180,7 +192,8 @@ TEST_F(ExpressionParserTest, ParseXPlus2) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), x + 2);
+	  auto pos = LegacyPosition(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(pos), x + 2);
         }
       }
     }
@@ -194,7 +207,8 @@ TEST_F(ExpressionParserTest, ParseXTimesMinus4) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), x * (-4));
+	  auto pos = LegacyPosition(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(pos), x * (-4));
         }
       }
     }
@@ -208,7 +222,8 @@ TEST_F(ExpressionParserTest, ParseXDividedBy3e8) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), x / 3.e8);
+	  auto pos = LegacyPosition(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(pos), x / 3.e8);
         }
       }
     }
@@ -222,7 +237,8 @@ TEST_F(ExpressionParserTest, ParseXSquared) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), x * x);
+	  auto pos = LegacyPosition(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(pos), x * x);
         }
       }
     }
@@ -277,7 +293,8 @@ TEST_F(ExpressionParserTest, AddGenerator) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), x + 1);
+	  auto pos = LegacyPosition(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(pos), x + 1);
         }
       }
     }
@@ -297,7 +314,8 @@ TEST_F(ExpressionParserTest, AddFieldValue) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), 42.0);
+          auto pos = LegacyPosition(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(pos), 42.0);
         }
       }
     }
@@ -314,7 +332,8 @@ TEST_F(ExpressionParserTest, AddNullaryFunction) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), 4.0);
+          auto pos = LegacyPosition(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(pos), 4.0);
         }
       }
     }
@@ -335,8 +354,9 @@ TEST_F(ExpressionParserTest, CloneBinaryOp) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          EXPECT_DOUBLE_EQ(actualFieldgen->generate(x, y, z, t),
-                           clonedFieldgen->generate(x, y, z, t));
+  	  auto pos = LegacyPosition(x, y, z, t);
+          EXPECT_DOUBLE_EQ(actualFieldgen->generate(pos),
+                           clonedFieldgen->generate(pos));
         }
       }
     }
@@ -353,7 +373,9 @@ TEST_F(ExpressionParserTest, BadBinaryOp) {
   // Refers to an unrecognised binary operator "?"
   parser.addBinaryOp('&', std::make_shared<FieldBinary>(nullptr, nullptr, '?'), 5);
   auto fieldgen = parser.parseString("2 & x + 3");
-  EXPECT_THROW(fieldgen->generate(0., 0., 0., 0.), ParseException);
+  auto pos = LegacyPosition(0,0,0,0);
+
+  EXPECT_THROW(fieldgen->generate(pos), ParseException);
 }
 
 TEST_F(ExpressionParserTest, AddBinaryOp) {
@@ -367,7 +389,8 @@ TEST_F(ExpressionParserTest, AddBinaryOp) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), 2 * (x + 3));
+          auto pos = LegacyPosition(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(pos), 2 * (x + 3));
         }
       }
     }
@@ -391,7 +414,8 @@ TEST_F(ExpressionParserTest, EscapeSymbol) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), x);
+          auto pos = LegacyPosition(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(pos), x);
         }
       }
     }
@@ -408,7 +432,8 @@ TEST_F(ExpressionParserTest, GeneratorNameEscape) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), x + 1);
+          auto pos = LegacyPosition(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(pos), x + 1);
         }
       }
     }
@@ -425,7 +450,8 @@ TEST_F(ExpressionParserTest, GeneratorNameLongEscape) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), x + 1);
+          auto pos = LegacyPosition(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(pos), x + 1);
         }
       }
     }
@@ -442,7 +468,8 @@ TEST_F(ExpressionParserTest, GeneratorNamePartEscape) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), x + 1);
+          auto pos = LegacyPosition(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(pos), x + 1);
         }
       }
     }
@@ -459,7 +486,8 @@ TEST_F(ExpressionParserTest, AddBinaryGenerator) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), x + y);
+          auto pos = LegacyPosition(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(pos), x + y);
         }
       }
     }
@@ -474,7 +502,8 @@ TEST_F(ExpressionParserTest, ImplicitMultiply) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), 2*x + 3*y);
+          auto pos = LegacyPosition(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(pos), 2*x + 3*y);
         }
       }
     }
@@ -489,7 +518,8 @@ TEST_F(ExpressionParserTest, ImplicitMultiplyBracket) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), 2*(x + 3*y));
+          auto pos = LegacyPosition(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(pos), 2*(x + 3*y));
         }
       }
     }
