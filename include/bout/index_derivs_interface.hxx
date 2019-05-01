@@ -200,6 +200,7 @@ T DDY(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "D
       REGION region = RGN_NOBNDRY) {
   AUTO_TRACE();
   if (f.hasParallelSlices()) {
+    ASSERT1(f.getDirectionY() == YDirectionType::Standard);
     return standardDerivative<T, DIRECTION::YOrthogonal, DERIV::Standard>(f, outloc,
                                                                           method, region);
   } else {
@@ -215,6 +216,7 @@ T D2DY2(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = 
         REGION region = RGN_NOBNDRY) {
   AUTO_TRACE();
   if (f.hasParallelSlices()) {
+    ASSERT1(f.getDirectionY() == YDirectionType::Standard);
     return standardDerivative<T, DIRECTION::YOrthogonal, DERIV::StandardSecond>(
         f, outloc, method, region);
   } else {
@@ -230,6 +232,7 @@ T D4DY4(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = 
         REGION region = RGN_NOBNDRY) {
   AUTO_TRACE();
   if (f.hasParallelSlices()) {
+    ASSERT1(f.getDirectionY() == YDirectionType::Standard);
     return standardDerivative<T, DIRECTION::YOrthogonal, DERIV::StandardFourth>(
         f, outloc, method, region);
   } else {
@@ -304,6 +307,8 @@ T VDDY(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
   const bool fHasParallelSlices = (f.hasParallelSlices());
   const bool velHasParallelSlices = (vel.hasParallelSlices());
   if (fHasParallelSlices && velHasParallelSlices) {
+    ASSERT1(vel.getDirectionY() == YDirectionType::Standard);
+    ASSERT1(f.getDirectionY() == YDirectionType::Standard);
     return flowDerivative<T, DIRECTION::YOrthogonal, DERIV::Upwind>(vel, f, outloc,
                                                                     method, region);
   } else {
@@ -322,6 +327,8 @@ T FDDY(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
   const bool fHasParallelSlices = (f.hasParallelSlices());
   const bool velHasParallelSlices = (vel.hasParallelSlices());
   if (fHasParallelSlices && velHasParallelSlices) {
+    ASSERT1(vel.getDirectionY() == YDirectionType::Standard);
+    ASSERT1(f.getDirectionY() == YDirectionType::Standard);
     return flowDerivative<T, DIRECTION::YOrthogonal, DERIV::Flux>(vel, f, outloc, method,
                                                                   region);
   } else {

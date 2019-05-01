@@ -242,6 +242,11 @@ void ShiftedMetric::shiftZ(const BoutReal* in, const dcomplex* phs, BoutReal* ou
 }
 
 void ShiftedMetric::calcParallelSlices(Field3D& f) {
+  if (f.getDirectionY() == YDirectionType::Aligned) {
+    // Cannot calculate parallel slices for field-aligned fields, so return without
+    // setting yup or ydown
+    return;
+  }
 
   auto results = shiftZ(f, parallel_slice_phases);
 
