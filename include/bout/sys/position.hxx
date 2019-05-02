@@ -2,7 +2,7 @@
 
 #include "bout/region.hxx"
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) && __GNUC__ >= 7
 # define BOUT_FALL_THROUGH __attribute__ ((fallthrough));
 #else
 # define BOUT_FALL_THROUGH
