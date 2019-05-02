@@ -498,6 +498,11 @@ cached. If a default value has already been cached for this option,
 then the default values must be consistent: A ``BoutException`` is
 thrown if inconsistent default values are detected.
 
+The default can also be set from another option. This may be useful if two or
+more options should usually be changed together::
+
+    BoutReal value2 = options["value2"].withDefault(options["value1"]);
+
 Note that if the result should be a real number (e.g. ``BoutReal``) then ``withDefault``
 should be given a real. Otherwise it will convert the number to an integer::
 
