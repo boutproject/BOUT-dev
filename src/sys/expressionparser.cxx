@@ -78,6 +78,17 @@ public:
   }
   std::string str() const override { return std::string("t"); }
 };
+
+class FieldParam : public FieldGenerator {
+public:
+  FieldParam(const std::string name) : name(name) {}
+  double generate(Position pos) override {
+    return 0.0;
+  }
+  std::string str() const override { return std::string("{") + name + std::string("}"); }
+private:
+  std::string name; // The name of the parameter to look up
+};
 } // namespace
 
 FieldGeneratorPtr FieldBinary::clone(const list<FieldGeneratorPtr> args) {
@@ -214,6 +225,10 @@ FieldGeneratorPtr ExpressionParser::parsePrimary(LexInfo& lex) const {
   }
   case -2: {
     return parseIdentifierExpr(lex);
+  }
+  case -3: {
+    // A parameter, passed as an argument to generate
+    return std::make_shared<FieldParam>(lex.curident);
   }
   case '-': {
     // Unary minus
@@ -400,6 +415,24 @@ char ExpressionParser::LexInfo::nextToken() {
     }
   }
 
+  if (LastChar == '{') {
+    // A special quoted name, which is turned into a FieldParam
+    // and used to look up an input parameter
+    curident.clear();
+    
+    LastChar = static_cast<signed char>(ss.get()); // Skip the {
+    do {
+      curident += LastChar;
+      LastChar = static_cast<signed char>(ss.get());
+      if (LastChar == EOF) {
+        throw ParseException("Unexpected end of input; expecting }");
+      }
+    } while (LastChar != '}');
+    LastChar = static_cast<signed char>(ss.get());
+    curtok = -3;
+    return curtok;
+  }
+  
   // LastChar is unsigned, explicitly cast
   curtok = LastChar;
   LastChar = static_cast<signed char>(ss.get());
