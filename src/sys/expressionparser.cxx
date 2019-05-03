@@ -83,7 +83,7 @@ class FieldParam : public FieldGenerator {
 public:
   FieldParam(const std::string name) : name(name) {}
   double generate(Position pos) override {
-    return 0.0;
+    return pos.get(name); // Get a parameter
   }
   std::string str() const override { return std::string("{") + name + std::string("}"); }
 private:
@@ -228,7 +228,9 @@ FieldGeneratorPtr ExpressionParser::parsePrimary(LexInfo& lex) const {
   }
   case -3: {
     // A parameter, passed as an argument to generate
-    return std::make_shared<FieldParam>(lex.curident);
+    auto gen = std::make_shared<FieldParam>(lex.curident);
+    lex.nextToken();
+    return gen;
   }
   case '-': {
     // Unary minus
@@ -280,7 +282,7 @@ FieldGeneratorPtr ExpressionParser::parseBinOpRHS(LexInfo& lex, int ExprPrec,
     it = bin_op.find(lex.curtok);
 
     if (it == bin_op.end())
-      throw ParseException("Unexpected character '%c'", lex.curtok);
+      throw ParseException("Unexpected character '%c' (%d)", lex.curtok, static_cast<int>(lex.curtok));
 
     int NextPrec = it->second.second;
     if (TokPrec < NextPrec) {
@@ -418,6 +420,14 @@ char ExpressionParser::LexInfo::nextToken() {
   if (LastChar == '{') {
     // A special quoted name, which is turned into a FieldParam
     // and used to look up an input parameter
+
+    // Special case: If the last token returned was a number
+    // then insert a multiplication ("*") before the opening brace
+    if (curtok == -1) {
+      curtok = '*';
+      return curtok;
+    }
+    
     curident.clear();
     
     LastChar = static_cast<signed char>(ss.get()); // Skip the {
@@ -426,6 +436,9 @@ char ExpressionParser::LexInfo::nextToken() {
       LastChar = static_cast<signed char>(ss.get());
       if (LastChar == EOF) {
         throw ParseException("Unexpected end of input; expecting }");
+      }
+      if (LastChar == '{') {
+        throw ParseException("Unexpected opening brace {; expecting }");
       }
     } while (LastChar != '}');
     LastChar = static_cast<signed char>(ss.get());
