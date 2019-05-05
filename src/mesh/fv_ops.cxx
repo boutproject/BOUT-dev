@@ -37,7 +37,7 @@ namespace FV {
 	for(int k=0;k<mesh->LocalNz;k++) {
 	  // Calculate flux from i to i+1
 	
-	  BoutReal fout = (coord->J(i,j)*a(i,j,k)*coord->g11(i,j) + coord->J(i+1,j)*a(i+1,j,k)*coord->g11(i+1,j)) *
+	  BoutReal fout = 0.5*(a(i,j,k) + a(i+1,j,k)) * (coord->J(i,j)*coord->g11(i,j) + coord->J(i+1,j)*coord->g11(i+1,j)) *
 	    (f(i+1,j,k) - f(i,j,k))/(coord->dx(i,j) + coord->dx(i+1,j));
                      
 	  result(i,j,k) += fout / (coord->dx(i,j)*coord->J(i,j));
@@ -80,7 +80,7 @@ namespace FV {
     // Y flux
 
     for (int i = mesh->xstart; i <= mesh->xend; i++) {
-      for (int j = mesh->ystart - 1; j <= mesh->yend; j++) {
+      for (int j = mesh->ystart; j <= mesh->yend; j++) {
 
         BoutReal coef =
             0.5 * (coord->g_23(i, j) / SQ(coord->J(i, j) * coord->Bxy(i, j)) +
@@ -88,8 +88,8 @@ namespace FV {
 
         for (int k = 0; k < mesh->LocalNz; k++) {
           // Calculate flux between j and j+1
-          int kp = (k + 1) % (mesh->LocalNz);
-          int km = (k - 1 + (mesh->LocalNz)) % (mesh->LocalNz);
+          int kp = (k + 1) % mesh->LocalNz;
+          int km = (k - 1 + mesh->LocalNz) % mesh->LocalNz;
 
           // Calculate Z derivative at y boundary
           BoutReal dfdz = 0.25 * (fc(i, j, kp) - fc(i, j, km) + fup(i, j + 1, kp) -
@@ -100,9 +100,9 @@ namespace FV {
           BoutReal dfdy = 2. * (fup(i, j + 1, k) - fc(i, j, k)) /
                           (coord->dy(i, j + 1) + coord->dy(i, j));
 
-          BoutReal fout = 0.5 *
-                          (coord->J(i, j) * ac(i, j, k) * coord->g23(i, j) +
-                           coord->J(i, j + 1) * aup(i, j + 1, k) * coord->g23(i, j + 1)) *
+          BoutReal fout = 0.25 * (ac(i, j, k) + aup(i, j + 1, k)) * 
+                          (coord->J(i, j) * coord->g23(i, j) +
+                           coord->J(i, j + 1) * coord->g23(i, j + 1)) *
                           (dfdz - coef * dfdy);
 
           yzresult(i, j, k) = fout / (coord->dy(i, j) * coord->J(i, j));
@@ -115,8 +115,9 @@ namespace FV {
           dfdy = 2. * (fc(i, j, k) - fdown(i, j - 1, k)) /
                  (coord->dy(i, j) + coord->dy(i, j - 1));
 
-          fout = 0.5 * (coord->J(i, j) * ac(i, j, k) * coord->g23(i, j) +
-                        coord->J(i, j - 1) * aup(i, j + 1, k) * coord->g23(i, j + 1)) *
+          fout = 0.25 * (ac(i, j, k) + adown(i, j - 1, k)) * 
+                        (coord->J(i, j) * coord->g23(i, j) +
+                         coord->J(i, j - 1) * coord->g23(i, j - 1)) *
                  (dfdz - coef * dfdy);
 
           yzresult(i, j, k) -= fout / (coord->dy(i, j) * coord->J(i, j));
