@@ -342,6 +342,31 @@ TEST_F(OptionsTest, InconsistentDefaultValueString) {
   EXPECT_EQ(value, "ghijkl");
 }
 
+TEST_F(OptionsTest, DefaultValueOptions) {
+  Options options, default_options;
+
+  default_options.set("int_key", 99);
+
+  int value = options["int_key"].withDefault(default_options["int_key"]).as<int>();
+
+  EXPECT_EQ(value, 99);
+}
+
+TEST_F(OptionsTest, InconsistentDefaultValueOptions) {
+  Options options, default_options;
+
+  default_options.set("int_key", 99);
+
+  EXPECT_EQ(options["int_key"].withDefault(42), 42);
+
+  int value = 0;
+  EXPECT_THROW(
+      value = options["int_key"].withDefault(default_options["int_key"]).as<int>(),
+      BoutException);
+
+  EXPECT_EQ(value, 0);
+}
+
 TEST_F(OptionsTest, SingletonTest) {
   Options *root = Options::getRoot();
   Options *second = Options::getRoot();
