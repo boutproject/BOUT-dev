@@ -2210,9 +2210,9 @@ void BoutMesh::addBoundaryRegions() {
   if (xe > xend)
     xe = xend;
 
-  addRegion3D("RGN_LOWER_Y", Region<Ind3D>(xs, xe, yend, LocalNy-1, 0, LocalNz-1,
+  addRegion3D("RGN_LOWER_Y", Region<Ind3D>(xs, xe, 0, ystart-1, 0, LocalNz-1,
                                            LocalNy, LocalNz, maxregionblocksize));
-  addRegion2D("RGN_LOWER_Y", Region<Ind2D>(xs, xe, yend, LocalNy-1, 0, 0,
+  addRegion2D("RGN_LOWER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
                                            LocalNy, 1, maxregionblocksize));
   all_boundaries.emplace_back("RGN_LOWER_Y");
   
@@ -2236,9 +2236,9 @@ void BoutMesh::addBoundaryRegions() {
     xe = -2;
   }
   
-  addRegion3D("RGN_UPPER_INNER_Y", Region<Ind3D>(xs, xe, yend, LocalNy-1, 0, LocalNz-1,
+  addRegion3D("RGN_UPPER_INNER_Y", Region<Ind3D>(xs, xe, yend+1, LocalNy-1, 0, LocalNz-1,
                                                  LocalNy, LocalNz, maxregionblocksize));
-  addRegion2D("RGN_UPPER_INNER_Y", Region<Ind2D>(xs, xe, yend, LocalNy-1, 0, 0,
+  addRegion2D("RGN_UPPER_INNER_Y", Region<Ind2D>(xs, xe, yend+1, LocalNy-1, 0, 0,
                                                  LocalNy, 1, maxregionblocksize));
   all_boundaries.emplace_back("RGN_UPPER_INNER_Y");
 
@@ -2262,9 +2262,9 @@ void BoutMesh::addBoundaryRegions() {
       xe = xend;
   }
 
-  addRegion3D("RGN_UPPER_OUTER_Y", Region<Ind3D>(xs, xe, yend, LocalNy-1, 0, LocalNz-1,
+  addRegion3D("RGN_UPPER_OUTER_Y", Region<Ind3D>(xs, xe, yend+1, LocalNy-1, 0, LocalNz-1,
                                                  LocalNy, LocalNz, maxregionblocksize));
-  addRegion2D("RGN_UPPER_OUTER_Y", Region<Ind2D>(xs, xe, yend, LocalNy-1, 0, 0,
+  addRegion2D("RGN_UPPER_OUTER_Y", Region<Ind2D>(xs, xe, yend+1, LocalNy-1, 0, 0,
                                                  LocalNy, 1, maxregionblocksize));
   all_boundaries.emplace_back("RGN_UPPER_OUTER_Y");
 
@@ -2282,9 +2282,9 @@ void BoutMesh::addBoundaryRegions() {
   if (xe > xend)
     xe = xend;
 
-  addRegion3D("RGN_UPPER_Y", Region<Ind3D>(xs, xe, 0, ystart-1, 0, LocalNz-1,
+  addRegion3D("RGN_UPPER_Y", Region<Ind3D>(xs, xe, yend+1, LocalNy-1, 0, LocalNz-1,
                                            LocalNy, LocalNz, maxregionblocksize));
-  addRegion2D("RGN_UPPER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
+  addRegion2D("RGN_UPPER_Y", Region<Ind2D>(xs, xe, yend+1, LocalNy-1, 0, 0,
                                            LocalNy, 1, maxregionblocksize));
   all_boundaries.emplace_back("RGN_UPPER_Y");
   
