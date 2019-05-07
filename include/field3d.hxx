@@ -232,7 +232,7 @@ class Field3D : public Field, public FieldData {
     return *this;
   }
   Field3D& setDirectionY(YDirectionType d) {
-    Field::setDirectionY(d);
+    directions.y = d;
     return *this;
   }
 

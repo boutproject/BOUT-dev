@@ -124,6 +124,14 @@ class Field2D : public Field, public FieldData {
     Field::setLocation(location);
     return *this;
   }
+  Field2D& setDirectionY(YDirectionType d) {
+    // This method included in case it is wanted in a templated function also dealing with
+    // Field3D or FieldPerp - there is no difference between orthogonal and field-aligned
+    // coordinates for Field2D, so should always have YDirectionType::Standard.
+    ASSERT1(d == YDirectionType::Standard);
+    directions.y = d;
+    return *this;
+  }
 
   /// Check if this field has yup and ydown fields
   bool hasParallelSlices() const {

@@ -216,15 +216,7 @@ protected:
     directions = f.directions;
   }
 
-  /// Setters for *DirectionType
-  void setDirectionY(YDirectionType y_type) {
-    directions.y = y_type;
-  }
-  void setDirectionZ(ZDirectionType z_type) {
-    directions.z = z_type;
-  }
-
-private:
+  /// Labels for the type of coordinate system this field is defined over
   DirectionTypes directions{YDirectionType::Standard, ZDirectionType::Standard};
 };
 
