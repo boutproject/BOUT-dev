@@ -3,6 +3,7 @@
 #include "fft.hxx"
 #include "test_extras.hxx"
 
+#ifdef BOUT_HAS_FFTW
 // The unit tests use the global mesh
 using namespace bout::globals;
 
@@ -415,3 +416,4 @@ TEST_F(ShiftedMetricTest, CalcParallelSlices) {
   EXPECT_TRUE(IsFieldEqual(input.ynext(-1), expected_down_1, "RGN_YDOWN", FFTTolerance));
   EXPECT_TRUE(IsFieldEqual(input.ynext(-2), expected_down2, "RGN_YDOWN2", FFTTolerance));
 }
+#endif
