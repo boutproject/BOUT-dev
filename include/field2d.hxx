@@ -261,6 +261,7 @@ class Field2D : public Field, public FieldData {
   friend class Vector2D;
   
   void applyBoundary(bool init=false) override;
+  void applyBoundary(BoutReal time);
   void applyBoundary(const std::string &condition);
   void applyBoundary(const char* condition) { applyBoundary(std::string(condition)); }
   void applyBoundary(const std::string &region, const std::string &condition);

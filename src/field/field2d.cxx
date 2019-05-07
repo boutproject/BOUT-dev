@@ -200,6 +200,22 @@ void Field2D::applyBoundary(bool init) {
       bndry->apply(*this);
 }
 
+void Field2D::applyBoundary(BoutReal time) {
+  TRACE("Field2D::applyBoundary(time)");
+
+#if CHECK > 0
+  if (!boundaryIsSet) {
+    output_warn << "WARNING: Call to Field2D::applyBoundary(time), but no boundary set\n";
+  }
+#endif
+
+  checkData(*this);
+
+  for (const auto& bndry : bndry_op) {
+    bndry->apply(*this, time);
+  }
+}
+
 void Field2D::applyBoundary(const std::string &condition) {
   TRACE("Field2D::applyBoundary(condition)");
 
