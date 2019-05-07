@@ -64,3 +64,30 @@ TEST_F(ParallelTransformTest, IdentityFromFieldAligned) {
   EXPECT_TRUE(IsFieldEqual(result, 1.0));
   EXPECT_TRUE(result.getDirectionY() == YDirectionType::Standard);
 }
+
+TEST_F(ParallelTransformTest, IdentityToFieldAlignedFieldPerp) {
+
+  ParallelTransformIdentity transform{*bout::globals::mesh};
+
+  FieldPerp field{1.0};
+  field.setIndex(2);
+
+  FieldPerp result = transform.toFieldAligned(field, RGN_ALL);
+
+  EXPECT_TRUE(IsFieldEqual(result, 1.0));
+  EXPECT_TRUE(result.getDirectionY() == YDirectionType::Aligned);
+}
+
+TEST_F(ParallelTransformTest, IdentityFromFieldAlignedFieldPerp) {
+
+  ParallelTransformIdentity transform{*bout::globals::mesh};
+
+  FieldPerp field{1.0};
+  field.setIndex(2);
+  field.setDirectionY(YDirectionType::Aligned);
+
+  FieldPerp result = transform.fromFieldAligned(field, RGN_ALL);
+
+  EXPECT_TRUE(IsFieldEqual(result, 1.0));
+  EXPECT_TRUE(result.getDirectionY() == YDirectionType::Standard);
+}
