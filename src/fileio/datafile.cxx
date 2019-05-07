@@ -173,9 +173,7 @@ bool Datafile::openr(const char *format, ...) {
   
   if(!openclose) {
     // Open the file now. Otherwise defer until later
-    int MYPE;
-    MPI_Comm_rank(BoutComm::get(), &MYPE);
-    if(!file->openr(filename, MYPE))
+    if(!file->openr(filename, BoutComm::rank()))
       throw BoutException("Datafile::open: Failed to open file!");
   }
 
@@ -216,9 +214,7 @@ bool Datafile::openw(const char *format, ...) {
   
   appending = false;
   // Open the file
-  int MYPE;
-  MPI_Comm_rank(BoutComm::get(), &MYPE);
-  if(!file->openw(filename, MYPE, appending))
+  if(!file->openw(filename, BoutComm::rank(), appending))
     throw BoutException("Datafile::open: Failed to open file!");
 
   appending = true;
@@ -326,9 +322,7 @@ bool Datafile::opena(const char *format, ...) {
   
   appending = true;
   // Open the file
-  int MYPE;
-  MPI_Comm_rank(BoutComm::get(), &MYPE);
-  if(!file->openw(filename, MYPE, true))
+  if(!file->openw(filename, BoutComm::rank(), true))
     throw BoutException("Datafile::open: Failed to open file!");
 
   first_time = true; // newly opened file, so write attributes when variables are first written
@@ -456,12 +450,10 @@ void Datafile::add(int &i, const char *name, bool save_repeat) {
     // Otherwise will add variables when Datafile is opened for writing/appending
     if (openclose) {
       // Open the file
-      int MYPE;
-      MPI_Comm_rank(BoutComm::get(), &MYPE);
       // Check filename has been set
       if (strcmp(filename, "") == 0)
         throw BoutException("Datafile::add: Filename has not been set");
-      if(!file->openw(filename, MYPE, appending))
+      if(!file->openw(filename, BoutComm::rank(), appending))
         throw BoutException("Datafile::add: Failed to open file!");
       appending = true;
     }
@@ -506,11 +498,9 @@ void Datafile::add(BoutReal &r, const char *name, bool save_repeat) {
     // Otherwise will add variables when Datafile is opened for writing/appending
     if (openclose) {
       // Open the file
-      int MYPE;
-      MPI_Comm_rank(BoutComm::get(), &MYPE);
       if (strcmp(filename, "") == 0)
         throw BoutException("Datafile::add: Filename has not been set");
-      if(!file->openw(filename, MYPE, appending))
+      if(!file->openw(filename, BoutComm::rank(), appending))
         throw BoutException("Datafile::add: Failed to open file!");
       appending = true;
     }
@@ -558,11 +548,9 @@ void Datafile::add(Field2D &f, const char *name, bool save_repeat) {
     // Otherwise will add variables when Datafile is opened for writing/appending
     if (openclose) {
       // Open the file
-      int MYPE;
-      MPI_Comm_rank(BoutComm::get(), &MYPE);
       if (strcmp(filename, "") == 0)
         throw BoutException("Datafile::add: Filename has not been set");
-      if(!file->openw(filename, MYPE, appending))
+      if(!file->openw(filename, BoutComm::rank(), appending))
         throw BoutException("Datafile::add: Failed to open file!");
       appending = true;
     }
@@ -610,11 +598,9 @@ void Datafile::add(Field3D &f, const char *name, bool save_repeat) {
     // Otherwise will add variables when Datafile is opened for writing/appending
     if (openclose) {
       // Open the file
-      int MYPE;
-      MPI_Comm_rank(BoutComm::get(), &MYPE);
       if (strcmp(filename, "") == 0)
         throw BoutException("Datafile::add: Filename has not been set");
-      if(!file->openw(filename, MYPE, appending))
+      if(!file->openw(filename, BoutComm::rank(), appending))
         throw BoutException("Datafile::add: Failed to open file!");
       appending = true;
     }
@@ -662,11 +648,9 @@ void Datafile::add(FieldPerp &f, const char *name, bool save_repeat) {
     // Otherwise will add variables when Datafile is opened for writing/appending
     if (openclose) {
       // Open the file
-      int MYPE;
-      MPI_Comm_rank(BoutComm::get(), &MYPE);
       if (strcmp(filename, "") == 0)
         throw BoutException("Datafile::add: Filename has not been set");
-      if(!file->openw(filename, MYPE, appending))
+      if(!file->openw(filename, BoutComm::rank(), appending))
         throw BoutException("Datafile::add: Failed to open file!");
       appending = true;
     }
@@ -714,11 +698,9 @@ void Datafile::add(Vector2D &f, const char *name, bool save_repeat) {
     // Otherwise will add variables when Datafile is opened for writing/appending
     if (openclose) {
       // Open the file
-      int MYPE;
-      MPI_Comm_rank(BoutComm::get(), &MYPE);
       if (strcmp(filename, "") == 0)
         throw BoutException("Datafile::add: Filename has not been set");
-      if(!file->openw(filename, MYPE, appending))
+      if(!file->openw(filename, BoutComm::rank(), appending))
         throw BoutException("Datafile::add: Failed to open file!");
       appending = true;
     }
@@ -772,11 +754,9 @@ void Datafile::add(Vector3D &f, const char *name, bool save_repeat) {
     // Otherwise will add variables when Datafile is opened for writing/appending
     if (openclose) {
       // Open the file
-      int MYPE;
-      MPI_Comm_rank(BoutComm::get(), &MYPE);
       if (strcmp(filename, "") == 0)
         throw BoutException("Datafile::add: Filename has not been set");
-      if(!file->openw(filename, MYPE, appending))
+      if(!file->openw(filename, BoutComm::rank(), appending))
         throw BoutException("Datafile::add: Failed to open file!");
       appending = true;
     }
@@ -809,9 +789,7 @@ bool Datafile::read() {
 
   if(openclose) {
     // Open the file
-    int MYPE;
-    MPI_Comm_rank(BoutComm::get(), &MYPE);
-    if(!file->openr(filename, MYPE))
+    if(!file->openr(filename, BoutComm::rank()))
       throw BoutException("Datafile::read: Failed to open file!");
   }
   
@@ -932,9 +910,7 @@ bool Datafile::write() {
 
   if(openclose && (flushFrequencyCounter % flushFrequency == 0)) {
     // Open the file
-    int MYPE;
-    MPI_Comm_rank(BoutComm::get(), &MYPE);
-    if(!file->openw(filename, MYPE, appending))
+    if(!file->openw(filename, BoutComm::rank(), appending))
       throw BoutException("Datafile::write: Failed to open file!");
     appending = true;
     flushFrequencyCounter = 0;
@@ -1098,9 +1074,7 @@ void Datafile::setAttribute(const std::string &varname, const std::string &attrn
 
   if(openclose && (flushFrequencyCounter % flushFrequency == 0)) {
     // Open the file
-    int MYPE;
-    MPI_Comm_rank(BoutComm::get(), &MYPE);
-    if(!file->openw(filename, MYPE, appending))
+    if(!file->openw(filename, BoutComm::rank(), appending))
       throw BoutException("Datafile::write: Failed to open file!");
     appending = true;
     flushFrequencyCounter = 0;
@@ -1127,9 +1101,7 @@ void Datafile::setAttribute(const std::string &varname, const std::string &attrn
 
   if(openclose && (flushFrequencyCounter % flushFrequency == 0)) {
     // Open the file
-    int MYPE;
-    MPI_Comm_rank(BoutComm::get(), &MYPE);
-    if(!file->openw(filename, MYPE, appending))
+    if(!file->openw(filename, BoutComm::rank(), appending))
       throw BoutException("Datafile::write: Failed to open file!");
     appending = true;
     flushFrequencyCounter = 0;
@@ -1156,9 +1128,7 @@ void Datafile::setAttribute(const std::string &varname, const std::string &attrn
 
   if(openclose && (flushFrequencyCounter % flushFrequency == 0)) {
     // Open the file
-    int MYPE;
-    MPI_Comm_rank(BoutComm::get(), &MYPE);
-    if(!file->openw(filename, MYPE, appending))
+    if(!file->openw(filename, BoutComm::rank(), appending))
       throw BoutException("Datafile::write: Failed to open file!");
     appending = true;
     flushFrequencyCounter = 0;
