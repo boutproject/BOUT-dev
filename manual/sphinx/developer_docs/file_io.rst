@@ -256,11 +256,16 @@ FieldPerp I/O
 `FieldPerp` is the local y-index on a certain processor, but is saved in output files as a
 global y-index in the attribute `yindex_global`. The intention is that a `FieldPerp` being
 saved should be a globally well-defined object, e.g. a set of values at one divertor
-target boundary, that will only be saved from processors holding that global y-index.
-Actually, the C++ I/O code should work fine even if a `FieldPerp` object is defined with
-different y-indices on different processors, but Python routines like `collect` and
-`restart.redistribute` will fail because they find inconsistent `yindex_global` values.
+target boundary, that will only be saved from processors holding that global
+y-index. The expectation is that the other processors would all save an invalid
+`FieldPerp` variable, with a `yindex_global` that is more negative than the
+lowest y-boundary guard cell [2]_. The reason for saving the invalid `FieldPerp` variables
+is so that all variables are present in every dump file (even if they are not allocated or
+used); in particular the Python `collect` routine assumes that any variable will be found
+in the first output file, which `collect` uses to get its type and dimensions.
 
-`FieldPerp` objects should be added to the output files on every processor even if they
-are not allocated or used, otherwise `collect` cannot find the variable in the first
-output file to get its dimensions.
+.. [2] Actually, the C++ I/O code should work fine even if a `FieldPerp` object is defined
+       with different y-indices on different processors. This may be useful for diagnostic
+       or debugging purposes. However, Python routines like `collect` and
+       `restart.redistribute` will fail because they find inconsistent `yindex_global`
+       values.
