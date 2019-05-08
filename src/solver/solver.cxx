@@ -152,7 +152,7 @@ void Solver::add(Field3D &v, const std::string name) {
   ddt(v).copyBoundary(v); // Set boundary to be the same as v
 
   if (mesh->StaggerGrids && (v.getLocation() != CELL_CENTRE)) {
-    output_info.write("\tVariable %s shifted to %s\n", name.c_str(), strLocation(v.getLocation()));
+    output_info.write("\tVariable %s shifted to %s\n", name.c_str(), toString(v.getLocation()).c_str());
     ddt(v).setLocation(v.getLocation()); // Make sure both at the same location
   }
 
@@ -1023,9 +1023,12 @@ void Solver::save_derivs(BoutReal *dudata) {
   }
 
   // Make sure 3D fields are at the correct cell location
-  for(const auto& f : f3d) {
-    if(f.var->getLocation() != (f.F_var)->getLocation()) {
-      throw BoutException(_("Time derivative at wrong location - Field is at %s, derivative is at %s for field '%s'\n"),strLocation(f.var->getLocation()), strLocation(f.F_var->getLocation()),f.name.c_str());
+  for (const auto& f : f3d) {
+    if (f.var->getLocation() != (f.F_var)->getLocation()) {
+      throw BoutException(_("Time derivative at wrong location - Field is at %s, "
+                            "derivative is at %s for field '%s'\n"),
+                          toString(f.var->getLocation()).c_str(),
+                          toString(f.F_var->getLocation()).c_str(), f.name.c_str());
     }
   }
 
