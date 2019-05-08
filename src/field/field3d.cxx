@@ -807,8 +807,6 @@ Field3D filter(const Field3D &var, int N0, REGION rgn) {
   
   checkData(var);
 
-  int ncz = var.getNz();
-
   Field3D result{emptyFrom(var)};
 
   const auto region_str = toString(rgn);
@@ -819,7 +817,9 @@ Field3D filter(const Field3D &var, int N0, REGION rgn) {
 
   const Region<Ind2D> &region = var.getRegion2D(region_str);
 
+  auto localmesh = var.getMesh();
   int ncz = localmesh->zend + 1 - localmesh->zstart;
+
   BOUT_OMP(parallel)
   {
     Array<dcomplex> f(ncz / 2 + 1);

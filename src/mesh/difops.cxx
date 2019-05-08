@@ -76,8 +76,6 @@ const Field3D Grad_parP(const Field3D &apar, const Field3D &f) {
   ASSERT1(areFieldsCompatible(apar, f));
   ASSERT1(f.hasParallelSlices());
 
-  Mesh *mesh = apar.getMesh();
-
   Field3D result{emptyFrom(f)};
 
   Coordinates *metric = apar.getCoordinates();
@@ -214,7 +212,6 @@ const Field3D Div_par(const Field3D& f, const Field3D& v) {
 
   // Parallel divergence, using velocities at cell boundaries
   // Note: Not guaranteed to be flux conservative
-  Mesh* mesh = f.getMesh();
 
   Field3D result{emptyFrom(f)};
 
@@ -277,7 +274,6 @@ const Field3D Div_par_flux(const Field3D &v, const Field3D &f, const std::string
 const Field3D Grad_par_CtoL(const Field3D &var) {
   ASSERT1(var.getLocation() == CELL_CENTRE);
 
-  Mesh *mesh = var.getMesh();
   Field3D result{emptyFrom(var).setLocation(CELL_YLOW)};
 
   Coordinates *metric = var.getCoordinates(CELL_YLOW);

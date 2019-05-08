@@ -245,7 +245,7 @@ FCIMap::FCIMap(Mesh& mesh, int offset_, BoundaryRegionPar* boundary, bool zperio
       BoutReal dx = (dZ_dz * dR - dR_dz * dZ) / det;
       BoutReal dz = (dR_dx * dZ - dZ_dx * dR) / det;
       boundary->add_point(
-          x, y, z, x + dx, y + 0.5 * dir,
+          x, y, z, x + dx, y + 0.5 * offset,
           z + dz,               // Intersection point in local index space
           0.5 * coord.dy(x, y), // sqrt( SQ(dR) + SQ(dZ) ),  // Distance to intersection
           PI                    // Right-angle intersection
@@ -284,15 +284,15 @@ Field3D FCIMap::integrate(Field3D &f) const {
     if (boundary_mask(x, y, z))
       continue;
 
-    const auto ynext = i.y() + dir;
-    const auto zm = i.zm(), zp = i.zp();
-    const auto xm = i.xm(), xp = i.xp(), xmzm = xm.zm();
+    const auto ynext = i.y() + offset;
+    const auto zm = i.zm();
+    const auto xm = i.xm();
 
     BoutReal f_c = centre(x, ynext, z);
 
     if (corner_boundary_mask(x, y, z) || corner_boundary_mask(xm.ind, y, z)
         || corner_boundary_mask(x, y, zm.ind) || corner_boundary_mask(xm.ind, y, zm.ind)
-        || (x == mesh->xstart)) {
+        || (x == map_mesh.xstart)) {
       // One of the corners leaves the domain.
       // Use the cell centre value, since boundary conditions are not
       // currently applied to corners.
