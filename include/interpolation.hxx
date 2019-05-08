@@ -195,9 +195,11 @@ const T interp_to(const T& var, CELL_LOC loc, REGION region = RGN_ALL) {
 }
 
 /// Print out the cell location (for debugging)
-void printLocation(const Field3D &var);
+[[gnu::deprecated("Please use `output << toString(var.getLocation())` instead")]]
+void printLocation(const Field3D& var);
 
-const char *strLocation(CELL_LOC loc);
+[[gnu::deprecated("Please use `toString(loc)` instead")]]
+const char* strLocation(CELL_LOC loc);
 
 /// Interpolate a field onto a perturbed set of points
 const Field3D interpolate(const Field3D &f, const Field3D &delta_x,
