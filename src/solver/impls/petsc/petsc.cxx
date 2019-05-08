@@ -167,9 +167,9 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   // Set user provided RHSFunction
   // Need to duplicate the solution vector for the residual
   Vec rhs_vec;
-  ierr = VecDuplicate(u,&rhs_vec);
+  ierr = VecDuplicate(u,&rhs_vec);CHKERRQ(ierr);
   ierr = TSSetRHSFunction(ts,rhs_vec,solver_f,this);CHKERRQ(ierr);
-  ierr = VecDestroy(&rhs_vec);
+  ierr = VecDestroy(&rhs_vec);CHKERRQ(ierr);
 
   ///////////// GET OPTIONS /////////////
   // Compute band_width_default from actually added fields, to allow for multiple Mesh objects
@@ -335,7 +335,7 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
     ierr = PCShellSetName(pc,"PhysicsPreconditioner");CHKERRQ(ierr);
 
     // Need a callback for IJacobian to get shift 'alpha'
-    ierr = TSSetIJacobian(ts, Jmf, Jmf, solver_ijacobian, this);
+    ierr = TSSetIJacobian(ts, Jmf, Jmf, solver_ijacobian, this);CHKERRQ(ierr);
 
     // Use right preconditioner
     ierr = KSPSetPCSide(ksp, PC_RIGHT);CHKERRQ(ierr);
@@ -471,7 +471,7 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
     ierr = TSComputeRHSJacobian(ts,simtime,u,&J,&J,&J_structure);CHKERRQ(ierr);
 #endif
 
-    ierr = PetscSynchronizedPrintf(comm, "[%d] TSComputeRHSJacobian is done\n",rank);
+    ierr = PetscSynchronizedPrintf(comm, "[%d] TSComputeRHSJacobian is done\n",rank);CHKERRQ(ierr);
 
 #if PETSC_VERSION_GE(3,5,0)
     ierr = PetscSynchronizedFlush(comm,PETSC_STDOUT);CHKERRQ(ierr);
