@@ -616,7 +616,7 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
       ISColoringDestroy(&iscoloring);
       // Set the function to difference
       //MatFDColoringSetFunction(fdcoloring,(PetscErrorCode (*)(void))FormFunctionForDifferencing,this);
-      MatFDColoringSetFunction(fdcoloring,(PetscErrorCode (*)(void))FormFunctionForColoring,this);
+      MatFDColoringSetFunction(fdcoloring,(PetscErrorCode (*)())FormFunctionForColoring,this);
       MatFDColoringSetFromOptions(fdcoloring);
       //MatFDColoringSetUp(Jmf,iscoloring,fdcoloring);
       

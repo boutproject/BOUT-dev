@@ -294,7 +294,7 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   if(use_jacobian && (jacfunc != nullptr)) {
     // Use a user-supplied Jacobian function
     ierr = MatCreateShell(comm, local_N, local_N, neq, neq, this, &Jmf); CHKERRQ(ierr);
-    ierr = MatShellSetOperation(Jmf, MATOP_MULT, (void (*)(void)) PhysicsJacobianApply); CHKERRQ(ierr);
+    ierr = MatShellSetOperation(Jmf, MATOP_MULT, (void (*)()) PhysicsJacobianApply); CHKERRQ(ierr);
     ierr = TSSetIJacobian(ts, Jmf, Jmf, solver_ijacobian, this); CHKERRQ(ierr);
   }else {
     // Use finite difference approximation
@@ -452,7 +452,7 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   
   ierr = MatFDColoringSetFromOptions(matfdcoloring);CHKERRQ(ierr);
   ierr = ISColoringDestroy(&iscoloring);CHKERRQ(ierr);
-  ierr = MatFDColoringSetFunction(matfdcoloring,(PetscErrorCode (*)(void))solver_f,this);CHKERRQ(ierr);
+  ierr = MatFDColoringSetFunction(matfdcoloring,(PetscErrorCode (*)())solver_f,this);CHKERRQ(ierr);
   ierr = SNESSetJacobian(snes,J,J,SNESComputeJacobianDefaultColor,matfdcoloring);CHKERRQ(ierr);
 
   // Write J in binary for study - see ~petsc/src/mat/examples/tests/ex124.c
