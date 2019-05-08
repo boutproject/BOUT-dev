@@ -136,6 +136,14 @@ class Field {
     return directions.z;
   }
 
+  /// Setters for *DirectionType
+  void setDirectionY(YDirectionType y_type) {
+    directions.y = y_type;
+  }
+  void setDirectionZ(ZDirectionType z_type) {
+    directions.z = z_type;
+  }
+
   std::string name;
 
 #if CHECK > 0
@@ -214,14 +222,6 @@ protected:
     fieldCoordinates = f.fieldCoordinates;
     location = f.location;
     directions = f.directions;
-  }
-
-  /// Setters for *DirectionType
-  void setDirectionY(YDirectionType y_type) {
-    directions.y = y_type;
-  }
-  void setDirectionZ(ZDirectionType z_type) {
-    directions.z = z_type;
   }
 
 private:

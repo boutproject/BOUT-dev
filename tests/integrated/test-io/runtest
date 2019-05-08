@@ -3,6 +3,7 @@
 #
 # Run the test, compare results against the benchmark
 #
+# requires: netcdf
 
 from __future__ import print_function
 
@@ -23,9 +24,11 @@ shell_safe("make > make.log")
 
 # Read benchmark values
 
-vars = ['ivar', 'rvar', 'f2d', 'f3d', 'ivar_evol', 'rvar_evol', 'v2d_evol_x', 'v2d_evol_y', 'v2d_evol_z']
+vars = ['ivar', 'rvar', 'f2d', 'f3d', 'fperp', 'fperp2', 'ivar_evol', 'rvar_evol', 'v2d_evol_x',
+        'v2d_evol_y', 'v2d_evol_z', 'fperp2_evol']
 
-field_vars = ['f2d', 'f3d', 'v2d_evol_x', 'v2d_evol_y', 'v2d_evol_z'] # Field quantities, not scalars
+field_vars = ['f2d', 'f3d', 'fperp', 'fperp2', 'v2d_evol_x', 'v2d_evol_y', 'v2d_evol_z',
+        'fperp2_evol'] # Field quantities, not scalars
 
 tol = 1e-10
 

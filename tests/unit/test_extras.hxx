@@ -278,6 +278,8 @@ public:
   int XGLOBAL(int UNUSED(xloc)) const { return 0; }
   int YGLOBAL(int UNUSED(yloc)) const { return 0; }
   int ZGLOBAL(int UNUSED(zloc)) const { return 0; }
+  int XLOCAL(int UNUSED(xglo)) const { return 0; }
+  int YLOCAL(int UNUSED(yglo)) const { return 0; }
 
   void initDerivs(Options * opt){
     StaggerGrids=true;

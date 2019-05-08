@@ -179,6 +179,9 @@ class BoutMesh : public Mesh {
   int YGLOBAL(BoutReal yloc, BoutReal &yglo) const;
   int ZGLOBAL(BoutReal zloc, BoutReal &zglo) const;  
 
+  int XLOCAL(int xglo) const;
+  int YLOCAL(int yglo) const;
+
  private:
   std::string gridname;
   int nx, ny, nz; ///< Size of the grid in the input file
@@ -205,9 +208,7 @@ class BoutMesh : public Mesh {
 
   // Processor number, local <-> global translation
   int PROC_NUM(int xind, int yind); // (PE_XIND, PE_YIND) -> MYPE
-  int XLOCAL(int xglo) const;
   int YGLOBAL(int yloc, int yproc) const;
-  int YLOCAL(int yglo) const;
   int YLOCAL(int yglo, int yproc) const;
   int YPROC(int yind);
   int XPROC(int xind);

@@ -80,9 +80,6 @@ int Mesh::get(BoutReal &rval, const std::string &name) {
 int Mesh::get(Field2D &var, const std::string &name, BoutReal def) {
   TRACE("Loading 2D field: Mesh::get(Field2D, %s)", name.c_str());
 
-  // Ensure data allocated
-  var.allocate();
-
   if (source == nullptr or !source->get(this, var, name, def))
     return 1;
 
@@ -98,9 +95,6 @@ int Mesh::get(Field2D &var, const std::string &name, BoutReal def) {
 int Mesh::get(Field3D &var, const std::string &name, BoutReal def, bool communicate) {
   TRACE("Loading 3D field: Mesh::get(Field3D, %s)", name.c_str());
 
-  // Ensure data allocated
-  var.allocate();
-
   if (source == nullptr or !source->get(this, var, name, def))
     return 1;
 
@@ -111,6 +105,25 @@ int Mesh::get(Field3D &var, const std::string &name, BoutReal def, bool communic
 
   // Check that the data is valid
   checkData(var);
+
+  return 0;
+}
+
+int Mesh::get(FieldPerp &var, const std::string &name, BoutReal def,
+    bool UNUSED(communicate)) {
+  TRACE("Loading FieldPerp: Mesh::get(FieldPerp, %s)", name.c_str());
+
+  if (source == nullptr or !source->get(this, var, name, def))
+    return 1;
+
+  int yindex = var.getIndex();
+  if (yindex >= 0 and yindex < var.getMesh()->LocalNy) {
+    // Communicate to get guard cell data
+    Mesh::communicate(var);
+
+    // Check that the data is valid
+    checkData(var);
+  }
 
   return 0;
 }

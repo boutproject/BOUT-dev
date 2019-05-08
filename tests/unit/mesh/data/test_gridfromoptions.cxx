@@ -193,11 +193,12 @@ TEST_F(GridFromOptionsTest, GetField3DNoneWithDefault) {
 }
 
 TEST_F(GridFromOptionsTest, GetVectorInt) {
+  // Getting a vector<int> from GridFromOptions is not currently implemented
   std::vector<int> result{};
-  std::vector<int> expected{3, 3, 3};
+  //std::vector<int> expected{3, 3, 3};
 
-  EXPECT_TRUE(griddata->get(&mesh_from_options, result, "f", 3));
-  EXPECT_EQ(result, expected);
+  EXPECT_THROW(griddata->get(&mesh_from_options, result, "f", 3), BoutException);
+  //EXPECT_EQ(result, expected);
 }
 
 TEST_F(GridFromOptionsTest, GetVectorIntNone) {
