@@ -454,6 +454,7 @@ class Mesh {
   /// Returns the global Y index given a local index
   /// The local index must include the boundary, the global index does not.
   virtual int YGLOBAL(int yloc) const = 0;
+  virtual int ZGLOBAL(int zloc) const = 0;
 
   /// Size of the mesh on this processor including guard/boundary cells
   int LocalNx, LocalNy, LocalNz;
