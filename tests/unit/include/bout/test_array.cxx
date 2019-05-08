@@ -14,7 +14,7 @@ class ArrayTest : public ::testing::Test {
 public:
   ArrayTest() { Array<double>::useStore(true); }
   // Note: Calling cleanup() disables the store
-  ~ArrayTest() { }
+  virtual ~ArrayTest() = default;
 };
 
 TEST_F(ArrayTest, ArraySize) {
@@ -119,6 +119,37 @@ TEST_F(ArrayTest, MoveArrayConstructor) {
   EXPECT_DOUBLE_EQ(b[5], 5);
   EXPECT_FALSE(a.unique());
   EXPECT_TRUE(b.unique());
+}
+
+TEST_F(ArrayTest, Reallocate) {
+  Array<double> a{};
+
+  ASSERT_TRUE(a.empty());
+
+  // Reallocate from empty
+  a.reallocate(15);
+  std::iota(a.begin(), a.end(), 0);
+
+  ASSERT_FALSE(a.empty());
+  EXPECT_EQ(a.size(), 15);
+  EXPECT_DOUBLE_EQ(a[5], 5);
+  EXPECT_TRUE(a.unique());
+
+  // Reallocate to smaller
+  a.reallocate(7);
+  std::iota(a.begin(), a.end(), 10);
+
+  ASSERT_FALSE(a.empty());
+  EXPECT_EQ(a.size(), 7);
+  EXPECT_DOUBLE_EQ(a[5], 15);
+
+  // Reallocate to larger
+  a.reallocate(30);
+  std::iota(a.begin(), a.end(), 20);
+
+  ASSERT_FALSE(a.empty());
+  EXPECT_EQ(a.size(), 30);
+  EXPECT_DOUBLE_EQ(a[5], 25);
 }
 
 TEST_F(ArrayTest, MakeUnique) {

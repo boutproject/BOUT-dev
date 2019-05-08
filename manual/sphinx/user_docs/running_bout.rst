@@ -79,7 +79,9 @@ run, and produce a bunch of files in the ``data/`` subdirectory.
 -  ``BOUT.settings`` contains all the options used in the code, including
    options which were not set and used the default values. It's in the same
    format as BOUT.inp, so can be renamed and used to re-run simulations
-   if needed.
+   if needed. In some cases the options used have documentation, with a brief
+   explanation of how they are used. In most cases the type the option is used
+   as (e.g. ``int``, ``BoutReal`` or ``bool``) is given.
    
 -  ``BOUT.restart.*.nc`` are the restart files for the last time point.
    Currently each processor saves its own state in a separate file, but

@@ -28,7 +28,7 @@ def getmpirun(default="mpirun -np"):
   """
   MPIRUN = os.getenv("MPIRUN")
 
-  if MPIRUN is None:
+  if MPIRUN is None or MPIRUN == "":
     MPIRUN = default
     print("getmpirun: using the default " + str(default))
 
@@ -184,7 +184,7 @@ def determineNumberOfCPUs():
     raise Exception('Can not determine number of CPUs on this system')
 
 
-def launch(command, runcmd="mpirun -np", nproc=None, mthread=None,
+def launch(command, runcmd=None, nproc=None, mthread=None,
            output=None, pipe=False, verbose=False):
     """Launch parallel MPI jobs
 
@@ -195,7 +195,7 @@ def launch(command, runcmd="mpirun -np", nproc=None, mthread=None,
     command : str
         The command to run
     runcmd : str, optional
-        Command for running parallel job; defaults to "mpirun -np"
+        Command for running parallel job; defaults to what getmpirun() returns"
     nproc : int, optional
         Number of processors (default: all available processors)
     mthread : int, optional
@@ -214,6 +214,9 @@ def launch(command, runcmd="mpirun -np", nproc=None, mthread=None,
         The return code, and either command output if pipe=True else None
 
     """
+
+    if runcmd is None:
+        runcmd = getmpirun()
 
     if nproc is None:
         # Determine number of CPUs on this machine

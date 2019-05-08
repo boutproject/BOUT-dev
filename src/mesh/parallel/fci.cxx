@@ -42,80 +42,97 @@
 #include "parallel_boundary_region.hxx"
 #include <bout/constants.hxx>
 #include <bout/mesh.hxx>
-#include <bout_types.hxx> // See this for codes
+#include <bout_types.hxx>
 #include <msg_stack.hxx>
 #include <utils.hxx>
 
-/**
- * Return the sign of val
- */
-inline BoutReal sgn(BoutReal val) { return (BoutReal(0) < val) - (val < BoutReal(0)); }
+#include <string>
 
-// Calculate all the coefficients needed for the spline interpolation
-// dir MUST be either +1 or -1
-FCIMap::FCIMap(Mesh &mesh, int dir, bool zperiodic)
-  : dir(dir), boundary_mask(mesh), corner_boundary_mask(mesh), y_prime(&mesh) {
+FCIMap::FCIMap(Mesh& mesh, int offset_, BoundaryRegionPar* boundary, bool zperiodic)
+    : map_mesh(mesh), offset(offset_), boundary_mask(map_mesh),
+      corner_boundary_mask(map_mesh) {
 
-  interp = InterpolationFactory::getInstance()->create(&mesh);
-  interp->setYOffset(dir);
+  TRACE("Creating FCIMAP for direction %d", offset);
 
-  interp_corner = InterpolationFactory::getInstance()->create(&mesh);
-  interp_corner->setYOffset(dir);
-  
-  // Index arrays contain guard cells in order to get subscripts right
-  // x-index of bottom-left grid point
-  auto i_corner = Tensor<int>(mesh.LocalNx, mesh.LocalNy, mesh.LocalNz);
-  // z-index of bottom-left grid point
-  auto k_corner = Tensor<int>(mesh.LocalNx, mesh.LocalNy, mesh.LocalNz);
-
-  Field3D xt_prime(&mesh), zt_prime(&mesh);
-  Field3D R(&mesh), Z(&mesh); // Real-space coordinates of grid points
-  Field3D R_prime(&mesh),
-      Z_prime(&mesh); // Real-space coordinates of forward/backward points
-
-  mesh.get(R, "R", 0.0, false);
-  mesh.get(Z, "Z", 0.0, false);
-
-  // Load the floating point indices from the grid file
-  // Future, higher order parallel derivatives could require maps to +/-2 slices
-  if (dir == +1) {
-    mesh.get(xt_prime, "forward_xt_prime", 0.0, false);
-    mesh.get(zt_prime, "forward_zt_prime", 0.0, false);
-    mesh.get(R_prime, "forward_R", 0.0, false);
-    mesh.get(Z_prime, "forward_Z", 0.0, false);
-    boundary = new BoundaryRegionPar("FCI_forward", BNDRY_PAR_FWD, dir, &mesh);
-  } else if (dir == -1) {
-    mesh.get(xt_prime, "backward_xt_prime", 0.0, false);
-    mesh.get(zt_prime, "backward_zt_prime", 0.0, false);
-    mesh.get(R_prime, "backward_R", 0.0, false);
-    mesh.get(Z_prime, "backward_Z", 0.0, false);
-    boundary = new BoundaryRegionPar("FCI_backward", BNDRY_PAR_BKWD, dir, &mesh);
-  } else {
-    // Definitely shouldn't be called
-    throw BoutException("FCIMap called with strange direction: %d. Only +/-1 currently supported.", dir);
+  if (offset == 0) {
+    throw BoutException("FCIMap called with offset = 0; You probably didn't mean to do that");
   }
 
-  // Add the boundary region to the mesh's vector of parallel boundaries
-  mesh.addBoundaryPar(boundary);
-  
+  interp =
+      std::unique_ptr<Interpolation>(InterpolationFactory::getInstance()->create(&map_mesh));
+  interp->setYOffset(offset);
+
+  interp_corner =
+      std::unique_ptr<Interpolation>(InterpolationFactory::getInstance()->create(&map_mesh));
+  interp_corner->setYOffset(offset);
+
+  // Index arrays contain guard cells in order to get subscripts right
+  // x-index of bottom-left grid point
+  auto i_corner = Tensor<int>(map_mesh.LocalNx, map_mesh.LocalNy, map_mesh.LocalNz);
+  // z-index of bottom-left grid point
+  auto k_corner = Tensor<int>(map_mesh.LocalNx, map_mesh.LocalNy, map_mesh.LocalNz);
+
+  // Index-space coordinates of forward/backward points
+  Field3D xt_prime{&map_mesh}, zt_prime{&map_mesh};
+
+  // Real-space coordinates of grid points
+  Field3D R{&map_mesh}, Z{&map_mesh};
+
+  // Real-space coordinates of forward/backward points
+  Field3D R_prime{&map_mesh}, Z_prime{&map_mesh};
+
+  map_mesh.get(R, "R", 0.0, false);
+  map_mesh.get(Z, "Z", 0.0, false);
+
+  // Get a unique name for a field based on the sign/magnitude of the offset
+  const auto parallel_slice_field_name = [&](std::string field) -> std::string {
+    const std::string direction = (offset > 0) ? "forward" : "backward";
+    // We only have a suffix for parallel slices beyond the first
+    // This is for backwards compatibility
+    const std::string slice_suffix =
+        (std::abs(offset) > 1) ? "_" + std::to_string(std::abs(offset)) : "";
+    return direction + "_" + field + slice_suffix;
+  };
+
+  // If we can't read in any of these fields, things will silently not
+  // work, so best throw
+  if (map_mesh.get(xt_prime, parallel_slice_field_name("xt_prime"), 0.0, false) != 0) {
+    throw BoutException("Could not read %s from grid file!\n"
+                        "  Either add it to the grid file, or reduce MYG",
+                        parallel_slice_field_name("xt_prime").c_str());
+  }
+  if (map_mesh.get(zt_prime, parallel_slice_field_name("zt_prime"), 0.0, false) != 0) {
+    throw BoutException("Could not read %s from grid file!\n"
+                        "  Either add it to the grid file, or reduce MYG",
+                        parallel_slice_field_name("zt_prime").c_str());
+  }
+  if (map_mesh.get(R_prime, parallel_slice_field_name("R"), 0.0, false) != 0) {
+    throw BoutException("Could not read %s from grid file!\n"
+                        "  Either add it to the grid file, or reduce MYG",
+                        parallel_slice_field_name("R").c_str());
+  }
+  if (map_mesh.get(Z_prime, parallel_slice_field_name("Z"), 0.0, false) != 0) {
+    throw BoutException("Could not read %s from grid file!\n"
+                        "  Either add it to the grid file, or reduce MYG",
+                        parallel_slice_field_name("Z").c_str());
+  }
+
   // Cell corners
-  Field3D xt_prime_corner(&mesh), zt_prime_corner(&mesh);
-  xt_prime_corner.allocate();
-  zt_prime_corner.allocate();
+  Field3D xt_prime_corner{emptyFrom(xt_prime)};
+  Field3D zt_prime_corner{emptyFrom(xt_prime)};
 
-  BOUT_FOR(i, R.getRegion("RGN_NOBNDRY")) {
-
-    const auto x = i.x(), y = i.y(), z = i.z();
-
-    const auto xp = i.xp();
-    const auto zp = i.zp();
-    const auto xpzp = xp.zp();
-
+  BOUT_FOR(i, xt_prime_corner.getRegion("RGN_NOBNDRY")) {
     // Point interpolated from (x+1/2, z+1/2)
-    if ((xt_prime[i] < 0.0) || (xt_prime[xp] < 0.0) || (xt_prime[xpzp] < 0.0)
-        || (xt_prime[zp] < 0.0)) {
+
+    // Cache the offsets
+    auto i_xplus = i.xp();
+    auto i_zplus = i.zp();
+    auto i_xzplus = i_zplus.xp();
+
+    if ((xt_prime[i] < 0.0) || (xt_prime[i_xplus] < 0.0) || (xt_prime[i_xzplus] < 0.0) ||
+        (xt_prime[i_zplus] < 0.0)) {
       // Hit a boundary
-      corner_boundary_mask(x, y, z) = true;
+      corner_boundary_mask(i.x(), i.y(), i.z()) = true;
 
       xt_prime_corner[i] = -1.0;
       zt_prime_corner[i] = -1.0;
@@ -123,16 +140,23 @@ FCIMap::FCIMap(Mesh &mesh, int dir, bool zperiodic)
     }
 
     xt_prime_corner[i] =
-        0.25 * (xt_prime[i] + xt_prime[xp] + xt_prime[zp] + xt_prime[xpzp]);
+        0.25 * (xt_prime[i] + xt_prime[i_xplus] + xt_prime[i_zplus] + xt_prime[i_xzplus]);
 
     zt_prime_corner[i] =
-        0.25 * (zt_prime[i] + zt_prime[xp] + zt_prime[zp] + zt_prime[xpzp]);
+        0.25 * (zt_prime[i] + zt_prime[i_xplus] + zt_prime[i_zplus] + zt_prime[i_xzplus]);
   }
 
   interp_corner->setMask(corner_boundary_mask);
-  interp_corner->calcWeights(xt_prime_corner, zt_prime_corner);
-  
-  interp->calcWeights(xt_prime, zt_prime);
+
+  {
+    TRACE("FCImap: calculating corner weights");
+    interp_corner->calcWeights(xt_prime_corner, zt_prime_corner);
+  }
+
+  {
+    TRACE("FCImap: calculating weights");
+    interp->calcWeights(xt_prime, zt_prime);
+  }
   
   int ncz = mesh.LocalNz;
 
@@ -142,7 +166,7 @@ FCIMap::FCIMap(Mesh &mesh, int dir, bool zperiodic)
 
   BoutReal t_x, t_z;
 
-  Coordinates &coord = *(mesh.getCoordinates());
+  Coordinates &coord = *(map_mesh.getCoordinates());
 
   BOUT_FOR(i, R.getRegion("RGN_NOBNDRY")) {
 
@@ -241,18 +265,19 @@ FCIMap::FCIMap(Mesh &mesh, int dir, bool zperiodic)
   interp->setMask(boundary_mask);
 }
 
-const Field3D FCIMap::integrate(Field3D &f) const {
+Field3D FCIMap::integrate(Field3D &f) const {
   TRACE("FCIMap::integrate");
-  
+
+  ASSERT1(f.getDirectionY() == YDirectionType::Standard);
+  ASSERT1(&map_mesh == f.getMesh());
+
   // Cell centre values
   Field3D centre = interp->interpolate(f);
-  
+
   // Cell corner values (x+1/2, z+1/2)
   Field3D corner = interp_corner->interpolate(f);
 
-  Field3D result(f.getMesh());
-  result.allocate();
-  result.setLocation(f.getLocation());
+  Field3D result{emptyFrom(f)};
 
   BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
     const auto x = i.x(), y = i.y(), z = i.z();
@@ -290,24 +315,47 @@ const Field3D FCIMap::integrate(Field3D &f) const {
   return result;
 }
 
-void FCITransform::calcYUpDown(Field3D &f) {
-  TRACE("FCITransform::calcYUpDown");
-
-  // Ensure that yup and ydown are different fields
-  f.splitYupYdown();
-
-  // Interpolate f onto yup and ydown fields
-  f.ynext(forward_map.dir) = forward_map.interpolate(f);
-  f.ynext(backward_map.dir) = backward_map.interpolate(f);
+void FCITransform::checkInputGrid() {
+  std::string coordinates_type = "";
+  if (!mesh.get(coordinates_type, "coordinates_type")) {
+    if (coordinates_type != "fci") {
+      throw BoutException("Incorrect coordinate system type '"+coordinates_type+"' used "
+          "to generate metric components for FCITransform. Should be 'fci'.");
+    }
+  } // else: coordinate_system variable not found in grid input, indicates older input
+    //       file so must rely on the user having ensured the type is correct
 }
 
-void FCITransform::integrateYUpDown(Field3D &f) {
-  TRACE("FCITransform::integrateYUpDown");
-  
+void FCITransform::calcParallelSlices(Field3D& f) {
+  TRACE("FCITransform::calcParallelSlices");
+
+  ASSERT1(f.getDirectionY() == YDirectionType::Standard);
+  // Only have forward_map/backward_map for CELL_CENTRE, so can only deal with
+  // CELL_CENTRE inputs
+  ASSERT1(f.getLocation() == CELL_CENTRE);
+
   // Ensure that yup and ydown are different fields
-  f.splitYupYdown();
+  f.splitParallelSlices();
+
+  // Interpolate f onto yup and ydown fields
+  for (const auto& map : field_line_maps) {
+    f.ynext(map.offset) = map.interpolate(f);
+  }
+}
+
+void FCITransform::integrateParallelSlices(Field3D& f) {
+  TRACE("FCITransform::integrateParallelSlices");
+
+  ASSERT1(f.getDirectionY() == YDirectionType::Standard);
+  // Only have forward_map/backward_map for CELL_CENTRE, so can only deal with
+  // CELL_CENTRE inputs
+  ASSERT1(f.getLocation() == CELL_CENTRE);
+
+  // Ensure that yup and ydown are different fields
+  f.splitParallelSlices();
 
   // Integrate f onto yup and ydown fields
-  f.ynext(forward_map.dir) = forward_map.integrate(f);
-  f.ynext(backward_map.dir) = backward_map.integrate(f);
+  for (const auto& map : field_line_maps) {
+    f.ynext(map.offset) = map.integrate(f);
+  }
 }

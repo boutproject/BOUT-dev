@@ -22,7 +22,7 @@ FUNCTION pdiff, nr, nz, r, z, f
     ENDFOR
   ENDFOR
   
-  RETURN, {r:dfdR, z:dfdZ, phi:0.0}
+  RETURN, {r:dfdR, z:dfdZ, phi:0.0D}
 END
 
 FUNCTION pdiff_xy, nr, nz, r, z, f
@@ -37,7 +37,7 @@ FUNCTION pdiff_xy, nr, nz, r, z, f
     dfdZ[i,*] = DERIV(z, f[i,*])
   ENDFOR
   
-  RETURN, {r:dfdR, z:dfdZ, phi:0.0}
+  RETURN, {r:dfdR, z:dfdZ, phi:0.0D}
 END
 
 function curlcyl, vecR, vecV, gradVr, gradVphi, gradVz
@@ -127,7 +127,7 @@ FUNCTION rz_curvature, mesh, rixy=rixy, zixy=zixy
   FOR i=0,nr-1 DO BEGIN
     FOR j=0,nz-1 DO BEGIN
       psinorm = (mesh.psi[i,j] - mesh.simagx) / (mesh.sibdry - mesh.simagx)
-      IF psinorm GT 1. THEN BEGIN
+      IF psinorm GT 1.D THEN BEGIN
         fpol = mesh.fpol[N_ELEMENTS(mesh.fpol)-1]
       ENDIF ELSE BEGIN
         ;fpol = INTERPOL(mesh.fpol, mesh.npsigrid, psinorm, /spline)
@@ -153,7 +153,7 @@ FUNCTION rz_curvature, mesh, rixy=rixy, zixy=zixy
   Rxy = R2D
   
   ; Get grad phi
-  grad_Phi={r:0.0,z:0.0,phi:1./Rxy} ;-gradient of the toroidal angle
+  grad_Phi={r:0.0D,z:0.0D,phi:1.D/Rxy} ;-gradient of the toroidal angle
   
   ; Curl of unit b vector
   curlb_unit = CurlCyl(vecR, vecB_unit, grad_Br_unit, grad_Bphi_unit, grad_Bz_unit)

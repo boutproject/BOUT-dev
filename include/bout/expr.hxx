@@ -12,6 +12,8 @@
 #ifndef __EXPR_H__
 #define __EXPR_H__
 
+#warning expr.hxx is deprecated. Do not use!
+
 #include <field3d.hxx>
 #include <field2d.hxx>
 #include <bout/mesh.hxx>
@@ -33,7 +35,7 @@ public:
   typedef Field3D type;
   
   Field3DExpr(const Field3D &f) : data(&f(0,0,0)) {}
-  const BoutReal& operator()(int x, int y, int z) const { return data[(x*mesh->LocalNy + y)*mesh->LocalNz + z]; }
+  const BoutReal& operator()(int x, int y, int z) const { return data[(x*bout::globals::mesh->LocalNy + y)*bout::globals::mesh->LocalNz + z]; }
 private:
   const BoutReal *data;
 };
@@ -43,7 +45,7 @@ public:
   typedef Field2D type;
   
   Field2DExpr(const Field2D &f) : data(&f(0,0)) {}
-  const BoutReal& operator()(int x, int y, int z) const { return data[x*mesh->LocalNy + y]; }
+  const BoutReal& operator()(int x, int y, int z) const { return data[x*bout::globals::mesh->LocalNy + y]; }
 private:
   const BoutReal *data;
 };
@@ -186,9 +188,9 @@ template<typename Expr>
 const Field3D eval3D(Expr e) {
   Field3D result;
   result.allocate();
-  for(int i=0;i<mesh->LocalNx;i++)
-    for(int j=0;j<mesh->LocalNy;j++)
-      for(int k=0;k<mesh->LocalNz;k++)
+  for(int i=0;i<bout::globals::mesh->LocalNx;i++)
+    for(int j=0;j<bout::globals::mesh->LocalNy;j++)
+      for(int k=0;k<bout::globals::mesh->LocalNz;k++)
 	result(i,j,k) = e(i,j,k);
   return result;
 }

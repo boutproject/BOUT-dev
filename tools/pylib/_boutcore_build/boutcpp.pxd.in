@@ -1,4 +1,7 @@
 #!/bin/bash
+
+. common.sh
+
 cat <<EOF
 # distutils: language=c++
 
@@ -11,13 +14,9 @@ cdef extern from "boutexception_helper.hxx":
      cdef void raise_bout_py_error()
 
 EOF
-for ftype in "Field3D" "Field2D"
+for ftype in $fields
 do
-  if [ $ftype = "Field3D" ]; then fheader="field3d";
-  elif [ $ftype = "Field2D" ]; then fheader="field2d";
-  else
-    echo "Error, unimplemented ftype"; exit 1
-  fi
+    setvars $ftype
 cat <<EOF
 
 cdef extern from "$fheader.hxx":
@@ -46,6 +45,21 @@ cat <<EOF
     $ftype & ddt($ftype)
 EOF
 done
+
+for vec in $vecs
+do
+    setvars $vec
+
+    cat <<EOF
+cdef extern from "$fheader.hxx":
+     cppclass $vec:
+         $vec()
+         $vec(const $vec &)
+         $field x
+         $field y
+         $field z
+EOF
+done
 cat <<EOF
 
 cdef extern from "bout/mesh.hxx":
@@ -54,7 +68,6 @@ cdef extern from "bout/mesh.hxx":
         @staticmethod
         Mesh * create(Options * option)
         void load()
-        void setParallelTransform()
         void communicate(FieldGroup&)
         int getNXPE()
         int getNYPE()
@@ -107,12 +120,13 @@ cdef extern from "invert_laplace.hxx":
         void setCoefEz(Field3D)
 
 cdef extern from "difops.hxx":
-    Field3D Div_par(Field3D, benum.CELL_LOC, benum.DIFF_METHOD)
-    Field3D Grad_par(Field3D, benum.CELL_LOC, benum.DIFF_METHOD)
+    Field3D Div_par(Field3D, benum.CELL_LOC, string)
+    Field3D Grad_par(Field3D, benum.CELL_LOC, string)
+    Vector3D Grad_perp(Field3D, benum.CELL_LOC, string)
     Field3D Laplace(Field3D)
-    Field3D Vpar_Grad_par(Field3D, Field3D, benum.CELL_LOC, benum.DIFF_METHOD)
+    Field3D Vpar_Grad_par(Field3D, Field3D, benum.CELL_LOC, string)
     Field3D bracket(Field3D,Field3D, benum.BRACKET_METHOD, benum.CELL_LOC)
-    Field3D Delp2(Field3D,double)
+    Field3D Delp2(Field3D)
 
 cdef extern from "options.hxx":
     cppclass Options:
@@ -130,7 +144,7 @@ cdef extern from "optionsreader.hxx":
     cppclass OptionsReader:
         @staticmethod
         OptionsReader *getInstance()
-        void read(Options *options, const char *file);
+        void read(Options *options, const char *file, ...);
 
 
 cdef extern from "derivs.hxx":
@@ -140,12 +154,12 @@ do
     for f in DDd D2Dd2 #VDDd FDDd
     do
         DD=${f/d/$d}
-        echo "    Field3D $DD(Field3D, benum.CELL_LOC, benum.DIFF_METHOD, benum.REGION) except +raise_bout_py_error"
+        echo "    Field3D $DD(Field3D, benum.CELL_LOC, string, benum.REGION) except +raise_bout_py_error"
     done
     for f in VDDd FDDd
     do
         DD=${f/d/$d}
-        echo "    Field3D $DD(Field3D, Field3D, benum.CELL_LOC, benum.DIFF_METHOD, benum.REGION) except +raise_bout_py_error"
+        echo "    Field3D $DD(Field3D, Field3D, benum.CELL_LOC, string, benum.REGION) except +raise_bout_py_error"
     done
 done
 cat <<EOF

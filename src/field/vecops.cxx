@@ -24,6 +24,7 @@
  *
  **************************************************************************/
 
+#include <bout/mesh.hxx>
 #include <bout/scorepwrapper.hxx>
 
 #include <globals.hxx>
@@ -31,12 +32,13 @@
 #include <derivs.hxx>
 #include <msg_stack.hxx>
 #include <unused.hxx>
+#include <utils.hxx>
 
 /**************************************************************************
  * Gradient operators
  **************************************************************************/
 
-const Vector2D Grad(const Field2D &f, CELL_LOC outloc) {
+const Vector2D Grad(const Field2D& f, CELL_LOC outloc, const std::string& method) {
   TRACE("Grad( Field2D )");
   SCOREP0();
   CELL_LOC outloc_x, outloc_y, outloc_z;
@@ -50,9 +52,9 @@ const Vector2D Grad(const Field2D &f, CELL_LOC outloc) {
 
   Vector2D result(f.getMesh());
 
-  result.x = DDX(f, outloc_x);
-  result.y = DDY(f, outloc_y);
-  result.z = DDZ(f, outloc_z);
+  result.x = DDX(f, outloc_x, method);
+  result.y = DDY(f, outloc_y, method);
+  result.z = DDZ(f, outloc_z, method);
 
   if (outloc == CELL_DEFAULT) {
     result.setLocation(result.x.getLocation());
@@ -65,7 +67,7 @@ const Vector2D Grad(const Field2D &f, CELL_LOC outloc) {
   return result;
 }
 
-const Vector3D Grad(const Field3D &f, CELL_LOC outloc) {
+const Vector3D Grad(const Field3D &f, CELL_LOC outloc, const std::string& method) {
   TRACE("Grad( Field3D )");
   SCOREP0();
   CELL_LOC outloc_x, outloc_y, outloc_z;
@@ -79,9 +81,9 @@ const Vector3D Grad(const Field3D &f, CELL_LOC outloc) {
 
   Vector3D result(f.getMesh());
 
-  result.x = DDX(f, outloc_x);
-  result.y = DDY(f, outloc_y);
-  result.z = DDZ(f, outloc_z);
+  result.x = DDX(f, outloc_x, method);
+  result.y = DDY(f, outloc_y, method);
+  result.z = DDZ(f, outloc_z, method);
 
   if (outloc == CELL_DEFAULT) {
     result.setLocation(result.x.getLocation());
@@ -94,7 +96,7 @@ const Vector3D Grad(const Field3D &f, CELL_LOC outloc) {
   return result;
 }
 
-const Vector3D Grad_perp(const Field3D &f, CELL_LOC outloc) {
+const Vector3D Grad_perp(const Field3D &f, CELL_LOC outloc, const std::string& method) {
   TRACE("Grad_perp( Field3D )");
   SCOREP0();
   ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
@@ -103,9 +105,11 @@ const Vector3D Grad_perp(const Field3D &f, CELL_LOC outloc) {
 
   Vector3D result(f.getMesh());
 
-  result.x = DDX(f, outloc) - metric->g_12 * DDY(f, outloc) / SQ(metric->J * metric->Bxy);
+  result.x = DDX(f, outloc, method)
+             - metric->g_12 * DDY(f, outloc, method) / SQ(metric->J * metric->Bxy);
   result.y = 0.0;
-  result.z = DDZ(f, outloc) - metric->g_23 * DDY(f, outloc) / SQ(metric->J * metric->Bxy);
+  result.z = DDZ(f, outloc, method)
+             - metric->g_23 * DDY(f, outloc, method) / SQ(metric->J * metric->Bxy);
 
   result.setLocation(result.x.getLocation());
 
@@ -118,7 +122,7 @@ const Vector3D Grad_perp(const Field3D &f, CELL_LOC outloc) {
  * Divergence operators
  **************************************************************************/
 
-const Field2D Div(const Vector2D &v, CELL_LOC outloc) {
+const Field2D Div(const Vector2D& v, CELL_LOC outloc, const std::string& method) {
   TRACE("Div( Vector2D )");
   SCOREP0();
   if (outloc == CELL_DEFAULT) {
@@ -128,7 +132,6 @@ const Field2D Div(const Vector2D &v, CELL_LOC outloc) {
   ASSERT1(outloc != CELL_VSHIFT);
 
   Mesh *localmesh = v.x.getMesh();
-  Field2D result(localmesh);
 
   Coordinates *metric = localmesh->getCoordinates(outloc);
 
@@ -136,15 +139,15 @@ const Field2D Div(const Vector2D &v, CELL_LOC outloc) {
   Vector2D vcn = v;
   vcn.toContravariant();
   
-  result = DDX(metric->J*vcn.x, outloc);
-  result += DDY(metric->J*vcn.y, outloc);
-  result += DDZ(metric->J*vcn.z, outloc);
+  Field2D result = DDX(metric->J*vcn.x, outloc, method);
+  result += DDY(metric->J*vcn.y, outloc, method);
+  result += DDZ(metric->J*vcn.z, outloc, method);
   result /= metric->J;
 
   return result;
 }
 
-const Field3D Div(const Vector3D &v, CELL_LOC outloc) {
+const Field3D Div(const Vector3D& v, CELL_LOC outloc, const std::string& method) {
   TRACE("Div( Vector3D )");
   SCOREP0();
   if (outloc == CELL_DEFAULT) {
@@ -155,7 +158,6 @@ const Field3D Div(const Vector3D &v, CELL_LOC outloc) {
   ASSERT1(outloc != CELL_VSHIFT);
 
   Mesh *localmesh = v.x.getMesh();
-  Field3D result(localmesh);
 
   Coordinates *metric = localmesh->getCoordinates(outloc);
 
@@ -163,9 +165,9 @@ const Field3D Div(const Vector3D &v, CELL_LOC outloc) {
   Vector3D vcn = v;
   vcn.toContravariant();
 
-  result = DDX(vcn.x.getCoordinates()->J * vcn.x, outloc);
-  result += DDY(vcn.y.getCoordinates()->J * vcn.y, outloc);
-  result += DDZ(vcn.z.getCoordinates()->J * vcn.z, outloc);
+  Field3D result = DDX(vcn.x.getCoordinates()->J * vcn.x, outloc, method);
+  result += DDY(vcn.y.getCoordinates()->J * vcn.y, outloc, method);
+  result += DDZ(vcn.z.getCoordinates()->J * vcn.z, outloc, method);
   result /= metric->J;
 
   return result;
@@ -175,7 +177,8 @@ const Field3D Div(const Vector3D &v, CELL_LOC outloc) {
  * Divergence operators for flux methods
  **************************************************************************/
 
-const Field2D Div(const Vector2D &v, const Field2D &f, CELL_LOC outloc) {
+const Field2D Div(const Vector2D& v, const Field2D& f, CELL_LOC outloc,
+                  const std::string& method) {
   TRACE("Div( Vector2D, Field2D )");
   SCOREP0();
   if (outloc == CELL_DEFAULT) {
@@ -192,22 +195,16 @@ const Field2D Div(const Vector2D &v, const Field2D &f, CELL_LOC outloc) {
   Vector2D vcn = v;
   vcn.toContravariant();
 
-  Field2D result(localmesh);
-  result = FDDX(vcn.x.getCoordinates()->J * vcn.x, f, outloc);
-  result += FDDY(vcn.y.getCoordinates()->J * vcn.y, f, outloc);
-  result += FDDZ(vcn.z.getCoordinates()->J * vcn.z, f, outloc);
+  Field2D result = FDDX(vcn.x.getCoordinates()->J * vcn.x, f, outloc, method);
+  result += FDDY(vcn.y.getCoordinates()->J * vcn.y, f, outloc, method);
+  result += FDDZ(vcn.z.getCoordinates()->J * vcn.z, f, outloc, method);
   result /= metric->J;
 
   return result;
 }
 
-const Field3D Div(const Vector3D &v, const Field3D &f, const std::string &method,
-                  CELL_LOC outloc) {
-  TRACE("Div( Vector3D, Field3D)");
-  return Div(v, f, outloc, method);
-}
-
-const Field3D Div(const Vector3D &v, const Field3D &f, CELL_LOC outloc, const std::string &method) {
+const Field3D Div(const Vector3D& v, const Field3D& f, CELL_LOC outloc,
+                  const std::string& method) {
   TRACE("Div( Vector3D, Field3D )");
 
   if (outloc == CELL_DEFAULT) {
@@ -223,18 +220,12 @@ const Field3D Div(const Vector3D &v, const Field3D &f, CELL_LOC outloc, const st
   Vector3D vcn = v;
   vcn.toContravariant();
 
-  Field3D result(localmesh);
-  result = FDDX(vcn.x.getCoordinates()->J * vcn.x, f, outloc, method);
+  Field3D result = FDDX(vcn.x.getCoordinates()->J * vcn.x, f, outloc, method);
   result += FDDY(vcn.y.getCoordinates()->J * vcn.y, f, outloc, method);
   result += FDDZ(vcn.z.getCoordinates()->J * vcn.z, f, outloc, method);
   result /= metric->J;
 
   return result;
-}
-
-const Field3D Div(const Vector3D &v, const Field3D &f) {
-  TRACE("Div( Vector3D, Field3D)");
-  return Div(v, f, CELL_DEFAULT, DIFF_DEFAULT);
 }
 
 /**************************************************************************
@@ -303,57 +294,45 @@ const Vector3D Curl(const Vector3D &v) {
 const Field2D V_dot_Grad(const Vector2D &v, const Field2D &f) {
   TRACE("V_dot_Grad( Vector2D , Field2D )");
   SCOREP0();
-  Field2D result(f.getMesh());
 
   // Get contravariant components of v
   auto vcn = v;
   vcn.toContravariant();
   
-  result = VDDX(vcn.x, f) + VDDY(vcn.y, f) + VDDZ(vcn.z, f);
-
-  return result;
+  return VDDX(vcn.x, f) + VDDY(vcn.y, f) + VDDZ(vcn.z, f);
 }
 
 const Field3D V_dot_Grad(const Vector2D &v, const Field3D &f) {
   TRACE("V_dot_Grad( Vector2D , Field3D )");
   SCOREP0();
-  Field3D result(f.getMesh());
 
   // Get contravariant components of v
   auto vcn = v;
   vcn.toContravariant();
   
-  result = VDDX(vcn.x, f) + VDDY(vcn.y, f) + VDDZ(vcn.z, f);
-
-  return result;
+  return VDDX(vcn.x, f) + VDDY(vcn.y, f) + VDDZ(vcn.z, f);
 }
 
 const Field3D V_dot_Grad(const Vector3D &v, const Field2D &f) {
   TRACE("V_dot_Grad( Vector3D , Field2D )");
   SCOREP0();
-  Field3D result(f.getMesh());
 
   // Get contravariant components of v
   auto vcn = v;
   vcn.toContravariant();
   
-  result = VDDX(vcn.x, f) + VDDY(vcn.y, f) + VDDZ(vcn.z, f);
-
-  return result;
+  return VDDX(vcn.x, f) + VDDY(vcn.y, f) + VDDZ(vcn.z, f);
 }
 
 const Field3D V_dot_Grad(const Vector3D &v, const Field3D &f) {
   TRACE("V_dot_Grad( Vector3D , Field3D )");
   SCOREP0();
-  Field3D result(f.getMesh());
 
   // Get contravariant components of v
   auto vcn = v;
   vcn.toContravariant();
   
-  result = VDDX(vcn.x, f) + VDDY(vcn.y, f) + VDDZ(vcn.z, f);
-
-  return result;
+  return VDDX(vcn.x, f) + VDDY(vcn.y, f) + VDDZ(vcn.z, f);
 }
 
 // Here R is the deduced return type based on a promoting

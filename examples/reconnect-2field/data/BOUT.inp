@@ -106,7 +106,7 @@ bracket_method = 2 # Method to use for [f,g] terms
                    # 2 = Arakawa scheme
                    # 3 = Corner Transport Upwind (CTU)
 
-parallel_lc = true # Use quasi-staggered LtoC and CtoL in Y
+parallel_lc = false # Use quasi-staggered LtoC and CtoL in Y
 nonlinear = false   # Include nonlinear terms?
 
 include_jpar0 = false

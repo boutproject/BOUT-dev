@@ -7,7 +7,9 @@ error=
 
 for i in BoutReal # double float int char size_t
 do
-    grep -E "\([^\)]*const[^\(,:<]*$i[^,\):\*>]*\&"  -r --include=*xx $BOUT_TOP &&
+    # Search for "(... const $i...)", but exclude lines with "template"
+    # because sometimes "const BoutReal" is needed in template specialisations
+    grep -E "\([^\)]*const[^\(,:<]*$i[^,\):\*>]*\&"  -r --include=*xx $BOUT_TOP | grep -v template &&
         error=yes &&
         echo "const $i should be passed by value"
 done

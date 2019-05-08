@@ -31,6 +31,7 @@
  *
  */
 
+#include <bout/mesh.hxx>
 #include <globals.hxx>
 #include <invert_laplace.hxx>
 #include <bout_types.hxx>
@@ -52,7 +53,7 @@
 
 /// Laplacian inversion initialisation. Called once at the start to get settings
 Laplacian::Laplacian(Options *options, const CELL_LOC loc, Mesh *mesh_in)
-  : location(loc), localmesh(mesh_in) {
+  : location(loc), localmesh(mesh_in==nullptr ? bout::globals::mesh : mesh_in) {
 
   if (options == nullptr) {
     // Use the default options
@@ -68,10 +69,11 @@ Laplacian::Laplacian(Options *options, const CELL_LOC loc, Mesh *mesh_in)
   coords = localmesh->getCoordinates(location);
 
   // Communication option. Controls if asyncronous sends are used
-  options->get("async", async_send, true);
+  async_send = (*options)["async"].doc("Use asyncronous MPI send?").withDefault(true);
 
-  BoutReal filter; ///< Fraction of Z modes to filter out. Between 0 and 1
-  OPTION(options, filter, 0.0);
+  BoutReal filter = (*options)["filter"]
+                        .doc("Fraction of Z modes to filter out. Between 0 and 1")
+                        .withDefault(0.0);
   int ncz = localmesh->zend + 1 - localmesh->zstart;
   // convert filtering into an integer number of modes
   maxmode = ROUND((1.0 - filter) * static_cast<BoutReal>(ncz / 2));
@@ -82,17 +84,19 @@ Laplacian::Laplacian(Options *options, const CELL_LOC loc, Mesh *mesh_in)
 
   OPTION(options, low_mem, false);
 
-  OPTION(options, nonuniform,
-         coords->non_uniform); // Default is the mesh setting
+  nonuniform = (*options)["nonuniform"]
+                   .doc("Use non-uniform grid corrections? Default is the mesh setting.")
+                   .withDefault(coords->non_uniform);
 
-  OPTION(options, all_terms, true); // Include first derivative terms
+  all_terms = (*options)["all_terms"].doc("Include first derivative terms?").withDefault(true);
 
   if (options->isSet("flags")) {
     if ( options->isSet("global_flags") || options->isSet("inner_boundary_flags") || options->isSet("outer_boundary_flags") ) {
       throw BoutException("Should not use old flags as well as new global_flags/inner_boundary_flags/outer_boundary_flags");
     }
-    int flags;
-    OPTION(options, flags, 0);
+    int flags = (*options)["flags"]
+                    .doc("Flags to control inner and outer boundaries.")
+                    .withDefault(0);
     setFlags(flags);
   }
   else {
@@ -101,7 +105,9 @@ Laplacian::Laplacian(Options *options, const CELL_LOC loc, Mesh *mesh_in)
     OPTION(options, outer_boundary_flags, 0);
   }
 
-  OPTION(options, include_yguards, false);
+  include_yguards = (*options)["include_yguards"]
+                        .doc("Solve Laplacian in Y guard cells?")
+                        .withDefault(false);
 
   OPTION2(options, extra_yguards_lower, extra_yguards_upper, 0);
 }
@@ -156,8 +162,7 @@ const Field3D Laplacian::solve(const Field3D &b) {
     ye -= extra_yguards_upper;
   }
 
-  Field3D x(localmesh);
-  x.allocate();
+  Field3D x{emptyFrom(b)};
 
   int status = 0;
   try {
@@ -170,8 +175,6 @@ const Field3D Laplacian::solve(const Field3D &b) {
     status = 1;
   }
   BoutParallelThrowRhsFail(status, "Laplacian inversion took too many iterations.");
-
-  x.setLocation(b.getLocation());
 
   return x;
 }
@@ -211,8 +214,7 @@ const Field3D Laplacian::solve(const Field3D &b, const Field3D &x0) {
   if(localmesh->hasBndryUpperY() && include_yguards)
     ye = localmesh->LocalNy-1; // Contains upper boundary
 
-  Field3D x(localmesh);
-  x.allocate();
+  Field3D x{emptyFrom(b)};
 
   int status = 0;
   try {
@@ -225,8 +227,6 @@ const Field3D Laplacian::solve(const Field3D &b, const Field3D &x0) {
     status = 1;
   }
   BoutParallelThrowRhsFail(status, "Laplacian inversion took too many iterations.");
-
-  x.setLocation(b.getLocation());
 
   return x; // Return the result of the inversion
 }
@@ -260,12 +260,12 @@ void Laplacian::tridagCoefs(int jx, int jy, int jz,
 
 void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
                             dcomplex &a, dcomplex &b, dcomplex &c,
-                            const Field2D *ccoef, const Field2D *d,
-                            CELL_LOC loc) {
+                            const Field2D *c1coef, const Field2D *c2coef,
+                            const Field2D *d, CELL_LOC loc) {
   /* Function: Laplacian::tridagCoef
    * Purpose:  - Set the matrix components of A in Ax=b, solving
    *
-   *             D*Laplace_perp(x) + (1/C)Grad_perp(C)*Grad_perp(x) + Ax = B
+   *             D*Laplace_perp(x) + (1/C1)Grad_perp(C2)*Grad_perp(x) + Ax = B
    *
    *             for each fourier component.
    *             NOTE: A in the equation above is not added here.
@@ -280,32 +280,43 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
    * a         - Lower diagonal of the tridiagonal matrix. DO NOT CONFUSE WITH A
    * b         - The main diagonal
    * c         - The upper diagonal. DO NOT CONFUSE WITH C (called ccoef here)
-   * ccoef     - C in the equation above. DO NOT CONFUSE WITH c
+   * c1coef    - C1 in the equation above. DO NOT CONFUSE WITH c
+   * c2coef    - C2 in the equation above. DO NOT CONFUSE WITH c
    * d         - D in the equation above
    *
    * Output:
    * a         - Lower diagonal of the tridiagonal matrix. DO NOT CONFUSE WITH A
    * b         - The main diagonal
-   * c         - The upper diagonal. DO NOT CONFUSE WITH C (called ccoef here)
+   * c         - The upper diagonal. DO NOT CONFUSE WITH C1, C2 (called c1coef, c2coef
+   *             here)
    */
 
-  if (loc == CELL_DEFAULT) loc = location;
+  Coordinates* localcoords;
+  if (loc == CELL_DEFAULT) {
+    loc = location;
+    localcoords = coords;
+  } else {
+    localcoords = localmesh->getCoordinates(loc);
+  }
 
-  ASSERT1(ccoef == nullptr || ccoef->getLocation() == loc);
+  ASSERT1(c1coef == nullptr || c1coef->getLocation() == loc);
+  ASSERT1(c2coef == nullptr || c2coef->getLocation() == loc);
+  ASSERT1( (c1coef == nullptr and c2coef == nullptr)
+           or (c1coef != nullptr and c2coef != nullptr) );
   ASSERT1(d == nullptr || d->getLocation() == loc);
 
   BoutReal coef1, coef2, coef3, coef4, coef5;
 
-  coef1=coords->g11(jx,jy);     ///< X 2nd derivative coefficient
-  coef2=coords->g33(jx,jy);     ///< Z 2nd derivative coefficient
-  coef3=2.*coords->g13(jx,jy);  ///< X-Z mixed derivative coefficient
+  coef1=localcoords->g11(jx,jy);     ///< X 2nd derivative coefficient
+  coef2=localcoords->g33(jx,jy);     ///< Z 2nd derivative coefficient
+  coef3=2.*localcoords->g13(jx,jy);  ///< X-Z mixed derivative coefficient
 
   coef4 = 0.0;
   coef5 = 0.0;
   // If global flag all_terms are set (true by default)
   if(all_terms) {
-    coef4 = coords->G1(jx,jy); // X 1st derivative
-    coef5 = coords->G3(jx,jy); // Z 1st derivative
+    coef4 = localcoords->G1(jx,jy); // X 1st derivative
+    coef5 = localcoords->G3(jx,jy); // Z 1st derivative
   }
 
   if (d != nullptr) {
@@ -320,26 +331,26 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
   if(nonuniform) {
     // non-uniform mesh correction
     if((jx != 0) && (jx != (localmesh->LocalNx-1))) {
-      coef4 -= 0.5*((coords->dx(jx+1,jy) - coords->dx(jx-1,jy))/SQ(coords->dx(jx,jy)))*coef1;
+      coef4 -= 0.5*((localcoords->dx(jx+1,jy) - localcoords->dx(jx-1,jy))/SQ(localcoords->dx(jx,jy)))*coef1;
     }
   }
 
-  if (ccoef != nullptr) {
+  if (c1coef != nullptr) {
     // A first order derivative term
     if((jx > 0) && (jx < (localmesh->LocalNx-1)))
-      coef4 += coords->g11(jx,jy) * ((*ccoef)(jx+1,jy) - (*ccoef)(jx-1,jy)) / (2.*coords->dx(jx,jy)*((*ccoef)(jx,jy)));
+      coef4 += localcoords->g11(jx,jy) * ((*c2coef)(jx+1,jy) - (*c2coef)(jx-1,jy)) / (2.*localcoords->dx(jx,jy)*((*c1coef)(jx,jy)));
   }
 
   if(localmesh->IncIntShear) {
     // d2dz2 term
-    coef2 += coords->g11(jx,jy) * coords->IntShiftTorsion(jx,jy) * coords->IntShiftTorsion(jx,jy);
+    coef2 += localcoords->g11(jx,jy) * localcoords->IntShiftTorsion(jx,jy) * localcoords->IntShiftTorsion(jx,jy);
     // Mixed derivative
     coef3 = 0.0; // This cancels out
   }
 
-  coef1 /= SQ(coords->dx(jx,jy));
-  coef3 /= 2.*coords->dx(jx,jy);
-  coef4 /= 2.*coords->dx(jx,jy);
+  coef1 /= SQ(localcoords->dx(jx,jy));
+  coef3 /= 2.*localcoords->dx(jx,jy);
+  coef4 /= 2.*localcoords->dx(jx,jy);
 
   a = dcomplex(coef1 - coef4,-kwave*coef3);
   b = dcomplex(-2.0*coef1 - SQ(kwave)*coef2,kwave*coef5);
@@ -378,7 +389,7 @@ void Laplacian::tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
  * This function will
  *      1. Calling tridagCoef, solving
  *
- *         D*Laplace_perp(x) + (1/C)Grad_perp(C)*Grad_perp(x) + Ax = B
+ *         D*Laplace_perp(x) + (1/C1)Grad_perp(C2)*Grad_perp(x) + Ax = B
  *
  *         for each fourier component
  *      2. Set the boundary conditions by setting the first and last rows
@@ -398,7 +409,8 @@ void Laplacian::tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
  * \param[in] inner_boundary_flags  Flags used to set the inner boundary
  * \param[in] outer_boundary_flags  Flags used to set the outer boundary
  * \param[in] a         A in the equation above. DO NOT CONFUSE WITH avec
- * \param[in] ccoef     C in the equation above. DO NOT CONFUSE WITH cvec
+ * \param[in] c1coef    C1 in the equation above. DO NOT CONFUSE WITH cvec
+ * \param[in] c2coef    C2 in the equation above. DO NOT CONFUSE WITH cvec
  * \param[in] d         D in the equation above
  * \param[in] includeguards Whether or not the guard points in x should be used
  *
@@ -411,12 +423,13 @@ void Laplacian::tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
 void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
                              dcomplex *bk, int jy, int kz, BoutReal kwave,
                              int global_flags, int inner_boundary_flags, int outer_boundary_flags,
-                             const Field2D *a, const Field2D *ccoef,
+                             const Field2D *a, const Field2D *c1coef, const Field2D *c2coef,
                              const Field2D *d,
                              bool includeguards) {
 
   ASSERT1(a->getLocation() == location);
-  ASSERT1(ccoef->getLocation() == location);
+  ASSERT1(c1coef->getLocation() == location);
+  ASSERT1(c2coef->getLocation() == location);
   ASSERT1(d->getLocation() == location);
 
   int xs = 0;            // xstart set to the start of x on this processor (including ghost points)
@@ -450,7 +463,7 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
   // The boundaries will be set according to the if-statements below.
   for(int ix=0;ix<=ncx;ix++) {
     // Actually set the metric coefficients
-    tridagCoefs(xs+ix, jy, kwave, avec[ix], bvec[ix], cvec[ix], ccoef, d);
+    tridagCoefs(xs+ix, jy, kwave, avec[ix], bvec[ix], cvec[ix], c1coef, c2coef, d);
     if (a != nullptr)
       // Add A to bvec (the main diagonal in the matrix)
       bvec[ix] += (*a)(xs+ix,jy);
@@ -744,6 +757,13 @@ void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcom
 }
 
 int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, const Field2D *a, const Field2D *c, const Field2D *d) {
+
+  // Laplacian::defaultInstance is at CELL_CENTRE
+  ASSERT1(b.getLocation() == CELL_CENTRE);
+  ASSERT1(x.getLocation() == CELL_CENTRE);
+  ASSERT1(a->getLocation() == CELL_CENTRE);
+  ASSERT1(c->getLocation() == CELL_CENTRE);
+  ASSERT1(d->getLocation() == CELL_CENTRE);
 
   Laplacian *lap = Laplacian::defaultInstance();
 

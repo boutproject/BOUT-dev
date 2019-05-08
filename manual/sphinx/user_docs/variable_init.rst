@@ -109,6 +109,18 @@ To do this, set in BOUT.inp
 This will change the definition of :math:`x` to ``i / (nx - 1)``, so
 :math:`x` is then between :math:`0` and :math:`1` everywhere.
 
+By default the expressions are evaluated in a field-aligned coordinate system,
+i.e. if you are using the ``[mesh]`` option ``paralleltransform = shifted``,
+the input ``f`` will have ``f = fromFieldAligned(f)`` applied before being
+returned. To switch off this behaviour and evaluate the input expressions in
+coordinates with orthogonal x-z (i.e. toroidal :math:`\{\psi,\theta,\phi\}`
+coordinates when using ``paralleltransform = shifted``), set in BOUT.inp
+
+.. code-block:: cfg
+
+      [input]
+      transform_from_field_aligned = false
+
 The functions in :numref:`tab-initexprfunc` are also available in
 expressions.
 

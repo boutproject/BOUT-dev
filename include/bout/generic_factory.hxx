@@ -59,7 +59,13 @@ public:
     if (index != std::end(type_map)) {
       return index->second(std::forward<Args>(args) ...);
     }
-    throw BoutException("Could not find '%s'", name.c_str());
+    // List available options in error
+    std::string available;
+    auto available_list = listAvailable();
+    for (auto i : available_list) {
+      available += i + "\n";
+    }
+    throw BoutException("Available:\n%s\nCould not find '%s'", available.c_str(), name.c_str());
   }
 
   /// List available types that can be created

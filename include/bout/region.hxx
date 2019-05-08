@@ -701,7 +701,7 @@ public:
     const BoutReal smallSizeFrac = 0.5;
     result.numSmallBlocks =
       std::count_if(std::begin(blockSizes), std::end(blockSizes),
-		    [&blockSizes, &result, smallSizeFrac](int theSize) {
+		    [&result, smallSizeFrac](int theSize) {
 		      return theSize < smallSizeFrac * result.maxBlockSize;
 		    });
 

@@ -28,6 +28,7 @@
 #include <globals.hxx>
 #include <options.hxx>
 #include <fft.hxx>
+#include <unused.hxx>
 
 #ifdef BOUT_HAS_FFTW
 #include <bout/constants.hxx>
@@ -43,19 +44,29 @@
 #include <boutexception.hxx>
 #endif
 
-bool fft_options = false;
-bool fft_measure;
+namespace bout {
+namespace fft {
 
-void fft_init()
-{
-  if(fft_options)
+/// Have we set fft_measure?
+bool fft_initialised{false};
+/// Should FFTW find an optimised plan by measuring various plans?
+bool fft_measure{false};
+
+void fft_init(Options* options) {
+  if (fft_initialised) {
     return;
-  {
-    Options *opt = Options::getRoot();
-    opt = opt->getSection("fft");
-    opt->get("fft_measure", fft_measure, false);
-    fft_options = true;
   }
+  if (options == nullptr) {
+    options = Options::getRoot()->getSection("fft");
+  }
+  fft_init((*options)["fft_measure"]
+               .doc("Perform speed measurements to optimise settings?")
+               .withDefault(false));
+}
+
+void fft_init(bool fft_measure) {
+  bout::fft::fft_measure = fft_measure;
+  fft_initialised = true;
 }
 
 /***********************************************************
@@ -64,8 +75,10 @@ void fft_init()
 
 #ifndef _OPENMP
 // Serial code
-void rfft(const BoutReal *in, int length, dcomplex *out) {
-#ifdef BOUT_HAS_FFTW
+void rfft(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(dcomplex *out)) {
+#ifndef BOUT_HAS_FFTW
+  throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
+#else
   // static variables initialized once
   static double *fin;
   static fftw_complex *fout;
@@ -94,8 +107,9 @@ void rfft(const BoutReal *in, int length, dcomplex *out) {
     fout = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (length/2 + 1));
 
     unsigned int flags = FFTW_ESTIMATE;
-    if(fft_measure)
+    if (fft_measure) {
       flags = FFTW_MEASURE;
+    }
 
     /* fftw call
      * Plan a real-input/complex-output discrete Fourier transform (DFT)
@@ -121,23 +135,13 @@ void rfft(const BoutReal *in, int length, dcomplex *out) {
   // Store the output in out, and normalize
   for(int i=0;i<nmodes;i++)
     out[i] = dcomplex(fout[i][0], fout[i][1]) * fac; // Normalise
-#else
-  throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
 #endif
 }
 
-const Array<dcomplex> rfft(const Array<BoutReal> &in) {
-  ASSERT1(!in.empty()); // Check that there is data
-  
-  int size = in.size();
-  Array<dcomplex> out(size); // Allocates data array
-  
-  rfft(in.begin(), size, out.begin());
-  return out;
-}
-
-void irfft(const dcomplex *in, int length, BoutReal *out) {
-#ifdef BOUT_HAS_FFTW
+void irfft(MAYBE_UNUSED(const dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(BoutReal *out)) {
+#ifndef BOUT_HAS_FFTW
+  throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
+#else
   // static variables initialized once
   static fftw_complex *fin;
   static double *fout;
@@ -166,8 +170,9 @@ void irfft(const dcomplex *in, int length, BoutReal *out) {
     fout = (double*) fftw_malloc(sizeof(double) * length);
 
     unsigned int flags = FFTW_ESTIMATE;
-    if(fft_measure)
+    if (fft_measure) {
       flags = FFTW_MEASURE;
+    }
 
     /* fftw call
      * Plan a complex-input/real-output discrete Fourier transform (DFT)
@@ -192,15 +197,15 @@ void irfft(const dcomplex *in, int length, BoutReal *out) {
   // Store the output of the fftw to the out
   for(int i=0;i<n;i++)
     out[i] = fout[i];
-#else
-  throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
 #endif
 }
 
 #else
 // Parallel thread-safe version of rfft and irfft
-void rfft(const BoutReal *in, int length, dcomplex *out) {
-#ifdef BOUT_HAS_FFTW
+void rfft(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(dcomplex *out)) {
+#ifndef BOUT_HAS_FFTW
+  throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
+#else
   static double *finall;
   static fftw_complex *foutall;
   static fftw_plan *p;
@@ -238,8 +243,9 @@ void rfft(const BoutReal *in, int length, dcomplex *out) {
       p = new fftw_plan[n_th]; //Never freed
 
       unsigned int flags = FFTW_ESTIMATE;
-      if(fft_measure)
+      if (fft_measure) {
         flags = FFTW_MEASURE;
+      }
 
       for(int i=0;i<n_th;i++)
         // fftw call
@@ -268,13 +274,13 @@ void rfft(const BoutReal *in, int length, dcomplex *out) {
 
   for(int i=0;i<nmodes;i++)
     out[i] = dcomplex(fout[i][0], fout[i][1]) * fac; // Normalise
-#else
-  throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
 #endif
 }
 
-void irfft(const dcomplex *in, int length, BoutReal *out) {
-#ifdef BOUT_HAS_FFTW
+void irfft(MAYBE_UNUSED(const dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(BoutReal *out)) {
+#ifndef BOUT_HAS_FFTW
+  throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
+#else
   static fftw_complex *finall;
   static double *foutall;
   static fftw_plan *p;
@@ -313,8 +319,9 @@ void irfft(const dcomplex *in, int length, BoutReal *out) {
       p = new fftw_plan[n_th]; // Never freed
 
       unsigned int flags = FFTW_ESTIMATE;
-      if (fft_measure)
+      if (fft_measure) {
         flags = FFTW_MEASURE;
+      }
 
       for (int i = 0; i < n_th; i++)
         p[i] = fftw_plan_dft_c2r_1d(length, finall + i * (length / 2 + 1),
@@ -340,16 +347,16 @@ void irfft(const dcomplex *in, int length, BoutReal *out) {
 
   for (int i = 0; i < size; i++)
     out[i] = fout[i];
-#else
-  throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
 #endif
 }
 #endif
 
 //  Discrete sine transforms (B Shanahan)
 
-void DST(const BoutReal *in, int length, dcomplex *out) {
-#ifdef BOUT_HAS_FFTW
+void DST(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(dcomplex *out)) {
+#ifndef BOUT_HAS_FFTW
+  throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
+#else
   static double *fin;
   static fftw_complex *fout;
   static fftw_plan p;
@@ -371,8 +378,9 @@ void DST(const BoutReal *in, int length, dcomplex *out) {
     fout = static_cast<fftw_complex *>(fftw_malloc(sizeof(fftw_complex) * 2 * length));
 
     unsigned int flags = FFTW_ESTIMATE;
-    if(fft_measure)
+    if (fft_measure) {
       flags = FFTW_MEASURE;
+    }
 
     // fftw call
     // Plan a real-input/complex-output discrete Fourier transform (DFT)
@@ -400,13 +408,13 @@ void DST(const BoutReal *in, int length, dcomplex *out) {
 
   for(int i=1;i<length-1;i++)
     out[i] = -fout[i][1] / (static_cast<BoutReal>(length) - 1); // Normalise
-#else
-  throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
 #endif
 }
 
-void DST_rev(dcomplex *in, int length, BoutReal *out) {
-#ifdef BOUT_HAS_FFTW
+void DST_rev(MAYBE_UNUSED(dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(BoutReal *out)) {
+#ifndef BOUT_HAS_FFTW
+  throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
+#else
   static fftw_complex *fin;
   static double *fout;
   static fftw_plan p;
@@ -429,8 +437,9 @@ void DST_rev(dcomplex *in, int length, BoutReal *out) {
     fout = static_cast<double *>(fftw_malloc(sizeof(double) * 2 * (length - 1)));
 
     unsigned int flags = FFTW_ESTIMATE;
-    if(fft_measure)
+    if (fft_measure) {
       flags = FFTW_MEASURE;
+    }
 
     p = fftw_plan_dft_c2r_1d(2*(length-1), fin, fout, flags);
 
@@ -457,7 +466,29 @@ void DST_rev(dcomplex *in, int length, BoutReal *out) {
   out[length-1]=0.0;
   for(int i=1;i<length-1;i++)
     out[i] = fout[i];
-#else
-  throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
 #endif
 }
+
+Array<dcomplex> rfft(const Array<BoutReal>& in) {
+  ASSERT1(!in.empty());
+
+  int size{in.size()};
+  Array<dcomplex> out{(size / 2) + 1};
+
+  rfft(in.begin(), size, out.begin());
+  return out;
+}
+
+Array<BoutReal> irfft(const Array<dcomplex>& in, int length) {
+  ASSERT1(!in.empty());
+  ASSERT1(in.size() == (length / 2) + 1);
+
+  Array<BoutReal> out{length};
+
+  irfft(in.begin(), length, out.begin());
+  return out;
+}
+
+} // namespace fft
+} // namespace bout
+

@@ -16,7 +16,7 @@ GlobalField::GlobalField(Mesh *m, int proc, int xsize, int ysize, int zsize)
 
   if(mype == proc) {
     // Allocate memory
-    data = Array<BoutReal>(nx * ny * nz);
+    data.reallocate(nx * ny * nz);
   }
 }
 

@@ -14,7 +14,8 @@ public:
   static FormatFactory* getInstance();
 
   std::unique_ptr<DataFormat> createDataFormat(const char *filename = nullptr,
-                                               bool parallel = true);
+                                               bool parallel = true,
+                                               Mesh* mesh_in = nullptr);
 
 private:
   static FormatFactory* instance; ///< The only instance of this class (Singleton)

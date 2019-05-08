@@ -3,6 +3,7 @@
 
 #include "imex-bdf2.hxx"
 
+#include <bout/mesh.hxx>
 #include <boutcomm.hxx>
 #include <utils.hxx>
 #include <boutexception.hxx>
@@ -127,7 +128,7 @@ int IMEXBDF2::init(int nout, BoutReal tstep) {
   }
 
   if (have_constraints) {
-    is_dae = Array<BoutReal>{nlocal};
+    is_dae.reallocate(nlocal);
     // Call the Solver function, which sets the array
     // to zero when not a constraint, one for constraint
     set_id(std::begin(is_dae));
@@ -153,7 +154,7 @@ int IMEXBDF2::init(int nout, BoutReal tstep) {
   }
 
   // Allocate memory and initialise structures
-  u = Array<BoutReal>{nlocal};
+  u.reallocate(nlocal);
   for(int i=0;i<maxOrder;i++){
     uV.emplace_back(Array<BoutReal>{nlocal});
     fV.emplace_back(Array<BoutReal>{nlocal});
@@ -163,7 +164,7 @@ int IMEXBDF2::init(int nout, BoutReal tstep) {
     gFac.push_back(0.0);
   }
 
-  rhs = Array<BoutReal>{nlocal};
+  rhs.reallocate(nlocal);
 
   OPTION(options, adaptive, true); //Do we try to estimate the error?
   OPTION(options, nadapt, 4); //How often do we check the error
@@ -171,7 +172,7 @@ int IMEXBDF2::init(int nout, BoutReal tstep) {
   OPTION(options, dtMax, out_timestep);
   OPTION(options, dtMin, dtMinFatal);
   if(adaptive){
-    err = Array<BoutReal>{nlocal};
+    err.reallocate(nlocal);
     OPTION(options, adaptRtol, 1.0e-3); //Target relative error
     OPTION(options, mxstepAdapt, mxstep); //Maximum no. consecutive times we try to reduce timestep
     OPTION(options, scaleCushUp, 1.5);
@@ -204,6 +205,9 @@ int IMEXBDF2::init(int nout, BoutReal tstep) {
 
 //Set up a snes object stored at the specified location
 void IMEXBDF2::constructSNES(SNES *snesIn){
+
+  // Use global mesh for now
+  Mesh* mesh = bout::globals::mesh;
 
   // Nonlinear solver interface (SNES)
   SNESCreate(BoutComm::get(),snesIn);
@@ -1316,6 +1320,9 @@ PetscErrorCode IMEXBDF2::precon(Vec x, Vec f) {
  */
 template< class Op >
 void IMEXBDF2::loopVars(BoutReal *u) {
+  // Use global mesh for now
+  Mesh* mesh = bout::globals::mesh;
+
   // Loop over 2D variables
   for(auto it = f2d.begin(); it != f2d.end(); ++it) {
     Op op(it->var, it->F_var); // Initialise the operator

@@ -17,9 +17,9 @@ private:
     Field3D f_B = f / Bxyz;
     
     f_B.splitYupYdown();
-    mesh->getParallelTransform().integrateYUpDown(f_B);
+    mesh->getParallelTransform().integrateParallelSlices(f_B);
 
-    // integrateYUpDown replaces all yup/down points, so the boundary conditions
+    // integrateParallelSlices replaces all yup/down points, so the boundary conditions
     // now need to be applied. If Bxyz has neumann parallel boundary conditions
     // then the boundary condition is simpler since f = 0 gives f_B=0 boundary condition.
 

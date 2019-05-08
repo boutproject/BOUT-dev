@@ -34,13 +34,14 @@ class LaplacePDD;
 #ifndef __LAPLACE_PDD_H__
 #define __LAPLACE_PDD_H__
 
+#include <bout/mesh.hxx>
 #include <invert_laplace.hxx>
 #include <options.hxx>
 #include <utils.hxx>
 
 class LaplacePDD : public Laplacian {
 public:
-  LaplacePDD(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = mesh)
+  LaplacePDD(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr)
       : Laplacian(opt, loc, mesh_in), Acoef(0.0), Ccoef(1.0), Dcoef(1.0), PDD_COMM_XV(123),
         PDD_COMM_Y(456) {
     Acoef.setLocation(location);

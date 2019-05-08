@@ -1,82 +1,58 @@
-#include <mpi.h>
-#include <bout/sys/timer.hxx>
+#include "bout/sys/timer.hxx"
 
-using namespace std;
-
-Timer::Timer() {
-  timing = getInfo("");
-  timing->started = MPI_Wtime();
-  timing->running = true;
+Timer::Timer() : timing(getInfo("")) {
+  if (timing.counter == 0) {
+    timing.started = clock_type::now();
+    timing.running = true;
+  }
+  timing.counter += 1;
 }
 
-Timer::Timer(const std::string &label) {
-  timing = getInfo(label);
-  timing->started = MPI_Wtime();
-  timing->running = true;
+Timer::Timer(const std::string& label) : timing(getInfo(label)) {
+  if (timing.counter == 0) {
+    timing.started = clock_type::now();
+    timing.running = true;
+  }
+  timing.counter += 1;
 }
 
 Timer::~Timer() {
-  double finished = MPI_Wtime();
-  timing->running = false;
-  timing->time += finished - timing->started;
-}
-
-double Timer::getTime() {
-  if(timing->running)
-    return timing->time + (MPI_Wtime() - timing->started);
-  return timing->time;
-}
-
-double Timer::resetTime() {
-  double val = timing->time;
-  timing->time = 0.0;
-  if(timing->running) {
-    double cur_time = MPI_Wtime();
-    val += cur_time - timing->started;
-    timing->started = cur_time;
+  timing.counter -= 1;
+  if (timing.counter == 0) {
+    auto finished = clock_type::now();
+    timing.running = false;
+    timing.time += finished - timing.started;
   }
-  return val;
 }
 
-double Timer::getTime(const std::string &label) {
-  timer_info* t = getInfo(label);
-  if(t->running)
-    return t->time + (MPI_Wtime() - t->started);
-  return t->time;
-}
+void Timer::cleanup() { info.clear(); }
 
-double Timer::resetTime(const std::string &label) {
-  timer_info* t = getInfo(label);
-  double val = t->time;
-  t->time = 0.0;
-  if(t->running) {
-    double cur_time = MPI_Wtime();
-    val += cur_time - t->started;
-    t->started = cur_time;
-  }
-  return val;
-}
+std::map<std::string, Timer::timer_info> Timer::info;
 
-// Static method to clean up all memory
-void Timer::cleanup() {
-  // Iterate over map
-  for(const auto& it : info) {
-    delete it.second;
-  }
-  info.clear();
-}
-
-map<std::string, Timer::timer_info*> Timer::info;
-
-Timer::timer_info* Timer::getInfo(const std::string &label) {
- auto it = info.find(label);
-  if(it == info.end()) {
-    // Not in map, so create it
-    timer_info *t = new timer_info;
-    t->time = 0.0;
-    t->running = false;
-    info[label] = t;
-    return t;
+Timer::timer_info& Timer::getInfo(const std::string& label) {
+  auto it = info.find(label);
+  if (it == info.end()) {
+    auto timer = info.emplace(
+      label, timer_info{seconds{0}, false, clock_type::now(), 0});
+    return timer.first->second;
   }
   return it->second;
+}
+
+double Timer::getTime(const Timer::timer_info& info) {
+  if (info.running) {
+    return seconds{info.time + (clock_type::now() - info.started)}.count();
+  }
+  return seconds{info.time}.count();
+}
+
+double Timer::resetTime(Timer::timer_info& info) {
+  auto val = info.time;
+  info.time = clock_type::duration{0};
+  if (info.running) {
+    auto cur_time = clock_type::now();
+    val += cur_time - info.started;
+    info.started = cur_time;
+  }
+  return seconds{val}.count();
 }

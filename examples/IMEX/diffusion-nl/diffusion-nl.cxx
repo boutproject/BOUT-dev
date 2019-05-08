@@ -23,9 +23,9 @@ class DiffusionNL : public PhysicsModel {
 protected:
   int init(bool restarting) {
     // Get the input parameter alpha
-    Options *opt = Options::getRoot();
-    OPTION(opt, alpha, 2.5);
-    
+    auto opt = Options::root();
+    alpha = opt["alpha"].withDefault(2.5);
+
     // Specify that the operator is split
     // into convective and diffusive parts
     setSplitOperator();

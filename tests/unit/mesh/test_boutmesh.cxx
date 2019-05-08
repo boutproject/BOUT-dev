@@ -10,6 +10,9 @@ public:
   FakeGridDataSource(){};
   ~FakeGridDataSource(){};
   bool hasVar(const std::string &UNUSED(name)) { return false; };
+  bool get(Mesh *UNUSED(m), std::string &UNUSED(sval), const std::string &UNUSED(name)) {
+    return true;
+  };
   bool get(Mesh *UNUSED(m), int &UNUSED(ival), const std::string &UNUSED(name)) {
     return true;
   };
@@ -34,6 +37,8 @@ public:
            Direction UNUSED(dir) = GridDataSource::X) {
     return true;
   }
+  bool hasXBoundaryGuards(Mesh* UNUSED(m)) { return false; }
+  bool hasYBoundaryGuards() { return false; }
 };
 
 TEST(BoutMeshTest, NullOptionsCheck) {

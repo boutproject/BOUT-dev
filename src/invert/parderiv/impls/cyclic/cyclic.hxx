@@ -41,11 +41,12 @@
 
 #include "invert_parderiv.hxx"
 #include "dcomplex.hxx"
+#include <globals.hxx>
 #include "utils.hxx"
 
 class InvertParCR : public InvertPar {
 public:
-  InvertParCR(Options *opt, Mesh *mesh_in = mesh);
+  InvertParCR(Options *opt, Mesh *mesh_in = bout::globals::mesh);
   ~InvertParCR();
 
   using InvertPar::solve;

@@ -61,6 +61,47 @@ which returns a pointer to the field holding the time-derivative of this
 variable. This function ensures that this field is unique using a
 singleton pattern.
 
+A `Field` has meta-data members, which give:
+  - ``location`` is the location of the field values in a grid cell. May be
+    unstaggered, ``CELL_CENTRE`` or staggered to one of the cell faces,
+    ``CELL_XLOW``, ``CELL_YLOW`` or ``CELL_ZLOW``.
+  - ``directions`` gives the type of grid that the `Field` is defined on
+      - ``directions.y`` is ``YDirectionType::Standard`` by default, but can be
+        ``YDirectionType::Aligned`` if the `Field` has been transformed from an
+        'orthogonal' to a 'field-aligned' coordinate system.
+      - ``directions.z`` is ``ZDirectionType::Standard`` by default, but can be
+        ``ZDirectionType::Average`` if the `Field` represents a quantity that
+        is averaged or constant in the z-direction (i.e. is a `Field2D`).
+The meta-data members are written to the output files as attributes of the variables.
+
+To create a new `Field` with meta-data, plus ``Mesh`` and ``Coordinates``
+pointers copied from another one, and data allocated (so that the Field is
+ready to use) but not initialized, use the function ``emptyFrom(const T& f)``
+which can act on `Field3D`, `Field2D` or `FieldPerp`. This is often used for
+example to create a ``result`` variable that will be returned from a function
+from the `Field` which is given as input, e.g.
+
+::
+
+    Field3D exampleFunction(const Field3D& f) {
+      Field3D result{emptyFrom(f)};
+      ...
+      < do things to calculate result >
+      ...
+      return result;
+    }
+
+To zero-initialise the `Field` as well, use ``zeroFrom`` in place of
+``emptyFrom``.  If a few of the meta-data members need to be changed, you can
+also chain setter methods to a `Field`. At the moment the available methods are
+``setLocation(CELL_LOC)``, ``setDirectionY(YDirectionType)`` and
+``setDirectionZ(ZDirectionType)``; also ``setIndex(int)`` for `FieldPerp`. For
+example, to set the location of ``result`` explicitly you could use
+
+::
+
+    Field3D result{emptyFrom(f).setLocation(CELL_YLOW)};
+
 ``Vector``
 ----------
 

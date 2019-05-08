@@ -11,7 +11,7 @@ class TestSolver : public PhysicsModel {
 public:
   Field3D field;
 
-  int init(bool restarting) {
+  int init(bool UNUSED(restarting)) {
     solver->add(field, "field");
     return 0;
   }

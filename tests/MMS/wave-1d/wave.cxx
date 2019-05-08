@@ -4,6 +4,7 @@
 #include <math.h>
 #include "mathematica.h"
 #include <bout/constants.hxx>
+#include <unused.hxx>
 
 BoutReal MS_f(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  z);
 BoutReal dxMS_f(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  z);
@@ -50,7 +51,7 @@ private:
   const Field3D solution_g(BoutReal t);
   const Field3D source_g(BoutReal t);
 protected:
-  int init(bool restarting) {
+  int init(bool UNUSED(restarting)) {
     // Coordinate system
     coord = mesh->getCoordinates();
     
@@ -150,7 +151,7 @@ protected:
   }
   
   // This called every output timestep
-  int outputMonitor(BoutReal simtime, int iter, int NOUT) {
+  int outputMonitor(BoutReal simtime, int UNUSED(iter), int UNUSED(NOUT)) {
 
     Field3D Sf = solution_f(simtime);
     Field3D Sg = solution_g(simtime);
@@ -177,7 +178,7 @@ protected:
 /////////////////// SOLUTION FOR F //////////////////////////////
 
 //Manufactured solution
-BoutReal MS_f(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  z) {
+BoutReal MS_f(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  UNUSED(z)) {
   // Input is in normalised x,y,z location
   x *= Lx;         // X input [0,1]
   y *= Ly / TWOPI; // Y input [0, 2pi]
@@ -185,7 +186,7 @@ BoutReal MS_f(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  z) {
 }
 
 //x-derivative of MS. For Neumann bnd cond
-BoutReal dxMS_f(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  z) {
+BoutReal dxMS_f(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  UNUSED(z)) {
   x *= Lx;         // X input [0,1]
   y *= Ly / TWOPI; // Y input [0, 2pi]
   return 0.9 + 2.*x*Cos(10*t)*Cos(5.*Power(x,2));
@@ -213,7 +214,7 @@ const Field3D Wave1D::solution_f(BoutReal t) {
 }
 
 const Field3D Wave1D::source_f(BoutReal t) {
-  BoutReal x,y,z;
+  BoutReal x;
   Field3D result;
   result.allocate();
 
@@ -223,8 +224,6 @@ const Field3D Wave1D::source_f(BoutReal t) {
     for(yj=mesh->ystart;yj < mesh->yend+1;yj++){
       for(zk=0;zk<mesh->LocalNz;zk++){
         x = mesh->GlobalX(xi)*Lx;
-        y = mesh->GlobalY(yj)*Ly;
-        z = mesh->GlobalZ(zk);
         result(xi,yj,zk) = -0.8*x*Cos(7*t)*Cos(2.0*Power(x,2)) - 2.0*Sin(10*t)*Sin(5.0*Power(x,2)) - 0.7;
       }
     }
@@ -234,7 +233,7 @@ const Field3D Wave1D::source_f(BoutReal t) {
 /////////////////// SOLUTION FOR G //////////////////////////////
 
 //Manufactured solution
-BoutReal MS_g(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  z) {
+BoutReal MS_g(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  UNUSED(z)) {
   // Input is in normalised x,y,z location
   x *= Lx;         // X input [0,1]
   y *= Ly / TWOPI; // Y input [0, 2pi]
@@ -242,7 +241,7 @@ BoutReal MS_g(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  z) {
 }
 
 //x-derivative of MS. For Neumann bnd cond
-BoutReal dxMS_g(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  z) {
+BoutReal dxMS_g(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  UNUSED(z)) {
   x *= Lx;         // X input [0,1]
   y *= Ly / TWOPI; // Y input [0, 2pi]
   return 0.8*x*Cos(7*t)*Cos(2.0*Power(x,2)) + 0.7;
@@ -275,7 +274,7 @@ const Field3D Wave1D::solution_g(BoutReal t) {
 }
 
 const Field3D Wave1D::source_g(BoutReal t) {
-  BoutReal x,y,z;
+  BoutReal x;
   Field3D result;
   result.allocate();
 
@@ -291,8 +290,6 @@ const Field3D Wave1D::source_g(BoutReal t) {
 	}else {
 	  x = mesh->GlobalX(xi)*Lx;
 	}
-        y = mesh->GlobalY(yj)*Ly;
-        z = mesh->GlobalZ(zk);
         result(xi,yj,zk) = -2.0*x*Cos(10*t)*Cos(5.0*Power(x,2)) - 1.4*Sin(7*t)*Sin(2.0*Power(x,2)) - 0.9;
       }
     }

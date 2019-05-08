@@ -27,10 +27,10 @@ int physics_init(bool restarting) {
   solver->setSplitOperator(physics_run,diffusive);
   
   // Get options
-  Options *options = Options::getRoot();
-  options = options->getSection("imex");
-  OPTION(options, cz, 100.0);
-  OPTION(options, cx, 1.0);
+  auto globalOptions = Options::root();
+  auto options = globalOptions["imex"];
+  cz = options["cz"].withDefault(100.0);
+  cx = options["cx"].withDefault(1.0);
 
   SOLVE_FOR(U);
 

@@ -27,6 +27,7 @@
 #include <globals.hxx>
 #include "serial_band.hxx"
 
+#include <bout/mesh.hxx>
 #include <fft.hxx>
 #include <utils.hxx>
 #include <boutexception.hxx>
@@ -51,28 +52,28 @@ LaplaceSerialBand::LaplaceSerialBand(Options *opt, const CELL_LOC loc, Mesh *mes
     }
   // Allocate memory
 
-    int ncz = localmesh->zend + 1 - localmesh->zstart;
-    bk = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
-    bk1d = Array<dcomplex>(localmesh->LocalNx);
+  int ncz = localmesh->zend + 1 - localmesh->zstart;
+  bk.reallocate(localmesh->LocalNx, ncz / 2 + 1);
+  bk1d.reallocate(localmesh->LocalNx);
 
-    // Initialise bk to 0 as we only visit 0<= kz <= maxmode in solve
-    for (int kz = maxmode + 1; kz < ncz / 2 + 1; kz++) {
-      for (int ix = 0; ix < localmesh->LocalNx; ix++) {
-        bk(ix, kz) = 0.0;
-      }
+  // Initialise bk to 0 as we only visit 0<= kz <= maxmode in solve
+  for (int kz = maxmode + 1; kz < ncz / 2 + 1; kz++) {
+    for (int ix = 0; ix < localmesh->LocalNx; ix++) {
+      bk(ix, kz) = 0.0;
+    }
   }
 
-  xk = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
-  xk1d = Array<dcomplex>(localmesh->LocalNx);
+  xk.reallocate(localmesh->LocalNx, ncz / 2 + 1);
+  xk1d.reallocate(localmesh->LocalNx);
 
-  //Initialise xk to 0 as we only visit 0<= kz <= maxmode in solve
-  for(int kz=maxmode+1; kz < ncz/2 + 1; kz++){
-    for (int ix=0; ix<localmesh->LocalNx; ix++){
+  // Initialise xk to 0 as we only visit 0<= kz <= maxmode in solve
+  for (int kz = maxmode + 1; kz < ncz / 2 + 1; kz++) {
+    for (int ix = 0; ix < localmesh->LocalNx; ix++) {
       xk(ix, kz) = 0.0;
     }
   }
 
-  A = Matrix<dcomplex>(localmesh->LocalNx, 5);
+  A.reallocate(localmesh->LocalNx, 5);
 }
 
 const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b) {
@@ -81,12 +82,12 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b) {
 
 const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0) {
   ASSERT1(localmesh == b.getMesh() && localmesh == x0.getMesh());
+  ASSERT1(b.getLocation() == location);
+  ASSERT1(x0.getLocation() == location);
 
-  FieldPerp x(localmesh);
-  x.allocate();
+  FieldPerp x{emptyFrom(b)};
 
   int jy = b.getIndex();
-  x.setIndex(jy);
 
   int ncz = localmesh->zend + 1 - localmesh->zstart;
   int ncx = localmesh->LocalNx-1;

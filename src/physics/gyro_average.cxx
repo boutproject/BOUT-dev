@@ -27,6 +27,7 @@
  *
  **************************************************************/
 
+#include <bout/mesh.hxx>
 #include <globals.hxx>
 #include <difops.hxx>
 #include <gyro_average.hxx>
@@ -89,7 +90,7 @@ const Field2D gyroPade1(const Field2D &f, const Field2D &rho, int flags) {
 
 const Field3D gyroPade2(const Field3D &f, BoutReal rho, int flags) {
   Field3D result = gyroPade1(gyroPade1(f, rho, flags), rho, flags);
-  mesh->communicate(result);
+  result.getMesh()->communicate(result);
   result = 0.5*rho*rho*Delp2( result );
   result.applyBoundary("dirichlet");
   return result;
@@ -97,7 +98,7 @@ const Field3D gyroPade2(const Field3D &f, BoutReal rho, int flags) {
 
 const Field3D gyroPade2(const Field3D &f, const Field2D &rho, int flags) {
   Field3D result = gyroPade1(gyroPade1(f, rho, flags), rho, flags);
-  mesh->communicate(result);
+  result.getMesh()->communicate(result);
   result = 0.5*rho*rho*Delp2( result );
   result.applyBoundary("dirichlet");
   return result;

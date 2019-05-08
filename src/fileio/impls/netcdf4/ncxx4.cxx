@@ -24,6 +24,7 @@
 
 #ifdef NCDF4
 
+#include <bout/mesh.hxx>
 #include <globals.hxx>
 #include <utils.hxx>
 #include <cmath>
@@ -38,7 +39,7 @@ using namespace netCDF;
 // Define this to see loads of info messages
 //#define NCDF_VERBOSE
 
-Ncxx4::Ncxx4() {
+Ncxx4::Ncxx4(Mesh* mesh_in) : DataFormat(mesh_in) {
   dataFile = nullptr;
   x0 = y0 = z0 = t0 = 0;
   recDimList = new const NcDim*[4];
@@ -51,7 +52,7 @@ Ncxx4::Ncxx4() {
   fname = nullptr;
 }
 
-Ncxx4::Ncxx4(const char *name) {
+Ncxx4::Ncxx4(const char *name, Mesh* mesh_in) : DataFormat(mesh_in) {
   dataFile = nullptr;
   x0 = y0 = z0 = t0 = 0;
   recDimList = new const NcDim*[4];
@@ -816,7 +817,7 @@ void Ncxx4::setAttribute(const std::string &varname, const std::string &attrname
   BoutReal existing_att;
   if (getAttribute(varname, attrname, existing_att)) {
     if (value != existing_att) {
-      output_warn.write("Overwriting attribute '%s' of variable '%s' with '%d', was previously '%d'",
+      output_warn.write("Overwriting attribute '%s' of variable '%s' with '%f', was previously '%f'",
           attrname.c_str(), varname.c_str(), value, existing_att);
     }
   }

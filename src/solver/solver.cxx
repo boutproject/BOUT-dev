@@ -20,26 +20,23 @@
  *
  **************************************************************************/
 
-#include <boutcomm.hxx>
-#include <bout/solver.hxx>
+#include "bout/solver.hxx"
+#include "boutcomm.hxx"
+#include "boutexception.hxx"
+#include "field_factory.hxx"
+#include "initialprofiles.hxx"
+#include "interpolation.hxx"
+#include "msg_stack.hxx"
+#include "output.hxx"
+#include "bout/array.hxx"
+#include "bout/assert.hxx"
+#include "bout/region.hxx"
+#include "bout/solverfactory.hxx"
+#include "bout/sys/timer.hxx"
+
 #include <cstring>
 #include <ctime>
-
-#include <initialprofiles.hxx>
-#include <interpolation.hxx>
-#include <boutexception.hxx>
-
-#include <field_factory.hxx>
-
-#include "bout/solverfactory.hxx"
-
-#include <bout/sys/timer.hxx>
-#include <msg_stack.hxx>
-#include <output.hxx>
-#include <bout/assert.hxx>
-
-#include <bout/array.hxx>
-#include "bout/region.hxx"
+#include <numeric>
 
 // Static member variables
 
@@ -50,53 +47,11 @@ char ***Solver::pargv = nullptr;
  * Constructor
  **************************************************************************/
 
-Solver::Solver(Options *opts) : options(opts), model(nullptr), prefunc(nullptr) {
-  if(options == nullptr)
-    options = Options::getRoot()->getSection("solver");
-
-  // Set flags to defaults
-  has_constraints = false;
-  initialised = false;
-  canReset = false;
-
-  // Zero timing
-  rhs_ncalls = 0;
-  rhs_ncalls_e = 0;
-  rhs_ncalls_i = 0;
-  
-  // Split operator
-  split_operator = false;
-  max_dt = -1.0;
-  
-  // Set simulation time and iteration count
-  // This may be modified by restart
-  simtime = 0.0; iteration = 0;
-  
-  // Output monitor
-  options->get("monitor_timestep", monitor_timestep, false);
-  
-  // Method of Manufactured Solutions (MMS)
-  options->get("mms", mms, false);
-  options->get("mms_initialise", mms_initialise, mms);
-}
-
-/**************************************************************************
- * Destructor
- **************************************************************************/
-Solver::~Solver(){
-  //Ensure all MMS_err fields allocated here are destroyed etc.
-  for(const auto& f : f3d) {
-    if(f.MMS_err) {
-      delete f.MMS_err;
-    }
-  }
-
-  for(const auto& f : f2d) {
-    if(f.MMS_err) {
-      delete f.MMS_err;
-    }
-  }
-}
+Solver::Solver(Options* opts)
+    : options(opts == nullptr ? &Options::root()["solver"] : opts),
+      monitor_timestep((*options)["monitor_timestep"].withDefault(false)),
+      mms((*options)["mms"].withDefault(false)),
+      mms_initialise((*options)["mms_initialise"].withDefault(mms)) {}
 
 /**************************************************************************
  * Add physics models
@@ -125,8 +80,10 @@ void Solver::setModel(PhysicsModel *m) {
 void Solver::add(Field2D &v, const std::string name) {
   TRACE("Adding 2D field: Solver::add(%s)", name.c_str());
 
+#if CHECK > 0
   if (varAdded(name))
     throw BoutException("Variable '%s' already added to Solver", name.c_str());
+#endif
 
   if (initialised)
     throw BoutException("Error: Cannot add to solver after initialisation\n");
@@ -137,11 +94,9 @@ void Solver::add(Field2D &v, const std::string name) {
 
   VarStr<Field2D> d;
   
-  d.constraint = false;
   d.var = &v;
   d.F_var = &ddt(v);
   d.location = v.getLocation();
-  d.covariant = false;
   d.name = name;
   
 #ifdef TRACK
@@ -158,31 +113,31 @@ void Solver::add(Field2D &v, const std::string name) {
     
     FieldFactory *fact = FieldFactory::get();
     
-    v = fact->create2D("solution", Options::getRoot()->getSection(name), mesh);
+    v = fact->create2D("solution", Options::getRoot()->getSection(name), v.getMesh());
   } else {
     initial_profile(name, v);
   }
   
   if (mms) {
     // Allocate storage for error variable
-    d.MMS_err = new Field2D(0.0);
-  } else {
-    d.MMS_err = nullptr;
+    d.MMS_err = bout::utils::make_unique<Field2D>(zeroFrom(v));
   }
   
   // Check if the boundary regions should be evolved
   // First get option from section "All"
   // then use that as default for specific section
-  Options::getRoot()->getSection("all")->get("evolve_bndry", d.evolve_bndry, false);
-  Options::getRoot()->getSection(name)->get("evolve_bndry", d.evolve_bndry, d.evolve_bndry);
+  d.evolve_bndry = Options::root()["all"]["evolve_bndry"].withDefault(false);
+  d.evolve_bndry = Options::root()[name]["evolve_bndry"].withDefault(d.evolve_bndry);
 
   v.applyBoundary(true);
 
-  f2d.push_back(d);
+  f2d.emplace_back(std::move(d));
 }
 
 void Solver::add(Field3D &v, const std::string name) {
   TRACE("Adding 3D field: Solver::add(%s)", name.c_str());
+
+  Mesh* mesh = v.getMesh();
 
 #if CHECK > 0  
   if (varAdded(name))
@@ -203,11 +158,9 @@ void Solver::add(Field3D &v, const std::string name) {
 
   VarStr<Field3D> d;
   
-  d.constraint = false;
   d.var = &v;
   d.F_var = &ddt(v);
   d.location = v.getLocation();
-  d.covariant = false;
   d.name = name;
   
 #ifdef TRACK
@@ -218,34 +171,31 @@ void Solver::add(Field3D &v, const std::string name) {
     // Load solution at t = 0
     FieldFactory *fact = FieldFactory::get();
     
-    v = fact->create3D("solution", Options::getRoot()->getSection(name), mesh, v.getLocation());
+    v = fact->create3D("solution", &Options::root()[name], mesh, v.getLocation());
     
   } else {
     initial_profile(name, v);
   }
   
   if (mms) {
-    d.MMS_err = new Field3D(v.getMesh());
-    (*d.MMS_err) = 0.0;
-  } else {
-    d.MMS_err = nullptr;
+    d.MMS_err = bout::utils::make_unique<Field3D>(zeroFrom(v));
   }
   
   // Check if the boundary regions should be evolved
   // First get option from section "All"
   // then use that as default for specific section
-  Options::getRoot()->getSection("all")->get("evolve_bndry", d.evolve_bndry, false);
-  Options::getRoot()->getSection(name)->get("evolve_bndry", d.evolve_bndry, d.evolve_bndry);
+  d.evolve_bndry = Options::root()["all"]["evolve_bndry"].withDefault(false);
+  d.evolve_bndry = Options::root()[name]["evolve_bndry"].withDefault(d.evolve_bndry);
 
   v.applyBoundary(true); // Make sure initial profile obeys boundary conditions
   v.setLocation(d.location); // Restore location if changed
   
-  f3d.push_back(d);
+  f3d.emplace_back(std::move(d));
 }
 
-void Solver::add(Vector2D &v, const std::string name) {
+void Solver::add(Vector2D& v, const std::string name) {
   TRACE("Adding 2D vector: Solver::add(%s)", name.c_str());
-  
+
   if (varAdded(name))
     throw BoutException("Variable '%s' already added to Solver", name.c_str());
 
@@ -255,76 +205,66 @@ void Solver::add(Vector2D &v, const std::string name) {
   // Set boundary conditions
   v.setBoundary(name);
   ddt(v).copyBoundary(v); // Set boundary to be the same as v
-  
+
   VarStr<Vector2D> d;
-  
-  d.constraint = false;
+
   d.var = &v;
   d.F_var = &ddt(v);
-  d.location = CELL_DEFAULT;
   d.covariant = v.covariant;
   d.name = name;
-  // MMS errors set on individual components
-  d.MMS_err = nullptr;
-
-  v2d.push_back(d);
 
   /// NOTE: No initial_profile call, because this will be done for each
   ///       component individually.
-  
+
   /// Add suffix, depending on co- /contravariance
   if (v.covariant) {
-    add(v.x, d.name+"_x");
-    add(v.y, d.name+"_y");
-    add(v.z, d.name+"_z");
+    add(v.x, d.name + "_x");
+    add(v.y, d.name + "_y");
+    add(v.z, d.name + "_z");
   } else {
-    add(v.x, d.name+"x");
-    add(v.y, d.name+"y");
-    add(v.z, d.name+"z");
+    add(v.x, d.name + "x");
+    add(v.y, d.name + "y");
+    add(v.z, d.name + "z");
   }
-  
+
   /// Make sure initial profile obeys boundary conditions
   v.applyBoundary(true);
+  v2d.emplace_back(std::move(d));
 }
 
-void Solver::add(Vector3D &v, const std::string name) {
+void Solver::add(Vector3D& v, const std::string name) {
   TRACE("Adding 3D vector: Solver::add(%s)", name.c_str());
-  
+
   if (varAdded(name))
     throw BoutException("Variable '%s' already added to Solver", name.c_str());
 
   if (initialised)
     throw BoutException("Error: Cannot add to solver after initialisation\n");
-  
+
   // Set boundary conditions
   v.setBoundary(name);
   ddt(v).copyBoundary(v); // Set boundary to be the same as v
 
   VarStr<Vector3D> d;
-  
-  d.constraint = false;
+
   d.var = &v;
   d.F_var = &ddt(v);
-  d.location = CELL_DEFAULT;
   d.covariant = v.covariant;
   d.name = name;
-  // MMS errors set on individual components
-  d.MMS_err = nullptr;
-  
-  v3d.push_back(d);
 
   // Add suffix, depending on co- /contravariance
   if (v.covariant) {
-    add(v.x, d.name+"_x");
-    add(v.y, d.name+"_y");
-    add(v.z, d.name+"_z");
+    add(v.x, d.name + "_x");
+    add(v.y, d.name + "_y");
+    add(v.z, d.name + "_z");
   } else {
-    add(v.x, d.name+"x");
-    add(v.y, d.name+"y");
-    add(v.z, d.name+"z");
+    add(v.x, d.name + "x");
+    add(v.y, d.name + "y");
+    add(v.z, d.name + "z");
   }
 
   v.applyBoundary(true);
+  v3d.emplace_back(std::move(d));
 }
 
 /**************************************************************************
@@ -332,12 +272,11 @@ void Solver::add(Vector3D &v, const std::string name) {
  **************************************************************************/
 
 void Solver::constraint(Field2D &v, Field2D &C_v, const std::string name) {
+  TRACE("Constrain 2D scalar: Solver::constraint(%s)", name.c_str());
 
   if (name.empty()) {
     throw BoutException("ERROR: Constraint requested for variable with empty name\n");
   }
-
-  TRACE("Constrain 2D scalar: Solver::constraint(%s)", name.c_str());
 
 #if CHECK > 0  
   if (varAdded(name))
@@ -357,16 +296,15 @@ void Solver::constraint(Field2D &v, Field2D &C_v, const std::string name) {
   d.F_var = &C_v;
   d.name = name;
 
-  f2d.push_back(d);
+  f2d.emplace_back(std::move(d));
 }
 
 void Solver::constraint(Field3D &v, Field3D &C_v, const std::string name) {
+  TRACE("Constrain 3D scalar: Solver::constraint(%s)", name.c_str());
 
   if (name.empty()) {
     throw BoutException("ERROR: Constraint requested for variable with empty name\n");
   }
-
-  TRACE("Constrain 3D scalar: Solver::constraint(%s)", name.c_str());
 
 #if CHECK > 0
   if (varAdded(name))
@@ -387,16 +325,15 @@ void Solver::constraint(Field3D &v, Field3D &C_v, const std::string name) {
   d.location = v.getLocation();
   d.name = name;
   
-  f3d.push_back(d);
+  f3d.emplace_back(std::move(d));
 }
 
 void Solver::constraint(Vector2D &v, Vector2D &C_v, const std::string name) {
+  TRACE("Constrain 2D vector: Solver::constraint(%s)", name.c_str());
 
   if (name.empty()) {
     throw BoutException("ERROR: Constraint requested for variable with empty name\n");
   }
-
-  TRACE("Constrain 2D vector: Solver::constraint(%s)", name.c_str());
 
 #if CHECK > 0  
   if (varAdded(name))
@@ -417,27 +354,26 @@ void Solver::constraint(Vector2D &v, Vector2D &C_v, const std::string name) {
   d.covariant = v.covariant;
   d.name = name;
   
-  v2d.push_back(d);
+  v2d.emplace_back(std::move(d));
 
   // Add suffix, depending on co- /contravariance
   if (v.covariant) {
     constraint(v.x, C_v.x, d.name+"_x");
-    constraint(v.y, C_v.y, d.name+"_x");
-    constraint(v.z, C_v.z, d.name+"_x");
+    constraint(v.y, C_v.y, d.name+"_y");
+    constraint(v.z, C_v.z, d.name+"_z");
   } else {
     constraint(v.x, C_v.x, d.name+"x");
-    constraint(v.y, C_v.y, d.name+"x");
-    constraint(v.z, C_v.z, d.name+"x");
+    constraint(v.y, C_v.y, d.name+"y");
+    constraint(v.z, C_v.z, d.name+"z");
   }
 }
 
 void Solver::constraint(Vector3D &v, Vector3D &C_v, const std::string name) {
+  TRACE("Constrain 3D vector: Solver::constraint(%s)", name.c_str());
 
   if (name.empty()) {
     throw BoutException("ERROR: Constraint requested for variable with empty name\n");
   }
-
-  TRACE("Constrain 3D vector: Solver::constraint(%s)", name.c_str());
 
 #if CHECK > 0  
   if (varAdded(name))
@@ -458,17 +394,17 @@ void Solver::constraint(Vector3D &v, Vector3D &C_v, const std::string name) {
   d.covariant = v.covariant;
   d.name = name;
   
-  v3d.push_back(d);
+  v3d.emplace_back(std::move(d));
 
   // Add suffix, depending on co- /contravariance
   if (v.covariant) {
     constraint(v.x, C_v.x, d.name+"_x");
-    constraint(v.y, C_v.y, d.name+"_x");
-    constraint(v.z, C_v.z, d.name+"_x");
+    constraint(v.y, C_v.y, d.name+"_y");
+    constraint(v.z, C_v.z, d.name+"_z");
   } else {
     constraint(v.x, C_v.x, d.name+"x");
-    constraint(v.y, C_v.y, d.name+"x");
-    constraint(v.z, C_v.z, d.name+"x");
+    constraint(v.y, C_v.y, d.name+"y");
+    constraint(v.z, C_v.z, d.name+"z");
   }
 }
 
@@ -478,83 +414,70 @@ void Solver::constraint(Vector3D &v, Vector3D &C_v, const std::string name) {
 
 int Solver::solve(int NOUT, BoutReal TIMESTEP) {
   
-  Options *globaloptions = Options::getRoot(); // Default from global options
+  Options& globaloptions = Options::root(); // Default from global options
   
-  if(NOUT < 0) {
+  if (NOUT < 0) {
     /// Get options
-    OPTION(globaloptions, NOUT, 1);
-    OPTION(globaloptions, TIMESTEP, 1.0);
+    NOUT = globaloptions["NOUT"].doc("Number of output steps").withDefault(1);
+    TIMESTEP = globaloptions["TIMESTEP"].doc("Output time step size").withDefault(1.0);
     
     // Check specific solver options, which override global options
-    OPTION(options, NOUT, NOUT);
-    options->get("output_step", TIMESTEP, TIMESTEP);
+    NOUT = (*options)["NOUT"]
+               .doc("Number of output steps. Overrides global setting.")
+               .withDefault(NOUT);
+    TIMESTEP = (*options)["output_step"]
+                   .doc("Output time step size. Overrides global TIMESTEP setting.")
+                   .withDefault(TIMESTEP);
   }
 
-  /// syncronize timestep with those set to the monitors
-  if (timestep > 0){
-    if (!isMultiple(timestep,TIMESTEP)){
-      throw BoutException("A monitor requested a timestep not compatible with the output_step!");
-    }
-    if (timestep < TIMESTEP*1.5){
-      freqDefault=TIMESTEP/timestep+.5;
-      NOUT*=freqDefault;
-      TIMESTEP=timestep;
-    } else {
-      freqDefault = 1;
-      // update old monitors
-      int fac=timestep/TIMESTEP+.5;
-      for (const auto &i: monitors){
-        i->freq=i->freq*fac;
-      }
-    }
-  }
-  for (const auto &i: monitors){
-    if (i->timestep < 0){
-      i->timestep=timestep*freqDefault;
-      i->freq=freqDefault;
-    }
-  }
+  finaliseMonitorPeriods(NOUT, TIMESTEP);
 
+  output_progress.write(_("Solver running for %d outputs with output timestep of %e\n"),
+                        NOUT, TIMESTEP);
+  if (default_monitor_period > 1)
+    output_progress.write(
+        _("Solver running for %d outputs with monitor timestep of %e\n"),
+        NOUT / default_monitor_period, TIMESTEP * default_monitor_period);
 
-  output_progress.write(_("Solver running for %d outputs with output timestep of %e\n"), NOUT, TIMESTEP);
-  if (freqDefault > 1)
-    output_progress.write(_("Solver running for %d outputs with monitor timestep of %e\n"),
-                          NOUT/freqDefault, TIMESTEP*freqDefault);
-  
   // Initialise
   if (init(NOUT, TIMESTEP)) {
     throw BoutException(_("Failed to initialise solver-> Aborting\n"));
   }
-  initCalled=true;
-  
+
   /// Run the solver
   output_info.write(_("Running simulation\n\n"));
 
   time_t start_time = time(nullptr);
   output_progress.write(_("\nRun started at  : %s\n"), toString(start_time).c_str());
-  
+
   Timer timer("run"); // Start timer
-  
-  bool restart;
-  OPTION(globaloptions, restart, false);
-  bool append;
-  OPTION(globaloptions, append, false);
-  bool dump_on_restart;
-  OPTION(globaloptions, dump_on_restart, !restart || !append);
-  if ( dump_on_restart ) {
+
+  const bool restart = globaloptions["restart"]
+               .doc("Load state from restart files?")
+               .withDefault(false);
+
+  const bool append = globaloptions["append"]
+          .doc("Add new outputs to the end of existing files? If false, overwrite files.")
+          .withDefault(false);
+  const bool dump_on_restart = globaloptions["dump_on_restart"]
+                                   .doc("Write initial state as time point 0?")
+                                   .withDefault(!restart || !append);
+
+  if (dump_on_restart) {
+
     /// Write initial state as time-point 0
-    
+
     // Run RHS once to ensure all variables set
     if (run_rhs(simtime)) {
       throw BoutException("Physics RHS call failed\n");
     }
-    
+
     // Call monitors so initial values are written to output dump files
-    if (call_monitors(simtime, -1, NOUT)){
+    if (call_monitors(simtime, -1, NOUT)) {
       throw BoutException("Initial monitor call failed!");
     }
   }
-  
+
   int status;
   try {
     status = run();
@@ -567,15 +490,15 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
     int i = static_cast<int>(dt / (60. * 60.));
     if (i > 0) {
       output_progress.write("%d h ", i);
-      dt -= i*60*60;
+      dt -= i * 60 * 60;
     }
     i = static_cast<int>(dt / 60.);
     if (i > 0) {
       output_progress.write("%d m ", i);
-      dt -= i*60;
+      dt -= i * 60;
     }
     output_progress.write("%d s\n", dt);
-  } catch (BoutException &e) {
+  } catch (BoutException& e) {
     output_error << "Error encountered in solver run\n";
     output_error << e.what() << endl;
     throw;
@@ -583,7 +506,6 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
 
   return status;
 }
-
 
 /**************************************************************************
  * Initialisation
@@ -598,8 +520,8 @@ int Solver::init(int UNUSED(nout), BoutReal UNUSED(tstep)) {
 
   output_progress.write(_("Initialising solver\n"));
 
-  MPI_Comm_size(BoutComm::get(), &NPES);
-  MPI_Comm_rank(BoutComm::get(), &MYPE);
+  NPES = BoutComm::size();
+  MYPE = BoutComm::rank();
   
   /// Mark as initialised. No more variables can be added
   initialised = true;
@@ -630,43 +552,93 @@ void Solver::outputVars(Datafile &outputfile, bool save_repeat) {
 
 /////////////////////////////////////////////////////
 
-/// Method to add a Monitor to the Solver
-/// Note that behaviour changes if init() is called,
-/// as the timestep cannot be changed afterwards
-void Solver::addMonitor(Monitor * mon, MonitorPosition pos) {
-  if (mon->timestep > 0){ // not default
-    if (!initCalled && timestep < 0){
-      timestep = mon->timestep;
-    }
-    if (!isMultiple(timestep,mon->timestep))
-      throw BoutException(_("Couldn't add Monitor: %g is not a multiple of %g!")
-                          ,timestep,mon->timestep);
-    if (mon->timestep > timestep*1.5){
-      mon->freq=(mon->timestep/timestep)+.5;
-    } else { // mon.timestep is truly smaller
-      if (initCalled)
-        throw BoutException(_("Solver::addMonitor: Cannot reduce timestep \
-(from %g to %g) after init is called!")
-                            ,timestep,mon->timestep);
-      int multi = timestep/mon->timestep+.5;
-      timestep=mon->timestep;
-      for (const auto &i: monitors){
-        i->freq=i->freq*multi;
-      }
-      // update freqDefault so that monitors with no timestep are called at the
-      // output frequency
-      freqDefault *= multi;
+BoutReal Solver::adjustMonitorPeriods(Monitor* new_monitor) {
 
-      mon->freq=1;
-    }
-  } else {
-    mon->freq = freqDefault;
+  if (new_monitor->timestep < 0) {
+    // The timestep will get adjusted when we call solve
+    new_monitor->period = default_monitor_period;
+    return internal_timestep;
   }
-  mon->is_added = true; // Records that monitor has been added to solver so timestep should not be updated
-  if(pos == Solver::FRONT) {
-    monitors.push_front(mon);
-  }else
-    monitors.push_back(mon);
+
+  if (!initialised && internal_timestep < 0) {
+    // This is the first monitor to be added
+    return new_monitor->timestep;
+  }
+
+  if (!isMultiple(internal_timestep, new_monitor->timestep)) {
+    throw BoutException(_("Couldn't add Monitor: %g is not a multiple of %g!"), internal_timestep,
+                        new_monitor->timestep);
+  }
+
+  if (new_monitor->timestep > internal_timestep * 1.5) {
+    // Monitor has a larger timestep
+    new_monitor->period = (new_monitor->timestep / internal_timestep) + .5;
+    return internal_timestep;
+  }
+
+  // Monitor timestep is smaller, so we need to adjust our timestep,
+  // along with that of all of the other monitors
+
+  if (initialised) {
+    throw BoutException(_("Solver::addMonitor: Cannot reduce timestep (from %g to %g) "
+                          "after init is called!"),
+                        internal_timestep, new_monitor->timestep);
+  }
+
+  // This is the relative increase in timestep
+  const int multiplier = internal_timestep / new_monitor->timestep + .5;
+  for (const auto& monitor : monitors) {
+    monitor->period *= multiplier;
+  }
+
+  // Update default_monitor_frequency so that monitors with no
+  // timestep are called at the output frequency
+  default_monitor_period *= multiplier;
+
+  // This monitor is now the fastest monitor
+  return new_monitor->timestep;
+}
+
+void Solver::finaliseMonitorPeriods(int& NOUT, BoutReal& output_timestep) {
+  // Synchronise timestep with those of the monitors
+  if (internal_timestep > 0) {
+    if (!isMultiple(internal_timestep, output_timestep)) {
+      throw BoutException(
+          "A monitor requested a timestep not compatible with the output_step!");
+    }
+    if (internal_timestep < output_timestep * 1.5) {
+      default_monitor_period = output_timestep / internal_timestep + .5;
+      NOUT *= default_monitor_period;
+      output_timestep = internal_timestep;
+    } else {
+      default_monitor_period = 1;
+      // update old monitors
+      int multiplier = internal_timestep / output_timestep + .5;
+      for (const auto& i : monitors) {
+        i->period = i->period * multiplier;
+      }
+    }
+  }
+  // Now set any monitors which still have the default timestep/period
+  for (const auto& i : monitors) {
+    if (i->timestep < 0) {
+      i->timestep = internal_timestep * default_monitor_period;
+      i->period = default_monitor_period;
+    }
+  }
+}
+
+void Solver::addMonitor(Monitor* monitor, MonitorPosition pos) {
+
+  internal_timestep = adjustMonitorPeriods(monitor);
+
+  monitor->is_added = true;
+
+  if (pos == Solver::FRONT) {
+    monitors.push_front(monitor);
+  } else {
+    monitors.push_back(monitor);
+  }
 }
 
 void Solver::removeMonitor(Monitor * f) {
@@ -676,46 +648,50 @@ void Solver::removeMonitor(Monitor * f) {
 extern bool user_requested_exit;
 int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
   bool abort;
-  MPI_Allreduce(&user_requested_exit,&abort,1,MPI_C_BOOL,MPI_LOR,MPI_COMM_WORLD);
-  if(abort){
-    NOUT=iter+1;
+  MPI_Allreduce(&user_requested_exit, &abort, 1, MPI_C_BOOL, MPI_LOR, BoutComm::get());
+  if (abort) {
+    NOUT = iter + 1;
   }
-  if(mms) {
+  if (mms) {
     // Calculate MMS errors
     calculate_mms_error(simtime);
   }
-  
+
   ++iter;
   try {
     // Call monitors
-    for (const auto &it : monitors){
-      if ((iter % it->freq)==0){
+    for (const auto& monitor : monitors) {
+      if ((iter % monitor->period) == 0) {
         // Call each monitor one by one
-        int ret = it->call(this, simtime,iter/it->freq-1, NOUT/it->freq);
-        if(ret)
+        int ret = monitor->call(this, simtime, iter / monitor->period - 1,
+                                NOUT / monitor->period);
+        if (ret)
           throw BoutException(_("Monitor signalled to quit"));
       }
     }
-  } catch (BoutException &e) {
-    for (const auto &it : monitors){
+  } catch (BoutException& e) {
+    for (const auto& it : monitors) {
       it->cleanup();
     }
     output_error.write(_("Monitor signalled to quit\n"));
     throw;
   }
 
-  if ( iter == NOUT ){
-    for (const auto &it : monitors){
+  // Check if any of the monitors has asked to quit
+  MPI_Allreduce(&user_requested_exit, &abort, 1, MPI_C_BOOL, MPI_LOR, BoutComm::get());
+
+  if (iter == NOUT || abort) {
+    for (const auto& it : monitors) {
       it->cleanup();
     }
   }
 
   if (abort) {
     // restart file should be written by physics model
-    output.write("User signalled to quit. Returning\n");
+    output.write(_("User signalled to quit. Returning\n"));
     return 1;
   }
-  
+
   return 0;
 }
 
@@ -747,21 +723,20 @@ void Solver::removeTimestepMonitor(TimestepMonitorFunc f) {
 }
 
 int Solver::call_timestep_monitors(BoutReal simtime, BoutReal lastdt) {
-  if(!monitor_timestep)
+  if (!monitor_timestep)
     return 0;
-  
-  for(const auto& monitor : timestep_monitors) {
-    // Call each monitor one by one
-    int ret = monitor(this, simtime, lastdt);
-    if(ret)
+
+  for (const auto& monitor : timestep_monitors) {
+    const int ret = monitor(this, simtime, lastdt);
+    if (ret != 0)
       return ret; // Return first time an error is encountered
   }
-  
+
   // Call physics model monitor
-  if(model) {
-    int ret = model->runTimestepMonitor(simtime, lastdt);
-    if(ret)
-      return ret; // Return first time an error is encountered
+  if (model != nullptr) {
+    const int ret = model->runTimestepMonitor(simtime, lastdt);
+    if (ret)
+      return ret;
   }
   return 0;
 }
@@ -770,53 +745,38 @@ int Solver::call_timestep_monitors(BoutReal simtime, BoutReal lastdt) {
  * Useful routines (protected)
  **************************************************************************/
 
+template <class T>
+int local_N_sum(int value, const Solver::VarStr<T>& f) {
+  const auto boundary_size = f.evolve_bndry ? size(f.var->getRegion("RGN_BNDRY")) : 0;
+  return value + boundary_size + size(f.var->getRegion("RGN_NOBNDRY"));
+}
+
 int Solver::getLocalN() {
 
-  /// Cache the value, so this is not repeatedly called.
-  /// This value should not change after initialisation
-  static int cacheLocalN = -1;
-  if(cacheLocalN != -1) {
+  // Cache the value, so this is not repeatedly called.
+  // This value should not change after initialisation
+  static int cacheLocalN{-1};
+  if (cacheLocalN != -1) {
     return cacheLocalN;
   }
-  
-  ASSERT0(initialised); // Must be initialised
-  
-  int n2d = n2Dvars();
-  int n3d = n3Dvars();
 
-  int local_N = size(mesh->getRegion2D("RGN_NOBNDRY"))
-                * (n2d + (mesh->zend + 1 - mesh->zstart) * n3d);
+  // Must be initialised
+  ASSERT0(initialised);
 
-  //////////// How many variables have evolving boundaries?
-  
-  int n2dbndry = 0;
-  for(const auto& f : f2d) {
-    if(f.evolve_bndry)
-      n2dbndry++;
-  }
-  
-  int n3dbndry = 0;
-  for(const auto& f : f3d) {
-    if(f.evolve_bndry)
-      n3dbndry++;
-  }
+  const auto local_N_2D = std::accumulate(begin(f2d), end(f2d), 0, local_N_sum<Field2D>);
+  const auto local_N_3D = std::accumulate(begin(f3d), end(f3d), 0, local_N_sum<Field3D>);
+  const auto local_N = local_N_2D + local_N_3D;
 
-  //////////// Find boundary regions ////////////
-  
-  // Add the points which will be evolved in the boundaries
-  local_N += size(mesh->getRegion2D("RGN_BNDRY")) * n2dbndry
-      + size(mesh->getRegion3D("RGN_BNDRY")) * n3dbndry;
-  
   cacheLocalN = local_N;
 
   return local_N;
 }
 
-Solver* Solver::create(Options *opts) {  
+Solver* Solver::create(Options* opts) {
   return SolverFactory::getInstance()->createSolver(opts);
 }
 
-Solver* Solver::create(SolverType &type, Options *opts) {  
+Solver* Solver::create(const SolverType& type, Options* opts) {
   return SolverFactory::getInstance()->createSolver(type, opts);
 }
 
@@ -829,6 +789,8 @@ Solver* Solver::create(SolverType &type, Options *opts) {
 
 /// Perform an operation at a given Ind2D (jx,jy) location, moving data between BOUT++ and CVODE
 void Solver::loop_vars_op(Ind2D i2d, BoutReal *udata, int &p, SOLVER_VAR_OP op, bool bndry) {
+  // Use global mesh: FIX THIS!
+  Mesh* mesh = bout::globals::mesh;
   
   switch(op) {
   case LOAD_VARS: {
@@ -962,6 +924,9 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal *udata, int &p, SOLVER_VAR_OP op, 
 
 /// Loop over variables and domain. Used for all data operations for consistency
 void Solver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op) {
+  // Use global mesh: FIX THIS!
+  Mesh* mesh = bout::globals::mesh;
+
   int p = 0; // Counter for location in udata array
   
   // All boundaries
@@ -1069,12 +1034,10 @@ void Solver::set_id(BoutReal *udata) {
   loop_vars(udata, SET_ID);
 }
 
+Field3D Solver::globalIndex(int localStart) {
+  // Use global mesh: FIX THIS!
+  Mesh* mesh = bout::globals::mesh;
 
-/*!
- * Returns a Field3D containing the global indices
- *
- */
-const Field3D Solver::globalIndex(int localStart) {
   Field3D index(-1, mesh); // Set to -1, indicating out of domain
 
   int n2d = f2d.size();
@@ -1285,10 +1248,9 @@ void Solver::post_rhs(BoutReal UNUSED(t)) {
       v.F_var->toContravariant();
   }
 
-  // Make sure 3D fields are at the correct cell location
+  // Make sure 3D fields are at the correct cell location, etc.
   for (MAYBE_UNUSED(const auto& f) : f3d) {
-    ASSERT1(f.var->getLocation() == f.F_var->getLocation());
-    ASSERT1(f.var->getMesh() == f.F_var->getMesh());
+    ASSERT1(areFieldsCompatible(*f.var, *f.F_var));
   }
 
   // Apply boundary conditions to the time-derivatives
@@ -1312,28 +1274,9 @@ void Solver::post_rhs(BoutReal UNUSED(t)) {
 #endif
 }
 
-bool Solver::varAdded(const std::string &name) {
-  for(const auto& f : f2d) {
-    if(f.name == name)
-      return true;
-  }
-  
-  for(const auto& f : f3d) {
-    if(f.name == name)
-      return true;
-  }
-  
-  for(const auto& f : v2d) {
-    if(f.name == name)
-      return true;
-  }
-  
-  for(const auto& f : v3d) {
-    if(f.name == name)
-      return true;
-  }
-  
-  return false;
+bool Solver::varAdded(const std::string& name) {
+  return contains(f2d, name) || contains(f3d, name) || contains(v2d, name)
+         || contains(v3d, name);
 }
 
 bool Solver::have_user_precon() {
@@ -1362,11 +1305,11 @@ void Solver::add_mms_sources(BoutReal t) {
     
   // Iterate over 2D variables
   for(const auto& f : f2d) {
-    *f.F_var += fact->create2D("source", Options::getRoot()->getSection(f.name), mesh, (f.var)->getLocation(), t);
+    *f.F_var += fact->create2D("source", Options::getRoot()->getSection(f.name), f.var->getMesh(), (f.var)->getLocation(), t);
   }
   
   for(const auto& f : f3d) {
-    *f.F_var += fact->create3D("source", Options::getRoot()->getSection(f.name), mesh, (f.var)->getLocation(), t);
+    *f.F_var += fact->create3D("source", Options::getRoot()->getSection(f.name), f.var->getMesh(), (f.var)->getLocation(), t);
   }
 }
 
@@ -1375,7 +1318,7 @@ void Solver::calculate_mms_error(BoutReal t) {
   FieldFactory *fact = FieldFactory::get();
   
   for(const auto& f : f3d) {
-    Field3D solution = fact->create3D("solution", Options::getRoot()->getSection(f.name), mesh, (f.var)->getLocation(), t);
+    Field3D solution = fact->create3D("solution", Options::getRoot()->getSection(f.name), f.var->getMesh(), (f.var)->getLocation(), t);
     
     *(f.MMS_err) = *(f.var) - solution;
   }

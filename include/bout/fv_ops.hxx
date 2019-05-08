@@ -10,6 +10,7 @@
 #include "../vector2d.hxx"
 
 #include "../utils.hxx"
+#include <bout/mesh.hxx>
 
 namespace FV {
   /*!
@@ -180,20 +181,19 @@ namespace FV {
   const Field3D Div_par(const Field3D &f_in, const Field3D &v_in,
                         const Field3D &wave_speed, bool fixflux=true) {
 
-    ASSERT1(f_in.getMesh() == v_in.getMesh());
-    ASSERT1(wave_speed.getMesh() == v_in.getMesh());
-    ASSERT2(f_in.getLocation() == v_in.getLocation());
+    ASSERT1(areFieldsCompatible(f_in, v_in));
+    ASSERT1(areFieldsCompatible(f_in, wave_speed));
 
     Mesh *localmesh = f_in.getMesh();
     
     CellEdges cellboundary;
     
-    Field3D f = localmesh->toFieldAligned(f_in);
-    Field3D v = localmesh->toFieldAligned(v_in);
+    Field3D f = toFieldAligned(f_in, RGN_NOX);
+    Field3D v = toFieldAligned(v_in, RGN_NOX);
 
     Coordinates *coord = f_in.getCoordinates();
 
-    Field3D result{0.0, localmesh};
+    Field3D result{zeroFrom(f_in)};
 
     // Only need one guard cell, so no need to communicate fluxes
     // Instead calculate in guard cells to preserve fluxes
@@ -326,7 +326,7 @@ namespace FV {
         }
       }
     }
-    return localmesh->fromFieldAligned(result);
+    return fromFieldAligned(result, RGN_NOBNDRY);
   }
   
   /*!
@@ -343,10 +343,8 @@ namespace FV {
    */
   template<typename CellEdges = MC>
   const Field3D Div_f_v(const Field3D &n_in, const Vector3D &v, bool bndry_flux) {
-    ASSERT1(n_in.getMesh() == v.x.getMesh());
-    ASSERT1(n_in.getMesh() == v.y.getMesh());
-    ASSERT1(n_in.getMesh() == v.z.getMesh());
-    ASSERT2(n_in.getLocation() == v.getLocation());
+    ASSERT1(n_in.getLocation() == v.getLocation());
+    ASSERT1(areFieldsCompatible(n_in, v.x));
 
     Mesh* localmesh = n_in.getMesh();
     
@@ -358,9 +356,9 @@ namespace FV {
       // Got a covariant vector instead
       throw BoutException("Div_f_v_XPPM passed a covariant v");
     }
-
-    Field3D result{0.0, localmesh};
-
+    
+    Field3D result{zeroFrom(n_in)};
+    
     Field3D vx = v.x;
     Field3D vz = v.z;
     Field3D n  = n_in;
@@ -478,8 +476,8 @@ namespace FV {
     // Currently just using simple centered differences
     // so no fluxes need to be exchanged
     
-    n = localmesh->toFieldAligned(n_in);
-    Field3D vy = localmesh->toFieldAligned(v.y);
+    n = toFieldAligned(n_in, RGN_NOX);
+    Field3D vy = toFieldAligned(v.y, RGN_NOX);
 
     Field3D yresult{0.0, localmesh};
 
@@ -496,7 +494,7 @@ namespace FV {
       yresult[i] = (nU * vU - nD * vD) / (coord->J[i] * coord->dy[i]);
     }
 
-    return result + localmesh->fromFieldAligned(yresult);
+    return result + fromFieldAligned(yresult, RGN_NOBNDRY);
   }
 }
 

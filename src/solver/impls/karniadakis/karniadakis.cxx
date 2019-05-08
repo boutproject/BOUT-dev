@@ -74,16 +74,16 @@ int KarniadakisSolver::init(int nout, BoutReal tstep) {
   
   // Allocate memory
 
-  f1 = Array<BoutReal>(nlocal);
-  f0 = Array<BoutReal>(nlocal);
-  fm1 = Array<BoutReal>(nlocal);
-  fm2 = Array<BoutReal>(nlocal);
+  f1.reallocate(nlocal);
+  f0.reallocate(nlocal);
+  fm1.reallocate(nlocal);
+  fm2.reallocate(nlocal);
 
-  S0 = Array<BoutReal>(nlocal);
-  Sm1 = Array<BoutReal>(nlocal);
-  Sm2 = Array<BoutReal>(nlocal);
+  S0.reallocate(nlocal);
+  Sm1.reallocate(nlocal);
+  Sm2.reallocate(nlocal);
 
-  D0 = Array<BoutReal>(nlocal);
+  D0.reallocate(nlocal);
 
   first_time = true;
 

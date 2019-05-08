@@ -10,18 +10,19 @@
 class Fluid : public PhysicsModel {
 protected:
 
-  int init(bool restart) override {
-    Options *opt = Options::getRoot()->getSection("fluid");
+  int init(bool UNUSED(restart)) override {
+    auto& opt = Options::root()["fluid"];
 
-    // Adiabatic index (ratio of specific heats)
-    OPTION(opt, gamma, 5./3);
-    
-    SOLVE_FOR3(n, p, nv);
+    gamma = opt["gamma"]
+      .doc("Adiabatic index (ratio of specific heats)")
+      .withDefault(5. / 3);
+
+    SOLVE_FOR(n, p, nv);
 
     return 0;
   }
   
-  int rhs(BoutReal time) override {
+  int rhs(BoutReal UNUSED(time)) override {
 
     mesh->communicate(n, p, nv);
 

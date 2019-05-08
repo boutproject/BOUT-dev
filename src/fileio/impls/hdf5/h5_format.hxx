@@ -54,9 +54,10 @@ class H5Format;
 
 class H5Format : public DataFormat {
  public:
-  H5Format(bool parallel_in = false);
-  H5Format(const char *name, bool parallel_in = false);
-  H5Format(const std::string &name, bool parallel_in = false) : H5Format(name.c_str(), parallel_in) {}
+  H5Format(bool parallel_in = false, Mesh* mesh_in = nullptr);
+  H5Format(const char *name, bool parallel_in = false, Mesh* mesh_in = nullptr);
+  H5Format(const std::string &name, bool parallel_in = false, Mesh* mesh_in = nullptr)
+    : H5Format(name.c_str(), parallel_in, mesh_in) {}
   ~H5Format();
 
   using DataFormat::openr;

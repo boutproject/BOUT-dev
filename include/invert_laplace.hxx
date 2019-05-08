@@ -105,7 +105,7 @@ const int INVERT_OUT_RHS = 32768; ///< Use input value in RHS at outer boundary
 /// Base class for Laplacian inversion
 class Laplacian {
 public:
-  Laplacian(Options *options = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh* mesh_in = mesh);
+  Laplacian(Options *options = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh* mesh_in = nullptr);
   virtual ~Laplacian() {}
   
   /// Set coefficients for inversion. Re-builds matrices if necessary
@@ -173,6 +173,9 @@ public:
   virtual void setGlobalFlags(int f) { global_flags = f; }
   virtual void setInnerBoundaryFlags(int f) { inner_boundary_flags = f; }
   virtual void setOuterBoundaryFlags(int f) { outer_boundary_flags = f; }
+
+  /// Does this solver use Field3D coefficients (true) or only their DC component (false)
+  virtual bool uses3DCoefs() const { return false; }
   
   virtual const FieldPerp solve(const FieldPerp &b) = 0;
   virtual const Field3D solve(const Field3D &b);
@@ -192,7 +195,7 @@ public:
    * 
    * @param[in] opt  The options section to use. By default "laplace" will be used
    */
-  static Laplacian *create(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = mesh);
+  static Laplacian *create(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr);
   static Laplacian* defaultInstance(); ///< Return pointer to global singleton
   
   static void cleanup(); ///< Frees all memory
@@ -214,17 +217,31 @@ protected:
 
   void tridagCoefs(int jx, int jy, BoutReal kwave, dcomplex &a, dcomplex &b, dcomplex &c,
                    const Field2D *ccoef = nullptr, const Field2D *d = nullptr,
+                   CELL_LOC loc = CELL_DEFAULT) {
+    tridagCoefs(jx, jy, kwave, a, b, c, ccoef, ccoef, d, loc);
+  }
+  void tridagCoefs(int jx, int jy, BoutReal kwave, dcomplex &a, dcomplex &b, dcomplex &c,
+                   const Field2D *c1coef, const Field2D *c2coef, const Field2D *d,
                    CELL_LOC loc = CELL_DEFAULT);
 
-  void tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec, dcomplex **bk,
-                    int jy, int flags, int inner_boundary_flags, int outer_boundary_flags,
-                    const Field2D *a = nullptr, const Field2D *ccoef = nullptr,
-                    const Field2D *d = nullptr);
+  void DEPRECATED(tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
+                    dcomplex **bk, int jy, int flags, int inner_boundary_flags,
+                    int outer_boundary_flags, const Field2D *a = nullptr,
+                    const Field2D *ccoef = nullptr, const Field2D *d = nullptr));
 
   void tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
                     dcomplex *bk, int jy, int kz, BoutReal kwave, 
                     int flags, int inner_boundary_flags, int outer_boundary_flags,
                     const Field2D *a, const Field2D *ccoef, 
+                    const Field2D *d,
+                    bool includeguards=true) {
+    tridagMatrix(avec, bvec, cvec, bk, jy, kz, kwave, flags, inner_boundary_flags,
+        outer_boundary_flags, a, ccoef, ccoef, d, includeguards);
+  }
+  void tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
+                    dcomplex *bk, int jy, int kz, BoutReal kwave,
+                    int flags, int inner_boundary_flags, int outer_boundary_flags,
+                    const Field2D *a, const Field2D *c1coef, const Field2D *c2coef,
                     const Field2D *d,
                     bool includeguards=true);
   CELL_LOC location;   ///< staggered grid location of this solver
@@ -244,14 +261,14 @@ void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcom
                           const Field2D *ccoef = nullptr, const Field2D *d = nullptr,
                           CELL_LOC loc = CELL_DEFAULT);
 
-int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, const Field2D *a,
-                   const Field2D *c = nullptr, const Field2D *d = nullptr);
-int invert_laplace(const Field3D &b, Field3D &x, int flags, const Field2D *a,
-                   const Field2D *c = nullptr, const Field2D *d = nullptr);
+DEPRECATED(int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, const Field2D *a,
+                   const Field2D *c = nullptr, const Field2D *d = nullptr));
+DEPRECATED(int invert_laplace(const Field3D &b, Field3D &x, int flags, const Field2D *a,
+                   const Field2D *c = nullptr, const Field2D *d = nullptr));
 
 /// More readable API for calling Laplacian inversion. Returns x
-const Field3D invert_laplace(const Field3D &b, int flags, const Field2D *a = nullptr,
-                             const Field2D *c = nullptr, const Field2D *d = nullptr);
+DEPRECATED(const Field3D invert_laplace(const Field3D &b, int flags, const Field2D *a = nullptr,
+                             const Field2D *c = nullptr, const Field2D *d = nullptr));
 
 #endif // __LAPLACE_H__
 

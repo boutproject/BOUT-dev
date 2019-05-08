@@ -11,12 +11,12 @@ try:
 except:
   pass
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
+from boututils.run_wrapper import shell, shell_safe, launch_safe
 from boutdata.collect import collect
 import numpy as np
 from sys import stdout, exit
 
-MPIRUN=getmpirun()
+
 
 print("Making I/O test")
 shell_safe("make > make.log")
@@ -46,7 +46,7 @@ for nproc in [1,2,4]:
   # Run test case
 
   print("   %d processor...." % (nproc))
-  s, out = launch_safe(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
+  s, out = launch_safe(cmd, nproc=nproc, pipe=True)
   with open("run.log."+str(nproc), "w") as f:
     f.write(out)
 

@@ -30,8 +30,8 @@ Lagrange4pt::Lagrange4pt(int y_offset, Mesh *mesh)
     : Interpolation(y_offset, mesh), t_x(localmesh), t_z(localmesh) {
 
   // Index arrays contain guard cells in order to get subscripts right
-  i_corner = Tensor<int>(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
-  k_corner = Tensor<int>(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
+  i_corner.reallocate(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
+  k_corner.reallocate(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
 
   t_x.allocate();
   t_z.allocate();
@@ -82,8 +82,7 @@ Field3D Lagrange4pt::interpolate(const Field3D &f) const {
       "Lagrange4pt::interpolate not yet updated to handle z-guards fully.");
 #endif
   ASSERT1(f.getMesh() == localmesh);
-  Field3D f_interp(f.getMesh());
-  f_interp.allocate();
+  Field3D f_interp{emptyFrom(f)};
 
   BOUT_FOR(i, f.getRegion("RGN_NOBNDRY")) {
     const auto x = i.x(), y = i.y(), z = i.z();

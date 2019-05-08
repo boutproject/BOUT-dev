@@ -8,7 +8,7 @@
 
 #include <output.hxx>
 
-LaplaceXZcyclic::LaplaceXZcyclic(Mesh *m, Options *options, const CELL_LOC loc) : LaplaceXZ(m, options, loc), mesh(m) {
+LaplaceXZcyclic::LaplaceXZcyclic(Mesh *m, Options *options, const CELL_LOC loc) : LaplaceXZ(m, options, loc) {
 
   // Number of Z Fourier modes, including DC
   nmode = (m->zend + 1 - m->zstart) / 2 + 1;
@@ -31,48 +31,52 @@ LaplaceXZcyclic::LaplaceXZcyclic(Mesh *m, Options *options, const CELL_LOC loc) 
   // including boundaries but not guard cells
   nloc = xend - xstart + 1;
 
-  acoef  = Matrix<dcomplex>(nsys, nloc);
-  bcoef  = Matrix<dcomplex>(nsys, nloc);
-  ccoef  = Matrix<dcomplex>(nsys, nloc);
-  xcmplx = Matrix<dcomplex>(nsys, nloc);
-  rhscmplx = Matrix<dcomplex>(nsys, nloc);
+  acoef.reallocate(nsys, nloc);
+  bcoef.reallocate(nsys, nloc);
+  ccoef.reallocate(nsys, nloc);
+  xcmplx.reallocate(nsys, nloc);
+  rhscmplx.reallocate(nsys, nloc);
 
-  k1d = Array<dcomplex>(nmode);
-  k1d_2 = Array<dcomplex>(nmode);
+  k1d.reallocate(nmode);
+  k1d_2.reallocate(nmode);
 
   // Create a cyclic reduction object, operating on dcomplex values
-  cr = new CyclicReduce<dcomplex>(mesh->getXcomm(), nloc);
+  cr = bout::utils::make_unique<CyclicReduce<dcomplex>>(localmesh->getXcomm(), nloc);
 
   // Getting the boundary flags
   OPTION(options, inner_boundary_flags, 0);
   OPTION(options, outer_boundary_flags, 0);
 
   // Set default coefficients
-  setCoefs(Field2D(1.0), Field2D(0.0));
-}
-
-LaplaceXZcyclic::~LaplaceXZcyclic() {
-  // Delete tridiagonal solver
-  delete cr;
+  Field2D one(1., localmesh);
+  Field2D zero(0., localmesh);
+  one.setLocation(location);
+  zero.setLocation(location);
+  setCoefs(one, zero);
 }
 
 void LaplaceXZcyclic::setCoefs(const Field2D &A2D, const Field2D &B2D) {
   TRACE("LaplaceXZcyclic::setCoefs");
   Timer timer("invert");
+
+  ASSERT1(A2D.getMesh() == localmesh);
+  ASSERT1(B2D.getMesh() == localmesh);
+  ASSERT1(A2D.getLocation() == location);
+  ASSERT1(B2D.getLocation() == location);
   
   // Set coefficients
 
-  Coordinates *coord = mesh->getCoordinates(location);
+  Coordinates *coord = localmesh->getCoordinates(location);
 
   // NOTE: For now the X-Z terms are omitted, so check that they are small
   ASSERT2(max(abs(coord->g13)) < 1e-5);
   
   int ind = 0;
-  for(int y=mesh->ystart; y <= mesh->yend; y++) {
+  for(int y=localmesh->ystart; y <= localmesh->yend; y++) {
     for(int kz = 0; kz < nmode; kz++) {
       BoutReal kwave=kz*2.0*PI/(coord->zlength());
 
-      if(mesh->firstX()) {
+      if(localmesh->firstX()) {
         // Inner X boundary
         
         if( ((kz == 0) && (inner_boundary_flags & INVERT_DC_GRAD)) ||
@@ -91,7 +95,7 @@ void LaplaceXZcyclic::setCoefs(const Field2D &A2D, const Field2D &B2D) {
       }
 
       // Bulk of the domain
-      for(int x=mesh->xstart; x <= mesh->xend; x++) {
+      for(int x=localmesh->xstart; x <= localmesh->xend; x++) {
         acoef(ind, x - xstart) = 0.0; // X-1
         bcoef(ind, x - xstart) = 0.0; // Diagonal
         ccoef(ind, x - xstart) = 0.0; // X+1
@@ -131,7 +135,7 @@ void LaplaceXZcyclic::setCoefs(const Field2D &A2D, const Field2D &B2D) {
       }
 
       // Outer X boundary
-      if(mesh->lastX()) {
+      if(localmesh->lastX()) {
         // Outer X boundary
         if( ((kz == 0) && (outer_boundary_flags & INVERT_DC_GRAD)) ||
             ((kz != 0) && (outer_boundary_flags & INVERT_AC_GRAD)) ) {
@@ -157,12 +161,16 @@ void LaplaceXZcyclic::setCoefs(const Field2D &A2D, const Field2D &B2D) {
 Field3D LaplaceXZcyclic::solve(const Field3D &rhs, const Field3D &x0) {
   Timer timer("invert");
 
-  Mesh *mesh = rhs.getMesh();
+  ASSERT1(rhs.getMesh() == localmesh);
+  ASSERT1(x0.getMesh() == localmesh);
+  ASSERT1(rhs.getLocation() == location);
+  ASSERT1(x0.getLocation() == location);
+
   // Create the rhs array
   int ind = 0;
-  for(int y=mesh->ystart; y <= mesh->yend; y++) {
+  for(int y=localmesh->ystart; y <= localmesh->yend; y++) {
 
-    if(mesh->firstX()) {
+    if(localmesh->firstX()) {
       // Inner X boundary
       
       if(inner_boundary_flags & INVERT_SET) {
@@ -197,7 +205,7 @@ Field3D LaplaceXZcyclic::solve(const Field3D &rhs, const Field3D &x0) {
     }
 
     // Bulk of the domain
-    for(int x=mesh->xstart; x <= mesh->xend; x++) {
+    for(int x=localmesh->xstart; x <= localmesh->xend; x++) {
       // Fourier transform RHS
       rfft(&rhs(x, y, mesh->zstart), mesh->zend + 1 - mesh->zstart, std::begin(k1d));
       for(int kz = 0; kz < nmode; kz++) {
@@ -206,7 +214,7 @@ Field3D LaplaceXZcyclic::solve(const Field3D &rhs, const Field3D &x0) {
     }
 
     // Outer X boundary
-    if(mesh->lastX()) {
+    if(localmesh->lastX()) {
       // Outer X boundary
       if(outer_boundary_flags & INVERT_SET) {
         // Fourier transform x0 in Z at xend and xend+1
@@ -250,12 +258,10 @@ Field3D LaplaceXZcyclic::solve(const Field3D &rhs, const Field3D &x0) {
 
   // FFT back to real space
 
-  Field3D result(mesh);
-  result.allocate();
-  result.setLocation(rhs.getLocation());
+  Field3D result{emptyFrom(rhs)};
 
   ind = 0;
-  for(int y=mesh->ystart; y <= mesh->yend; y++) {
+  for(int y=localmesh->ystart; y <= localmesh->yend; y++) {
     for(int x=xstart;x<=xend;x++) {
       for(int kz = 0; kz < nmode; kz++) {
         k1d[kz] = xcmplx(ind + kz, x - xstart);

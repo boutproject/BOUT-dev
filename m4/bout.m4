@@ -44,6 +44,7 @@ AC_DEFUN([BOUT_ADDPATH_CHECK_LIB],[
 
   # Try with no extra libraries first
   AS_IF([test ."$5" = .yes], [extra_prefix=""], [extra_prefix="$5"])
+  LIBS="$save_LIBS $EXTRA_LIBS"
   AC_LINK_IFELSE([AC_LANG_PROGRAM([[
     extern "C"
     char $2();
@@ -51,10 +52,11 @@ AC_DEFUN([BOUT_ADDPATH_CHECK_LIB],[
   [BACL_found=yes
    BOUT_MSG_DEBUG([found $1 without path or library flag])],
   [])
+  LIBS=$save_LIBS
 
   # Now try with explicitly linking library
   AS_IF([test $BACL_found != yes], [
-    LIBS="$save_LIBS -l$1"
+    LIBS="$save_LIBS $EXTRA_LIBS -l$1"
     AS_IF([test ."$5" = .yes], [extra_prefix=""], [extra_prefix="$5"])
     AC_LINK_IFELSE([AC_LANG_PROGRAM([[
       extern "C"
@@ -71,7 +73,7 @@ AC_DEFUN([BOUT_ADDPATH_CHECK_LIB],[
       for path in $search_prefix $search_prefix/lib $search_prefix/lib64 $search_prefix/x86_64-linux-gnu
       do
         AS_IF([test -d $path], [
-          LIBS="$save_LIBS -l$1"
+          LIBS="$save_LIBS $EXTRA_LIBS -l$1"
           LDFLAGS="$save_LDFLAGS -L$path"
           BOUT_MSG_DEBUG([try link $1 with $path])
           AC_LINK_IFELSE([AC_LANG_PROGRAM([[

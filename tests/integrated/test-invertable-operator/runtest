@@ -1,0 +1,56 @@
+#!/usr/bin/env python3
+
+#requires: petsc
+
+# 
+# Run the test, compare results against expected value
+#
+
+from __future__ import print_function
+from __future__ import division
+
+from boututils.run_wrapper import shell, shell_safe, launch_safe
+from boutdata.collect import collect
+import numpy as np
+from sys import stdout, exit
+
+nprocs = [1,2]       # Number of processors to run on
+reltol = 1.e-3  # Allowed relative tolerance
+nthreads=1
+
+
+print("Making invertable operator test")
+shell_safe("make > make.log")
+
+# Delete old output files
+shell("rm data/BOUT.dmp.*")
+
+def run(path, nproc, log=False):
+    pipe = False
+    if log != False:
+        pipe = True
+    s, out = launch_safe("./invertable_operator -d "+path, nproc=nproc, mthread=nthreads, pipe=pipe)
+    if pipe:
+        f = open(log, "w")
+        f.write(out)
+        f.close()
+
+    # Get result of the test
+    passVerification = collect("passVerification", path=path)[-1]
+    maxRelErrLaplacians = collect("maxRelErrLaplacians", path=path)[-1]
+
+    if passVerification == 0:
+        print("  => Failed (verification step - value is {s})".format(s=passVerification))
+        exit(1)
+
+    if maxRelErrLaplacians > reltol:
+        print("  => Failed (relative tolerance step -- difference of {s})".format(s=maxRelErrLaplacians))
+        exit(1)
+
+
+for np in nprocs:
+    run("data",np)
+
+print("  => All tests passed")
+exit(0)
+

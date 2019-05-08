@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
   Field2D input2d = f.create2D("1 + sin(2*y)");
   Field3D input3d = f.create3D("gauss(x-0.5,0.2)*gauss(y-pi)*sin(3*y - z)");
   
-  input3d.mergeYupYdown();
+  input3d.calcParallelSlices();
 
   SAVE_ONCE2(input2d, input3d);
   
@@ -31,11 +31,6 @@ int main(int argc, char **argv) {
   
   // Output data
   dump.write();
-  dump.close();
-  
-  output << "\nFinished running test. Triggering error to quit\n\n";
-  
-  MPI_Barrier(BoutComm::get()); // Wait for all processors to write data
   
   BoutFinalise();
   return 0;

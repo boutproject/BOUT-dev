@@ -20,7 +20,7 @@
 #include <output.hxx>
 
 LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt, const CELL_LOC loc)
-  : LaplaceXZ(m, opt, loc), mesh(m), coefs_set(false) {
+  : LaplaceXZ(m, opt, loc), coefs_set(false) {
   /* Constructor: LaplaceXZpetsc
    * Purpose:     - Setting inversion solver options
    *              - Setting the solver method
@@ -98,51 +98,60 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt, const CELL_LOC loc)
 
   if (opt == nullptr) {
     // If no options supplied, use default
-    opt = Options::getRoot()->getSection("laplacexz");
+    opt = &(Options::root())["laplacexz"];
   }
 
   // Getting the boundary flags
   OPTION(opt, inner_boundary_flags, 0);
   OPTION(opt, outer_boundary_flags, 0);
-  #if CHECK > 0
-    // Checking flags are set to something which is not implemented
-    // This is done binary (which is possible as each flag is a power of 2)
-    if ( inner_boundary_flags & ~implemented_boundary_flags ) {
-      throw BoutException("Attempted to set LaplaceXZ inversion boundary flag that is not implemented in petsc_laplace.cxx");
-    }
-    if ( outer_boundary_flags & ~implemented_boundary_flags ) {
-      throw BoutException("Attempted to set LaplaceXZ inversion boundary flag that is not implemented in petsc_laplace.cxx");
-    }
-    if(mesh->periodicX) {
-      throw BoutException("LaplacePetsc does not work with periodicity in the x direction (mesh->PeriodicX == true). Change boundary conditions or use serial-tri or cyclic solver instead");
-      }
-  #endif
+#if CHECK > 0
+  // Checking flags are set to something which is not implemented
+  // This is done binary (which is possible as each flag is a power of 2)
+  if (inner_boundary_flags & ~implemented_boundary_flags) {
+    throw BoutException("Attempted to set LaplaceXZ inversion boundary flag that is not "
+                        "implemented in petsc_laplace.cxx");
+  }
+  if (outer_boundary_flags & ~implemented_boundary_flags) {
+    throw BoutException("Attempted to set LaplaceXZ inversion boundary flag that is not "
+                        "implemented in petsc_laplace.cxx");
+  }
+  if (localmesh->periodicX) {
+    throw BoutException("LaplacePetsc does not work with periodicity in the x direction "
+                        "(localmesh->PeriodicX == true). Change boundary conditions or "
+                        "use serial-tri or cyclic solver instead");
+  }
+#endif
 
-  OPTION(opt, reuse_limit, 100);
+  reuse_limit = (*opt)["reuse_limit"]
+                    .doc("How many solves can the preconditioner be reused?")
+                    .withDefault(100);
   reuse_count = reuse_limit + 1; // So re-calculates first time
 
   // Convergence Parameters. Solution is considered converged if |r_k| < max( rtol * |b| , atol )
   // where r_k = b - Ax_k. The solution is considered diverged if |r_k| > dtol * |b|.
-  BoutReal rtol, atol, dtol;
-  int maxits; ///< Maximum iterations
-  OPTION(opt, rtol, 1e-5);     // Relative tolerance
-  OPTION(opt, atol, 1e-10);    // Absolute tolerance
-  OPTION(opt, dtol, 1e3);      // Diverged threshold
-  OPTION(opt, maxits, 100000); // Maximum iterations
+
+  const BoutReal rtol = (*opt)["rtol"].doc("Relative tolerance").withDefault(1e-5);
+  const BoutReal atol = (*opt)["atol"]
+          .doc("Absolute tolerance. The solution is considered converged if |Ax-b| "
+               "< max( rtol * |b| , atol )")
+          .withDefault(1e-10);
+  const BoutReal dtol = (*opt)["dtol"]
+                      .doc("The solution is considered diverged if |Ax-b| > dtol * |b|")
+                      .withDefault(1e3);
+  const int maxits = (*opt)["maxits"].doc("Maximum iterations").withDefault(100000);
 
   // Get KSP Solver Type
-  std::string ksptype;
-  opt->get("ksptype", ksptype, "gmres");
-
+  const std::string ksptype = (*opt)["ksptype"].doc("KSP solver type").withDefault("gmres");
+  
   // Get PC type
-  std::string pctype;
-  opt->get("pctype", pctype, "lu", true);
+  const std::string pctype = (*opt)["pctype"].doc("Preconditioner type").withDefault("none");
 
-  std::string factor_package;
-  opt->get("factor_package", factor_package, "petsc", true);
+  const std::string factor_package = (*opt)["factor_package"]
+          .doc("Package to use in preconditioner. Passed to PCFactorSetMatSolver")
+          .withDefault("petsc");
 
   // Get MPI communicator
-  MPI_Comm comm = mesh->getXcomm();
+  MPI_Comm comm = localmesh->getXcomm();
 
   // Local size
   int localN = (mesh->xend - mesh->xstart + 1) * (mesh->zend - mesh->zstart + 1);
@@ -159,7 +168,7 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt, const CELL_LOC loc)
   VecSetFromOptions( xs );
   VecDuplicate( xs , &bs );
 
-  for(int y = mesh->ystart; y <= mesh->yend; y++) {
+  for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
     YSlice data;
 
     data.yindex = y;
@@ -176,7 +185,7 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt, const CELL_LOC loc)
     PetscMalloc( (localN)*sizeof(PetscInt), &d_nnz );
     PetscMalloc( (localN)*sizeof(PetscInt), &o_nnz );
 
-    for(int i=0;i<localN;i++) {
+    for (int i=0;i<localN;i++) {
       // Non-zero elements on this processor
       d_nnz[i] = 5; // Star pattern in 2D
       // Non-zero elements on neighboring processor
@@ -188,7 +197,7 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt, const CELL_LOC loc)
       for (int z = mesh->zstart; z <= mesh->zend; z++) {
         d_nnz[z] = 2;
       }
-    }else {
+    } else {
       // One point on another processor
       for (int z = mesh->zstart; z <= mesh->zend; z++) {
         d_nnz[z] -= 1;
@@ -201,7 +210,7 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt, const CELL_LOC loc)
         int ind = localN - (mesh->zend - mesh->zstart + 1) + z;
         d_nnz[ind] = 2;
       }
-    }else {
+    } else {
       // One point on another processor
       for (int z = mesh->zstart; z <= mesh->zend; z++) {
         int ind = localN - (mesh->zend - mesh->zstart + 1) + z;
@@ -277,6 +286,11 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
 
   TRACE("LaplaceXZpetsc::setCoefs");
 
+  ASSERT1(Ain.getMesh() == localmesh);
+  ASSERT1(Bin.getMesh() == localmesh);
+  ASSERT1(Ain.getLocation() == location);
+  ASSERT1(Bin.getLocation() == location);
+
   #if CHECK > 0
     // Checking flags are set to something which is not implemented
     // This is done binary (which is possible as each flag is a power of 2)
@@ -304,7 +318,7 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
     ////////////////////////////////////////////////
     // Inner X boundary (see note about BC in LaplaceXZ constructor)
     int row = Istart;
-    if(mesh->firstX()) {
+    if(localmesh->firstX()) {
       if (inner_boundary_flags & INVERT_AC_GRAD){
         // Neumann 0
         /* NOTE: Sign of the elements are opposite of what one might expect,
@@ -369,7 +383,7 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
     //
     // (1/J) d/dx ( A * J * g11 d/dx ) + (1/J) d/dz ( A * J * g33 d/dz ) + B
 
-    Coordinates *coords = mesh->getCoordinates(location);
+    Coordinates *coords = localmesh->getCoordinates(location);
 
     // NOTE: For now the X-Z terms are omitted, so check that they are small
     ASSERT2(max(abs(coords->g13)) < 1e-5);
@@ -460,7 +474,7 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
 
     ////////////////////////////////////////////////
     // Outer X boundary (see note about BC in LaplaceXZ constructor)
-    if(mesh->lastX()) {
+    if(localmesh->lastX()) {
       if (outer_boundary_flags & INVERT_AC_GRAD){
         // Neumann 0
         for (int z = mesh->zstart; z <= mesh->zend; z++) {
@@ -580,6 +594,11 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
 
   TRACE("LaplaceXZpetsc::solve");
 
+  ASSERT1(bin.getMesh() == localmesh);
+  ASSERT1(x0in.getMesh() == localmesh);
+  ASSERT1(bin.getLocation() == location);
+  ASSERT1(x0in.getLocation() == location);
+
   if(!coefs_set) {
     throw BoutException("LaplaceXZpetsc: solve called before setCoefs");
   }
@@ -589,9 +608,7 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
   Field3D b = bin;
   Field3D x0 = x0in;
 
-  Field3D result;
-  result.allocate();
-  result.setLocation(bin.getLocation());
+  Field3D result{emptyFrom(bin)};
 
   for (auto &it : slice) {
     /// Get y index
@@ -609,12 +626,12 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
     int ind = Istart;
 
     // Inner X boundary (see note about BC in LaplaceXZ constructor)
-    if(mesh->firstX()) {
+    if(localmesh->firstX()) {
       if (inner_boundary_flags & INVERT_AC_GRAD){
         // Neumann 0
         for (int z = mesh->zstart; z <= mesh->zend; z++) {
           // Setting the initial guess x0
-          PetscScalar val = x0(mesh->xstart-1,y,z);
+          PetscScalar val = x0(localmesh->xstart-1,y,z);
           VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
 
           // Setting the solution b
@@ -627,11 +644,11 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
         // Setting BC from x0
         for (int z = mesh->zstart; z <= mesh->zend; z++) {
           // Setting the initial guess x0
-          PetscScalar val = x0(mesh->xstart-1,y,z);
+          PetscScalar val = x0(localmesh->xstart-1,y,z);
           VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
 
           // Setting the solution b
-          val = x0(mesh->xstart,y,z);
+          val = x0(localmesh->xstart,y,z);
           VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
           ind++;
         }
@@ -640,11 +657,11 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
         // Setting BC from b
         for (int z = mesh->zstart; z <= mesh->zend; z++) {
           // Setting the initial guess x0
-          PetscScalar val = x0(mesh->xstart-1,y,z);
+          PetscScalar val = x0(localmesh->xstart-1,y,z);
           VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
 
           // Setting the solution b
-          val = b(mesh->xstart,y,z);
+          val = b(localmesh->xstart,y,z);
           VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
           ind++;
         }
@@ -653,11 +670,11 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
         // Default: Neumann on inner x boundary
         for (int z = mesh->zstart; z <= mesh->zend; z++) {
           // Setting the initial guess x0
-          PetscScalar val = x0(mesh->xstart-1,y,z);
+          PetscScalar val = x0(localmesh->xstart-1,y,z);
           VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
 
           // Setting the solution b
-          val = x0(mesh->xstart-1,y,z) - x0(mesh->xstart,y,z);
+          val = x0(localmesh->xstart-1,y,z) - x0(localmesh->xstart,y,z);
           VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
           ind++;
         }
@@ -677,12 +694,12 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
     }
 
     // Outer X boundary (see note about BC in LaplaceXZ constructor)
-    if(mesh->lastX()) {
+    if(localmesh->lastX()) {
       if (outer_boundary_flags & INVERT_AC_GRAD){
         // Neumann 0
         for (int z = mesh->zstart; z <= mesh->zend; z++) {
           // Setting the initial guess x0
-          PetscScalar val = x0(mesh->xend+1,y,z);
+          PetscScalar val = x0(localmesh->xend+1,y,z);
           VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
 
           // Setting the solution b
@@ -696,11 +713,11 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
         // Setting BC from x0
         for (int z = mesh->zstart; z <= mesh->zend; z++) {
           // Setting the initial guess x0
-          PetscScalar val = x0(mesh->xend+1,y,z);
+          PetscScalar val = x0(localmesh->xend+1,y,z);
           VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
 
           // Setting the solution b
-          val = x0(mesh->xend+1,y,z);
+          val = x0(localmesh->xend+1,y,z);
           VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
 
           ind++;
@@ -710,11 +727,11 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
         // Setting BC from b
         for (int z = mesh->zstart; z <= mesh->zend; z++) {
           // Setting the initial guess x0
-          PetscScalar val = x0(mesh->xend+1,y,z);
+          PetscScalar val = x0(localmesh->xend+1,y,z);
           VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
 
           // Setting the solution b
-          val = b(mesh->xend+1,y,z);
+          val = b(localmesh->xend+1,y,z);
           VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
 
           ind++;
@@ -724,11 +741,11 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
         //Default: Dirichlet on outer X boundary
         for (int z = mesh->zstart; z <= mesh->zend; z++) {
           // Setting the initial guess x0
-          PetscScalar val = x0(mesh->xend+1,y,z);
+          PetscScalar val = x0(localmesh->xend+1,y,z);
           VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
 
           // Setting the solution b
-          val = 0.5*(x0(mesh->xend,y,z) + x0(mesh->xend+1,y,z));
+          val = 0.5*(x0(localmesh->xend,y,z) + x0(localmesh->xend+1,y,z));
           VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
 
           ind++;
@@ -768,7 +785,7 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
       for (int z = mesh->zstart; z <= mesh->zend; z++) {
         PetscScalar val;
         VecGetValues(xs, 1, &ind, &val );
-        result(mesh->xstart-1,y,z) = val;
+        result(localmesh->xstart-1,y,z) = val;
         ind++;
       }
     }
@@ -787,7 +804,7 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
       for (int z = mesh->zstart; z <= mesh->zend; z++) {
         PetscScalar val;
         VecGetValues(xs, 1, &ind, &val );
-        result(mesh->xend+1,y,z) = val;
+        result(localmesh->xend+1,y,z) = val;
         ind++;
       }
     }

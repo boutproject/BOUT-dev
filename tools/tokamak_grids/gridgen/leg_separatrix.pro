@@ -30,23 +30,12 @@ FUNCTION leg_separatrix, dctF, R, Z, xpt_ri, xpt_zi, $
   fyy = d[4]
   fxy = d[5]
   
-  xr = INTERPOLATE(r,xpt_ri)
-  xz = INTERPOLATE(z,xpt_zi)
+  xr = INTERPOLATE(r,xpt_ri, /DOUBLE)
+  xz = INTERPOLATE(z,xpt_zi, /DOUBLE)
   
-  drdi = INTERPOLATE(DERIV(R), xpt_ri)
-  dzdi = INTERPOLATE(DERIV(Z), xpt_zi)
+  drdi = INTERPOLATE(DERIV(R), xpt_ri, /DOUBLE)
+  dzdi = INTERPOLATE(DERIV(Z), xpt_zi, /DOUBLE)
 
-  ; Use finite-differencing
-  ;di = 2.
-  ;axp = local_gradient(dctF, xpt_ri + di, xpt_zi)
-  ;axm = local_gradient(dctF, xpt_ri - di, xpt_zi)
-  ;ayp = local_gradient(dctF, xpt_ri, xpt_zi + di)
-  ;aym = local_gradient(dctF, xpt_ri, xpt_zi - di)
-
-  ;fxx = 0.5*(axp.dfdr - axm.dfdr)/di
-  ;fyy = 0.5*(ayp.dfdz - aym.dfdz)/di
-  ;fxy = 0.25*( (axp.dfdz - axm.dfdz) + (ayp.dfdr - aym.dfdr) ) / di
-  
   IF ABS(fyy) GT 1e-4 THEN BEGIN
     ; Get gradients 1 and 2 (solutions y = g1 * x and y = g2 * x)
     
@@ -60,7 +49,7 @@ FUNCTION leg_separatrix, dctF, R, Z, xpt_ri, xpt_zi, $
   ENDIF ELSE BEGIN
     ; One of the lines through the x-point is vertical (x = const)    
     v1 = [0, 1]
-    v2 = [drdi, -fxx / (2.*fxy) * dzdi]
+    v2 = [drdi, -fxx / (2.D*fxy) * dzdi]
   ENDELSE
   
   ; For each line, work out which direction to go away from the
@@ -83,7 +72,7 @@ FUNCTION leg_separatrix, dctF, R, Z, xpt_ri, xpt_zi, $
   vp = vp / SQRT(TOTAL(vp^2))
   vm = vm / SQRT(TOTAL(vm^2))
   
-  di = 0.1
+  di = 0.1D
   
   dp = TOTAL(v0*vp)
   dm = TOTAL(v0*vm)
@@ -93,7 +82,7 @@ FUNCTION leg_separatrix, dctF, R, Z, xpt_ri, xpt_zi, $
     dp = dm
   ENDIF
   ; Either both pointing along core or both along pf
-  IF dp GT 0. THEN BEGIN
+  IF dp GT 0.D THEN BEGIN
     ; Both along core - reverse
     v1 = -v1
     v2 = -v2
@@ -109,9 +98,9 @@ FUNCTION leg_separatrix, dctF, R, Z, xpt_ri, xpt_zi, $
   
   ; Need to decide which direction in theta this is
   
-  dt = theta_differential(0., [xpt_ri + di*v1[0], xpt_zi + di*v1[1]])
-  sign = 1.
-  IF TOTAL(dt * v1) LT 0 THEN sign = -1.
+  dt = theta_differential(0.D, [xpt_ri + di*v1[0], xpt_zi + di*v1[1]])
+  sign = 1.D
+  IF TOTAL(dt * v1) LT 0 THEN sign = -1.D
   
   line1 = theta_line( dctF, $
                       xpt_ri + di*v1[0], xpt_zi + di*v1[1], $
@@ -121,9 +110,9 @@ FUNCTION leg_separatrix, dctF, R, Z, xpt_ri, xpt_zi, $
                       xpt_ri - di*v1[0], xpt_zi - di*v1[1], $
                       sign*di, 100, psi=psi)
 
-  dt = theta_differential(0., [xpt_ri + di*v2[0], xpt_zi + di*v2[1]])
-  sign = 1.
-  IF TOTAL(dt * v2) LT 0 THEN sign = -1.
+  dt = theta_differential(0.D, [xpt_ri + di*v2[0], xpt_zi + di*v2[1]])
+  sign = 1.D
+  IF TOTAL(dt * v2) LT 0 THEN sign = -1.D
 
   line2 = theta_line( dctF, $
                       xpt_ri + di*v2[0], xpt_zi + di*v2[1], $
@@ -133,11 +122,11 @@ FUNCTION leg_separatrix, dctF, R, Z, xpt_ri, xpt_zi, $
                       xpt_ri - di*v2[0], xpt_zi - di*v2[1], $
                       sign*di, 100, psi=psi)
 
-  OPLOT, INTERPOLATE(R, line1[*,0]), INTERPOLATE(Z, line1[*,1]), color=3, thick=2
-  OPLOT, INTERPOLATE(R, line2[*,0]), INTERPOLATE(Z, line2[*,1]), color=4, thick=2
+  OPLOT, INTERPOLATE(R, line1[*,0], /DOUBLE), INTERPOLATE(Z, line1[*,1], /DOUBLE), color=3, thick=2
+  OPLOT, INTERPOLATE(R, line2[*,0], /DOUBLE), INTERPOLATE(Z, line2[*,1], /DOUBLE), color=4, thick=2
   
-  OPLOT, INTERPOLATE(R, core1[*,0]), INTERPOLATE(Z, core1[*,1]), color=3, thick=2
-  OPLOT, INTERPOLATE(R, core2[*,0]), INTERPOLATE(Z, core2[*,1]), color=4, thick=2
+  OPLOT, INTERPOLATE(R, core1[*,0], /DOUBLE), INTERPOLATE(Z, core1[*,1], /DOUBLE), color=3, thick=2
+  OPLOT, INTERPOLATE(R, core2[*,0], /DOUBLE), INTERPOLATE(Z, core2[*,1], /DOUBLE), color=4, thick=2
   
   RETURN, {leg1:line1, leg2:line2, core1:core1, core2:core2, ri:xpt_ri, zi:xpt_zi}
 END

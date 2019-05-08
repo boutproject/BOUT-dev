@@ -24,7 +24,7 @@
 **************************************************************************/
 
 #include <globals.hxx>
-#include <bout.hxx>
+#include <bout/solver.hxx>
 #include <difops.hxx>
 #include <vecops.hxx>
 #include <utils.hxx>
@@ -73,19 +73,16 @@ const Field3D Grad_par(const Field3D &var, const std::string &method, CELL_LOC o
 *******************************************************************************/
 
 const Field3D Grad_parP(const Field3D &apar, const Field3D &f) {
-  ASSERT1(apar.getMesh() == f.getMesh());
-  ASSERT2(apar.getLocation() == f.getLocation());
+  ASSERT1(areFieldsCompatible(apar, f));
+  ASSERT1(f.hasParallelSlices());
 
   Mesh *mesh = apar.getMesh();
 
-  Field3D result(mesh);
-  result.allocate();
+  Field3D result{emptyFrom(f)};
 
   Coordinates *metric = apar.getCoordinates();
 
-  Field3D gys(mesh);
-  gys.allocate();
-  gys.setLocation(f.getLocation());
+  Field3D gys{emptyFrom(f)};
 
   // Need Y derivative everywhere
   BOUT_FOR(i, f.getRegion("RGN_NOY")) {
@@ -210,16 +207,16 @@ const Field3D Div_par(const Field3D &f, const std::string &method, CELL_LOC outl
   return f.getCoordinates(outloc)->Div_par(f, outloc, method);
 }
 
-const Field3D Div_par(const Field3D &f, const Field3D &v) {
-  ASSERT1(f.getMesh() == v.getMesh());
-  ASSERT2(v.getLocation() == f.getLocation());
+const Field3D Div_par(const Field3D& f, const Field3D& v) {
+  ASSERT1(areFieldsCompatible(f, v));
+  ASSERT1(f.hasParallelSlices());
+  ASSERT1(v.hasParallelSlices());
 
   // Parallel divergence, using velocities at cell boundaries
   // Note: Not guaranteed to be flux conservative
-  Mesh *mesh = f.getMesh();
+  Mesh* mesh = f.getMesh();
 
-  Field3D result(mesh);
-  result.allocate();
+  Field3D result{emptyFrom(f)};
 
   Coordinates *coord = f.getCoordinates();
 
@@ -244,8 +241,6 @@ const Field3D Div_par(const Field3D &f, const Field3D &v) {
     result[i] = (fluxRight - fluxLeft) / (coord->dy[i] * coord->J[i]);
   }
 
-  result.setLocation(f.getLocation());
-
   return result;
 }
 
@@ -256,21 +251,16 @@ const Field3D Div_par_flux(const Field3D &v, const Field3D &f, CELL_LOC outloc, 
 
   Field2D Bxy_floc = f.getCoordinates()->Bxy;
 
-  if (!f.hasYupYdown()) {
+  if (!f.hasParallelSlices()) {
     return metric->Bxy*FDDY(v, f/Bxy_floc, outloc, method)/sqrt(metric->g_22);
   }
 
   // Need to modify yup and ydown fields
   Field3D f_B = f / Bxy_floc;
-  if (&f.yup() == &f) {
-    // Identity, yup and ydown point to same field
-    f_B.mergeYupYdown();
-  } else {
-    // Distinct fields
-    f_B.splitYupYdown();
-    f_B.yup() = f.yup() / Bxy_floc;
-    f_B.ydown() = f.ydown() / Bxy_floc;
-  }
+  // Distinct fields
+  f_B.splitParallelSlices();
+  f_B.yup() = f.yup() / Bxy_floc;
+  f_B.ydown() = f.ydown() / Bxy_floc;
   return metric->Bxy*FDDY(v, f_B, outloc, method)/sqrt(metric->g_22);
 }
 
@@ -288,12 +278,11 @@ const Field3D Grad_par_CtoL(const Field3D &var) {
   ASSERT1(var.getLocation() == CELL_CENTRE);
 
   Mesh *mesh = var.getMesh();
-  Field3D result(mesh);
-  result.allocate();
+  Field3D result{emptyFrom(var).setLocation(CELL_YLOW)};
 
   Coordinates *metric = var.getCoordinates(CELL_YLOW);
 
-  if (var.hasYupYdown()) {
+  if (var.hasParallelSlices()) {
     // NOTE: Need to calculate one more point than centred vars
     BOUT_FOR(i, var.getRegion("RGN_NOY")) {
       const auto iym = i.ym();
@@ -303,7 +292,7 @@ const Field3D Grad_par_CtoL(const Field3D &var) {
     }
   } else {
     // No yup/ydown fields, so transform to cell centred
-    Field3D var_fa = mesh->toFieldAligned(var);
+    Field3D var_fa = toFieldAligned(var, RGN_NOX);
 
     BOUT_FOR(i, var.getRegion("RGN_NOY")) {
       const auto iym = i.ym();
@@ -312,17 +301,14 @@ const Field3D Grad_par_CtoL(const Field3D &var) {
                                             + metric->dy[iym] * sqrt(metric->g_22[iym]));
     }
 
-    result = mesh->fromFieldAligned(result);
+    result = fromFieldAligned(result, RGN_NOBNDRY);
   }
 
-  result.setLocation(CELL_YLOW);
   return result;
 }
 
 const Field2D Grad_par_CtoL(const Field2D &var) {
-  const auto varMesh = var.getMesh();
-  Field2D result(varMesh);
-  result.allocate();
+  Field2D result{emptyFrom(var).setLocation(CELL_YLOW)};
 
   Coordinates *metric = var.getCoordinates(CELL_YLOW);
 
@@ -330,8 +316,6 @@ const Field2D Grad_par_CtoL(const Field2D &var) {
     result[i] = (var[i] - var[i.ym()]) / (metric->dy[i] * sqrt(metric->g_22[i]));
   }
 
-  result.setLocation(CELL_YLOW);
-  
   return result;
 }
 
@@ -341,15 +325,12 @@ const Field3D Vpar_Grad_par_LCtoC(const Field3D &v, const Field3D &f, REGION reg
   ASSERT1(v.getLocation() == CELL_YLOW);
   ASSERT1(f.getLocation() == CELL_CENTRE);
 
-  const auto vMesh = v.getMesh();
-  Field3D result(vMesh);
+  Field3D result{emptyFrom(f).setLocation(CELL_CENTRE)};
 
-  result.allocate();
+  bool vUseParallelSlices = v.hasParallelSlices();
+  bool fUseParallelSlices = f.hasParallelSlices();
 
-  bool vUseUpDown = (v.hasYupYdown() && ((&v.yup() != &v) || (&v.ydown() != &v)));
-  bool fUseUpDown = (f.hasYupYdown() && ((&f.yup() != &f) || (&f.ydown() != &f)));
-
-  if (vUseUpDown && fUseUpDown) {
+  if (vUseParallelSlices && fUseParallelSlices) {
     // Both v and f have up/down fields
     BOUT_OMP(parallel) {
       stencil fval, vval;
@@ -374,8 +355,8 @@ const Field3D Vpar_Grad_par_LCtoC(const Field3D &v, const Field3D &f, REGION reg
     // (even if one of v and f has yup/ydown fields, it doesn't make sense to
     // multiply them with one in field-aligned and one in non-field-aligned
     // coordinates)
-    Field3D v_fa = vMesh->toFieldAligned(v);
-    Field3D f_fa = vMesh->toFieldAligned(f);
+    Field3D v_fa = toFieldAligned(v, RGN_NOX);
+    Field3D f_fa = toFieldAligned(f, RGN_NOX);
 
     BOUT_OMP(parallel) {
       stencil fval, vval;
@@ -394,11 +375,10 @@ const Field3D Vpar_Grad_par_LCtoC(const Field3D &v, const Field3D &f, REGION reg
         result[i] -= (vval.p >= 0.0) ? vval.p * fval.c : vval.p * fval.p;
       }
 
-    result = vMesh->fromFieldAligned(result);
+      result = fromFieldAligned(result, region);
     }
   }
 
-  result.setLocation(CELL_CENTRE);
   return result;
 }
 
@@ -409,34 +389,30 @@ const Field3D Grad_par_LtoC(const Field3D &var) {
     ASSERT1(var.getLocation() == CELL_YLOW);
   }
 
-  Field3D result(varMesh);
-  result.allocate();
+  Field3D result{emptyFrom(var).setLocation(CELL_CENTRE)};
 
   Coordinates *metric = var.getCoordinates(CELL_CENTRE);
 
-  if (var.hasYupYdown()) {
+  if (var.hasParallelSlices()) {
     BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
       result[i] = (var.yup()[i.yp()] - var[i]) / (metric->dy[i]*sqrt(metric->g_22[i]));
     }
   } else {
     // No yup/ydown field, so transform to field aligned
 
-    Field3D var_fa = varMesh->toFieldAligned(var);
+    Field3D var_fa = toFieldAligned(var, RGN_NOX);
 
     BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
       result[i] = (var_fa[i.yp()] - var_fa[i]) / (metric->dy[i]*sqrt(metric->g_22[i]));
     }
-    result = varMesh->fromFieldAligned(result);
+    result = fromFieldAligned(result, RGN_NOBNDRY);
   }
 
-  result.setLocation(CELL_CENTRE);
   return result;
 }
 
 const Field2D Grad_par_LtoC(const Field2D &var) {
-  const auto varMesh = var.getMesh();
-  Field2D result(varMesh);
-  result.allocate();
+  Field2D result{emptyFrom(var).setLocation(CELL_CENTRE)};
 
   Coordinates *metric = var.getCoordinates(CELL_CENTRE);
 
@@ -444,8 +420,6 @@ const Field2D Grad_par_LtoC(const Field2D &var) {
     result[i] = (var[i.yp()] - var[i]) / (metric->dy[i] * sqrt(metric->g_22[i]));
   }
 
-  result.setLocation(CELL_CENTRE);
-  
   return result;
 }
 
@@ -455,8 +429,9 @@ const Field2D Div_par_LtoC(const Field2D &var) {
 }
 
 const Field3D Div_par_LtoC(const Field3D &var) {
-  Field3D result;
-  result.allocate();
+  Mesh* mesh = var.getMesh();
+
+  Field3D result{emptyFrom(var).setLocation(CELL_CENTRE)};
 
   Coordinates *metric = var.getCoordinates(CELL_CENTRE);
 
@@ -473,8 +448,6 @@ const Field3D Div_par_LtoC(const Field3D &var) {
     }
   }
 
-  result.setLocation(CELL_CENTRE);
-
   return result;
 }
 
@@ -484,8 +457,9 @@ const Field2D Div_par_CtoL(const Field2D &var) {
 }
 
 const Field3D Div_par_CtoL(const Field3D &var) {
-  Field3D result;
-  result.allocate();
+  Mesh* mesh = var.getMesh();
+
+  Field3D result{emptyFrom(var).setLocation(CELL_CENTRE)};
 
   Coordinates *metric = var.getCoordinates(CELL_CENTRE);
 
@@ -501,8 +475,6 @@ const Field3D Div_par_CtoL(const Field3D &var) {
       }
     }
   }
-
-  result.setLocation(CELL_CENTRE);
 
   return result;
 }
@@ -558,16 +530,16 @@ const Field3D Div_par_K_Grad_par(const Field3D &kY, const Field3D &f, CELL_LOC o
 * perpendicular Laplacian operator
 *******************************************************************************/
 
-const Field2D Delp2(const Field2D &f, CELL_LOC outloc) {
-  return f.getCoordinates(outloc)->Delp2(f, outloc);
+const Field2D Delp2(const Field2D& f, CELL_LOC outloc, bool useFFT) {
+  return f.getCoordinates(outloc)->Delp2(f, outloc, useFFT);
 }
 
-const Field3D Delp2(const Field3D &f, BoutReal UNUSED(zsmooth), CELL_LOC outloc) {
-  return f.getCoordinates(outloc)->Delp2(f, outloc);
+const Field3D Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT) {
+  return f.getCoordinates(outloc)->Delp2(f, outloc, useFFT);
 }
 
-const FieldPerp Delp2(const FieldPerp &f, BoutReal UNUSED(zsmooth), CELL_LOC outloc) {
-  return f.getCoordinates(outloc)->Delp2(f, outloc);
+const FieldPerp Delp2(const FieldPerp& f, CELL_LOC outloc, bool useFFT) {
+  return f.getCoordinates(outloc)->Delp2(f, outloc, useFFT);
 }
 
 /*******************************************************************************
@@ -771,13 +743,13 @@ const Field2D bracket(const Field2D &f, const Field2D &g, BRACKET_METHOD method,
                       CELL_LOC outloc, Solver *UNUSED(solver)) {
   TRACE("bracket(Field2D, Field2D)");
 
-  ASSERT1(f.getMesh() == g.getMesh());
+  ASSERT1(areFieldsCompatible(f, g));
   if (outloc == CELL_DEFAULT) {
     outloc = g.getLocation();
   }
-  ASSERT1(f.getLocation() == g.getLocation() && outloc == f.getLocation())
+  ASSERT1(outloc == g.getLocation());
 
-  Field2D result(f.getMesh());
+  Field2D result{emptyFrom(f)};
 
   if( (method == BRACKET_SIMPLE) || (method == BRACKET_ARAKAWA)) {
     // Use a subset of terms for comparison to BOUT-06
@@ -794,15 +766,15 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
                       CELL_LOC outloc, Solver *solver) {
   TRACE("bracket(Field3D, Field2D)");
 
-  ASSERT1(f.getMesh() == g.getMesh());
+  ASSERT1(areFieldsCompatible(f, g));
   if (outloc == CELL_DEFAULT) {
     outloc = g.getLocation();
   }
-  ASSERT1(f.getLocation() == g.getLocation() && outloc == f.getLocation())
+  ASSERT1(outloc == g.getLocation());
 
   Mesh *mesh = f.getMesh();
 
-  Field3D result(mesh);
+  Field3D result{emptyFrom(f).setLocation(outloc)};
 
   Coordinates *metric = f.getCoordinates(outloc);
 
@@ -814,9 +786,6 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
     if(!solver)
       throw BoutException("CTU method requires access to the solver");
     
-    result.allocate();
-    result.setLocation(outloc);
-
     BOUT_FOR(i, f.getRegion("RGN_NOBNDRY")) {
       const auto izm = i.zm(), izp = i.zp();
 
@@ -847,9 +816,6 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
   }
   case BRACKET_ARAKAWA: {
     // Arakawa scheme for perpendicular flow. Here as a test
-
-    result.allocate();
-    result.setLocation(outloc);
 
     const BoutReal fac = 1.0 / (12 * metric->dz);
 
@@ -885,7 +851,7 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
     // Following loop tagged for replacement
     const int ncz = mesh->LocalNz;
 
-    BOUT_FOR(j2D, result.getRegion("RGN_NOBNDRY")) {
+    BOUT_FOR(j2D, result.getRegion2D("RGN_NOBNDRY")) {
       // Get constants for this iteration
       const BoutReal spacingFactor = fac / metric->dx[j2D];
       const int jy = j2D.y(), jx = j2D.x();
@@ -950,10 +916,7 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
     break;
   }
   case BRACKET_ARAKAWA_OLD: {
-    result.allocate();
-    result.setLocation(outloc);
-
-    const BoutReal partialFactor = 1.0/(12 * metric->dz);
+   const BoutReal partialFactor = 1.0/(12 * metric->dz);
     BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
       // Being lazy in migrating to a BOUT_FOR loop from a nested loop
       // just calculate individual indices for each direction -- don't have
@@ -1003,11 +966,11 @@ const Field3D bracket(const Field2D &f, const Field3D &g, BRACKET_METHOD method,
                       CELL_LOC outloc, Solver *solver) {
   TRACE("bracket(Field2D, Field3D)");
 
-  ASSERT1(f.getMesh() == g.getMesh());
+  ASSERT1(areFieldsCompatible(f, g));
   if (outloc == CELL_DEFAULT) {
     outloc = g.getLocation();
   }
-  ASSERT1(f.getLocation() == g.getLocation() && outloc == f.getLocation())
+  ASSERT1(outloc == g.getLocation())
 
   Mesh *mesh = f.getMesh();
 
@@ -1040,15 +1003,15 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
                       CELL_LOC outloc, Solver *solver) {
   TRACE("Field3D, Field3D");
 
-  ASSERT1(f.getMesh() == g.getMesh());
+  ASSERT1(areFieldsCompatible(f, g));
   if (outloc == CELL_DEFAULT) {
     outloc = g.getLocation();
   }
-  ASSERT1(f.getLocation() == g.getLocation() && outloc == f.getLocation())
+  ASSERT1(outloc == g.getLocation());
 
   Mesh *mesh = f.getMesh();
 
-  Field3D result(mesh);
+  Field3D result{emptyFrom(f).setLocation(outloc)};
 
   Coordinates *metric = f.getCoordinates(outloc);
 
@@ -1069,15 +1032,16 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
     // Get current timestep
     BoutReal dt = solver->getCurrentTimestep();
     
-    result.allocate();
-    result.setLocation(outloc);
-
     FieldPerp vx(mesh), vz(mesh);
     vx.allocate();
+    vx.setLocation(outloc);
     vz.allocate();
+    vz.setLocation(outloc);
+
 #ifdef BOUT_HAS_Z_GUARD_CELLS_IMPLEMENTED
     throw BoutException("Bracket_CTU needs updating to account for z-guard cells.");
 #endif
+
     int ncz = mesh->LocalNz;
     for(int y=mesh->ystart;y<=mesh->yend;y++) {
       for(int x=1;x<=mesh->LocalNx-2;x++) {
@@ -1163,10 +1127,6 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
   }
   case BRACKET_ARAKAWA: {
     // Arakawa scheme for perpendicular flow
-    
-    result.allocate();
-    result.setLocation(outloc);
-    
     const BoutReal partialFactor = 1.0/(12 * metric->dz);
 
 #ifdef BOUT_HAS_Z_GUARD_CELLS_IMPLEMENTED
@@ -1208,7 +1168,7 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
 
     const int ncz = mesh->LocalNz;
 
-    BOUT_FOR(j2D, result.getRegion("RGN_NOBNDRY")) {
+    BOUT_FOR(j2D, result.getRegion2D("RGN_NOBNDRY")) {
       const BoutReal spacingFactor = partialFactor / metric->dx[j2D];
       const int jy = j2D.y(), jx = j2D.x();
       const int xm = jx - 1, xp = jx + 1;

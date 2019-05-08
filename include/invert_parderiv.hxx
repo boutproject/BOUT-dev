@@ -63,8 +63,8 @@ public:
    * with pure virtual members, so can't be created directly.
    * To create an InvertPar object call the create() static function.
    */ 
-  InvertPar(Options *UNUSED(opt), Mesh *mesh_in = mesh)
-    : localmesh(mesh_in) {}
+  InvertPar(Options *UNUSED(opt), Mesh *mesh_in = nullptr)
+    : localmesh(mesh_in==nullptr ? bout::globals::mesh : mesh_in) {}
   virtual ~InvertPar() {}
   
   /*!
@@ -72,7 +72,7 @@ public:
    * 
    * Note: For consistency this should be renamed "create" and take an Options* argument
    */
-  static InvertPar* Create(Mesh *mesh_in = mesh);
+  static InvertPar* Create(Mesh *mesh_in = nullptr);
   
   /*!
    * Solve the system of equations
@@ -112,27 +112,27 @@ public:
   /*!
    * Set the D2DYDZ coefficient C
    */
-  virtual void setCoefC(const Field2D &f) = 0;
-  virtual void setCoefC(const Field3D &f) {setCoefB(DC(f));}
-  virtual void setCoefC(BoutReal f) {setCoefB(Field2D(f, localmesh));}
-  
+  virtual void setCoefC(const Field2D& f) = 0;
+  virtual void setCoefC(const Field3D& f) { setCoefC(DC(f)); }
+  virtual void setCoefC(BoutReal f) { setCoefC(Field2D(f, localmesh)); }
+
   /*!
    * Set the D2DZ2 coefficient D
-   */ 
-  virtual void setCoefD(const Field2D &f) = 0;
-  virtual void setCoefD(const Field3D &f) {setCoefB(DC(f));}
-  virtual void setCoefD(BoutReal f) {setCoefB(Field2D(f, localmesh));}
-  
+   */
+  virtual void setCoefD(const Field2D& f) = 0;
+  virtual void setCoefD(const Field3D& f) { setCoefD(DC(f)); }
+  virtual void setCoefD(BoutReal f) { setCoefD(Field2D(f, localmesh)); }
+
   /*!
    * Set the DDY coefficient E
    */
-  virtual void setCoefE(const Field2D &f) = 0;
-  virtual void setCoefE(const Field3D &f) {setCoefB(DC(f));}
-  virtual void setCoefE(BoutReal f) {setCoefB(Field2D(f, localmesh));}
+  virtual void setCoefE(const Field2D& f) = 0;
+  virtual void setCoefE(const Field3D& f) { setCoefE(DC(f)); }
+  virtual void setCoefE(BoutReal f) { setCoefE(Field2D(f, localmesh)); }
 
 protected:
   Mesh* localmesh; ///< Mesh object for this solver
-  
+
 private:
 };
 

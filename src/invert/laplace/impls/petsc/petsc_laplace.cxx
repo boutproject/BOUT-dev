@@ -27,6 +27,7 @@
 
 #include "petsc_laplace.hxx"
 
+#include <bout/mesh.hxx>
 #include <bout/sys/timer.hxx>
 #include <boutcomm.hxx>
 #include <bout/assert.hxx>
@@ -275,14 +276,15 @@ LaplacePetsc::LaplacePetsc(Options *opt, const CELL_LOC loc, Mesh *mesh_in) :
   KSPCreate( comm, &ksp );
 
   // Get KSP Solver Type (Generalizes Minimal RESidual is the default)
-  std::string type;
-  opts->get("ksptype", ksptype, KSP_GMRES);
-  
+  ksptype = (*opts)["ksptype"].doc("KSP solver type").withDefault(KSP_GMRES);
+
   // Get preconditioner type
   // WARNING: only a few of these options actually make sense: see the
   // PETSc documentation to work out which they are (possibly
   // pbjacobi, sor might be useful choices?)
-  opts->get("pctype", pctype, "none", true);
+  pctype = (*opts)["pctype"]
+               .doc("Preconditioner type. See the PETSc documentation for options")
+               .withDefault("none");
 
   // Let "user" be a synonym for "shell"
   if (pctype == "user") {
@@ -296,13 +298,13 @@ LaplacePetsc::LaplacePetsc(Options *opt, const CELL_LOC loc, Mesh *mesh_in) :
   opts->get("gmres_max_steps",gmres_max_steps,30,true);
 
   // Get Tolerances for KSP solver
-  opts->get("rtol",rtol,pow(10.0,-5),true);
-  opts->get("atol",atol,pow(10.0,-50),true);
-  opts->get("dtol",dtol,pow(10.0,5),true);
-  opts->get("maxits",maxits,pow(10,5),true);
+  rtol = (*opts)["rtol"].doc("Relative tolerance for KSP solver").withDefault(1e-5);
+  atol = (*opts)["atol"].doc("Absolute tolerance for KSP solver").withDefault(1e-50);
+  dtol = (*opts)["dtol"].doc("Divergence tolerance for KSP solver").withDefault(1e5);
+  maxits = (*opts)["maxits"].doc("Maximum number of KSP iterations").withDefault(100000);
 
   // Get direct solver switch
-  opts->get("direct", direct, false);
+  direct = (*opts)["direct"].doc("Use direct (LU) solver?").withDefault(false);
   if (direct) {
     output << endl << "Using LU decompostion for direct solution of system" << endl << endl;
   }
@@ -310,7 +312,7 @@ LaplacePetsc::LaplacePetsc(Options *opt, const CELL_LOC loc, Mesh *mesh_in) :
   pcsolve = nullptr;
   if (pctype == PCSHELL) {
 
-    OPTION(opts, rightprec, true); // Right preconditioning by default
+    rightprec = (*opts)["rightprec"].doc("Right preconditioning?").withDefault(true);
 
     // Options for preconditioner are in a subsection
     pcsolve = Laplacian::create(opts->getSection("precon"));
@@ -346,6 +348,8 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
   TRACE("LaplacePetsc::solve");
 
   ASSERT1(localmesh == b.getMesh() && localmesh == x0.getMesh());
+  ASSERT1(b.getLocation() == location);
+  ASSERT1(x0.getLocation() == location);
   
   #if CHECK > 0
     // Checking flags are set to something which is not implemented (see

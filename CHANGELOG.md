@@ -1,5 +1,54 @@
 # Change Log
 
+## [v4.2.2](https://github.com/boutproject/BOUT-dev/tree/v4.2.2) (2019-02-27)
+
+[Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v4.2.1...v4.2.2)
+
+**Merged pull requests:**
+
+- Fix some clang-tidy warnings [\#1612](https://github.com/boutproject/BOUT-dev/pull/1612) ([ZedThree](https://github.com/ZedThree))
+- Check if we need to link against libdl for dladdr [\#1611](https://github.com/boutproject/BOUT-dev/pull/1611) ([ZedThree](https://github.com/ZedThree))
+- Fix unclean exit [\#1610](https://github.com/boutproject/BOUT-dev/pull/1610) ([dschwoerer](https://github.com/dschwoerer))
+- Fix a couple of small(ish) bugs in FV::Div\_par\_K\_Grad\_par [\#1609](https://github.com/boutproject/BOUT-dev/pull/1609) ([bendudson](https://github.com/bendudson))
+- Fix FV::Div\_a\_Laplace\_perp and FV::Div\_par\_K\_Grad\_par [\#1606](https://github.com/boutproject/BOUT-dev/pull/1606) ([bendudson](https://github.com/bendudson))
+- Bugfix laplacexz [\#1605](https://github.com/boutproject/BOUT-dev/pull/1605) ([bendudson](https://github.com/bendudson))
+- Initialise some mesh variables to sensible defaults [\#1604](https://github.com/boutproject/BOUT-dev/pull/1604) ([ZedThree](https://github.com/ZedThree))
+- Fix prototype Div\(v2d, f2d\) in header [\#1603](https://github.com/boutproject/BOUT-dev/pull/1603) ([bendudson](https://github.com/bendudson))
+- Hypnotoad version numbering [\#1595](https://github.com/boutproject/BOUT-dev/pull/1595) ([johnomotani](https://github.com/johnomotani))
+- Provide formatting string [\#1588](https://github.com/boutproject/BOUT-dev/pull/1588) ([dschwoerer](https://github.com/dschwoerer))
+- Fix bug in FCI: missed last point in Z for corner displacements [\#1587](https://github.com/boutproject/BOUT-dev/pull/1587) ([ZedThree](https://github.com/ZedThree))
+- use MPIRUN if set [\#1585](https://github.com/boutproject/BOUT-dev/pull/1585) ([dschwoerer](https://github.com/dschwoerer))
+- Prevent failures on parallel, clean build [\#1583](https://github.com/boutproject/BOUT-dev/pull/1583) ([dschwoerer](https://github.com/dschwoerer))
+- More printf [\#1581](https://github.com/boutproject/BOUT-dev/pull/1581) ([dschwoerer](https://github.com/dschwoerer))
+- Provide argument for printf [\#1580](https://github.com/boutproject/BOUT-dev/pull/1580) ([dschwoerer](https://github.com/dschwoerer))
+- Ensure Coordinates is a complete type when trying to swap [\#1574](https://github.com/boutproject/BOUT-dev/pull/1574) ([ZedThree](https://github.com/ZedThree))
+- Compile with BOUT_FLAGS [\#1573](https://github.com/boutproject/BOUT-dev/pull/1573) ([dschwoerer](https://github.com/dschwoerer))
+- Swap coordinates when adding - to master [\#1549](https://github.com/boutproject/BOUT-dev/pull/1549) ([johnomotani](https://github.com/johnomotani))
+
+## [v4.2.1](https://github.com/boutproject/BOUT-dev/tree/v4.2.1) (2019-01-23)
+
+[Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v4.2.0...v4.2.1)
+
+**Merged pull requests:**
+
+- Fix MAYBE_UNUSED for some compilers [\#1520](https://github.com/boutproject/BOUT-dev/pull/1520) ([ZedThree](https://github.com/ZedThree))
+- Try to provide some thread safety to msg_stack [\#1517](https://github.com/boutproject/BOUT-dev/pull/1517) ([d7919](https://github.com/d7919))
+- Fix listing available derivative methods [\#1515](https://github.com/boutproject/BOUT-dev/pull/1515) ([ZedThree](https://github.com/ZedThree))
+- Initialize Coordinates objects in BoutMesh::load() [\#1509](https://github.com/boutproject/BOUT-dev/pull/1509) ([johnomotani](https://github.com/johnomotani))
+- Use localmesh for d2x and d2y, and interpolate them to location [\#1496](https://github.com/boutproject/BOUT-dev/pull/1496) ([johnomotani](https://github.com/johnomotani))
+- Hypnotoad fixes [\#1487](https://github.com/boutproject/BOUT-dev/pull/1487) ([bendudson](https://github.com/bendudson))
+- Silence remaining warnings on master [\#1485](https://github.com/boutproject/BOUT-dev/pull/1485) ([ZedThree](https://github.com/ZedThree))
+- Documentation for making releases [\#1482](https://github.com/boutproject/BOUT-dev/pull/1482) ([ZedThree](https://github.com/ZedThree))
+- Silence gcc warning about unrecognised option Wno-cast-function-type [\#1480](https://github.com/boutproject/BOUT-dev/pull/1480) ([ZedThree](https://github.com/ZedThree))
+- Fix bugs in boututils.calculus.deriv2D [\#1479](https://github.com/boutproject/BOUT-dev/pull/1479) ([bendudson](https://github.com/bendudson))
+- Fix failure of collect() with integer slice argument [\#1421](https://github.com/boutproject/BOUT-dev/pull/1421) ([johnomotani](https://github.com/johnomotani))
+- Fix setCoefs in InvertPar [\#1398](https://github.com/boutproject/BOUT-dev/pull/1398) ([arkabokshi](https://github.com/arkabokshi))
+- Support BoutOutputs caching option in boutcore \*.fromBoutOutputs [\#1397](https://github.com/boutproject/BOUT-dev/pull/1397) ([johnomotani](https://github.com/johnomotani))
+- Hypnotoad: fix unstable integration method used to calculate zShift  [\#1387](https://github.com/boutproject/BOUT-dev/pull/1387) ([johnomotani](https://github.com/johnomotani))
+- Check for nullptr in NcFormat::get/setAttribute [\#1374](https://github.com/boutproject/BOUT-dev/pull/1374) ([johnomotani](https://github.com/johnomotani))
+- Set location in LaplaceCyclic::solve() and DC() [\#1368](https://github.com/boutproject/BOUT-dev/pull/1368) ([johnomotani](https://github.com/johnomotani))
+- Changing README example to use cross rather than ^ [\#1357](https://github.com/boutproject/BOUT-dev/pull/1357) ([dschwoerer](https://github.com/dschwoerer))
+
 ## [v4.2.0](https://github.com/boutproject/BOUT-dev/tree/v4.2.0) (2018-10-16)
 [Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v1.0...v4.2.0)
 
@@ -1015,4 +1064,4 @@
 ## [v1.0](https://github.com/boutproject/BOUT-dev/tree/v1.0) (2011-08-26)
 
 
-\* *This Change Log was automatically generated by [github_changelog_generator](https://github.com/skywinder/Github-Changelog-Generator)*
+\* *This Changelog was automatically generated by [github_changelog_generator](https://github.com/github-changelog-generator/github-changelog-generator)*

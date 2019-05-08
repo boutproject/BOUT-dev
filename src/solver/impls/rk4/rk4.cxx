@@ -17,10 +17,10 @@ RK4Solver::~RK4Solver() {
 }
 
 void RK4Solver::setMaxTimestep(BoutReal dt) {
-  if(dt > timestep)
+  if (dt > timestep)
     return; // Already less than this
   
-  if(adaptive)
+  if (adaptive)
     timestep = dt; // Won't be used this time, but next
 }
 
@@ -52,27 +52,27 @@ int RK4Solver::init(int nout, BoutReal tstep) {
 	       n3Dvars(), n2Dvars(), neq, nlocal);
   
   // Allocate memory
-  f0 = Array<BoutReal>(nlocal);
-  f1 = Array<BoutReal>(nlocal);
-  f2 = Array<BoutReal>(nlocal);
+  f0.reallocate(nlocal);
+  f1.reallocate(nlocal);
+  f2.reallocate(nlocal);
 
   // memory for taking a single time step
-  k1 = Array<BoutReal>(nlocal);
-  k2 = Array<BoutReal>(nlocal);
-  k3 = Array<BoutReal>(nlocal);
-  k4 = Array<BoutReal>(nlocal);
-  k5 = Array<BoutReal>(nlocal);
+  k1.reallocate(nlocal);
+  k2.reallocate(nlocal);
+  k3.reallocate(nlocal);
+  k4.reallocate(nlocal);
+  k5.reallocate(nlocal);
 
   // Put starting values into f0
   save_vars(std::begin(f0));
 
   // Get options
-  OPTION(options, atol, 1.e-5); // Absolute tolerance
-  OPTION(options, rtol, 1.e-3); // Relative tolerance
-  OPTION(options, max_timestep, tstep); // Maximum timestep
-  OPTION(options, timestep, max_timestep); // Starting timestep
-  OPTION(options, mxstep, 500); // Maximum number of steps between outputs
-  OPTION(options, adaptive, false);
+  atol = (*options)["atol"].doc("Absolute tolerance").withDefault(1.e-5);
+  rtol = (*options)["rtol"].doc("Relative tolerance").withDefault(1.e-3);
+  max_timestep = (*options)["max_timestep"].doc("Maximum timestep").withDefault(tstep);
+  timestep = (*options)["timestep"].doc("Starting timestep").withDefault(max_timestep);
+  mxstep = (*options)["mxstep"].doc("Maximum number of steps between outputs").withDefault(500);
+  adaptive = (*options)["adaptive"].doc("Adapt internal timestep using ATOL and RTOL.").withDefault(false);
 
   return 0;
 }

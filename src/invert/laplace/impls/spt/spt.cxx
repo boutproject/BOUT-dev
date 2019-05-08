@@ -32,6 +32,7 @@
  */
 
 #include <bout/constants.hxx>
+#include <bout/mesh.hxx>
 #include <bout/openmpwrap.hxx>
 #include <bout/sys/timer.hxx>
 #include <boutexception.hxx>
@@ -67,7 +68,7 @@ LaplaceSPT::LaplaceSPT(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
 
   // Temporary array for taking FFTs
   int ncz = localmesh->zend + 1 - localmesh->zstart;
-  dc1d = Array<dcomplex>(ncz / 2 + 1);
+  dc1d.reallocate(ncz / 2 + 1);
 }
 
 LaplaceSPT::~LaplaceSPT() {
@@ -81,9 +82,10 @@ const FieldPerp LaplaceSPT::solve(const FieldPerp &b) {
 
 const FieldPerp LaplaceSPT::solve(const FieldPerp &b, const FieldPerp &x0) {
   ASSERT1(localmesh == b.getMesh() && localmesh == x0.getMesh());
+  ASSERT1(b.getLocation() == location);
+  ASSERT1(x0.getLocation() == location);
 
-  FieldPerp x(localmesh);
-  x.allocate();
+  FieldPerp x{emptyFrom(b)};
   
   if( (inner_boundary_flags & INVERT_SET) || (outer_boundary_flags & INVERT_SET) ) {
     FieldPerp bs = copy(b);
@@ -124,8 +126,7 @@ const Field3D LaplaceSPT::solve(const Field3D &b) {
   ASSERT1(localmesh = b.getMesh());
 
   Timer timer("invert");
-  Field3D x(localmesh);
-  x.allocate();
+  Field3D x{emptyFrom(b)};
   
   for(int jy=ys; jy <= ye; jy++) {
     // And start another one going
@@ -144,6 +145,7 @@ const Field3D LaplaceSPT::solve(const Field3D &b) {
   }while(running);
 
   FieldPerp xperp(localmesh);
+  xperp.setLocation(location);
   xperp.allocate();
   
   // All calculations finished. Get result
@@ -151,8 +153,6 @@ const Field3D LaplaceSPT::solve(const Field3D &b) {
     finish(alldata[jy], xperp);
     x = xperp;
   }
-  
-  x.setLocation(b.getLocation());
   
   return x;
 }
@@ -275,6 +275,8 @@ void LaplaceSPT::tridagBack(dcomplex *u, int n,
 int LaplaceSPT::start(const FieldPerp &b, SPT_data &data) {
   if(localmesh->firstX() && localmesh->lastX())
     throw BoutException("Error: SPT method only works for localmesh->NXPE > 1\n");
+
+  ASSERT1(b.getLocation() == location);
 
   data.jy = b.getIndex();
 
@@ -460,6 +462,8 @@ void LaplaceSPT::finish(SPT_data &data, FieldPerp &x) {
   int ncx = localmesh->LocalNx-1;
   int ncz = localmesh->zend + 1 - localmesh->zstart;
 
+  ASSERT1(x.getLocation() == location);
+
   x.allocate();
   x.setIndex(data.jy);
 
@@ -502,16 +506,16 @@ void LaplaceSPT::finish(SPT_data &data, FieldPerp &x) {
 // SPT_data helper class
 
 void LaplaceSPT::SPT_data::allocate(int mm, int nx) {
-  bk = Matrix<dcomplex>(mm, nx);
-  xk = Matrix<dcomplex>(mm, nx);
+  bk.reallocate(mm, nx);
+  xk.reallocate(mm, nx);
 
-  gam = Matrix<dcomplex>(mm, nx);
+  gam.reallocate(mm, nx);
 
   // Matrix to be solved
-  avec = Matrix<dcomplex>(mm, nx);
-  bvec = Matrix<dcomplex>(mm, nx);
-  cvec = Matrix<dcomplex>(mm, nx);
+  avec.reallocate(mm, nx);
+  bvec.reallocate(mm, nx);
+  cvec.reallocate(mm, nx);
 
-  buffer = Array<BoutReal>(4 * mm);
+  buffer.reallocate(4 * mm);
 }
 

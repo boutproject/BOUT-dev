@@ -46,8 +46,12 @@ private:
   // Coordinate system
   Coordinates *coord;
 
+  /// Solver for inverting Laplacian
+  Laplacian *phiSolver;
+  Laplacian *aparSolver;
+  
 protected:
-  int init(bool restarting) override {
+  int init(bool UNUSED(restarting)) override {
     Field2D I; // Shear factor
 
     output << "Solving 6-variable 2-fluid equations\n";
@@ -94,25 +98,24 @@ protected:
     /*************** READ OPTIONS *************************/
 
     // Read some parameters
-    Options *globalOptions = Options::getRoot();
-    Options *options = globalOptions->getSection("2fluid");
-    OPTION(options, AA, 2.0);
-    OPTION(options, ZZ, 1.0);
+    auto globalOptions = Options::root();
+    auto options = globalOptions["2fluid"];
+    AA = options["AA"].withDefault(2.0);
+    ZZ = options["ZZ"].withDefault(1.0);
 
-    OPTION(options, ZeroElMass, false);
-    OPTION(options, zeff, 1.0);
-    OPTION(options, nu_perp, 0.0);
-    OPTION(options, ShearFactor, 1.0);
+    ZeroElMass = options["ZeroElMass"].withDefault(false);
+    zeff = options["zeff"].withDefault(1.0);
+    nu_perp = options["nu_perp"].withDefault(0.0);
+    ShearFactor = options["ShearFactor"].withDefault(1.0);
 
-    OPTION(options, phi_flags, 0);
-    OPTION(options, apar_flags, 0);
+    phi_flags = options["phi_flags"].withDefault(0);
+    apar_flags = options["apar_flags"].withDefault(0);
 
     /************* SHIFTED RADIAL COORDINATES ************/
 
     // Check type of parallel transform
-    string ptstr;
-    Options::getRoot()->getSection("mesh")->get("paralleltransform", ptstr, "identity");
-
+    std::string ptstr = Options::root()["mesh"]["paralleltransform"].withDefault<std::string>("identity");
+    
     if (lowercase(ptstr) == "shifted") {
       ShearFactor = 0.0; // I disappears from metric
       b0xcv.z += I * b0xcv.x;
@@ -202,7 +205,7 @@ protected:
     // Tell BOUT++ which variables to evolve
     // add evolving variables to the communication object
 
-    SOLVE_FOR2(rho, Ajpar);
+    SOLVE_FOR(rho, Ajpar);
     comms.add(rho, Ajpar);
 
     // Set boundary conditions
@@ -217,18 +220,26 @@ protected:
     }
 
     // Add any other variables to be dumped to file
-    SAVE_REPEAT3(phi, Apar, jpar);
+    SAVE_REPEAT(phi, Apar, jpar);
 
-    SAVE_ONCE3(Ni0, Te0, Ti0);
-    SAVE_ONCE5(Te_x, Ti_x, Ni_x, rho_s, wci);
+    SAVE_ONCE(Ni0, Te0, Ti0);
+    SAVE_ONCE(Te_x, Ti_x, Ni_x, rho_s, wci);
+    
+    // Create a solver for the Laplacian
+    phiSolver = Laplacian::create();
+    phiSolver->setFlags(phi_flags);
+
+    aparSolver = Laplacian::create();
+    aparSolver->setFlags(apar_flags);
+    aparSolver->setCoefA((-0.5 * beta_p / fmei) * Ni0);
 
     return 0;
   }
 
-  int rhs(BoutReal t) override {
+  int rhs(BoutReal UNUSED(t)) override {
     // Solve EM fields
 
-    phi = invert_laplace(rho / Ni0, phi_flags);
+    phi = phiSolver->solve(rho / Ni0);
 
     if (ZeroElMass) {
       mesh->communicate(comms);
@@ -239,16 +250,7 @@ protected:
       mesh->communicate(jpar);
     } else {
 
-      static Field2D a;
-      static int set = 0;
-
-      if (set == 0) {
-        // calculate a
-        a = (-0.5 * beta_p / fmei) * Ni0;
-        set = 1;
-      }
-
-      Apar = invert_laplace(-a * Ajpar, apar_flags, &a);
+      Apar = aparSolver->solve((0.5 * beta_p / fmei) * Ni0 * Ajpar);
 
       // Communicate variables
       mesh->communicate(comms);

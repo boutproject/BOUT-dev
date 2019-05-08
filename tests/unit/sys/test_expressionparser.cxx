@@ -15,6 +15,7 @@ public:
 
 class ExpressionParserTest : public ::testing::Test {
 public:
+  virtual ~ExpressionParserTest() = default;
   ExpressionParserSubClass parser;
   std::vector<double> x_array = {-1., 0., 1., 5., 10., 3.14e8};
   std::vector<double> y_array = {-1., 0., 1., 5., 10., 3.14e8};
@@ -33,7 +34,7 @@ public:
   clone(const std::list<std::shared_ptr<FieldGenerator>> args) {
     if (args.size() != 2) {
       throw ParseException(
-          "Incorrect number of arguments to increment function. Expecting 2, got %d",
+          "Incorrect number of arguments to increment function. Expecting 2, got %zu",
           args.size());
     }
 
@@ -43,7 +44,7 @@ public:
   BoutReal generate(BoutReal x, BoutReal y, BoutReal z, BoutReal t) {
     return a->generate(x, y, z, t) + b->generate(x, y, z, t);
   }
-  const std::string str() {
+  std::string str() const {
     return std::string{"add(" + a->str() + ", " + b->str() + ")"};
   }
 
@@ -60,7 +61,7 @@ public:
     if (args.size() != 1) {
       throw ParseException(
           "Incorrect number of arguments to increment function. Expecting 1, got %d",
-          args.size());
+          static_cast<int>(args.size()));
     }
 
     return std::make_shared<IncrementGenerator>(args.front());
@@ -69,7 +70,7 @@ public:
   BoutReal generate(BoutReal x, BoutReal y, BoutReal z, BoutReal t) {
     return gen->generate(x, y, z, t) + 1;
   }
-  const std::string str() { return std::string{"increment(" + gen->str() + ")"}; }
+  std::string str() const { return std::string{"increment(" + gen->str() + ")"}; }
 
 private:
   std::shared_ptr<FieldGenerator> gen;
@@ -85,7 +86,7 @@ public:
     if (args.size() != 0) {
       throw ParseException(
           "Incorrect number of arguments to nullary function. Expecting 0, got %d",
-          args.size());
+          static_cast<int>(args.size()));
     }
 
     return std::make_shared<NullaryGenerator>();

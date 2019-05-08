@@ -122,7 +122,7 @@ derivatives=[
 
 runtests(functions,derivatives,directions,True,"D2D2")
 
-
+boutcore.finalise()
 
 if errorlist:
     for error in errorlist:

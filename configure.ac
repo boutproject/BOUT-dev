@@ -32,7 +32,7 @@
 #
 
 AC_PREREQ([2.69])
-AC_INIT([BOUT++],[4.2.0],[bd512@york.ac.uk])
+AC_INIT([BOUT++],[4.2.2],[bd512@york.ac.uk])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -228,15 +228,24 @@ AX_CHECK_COMPILE_FLAG([-Werror=unknown-warning-option],[
 AS_IF([test "x$enable_warnings" != "xno"], [
 # Some hopefully sensible default compiler warning flags
 
-# Note we explicitly turn off -Wcast-function-type as PETSc *requires*
-# we cast a function to the wrong type in MatFDColoringSetFunction
-
   AX_APPEND_COMPILE_FLAGS([ dnl
      -Wall dnl
      -Wextra dnl
      -Wnull-dereference dnl
-     -Wno-cast-function-type dnl
   ], [CXXFLAGS], [$extra_compiler_flags_test])
+
+# Note we explicitly turn off -Wcast-function-type as PETSc *requires*
+# we cast a function to the wrong type in MatFDColoringSetFunction
+
+# Also note that gcc ignores unknown flags of the form "-Wno-warning"
+# for backwards compatibility. Therefore we need to add the positive
+# form as an additional flag which it will choke on (if it doesn't
+# exist). See: https://gcc.gnu.org/wiki/FAQ#wnowarning
+
+  AX_APPEND_COMPILE_FLAGS([ dnl
+     -Wno-cast-function-type dnl
+  ], [CXXFLAGS], [$extra_compiler_flags_test "-Wcast-function-type"])
+
 ], [
   AC_MSG_NOTICE([Compiler warnings disabled])
 ])
@@ -349,6 +358,10 @@ AS_IF([test "x$enable_backtrace" = "xyes" || test "x$enable_backtrace" = "xmaybe
   ])
 
   AS_IF([test $works = yes], [
+    AC_SEARCH_LIBS([dladdr], [dl], [works=yes], [works=no; break])
+  ])
+
+  AS_IF([test $works = yes], [
     AC_MSG_NOTICE([Native backtrace enabled])
     CXXFLAGS="$CXXFLAGS -DBACKTRACE"
   ], [
@@ -396,9 +409,10 @@ AS_IF([test "x$with_fftw" != "xno"], [
 AC_PATH_PROG([fftw_path], [fftw-wisdom], [no], [$with_fftw$PATH_SEPARATOR$PATH])
 
   AS_IF([test "x$fftw_path" != "xno"], [
-  fftw_wisdom0=`AS_DIRNAME(["$fftw_path"])`
-  fftw_wisdom=`AS_DIRNAME(["$fftw_wisdom0"])`
-  with_fftw="$with_fftw $fftw_wisdom"
+    fftw_wisdom0=`AS_DIRNAME(["$fftw_path"])`
+    fftw_wisdom=`AS_DIRNAME(["$fftw_wisdom0"])`
+    with_fftw="$with_fftw $fftw_wisdom"
+  ], AC_MSG_NOTICE([FFTW3 requested but fftw-wisdom not found]))
 
   BOUT_ADDPATH_CHECK_HEADER(fftw3.h, ,AC_MSG_ERROR([FFTW3 requested but header not found]), $with_fftw)
   BOUT_ADDPATH_CHECK_LIB(fftw3, fftw_plan_dft_r2c_1d, ,AC_MSG_ERROR([FFTW3 requested but library not found]), $with_fftw)
@@ -407,7 +421,7 @@ AC_PATH_PROG([fftw_path], [fftw-wisdom], [no], [$with_fftw$PATH_SEPARATOR$PATH])
   #add our define to CXXFLAGS
   CXXFLAGS="$CXXFLAGS -DBOUT_HAS_FFTW"
   HAS_FFTW="yes"
-], AC_MSG_ERROR([FFTW3 requested but fftw-wisdom not found]))],
+],
 [
 AC_MSG_NOTICE([Configuring without FFTW3 is not recommended])
 HAS_FFTW="no"
@@ -979,33 +993,19 @@ AS_IF([test "x$with_sundials" != "x" && test "x$with_sundials" != "xno"], [
     [AC_MSG_RESULT([no])
      AC_MSG_FAILURE([*** Could not determine SUNDIALS version])])
 
-  # Version 3.0.0 changed the name of this define to just SUNDIALS_VERSION
-  AC_MSG_CHECKING([for SUNDIALS major version])
-  AC_EGREP_CPP([yes], [
-    #include "sundials/sundials_config.h"
-    #ifdef SUNDIALS_PACKAGE_VERSION
-      yes
-    #endif
-  ], [sundials_major_ver=2], [sundials_major_ver=3])
-  AC_MSG_RESULT([$sundials_major_ver])
-
-  AS_IF([test $sundials_major_ver = 3], [
-    AC_MSG_FAILURE([*** Unsupported SUNDIALS version: Only 2.6-2.7 are supported currently])
-  ])
-
   AC_MSG_CHECKING([for SUNDIALS minor version])
-  AC_EGREP_CPP([^ *\"? *2\.[67]\.], [
+  AC_EGREP_CPP([^ *\"? *[12]\.[0-5]\.], [
     #include "sundials/sundials_config.h"
     #ifdef SUNDIALS_PACKAGE_VERSION
     SUNDIALS_PACKAGE_VERSION
     #endif
-  ], [sundials_minor_ver=ok], [sundials_minor_ver="too low"])
+  ], [sundials_minor_ver="too low"], [sundials_minor_ver=ok])
   AC_MSG_RESULT([$sundials_minor_ver])
 
   CPPFLAGS=$save_CPPFLAGS
 
   AS_IF([test "$sundials_minor_ver" = "too low"], [
-    AC_MSG_FAILURE([*** Unsupported SUNDIALS version: Only 2.6-2.7 are supported currently])
+    AC_MSG_FAILURE([*** Unsupported SUNDIALS version: Requires at least 2.6])
   ])
 
   # Set both IDA and CVODE if not set already
@@ -1038,7 +1038,13 @@ AS_IF([test "x$with_cvode" != "x" && test "x$with_cvode" != "xno"], [
     #include <nvector/nvector_parallel.h>
     #include <cvode/cvode.h>
     extern void foo(N_Vector);
-  ], [CVodeCreate(0, 0);], [
+  ], [
+    #if SUNDIALS_VERSION_MAJOR >= 4
+    CVodeCreate(0);
+    #else
+    CVodeCreate(0, 0);
+    #endif
+  ], [
     #include <cvode/cvode_bbdpre.h>
     extern int cvode_bbd_rhs(CVODEINT, double, N_Vector, N_Vector, void *);
   ], [CVBBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, cvode_bbd_rhs, nullptr);])
@@ -1047,9 +1053,19 @@ AS_IF([test "x$with_cvode" != "x" && test "x$with_cvode" != "xno"], [
 AS_IF([test "x$with_arkode" != "x" && test "x$with_arkode" != "xno"], [
   BOUT_FIND_SUNDIALS_MODULE([arkode], [
     #include <nvector/nvector_parallel.h>
+    #if SUNDIALS_VERSION_MAJOR >= 4
+    #include <arkode/arkode_arkstep.h>
+    #else
     #include <arkode/arkode.h>
+    #endif
     extern void foo(N_Vector);
-  ], [ARKodeCreate();], [
+  ], [
+    #if SUNDIALS_VERSION_MAJOR >= 4
+    ARKStepCreate(0, 0, 0, 0);
+    #else
+    ARKodeCreate();
+    #endif
+  ], [
     #include <arkode/arkode_bbdpre.h>
     extern int arkode_bbd_rhs(ARKODEINT, double, N_Vector, N_Vector, void *);
   ], [ARKBBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, arkode_bbd_rhs, nullptr);])
@@ -1253,8 +1269,10 @@ AC_SUBST(CONFIG_LDFLAGS)
 # If make install is run then that replaces these paths
 BOUT_LIB_PATH=$PWD/lib
 BOUT_INCLUDE_PATH=$PWD/include
+MPARK_VARIANT_INCLUDE_PATH=$PWD/externalpackages/mpark.variant/include
 AC_SUBST(BOUT_LIB_PATH)
 AC_SUBST(BOUT_INCLUDE_PATH)
+AC_SUBST(MPARK_VARIANT_INCLUDE_PATH)
 
 AC_SUBST(PREFIX)
 AC_SUBST(IDLCONFIGPATH)
@@ -1284,6 +1302,7 @@ AC_SUBST(SLEPC_DIR)
 AC_SUBST(SLEPC_ARCH)
 AC_SUBST(HAS_OPENMP)
 AC_SUBST(HAS_NLS)
+AC_SUBST(HAS_FFTW)
 
 AC_CONFIG_FILES([bin/bout-config])
 AC_OUTPUT
