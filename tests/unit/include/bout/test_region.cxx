@@ -643,8 +643,8 @@ TEST_F(RegionTest, regionMask) {
   EXPECT_EQ(masked1Indices.size(), indicesIn.size() - indicesMask1.size());
 
   // Check values
-  for (unsigned int i = 0; i < masked1Indices.size(); i++) {
-    EXPECT_EQ((masked1Indices[i] % 2).ind, 0);
+  for (auto& masked1Index : masked1Indices) {
+    EXPECT_EQ((masked1Index % 2).ind, 0);
   }
 
   // Check size of other regions not changed
@@ -703,8 +703,8 @@ TEST_F(RegionTest, regionFriendMask) {
   EXPECT_EQ(masked1Indices.size(), indicesIn.size() - indicesMask1.size());
 
   // Check values
-  for (unsigned int i = 0; i < masked1Indices.size(); i++) {
-    EXPECT_EQ((masked1Indices[i] % 2).ind, 0);
+  for (auto& masked1Index : masked1Indices) {
+    EXPECT_EQ((masked1Index % 2).ind, 0);
   }
 
   // Check size of other regions not changed
