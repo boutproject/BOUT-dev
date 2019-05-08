@@ -166,6 +166,16 @@ class Mesh {
   /// @returns zero if successful, non-zero on failure
   int get(Field3D &var, const std::string &name, BoutReal def=0.0, bool communicate=true);
 
+  /// Get a FieldPerp from the input source
+  ///
+  /// @param[out] var   This will be set to the value. Will be allocated if needed
+  /// @param[in] name   Name of the variable to read
+  /// @param[in] def    The default value if not found
+  /// @param[in] communicate  Should the field be communicated to fill guard cells?
+  ///
+  /// @returns zero if successful, non-zero on failure
+  int get(FieldPerp &var, const std::string &name, BoutReal def=0.0, bool communicate=true);
+
   /// Get a Vector2D from the input source.
   /// If \p var is covariant then this gets three
   /// Field2D variables with "_x", "_y", "_z" appended to \p name
@@ -446,12 +456,19 @@ class Mesh {
   int OffsetX, OffsetY, OffsetZ;    ///< Offset of this mesh within the global array
                                     ///< so startx on this processor is OffsetX in global
   
-  /// Returns the global X index given a local indexs
+  /// Returns the global X index given a local index
   /// If the local index includes the boundary cells, then so does the global.
   virtual int XGLOBAL(int xloc) const = 0;
   /// Returns the global Y index given a local index
   /// The local index must include the boundary, the global index does not.
   virtual int YGLOBAL(int yloc) const = 0;
+
+  /// Returns the local X index given a global index
+  /// If the global index includes the boundary cells, then so does the local.
+  virtual int XLOCAL(int xglo) const = 0;
+  /// Returns the local Y index given a global index
+  /// If the global index includes the boundary cells, then so does the local.
+  virtual int YLOCAL(int yglo) const = 0;
 
   /// Size of the mesh on this processor including guard/boundary cells
   int LocalNx, LocalNy, LocalNz;

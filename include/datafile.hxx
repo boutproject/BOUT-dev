@@ -26,6 +26,7 @@ class Mesh;
 class Field;
 class Field2D;
 class Field3D;
+class FieldPerp;
 class Options;
 class Vector2D;
 class Vector3D;
@@ -71,6 +72,7 @@ class Datafile {
   void add(BoutReal &r, const char *name, bool save_repeat = false);
   void add(Field2D &f, const char *name, bool save_repeat = false);
   void add(Field3D &f, const char *name, bool save_repeat = false);
+  void add(FieldPerp &f, const char *name, bool save_repeat = false);
   void add(Vector2D &f, const char *name, bool save_repeat = false);
   void add(Vector3D &f, const char *name, bool save_repeat = false);
   
@@ -125,20 +127,19 @@ class Datafile {
   std::vector<VarStr<BoutReal>> BoutReal_arr;
   std::vector<VarStr<Field2D>> f2d_arr;
   std::vector<VarStr<Field3D>> f3d_arr;
+  std::vector<VarStr<FieldPerp>> fperp_arr;
   std::vector<VarStr<Vector2D>> v2d_arr;
   std::vector<VarStr<Vector3D>> v3d_arr;
 
   bool read_f2d(const std::string &name, Field2D *f, bool save_repeat);
   bool read_f3d(const std::string &name, Field3D *f, bool save_repeat);
+  bool read_fperp(const std::string &name, FieldPerp *f, bool save_repeat);
 
   bool write_int(const std::string &name, int *f, bool save_repeat);
   bool write_real(const std::string &name, BoutReal *f, bool save_repeat);
   bool write_f2d(const std::string &name, Field2D *f, bool save_repeat);
   bool write_f3d(const std::string &name, Field3D *f, bool save_repeat);
-
-  /// Write out the meta-data of a field as attributes of the variable in
-  /// 'file'.
-  void writeFieldAttributes(const std::string& name, const Field& f);
+  bool write_fperp(const std::string &name, FieldPerp *f, bool save_repeat);
 
   /// Check if a variable has already been added
   bool varAdded(const std::string &name);

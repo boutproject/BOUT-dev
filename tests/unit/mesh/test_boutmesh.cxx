@@ -27,6 +27,10 @@ public:
            BoutReal UNUSED(def) = 0.0) {
     return true;
   }
+  bool get(Mesh *UNUSED(m), FieldPerp &UNUSED(var), const std::string &UNUSED(name),
+           BoutReal UNUSED(def) = 0.0) {
+    return true;
+  }
   bool get(Mesh *UNUSED(m), std::vector<int> &UNUSED(var), const std::string &UNUSED(name),
            int UNUSED(len), int UNUSED(offset) = 0,
            Direction UNUSED(dir) = GridDataSource::X) {
