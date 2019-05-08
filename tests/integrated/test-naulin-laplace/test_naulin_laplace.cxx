@@ -43,7 +43,7 @@ int main(int argc, char** argv) {
 
   //class Laplacian* invert = Laplacian::create();
   Options* options = Options::getRoot()->getSection("laplace");
-  LaplaceNaulin* invert = new LaplaceNaulin(options);
+  auto* invert = new LaplaceNaulin(options);
 
   // Solving equations of the form d*Grad_perp2(f) + 1/c*Grad_perp(c).Grad_perp(f) + a*f = b for various boundary conditions
   Field3D f1,a1,b1,c1,d1,sol1,bcheck1;

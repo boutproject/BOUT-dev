@@ -170,7 +170,7 @@ BoundaryOpBase* BoundaryFactory::create(const string &name, BoundaryRegionBase *
   BoundaryModifier *mod = findBoundaryMod(func);
   if (mod != nullptr) {
     // The first argument should be an operation
-    BoundaryOp *op = static_cast<BoundaryOp*>(create(arglist.front(), region));
+    auto* op = static_cast<BoundaryOp*>(create(arglist.front(), region));
     if (op == nullptr)
       return nullptr;
 

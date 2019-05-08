@@ -203,7 +203,7 @@ const std::vector<int> H5Format::getSize(const char *name) {
     return size;
   }
   else {
-    hsize_t* dims = new hsize_t[nd];
+    auto* dims = new hsize_t[nd];
     int error = H5Sget_simple_extent_dims(dataSpace, dims, nullptr);
     if (error < 0)
       throw BoutException("Failed to get dimensions of dataSpace");

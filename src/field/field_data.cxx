@@ -22,7 +22,7 @@ void FieldData::setBoundary(const std::string &name) {
   output_info << "Setting boundary for variable " << name << endl;
   /// Loop over the mesh boundary regions
   for(const auto& reg : bout::globals::mesh->getBoundaries()) {
-    BoundaryOp* op = static_cast<BoundaryOp*>(bfact->createFromOptions(name, reg));
+    auto* op = static_cast<BoundaryOp*>(bfact->createFromOptions(name, reg));
     if (op != nullptr)
       bndry_op.push_back(op);
     output_info << endl;
@@ -32,7 +32,7 @@ void FieldData::setBoundary(const std::string &name) {
   std::vector<BoundaryRegionPar*> par_reg = bout::globals::mesh->getBoundariesPar();
   /// Loop over the mesh parallel boundary regions
   for(const auto& reg : bout::globals::mesh->getBoundariesPar()) {
-    BoundaryOpPar* op = static_cast<BoundaryOpPar*>(bfact->createFromOptions(name, reg));
+    auto* op = static_cast<BoundaryOpPar*>(bfact->createFromOptions(name, reg));
     if (op != nullptr)
       bndry_op_par.push_back(op);
     output_info << endl;

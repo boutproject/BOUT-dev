@@ -3197,7 +3197,7 @@ void BoundaryFree_O3::apply_ddt(Field3D &f) {
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryRelax::cloneMod(BoundaryOp *operation, const std::list<std::string> &args) {
-  BoundaryRelax* result = new BoundaryRelax(operation, r);
+  auto* result = new BoundaryRelax(operation, r);
   
   if(!args.empty()) {
     // First argument should be the rate
@@ -3255,7 +3255,7 @@ void BoundaryRelax::apply_ddt(Field3D &f) {
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryWidth::cloneMod(BoundaryOp *operation, const std::list<std::string> &args) {
-  BoundaryWidth* result = new BoundaryWidth(operation, width);
+  auto* result = new BoundaryWidth(operation, width);
   
   if(args.empty()) {
     output << "WARNING: BoundaryWidth expected 1 argument\n";
@@ -3299,7 +3299,7 @@ void BoundaryWidth::apply_ddt(Field3D &f) {
 
 ///////////////////////////////////////////////////////////////
 BoundaryOp* BoundaryToFieldAligned::cloneMod(BoundaryOp *operation, const std::list<std::string> &args) {
-  BoundaryToFieldAligned* result = new BoundaryToFieldAligned(operation);
+  auto* result = new BoundaryToFieldAligned(operation);
   
   if(!args.empty()) {
     output << "WARNING: BoundaryToFieldAligned expected no argument\n";
@@ -3346,7 +3346,7 @@ void BoundaryToFieldAligned::apply_ddt(Field3D &f) {
 
 ///////////////////////////////////////////////////////////////
 BoundaryOp* BoundaryFromFieldAligned::cloneMod(BoundaryOp *operation, const std::list<std::string> &args) {
-  BoundaryFromFieldAligned* result = new BoundaryFromFieldAligned(operation);
+  auto* result = new BoundaryFromFieldAligned(operation);
   
   if(!args.empty()) {
     output << "WARNING: BoundaryFromFieldAligned expected no argument\n";

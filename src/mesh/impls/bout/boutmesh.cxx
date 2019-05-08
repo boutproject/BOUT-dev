@@ -1078,7 +1078,7 @@ int BoutMesh::wait(comm_handle handle) {
   if (handle == nullptr)
     return 1;
 
-  CommHandle *ch = static_cast<CommHandle *>(handle);
+  auto* ch = static_cast<CommHandle*>(handle);
 
   if (!ch->in_progress)
     return 2;

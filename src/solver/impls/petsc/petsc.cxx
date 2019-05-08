@@ -708,7 +708,7 @@ PetscErrorCode solver_ijacobian(TS ts, BoutReal t, Vec globalin, Vec UNUSED(glob
   ierr = solver_rhsjacobian(ts, t, globalin, J, Jpre, f_data); CHKERRQ(ierr);
 
   ////// Save data for preconditioner
-  PetscSolver *solver = (PetscSolver*) f_data;
+  auto* solver = (PetscSolver*)f_data;
 
   if(solver->diagnose)
     output << "Saving state, t = " << t << ", a = " << a << endl;
@@ -840,7 +840,7 @@ PetscErrorCode PhysicsJacobianApply(Mat J, Vec x, Vec y) {
 #define __FUNCT__ "PetscMonitor"
 PetscErrorCode PetscMonitor(TS ts, PetscInt UNUSED(step), PetscReal t, Vec X, void *ctx) {
   PetscErrorCode ierr;
-  PetscSolver *s = (PetscSolver *)ctx;
+  auto *s = (PetscSolver *)ctx;
   PetscReal tfinal, dt;
   Vec interpolatedX;
   const PetscScalar *x;
@@ -887,7 +887,7 @@ PetscErrorCode PetscSNESMonitor(SNES snes, PetscInt its, PetscReal norm, void *c
   PetscInt linear_its=0;
   BoutReal tmp = .0;
   snes_info row;
-  PetscSolver *s = (PetscSolver*)ctx;
+  auto *s = (PetscSolver*)ctx;
 
   PetscFunctionBegin;
 

@@ -68,8 +68,7 @@ const Field3D InvertParCR::solve(const Field3D &f) {
   Field3D alignedField = toFieldAligned(f, RGN_NOX);
 
   // Create cyclic reduction object
-  CyclicReduce<dcomplex> *cr = 
-    new CyclicReduce<dcomplex>();
+  auto* cr = new CyclicReduce<dcomplex>();
 
   // Find out if we are on a boundary
   int size = localmesh->LocalNy - 2 * localmesh->ystart;
