@@ -89,7 +89,7 @@ int physics_init(bool UNUSED(restarting)) {
   source.allocate();
   SAVE_REPEAT(source);
 
-  error_monitor.call(NULL, 0,  0, 0);
+  error_monitor.call(nullptr, 0,  0, 0);
   solver->addMonitor(&error_monitor);
 
   return 0;
