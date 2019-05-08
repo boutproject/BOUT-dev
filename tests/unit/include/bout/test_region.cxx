@@ -10,9 +10,10 @@
 
 #include <algorithm>
 #include <list>
-#include <vector>
+#include <random>
 #include <sstream>
 #include <type_traits>
+#include <vector>
 
 /// Global mesh
 namespace bout{
@@ -358,7 +359,7 @@ TEST_F(RegionTest, regionAsSorted) {
   Region<Ind3D>::RegionIndices regionIndicesSortedIn = regionSortedIn.getIndices();
 
   // Now shuffle the order and create a new region
-  std::random_shuffle(std::begin(indicesIn), std::end(indicesIn));
+  std::shuffle(std::begin(indicesIn), std::end(indicesIn), std::mt19937());
   Region<Ind3D> regionShuffledIn(indicesIn);
   Region<Ind3D>::RegionIndices regionIndicesShuffledIn = regionShuffledIn.getIndices();
   // Should we check the shuffle has actually changed the index order?
