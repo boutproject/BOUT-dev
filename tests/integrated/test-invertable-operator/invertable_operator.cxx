@@ -31,10 +31,8 @@ private:
 
   class Laplacian* laplacianSolver;
 
-  const int nits = 10;
-
 protected:
-  int init(bool restart) {
+  int init(bool) {
     SOLVE_FOR(n);
     SOLVE_FOR(solutionLap);
     SOLVE_FOR(solutionInv);
@@ -62,7 +60,7 @@ protected:
     return 0;
   }
 
-  int rhs(BoutReal time) {
+  int rhs(BoutReal) {
     ddt(n) = 0.;
     ddt(solutionInv) = 0.;
     ddt(solutionLap) = 0.;
