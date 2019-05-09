@@ -10,9 +10,9 @@
 #include <invert_laplace.hxx>
 #include <unused.hxx>
 
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
 
 class Interchange : public PhysicsModel {
 

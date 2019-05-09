@@ -1,7 +1,7 @@
 #include <bout/physicsmodel.hxx>
 #include <initialprofiles.hxx>
 #include <derivs.hxx>
-#include <math.h>
+#include <cmath>
 #include "mathematica.h"
 #include <bout/constants.hxx>
 #include <unused.hxx>
