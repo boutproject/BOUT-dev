@@ -256,7 +256,7 @@ int physics_init(bool UNUSED(restarting)) {
   }else {
     initial_profile("Ajpar", Ajpar);
     if(ZeroElMass)
-      dump.add(Ajpar, "Ajpar", 1); // output calculated Ajpar
+      dump.add(Ajpar, "Ajpar", true); // output calculated Ajpar
   }
 
   if(evolve_vi) {
@@ -283,19 +283,19 @@ int physics_init(bool UNUSED(restarting)) {
   comms.add(Apar);
 
   // Add any other variables to be dumped to file
-  dump.add(phi,  "phi",  1);
-  dump.add(Apar, "Apar", 1);
-  dump.add(jpar, "jpar", 1);
+  dump.add(phi, "phi", true);
+  dump.add(Apar, "Apar", true);
+  dump.add(jpar, "jpar", true);
 
-  dump.add(Ni0, "Ni0", 0);
-  dump.add(Te0, "Te0", 0);
-  dump.add(Ti0, "Ti0", 0);
+  dump.add(Ni0, "Ni0", false);
+  dump.add(Te0, "Te0", false);
+  dump.add(Ti0, "Ti0", false);
 
-  dump.add(Te_x,  "Te_x", 0);
-  dump.add(Ti_x,  "Ti_x", 0);
-  dump.add(Ni_x,  "Ni_x", 0);
-  dump.add(rho_s, "rho_s", 0);
-  dump.add(wci,   "wci", 0);
+  dump.add(Te_x, "Te_x", false);
+  dump.add(Ti_x, "Ti_x", false);
+  dump.add(Ni_x, "Ni_x", false);
+  dump.add(rho_s, "rho_s", false);
+  dump.add(wci, "wci", false);
 
   if (mesh->StaggerGrids) {
     maybe_ylow = CELL_YLOW;
