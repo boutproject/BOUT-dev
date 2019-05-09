@@ -459,8 +459,8 @@ private:
   /// Diffusive part (if split operator)
   rhsfunc phys_diff{nullptr};
 
-  /// Should unsplit physics models be treated as diffusive?
-  bool unsplit_diffusive{true};
+  /// Should non-split physics models be treated as diffusive?
+  bool is_nonsplit_model_diffusive{true};
   
   /// Enable sources and solutions for Method of Manufactured Solutions
   bool mms{false};

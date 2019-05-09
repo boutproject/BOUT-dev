@@ -53,9 +53,10 @@ Solver::Solver(Options* opts)
       mms((*options)["mms"].withDefault(false)),
       mms_initialise((*options)["mms_initialise"].withDefault(mms)) {
 
-  unsplit_diffusive = (*options)["unsplit_diffusive"]
-                          .doc("If not a split operator, treat RHS as diffusive?")
-                          .withDefault(true);
+  is_nonsplit_model_diffusive =
+      (*options)["is_nonsplit_model_diffusive"]
+          .doc("If not a split operator, treat RHS as diffusive?")
+          .withDefault(true);
 }
 
 /**************************************************************************
@@ -1174,7 +1175,7 @@ int Solver::run_convective(BoutReal t) {
       status = model->runConvective(t);
     } else
       status = (*phys_conv)(t);
-  } else if (!unsplit_diffusive) {
+  } else if (!is_nonsplit_model_diffusive) {
     // Return total
     if (model) {
       status = model->runRHS(t);
@@ -1212,7 +1213,7 @@ int Solver::run_diffusive(BoutReal t, bool linear) {
       status = (*phys_diff)(t);
     }
     post_rhs(t);
-  } else if (unsplit_diffusive) {
+  } else if (is_nonsplit_model_diffusive) {
     // Return total
     if (model) {
       status = model->runRHS(t);
