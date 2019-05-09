@@ -4,12 +4,12 @@
  *
  * 2010-09-03 Ben Dudson <bd512@york.ac.uk>
  *    * Initial version, simple averaging operator
- * 
+ *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -28,9 +28,9 @@
  **************************************************************/
 
 #include <bout/mesh.hxx>
-#include <globals.hxx>
 #include <bout/sys/timer.hxx>
 #include <difops.hxx>
+#include <globals.hxx>
 #include <gyro_average.hxx>
 #include <invert_laplace.hxx>
 
@@ -126,7 +126,7 @@ Field2D gyroPade1(const Field2D& f, const Field2D& rho, int flags) {
 Field3D gyroPade2(const Field3D& f, BoutReal rho, int flags) {
   Field3D result = gyroPade1(gyroPade1(f, rho, flags), rho, flags);
   result.getMesh()->communicate(result);
-  result = 0.5*rho*rho*Delp2( result );
+  result = 0.5 * rho * rho * Delp2(result);
   result.applyBoundary("dirichlet");
   return result;
 }
@@ -134,7 +134,7 @@ Field3D gyroPade2(const Field3D& f, BoutReal rho, int flags) {
 Field3D gyroPade2(const Field3D& f, const Field2D& rho, int flags) {
   Field3D result = gyroPade1(gyroPade1(f, rho, flags), rho, flags);
   result.getMesh()->communicate(result);
-  result = 0.5*rho*rho*Delp2( result );
+  result = 0.5 * rho * rho * Delp2(result);
   result.applyBoundary("dirichlet");
   return result;
 }
@@ -143,4 +143,3 @@ Field3D gyroPade2(const Field3D& f, const Field3D& rho, int flags) {
   // Have to use Z average of rho for efficient inversion
   return gyroPade2(f, DC(rho), flags);
 }
-
