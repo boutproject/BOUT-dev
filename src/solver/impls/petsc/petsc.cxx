@@ -635,10 +635,8 @@ PetscErrorCode PetscSolver::jac(Vec x, Vec y) {
 #undef __FUNCT__
 #define __FUNCT__ "solver_f"
 PetscErrorCode solver_f(TS ts, BoutReal t, Vec globalin, Vec globalout, void *f_data) {
-  PetscSolver *s;
-
   PetscFunctionBegin;
-  s = (PetscSolver*) f_data;
+  auto* s = static_cast<PetscSolver*>(f_data);
   PetscLogEventBegin(s->solver_event,0,0,0,0);
   s->rhs(ts, t, globalin, globalout);
   PetscLogEventEnd(s->solver_event,0,0,0,0);
@@ -840,7 +838,7 @@ PetscErrorCode PhysicsJacobianApply(Mat J, Vec x, Vec y) {
 #define __FUNCT__ "PetscMonitor"
 PetscErrorCode PetscMonitor(TS ts, PetscInt UNUSED(step), PetscReal t, Vec X, void *ctx) {
   PetscErrorCode ierr;
-  auto *s = (PetscSolver *)ctx;
+  auto* s = static_cast<PetscSolver*>(ctx);
   PetscReal tfinal, dt;
   Vec interpolatedX;
   const PetscScalar *x;
@@ -887,7 +885,7 @@ PetscErrorCode PetscSNESMonitor(SNES snes, PetscInt its, PetscReal norm, void *c
   PetscInt linear_its=0;
   BoutReal tmp = .0;
   snes_info row;
-  auto *s = (PetscSolver*)ctx;
+  auto *s = static_cast<PetscSolver*>(ctx);
 
   PetscFunctionBegin;
 
