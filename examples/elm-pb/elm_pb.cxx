@@ -276,7 +276,7 @@ private:
   }
 
 protected:
-  int init(bool restarting) {
+  int init(bool restarting) override {
     bool noshear;
 
     Coordinates* metric = mesh->getCoordinates();
