@@ -97,7 +97,7 @@ BoundaryOpBase* BoundaryFactory::create(const string &name, BoundaryRegionBase *
       // Clone the boundary operation, passing the region to operate over,
       // an empty args list and empty keyword map
       list<string> args;
-      return pop->clone(static_cast<BoundaryRegionPar*>(region), args, {});
+      return pop->clone(dynamic_cast<BoundaryRegionPar*>(region), args, {});
     } else {
       // Perpendicular boundary
       BoundaryOp *op = findBoundaryOp(trim(name));
@@ -107,7 +107,7 @@ BoundaryOpBase* BoundaryFactory::create(const string &name, BoundaryRegionBase *
       // Clone the boundary operation, passing the region to operate over,
       // an empty args list and empty keyword map
       list<string> args;
-      return op->clone(static_cast<BoundaryRegion*>(region), args, {});
+      return op->clone(dynamic_cast<BoundaryRegion*>(region), args, {});
     }
   }
   // Contains a bracket. Find the last bracket and remove
@@ -170,7 +170,7 @@ BoundaryOpBase* BoundaryFactory::create(const string &name, BoundaryRegionBase *
   BoundaryModifier *mod = findBoundaryMod(func);
   if (mod != nullptr) {
     // The first argument should be an operation
-    auto* op = static_cast<BoundaryOp*>(create(arglist.front(), region));
+    auto* op = dynamic_cast<BoundaryOp*>(create(arglist.front(), region));
     if (op == nullptr)
       return nullptr;
 
@@ -186,14 +186,14 @@ BoundaryOpBase* BoundaryFactory::create(const string &name, BoundaryRegionBase *
     BoundaryOpPar *pop = findBoundaryOpPar(trim(func));
     if (pop != nullptr) {
       // An operation with arguments
-      return pop->clone(static_cast<BoundaryRegionPar*>(region), arglist, keywords);
+      return pop->clone(dynamic_cast<BoundaryRegionPar*>(region), arglist, keywords);
     }
   } else {
     // Perpendicular boundary
     BoundaryOp *op = findBoundaryOp(trim(func));
     if (op != nullptr) {
       // An operation with arguments
-      return op->clone(static_cast<BoundaryRegion*>(region), arglist, keywords);
+      return op->clone(dynamic_cast<BoundaryRegion*>(region), arglist, keywords);
     }
   }
 

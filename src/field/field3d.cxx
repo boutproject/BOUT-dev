@@ -400,9 +400,9 @@ void Field3D::applyBoundary(const std::string &condition) {
   
   /// Loop over the mesh boundary regions
   for(const auto& reg : fieldmesh->getBoundaries()) {
-    auto* op = static_cast<BoundaryOp*>(bfact->create(condition, reg));
+    auto op = std::unique_ptr<BoundaryOp>{
+        dynamic_cast<BoundaryOp*>(bfact->create(condition, reg))};
     op->apply(*this);
-    delete op;
   }
 
   //Field2D sets the corners to zero here, should we do the same here?
@@ -420,9 +420,9 @@ void Field3D::applyBoundary(const std::string &region, const std::string &condit
   for (const auto &reg : fieldmesh->getBoundaries()) {
     if (reg->label.compare(region) == 0) {
       region_found = true;
-      auto *op = static_cast<BoundaryOp *>(bfact->create(condition, reg));
+      auto op = std::unique_ptr<BoundaryOp>{
+          dynamic_cast<BoundaryOp*>(bfact->create(condition, reg))};
       op->apply(*this);
-      delete op;
       break;
     }
   }
@@ -527,9 +527,9 @@ void Field3D::applyParallelBoundary(const std::string &condition) {
 
     /// Loop over the mesh boundary regions
     for(const auto& reg : fieldmesh->getBoundariesPar()) {
-      auto* op = static_cast<BoundaryOpPar*>(bfact->create(condition, reg));
+      auto op = std::unique_ptr<BoundaryOpPar>{
+          dynamic_cast<BoundaryOpPar*>(bfact->create(condition, reg))};
       op->apply(*this);
-      delete op;
     }
   }
 }
@@ -552,9 +552,9 @@ void Field3D::applyParallelBoundary(const std::string &region, const std::string
     /// Loop over the mesh boundary regions
     for(const auto& reg : fieldmesh->getBoundariesPar()) {
       if(reg->label.compare(region) == 0) {
-        auto* op = static_cast<BoundaryOpPar*>(bfact->create(condition, reg));
+        auto op = std::unique_ptr<BoundaryOpPar>{
+            dynamic_cast<BoundaryOpPar*>(bfact->create(condition, reg))};
         op->apply(*this);
-        delete op;
         break;
       }
     }
@@ -581,12 +581,11 @@ void Field3D::applyParallelBoundary(const std::string &region, const std::string
       if(reg->label.compare(region) == 0) {
         // BoundaryFactory can't create boundaries using Field3Ds, so get temporary
         // boundary of the right type
-        auto* tmp = static_cast<BoundaryOpPar*>(bfact->create(condition, reg));
+        auto tmp = std::unique_ptr<BoundaryOpPar>{
+            dynamic_cast<BoundaryOpPar*>(bfact->create(condition, reg))};
         // then clone that with the actual argument
-        BoundaryOpPar* op = tmp->clone(reg, f);
+        auto op = std::unique_ptr<BoundaryOpPar>{tmp->clone(reg, f)};
         op->apply(*this);
-        delete tmp;
-        delete op;
         break;
       }
     }
