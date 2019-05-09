@@ -39,9 +39,7 @@ private:
   Field2D Pi0, Pe0;
   Field2D q95;
   Field3D ubyn;
-  BoutReal q95_input;
   bool n0_fake_prof, T0_fake_prof;
-  BoutReal Zi; // charge number of ion
 
   // B field vectors
   Vector2D B0vec; // B0 field vector
