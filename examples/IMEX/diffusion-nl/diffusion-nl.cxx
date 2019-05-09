@@ -23,7 +23,7 @@ class DiffusionNL : public PhysicsModel {
 protected:
   int init(bool) {
     // Get the input parameter alpha
-    auto opt = Options::root();
+    auto& opt = Options::root();
     alpha = opt["alpha"].withDefault(2.5);
 
     // Specify that the operator is split
