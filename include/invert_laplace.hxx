@@ -177,13 +177,13 @@ public:
   /// Does this solver use Field3D coefficients (true) or only their DC component (false)
   virtual bool uses3DCoefs() const { return false; }
   
-  virtual const FieldPerp solve(const FieldPerp &b) = 0;
-  virtual const Field3D solve(const Field3D &b);
-  virtual const Field2D solve(const Field2D &b);
+  virtual FieldPerp solve(const FieldPerp &b) = 0;
+  virtual Field3D solve(const Field3D &b);
+  virtual Field2D solve(const Field2D &b);
   
-  virtual const FieldPerp solve(const FieldPerp &b, const FieldPerp &UNUSED(x0)) { return solve(b); }
-  virtual const Field3D solve(const Field3D &b, const Field3D &x0);
-  virtual const Field2D solve(const Field2D &b, const Field2D &x0);
+  virtual FieldPerp solve(const FieldPerp &b, const FieldPerp &UNUSED(x0)) { return solve(b); }
+  virtual Field3D solve(const Field3D &b, const Field3D &x0);
+  virtual Field2D solve(const Field2D &b, const Field2D &x0);
 
   /// Coefficients in tridiagonal inversion
   void tridagCoefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcomplex &c,

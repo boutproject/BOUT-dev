@@ -174,8 +174,8 @@ public:
     if(pcsolve) pcsolve->setCoefEz(val);
   }
 
-  const FieldPerp solve(const FieldPerp &b) override;
-  const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override;
+  FieldPerp solve(const FieldPerp &b) override;
+  FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override;
 
   int precon(Vec x, Vec y); ///< Preconditioner function
 
