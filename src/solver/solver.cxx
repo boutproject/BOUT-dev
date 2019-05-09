@@ -50,14 +50,12 @@ char ***Solver::pargv = nullptr;
 Solver::Solver(Options* opts)
     : options(opts == nullptr ? &Options::root()["solver"] : opts),
       monitor_timestep((*options)["monitor_timestep"].withDefault(false)),
+      is_nonsplit_model_diffusive(
+          (*options)["is_nonsplit_model_diffusive"]
+              .doc("If not a split operator, treat RHS as diffusive?")
+              .withDefault(true)),
       mms((*options)["mms"].withDefault(false)),
-      mms_initialise((*options)["mms_initialise"].withDefault(mms)) {
-
-  is_nonsplit_model_diffusive =
-      (*options)["is_nonsplit_model_diffusive"]
-          .doc("If not a split operator, treat RHS as diffusive?")
-          .withDefault(true);
-}
+      mms_initialise((*options)["mms_initialise"].withDefault(mms)) {}
 
 /**************************************************************************
  * Add physics models
