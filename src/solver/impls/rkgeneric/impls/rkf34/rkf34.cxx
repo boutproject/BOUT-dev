@@ -85,9 +85,3 @@ RKF34Scheme::RKF34Scheme(Options *options):RKScheme(options){
   timeCoeffs[4] = 1.0;
 
 }
-
-RKF34Scheme::~RKF34Scheme(){
-  //Do my cleanup
-  
-}
-

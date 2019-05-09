@@ -42,9 +42,6 @@ PhysicsModel::PhysicsModel()
   restart = Datafile(Options::getRoot()->getSection("restart"));
 }
 
-PhysicsModel::~PhysicsModel() {
-}
-
 int PhysicsModel::runRHS(BoutReal time) {
   return rhs(time);
 }

@@ -91,9 +91,3 @@ CASHKARPScheme::CASHKARPScheme(Options *options):RKScheme(options){
   timeCoeffs[5] = 7.0/8.0;
 
 }
-
-CASHKARPScheme::~CASHKARPScheme(){
-  //Do my cleanup
-  
-}
-

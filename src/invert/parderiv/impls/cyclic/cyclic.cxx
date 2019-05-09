@@ -54,9 +54,6 @@ InvertParCR::InvertParCR(Options *opt, Mesh *mesh_in)
   nsys = 1 + (localmesh->LocalNz)/2; 
 }
 
-InvertParCR::~InvertParCR() {
-}
-
 const Field3D InvertParCR::solve(const Field3D &f) {
   TRACE("InvertParCR::solve(Field3D)");
   ASSERT1(localmesh == f.getMesh());

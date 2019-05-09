@@ -55,7 +55,7 @@ public:
   
   PhysicsModel();
   
-  virtual ~PhysicsModel();
+  virtual ~PhysicsModel() = default;
   
   /*!
    * Initialse the model, calling the init() and postInit() methods

@@ -19,10 +19,6 @@ GlobalField::GlobalField(Mesh *m, int proc, int xsize, int ysize, int zsize)
     data.reallocate(nx * ny * nz);
   }
 }
-
-GlobalField::~GlobalField() {
-}
-
 void GlobalField::proc_local_origin(int proc, int *x, int *y, int *z) const {
   
   int nxpe = mesh->getNXPE();

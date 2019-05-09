@@ -7,8 +7,6 @@
 
 class FakeGridDataSource : public GridDataSource {
 public:
-  FakeGridDataSource(){};
-  ~FakeGridDataSource(){};
   bool hasVar(const std::string &UNUSED(name)) { return false; };
   bool get(Mesh *UNUSED(m), std::string &UNUSED(sval), const std::string &UNUSED(name)) {
     return true;
