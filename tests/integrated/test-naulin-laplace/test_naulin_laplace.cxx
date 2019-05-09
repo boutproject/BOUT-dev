@@ -41,9 +41,8 @@ int main(int argc, char** argv) {
   // Initialise BOUT++, setting up mesh
   BoutInitialise(argc, argv);
 
-  //class Laplacian* invert = Laplacian::create();
   Options* options = Options::getRoot()->getSection("laplace");
-  auto* invert = new LaplaceNaulin(options);
+  LaplaceNaulin invert(options);
 
   // Solving equations of the form d*Grad_perp2(f) + 1/c*Grad_perp(c).Grad_perp(f) + a*f = b for various boundary conditions
   Field3D f1,a1,b1,c1,d1,sol1,bcheck1;
@@ -53,7 +52,7 @@ int main(int argc, char** argv) {
   dump.add(mesh->getCoordinates()->G1,"G1");
   dump.add(mesh->getCoordinates()->G3,"G3");
 
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////////
   // Test 1: zero-value Dirichlet boundaries
   f1 = FieldFactory::get()->create3D("f1:function", Options::getRoot(), mesh);
   d1 = FieldFactory::get()->create3D("d1:function", Options::getRoot(), mesh);
@@ -63,14 +62,14 @@ int main(int argc, char** argv) {
   b1 = d1*Delp2(f1) + this_Grad_perp_dot_Grad_perp(c1,f1)/c1 + a1*f1;
   sol1 = 0.;
 
-  invert->setInnerBoundaryFlags(0);
-  invert->setOuterBoundaryFlags(0);
-  invert->setCoefA(a1);
-  invert->setCoefC(c1);
-  invert->setCoefD(d1);
+  invert.setInnerBoundaryFlags(0);
+  invert.setOuterBoundaryFlags(0);
+  invert.setCoefA(a1);
+  invert.setCoefC(c1);
+  invert.setCoefD(d1);
 
   try {
-    sol1 = invert->solve(b1);
+    sol1 = invert.solve(b1);
     mesh->communicate(sol1);
     checkData(sol1);
     bcheck1 = d1*Delp2(sol1) + this_Grad_perp_dot_Grad_perp(c1,sol1)/c1 + a1*sol1;
@@ -87,7 +86,7 @@ int main(int argc, char** argv) {
 
   output<<endl<<"Test 1: zero Dirichlet"<<endl;
   output<<"Magnitude of maximum absolute error is "<<max_error1<<endl;
-  output<<"Solver took "<<invert->getMeanIterations()<<" iterations to converge"<<endl;
+  output<<"Solver took "<<invert.getMeanIterations()<<" iterations to converge"<<endl;
 
   dump.add(a1,"a1");
   dump.add(b1,"b1");
@@ -98,10 +97,10 @@ int main(int argc, char** argv) {
   dump.add(bcheck1,"bcheck1");
   dump.add(absolute_error1,"absolute_error1");
   dump.add(max_error1,"max_error1");
-  delete invert;
 
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  invert = new LaplaceNaulin(options); // reinitialize here to reset iteration counter
+  ////////////////////////////////////////////////////////////////////////////////
+
+  invert.resetMeanIterations();
   Field3D f2,a2,b2,c2,d2,sol2,bcheck2;
   Field3D absolute_error2;
   BoutReal max_error2; //Output of test
@@ -114,14 +113,14 @@ int main(int argc, char** argv) {
   b2 = d2*Delp2(f2) + this_Grad_perp_dot_Grad_perp(c2,f2)/c2 + a2*f2;
   sol2 = 0.;
 
-  invert->setInnerBoundaryFlags(INVERT_DC_GRAD + INVERT_AC_GRAD);
-  invert->setOuterBoundaryFlags(INVERT_DC_GRAD + INVERT_AC_GRAD);
-  invert->setCoefA(a2);
-  invert->setCoefC(c2);
-  invert->setCoefD(d2);
+  invert.setInnerBoundaryFlags(INVERT_DC_GRAD + INVERT_AC_GRAD);
+  invert.setOuterBoundaryFlags(INVERT_DC_GRAD + INVERT_AC_GRAD);
+  invert.setCoefA(a2);
+  invert.setCoefC(c2);
+  invert.setCoefD(d2);
 
   try {
-    sol2 = invert->solve(b2);
+    sol2 = invert.solve(b2);
     mesh->communicate(sol2);
     bcheck2 = d2*Delp2(sol2) + this_Grad_perp_dot_Grad_perp(c2,sol2)/c2 + a2*sol2;
     absolute_error2 = f2-sol2;
@@ -137,7 +136,7 @@ int main(int argc, char** argv) {
 
   output<<endl<<"Test 2: zero Neumann"<<endl;
   output<<"Magnitude of maximum absolute error is "<<max_error2<<endl;
-  output<<"Solver took "<<invert->getMeanIterations()<<" iterations to converge"<<endl;
+  output<<"Solver took "<<invert.getMeanIterations()<<" iterations to converge"<<endl;
 
   dump.add(a2,"a2");
   dump.add(b2,"b2");
@@ -148,10 +147,10 @@ int main(int argc, char** argv) {
   dump.add(bcheck2,"bcheck2");
   dump.add(absolute_error2,"absolute_error2");
   dump.add(max_error2,"max_error2");
-  delete invert;
 
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  invert = new LaplaceNaulin(options); // reinitialize here to reset iteration counter
+  ////////////////////////////////////////////////////////////////////////////////
+
+  invert.resetMeanIterations();
   Field3D f3,a3,b3,c3,d3,sol3,bcheck3;
   Field3D absolute_error3;
   BoutReal max_error3; //Output of test
@@ -164,11 +163,11 @@ int main(int argc, char** argv) {
   b3 = d3*Delp2(f3) + this_Grad_perp_dot_Grad_perp(c3,f3)/c3 + a3*f3;
   sol3 = 0.;
 
-  invert->setInnerBoundaryFlags(INVERT_SET);
-  invert->setOuterBoundaryFlags(INVERT_SET);
-  invert->setCoefA(a3);
-  invert->setCoefC(c3);
-  invert->setCoefD(d3);
+  invert.setInnerBoundaryFlags(INVERT_SET);
+  invert.setOuterBoundaryFlags(INVERT_SET);
+  invert.setCoefA(a3);
+  invert.setCoefC(c3);
+  invert.setCoefD(d3);
 
   // make field to pass in boundary conditions
   Field3D x0 = 0.;
@@ -180,7 +179,7 @@ int main(int argc, char** argv) {
       x0(mesh->xend+1,mesh->ystart,k) = 0.5*(f3(mesh->xend+1,mesh->ystart,k)+f3(mesh->xend,mesh->ystart,k));
 
   try {
-    sol3 = invert->solve(b3, x0);
+    sol3 = invert.solve(b3, x0);
     mesh->communicate(sol3);
     bcheck3 = d3*Delp2(sol3) + this_Grad_perp_dot_Grad_perp(c3,f3)/c3 + a3*sol3;
     absolute_error3 = f3-sol3;
@@ -196,7 +195,7 @@ int main(int argc, char** argv) {
 
   output<<endl<<"Test 3: set Dirichlet"<<endl;
   output<<"Magnitude of maximum absolute error is "<<max_error3<<endl;
-  output<<"Solver took "<<invert->getMeanIterations()<<" iterations to converge"<<endl;
+  output<<"Solver took "<<invert.getMeanIterations()<<" iterations to converge"<<endl;
 
   dump.add(a3,"a3");
   dump.add(b3,"b3");
@@ -207,10 +206,10 @@ int main(int argc, char** argv) {
   dump.add(bcheck3,"bcheck3");
   dump.add(absolute_error3,"absolute_error3");
   dump.add(max_error3,"max_error3");
-  delete invert;
 
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  invert = new LaplaceNaulin(options); // reinitialize here to reset iteration counter
+  ////////////////////////////////////////////////////////////////////////////////
+
+  invert.resetMeanIterations();
   Field3D f4,a4,b4,c4,d4,sol4,bcheck4;
   Field3D absolute_error4;
   BoutReal max_error4; //Output of test
@@ -223,11 +222,11 @@ int main(int argc, char** argv) {
   b4 = d4*Delp2(f4) + this_Grad_perp_dot_Grad_perp(c4,f4)/c4 + a4*f4;
   sol4 = 0.;
 
-  invert->setInnerBoundaryFlags(INVERT_DC_GRAD + INVERT_AC_GRAD + INVERT_SET);
-  invert->setOuterBoundaryFlags(INVERT_DC_GRAD + INVERT_AC_GRAD + INVERT_SET);
-  invert->setCoefA(a4);
-  invert->setCoefC(c4);
-  invert->setCoefD(d4);
+  invert.setInnerBoundaryFlags(INVERT_DC_GRAD + INVERT_AC_GRAD + INVERT_SET);
+  invert.setOuterBoundaryFlags(INVERT_DC_GRAD + INVERT_AC_GRAD + INVERT_SET);
+  invert.setCoefA(a4);
+  invert.setCoefC(c4);
+  invert.setCoefD(d4);
 
   // make field to pass in boundary conditions
   x0 = 0.;
@@ -243,7 +242,7 @@ int main(int argc, char** argv) {
                                         /sqrt(mesh->getCoordinates()->g_11(mesh->xend,mesh->ystart));
 
   try {
-    sol4 = invert->solve(b4, x0);
+    sol4 = invert.solve(b4, x0);
     mesh->communicate(sol4);
     bcheck4 = d4*Delp2(sol4) + this_Grad_perp_dot_Grad_perp(c4,sol4)/c4 + a4*sol4;
     absolute_error4 = f4-sol4;
@@ -259,7 +258,7 @@ int main(int argc, char** argv) {
 
   output<<endl<<"Test 4: set Neumann"<<endl;
   output<<"Magnitude of maximum absolute error is "<<max_error4<<endl;
-  output<<"Solver took "<<invert->getMeanIterations()<<" iterations to converge"<<endl;
+  output<<"Solver took "<<invert.getMeanIterations()<<" iterations to converge"<<endl;
 
   dump.add(a4,"a4");
   dump.add(b4,"b4");
@@ -270,8 +269,8 @@ int main(int argc, char** argv) {
   dump.add(bcheck4,"bcheck4");
   dump.add(absolute_error4,"absolute_error4");
   dump.add(max_error4,"max_error4");
-  delete invert;
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+  ////////////////////////////////////////////////////////////////////////////////
 
   output << "\nFinished running test.\n\n";
 
