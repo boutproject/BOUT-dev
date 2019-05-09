@@ -108,7 +108,8 @@ void GlobalField2D::gather(const Field2D &f) {
   if(mype == data_on_proc) {
     // This processor will receive the data
     
-    auto* req = new MPI_Request[npes]; // Array of receive handles
+    // Array of receive handles
+    std::vector<MPI_Request> req(npes);
 
     // Post receives
     for(int p = 0; p < npes; p++) {
@@ -138,7 +139,7 @@ void GlobalField2D::gather(const Field2D &f) {
       int pe;
       MPI_Status status;
       do {
-        MPI_Waitany(npes, req, &pe, &status);
+        MPI_Waitany(npes, req.data(), &pe, &status);
 
         if(pe != MPI_UNDEFINED) {
           // Unpack data from processor 'pe'
@@ -156,7 +157,6 @@ void GlobalField2D::gather(const Field2D &f) {
         }
       }while(pe != MPI_UNDEFINED);
     }
-    delete[] req;
   }else {
     // Sending data to proc
     
@@ -271,7 +271,8 @@ void GlobalField3D::gather(const Field3D &f) {
   if(mype == data_on_proc) {
     // This processor will receive the data
     
-    auto* req = new MPI_Request[npes]; // Array of receive handles
+    // Array of receive handles
+    std::vector<MPI_Request> req(npes);
 
     // Post receives
     for(int p = 0; p < npes; p++) {
@@ -302,7 +303,7 @@ void GlobalField3D::gather(const Field3D &f) {
       int pe;
       MPI_Status status;
       do {
-        MPI_Waitany(npes, req, &pe, &status);
+        MPI_Waitany(npes, req.data(), &pe, &status);
 
         if(pe != MPI_UNDEFINED) {
           // Unpack data from processor 'pe'
@@ -322,7 +323,6 @@ void GlobalField3D::gather(const Field3D &f) {
         }
       }while(pe != MPI_UNDEFINED);
     }
-    delete[] req;
   }else {
     // Sending data to proc
     
