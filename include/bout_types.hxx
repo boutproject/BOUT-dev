@@ -31,7 +31,7 @@
 using BoutReal = double;
 
 /// Quiet NaN
-const BoutReal BoutNaN = std::numeric_limits<BoutReal>::quiet_NaN();
+constexpr BoutReal BoutNaN = std::numeric_limits<BoutReal>::quiet_NaN();
 
 #define ENUMSTR(val) {val, #val}
 #define STRENUM(val) {#val, val}
