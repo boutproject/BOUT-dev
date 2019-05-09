@@ -42,6 +42,7 @@ class PhysicsModel;
 #include <msg_stack.hxx>
 #include "solver.hxx"
 #include "unused.hxx"
+#include "utils.hxx"
 #include "bout/macro_for_each.hxx"
 
 /*!
@@ -298,31 +299,28 @@ private:
  *
  * BOUTMAIN(MyModel);
  */
-#define BOUTMAIN(ModelClass)                          \
-  int main(int argc, char **argv) {                   \
-    int init_err = BoutInitialise(argc, argv);        \
-    if (init_err < 0)				      \
-      return 0;                                       \
-    else if (init_err > 0) 			      \
-      return init_err;				      \
-    try {                                             \
-      ModelClass *model = new ModelClass();           \
-      Solver *solver = Solver::create();              \
-      solver->setModel(model);                        \
-      Monitor * bout_monitor = new BoutMonitor();     \
-      solver->addMonitor(bout_monitor, Solver::BACK); \
-      solver->outputVars(bout::globals::dump);        \
-      solver->solve();                                \
-      delete model;                                   \
-      delete solver;                                  \
-      delete bout_monitor;                            \
-    } catch (const BoutException &e) {                \
-      output << "Error encountered\n";                \
-      output << e.getBacktrace() << endl;             \
-      MPI_Abort(BoutComm::get(), 1);                  \
-    }                                                 \
-    BoutFinalise();                                   \
-    return 0;                                         \
+#define BOUTMAIN(ModelClass)                                       \
+  int main(int argc, char** argv) {                                \
+    int init_err = BoutInitialise(argc, argv);                     \
+    if (init_err < 0)                                              \
+      return 0;                                                    \
+    else if (init_err > 0)                                         \
+      return init_err;                                             \
+    try {                                                          \
+      auto model = bout::utils::make_unique<ModelClass>();         \
+      auto solver = std::unique_ptr<Solver>(Solver::create());     \
+      solver->setModel(model.get());                               \
+      auto bout_monitor = bout::utils::make_unique<BoutMonitor>(); \
+      solver->addMonitor(bout_monitor.get(), Solver::BACK);        \
+      solver->outputVars(bout::globals::dump);                     \
+      solver->solve();                                             \
+    } catch (const BoutException& e) {                             \
+      output << "Error encountered\n";                             \
+      output << e.getBacktrace() << endl;                          \
+      MPI_Abort(BoutComm::get(), 1);                               \
+    }                                                              \
+    BoutFinalise();                                                \
+    return 0;                                                      \
   }
 
 /// Macro to replace solver->add, passing variable name
