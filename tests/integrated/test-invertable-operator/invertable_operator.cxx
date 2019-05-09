@@ -32,7 +32,7 @@ private:
   class Laplacian* laplacianSolver;
 
 protected:
-  int init(bool) {
+  int init(bool) override {
     SOLVE_FOR(n);
     SOLVE_FOR(solutionLap);
     SOLVE_FOR(solutionInv);
@@ -60,7 +60,7 @@ protected:
     return 0;
   }
 
-  int rhs(BoutReal) {
+  int rhs(BoutReal) override {
     ddt(n) = 0.;
     ddt(solutionInv) = 0.;
     ddt(solutionLap) = 0.;

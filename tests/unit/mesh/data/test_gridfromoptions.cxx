@@ -64,7 +64,7 @@ public:
         &mesh_from_options);
   }
 
-  ~GridFromOptionsTest() {
+  ~GridFromOptionsTest() override {
     Options::cleanup();
     output_info.enable();
     output_progress.enable();

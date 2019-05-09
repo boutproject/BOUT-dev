@@ -11,12 +11,12 @@ class TestSolver : public PhysicsModel {
 public:
   Field3D field;
 
-  int init(bool UNUSED(restarting)) {
+  int init(bool UNUSED(restarting)) override {
     solver->add(field, "field");
     return 0;
   }
 
-  int rhs(BoutReal time) {
+  int rhs(BoutReal time) override {
     ddt(field) = sin(time) * sin(time);
     return 0;
   }

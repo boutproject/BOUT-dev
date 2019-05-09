@@ -1169,9 +1169,10 @@ TEST(RegionIndex3DTest, NonMemberSize) {
   EXPECT_EQ(size(region), nmesh);
 }
 
-template <typename T> class RegionIndexTest : public ::testing::Test {
+template <typename T>
+class RegionIndexTest : public ::testing::Test {
 public:
-  virtual ~RegionIndexTest() = default;
+  ~RegionIndexTest() override = default;
 };
 
 using RegionIndexTypes = ::testing::Types<Ind2D, Ind3D, IndPerp>;
@@ -1490,7 +1491,7 @@ TYPED_TEST(RegionIndexTest, RangeBasedForLoop) {
 template <typename T>
 class FieldIndexTest : public ::testing::Test {
 public:
-  virtual ~FieldIndexTest() = default;
+  ~FieldIndexTest() override = default;
 };
 
 using FieldIndexTypes = ::testing::Types<Ind2D, Ind3D>;
@@ -1668,7 +1669,7 @@ protected:
     mesh->createDefaultRegions();
   }
 
-  virtual ~IndexOffsetTest() {
+  ~IndexOffsetTest() override {
     delete mesh;
     mesh = nullptr;
   }

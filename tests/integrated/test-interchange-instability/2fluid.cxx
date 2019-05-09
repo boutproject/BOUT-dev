@@ -37,7 +37,7 @@ class Interchange : public PhysicsModel {
 
   Coordinates *coord;
 protected:
-  int init(bool UNUSED(restarting)) {
+  int init(bool UNUSED(restarting)) override {
     Field2D I; // Shear factor
 
     output << "Solving 2-variable equations\n";
@@ -169,7 +169,7 @@ protected:
     return (0);
   }
 
-  int rhs(BoutReal UNUSED(t)) {
+  int rhs(BoutReal UNUSED(t)) override {
     // Solve EM fields
     phi = phi_solver->solve(rho / Ni0, phi);
 
