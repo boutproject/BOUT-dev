@@ -16,7 +16,7 @@ using namespace bout::globals;
 
 class GridFromOptionsTest : public ::testing::Test {
 public:
-  GridFromOptionsTest() : options(), griddata(nullptr) {
+  GridFromOptionsTest() : options() {
 
     mesh_from_options.StaggerGrids = true;
     mesh_from_options.xstart = 2;
@@ -78,7 +78,7 @@ public:
 
   std::shared_ptr<Coordinates> test_coords;
   Options options;
-  GridFromOptions* griddata;
+  GridFromOptions* griddata{nullptr};
   std::string expected_string{"x + y + z + 3"};
   Field2D expected_2d;
   Field3D expected_3d;
