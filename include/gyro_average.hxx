@@ -33,8 +33,11 @@
 #define __GYRO_AVERAGE_H__
 
 #include "field3d.hxx"
+#include "invert_laplace.hxx"
 
-const int GYRO_FLAGS = 64 + 16384 + 32768; ///< = INVERT_BNDRY_ONE | INVERT_IN_RHS | INVERT_OUT_RHS; uses old-style Laplacian inversion flags
+/// INVERT_BNDRY_ONE | INVERT_IN_RHS | INVERT_OUT_RHS; uses old-style
+/// Laplacian inversion flags
+constexpr int GYRO_FLAGS = 64 + 16384 + 32768;
 
 /// Gyro-average using Taylor series approximation
 ///
