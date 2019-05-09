@@ -409,6 +409,7 @@ REGISTER_FLUX_DERIVATIVE_STAGGERED(FDDX_U2_stag, "U2", 2, DERIV::Flux) {
 /// into the standard stencil based approach.
 // /////////////////////////////////////////////////////////////////////////////////
 
+#ifdef BOUT_HAS_FFTW
 class FFTDerivativeType {
 public:
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
@@ -550,6 +551,7 @@ produceCombinations<Set<WRAP_ENUM(DIRECTION, Z)>, Set<WRAP_ENUM(STAGGER, None)>,
                     Set<TypeContainer<Field3D>>,
                     Set<FFTDerivativeType, FFT2ndDerivativeType>>
     registerFFTDerivative(registerMethod{});
+#endif
 
 class SplitFluxDerivativeType {
 public:
