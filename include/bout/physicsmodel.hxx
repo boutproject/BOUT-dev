@@ -50,9 +50,9 @@ class PhysicsModel;
  */
 class PhysicsModel {
 public:
-  typedef int (PhysicsModel::*preconfunc)(BoutReal t, BoutReal gamma, BoutReal delta);
-  typedef int (PhysicsModel::*jacobianfunc)(BoutReal t);
-  
+  using preconfunc = int (PhysicsModel::*)(BoutReal t, BoutReal gamma, BoutReal delta);
+  using jacobianfunc = int (PhysicsModel::*)(BoutReal t);
+
   PhysicsModel();
   
   virtual ~PhysicsModel() = default;

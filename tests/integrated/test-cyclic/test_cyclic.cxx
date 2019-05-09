@@ -10,7 +10,7 @@
 #include "utils.hxx"
 
 // Change this to dcomplex to test complex matrix inversion
-typedef BoutReal T;
+using T = BoutReal;
 
 int main(int argc, char **argv) {
 

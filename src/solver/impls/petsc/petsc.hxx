@@ -49,10 +49,10 @@ namespace {
 RegisterSolver<PetscSolver> registersolverpetsc("petsc");
 }
 
-typedef PetscScalar BoutReal;
+using BoutReal = PetscScalar;
 #define OPT_SIZE 40
 
-typedef int (*rhsfunc)(BoutReal);
+using rhsfunc = int (*)(BoutReal);
 
 extern BoutReal simtime;
 
@@ -71,12 +71,12 @@ extern PetscErrorCode solver_ijacobian(TS, PetscReal, Vec, Vec, PetscReal, Mat *
 #endif
 
 /// Data for SNES
-typedef struct snes_info {
+struct snes_info {
   PetscInt it;
   PetscInt linear_its;
   PetscReal time;
   PetscReal norm;
-} snes_info;
+};
 
 class PetscSolver : public Solver {
 public:

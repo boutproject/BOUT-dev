@@ -1174,7 +1174,7 @@ public:
   virtual ~RegionIndexTest() = default;
 };
 
-typedef ::testing::Types<Ind2D, Ind3D, IndPerp> RegionIndexTypes;
+using RegionIndexTypes = ::testing::Types<Ind2D, Ind3D, IndPerp>;
 TYPED_TEST_SUITE(RegionIndexTest, RegionIndexTypes);
 
 TYPED_TEST(RegionIndexTest, Begin) {
@@ -1493,7 +1493,7 @@ public:
   virtual ~FieldIndexTest() = default;
 };
 
-typedef ::testing::Types<Ind2D, Ind3D> FieldIndexTypes;
+using FieldIndexTypes = ::testing::Types<Ind2D, Ind3D>;
 TYPED_TEST_SUITE(FieldIndexTest, FieldIndexTypes);
 
 TYPED_TEST(FieldIndexTest, Constructor) {

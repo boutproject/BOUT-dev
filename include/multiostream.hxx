@@ -75,7 +75,7 @@ class multiostream : private
       public
        std::basic_ostream<char_type, traits> {
  private:
-  typedef ::multioutbuf_init<char_type, traits> multioutbuf_init;
+  using multioutbuf_init = ::multioutbuf_init<char_type, traits>;
 
  public:
   multiostream() : multioutbuf_init(), std::basic_ostream<char_type,
@@ -92,8 +92,8 @@ class multiostream : private
   }
 };
 
-typedef multiostream<char> cmultiostream;
-typedef multiostream<wchar_t> wmultiostream;
+using cmultiostream = multiostream<char>;
+using wmultiostream = multiostream<wchar_t>;
 
 #endif // __MULTIOSTREAM_H__
 
