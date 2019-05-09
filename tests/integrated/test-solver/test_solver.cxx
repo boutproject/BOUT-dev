@@ -85,13 +85,13 @@ int main(int argc, char **argv) {
       // "solver" section, as we run into problems when solvers use the same
       // name for an option with inconsistent defaults
       auto options = Options::getRoot()->getSection(name);
-      Solver *solver = SolverFactory::getInstance()->createSolver(name, options);
+      auto solver = std::unique_ptr<Solver>{SolverFactory::getInstance()->createSolver(name, options)};
 
-      TestSolver *model = new TestSolver();
-      solver->setModel(model);
+      auto model = bout::utils::make_unique<TestSolver>();
+      solver->setModel(model.get());
 
-      Monitor *bout_monitor = new BoutMonitor();
-      solver->addMonitor(bout_monitor, Solver::BACK);
+      auto bout_monitor = bout::utils::make_unique<BoutMonitor>();
+      solver->addMonitor(bout_monitor.get(), Solver::BACK);
 
       solver->solve();
 
@@ -101,11 +101,6 @@ int main(int argc, char **argv) {
       } else {
         output_test << " PASSED\n";
       }
-
-      delete model;
-      delete solver;
-      delete bout_monitor;
-
     } catch (BoutException &e) {
       // Don't let one bad solver stop us trying the rest
       output_test << " ERROR\n";
