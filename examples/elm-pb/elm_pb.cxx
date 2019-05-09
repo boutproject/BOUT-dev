@@ -167,7 +167,7 @@ private:
   bool zonal_bkgd;
 
   bool split_n0; // Solve the n=0 component of potential
-  LaplaceXY *laplacexy; // Laplacian solver in X-Y (n=0)
+  std::unique_ptr<LaplaceXY> laplacexy{nullptr}; // Laplacian solver in X-Y (n=0)
   Field2D phi2D;        // Axisymmetric phi
   
   bool relax_j_vac;
@@ -224,8 +224,8 @@ private:
   FieldGroup comms;
 
   /// Solver for inverting Laplacian
-  Laplacian* phiSolver;
-  Laplacian* aparSolver;
+  std::unique_ptr<Laplacian> phiSolver{nullptr};
+  std::unique_ptr<Laplacian> aparSolver{nullptr};
 
   const Field2D N0tanh(BoutReal n0_height, BoutReal n0_ave, BoutReal n0_width,
                        BoutReal n0_center, BoutReal n0_bottom_x) {
@@ -473,7 +473,7 @@ protected:
                    .withDefault(false);
     if (split_n0) {
       // Create an XY solver for n=0 component
-      laplacexy = new LaplaceXY(mesh);
+      laplacexy = bout::utils::make_unique<LaplaceXY>(mesh);
       // Set coefficients for Boussinesq solve
       laplacexy->setCoefs(1.0, 0.0);
       phi2D = 0.0; // Starting guess
@@ -662,7 +662,7 @@ protected:
           // Need to calculate Psi inside the domain, enforcing j = 0
 
           Jpar = 0.0;
-          Laplacian* psiLap = Laplacian::create();
+          auto psiLap = std::unique_ptr<Laplacian>{Laplacian::create()};
           psiLap->setInnerBoundaryFlags(INVERT_AC_GRAD); // Zero gradient inner BC
           psiLap->setOuterBoundaryFlags(INVERT_SET); // Set to rmp_Psi0 on outer boundary
           rmp_Psi0 = psiLap->solve(Jpar, rmp_Psi0);
@@ -1063,10 +1063,10 @@ protected:
     }
 
     // Create a solver for the Laplacian
-    phiSolver = Laplacian::create();
+    phiSolver = std::unique_ptr<Laplacian>(Laplacian::create());
     phiSolver->setFlags(phi_flags);
 
-    aparSolver = Laplacian::create();
+    aparSolver = std::unique_ptr<Laplacian>(Laplacian::create());
     aparSolver->setFlags(apar_flags);
 
     /////////////// CHECK VACUUM ///////////////////////
