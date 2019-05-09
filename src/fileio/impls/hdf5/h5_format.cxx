@@ -201,10 +201,9 @@ const std::vector<int> H5Format::getSize(const char *name) {
     
     size.push_back(1);
     return size;
-  }
-  else {
-    auto* dims = new hsize_t[nd];
-    int error = H5Sget_simple_extent_dims(dataSpace, dims, nullptr);
+  } else {
+    std::vector<hsize_t> dims(nd);
+    int error = H5Sget_simple_extent_dims(dataSpace, dims.data(), nullptr);
     if (error < 0)
       throw BoutException("Failed to get dimensions of dataSpace");
     
@@ -213,10 +212,7 @@ const std::vector<int> H5Format::getSize(const char *name) {
     if (H5Dclose(dataSet) < 0)
       throw BoutException("Failed to close dataSet");
     
-    for (int i=0; i<nd; i++)
-      size.push_back(dims[i]);
-
-    delete[] dims;
+    std::copy(begin(dims), end(dims), std::back_inserter(size));
   }
 
   return size;
