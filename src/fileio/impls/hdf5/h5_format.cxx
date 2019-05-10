@@ -148,9 +148,7 @@ bool H5Format::openw(const char *name, bool append) {
 }
 
 bool H5Format::is_valid() {
-  if(dataFile<0)
-    return false;
-  return true;
+  return dataFile >= 0;
 }
 
 void H5Format::close() {
