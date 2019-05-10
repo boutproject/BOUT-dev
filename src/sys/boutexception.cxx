@@ -101,7 +101,7 @@ void BoutException::makeBacktrace() {
   {                                                                                      \
     buflen = 0;                                                                          \
     buffer = nullptr;                                                                    \
-    if (s == nullptr) {                                                                  \
+    if ((s) == nullptr) {                                                                \
       message = "No error message given!\n";                                             \
     } else {                                                                             \
       buflen = BoutException::BUFFER_LEN;                                                \
