@@ -53,7 +53,9 @@ public:
   void setCoefEz(const Field2D &UNUSED(val)) override {}
 
   using Laplacian::solve;
-  const FieldPerp solve(const FieldPerp &UNUSED(b)) override {throw BoutException("PETSc not available");}
+  FieldPerp solve(const FieldPerp& UNUSED(b)) override {
+    throw BoutException("PETSc not available");
+  }
 };
 
 #else
