@@ -228,10 +228,10 @@ public:
 
   /// Add a variable to be solved. This must be done in the
   /// initialisation stage, before the simulation starts.
-  virtual void add(Field2D& v, const std::string name);
-  virtual void add(Field3D& v, const std::string name);
-  virtual void add(Vector2D& v, const std::string name);
-  virtual void add(Vector3D& v, const std::string name);
+  virtual void add(Field2D& v, const std::string& name);
+  virtual void add(Field3D& v, const std::string& name);
+  virtual void add(Vector2D& v, const std::string& name);
+  virtual void add(Vector3D& v, const std::string& name);
 
   /// Returns true if constraints available
   virtual bool constraints() { return has_constraints; }

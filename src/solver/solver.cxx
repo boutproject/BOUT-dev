@@ -82,7 +82,7 @@ void Solver::setModel(PhysicsModel *m) {
  * Add fields
  **************************************************************************/
 
-void Solver::add(Field2D &v, const std::string name) {
+void Solver::add(Field2D &v, const std::string& name) {
   TRACE("Adding 2D field: Solver::add(%s)", name.c_str());
 
 #if CHECK > 0
@@ -139,7 +139,7 @@ void Solver::add(Field2D &v, const std::string name) {
   f2d.emplace_back(std::move(d));
 }
 
-void Solver::add(Field3D &v, const std::string name) {
+void Solver::add(Field3D &v, const std::string& name) {
   TRACE("Adding 3D field: Solver::add(%s)", name.c_str());
 
   Mesh* mesh = v.getMesh();
@@ -198,7 +198,7 @@ void Solver::add(Field3D &v, const std::string name) {
   f3d.emplace_back(std::move(d));
 }
 
-void Solver::add(Vector2D& v, const std::string name) {
+void Solver::add(Vector2D& v, const std::string& name) {
   TRACE("Adding 2D vector: Solver::add(%s)", name.c_str());
 
   if (varAdded(name))
@@ -237,7 +237,7 @@ void Solver::add(Vector2D& v, const std::string name) {
   v2d.emplace_back(std::move(d));
 }
 
-void Solver::add(Vector3D& v, const std::string name) {
+void Solver::add(Vector3D& v, const std::string& name) {
   TRACE("Adding 3D vector: Solver::add(%s)", name.c_str());
 
   if (varAdded(name))

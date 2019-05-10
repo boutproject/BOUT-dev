@@ -96,25 +96,25 @@ public:
   //////Following overrides all just pass through to advanceSolver
 
   // Override virtual add functions in order to pass through to advanceSolver
-  void add(Field2D &v, const std::string name) override {
+  void add(Field2D &v, const std::string& name) override {
     Solver::add(v, name);
     if (!selfSolve) {
       advanceSolver->add(v, name);
     }
   }
-  void add(Field3D &v, const std::string name) override {
+  void add(Field3D &v, const std::string& name) override {
     Solver::add(v, name);
     if (!selfSolve) {
       advanceSolver->add(v, name);
     }
   }
-  void add(Vector2D &v, const std::string name) override {
+  void add(Vector2D &v, const std::string& name) override {
     Solver::add(v, name);
     if (!selfSolve) {
       advanceSolver->add(v, name);
     }
   }
-  void add(Vector3D &v, const std::string name) override {
+  void add(Vector3D &v, const std::string& name) override {
     Solver::add(v, name);
     if (!selfSolve) {
       advanceSolver->add(v, name);

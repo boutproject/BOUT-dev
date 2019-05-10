@@ -10,7 +10,7 @@
 using namespace netCDF;
 
 namespace {
-void readGroup(const std::string& filename, NcGroup group, Options& result) {
+void readGroup(const std::string& filename, const NcGroup& group, Options& result) {
 
   // Iterate over all variables
   for (const auto& varpair : group.getVars()) {
