@@ -805,14 +805,6 @@ int LaplaceXY::globalIndex(int x, int y) {
     return -1; // Out of range
  
   // Get the index from a Field2D, round to integer
-  return roundInt(indexXY(x,y));
+  return static_cast<int>(std::round(indexXY(x, y)));
 }
-
-int LaplaceXY::roundInt(BoutReal f) {
-  if(f > 0.0) {
-    return (int) (f + 0.5);
-  }
-  return (int) (f - 0.5);
-}
-
 #endif // BOUT_HAS_PETSC
