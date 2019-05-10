@@ -94,7 +94,7 @@ Field3D::Field3D(const BoutReal val, Mesh* localmesh) : Field3D(localmesh) {
 
 Field3D::Field3D(Array<BoutReal> data, Mesh* localmesh, CELL_LOC datalocation,
                  DirectionTypes directions_in)
-    : Field(localmesh, datalocation, directions_in), data(data) {
+    : Field(localmesh, datalocation, directions_in), data(std::move(data)) {
   TRACE("Field3D: Copy constructor from Array and Mesh");
 
   nx = fieldmesh->LocalNx;

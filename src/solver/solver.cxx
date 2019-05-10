@@ -276,7 +276,7 @@ void Solver::add(Vector3D& v, const std::string& name) {
  * Constraints
  **************************************************************************/
 
-void Solver::constraint(Field2D &v, Field2D &C_v, const std::string name) {
+void Solver::constraint(Field2D &v, Field2D &C_v, std::string name) {
   TRACE("Constrain 2D scalar: Solver::constraint(%s)", name.c_str());
 
   if (name.empty()) {
@@ -299,12 +299,12 @@ void Solver::constraint(Field2D &v, Field2D &C_v, const std::string name) {
   d.constraint = true;
   d.var = &v;
   d.F_var = &C_v;
-  d.name = name;
+  d.name = std::move(name);
 
   f2d.emplace_back(std::move(d));
 }
 
-void Solver::constraint(Field3D &v, Field3D &C_v, const std::string name) {
+void Solver::constraint(Field3D &v, Field3D &C_v, std::string name) {
   TRACE("Constrain 3D scalar: Solver::constraint(%s)", name.c_str());
 
   if (name.empty()) {
@@ -328,12 +328,12 @@ void Solver::constraint(Field3D &v, Field3D &C_v, const std::string name) {
   d.var = &v;
   d.F_var = &C_v;
   d.location = v.getLocation();
-  d.name = name;
+  d.name = std::move(name);
   
   f3d.emplace_back(std::move(d));
 }
 
-void Solver::constraint(Vector2D &v, Vector2D &C_v, const std::string name) {
+void Solver::constraint(Vector2D &v, Vector2D &C_v, std::string name) {
   TRACE("Constrain 2D vector: Solver::constraint(%s)", name.c_str());
 
   if (name.empty()) {
@@ -351,16 +351,6 @@ void Solver::constraint(Vector2D &v, Vector2D &C_v, const std::string name) {
   if (initialised)
     throw BoutException("Error: Cannot add constraints to solver after initialisation\n");
 
-  VarStr<Vector2D> d;
-  
-  d.constraint = true;
-  d.var = &v;
-  d.F_var = &C_v;
-  d.covariant = v.covariant;
-  d.name = name;
-  
-  v2d.emplace_back(std::move(d));
-
   // Add suffix, depending on co- /contravariance
   if (v.covariant) {
     constraint(v.x, C_v.x, name+"_x");
@@ -371,9 +361,19 @@ void Solver::constraint(Vector2D &v, Vector2D &C_v, const std::string name) {
     constraint(v.y, C_v.y, name+"y");
     constraint(v.z, C_v.z, name+"z");
   }
+
+  VarStr<Vector2D> d;
+
+  d.constraint = true;
+  d.var = &v;
+  d.F_var = &C_v;
+  d.covariant = v.covariant;
+  d.name = std::move(name);
+
+  v2d.emplace_back(std::move(d));
 }
 
-void Solver::constraint(Vector3D &v, Vector3D &C_v, const std::string name) {
+void Solver::constraint(Vector3D &v, Vector3D &C_v, std::string name) {
   TRACE("Constrain 3D vector: Solver::constraint(%s)", name.c_str());
 
   if (name.empty()) {
@@ -391,16 +391,6 @@ void Solver::constraint(Vector3D &v, Vector3D &C_v, const std::string name) {
   if (initialised)
     throw BoutException("Error: Cannot add constraints to solver after initialisation\n");
 
-  VarStr<Vector3D> d;
-  
-  d.constraint = true;
-  d.var = &v;
-  d.F_var = &C_v;
-  d.covariant = v.covariant;
-  d.name = name;
-  
-  v3d.emplace_back(std::move(d));
-
   // Add suffix, depending on co- /contravariance
   if (v.covariant) {
     constraint(v.x, C_v.x, name+"_x");
@@ -411,6 +401,16 @@ void Solver::constraint(Vector3D &v, Vector3D &C_v, const std::string name) {
     constraint(v.y, C_v.y, name+"y");
     constraint(v.z, C_v.z, name+"z");
   }
+
+  VarStr<Vector3D> d;
+
+  d.constraint = true;
+  d.var = &v;
+  d.F_var = &C_v;
+  d.covariant = v.covariant;
+  d.name = std::move(name);
+
+  v3d.emplace_back(std::move(d));
 }
 
 /**************************************************************************

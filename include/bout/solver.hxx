@@ -238,10 +238,10 @@ public:
 
   /// Add constraint functions (optional). These link a variable v to
   /// a control parameter C_v such that v is adjusted to keep C_v = 0.
-  virtual void constraint(Field2D& v, Field2D& C_v, const std::string name);
-  virtual void constraint(Field3D& v, Field3D& C_v, const std::string name);
-  virtual void constraint(Vector2D& v, Vector2D& C_v, const std::string name);
-  virtual void constraint(Vector3D& v, Vector3D& C_v, const std::string name);
+  virtual void constraint(Field2D& v, Field2D& C_v, std::string name);
+  virtual void constraint(Field3D& v, Field3D& C_v, std::string name);
+  virtual void constraint(Vector2D& v, Vector2D& C_v, std::string name);
+  virtual void constraint(Vector3D& v, Vector3D& C_v, std::string name);
 
   /// Set a maximum internal timestep (only for explicit schemes)
   virtual void setMaxTimestep(BoutReal dt) { max_dt = dt; }
