@@ -362,13 +362,13 @@ void Solver::constraint(Vector2D &v, Vector2D &C_v, const std::string name) {
 
   // Add suffix, depending on co- /contravariance
   if (v.covariant) {
-    constraint(v.x, C_v.x, d.name+"_x");
-    constraint(v.y, C_v.y, d.name+"_y");
-    constraint(v.z, C_v.z, d.name+"_z");
+    constraint(v.x, C_v.x, name+"_x");
+    constraint(v.y, C_v.y, name+"_y");
+    constraint(v.z, C_v.z, name+"_z");
   } else {
-    constraint(v.x, C_v.x, d.name+"x");
-    constraint(v.y, C_v.y, d.name+"y");
-    constraint(v.z, C_v.z, d.name+"z");
+    constraint(v.x, C_v.x, name+"x");
+    constraint(v.y, C_v.y, name+"y");
+    constraint(v.z, C_v.z, name+"z");
   }
 }
 
@@ -402,13 +402,13 @@ void Solver::constraint(Vector3D &v, Vector3D &C_v, const std::string name) {
 
   // Add suffix, depending on co- /contravariance
   if (v.covariant) {
-    constraint(v.x, C_v.x, d.name+"_x");
-    constraint(v.y, C_v.y, d.name+"_y");
-    constraint(v.z, C_v.z, d.name+"_z");
+    constraint(v.x, C_v.x, name+"_x");
+    constraint(v.y, C_v.y, name+"_y");
+    constraint(v.z, C_v.z, name+"_z");
   } else {
-    constraint(v.x, C_v.x, d.name+"x");
-    constraint(v.y, C_v.y, d.name+"y");
-    constraint(v.z, C_v.z, d.name+"z");
+    constraint(v.x, C_v.x, name+"x");
+    constraint(v.y, C_v.y, name+"y");
+    constraint(v.z, C_v.z, name+"z");
   }
 }
 
