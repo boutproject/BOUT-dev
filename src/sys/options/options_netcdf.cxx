@@ -382,7 +382,7 @@ void writeGroup(const Options& options, NcGroup group,
         if (time_it != child.attributes.end()) {
           // Has a time dimension
 
-          auto time_name = bout::utils::get<std::string>(time_it->second);
+          const auto& time_name = bout::utils::get<std::string>(time_it->second);
           time_dim = group.getDim(time_name, NcGroup::ParentsAndCurrent);
           if (time_dim.isNull()) {
             time_dim = group.addDim(time_name);
