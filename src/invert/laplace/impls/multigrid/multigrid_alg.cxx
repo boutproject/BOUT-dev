@@ -137,7 +137,6 @@ BOUT_OMP(for)
 
     smoothings(level,sol,rhs);
   }
-  return;
 }
 
 void MultigridAlg::projection(int level,BoutReal *r,BoutReal *pr) 
@@ -164,7 +163,6 @@ BOUT_OMP(for collapse(2))
     }
   }
   communications(pr,level-1);
-  return;
 }
 
 void MultigridAlg::prolongation(int level,BoutReal *x,BoutReal *ix) {
@@ -194,7 +192,6 @@ BOUT_OMP(for collapse(2))
     }
   }
   communications(ix,level+1);
-  return;
 }
 
 void MultigridAlg::smoothings(int level, BoutReal *x, BoutReal *b) {
@@ -256,7 +253,6 @@ BOUT_OMP(for collapse(2))
       } 
     communications(x,level);
   }
-  return;
 }
 
 void MultigridAlg::pGMRES(BoutReal *sol,BoutReal *rhs,int level,int iplag) {
@@ -457,8 +453,6 @@ BOUT_OMP(for)
     delete [] v[i];
   }
   delete [] v;
-
-  return; 
 }
 
 void MultigridAlg::setMultigridC(int UNUSED(plag)) {
@@ -758,6 +752,4 @@ BOUT_OMP(for)
     printf("The average error reduction of MG %d: %14.8f(%18.12f)\n",m+1,rederr,error);
     fflush(stdout);
   }
-
-  return;
 }
