@@ -129,7 +129,7 @@ private:
 
     LexInfo(const std::string& input, const std::string& reserved_chars = "");
 
-    /// Current token. -1 for number, -2 for string, 0 for "end of input"
+    /// Current token. -1 for number, -2 for symbol, -3 for {string}, 0 for "end of input"
     signed char curtok = 0;
     double curval; ///< Value if a number
     std::string curident;       ///< Identifier, variable or function name

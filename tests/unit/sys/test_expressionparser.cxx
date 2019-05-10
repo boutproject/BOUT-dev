@@ -531,3 +531,60 @@ TEST_F(ExpressionParserTest, BadImplicitMultiply) {
   EXPECT_THROW(parser.parseString("(1+x)2"), ParseException);
   EXPECT_THROW(parser.parseString("2 2"), ParseException);
 }
+
+TEST_F(ExpressionParserTest, PassParameter) {
+
+  auto fieldgen = parser.parseString("{value}");
+
+  for (auto x : x_array) {
+    for (auto y : y_array) {
+      for (auto z : z_array) {
+        for (auto t : t_array) {
+          auto pos = LegacyPosition(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(pos.set("value", y + z)), y + z);
+        }
+      }
+    }
+  }
+}
+
+TEST_F(ExpressionParserTest, MissingBrace) {
+  EXPECT_THROW(parser.parseString("{"), ParseException);
+  EXPECT_THROW(parser.parseString("2 + 3 * {something + 2"), ParseException);
+  EXPECT_THROW(parser.parseString("2 + 3 * {something + {another}"), ParseException);
+  EXPECT_THROW(parser.parseString("2 + 3 * something} + 2"), ParseException);
+}
+
+TEST_F(ExpressionParserTest, PassParameterImplicitMultiply) {
+
+  auto fieldgen = parser.parseString("x - 3{value}");
+
+  for (auto x : x_array) {
+    for (auto y : y_array) {
+      for (auto z : z_array) {
+        for (auto t : t_array) {
+          auto pos = LegacyPosition(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(pos.set("value", 1 + y + z)), x - 3 * (1 + y + z));
+        }
+      }
+    }
+  }
+}
+
+TEST_F(ExpressionParserTest, PassMultipleParameters) {
+
+  auto fieldgen = parser.parseString("x + {value} - 2*{other}");
+
+  for (auto x : x_array) {
+    for (auto y : y_array) {
+      for (auto z : z_array) {
+        for (auto t : t_array) {
+          auto pos = LegacyPosition(x, y, z, t);
+          EXPECT_DOUBLE_EQ(
+              fieldgen->generate(pos.set("value", 1 + y + z).set("other", x - y)),
+              x + (1 + y + z) - 2 * (x - y));
+        }
+      }
+    }
+  }
+}
