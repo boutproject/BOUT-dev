@@ -49,12 +49,12 @@ public:
 
   int run() override;
 private:
-  int nstages; ///< Number of stages in the RKL 
+  int nstages{2}; ///< Number of stages in the RKL 
   
-  BoutReal out_timestep; ///< The output timestep
-  int nsteps; ///< Number of output steps
+  BoutReal out_timestep{0.0}; ///< The output timestep
+  int nsteps{0}; ///< Number of output steps
   
-  BoutReal timestep; ///< The internal timestep
+  BoutReal timestep{0.0}; ///< The internal timestep
 
   bool adaptive{true};   ///< Adapt timestep using tolerances?
   BoutReal atol{1e-10};  ///< Absolute tolerance
@@ -66,7 +66,7 @@ private:
 
   bool diagnose{false};  ///< Turn on diagnostic output
   
-  int nlocal, neq; ///< Number of variables on local processor and in total
+  int nlocal{0}, neq{0}; ///< Number of variables on local processor and in total
   
   /// System state
   Array<BoutReal> state;
