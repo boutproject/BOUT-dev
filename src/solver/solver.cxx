@@ -34,6 +34,7 @@
 #include "bout/solverfactory.hxx"
 #include "bout/sys/timer.hxx"
 
+#include <cmath>
 #include <cstring>
 #include <ctime>
 #include <numeric>
@@ -576,7 +577,8 @@ BoutReal Solver::adjustMonitorPeriods(Monitor* new_monitor) {
 
   if (new_monitor->timestep > internal_timestep * 1.5) {
     // Monitor has a larger timestep
-    new_monitor->period = (new_monitor->timestep / internal_timestep) + .5;
+    new_monitor->period =
+        static_cast<int>(std::round(new_monitor->timestep / internal_timestep));
     return internal_timestep;
   }
 
@@ -590,7 +592,8 @@ BoutReal Solver::adjustMonitorPeriods(Monitor* new_monitor) {
   }
 
   // This is the relative increase in timestep
-  const int multiplier = internal_timestep / new_monitor->timestep + .5;
+  const auto multiplier =
+      static_cast<int>(std::round(internal_timestep / new_monitor->timestep));
   for (const auto& monitor : monitors) {
     monitor->period *= multiplier;
   }
@@ -611,13 +614,15 @@ void Solver::finaliseMonitorPeriods(int& NOUT, BoutReal& output_timestep) {
           "A monitor requested a timestep not compatible with the output_step!");
     }
     if (internal_timestep < output_timestep * 1.5) {
-      default_monitor_period = output_timestep / internal_timestep + .5;
+      default_monitor_period =
+          static_cast<int>(std::round(output_timestep / internal_timestep));
       NOUT *= default_monitor_period;
       output_timestep = internal_timestep;
     } else {
       default_monitor_period = 1;
       // update old monitors
-      int multiplier = internal_timestep / output_timestep + .5;
+      const auto multiplier =
+          static_cast<int>(std::round(internal_timestep / output_timestep));
       for (const auto& i : monitors) {
         i->period = i->period * multiplier;
       }
