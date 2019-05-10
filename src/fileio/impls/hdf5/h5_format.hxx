@@ -36,7 +36,7 @@
 #ifndef HDF5
 
 #include "../emptyformat.hxx"
-typedef EmptyFormat H5Format;
+using H5Format = EmptyFormat;
 
 #else
 

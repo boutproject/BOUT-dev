@@ -65,8 +65,8 @@ public:
    */ 
   InvertPar(Options *UNUSED(opt), Mesh *mesh_in = nullptr)
     : localmesh(mesh_in==nullptr ? bout::globals::mesh : mesh_in) {}
-  virtual ~InvertPar() {}
-  
+  virtual ~InvertPar() = default;
+
   /*!
    * Create an instance of InvertPar
    * 

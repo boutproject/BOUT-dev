@@ -17,10 +17,6 @@ RKScheme::RKScheme(Options *UNUSED(opts)) {
   dtfac = 1.0; // Time step factor
 }
 
-//Cleanup
-RKScheme::~RKScheme(){
-}
-
 //Finish generic initialisation
 void RKScheme::init(const int nlocalIn, const int neqIn, const bool adaptiveIn, const BoutReal atolIn, 
 		    const BoutReal rtolIn, Options *options){

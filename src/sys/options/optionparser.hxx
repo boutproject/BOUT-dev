@@ -48,9 +48,9 @@ class OptionParser;
 
 /// Base class for input file types
 class OptionParser {
- public:
-  OptionParser() {}
-  virtual ~OptionParser() {}
+public:
+  OptionParser() = default;
+  virtual ~OptionParser() = default;
 
   /// Read \p filename into \p options
   virtual void read(Options *options, const std::string &filename) = 0;

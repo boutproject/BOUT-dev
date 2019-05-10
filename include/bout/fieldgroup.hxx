@@ -168,7 +168,7 @@ class FieldGroup {
   void clear() {fvec.clear(); f3vec.clear(); }
 
   /// Iteration over all fields
-  typedef std::vector<FieldData*>::iterator iterator;
+  using iterator = std::vector<FieldData*>::iterator;
   iterator begin() {
     return fvec.begin();
   }
@@ -177,7 +177,7 @@ class FieldGroup {
   }
 
   /// Const iteration over all fields
-  typedef std::vector<FieldData*>::const_iterator const_iterator;
+  using const_iterator = std::vector<FieldData*>::const_iterator;
   const_iterator begin() const {
     return fvec.begin();
   }

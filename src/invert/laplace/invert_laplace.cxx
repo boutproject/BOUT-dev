@@ -97,7 +97,7 @@ Laplacian::Laplacian(Options *options, const CELL_LOC loc, Mesh *mesh_in)
     int flags = (*options)["flags"]
                     .doc("Flags to control inner and outer boundaries.")
                     .withDefault(0);
-    setFlags(flags);
+    Laplacian::setFlags(flags);
   }
   else {
     OPTION(options, global_flags, 0);

@@ -76,7 +76,7 @@ class Mesh;
 #include <map>
 
 /// Type used to return pointers to handles
-typedef void* comm_handle;
+using comm_handle = void*;
 
 class Mesh {
  public:

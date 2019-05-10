@@ -1,7 +1,7 @@
 #include "bout/physicsmodel.hxx"
 
 class TestRestartIO : public PhysicsModel {
-  int init(bool UNUSED(restarting)) {
+  int init(bool UNUSED(restarting)) override {
     solver->add(f3d, "f3d");
     solver->add(f2d, "f2d");
     dump.addRepeat(fperp_lower, "fperp_lower");
@@ -17,7 +17,7 @@ class TestRestartIO : public PhysicsModel {
     return 0;
   }
 
-  int rhs(BoutReal UNUSED(time)) {
+  int rhs(BoutReal UNUSED(time)) override {
     ddt(f3d) = 0.;
     ddt(f2d) = 0.;
     return 0;

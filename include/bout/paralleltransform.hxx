@@ -73,7 +73,7 @@ class ParallelTransformIdentity : public ParallelTransform {
 public:
   ParallelTransformIdentity(Mesh& mesh_in) : ParallelTransform(mesh_in) {
     // check the coordinate system used for the grid data source
-    checkInputGrid();
+    ParallelTransformIdentity::checkInputGrid();
   }
 
   /*!

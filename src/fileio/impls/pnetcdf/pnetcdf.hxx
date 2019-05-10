@@ -36,7 +36,7 @@
 #ifndef PNCDF
 
 #include "../emptyformat.hxx"
-typedef EmptyFormat PncFormat;
+using PncFormat = EmptyFormat;
 
 #else
 

@@ -456,14 +456,14 @@ template <typename T = Ind3D> class Region {
                 "Region must be templated with one of IndPerp, Ind2D or Ind3D");
 
 public:
-  typedef T data_type;
+  using data_type = T;
 
   /// Indices to iterate over
-  typedef std::vector<T> RegionIndices;
+  using RegionIndices = std::vector<T>;
   /// Start and end of contiguous region. This describes a range [block.first,block.second)
-  typedef std::pair<T, T> ContiguousBlock;
+  using ContiguousBlock = std::pair<T, T>;
   /// Collection of contiguous regions
-  typedef std::vector<ContiguousBlock> ContiguousBlocks;
+  using ContiguousBlocks = std::vector<ContiguousBlock>;
 
   // NOTE::
   // Probably want to require a mesh in constructor, both to know nx/ny/nz

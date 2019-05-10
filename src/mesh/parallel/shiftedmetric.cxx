@@ -21,7 +21,7 @@ ShiftedMetric::ShiftedMetric(Mesh& m, CELL_LOC location_in, Field2D zShift_,
       zlength(zlength_in) {
   ASSERT1(zShift.getLocation() == location);
   // check the coordinate system used for the grid data source
-  checkInputGrid();
+  ShiftedMetric::checkInputGrid();
 
   // TwistShift should not be set for derivatives to be correct at the jump where
   // poloidal angle theta goes 2pi->0. zShift has been corrected for the jump

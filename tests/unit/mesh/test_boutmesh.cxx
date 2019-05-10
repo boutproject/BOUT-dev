@@ -7,42 +7,42 @@
 
 class FakeGridDataSource : public GridDataSource {
 public:
-  FakeGridDataSource(){};
-  ~FakeGridDataSource(){};
-  bool hasVar(const std::string &UNUSED(name)) { return false; };
-  bool get(Mesh *UNUSED(m), std::string &UNUSED(sval), const std::string &UNUSED(name)) {
+  bool hasVar(const std::string& UNUSED(name)) override { return false; };
+  bool get(Mesh* UNUSED(m), std::string& UNUSED(sval),
+           const std::string& UNUSED(name)) override {
     return true;
   };
-  bool get(Mesh *UNUSED(m), int &UNUSED(ival), const std::string &UNUSED(name)) {
+  bool get(Mesh* UNUSED(m), int& UNUSED(ival), const std::string& UNUSED(name)) override {
     return true;
   };
-  bool get(Mesh *UNUSED(m), BoutReal &UNUSED(rval), const std::string &UNUSED(name)) {
+  bool get(Mesh* UNUSED(m), BoutReal& UNUSED(rval),
+           const std::string& UNUSED(name)) override {
     return true;
   }
-  bool get(Mesh *UNUSED(m), Field2D &UNUSED(var), const std::string &UNUSED(name),
-           BoutReal UNUSED(def) = 0.0) {
+  bool get(Mesh* UNUSED(m), Field2D& UNUSED(var), const std::string& UNUSED(name),
+           BoutReal UNUSED(def) = 0.0) override {
     return true;
   }
-  bool get(Mesh *UNUSED(m), Field3D &UNUSED(var), const std::string &UNUSED(name),
-           BoutReal UNUSED(def) = 0.0) {
+  bool get(Mesh* UNUSED(m), Field3D& UNUSED(var), const std::string& UNUSED(name),
+           BoutReal UNUSED(def) = 0.0) override {
     return true;
   }
-  bool get(Mesh *UNUSED(m), FieldPerp &UNUSED(var), const std::string &UNUSED(name),
-           BoutReal UNUSED(def) = 0.0) {
+  bool get(Mesh* UNUSED(m), FieldPerp& UNUSED(var), const std::string& UNUSED(name),
+           BoutReal UNUSED(def) = 0.0) override {
     return true;
   }
-  bool get(Mesh *UNUSED(m), std::vector<int> &UNUSED(var), const std::string &UNUSED(name),
-           int UNUSED(len), int UNUSED(offset) = 0,
-           Direction UNUSED(dir) = GridDataSource::X) {
+  bool get(Mesh* UNUSED(m), std::vector<int>& UNUSED(var),
+           const std::string& UNUSED(name), int UNUSED(len), int UNUSED(offset) = 0,
+           Direction UNUSED(dir) = GridDataSource::X) override {
     return true;
   }
-  bool get(Mesh *UNUSED(m), std::vector<BoutReal> &UNUSED(var), const std::string &UNUSED(name),
-           int UNUSED(len), int UNUSED(offset) = 0,
-           Direction UNUSED(dir) = GridDataSource::X) {
+  bool get(Mesh* UNUSED(m), std::vector<BoutReal>& UNUSED(var),
+           const std::string& UNUSED(name), int UNUSED(len), int UNUSED(offset) = 0,
+           Direction UNUSED(dir) = GridDataSource::X) override {
     return true;
   }
-  bool hasXBoundaryGuards(Mesh* UNUSED(m)) { return false; }
-  bool hasYBoundaryGuards() { return false; }
+  bool hasXBoundaryGuards(Mesh* UNUSED(m)) override { return false; }
+  bool hasYBoundaryGuards() override { return false; }
 };
 
 TEST(BoutMeshTest, NullOptionsCheck) {
