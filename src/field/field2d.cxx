@@ -259,7 +259,7 @@ void Field2D::applyBoundary(const std::string &region, const std::string &condit
   bool region_found = false;
   /// Loop over the mesh boundary regions
   for (const auto &reg : fieldmesh->getBoundaries()) {
-    if (reg->label.compare(region) == 0) {
+    if (reg->label == region) {
       region_found = true;
       auto op = std::unique_ptr<BoundaryOp>{
           dynamic_cast<BoundaryOp*>(bfact->create(condition, reg))};
