@@ -107,10 +107,7 @@ Field3D::Field3D(Array<BoutReal> data, Mesh* localmesh, CELL_LOC datalocation,
 }
 
 Field3D::~Field3D() {
-  /// Delete the time derivative variable if allocated
-  if (deriv != nullptr) {
-    delete deriv;
-  }
+  delete deriv;
 }
 
 Field3D& Field3D::allocate() {

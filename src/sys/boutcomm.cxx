@@ -70,6 +70,6 @@ BoutComm* BoutComm::getInstance() {
 }
 
 void BoutComm::cleanup() {
-  if(instance != nullptr) delete instance;
+  delete instance;
   instance = nullptr;
 }

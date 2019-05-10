@@ -35,9 +35,7 @@ Mesh::Mesh(GridDataSource *s, Options* opt) : source(s), options(opt) {
 }
 
 Mesh::~Mesh() {
-  if (source) {
-    delete source;
-  }
+  delete source;
 }
 
 /**************************************************************************
