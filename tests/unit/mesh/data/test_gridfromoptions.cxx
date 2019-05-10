@@ -16,7 +16,7 @@ using namespace bout::globals;
 
 class GridFromOptionsTest : public ::testing::Test {
 public:
-  GridFromOptionsTest() : options() {
+  GridFromOptionsTest() {
 
     mesh_from_options.StaggerGrids = true;
     mesh_from_options.xstart = 2;
