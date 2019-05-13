@@ -1147,7 +1147,15 @@ void Datafile::setAttribute(const std::string &varname, const std::string &attrn
 /////////////////////////////////////////////////////////////
 
 bool Datafile::read_f2d(const std::string &name, Field2D *f, bool save_repeat) {
-  file->readFieldAttributes(name, *f);
+  try {
+    file->readFieldAttributes(name, *f);
+  } catch (const BoutException &e) {
+    if (init_missing) {
+      output_warn.write("\tWARNING: Could not read 2D field %s attributes.\n", name.c_str());
+    } else {
+      throw;
+    }
+  }
 
   f->allocate();
   
@@ -1177,7 +1185,15 @@ bool Datafile::read_f2d(const std::string &name, Field2D *f, bool save_repeat) {
 }
 
 bool Datafile::read_f3d(const std::string &name, Field3D *f, bool save_repeat) {
-  file->readFieldAttributes(name, *f);
+  try {
+    file->readFieldAttributes(name, *f);
+  } catch (const BoutException &e) {
+    if (init_missing) {
+      output_warn.write("\tWARNING: Could not read 3D field %s attributes.\n", name.c_str());
+    } else {
+      throw;
+    }
+  }
 
   f->allocate();
   
@@ -1213,7 +1229,15 @@ bool Datafile::read_f3d(const std::string &name, Field3D *f, bool save_repeat) {
 }
 
 bool Datafile::read_fperp(const std::string &name, FieldPerp *f, bool save_repeat) {
-  file->readFieldAttributes(name, *f);
+  try {
+    file->readFieldAttributes(name, *f);
+  } catch (const BoutException &e) {
+    if (init_missing) {
+      output_warn.write("\tWARNING: Could not read FieldPerp %s attributes.\n", name.c_str());
+    } else {
+      throw;
+    }
+  }
 
   int yindex = f->getIndex();
   if (yindex >= 0 and yindex < mesh->LocalNy) {
