@@ -334,6 +334,8 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
         "\tWARNING: Jacobian 'J' not found. Calculating from metric tensor\n");
     J = Jcalc;
   } else {
+    J = interpolateAndExtrapolate(J, location, extrapolate_x, extrapolate_y);
+
     // Compare calculated and loaded values
     output_warn.write("\tMaximum difference in J is %e\n", max(abs(J - Jcalc)));
 
@@ -348,15 +350,13 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
                       "metric tensor\n");
     Bxy = Bcalc;
   } else {
+    Bxy = interpolateAndExtrapolate(Bxy, location, extrapolate_x, extrapolate_y);
+
     output_warn.write("\tMaximum difference in Bxy is %e\n", max(abs(Bxy - Bcalc)));
     // Check Bxy
     checkFinite(Bxy, "Bxy", "RGN_NOCORNERS");
     checkPositive(Bxy, "Bxy", "RGN_NOCORNERS");
   }
-  // More robust to extrapolate derived quantities directly, rather than
-  // deriving from extrapolated covariant metric components
-  J = interpolateAndExtrapolate(J, location, extrapolate_x, extrapolate_y);
-  Bxy = interpolateAndExtrapolate(Bxy, location, extrapolate_x, extrapolate_y);
 
   //////////////////////////////////////////////////////
   /// Calculate Christoffel symbols. Needs communication
@@ -579,10 +579,6 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
   /// Calculate Jacobian and Bxy
   if (jacobian())
     throw BoutException("Error in jacobian call while constructing staggered Coordinates");
-  // More robust to extrapolate derived quantities directly, rather than
-  // deriving from extrapolated covariant metric components
-  J = interpolateAndExtrapolate(J, location, extrapolate_x, extrapolate_y);
-  Bxy = interpolateAndExtrapolate(Bxy, location, extrapolate_x, extrapolate_y);
 
   //////////////////////////////////////////////////////
   /// Calculate Christoffel symbols. Needs communication
@@ -1000,6 +996,9 @@ int Coordinates::jacobian() {
   TRACE("Coordinates::jacobian");
   // calculate Jacobian using g^-1 = det[g^ij], J = sqrt(g)
 
+  const bool extrapolate_x = not localmesh->sourceHasXBoundaryGuards();
+  const bool extrapolate_y = not localmesh->sourceHasYBoundaryGuards();
+
   Field2D g = g11 * g22 * g33 + 2.0 * g12 * g13 * g23 - g11 * g23 * g23 - g22 * g13 * g13
               - g33 * g12 * g12;
 
@@ -1007,9 +1006,13 @@ int Coordinates::jacobian() {
   checkPositive(g, "The determinant of g^ij", "RGN_NOCORNERS");
 
   J = 1. / sqrt(g);
+  // More robust to extrapolate derived quantities directly, rather than
+  // deriving from extrapolated covariant metric components
+  J = interpolateAndExtrapolate(J, location, extrapolate_x, extrapolate_y);
 
   // Check jacobian
   checkFinite(J, "The Jacobian", "RGN_NOCORNERS");
+  checkPositive(J, "The Jacobian", "RGN_NOCORNERS");
   if (min(abs(J)) < 1.0e-10) {
     throw BoutException("\tERROR: Jacobian becomes very small\n");
   }
@@ -1017,6 +1020,7 @@ int Coordinates::jacobian() {
   checkPositive(g_22, "g_22", "RGN_NOCORNERS");
 
   Bxy = sqrt(g_22) / J;
+  Bxy = interpolateAndExtrapolate(Bxy, location, extrapolate_x, extrapolate_y);
 
   checkFinite(Bxy, "Bxy", "RGN_NOCORNERS");
   checkPositive(Bxy, "Bxy", "RGN_NOCORNERS");
