@@ -451,7 +451,7 @@ inline std::ostream &operator<<(std::ostream &out, const RegionStats &stats){
 ///     }
 template <typename T = Ind3D> class Region {
   // Following prevents a Region being created with anything other
-  // than Ind2D or Ind3D as template type
+  // than Ind2D, Ind3D or IndPerp as template type
   static_assert(std::is_base_of<Ind2D, T>::value || std::is_base_of<Ind3D, T>::value || std::is_base_of<IndPerp, T>::value,
                 "Region must be templated with one of IndPerp, Ind2D or Ind3D");
 
