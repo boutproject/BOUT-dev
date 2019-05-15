@@ -275,18 +275,9 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   g23 = interpolateAndExtrapolate(g23, location, extrapolate_x, extrapolate_y);
 
   // Check input metrics
-  if ((!finite(g11, RGN_NOBNDRY)) || (!finite(g22, RGN_NOBNDRY))
-      || (!finite(g33, RGN_NOBNDRY))) {
-    throw BoutException("\tERROR: Diagonal metrics are not finite!\n");
-  }
-  if ((min(g11, RGN_NOBNDRY) <= 0.0) || (min(g22, RGN_NOBNDRY) <= 0.0)
-      || (min(g33, RGN_NOBNDRY) <= 0.0)) {
-    throw BoutException("\tERROR: Diagonal metrics are negative!\n");
-  }
-  if ((!finite(g12, RGN_NOBNDRY)) || (!finite(g13, RGN_NOBNDRY))
-      || (!finite(g23, RGN_NOBNDRY))) {
-    throw BoutException("\tERROR: Off-diagonal metrics are not finite!\n");
-  }
+  checkFinite(g11, "g11", "RGN_NOCORNERS");
+  checkFinite(g22, "g22", "RGN_NOCORNERS");
+  checkFinite(g33, "g33", "RGN_NOCORNERS");
 
   /// Find covariant metric components
   auto covariant_component_names = {"g_11", "g_22", "g_33", "g_12", "g_13", "g_23"};
@@ -359,9 +350,8 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   } else {
     output_warn.write("\tMaximum difference in Bxy is %e\n", max(abs(Bxy - Bcalc)));
     // Check Bxy
-    if (!finite(Bxy)) {
-      throw BoutException("\tERROR: Bxy not finite everywhere!\n");
-    }
+    checkFinite(Bxy, "Bxy", "RGN_NOCORNERS");
+    checkPositive(Bxy, "Bxy", "RGN_NOCORNERS");
   }
   // More robust to extrapolate derived quantities directly, rather than
   // deriving from extrapolated covariant metric components
@@ -573,17 +563,18 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
   }
 
   // Check input metrics
-  if ((!finite(g11, RGN_NOBNDRY)) || (!finite(g22, RGN_NOBNDRY))
-      || (!finite(g33, RGN_NOBNDRY))) {
-    throw BoutException("\tERROR: Staggered diagonal metrics are not finite!\n");
-  }
-  if ((min(g11) <= 0.0) || (min(g22) <= 0.0) || (min(g33) <= 0.0)) {
-    throw BoutException("\tERROR: Staggered diagonal metrics are negative!\n");
-  }
-  if ((!finite(g12, RGN_NOBNDRY)) || (!finite(g13, RGN_NOBNDRY))
-      || (!finite(g23, RGN_NOBNDRY))) {
-    throw BoutException("\tERROR: Staggered off-diagonal metrics are not finite!\n");
-  }
+  // Diagonal metric components should be finite
+  checkFinite(g11, "g11", "RGN_NOCORNERS");
+  checkFinite(g22, "g22", "RGN_NOCORNERS");
+  checkFinite(g33, "g33", "RGN_NOCORNERS");
+  // Diagonal metric components should be positive
+  checkPositive(g11, "g11", "RGN_NOCORNERS");
+  checkPositive(g22, "g22", "RGN_NOCORNERS");
+  checkPositive(g33, "g33", "RGN_NOCORNERS");
+  // Off-diagonal metric components should be finite
+  checkFinite(g12, "g12", "RGN_NOCORNERS");
+  checkFinite(g13, "g13", "RGN_NOCORNERS");
+  checkFinite(g23, "g23", "RGN_NOCORNERS");
 
   /// Calculate Jacobian and Bxy
   if (jacobian())
@@ -642,29 +633,31 @@ int Coordinates::geometry(bool recalculate_staggered,
     throw BoutException("dz magnitude less than 1e-8");
 
   // Check input metrics
-  if ((!finite(g11, RGN_NOBNDRY)) || (!finite(g22, RGN_NOBNDRY))
-      || (!finite(g33, RGN_NOBNDRY))) {
-    throw BoutException("\tERROR: Diagonal metrics are not finite!\n");
-  }
-  if ((min(g11) <= 0.0) || (min(g22) <= 0.0) || (min(g33) <= 0.0)) {
-    throw BoutException("\tERROR: Diagonal metrics are negative!\n");
-  }
-  if ((!finite(g12, RGN_NOBNDRY)) || (!finite(g13, RGN_NOBNDRY))
-      || (!finite(g23, RGN_NOBNDRY))) {
-    throw BoutException("\tERROR: Off-diagonal metrics are not finite!\n");
-  }
+  // Diagonal metric components should be finite
+  checkFinite(g11, "g11", "RGN_NOCORNERS");
+  checkFinite(g22, "g22", "RGN_NOCORNERS");
+  checkFinite(g33, "g33", "RGN_NOCORNERS");
+  // Diagonal metric components should be positive
+  checkPositive(g11, "g11", "RGN_NOCORNERS");
+  checkPositive(g22, "g22", "RGN_NOCORNERS");
+  checkPositive(g33, "g33", "RGN_NOCORNERS");
+  // Off-diagonal metric components should be finite
+  checkFinite(g12, "g12", "RGN_NOCORNERS");
+  checkFinite(g13, "g13", "RGN_NOCORNERS");
+  checkFinite(g23, "g23", "RGN_NOCORNERS");
 
-  if ((!finite(g_11, RGN_NOBNDRY)) || (!finite(g_22, RGN_NOBNDRY))
-      || (!finite(g_33, RGN_NOBNDRY))) {
-    throw BoutException("\tERROR: Diagonal g_ij metrics are not finite!\n");
-  }
-  if ((min(g_11) <= 0.0) || (min(g_22) <= 0.0) || (min(g_33) <= 0.0)) {
-    throw BoutException("\tERROR: Diagonal g_ij metrics are negative!\n");
-  }
-  if ((!finite(g_12, RGN_NOBNDRY)) || (!finite(g_13, RGN_NOBNDRY))
-      || (!finite(g_23, RGN_NOBNDRY))) {
-    throw BoutException("\tERROR: Off-diagonal g_ij metrics are not finite!\n");
-  }
+  // Diagonal metric components should be finite
+  checkFinite(g_11, "g_11", "RGN_NOCORNERS");
+  checkFinite(g_22, "g_22", "RGN_NOCORNERS");
+  checkFinite(g_33, "g_33", "RGN_NOCORNERS");
+  // Diagonal metric components should be positive
+  checkPositive(g_11, "g_11", "RGN_NOCORNERS");
+  checkPositive(g_22, "g_22", "RGN_NOCORNERS");
+  checkPositive(g_33, "g_33", "RGN_NOCORNERS");
+  // Off-diagonal metric components should be finite
+  checkFinite(g_12, "g_12", "RGN_NOCORNERS");
+  checkFinite(g_13, "g_13", "RGN_NOCORNERS");
+  checkFinite(g_23, "g_23", "RGN_NOCORNERS");
 
   // Calculate Christoffel symbol terms (18 independent values)
   // Note: This calculation is completely general: metric
@@ -1011,23 +1004,22 @@ int Coordinates::jacobian() {
               - g33 * g12 * g12;
 
   // Check that g is positive
-  if (min(g) < 0.0) {
-    throw BoutException("The determinant of g^ij is somewhere less than 0.0");
-  }
+  checkPositive(g, "The determinant of g^ij", "RGN_NOCORNERS");
+
   J = 1. / sqrt(g);
 
   // Check jacobian
-  if (!finite(J, RGN_NOBNDRY)) {
-    throw BoutException("\tERROR: Jacobian not finite everywhere!\n");
-  }
+  checkFinite(J, "The Jacobian", "RGN_NOCORNERS");
   if (min(abs(J)) < 1.0e-10) {
     throw BoutException("\tERROR: Jacobian becomes very small\n");
   }
 
-  if (min(g_22) < 0.0) {
-    throw BoutException("g_22 is somewhere less than 0.0");
-  }
+  checkPositive(g_22, "g_22", "RGN_NOCORNERS");
+
   Bxy = sqrt(g_22) / J;
+
+  checkFinite(Bxy, "Bxy", "RGN_NOCORNERS");
+  checkPositive(Bxy, "Bxy", "RGN_NOCORNERS");
 
   return 0;
 }
