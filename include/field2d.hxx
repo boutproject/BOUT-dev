@@ -326,8 +326,12 @@ Field2D operator-(const Field2D &f);
 
 // Non-member functions
 
-inline Field2D toFieldAligned(const Field2D& f, const REGION UNUSED(region)) { return f; }
-inline Field2D fromFieldAligned(const Field2D& f, const REGION UNUSED(region)) { return f; }
+inline Field2D toFieldAligned(const Field2D& f, const REGION UNUSED(region) = RGN_ALL) {
+  return f;
+}
+inline Field2D fromFieldAligned(const Field2D& f, const REGION UNUSED(region) = RGN_ALL) {
+  return f;
+}
 
 /// Square root of \p f over region \p rgn
 ///
