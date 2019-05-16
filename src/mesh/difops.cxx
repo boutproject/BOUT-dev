@@ -316,7 +316,7 @@ const Field2D Grad_par_CtoL(const Field2D &var) {
 }
 
 
-const Field3D Vpar_Grad_par_LCtoC(const Field3D &v, const Field3D &f, REGION region) {
+const Field3D Vpar_Grad_par_LCtoC(const Field3D &v, const Field3D &f, const std::string& region) {
   ASSERT1(v.getMesh() == f.getMesh());
   ASSERT1(v.getLocation() == CELL_YLOW);
   ASSERT1(f.getLocation() == CELL_CENTRE);

@@ -140,23 +140,26 @@ public:
   ///////////////////////////////////////////////////////////
 
   const Field2D DDX(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-                    const std::string& method = "DEFAULT", REGION region = RGN_NOBNDRY);
+                    const std::string& method = "DEFAULT",
+                    const std::string& region = "RGN_NOBNDRY");
   const Field2D DDX(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method,
-                    REGION region = RGN_NOBNDRY) {
+                    const std::string& region = "RGN_NOBNDRY") {
     return DDX(f, outloc, toString(method), region);
   };
 
   const Field2D DDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-                    const std::string& method = "DEFAULT", REGION region = RGN_NOBNDRY);
+                    const std::string& method = "DEFAULT",
+                    const std::string& region = "RGN_NOBNDRY");
   const Field2D DDY(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method,
-                    REGION region = RGN_NOBNDRY) {
+                    const std::string& region = "RGN_NOBNDRY") {
     return DDY(f, outloc, toString(method), region);
   };
 
   const Field2D DDZ(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-                    const std::string& method = "DEFAULT", REGION region = RGN_NOBNDRY);
+                    const std::string& method = "DEFAULT",
+                    const std::string& region = "RGN_NOBNDRY");
   const Field2D DDZ(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method,
-                    REGION region = RGN_NOBNDRY) {
+                    const std::string& region = "RGN_NOBNDRY") {
     return DDZ(f, outloc, toString(method), region);
   };
 
