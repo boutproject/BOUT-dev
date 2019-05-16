@@ -276,26 +276,50 @@ const Field2D D4DZ4(const Field2D &f, CELL_LOC outloc, const std::string &method
 /*!
  * Mixed derivative in X and Y
  *
- * This first takes derivatives in X, then in Y.
+ * This first takes derivatives in Y, then in X.
  *
- * ** Applies Neumann boundary in Y, communicates
+ * ** Communicates and applies boundary in X.
  */
-const Field2D D2DXDY(const Field2D &f, CELL_LOC outloc, const std::string &method, REGION region) {
-  Field2D dfdy = DDY(f, outloc, method, RGN_NOY);
+const Field2D D2DXDY(const Field2D& f, CELL_LOC outloc, const std::string& method,
+    REGION region, const std::string& dfdy_boundary_condition) {
+
+  // If staggering in x, take y-derivative at f's location.
+  const auto y_location =
+    (outloc == CELL_XLOW or f.getLocation() == CELL_XLOW) ? CELL_DEFAULT : outloc;
+
+  Field2D dfdy = DDY(f, y_location, method, region);
+
+  // Set x-guard cells and x-boundary cells before calculating DDX
   f.getMesh()->communicate(dfdy);
+  dfdy.applyBoundary("core", dfdy_boundary_condition);
+  dfdy.applyBoundary("pf", dfdy_boundary_condition);
+  dfdy.applyBoundary("sol", dfdy_boundary_condition);
+
   return DDX(dfdy, outloc, method, region);
 }
 
 /*!
  * Mixed derivative in X and Y
  *
- * This first takes derivatives in X, then in Y.
+ * This first takes derivatives in Y, then in X.
  *
- * ** Applies Neumann boundary in Y, communicates
+ * ** Communicates and applies boundary in X.
  */
-const Field3D D2DXDY(const Field3D &f, CELL_LOC outloc, const std::string &method, REGION region) {
-  Field3D dfdy = DDY(f, outloc, method, RGN_NOY);
+const Field3D D2DXDY(const Field3D& f, CELL_LOC outloc, const std::string& method,
+    REGION region, const std::string& dfdy_boundary_condition) {
+
+  // If staggering in x, take y-derivative at f's location.
+  const auto y_location =
+    (outloc == CELL_XLOW or f.getLocation() == CELL_XLOW) ? CELL_DEFAULT : outloc;
+
+  Field3D dfdy = DDY(f, y_location, method, region);
+
+  // Set x-guard cells and x-boundary cells before calculating DDX
   f.getMesh()->communicate(dfdy);
+  dfdy.applyBoundary("core", dfdy_boundary_condition);
+  dfdy.applyBoundary("pf", dfdy_boundary_condition);
+  dfdy.applyBoundary("sol", dfdy_boundary_condition);
+
   return DDX(dfdy, outloc, method, region);
 }
 
