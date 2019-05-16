@@ -1147,11 +1147,8 @@ retrybetacalc:
   ; Calculate zshift (qinty), sinty = d(zshift)/dpsi, and H = d(zshift)/dtheta
   qinty = my_int_y(pitch*(1.D + dyshiftdy), yxy, mesh, /nosmooth, loop=qloop)
   sinty = DDX(psixy,qinty)
-
-  ; original calculation for H was:
-  ; H = dfdy_seps(qinty,thetaxy,mesh)
-  ; but qinty is an integral in y, so H is just the integrand
-  H = pitch*(1.D + dyshiftdy)
+  H = dfdy_seps(qinty,thetaxy,mesh)
+;   H = dfdy(qinty,thetaxy,mesh)
 
   ; NOTE: This is only valid in the core
   pol_angle = DBLARR(nx,ny_total)
