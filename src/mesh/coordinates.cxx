@@ -506,6 +506,11 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     g_13 = interpolateAndExtrapolate(g_13, location, extrapolate_x, extrapolate_y);
     g_23 = interpolateAndExtrapolate(g_23, location, extrapolate_x, extrapolate_y);
 
+    /// Calculate Jacobian and Bxy
+    if (jacobian()) {
+      throw BoutException("Error in jacobian call while constructing staggered Coordinates");
+    }
+
     checkStaggeredGet(mesh, "ShiftTorsion", suffix);
     if (mesh->get(ShiftTorsion, "ShiftTorsion"+suffix)) {
       output_warn.write("\tWARNING: No Torsion specified for zShift. Derivatives may not be correct\n");
@@ -555,6 +560,9 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     g_13 = interpolateAndExtrapolate(coords_in->g_13, location);
     g_23 = interpolateAndExtrapolate(coords_in->g_23, location);
 
+    J = interpolateAndExtrapolate(coords_in->J, location);
+    Bxy = interpolateAndExtrapolate(coords_in->J, location);
+
     ShiftTorsion = interpolateAndExtrapolate(coords_in->ShiftTorsion, location);
 
     if (mesh->IncIntShear) {
@@ -575,10 +583,6 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
   checkFinite(g12, "g12", "RGN_NOCORNERS");
   checkFinite(g13, "g13", "RGN_NOCORNERS");
   checkFinite(g23, "g23", "RGN_NOCORNERS");
-
-  /// Calculate Jacobian and Bxy
-  if (jacobian())
-    throw BoutException("Error in jacobian call while constructing staggered Coordinates");
 
   //////////////////////////////////////////////////////
   /// Calculate Christoffel symbols. Needs communication
