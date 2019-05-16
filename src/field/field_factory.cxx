@@ -230,7 +230,7 @@ Field3D FieldFactory::create3D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC 
     if (coords->getParallelTransform().canToFromFieldAligned()) {
       // Transform from field aligned coordinates, to be compatible with
       // older BOUT++ inputs. This is not a particularly "nice" solution.
-      result = fromFieldAligned(result, RGN_ALL);
+      result = fromFieldAligned(result, "RGN_ALL");
     }
   }
 
@@ -310,7 +310,7 @@ FieldPerp FieldFactory::createPerp(FieldGeneratorPtr gen, Mesh* localmesh, CELL_
     if (coords->getParallelTransform().canToFromFieldAligned()) {
       // Transform from field aligned coordinates, to be compatible with
       // older BOUT++ inputs. This is not a particularly "nice" solution.
-      result = fromFieldAligned(result, RGN_ALL);
+      result = fromFieldAligned(result, "RGN_ALL");
     }
   }
 

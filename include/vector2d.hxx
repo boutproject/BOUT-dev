@@ -175,7 +175,12 @@ const Vector3D cross(const Vector2D & lhs, const Vector3D &rhs);
  *
  * |v| = sqrt( v dot v )
  */
-const Field2D abs(const Vector2D &v, REGION region = RGN_ALL);
+const Field2D abs(const Vector2D& v, const std::string& region = "RGN_ALL");
+[[gnu::deprecated("Please use Vector2D abs(const Vector2D& f, "
+    "const std::string& region = \"RGN_ALL\") instead")]]
+inline const Field2D abs(const Vector2D &v, REGION region) {
+  return abs(v, toString(region));
+}
 
 /*!
  * @brief Time derivative of 2D vector field
