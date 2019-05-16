@@ -341,12 +341,11 @@ const Field2D D2DYDZ(const Field2D &f, CELL_LOC outloc,
 
 const Field3D D2DYDZ(const Field3D& f, CELL_LOC outloc, const std::string& method,
                      REGION region) {
-  if (outloc == CELL_ZLOW || f.getLocation() == CELL_ZLOW) {
-    // Staggering in z, so take y-derivative at f's location.
-    return DDZ(DDY(f, CELL_DEFAULT, method, region), outloc, method, region);
-  } else {
-    return DDZ(DDY(f, outloc, method, region), outloc, method, region);
-  }
+  // If staggering in z, take y-derivative at f's location.
+  const auto y_location =
+    (outloc == CELL_ZLOW or f.getLocation() == CELL_ZLOW) ? CELL_DEFAULT : outloc;
+
+  return DDZ(DDY(f, y_location, method, region), outloc, method, region);
 }
 
 /*******************************************************************************
