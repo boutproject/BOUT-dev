@@ -141,8 +141,8 @@ public:
 
     // We need the parallel slices for the y-direction
     ParallelTransformIdentity identity{*mesh};
-    identity.calcYUpDown(input);
-    identity.calcYUpDown(velocity);
+    identity.calcParallelSlices(input);
+    identity.calcParallelSlices(velocity);
   };
 
   virtual ~DerivativesTest() {

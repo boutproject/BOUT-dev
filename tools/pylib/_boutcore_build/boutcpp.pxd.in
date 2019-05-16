@@ -68,7 +68,6 @@ cdef extern from "bout/mesh.hxx":
         @staticmethod
         Mesh * create(Options * option)
         void load()
-        void setParallelTransform()
         void communicate(FieldGroup&)
         int getNXPE()
         int getNYPE()

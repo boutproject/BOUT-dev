@@ -33,9 +33,9 @@ class Monitor{
 public:
   /// A \p timestep_ of -1 defaults to the the frequency of the BOUT++
   /// output monitor
-  Monitor(BoutReal timestep_ = -1) : timestep(timestep_){};
+  Monitor(BoutReal timestep_ = -1) : timestep(timestep_) {};
 
-  virtual ~Monitor(){};
+  virtual ~Monitor() = default;
 
   /// Callback function for the solver, called after timestep_ has passed
   ///
@@ -45,7 +45,7 @@ public:
   /// @param[in] nout   The total number of iterations for this simulation
   ///
   /// @returns non-zero if simulation should be stopped
-  virtual int call(Solver *solver, BoutReal time, int iter, int nout) = 0;
+  virtual int call(Solver* solver, BoutReal time, int iter, int nout) = 0;
 
   /// Callback function for when a clean shutdown is initiated
   virtual void cleanup(){};
@@ -60,16 +60,18 @@ protected:
   void setTimestep(BoutReal new_timestep) {
     if (is_added) {
       throw BoutException("Monitor::set_timestep - Error: Monitor has already"
-          "been added to a Solver, so timestep cannot be changed.");
+                          "been added to a Solver, so timestep cannot be changed.");
     }
     timestep = new_timestep;
   }
 
 private:
-  bool is_added = false; ///< Set to true when Monitor is added to a Solver
-  BoutReal timestep;
-  int freq;
-
+  /// Set to true when Monitor is added to a Solver
+  bool is_added{false};
+  /// The desired physical timestep
+  BoutReal timestep{-1};
+  /// How often this monitor should be called, in internal Solver steps
+  int period{1};
 };
 
 struct RunMetrics {

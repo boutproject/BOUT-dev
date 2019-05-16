@@ -145,12 +145,12 @@ class Mesh;  // #include "bout/mesh.hxx"
 
       f.yup() // error; f.yup not allocated
 
-      f.mergeYupYdown(); // f.yup() and f.ydown() now point to f
-      f.yup()(0,1,0)  // ok, gives value of f at (0,1,0)
+      f.clearParallelSlices(); // f.yup_fields and f.ydown_fields are now empty
+      f.yup() // error; f.yup not allocated
 
       To have separate fields for yup and ydown, first call
 
-      f.splitYupYdown(); // f.yup() and f.ydown() separate
+      f.splitParallelSlices(); // f.yup() and f.ydown() separate
 
       f.yup(); // ok
       f.yup()(0,1,0) // error; f.yup not allocated
@@ -240,18 +240,34 @@ class Field3D : public Field, public FieldData {
    * Ensure that this field has separate fields
    * for yup and ydown.
    */
-  void splitYupYdown();
+  void splitParallelSlices();
+
+  [[gnu::deprecated("Please use Field3D::splitParallelSlices instead")]]
+  void splitYupYdown() {
+    splitParallelSlices();
+  }
 
   /*!
-   * Ensure that yup and ydown refer to this field
+   * Clear the parallel slices, yup and ydown
    */
-  void mergeYupYdown();
+  void clearParallelSlices();
   
+  [[gnu::deprecated("Please use Field3D::clearParallelSlices instead")]]
+  void mergeYupYdown() {
+    clearParallelSlices();
+  }
+
   /// Check if this field has yup and ydown fields
-  bool hasYupYdown() const {
+  bool hasParallelSlices() const {
     return !yup_fields.empty() and !ydown_fields.empty();
   }
 
+  [[gnu::deprecated("Please use Field3D::hasParallelSlices instead")]]
+  bool hasYupYdown() const {
+    return hasParallelSlices();
+  }
+
+  /// Check if this field has yup and ydown fields
   /// Return reference to yup field
   Field3D &yup(std::vector<Field3D>::size_type index = 0) {
     ASSERT2(index < yup_fields.size());
@@ -300,6 +316,11 @@ class Field3D : public Field, public FieldData {
   /// 
   const Region<Ind3D>& getRegion(REGION region) const;  
   const Region<Ind3D>& getRegion(const std::string &region_name) const;
+
+  /// Return a Region<Ind2D> reference to use to iterate over the x- and
+  /// y-indices of this field
+  const Region<Ind2D>& getRegion2D(REGION region) const;
+  const Region<Ind2D>& getRegion2D(const std::string &region_name) const;
   
   Region<Ind3D>::RegionIndices::const_iterator begin() const {return std::begin(getRegion("RGN_ALL"));};
   Region<Ind3D>::RegionIndices::const_iterator end() const {return std::end(getRegion("RGN_ALL"));};
@@ -445,6 +466,8 @@ class Field3D : public Field, public FieldData {
 
   friend class Vector3D;
 
+  Field3D& calcParallelSlices();
+
   void applyBoundary(bool init=false) override;
   void applyBoundary(BoutReal t);
   void applyBoundary(const std::string &condition);
@@ -538,6 +561,9 @@ Field3D operator/(BoutReal lhs, const Field3D &rhs);
 Field3D operator-(const Field3D &f);
 
 // Non-member functions
+
+Field3D toFieldAligned(const Field3D& f, const REGION region = RGN_ALL);
+Field3D fromFieldAligned(const Field3D& f, const REGION region = RGN_ALL);
 
 /// Calculates the minimum of a field, excluding the boundary/guard
 /// cells by default (can be changed with \p rgn argument).
@@ -780,5 +806,12 @@ template <>
 inline std::string toString<>(const Field3D& UNUSED(val)) {
   return "<Field3D>";
 }
+
+/// Test if two fields are the same, by calculating
+/// the minimum absolute difference between them
+bool operator==(const Field3D &a, const Field3D &b);
+
+/// Output a string describing a Field3D to a stream
+std::ostream& operator<<(std::ostream &out, const Field3D &value);
 
 #endif /* __FIELD3D_H__ */

@@ -158,8 +158,10 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
   // Put the variables into uvec
   save_vars(NV_DATA_P(uvec));
 
-  diagnose = (*options)["diagnose"].withDefault(false);
-  const auto adams_moulton = (*options)["adams_moulton"].withDefault(false);
+  diagnose = (*options)["diagnose"].doc("Print solver diagnostic information?").withDefault(false);
+  const auto adams_moulton = (*options)["adams_moulton"]
+          .doc("Use Adams Moulton implicit multistep. Otherwise BDF method.")
+          .withDefault(false);
 
   if (adams_moulton) {
     // By default use functional iteration for Adams-Moulton
@@ -183,7 +185,7 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
   if (CVodeInit(cvode_mem, cvode_rhs, simtime, uvec) < 0)
     throw BoutException("CVodeInit failed\n");
 
-  const auto max_order = (*options)["cvode_max_order"].withDefault(-1);
+  const auto max_order = (*options)["cvode_max_order"].doc("Maximum order of method to use. < 0 means no limit.").withDefault(-1);
   if (max_order > 0) {
     if (CVodeSetMaxOrd(cvode_mem, max_order) < 0)
       throw BoutException("CVodeSetMaxOrder failed\n");
@@ -196,8 +198,8 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
       throw BoutException("CVodeSetStabLimDet failed\n");
   }
 
-  const auto abstol = (*options)["ATOL"].withDefault(1.0e-12);
-  const auto reltol = (*options)["RTOL"].withDefault(1.0e-5);
+  const auto abstol = (*options)["ATOL"].doc("Absolute tolerance").withDefault(1.0e-12);
+  const auto reltol = (*options)["RTOL"].doc("Relative tolerance").withDefault(1.0e-5);
   const auto use_vector_abstol = (*options)["use_vector_abstol"].withDefault(false);
   if (use_vector_abstol) {
     std::vector<BoutReal> f2dtols;
@@ -236,20 +238,20 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
       throw BoutException("CVodeSStolerances failed\n");
   }
 
-  const auto mxsteps = (*options)["mxstep"].withDefault(500);
+  const auto mxsteps = (*options)["mxstep"].doc("Maximum number of internal steps between outputs.").withDefault(500);
   CVodeSetMaxNumSteps(cvode_mem, mxsteps);
 
-  const auto max_timestep = (*options)["max_timestep"].withDefault(-1.);
+  const auto max_timestep = (*options)["max_timestep"].doc("Maximum time step size").withDefault(-1.0);
   if (max_timestep > 0.0) {
     CVodeSetMaxStep(cvode_mem, max_timestep);
   }
 
-  const auto min_timestep = (*options)["min_timestep"].withDefault(-1);
+  const auto min_timestep = (*options)["min_timestep"].doc("Minimum time step size").withDefault(-1.0);
   if (min_timestep > 0.0) {
     CVodeSetMinStep(cvode_mem, min_timestep);
   }
 
-  const auto start_timestep = (*options)["start_timestep"].withDefault(-1);
+  const auto start_timestep = (*options)["start_timestep"].doc("Starting time step. < 0 then chosen by CVODE.").withDefault(-1.0);
   if (start_timestep > 0.0) {
     CVodeSetInitStep(cvode_mem, start_timestep);
   }
@@ -263,12 +265,14 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
   if (!func_iter) {
     output_info.write("\tUsing Newton iteration\n");
     TRACE("Setting preconditioner");
-    const auto maxl = (*options)["maxl"].withDefault(5);
-    const auto use_precon = (*options)["use_precon"].withDefault(false);
+    const auto maxl = (*options)["maxl"].doc("Maximum number of linear iterations").withDefault(5);
+    const auto use_precon = (*options)["use_precon"].doc("Use preconditioner?").withDefault(false);
 
     if (use_precon) {
 
-      const auto rightprec = (*options)["rightprec"].withDefault(false);
+      const auto rightprec = (*options)["rightprec"]
+                                 .doc("Use right preconditioner? Otherwise use left.")
+                                 .withDefault(false);
       const int prectype = rightprec ? PREC_RIGHT : PREC_LEFT;
 
 #if SUNDIALS_VERSION_MAJOR >= 3
@@ -565,7 +569,7 @@ static int cvode_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data) {
   BoutReal* udata = NV_DATA_P(u);
   BoutReal* dudata = NV_DATA_P(du);
 
-  CvodeSolver* s = static_cast<CvodeSolver*>(user_data);
+  auto* s = static_cast<CvodeSolver*>(user_data);
 
   // Calculate RHS function
   try {
@@ -590,7 +594,7 @@ static int cvode_pre(BoutReal t, N_Vector yy, N_Vector UNUSED(yp), N_Vector rvec
   BoutReal* rdata = NV_DATA_P(rvec);
   BoutReal* zdata = NV_DATA_P(zvec);
 
-  CvodeSolver* s = static_cast<CvodeSolver*>(user_data);
+  auto* s = static_cast<CvodeSolver*>(user_data);
 
   // Calculate residuals
   s->pre(t, gamma, delta, udata, rdata, zdata);
@@ -605,7 +609,7 @@ static int cvode_jac(N_Vector v, N_Vector Jv, realtype t, N_Vector y, N_Vector U
   BoutReal* vdata = NV_DATA_P(v);   ///< Input vector
   BoutReal* Jvdata = NV_DATA_P(Jv); ///< Jacobian*vector output
 
-  CvodeSolver* s = static_cast<CvodeSolver*>(user_data);
+  auto* s = static_cast<CvodeSolver*>(user_data);
 
   s->jac(t, ydata, vdata, Jvdata);
 

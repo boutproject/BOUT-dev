@@ -140,12 +140,12 @@ Field3D* Field3D::timeDeriv() {
   return deriv;
 }
 
-void Field3D::splitYupYdown() {
-  TRACE("Field3D::splitYupYdown");
+void Field3D::splitParallelSlices() {
+  TRACE("Field3D::splitParallelSlices");
   
 #if CHECK > 2
   if (yup_fields.size() != ydown_fields.size()) {
-    throw BoutException("Field3D::splitYupYdown: forward/backward parallel slices not in sync.\n"
+    throw BoutException("Field3D::splitParallelSlices: forward/backward parallel slices not in sync.\n"
                         "    This is an internal library error");
   }
 #endif
@@ -162,8 +162,8 @@ void Field3D::splitYupYdown() {
   }
 }
 
-void Field3D::mergeYupYdown() {
-  TRACE("Field3D::mergeYupYdown");
+void Field3D::clearParallelSlices() {
+  TRACE("Field3D::clearParallelSlices");
 
 #if CHECK > 2
   if (yup_fields.size() != ydown_fields.size()) {
@@ -232,6 +232,13 @@ const Region<Ind3D> &Field3D::getRegion(const std::string &region_name) const {
   return fieldmesh->getRegion3D(region_name);
 };
 
+const Region<Ind2D> &Field3D::getRegion2D(REGION region) const {
+  return fieldmesh->getRegion2D(toString(region));
+};
+const Region<Ind2D> &Field3D::getRegion2D(const std::string &region_name) const {
+  return fieldmesh->getRegion2D(region_name);
+};
+
 /***************************************************************
  *                         OPERATORS 
  ***************************************************************/
@@ -244,7 +251,11 @@ Field3D & Field3D::operator=(const Field3D &rhs) {
     return(*this); // skip this assignment
 
   TRACE("Field3D: Assignment from Field3D");
-  
+
+  // Delete existing parallel slices. We don't copy parallel slices, so any
+  // that currently exist will be incorrect.
+  clearParallelSlices();
+
   copyFieldMembers(rhs);
 
   // Copy the data and data sizes
@@ -262,6 +273,10 @@ Field3D & Field3D::operator=(const Field2D &rhs) {
 
   /// Check that the data is allocated
   ASSERT1(rhs.isAllocated());
+
+  // Delete existing parallel slices. We don't copy parallel slices, so any
+  // that currently exist will be incorrect.
+  clearParallelSlices();
 
   setLocation(rhs.getLocation());
 
@@ -282,6 +297,10 @@ void Field3D::operator=(const FieldPerp &rhs) {
   /// Check that the data is allocated
   ASSERT1(rhs.isAllocated());
 
+  // Delete existing parallel slices. We don't copy parallel slices, so any
+  // that currently exist will be incorrect.
+  clearParallelSlices();
+
   /// Make sure there's a unique array to copy data into
   allocate();
 
@@ -292,10 +311,19 @@ void Field3D::operator=(const FieldPerp &rhs) {
 Field3D & Field3D::operator=(const BoutReal val) {
   TRACE("Field3D = BoutReal");
 
+  // Delete existing parallel slices. We don't copy parallel slices, so any
+  // that currently exist will be incorrect.
+  clearParallelSlices();
+
   allocate();
 
   BOUT_FOR(i, getRegion("RGN_ALL")) { (*this)[i] = val; }
 
+  return *this;
+}
+
+Field3D& Field3D::calcParallelSlices() {
+  getCoordinates()->getParallelTransform().calcParallelSlices(*this);
   return *this;
 }
 
@@ -372,9 +400,9 @@ void Field3D::applyBoundary(const std::string &condition) {
   
   /// Loop over the mesh boundary regions
   for(const auto& reg : fieldmesh->getBoundaries()) {
-    BoundaryOp* op = static_cast<BoundaryOp*>(bfact->create(condition, reg));
+    auto op = std::unique_ptr<BoundaryOp>{
+        dynamic_cast<BoundaryOp*>(bfact->create(condition, reg))};
     op->apply(*this);
-    delete op;
   }
 
   //Field2D sets the corners to zero here, should we do the same here?
@@ -392,9 +420,9 @@ void Field3D::applyBoundary(const std::string &region, const std::string &condit
   for (const auto &reg : fieldmesh->getBoundaries()) {
     if (reg->label.compare(region) == 0) {
       region_found = true;
-      BoundaryOp *op = static_cast<BoundaryOp *>(bfact->create(condition, reg));
+      auto op = std::unique_ptr<BoundaryOp>{
+          dynamic_cast<BoundaryOp*>(bfact->create(condition, reg))};
       op->apply(*this);
-      delete op;
       break;
     }
   }
@@ -499,9 +527,9 @@ void Field3D::applyParallelBoundary(const std::string &condition) {
 
     /// Loop over the mesh boundary regions
     for(const auto& reg : fieldmesh->getBoundariesPar()) {
-      BoundaryOpPar* op = static_cast<BoundaryOpPar*>(bfact->create(condition, reg));
+      auto op = std::unique_ptr<BoundaryOpPar>{
+          dynamic_cast<BoundaryOpPar*>(bfact->create(condition, reg))};
       op->apply(*this);
-      delete op;
     }
   }
 }
@@ -524,9 +552,9 @@ void Field3D::applyParallelBoundary(const std::string &region, const std::string
     /// Loop over the mesh boundary regions
     for(const auto& reg : fieldmesh->getBoundariesPar()) {
       if(reg->label.compare(region) == 0) {
-        BoundaryOpPar* op = static_cast<BoundaryOpPar*>(bfact->create(condition, reg));
+        auto op = std::unique_ptr<BoundaryOpPar>{
+            dynamic_cast<BoundaryOpPar*>(bfact->create(condition, reg))};
         op->apply(*this);
-        delete op;
         break;
       }
     }
@@ -553,12 +581,11 @@ void Field3D::applyParallelBoundary(const std::string &region, const std::string
       if(reg->label.compare(region) == 0) {
         // BoundaryFactory can't create boundaries using Field3Ds, so get temporary
         // boundary of the right type
-        BoundaryOpPar* tmp = static_cast<BoundaryOpPar*>(bfact->create(condition, reg));
+        auto tmp = std::unique_ptr<BoundaryOpPar>{
+            dynamic_cast<BoundaryOpPar*>(bfact->create(condition, reg))};
         // then clone that with the actual argument
-        BoundaryOpPar* op = tmp->clone(reg, f);
+        auto op = std::unique_ptr<BoundaryOpPar>{tmp->clone(reg, f)};
         op->apply(*this);
-        delete tmp;
-        delete op;
         break;
       }
     }
@@ -573,6 +600,14 @@ void Field3D::applyParallelBoundary(const std::string &region, const std::string
 Field3D operator-(const Field3D &f) { return -1.0 * f; }
 
 //////////////// NON-MEMBER FUNCTIONS //////////////////
+
+Field3D toFieldAligned(const Field3D& f, const REGION region) {
+  return f.getCoordinates()->getParallelTransform().toFieldAligned(f, region);
+}
+
+Field3D fromFieldAligned(const Field3D& f, const REGION region) {
+  return f.getCoordinates()->getParallelTransform().fromFieldAligned(f, region);
+}
 
 Field3D pow(const Field3D &lhs, const Field3D &rhs, REGION rgn) {
   TRACE("pow(Field3D, Field3D)");
@@ -771,9 +806,7 @@ Field3D filter(const Field3D &var, int N0, REGION rgn) {
   
   checkData(var);
 
-  Mesh *localmesh = var.getMesh();
-
-  int ncz = localmesh->LocalNz;
+  int ncz = var.getNz();
 
   Field3D result{emptyFrom(var)};
 
@@ -783,7 +816,7 @@ Field3D filter(const Field3D &var, int N0, REGION rgn) {
   ASSERT2(region_str == "RGN_ALL" || region_str == "RGN_NOBNDRY" ||
           region_str == "RGN_NOX" || region_str == "RGN_NOY");
 
-  const Region<Ind2D> &region = localmesh->getRegion2D(region_str);
+  const Region<Ind2D> &region = var.getRegion2D(region_str);
 
   BOUT_OMP(parallel)
   {
@@ -818,8 +851,7 @@ Field3D lowPass(const Field3D &var, int zmax, bool keep_zonal, REGION rgn) {
   TRACE("lowPass(Field3D, %d, %d)", zmax, keep_zonal);
 
   checkData(var);
-  Mesh *localmesh = var.getMesh();
-  int ncz = localmesh->LocalNz;
+  int ncz = var.getNz();
 
   if (((zmax >= ncz / 2) || (zmax < 0)) && keep_zonal) {
     // Removing nothing
@@ -834,7 +866,7 @@ Field3D lowPass(const Field3D &var, int zmax, bool keep_zonal, REGION rgn) {
   ASSERT2(region_str == "RGN_ALL" || region_str == "RGN_NOBNDRY" ||
           region_str == "RGN_NOX" || region_str == "RGN_NOY");
 
-  const Region<Ind2D> &region = localmesh->getRegion2D(region_str);
+  const Region<Ind2D> &region = var.getRegion2D(region_str);
 
   BOUT_OMP(parallel) {
     Array<dcomplex> f(ncz / 2 + 1);
@@ -895,7 +927,7 @@ void shiftZ(Field3D &var, double zangle, REGION rgn) {
   ASSERT2(region_str == "RGN_ALL" || region_str == "RGN_NOBNDRY" ||
           region_str == "RGN_NOX" || region_str == "RGN_NOY");
 
-  const Region<Ind2D> &region = var.getMesh()->getRegion2D(region_str);
+  const Region<Ind2D> &region = var.getRegion2D(region_str);
 
   // Could be OpenMP if shiftZ(Field3D, int, int, double) didn't throw
   BOUT_FOR_SERIAL(i, region) {
@@ -992,3 +1024,15 @@ void invalidateGuards(Field3D &var) {
   BOUT_FOR(i, var.getRegion("RGN_GUARDS")) { var[i] = BoutNaN; }
 }
 #endif
+
+bool operator==(const Field3D &a, const Field3D &b) {
+  if (!a.isAllocated() || !b.isAllocated()) {
+    return false;
+  }
+  return min(abs(a - b)) < 1e-10;
+}
+
+std::ostream& operator<<(std::ostream &out, const Field3D &value) {
+  out << toString(value);
+  return out;
+}

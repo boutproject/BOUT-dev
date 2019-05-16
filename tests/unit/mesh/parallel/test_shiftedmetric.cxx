@@ -2,8 +2,8 @@
 
 #include "fft.hxx"
 #include "test_extras.hxx"
-#include "bout/paralleltransform.hxx"
 
+#ifdef BOUT_HAS_FFTW
 // The unit tests use the global mesh
 using namespace bout::globals;
 
@@ -40,7 +40,10 @@ public:
         Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
         Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, false));
 
-    mesh->setParallelTransform(bout::utils::make_unique<ShiftedMetric>(*mesh, zShift));
+    auto coords = mesh->getCoordinates();
+    coords->setParallelTransform(
+        bout::utils::make_unique<ShiftedMetric>(*mesh, CELL_CENTRE, zShift,
+            coords->zlength()));
 
     Field3D input_temp{mesh};
 
@@ -116,11 +119,11 @@ TEST_F(ShiftedMetricTest, ToFieldAligned) {
                         {4., 5., 1., 3., 2.},
                         {2., 4., 3., 5., 1.}}});
 
-  Field3D result = mesh->toFieldAligned(input);
+  Field3D result = toFieldAligned(input);
 
   EXPECT_TRUE(IsFieldEqual(result, expected, "RGN_ALL",
                            FFTTolerance));
-  EXPECT_TRUE(IsFieldEqual(mesh->fromFieldAligned(input), input));
+  EXPECT_TRUE(IsFieldEqual(fromFieldAligned(input), input));
   EXPECT_TRUE(areFieldsCompatible(result, expected));
   EXPECT_FALSE(areFieldsCompatible(result, input));
 }
@@ -157,29 +160,129 @@ TEST_F(ShiftedMetricTest, FromFieldAligned) {
                         {2., 4., 5., 1., 3.},
                         {5., 1., 2., 4., 3.}}});
 
-  Field3D result = mesh->fromFieldAligned(input);
+  Field3D result = fromFieldAligned(input);
 
   // Loosen tolerance a bit due to FFTs
   EXPECT_TRUE(IsFieldEqual(result, expected, "RGN_ALL",
                            FFTTolerance));
-  EXPECT_TRUE(IsFieldEqual(mesh->toFieldAligned(input), input));
+  EXPECT_TRUE(IsFieldEqual(toFieldAligned(input), input));
   EXPECT_TRUE(areFieldsCompatible(result, expected));
   EXPECT_FALSE(areFieldsCompatible(result, input));
 }
 
 TEST_F(ShiftedMetricTest, FromToFieldAligned) {
-  EXPECT_TRUE(IsFieldEqual(mesh->fromFieldAligned(mesh->toFieldAligned(input)), input, "RGN_ALL",
+  EXPECT_TRUE(IsFieldEqual(fromFieldAligned(toFieldAligned(input)), input, "RGN_ALL",
                            FFTTolerance));
 }
 
 TEST_F(ShiftedMetricTest, ToFromFieldAligned) {
   input.setDirectionY(YDirectionType::Aligned);
 
-  EXPECT_TRUE(IsFieldEqual(mesh->toFieldAligned(mesh->fromFieldAligned(input)), input, "RGN_ALL",
+  EXPECT_TRUE(IsFieldEqual(toFieldAligned(fromFieldAligned(input)), input, "RGN_ALL",
                            FFTTolerance));
 }
 
-TEST_F(ShiftedMetricTest, CalcYUpDown) {
+TEST_F(ShiftedMetricTest, ToFieldAlignedFieldPerp) {
+  Field3D expected{mesh};
+  expected.setDirectionY(YDirectionType::Aligned);
+
+  fillField(expected, {{{2., 3., 4., 5., 1.},
+                        {3., 4., 5., 2., 1.},
+                        {4., 5., 1., 3., 2.},
+                        {5., 1., 2., 4., 3.},
+                        {1., 2., 3., 5., 4.},
+                        {2., 3., 4., 5., 1.},
+                        {3., 4., 5., 2., 1.}},
+
+                       {{3., 4., 5., 2., 1.},
+                        {5., 1., 3., 2., 4.},
+                        {2., 4., 3., 5., 1.},
+                        {5., 4., 1., 2., 3.},
+                        {1., 2., 3., 4., 5.},
+                        {3., 4., 5., 2., 1.},
+                        {5., 1., 3., 2., 4.}},
+
+                       {{4., 5., 1., 3., 2.},
+                        {2., 4., 3., 5., 1.},
+                        {4., 1., 2., 3., 5.},
+                        {3., 4., 5., 1., 2.},
+                        {2., 1., 3., 4., 5.},
+                        {4., 5., 1., 3., 2.},
+                        {2., 4., 3., 5., 1.}}});
+
+  FieldPerp result = toFieldAligned(sliceXZ(input, 3));
+
+  // Note that the region argument does not do anything for FieldPerp, as
+  // FieldPerp does not have a getRegion2D() method. Values are never set in
+  // the x-guard or x-boundary cells
+  EXPECT_TRUE(IsFieldEqual(result, sliceXZ(expected, 3), "RGN_NOBNDRY", FFTTolerance));
+  EXPECT_TRUE(IsFieldEqual(fromFieldAligned(sliceXZ(input,2)), sliceXZ(input, 2)));
+  EXPECT_TRUE(areFieldsCompatible(result, sliceXZ(expected, 3)));
+  EXPECT_FALSE(areFieldsCompatible(result, sliceXZ(input, 3)));
+}
+
+TEST_F(ShiftedMetricTest, FromFieldAlignedFieldPerp) {
+  // reset input.yDirectionType so that fromFieldAligned is not a null
+  // operation
+  input.setDirectionY(YDirectionType::Aligned);
+
+  Field3D expected{mesh, CELL_CENTRE};
+  expected.setDirectionY(YDirectionType::Standard);
+
+  fillField(expected, {{{5., 1., 2., 3., 4.},
+                        {4., 5., 2., 1., 3.},
+                        {2., 4., 5., 1., 3.},
+                        {2., 4., 3., 5., 1.},
+                        {1., 2., 3., 5., 4.},
+                        {5., 1., 2., 3., 4.},
+                        {4., 5., 2., 1., 3.}},
+
+                       {{4., 5., 2., 1., 3.},
+                        {3., 2., 4., 5., 1.},
+                        {5., 1., 2., 4., 3.},
+                        {3., 5., 4., 1., 2.},
+                        {1., 2., 3., 4., 5.},
+                        {4., 5., 2., 1., 3.},
+                        {3., 2., 4., 5., 1.}},
+
+                       {{2., 4., 5., 1., 3.},
+                        {5., 1., 2., 4., 3.},
+                        {2., 3., 5., 4., 1.},
+                        {4., 5., 1., 2., 3.},
+                        {2., 1., 3., 4., 5.},
+                        {2., 4., 5., 1., 3.},
+                        {5., 1., 2., 4., 3.}}});
+
+  FieldPerp result = fromFieldAligned(sliceXZ(input, 4));
+
+  // Note that the region argument does not do anything for FieldPerp, as
+  // FieldPerp does not have a getRegion2D() method. Values are never set in
+  // the x-guard or x-boundary cells
+  EXPECT_TRUE(IsFieldEqual(result, sliceXZ(expected, 4), "RGN_NOBNDRY", FFTTolerance));
+  EXPECT_TRUE(IsFieldEqual(toFieldAligned(sliceXZ(input, 0)), sliceXZ(input, 0)));
+  EXPECT_TRUE(areFieldsCompatible(result, sliceXZ(expected, 4)));
+  EXPECT_FALSE(areFieldsCompatible(result, sliceXZ(input, 4)));
+}
+
+TEST_F(ShiftedMetricTest, FromToFieldAlignedFieldPerp) {
+  // Note that the region argument does not do anything for FieldPerp, as
+  // FieldPerp does not have a getRegion2D() method. Values are never set in
+  // the x-guard or x-boundary cells
+  EXPECT_TRUE(IsFieldEqual(fromFieldAligned(toFieldAligned(sliceXZ(input, 2))),
+        sliceXZ(input, 2), "RGN_NOBNDRY", FFTTolerance));
+}
+
+TEST_F(ShiftedMetricTest, ToFromFieldAlignedFieldPerp) {
+  // Note that the region argument does not do anything for FieldPerp, as
+  // FieldPerp does not have a getRegion2D() method. Values are never set in
+  // the x-guard or x-boundary cells
+  input.setDirectionY(YDirectionType::Aligned);
+
+  EXPECT_TRUE(IsFieldEqual(toFieldAligned(fromFieldAligned(sliceXZ(input, 6))),
+        sliceXZ(input, 6), "RGN_NOBNDRY", FFTTolerance));
+}
+
+TEST_F(ShiftedMetricTest, CalcParallelSlices) {
   // We don't shift in the guard cells, and the parallel slices are
   // stored offset in y, therefore we need to make new regions that we
   // can compare the expected and actual outputs over
@@ -200,7 +303,7 @@ TEST_F(ShiftedMetricTest, CalcYUpDown) {
   output_info.enable();
 
   // Actual interesting bit here!
-  mesh->getParallelTransform().calcYUpDown(input);
+  input.getCoordinates()->getParallelTransform().calcParallelSlices(input);
   // Expected output values
 
   Field3D expected_up_1{mesh};
@@ -313,3 +416,4 @@ TEST_F(ShiftedMetricTest, CalcYUpDown) {
   EXPECT_TRUE(IsFieldEqual(input.ynext(-1), expected_down_1, "RGN_YDOWN", FFTTolerance));
   EXPECT_TRUE(IsFieldEqual(input.ynext(-2), expected_down2, "RGN_YDOWN2", FFTTolerance));
 }
+#endif

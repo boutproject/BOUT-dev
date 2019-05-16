@@ -24,12 +24,22 @@ template <typename T>
 class FieldFactoryCreationTest : public FakeMeshFixture {
 public:
   FieldFactoryCreationTest() : FakeMeshFixture{}, factory{mesh} {
-    // We need a parallel transform as FieldFactory::create3D wants to
-    // un-field-align the result
-    mesh->setParallelTransform(
+    // We need Coordinates so a parallel transform is available as
+    // FieldFactory::create3D wants to un-field-align the result
+    static_cast<FakeMesh*>(mesh)->setCoordinates(test_coords);
+
+    mesh->getCoordinates()->setParallelTransform(
         bout::utils::make_unique<ParallelTransformIdentity>(*mesh));
-    mesh_staggered->setParallelTransform(
-        bout::utils::make_unique<ParallelTransformIdentity>(*mesh_staggered));
+
+    for (const auto& location
+        : std::list<CELL_LOC>{CELL_CENTRE, CELL_XLOW, CELL_YLOW, CELL_ZLOW}) {
+
+      static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(test_coords_staggered,
+                                                             location);
+
+      mesh_staggered->getCoordinates(location)->setParallelTransform(
+          bout::utils::make_unique<ParallelTransformIdentity>(*mesh_staggered));
+    }
   }
 
   WithQuietOutput quiet{output_info};
@@ -554,9 +564,14 @@ TYPED_TEST(FieldFactoryCreationTest, CreateOnMesh) {
   constexpr auto nz = int{1};
 
   FakeMesh localmesh{nx, ny, nz};
-  localmesh.setCoordinates(nullptr);
   localmesh.createDefaultRegions();
-  localmesh.setParallelTransform(
+  localmesh.setCoordinates(std::make_shared<Coordinates>(
+      &localmesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0}, Field2D{0.0},
+      Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0},
+      Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
+      Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, false));
+
+  localmesh.getCoordinates()->setParallelTransform(
       bout::utils::make_unique<ParallelTransformIdentity>(localmesh));
 
   auto output = this->create("x", nullptr, &localmesh);
@@ -569,6 +584,21 @@ TYPED_TEST(FieldFactoryCreationTest, CreateOnMesh) {
   EXPECT_EQ(output.getNx(), nx);
   EXPECT_EQ(output.getNy(), ny);
   EXPECT_EQ(output.getNz(), nz);
+}
+
+TYPED_TEST(FieldFactoryCreationTest, CreateOnMeshWithoutCoordinates) {
+  constexpr auto nx = int{1};
+  constexpr auto ny = int{1};
+  constexpr auto nz = int{1};
+
+  FakeMesh localmesh{nx, ny, nz};
+  localmesh.setCoordinates(nullptr);
+  localmesh.createDefaultRegions();
+
+  // Field2D version doesn't try to transform back
+  if (std::is_base_of<Field3D, TypeParam>::value) {
+    EXPECT_THROW(this->create("x", nullptr, &localmesh), BoutException);
+  }
 }
 
 // The following tests still use the FieldFactory, but don't need to

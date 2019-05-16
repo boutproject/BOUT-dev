@@ -116,6 +116,10 @@ void readGroup(const std::string& filename, NcGroup group, Options& result) {
 }
 } // namespace
 
+
+namespace bout {
+namespace experimental {
+
 Options OptionsNetCDF::read() {
   // Open file
   NcFile dataFile(filename, NcFile::read);
@@ -129,6 +133,9 @@ Options OptionsNetCDF::read() {
 
   return result;
 }
+
+} // experimental
+} // bout
 
 namespace {
 
@@ -316,7 +323,7 @@ void NcPutVarCountVisitor::operator()<Field3D>(const Field3D& value) {
 
 /// Visit a variant type, and put the data into an attributute
 struct NcPutAttVisitor {
-  NcPutAttVisitor(NcVar& var, std::string name) : var(var), name(name) {}
+  NcPutAttVisitor(NcVar& var, std::string name) : var(var), name(std::move(name)) {}
   template <typename T>
   void operator()(const T& UNUSED(value)) {
     // Default is to ignore if unhandled
@@ -505,6 +512,9 @@ void writeGroup(const Options& options, NcGroup group,
 
 } // namespace
 
+namespace bout {
+namespace experimental {
+
 /// Write options to file
 void OptionsNetCDF::write(const Options& options) {
   // Check the file mode to use
@@ -521,5 +531,8 @@ void OptionsNetCDF::write(const Options& options) {
 
   writeGroup(options, dataFile, time_index);
 }
+
+} // experimental
+} // bout
 
 #endif // NCDF4

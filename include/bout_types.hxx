@@ -28,17 +28,19 @@
 #include <string>
 
 /// Size of real numbers
-typedef double BoutReal;
+using BoutReal = double;
 
 /// Quiet NaN
-const BoutReal BoutNaN = std::numeric_limits<BoutReal>::quiet_NaN();
+constexpr BoutReal BoutNaN = std::numeric_limits<BoutReal>::quiet_NaN();
 
 #define ENUMSTR(val) {val, #val}
+#define STRENUM(val) {#val, val}
 
 /// 4 possible variable locations. Default is for passing to functions
 enum CELL_LOC {CELL_DEFAULT=0, CELL_CENTRE=1, CELL_CENTER=1, CELL_XLOW=2, CELL_YLOW=3, CELL_ZLOW=4, CELL_VSHIFT=5};
 
 std::string toString(CELL_LOC location);
+CELL_LOC CELL_LOCFromString(std::string location_string);
 DEPRECATED(inline std::string CELL_LOC_STRING(CELL_LOC location)) {
   return toString(location);
 }
@@ -78,6 +80,7 @@ DEPRECATED(inline std::string DIRECTION_STRING(DIRECTION direction)) {
 enum class YDirectionType { Standard, Aligned };
 
 std::string toString(YDirectionType d);
+YDirectionType YDirectionTypeFromString(std::string y_direction_string);
 
 /// Identify kind of a field's z-direction
 /// - Standard is the default
@@ -87,6 +90,7 @@ std::string toString(YDirectionType d);
 enum class ZDirectionType { Standard, Average };
 
 std::string toString(ZDirectionType d);
+ZDirectionType ZDirectionTypeFromString(std::string z_direction_string);
 
 /// Container for direction types
 struct DirectionTypes {

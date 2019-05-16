@@ -44,6 +44,8 @@ class Options;
 #include "output.hxx"
 #include "utils.hxx"
 #include "bout/sys/variant.hxx"
+#include "bout/sys/type_name.hxx"
+#include "bout/deprecated.hxx"
 #include "field2d.hxx"
 #include "field3d.hxx"
 
@@ -96,7 +98,7 @@ class Options;
  *     int other;
  *     options.get("otherkey", other, 2.0); // Sets other to 2 because "otherkey" not found
  *
- * Internally, all values are stored as strings, so conversion is performed silently:
+ * Conversion is performed silently:
  *
  *     options.set("value", "2.34", "here"); // Set a string
  *
@@ -231,6 +233,15 @@ public:
   ///                     do not need to be forced. The string will be used
   ///                     when writing the output as the name of the time
   ///                     dimension (unlimited first dimension in NetCDF files).
+  ///
+  ///  - source           [string] Describes where the value came from
+  ///                     e.g. a file name, or "default".
+  /// 
+  ///  - type             [string] The type the Option is converted to
+  ///                     when used.
+  /// 
+  ///  - doc              [string] Documentation, describing what the variable does
+  ///
   std::map<std::string, AttributeType> attributes;
   
   /// Get a sub-section or value
@@ -323,8 +334,12 @@ public:
   /// option["test"] = 2.0;
   /// int value = option["test"].as<int>();
   ///
+  /// An optional argument is an object which the result should be similar to.
+  /// The main use for this is in Field2D and Field3D specialisations,
+  /// where the Mesh and cell location are taken from this input.
+  /// 
   template <typename T>
-  T as(Mesh* UNUSED(mesh) = nullptr) const {
+  T as(const T& UNUSED(similar_to) = {}) const {
     if (!is_value) {
       throw BoutException("Option %s has no value", full_name.c_str());
     }
@@ -379,6 +394,10 @@ public:
   /// Get the value of this option. If not found,
   /// set to the default value
   template <typename T> T withDefault(T def) {
+
+    // Set the type
+    attributes["type"] = bout::utils::typeName<T>();
+    
     if (!is_value) {
       // Option not found
       assign(def, DEFAULT_SOURCE);
@@ -388,7 +407,7 @@ public:
                   << ")" << std::endl;
       return def;
     }
-    T val = as<T>();
+    T val = as<T>(def);
     // Check if this was previously set as a default option
     if (bout::utils::variantEqualTo(attributes.at("source"), DEFAULT_SOURCE)) {
       // Check that the default values are the same
@@ -406,6 +425,33 @@ public:
     return withDefault<std::string>(std::string(def));
   }
   
+  /// Overloaded version to copy from another option
+  Options& withDefault(const Options& def) {
+    // if def is a section, then it does not make sense to try to use it as a default for
+    // a value
+    ASSERT0(def.is_value);
+
+    if (!is_value) {
+      // Option not found
+      *this = def;
+
+      output_info << _("\tOption ") << full_name << " = " << def.full_name << " ("
+                  << DEFAULT_SOURCE << ")" << std::endl;
+    } else {
+      // Check if this was previously set as a default option
+      if (bout::utils::variantEqualTo(attributes.at("source"), DEFAULT_SOURCE)) {
+        // Check that the default values are the same
+        if (!similar(bout::utils::variantToString(value),
+                     bout::utils::variantToString(def.value))) {
+          throw BoutException("Inconsistent default values for '%s': '%s' then '%s'",
+              full_name.c_str(), bout::utils::variantToString(value).c_str(),
+              bout::utils::variantToString(def.value).c_str());
+        }
+      }
+    }
+    return *this;
+  }
+
   /// Get the value of this option. If not found,
   /// return the default value but do not set
   template <typename T> T withDefault(T def) const {
@@ -415,7 +461,7 @@ public:
                   << ")" << std::endl;
       return def;
     }
-    T val = as<T>();
+    T val = as<T>(def);
     // Check if this was previously set as a default option
     if (bout::utils::variantEqualTo(attributes.at("source"), DEFAULT_SOURCE)) {
       // Check that the default values are the same
@@ -535,7 +581,8 @@ public:
 
   /// Read-only access to internal options and sections
   /// to allow iteration over the tree
-  std::map<std::string, OptionValue> values() const;
+  using ValuesMap = std::map<std::string, OptionValue>;
+  DEPRECATED(ValuesMap values() const);
   std::map<std::string, const Options*> subsections() const;
 
   const std::map<std::string, Options>& getChildren() const {
@@ -546,6 +593,18 @@ public:
     return is_value;
   }
   bool isSection(const std::string& name = "") const;
+  
+  /// If the option value has been used anywhere
+  bool valueUsed() const { return value_used; }
+
+
+  /// Set a documentation string as an attribute "doc"
+  /// Returns a reference to this, to allow chaining
+  Options& doc(const std::string& docstring) {
+    attributes["doc"] = docstring;
+    return *this;
+  }
+  
  private:
   
   /// The source label given to default values
@@ -617,12 +676,12 @@ template<> void Options::assign<>(Tensor<BoutReal> val, const std::string source
 template <> inline bool Options::similar<BoutReal>(BoutReal a, BoutReal b) const { return fabs(a - b) < 1e-10; }
 
 /// Specialised as routines
-template <> std::string Options::as<std::string>(Mesh* mesh) const;
-template <> int Options::as<int>(Mesh* mesh) const;
-template <> BoutReal Options::as<BoutReal>(Mesh* mesh) const;
-template <> bool Options::as<bool>(Mesh* mesh) const;
-template <> Field2D Options::as<Field2D>(Mesh* mesh) const;
-template <> Field3D Options::as<Field3D>(Mesh* mesh) const;
+template <> std::string Options::as<std::string>(const std::string& similar_to) const;
+template <> int Options::as<int>(const int& similar_to) const;
+template <> BoutReal Options::as<BoutReal>(const BoutReal& similar_to) const;
+template <> bool Options::as<bool>(const bool& similar_to) const;
+template <> Field2D Options::as<Field2D>(const Field2D& similar_to) const;
+template <> Field3D Options::as<Field3D>(const Field3D& similar_to) const;
 
 /// Define for reading options which passes the variable name
 #define OPTION(options, var, def)  \

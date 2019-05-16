@@ -8,7 +8,7 @@ private:
   Field3D f, g; // Evolving variables
   
 protected:
-  int init(bool UNUSED(restarting)) {
+  int init(bool UNUSED(restarting)) override {
 
     g.setLocation(CELL_YLOW); // g staggered 
     
@@ -18,8 +18,8 @@ protected:
 
     return 0;
   }
-  
-  int rhs(BoutReal UNUSED(t)) {
+
+  int rhs(BoutReal UNUSED(t)) override {
     mesh->communicate(f,g); // Communicate guard cells
     
     // Central differencing

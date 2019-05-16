@@ -105,6 +105,22 @@ class BoutMesh : public Mesh {
   /// \param[in] jx   The local (on this processor) index in X
   bool periodicY(int jx) const;
 
+  /// Is there a branch cut at this processor's lower boundary?
+  ///
+  /// @param[in] jx             The local (on this processor) index in X
+  /// @returns pair<bool, BoutReal> - bool is true if there is a branch cut,
+  ///                                 BoutReal gives the total zShift for a 2pi
+  ///                                 poloidal circuit if there is a branch cut
+  std::pair<bool, BoutReal> hasBranchCutLower(int jx) const override;
+
+  /// Is there a branch cut at this processor's upper boundary?
+  ///
+  /// @param[in] jx             The local (on this processor) index in X
+  /// @returns pair<bool, BoutReal> - bool is true if there is a branch cut,
+  ///                                 BoutReal gives the total zShift for a 2pi
+  ///                                 poloidal circuit if there is a branch cut
+  std::pair<bool, BoutReal> hasBranchCutUpper(int jx) const override;
+
   int ySize(int jx) const; ///< The number of points in Y at fixed X index \p jx
 
   /////////////////////////////////////////////
@@ -159,6 +175,9 @@ class BoutMesh : public Mesh {
   int XGLOBAL(BoutReal xloc, BoutReal &xglo) const;
   int YGLOBAL(BoutReal yloc, BoutReal &yglo) const;
 
+  int XLOCAL(int xglo) const;
+  int YLOCAL(int yglo) const;
+
  private:
   std::string gridname;
   int nx, ny, nz; ///< Size of the grid in the input file
@@ -185,9 +204,7 @@ class BoutMesh : public Mesh {
 
   // Processor number, local <-> global translation
   int PROC_NUM(int xind, int yind); // (PE_XIND, PE_YIND) -> MYPE
-  int XLOCAL(int xglo) const;
   int YGLOBAL(int yloc, int yproc) const;
-  int YLOCAL(int yglo) const;
   int YLOCAL(int yglo, int yproc) const;
   int YPROC(int yind);
   int XPROC(int xind);

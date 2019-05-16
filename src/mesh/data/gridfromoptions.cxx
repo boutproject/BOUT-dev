@@ -71,6 +71,26 @@ bool GridFromOptions::get(Mesh* m, Field3D& var, const std::string& name, BoutRe
   return true;
 }
 
+bool GridFromOptions::get(Mesh* m, FieldPerp& var, const std::string& name, BoutReal def) {
+  // Cannot set attributes from options at the moment, so don't know what 'yindex' this
+  // FieldPerp should have: just set to 0 for now, and create FieldPerp on all processors
+  // (note: this is different to behaviour of GridFromFile which will only create the
+  // FieldPerp at a single global y-index).
+
+  if (!hasVar(name)) {
+    output_warn.write("Variable '%s' not in mesh options. Setting to %e\n", name.c_str(),
+                      def);
+    var = def;
+    var.setIndex(0);
+    return false;
+  }
+
+  var = FieldFactory::get()->createPerp(name, options, m);
+  var.setIndex(0);
+
+  return true;
+}
+
 bool GridFromOptions::get(Mesh* m, std::vector<int>& var, const std::string& name,
                           int len, int UNUSED(offset),
                           GridDataSource::Direction UNUSED(dir)) {
@@ -83,6 +103,7 @@ bool GridFromOptions::get(Mesh* m, std::vector<int>& var, const std::string& nam
   }
 
   // FIXME: actually implement this!
+  throw BoutException("not implemented");
   int ival;
   get(m, ival, name);
   var.resize(len, ival);

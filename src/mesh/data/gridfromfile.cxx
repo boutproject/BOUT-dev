@@ -34,6 +34,19 @@ GridFile::GridFile(std::unique_ptr<DataFormat> format, std::string gridfilename)
 
   file->setGlobalOrigin(); // Set default global origin
 
+  // Get number of y-boundary guard cells saved in the grid file
+  if (!file->read(&grid_yguards, "y_boundary_guards", 1, 1)) {
+    // not found in file, default to zero
+    grid_yguards = 0;
+  }
+
+  // Get number ny_inner from the grid file.
+  // Is already read in BoutMesh, but this way we don't have to the Mesh API to
+  // get it from there.
+  if (!file->read(&ny_inner, "ny_inner", 1, 1)) {
+    // not found in file, default to zero
+    ny_inner = 0;
+  }
 }
 
 GridFile::~GridFile() {
@@ -158,13 +171,26 @@ bool GridFile::get(Mesh *UNUSED(m), BoutReal &rval, const std::string &name) {
 }
 
 /*!
- * Reads a 2D field variable from a file
+ * Reads a 2D, 3D or FieldPerp field variable from a file
  * 
- * Succeeds if the variable in the file is 0-D or 2-D
+ * Successfully reads Field2D or FieldPerp if the variable in the file is 0-D or 2-D.
+ * Successfully reads Field3D if the variable in the file is 0-D, 2-D or 3-D.
  */
-bool GridFile::get(Mesh *m, Field2D &var,   const std::string &name, BoutReal def) {
+bool GridFile::get(Mesh *m, Field2D &var, const std::string &name, BoutReal def) {
+  return getField(m, var, name, def);
+}
+bool GridFile::get(Mesh *m, Field3D &var, const std::string &name, BoutReal def) {
+  return getField(m, var, name, def);
+}
+
+template<typename T>
+bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def) {
+  static_assert(std::is_base_of<Field2D, T>::value or std::is_base_of<Field3D, T>::value
+                or std::is_base_of<FieldPerp, T>::value,
+                "templated GridFile::get only works for Field2D, Field3D or FieldPerp");
+
   Timer timer("io");
-  TRACE("GridFile::get(Field2D)");
+  AUTO_TRACE();
 
   if (!file->is_valid()) {
     throw BoutException("Could not read '%s' from file: File cannot be read", name.c_str());
@@ -194,30 +220,57 @@ bool GridFile::get(Mesh *m, Field2D &var,   const std::string &name, BoutReal de
     // Check size
     break;
   }
+  case 3: {
+    // Check size if getting Field3D
+    if (std::is_base_of<Field2D, T>::value or std::is_base_of<FieldPerp, T>::value) {
+      output_warn.write("WARNING: Variable '%s' should be 2D, but has %zu dimensions. Ignored\n",
+                        name.c_str(), size.size());
+      var = def;
+      return false;
+    }
+    break;
+  }
   default: {
-    output_warn.write("WARNING: Variable '%s' should be 2D, but has %lu dimensions. Ignored\n",
-                      name.c_str(), static_cast<unsigned long>(size.size()));
+    output_warn.write("WARNING: Variable '%s' should be 2D or 3D, but has %zu dimensions. Ignored\n",
+                      name.c_str(), size.size());
     var = def;
     return false;
   }
   };
 
-  var.allocate(); // Make sure data allocated
+  ///Ghost region widths.
+  const int mxg = (m->LocalNx - (m->xend - m->xstart + 1)) / 2;
+  const int myg = (m->LocalNy - (m->yend - m->ystart + 1)) / 2;
+  ///Check that ghost region widths are in fact integers
+  ASSERT1((m->LocalNx - (m->xend - m->xstart + 1)) % 2 == 0);
+  ASSERT1((m->LocalNy - (m->yend - m->ystart + 1)) % 2 == 0);
 
   // Index offsets into source array
   int xs = m->OffsetX;
+  // Need to increase offset by 2*(# boundary guards) for each target position
+  // we pass
   int ys = m->OffsetY;
+
+  // Total number of y-boundary cells in grid file, used for check later.
+  // Value depends on if we are double-null or not.
+  int total_grid_yguards = 2*grid_yguards;
+  if (m->numberOfXPoints > 1) {
+    ASSERT1(m->numberOfXPoints == 2);
+    // Need to check if we are before or after the target in the middle of the
+    // y-domain, and increase ys for the extra boundary guard cells at that
+    // target if we are after it.
+    if (m->OffsetY >= ny_inner) {
+      // Note: neither ny_inner nor OffsetY include guard cells
+      ys += 2*grid_yguards;
+    }
+
+    // Add y-boundary guard cells at upper target
+    total_grid_yguards += 2*grid_yguards;
+  }
 
   // Index offsets into destination
   int xd = -1;
   int yd = -1;
-
-  ///Ghost region widths.
-  int mxg = (m->LocalNx - (m->xend - m->xstart + 1)) / 2;
-  int myg = (m->LocalNy - (m->yend - m->ystart + 1)) / 2;
-  ///Check that ghost region widths are in fact integers
-  ASSERT1((m->LocalNx - (m->xend - m->xstart + 1)) % 2 == 0);
-  ASSERT1((m->LocalNy - (m->yend - m->ystart + 1)) % 2 == 0);
 
   ///Global (x,y) dimensions of field
   const std::vector<int> field_dimensions = file->getSize(name);
@@ -227,149 +280,187 @@ bool GridFile::get(Mesh *m, Field2D &var,   const std::string &name, BoutReal de
   int ny_to_read = -1;
 
   ///Check if field dimensions are correct. x-direction
-  if (field_dimensions[0] == m->GlobalNx) { ///including ghostpoints
+  int grid_xguards = (field_dimensions[0] - (m->GlobalNx - 2*mxg)) / 2;
+  // Check there is no rounding in calculation of grid_xguards
+  ASSERT1( (field_dimensions[0] - (m->GlobalNx - 2*mxg)) % 2 == 0 );
+  if (grid_xguards >= 0) { ///including ghostpoints
     nx_to_read = m->LocalNx;
-    xd = 0;
-  } else if ( field_dimensions[0] == m->GlobalNx - 2*mxg ) {///including ghostpoints
+    xd = grid_xguards - mxg;
+    ASSERT1(xd >= 0);
+  } else if (grid_xguards == 0) { ///excluding ghostpoints
     nx_to_read = m->LocalNx - 2*mxg;
     xd = mxg;
   } else {
-    throw BoutException("Could not read '%s' from file: x-dimension = %i do neither match nx = %i"
-                "nor nx-2*mxg = %i ", name.c_str(), field_dimensions[0], m->GlobalNx, m->GlobalNx-2*mxg);
+    throw BoutException("Could not read '%s' from file: number of x-boundary guard cells "
+                "in the grid file grid_xguards=%i neither matches grid_xguards >= mxg=%i "
+                "nor grid_xguards = 0", name.c_str(), grid_xguards, mxg);
   }
 
-  ///Check if field dimensions are correct. y-direction
-  if (field_dimensions[1] == m->GlobalNy) { ///including ghostpoints
-    ny_to_read = m->LocalNy;
-    yd = 0;
-  } else if ( field_dimensions[1] == m->GlobalNy - 2*myg ) {///including ghostpoints
-    ny_to_read = m->LocalNy - 2*myg;
-    yd = myg;
-  } else {
-    throw BoutException("Could not read '%s' from file: y-dimension = %i do neither match ny = %i"
-                "nor ny-2*myg = %i ", name.c_str(), field_dimensions[1], m->GlobalNy, m->GlobalNy-2*myg);
+  if (not std::is_base_of<FieldPerp, T>::value) {
+    ///Check if field dimensions are correct. y-direction
+    if (grid_yguards > 0) { ///including ghostpoints
+      ASSERT1(field_dimensions[1] == m->GlobalNy - 2*myg + total_grid_yguards);
+      ny_to_read = m->LocalNy;
+      yd = grid_yguards - myg;
+      ASSERT1(yd >= 0);
+    } else if (grid_yguards == 0) { ///excluding ghostpoints
+      ASSERT1(field_dimensions[1] == m->GlobalNy - 2*myg);
+      ny_to_read = m->LocalNy - 2*myg;
+      yd = myg;
+    } else {
+      throw BoutException("Could not read '%s' from file: number of y-boundary guard cells "
+                  "in the grid file grid_yguards=%i neither matches grid_yguards >= myg=%i "
+                  "nor grid_yguards = 0", name.c_str(), grid_yguards, myg);
+    }
   }
 
-  ///Now read data from file
-  for(int x=xs;x < xs+nx_to_read; x++) {
+  // Now read data from file
+  readField(m, name, ys, yd, ny_to_read, xs, xd, nx_to_read, size, var);
+
+  if (var.isAllocated()) {
+    // FieldPerps might not be allocated if they are not read on this processor
+
+    ///If field does not include ghost points in x-direction ->
+    ///Upper and lower X boundaries copied from nearest point
+    if (field_dimensions[0] == m->GlobalNx - 2*mxg ) {
+      for (int x=0; x<m->xstart; x++) {
+        for (int y=0; y<m->LocalNy; y++) {
+          for (int z=0; z<var.getNz(); z++) {
+            var(x, y, z) = var(m->xstart, y, z);
+          }
+        }
+      }
+      for (int x=m->xend+1;x<m->LocalNx;x++) {
+        for (int y=0; y<m->LocalNy; y++) {
+          for (int z=0; z<var.getNz(); z++) {
+            var(x, y, z) = var(m->xend, y, z);
+          }
+        }
+      }
+    }
+
+    if (not std::is_base_of<FieldPerp, T>::value) {
+      ///If field does not include ghost points in y-direction ->
+      ///Upper and lower Y boundaries copied from nearest point
+      if (grid_yguards == 0) {
+        for(int x=0; x<m->LocalNx; x++) {
+          for(int y=0; y<m->ystart; y++) {
+            for (int z=0; z<var.getNz(); z++) {
+              var(x, y, z) = var(x, m->ystart, z);
+            }
+          }
+          for(int y=m->yend+1; y<m->LocalNy; y++) {
+            for (int z=0; z<var.getNz(); z++) {
+              var(x, y, z) = var(x, m->yend, z);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return true;
+}
+
+void GridFile::readField(Mesh* UNUSED(m), const std::string& name, int ys, int yd,
+    int ny_to_read, int xs, int xd, int nx_to_read, const std::vector<int>& UNUSED(size),
+    Field2D& var) {
+  file->readFieldAttributes(name, var);
+
+  var.allocate();
+
+  for(int x = xs; x < xs+nx_to_read; x++) {
     file->setGlobalOrigin(x,ys,0);
     if (!file->read(&var(x-xs+xd, yd), name, 1, ny_to_read) ) {
       throw BoutException("Could not fetch data for '%s'", name.c_str());
     }
   }
-
-  ///If field does not include ghost points in y-direction ->
-  ///Upper and lower Y boundaries copied from nearest point
-  if (field_dimensions[1] == m->GlobalNy - 2*myg ) {
-    for(int x=0;x<m->LocalNx;x++) {
-      for(int y=0;y<m->ystart;y++)
-        var(x, y) = var(x, m->ystart);
-      for(int y=m->yend+1;y<m->LocalNy;y++)
-        var(x, y) = var(x, m->yend);
-    }
-  }
   file->setGlobalOrigin();
-
-  return true;
 }
 
-/*!
- * Reads a 3D variable from a file
- * 
- * 
- */
-bool GridFile::get(Mesh *m, Field3D &var,   const std::string &name, BoutReal def) {
-  Timer timer("io");
-  TRACE("GridFile::get(Field3D)");
+void GridFile::readField(Mesh* m, const std::string& name, int ys, int yd,
+    int ny_to_read, int xs, int xd, int nx_to_read, const std::vector<int>& size,
+    Field3D& var) {
+  file->readFieldAttributes(name, var);
 
-  // Check that the file can be read
-  
-  if (!file->is_valid()) {
-    throw BoutException("Could not read '%s' from file: File cannot be read", name.c_str());
-  }
+  var.allocate();
 
-  // Check the size of the variable in the file
-  
-  std::vector<int> size = file->getSize(name);
-  switch(size.size()) {
-  case 0: {
-    // Variable not found
-    output_warn.write("\tWARNING: Could not read '%s' from grid. Setting to %le\n", name.c_str(), def);
-    var = def;
-    return false;
-  }
-  case 1: {
-    // 0 or 1 dimension
-    if (size[0] != 1) {
-      throw BoutException("Expecting a 3D variable, but '%s' is 1D with %d elements\n", name.c_str(), size[0]);
+  // Check whether "nz" is defined
+  if (hasVar("nz")) {
+    // Check the array is the right size
+    if (size[2] != m->LocalNz) {
+      throw BoutException("3D variable '%s' has incorrect size %d (expecting %d)",
+          name.c_str(), size[2], m->LocalNz);
     }
-    BoutReal rval;
-    if (!file->read(&rval, name)) {
-      throw BoutException("Couldn't read 0D variable '%s'\n", name.c_str());
-    }
-    var = rval;
-    return true;
-  }
-  case 2: {
-    // Read as 2D
 
-    Field2D var2d(m);
-    if (!get(m, var2d, name, def)) {
-      throw BoutException("Couldn't read 2D variable '%s'\n", name.c_str());
+    if (!readgrid_3dvar_real(name,
+          ys,// Start reading at global y-index
+          yd,// Insert data starting from y=yd
+          ny_to_read,// Length of data in Y
+          xs,// Start reading at global x-index
+          xd,// Insert data starting from x=xd
+          nx_to_read, // Length of data in X
+          var) ) {
+      throw BoutException("\tWARNING: Could not read '%s' from grid. Setting to zero\n",
+          name.c_str());
     }
-    var = var2d;
-    return true;
+  } else {
+    // No Z size specified in file. Assume FFT format
+    if (!readgrid_3dvar_fft(m, name,
+          ys,// Start reading at global y-index
+          yd,// Insert data starting from y=yd
+          ny_to_read,// Length of data in Y
+          xs,// Start reading at global x-index
+          xd,// Insert data starting from x=xd
+          nx_to_read, // Length of data in X
+          var) ) {
+      throw BoutException("\tWARNING: Could not read '%s' from grid. Setting to zero\n",
+          name.c_str());
+    }
   }
-  case 3: {
+}
+
+void GridFile::readField(Mesh* m, const std::string& name, int UNUSED(ys), int UNUSED(yd),
+    int UNUSED(ny_to_read), int xs, int xd, int nx_to_read, const std::vector<int>& size,
+    FieldPerp& var) {
+
+  file->readFieldAttributes(name, var);
+
+  int yindex = var.getIndex();
+
+  if (yindex >= 0 and yindex <= m->LocalNy) {
+    // Only read if yindex is on this processor
+
+    var.allocate();
+
     // Check whether "nz" is defined
     if (hasVar("nz")) {
-      // Read directly into arrays
-      
       // Check the array is the right size
-      
       if (size[2] != m->LocalNz) {
-        throw BoutException("3D variable '%s' has incorrect size %d (expecting %d)", name.c_str(), size[2], m->LocalNz);
+        throw BoutException("FieldPerp variable '%s' has incorrect size %d (expecting %d)",
+            name.c_str(), size[2], m->LocalNz);
       }
-      
-      if (! readgrid_3dvar_real(m, name,
-			       m->OffsetY,// Start reading at global index
-			       m->ystart,// Insert data starting from y=ystart
-			       m->yend-m->ystart+1, // Length of data in Y
-			       0, m->LocalNx, // All x indices (local indices)
-			       var) ) {
-	      throw BoutException("\tWARNING: Could not read '%s' from grid. Setting to zero\n", name.c_str());
+
+      if (!readgrid_perpvar_real(name,
+            xs,// Start reading at global x-index
+            xd,// Insert data starting from x=xd
+            nx_to_read, // Length of data in X
+            var) ) {
+        throw BoutException("\tWARNING: Could not read '%s' from grid. Setting to zero\n",
+            name.c_str());
       }
     } else {
       // No Z size specified in file. Assume FFT format
-      if (! readgrid_3dvar_fft(m, name,
-			      m->OffsetY,// Start reading at global index
-			      m->ystart,// Insert data starting from y=ystart
-			      m->yend-m->ystart+1, // Length of data in Y
-			      0, m->LocalNx, // All x indices (local indices)
-			      var) ) {
-	      throw BoutException("\tWARNING: Could not read '%s' from grid. Setting to zero\n", name.c_str());
+      if (!readgrid_perpvar_fft(m, name,
+            xs,// Start reading at global x-index
+            xd,// Insert data starting from x=xd
+            nx_to_read, // Length of data in X
+            var) ) {
+        throw BoutException("\tWARNING: Could not read '%s' from grid. Setting to zero\n",
+            name.c_str());
       }
     }
-    
-    break;
   }
-  default: {
-    throw BoutException("Error: Variable '%s' should be 3D, but has %lu dimensions\n",
-			name.c_str(), static_cast<unsigned long>(size.size()));
-  }
-  };
-
-  // Upper and lower Y boundaries copied from nearest point
-  for(int x=0;x<m->LocalNx;x++) {
-    for(int y=0;y<m->ystart;y++)
-      for(int z=0;z<m->LocalNz;z++)
-	var(x, y, z) = var(x, m->ystart, z);
-    for(int y=m->yend+1;y<m->LocalNy;y++)
-      for(int z=0;z<m->LocalNz;z++)
-	var(x, y, z) = var(x, m->yend, z);
-  }
-  
-  return true;
 }
 
 bool GridFile::get(Mesh *UNUSED(m), std::vector<int> &var, const std::string &name,
@@ -408,6 +499,19 @@ bool GridFile::get(Mesh *UNUSED(m), std::vector<BoutReal> &var, const std::strin
   return true;
 }
 
+bool GridFile::hasXBoundaryGuards(Mesh* m) {
+  // Global (x,y) dimensions of some field
+  // a grid file should always contain "dx"
+  const auto field_dimensions = file->getSize("dx");
+
+  if (field_dimensions.empty()) {
+    // handle case where "dx" is not present - non-standard grid file
+    // - e.g. for tests
+    return false;
+  }
+
+  return field_dimensions[0] > m->GlobalNx - 2*m->xstart;
+}
 
 /////////////////////////////////////////////////////////////
 // Private routines
@@ -425,9 +529,10 @@ bool GridFile::get(Mesh *UNUSED(m), std::vector<BoutReal> &var, const std::strin
  */
 bool GridFile::readgrid_3dvar_fft(Mesh *m, const std::string &name, 
 				 int yread, int ydest, int ysize, 
-				 int xge, int xlt, Field3D &var) {
+				 int xread, int xdest, int xsize, Field3D &var) {
   /// Check the arguments make sense
-  if ((yread < 0) || (ydest < 0) || (ysize < 0) || (xge < 0) || (xlt < 0)) {
+  if ((yread < 0) || (ydest < 0) || (ysize < 0) || (xread < 0) || (xdest < 0)
+      || (xsize < 0)) {
     return false;
   }
   
@@ -473,17 +578,15 @@ bool GridFile::readgrid_3dvar_fft(Mesh *m, const std::string &name,
   Array<dcomplex> fdata(ncz / 2 + 1);
   Array<BoutReal> zdata(size[2]);
 
-  for(int jx=xge;jx<xlt;jx++) {
-    // Set the global X index
+  for (int jx = xread; jx < xread+xsize; jx++) {
+    // jx is global x-index to start from
 
-    for(int jy=0; jy < ysize; jy++) {
-      /// Read data
+    for (int jy = yread; jy < yread+ysize; jy++) {
+      // jy is global y-index to start from
 
-      int yind = yread + jy; // Global location to read from
-
-      file->setGlobalOrigin(jx + m->OffsetX, yind);
+      file->setGlobalOrigin(jx, jy);
       if (!file->read(std::begin(zdata), name, 1, 1, size[2])) {
-        return true;
+        return false;
       }
 
       /// Load into dcomplex array
@@ -500,7 +603,7 @@ bool GridFile::readgrid_3dvar_fft(Mesh *m, const std::string &name,
           fdata[i] = 0.0;
         }
       }
-      irfft(std::begin(fdata), ncz, &var(jx, ydest + jy, 0));
+      irfft(std::begin(fdata), ncz, &var(jx-xread+xdest, jy-yread+ydest, 0));
     }
   }
 
@@ -513,11 +616,12 @@ bool GridFile::readgrid_3dvar_fft(Mesh *m, const std::string &name,
  * Reads a 3D variable directly from the file, without 
  * any processing
  */ 
-bool GridFile::readgrid_3dvar_real(Mesh *m, const std::string &name, 
+bool GridFile::readgrid_3dvar_real(const std::string &name,
 				   int yread, int ydest, int ysize, 
-				   int xge, int xlt, Field3D &var) {
+				   int xread, int xdest, int xsize, Field3D &var) {
   /// Check the arguments make sense
-  if ((yread < 0) || (ydest < 0) || (ysize < 0) || (xge < 0) || (xlt < 0)) {
+  if ((yread < 0) || (ydest < 0) || (ysize < 0) || (xread < 0) || (xdest < 0)
+      || (xsize < 0)) {
     return false;
   }
   
@@ -529,22 +633,141 @@ bool GridFile::readgrid_3dvar_real(Mesh *m, const std::string &name,
     return false;
   }
   
-  for(int jx=xge;jx<xlt;jx++) {
-    // Set the global X index
-    
-    for(int jy=0; jy < ysize; jy++) {
-      /// Read data
+  for (int jx = xread; jx < xread+xsize; jx++) {
+    // jx is global x-index to start from
+
+    for (int jy = yread; jy < yread+ysize; jy++) {
+      // jy is global y-index to start from
       
-      int yind = yread + jy; // Global location to read from
-      
-      file->setGlobalOrigin(jx + m->OffsetX, yind);
-      if (!file->read(&var(jx,ydest+jy,0), name, 1, 1, size[2])) {
+      file->setGlobalOrigin(jx, jy);
+      if (!file->read(&var(jx-xread+xdest, jy-yread+ydest, 0), name, 1, 1, size[2])) {
         return false;
       }
     }
   }
   file->setGlobalOrigin();
   
+  return true;
+}
+
+/*
+  Data stored as toroidal FFTs in BoutReal space at each X point.
+  In toroidal direction, array must have an odd number of points.
+  Format is:
+
+  DC, r1,i1, r2,i2, ... , rn,in
+
+  with the BoutReal and imaginary parts of each (positive) frequency
+  up to the nyquist frequency.
+ */
+bool GridFile::readgrid_perpvar_fft(Mesh *m, const std::string &name,
+    int xread, int xdest, int xsize, FieldPerp &var) {
+  /// Check the arguments make sense
+  if ((xread < 0) || (xdest < 0) || (xsize < 0)) {
+    return false;
+  }
+
+  /// Check the size of the data
+  std::vector<int> size = file->getSize(name);
+
+  if (size.size() != 2) {
+    output_warn.write("\tWARNING: Number of dimensions of %s incorrect\n", name.c_str());
+    return false;
+  }
+
+  int maxmode = (size[1] - 1)/2; ///< Maximum mode-number n
+
+  int ncz = m->LocalNz;
+
+  /// we should be able to replace the following with
+  /// var.getCoordinates()->zlength();
+  /// but don't do it yet as we don't assert that m == var.getMesh()
+  /// Expect the assertion to be true, in which case we probably don't
+  /// need to pass m as can just use var.getMesh()
+  BoutReal zlength = m->getCoordinates(var.getLocation())->zlength();
+
+  int zperiod = ROUND(TWOPI / zlength); /// Number of periods in 2pi
+
+  // Print out which modes are going to be read in
+  if (zperiod > maxmode) {
+    // Domain is too small: Only DC
+    output_warn.write("zperiod (%d) > maxmode (%d) => Only reading n = 0 component\n", zperiod, maxmode);
+  } else {
+    // Get maximum mode in the input which is a multiple of zperiod
+    int mm = (maxmode / zperiod) * zperiod;
+    if ( (ncz/2)*zperiod < mm )
+      mm = (ncz/2)*zperiod; // Limited by Z resolution
+
+    if (mm == zperiod) {
+      output_info.write(" => Reading n = 0, %d\n", zperiod);
+    } else {
+      output_info.write(" => Reading n = 0, %d ... %d\n", zperiod, mm);
+    }
+  }
+
+  /// Data for FFT. Only positive frequencies
+  Array<dcomplex> fdata(ncz / 2 + 1);
+  Array<BoutReal> zdata(size[1]);
+
+  for (int jx = xread; jx < xread+xsize; jx++) {
+    // jx is global x-index to start from
+
+    file->setGlobalOrigin(jx, 0);
+    if (!file->read_perp(std::begin(zdata), name, 1, size[1])) {
+      return false;
+    }
+
+    /// Load into dcomplex array
+
+    fdata[0] = zdata[0]; // DC component
+
+    for(int i=1;i<=ncz/2;i++) {
+      int modenr = i*zperiod; // Z mode number
+
+      if (modenr <= maxmode) {
+        // Have data for this mode
+        fdata[i] = dcomplex(zdata[modenr*2 - 1], zdata[modenr*2]);
+      } else {
+        fdata[i] = 0.0;
+      }
+    }
+    irfft(std::begin(fdata), ncz, &var(jx-xread+xdest, 0));
+  }
+
+  file->setGlobalOrigin();
+
+  return true;
+}
+
+/*!
+ * Reads a FieldPerp variable directly from the file, without
+ * any processing
+ */
+bool GridFile::readgrid_perpvar_real(const std::string &name,
+    int xread, int xdest, int xsize, FieldPerp &var) {
+  /// Check the arguments make sense
+  if ((xread < 0) || (xdest < 0) || (xsize < 0)) {
+    return false;
+  }
+
+  /// Check the size of the data
+  std::vector<int> size = file->getSize(name);
+
+  if (size.size() != 2) {
+    output_warn.write("\tWARNING: Number of dimensions of %s incorrect\n", name.c_str());
+    return false;
+  }
+
+  for (int jx = xread; jx < xread+xsize; jx++) {
+    // jx is global x-index to start from
+
+    file->setGlobalOrigin(jx, 0);
+    if (!file->read_perp(&var(jx-xread+xdest, 0), name, 1, size[1])) {
+      return false;
+    }
+  }
+  file->setGlobalOrigin();
+
   return true;
 }
 

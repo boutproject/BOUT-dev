@@ -158,8 +158,6 @@ int BoutInitialise(int& argc, char**& argv) {
     bout::globals::mesh = Mesh::create();
     // Load from sources. Required for Field initialisation
     bout::globals::mesh->load();
-    // Set the parallel transform from options
-    bout::globals::mesh->setParallelTransform();
 
     bout::globals::dump =
         setupDumpFile(Options::root(), *bout::globals::mesh, args.data_dir);
@@ -208,10 +206,11 @@ void setupGetText() {
     std::setlocale(LC_NUMERIC, "C");
 
     bindtextdomain(GETTEXT_PACKAGE, BUILDFLAG(BOUT_LOCALE_PATH));
-
-    fprintf(stderr, "LOCALE_PATH = '%s'\n", BUILDFLAG(BOUT_LOCALE_PATH));
   } catch (const std::runtime_error& e) {
-    fprintf(stderr, "WARNING: Could not set locale. Try a different LANG setting\n");
+    fprintf(stderr, "WARNING: Could not set locale. Check the LANG environment variable "
+        "(get available values by running 'locale -a'). If LANG is correct, there may be "
+        "a problem with the BOUT_LOCALE_PATH=%s that BOUT++ was compiled with.\n",
+        BUILDFLAG(BOUT_LOCALE_PATH));
   }
 #endif // BOUT_HAS_GETTEXT
 }
@@ -517,7 +516,9 @@ void setRunFinishInfo(Options& options) {
 
 Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir) {
   // Check if restarting
-  const bool append = options["append"].withDefault(false);
+  const bool append = options["append"]
+                        .doc("Add output data to existing (dump) files?")
+                        .withDefault(false);
 
   // Get file extensions
   const auto dump_ext = options["dump_format"].withDefault(std::string{"nc"});
@@ -675,17 +676,21 @@ int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
     /// First time the monitor has been called
 
     /// Get some options
-    Options* options = Options::getRoot();
-    OPTION(options, wall_limit, -1.0); // Wall time limit. By default, no limit
-    wall_limit *= 60.0 * 60.0;         // Convert from hours to seconds
+    auto& options = Options::root();
+    wall_limit = options["wall_limit"]
+                     .doc(_("Wall time limit in hours. By default (< 0), no limit"))
+                     .withDefault(-1.0);
+    wall_limit *= 60.0 * 60.0; // Convert from hours to seconds
 
-    OPTION(options, stopCheck, false);
+    stopCheck = options["stopCheck"]
+                    .doc(_("Check if a file exists, and exit if it does."))
+                    .withDefault(false);
     if (stopCheck) {
-      // Get name of file whose existence triggers a stop
-      OPTION(options, stopCheckName, "BOUT.stop");
+      stopCheckName = options["stopCheckName"]
+                          .doc(_("Name of file whose existence triggers a stop"))
+                          .withDefault("BOUT.stop");
       // Now add data directory to start of name to ensure we look in a run specific location
-      std::string data_dir;
-      Options::getRoot()->get("datadir", data_dir, string(DEFAULT_DIR));
+      std::string data_dir = Options::root()["datadir"].withDefault(DEFAULT_DIR);
       stopCheckName = data_dir + "/" + stopCheckName;
     }
 

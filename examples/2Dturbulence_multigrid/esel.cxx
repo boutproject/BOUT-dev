@@ -19,14 +19,13 @@ private:
   Field3D vort_error;
 
 protected:
-  int init(bool restart) {
+  int init(bool UNUSED(restart)) {
 
-    auto options = Options::root()["esel"];
+    auto& options = Options::root()["esel"];
 
     zeta = options["zeta"].withDefault(2.15e-3);
     D = options["D"].withDefault(1.97e-3);
     mu = options["mu"].withDefault(3.88e-2);
-    int bracket = options["bracket"].withDefault(2);
     test_laplacian = options["test_laplacian"].withDefault(false);
 
     // Set sources and sinks from input profile
@@ -41,7 +40,7 @@ protected:
     // Method to use: BRACKET_ARAKAWA, BRACKET_STD or BRACKET_SIMPLE
     // Choose method to use for Poisson bracket advection terms
 
-    switch (bracket) {
+    switch (options["bracket"].withDefault(2)) {
     case 0: {
       bm = BRACKET_STD;
       output << "\tBrackets: default differencing\n";
@@ -88,8 +87,7 @@ protected:
 
     coord->geometry();
 
-    SOLVE_FOR(N);
-    SOLVE_FOR(vort);
+    SOLVE_FOR(N, vort);
     SAVE_REPEAT(phi);
     if (test_laplacian) {
       SAVE_REPEAT(vort_error);
@@ -102,7 +100,7 @@ protected:
 
   Field3D C(const Field3D& f) { return zeta * DDZ(f); }
 
-  int rhs(BoutReal time) {
+  int rhs(BoutReal UNUSED(time)) {
     mesh->communicate(N, vort);
 
     phiSolver->setCoefC2(N);

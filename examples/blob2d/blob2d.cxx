@@ -50,31 +50,34 @@ protected:
 
     /******************Reading options *****************/
 
-    auto globalOptions = Options::root();
-    auto options = globalOptions["model"];
+    auto& globalOptions = Options::root();
+    auto& options = globalOptions["model"];
 
     // Load system parameters
-    Te0 = options["Te0"].withDefault(30); // Temp in eV
+    Te0 = options["Te0"].doc("Temperature in eV").withDefault(30.0);
+    
     e = options["e"].withDefault(1.602e-19);
     m_i = options["m_i"].withDefault(2 * 1.667e-27);
     m_e = options["m_e"].withDefault(9.11e-31);
 
-    n0 = options["n0"].withDefault(1e19);      // Background density in cubic m
-    D_vort = options["D_vort"].withDefault(0); // Viscous diffusion coefficient
-    D_n = options["D_n"].withDefault(0);       // Density diffusion coefficient
+    n0 = options["n0"].doc("Background density in cubic m").withDefault(1e19);
+    D_vort = options["D_vort"].doc("Viscous diffusion coefficient").withDefault(0.0);
+    D_n = options["D_n"].doc("Density diffusion coefficient").withDefault(0.0);
 
-    R_c = options["R_c"].withDefault(1.5);    // Radius of curvature
-    L_par = options["L_par"].withDefault(10); // Parallel connection length
+    R_c = options["R_c"].doc("Radius of curvature").withDefault(1.5);
+    L_par = options["L_par"].doc("Parallel connection length").withDefault(10.0);
 
-    B0 = options["B0"].withDefault(0.35); // Value of magnetic field strength
+    B0 = options["B0"].doc("Value of magnetic field strength").withDefault(0.35);
 
     // System option switches
 
-    compressible = options["compressible"].withDefault(
-        false); // Compressible ExB term in density equation
-    boussinesq = options["boussinesq"].withDefault(
-        true); // Use Boussinesq approximation in vorticity
-    sheath = options["sheath"].withDefault(true); // Sheath closure
+    compressible = options["compressible"]
+                       .doc("Compressible ExB term in density equation")
+                       .withDefault(false);
+    boussinesq = options["boussinesq"]
+                     .doc("Use Boussinesq approximation in vorticity")
+                     .withDefault(true);
+    sheath = options["sheath"].doc("Sheath closure").withDefault(true);
 
     /***************Calculate the Parameters **********/
 

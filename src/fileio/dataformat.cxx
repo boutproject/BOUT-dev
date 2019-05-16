@@ -29,5 +29,58 @@ bool DataFormat::openw(const std::string &name, int mype, bool append) {
 
 bool DataFormat::setLocalOrigin(int x, int y, int z, int UNUSED(offset_x),
                                 int UNUSED(offset_y), int UNUSED(offset_z)) {
+  // This function should not be called from the DataFormat in GridFromFile, which is
+  // created before the Mesh - then DataFormat::mesh would be nullptr.
+  ASSERT1(mesh != nullptr);
   return setGlobalOrigin(x + mesh->OffsetX, y + mesh->OffsetY, z + mesh->OffsetZ);
+}
+
+void DataFormat::writeFieldAttributes(const std::string& name, const Field& f) {
+  setAttribute(name, "cell_location", toString(f.getLocation()));
+  setAttribute(name, "direction_y", toString(f.getDirectionY()));
+  setAttribute(name, "direction_z", toString(f.getDirectionZ()));
+}
+
+void DataFormat::writeFieldAttributes(const std::string& name, const FieldPerp& f) {
+  writeFieldAttributes(name, static_cast<const Field&>(f));
+
+  auto& fieldmesh = *f.getMesh();
+  int yindex = f.getIndex();
+  if (yindex >= 0 and yindex < fieldmesh.LocalNy) {
+    // write global y-index as attribute
+    setAttribute(name, "yindex_global", fieldmesh.YGLOBAL(f.getIndex()));
+  } else {
+    // y-index is not valid, set global y-index to -1 to indicate 'not-valid'
+    setAttribute(name, "yindex_global", -fieldmesh.ystart-1);
+  }
+}
+
+void DataFormat::readFieldAttributes(const std::string& name, Field& f) {
+  std::string location_string;
+  if (getAttribute(name, "cell_location", location_string)) {
+    f.setLocation(CELL_LOCFromString(location_string));
+  }
+
+  std::string direction_y_string;
+  if (getAttribute(name, "direction_y", direction_y_string)) {
+    f.setDirectionY(YDirectionTypeFromString(direction_y_string));
+  }
+
+  std::string direction_z_string;
+  if (getAttribute(name, "direction_z", direction_z_string)) {
+    f.setDirectionZ(ZDirectionTypeFromString(direction_z_string));
+  }
+}
+
+void DataFormat::readFieldAttributes(const std::string& name, FieldPerp& f) {
+  readFieldAttributes(name, static_cast<Field&>(f));
+
+  int yindex_global = 0;
+  // Note: don't use DataFormat::mesh variable, because it may be null if the DataFormat
+  // is part of a GridFromFile, which is created before the Mesh.
+  if (getAttribute(name, "yindex_global", yindex_global)) {
+    f.setIndex(f.getMesh()->YLOCAL(yindex_global));
+  } else {
+    f.setIndex(f.getMesh()->YLOCAL(0));
+  }
 }

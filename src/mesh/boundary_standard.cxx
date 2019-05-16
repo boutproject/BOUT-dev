@@ -127,7 +127,7 @@ void BoundaryDirichlet::apply(Field2D &f,BoutReal t) {
   // N.B. Only first guard cells (closest to the grid) should ever be used
   
   Mesh* mesh = bndry->localmesh;
-  ASSERT1(mesh = f.getMesh());
+  ASSERT1(mesh == f.getMesh());
   bndry->first();
 
   // Decide which generator to use
@@ -316,7 +316,7 @@ void BoundaryDirichlet::apply(Field3D &f,BoutReal t) {
   // N.B. Only first guard cells (closest to the grid) should ever be used
 
   Mesh* mesh = bndry->localmesh;
-  ASSERT1(mesh = f.getMesh());
+  ASSERT1(mesh == f.getMesh());
   bndry->first();
 
   // Decide which generator to use
@@ -555,7 +555,7 @@ void BoundaryDirichlet::apply_ddt(Field2D &f) {
 
 void BoundaryDirichlet::apply_ddt(Field3D &f) {
   Mesh* mesh = bndry->localmesh;
-  ASSERT1(mesh = f.getMesh());
+  ASSERT1(mesh == f.getMesh());
   Field3D *dt = f.timeDeriv();
   for(bndry->first(); !bndry->isDone(); bndry->next())
     for(int z=0;z<mesh->LocalNz;z++)
@@ -585,7 +585,7 @@ void BoundaryDirichlet_O3::apply(Field2D &f,BoutReal t) {
   // N.B. Only first guard cells (closest to the grid) should ever be used
   
   Mesh* mesh = bndry->localmesh;
-  ASSERT1(mesh = f.getMesh());
+  ASSERT1(mesh == f.getMesh());
   bndry->first();
 
   // Decide which generator to use
@@ -772,7 +772,7 @@ void BoundaryDirichlet_O3::apply(Field3D &f,BoutReal t) {
   // N.B. Only first guard cells (closest to the grid) should ever be used
 
   Mesh* mesh = bndry->localmesh;
-  ASSERT1(mesh = f.getMesh());
+  ASSERT1(mesh == f.getMesh());
   bndry->first();
 
   // Decide which generator to use
@@ -973,7 +973,7 @@ void BoundaryDirichlet_O3::apply_ddt(Field2D &f) {
 
 void BoundaryDirichlet_O3::apply_ddt(Field3D &f) {
   Mesh* mesh = bndry->localmesh;
-  ASSERT1(mesh = f.getMesh());
+  ASSERT1(mesh == f.getMesh());
   Field3D *dt = f.timeDeriv();
 
   bndry->first() ; 
@@ -1006,7 +1006,7 @@ void BoundaryDirichlet_O4::apply(Field2D &f,BoutReal t) {
   // N.B. Only first guard cells (closest to the grid) should ever be used
   
   Mesh* mesh = bndry->localmesh;
-  ASSERT1(mesh = f.getMesh());
+  ASSERT1(mesh == f.getMesh());
   bndry->first();
 
   // Decide which generator to use
@@ -1205,7 +1205,7 @@ void BoundaryDirichlet_O4::apply(Field3D &f,BoutReal t) {
   // N.B. Only first guard cells (closest to the grid) should ever be used
 
   Mesh* mesh = bndry->localmesh;
-  ASSERT1(mesh = f.getMesh());
+  ASSERT1(mesh == f.getMesh());
   bndry->first();
 
   // Decide which generator to use
@@ -1411,7 +1411,7 @@ void BoundaryDirichlet_O4::apply_ddt(Field2D &f) {
 
 void BoundaryDirichlet_O4::apply_ddt(Field3D &f) {
   Mesh* mesh = bndry->localmesh;
-  ASSERT1(mesh = f.getMesh());
+  ASSERT1(mesh == f.getMesh());
   Field3D *dt = f.timeDeriv();
   for(bndry->first(); !bndry->isDone(); bndry->next())
     for(int z=0;z<mesh->LocalNz;z++)
@@ -1441,7 +1441,7 @@ void BoundaryDirichlet_4thOrder::apply(Field2D &f) {
 
 void BoundaryDirichlet_4thOrder::apply(Field3D &f) {
   Mesh* mesh = bndry->localmesh;
-  ASSERT1(mesh = f.getMesh());
+  ASSERT1(mesh == f.getMesh());
   // Set (at 4th order) the value at the mid-point between the guard cell and the grid cell to be val
   for(bndry->first(); !bndry->isDone(); bndry->next1d())
     for(int z=0;z<mesh->LocalNz;z++) {
@@ -1458,7 +1458,7 @@ void BoundaryDirichlet_4thOrder::apply_ddt(Field2D &f) {
 
 void BoundaryDirichlet_4thOrder::apply_ddt(Field3D &f) {
   Mesh* mesh = bndry->localmesh;
-  ASSERT1(mesh = f.getMesh());
+  ASSERT1(mesh == f.getMesh());
   Field3D *dt = f.timeDeriv();
   for(bndry->first(); !bndry->isDone(); bndry->next())
     for(int z=0;z<mesh->LocalNz;z++)
@@ -1480,7 +1480,7 @@ BoundaryOp* BoundaryNeumann_NonOrthogonal::clone(BoundaryRegion *region, const s
 
 void BoundaryNeumann_NonOrthogonal::apply(Field2D &f) {
   Mesh* mesh = bndry->localmesh;
-  ASSERT1(mesh = f.getMesh());
+  ASSERT1(mesh == f.getMesh());
   Coordinates *metric = f.getCoordinates();
   // Calculate derivatives for metric use
   mesh->communicate(f);
@@ -1522,7 +1522,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field2D &f) {
 
 void BoundaryNeumann_NonOrthogonal::apply(Field3D &f) {
   Mesh* mesh = bndry->localmesh;
-  ASSERT1(mesh = f.getMesh());
+  ASSERT1(mesh == f.getMesh());
   Coordinates *metric = f.getCoordinates();
   // Calculate derivatives for metric use
   mesh->communicate(f);
@@ -1589,7 +1589,7 @@ void BoundaryNeumann::apply(Field2D &f,BoutReal t) {
   // N.B. Only first guard cells (closest to the grid) should ever be used
   
   Mesh* mesh = bndry->localmesh;
-  ASSERT1(mesh = f.getMesh());
+  ASSERT1(mesh == f.getMesh());
   Coordinates *metric = f.getCoordinates();
   
   bndry->first();
@@ -1788,7 +1788,7 @@ void BoundaryNeumann::apply(Field3D &f) {
 
 void BoundaryNeumann::apply(Field3D &f,BoutReal t) {
   Mesh* mesh = bndry->localmesh;
-  ASSERT1(mesh = f.getMesh());
+  ASSERT1(mesh == f.getMesh());
   Coordinates *metric = f.getCoordinates();
   
   bndry->first();
@@ -1993,7 +1993,7 @@ void BoundaryNeumann::apply_ddt(Field2D &f) {
 
 void BoundaryNeumann::apply_ddt(Field3D &f) {
   Mesh* mesh = bndry->localmesh;
-  ASSERT1(mesh = f.getMesh());
+  ASSERT1(mesh == f.getMesh());
   Field3D *dt = f.timeDeriv();
   for(bndry->first(); !bndry->isDone(); bndry->next())
     for(int z=0;z<mesh->LocalNz;z++)
@@ -2017,7 +2017,7 @@ void BoundaryNeumann_O4::apply(Field2D &f) {
 
 void BoundaryNeumann_O4::apply(Field2D &f,BoutReal t) {
   Mesh* mesh = bndry->localmesh;
-  ASSERT1(mesh = f.getMesh());
+  ASSERT1(mesh == f.getMesh());
   
   // Set (at 4th order) the value at the mid-point between the guard cell and the grid cell to be val
   // N.B. Only first guard cells (closest to the grid) should ever be used
@@ -3197,7 +3197,7 @@ void BoundaryFree_O3::apply_ddt(Field3D &f) {
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryRelax::cloneMod(BoundaryOp *operation, const std::list<std::string> &args) {
-  BoundaryRelax* result = new BoundaryRelax(operation, r);
+  auto* result = new BoundaryRelax(operation, r);
   
   if(!args.empty()) {
     // First argument should be the rate
@@ -3255,7 +3255,7 @@ void BoundaryRelax::apply_ddt(Field3D &f) {
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryWidth::cloneMod(BoundaryOp *operation, const std::list<std::string> &args) {
-  BoundaryWidth* result = new BoundaryWidth(operation, width);
+  auto* result = new BoundaryWidth(operation, width);
   
   if(args.empty()) {
     output << "WARNING: BoundaryWidth expected 1 argument\n";
@@ -3299,7 +3299,7 @@ void BoundaryWidth::apply_ddt(Field3D &f) {
 
 ///////////////////////////////////////////////////////////////
 BoundaryOp* BoundaryToFieldAligned::cloneMod(BoundaryOp *operation, const std::list<std::string> &args) {
-  BoundaryToFieldAligned* result = new BoundaryToFieldAligned(operation);
+  auto* result = new BoundaryToFieldAligned(operation);
   
   if(!args.empty()) {
     output << "WARNING: BoundaryToFieldAligned expected no argument\n";
@@ -3314,17 +3314,16 @@ void BoundaryToFieldAligned::apply(Field2D &f, BoutReal t) {
 }
 
 void BoundaryToFieldAligned::apply(Field3D &f, BoutReal t) {
-  Mesh* mesh = bndry->localmesh;
-  ASSERT1(mesh = f.getMesh());
+  ASSERT1(bndry->localmesh = f.getMesh());
 
   //NOTE: This is not very efficient... updating entire field
-  f = mesh->fromFieldAligned(f); 
+  f = fromFieldAligned(f);
 
   // Apply the boundary to shifted field
   op->apply(f, t);
 
   //Shift back
-  f = mesh->toFieldAligned(f);
+  f = toFieldAligned(f);
 
   //This is inefficient -- could instead use the shiftZ just in the bndry
   //but this is not portable to other parallel transforms -- we could instead
@@ -3336,18 +3335,18 @@ void BoundaryToFieldAligned::apply_ddt(Field2D &f) {
 }
 
 void BoundaryToFieldAligned::apply_ddt(Field3D &f) {
-  Mesh* mesh = bndry->localmesh;
-  ASSERT1(mesh = f.getMesh());
-  f = mesh->fromFieldAligned(f);
-  ddt(f) = mesh->fromFieldAligned(ddt(f));
+  ASSERT1(bndry->localmesh = f.getMesh());
+
+  f = fromFieldAligned(f);
+  ddt(f) = fromFieldAligned(ddt(f));
   op->apply_ddt(f);
-  ddt(f) = mesh->toFieldAligned(ddt(f));
+  ddt(f) = toFieldAligned(ddt(f));
 }
 
 
 ///////////////////////////////////////////////////////////////
 BoundaryOp* BoundaryFromFieldAligned::cloneMod(BoundaryOp *operation, const std::list<std::string> &args) {
-  BoundaryFromFieldAligned* result = new BoundaryFromFieldAligned(operation);
+  auto* result = new BoundaryFromFieldAligned(operation);
   
   if(!args.empty()) {
     output << "WARNING: BoundaryFromFieldAligned expected no argument\n";
@@ -3362,16 +3361,16 @@ void BoundaryFromFieldAligned::apply(Field2D &f, BoutReal t) {
 }
 
 void BoundaryFromFieldAligned::apply(Field3D &f, BoutReal t) {
-  Mesh* mesh = bndry->localmesh;
-  ASSERT1(mesh = f.getMesh());
+  ASSERT1(bndry->localmesh = f.getMesh());
+
   //NOTE: This is not very efficient... shifting entire field
-  f = mesh->toFieldAligned(f); 
+  f = toFieldAligned(f);
 
   // Apply the boundary to shifted field
   op->apply(f, t);
 
   //Shift back
-  f = mesh->fromFieldAligned(f);
+  f = fromFieldAligned(f);
 
   //This is inefficient -- could instead use the shiftZ just in the bndry
   //but this is not portable to other parallel transforms -- we could instead
@@ -3383,10 +3382,10 @@ void BoundaryFromFieldAligned::apply_ddt(Field2D &f) {
 }
 
 void BoundaryFromFieldAligned::apply_ddt(Field3D &f) {
-  Mesh* mesh = bndry->localmesh;
-  ASSERT1(mesh = f.getMesh());
-  f = mesh->toFieldAligned(f);
-  ddt(f) = mesh->toFieldAligned(ddt(f));
+  ASSERT1(bndry->localmesh = f.getMesh());
+
+  f = toFieldAligned(f);
+  ddt(f) = toFieldAligned(ddt(f));
   op->apply_ddt(f);
-  ddt(f) = mesh->fromFieldAligned(ddt(f));
+  ddt(f) = fromFieldAligned(ddt(f));
 }

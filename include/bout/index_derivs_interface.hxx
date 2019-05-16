@@ -199,14 +199,15 @@ template <typename T>
 T DDY(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT",
       REGION region = RGN_NOBNDRY) {
   AUTO_TRACE();
-  if (std::is_base_of<Field3D, T>::value && f.hasYupYdown()) {
+  if (f.hasParallelSlices()) {
+    ASSERT1(f.getDirectionY() == YDirectionType::Standard);
     return standardDerivative<T, DIRECTION::YOrthogonal, DERIV::Standard>(f, outloc,
                                                                           method, region);
   } else {
-    const T f_aligned = f.getMesh()->toFieldAligned(f, RGN_NOX);
+    const T f_aligned = toFieldAligned(f, RGN_NOX);
     T result = standardDerivative<T, DIRECTION::Y, DERIV::Standard>(f_aligned, outloc,
                                                                     method, region);
-    return f.getMesh()->fromFieldAligned(result, region);
+    return fromFieldAligned(result, region);
   }
 }
 
@@ -214,14 +215,15 @@ template <typename T>
 T D2DY2(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT",
         REGION region = RGN_NOBNDRY) {
   AUTO_TRACE();
-  if (std::is_base_of<Field3D, T>::value && f.hasYupYdown()) {
+  if (f.hasParallelSlices()) {
+    ASSERT1(f.getDirectionY() == YDirectionType::Standard);
     return standardDerivative<T, DIRECTION::YOrthogonal, DERIV::StandardSecond>(
         f, outloc, method, region);
   } else {
-    const T f_aligned = f.getMesh()->toFieldAligned(f, RGN_NOX);
+    const T f_aligned = toFieldAligned(f, RGN_NOX);
     T result = standardDerivative<T, DIRECTION::Y, DERIV::StandardSecond>(
         f_aligned, outloc, method, region);
-    return f.getMesh()->fromFieldAligned(result, region);
+    return fromFieldAligned(result, region);
   }
 }
 
@@ -229,14 +231,15 @@ template <typename T>
 T D4DY4(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT",
         REGION region = RGN_NOBNDRY) {
   AUTO_TRACE();
-  if (std::is_base_of<Field3D, T>::value && f.hasYupYdown()) {
+  if (f.hasParallelSlices()) {
+    ASSERT1(f.getDirectionY() == YDirectionType::Standard);
     return standardDerivative<T, DIRECTION::YOrthogonal, DERIV::StandardFourth>(
         f, outloc, method, region);
   } else {
-    const T f_aligned = f.getMesh()->toFieldAligned(f, RGN_NOX);
+    const T f_aligned = toFieldAligned(f, RGN_NOX);
     T result = standardDerivative<T, DIRECTION::Y, DERIV::StandardFourth>(
         f_aligned, outloc, method, region);
-    return f.getMesh()->fromFieldAligned(result, region);
+    return fromFieldAligned(result, region);
   }
 }
 
@@ -301,17 +304,19 @@ template <typename T>
 T VDDY(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
        const std::string& method = "DEFAULT", REGION region = RGN_NOBNDRY) {
   AUTO_TRACE();
-  bool fHasParallelSlices = (std::is_base_of<Field3D, T>::value && f.hasYupYdown());
-  bool velHasParallelSlices = (std::is_base_of<Field3D, T>::value && vel.hasYupYdown());
+  const bool fHasParallelSlices = (f.hasParallelSlices());
+  const bool velHasParallelSlices = (vel.hasParallelSlices());
   if (fHasParallelSlices && velHasParallelSlices) {
+    ASSERT1(vel.getDirectionY() == YDirectionType::Standard);
+    ASSERT1(f.getDirectionY() == YDirectionType::Standard);
     return flowDerivative<T, DIRECTION::YOrthogonal, DERIV::Upwind>(vel, f, outloc,
                                                                     method, region);
   } else {
-    const T f_aligned = f.getMesh()->toFieldAligned(f, RGN_NOX);
-    const T vel_aligned = vel.getMesh()->toFieldAligned(vel, RGN_NOX);
+    const T f_aligned = toFieldAligned(f, RGN_NOX);
+    const T vel_aligned = toFieldAligned(vel, RGN_NOX);
     T result = flowDerivative<T, DIRECTION::Y, DERIV::Upwind>(vel_aligned, f_aligned,
                                                               outloc, method, region);
-    return f.getMesh()->fromFieldAligned(result, region);
+    return fromFieldAligned(result, region);
   }
 }
 
@@ -319,17 +324,19 @@ template <typename T>
 T FDDY(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
        const std::string& method = "DEFAULT", REGION region = RGN_NOBNDRY) {
   AUTO_TRACE();
-  bool fHasParallelSlices = (std::is_base_of<Field3D, T>::value && f.hasYupYdown());
-  bool velHasParallelSlices = (std::is_base_of<Field3D, T>::value && vel.hasYupYdown());
+  const bool fHasParallelSlices = (f.hasParallelSlices());
+  const bool velHasParallelSlices = (vel.hasParallelSlices());
   if (fHasParallelSlices && velHasParallelSlices) {
+    ASSERT1(vel.getDirectionY() == YDirectionType::Standard);
+    ASSERT1(f.getDirectionY() == YDirectionType::Standard);
     return flowDerivative<T, DIRECTION::YOrthogonal, DERIV::Flux>(vel, f, outloc, method,
                                                                   region);
   } else {
-    const T f_aligned = f.getMesh()->toFieldAligned(f, RGN_NOX);
-    const T vel_aligned = vel.getMesh()->toFieldAligned(vel, RGN_NOX);
+    const T f_aligned = toFieldAligned(f, RGN_NOX);
+    const T vel_aligned = toFieldAligned(vel, RGN_NOX);
     T result = flowDerivative<T, DIRECTION::Y, DERIV::Flux>(vel_aligned, f_aligned,
                                                             outloc, method, region);
-    return f.getMesh()->fromFieldAligned(result, region);
+    return fromFieldAligned(result, region);
   }
 }
 

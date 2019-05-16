@@ -34,14 +34,6 @@ errc = np.log(errors[-2]/errors[-1])
 difc = np.log(nzs[-1]/nzs[-2])
 conv = errc/difc
 
-# FIXME: this is a workaround for a strange bug, MPI_Comm_free after
-# MPI_Finalize. Seems to be from the global mesh getting destroyed
-# after/at the same time as finalise is called -- hence explicitly
-# deleting it here
-mesh = boutcore.Mesh.getGlobal()
-del mesh
-boutcore.finalise()
-
 if 1.9 < conv < 2.1:
     print("The convergence is: %f" % conv)
 else:

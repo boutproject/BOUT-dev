@@ -33,9 +33,9 @@ private:
   }
   
 protected:
-  int init(bool restart) {
+  int init(bool UNUSED(restart)) {
 
-    auto options = Options::root()["hw"];
+    auto& options = Options::root()["hw"];
     alpha = options["alpha"].withDefault(1.0);
     kappa = options["kappa"].withDefault(0.1);
     Dvort = options["Dvort"].withDefault(1e-2);
@@ -43,7 +43,7 @@ protected:
 
     modified = options["modified"].withDefault(false);
 
-    SOLVE_FOR2(n, vort);
+    SOLVE_FOR(n, vort);
     SAVE_REPEAT(phi);
 
     // Split into convective and diffusive parts
@@ -55,9 +55,7 @@ protected:
     // Use default flags 
     
     // Choose method to use for Poisson bracket advection terms
-    int bracket;
-    bracket = options["bracket"].withDefault(0);
-    switch(bracket) {
+    switch(options["bracket"].withDefault(0)) {
     case 0: {
       bm = BRACKET_STD; 
       output << "\tBrackets: default differencing\n";
@@ -86,7 +84,7 @@ protected:
     return 0;
   }
 
-  int convective(BoutReal time) {
+  int convective(BoutReal UNUSED(time)) {
     // Non-stiff, convective part of the problem
     
     // Solve for potential
@@ -111,7 +109,7 @@ protected:
     return 0;
   }
   
-  int diffusive(BoutReal time) {
+  int diffusive(BoutReal UNUSED(time)) {
     // Diffusive terms
     mesh->communicate(n, vort);
     ddt(n) = -Dn*Delp4(n);

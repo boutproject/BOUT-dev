@@ -73,7 +73,7 @@ public:
   FCITransform(Mesh& mesh, bool zperiodic = true) : ParallelTransform(mesh) {
 
     // check the coordinate system used for the grid data source
-    checkInputGrid();
+    FCITransform::checkInputGrid();
 
     auto forward_boundary = new BoundaryRegionPar("FCI_forward", BNDRY_PAR_FWD, +1, &mesh);
     auto backward_boundary = new BoundaryRegionPar("FCI_backward", BNDRY_PAR_BKWD, -1, &mesh);
@@ -89,15 +89,21 @@ public:
     }
   }
 
-  void calcYUpDown(Field3D &f) override;
+  void calcParallelSlices(Field3D &f) override;
   
-  void integrateYUpDown(Field3D &f) override;
+  void integrateParallelSlices(Field3D &f) override;
   
   const Field3D toFieldAligned(const Field3D &UNUSED(f), const REGION UNUSED(region)) override {
     throw BoutException("FCI method cannot transform into field aligned grid");
   }
+  const FieldPerp toFieldAligned(const FieldPerp &UNUSED(f), const REGION UNUSED(region)) override {
+    throw BoutException("FCI method cannot transform into field aligned grid");
+  }
 
   const Field3D fromFieldAligned(const Field3D &UNUSED(f), const REGION UNUSED(region)) override {
+    throw BoutException("FCI method cannot transform into field aligned grid");
+  }
+  const FieldPerp fromFieldAligned(const FieldPerp &UNUSED(f), const REGION UNUSED(region)) override {
     throw BoutException("FCI method cannot transform into field aligned grid");
   }
 

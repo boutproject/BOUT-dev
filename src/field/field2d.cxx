@@ -200,6 +200,22 @@ void Field2D::applyBoundary(bool init) {
       bndry->apply(*this);
 }
 
+void Field2D::applyBoundary(BoutReal time) {
+  TRACE("Field2D::applyBoundary(time)");
+
+#if CHECK > 0
+  if (!boundaryIsSet) {
+    output_warn << "WARNING: Call to Field2D::applyBoundary(time), but no boundary set\n";
+  }
+#endif
+
+  checkData(*this);
+
+  for (const auto& bndry : bndry_op) {
+    bndry->apply(*this, time);
+  }
+}
+
 void Field2D::applyBoundary(const std::string &condition) {
   TRACE("Field2D::applyBoundary(condition)");
 
@@ -210,9 +226,9 @@ void Field2D::applyBoundary(const std::string &condition) {
 
   /// Loop over the mesh boundary regions
   for(const auto& reg : fieldmesh->getBoundaries()) {
-    BoundaryOp* op = static_cast<BoundaryOp*>(bfact->create(condition, reg));
+    auto op = std::unique_ptr<BoundaryOp>{
+        dynamic_cast<BoundaryOp*>(bfact->create(condition, reg))};
     op->apply(*this);
-    delete op;
   }
 
   // Set the corners to zero
@@ -246,9 +262,9 @@ void Field2D::applyBoundary(const std::string &region, const std::string &condit
   for (const auto &reg : fieldmesh->getBoundaries()) {
     if (reg->label.compare(region) == 0) {
       region_found = true;
-      BoundaryOp *op = static_cast<BoundaryOp *>(bfact->create(condition, reg));
+      auto op = std::unique_ptr<BoundaryOp>{
+          dynamic_cast<BoundaryOp*>(bfact->create(condition, reg))};
       op->apply(*this);
-      delete op;
       break;
     }
   }
@@ -522,3 +538,15 @@ void invalidateGuards(Field2D &var) {
   BOUT_FOR(i, var.getRegion("RGN_GUARDS")) { var[i] = BoutNaN; }
 }
 #endif
+
+bool operator==(const Field2D &a, const Field2D &b) {
+  if (!a.isAllocated() || !b.isAllocated()) {
+    return false;
+  }
+  return min(abs(a - b)) < 1e-10;
+}
+
+std::ostream& operator<<(std::ostream &out, const Field2D &value) {
+  out << toString(value);
+  return out;
+}

@@ -9,6 +9,8 @@
 #include "test_extras.hxx"
 #include "options_netcdf.hxx"
 
+using bout::experimental::OptionsNetCDF;
+
 #include <cstdio>
 
 /// Global mesh

@@ -68,14 +68,6 @@ function = 15*sqrt(2*pi)*gauss(150*x,15)
 bndry_xin = dirichlet_o2(1.0)
 bndry_xout = neumann_o2
 
-[N]
-scale = 1.0
-#function = log(15*sqrt(2*pi)*gauss(150*x,15))
-function = 0-x
-
-bndry_xin = dirichlet_o2(0.0)
-bndry_xout = neumann_o2
-
 [T]
 scale = 1.0
 function = 15*sqrt(2*pi)*gauss(150*x,15)

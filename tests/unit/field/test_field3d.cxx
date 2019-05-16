@@ -190,16 +190,16 @@ TEST_F(Field3DTest, TimeDeriv) {
   EXPECT_EQ(&(ddt(field)), deriv);
 }
 
-TEST_F(Field3DTest, SplitYupYDown) {
+TEST_F(Field3DTest, SplitParallelSlices) {
   Field3D field;
 
   field = 0.;
 
-  EXPECT_FALSE(field.hasYupYdown());
+  EXPECT_FALSE(field.hasParallelSlices());
 
-  field.splitYupYdown();
+  field.splitParallelSlices();
 
-  EXPECT_TRUE(field.hasYupYdown());
+  EXPECT_TRUE(field.hasParallelSlices());
 
   auto& yup = field.yup();
   EXPECT_NE(&field, &yup);
@@ -207,7 +207,7 @@ TEST_F(Field3DTest, SplitYupYDown) {
   EXPECT_NE(&field, &ydown);
 
   // Should be able to split again without any problems
-  field.splitYupYdown();
+  field.splitParallelSlices();
 
   // Would be nice to check yup2 != yup, but not sure this is possible
   // to do in general
@@ -217,16 +217,16 @@ TEST_F(Field3DTest, SplitYupYDown) {
   EXPECT_NE(&field, &ydown2);
 }
 
-TEST_F(Field3DTest, MergeYupYDown) {
+TEST_F(Field3DTest, ClearParallelSlices) {
   Field3D field;
 
   field = 0.;
 
-  EXPECT_FALSE(field.hasYupYdown());
+  EXPECT_FALSE(field.hasParallelSlices());
 
-  field.mergeYupYdown();
+  field.clearParallelSlices();
 
-  EXPECT_FALSE(field.hasYupYdown());
+  EXPECT_FALSE(field.hasParallelSlices());
 
 #if CHECK > 2
   EXPECT_THROW(field.yup(), BoutException);
@@ -234,21 +234,21 @@ TEST_F(Field3DTest, MergeYupYDown) {
 #endif
 
   // Should be able to merge again without any problems
-  EXPECT_NO_THROW(field.mergeYupYdown());
+  EXPECT_NO_THROW(field.clearParallelSlices());
 }
 
-TEST_F(Field3DTest, SplitThenMergeYupYDown) {
+TEST_F(Field3DTest, SplitThenClearParallelSlices) {
   Field3D field;
 
   field = 0.;
-  field.splitYupYdown();
+  field.splitParallelSlices();
 
   auto& yup = field.yup();
   EXPECT_NE(&field, &yup);
   auto& ydown = field.ydown();
   EXPECT_NE(&field, &ydown);
 
-  field.mergeYupYdown();
+  field.clearParallelSlices();
 
 #if CHECK > 2
   EXPECT_THROW(field.yup(), BoutException);
@@ -256,7 +256,7 @@ TEST_F(Field3DTest, SplitThenMergeYupYDown) {
 #endif
 }
 
-TEST_F(Field3DTest, MultipleYupYdown) {
+TEST_F(Field3DTest, MultipleParallelSlices) {
   FakeMesh newmesh{3, 5, 7};
   newmesh.setCoordinates(nullptr);
   newmesh.ystart = 2;
@@ -264,9 +264,9 @@ TEST_F(Field3DTest, MultipleYupYdown) {
 
   Field3D field{&newmesh};
 
-  field.splitYupYdown();
+  field.splitParallelSlices();
 
-  EXPECT_TRUE(field.hasYupYdown());
+  EXPECT_TRUE(field.hasParallelSlices());
 
   auto &yup = field.yup();
   EXPECT_NE(&field, &yup);
@@ -288,7 +288,7 @@ TEST_F(Field3DTest, Ynext) {
   Field3D field;
 
   field = 0.;
-  field.splitYupYdown();
+  field.splitParallelSlices();
 
   auto& yup = field.ynext(1);
   EXPECT_NE(&field, &yup);
@@ -304,7 +304,7 @@ TEST_F(Field3DTest, Ynext) {
 TEST_F(Field3DTest, ConstYnext) {
   Field3D field(0.);
 
-  field.splitYupYdown();
+  field.splitParallelSlices();
 
   const Field3D& field2 = field;
 
@@ -1948,7 +1948,7 @@ TEST_F(Field3DTest, Swap) {
 
   first.setLocation(CELL_XLOW);
 
-  first.splitYupYdown();
+  first.splitParallelSlices();
   first.yup() = 1.5;
   first.ydown() = 0.5;
 
@@ -1967,7 +1967,7 @@ TEST_F(Field3DTest, Swap) {
   // Second field
   Field3D second(2., &second_mesh);
 
-  second.splitYupYdown();
+  second.splitParallelSlices();
   second.yup() = 2.2;
   second.ydown() = 1.2;
 
@@ -2018,7 +2018,7 @@ TEST_F(Field3DTest, MoveCtor) {
 
   first.setLocation(CELL_XLOW);
 
-  first.splitYupYdown();
+  first.splitParallelSlices();
   first.yup() = 1.5;
   first.ydown() = 0.5;
 
@@ -2096,6 +2096,7 @@ TEST_F(Field3DTest, FillField) {
   EXPECT_TRUE(IsFieldEqual(f, g));
 }
 
+#ifdef BOUT_HAS_FFTW
 namespace bout {
 namespace testing {
 
@@ -2215,6 +2216,7 @@ TEST_F(Field3DTest, LowPassTwoArgNothing) {
 
   EXPECT_TRUE(IsFieldEqual(output, input));
 }
+#endif
 
 TEST_F(Field3DTest, OperatorEqualsField3D) {
   Field3D field;

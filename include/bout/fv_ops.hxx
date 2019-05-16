@@ -188,8 +188,8 @@ namespace FV {
 
     CellEdges cellboundary;
     
-    Field3D f = mesh->toFieldAligned(f_in, RGN_NOX);
-    Field3D v = mesh->toFieldAligned(v_in, RGN_NOX);
+    Field3D f = toFieldAligned(f_in, RGN_NOX);
+    Field3D v = toFieldAligned(v_in, RGN_NOX);
 
     Coordinates *coord = f_in.getCoordinates();
 
@@ -326,7 +326,7 @@ namespace FV {
         }
       }
     }
-    return mesh->fromFieldAligned(result, RGN_NOBNDRY);
+    return fromFieldAligned(result, RGN_NOBNDRY);
   }
   
   /*!
@@ -470,8 +470,8 @@ namespace FV {
     // Currently just using simple centered differences
     // so no fluxes need to be exchanged
     
-    n = mesh->toFieldAligned(n_in, RGN_NOX);
-    Field3D vy = mesh->toFieldAligned(v.y, RGN_NOX);
+    n = toFieldAligned(n_in, RGN_NOX);
+    Field3D vy = toFieldAligned(v.y, RGN_NOX);
     
     Field3D yresult = 0.0;    
     for(int i=mesh->xstart;i<=mesh->xend;i++)
@@ -490,7 +490,7 @@ namespace FV {
           yresult(i,j,k) = (nU*vU - nD*vD) / (coord->J(i,j)*coord->dy(i,j));
         }
     
-    return result + mesh->fromFieldAligned(yresult, RGN_NOBNDRY);
+    return result + fromFieldAligned(yresult, RGN_NOBNDRY);
   }
 }
 

@@ -47,6 +47,4 @@ if compare(fc, fo) > 1e-3:
     print("Something is wrong. Maybe setting the location from field failed.")
     fail = 1
 
-bc.finalise()
-
 exit(fail)

@@ -76,7 +76,16 @@ TEST_F(OptionsFieldTest, RetrieveField2DfromField3D) {
   Field3D field = 1.2;
   options = field;
 
-  EXPECT_THROW(Field2D value = options.as<Field2D>(bout::globals::mesh), BoutException);
+  EXPECT_THROW(Field2D value = options.as<Field2D>(), BoutException);
+}
+
+TEST_F(OptionsFieldTest, RetrieveField3DfromField2D) {
+  Options options;
+  Field2D field = 1.2;
+  options = field;
+
+  Field3D value = options.as<Field3D>();
+  EXPECT_DOUBLE_EQ(value(0,1,0), 1.2);
 }
 
 TEST_F(OptionsFieldTest, RetrieveStringfromField3D) {
@@ -103,7 +112,7 @@ TEST_F(OptionsFieldTest, RetrieveField3DfromString) {
 
   WithQuietOutput quiet{output_info};
 
-  Field3D other = options.as<Field3D>(bout::globals::mesh);
+  Field3D other = options.as<Field3D>();
 
   EXPECT_DOUBLE_EQ(other(0,1,0), 3.0);
   EXPECT_DOUBLE_EQ(other(0,0,1), 3.0);
@@ -113,7 +122,7 @@ TEST_F(OptionsFieldTest, RetrieveField2DfromString) {
   Options options;
   options = "1 + 2";
 
-  Field2D other = options.as<Field2D>(bout::globals::mesh);
+  Field2D other = options.as<Field2D>();
 
   EXPECT_DOUBLE_EQ(other(0,1,0), 3.0);
   EXPECT_DOUBLE_EQ(other(0,0,1), 3.0);
@@ -123,6 +132,6 @@ TEST_F(OptionsFieldTest, RetrieveField2DfromBadString) {
   Options options;
   options = "1 + ";
 
-  EXPECT_THROW(Field2D other = options.as<Field2D>(bout::globals::mesh), ParseException);
+  EXPECT_THROW(Field2D other = options.as<Field2D>(), ParseException);
 }
 

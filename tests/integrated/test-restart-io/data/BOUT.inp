@@ -1,0 +1,18 @@
+restart = true
+timestep = 1
+
+[mesh]
+nx = 12
+ny = 16
+nz = 4
+
+# no periodic region
+ixseps1 = -1
+ixseps2 = -1
+
+[solver]
+type = euler
+timestep = 0.5
+
+[all]
+bndry_all = none

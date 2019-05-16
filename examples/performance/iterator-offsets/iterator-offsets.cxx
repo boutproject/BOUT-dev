@@ -34,7 +34,7 @@ BoutReal test_ddy(stencil &s) {
   return (s.p - s.m);
 }
 
-typedef BoutReal (*deriv_func)(stencil &);
+using deriv_func = BoutReal (*)(stencil &);
 deriv_func func_ptr = &test_ddy;
 
 int main(int argc, char **argv) {

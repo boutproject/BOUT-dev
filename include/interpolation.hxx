@@ -75,7 +75,6 @@ const T interp_to(const T& var, CELL_LOC loc, REGION region = RGN_ALL) {
     return var;
   }
 
-
   // NOTE: invalidateGuards() is called in Field3D::alloctate() if the data
   // block is not already allocated, so will be called here if
   // region==RGN_NOBNDRY
@@ -127,7 +126,7 @@ const T interp_to(const T& var, CELL_LOC loc, REGION region = RGN_ALL) {
       // We can't interpolate in y unless we're field-aligned
       // FIXME: Add check once we label fields as orthogonal/aligned
 
-      const T var_fa = fieldmesh->toFieldAligned(var, RGN_NOX);
+      const T var_fa = toFieldAligned(var, RGN_NOX);
       if (region != RGN_NOBNDRY) {
         // repeat the hack above for boundary points
         // this avoids a duplicate toFieldAligned call if we had called
@@ -154,7 +153,7 @@ const T interp_to(const T& var, CELL_LOC loc, REGION region = RGN_ALL) {
         }
       }
 
-      result = fieldmesh->fromFieldAligned(result, RGN_NOBNDRY);
+      result = fromFieldAligned(result, RGN_NOBNDRY);
 
       break;
     }
@@ -196,9 +195,11 @@ const T interp_to(const T& var, CELL_LOC loc, REGION region = RGN_ALL) {
 }
 
 /// Print out the cell location (for debugging)
-void printLocation(const Field3D &var);
+[[gnu::deprecated("Please use `output << toString(var.getLocation())` instead")]]
+void printLocation(const Field3D& var);
 
-const char *strLocation(CELL_LOC loc);
+[[gnu::deprecated("Please use `toString(loc)` instead")]]
+const char* strLocation(CELL_LOC loc);
 
 /// Interpolate a field onto a perturbed set of points
 const Field3D interpolate(const Field3D &f, const Field3D &delta_x,

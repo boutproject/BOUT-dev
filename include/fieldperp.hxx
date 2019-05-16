@@ -269,6 +269,11 @@ private:
   Array<BoutReal> data;
 };
   
+// Non-member functions
+
+FieldPerp toFieldAligned(const FieldPerp& f, const REGION region = RGN_ALL);
+FieldPerp fromFieldAligned(const FieldPerp& f, const REGION region = RGN_ALL);
+
 // Non-member overloaded operators
   
 FieldPerp operator+(const FieldPerp &lhs, const FieldPerp &rhs);

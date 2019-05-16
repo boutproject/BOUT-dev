@@ -53,8 +53,7 @@
 BoutMesh::BoutMesh(GridDataSource *s, Options *opt) : Mesh(s, opt) {
   OPTION(options, symmetricGlobalX, true);
   if (!options->isSet("symmetricGlobalY")) {
-    std::string optionfile;
-    OPTION(Options::getRoot(), optionfile, "");
+    std::string optionfile = Options::root()["optionfile"].withDefault("");
     output_warn << "WARNING: The default of this option has changed in release 4.1.\n\
 If you want the old setting, you have to specify mesh:symmetricGlobalY=false in "
                 << optionfile << "\n";
@@ -91,7 +90,7 @@ int BoutMesh::load() {
   output_progress << _("Loading mesh") << endl;
 
   // Use root level options
-  Options *options = Options::getRoot();
+  auto& options = Options::root();
 
   //////////////
   // Number of processors
@@ -133,12 +132,12 @@ int BoutMesh::load() {
   // get from options
   if (Mesh::get(MXG, "MXG")) {
     // Error code returned
-    options->get("MXG", MXG, 2);
+    MXG = options["MXG"].doc("Number of guard cells on each side in X").withDefault(2);
   }
   ASSERT0(MXG >= 0);
 
   if (Mesh::get(MYG, "MYG")) {
-    options->get("MYG", MYG, 2);
+    MYG = options["MYG"].doc("Number of guard cells on each side in Y").withDefault(2);
   }
   ASSERT0(MYG >= 0);
 
@@ -237,8 +236,19 @@ int BoutMesh::load() {
   // For now don't parallelise z
   NZPE = 1;
 
-  if (options->isSet("NXPE")) {    // Specified NXPE
-    options->get("NXPE", NXPE, 1); // Decomposition in the radial direction
+  if (jyseps1_1 < 0 and jyseps2_2 >= ny - 1) {
+    numberOfXPoints = 0;
+  } else if (jyseps2_1 == jyseps1_2) {
+    numberOfXPoints = 1;
+  } else {
+    numberOfXPoints = 2;
+  }
+
+  if (options.isSet("NXPE")) {    // Specified NXPE
+    NXPE = options["NXPE"]
+               .doc("Decomposition in the radial direction. If not given then calculated "
+                    "automatically.")
+               .withDefault(1);
     if ((NPES % NXPE) != 0) {
       throw BoutException(
           _("Number of processors (%d) not divisible by NPs in x direction (%d)\n"), NPES,
@@ -433,9 +443,11 @@ int BoutMesh::load() {
 
   /// Get mesh options
   OPTION(options, IncIntShear, false);
-  OPTION(options, periodicX, false); // Periodic in X
+  periodicX = options["periodicX"].doc("Make grid periodic in X?").withDefault(false);
 
-  OPTION(options, async_send, false); // Whether to use asyncronous sends
+  async_send = options["async_send"]
+                   .doc("Whether to use asyncronous MPI sends")
+                   .withDefault(false);
 
   // Set global offsets
 
@@ -443,7 +455,7 @@ int BoutMesh::load() {
   OffsetY = PE_YIND * MYSUB;
   OffsetZ = 0;
 
-  if (options->isSet("zperiod")) {
+  if (options.isSet("zperiod")) {
     OPTION(options, zperiod, 1);
     ZMIN = 0.0;
     ZMAX = 1.0 / static_cast<BoutReal>(zperiod);
@@ -474,18 +486,26 @@ int BoutMesh::load() {
   /// Call topology to set layout of grid
   topology();
 
-  OPTION(options, TwistShift, false);
+  TwistShift = options["TwistShift"]
+                   .doc("Apply a Twist-Shift boundary using ShiftAngle?")
+                   .withDefault(false);
+
+  // Try to read the shift angle from the grid file
+  // NOTE: All processors should know the twist-shift angle (for invert_parderiv)
+  // NOTE: Always read ShiftAngle as Coordinates will use hasBranchCutLower and
+  //       hasBranchCutUpper to set zShift for ShiftedMetric
+
+  ShiftAngle.resize(LocalNx);
+
+  if (!source->get(this, ShiftAngle, "ShiftAngle", LocalNx, XGLOBAL(0))) {
+    ShiftAngle.clear();
+  }
 
   if (TwistShift) {
     output_info.write("Applying Twist-Shift condition. Interpolation: FFT\n");
-
-    // Try to read the shift angle from the grid file
-    // NOTE: All processors should know the twist-shift angle (for invert_parderiv)
-
-    ShiftAngle.resize(LocalNx);
-
-    if (!source->get(this, ShiftAngle, "ShiftAngle", LocalNx, XGLOBAL(0))) {
-      throw BoutException("ERROR: Twist-shift angle 'ShiftAngle' not found.");
+    if (ShiftAngle.empty()) {
+      throw BoutException("ERROR: Twist-shift angle 'ShiftAngle' not found. "
+          "Required when TwistShift==true.");
     }
   }
 
@@ -1058,7 +1078,7 @@ int BoutMesh::wait(comm_handle handle) {
   if (handle == nullptr)
     return 1;
 
-  CommHandle *ch = static_cast<CommHandle *>(handle);
+  auto* ch = static_cast<CommHandle*>(handle);
 
   if (!ch->in_progress)
     return 2;
@@ -2039,6 +2059,35 @@ bool BoutMesh::periodicY(int jx, BoutReal &ts) const {
   return false;
 }
 
+std::pair<bool, BoutReal> BoutMesh::hasBranchCutLower(int jx) const {
+  if ( (TS_down_in and DDATA_INDEST != -1 and jx < DDATA_XSPLIT)
+      or (TS_down_out and DDATA_OUTDEST != -1 and jx >= DDATA_XSPLIT) ) {
+    // this processor has branch cut at lower boundary for jx
+    if (ShiftAngle.empty()) {
+      // This function should only be called during initialization, so always check
+      throw BoutException("BoutMesh failed to read ShiftAngle from the grid");
+    }
+    return std::make_pair(true, ShiftAngle[jx]);
+  }
+
+  return std::make_pair(false, 0.);
+}
+
+
+std::pair<bool, BoutReal> BoutMesh::hasBranchCutUpper(int jx) const {
+  if ( (TS_up_in and UDATA_INDEST != -1 and jx < UDATA_XSPLIT)
+      or (TS_up_out and UDATA_OUTDEST != -1 and jx >= UDATA_XSPLIT) ) {
+    // this processor has branch cut at upper boundary for jx
+    if (ShiftAngle.empty()) {
+      // This function should only be called during initialization, so always check
+      throw BoutException("BoutMesh failed to read ShiftAngle from the grid");
+    }
+    return std::make_pair(true, ShiftAngle[jx]);
+  }
+
+  return std::make_pair(false, 0.);
+}
+
 int BoutMesh::ySize(int xpos) const {
   int xglobal = XGLOBAL(xpos);
   int yglobal = YGLOBAL(MYG);
@@ -2187,9 +2236,9 @@ void BoutMesh::addBoundaryRegions() {
     xe = -2;
   }
   
-  addRegion3D("RGN_UPPER_INNER_Y", Region<Ind3D>(xs, xe, 0, ystart-1, 0, LocalNz-1,
+  addRegion3D("RGN_UPPER_INNER_Y", Region<Ind3D>(xs, xe, yend+1, LocalNy-1, 0, LocalNz-1,
                                                  LocalNy, LocalNz, maxregionblocksize));
-  addRegion2D("RGN_UPPER_INNER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
+  addRegion2D("RGN_UPPER_INNER_Y", Region<Ind2D>(xs, xe, yend+1, LocalNy-1, 0, 0,
                                                  LocalNy, 1, maxregionblocksize));
   all_boundaries.emplace_back("RGN_UPPER_INNER_Y");
 
@@ -2213,9 +2262,9 @@ void BoutMesh::addBoundaryRegions() {
       xe = xend;
   }
 
-  addRegion3D("RGN_UPPER_OUTER_Y", Region<Ind3D>(xs, xe, 0, ystart-1, 0, LocalNz-1,
+  addRegion3D("RGN_UPPER_OUTER_Y", Region<Ind3D>(xs, xe, yend+1, LocalNy-1, 0, LocalNz-1,
                                                  LocalNy, LocalNz, maxregionblocksize));
-  addRegion2D("RGN_UPPER_OUTER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
+  addRegion2D("RGN_UPPER_OUTER_Y", Region<Ind2D>(xs, xe, yend+1, LocalNy-1, 0, 0,
                                                  LocalNy, 1, maxregionblocksize));
   all_boundaries.emplace_back("RGN_UPPER_OUTER_Y");
 
@@ -2233,9 +2282,9 @@ void BoutMesh::addBoundaryRegions() {
   if (xe > xend)
     xe = xend;
 
-  addRegion3D("RGN_UPPER_Y", Region<Ind3D>(xs, xe, 0, ystart-1, 0, LocalNz-1,
+  addRegion3D("RGN_UPPER_Y", Region<Ind3D>(xs, xe, yend+1, LocalNy-1, 0, LocalNz-1,
                                            LocalNy, LocalNz, maxregionblocksize));
-  addRegion2D("RGN_UPPER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
+  addRegion2D("RGN_UPPER_Y", Region<Ind2D>(xs, xe, yend+1, LocalNy-1, 0, 0,
                                            LocalNy, 1, maxregionblocksize));
   all_boundaries.emplace_back("RGN_UPPER_Y");
   
@@ -2586,6 +2635,7 @@ void BoutMesh::outputVars(Datafile &file) {
   file.add(jyseps1_2, "jyseps1_2", false);
   file.add(jyseps2_1, "jyseps2_1", false);
   file.add(jyseps2_2, "jyseps2_2", false);
+  file.add(ny_inner, "ny_inner", false);
 
   getCoordinates()->outputVars(file);
 }
