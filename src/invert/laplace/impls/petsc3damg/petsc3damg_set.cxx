@@ -28,8 +28,10 @@
  *
  **************************************************************************/
 
+#include "bout/mesh.hxx"
+#include "boutcomm.hxx"
+
 #include "petsc3damg.hxx"
-#include <boutcomm.hxx>
 
 void LaplacePetsc3DAmg::settingSolver(int kflag){
   //  Timer timer("invert");
@@ -51,7 +53,7 @@ void LaplacePetsc3DAmg::settingSolver(int kflag){
   else KSPSetOperators( ksp, MatA, MatP );
    // Convergence Parameters. Solution is considered converged if |r_k| < max( rtol * |b| , atol )
     // where r_k = b - Ax_k. The solution is considered diverged if |r_k| > dtol * |b|.
-  string solt;
+  std::string solt;
   solt.assign(soltype,0,2);
   if(solt == "di") {
     if(xNP*zNP == 1) {
@@ -137,8 +139,8 @@ const Field3D LaplacePetsc3DAmg::solve(const Field3D &rhs, const Field3D &x0) {
   
   // Load initial guess x0 into xs and rhs into bs
   Mesh *mesh = rhs.getMesh();  // Where to get initializing LaplacePetscAmg
-  Coordinates *coords = mesh->coordinates();
-  BoutReal tmss, tms, tmf, tmG, tmS, tmR, tsol, tmB;
+  Coordinates *coords = mesh->getCoordinates();
+  BoutReal tmss, tms, tmf, tmG, tmS, tmR, tsol;
   if(fcheck) tmss = MPI_Wtime();
   generateMatrixA(elemf);
   if(diffpre > 0) generateMatrixP(elemf);
@@ -155,7 +157,6 @@ const Field3D LaplacePetsc3DAmg::solve(const Field3D &rhs, const Field3D &x0) {
   // MPI_Barrier(MPI_COMM_WORLD);
   
   int ind,i2,i,j,j2,j2p,j2m,k,k2,nn,nxzt;
-  BoutReal area;
   PetscScalar val,volm;
   nxzt = nzt*nxt;
   if(fcheck) tms = MPI_Wtime();
@@ -182,7 +183,6 @@ const Field3D LaplacePetsc3DAmg::solve(const Field3D &rhs, const Field3D &x0) {
       k2 = k + mystart;
       for (i=0; i < Nx_local; i++) {
         i2 = i + mxstart;
-        area = coords->dy(i2,k2)*coords->dx(i2, k2)*coords->dz;
         for (j=0; j < Nz_local; j++) {
           ind = gindices[(k+lys)*nxzt + (i+lxs)*nzt+j+lzs];
           val = x0(i2, k2, j+mzstart);
@@ -204,7 +204,7 @@ const Field3D LaplacePetsc3DAmg::solve(const Field3D &rhs, const Field3D &x0) {
   BoutReal tval[tmax*nzt];
   if(yProcI == 0) {
     BoutReal dhx,dhy,dhz,volm,gt12,gt22,gt23,ddJ,ddx_C,ddy_C,ddz_C;
-    BoutReal dval,ddy,dxdy,dzdy,dyd,dydz;
+    BoutReal ddy,dxdy,dzdy,dyd,dydz;
     if(ybdcon != 0) { // Boundary value along with y-direction, i.e. x and z index
       k2 = mystart;
       if(ybdcon%3 == 1) { // Neumann
@@ -288,7 +288,7 @@ const Field3D LaplacePetsc3DAmg::solve(const Field3D &rhs, const Field3D &x0) {
 
   if(yProcI == yNP - 1) {
     BoutReal dhx,dhy,dhz,volm,gt12,gt22,gt23,ddJ,ddx_C,ddy_C,ddz_C;
-    BoutReal dval,ddy,dxdy,dzdy,dyd,dydz;
+    BoutReal ddy,dxdy,dzdy,dyd,dydz;
     if(ybdcon != 0) { // Boundary value along with y-direction, i.e. x and z index
       k2 = Ny_global - 1;
       if(ybdcon%5 == 1) { // Neumann
@@ -372,7 +372,7 @@ const Field3D LaplacePetsc3DAmg::solve(const Field3D &rhs, const Field3D &x0) {
   
   if(xProcI == 0) { 
     BoutReal dhx,dhy,dhz,volm,gt11,gt12,gt13,gt22,gt23,ddJ,ddx_C,ddy_C,ddz_C;
-    BoutReal dval,ddx,dxdz,dxdy,dxd,dydz;
+    BoutReal ddx,dxdz,dxdy,dxd,dydz;
     if(xbdcon != 0) { // Boundary value along with x-direction, i.e. y and z index
       i2 = mxstart;
       if(xbdcon%3 == 1) { // Neumann
@@ -458,7 +458,7 @@ const Field3D LaplacePetsc3DAmg::solve(const Field3D &rhs, const Field3D &x0) {
 
   if(xProcI == xNP - 1) { 
     BoutReal dhx,dhy,dhz,volm,gt11,gt12,gt13,gt22,gt23,ddJ,ddx_C,ddy_C,ddz_C;
-    BoutReal dval,ddx,dxdz,dxdy,dxd,dydz;
+    BoutReal ddx,dxdz,dxdy,dxd,dydz;
     if(xbdcon != 0) { // Boundary value along with x-direction, i.e. y and z index
       i2 = Nx_global - 1;
       if(xbdcon%5 == 1) { // Neumann
@@ -556,7 +556,6 @@ const Field3D LaplacePetsc3DAmg::solve(const Field3D &rhs, const Field3D &x0) {
   PCType typepc;
   PCGetType(pc,&typepc);
   if(fcheck) {
-    int its;
     Vec rs;
     PetscScalar norm;
     VecDuplicate(xs,&rs);

@@ -53,7 +53,7 @@ public:
    * Calculates the yup() and ydown() fields of f
    * by interpolating f through a toroidal shift angle
    */ 
-  void calcYUpDown(Field3D &f) override;
+  void calcParallelSlices(Field3D &f) override;
   
   /*!
    * Uses interpolation of f through a toroidal shift angle to align the grid
@@ -62,13 +62,13 @@ public:
    * Note that the returned field will no longer be orthogonal in X-Z, and the
    * metric tensor will need to be changed if X derivatives are used.
    */
-  const Field3D toFieldAligned(const Field3D &f) override;
+  const Field3D toFieldAligned(const Field3D &f, REGION region = RGN_ALL) override;
 
   /*!
    * Converts a field back to X-Z orthogonal coordinates
    * from field aligned coordinates.
    */
-  const Field3D fromFieldAligned(const Field3D &f) override;
+  const Field3D fromFieldAligned(const Field3D &f, REGION region = RGN_ALL) override;
 
   bool canToFromFieldAligned() override{
     return false;

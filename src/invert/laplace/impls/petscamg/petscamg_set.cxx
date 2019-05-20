@@ -28,6 +28,8 @@
  *
  **************************************************************************/
 
+#include "bout/mesh.hxx"
+
 #include "petscamg.hxx"
 
 void LaplacePetscAmg::settingSolver(int kflag){
@@ -51,7 +53,7 @@ void LaplacePetscAmg::settingSolver(int kflag){
   else KSPSetOperators( ksp, MatA, MatP );
    // Convergence Parameters. Solution is considered converged if |r_k| < max( rtol * |b| , atol )
     // where r_k = b - Ax_k. The solution is considered diverged if |r_k| > dtol * |b|.
-  string solt;
+  std::string solt;
   solt.assign(soltype,0,2);
   if(solt == "di") {
     if(xNP*zNP == 1) {
@@ -142,11 +144,12 @@ const FieldPerp LaplacePetscAmg::solve(const FieldPerp &rhs, const FieldPerp &x0
   // Timer timer("invert");
   TRACE("LaplacePetscAmg::solve(const FieldPerp, const FieldPerp)");
   
+  ASSERT1(localmesh == rhs.getMesh());
+
   // Load initial guess x0 into xs and rhs into bs
-  Mesh *mesh = rhs.getMesh();  // Where to get initializing LaplacePetscAmg
-  Coordinates *coords = mesh->coordinates();
+  Coordinates *coords = localmesh->getCoordinates();
   yindex = rhs.getIndex();
-  BoutReal tmss, tms, tmf, tmG, tmS, tmR, tsol, tmB;
+  BoutReal tmss, tms, tmf, tmG, tmS, tmR, tsol;
   if(fcheck) tmss = MPI_Wtime();
   generateMatrixA(elemf);
   if(diffpre > 0) generateMatrixP(elemf);
@@ -209,7 +212,7 @@ const FieldPerp LaplacePetscAmg::solve(const FieldPerp &rhs, const FieldPerp &x0
   // For the boundary conditions 
   // MPI_Barrier(MPI_COMM_WORLD);
   BoutReal tval[nzt],dval,ddx_C,ddz_C;
-  if (mesh->firstX()) {
+  if (localmesh->firstX()) {
     i2 = mxstart;
     if ( inner_boundary_flags & INVERT_AC_GRAD ) {
       // Neumann boundary condition
@@ -265,8 +268,8 @@ const FieldPerp LaplacePetscAmg::solve(const FieldPerp &rhs, const FieldPerp &x0
       VecSetValues( bs, 1, &ind, &val, ADD_VALUES );
     }  
   }
-  if (mesh->lastX()) {
-    i2 = mesh->xend;
+  if (localmesh->lastX()) {
+    i2 = localmesh->xend;
     if ( outer_boundary_flags & INVERT_AC_GRAD ) {
       // Neumann boundary condition
       //      if ( inner_boundary_flags & INVERT_SET ) {
@@ -337,7 +340,6 @@ const FieldPerp LaplacePetscAmg::solve(const FieldPerp &rhs, const FieldPerp &x0
   PCType typepc;
   PCGetType(pc,&typepc);
   if(fcheck) {
-    int its;
     Vec rs;
     PetscScalar norm;
     VecDuplicate(xs,&rs);
@@ -384,7 +386,7 @@ const FieldPerp LaplacePetscAmg::solve(const FieldPerp &rhs, const FieldPerp &x0
   // Copy data into result
   
   //  MPI_Barrier(MPI_COMM_WORLD);
-  FieldPerp result(mesh);
+  FieldPerp result(localmesh);
   result.allocate();
   
   for(i = 0;i < Nx_local;i++) {
@@ -398,7 +400,7 @@ const FieldPerp LaplacePetscAmg::solve(const FieldPerp &rhs, const FieldPerp &x0
   // Inner X boundary approximations on guard cells
   // Need to modify
   
-  if(mesh->firstX()) {
+  if(localmesh->firstX()) {
     i2 = mxstart;
     if ( inner_boundary_flags & INVERT_AC_GRAD ) {
       // Set THE VALUE guard cells specify gradient to set at inner boundary
@@ -420,8 +422,8 @@ const FieldPerp LaplacePetscAmg::solve(const FieldPerp &rhs, const FieldPerp &x0
   }
 
   // Outer X boundary
-  if (mesh->lastX()) {
-    i2 = mesh->xend;
+  if (localmesh->lastX()) {
+    i2 = localmesh->xend;
     if ( outer_boundary_flags & INVERT_AC_GRAD ) {
       // Neumann boundary condition
         // guard cells of x0 specify gradient to set at outer boundary

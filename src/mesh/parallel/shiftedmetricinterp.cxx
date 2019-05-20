@@ -31,7 +31,8 @@
 #include <interpolation_factory.hxx>
 #include <bout/constants.hxx>
 
-ShiftedMetricInterp::ShiftedMetricInterp(Mesh &mesh) : localmesh(mesh) {
+ShiftedMetricInterp::ShiftedMetricInterp(Mesh &mesh)
+  : ParallelTransform(mesh), localmesh(mesh) {
 
   // Read the zShift angle from the mesh
   if(localmesh.get(zShift, "zShift")) {
@@ -57,13 +58,13 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh &mesh) : localmesh(mesh) {
 
   for (const auto &i : xt_prime) {
     // no interpolation in x, all field lines stay at constant x
-    xt_prime[i] = i.x;
+    xt_prime[i] = i.x();
   }
 
-  for (const auto &i : zt_prime_up.region(RGN_NOY)) {
+  for (const auto &i : zt_prime_up.getRegion(RGN_NOY)) {
     // Field line moves in z by an angle zShift(i,j+1)-zShift(i,j) when going
     // from j to j+1, but we want the shift in index-space
-    zt_prime_up[i] = static_cast<BoutReal>(i.z)
+    zt_prime_up[i] = static_cast<BoutReal>(i.z())
       + (zShift[i.yp()] - zShift[i])*static_cast<BoutReal>(localmesh.GlobalNz)/TWOPI;
   }
 
@@ -71,13 +72,13 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh &mesh) : localmesh(mesh) {
 
   for (const auto &i : xt_prime) {
     // no interpolation in x, all field lines stay at constant x
-    xt_prime[i] = i.x;
+    xt_prime[i] = i.x();
   }
 
-  for (const auto &i : zt_prime_down.region(RGN_NOY)) {
+  for (const auto &i : zt_prime_down.getRegion(RGN_NOY)) {
     // Field line moves in z by an angle -(zShift(i,j)-zShift(i,j-1)) when going
     // from j to j-1, but we want the shift in index-space
-    zt_prime_down[i] = static_cast<BoutReal>(i.z)
+    zt_prime_down[i] = static_cast<BoutReal>(i.z())
       - (zShift[i] - zShift[i.ym()])*static_cast<BoutReal>(localmesh.GlobalNz)/TWOPI;
   }
 
@@ -94,7 +95,7 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh &mesh) : localmesh(mesh) {
   for (const auto &i : zt_prime_to) {
     // Field line moves in z by an angle zShift(i,j) when going
     // from y0 to y(j), but we want the shift in index-space
-    zt_prime_to[i] = static_cast<BoutReal>(i.z)
+    zt_prime_to[i] = static_cast<BoutReal>(i.z())
       + zShift[i]*static_cast<BoutReal>(localmesh.GlobalNz)/TWOPI;
   }
 
@@ -104,7 +105,7 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh &mesh) : localmesh(mesh) {
     // Field line moves in z by an angle zShift(i,j) when going
     // from y0 to y(j), but we want the shift in index-space.
     // Here we reverse the shift, so subtract zShift
-    zt_prime_from[i] = static_cast<BoutReal>(i.z)
+    zt_prime_from[i] = static_cast<BoutReal>(i.z())
       - zShift[i]*static_cast<BoutReal>(localmesh.GlobalNz)/TWOPI;
   }
 
@@ -115,11 +116,11 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh &mesh) : localmesh(mesh) {
 /*!
  * Calculate the Y up and down fields
  */
-void ShiftedMetricInterp::calcYUpDown(Field3D &f) {
-  TRACE("ShiftedMetricInterp::calcYUpDown");
+void ShiftedMetricInterp::calcParallelSlices(Field3D &f) {
+  AUTO_TRACE();
 
   // Ensure that yup and ydown are different fields
-  f.splitYupYdown();
+  f.splitParallelSlices();
 
   // Interpolate f onto yup and ydown fields
   f.yup() = interp_yup->interpolate(f);
@@ -130,7 +131,7 @@ void ShiftedMetricInterp::calcYUpDown(Field3D &f) {
  * Shift the field so that X-Z is not orthogonal,
  * and Y is then field aligned.
  */
-const Field3D ShiftedMetricInterp::toFieldAligned(const Field3D &f) {
+const Field3D ShiftedMetricInterp::toFieldAligned(const Field3D &f, REGION UNUSED(region)) {
   return interp_to_aligned->interpolate(f);
 }
 
@@ -138,7 +139,7 @@ const Field3D ShiftedMetricInterp::toFieldAligned(const Field3D &f) {
  * Shift back, so that X-Z is orthogonal,
  * but Y is not field aligned.
  */
-const Field3D ShiftedMetricInterp::fromFieldAligned(const Field3D &f) {
+const Field3D ShiftedMetricInterp::fromFieldAligned(const Field3D &f, REGION UNUSED(region)) {
   return interp_from_aligned->interpolate(f);
 }
 

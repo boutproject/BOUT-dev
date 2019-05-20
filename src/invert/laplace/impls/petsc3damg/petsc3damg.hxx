@@ -90,7 +90,7 @@ public:
   const Field3D solve(const Field3D &b) override { Field3D zero(b.getMesh()); zero = 0.; return solve(b, zero); }
   const Field3D solve(const Field3D &b_in, const Field3D &x0) override;
 
-  const FieldPerp solve(const FieldPerp& b) {
+  const FieldPerp solve(const FieldPerp& UNUSED(b)) {
     throw BoutException("LaplacePetsc3DAmg cannot solve for FieldPerp");
   }
 
@@ -118,7 +118,7 @@ private:
   bool rightpre;
   int diffpre,elemf;
   int maxits,mgsm,mglevel,fcheck,stypei;
-  string soltype;  /* direct, gmres, gamg, boomermg, ml, kmg, ...  */
+  std::string soltype;  /* direct, gmres, gamg, boomermg, ml, kmg, ...  */
 
   /*********************************************************/
   PetscLib lib;
@@ -127,7 +127,7 @@ private:
   Vec xs, bs;                 // Solution and RHS vectors
   KSP ksp;
   PC pc;
-  string ksptype, pctype;	      // Preconditioner type
+  std::string ksptype, pctype;	      // Preconditioner type
   ISLocalToGlobalMapping mgmapping;
   
   int comms_tagbase,*gindices;

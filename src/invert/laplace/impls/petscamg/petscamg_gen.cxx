@@ -28,6 +28,8 @@
  *
  **************************************************************************/
 
+#include "bout/mesh.hxx"
+
 #include "petscamg.hxx"
 
 void LaplacePetscAmg::generateMatrixA(int kflag) {
@@ -35,7 +37,7 @@ void LaplacePetscAmg::generateMatrixA(int kflag) {
   TRACE("LaplacePetscAmg::generateMatrixA(int)");
   
   // Set (fine-level) matrix entries
-  Coordinates *coords = mesh->coordinates();
+  Coordinates *coords = localmesh->getCoordinates();
   int i,k,i2,k2,k2p,k2m,icc,irow,icol,nn,dz,*dzz,oz,*ozz;
   BoutReal ddx_C,ddz_C,ddx,ddz,dxdz,dxd,dzd,area;
   PetscScalar lval[9],val;
@@ -83,7 +85,7 @@ void LaplacePetscAmg::generateMatrixA(int kflag) {
 
   
   for (i = 0; i < Nx_local; i++) {
-    i2 = i+mesh->xstart;
+    i2 = i+localmesh->xstart;
 BOUT_OMP(parallel default(shared) private(k2))
 BOUT_OMP(for)
     for (k = 0; k < Nz_local; k++) {
@@ -243,7 +245,7 @@ void LaplacePetscAmg::generateMatrixP(int kflag) {
   
   // Set (fine-level) matrix entries
 
-  Coordinates *coords = mesh->coordinates();
+  Coordinates *coords = localmesh->getCoordinates();
   int i,k,i2,k2,k2p,k2m,icc,irow,icol,nn,dz,*dzz,oz,*ozz;
   BoutReal ddx_C,ddz_C,ddx,ddz,dxdz,dxd,dzd,area;
   PetscScalar lval[5],val;
@@ -303,7 +305,7 @@ BOUT_OMP(for)
       ddz = D(i2, yindex, k2)*coords->g33(i2, yindex)/coords->dz/coords->dz; 
               // coefficient of 2nd derivative stencil (z-direction)
       
-      //      dxdz = D(i2, yindex, k2)*coords->g13(i2, yindex)/coords->dx(i2, yindex)/coords->dz/2.; 
+      dxdz = D(i2, yindex, k2)*coords->g13(i2, yindex)/coords->dx(i2, yindex)/coords->dz/2.; 
               // coefficient of mixed derivative stencil (could assume zero, at least initially, 
               // if easier; then check this is true in constructor)
       

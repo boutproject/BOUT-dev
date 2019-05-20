@@ -33,9 +33,10 @@
  *
  **************************************************************************/
  
-#include "petsc3damg.hxx"
+#include "bout/mesh.hxx"
+#include "boutcomm.hxx"
 
-#include <boutcomm.hxx>
+#include "petsc3damg.hxx"
 
 //BoutReal amgsoltime=0.0,amgsettime=0.0;
 
@@ -81,11 +82,11 @@ LaplacePetsc3DAmg::LaplacePetsc3DAmg(Options *opt) :
 
   // For boundary condition for y-direction?? all Dirichlet
   ybdcon = 2;
-  yNP = mesh->getNYPE();
-  yProcI = mesh->getYProcIndex();
-  Ny_local = mesh->yend - mesh->ystart + 1; // excluding guard cells
-  Ny_global = mesh->GlobalNy - 2*mesh->ystart; // excluding guard cells
-  mystart = mesh->ystart;
+  yNP = localmesh->getNYPE();
+  yProcI = localmesh->getYProcIndex();
+  Ny_local = localmesh->yend - localmesh->ystart + 1; // excluding guard cells
+  Ny_global = localmesh->GlobalNy - 2*localmesh->ystart; // excluding guard cells
+  mystart = localmesh->ystart;
   
   if (mgcount==0) {
     output <<"Ny="<<Ny_global<<"("<<Ny_local<<")"<<endl;
@@ -93,11 +94,11 @@ LaplacePetsc3DAmg::LaplacePetsc3DAmg(Options *opt) :
   
   // For boundary condition for x-direction?? 0-Neumann 1-Dirichlet
   xbdcon = 4;
-  xNP = mesh->getNXPE();
-  xProcI = mesh->getXProcIndex();
-  Nx_local = mesh->xend - mesh->xstart + 1; // excluding guard cells
-  Nx_global = mesh->GlobalNx - 2*mesh->xstart; // excluding guard cells
-  mxstart = mesh->xstart;
+  xNP = localmesh->getNXPE();
+  xProcI = localmesh->getXProcIndex();
+  Nx_local = localmesh->xend - localmesh->xstart + 1; // excluding guard cells
+  Nx_global = localmesh->GlobalNx - 2*localmesh->xstart; // excluding guard cells
+  mxstart = localmesh->xstart;
   
   if (mgcount == 0) {
     output <<"Nx="<<Nx_global<<"("<<Nx_local<<")"<<endl;
@@ -105,14 +106,14 @@ LaplacePetsc3DAmg::LaplacePetsc3DAmg(Options *opt) :
   zbdcon = 0;
   zNP = 1;
   zProcI = 0;
-  Nz_global = mesh->GlobalNz;
+  Nz_global = localmesh->GlobalNz;
   Nz_local = Nz_global;
   mzstart = 0; //  
   // No parallelization in z-direction (for now)
   // 
   //else {
-  //  Nz_local = mesh->zend - mesh->zstart + 1; // excluding guard cells
-  //  Nz_global = mesh->GlobalNz - 2*mesh->zstart; // excluding guard cells
+  //  Nz_local = localmesh->zend - localmesh->zstart + 1; // excluding guard cells
+  //  Nz_global = localmesh->GlobalNz - 2*localmesh->zstart; // excluding guard cells
   // }
   if (mgcount==0) {
     output <<"Nz="<<Nz_global<<"("<<Nz_local<<")"<<endl;

@@ -28,18 +28,19 @@
  *
  **************************************************************************/
 
-#include "petsc3damg.hxx"
+#include "bout/mesh.hxx"
+#include "boutcomm.hxx"
 
-#include <boutcomm.hxx>
+#include "petsc3damg.hxx"
 
 void LaplacePetsc3DAmg::generateMatrixA(int kflag) {
 
   TRACE("LaplacePetsc3DAmg::generateMatrixA(int)");
   
   // Set (fine-level) matrix entries
-  Coordinates *coords = mesh->coordinates();
+  Coordinates *coords = localmesh->getCoordinates();
   int i,j,k,i2,k2,j2,i2m,i2p,j2m,j2p,k2p,k2m,icc,irow,icol,nn,dz,*dzz,oz,*ozz;
-  BoutReal ddx_C,ddz_C,ddy_C,ddx,ddz,ddy,dxdz,dxdy,dydz,dxd,dzd,dyd,ddJ,area,volm;
+  BoutReal ddx_C,ddz_C,ddy_C,ddx,ddz,ddy,dxdz,dxdy,dydz,dxd,dzd,dyd,ddJ,volm;
   PetscScalar lval[19],val,dhz,dhx,dhy,gt11,gt12,gt13,gt22,gt23,gt33;
   nn = Nx_local*Nz_local*Ny_local;
   int nxz = Nx_local*Nz_local;
@@ -47,7 +48,7 @@ void LaplacePetsc3DAmg::generateMatrixA(int kflag) {
   oz = 12; // For x- and y- directional decomposition only
   // oz = 5 //For 3-d decompositions
   if(kflag >1) {
-    int bcase,tdz,toz;
+    int bcase;
     dzz = new int[nn];
     ozz = new int[nn];
     for(k=0;k<Ny_local;k++) {
@@ -131,11 +132,11 @@ void LaplacePetsc3DAmg::generateMatrixA(int kflag) {
   dhz = coords->dz;
   int ybds,ybde,xbds,xbde;
   for (k = 0; k < Ny_local; k++) {
-    k2 = k + mesh->ystart;
+    k2 = k + localmesh->ystart;
     k2p  = k2+1;            // How to handel when k2p = Ny_global and k2m = -1
     k2m  = k2-1; 
     for (i = 0; i < Nx_local; i++) {
-      i2 = i+mesh->xstart;
+      i2 = i+localmesh->xstart;
       i2p  = i2+1;            // How to handel when i2p = Ny_global and i2m = -1
       i2m  = i2-1;
       dhx = coords->dx(i2,k2);
@@ -412,16 +413,16 @@ void LaplacePetsc3DAmg::generateMatrixP(int kflag) {
   // Set (fine-level) matrix entries
 
   // Set (fine-level) matrix entries
-  Coordinates *coords = mesh->coordinates();
+  Coordinates *coords = localmesh->getCoordinates();
   int i,j,k,i2,k2,j2,i2m,i2p,j2m,j2p,k2p,k2m,icc,irow,icol,nn,dz,*dzz,oz,*ozz;
-  BoutReal ddx_C,ddz_C,ddy_C,ddx,ddy,ddz,dxdz,dxdy,dydz,dxd,dzd,dyd,ddJ,area,volm;
+  BoutReal ddx_C,ddz_C,ddy_C,ddx,ddy,ddz,dxdz,dxdy,dydz,dxd,dzd,dyd,ddJ,volm;
   PetscScalar lval[7],val,dhz,dhx,dhy,gt11,gt12,gt13,gt22,gt23,gt33;
   nn = Nx_local*Nz_local*Ny_local;
   int nxz = Nx_local*Nz_local;
   dz = 7;
   oz = 3; // For x- and y- directional decomposition only
   if(kflag >1) {
-    int bcase,tdz,toz;
+    int bcase;
     dzz = new int[nn];
     ozz = new int[nn];
     for(k=0;k<Ny_local;k++) {
@@ -505,11 +506,11 @@ void LaplacePetsc3DAmg::generateMatrixP(int kflag) {
   dhz = coords->dz;
   int ybds,ybde,xbds,xbde;
   for (k = 0; k < Ny_local; k++) {
-    k2 = k + mesh->ystart;
+    k2 = k + localmesh->ystart;
     k2p  = k2+1;            // How to handel when k2p = Ny_global and k2m = -1
     k2m  = k2-1; 
     for (i = 0; i < Nx_local; i++) {
-      i2 = i+mesh->xstart;
+      i2 = i+localmesh->xstart;
       i2p  = i2+1;            // How to handel when i2p = Ny_global and i2m = -1
       i2m  = i2-1;
       dhx = coords->dx(i2,k2);

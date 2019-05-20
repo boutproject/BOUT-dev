@@ -110,7 +110,7 @@ private:
   bool rightpre;
   int diffpre,elemf;
   int maxits,mgsm,mglevel,fcheck,stypei;
-  string soltype;  /* direct, gmres, gamg, boomermg, ml, kmg, ...  */
+  std::string soltype;  /* direct, gmres, gamg, boomermg, ml, kmg, ...  */
 
   /*********************************************************/
   PetscLib lib;
@@ -120,7 +120,7 @@ private:
   Vec xs, bs;                 // Solution and RHS vectors
   KSP ksp;
   PC pc;
-  string ksptype, pctype;	      // Preconditioner type
+  std::string ksptype, pctype;	      // Preconditioner type
   ISLocalToGlobalMapping mgmapping;
   
   int comms_tagbase,*gindices;

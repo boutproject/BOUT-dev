@@ -28,6 +28,8 @@
  *
  **************************************************************************/
 
+#include "bout/mesh.hxx"
+
 #include "petscamg.hxx"
 
 //BoutReal amgsoltime=0.0,amgsettime=0.0;
@@ -72,27 +74,27 @@ LaplacePetscAmg::LaplacePetscAmg(Options *opt) :
     throw BoutException("nonuniform option is not implemented in LaplaceMultigrid.");
   }
   
-  commX = mesh->getXcomm();    // Where to get This mesh //
+  commX = localmesh->getXcomm();    // Where to get This mesh //
 
   MPI_Comm_size(commX,&xNP);
   MPI_Comm_rank(commX,&xProcI); 
-  Nx_local = mesh->xend - mesh->xstart + 1; // excluding guard cells
-  Nx_global = mesh->GlobalNx - 2*mesh->xstart; // excluding guard cells
-  mxstart = mesh->xstart;
+  Nx_local = localmesh->xend - localmesh->xstart + 1; // excluding guard cells
+  Nx_global = localmesh->GlobalNx - 2*localmesh->xstart; // excluding guard cells
+  mxstart = localmesh->xstart;
   
   if (mgcount == 0) {
     output <<"Nx="<<Nx_global<<"("<<Nx_local<<")"<<endl;
   }
   zNP = 1;
   zProcI = 0;
-  Nz_global = mesh->GlobalNz;
+  Nz_global = localmesh->GlobalNz;
   Nz_local = Nz_global;
   mzstart = 0; //  
   // No parallelization in z-direction (for now)
   // 
   //else {
-  //  Nz_local = mesh->zend - mesh->zstart + 1; // excluding guard cells
-  //  Nz_global = mesh->GlobalNz - 2*mesh->zstart; // excluding guard cells
+  //  Nz_local = localmesh->zend - localmesh->zstart + 1; // excluding guard cells
+  //  Nz_global = localmesh->GlobalNz - 2*localmesh->zstart; // excluding guard cells
   // }
   if (mgcount==0) {
     output <<"Nz="<<Nz_global<<"("<<Nz_local<<")"<<endl;
