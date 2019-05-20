@@ -275,9 +275,18 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   g23 = interpolateAndExtrapolate(g23, location, extrapolate_x, extrapolate_y);
 
   // Check input metrics
+  // Diagonal metric components should be finite
   checkFinite(g11, "g11", "RGN_NOCORNERS");
   checkFinite(g22, "g22", "RGN_NOCORNERS");
   checkFinite(g33, "g33", "RGN_NOCORNERS");
+  // Diagonal metric components should be positive
+  checkPositive(g11, "g11", "RGN_NOCORNERS");
+  checkPositive(g22, "g22", "RGN_NOCORNERS");
+  checkPositive(g33, "g33", "RGN_NOCORNERS");
+  // Off-diagonal metric components should be finite
+  checkFinite(g12, "g12", "RGN_NOCORNERS");
+  checkFinite(g13, "g13", "RGN_NOCORNERS");
+  checkFinite(g23, "g23", "RGN_NOCORNERS");
 
   /// Find covariant metric components
   auto covariant_component_names = {"g_11", "g_22", "g_33", "g_12", "g_13", "g_23"};
