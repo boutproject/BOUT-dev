@@ -41,7 +41,7 @@
 class ShiftedMetricInterp : public ParallelTransform {
 public:
   ShiftedMetricInterp() = delete;
-  ShiftedMetricInterp(Mesh& mesh);
+  ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in, Field2D zShift_in);
   ~ShiftedMetricInterp() {
     delete interp_yup;
     delete interp_ydown;
@@ -53,7 +53,7 @@ public:
    * Calculates the yup() and ydown() fields of f
    * by interpolating f through a toroidal shift angle
    */
-  void calcYUpDown(Field3D& f) override;
+  void calcParallelSlices(Field3D& f) override;
 
   /*!
    * Uses interpolation of f through a toroidal shift angle to align the grid
@@ -62,13 +62,21 @@ public:
    * Note that the returned field will no longer be orthogonal in X-Z, and the
    * metric tensor will need to be changed if X derivatives are used.
    */
-  const Field3D toFieldAligned(const Field3D& f) override;
+  const Field3D toFieldAligned(const Field3D& f, REGION region = RGN_ALL) override;
+  const FieldPerp toFieldAligned(const FieldPerp& UNUSED(f),
+                                 const REGION UNUSED(region) = RGN_ALL) override {
+    throw BoutException("Not implemented yet");
+  }
 
   /*!
    * Converts a field back to X-Z orthogonal coordinates
    * from field aligned coordinates.
    */
-  const Field3D fromFieldAligned(const Field3D& f) override;
+  const Field3D fromFieldAligned(const Field3D& f, REGION region = RGN_ALL) override;
+  const FieldPerp fromFieldAligned(const FieldPerp& UNUSED(f),
+                                   const REGION UNUSED(region) = RGN_ALL) override {
+    throw BoutException("Not implemented yet");
+  }
 
   bool canToFromFieldAligned() override { return false; }
 
@@ -81,8 +89,11 @@ public:
     return interp_ydown->getWeightsForYApproximation(i, j, k, -1);
   }
 
+protected:
+  void checkInputGrid() override;
+
 private:
-  Mesh& localmesh; ///< The mesh this paralleltransform is part of
+  CELL_LOC location{CELL_CENTRE};
 
   /// This is the shift in toroidal angle (z) which takes a point from
   /// X-Z orthogonal to field-aligned along Y.
