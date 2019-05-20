@@ -249,13 +249,17 @@ public:
   int y_offset;
   void setYOffset(int offset) { y_offset = offset; }
 
-  virtual std::vector<ParallelTransform::positionsAndWeights> getWeightsForYUpApproximation(int i, int j, int k) {
+  virtual std::vector<ParallelTransform::positionsAndWeights>
+      getWeightsForYUpApproximation(int i, int j, int k) {
     return getWeightsForYApproximation(i,j,k,1);
   }
-  virtual std::vector<ParallelTransform::positionsAndWeights> getWeightsForYDownApproximation(int i, int j, int k) {
+  virtual std::vector<ParallelTransform::positionsAndWeights>
+      getWeightsForYDownApproximation(int i, int j, int k) {
     return getWeightsForYApproximation(i,j,k,-1);
   }
-  virtual std::vector<ParallelTransform::positionsAndWeights> getWeightsForYApproximation(int i, int j, int k, int yoffset) {
+  virtual std::vector<ParallelTransform::positionsAndWeights>
+      getWeightsForYApproximation(int UNUSED(i), int UNUSED(j), int UNUSED(k),
+        int UNUSED(yoffset)) {
     throw BoutException("Interpolation::getWeightsForYApproximation not implemented in this subclass");
   }
 };
