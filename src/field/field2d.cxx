@@ -80,9 +80,9 @@ Field2D::Field2D(BoutReal val, Mesh* localmesh) : Field2D(localmesh) {
   *this = val;
 }
 
-Field2D::Field2D(Array<BoutReal> data, Mesh* localmesh, CELL_LOC datalocation,
+Field2D::Field2D(Array<BoutReal> data_in, Mesh* localmesh, CELL_LOC datalocation,
                  DirectionTypes directions_in)
-    : Field(localmesh, datalocation, directions_in), data(std::move(data)) {
+    : Field(localmesh, datalocation, directions_in), data(std::move(data_in)) {
 
   ASSERT1(fieldmesh != nullptr);
 
