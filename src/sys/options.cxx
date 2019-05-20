@@ -345,8 +345,8 @@ template <> Field3D Options::as<Field3D>(const Field3D& similar_to) const {
   }
 
   if (bout::utils::holds_alternative<Field2D>(value)) {
-    const Field2D& stored_value = bout::utils::get<Field2D>(value);
-    
+    const auto& stored_value = bout::utils::get<Field2D>(value);
+
     // Check that meta-data is consistent
     ASSERT1(areFieldsCompatible(stored_value, similar_to));
 
