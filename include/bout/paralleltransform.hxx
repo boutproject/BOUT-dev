@@ -61,14 +61,18 @@ public:
     BoutReal weight;
   };
 
-  virtual std::vector<positionsAndWeights> getWeightsForYUpApproximation(int i, int j, int k) {
+  virtual std::vector<positionsAndWeights> getWeightsForYUpApproximation(int i, int j,
+      int k) {
     return getWeightsForYApproximation(i,j,k,1);
   }
-  virtual std::vector<positionsAndWeights> getWeightsForYDownApproximation(int i, int j, int k) {
+  virtual std::vector<positionsAndWeights> getWeightsForYDownApproximation(int i, int j,
+      int k) {
     return getWeightsForYApproximation(i,j,k,-1);
   }
-  virtual std::vector<positionsAndWeights> getWeightsForYApproximation(int i, int j, int k, int yoffset) {
-    throw BoutException("ParallelTransform::getWeightsForYApproximation not implemented in this subclass");
+  virtual std::vector<positionsAndWeights> getWeightsForYApproximation(int UNUSED(i),
+      int UNUSED(j), int UNUSED(k), int UNUSED(yoffset)) {
+    throw BoutException("ParallelTransform::getWeightsForYApproximation not implemented "
+        "in this subclass");
   }
 
 protected:
