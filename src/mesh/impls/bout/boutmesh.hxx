@@ -18,10 +18,10 @@
 class BoutMesh : public Mesh {
  public:
   BoutMesh(GridDataSource *s, Options *options = nullptr);
-  ~BoutMesh();
+  ~BoutMesh() override ;
 
   /// Read in the mesh from data sources
-  int load();
+  int load() override ;
 
   /////////////////////////////////////////////
   // Communicate variables
@@ -40,70 +40,70 @@ class BoutMesh : public Mesh {
   /// ...
   /// mesh->wait(handle);
   ///
-  comm_handle send(FieldGroup &g);
+  comm_handle send(FieldGroup &g) override ;
 
   /// Wait for a send operation to complete
   /// @param[in] handle  The handle returned by send()
-  int wait(comm_handle handle);
+  int wait(comm_handle handle) override ;
 
   /////////////////////////////////////////////
   // non-local communications
 
-  MPI_Request sendToProc(int xproc, int yproc, BoutReal *buffer, int size, int tag);
-  comm_handle receiveFromProc(int xproc, int yproc, BoutReal *buffer, int size, int tag);
+  MPI_Request sendToProc(int xproc, int yproc, BoutReal *buffer, int size, int tag) override ;
+  comm_handle receiveFromProc(int xproc, int yproc, BoutReal *buffer, int size, int tag) override ;
 
-  int getNXPE(); ///< The number of processors in the X direction
-  int getNYPE(); ///< The number of processors in the Y direction
-  int getXProcIndex();  ///< This processor's index in X direction
-  int getYProcIndex();  ///< This processor's index in Y direction
+  int getNXPE() override ; ///< The number of processors in the X direction
+  int getNYPE() override ; ///< The number of processors in the Y direction
+  int getXProcIndex() override ;  ///< This processor's index in X direction
+  int getYProcIndex() override ;  ///< This processor's index in Y direction
 
   /////////////////////////////////////////////
   // X communications
 
-  bool firstX(); ///< Is this processor the first in X? i.e. is there a boundary to the left in X?
-  bool lastX();  ///< Is this processor last in X? i.e. is there a boundary to the right in X?
+  bool firstX() override ; ///< Is this processor the first in X? i.e. is there a boundary to the left in X?
+  bool lastX() override ;  ///< Is this processor last in X? i.e. is there a boundary to the right in X?
 
   /// Send a buffer of data to processor at X index +1
   ///
   /// @param[in] buffer  The data to send. Must be at least length \p size
   /// @param[in] size    The number of BoutReals to send
   /// @param[in] tag     A label for the communication. Must be the same at receive
-  int sendXOut(BoutReal *buffer, int size, int tag);
+  int sendXOut(BoutReal *buffer, int size, int tag) override ;
 
   /// Send a buffer of data to processor at X index -1
   ///
   /// @param[in] buffer  The data to send. Must be at least length \p size
   /// @param[in] size    The number of BoutReals to send
   /// @param[in] tag     A label for the communication. Must be the same at receive
-  int sendXIn(BoutReal *buffer, int size, int tag);
+  int sendXIn(BoutReal *buffer, int size, int tag) override ;
 
   /// Receive a buffer of data from X index +1
   ///
   /// @param[in] buffer  A buffer to put the data in. Must already be allocated of length \p size
   /// @param[in] size    The number of BoutReals to receive and put in \p buffer
   /// @param[in] tag     A label for the communication. Must be the same as sent
-  comm_handle irecvXOut(BoutReal *buffer, int size, int tag);
+  comm_handle irecvXOut(BoutReal *buffer, int size, int tag) override ;
 
   /// Receive a buffer of data from X index -1
   ///
   /// @param[in] buffer  A buffer to put the data in. Must already be allocated of length \p size
   /// @param[in] size    The number of BoutReals to receive and put in \p buffer
   /// @param[in] tag     A label for the communication. Must be the same as sent
-  comm_handle irecvXIn(BoutReal *buffer, int size, int tag);
+  comm_handle irecvXIn(BoutReal *buffer, int size, int tag) override ;
 
-  MPI_Comm getXcomm(int UNUSED(jy)) const {return comm_x; } ///< Return communicator containing all processors in X
-  MPI_Comm getYcomm(int jx) const; ///< Return communicator containing all processors in Y
+  MPI_Comm getXcomm(int UNUSED(jy)) const override  {return comm_x; } ///< Return communicator containing all processors in X
+  MPI_Comm getYcomm(int jx) const override ; ///< Return communicator containing all processors in Y
 
   /// Is local X index \p jx periodic in Y?
   ///
   /// \param[in] jx   The local (on this processor) index in X
   /// \param[out] ts  The Twist-Shift angle if periodic
-  bool periodicY(int jx, BoutReal &ts) const;
+  bool periodicY(int jx, BoutReal &ts) const override ;
 
   /// Is local X index \p jx periodic in Y?
   ///
   /// \param[in] jx   The local (on this processor) index in X
-  bool periodicY(int jx) const;
+  bool periodicY(int jx) const override ;
 
   /// Is there a branch cut at this processor's lower boundary?
   ///
@@ -121,62 +121,62 @@ class BoutMesh : public Mesh {
   ///                                 poloidal circuit if there is a branch cut
   std::pair<bool, BoutReal> hasBranchCutUpper(int jx) const override;
 
-  int ySize(int jx) const; ///< The number of points in Y at fixed X index \p jx
+  int ySize(int jx) const override ; ///< The number of points in Y at fixed X index \p jx
 
   /////////////////////////////////////////////
   // Y communications
 
-  bool firstY() const;
-  bool lastY() const;
-  bool firstY(int xpos) const;
-  bool lastY(int xpos) const;
-  int UpXSplitIndex();
-  int DownXSplitIndex();
-  int sendYOutIndest(BoutReal *buffer, int size, int tag);
-  int sendYOutOutdest(BoutReal *buffer, int size, int tag);
-  int sendYInIndest(BoutReal *buffer, int size, int tag);
-  int sendYInOutdest(BoutReal *buffer, int size, int tag);
-  comm_handle irecvYOutIndest(BoutReal *buffer, int size, int tag);
-  comm_handle irecvYOutOutdest(BoutReal *buffer, int size, int tag);
-  comm_handle irecvYInIndest(BoutReal *buffer, int size, int tag);
-  comm_handle irecvYInOutdest(BoutReal *buffer, int size, int tag);
+  bool firstY() const override ;
+  bool lastY() const override ;
+  bool firstY(int xpos) const override ;
+  bool lastY(int xpos) const override ;
+  int UpXSplitIndex() override ;
+  int DownXSplitIndex() override ;
+  int sendYOutIndest(BoutReal *buffer, int size, int tag) override ;
+  int sendYOutOutdest(BoutReal *buffer, int size, int tag) override ;
+  int sendYInIndest(BoutReal *buffer, int size, int tag) override ;
+  int sendYInOutdest(BoutReal *buffer, int size, int tag) override ;
+  comm_handle irecvYOutIndest(BoutReal *buffer, int size, int tag) override ;
+  comm_handle irecvYOutOutdest(BoutReal *buffer, int size, int tag) override ;
+  comm_handle irecvYInIndest(BoutReal *buffer, int size, int tag) override ;
+  comm_handle irecvYInOutdest(BoutReal *buffer, int size, int tag) override ;
 
   // Boundary iteration
-  const RangeIterator iterateBndryLowerY() const;
-  const RangeIterator iterateBndryUpperY() const;
-  const RangeIterator iterateBndryLowerInnerY() const;
-  const RangeIterator iterateBndryLowerOuterY() const;
-  const RangeIterator iterateBndryUpperInnerY() const;
-  const RangeIterator iterateBndryUpperOuterY() const;
+  const RangeIterator iterateBndryLowerY() const override ;
+  const RangeIterator iterateBndryUpperY() const override ;
+  const RangeIterator iterateBndryLowerInnerY() const override ;
+  const RangeIterator iterateBndryLowerOuterY() const override ;
+  const RangeIterator iterateBndryUpperInnerY() const override ;
+  const RangeIterator iterateBndryUpperOuterY() const override ;
 
 
   // Boundary regions
-  std::vector<BoundaryRegion*> getBoundaries();
-  std::vector<BoundaryRegionPar*> getBoundariesPar();
-  void addBoundaryPar(BoundaryRegionPar* bndry);
+  std::vector<BoundaryRegion*> getBoundaries() override ;
+  std::vector<BoundaryRegionPar*> getBoundariesPar() override ;
+  void addBoundaryPar(BoundaryRegionPar* bndry) override ;
 
-  const Field3D smoothSeparatrix(const Field3D &f);
+  const Field3D smoothSeparatrix(const Field3D &f) override ;
 
   int getNx() const {return nx;}
   int getNy() const {return ny;}
 
-  BoutReal GlobalX(int jx) const;
-  BoutReal GlobalY(int jy) const;
-  BoutReal GlobalX(BoutReal jx) const;
-  BoutReal GlobalY(BoutReal jy) const;
+  BoutReal GlobalX(int jx) const override ;
+  BoutReal GlobalY(int jy) const override ;
+  BoutReal GlobalX(BoutReal jx) const override ;
+  BoutReal GlobalY(BoutReal jy) const override ;
 
   BoutReal getIxseps1() const {return ixseps1;}
   BoutReal getIxseps2() const {return ixseps2;}
 
-  void outputVars(Datafile &file);
+  void outputVars(Datafile &file) override ;
 
-  int XGLOBAL(int xloc) const;
-  int YGLOBAL(int yloc) const;
+  int XGLOBAL(int xloc) const override ;
+  int YGLOBAL(int yloc) const override ;
   int XGLOBAL(BoutReal xloc, BoutReal &xglo) const;
   int YGLOBAL(BoutReal yloc, BoutReal &yglo) const;
 
-  int XLOCAL(int xglo) const;
-  int YLOCAL(int yglo) const;
+  int XLOCAL(int xglo) const override ;
+  int YLOCAL(int yglo) const override ;
 
  private:
   std::string gridname;
