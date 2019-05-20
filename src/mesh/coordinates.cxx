@@ -332,6 +332,20 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   g_13 = interpolateAndExtrapolate(g_13, location, extrapolate_x, extrapolate_y);
   g_23 = interpolateAndExtrapolate(g_23, location, extrapolate_x, extrapolate_y);
 
+  // Check covariant metrics
+  // Diagonal metric components should be finite
+  checkFinite(g_11, "g_11", "RGN_NOCORNERS");
+  checkFinite(g_22, "g_22", "RGN_NOCORNERS");
+  checkFinite(g_33, "g_33", "RGN_NOCORNERS");
+  // Diagonal metric components should be positive
+  checkPositive(g_11, "g_11", "RGN_NOCORNERS");
+  checkPositive(g_22, "g_22", "RGN_NOCORNERS");
+  checkPositive(g_33, "g_33", "RGN_NOCORNERS");
+  // Off-diagonal metric components should be finite
+  checkFinite(g_12, "g_12", "RGN_NOCORNERS");
+  checkFinite(g_13, "g_13", "RGN_NOCORNERS");
+  checkFinite(g_23, "g_23", "RGN_NOCORNERS");
+
   /// Calculate Jacobian and Bxy
   if (jacobian())
     throw BoutException("Error in jacobian call");
@@ -572,6 +586,11 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     J = interpolateAndExtrapolate(coords_in->J, location);
     Bxy = interpolateAndExtrapolate(coords_in->J, location);
 
+    checkFinite(J, "The Jacobian", "RGN_NOCORNERS");
+    checkPositive(J, "The Jacobian", "RGN_NOCORNERS");
+    checkFinite(Bxy, "Bxy", "RGN_NOCORNERS");
+    checkPositive(Bxy, "Bxy", "RGN_NOCORNERS");
+
     ShiftTorsion = interpolateAndExtrapolate(coords_in->ShiftTorsion, location);
 
     if (mesh->IncIntShear) {
@@ -584,14 +603,23 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
   checkFinite(g11, "g11", "RGN_NOCORNERS");
   checkFinite(g22, "g22", "RGN_NOCORNERS");
   checkFinite(g33, "g33", "RGN_NOCORNERS");
+  checkFinite(g_11, "g_11", "RGN_NOCORNERS");
+  checkFinite(g_22, "g_22", "RGN_NOCORNERS");
+  checkFinite(g_33, "g_33", "RGN_NOCORNERS");
   // Diagonal metric components should be positive
   checkPositive(g11, "g11", "RGN_NOCORNERS");
   checkPositive(g22, "g22", "RGN_NOCORNERS");
   checkPositive(g33, "g33", "RGN_NOCORNERS");
+  checkPositive(g_11, "g_11", "RGN_NOCORNERS");
+  checkPositive(g_22, "g_22", "RGN_NOCORNERS");
+  checkPositive(g_33, "g_33", "RGN_NOCORNERS");
   // Off-diagonal metric components should be finite
   checkFinite(g12, "g12", "RGN_NOCORNERS");
   checkFinite(g13, "g13", "RGN_NOCORNERS");
   checkFinite(g23, "g23", "RGN_NOCORNERS");
+  checkFinite(g_12, "g_12", "RGN_NOCORNERS");
+  checkFinite(g_13, "g_13", "RGN_NOCORNERS");
+  checkFinite(g_23, "g_23", "RGN_NOCORNERS");
 
   //////////////////////////////////////////////////////
   /// Calculate Christoffel symbols. Needs communication
