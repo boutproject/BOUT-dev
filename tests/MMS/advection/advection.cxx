@@ -18,7 +18,7 @@ public:
   }
   int rhs(BoutReal time) {
     mesh->communicate(f);
-    Coordinates *coords = mesh->coordinates();
+    Coordinates *coords = mesh->getCoordinates();
     
     g = FieldFactory::get()->create3D("g:solution", Options::getRoot(), mesh, CELL_CENTRE, time);
     

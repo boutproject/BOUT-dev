@@ -30,9 +30,9 @@ class FieldPerp;
 
 #include "field.hxx"
 
-#include "bout/dataiterator.hxx"
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
+#include "bout/region.hxx"
 
 #include "unused.hxx"
 
@@ -47,17 +47,22 @@ class Field3D; // #include "field3d.hxx"
  */ 
 class FieldPerp : public Field {
  public:
+  using ind_type = IndPerp;
+    
   /*!
    * Constructor
    */
-  FieldPerp(Mesh * fieldmesh = nullptr);
+  FieldPerp(Mesh * fieldmesh = nullptr, CELL_LOC location_in=CELL_CENTRE,
+            int yindex_in=-1,
+            DirectionTypes directions_in =
+              {YDirectionType::Standard, ZDirectionType::Standard});
 
   /*!
    * Copy constructor. After this the data
    * will be shared (non unique)
    */
-  FieldPerp(const FieldPerp &f)
-      : Field(f.fieldmesh), yindex(f.yindex), nx(f.nx), nz(f.nz), data(f.data) {}
+  FieldPerp(const FieldPerp& f)
+      : Field(f), yindex(f.yindex), nx(f.nx), nz(f.nz), data(f.data) {}
 
   /*!
    * Move constructor
@@ -71,7 +76,7 @@ class FieldPerp : public Field {
    */ 
   FieldPerp(BoutReal val, Mesh *localmesh = nullptr);
 
-  ~FieldPerp() {}
+  ~FieldPerp() override {}
 
   /*!
    * Assignment operators
@@ -80,30 +85,29 @@ class FieldPerp : public Field {
   FieldPerp &operator=(FieldPerp &&rhs) = default;
   FieldPerp &operator=(BoutReal rhs);
 
-  /*!
-   * Iterators and data access
-   */
-  const DataIterator begin() const;
-  const DataIterator end() const;
+  /// Return a Region<IndPerp> reference to use to iterate over this field
+  const Region<IndPerp>& getRegion(REGION region) const;  
+  const Region<IndPerp>& getRegion(const std::string &region_name) const;
 
-  const IndexRange region(REGION rgn) const override;
-
-  /*!
-   * Direct data access using DataIterator indexing
-   */
-  inline BoutReal& operator[](const DataIterator &d) {
-    return operator()(d.x, d.z);
-  }
-  inline const BoutReal& operator[](const DataIterator &d) const {
-    return operator()(d.x, d.z);
-  }
-  BoutReal& operator[](const Indices &i) {
-    return operator()(i.x, i.z);
-  }
-  const BoutReal& operator[](const Indices &i) const override{
-    return operator()(i.x, i.z);
-  }
+  Region<IndPerp>::RegionIndices::const_iterator begin() const {return std::begin(getRegion("RGN_ALL"));};
+  Region<IndPerp>::RegionIndices::const_iterator end() const {return std::end(getRegion("RGN_ALL"));};
   
+  inline BoutReal& operator[](const IndPerp &d) {
+    return data[d.ind];
+  }
+  inline const BoutReal& operator[](const IndPerp &d) const {
+    return data[d.ind];
+  }  
+
+  inline BoutReal& operator[](const Ind3D &d) {
+    ASSERT3(d.y() == yindex);
+    return operator()(d.x(), d.z()); //Could use mesh->ind3DtoPerp if we had access to mesh here
+  }
+  inline const BoutReal& operator[](const Ind3D &d) const {
+    ASSERT3(d.y() == yindex);
+    return operator()(d.x(), d.z());
+  }  
+
   /*!
    * Returns the y index at which this field is defined
    */ 
@@ -114,12 +118,25 @@ class FieldPerp : public Field {
    *
    * This is used in arithmetic operations
    */
-  void setIndex(int y) { yindex = y; }
+  FieldPerp& setIndex(int y) {
+    yindex = y;
+    return *this;
+  }
+
+  // these methods return FieldPerp to allow method chaining
+  FieldPerp& setLocation(CELL_LOC location) {
+    Field::setLocation(location);
+    return *this;
+  }
+  FieldPerp& setDirectionY(YDirectionType d) {
+    Field::setDirectionY(d);
+    return *this;
+  }
 
   /*!
    * Ensure that data array is allocated and unique
    */
-  void allocate();
+  FieldPerp& allocate();
 
   /*!
    * True if the underlying data array is allocated.
@@ -235,51 +252,53 @@ class FieldPerp : public Field {
   /*!
    * Return the number of ny points
    */
-  virtual int getNy() const override{ return 1;};
+  int getNy() const override { return 1; };
   /*!
    * Return the number of nz points
    */
   int getNz() const override {return nz;};
   
- private:
-  int yindex; ///< The Y index at which this FieldPerp is defined
+private:
+  /// The Y index at which this FieldPerp is defined
+  int yindex{-1};
 
   /// The size of the data array
-  int nx, nz;
+  int nx{-1}, nz{-1};
 
   /// The underlying data array
   Array<BoutReal> data;
 };
   
+// Non-member functions
+
+FieldPerp toFieldAligned(const FieldPerp& f, const REGION region = RGN_ALL);
+FieldPerp fromFieldAligned(const FieldPerp& f, const REGION region = RGN_ALL);
+
 // Non-member overloaded operators
   
-const FieldPerp operator+(const FieldPerp &lhs, const FieldPerp &rhs);
-const FieldPerp operator+(const FieldPerp &lhs, const Field3D &rhs);
-const FieldPerp operator+(const FieldPerp &lhs, const Field2D &rhs);
-const FieldPerp operator+(const FieldPerp &lhs, BoutReal rhs);
-inline const FieldPerp operator+(BoutReal lhs, const FieldPerp &rhs) {
-  return rhs + lhs;
-}
+FieldPerp operator+(const FieldPerp &lhs, const FieldPerp &rhs);
+FieldPerp operator+(const FieldPerp &lhs, const Field3D &rhs);
+FieldPerp operator+(const FieldPerp &lhs, const Field2D &rhs);
+FieldPerp operator+(const FieldPerp &lhs, BoutReal rhs);
+FieldPerp operator+(BoutReal lhs, const FieldPerp &rhs);
 
-const FieldPerp operator-(const FieldPerp &lhs, const FieldPerp &other);
-const FieldPerp operator-(const FieldPerp &lhs, const Field3D &other);
-const FieldPerp operator-(const FieldPerp &lhs, const Field2D &other);
-const FieldPerp operator-(const FieldPerp &lhs, BoutReal rhs);
-const FieldPerp operator-(BoutReal lhs, const FieldPerp &rhs);
+FieldPerp operator-(const FieldPerp &lhs, const FieldPerp &rhs);
+FieldPerp operator-(const FieldPerp &lhs, const Field3D &rhs);
+FieldPerp operator-(const FieldPerp &lhs, const Field2D &rhs);
+FieldPerp operator-(const FieldPerp &lhs, BoutReal rhs);
+FieldPerp operator-(BoutReal lhs, const FieldPerp &rhs);
 
-const FieldPerp operator*(const FieldPerp &lhs, const FieldPerp &other);
-const FieldPerp operator*(const FieldPerp &lhs, const Field3D &other);
-const FieldPerp operator*(const FieldPerp &lhs, const Field2D &other);
-const FieldPerp operator*(const FieldPerp &lhs, BoutReal rhs);
-inline const FieldPerp operator*(BoutReal lhs, const FieldPerp &rhs) {
-  return rhs * lhs;
-}
+FieldPerp operator*(const FieldPerp &lhs, const FieldPerp &rhs);
+FieldPerp operator*(const FieldPerp &lhs, const Field3D &rhs);
+FieldPerp operator*(const FieldPerp &lhs, const Field2D &rhs);
+FieldPerp operator*(const FieldPerp &lhs, BoutReal rhs);
+FieldPerp operator*(BoutReal lhs, const FieldPerp &rhs);
 
-const FieldPerp operator/(const FieldPerp &lhs, const FieldPerp &other);
-const FieldPerp operator/(const FieldPerp &lhs, const Field3D &other);
-const FieldPerp operator/(const FieldPerp &lhs, const Field2D &other);
-const FieldPerp operator/(const FieldPerp &lhs, BoutReal rhs);
-const FieldPerp operator/(BoutReal lhs, const FieldPerp &rhs);
+FieldPerp operator/(const FieldPerp &lhs, const FieldPerp &rhs);
+FieldPerp operator/(const FieldPerp &lhs, const Field3D &rhs);
+FieldPerp operator/(const FieldPerp &lhs, const Field2D &rhs);
+FieldPerp operator/(const FieldPerp &lhs, BoutReal rhs);
+FieldPerp operator/(BoutReal lhs, const FieldPerp &rhs);
 
 /*!
  * Unary minus. Returns the negative of given field,
@@ -403,6 +422,14 @@ BoutReal max(const FieldPerp &f, bool allpe=false, REGION rgn=RGN_NOX);
 /// default (can be changed using the \p rgn argument)
 bool finite(const FieldPerp &f, REGION rgn=RGN_ALL);
 
+// Specialize newEmptyField templates for FieldPerp
+/// Return an empty shell field of some type derived from Field, with metadata
+/// copied and a data array that is allocated but not initialised.
+template<>
+inline FieldPerp emptyFrom<FieldPerp>(const FieldPerp& f) {
+  return FieldPerp(f.getMesh(), f.getLocation(), f.getIndex(), {f.getDirectionY(), f.getDirectionZ()}).allocate();
+}
+
 #if CHECK > 0
 void checkData(const FieldPerp &f, REGION region = RGN_NOX);
 #else
@@ -410,6 +437,10 @@ inline void checkData(const FieldPerp &UNUSED(f), REGION UNUSED(region) = RGN_NO
 #endif
 
 /// Force guard cells of passed field \p var to NaN
+#if CHECK > 2
 void invalidateGuards(FieldPerp &var);
+#else
+inline void invalidateGuards(FieldPerp &UNUSED(var)) {}
+#endif
 
 #endif

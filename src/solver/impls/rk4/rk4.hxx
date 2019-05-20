@@ -43,7 +43,6 @@ RegisterSolver<RK4Solver> registersolverrk4("rk4");
 class RK4Solver : public Solver {
  public:
   RK4Solver(Options *options);
-  ~RK4Solver();
 
   void resetInternalFields() override;
   void setMaxTimestep(BoutReal dt) override;

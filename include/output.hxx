@@ -33,8 +33,12 @@ class Output;
 #include <iostream>
 #include <fstream>
 #include <functional>
+
+#include "bout/assert.hxx"
 #include "boutexception.hxx"
 #include "unused.hxx"
+#include "bout/format.hxx"
+#include "bout/sys/gettext.hxx"  // for gettext _() macro
 
 using std::endl;
 
@@ -55,14 +59,14 @@ using std::endl;
 class Output : private multioutbuf_init<char, std::char_traits<char>>,
                public std::basic_ostream<char, std::char_traits<char>> {
 
-  typedef std::char_traits<char> _Tr;
-  typedef ::multioutbuf_init<char, _Tr> multioutbuf_init;
+  using _Tr = std::char_traits<char>;
+  using multioutbuf_init = ::multioutbuf_init<char, _Tr>;
 
 public:
   Output() : multioutbuf_init(), std::basic_ostream<char, _Tr>(multioutbuf_init::buf()) {
     buffer_len = BUFFER_LEN;
     buffer = new char[buffer_len];
-    enable();
+    Output::enable();
   }
 
   /// Specify a log file to open
@@ -70,10 +74,10 @@ public:
       : multioutbuf_init(), std::basic_ostream<char, _Tr>(multioutbuf_init::buf()) {
     buffer_len = BUFFER_LEN;
     buffer = new char[buffer_len];
-    enable();
-    open(fname);
+    Output::enable();
+    open("%s",fname);
   }
-  virtual ~Output() {
+  ~Output() override {
     close();
     delete[] buffer;
   }
@@ -81,12 +85,15 @@ public:
   virtual void enable();  ///< Enables writing to stdout (default)
   virtual void disable(); ///< Disables stdout
 
-  int open(const char *fname, ...); ///< Open an output log file
+  int open(const char *fname, ...)
+    BOUT_FORMAT_ARGS( 2, 3); ///< Open an output log file
   void close();                     ///< Close the log file
 
-  virtual void write(const char *string, ...); ///< Write a string using C printf format
+  virtual void write(const char *string, ...)
+    BOUT_FORMAT_ARGS( 2, 3); ///< Write a string using C printf format
 
-  virtual void print(const char *string, ...); ///< Same as write, but only to screen
+  virtual void print(const char *string, ...)
+    BOUT_FORMAT_ARGS( 2, 3); ///< Same as write, but only to screen
 
   virtual void vwrite(const char *string,
                       va_list args); ///< Write a string using C vprintf format
@@ -104,6 +111,11 @@ public:
 
   static Output *getInstance(); ///< Return pointer to instance
 
+protected:
+  friend class ConditionalOutput;
+  virtual Output *getBase() { return this; }
+  virtual bool isEnabled() { return true; }
+
 private:
   std::ofstream file;                 ///< Log file stream
   static const int BUFFER_LEN = 1024; ///< default length
@@ -120,16 +132,10 @@ class DummyOutput : public Output {
 public:
   void write(const char *UNUSED(str), ...) override{};
   void print(const char *UNUSED(str), ...) override{};
-  void enable() override {
-    throw BoutException("DummyOutput cannot be enabled.\nTry compiling with "
-                        "--enable-debug or be less verbose?");
-  };
+  void enable() override{};
   void disable() override{};
-  void enable(bool enable) {
-    if (enable)
-      this->enable();
-  };
-  bool isEnabled() { return false; }
+  void enable(MAYBE_UNUSED(bool enable)){};
+  bool isEnabled() override { return false; }
 };
 
 /// Layer on top of Output which passes through calls to write, print etc
@@ -140,43 +146,45 @@ public:
 class ConditionalOutput : public Output {
 public:
   /// @param[in] base    The Output object which will be written to if enabled
-  ConditionalOutput(Output *base) : base(base), enabled(true), base_is_cond(false) {};
+  /// @param[in] enabled Should this be enabled by default?
+  ConditionalOutput(Output *base, bool enabled = true) : base(base), enabled(enabled) {};
 
   /// Constuctor taking ConditionalOutput. This allows several layers of conditions
   /// 
   /// @param[in] base    A ConditionalOutput which will be written to if enabled
   /// 
   ConditionalOutput(ConditionalOutput *base)
-      : base(base), enabled(base->enabled), base_is_cond(true) {};
+      : base(base), enabled(base->enabled) {};
 
   /// If enabled, writes a string using C printf formatting
   /// by calling base->vwrite
   /// This string is then sent to log file and stdout (on processor 0)
-  void write(const char *str, ...) override;
+  void write(const char *str, ...) override
+    BOUT_FORMAT_ARGS( 2, 3);
   void vwrite(const char *str, va_list va) override {
     if (enabled) {
+      ASSERT1(base != nullptr);
       base->vwrite(str, va);
     }
   }
 
   /// If enabled, print a string to stdout using C printf formatting
   /// note: unlike write, this is not also sent to log files
-  void print(const char *str, ...) override;
+  void print(const char *str, ...) override
+    BOUT_FORMAT_ARGS( 2, 3);
   void vprint(const char *str, va_list va) override {
     if (enabled) {
+      ASSERT1(base != nullptr);
       base->vprint(str, va);
     }
   }
-  
+
   /// Get the lowest-level Output object which is the base of this ConditionalOutput
-  Output *getBase() {
-    if (base_is_cond) {
-      return dynamic_cast<ConditionalOutput *>(base)->getBase();
-    } else {
-      return base;
-    }
+  Output *getBase() override {
+    ASSERT1(base != nullptr);
+    return base->getBase();
   };
-  
+
   /// Set whether this ConditionalOutput is enabled
   /// If set to false (disabled), then all print and write calls do nothing
   void enable(bool enable_) { enabled = enable_; };
@@ -189,16 +197,16 @@ public:
   void disable() override { enabled = false; };
 
   /// Check if output is enabled
-  bool isEnabled() {
-    return enabled &&
-           (!base_is_cond || (dynamic_cast<ConditionalOutput *>(base))->isEnabled());
+  bool isEnabled() override {
+    ASSERT1(base != nullptr);
+    return enabled && base->isEnabled();
   };
 
-  Output *base;
-
 private:
+  /// The lower-level Output to send output to
+  Output *base;
+  /// Does this instance output anything?
   bool enabled;
-  bool base_is_cond;
 };
 
 /// Catch stream outputs to DummyOutput objects. This is so that
@@ -252,6 +260,7 @@ extern ConditionalOutput output_warn;  ///< warnings
 extern ConditionalOutput output_progress;  ///< progress
 extern ConditionalOutput output_info;  ///< information 
 extern ConditionalOutput output_error; ///< errors
+extern ConditionalOutput output_verbose; ///< less interesting messages
 
 /// Generic output, given the same level as output_progress
 extern ConditionalOutput output;

@@ -28,6 +28,7 @@
  **************************************************************************/
 
 #include "multigrid_laplace.hxx"
+#include <bout/mesh.hxx>
 #include <msg_stack.hxx>
 #include <bout/openmpwrap.hxx>
 
@@ -37,12 +38,20 @@
 
 BoutReal soltime=0.0,settime=0.0;
 
-LaplaceMultigrid::LaplaceMultigrid(Options *opt) :
-  Laplacian(opt),
+LaplaceMultigrid::LaplaceMultigrid(Options *opt, const CELL_LOC loc, Mesh *mesh_in) :
+  Laplacian(opt, loc, mesh_in),
   A(0.0), C1(1.0), C2(1.0), D(1.0) {
 
   TRACE("LaplaceMultigrid::LaplaceMultigrid(Options *opt)");
   
+  // periodic x-direction not handled: see MultigridAlg::communications
+  ASSERT1(!localmesh->periodicX);
+
+  A.setLocation(location);
+  C1.setLocation(location);
+  C2.setLocation(location);
+  D.setLocation(location);
+
   // Get Options in Laplace Section
   if (!opt) opts = Options::getRoot()->getSection("laplace");
   else opts=opt;
@@ -78,24 +87,21 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt) :
   if ( outer_boundary_flags & ~implemented_boundary_flags ) {
     throw BoutException("Attempted to set Laplacian outer boundary inversion flag that is not implemented in LaplaceMultigrid.");
   }
-  if (nonuniform) {
-    throw BoutException("nonuniform option is not implemented in LaplaceMultigrid.");
-  }
   
-  commX = mesh->getXcomm();
+  commX = localmesh->getXcomm();
   
-  Nx_local = mesh->xend - mesh->xstart + 1; // excluding guard cells
-  Nx_global = mesh->GlobalNx - 2*mesh->xstart; // excluding guard cells
+  Nx_local = localmesh->xend - localmesh->xstart + 1; // excluding guard cells
+  Nx_global = localmesh->GlobalNx - 2*localmesh->xstart; // excluding guard cells
   
   if (mgcount == 0) {
     output <<"Nx="<<Nx_global<<"("<<Nx_local<<")"<<endl;
   }
-  Nz_global = mesh->GlobalNz;
+  Nz_global = localmesh->GlobalNz;
   Nz_local = Nz_global; // No parallelization in z-direction (for now)
   // 
   //else {
-  //  Nz_local = mesh->zend - mesh->zstart + 1; // excluding guard cells
-  //  Nz_global = mesh->GlobalNz - 2*mesh->zstart; // excluding guard cells
+  //  Nz_local = localmesh->zend - localmesh->zstart + 1; // excluding guard cells
+  //  Nz_global = localmesh->GlobalNz - 2*localmesh->zstart; // excluding guard cells
   // }
   if (mgcount==0) {
     output <<"Nz="<<Nz_global<<"("<<Nz_local<<")"<<endl;
@@ -157,8 +163,8 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt) :
   else aclevel = 1;
   adlevel = mglevel - aclevel;
 
-  kMG = std::unique_ptr<Multigrid1DP>(new Multigrid1DP(
-      aclevel, Nx_local, Nz_local, Nx_global, adlevel, mgmpi, commX, pcheck));
+  kMG = bout::utils::make_unique<Multigrid1DP>(aclevel, Nx_local, Nz_local, Nx_global,
+                                               adlevel, mgmpi, commX, pcheck);
   kMG->mgplag = mgplag;
   kMG->mgsm = mgsm; 
   kMG->cftype = cftype;
@@ -170,8 +176,8 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt) :
 
   // Set up Multigrid Cycle
 
-  x = Array<BoutReal>((Nx_local + 2) * (Nz_local + 2));
-  b = Array<BoutReal>((Nx_local + 2) * (Nz_local + 2));
+  x.reallocate((Nx_local + 2) * (Nz_local + 2));
+  b.reallocate((Nx_local + 2) * (Nz_local + 2));
 
   if (mgcount == 0) {  
     output<<" Smoothing type is ";
@@ -199,16 +205,16 @@ const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &
 
   TRACE("LaplaceMultigrid::solve(const FieldPerp, const FieldPerp)");
 
-#if CHECK > 2
+  ASSERT1(localmesh == b_in.getMesh() && localmesh == x0.getMesh());
+  ASSERT1(b_in.getLocation() == location);
+  ASSERT1(x0.getLocation() == location);
+
   checkData(b_in);
   checkData(x0);
-#endif
+  ASSERT3(b_in.getIndex() == x0.getIndex());
 
-  Mesh *mesh = b_in.getMesh();
   BoutReal t0,t1;
   
-  Coordinates *coords = mesh->coordinates();
-
   yindex = b_in.getIndex();
   int level = kMG->mglevel-1;
   int lzz = kMG->lnz[level];
@@ -230,7 +236,7 @@ BOUT_OMP(parallel default(shared) )
 BOUT_OMP(for collapse(2))
     for (int i=1; i<lxx+1; i++) {
       for (int k=1; k<lzz+1; k++) {
-        int i2 = i-1+mesh->xstart;
+        int i2 = i-1+localmesh->xstart;
         int k2 = k-1;
         x[i*lz2+k] = x0[i2][k2];
       }
@@ -242,13 +248,13 @@ BOUT_OMP(parallel default(shared) )
 BOUT_OMP(for collapse(2))
   for (int i=1; i<lxx+1; i++) {
     for (int k=1; k<lzz+1; k++) {
-      int i2 = i-1+mesh->xstart;
+      int i2 = i-1+localmesh->xstart;
       int k2 = k-1;
       b[i*lz2+k] = b_in(i2, k2);
     }
   }
   
-  if (mesh->firstX()) {
+  if (localmesh->firstX()) {
     if ( inner_boundary_flags & INVERT_AC_GRAD ) {
       // Neumann boundary condition
       if ( inner_boundary_flags & INVERT_SET ) {
@@ -257,7 +263,7 @@ BOUT_OMP(parallel default(shared) )
 BOUT_OMP(for)
         for (int k=1; k<lzz+1; k++) {
           int k2 = k-1;
-	  x[k] = -x0(mesh->xstart-1, k2)*sqrt(coords->g_11(mesh->xstart, yindex))*coords->dx(mesh->xstart, yindex); 
+	  x[k] = -x0(localmesh->xstart-1, k2)*sqrt(coords->g_11(localmesh->xstart, yindex))*coords->dx(localmesh->xstart, yindex); 
         }
       } else {
         // zero gradient inner boundary condition
@@ -276,7 +282,7 @@ BOUT_OMP(parallel default(shared) )
 BOUT_OMP(for)
         for (int k=1; k<lzz+1; k++) {
           int k2 = k-1;
-          x[k] = 2.*x0(mesh->xstart-1, k2); 
+          x[k] = 2.*x0(localmesh->xstart-1, k2); 
         // this is the value to set at the inner boundary
         }
       }
@@ -291,7 +297,7 @@ BOUT_OMP(for)
       }
     }
   }
-  if (mesh->lastX()) {
+  if (localmesh->lastX()) {
     if ( outer_boundary_flags & INVERT_AC_GRAD ) {
       // Neumann boundary condition
       if ( inner_boundary_flags & INVERT_SET ) {
@@ -300,7 +306,7 @@ BOUT_OMP(parallel default(shared) )
 BOUT_OMP(for)
         for (int k=1; k<lzz+1; k++) {
           int k2 = k-1;
-        x[(lxx+1)*lz2+k] = x0(mesh->xend+1, k2)*sqrt(coords->g_11(mesh->xend, yindex))*coords->dx(mesh->xend, yindex); 
+        x[(lxx+1)*lz2+k] = x0(localmesh->xend+1, k2)*sqrt(coords->g_11(localmesh->xend, yindex))*coords->dx(localmesh->xend, yindex); 
         // this is the value to set the gradient to at the outer boundary
         }
       }
@@ -322,7 +328,7 @@ BOUT_OMP(parallel default(shared) )
 BOUT_OMP(for)
         for (int k=1; k<lzz+1; k++) {
           int k2 = k-1;
-          x[(lxx+1)*lz2+k]=2.*x0(mesh->xend+1, k2); 
+          x[(lxx+1)*lz2+k]=2.*x0(localmesh->xend+1, k2); 
           // this is the value to set at the outer boundary
         }
       }
@@ -422,40 +428,39 @@ BOUT_OMP(for)
     }
   }
 
-  FieldPerp result(mesh);
-  result.allocate();
-  #if CHECK>2
-    // Make any unused elements NaN so that user does not try to do calculations with them
-  for (const auto &i : result) {
-    result[i] = std::nan("");
-  }
-  #endif
+  FieldPerp result{emptyFrom(b_in)};
+
+#if CHECK > 2
+  // Make any unused elements NaN so that user does not try to do calculations with them
+  BOUT_FOR(i, result.getRegion("RGN_ALL")) { result[i] = BoutNaN; }
+#endif
+
   // Copy solution into a FieldPerp to return
 BOUT_OMP(parallel default(shared) )
 BOUT_OMP(for collapse(2))
   for (int i=1; i<lxx+1; i++) {
     for (int k=1; k<lzz+1; k++) {
-      int i2 = i-1+mesh->xstart;
+      int i2 = i-1+localmesh->xstart;
       int k2 = k-1;
       result(i2, k2) = x[i*lz2+k];
     }
   }
-  if (mesh->firstX()) {
+  if (localmesh->firstX()) {
     if ( inner_boundary_flags & INVERT_AC_GRAD ) {
       // Neumann boundary condition
       if ( inner_boundary_flags & INVERT_SET ) {
         // guard cells of x0 specify gradient to set at inner boundary
-        int i2 = -1+mesh->xstart;
+        int i2 = -1+localmesh->xstart;
 BOUT_OMP(parallel default(shared) )
 BOUT_OMP(for)
         for (int k=1; k<lzz+1; k++) {
           int k2 = k-1;
-          result(i2, k2) = x[lz2+k] - x0(mesh->xstart-1, k2)*sqrt(coords->g_11(mesh->xstart, yindex))*coords->dx(mesh->xstart, yindex);
+          result(i2, k2) = x[lz2+k] - x0(localmesh->xstart-1, k2)*sqrt(coords->g_11(localmesh->xstart, yindex))*coords->dx(localmesh->xstart, yindex);
         }
       }
       else {
         // zero gradient inner boundary condition
-        int i2 = -1+mesh->xstart;
+        int i2 = -1+localmesh->xstart;
 BOUT_OMP(parallel default(shared) )
 BOUT_OMP(for)
         for (int k=1; k<lzz+1; k++) {
@@ -468,17 +473,17 @@ BOUT_OMP(for)
       // Dirichlet boundary condition
       if ( inner_boundary_flags & INVERT_SET ) {
         // guard cells of x0 specify value to set at inner boundary
-        int i2 = -1+mesh->xstart;
+        int i2 = -1+localmesh->xstart;
 BOUT_OMP(parallel default(shared) )
 BOUT_OMP(for)
         for (int k=1; k<lzz+1; k++) {
           int k2 = k-1;
-          result(i2, k2) = 2.*x0(mesh->xstart-1,k2) - x[lz2+k];
+          result(i2, k2) = 2.*x0(localmesh->xstart-1,k2) - x[lz2+k];
         }
       }
       else {
         // zero value inner boundary condition
-        int i2 = -1+mesh->xstart;
+        int i2 = -1+localmesh->xstart;
 BOUT_OMP(parallel default(shared) )
 BOUT_OMP(for)
         for (int k=1; k<lzz+1; k++) {
@@ -488,22 +493,22 @@ BOUT_OMP(for)
       }
     }
   }
-  if (mesh->lastX()) {
+  if (localmesh->lastX()) {
     if ( outer_boundary_flags & INVERT_AC_GRAD ) {
       // Neumann boundary condition
       if ( inner_boundary_flags & INVERT_SET ) {
         // guard cells of x0 specify gradient to set at outer boundary
-        int i2 = lxx+mesh->xstart;
+        int i2 = lxx+localmesh->xstart;
 BOUT_OMP(parallel default(shared) )
 BOUT_OMP(for)
         for (int k=1; k<lzz+1; k++) {
           int k2 = k-1;
-          result(i2, k2) = x[lxx*lz2+k] + x0(mesh->xend+1, k2)*sqrt(coords->g_11(mesh->xend, yindex))*coords->dx(mesh->xend, yindex);
+          result(i2, k2) = x[lxx*lz2+k] + x0(localmesh->xend+1, k2)*sqrt(coords->g_11(localmesh->xend, yindex))*coords->dx(localmesh->xend, yindex);
         }
       }
       else {
         // zero gradient outer boundary condition
-        int i2 = lxx+mesh->xstart;
+        int i2 = lxx+localmesh->xstart;
 BOUT_OMP(parallel default(shared) )
 BOUT_OMP(for)
         for (int k=1; k<lzz+1; k++) {
@@ -516,17 +521,17 @@ BOUT_OMP(for)
       // Dirichlet boundary condition
       if ( outer_boundary_flags & INVERT_SET ) {
         // guard cells of x0 specify value to set at outer boundary
-        int i2 = lxx+mesh->xstart;
+        int i2 = lxx+localmesh->xstart;
 BOUT_OMP(parallel default(shared) )
 BOUT_OMP(for)
         for (int k=1; k<lzz+1; k++) {
           int k2 = k-1;
-          result(i2, k2) = 2.*x0(mesh->xend+1,k2) - x[lxx*lz2+k];
+          result(i2, k2) = 2.*x0(localmesh->xend+1,k2) - x[lxx*lz2+k];
         }
       }
       else {
         // zero value inner boundary condition
-        int i2 = lxx+mesh->xstart;
+        int i2 = lxx+localmesh->xstart;
 BOUT_OMP(parallel default(shared) )
 BOUT_OMP(for)
         for (int k=1; k<lzz+1; k++) {
@@ -536,7 +541,6 @@ BOUT_OMP(for)
       }
     }
   }
-  result.setIndex(yindex); // Set the index of the FieldPerp to be returned
 
 #if CHECK > 2
   checkData(result);
@@ -551,7 +555,6 @@ void LaplaceMultigrid::generateMatrixF(int level) {
   
   // Set (fine-level) matrix entries
 
-  Coordinates *coords = mesh->coordinates();
   BoutReal *mat;
   mat = kMG->matmg[level];
   int llx = kMG->lnx[level];
@@ -561,7 +564,7 @@ BOUT_OMP(parallel default(shared))
 BOUT_OMP(for collapse(2))
   for (int i=1; i<llx+1; i++) {
     for (int k=1; k<llz+1; k++) {
-      int i2 = i-1+mesh->xstart;
+      int i2 = i-1+localmesh->xstart;
       int k2 = k-1;
       int k2p  = (k2+1)%Nz_global;
       int k2m  = (k2+Nz_global-1)%Nz_global;
@@ -583,6 +586,10 @@ BOUT_OMP(for collapse(2))
         + coords->g11(i2, yindex)*ddx_C
         + coords->g13(i2, yindex)*ddz_C // (could assume zero, at least initially, if easier; then check this is true in constructor)
       )/coords->dx(i2, yindex); // coefficient of 1st derivative stencil (x-direction)
+      if (nonuniform) {
+        // add correction for non-uniform dx
+        dxd += D(i2, yindex, k2)*coords->d1_dx(i2, yindex);
+      }
       
       BoutReal dzd = (D(i2, yindex, k2)*coords->G3(i2, yindex)
         + coords->g33(i2, yindex)*ddz_C

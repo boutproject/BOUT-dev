@@ -37,8 +37,10 @@ adaptRtol = 1.e-5
 nout = 100
 timestep = end / (NOUT * 10000)
 [petsc]
-# This solver currently fails this test without adaptive timestepping
-adaptive = true
+# For PETSc < 3.7, there are issues with the RK solvers not
+# interpolating at the final step if they are adaptive
+nout = 10000
+output_step = end / nout
 [power]
 [pvode]
 [rk3ssp]
@@ -52,6 +54,12 @@ adaptive = true
 [snes]
 # This solver currently fails this test without adaptive timestepping
 adaptive = true
+
+[splitrk]
+timestep = end / (NOUT * 500)
+nstages = 3
+mxstep = 10000
+adaptive=false
 
 [field]
 bndry_all = none

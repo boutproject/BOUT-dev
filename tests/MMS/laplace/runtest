@@ -2,16 +2,18 @@
 
 # Python script to run and analyse MMS test
 
+#requires: all_tests
+
 from __future__ import division
 from __future__ import print_function
 from builtins import str
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
+from boututils.run_wrapper import shell, shell_safe, launch_safe
 from boutdata.collect import collect
 
 from numpy import sqrt, max, abs, mean, array, log, concatenate
 
-MPIRUN = getmpirun()
+
 
 print("Making MMS test")
 shell_safe("make > make.log")
@@ -38,7 +40,7 @@ for nx in nxlist:
     # Command to run
     cmd = "./laplace "+args
     # Launch using MPI
-    s, out = launch_safe(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
+    s, out = launch_safe(cmd, nproc=nproc, pipe=True)
 
     # Save output to log file
     f = open("run.log."+str(nx), "w")
@@ -89,8 +91,9 @@ try:
 except:
     pass
 
-if order < 1.9:
+if 1.9 < order < 2.1:
+    # check for success
+    exit(0)
+else:
     print("MMS test failed")
     exit(1)
-else:
-    exit(0)

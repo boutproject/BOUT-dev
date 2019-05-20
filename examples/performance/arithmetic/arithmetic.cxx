@@ -9,8 +9,8 @@
 
 #include <chrono>
 
-typedef std::chrono::time_point<std::chrono::steady_clock> SteadyClock;
-typedef std::chrono::duration<double> Duration;
+using SteadyClock = std::chrono::time_point<std::chrono::steady_clock>;
+using Duration = std::chrono::duration<double>;
 using namespace std::chrono;
 
 #define TIMEIT(elapsed, ...)                                                             \

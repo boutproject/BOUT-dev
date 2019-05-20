@@ -97,7 +97,7 @@ During initialisation (the ``init`` function), the conduction example
 first reads an option (lines 21 and 24) from the input settings file
 (``data/BOUT.inp`` by default)::
 
-    Options *options = Options::getRoot()->getSection("conduction");
+    auto options = Options::root()["conduction"];
 
     OPTION(options, chi, 1.0);
 
@@ -367,9 +367,10 @@ this shorthand for ``v`` and ``B``::
     SOLVE_FOR(v);
     SOLVE_FOR(B);
 
-To make this even shorter, we can use macros `SOLVE_FOR2`,
-`SOLVE_FOR3`, ..., `SOLVE_FOR6` to shorten our initialisation code
-to::
+To make this even shorter, multiple fields can be passed to
+``SOLVE_FOR`` (up to 10 at the time of writing). We can also use
+macros `SOLVE_FOR2`, `SOLVE_FOR3`, ..., `SOLVE_FOR6` which are used in
+many models. Our initialisation code becomes::
 
     int init(bool restarting) override {
       ...
@@ -377,7 +378,7 @@ to::
       bout_solve(p,   "pressure");
       v.covariant = true; // evolve covariant components
       B.covariant = false; // evolve contravariant components
-      SOLVE_FOR2(v, B);
+      SOLVE_FOR(v, B);
       ...
       return 0;
     }
@@ -428,14 +429,14 @@ object in the initialisation function::
       BoutReal gamma;
 
       int init(bool restarting) override {
-        Options *globalOptions = Options::getRoot();
-        Options *options = globalOptions->getSection("mhd");
+        auto globalOptions = Options::root();
+        auto options = globalOptions["mhd"];
 
-        options->get("g", g, 5.0/3.0);
+        OPTION(options, g, 5.0 / 3.0);
         ...
 
 This specifies that an option called “g” in a section called “mhd”
-should be put into the variable ``gamma``. If the option could not be
+should be put into the variable ``g``. If the option could not be
 found, or was of the wrong type, the variable should be set to a
 default value of :math:`5/3`. The value used will be printed to the
 output file, so if ``g`` is not set in the input file the following
@@ -456,8 +457,8 @@ is the macro::
     OPTION(options, g, 5.0/3.0);
 
 which is equivalent to::
-
-    options->get("g", g, 5.0/3.0);
+  
+    g = options["g"].withDefault( 5.0/3.0 );
 
 See :ref:`sec-options` for more details of how to use the input
 options.
@@ -662,6 +663,28 @@ Another way to set the boundaries is to copy them from another variable::
     ...
     a.setBoundaryTo(b); // Copy b's boundaries into a
     ...
+
+Note that this will copy the value at the boundary, which is half-way between
+mesh points. This is not the same as copying the guard cells from
+field ``b`` to field ``a``. The value at the boundary cell is
+calculated using second-order central difference.  For example if
+there is one boundary cell, so that ``a(0,y,z)`` is the boundary cell,
+and ``a(1,y,z)`` is in the domain, then the boundary would be set so that::
+
+    a(0,y,z) + a(1,y,z) = b(0,y,z) + b(1,y,z)
+
+rearranged as::
+
+    a(0,y,z) = - a(1,y,z) + b(0,y,z) + b(1,y,z)
+    
+To copy the boundary cells (and communication guard cells), iterate
+over them::
+
+    BOUT_FOR(i, a.getRegion("RGN_GUARDS")) {
+      a[i] = b[i];
+    }
+    
+See :ref:`sec-iterating` for more details on iterating over custom regions.
 
 .. _sec-custom-bc:
 
@@ -906,7 +929,7 @@ they’re communicated::
 
       int init(bool restarting) override {
 
-        SOLVE_FOR2(U, Apar);
+        SOLVE_FOR(U, Apar);
       }
 
       int rhs(BoutReal t) override {
@@ -925,8 +948,8 @@ getting :math:`\phi` from :math:`U` means inverting a Laplacian.
     Field3D phi, jpar; // Auxilliary variables
 
     int init(bool restarting) override {
-      SOLVE_FOR2(U, Apar);
-      SAVE_REPEAT2(phi, jpar); // Save variables in output file
+      SOLVE_FOR(U, Apar);
+      SAVE_REPEAT(phi, jpar); // Save variables in output file
       return 0;
     }
 

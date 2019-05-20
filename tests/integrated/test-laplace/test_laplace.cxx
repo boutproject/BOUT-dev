@@ -32,8 +32,8 @@ int main(int argc, char **argv) {
   Field3D flag3ac = invert_laplace(input, 3, &a, &c);
   SAVE_ONCE2(flag0ac, flag3ac);
 
-  Field3D flag0ad = invert_laplace(input, 0, &a, NULL, &d);
-  Field3D flag3ad = invert_laplace(input, 3, &a, NULL, &d);
+  Field3D flag0ad = invert_laplace(input, 0, &a, nullptr, &d);
+  Field3D flag3ad = invert_laplace(input, 3, &a, nullptr, &d);
   SAVE_ONCE2(flag0ad, flag3ad);
 
   /// Test new interface and INVERT_IN/OUT_SET flags

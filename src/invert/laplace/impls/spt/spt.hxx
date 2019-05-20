@@ -50,12 +50,12 @@ class LaplaceSPT;
 /*!
  * This is a reference code which performs the same operations as the serial code.
  * To invert a single XZ slice (FieldPerp object), data must pass from the innermost
- * processor (mesh->PE_XIND = 0) to the outermost (mesh->PE_XIND = mesh->NXPE-1) and back again.
+ * processor (localmesh->PE_XIND = 0) to the outermost (localmesh->PE_XIND = localmesh->NXPE-1) and back again.
  *
  * Some parallelism is achieved by running several inversions simultaneously, so while
  * processor #1 is inverting Y=0, processor #0 is starting on Y=1. This works ok as long
- * as the number of slices to be inverted is greater than the number of X processors (MYSUB > mesh->NXPE).
- * If MYSUB < mesh->NXPE then not all processors can be busy at once, and so efficiency will fall sharply.
+ * as the number of slices to be inverted is greater than the number of X processors (MYSUB > localmesh->NXPE).
+ * If MYSUB < localmesh->NXPE then not all processors can be busy at once, and so efficiency will fall sharply.
  *
  * @param[in]    b      RHS values (Ax = b)
  * @param[in]    flags  Inversion settings (see boundary.h for values)
@@ -66,15 +66,27 @@ class LaplaceSPT;
  */
 class LaplaceSPT : public Laplacian {
 public:
-  LaplaceSPT(Options *opt = nullptr);
+  LaplaceSPT(Options *opt = nullptr, const CELL_LOC = CELL_CENTRE, Mesh *mesh_in = nullptr);
   ~LaplaceSPT();
   
   using Laplacian::setCoefA;
-  void setCoefA(const Field2D &val) override { Acoef = val; }
+  void setCoefA(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
+    Acoef = val;
+  }
   using Laplacian::setCoefC;
-  void setCoefC(const Field2D &val) override { Ccoef = val; }
+  void setCoefC(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
+    Ccoef = val;
+  }
   using Laplacian::setCoefD;
-  void setCoefD(const Field2D &val) override { Dcoef = val; }
+  void setCoefD(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
+    Dcoef = val;
+  }
   using Laplacian::setCoefEx;
   void setCoefEx(const Field2D &UNUSED(val)) override {
     throw BoutException("LaplaceSPT does not have Ex coefficient");

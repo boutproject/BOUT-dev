@@ -1,0 +1,210 @@
+# This file is a citation metadata file in the Citation File Format
+# (http://citation-file-format.github.io/).
+#
+# It provides citation metadata for this version of BOUT++
+
+cff-version: 1.0.3-1
+message: If you use BOUT++ in your work, please cite it using the following metadata,
+  or the two papers in the reference section
+title: BOUT++
+authors:
+  - family-names: Dudson
+    given-names: Benjamin Daniel
+    orcid: https://orcid.org/0000-0002-0094-4867
+    affiliation: University of York
+
+  - family-names: Hill
+    given-names: Peter Alec
+    orcid: https://orcid.org/0000-0003-3092-1858
+    affiliation: University of York
+
+  - family-names: Dickinson
+    given-names: David
+    orcid: https://orcid.org/0000-0002-0868-211X
+    affiliation: University of York
+
+  - family-names: Parker
+    given-names: Joseph
+
+  - family-names: Dempsey
+    given-names: Adam
+
+  - family-names: Allen
+    given-names: Andrew
+
+  - family-names: Bokshi
+    given-names: Arka
+
+  - family-names: Shanahan
+    given-names: Brendan
+
+  - family-names: Friedman
+    given-names: Brett
+
+  - family-names: Ma
+    given-names: Chenhao
+
+  - family-names: Schwörer
+    given-names: David
+
+  - family-names: Meyerson
+    given-names: Dmitry
+
+  - family-names: Grinaker
+    given-names: Eric
+
+  - family-names: Breyiannia
+    given-names: George
+
+  - family-names: Seto
+    given-names: Haruki
+
+  - family-names: Zhang
+    given-names: Hong
+
+  - family-names: Joseph
+    given-names: Ilon
+
+  - family-names: Leddy
+    given-names: Jarrod
+
+  - family-names: Brown
+    given-names: Jed
+
+  - family-names: Madsen
+    given-names: Jens
+
+  - family-names: Omotani
+    given-names: John
+    orcid: https://orcid.org/0000-0002-3156-8227
+
+  - family-names: Sauppe
+    given-names: Joshua
+
+  - family-names: Savage
+    given-names: Kevin
+
+  - family-names: Wang
+    given-names: Licheng
+
+  - family-names: Easy
+    given-names: Luke
+    orcid: https://orcid.org/0000-0002-9087-9180
+
+  - family-names: Thomas
+    given-names: Matt
+
+  - family-names: Umansky
+    given-names: Maxim
+
+  - family-names: Løiten
+    given-names: Michael
+    orcid: https://orcid.org/0000-0002-8489-0789
+
+  - family-names: Kim
+    given-names: Minwoo
+
+  - family-names: Leconte
+    given-names: M
+
+  - family-names: Walkden
+    given-names: Nicholas
+
+  - family-names: Izacard
+    given-names: Olivier
+
+  - family-names: Xi
+    given-names: Pengwei
+
+  - family-names: Naylor
+    given-names: Peter
+
+  - family-names: Tiwari
+    given-names: Sanat
+
+  - family-names: Farley
+    given-names: Sean
+
+  - family-names: Myers
+    given-names: Simon
+
+  - family-names: Xia
+    given-names: Tianyang
+
+  - family-names: Rhee
+    given-names: Tongnyeol
+
+  - family-names: Liu
+    given-names: Xiang
+
+  - family-names: Xu
+    given-names: Xueqiao
+
+  - family-names: Wang
+    given-names: Zhanhui
+version: 4.2.2
+date-released: 2019-03-01
+repository-code: https://github.com/boutproject/BOUT-dev
+url: http://boutproject.github.io/
+doi: 10.5281/zenodo.2579077
+license: 'LGPL-3.0-or-later'
+references:
+  - type: article
+    title: "BOUT++: A framework for parallel plasma fluid simulations"
+    authors:
+      - family-names: Dudson
+        given-names: B D
+        orcid: https://orcid.org/0000-0002-0094-4867
+        affiliation: University of York
+
+      - family-names: Umansky
+        given-names: M V
+
+      - family-names: Xu
+        given-names: X Q
+
+      - family-names: Snyder
+        given-names: P B
+
+      - family-names: Wilson
+        given-names: H R
+    doi: 10.1016/j.cpc.2009.03.008
+    url: http://www.sciencedirect.com/science/article/B6TJ5-4VTCM95-3/2/ed200cd23916d02f86fda4ce6887d798
+    journal: Computer Physics Communications
+    volume: 180
+    pages: 1467
+    year: 2009
+    issn: "0010-4655"
+  - type: article
+    title: "Verification of BOUT++ by the method of manufactured solutions"
+    authors:
+      - family-names: Dudson
+        given-names: Benjamin Daniel
+        orcid: https://orcid.org/0000-0002-0094-4867
+        affiliation: University of York
+
+      - family-names: Madsen
+        given-names: Jens
+
+      - family-names: Omotani
+        given-names: John
+        orcid: https://orcid.org/0000-0002-3156-8227
+
+      - family-names: Hill
+        given-names: Peter
+        orcid: https://orcid.org/0000-0003-3092-1858
+        affiliation: University of York
+
+      - family-names: Easy
+        given-names: Luke
+        orcid: https://orcid.org/0000-0002-9087-9180
+
+      - family-names: Løiten
+        given-names: Michael
+        orcid: https://orcid.org/0000-0002-8489-0789
+    doi: 10.1063/1.4953429
+    url: https://aip.scitation.org/doi/full/10.1063/1.4953429
+    journal: Physics of Plasmas
+    volume: 23
+    pages: 062303
+    year: 2016

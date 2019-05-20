@@ -178,10 +178,10 @@ int main(int argc, char** argv) {
 // 	  a1(jx, jy, jz) = a1(jx-1, jy, jz);
 	}
 
-  ASSERT0(finite(f1));
-  ASSERT0(finite(a1));
-  ASSERT0(finite(c1));
-  ASSERT0(finite(d1));
+  checkData(f1);
+  checkData(a1);
+  checkData(c1);
+  checkData(d1);
   
   mesh->communicate(f1,a1,c1,d1);
 
@@ -206,7 +206,7 @@ int main(int argc, char** argv) {
   invert->setCoefC(c1);
   invert->setCoefD(d1);
 
-  ASSERT0(finite(b1));
+  checkData(b1);
   
   try {
     sol1 = invert->solve(sliceXZ(b1, mesh->ystart));

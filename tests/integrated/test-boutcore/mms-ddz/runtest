@@ -2,43 +2,43 @@
 import boutcore
 import numpy as np
 
-#requires boutcore
-#requires not make
+# requires boutcore
+# requires not make
 
-errorlist=""
-boutcore.init("-d data -q -q -q")#+" -f BOUT.settings")
+errorlist = ""
+boutcore.init("-d data -q -q -q")  # +" -f BOUT.settings")
 
-shapes=[]
-errors=[]
-mmax=7
-start=6
-doPlot=False
-nzs=np.logspace(start,mmax,num=mmax-start+1,base=2)
+shapes = []
+errors = []
+mmax = 7
+start = 6
+doPlot = False
+nzs = np.logspace(start, mmax, num=mmax-start+1, base=2)
 for nz in nzs:
-    boutcore.setOption("meshz:nz","%d"%nz,force=True)
-    boutcore.setOption("meshz:dz","2*Pi/%d"%nz,force=True)#%.30g"%(2*np.pi/nz))# better pass calculation to bout ...
-    mesh=boutcore.Mesh(OptionSection="meshz")
-    f=boutcore.create3D("sin(z)",mesh)
-    sim=boutcore.DDZ(f)
-    ana=boutcore.create3D("cos(z)",mesh)
-    err=sim-ana
-    err=np.max(np.abs(err.getAll()))
+    boutcore.setOption("meshz:nz", "%d" % nz, force=True)
+    boutcore.setOption("meshz:dz", "2*Pi/%d" % nz, force=True)
+    mesh = boutcore.Mesh(section="meshz")
+    f = boutcore.create3D("sin(z)", mesh)
+    sim = boutcore.DDZ(f)
+    ana = boutcore.create3D("cos(z)", mesh)
+    err = sim-ana
+    err = np.max(np.abs(err.getAll()))
     errors.append(err)
 
 if doPlot:
     from matplotlib import pyplot as plt
-    plt.plot(1/np.array(nzs),errors,'-o')
+    plt.plot(1/np.array(nzs), errors, '-o')
     plt.show()
 
-errc=np.log(errors[-2]/errors[-1])
-difc=np.log(nzs[-1]/nzs[-2])
-conv=errc/difc
+errc = np.log(errors[-2]/errors[-1])
+difc = np.log(nzs[-1]/nzs[-2])
+conv = errc/difc
 
 if 1.9 < conv < 2.1:
-    print("The convergence is: %f"%conv)
+    print("The convergence is: %f" % conv)
 else:
-    errorlist+="DDZ is not working\n"
+    errorlist += "DDZ is not working\n"
 
 if errorlist != "":
-    print("Found errors:\n%s"%errorlist)
+    print("Found errors:\n%s" % errorlist)
     exit(1)

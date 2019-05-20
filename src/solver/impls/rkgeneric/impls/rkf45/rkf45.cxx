@@ -11,9 +11,9 @@ RKF45Scheme::RKF45Scheme(Options *options):RKScheme(options){
   OPTION(options, followHighOrder, followHighOrder);
 
   //Allocate coefficient arrays
-  stageCoeffs = Matrix<BoutReal>(numStages, numStages);
-  resultCoeffs = Matrix<BoutReal>(numStages, numOrders);
-  timeCoeffs = Array<BoutReal>(numStages);
+  stageCoeffs.reallocate(numStages, numStages);
+  resultCoeffs.reallocate(numStages, numOrders);
+  timeCoeffs.reallocate(numStages);
 
   //Zero out arrays (shouldn't be needed, but do for testing)
   for(int i=0;i<numStages;i++){
@@ -91,9 +91,3 @@ RKF45Scheme::RKF45Scheme(Options *options):RKScheme(options){
   timeCoeffs[5] = 1.0/2.0;
 
 }
-
-RKF45Scheme::~RKF45Scheme(){
-  //Do my cleanup
-  
-}
-

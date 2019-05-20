@@ -4,6 +4,7 @@
 #include "bout/generic_factory.hxx"
 
 #include <exception>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -49,8 +50,8 @@ public:
 };
 
 // Save some typing later
-typedef Factory<BaseComplicated, std::function<BaseComplicated *(const std::string &)>>
-    ComplicatedFactory;
+using ComplicatedFactory =
+    Factory<BaseComplicated, std::function<BaseComplicated*(const std::string&)>>;
 
 // We need to specialise the helper class to pass arguments to the constructor
 template<typename DerivedType>
@@ -73,13 +74,13 @@ RegisterInFactory<BaseComplicated, DerivedComplicated2>
 
 TEST(GenericFactory, RegisterAndCreate) {
 
-  auto base_ = Factory<Base>::getInstance().create("base");
+  std::unique_ptr<Base> base_{Factory<Base>::getInstance().create("base")};
   EXPECT_EQ(base_->foo(), "Base");
 
-  auto derived1_ = Factory<Base>::getInstance().create("derived1");
+  std::unique_ptr<Base> derived1_{Factory<Base>::getInstance().create("derived1")};
   EXPECT_EQ(derived1_->foo(), "Derived1");
 
-  auto derived2_ = Factory<Base>::getInstance().create("derived2");
+  std::unique_ptr<Base> derived2_{Factory<Base>::getInstance().create("derived2")};
   EXPECT_EQ(derived2_->foo(), "Derived2");
 }
 
@@ -90,21 +91,43 @@ TEST(GenericFactory, ListAvailable) {
   EXPECT_EQ(available, expected);
 }
 
+TEST(GenericFactory, Remove) {
+  auto available = Factory<Base>::getInstance().listAvailable();
+  std::vector<std::string> expected{"base", "derived1", "derived2"};
+
+  EXPECT_EQ(available, expected);
+
+  EXPECT_TRUE(Factory<Base>::getInstance().remove("derived2"));
+
+  std::vector<std::string> expected2{"base", "derived1"};
+  available = Factory<Base>::getInstance().listAvailable();
+
+  EXPECT_EQ(available, expected2);
+
+  // Better add this back in as this object is shared between tests!
+  RegisterInFactory<Base, Derived2> registerme("derived2");
+}
+
+TEST(GenericFactory, RemoveNonexistant) {
+  // Try a remove for something that shouldn't be registered
+  EXPECT_FALSE(Factory<Base>::getInstance().remove("derived83"));
+}
+
 TEST(GenericFactory, GetUnknownType) {
   EXPECT_THROW(Factory<Base>::getInstance().create("unknown"), BoutException);
 }
 
 TEST(GenericFactory, Complicated) {
 
-  auto base_ =
-      ComplicatedFactory::getInstance().create("basecomplicated", "BaseComplicated");
+  std::unique_ptr<BaseComplicated> base_{
+      ComplicatedFactory::getInstance().create("basecomplicated", "BaseComplicated")};
   EXPECT_EQ(base_->foo(), "BaseComplicated");
 
-  auto derived1_ = ComplicatedFactory::getInstance().create("derivedcomplicated1",
-                                                            "DerivedComplicated1");
+  std::unique_ptr<BaseComplicated> derived1_{ComplicatedFactory::getInstance().create(
+      "derivedcomplicated1", "DerivedComplicated1")};
   EXPECT_EQ(derived1_->foo(), "DerivedComplicated1");
 
-  auto derived2_ = ComplicatedFactory::getInstance().create("derivedcomplicated2",
-                                                            "DerivedComplicated2");
+  std::unique_ptr<BaseComplicated> derived2_{ComplicatedFactory::getInstance().create(
+      "derivedcomplicated2", "DerivedComplicated2")};
   EXPECT_EQ(derived2_->foo(), "DerivedComplicated2");
 }

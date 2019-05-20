@@ -30,8 +30,9 @@
  *
  **************************************************************/
 
-#include <math.h>
+#include <cmath>
 
+#include <bout/mesh.hxx>
 #include <globals.hxx>
 #include <smoothing.hxx>
 #include <bout_types.hxx>
@@ -44,7 +45,7 @@
 const Field3D smooth_x(const Field3D &f) {
   TRACE("smooth_x");
   Mesh *mesh = f.getMesh();
-  Field3D result(mesh);
+  Field3D result{emptyFrom(f)};
   result.allocate();
   
   // Copy boundary region
@@ -72,7 +73,7 @@ const Field3D smooth_x(const Field3D &f) {
 const Field3D smooth_y(const Field3D &f) {
   TRACE("smooth_y");
   Mesh *mesh = f.getMesh();
-  Field3D result(mesh);
+  Field3D result{emptyFrom(f)};
   result.allocate();
   
   // Copy boundary region
@@ -125,8 +126,7 @@ const Field2D averageX(const Field2D &f) {
     input[y] /= (mesh->xend - mesh->xstart + 1);
   }
 
-  Field2D r(mesh);
-  r.allocate();
+  Field2D r{emptyFrom(f)};
 
   MPI_Comm comm_x = mesh->getXcomm();
 
@@ -185,8 +185,7 @@ const Field3D averageX(const Field3D &f) {
       input(y, z) /= (mesh->xend - mesh->xstart + 1);
     }
 
-  Field3D r(mesh);
-  r.allocate();
+  Field3D r{emptyFrom(f)};
   
   MPI_Comm comm_x = mesh->getXcomm();
  
@@ -230,8 +229,7 @@ const Field2D averageY(const Field2D &f) {
     input[x] /= (mesh->yend - mesh->ystart + 1);
   }
 
-  Field2D r(mesh);
-  r.allocate();
+  Field2D r{emptyFrom(f)};
 
   /// NOTE: This only works if there are no branch-cuts
   MPI_Comm comm_inner = mesh->getYcomm(0);
@@ -276,8 +274,7 @@ const Field3D averageY(const Field3D &f) {
       input(x, z) /= (mesh->yend - mesh->ystart + 1);
     }
 
-  Field3D r(mesh);
-  r.allocate();
+  Field3D r{emptyFrom(f)};
 
   /// NOTE: This only works if there are no branch-cuts
   MPI_Comm comm_inner = mesh->getYcomm(0);
@@ -327,7 +324,7 @@ BoutReal Average_XY(const Field2D &var) {
 BoutReal Vol_Integral(const Field2D &var) {
   Mesh *mesh = var.getMesh();
   BoutReal Int_Glb;
-  Coordinates *metric = mesh->coordinates();
+  Coordinates *metric = var.getCoordinates();
 
   Field2D result = metric->J * var * metric->dx * metric->dy;
 
@@ -339,8 +336,7 @@ BoutReal Vol_Integral(const Field2D &var) {
 
 const Field3D smoothXY(const Field3D &f) {
   Mesh *mesh = f.getMesh();
-  Field3D result(mesh);
-  result.allocate();
+  Field3D result{emptyFrom(f)};
 
   for(int x=2;x<mesh->LocalNx-2;x++)
     for(int y=2;y<mesh->LocalNy-2;y++)
@@ -386,8 +382,7 @@ const Field3D nl_filter_x(const Field3D &f, BoutReal w) {
   TRACE("nl_filter_x( Field3D )");
   Mesh *mesh = f.getMesh();
 
-  Field3D result(mesh);
-  result.allocate();
+  Field3D result{emptyFrom(f)};
   rvec v(mesh->LocalNx);
   
   for (int jy=0;jy<mesh->LocalNy;jy++) {
@@ -409,13 +404,13 @@ const Field3D nl_filter_y(const Field3D &f, BoutReal w) {
   TRACE("nl_filter_x( Field3D )");
 
   Mesh *mesh = f.getMesh();
-  Field3D result(mesh);
-  result.allocate();
+
+  Field3D result{emptyFrom(f)};
 
   rvec v(mesh->LocalNy); // Temporary array
   
   // Transform into field-aligned coordinates
-  Field3D fs = mesh->toFieldAligned(f);
+  Field3D fs = toFieldAligned(f);
 
   for (int jx=0;jx<mesh->LocalNx;jx++) {
     for (int jz=0;jz<mesh->LocalNz;jz++) {
@@ -430,15 +425,14 @@ const Field3D nl_filter_y(const Field3D &f, BoutReal w) {
   }
   
   // Tranform the field back from field aligned coordinates
-  return mesh->fromFieldAligned(result);
+  return fromFieldAligned(result);
 }
 
 const Field3D nl_filter_z(const Field3D &fs, BoutReal w) {
   TRACE("nl_filter_z( Field3D )");
 
   Mesh *mesh = fs.getMesh();
-  Field3D result(mesh);
-  result.allocate();
+  Field3D result{emptyFrom(fs)};
   
   rvec v(mesh->LocalNz);
   
@@ -461,6 +455,6 @@ const Field3D nl_filter(const Field3D &f, BoutReal w) {
   /// Perform filtering in Z, Y then X
   Field3D result = nl_filter_x(nl_filter_y(nl_filter_z(f, w), w), w);
   /// Communicate boundaries
-  mesh->communicate(result);
+  f.getMesh()->communicate(result);
   return result;
 }

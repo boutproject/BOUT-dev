@@ -5,13 +5,15 @@
 # Outputs PDF figures in each subdirectory
 # Checks that the convergence is 2nd order
 # Exits with status 1 if any test failed
- 
+
+#requires: all_tests
+
 
 from __future__ import division
 from __future__ import print_function
 from builtins import str
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
+from boututils.run_wrapper import shell, shell_safe, launch_safe
 from boutdata.collect import collect
 
 from numpy import sqrt, max, abs, mean, array, log
@@ -20,7 +22,7 @@ from os.path import join
 
 import matplotlib.pyplot as plt
 
-MPIRUN = getmpirun()
+
 
 print("Making MMS diffusion test")
 shell_safe("make > make.log")
@@ -49,74 +51,80 @@ for dir,sizes in inputs:
 
     for nx in nxlist:
         #args = "-d "+dir+" nout="+str(nout)+" timestep="+str(timestep)+" solver:type=rk4 solver:timestep="+str(0.01*timestep/nx)
-	args = "-d "+dir+" nout="+str(nout)
+        args = "-d "+dir+" nout="+str(nout)
         for s in sizes:
             args += " "+s+"="+str(nx)
-        
+
         print("  Running with " + args)
 
         # Delete old data
         shell("rm "+dir+"/BOUT.dmp.*.nc")
-        
+
         # Command to run
         cmd = "./diffusion "+args
         # Launch using MPI
-        s, out = launch_safe(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
-        
+        s, out = launch_safe(cmd, nproc=nproc, pipe=True)
+
         # Save output to log file
         f = open("run.log."+str(nx), "w")
         f.write(out)
         f.close()
-        
+
         # Collect data
         E_N = collect("E_N", tind=[nout,nout], path=dir,info=False)
-        
-	# Remove guard cells
-	E_N = E_N[:,1:-1,:,:]
-	 
+
+        # Remove guard cells
+        E_N = E_N[:,1:-1,:,:]
+
         # Average error over domain
         l2 = sqrt(mean(E_N**2))
         linf = max(abs( E_N ))
-        
+
         error_2.append( l2 )
         error_inf.append( linf )
-        
+
         print("  -> Error norm: l-2 %f l-inf %f" % (l2, linf))
-        
+
     # Calculate grid spacing
     dx = 1. / (array(nxlist) - 2.)
 
     # Calculate convergence order
-    
+
     order = log(error_2[-1] / error_2[-2]) / log(dx[-1] / dx[-2])
     print("Convergence order = %f" % (order))
 
-    if order < 1.5:
-        print("=> FAILED\n")
+    if 1.8 < order < 2.2:
+        #success
+        pass
+    else:
         success = False
-    
+        print("=> FAILED\n")
+
     # plot errors
 
-    plt.figure()
-    
-    plt.plot(dx, error_2, '-o', label=r'$l^2$')
-    plt.plot(dx, error_inf, '-x', label=r'$l^\infty$')
-    
-    plt.plot(dx, error_2[-1]*(dx/dx[-1])**order, '--', label="Order %.1f"%(order))
-    
-    plt.legend(loc="upper left")
-    plt.grid()
-    
-    plt.yscale('log')
-    plt.xscale('log')
-    
-    plt.xlabel(r'Mesh spacing $\delta x$')
-    plt.ylabel("Error norm")
-    
-    plt.savefig(join(dir,"norm.pdf"))
+    try:
+        plt.figure()
 
-    #plt.show()
-    plt.close()
+        plt.plot(dx, error_2, '-o', label=r'$l^2$')
+        plt.plot(dx, error_inf, '-x', label=r'$l^\infty$')
+
+        plt.plot(dx, error_2[-1]*(dx/dx[-1])**order, '--', label="Order %.1f"%(order))
+
+        plt.legend(loc="upper left")
+        plt.grid()
+
+        plt.yscale('log')
+        plt.xscale('log')
+
+        plt.xlabel(r'Mesh spacing $\delta x$')
+        plt.ylabel("Error norm")
+
+        plt.savefig(join(dir,"norm.pdf"))
+
+        #plt.show()
+        plt.close()
+    except:
+        pass
 
 if success:
   print(" => All tests passed")

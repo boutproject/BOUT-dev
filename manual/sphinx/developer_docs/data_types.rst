@@ -61,6 +61,47 @@ which returns a pointer to the field holding the time-derivative of this
 variable. This function ensures that this field is unique using a
 singleton pattern.
 
+A `Field` has meta-data members, which give:
+  - ``location`` is the location of the field values in a grid cell. May be
+    unstaggered, ``CELL_CENTRE`` or staggered to one of the cell faces,
+    ``CELL_XLOW``, ``CELL_YLOW`` or ``CELL_ZLOW``.
+  - ``directions`` gives the type of grid that the `Field` is defined on
+      - ``directions.y`` is ``YDirectionType::Standard`` by default, but can be
+        ``YDirectionType::Aligned`` if the `Field` has been transformed from an
+        'orthogonal' to a 'field-aligned' coordinate system.
+      - ``directions.z`` is ``ZDirectionType::Standard`` by default, but can be
+        ``ZDirectionType::Average`` if the `Field` represents a quantity that
+        is averaged or constant in the z-direction (i.e. is a `Field2D`).
+The meta-data members are written to the output files as attributes of the variables.
+
+To create a new `Field` with meta-data, plus ``Mesh`` and ``Coordinates``
+pointers copied from another one, and data allocated (so that the Field is
+ready to use) but not initialized, use the function ``emptyFrom(const T& f)``
+which can act on `Field3D`, `Field2D` or `FieldPerp`. This is often used for
+example to create a ``result`` variable that will be returned from a function
+from the `Field` which is given as input, e.g.
+
+::
+
+    Field3D exampleFunction(const Field3D& f) {
+      Field3D result{emptyFrom(f)};
+      ...
+      < do things to calculate result >
+      ...
+      return result;
+    }
+
+To zero-initialise the `Field` as well, use ``zeroFrom`` in place of
+``emptyFrom``.  If a few of the meta-data members need to be changed, you can
+also chain setter methods to a `Field`. At the moment the available methods are
+``setLocation(CELL_LOC)``, ``setDirectionY(YDirectionType)`` and
+``setDirectionZ(ZDirectionType)``; also ``setIndex(int)`` for `FieldPerp`. For
+example, to set the location of ``result`` explicitly you could use
+
+::
+
+    Field3D result{emptyFrom(f).setLocation(CELL_YLOW)};
+
 ``Vector``
 ----------
 
@@ -217,51 +258,209 @@ See the example ``examples/test-globalfield`` for more examples.
 Iterating over fields
 ---------------------
 
-As of BOUT++ 4.0.0, we now have the ability to use C++ range-based
-for-loops. This means that it is possible to iterate over a whole field
-using a single loop::
+The recommended way to iterate over a field is to use the ``BOUT_FOR``
+macro::
+
+    Field3D f(0.0);
+    BOUT_FOR(i, f.getMesh()->getRegion3D("RGN_ALL")) {
+       f[i] = a[i] + b[i];
+    }
+
+This expands into two nested loops, which have been designed to OpenMP
+parallelise and vectorise. Some tuning of this is possible, see below
+for details. It replaces the C-style triple-nested loop::
+
+   Field3D f(0.0);
+   for (int i = mesh->xstart; i < mesh->xend; ++i) {
+     for (int j = mesh->ystart; j < mesh->yend; ++j) {
+       for (int k = 0; k < mesh->LocalNz; ++k) {
+         f(i,j,k) = a(i,j,k) + b(i,j,k)
+       }
+     }
+   }
+
+The region to iterate over can be over ``Field2D``, ``Field3D``, or
+``FieldPerp`` domains, obtained by calling functions on ``Mesh``:
+``getRegion2D("name")``, ``getRegion3D("name")`` and
+``getRegionPerp("name")`` respectively. Currently the available regions include:
+
+-  `RGN_ALL`, which is the whole mesh;
+
+-  `RGN_NOBNDRY`, which skips all boundaries and guard cells;
+
+-  `RGN_GUARDS`, which is only guard cells, both boundary and
+   communication cells;
+
+-  `RGN_NOX`, which skips the x boundaries and guard cells
+
+-  `RGN_NOY`, which skips the y boundaries and guard cells
+
+New regions can be created and modified, see section below.
+   
+A standard C++ range for loop can also be used, but this is unlikely
+to OpenMP parallelise or vectorise::
 
     Field3D f(0.0);
     for (auto i : f) {
        f[i] = a[i] + b[i];
     }
 
-This replaces the C-style triple-nested loop::
+If you wish to vectorise but can't use OpenMP then there is a serial
+verion of the macro::
 
-   Field3D f(0.0);
-   for (int i = mesh->xstart; i < mesh->xend; ++i) {
-     for (int j = mesh->ystart; j < mesh->yend; ++j) {
-       for (int k = 0; k < mesh->LocalNz; ++k) {
-         f[i,j,k] = a[i,j,k] + b[i,j,k]
-       }
+     BoutReal max=0.;
+     BOUT_FOR_SERIAL(i, region) {
+       max = f[i] > max ? f[i] : max;
      }
-   }
 
+For loops inside parallel regions, there is ``BOUT_FOR_INNER``::
+
+    Field3D f(0.0);
+    BOUT_OMP(parallel) {
+      BOUT_FOR_INNER(i, f.getMesh()->getRegion3D("RGN_ALL")) {
+         f[i] = a[i] + b[i];
+      }
+      ...
+    }
+    
+If a more general OpenMP directive is needed, there is
+``BOUT_FOR_OMP``::
+
+    BoutReal result=0.;
+    BOUT_FOR_OMP(i, region, parallel for reduction(max:result)) {
+      result = f[i] > result ? f[i] : result;
+    }
+  
 The iterator provides access to the x, y, z indices::
 
     Field3D f(0.0);
-    for (auto i : f) {
-       f[i] = i.x + i.y + i.z;
+    BOUT_FOR(i, f.getMesh()->getRegion3D("RGN_ALL")) {
+      f[i] = i.x() + i.y() + i.z();
     }
 
-It is also possible to specify regions to iterate over using this
-syntax::
+Note that calculating these indices involves some overhead: The
+iterator uses a single index internally, so integer division and
+modulo operators are needed to calculate individual indices.
 
-    Field3D f(0.0);
-    for (auto i : f.region(RGN_NOBNDRY)) {
-       f[i] = 1.0;
+To perform finite difference or similar operators, index offsets can
+be calculated::
+
+    Field3D f = ...;
+    Field3D g(0.0);
+    BOUT_FOR(i, f.getMesh()->getRegion3D("RGN_NOBNDRY")) {
+      g[i] = f[i.xp()] - f[i.xm()];
     }
 
-Available regions are:
+The ``xp()`` function by default produces an offset of ``+1`` in ``X``, ``xm()``
+an offset of ``-1`` in the ``X`` direction. These functions can also
+be given an optional step size argument e.g. ``xp(2)`` produces an
+offset of ``+2`` in the ``X`` direction. There are also ``xpp()``,
+which produces an offset of ``+2``, ``xmm()`` an offset of ``-2``, and
+similar functions exist for ``Y`` and ``Z`` directions. For other
+offsets there is a function ``offset(x,y,z)`` so that
+``i.offset(1,0,1)`` is the index at ``(x+1,y,z+1)``.
 
--  `RGN_ALL`, which is the whole mesh;
+Note that by default no bounds checking is performed. If the checking
+level is increased to 3 or above then bounds checks will be
+performed. This will have a significant (bad) impact on performance, so is
+just for debugging purposes. Configure with ``--enable-checks=3``
+option to do this.
 
--  `RGN_NOBNDRY`, which skips all boundaries;
 
--  `RGN_NOX`, which skips the x boundaries
+Tuning BOUT_FOR loops
+~~~~~~~~~~~~~~~~~~~~~
 
--  `RGN_NOY`, which skips the y boundaries
+The ``BOUT_FOR`` macros use two nested loops: The outer loop is OpenMP
+parallelised, and iterates over contiguous blocks::
 
+  BOUT_OMP(parallel for schedule(guided))
+  for (auto block = region.getBlocks().cbegin();
+       block < region.getBlocks().cend();
+       ++block)
+    for (auto index = block->first; index < block->second; ++index)
+
+The inner loop iterates over a contiguous range of indices, which
+enables it to be vectorised by GCC and Intel compilers.
+
+In order to OpenMP parallelise, there must be enough blocks to
+keep all threads busy. In order to vectorise, each of these blocks
+must be larger than the processor vector width, preferably several
+times larger. This can be tuned by setting the maximum block size,
+set at runtime using the `mesh:maxregionblocksize` option on the
+command line or in the `BOUT.inp` input file::
+
+  [mesh]
+  maxregionblocksize = 64
+
+The default value is set in ``include/bout/region.hxx``::
+
+  #define MAXREGIONBLOCKSIZE 64
+
+By default a value of 64 is used, since this has been found to give
+good performance on typical x86_64 hardware. Some simple diagnostics
+are printed at the start of the BOUT++ output which may help. For
+example the ``blob2d`` example prints::
+
+  Registered region 3D RGN_ALL: 
+	Total blocks : 1040, min(count)/max(count) : 64 (1040)/ 64 (1040), Max imbalance : 1, Small block count : 0
+
+In this case all blocks are the same size, so the ``Max imbalance``
+(ratio of maximum to minimum block size) is 1. The ``Small block
+count`` is currently defined as the number of blocks with a size less
+than half the maximum block size. Ideally all blocks should be a
+similar size, so that work is evenly balanced between threads. 
+
+Creating new regions
+~~~~~~~~~~~~~~~~~~~~
+
+Regions can be combined in various ways to create new regions. Adding
+regions together results in a region containing the union of the
+indices in both regions::
+
+  auto region = mesh->getRegion2D("RGN_NOBNDRY") + mesh->getRegion2D("RGN_BNDRY");
+
+This new region could contain duplicated indices, so if unique points
+are required then the ``unique`` function can be used::
+
+  auto region = unique(mesh->getRegion2D("RGN_NOBNDRY") + mesh->getRegion2D("RGN_BNDRY"));
+
+Currently the implementation of ``unique`` also sorts the indices, but
+if this changes in future there is also a ``sort`` function which
+ensures that indices are in ascending order. This can help improve the
+division into blocks of contiguous indices.
+
+Points can also be removed from regions using the ``mask``
+function. This removes all points in the region which are
+in the mask (i.e. set subtraction)::
+
+  auto region = mesh->getRegion2D("RGN_ALL").mask(mesh->getRegion2D("RGN_GUARDS"));
+
+or::
+
+  auto region = mask(mesh->getRegion2D("RGN_ALL"), mesh->getRegion2D("RGN_GUARDS"));
+  
+The above example would produce a region containing all the indices in
+``RGN_ALL`` which are not in ``RGN_GUARDS``.
+
+Currently creating new regions is a relatively slow process, so
+creating new regions should be done in the initialisation stages
+rather than in inner loops. Some of this overhead could be reduced
+with caching, but is not done yet.
+
+One way to improve the performance, and make use of custom regions
+more convenient, is to register a new region in the mesh::
+
+  mesh->addRegion3D("Custom region",
+                     mesh->getRegion3D("RGN_NOBNDRY") + mesh->getRegion3D("RGN_BNDRY"));
+
+It is advisable, though not required, to register both 2D and 3D
+regions of the same name.
+
+In the current implementation overwriting a region, by attempting to
+add a region which already exists, is not allowed, and will result in
+a ``BoutException`` being thrown. This restriction may be removed in
+future.
+  
 .. _sec-rangeiterator:
 
 Iterating over ranges

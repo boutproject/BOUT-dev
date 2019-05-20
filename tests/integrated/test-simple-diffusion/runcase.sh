@@ -3,11 +3,9 @@
 NO_ARGS=0 
 OPTERROR=65
 
-if [ $# -eq "$NO_ARGS" ]  # Script invoked with no command-line args?
-then
-    MPIEXEC="mpirun -np "
-    NP=4
-fi  
+NP=4
+test ".$MPIRUN" = . && MPIRUN="mpirun -np"
+
 # Usage: scriptname -options
 # Note: dash (-) necessary
 
@@ -15,7 +13,7 @@ fi
 while getopts ":n:np" Option
 do
   case $Option in
-    n ) MPIEXEC="mpiexec -np";NP=$OPTARG;;
+    n ) NP=$OPTARG;;
     * ) ;;   # DEFAULT
   esac
 done
@@ -25,6 +23,6 @@ make
 
 #-run the case       
 echo Running with NP = $NP       
-$MPIEXEC $NP ./simple_diff
+$MPIRUN $NP ./simple_diff
 
 

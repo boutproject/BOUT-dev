@@ -20,6 +20,8 @@ FUNCTION collect, arg, xind=xind, yind=yind, zind=zind, tind=tind, $
              path=path, var=var, t_array=t_array, use=use, old=old,  $
                   quiet=quiet, debug=debug, prefix=prefix
 
+  MESSAGE, "This is currently broken for BOUT++ > v4.0.0. See issue #394"
+
   IF NOT KEYWORD_SET(prefix) THEN prefix="BOUT.dmp"
 
   IF NOT KEYWORD_SET(debug) THEN BEGIN

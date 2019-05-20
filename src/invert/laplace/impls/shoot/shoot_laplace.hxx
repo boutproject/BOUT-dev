@@ -37,15 +37,27 @@ class LaplaceShoot;
 
 class LaplaceShoot : public Laplacian {
 public:
-  LaplaceShoot(Options *opt = nullptr);
+  LaplaceShoot(Options *opt = nullptr, const CELL_LOC = CELL_CENTRE, Mesh *mesh_in = nullptr);
   ~LaplaceShoot(){};
   
   using Laplacian::setCoefA;
-  void setCoefA(const Field2D &val) override { Acoef = val; }
+  void setCoefA(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
+    Acoef = val;
+  }
   using Laplacian::setCoefC;
-  void setCoefC(const Field2D &val) override { Ccoef = val; }
+  void setCoefC(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
+    Ccoef = val;
+  }
   using Laplacian::setCoefD;
-  void setCoefD(const Field2D &val) override { Dcoef = val; }
+  void setCoefD(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
+    Dcoef = val;
+  }
   using Laplacian::setCoefEx;
   void setCoefEx(const Field2D &UNUSED(val)) override {
     throw BoutException("LaplaceShoot does not have Ex coefficient");

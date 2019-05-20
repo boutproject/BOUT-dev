@@ -1,23 +1,14 @@
 #ifndef __BOUT_SCOREP_H__
 #define __BOUT_SCOREP_H__
 
+#include <bout_types.hxx>
+
 #ifdef BOUT_HAS_SCOREP
 #include <scorep/SCOREP_User.h>
 #endif
 
 #ifndef SCOREPLVL
 #define SCOREPLVL 0
-#endif
-
-/// The __PRETTY_FUNCTION__ variable is defined by GCC (and some other families) but is not a part 
-/// of the standard. The __func__ variable *is* a part of the c++11 standard so we'd like to fall back
-/// to this if possible. However as these are variables/constants and not macros we can't just
-/// check if __PRETTY_FUNCITON__ is defined or not. Instead we need to say if we support this
-/// or not by defining HAS_PRETTY_FUNCTION (to be implemented in configure)
-#ifdef HAS_PRETTY_FUNCTION
-#define __thefunc__ __PRETTY_FUNCTION__ 
-#else
-#define __thefunc__ __func__
 #endif
 
 /// Instrument a region/function with scorep

@@ -79,7 +79,9 @@ run, and produce a bunch of files in the ``data/`` subdirectory.
 -  ``BOUT.settings`` contains all the options used in the code, including
    options which were not set and used the default values. It's in the same
    format as BOUT.inp, so can be renamed and used to re-run simulations
-   if needed.
+   if needed. In some cases the options used have documentation, with a brief
+   explanation of how they are used. In most cases the type the option is used
+   as (e.g. ``int``, ``BoutReal`` or ``bool``) is given.
    
 -  ``BOUT.restart.*.nc`` are the restart files for the last time point.
    Currently each processor saves its own state in a separate file, but
@@ -210,6 +212,27 @@ and to make this a coloured contour plot
 
 The equivalent commands in Python are as follows. 
 
+.. _sec-run-nls:
+
+Natural language support
+------------------------
+
+If you have locales installed, and configured the ``locale`` path
+correctly (see :ref:`sec-config-nls`), then the ``LANG`` environment
+variable selects the language to use. Currently BOUT++ only has limited support
+for ``fr``, ``zh_TW`` and ``zh_CN`` locales e.g. ::
+
+    LANG=zh_TW.utf8 ./conduction
+
+which should produce an output like::
+
+  BOUT++ 版 4.2.0
+  版: dc95c252d9447ca72d27d4cc0d30f4d9c8a91a41
+  MD5 checksum: 086b600cc54f9c0eb0ee9338dbba71a6
+  代碼於 Nov  1 2018 17:41:02 编译
+  ...
+
+  
 Further examples
 ----------------
 

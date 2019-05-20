@@ -20,11 +20,11 @@
  *
  **************************************************************************/
 
-
-#include "bout/mesh.hxx"
 #include "globals.hxx"
 #include "interpolation.hxx"
 #include "output.hxx"
+#include "bout/index_derivs_interface.hxx"
+#include "bout/mesh.hxx"
 
 #include <vector>
 
@@ -35,11 +35,11 @@ Field3D MonotonicHermiteSpline::interpolate(const Field3D &f) const {
 
   // Derivatives are used for tension and need to be on dimensionless
   // coordinates
-  Field3D fx = localmesh->indexDDX(f, CELL_DEFAULT, DIFF_DEFAULT);
+  Field3D fx = bout::derivatives::index::DDX(f, CELL_DEFAULT, "DEFAULT");
   localmesh->communicateXZ(fx);
-  Field3D fz = localmesh->indexDDZ(f, CELL_DEFAULT, DIFF_DEFAULT, true);
+  Field3D fz = bout::derivatives::index::DDZ(f, CELL_DEFAULT, "DEFAULT", RGN_ALL);
   localmesh->communicateXZ(fz);
-  Field3D fxz = localmesh->indexDDX(fz, CELL_DEFAULT, DIFF_DEFAULT);
+  Field3D fxz = bout::derivatives::index::DDX(fz, CELL_DEFAULT, "DEFAULT");
   localmesh->communicateXZ(fxz);
 
   for (int x = localmesh->xstart; x <= localmesh->xend; x++) {

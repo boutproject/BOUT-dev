@@ -37,28 +37,33 @@ int main(int argc, char** argv) {
   // Read variable from mesh
   Field3D var;
   mesh->get(var, "var");
+
+  Field3D var2 = copy(var);
   
   // Var starts in orthogonal X-Z coordinates
 
   // Calculate yup and ydown
   mesh->communicate(var);
   
-  // Calculate d/dy ysing yup() and ydown() fields
-  Field3D ddy = DDY_yud(var);
+  // Calculate d/dy using yup() and ydown() fields
+  Field3D ddy = DDY(var);
+
+  // Calculate d/dy by transform to field-aligned coordinates
+  // (var2 has no yup/ydown fields)
+  Field3D ddy2 = DDY(var2);
 
   // Change into field-aligned coordinates
-  Field3D var_aligned = mesh->toFieldAligned(var);
+  Field3D var_aligned = toFieldAligned(var);
   var_aligned.applyBoundary("neumann");
   mesh->communicate(var_aligned);
   
   // var now field aligned
-  Field3D ddy2 = DDY_aligned(var_aligned);
-  mesh->communicate(ddy2);
+  Field3D ddy_check = DDY_aligned(var_aligned);
   
   // Shift back to orthogonal X-Z coordinates
-  ddy2 = mesh->fromFieldAligned(ddy2);
+  ddy_check = fromFieldAligned(ddy_check);
   
-  SAVE_ONCE2(ddy, ddy2);
+  SAVE_ONCE3(ddy, ddy2, ddy_check);
   dump.write();
 
   BoutFinalise();

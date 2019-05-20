@@ -71,7 +71,7 @@ class Vector3D : public FieldData {
    * used, then some book-keeping is needed to ensure
    * that fields are only destroyed once.
    */
-  ~Vector3D();
+  ~Vector3D() override;
 
   /*!
    * The components of the vector. These can be 
@@ -149,13 +149,6 @@ class Vector3D : public FieldData {
   Vector3D & operator/=(BoutReal rhs);
   Vector3D & operator/=(const Field2D &rhs);
   Vector3D & operator/=(const Field3D &rhs);
-
-  /// Cross-product of two vectors
-  /// Deprecated: use a=cross(a,b) instead
-  DEPRECATED(Vector3D & operator^=(const Vector3D &rhs);)
-  /// Cross-product of two vectors
-  /// Deprecated: use a=cross(a,b) instead
-  DEPRECATED(Vector3D & operator^=(const Vector2D &rhs);)
   
   // Binary operators
 
@@ -176,14 +169,6 @@ class Vector3D : public FieldData {
   const Field3D operator*(const Vector3D &rhs) const; // Dot product
   const Field3D operator*(const Vector2D &rhs) const;
 
-  /// Cross-product of two vectors
-  /// Deprecated: use cross(a,b) instead
-  DEPRECATED(const Vector3D operator^(const Vector3D &rhs) const;)
-
-  /// Cross-product of two vectors
-  /// Deprecated: use cross(a,b) instead
-  DEPRECATED(const Vector3D operator^(const Vector2D &rhs) const;)
-  
   /*!
    * Set variable cell location
    */ 
@@ -203,12 +188,12 @@ class Vector3D : public FieldData {
   int  BoutRealSize() const override { return 3; }
   
   void applyBoundary(bool init=false) override;
-  void applyBoundary(const string &condition) {
+  void applyBoundary(const std::string &condition) {
     x.applyBoundary(condition);
     y.applyBoundary(condition);
     z.applyBoundary(condition);
   }
-  void applyBoundary(const char* condition) { applyBoundary(string(condition)); }
+  void applyBoundary(const char* condition) { applyBoundary(std::string(condition)); }
   void applyTDerivBoundary() override;
  private:
   Vector3D *deriv; ///< Time-derivative, can be NULL

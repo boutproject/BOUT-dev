@@ -35,15 +35,27 @@ class LaplaceSerialTri;
 
 class LaplaceSerialTri : public Laplacian {
 public:
-  LaplaceSerialTri(Options *opt = nullptr);
+  LaplaceSerialTri(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr);
   ~LaplaceSerialTri(){};
 
   using Laplacian::setCoefA;
-  void setCoefA(const Field2D &val) override { A = val; }
+  void setCoefA(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
+    A = val;
+  }
   using Laplacian::setCoefC;
-  void setCoefC(const Field2D &val) override { C = val; }
+  void setCoefC(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
+    C = val;
+  }
   using Laplacian::setCoefD;
-  void setCoefD(const Field2D &val) override { D = val; }
+  void setCoefD(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
+    D = val;
+  }
   using Laplacian::setCoefEx;
   void setCoefEx(const Field2D &UNUSED(val)) override {
     throw BoutException("LaplaceSerialTri does not have Ex coefficient");

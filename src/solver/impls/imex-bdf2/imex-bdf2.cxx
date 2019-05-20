@@ -3,6 +3,7 @@
 
 #include "imex-bdf2.hxx"
 
+#include <bout/mesh.hxx>
 #include <boutcomm.hxx>
 #include <utils.hxx>
 #include <boutexception.hxx>
@@ -16,32 +17,19 @@
 #include "petscsnes.h"
 #include "petscmat.h"
 
-IMEXBDF2::IMEXBDF2(Options *opt) : Solver(opt), u(nullptr) {
+IMEXBDF2::IMEXBDF2(Options *opt)
+    : Solver(opt), snes_f(nullptr), snes_x(nullptr), snes(nullptr), snesAlt(nullptr),
+      snesUse(nullptr), Jmf(nullptr) {
 
   has_constraints = true; ///< This solver can handle constraints
-  
 }
 
 IMEXBDF2::~IMEXBDF2() {
-  if (u != nullptr) {
-    delete[] u;
-    for (int i = 0; i < uV.size(); i++) {
-      delete[] uV[i];
-    }
-    for (int i = 0; i < fV.size(); i++) {
-      delete[] fV[i];
-    }
-
-    delete[] rhs;
-
+  if (snes_f != nullptr) {
     VecDestroy(&snes_f);
+  }
+  if (snes_x != nullptr) {
     VecDestroy(&snes_x);
-
-    if (have_constraints)
-      delete[] is_dae;
-
-    if (adaptive)
-      delete[] err;
   }
 }
 
@@ -54,8 +42,8 @@ IMEXBDF2::~IMEXBDF2() {
  */
 #undef __FUNCT__
 #define __FUNCT__ "FormFunction"
-static PetscErrorCode FormFunction(SNES snes,Vec x, Vec f, void* ctx) {
-  return static_cast<IMEXBDF2*>(ctx)->snes_function(x, f, false);
+static PetscErrorCode FormFunction(SNES UNUSED(snes), Vec x, Vec f, void *ctx) {
+  return static_cast<IMEXBDF2 *>(ctx)->snes_function(x, f, false);
 }
 
 /*!
@@ -76,10 +64,10 @@ static PetscErrorCode FormFunctionForDifferencing(void* ctx, Vec x, Vec f) {
  */
 #undef __FUNCT__
 #define __FUNCT__ "FormFunctionForColoring"
-static PetscErrorCode FormFunctionForColoring(SNES snes, Vec x, Vec f, void* ctx) {
-  return static_cast<IMEXBDF2*>(ctx)->snes_function(x, f, true);
+static PetscErrorCode FormFunctionForColoring(SNES UNUSED(snes), Vec x, Vec f,
+                                              void *ctx) {
+  return static_cast<IMEXBDF2 *>(ctx)->snes_function(x, f, true);
 }
-
 
 #undef __FUNCT__
 #define __FUNCT__ "imexbdf2PCapply"
@@ -138,12 +126,12 @@ int IMEXBDF2::init(int nout, BoutReal tstep) {
       break;
     }
   }
-  
-  if(have_constraints) {
-    is_dae = new BoutReal[nlocal];
+
+  if (have_constraints) {
+    is_dae.reallocate(nlocal);
     // Call the Solver function, which sets the array
     // to zero when not a constraint, one for constraint
-    set_id(is_dae);
+    set_id(std::begin(is_dae));
   }
 
   // Get options
@@ -166,18 +154,17 @@ int IMEXBDF2::init(int nout, BoutReal tstep) {
   }
 
   // Allocate memory and initialise structures
-  u = new BoutReal[nlocal];
+  u.reallocate(nlocal);
   for(int i=0;i<maxOrder;i++){
-    uV.push_back(new BoutReal[nlocal]);
-    fV.push_back(new BoutReal[nlocal]);
-    //gV.push_back(new BoutReal[nlocal]);
+    uV.emplace_back(Array<BoutReal>{nlocal});
+    fV.emplace_back(Array<BoutReal>{nlocal});
     timesteps.push_back(timestep);
     uFac.push_back(0.0);
     fFac.push_back(0.0);
     gFac.push_back(0.0);
   }
 
-  rhs = new BoutReal[nlocal];
+  rhs.reallocate(nlocal);
 
   OPTION(options, adaptive, true); //Do we try to estimate the error?
   OPTION(options, nadapt, 4); //How often do we check the error
@@ -185,7 +172,7 @@ int IMEXBDF2::init(int nout, BoutReal tstep) {
   OPTION(options, dtMax, out_timestep);
   OPTION(options, dtMin, dtMinFatal);
   if(adaptive){
-    err = new BoutReal[nlocal];
+    err.reallocate(nlocal);
     OPTION(options, adaptRtol, 1.0e-3); //Target relative error
     OPTION(options, mxstepAdapt, mxstep); //Maximum no. consecutive times we try to reduce timestep
     OPTION(options, scaleCushUp, 1.5);
@@ -193,10 +180,10 @@ int IMEXBDF2::init(int nout, BoutReal tstep) {
   }
 
   // Put starting values into u
-  saveVars(u);
+  saveVars(std::begin(u));
   for(int i=0; i<nlocal; i++){
-    for(int j=0; j<uV.size(); j++){
-      uV[j][i] = u[i];
+    for (auto& u_: uV) {
+      u_[i] = u[i];
     }
   }
 
@@ -218,6 +205,9 @@ int IMEXBDF2::init(int nout, BoutReal tstep) {
 
 //Set up a snes object stored at the specified location
 void IMEXBDF2::constructSNES(SNES *snesIn){
+
+  // Use global mesh for now
+  Mesh* mesh = bout::globals::mesh;
 
   // Nonlinear solver interface (SNES)
   SNESCreate(BoutComm::get(),snesIn);
@@ -626,7 +616,7 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
       ISColoringDestroy(&iscoloring);
       // Set the function to difference
       //MatFDColoringSetFunction(fdcoloring,(PetscErrorCode (*)(void))FormFunctionForDifferencing,this);
-      MatFDColoringSetFunction(fdcoloring,(PetscErrorCode (*)(void))FormFunctionForColoring,this);
+      MatFDColoringSetFunction(fdcoloring,(PetscErrorCode (*)())FormFunctionForColoring,this);
       MatFDColoringSetFromOptions(fdcoloring);
       //MatFDColoringSetUp(Jmf,iscoloring,fdcoloring);
       
@@ -753,7 +743,7 @@ int IMEXBDF2::run() {
   int order = 1;
   int lastOrder = -1;
   BoutReal dt = timestep;
-  vector<BoutReal> lastTimesteps = timesteps;
+  std::vector<BoutReal> lastTimesteps = timesteps;
   BoutReal dtNext = dt; //Timestep to try for next internal iteration
   
   //By default use the main snes object.
@@ -780,9 +770,9 @@ int IMEXBDF2::run() {
 	need to loadVars(u) before doing the monitors. Would need a setup call outside
 	loops however and savings probably minimal.
       */
-      loadVars(uV[0]);
+      loadVars(std::begin(uV[0]));
       run_convective(simtime);
-      saveDerivs(fV[0]);
+      saveDerivs(std::begin(fV[0]));
 
       bool running = true;
       bool checkingErr = adaptive && (internalCounter%nadapt) ==0 && order>1;
@@ -834,8 +824,8 @@ int IMEXBDF2::run() {
           }catch (const BoutException &e) {
             // An error occurred. If adaptive, reduce timestep
             if(!adaptive)
-              throw e;
-          
+              throw;
+
             failCounter++;
             if(failCounter > 10) {
               throw BoutException("Too many failed steps\n");
@@ -868,8 +858,8 @@ int IMEXBDF2::run() {
         }catch (const BoutException &e) {
           // An error occurred. If adaptive, reduce timestep
           if(!adaptive)
-            throw e;
-          
+            throw;
+
           failCounter++;
           if(failCounter > 10) {
             throw BoutException("Too many failed steps\n");
@@ -888,9 +878,9 @@ int IMEXBDF2::run() {
 
 	  //Find local data
 	  for(int i=0;i<nlocal;i++){
-	    errTot[0] += abs(err[i]-u[i]);
-	    errTot[1] += abs(u[i]);
-	    errTot[2] += abs(err[i]);
+	    errTot[0] += std::abs(err[i]-u[i]);
+	    errTot[1] += std::abs(u[i]);
+	    errTot[2] += std::abs(err[i]);
 	  };
 
 	  //Now reduce across procs
@@ -981,7 +971,7 @@ int IMEXBDF2::run() {
       output.write("   Linear fails = %d, nonlinear fails = %d\n", linear_fails, nonlinear_fails);
     }
 
-    loadVars(u);// Put result into variables
+    loadVars(std::begin(u));// Put result into variables
     run_rhs(simtime); // Run RHS to calculate auxilliary variables
 
     iteration++; // Advance iteration number
@@ -1090,15 +1080,15 @@ void IMEXBDF2::calculateCoeffs(int order){
  * u   - Latest Solution
  * f1  - Non-stiff time derivative at current time
  */
-void IMEXBDF2::take_step(BoutReal curtime, BoutReal dt, int order) {
+void IMEXBDF2::take_step(BoutReal curtime, BoutReal UNUSED(dt), int order) {
 
   //First zero out rhs
-  std::fill(rhs, rhs+nlocal, 0.0);
+  std::fill(std::begin(rhs), std::end(rhs), 0.0);
 
   //Now add the contribution to rhs from each history step
   for(int j=0;j<order;j++){
     for(int i=0;i<nlocal;i++){
-      rhs[i] += uV[j][i]*uFac[j] + fV[j][i]*fFac[j]; //+gV[j][i]*gFac[j]
+      rhs[i] += uV[j][i]*uFac[j] + fV[j][i]*fFac[j];
     }
   }
 
@@ -1110,7 +1100,6 @@ void IMEXBDF2::take_step(BoutReal curtime, BoutReal dt, int order) {
  *  Moves the solution histories along one step. Also handles the timesteps.
  */
 void IMEXBDF2::shuffleState(){
-  BoutReal *tmp;
 
   //Note: std::rotate takes the start and end of a range and a third value (2nd arg)
   //which says rotate the elements of the vector such that this element is first.
@@ -1121,16 +1110,11 @@ void IMEXBDF2::shuffleState(){
   //Non-stiff solutions
   std::rotate(fV.begin(),fV.end()-1,fV.end());
 
-  //Stiff solutions
-  //std::rotate(gV.begin(),gV.end()-1,gV.end());
-
   // Rotate u -> u_1, u_1 -> u_2, u_2 -> u . U later overwritten
   std::rotate(uV.begin(),uV.end()-1,uV.end()); //Rotate
   //Slight extra handling required as the current state "u" is held externally 
   //from the history vector *for reasons*
-  tmp = uV[0];
-  uV[0] = u;
-  u = tmp;
+  std::swap(u, uV[0]);
 
   //Timesteps used
   std::rotate(timesteps.begin(),timesteps.end()-1,timesteps.end());
@@ -1330,11 +1314,14 @@ PetscErrorCode IMEXBDF2::precon(Vec x, Vec f) {
  */
 template< class Op >
 void IMEXBDF2::loopVars(BoutReal *u) {
-  // Loop over 2D variables
-  for(vector< VarStr<Field2D> >::const_iterator it = f2d.begin(); it != f2d.end(); ++it) {
-    Op op(it->var, it->F_var); // Initialise the operator
+  // Use global mesh for now
+  Mesh* mesh = bout::globals::mesh;
 
-    if(it->evolve_bndry) {
+  // Loop over 2D variables
+  for(auto & it : f2d) {
+    Op op(it.var, it.F_var); // Initialise the operator
+
+    if(it.evolve_bndry) {
       // Include boundary regions
 
       // Inner X
@@ -1375,9 +1362,9 @@ void IMEXBDF2::loopVars(BoutReal *u) {
   }
 
   // Loop over 3D variables
-  for(vector< VarStr<Field3D> >::const_iterator it = f3d.begin(); it != f3d.end(); ++it) {
-    Op op(it->var, it->F_var); // Initialise the operator
-    if(it->evolve_bndry) {
+  for(auto & it : f3d) {
+    Op op(it.var, it.F_var); // Initialise the operator
+    if(it.evolve_bndry) {
       // Include boundary regions
 
       // Inner X
@@ -1428,9 +1415,9 @@ void IMEXBDF2::loopVars(BoutReal *u) {
 class SaveVarOp {
 public:
   // Initialise with a Field2D iterator
-  SaveVarOp(Field2D *var, Field2D *F_var) : var2D(var) {}
+  SaveVarOp(Field2D *var, Field2D *UNUSED(F_var)) : var2D(var) {}
   // Initialise with a Field3D iterator
-  SaveVarOp(Field3D *var, Field3D *F_var) : var3D(var) {}
+  SaveVarOp(Field3D *var, Field3D *UNUSED(F_var)) : var3D(var) {}
 
   // Perform operation on 2D field
   inline void run(int jx, int jy, BoutReal *u) {
@@ -1459,9 +1446,9 @@ void IMEXBDF2::saveVars(BoutReal *u) {
 class LoadVarOp {
 public:
   // Initialise with a Field2D iterator
-  LoadVarOp(Field2D *var, Field2D *F_var) : var2D(var) {}
+  LoadVarOp(Field2D *var, Field2D *UNUSED(F_var)) : var2D(var) {}
   // Initialise with a Field3D iterator
-  LoadVarOp(Field3D *var, Field3D *F_var) : var3D(var) {}
+  LoadVarOp(Field3D *var, Field3D *UNUSED(F_var)) : var3D(var) {}
 
   // Perform operation on 2D field
   inline void run(int jx, int jy, BoutReal *u) {
@@ -1490,9 +1477,9 @@ void IMEXBDF2::loadVars(BoutReal *u) {
 class SaveDerivsOp {
 public:
   // Initialise with a Field2D iterator
-  SaveDerivsOp(Field2D *var, Field2D *F_var) : F_var2D(F_var) {}
+  SaveDerivsOp(Field2D *UNUSED(var), Field2D *F_var) : F_var2D(F_var) {}
   // Initialise with a Field3D iterator
-  SaveDerivsOp(Field3D *var, Field3D *F_var) : F_var3D(F_var) {}
+  SaveDerivsOp(Field3D *UNUSED(var), Field3D *F_var) : F_var3D(F_var) {}
 
   // Perform operation on 2D field
   inline void run(int jx, int jy, BoutReal *u) {

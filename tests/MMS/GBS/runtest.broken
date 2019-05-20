@@ -1,0 +1,12 @@
+#!/bin/bash
+
+#requires: all_tests
+
+for test in slab2d slab3d
+do
+    if ! ./runtest-$test
+    then
+        echo "Test $test failed"
+        exit 1
+    fi
+done

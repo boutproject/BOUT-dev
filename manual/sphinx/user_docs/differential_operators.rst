@@ -23,8 +23,8 @@ central differencing), and differential operators (such as
 Differencing methods
 --------------------
 
-Methods are implemented on 5-point stencils, and are divided into three
-categories:
+Methods are typically implemented on *5-point* stencils (although
+exceptions are possible) and are divided into three categories:
 
 -  Central-differencing methods, for diffusion operators
    :math:`\frac{df}{dx}`, :math:`\frac{d^2f}{dx^2}`. Each method has a
@@ -35,18 +35,25 @@ categories:
    -  ``C4``: 4\ :math:`^{th}` order
       :math:`(-f_{-2} + 16f_{-1} - 30f_0 + 16f_1 - f_2)/12`
 
+   -  ``S2``: 2\ :math:`^{nd}` order smoothing derivative
+      
    -  ``W2``: 2\ :math:`^{nd}` order CWENO
 
    -  ``W3``: 3\ :math:`^{rd}` order CWENO
-
-   -  ``FFT``: Fourier Transform method in Z (axisymmetric) direction
-      only
 
 -  Upwinding methods for advection operators :math:`v_x\frac{df}{dx}`
 
    -  ``U1``: 1\ :math:`^{st}` order upwinding
 
+   -  ``U2``: 2\ :math:`^{nd}` order upwinding
+      
+   -  ``U3``: 3\ :math:`^{rd}` order upwinding
+      
    -  ``U4``: 4\ :math:`^{th}` order upwinding
+
+   -  ``C2``: 2\ :math:`^{nd}` order central
+
+   -  ``C4``: 4\ :math:`^{th}` order central
 
    -  ``W3``: 3\ :math:`^{rd}` order `Weighted Essentially
       Non-Oscillatory (WENO)`_
@@ -54,26 +61,51 @@ categories:
 -  Flux conserving and limiting methods for terms of the form
    :math:`\frac{d}{dx}(v_x f)`
 
-   -  ``SPLIT``: split into upwind and central terms
-      :math:`\frac{d}{dx}(v_x f) = v_x\frac{df}{dx} + f\frac{dv_x}{dx}`
+   -  ``U1``: 1\ :math:`^{st}` order upwinding
 
-   -  ``NND``: `Non-oscillatory, containing No free parameters and
-      Dissipative (NND) scheme`_
+   -  ``C2``: 2\ :math:`^{nd}` order central
+
+   -  ``C4``: 4\ :math:`^{th}` order central
+
+Special methods :
+
+- ``FFT``: Classed as a central method, Fourier Transform method in Z
+   (axisymmetric) direction only. Currently available for ``first``
+   and ``second`` order central difference
+
+- ``SPLIT``: A flux method that splits into upwind and central terms
+   :math:`\frac{d}{dx}(v_x f) = v_x\frac{df}{dx} + f\frac{dv_x}{dx}`
+  
 
 .. _Weighted Essentially Non-Oscillatory (WENO): https://doi.org/10.1137/S106482759732455X
 
-.. _Non-oscillatory, containing No free parameters and Dissipative (NND) scheme: https://doi.org/10.1088/0253-6102/54/6/28             
-
-Both of these methods avoid overshoots (Gibbs phenomena) at sharp
+WENO methods avoid overshoots (Gibbs phenomena) at sharp
 gradients such as shocks, but the simple 1st-order method has very large
 artificial diffusion. WENO schemes are a development of the ENO
 reconstruction schemes which combine good handling of sharp-gradient
 regions with high accuracy in smooth regions.
 
-To use these differencing operators directly, add the following to the
-top of your physics module::
+The stencil based methods are based by a kernel that combines the data
+in a stencil to produce a single BoutReal (note upwind/flux methods
+take extra information about the flow, either a ``BoutReal`` or
+another ``stencil``). It is not anticipated that the user would wish
+to apply one of these kernels directly so documentation is not
+provided here for how to do so. If this is of interest please look at
+``include/bout/index_derivs.hxx``. Internally, these kernel routines
+are combined within a functor struct that uses a ``BOUT_FOR`` loop
+over the domain to provide a routine that will apply the kernel to
+every point, calculating the derivative everywhere. These routines are
+registered in the appropriate ``DerivativeStore`` and identified by
+the direction of differential, the staggering, the type
+(central/upwind/flux) and a key such as "C2". The typical user does
+not need to interact with this store, instead one can add the
+following to the top of your physics module::
 
     #include <derivs.hxx>
+
+to provide access to the following routines. These take care of
+selecting the appropriate method from the store and ensuring the
+input/output field locations are compatible.
 
 .. _tab-coordinate-derivatives:
 .. table:: Coordinate derivatives
@@ -93,11 +125,11 @@ top of your physics module::
    +--------------+-----------------------------------------------+
    | D2DZ2(f)     | :math:`\partial^2 f / \partial z^2`           |
    +--------------+-----------------------------------------------+
-   | D2DX4(f)     | :math:`\partial^4 f / \partial x^4`           |
+   | D4DX4(f)     | :math:`\partial^4 f / \partial x^4`           |
    +--------------+-----------------------------------------------+
-   | D2DY4(f)     | :math:`\partial^4 f / \partial y^4`           |
+   | D4DY4(f)     | :math:`\partial^4 f / \partial y^4`           |
    +--------------+-----------------------------------------------+
-   | D2DZ4(f)     | :math:`\partial^4 f / \partial z^4`           |
+   | D4DZ4(f)     | :math:`\partial^4 f / \partial z^4`           |
    +--------------+-----------------------------------------------+
    | D2DXDZ(f)    | :math:`\partial^2 f / \partial x\partial z`   |
    +--------------+-----------------------------------------------+
@@ -118,8 +150,95 @@ top of your physics module::
 
 By default the method used will be the one specified in the options
 input file (see :ref:`sec-diffmethodoptions`), but most of these
-methods can take an optional `DIFF_METHOD` argument, specifying
-exactly which method to use.
+methods can take an optional `std::string` argument (or a
+`DIFF_METHOD` argument - to be deprecated), specifying exactly which
+method to use.
+
+.. _sec-diffmethod-userregistration:
+
+User registered methods
+-----------------------
+
+.. note:: The following may be considered advanced usage.
+
+It is possible for the user to define their own
+differencing routines, either by supplying a stencil using kernel or
+writing their own functor that calculates the differential
+everywhere. It is then possible to register these methods with the
+derivative store (for any direction, staggering etc.). For examples
+please look at ``include/bout/index_derivs.hxx`` to see how these
+approaches work.
+
+Here is a verbose example showing how the ``C2`` method is
+implemented.
+
+::
+
+   DEFINE_STANDARD_DERIV(DDX_C2, "C2", 1, DERIV::Stanard) {
+       return 0.5*(f.p - f.m);
+   };
+
+   
+Here `DEFINE_STANARD_DERIV` is a macro that acts on the kernel `return
+0.5*(f.p - f.m);` and produces the functor that will apply the
+differencing method over an entire field.  The macro takes several
+arguments;
+
+- the first (`DDX_C2`) is the name of the generated functor -- this
+  needs to be unique and allows advanced users to refer to a specific
+  derivative functor without having to go through the derivative store
+  if desired.
+
+- the second (`"C2"`) is the string key that is used to refer to this
+  specific method when registering/retrieving the method from the
+  derivative store.
+
+- the third (`1`) is the number of guard cells required to be able to
+  use this method (i.e. here the stencil will consist of three values
+  -- the field at the current point and one point either side). This
+  can be 1 or 2.
+
+- the fourth (`DERIV::Standard`) identifies the type of method - here
+  a central method.
+
+Alongside `DEFINE_STANDARD_DERIV` there's also `DEFINE_UPWIND_DERIV`,
+`DEFINE_FLUX_DERIV` and the staggered versions
+`DEFINE_STANDARD_DERIV_STAGGERED`, `DEFINE_UPWIND_DERIV_STAGGERED` and
+`DEFINE_FLUX_DERIV_STAGGERED`.
+
+To register this method with the derivative store in `X` and `Z` with
+no staggering for both field types we can then use the following code:
+
+::
+
+   produceCombinations<Set<WRAP_ENUM(DIRECTION, X), WRAP_ENUM(DIRECTION, Z)>,
+                    Set<WRAP_ENUM(STAGGER, None)>,
+                    Set<TypeContainer<Field2D, Field3D>>,
+                    Set<DDX_C2>>
+    someUniqueNameForDerivativeRegistration(registerMethod{});
+
+
+For the common case where the user wishes to register the method in
+`X`, `Y` and `Z` and for both field types we provide the helper
+macros, `REGISTER_DERIVATIVE` and `REGISTER_STAGGERED_DERIVATIVE`
+which could be used as `REGISTER_DERIVATIVE(DDX_C2)`.
+
+To simplify matters further we provide `REGISTER_STANDARD_DERIVATIVE`,
+`REGISTER_UPWIND_DERIVATIVE`, `REGISTER_FLUX_DERIVATIVE`,
+`REGISTER_STANDARD_STAGGERED_DERIVATIVE`,
+`REGISTER_UPWIND_STAGGERED_DERIVATIVE` and
+`REGISTER_FLUX_STAGGERED_DERIVATIVE` macros that can define and
+register a stencil using kernel in a single step. For example:
+
+::
+
+   REGISTER_STANDARD_DERIVATIVE(DDX_C2, "C2", 1, DERIV::Standard) { return 0.5*(f.p-f.m);};
+
+
+Will define the `DDX_C2` functor and register it with the derivative
+store using key `"C2"` for all three directions and both fields with
+no staggering.
+
 
 .. _sec-diffmethod-nonuniform:
 
@@ -470,191 +589,7 @@ values. Several slope limiters are defined in ``fv_ops.hxx``:
   default.
 
 
-Operators on a single index
----------------------------
-
-**Note: Experimental**
-
-The standard functions implemented in BOUT++ (such as ``DDX``, or
-``bracket``) typically operate on a whole field, internally iterating
-over the entire mesh. This is convenient, but leads to many loops over
-the mesh, which can be inefficient due to cache misses. One way to try
-to improve efficiency is to move to a single loop over the mesh. To do
-this, some operators are implemented in ``bout/operators_di.hxx``
-which have the same (or similar) names as the standard operators but
-an additional `DataIterator` index.
-
-For example, in ``examples/blob2d.cxx``
-
-::
-
-   ddt(n) = - bracket(phi,n,BRACKET_ARAKAWA)
-            + 2 * DDZ(n) * (rho_s / R_c)
-            ;
-
-which in ``examples/blob2d-outerloop.cxx`` becomes::
-
-   for(auto &i : n.region(RGN_NOBNDRY)) {
-     ...
-     ddt(n)[i] = - bracket_arakawa(phi, n, i)
-                 + 2 * DDZ_C2(n, i) * (rho_s / R_c)
-                 ;
-   }
-
-Note that in addition to providing an index ``i`` which is of type
-`DataIterator`, the function name includes the method (``arakawa`` or
-``C2``).  This is so that the function call does not have to contain
-logic to decide the method to use at runtime. The standard operators
-only have to decide which method to use once, then loop over the
-entire mesh, but these indexed functions would have to decide the
-method for every index.
-
-.. _sec-derivatives:
-
-Derivative internals
---------------------
-
-This is probably the part of the code most people will want to alter,
-and is in ``bout++/src/sys/derivs.cxx``. The main task of this module is
-to map functions on fields like ``DDX`` to direction-independent
-differential methods on stencils such as :math:`4^{th}`-order central
-differencing. This mapping depends on global settings in ``BOUT.inp``
-and is illustrated in :numref:`fig-diffOverview`.
-
-.. _fig-diffOverview:
-.. figure:: ../figs/diffOverview.*
-   :alt: Overview of ``derivs`` module
-
-   Overview of ``derivs`` module, mapping derivative functions on fields
-   to direction-independent differential methods
-
-Four kinds of differencing methods are supported
-
-#. | First derivative ``DDX``, ``DDY``, ``DDZ``
-   | Central differencing type schemes for first-order derivatives
-
-#. | Second derivatives ``D2DX2``, ``D2DZ2``, ``D2DZ2``
-   | Central differencing second derivatives e.g. for :math:`\nabla^2`
-
-#. | Upwinding ``VDDX``, ``VDDY``, ``VDDZ``
-   | Terms like :math:`\mathbf{v}\cdot\nabla`
-
-#. | Flux methods ``FDDX``, ``FDDY``, ``FDDZ``
-   | Flux conserving, limiting methods for terms like
-     :math:`\nabla\cdot\left(\mathbf{v}f\right)`
-
-The differencing methods themselves are independent on direction, and
-have types defined in :doc:`derivs.cxx<../_breathe_autogen/file/derivs_8cxx>`
-
-::
-
-    typedef BoutReal (*deriv_func)(stencil &); // f
-    typedef BoutReal (*upwind_func)(stencil &, stencil &); // v, f
-
-These operate on ``stencil`` objects. This class is in :doc:`stencils.hxx<../_breathe_autogen/file/stencils_8hxx>`
-
-::
-
-    class stencil {
-      public:
-        int jx, jy, jz;  // Central location
-        BoutReal c, p, m, pp, mm; // stencil 2 each side of the centre
-        Overloaded operators
-          =,+,-,*,/
-        Functions
-          min, max, abs
-    };
-
-The main purpose of this class is to store a 5-element stencil. To
-simplify some code this class also has a bunch of overloaded operators
-on BoutReals and other stencil objects. There are also some functions to
-calculate things like absolute, minimum, and maximum values.
-
-Lookup tables
-~~~~~~~~~~~~~
-
-To convert between short variable names (“C2”), long descriptions
-(“2nd order Central Differencing”), ``DIFF_METHOD`` enums used to
-specify methods at runtime (DIFF\_C2, defined in
-:doc:`bout_types.hxx<../_breathe_autogen/file/bout__types_8hxx>`), and
-function pointers (``DDX_C2``), taking into account whether variables
-are shifted or not, BOUT++ uses a set of lookup tables.
-
-To find function pointers, tables of the following type are used::
-
-    /// Translate between DIFF_METHOD codes, and functions
-    struct DiffLookup {
-      DIFF_METHOD method;
-      deriv_func func;     // Single-argument differencing function
-      upwind_func up_func; // Upwinding function
-    };
-
-Because the ``DiffLookup`` type contains a ``deriv_func`` and
-``upwind_func`` pointer, it is used for all function lookup tables.
-There is a separate table for each type of differencing method, so for
-example the table of non-staggered upwinding methods is
-
-::
-
-    /// Upwinding functions lookup table
-    static DiffLookup UpwindTable[] = { {DIFF_U1, NULL, VDDX_U1},
-                        {DIFF_C2, NULL, VDDX_C2},
-                        {DIFF_U4, NULL, VDDX_U4},
-                        {DIFF_W3, NULL, VDDX_WENO3},
-                        {DIFF_C4, NULL, VDDX_C4},
-                        {DIFF_DEFAULT}};
-
-The ``DIFF_DEFAULT`` at the end is used to terminate the array. These
-tables are used by functions
-
-::
-
-    deriv_func lookupFunc(DiffLookup* table, DIFF_METHOD method);
-    upwind_func lookupUpwindFunc(DiffLookup* table, DIFF_METHOD method);
-
-which return the function pointer corresponding to the given method. If
-the method isn’t in the table, then the first entry in the table is
-used. These functions can be used at run-time to allow a user to specify
-the method to use for specific operators.
-
-When reading settings from the input file, they are specified as short
-strings like “C2”, and a longer description of the method chosen should
-be written to the output log. To do this, there is a name lookup table::
-
-    /// Translate between short names, long names and DIFF_METHOD codes
-    struct DiffNameLookup {
-      DIFF_METHOD method;
-      const char* label; // Short name
-      const char* name;  // Long name
-    };
-
-    static DiffNameLookup DiffNameTable[] = {
-      {DIFF_U1, "U1", "First order upwinding"},
-      {DIFF_C2, "C2", "Second order central"},
-      {DIFF_W2, "W2", "Second order WENO"},
-      {DIFF_W3, "W3", "Third order WENO"},
-      {DIFF_C4, "C4", "Fourth order central"},
-      {DIFF_U4, "U4", "Fourth order upwinding"},
-      {DIFF_FFT, "FFT", "FFT"},
-      {DIFF_DEFAULT}}; // Use to terminate the list
-
-To search this table, there is the function
-
-::
-
-    DIFF_METHOD lookupFunc(DiffLookup *table, const string &label)
-
-During initialisation, the lookup therefore works in two stages, shown
-in :numref:`fig-diffLookup`. First the short description is turned into a
-``DIFF_METHOD`` enum code, then this code is turned into a function
-pointer.
-
-.. _fig-diffLookup:
-.. figure:: ../figs/diffLookup.*
-   :alt: Lookup tables for differential method
-
-   Lookup tables for mapping between differential method labels, codes,
-   descriptions and function pointers
+.. _sec-staggeredgrids:
 
 Staggered grids
 ~~~~~~~~~~~~~~~

@@ -4,6 +4,7 @@
 [![Build Status](https://travis-ci.org/boutproject/BOUT-dev.svg?branch=master)](https://travis-ci.org/boutproject/BOUT-dev)
 [![License](https://img.shields.io/badge/license-LGPL-blue.svg)](https://img.shields.io/badge/license-LGPL-blue.svg)
 [![py3comp](https://img.shields.io/badge/py3-compatible-brightgreen.svg)](https://img.shields.io/badge/py3-compatible-brightgreen.svg)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1423213.svg)](https://doi.org/10.5281/zenodo.1423213)
 
 ```
 .______     ______    __    __  .___________.
@@ -34,8 +35,8 @@ can be written simply as:
 ```cpp
 ddt(rho) = -V_dot_Grad(v, rho) - rho*Div(v);
 ddt(p)   = -V_dot_Grad(v, p) - g*p*Div(v);
-ddt(v)   = -V_dot_Grad(v, v) + ((Curl(B)^B) - Grad(p))/rho;
-ddt(B)   = Curl(v^B);
+ddt(v)   = -V_dot_Grad(v, v) + (cross(Curl(B),B) - Grad(p))/rho;
+ddt(B)   = Curl(cross(v,B));
 ```
 
 The full code for this example can be found in the [orszag-tang
@@ -50,9 +51,9 @@ Homepage found at [http://boutproject.github.io/](http://boutproject.github.io/)
 ## Table of Contents
 * [Requirements](#requirements)
 * [Usage and installation](#usage-and-installation)
+* [Terms of use](#terms-of-use)
 * [Overview of files](#overview-of-files)
 * [Contributing](#contributing)
-* [Terms of use](#terms-of-use)
 * [License](#license)
 
 ## Requirements
@@ -80,6 +81,32 @@ BOUT++ has the following optional dependencies:
 
 ## Usage and installation
 Please see the [users manual](http://bout-dev.readthedocs.io)
+
+## Terms of use
+
+BOUT++ is released under the LGPL, but since BOUT++ is a
+scientific code we also ask that you show professional courtesy
+when using this code:
+
+1. Since you are benefiting from work on BOUT++, we ask that you
+   submit any improvements you make to the code to us by submitting a
+   pull request to this repository
+2. If you use BOUT++ results in a paper or professional publication,
+   we ask that you send your results to one of the BOUT++ authors
+   first so that we can check them. It is understood that in most cases
+   if one or more of the BOUT++ team are involved in preparing results
+   then they should appear as co-authors.
+3. If you use BOUT++ in your work, please help ensure that all the
+   authors get the credit they deserve by citing BOUT++, preferably
+   using the DOI of the version you used. See the file
+   [CITATION.cff](CITATION.cff) for details. In addition, you may also
+   cite either of the two main papers: B. Dudson et al,
+   Comp. Phys. Comm. 2009, and B. Dudson et al, Phys. of Plasmas 2016
+
+You can convert the CITATION.cff file into a Bibtex file as follows:
+
+    pip3 install --user cffconvert
+    cffconvert -if CITATION.cff -f bibtex -of CITATION.bib
 
 ## Overview of files
 
@@ -132,26 +159,6 @@ This directory contains
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Terms of use
-
-BOUT++ is released under the LGPL, but since BOUT++ is a
-scientific code we also ask that you show professional courtesy
-when using this code:
-
-1. Since you are benefiting from work on BOUT++, we ask that you
-   submit any improvements you make to the code to us by emailing
-   Ben Dudson at bd512@york.ac.uk
-2. If you use BOUT++ results in a paper or professional publication,
-   we ask that you send your results to one of the BOUT++ authors
-   first so that we can check them. It is understood that in most cases
-   if one or more of the BOUT++ team are involved in preparing results
-   then they should appear as co-authors.
-3. Publications or figures made with the BOUT++ code should acknowledge the
-   BOUT++ code by citing B.Dudson et. al. Comp.Phys.Comm 2009 and/or
-   other BOUT++ papers. See the file CITATION for details.
-
-
-
 ## License
 Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
 
@@ -167,3 +174,15 @@ GNU Lesser General Public License for more details.
 
 A copy of the LGPL license is in [LICENSE](LICENSE). Since this is based
 on (and refers to) the GPL, this is included in [LICENSE.GPL](LICENSE.GPL).
+
+Some of the autoconf macros under [m4](m4) are licensed under
+GPLv3. These are not necessary to either build or run BOUT++, but are
+used in the creation of [configure](configure) from
+[configure.ac](configure.ac), and are provided as a courtesy to
+developers. You are free to substitute them with other autoconf macros
+that provide equivalent functionality.
+
+BOUT++ links by default with some GPL licensed libraries. Thus if you
+compile BOUT++ with any of them, BOUT++ will automatically be licensed
+as GPL. Thus if you want to use BOUT++ with GPL non-compatible code,
+make sure to compile without GPLed code.

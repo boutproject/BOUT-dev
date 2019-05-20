@@ -15,13 +15,13 @@ FUNCTION pdiff_rz, rxy, zxy, fxy, i, j, jp, jm
    
    ;IF j EQ 0 THEN STOP
 
-   A=TRANSPOSE([[fltarr(4)+1],[r-r(0)],[z-z(0)]])
+   A=TRANSPOSE([[DBLARR(4)+1],[r-r(0)],[z-z(0)]])
 
    SVDC, A,W,U,V
 
    res=SVSOL(U,W,V,f)
 
-   pdiff={r:res[1],z:res[2],phi:0.0}
+   pdiff={r:res[1],z:res[2],phi:0.0D}
 
    RETURN, pdiff
 END
@@ -103,18 +103,18 @@ PRO curvature, nx, ny, Rxy, Zxy, BRxy, BZxy, BPHIxy, PSIxy, THETAxy, HTHExy, $
    PRINT, 'Calculating curvature-related quantities...'
    
 ;;-vector quantities are stored as 2D arrays of structures {r,phi,z}
-   vec={r:0.,phi:0.,z:0.}
+   vec={r:0.D,phi:0.D,z:0.D}
    curlb=REPLICATE(vec,nx,ny) 
    jxb=REPLICATE(vec,nx,ny) 
    curvec=REPLICATE(vec,nx,ny) 
    bxcurvec=REPLICATE(vec,nx,ny)
 
-   vec2={psi:0.,theta:0.,phi:0.}
+   vec2={psi:0.D,theta:0.D,phi:0.D}
    bxcv=REPLICATE(vec2,nx,ny)
 
-   status = gen_surface(mesh=mesh) ; Start generator
+   status = gen_surface_hypnotoad(mesh=mesh) ; Start generator
    REPEAT BEGIN
-     yi = gen_surface(last=last, xi=x, period=period)
+     yi = gen_surface_hypnotoad(last=last, xi=x, period=period)
      nys = N_ELEMENTS(yi)
 
      ; Get vector along the surface
@@ -147,9 +147,9 @@ PRO curvature, nx, ny, Rxy, Zxy, BRxy, BZxy, BPHIxy, PSIxy, THETAxy, HTHExy, $
        grad_Psi  = pdiff_rz(Rxy, Zxy, PSIxy, x, y, yp, ym)
        
        ;grad_Theta = pdiff_rz(Rxy, Zxy, THETAxy, x, y, yp, ym)
-       grad_Theta = {r:dr[j]/hthexy[x,y], z:dz[j]/hthexy[x,y], phi:0.0}
+       grad_Theta = {r:dr[j]/hthexy[x,y], z:dz[j]/hthexy[x,y], phi:0.0D}
 
-       grad_Phi={r:0.0,z:0.0,phi:1./Rxy[x,y]} ;-gradient of the toroidal angle
+       grad_Phi={r:0.0D,z:0.0D,phi:1.D/Rxy[x,y]} ;-gradient of the toroidal angle
 
        vecR={r:Rxy[x,y],z:Zxy[x,y]}
        vecB={r:BRxy[x,y],z:BZxy[x,y],phi:BPHIxy[x,y]}

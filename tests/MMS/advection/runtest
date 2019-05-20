@@ -5,11 +5,10 @@
 # Tests a range of different schemes
 #
 
-from __future__ import division
-from __future__ import print_function
-from builtins import str
+#requires: all_tests
+#requires: make
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
+from boututils.run_wrapper import shell, shell_safe, launch_safe
 from boutdata.collect import collect
 
 from numpy import sqrt, max, abs, mean, array, log, pi
@@ -18,163 +17,104 @@ from os.path import join
 
 import pickle
 
-MPIRUN = getmpirun()
+import time
 
-print("Making MMS advection test")
-shell_safe("make > make.log")
 
-# List of options to be passed for each test
-options = [
-    ("method=2", "Arakawa", "-^"),
-    ("method=0 mesh:ddx:upwind=u1 mesh:ddz:upwind=u1", "1st order upwind", "-o"),
-    ("method=0 mesh:ddx:upwind=c2 mesh:ddz:upwind=c2", "2nd order central", "-x"),
-    ("method=0 mesh:ddx:upwind=w3 mesh:ddz:upwind=w3", "3rd order WENO", "-s")
-    ]
+
+if __name__ == "__main__":
+    print("Making MMS advection test")
+    shell_safe("make > make.log")
+
+def make_parent():
+    print("Making MMS advection test")
+    shell_safe("make -C .. > make.log")
 
 # List of NX values to use
-nxlist = [16, 32, 64, 128, 256, 512, 1024]
+#[16, 32, 64, 128, 256, 512, 1024]
+nxlist = [16,32,64, 128, 256, 512, 1024]
 
 nproc = 8
 
-success = True
 
 dt0 = 0.15
 
-err_2_all = []
-err_inf_all = []
-for opts,label,sym in options:
-    error_2   = []  # The L2 error (RMS)
-    error_inf = []  # The maximum error
+def run_mms(options,exit=True):
+    success = True
 
-    for nx in nxlist:
-        # Set the X and Z mesh size
+    err_2_all = []
+    err_inf_all = []
+    for opts,exp_order in options:
+        error_2   = []  # The L2 error (RMS)
+        error_inf = []  # The maximum error
 
-        dx = 2.*pi / (nx)
+        for nx in nxlist:
+            # Set the X and Z mesh size
 
-        args = opts + " mesh:nx="+str(nx+4)+" mesh:dx="+str(dx)+" MZ="+str(nx) #+" solver:timestep="+str(dt0/nx)
-        
-        print("  Running with " + args)
+            dx = 2.*pi / (nx)
 
-        # Delete old data
-        shell("rm data/BOUT.dmp.*.nc")
-        
-        # Command to run
-        cmd = "./advection "+args
-        # Launch using MPI
-        s, out = launch_safe(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
+            args = opts + " mesh:nx="+str(nx+4)+" mesh:dx="+str(dx)+" MZ="+str(nx) #+" solver:timestep="+str(dt0/nx)
 
-        # Save output to log file
-        f = open("run.log."+str(nx), "w")
-        f.write(out)
-        f.close()
-        
-        # Collect data
-        E_f = collect("E_f", tind=[1,1], info=False, path="data")
-        #E_f = E_f[0,1:-1,0,:]
-        
-        # Average error over domain
-        l2 = sqrt(mean(E_f**2))
-        linf = max(abs( E_f ))
-        
-        error_2.append( l2 )
-        error_inf.append( linf )
-        
-        print("  -> Error norm: l-2 %f l-inf %f" % (l2, linf))
-        
-    
-    # Append to list of all results
-    err_2_all.append( (error_2, label, sym) )
-    err_inf_all.append( (error_inf, label, sym) )
+            print("  Running with " + args)
 
-    # Calculate grid spacing
-    dx = 1. / array(nxlist)
+            # Delete old data
+            shell("rm data/BOUT.dmp.*.nc")
 
-    # Calculate convergence order
-    
-    order = log(error_2[-1] / error_2[-2]) / log(dx[-1] / dx[-2])
-    print("Convergence order = %f" % (order))
-    
-    if (label == "1st order upwind"):
-        if order < 0.75: # Should be first order accurate
-            print("............ FAIL")
-            success = False 
-        else:
+            # Command to run
+            cmd = "./advection "+args
+            # Launch using MPI
+            start_time_ = time.time()
+            
+            s, out = launch_safe(cmd, nproc=nproc, pipe=True)
+
+            # Save output to log file
+            f = open("run.log."+str(nx), "w")
+            f.write(out)
+            f.close()
+
+            # Collect data
+            E_f = collect("E_f", tind=[1,1], info=False, path="data")
+            #E_f = E_f[0,1:-1,0,:]
+
+            # Average error over domain
+            l2 = sqrt(mean(E_f**2))
+            linf = max(abs( E_f ))
+
+            error_2.append( l2 )
+            error_inf.append( linf )
+
+            if len(error_2) > 1:
+                order = log(error_2[-1] / error_2[-2]) / log(.5)
+                print(" %d | %7.3f s | %.6f"%(nx,time.time() - start_time_,order))
+            else:
+                print(" %d | %7.3f s | ?"%(nx,time.time() - start_time_))
+                
+
+            print("  -> Error norm: l-2 %f l-inf %f" % (l2, linf))
+
+
+        dx = 1. / array(nxlist)
+
+        # Calculate convergence order
+
+        order = log(error_2[-1] / error_2[-2]) / log(dx[-1] / dx[-2])
+        print("Convergence order = %f" % (order))
+
+        if exp_order-.25 < order < exp_order+0.75:
             print("............ PASS")
+        else:
+            success = False
+            print("............ FAIL")
+
+
+    if exit:
+        _exit(success)
+    return success
+
+def _exit(success):
+    from sys import exit
+    if success:
+        print(" => All tests passed")
+        exit(0)
     else:
-        if order < 1.75: # Should be second order accurate
-            print("............ FAIL")
-            success = False 
-        else:
-            print("............ PASS")
-    
-    # plot errors
-    if False:
-        import matplotlib.pyplot as plt
-
-        plt.figure()
-    
-        plt.plot(dx, error_2, '-o', label=r'$l^2$')
-        plt.plot(dx, error_inf, '-x', label=r'$l^\infty$')
-    
-        plt.plot(dx, error_2[-1]*(dx/dx[-1])**order, '--', label="Order %.1f"%(order))
-        
-        plt.legend(loc="upper left")
-        plt.grid()
-    
-        plt.yscale('log')
-        plt.xscale('log')
-        
-        plt.xlabel(r'Mesh spacing $\delta x$')
-        plt.ylabel("Error norm")
-    
-        #plt.savefig("norm.pdf")
-
-        plt.show()
-        plt.close()
-
-# Save the data
-with open("advection.pkl", "wb") as output:
-    pickle.dump(err_2_all, output)
-    pickle.dump(err_inf_all, output)
-
-# Plot all results for comparison
-try:
-    import matplotlib.pyplot as plt
-    plt.figure()
-    for e, label, sym in err_2_all:
-        plt.plot(dx, e, sym, label=label)
-
-    plt.legend(loc="upper left")
-    plt.grid()
-    plt.yscale('log')
-    plt.xscale('log')
-    
-    plt.xlabel(r'Mesh spacing $\delta x$')
-    plt.ylabel(r'$l^2$ error norm')
-    plt.savefig("advection_norm_l2.pdf")
-    plt.close()
-
-    ###
-
-    plt.figure()
-    for e, label, sym in err_inf_all:
-        plt.plot(dx, e, sym, label=label)
-
-    plt.legend(loc="upper left")
-    plt.grid()
-    plt.yscale('log')
-    plt.xscale('log')
-    
-    plt.xlabel(r'Mesh spacing $\delta x$')
-    plt.ylabel(r'$l^\infty$ error norm')
-    plt.savefig("advection_norm_linf.pdf")
-    plt.close()
-except ImportError:
-    pass
-
-if success:
-  print(" => All tests passed")
-  exit(0)
-else:
-  print(" => Some failed tests")
-  exit(1)
+        print(" => Some failed tests")
+        exit(1)

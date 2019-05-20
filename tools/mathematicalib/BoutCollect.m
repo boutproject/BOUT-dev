@@ -7,6 +7,8 @@ Module[
 	{Xind,Yind,Zind,Tind,Path,Yguards,Info,Prefix,
 		varnameissymbol,vars,position,dimensions,nxpe,nype,mxsub,mysub,mxg,myg,mz,tarray,files,nfiles,data,tempdata,ts,te,xs,xe,ys,ye,zs,ze,localx,localy,import,lxs,lxe,lys,lye},
 
+    Throw["This is currently broken for BOUT++ > v4.0.0. See issue #394"]
+
 	Xind=OptionValue[xind];
 	Yind=OptionValue[yind];
 	Zind=OptionValue[zind];

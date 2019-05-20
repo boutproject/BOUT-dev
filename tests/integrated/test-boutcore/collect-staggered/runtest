@@ -1,49 +1,50 @@
 #!/usr/bin/env python3
 import boutcore as bc
 
-#requires boutcore
-#requires not make
+# requires boutcore
+# requires not make
 
 bc.init("-q -q -q")
 
-fail=0
-f=bc.create3D("sin(y)",outloc='YLOW')
+fail = 0
+f = bc.create3D("sin(y)", outloc='YLOW')
 
-dump=bc.Datafile() # get global :(
-dump.add(f3d_evolve=f,save_repeat=True)
-dump.add(f3d_once=f,save_repeat=False)
+dump = bc.Datafile()  # get global :(
+dump.add(f3d_evolve=f, save_repeat=True)
+dump.add(f3d_once=f, save_repeat=False)
 dump.write()
 
 
-fc=bc.create3D("sin(y)",outloc='CENTRE')
+fc = bc.create3D("sin(y)", outloc='CENTRE')
 
-fe=bc.Field3D.fromCollect("f3d_evolve",path='data',info=False)
-fo=bc.Field3D.fromCollect("f3d_once",path='data',info=False)
+fe = bc.Field3D.fromCollect("f3d_evolve", path='data', info=False)
+fo = bc.Field3D.fromCollect("f3d_once", path='data', info=False)
 
 if fe.getLocation() == fc.getLocation():
     print("The loaded field should not be at CELL_CENTRE")
-    fail=1
-    
+    fail = 1
+
 if fo.getLocation() == fc.getLocation():
     print("The loaded field should not be at CELL_CENTRE")
-    fail=1
+    fail = 1
 
-def compare(a,b):
-    diff=a-bc.interp_to(b,a.getLocation())
-    err=bc.max(bc.sqrt(diff*diff))
+
+def compare(a, b):
+    diff = a-bc.interp_to(b, a.getLocation())
+    err = bc.max(bc.sqrt(diff*diff))
     return err
 
-if compare(fc,f) > 1e-3:
+
+if compare(fc, f) > 1e-3:
     print("Something is wrong. Maybe interpolation is broken")
-    fail=1
+    fail = 1
 
-if compare(fc,fe) > 1e-3:
+if compare(fc, fe) > 1e-3:
     print("Something is wrong. Maybe setting the location from field failed.")
-    fail=1
+    fail = 1
 
-if compare(fc,fo) > 1e-3:
+if compare(fc, fo) > 1e-3:
     print("Something is wrong. Maybe setting the location from field failed.")
-    fail=1
-
+    fail = 1
 
 exit(fail)

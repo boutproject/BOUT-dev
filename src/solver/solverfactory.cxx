@@ -12,12 +12,13 @@
 #include "impls/rk3-ssp/rk3-ssp.hxx"
 #include "impls/rk4/rk4.hxx"
 #include "impls/rkgeneric/rkgeneric.hxx"
-#include "impls/slepc-3.4/slepc-3.4.hxx"
+#include "impls/slepc/slepc.hxx"
 #include "impls/snes/snes.hxx"
+#include "impls/split-rk/split-rk.hxx"
 
 SolverFactory* SolverFactory::instance = nullptr;
 
-SolverFactory *SolverFactory::getInstance() {
+SolverFactory* SolverFactory::getInstance() {
   if (instance == nullptr) {
     // Create the singleton object
     instance = new SolverFactory();
@@ -25,35 +26,23 @@ SolverFactory *SolverFactory::getInstance() {
   return instance;
 }
 
-inline SolverType SolverFactory::getDefaultSolverType() {
-  SolverType type;
-
-  #if defined BOUT_HAS_CVODE
-    type = SOLVERCVODE;
-  #elif defined BOUT_HAS_IDA
-    type = SOLVERIDA;
-    //#elif defined BOUT_HAS_PETSC
-    //type = SOLVERPETSC;
-  #else
-    type = SOLVERPVODE;
-  #endif
-
-  return type;
+SolverType SolverFactory::getDefaultSolverType() {
+  return
+#if defined BOUT_HAS_CVODE
+      SOLVERCVODE;
+#elif defined BOUT_HAS_IDA
+      SOLVERIDA;
+#else
+      SOLVERPVODE;
+#endif
 }
 
-Solver *SolverFactory::createSolver(Options *options) {
-  SolverType type = getDefaultSolverType();
-
+Solver* SolverFactory::createSolver(Options* options) {
   if (options == nullptr) {
     options = Options::getRoot()->getSection("solver");
   }
 
-  std::string solver_option;
-  options->get("type", solver_option, "");
-
-  if (!solver_option.empty()) {
-    type = solver_option.c_str();
-  }
+  auto type = (*options)["type"].withDefault(getDefaultSolverType());
 
   return createSolver(type, options);
 }

@@ -6,7 +6,7 @@
 // No PETSc available, so define as an empty laplace3d
 
 #include "../emptylaplace3d.hxx"
-typedef EmptyLaplace3D Laplace3DPetsc;
+using Laplace3DPetsc = EmptyLaplace3D;
 
 #else // BOUT_HAS_PETSC
 

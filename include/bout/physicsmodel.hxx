@@ -42,18 +42,20 @@ class PhysicsModel;
 #include <msg_stack.hxx>
 #include "solver.hxx"
 #include "unused.hxx"
+#include "utils.hxx"
+#include "bout/macro_for_each.hxx"
 
 /*!
   Base class for physics models
  */
 class PhysicsModel {
 public:
-  typedef int (PhysicsModel::*preconfunc)(BoutReal t, BoutReal gamma, BoutReal delta);
-  typedef int (PhysicsModel::*jacobianfunc)(BoutReal t);
-  
+  using preconfunc = int (PhysicsModel::*)(BoutReal t, BoutReal gamma, BoutReal delta);
+  using jacobianfunc = int (PhysicsModel::*)(BoutReal t);
+
   PhysicsModel();
   
-  virtual ~PhysicsModel();
+  virtual ~PhysicsModel() = default;
   
   /*!
    * Initialse the model, calling the init() and postInit() methods
@@ -146,12 +148,6 @@ public:
    */ 
   int runJacobian(BoutReal t);
 
-  int runOutputMonitor(BoutReal simtime, int iter, int NOUT) {
-    /// Save state to restart file
-    restart.write();
-    // Call user output monitor
-    return outputMonitor(simtime, iter, NOUT);
-  }
   int runTimestepMonitor(BoutReal simtime, BoutReal dt) {return timestepMonitor(simtime, dt);}
   
 protected:
@@ -260,6 +256,26 @@ protected:
    * 
    */ 
   bool bout_constrain(Field3D &var, Field3D &F_var, const char *name);
+
+  /*!
+   * Monitor class for PhysicsModel
+   */
+  class PhysicsModelMonitor : public Monitor {
+  public:
+    PhysicsModelMonitor() = delete;
+    PhysicsModelMonitor(PhysicsModel *model) : model(model) {}
+    int call(Solver* UNUSED(solver), BoutReal simtime, int iter, int nout) {
+      // Save state to restart file
+      model->restart.write();
+      // Call user output monitor
+      return model->outputMonitor(simtime, iter, nout);
+    }
+  private:
+    PhysicsModel *model;
+  };
+
+  /// write restarts and pass outputMonitor method inside a Monitor subclass
+  PhysicsModelMonitor modelMonitor;
 private:
   bool splitop; ///< Split operator model?
   preconfunc   userprecon; ///< Pointer to user-supplied preconditioner function
@@ -283,35 +299,32 @@ private:
  *
  * BOUTMAIN(MyModel);
  */
-#define BOUTMAIN(ModelClass)                          \
-  int main(int argc, char **argv) {                   \
-    int init_err = BoutInitialise(argc, argv);        \
-    if (init_err < 0)				      \
-      return 0;                                       \
-    else if (init_err > 0) 			      \
-      return init_err;				      \
-    try {                                             \
-      ModelClass *model = new ModelClass();           \
-      Solver *solver = Solver::create();              \
-      solver->setModel(model);                        \
-      Monitor * bout_monitor = new BoutMonitor();     \
-      solver->addMonitor(bout_monitor, Solver::BACK); \
-      solver->outputVars(dump);                       \
-      solver->solve();                                \
-      delete model;                                   \
-      delete solver;                                  \
-      delete bout_monitor;                            \
-    }catch (BoutException &e) {                       \
-      output << "Error encountered\n";                \
-      output << e.what() << endl;                     \
-      MPI_Abort(BoutComm::get(), 1);                  \
-    }                                                 \
-    BoutFinalise();                                   \
-    return 0;                                         \
+#define BOUTMAIN(ModelClass)                                       \
+  int main(int argc, char** argv) {                                \
+    int init_err = BoutInitialise(argc, argv);                     \
+    if (init_err < 0)                                              \
+      return 0;                                                    \
+    else if (init_err > 0)                                         \
+      return init_err;                                             \
+    try {                                                          \
+      auto model = bout::utils::make_unique<ModelClass>();         \
+      auto solver = std::unique_ptr<Solver>(Solver::create());     \
+      solver->setModel(model.get());                               \
+      auto bout_monitor = bout::utils::make_unique<BoutMonitor>(); \
+      solver->addMonitor(bout_monitor.get(), Solver::BACK);        \
+      solver->outputVars(bout::globals::dump);                     \
+      solver->solve();                                             \
+    } catch (const BoutException& e) {                             \
+      output << "Error encountered\n";                             \
+      output << e.getBacktrace() << endl;                          \
+      MPI_Abort(BoutComm::get(), 1);                               \
+    }                                                              \
+    BoutFinalise();                                                \
+    return 0;                                                      \
   }
 
 /// Macro to replace solver->add, passing variable name
-#define SOLVE_FOR(var) solver->add(var, #var)
+#define SOLVE_FOR1(var) solver->add(var, #var);
 #define SOLVE_FOR2(var1, var2) { \
   solver->add(var1, #var1);       \
   solver->add(var2, #var2);}
@@ -337,6 +350,11 @@ private:
   solver->add(var4, #var4);             \
   solver->add(var5, #var5);             \
   solver->add(var6, #var6);}
+
+/// Add fields to the solver.
+/// This should accept up to ten arguments
+#define SOLVE_FOR(...)                  \
+  { MACRO_FOR_EACH(SOLVE_FOR1, __VA_ARGS__) }
 
 #endif // __PHYSICS_MODEL_H__
 

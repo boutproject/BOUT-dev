@@ -1,13 +1,16 @@
 
+#include <bout/mesh.hxx>
 #include <globals.hxx>
 #include <boundary_region.hxx>
 #include <utils.hxx>
 
-BoundaryRegionXIn::BoundaryRegionXIn(const string &name, int ymin, int ymax)
-  : BoundaryRegion(name, -1, 0), ys(ymin), ye(ymax)
+using std::swap;
+
+BoundaryRegionXIn::BoundaryRegionXIn(std::string name, int ymin, int ymax, Mesh* passmesh)
+  : BoundaryRegion(name, -1, 0, passmesh), ys(ymin), ye(ymax)
 {
   location = BNDRY_XIN;
-  width = mesh->xstart;
+  width = localmesh->xstart;
   x = width-1; // First point inside the boundary
   if(ye < ys)
     swap(ys, ye);
@@ -57,19 +60,19 @@ bool BoundaryRegionXIn::isDone()
 ///////////////////////////////////////////////////////////////
 
 
-BoundaryRegionXOut::BoundaryRegionXOut(const string &name, int ymin, int ymax)
-  : BoundaryRegion(name, 1, 0), ys(ymin), ye(ymax)
+BoundaryRegionXOut::BoundaryRegionXOut(std::string name, int ymin, int ymax, Mesh* passmesh)
+  : BoundaryRegion(name, 1, 0, passmesh), ys(ymin), ye(ymax)
 {
   location = BNDRY_XOUT;
-  width = mesh->LocalNx - mesh->xend - 1;
-  x = mesh->LocalNx - width; // First point inside the boundary
+  width = localmesh->LocalNx - localmesh->xend - 1;
+  x = localmesh->LocalNx - width; // First point inside the boundary
   if(ye < ys)
     swap(ys, ye);
 }
 
 void BoundaryRegionXOut::first()
 {
-  x = mesh->LocalNx - width;
+  x = localmesh->LocalNx - width;
   y = ys;
 }
 
@@ -99,23 +102,23 @@ void BoundaryRegionXOut::nextX()
 void BoundaryRegionXOut::nextY()
 {
   y++;
-  if(x >= mesh->LocalNx)
-    x = mesh->LocalNx - width;
+  if(x >= localmesh->LocalNx)
+    x = localmesh->LocalNx - width;
 }
 
 bool BoundaryRegionXOut::isDone()
 {
-  return (x >= mesh->LocalNx) || (y > ye); // Return true if gone out of the boundary
+  return (x >= localmesh->LocalNx) || (y > ye); // Return true if gone out of the boundary
 }
 
 ///////////////////////////////////////////////////////////////
 
 
-BoundaryRegionYDown::BoundaryRegionYDown(const string &name, int xmin, int xmax)
-  : BoundaryRegion(name, 0, -1), xs(xmin), xe(xmax)
+BoundaryRegionYDown::BoundaryRegionYDown(std::string name, int xmin, int xmax, Mesh* passmesh)
+  : BoundaryRegion(name, 0, -1, passmesh), xs(xmin), xe(xmax)
 {
   location = BNDRY_YDOWN;
-  width = mesh->ystart;
+  width = localmesh->ystart;
   y = width-1; // First point inside the boundary
   if(xe < xs)
     swap(xs, xe);
@@ -166,12 +169,12 @@ bool BoundaryRegionYDown::isDone()
 ///////////////////////////////////////////////////////////////
 
 
-BoundaryRegionYUp::BoundaryRegionYUp(const string &name, int xmin, int xmax)
-  : BoundaryRegion(name, 0, 1), xs(xmin), xe(xmax)
+BoundaryRegionYUp::BoundaryRegionYUp(std::string name, int xmin, int xmax, Mesh* passmesh)
+  : BoundaryRegion(name, 0, 1, passmesh), xs(xmin), xe(xmax)
 {
   location = BNDRY_YUP;
-  width = mesh->LocalNy - mesh->yend - 1;
-  y = mesh->LocalNy - width; // First point inside the boundary
+  width = localmesh->LocalNy - localmesh->yend - 1;
+  y = localmesh->LocalNy - width; // First point inside the boundary
   if(xe < xs)
     swap(xs, xe);
 }
@@ -179,15 +182,15 @@ BoundaryRegionYUp::BoundaryRegionYUp(const string &name, int xmin, int xmax)
 void BoundaryRegionYUp::first()
 {
   x = xs;
-  y = mesh->LocalNy - width;
+  y = localmesh->LocalNy - width;
 }
 
 void BoundaryRegionYUp::next()
 {
   // Loop over all points, from inside out
   y++;
-  if(y >= mesh->LocalNy) {
-    y = mesh->LocalNy - width;
+  if(y >= localmesh->LocalNy) {
+    y = localmesh->LocalNy - width;
     x++;
   }
 }
@@ -201,8 +204,8 @@ void BoundaryRegionYUp::next1d()
 void BoundaryRegionYUp::nextX()
 {
   x++;
-  if(y >= mesh->LocalNy)
-    y = mesh->LocalNy - width;
+  if(y >= localmesh->LocalNy)
+    y = localmesh->LocalNy - width;
 }
 
 void BoundaryRegionYUp::nextY()
@@ -214,5 +217,5 @@ void BoundaryRegionYUp::nextY()
 
 bool BoundaryRegionYUp::isDone()
 {
-  return (x > xe) || (y >= mesh->LocalNy); // Return true if gone out of the boundary
+  return (x > xe) || (y >= localmesh->LocalNy); // Return true if gone out of the boundary
 }

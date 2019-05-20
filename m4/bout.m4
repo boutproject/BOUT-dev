@@ -44,6 +44,7 @@ AC_DEFUN([BOUT_ADDPATH_CHECK_LIB],[
 
   # Try with no extra libraries first
   AS_IF([test ."$5" = .yes], [extra_prefix=""], [extra_prefix="$5"])
+  LIBS="$save_LIBS $EXTRA_LIBS"
   AC_LINK_IFELSE([AC_LANG_PROGRAM([[
     extern "C"
     char $2();
@@ -51,10 +52,11 @@ AC_DEFUN([BOUT_ADDPATH_CHECK_LIB],[
   [BACL_found=yes
    BOUT_MSG_DEBUG([found $1 without path or library flag])],
   [])
+  LIBS=$save_LIBS
 
   # Now try with explicitly linking library
   AS_IF([test $BACL_found != yes], [
-    LIBS="$save_LIBS -l$1"
+    LIBS="$save_LIBS $EXTRA_LIBS -l$1"
     AS_IF([test ."$5" = .yes], [extra_prefix=""], [extra_prefix="$5"])
     AC_LINK_IFELSE([AC_LANG_PROGRAM([[
       extern "C"
@@ -71,7 +73,7 @@ AC_DEFUN([BOUT_ADDPATH_CHECK_LIB],[
       for path in $search_prefix $search_prefix/lib $search_prefix/lib64 $search_prefix/x86_64-linux-gnu
       do
         AS_IF([test -d $path], [
-          LIBS="$save_LIBS -l$1"
+          LIBS="$save_LIBS $EXTRA_LIBS -l$1"
           LDFLAGS="$save_LDFLAGS -L$path"
           BOUT_MSG_DEBUG([try link $1 with $path])
           AC_LINK_IFELSE([AC_LANG_PROGRAM([[
@@ -190,7 +192,7 @@ AC_DEFUN([BOUT_FIND_SUNDIALS_MODULE],[
        AC_MSG_WARN([No sundials-config available, no path given, will try compiling with $module_upper anyway])
        sundials_module_includes=""
        # Need to link to libsundials_ida, libsundials_cvode or libsundials_arkode
-       sundials_module_libs="-lsundials_$1 -lsundials_nvecparallel"
+       sundials_module_libs="-lsundials_$1 -lsundials_nvecparallel $SUNDIALS_EXTRA_LIBS"
     ])
     AC_LANG_PUSH([C++])
     AC_MSG_CHECKING([if we can compile with SUNDIALS $module_upper])
@@ -245,7 +247,7 @@ $2
 
     # We've now got the include directory and can specify what libraries we need
     sundials_module_includes="-I$sundials_module_includes_path"
-    sundials_module_libs="-lsundials_$1 -lsundials_nvecparallel"
+    sundials_module_libs="-lsundials_$1 -lsundials_nvecparallel $SUNDIALS_EXTRA_LIBS"
 
     # Try compiling something simple with a few different common paths
     save_LIBS=$LIBS

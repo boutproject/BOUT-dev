@@ -56,41 +56,38 @@ private:
   // Coordinate system metric
   Coordinates *coord;
 
+  // Inverts a Laplacian to get potential
+  Laplacian *phiSolver;
+  
 protected:
-  int init(bool restarting) override {
+  int init(bool UNUSED(restarting)) override {
 
     // Load 2D profiles
-    GRID_LOAD3(Jpar0, Te0, Ni0);
+    GRID_LOAD(Jpar0, Te0, Ni0);
     Ni0 *= 1e20; // To m^-3
     
     // Coordinate system
-    coord = mesh->coordinates();
+    coord = mesh->getCoordinates();
 
     // Load metrics
-    GRID_LOAD(Rxy);
-    GRID_LOAD(Bpxy);
-    GRID_LOAD(Btxy);
-    GRID_LOAD(hthe);
+    GRID_LOAD(Rxy, Bpxy, Btxy, hthe);
     mesh->get(coord->Bxy, "Bxy");
 
     // Read some parameters
-    Options *globalOptions = Options::getRoot();
-    Options *options = globalOptions->getSection("2field");
+    auto& options = Options::root()["2field"];
 
     // normalisation values
-    OPTION(options, nonlinear, false);
-    OPTION(options, parallel_lc, true);
-    OPTION(options, include_jpar0, true);
-    OPTION(options, jpar_bndry, 0);
+    nonlinear = options["nonlinear"].withDefault(false);
+    parallel_lc = options["parallel_lc"].withDefault(true);
+    include_jpar0 = options["include_jpar0"].withDefault(true);
+    jpar_bndry = options["jpar_bndry"].withDefault(0);
 
-    OPTION(options, eta, 1e-3); // Normalised resistivity
-    OPTION(options, mu, 1.e-3); // Normalised vorticity
+    eta = options["eta"].doc("Normalised resistivity").withDefault(1e-3);
+    mu = options["mu"].doc("Normalised vorticity").withDefault(1.e-3);
 
-    OPTION(options, phi_flags, 0);
-
-    int bracket_method;
-    OPTION(options, bracket_method, 0);
-    switch (bracket_method) {
+    phi_flags = options["phi_flags"].withDefault(0);
+    
+    switch (options["bracket_method"].withDefault(0)) {
     case 0: {
       bm = BRACKET_STD;
       output << "\tBrackets: default differencing\n";
@@ -120,11 +117,15 @@ protected:
     // Normalisation
 
     Tenorm = max(Te0, true);
-    if (Tenorm < 1)
+    if (Tenorm < 1) {
       Tenorm = 1000;
+    }
+    
     Nenorm = max(Ni0, true);
-    if (Nenorm < 1)
+    if (Nenorm < 1) {
       Nenorm = 1.e19;
+    }
+    
     Bnorm = max(coord->Bxy, true);
 
     // Sound speed in m/s
@@ -144,8 +145,8 @@ protected:
     output << "\twci      = " << wci << endl;
     output << "\tbeta_hat = " << beta_hat << endl;
 
-    SAVE_ONCE3(Tenorm, Nenorm, Bnorm);
-    SAVE_ONCE4(Cs, rho_s, wci, beta_hat);
+    SAVE_ONCE(Tenorm, Nenorm, Bnorm);
+    SAVE_ONCE(Cs, rho_s, wci, beta_hat);
 
     // Normalise geometry
     Rxy /= rho_s;
@@ -181,25 +182,25 @@ protected:
     coord->geometry();
 
     // Tell BOUT++ which variables to evolve
-    SOLVE_FOR2(U, Apar);
+    SOLVE_FOR(U, Apar);
 
     // Set boundary conditions
     jpar.setBoundary("jpar");
     phi.setBoundary("phi");
 
     // Add any other variables to be dumped to file
-    SAVE_REPEAT2(phi, jpar);
+    SAVE_REPEAT(phi, jpar);
     SAVE_ONCE(Jpar0);
 
     // Generate external field
 
     initial_profile("Apar_ext", Apar_ext);
     Jpar_ext = -Delp2(Apar_ext);
-    SAVE_ONCE2(Apar_ext, Jpar_ext);
+    SAVE_ONCE(Apar_ext, Jpar_ext);
 
     initial_profile("Phi0_ext", Phi0_ext);
     U0_ext = -Delp2(Phi0_ext) / coord->Bxy;
-    SAVE_ONCE2(Phi0_ext, U0_ext);
+    SAVE_ONCE(Phi0_ext, U0_ext);
 
     // Give the solver the preconditioner function
     setPrecon((preconfunc)&TwoField::precon);
@@ -210,6 +211,10 @@ protected:
     U.setBoundary("U");
     Apar.setBoundary("Apar");
 
+    // Create a solver for the Laplacian
+    phiSolver = Laplacian::create();
+    phiSolver->setFlags(phi_flags);
+    
     return 0;
   }
 
@@ -250,11 +255,11 @@ protected:
     return result;
   }
 
-  int rhs(BoutReal t) override {
+  int rhs(BoutReal UNUSED(time)) override {
     // Solve EM fields
 
     // U = (1/B) * Delp2(phi)
-    phi = invert_laplace(coord->Bxy * U, phi_flags);
+    phi = phiSolver->solve(coord->Bxy * U);
     phi.applyBoundary(); // For target plates only
 
     mesh->communicate(U, phi, Apar);
@@ -319,7 +324,7 @@ public:
    * o Return values should be in time derivatives
    *
    *********************************************************/
-  int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
+  int precon(BoutReal UNUSED(t), BoutReal gamma, BoutReal UNUSED(delta)) {
     mesh->communicate(ddt(Apar));
     Field3D Jp = -Delp2(ddt(Apar));
     mesh->communicate(Jp);
@@ -348,7 +353,7 @@ public:
     ddt(U) = inv->solve(U1);
     ddt(U).applyBoundary();
 
-    Field3D phip = invert_laplace(coord->Bxy * ddt(U), phi_flags);
+    Field3D phip = phiSolver->solve(coord->Bxy * ddt(U));
     mesh->communicate(phip);
 
     ddt(Apar) = ddt(Apar) - (gamma / beta_hat) * Grad_par_CtoL(phip);

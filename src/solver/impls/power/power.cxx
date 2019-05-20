@@ -35,10 +35,8 @@ int PowerSolver::init(int nout, BoutReal tstep) {
 	       n3Dvars(), n2Dvars(), nglobal, nlocal);
   
   // Allocate memory
-  f0 = Array<BoutReal>(nlocal);
+  f0.reallocate(nlocal);
 
-  // Save the eigenvalue to the output
-  dump.add(eigenvalue, "eigenvalue", 1);
   eigenvalue = 0.0;
   
   // Put starting values into f0

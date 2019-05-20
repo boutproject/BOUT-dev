@@ -30,7 +30,7 @@
 /// contiguous indices may be used instead, which allows OpenMP
 /// parallelisation.
 ///
-/// The BLOCK_REGION_LOOP helper macro is provided as a replacement
+/// The BOUT_FOR helper macro is provided as a replacement
 /// for for-loops.
 ///
 /// Separate index classes are available for Field2Ds (Ind2D) and
@@ -43,10 +43,12 @@
 #define __REGION_H__
 
 #include <algorithm>
+#include <ostream>
 #include <type_traits>
 #include <utility>
 #include <vector>
 
+#include "bout_types.hxx"
 #include "bout/assert.hxx"
 #include "bout/openmpwrap.hxx"
 
@@ -65,12 +67,32 @@
 /// Helper macros for iterating over a Region making use of the
 /// contiguous blocks of indices
 ///
-/// @param[in] region An already existing Region
 /// @param[in] index  The name of the index variable to use in the loop
-/// The rest of the arguments form the loop body.
+/// @param[in] region An already existing Region
 ///
-/// The following loops vectorise well when index is type int, needs testing
-/// with current approach where index is Ind2D or ind3D
+/// These macros all have the same basic form: an outer loop over
+/// blocks of contiguous indices, and an inner loop over the indices
+/// themselves. This allows the outer loop to be parallelised with
+/// OpenMP while the inner loop can be vectorised with the CPU's
+/// native SIMD instructions.
+///
+/// Alternative forms are also provided for loops that must be done
+/// serially, as well as for more control over the OpenMP directives
+/// used.
+///
+/// The different macros:
+///
+/// - BOUT_FOR: OpenMP-aware version that allows speedup with both
+///   OpenMP and native SIMD vectorisation. This should be the
+///   preferred form for most loops
+/// - BOUT_FOR_SERIAL: for use with inherently serial loops. If BOUT++
+///   was not compiled with OpenMP, BOUT_FOR falls back to using this
+///   form
+/// - BOUT_FOR_INNER: for use on loops inside OpenMP parallel regions,
+///   e.g. in order to declare thread private variables outside of the
+///   loop
+/// - BOUT_FOR_OMP: the most generic form, that takes arbitrary OpenMP
+///   directives as an extra argument
 ///
 /// Example
 /// -------
@@ -82,36 +104,68 @@
 ///
 /// can be converted to a block region loop like so:
 ///
-///     BLOCK_REGION_LOOP(region, index,
+///     BOUT_FOR(index, region) {
 ///        A[index] = B[index] + C[index];
-///     )
-#define BLOCK_REGION_LOOP_SERIAL(region, index, ...)                                     \
-  {                                                                                      \
-    const auto blocks = region.getBlocks();                                              \
-    for (auto block = blocks.begin(); block < blocks.end(); ++block) {                   \
-      for (auto index = block->first; index < block->second; ++index) {                  \
-        __VA_ARGS__                                                                      \
-      }                                                                                  \
-    }                                                                                    \
-  }
+///     }
+#define BOUT_FOR_SERIAL(index, region)                                                   \
+  for (auto block = region.getBlocks().cbegin(), end = region.getBlocks().cend();        \
+       block < end; ++block)                                                             \
+    for (auto index = block->first; index < block->second; ++index)
 
-#define BLOCK_REGION_LOOP(region, index, ...)                                            \
-  {                                                                                      \
-    const auto blocks = region.getBlocks();                                              \
-  BOUT_OMP(parallel for)                                                                 \
-    for (auto block = blocks.begin(); block < blocks.end(); ++block) {                   \
-      for (auto index = block->first; index < block->second; ++index) {                  \
-        __VA_ARGS__                                                                      \
-      }                                                                                  \
-    }                                                                                    \
-  }
+#ifdef _OPENMP
+#define BOUT_FOR_OMP(index, region, omp_pragmas)                                         \
+  BOUT_OMP(omp_pragmas)                                                                  \
+  for (auto block = region.getBlocks().cbegin(); block < region.getBlocks().cend();      \
+       ++block)                                                                          \
+    for (auto index = block->first; index < block->second; ++index)
+#else
+// No OpenMP, so fall back to slightly more efficient serial form
+#define BOUT_FOR_OMP(index, region, omp_pragmas) BOUT_FOR_SERIAL(index, region)
+#endif
+
+#define BOUT_FOR(index, region)                                                          \
+  BOUT_FOR_OMP(index, region, parallel for schedule(OPENMP_SCHEDULE))
+
+#define BOUT_FOR_INNER(index, region)                                                    \
+  BOUT_FOR_OMP(index, region, for schedule(OPENMP_SCHEDULE) nowait)
+
+
+enum class IND_TYPE { IND_3D = 0, IND_2D = 1, IND_PERP = 2 };
 
 /// Indices base class for Fields -- Regions are dereferenced into these
+///
+/// Provides methods for offsetting by fixed amounts in x, y, z, as
+/// well as a generic method for offsetting by any amount in multiple
+/// directions.
+///
+/// Assumes that the offset is less than the grid size in that
+/// direction. This assumption is checked for at CHECK=3. This
+/// assumption implies that a `FieldPerp` cannot be offset in y, and a
+/// `Field2D` cannot be offset in z. A stronger, more expensive check
+/// that the resulting offset index doesn't go out of bounds can be
+/// enabled at CHECK=4.
+///
+/// Also provides helper methods for converting Ind2D/Ind3D/IndPerp to x, y, z
+/// indices
+///
+/// Examples
+/// --------
+///
+///     Field3D field, result;
+///     auto index = std::begin(region);
+///
+///     result = field[index->yp()] - field[index->ym()];
+template<IND_TYPE N>
 class SpecificInd {
 public:
-  int ind; //< 1D index into Field
-  SpecificInd() : ind(-1){};
-  SpecificInd(int i) : ind(i){};
+  int ind = -1; //< 1D index into Field
+private:
+  int ny = -1, nz = -1; //< Sizes of y and z dimensions
+
+public:
+  SpecificInd() = default;
+  SpecificInd(int i, int ny, int nz) : ind(i), ny(ny), nz(nz){};
+  explicit SpecificInd(int i) : ind(i) {};
 
   /// Pre-increment operator
   SpecificInd &operator++() {
@@ -145,90 +199,200 @@ public:
     return *this;
   }
 
+  SpecificInd &operator+=(int n) {
+    ind += n;
+    return *this;
+  }
+
   /// In-place subtraction
   SpecificInd &operator-=(SpecificInd n) {
     ind -= n.ind;
     return *this;
   }
 
+  SpecificInd &operator-=(int n) {
+    ind -= n;
+    return *this;
+  }
+
   /// Modulus operator
   SpecificInd operator%(int n) {
-    SpecificInd new_ind(ind % n);
+    SpecificInd new_ind{ind % n, ny, nz};
     return new_ind;
+  }
+
+  /// Convenience functions for converting to (x, y, z)
+  int x() const { return (ind / nz) / ny; }
+  int y() const { return (ind / nz) % ny; }
+  int z() const { return (ind % nz); }
+
+  /// Templated routine to return index.?p(offset), where `?` is one of {x,y,z}
+  /// and is determined by the `dir` template argument. The offset corresponds
+  /// to the `dd` template argument.
+  template<int dd, DIRECTION dir>
+  const inline SpecificInd plus() const{
+    static_assert(dir == DIRECTION::X || dir == DIRECTION::Y || dir == DIRECTION::Z
+                      || dir == DIRECTION::YAligned || dir == DIRECTION::YOrthogonal,
+                  "Unhandled DIRECTION in SpecificInd::plus");
+    switch(dir) {
+    case(DIRECTION::X):
+      return xp(dd);
+    case(DIRECTION::Y):
+    case(DIRECTION::YAligned):
+    case(DIRECTION::YOrthogonal):
+      return yp(dd);
+    case(DIRECTION::Z):
+      return zp(dd);
+    }
+  }
+
+  /// Templated routine to return index.?m(offset), where `?` is one of {x,y,z}
+  /// and is determined by the `dir` template argument. The offset corresponds
+  /// to the `dd` template argument.
+  template<int dd, DIRECTION dir>
+  const inline SpecificInd minus() const{
+    static_assert(dir == DIRECTION::X || dir == DIRECTION::Y || dir == DIRECTION::Z
+                      || dir == DIRECTION::YAligned || dir == DIRECTION::YOrthogonal,
+                  "Unhandled DIRECTION in SpecificInd::minus");
+    switch(dir) {
+    case(DIRECTION::X):
+      return xm(dd);
+    case(DIRECTION::Y):
+    case(DIRECTION::YAligned):
+    case(DIRECTION::YOrthogonal):
+      return ym(dd);
+    case(DIRECTION::Z):
+      return zm(dd);
+    }
+  }
+
+  const inline SpecificInd xp(int dx = 1) const { return {ind + (dx * ny * nz), ny, nz}; }
+  /// The index one point -1 in x
+  const inline SpecificInd xm(int dx = 1) const { return xp(-dx); }
+  /// The index one point +1 in y
+  const inline SpecificInd yp(int dy = 1) const {
+#if CHECK >= 4
+    if (y() + dy < 0 or y() + dy >= ny) {
+      throw BoutException("Offset in y (%d) would go out of bounds at %d", dy, ind);
+    }
+#endif
+    ASSERT3(std::abs(dy) < ny);
+    return {ind + (dy * nz), ny, nz};
+  }
+  /// The index one point -1 in y
+  const inline SpecificInd ym(int dy = 1) const { return yp(-dy); }
+  /// The index one point +1 in z. Wraps around zend to zstart
+  /// An alternative, non-branching calculation is :
+  /// ind + dz - nz * ((ind + dz) / nz  - ind / nz)
+  /// but this appears no faster (and perhaps slower).  
+  const inline SpecificInd zp(int dz = 1) const {
+    ASSERT3(dz >= 0);
+    dz = dz <= nz ? dz : dz % nz; //Fix in case dz > nz, if not force it to be in range
+    return {(ind + dz) % nz < dz ? ind - nz + dz : ind + dz, ny, nz};
+  }
+  /// The index one point -1 in z. Wraps around zstart to zend
+  /// An alternative, non-branching calculation is :
+  /// ind - dz + nz * ( (nz + ind) / nz - (nz + ind - dz) / nz)
+  /// but this appears no faster (and perhaps slower).
+  const inline SpecificInd zm(int dz = 1) const {
+    dz = dz <= nz ? dz : dz % nz; //Fix in case dz > nz, if not force it to be in range
+    ASSERT3(dz >= 0);
+    return {(ind) % nz < dz ? ind + nz - dz : ind - dz, ny, nz};
+  }
+
+  // and for 2 cells
+  const inline SpecificInd xpp() const { return xp(2); }
+  const inline SpecificInd xmm() const { return xm(2); }
+  const inline SpecificInd ypp() const { return yp(2); }
+  const inline SpecificInd ymm() const { return ym(2); }
+  const inline SpecificInd zpp() const { return zp(2); }
+  const inline SpecificInd zmm() const { return zm(2); }
+
+  /// Generic offset of \p index in multiple directions simultaneously
+  const inline SpecificInd offset(int dx, int dy, int dz) const {
+    auto temp = (dz > 0) ? zp(dz) : zm(-dz);
+    return temp.yp(dy).xp(dx);
   }
 };
 
 /// Relational operators
-inline bool operator==(const SpecificInd &lhs, const SpecificInd &rhs) {
+template<IND_TYPE N>
+inline bool operator==(const SpecificInd<N> &lhs, const SpecificInd<N> &rhs) {
   return lhs.ind == rhs.ind;
 }
-inline bool operator!=(const SpecificInd &lhs, const SpecificInd &rhs) {
+
+template<IND_TYPE N>
+inline bool operator!=(const SpecificInd<N> &lhs, const SpecificInd<N> &rhs) {
   return !operator==(lhs, rhs);
 }
-inline bool operator<(const SpecificInd &lhs, const SpecificInd &rhs) {
+
+template<IND_TYPE N>
+inline bool operator<(const SpecificInd<N> &lhs, const SpecificInd<N> &rhs) {
   return lhs.ind < rhs.ind;
 }
-inline bool operator>(const SpecificInd &lhs, const SpecificInd &rhs) {
+
+template<IND_TYPE N>
+inline bool operator>(const SpecificInd<N> &lhs, const SpecificInd<N> &rhs) {
   return operator<(rhs, lhs);
 }
-inline bool operator>=(const SpecificInd &lhs, const SpecificInd &rhs) {
+
+template<IND_TYPE N>
+inline bool operator>=(const SpecificInd<N> &lhs, const SpecificInd<N> &rhs) {
   return !operator<(lhs, rhs);
 }
-inline bool operator<=(const SpecificInd &lhs, const SpecificInd &rhs) {
+
+template<IND_TYPE N>
+inline bool operator<=(const SpecificInd<N> &lhs, const SpecificInd<N> &rhs) {
   return !operator>(lhs, rhs);
 }
 
-/// Index-type for `Field3D`s
-class Ind3D : public SpecificInd {
-public:
-  Ind3D() : SpecificInd(){};
-  Ind3D(int i) : SpecificInd(i){};
-  Ind3D(SpecificInd baseIn) : SpecificInd(baseIn){};
+/// Arithmetic operators with integers
+template<IND_TYPE N>
+inline SpecificInd<N> operator+(SpecificInd<N> lhs, const SpecificInd<N> &rhs) { return lhs += rhs; }
 
-  // Note operator= from base class is always hidden
-  // by implicit method so have to be explicit
-  Ind3D &operator=(int i) {
-    ind = i;
-    return *this;
-  }
+template<IND_TYPE N>
+inline SpecificInd<N> operator+(SpecificInd<N> lhs, int n) { return lhs += SpecificInd<N>(n); }
 
-  Ind3D &operator=(SpecificInd i) {
-    ind = i.ind;
-    return *this;
-  }
+template<IND_TYPE N>
+inline SpecificInd<N> operator+(int n, SpecificInd<N> rhs) { return rhs += SpecificInd<N>(n); }
+
+template<IND_TYPE N>
+inline SpecificInd<N> operator-(SpecificInd<N> lhs, int n) { return lhs -= SpecificInd<N>(n); }
+
+template<IND_TYPE N>
+inline SpecificInd<N> operator-(SpecificInd<N> lhs, const SpecificInd<N> &rhs) { return lhs -= rhs; }
+
+/// Define aliases for global indices in 3D and 2D 
+using Ind3D = SpecificInd<IND_TYPE::IND_3D>;
+using Ind2D = SpecificInd<IND_TYPE::IND_2D>;
+using IndPerp = SpecificInd<IND_TYPE::IND_PERP>;
+
+/// Structure to hold various derived "statistics" from a particular region
+struct RegionStats {
+  int numBlocks = 0;           ///< How many blocks
+  int minBlockSize = 0;        ///< Size of smallest block
+  int numMinBlocks = 0;        ///< Number of blocks with min size
+  int maxBlockSize = 0;        ///< Size of largest block
+  int numMaxBlocks = 0;        ///< Number of blocks with max size
+  int numSmallBlocks = 0;      ///< Number of "small" blocks, for definition see Region::getStats
+  BoutReal maxImbalance = 0;   ///< Ratio of largest block to smallest
 };
 
-/// Arithmetic operators with integers
-inline Ind3D operator+(Ind3D lhs, const Ind3D &rhs) { return lhs += rhs; }
-inline Ind3D operator+(Ind3D lhs, int n) { return lhs += n; }
-inline Ind3D operator+(int n, Ind3D rhs) { return rhs += n; }
-inline Ind3D operator-(Ind3D lhs, int n) { return lhs -= n; }
-inline Ind3D operator-(Ind3D lhs, const Ind3D &rhs) { return lhs -= rhs; }
-
-/// Index-type for `Field2D`s
-class Ind2D : public SpecificInd {
-public:
-  Ind2D() : SpecificInd(){};
-  Ind2D(int i) : SpecificInd(i){};
-  Ind2D(SpecificInd baseIn) : SpecificInd(baseIn){};
-
-  Ind2D &operator=(int i) {
-    ind = i;
-    return *this;
+/// Provide an easy way to report a Region's statistics
+inline std::ostream &operator<<(std::ostream &out, const RegionStats &stats){
+  if ( stats.numBlocks == 0 ) {
+    out << "Empty";
+    return out;
   }
+  out << "Total blocks : "<< stats.numBlocks;
+  out << ", " << "min(count)/max(count) :";
+  out << " " << stats.minBlockSize << " (" << stats.numMinBlocks << ")/";
+  out << " " << stats.maxBlockSize << " (" << stats.numMaxBlocks << ")";
+  out << ", " << "Max imbalance : " << stats.maxImbalance;
+  out << ", " << "Small block count : " << stats.numSmallBlocks;
+  return out;
+}
 
-  Ind2D &operator=(SpecificInd i) {
-    ind = i.ind;
-    return *this;
-  }
-};
-
-/// Arithmetic operators with integers
-inline Ind2D operator+(Ind2D lhs, const Ind2D &rhs) { return lhs += rhs; }
-inline Ind2D operator+(Ind2D lhs, int n) { return lhs += n; }
-inline Ind2D operator+(int n, Ind2D rhs) { return rhs += n; }
-inline Ind2D operator-(Ind2D lhs, int n) { return lhs -= n; }
-inline Ind2D operator-(Ind2D lhs, const Ind2D &rhs) { return lhs -= rhs; }
 
 /// Specifies a set of indices which can be iterated over and begin()
 /// and end() methods for range-based for loops.
@@ -241,7 +405,7 @@ inline Ind2D operator-(Ind2D lhs, const Ind2D &rhs) { return lhs -= rhs; }
 /// blocks of at most MAXREGIONBLOCKSIZE indices. This allows loops to
 /// be parallelised with OpenMP. Iterating using a "block region" may
 /// be more efficient, although it requires a bit more set up. The
-/// helper macro BLOCK_REGION_LOOP is provided to simplify things.
+/// helper macro BOUT_FOR is provided to simplify things.
 ///
 /// Example
 /// -------
@@ -267,39 +431,39 @@ inline Ind2D operator-(Ind2D lhs, const Ind2D &rhs) { return lhs -= rhs; }
 ///
 /// or the more convenient region for loop:
 ///
-///     for (auto &i : r) {
+///     for (const auto &i : r) {
 ///       f[i] = a[i] + b[i];
 ///     }
 ///
-/// For performance the BLOCK_REGION_LOOP macro should
+/// For performance the BOUT_FOR macro should
 /// allow OpenMP parallelisation and hardware vectorisation.
 ///
-///     BLOCK_REGION_LOOP(region, i,
+///     BOUT_FOR(i, region) {
 ///       f[i] = a[i] + b[i];
-///     );
+///     }
 ///
 /// If you wish to vectorise but can't use OpenMP then
 /// there is a serial verion of the macro:
 ///
 ///     BoutReal max=0.;
-///     BLOCK_REGION_LOOP_SERIAL(region, i,
+///     BOUT_FOR_SERIAL(i, region) {
 ///       max = f[i] > max ? f[i] : max;
-///     );
+///     }
 template <typename T = Ind3D> class Region {
   // Following prevents a Region being created with anything other
   // than Ind2D or Ind3D as template type
-  static_assert(std::is_base_of<Ind2D, T>::value || std::is_base_of<Ind3D, T>::value,
-                "Region must be templated with either Ind2D or Ind3D");
+  static_assert(std::is_base_of<Ind2D, T>::value || std::is_base_of<Ind3D, T>::value || std::is_base_of<IndPerp, T>::value,
+                "Region must be templated with one of IndPerp, Ind2D or Ind3D");
 
 public:
-  typedef T data_type;
+  using data_type = T;
 
   /// Indices to iterate over
-  typedef std::vector<T> RegionIndices;
+  using RegionIndices = std::vector<T>;
   /// Start and end of contiguous region. This describes a range [block.first,block.second)
-  typedef std::pair<T, T> ContiguousBlock;
+  using ContiguousBlock = std::pair<T, T>;
   /// Collection of contiguous regions
-  typedef std::vector<ContiguousBlock> ContiguousBlocks;
+  using ContiguousBlocks = std::vector<ContiguousBlock>;
 
   // NOTE::
   // Probably want to require a mesh in constructor, both to know nx/ny/nz
@@ -315,7 +479,29 @@ public:
   Region<T>(){};
 
   Region<T>(int xstart, int xend, int ystart, int yend, int zstart, int zend, int ny,
-            int nz, int maxregionblocksize = MAXREGIONBLOCKSIZE) {
+            int nz, int maxregionblocksize = MAXREGIONBLOCKSIZE)
+      : ny(ny), nz(nz) {
+#if CHECK > 1
+    if (std::is_base_of<Ind2D, T>::value) {
+      if (nz != 1)
+	throw BoutException("Trying to make Region<Ind2D> with nz = %d, but expected nz = 1", nz);
+      if (zstart != 0)
+	throw BoutException("Trying to make Region<Ind2D> with zstart = %d, but expected zstart = 0", zstart);
+      if (zstart != 0)
+	throw BoutException("Trying to make Region<Ind2D> with zend = %d, but expected zend = 0", zend);
+
+    }
+
+    if (std::is_base_of<IndPerp, T>::value) {
+      if (ny != 1)
+	throw BoutException("Trying to make Region<IndPerp> with ny = %d, but expected ny = 1", ny);
+      if (ystart != 0)
+	throw BoutException("Trying to make Region<IndPerp> with ystart = %d, but expected ystart = 0", ystart);
+      if (ystart != 0)
+	throw BoutException("Trying to make Region<IndPerp> with yend = %d, but expected yend = 0", yend);
+    }
+#endif
+    
     indices = createRegionIndices(xstart, xend, ystart, yend, zstart, zend, ny, nz);
     blocks = getContiguousBlocks(maxregionblocksize);
   };
@@ -337,12 +523,14 @@ public:
   /// Note that if the indices are altered using these iterators, the
   /// blocks may become out of sync and will need to manually updated
   typename RegionIndices::iterator begin() { return std::begin(indices); };
+  typename RegionIndices::const_iterator begin() const { return std::begin(indices); };
   typename RegionIndices::const_iterator cbegin() const { return indices.cbegin(); };
   typename RegionIndices::iterator end() { return std::end(indices); };
+  typename RegionIndices::const_iterator end() const { return std::end(indices); };
   typename RegionIndices::const_iterator cend() const { return indices.cend(); };
 
-  ContiguousBlocks getBlocks() const { return blocks; };
-  RegionIndices getIndices() const { return indices; };
+  const ContiguousBlocks &getBlocks() const { return blocks; };
+  const RegionIndices &getIndices() const { return indices; };
 
   /// Set the indices and ensure blocks updated
   void setIndices (RegionIndices &indicesIn, int maxregionblocksize = MAXREGIONBLOCKSIZE) {
@@ -440,7 +628,7 @@ public:
     RegionIndices newInd(oldInd.size());
 
     for (unsigned int i = 0; i < oldInd.size(); i++) {
-      newInd[i] = T(oldInd[i].ind + offset);
+      newInd[i] = T{oldInd[i].ind + offset, ny, nz};
     }
 
     setIndices(newInd);
@@ -472,7 +660,7 @@ public:
     for (unsigned int i = 0; i < newInd.size(); i++){
       int index = newInd[i].ind;
       int whichBlock = index / period;
-      newInd[i] = ((index + shift) % period) + period * whichBlock;
+      newInd[i].ind = ((index + shift) % period) + period * whichBlock;
     };
 
     setIndices(newInd);
@@ -484,16 +672,41 @@ public:
   unsigned int size() const {
     return indices.size();
   }
-  
-  // TODO: Should be able to add regions (would just require extending
-  // indices and recalculating blocks). This raises question of should
-  // we be able to subtract regions, and if so what does that mean.
-  // Addition could be simple and just extend or we could seek to
-  // remove duplicate points. Former probably mostly ok. Note we do
-  // want to allow duplicate points (one reason we use vector and
-  // not set) but what if we add a region that has some duplicates?
-  // We could retain them but common usage would probably not want
-  // the duplicates.
+
+  /// Returns a RegionStats struct desribing the region
+  RegionStats getStats() const {
+    RegionStats result;
+
+    result.numBlocks = blocks.size();
+    if ( result.numBlocks == 0 ) return result;
+    
+    std::vector<int> blockSizes(result.numBlocks);
+    
+    // Get the size of each block using lambda to calculate size
+    std::transform(std::begin(blocks), std::end(blocks), std::begin(blockSizes),
+		   [](const ContiguousBlock &a) { return a.second.ind - a.first.ind;});
+
+    auto minMaxSize = std::minmax_element(std::begin(blockSizes), std::end(blockSizes));
+
+    result.minBlockSize = *(minMaxSize.first); //Note have to derefence to get actual value
+    result.numMinBlocks = std::count(std::begin(blockSizes), std::end(blockSizes), result.minBlockSize);
+
+    result.maxBlockSize = *(minMaxSize.second); //Note have to derefence to get actual value
+    result.numMaxBlocks = std::count(std::begin(blockSizes), std::end(blockSizes), result.maxBlockSize);
+
+    
+    result.maxImbalance = static_cast<BoutReal>(result.maxBlockSize)/static_cast<BoutReal>(result.minBlockSize);
+
+    // Count the number of small blocks, defined as blocks less than smallSizeFrac of maxBlockSize
+    const BoutReal smallSizeFrac = 0.5;
+    result.numSmallBlocks =
+      std::count_if(std::begin(blockSizes), std::end(blockSizes),
+		    [&result, smallSizeFrac](int theSize) {
+		      return theSize < smallSizeFrac * result.maxBlockSize;
+		    });
+
+    return result;
+  }
 
   // We could sort indices (either forcibly or on request) to try
   // to ensure most contiguous+ordered access. Probably ok in common
@@ -504,28 +717,30 @@ public:
 private:
   RegionIndices indices;   //< Flattened indices
   ContiguousBlocks blocks; //< Contiguous sections of flattened indices
+  int ny = -1;             //< Size of y dimension
+  int nz = -1;             //< Size of z dimension
 
   /// Helper function to create a RegionIndices, given the start and end
   /// points in x, y, z, and the total y, z lengths
   inline RegionIndices createRegionIndices(int xstart, int xend, int ystart, int yend,
                                            int zstart, int zend, int ny, int nz) {
 
-    if ( (xend + 1 <= xstart) ||
-         (yend + 1 <= ystart) ||
-         (zend + 1 <= zstart) ) {
+    if ((xend + 1 <= xstart) ||
+        (yend + 1 <= ystart) ||
+        (zend + 1 <= zstart)) {
       // Empty region
       return {};
     }
-    
+
     ASSERT1(ny > 0);
     ASSERT1(nz > 0);
 
     int len = (xend - xstart + 1) * (yend - ystart + 1) * (zend - zstart + 1);
     ASSERT1(len > 0);
-    RegionIndices region;
     // Guard against invalid length ranges
-    if (len <= 0 ) return region;
-    region.resize(len);
+    if (len <= 0 ) return {};
+
+    RegionIndices region(len, {-1, ny, nz});
 
     int x = xstart;
     int y = ystart;
@@ -535,7 +750,7 @@ private:
     int j = -1;
     while (!done) {
       j++;
-      region[j] = (x * ny + y) * nz + z;
+      region[j].ind = (x * ny + y) * nz + z;
       if (x == xend && y == yend && z == zend) {
         done = true;
       }
@@ -597,7 +812,9 @@ private:
     RegionIndices result;
     // This has to be serial unless we can make result large enough in advance
     // otherwise there will be a race between threads to extend the vector
-    BLOCK_REGION_LOOP_SERIAL((*this), curInd, result.push_back(curInd););
+    BOUT_FOR_SERIAL(curInd, (*this)) {
+      result.push_back(curInd);
+    }
     return result;
   }
 };
@@ -624,6 +841,13 @@ Region<T> mask(const Region<T> &region, const Region<T> &mask) {
 /// Return a new region with combined indices from two Regions
 /// This doesn't attempt to avoid duplicate elements or enforce
 /// any sorting etc. but could be done if desired.
+/// -
+/// Addition is currently simple and just extends. Probably mostly ok 
+/// but we could seek to remove duplicate points. Note we do
+/// want to allow duplicate points (one reason we use vector and
+/// not set) but what if we add a region that has some duplicates?
+/// We could retain them but common usage would probably not want
+/// the duplicates.
 template<typename T>
 Region<T> operator+(const Region<T> &lhs, const Region<T> &rhs){
   auto indices = lhs.getIndices(); // Indices is a copy of the indices

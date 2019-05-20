@@ -13,7 +13,7 @@ int physics_init(bool restart) {
   
   v.setLocation(CELL_YLOW); // Staggered relative to n
   
-  SOLVE_FOR2(n, v);
+  SOLVE_FOR(n, v);
 
   return 0;
 }

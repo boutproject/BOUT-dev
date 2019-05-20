@@ -1,0 +1,13 @@
+
+MZ = 100
+MXG=1
+MYG=1
+
+[mesh]
+nx = 100
+ny = 100
+
+[performanceIterator]
+NUM_LOOPS = 100
+profileMode = false 
+includeHeader = true

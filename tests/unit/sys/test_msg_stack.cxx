@@ -29,6 +29,67 @@ TEST(MsgStackTest, PopTest) {
   EXPECT_EQ(dump, expected_dump);
 }
 
+TEST(MsgStackTest, PopValueTest) {
+  MsgStack msg_stack;
+
+  msg_stack.push("First");
+  msg_stack.push("Second");
+  msg_stack.push("Third");
+  msg_stack.pop(2);
+
+  auto dump = msg_stack.getDump();
+  auto first_dump = "====== Back trace ======\n -> Second\n -> First\n";
+  EXPECT_EQ(dump, first_dump);
+
+  msg_stack.pop(-5); // Points to first message only
+  dump = msg_stack.getDump();
+  auto second_dump = "====== Back trace ======\n";
+  EXPECT_EQ(dump, second_dump);
+}
+
+TEST(MsgStackTest, ReallocStorageTest) {
+  MsgStack msg_stack;
+
+  std::string expected_dump = "";
+
+  for (int i = 0; i < 20; i++) {
+    msg_stack.push("Message %i", i);
+    expected_dump = " -> Message " + std::to_string(i) + "\n" + expected_dump;
+  }
+  expected_dump = "====== Back trace ======\n" + expected_dump;
+  auto dump = msg_stack.getDump();
+  EXPECT_EQ(dump, expected_dump);
+}
+
+TEST(MsgStackTest, PushReturnTest) {
+  MsgStack msg_stack;
+
+  for (int i = 0; i < 6; i++) {
+    EXPECT_EQ(msg_stack.push("Message %i", i), i);
+  }
+}
+
+TEST(MsgStackTest, SetPointTest) {
+  MsgStack msg_stack;
+
+  for (int i = 0; i < 6; i++) {
+    EXPECT_EQ(msg_stack.setPoint(), i);
+  }
+
+  auto dump = msg_stack.getDump();
+  auto expected_dump = "====== Back trace ======\n";
+  EXPECT_EQ(dump, expected_dump);
+}
+
+TEST(MsgStackTest, NoMessageTest) {
+  MsgStack msg_stack;
+  msg_stack.push(nullptr);
+  auto dump = msg_stack.getDump();
+  auto expected_dump = "====== Back trace ======\n";
+
+  EXPECT_EQ(dump, expected_dump);
+}
+
 TEST(MsgStackTest, ClearTest) {
   MsgStack msg_stack;
 
@@ -78,4 +139,27 @@ TEST(MsgStackTest, TraceMacroTest) {
 
   EXPECT_EQ(first_dump, third);
 }
+
+TEST(MsgStackTest, DumpTest) {
+  // Code to capture output -- see test_output.cxx
+  // Write cout to buffer instead of stdout
+  std::stringstream buffer;
+  // Save cout's buffer here
+  std::streambuf *sbuf(std::cout.rdbuf());
+  std::cout.rdbuf(buffer.rdbuf());
+
+  MsgStack msg_stack;
+
+  msg_stack.push("First");
+  msg_stack.dump();
+  auto first_dump = "====== Back trace ======\n -> First\n";
+
+  EXPECT_EQ(first_dump, buffer.str());
+
+  // Clear buffer
+  buffer.str("");
+  // When done redirect cout to its old self
+  std::cout.rdbuf(sbuf);
+}
+
 #endif

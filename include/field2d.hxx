@@ -37,12 +37,11 @@ class Field3D; //#include "field3d.hxx"
 #include "fieldperp.hxx"
 #include "stencils.hxx"
 
-#include "bout/dataiterator.hxx"
-
 #include "bout/field_visitor.hxx"
 
 #include "bout/array.hxx"
 #include "bout/region.hxx"
+#include "utils.hxx"
 
 #include "unused.hxx"
 
@@ -54,6 +53,7 @@ class Field3D; //#include "field3d.hxx"
  */
 class Field2D : public Field, public FieldData {
  public:
+  using ind_type = Ind2D;    
   /*!
    * Constructor, taking an optional mesh pointer
    * This mesh pointer is not used until the data is allocated,
@@ -64,7 +64,9 @@ class Field2D : public Field, public FieldData {
    * 
    * By default the global Mesh pointer (mesh) is used.
    */ 
-  Field2D(Mesh *localmesh = nullptr);
+  Field2D(Mesh *localmesh = nullptr, CELL_LOC location_in=CELL_CENTRE,
+          DirectionTypes directions_in =
+          {YDirectionType::Standard, ZDirectionType::Average});
 
   /*!
    * Copy constructor. After this both fields
@@ -75,7 +77,7 @@ class Field2D : public Field, public FieldData {
   /*!
    * Move constructor
    */
-  Field2D(Field2D&& f) = default;
+  Field2D(Field2D&& f) noexcept { swap(*this, f); };
 
   /*!
    * Constructor. This creates a Field2D using the global Mesh pointer (mesh)
@@ -83,17 +85,22 @@ class Field2D : public Field, public FieldData {
    * boundary cells.
    */ 
   Field2D(BoutReal val, Mesh *localmesh = nullptr);
+  
+  /// Constructor from Array and Mesh
+  Field2D(Array<BoutReal> data, Mesh* localmesh, CELL_LOC location = CELL_CENTRE,
+          DirectionTypes directions_in = {YDirectionType::Standard,
+                                          ZDirectionType::Average});
 
   /*!
    * Destructor
-   */ 
-  ~Field2D();
+   */
+  ~Field2D() override;
 
   /// Data type
   using value_type = BoutReal;
 
   /// Ensure data is allocated
-  void allocate();
+  Field2D& allocate();
   bool isAllocated() const { return !data.empty(); } ///< Test if data is allocated
 
   /// Return a pointer to the time-derivative field
@@ -112,8 +119,41 @@ class Field2D : public Field, public FieldData {
    */
   int getNz() const override {return 1;};
 
-  // Operators
+  // these methods return Field2D to allow method chaining
+  Field2D& setLocation(CELL_LOC location) {
+    Field::setLocation(location);
+    return *this;
+  }
 
+  /// Check if this field has yup and ydown fields
+  bool hasParallelSlices() const {
+    return true;
+  }
+
+  [[gnu::deprecated("Please use Field2D::hasParallelSlices instead")]]
+  bool hasYupYdown() const {
+    return hasParallelSlices();
+  }
+  
+  Field2D& yup(std::vector<Field2D>::size_type UNUSED(index) = 0) {
+    return *this;
+  }
+  const Field2D& yup(std::vector<Field2D>::size_type UNUSED(index) = 0) const {
+    return *this;
+  }
+
+  Field2D& ydown(std::vector<Field2D>::size_type UNUSED(index) = 0) {
+    return *this;
+  }
+  const Field2D& ydown(std::vector<Field2D>::size_type UNUSED(index) = 0) const {
+    return *this;
+  }
+
+  Field2D& ynext(int UNUSED(dir)) { return *this; }
+  const Field2D& ynext(int UNUSED(dir)) const { return *this; }
+
+  // Operators
+  
   /*!
    * Assignment from Field2D. After this both fields will
    * share the same underlying data. To make a true copy,
@@ -121,7 +161,6 @@ class Field2D : public Field, public FieldData {
    * function.
    */
   Field2D & operator=(const Field2D &rhs);
-  Field2D & operator=(Field2D &&rhs) = default;
 
   /*!
    * Allocates data if not already allocated, then
@@ -132,49 +171,21 @@ class Field2D : public Field, public FieldData {
   /////////////////////////////////////////////////////////
   // Data access
 
-  /// Iterator over the Field2D indices
-  const DataIterator iterator() const;
+  /// Return a Region<Ind2D> reference to use to iterate over this field
+  const Region<Ind2D>& getRegion(REGION region) const;  
+  const Region<Ind2D>& getRegion(const std::string &region_name) const;
 
-  const DataIterator begin() const;
-  const DataIterator end() const;
+  Region<Ind2D>::RegionIndices::const_iterator begin() const {return std::begin(getRegion("RGN_ALL"));};
+  Region<Ind2D>::RegionIndices::const_iterator end() const {return std::end(getRegion("RGN_ALL"));};
   
-  /*!
-   * Returns a range of indices which can be iterated over
-   * Uses the REGION flags in bout_types.hxx
-   */
-  const IndexRange region(REGION rgn) const override;
-
   BoutReal& operator[](const Ind2D &d) {
     return data[d.ind];
   }
   const BoutReal& operator[](const Ind2D &d) const {
     return data[d.ind];
   }
-  BoutReal& operator[](const Ind3D &d); 
+  BoutReal& operator[](const Ind3D &d);
   const BoutReal& operator[](const Ind3D &d) const;
-
-  /*!
-   * Direct access to the data array. Since operator() is used
-   * to implement this, no checks are performed if CHECK <= 2
-   */
-  inline BoutReal& operator[](const DataIterator &d) {
-    return operator()(d.x, d.y);
-  }
-
-  /// Const access to data array
-  inline const BoutReal& operator[](const DataIterator &d) const {
-    return operator()(d.x, d.y);
-  }
-
-  /// Indices are also used as a lightweight way to specify indexing
-  /// for example DataIterator offsets (xp, xm, yp etc.) return Indices
-  inline BoutReal& operator[](const Indices &i) {
-    return operator()(i.x, i.y);
-  }
-  /// const Indices data access
-  inline const BoutReal& operator[](const Indices &i) const override {
-    return operator()(i.x, i.y);
-  }
 
   /*!
    * Access to the underlying data array. 
@@ -250,19 +261,39 @@ class Field2D : public Field, public FieldData {
   friend class Vector2D;
   
   void applyBoundary(bool init=false) override;
-  void applyBoundary(const string &condition);
-  void applyBoundary(const char* condition) { applyBoundary(string(condition)); }
-  void applyBoundary(const string &region, const string &condition);
+  void applyBoundary(BoutReal time);
+  void applyBoundary(const std::string &condition);
+  void applyBoundary(const char* condition) { applyBoundary(std::string(condition)); }
+  void applyBoundary(const std::string &region, const std::string &condition);
   void applyTDerivBoundary() override;
   void setBoundaryTo(const Field2D &f2d); ///< Copy the boundary region
-  
- private:
-  int nx, ny;      ///< Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
-  
+
+  friend void swap(Field2D& first, Field2D& second) noexcept {
+    using std::swap;
+
+    // Swap base class members
+    swap(static_cast<Field&>(first), static_cast<Field&>(second));
+
+    swap(first.data, second.data);
+    swap(first.nx, second.nx);
+    swap(first.ny, second.ny);
+    swap(first.deriv, second.deriv);
+    swap(first.bndry_op, second.bndry_op);
+    swap(first.boundaryIsCopy, second.boundaryIsCopy);
+    swap(first.boundaryIsSet, second.boundaryIsSet);
+    swap(first.bndry_op_par, second.bndry_op_par);
+    swap(first.bndry_generator, second.bndry_generator);
+  }
+
+private:
+  /// Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
+  int nx{-1}, ny{-1};
+
   /// Internal data array. Handles allocation/freeing of memory
   Array<BoutReal> data;
-  
-  Field2D *deriv; ///< Time-derivative, can be NULL
+
+  /// Time-derivative, can be nullptr
+  Field2D *deriv{nullptr};
 };
 
 // Non-member overloaded operators
@@ -294,6 +325,9 @@ Field2D operator/(BoutReal lhs, const Field2D &rhs);
 Field2D operator-(const Field2D &f);
 
 // Non-member functions
+
+inline Field2D toFieldAligned(const Field2D& f, const REGION UNUSED(region)) { return f; }
+inline Field2D fromFieldAligned(const Field2D& f, const REGION UNUSED(region)) { return f; }
 
 /// Square root of \p f over region \p rgn
 ///
@@ -430,7 +464,11 @@ inline void checkData(const Field2D &UNUSED(f), REGION UNUSED(region) = RGN_NOBN
 #endif
 
 /// Force guard cells of passed field \p var to NaN
+#if CHECK > 2
 void invalidateGuards(Field2D &var);
+#else
+inline void invalidateGuards(Field2D &UNUSED(var)) {}
+#endif
 
 /// Returns a reference to the time-derivative of a field \p f
 ///
@@ -438,5 +476,18 @@ void invalidateGuards(Field2D &var);
 inline Field2D& ddt(Field2D &f) {
   return *(f.timeDeriv());
 }
+
+/// toString template specialisation
+/// Defined in utils.hxx
+template <>
+inline std::string toString<>(const Field2D& UNUSED(val)) {
+  return "<Field2D>";
+}
+
+/// Test if two fields are the same, by calculating
+/// the minimum absolute difference between them
+bool operator==(const Field2D &a, const Field2D &b);
+
+std::ostream& operator<<(std::ostream &out, const Field2D &value);
 
 #endif /* __FIELD2D_H__ */

@@ -16,37 +16,38 @@
 class WaveTest : public PhysicsModel {
 public:
   int init(bool restarting) {
-    
+    auto *coords = mesh->getCoordinates();
     Field2D Rxy, Bpxy, Btxy, hthe, I;
     GRID_LOAD(Rxy);
     GRID_LOAD(Bpxy);
     GRID_LOAD(Btxy);
     GRID_LOAD(hthe);
-    mesh->get(mesh->Bxy,  "Bxy");
-    
-    if(mesh->ShiftXderivs) {
+    mesh->get(coords->Bxy,  "Bxy");
+    int ShiftXderivs = 0;
+    mesh->get(ShiftXderivs, "false");
+    if(ShiftXderivs) {
       // No integrated shear in metric
       I = 0.0;
     }else
       mesh->get(I,    "sinty");
     
-    mesh->g11 = (Rxy*Bpxy)^2;
-    mesh->g22 = 1.0 / (hthe^2);
-    mesh->g33 = (I^2)*mesh->g11 + (mesh->Bxy^2)/mesh->g11;
-    mesh->g12 = 0.0;
-    mesh->g13 = -I*mesh->g11;
-    mesh->g23 = -Btxy/(hthe*Bpxy*Rxy);
+    coords->g11 = pow(Rxy*Bpxy,2.0);
+    coords->g22 = 1.0 / pow(hthe,2.0);
+    coords->g33 = pow(I,2.0)*coords->g11 + pow(coords->Bxy,2.0)/coords->g11;
+    coords->g12 = 0.0;
+    coords->g13 = -I*coords->g11;
+    coords->g23 = -Btxy/(hthe*Bpxy*Rxy);
     
-    mesh->J = hthe / Bpxy;
+    coords->J = hthe / Bpxy;
     
-    mesh->g_11 = 1.0/mesh->g11 + ((I*Rxy)^2);
-    mesh->g_22 = (mesh->Bxy*hthe/Bpxy)^2;
-    mesh->g_33 = Rxy*Rxy;
-    mesh->g_12 = Btxy*hthe*I*Rxy/Bpxy;
-    mesh->g_13 = I*Rxy*Rxy;
-    mesh->g_23 = Btxy*hthe*Rxy/Bpxy;
+    coords->g_11 = 1.0/coords->g11 + (pow(I*Rxy,2.0));
+    coords->g_22 = pow(coords->Bxy*hthe/Bpxy,2.0);
+    coords->g_33 = Rxy*Rxy;
+    coords->g_12 = Btxy*hthe*I*Rxy/Bpxy;
+    coords->g_13 = I*Rxy*Rxy;
+    coords->g_23 = Btxy*hthe*Rxy/Bpxy;
     
-    mesh->geometry();
+    coords->geometry();
     
     solver->add(f, "f");
     solver->add(g, "g");

@@ -6,12 +6,12 @@ from __future__ import division
 from __future__ import print_function
 from builtins import str
 
-from boututils.run_wrapper import shell, launch, getmpirun
+from boututils.run_wrapper import shell, launch_safe
 from boutdata.collect import collect
 
 from numpy import sqrt, max, abs, mean, array, log, concatenate
 
-MPIRUN = getmpirun()
+
 
 print("Making MMS test")
 shell("make > make.log")
@@ -46,7 +46,7 @@ for nx in nxlist:
     # Command to run
     cmd = "./gbs "+args
     # Launch using MPI
-    s, out = launch(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
+    s, out = launch_safe(cmd, nproc=nproc, pipe=True)
 
     # Save output to log file
     f = open(path+"/run.log."+str(nx), "w")
@@ -75,7 +75,9 @@ dx = 1. / (array(nxlist) - 2.)
 for var in varlist:
     order = log(error_2[var][-1] / error_2[var][-2]) / log(dx[-1] / dx[-2])
     print("Convergence order = %f" % (order))
-    if order < 1.9:
+    if 1.9 < order < 2.1:
+        pass
+    else:
         success=False
 
 

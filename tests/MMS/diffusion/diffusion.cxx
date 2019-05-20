@@ -2,9 +2,10 @@
 #include <boutmain.hxx>
 #include <initialprofiles.hxx>
 #include <derivs.hxx>
-#include <math.h>
+#include <cmath>
 #include "mathematica.h"
 #include <bout/constants.hxx>
+#include <unused.hxx>
 
 void solution(Field3D &f, BoutReal t, BoutReal D);
 class ErrorMonitor: public Monitor{
@@ -24,11 +25,11 @@ BoutReal Lx, Ly, Lz;
 
 Coordinates *coord;
 ErrorMonitor error_monitor;
-int physics_init(bool restarting) {
+int physics_init(bool UNUSED(restarting)) {
   // Get the options
   Options *meshoptions = Options::getRoot()->getSection("mesh");
 
-  coord = mesh->coordinates();
+  coord = mesh->getCoordinates();
   
   meshoptions->get("Lx",Lx,1.0);
   meshoptions->get("Ly",Ly,1.0);
@@ -88,7 +89,7 @@ int physics_init(bool restarting) {
   source.allocate();
   SAVE_REPEAT(source);
 
-  error_monitor.call(NULL, 0,  0, 0);
+  error_monitor.call(nullptr, 0,  0, 0);
   solver->addMonitor(&error_monitor);
 
   return 0;
@@ -130,7 +131,7 @@ BoutReal dxMS(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  z) {
 
 
 //Manufactured solution
-void solution(Field3D &f, BoutReal t, BoutReal D) {
+void solution(Field3D &f, BoutReal t, BoutReal UNUSED(D)) {
   int bx = (mesh->LocalNx - (mesh->xend - mesh->xstart + 1)) / 2;
   int by = (mesh->LocalNy - (mesh->yend - mesh->ystart + 1)) / 2;
   BoutReal x,y,z;
@@ -154,7 +155,7 @@ void solution(Field3D &f, BoutReal t, BoutReal D) {
 //\partial_t MS - \mu_N \partial^2_{xx } N = MMS_Source
 Field3D MMS_Source(BoutReal t)
 {
-  BoutReal x,y,z;
+  BoutReal x;
   Field3D result;
   result = 0.0;
   
@@ -164,8 +165,6 @@ Field3D MMS_Source(BoutReal t)
     for(yj=mesh->ystart;yj < mesh->yend+1;yj++){
       for(zk=0;zk<mesh->LocalNz;zk++){
         x = mesh->GlobalX(xi)*Lx;
-        y = mesh->GlobalY(yj)*Ly;
-        z = zk*coord->dz;
         result(xi,yj,zk) = -2.*Sin(10*t)*Sin(5.*Power(x,2)) + Cos(10*t)*
           (-2.*Cos(5.*Power(x,2)) + 20.*Power(x,2)*Sin(5.*Power(x,2)));
       }
@@ -173,7 +172,7 @@ Field3D MMS_Source(BoutReal t)
   return result;
 }
 
-int ErrorMonitor::call(Solver *solver, BoutReal simtime, int iter, int NOUT) {
+int ErrorMonitor::call(Solver *UNUSED(solver), BoutReal simtime, int UNUSED(iter), int UNUSED(NOUT)) {
   solution(S, simtime, mu_N);
 
   //Calculate the error. norms are calculated in the post-processing

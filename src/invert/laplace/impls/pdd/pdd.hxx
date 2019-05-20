@@ -34,23 +34,40 @@ class LaplacePDD;
 #ifndef __LAPLACE_PDD_H__
 #define __LAPLACE_PDD_H__
 
+#include <bout/mesh.hxx>
 #include <invert_laplace.hxx>
 #include <options.hxx>
 #include <utils.hxx>
 
 class LaplacePDD : public Laplacian {
 public:
-  LaplacePDD(Options *opt = nullptr)
-      : Laplacian(opt), Acoef(0.0), Ccoef(1.0), Dcoef(1.0), PDD_COMM_XV(123),
-        PDD_COMM_Y(456) {}
+  LaplacePDD(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr)
+      : Laplacian(opt, loc, mesh_in), Acoef(0.0), Ccoef(1.0), Dcoef(1.0), PDD_COMM_XV(123),
+        PDD_COMM_Y(456) {
+    Acoef.setLocation(location);
+    Ccoef.setLocation(location);
+    Dcoef.setLocation(location);
+  }
   ~LaplacePDD() {}
 
   using Laplacian::setCoefA;
-  void setCoefA(const Field2D &val) override { Acoef = val; }
+  void setCoefA(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
+    Acoef = val;
+  }
   using Laplacian::setCoefC;
-  void setCoefC(const Field2D &val) override { Ccoef = val; }
+  void setCoefC(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
+    Ccoef = val;
+  }
   using Laplacian::setCoefD;
-  void setCoefD(const Field2D &val) override { Dcoef = val; }
+  void setCoefD(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
+    Dcoef = val;
+  }
   using Laplacian::setCoefEx;
   void setCoefEx(const Field2D &UNUSED(val)) override {
     throw BoutException("LaplacePDD does not have Ex coefficient");
@@ -70,7 +87,7 @@ private:
   const int PDD_COMM_Y;  // Second tag
   
   /// Data structure for PDD algorithm
-  typedef struct {
+  struct PDD_data {
     Matrix<dcomplex> bk;  ///< b vector in Fourier space
 
     Matrix<dcomplex> avec, bvec, cvec; ///< Diagonal bands of matrix
@@ -86,7 +103,7 @@ private:
     comm_handle recv_handle;
 
     Array<dcomplex> y2i;
-  }PDD_data;
+  };
   
   void start(const FieldPerp &b, PDD_data &data);
   void next(PDD_data &data);

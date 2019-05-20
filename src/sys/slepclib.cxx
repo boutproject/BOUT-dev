@@ -6,8 +6,8 @@
 // Define all the static member variables
 int SlepcLib::count = 0;
 char SlepcLib::help[] = "BOUT++: Uses finite difference methods to solve plasma fluid problems in curvilinear coordinates";
-int* SlepcLib::pargc = 0;
-char*** SlepcLib::pargv = 0;
+int* SlepcLib::pargc = nullptr;
+char*** SlepcLib::pargv = nullptr;
 PetscLogEvent SlepcLib::USER_EVENT = 0;
 
 SlepcLib::SlepcLib() {

@@ -49,7 +49,7 @@ class Vector2D : public FieldData {
  public:
   Vector2D(Mesh * fieldmesh = nullptr);
   Vector2D(const Vector2D &f);
-  ~Vector2D();
+  ~Vector2D() override;
 
   Field2D x, y, z; ///< components
 
@@ -106,10 +106,6 @@ class Vector2D : public FieldData {
   /// Divide all components by \p rhs
   Vector2D & operator/=(const Field2D &rhs);
 
-  /// Cross-product of two vectors
-  /// Deprecated: use a=cross(a,b) instead
-  DEPRECATED(Vector2D & operator^=(const Vector2D &rhs);)
-
   // Binary operators
   
   const Vector2D operator+(const Vector2D &rhs) const; ///< Addition
@@ -129,12 +125,13 @@ class Vector2D : public FieldData {
   const Field2D operator*(const Vector2D &rhs) const; ///< Dot product
   const Field3D operator*(const Vector3D &rhs) const; ///< Dot product
 
-  /// Cross product
-  /// Deprecated: use cross(a,b) instead
-  DEPRECATED(const Vector2D operator^(const Vector2D &rhs) const;)
-  /// Cross product
-  /// Deprecated: use cross(a,b) instead
-  DEPRECATED(const Vector3D operator^(const Vector3D &rhs) const;)
+   /*!
+   * Set variable cell location
+   */ 
+  void setLocation(CELL_LOC loc); 
+
+  // Get variable cell location
+  CELL_LOC getLocation() const;
 
   /// Visitor pattern support
   void accept(FieldVisitor &v) override;
@@ -148,16 +145,17 @@ class Vector2D : public FieldData {
 
   /// Apply boundary condition to all fields
   void applyBoundary(bool init=false) override;
-  void applyBoundary(const string &condition) {
+  void applyBoundary(const std::string &condition) {
     x.applyBoundary(condition);
     y.applyBoundary(condition);
     z.applyBoundary(condition);
   }
-  void applyBoundary(const char* condition) { applyBoundary(string(condition)); }
+  void applyBoundary(const char* condition) { applyBoundary(std::string(condition)); }
   void applyTDerivBoundary() override;
  private:
   
   Vector2D *deriv; ///< Time-derivative, can be NULL
+  CELL_LOC location; ///< Location of the variable in the cell
 };
 
 // Non-member overloaded operators

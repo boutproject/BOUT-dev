@@ -16,8 +16,8 @@
 #include "bout/openmpwrap.hxx"
 #include "bout/region.hxx"
 
-typedef std::chrono::time_point<std::chrono::steady_clock> SteadyClock;
-typedef std::chrono::duration<double> Duration;
+using SteadyClock = std::chrono::time_point<std::chrono::steady_clock>;
+using Duration = std::chrono::duration<double>;
 using namespace std::chrono;
 
 #define ITERATOR_TEST_BLOCK(NAME, ...)                                                   \
@@ -37,11 +37,11 @@ int main(int argc, char **argv) {
   std::vector<Duration> times;
 
   // Get options root
-  Options *globalOptions = Options::getRoot();
-  Options *modelOpts = globalOptions->getSection("tuningRegionBlockSize");
+  auto globalOptions = Options::root();
+  auto modelOpts = globalOptions["tuningRegionBlockSize"];
   int NUM_LOOPS, numSteps;
-  OPTION(modelOpts, NUM_LOOPS, 100);
-  OPTION(modelOpts, numSteps, 16);
+  NUM_LOOPS = modelOpts["NUM_LOOPS"].withDefault(100);
+  numSteps = modelOpts["numSteps"].withDefault(16);
 
   ConditionalOutput time_output(Output::getInstance());
   time_output.enable(true);
@@ -62,7 +62,7 @@ int main(int argc, char **argv) {
         Region<Ind3D>(0, mesh->LocalNx - 1, 0, mesh->LocalNy - 1, 0, mesh->LocalNz - 1,
                       mesh->LocalNy, mesh->LocalNz, blocksize);
 
-    ITERATOR_TEST_BLOCK(name, BLOCK_REGION_LOOP(region, i, result[i] = a[i] + b[i];););
+    ITERATOR_TEST_BLOCK(name, BOUT_FOR(i, region) { result[i] = a[i] + b[i]; });
     blocksize *= 2;
   }
 

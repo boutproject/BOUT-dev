@@ -17,6 +17,7 @@
 
 # Collect metadata from collection of data files
 function desc = bcollect(path)
+  error("This is currently broken for BOUT++ > v4.0.0. See issue #394")
   narg = nargin();
   if (narg < 1)
     # No path specified, so use current directory

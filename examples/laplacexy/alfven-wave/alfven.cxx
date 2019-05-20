@@ -39,11 +39,11 @@ protected:
   int init(bool restarting) {
 
     // Normalisation
-    Options *opt = Options::getRoot()->getSection("alfven");
-    OPTION(opt, Tnorm, 100);  // Reference temperature [eV]
-    OPTION(opt, Nnorm, 1e19); // Reference density [m^-3]
-    OPTION(opt, Bnorm, 1.0);  // Reference magnetic field [T]
-    OPTION(opt, AA, 2.0);     // Ion mass
+    auto opt = Options::root()["alfven"];
+    Tnorm = opt["Tnorm"].withDefault(100);  // Reference temperature [eV]
+    Nnorm = opt["Nnorm"].withDefault(1e19); // Reference density [m^-3]
+    Bnorm = opt["Bnorm"].withDefault(1.0);  // Reference magnetic field [T]
+    AA = opt["AA"].withDefault(2.0);        // Ion mass
 
     output.write("Normalisation Te=%e, Ne=%e, B=%e\n", Tnorm, Nnorm, Bnorm);
     SAVE_ONCE4(Tnorm, Nnorm, Bnorm, AA); // Save
@@ -61,10 +61,10 @@ protected:
     output.write("\t Cs=%e, rho_s=%e, Omega_ci=%e\n", Cs0, rho_s0, Omega_ci);
     SAVE_ONCE3(Cs0, rho_s0, Omega_ci);
 
-    OPTION(opt, mu_epar, -1e7);                    // Electron parallel viscosity [m^2/s]
+    mu_epar = opt["mu_epar"].withDefault(-1e7);    // Electron parallel viscosity [m^2/s]
     mu_epar /= rho_s0 * rho_s0 * Omega_ci * mi_me; // Normalise
 
-    OPTION(opt, resistivity, 1e-7);
+    resistivity = opt["resistivity"].withDefault(1e-7);
 
     // Load metric tensor from the mesh, passing length and B field normalisations
     LoadMetric(rho_s0, Bnorm);
@@ -72,8 +72,9 @@ protected:
     // Specify evolving variables
     SOLVE_FOR2(Vort, Apar);
 
-    OPTION(opt, laplace_perp, true); // Use Laplace_perp rather than Delp2
-    OPTION(opt, split_n0, true);     // Split into n=0 and n~=0
+    laplace_perp =
+        opt["laplace_perp"].withDefault(true);    // Use Laplace_perp rather than Delp2
+    split_n0 = opt["split_n0"].withDefault(true); // Split into n=0 and n~=0
 
     if (split_n0) {
       // Create an XY solver for n=0 component
@@ -82,7 +83,7 @@ protected:
     }
 
     // Create an XZ solver
-    OPTION(opt, newXZsolver, false);
+    newXZsolver = opt["newXZsolver"].withDefault(false);
     if (newXZsolver) {
       // Test new LaplaceXZ solver
       newSolver = LaplaceXZ::create(mesh);
@@ -170,7 +171,7 @@ protected:
     Field2D Rxy, Bpxy, Btxy, hthe, sinty;
     GRID_LOAD5(Rxy, Bpxy, Btxy, hthe, sinty); // Load metrics
 
-    Coordinates *coord = mesh->coordinates(); // Metric tensor
+    Coordinates *coord = mesh->getCoordinates(); // Metric tensor
 
     // Checking for dpsi and qinty used in BOUT grids
     Field2D dx;

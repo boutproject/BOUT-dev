@@ -7,54 +7,36 @@
 #include <interpolation.hxx>
 
 // Provide the C++ wrapper for multiplication of Field3D and Field3D
-Field3D operator*(const Field3D &lhs, const Field3D &rhs) {
-#if CHECK > 0
-  if (lhs.getLocation() != rhs.getLocation()) {
-    throw BoutException("Error in operator*(Field3D, Field3D): fields at different "
-                        "locations. lhs is at %s, rhs is at %s!",
-                        strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
-  }
-#endif
+Field3D operator*(const Field3D& lhs, const Field3D& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
-  Mesh *localmesh = lhs.getMesh();
-
-  ASSERT1(localmesh == rhs.getMesh());
-
-  Field3D result(localmesh);
-  result.allocate();
+  Field3D result{emptyFrom(lhs)};
   checkData(lhs);
   checkData(rhs);
 
-  BLOCK_REGION_LOOP(localmesh->getRegion3D("RGN_ALL"), index,
-                    result[index] = lhs[index] * rhs[index];);
-
-  result.setLocation(rhs.getLocation());
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+    result[index] = lhs[index] * rhs[index];
+  }
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ operator to update Field3D by multiplication with Field3D
-Field3D &Field3D::operator*=(const Field3D &rhs) {
+Field3D& Field3D::operator*=(const Field3D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-#if CHECK > 0
-    if (this->getLocation() != rhs.getLocation()) {
-      throw BoutException("Error in Field3D::operator*=(Field3D): fields at different "
-                          "locations. lhs is at %s, rhs is at %s!",
-                          strLocation(this->getLocation()),
-                          strLocation(rhs.getLocation()));
-    }
-#endif
+    ASSERT1(areFieldsCompatible(*this, rhs));
 
-    ASSERT1(fieldmesh == rhs.getMesh());
+    // Delete existing parallel slices. We don't copy parallel slices, so any
+    // that currently exist will be incorrect.
+    clearParallelSlices();
 
     checkData(*this);
     checkData(rhs);
 
-    BLOCK_REGION_LOOP(fieldmesh->getRegion3D("RGN_ALL"), index,
-                      (*this)[index] *= rhs[index];);
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs[index]; }
 
     checkData(*this);
 
@@ -65,54 +47,36 @@ Field3D &Field3D::operator*=(const Field3D &rhs) {
 }
 
 // Provide the C++ wrapper for division of Field3D and Field3D
-Field3D operator/(const Field3D &lhs, const Field3D &rhs) {
-#if CHECK > 0
-  if (lhs.getLocation() != rhs.getLocation()) {
-    throw BoutException("Error in operator/(Field3D, Field3D): fields at different "
-                        "locations. lhs is at %s, rhs is at %s!",
-                        strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
-  }
-#endif
+Field3D operator/(const Field3D& lhs, const Field3D& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
-  Mesh *localmesh = lhs.getMesh();
-
-  ASSERT1(localmesh == rhs.getMesh());
-
-  Field3D result(localmesh);
-  result.allocate();
+  Field3D result{emptyFrom(lhs)};
   checkData(lhs);
   checkData(rhs);
 
-  BLOCK_REGION_LOOP(localmesh->getRegion3D("RGN_ALL"), index,
-                    result[index] = lhs[index] / rhs[index];);
-
-  result.setLocation(rhs.getLocation());
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+    result[index] = lhs[index] / rhs[index];
+  }
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ operator to update Field3D by division with Field3D
-Field3D &Field3D::operator/=(const Field3D &rhs) {
+Field3D& Field3D::operator/=(const Field3D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-#if CHECK > 0
-    if (this->getLocation() != rhs.getLocation()) {
-      throw BoutException("Error in Field3D::operator/=(Field3D): fields at different "
-                          "locations. lhs is at %s, rhs is at %s!",
-                          strLocation(this->getLocation()),
-                          strLocation(rhs.getLocation()));
-    }
-#endif
+    ASSERT1(areFieldsCompatible(*this, rhs));
 
-    ASSERT1(fieldmesh == rhs.getMesh());
+    // Delete existing parallel slices. We don't copy parallel slices, so any
+    // that currently exist will be incorrect.
+    clearParallelSlices();
 
     checkData(*this);
     checkData(rhs);
 
-    BLOCK_REGION_LOOP(fieldmesh->getRegion3D("RGN_ALL"), index,
-                      (*this)[index] /= rhs[index];);
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] /= rhs[index]; }
 
     checkData(*this);
 
@@ -123,54 +87,36 @@ Field3D &Field3D::operator/=(const Field3D &rhs) {
 }
 
 // Provide the C++ wrapper for addition of Field3D and Field3D
-Field3D operator+(const Field3D &lhs, const Field3D &rhs) {
-#if CHECK > 0
-  if (lhs.getLocation() != rhs.getLocation()) {
-    throw BoutException("Error in operator+(Field3D, Field3D): fields at different "
-                        "locations. lhs is at %s, rhs is at %s!",
-                        strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
-  }
-#endif
+Field3D operator+(const Field3D& lhs, const Field3D& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
-  Mesh *localmesh = lhs.getMesh();
-
-  ASSERT1(localmesh == rhs.getMesh());
-
-  Field3D result(localmesh);
-  result.allocate();
+  Field3D result{emptyFrom(lhs)};
   checkData(lhs);
   checkData(rhs);
 
-  BLOCK_REGION_LOOP(localmesh->getRegion3D("RGN_ALL"), index,
-                    result[index] = lhs[index] + rhs[index];);
-
-  result.setLocation(rhs.getLocation());
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+    result[index] = lhs[index] + rhs[index];
+  }
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ operator to update Field3D by addition with Field3D
-Field3D &Field3D::operator+=(const Field3D &rhs) {
+Field3D& Field3D::operator+=(const Field3D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-#if CHECK > 0
-    if (this->getLocation() != rhs.getLocation()) {
-      throw BoutException("Error in Field3D::operator+=(Field3D): fields at different "
-                          "locations. lhs is at %s, rhs is at %s!",
-                          strLocation(this->getLocation()),
-                          strLocation(rhs.getLocation()));
-    }
-#endif
+    ASSERT1(areFieldsCompatible(*this, rhs));
 
-    ASSERT1(fieldmesh == rhs.getMesh());
+    // Delete existing parallel slices. We don't copy parallel slices, so any
+    // that currently exist will be incorrect.
+    clearParallelSlices();
 
     checkData(*this);
     checkData(rhs);
 
-    BLOCK_REGION_LOOP(fieldmesh->getRegion3D("RGN_ALL"), index,
-                      (*this)[index] += rhs[index];);
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs[index]; }
 
     checkData(*this);
 
@@ -181,54 +127,36 @@ Field3D &Field3D::operator+=(const Field3D &rhs) {
 }
 
 // Provide the C++ wrapper for subtraction of Field3D and Field3D
-Field3D operator-(const Field3D &lhs, const Field3D &rhs) {
-#if CHECK > 0
-  if (lhs.getLocation() != rhs.getLocation()) {
-    throw BoutException("Error in operator-(Field3D, Field3D): fields at different "
-                        "locations. lhs is at %s, rhs is at %s!",
-                        strLocation(lhs.getLocation()), strLocation(rhs.getLocation()));
-  }
-#endif
+Field3D operator-(const Field3D& lhs, const Field3D& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
-  Mesh *localmesh = lhs.getMesh();
-
-  ASSERT1(localmesh == rhs.getMesh());
-
-  Field3D result(localmesh);
-  result.allocate();
+  Field3D result{emptyFrom(lhs)};
   checkData(lhs);
   checkData(rhs);
 
-  BLOCK_REGION_LOOP(localmesh->getRegion3D("RGN_ALL"), index,
-                    result[index] = lhs[index] - rhs[index];);
-
-  result.setLocation(rhs.getLocation());
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+    result[index] = lhs[index] - rhs[index];
+  }
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ operator to update Field3D by subtraction with Field3D
-Field3D &Field3D::operator-=(const Field3D &rhs) {
+Field3D& Field3D::operator-=(const Field3D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-#if CHECK > 0
-    if (this->getLocation() != rhs.getLocation()) {
-      throw BoutException("Error in Field3D::operator-=(Field3D): fields at different "
-                          "locations. lhs is at %s, rhs is at %s!",
-                          strLocation(this->getLocation()),
-                          strLocation(rhs.getLocation()));
-    }
-#endif
+    ASSERT1(areFieldsCompatible(*this, rhs));
 
-    ASSERT1(fieldmesh == rhs.getMesh());
+    // Delete existing parallel slices. We don't copy parallel slices, so any
+    // that currently exist will be incorrect.
+    clearParallelSlices();
 
     checkData(*this);
     checkData(rhs);
 
-    BLOCK_REGION_LOOP(fieldmesh->getRegion3D("RGN_ALL"), index,
-                      (*this)[index] -= rhs[index];);
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs[index]; }
 
     checkData(*this);
 
@@ -239,44 +167,46 @@ Field3D &Field3D::operator-=(const Field3D &rhs) {
 }
 
 // Provide the C++ wrapper for multiplication of Field3D and Field2D
-Field3D operator*(const Field3D &lhs, const Field2D &rhs) {
+Field3D operator*(const Field3D& lhs, const Field2D& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
-  Mesh *localmesh = lhs.getMesh();
-
-  ASSERT1(localmesh == rhs.getMesh());
-
-  Field3D result(localmesh);
-  result.allocate();
+  Field3D result{emptyFrom(lhs)};
   checkData(lhs);
   checkData(rhs);
 
-  BLOCK_REGION_LOOP(localmesh->getRegion2D("RGN_ALL"), index,
-                    const auto base_ind = localmesh->ind2Dto3D(index);
-                    for (int jz = 0; jz < localmesh->LocalNz; ++jz) {
-                      result[base_ind + jz] = lhs[base_ind + jz] * rhs[index];
-                    });
+  Mesh* localmesh = lhs.getMesh();
 
-  result.setLocation(lhs.getLocation());
+  BOUT_FOR(index, rhs.getRegion("RGN_ALL")) {
+    const auto base_ind = localmesh->ind2Dto3D(index);
+    for (int jz = 0; jz < localmesh->LocalNz; ++jz) {
+      result[base_ind + jz] = lhs[base_ind + jz] * rhs[index];
+    }
+  }
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ operator to update Field3D by multiplication with Field2D
-Field3D &Field3D::operator*=(const Field2D &rhs) {
+Field3D& Field3D::operator*=(const Field2D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
+    ASSERT1(areFieldsCompatible(*this, rhs));
 
-    ASSERT1(fieldmesh == rhs.getMesh());
+    // Delete existing parallel slices. We don't copy parallel slices, so any
+    // that currently exist will be incorrect.
+    clearParallelSlices();
 
     checkData(*this);
     checkData(rhs);
 
-    BLOCK_REGION_LOOP(fieldmesh->getRegion2D("RGN_ALL"), index,
-                      const auto base_ind = fieldmesh->ind2Dto3D(index);
-                      for (int jz = 0; jz < fieldmesh->LocalNz;
-                           ++jz) { (*this)[base_ind + jz] *= rhs[index]; });
+    BOUT_FOR(index, rhs.getRegion("RGN_ALL")) {
+      const auto base_ind = fieldmesh->ind2Dto3D(index);
+      for (int jz = 0; jz < fieldmesh->LocalNz; ++jz) {
+        (*this)[base_ind + jz] *= rhs[index];
+      }
+    }
 
     checkData(*this);
 
@@ -287,45 +217,48 @@ Field3D &Field3D::operator*=(const Field2D &rhs) {
 }
 
 // Provide the C++ wrapper for division of Field3D and Field2D
-Field3D operator/(const Field3D &lhs, const Field2D &rhs) {
+Field3D operator/(const Field3D& lhs, const Field2D& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
-  Mesh *localmesh = lhs.getMesh();
-
-  ASSERT1(localmesh == rhs.getMesh());
-
-  Field3D result(localmesh);
-  result.allocate();
+  Field3D result{emptyFrom(lhs)};
   checkData(lhs);
   checkData(rhs);
 
-  BLOCK_REGION_LOOP(localmesh->getRegion2D("RGN_ALL"), index,
-                    const auto base_ind = localmesh->ind2Dto3D(index);
-                    const auto tmp = 1.0 / rhs[index];
-                    for (int jz = 0; jz < localmesh->LocalNz;
-                         ++jz) { result[base_ind + jz] = lhs[base_ind + jz] * tmp; });
+  Mesh* localmesh = lhs.getMesh();
 
-  result.setLocation(lhs.getLocation());
+  BOUT_FOR(index, rhs.getRegion("RGN_ALL")) {
+    const auto base_ind = localmesh->ind2Dto3D(index);
+    const auto tmp = 1.0 / rhs[index];
+    for (int jz = 0; jz < localmesh->LocalNz; ++jz) {
+      result[base_ind + jz] = lhs[base_ind + jz] * tmp;
+    }
+  }
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ operator to update Field3D by division with Field2D
-Field3D &Field3D::operator/=(const Field2D &rhs) {
+Field3D& Field3D::operator/=(const Field2D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
+    ASSERT1(areFieldsCompatible(*this, rhs));
 
-    ASSERT1(fieldmesh == rhs.getMesh());
+    // Delete existing parallel slices. We don't copy parallel slices, so any
+    // that currently exist will be incorrect.
+    clearParallelSlices();
 
     checkData(*this);
     checkData(rhs);
 
-    BLOCK_REGION_LOOP(fieldmesh->getRegion2D("RGN_ALL"), index,
-                      const auto base_ind = fieldmesh->ind2Dto3D(index);
-                      const auto tmp = 1.0 / rhs[index];
-                      for (int jz = 0; jz < fieldmesh->LocalNz;
-                           ++jz) { (*this)[base_ind + jz] *= tmp; });
+    BOUT_FOR(index, rhs.getRegion("RGN_ALL")) {
+      const auto base_ind = fieldmesh->ind2Dto3D(index);
+      const auto tmp = 1.0 / rhs[index];
+      for (int jz = 0; jz < fieldmesh->LocalNz; ++jz) {
+        (*this)[base_ind + jz] *= tmp;
+      }
+    }
 
     checkData(*this);
 
@@ -336,44 +269,46 @@ Field3D &Field3D::operator/=(const Field2D &rhs) {
 }
 
 // Provide the C++ wrapper for addition of Field3D and Field2D
-Field3D operator+(const Field3D &lhs, const Field2D &rhs) {
+Field3D operator+(const Field3D& lhs, const Field2D& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
-  Mesh *localmesh = lhs.getMesh();
-
-  ASSERT1(localmesh == rhs.getMesh());
-
-  Field3D result(localmesh);
-  result.allocate();
+  Field3D result{emptyFrom(lhs)};
   checkData(lhs);
   checkData(rhs);
 
-  BLOCK_REGION_LOOP(localmesh->getRegion2D("RGN_ALL"), index,
-                    const auto base_ind = localmesh->ind2Dto3D(index);
-                    for (int jz = 0; jz < localmesh->LocalNz; ++jz) {
-                      result[base_ind + jz] = lhs[base_ind + jz] + rhs[index];
-                    });
+  Mesh* localmesh = lhs.getMesh();
 
-  result.setLocation(lhs.getLocation());
+  BOUT_FOR(index, rhs.getRegion("RGN_ALL")) {
+    const auto base_ind = localmesh->ind2Dto3D(index);
+    for (int jz = 0; jz < localmesh->LocalNz; ++jz) {
+      result[base_ind + jz] = lhs[base_ind + jz] + rhs[index];
+    }
+  }
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ operator to update Field3D by addition with Field2D
-Field3D &Field3D::operator+=(const Field2D &rhs) {
+Field3D& Field3D::operator+=(const Field2D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
+    ASSERT1(areFieldsCompatible(*this, rhs));
 
-    ASSERT1(fieldmesh == rhs.getMesh());
+    // Delete existing parallel slices. We don't copy parallel slices, so any
+    // that currently exist will be incorrect.
+    clearParallelSlices();
 
     checkData(*this);
     checkData(rhs);
 
-    BLOCK_REGION_LOOP(fieldmesh->getRegion2D("RGN_ALL"), index,
-                      const auto base_ind = fieldmesh->ind2Dto3D(index);
-                      for (int jz = 0; jz < fieldmesh->LocalNz;
-                           ++jz) { (*this)[base_ind + jz] += rhs[index]; });
+    BOUT_FOR(index, rhs.getRegion("RGN_ALL")) {
+      const auto base_ind = fieldmesh->ind2Dto3D(index);
+      for (int jz = 0; jz < fieldmesh->LocalNz; ++jz) {
+        (*this)[base_ind + jz] += rhs[index];
+      }
+    }
 
     checkData(*this);
 
@@ -384,44 +319,46 @@ Field3D &Field3D::operator+=(const Field2D &rhs) {
 }
 
 // Provide the C++ wrapper for subtraction of Field3D and Field2D
-Field3D operator-(const Field3D &lhs, const Field2D &rhs) {
+Field3D operator-(const Field3D& lhs, const Field2D& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
-  Mesh *localmesh = lhs.getMesh();
-
-  ASSERT1(localmesh == rhs.getMesh());
-
-  Field3D result(localmesh);
-  result.allocate();
+  Field3D result{emptyFrom(lhs)};
   checkData(lhs);
   checkData(rhs);
 
-  BLOCK_REGION_LOOP(localmesh->getRegion2D("RGN_ALL"), index,
-                    const auto base_ind = localmesh->ind2Dto3D(index);
-                    for (int jz = 0; jz < localmesh->LocalNz; ++jz) {
-                      result[base_ind + jz] = lhs[base_ind + jz] - rhs[index];
-                    });
+  Mesh* localmesh = lhs.getMesh();
 
-  result.setLocation(lhs.getLocation());
+  BOUT_FOR(index, rhs.getRegion("RGN_ALL")) {
+    const auto base_ind = localmesh->ind2Dto3D(index);
+    for (int jz = 0; jz < localmesh->LocalNz; ++jz) {
+      result[base_ind + jz] = lhs[base_ind + jz] - rhs[index];
+    }
+  }
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ operator to update Field3D by subtraction with Field2D
-Field3D &Field3D::operator-=(const Field2D &rhs) {
+Field3D& Field3D::operator-=(const Field2D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
+    ASSERT1(areFieldsCompatible(*this, rhs));
 
-    ASSERT1(fieldmesh == rhs.getMesh());
+    // Delete existing parallel slices. We don't copy parallel slices, so any
+    // that currently exist will be incorrect.
+    clearParallelSlices();
 
     checkData(*this);
     checkData(rhs);
 
-    BLOCK_REGION_LOOP(fieldmesh->getRegion2D("RGN_ALL"), index,
-                      const auto base_ind = fieldmesh->ind2Dto3D(index);
-                      for (int jz = 0; jz < fieldmesh->LocalNz;
-                           ++jz) { (*this)[base_ind + jz] -= rhs[index]; });
+    BOUT_FOR(index, rhs.getRegion("RGN_ALL")) {
+      const auto base_ind = fieldmesh->ind2Dto3D(index);
+      for (int jz = 0; jz < fieldmesh->LocalNz; ++jz) {
+        (*this)[base_ind + jz] -= rhs[index];
+      }
+    }
 
     checkData(*this);
 
@@ -431,35 +368,113 @@ Field3D &Field3D::operator-=(const Field2D &rhs) {
   return *this;
 }
 
-// Provide the C++ wrapper for multiplication of Field3D and BoutReal
-Field3D operator*(const Field3D &lhs, const BoutReal rhs) {
+// Provide the C++ wrapper for multiplication of Field3D and FieldPerp
+FieldPerp operator*(const Field3D& lhs, const FieldPerp& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
-  Mesh *localmesh = lhs.getMesh();
-
-  Field3D result(localmesh);
-  result.allocate();
+  FieldPerp result{emptyFrom(rhs)};
   checkData(lhs);
   checkData(rhs);
 
-  BLOCK_REGION_LOOP(localmesh->getRegion3D("RGN_ALL"), index,
-                    result[index] = lhs[index] * rhs;);
+  Mesh* localmesh = lhs.getMesh();
 
-  result.setLocation(lhs.getLocation());
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+    int yind = rhs.getIndex();
+    const auto base_ind = localmesh->indPerpto3D(index, yind);
+    result[index] = lhs[base_ind] * rhs[index];
+  }
+
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ wrapper for division of Field3D and FieldPerp
+FieldPerp operator/(const Field3D& lhs, const FieldPerp& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
+
+  FieldPerp result{emptyFrom(rhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  Mesh* localmesh = lhs.getMesh();
+
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+    int yind = rhs.getIndex();
+    const auto base_ind = localmesh->indPerpto3D(index, yind);
+    result[index] = lhs[base_ind] / rhs[index];
+  }
+
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ wrapper for addition of Field3D and FieldPerp
+FieldPerp operator+(const Field3D& lhs, const FieldPerp& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
+
+  FieldPerp result{emptyFrom(rhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  Mesh* localmesh = lhs.getMesh();
+
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+    int yind = rhs.getIndex();
+    const auto base_ind = localmesh->indPerpto3D(index, yind);
+    result[index] = lhs[base_ind] + rhs[index];
+  }
+
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ wrapper for subtraction of Field3D and FieldPerp
+FieldPerp operator-(const Field3D& lhs, const FieldPerp& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
+
+  FieldPerp result{emptyFrom(rhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  Mesh* localmesh = lhs.getMesh();
+
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+    int yind = rhs.getIndex();
+    const auto base_ind = localmesh->indPerpto3D(index, yind);
+    result[index] = lhs[base_ind] - rhs[index];
+  }
+
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ wrapper for multiplication of Field3D and BoutReal
+Field3D operator*(const Field3D& lhs, const BoutReal rhs) {
+
+  Field3D result{emptyFrom(lhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs[index] * rhs; }
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ operator to update Field3D by multiplication with BoutReal
-Field3D &Field3D::operator*=(const BoutReal rhs) {
+Field3D& Field3D::operator*=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
 
+    // Delete existing parallel slices. We don't copy parallel slices, so any
+    // that currently exist will be incorrect.
+    clearParallelSlices();
+
     checkData(*this);
     checkData(rhs);
 
-    BLOCK_REGION_LOOP(fieldmesh->getRegion3D("RGN_ALL"), index, (*this)[index] *= rhs;);
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs; }
 
     checkData(*this);
 
@@ -470,34 +485,32 @@ Field3D &Field3D::operator*=(const BoutReal rhs) {
 }
 
 // Provide the C++ wrapper for division of Field3D and BoutReal
-Field3D operator/(const Field3D &lhs, const BoutReal rhs) {
+Field3D operator/(const Field3D& lhs, const BoutReal rhs) {
 
-  Mesh *localmesh = lhs.getMesh();
-
-  Field3D result(localmesh);
-  result.allocate();
+  Field3D result{emptyFrom(lhs)};
   checkData(lhs);
   checkData(rhs);
 
-  BLOCK_REGION_LOOP(localmesh->getRegion3D("RGN_ALL"), index,
-                    result[index] = lhs[index] / rhs;);
-
-  result.setLocation(lhs.getLocation());
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs[index] / rhs; }
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ operator to update Field3D by division with BoutReal
-Field3D &Field3D::operator/=(const BoutReal rhs) {
+Field3D& Field3D::operator/=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
 
+    // Delete existing parallel slices. We don't copy parallel slices, so any
+    // that currently exist will be incorrect.
+    clearParallelSlices();
+
     checkData(*this);
     checkData(rhs);
 
-    BLOCK_REGION_LOOP(fieldmesh->getRegion3D("RGN_ALL"), index, (*this)[index] /= rhs;);
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] /= rhs; }
 
     checkData(*this);
 
@@ -508,34 +521,32 @@ Field3D &Field3D::operator/=(const BoutReal rhs) {
 }
 
 // Provide the C++ wrapper for addition of Field3D and BoutReal
-Field3D operator+(const Field3D &lhs, const BoutReal rhs) {
+Field3D operator+(const Field3D& lhs, const BoutReal rhs) {
 
-  Mesh *localmesh = lhs.getMesh();
-
-  Field3D result(localmesh);
-  result.allocate();
+  Field3D result{emptyFrom(lhs)};
   checkData(lhs);
   checkData(rhs);
 
-  BLOCK_REGION_LOOP(localmesh->getRegion3D("RGN_ALL"), index,
-                    result[index] = lhs[index] + rhs;);
-
-  result.setLocation(lhs.getLocation());
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs[index] + rhs; }
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ operator to update Field3D by addition with BoutReal
-Field3D &Field3D::operator+=(const BoutReal rhs) {
+Field3D& Field3D::operator+=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
 
+    // Delete existing parallel slices. We don't copy parallel slices, so any
+    // that currently exist will be incorrect.
+    clearParallelSlices();
+
     checkData(*this);
     checkData(rhs);
 
-    BLOCK_REGION_LOOP(fieldmesh->getRegion3D("RGN_ALL"), index, (*this)[index] += rhs;);
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs; }
 
     checkData(*this);
 
@@ -546,34 +557,32 @@ Field3D &Field3D::operator+=(const BoutReal rhs) {
 }
 
 // Provide the C++ wrapper for subtraction of Field3D and BoutReal
-Field3D operator-(const Field3D &lhs, const BoutReal rhs) {
+Field3D operator-(const Field3D& lhs, const BoutReal rhs) {
 
-  Mesh *localmesh = lhs.getMesh();
-
-  Field3D result(localmesh);
-  result.allocate();
+  Field3D result{emptyFrom(lhs)};
   checkData(lhs);
   checkData(rhs);
 
-  BLOCK_REGION_LOOP(localmesh->getRegion3D("RGN_ALL"), index,
-                    result[index] = lhs[index] - rhs;);
-
-  result.setLocation(lhs.getLocation());
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs[index] - rhs; }
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ operator to update Field3D by subtraction with BoutReal
-Field3D &Field3D::operator-=(const BoutReal rhs) {
+Field3D& Field3D::operator-=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
 
+    // Delete existing parallel slices. We don't copy parallel slices, so any
+    // that currently exist will be incorrect.
+    clearParallelSlices();
+
     checkData(*this);
     checkData(rhs);
 
-    BLOCK_REGION_LOOP(fieldmesh->getRegion3D("RGN_ALL"), index, (*this)[index] -= rhs;);
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs; }
 
     checkData(*this);
 
@@ -584,133 +593,116 @@ Field3D &Field3D::operator-=(const BoutReal rhs) {
 }
 
 // Provide the C++ wrapper for multiplication of Field2D and Field3D
-Field3D operator*(const Field2D &lhs, const Field3D &rhs) {
+Field3D operator*(const Field2D& lhs, const Field3D& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
-  Mesh *localmesh = lhs.getMesh();
-
-  ASSERT1(localmesh == rhs.getMesh());
-
-  Field3D result(localmesh);
-  result.allocate();
+  Field3D result{emptyFrom(rhs)};
   checkData(lhs);
   checkData(rhs);
 
-  BLOCK_REGION_LOOP(localmesh->getRegion2D("RGN_ALL"), index,
-                    const auto base_ind = localmesh->ind2Dto3D(index);
-                    for (int jz = 0; jz < localmesh->LocalNz; ++jz) {
-                      result[base_ind + jz] = lhs[index] * rhs[base_ind + jz];
-                    });
+  Mesh* localmesh = lhs.getMesh();
 
-  result.setLocation(rhs.getLocation());
+  BOUT_FOR(index, lhs.getRegion("RGN_ALL")) {
+    const auto base_ind = localmesh->ind2Dto3D(index);
+    for (int jz = 0; jz < localmesh->LocalNz; ++jz) {
+      result[base_ind + jz] = lhs[index] * rhs[base_ind + jz];
+    }
+  }
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ wrapper for division of Field2D and Field3D
-Field3D operator/(const Field2D &lhs, const Field3D &rhs) {
+Field3D operator/(const Field2D& lhs, const Field3D& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
-  Mesh *localmesh = lhs.getMesh();
-
-  ASSERT1(localmesh == rhs.getMesh());
-
-  Field3D result(localmesh);
-  result.allocate();
+  Field3D result{emptyFrom(rhs)};
   checkData(lhs);
   checkData(rhs);
 
-  BLOCK_REGION_LOOP(localmesh->getRegion2D("RGN_ALL"), index,
-                    const auto base_ind = localmesh->ind2Dto3D(index);
-                    for (int jz = 0; jz < localmesh->LocalNz; ++jz) {
-                      result[base_ind + jz] = lhs[index] / rhs[base_ind + jz];
-                    });
+  Mesh* localmesh = lhs.getMesh();
 
-  result.setLocation(rhs.getLocation());
+  BOUT_FOR(index, lhs.getRegion("RGN_ALL")) {
+    const auto base_ind = localmesh->ind2Dto3D(index);
+    for (int jz = 0; jz < localmesh->LocalNz; ++jz) {
+      result[base_ind + jz] = lhs[index] / rhs[base_ind + jz];
+    }
+  }
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ wrapper for addition of Field2D and Field3D
-Field3D operator+(const Field2D &lhs, const Field3D &rhs) {
+Field3D operator+(const Field2D& lhs, const Field3D& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
-  Mesh *localmesh = lhs.getMesh();
-
-  ASSERT1(localmesh == rhs.getMesh());
-
-  Field3D result(localmesh);
-  result.allocate();
+  Field3D result{emptyFrom(rhs)};
   checkData(lhs);
   checkData(rhs);
 
-  BLOCK_REGION_LOOP(localmesh->getRegion2D("RGN_ALL"), index,
-                    const auto base_ind = localmesh->ind2Dto3D(index);
-                    for (int jz = 0; jz < localmesh->LocalNz; ++jz) {
-                      result[base_ind + jz] = lhs[index] + rhs[base_ind + jz];
-                    });
+  Mesh* localmesh = lhs.getMesh();
 
-  result.setLocation(rhs.getLocation());
+  BOUT_FOR(index, lhs.getRegion("RGN_ALL")) {
+    const auto base_ind = localmesh->ind2Dto3D(index);
+    for (int jz = 0; jz < localmesh->LocalNz; ++jz) {
+      result[base_ind + jz] = lhs[index] + rhs[base_ind + jz];
+    }
+  }
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ wrapper for subtraction of Field2D and Field3D
-Field3D operator-(const Field2D &lhs, const Field3D &rhs) {
+Field3D operator-(const Field2D& lhs, const Field3D& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
-  Mesh *localmesh = lhs.getMesh();
-
-  ASSERT1(localmesh == rhs.getMesh());
-
-  Field3D result(localmesh);
-  result.allocate();
+  Field3D result{emptyFrom(rhs)};
   checkData(lhs);
   checkData(rhs);
 
-  BLOCK_REGION_LOOP(localmesh->getRegion2D("RGN_ALL"), index,
-                    const auto base_ind = localmesh->ind2Dto3D(index);
-                    for (int jz = 0; jz < localmesh->LocalNz; ++jz) {
-                      result[base_ind + jz] = lhs[index] - rhs[base_ind + jz];
-                    });
+  Mesh* localmesh = lhs.getMesh();
 
-  result.setLocation(rhs.getLocation());
+  BOUT_FOR(index, lhs.getRegion("RGN_ALL")) {
+    const auto base_ind = localmesh->ind2Dto3D(index);
+    for (int jz = 0; jz < localmesh->LocalNz; ++jz) {
+      result[base_ind + jz] = lhs[index] - rhs[base_ind + jz];
+    }
+  }
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ wrapper for multiplication of Field2D and Field2D
-Field2D operator*(const Field2D &lhs, const Field2D &rhs) {
+Field2D operator*(const Field2D& lhs, const Field2D& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
-  Mesh *localmesh = lhs.getMesh();
-
-  ASSERT1(localmesh == rhs.getMesh());
-
-  Field2D result(localmesh);
-  result.allocate();
+  Field2D result{emptyFrom(lhs)};
   checkData(lhs);
   checkData(rhs);
 
-  BLOCK_REGION_LOOP(localmesh->getRegion2D("RGN_ALL"), index,
-                    result[index] = lhs[index] * rhs[index];);
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+    result[index] = lhs[index] * rhs[index];
+  }
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ operator to update Field2D by multiplication with Field2D
-Field2D &Field2D::operator*=(const Field2D &rhs) {
+Field2D& Field2D::operator*=(const Field2D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-
-    ASSERT1(fieldmesh == rhs.getMesh());
+    ASSERT1(areFieldsCompatible(*this, rhs));
 
     checkData(*this);
     checkData(rhs);
 
-    BLOCK_REGION_LOOP(fieldmesh->getRegion2D("RGN_ALL"), index,
-                      (*this)[index] *= rhs[index];);
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs[index]; }
 
     checkData(*this);
 
@@ -721,37 +713,32 @@ Field2D &Field2D::operator*=(const Field2D &rhs) {
 }
 
 // Provide the C++ wrapper for division of Field2D and Field2D
-Field2D operator/(const Field2D &lhs, const Field2D &rhs) {
+Field2D operator/(const Field2D& lhs, const Field2D& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
-  Mesh *localmesh = lhs.getMesh();
-
-  ASSERT1(localmesh == rhs.getMesh());
-
-  Field2D result(localmesh);
-  result.allocate();
+  Field2D result{emptyFrom(lhs)};
   checkData(lhs);
   checkData(rhs);
 
-  BLOCK_REGION_LOOP(localmesh->getRegion2D("RGN_ALL"), index,
-                    result[index] = lhs[index] / rhs[index];);
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+    result[index] = lhs[index] / rhs[index];
+  }
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ operator to update Field2D by division with Field2D
-Field2D &Field2D::operator/=(const Field2D &rhs) {
+Field2D& Field2D::operator/=(const Field2D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-
-    ASSERT1(fieldmesh == rhs.getMesh());
+    ASSERT1(areFieldsCompatible(*this, rhs));
 
     checkData(*this);
     checkData(rhs);
 
-    BLOCK_REGION_LOOP(fieldmesh->getRegion2D("RGN_ALL"), index,
-                      (*this)[index] /= rhs[index];);
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] /= rhs[index]; }
 
     checkData(*this);
 
@@ -762,37 +749,32 @@ Field2D &Field2D::operator/=(const Field2D &rhs) {
 }
 
 // Provide the C++ wrapper for addition of Field2D and Field2D
-Field2D operator+(const Field2D &lhs, const Field2D &rhs) {
+Field2D operator+(const Field2D& lhs, const Field2D& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
-  Mesh *localmesh = lhs.getMesh();
-
-  ASSERT1(localmesh == rhs.getMesh());
-
-  Field2D result(localmesh);
-  result.allocate();
+  Field2D result{emptyFrom(lhs)};
   checkData(lhs);
   checkData(rhs);
 
-  BLOCK_REGION_LOOP(localmesh->getRegion2D("RGN_ALL"), index,
-                    result[index] = lhs[index] + rhs[index];);
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+    result[index] = lhs[index] + rhs[index];
+  }
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ operator to update Field2D by addition with Field2D
-Field2D &Field2D::operator+=(const Field2D &rhs) {
+Field2D& Field2D::operator+=(const Field2D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-
-    ASSERT1(fieldmesh == rhs.getMesh());
+    ASSERT1(areFieldsCompatible(*this, rhs));
 
     checkData(*this);
     checkData(rhs);
 
-    BLOCK_REGION_LOOP(fieldmesh->getRegion2D("RGN_ALL"), index,
-                      (*this)[index] += rhs[index];);
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs[index]; }
 
     checkData(*this);
 
@@ -803,37 +785,32 @@ Field2D &Field2D::operator+=(const Field2D &rhs) {
 }
 
 // Provide the C++ wrapper for subtraction of Field2D and Field2D
-Field2D operator-(const Field2D &lhs, const Field2D &rhs) {
+Field2D operator-(const Field2D& lhs, const Field2D& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
-  Mesh *localmesh = lhs.getMesh();
-
-  ASSERT1(localmesh == rhs.getMesh());
-
-  Field2D result(localmesh);
-  result.allocate();
+  Field2D result{emptyFrom(lhs)};
   checkData(lhs);
   checkData(rhs);
 
-  BLOCK_REGION_LOOP(localmesh->getRegion2D("RGN_ALL"), index,
-                    result[index] = lhs[index] - rhs[index];);
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+    result[index] = lhs[index] - rhs[index];
+  }
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ operator to update Field2D by subtraction with Field2D
-Field2D &Field2D::operator-=(const Field2D &rhs) {
+Field2D& Field2D::operator-=(const Field2D& rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-
-    ASSERT1(fieldmesh == rhs.getMesh());
+    ASSERT1(areFieldsCompatible(*this, rhs));
 
     checkData(*this);
     checkData(rhs);
 
-    BLOCK_REGION_LOOP(fieldmesh->getRegion2D("RGN_ALL"), index,
-                      (*this)[index] -= rhs[index];);
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs[index]; }
 
     checkData(*this);
 
@@ -843,25 +820,101 @@ Field2D &Field2D::operator-=(const Field2D &rhs) {
   return *this;
 }
 
-// Provide the C++ wrapper for multiplication of Field2D and BoutReal
-Field2D operator*(const Field2D &lhs, const BoutReal rhs) {
+// Provide the C++ wrapper for multiplication of Field2D and FieldPerp
+FieldPerp operator*(const Field2D& lhs, const FieldPerp& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
 
-  Mesh *localmesh = lhs.getMesh();
-
-  Field2D result(localmesh);
-  result.allocate();
+  FieldPerp result{emptyFrom(rhs)};
   checkData(lhs);
   checkData(rhs);
 
-  BLOCK_REGION_LOOP(localmesh->getRegion2D("RGN_ALL"), index,
-                    result[index] = lhs[index] * rhs;);
+  Mesh* localmesh = lhs.getMesh();
+
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+    int yind = rhs.getIndex();
+    const auto base_ind = localmesh->indPerpto3D(index, yind);
+    result[index] = lhs[base_ind] * rhs[index];
+  }
+
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ wrapper for division of Field2D and FieldPerp
+FieldPerp operator/(const Field2D& lhs, const FieldPerp& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
+
+  FieldPerp result{emptyFrom(rhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  Mesh* localmesh = lhs.getMesh();
+
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+    int yind = rhs.getIndex();
+    const auto base_ind = localmesh->indPerpto3D(index, yind);
+    result[index] = lhs[base_ind] / rhs[index];
+  }
+
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ wrapper for addition of Field2D and FieldPerp
+FieldPerp operator+(const Field2D& lhs, const FieldPerp& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
+
+  FieldPerp result{emptyFrom(rhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  Mesh* localmesh = lhs.getMesh();
+
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+    int yind = rhs.getIndex();
+    const auto base_ind = localmesh->indPerpto3D(index, yind);
+    result[index] = lhs[base_ind] + rhs[index];
+  }
+
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ wrapper for subtraction of Field2D and FieldPerp
+FieldPerp operator-(const Field2D& lhs, const FieldPerp& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
+
+  FieldPerp result{emptyFrom(rhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  Mesh* localmesh = lhs.getMesh();
+
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+    int yind = rhs.getIndex();
+    const auto base_ind = localmesh->indPerpto3D(index, yind);
+    result[index] = lhs[base_ind] - rhs[index];
+  }
+
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ wrapper for multiplication of Field2D and BoutReal
+Field2D operator*(const Field2D& lhs, const BoutReal rhs) {
+
+  Field2D result{emptyFrom(lhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs[index] * rhs; }
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ operator to update Field2D by multiplication with BoutReal
-Field2D &Field2D::operator*=(const BoutReal rhs) {
+Field2D& Field2D::operator*=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -869,7 +922,7 @@ Field2D &Field2D::operator*=(const BoutReal rhs) {
     checkData(*this);
     checkData(rhs);
 
-    BLOCK_REGION_LOOP(fieldmesh->getRegion2D("RGN_ALL"), index, (*this)[index] *= rhs;);
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs; }
 
     checkData(*this);
 
@@ -880,24 +933,20 @@ Field2D &Field2D::operator*=(const BoutReal rhs) {
 }
 
 // Provide the C++ wrapper for division of Field2D and BoutReal
-Field2D operator/(const Field2D &lhs, const BoutReal rhs) {
+Field2D operator/(const Field2D& lhs, const BoutReal rhs) {
 
-  Mesh *localmesh = lhs.getMesh();
-
-  Field2D result(localmesh);
-  result.allocate();
+  Field2D result{emptyFrom(lhs)};
   checkData(lhs);
   checkData(rhs);
 
-  BLOCK_REGION_LOOP(localmesh->getRegion2D("RGN_ALL"), index,
-                    result[index] = lhs[index] / rhs;);
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs[index] / rhs; }
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ operator to update Field2D by division with BoutReal
-Field2D &Field2D::operator/=(const BoutReal rhs) {
+Field2D& Field2D::operator/=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -905,7 +954,7 @@ Field2D &Field2D::operator/=(const BoutReal rhs) {
     checkData(*this);
     checkData(rhs);
 
-    BLOCK_REGION_LOOP(fieldmesh->getRegion2D("RGN_ALL"), index, (*this)[index] /= rhs;);
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] /= rhs; }
 
     checkData(*this);
 
@@ -916,24 +965,20 @@ Field2D &Field2D::operator/=(const BoutReal rhs) {
 }
 
 // Provide the C++ wrapper for addition of Field2D and BoutReal
-Field2D operator+(const Field2D &lhs, const BoutReal rhs) {
+Field2D operator+(const Field2D& lhs, const BoutReal rhs) {
 
-  Mesh *localmesh = lhs.getMesh();
-
-  Field2D result(localmesh);
-  result.allocate();
+  Field2D result{emptyFrom(lhs)};
   checkData(lhs);
   checkData(rhs);
 
-  BLOCK_REGION_LOOP(localmesh->getRegion2D("RGN_ALL"), index,
-                    result[index] = lhs[index] + rhs;);
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs[index] + rhs; }
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ operator to update Field2D by addition with BoutReal
-Field2D &Field2D::operator+=(const BoutReal rhs) {
+Field2D& Field2D::operator+=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -941,7 +986,7 @@ Field2D &Field2D::operator+=(const BoutReal rhs) {
     checkData(*this);
     checkData(rhs);
 
-    BLOCK_REGION_LOOP(fieldmesh->getRegion2D("RGN_ALL"), index, (*this)[index] += rhs;);
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs; }
 
     checkData(*this);
 
@@ -952,24 +997,20 @@ Field2D &Field2D::operator+=(const BoutReal rhs) {
 }
 
 // Provide the C++ wrapper for subtraction of Field2D and BoutReal
-Field2D operator-(const Field2D &lhs, const BoutReal rhs) {
+Field2D operator-(const Field2D& lhs, const BoutReal rhs) {
 
-  Mesh *localmesh = lhs.getMesh();
-
-  Field2D result(localmesh);
-  result.allocate();
+  Field2D result{emptyFrom(lhs)};
   checkData(lhs);
   checkData(rhs);
 
-  BLOCK_REGION_LOOP(localmesh->getRegion2D("RGN_ALL"), index,
-                    result[index] = lhs[index] - rhs;);
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs[index] - rhs; }
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ operator to update Field2D by subtraction with BoutReal
-Field2D &Field2D::operator-=(const BoutReal rhs) {
+Field2D& Field2D::operator-=(const BoutReal rhs) {
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
@@ -977,7 +1018,647 @@ Field2D &Field2D::operator-=(const BoutReal rhs) {
     checkData(*this);
     checkData(rhs);
 
-    BLOCK_REGION_LOOP(fieldmesh->getRegion2D("RGN_ALL"), index, (*this)[index] -= rhs;);
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs; }
+
+    checkData(*this);
+
+  } else {
+    (*this) = (*this) - rhs;
+  }
+  return *this;
+}
+
+// Provide the C++ wrapper for multiplication of FieldPerp and Field3D
+FieldPerp operator*(const FieldPerp& lhs, const Field3D& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
+
+  FieldPerp result{emptyFrom(lhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  Mesh* localmesh = lhs.getMesh();
+
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+    int yind = lhs.getIndex();
+    const auto base_ind = localmesh->indPerpto3D(index, yind);
+    result[index] = lhs[index] * rhs[base_ind];
+  }
+
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ operator to update FieldPerp by multiplication with Field3D
+FieldPerp& FieldPerp::operator*=(const Field3D& rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+  if (data.unique()) {
+    ASSERT1(areFieldsCompatible(*this, rhs));
+
+    checkData(*this);
+    checkData(rhs);
+
+    Mesh* localmesh = this->getMesh();
+
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) {
+      int yind = this->getIndex();
+      const auto base_ind = localmesh->indPerpto3D(index, yind);
+      (*this)[index] *= rhs[base_ind];
+    }
+
+    checkData(*this);
+
+  } else {
+    (*this) = (*this) * rhs;
+  }
+  return *this;
+}
+
+// Provide the C++ wrapper for division of FieldPerp and Field3D
+FieldPerp operator/(const FieldPerp& lhs, const Field3D& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
+
+  FieldPerp result{emptyFrom(lhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  Mesh* localmesh = lhs.getMesh();
+
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+    int yind = lhs.getIndex();
+    const auto base_ind = localmesh->indPerpto3D(index, yind);
+    result[index] = lhs[index] / rhs[base_ind];
+  }
+
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ operator to update FieldPerp by division with Field3D
+FieldPerp& FieldPerp::operator/=(const Field3D& rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+  if (data.unique()) {
+    ASSERT1(areFieldsCompatible(*this, rhs));
+
+    checkData(*this);
+    checkData(rhs);
+
+    Mesh* localmesh = this->getMesh();
+
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) {
+      int yind = this->getIndex();
+      const auto base_ind = localmesh->indPerpto3D(index, yind);
+      (*this)[index] /= rhs[base_ind];
+    }
+
+    checkData(*this);
+
+  } else {
+    (*this) = (*this) / rhs;
+  }
+  return *this;
+}
+
+// Provide the C++ wrapper for addition of FieldPerp and Field3D
+FieldPerp operator+(const FieldPerp& lhs, const Field3D& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
+
+  FieldPerp result{emptyFrom(lhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  Mesh* localmesh = lhs.getMesh();
+
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+    int yind = lhs.getIndex();
+    const auto base_ind = localmesh->indPerpto3D(index, yind);
+    result[index] = lhs[index] + rhs[base_ind];
+  }
+
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ operator to update FieldPerp by addition with Field3D
+FieldPerp& FieldPerp::operator+=(const Field3D& rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+  if (data.unique()) {
+    ASSERT1(areFieldsCompatible(*this, rhs));
+
+    checkData(*this);
+    checkData(rhs);
+
+    Mesh* localmesh = this->getMesh();
+
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) {
+      int yind = this->getIndex();
+      const auto base_ind = localmesh->indPerpto3D(index, yind);
+      (*this)[index] += rhs[base_ind];
+    }
+
+    checkData(*this);
+
+  } else {
+    (*this) = (*this) + rhs;
+  }
+  return *this;
+}
+
+// Provide the C++ wrapper for subtraction of FieldPerp and Field3D
+FieldPerp operator-(const FieldPerp& lhs, const Field3D& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
+
+  FieldPerp result{emptyFrom(lhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  Mesh* localmesh = lhs.getMesh();
+
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+    int yind = lhs.getIndex();
+    const auto base_ind = localmesh->indPerpto3D(index, yind);
+    result[index] = lhs[index] - rhs[base_ind];
+  }
+
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ operator to update FieldPerp by subtraction with Field3D
+FieldPerp& FieldPerp::operator-=(const Field3D& rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+  if (data.unique()) {
+    ASSERT1(areFieldsCompatible(*this, rhs));
+
+    checkData(*this);
+    checkData(rhs);
+
+    Mesh* localmesh = this->getMesh();
+
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) {
+      int yind = this->getIndex();
+      const auto base_ind = localmesh->indPerpto3D(index, yind);
+      (*this)[index] -= rhs[base_ind];
+    }
+
+    checkData(*this);
+
+  } else {
+    (*this) = (*this) - rhs;
+  }
+  return *this;
+}
+
+// Provide the C++ wrapper for multiplication of FieldPerp and Field2D
+FieldPerp operator*(const FieldPerp& lhs, const Field2D& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
+
+  FieldPerp result{emptyFrom(lhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  Mesh* localmesh = lhs.getMesh();
+
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+    int yind = lhs.getIndex();
+    const auto base_ind = localmesh->indPerpto3D(index, yind);
+    result[index] = lhs[index] * rhs[base_ind];
+  }
+
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ operator to update FieldPerp by multiplication with Field2D
+FieldPerp& FieldPerp::operator*=(const Field2D& rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+  if (data.unique()) {
+    ASSERT1(areFieldsCompatible(*this, rhs));
+
+    checkData(*this);
+    checkData(rhs);
+
+    Mesh* localmesh = this->getMesh();
+
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) {
+      int yind = this->getIndex();
+      const auto base_ind = localmesh->indPerpto3D(index, yind);
+      (*this)[index] *= rhs[base_ind];
+    }
+
+    checkData(*this);
+
+  } else {
+    (*this) = (*this) * rhs;
+  }
+  return *this;
+}
+
+// Provide the C++ wrapper for division of FieldPerp and Field2D
+FieldPerp operator/(const FieldPerp& lhs, const Field2D& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
+
+  FieldPerp result{emptyFrom(lhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  Mesh* localmesh = lhs.getMesh();
+
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+    int yind = lhs.getIndex();
+    const auto base_ind = localmesh->indPerpto3D(index, yind);
+    result[index] = lhs[index] / rhs[base_ind];
+  }
+
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ operator to update FieldPerp by division with Field2D
+FieldPerp& FieldPerp::operator/=(const Field2D& rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+  if (data.unique()) {
+    ASSERT1(areFieldsCompatible(*this, rhs));
+
+    checkData(*this);
+    checkData(rhs);
+
+    Mesh* localmesh = this->getMesh();
+
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) {
+      int yind = this->getIndex();
+      const auto base_ind = localmesh->indPerpto3D(index, yind);
+      (*this)[index] /= rhs[base_ind];
+    }
+
+    checkData(*this);
+
+  } else {
+    (*this) = (*this) / rhs;
+  }
+  return *this;
+}
+
+// Provide the C++ wrapper for addition of FieldPerp and Field2D
+FieldPerp operator+(const FieldPerp& lhs, const Field2D& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
+
+  FieldPerp result{emptyFrom(lhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  Mesh* localmesh = lhs.getMesh();
+
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+    int yind = lhs.getIndex();
+    const auto base_ind = localmesh->indPerpto3D(index, yind);
+    result[index] = lhs[index] + rhs[base_ind];
+  }
+
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ operator to update FieldPerp by addition with Field2D
+FieldPerp& FieldPerp::operator+=(const Field2D& rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+  if (data.unique()) {
+    ASSERT1(areFieldsCompatible(*this, rhs));
+
+    checkData(*this);
+    checkData(rhs);
+
+    Mesh* localmesh = this->getMesh();
+
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) {
+      int yind = this->getIndex();
+      const auto base_ind = localmesh->indPerpto3D(index, yind);
+      (*this)[index] += rhs[base_ind];
+    }
+
+    checkData(*this);
+
+  } else {
+    (*this) = (*this) + rhs;
+  }
+  return *this;
+}
+
+// Provide the C++ wrapper for subtraction of FieldPerp and Field2D
+FieldPerp operator-(const FieldPerp& lhs, const Field2D& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
+
+  FieldPerp result{emptyFrom(lhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  Mesh* localmesh = lhs.getMesh();
+
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+    int yind = lhs.getIndex();
+    const auto base_ind = localmesh->indPerpto3D(index, yind);
+    result[index] = lhs[index] - rhs[base_ind];
+  }
+
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ operator to update FieldPerp by subtraction with Field2D
+FieldPerp& FieldPerp::operator-=(const Field2D& rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+  if (data.unique()) {
+    ASSERT1(areFieldsCompatible(*this, rhs));
+
+    checkData(*this);
+    checkData(rhs);
+
+    Mesh* localmesh = this->getMesh();
+
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) {
+      int yind = this->getIndex();
+      const auto base_ind = localmesh->indPerpto3D(index, yind);
+      (*this)[index] -= rhs[base_ind];
+    }
+
+    checkData(*this);
+
+  } else {
+    (*this) = (*this) - rhs;
+  }
+  return *this;
+}
+
+// Provide the C++ wrapper for multiplication of FieldPerp and FieldPerp
+FieldPerp operator*(const FieldPerp& lhs, const FieldPerp& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
+
+  FieldPerp result{emptyFrom(lhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+    result[index] = lhs[index] * rhs[index];
+  }
+
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ operator to update FieldPerp by multiplication with FieldPerp
+FieldPerp& FieldPerp::operator*=(const FieldPerp& rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+  if (data.unique()) {
+    ASSERT1(areFieldsCompatible(*this, rhs));
+
+    checkData(*this);
+    checkData(rhs);
+
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs[index]; }
+
+    checkData(*this);
+
+  } else {
+    (*this) = (*this) * rhs;
+  }
+  return *this;
+}
+
+// Provide the C++ wrapper for division of FieldPerp and FieldPerp
+FieldPerp operator/(const FieldPerp& lhs, const FieldPerp& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
+
+  FieldPerp result{emptyFrom(lhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+    result[index] = lhs[index] / rhs[index];
+  }
+
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ operator to update FieldPerp by division with FieldPerp
+FieldPerp& FieldPerp::operator/=(const FieldPerp& rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+  if (data.unique()) {
+    ASSERT1(areFieldsCompatible(*this, rhs));
+
+    checkData(*this);
+    checkData(rhs);
+
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] /= rhs[index]; }
+
+    checkData(*this);
+
+  } else {
+    (*this) = (*this) / rhs;
+  }
+  return *this;
+}
+
+// Provide the C++ wrapper for addition of FieldPerp and FieldPerp
+FieldPerp operator+(const FieldPerp& lhs, const FieldPerp& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
+
+  FieldPerp result{emptyFrom(lhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+    result[index] = lhs[index] + rhs[index];
+  }
+
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ operator to update FieldPerp by addition with FieldPerp
+FieldPerp& FieldPerp::operator+=(const FieldPerp& rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+  if (data.unique()) {
+    ASSERT1(areFieldsCompatible(*this, rhs));
+
+    checkData(*this);
+    checkData(rhs);
+
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs[index]; }
+
+    checkData(*this);
+
+  } else {
+    (*this) = (*this) + rhs;
+  }
+  return *this;
+}
+
+// Provide the C++ wrapper for subtraction of FieldPerp and FieldPerp
+FieldPerp operator-(const FieldPerp& lhs, const FieldPerp& rhs) {
+  ASSERT1(areFieldsCompatible(lhs, rhs));
+
+  FieldPerp result{emptyFrom(lhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) {
+    result[index] = lhs[index] - rhs[index];
+  }
+
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ operator to update FieldPerp by subtraction with FieldPerp
+FieldPerp& FieldPerp::operator-=(const FieldPerp& rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+  if (data.unique()) {
+    ASSERT1(areFieldsCompatible(*this, rhs));
+
+    checkData(*this);
+    checkData(rhs);
+
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs[index]; }
+
+    checkData(*this);
+
+  } else {
+    (*this) = (*this) - rhs;
+  }
+  return *this;
+}
+
+// Provide the C++ wrapper for multiplication of FieldPerp and BoutReal
+FieldPerp operator*(const FieldPerp& lhs, const BoutReal rhs) {
+
+  FieldPerp result{emptyFrom(lhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs[index] * rhs; }
+
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ operator to update FieldPerp by multiplication with BoutReal
+FieldPerp& FieldPerp::operator*=(const BoutReal rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+  if (data.unique()) {
+
+    checkData(*this);
+    checkData(rhs);
+
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= rhs; }
+
+    checkData(*this);
+
+  } else {
+    (*this) = (*this) * rhs;
+  }
+  return *this;
+}
+
+// Provide the C++ wrapper for division of FieldPerp and BoutReal
+FieldPerp operator/(const FieldPerp& lhs, const BoutReal rhs) {
+
+  FieldPerp result{emptyFrom(lhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs[index] / rhs; }
+
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ operator to update FieldPerp by division with BoutReal
+FieldPerp& FieldPerp::operator/=(const BoutReal rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+  if (data.unique()) {
+
+    checkData(*this);
+    checkData(rhs);
+
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] /= rhs; }
+
+    checkData(*this);
+
+  } else {
+    (*this) = (*this) / rhs;
+  }
+  return *this;
+}
+
+// Provide the C++ wrapper for addition of FieldPerp and BoutReal
+FieldPerp operator+(const FieldPerp& lhs, const BoutReal rhs) {
+
+  FieldPerp result{emptyFrom(lhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs[index] + rhs; }
+
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ operator to update FieldPerp by addition with BoutReal
+FieldPerp& FieldPerp::operator+=(const BoutReal rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+  if (data.unique()) {
+
+    checkData(*this);
+    checkData(rhs);
+
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] += rhs; }
+
+    checkData(*this);
+
+  } else {
+    (*this) = (*this) + rhs;
+  }
+  return *this;
+}
+
+// Provide the C++ wrapper for subtraction of FieldPerp and BoutReal
+FieldPerp operator-(const FieldPerp& lhs, const BoutReal rhs) {
+
+  FieldPerp result{emptyFrom(lhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs[index] - rhs; }
+
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ operator to update FieldPerp by subtraction with BoutReal
+FieldPerp& FieldPerp::operator-=(const BoutReal rhs) {
+  // only if data is unique we update the field
+  // otherwise just call the non-inplace version
+  if (data.unique()) {
+
+    checkData(*this);
+    checkData(rhs);
+
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] -= rhs; }
 
     checkData(*this);
 
@@ -988,144 +1669,156 @@ Field2D &Field2D::operator-=(const BoutReal rhs) {
 }
 
 // Provide the C++ wrapper for multiplication of BoutReal and Field3D
-Field3D operator*(const BoutReal lhs, const Field3D &rhs) {
+Field3D operator*(const BoutReal lhs, const Field3D& rhs) {
 
-  Mesh *localmesh = rhs.getMesh();
-
-  Field3D result(localmesh);
-  result.allocate();
+  Field3D result{emptyFrom(rhs)};
   checkData(lhs);
   checkData(rhs);
 
-  BLOCK_REGION_LOOP(localmesh->getRegion3D("RGN_ALL"), index,
-                    result[index] = lhs * rhs[index];);
-
-  result.setLocation(rhs.getLocation());
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs * rhs[index]; }
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ wrapper for division of BoutReal and Field3D
-Field3D operator/(const BoutReal lhs, const Field3D &rhs) {
+Field3D operator/(const BoutReal lhs, const Field3D& rhs) {
 
-  Mesh *localmesh = rhs.getMesh();
-
-  Field3D result(localmesh);
-  result.allocate();
+  Field3D result{emptyFrom(rhs)};
   checkData(lhs);
   checkData(rhs);
 
-  BLOCK_REGION_LOOP(localmesh->getRegion3D("RGN_ALL"), index,
-                    result[index] = lhs / rhs[index];);
-
-  result.setLocation(rhs.getLocation());
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs / rhs[index]; }
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ wrapper for addition of BoutReal and Field3D
-Field3D operator+(const BoutReal lhs, const Field3D &rhs) {
+Field3D operator+(const BoutReal lhs, const Field3D& rhs) {
 
-  Mesh *localmesh = rhs.getMesh();
-
-  Field3D result(localmesh);
-  result.allocate();
+  Field3D result{emptyFrom(rhs)};
   checkData(lhs);
   checkData(rhs);
 
-  BLOCK_REGION_LOOP(localmesh->getRegion3D("RGN_ALL"), index,
-                    result[index] = lhs + rhs[index];);
-
-  result.setLocation(rhs.getLocation());
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs + rhs[index]; }
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ wrapper for subtraction of BoutReal and Field3D
-Field3D operator-(const BoutReal lhs, const Field3D &rhs) {
+Field3D operator-(const BoutReal lhs, const Field3D& rhs) {
 
-  Mesh *localmesh = rhs.getMesh();
-
-  Field3D result(localmesh);
-  result.allocate();
+  Field3D result{emptyFrom(rhs)};
   checkData(lhs);
   checkData(rhs);
 
-  BLOCK_REGION_LOOP(localmesh->getRegion3D("RGN_ALL"), index,
-                    result[index] = lhs - rhs[index];);
-
-  result.setLocation(rhs.getLocation());
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs - rhs[index]; }
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ wrapper for multiplication of BoutReal and Field2D
-Field2D operator*(const BoutReal lhs, const Field2D &rhs) {
+Field2D operator*(const BoutReal lhs, const Field2D& rhs) {
 
-  Mesh *localmesh = rhs.getMesh();
-
-  Field2D result(localmesh);
-  result.allocate();
+  Field2D result{emptyFrom(rhs)};
   checkData(lhs);
   checkData(rhs);
 
-  BLOCK_REGION_LOOP(localmesh->getRegion2D("RGN_ALL"), index,
-                    result[index] = lhs * rhs[index];);
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs * rhs[index]; }
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ wrapper for division of BoutReal and Field2D
-Field2D operator/(const BoutReal lhs, const Field2D &rhs) {
+Field2D operator/(const BoutReal lhs, const Field2D& rhs) {
 
-  Mesh *localmesh = rhs.getMesh();
-
-  Field2D result(localmesh);
-  result.allocate();
+  Field2D result{emptyFrom(rhs)};
   checkData(lhs);
   checkData(rhs);
 
-  BLOCK_REGION_LOOP(localmesh->getRegion2D("RGN_ALL"), index,
-                    result[index] = lhs / rhs[index];);
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs / rhs[index]; }
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ wrapper for addition of BoutReal and Field2D
-Field2D operator+(const BoutReal lhs, const Field2D &rhs) {
+Field2D operator+(const BoutReal lhs, const Field2D& rhs) {
 
-  Mesh *localmesh = rhs.getMesh();
-
-  Field2D result(localmesh);
-  result.allocate();
+  Field2D result{emptyFrom(rhs)};
   checkData(lhs);
   checkData(rhs);
 
-  BLOCK_REGION_LOOP(localmesh->getRegion2D("RGN_ALL"), index,
-                    result[index] = lhs + rhs[index];);
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs + rhs[index]; }
 
   checkData(result);
   return result;
 }
 
 // Provide the C++ wrapper for subtraction of BoutReal and Field2D
-Field2D operator-(const BoutReal lhs, const Field2D &rhs) {
+Field2D operator-(const BoutReal lhs, const Field2D& rhs) {
 
-  Mesh *localmesh = rhs.getMesh();
-
-  Field2D result(localmesh);
-  result.allocate();
+  Field2D result{emptyFrom(rhs)};
   checkData(lhs);
   checkData(rhs);
 
-  BLOCK_REGION_LOOP(localmesh->getRegion2D("RGN_ALL"), index,
-                    result[index] = lhs - rhs[index];);
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs - rhs[index]; }
+
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ wrapper for multiplication of BoutReal and FieldPerp
+FieldPerp operator*(const BoutReal lhs, const FieldPerp& rhs) {
+
+  FieldPerp result{emptyFrom(rhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs * rhs[index]; }
+
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ wrapper for division of BoutReal and FieldPerp
+FieldPerp operator/(const BoutReal lhs, const FieldPerp& rhs) {
+
+  FieldPerp result{emptyFrom(rhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs / rhs[index]; }
+
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ wrapper for addition of BoutReal and FieldPerp
+FieldPerp operator+(const BoutReal lhs, const FieldPerp& rhs) {
+
+  FieldPerp result{emptyFrom(rhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs + rhs[index]; }
+
+  checkData(result);
+  return result;
+}
+
+// Provide the C++ wrapper for subtraction of BoutReal and FieldPerp
+FieldPerp operator-(const BoutReal lhs, const FieldPerp& rhs) {
+
+  FieldPerp result{emptyFrom(rhs)};
+  checkData(lhs);
+  checkData(rhs);
+
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs - rhs[index]; }
 
   checkData(result);
   return result;

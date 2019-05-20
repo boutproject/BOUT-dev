@@ -9,6 +9,8 @@ function var = import_dmp(path, var_name)
 % 
 % Coded by Minwoo Kim(Mar. 2012)
 
+error("This is currently broken for BOUT++ > v4.0.0. See issue #394")
+
 % Check input arguments
 if ( nargin < 2 )
     fprintf('\tBoth dump file path and variable name are requisite input arguments.\n');

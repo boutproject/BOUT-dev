@@ -5,20 +5,21 @@
 # Outputs PDF figures in each subdirectory
 # Checks that the convergence is 2nd order
 # Exits with status 1 if any test failed
- 
+
+#requires: all_tests
 
 from __future__ import division
 from __future__ import print_function
 from builtins import str
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
+from boututils.run_wrapper import shell, shell_safe, launch_safe
 from boutdata.collect import collect
 
 from numpy import sqrt, max, abs, mean, array, log
 
 from os.path import join
 
-MPIRUN = getmpirun()
+
 
 print("Making MMS diffusion test")
 shell_safe("make > make.log")
@@ -62,7 +63,7 @@ for dir,sizes in inputs:
         # Command to run
         cmd = "./cyto "+args
         # Launch using MPI
-        s, out = launch_safe(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
+        s, out = launch_safe(cmd, nproc=nproc, pipe=True)
         
         # Save output to log file
         f = open("run.log."+str(nx), "w")
@@ -91,9 +92,11 @@ for dir,sizes in inputs:
     order = log(error_2[-1] / error_2[-2]) / log(dx[-1] / dx[-2])
     print("Convergence order = %f" % (order))
 
-    if order < 1.5:
-        print("=> FAILED\n")
+    if 1.8 < order < 2.2:
+        pass
+    else:
         success = False
+        print("=> FAILED\n")
     
     # plot errors
 
@@ -119,7 +122,7 @@ for dir,sizes in inputs:
 
         #plt.show()
         plt.close()
-    except all:
+    except:
         pass
 
 if success:

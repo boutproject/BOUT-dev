@@ -48,12 +48,15 @@
  * LaplaceXY is used.
  */
 class LaplaceXY {
- public:
-  LaplaceXY(Mesh *m, Options *opt = nullptr) {
+public:
+  LaplaceXY(Mesh* UNUSED(m) = nullptr, Options* UNUSED(opt) = nullptr,
+            const CELL_LOC UNUSED(loc) = CELL_CENTRE) {
     throw BoutException("LaplaceXY requires PETSc. No LaplaceXY available");
   }
-  void setCoefs(const Field2D &A, const Field2D &B) {}
-  const Field2D solve(const Field2D &rhs, const Field2D &x0) {}
+  void setCoefs(const Field2D& UNUSED(A), const Field2D& UNUSED(B)) {}
+  const Field2D solve(const Field2D& UNUSED(rhs), const Field2D& UNUSED(x0)) {
+    throw BoutException("LaplaceXY requires PETSc. No LaplaceXY available");
+  }
 };
 
 #else // BOUT_HAS_PETSC
@@ -68,7 +71,7 @@ public:
   /*! 
    * Constructor
    */
-  LaplaceXY(Mesh *m, Options *opt = nullptr);
+  LaplaceXY(Mesh *m = nullptr, Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE);
   /*!
    * Destructor
    */
@@ -113,13 +116,13 @@ private:
   KSP ksp;          ///< Krylov Subspace solver
   PC pc;            ///< Preconditioner
 
-  Mesh *mesh;   ///< The mesh this operates on, provides metrics and communication
+  Mesh *localmesh;   ///< The mesh this operates on, provides metrics and communication
   
   // Preconditioner
   int xstart, xend;
   int nloc, nsys;
   Matrix<BoutReal> acoef, bcoef, ccoef, xvals, bvals;
-  CyclicReduce<BoutReal> *cr; ///< Tridiagonal solver
+  std::unique_ptr<CyclicReduce<BoutReal>> cr; ///< Tridiagonal solver
 
   // Y derivatives
   bool include_y_derivs; // Include Y derivative terms?
@@ -128,6 +131,9 @@ private:
   bool x_inner_dirichlet; // Dirichlet on inner X boundary?
   bool x_outer_dirichlet; // Dirichlet on outer X boundary?
   bool y_bndry_dirichlet; // Dirichlet on Y boundary?
+
+  // Location of the rhs and solution
+  CELL_LOC location;
   
   /*!
    * Number of grid points on this processor

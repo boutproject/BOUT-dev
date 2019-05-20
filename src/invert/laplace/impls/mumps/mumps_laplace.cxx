@@ -34,11 +34,18 @@
 #include <msg_stack.hxx>
 #include <cmath>
 
-LaplaceMumps::LaplaceMumps(Options *opt) : 
-  Laplacian(opt),
+LaplaceMumps::LaplaceMumps(Options *opt, const CELL_LOC loc, Mesh *mesh_in = mesh) : 
+  Laplacian(opt, loc, mesh_in),
   A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
   issetD(false), issetC(false), issetE(false)
 {
+  A.setLocation(location);
+  C1.setLocation(location);
+  C2.setLocation(location);
+  D.setLocation(location);
+  Ex.setLocation(location);
+  Ez.setLocation(location);
+
   // Get Options in Laplace Section
   if (!opt) opts = Options::getRoot()->getSection("laplace");
   else opts=opt;
@@ -58,21 +65,21 @@ LaplaceMumps::LaplaceMumps(Options *opt) :
     if (outer_boundary_flags & ~implemented_boundary_flags) {
       throw BoutException("Attempted to set Laplacian inversion boundary condition flag that is not implemented in mumps_laplace.cxx");
     }
-    if(mesh->periodicX) {
-        throw BoutException("LaplaceMumps does not work with periodicity in the x direction (mesh->PeriodicX == true). Change boundary conditions or use serial-tri or cyclic solver instead");
+    if(localmesh->periodicX) {
+        throw BoutException("LaplaceMumps does not work with periodicity in the x direction (localmesh->PeriodicX == true). Change boundary conditions or use serial-tri or cyclic solver instead");
       }
   #endif
 
   // Get communicator for group of processors in X - all points in z-x plane for fixed y.
-  comm = mesh->getXcomm();
+  comm = localmesh->getXcomm();
   
   // Need to determine local size to use based on prior parallelisation
   // Coefficient values are stored only on local processors.
-  localN = (mesh->xend - mesh->xstart + 1) * (mesh->LocalNz);
-  if(mesh->firstX())
-    localN += mesh->xstart * (mesh->LocalNz);    // If on first processor add on width of boundary region
-  if(mesh->lastX())
-    localN += mesh->xstart * (mesh->LocalNz);    // If on last processor add on width of boundary region
+  localN = (localmesh->xend - localmesh->xstart + 1) * (localmesh->LocalNz);
+  if(localmesh->firstX())
+    localN += localmesh->xstart * (localmesh->LocalNz);    // If on first processor add on width of boundary region
+  if(localmesh->lastX())
+    localN += localmesh->xstart * (localmesh->LocalNz);    // If on last processor add on width of boundary region
   
 
   // Calculate total number of points in physical grid
@@ -80,11 +87,11 @@ LaplaceMumps::LaplaceMumps(Options *opt) :
     throw BoutException("Error in MPI_Allreduce during LaplacePetsc initialisation");
   
   // Calculate total (physical) grid dimensions
-  meshz = mesh->GlobalNz-1;
+  meshz = localmesh->GlobalNz-1;
   meshx = size / meshz;
   
   // Calculate number of guard cells in x-direction
-  nxguards = mesh->LocalNx - (mesh->xend-mesh->xstart+1);
+  nxguards = localmesh->LocalNx - (localmesh->xend-localmesh->xstart+1);
   
   // Get implementation specific options
   opts->get("fourth_order", fourth_order, false);
@@ -92,7 +99,7 @@ LaplaceMumps::LaplaceMumps(Options *opt) :
 
   sol.allocate();
   
-  mumps_struc.comm_fortran = (MUMPS_INT) MPI_Comm_c2f(mesh->getXcomm()); // MPI communicator for MUMPS, in fortran format
+  mumps_struc.comm_fortran = (MUMPS_INT) MPI_Comm_c2f(localmesh->getXcomm()); // MPI communicator for MUMPS, in fortran format
   mumps_struc.sym = 0; // Solve using unsymmetric matrix
   mumps_struc.par = 1; // Use the host processor (rank 0) to do work for the solution
   
@@ -105,39 +112,39 @@ LaplaceMumps::LaplaceMumps(Options *opt) :
   // nz is the total number of non-zero elements in the matrix, nz_loc is the number of non-zero elements on this processor
   if (fourth_order) {
     mumps_struc.nz = 25*(meshx-nxguards)*meshz;
-    mumps_struc.nz_loc = 25*(mesh->xend-mesh->xstart+1)*(mesh->LocalNz);
+    mumps_struc.nz_loc = 25*(localmesh->xend-localmesh->xstart+1)*(localmesh->LocalNz);
   }
   else {
     mumps_struc.nz = 9*(meshx-nxguards)*meshz;
-    mumps_struc.nz_loc = 9*(mesh->xend-mesh->xstart+1)*(mesh->LocalNz);
+    mumps_struc.nz_loc = 9*(localmesh->xend-localmesh->xstart+1)*(localmesh->LocalNz);
   }
   if (inner_boundary_flags & INVERT_AC_GRAD) {
     if (fourth_order) {
-      mumps_struc.nz += 5*meshz*mesh->xstart;
-      if (mesh->firstX()) mumps_struc.nz_loc += 5*mesh->xstart*(mesh->LocalNz);
+      mumps_struc.nz += 5*meshz*localmesh->xstart;
+      if (localmesh->firstX()) mumps_struc.nz_loc += 5*localmesh->xstart*(localmesh->LocalNz);
     }
     else {
-      mumps_struc.nz += 3*meshz*(mesh->xstart);
-      if (mesh->firstX()) mumps_struc.nz_loc += 3*mesh->xstart*(mesh->LocalNz);
+      mumps_struc.nz += 3*meshz*(localmesh->xstart);
+      if (localmesh->firstX()) mumps_struc.nz_loc += 3*localmesh->xstart*(localmesh->LocalNz);
     }
   }
   else {
-    mumps_struc.nz += mesh->xstart*meshz;
-    if (mesh->firstX()) mumps_struc.nz_loc += mesh->xstart*(mesh->LocalNz);
+    mumps_struc.nz += localmesh->xstart*meshz;
+    if (localmesh->firstX()) mumps_struc.nz_loc += localmesh->xstart*(localmesh->LocalNz);
   }
   if (outer_boundary_flags & INVERT_AC_GRAD) {
     if (fourth_order) {
-      mumps_struc.nz += 5*(mesh->LocalNx-mesh->xend-1)*meshz;
-      if (mesh->lastX()) mumps_struc.nz_loc += 5*(mesh->LocalNx-mesh->xend-1)*(mesh->LocalNz);
+      mumps_struc.nz += 5*(localmesh->LocalNx-localmesh->xend-1)*meshz;
+      if (localmesh->lastX()) mumps_struc.nz_loc += 5*(localmesh->LocalNx-localmesh->xend-1)*(localmesh->LocalNz);
     }
     else {
-      mumps_struc.nz += 3*(mesh->LocalNx-mesh->xend-1)*meshz;
-      if (mesh->lastX()) mumps_struc.nz_loc += 3*(mesh->LocalNx-mesh->xend-1)*(mesh->LocalNz);
+      mumps_struc.nz += 3*(localmesh->LocalNx-localmesh->xend-1)*meshz;
+      if (localmesh->lastX()) mumps_struc.nz_loc += 3*(localmesh->LocalNx-localmesh->xend-1)*(localmesh->LocalNz);
     }
   }
   else {
-    mumps_struc.nz += (mesh->LocalNx-mesh->xend-1)*meshz;
-    if (mesh->lastX()) mumps_struc.nz_loc += (mesh->LocalNx-mesh->xend-1)*(mesh->LocalNz);
+    mumps_struc.nz += (localmesh->LocalNx-localmesh->xend-1)*meshz;
+    if (localmesh->lastX()) mumps_struc.nz_loc += (localmesh->LocalNx-localmesh->xend-1)*(localmesh->LocalNz);
   }
 // // These would be needed if giving the matrix only on the host processor, or possibly if providing the structure on the host processor for analysis
 //   mumps_struc.irn = new MUMPS_INT[mumps_struc.nz];
@@ -147,13 +154,13 @@ LaplaceMumps::LaplaceMumps(Options *opt) :
   mumps_struc.jcn_loc = new MUMPS_INT[mumps_struc.nz_loc]; // list of GLOBAL column indices of local matrix entries
   mumps_struc.a_loc = new BoutReal[mumps_struc.nz_loc]; // the matrix entries
   
-  if (mesh->firstX()) {
+  if (localmesh->firstX()) {
     mumps_struc.nrhs = 1; // number of right hand side vectors
     mumps_struc.lrhs = mumps_struc.n; // leading dimension of rhs (i.e. length of vector)
 //     mumps_struc.rhs = new BoutReal[mumps_struc.lrhs*mumps_struc.nrhs]; // rhs, to be provided on the rank-0 processor only
   }
-//   if (mesh->firstX()) mumps_struc.sol_loc = *sol.getData(); // pointer to the array to put the solution in, starts at 0 on first processor
-//   else mumps_struc.sol_loc = *sol.getData() + mesh->xstart*meshz; // pointer to the array to put the solution in, starts at mesh->xstart
+//   if (localmesh->firstX()) mumps_struc.sol_loc = *sol.getData(); // pointer to the array to put the solution in, starts at 0 on first processor
+//   else mumps_struc.sol_loc = *sol.getData() + localmesh->xstart*meshz; // pointer to the array to put the solution in, starts at localmesh->xstart
 //   mumps_struc.lsol_loc = localN; // size of the (local) solution array
 //   mumps_struc.isol_loc = new MUMPS_INT[localN]; // list of indices of the solution array (though this is all local points)
   mumps_struc.icntl[2] = 0; // Suppress output of global information
@@ -173,58 +180,58 @@ LaplaceMumps::LaplaceMumps(Options *opt) :
 //   mumps_struc.job = MUMPS_JOB_ALL;
 //   iteration_count = repeat_analysis;
   
-//   localrhssize = (mesh->xend-mesh->xstart+1)*mesh->LocalNy*mesh->LocalNz;
-//   if (mesh->lastX()) {
-//     localrhssize += (mesh->LocalNx-mesh->xend-1)*mesh->LocalNy*mesh->LocalNz;
+//   localrhssize = (localmesh->xend-localmesh->xstart+1)*localmesh->LocalNy*localmesh->LocalNz;
+//   if (localmesh->lastX()) {
+//     localrhssize += (localmesh->LocalNx-localmesh->xend-1)*localmesh->LocalNy*localmesh->LocalNz;
 //   }
-//   if (mesh->firstX()) {
-//     localrhssize += mesh->xstart*mesh->LocalNy*mesh->LocalNz;
+//   if (localmesh->firstX()) {
+//     localrhssize += localmesh->xstart*localmesh->LocalNy*localmesh->LocalNz;
 //     
-//     int nxpe = mesh->NXPE;
+//     int nxpe = localmesh->NXPE;
 //     localrhs_size_array = new int[nxpe];
 //     localrhs_size_array[0] = localrhssize;
 //     if (nxpe>1) {
 //       for (int i=1; i<nxpe-1; i++)
-// 	localrhs_size_array[i] = (mesh->xend-mesh->xstart+1)*mesh->LocalNy*mesh->LocalNz;
-//       localrhs_size_array[nxpe-1] = (mesh->LocalNx-mesh->xstart)*mesh->LocalNy*mesh->LocalNz;
+// 	localrhs_size_array[i] = (localmesh->xend-localmesh->xstart+1)*localmesh->LocalNy*localmesh->LocalNz;
+//       localrhs_size_array[nxpe-1] = (localmesh->LocalNx-localmesh->xstart)*localmesh->LocalNy*localmesh->LocalNz;
 //     }
 //     rhs_positions = new int[nxpe];
 //     rhs_positions[0] = 0;
 //     for (int i=1; i<nxpe; i++)
 //       rhs_positions[i] = rhs_positions[i-1] + localrhs_size_array[i-1];
 //     
-//     rhs = new BoutReal[meshx*mesh->LocalNy*mesh->LocalNz];
-//     rhs_slice = new BoutReal[meshx*mesh->LocalNz];
+//     rhs = new BoutReal[meshx*localmesh->LocalNy*localmesh->LocalNz];
+//     rhs_slice = new BoutReal[meshx*localmesh->LocalNz];
 //   }
-  localrhssize = (mesh->xend-mesh->xstart+1)*(mesh->LocalNz);
-  if (mesh->lastX()) {
-    localrhssize += (mesh->LocalNx-mesh->xend-1)*(mesh->LocalNz);
+  localrhssize = (localmesh->xend-localmesh->xstart+1)*(localmesh->LocalNz);
+  if (localmesh->lastX()) {
+    localrhssize += (localmesh->LocalNx-localmesh->xend-1)*(localmesh->LocalNz);
   }
-  if (mesh->firstX()) {
-    localrhssize += mesh->xstart*(mesh->LocalNz);
+  if (localmesh->firstX()) {
+    localrhssize += localmesh->xstart*(localmesh->LocalNz);
     
-    int nxpe = mesh->NXPE;
-    localrhs_size_array = Array<int>(nxpe);
+    int nxpe = localmesh->NXPE;
+    localrhs_size_array.reallocate(nxpe);
     localrhs_size_array[0] = localrhssize;
     if (nxpe>1) {
       for (int i=1; i<nxpe-1; i++)
-	localrhs_size_array[i] = (mesh->xend-mesh->xstart+1)*(mesh->LocalNz);
-      localrhs_size_array[nxpe-1] = (mesh->LocalNx-mesh->xstart)*(mesh->LocalNz);
+	localrhs_size_array[i] = (localmesh->xend-localmesh->xstart+1)*(localmesh->LocalNz);
+      localrhs_size_array[nxpe-1] = (localmesh->LocalNx-localmesh->xstart)*(localmesh->LocalNz);
     }
-    rhs_positions = Array<int>(nxpe);
+    rhs_positions.reallocate(nxpe);
     rhs_positions[0] = 0;
     for (int i=1; i<nxpe; i++)
       rhs_positions[i] = rhs_positions[i-1] + localrhs_size_array[i-1];
 
-    rhs = Array<BoutReal>(meshx * meshz);
+    rhs.reallocate(meshx * meshz);
   }
-  localrhs = Array<BoutReal>(localrhssize);
+  localrhs.reallocate(localrhssize);
 
   // Set Arrays of matrix indices, using i (0<=i<nz_loc), and solution indices, using j (0<=j<localN)
   int i=0; //int j=0;
-  if (mesh->firstX())
-    for (int x=0; x<mesh->xstart; x++)
-      for (int z=0; z<mesh->LocalNz; z++) {
+  if (localmesh->firstX())
+    for (int x=0; x<localmesh->xstart; x++)
+      for (int z=0; z<localmesh->LocalNz; z++) {
 	int x0 = x;
 	int xp = x+1;
 	int xpp = x+2;
@@ -256,13 +263,13 @@ LaplaceMumps::LaplaceMumps(Options *opt) :
 // 	mumps_struc.isol_loc[j] = x0*meshz + z0 + 1; // Indices for fortran arrays that start at 1
 // 	j++;
       }
-  for (int x=mesh->xstart; x<=mesh->xend; x++)
-    for (int z=0; z<mesh->LocalNz; z++) {
-      int xmm = mesh->XGLOBAL(x)-2;
-      int xm = mesh->XGLOBAL(x)-1;
-      int x0 = mesh->XGLOBAL(x);
-      int xp = mesh->XGLOBAL(x)+1;
-      int xpp = mesh->XGLOBAL(x)+2;
+  for (int x=localmesh->xstart; x<=localmesh->xend; x++)
+    for (int z=0; z<localmesh->LocalNz; z++) {
+      int xmm = localmesh->XGLOBAL(x)-2;
+      int xm = localmesh->XGLOBAL(x)-1;
+      int x0 = localmesh->XGLOBAL(x);
+      int xp = localmesh->XGLOBAL(x)+1;
+      int xpp = localmesh->XGLOBAL(x)+2;
       int zmm = (z-2<0) ? (z-2+meshz) : (z-2);
       int zm = (z-1<0) ? (z-1+meshz) : (z-1);
       int z0 = z;
@@ -377,12 +384,12 @@ LaplaceMumps::LaplaceMumps(Options *opt) :
 //       mumps_struc.isol_loc[j] = x0*meshz + z0 + 1; // Indices for fortran arrays that start at 1
 //       j++;
     }
-  if (mesh->lastX())
-    for (int x=mesh->xend+1; x<mesh->LocalNx; x++)
-      for (int z=0; z<mesh->LocalNz; z++) {
-	int xmm = mesh->XGLOBAL(mesh->xend)+x-mesh->xend-2;
-	int xm = mesh->XGLOBAL(mesh->xend)+x-mesh->xend-1;
-	int x0 = mesh->XGLOBAL(mesh->xend)+x-mesh->xend;
+  if (localmesh->lastX())
+    for (int x=localmesh->xend+1; x<localmesh->LocalNx; x++)
+      for (int z=0; z<localmesh->LocalNz; z++) {
+	int xmm = localmesh->XGLOBAL(localmesh->xend)+x-localmesh->xend-2;
+	int xm = localmesh->XGLOBAL(localmesh->xend)+x-localmesh->xend-1;
+	int x0 = localmesh->XGLOBAL(localmesh->xend)+x-localmesh->xend;
 	int z0 = z;
 	if(outer_boundary_flags & INVERT_AC_GRAD) {
 	  mumps_struc.irn_loc[i] = x0*meshz + z0 + 1; // Indices for fortran arrays that start at 1
@@ -435,17 +442,17 @@ LaplaceMumps::LaplaceMumps(Options *opt) :
 // #if CHECK > 0
 //   msg_stack.push("Laplacian::solve(Field3D)");
 // #endif
-//   int ys = mesh->ystart, ye = mesh->yend;
+//   int ys = localmesh->ystart, ye = localmesh->yend;
 // 
-//   if(mesh->hasBndryLowerY()) {
+//   if(localmesh->hasBndryLowerY()) {
 //     if (include_yguards)
 //       ys = 0; // Mesh contains a lower boundary and we are solving in the guard cells
 //     
 //     ys += extra_yguards_lower;
 //   }
-//   if(mesh->hasBndryUpperY()) {
+//   if(localmesh->hasBndryUpperY()) {
 //     if (include_yguards)
-//       ye = mesh->LocalNy-1; // Contains upper boundary and we are solving in the guard cells
+//       ye = localmesh->LocalNy-1; // Contains upper boundary and we are solving in the guard cells
 //       
 //     ye -= extra_yguards_upper;
 //   }
@@ -453,43 +460,43 @@ LaplaceMumps::LaplaceMumps(Options *opt) :
 //   Field3D x = copy(b); // Force new memory allocation as we will mess around with x's data via pointers (i.e. 'unsafely')
 //   
 //   BoutReal* localrhs = **x.getData(); // Input the rhs in the solution field as solution will be returned in place by MUMPS
-//   if (!mesh->firstX()) localrhs += mesh->xstart*mesh->LocalNy*mesh->LocalNz;
-//   MPI_Gatherv(localrhs,localrhssize,MPI_DOUBLE,rhs,localrhs_size_array,rhs_positions,MPI_DOUBLE,0,mesh->getXcomm());
+//   if (!localmesh->firstX()) localrhs += localmesh->xstart*localmesh->LocalNy*localmesh->LocalNz;
+//   MPI_Gatherv(localrhs,localrhssize,MPI_DOUBLE,rhs,localrhs_size_array,rhs_positions,MPI_DOUBLE,0,localmesh->getXcomm());
 //   
 //   if ( ++iteration_count > repeat_analysis ) {
 //     mumps_struc.job = MUMPS_JOB_ALL;
 //     for(int jy=ys; jy <= ye; jy++) {
-//       if (mesh->firstX())
+//       if (localmesh->firstX())
 // 	for(int jx=0; jx<meshx; jx++)
 // 	  for (int jz=0; jz<meshz; jz++)
-// 	    rhs_slice[jx*meshz+jz] = rhs[jx*mesh->LocalNy*mesh->LocalNz + jy*mesh->LocalNz + jz];
+// 	    rhs_slice[jx*meshz+jz] = rhs[jx*localmesh->LocalNy*localmesh->LocalNz + jy*localmesh->LocalNz + jz];
 //       
 //       solve(rhs_slice,jy);
 //       
-//       if (mesh->firstX())
+//       if (localmesh->firstX())
 // 	for(int jx=0; jx<meshx; jx++)
 // 	  for (int jz=0; jz<meshz; jz++)
-// 	     rhs[jx*mesh->LocalNy*mesh->LocalNz + jy*mesh->LocalNz + jz] = rhs_slice[jx*meshz+jz];
+// 	     rhs[jx*localmesh->LocalNy*localmesh->LocalNz + jy*localmesh->LocalNz + jz] = rhs_slice[jx*meshz+jz];
 //     }
 //     mumps_struc.job = MUMPS_JOB_BOTH;
 //   }
 //   else {
 //     for(int jy=ys; jy <= ye; jy++) {
-//       if (mesh->firstX())
+//       if (localmesh->firstX())
 // 	for(int jx=0; jx<meshx; jx++)
 // 	  for (int jz=0; jz<meshz; jz++)
-// 	    rhs_slice[jx*meshz+jz] = rhs[jx*mesh->LocalNy*mesh->LocalNz + jy*mesh->LocalNz + jz];
+// 	    rhs_slice[jx*meshz+jz] = rhs[jx*localmesh->LocalNy*localmesh->LocalNz + jy*localmesh->LocalNz + jz];
 //       
 //       solve(rhs_slice,jy);
 //       
-//       if (mesh->firstX())
+//       if (localmesh->firstX())
 // 	for(int jx=0; jx<meshx; jx++)
 // 	  for (int jz=0; jz<meshz; jz++)
-// 	     rhs[jx*mesh->LocalNy*mesh->LocalNz + jy*mesh->LocalNz + jz] = rhs_slice[jx*meshz+jz];
+// 	     rhs[jx*localmesh->LocalNy*localmesh->LocalNz + jy*localmesh->LocalNz + jz] = rhs_slice[jx*meshz+jz];
 //     }
 //   }
 //   
-//   MPI_Scatterv(rhs,localrhs_size_array,rhs_positions,MPI_DOUBLE,localrhs,localrhssize,MPI_DOUBLE,0,mesh->getXcomm()); // Scatters solution from host back to localrhs (which points to x's data) on all processors
+//   MPI_Scatterv(rhs,localrhs_size_array,rhs_positions,MPI_DOUBLE,localrhs,localrhssize,MPI_DOUBLE,0,localmesh->getXcomm()); // Scatters solution from host back to localrhs (which points to x's data) on all processors
 //   
 // #if CHECK > 0
 //   msg_stack.pop();
@@ -509,17 +516,17 @@ LaplaceMumps::LaplaceMumps(Options *opt) :
 // #if CHECK > 0
 //   msg_stack.push("Laplacian::solve(Field3D)");
 // #endif
-//   int ys = mesh->ystart, ye = mesh->yend;
+//   int ys = localmesh->ystart, ye = localmesh->yend;
 // 
-//   if(mesh->hasBndryLowerY()) {
+//   if(localmesh->hasBndryLowerY()) {
 //     if (include_yguards)
 //       ys = 0; // Mesh contains a lower boundary and we are solving in the guard cells
 //     
 //     ys += extra_yguards_lower;
 //   }
-//   if(mesh->hasBndryUpperY()) {
+//   if(localmesh->hasBndryUpperY()) {
 //     if (include_yguards)
-//       ye = mesh->LocalNy-1; // Contains upper boundary and we are solving in the guard cells
+//       ye = localmesh->LocalNy-1; // Contains upper boundary and we are solving in the guard cells
 //       
 //     ye -= extra_yguards_upper;
 //   }
@@ -556,36 +563,39 @@ const FieldPerp LaplaceMumps::solve(const FieldPerp &b, const FieldPerp &x0) {
 }
 
 const FieldPerp LaplaceMumps::solve(const FieldPerp &b) {
+  ASSERT1(localmesh == b.getMesh());
+  ASSERT1(b.getLocation() == location);
+
   int y = b.getIndex();
   sol = 0.;
   sol.setIndex(y);
   
   // Set boundary conditions through rhs if needed
   if (!(inner_boundary_flags & INVERT_RHS)) {
-    if (mesh->firstX())
-      for (int z=0; z<mesh->LocalNz; z++)
-	for (int x=mesh->xstart-1; x>=0; x--) {
+    if (localmesh->firstX())
+      for (int z=0; z<localmesh->LocalNz; z++)
+	for (int x=localmesh->xstart-1; x>=0; x--) {
 	  b[x][z]=0.;
 	}
   }
   if (!(outer_boundary_flags & INVERT_RHS)) {
-    if (mesh->lastX())
-      for (int z=0; z<mesh->LocalNz; z++)
-	for (int x=mesh->xend+1; x<mesh->LocalNx; x++) {
+    if (localmesh->lastX())
+      for (int z=0; z<localmesh->LocalNz; z++)
+	for (int x=localmesh->xend+1; x<localmesh->LocalNx; x++) {
 	  b[x][z]=0.;
 	}
   }
   
   BoutReal* bdata = *b.getData();
   int xs,xe;
-  if (mesh->firstX()) xs=0;
-  else xs=mesh->xstart;
-  if (mesh->lastX()) xe=mesh->LocalNx-1;
-  else xe=mesh->xend;
+  if (localmesh->firstX()) xs=0;
+  else xs=localmesh->xstart;
+  if (localmesh->lastX()) xe=localmesh->LocalNx-1;
+  else xe=localmesh->xend;
   
   for (int x=xs; x<=xe; x++)
-    for (int z=0; z<mesh->LocalNz; z++)
-      localrhs[(x-xs)*(mesh->LocalNz)+z] = bdata[x*mesh->LocalNz+z];
+    for (int z=0; z<localmesh->LocalNz; z++)
+      localrhs[(x-xs)*(localmesh->LocalNz)+z] = bdata[x*localmesh->LocalNz+z];
   
   MPI_Gatherv(localrhs,localrhssize,MPI_DOUBLE,rhs,localrhs_size_array,rhs_positions,MPI_DOUBLE,0,comm);
   
@@ -595,8 +605,8 @@ const FieldPerp LaplaceMumps::solve(const FieldPerp &b) {
   
   BoutReal* soldata = *sol.getData();
   for (int x=xs; x<=xe; x++)
-    for (int z=0; z<mesh->LocalNz; z++)
-      soldata[x*mesh->LocalNz+z] = localrhs[(x-xs)*(mesh->LocalNz)+z];
+    for (int z=0; z<localmesh->LocalNz; z++)
+      soldata[x*localmesh->LocalNz+z] = localrhs[(x-xs)*(localmesh->LocalNz)+z];
   
   return sol;
 }
@@ -606,14 +616,14 @@ void LaplaceMumps::solve(BoutReal* rhs, int y) {
 { Timer timer("mumpssetup");
   int i = 0;
   
-  Coordinates *coord = mesh->coordinates();
+  Coordinates *coord = localmesh->coordinates(location);
 
   // Set Matrix Elements corresponding to index lists created in constructor (x,z) loop over rows
 
-  // X=0 to mesh->xstart-1 defines the boundary region of the domain.
-  if( mesh->firstX() )
-    for(int x=0; x<mesh->xstart; x++)
-      for(int z=0; z<mesh->LocalNz; z++) {
+  // X=0 to localmesh->xstart-1 defines the boundary region of the domain.
+  if( localmesh->firstX() )
+    for(int x=0; x<localmesh->xstart; x++)
+      for(int z=0; z<localmesh->LocalNz; z++) {
 	// Set values corresponding to nodes adjacent in x if Neumann Boundary Conditions are required.
 	if(inner_boundary_flags & INVERT_AC_GRAD)
 	  if( fourth_order ) {
@@ -646,8 +656,8 @@ void LaplaceMumps::solve(BoutReal* rhs, int y) {
       }
   
   // Main domain with Laplacian operator
-  for(int x=mesh->xstart; x <= mesh->xend; x++)
-    for(int z=0; z<mesh->LocalNz; z++) {
+  for(int x=localmesh->xstart; x <= localmesh->xend; x++)
+    for(int z=0; z<localmesh->LocalNz; z++) {
       BoutReal A0, A1, A2, A3, A4, A5;
       A0 = A[x][y][z];
       Coeffs( x, y, z, A1, A2, A3, A4, A5 );
@@ -799,10 +809,10 @@ void LaplaceMumps::solve(BoutReal* rhs, int y) {
       }
     }
   
-  // X=mesh->xend+1 to mesh->LocalNx-1 defines the upper boundary region of the domain.
-  if( mesh->lastX() )
-    for(int x=mesh->xend+1; x<mesh->LocalNx; x++) 
-      for(int z=0; z<mesh->LocalNz; z++) {
+  // X=localmesh->xend+1 to localmesh->LocalNx-1 defines the upper boundary region of the domain.
+  if( localmesh->lastX() )
+    for(int x=localmesh->xend+1; x<localmesh->LocalNx; x++) 
+      for(int z=0; z<localmesh->LocalNz; z++) {
 	
 	// Set values corresponding to nodes adjacent in x if Neumann Boundary Conditions are required.
 	if(outer_boundary_flags & INVERT_AC_GRAD) {
@@ -849,7 +859,7 @@ void LaplaceMumps::solve(BoutReal* rhs, int y) {
 
 void LaplaceMumps::Coeffs( int x, int y, int z, BoutReal &coef1, BoutReal &coef2, BoutReal &coef3, BoutReal &coef4, BoutReal &coef5 )
 {
-  Coordinates *coord = mesh->coordinates();
+  Coordinates *coord = localmesh->coordinates(location);
 
   coef1 = coord->g11[x][y];     // X 2nd derivative coefficient
   coef2 = coord->g33[x][y];     // Z 2nd derivative coefficient
@@ -865,7 +875,7 @@ void LaplaceMumps::Coeffs( int x, int y, int z, BoutReal &coef1, BoutReal &coef2
   if(nonuniform) 
     {
       // non-uniform mesh correction
-      if((x != 0) && (x != (mesh->LocalNx-1))) 
+      if((x != 0) && (x != (localmesh->LocalNx-1))) 
 	{
 	  //coef4 += coord->g11[jx][jy]*0.25*( (1.0/dx[jx+1][jy]) - (1.0/dx[jx-1][jy]) )/dx[jx][jy]; // SHOULD BE THIS (?)
 	  //coef4 -= 0.5 * ( ( coord->dx[x+1][y] - coord->dx[x-1][y] ) / SQ ( coord->dx[x][y] ) ) * coef1; // BOUT-06 term
@@ -886,8 +896,8 @@ void LaplaceMumps::Coeffs( int x, int y, int z, BoutReal &coef1, BoutReal &coef2
   
   // A second/fourth order derivative term
   if (issetC) {
-//     if( (x > 0) && (x < (mesh->LocalNx-1)) ) //Valid if doing second order derivative, not if fourth: should only be called for xstart<=x<=xend anyway
-    if( (x > 1) && (x < (mesh->LocalNx-2)) ) {
+//     if( (x > 0) && (x < (localmesh->LocalNx-1)) ) //Valid if doing second order derivative, not if fourth: should only be called for xstart<=x<=xend anyway
+    if( (x > 1) && (x < (localmesh->LocalNx-2)) ) {
       int zp = z+1;
       if (zp > meshz-1) zp -= meshz;
       int zm = z-1;

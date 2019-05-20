@@ -40,36 +40,36 @@ FUNCTION line_crossings, r1, z1, period1, r2, z2, period2, ncross=ncross, $
       det = a*d - b*c
       
       ; Get location along the line segments
-      IF ABS(det) GT 1.e-6 THEN BEGIN
+      IF ABS(det) GT 1.d-6 THEN BEGIN
         alpha = (d*dr - b*dz)/det
         beta =  (a*dz - c*dr)/det
       ENDIF ELSE BEGIN
-        alpha = -1.
-        beta = -1.
+        alpha = -1.D
+        beta = -1.D
       ENDELSE
       
-      IF (alpha GE 0.0) AND (alpha LE 1.0) AND (beta GE 0.0) AND (beta LE 1.0) THEN BEGIN
+      IF (alpha GE 0.0D) AND (alpha LE 1.0D) AND (beta GE 0.0D) AND (beta LE 1.0D) THEN BEGIN
         ; Intersection
         
         r = r1[i] + alpha * a
         z = z1[i] + alpha * c
         
         IF ncross EQ 0 THEN BEGIN
-          result = FLTARR(2,1)
+          result = DBLARR(2,1)
           result[0,0] = r
           result[1,0] = z
           
-          inds1 = [FLOAT(i)+alpha]
-          inds2 = [FLOAT(j)+beta]
+          inds1 = [DOUBLE(i)+alpha]
+          inds2 = [DOUBLE(j)+beta]
         ENDIF ELSE BEGIN
           rold = result
-          result = FLTARR(2, ncross+1)
+          result = DBLARR(2, ncross+1)
           result[*,0:(ncross-1)] = rold
           result[0,ncross] = r
           result[1,ncross] = z
 
-          inds1 = [inds1, FLOAT(i)+alpha]
-          inds2 = [inds2, FLOAT(j)+beta]
+          inds1 = [inds1, DOUBLE(i)+alpha]
+          inds2 = [inds2, DOUBLE(j)+beta]
         ENDELSE
         ncross = ncross + 1
       ENDIF

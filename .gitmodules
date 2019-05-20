@@ -1,3 +1,9 @@
 [submodule "googletest"]
-	path = googletest
+	path = externalpackages/googletest
 	url = https://github.com/google/googletest.git
+[submodule "externalpackages/git-archive-all.sh"]
+	path = externalpackages/git-archive-all.sh
+	url = https://github.com/meitar/git-archive-all.sh/
+[submodule "mpark.variant"]
+	path = externalpackages/mpark.variant
+	url = https://github.com/mpark/variant.git

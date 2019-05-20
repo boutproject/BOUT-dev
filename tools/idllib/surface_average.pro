@@ -9,7 +9,7 @@
 ; surface_average(nu) = q
 ;
 
-FUNCTION surface_average, var, grid, area=area
+FUNCTION surface_average, var, grid, area=area, simple=simple
   
   s = SIZE(var)
   
@@ -50,22 +50,28 @@ FUNCTION surface_average, var, grid, area=area
     dl = SQRT( DERIV(r)^2 + DERIV(z)^2 ) / dtheta
     IF KEYWORD_SET(area) THEN BEGIN
       dA = REFORM(grid.Bxy[xi,yi]/grid.Bpxy[xi,yi])*r*dl
-      A = int_func(FINDGEN(n),dA)
+      A = int_func(FINDGEN(n),dA,/simple=simple)
       theta[xi,yi] = 2.*!PI*A/A[n-1]
     ENDIF ELSE BEGIN
       nu = dl * REFORM(grid.Btxy[xi,yi]) / ( REFORM(grid.Bpxy[xi,yi]) * r )
-      theta[xi,yi] = int_func(FINDGEN(n)*dtheta,nu)
+      theta[xi,yi] = int_func(FINDGEN(n)*dtheta,nu,/simple=simple)
       theta[xi,yi] = 2.*!PI*theta[xi,yi] / theta[xi,yi[n-1]]
     ENDELSE
   ENDREP UNTIL last
   
   vy = FLTARR(ny)
   result = FLTARR(nx)
-  FOR x=0,nx-1 DO BEGIN
-    FOR y=0,ny-1 DO vy[y] = MEAN(var[x,y,*])
-    
-    result[x] = INT_TABULATED(REFORM(theta[x,*]), vy) / (2.*!PI)
-  ENDFOR
+  IF KEYWORD_SET(simple) THEN BEGIN
+    FOR x=0,nx-1 DO BEGIN
+      FOR y=0,ny-1 DO vy[y] = MEAN(var[x,y,*])
+      result[x] = INT_TRAPEZOID(REFORM(theta[x,*]), vy) / (2.*!PI)
+    ENDFOR
+  ENDIF ELSE BEGIN
+    FOR x=0,nx-1 DO BEGIN
+      FOR y=0,ny-1 DO vy[y] = MEAN(var[x,y,*])
+      result[x] = INT_TABULATED(REFORM(theta[x,*]), vy) / (2.*!PI)
+    ENDFOR
+  ENDELSE
   
   RETURN, result
 END

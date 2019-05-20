@@ -4,6 +4,8 @@
 # Run the test, compare results
 #
 
+#requires: all_tests
+
 # Variables to compare
 from __future__ import print_function
 try:
@@ -11,7 +13,7 @@ try:
 except:
   pass
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
+from boututils.run_wrapper import shell, shell_safe, launch_safe
 from boutdata.collect import collect
 from numpy import abs, seterr
 from sys import stdout, exit
@@ -26,7 +28,7 @@ name = "FieldGroup comm"
 exeName = "test"
 tol = 1e-10  # Relative tolerance
 
-MPIRUN=getmpirun()
+
 
 print("Making {nm} test".format(nm=name))
 shell_safe("make > make.log")
@@ -44,7 +46,7 @@ for nproc in [1,2,4]:
   shell("rm data/BOUT.dmp.*.nc")
 
   print("   %d processors ...." % (nproc))
-  s, out = launch_safe(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
+  s, out = launch_safe(cmd, nproc=nproc, pipe=True)
   with open("run.log."+str(nproc), "w") as f:
     f.write(out)
 

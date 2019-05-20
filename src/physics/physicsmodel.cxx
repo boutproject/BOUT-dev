@@ -28,17 +28,18 @@
  *
  **************************************************************************/
 
+#define BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 #include <bout/physicsmodel.hxx>
+#undef BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
+
+#include <bout/mesh.hxx>
 
 PhysicsModel::PhysicsModel()
-    : solver(nullptr), splitop(false), userprecon(nullptr), userjacobian(nullptr),
-      initialised(false) {
+    : solver(nullptr), modelMonitor(this), splitop(false), userprecon(nullptr),
+      userjacobian(nullptr), initialised(false) {
 
   // Set up restart file
   restart = Datafile(Options::getRoot()->getSection("restart"));
-}
-
-PhysicsModel::~PhysicsModel() {
 }
 
 int PhysicsModel::runRHS(BoutReal time) {
@@ -97,8 +98,8 @@ int PhysicsModel::postInit(bool restarting) {
   // Second argument specifies no time history
   solver->outputVars(restart, false);
 
-  string restart_dir;  ///< Directory for restart files
-  string dump_ext, restart_ext;  ///< Dump, Restart file extension
+  std::string restart_dir;  ///< Directory for restart files
+  std::string dump_ext, restart_ext;  ///< Dump, Restart file extension
   
   Options *options = Options::getRoot();
   if (options->isSet("restartdir")) {
@@ -112,12 +113,12 @@ int PhysicsModel::postInit(bool restarting) {
   options->get("dump_format", dump_ext, "nc");
   options->get("restart_format", restart_ext, dump_ext);
 
-  string filename = restart_dir + "/BOUT.restart."+restart_ext;
+  std::string filename = restart_dir + "/BOUT.restart."+restart_ext;
   if (restarting) {
     output.write("Loading restart file: %s\n", filename.c_str());
 
     /// Load restart file
-    if (!restart.openr(filename.c_str()))
+    if (!restart.openr("%s",filename.c_str()))
       throw BoutException("Error: Could not open restart file\n");
     if (!restart.read())
       throw BoutException("Error: Could not read restart file\n");
@@ -127,13 +128,17 @@ int PhysicsModel::postInit(bool restarting) {
   // Add mesh information to restart file
   // Note this is done after reading, so mesh variables
   // are not overwritten.
-  mesh->outputVars(restart);
+  bout::globals::mesh->outputVars(restart);
   // Version expected by collect routine
   restart.addOnce(const_cast<BoutReal &>(BOUT_VERSION), "BOUT_VERSION");
 
   /// Open the restart file for writing
-  if (!restart.openw(filename.c_str()))
+  if (!restart.openw("%s",filename.c_str()))
     throw BoutException("Error: Could not open restart file for writing\n");
+
+  // Add monitor to the solver which calls restart.write() and
+  // PhysicsModel::outputMonitor()
+  solver->addMonitor(&modelMonitor);
 
   return 0;
 }

@@ -51,6 +51,9 @@ control over how BOUT++ is built:
 
 - ``CXXFLAGS``: compiler flags, e.g. ``-Wall``
 
+- ``SUNDIALS_EXTRA_LIBS`` specifies additional libraries for linking
+  to SUNDIALS, which are put at the end of the link command.
+
 It is possible to change flags for BOUT++ after running configure, by
 editing the ``make.config`` file. Note that this is not recommended,
 as e.g. PVODE will not be built with these flags.
@@ -154,10 +157,22 @@ Marconi
    module load netcdf-cxx4
    module load python
 
-.. note:: As of 20/04/2018, an issue with the netcdf and netcdf-cxx4 modules
-          means that you will need to remove ``-lnetcdf`` from ``EXTRA_LIBS`` in
-          ``make.config`` after running ``./configure`` and before running
-          ``make``.
+To compile for the SKL partition, configure with
+
+.. code-block:: bash
+
+   ./configure --enable-checks=0 CPPFLAGS="-Ofast -funroll-loops -xCORE-AVX512 -mtune=skylake" --host skl
+
+to enable AVX512 vectorization.
+
+.. note:: As of 20/04/2018, an issue with the netcdf and netcdf-cxx4
+          modules means that you will need to remove ``-lnetcdf`` from
+          ``EXTRA_LIBS`` in ``make.config`` after running
+          ``./configure`` and before running ``make``. ``-lnetcdf``
+          needs also to be removed from ``bin/bout-config`` to allow a
+          successful build of the python interface. Recreation of
+          ``boutcore.pyx`` needs to be manually triggered, if
+          ``boutcore.pyx`` has already been created.
 
 Ubgl
 ~~~~
@@ -244,11 +259,37 @@ appropriately.
 OpenMP
 ------
 
-BOUT++ can make use of Single-Instruction Multiple-Data (SIMD)
-parallelism through OpenMP. To enable OpenMP, use the
+BOUT++ can make use of OpenMP parallelism. To enable OpenMP, use the
 ``--enable-openmp`` flag to configure::
 
     ./configure --enable-openmp
+
+OpenMP can be used to parallelise in more directions than can be
+achieved with MPI alone. For example, it is currently difficult to
+parallelise in X using pure MPI if FCI is used, and impossible to
+parallelise at all in Z with pure MPI.
+
+OpenMP is in a large number of places now, such that a decent speed-up
+can be achieved with OpenMP alone. Hybrid parallelisation with both
+MPI and OpenMP can lead to more significant speed-ups, but it
+sometimes requires some fine tuning of numerical parameters in order
+to achieve this. This greatly depends on the details not just of your
+system, but also your particular problem. We have tried to choose
+"sensible" defaults that will work well for the most common cases, but
+this is not always possible. You may need to perform some testing
+yourself to find e.g. the optimum split of OpenMP threads and MPI
+ranks.
+
+One such parameter that can potentially have a significant effect (for
+some problem sizes on some machines) is setting the OpenMP schedule
+used in some of the OpenMP loops (specifically those using
+`BOUT_FOR`). This can be set using::
+
+    ./configure --enable-openmp --with-openmp-schedule=<schedule>
+
+with ``<schedule>`` being one of: ``static`` (the default),
+``dynamic``, ``guided``, ``auto`` or ``runtime``.
+
 
 .. note::
     If you want to use OpenMP with Clang, you will need Clang 3.7+,
@@ -262,6 +303,14 @@ parallelism through OpenMP. To enable OpenMP, use the
 .. note::
     By default PVODE is built without OpenMP support. To enable this
     add ``--enable-pvode-openmp`` to the configure command.
+
+
+.. note::
+    OpenMP will attempt to use all available threads by default. This
+    can cause oversubscription problems on certain systems. You can
+    limit the number of threads OpenMP uses with the
+    ``OMP_NUM_THREADS`` environment variable. See your system
+    documentation for more details.
 
 .. _sec-sundials:
 
@@ -277,40 +326,33 @@ solver. Currently, BOUT++ also supports the SUNDIALS solvers CVODE, IDA
 and ARKODE which are available from
 https://computation.llnl.gov/casc/sundials/main.html.
 
-.. note:: SUNDIALS is only downloadable from the home page, as submitting your
-   name and e-mail is required for the download. As for the date of this
-   typing, SUNDIALS version :math:`3.0.0` is the newest. In order for a
-   smooth install it is recommended to install SUNDIALS from an install
-   directory. The full installation guide is found in the downloaded
-   ``.tar.gz``, but we will provide a step-by-step guide to install it
-   and make it compatible with BOUT++ here
+.. note:: BOUT++ currently supports SUNDIALS > 2.6, up to 4.1.0 as of
+          March 2019. It is advisable to use the highest possible
+          version
 
-.. warning:: BOUT++ currently only supports SUNDIALS 2.6 - 2.7!
-             Support for versions past 2.7 has yet to be
-             implemented. It is unlikely that we will support versions
-             before 2.6.
-
-::
+In order for a smooth install it is recommended to install SUNDIALS
+from an install directory. The full installation guide is found in the
+downloaded ``.tar.gz``, but we will provide a step-by-step guide to
+install it and make it compatible with BOUT++ here::
 
      $ cd ~
-     $ mkdir -p local/examples
      $ mkdir -p install/sundials-install
      $ cd install/sundials-install
-     $ # Move the downloaded sundials-2.6.0.tar.gz to sundials-install
-     $ tar -xzvf sundials-2.6.0.tar.gz
-     $ mkdir build
-     $ cd build
+     $ # Move the downloaded sundials-4.1.0.tar.gz to sundials-install
+     $ tar -xzvf sundials-4.1.0.tar.gz
+     $ mkdir build && cd build
 
      $ cmake \
        -DCMAKE_INSTALL_PREFIX=$HOME/local \
-       -DEXAMPLES_INSTALL_PATH=$HOME/local/examples \
-       -DCMAKE_LINKER=$HOME/local/lib \
        -DLAPACK_ENABLE=ON \
        -DOPENMP_ENABLE=ON \
        -DMPI_ENABLE=ON \
-       ../sundials-2.6.0
+       -DCMAKE_C_COMPILER=$(which mpicc) \
+       -DCMAKE_CXX_COMPILER=$(which mpicxx) \
+       ../sundials-4.1.0
 
      $ make
+     $ make test
      $ make install
 
 The SUNDIALS IDA solver is a Differential-Algebraic Equation (DAE)
@@ -318,11 +360,11 @@ solver, which evolves a system of the form
 :math:`\mathbf{f}(\mathbf{u},\dot{\mathbf{u}},t) = 0`. This allows
 algebraic constraints on variables to be specified.
 
-To configure BOUT++ with SUNDIALS only (see section :ref:`sec-PETSc-install` on how
-to build PETSc with SUNDIALS), go to the root directory of BOUT++ and
-type::
+To configure BOUT++ with SUNDIALS only (see section
+:ref:`sec-PETSc-install` on how to build PETSc with SUNDIALS), go to
+the root directory of BOUT++ and type::
 
-    $ ./configure --with-sundials
+    $ ./configure --with-sundials=/path/to/sundials/install
 
 SUNDIALS will allow you to select at run-time which solver to use. See
 :ref:`sec-timeoptions` for more details on how to do this.
@@ -368,7 +410,7 @@ debugging.
               --download-mumps \
               --download-scalapack \
               --download-blacs \
-              --download-f-blas-lapack=1 \
+              --download-fblas-lapack=1 \
               --download-parmetis \
               --download-ptscotch \
               --download-metis

@@ -37,7 +37,6 @@
 #include "unused.hxx"
 
 // Parderiv implementations
-#define PARDERIVSERIAL "serial"
 #define PARDERIVCYCLIC "cyclic"
 
 /// Base class for parallel inversion solvers
@@ -64,15 +63,16 @@ public:
    * with pure virtual members, so can't be created directly.
    * To create an InvertPar object call the create() static function.
    */ 
-  InvertPar(Options *UNUSED(opt)) {}
-  virtual ~InvertPar() {}
-  
+  InvertPar(Options *UNUSED(opt), Mesh *mesh_in = nullptr)
+    : localmesh(mesh_in==nullptr ? bout::globals::mesh : mesh_in) {}
+  virtual ~InvertPar() = default;
+
   /*!
    * Create an instance of InvertPar
    * 
    * Note: For consistency this should be renamed "create" and take an Options* argument
    */
-  static InvertPar* Create();
+  static InvertPar* Create(Mesh *mesh_in = nullptr);
   
   /*!
    * Solve the system of equations
@@ -100,36 +100,39 @@ public:
    */
   virtual void setCoefA(const Field2D &f) = 0;
   virtual void setCoefA(const Field3D &f) {setCoefA(DC(f));}
-  virtual void setCoefA(BoutReal f) {setCoefA(Field2D(f));}
+  virtual void setCoefA(BoutReal f) {setCoefA(Field2D(f, localmesh));}
   
   /*!
    * Set the Grad2_par2 coefficient B
    */ 
   virtual void setCoefB(const Field2D &f) = 0;
   virtual void setCoefB(const Field3D &f) {setCoefB(DC(f));}
-  virtual void setCoefB(BoutReal f) {setCoefB(Field2D(f));}
+  virtual void setCoefB(BoutReal f) {setCoefB(Field2D(f, localmesh));}
   
   /*!
    * Set the D2DYDZ coefficient C
    */
-  virtual void setCoefC(const Field2D &f) = 0;
-  virtual void setCoefC(const Field3D &f) {setCoefB(DC(f));}
-  virtual void setCoefC(BoutReal f) {setCoefB(Field2D(f));}
-  
+  virtual void setCoefC(const Field2D& f) = 0;
+  virtual void setCoefC(const Field3D& f) { setCoefC(DC(f)); }
+  virtual void setCoefC(BoutReal f) { setCoefC(Field2D(f, localmesh)); }
+
   /*!
    * Set the D2DZ2 coefficient D
-   */ 
-  virtual void setCoefD(const Field2D &f) = 0;
-  virtual void setCoefD(const Field3D &f) {setCoefB(DC(f));}
-  virtual void setCoefD(BoutReal f) {setCoefB(Field2D(f));}
-  
+   */
+  virtual void setCoefD(const Field2D& f) = 0;
+  virtual void setCoefD(const Field3D& f) { setCoefD(DC(f)); }
+  virtual void setCoefD(BoutReal f) { setCoefD(Field2D(f, localmesh)); }
+
   /*!
    * Set the DDY coefficient E
    */
-  virtual void setCoefE(const Field2D &f) = 0;
-  virtual void setCoefE(const Field3D &f) {setCoefB(DC(f));}
-  virtual void setCoefE(BoutReal f) {setCoefB(Field2D(f));}
-  
+  virtual void setCoefE(const Field2D& f) = 0;
+  virtual void setCoefE(const Field3D& f) { setCoefE(DC(f)); }
+  virtual void setCoefE(BoutReal f) { setCoefE(Field2D(f, localmesh)); }
+
+protected:
+  Mesh* localmesh; ///< Mesh object for this solver
+
 private:
 };
 

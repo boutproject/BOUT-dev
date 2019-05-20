@@ -35,8 +35,8 @@ class BoundaryRegionPar : public BoundaryRegionBase {
     BoutReal angle;
   };
 
-  typedef std::vector<Indices> IndicesVec;
-  typedef IndicesVec::iterator IndicesIter;
+  using IndicesVec = std::vector<Indices>;
+  using IndicesIter = IndicesVec::iterator;
 
   /// Vector of points in the boundary
   IndicesVec bndry_points;
@@ -44,11 +44,11 @@ class BoundaryRegionPar : public BoundaryRegionBase {
   IndicesIter bndry_position;
 
 public:
-  BoundaryRegionPar(const string &name,int dir) :
-    BoundaryRegionBase(name), dir(dir) {
+  BoundaryRegionPar(const std::string &name, int dir, Mesh* passmesh) :
+    BoundaryRegionBase(name, passmesh), dir(dir) {
     BoundaryRegionBase::isParallel = true;}
-  BoundaryRegionPar(const string &name, BndryLoc loc,int dir) :
-    BoundaryRegionBase(name, loc), dir(dir) {
+  BoundaryRegionPar(const std::string &name, BndryLoc loc,int dir, Mesh* passmesh) :
+    BoundaryRegionBase(name, loc, passmesh), dir(dir) {
     BoundaryRegionBase::isParallel = true;}
 
   /// Add a point to the boundary
@@ -56,9 +56,9 @@ public:
                  const BoutReal x,BoutReal y,BoutReal z,
                  const BoutReal length,BoutReal angle);
 
-  void first();
-  void next();
-  bool isDone();
+  void first() override;
+  void next() override;
+  bool isDone() override;
 
   /// Index of the point in the boundary
   int x, y, z;

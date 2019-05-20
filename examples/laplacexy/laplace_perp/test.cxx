@@ -9,7 +9,7 @@ int main(int argc, char** argv) {
   
   ///////////////////////////////////////
   bool calc_metric;
-  OPTION(Options::getRoot(), calc_metric, false);
+  calc_metric = Options::root()["calc_metric"].withDefault(false);
   if(calc_metric) {
     // Read metric tensor
     Field2D Rxy, Btxy, Bpxy, B0, hthe, I;
@@ -20,7 +20,7 @@ int main(int argc, char** argv) {
     mesh->get(hthe, "hthe"); // m
     mesh->get(I,    "sinty");// m^-2 T^-1
 
-    Coordinates *coord = mesh->coordinates();
+    Coordinates *coord = mesh->getCoordinates();
 
     // Calculate metrics
     coord->g11 = SQ(Rxy * Bpxy);

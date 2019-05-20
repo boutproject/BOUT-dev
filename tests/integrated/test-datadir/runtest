@@ -1,6 +1,8 @@
 #!/usr/bin/env sh
 make || exit
 
+#requires: all_tests
+
 of=run.log.1
 if ! ./test -d test_dir > $of 2>&1
 then

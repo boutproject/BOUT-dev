@@ -19,7 +19,7 @@ protected:
     
     // Read initial conditions
     
-    Coordinates *coord = mesh->coordinates();
+    Coordinates *coord = mesh->getCoordinates();
     
     mesh->get(V0, "V0");
     mesh->get(coord->dx,   "dx");

@@ -115,7 +115,7 @@ FUNCTION read_neqdsk, file
   FOR i=0,nxefit-1 DO BEGIN
     FOR j=0,nyefit-1 DO BEGIN
       r[i,j] = rgrid1 + xdim*i/(nxefit-1)
-      z[i,j] = (zmid-0.5*zdim) + zdim*j/(nyefit-1)
+      z[i,j] = (zmid-0.5D*zdim) + zdim*j/(nyefit-1)
     ENDFOR
   ENDFOR
 

@@ -13,17 +13,17 @@ FUNCTION radial_grid, n, pin, pout, include_in, include_out, seps, sep_factor, $
          in_dp=in_dp, out_dp=out_dp
 
   IF n EQ 1 THEN BEGIN
-    RETURN, [0.5*(pin+pout)]
+    RETURN, [0.5D*(pin+pout)]
   ENDIF
 
   x = FINDGEN(n)
-  m = FLOAT(n-1)
+  m = DOUBLE(n-1)
   IF NOT include_in THEN BEGIN
-    x = x + 0.5
-    m = m + 0.5
+    x = x + 0.5D
+    m = m + 0.5D
   ENDIF
   
-  IF NOT include_out THEN m = m + 0.5
+  IF NOT include_out THEN m = m + 0.5D
   x = x / m
   
   IF (NOT KEYWORD_SET(in_dp)) AND (NOT KEYWORD_SET(out_dp)) THEN BEGIN
@@ -36,24 +36,24 @@ FUNCTION radial_grid, n, pin, pout, include_in, include_out, seps, sep_factor, $
   IF KEYWORD_SET(in_dp) AND KEYWORD_SET(out_dp) THEN BEGIN
     ; Fit to dist = a*i^3 + b*i^2 + c*i
     c = in_dp/norm
-    b = 3.*(1. - c) - out_dp/norm + c
-    a = 1. - c - b
+    b = 3.D*(1.D - c) - out_dp/norm + c
+    a = 1.D - c - b
   ENDIF ELSE IF KEYWORD_SET(in_dp) THEN BEGIN
     ; Only inner set
     c = in_dp/norm
-    a = 0.5*(c-1.)
-    b = 1. - c - a
+    a = 0.5D*(c-1.D)
+    b = 1.D - c - a
 
     ;a = 0
     ;c = in_dp/norm
-    ;b = 1. - c
+    ;b = 1.D - c
   ENDIF ELSE BEGIN
     ; Only outer set. Used in PF region
     ; Fit to (1-b)*x^a + bx for fixed b
     df = out_dp / norm
-    b = 0.25 < df  ; Make sure a > 0
-    a = (df - b) / (1. - b)
-    vals = pin + (pout - pin)*( (1.-b)*x^a + b*x )
+    b = 0.25D < df  ; Make sure a > 0
+    a = (df - b) / (1.D - b)
+    vals = pin + (pout - pin)*( (1.D - b)*x^a + b*x )
     RETURN, vals
   ENDELSE
   

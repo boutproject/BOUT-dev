@@ -16,6 +16,9 @@ engines:
       - tools/pylib/**
   cppcheck:
     enabled: true
+    exclude_paths:
+      - externalpackages/**
+      - tools/**
   pylint:
     enable: true
     include_paths:
@@ -24,3 +27,7 @@ engines:
     enable: true
     include_paths:
       - tools/pylib/**
+  shellcheck:
+    enable: true
+    exclude_paths:
+      - build-aux/**

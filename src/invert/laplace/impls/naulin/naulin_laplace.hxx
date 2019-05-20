@@ -37,22 +37,64 @@ class LaplaceNaulin;
  */
 class LaplaceNaulin : public Laplacian {
 public:
-  LaplaceNaulin(Options *opt = NULL);
+  LaplaceNaulin(Options *opt = NULL, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr);
   ~LaplaceNaulin();
   
   // ACoef is not implemented because the delp2solver that we use can probably
   // only handle a Field2D for Acoef, but we would have to pass Acoef/Dcoef,
   // where we allow Dcoef to be a Field3D
-  void setCoefA(const Field2D &val) override { Acoef = val; }
-  void setCoefA(const Field3D &val) override { Acoef = val; }
-  void setCoefC(const Field2D &val) override { setCoefC1(val); setCoefC2(val); }
-  void setCoefC(const Field3D &val) override { setCoefC1(val); setCoefC2(val); }
-  void setCoefC1(const Field3D &val) override { C1coef = val; }
-  void setCoefC1(const Field2D &val) override { C1coef = val; }
-  void setCoefC2(const Field3D &val) override { C2coef = val; }
-  void setCoefC2(const Field2D &val) override { C2coef = val; }
-  void setCoefD(const Field3D &val) override { Dcoef = val; }
-  void setCoefD(const Field2D &val) override { Dcoef = val; }
+  void setCoefA(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
+    Acoef = val;
+  }
+  void setCoefA(const Field3D &val) override {
+    ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
+    Acoef = val;
+  }
+  void setCoefC(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
+    setCoefC1(val);
+    setCoefC2(val);
+  }
+  void setCoefC(const Field3D &val) override {
+    ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
+    setCoefC1(val);
+    setCoefC2(val);
+  }
+  void setCoefC1(const Field3D &val) override {
+    ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
+    C1coef = val;
+  }
+  void setCoefC1(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
+    C1coef = val;
+  }
+  void setCoefC2(const Field3D &val) override {
+    ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
+    C2coef = val;
+  }
+  void setCoefC2(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
+    C2coef = val;
+  }
+  void setCoefD(const Field3D &val) override {
+    ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
+    Dcoef = val;
+  }
+  void setCoefD(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
+    Dcoef = val;
+  }
   void setCoefEx(const Field2D &UNUSED(val)) override {
     throw BoutException("LaplaceNaulin does not have Ex coefficient");
   }
@@ -60,27 +102,55 @@ public:
     throw BoutException("LaplaceNaulin does not have Ez coefficient");
   }
 
+  bool uses3DCoefs() const override { return true; }
+
   const FieldPerp solve(const FieldPerp &b) override {return solve(b,b);}
-  const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override { throw BoutException("LaplaceNaulin has no solve(FieldPerp), must call solve(Field3D)"); }
-  const Field3D solve(const Field3D &b, const Field3D&x0) override;
-  const Field3D solve(const Field3D &b) override { return solve(b, Field3D(0.)); }
+  const FieldPerp solve(const FieldPerp &UNUSED(b),
+                        const FieldPerp &UNUSED(x0)) override {
+    throw BoutException(
+        "LaplaceNaulin has no solve(FieldPerp), must call solve(Field3D)");
+  }
+  const Field3D solve(const Field3D &b, const Field3D &x0) override;
+  const Field3D solve(const Field3D &b) override {
+    return solve(b, zeroFrom(b));
+  }
 
   // Override flag-setting methods to set delp2solver's flags as well
   void setGlobalFlags(int f) override { Laplacian::setGlobalFlags(f); delp2solver->setGlobalFlags(f); }
   void setInnerBoundaryFlags(int f) override { Laplacian::setInnerBoundaryFlags(f); delp2solver->setInnerBoundaryFlags(f); }
   void setOuterBoundaryFlags(int f) override { Laplacian::setOuterBoundaryFlags(f); delp2solver->setOuterBoundaryFlags(f); }
 
-  const BoutReal getMeanIterations() const { return naulinsolver_mean_its; }
+  BoutReal getMeanIterations() const { return naulinsolver_mean_its; }
+  void resetMeanIterations() { naulinsolver_mean_its = 0; }
 private:
   LaplaceNaulin(const LaplaceNaulin&);
   LaplaceNaulin& operator=(const LaplaceNaulin&);
   Field3D Acoef, C1coef, C2coef, Dcoef;
+
+  /// Laplacian solver used to solve the equation with constant-in-z coefficients
   Laplacian* delp2solver;
+
+  /// Solver tolerances
   BoutReal rtol, atol;
+
+  /// Maximum number of iterations
   int maxits;
+
+  /// Initial choice for under-relaxation factor, should be greater than 0 and
+  /// less than or equal to 1. Value of 1 means no underrelaxation
+  BoutReal initial_underrelax_factor{1.};
+
+  /// Mean number of iterations taken by the solver
   BoutReal naulinsolver_mean_its;
+
+  /// Mean number of times the underrelaxation factor is reduced
+  BoutReal naulinsolver_mean_underrelax_counts{0.};
+
+  /// Counter for the number of times the solver has been called
   int ncalls;
 
+  /// Copy the boundary guard cells from the input 'initial guess' x0 into x.
+  /// These may be used to set non-zero-value boundary conditions
   void copy_x_boundaries(Field3D &x, const Field3D &x0, Mesh *mesh);
 };
 

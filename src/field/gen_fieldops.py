@@ -91,6 +91,8 @@ class Field(object):
         # Name of jz variable
         self.jz_var = jz_var
         self.mixed_base_ind_var = mixed_base_ind_var
+        #Note region_type isn't actually used currently but
+        #may be useful in future.
         if self.field_type == "Field3D":
             self.region_type="3D"
         elif self.field_type == "Field2D":
@@ -131,6 +133,17 @@ class Field(object):
         else:  # Field2D
             return "{self.name}[{self.index_var}]".format(self=self)
 
+    @property
+    def base_index(self):
+        """Returns "[{mixed_base_ind_var}]" if field_type is Field3D, Field2D or FieldPerp
+        or just returns "" for BoutReal
+
+        """
+        if self.field_type == "BoutReal":
+            return "{self.name}".format(self=self)
+        else:
+            return "{self.name}[{self.mixed_base_ind_var}]".format(self=self)
+
     def __eq__(self, other):
         try:
             return self.field_type == other.field_type
@@ -157,6 +170,8 @@ def returnType(f1, f2):
         return copy(f2)
     elif f2 == 'BoutReal':
         return copy(f1)
+    elif f1 == 'FieldPerp' or f2 == 'FieldPerp':
+        return copy(fieldPerp)
     else:
         return copy(field3D)
 
@@ -179,9 +194,9 @@ if __name__ == "__main__":
     region_name = '"RGN_ALL"'
     
     if args.noOpenMP:
-        region_loop = 'BLOCK_REGION_LOOP_SERIAL'
+        region_loop = 'BOUT_FOR_SERIAL'
     else:
-        region_loop = 'BLOCK_REGION_LOOP'
+        region_loop = 'BOUT_FOR'
         
     # Declare what fields we currently support:
     # Field perp is currently missing
@@ -189,10 +204,12 @@ if __name__ == "__main__":
                     jz_var = jz_var, mixed_base_ind_var = mixed_base_ind_var)
     field2D = Field('Field2D', ['x', 'y'], index_var=index_var,
                     jz_var = jz_var, mixed_base_ind_var = mixed_base_ind_var)
+    fieldPerp = Field('FieldPerp', ['x', 'z'], index_var=index_var,
+                    jz_var = jz_var, mixed_base_ind_var = mixed_base_ind_var)
     boutreal = Field('BoutReal', [], index_var=index_var,
                      jz_var = jz_var, mixed_base_ind_var = mixed_base_ind_var)
     
-    fields = [field3D, field2D, boutreal]
+    fields = [field3D, field2D, fieldPerp, boutreal]
 
     with smart_open(args.filename, "w") as f:
         f.write(header)

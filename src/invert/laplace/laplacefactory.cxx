@@ -41,35 +41,39 @@ LaplaceFactory* LaplaceFactory::getInstance() {
   return instance;
 }
 
-Laplacian* LaplaceFactory::createLaplacian(Options *options) {
+Laplacian* LaplaceFactory::createLaplacian(Options *options, const CELL_LOC loc, Mesh *mesh_in) {
   if (options == nullptr)
     options = Options::getRoot()->getSection("laplace");
 
-  string type;
+  if (mesh_in == nullptr) {
+    mesh_in = bout::globals::mesh;
+  }
 
-  if(mesh->firstX() && mesh->lastX()) {
+  std::string type;
+
+  if(mesh_in->firstX() && mesh_in->lastX()) {
     // Can use serial algorithm
 
     options->get("type", type, LAPLACE_CYCLIC);
 
     if(strcasecmp(type.c_str(), LAPLACE_TRI) == 0) {
-      return new LaplaceSerialTri(options);
+      return new LaplaceSerialTri(options, loc, mesh_in);
     }else if(strcasecmp(type.c_str(), LAPLACE_BAND) == 0) {
-      return new LaplaceSerialBand(options);
+      return new LaplaceSerialBand(options, loc, mesh_in);
     }else if(strcasecmp(type.c_str(), LAPLACE_SPT) == 0) {
-      return new LaplaceSPT(options);
+      return new LaplaceSPT(options, loc, mesh_in);
     }else if(strcasecmp(type.c_str(), LAPLACE_PETSC) == 0) {
-      return new LaplacePetsc(options);
+      return new LaplacePetsc(options, loc, mesh_in);
     }else if(strcasecmp(type.c_str(), LAPLACE_MUMPS) == 0) {
-      return new LaplaceMumps(options);
+      return new LaplaceMumps(options, loc, mesh_in);
     }else if(strcasecmp(type.c_str(), LAPLACE_CYCLIC) == 0) {
-      return new LaplaceCyclic(options);
+      return new LaplaceCyclic(options, loc, mesh_in);
     }else if(strcasecmp(type.c_str(), LAPLACE_SHOOT) == 0) {
-      return new LaplaceShoot(options);
+      return new LaplaceShoot(options, loc, mesh_in);
     }else if(strcasecmp(type.c_str(), LAPLACE_MULTIGRID) == 0) {
-      return new LaplaceMultigrid(options);
+      return new LaplaceMultigrid(options, loc, mesh_in);
     }else if(strcasecmp(type.c_str(), LAPLACE_NAULIN) == 0) {
-      return new LaplaceNaulin(options);
+      return new LaplaceNaulin(options, loc, mesh_in);
     }else if(strcasecmp(type.c_str(), LAPLACE_PETSCAMG) == 0) {
       return new LaplacePetscAmg(options);
     }else if(strcasecmp(type.c_str(), LAPLACE_PETSC3DAMG) == 0) {
@@ -83,21 +87,21 @@ Laplacian* LaplaceFactory::createLaplacian(Options *options) {
 
   // Parallel algorithm
   if(strcasecmp(type.c_str(), LAPLACE_PDD) == 0) {
-    return new LaplacePDD(options);
+    return new LaplacePDD(options, loc, mesh_in);
   }else if(strcasecmp(type.c_str(), LAPLACE_SPT) == 0) {
-    return new LaplaceSPT(options);
+    return new LaplaceSPT(options, loc, mesh_in);
   }else if(strcasecmp(type.c_str(), LAPLACE_PETSC) == 0) {
-    return new LaplacePetsc(options);
+    return new LaplacePetsc(options, loc, mesh_in);
   }else if(strcasecmp(type.c_str(), LAPLACE_MUMPS) == 0) {
-    return new LaplaceMumps(options);
+    return new LaplaceMumps(options, loc, mesh_in);
   }else if(strcasecmp(type.c_str(), LAPLACE_CYCLIC) == 0) {
-    return new LaplaceCyclic(options);
+    return new LaplaceCyclic(options, loc, mesh_in);
   }else if(strcasecmp(type.c_str(), LAPLACE_SHOOT) == 0) {
-    return new LaplaceShoot(options);
+    return new LaplaceShoot(options, loc, mesh_in);
   }else if(strcasecmp(type.c_str(), LAPLACE_MULTIGRID) == 0) {
-      return new LaplaceMultigrid(options);
+      return new LaplaceMultigrid(options, loc, mesh_in);
   }else if(strcasecmp(type.c_str(), LAPLACE_NAULIN) == 0) {
-    return new LaplaceNaulin(options);
+    return new LaplaceNaulin(options, loc, mesh_in);
   }else if(strcasecmp(type.c_str(), LAPLACE_PETSCAMG) == 0) {
       return new LaplacePetscAmg(options);
   }else if(strcasecmp(type.c_str(), LAPLACE_PETSC3DAMG) == 0) {

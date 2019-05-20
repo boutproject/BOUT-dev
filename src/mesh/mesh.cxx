@@ -12,16 +12,13 @@
 
 #include <output.hxx>
 
-#include "parallel/shiftedmetricinterp.hxx"
-#include "parallel/fci.hxx"
-
 Mesh* Mesh::create(GridDataSource *s, Options *opt) {
   return MeshFactory::getInstance()->createMesh(s, opt);
 }
 
 Mesh *Mesh::create(Options *opt) { return create(nullptr, opt); }
 
-Mesh::Mesh(GridDataSource *s, Options* opt) : source(s), coords(nullptr), options(opt) {
+Mesh::Mesh(GridDataSource *s, Options* opt) : source(s), options(opt) {
   if(s == nullptr)
     throw BoutException("GridDataSource passed to Mesh::Mesh() is NULL");
   
@@ -32,6 +29,7 @@ Mesh::Mesh(GridDataSource *s, Options* opt) : source(s), coords(nullptr), option
   /// Get mesh options
   OPTION(options, StaggerGrids,   false); // Stagger grids
   OPTION(options, maxregionblocksize, MAXREGIONBLOCKSIZE);
+  OPTION(options, calcParallelSlices_on_communicate, true);
   // Initialise derivatives
   derivs_init(options);  // in index_derivs.cxx for now
 }
@@ -39,10 +37,6 @@ Mesh::Mesh(GridDataSource *s, Options* opt) : source(s), coords(nullptr), option
 Mesh::~Mesh() {
   if (source) {
     delete source;
-  }
-
-  if (coords) {
-    delete coords;
   }
 }
 
@@ -53,33 +47,40 @@ Mesh::~Mesh() {
  * which may then read from a file, options, or other sources.
  **************************************************************************/
 
-/// Get an integer
-int Mesh::get(int &ival, const string &name) {
-  TRACE("Mesh::get(ival)");
+/// Get a string
+int Mesh::get(std::string &sval, const std::string &name) {
+  TRACE("Mesh::get(sval, %s)", name.c_str());
 
-  if(!source->get(this, ival, name))
+  if (source == nullptr or !source->get(this, sval, name))
+    return 1;
+
+  return 0;
+}
+
+/// Get an integer
+int Mesh::get(int &ival, const std::string &name) {
+  TRACE("Mesh::get(ival, %s)", name.c_str());
+
+  if (source == nullptr or !source->get(this, ival, name))
     return 1;
 
   return 0;
 }
 
 /// A BoutReal number
-int Mesh::get(BoutReal &rval, const string &name) {
-  TRACE("Mesh::get(rval)");
+int Mesh::get(BoutReal &rval, const std::string &name) {
+  TRACE("Mesh::get(rval, %s)", name.c_str());
 
-  if(!source->get(this, rval, name))
+  if (source == nullptr or !source->get(this, rval, name))
     return 1;
 
   return 0;
 }
 
-int Mesh::get(Field2D &var, const string &name, BoutReal def) {
-  TRACE("Loading 2D field: Mesh::get(Field2D)");
+int Mesh::get(Field2D &var, const std::string &name, BoutReal def) {
+  TRACE("Loading 2D field: Mesh::get(Field2D, %s)", name.c_str());
 
-  // Ensure data allocated
-  var.allocate();
-
-  if(!source->get(this, var, name, def))
+  if (source == nullptr or !source->get(this, var, name, def))
     return 1;
 
   // Communicate to get guard cell data
@@ -91,13 +92,10 @@ int Mesh::get(Field2D &var, const string &name, BoutReal def) {
   return 0;
 }
 
-int Mesh::get(Field3D &var, const string &name, BoutReal def, bool communicate) {
-  TRACE("Loading 3D field: Mesh::get(Field3D)");
+int Mesh::get(Field3D &var, const std::string &name, BoutReal def, bool communicate) {
+  TRACE("Loading 3D field: Mesh::get(Field3D, %s)", name.c_str());
 
-  // Ensure data allocated
-  var.allocate();
-
-  if(!source->get(this, var, name, def))
+  if (source == nullptr or !source->get(this, var, name, def))
     return 1;
 
   // Communicate to get guard cell data
@@ -111,22 +109,41 @@ int Mesh::get(Field3D &var, const string &name, BoutReal def, bool communicate) 
   return 0;
 }
 
+int Mesh::get(FieldPerp &var, const std::string &name, BoutReal def,
+    bool UNUSED(communicate)) {
+  TRACE("Loading FieldPerp: Mesh::get(FieldPerp, %s)", name.c_str());
+
+  if (source == nullptr or !source->get(this, var, name, def))
+    return 1;
+
+  int yindex = var.getIndex();
+  if (yindex >= 0 and yindex < var.getMesh()->LocalNy) {
+    // Communicate to get guard cell data
+    Mesh::communicate(var);
+
+    // Check that the data is valid
+    checkData(var);
+  }
+
+  return 0;
+}
+
 /**************************************************************************
  * Data get routines
  **************************************************************************/
 
-int Mesh::get(Vector2D &var, const string &name) {
+int Mesh::get(Vector2D &var, const std::string &name) {
   TRACE("Loading 2D vector: Mesh::get(Vector2D, %s)", name.c_str());
 
   if(var.covariant) {
-    output << "\tReading covariant vector " << name << endl;
+    output << _("\tReading covariant vector ") << name << endl;
 
     get(var.x, name+"_x");
     get(var.y, name+"_y");
     get(var.z, name+"_z");
 
   }else {
-    output << "\tReading contravariant vector " << name << endl;
+    output << _("\tReading contravariant vector ") << name << endl;
 
     get(var.x, name+"x");
     get(var.y, name+"y");
@@ -136,18 +153,18 @@ int Mesh::get(Vector2D &var, const string &name) {
   return 0;
 }
 
-int Mesh::get(Vector3D &var, const string &name) {
+int Mesh::get(Vector3D &var, const std::string &name) {
   TRACE("Loading 3D vector: Mesh::get(Vector3D, %s)", name.c_str());
 
   if(var.covariant) {
-    output << "\tReading covariant vector " << name << endl;
+    output << _("\tReading covariant vector ") << name << endl;
 
     get(var.x, name+"_x");
     get(var.y, name+"_y");
     get(var.z, name+"_z");
 
   }else {
-    output << "\tReading contravariant vector " << name << endl;
+    output << ("\tReading contravariant vector ") << name << endl;
 
     get(var.x, name+"x");
     get(var.y, name+"y");
@@ -157,8 +174,21 @@ int Mesh::get(Vector3D &var, const string &name) {
   return 0;
 }
 
-bool Mesh::sourceHasVar(const string &name) {
+bool Mesh::sourceHasVar(const std::string &name) {
+  TRACE("Mesh::sourceHasVar(%s)", name.c_str());
+  if (source == nullptr)
+    return false;
   return source->hasVar(name);
+}
+
+/// Wrapper for GridDataSource::hasXBoundaryGuards
+bool Mesh::sourceHasXBoundaryGuards() {
+  return source->hasXBoundaryGuards(this);
+}
+
+/// Wrapper for GridDataSource::hasYBoundaryGuards
+bool Mesh::sourceHasYBoundaryGuards() {
+  return source->hasYBoundaryGuards();
 }
 
 /**************************************************************************
@@ -185,8 +215,11 @@ void Mesh::communicate(FieldGroup &g) {
   wait(h);
 
   // Calculate yup and ydown fields for 3D fields
-  for(const auto& fptr : g.field3d())
-    getParallelTransform().calcYUpDown(*fptr);
+  if (calcParallelSlices_on_communicate) {
+    for(const auto& fptr : g.field3d()) {
+      fptr->calcParallelSlices();
+    }
+  }
 }
 
 /// This is a bit of a hack for now to get FieldPerp communications
@@ -211,7 +244,7 @@ void Mesh::communicate(FieldPerp &f) {
   wait(recv[1]);
 }
 
-int Mesh::msg_len(const vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt) {
+int Mesh::msg_len(const std::vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt) {
   int len = 0;
 
   /// Loop over variables
@@ -264,111 +297,119 @@ bool Mesh::hasBndryUpperY() {
   return answer;
 }
 
-const vector<int> Mesh::readInts(const string &name, int n) {
-  vector<int> result;
+const std::vector<int> Mesh::readInts(const std::string &name, int n) {
+  TRACE("Mesh::readInts(%s)", name.c_str());
+
+  if (source == nullptr) {
+    throw BoutException("Can't read integer array %s as 'Mesh::source' is nullptr\n",
+                        name.c_str());
+  }
+
+  std::vector<int> result;
 
   if(source->hasVar(name)) {
     if(!source->get(this, result, name, n, 0)) {
       // Error reading
-      throw BoutException("Could not read integer array '%s'\n", name.c_str());
+      throw BoutException(_("Could not read integer array '%s'\n"), name.c_str());
     }
   }else {
     // Not found
-    throw BoutException("Missing integer array %s\n", name.c_str());
+    throw BoutException(_("Missing integer array %s\n"), name.c_str());
   }
 
   return result;
 }
 
-void Mesh::setParallelTransform() {
+std::shared_ptr<Coordinates> Mesh::createDefaultCoordinates(const CELL_LOC location,
+    bool force_interpolate_from_centre) {
 
-  string ptstr;
-  options->get("paralleltransform", ptstr, "identity");
-
-  // Convert to lower case for comparison
-  ptstr = lowercase(ptstr);
-    
-  if(ptstr == "identity") {
-    // Identity method i.e. no transform needed
-    transform = std::unique_ptr<ParallelTransform>(new ParallelTransformIdentity());
-      
-  }else if(ptstr == "shifted") {
-    // Shifted metric method
-    transform = std::unique_ptr<ParallelTransform>(new ShiftedMetric(*this));
-      
-  }else if(ptstr == "shiftedinterp") {
-    // Shifted metric method
-    transform = std::unique_ptr<ParallelTransform>(new ShiftedMetricInterp(*this));
-      
-  }else if(ptstr == "fci") {
-
-    Options *fci_options = Options::getRoot()->getSection("fci");
-    // Flux Coordinate Independent method
-    bool fci_zperiodic;
-    fci_options->get("z_periodic", fci_zperiodic, true);
-    transform = std::unique_ptr<ParallelTransform>(new FCITransform(*this, fci_zperiodic));
-      
-  }else {
-    throw BoutException("Unrecognised paralleltransform option.\n"
-                        "Valid choices are 'identity', 'shifted', 'shiftedinterp', 'fci'");
+  if (location == CELL_CENTRE || location == CELL_DEFAULT) {
+    // Initialize coordinates from input
+    return std::make_shared<Coordinates>(this, options);
+  } else {
+    // Interpolate coordinates from CELL_CENTRE version
+    return std::make_shared<Coordinates>(this, options, location,
+        getCoordinates(CELL_CENTRE), force_interpolate_from_centre);
   }
 }
 
-ParallelTransform& Mesh::getParallelTransform() {
-  if(!transform) {
-    // No ParallelTransform object yet. Set from options
-    setParallelTransform();
+const Region<>& Mesh::getRegion3D(const std::string& region_name) const {
+  const auto found = regionMap3D.find(region_name);
+  if (found == end(regionMap3D)) {
+    throw BoutException(_("Couldn't find region %s in regionMap3D"), region_name.c_str());
   }
-  
-  // Return a reference to the ParallelTransform object
-  return *transform;
+  return found->second;
 }
 
-Coordinates *Mesh::createDefaultCoordinates() {
-  return new Coordinates(this);
+const Region<Ind2D>& Mesh::getRegion2D(const std::string& region_name) const {
+  const auto found = regionMap2D.find(region_name);
+  if (found == end(regionMap2D)) {
+    throw BoutException(_("Couldn't find region %s in regionMap2D"), region_name.c_str());
+  }
+  return found->second;
 }
 
-
-Region<> & Mesh::getRegion3D(const std::string &region_name){
-   auto found = regionMap3D.find(region_name);
-   if (found == end(regionMap3D)) {
-     throw BoutException("Couldn't find region %s in regionMap3D", region_name.c_str());
-   }
-   return found->second;
+const Region<IndPerp>& Mesh::getRegionPerp(const std::string& region_name) const {
+  const auto found = regionMapPerp.find(region_name);
+  if (found == end(regionMapPerp)) {
+    throw BoutException(_("Couldn't find region %s in regionMapPerp"),
+                        region_name.c_str());
+  }
+  return found->second;
 }
 
-Region<Ind2D> & Mesh::getRegion2D(const std::string &region_name){
-   auto found = regionMap2D.find(region_name);
-   if (found == end(regionMap2D)) {
-     throw BoutException("Couldn't find region %s in regionMap2D", region_name.c_str());
-   }
-   return found->second;
+bool Mesh::hasRegion3D(const std::string& region_name) const {
+  return regionMap3D.find(region_name) != std::end(regionMap3D);
+}
+
+bool Mesh::hasRegion2D(const std::string& region_name) const {
+  return regionMap2D.find(region_name) != std::end(regionMap2D);
+}
+
+bool Mesh::hasRegionPerp(const std::string& region_name) const {
+  return regionMapPerp.find(region_name) != std::end(regionMapPerp);
 }
 
 void Mesh::addRegion3D(const std::string &region_name, const Region<> &region) {
   if (regionMap3D.count(region_name)) {
-    throw BoutException("Trying to add an already existing region %s to regionMap3D");
+    throw BoutException(_("Trying to add an already existing region %s to regionMap3D"), region_name.c_str());
   }
   regionMap3D[region_name] = region;
+  output_verbose.write(_("Registered region 3D %s"),region_name.c_str());
+  output_verbose << "\n:\t" << region.getStats() << "\n";
 }
 
 void Mesh::addRegion2D(const std::string &region_name, const Region<Ind2D> &region) {
   if (regionMap2D.count(region_name)) {
-    throw BoutException("Trying to add an already existing region %s to regionMap2D");
+    throw BoutException(_("Trying to add an already existing region %s to regionMap2D"), region_name.c_str());
   }
   regionMap2D[region_name] = region;
+  output_verbose.write(_("Registered region 2D %s"),region_name.c_str());
+  output_verbose << "\n:\t" << region.getStats() << "\n";
+}
+
+void Mesh::addRegionPerp(const std::string &region_name, const Region<IndPerp> &region) {
+  if (regionMapPerp.count(region_name)) {
+    throw BoutException(_("Trying to add an already existing region %s to regionMapPerp"), region_name.c_str());
+  }
+  regionMapPerp[region_name] = region;
+  output_verbose.write(_("Registered region Perp %s"),region_name.c_str());
+  output_verbose << "\n:\t" << region.getStats() << "\n";
 }
 
 void Mesh::createDefaultRegions(){
   //3D regions
   addRegion3D("RGN_ALL", Region<Ind3D>(0, LocalNx - 1, 0, LocalNy - 1, 0, LocalNz - 1,
                                        LocalNy, LocalNz, maxregionblocksize));
-  addRegion3D("RGN_NOBNDRY", Region<Ind3D>(xstart, xend, ystart, yend, 0, LocalNz - 1,
+  addRegion3D("RGN_NOBNDRY", Region<Ind3D>(xstart, xend, ystart, yend, zstart, zend,
                                            LocalNy, LocalNz, maxregionblocksize));
   addRegion3D("RGN_NOX", Region<Ind3D>(xstart, xend, 0, LocalNy - 1, 0, LocalNz - 1,
                                        LocalNy, LocalNz, maxregionblocksize));
   addRegion3D("RGN_NOY", Region<Ind3D>(0, LocalNx - 1, ystart, yend, 0, LocalNz - 1,
                                        LocalNy, LocalNz, maxregionblocksize));
+  addRegion3D("RGN_NOZ", Region<Ind3D>(0, LocalNx - 1, 0, LocalNy - 1, zstart, zend,
+                                       LocalNy, LocalNz, maxregionblocksize));
+  addRegion3D("RGN_GUARDS", mask(getRegion3D("RGN_ALL"), getRegion3D("RGN_NOBNDRY")));
 
   //2D regions
   addRegion2D("RGN_ALL", Region<Ind2D>(0, LocalNx - 1, 0, LocalNy - 1, 0, 0, LocalNy, 1,
@@ -379,10 +420,38 @@ void Mesh::createDefaultRegions(){
                                        maxregionblocksize));
   addRegion2D("RGN_NOY", Region<Ind2D>(0, LocalNx - 1, ystart, yend, 0, 0, LocalNy, 1,
                                        maxregionblocksize));
+  addRegion2D("RGN_GUARDS", mask(getRegion2D("RGN_ALL"), getRegion2D("RGN_NOBNDRY")));
+
+  // Perp regions
+  addRegionPerp("RGN_ALL", Region<IndPerp>(0, LocalNx - 1, 0, 0, 0, LocalNz - 1, 1,
+                                           LocalNz, maxregionblocksize));
+  addRegionPerp("RGN_NOBNDRY", Region<IndPerp>(xstart, xend, 0, 0, zstart, zend, 1,
+                                               LocalNz, maxregionblocksize));
+  addRegionPerp("RGN_NOX", Region<IndPerp>(xstart, xend, 0, 0, 0, LocalNz - 1, 1, LocalNz,
+                                           maxregionblocksize)); // Same as NOBNDRY
+  addRegionPerp("RGN_NOY", Region<IndPerp>(0, LocalNx - 1, 0, 0, 0, LocalNz - 1, 1,
+                                           LocalNz, maxregionblocksize));
+
+  addRegionPerp("RGN_NOZ", Region<IndPerp>(0, LocalNx - 1, 0, 0, zstart, zend, 1, LocalNz,
+                                           maxregionblocksize));
+  addRegionPerp("RGN_GUARDS", mask(getRegionPerp("RGN_ALL"), getRegionPerp("RGN_NOBNDRY")));
 
   // Construct index lookup for 3D-->2D
   indexLookup3Dto2D = Array<int>(LocalNx*LocalNy*LocalNz);
-  for (const auto &ind3D: getRegion3D("RGN_ALL")){
+  BOUT_FOR(ind3D, getRegion3D("RGN_ALL")) {
     indexLookup3Dto2D[ind3D.ind] = ind3Dto2D(ind3D).ind;
+  }
+}
+
+void Mesh::recalculateStaggeredCoordinates() {
+  for (auto &i : coords_map) {
+    CELL_LOC location = i.first;
+
+    if (location == CELL_CENTRE) {
+      // Only reset staggered locations
+      continue;
+    }
+
+    *coords_map[location] = std::move(*createDefaultCoordinates(location, true));
   }
 }

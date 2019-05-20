@@ -4,90 +4,99 @@ from __future__ import division
 from __future__ import print_function
 from builtins import str
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
+from boututils.run_wrapper import shell, shell_safe, launch_safe
 from boutdata.collect import collect
 
 from numpy import sqrt, max, abs, mean, array, log
 
-MPIRUN = getmpirun()
+try:
+    import matplotlib.pyplot as plt
+except:
+    plt=None
+
+#requires: all_tests
+
+
 
 print("Making MMS d2dz2 test")
 shell_safe("make > make.log")
 
 nproc = 1
 
-error_2   = []  # The L2 error (RMS)
-error_inf = []  # The maximum error
+error_2     = []    # The L2 error (RMS)
+error_inf = []    # The maximum error
 
 # List of MZ values to use
 mzlist = [8, 16, 32, 64, 128, 256, 512, 1024]
 
 for mz in mzlist:
-  args = "MZ="+str(mz)
-  
-  # Delete old data
-  shell("rm data/BOUT.dmp.*.nc")
-  
-  # Command to run
-  cmd = "./test_d2dz2 "+args
-  
-  # Launch using MPI
-  s, out = launch_safe(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
-  
-  # Save output to log file
-  f = open("run.log."+str(mz), "w")
-  f.write(out)
-  f.close()
-  
-  # Collect data
-  result = collect("result", path="data", info=False)
-  solution = collect("solution", path="data", info=False)
-  
-  err = result - solution
-  
-  # Average error
-  l2 = sqrt(mean(err**2))
-  linf = max(abs( err ))
-    
-  error_2.append( l2 )
-  error_inf.append( linf )
-  
-  print("Error norm: l-2 %f l-inf %f" % (l2, linf))
+    args = "MZ="+str(mz)
+
+    # Delete old data
+    shell("rm data/BOUT.dmp.*.nc")
+
+    # Command to run
+    cmd = "./test_d2dz2 "+args
+
+    # Launch using MPI
+    s, out = launch_safe(cmd, nproc=nproc, pipe=True)
+
+    # Save output to log file
+    f = open("run.log."+str(mz), "w")
+    f.write(out)
+    f.close()
+
+    # Collect data
+    result = collect("result", path="data", info=False)
+    solution = collect("solution", path="data", info=False)
+
+    err = result - solution
+
+    # Average error
+    l2 = sqrt(mean(err**2))
+    linf = max(abs( err ))
+
+    error_2.append( l2 )
+    error_inf.append( linf )
+
+    print("Error norm: l-2 %f l-inf %f" % (l2, linf))
 
 
 # Calculate grid spacing
 dx = 1. / (array(mzlist) - 2.)
 
-# plot errors
-
-import matplotlib.pyplot as plt
-
-plt.plot(dx, error_2, '-o', label=r'$l^2$')
-plt.plot(dx, error_inf, '-x', label=r'$l^\infty$')
-
 order = log(error_2[-1] / error_2[-2]) / log(dx[-1] / dx[-2])
 print("Convergence order = %f" % (order))
 
-plt.plot(dx, error_2[-1]*(dx/dx[-1])**order, '--', label="Order %.1f"%(order))
 
-plt.legend(loc="upper left")
-plt.grid()
+# plot errors
+try:
+    plt.plot(dx, error_2, '-o', label=r'$l^2$')
+    plt.plot(dx, error_inf, '-x', label=r'$l^\infty$')
 
-plt.yscale('log')
-plt.xscale('log')
 
-plt.xlabel(r'Mesh spacing $\delta z$')
-plt.ylabel("Error norm")
+    plt.plot(dx, error_2[-1]*(dx/dx[-1])**order, '--', label="Order %.1f"%(order))
 
-plt.savefig("norm.pdf")
+    plt.legend(loc="upper left")
+    plt.grid()
 
-#plt.show()
-plt.close()
+    plt.yscale('log')
+    plt.xscale('log')
 
-if order > 1.8:
-  print(" => Test passed")
-  exit(0)
+    plt.xlabel(r'Mesh spacing $\delta z$')
+    plt.ylabel("Error norm")
+
+    plt.savefig("norm.pdf")
+
+    #plt.show()
+    plt.close()
+except:
+    pass
+
+if 2.2 > order > 1.8:
+    # check for success
+    print(" => Test passed")
+    exit(0)
 else:
-  print(" => Test failed")
-  exit(1)
-
+    print(" => Test failed")
+    exit(1)

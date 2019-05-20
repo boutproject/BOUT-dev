@@ -7,12 +7,9 @@ class CASHKARPScheme;
 #include <bout/rkscheme.hxx>
 #include <utils.hxx>
 
-class CASHKARPScheme : public RKScheme{
- public:
-  CASHKARPScheme(Options *options);
-  ~CASHKARPScheme();
- private:
-
+class CASHKARPScheme : public RKScheme {
+public:
+  CASHKARPScheme(Options* options);
 };
 
 #endif // __CASHKARP_SCHEME_H__

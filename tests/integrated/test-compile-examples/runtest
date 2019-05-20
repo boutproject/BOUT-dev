@@ -1,0 +1,35 @@
+#!/bin/bash
+
+#requires: all_tests
+#requires: not make
+
+BOUT_TOP=../../..
+export PATH=$(pwd)/$BOUT_TOP/bin:$PATH
+
+error=0
+
+failed=
+for target in $(find $BOUT_TOP/examples/ -name makefile | grep -v doc)
+do
+    dir=$(dirname ${target})
+    if grep ":.*requires_petsc" $target -q;
+    then
+        echo "Skipping $dir - requires PETSc"
+    else
+        echo "Trying to compile ${dir}"
+
+        (cd ${dir} && make 2>&1)
+        ex=$?
+
+        if test $ex -gt 0
+        then
+            echo $(basename $dir) failed
+            error=1
+            failed="$failed\n$(basename $dir) failed"
+        fi
+    fi
+done
+
+echo -e $failed
+
+exit $error

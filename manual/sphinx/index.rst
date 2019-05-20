@@ -71,6 +71,15 @@ The documentation is divided into the following sections:
 
 .. toctree::
    :maxdepth: 1
+   :caption: Field-aligned coordinate systems
+   :name: coordinates
+
+   user_docs/coordinates
+   user_docs/preconditioning
+   user_docs/BOUT_Gradperp_op
+
+.. toctree::
+   :maxdepth: 1
    :caption: Developer Documentation
    :name: developer-docs
 
@@ -80,6 +89,8 @@ The documentation is divided into the following sections:
    developer_docs/data_types
    developer_docs/mesh
    developer_docs/file_io
+   developer_docs/natural_language
+   developer_docs/performance_profiling
 
    api_reference
 

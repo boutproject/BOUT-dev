@@ -6,7 +6,7 @@ MZ = 16
 ZMAX = 1
 
 MXG = 2
-MYG = 1
+MYG = 0
 
 [mesh]
 
@@ -18,9 +18,17 @@ symmetricGlobalX = true
 ny = 1
 
 [mesh:ddx]
+first = C4
+second = C4
 upwind=c2
 
+[mesh:ddy]
+first = C4
+second = C4
+
 [mesh:ddz]
+first = C4
+second = C4
 upwind=c2
 
 [solver]
@@ -46,4 +54,4 @@ ddx = -1.27323954473516*x*sin(4.0*x^2 + 1.0*z) + 0.477464829275686*sin(t)*cos(3.
 
 source = -1.90985931710274*x*(2.0*sin(t)*cos(3.0*x + 2.0*z) - sin(4.0*x^2 + z))*cos(6.0*x^2 - z) - (-1.27323954473516*x*sin(4.0*x^2 + z) + 0.477464829275686*sin(t)*cos(3.0*x + 2.0*z))*cos(6.0*x^2 - 1.0*z) + sin(3.0*x + 2.0*z)*cos(t)
 
-bndry_all = dirichlet_o2(f:solution)
+bndry_all = dirichlet_o3(f:solution)

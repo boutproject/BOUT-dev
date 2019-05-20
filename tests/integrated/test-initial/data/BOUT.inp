@@ -123,3 +123,6 @@ function = erf(x)
 
 [TanhHat]
 function = TanhHat(x, 0.5, 0.4, 0.3)
+
+[fmod]
+function = fmod(x,.50)

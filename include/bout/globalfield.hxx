@@ -19,7 +19,8 @@ class GlobalField2D;
  */ 
 class GlobalField {
 public:
-  virtual ~GlobalField();
+  GlobalField() = delete;
+  virtual ~GlobalField() = default;
   virtual bool valid() const = 0;  ///< Is the data valid on any processor?
   bool dataIsLocal() const {return valid() && (data_on_proc == mype);} ///< Data is on this processor
 
@@ -63,9 +64,6 @@ protected:
   void proc_origin(int proc, int *x, int *y, int *z = nullptr) const;
   /// Return the array size of processor proc
   void proc_size(int proc, int *lx, int *ly, int *lz = nullptr) const;
-
-private:
-  GlobalField();
 };
 
 /*!
@@ -114,6 +112,8 @@ private:
  */ 
 class GlobalField2D : public GlobalField {
 public:
+  /// Can't be constructed without args
+  GlobalField2D() = delete;
   /// Construct, giving a mesh and an optional processor
   ///
   /// @param[in] mesh   The mesh to gather over
@@ -121,10 +121,10 @@ public:
   GlobalField2D(Mesh *mesh, int proc = 0);
 
   /// Destructor
-  virtual ~GlobalField2D();
-  
+  ~GlobalField2D() override;
+
   /// Is the data valid and on this processor?
-  bool valid() const { return data_valid; }
+  bool valid() const override { return data_valid; }
 
   /// Gather all data onto one processor
   void gather(const Field2D &f);
@@ -145,8 +145,7 @@ public:
 protected:
   
 private:
-  GlobalField2D(); ///< Private so can't be constructed without args
-  
+
   /// Buffer for sending and receiving. First index
   /// is the processor index, and second is the data
   BoutReal** buffer;
@@ -208,6 +207,9 @@ private:
  */
 class GlobalField3D : public GlobalField {
 public:
+  /// Can't be constructed without args
+  GlobalField3D() = delete;
+
   /// Construct, giving a mesh and an optional processor
   ///
   /// @param[in] mesh   The mesh to gather over
@@ -215,11 +217,11 @@ public:
   GlobalField3D(Mesh *mesh, int proc = 0);
 
   /// Destructor
-  virtual ~GlobalField3D();
-  
+  ~GlobalField3D() override;
+
   /// Test if the data is valid i.e. has been allocated
-  bool valid() const {return data_valid;}
-  
+  bool valid() const override { return data_valid; }
+
   /// Gather all data onto one processor
   void gather(const Field3D &f);
   /// Scatter data back from one to many processors
@@ -235,7 +237,6 @@ public:
 protected:
   
 private:
-  GlobalField3D(); ///< Private so can't be constructed without args
 
   /// Buffer for sending and receiving. First index
   /// is the processor index, and second is the data
