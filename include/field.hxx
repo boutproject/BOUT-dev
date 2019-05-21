@@ -224,7 +224,7 @@ protected:
     directions = f.directions;
   }
 
-private:
+  /// Labels for the type of coordinate system this field is defined over
   DirectionTypes directions{YDirectionType::Standard, ZDirectionType::Standard};
 };
 

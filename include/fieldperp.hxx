@@ -129,7 +129,7 @@ class FieldPerp : public Field {
     return *this;
   }
   FieldPerp& setDirectionY(YDirectionType d) {
-    Field::setDirectionY(d);
+    directions.y = d;
     return *this;
   }
 
