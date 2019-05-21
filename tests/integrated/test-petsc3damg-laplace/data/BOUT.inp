@@ -1,5 +1,8 @@
 #grid = "21712_grid.nc"
-#grid = "21712_v4.2.grd.nc"
+grid = "21712_v4.2.grd.nc"
+
+non_uniform = false
+
 [mesh]
 nx = 32
 ny = 16
@@ -28,6 +31,7 @@ maxits=1000
 [petscamg]
 rtol=1.e-6
 atol=1.e-10
+solvertype = hy
 
 #############################################
 # input variables for tests
