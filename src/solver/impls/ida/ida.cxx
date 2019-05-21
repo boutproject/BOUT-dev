@@ -56,7 +56,11 @@
 #define ONE RCONST(1.0)
 
 #ifndef IDAINT
-using IDAINT = int;
+#if SUNDIALS_VERSION_MAJOR < 3
+using IDAINT = bout::utils::function_traits<IDABBDLocalFn>::arg<0>::type;
+#else
+using IDAINT = sunindextype;
+#endif
 #endif
 
 static int idares(BoutReal t, N_Vector u, N_Vector du, N_Vector rr, void* user_data);
