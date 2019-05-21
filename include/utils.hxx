@@ -111,6 +111,9 @@ struct function_traits<R (*)(Args...)> {
   struct arg {
     using type = typename std::tuple_element<i, std::tuple<Args...>>::type;
   };
+
+  template <size_t i>
+  using arg_t = typename arg<i>::type;
 };
 } // namespace utils
 } // namespace bout
