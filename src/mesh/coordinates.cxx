@@ -18,6 +18,7 @@
 #include <globals.hxx>
 
 #include "parallel/fci.hxx"
+#include "parallel/shiftedmetricinterp.hxx"
 
 // use anonymous namespace so this utility function is not available outside this file
 namespace {
@@ -1044,7 +1045,7 @@ void Coordinates::setParallelTransform(Options* options) {
     // Identity method i.e. no transform needed
     transform = bout::utils::make_unique<ParallelTransformIdentity>(*localmesh);
 
-  } else if (ptstr == "shifted") {
+  } else if (ptstr == "shifted" or ptstr == "shiftedinterp") {
     // Shifted metric method
 
     Field2D zShift{localmesh};
@@ -1097,8 +1098,13 @@ void Coordinates::setParallelTransform(Options* options) {
       }
     }
 
-    transform = bout::utils::make_unique<ShiftedMetric>(*localmesh, location, zShift,
-        zlength());
+    if (ptstr == "shifted") {
+      transform = bout::utils::make_unique<ShiftedMetric>(*localmesh, location, zShift,
+          zlength());
+    } else if (ptstr == "shiftedinterp") {
+      transform = bout::utils::make_unique<ShiftedMetricInterp>(*localmesh, location,
+          zShift);
+    }
 
   } else if (ptstr == "fci") {
 

@@ -31,27 +31,23 @@
 #include <interpolation_factory.hxx>
 #include <bout/constants.hxx>
 
-ShiftedMetricInterp::ShiftedMetricInterp(Mesh &mesh)
-  : ParallelTransform(mesh), localmesh(mesh) {
-
-  // Read the zShift angle from the mesh
-  if(localmesh.get(zShift, "zShift")) {
-    // No zShift variable. Try qinty in BOUT grid files
-    localmesh.get(zShift, "qinty");
-  }
+ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in, Field2D zShift_in)
+  : ParallelTransform(mesh), location(location_in), zShift(std::move(zShift_in)) {
+  // check the coordinate system used for the grid data source
+  ShiftedMetricInterp::checkInputGrid();
 
   // Create the Interpolation objects and set whether they go up or down the
   // magnetic field
-  interp_yup = InterpolationFactory::getInstance()->create(&localmesh);
+  interp_yup = InterpolationFactory::getInstance()->create(&mesh);
   interp_yup->setYOffset(1);
 
-  interp_ydown = InterpolationFactory::getInstance()->create(&localmesh);
+  interp_ydown = InterpolationFactory::getInstance()->create(&mesh);
   interp_ydown->setYOffset(-1);
 
   // Find the index positions where the magnetic field line intersects the next
   // x-z plane
-  Field3D xt_prime(&localmesh), zt_prime_up(&localmesh),
-          zt_prime_down(&localmesh);
+  Field3D xt_prime(&mesh), zt_prime_up(&mesh),
+          zt_prime_down(&mesh);
   xt_prime.allocate();
   zt_prime_up.allocate();
   zt_prime_down.allocate();
@@ -65,7 +61,7 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh &mesh)
     // Field line moves in z by an angle zShift(i,j+1)-zShift(i,j) when going
     // from j to j+1, but we want the shift in index-space
     zt_prime_up[i] = static_cast<BoutReal>(i.z())
-      + (zShift[i.yp()] - zShift[i])*static_cast<BoutReal>(localmesh.GlobalNz)/TWOPI;
+      + (zShift[i.yp()] - zShift[i])*static_cast<BoutReal>(mesh.GlobalNz)/TWOPI;
   }
 
   interp_yup->calcWeights(xt_prime, zt_prime_up);
@@ -79,16 +75,16 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh &mesh)
     // Field line moves in z by an angle -(zShift(i,j)-zShift(i,j-1)) when going
     // from j to j-1, but we want the shift in index-space
     zt_prime_down[i] = static_cast<BoutReal>(i.z())
-      - (zShift[i] - zShift[i.ym()])*static_cast<BoutReal>(localmesh.GlobalNz)/TWOPI;
+      - (zShift[i] - zShift[i.ym()])*static_cast<BoutReal>(mesh.GlobalNz)/TWOPI;
   }
 
   interp_ydown->calcWeights(xt_prime, zt_prime_down);
 
   // Set up interpolation to/from field-aligned coordinates
-  interp_to_aligned = InterpolationFactory::getInstance()->create(&localmesh);
-  interp_from_aligned = InterpolationFactory::getInstance()->create(&localmesh);
+  interp_to_aligned = InterpolationFactory::getInstance()->create(&mesh);
+  interp_from_aligned = InterpolationFactory::getInstance()->create(&mesh);
 
-  Field3D zt_prime_to(&localmesh), zt_prime_from(&localmesh);
+  Field3D zt_prime_to(&mesh), zt_prime_from(&mesh);
   zt_prime_to.allocate();
   zt_prime_from.allocate();
 
@@ -96,7 +92,7 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh &mesh)
     // Field line moves in z by an angle zShift(i,j) when going
     // from y0 to y(j), but we want the shift in index-space
     zt_prime_to[i] = static_cast<BoutReal>(i.z())
-      + zShift[i]*static_cast<BoutReal>(localmesh.GlobalNz)/TWOPI;
+      + zShift[i]*static_cast<BoutReal>(mesh.GlobalNz)/TWOPI;
   }
 
   interp_to_aligned->calcWeights(xt_prime, zt_prime_to);
@@ -106,11 +102,23 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh &mesh)
     // from y0 to y(j), but we want the shift in index-space.
     // Here we reverse the shift, so subtract zShift
     zt_prime_from[i] = static_cast<BoutReal>(i.z())
-      - zShift[i]*static_cast<BoutReal>(localmesh.GlobalNz)/TWOPI;
+      - zShift[i]*static_cast<BoutReal>(mesh.GlobalNz)/TWOPI;
   }
 
   interp_from_aligned->calcWeights(xt_prime, zt_prime_from);
 
+}
+
+void ShiftedMetricInterp::checkInputGrid() {
+  std::string coordinates_type = "";
+  if (!mesh.get(coordinates_type, "coordinates_type")) {
+    if (coordinates_type != "orthogonal") {
+      throw BoutException("Incorrect coordinate system type '" + coordinates_type
+                          + "' used to generate metric components for ShiftedMetric. "
+                            "Should be 'orthogonal'.");
+    }
+  } // else: coordinate_system variable not found in grid input, indicates older input
+    //       file so must rely on the user having ensured the type is correct
 }
 
 /*!

@@ -20,7 +20,7 @@ const Field3D DDY_yud(const Field3D &f) {
 // Y derivative constructed from interpolation weights
 const Field3D DDY_weights(const Field3D &f) {
 
-  ParallelTransform& pt = mesh->getParallelTransform();
+  ParallelTransform& pt = f.getCoordinates()->getParallelTransform();
   Field3D result;
   result.allocate();
 
