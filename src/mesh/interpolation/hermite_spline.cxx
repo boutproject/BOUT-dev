@@ -36,6 +36,11 @@ HermiteSpline::HermiteSpline(int y_offset, Mesh *mesh)
   i_corner.reallocate(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
   k_corner.reallocate(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
 
+  // Initialise in order to avoid 'uninitialized value' errors from Valgrind when using
+  // guard-cell values
+  i_corner = -1;
+  k_corner = -1;
+
   // Allocate Field3D members
   h00_x.allocate();
   h01_x.allocate();
