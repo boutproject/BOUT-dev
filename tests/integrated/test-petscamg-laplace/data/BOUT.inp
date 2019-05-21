@@ -1,4 +1,5 @@
 dump_format = "nc"
+non_uniform = false
 
 [mesh]
 nx = 100
@@ -26,6 +27,7 @@ g_23 = 2.14121198654175/(1.+.01*y*dy)
 
 [laplace]
 type=petscamg
+
 all_terms=true
 rtol=1.e-10
 # Note, set a fairly high atol here because the RHS in this test is large, O(10^6)
@@ -33,6 +35,9 @@ atol=1.e-10
 dtol=1.e12
 include_yguards=false
 maxits=1000
+
+[petscamg]
+solvertype = hy
 
 #############################################
 # input variables for tests
