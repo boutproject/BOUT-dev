@@ -82,6 +82,39 @@ typename _Unique_if<T>::_Known_bound make_unique(Args&&...) = delete;
 #else
 using std::make_unique;
 #endif
+
+template <typename T>
+struct function_traits;
+
+/// Traits class to get the types of function arguments for function pointers
+///
+/// Use like:
+///
+//      // A function signature we'd like to check:
+///     using some_function = int(*)(int, double, std::string);
+///     // Get the type of the first argument:
+///     using first_argument_type =
+///         bout::utils::function_traits<some_function>::arg<1>::type;
+///     // The following prints "true":
+///     std::cout << std::boolalpha
+///         << std::is_same<double, first_argument_type>::value;
+///
+/// Adapted from https://stackoverflow.com/a/9065203/2043465
+template <typename R, typename... Args>
+struct function_traits<R (*)(Args...)> {
+  /// Total number of arguments
+  static constexpr size_t nargs = sizeof...(Args);
+
+  using result_type = R;
+
+  template <size_t i>
+  struct arg {
+    using type = typename std::tuple_element<i, std::tuple<Args...>>::type;
+  };
+
+  template <size_t i>
+  using arg_t = typename arg<i>::type;
+};
 } // namespace utils
 } // namespace bout
 
