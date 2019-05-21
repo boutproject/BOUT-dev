@@ -39,13 +39,15 @@ int main(int argc, char** argv) {
 
   class Laplacian* invert = Laplacian::create();
 
+  auto coords = mesh->getCoordinates();
+
   // Solving equations of the form d*Grad_perp2(f) + 1/c*Grad_perp(c).Grad_perp(f) + a*f = b for various boundary conditions
   Field3D f1,a1,b1,c1,d1,sol1,bcheck1;
   Field3D absolute_error1;
   BoutReal max_error1; //Output of test
 
-  dump.add(mesh->coordinates()->G1,"G1");
-  dump.add(mesh->coordinates()->G3,"G3");
+  dump.add(coords->G1,"G1");
+  dump.add(coords->G3,"G3");
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Test 1: zero-value Dirichlet boundaries
@@ -230,8 +232,8 @@ int main(int argc, char** argv) {
       for (int k=0;k<mesh->LocalNz;k++) {
         x0(mesh->xstart-1,j,k) =
           (f4(mesh->xstart,j,k)-f4(mesh->xstart-1,j,k))
-          /mesh->coordinates()->dx(mesh->xstart,j)
-          /sqrt(mesh->coordinates()->g_11(mesh->xstart,j));
+          /coords->dx(mesh->xstart,j)
+          /sqrt(coords->g_11(mesh->xstart,j));
       }
     }
   }
@@ -240,8 +242,8 @@ int main(int argc, char** argv) {
       for (int k=0;k<mesh->LocalNz;k++) {
         x0(mesh->xend+1,j,k) =
           (f4(mesh->xend+1,j,k)-f4(mesh->xend,j,k))
-          /mesh->coordinates()->dx(mesh->xend,j)
-          /sqrt(mesh->coordinates()->g_11(mesh->xend,j));
+          /coords->dx(mesh->xend,j)
+          /sqrt(coords->g_11(mesh->xend,j));
       }
     }
   }

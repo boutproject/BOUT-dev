@@ -43,17 +43,15 @@ int main(int argc, char** argv) {
 
   class Laplacian* invert = Laplacian::create();
 
+  auto coords = mesh->getCoordinates();
+
   // Solving equations of the form d*Grad_perp2(f) + 1/c*Grad_perp(c).Grad_perp(f) + a*f = b for various boundary conditions
   Field3D f1,a1,b1,c1,d1,sol1,bcheck1;
   Field3D absolute_error1;
   BoutReal max_error1; //Output of test
 
-  // Use Field3D's, but solver only works on FieldPerp slices, so only use 1 y-point
-  BoutReal nx = mesh->GlobalNx-2*mesh->xstart;
-  BoutReal nz = mesh->GlobalNz;
-
-  dump.add(mesh->coordinates()->G1,"G1");
-  dump.add(mesh->coordinates()->G3,"G3");
+  dump.add(coords->G1,"G1");
+  dump.add(coords->G3,"G3");
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Test 1: zero-value Dirichlet boundaries
@@ -231,13 +229,13 @@ int main(int argc, char** argv) {
   if (mesh->firstX())
     for (int k=0;k<mesh->LocalNz;k++)
       x0(mesh->xstart-1,mesh->ystart,k) = (f4(mesh->xstart,mesh->ystart,k)-f4(mesh->xstart-1,mesh->ystart,k))
-                                        /mesh->coordinates()->dx(mesh->xstart,mesh->ystart)
-                                        /sqrt(mesh->coordinates()->g_11(mesh->xstart,mesh->ystart));
+                                        /coords->dx(mesh->xstart,mesh->ystart)
+                                        /sqrt(coords->g_11(mesh->xstart,mesh->ystart));
   if (mesh->lastX())
     for (int k=0;k<mesh->LocalNz;k++)
       x0(mesh->xend+1,mesh->ystart,k) = (f4(mesh->xend+1,mesh->ystart,k)-f4(mesh->xend,mesh->ystart,k))
-                                        /mesh->coordinates()->dx(mesh->xend,mesh->ystart)
-                                        /sqrt(mesh->coordinates()->g_11(mesh->xend,mesh->ystart));
+                                        /coords->dx(mesh->xend,mesh->ystart)
+                                        /sqrt(coords->g_11(mesh->xend,mesh->ystart));
 
   try {
     sol4 = invert->solve(sliceXZ(b4, mesh->ystart), sliceXZ(x0, mesh->ystart));
@@ -283,16 +281,18 @@ int main(int argc, char** argv) {
 // Delp2 uses FFT z-derivatives and Laplace includes y-derivatives, so can't use those
 // The function is a copy of Laplace() with the y-derivatives deleted
 Field3D this_Grad_perp2(const Field3D &f) {
-  Field3D result = mesh->coordinates()->G1 * ::DDX(f) +  mesh->coordinates()->G3 * ::DDZ(f) +
-                   mesh->coordinates()->g11 * ::D2DX2(f) + mesh->coordinates()->g33 * ::D2DZ2(f) +
-                   2.0 * mesh->coordinates()->g13 * ::D2DXDZ(f);
+  auto coords = mesh->getCoordinates();
+  Field3D result = coords->G1 * ::DDX(f) +  coords->G3 * ::DDZ(f) +
+                   coords->g11 * ::D2DX2(f) + coords->g33 * ::D2DZ2(f) +
+                   2.0 * coords->g13 * ::D2DXDZ(f);
 
   return result;
 }
 
 Field3D this_Grad_perp_dot_Grad_perp(const Field3D &f, const Field3D &g) {
-  Field3D result = mesh->coordinates()->g11 * ::DDX(f) * ::DDX(g) + mesh->coordinates()->g33 * ::DDZ(f) * ::DDZ(g)
-                   + mesh->coordinates()->g13 * (DDX(f)*DDZ(g) + DDZ(f)*DDX(g));
+  auto coords = mesh->getCoordinates();
+  Field3D result = coords->g11 * ::DDX(f) * ::DDX(g) + coords->g33 * ::DDZ(f) * ::DDZ(g)
+                   + coords->g13 * (DDX(f)*DDZ(g) + DDZ(f)*DDX(g));
   
   return result;
 }
