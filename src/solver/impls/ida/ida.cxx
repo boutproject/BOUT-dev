@@ -57,7 +57,7 @@
 
 #ifndef IDAINT
 #if SUNDIALS_VERSION_MAJOR < 3
-using IDAINT = bout::utils::function_traits<IDABBDLocalFn>::arg<0>::type;
+using IDAINT = bout::utils::function_traits<IDABBDLocalFn>::arg_t<0>;
 #else
 using IDAINT = sunindextype;
 #endif

@@ -67,7 +67,7 @@ class Field2D;
 
 #ifndef ARKODEINT
 #if SUNDIALS_VERSION_MAJOR < 3
-using ARKODEINT = bout::utils::function_traits<ARKLocalFn>::arg<0>::type;
+using ARKODEINT = bout::utils::function_traits<ARKLocalFn>::arg_t<0>;
 #else
 using ARKODEINT = sunindextype;
 #endif

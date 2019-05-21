@@ -62,7 +62,7 @@ class Field2D;
 
 #ifndef CVODEINT
 #if SUNDIALS_VERSION_MAJOR < 3
-using CVODEINT = bout::utils::function_traits<CVLocalFn>::arg<0>::type;
+using CVODEINT = bout::utils::function_traits<CVLocalFn>::arg_t<0>;
 #else
 using CVODEINT = sunindextype;
 #endif
