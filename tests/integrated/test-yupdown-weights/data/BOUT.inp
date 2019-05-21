@@ -4,10 +4,11 @@ nx = 12
 ny = 12
 
 zShift = y
+shiftAngle = 2*pi
 
 var = sin(y - z)
 
-paralleltransform = shifted
+paralleltransform = shiftedinterp
 
 [interpolation]
 type = hermitespline
