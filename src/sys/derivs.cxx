@@ -291,9 +291,7 @@ const Field2D D2DXDY(const Field2D& f, CELL_LOC outloc, const std::string& metho
 
   // Set x-guard cells and x-boundary cells before calculating DDX
   f.getMesh()->communicate(dfdy);
-  dfdy.applyBoundary("core", dfdy_boundary_condition);
-  dfdy.applyBoundary("pf", dfdy_boundary_condition);
-  dfdy.applyBoundary("sol", dfdy_boundary_condition);
+  dfdy.applyBoundary(dfdy_boundary_condition);
 
   return DDX(dfdy, outloc, method, region);
 }
@@ -316,9 +314,7 @@ const Field3D D2DXDY(const Field3D& f, CELL_LOC outloc, const std::string& metho
 
   // Set x-guard cells and x-boundary cells before calculating DDX
   f.getMesh()->communicate(dfdy);
-  dfdy.applyBoundary("core", dfdy_boundary_condition);
-  dfdy.applyBoundary("pf", dfdy_boundary_condition);
-  dfdy.applyBoundary("sol", dfdy_boundary_condition);
+  dfdy.applyBoundary(dfdy_boundary_condition);
 
   return DDX(dfdy, outloc, method, region);
 }
