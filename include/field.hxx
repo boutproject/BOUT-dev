@@ -271,10 +271,15 @@ inline T filledFrom(const T& f, BoutReal fill_value) {
 template<typename T>
 T operator+(const T& f) {return f;}
 
+namespace bout {
 /// Check if all values of a field \p var are finite.  Loops over all points including the
 /// boundaries by default (can be changed using the \p rgn argument)
 /// If any element is not finite, throws an exception that includes the position of the
 /// first found.
+///
+/// Note that checkFinite runs the check irrespective of CHECK level. It is intended to be
+/// used during initialization, where we always want to check inputs, even for optimized
+/// builds.
 template<typename T>
 inline void checkFinite(const T& f, const std::string& name="field", const std::string& rgn="RGN_ALL") {
   AUTO_TRACE();
@@ -294,6 +299,10 @@ inline void checkFinite(const T& f, const std::string& name="field", const std::
 /// the boundaries by default (can be changed using the \p rgn argument)
 /// If any element is not finite, throws an exception that includes the position of the
 /// first found.
+///
+/// Note that checkPositive runs the check irrespective of CHECK level. It is intended to
+/// be used during initialization, where we always want to check inputs, even for
+/// optimized builds.
 template<typename T>
 inline void checkPositive(const T& f, const std::string& name="field", const std::string& rgn="RGN_ALL") {
   AUTO_TRACE();
@@ -308,5 +317,6 @@ inline void checkPositive(const T& f, const std::string& name="field", const std
     }
   }
 }
+} // namespace bout
 
 #endif /* __FIELD_H__ */

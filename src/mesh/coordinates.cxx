@@ -276,17 +276,17 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
 
   // Check input metrics
   // Diagonal metric components should be finite
-  checkFinite(g11, "g11", "RGN_NOCORNERS");
-  checkFinite(g22, "g22", "RGN_NOCORNERS");
-  checkFinite(g33, "g33", "RGN_NOCORNERS");
+  bout::checkFinite(g11, "g11", "RGN_NOCORNERS");
+  bout::checkFinite(g22, "g22", "RGN_NOCORNERS");
+  bout::checkFinite(g33, "g33", "RGN_NOCORNERS");
   // Diagonal metric components should be positive
-  checkPositive(g11, "g11", "RGN_NOCORNERS");
-  checkPositive(g22, "g22", "RGN_NOCORNERS");
-  checkPositive(g33, "g33", "RGN_NOCORNERS");
+  bout::checkPositive(g11, "g11", "RGN_NOCORNERS");
+  bout::checkPositive(g22, "g22", "RGN_NOCORNERS");
+  bout::checkPositive(g33, "g33", "RGN_NOCORNERS");
   // Off-diagonal metric components should be finite
-  checkFinite(g12, "g12", "RGN_NOCORNERS");
-  checkFinite(g13, "g13", "RGN_NOCORNERS");
-  checkFinite(g23, "g23", "RGN_NOCORNERS");
+  bout::checkFinite(g12, "g12", "RGN_NOCORNERS");
+  bout::checkFinite(g13, "g13", "RGN_NOCORNERS");
+  bout::checkFinite(g23, "g23", "RGN_NOCORNERS");
 
   /// Find covariant metric components
   auto covariant_component_names = {"g_11", "g_22", "g_33", "g_12", "g_13", "g_23"};
@@ -334,17 +334,17 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
 
   // Check covariant metrics
   // Diagonal metric components should be finite
-  checkFinite(g_11, "g_11", "RGN_NOCORNERS");
-  checkFinite(g_22, "g_22", "RGN_NOCORNERS");
-  checkFinite(g_33, "g_33", "RGN_NOCORNERS");
+  bout::checkFinite(g_11, "g_11", "RGN_NOCORNERS");
+  bout::checkFinite(g_22, "g_22", "RGN_NOCORNERS");
+  bout::checkFinite(g_33, "g_33", "RGN_NOCORNERS");
   // Diagonal metric components should be positive
-  checkPositive(g_11, "g_11", "RGN_NOCORNERS");
-  checkPositive(g_22, "g_22", "RGN_NOCORNERS");
-  checkPositive(g_33, "g_33", "RGN_NOCORNERS");
+  bout::checkPositive(g_11, "g_11", "RGN_NOCORNERS");
+  bout::checkPositive(g_22, "g_22", "RGN_NOCORNERS");
+  bout::checkPositive(g_33, "g_33", "RGN_NOCORNERS");
   // Off-diagonal metric components should be finite
-  checkFinite(g_12, "g_12", "RGN_NOCORNERS");
-  checkFinite(g_13, "g_13", "RGN_NOCORNERS");
-  checkFinite(g_23, "g_23", "RGN_NOCORNERS");
+  bout::checkFinite(g_12, "g_12", "RGN_NOCORNERS");
+  bout::checkFinite(g_13, "g_13", "RGN_NOCORNERS");
+  bout::checkFinite(g_23, "g_23", "RGN_NOCORNERS");
 
   /// Calculate Jacobian and Bxy
   if (jacobian())
@@ -377,8 +377,8 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
 
     output_warn.write("\tMaximum difference in Bxy is %e\n", max(abs(Bxy - Bcalc)));
     // Check Bxy
-    checkFinite(Bxy, "Bxy", "RGN_NOCORNERS");
-    checkPositive(Bxy, "Bxy", "RGN_NOCORNERS");
+    bout::checkFinite(Bxy, "Bxy", "RGN_NOCORNERS");
+    bout::checkPositive(Bxy, "Bxy", "RGN_NOCORNERS");
   }
 
   //////////////////////////////////////////////////////
@@ -586,10 +586,10 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     J = interpolateAndExtrapolate(coords_in->J, location);
     Bxy = interpolateAndExtrapolate(coords_in->J, location);
 
-    checkFinite(J, "The Jacobian", "RGN_NOCORNERS");
-    checkPositive(J, "The Jacobian", "RGN_NOCORNERS");
-    checkFinite(Bxy, "Bxy", "RGN_NOCORNERS");
-    checkPositive(Bxy, "Bxy", "RGN_NOCORNERS");
+    bout::checkFinite(J, "The Jacobian", "RGN_NOCORNERS");
+    bout::checkPositive(J, "The Jacobian", "RGN_NOCORNERS");
+    bout::checkFinite(Bxy, "Bxy", "RGN_NOCORNERS");
+    bout::checkPositive(Bxy, "Bxy", "RGN_NOCORNERS");
 
     ShiftTorsion = interpolateAndExtrapolate(coords_in->ShiftTorsion, location);
 
@@ -600,26 +600,26 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
 
   // Check input metrics
   // Diagonal metric components should be finite
-  checkFinite(g11, "g11", "RGN_NOCORNERS");
-  checkFinite(g22, "g22", "RGN_NOCORNERS");
-  checkFinite(g33, "g33", "RGN_NOCORNERS");
-  checkFinite(g_11, "g_11", "RGN_NOCORNERS");
-  checkFinite(g_22, "g_22", "RGN_NOCORNERS");
-  checkFinite(g_33, "g_33", "RGN_NOCORNERS");
+  bout::checkFinite(g11, "g11", "RGN_NOCORNERS");
+  bout::checkFinite(g22, "g22", "RGN_NOCORNERS");
+  bout::checkFinite(g33, "g33", "RGN_NOCORNERS");
+  bout::checkFinite(g_11, "g_11", "RGN_NOCORNERS");
+  bout::checkFinite(g_22, "g_22", "RGN_NOCORNERS");
+  bout::checkFinite(g_33, "g_33", "RGN_NOCORNERS");
   // Diagonal metric components should be positive
-  checkPositive(g11, "g11", "RGN_NOCORNERS");
-  checkPositive(g22, "g22", "RGN_NOCORNERS");
-  checkPositive(g33, "g33", "RGN_NOCORNERS");
-  checkPositive(g_11, "g_11", "RGN_NOCORNERS");
-  checkPositive(g_22, "g_22", "RGN_NOCORNERS");
-  checkPositive(g_33, "g_33", "RGN_NOCORNERS");
+  bout::checkPositive(g11, "g11", "RGN_NOCORNERS");
+  bout::checkPositive(g22, "g22", "RGN_NOCORNERS");
+  bout::checkPositive(g33, "g33", "RGN_NOCORNERS");
+  bout::checkPositive(g_11, "g_11", "RGN_NOCORNERS");
+  bout::checkPositive(g_22, "g_22", "RGN_NOCORNERS");
+  bout::checkPositive(g_33, "g_33", "RGN_NOCORNERS");
   // Off-diagonal metric components should be finite
-  checkFinite(g12, "g12", "RGN_NOCORNERS");
-  checkFinite(g13, "g13", "RGN_NOCORNERS");
-  checkFinite(g23, "g23", "RGN_NOCORNERS");
-  checkFinite(g_12, "g_12", "RGN_NOCORNERS");
-  checkFinite(g_13, "g_13", "RGN_NOCORNERS");
-  checkFinite(g_23, "g_23", "RGN_NOCORNERS");
+  bout::checkFinite(g12, "g12", "RGN_NOCORNERS");
+  bout::checkFinite(g13, "g13", "RGN_NOCORNERS");
+  bout::checkFinite(g23, "g23", "RGN_NOCORNERS");
+  bout::checkFinite(g_12, "g_12", "RGN_NOCORNERS");
+  bout::checkFinite(g_13, "g_13", "RGN_NOCORNERS");
+  bout::checkFinite(g_23, "g_23", "RGN_NOCORNERS");
 
   //////////////////////////////////////////////////////
   /// Calculate Christoffel symbols. Needs communication
@@ -671,30 +671,30 @@ int Coordinates::geometry(bool recalculate_staggered,
 
   // Check input metrics
   // Diagonal metric components should be finite
-  checkFinite(g11, "g11", "RGN_NOCORNERS");
-  checkFinite(g22, "g22", "RGN_NOCORNERS");
-  checkFinite(g33, "g33", "RGN_NOCORNERS");
+  bout::checkFinite(g11, "g11", "RGN_NOCORNERS");
+  bout::checkFinite(g22, "g22", "RGN_NOCORNERS");
+  bout::checkFinite(g33, "g33", "RGN_NOCORNERS");
   // Diagonal metric components should be positive
-  checkPositive(g11, "g11", "RGN_NOCORNERS");
-  checkPositive(g22, "g22", "RGN_NOCORNERS");
-  checkPositive(g33, "g33", "RGN_NOCORNERS");
+  bout::checkPositive(g11, "g11", "RGN_NOCORNERS");
+  bout::checkPositive(g22, "g22", "RGN_NOCORNERS");
+  bout::checkPositive(g33, "g33", "RGN_NOCORNERS");
   // Off-diagonal metric components should be finite
-  checkFinite(g12, "g12", "RGN_NOCORNERS");
-  checkFinite(g13, "g13", "RGN_NOCORNERS");
-  checkFinite(g23, "g23", "RGN_NOCORNERS");
+  bout::checkFinite(g12, "g12", "RGN_NOCORNERS");
+  bout::checkFinite(g13, "g13", "RGN_NOCORNERS");
+  bout::checkFinite(g23, "g23", "RGN_NOCORNERS");
 
   // Diagonal metric components should be finite
-  checkFinite(g_11, "g_11", "RGN_NOCORNERS");
-  checkFinite(g_22, "g_22", "RGN_NOCORNERS");
-  checkFinite(g_33, "g_33", "RGN_NOCORNERS");
+  bout::checkFinite(g_11, "g_11", "RGN_NOCORNERS");
+  bout::checkFinite(g_22, "g_22", "RGN_NOCORNERS");
+  bout::checkFinite(g_33, "g_33", "RGN_NOCORNERS");
   // Diagonal metric components should be positive
-  checkPositive(g_11, "g_11", "RGN_NOCORNERS");
-  checkPositive(g_22, "g_22", "RGN_NOCORNERS");
-  checkPositive(g_33, "g_33", "RGN_NOCORNERS");
+  bout::checkPositive(g_11, "g_11", "RGN_NOCORNERS");
+  bout::checkPositive(g_22, "g_22", "RGN_NOCORNERS");
+  bout::checkPositive(g_33, "g_33", "RGN_NOCORNERS");
   // Off-diagonal metric components should be finite
-  checkFinite(g_12, "g_12", "RGN_NOCORNERS");
-  checkFinite(g_13, "g_13", "RGN_NOCORNERS");
-  checkFinite(g_23, "g_23", "RGN_NOCORNERS");
+  bout::checkFinite(g_12, "g_12", "RGN_NOCORNERS");
+  bout::checkFinite(g_13, "g_13", "RGN_NOCORNERS");
+  bout::checkFinite(g_23, "g_23", "RGN_NOCORNERS");
 
   // Calculate Christoffel symbol terms (18 independent values)
   // Note: This calculation is completely general: metric
@@ -1044,7 +1044,7 @@ int Coordinates::jacobian() {
               - g33 * g12 * g12;
 
   // Check that g is positive
-  checkPositive(g, "The determinant of g^ij", "RGN_NOCORNERS");
+  bout::checkPositive(g, "The determinant of g^ij", "RGN_NOCORNERS");
 
   J = 1. / sqrt(g);
   // More robust to extrapolate derived quantities directly, rather than
@@ -1052,19 +1052,19 @@ int Coordinates::jacobian() {
   J = interpolateAndExtrapolate(J, location, extrapolate_x, extrapolate_y);
 
   // Check jacobian
-  checkFinite(J, "The Jacobian", "RGN_NOCORNERS");
-  checkPositive(J, "The Jacobian", "RGN_NOCORNERS");
+  bout::checkFinite(J, "The Jacobian", "RGN_NOCORNERS");
+  bout::checkPositive(J, "The Jacobian", "RGN_NOCORNERS");
   if (min(abs(J)) < 1.0e-10) {
     throw BoutException("\tERROR: Jacobian becomes very small\n");
   }
 
-  checkPositive(g_22, "g_22", "RGN_NOCORNERS");
+  bout::checkPositive(g_22, "g_22", "RGN_NOCORNERS");
 
   Bxy = sqrt(g_22) / J;
   Bxy = interpolateAndExtrapolate(Bxy, location, extrapolate_x, extrapolate_y);
 
-  checkFinite(Bxy, "Bxy", "RGN_NOCORNERS");
-  checkPositive(Bxy, "Bxy", "RGN_NOCORNERS");
+  bout::checkFinite(Bxy, "Bxy", "RGN_NOCORNERS");
+  bout::checkPositive(Bxy, "Bxy", "RGN_NOCORNERS");
 
   return 0;
 }
