@@ -1,4 +1,5 @@
 #ifdef BOUT_HAS_PYBIND11
+#include <pybind11/numpy.h>
 #include <pybind11/embed.h>
 
 #include <iostream>
