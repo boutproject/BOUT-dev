@@ -126,4 +126,8 @@ TEST(BoutTraitsTest, EnableIfFieldReturnType) {
       std::is_same<Field3D, decltype(example_function(std::declval<Field3D>(),
                                                       std::declval<Field2D>()))>::value,
       "EnableIfField should return Field3D for a Field2D and a Field3D");
+  static_assert(
+      std::is_same<Field3D, decltype(example_function(std::declval<Field3D>(),
+                                                      std::declval<Field3D>()))>::value,
+      "EnableIfField should return Field3D for a Field3D and a Field3D");
 }
