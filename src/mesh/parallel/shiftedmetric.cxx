@@ -37,7 +37,7 @@ ShiftedMetric::ShiftedMetric(Mesh& m, CELL_LOC location_in, Field2D zShift_,
 }
 
 void ShiftedMetric::checkInputGrid() {
-  std::string coordinates_type = "";
+  std::string coordinates_type;
   if (!mesh.get(coordinates_type, "coordinates_type")) {
     if (coordinates_type != "orthogonal") {
       throw BoutException("Incorrect coordinate system type '" + coordinates_type
