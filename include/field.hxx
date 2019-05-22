@@ -193,7 +193,7 @@ inline bool areFieldsCompatible(const Field& field1, const Field& field2) {
 /// copied and a data array that is allocated but not initialised.
 template<typename T>
 inline T emptyFrom(const T& f) {
-  static_assert(std::is_base_of<Field, T>::value, "emptyFrom only works on Fields");
+  static_assert(bout::utils::is_Field<T>::value, "emptyFrom only works on Fields");
   return T(f.getMesh(), f.getLocation(), {f.getDirectionY(), f.getDirectionZ()}).allocate();
 }
 
@@ -201,7 +201,7 @@ inline T emptyFrom(const T& f) {
 /// another field and a data array allocated and initialised to zero.
 template<typename T>
 inline T zeroFrom(const T& f) {
-  static_assert(std::is_base_of<Field, T>::value, "emptyFrom only works on Fields");
+  static_assert(bout::utils::is_Field<T>::value, "emptyFrom only works on Fields");
   T result{emptyFrom(f)};
   result = 0.;
   return result;
@@ -211,7 +211,7 @@ inline T zeroFrom(const T& f) {
 /// another field and a data array allocated and filled with the given value.
 template<typename T>
 inline T filledFrom(const T& f, BoutReal fill_value) {
-  static_assert(std::is_base_of<Field, T>::value, "emptyFrom only works on Fields");
+  static_assert(bout::utils::is_Field<T>::value, "emptyFrom only works on Fields");
   T result{emptyFrom(f)};
   result = fill_value;
   return result;

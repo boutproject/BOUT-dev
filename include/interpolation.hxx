@@ -26,6 +26,7 @@
 #ifndef __INTERP_H__
 #define __INTERP_H__
 
+#include "bout/traits.hxx"
 #include "bout_types.hxx"
 #include "field3d.hxx"
 #include "mask.hxx"
@@ -60,7 +61,7 @@ inline BoutReal interp(const stencil& s) {
 template <typename T>
 const T interp_to(const T& var, CELL_LOC loc, REGION region = RGN_ALL) {
   AUTO_TRACE();
-  static_assert(std::is_base_of<Field2D, T>::value || std::is_base_of<Field3D, T>::value,
+  static_assert(bout::utils::is_Field2D<T>::value || bout::utils::is_Field3D<T>::value,
                 "interp_to must be templated with one of Field2D or Field3D.");
   ASSERT1(loc != CELL_DEFAULT); // doesn't make sense to interplote to CELL_DEFAULT
 
