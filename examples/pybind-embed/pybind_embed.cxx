@@ -85,7 +85,12 @@ int main() {
       linspaceTest[py::make_tuple(i)] = i;
     }
     py::print(linspaceTest);
-
+    py::module matplot = py::module::import("matplotlib.pyplot");
+    matplot.attr("ioff")();
+    matplot.attr("plot")(linspaceTest,"-o");
+    matplot.attr("xlabel")("This is the x axis label");
+    matplot.attr("ylabel")("$\\alpha$ is alpha");
+    matplot.attr("show")();    
     double theValue = linspaceTest[py::make_tuple(10)].cast<double>();
     std::cout<<"The value is "<<theValue<<std::endl;    
     getVal(linspaceTest[py::make_tuple(5)], theValue);
