@@ -6,9 +6,9 @@
  *
  */
 
+#include "bout/paralleltransform.hxx"
 #include <bout/constants.hxx>
 #include <bout/mesh.hxx>
-#include "bout/paralleltransform.hxx"
 #include <fft.hxx>
 
 #include <cmath>
@@ -16,7 +16,7 @@
 #include <output.hxx>
 
 ShiftedMetric::ShiftedMetric(Mesh& m, CELL_LOC location_in, Field2D zShift_,
-    BoutReal zlength_in)
+                             BoutReal zlength_in)
     : ParallelTransform(m), location(location_in), zShift(std::move(zShift_)),
       zlength(zlength_in) {
   ASSERT1(zShift.getLocation() == location);
