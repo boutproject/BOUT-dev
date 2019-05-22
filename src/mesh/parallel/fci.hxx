@@ -73,7 +73,7 @@ public:
   FCITransform(Mesh& mesh, bool zperiodic = true) : ParallelTransform(mesh) {
 
     // check the coordinate system used for the grid data source
-    checkInputGrid();
+    FCITransform::checkInputGrid();
 
     auto forward_boundary = new BoundaryRegionPar("FCI_forward", BNDRY_PAR_FWD, +1, &mesh);
     auto backward_boundary = new BoundaryRegionPar("FCI_backward", BNDRY_PAR_BKWD, -1, &mesh);

@@ -226,9 +226,9 @@ void Field2D::applyBoundary(const std::string &condition) {
 
   /// Loop over the mesh boundary regions
   for(const auto& reg : fieldmesh->getBoundaries()) {
-    BoundaryOp* op = static_cast<BoundaryOp*>(bfact->create(condition, reg));
+    auto op = std::unique_ptr<BoundaryOp>{
+        dynamic_cast<BoundaryOp*>(bfact->create(condition, reg))};
     op->apply(*this);
-    delete op;
   }
 
   // Set the corners to zero
@@ -262,9 +262,9 @@ void Field2D::applyBoundary(const std::string &region, const std::string &condit
   for (const auto &reg : fieldmesh->getBoundaries()) {
     if (reg->label.compare(region) == 0) {
       region_found = true;
-      BoundaryOp *op = static_cast<BoundaryOp *>(bfact->create(condition, reg));
+      auto op = std::unique_ptr<BoundaryOp>{
+          dynamic_cast<BoundaryOp*>(bfact->create(condition, reg))};
       op->apply(*this);
-      delete op;
       break;
     }
   }

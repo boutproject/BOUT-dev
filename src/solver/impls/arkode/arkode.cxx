@@ -37,6 +37,7 @@
 #include "output.hxx"
 #include "unused.hxx"
 #include "bout/mesh.hxx"
+#include "utils.hxx"
 
 #if SUNDIALS_VERSION_MAJOR >= 4
 #include <arkode/arkode_arkstep.h>
@@ -65,7 +66,11 @@ class Field2D;
 #define ONE RCONST(1.0)
 
 #ifndef ARKODEINT
-using ARKODEINT = int;
+#if SUNDIALS_VERSION_MAJOR < 3
+using ARKODEINT = bout::utils::function_traits<ARKLocalFn>::arg_t<0>;
+#else
+using ARKODEINT = sunindextype;
+#endif
 #endif
 
 static int arkode_rhs_explicit(BoutReal t, N_Vector u, N_Vector du, void* user_data);
@@ -691,7 +696,7 @@ static int arkode_rhs_explicit(BoutReal t, N_Vector u, N_Vector du, void* user_d
   BoutReal* udata = NV_DATA_P(u);
   BoutReal* dudata = NV_DATA_P(du);
 
-  ArkodeSolver* s = static_cast<ArkodeSolver*>(user_data);
+  auto* s = static_cast<ArkodeSolver*>(user_data);
 
   // Calculate RHS function
   try {
@@ -707,7 +712,7 @@ static int arkode_rhs_implicit(BoutReal t, N_Vector u, N_Vector du, void* user_d
   BoutReal* udata = NV_DATA_P(u);
   BoutReal* dudata = NV_DATA_P(du);
 
-  ArkodeSolver* s = static_cast<ArkodeSolver*>(user_data);
+  auto* s = static_cast<ArkodeSolver*>(user_data);
 
   // Calculate RHS function
   try {
@@ -723,7 +728,7 @@ static int arkode_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data) {
   BoutReal* udata = NV_DATA_P(u);
   BoutReal* dudata = NV_DATA_P(du);
 
-  ArkodeSolver* s = static_cast<ArkodeSolver*>(user_data);
+  auto* s = static_cast<ArkodeSolver*>(user_data);
 
   // Calculate RHS function
   try {
@@ -748,7 +753,7 @@ static int arkode_pre(BoutReal t, N_Vector yy, N_Vector UNUSED(yp), N_Vector rve
   BoutReal* rdata = NV_DATA_P(rvec);
   BoutReal* zdata = NV_DATA_P(zvec);
 
-  ArkodeSolver* s = static_cast<ArkodeSolver*>(user_data);
+  auto* s = static_cast<ArkodeSolver*>(user_data);
 
   // Calculate residuals
   s->pre(t, gamma, delta, udata, rdata, zdata);
@@ -763,7 +768,7 @@ static int arkode_jac(N_Vector v, N_Vector Jv, realtype t, N_Vector y,
   BoutReal* vdata = NV_DATA_P(v);   ///< Input vector
   BoutReal* Jvdata = NV_DATA_P(Jv); ///< Jacobian*vector output
 
-  ArkodeSolver* s = static_cast<ArkodeSolver*>(user_data);
+  auto* s = static_cast<ArkodeSolver*>(user_data);
 
   s->jac(t, ydata, vdata, Jvdata);
 

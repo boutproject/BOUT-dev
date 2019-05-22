@@ -97,7 +97,7 @@ Laplacian::Laplacian(Options *options, const CELL_LOC loc, Mesh *mesh_in)
     int flags = (*options)["flags"]
                     .doc("Flags to control inner and outer boundaries.")
                     .withDefault(0);
-    setFlags(flags);
+    Laplacian::setFlags(flags);
   }
   else {
     OPTION(options, global_flags, 0);
@@ -140,7 +140,7 @@ void Laplacian::cleanup() {
  *                                 Solve routines
  **********************************************************************************/
 
-const Field3D Laplacian::solve(const Field3D &b) {
+Field3D Laplacian::solve(const Field3D& b) {
   TRACE("Laplacian::solve(Field3D)");
 
   ASSERT1(b.getLocation() == location);
@@ -180,7 +180,7 @@ const Field3D Laplacian::solve(const Field3D &b) {
 }
 
 // NB: Really inefficient, but functional
-const Field2D Laplacian::solve(const Field2D &b) {
+Field2D Laplacian::solve(const Field2D& b) {
 
   ASSERT1(b.getLocation() == location);
 
@@ -198,7 +198,7 @@ const Field2D Laplacian::solve(const Field2D &b) {
  *
  * \returns x All the y-slices of x_slice in the equation A*x_slice = b_slice
  */
-const Field3D Laplacian::solve(const Field3D &b, const Field3D &x0) {
+Field3D Laplacian::solve(const Field3D& b, const Field3D& x0) {
   TRACE("Laplacian::solve(Field3D, Field3D)");
 
   ASSERT1(b.getLocation() == location);
@@ -231,7 +231,7 @@ const Field3D Laplacian::solve(const Field3D &b, const Field3D &x0) {
   return x; // Return the result of the inversion
 }
 
-const Field2D Laplacian::solve(const Field2D &b, const Field2D &x0) {
+Field2D Laplacian::solve(const Field2D& b, const Field2D& x0) {
   Field3D f = b, g = x0;
   f = solve(f, g);
   return DC(f);

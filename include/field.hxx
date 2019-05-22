@@ -165,8 +165,8 @@ class Field {
   bool bndry_xin{true}, bndry_xout{true}, bndry_yup{true}, bndry_ydown{true};
 #endif
 
-  virtual Mesh * getMesh() const{
-    if (fieldmesh){
+  Mesh* getMesh() const {
+    if (fieldmesh) {
       return fieldmesh;
     } else {
       // Don't set fieldmesh=mesh here, so that fieldmesh==nullptr until
@@ -180,13 +180,13 @@ class Field {
 
   /// Returns a pointer to the coordinates object at this field's
   /// location from the mesh this field is on.
-  virtual Coordinates *getCoordinates() const;
-  
+  Coordinates* getCoordinates() const;
+
   /// Returns a pointer to the coordinates object at the requested
   /// location from the mesh this field is on. If location is CELL_DEFAULT
   /// then return coordinates at field location
-  virtual Coordinates *getCoordinates(CELL_LOC loc) const;
-  
+  Coordinates* getCoordinates(CELL_LOC loc) const;
+
   /*!
    * Return the number of nx points
    */
@@ -224,7 +224,7 @@ protected:
     directions = f.directions;
   }
 
-private:
+  /// Labels for the type of coordinate system this field is defined over
   DirectionTypes directions{YDirectionType::Standard, ZDirectionType::Standard};
 };
 

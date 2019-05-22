@@ -38,7 +38,7 @@
 
 #include "pdd.hxx"
 
-const FieldPerp LaplacePDD::solve(const FieldPerp &b) {
+FieldPerp LaplacePDD::solve(const FieldPerp& b) {
   ASSERT1(localmesh == b.getMesh());
   ASSERT1(b.getLocation() == location);
 
@@ -53,7 +53,7 @@ const FieldPerp LaplacePDD::solve(const FieldPerp &b) {
   return x;
 }
 
-const Field3D LaplacePDD::solve(const Field3D &b) {
+Field3D LaplacePDD::solve(const Field3D& b) {
   ASSERT1(localmesh == b.getMesh());
   ASSERT1(b.getLocation() == location);
 

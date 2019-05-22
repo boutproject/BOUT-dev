@@ -1027,10 +1027,7 @@ AS_IF([test "x$with_ida" != "x" && test "x$with_ida" != "xno"], [
     #include <nvector/nvector_parallel.h>
     #include <ida/ida.h>
     extern void foo(N_Vector);
-  ], [IDACreate();], [
-    #include <ida/ida_bbdpre.h>
-    extern int ida_bbd_rhs(IDAINT, double, N_Vector, N_Vector, N_Vector, void *);
-  ], [IDABBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, ida_bbd_rhs, nullptr);])
+  ], [IDACreate();])
 ])
 
 AS_IF([test "x$with_cvode" != "x" && test "x$with_cvode" != "xno"], [
@@ -1044,10 +1041,7 @@ AS_IF([test "x$with_cvode" != "x" && test "x$with_cvode" != "xno"], [
     #else
     CVodeCreate(0, 0);
     #endif
-  ], [
-    #include <cvode/cvode_bbdpre.h>
-    extern int cvode_bbd_rhs(CVODEINT, double, N_Vector, N_Vector, void *);
-  ], [CVBBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, cvode_bbd_rhs, nullptr);])
+  ])
 ])
 
 AS_IF([test "x$with_arkode" != "x" && test "x$with_arkode" != "xno"], [
@@ -1065,10 +1059,7 @@ AS_IF([test "x$with_arkode" != "x" && test "x$with_arkode" != "xno"], [
     #else
     ARKodeCreate();
     #endif
-  ], [
-    #include <arkode/arkode_bbdpre.h>
-    extern int arkode_bbd_rhs(ARKODEINT, double, N_Vector, N_Vector, void *);
-  ], [ARKBBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, arkode_bbd_rhs, nullptr);])
+  ])
 ])
 
 #############################################################

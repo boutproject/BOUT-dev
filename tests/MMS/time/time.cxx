@@ -25,11 +25,11 @@ public:
   }
   
   int convective(MAYBE_UNUSED(BoutReal time)) {
-    ddt(f) = f;
+    ddt(f) = 0.5*f;
     return 0;
   }
   int diffusive(MAYBE_UNUSED(BoutReal time)) {
-    ddt(f) = 0;
+    ddt(f) = 0.5*f;
     return 0;
   }
 private:

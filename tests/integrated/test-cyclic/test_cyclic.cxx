@@ -10,7 +10,7 @@
 #include "utils.hxx"
 
 // Change this to dcomplex to test complex matrix inversion
-typedef BoutReal T;
+using T = BoutReal;
 
 int main(int argc, char **argv) {
 
@@ -30,8 +30,7 @@ int main(int argc, char **argv) {
   OPTION(options, periodic, false);
 
   // Create a cyclic reduction object, operating on Ts
-  CyclicReduce<T> *cr =
-    new CyclicReduce<T>(BoutComm::get(), n);
+  auto* cr = new CyclicReduce<T>(BoutComm::get(), n);
 
   int mype, npe;
   MPI_Comm_rank(BoutComm::get(), &mype);

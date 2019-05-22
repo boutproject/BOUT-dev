@@ -1,7 +1,7 @@
 #include <bout/physicsmodel.hxx>
 #include <initialprofiles.hxx>
 #include <derivs.hxx>
-#include <math.h>
+#include <cmath>
 #include "mathematica.h"
 #include <bout/constants.hxx>
 #include <unused.hxx>
@@ -51,7 +51,7 @@ private:
   const Field3D solution_g(BoutReal t);
   const Field3D source_g(BoutReal t);
 protected:
-  int init(bool UNUSED(restarting)) {
+  int init(bool UNUSED(restarting)) override {
     // Coordinate system
     coord = mesh->getCoordinates();
     
@@ -127,8 +127,8 @@ protected:
     
     return 0;
   }
-  
-  int rhs(BoutReal t) {
+
+  int rhs(BoutReal t) override {
     mesh->communicate(f,g); // Communicate guard cells
     
     //update time-dependent boundary conditions
@@ -149,9 +149,9 @@ protected:
     
     return 0;
   }
-  
+
   // This called every output timestep
-  int outputMonitor(BoutReal simtime, int UNUSED(iter), int UNUSED(NOUT)) {
+  int outputMonitor(BoutReal simtime, int UNUSED(iter), int UNUSED(NOUT)) override {
 
     Field3D Sf = solution_f(simtime);
     Field3D Sg = solution_g(simtime);

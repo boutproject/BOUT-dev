@@ -622,7 +622,7 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
       ISColoringDestroy(&iscoloring);
       // Set the function to difference
       //MatFDColoringSetFunction(fdcoloring,(PetscErrorCode (*)(void))FormFunctionForDifferencing,this);
-      MatFDColoringSetFunction(fdcoloring,(PetscErrorCode (*)(void))FormFunctionForColoring,this);
+      MatFDColoringSetFunction(fdcoloring,(PetscErrorCode (*)())FormFunctionForColoring,this);
       MatFDColoringSetFromOptions(fdcoloring);
       //MatFDColoringSetUp(Jmf,iscoloring,fdcoloring);
       
@@ -1324,10 +1324,10 @@ void IMEXBDF2::loopVars(BoutReal *u) {
   Mesh* mesh = bout::globals::mesh;
 
   // Loop over 2D variables
-  for(auto it = f2d.begin(); it != f2d.end(); ++it) {
-    Op op(it->var, it->F_var); // Initialise the operator
+  for(auto & it : f2d) {
+    Op op(it.var, it.F_var); // Initialise the operator
 
-    if(it->evolve_bndry) {
+    if(it.evolve_bndry) {
       // Include boundary regions
 
       // Inner X
@@ -1368,9 +1368,9 @@ void IMEXBDF2::loopVars(BoutReal *u) {
   }
 
   // Loop over 3D variables
-  for(auto it = f3d.begin(); it != f3d.end(); ++it) {
-    Op op(it->var, it->F_var); // Initialise the operator
-    if(it->evolve_bndry) {
+  for(auto & it : f3d) {
+    Op op(it.var, it.F_var); // Initialise the operator
+    if(it.evolve_bndry) {
       // Include boundary regions
 #ifdef BOUT_HAS_Z_GUARD_CELLS_IMPLEMENTED
       output_warn << "WARNING: Imex-bdf2 with evolve_bndry may need updating to include "

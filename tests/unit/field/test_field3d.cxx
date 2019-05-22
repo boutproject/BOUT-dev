@@ -2096,6 +2096,7 @@ TEST_F(Field3DTest, FillField) {
   EXPECT_TRUE(IsFieldEqual(f, g));
 }
 
+#ifdef BOUT_HAS_FFTW
 namespace bout {
 namespace testing {
 
@@ -2215,6 +2216,7 @@ TEST_F(Field3DTest, LowPassTwoArgNothing) {
 
   EXPECT_TRUE(IsFieldEqual(output, input));
 }
+#endif
 
 TEST_F(Field3DTest, OperatorEqualsField3D) {
   Field3D field;

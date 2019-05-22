@@ -52,7 +52,7 @@ LaplaceXZcyclic::LaplaceXZcyclic(Mesh *m, Options *options, const CELL_LOC loc) 
   Field2D zero(0., localmesh);
   one.setLocation(location);
   zero.setLocation(location);
-  setCoefs(one, zero);
+  LaplaceXZcyclic::setCoefs(one, zero);
 }
 
 void LaplaceXZcyclic::setCoefs(const Field2D &A2D, const Field2D &B2D) {

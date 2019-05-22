@@ -276,26 +276,46 @@ const Field2D D4DZ4(const Field2D &f, CELL_LOC outloc, const std::string &method
 /*!
  * Mixed derivative in X and Y
  *
- * This first takes derivatives in X, then in Y.
+ * This first takes derivatives in Y, then in X.
  *
- * ** Applies Neumann boundary in Y, communicates
+ * ** Communicates and applies boundary in X.
  */
-const Field2D D2DXDY(const Field2D &f, CELL_LOC outloc, const std::string &method, REGION region) {
-  Field2D dfdy = DDY(f, outloc, method, RGN_NOY);
+const Field2D D2DXDY(const Field2D& f, CELL_LOC outloc, const std::string& method,
+    REGION region, const std::string& dfdy_boundary_condition) {
+
+  // If staggering in x, take y-derivative at f's location.
+  const auto y_location =
+    (outloc == CELL_XLOW or f.getLocation() == CELL_XLOW) ? CELL_DEFAULT : outloc;
+
+  Field2D dfdy = DDY(f, y_location, method, region);
+
+  // Set x-guard cells and x-boundary cells before calculating DDX
   f.getMesh()->communicate(dfdy);
+  dfdy.applyBoundary(dfdy_boundary_condition);
+
   return DDX(dfdy, outloc, method, region);
 }
 
 /*!
  * Mixed derivative in X and Y
  *
- * This first takes derivatives in X, then in Y.
+ * This first takes derivatives in Y, then in X.
  *
- * ** Applies Neumann boundary in Y, communicates
+ * ** Communicates and applies boundary in X.
  */
-const Field3D D2DXDY(const Field3D &f, CELL_LOC outloc, const std::string &method, REGION region) {
-  Field3D dfdy = DDY(f, outloc, method, RGN_NOY);
+const Field3D D2DXDY(const Field3D& f, CELL_LOC outloc, const std::string& method,
+    REGION region, const std::string& dfdy_boundary_condition) {
+
+  // If staggering in x, take y-derivative at f's location.
+  const auto y_location =
+    (outloc == CELL_XLOW or f.getLocation() == CELL_XLOW) ? CELL_DEFAULT : outloc;
+
+  Field3D dfdy = DDY(f, y_location, method, region);
+
+  // Set x-guard cells and x-boundary cells before calculating DDX
   f.getMesh()->communicate(dfdy);
+  dfdy.applyBoundary(dfdy_boundary_condition);
+
   return DDX(dfdy, outloc, method, region);
 }
 
@@ -309,26 +329,11 @@ const Field2D D2DXDZ(const Field2D &f, CELL_LOC outloc,
 
 /// X-Z mixed derivative
 const Field3D D2DXDZ(const Field3D &f, CELL_LOC outloc, const std::string &method, REGION region) {
-  // Take derivative in Z, including in X boundaries. Then take derivative in X
-  // Maybe should average results of DDX(DDZ) and DDZ(DDX)?
-  ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
-  // region specifies what the combined derivative should return
-  // Therefore we need to add the X boundary to the inner derivative
-  // RGN_NOY and RGN_NOZ include the X boundary, therefore we need to
-  // throw - or add communication code.
-  REGION region_inner;
-  switch (region){
-  case RGN_NOBNDRY:
-    region_inner = RGN_NOY;
-    break;
-  case RGN_NOX:
-    region_inner = RGN_ALL;
-    break;
-  default:
-    throw BoutException("Unhandled region case in D2DXDZ");
-  }
+  // If staggering in z, take x-derivative at f's location.
+  const auto x_location =
+    (outloc == CELL_ZLOW or f.getLocation() == CELL_ZLOW) ? CELL_DEFAULT : outloc;
 
-  return DDX(DDZ(f, outloc,method, region_inner),outloc,method,region);;
+  return DDZ(DDX(f, x_location, method, region), outloc, method, region);
 }
 
 const Field2D D2DYDZ(const Field2D &f, CELL_LOC outloc,
@@ -339,23 +344,13 @@ const Field2D D2DYDZ(const Field2D &f, CELL_LOC outloc,
   return zeroFrom(f).setLocation(outloc);
 }
 
-const Field3D D2DYDZ(const Field3D& f, CELL_LOC outloc,
-                     MAYBE_UNUSED(const std::string& method), REGION UNUSED(region)) {
-  Coordinates *coords = f.getCoordinates(outloc);
+const Field3D D2DYDZ(const Field3D& f, CELL_LOC outloc, const std::string& method,
+                     REGION region) {
+  // If staggering in z, take y-derivative at f's location.
+  const auto y_location =
+    (outloc == CELL_ZLOW or f.getLocation() == CELL_ZLOW) ? CELL_DEFAULT : outloc;
 
-  Field3D result{emptyFrom(f)};
-  ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
-  result.allocate();
-  result.setLocation(f.getLocation());
-  ASSERT1(method == "DEFAULT");
-  BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
-    const auto yp = i.yp(), ym = i.ym();
-    const auto ypzp = yp.zp(), ypzm = yp.zm();
-    const auto ymzp = ym.zp(), ymzm = ym.zm();
-    result[i] = 0.25 * (+(f[ypzp] - f[ymzp]) - (f[ypzm] - f[ymzm]))
-                / (coords->dy[i] * coords->dz);
-  }
-  return result;
+  return DDZ(DDY(f, y_location, method, region), outloc, method, region);
 }
 
 /*******************************************************************************

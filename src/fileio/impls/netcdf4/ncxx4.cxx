@@ -62,12 +62,12 @@ Ncxx4::Ncxx4(const char *name, Mesh* mesh_in) : DataFormat(mesh_in) {
   default_rec = 0;
   rec_nr.clear();
 
-  openr(name);
+  Ncxx4::openr(name);
 }
 
 Ncxx4::~Ncxx4() {
   delete[] recDimList;
-  close();
+  Ncxx4::close();
   rec_nr.clear();
 }
 
@@ -78,8 +78,10 @@ bool Ncxx4::openr(const char *name) {
   output.write("Ncxx4:: openr(%s)\n", name); 
 #endif
 
-  if (dataFile != nullptr) // Already open. Close then re-open
-    close(); 
+  if (dataFile != nullptr) {
+    // Already open. Close then re-open
+    Ncxx4::close();
+  }
 
   dataFile = new NcFile(name, NcFile::read);
 
