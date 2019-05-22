@@ -1,4 +1,29 @@
-# Changelog
+# Change Log
+
+## [v4.2.2](https://github.com/boutproject/BOUT-dev/tree/v4.2.2) (2019-02-27)
+
+[Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v4.2.1...v4.2.2)
+
+**Merged pull requests:**
+
+- Fix some clang-tidy warnings [\#1612](https://github.com/boutproject/BOUT-dev/pull/1612) ([ZedThree](https://github.com/ZedThree))
+- Check if we need to link against libdl for dladdr [\#1611](https://github.com/boutproject/BOUT-dev/pull/1611) ([ZedThree](https://github.com/ZedThree))
+- Fix unclean exit [\#1610](https://github.com/boutproject/BOUT-dev/pull/1610) ([dschwoerer](https://github.com/dschwoerer))
+- Fix a couple of small(ish) bugs in FV::Div\_par\_K\_Grad\_par [\#1609](https://github.com/boutproject/BOUT-dev/pull/1609) ([bendudson](https://github.com/bendudson))
+- Fix FV::Div\_a\_Laplace\_perp and FV::Div\_par\_K\_Grad\_par [\#1606](https://github.com/boutproject/BOUT-dev/pull/1606) ([bendudson](https://github.com/bendudson))
+- Bugfix laplacexz [\#1605](https://github.com/boutproject/BOUT-dev/pull/1605) ([bendudson](https://github.com/bendudson))
+- Initialise some mesh variables to sensible defaults [\#1604](https://github.com/boutproject/BOUT-dev/pull/1604) ([ZedThree](https://github.com/ZedThree))
+- Fix prototype Div\(v2d, f2d\) in header [\#1603](https://github.com/boutproject/BOUT-dev/pull/1603) ([bendudson](https://github.com/bendudson))
+- Hypnotoad version numbering [\#1595](https://github.com/boutproject/BOUT-dev/pull/1595) ([johnomotani](https://github.com/johnomotani))
+- Provide formatting string [\#1588](https://github.com/boutproject/BOUT-dev/pull/1588) ([dschwoerer](https://github.com/dschwoerer))
+- Fix bug in FCI: missed last point in Z for corner displacements [\#1587](https://github.com/boutproject/BOUT-dev/pull/1587) ([ZedThree](https://github.com/ZedThree))
+- use MPIRUN if set [\#1585](https://github.com/boutproject/BOUT-dev/pull/1585) ([dschwoerer](https://github.com/dschwoerer))
+- Prevent failures on parallel, clean build [\#1583](https://github.com/boutproject/BOUT-dev/pull/1583) ([dschwoerer](https://github.com/dschwoerer))
+- More printf [\#1581](https://github.com/boutproject/BOUT-dev/pull/1581) ([dschwoerer](https://github.com/dschwoerer))
+- Provide argument for printf [\#1580](https://github.com/boutproject/BOUT-dev/pull/1580) ([dschwoerer](https://github.com/dschwoerer))
+- Ensure Coordinates is a complete type when trying to swap [\#1574](https://github.com/boutproject/BOUT-dev/pull/1574) ([ZedThree](https://github.com/ZedThree))
+- Compile with BOUT_FLAGS [\#1573](https://github.com/boutproject/BOUT-dev/pull/1573) ([dschwoerer](https://github.com/dschwoerer))
+- Swap coordinates when adding - to master [\#1549](https://github.com/boutproject/BOUT-dev/pull/1549) ([johnomotani](https://github.com/johnomotani))
 
 ## [v4.2.1](https://github.com/boutproject/BOUT-dev/tree/v4.2.1) (2019-01-23)
 

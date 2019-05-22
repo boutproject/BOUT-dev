@@ -62,12 +62,12 @@ Ncxx4::Ncxx4(const char *name, Mesh* mesh_in) : DataFormat(mesh_in) {
   default_rec = 0;
   rec_nr.clear();
 
-  openr(name);
+  Ncxx4::openr(name);
 }
 
 Ncxx4::~Ncxx4() {
   delete[] recDimList;
-  close();
+  Ncxx4::close();
   rec_nr.clear();
 }
 
@@ -78,8 +78,10 @@ bool Ncxx4::openr(const char *name) {
   output.write("Ncxx4:: openr(%s)\n", name); 
 #endif
 
-  if (dataFile != nullptr) // Already open. Close then re-open
-    close(); 
+  if (dataFile != nullptr) {
+    // Already open. Close then re-open
+    Ncxx4::close();
+  }
 
   dataFile = new NcFile(name, NcFile::read);
 
@@ -417,6 +419,37 @@ bool Ncxx4::addVarField3D(const string &name, bool repeat) {
   return true;
 }
 
+bool Ncxx4::addVarFieldPerp(const string &name, bool repeat) {
+  if(!is_valid())
+    return false;
+
+  NcVar var = dataFile->getVar(name);
+  if(var.isNull()) {
+    // Variable not in file, so add it.
+    if (repeat) {
+      std::vector<NcDim> vec = {*recDimList[0], *recDimList[1], *recDimList[3]};
+      if(lowPrecision) {
+        var = dataFile->addVar(name, ncFloat, vec);
+      } else {
+        var = dataFile->addVar(name, ncDouble, vec);
+      }
+    } else {
+      std::vector<NcDim> vec = {*dimList[0], *dimList[2]};
+      if(lowPrecision) {
+        var = dataFile->addVar(name, ncFloat, vec);
+      } else {
+        var = dataFile->addVar(name, ncDouble, vec);
+      }
+    }
+
+    if(var.isNull()) {
+      output_error.write("ERROR: NetCDF could not add FieldPerp '%s' to file '%s'\n", name.c_str(), fname);
+      return false;
+    }
+  }
+  return true;
+}
+
 bool Ncxx4::read(int *data, const char *name, int lx, int ly, int lz) {
   TRACE("Ncxx4::read(int)");
 
@@ -482,6 +515,34 @@ bool Ncxx4::read(BoutReal *data, const char *name, int lx, int ly, int lz) {
 
 bool Ncxx4::read(BoutReal *var, const std::string &name, int lx, int ly, int lz) {
   return read(var, name.c_str(), lx, ly, lz);
+}
+
+bool Ncxx4::read_perp(BoutReal *data, const std::string& name, int lx, int lz) {
+  TRACE("Ncxx4::read_perp(BoutReal)");
+
+#ifdef NCDF_VERBOSE
+  output.write("Ncxx4:: read(BoutReal, %s)\n", name);
+#endif
+  if(!is_valid())
+    return false;
+
+  if((lx < 0) || (lz < 0))
+    return false;
+
+  NcVar var = dataFile->getVar(name);
+
+  if(var.isNull()) {
+    return false;
+  }
+
+  std::vector<size_t> start(2);
+  start[0] = x0; start[1] = z0;
+  std::vector<size_t> counts(2);
+  counts[0] = lx; counts[1] = lz;
+
+  var.getVar(start, counts, data);
+
+  return true;
 }
 
 bool Ncxx4::write(int *data, const char *name, int lx, int ly, int lz) {
@@ -574,6 +635,54 @@ bool Ncxx4::write(BoutReal *var, const std::string &name, int lx, int ly, int lz
   return write(var, name.c_str(), lx, ly, lz);
 }
 
+bool Ncxx4::write_perp(BoutReal *data, const std::string& name, int lx, int lz) {
+  TRACE("Ncxx4::write_perp(BoutReal)");
+
+#ifdef NCDF_VERBOSE
+  output.write("Ncxx4:: write_perp(BoutReal, %s)\n", name);
+#endif
+  if(!is_valid())
+    return false;
+
+  if((lx < 0) || (lz < 0))
+    return false;
+
+  NcVar var = dataFile->getVar(name);
+  if(var.isNull()) {
+    output_error.write(
+        "ERROR: NetCDF BoutReal variable '%s' has not been added to file '%s'\n",
+        name.c_str(), fname);
+    return false;
+  }
+
+  std::vector<size_t> start(2);
+  start[0] = x0; start[1] = z0;
+  std::vector<size_t> counts(2);
+  counts[0] = lx; counts[1] = lz;
+
+  if(lowPrecision) {
+    // An out of range value can make the conversion
+    // corrupt the whole dataset. Make sure everything
+    // is in the range of a float
+
+    for(int i=0;i<lx*lz;i++) {
+      if(data[i] > 1e20)
+        data[i] = 1e20;
+      if(data[i] < -1e20)
+        data[i] = -1e20;
+    }
+  }
+
+  for(int i=0;i<lx*lz;i++) {
+    if(!finite(data[i]))
+      data[i] = 0.0;
+  }
+
+  var.putVar(start, counts, data);
+
+  return true;
+}
+
 /***************************************************************************
  * Record-based (time-dependent) data
  ***************************************************************************/
@@ -638,6 +747,33 @@ bool Ncxx4::read_rec(BoutReal *data, const char *name, int lx, int ly, int lz) {
 
 bool Ncxx4::read_rec(BoutReal *var, const std::string &name, int lx, int ly, int lz) {
   return read_rec(var, name.c_str(), lx, ly, lz);
+}
+
+bool Ncxx4::read_rec_perp(BoutReal *data, const std::string& name, int lx, int lz) {
+#ifdef NCDF_VERBOSE
+  output.write("Ncxx4:: read_rec_perp(BoutReal, %s)\n", name);
+#endif
+  if(!is_valid())
+    return false;
+
+  if((lx < 0) || (lz < 0))
+    return false;
+
+  NcVar var = dataFile->getVar(name);
+
+  if(var.isNull())
+    return false;
+
+  // NOTE: Probably should do something here to check t0
+
+  std::vector<size_t> start(3);
+  start[0] = t0; start[1] = x0; start[2] = z0;
+  std::vector<size_t> counts(4);
+  counts[0] = 1; counts[1] = lx; counts[2] = lz;
+
+  var.getVar(start, counts, data);
+
+  return true;
 }
 
 bool Ncxx4::write_rec(int *data, const char *name, int lx, int ly, int lz) {
@@ -751,6 +887,70 @@ bool Ncxx4::write_rec(BoutReal *var, const std::string &name, int lx, int ly, in
   return write_rec(var, name.c_str(), lx, ly, lz);
 }
 
+bool Ncxx4::write_rec_perp(BoutReal *data, const std::string& name, int lx, int lz) {
+  TRACE("Ncxx4::write_rec_perp(BoutReal)");
+
+#ifdef NCDF_VERBOSE
+  output.write("Ncxx4::write_rec_perp(BoutReal, %s)\n", name);
+#endif
+  if(!is_valid())
+    return false;
+
+  if((lx < 0) || (lz < 0))
+    return false;
+
+  // Try to find variable
+  NcVar var = dataFile->getVar(name);
+  if(var.isNull()) {
+    output_error.write(
+        "ERROR: NetCDF BoutReal variable '%s' has not been added to file '%s'\n",
+        name.c_str(), fname);
+    return false;
+  }else {
+    // Get record number
+    if(rec_nr.find(name) == rec_nr.end()) {
+      // Add to map
+      rec_nr[name] = default_rec;
+    }
+  }
+
+  int t = rec_nr[name];
+
+#ifdef NCDF_VERBOSE
+  output_info.write("INFO: NetCDF writing record %d of '%s' in '%s'\n",t, name, fname);
+#endif
+
+  if(lowPrecision) {
+    // An out of range value can make the conversion
+    // corrupt the whole dataset. Make sure everything
+    // is in the range of a float
+
+    for(int i=0;i<lx*lz;i++) {
+      if(data[i] > 1e20)
+        data[i] = 1e20;
+      if(data[i] < -1e20)
+        data[i] = -1e20;
+    }
+  }
+
+  for(int i=0;i<lx*lz;i++) {
+    if(!finite(data[i]))
+      data[i] = 0.0;
+  }
+
+  std::vector<size_t> start(3);
+  start[0] = t; start[1] = x0; start[2] = z0;
+  std::vector<size_t> counts(3);
+  counts[0] = 1; counts[1] = lx; counts[2] = lz;
+
+  // Add the record
+  var.putVar(start, counts, data);
+
+  // Increment record number
+  rec_nr[name] = rec_nr[name] + 1;
+
+  return true;
+}
 
 /***************************************************************************
  * Attributes
@@ -817,7 +1017,7 @@ void Ncxx4::setAttribute(const std::string &varname, const std::string &attrname
   BoutReal existing_att;
   if (getAttribute(varname, attrname, existing_att)) {
     if (value != existing_att) {
-      output_warn.write("Overwriting attribute '%s' of variable '%s' with '%d', was previously '%d'",
+      output_warn.write("Overwriting attribute '%s' of variable '%s' with '%f', was previously '%f'",
           attrname.c_str(), varname.c_str(), value, existing_att);
     }
   }

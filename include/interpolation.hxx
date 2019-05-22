@@ -62,167 +62,144 @@ const T interp_to(const T& var, CELL_LOC loc, REGION region = RGN_ALL) {
   AUTO_TRACE();
   static_assert(std::is_base_of<Field2D, T>::value || std::is_base_of<Field3D, T>::value,
                 "interp_to must be templated with one of Field2D or Field3D.");
+  ASSERT1(loc != CELL_DEFAULT); // doesn't make sense to interplote to CELL_DEFAULT
 
   Mesh* fieldmesh = var.getMesh();
-  T result(fieldmesh);
 
-  if ((loc != CELL_CENTRE && loc != CELL_DEFAULT) && (fieldmesh->StaggerGrids == false)) {
+  if ((loc != CELL_CENTRE) && (fieldmesh->StaggerGrids == false)) {
     throw BoutException("Asked to interpolate, but StaggerGrids is disabled!");
   }
 
-  if (fieldmesh->StaggerGrids && (var.getLocation() != loc)) {
-
-    // Staggered grids enabled, and need to perform interpolation
-    TRACE("Interpolating %s -> %s", CELL_LOC_STRING(var.getLocation()).c_str(),
-          CELL_LOC_STRING(loc).c_str());
-
-    if (region != RGN_NOBNDRY) {
-      // result is requested in some boundary region(s)
-      result = var; // NOTE: This is just for boundaries. FIX!
-    }
-    // NOTE: invalidateGuards() is called in Field3D::alloctate() if the data
-    // block is not already allocated, so will be called here if
-    // region==RGN_NOBNDRY
-    result.allocate();
-    result.setLocation(loc);
-
-    // Cell location of the input field
-    const CELL_LOC location = var.getLocation();
-
-    if ((location == CELL_CENTRE) || (loc == CELL_CENTRE)) {
-      // Going between centred and shifted
-
-      // Get the non-centre location for interpolation direction
-      const CELL_LOC dir = (loc == CELL_CENTRE) ? location : loc;
-
-      switch (dir) {
-      case CELL_XLOW: {
-        // At least 2 boundary cells needed for interpolation in x-direction
-        ASSERT0(fieldmesh->xstart >= 2);
-
-        if ((location == CELL_CENTRE) && (loc == CELL_XLOW)) { // C2L
-          BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
-            // Producing a stencil centred around a lower X value
-            result[i] = interp(populateStencil<DIRECTION::X, STAGGER::C2L, 2>(var, i));
-          }
-        } else if (location == CELL_XLOW) { // L2C
-          BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
-            // Stencil centred around a cell centre
-            result[i] = interp(populateStencil<DIRECTION::X, STAGGER::L2C, 2>(var, i));
-          }
-        }
-
-        break;
-      }
-      case CELL_YLOW: {
-        // At least 2 boundary cells needed for interpolation in y-direction
-        ASSERT0(fieldmesh->ystart >= 2);
-
-        if (var.hasYupYdown() && ((&var.yup() != &var) || (&var.ydown() != &var))) {
-          // Field "var" has distinct yup and ydown fields which
-          // will be used to calculate a derivative along
-          // the magnetic field
-          throw BoutException(
-              "At the moment, fields with yup/ydown cannot use interp_to.\n"
-              "If we implement a 3-point stencil for interpolate or double-up\n"
-              "/double-down fields, then we can use this case.");
-
-          if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) { // C2L
-            BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
-              // Producing a stencil centred around a lower X value
-              result[i] = interp(
-                  populateStencil<DIRECTION::YOrthogonal, STAGGER::C2L, 2>(var, i));
-            }
-          } else if (location == CELL_YLOW) { // L2C
-            BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
-              // Stencil centred around a cell centre
-              result[i] = interp(
-                  populateStencil<DIRECTION::YOrthogonal, STAGGER::L2C, 2>(var, i));
-            }
-          }
-        } else {
-          // var has no yup/ydown fields, so we need to shift into field-aligned
-          // coordinates
-
-          const T var_fa = fieldmesh->toFieldAligned(var);
-          if (region != RGN_NOBNDRY) {
-            // repeat the hack above for boundary points
-            // this avoids a duplicate toFieldAligned call if we had called
-            // result = toFieldAligned(result)
-            // to get the boundary cells
-            //
-            // result is requested in some boundary region(s)
-            result = var_fa; // NOTE: This is just for boundaries. FIX!
-            result.allocate();
-            result.setLocation(loc);
-          }
-
-          if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) { // C2L
-            BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
-              // Producing a stencil centred around a lower X value
-              result[i] = interp(
-                  populateStencil<DIRECTION::YAligned, STAGGER::C2L, 2>(var_fa, i));
-            }
-          } else if (location == CELL_YLOW) { // L2C
-            BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
-              // Stencil centred around a cell centre
-              result[i] = interp(
-                  populateStencil<DIRECTION::YAligned, STAGGER::L2C, 2>(var_fa, i));
-            }
-          }
-
-          result = fieldmesh->fromFieldAligned(result);
-        }
-        break;
-      }
-      case CELL_ZLOW: {
-
-        if ((location == CELL_CENTRE) && (loc == CELL_ZLOW)) { // C2L
-          BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
-            // Producing a stencil centred around a lower X value
-            result[i] = interp(populateStencil<DIRECTION::Z, STAGGER::C2L, 2>(var, i));
-          }
-        } else if (location == CELL_ZLOW) { // L2C
-          BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
-            // Stencil centred around a cell centre
-            result[i] = interp(populateStencil<DIRECTION::Z, STAGGER::L2C, 2>(var, i));
-          }
-        }
-        break;
-      }
-      default: {
-        // This should never happen
-        throw BoutException("Unsupported direction of interpolation\n"
-                            " - don't know how to interpolate to %s",
-                            CELL_LOC_STRING(loc).c_str());
-      }
-      };
-
-      if ((dir != CELL_ZLOW) && (region != RGN_NOBNDRY)) {
-        fieldmesh->communicate(result);
-      }
-
-    } else {
-      // Shifted -> shifted
-      // For now, shift to centre then to final location loc
-      // We probably should not rely on this, but it might work if one of the
-      // shifts is in the z-direction where guard cells aren't needed.
-      result = interp_to(interp_to(var, CELL_CENTRE), loc, region);
-    }
-    return result;
-  } else {
+  if (var.getLocation() == loc) {
     // Nothing to do - just return unchanged
-    // Copying into result to return as returning var may increase the number of
-    // references to the var data whilst returning result doesn't
-    result = var;
-    return result;
+    return var;
   }
+
+  // NOTE: invalidateGuards() is called in Field3D::alloctate() if the data
+  // block is not already allocated, so will be called here if
+  // region==RGN_NOBNDRY
+  T result{emptyFrom(var).setLocation(loc)};
+
+  // Staggered grids enabled, and need to perform interpolation
+  TRACE("Interpolating %s -> %s", toString(var.getLocation()).c_str(),
+        toString(loc).c_str());
+
+  if (region != RGN_NOBNDRY) {
+    // result is requested in some boundary region(s)
+    result = var; // NOTE: This is just for boundaries. FIX!
+    result.setLocation(loc); // location gets reset when assigning from var
+    result.allocate();
+  }
+
+  // Cell location of the input field
+  const CELL_LOC location = var.getLocation();
+
+  if ((location == CELL_CENTRE) || (loc == CELL_CENTRE)) {
+    // Going between centred and shifted
+
+    // Get the non-centre location for interpolation direction
+    const CELL_LOC dir = (loc == CELL_CENTRE) ? location : loc;
+
+    switch (dir) {
+    case CELL_XLOW: {
+      // At least 2 boundary cells needed for interpolation in x-direction
+      ASSERT0(fieldmesh->xstart >= 2);
+
+      if ((location == CELL_CENTRE) && (loc == CELL_XLOW)) { // C2L
+        BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
+          // Producing a stencil centred around a lower X value
+          result[i] = interp(populateStencil<DIRECTION::X, STAGGER::C2L, 2>(var, i));
+        }
+      } else if (location == CELL_XLOW) { // L2C
+        BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
+          // Stencil centred around a cell centre
+          result[i] = interp(populateStencil<DIRECTION::X, STAGGER::L2C, 2>(var, i));
+        }
+      }
+
+      break;
+    }
+    case CELL_YLOW: {
+      // At least 2 boundary cells needed for interpolation in y-direction
+      ASSERT0(fieldmesh->ystart >= 2);
+
+      // We can't interpolate in y unless we're field-aligned
+      // FIXME: Add check once we label fields as orthogonal/aligned
+
+      const T var_fa = toFieldAligned(var, RGN_NOX);
+      if (region != RGN_NOBNDRY) {
+        // repeat the hack above for boundary points
+        // this avoids a duplicate toFieldAligned call if we had called
+        // result = toFieldAligned(result)
+        // to get the boundary cells
+        //
+        // result is requested in some boundary region(s)
+        result = var_fa; // NOTE: This is just for boundaries. FIX!
+        result.setLocation(loc); // location gets reset when assigning from var
+        result.allocate();
+      }
+
+      if ((location == CELL_CENTRE) && (loc == CELL_YLOW)) { // C2L
+        BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
+          // Producing a stencil centred around a lower X value
+          result[i] =
+              interp(populateStencil<DIRECTION::YAligned, STAGGER::C2L, 2>(var_fa, i));
+        }
+      } else if (location == CELL_YLOW) { // L2C
+        BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
+          // Stencil centred around a cell centre
+          result[i] =
+              interp(populateStencil<DIRECTION::YAligned, STAGGER::L2C, 2>(var_fa, i));
+        }
+      }
+
+      result = fromFieldAligned(result, RGN_NOBNDRY);
+
+      break;
+    }
+    case CELL_ZLOW: {
+
+      if ((location == CELL_CENTRE) && (loc == CELL_ZLOW)) { // C2L
+        BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
+          // Producing a stencil centred around a lower X value
+          result[i] = interp(populateStencil<DIRECTION::Z, STAGGER::C2L, 2>(var, i));
+        }
+      } else if (location == CELL_ZLOW) { // L2C
+        BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
+          // Stencil centred around a cell centre
+          result[i] = interp(populateStencil<DIRECTION::Z, STAGGER::L2C, 2>(var, i));
+        }
+      }
+      break;
+    }
+    default: {
+      // This should never happen
+      throw BoutException("Unsupported direction of interpolation\n"
+                          " - don't know how to interpolate to %s",
+                          toString(loc).c_str());
+    }
+    };
+
+    if ((dir != CELL_ZLOW) && (region != RGN_NOBNDRY)) {
+      fieldmesh->communicate(result);
+    }
+
+  } else {
+    // Shifted -> shifted
+    // For now, shift to centre then to final location loc
+    // We probably should not rely on this, but it might work if one of the
+    // shifts is in the z-direction where guard cells aren't needed.
+    result = interp_to(interp_to(var, CELL_CENTRE), loc, region);
+  }
+  return result;
 }
 
 /// Print out the cell location (for debugging)
-void printLocation(const Field3D &var);
+[[gnu::deprecated("Please use `output << toString(var.getLocation())` instead")]]
+void printLocation(const Field3D& var);
 
-const char *strLocation(CELL_LOC loc);
+[[gnu::deprecated("Please use `toString(loc)` instead")]]
+const char* strLocation(CELL_LOC loc);
 
 /// Interpolate a field onto a perturbed set of points
 const Field3D interpolate(const Field3D &f, const Field3D &delta_x,

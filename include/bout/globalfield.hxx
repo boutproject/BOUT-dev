@@ -20,7 +20,7 @@ class GlobalField2D;
 class GlobalField {
 public:
   GlobalField() = delete;
-  virtual ~GlobalField();
+  virtual ~GlobalField() = default;
   virtual bool valid() const = 0;  ///< Is the data valid on any processor?
   bool dataIsLocal() const {return valid() && (data_on_proc == mype);} ///< Data is on this processor
 

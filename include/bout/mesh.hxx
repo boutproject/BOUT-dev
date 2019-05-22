@@ -67,8 +67,6 @@ class Mesh;
 
 #include "coordinates.hxx"    // Coordinates class
 
-#include "paralleltransform.hxx" // ParallelTransform class
-
 #include "unused.hxx"
 
 #include <bout/region.hxx>
@@ -78,7 +76,7 @@ class Mesh;
 #include <map>
 
 /// Type used to return pointers to handles
-typedef void* comm_handle;
+using comm_handle = void*;
 
 class Mesh {
  public:
@@ -124,6 +122,14 @@ class Mesh {
   
   // Get routines to request data from mesh file
   
+  /// Get a string from the input source
+  /// 
+  /// @param[out] sval  The value will be put into this variable
+  /// @param[in] name   The name of the variable to read
+  ///
+  /// @returns zero if successful, non-zero on failure
+  int get(std::string &sval, const std::string &name);
+
   /// Get an integer from the input source
   /// 
   /// @param[out] ival  The value will be put into this variable
@@ -160,6 +166,16 @@ class Mesh {
   /// @returns zero if successful, non-zero on failure
   int get(Field3D &var, const std::string &name, BoutReal def=0.0, bool communicate=true);
 
+  /// Get a FieldPerp from the input source
+  ///
+  /// @param[out] var   This will be set to the value. Will be allocated if needed
+  /// @param[in] name   Name of the variable to read
+  /// @param[in] def    The default value if not found
+  /// @param[in] communicate  Should the field be communicated to fill guard cells?
+  ///
+  /// @returns zero if successful, non-zero on failure
+  int get(FieldPerp &var, const std::string &name, BoutReal def=0.0, bool communicate=true);
+
   /// Get a Vector2D from the input source.
   /// If \p var is covariant then this gets three
   /// Field2D variables with "_x", "_y", "_z" appended to \p name
@@ -188,6 +204,12 @@ class Mesh {
 
   /// Wrapper for GridDataSource::hasVar
   bool sourceHasVar(const std::string &name);
+
+  /// Wrapper for GridDataSource::hasXBoundaryGuards
+  bool sourceHasXBoundaryGuards();
+
+  /// Wrapper for GridDataSource::hasYBoundaryGuards
+  bool sourceHasYBoundaryGuards();
   
   // Communications
   /*!
@@ -276,7 +298,9 @@ class Mesh {
   // X communications
   virtual bool firstX() = 0;  ///< Is this processor first in X? i.e. is there a boundary to the left in X?
   virtual bool lastX() = 0; ///< Is this processor last in X? i.e. is there a boundary to the right in X?
-  bool periodicX; ///< Domain is periodic in X?
+
+  /// Domain is periodic in X?
+  bool periodicX{false};
 
   int NXPE, PE_XIND; ///< Number of processors in X, and X processor index
 
@@ -322,6 +346,22 @@ class Mesh {
   /// \param[in] jx   The local (on this processor) index in X
   /// \param[out] ts  The Twist-Shift angle if periodic
   virtual bool periodicY(int jx, BoutReal &ts) const = 0;
+
+  /// Is there a branch cut at this processor's lower y-boundary?
+  ///
+  /// @param[in] jx             The local (on this processor) index in X
+  /// @returns pair<bool, BoutReal> - bool is true if there is a branch cut,
+  ///                                 BoutReal gives the total zShift for a 2pi
+  ///                                 poloidal circuit if there is a branch cut
+  virtual std::pair<bool, BoutReal> hasBranchCutLower(int jx) const = 0;
+
+  /// Is there a branch cut at this processor's upper y-boundary?
+  ///
+  /// @param[in] jx             The local (on this processor) index in X
+  /// @returns pair<bool, BoutReal> - bool is true if there is a branch cut,
+  ///                                 BoutReal gives the total zShift for a 2pi
+  ///                                 poloidal circuit if there is a branch cut
+  virtual std::pair<bool, BoutReal> hasBranchCutUpper(int jx) const = 0;
   
   virtual int ySize(int jx) const; ///< The number of points in Y at fixed X index \p jx
 
@@ -416,37 +456,57 @@ class Mesh {
   int OffsetX, OffsetY, OffsetZ;    ///< Offset of this mesh within the global array
                                     ///< so startx on this processor is OffsetX in global
   
-  /// Returns the global X index given a local indexs
+  /// Returns the global X index given a local index
   /// If the local index includes the boundary cells, then so does the global.
   virtual int XGLOBAL(int xloc) const = 0;
   /// Returns the global Y index given a local index
   /// The local index must include the boundary, the global index does not.
   virtual int YGLOBAL(int yloc) const = 0;
 
+  /// Returns the local X index given a global index
+  /// If the global index includes the boundary cells, then so does the local.
+  virtual int XLOCAL(int xglo) const = 0;
+  /// Returns the local Y index given a global index
+  /// If the global index includes the boundary cells, then so does the local.
+  virtual int YLOCAL(int yglo) const = 0;
+
   /// Size of the mesh on this processor including guard/boundary cells
   int LocalNx, LocalNy, LocalNz;
   
   /// Local ranges of data (inclusive), excluding guard cells
-  int xstart, xend, ystart, yend;
+  int xstart, xend, ystart, yend, zstart, zend;
   
-  bool StaggerGrids;    ///< Enable staggered grids (Centre, Lower). Otherwise all vars are cell centred (default).
+  /// Enable staggered grids (Centre, Lower). Otherwise all vars are
+  /// cell centred (default).
+  bool StaggerGrids{false};
   
-  bool IncIntShear; ///< Include integrated shear (if shifting X)
+  /// Include integrated shear (if shifting X)
+  bool IncIntShear{false};
+
+  int numberOfXPoints{0};
 
   /// Coordinate system
   Coordinates *getCoordinates(const CELL_LOC location = CELL_CENTRE) {
+    return getCoordinatesSmart(location).get();
+  };
+
+  std::shared_ptr<Coordinates>
+  getCoordinatesSmart(const CELL_LOC location = CELL_CENTRE) {
     ASSERT1(location != CELL_DEFAULT);
     ASSERT1(location != CELL_VSHIFT);
 
-    if (coords_map.count(location)) { // True branch most common, returns immediately
-      return coords_map[location].get();
-    } else {
-      // No coordinate system set. Create default
-      // Note that this can't be allocated here due to incomplete type
-      // (circular dependency between Mesh and Coordinates)
-      coords_map.emplace(location, createDefaultCoordinates(location));
-      return coords_map[location].get();
+    auto found = coords_map.find(location);
+    if (found != coords_map.end()) {
+      // True branch most common, returns immediately
+      return found->second;
     }
+
+    // No coordinate system set. Create default
+    // Note that this can't be allocated here due to incomplete type
+    // (circular dependency between Mesh and Coordinates)
+    auto inserted = coords_map.emplace(location, nullptr);
+    inserted.first->second = createDefaultCoordinates(location);
+    return inserted.first->second;
   }
 
   /// Returns the non-CELL_CENTRE location
@@ -504,18 +564,7 @@ class Mesh {
   };
 
   /// Re-calculate staggered Coordinates, useful if CELL_CENTRE Coordinates are changed
-  void recalculateStaggeredCoordinates() {
-    for (auto& i : coords_map) {
-      CELL_LOC location = i.first;
-
-      if (location == CELL_CENTRE) {
-        // Only reset staggered locations
-        continue;
-      }
-
-      i.second = createDefaultCoordinates(location);
-    }
-  }
+  void recalculateStaggeredCoordinates();
 
   ///////////////////////////////////////////////////////////
   // INDEX DERIVATIVE OPERATORS
@@ -523,7 +572,8 @@ class Mesh {
 
   ////// Utilties and parameters
   
-  BoutReal fft_derivs_filter; ///< Fraction of modes to filter. This is set in derivs_init from option "ddz:fft_filter"
+  /// Fraction of modes to filter. This is set in derivs_init from option "ddz:fft_filter"
+  BoutReal fft_derivs_filter{0.0};
 
   /// Determines the resultant output stagger location in derivatives
   /// given the input and output location. Also checks that the
@@ -689,52 +739,49 @@ class Mesh {
     return bout::derivatives::index::FDDZ(vel, f, outloc, method, region);
   }
 
-  ///////////////////////////////////////////////////////////
-  // PARALLEL TRANSFORMS
-  ///////////////////////////////////////////////////////////
-
-  /// Transform a field into field-aligned coordinates
-  const Field3D toFieldAligned(const Field3D &f) {
-    return getParallelTransform().toFieldAligned(f);
-  }
-  const Field2D toFieldAligned(const Field2D &f) {
-    return f;
-  }
-  
-  /// Convert back into standard form
-  const Field3D fromFieldAligned(const Field3D &f) {
-    return getParallelTransform().fromFieldAligned(f);
-  }
-  const Field2D fromFieldAligned(const Field2D &f) {
-    return f;
+  [[gnu::deprecated("Please use free function toFieldAligned instead")]]
+  const Field3D toFieldAligned(const Field3D &f, const REGION region = RGN_ALL) {
+    return ::toFieldAligned(f, region);
   }
 
+  [[gnu::deprecated("Please use free function fromFieldAligned instead")]]
+  const Field3D fromFieldAligned(const Field3D &f, const REGION region = RGN_ALL) {
+    return ::fromFieldAligned(f, region);
+  }
+
+  [[gnu::deprecated("Please use free function toFieldAligned instead")]]
+  const Field2D toFieldAligned(const Field2D &f, const REGION region = RGN_ALL) {
+    return ::toFieldAligned(f, region);
+  }
+
+  [[gnu::deprecated("Please use free function fromFieldAligned instead")]]
+  const Field2D fromFieldAligned(const Field2D &f, const REGION region = RGN_ALL) {
+    return ::fromFieldAligned(f, region);
+  }
+
+  [[gnu::deprecated("Please use "
+      "Coordinates::getParallelTransform().canToFromFieldAligned instead")]]
   bool canToFromFieldAligned() {
-    return getParallelTransform().canToFromFieldAligned();
+    return getCoordinates()->getParallelTransform().canToFromFieldAligned();
   }
 
-  /*!
-   * Unique pointer to ParallelTransform object
-   */
-  typedef std::unique_ptr<ParallelTransform> PTptr;
-  
-  /*!
-   * Set the parallel (y) transform for this mesh.
-   * Unique pointer used so that ParallelTransform will be deleted
-   */
-  void setParallelTransform(PTptr pt) {
-    transform = std::move(pt);
+  [[gnu::deprecated("Please use Coordinates::setParallelTransform instead")]]
+  void setParallelTransform(std::unique_ptr<ParallelTransform> pt) {
+    getCoordinates()->setParallelTransform(std::move(pt));
   }
-  /*!
-   * Set the parallel (y) transform from the options file
-   */
-  void setParallelTransform();
 
-  /*!
-   * Return the parallel transform, setting it if need be
-   */
-  ParallelTransform& getParallelTransform();
-  
+  [[gnu::deprecated("This call is now unnecessary")]]
+  void setParallelTransform() {
+    // The ParallelTransform is set from options in the Coordinates
+    // constructor, so this method doesn't need to do anything
+  }
+
+  [[gnu::deprecated("Please use Coordinates::getParallelTransform instead")]]
+  ParallelTransform& getParallelTransform() {
+    return getCoordinates()->getParallelTransform();
+  }
+
+
   ///////////////////////////////////////////////////////////
   // REGION RELATED ROUTINES
   ///////////////////////////////////////////////////////////
@@ -800,16 +847,19 @@ class Mesh {
   /// Creates RGN_{ALL,NOBNDRY,NOX,NOY}
   void createDefaultRegions();
     
- protected:
-  
-  GridDataSource *source; ///< Source for grid data
-  
-  std::map<CELL_LOC, std::shared_ptr<Coordinates> > coords_map; ///< Coordinate systems at different CELL_LOCs
+protected:
 
-  Options *options; ///< Mesh options section
-  
+  /// Source for grid data
+  GridDataSource* source{nullptr};
 
-  PTptr transform; ///< Handles calculation of yup and ydown
+  /// Coordinate systems at different CELL_LOCs
+  std::map<CELL_LOC, std::shared_ptr<Coordinates>> coords_map;
+
+  /// Mesh options section
+  Options *options{nullptr};
+
+  /// Set whether to call calcParallelSlices on all communicated fields (true) or not (false)
+  bool calcParallelSlices_on_communicate{true};
 
   /// Read a 1D array of integers
   const std::vector<int> readInts(const std::string &name, int n);
@@ -823,7 +873,13 @@ class Mesh {
 private:
 
   /// Allocates default Coordinates objects
-  std::shared_ptr<Coordinates> createDefaultCoordinates(const CELL_LOC location);
+  /// By default attempts to read staggered Coordinates from grid data source,
+  /// interpolating from CELL_CENTRE if not present. Set
+  /// force_interpolate_from_centre argument to true to always interpolate
+  /// (useful if CELL_CENTRE Coordinates have been changed, so reading from file
+  /// would not be correct).
+  std::shared_ptr<Coordinates> createDefaultCoordinates(const CELL_LOC location,
+      bool force_interpolate_from_centre=false);
 
   //Internal region related information
   std::map<std::string, Region<Ind3D>> regionMap3D;

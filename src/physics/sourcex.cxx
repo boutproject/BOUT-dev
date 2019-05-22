@@ -21,7 +21,7 @@ BoutReal TanH(BoutReal a) {
 const Field2D source_tanhx(const Field2D &f, BoutReal swidth, BoutReal slength) {
   Mesh* localmesh = f.getMesh();
 
-  Field2D result(localmesh);
+  Field2D result{emptyFrom(f)};
   result.allocate();
 
   // create a radial buffer zone to set jpar zero near radial boundary
@@ -41,7 +41,7 @@ const Field2D source_tanhx(const Field2D &f, BoutReal swidth, BoutReal slength) 
 const Field2D source_expx2(const Field2D &f, BoutReal swidth, BoutReal slength) {
   Mesh* localmesh = f.getMesh();
 
-  Field2D result(localmesh);
+  Field2D result{emptyFrom(f)};
 
   result.allocate();
 
@@ -63,7 +63,7 @@ const Field3D sink_tanhx(const Field2D &UNUSED(f0), const Field3D &f, BoutReal s
                          BoutReal slength, bool UNUSED(BoutRealspace)) {
   Mesh* localmesh = f.getMesh();
 
-  Field3D result(localmesh);
+  Field3D result{emptyFrom(f)};
   result.allocate();
 
   // create a radial buffer zone to set jpar zero near radial boundary
@@ -85,7 +85,7 @@ const Field3D mask_x(const Field3D &f, bool UNUSED(BoutRealspace)) {
 
   Mesh* localmesh = f.getMesh();
 
-  Field3D result(localmesh);
+  Field3D result{emptyFrom(f)};
   result.allocate();
 
   // create a radial buffer zone to set jpar zero near radial boundary
@@ -110,7 +110,7 @@ const Field3D sink_tanhxl(const Field2D &UNUSED(f0), const Field3D &f, BoutReal 
 
   Mesh* localmesh = f.getMesh();
 
-  Field3D result(localmesh);
+  Field3D result{emptyFrom(f)};
 
   result.allocate();
 
@@ -134,7 +134,7 @@ const Field3D sink_tanhxr(const Field2D &UNUSED(f0), const Field3D &f, BoutReal 
 
   Mesh* localmesh = f.getMesh();
 
-  Field3D result(localmesh);
+  Field3D result{emptyFrom(f)};
   result.allocate();
 
   BOUT_FOR(i, result.getRegion("RGN_ALL")) {
@@ -156,7 +156,7 @@ const Field3D buff_x(const Field3D &f, bool UNUSED(BoutRealspace)) {
 
   Mesh* localmesh = f.getMesh();
 
-  Field3D result(localmesh);
+  Field3D result{emptyFrom(f)};
   result.allocate();
 
   const BoutReal dampl = 1.e0;

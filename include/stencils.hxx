@@ -46,49 +46,73 @@ void inline populateStencil(stencil &s, const FieldType& f, const typename Field
   
   switch(stagger) {
   case(STAGGER::None):
-    if (nGuard == 2) s.mm = f[i.template minus<2, direction>()];
+    if (nGuard == 2) {
+      if (direction == DIRECTION::YOrthogonal) {
+        s.mm = f.ynext(-2)[i.template minus<2, direction>()];
+      } else {
+        s.mm = f[i.template minus<2, direction>()];
+      }
+    }
     if (direction == DIRECTION::YOrthogonal) {
-      s.m = f.ydown()[i.template minus<1, direction>()];
+      s.m = f.ynext(-1)[i.template minus<1, direction>()];
     } else {
       s.m = f[i.template minus<1, direction>()];
     }
     s.c = f[i];
     if (direction == DIRECTION::YOrthogonal) {
-      s.p = f.yup()[i.template plus<1, direction>()];
+      s.p = f.ynext(1)[i.template plus<1, direction>()];
     } else {
       s.p = f[i.template plus<1, direction>()];
     }
-    if (nGuard == 2) s.pp = f[i.template plus<2, direction>()];
+    if (nGuard == 2) {
+      if (direction == DIRECTION::YOrthogonal) {
+        s.pp = f.ynext(2)[i.template plus<2, direction>()];
+      } else {
+        s.pp = f[i.template plus<2, direction>()];
+      }
+    }
     break;
   case(STAGGER::C2L):
-    if (nGuard == 2) s.mm = f[i.template minus<2, direction>()];
+    if (nGuard == 2) {
+      if (direction == DIRECTION::YOrthogonal) {
+        s.mm = f.ynext(-2)[i.template minus<2, direction>()];
+      } else {
+        s.mm = f[i.template minus<2, direction>()];
+      }
+    }
     if (direction == DIRECTION::YOrthogonal) {
-      s.m = f.ydown()[i.template minus<1, direction>()];      
+      s.m = f.ynext(-1)[i.template minus<1, direction>()];
     } else {
       s.m = f[i.template minus<1, direction>()];
     }
     s.c = f[i];
     s.p = s.c;
     if (direction == DIRECTION::YOrthogonal) {
-      s.pp = f.yup()[i.template plus<1, direction>()];
+      s.pp = f.ynext(1)[i.template plus<1, direction>()];
     } else {
       s.pp = f[i.template plus<1, direction>()];
     }
     break;
   case(STAGGER::L2C):
     if (direction == DIRECTION::YOrthogonal) {
-      s.mm = f.ydown()[i.template minus<1, direction>()];
+      s.mm = f.ynext(-1)[i.template minus<1, direction>()];
     } else {
       s.mm = f[i.template minus<1, direction>()];
     }
     s.m = f[i];
     s.c = s.m;
     if (direction == DIRECTION::YOrthogonal) {
-      s.p = f.yup()[i.template plus<1, direction>()];
+      s.p = f.ynext(1)[i.template plus<1, direction>()];
     } else {
       s.p = f[i.template plus<1, direction>()];
     }
-    if (nGuard == 2) s.pp = f[i.template plus<2, direction>()];
+    if (nGuard == 2) {
+      if (direction == DIRECTION::YOrthogonal) {
+        s.pp = f.ynext(2)[i.template plus<2, direction>()];
+      } else {
+        s.pp = f[i.template plus<2, direction>()];
+      }
+    }
     break;
   }
   return;

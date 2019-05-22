@@ -161,29 +161,31 @@ class GEM : public PhysicsModel {
 
     auto globalOptions = Options::root();
     auto options = globalOptions["gem"];
-    
-    OPTION(options, adiabatic_electrons, false);
-    OPTION(options, small_rho_e, true);
-    OPTION(options, include_grad_par_B, true);
-    
-    OPTION(options, Landau, 1.0);
-    
-    OPTION(options, nu_perp, 0.01); // Artificial perpendicular dissipation
-    OPTION(options, nu_par, 3e-3);  // Artificial parallel dissipation
-  
-    OPTION(options, phi_flags,  0);
-    OPTION(options, apar_flags, 0);
-    
-    OPTION(options, low_pass_z, -1); // Default is no filtering
 
-    OPTION(options, curv_logB, false); // Read in a separate logB variable
-    
-    OPTION(options, fix_profiles, false); // Subtract DC components
-    
-    OPTION(options, nonlinear, true);
-    OPTION(options, flat_temp, -1.0);
-    OPTION(options, flat_dens, -1.0);
-    
+    adiabatic_electrons = options["adiabatic_electrons"].withDefault(false);
+    small_rho_e = options["small_rho_e"].withDefault(true);
+    include_grad_par_B = options["include_grad_par_B"].withDefault(true);
+
+    Landau = options["Landau"].withDefault(1.0);
+
+    nu_perp =
+        options["nu_perp"].withDefault(0.01);     // Artificial perpendicular dissipation
+    nu_par = options["nu_par"].withDefault(3e-3); // Artificial parallel dissipation
+
+    phi_flags = options["phi_flags"].withDefault(0);
+    apar_flags = options["apar_flags"].withDefault(0);
+
+    low_pass_z = options["low_pass_z"].withDefault(-1); // Default is no filtering
+
+    curv_logB =
+        options["curv_logB"].withDefault(false); // Read in a separate logB variable
+
+    fix_profiles = options["fix_profiles"].withDefault(false); // Subtract DC components
+
+    nonlinear = options["nonlinear"].withDefault(true);
+    flat_temp = options["flat_temp"].withDefault(-1.0);
+    flat_dens = options["flat_dens"].withDefault(-1.0);
+
     //////////////////////////////////
     // Read profiles
     
@@ -229,21 +231,21 @@ class GEM : public PhysicsModel {
         Lbar = 1.0;
       }
     }
-    OPTION(options, Lbar, Lbar); // Override in options file
+    Lbar = options["Lbar"].withDefault(Lbar); // Override in options file
     SAVE_ONCE(Lbar);   // Save in output file
 
     BoutReal AA; // Ion atomic mass
     BoutReal ZZ; // Ion charge
-    OPTION(options, AA, 2.0); // Deuterium by default
-    OPTION(options, ZZ, 1.0);
-    
+    AA = options["AA"].withDefault(2.0); // Deuterium by default
+    ZZ = options["ZZ"].withDefault(1.0);
+
     Tenorm = max(Te0,true); SAVE_ONCE(Tenorm); // Maximum value over the grid
     Ninorm = max(Ni0, true); SAVE_ONCE(Ninorm);
     
     Cs = sqrt(qe*Tenorm / (AA*Mp)); SAVE_ONCE(Cs); // Sound speed in m/s
     
-    Tbar = Lbar / Cs; 
-    OPTION(options, Tbar, Tbar); // Override in options file
+    Tbar = Lbar / Cs;
+    Tbar = options["Tbar"].withDefault(Tbar); // Override in options file
     SAVE_ONCE(Tbar); // Timescale in seconds
     
     if (mesh->get(Bbar, "Bbar")) {
@@ -251,7 +253,7 @@ class GEM : public PhysicsModel {
         Bbar = max(Bxy, true);
       }
     }
-    OPTION(options, Bbar, Bbar); // Override in options file
+    Bbar = options["Bbar"].withDefault(Bbar); // Override in options file
     SAVE_ONCE(Bbar);
     
     beta_e =  4.e-7*PI * max(p_e,true) / (Bbar*Bbar); SAVE_ONCE(beta_e); 
@@ -273,28 +275,28 @@ class GEM : public PhysicsModel {
     
     ////////////////////////////////////////////////////
     // Terms in equations
-    
-    OPTION(options, jpar_bndry_width,    -1);
-    
+
+    jpar_bndry_width = options["jpar_bndry_width"].withDefault(-1);
+
     OPTION4(options, ne_ddt, ne_te0, ne_ue, ne_curv, true); // Linear
     OPTION2(options, ne_ne1, ne_te1, nonlinear); // Nonlinear
     OPTION6(options, apue_ddt, apue_phi1, apue_pet, apue_curv, apue_gradB, apue_Rei, true);
     OPTION4(options, apue_ue1_phi1, apue_qe1_phi1, apue_apar1_phi1, apue_apar1_pe1, nonlinear);
-    
-    OPTION(options, tepar_ddt, true);
-    OPTION(options, teperp_ddt, true);
-    OPTION(options, qepar_ddt, true);
-    OPTION(options, qeperp_ddt, true);
-    
+
+    tepar_ddt = options["tepar_ddt"].withDefault(true);
+    teperp_ddt = options["teperp_ddt"].withDefault(true);
+    qepar_ddt = options["qepar_ddt"].withDefault(true);
+    qeperp_ddt = options["qeperp_ddt"].withDefault(true);
+
     OPTION4(options, ni_ddt, ni_ti0, ni_ui, ni_curv, true); // Linear
     OPTION2(options, ni_ni1, ni_ti1, nonlinear); // Nonlinear
     OPTION6(options, apui_ddt, apui_phi1, apui_pit, apui_curv, apui_gradB, apui_Rei, true);
     OPTION4(options, apui_ui1_phi1, apui_qi1_phi1, apui_apar1_phi1, apui_apar1_pi1, nonlinear);
-    OPTION(options, tipar_ddt, true);
-    OPTION(options, tiperp_ddt, true);
-    OPTION(options, qipar_ddt, true);
-    OPTION(options, qiperp_ddt, true);
-    
+    tipar_ddt = options["tipar_ddt"].withDefault(true);
+    tiperp_ddt = options["tiperp_ddt"].withDefault(true);
+    qipar_ddt = options["qipar_ddt"].withDefault(true);
+    qiperp_ddt = options["qiperp_ddt"].withDefault(true);
+
     ////////////////////////////////////////////////////
     // Collisional parameters
     
@@ -462,7 +464,7 @@ class GEM : public PhysicsModel {
     }
     
     bool output_ddt;
-    OPTION(options, output_ddt, false);
+    output_ddt = options["output_ddt"].withDefault(false);
     if (output_ddt) {
       // Output the time derivatives
       

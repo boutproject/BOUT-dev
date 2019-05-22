@@ -109,21 +109,21 @@ private:
     /*************** READ OPTIONS *************************/
     // Read some parameters
 
-    auto globalOptions = Options::root();
-    auto options = globalOptions["2fluid"];
-    OPTION(options, AA, 4.0); // <=> options.get("AA", AA, 1.0);
-    OPTION(options, ZZ, 1.0);
+    auto& globalOptions = Options::root();
+    auto& options = globalOptions["2fluid"];
+    AA = options["AA"].withDefault(4.0);
+    ZZ = options["ZZ"].withDefault(1.0);
 
-    OPTION(options, zeff, 1.0);
-    OPTION(options, nu_perp, 0.0);
-    OPTION(options, ShearFactor, 1.0);
-    OPTION(options, bout_exb, false);
+    zeff = options["zeff"].withDefault(1.0);
+    nu_perp = options["nu_perp"].withDefault(0.0);
+    ShearFactor = options["ShearFactor"].withDefault(1.0);
+    bout_exb = options["bout_exb"].withDefault(false);
 
-    OPTION(options, phi_flags, 0);
+    phi_flags = options["phi_flags"].withDefault(0);
 
     // Toroidal filtering
-    OPTION(options, filter_z, false); // Filter a single n
-    OPTION(options, filter_z_mode, 1);
+    filter_z = options["filter_z"].withDefault(false); // Filter a single n
+    filter_z_mode = options["filter_z_mode"].withDefault(1);
 
     /************* SHIFTED RADIAL COORDINATES ************/
     // Check type of parallel transform

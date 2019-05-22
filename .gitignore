@@ -25,7 +25,6 @@
 autom4te.cache/
 aclocal.m4
 /bin/bout-config
-/externalpackages/
 /include/pvode
 /lib/
 /manual/*.pdf
@@ -40,3 +39,4 @@ src/.libfast
 .*.mk
 *.mo
 include/pybind11
+.BOUT.pid.*

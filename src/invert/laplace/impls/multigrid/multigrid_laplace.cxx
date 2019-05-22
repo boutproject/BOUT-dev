@@ -44,6 +44,9 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt, const CELL_LOC loc, Mesh *mesh_
 
   TRACE("LaplaceMultigrid::LaplaceMultigrid(Options *opt)");
   
+  // periodic x-direction not handled: see MultigridAlg::communications
+  ASSERT1(!localmesh->periodicX);
+
   A.setLocation(location);
   C1.setLocation(location);
   C2.setLocation(location);
@@ -173,8 +176,8 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt, const CELL_LOC loc, Mesh *mesh_
 
   // Set up Multigrid Cycle
 
-  x = Array<BoutReal>((Nx_local + 2) * (Nz_local + 2));
-  b = Array<BoutReal>((Nx_local + 2) * (Nz_local + 2));
+  x.reallocate((Nx_local + 2) * (Nz_local + 2));
+  b.reallocate((Nx_local + 2) * (Nz_local + 2));
 
   if (mgcount == 0) {  
     output<<" Smoothing type is ";
@@ -198,7 +201,7 @@ BOUT_OMP(master)
   }  
 }
 
-const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &x0) {
+FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
 
   TRACE("LaplaceMultigrid::solve(const FieldPerp, const FieldPerp)");
 
@@ -425,10 +428,7 @@ BOUT_OMP(for)
     }
   }
 
-  FieldPerp result(localmesh);
-  result.setLocation(location);
-  result.allocate();
-  result.setIndex(yindex);
+  FieldPerp result{emptyFrom(b_in)};
 
 #if CHECK > 2
   // Make any unused elements NaN so that user does not try to do calculations with them

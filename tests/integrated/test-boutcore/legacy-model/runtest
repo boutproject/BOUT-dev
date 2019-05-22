@@ -2,19 +2,21 @@
 import boutcore
 import sys
 
-#requires boutcore
-#requires not make
+# requires boutcore
+# requires not make
 
 boutcore.init(sys.argv[1:])
 
-dens=boutcore.create3D("0")
+dens = boutcore.create3D("0")
+
 
 def rhs(time):
-    n_ddt=dens.ddt()
-    n_ddt[:,:,:]=dens*0
-    n_ddt+=1
+    n_ddt = dens.ddt()
+    n_ddt[:, :, :] = dens*0
+    n_ddt += 1
 
-model=boutcore.PhysicsModelBase()
+
+model = boutcore.PhysicsModelBase()
 model.setRhs(rhs)
 model.solve_for(n=dens)
 model.solve()

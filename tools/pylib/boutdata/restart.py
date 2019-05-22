@@ -15,6 +15,7 @@ from builtins import str, range
 import os
 import glob
 
+from boutdata.collect import collect, create_cache
 from boututils.datafile import DataFile
 from boututils.boutarray import BoutArray
 from boutdata.processor_rearrange import get_processor_layout, create_processor_layout
@@ -587,66 +588,22 @@ def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outfor
     nype = new_processor_layout.nype
     mxsub = new_processor_layout.mxsub
     mysub = new_processor_layout.mysub
+    mzsub = new_processor_layout.mz
 
     outfile_list = []
     for i in range(npes):
         outpath = os.path.join(output, "BOUT.restart."+str(i)+"."+outformat)
         outfile_list.append(DataFile(outpath, write=True, create=True))
-    infile_list = []
-    for i in range(old_npes):
-        inpath = os.path.join(path, "BOUT.restart."+str(i)+"."+outformat)
-        infile_list.append(DataFile(inpath))
+
+    DataFileCache = create_cache(path, "BOUT.restart")
 
     for v in var_list:
-        ndims = f.ndims(v)
+        dimensions = f.dimensions(v)
+        ndims = len(dimensions)
 
         # collect data
-        if ndims == 0:
-            # scalar
-            data = f.read(v)
-        elif ndims == 2:
-            data = np.zeros((nx+2*mxg, ny+2*myg))
-            for i in range(old_npes):
-                ix = i % old_nxpe
-                iy = int(i/old_nxpe)
-                ixstart = mxg
-                if ix == 0:
-                    ixstart = 0
-                ixend = -mxg
-                if ix == old_nxpe-1:
-                    ixend = 0
-                iystart = myg
-                if iy == 0:
-                    iystart = 0
-                iyend = -myg
-                if iy == old_nype-1:
-                    iyend = 0
-                data[ix*old_mxsub+ixstart:(ix+1)*old_mxsub+2*mxg+ixend,
-                     iy*old_mysub+iystart:(iy+1)*old_mysub+2*myg+iyend] = infile_list[i].read(v)[ixstart:old_mxsub+2*mxg+ixend, iystart:old_mysub+2*myg+iyend]
-            data = BoutArray(data, attributes=infile_list[0].attributes(v))
-        elif ndims == 3:
-            data = np.zeros((nx+2*mxg, ny+2*myg, mz))
-            for i in range(old_npes):
-                ix = i % old_nxpe
-                iy = int(i/old_nxpe)
-                ixstart = mxg
-                if ix == 0:
-                    ixstart = 0
-                ixend = -mxg
-                if ix == old_nxpe-1:
-                    ixend = 0
-                iystart = myg
-                if iy == 0:
-                    iystart = 0
-                iyend = -myg
-                if iy == old_nype-1:
-                    iyend = 0
-                data[ix*old_mxsub+ixstart:(ix+1)*old_mxsub+2*mxg+ixend, iy*old_mysub+iystart:(iy+1)*old_mysub+2*myg+iyend,
-                     :] = infile_list[i].read(v)[ixstart:old_mxsub+2*mxg+ixend, iystart:old_mysub+2*myg+iyend, :]
-            data = BoutArray(data, attributes=infile_list[0].attributes(v))
-        else:
-            print("ERROR: variable found with unexpected number of dimensions,", ndims, v)
-            return False
+        data = collect(v, xguards=True, yguards=True, info=False,
+                datafile_cache=DataFileCache)
 
         # write data
         for i in range(npes):
@@ -659,24 +616,36 @@ def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outfor
                 outfile.write(v, nxpe)
             elif v == "NYPE":
                 outfile.write(v, nype)
-            elif ndims == 0:
+            elif v == "MXSUB":
+                outfile.write(v, mxsub)
+            elif v == "MYSUB":
+                outfile.write(v, mysub)
+            elif v == "MZSUB":
+                outfile.write(v, mzsub)
+            elif dimensions == ():
                 # scalar
                 outfile.write(v, data)
-            elif ndims == 2:
+            elif dimensions == ('x', 'y'):
                 # Field2D
                 outfile.write(
                     v, data[ix*mxsub:(ix+1)*mxsub+2*mxg, iy*mysub:(iy+1)*mysub+2*myg])
-            elif ndims == 3:
+            elif dimensions == ('x', 'z'):
+                # FieldPerp
+                yindex_global = data.attributes['yindex_global']
+                if yindex_global + myg >= iy*mysub and yindex_global + myg < (iy+1)*mysub+2*myg:
+                    outfile.write(v, data[ix*mxsub:(ix+1)*mxsub+2*mxg, :])
+                else:
+                    nullarray = BoutArray(np.zeros([mxsub+2*mxg, mysub+2*myg]), attributes={"bout_type":"FieldPerp", "yindex_global":-myg-1})
+                    outfile.write(v, nullarray)
+            elif dimensions == ('x', 'y', 'z'):
                 # Field3D
                 outfile.write(
                     v, data[ix*mxsub:(ix+1)*mxsub+2*mxg, iy*mysub:(iy+1)*mysub+2*myg, :])
             else:
                 print(
-                    "ERROR: variable found with unexpected number of dimensions,", f.ndims(v))
+                    "ERROR: variable found with unexpected dimensions,", dimensions, v)
 
     f.close()
-    for infile in infile_list:
-        infile.close()
     for outfile in outfile_list:
         outfile.close()
 

@@ -92,6 +92,7 @@ TEST_F(Field2DTest, CreateOnGivenMesh) {
   int test_nz = Field2DTest::nz + 2;
 
   FakeMesh fieldmesh{test_nx, test_ny, test_nz};
+  fieldmesh.setCoordinates(nullptr);
 
   Field2D field{&fieldmesh};
 
@@ -106,11 +107,11 @@ TEST_F(Field2DTest, CopyCheckFieldmesh) {
   int test_nz = Field2DTest::nz + 2;
 
   FakeMesh fieldmesh{test_nx, test_ny, test_nz};
+  fieldmesh.setCoordinates(nullptr);
 
   // createDefaultRegions is noisy
-  output_info.disable();
+  WithQuietOutput quiet{output_info};
   fieldmesh.createDefaultRegions();
-  output_info.enable();
 
   Field2D field{1.0, &fieldmesh};
   Field2D field2{field};
@@ -118,6 +119,7 @@ TEST_F(Field2DTest, CopyCheckFieldmesh) {
   EXPECT_EQ(field2.getNx(), test_nx);
   EXPECT_EQ(field2.getNy(), test_ny);
   EXPECT_EQ(field2.getNz(), 1);
+  EXPECT_TRUE(areFieldsCompatible(field, field2));
 }
 
 #if CHECK > 0
@@ -184,6 +186,41 @@ TEST_F(Field2DTest, TimeDeriv) {
   EXPECT_EQ(deriv, deriv2);
 
   EXPECT_EQ(&(ddt(field)), deriv);
+}
+
+TEST_F(Field2DTest, SetGetLocation) {
+  Field2D field(mesh_staggered);
+
+  field.setLocation(CELL_XLOW);
+  EXPECT_EQ(field.getLocation(), CELL_XLOW);
+
+  field.setLocation(CELL_DEFAULT);
+  EXPECT_EQ(field.getLocation(), CELL_CENTRE);
+
+  EXPECT_THROW(field.setLocation(CELL_VSHIFT), BoutException);
+}
+
+TEST_F(Field2DTest, SetGetLocationNonStaggered) {
+  Field2D field;
+
+  field.getMesh()->StaggerGrids = false;
+
+#if CHECK > 0
+  EXPECT_THROW(field.setLocation(CELL_XLOW), BoutException);
+  EXPECT_THROW(field.setLocation(CELL_VSHIFT), BoutException);
+
+  field.setLocation(CELL_DEFAULT);
+  EXPECT_EQ(field.getLocation(), CELL_CENTRE);
+#else
+  field.setLocation(CELL_XLOW);
+  EXPECT_EQ(field.getLocation(), CELL_CENTRE);
+
+  field.setLocation(CELL_DEFAULT);
+  EXPECT_EQ(field.getLocation(), CELL_CENTRE);
+
+  field.setLocation(CELL_VSHIFT);
+  EXPECT_EQ(field.getLocation(), CELL_CENTRE);
+#endif
 }
 
 /// This test is split into two parts: a very basic sanity check first
@@ -636,14 +673,14 @@ TEST_F(Field2DTest, InvalidateGuards) {
 TEST_F(Field2DTest, CreateFromBoutReal) {
   Field2D field(1.0);
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(field, 1.0));
+  EXPECT_TRUE(IsFieldEqual(field, 1.0));
 }
 
 TEST_F(Field2DTest, CreateFromField2D) {
   Field2D field(99.0);
   Field2D result(field);
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(result, 99.0));
+  EXPECT_TRUE(IsFieldEqual(result, 99.0));
 }
 
 TEST_F(Field2DTest, AssignFromBoutReal) {
@@ -651,14 +688,14 @@ TEST_F(Field2DTest, AssignFromBoutReal) {
 
   field = 2.0;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(field, 2.0));
+  EXPECT_TRUE(IsFieldEqual(field, 2.0));
 }
 
 TEST_F(Field2DTest, AssignFromInvalid) {
   Field2D field;
 
   EXPECT_NO_THROW(field = std::nan(""));
-  EXPECT_TRUE(IsField2DEqualBoutReal(field, std::nan("")));  
+  EXPECT_TRUE(IsFieldEqual(field, std::nan("")));
 }
 
 TEST_F(Field2DTest, UnaryMinus) {
@@ -667,7 +704,7 @@ TEST_F(Field2DTest, UnaryMinus) {
   field = 2.0;
   field = -field;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(field, -2.0));
+  EXPECT_TRUE(IsFieldEqual(field, -2.0));
 }
 
 TEST_F(Field2DTest, AddEqualsBoutReal) {
@@ -676,14 +713,14 @@ TEST_F(Field2DTest, AddEqualsBoutReal) {
   a = 1.0;
   a += 5.0;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(a, 6.0));
+  EXPECT_TRUE(IsFieldEqual(a, 6.0));
 
   // Check case where field is not unique
   auto c = a;
   c += 5.0;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(a, 6.0));
-  EXPECT_TRUE(IsField2DEqualBoutReal(c, 11.0));
+  EXPECT_TRUE(IsFieldEqual(a, 6.0));
+  EXPECT_TRUE(IsFieldEqual(c, 11.0));
 }
 
 TEST_F(Field2DTest, AddEqualsField2D) {
@@ -693,14 +730,14 @@ TEST_F(Field2DTest, AddEqualsField2D) {
   b = 3.0;
   a += b;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(a, 5.0));
+  EXPECT_TRUE(IsFieldEqual(a, 5.0));
 
   // Check case where field is not unique
   auto c = a;
   c += b;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(a, 5.0));
-  EXPECT_TRUE(IsField2DEqualBoutReal(c, 8.0));
+  EXPECT_TRUE(IsFieldEqual(a, 5.0));
+  EXPECT_TRUE(IsFieldEqual(c, 8.0));
 }
 
 TEST_F(Field2DTest, AddField2DBoutReal) {
@@ -709,7 +746,7 @@ TEST_F(Field2DTest, AddField2DBoutReal) {
   a = 1.0;
   b = a + 2.0;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(b, 3.0));
+  EXPECT_TRUE(IsFieldEqual(b, 3.0));
 }
 
 TEST_F(Field2DTest, AddBoutRealField2D) {
@@ -718,7 +755,7 @@ TEST_F(Field2DTest, AddBoutRealField2D) {
   a = 1.0;
   b = 3.0 + a;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(b, 4.0));
+  EXPECT_TRUE(IsFieldEqual(b, 4.0));
 }
 
 TEST_F(Field2DTest, AddField2DField2D) {
@@ -728,7 +765,7 @@ TEST_F(Field2DTest, AddField2DField2D) {
   b = 2.0;
   c = a + b;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(c, 3.0));
+  EXPECT_TRUE(IsFieldEqual(c, 3.0));
 }
 
 TEST_F(Field2DTest, MultiplyEqualsBoutReal) {
@@ -737,14 +774,14 @@ TEST_F(Field2DTest, MultiplyEqualsBoutReal) {
   a = 2.0;
   a *= 1.5;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(a, 3.0));
+  EXPECT_TRUE(IsFieldEqual(a, 3.0));
 
   // Check case where field is not unique
   auto c = a;
   c *= 1.5;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(a, 3.0));
-  EXPECT_TRUE(IsField2DEqualBoutReal(c, 4.5));
+  EXPECT_TRUE(IsFieldEqual(a, 3.0));
+  EXPECT_TRUE(IsFieldEqual(c, 4.5));
 }
 
 TEST_F(Field2DTest, MultiplyEqualsField2D) {
@@ -754,14 +791,14 @@ TEST_F(Field2DTest, MultiplyEqualsField2D) {
   b = 4.0;
   a *= b;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(a, 10.0));
+  EXPECT_TRUE(IsFieldEqual(a, 10.0));
 
   // Check case where field is not unique
   auto c = a;
   c *= b;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(a, 10.0));
-  EXPECT_TRUE(IsField2DEqualBoutReal(c, 40.0));
+  EXPECT_TRUE(IsFieldEqual(a, 10.0));
+  EXPECT_TRUE(IsFieldEqual(c, 40.0));
 }
 
 TEST_F(Field2DTest, MultiplyField2DBoutReal) {
@@ -770,7 +807,7 @@ TEST_F(Field2DTest, MultiplyField2DBoutReal) {
   a = 1.5;
   b = a * 2.0;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(b, 3.0));
+  EXPECT_TRUE(IsFieldEqual(b, 3.0));
 }
 
 TEST_F(Field2DTest, MultiplyBoutRealField2D) {
@@ -779,7 +816,7 @@ TEST_F(Field2DTest, MultiplyBoutRealField2D) {
   a = 2.5;
   b = 3.0 * a;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(b, 7.5));
+  EXPECT_TRUE(IsFieldEqual(b, 7.5));
 }
 
 TEST_F(Field2DTest, MultiplyField2DField2D) {
@@ -789,7 +826,7 @@ TEST_F(Field2DTest, MultiplyField2DField2D) {
   b = 8.0;
   c = a * b;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(c, 32.0));
+  EXPECT_TRUE(IsFieldEqual(c, 32.0));
 }
 
 TEST_F(Field2DTest, SubtractEqualsBoutReal) {
@@ -798,14 +835,14 @@ TEST_F(Field2DTest, SubtractEqualsBoutReal) {
   a = 1.0;
   a -= 5.0;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(a, -4.0));
+  EXPECT_TRUE(IsFieldEqual(a, -4.0));
 
   // Check case where field is not unique
   auto c = a;
   c -= 5.0;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(a, -4.0));
-  EXPECT_TRUE(IsField2DEqualBoutReal(c, -9.0));
+  EXPECT_TRUE(IsFieldEqual(a, -4.0));
+  EXPECT_TRUE(IsFieldEqual(c, -9.0));
 }
 
 TEST_F(Field2DTest, SubtractEqualsField2D) {
@@ -815,14 +852,14 @@ TEST_F(Field2DTest, SubtractEqualsField2D) {
   b = 7.0;
   a -= b;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(a, -5.0));
+  EXPECT_TRUE(IsFieldEqual(a, -5.0));
 
   // Check case where field is not unique
   auto c = a;
   c -= b;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(a, -5.0));
-  EXPECT_TRUE(IsField2DEqualBoutReal(c, -12.0));
+  EXPECT_TRUE(IsFieldEqual(a, -5.0));
+  EXPECT_TRUE(IsFieldEqual(c, -12.0));
 }
 
 TEST_F(Field2DTest, SubtractField2DBoutReal) {
@@ -831,7 +868,7 @@ TEST_F(Field2DTest, SubtractField2DBoutReal) {
   a = 10.0;
   b = a - 2.0;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(b, 8.0));
+  EXPECT_TRUE(IsFieldEqual(b, 8.0));
 }
 
 TEST_F(Field2DTest, SubtractBoutRealField2D) {
@@ -840,7 +877,7 @@ TEST_F(Field2DTest, SubtractBoutRealField2D) {
   a = 10.0;
   b = 3.0 - a;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(b, -7.0));
+  EXPECT_TRUE(IsFieldEqual(b, -7.0));
 }
 
 TEST_F(Field2DTest, SubtractField2DField2D) {
@@ -850,7 +887,7 @@ TEST_F(Field2DTest, SubtractField2DField2D) {
   b = 20.0;
   c = a - b;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(c, -10.0));
+  EXPECT_TRUE(IsFieldEqual(c, -10.0));
 }
 
 TEST_F(Field2DTest, DivideEqualsBoutReal) {
@@ -859,14 +896,14 @@ TEST_F(Field2DTest, DivideEqualsBoutReal) {
   a = 2.5;
   a /= 5.0;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(a, 0.5));
+  EXPECT_TRUE(IsFieldEqual(a, 0.5));
 
   // Check case where field is not unique
   auto c = a;
   c /= 5.0;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(a, 0.5));
-  EXPECT_TRUE(IsField2DEqualBoutReal(c, 0.1));
+  EXPECT_TRUE(IsFieldEqual(a, 0.5));
+  EXPECT_TRUE(IsFieldEqual(c, 0.1));
 }
 
 TEST_F(Field2DTest, DivideEqualsField2D) {
@@ -876,14 +913,14 @@ TEST_F(Field2DTest, DivideEqualsField2D) {
   b = 2.5;
   a /= b;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(a, 2.0));
+  EXPECT_TRUE(IsFieldEqual(a, 2.0));
 
   // Check case where field is not unique
   auto c = a;
   c /= b;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(a, 2.0));
-  EXPECT_TRUE(IsField2DEqualBoutReal(c, 0.8));
+  EXPECT_TRUE(IsFieldEqual(a, 2.0));
+  EXPECT_TRUE(IsFieldEqual(c, 0.8));
 }
 
 TEST_F(Field2DTest, DivideField2DBoutReal) {
@@ -892,7 +929,7 @@ TEST_F(Field2DTest, DivideField2DBoutReal) {
   a = 3.0;
   b = a / 2.0;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(b, 1.5));
+  EXPECT_TRUE(IsFieldEqual(b, 1.5));
 }
 
 TEST_F(Field2DTest, DivideBoutRealField2D) {
@@ -901,7 +938,7 @@ TEST_F(Field2DTest, DivideBoutRealField2D) {
   a = 2.5;
   b = 10.0 / a;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(b, 4.0));
+  EXPECT_TRUE(IsFieldEqual(b, 4.0));
 }
 
 TEST_F(Field2DTest, DivideField2DField2D) {
@@ -911,7 +948,7 @@ TEST_F(Field2DTest, DivideField2DField2D) {
   b = 8.0;
   c = a / b;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(c, 4.0));
+  EXPECT_TRUE(IsFieldEqual(c, 4.0));
 }
 
 TEST_F(Field2DTest, PowBoutRealField2D) {
@@ -919,7 +956,7 @@ TEST_F(Field2DTest, PowBoutRealField2D) {
   a = 5.0;
   b = pow(2.0, a);
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(b, 32.0));
+  EXPECT_TRUE(IsFieldEqual(b, 32.0));
 }
 
 TEST_F(Field2DTest, PowField2DBoutReal) {
@@ -927,7 +964,7 @@ TEST_F(Field2DTest, PowField2DBoutReal) {
   a = 5.0;
   b = pow(a, 2.0);
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(b, 25.0));
+  EXPECT_TRUE(IsFieldEqual(b, 25.0));
 }
 
 TEST_F(Field2DTest, PowField2DField2D) {
@@ -936,21 +973,21 @@ TEST_F(Field2DTest, PowField2DField2D) {
   b = 6.0;
   c = pow(a, b);
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(c, 64.0));
+  EXPECT_TRUE(IsFieldEqual(c, 64.0));
 }
 
 TEST_F(Field2DTest, Sqrt) {
   Field2D field;
 
   field = 16.0;
-  EXPECT_TRUE(IsField2DEqualBoutReal(sqrt(field), 4.0));
+  EXPECT_TRUE(IsFieldEqual(sqrt(field), 4.0));
 }
 
 TEST_F(Field2DTest, Abs) {
   Field2D field;
 
   field = -31.0;
-  EXPECT_TRUE(IsField2DEqualBoutReal(abs(field), 31.0));
+  EXPECT_TRUE(IsFieldEqual(abs(field), 31.0));
 }
 
 TEST_F(Field2DTest, Exp) {
@@ -958,7 +995,7 @@ TEST_F(Field2DTest, Exp) {
 
   field = 2.5;
   const BoutReal expected = 12.182493960703473;
-  EXPECT_TRUE(IsField2DEqualBoutReal(exp(field), expected));
+  EXPECT_TRUE(IsFieldEqual(exp(field), expected));
 }
 
 TEST_F(Field2DTest, Log) {
@@ -966,7 +1003,7 @@ TEST_F(Field2DTest, Log) {
 
   field = 12.182493960703473;
   const BoutReal expected = 2.5;
-  EXPECT_TRUE(IsField2DEqualBoutReal(log(field), expected));
+  EXPECT_TRUE(IsFieldEqual(log(field), expected));
 }
 
 TEST_F(Field2DTest, LogExp) {
@@ -974,37 +1011,37 @@ TEST_F(Field2DTest, LogExp) {
 
   field = 2.5;
   const BoutReal expected = 2.5;
-  EXPECT_TRUE(IsField2DEqualBoutReal(log(exp(field)), expected));
+  EXPECT_TRUE(IsFieldEqual(log(exp(field)), expected));
 }
 
 TEST_F(Field2DTest, Sin) {
   Field2D field;
 
   field = PI / 2.0;
-  EXPECT_TRUE(IsField2DEqualBoutReal(sin(field), 1.0));
+  EXPECT_TRUE(IsFieldEqual(sin(field), 1.0));
 
   field = PI;
-  EXPECT_TRUE(IsField2DEqualBoutReal(sin(field), 0.0));
+  EXPECT_TRUE(IsFieldEqual(sin(field), 0.0));
 }
 
 TEST_F(Field2DTest, Cos) {
   Field2D field;
 
   field = PI / 2.0;
-  EXPECT_TRUE(IsField2DEqualBoutReal(cos(field), 0.0));
+  EXPECT_TRUE(IsFieldEqual(cos(field), 0.0));
 
   field = PI;
-  EXPECT_TRUE(IsField2DEqualBoutReal(cos(field), -1.0));
+  EXPECT_TRUE(IsFieldEqual(cos(field), -1.0));
 }
 
 TEST_F(Field2DTest, Tan) {
   Field2D field;
 
   field = PI / 4.0;
-  EXPECT_TRUE(IsField2DEqualBoutReal(tan(field), 1.0));
+  EXPECT_TRUE(IsFieldEqual(tan(field), 1.0));
 
   field = PI;
-  EXPECT_TRUE(IsField2DEqualBoutReal(tan(field), 0.0));
+  EXPECT_TRUE(IsFieldEqual(tan(field), 0.0));
 }
 
 TEST_F(Field2DTest, Sinh) {
@@ -1012,10 +1049,10 @@ TEST_F(Field2DTest, Sinh) {
 
   field = 1.0;
   const BoutReal expected = 1.1752011936438014;
-  EXPECT_TRUE(IsField2DEqualBoutReal(sinh(field), expected));
+  EXPECT_TRUE(IsFieldEqual(sinh(field), expected));
 
   field = -1.0;
-  EXPECT_TRUE(IsField2DEqualBoutReal(sinh(field), -expected));
+  EXPECT_TRUE(IsFieldEqual(sinh(field), -expected));
 }
 
 TEST_F(Field2DTest, Cosh) {
@@ -1023,10 +1060,10 @@ TEST_F(Field2DTest, Cosh) {
 
   field = 1.0;
   const BoutReal expected = 1.5430806348152437;
-  EXPECT_TRUE(IsField2DEqualBoutReal(cosh(field), expected));
+  EXPECT_TRUE(IsFieldEqual(cosh(field), expected));
 
   field = -1.0;
-  EXPECT_TRUE(IsField2DEqualBoutReal(cosh(field), expected));
+  EXPECT_TRUE(IsFieldEqual(cosh(field), expected));
 }
 
 TEST_F(Field2DTest, Tanh) {
@@ -1034,10 +1071,10 @@ TEST_F(Field2DTest, Tanh) {
 
   field = 1.0;
   const BoutReal expected = 0.761594155955764;
-  EXPECT_TRUE(IsField2DEqualBoutReal(tanh(field), expected));
+  EXPECT_TRUE(IsFieldEqual(tanh(field), expected));
 
   field = -1.0;
-  EXPECT_TRUE(IsField2DEqualBoutReal(tanh(field), -expected));
+  EXPECT_TRUE(IsFieldEqual(tanh(field), -expected));
 }
 
 TEST_F(Field2DTest, Floor) {
@@ -1049,7 +1086,7 @@ TEST_F(Field2DTest, Floor) {
 
   const BoutReal floor_value = 50.0;
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(floor(field, floor_value), floor_value));
+  EXPECT_TRUE(IsFieldEqual(floor(field, floor_value), floor_value));
 }
 
 TEST_F(Field2DTest, Min) {
@@ -1087,11 +1124,9 @@ TEST_F(Field2DTest, Max) {
 }
 
 TEST_F(Field2DTest, Swap) {
-  auto backup = mesh->StaggerGrids;
-  mesh->StaggerGrids = true;
+  WithQuietOutput quiet{output_info};
 
-  // First field
-  Field2D first(1., mesh);
+  Field2D first(1., mesh_staggered);
 
   first.setLocation(CELL_XLOW);
 
@@ -1103,10 +1138,9 @@ TEST_F(Field2DTest, Swap) {
   constexpr int second_nz = Field2DTest::nz + 2;
 
   FakeMesh second_mesh{second_nx, second_ny, second_nz};
+  second_mesh.setCoordinates(nullptr);
   second_mesh.StaggerGrids = false;
-  output_info.disable();
   second_mesh.createDefaultRegions();
-  output_info.enable();
 
   // Second field
   Field2D second(2., &second_mesh);
@@ -1114,22 +1148,22 @@ TEST_F(Field2DTest, Swap) {
   ddt(second) = 2.4;
 
   // Basic sanity check
-  EXPECT_TRUE(IsField2DEqualBoutReal(first, 1.0));
-  EXPECT_TRUE(IsField2DEqualBoutReal(second, 2.0));
+  EXPECT_TRUE(IsFieldEqual(first, 1.0));
+  EXPECT_TRUE(IsFieldEqual(second, 2.0));
 
   // swap is marked noexcept, so absolutely should not throw!
   ASSERT_NO_THROW(swap(first, second));
 
   // Values
-  EXPECT_TRUE(IsField2DEqualBoutReal(first, 2.0));
-  EXPECT_TRUE(IsField2DEqualBoutReal(second, 1.0));
+  EXPECT_TRUE(IsFieldEqual(first, 2.0));
+  EXPECT_TRUE(IsFieldEqual(second, 1.0));
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(ddt(first), 2.4));
-  EXPECT_TRUE(IsField2DEqualBoutReal(ddt(second), 1.1));
+  EXPECT_TRUE(IsFieldEqual(ddt(first), 2.4));
+  EXPECT_TRUE(IsFieldEqual(ddt(second), 1.1));
 
   // Mesh properties
   EXPECT_EQ(first.getMesh(), &second_mesh);
-  EXPECT_EQ(second.getMesh(), mesh);
+  EXPECT_EQ(second.getMesh(), mesh_staggered);
 
   EXPECT_EQ(first.getNx(), second_nx);
   EXPECT_EQ(first.getNy(), second_ny);
@@ -1144,16 +1178,11 @@ TEST_F(Field2DTest, Swap) {
 
   // We don't check the boundaries, but the data is protected and
   // there are no inquiry functions
-
-  mesh->StaggerGrids = backup;
 }
 
 TEST_F(Field2DTest, MoveCtor) {
-  auto backup = mesh->StaggerGrids;
-  mesh->StaggerGrids = true;
-
   // First field
-  Field2D first(1., mesh);
+  Field2D first(1., mesh_staggered);
 
   first.setLocation(CELL_XLOW);
 
@@ -1163,12 +1192,12 @@ TEST_F(Field2DTest, MoveCtor) {
   Field2D second{std::move(first)};
 
   // Values
-  EXPECT_TRUE(IsField2DEqualBoutReal(second, 1.0));
+  EXPECT_TRUE(IsFieldEqual(second, 1.0));
 
-  EXPECT_TRUE(IsField2DEqualBoutReal(ddt(second), 1.1));
+  EXPECT_TRUE(IsFieldEqual(ddt(second), 1.1));
 
   // Mesh properties
-  EXPECT_EQ(second.getMesh(), mesh);
+  EXPECT_EQ(second.getMesh(), mesh_staggered);
 
   EXPECT_EQ(second.getNx(), Field2DTest::nx);
   EXPECT_EQ(second.getNy(), Field2DTest::ny);
@@ -1178,8 +1207,6 @@ TEST_F(Field2DTest, MoveCtor) {
 
   // We don't check the boundaries, but the data is protected and
   // there are no inquiry functions
-
-  mesh->StaggerGrids = backup;
 }
 
 TEST_F(Field2DTest, FillField) {
@@ -1187,7 +1214,7 @@ TEST_F(Field2DTest, FillField) {
 
   fillField(f, {{1., 1., 1., 1., 1.}, {1., 1., 1., 1., 1.}, {1., 1., 1., 1., 1.}});
 
-  EXPECT_TRUE(IsField3DEqualBoutReal(f, 1.));
+  EXPECT_TRUE(IsFieldEqual(f, 1.));
 
   fillField(f, {{0., 1., 2., 3., 4.}, {0., 1., 2., 3., 4.}, {0., 1., 2., 3., 4.}});
 
@@ -1195,7 +1222,57 @@ TEST_F(Field2DTest, FillField) {
   g.allocate();
   BOUT_FOR_SERIAL(i, g.getRegion("RGN_ALL")) { g[i] = i.y(); }
 
-  EXPECT_TRUE(IsField2DEqualField2D(f, g));
+  EXPECT_TRUE(IsFieldEqual(f, g));
 }
 
+TEST_F(Field2DTest, OperatorEqualsField2D) {
+  Field2D field;
+
+  // Create field with non-default arguments so we can check they get copied
+  // to 'field'.
+  // Note that Aligned y-direction type is not really allowed for Field2D, but
+  // we don't check anywhere at the moment.
+  Field2D field2{mesh_staggered, CELL_XLOW, {YDirectionType::Aligned, ZDirectionType::Average}};
+
+  field = field2;
+
+  EXPECT_TRUE(areFieldsCompatible(field, field2));
+  EXPECT_EQ(field.getMesh(), field2.getMesh());
+  EXPECT_EQ(field.getLocation(), field2.getLocation());
+  EXPECT_EQ(field.getDirectionY(), field2.getDirectionY());
+  EXPECT_EQ(field.getDirectionZ(), field2.getDirectionZ());
+}
+
+TEST_F(Field2DTest, EmptyFrom) {
+  // Create field with non-default arguments so we can check they get copied
+  // to 'field2'.
+  // Note that Aligned y-direction type is not really allowed for Field2D, but
+  // we don't check anywhere at the moment.
+  Field2D field{mesh_staggered, CELL_XLOW, {YDirectionType::Aligned, ZDirectionType::Average}};
+  field = 5.;
+
+  Field2D field2{emptyFrom(field)};
+  EXPECT_EQ(field2.getMesh(), mesh_staggered);
+  EXPECT_EQ(field2.getLocation(), CELL_XLOW);
+  EXPECT_EQ(field2.getDirectionY(), YDirectionType::Aligned);
+  EXPECT_EQ(field2.getDirectionZ(), ZDirectionType::Average);
+  EXPECT_TRUE(field2.isAllocated());
+}
+
+TEST_F(Field2DTest, ZeroFrom) {
+  // Create field with non-default arguments so we can check they get copied
+  // to 'field2'.
+  // Note that Aligned y-direction type is not really allowed for Field2D, but
+  // we don't check anywhere at the moment.
+  Field2D field{mesh_staggered, CELL_XLOW, {YDirectionType::Aligned, ZDirectionType::Average}};
+  field = 5.;
+
+  Field2D field2{zeroFrom(field)};
+  EXPECT_EQ(field2.getMesh(), mesh_staggered);
+  EXPECT_EQ(field2.getLocation(), CELL_XLOW);
+  EXPECT_EQ(field2.getDirectionY(), YDirectionType::Aligned);
+  EXPECT_EQ(field2.getDirectionZ(), ZDirectionType::Average);
+  EXPECT_TRUE(field2.isAllocated());
+  EXPECT_TRUE(IsFieldEqual(field2, 0.));
+}
 #pragma GCC diagnostic pop

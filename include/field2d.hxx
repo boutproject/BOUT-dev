@@ -41,6 +41,7 @@ class Field3D; //#include "field3d.hxx"
 
 #include "bout/array.hxx"
 #include "bout/region.hxx"
+#include "utils.hxx"
 
 #include "unused.hxx"
 
@@ -63,7 +64,9 @@ class Field2D : public Field, public FieldData {
    * 
    * By default the global Mesh pointer (mesh) is used.
    */ 
-  Field2D(Mesh *localmesh = nullptr);
+  Field2D(Mesh *localmesh = nullptr, CELL_LOC location_in=CELL_CENTRE,
+          DirectionTypes directions_in =
+          {YDirectionType::Standard, ZDirectionType::Average});
 
   /*!
    * Copy constructor. After this both fields
@@ -82,6 +85,11 @@ class Field2D : public Field, public FieldData {
    * boundary cells.
    */ 
   Field2D(BoutReal val, Mesh *localmesh = nullptr);
+  
+  /// Constructor from Array and Mesh
+  Field2D(Array<BoutReal> data, Mesh* localmesh, CELL_LOC location = CELL_CENTRE,
+          DirectionTypes directions_in = {YDirectionType::Standard,
+                                          ZDirectionType::Average});
 
   /*!
    * Destructor
@@ -92,7 +100,7 @@ class Field2D : public Field, public FieldData {
   using value_type = BoutReal;
 
   /// Ensure data is allocated
-  void allocate();
+  Field2D& allocate();
   bool isAllocated() const { return !data.empty(); } ///< Test if data is allocated
 
   /// Return a pointer to the time-derivative field
@@ -111,25 +119,47 @@ class Field2D : public Field, public FieldData {
    */
   int getNz() const override {return 1;};
 
-  /// Check if this field has yup and ydown fields
-  bool hasYupYdown() const {
-    return true;
-  }
-  
-  Field2D& yup() {
+  // these methods return Field2D to allow method chaining
+  Field2D& setLocation(CELL_LOC location) {
+    Field::setLocation(location);
     return *this;
   }
-  const Field2D& yup() const {
+  Field2D& setDirectionY(YDirectionType d) {
+    // This method included in case it is wanted in a templated function also dealing with
+    // Field3D or FieldPerp - there is no difference between orthogonal and field-aligned
+    // coordinates for Field2D, so should always have YDirectionType::Standard.
+    ASSERT1(d == YDirectionType::Standard);
+    directions.y = d;
     return *this;
   }
 
-  Field2D& ydown() {
-    return *this;
+  /// Check if this field has yup and ydown fields
+  bool hasParallelSlices() const {
+    return true;
   }
-  const Field2D& ydown() const {
-    return *this;
+
+  [[gnu::deprecated("Please use Field2D::hasParallelSlices instead")]]
+  bool hasYupYdown() const {
+    return hasParallelSlices();
   }
   
+  Field2D& yup(std::vector<Field2D>::size_type UNUSED(index) = 0) {
+    return *this;
+  }
+  const Field2D& yup(std::vector<Field2D>::size_type UNUSED(index) = 0) const {
+    return *this;
+  }
+
+  Field2D& ydown(std::vector<Field2D>::size_type UNUSED(index) = 0) {
+    return *this;
+  }
+  const Field2D& ydown(std::vector<Field2D>::size_type UNUSED(index) = 0) const {
+    return *this;
+  }
+
+  Field2D& ynext(int UNUSED(dir)) { return *this; }
+  const Field2D& ynext(int UNUSED(dir)) const { return *this; }
+
   // Operators
   
   /*!
@@ -139,22 +169,12 @@ class Field2D : public Field, public FieldData {
    * function.
    */
   Field2D & operator=(const Field2D &rhs);
-  Field2D & operator=(Field2D &&rhs) = default;
 
   /*!
    * Allocates data if not already allocated, then
    * sets all cells to \p rhs
    */ 
   Field2D & operator=(BoutReal rhs);
-
-  /// Set variable location for staggered grids to @param new_location
-  ///
-  /// Throws BoutException if new_location is not `CELL_CENTRE` and
-  /// staggered grids are turned off and checks are on. If checks are
-  /// off, silently sets location to ``CELL_CENTRE`` instead.
-  void setLocation(CELL_LOC new_location) override;
-  /// Get variable location
-  CELL_LOC getLocation() const override;
 
   /////////////////////////////////////////////////////////
   // Data access
@@ -249,6 +269,7 @@ class Field2D : public Field, public FieldData {
   friend class Vector2D;
   
   void applyBoundary(bool init=false) override;
+  void applyBoundary(BoutReal time);
   void applyBoundary(const std::string &condition);
   void applyBoundary(const char* condition) { applyBoundary(std::string(condition)); }
   void applyBoundary(const std::string &region, const std::string &condition);
@@ -257,12 +278,13 @@ class Field2D : public Field, public FieldData {
 
   friend void swap(Field2D& first, Field2D& second) noexcept {
     using std::swap;
+
+    // Swap base class members
+    swap(static_cast<Field&>(first), static_cast<Field&>(second));
+
     swap(first.data, second.data);
-    swap(first.fieldmesh, second.fieldmesh);
-    swap(first.fieldCoordinates, second.fieldCoordinates);
     swap(first.nx, second.nx);
     swap(first.ny, second.ny);
-    swap(first.location, second.location);
     swap(first.deriv, second.deriv);
     swap(first.bndry_op, second.bndry_op);
     swap(first.boundaryIsCopy, second.boundaryIsCopy);
@@ -277,9 +299,6 @@ private:
 
   /// Internal data array. Handles allocation/freeing of memory
   Array<BoutReal> data;
-  
-  /// Location of the variable in the cell
-  CELL_LOC location{CELL_CENTRE};
 
   /// Time-derivative, can be nullptr
   Field2D *deriv{nullptr};
@@ -314,6 +333,9 @@ Field2D operator/(BoutReal lhs, const Field2D &rhs);
 Field2D operator-(const Field2D &f);
 
 // Non-member functions
+
+inline Field2D toFieldAligned(const Field2D& f, const REGION UNUSED(region)) { return f; }
+inline Field2D fromFieldAligned(const Field2D& f, const REGION UNUSED(region)) { return f; }
 
 /// Square root of \p f over region \p rgn
 ///
@@ -462,5 +484,18 @@ inline void invalidateGuards(Field2D &UNUSED(var)) {}
 inline Field2D& ddt(Field2D &f) {
   return *(f.timeDeriv());
 }
+
+/// toString template specialisation
+/// Defined in utils.hxx
+template <>
+inline std::string toString<>(const Field2D& UNUSED(val)) {
+  return "<Field2D>";
+}
+
+/// Test if two fields are the same, by calculating
+/// the minimum absolute difference between them
+bool operator==(const Field2D &a, const Field2D &b);
+
+std::ostream& operator<<(std::ostream &out, const Field2D &value);
 
 #endif /* __FIELD2D_H__ */

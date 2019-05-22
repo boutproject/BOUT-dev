@@ -34,10 +34,7 @@ public:
 class BoundaryFactoryTest : public ::testing::Test {
 public:
   BoundaryFactoryTest() {
-    if (mesh != nullptr) {
-      delete mesh;
-      mesh = nullptr;
-    }
+    delete mesh;
     mesh = new FakeMesh(3, 3, 3);
 
     fac->add(new TestBoundary(), "testboundary");
@@ -45,18 +42,14 @@ public:
     region = new BoundaryRegionXIn{"test_region", 0, 1, mesh};
   }
 
-  ~BoundaryFactoryTest() {
+  virtual ~BoundaryFactoryTest() {
     delete mesh;
     mesh = nullptr;
 
     delete region;
-
     BoundaryFactory::cleanup();
 
-    if (boundary != nullptr) {
-      delete boundary;
-      boundary = nullptr;
-    }
+    delete boundary;
   }
 
   BoundaryFactory* fac{BoundaryFactory::getInstance()};

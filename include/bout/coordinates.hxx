@@ -30,15 +30,17 @@
  *
  **************************************************************************/
 
-class Coordinates;
-
 #ifndef __COORDINATES_H__
 #define __COORDINATES_H__
 
-#include "mesh.hxx"
+#include "bout/paralleltransform.hxx"
 #include "datafile.hxx"
 #include "utils.hxx"
 #include <bout_types.hxx>
+#include "field2d.hxx"
+#include "field3d.hxx"
+
+class Mesh;
 
 /*!
  * Represents a coordinate system, and associated operators
@@ -48,10 +50,16 @@ class Coordinates;
 class Coordinates {
 public:
   /// Standard constructor from input
-  Coordinates(Mesh *mesh);
+  Coordinates(Mesh *mesh, Options* options = nullptr);
 
   /// Constructor interpolating from another Coordinates object
-  Coordinates(Mesh *mesh, const CELL_LOC loc, const Coordinates* coords_in);
+  /// By default attempts to read staggered Coordinates from grid data source,
+  /// interpolating from CELL_CENTRE if not present. Set
+  /// force_interpolate_from_centre argument to true to always interpolate
+  /// (useful if CELL_CENTRE Coordinates have been changed, so reading from file
+  /// would not be correct).
+  Coordinates(Mesh *mesh, Options* options, const CELL_LOC loc, const Coordinates* coords_in,
+      bool force_interpolate_from_centre=false);
 
   /// A constructor useful for testing purposes. To use it, inherit
   /// from Coordinates. If \p calculate_geometry is true (default),
@@ -61,6 +69,8 @@ public:
               Field2D g23, Field2D g_11, Field2D g_22, Field2D g_33, Field2D g_12,
               Field2D g_13, Field2D g_23, Field2D ShiftTorsion, Field2D IntShiftTorsion,
               bool calculate_geometry = true);
+
+  Coordinates& operator=(Coordinates&&) = default;
 
   ~Coordinates() = default;
 
@@ -102,45 +112,65 @@ public:
   Field2D IntShiftTorsion; ///< Integrated shear (I in BOUT notation)
 
   /// Calculate differential geometry quantities from the metric tensor
-  int geometry();
+  int geometry(bool recalculate_staggered = true,
+      bool force_interpolate_from_centre = false);
   int calcCovariant(); ///< Inverts contravatiant metric to get covariant
   int calcContravariant(); ///< Invert covariant metric to get contravariant
   int jacobian(); ///< Calculate J and Bxy
 
+
+  ///////////////////////////////////////////////////////////
+  // Parallel transforms
+  ///////////////////////////////////////////////////////////
+
+  /// Set the parallel (y) transform for this mesh.
+  /// Mostly useful for tests.
+  void setParallelTransform(std::unique_ptr<ParallelTransform> pt) {
+    transform = std::move(pt);
+  }
+
+  /// Return the parallel transform
+  ParallelTransform& getParallelTransform() {
+    ASSERT1(transform != nullptr);
+    return *transform;
+  }
+
+  ///////////////////////////////////////////////////////////
   // Operators
+  ///////////////////////////////////////////////////////////
 
   const Field2D DDX(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                     const std::string& method = "DEFAULT", REGION region = RGN_NOBNDRY);
   const Field2D DDX(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method,
                     REGION region = RGN_NOBNDRY) {
-    return DDX(f, outloc, DIFF_METHOD_STRING(method), region);
+    return DDX(f, outloc, toString(method), region);
   };
 
   const Field2D DDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                     const std::string& method = "DEFAULT", REGION region = RGN_NOBNDRY);
   const Field2D DDY(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method,
                     REGION region = RGN_NOBNDRY) {
-    return DDY(f, outloc, DIFF_METHOD_STRING(method), region);
+    return DDY(f, outloc, toString(method), region);
   };
 
   const Field2D DDZ(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                     const std::string& method = "DEFAULT", REGION region = RGN_NOBNDRY);
   const Field2D DDZ(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method,
                     REGION region = RGN_NOBNDRY) {
-    return DDZ(f, outloc, DIFF_METHOD_STRING(method), region);
+    return DDZ(f, outloc, toString(method), region);
   };
 
   /// Gradient along magnetic field  b.Grad(f)
   const Field2D Grad_par(const Field2D& var, CELL_LOC outloc = CELL_DEFAULT,
                          const std::string& method = "DEFAULT");
   const Field2D Grad_par(const Field2D& var, CELL_LOC outloc, DIFF_METHOD method) {
-    return Grad_par(var, outloc, DIFF_METHOD_STRING(method));
+    return Grad_par(var, outloc, toString(method));
   };
 
   const Field3D Grad_par(const Field3D& var, CELL_LOC outloc = CELL_DEFAULT,
                          const std::string& method = "DEFAULT");
   const Field3D Grad_par(const Field3D& var, CELL_LOC outloc, DIFF_METHOD method) {
-    return Grad_par(var, outloc, DIFF_METHOD_STRING(method));
+    return Grad_par(var, outloc, toString(method));
   };
 
   /// Advection along magnetic field V*b.Grad(f)
@@ -149,7 +179,7 @@ public:
                               const std::string& method = "DEFAULT");
   const Field2D Vpar_Grad_par(const Field2D& v, const Field2D& f, CELL_LOC outloc,
                               DIFF_METHOD method) {
-    return Vpar_Grad_par(v, f, outloc, DIFF_METHOD_STRING(method));
+    return Vpar_Grad_par(v, f, outloc, toString(method));
   };
 
   const Field3D Vpar_Grad_par(const Field3D& v, const Field3D& f,
@@ -157,33 +187,33 @@ public:
                               const std::string& method = "DEFAULT");
   const Field3D Vpar_Grad_par(const Field3D& v, const Field3D& f, CELL_LOC outloc,
                               DIFF_METHOD method) {
-    return Vpar_Grad_par(v, f, outloc, DIFF_METHOD_STRING(method));
+    return Vpar_Grad_par(v, f, outloc, toString(method));
   };
 
   /// Divergence along magnetic field  Div(b*f) = B.Grad(f/B)
   const Field2D Div_par(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                         const std::string& method = "DEFAULT");
   const Field2D Div_par(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method) {
-    return Div_par(f, outloc, DIFF_METHOD_STRING(method));
+    return Div_par(f, outloc, toString(method));
   };
 
   const Field3D Div_par(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
                         const std::string& method = "DEFAULT");
   const Field3D Div_par(const Field3D& f, CELL_LOC outloc, DIFF_METHOD method) {
-    return Div_par(f, outloc, DIFF_METHOD_STRING(method));
+    return Div_par(f, outloc, toString(method));
   };
 
   // Second derivative along magnetic field
   const Field2D Grad2_par2(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                            const std::string& method = "DEFAULT");
   const Field2D Grad2_par2(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method) {
-    return Grad2_par2(f, outloc, DIFF_METHOD_STRING(method));
+    return Grad2_par2(f, outloc, toString(method));
   };
 
   const Field3D Grad2_par2(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
                            const std::string& method = "DEFAULT");
   const Field3D Grad2_par2(const Field3D& f, CELL_LOC outloc, DIFF_METHOD method) {
-    return Grad2_par2(f, outloc, DIFF_METHOD_STRING(method));
+    return Grad2_par2(f, outloc, toString(method));
   };
 
   // Perpendicular Laplacian operator, using only X-Z derivatives
@@ -209,6 +239,13 @@ private:
   int nz; // Size of mesh in Z. This is mesh->ngz-1
   Mesh * localmesh;
   CELL_LOC location;
+
+  /// Handles calculation of yup and ydown
+  std::unique_ptr<ParallelTransform> transform{nullptr};
+
+  /// Set the parallel (y) transform from the options file.
+  /// Used in the constructor to create the transform object.
+  void setParallelTransform(Options* options);
 };
 
 /*

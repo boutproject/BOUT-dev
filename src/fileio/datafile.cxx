@@ -38,6 +38,7 @@
 #include <globals.hxx>
 #include <bout/mesh.hxx>
 #include <bout/sys/timer.hxx>
+#include "bout_types.hxx"
 #include <datafile.hxx>
 #include <boutexception.hxx>
 #include <options.hxx>
@@ -172,9 +173,7 @@ bool Datafile::openr(const char *format, ...) {
   
   if(!openclose) {
     // Open the file now. Otherwise defer until later
-    int MYPE;
-    MPI_Comm_rank(BoutComm::get(), &MYPE);
-    if(!file->openr(filename, MYPE))
+    if(!file->openr(filename, BoutComm::rank()))
       throw BoutException("Datafile::open: Failed to open file!");
   }
 
@@ -215,9 +214,7 @@ bool Datafile::openw(const char *format, ...) {
   
   appending = false;
   // Open the file
-  int MYPE;
-  MPI_Comm_rank(BoutComm::get(), &MYPE);
-  if(!file->openw(filename, MYPE, appending))
+  if(!file->openw(filename, BoutComm::rank(), appending))
     throw BoutException("Datafile::open: Failed to open file!");
 
   appending = true;
@@ -249,6 +246,13 @@ bool Datafile::openw(const char *format, ...) {
   for (const auto& var : f3d_arr) {
     if (!file->addVarField3D(var.name, var.save_repeat)) {
       throw BoutException("Failed to add Field3D variable %s to Datafile", var.name.c_str());
+    }
+  }
+
+  // Add FieldPerps
+  for (const auto& var : fperp_arr) {
+    if (!file->addVarFieldPerp(var.name, var.save_repeat)) {
+      throw BoutException("Failed to add FieldPerp variable %s to Datafile", var.name.c_str());
     }
   }
 
@@ -318,9 +322,7 @@ bool Datafile::opena(const char *format, ...) {
   
   appending = true;
   // Open the file
-  int MYPE;
-  MPI_Comm_rank(BoutComm::get(), &MYPE);
-  if(!file->openw(filename, MYPE, true))
+  if(!file->openw(filename, BoutComm::rank(), true))
     throw BoutException("Datafile::open: Failed to open file!");
 
   first_time = true; // newly opened file, so write attributes when variables are first written
@@ -351,6 +353,13 @@ bool Datafile::opena(const char *format, ...) {
   for (const auto& var : f3d_arr) {
     if (!file->addVarField3D(var.name, var.save_repeat)) {
       throw BoutException("Failed to add Field3D variable %s to Datafile", var.name.c_str());
+    }
+  }
+
+  // Add FieldPerps
+  for (const auto& var : fperp_arr) {
+    if (!file->addVarFieldPerp(var.name, var.save_repeat)) {
+      throw BoutException("Failed to add FieldPerp variable %s to Datafile", var.name.c_str());
     }
   }
 
@@ -441,12 +450,10 @@ void Datafile::add(int &i, const char *name, bool save_repeat) {
     // Otherwise will add variables when Datafile is opened for writing/appending
     if (openclose) {
       // Open the file
-      int MYPE;
-      MPI_Comm_rank(BoutComm::get(), &MYPE);
       // Check filename has been set
       if (strcmp(filename, "") == 0)
         throw BoutException("Datafile::add: Filename has not been set");
-      if(!file->openw(filename, MYPE, appending))
+      if(!file->openw(filename, BoutComm::rank(), appending))
         throw BoutException("Datafile::add: Failed to open file!");
       appending = true;
     }
@@ -491,11 +498,9 @@ void Datafile::add(BoutReal &r, const char *name, bool save_repeat) {
     // Otherwise will add variables when Datafile is opened for writing/appending
     if (openclose) {
       // Open the file
-      int MYPE;
-      MPI_Comm_rank(BoutComm::get(), &MYPE);
       if (strcmp(filename, "") == 0)
         throw BoutException("Datafile::add: Filename has not been set");
-      if(!file->openw(filename, MYPE, appending))
+      if(!file->openw(filename, BoutComm::rank(), appending))
         throw BoutException("Datafile::add: Failed to open file!");
       appending = true;
     }
@@ -543,11 +548,9 @@ void Datafile::add(Field2D &f, const char *name, bool save_repeat) {
     // Otherwise will add variables when Datafile is opened for writing/appending
     if (openclose) {
       // Open the file
-      int MYPE;
-      MPI_Comm_rank(BoutComm::get(), &MYPE);
       if (strcmp(filename, "") == 0)
         throw BoutException("Datafile::add: Filename has not been set");
-      if(!file->openw(filename, MYPE, appending))
+      if(!file->openw(filename, BoutComm::rank(), appending))
         throw BoutException("Datafile::add: Failed to open file!");
       appending = true;
     }
@@ -595,11 +598,9 @@ void Datafile::add(Field3D &f, const char *name, bool save_repeat) {
     // Otherwise will add variables when Datafile is opened for writing/appending
     if (openclose) {
       // Open the file
-      int MYPE;
-      MPI_Comm_rank(BoutComm::get(), &MYPE);
       if (strcmp(filename, "") == 0)
         throw BoutException("Datafile::add: Filename has not been set");
-      if(!file->openw(filename, MYPE, appending))
+      if(!file->openw(filename, BoutComm::rank(), appending))
         throw BoutException("Datafile::add: Failed to open file!");
       appending = true;
     }
@@ -613,6 +614,56 @@ void Datafile::add(Field3D &f, const char *name, bool save_repeat) {
     // Add variable to file
     if (!file->addVarField3D(name, save_repeat)) {
       throw BoutException("Failed to add Field3D variable %s to Datafile", name);
+    }
+
+    if(openclose) {
+      file->close();
+    }
+  }
+}
+
+void Datafile::add(FieldPerp &f, const char *name, bool save_repeat) {
+  AUTO_TRACE();
+  if (!enabled)
+    return;
+  if (varAdded(name)) {
+    // Check if it's the same variable
+    if (&f == varPtr(name)) {
+      output_warn.write("WARNING: variable '%s' added again to Datafile\n", name);
+    } else {
+      throw BoutException("Variable with name '%s' already added to Datafile", name);
+    }
+  }
+
+  VarStr<FieldPerp> d;
+
+  d.ptr = &f;
+  d.name = name;
+  d.save_repeat = save_repeat;
+  d.covar = false;
+
+  fperp_arr.push_back(d);
+
+  if (writable) {
+    // Otherwise will add variables when Datafile is opened for writing/appending
+    if (openclose) {
+      // Open the file
+      if (strcmp(filename, "") == 0)
+        throw BoutException("Datafile::add: Filename has not been set");
+      if(!file->openw(filename, BoutComm::rank(), appending))
+        throw BoutException("Datafile::add: Failed to open file!");
+      appending = true;
+    }
+
+    if(!file->is_valid())
+      throw BoutException("Datafile::add: File is not valid!");
+
+    if(floats)
+      file->setLowPrecision();
+
+    // Add variable to file
+    if (!file->addVarFieldPerp(name, save_repeat)) {
+      throw BoutException("Failed to add FieldPerp variable %s to Datafile", name);
     }
 
     if(openclose) {
@@ -647,11 +698,9 @@ void Datafile::add(Vector2D &f, const char *name, bool save_repeat) {
     // Otherwise will add variables when Datafile is opened for writing/appending
     if (openclose) {
       // Open the file
-      int MYPE;
-      MPI_Comm_rank(BoutComm::get(), &MYPE);
       if (strcmp(filename, "") == 0)
         throw BoutException("Datafile::add: Filename has not been set");
-      if(!file->openw(filename, MYPE, appending))
+      if(!file->openw(filename, BoutComm::rank(), appending))
         throw BoutException("Datafile::add: Failed to open file!");
       appending = true;
     }
@@ -705,11 +754,9 @@ void Datafile::add(Vector3D &f, const char *name, bool save_repeat) {
     // Otherwise will add variables when Datafile is opened for writing/appending
     if (openclose) {
       // Open the file
-      int MYPE;
-      MPI_Comm_rank(BoutComm::get(), &MYPE);
       if (strcmp(filename, "") == 0)
         throw BoutException("Datafile::add: Filename has not been set");
-      if(!file->openw(filename, MYPE, appending))
+      if(!file->openw(filename, BoutComm::rank(), appending))
         throw BoutException("Datafile::add: Failed to open file!");
       appending = true;
     }
@@ -742,9 +789,7 @@ bool Datafile::read() {
 
   if(openclose) {
     // Open the file
-    int MYPE;
-    MPI_Comm_rank(BoutComm::get(), &MYPE);
-    if(!file->openr(filename, MYPE))
+    if(!file->openr(filename, BoutComm::rank()))
       throw BoutException("Datafile::read: Failed to open file!");
   }
   
@@ -809,6 +854,11 @@ bool Datafile::read() {
     read_f3d(var.name, var.ptr, var.save_repeat);
   }
 
+  // Read FieldPerps
+  for(const auto& var : fperp_arr) {
+    read_fperp(var.name, var.ptr, var.save_repeat);
+  }
+
   // 2D vectors
   for(const auto& var : v2d_arr) {
     if(var.covar) {
@@ -860,9 +910,7 @@ bool Datafile::write() {
 
   if(openclose && (flushFrequencyCounter % flushFrequency == 0)) {
     // Open the file
-    int MYPE;
-    MPI_Comm_rank(BoutComm::get(), &MYPE);
-    if(!file->openw(filename, MYPE, appending))
+    if(!file->openw(filename, BoutComm::rank(), appending))
       throw BoutException("Datafile::write: Failed to open file!");
     appending = true;
     flushFrequencyCounter = 0;
@@ -881,39 +929,38 @@ bool Datafile::write() {
   if (first_time) {
     first_time = false;
 
-    // Set the cell location attributes.
-    // Location must have been set for all fields before the first time output
-    // is written, since this happens after the first rhs evaluation
+    // Set the field attributes from field meta-data.
+    // Attributes must have been set for all fields before the first time
+    // output is written, since this happens after the first rhs evaluation
     // 2D fields
     for (const auto& var : f2d_arr) {
-      file->setAttribute(var.name, "cell_location", CELL_LOC_STRING(var.ptr->getLocation()));
+      file->writeFieldAttributes(var.name, *var.ptr);
     }
 
     // 3D fields
     for (const auto& var : f3d_arr) {
-      file->setAttribute(var.name, "cell_location", CELL_LOC_STRING(var.ptr->getLocation()));
+      file->writeFieldAttributes(var.name, *var.ptr);
+    }
+
+    // FieldPerps
+    for (const auto& var : fperp_arr) {
+      file->writeFieldAttributes(var.name, *var.ptr);
     }
 
     // 2D vectors
     for(const auto& var : v2d_arr) {
       Vector2D v  = *(var.ptr);
-      file->setAttribute(var.name+"_x", "cell_location",
-                         CELL_LOC_STRING(v.x.getLocation()));
-      file->setAttribute(var.name+"_y", "cell_location",
-                         CELL_LOC_STRING(v.y.getLocation()));
-      file->setAttribute(var.name+"_z", "cell_location",
-                         CELL_LOC_STRING(v.z.getLocation()));
+      file->writeFieldAttributes(var.name+"_x", v.x);
+      file->writeFieldAttributes(var.name+"_y", v.y);
+      file->writeFieldAttributes(var.name+"_z", v.z);
     }
 
     // 3D vectors
     for(const auto& var : v3d_arr) {
       Vector3D v  = *(var.ptr);
-      file->setAttribute(var.name+"_x", "cell_location",
-                         CELL_LOC_STRING(v.x.getLocation()));
-      file->setAttribute(var.name+"_y", "cell_location",
-                         CELL_LOC_STRING(v.y.getLocation()));
-      file->setAttribute(var.name+"_z", "cell_location",
-                         CELL_LOC_STRING(v.z.getLocation()));
+      file->writeFieldAttributes(var.name+"_x", v.x);
+      file->writeFieldAttributes(var.name+"_y", v.y);
+      file->writeFieldAttributes(var.name+"_z", v.z);
     }
   }
 
@@ -937,6 +984,11 @@ bool Datafile::write() {
     write_f3d(var.name, var.ptr, var.save_repeat);
   }
   
+  // Write FieldPerps
+  for (const auto& var : fperp_arr) {
+    write_fperp(var.name, var.ptr, var.save_repeat);
+  }
+
   // 2D vectors
   for(const auto& var : v2d_arr) {
     if(var.covar) {
@@ -1002,7 +1054,7 @@ bool Datafile::write(const char *format, ...) const {
   // Create a new datafile
   Datafile tmp(*this);
 
-  tmp.openw(filename);
+  tmp.openw("%s",filename);
   bool ret = tmp.write();
   tmp.close();
 
@@ -1022,9 +1074,7 @@ void Datafile::setAttribute(const std::string &varname, const std::string &attrn
 
   if(openclose && (flushFrequencyCounter % flushFrequency == 0)) {
     // Open the file
-    int MYPE;
-    MPI_Comm_rank(BoutComm::get(), &MYPE);
-    if(!file->openw(filename, MYPE, appending))
+    if(!file->openw(filename, BoutComm::rank(), appending))
       throw BoutException("Datafile::write: Failed to open file!");
     appending = true;
     flushFrequencyCounter = 0;
@@ -1051,9 +1101,7 @@ void Datafile::setAttribute(const std::string &varname, const std::string &attrn
 
   if(openclose && (flushFrequencyCounter % flushFrequency == 0)) {
     // Open the file
-    int MYPE;
-    MPI_Comm_rank(BoutComm::get(), &MYPE);
-    if(!file->openw(filename, MYPE, appending))
+    if(!file->openw(filename, BoutComm::rank(), appending))
       throw BoutException("Datafile::write: Failed to open file!");
     appending = true;
     flushFrequencyCounter = 0;
@@ -1080,9 +1128,7 @@ void Datafile::setAttribute(const std::string &varname, const std::string &attrn
 
   if(openclose && (flushFrequencyCounter % flushFrequency == 0)) {
     // Open the file
-    int MYPE;
-    MPI_Comm_rank(BoutComm::get(), &MYPE);
-    if(!file->openw(filename, MYPE, appending))
+    if(!file->openw(filename, BoutComm::rank(), appending))
       throw BoutException("Datafile::write: Failed to open file!");
     appending = true;
     flushFrequencyCounter = 0;
@@ -1101,6 +1147,16 @@ void Datafile::setAttribute(const std::string &varname, const std::string &attrn
 /////////////////////////////////////////////////////////////
 
 bool Datafile::read_f2d(const std::string &name, Field2D *f, bool save_repeat) {
+  try {
+    file->readFieldAttributes(name, *f);
+  } catch (const BoutException &e) {
+    if (init_missing) {
+      output_warn.write("\tWARNING: Could not read 2D field %s attributes.\n", name.c_str());
+    } else {
+      throw;
+    }
+  }
+
   f->allocate();
   
   if(save_repeat) {
@@ -1129,6 +1185,16 @@ bool Datafile::read_f2d(const std::string &name, Field2D *f, bool save_repeat) {
 }
 
 bool Datafile::read_f3d(const std::string &name, Field3D *f, bool save_repeat) {
+  try {
+    file->readFieldAttributes(name, *f);
+  } catch (const BoutException &e) {
+    if (init_missing) {
+      output_warn.write("\tWARNING: Could not read 3D field %s attributes.\n", name.c_str());
+    } else {
+      throw;
+    }
+  }
+
   f->allocate();
   
   if(save_repeat) {
@@ -1156,9 +1222,57 @@ bool Datafile::read_f3d(const std::string &name, Field3D *f, bool save_repeat) {
   
   if (shiftInput) {
     // Input file is in field-aligned coordinates e.g. BOUT++ 3.x restart file
-    *f = mesh->fromFieldAligned(*f);
+    *f = fromFieldAligned(*f, RGN_ALL);
   }
   
+  return true;
+}
+
+bool Datafile::read_fperp(const std::string &name, FieldPerp *f, bool save_repeat) {
+  try {
+    file->readFieldAttributes(name, *f);
+  } catch (const BoutException &e) {
+    if (init_missing) {
+      output_warn.write("\tWARNING: Could not read FieldPerp %s attributes.\n", name.c_str());
+    } else {
+      throw;
+    }
+  }
+
+  int yindex = f->getIndex();
+  if (yindex >= 0 and yindex < mesh->LocalNy) {
+    // yindex is in the range of this processor, so read FieldPerp
+
+    f->allocate();
+
+    if(save_repeat) {
+      if(!file->read_rec_perp(&((*f)(0,0)), name, mesh->LocalNx, mesh->LocalNz)) {
+        if(init_missing) {
+          output_warn.write("\tWARNING: Could not read FieldPerp %s. Setting to zero\n", name.c_str());
+          *f = 0.0;
+        }else {
+          throw BoutException("Missing evolving FieldPerp %s in input. Set init_missing=true to set to zero.", name.c_str());
+        }
+        return false;
+      }
+    }else {
+      if(!file->read_perp(&((*f)(0,0)), name, mesh->LocalNx, mesh->LocalNz)) {
+        if(init_missing) {
+          output_warn.write("\tWARNING: Could not read FieldPerp %s. Setting to zero\n", name.c_str());
+          *f = 0.0;
+        }else {
+          throw BoutException("Missing FieldPerp %s in input. Set init_missing=true to set to zero.", name.c_str());
+        }
+        return false;
+      }
+    }
+
+    if (shiftInput) {
+      // Input file is in field-aligned coordinates e.g. BOUT++ 3.x restart file
+      *f = fromFieldAligned(*f, RGN_ALL);
+    }
+  }
+
   return true;
 }
 
@@ -1200,9 +1314,9 @@ bool Datafile::write_f3d(const std::string &name, Field3D *f, bool save_repeat) 
   }
 
   //Deal with shifting the output
-  Field3D f_out(f->getMesh());
+  Field3D f_out{emptyFrom(*f)};
   if(shiftOutput) {
-    f_out = mesh->toFieldAligned(*f);
+    f_out = toFieldAligned(*f);
   }else {
     f_out = *f;
   }
@@ -1212,6 +1326,33 @@ bool Datafile::write_f3d(const std::string &name, Field3D *f, bool save_repeat) 
   }else {
     return file->write(&(f_out(0,0,0)), name, mesh->LocalNx, mesh->LocalNy, mesh->LocalNz);
   }
+}
+
+bool Datafile::write_fperp(const std::string &name, FieldPerp *f, bool save_repeat) {
+  int yindex = f->getIndex();
+  if (yindex >= 0 and yindex < mesh->LocalNy) {
+    if (!f->isAllocated()) {
+      throw BoutException("Datafile::write_fperp: FieldPerp '%s' is not allocated!", name.c_str());
+    }
+
+    //Deal with shifting the output
+    FieldPerp f_out{emptyFrom(*f)};
+    if(shiftOutput) {
+      f_out = toFieldAligned(*f);
+    }else {
+      f_out = *f;
+    }
+
+    if(save_repeat) {
+      return file->write_rec_perp(&(f_out(0,0)), name, mesh->LocalNx, mesh->LocalNz);
+    }else {
+      return file->write_perp(&(f_out(0,0)), name, mesh->LocalNx, mesh->LocalNz);
+    }
+  }
+
+  // Don't need to write f as it's y-index is not on this processor. Return
+  // without doing anything.
+  return true;
 }
 
 bool Datafile::varAdded(const std::string &name) {

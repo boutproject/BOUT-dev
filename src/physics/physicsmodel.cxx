@@ -42,9 +42,6 @@ PhysicsModel::PhysicsModel()
   restart = Datafile(Options::getRoot()->getSection("restart"));
 }
 
-PhysicsModel::~PhysicsModel() {
-}
-
 int PhysicsModel::runRHS(BoutReal time) {
   return rhs(time);
 }
@@ -121,7 +118,7 @@ int PhysicsModel::postInit(bool restarting) {
     output.write("Loading restart file: %s\n", filename.c_str());
 
     /// Load restart file
-    if (!restart.openr(filename.c_str()))
+    if (!restart.openr("%s",filename.c_str()))
       throw BoutException("Error: Could not open restart file\n");
     if (!restart.read())
       throw BoutException("Error: Could not read restart file\n");
@@ -136,7 +133,7 @@ int PhysicsModel::postInit(bool restarting) {
   restart.addOnce(const_cast<BoutReal &>(BOUT_VERSION), "BOUT_VERSION");
 
   /// Open the restart file for writing
-  if (!restart.openw(filename.c_str()))
+  if (!restart.openw("%s",filename.c_str()))
     throw BoutException("Error: Could not open restart file for writing\n");
 
   // Add monitor to the solver which calls restart.write() and

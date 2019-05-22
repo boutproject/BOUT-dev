@@ -427,8 +427,7 @@ public:
     output_debug << "KSPSolve finished with converged reason : " << reason << endl;
 
     // lhs to lhsField -- first make the output field and ensure it has space allocated
-    T lhsField(localmesh);
-    lhsField.allocate();
+    T lhsField{emptyFrom(rhsField)};
 
     ierr = petscVecToField(lhs, lhsField);
     CHKERRQ(ierr);

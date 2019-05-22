@@ -211,21 +211,21 @@ LaplaceMumps::LaplaceMumps(Options *opt, const CELL_LOC loc, Mesh *mesh_in = mes
     localrhssize += localmesh->xstart*(localmesh->LocalNz);
     
     int nxpe = localmesh->NXPE;
-    localrhs_size_array = Array<int>(nxpe);
+    localrhs_size_array.reallocate(nxpe);
     localrhs_size_array[0] = localrhssize;
     if (nxpe>1) {
       for (int i=1; i<nxpe-1; i++)
 	localrhs_size_array[i] = (localmesh->xend-localmesh->xstart+1)*(localmesh->LocalNz);
       localrhs_size_array[nxpe-1] = (localmesh->LocalNx-localmesh->xstart)*(localmesh->LocalNz);
     }
-    rhs_positions = Array<int>(nxpe);
+    rhs_positions.reallocate(nxpe);
     rhs_positions[0] = 0;
     for (int i=1; i<nxpe; i++)
       rhs_positions[i] = rhs_positions[i-1] + localrhs_size_array[i-1];
 
-    rhs = Array<BoutReal>(meshx * meshz);
+    rhs.reallocate(meshx * meshz);
   }
-  localrhs = Array<BoutReal>(localrhssize);
+  localrhs.reallocate(localrhssize);
 
   // Set Arrays of matrix indices, using i (0<=i<nz_loc), and solution indices, using j (0<=j<localN)
   int i=0; //int j=0;
@@ -558,11 +558,11 @@ LaplaceMumps::LaplaceMumps(Options *opt, const CELL_LOC loc, Mesh *mesh_in = mes
 // 
 // }
 
-const FieldPerp LaplaceMumps::solve(const FieldPerp &b, const FieldPerp &x0) {
+FieldPerp LaplaceMumps::solve(const FieldPerp& b, const FieldPerp& x0) {
   return solve(b);
 }
 
-const FieldPerp LaplaceMumps::solve(const FieldPerp &b) {
+FieldPerp LaplaceMumps::solve(const FieldPerp& b) {
   ASSERT1(localmesh == b.getMesh());
   ASSERT1(b.getLocation() == location);
 

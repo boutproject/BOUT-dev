@@ -55,7 +55,7 @@ public:
   }
   void setCoefs(const Field2D& UNUSED(A), const Field2D& UNUSED(B)) {}
   const Field2D solve(const Field2D& UNUSED(rhs), const Field2D& UNUSED(x0)) {
-    return {};
+    throw BoutException("LaplaceXY requires PETSc. No LaplaceXY available");
   }
 };
 

@@ -7,21 +7,23 @@
 #requires: all_tests
 #Requires: hdf5
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
+from boututils.run_wrapper import shell, shell_safe, launch_safe
 from boutdata.collect import collect
 import numpy as np
 from sys import stdout, exit
 
-MPIRUN=getmpirun()
+
 
 print("Making I/O test")
 shell_safe("make > make.log")
 
 # Read benchmark values
 
-vars = ['ivar', 'rvar', 'f2d', 'f3d', 'ivar_evol', 'rvar_evol', 'v2d_evol_x', 'v2d_evol_y', 'v2d_evol_z']
+vars = ['ivar', 'rvar', 'f2d', 'f3d', 'fperp', 'fperp2', 'ivar_evol', 'rvar_evol',
+        'v2d_evol_x', 'v2d_evol_y', 'v2d_evol_z', 'fperp2_evol']
 
-field_vars = ['f2d', 'f3d', 'v2d_evol_x', 'v2d_evol_y', 'v2d_evol_z'] # Field quantities, not scalars
+field_vars = ['f2d', 'f3d', 'fperp', 'fperp2', 'v2d_evol_x', 'v2d_evol_y', 'v2d_evol_z',
+        'fperp2_evol'] # Field quantities, not scalars
 
 tol = 1e-10
 
@@ -42,7 +44,7 @@ for nproc in [1,2,4]:
   # Run test case
 
   print("   %d processor...." % (nproc))
-  s, out = launch_safe(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
+  s, out = launch_safe(cmd, nproc=nproc, pipe=True)
   with open("run.log."+str(nproc), "w") as f:
     f.write(out)
 

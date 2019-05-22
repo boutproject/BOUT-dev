@@ -88,7 +88,8 @@ LIB    = $(BOUT_LIB_PATH)/libbout++.a
 LIB_SO = $(BOUT_LIB_PATH)/libbout++.so
 endif
 
-BOUT_INCLUDE = -I$(BOUT_INCLUDE_PATH) $(CXXINCLUDE) $(EXTRA_INCS)
+MPARK_VARIANT_INCLUDE_PATH=@MPARK_VARIANT_INCLUDE_PATH@
+BOUT_INCLUDE = -I$(BOUT_INCLUDE_PATH) $(CXXINCLUDE) $(EXTRA_INCS) -I$(MPARK_VARIANT_INCLUDE_PATH)
 BOUT_LIBS    = -lm -L$(BOUT_LIB_PATH) -lbout++ $(EXTRA_LIBS)
 
 CHANGED = $(shell find -f $(BOUT_TOP)/include $(BOUT_TOP)/src -type f \( -name \*.cxx -or -name \*.h \) -newer $(LIB) -print 2> /dev/null)
@@ -161,10 +162,11 @@ install: libfast
 	$(PRE_INSTALL)     # Pre-install commands follow.
 
 	$(NORMAL_INSTALL)  # Normal commands follow.
-	$(MKDIR) $(INSTALL_INCLUDE_PATH)/{,pvode,bout/sys,bout/invert}
+	$(MKDIR) $(INSTALL_INCLUDE_PATH)/{,pvode,bout/sys,bout/invert,mpark}
 	$(MKDIR) $(DESTDIR)/{@libdir@,@bindir@,@datadir@/bout++/idllib}
 	$(MKDIR) $(DESTDIR)/@datadir@/bout++/pylib/{boutdata,boututils}
 	$(INSTALL_DATA) include/*.hxx $(INSTALL_INCLUDE_PATH)
+	$(INSTALL_DATA) $(MPARK_VARIANT_INCLUDE_PATH)/mpark/*.hpp $(INSTALL_INCLUDE_PATH)/mpark
 	$(INSTALL_DATA) include/pvode/*.h $(INSTALL_INCLUDE_PATH)/pvode/
 	$(INSTALL_DATA) include/bout/*.hxx $(INSTALL_INCLUDE_PATH)/bout/
 	$(INSTALL_DATA) include/bout/sys/*.hxx $(INSTALL_INCLUDE_PATH)/bout/sys/
@@ -188,11 +190,13 @@ install: libfast
 	sed -i "s|^BOUT_CONFIG_FILE=.*|BOUT_CONFIG_FILE=@datadir@/bout++/make.config|" $(DESTDIR)@bindir@/bout-config
 	sed -i "s|^idlpath=.*|idlpath=@datadir@/bout++/idllib/|" $(DESTDIR)@bindir@/bout-config
 	sed -i "s|^pythonpath=.*|pythonpath=@datadir@/bout++/pylib/|" $(DESTDIR)@bindir@/bout-config
+	sed -i "s|^MPARK_VARIANT_INCLUDE_PATH=.*|MPARK_VARIANT_INCLUDE_PATH=@includedir@/bout++|" $(DESTDIR)@bindir@/bout-config
 
 	@# Modify paths in the make.config file
 	sed -i "s|^BOUT_INCLUDE_PATH=.*|BOUT_INCLUDE_PATH=@includedir@/bout++|" $(DESTDIR)@datadir@/bout++/make.config
 	sed -i "s|^BOUT_LIB_PATH=.*|BOUT_LIB_PATH=@libdir@|" $(DESTDIR)@datadir@/bout++/make.config
 	sed -i "s|^BOUT_CONFIG_FILE=.*|BOUT_CONFIG_FILE=@datadir@/bout++/make.config|" $(DESTDIR)@datadir@/bout++/make.config
+	sed -i "s|^MPARK_VARIANT_INCLUDE_PATH=.*|MPARK_VARIANT_INCLUDE_PATH=@includedir@/bout++|" $(DESTDIR)@datadir@/bout++/make.config
 
 uninstall:
 	$(PRE_UNINSTALL)     # Pre-uninstall commands follow.

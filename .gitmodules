@@ -7,3 +7,6 @@
 [submodule "externalpackages/pybind11"]
 	path = externalpackages/pybind11
 	url = https://github.com/pybind/pybind11.git
+[submodule "mpark.variant"]
+	path = externalpackages/mpark.variant
+	url = https://github.com/mpark/variant.git

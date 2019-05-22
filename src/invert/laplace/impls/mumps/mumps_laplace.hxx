@@ -52,7 +52,7 @@ public:
   void setCoefEz(const Field2D &UNUSED(val)) override {}
 
   using Laplacian::solve;
-  const FieldPerp solve(const FieldPerp &UNUSED(b)) override{
+  FieldPerp solve(const FieldPerp &UNUSED(b)) override{
     throw BoutException("Mumps library not available");
   }
 };
@@ -172,10 +172,12 @@ public:
     issetE = true;
   }
   
+  bool uses3DCoefs() const override { return true; }
+
   void setFlags(int f) {throw BoutException("May not change the value of flags during run in LaplaceMumps as it might change the number of non-zero matrix elements: flags may only be set in the options file.");}
   
-  const FieldPerp solve(const FieldPerp &b) override;
-  const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override;
+  FieldPerp solve(const FieldPerp &b) override;
+  FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override;
 //   const Field3D solve(const Field3D &b);
 //   const Field3D solve(const Field3D &b, const Field3D &x0);
 

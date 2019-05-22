@@ -36,8 +36,7 @@ Interpolation* InterpolationFactory::create(Options *options, Mesh *mesh) {
   if (options == nullptr)
     options = Options::getRoot()->getSection("interpolation");
 
-  std::string interp_option;
-  options->get("type", interp_option, type);
+  std::string interp_option = (*options)["type"].withDefault(type);
 
   if (!interp_option.empty()) type = interp_option.c_str();
 
@@ -65,9 +64,8 @@ Interpolation* InterpolationFactory::create(const std::string &name, Options *op
 }
 
 void InterpolationFactory::add(CreateInterpCallback interp, const std::string &name) {
-  if ((findInterpolation(name)) != nullptr) {
-    // error - already exists
-    output << "ERROR: Trying to add an already existing interpolation: " << name << endl;
+  if (findInterpolation(name) != nullptr) {
+    output_warn << "ERROR: Trying to add an already existing interpolation: " << name << endl;
     return;
   }
   interp_map[lowercase(name)] = interp;

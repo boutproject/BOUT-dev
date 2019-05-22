@@ -90,31 +90,31 @@ private:
     
     auto globalOptions = Options::root();
     auto options = globalOptions["gravity"];
-    
-    OPTION(options, nonlinear, false);
-    
+
+    nonlinear = options["nonlinear"].withDefault(false);
+
     if (nonlinear) {
       output <<"Solving WITH nonlinear terms\n";
     } else {
       output <<"Solving WITHOUT nonlinear terms\n";
     }
-    
-    OPTION(options, phi_flags, 0);
+
+    phi_flags = options["phi_flags"].withDefault(0);
     phi.setBoundary("phi");
 
-    OPTION(options, viscos_par, 0.);
-    OPTION(options, viscos_perp, 0.);
-    OPTION(options, mu_0, 1.);
-    OPTION(options, Gamma, 5./3.);
-    
+    viscos_par = options["viscos_par"].withDefault(0.);
+    viscos_perp = options["viscos_perp"].withDefault(0.);
+    mu_0 = options["mu_0"].withDefault(1.);
+    Gamma = options["Gamma"].withDefault(5. / 3.);
+
     // load metric tensor components
 
     coord = mesh->getCoordinates();
     
     BoutReal Lz; // Size of the Z box
-    
-    OPTION(options, Lz, 1.);
-    
+
+    Lz = options["Lz"].withDefault(1.);
+
     // Set the metric tensor components to get Lz
     coord->g33 = SQ(2.*PI/Lz);
     coord->g_33 = 1. / coord->g33;

@@ -3,111 +3,114 @@
 #include <bout/physicsmodel.hxx>
 #include <bout.hxx>
 
-// simplify the datafile with sane defaults
-// Note that you should never ever copy the datafile ...
+// Simplify the datafile with sane defaults
+// Note that you should never ever copy the datafile.
 // The constructor takes a pointer to an options object, or the name
 // of a section.
 // Unlike the default Datafile, SimpleDatafile always ends up in the
 // correct folder, and should throw if it possible to detect the error.
-class SimpleDatafile: public Datafile{
+class SimpleDatafile : public Datafile {
 public:
-  SimpleDatafile(std::string section):SimpleDatafile(Options::getRoot()->getSection(section.c_str())
-                                                     ,section){};
-    SimpleDatafile(Options* ops,std::string section="Default"):Datafile(ops){
-    // Open a file for the output
-    std::string datadir;
-    if (ops->isSet("path")){
-      ops->get("path",datadir,"data");// default never needed
-    } else {
-      OPTION(Options::getRoot(),datadir,"data"); // I need to know data is default :(
-    }
-    std::string file;
-    file = section+".dmp";
-    OPTION(ops,file,file);
-    bool append;
-    if (ops->isSet("append")){
-      OPTION(ops,append,false);
-    } else {
-      OPTION(Options::getRoot(),append,false); // I hope that is the correct default
-    }
-    std::string dump_ext="nc"; // bad style, but I only use nc
+  SimpleDatafile(std::string section)
+      : SimpleDatafile(Options::root()[section], section){};
+  SimpleDatafile(Options& ops, std::string section = "Default") : Datafile(&ops) {
 
-    if(append) {
+    // Open a file for the output
+    std::string datadir = "data";
+    if (ops.isSet("path")) {
+      datadir = ops["path"].as<std::string>();
+    } else {
+      datadir = Options::root()["datadir"].withDefault(datadir);
+    }
+
+    const std::string default_filename = section + ".dmp";
+    const std::string file = ops["file"].withDefault(default_filename);
+
+    bool append;
+    if (ops.isSet("append")) {
+      append = ops["append"].withDefault(false);
+    } else {
+      append = Options::root()["append"].withDefault(false);
+    }
+
+    const std::string dump_ext = "nc";
+
+    if (append) {
       if (!this->opena("%s/%s.%s", datadir.c_str(), file.c_str(), dump_ext.c_str()))
         throw BoutException("Failed to open file for appending!");
-      //output.write("opend succesfully for appending\n");
-    }else {
+    } else {
       if (!this->openw("%s/%s.%s", datadir.c_str(), file.c_str(), dump_ext.c_str()))
         throw BoutException("Failed to open file for writing!");
-      //output.write("opend succesfully for writing\n");
     }
   }
 };
 
 // Monitor to write out 1d Data
-class Monitor1dDump:public Monitor{
+class Monitor1dDump : public Monitor {
 public:
-  Monitor1dDump(BoutReal timestep,std::string section_name)
-    :Monitor(timestep),
-    dump(new SimpleDatafile(section_name))
-  {
-    dump->add(time,"t_array",true);
+  Monitor1dDump(BoutReal timestep, std::string section_name)
+      : Monitor(timestep), dump(bout::utils::make_unique<SimpleDatafile>(section_name)) {
+    dump->add(time, "t_array", true);
   };
-  int call(Solver * solver,double _time,int i1,int i2) override{
-    time=_time;
-    dump->write(); // this should throw if it doesn't work
+  int call(Solver*, BoutReal _time, int, int) override {
+    time = _time;
+    dump->write();
     return 0;
   }
-  void add(BoutReal &data,std::string name){
-    dump->add(data,name.c_str(),true);
+  void add(BoutReal& data, const std::string& name) {
+    dump->add(data, name.c_str(), true);
   }
+
 private:
   BoutReal time;
-  Datafile * dump;
+  std::unique_ptr<Datafile> dump{nullptr};
 };
 
-
-
+/// An example of using multiple monitors on different timescales
 class MonitorExample : public PhysicsModel {
 protected:
-  int init(bool restarting) {
-    SOLVE_FOR2(n,T);
-    // our monitor writes out data every 100th of a time unit
+  int init(bool) {
+    SOLVE_FOR2(n, T);
+
+    // Our monitor writes out data every 100th of a time unit
     // note that this is independent of time_step.
     // Especially if the monitor influences the physics, and isn't
     // just used to output data, this is probably what you want.
-    probes=new Monitor1dDump(.01, "probes");
+    probes = bout::utils::make_unique<Monitor1dDump>(.01, "probes");
+
     // In case the monitor should be relative to the timestep, the
     // timestep needs to be read first:
-    BoutReal timestep;
-    OPTION(Options::getRoot(),timestep,-1);
-    // There is no 'slow' section in BOUT.inp, therfore it will write
+    const BoutReal timestep = Options::root()["timestep"].withDefault(-1);
+
+    // There is no 'slow' section in BOUT.inp, therefore it will write
     // to data/slow.dmp.0.nc
-    Monitor1dDump * slow=new Monitor1dDump(timestep*2,"slow");
-    // now we can add the monitors
-    solver->addMonitor(probes);
-    solver->addMonitor(slow);
-    // the derived monitor Monitor1dData can dump 1d data, which we can
-    // now add:
-    probes->add(n(mesh->xstart,mesh->ystart,0),"n_up");
-    probes->add(T(mesh->xstart,mesh->ystart,0),"T_up");
-    // add the corner value
-    slow->add(T(0,0,0),"T"); // T is already present in BOUT.dmp - but
-                             // as it is a differnt file, this doesn't
-                             // cause issues.
+    slow = bout::utils::make_unique<Monitor1dDump>(timestep * 2, "slow");
+
+    // Now we can add the monitors
+    solver->addMonitor(probes.get());
+    solver->addMonitor(slow.get());
+
+    // The derived monitor Monitor1dData can dump 1d data, which we
+    // can now add:
+    probes->add(n(mesh->xstart, mesh->ystart, 0), "n_up");
+    probes->add(T(mesh->xstart, mesh->ystart, 0), "T_up");
+
+    // Add the corner value. T is already present in BOUT.dmp - but
+    // as it is a different file, this doesn't cause issues
+    slow->add(T(mesh->xstart, mesh->ystart, 0), "T");
     return 0;
   }
 
-  int rhs(BoutReal t) {
+  int rhs(BoutReal) {
     ddt(n) = -T;
     ddt(T) = -n;
     return 0;
   }
-private:
-  Field3D n,T;
 
-  Monitor1dDump * probes, * slow;
+private:
+  Field3D n, T;
+
+  std::unique_ptr<Monitor1dDump> probes{nullptr}, slow{nullptr};
 };
 
 BOUTMAIN(MonitorExample);
-

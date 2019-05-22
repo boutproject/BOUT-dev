@@ -15,16 +15,19 @@ class Datafile;
 #define __DATAFILE_H__
 
 #include "bout_types.hxx"
-#include "options.hxx"
 #include "bout/macro_for_each.hxx"
 
 #include "dataformat.hxx"
+#include "bout/format.hxx"
 
 #include <cstdarg>
 #include <cstdio>
 class Mesh;
+class Field;
 class Field2D;
 class Field3D;
+class FieldPerp;
+class Options;
 class Vector2D;
 class Vector3D;
 
@@ -45,34 +48,39 @@ class Datafile {
   Datafile& operator=(Datafile &&rhs) noexcept;
   Datafile& operator=(const Datafile &rhs) = delete;
 
-  bool openr(const char *filename, ...);
-  bool openw(const char *filename, ...); // Overwrites existing file
-  bool opena(const char *filename, ...); // Appends if exists
+  bool openr(const char *filename, ...)
+    BOUT_FORMAT_ARGS( 2, 3);
+  bool openw(const char *filename, ...)
+    BOUT_FORMAT_ARGS( 2, 3); // Overwrites existing file
+  bool opena(const char *filename, ...)
+    BOUT_FORMAT_ARGS( 2, 3); // Appends if exists
   
   bool isValid();  // Checks if the data source is valid
 
   void close();
 
   void setLowPrecision(); ///< Only output floats
-  template <typename t>
-  void addRepeat(t &value, std::string name){
-    add(value,name.c_str(),true);
+  template <typename T>
+  void addRepeat(T& value, std::string name) {
+    add(value, name.c_str(), true);
   }
-  template <typename t>
-  void addOnce(t &value, std::string name){
-    add(value,name.c_str(),false);
+  template <typename T>
+  void addOnce(T& value, std::string name) {
+    add(value, name.c_str(), false);
   }
   void add(int &i, const char *name, bool save_repeat = false);
   void add(BoutReal &r, const char *name, bool save_repeat = false);
   void add(Field2D &f, const char *name, bool save_repeat = false);
   void add(Field3D &f, const char *name, bool save_repeat = false);
+  void add(FieldPerp &f, const char *name, bool save_repeat = false);
   void add(Vector2D &f, const char *name, bool save_repeat = false);
   void add(Vector3D &f, const char *name, bool save_repeat = false);
   
   bool read();  ///< Read data into added variables 
   bool write(); ///< Write added variables
 
-  bool write(const char *filename, ...) const; ///< Opens, writes, closes file
+  /// Opens, writes, closes file
+  bool write(const char* filename, ...) const BOUT_FORMAT_ARGS(2, 3);
 
   void setAttribute(const std::string &varname, const std::string &attrname, const std::string &text);
   void setAttribute(const std::string &varname, const std::string &attrname, int value);
@@ -119,16 +127,19 @@ class Datafile {
   std::vector<VarStr<BoutReal>> BoutReal_arr;
   std::vector<VarStr<Field2D>> f2d_arr;
   std::vector<VarStr<Field3D>> f3d_arr;
+  std::vector<VarStr<FieldPerp>> fperp_arr;
   std::vector<VarStr<Vector2D>> v2d_arr;
   std::vector<VarStr<Vector3D>> v3d_arr;
 
   bool read_f2d(const std::string &name, Field2D *f, bool save_repeat);
   bool read_f3d(const std::string &name, Field3D *f, bool save_repeat);
+  bool read_fperp(const std::string &name, FieldPerp *f, bool save_repeat);
 
   bool write_int(const std::string &name, int *f, bool save_repeat);
   bool write_real(const std::string &name, BoutReal *f, bool save_repeat);
   bool write_f2d(const std::string &name, Field2D *f, bool save_repeat);
   bool write_f3d(const std::string &name, Field3D *f, bool save_repeat);
+  bool write_fperp(const std::string &name, FieldPerp *f, bool save_repeat);
 
   /// Check if a variable has already been added
   bool varAdded(const std::string &name);
@@ -139,63 +150,63 @@ class Datafile {
 };
 
 /// Write this variable once to the grid file
-#define SAVE_ONCE1(var) bout::globals::dump.add(var, #var, 0);
+#define SAVE_ONCE1(var) bout::globals::dump.addOnce(var, #var);
 #define SAVE_ONCE2(var1, var2) { \
-  bout::globals::dump.add(var1, #var1, 0); \
-  bout::globals::dump.add(var2, #var2, 0);}
+  bout::globals::dump.addOnce(var1, #var1); \
+  bout::globals::dump.addOnce(var2, #var2);}
 #define SAVE_ONCE3(var1, var2, var3) {\
-  bout::globals::dump.add(var1, #var1, 0); \
-  bout::globals::dump.add(var2, #var2, 0); \
-  bout::globals::dump.add(var3, #var3, 0);}
+  bout::globals::dump.addOnce(var1, #var1); \
+  bout::globals::dump.addOnce(var2, #var2); \
+  bout::globals::dump.addOnce(var3, #var3);}
 #define SAVE_ONCE4(var1, var2, var3, var4) { \
-  bout::globals::dump.add(var1, #var1, 0); \
-  bout::globals::dump.add(var2, #var2, 0); \
-  bout::globals::dump.add(var3, #var3, 0); \
-  bout::globals::dump.add(var4, #var4, 0);}
+  bout::globals::dump.addOnce(var1, #var1); \
+  bout::globals::dump.addOnce(var2, #var2); \
+  bout::globals::dump.addOnce(var3, #var3); \
+  bout::globals::dump.addOnce(var4, #var4);}
 #define SAVE_ONCE5(var1, var2, var3, var4, var5) {\
-  bout::globals::dump.add(var1, #var1, 0); \
-  bout::globals::dump.add(var2, #var2, 0); \
-  bout::globals::dump.add(var3, #var3, 0); \
-  bout::globals::dump.add(var4, #var4, 0); \
-  bout::globals::dump.add(var5, #var5, 0);}
+  bout::globals::dump.addOnce(var1, #var1); \
+  bout::globals::dump.addOnce(var2, #var2); \
+  bout::globals::dump.addOnce(var3, #var3); \
+  bout::globals::dump.addOnce(var4, #var4); \
+  bout::globals::dump.addOnce(var5, #var5);}
 #define SAVE_ONCE6(var1, var2, var3, var4, var5, var6) {\
-  bout::globals::dump.add(var1, #var1, 0); \
-  bout::globals::dump.add(var2, #var2, 0); \
-  bout::globals::dump.add(var3, #var3, 0); \
-  bout::globals::dump.add(var4, #var4, 0); \
-  bout::globals::dump.add(var5, #var5, 0); \
-  bout::globals::dump.add(var6, #var6, 0);}
+  bout::globals::dump.addOnce(var1, #var1); \
+  bout::globals::dump.addOnce(var2, #var2); \
+  bout::globals::dump.addOnce(var3, #var3); \
+  bout::globals::dump.addOnce(var4, #var4); \
+  bout::globals::dump.addOnce(var5, #var5); \
+  bout::globals::dump.addOnce(var6, #var6);}
 
 #define SAVE_ONCE(...)                          \
   { MACRO_FOR_EACH(SAVE_ONCE1, __VA_ARGS__) }
 
 /// Write this variable every timestep
-#define SAVE_REPEAT1(var) bout::globals::dump.add(var, #var, 1);
+#define SAVE_REPEAT1(var) bout::globals::dump.addRepeat(var, #var);
 #define SAVE_REPEAT2(var1, var2) { \
-  bout::globals::dump.add(var1, #var1, 1); \
-  bout::globals::dump.add(var2, #var2, 1);}
+  bout::globals::dump.addRepeat(var1, #var1); \
+  bout::globals::dump.addRepeat(var2, #var2);}
 #define SAVE_REPEAT3(var1, var2, var3) {\
-  bout::globals::dump.add(var1, #var1, 1); \
-  bout::globals::dump.add(var2, #var2, 1); \
-  bout::globals::dump.add(var3, #var3, 1);}
+  bout::globals::dump.addRepeat(var1, #var1); \
+  bout::globals::dump.addRepeat(var2, #var2); \
+  bout::globals::dump.addRepeat(var3, #var3);}
 #define SAVE_REPEAT4(var1, var2, var3, var4) { \
-  bout::globals::dump.add(var1, #var1, 1); \
-  bout::globals::dump.add(var2, #var2, 1); \
-  bout::globals::dump.add(var3, #var3, 1); \
-  bout::globals::dump.add(var4, #var4, 1);}
+  bout::globals::dump.addRepeat(var1, #var1); \
+  bout::globals::dump.addRepeat(var2, #var2); \
+  bout::globals::dump.addRepeat(var3, #var3); \
+  bout::globals::dump.addRepeat(var4, #var4);}
 #define SAVE_REPEAT5(var1, var2, var3, var4, var5) {\
-  bout::globals::dump.add(var1, #var1, 1); \
-  bout::globals::dump.add(var2, #var2, 1); \
-  bout::globals::dump.add(var3, #var3, 1); \
-  bout::globals::dump.add(var4, #var4, 1); \
-  bout::globals::dump.add(var5, #var5, 1);}
+  bout::globals::dump.addRepeat(var1, #var1); \
+  bout::globals::dump.addRepeat(var2, #var2); \
+  bout::globals::dump.addRepeat(var3, #var3); \
+  bout::globals::dump.addRepeat(var4, #var4); \
+  bout::globals::dump.addRepeat(var5, #var5);}
 #define SAVE_REPEAT6(var1, var2, var3, var4, var5, var6) {\
-  bout::globals::dump.add(var1, #var1, 1); \
-  bout::globals::dump.add(var2, #var2, 1); \
-  bout::globals::dump.add(var3, #var3, 1); \
-  bout::globals::dump.add(var4, #var4, 1); \
-  bout::globals::dump.add(var5, #var5, 1); \
-  bout::globals::dump.add(var6, #var6, 1);}
+  bout::globals::dump.addRepeat(var1, #var1); \
+  bout::globals::dump.addRepeat(var2, #var2); \
+  bout::globals::dump.addRepeat(var3, #var3); \
+  bout::globals::dump.addRepeat(var4, #var4); \
+  bout::globals::dump.addRepeat(var5, #var5); \
+  bout::globals::dump.addRepeat(var6, #var6);}
 
 #define SAVE_REPEAT(...)                        \
   { MACRO_FOR_EACH(SAVE_REPEAT1, __VA_ARGS__) }

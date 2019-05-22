@@ -5,8 +5,8 @@
 ; Calculate dR/df and dZ/df for use by LSODE
 ; Input: pos[0] = R, pos[1] = Z
 ; Output [0] = dR/df = -Bz/B^2 , [1] = dZ/df = Br/B^2
-FUNCTION radial_differential, fcur, pos
-  COMMON rd_com_no, idata, lastgoodf, lastgoodpos, R, Z, ood, boundary, ri0, zi0, tol, vec, weightc, bndry_periodic
+FUNCTION radial_differential_nonorth, fcur, pos
+  COMMON rd_com_no, idata, lastgoodf, lastgoodpos, R, Z, ood, boundary, ri0, zi0, tol, vec_comm_up, weightc_up, vec_comm_down, weightc_down, bndry_periodic
   
   local_gradient, idata, pos[0], pos[1], status=status, dfdr=dfdr, dfdz=dfdz
   
@@ -36,20 +36,30 @@ FUNCTION radial_differential, fcur, pos
     ENDIF
   ENDIF
   
-  dRdi = INTERPOLATE(DERIV(R), pos[0])
-  dZdi = INTERPOLATE(DERIV(Z), pos[1])
+  dRdi = INTERPOLATE(DERIV(R), pos[0], /DOUBLE)
+  dZdi = INTERPOLATE(DERIV(Z), pos[1], /DOUBLE)
   
   ; Check mismatch between fcur and f ? 
   Br = dfdz/dZdi
   Bz = -dfdr/dRdi
   B2 = Br^2 + Bz^2
 
-  IF KEYWORD_SET(vec) THEN BEGIN
+  IF KEYWORD_SET(vec_comm_up) AND KEYWORD_SET(vec_comm_down) THEN BEGIN
   ;; V*mod(R)/mod(V) w + (1-w) vec(r)
-     newvec = vec * SQRT((-Bz/B2/dRdi)^2 + (Br/B2/dZdi)^2) * weightc + (1-weightc)*[-Bz/B2/dRdi, Br/B2/dZdi]
+     newvec = vec_comm_up * SQRT((-Bz/B2/dRdi)^2 + (Br/B2/dZdi)^2) * weightc_up $
+              + vec_comm_down * SQRT((-Bz/B2/dRdi)^2 + (Br/B2/dZdi)^2) * weightc_down $
+              + (1-weightc_up-weightc_down)*[-Bz/B2/dRdi, Br/B2/dZdi]
      RETURN, newvec
      ;;RETURN, [-Bz/B2/dRdi, Br/B2/dZdi]
      
+  ENDIF ELSE IF KEYWORD_SET(vec_comm_up) THEN BEGIN
+     newvec = vec_comm_up * SQRT((-Bz/B2/dRdi)^2 + (Br/B2/dZdi)^2) * weightc_up $
+              + (1-weightc_up)*[-Bz/B2/dRdi, Br/B2/dZdi]
+     RETURN, newvec
+  ENDIF ELSE IF KEYWORD_SET(vec_comm_down) THEN BEGIN
+     newvec = vec_comm_down * SQRT((-Bz/B2/dRdi)^2 + (Br/B2/dZdi)^2) * weightc_down $
+              + (1-weightc_down)*[-Bz/B2/dRdi, Br/B2/dZdi]
+     RETURN, newvec
   ENDIF ELSE BEGIN
   ;; stop
      RETURN, [-Bz/B2/dRdi, Br/B2/dZdi]
@@ -70,10 +80,12 @@ END
 ;
 PRO follow_gradient_nonorth, interp_data, R, Z, ri0, zi0, ftarget, ri, zi, status=status, $
                      boundary=boundary, fbndry=fbndry, ibndry=ibndry, $
-                     vec=vec, weight=weight, bndry_noperiodic=bndry_noperiodic
-  COMMON rd_com_no, idata, lastgoodf, lastgoodpos, Rpos, Zpos, ood, bndry, ri0c, zi0c, tol, vec_comm, weightc, bndry_periodic
+                     vec_up=vec_up, weight_up=weight_up, $
+                     vec_down=vec_down, weight_down=weight_down, $
+                     bndry_noperiodic=bndry_noperiodic
+  COMMON rd_com_no, idata, lastgoodf, lastgoodpos, Rpos, Zpos, ood, bndry, ri0c, zi0c, tol, vec_comm_up, weightc_up, vec_comm_down, weightc_down, bndry_periodic
   
-  tol = 0.1
+  tol = 0.1D
 
   Rpos = R
   Zpos = Z
@@ -92,14 +104,23 @@ PRO follow_gradient_nonorth, interp_data, R, Z, ri0, zi0, ftarget, ri, zi, statu
   bndry_periodic = 1
   IF KEYWORD_SET(bndry_noperiodic) THEN bndry_periodic = 0
 
-  IF NOT KEYWORD_SET(weight) THEN BEGIN
-     weight = 0.
+  IF NOT KEYWORD_SET(weight_up) THEN BEGIN
+     weight_up = 0.D
+     weightc_up = weight_up*1.0D
   ENDIF
-  
-  IF KEYWORD_SET(vec) THEN BEGIN
-     vec_comm = vec
-     weightc = weight*1.0
-  ENDIF 
+  IF NOT KEYWORD_SET(weight_down) THEN BEGIN
+     weight_down = 0.D
+     weightc_down = weight_down*1.0D
+  ENDIF
+
+  IF KEYWORD_SET(vec_up) THEN BEGIN
+     vec_comm_up = vec_up
+     weightc_up = weight_up*1.0D
+  ENDIF
+  IF KEYWORD_SET(vec_down) THEN BEGIN
+     vec_comm_down = vec_down
+     weightc_down = weight_down*1.0D
+  ENDIF
 
   IF SIZE(ftarget, /TYPE) EQ 0 THEN PRINT, ftarget
 
@@ -120,7 +141,7 @@ PRO follow_gradient_nonorth, interp_data, R, Z, ri0, zi0, ftarget, ri, zi, statu
     rzold = [ri0, zi0]
     rcount = 0
     REPEAT BEGIN
-      rznew = LSODE(rzold,f0,ftarget - f0,'radial_differential', lstat)
+      rznew = LSODE(rzold,f0,ftarget - f0,'radial_differential_nonorth', lstat)
       IF lstat EQ -1 THEN BEGIN
         PRINT, "  -> Excessive work "+STR(f0)+" to "+STR(ftarget)+" Trying to continue..."
         lstat = 2 ; continue
@@ -174,7 +195,7 @@ PRO follow_gradient_nonorth, interp_data, R, Z, ri0, zi0, ftarget, ri, zi, statu
       ; Repeat to verify that this does work
       rzold = [ri0, zi0]
       CATCH, theError
-      fbndry = lastgoodf - 0.1*(ftarget - f0)
+      fbndry = lastgoodf - 0.1D*(ftarget - f0)
       IF theError NE 0 THEN BEGIN
         PRINT, "   Error again at ", fbndry
       ENDIF
@@ -194,7 +215,7 @@ PRO follow_gradient_nonorth, interp_data, R, Z, ri0, zi0, ftarget, ri, zi, statu
                           boundary[0,*], boundary[1,*], bndry_periodic, ncross=ncross, inds2=inds2)
     IF (ncross MOD 2) EQ 1 THEN BEGIN ; Odd number of boundary crossings
       
-      IF SQRT( (ri - cpos[0,0])^2 + (zi - cpos[1,0])^2 ) GT 0.1 THEN BEGIN
+      IF SQRT( (ri - cpos[0,0])^2 + (zi - cpos[1,0])^2 ) GT 0.1D THEN BEGIN
         ;PRINT, "FINDING BOUNDARY", SQRT( (ri - cpos[0,0])^2 + (zi - cpos[1,0])^2 )
         ; Use divide-and-conquer to find crossing point
         
@@ -224,7 +245,7 @@ PRO follow_gradient_nonorth, interp_data, R, Z, ri0, zi0, ftarget, ri, zi, statu
             CATCH, /cancel
           ENDELSE
           
-        ENDREP UNTIL ABS(fmax - fcur) LT 0.01*ABS(ftarget - f0)
+        ENDREP UNTIL ABS(fmax - fcur) LT 0.01D*ABS(ftarget - f0)
         ri = rzcur[0]
         zi = rzcur[1]
         fbndry = fcur

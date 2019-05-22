@@ -9,11 +9,11 @@ try:
   from builtins import str
 except:
   pass
-from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
+from boututils.run_wrapper import shell, shell_safe, launch_safe
 from boutdata.collect import collect
 from sys import stdout, exit
 
-MPIRUN=getmpirun()
+
 
 print("Making parallel inversion test")
 
@@ -35,7 +35,7 @@ for nproc in [1,2,4]:
         shell("rm data/BOUT.dmp.* 2> err.log")
         
         # Run the case
-        s, out = launch_safe(cmd+" "+f, runcmd=MPIRUN, nproc=nproc, mthread=1, pipe=True)
+        s, out = launch_safe(cmd+" "+f, nproc=nproc, mthread=1, pipe=True)
 
         with open("run.log."+str(nproc)+"."+str(r), "w") as f:
           f.write(out)

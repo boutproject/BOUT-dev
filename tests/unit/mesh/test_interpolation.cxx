@@ -49,22 +49,33 @@ protected:
   }
 
   static void SetUpTestCase() {
-
-    // Delete any existing mesh
-    if (mesh != nullptr) {
-      delete mesh;
-      mesh = nullptr;
-    }
+    WithQuietOutput quiet{output_info};
+    delete mesh;
     mesh = new FakeMesh(nx, ny, nz);
     mesh->StaggerGrids = true;
     mesh->xstart = 2;
     mesh->ystart = 2;
     mesh->xend = nx - 3;
     mesh->yend = ny - 3;
-    mesh->setParallelTransform(bout::utils::make_unique<ParallelTransformIdentity>());
-    output_info.disable();
+
     mesh->createDefaultRegions();
-    output_info.enable();
+
+    // We need Coordinates so a parallel transform is available as
+    // FieldFactory::create3D wants to un-field-align the result
+    for (const auto& location
+        : std::list<CELL_LOC>{CELL_CENTRE, CELL_XLOW, CELL_YLOW, CELL_ZLOW}) {
+
+      static_cast<FakeMesh*>(mesh)->setCoordinates(nullptr, location);
+      static_cast<FakeMesh*>(mesh)->setCoordinates(std::make_shared<Coordinates>(
+          mesh, Field2D{1.0, mesh}, Field2D{1.0, mesh}, BoutReal{1.0}, Field2D{1.0, mesh},
+          Field2D{0.0, mesh}, Field2D{1.0, mesh}, Field2D{1.0, mesh}, Field2D{1.0, mesh},
+          Field2D{0.0, mesh}, Field2D{0.0, mesh}, Field2D{0.0, mesh}, Field2D{1.0, mesh},
+          Field2D{1.0, mesh}, Field2D{1.0, mesh}, Field2D{0.0, mesh}, Field2D{0.0, mesh},
+          Field2D{0.0, mesh}, Field2D{0.0, mesh}, Field2D{0.0, mesh}, false),
+          location);
+      mesh->getCoordinates(location)->setParallelTransform(
+          bout::utils::make_unique<ParallelTransformIdentity>(*mesh));
+    }
   }
 
   static void TearDownTestCase() {

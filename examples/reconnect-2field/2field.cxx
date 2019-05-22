@@ -74,23 +74,20 @@ protected:
     mesh->get(coord->Bxy, "Bxy");
 
     // Read some parameters
-    Options *globalOptions = Options::getRoot();
-    Options *options = globalOptions->getSection("2field");
+    auto& options = Options::root()["2field"];
 
     // normalisation values
-    OPTION(options, nonlinear, false);
-    OPTION(options, parallel_lc, true);
-    OPTION(options, include_jpar0, true);
-    OPTION(options, jpar_bndry, 0);
+    nonlinear = options["nonlinear"].withDefault(false);
+    parallel_lc = options["parallel_lc"].withDefault(true);
+    include_jpar0 = options["include_jpar0"].withDefault(true);
+    jpar_bndry = options["jpar_bndry"].withDefault(0);
 
-    OPTION(options, eta, 1e-3); // Normalised resistivity
-    OPTION(options, mu, 1.e-3); // Normalised vorticity
+    eta = options["eta"].doc("Normalised resistivity").withDefault(1e-3);
+    mu = options["mu"].doc("Normalised vorticity").withDefault(1.e-3);
 
-    OPTION(options, phi_flags, 0);
-
-    int bracket_method;
-    OPTION(options, bracket_method, 0);
-    switch (bracket_method) {
+    phi_flags = options["phi_flags"].withDefault(0);
+    
+    switch (options["bracket_method"].withDefault(0)) {
     case 0: {
       bm = BRACKET_STD;
       output << "\tBrackets: default differencing\n";
@@ -120,11 +117,15 @@ protected:
     // Normalisation
 
     Tenorm = max(Te0, true);
-    if (Tenorm < 1)
+    if (Tenorm < 1) {
       Tenorm = 1000;
+    }
+    
     Nenorm = max(Ni0, true);
-    if (Nenorm < 1)
+    if (Nenorm < 1) {
       Nenorm = 1.e19;
+    }
+    
     Bnorm = max(coord->Bxy, true);
 
     // Sound speed in m/s
@@ -254,7 +255,7 @@ protected:
     return result;
   }
 
-  int rhs(BoutReal UNUSED(t)) override {
+  int rhs(BoutReal UNUSED(time)) override {
     // Solve EM fields
 
     // U = (1/B) * Delp2(phi)

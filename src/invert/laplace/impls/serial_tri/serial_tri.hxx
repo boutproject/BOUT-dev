@@ -41,19 +41,19 @@ public:
   using Laplacian::setCoefA;
   void setCoefA(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
-    ASSERT1(localmesh = val.getMesh());
+    ASSERT1(localmesh == val.getMesh());
     A = val;
   }
   using Laplacian::setCoefC;
   void setCoefC(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
-    ASSERT1(localmesh = val.getMesh());
+    ASSERT1(localmesh == val.getMesh());
     C = val;
   }
   using Laplacian::setCoefD;
   void setCoefD(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
-    ASSERT1(localmesh = val.getMesh());
+    ASSERT1(localmesh == val.getMesh());
     D = val;
   }
   using Laplacian::setCoefEx;
@@ -66,8 +66,8 @@ public:
   }
 
   using Laplacian::solve;
-  const FieldPerp solve(const FieldPerp &b) override;
-  const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override;
+  FieldPerp solve(const FieldPerp &b) override;
+  FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override;
 private:
   // The coefficents in
   // D*grad_perp^2(x) + (1/C)*(grad_perp(C))*grad_perp(x) + A*x = b
