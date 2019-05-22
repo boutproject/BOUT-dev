@@ -419,6 +419,181 @@ TEST_F(FieldPerpTest, IterateOverRGN_NOX) {
   EXPECT_TRUE(region_indices == result_indices);
 }
 
+TEST_F(FieldPerpTest, IterateOverRGN_XGUARDS) {
+  FieldPerp field;
+
+  field = 1.0;
+
+  const BoutReal sentinel = -99.0;
+
+  // We use a set in case for some reason the iterator doesn't visit
+  // each point in the order we expect.
+  std::set<std::vector<int>> test_indices;
+  test_indices.insert({0, 0});
+  test_indices.insert({0, 1});
+  test_indices.insert({1, 0});
+  test_indices.insert({1, 1});
+
+  // This is the set of indices actually inside the region we want
+  std::set<std::vector<int>> region_indices;
+  region_indices.insert({0, 0});
+  region_indices.insert({0, 1});
+
+  const int num_sentinels = region_indices.size();
+
+  // Assign sentinel value to watch out for to our chosen points
+  for (const auto index : test_indices) {
+    field(index[0], index[1]) = sentinel;
+  }
+
+  int found_sentinels = 0;
+  BoutReal sum = 0.0;
+  std::set<std::vector<int>> result_indices;
+
+  for (const auto &i : field.getRegion("RGN_XGUARDS")) {
+    sum += field[i];
+    if (field[i] == sentinel) {
+      result_indices.insert({i.x(), i.z()});
+      ++found_sentinels;
+    }
+  }
+
+  EXPECT_EQ(found_sentinels, num_sentinels);
+  EXPECT_EQ(sum, ((2 * nz) - num_sentinels) + (num_sentinels * sentinel));
+  EXPECT_TRUE(region_indices == result_indices);
+}
+
+TEST_F(FieldPerpTest, IterateOverRGN_YGUARDS) {
+  FieldPerp field;
+
+  field = 1.0;
+
+  const BoutReal sentinel = -99.0;
+
+  // We use a set in case for some reason the iterator doesn't visit
+  // each point in the order we expect.
+  std::set<std::vector<int>> test_indices;
+  test_indices.insert({0, 0});
+  test_indices.insert({0, 1});
+  test_indices.insert({1, 0});
+  test_indices.insert({1, 1});
+
+  // This is the set of indices actually inside the region we want
+  std::set<std::vector<int>> region_indices;
+
+  const int num_sentinels = region_indices.size();
+
+  // Assign sentinel value to watch out for to our chosen points
+  for (const auto index : test_indices) {
+    field(index[0], index[1]) = sentinel;
+  }
+
+  int found_sentinels = 0;
+  BoutReal sum = 0.0;
+  std::set<std::vector<int>> result_indices;
+
+  for (const auto &i : field.getRegion("RGN_YGUARDS")) {
+    sum += field[i];
+    if (field[i] == sentinel) {
+      result_indices.insert({i.x(), i.z()});
+      ++found_sentinels;
+    }
+  }
+
+  EXPECT_EQ(found_sentinels, num_sentinels);
+  EXPECT_EQ(sum, (((nx - 2) * 0 * nz) - num_sentinels) + (num_sentinels * sentinel));
+  EXPECT_TRUE(region_indices == result_indices);
+}
+
+TEST_F(FieldPerpTest, IterateOverRGN_ZGUARDS) {
+  FieldPerp field;
+
+  field = 1.0;
+
+  const BoutReal sentinel = -99.0;
+
+  // We use a set in case for some reason the iterator doesn't visit
+  // each point in the order we expect.
+  std::set<std::vector<int>> test_indices;
+  test_indices.insert({0, 0});
+  test_indices.insert({0, 1});
+  test_indices.insert({1, 0});
+  test_indices.insert({1, 1});
+
+  // This is the set of indices actually inside the region we want
+  std::set<std::vector<int>> region_indices;
+
+  const int num_sentinels = region_indices.size();
+
+  // Assign sentinel value to watch out for to our chosen points
+  for (const auto index : test_indices) {
+    field(index[0], index[1]) = sentinel;
+  }
+
+  int found_sentinels = 0;
+  BoutReal sum = 0.0;
+  std::set<std::vector<int>> result_indices;
+
+  for (const auto &i : field.getRegion("RGN_ZGUARDS")) {
+    sum += field[i];
+    if (field[i] == sentinel) {
+      result_indices.insert({i.x(), i.z()});
+      ++found_sentinels;
+    }
+  }
+
+  EXPECT_EQ(found_sentinels, num_sentinels);
+  EXPECT_EQ(sum, ((nx - 2) * 0 - num_sentinels) + (num_sentinels * sentinel));
+  EXPECT_TRUE(region_indices == result_indices);
+}
+
+TEST_F(FieldPerpTest, IterateOverRGN_NOCORNERS) {
+  FieldPerp field;
+
+  field = 1.0;
+
+  const BoutReal sentinel = -99.0;
+
+  // We use a set in case for some reason the iterator doesn't visit
+  // each point in the order we expect.
+  std::set<std::vector<int>> test_indices;
+  test_indices.insert({0, 0});
+  test_indices.insert({0, 1});
+  test_indices.insert({1, 0});
+  test_indices.insert({1, 1});
+
+  // This is the set of indices actually inside the region we want
+  std::set<std::vector<int>> region_indices;
+  region_indices.insert({0, 0});
+  region_indices.insert({0, 1});
+  region_indices.insert({1, 0});
+  region_indices.insert({1, 1});
+
+  const int num_sentinels = region_indices.size();
+
+  // Assign sentinel value to watch out for to our chosen points
+  for (const auto index : test_indices) {
+    field(index[0], index[1]) = sentinel;
+  }
+
+  int found_sentinels = 0;
+  BoutReal sum = 0.0;
+  std::set<std::vector<int>> result_indices;
+
+  for (const auto &i : field.getRegion("RGN_NOCORNERS")) {
+    sum += field[i];
+    if (field[i] == sentinel) {
+      result_indices.insert({i.x(), i.z()});
+      ++found_sentinels;
+    }
+  }
+
+  EXPECT_EQ(found_sentinels, num_sentinels);
+  EXPECT_EQ(sum, ((nx * nz) - num_sentinels) + (num_sentinels * sentinel));
+  EXPECT_TRUE(region_indices == result_indices);
+}
+
+
 TEST_F(FieldPerpTest, Indexing) {
   FieldPerp field;
 

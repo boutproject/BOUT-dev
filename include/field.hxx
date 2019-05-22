@@ -29,6 +29,7 @@ class Field;
 #ifndef __FIELD_H__
 #define __FIELD_H__
 
+#include <cmath>
 #include <cstdio>
 #include <memory>
 
@@ -36,6 +37,7 @@ class Field;
 #include "boutexception.hxx"
 #include <globals.hxx>
 #include "msg_stack.hxx"
+#include "bout/region.hxx"
 #include "stencils.hxx"
 #include <bout/rvec.hxx>
 
@@ -268,5 +270,53 @@ inline T filledFrom(const T& f, BoutReal fill_value) {
 /// Unary + operator. This doesn't do anything
 template<typename T>
 T operator+(const T& f) {return f;}
+
+namespace bout {
+/// Check if all values of a field \p var are finite.  Loops over all points including the
+/// boundaries by default (can be changed using the \p rgn argument)
+/// If any element is not finite, throws an exception that includes the position of the
+/// first found.
+///
+/// Note that checkFinite runs the check irrespective of CHECK level. It is intended to be
+/// used during initialization, where we always want to check inputs, even for optimized
+/// builds.
+template<typename T>
+inline void checkFinite(const T& f, const std::string& name="field", const std::string& rgn="RGN_ALL") {
+  AUTO_TRACE();
+
+  if (!f.isAllocated()) {
+    throw BoutException("%s is not allocated", name.c_str());
+  }
+
+  BOUT_FOR_SERIAL(i, f.getRegion(rgn)) {
+    if (!::finite(f[i])) {
+      throw BoutException("%s is not finite at %s", name.c_str(), toString(i).c_str());
+    }
+  }
+}
+
+/// Check if all values of a field \p var are positive.  Loops over all points including
+/// the boundaries by default (can be changed using the \p rgn argument)
+/// If any element is not finite, throws an exception that includes the position of the
+/// first found.
+///
+/// Note that checkPositive runs the check irrespective of CHECK level. It is intended to
+/// be used during initialization, where we always want to check inputs, even for
+/// optimized builds.
+template<typename T>
+inline void checkPositive(const T& f, const std::string& name="field", const std::string& rgn="RGN_ALL") {
+  AUTO_TRACE();
+
+  if (!f.isAllocated()) {
+    throw BoutException("%s is not allocated", name.c_str());
+  }
+
+  BOUT_FOR_SERIAL(i, f.getRegion(rgn)) {
+    if (f[i] <= 0.) {
+      throw BoutException("%s is not positive at %s", name.c_str(), toString(i).c_str());
+    }
+  }
+}
+} // namespace bout
 
 #endif /* __FIELD_H__ */

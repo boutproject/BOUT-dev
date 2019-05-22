@@ -326,6 +326,50 @@ private:
   std::vector<BoundaryRegion *> boundaries;
 };
 
+/// FakeGridDataSource provides a non-null GridDataSource* source to use with FakeMesh, to
+/// allow testing of methods that use 'source' - in particular allowing
+/// source->hasXBoundaryGuards and source->hasXBoundaryGuards to be called.
+class FakeGridDataSource : public GridDataSource {
+  bool hasVar(const std::string& UNUSED(name)) { return false; }
+
+  bool get(Mesh* UNUSED(m), std::string& UNUSED(sval), const std::string& UNUSED(name)) {
+    return false;
+  }
+  bool get(Mesh* UNUSED(m), int& UNUSED(ival), const std::string& UNUSED(name)) {
+    return false;
+  }
+  bool get(Mesh* UNUSED(m), BoutReal& UNUSED(rval), const std::string& UNUSED(name)) {
+    return false;
+  }
+  bool get(Mesh* UNUSED(m), Field2D& UNUSED(var), const std::string& UNUSED(name),
+      BoutReal UNUSED(def) = 0.0) {
+    return false;
+  }
+  bool get(Mesh* UNUSED(m), Field3D& UNUSED(var), const std::string& UNUSED(name),
+      BoutReal UNUSED(def) = 0.0) {
+    return false;
+  }
+  bool get(Mesh* UNUSED(m), FieldPerp& UNUSED(var), const std::string& UNUSED(name),
+      BoutReal UNUSED(def) = 0.0) {
+    return false;
+  }
+
+  bool get(Mesh* UNUSED(m), std::vector<int>& UNUSED(var),
+      const std::string& UNUSED(name), int UNUSED(len), int UNUSED(offset) = 0,
+      Direction UNUSED(dir) = GridDataSource::X) {
+    return false;
+  }
+  bool get(Mesh* UNUSED(m), std::vector<BoutReal>& UNUSED(var),
+      const std::string& UNUSED(name), int UNUSED(len), int UNUSED(offset) = 0,
+      Direction UNUSED(dir) = GridDataSource::X) {
+    return false;
+  }
+
+  bool hasXBoundaryGuards(Mesh* UNUSED(m)) { return true; }
+
+  bool hasYBoundaryGuards() { return true; }
+};
+
 /// Test fixture to make sure the global mesh is our fake
 /// one. Also initialize the global mesh_staggered for use in tests with
 /// staggering. Multiple tests have exactly the same fixture, so use a type
@@ -348,6 +392,8 @@ public:
         Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0},
         false);
     static_cast<FakeMesh*>(bout::globals::mesh)->setCoordinates(test_coords);
+    static_cast<FakeMesh*>(bout::globals::mesh)->setGridDataSource(
+        new FakeGridDataSource());
     // May need a ParallelTransform to create fields, because create3D calls
     // fromFieldAligned
     test_coords->setParallelTransform(
