@@ -1165,28 +1165,33 @@ int BoutMesh::wait(comm_handle handle) {
     // Perform Twist-shift using shifting method
     // Loop over 3D fields
     for (const auto &var : ch->var_list.field3d()) {
-      // Lower boundary
-      if (TS_down_in && (DDATA_INDEST != -1)) {
-        for (jx = 0; jx < DDATA_XSPLIT; jx++)
-          for (jy = 0; jy != MYG; jy++)
-            shiftZ(*var, jx, jy, ShiftAngle[jx]);
-      }
-      if (TS_down_out && (DDATA_OUTDEST != -1)) {
-        for (jx = DDATA_XSPLIT; jx < LocalNx; jx++)
-          for (jy = 0; jy != MYG; jy++)
-            shiftZ(*var, jx, jy, ShiftAngle[jx]);
-      }
+      if (var->getDirectionY() == YDirectionType::Aligned) {
+        // Only variables in field-aligned coordinates need the twist-shift boundary
+        // condition to be applied
 
-      // Upper boundary
-      if (TS_up_in && (UDATA_INDEST != -1)) {
-        for (jx = 0; jx < UDATA_XSPLIT; jx++)
-          for (jy = LocalNy - MYG; jy != LocalNy; jy++)
-            shiftZ(*var, jx, jy, -ShiftAngle[jx]);
-      }
-      if (TS_up_out && (UDATA_OUTDEST != -1)) {
-        for (jx = UDATA_XSPLIT; jx < LocalNx; jx++)
-          for (jy = LocalNy - MYG; jy != LocalNy; jy++)
-            shiftZ(*var, jx, jy, -ShiftAngle[jx]);
+        // Lower boundary
+        if (TS_down_in && (DDATA_INDEST != -1)) {
+          for (jx = 0; jx < DDATA_XSPLIT; jx++)
+            for (jy = 0; jy != MYG; jy++)
+              shiftZ(*var, jx, jy, ShiftAngle[jx]);
+        }
+        if (TS_down_out && (DDATA_OUTDEST != -1)) {
+          for (jx = DDATA_XSPLIT; jx < LocalNx; jx++)
+            for (jy = 0; jy != MYG; jy++)
+              shiftZ(*var, jx, jy, ShiftAngle[jx]);
+        }
+
+        // Upper boundary
+        if (TS_up_in && (UDATA_INDEST != -1)) {
+          for (jx = 0; jx < UDATA_XSPLIT; jx++)
+            for (jy = LocalNy - MYG; jy != LocalNy; jy++)
+              shiftZ(*var, jx, jy, -ShiftAngle[jx]);
+        }
+        if (TS_up_out && (UDATA_OUTDEST != -1)) {
+          for (jx = UDATA_XSPLIT; jx < LocalNx; jx++)
+            for (jy = LocalNy - MYG; jy != LocalNy; jy++)
+              shiftZ(*var, jx, jy, -ShiftAngle[jx]);
+        }
       }
     }
   }
