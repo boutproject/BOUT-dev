@@ -23,16 +23,6 @@ ShiftedMetric::ShiftedMetric(Mesh& m, CELL_LOC location_in, Field2D zShift_,
   // check the coordinate system used for the grid data source
   ShiftedMetric::checkInputGrid();
 
-  // TwistShift should not be set for derivatives to be correct at the jump where
-  // poloidal angle theta goes 2pi->0. zShift has been corrected for the jump
-  // already in Coordinates::Coordinates
-  bool twistshift = Options::root()["TwistShift"]
-                        .doc("Enable twist-shift boundary condition in core region?")
-                        .withDefault(false);
-  if (twistshift) {
-    throw BoutException("ShiftedMetric requires the option TwistShift=false");
-  }
-
   cachePhases();
 }
 
