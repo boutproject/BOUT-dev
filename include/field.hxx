@@ -38,6 +38,7 @@ class Field;
 #include "msg_stack.hxx"
 #include "stencils.hxx"
 #include <bout/rvec.hxx>
+#include "bout/traits.hxx"
 
 #include "unused.hxx"
 
@@ -47,55 +48,6 @@ class Coordinates;
 #ifdef TRACK
 #include <string>
 #endif
-
-namespace bout {
-namespace utils {
-
-namespace details {
-/// Helper class for fold expressions pre-C++17
-///
-/// Taken from "C++ Templates: The Complete Guide, Second Edition"
-///  Addison-Wesley, 2017
-///  ISBN-13:  978-0-321-71412-1
-///  ISBN-10:      0-321-71412-1
-/// Copyright © 2017 by Addison-Wesley, David Vandevoorde, Nicolai
-/// M. Josuttis, and Douglas Gregor.
-constexpr bool and_all() { return true; }
-template <class T>
-constexpr bool and_all(T cond) {
-  return cond;
-}
-template <class T, class... Ts>
-constexpr bool and_all(T cond, Ts... conds) {
-  return cond and and_all(conds...);
-}
-} // namespace details
-
-/// Enable a function if all the Ts are subclasses of `Field`, and
-/// returns the common type: i.e. `Field3D` if at least one argument
-/// is `Field3D`, otherwise `Field2D` if they are all `Field2D`
-///
-/// Examples
-/// --------
-///
-/// Consider the following template function:
-///
-///     template <class T, class U, class V,
-///          class ResultType = typename bout::utils::EnableIfField<T, U, V>>
-///     auto where(const T& test, const U& gt0, const V& le0) -> ResultType {
-///       // function body
-///     }
-///
-/// This function only "appears" if `T`, `U` and `V` are all
-/// subclasses of `Field`. `ResultType` is the common type of `T`, `U`
-/// and `V`. If `T` and `U` are both `Field2D`, `ResultType` is
-/// `Field2D` if `V` is `Field2D`, and `Field3D` if `V` is `Field3D`.
-template <class... Ts>
-using EnableIfField =
-    typename std::enable_if<details::and_all(std::is_base_of<Field, Ts>::value ...),
-                            typename std::common_type<Ts...>::type>::type;
-} // namespace utils
-} // namespace bout
 
 /*!
  * \brief Base class for fields
