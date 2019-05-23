@@ -49,9 +49,7 @@ LaplaceSerialTri::LaplaceSerialTri(Options *opt, CELL_LOC loc, Mesh *mesh_in)
   }
 }
 
-const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b) {
-  return solve(b,b);   // Call the solver below
-}
+FieldPerp LaplaceSerialTri::solve(const FieldPerp& b) { return solve(b, b); }
 
 /*!
  * Solve Ax=b for x given b
@@ -73,7 +71,7 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b) {
  *
  * \return          The inverted variable.
  */
-const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0) {
+FieldPerp LaplaceSerialTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   ASSERT1(localmesh == b.getMesh() && localmesh == x0.getMesh());
   ASSERT1(b.getLocation() == location);
   ASSERT1(x0.getLocation() == location);

@@ -20,6 +20,7 @@
  *
  **************************************************************************/
 
+#include "bout/traits.hxx"
 #include <bout/index_derivs.hxx>
 #include <bout/mesh.hxx>
 #include <msg_stack.hxx>
@@ -419,8 +420,7 @@ public:
     ASSERT2(var.getMesh()->getNguard(direction) >= nGuards);
     ASSERT2(direction == DIRECTION::Z); // Only in Z for now
     ASSERT2(stagger == STAGGER::None);  // Staggering not currently supported
-    ASSERT2((std::is_base_of<Field3D,
-                             T>::value)); // Should never need to call this with Field2D
+    ASSERT2(bout::utils::is_Field3D<T>::value); // Should never need to call this with Field2D
 
     // Only allow a whitelist of regions for now
     ASSERT2(region == "RGN_ALL" || region == "RGN_NOBNDRY"
@@ -489,8 +489,7 @@ public:
     ASSERT2(var.getMesh()->getNguard(direction) >= nGuards);
     ASSERT2(direction == DIRECTION::Z); // Only in Z for now
     ASSERT2(stagger == STAGGER::None);  // Staggering not currently supported
-    ASSERT2((std::is_base_of<Field3D,
-                             T>::value)); // Should never need to call this with Field2D
+    ASSERT2(bout::utils::is_Field3D<T>::value); // Should never need to call this with Field2D
 
     // Only allow a whitelist of regions for now
     ASSERT2(region == "RGN_ALL" || region == "RGN_NOBNDRY"

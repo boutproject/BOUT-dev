@@ -635,9 +635,28 @@ VDERIV_FUNC_REGION_ENUM_TO_STRING(FDDZ, Field2D, Field2D, Field2D)
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field3D D2DXDY(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, const std::string&
-    method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
-DERIV_FUNC_REGION_ENUM_TO_STRING(D2DXDY, Field3D)
+/// @param[in] dfdy_boundary_condition Boundary condition to use to set the guard cells of
+///                                    df/dy, before calculating the x-derivative.
+const Field3D D2DXDY(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+                     const std::string& method = "DEFAULT",
+                     const std::string region = "RGN_NOBNDRY",
+                     const std::string& dfdy_boundary_condition = "free_o3");
+[[gnu::deprecated("Please use D2DXDY(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, " 
+    "const std::string& method = \"DEFAULT\", const std::string& region = \"RGN_ALL\", "
+    "const std::string& dfdy_boundary_condition) instead")]]
+inline const Field3D D2DXDY(const Field3D& f, CELL_LOC outloc, const std::string& method,
+                            REGION region,
+                            const std::string& dfdy_boundary_condition = "free_o3") {
+  return D2DXDY(f, outloc, method, toString(region), dfdy_boundary_condition);
+}
+[[gnu::deprecated("Please use D2DXDY(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, " 
+    "const std::string& method = \"DEFAULT\", const std::string& region = \"RGN_ALL\", "
+    "const std::string& dfdy_boundary_condition) instead")]]
+inline const Field3D D2DXDY(const Field3D& f, CELL_LOC outloc, DIFF_METHOD method,
+                            REGION region = RGN_NOBNDRY,
+                            const std::string& dfdy_boundary_condition = "free_o3") {
+  return D2DXDY(f, outloc, toString(method), toString(region), dfdy_boundary_condition);
+};
 
 /// Calculate mixed partial derivative in x and y
 ///
@@ -651,9 +670,28 @@ DERIV_FUNC_REGION_ENUM_TO_STRING(D2DXDY, Field3D)
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field2D D2DXDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT, const std::string&
-    method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
-DERIV_FUNC_REGION_ENUM_TO_STRING(D2DXDY, Field2D)
+/// @param[in] dfdy_boundary_condition Boundary condition to use to set the guard cells of
+///                                    df/dy, before calculating the x-derivative.
+const Field2D D2DXDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+                     const std::string& method = "DEFAULT",
+                     const std::string region = "RGN_NOBNDRY",
+                     const std::string& dfdy_boundary_condition = "free_o3");
+[[gnu::deprecated("Please use D2DXDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT, " 
+    "const std::string& method = \"DEFAULT\", const std::string& region = \"RGN_ALL\", "
+    "const std::string& dfdy_boundary_condition) instead")]]
+inline const Field2D D2DXDY(const Field2D& f, CELL_LOC outloc, const std::string& method,
+                            REGION region,
+                            const std::string& dfdy_boundary_condition = "free_o3") {
+  return D2DXDY(f, outloc, method, toString(region), dfdy_boundary_condition);
+}
+[[gnu::deprecated("Please use D2DXDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT, " 
+    "const std::string& method = \"DEFAULT\", const std::string& region = \"RGN_ALL\", "
+    "const std::string& dfdy_boundary_condition) instead")]]
+inline const Field2D D2DXDY(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method,
+                            REGION region = RGN_NOBNDRY,
+                            const std::string& dfdy_boundary_condition = "free_o3") {
+  return D2DXDY(f, outloc, toString(method), toString(region), dfdy_boundary_condition);
+};
 
 /// Calculate mixed partial derivative in x and z
 ///

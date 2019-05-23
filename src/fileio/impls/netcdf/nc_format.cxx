@@ -489,10 +489,13 @@ bool NcFormat::addVarFieldPerp(const string &name, bool repeat) {
   if (!(var = dataFile->get_var(name.c_str()))) {
     // Variable not in file, so add it.
     auto nc_float_type = lowPrecision ? ncFloat : ncDouble;
-    if (repeat)
-      var = dataFile->add_var(name.c_str(), nc_float_type, 3, {tDim, xDim, zDim});
-    else
-      var = dataFile->add_var(name.c_str(), nc_float_type, 2, {xDim, zDim});
+    if (repeat){
+      const NcDim * dims[3] = {tDim, xDim, zDim};
+      var = dataFile->add_var(name.c_str(), nc_float_type, 3, dims);
+    } else {
+      const NcDim * dims[2] = {xDim, zDim};
+      var = dataFile->add_var(name.c_str(), nc_float_type, 2, dims);
+    }
 
     if(!var->is_valid()) {
       output_error.write("ERROR: NetCDF could not add FieldPerp '%s' to file '%s'\n", name.c_str(), fname);
@@ -615,7 +618,7 @@ bool NcFormat::read_perp(BoutReal *data, const std::string& name, int lx, int lz
 
   NcVar *var;
 
-  if(!(var = dataFile->get_var(name))) {
+  if(!(var = dataFile->get_var(name.c_str()))) {
     return false;
   }
 
@@ -745,7 +748,7 @@ bool NcFormat::write_perp(BoutReal *data, const std::string& name, int lx, int l
     return false;
 
   // Check for valid name
-  checkName(name);
+  checkName(name.c_str());
 
   TRACE("NcFormat::write_perp(BoutReal)");
 
@@ -756,8 +759,8 @@ bool NcFormat::write_perp(BoutReal *data, const std::string& name, int lx, int l
 #endif
 
   NcVar *var;
-  if(!(var = dataFile->get_var(name))) {
-    output_error.write("ERROR: NetCDF BoutReal variable '%s' has not been added to file '%s'\n", name, fname);
+  if(!(var = dataFile->get_var(name.c_str()))) {
+    output_error.write("ERROR: NetCDF BoutReal variable '%s' has not been added to file '%s'\n", name.c_str(), fname);
     return false;
   }
 
@@ -888,7 +891,7 @@ bool NcFormat::read_rec_perp(BoutReal *data, const std::string& name, int lx, in
     return false;
 
   // Check for valid name
-  checkName(name);
+  checkName(name.c_str());
 
   // Create an error object so netCDF doesn't exit
 #ifdef NCDF_VERBOSE
@@ -899,7 +902,7 @@ bool NcFormat::read_rec_perp(BoutReal *data, const std::string& name, int lx, in
 
   NcVar *var;
 
-  if(!(var = dataFile->get_var(name)))
+  if(!(var = dataFile->get_var(name.c_str())))
     return false;
 
   // NOTE: Probably should do something here to check t0
@@ -1045,7 +1048,7 @@ bool NcFormat::write_rec_perp(BoutReal *data, const std::string& name, int lx, i
     return false;
 
   // Check the name
-  checkName(name);
+  checkName(name.c_str());
 
   TRACE("NcFormat::write_rec_perp(BoutReal*)");
 
@@ -1058,12 +1061,12 @@ bool NcFormat::write_rec_perp(BoutReal *data, const std::string& name, int lx, i
   NcVar *var;
 
   // Try to find variable
-  if(!(var = dataFile->get_var(name))) {
-    output_error.write("ERROR: NetCDF BoutReal variable '%s' has not been added to file '%s'\n", name, fname);
+  if(!(var = dataFile->get_var(name.c_str()))) {
+    output_error.write("ERROR: NetCDF BoutReal variable '%s' has not been added to file '%s'\n", name.c_str(), fname);
     return false;
   }else {
     // Get record number
-    if(rec_nr.find(name) == rec_nr.end()) {
+    if(rec_nr.find(name.c_str()) == rec_nr.end()) {
       // Add to map
       rec_nr[name] = default_rec;
     }
@@ -1072,7 +1075,7 @@ bool NcFormat::write_rec_perp(BoutReal *data, const std::string& name, int lx, i
   int t = rec_nr[name];
 
 #ifdef NCDF_VERBOSE
-  output_info.write("INFO: NetCDF writing record %d of '%s' in '%s'\n",t, name, fname);
+  output_info.write("INFO: NetCDF writing record %d of '%s' in '%s'\n",t, name.c_str(), fname);
 #endif
 
   if(lowPrecision) {
@@ -1190,8 +1193,8 @@ void NcFormat::setAttribute(const std::string &varname, const std::string &attrn
   int existing_att;
   if (getAttribute(varname, attrname, existing_att)) {
     if (value != existing_att) {
-      output_warn.write("Overwriting attribute '%s' of variable '%s' with '%d', was previously '%d'",
-          attrname.c_str(), varname.c_str(), value, existing_att);
+      output_warn.write("Overwriting attribute '%s' of variable '%s' with '%f', was previously '%d'",
+			attrname.c_str(), varname.c_str(), value, existing_att);
     }
   }
   // else: attribute does not exist, so just write it
@@ -1226,7 +1229,11 @@ bool NcFormat::getAttribute(const std::string &varname, const std::string &attrn
       return false;
     }
 
-    text = fileAtt->values()->as_string(0);
+    auto values = fileAtt->values();
+    if (values == nullptr)
+      return false;
+
+    text = values->as_string(0);
 
     return true;
   } else {
@@ -1240,7 +1247,11 @@ bool NcFormat::getAttribute(const std::string &varname, const std::string &attrn
       return false;
     }
 
-    text = varAtt->values()->as_string(0);
+    auto values = varAtt->values();
+    if (values == nullptr)
+      return false;
+
+    text = values->as_string(0);
 
     return true;
   }
@@ -1262,7 +1273,11 @@ bool NcFormat::getAttribute(const std::string &varname, const std::string &attrn
       return false;
     }
 
-    value = fileAtt->values()->as_int(0);
+    auto values = fileAtt->values();
+    if (values == nullptr)
+      return false;
+
+    value = values->as_int(0);
 
     return true;
   } else {
@@ -1276,7 +1291,11 @@ bool NcFormat::getAttribute(const std::string &varname, const std::string &attrn
     if (!(varAtt = var->get_att(attrname.c_str())))
       return false;
 
-    value = varAtt->values()->as_int(0);
+    auto values = varAtt->values();
+    if (values == nullptr)
+      return false;
+
+    value = values->as_int(0);
 
     return true;
   }
@@ -1298,7 +1317,11 @@ bool NcFormat::getAttribute(const std::string &varname, const std::string &attrn
       return false;
     }
 
-    value = fileAtt->values()->as_double(0);
+    auto values = fileAtt->values();
+    if (values == nullptr)
+      return false;
+
+    value = values->as_double(0);
 
     return true;
   } else {
@@ -1312,7 +1335,11 @@ bool NcFormat::getAttribute(const std::string &varname, const std::string &attrn
     if (!(varAtt = var->get_att(attrname.c_str())))
       return false;
 
-    value = varAtt->values()->as_double(0);
+    auto values = varAtt->values();
+    if (values == nullptr)
+      return false;
+
+    value = values->as_double(0);
 
     return true;
   }

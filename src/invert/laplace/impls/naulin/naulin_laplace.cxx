@@ -186,7 +186,7 @@ LaplaceNaulin::~LaplaceNaulin() {
   delete delp2solver;
 }
 
-const Field3D LaplaceNaulin::solve(const Field3D &rhs, const Field3D &x0) {
+Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
   // Rearrange equation so first term is just Delp2(x):
   //   D*Delp2(x) + 1/C1*Grad_perp(C2).Grad_perp(phi) = rhs
   //   -> Delp2(x) + 1/(C1*D)*Grad_perp(C2).Grad_perp(phi) = rhs/D

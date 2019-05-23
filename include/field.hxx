@@ -39,9 +39,11 @@ class Field;
 #include "boutexception.hxx"
 #include <globals.hxx>
 #include "msg_stack.hxx"
+#include "bout/region.hxx"
 #include "stencils.hxx"
 #include "utils.hxx"
 #include <bout/rvec.hxx>
+#include "bout/traits.hxx"
 
 #include "unused.hxx"
 
@@ -51,55 +53,6 @@ class Coordinates;
 #ifdef TRACK
 #include <string>
 #endif
-
-namespace bout {
-namespace utils {
-
-namespace details {
-/// Helper class for fold expressions pre-C++17
-///
-/// Taken from "C++ Templates: The Complete Guide, Second Edition"
-///  Addison-Wesley, 2017
-///  ISBN-13:  978-0-321-71412-1
-///  ISBN-10:      0-321-71412-1
-/// Copyright © 2017 by Addison-Wesley, David Vandevoorde, Nicolai
-/// M. Josuttis, and Douglas Gregor.
-constexpr bool and_all() { return true; }
-template <class T>
-constexpr bool and_all(T cond) {
-  return cond;
-}
-template <class T, class... Ts>
-constexpr bool and_all(T cond, Ts... conds) {
-  return cond and and_all(conds...);
-}
-} // namespace details
-
-/// Enable a function if all the Ts are subclasses of `Field`, and
-/// returns the common type: i.e. `Field3D` if at least one argument
-/// is `Field3D`, otherwise `Field2D` if they are all `Field2D`
-///
-/// Examples
-/// --------
-///
-/// Consider the following template function:
-///
-///     template <class T, class U, class V,
-///          class ResultType = typename bout::utils::EnableIfField<T, U, V>>
-///     auto where(const T& test, const U& gt0, const V& le0) -> ResultType {
-///       // function body
-///     }
-///
-/// This function only "appears" if `T`, `U` and `V` are all
-/// subclasses of `Field`. `ResultType` is the common type of `T`, `U`
-/// and `V`. If `T` and `U` are both `Field2D`, `ResultType` is
-/// `Field2D` if `V` is `Field2D`, and `Field3D` if `V` is `Field3D`.
-template <class... Ts>
-using EnableIfField =
-    typename std::enable_if<details::and_all(std::is_base_of<Field, Ts>::value ...),
-                            typename std::common_type<Ts...>::type>::type;
-} // namespace utils
-} // namespace bout
 
 /*!
  * \brief Base class for fields
@@ -228,7 +181,7 @@ protected:
     directions = f.directions;
   }
 
-private:
+  /// Labels for the type of coordinate system this field is defined over
   DirectionTypes directions{YDirectionType::Standard, ZDirectionType::Standard};
 };
 
@@ -245,7 +198,7 @@ inline bool areFieldsCompatible(const Field& field1, const Field& field2) {
 /// copied and a data array that is allocated but not initialised.
 template<typename T, typename = bout::utils::EnableIfField<T>>
 inline T emptyFrom(const T& f) {
-  static_assert(std::is_base_of<Field, T>::value, "emptyFrom only works on Fields");
+  static_assert(bout::utils::is_Field<T>::value, "emptyFrom only works on Fields");
   return T(f.getMesh(), f.getLocation(), {f.getDirectionY(), f.getDirectionZ()}).allocate();
 }
 
@@ -253,7 +206,7 @@ inline T emptyFrom(const T& f) {
 /// another field and a data array allocated and initialised to zero.
 template<typename T, typename = bout::utils::EnableIfField<T>>
 inline T zeroFrom(const T& f) {
-  static_assert(std::is_base_of<Field, T>::value, "emptyFrom only works on Fields");
+  static_assert(bout::utils::is_Field<T>::value, "emptyFrom only works on Fields");
   T result{emptyFrom(f)};
   result = 0.;
   return result;
@@ -263,7 +216,7 @@ inline T zeroFrom(const T& f) {
 /// another field and a data array allocated and filled with the given value.
 template<typename T, typename = bout::utils::EnableIfField<T>>
 inline T filledFrom(const T& f, BoutReal fill_value) {
-  static_assert(std::is_base_of<Field, T>::value, "emptyFrom only works on Fields");
+  static_assert(bout::utils::is_Field<T>::value, "emptyFrom only works on Fields");
   T result{emptyFrom(f)};
   result = fill_value;
   return result;
@@ -272,6 +225,54 @@ inline T filledFrom(const T& f, BoutReal fill_value) {
 /// Unary + operator. This doesn't do anything
 template<typename T, typename = bout::utils::EnableIfField<T>>
 T operator+(const T& f) {return f;}
+
+namespace bout {
+/// Check if all values of a field \p var are finite.  Loops over all points including the
+/// boundaries by default (can be changed using the \p rgn argument)
+/// If any element is not finite, throws an exception that includes the position of the
+/// first found.
+///
+/// Note that checkFinite runs the check irrespective of CHECK level. It is intended to be
+/// used during initialization, where we always want to check inputs, even for optimized
+/// builds.
+template<typename T>
+inline void checkFinite(const T& f, const std::string& name="field", const std::string& rgn="RGN_ALL") {
+  AUTO_TRACE();
+
+  if (!f.isAllocated()) {
+    throw BoutException("%s is not allocated", name.c_str());
+  }
+
+  BOUT_FOR_SERIAL(i, f.getRegion(rgn)) {
+    if (!::finite(f[i])) {
+      throw BoutException("%s is not finite at %s", name.c_str(), toString(i).c_str());
+    }
+  }
+}
+
+/// Check if all values of a field \p var are positive.  Loops over all points including
+/// the boundaries by default (can be changed using the \p rgn argument)
+/// If any element is not finite, throws an exception that includes the position of the
+/// first found.
+///
+/// Note that checkPositive runs the check irrespective of CHECK level. It is intended to
+/// be used during initialization, where we always want to check inputs, even for
+/// optimized builds.
+template<typename T>
+inline void checkPositive(const T& f, const std::string& name="field", const std::string& rgn="RGN_ALL") {
+  AUTO_TRACE();
+
+  if (!f.isAllocated()) {
+    throw BoutException("%s is not allocated", name.c_str());
+  }
+
+  BOUT_FOR_SERIAL(i, f.getRegion(rgn)) {
+    if (f[i] <= 0.) {
+      throw BoutException("%s is not positive at %s", name.c_str(), toString(i).c_str());
+    }
+  }
+}
+} // namespace bout
 
 //////////////// NON-MEMBER FUNCTIONS //////////////////
 

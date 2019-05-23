@@ -1,4 +1,5 @@
 
+#include "bout/traits.hxx"
 #include <bout/griddata.hxx>
 
 #include <msg_stack.hxx>
@@ -185,8 +186,7 @@ bool GridFile::get(Mesh *m, Field3D &var, const std::string &name, BoutReal def)
 
 template<typename T>
 bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def) {
-  static_assert(std::is_base_of<Field2D, T>::value or std::is_base_of<Field3D, T>::value
-                or std::is_base_of<FieldPerp, T>::value,
+  static_assert(bout::utils::is_Field<T>::value,
                 "templated GridFile::get only works for Field2D, Field3D or FieldPerp");
 
   Timer timer("io");
@@ -222,7 +222,7 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def) 
   }
   case 3: {
     // Check size if getting Field3D
-    if (std::is_base_of<Field2D, T>::value or std::is_base_of<FieldPerp, T>::value) {
+    if (bout::utils::is_Field2D<T>::value or bout::utils::is_FieldPerp<T>::value) {
       output_warn.write("WARNING: Variable '%s' should be 2D, but has %zu dimensions. Ignored\n",
                         name.c_str(), size.size());
       var = def;
@@ -296,7 +296,7 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def) 
                 "nor grid_xguards = 0", name.c_str(), grid_xguards, mxg);
   }
 
-  if (not std::is_base_of<FieldPerp, T>::value) {
+  if (not bout::utils::is_FieldPerp<T>::value) {
     ///Check if field dimensions are correct. y-direction
     if (grid_yguards > 0) { ///including ghostpoints
       ASSERT1(field_dimensions[1] == m->GlobalNy - 2*myg + total_grid_yguards);
@@ -339,7 +339,7 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def) 
       }
     }
 
-    if (not std::is_base_of<FieldPerp, T>::value) {
+    if (not bout::utils::is_FieldPerp<T>::value) {
       ///If field does not include ghost points in y-direction ->
       ///Upper and lower Y boundaries copied from nearest point
       if (grid_yguards == 0) {
