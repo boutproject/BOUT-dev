@@ -333,8 +333,8 @@ int BoutMesh::load() {
         int nyp = NPES / i;
         int ysub = ny / nyp;
 
-        // Check size of Y mesh
-        if (ysub < MYG) {
+        // Check size of Y mesh if we've got multiple processors
+        if (ysub < MYG and NPES != 1) {
           output_info.write(_("\t -> ny/NYPE (%d/%d = %d) must be >= MYG (%d)\n"), ny, nyp,
                             ysub, MYG);
           continue;
