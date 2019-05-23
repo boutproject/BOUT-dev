@@ -652,6 +652,8 @@ void Coordinates::outputVars(Datafile& file) {
   file.addOnce(g_23, "g_23" + loc_string);
 
   file.addOnce(J, "J" + loc_string);
+
+  getParallelTransform().outputVars(file);
 }
 
 int Coordinates::geometry(bool recalculate_staggered,

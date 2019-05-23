@@ -56,6 +56,9 @@ public:
 
   virtual bool canToFromFieldAligned() = 0;
 
+  /// Output variables used by a ParallelTransform instance to the dump files
+  virtual void outputVars(Datafile& UNUSED(file)) {}
+
 protected:
   /// This method should be called in the constructor to check that if the grid
   /// has a 'coordinates_type' variable, it has the correct value
@@ -155,6 +158,9 @@ public:
                                    const REGION region = RGN_ALL) override;
 
   bool canToFromFieldAligned() override { return true; }
+
+  /// Save zShift to the output
+  void outputVars(Datafile& file) override;
 
 protected:
   void checkInputGrid() override;
