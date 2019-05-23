@@ -1,20 +1,19 @@
 #include "gtest/gtest.h"
 
 #include "../src/mesh/impls/bout/boutmesh.hxx"
-#include "bout/mesh.hxx"
+#include "options.hxx"
 #include "output.hxx"
-#include "unused.hxx"
 #include "bout/griddata.hxx"
 
 #include "test_extras.hxx"
 
 TEST(BoutMeshTest, NullOptionsCheck) {
-  // Temporarily turn off outputs to make test quiet
-  output_info.disable();
-  output_warn.disable();
+  WithQuietOutput info{output_info};
+  WithQuietOutput warn{output_warn};
+
   EXPECT_NO_THROW(BoutMesh mesh(new FakeGridDataSource, nullptr));
-  output_info.enable();
-  output_warn.enable();
+}
+
 // Not a great test as it's not specific to the thing we want to test,
 // and also takes a whopping ~300ms!
 TEST(BoutMeshTest, SingleCoreDecomposition) {
