@@ -8,6 +8,7 @@
 #include "test_extras.hxx"
 #include "bout/constants.hxx"
 #include "bout/mesh.hxx"
+#include "bout/traits.hxx"
 
 /// Global mesh
 namespace bout {
@@ -49,7 +50,7 @@ public:
   // We can't just decide which FieldFactory::create?D function to
   // call with
   //
-  //     if (std::is_base_of<Field3D, T>::value) {
+  //     if (bout::utils::is_Field3D<T>::value) {
   //       return factory.create3D(...);
   //     } else {
   //       return factory.create2D(...);
@@ -71,7 +72,7 @@ public:
   // FieldFactory::create3D
   template <class... Args>
   T create(Args&&... args) {
-    return createDispatch(std::is_base_of<Field3D, T>{}, std::forward<Args>(args)...);
+    return createDispatch(bout::utils::is_Field3D<T>{}, std::forward<Args>(args)...);
   }
 };
 
@@ -237,7 +238,7 @@ TYPED_TEST(FieldFactoryCreationTest, CreateZStaggered) {
       [](typename TypeParam::ind_type& index) -> BoutReal {
 
         auto offset = BoutReal{0.0};
-        if (std::is_base_of<Field3D, TypeParam>::value) {
+        if (bout::utils::is_Field3D<TypeParam>::value) {
           offset = 0.5;
         }
 
@@ -596,7 +597,7 @@ TYPED_TEST(FieldFactoryCreationTest, CreateOnMeshWithoutCoordinates) {
   localmesh.createDefaultRegions();
 
   // Field2D version doesn't try to transform back
-  if (std::is_base_of<Field3D, TypeParam>::value) {
+  if (bout::utils::is_Field3D<TypeParam>::value) {
     EXPECT_THROW(this->create("x", nullptr, &localmesh), BoutException);
   }
 }

@@ -35,6 +35,7 @@ class InvertableOperator;
 
 #ifdef BOUT_HAS_PETSC
 
+#include "bout/traits.hxx"
 #include <bout/mesh.hxx>
 #include <bout/sys/timer.hxx>
 #include <boutcomm.hxx>
@@ -117,8 +118,7 @@ PetscErrorCode petscVecToField(Vec in, T& out) {
 template <typename T>
 class InvertableOperator {
   static_assert(
-      std::is_base_of<Field3D, T>::value || std::is_base_of<Field2D, T>::value
-          || std::is_base_of<FieldPerp, T>::value,
+      bout::utils::is_Field<T>::value,
       "InvertableOperator must be templated with one of FieldPerp, Field2D or Field3D");
 
 public:
