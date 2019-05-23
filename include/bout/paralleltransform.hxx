@@ -168,17 +168,11 @@ public:
 
   bool requiresTwistShift(bool twist_shift_enabled, YDirectionType ytype) override {
     // Twist-shift only if field-aligned
-
-    if (ytype == YDirectionType::Aligned) {
-      // Twist-shift is required if field-aligned
-      if (not twist_shift_enabled) {
-        throw BoutException("'TwistShift = true' is required to communicate "
-            "field-aligned Field3Ds when using ShiftedMetric.");
-      }
-      return true;
-    } else {
-      return false;
+    if (ytype == YDirectionType::Aligned and not twist_shift_enabled) {
+      throw BoutException("'TwistShift = true' is required to communicate field-aligned "
+          "Field3Ds when using ShiftedMetric.");
     }
+    return ytype == YDirectionType::Aligned;
   }
 
 protected:
