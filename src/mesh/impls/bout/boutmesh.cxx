@@ -1161,7 +1161,7 @@ int BoutMesh::wait(comm_handle handle) {
   // TWIST-SHIFT CONDITION
   // Loop over 3D fields
   for (const auto &var : ch->var_list.field3d()) {
-    if (var->twistShift(TwistShift)) {
+    if (var->requiresTwistShift(TwistShift)) {
 
       // Twist-shift only needed for field-aligned fields
       int jx, jy;

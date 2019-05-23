@@ -56,8 +56,9 @@ public:
 
   virtual bool canToFromFieldAligned() = 0;
 
-  /// Does a Field3D with ytype require a twist-shift at branch cuts on closed field lines?
-  virtual bool twistShift(bool twist_shift_enabled, YDirectionType ytype) = 0;
+  /// If \p twist_shift_enabled is true, does a `Field3D` with Y direction \p ytype
+  /// require a twist-shift at branch cuts on closed field lines?
+  virtual bool requiresTwistShift(bool twist_shift_enabled, YDirectionType ytype) = 0;
 
 protected:
   /// This method should be called in the constructor to check that if the grid
@@ -113,7 +114,7 @@ public:
 
   bool canToFromFieldAligned() override { return true; }
 
-  bool twistShift(bool twist_shift_enabled, YDirectionType UNUSED(ytype)) {
+  bool requiresTwistShift(bool twist_shift_enabled, YDirectionType UNUSED(ytype)) override {
     // All Field3Ds require twist-shift, because all are effectively field-aligned, but
     // allow twist-shift to be turned off by twist_shift_enabled
     return twist_shift_enabled;
@@ -165,7 +166,7 @@ public:
 
   bool canToFromFieldAligned() override { return true; }
 
-  bool twistShift(bool twist_shift_enabled, YDirectionType ytype) {
+  bool requiresTwistShift(bool twist_shift_enabled, YDirectionType ytype) override {
     // Twist-shift only if field-aligned
 
     if (ytype == YDirectionType::Aligned) {
