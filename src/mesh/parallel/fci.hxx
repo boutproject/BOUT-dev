@@ -109,6 +109,13 @@ public:
 
   bool canToFromFieldAligned() override { return false; }
 
+  bool twistShift(bool UNUSED(twist_shift_enabled), MAYBE_UNUSED(YDirectionType ytype)) {
+    // No Field3Ds require twist-shift, because they cannot be field-aligned
+    ASSERT1(ytype == YDirectionType::Standard);
+
+    return false;
+  }
+
 protected:
   void checkInputGrid() override;
 

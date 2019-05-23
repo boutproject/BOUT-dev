@@ -1159,12 +1159,14 @@ int BoutMesh::wait(comm_handle handle) {
   }
 
   // TWIST-SHIFT CONDITION
-  if (TwistShift) {
-    int jx, jy;
+  // Loop over 3D fields
+  for (const auto &var : ch->var_list.field3d()) {
+    if (var->twistShift(TwistShift)) {
 
-    // Perform Twist-shift using shifting method
-    // Loop over 3D fields
-    for (const auto &var : ch->var_list.field3d()) {
+      // Twist-shift only needed for field-aligned fields
+      int jx, jy;
+
+      // Perform Twist-shift using shifting method
       if (var->getDirectionY() == YDirectionType::Aligned) {
         // Only variables in field-aligned coordinates need the twist-shift boundary
         // condition to be applied
