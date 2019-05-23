@@ -317,7 +317,7 @@ T VDDY(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
     const T vel_aligned = toFieldAligned(vel, "RGN_NOX");
     T result = flowDerivative<T, DIRECTION::Y, DERIV::Upwind>(vel_aligned, f_aligned,
                                                               outloc, method, region);
-    return fromFieldAligned(result, toString(region));
+    return fromFieldAligned(result, region);
   }
 }
 
@@ -337,7 +337,7 @@ T FDDY(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
     const T vel_aligned = toFieldAligned(vel, "RGN_NOX");
     T result = flowDerivative<T, DIRECTION::Y, DERIV::Flux>(vel_aligned, f_aligned,
                                                             outloc, method, region);
-    return fromFieldAligned(result, toString(region));
+    return fromFieldAligned(result, region);
   }
 }
 
