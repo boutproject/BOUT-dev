@@ -1,0 +1,16 @@
+twistshift = true
+
+# input which is periodic is z but has all modes present, as exp is non-linear
+f = exp(3.*sin(z) + cos(z))*(1. + 0.1*x)
+
+[mesh]
+paralleltransform = shifted
+nx = 9
+ny = 7
+nz = 8
+
+zShift = sqrt(2.)*y*(x+1.)
+ShiftAngle = sqrt(2.)*2.*pi*(x+1.)
+
+[input]
+transform_from_field_aligned = false
