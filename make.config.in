@@ -319,7 +319,7 @@ endif
 
 clean::
 	-@$(RM) -rf $(OBJ) $(DEPS) $(TARGET)
-	@for pp in $(DIRS); do echo "  " $$pp cleaned; $(MAKE) --no-print-directory -C $$pp clean; done
+	@for pp in $(DIRS) $(DIRS_CLEAN); do echo "  " cleaning $$pp; $(MAKE) --no-print-directory -C $$pp clean; done
 	@$(RM) -f $(SUB_LIBS)
 	-@$(RM) .*.mk
 	@test -f make.config && ( find src | grep '\.o$$' && echo "WARNING: Some object files remain - which might cause issues. Clean with $(MAKE) clean-remove-object-files" ) || exit 0
