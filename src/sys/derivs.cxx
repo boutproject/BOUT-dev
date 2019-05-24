@@ -297,8 +297,8 @@ Field2D D4DZ4(const Field2D &f, CELL_LOC outloc, const std::string &method,
  *
  * ** Communicates and applies boundary in X.
  */
-Field2D D2DXDY(const Field2D &f, CELL_LOC outloc, const std::string &method,
-    const std::string& region, const std::string dfdy_boundary_condition) {
+Field2D D2DXDY(const Field2D& f, CELL_LOC outloc, const std::string& method,
+    const std::string& region, const std::string& dfdy_boundary_condition) {
 
   // If staggering in x, take y-derivative at f's location.
   const auto y_location =
@@ -320,8 +320,8 @@ Field2D D2DXDY(const Field2D &f, CELL_LOC outloc, const std::string &method,
  *
  * ** Communicates and applies boundary in X.
  */
-Field3D D2DXDY(const Field3D &f, CELL_LOC outloc, const std::string &method,
-    const std::string& region, const std::string dfdy_boundary_condition) {
+Field3D D2DXDY(const Field3D& f, CELL_LOC outloc, const std::string& method,
+    const std::string& region, const std::string& dfdy_boundary_condition) {
 
   // If staggering in x, take y-derivative at f's location.
   const auto y_location =

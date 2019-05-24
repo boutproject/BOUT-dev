@@ -639,7 +639,7 @@ VDERIV_FUNC_REGION_ENUM_TO_STRING(FDDZ, Field2D, Field2D, Field2D)
 ///                                    df/dy, before calculating the x-derivative.
 Field3D D2DXDY(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
                      const std::string& method = "DEFAULT",
-                     const std::string region = "RGN_NOBNDRY",
+                     const std::string& region = "RGN_NOBNDRY",
                      const std::string& dfdy_boundary_condition = "free_o3");
 [[gnu::deprecated("Please use D2DXDY(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, " 
     "const std::string& method = \"DEFAULT\", const std::string& region = \"RGN_ALL\", "
@@ -674,7 +674,7 @@ inline Field3D D2DXDY(const Field3D& f, CELL_LOC outloc, DIFF_METHOD method,
 ///                                    df/dy, before calculating the x-derivative.
 Field2D D2DXDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                      const std::string& method = "DEFAULT",
-                     const std::string region = "RGN_NOBNDRY",
+                     const std::string& region = "RGN_NOBNDRY",
                      const std::string& dfdy_boundary_condition = "free_o3");
 [[gnu::deprecated("Please use D2DXDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT, " 
     "const std::string& method = \"DEFAULT\", const std::string& region = \"RGN_ALL\", "
