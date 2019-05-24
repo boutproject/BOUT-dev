@@ -1044,7 +1044,7 @@ int Coordinates::jacobian() {
               - g33 * g12 * g12;
 
   // Check that g is positive
-  bout::checkPositive(g, "The determinant of g^ij", "RGN_NOCORNERS");
+  bout::checkPositive(g, "The determinant of g^ij", "RGN_NOBNDRY");
 
   J = 1. / sqrt(g);
   // More robust to extrapolate derived quantities directly, rather than
