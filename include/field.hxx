@@ -196,7 +196,7 @@ inline bool areFieldsCompatible(const Field& field1, const Field& field2) {
 
 /// Return an empty shell field of some type derived from Field, with metadata
 /// copied and a data array that is allocated but not initialised.
-template<typename T, typename = bout::utils::EnableIfField<T>>
+template<typename T>
 inline T emptyFrom(const T& f) {
   static_assert(bout::utils::is_Field<T>::value, "emptyFrom only works on Fields");
   return T(f.getMesh(), f.getLocation(), {f.getDirectionY(), f.getDirectionZ()}).allocate();
@@ -204,9 +204,9 @@ inline T emptyFrom(const T& f) {
 
 /// Return a field of some type derived from Field, with metadata copied from
 /// another field and a data array allocated and initialised to zero.
-template<typename T, typename = bout::utils::EnableIfField<T>>
+template<typename T>
 inline T zeroFrom(const T& f) {
-  static_assert(bout::utils::is_Field<T>::value, "emptyFrom only works on Fields");
+  static_assert(bout::utils::is_Field<T>::value, "zeroFrom only works on Fields");
   T result{emptyFrom(f)};
   result = 0.;
   return result;
@@ -214,9 +214,9 @@ inline T zeroFrom(const T& f) {
 
 /// Return a field of some type derived from Field, with metadata copied from
 /// another field and a data array allocated and filled with the given value.
-template<typename T, typename = bout::utils::EnableIfField<T>>
+template<typename T>
 inline T filledFrom(const T& f, BoutReal fill_value) {
-  static_assert(bout::utils::is_Field<T>::value, "emptyFrom only works on Fields");
+  static_assert(bout::utils::is_Field<T>::value, "filledFrom only works on Fields");
   T result{emptyFrom(f)};
   result = fill_value;
   return result;
@@ -276,22 +276,24 @@ inline void checkPositive(const T& f, const std::string& name="field", const std
 
 //////////////// NON-MEMBER FUNCTIONS //////////////////
 
-template<typename T, typename = bout::utils::EnableIfField<T>>
+template<typename T>
 inline T toFieldAligned(const T& f, const std::string& region = "RGN_ALL") {
+  static_assert(bout::utils::is_Field<T>::value, "toFieldAligned only works on Fields");
   return f.getCoordinates()->getParallelTransform().toFieldAligned(f, region);
 }
-template<typename T, typename = bout::utils::EnableIfField<T>>
+template<typename T>
 [[gnu::deprecated("Please use toFieldAligned(const T& f, "
     "const std::string& region = \"RGN_ALL\") instead")]]
 inline T toFieldAligned(const T& f, REGION region) {
   return toFieldAligned(f, toString(region));
 }
 
-template<typename T, typename = bout::utils::EnableIfField<T>>
+template<typename T>
 inline T fromFieldAligned(const T& f, const std::string& region = "RGN_ALL") {
+  static_assert(bout::utils::is_Field<T>::value, "fromFieldAligned only works on Fields");
   return f.getCoordinates()->getParallelTransform().fromFieldAligned(f, region);
 }
-template<typename T, typename = bout::utils::EnableIfField<T>>
+template<typename T>
 [[gnu::deprecated("Please use fromFieldAligned(const T& f, "
     "const std::string& region = \"RGN_ALL\") instead")]]
 inline T fromFieldAligned(const T& f, REGION region) {
