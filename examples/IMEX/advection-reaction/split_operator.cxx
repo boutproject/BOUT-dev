@@ -31,7 +31,7 @@ Field3D phi; // Potential used for advection
 
 BoutReal rate; // Reaction rate
 
-int physics_init(bool restarting) {
+int physics_init(bool UNUSED(restarting)) {
   // Give the solver two RHS functions
   solver->setSplitOperator(physics_run, reaction);
   
@@ -54,7 +54,7 @@ int physics_init(bool restarting) {
   return 0;
 }
 
-int physics_run(BoutReal time) {
+int physics_run(BoutReal UNUSED(time)) {
   // Need communication
   mesh->communicate(U);
 
@@ -64,7 +64,9 @@ int physics_run(BoutReal time) {
   return 0;
 }
 
-int reaction(BoutReal time) {
+int reaction(BoutReal UNUSED(time)) {
   // A simple reaction operator. No communication needed
   ddt(U) = rate * (1.-U);
+
+  return 0;
 }

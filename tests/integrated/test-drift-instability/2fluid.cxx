@@ -293,8 +293,8 @@ int physics_init(bool UNUSED(restarting)) {
     maybe_ylow = CELL_CENTRE;
   }
   Vi = interp_to(Vi,maybe_ylow);
-  Ni0_maybe_ylow = interp_to(Ni0, maybe_ylow, RGN_NOBNDRY);
-  Te0_maybe_ylow = interp_to(Te0, maybe_ylow, RGN_NOBNDRY);
+  Ni0_maybe_ylow = interp_to(Ni0, maybe_ylow, "RGN_NOBNDRY");
+  Te0_maybe_ylow = interp_to(Te0, maybe_ylow, "RGN_NOBNDRY");
 
   return(0);
 }

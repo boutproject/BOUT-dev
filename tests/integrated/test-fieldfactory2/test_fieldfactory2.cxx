@@ -10,7 +10,7 @@
 class TestFieldFactory2 : public PhysicsModel {
 protected:
   // Initialisation
-  int init(bool restarting) {
+  int init(bool UNUSED(restarting)) {
     // Create a field factory for parsing strings
     FieldFactory f(mesh);
     

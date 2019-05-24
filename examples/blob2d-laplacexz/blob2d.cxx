@@ -37,7 +37,7 @@ private:
   int boussinesq_used;  // How many times has it been reused
 
 protected:
-  int init(bool restarting) {
+  int init(bool UNUSED(restarting)) {
 
     /******************Reading options *****************/
 
@@ -109,7 +109,7 @@ protected:
     return 0;
   }
 
-  int rhs(BoutReal t) {
+  int rhs(BoutReal UNUSED(t)) {
 
     // Run communications
     ////////////////////////////////////////////////////////////////////////////

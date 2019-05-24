@@ -18,7 +18,7 @@ class Laplacian* phiSolver; // Laplacian solver for vort -> phi
 // Method to use: BRACKET_ARAKAWA, BRACKET_STD or BRACKET_SIMPLE
 BRACKET_METHOD bm; // Bracket method for advection terms
 
-int physics_init(bool restart) {
+int physics_init(bool UNUSED(restart)) {
   
   Options *options = Options::getRoot()->getSection("hw");
   OPTION(options, alpha, 1.0);

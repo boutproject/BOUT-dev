@@ -13,7 +13,7 @@ void f1(){
   output.write("c is %f\n",c);
   throw BoutException("Tomatoes are red?\n");
 }
-void f2(int a){
+void f2(int UNUSED(a)) {
   f1();
 }
 
@@ -22,13 +22,13 @@ int f3(){
   return 0;
 }
 
-int physics_init(bool restarting) {
+int physics_init(bool UNUSED(restarting)) {
   f3();
   
   return 1;
 }
 
-int physics_run(BoutReal time) {
+int physics_run(BoutReal UNUSED(time)) {
   
   
   return 1;
