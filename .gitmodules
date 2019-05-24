@@ -7,3 +7,9 @@
 [submodule "mpark.variant"]
 	path = externalpackages/mpark.variant
 	url = https://github.com/mpark/variant.git
+[submodule "tools/pylib/boutdata"]
+	path = tools/pylib/boutdata
+	url = https://github.com/boutproject/boutdata.git
+[submodule "tools/pylib/boututils"]
+	path = tools/pylib/boututils
+	url = https://github.com/boutproject/boututils.git
