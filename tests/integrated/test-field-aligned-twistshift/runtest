@@ -1,0 +1,64 @@
+#!/usr/bin/env python3
+
+from boutdata.data import BoutOutputs
+from boututils.run_wrapper import shell_safe, launch_safe
+from matplotlib import pyplot
+
+nproc = 1
+
+print("Making to/from test")
+shell_safe('make > make.log')
+
+s, out = launch_safe('test-tofrom-field-aligned', nproc=nproc, pipe=True)
+with open('run.log.%i'%nproc, 'w') as f:
+    f.write(out)
+
+data = BoutOutputs(path="data", yguards=True)
+
+pyplot.figure()
+pyplot.plot(data['freal'][0,0,:], label='freal')
+pyplot.plot(data['fimag'][0,0,:], label='fimag')
+pyplot.plot(data['freal_tofrom'][0,0,:], label='freal_tofrom')
+pyplot.plot(data['fimag_tofrom'][0,0,:], label='fimag_tofrom')
+pyplot.legend()
+pyplot.show()
+
+for k in range(data['nz']//2 + 1):
+    pyplot.figure(k)
+
+    freal = data['freal'][:, :, k]
+    fimag = data['fimag'][:, :, k]
+    freal_tofrom = data['freal_tofrom'][:, :, k]
+    fimag_tofrom = data['fimag_tofrom'][:, :, k]
+
+    #vmin = min(freal.min(), freal_tofrom.min())
+    #vmax = max(freal.max(), freal_tofrom.max())
+    vmin = None
+    vmax = None
+
+    pyplot.subplot(231)
+    pyplot.pcolor(freal, vmin=vmin, vmax=vmax)
+    pyplot.colorbar()
+    pyplot.title('freal')
+    pyplot.subplot(232)
+    pyplot.pcolor(freal_tofrom, vmin=vmin, vmax=vmax)
+    pyplot.title('freal_tofrom')
+    pyplot.colorbar()
+    pyplot.subplot(233)
+    pyplot.pcolor(freal-freal_tofrom, vmin=vmin, vmax=vmax)
+    pyplot.title('freal-freal_tofrom')
+    pyplot.colorbar()
+    pyplot.subplot(234)
+    pyplot.pcolor(fimag, vmin=vmin, vmax=vmax)
+    pyplot.colorbar()
+    pyplot.title('fimag')
+    pyplot.subplot(235)
+    pyplot.pcolor(fimag_tofrom, vmin=vmin, vmax=vmax)
+    pyplot.colorbar()
+    pyplot.title('fimag_tofrom')
+    pyplot.subplot(236)
+    pyplot.pcolor(fimag-fimag_tofrom, vmin=vmin, vmax=vmax)
+    pyplot.colorbar()
+    pyplot.title('fimag-fimag_tofrom')
+
+pyplot.show()
