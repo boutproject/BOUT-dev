@@ -584,7 +584,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     g_23 = interpolateAndExtrapolate(coords_in->g_23, location);
 
     J = interpolateAndExtrapolate(coords_in->J, location);
-    Bxy = interpolateAndExtrapolate(coords_in->J, location);
+    Bxy = interpolateAndExtrapolate(coords_in->Bxy, location);
 
     bout::checkFinite(J, "The Jacobian", "RGN_NOCORNERS");
     bout::checkPositive(J, "The Jacobian", "RGN_NOCORNERS");
