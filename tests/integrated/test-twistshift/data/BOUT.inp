@@ -1,0 +1,15 @@
+twistshift = true
+
+test = sin(y) * (x+0.2)^2 * cos(z)
+
+[mesh]
+paralleltransform = shifted
+nx = 5
+ny = 7
+nz = 5
+
+zShift = (y-0.5) * (x+1)
+ShiftAngle = (x+1)
+
+[input]
+transform_from_field_aligned = false

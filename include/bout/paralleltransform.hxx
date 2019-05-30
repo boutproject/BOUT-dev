@@ -56,6 +56,10 @@ public:
 
   virtual bool canToFromFieldAligned() = 0;
 
+  /// If \p twist_shift_enabled is true, does a `Field3D` with Y direction \p ytype
+  /// require a twist-shift at branch cuts on closed field lines?
+  virtual bool requiresTwistShift(bool twist_shift_enabled, YDirectionType ytype) = 0;
+
 protected:
   /// This method should be called in the constructor to check that if the grid
   /// has a 'coordinates_type' variable, it has the correct value
@@ -110,6 +114,12 @@ public:
 
   bool canToFromFieldAligned() override { return true; }
 
+  bool requiresTwistShift(bool twist_shift_enabled, YDirectionType UNUSED(ytype)) override {
+    // All Field3Ds require twist-shift, because all are effectively field-aligned, but
+    // allow twist-shift to be turned off by twist_shift_enabled
+    return twist_shift_enabled;
+  }
+
 protected:
   void checkInputGrid() override;
 };
@@ -155,6 +165,15 @@ public:
                                    const REGION region = RGN_ALL) override;
 
   bool canToFromFieldAligned() override { return true; }
+
+  bool requiresTwistShift(bool twist_shift_enabled, YDirectionType ytype) override {
+    // Twist-shift only if field-aligned
+    if (ytype == YDirectionType::Aligned and not twist_shift_enabled) {
+      throw BoutException("'TwistShift = true' is required to communicate field-aligned "
+          "Field3Ds when using ShiftedMetric.");
+    }
+    return ytype == YDirectionType::Aligned;
+  }
 
 protected:
   void checkInputGrid() override;

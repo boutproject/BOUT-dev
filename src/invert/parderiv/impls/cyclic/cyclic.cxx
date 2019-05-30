@@ -71,9 +71,8 @@ const Field3D InvertParCR::solve(const Field3D &f) {
   int size = localmesh->LocalNy - 2 * localmesh->ystart;
   SurfaceIter surf(localmesh);
   for(surf.first(); !surf.isDone(); surf.next()) {
-    BoutReal ts;
     int n = localmesh->LocalNy - 2 * localmesh->ystart;
-    if (!surf.closed(ts)) {
+    if (!surf.closed()) {
       // Open field line
       if (surf.firstY())
         n += localmesh->ystart;
