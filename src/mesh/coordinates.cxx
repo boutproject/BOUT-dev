@@ -584,7 +584,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     g_23 = interpolateAndExtrapolate(coords_in->g_23, location);
 
     J = interpolateAndExtrapolate(coords_in->J, location);
-    Bxy = interpolateAndExtrapolate(coords_in->J, location);
+    Bxy = interpolateAndExtrapolate(coords_in->Bxy, location);
 
     bout::checkFinite(J, "The Jacobian", "RGN_NOCORNERS");
     bout::checkPositive(J, "The Jacobian", "RGN_NOCORNERS");
@@ -1046,7 +1046,7 @@ int Coordinates::jacobian() {
               - g33 * g12 * g12;
 
   // Check that g is positive
-  bout::checkPositive(g, "The determinant of g^ij", "RGN_NOCORNERS");
+  bout::checkPositive(g, "The determinant of g^ij", "RGN_NOBNDRY");
 
   J = 1. / sqrt(g);
   // More robust to extrapolate derived quantities directly, rather than

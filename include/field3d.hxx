@@ -297,6 +297,10 @@ class Field3D : public Field, public FieldData {
   Field3D& ynext(int offset);
   const Field3D& ynext(int offset) const;
 
+  /// If \p twist_shift_enabled is true, does this Field3D require a twist-shift at branch
+  /// cuts on closed field lines?
+  bool requiresTwistShift(bool twist_shift_enabled);
+
   /////////////////////////////////////////////////////////
   // Data access
 
