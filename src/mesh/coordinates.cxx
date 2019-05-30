@@ -313,13 +313,13 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
       output_warn.write("Not all covariant components of metric tensor found. "
                         "Calculating all from the contravariant tensor\n");
       /// Calculate contravariant metric components if not found
-      if (calcCovariant("RGN_NOBNDRY")) {
+      if (calcCovariant("RGN_NOCORNERS")) {
         throw BoutException("Error in calcCovariant call");
       }
     }
   } else {
     /// Calculate contravariant metric components if not found
-    if (calcCovariant("RGN_NOBNDRY")) {
+    if (calcCovariant("RGN_NOCORNERS")) {
       throw BoutException("Error in calcCovariant call");
     }
   }
@@ -510,13 +510,13 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
         output_warn.write("Not all staggered covariant components of metric tensor found. "
                           "Calculating all from the contravariant tensor\n");
         /// Calculate contravariant metric components if not found
-        if (calcCovariant("RGN_NOBNDRY")) {
+        if (calcCovariant("RGN_NOCORNERS")) {
           throw BoutException("Error in staggered calcCovariant call");
         }
       }
     } else {
       /// Calculate contravariant metric components if not found
-      if (calcCovariant("RGN_NOBNDRY")) {
+      if (calcCovariant("RGN_NOCORNERS")) {
         throw BoutException("Error in staggered calcCovariant call");
       }
     }
