@@ -51,7 +51,7 @@
 InvertParCR::InvertParCR(Options *opt, Mesh *mesh_in)
   : InvertPar(opt, mesh_in), A(1.0), B(0.0), C(0.0), D(0.0), E(0.0) {
   // Number of k equations to solve for each x location
-  nsys = 1 + (localmesh->LocalNz)/2; 
+  nsys = 1 + (localmesh->zend + 1 - localmesh->zstart) / 2;
 }
 
 const Field3D InvertParCR::solve(const Field3D &f) {
@@ -118,7 +118,8 @@ const Field3D InvertParCR::solve(const Field3D &f) {
     
     // Take Fourier transform
     for (int y = 0; y < localmesh->LocalNy - 2 * localmesh->ystart; y++)
-      rfft(alignedField(x, y + localmesh->ystart), localmesh->LocalNz, &rhs(y + y0, 0));
+      rfft(&alignedField(x, y + localmesh->ystart, localmesh->zstart),
+           localmesh->zend + 1 - localmesh->zstart, &rhs(y + y0, 0));
 
     // Set up tridiagonal system
     for(int k=0; k<nsys; k++) {
@@ -204,7 +205,8 @@ const Field3D InvertParCR::solve(const Field3D &f) {
     
     // Inverse Fourier transform 
     for(int y=0;y<size;y++)
-      irfft(&rhs(y, 0), localmesh->LocalNz, result(x, y + localmesh->ystart - y0));
+      irfft(&rhs(y, 0), localmesh->zend + 1 - localmesh->zstart,
+            &result(x, y + localmesh->ystart - y0, localmesh->zstart));
   }
 
   return fromFieldAligned(result, RGN_NOBNDRY);

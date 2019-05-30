@@ -52,13 +52,13 @@ LaplaceSerialBand::LaplaceSerialBand(Options *opt, const CELL_LOC loc, Mesh *mes
     }
   // Allocate memory
 
-  int ncz = localmesh->LocalNz;
+  int ncz = localmesh->zend + 1 - localmesh->zstart;
   bk.reallocate(localmesh->LocalNx, ncz / 2 + 1);
   bk1d.reallocate(localmesh->LocalNx);
 
-  //Initialise bk to 0 as we only visit 0<= kz <= maxmode in solve
-  for(int kz=maxmode+1; kz < ncz/2 + 1; kz++){
-    for (int ix=0; ix<localmesh->LocalNx; ix++){
+  // Initialise bk to 0 as we only visit 0<= kz <= maxmode in solve
+  for (int kz = maxmode + 1; kz < ncz / 2 + 1; kz++) {
+    for (int ix = 0; ix < localmesh->LocalNx; ix++) {
       bk(ix, kz) = 0.0;
     }
   }
@@ -87,7 +87,7 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   int jy = b.getIndex();
 
-  int ncz = localmesh->LocalNz;
+  int ncz = localmesh->zend + 1 - localmesh->zstart;
   int ncx = localmesh->LocalNx-1;
 
   int xbndry = localmesh->xstart; // Width of the x boundary
@@ -102,9 +102,9 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
     if(((ix < xbndry) && (inner_boundary_flags & INVERT_SET)) ||
        ((ncx-ix < xbndry) && (outer_boundary_flags & INVERT_SET))) {
       // Use the values in x0 in the boundary
-      rfft(x0[ix], ncz, &bk(ix, 0));
+      rfft(&x0(ix, localmesh->zstart), ncz, &bk(ix, 0));
     }else
-      rfft(b[ix], ncz, &bk(ix, 0));
+      rfft(&b(ix, localmesh->zstart), ncz, &bk(ix, 0));
   }
   
   int xstart, xend;
@@ -416,7 +416,7 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
     if(global_flags & INVERT_ZERO_DC)
       xk(ix, 0) = 0.0;
 
-    irfft(&xk(ix, 0), ncz, x[ix]);
+    irfft(&xk(ix, 0), ncz, &x(ix, localmesh->zstart));
   }
 
   return x;

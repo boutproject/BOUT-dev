@@ -21,7 +21,7 @@ int main(int argc, char **argv) {
   /*this assumes equidistant grid*/
   int nguard = mesh->xstart;
   mesh->getCoordinates()->dx = Lx/(mesh->GlobalNx - 2*nguard);
-  mesh->getCoordinates()->dz = TWOPI*Lx/(mesh->LocalNz);
+  mesh->getCoordinates()->dz = TWOPI * Lx / (mesh->GlobalNz - 2 * mesh->zstart);
   /////
 
   // Create a Laplacian inversion solver

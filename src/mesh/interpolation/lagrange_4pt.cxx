@@ -39,42 +39,34 @@ Lagrange4pt::Lagrange4pt(int y_offset, Mesh *mesh)
 
 void Lagrange4pt::calcWeights(const Field3D &delta_x, const Field3D &delta_z) {
 
-  for (int x = localmesh->xstart; x <= localmesh->xend; x++) {
-    for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
-      for (int z = 0; z < localmesh->LocalNz; z++) {
+  BOUT_FOR(i, delta_x.getRegion("RGN_NOBNDRY")) {
+    const auto x = i.x(), y = i.y(), z = i.z();
 
-        if (skip_mask(x, y, z))
-          continue;
+    if (skip_mask(x, y, z))
+      continue;
 
-        // The integer part of xt_prime, zt_prime are the indices of the cell
-        // containing the field line end-point
-        i_corner(x, y, z) = static_cast<int>(floor(delta_x(x, y, z)));
-        k_corner(x, y, z) = static_cast<int>(floor(delta_z(x, y, z)));
+    // The integer part of xt_prime, zt_prime are the indices of the cell
+    // containing the field line end-point
+    i_corner(x, y, z) = static_cast<int>(floor(delta_x(x, y, z)));
+    k_corner(x, y, z) = static_cast<int>(floor(delta_z(x, y, z)));
 
-        // t_x, t_z are the normalised coordinates \in [0,1) within the cell
-        // calculated by taking the remainder of the floating point index
-        t_x(x, y, z) = delta_x(x, y, z) - static_cast<BoutReal>(i_corner(x, y, z));
-        t_z(x, y, z) = delta_z(x, y, z) - static_cast<BoutReal>(k_corner(x, y, z));
+    // t_x, t_z are the normalised coordinates \in [0,1) within the cell
+    // calculated by taking the remainder of the floating point index
+    t_x(x, y, z) = delta_x(x, y, z) - static_cast<BoutReal>(i_corner(x, y, z));
+    t_z(x, y, z) = delta_z(x, y, z) - static_cast<BoutReal>(k_corner(x, y, z));
 
-        // NOTE: A (small) hack to avoid one-sided differences
-        if (i_corner(x, y, z) == localmesh->xend) {
-          i_corner(x, y, z) -= 1;
-          t_x(x, y, z) = 1.0;
-        }
-
-        // Check that t_x and t_z are in range
-        if ((t_x(x, y, z) < 0.0) || (t_x(x, y, z) > 1.0)) {
-          throw BoutException(
-            "t_x=%e out of range at (%d,%d,%d) (delta_x=%e, i_corner=%d)", t_x(x, y, z), x, y,
-              z, delta_x(x, y, z), i_corner(x, y, z));
-        }
-        if ((t_z(x, y, z) < 0.0) || (t_z(x, y, z) > 1.0)) {
-          throw BoutException(
-            "t_z=%e out of range at (%d,%d,%d) (delta_z=%e, k_corner=%d)", t_z(x, y, z), x, y,
-              z, delta_z(x, y, z), k_corner(x, y, z));
-        }
-      }
+    // NOTE: A (small) hack to avoid one-sided differences
+    if (i_corner(x, y, z) == localmesh->xend) {
+      i_corner(x, y, z) -= 1;
+      t_x(x, y, z) = 1.0;
     }
+
+    // Check that t_x and t_z are in range
+    if ((t_x(x, y, z) < 0.0) || (t_x(x, y, z) > 1.0))
+      throw BoutException("t_x=%e out of range at (%d,%d,%d)", t_x(x, y, z), x, y, z);
+
+    if ((t_z(x, y, z) < 0.0) || (t_z(x, y, z) > 1.0))
+      throw BoutException("t_z=%e out of range at (%d,%d,%d)", t_z(x, y, z), x, y, z);
   }
 }
 
@@ -85,56 +77,56 @@ void Lagrange4pt::calcWeights(const Field3D &delta_x, const Field3D &delta_z,
 }
 
 Field3D Lagrange4pt::interpolate(const Field3D &f) const {
-
+#ifdef BOUT_HAS_Z_GUARD_CELLS_IMPLEMENTED
+  throw BoutException(
+      "Lagrange4pt::interpolate not yet updated to handle z-guards fully.");
+#endif
   ASSERT1(f.getMesh() == localmesh);
   Field3D f_interp{emptyFrom(f)};
 
-  for (int x = localmesh->xstart; x <= localmesh->xend; x++) {
-    for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
-      for (int z = 0; z < localmesh->LocalNz; z++) {
+  BOUT_FOR(i, f.getRegion("RGN_NOBNDRY")) {
+    const auto x = i.x(), y = i.y(), z = i.z();
 
-        if (skip_mask(x, y, z))
-          continue;
+    if (skip_mask(x, y, z))
+      continue;
 
-        int jx = i_corner(x, y, z);
-        int jx2mnew = (jx == 0) ? 0 : (jx - 1);
-        int jxpnew = jx + 1;
-        int jx2pnew = (jx == (localmesh->LocalNx - 2)) ? jxpnew : (jxpnew + 1);
+    int jx = i_corner(x, y, z);
+    int jx2mnew = (jx == 0) ? 0 : (jx - 1); /* This is a hack that should be removed */
+    int jxpnew = jx + 1;
+    int jx2pnew = (jx == (localmesh->LocalNx - 2))
+                      ? jxpnew
+                      : (jxpnew + 1); /* This is a hack that should be removed */
 
-        int ncz = localmesh->LocalNz;
+    // Get the 4 Z points
+    // THE FOLLOWING SECTION NEEDS TO BE ADAPTED FOR Z-GUARDS
+    int ncz = localmesh->LocalNz;
+    int jz = ((k_corner(x, y, z) % ncz) + ncz) % ncz;
+    int jzpnew = (jz + 1) % ncz;
+    int jz2pnew = (jz + 2) % ncz;
+    int jz2mnew = (jz - 1 + ncz) % ncz;
 
-        // Get the 4 Z points
-        int jz = ((k_corner(x, y, z) % ncz) + ncz) % ncz;
+    // Interpolate in Z first
+    BoutReal xvals[4];
 
-        int jzpnew = (jz + 1) % ncz;
-        int jz2pnew = (jz + 2) % ncz;
-        int jz2mnew = (jz - 1 + ncz) % ncz;
+    int y_next = y + y_offset;
 
-        // Interpolate in Z first
-        BoutReal xvals[4];
+    xvals[0] = lagrange_4pt(f(jx2mnew, y_next, jz2mnew), f(jx2mnew, y_next, jz),
+                            f(jx2mnew, y_next, jzpnew), f(jx2mnew, y_next, jz2pnew),
+                            t_z(x, y, z));
 
-        int y_next = y + y_offset;
+    xvals[1] = lagrange_4pt(f(jx, y_next, jz2mnew), f(jx, y_next, jz),
+                            f(jx, y_next, jzpnew), f(jx, y_next, jz2pnew), t_z(x, y, z));
 
-        xvals[0] = lagrange_4pt(f(jx2mnew, y_next, jz2mnew), f(jx2mnew, y_next, jz),
-                                f(jx2mnew, y_next, jzpnew), f(jx2mnew, y_next, jz2pnew),
-                                t_z(x, y, z));
+    xvals[2] =
+        lagrange_4pt(f(jxpnew, y_next, jz2mnew), f(jxpnew, y_next, jz),
+                     f(jxpnew, y_next, jzpnew), f(jxpnew, y_next, jz2pnew), t_z(x, y, z));
 
-        xvals[1] =
-            lagrange_4pt(f(jx, y_next, jz2mnew), f(jx, y_next, jz), f(jx, y_next, jzpnew),
-                         f(jx, y_next, jz2pnew), t_z(x, y, z));
+    xvals[3] = lagrange_4pt(f(jx2pnew, y_next, jz2mnew), f(jx2pnew, y_next, jz),
+                            f(jx2pnew, y_next, jzpnew), f(jx2pnew, y_next, jz2pnew),
+                            t_z(x, y, z));
 
-        xvals[2] = lagrange_4pt(f(jxpnew, y_next, jz2mnew), f(jxpnew, y_next, jz),
-                                f(jxpnew, y_next, jzpnew), f(jxpnew, y_next, jz2pnew),
-                                t_z(x, y, z));
-
-        xvals[3] = lagrange_4pt(f(jx2pnew, y_next, jz2mnew), f(jx2pnew, y_next, jz),
-                                f(jx2pnew, y_next, jzpnew), f(jx2pnew, y_next, jz2pnew),
-                                t_z(x, y, z));
-
-        // Then in X
-        f_interp(x, y_next, z) = lagrange_4pt(xvals, t_x(x, y, z));
-      }
-    }
+    // Then in X
+    f_interp(x, y_next, z) = lagrange_4pt(xvals, t_x(x, y, z));
   }
   return f_interp;
 }

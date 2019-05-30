@@ -184,9 +184,7 @@ Field3D FieldFactory::create3D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC 
     BOUT_FOR(i, result.getRegion("RGN_ALL")) {
       BoutReal xpos = 0.5 * (localmesh->GlobalX(i.x() - 1) + localmesh->GlobalX(i.x()));
       result[i] = gen->generate(xpos, TWOPI * localmesh->GlobalY(i.y()),
-                                TWOPI * static_cast<BoutReal>(i.z())
-                                    / static_cast<BoutReal>(localmesh->LocalNz),
-                                t);
+                                TWOPI * localmesh->GlobalZ(i.z()), t);
     }
     break;
   }
@@ -195,19 +193,17 @@ Field3D FieldFactory::create3D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC 
       BoutReal ypos =
           TWOPI * 0.5 * (localmesh->GlobalY(i.y() - 1) + localmesh->GlobalY(i.y()));
       result[i] = gen->generate(localmesh->GlobalX(i.x()), ypos,
-                                TWOPI * static_cast<BoutReal>(i.z())
-                                    / static_cast<BoutReal>(localmesh->LocalNz),
-                                t);
+                                TWOPI * localmesh->GlobalZ(i.z()), t);
     }
     break;
   }
   case CELL_ZLOW: {
     BOUT_FOR(i, result.getRegion("RGN_ALL")) {
-      result[i] =
-          gen->generate(localmesh->GlobalX(i.x()), TWOPI * localmesh->GlobalY(i.y()),
-                        TWOPI * (static_cast<BoutReal>(i.z()) - 0.5)
-                            / static_cast<BoutReal>(localmesh->LocalNz),
-                        t);
+      BoutReal zpos =
+          TWOPI * 0.5 * (localmesh->GlobalZ(i.z() - 1) + localmesh->GlobalZ(i.z()));
+
+      result[i] = gen->generate(localmesh->GlobalX(i.x()),
+                                TWOPI * localmesh->GlobalY(i.y()), zpos, t);
     }
     break;
   }
@@ -215,9 +211,7 @@ Field3D FieldFactory::create3D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC 
     BOUT_FOR(i, result.getRegion("RGN_ALL")) {
       result[i] =
           gen->generate(localmesh->GlobalX(i.x()), TWOPI * localmesh->GlobalY(i.y()),
-                        TWOPI * static_cast<BoutReal>(i.z())
-                            / static_cast<BoutReal>(localmesh->LocalNz),
-                        t);
+                        TWOPI * localmesh->GlobalZ(i.z()), t);
     }
   }
   };

@@ -67,7 +67,7 @@ LaplaceSPT::LaplaceSPT(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
   }
 
   // Temporary array for taking FFTs
-  int ncz = localmesh->LocalNz;
+  int ncz = localmesh->zend + 1 - localmesh->zstart;
   dc1d.reallocate(ncz / 2 + 1);
 }
 
@@ -96,13 +96,13 @@ FieldPerp LaplaceSPT::solve(const FieldPerp& b, const FieldPerp& x0) {
       // Copy x0 inner boundary into bs
       for(int ix=0;ix<xbndry;ix++)
         for(int iz=0;iz<localmesh->LocalNz;iz++)
-          bs[ix][iz] = x0[ix][iz];
+          bs(ix, iz) = x0(ix, iz);
     }
     if((outer_boundary_flags & INVERT_SET) && localmesh->lastX()) {
       // Copy x0 outer boundary into bs
       for(int ix=localmesh->LocalNx-1;ix>=localmesh->LocalNx-xbndry;ix--)
         for(int iz=0;iz<localmesh->LocalNz;iz++)
-          bs[ix][iz] = x0[ix][iz];
+          bs(ix, iz) = x0(ix, iz);
     }
     start(bs, slicedata);
   }else
@@ -278,7 +278,7 @@ int LaplaceSPT::start(const FieldPerp &b, SPT_data &data) {
 
   data.jy = b.getIndex();
 
-  int mm = localmesh->LocalNz/2 + 1;
+  int mm = (localmesh->zend + 1 - localmesh->zstart) / 2 + 1;
   data.allocate(mm, localmesh->LocalNx); // Make sure data is allocated. Already allocated -> does nothing
   
   /// Take FFTs of data
@@ -286,7 +286,7 @@ int LaplaceSPT::start(const FieldPerp &b, SPT_data &data) {
   int ncz = localmesh->LocalNz;
   
   for(int ix=0; ix < localmesh->LocalNx; ix++) {
-    rfft(b[ix], ncz, std::begin(dc1d));
+    rfft(&b(ix, localmesh->zstart), ncz, std::begin(dc1d));
     for(int kz = 0; kz <= maxmode; kz++)
       data.bk(kz, ix) = dc1d[kz];
   }
@@ -458,7 +458,7 @@ BOUT_OMP(parallel for)
 /// @param[out]   x      The result
 void LaplaceSPT::finish(SPT_data &data, FieldPerp &x) {
   int ncx = localmesh->LocalNx-1;
-  int ncz = localmesh->LocalNz;
+  int ncz = localmesh->zend + 1 - localmesh->zstart;
 
   ASSERT1(x.getLocation() == location);
 
@@ -481,17 +481,17 @@ void LaplaceSPT::finish(SPT_data &data, FieldPerp &x) {
     if(global_flags & INVERT_ZERO_DC)
       dc1d[0] = 0.0;
 
-    irfft(std::begin(dc1d), ncz, x[ix]);
+    irfft(std::begin(dc1d), ncz, &x(ix, localmesh->zstart));
   }
 
-  if(!localmesh->firstX()) {
+  if (!localmesh->firstX()) { /* This looks like it could mask missing communicates? */
     // Set left boundary to zero (Prevent unassigned values in corners)
     for(int ix=0; ix<localmesh->xstart; ix++){
       for(int kz=0;kz<localmesh->LocalNz;kz++)
 	x(ix,kz) = 0.0;
     }
   }
-  if(!localmesh->lastX()) {
+  if (!localmesh->lastX()) { /* This looks like it could mask missing communicates? */
     // Same for right boundary
     for(int ix=localmesh->xend+1; ix<localmesh->LocalNx; ix++){
       for(int kz=0;kz<localmesh->LocalNz;kz++)

@@ -295,10 +295,10 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
       if(mesh->firstX()) {
         // Lower X boundary
         for(int y=mesh->ystart;y<=mesh->yend;y++) {
-          for(int z=0;z<mesh->LocalNz;z++) {
+          for (int z = mesh->zstart; z <= mesh->zend; z++) {
             int localIndex = ROUND(index(mesh->xstart, y, z));
             ASSERT2( (localIndex >= 0) && (localIndex < localN) );
-            if(z == 0) {
+            if (z == mesh->zstart) {
               // All 2D and 3D fields
               for(int i=0;i<n2d+n3d;i++)
                 d_nnz[localIndex + i] -= (n3d + n2d);
@@ -312,10 +312,10 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
       }else {
         // On another processor
         for(int y=mesh->ystart;y<=mesh->yend;y++) {
-          for(int z=0;z<mesh->LocalNz;z++) {
+          for (int z = mesh->zstart; z <= mesh->zend; z++) {
             int localIndex = ROUND(index(mesh->xstart, y, z));
             ASSERT2( (localIndex >= 0) && (localIndex < localN) );
-            if(z == 0) {
+            if (z == mesh->zstart) {
               // All 2D and 3D fields
               for(int i=0;i<n2d+n3d;i++) {
                 d_nnz[localIndex+i] -= (n3d + n2d);
@@ -335,10 +335,10 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
       if(mesh->lastX()) {
         // Upper X boundary
         for(int y=mesh->ystart;y<=mesh->yend;y++) {
-          for(int z=0;z<mesh->LocalNz;z++) {
+          for (int z = mesh->zstart; z <= mesh->zend; z++) {
             int localIndex = ROUND(index(mesh->xend, y, z));
             ASSERT2( (localIndex >= 0) && (localIndex < localN) );
-            if(z == 0) {
+            if (z == mesh->zstart) {
               // All 2D and 3D fields
               for(int i=0;i<n2d+n3d;i++)
                 d_nnz[localIndex + i] -= (n3d + n2d);
@@ -352,10 +352,10 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
       }else {
         // On another processor
         for(int y=mesh->ystart;y<=mesh->yend;y++) {
-          for(int z=0;z<mesh->LocalNz;z++) {
+          for (int z = mesh->zstart; z <= mesh->zend; z++) {
             int localIndex = ROUND(index(mesh->xend, y, z));
             ASSERT2( (localIndex >= 0) && (localIndex < localN) );
-            if(z == 0) {
+            if (z == mesh->zstart) {
               // All 2D and 3D fields
               for(int i=0;i<n2d+n3d;i++) {
                 d_nnz[localIndex+i] -= (n3d + n2d);
@@ -381,14 +381,14 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
         //   then this will result in PETSc warnings about out of range allocations
 
         // z = 0 case
-        int localIndex = ROUND(index(x, mesh->ystart, 0));
+        int localIndex = ROUND(index(x, mesh->ystart, mesh->zstart));
         // All 2D and 3D fields
         for(int i=0;i<n2d+n3d;i++) {
           //d_nnz[localIndex+i] -= (n3d + n2d);
           o_nnz[localIndex+i] += (n3d + n2d);
         }
-        
-        for(int z=1;z<mesh->LocalNz;z++) {
+
+        for (int z = mesh->zstart + 1; z <= mesh->zend; z++) {
           localIndex = ROUND(index(x, mesh->ystart, z));
           
           // Only 3D fields
@@ -399,14 +399,14 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
         }
 
         // z = 0 case
-        localIndex = ROUND(index(x, mesh->yend, 0));
+        localIndex = ROUND(index(x, mesh->yend, mesh->zstart));
         // All 2D and 3D fields
         for(int i=0;i<n2d+n3d;i++) {
           //d_nnz[localIndex+i] -= (n3d + n2d);
           o_nnz[localIndex+i] += (n3d + n2d);
         }
-        
-        for(int z=1;z<mesh->LocalNz;z++) {
+
+        for (int z = mesh->zstart + 1; z <= mesh->zend; z++) {
           localIndex = ROUND(index(x, mesh->yend, z));
           
           // Only 3D fields
@@ -421,13 +421,13 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
         // A boundary, so no communication
 
         // z = 0 case
-        int localIndex = ROUND(index(it.ind, mesh->ystart, 0));
+        int localIndex = ROUND(index(it.ind, mesh->ystart, mesh->zstart));
         // All 2D and 3D fields
         for(int i=0;i<n2d+n3d;i++) {
           o_nnz[localIndex+i] -= (n3d + n2d);
         }
-        
-        for(int z=1;z<mesh->LocalNz;z++) {
+
+        for (int z = mesh->zstart + 1; z <= mesh->zend; z++) {
           int localIndex = ROUND(index(it.ind, mesh->ystart, z));
           
           // Only 3D fields
@@ -441,13 +441,13 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
         // A boundary, so no communication
 
         // z = 0 case
-        int localIndex = ROUND(index(it.ind, mesh->yend, 0));
+        int localIndex = ROUND(index(it.ind, mesh->yend, mesh->zstart));
         // All 2D and 3D fields
         for(int i=0;i<n2d+n3d;i++) {
           o_nnz[localIndex+i] -= (n3d + n2d);
         }
-        
-        for(int z=1;z<mesh->LocalNz;z++) {
+
+        for (int z = mesh->zstart + 1; z <= mesh->zend; z++) {
           int localIndex = ROUND(index(it.ind, mesh->yend, z));
           
           // Only 3D fields
@@ -486,8 +486,8 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
       
       for(int x=mesh->xstart; x <= mesh->xend; x++) {
         for(int y=mesh->ystart;y<=mesh->yend;y++) {
-          
-          int ind0 = ROUND(index(x,y,0));
+
+          int ind0 = ROUND(index(x, y, mesh->zstart));
 
           // 2D fields
           for(int i=0;i<n2d;i++) {
@@ -501,9 +501,9 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
               if( (xi < 0) || (yi < 0) ||
                   (xi >= mesh->LocalNx) || (yi >= mesh->LocalNy) )
                 continue;
-              
-              int ind2 = ROUND(index(xi, yi, 0));
-              
+
+              int ind2 = ROUND(index(xi, yi, mesh->zstart));
+
               if(ind2 < 0)
                 continue; // A boundary point
               
@@ -518,13 +518,13 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
           }
           
           // 3D fields
-          for(int z=0;z<mesh->LocalNz;z++) {
-            
+          for (int z = mesh->zstart; z <= mesh->zend; z++) {
+
             int ind = ROUND(index(x,y,z));
             
             for(int i=0;i<n3d;i++) {
               PetscInt row = ind + i;
-              if(z == 0)
+              if (z == mesh->zstart)
                 row += n2d;
               
               // Depends on 2D fields
@@ -546,8 +546,8 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
                 int ind2 = ROUND(index(xi, yi, z));
                 if(ind2 < 0)
                   continue; // Boundary point
-                
-                if(z == 0)
+
+                if (z == mesh->zstart)
                   ind2 += n2d;
                 
                 // 3D fields on this cell
@@ -559,13 +559,19 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
               }
 
               int nz = mesh->LocalNz;
-              if(nz > 1) {
+#ifdef BOUT_HAS_Z_GUARD_CELLS_IMPLEMENTED
+              output_warn << "WARNING: Imex-bdf2 may need updating to handle periodic z "
+                             "with guard cells"
+                          << endl;
+#endif
+
+              if (mesh->LocalNz > 1) {
                 // Multiple points in z
-                
-                int zp = (z + 1) % nz;
+                Ind3D i(z, mesh->LocalNy, mesh->LocalNz);
+                int zp = i.zp().z();
 
                 int ind2 = ROUND(index(x, y, zp));
-                if(zp == 0)
+                if (zp == mesh->zend + 1)
                   ind2 += n2d;
                 for(int j=0;j<n3d;j++) {
                   PetscInt col = ind2 + j;
@@ -573,9 +579,9 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
                   MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
                 }
 
-                int zm = (z - 1 + nz) % nz;
+                int zm = i.zm().z();
                 ind2 = ROUND(index(x, y, zm));
-                if(zm == 0)
+                if (zm == mesh->zstart)
                   ind2 += n2d;
                 for(int j=0;j<n3d;j++) {
                   PetscInt col = ind2 + j;
@@ -1366,12 +1372,17 @@ void IMEXBDF2::loopVars(BoutReal *u) {
     Op op(it.var, it.F_var); // Initialise the operator
     if(it.evolve_bndry) {
       // Include boundary regions
+#ifdef BOUT_HAS_Z_GUARD_CELLS_IMPLEMENTED
+      output_warn << "WARNING: Imex-bdf2 with evolve_bndry may need updating to include "
+                     "z-boundaries."
+                  << endl;
+#endif
 
       // Inner X
       if(mesh->firstX() && !mesh->periodicX) {
         for(int jx=0;jx<mesh->xstart;++jx)
           for(int jy=mesh->ystart;jy<=mesh->yend;++jy)
-            for(int jz=0; jz < mesh->LocalNz; ++jz) {
+            for (int jz = mesh->zstart; jz <= mesh->zend; ++jz) {
               op.run(jx, jy, jz, u); ++u;
             }
       }
@@ -1380,14 +1391,14 @@ void IMEXBDF2::loopVars(BoutReal *u) {
       if(mesh->lastX() && !mesh->periodicX) {
         for(int jx=mesh->xend+1;jx<mesh->LocalNx;++jx)
           for(int jy=mesh->ystart;jy<=mesh->yend;++jy)
-            for(int jz=0; jz < mesh->LocalNz; ++jz) {
+            for (int jz = mesh->zstart; jz <= mesh->zend; ++jz) {
               op.run(jx, jy, jz, u); ++u;
             }
       }
       // Lower Y
       for(RangeIterator xi = mesh->iterateBndryLowerY(); !xi.isDone(); ++xi) {
         for(int jy=0;jy<mesh->ystart;++jy)
-          for(int jz=0; jz < mesh->LocalNz; ++jz) {
+          for (int jz = mesh->zstart; jz <= mesh->zend; ++jz) {
             op.run(*xi, jy, jz, u); ++u;
           }
       }
@@ -1395,7 +1406,7 @@ void IMEXBDF2::loopVars(BoutReal *u) {
       // Upper Y
       for(RangeIterator xi = mesh->iterateBndryUpperY(); !xi.isDone(); ++xi) {
         for(int jy=mesh->yend+1;jy<mesh->LocalNy;++jy)
-          for(int jz=0; jz < mesh->LocalNz; ++jz) {
+          for (int jz = mesh->zstart; jz <= mesh->zend; ++jz) {
             op.run(*xi, jy, jz, u); ++u;
           }
       }
@@ -1404,7 +1415,7 @@ void IMEXBDF2::loopVars(BoutReal *u) {
     // Bulk of points
     for(int jx=mesh->xstart; jx <= mesh->xend; ++jx)
       for(int jy=mesh->ystart; jy <= mesh->yend; ++jy)
-        for(int jz=0; jz < mesh->LocalNz; ++jz) {
+        for (int jz = mesh->zstart; jz <= mesh->zend; ++jz) {
           op.run(jx, jy, jz, u); ++u;
         }
   }

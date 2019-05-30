@@ -53,7 +53,7 @@ LaplaceShoot::LaplaceShoot(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
   nmode = maxmode + 1; // Number of Z modes. maxmode set in invert_laplace.cxx from options
   
   // Allocate memory
-  int size = (localmesh->LocalNz)/2 + 1;
+  int size = (localmesh->zend + 1 - localmesh->zstart) / 2 + 1;
   km.reallocate(size);
   kc.reallocate(size);
   kp.reallocate(size);
@@ -105,8 +105,9 @@ FieldPerp LaplaceShoot::solve(const FieldPerp& rhs) {
       kc[i] = 0.0;
       kp[i] = 0.0;
     }
-    
-    for(int ix=xe;ix<localmesh->LocalNx;ix++)
+
+    for (int ix = xe; ix < localmesh->LocalNx;
+         ix++) /* This looks like a hack to hide missing communications */
       for(int iz=0;iz<localmesh->LocalNz;iz++) {
         x(ix, iz) = 0.0;
       }
@@ -123,14 +124,16 @@ FieldPerp LaplaceShoot::solve(const FieldPerp& rhs) {
     }
     
     // Calculate solution at xe using kc
-    irfft(std::begin(kc), localmesh->LocalNz, x[xe]);
+    irfft(std::begin(kc), localmesh->zend + 1 - localmesh->zstart,
+          &x(xe, localmesh->zstart));
   }
   
   // kc and kp now set to result at x and x+1 respectively
   // Use b at x to get km at x-1
   // Loop inwards from edge
   for(int ix=xe; ix >= xs; ix--) {
-    rfft(rhs[ix], localmesh->LocalNz, std::begin(rhsk));
+    rfft(&rhs(ix, localmesh->zstart), localmesh->zend + 1 - localmesh->zstart,
+         std::begin(rhsk));
 
     for(int kz=0; kz<maxmode; kz++) {
       BoutReal kwave=kz*2.0*PI/(coords->zlength()); // wave number is 1/[rad]
@@ -146,7 +149,8 @@ FieldPerp LaplaceShoot::solve(const FieldPerp& rhs) {
     }
     
     // Inverse FFT to get x[ix-1]
-    irfft(std::begin(km), localmesh->LocalNz, x[ix - 1]);
+    irfft(std::begin(km), localmesh->zend + 1 - localmesh->zstart,
+          &x(ix - 1, localmesh->zstart));
 
     // Cycle km->kc->kp
     std::swap(kp, kc);
@@ -165,7 +169,8 @@ FieldPerp LaplaceShoot::solve(const FieldPerp& rhs) {
     localmesh->sendXIn(std::begin(buffer), 4 * maxmode, jy);
   }else {
     // Set inner boundary
-    for(int ix=xs-2;ix>=0;ix--) {
+    for (int ix = xs - 2; ix >= 0;
+         ix--) { /* This looks like a hack to hide missing communications */
       for(int iz=0;iz<localmesh->LocalNz;iz++) {
         x(ix, iz) = x(xs - 1, iz);
       }

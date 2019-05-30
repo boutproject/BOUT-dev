@@ -80,7 +80,7 @@ FieldPerp LaplaceSerialTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   int jy = b.getIndex();
 
-  int ncz = localmesh->LocalNz; // No of z pnts
+  int ncz = localmesh->zend + 1 - localmesh->zstart; // No of z pnts
   int ncx = localmesh->LocalNx; // No of x pnts
 
   BoutReal kwaveFactor = 2.0 * PI / coords->zlength();
@@ -143,12 +143,12 @@ FieldPerp LaplaceSerialTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 
       // x0 is the input
       // bk is the output
-      rfft(x0[ix], ncz, &bk(ix, 0));
+      rfft(&x0(ix, localmesh->zstart), ncz, &bk(ix, 0));
 
     } else {
       // b is the input
       // bk is the output
-      rfft(b[ix], ncz, &bk(ix, 0));
+      rfft(&b(ix, localmesh->zstart), ncz, &bk(ix, 0));
     }
   }
 
@@ -228,7 +228,7 @@ FieldPerp LaplaceSerialTri::solve(const FieldPerp& b, const FieldPerp& x0) {
     if(global_flags & INVERT_ZERO_DC)
       xk(ix, 0) = 0.0;
 
-    irfft(&xk(ix, 0), ncz, x[ix]);
+    irfft(&xk(ix, 0), ncz, &x(ix, localmesh->zstart));
 
 #if CHECK > 2
     for(int kz=0;kz<ncz;kz++)

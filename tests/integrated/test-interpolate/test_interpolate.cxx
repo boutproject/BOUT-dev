@@ -77,7 +77,7 @@ int main(int argc, char **argv) {
     // Get the global indices
     BoutReal x = mesh->GlobalX(dx);
     BoutReal y = TWOPI * mesh->GlobalY(index.y());
-    BoutReal z = TWOPI * static_cast<BoutReal>(dz) / static_cast<BoutReal>(mesh->LocalNz);
+    BoutReal z = TWOPI * mesh->GlobalZ(dz);
     // Generate the analytic solution at the displacements
     a_solution[index] = a_gen->generate(x, y, z, 0.0);
     b_solution[index] = b_gen->generate(x, y, z, 0.0);

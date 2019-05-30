@@ -64,8 +64,8 @@ void GlobalField::proc_size(int proc, int *lx, int *ly, int *lz) const {
   *lx = mesh->xend - mesh->xstart + 1;
   *ly = mesh->yend - mesh->ystart + 1;
   if (lz != nullptr)
-    *lz = mesh->LocalNz;
-  
+    *lz = mesh->zend - mesh->zstart + 1;
+
   int nxpe = mesh->getNXPE();
   int pex = proc % nxpe;
   if(pex == 0)
@@ -239,9 +239,11 @@ int GlobalField2D::msg_len(int proc) const {
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 
-GlobalField3D::GlobalField3D(Mesh *m, int proc) : GlobalField(m, proc, m->GlobalNx, m->GlobalNy-2*m->ystart, m->LocalNz), 
-  data_valid(false) {
-  
+GlobalField3D::GlobalField3D(Mesh* m, int proc)
+    : GlobalField(m, proc, m->GlobalNx, m->GlobalNy - 2 * m->ystart,
+                  m->GlobalNz /*Do we need to remove zguards here?*/),
+      data_valid(false) {
+
   if((proc < 0) || (proc >= npes))
     throw BoutException("Processor out of range");
   

@@ -59,6 +59,8 @@ If you want the old setting, you have to specify mesh:symmetricGlobalY=false in 
                 << optionfile << "\n";
   }
   OPTION(options, symmetricGlobalY, true);
+  OPTION(options, symmetricGlobalZ, false); // The default should be updated to true but
+                                            // this breaks backwards compatibility
 
   comm_x = MPI_COMM_NULL;
   comm_inner = MPI_COMM_NULL;
@@ -412,6 +414,7 @@ int BoutMesh::load() {
   }
 
   /// Get X and Y processor indices
+  PE_ZIND = 0;
   PE_YIND = MYPE / NXPE;
   PE_XIND = MYPE % NXPE;
 
@@ -1541,6 +1544,16 @@ int BoutMesh::YLOCAL(int yglo) const { return yglo - PE_YIND * MYSUB + MYG; }
 
 int BoutMesh::YLOCAL(int yglo, int yproc) const { return yglo - yproc * MYSUB + MYG; }
 
+/// Returns the global Z index given a local index
+int BoutMesh::ZGLOBAL(int zloc) const { return zloc + PE_ZIND * MZSUB; }
+
+/// Returns the global Z index given a local index
+int BoutMesh::ZGLOBAL(BoutReal zloc, BoutReal &zglo) const {
+  zglo = zloc + PE_ZIND * MZSUB;
+  return static_cast<int>(zglo);
+}
+
+
 /// Return the Y processor number given a global Y index
 int BoutMesh::YPROC(int yind) {
   if ((yind < 0) || (yind > ny))
@@ -2610,6 +2623,27 @@ BoutReal BoutMesh::GlobalY(BoutReal jy) const {
   }
 
   return yglo / static_cast<BoutReal>(nycore);
+}
+
+BoutReal BoutMesh::GlobalZ(int jz) const {
+  if (symmetricGlobalZ) {
+    // With this definition the boundary sits dx/2 away form the first/last inner points
+    return (0.5 + ZGLOBAL(jz) - (nz - MZ) * 0.5) / static_cast<BoutReal>(MZ);
+  }
+  return static_cast<BoutReal>(ZGLOBAL(jz)) / static_cast<BoutReal>(MZ);
+}
+
+BoutReal BoutMesh::GlobalZ(BoutReal jz) const {
+
+  // Get global Z index as a BoutReal
+  BoutReal zglo;
+  ZGLOBAL(jz, zglo);
+
+  if (symmetricGlobalZ) {
+    // With this definition the boundary sits dx/2 away form the first/last inner points
+    return (0.5 + zglo - (nz - MZ) * 0.5) / static_cast<BoutReal>(MZ);
+  }
+  return zglo / static_cast<BoutReal>(MZ);
 }
 
 void BoutMesh::outputVars(Datafile &file) {

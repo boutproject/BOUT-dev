@@ -759,45 +759,13 @@ protected:
     Field3D result;
     if (arakawa) {
       // Arakawa scheme for perpendicular flow. Here as a test
-      
-      result.allocate();
-      
-      int ncz = mesh->LocalNz;
-      for(int jx=mesh->xstart;jx<=mesh->xend;jx++)
-        for(int jy=mesh->ystart;jy<=mesh->yend;jy++)
-          for(int jz=0;jz<ncz;jz++) {
-            int jzp = (jz + 1) % ncz;
-            int jzm = (jz - 1 + ncz) % ncz;
-          
-            // J++ = DDZ(p)*DDX(f) - DDX(p)*DDZ(f)
-            BoutReal Jpp = 0.25*( (p(jx,jy,jzp) - p(jx,jy,jzm))*
-                                  (f(jx+1,jy) - f(jx-1,jy)) -
-                                  (p(jx+1,jy,jz) - p(jx-1,jy,jz))*
-                                  (f(jx,jy) - f(jx,jy)) )
-              / (coord->dx(jx,jy) * coord->dz);
-            
-            // J+x
-            BoutReal Jpx = 0.25*( f(jx+1,jy)*(p(jx+1,jy,jzp)-p(jx+1,jy,jzm)) -
-                                  f(jx-1,jy)*(p(jx-1,jy,jzp)-p(jx-1,jy,jzm)) -
-                                  f(jx,jy)*(p(jx+1,jy,jzp)-p(jx-1,jy,jzp)) +
-                                  f(jx,jy)*(p(jx+1,jy,jzm)-p(jx-1,jy,jzm)))
-              / (coord->dx(jx,jy) * coord->dz);
-            // Jx+
-            BoutReal Jxp = 0.25*( f(jx+1,jy)*(p(jx,jy,jzp)-p(jx+1,jy,jz)) -
-                                  f(jx-1,jy)*(p(jx-1,jy,jz)-p(jx,jy,jzm)) -
-                                  f(jx-1,jy)*(p(jx,jy,jzp)-p(jx-1,jy,jz)) +
-                                  f(jx+1,jy)*(p(jx+1,jy,jz)-p(jx,jy,jzm)))
-              / (coord->dx(jx,jy) * coord->dz);
-            
-            result(jx,jy,jz) = (Jpp + Jpx + Jxp) / 3.;
-          }
-      
+      result = bracket(p, f, BRACKET_ARAKAWA);
     }else if(bout_exb) {
       // Use a subset of terms for comparison to BOUT-06
-      result = VDDX(DDZ(p), f);
+      result = bracket(p, f, BRACKET_SIMPLE);
     }else {
       // Use full expression with all terms
-      result = b0xGrad_dot_Grad(p, f) / coord->Bxy;
+      result = bracket(p, f, BRACKET_STD);
     }
     return result;
   }
@@ -820,39 +788,7 @@ protected:
     Coordinates *coord = mesh->getCoordinates();
     if (arakawa) {
       // Arakawa scheme for perpendicular flow. Here as a test
-      
-      result.allocate();
-      
-      int ncz = mesh->LocalNz;
-      for(int jx=mesh->xstart;jx<=mesh->xend;jx++)
-        for(int jy=mesh->ystart;jy<=mesh->yend;jy++)
-          for(int jz=0;jz<ncz;jz++) {
-            int jzp = (jz + 1) % ncz;
-            int jzm = (jz - 1 + ncz) % ncz;
-            
-            // J++ = DDZ(p)*DDX(f) - DDX(p)*DDZ(f)
-            BoutReal Jpp = 0.25*( (p(jx,jy,jzp) - p(jx,jy,jzm))*
-                                  (f(jx+1,jy,jz) - f(jx-1,jy,jz)) -
-                                  (p(jx+1,jy,jz) - p(jx-1,jy,jz))*
-                                  (f(jx,jy,jzp) - f(jx,jy,jzm)) )
-              / (coord->dx(jx,jy) * coord->dz);
-            
-            // J+x
-            BoutReal Jpx = 0.25*( f(jx+1,jy,jz)*(p(jx+1,jy,jzp)-p(jx+1,jy,jzm)) -
-                                  f(jx-1,jy,jz)*(p(jx-1,jy,jzp)-p(jx-1,jy,jzm)) -
-                                  f(jx,jy,jzp)*(p(jx+1,jy,jzp)-p(jx-1,jy,jzp)) +
-                                  f(jx,jy,jzm)*(p(jx+1,jy,jzm)-p(jx-1,jy,jzm)))
-              / (coord->dx(jx,jy) * coord->dz);
-            // Jx+
-            BoutReal Jxp = 0.25*( f(jx+1,jy,jzp)*(p(jx,jy,jzp)-p(jx+1,jy,jz)) -
-                                  f(jx-1,jy,jzm)*(p(jx-1,jy,jz)-p(jx,jy,jzm)) -
-                                  f(jx-1,jy,jzp)*(p(jx,jy,jzp)-p(jx-1,jy,jz)) +
-                                  f(jx+1,jy,jzm)*(p(jx+1,jy,jz)-p(jx,jy,jzm)))
-              / (coord->dx(jx,jy) * coord->dz);
-            
-            result(jx,jy,jz) = (Jpp + Jpx + Jxp) / 3.;
-          }
-      
+      result = bracket(p, f, BRACKET_ARAKAWA);
     }else if(bout_exb) {
       // Use a subset of terms for comparison to BOUT-06
       result = VDDX(DDZ(p), f) + VDDZ(-DDX(p), f);

@@ -19,10 +19,10 @@
 	const auto {{mixed_base_ind}} = localmesh->ind2Dto3D({{index_var}});
 	{% if (operator == "/") and (rhs == "Field2D") %}
            const auto tmp = 1.0 / {{rhs.mixed_index}};
-	   for (int {{jz_var}} = 0; {{jz_var}} < localmesh->LocalNz; ++{{jz_var}}){
+	   for (int {{jz_var}} = localmesh->zstart; {{jz_var}} <= localmesh->zend; ++{{jz_var}}){
          	   {{out.mixed_index}} = {{lhs.mixed_index}} * tmp;
         {% else %}
-	   for (int {{jz_var}} = 0; {{jz_var}} < localmesh->LocalNz; ++{{jz_var}}){
+	   for (int {{jz_var}} = localmesh->zstart; {{jz_var}} <= localmesh->zend; ++{{jz_var}}){
 	           {{out.mixed_index}} = {{lhs.mixed_index}} {{operator}} {{rhs.mixed_index}};
         {% endif %}
 	}
@@ -73,10 +73,10 @@
 	const auto {{mixed_base_ind}} = fieldmesh->ind2Dto3D({{index_var}});
 	{% if (operator == "/") and (rhs == "Field2D") %}
            const auto tmp = 1.0 / {{rhs.mixed_index}};
-	   for (int {{jz_var}} = 0; {{jz_var}} < fieldmesh->LocalNz; ++{{jz_var}}){
+	   for (int {{jz_var}} = fieldmesh->zstart; {{jz_var}} <= fieldmesh->zend; ++{{jz_var}}){
 		   (*this)[{{mixed_base_ind}} + {{jz_var}}] *= tmp;
         {% else %}
-           for (int {{jz_var}} = 0; {{jz_var}} < fieldmesh->LocalNz; ++{{jz_var}}){
+           for (int {{jz_var}} = fieldmesh->zstart; {{jz_var}} <= fieldmesh->zend; ++{{jz_var}}){
 	           (*this)[{{mixed_base_ind}} + {{jz_var}}] {{operator}}= {{rhs.index}};
         {% endif %}
 	}

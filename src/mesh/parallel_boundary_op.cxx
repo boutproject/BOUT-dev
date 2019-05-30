@@ -22,7 +22,7 @@ BoutReal BoundaryOpPar::getValue(int x, int y, int z, BoutReal t) {
     // answer. This instead generates the value at the gridpoint
     xnorm = mesh->GlobalX(x);
     ynorm = mesh->GlobalY(y);
-    znorm = static_cast<BoutReal>(z) / (mesh->LocalNz);
+    znorm = mesh->GlobalZ(z);
     return gen_values->generate(xnorm, TWOPI*ynorm, TWOPI*znorm, t);
   case FIELD:
     value = (*field_values)(x,y,z);
@@ -50,7 +50,7 @@ BoutReal BoundaryOpPar::getValue(const BoundaryRegionPar &bndry, BoutReal t) {
     // Need to use GlobalX, except with BoutReal as argument...
     xnorm = mesh->GlobalX(bndry.s_x);
     ynorm = mesh->GlobalY(bndry.s_y);
-    znorm = bndry.s_z/(mesh->LocalNz);
+    znorm = mesh->GlobalZ(bndry.s_z);
     return gen_values->generate(xnorm, TWOPI*ynorm, TWOPI*znorm, t);
   case FIELD:
     // FIXME: Interpolate to s_x, s_y, s_z...

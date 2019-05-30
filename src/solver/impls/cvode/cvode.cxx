@@ -652,7 +652,7 @@ void CvodeSolver::loop_abstol_values_op(Ind2D UNUSED(i2d), BoutReal* abstolvec_d
     p++;
   }
 
-  for (int jz = 0; jz < bout::globals::mesh->LocalNz; jz++) {
+  for (int jz = bout::globals::mesh->zstart; jz <= bout::globals::mesh->zend; jz++) {
     // Loop over 3D variables
     for (std::vector<BoutReal>::size_type i = 0; i < f3dtols.size(); i++) {
       if (bndry && !f3d[i].evolve_bndry) {

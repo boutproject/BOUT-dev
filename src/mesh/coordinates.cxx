@@ -1328,7 +1328,7 @@ const Field3D Coordinates::Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT)
   Field3D result{emptyFrom(f).setLocation(outloc)};
 
   if (useFFT) {
-    int ncz = localmesh->LocalNz;
+    int ncz = localmesh->zend + 1 - localmesh->zstart;
 
     // Allocate memory
     auto ft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
@@ -1340,7 +1340,7 @@ const Field3D Coordinates::Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT)
       // Take forward FFT
 
       for (int jx = 0; jx < localmesh->LocalNx; jx++)
-        rfft(&f(jx, jy, 0), ncz, &ft(jx, 0));
+        rfft(&f(jx, jy, localmesh->zstart), ncz, &ft(jx, 0));
 
       // Loop over kz
       for (int jz = 0; jz <= ncz / 2; jz++) {
@@ -1358,8 +1358,7 @@ const Field3D Coordinates::Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT)
 
       // Reverse FFT
       for (int jx = localmesh->xstart; jx <= localmesh->xend; jx++) {
-
-        irfft(&delft(jx, 0), ncz, &result(jx, jy, 0));
+        irfft(&delft(jx, 0), ncz, &result(jx, jy, localmesh->zstart));
       }
     }
   } else {
@@ -1394,7 +1393,7 @@ const FieldPerp Coordinates::Delp2(const FieldPerp& f, CELL_LOC outloc, bool use
   result.setIndex(jy);
 
   if (useFFT) {
-    int ncz = localmesh->LocalNz;
+    int ncz = localmesh->zend + 1 - localmesh->zstart;
 
     // Allocate memory
     auto ft = Matrix<dcomplex>(localmesh->LocalNx, ncz / 2 + 1);
@@ -1402,7 +1401,7 @@ const FieldPerp Coordinates::Delp2(const FieldPerp& f, CELL_LOC outloc, bool use
 
     // Take forward FFT
     for (int jx = 0; jx < localmesh->LocalNx; jx++)
-      rfft(&f(jx, 0), ncz, &ft(jx, 0));
+      rfft(&f(jx, localmesh->zstart), ncz, &ft(jx, 0));
 
     // Loop over kz
     for (int jz = 0; jz <= ncz / 2; jz++) {
@@ -1419,10 +1418,9 @@ const FieldPerp Coordinates::Delp2(const FieldPerp& f, CELL_LOC outloc, bool use
     }
 
     // Reverse FFT
-    for (int jx = localmesh->xstart; jx <= localmesh->xend; jx++) {
-      irfft(&delft(jx, 0), ncz, &result(jx, 0));
+    for (int jx = 1; jx < (localmesh->LocalNx - 1); jx++) {
+      irfft(&delft(jx, 0), ncz, &result(jx, localmesh->zstart));
     }
-
   } else {
     throw BoutException("Non-fourier Delp2 not currently implented for FieldPerp.");
     // Would be the following but don't have standard derivative operators for FieldPerps

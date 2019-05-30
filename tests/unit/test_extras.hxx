@@ -159,7 +159,7 @@ public:
     xend = nx - 2;
     ystart = 1;
     yend = ny - 2;
-    zstart = 0;
+    zstart = 0; // No guards in z here
     zend = nz - 1;
 
     StaggerGrids=false;
@@ -271,10 +271,13 @@ public:
   std::vector<BoundaryRegionPar *> getBoundariesPar() { return std::vector<BoundaryRegionPar *>(); }
   BoutReal GlobalX(int jx) const { return jx; }
   BoutReal GlobalY(int jy) const { return jy; }
+  BoutReal GlobalZ(int jz) const { return jz / static_cast<BoutReal>(LocalNz); }
   BoutReal GlobalX(BoutReal jx) const { return jx; }
   BoutReal GlobalY(BoutReal jy) const { return jy; }
+  BoutReal GlobalZ(BoutReal jz) const { return jz / static_cast<BoutReal>(LocalNz); }
   int XGLOBAL(int UNUSED(xloc)) const { return 0; }
   int YGLOBAL(int UNUSED(yloc)) const { return 0; }
+  int ZGLOBAL(int UNUSED(zloc)) const { return 0; }
   int XLOCAL(int UNUSED(xglo)) const { return 0; }
   int YLOCAL(int UNUSED(yglo)) const { return 0; }
 

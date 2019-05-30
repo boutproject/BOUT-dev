@@ -14,6 +14,7 @@ dump_format = "nc"  # NetCDF format. Alternative is "pdb"
 [mesh]
 symmetricGlobalX = false
 symmetricGlobalY = false
+symmetricGlobalZ = false
 
 [output]
 floats=true

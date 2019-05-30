@@ -162,9 +162,11 @@ class BoutMesh : public Mesh {
 
   BoutReal GlobalX(int jx) const;
   BoutReal GlobalY(int jy) const;
+  BoutReal GlobalZ(int jz) const;  
   BoutReal GlobalX(BoutReal jx) const;
   BoutReal GlobalY(BoutReal jy) const;
-
+  BoutReal GlobalZ(BoutReal jz) const;
+  
   BoutReal getIxseps1() const {return ixseps1;}
   BoutReal getIxseps2() const {return ixseps2;}
 
@@ -172,8 +174,10 @@ class BoutMesh : public Mesh {
 
   int XGLOBAL(int xloc) const;
   int YGLOBAL(int yloc) const;
+  int ZGLOBAL(int zloc) const;  
   int XGLOBAL(BoutReal xloc, BoutReal &xglo) const;
   int YGLOBAL(BoutReal yloc, BoutReal &yglo) const;
+  int ZGLOBAL(BoutReal zloc, BoutReal &zglo) const;  
 
   int XLOCAL(int xglo) const;
   int YLOCAL(int yglo) const;
@@ -191,7 +195,7 @@ class BoutMesh : public Mesh {
   int PE_YIND; ///< Y index of this processor
   int NYPE; // Number of processors in the Y direction
 
-  int NZPE;
+  int NZPE, PE_ZIND;
 
   int MYPE_IN_CORE;  // 1 if processor in core
 
@@ -222,6 +226,7 @@ class BoutMesh : public Mesh {
 
   bool symmetricGlobalX; ///< Use a symmetric definition in GlobalX() function
   bool symmetricGlobalY;
+  bool symmetricGlobalZ;  
 
   int  zperiod;
   BoutReal ZMIN, ZMAX;   // Range of the Z domain (in fractions of 2pi)

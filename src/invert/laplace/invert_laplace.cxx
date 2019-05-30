@@ -74,7 +74,7 @@ Laplacian::Laplacian(Options *options, const CELL_LOC loc, Mesh *mesh_in)
   BoutReal filter = (*options)["filter"]
                         .doc("Fraction of Z modes to filter out. Between 0 and 1")
                         .withDefault(0.0);
-  int ncz = localmesh->LocalNz;
+  int ncz = localmesh->zend + 1 - localmesh->zstart;
   // convert filtering into an integer number of modes
   maxmode = ROUND((1.0 - filter) * static_cast<BoutReal>(ncz / 2));
   // Can be overriden by max_mode option

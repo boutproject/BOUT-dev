@@ -334,15 +334,15 @@ Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
 
 void LaplaceNaulin::copy_x_boundaries(Field3D &x, const Field3D &x0, Mesh *localmesh) {
   if (localmesh->firstX()) {
-    for (int i=localmesh->xstart-1; i>=0; --i)
-      for (int j=localmesh->ystart; j<=localmesh->yend; ++j)
-        for (int k=0; k<localmesh->LocalNz; ++k)
+    for (int i = localmesh->xstart - 1; i >= 0; --i)
+      for (int j = localmesh->ystart; j <= localmesh->yend; ++j)
+        for (int k = localmesh->zstart; k <= localmesh->zend; ++k)
           x(i, j, k) = x0(i, j, k);
   }
   if (localmesh->lastX()) {
-    for (int i=localmesh->xend+1; i<localmesh->LocalNx; ++i)
-      for (int j=localmesh->ystart; j<=localmesh->yend; ++j)
-        for (int k=0; k<localmesh->LocalNz; ++k)
+    for (int i = localmesh->xend + 1; i < localmesh->LocalNx; ++i)
+      for (int j = localmesh->ystart; j <= localmesh->yend; ++j)
+        for (int k = localmesh->zstart; k <= localmesh->zend; ++k)
           x(i, j, k) = x0(i, j, k);
   }
 }

@@ -56,7 +56,12 @@ LaplaceCyclic::LaplaceCyclic(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
   OPTION(opt, dst, false);
 
   if(dst) {
-    nmode = localmesh->LocalNz-2;
+#ifdef BOUT_HAS_Z_GUARD_CELLS_IMPLEMENTED
+    throw BoutException(
+        "WARNING Cyclic Laplacian for DST needs updating for inclusion of z-guard cells");
+#endif
+    nmode = localmesh->zend + 1 - localmesh->zstart
+            - 2; /* Once we've added z-guards should be able to remove this -2*/
   }else
     nmode = maxmode+1; // Number of Z modes. maxmode set in invert_laplace.cxx from options
 
@@ -184,8 +189,8 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
     BOUT_OMP(parallel)
     {
       /// Create a local thread-scope working array
-      auto k1d = Array<dcomplex>((localmesh->LocalNz) / 2 +
-                                 1); // ZFFT routine expects input of this length
+      auto k1d = Array<dcomplex>((localmesh->zend + 1 - localmesh->zstart) / 2
+                                 + 1); // ZFFT routine expects input of this length
 
       // Loop over X indices, including boundaries but not guard cells (unless periodic in
       // x)
@@ -197,9 +202,11 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
             ((localmesh->LocalNx - ix - 1 < outbndry) && (outer_boundary_flags & INVERT_SET) &&
              localmesh->lastX())) {
           // Use the values in x0 in the boundary
-          rfft(x0[ix], localmesh->LocalNz, std::begin(k1d));
+          rfft(&x0(ix, localmesh->zstart), localmesh->zend + 1 - localmesh->zstart,
+               std::begin(k1d));
         } else {
-          rfft(rhs[ix], localmesh->LocalNz, std::begin(k1d));
+          rfft(&rhs(ix, localmesh->zstart), localmesh->zend + 1 - localmesh->zstart,
+               std::begin(k1d));
         }
 
         // Copy into array, transposing so kz is first index
@@ -229,8 +236,8 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
     BOUT_OMP(parallel)
     {
       /// Create a local thread-scope working array
-      auto k1d = Array<dcomplex>((localmesh->LocalNz) / 2 +
-                                 1); // ZFFT routine expects input of this length
+      auto k1d = Array<dcomplex>((localmesh->zend + 1 - localmesh->zstart) / 2
+                                 + 1); // ZFFT routine expects input of this length
 
       BOUT_OMP(for nowait)
       for (int ix = xs; ix <= xe; ix++) {
@@ -240,7 +247,8 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
         for (int kz = nmode; kz < (localmesh->LocalNz) / 2 + 1; kz++)
           k1d[kz] = 0.0; // Filtering out all higher harmonics
 
-        irfft(std::begin(k1d), localmesh->LocalNz, x[ix]);
+        irfft(std::begin(k1d), localmesh->zend + 1 - localmesh->zstart,
+              &x(ix, localmesh->zstart));
       }
     }
   }
@@ -384,8 +392,8 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
   } else {
     BOUT_OMP(parallel) {
       /// Create a local thread-scope working array
-      auto k1d = Array<dcomplex>(localmesh->LocalNz / 2 +
-                                 1); // ZFFT routine expects input of this length
+      auto k1d = Array<dcomplex>((localmesh->zend + 1 - localmesh->zstart) / 2
+                                 + 1); // ZFFT routine expects input of this length
 
       // Loop over X and Y indices, including boundaries but not guard cells
       // (unless periodic in x)
@@ -402,9 +410,11 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
             ((localmesh->LocalNx - ix - 1 < outbndry) && (outer_boundary_flags & INVERT_SET) &&
              localmesh->lastX())) {
           // Use the values in x0 in the boundary
-          rfft(x0(ix, iy), localmesh->LocalNz, std::begin(k1d));
+          rfft(&x0(ix, iy, localmesh->zstart), localmesh->zend + 1 - localmesh->zstart,
+               std::begin(k1d));
         } else {
-          rfft(rhs(ix, iy), localmesh->LocalNz, std::begin(k1d));
+          rfft(&rhs(ix, iy, localmesh->zstart), localmesh->zend + 1 - localmesh->zstart,
+               std::begin(k1d));
         }
 
         // Copy into array, transposing so kz is first index
@@ -437,8 +447,8 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
     // FFT back to real space
     BOUT_OMP(parallel) {
       /// Create a local thread-scope working array
-      auto k1d = Array<dcomplex>((localmesh->LocalNz) / 2 +
-                                 1); // ZFFT routine expects input of this length
+      auto k1d = Array<dcomplex>((localmesh->zend + 1 - localmesh->zstart) / 2
+                                 + 1); // ZFFT routine expects input of this length
 
       BOUT_OMP(for nowait)
       for (int ind = 0; ind < nxny; ++ind) { // Loop over X and Y
@@ -452,7 +462,8 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
         for (int kz = nmode; kz < localmesh->LocalNz / 2 + 1; kz++)
           k1d[kz] = 0.0; // Filtering out all higher harmonics
 
-        irfft(std::begin(k1d), localmesh->LocalNz, x(ix, iy));
+        irfft(std::begin(k1d), localmesh->zend + 1 - localmesh->zstart,
+              &x(ix, iy, localmesh->zstart));
       }
     }
   }

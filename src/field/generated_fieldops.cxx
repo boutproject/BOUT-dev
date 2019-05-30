@@ -178,7 +178,7 @@ Field3D operator*(const Field3D& lhs, const Field2D& rhs) {
 
   BOUT_FOR(index, rhs.getRegion("RGN_ALL")) {
     const auto base_ind = localmesh->ind2Dto3D(index);
-    for (int jz = 0; jz < localmesh->LocalNz; ++jz) {
+    for (int jz = localmesh->zstart; jz <= localmesh->zend; ++jz) {
       result[base_ind + jz] = lhs[base_ind + jz] * rhs[index];
     }
   }
@@ -203,7 +203,7 @@ Field3D& Field3D::operator*=(const Field2D& rhs) {
 
     BOUT_FOR(index, rhs.getRegion("RGN_ALL")) {
       const auto base_ind = fieldmesh->ind2Dto3D(index);
-      for (int jz = 0; jz < fieldmesh->LocalNz; ++jz) {
+      for (int jz = fieldmesh->zstart; jz <= fieldmesh->zend; ++jz) {
         (*this)[base_ind + jz] *= rhs[index];
       }
     }
@@ -229,7 +229,7 @@ Field3D operator/(const Field3D& lhs, const Field2D& rhs) {
   BOUT_FOR(index, rhs.getRegion("RGN_ALL")) {
     const auto base_ind = localmesh->ind2Dto3D(index);
     const auto tmp = 1.0 / rhs[index];
-    for (int jz = 0; jz < localmesh->LocalNz; ++jz) {
+    for (int jz = localmesh->zstart; jz <= localmesh->zend; ++jz) {
       result[base_ind + jz] = lhs[base_ind + jz] * tmp;
     }
   }
@@ -255,7 +255,7 @@ Field3D& Field3D::operator/=(const Field2D& rhs) {
     BOUT_FOR(index, rhs.getRegion("RGN_ALL")) {
       const auto base_ind = fieldmesh->ind2Dto3D(index);
       const auto tmp = 1.0 / rhs[index];
-      for (int jz = 0; jz < fieldmesh->LocalNz; ++jz) {
+      for (int jz = fieldmesh->zstart; jz <= fieldmesh->zend; ++jz) {
         (*this)[base_ind + jz] *= tmp;
       }
     }
@@ -280,7 +280,7 @@ Field3D operator+(const Field3D& lhs, const Field2D& rhs) {
 
   BOUT_FOR(index, rhs.getRegion("RGN_ALL")) {
     const auto base_ind = localmesh->ind2Dto3D(index);
-    for (int jz = 0; jz < localmesh->LocalNz; ++jz) {
+    for (int jz = localmesh->zstart; jz <= localmesh->zend; ++jz) {
       result[base_ind + jz] = lhs[base_ind + jz] + rhs[index];
     }
   }
@@ -305,7 +305,7 @@ Field3D& Field3D::operator+=(const Field2D& rhs) {
 
     BOUT_FOR(index, rhs.getRegion("RGN_ALL")) {
       const auto base_ind = fieldmesh->ind2Dto3D(index);
-      for (int jz = 0; jz < fieldmesh->LocalNz; ++jz) {
+      for (int jz = fieldmesh->zstart; jz <= fieldmesh->zend; ++jz) {
         (*this)[base_ind + jz] += rhs[index];
       }
     }
@@ -330,7 +330,7 @@ Field3D operator-(const Field3D& lhs, const Field2D& rhs) {
 
   BOUT_FOR(index, rhs.getRegion("RGN_ALL")) {
     const auto base_ind = localmesh->ind2Dto3D(index);
-    for (int jz = 0; jz < localmesh->LocalNz; ++jz) {
+    for (int jz = localmesh->zstart; jz <= localmesh->zend; ++jz) {
       result[base_ind + jz] = lhs[base_ind + jz] - rhs[index];
     }
   }
@@ -355,7 +355,7 @@ Field3D& Field3D::operator-=(const Field2D& rhs) {
 
     BOUT_FOR(index, rhs.getRegion("RGN_ALL")) {
       const auto base_ind = fieldmesh->ind2Dto3D(index);
-      for (int jz = 0; jz < fieldmesh->LocalNz; ++jz) {
+      for (int jz = fieldmesh->zstart; jz <= fieldmesh->zend; ++jz) {
         (*this)[base_ind + jz] -= rhs[index];
       }
     }
@@ -604,7 +604,7 @@ Field3D operator*(const Field2D& lhs, const Field3D& rhs) {
 
   BOUT_FOR(index, lhs.getRegion("RGN_ALL")) {
     const auto base_ind = localmesh->ind2Dto3D(index);
-    for (int jz = 0; jz < localmesh->LocalNz; ++jz) {
+    for (int jz = localmesh->zstart; jz <= localmesh->zend; ++jz) {
       result[base_ind + jz] = lhs[index] * rhs[base_ind + jz];
     }
   }
@@ -625,7 +625,7 @@ Field3D operator/(const Field2D& lhs, const Field3D& rhs) {
 
   BOUT_FOR(index, lhs.getRegion("RGN_ALL")) {
     const auto base_ind = localmesh->ind2Dto3D(index);
-    for (int jz = 0; jz < localmesh->LocalNz; ++jz) {
+    for (int jz = localmesh->zstart; jz <= localmesh->zend; ++jz) {
       result[base_ind + jz] = lhs[index] / rhs[base_ind + jz];
     }
   }
@@ -646,7 +646,7 @@ Field3D operator+(const Field2D& lhs, const Field3D& rhs) {
 
   BOUT_FOR(index, lhs.getRegion("RGN_ALL")) {
     const auto base_ind = localmesh->ind2Dto3D(index);
-    for (int jz = 0; jz < localmesh->LocalNz; ++jz) {
+    for (int jz = localmesh->zstart; jz <= localmesh->zend; ++jz) {
       result[base_ind + jz] = lhs[index] + rhs[base_ind + jz];
     }
   }
@@ -667,7 +667,7 @@ Field3D operator-(const Field2D& lhs, const Field3D& rhs) {
 
   BOUT_FOR(index, lhs.getRegion("RGN_ALL")) {
     const auto base_ind = localmesh->ind2Dto3D(index);
-    for (int jz = 0; jz < localmesh->LocalNz; ++jz) {
+    for (int jz = localmesh->zstart; jz <= localmesh->zend; ++jz) {
       result[base_ind + jz] = lhs[index] - rhs[base_ind + jz];
     }
   }
