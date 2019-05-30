@@ -367,6 +367,23 @@ using Ind3D = SpecificInd<IND_TYPE::IND_3D>;
 using Ind2D = SpecificInd<IND_TYPE::IND_2D>;
 using IndPerp = SpecificInd<IND_TYPE::IND_PERP>;
 
+/// Get string representation of Ind3D
+inline const std::string toString(const Ind3D& i) {
+  return "(" + std::to_string(i.x()) + ", "
+             + std::to_string(i.y()) + ", "
+             + std::to_string(i.z()) + ")";
+}
+/// Get string representation of Ind2D
+inline const std::string toString(const Ind2D& i) {
+  return "(" + std::to_string(i.x()) + ", "
+             + std::to_string(i.y()) + ")";
+}
+/// Get string representation of IndPerp
+inline const std::string toString(const IndPerp& i) {
+  return "(" + std::to_string(i.x()) + ", "
+             + std::to_string(i.z()) + ")";
+}
+
 /// Structure to hold various derived "statistics" from a particular region
 struct RegionStats {
   int numBlocks = 0;           ///< How many blocks
@@ -451,7 +468,7 @@ inline std::ostream &operator<<(std::ostream &out, const RegionStats &stats){
 ///     }
 template <typename T = Ind3D> class Region {
   // Following prevents a Region being created with anything other
-  // than Ind2D or Ind3D as template type
+  // than Ind2D, Ind3D or IndPerp as template type
   static_assert(std::is_base_of<Ind2D, T>::value || std::is_base_of<Ind3D, T>::value || std::is_base_of<IndPerp, T>::value,
                 "Region must be templated with one of IndPerp, Ind2D or Ind3D");
 
