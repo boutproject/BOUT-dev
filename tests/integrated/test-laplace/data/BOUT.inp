@@ -8,7 +8,7 @@ NOUT = 0  # No timesteps
 MZ = 32    # Z size
 
 grid = "test_laplace.grd.nc"
-
+non_uniform = false
 dump_format = "nc"  # NetCDF format. Alternative is "pdb"
 
 [mesh]
@@ -19,6 +19,3 @@ symmetricGlobalY = false
 all_terms = false
 include_yguards = true
 filter = 0.2
-
-[output]
-floats = true
