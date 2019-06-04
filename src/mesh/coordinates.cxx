@@ -1075,7 +1075,7 @@ void fixZShiftGuards(Field2D& zShift) {
   auto localmesh = zShift.getMesh();
 
   // extrapolate into boundary guard cells if necessary
-  interpolateAndExtrapolate(zShift, zShift.getLocation(),
+  zShift = interpolateAndExtrapolate(zShift, zShift.getLocation(),
       not localmesh->sourceHasXBoundaryGuards(),
       not localmesh->sourceHasYBoundaryGuards());
 
