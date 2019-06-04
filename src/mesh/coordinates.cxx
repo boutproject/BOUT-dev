@@ -313,13 +313,13 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
       output_warn.write("Not all covariant components of metric tensor found. "
                         "Calculating all from the contravariant tensor\n");
       /// Calculate contravariant metric components if not found
-      if (calcCovariant()) {
+      if (calcCovariant("RGN_NOCORNERS")) {
         throw BoutException("Error in calcCovariant call");
       }
     }
   } else {
     /// Calculate contravariant metric components if not found
-    if (calcCovariant()) {
+    if (calcCovariant("RGN_NOCORNERS")) {
       throw BoutException("Error in calcCovariant call");
     }
   }
@@ -510,13 +510,13 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
         output_warn.write("Not all staggered covariant components of metric tensor found. "
                           "Calculating all from the contravariant tensor\n");
         /// Calculate contravariant metric components if not found
-        if (calcCovariant()) {
+        if (calcCovariant("RGN_NOCORNERS")) {
           throw BoutException("Error in staggered calcCovariant call");
         }
       }
     } else {
       /// Calculate contravariant metric components if not found
-      if (calcCovariant()) {
+      if (calcCovariant("RGN_NOCORNERS")) {
         throw BoutException("Error in staggered calcCovariant call");
       }
     }
@@ -907,7 +907,7 @@ int Coordinates::geometry(bool recalculate_staggered,
   return 0;
 }
 
-int Coordinates::calcCovariant() {
+int Coordinates::calcCovariant(const std::string& region) {
   TRACE("Coordinates::calcCovariant");
 
   // Make sure metric elements are allocated
@@ -930,32 +930,27 @@ int Coordinates::calcCovariant() {
 
   auto a = Matrix<BoutReal>(3, 3);
 
-  for (int jx = 0; jx < localmesh->LocalNx; jx++) {
-    for (int jy = 0; jy < localmesh->LocalNy; jy++) {
-      // set elements of g
-      a(0, 0) = g11(jx, jy);
-      a(1, 1) = g22(jx, jy);
-      a(2, 2) = g33(jx, jy);
+  BOUT_FOR_SERIAL(i, g11.getRegion(region)) {
+    a(0, 0) = g11[i];
+    a(1, 1) = g22[i];
+    a(2, 2) = g33[i];
 
-      a(0, 1) = a(1, 0) = g12(jx, jy);
-      a(1, 2) = a(2, 1) = g23(jx, jy);
-      a(0, 2) = a(2, 0) = g13(jx, jy);
+    a(0, 1) = a(1, 0) = g12[i];
+    a(1, 2) = a(2, 1) = g23[i];
+    a(0, 2) = a(2, 0) = g13[i];
 
-      // invert
-      if (invert3x3(a)) {
-        output_error.write("\tERROR: metric tensor is singular at (%d, %d)\n", jx, jy);
-        return 1;
-      }
-
-      // put elements into g_{ij}
-      g_11(jx, jy) = a(0, 0);
-      g_22(jx, jy) = a(1, 1);
-      g_33(jx, jy) = a(2, 2);
-
-      g_12(jx, jy) = a(0, 1);
-      g_13(jx, jy) = a(0, 2);
-      g_23(jx, jy) = a(1, 2);
+    if (invert3x3(a)) {
+      output_error.write("\tERROR: metric tensor is singular at (%d, %d)\n", i.x(), i.y());
+      return 1;
     }
+
+    g_11[i] = a(0, 0);
+    g_22[i] = a(1, 1);
+    g_33[i] = a(2, 2);
+
+    g_12[i] = a(0, 1);
+    g_13[i] = a(0, 2);
+    g_23[i] = a(1, 2);
   }
 
   BoutReal maxerr;
@@ -974,7 +969,7 @@ int Coordinates::calcCovariant() {
   return 0;
 }
 
-int Coordinates::calcContravariant() {
+int Coordinates::calcContravariant(const std::string& region) {
   TRACE("Coordinates::calcContravariant");
 
   // Make sure metric elements are allocated
@@ -990,32 +985,27 @@ int Coordinates::calcContravariant() {
 
   auto a = Matrix<BoutReal>(3, 3);
 
-  for (int jx = 0; jx < localmesh->LocalNx; jx++) {
-    for (int jy = 0; jy < localmesh->LocalNy; jy++) {
-      // set elements of g
-      a(0, 0) = g_11(jx, jy);
-      a(1, 1) = g_22(jx, jy);
-      a(2, 2) = g_33(jx, jy);
+  BOUT_FOR_SERIAL(i, g_11.getRegion(region)) {
+    a(0, 0) = g_11[i];
+    a(1, 1) = g_22[i];
+    a(2, 2) = g_33[i];
 
-      a(0, 1) = a(1, 0) = g_12(jx, jy);
-      a(1, 2) = a(2, 1) = g_23(jx, jy);
-      a(0, 2) = a(2, 0) = g_13(jx, jy);
+    a(0, 1) = a(1, 0) = g_12[i];
+    a(1, 2) = a(2, 1) = g_23[i];
+    a(0, 2) = a(2, 0) = g_13[i];
 
-      // invert
-      if (invert3x3(a)) {
-        output_error.write("\tERROR: metric tensor is singular at (%d, %d)\n", jx, jy);
-        return 1;
-      }
-
-      // put elements into g_{ij}
-      g11(jx, jy) = a(0, 0);
-      g22(jx, jy) = a(1, 1);
-      g33(jx, jy) = a(2, 2);
-
-      g12(jx, jy) = a(0, 1);
-      g13(jx, jy) = a(0, 2);
-      g23(jx, jy) = a(1, 2);
+    if (invert3x3(a)) {
+      output_error.write("\tERROR: metric tensor is singular at (%d, %d)\n", i.x(), i.y());
+      return 1;
     }
+
+    g11[i] = a(0, 0);
+    g22[i] = a(1, 1);
+    g33[i] = a(2, 2);
+
+    g12[i] = a(0, 1);
+    g13[i] = a(0, 2);
+    g23[i] = a(1, 2);
   }
 
   BoutReal maxerr;
