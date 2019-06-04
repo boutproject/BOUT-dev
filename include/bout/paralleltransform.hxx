@@ -56,6 +56,9 @@ public:
 
   virtual bool canToFromFieldAligned() = 0;
 
+  /// Output variables used by a ParallelTransform instance to the dump files
+  virtual void outputVars(Datafile& UNUSED(file)) {}
+
   /// If \p twist_shift_enabled is true, does a `Field3D` with Y direction \p ytype
   /// require a twist-shift at branch cuts on closed field lines?
   virtual bool requiresTwistShift(bool twist_shift_enabled, YDirectionType ytype) = 0;
@@ -165,6 +168,9 @@ public:
                                    const REGION region = RGN_ALL) override;
 
   bool canToFromFieldAligned() override { return true; }
+
+  /// Save zShift to the output
+  void outputVars(Datafile& file) override;
 
   bool requiresTwistShift(bool twist_shift_enabled, YDirectionType ytype) override {
     // Twist-shift only if field-aligned

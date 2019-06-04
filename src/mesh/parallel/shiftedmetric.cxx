@@ -38,6 +38,12 @@ void ShiftedMetric::checkInputGrid() {
     //       file so must rely on the user having ensured the type is correct
 }
 
+void ShiftedMetric::outputVars(Datafile& file) {
+  const std::string loc_string = (location == CELL_CENTRE) ? "" : "_"+toString(location);
+
+  file.addOnce(zShift, "zShift" + loc_string);
+}
+
 void ShiftedMetric::cachePhases() {
   // If we wanted to be efficient we could move the following cached phase setup
   // into the relevant shifting routines (with static bool first protection)
