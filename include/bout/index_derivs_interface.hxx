@@ -208,7 +208,7 @@ T DDY(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "D
     const T f_aligned = toFieldAligned(f, "RGN_NOX");
     T result = standardDerivative<T, DIRECTION::Y, DERIV::Standard>(f_aligned, outloc,
                                                                     method, region);
-    return fromFieldAligned(result, toString(region));
+    return fromFieldAligned(result, region);
   }
 }
 
@@ -224,7 +224,7 @@ T D2DY2(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = 
     const T f_aligned = toFieldAligned(f, "RGN_NOX");
     T result = standardDerivative<T, DIRECTION::Y, DERIV::StandardSecond>(
         f_aligned, outloc, method, region);
-    return fromFieldAligned(result, toString(region));
+    return fromFieldAligned(result, region);
   }
 }
 
@@ -240,7 +240,7 @@ T D4DY4(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = 
     const T f_aligned = toFieldAligned(f, "RGN_NOX");
     T result = standardDerivative<T, DIRECTION::Y, DERIV::StandardFourth>(
         f_aligned, outloc, method, region);
-    return fromFieldAligned(result, toString(region));
+    return fromFieldAligned(result, region);
   }
 }
 
