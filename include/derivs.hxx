@@ -67,9 +67,9 @@ inline T func(const T1& v, const T2& f, CELL_LOC outloc, const std::string& meth
     REGION region) { \
   return func(v, f, outloc, method, toString(region)); \
 } \
-[[gnu::deprecated("Please use #func(const #T& f, CELL_LOC outloc = CELL_DEFAULT, " \
-    "const std::string& method = \"DEFAULT\", const std::string& region = \"RGN_ALL\") " \
-    "instead")]] \
+[[gnu::deprecated("Please use #func(const #T1& v, const #T2& f, " \
+    "CELL_LOC outloc = CELL_DEFAULT, const std::string& method = \"DEFAULT\", " \
+    "const std::string& region = \"RGN_ALL\") instead")]] \
 inline T func(const T1& v, const T2& f, CELL_LOC outloc, DIFF_METHOD method, \
     REGION region = RGN_NOBNDRY) { \
   return func(v, f, outloc, toString(method), toString(region)); \

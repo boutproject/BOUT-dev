@@ -139,80 +139,100 @@ public:
   // Operators
   ///////////////////////////////////////////////////////////
 
+#ifdef DERIV_FUNC_REGION_ENUM_TO_STRING
+#error This utility macro should not clash with another one
+#else
+#define DERIV_FUNC_REGION_ENUM_TO_STRING(func, T) \
+  [[gnu::deprecated("Please use Coordinates::#func(const #T& f, " \
+      "CELL_LOC outloc = CELL_DEFAULT, const std::string& method = \"DEFAULT\", " \
+      "const std::string& region = \"RGN_ALL\") instead")]] \
+  inline T func(const T& f, CELL_LOC outloc, const std::string& method, \
+      REGION region) { \
+    return func(f, outloc, method, toString(region)); \
+  } \
+  [[gnu::deprecated("Please use Coordinates::#func(const #T& f, " \
+      "CELL_LOC outloc = CELL_DEFAULT, const std::string& method = \"DEFAULT\", " \
+      "const std::string& region = \"RGN_ALL\") instead")]] \
+  inline T func(const T& f, CELL_LOC outloc, DIFF_METHOD method, \
+      REGION region = RGN_NOBNDRY) { \
+    return func(f, outloc, toString(method), toString(region)); \
+  }
+#endif
+
+#ifdef GRAD_FUNC_REGION_ENUM_TO_STRING
+#error This utility macro should not clash with another one
+#else
+#define GRAD_FUNC_REGION_ENUM_TO_STRING(func, T) \
+  [[gnu::deprecated("Please use Coordinates::#func(const #T& f, " \
+      "CELL_LOC outloc = CELL_DEFAULT, const std::string& method = \"DEFAULT\") " \
+      "instead")]] \
+  inline T func(const T& f, CELL_LOC outloc, DIFF_METHOD method) { \
+    return func(f, outloc, toString(method)); \
+  }
+#endif
+
   Field2D DDX(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
       const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
-  Field2D DDX(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method,
-      const std::string& region = "RGN_NOBNDRY") {
-    return DDX(f, outloc, toString(method), region);
-  };
+  DERIV_FUNC_REGION_ENUM_TO_STRING(DDX, Field2D);
 
   Field2D DDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
       const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
-  Field2D DDY(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method,
-      const std::string& region = "RGN_NOBNDRY") {
-    return DDY(f, outloc, toString(method), region);
-  };
+  DERIV_FUNC_REGION_ENUM_TO_STRING(DDY, Field2D);
 
   Field2D DDZ(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
       const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
-  Field2D DDZ(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method,
-      const std::string& region = "RGN_NOBNDRY") {
-    return DDZ(f, outloc, toString(method), region);
-  };
+  DERIV_FUNC_REGION_ENUM_TO_STRING(DDZ, Field2D);
 
   /// Gradient along magnetic field  b.Grad(f)
   Field2D Grad_par(const Field2D& var, CELL_LOC outloc = CELL_DEFAULT,
       const std::string& method = "DEFAULT");
-  Field2D Grad_par(const Field2D& var, CELL_LOC outloc, DIFF_METHOD method) {
-    return Grad_par(var, outloc, toString(method));
-  };
+  GRAD_FUNC_REGION_ENUM_TO_STRING(Grad_par, Field2D);
 
   Field3D Grad_par(const Field3D& var, CELL_LOC outloc = CELL_DEFAULT,
       const std::string& method = "DEFAULT");
-  Field3D Grad_par(const Field3D& var, CELL_LOC outloc, DIFF_METHOD method) {
-    return Grad_par(var, outloc, toString(method));
-  };
+  GRAD_FUNC_REGION_ENUM_TO_STRING(Grad_par, Field3D);
 
   /// Advection along magnetic field V*b.Grad(f)
   Field2D Vpar_Grad_par(const Field2D& v, const Field2D& f,
       CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT");
-  Field2D Vpar_Grad_par(const Field2D& v, const Field2D& f, CELL_LOC outloc,
+  [[gnu::deprecated("Please use Coordinates::Vpar_Grad_par(const Field2D& v, "
+      "const Field2D& f, CELL_LOC outloc = CELL_DEFAULT, "
+      "const std::string& method = \"DEFAULT\") instead")]]
+  inline Field2D Vpar_Grad_par(const Field2D& v, const Field2D& f, CELL_LOC outloc,
       DIFF_METHOD method) {
     return Vpar_Grad_par(v, f, outloc, toString(method));
-  };
+  }
 
   Field3D Vpar_Grad_par(const Field3D& v, const Field3D& f,
       CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT");
-  Field3D Vpar_Grad_par(const Field3D& v, const Field3D& f, CELL_LOC outloc,
+  [[gnu::deprecated("Please use Coordinates::Vpar_Grad_par(const Field3D& v, "
+      "const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, "
+      "const std::string& method = \"DEFAULT\") instead")]]
+  inline Field3D Vpar_Grad_par(const Field3D& v, const Field3D& f, CELL_LOC outloc,
       DIFF_METHOD method) {
     return Vpar_Grad_par(v, f, outloc, toString(method));
-  };
+  }
 
   /// Divergence along magnetic field  Div(b*f) = B.Grad(f/B)
   Field2D Div_par(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
       const std::string& method = "DEFAULT");
-  Field2D Div_par(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method) {
-    return Div_par(f, outloc, toString(method));
-  };
+  GRAD_FUNC_REGION_ENUM_TO_STRING(Div_par, Field2D);
 
   Field3D Div_par(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
       const std::string& method = "DEFAULT");
-  Field3D Div_par(const Field3D& f, CELL_LOC outloc, DIFF_METHOD method) {
-    return Div_par(f, outloc, toString(method));
-  };
+  GRAD_FUNC_REGION_ENUM_TO_STRING(Div_par, Field3D);
 
   // Second derivative along magnetic field
   Field2D Grad2_par2(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
       const std::string& method = "DEFAULT");
-  Field2D Grad2_par2(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method) {
-    return Grad2_par2(f, outloc, toString(method));
-  };
+  GRAD_FUNC_REGION_ENUM_TO_STRING(Grad2_par2, Field2D);
 
   Field3D Grad2_par2(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
       const std::string& method = "DEFAULT");
-  Field3D Grad2_par2(const Field3D& f, CELL_LOC outloc, DIFF_METHOD method) {
-    return Grad2_par2(f, outloc, toString(method));
-  };
+  GRAD_FUNC_REGION_ENUM_TO_STRING(Grad2_par2, Field3D);
+
+#undef DERIV_FUNC_REGION_ENUM_TO_STRING
+#undef GRAD_FUNC_REGION_ENUM_TO_STRING
 
   // Perpendicular Laplacian operator, using only X-Z derivatives
   // NOTE: This might be better bundled with the Laplacian inversion code
