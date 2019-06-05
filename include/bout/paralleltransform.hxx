@@ -189,7 +189,7 @@ private:
 
   /// This is the shift in toroidal angle (z) which takes a point from
   /// X-Z orthogonal to field-aligned along Y.
-  const Field2D zShift;
+  Field2D zShift;
 
   /// Length of the z-domain in radians
   BoutReal zlength{0.};
