@@ -65,33 +65,34 @@ Usage of the laplacian inversion
 
 In BOUT++, equation :eq:`full_laplace_inv` can be solved in two
 ways. The first method Fourier transforms in the :math:`z`-direction,
-whilst the other is solving the full two dimensional problem by matrix
+whilst the other solves the full two dimensional problem by matrix
 inversion. The derivation of :math:`\nabla_\perp^2f` for a general
-coordinate system can be found in the ``coordinates`` manual. What is
-important, is to note that if :math:`g_{xy}` and :math:`g_{yz}` are
-non-zero, BOUT++ is neglecting the :math:`y`-parallel derivatives when
-using the solvers `Laplacian` and `LaplaceXZ`.
+coordinate system can be found in the
+:ref:`sec-field-aligned-coordinates` section. What is important, is to
+note that if :math:`g_{xy}` and :math:`g_{yz}` are non-zero, BOUT++
+neglects the :math:`y`-parallel derivatives when using the solvers
+`Laplacian` and `LaplaceXZ`.
 
 By neglecting the :math:`y`-derivatives (or if
 :math:`g_{xy}=g_{yz}=0`), one can solve equation
 :eq:`full_laplace_inv` :math:`y` plane by :math:`y` plane.
 
-The first approach utilizes that it is possible Fourier transform the
-equation in :math:`z` (using some assumptions described in section
-:ref:`sec-num-laplace`), and solve a tridiagonal system for each
-mode. These inversion problems are band-diagonal (tri-diagonal in the
-case of 2nd-order differencing) and so inversions can be very
+The first approach utilizes the face that it is possible to Fourier
+transform the equation in :math:`z` (using some assumptions described
+in section :ref:`sec-num-laplace`), and solve a tridiagonal system for
+each mode. These inversion problems are band-diagonal (tri-diagonal in
+the case of 2nd-order differencing) and so inversions can be very
 efficient: :math:`O(n_z \log n_z)` for the FFTs, :math:`O(n_x)` for
 tridiagonal inversion using the Thomas algorithm, where :math:`n_x`
 and :math:`n_z` are the number of grid-points in the :math:`x` and
 :math:`z` directions respectively.
 
 
-In the second approach, the full :math:`2`\ -D system is being solved.
-The available solvers for this approach are 'multigrid' using a multigrid
+In the second approach, the full :math:`2`\ -D system is solved. The
+available solvers for this approach are 'multigrid' using a multigrid
 algorithm; 'naulin' using an iterative scheme to correct the FFT-based
-approach; or 'petsc' using KSP linear solvers from the PETSc library (this
-requires PETSc to be built with BOUT++).
+approach; or 'petsc' using KSP linear solvers from the PETSc library
+(this requires PETSc to be built with BOUT++).
 
 
 The `Laplacian` class is defined in ``invert_laplace.hxx`` and solves
@@ -327,11 +328,10 @@ following equation for :math:`f`
 
    d\nabla_\perp^2f + \frac{1}{c_1}(\nabla_\perp c_2)\cdot\nabla_\perp f + af = b
 
-BOUT++ is neglecting the :math:`y`-parallel derivatives if
-:math:`g_{xy}` and :math:`g_{yz}` are no-zero when using the solvers
-`Laplacian` and `LaplaceXZ`. For these two
-solvers, equation :eq:`to_invert` becomes (see ``coordinates`` manual
-for derivation)
+BOUT++ neglects the :math:`y`-parallel derivatives if :math:`g_{xy}`
+and :math:`g_{yz}` are no-zero when using the solvers `Laplacian` and
+`LaplaceXZ`. For these two solvers, equation :eq:`to_invert` becomes
+(see :ref:`sec-field-aligned-coordinates` for derivation)
 
 .. math::
    :label: invert_expanded
@@ -375,7 +375,7 @@ of two terms which depends on :math:`z`, as this would give terms like
 Thus, in order to use a tridiagonal solver, :math:`a`, :math:`c_1`, :math:`c_2`
 and :math:`d` cannot be functions of :math:`z`. Because of this, the
 :math:`{{\boldsymbol{e}}}^z \partial_z c_2` term in equation
-:eq:`invert_expanded` is zero. Thus the tridiagonal solvers are solving
+:eq:`invert_expanded` is zero. Thus the tridiagonal solvers solve
 equations of the form
 
 .. math::
@@ -491,12 +491,12 @@ The tridiagonal solvers previously required :math:`c_1 = c_2` in equation
 Using PETSc solvers
 ~~~~~~~~~~~~~~~~~~~
 
-When using PETSc, all terms of equation :eq:`invert_expanded` is being
-used when inverting to find :math:`f`. Note that when using PETSc, we
-are not Fourier decomposing in the :math:`z`-direction, so it may take
-substantially longer time to find the solution. As with the tridiagonal
-solver, the fields are being sliced in the :math:`y`-direction, and a
-solution is being found for one :math:`y` plane at the time.
+When using PETSc, all terms of equation :eq:`invert_expanded` are used
+when inverting to find :math:`f`. Note that when using PETSc, we do
+not Fourier decompose in the :math:`z`-direction, so it may take
+substantially longer time to find the solution. As with the
+tridiagonal solver, the fields are sliced in the :math:`y`-direction,
+and a solution is found for one :math:`y` plane at the time.
 
 Before solving, equation :eq:`invert_expanded` is rewritten to the
 form
@@ -566,25 +566,25 @@ Second order approximation (5-point stencil)
 
 .. math::
 
-       \texttt{ddx\_c} = \frac{\texttt{c2}_{x+1} - \texttt{c2}_{x-1} }{2\texttt{c1}\text{d}x}
+       \texttt{ddx_c} = \frac{\texttt{c2}_{x+1} - \texttt{c2}_{x-1} }{2\texttt{c1}\text{d}x}
 
-       \texttt{ddz\_c} = \frac{\texttt{c2}_{z+1} - \texttt{c2}_{z-1} }{2\texttt{c1}\text{d}z}
+       \texttt{ddz_c} = \frac{\texttt{c2}_{z+1} - \texttt{c2}_{z-1} }{2\texttt{c1}\text{d}z}
 
 Fourth order approximation (9-point stencil)
 
 .. math::
 
-       \texttt{ddx\_c} = \frac{-\texttt{c2}_{x+2} + 8\texttt{c2}_{x+1} -
+       \texttt{ddx_c} = \frac{-\texttt{c2}_{x+2} + 8\texttt{c2}_{x+1} -
        8\texttt{c2}_{x-1} + \texttt{c2}_{x-1} }{ 12\texttt{c1}\text{d}x} \\
-       \texttt{ddz\_c} = \frac{-\texttt{c2}_{z+2} + 8\texttt{c2}_{z+1} -
+       \texttt{ddz_c} = \frac{-\texttt{c2}_{z+2} + 8\texttt{c2}_{z+1} -
        8\texttt{c2}_{z-1} + \texttt{c2}_{z-1} }{ 12\texttt{c1}\text{d}z}
 
 
 This gives
 
 .. math::
-   A_4 = dG^x + g^{xx}\texttt{ddx\_c} + g^{xz}\texttt{ddz\_c}
-   A_5 = dG^z + g^{xz}\texttt{ddx\_c} + g^{xx}\texttt{ddz\_c}
+   A_4 &= dG^x + g^{xx}\texttt{ddx_c} + g^{xz}\texttt{ddz_c} \\
+   A_5 &= dG^z + g^{xz}\texttt{ddx_c} + g^{xx}\texttt{ddz_c}
 
 The coefficients :math:`c_{i+m,j+n}` are finally being set according
 to the appropriate order of discretisation. The coefficients can be
@@ -677,7 +677,7 @@ defined in ``include/invert_laplace.hxx``. This defines a set of
 functions which all implementations must provide::
 
     class Laplacian {
-     public:
+    public:
       virtual void setCoefA(const Field2D &val) = 0;
       virtual void setCoefC(const Field2D &val) = 0;
       virtual void setCoefD(const Field2D &val) = 0;
@@ -714,7 +714,7 @@ The code for the `Laplacian` base class is in
 Laplacian implementations is done in the `LaplaceFactory` class,
 defined in ``src/invert/laplace/laplacefactory.cxx``. This file
 includes all the headers for the implementations, and chooses which
-one to create based on the “type” setting in the input options. This
+one to create based on the ``type`` setting in the input options. This
 factory therefore provides a single point of access to the underlying
 Laplacian inversion implementations.
 
@@ -777,6 +777,7 @@ ELM simulations, it has been found that these terms are important, so
 this method is not usually used.
 
 .. _sec-cyclic:
+
 Cyclic algorithm
 ~~~~~~~~~~~~~~~~
 
@@ -784,6 +785,7 @@ This is now the default solver in both serial and parallel. It is an FFT-based
 solver using a cyclic reduction algorithm.
 
 .. _sec-multigrid:
+
 Multigrid solver
 ~~~~~~~~~~~~~~~~
 
@@ -799,8 +801,8 @@ This scheme was introduced for BOUT++ by Michael Løiten in the `CELMA code
 <https://github.com/CELMA-project/CELMA>`_ and the iterative algoritm is detailed in
 his thesis [Løiten2017]_.
 
-The iteration can be under-relaxed (see naulin_laplace.cxx for more details of the
-implementation). A factor 0<underrelax_factor<=1 is used, with a value of 1 corresponding
+The iteration can be under-relaxed (see ``naulin_laplace.cxx`` for more details of the
+implementation). A factor :math:`0< \text{underrelax_factor}<=1` is used, with a value of 1 corresponding
 to no under-relaxation. If the iteration starts to diverge (the error increases on any
 step) the underrelax_factor is reduced by a factor of 0.9, and the iteration is restarted
 from the initial guess. The initial value of underrelax_factor, which underrelax_factor is
@@ -809,12 +811,16 @@ set to at the beginning of each call to ``solve`` can be set by the option
 file (``[laplace]`` by default). Reducing the value of ``initial_underrelax_factor`` may
 speed up convergence in some cases. Some statistics from the solver are written to the
 output files to help in choosing this value. With ``<i>`` being the number of the
-LaplaceNaulin solver, counting in the order they are created in the physics model:
-- ``naulinsolver<i>_mean_underrelax_counts`` gives the mean number of times
-  ``underrelax_factor`` had to be reduced to get the iteration to converge. If this is
-  much above 0, it is probably worth reducing ``initial_underrelax_factor``.
-- ``naulinsolver<i>_mean_its`` is the mean number of iterations taken to converge.  Try to
-  minimise when adjusting ``initial_underrelax_factor``.
+`LaplaceNaulin` solver, counting in the order they are created in the physics model:
+
+- ``naulinsolver<i>_mean_underrelax_counts`` gives the mean number of
+  times ``underrelax_factor`` had to be reduced to get the iteration
+  to converge. If this is much above 0, it is probably worth reducing
+  ``initial_underrelax_factor``.
+
+- ``naulinsolver<i>_mean_its`` is the mean number of iterations taken
+  to converge.  Try to minimise when adjusting
+  ``initial_underrelax_factor``.
 
 .. [Løiten2017] Michael Løiten, "Global numerical modeling of magnetized plasma
    in a linear device", 2017, https://celma-project.github.io/.
