@@ -9,7 +9,7 @@
 
 class AdvectMMS : public PhysicsModel {
 public:
-  int init(bool restarting) {
+  int init(bool UNUSED(restarting)) {
     solver->add(f, "f");
     
     Options::getRoot()->get("method", method, 0);

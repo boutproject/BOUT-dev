@@ -606,28 +606,7 @@ Field3D operator-(const Field3D &f) { return -1.0 * f; }
 
 //////////////// NON-MEMBER FUNCTIONS //////////////////
 
-Field3D toFieldAligned(const Field3D& f, const REGION region) {
-  return f.getCoordinates()->getParallelTransform().toFieldAligned(f, region);
-}
-
-Field3D fromFieldAligned(const Field3D& f, const REGION region) {
-  return f.getCoordinates()->getParallelTransform().fromFieldAligned(f, region);
-}
-
-Field3D pow(const Field3D &lhs, const Field3D &rhs, REGION rgn) {
-  TRACE("pow(Field3D, Field3D)");
-
-  ASSERT1(areFieldsCompatible(lhs, rhs));
-
-  Field3D result{emptyFrom(lhs)};
-
-  BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs[i], rhs[i]); }
-
-  checkData(result);
-  return result;
-}
-
-Field3D pow(const Field3D &lhs, const Field2D &rhs, REGION rgn) {
+Field3D pow(const Field3D &lhs, const Field2D &rhs, const std::string& rgn) {
   TRACE("pow(Field3D, Field2D)");
   // Check if the inputs are allocated
   checkData(lhs);
@@ -643,7 +622,7 @@ Field3D pow(const Field3D &lhs, const Field2D &rhs, REGION rgn) {
   return result;
 }
 
-FieldPerp pow(const Field3D &lhs, const FieldPerp &rhs, REGION rgn) {
+FieldPerp pow(const Field3D &lhs, const FieldPerp &rhs, const std::string& rgn) {
   TRACE("pow(Field3D, FieldPerp)");
 
   checkData(lhs);
@@ -661,152 +640,10 @@ FieldPerp pow(const Field3D &lhs, const FieldPerp &rhs, REGION rgn) {
   return result;
 }
 
-Field3D pow(const Field3D &lhs, BoutReal rhs, REGION rgn) {
-  TRACE("pow(Field3D, BoutReal)");
-  // Check if the inputs are allocated
-  checkData(lhs);
-  checkData(rhs);
-
-  Field3D result{emptyFrom(lhs)};
-
-  BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs[i], rhs); }
-
-  checkData(result);
-  return result;
-}
-
-Field3D pow(BoutReal lhs, const Field3D &rhs, REGION rgn) {
-  TRACE("pow(lhs, Field3D)");
-  // Check if the inputs are allocated
-  checkData(lhs);
-  checkData(rhs);
-
-  // Define and allocate the output result
-  Field3D result{emptyFrom(rhs)};
-
-  BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs, rhs[i]); }
-
-  checkData(result);
-  return result;
-}
-
-BoutReal min(const Field3D &f, bool allpe, REGION rgn) {
-  TRACE("Field3D::Min() %s",allpe? "over all PEs" : "");
-
-  checkData(f);
-
-  const auto region = f.getRegion(rgn);
-  BoutReal result = f[*region.cbegin()];
-
-  BOUT_FOR_OMP(i, region, parallel for reduction(min:result)) {
-    if(f[i] < result) {
-      result = f[i];
-    }
-  }
-  
-  if(allpe) {
-    // MPI reduce
-    BoutReal localresult = result;
-    MPI_Allreduce(&localresult, &result, 1, MPI_DOUBLE, MPI_MIN, BoutComm::get());
-  }
-
-  return result;
-}
-
-BoutReal max(const Field3D &f, bool allpe, REGION rgn) {
-  TRACE("Field3D::Max() %s",allpe? "over all PEs" : "");
-
-  checkData(f);
-
-  const auto region = f.getRegion(rgn);
-  BoutReal result = f[*region.cbegin()];
-
-  BOUT_FOR_OMP(i, region, parallel for reduction(max:result)) {
-    if(f[i] > result) {
-      result = f[i];
-    }
-  }
-  
-  if(allpe) {
-    // MPI reduce
-    BoutReal localresult = result;
-    MPI_Allreduce(&localresult, &result, 1, MPI_DOUBLE, MPI_MAX, BoutComm::get());
-  }
-  
-  return result;
-}
-
-BoutReal mean(const Field3D &f, bool allpe, REGION rgn) {
-  TRACE("Field3D::mean() %s",allpe? "over all PEs" : "");
-
-  checkData(f);
-
-  // Intitialise the cummulative sum and counter
-  BoutReal result = 0.;
-  int count = 0;
-
-  BOUT_FOR_OMP(i, f.getRegion(rgn), parallel for reduction(+:result,count)) {
-    result += f[i];
-    count += 1;
-  }
-
-  if(allpe) {
-    // MPI reduce
-    BoutReal localresult = result;
-    MPI_Allreduce(&localresult, &result, 1, MPI_DOUBLE, MPI_SUM, BoutComm::get());
-    int localcount = count;
-    MPI_Allreduce(&localcount, &count, 1, MPI_INT, MPI_SUM, BoutComm::get());
-  }
-
-  return result / static_cast<BoutReal>(count);
-}
-
 /////////////////////////////////////////////////////////////////////
 // Friend functions
 
-/*!
- * This macro takes a function \p func, which is
- * assumed to operate on a single BoutReal and return
- * a single BoutReal, and wraps it up into a function
- * of a Field3D called \p name.
- *
- * @param name  The name of the function to define
- * @param func  The function to apply to each value
- *
- * If CHECK >= 1, checks if the Field3D is allocated
- *
- * Loops over the entire domain, applies function,
- * and uses checkData() to, if CHECK >= 3, check
- * result for non-finite numbers
- *
- */
-#define F3D_FUNC(name, func)                                                             \
-  Field3D name(const Field3D &f, REGION rgn) {                                           \
-    TRACE(#name "(Field3D)");                                                            \
-    /* Check if the input is allocated */                                                \
-    checkData(f);                                                                        \
-    /* Define and allocate the output result */                                          \
-    Field3D result{emptyFrom(f)};                                                        \
-    BOUT_FOR(d, result.getRegion(rgn)) { result[d] = func(f[d]); }                       \
-    checkData(result);                                                                   \
-    return result;                                                                       \
-  }
-
-F3D_FUNC(sqrt, ::sqrt);
-F3D_FUNC(abs, ::fabs);
-
-F3D_FUNC(exp, ::exp);
-F3D_FUNC(log, ::log);
-
-F3D_FUNC(sin, ::sin);
-F3D_FUNC(cos, ::cos);
-F3D_FUNC(tan, ::tan);
-
-F3D_FUNC(sinh, ::sinh);
-F3D_FUNC(cosh, ::cosh);
-F3D_FUNC(tanh, ::tanh);
-
-Field3D filter(const Field3D &var, int N0, REGION rgn) {
+Field3D filter(const Field3D &var, int N0, const std::string& rgn) {
   TRACE("filter(Field3D, int)");
   
   checkData(var);
@@ -852,7 +689,7 @@ Field3D filter(const Field3D &var, int N0, REGION rgn) {
 }
 
 // Fourier filter in z with zmin
-Field3D lowPass(const Field3D &var, int zmax, bool keep_zonal, REGION rgn) {
+Field3D lowPass(const Field3D &var, int zmax, bool keep_zonal, const std::string& rgn) {
   TRACE("lowPass(Field3D, %d, %d)", zmax, keep_zonal);
 
   checkData(var);
@@ -925,7 +762,7 @@ void shiftZ(Field3D &var, int jx, int jy, double zangle) {
   irfft(v.begin(), ncz, &(var(jx,jy,0))); // Reverse FFT
 }
 
-void shiftZ(Field3D &var, double zangle, REGION rgn) {
+void shiftZ(Field3D &var, double zangle, const std::string& rgn) {
   const auto region_str = toString(rgn);
 
   // Only allow a whitelist of regions for now
@@ -940,27 +777,11 @@ void shiftZ(Field3D &var, double zangle, REGION rgn) {
   }
 }
 
-bool finite(const Field3D &f, REGION rgn) {
-  TRACE("finite( Field3D )");
-
-  if (!f.isAllocated()) {
-    return false;
-  }
-
-  BOUT_FOR_SERIAL(i, f.getRegion(rgn)) {
-    if (!finite(f[i])) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
 namespace {
   // Internal routine to avoid ugliness with interactions between CHECK
   // levels and UNUSED parameters
 #if CHECK > 2
-void checkDataIsFiniteOnRegion(const Field3D& f, REGION region) {
+void checkDataIsFiniteOnRegion(const Field3D& f, const std::string& region) {
   // Do full checks
   BOUT_FOR_SERIAL(i, f.getRegion(region)) {
     if (!finite(f[i])) {
@@ -971,12 +792,12 @@ void checkDataIsFiniteOnRegion(const Field3D& f, REGION region) {
 }
 #elif CHECK > 0
 // No-op for no checking
-void checkDataIsFiniteOnRegion(const Field3D &UNUSED(f), REGION UNUSED(region)) {}
+void checkDataIsFiniteOnRegion(const Field3D &UNUSED(f), const std::string& UNUSED(region)) {}
 #endif
 }
 
 #if CHECK > 0
-void checkData(const Field3D &f, REGION region) {
+void checkData(const Field3D &f, const std::string& region) {
   if (!f.isAllocated())
     throw BoutException("Field3D: Operation on empty data\n");
 
@@ -984,26 +805,7 @@ void checkData(const Field3D &f, REGION region) {
 }
 #endif
 
-Field3D copy(const Field3D &f) {
-  Field3D result = f;
-  result.allocate();
-  return result;
-}
-
-Field3D floor(const Field3D &var, BoutReal f, REGION rgn) {
-  checkData(var);
-  Field3D result = copy(var);
-
-  BOUT_FOR(d, var.getRegion(rgn)) {
-    if (result[d] < f) {
-      result[d] = f;
-    }
-  }
-
-  return result;
-}
-
-Field2D DC(const Field3D &f, REGION rgn) {
+Field2D DC(const Field3D &f, const std::string& rgn) {
   TRACE("DC(Field3D)");
 
   checkData(f);

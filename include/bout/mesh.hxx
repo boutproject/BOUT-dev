@@ -753,22 +753,22 @@ class Mesh {
 
   [[gnu::deprecated("Please use free function toFieldAligned instead")]]
   const Field3D toFieldAligned(const Field3D &f, const REGION region = RGN_ALL) {
-    return ::toFieldAligned(f, region);
+    return ::toFieldAligned(f, toString(region));
   }
 
   [[gnu::deprecated("Please use free function fromFieldAligned instead")]]
   const Field3D fromFieldAligned(const Field3D &f, const REGION region = RGN_ALL) {
-    return ::fromFieldAligned(f, region);
+    return ::fromFieldAligned(f, toString(region));
   }
 
   [[gnu::deprecated("Please use free function toFieldAligned instead")]]
   const Field2D toFieldAligned(const Field2D &f, const REGION region = RGN_ALL) {
-    return ::toFieldAligned(f, region);
+    return ::toFieldAligned(f, toString(region));
   }
 
   [[gnu::deprecated("Please use free function fromFieldAligned instead")]]
   const Field2D fromFieldAligned(const Field2D &f, const REGION region = RGN_ALL) {
-    return ::fromFieldAligned(f, region);
+    return ::fromFieldAligned(f, toString(region));
   }
 
   [[gnu::deprecated("Please use "

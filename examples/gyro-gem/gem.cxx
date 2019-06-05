@@ -1088,7 +1088,7 @@ class GEM : public PhysicsModel {
   }
   
   /// Artificial dissipation terms in advection
-  const Field3D UE_Grad_D(const Field3D &f, const Field3D &p) {
+  const Field3D UE_Grad_D(const Field3D &f, const Field3D &UNUSED(p)) {
     Field3D delp2 = Delp2(f);
     delp2.applyBoundary("neumann");
     mesh->communicate(delp2);
