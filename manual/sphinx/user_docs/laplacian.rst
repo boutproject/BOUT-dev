@@ -102,10 +102,10 @@ class, first create an instance of it::
 
 By default, this will use the options in a section called “laplace”, but
 can be given a different section as an argument. By default
-:math:`d = 1`, :math:`a = 0`, and :math:`c1=c2=1`. To set the values of
+:math:`d = 1`, :math:`a = 0`, and :math:`c_1=c_2=1`. To set the values of
 these coefficients, there are the ``setCoefA()``, ``setCoefC1()``,
-``setCoefC2()``,  ``setCoefC()`` (which sets both `c1` and `c2` to its
-argument), and ``setCoefD()`` methods::
+``setCoefC2()``,  ``setCoefC()`` (which sets both :math:`c_1` and :math:`c_2`
+to its argument), and ``setCoefD()`` methods::
 
     Field2D a = ...;
     lap->setCoefA(a);
@@ -372,9 +372,9 @@ of two terms which depends on :math:`z`, as this would give terms like
    \frac{1}{N}\sum_{Z=0}^{N-1} a(x,y)_Z f(x,y)_Z \exp(\frac{-2\pi i k
    Z}{N})
 
-Thus, in order to use a tridiagonal solver, :math:`a`, :math:`c1`, :math:`c2`
+Thus, in order to use a tridiagonal solver, :math:`a`, :math:`c_1`, :math:`c_2`
 and :math:`d` cannot be functions of :math:`z`. Because of this, the
-:math:`{{\boldsymbol{e}}}^z \partial_z c` term in equation
+:math:`{{\boldsymbol{e}}}^z \partial_z c_2` term in equation
 :eq:`invert_expanded` is zero. Thus the tridiagonal solvers are solving
 equations of the form
 
