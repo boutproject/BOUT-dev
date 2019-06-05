@@ -77,7 +77,7 @@ By neglecting the :math:`y`-derivatives (or if
 :math:`g_{xy}=g_{yz}=0`), one can solve equation
 :eq:`full_laplace_inv` :math:`y` plane by :math:`y` plane.
 
-The first approach utilizes the face that it is possible to Fourier
+The first approach utilizes the fact that it is possible to Fourier
 transform the equation in :math:`z` (using some assumptions described
 in section :ref:`sec-num-laplace`), and solve a tridiagonal system for
 each mode. These inversion problems are band-diagonal (tri-diagonal in
@@ -329,7 +329,7 @@ following equation for :math:`f`
    d\nabla_\perp^2f + \frac{1}{c_1}(\nabla_\perp c_2)\cdot\nabla_\perp f + af = b
 
 BOUT++ neglects the :math:`y`-parallel derivatives if :math:`g_{xy}`
-and :math:`g_{yz}` are no-zero when using the solvers `Laplacian` and
+and :math:`g_{yz}` are non-zero when using the solvers `Laplacian` and
 `LaplaceXZ`. For these two solvers, equation :eq:`to_invert` becomes
 (see :ref:`sec-field-aligned-coordinates` for derivation)
 
