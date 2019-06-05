@@ -21,6 +21,9 @@ class FieldGroup {
 public:
   FieldGroup() = default;
   FieldGroup(const FieldGroup& other) = default;
+  FieldGroup(FieldGroup&& other) = default;
+  FieldGroup& operator=(const FieldGroup& other) = default;
+  FieldGroup& operator=(FieldGroup&& other) = default;
 
   /// Constructor with a single FieldData \p f
   FieldGroup(FieldData &f) { fvec.push_back(&f); }
