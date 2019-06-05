@@ -23,7 +23,7 @@ class Mesh;
 class ParallelTransform {
 public:
   ParallelTransform(Mesh& mesh_in) : mesh(mesh_in) {}
-  virtual ~ParallelTransform() {}
+  virtual ~ParallelTransform() = default;
 
   /// Given a 3D field, calculate and set the Y up down fields
   virtual void calcParallelSlices(Field3D &f) = 0;

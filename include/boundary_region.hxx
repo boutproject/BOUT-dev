@@ -32,7 +32,7 @@ public:
   BoundaryRegionBase(std::string name, BndryLoc loc, Mesh *passmesh = nullptr)
       : localmesh(passmesh ? passmesh : bout::globals::mesh), label(std::move(name)), location(loc) {}
 
-  virtual ~BoundaryRegionBase() {}
+  virtual ~BoundaryRegionBase() = default;
 
   Mesh* localmesh; ///< Mesh does this boundary region belongs to
 
@@ -56,7 +56,7 @@ public:
       : BoundaryRegionBase(name, loc, passmesh) {}
   BoundaryRegion(std::string name, int xd, int yd, Mesh *passmesh = nullptr)
       : BoundaryRegionBase(name, passmesh), bx(xd), by(yd), width(2) {}
-  ~BoundaryRegion() override {}
+  ~BoundaryRegion() override = default;
 
   int x,y; ///< Indices of the point in the boundary
   int bx, by; ///< Direction of the boundary [x+dx][y+dy] is going outwards

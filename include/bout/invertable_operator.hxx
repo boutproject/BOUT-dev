@@ -134,7 +134,7 @@ public:
       : operatorFunction(func), preconditionerFunction(func),
         opt(optIn == nullptr ? optIn
                              : Options::getRoot()->getSection("invertableOperator")),
-        localmesh(localmeshIn == nullptr ? bout::globals::mesh : localmeshIn), doneSetup(false) {
+        localmesh(localmeshIn == nullptr ? bout::globals::mesh : localmeshIn) {
     AUTO_TRACE();
   };
 

@@ -88,26 +88,26 @@ class Datafile {
 
  private:
   Mesh* mesh;
-  bool parallel; // Use parallel formats?
-  bool flush;    // Flush after every write?
-  bool guards;   // Write guard cells?
-  bool floats;   // Low precision?
-  bool openclose; // Open and close file for each write
+  bool parallel{false}; // Use parallel formats?
+  bool flush{true};        // Flush after every write?
+  bool guards{true};       // Write guard cells?
+  bool floats{false};   // Low precision?
+  bool openclose{true};    // Open and close file for each write
   int Lx,Ly,Lz; // The sizes in the x-, y- and z-directions of the arrays to be written
-  bool enabled;  // Enable / Disable writing
+  bool enabled{true}; // Enable / Disable writing
   bool init_missing; // Initialise missing variables?
-  bool shiftOutput; // Do we want to write out in shifted space?
-  bool shiftInput;  // Read in shifted space?
-  int flushFrequencyCounter; //Counter used in determining when next openclose required
-  int flushFrequency; //How many write calls do we want between openclose
+  bool shiftOutput{false}; // Do we want to write out in shifted space?
+  bool shiftInput{false}; // Read in shifted space?
+  int flushFrequencyCounter{0}; // Counter used in determining when next openclose required
+  int flushFrequency{1}; // How many write calls do we want between openclose
 
   std::unique_ptr<DataFormat> file;
   size_t filenamelen;
   static const size_t FILENAMELEN=512;
   char *filename;
-  bool writable; // is file open for writing?
-  bool appending;
-  bool first_time; // is this the first time the data will be written?
+  bool writable{false}; // is file open for writing?
+  bool appending{false};
+  bool first_time{true}; // is this the first time the data will be written?
 
   /// Shallow copy, not including dataformat, therefore private
   Datafile(const Datafile& other);

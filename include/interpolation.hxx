@@ -231,7 +231,7 @@ public:
       : Interpolation(y_offset, mesh) {
     skip_mask = mask;
   }
-  virtual ~Interpolation() {}
+  virtual ~Interpolation() = default;
 
   virtual void calcWeights(const Field3D &delta_x, const Field3D &delta_z) = 0;
   virtual void calcWeights(const Field3D &delta_x, const Field3D &delta_z,

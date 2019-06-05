@@ -34,7 +34,8 @@ private:
   CreateInterpCallback findInterpolation(const std::string& name);
 
 public:
-  ~InterpolationFactory(){};
+  ~InterpolationFactory() = default;
+  ;
 
   /// Create or get the singleton instance of the factory
   static InterpolationFactory* getInstance();

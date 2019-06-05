@@ -58,7 +58,7 @@ template <class T> class CyclicReduce {
 public:
   CyclicReduce() = default;
 
-  CyclicReduce(MPI_Comm c, int size) : comm(c), N(size), Nsys(0) {
+  CyclicReduce(MPI_Comm c, int size) : comm(c), N(size) {
     MPI_Comm_size(c, &nprocs);
     MPI_Comm_rank(c, &myproc);
   }

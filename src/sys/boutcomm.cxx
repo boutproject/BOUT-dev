@@ -3,8 +3,7 @@
 
 BoutComm* BoutComm::instance = nullptr;
 
-BoutComm::BoutComm()
-    : pargc(nullptr), pargv(nullptr), hasBeenSet(false), comm(MPI_COMM_NULL) {}
+BoutComm::BoutComm() : comm(MPI_COMM_NULL) {}
 
 BoutComm::~BoutComm() {
   if(comm != MPI_COMM_NULL)

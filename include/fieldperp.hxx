@@ -62,7 +62,7 @@ class FieldPerp : public Field {
    * will be shared (non unique)
    */
   FieldPerp(const FieldPerp& f)
-      : Field(f), yindex(f.yindex), nx(f.nx), nz(f.nz), data(f.data) {}
+       = default;
 
   /*!
    * Move constructor
@@ -76,7 +76,7 @@ class FieldPerp : public Field {
    */ 
   FieldPerp(BoutReal val, Mesh *localmesh = nullptr);
 
-  ~FieldPerp() override {}
+  ~FieldPerp() override = default;
 
   /*!
    * Assignment operators

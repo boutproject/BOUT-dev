@@ -130,7 +130,7 @@ public:
   using data_type = T;
   using size_type = int;
   
-  Matrix() : n1(0), n2(0){};
+  Matrix()  = default;;
   Matrix(size_type n1, size_type n2) : n1(n1), n2(n2) {
     ASSERT2(n1 >= 0);
     ASSERT2(n2 >= 0);
@@ -204,7 +204,7 @@ public:
   const Array<T>& getData() const { return data; }
 
 private:
-  size_type n1, n2;
+  size_type n1{0}, n2{0};
   /// Underlying 1D storage array
   Array<T> data;
 };
@@ -221,7 +221,7 @@ public:
   using data_type = T;
   using size_type = int;
 
-  Tensor() : n1(0), n2(0), n3(0) {};
+  Tensor()  = default;;
   Tensor(size_type n1, size_type n2, size_type n3) : n1(n1), n2(n2), n3(n3) {
     ASSERT2(n1 >= 0);
     ASSERT2(n2 >= 0);
@@ -302,7 +302,7 @@ public:
   const Array<T>& getData() const { return data; }
 
 private:
-  size_type n1, n2, n3;
+  size_type n1{0}, n2{0}, n3{0};
   /// Underlying 1D storage array
   Array<T> data;
 };

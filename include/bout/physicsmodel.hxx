@@ -223,7 +223,7 @@ protected:
   void setJacobian(jacobianfunc jset) {userjacobian = jset;}
 
   /// This is set by a call to initialise, and can be used by models to specify evolving variables
-  Solver *solver;
+  Solver* solver{nullptr};
 
   /*!
    * Specify a variable for the solver to evolve
@@ -277,11 +277,11 @@ protected:
   /// write restarts and pass outputMonitor method inside a Monitor subclass
   PhysicsModelMonitor modelMonitor;
 private:
-  bool splitop; ///< Split operator model?
-  preconfunc   userprecon; ///< Pointer to user-supplied preconditioner function
-  jacobianfunc userjacobian; ///< Pointer to user-supplied Jacobian-vector multiply function
-  
-  bool initialised; ///< True if model already initialised
+  bool splitop{false}; ///< Split operator model?
+  preconfunc userprecon{nullptr}; ///< Pointer to user-supplied preconditioner function
+  jacobianfunc userjacobian{nullptr}; ///< Pointer to user-supplied Jacobian-vector multiply function
+
+  bool initialised{false}; ///< True if model already initialised
 };
 
 /*!

@@ -120,8 +120,8 @@ const int INVERT_OUT_RHS = 32768; ///< Use input value in RHS at outer boundary
 class Laplacian {
 public:
   Laplacian(Options *options = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh* mesh_in = nullptr);
-  virtual ~Laplacian() {}
-  
+  virtual ~Laplacian() = default;
+
   /// Set coefficients for inversion. Re-builds matrices if necessary
   virtual void setCoefA(const Field2D &val) = 0;
   virtual void setCoefA(const Field3D &val) { setCoefA(DC(val)); }

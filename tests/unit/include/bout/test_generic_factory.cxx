@@ -10,19 +10,19 @@
 
 class Base {
 public:
-  Base() {}
+  Base() = default;
   virtual std::string foo() { return "Base"; }
 };
 
 class Derived1 : public Base {
 public:
-  Derived1() {}
+  Derived1() = default;
   std::string foo() override { return "Derived1"; }
 };
 
 class Derived2 : public Base {
 public:
-  Derived2() {}
+  Derived2() = default;
   std::string foo() override { return "Derived2"; }
 };
 

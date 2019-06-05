@@ -18,8 +18,8 @@ class BoundaryModifier;
 
 class BoundaryOpBase {
 public:
-  BoundaryOpBase() {}
-  virtual ~BoundaryOpBase() {}
+  BoundaryOpBase() = default;
+  virtual ~BoundaryOpBase() = default;
 
   /// Apply a boundary condition on field f
   virtual void apply(Field2D &f) = 0;
@@ -48,7 +48,7 @@ public:
     apply_to_ddt = false;
   }
   BoundaryOp(BoundaryRegion *region) {bndry = region; apply_to_ddt=false;}
-  ~BoundaryOp() override {}
+  ~BoundaryOp() override = default;
 
   // Note: All methods must implement clone, except for modifiers (see below)
   virtual BoundaryOp* clone(BoundaryRegion *UNUSED(region), const std::list<std::string> &UNUSED(args)) {
@@ -87,11 +87,11 @@ public:
 
 class BoundaryModifier : public BoundaryOp {
 public:
-  BoundaryModifier() : op(nullptr) {}
+  BoundaryModifier() = default;
   BoundaryModifier(BoundaryOp *operation) : BoundaryOp(operation->bndry), op(operation) {}
   virtual BoundaryOp* cloneMod(BoundaryOp *op, const std::list<std::string> &args) = 0;
 protected:
-  BoundaryOp *op;
+  BoundaryOp* op{nullptr};
 };
 
 #endif // __BNDRY_OP__

@@ -60,18 +60,12 @@ class Coordinates;
  * Defines the virtual function SetStencil, used by differencing methods
  */
 class Field {
- public:
+public:
   Field() = default;
+  Field(const Field& other) = default;
+  virtual ~Field() = default;
 
   Field(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in);
-
-  // Copy constructor
-  Field(const Field& f)
-    : name(f.name), fieldmesh(f.fieldmesh),
-      fieldCoordinates(f.fieldCoordinates), location(f.location),
-      directions(f.directions) {}
-
-  virtual ~Field() { }
 
   /// Set variable location for staggered grids to @param new_location
   ///

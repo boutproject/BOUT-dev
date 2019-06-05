@@ -79,7 +79,7 @@ private:
 // Function that takes no arguments and returns 4.0
 class NullaryGenerator : public FieldGenerator {
 public:
-  NullaryGenerator() {}
+  NullaryGenerator() = default;
 
   std::shared_ptr<FieldGenerator>
   clone(const std::list<std::shared_ptr<FieldGenerator>> args) {
