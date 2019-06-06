@@ -1,0 +1,8 @@
+add_subdirectory(test-attribs)
+add_subdirectory(test-griddata)
+add_subdirectory(test-initial)
+add_subdirectory(test-invertable-operator)
+add_subdirectory(test-io)
+add_subdirectory(test-laplace)
+add_subdirectory(test-solver)
+add_subdirectory(test-stopCheck)

@@ -498,9 +498,7 @@ option(PACKAGE_TESTS "Build the tests" ON)
 if(PACKAGE_TESTS)
   enable_testing()
   add_subdirectory(tests/unit)
-  add_subdirectory(tests/integrated/test-solver)
-  add_subdirectory(tests/integrated/test-initial)
-  add_subdirectory(tests/integrated/test-griddata)
+  add_subdirectory(tests/integrated)
 endif()
 
 ##################################################
