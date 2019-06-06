@@ -247,6 +247,8 @@ set(BOUT_SOURCES
   ./src/solver/impls/slepc/slepc.hxx
   ./src/solver/impls/snes/snes.cxx
   ./src/solver/impls/snes/snes.hxx
+  ./src/solver/impls/split-rk/split-rk.cxx
+  ./src/solver/impls/split-rk/split-rk.hxx
   ./src/solver/solver.cxx
   ./src/solver/solverfactory.cxx
   ./src/sys/bout_types.cxx
