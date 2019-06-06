@@ -464,10 +464,20 @@ endmacro()
 # Optional arguments:
 # - USE_RUNTEST: if given, the test uses `./runtest` as the test
 #   command, otherwise it uses the executable
+# - USE_DATA_BOUT_INP: if given, copy `data/BOUT.inp`
+# - REQUIRES: list of required dependencies
 function(bout_add_integrated_test TESTNAME)
   set(options USE_RUNTEST USE_DATA_BOUT_INP)
-  set(multiValueArgs SOURCES EXTRA_FILES)
+  set(multiValueArgs SOURCES EXTRA_FILES REQUIRES)
   cmake_parse_arguments(BOUT_TEST_OPTIONS "${options}" "" "${multiValueArgs}" ${ARGN})
+
+  foreach (REQUIREMENT "${BOUT_TEST_OPTIONS_REQUIRES}")
+    if (REQUIREMENT AND NOT BOUT_HAS_${REQUIREMENT})
+      message(STATUS "Not building test ${TESTNAME}, requirement not met: ${REQUIREMENT}")
+      return()
+    endif()
+  endforeach()
+
   add_executable(${TESTNAME} ${BOUT_TEST_OPTIONS_SOURCES})
   target_link_libraries(${TESTNAME} bout++)
   target_include_directories(${TESTNAME} PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
