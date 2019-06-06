@@ -552,3 +552,29 @@ export(EXPORT bout++Targets
   )
 
 export(PACKAGE bout)
+
+##################################################
+# Configure summary
+
+message("
+   --------------------------------
+     BOUT++ Configuration Summary
+   --------------------------------
+
+   PETSc support            : ${BOUT_HAS_PETSC}
+   SUNDIALS support         : ${BOUT_HAS_SUNDIALS}
+   NetCDF support           : ${BOUT_HAS_NETCDF}
+   FFTW support             : ${BOUT_HAS_FFTW}
+   LAPACK support           : ${BOUT_HAS_LAPACK}
+   OpenMP support           : ${BOUT_USE_OPENMP}
+   Natural language support : ${BOUT_HAS_GETTEXT}
+
+   === Python ===
+
+   Make sure that the tools/pylib directory is in your PYTHONPATH
+   e.g. by adding to your ~/.bashrc file
+
+       export PYTHONPATH=$PWD/tools/pylib/:\$PYTHONPATH
+
+*** Now run `cmake --build .` to compile BOUT++ ***
+")
