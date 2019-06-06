@@ -336,9 +336,12 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
   }
 
   if (c1coef != nullptr) {
-    // A first order derivative term
-    if((jx > 0) && (jx < (localmesh->LocalNx-1)))
-      coef4 += localcoords->g11(jx,jy) * ((*c2coef)(jx+1,jy) - (*c2coef)(jx-1,jy)) / (2.*localcoords->dx(jx,jy)*((*c1coef)(jx,jy)));
+    // First derivative terms
+    if((jx > 0) && (jx < (localmesh->LocalNx-1))) {
+      BoutReal dc2dx_over_c1 = ((*c2coef)(jx+1,jy) - (*c2coef)(jx-1,jy)) / (2.*localcoords->dx(jx,jy)*((*c1coef)(jx,jy)));
+      coef4 += localcoords->g11(jx,jy) * dc2dx_over_c1;
+      coef5 += localcoords->g13(jx,jy) * dc2dx_over_c1;
+    }
   }
 
   if(localmesh->IncIntShear) {

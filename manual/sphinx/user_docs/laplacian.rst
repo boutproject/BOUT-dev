@@ -65,30 +65,34 @@ Usage of the laplacian inversion
 
 In BOUT++, equation :eq:`full_laplace_inv` can be solved in two
 ways. The first method Fourier transforms in the :math:`z`-direction,
-whilst the other is solving the full two dimensional problem by matrix
+whilst the other solves the full two dimensional problem by matrix
 inversion. The derivation of :math:`\nabla_\perp^2f` for a general
-coordinate system can be found in the ``coordinates`` manual. What is
-important, is to note that if :math:`g_{xy}` and :math:`g_{yz}` are
-non-zero, BOUT++ is neglecting the :math:`y`-parallel derivatives when
-using the solvers `Laplacian` and `LaplaceXZ`.
+coordinate system can be found in the
+:ref:`sec-field-aligned-coordinates` section. What is important, is to
+note that if :math:`g_{xy}` and :math:`g_{yz}` are non-zero, BOUT++
+neglects the :math:`y`-parallel derivatives when using the solvers
+`Laplacian` and `LaplaceXZ`.
 
 By neglecting the :math:`y`-derivatives (or if
 :math:`g_{xy}=g_{yz}=0`), one can solve equation
 :eq:`full_laplace_inv` :math:`y` plane by :math:`y` plane.
 
-The first approach utilizes that it is possible Fourier transform the
-equation in :math:`z` (using some assumptions described in section
-:ref:`sec-num-laplace`), and solve a tridiagonal system for each
-mode. These inversion problems are band-diagonal (tri-diagonal in the
-case of 2nd-order differencing) and so inversions can be very
+The first approach utilizes the fact that it is possible to Fourier
+transform the equation in :math:`z` (using some assumptions described
+in section :ref:`sec-num-laplace`), and solve a tridiagonal system for
+each mode. These inversion problems are band-diagonal (tri-diagonal in
+the case of 2nd-order differencing) and so inversions can be very
 efficient: :math:`O(n_z \log n_z)` for the FFTs, :math:`O(n_x)` for
 tridiagonal inversion using the Thomas algorithm, where :math:`n_x`
 and :math:`n_z` are the number of grid-points in the :math:`x` and
 :math:`z` directions respectively.
 
 
-In the second approach, the full :math:`2`\ -D system is being solved.
-This requires PETSc to be built with BOUT++.
+In the second approach, the full :math:`2`\ -D system is solved. The
+available solvers for this approach are 'multigrid' using a multigrid
+algorithm; 'naulin' using an iterative scheme to correct the FFT-based
+approach; or 'petsc' using KSP linear solvers from the PETSc library
+(this requires PETSc to be built with BOUT++).
 
 
 The `Laplacian` class is defined in ``invert_laplace.hxx`` and solves
@@ -99,15 +103,17 @@ class, first create an instance of it::
 
 By default, this will use the options in a section called “laplace”, but
 can be given a different section as an argument. By default
-:math:`d = 1`, :math:`a = 0`, and the :math:`c=1`. To set the values of
-these coefficients, there are the ``setCoefA()``, ``setCoefC()``, and
-``setCoefD()`` methods::
+:math:`d = 1`, :math:`a = 0`, and :math:`c_1=c_2=1`. To set the values of
+these coefficients, there are the ``setCoefA()``, ``setCoefC1()``,
+``setCoefC2()``,  ``setCoefC()`` (which sets both :math:`c_1` and :math:`c_2`
+to its argument), and ``setCoefD()`` methods::
 
     Field2D a = ...;
     lap->setCoefA(a);
     lap->setCoefC(0.5);
 
-arguments can be `Field2D`, `Field3D`, or `BoutReal` values.
+arguments can be `Field2D`, `Field3D`, or `BoutReal` values. Note that FFT
+solvers will use only the DC part of `Field3D` arguments.
 
 Settings for the inversion can be set in the input file under the
 section ``laplace`` (default) or whichever settings section name was
@@ -292,8 +298,8 @@ To perform the inversion, there’s the ``solve`` method
 
     x = lap->solve(b);
 
-If you prefer, there are functions compatible with older versions of the
-BOUT++ code::
+There are also functions compatible with older versions of the
+BOUT++ code, but these are deprecated::
 
     Field2D a, c, d;
     invert_laplace(b, x, flags, &a, &c, &d);
@@ -322,11 +328,10 @@ following equation for :math:`f`
 
    d\nabla_\perp^2f + \frac{1}{c_1}(\nabla_\perp c_2)\cdot\nabla_\perp f + af = b
 
-BOUT++ is neglecting the :math:`y`-parallel derivatives if
-:math:`g_{xy}` and :math:`g_{yz}` are no-zero when using the solvers
-`Laplacian` and `LaplaceXZ`. For these two
-solvers, equation :eq:`to_invert` becomes (see ``coordinates`` manual
-for derivation)
+BOUT++ neglects the :math:`y`-parallel derivatives if :math:`g_{xy}`
+and :math:`g_{yz}` are non-zero when using the solvers `Laplacian` and
+`LaplaceXZ`. For these two solvers, equation :eq:`to_invert` becomes
+(see :ref:`sec-field-aligned-coordinates` for derivation)
 
 .. math::
    :label: invert_expanded
@@ -341,17 +346,9 @@ for derivation)
 Using tridiagonal solvers
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-When using the tridiagonal solvers, :math:`c_1 = c_2` in equation
-:eq:`to_invert`, hence, it is rather solving
-
-.. math::
-   :label: to_invert_tri
-
-   d\nabla_\perp^2f + \frac{1}{c}(\nabla_\perp c)\cdot\nabla_\perp f + af = b
-
 Since there are no parallel :math:`y`-derivatives if
 :math:`g_{xy}=g_{yz}=0` (or if they are neglected), equation
-:eq:`to_invert_tri` will only contain derivatives of :math:`x` and
+:eq:`to_invert` will only contain derivatives of :math:`x` and
 :math:`z` for the dependent variable. The hope is that the modes in the
 periodic :math:`z` direction will decouple, so that we in the end only
 have to invert for the :math:`x` coordinate.
@@ -375,22 +372,19 @@ of two terms which depends on :math:`z`, as this would give terms like
    \frac{1}{N}\sum_{Z=0}^{N-1} a(x,y)_Z f(x,y)_Z \exp(\frac{-2\pi i k
    Z}{N})
 
-Thus, in order to use a tridiagonal solver, :math:`a`, :math:`c` and
-:math:`d` cannot be functions of :math:`z`. Because of this, the
-:math:`{{\boldsymbol{e}}}^z \partial_z c` term in equation
-:eq:`invert_expanded` is zero. In principle the modes would still
-decouple if the :math:`{{\boldsymbol{e}}}^z \partial_z f`
-part of equation :eq:`invert_expanded` was kept, but currently this
-part is also neglected in solvers using a tridiagonal matrix. Thus the
-tridiagonal solvers are solving equations on the form
+Thus, in order to use a tridiagonal solver, :math:`a`, :math:`c_1`, :math:`c_2`
+and :math:`d` cannot be functions of :math:`z`. Because of this, the
+:math:`{{\boldsymbol{e}}}^z \partial_z c_2` term in equation
+:eq:`invert_expanded` is zero. Thus the tridiagonal solvers solve
+equations of the form
 
 .. math::
 
    \, &d(x,y) ( g^{xx}(x,y) \partial_x^2 + G^x(x,y) \partial_x +
        g^{zz}(x,y) \partial_z^2 + G^z(x,y) \partial_z + 2g^{xz}(x,y)
        \partial_x \partial_z ) f(x,y,z) \\
-     +& \frac{1}{c(x,y)}({{\boldsymbol{e}}}^x \partial_x ) c(x,y) \cdot (
-       {{\boldsymbol{e}}}^x \partial_x ) f(x,y,z) \\
+     +& \frac{1}{c_1(x,y)}({{\boldsymbol{e}}}^x \partial_x c_2(x,y) ) \cdot (
+       {{\boldsymbol{e}}}^x \partial_x + \boldsymbol{e}^z \partial_z) f(x,y,z) \\
      +& a(x,y)f(x,y,z) = b(x,y,z)
 
 after using the discrete Fourier transform (see section
@@ -400,8 +394,8 @@ after using the discrete Fourier transform (see section
 
    \, &d (    g^{xx} \partial_x^2F_z + G^x \partial_xF_z + g^{zz} [i k]^2F_z
         + G^z [i k]F_z + 2g^{xz} \partial_x[i k]F_z ) \\
-     +& \frac{1}{c}( {{\boldsymbol{e}}}^x \partial_x ) c \cdot ( {{\boldsymbol{e}}}^x
-        \partial_xF_z ) \\
+     +& \frac{1}{c_1}( {{\boldsymbol{e}}}^x \partial_x  c_2 ) \cdot ( {{\boldsymbol{e}}}^x
+        \partial_xF_z + \boldsymbol{e}^z i k F_z) \\
      +& aF_z = B_z
 
 which gives
@@ -411,15 +405,15 @@ which gives
 
    \, &d ( g^{xx} \partial_x^2 + G^x \partial_x - k^2 g^{zz} + i
    kG^z + i k2g^{xz} \partial_x )F_z \\
-   +& \frac{g^{xx}}{c} (\partial_x c ) \partial_xF_z \\
+   +& \frac{1}{c_1} (\partial_x c_2 ) (g^{xx}\partial_xF_z + g^{xz} i k F_z) \\
    +& aF_z = B_z
 
 As nothing in equation :eq:`FT_laplace_inversion` couples points in
 :math:`y` together (since we neglected the :math:`y`-derivatives if
-:math:`g_{xy}` and :math:`g_{yz}` were non-zero). Also, as the modes are
-decoupled, we may solve equation :eq:`FT_laplace_inversion` :math:`k`
-mode by :math:`k` mode in addition to :math:`y`\ -plane by
-:math:`y`\ -plane.
+:math:`g_{xy}` and :math:`g_{yz}` were non-zero) we can solve :math:`y`\ -plane
+by :math:`y`\ -plane. Also, as the modes are decoupled, we may solve equation
+:eq:`FT_laplace_inversion` :math:`k` mode by :math:`k` mode in addition to
+:math:`y`\ -plane by :math:`y`\ -plane.
 
 The second order centred approximation of the first and second
 derivatives in :math:`x` reads
@@ -433,12 +427,14 @@ This gives
 
 .. math::
 
-   \, &d (    g^{xx} \frac{F_{z,n-1} - 2F_{z,n} + F_{z, n+1}}{\text{d}x^2} +
-       G^x \frac{-F_{z,n-1} + F_{z,n+1}}{2\text{d}x} - k^2 g^{zz}F_{z,n} .\\
-       &\quad.  + i kG^zF_{z,n} + i k2g^{xz} \frac{-F_{z,n-1} +
-   F_{z,n+1}}{2\text{d}x} ) \\
-       +& \frac{g^{xx}}{c} ( \frac{-c_{n-1} + c_{n+1}}{2\text{d}x} )
-   \frac{-F_{z,n-1} + F_{z,n+1}}{2\text{d}x} \\
+   \, &d \left(    g^{xx} \frac{F_{z,n-1} - 2F_{z,n} + F_{z, n+1}}{\text{d}x^2} +
+       G^x \frac{-F_{z,n-1} + F_{z,n+1}}{2\text{d}x} - k^2 g^{zz}F_{z,n}
+       \right. \\
+       &\left. \quad  + i kG^zF_{z,n} + i k2g^{xz} \frac{-F_{z,n-1} +
+   F_{z,n+1}}{2\text{d}x} \right) \\
+       +& \frac{1}{c_1} \left( \frac{-c_{2,n-1} + c_{2,n+1}}{2\text{d}x} \right)
+   \left(g^{xx}\frac{-F_{z,n-1} + F_{z,n+1}}{2\text{d}x}
+         + g^{xz} i k F_{z,n} \right) \\
        +& aF_{z,n} = B_{z,n}
 
 collecting point by point
@@ -446,35 +442,37 @@ collecting point by point
 .. math::
    :label: discretized_laplace
 
-       &( \frac{dg^{xx}}{\text{d}x^2} - \frac{dG^x}{2\text{d}x} -
-       \frac{g^{xx}}{c_{n}} \frac{-c_{n-1} + c_{n+1}}{4\text{d}x^2} - i\frac{d
-       k2g^{xz}}{2\text{d}x} ) F_{z,n-1} \\
-           +&( - \frac{ dg^{xx} }{\text{d}x^2} - dk^2 g^{zz} + a + idkG^z )
+       &\left( \frac{dg^{xx}}{\text{d}x^2} - \frac{dG^x}{2\text{d}x} -
+       \frac{g^{xx}}{c_{1,n}} \frac{-c_{2,n-1} + c_{2,n+1}}{4\text{d}x^2} - i\frac{d
+       k2g^{xz}}{2\text{d}x} \right) F_{z,n-1} \\
+           +&\left( - \frac{ dg^{xx} }{\text{d}x^2} - dk^2 g^{zz} + a + idkG^z +
+           i\frac{g^{xz}}{c_{1,n}} \frac{-c_{2,n-1} +
+           c_{2,n+1}}{2\text{d}x}k \right)
        F_{z,n} \\
-           +&( \frac{dg^{xx}}{\text{d}x^2} + \frac{dG^x}{2\text{d}x} +
-       \frac{g^{xx}}{c_{n}} \frac{-c_{n-1} + c_{n+1}}{4\text{d}x^2} +
-       i\frac{dk2g^{xz}}{2\text{d}x} ) F_{z, n+1} \\
-        =& B_{z,n}
+           +&\left( \frac{dg^{xx}}{\text{d}x^2} + \frac{dG^x}{2\text{d}x} +
+       \frac{g^{xx}}{c_{1,n}} \frac{-c_{2,n-1} + c_{2,n+1}}{4\text{d}x^2} +
+       i\frac{dk2g^{xz}}{2\text{d}x} \right) F_{z, n+1} \\
+        = B_{z,n}
 
 We now introduce
 
 .. math::
 
-   c_1 = \frac{dg^{xx}}{\text{d}x^2}
+   C_1 &= \frac{dg^{xx}}{\text{d}x^2}
 
-   c_2 = dg^{zz}
+   C_2 &= dg^{zz}
 
-   c_3 = \frac{2dg^{xz}}{2\text{d}x}
+   C_3 &= \frac{2dg^{xz}}{2\text{d}x}
 
-   c_4 = \frac{dG^x + g^{xx}\frac{-c_{n-1} + c_{n+1}}{2c_n\text{d}x}}{2\text{d}x}
+   C_4 &= \frac{dG^x + g^{xx}\frac{-c_{2,n-1} + c_{2,n+1}}{2c_{1,n}\text{d}x}}{2\text{d}x}
 
-   c_5 = dG^z
+   C_5 &= dG^z + \frac{g^{xz}}{c_{1,n}} \frac{-c_{2,n-1} + c_{2,n+1}}{2\text{d}x}
 
 which inserted in equation :eq:`discretized_laplace` gives
 
 .. math::
 
-       ( c_1 - c_4 -ikc_3 ) F_{z,n-1} + ( -2c_1 - k^2c_2 +ikc_5 + a ) F_{z,n} + ( c_1 + c_4 + ikc_3 ) F_{z, n+1} = B_{z,n}
+       ( C_1 - C_4 -ikC_3 ) F_{z,n-1} + ( -2C_1 - k^2C_2 +ikC_5 + a ) F_{z,n} + ( C_1 + C_4 + ikC_3 ) F_{z, n+1} = B_{z,n}
 
 This can be formulated as the matrix equation
 
@@ -485,17 +483,20 @@ This can be formulated as the matrix equation
 where the matrix :math:`A` is tridiagonal. The boundary conditions are
 set by setting the first and last rows in :math:`A` and :math:`B_z`.
 
+The tridiagonal solvers previously required :math:`c_1 = c_2` in equation
+:eq:`to_invert`, but from version 4.3 allow :math:`c_1 \neq c_2`.
+
 .. _sec-petsc-laplace:
 
 Using PETSc solvers
 ~~~~~~~~~~~~~~~~~~~
 
-When using PETSc, all terms of equation :eq:`invert_expanded` is being
-used when inverting to find :math:`f`. Note that when using PETSc, we
-are not Fourier decomposing in the :math:`z`-direction, so it may take
-substantially longer time to find the solution. As with the tridiagonal
-solver, the fields are being sliced in the :math:`y`-direction, and a
-solution is being found for one :math:`y` plane at the time.
+When using PETSc, all terms of equation :eq:`invert_expanded` are used
+when inverting to find :math:`f`. Note that when using PETSc, we do
+not Fourier decompose in the :math:`z`-direction, so it may take
+substantially longer time to find the solution. As with the
+tridiagonal solver, the fields are sliced in the :math:`y`-direction,
+and a solution is found for one :math:`y` plane at the time.
 
 Before solving, equation :eq:`invert_expanded` is rewritten to the
 form
@@ -565,25 +566,25 @@ Second order approximation (5-point stencil)
 
 .. math::
 
-       \texttt{ddx\_c} = \frac{\texttt{c2}_{x+1} - \texttt{c2}_{x-1} }{2\texttt{c1}\text{d}x}
+       \texttt{ddx_c} = \frac{\texttt{c2}_{x+1} - \texttt{c2}_{x-1} }{2\texttt{c1}\text{d}x}
 
-       \texttt{ddz\_c} = \frac{\texttt{c2}_{z+1} - \texttt{c2}_{z-1} }{2\texttt{c1}\text{d}z}
+       \texttt{ddz_c} = \frac{\texttt{c2}_{z+1} - \texttt{c2}_{z-1} }{2\texttt{c1}\text{d}z}
 
 Fourth order approximation (9-point stencil)
 
 .. math::
 
-       \texttt{ddx\_c} = \frac{-\texttt{c2}_{x+2} + 8\texttt{c2}_{x+1} -
+       \texttt{ddx_c} = \frac{-\texttt{c2}_{x+2} + 8\texttt{c2}_{x+1} -
        8\texttt{c2}_{x-1} + \texttt{c2}_{x-1} }{ 12\texttt{c1}\text{d}x} \\
-       \texttt{ddz\_c} = \frac{-\texttt{c2}_{z+2} + 8\texttt{c2}_{z+1} -
+       \texttt{ddz_c} = \frac{-\texttt{c2}_{z+2} + 8\texttt{c2}_{z+1} -
        8\texttt{c2}_{z-1} + \texttt{c2}_{z-1} }{ 12\texttt{c1}\text{d}z}
 
 
 This gives
 
 .. math::
-   A_4 = dG^x + g^{xx}\texttt{ddx\_c} + g^{xz}\texttt{ddz\_c}
-   A_5 = dG^z + g^{xz}\texttt{ddx\_c} + g^{xx}\texttt{ddz\_c}
+   A_4 &= dG^x + g^{xx}\texttt{ddx_c} + g^{xz}\texttt{ddz_c} \\
+   A_5 &= dG^z + g^{xz}\texttt{ddx_c} + g^{xx}\texttt{ddz_c}
 
 The coefficients :math:`c_{i+m,j+n}` are finally being set according
 to the appropriate order of discretisation. The coefficients can be
@@ -662,21 +663,21 @@ Implementation internals
 
 The Laplacian inversion code solves the equation:
 
-.. math:: d\nabla^2_\perp x + \frac{1}{c}\nabla_\perp c\cdot\nabla_\perp x + a x = b
+.. math:: d\nabla^2_\perp x + \frac{1}{c_1}\nabla_\perp c_2\cdot\nabla_\perp x + a x = b
 
 where :math:`x` and :math:`b` are 3D variables, whilst :math:`a`,
-:math:`c` and :math:`d` are 2D variables. Several different algorithms
-are implemented for Laplacian inversion, and they differ between
-serial and parallel versions. Serial inversion can currently either be
-done using a tridiagonal solver (Thomas algorithm), or a band-solver
-(allowing :math:`4^{th}`-order differencing).
+:math:`c_1`, :math:`c_2` and :math:`d` are 2D variables for the FFT solvers, or
+3D variables otherwise. Several different algorithms are implemented for
+Laplacian inversion, and they differ between serial and parallel versions.
+Serial inversion can currently either be done using a tridiagonal solver (Thomas
+algorithm), or a band-solver (allowing :math:`4^{th}`-order differencing).
 
 To support multiple implementations, a base class `Laplacian` is
 defined in ``include/invert_laplace.hxx``. This defines a set of
 functions which all implementations must provide::
 
     class Laplacian {
-     public:
+    public:
       virtual void setCoefA(const Field2D &val) = 0;
       virtual void setCoefC(const Field2D &val) = 0;
       virtual void setCoefD(const Field2D &val) = 0;
@@ -693,12 +694,13 @@ For convenience, the `Laplacian` base class also defines a function to
 calculate coefficients in a Tridiagonal matrix::
 
       void tridagCoefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b,
-                       dcomplex &c, const Field2D *ccoef = NULL,
-                       const Field2D *d=NULL);
+                       dcomplex &c, const Field2D *c1coef = nullptr,
+                       const Field2D *c2coef = nullptr,
+                       const Field2D *d=nullptr);
 
 For the user of the class, some static functions are defined::
 
-      static Laplacian* create(Options *opt = NULL);
+      static Laplacian* create(Options *opt = nullptr);
       static Laplacian* defaultInstance();
 
 The create function allows new Laplacian implementations to be created,
@@ -712,7 +714,7 @@ The code for the `Laplacian` base class is in
 Laplacian implementations is done in the `LaplaceFactory` class,
 defined in ``src/invert/laplace/laplacefactory.cxx``. This file
 includes all the headers for the implementations, and chooses which
-one to create based on the “type” setting in the input options. This
+one to create based on the ``type`` setting in the input options. This
 factory therefore provides a single point of access to the underlying
 Laplacian inversion implementations.
 
@@ -774,6 +776,22 @@ fast, but achieves this by neglecting some cross-processor terms. For
 ELM simulations, it has been found that these terms are important, so
 this method is not usually used.
 
+.. _sec-cyclic:
+
+Cyclic algorithm
+~~~~~~~~~~~~~~~~
+
+This is now the default solver in both serial and parallel. It is an FFT-based
+solver using a cyclic reduction algorithm.
+
+.. _sec-multigrid:
+
+Multigrid solver
+~~~~~~~~~~~~~~~~
+
+A solver using a geometric multigrid algorithm was introduced by projects in
+2015 and 2016 of CCFE and the EUROfusion HLST.
+
 .. _sec-naulin:
 
 Naulin solver
@@ -783,8 +801,8 @@ This scheme was introduced for BOUT++ by Michael Løiten in the `CELMA code
 <https://github.com/CELMA-project/CELMA>`_ and the iterative algoritm is detailed in
 his thesis [Løiten2017]_.
 
-The iteration can be under-relaxed (see naulin_laplace.cxx for more details of the
-implementation). A factor 0<underrelax_factor<=1 is used, with a value of 1 corresponding
+The iteration can be under-relaxed (see ``naulin_laplace.cxx`` for more details of the
+implementation). A factor :math:`0< \text{underrelax_factor}<=1` is used, with a value of 1 corresponding
 to no under-relaxation. If the iteration starts to diverge (the error increases on any
 step) the underrelax_factor is reduced by a factor of 0.9, and the iteration is restarted
 from the initial guess. The initial value of underrelax_factor, which underrelax_factor is
@@ -793,12 +811,16 @@ set to at the beginning of each call to ``solve`` can be set by the option
 file (``[laplace]`` by default). Reducing the value of ``initial_underrelax_factor`` may
 speed up convergence in some cases. Some statistics from the solver are written to the
 output files to help in choosing this value. With ``<i>`` being the number of the
-LaplaceNaulin solver, counting in the order they are created in the physics model:
-- ``naulinsolver<i>_mean_underrelax_counts`` gives the mean number of times
-  ``underrelax_factor`` had to be reduced to get the iteration to converge. If this is
-  much above 0, it is probably worth reducing ``initial_underrelax_factor``.
-- ``naulinsolver<i>_mean_its`` is the mean number of iterations taken to converge.  Try to
-  minimise when adjusting ``initial_underrelax_factor``.
+`LaplaceNaulin` solver, counting in the order they are created in the physics model:
+
+- ``naulinsolver<i>_mean_underrelax_counts`` gives the mean number of
+  times ``underrelax_factor`` had to be reduced to get the iteration
+  to converge. If this is much above 0, it is probably worth reducing
+  ``initial_underrelax_factor``.
+
+- ``naulinsolver<i>_mean_its`` is the mean number of iterations taken
+  to converge.  Try to minimise when adjusting
+  ``initial_underrelax_factor``.
 
 .. [Løiten2017] Michael Løiten, "Global numerical modeling of magnetized plasma
    in a linear device", 2017, https://celma-project.github.io/.
