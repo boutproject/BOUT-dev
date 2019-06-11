@@ -6,6 +6,7 @@
 NOUT = 0  # No timesteps
 
 MZ = 32    # Z size
+#MZ = 1    # Z size
 
 grid = "test_laplace.grd.nc"
 
@@ -19,3 +20,8 @@ symmetricGlobalY = false
 all_terms = false
 include_yguards = false
 filter = 0.2
+type = ptri
+maxits = 100
+
+[output]
+floats = true
