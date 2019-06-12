@@ -319,7 +319,8 @@ int BoutMesh::load() {
 
     NXPE = -1; // Best option
     
-    BoutReal ideal = sqrt(MX * NPES / static_cast<BoutReal>(ny)); // Results in square domains
+    // Results in square domains
+    const BoutReal ideal = sqrt(MX * NPES / static_cast<BoutReal>(ny));
 
     output_info.write(_("Finding value for NXPE (ideal = %f)\n"), ideal);
 
@@ -330,11 +331,11 @@ int BoutMesh::load() {
 
         output_info.write(_("\tCandidate value: %d\n"), i);
 
-        int nyp = NPES / i;
-        int ysub = ny / nyp;
+        const int nyp = NPES / i;
+        const int ysub = ny / nyp;
 
-        // Check size of Y mesh
-        if (ysub < MYG) {
+        // Check size of Y mesh if we've got multiple processors
+        if (ysub < MYG and NPES != 1) {
           output_info.write(_("\t -> ny/NYPE (%d/%d = %d) must be >= MYG (%d)\n"), ny, nyp,
                             ysub, MYG);
           continue;
@@ -395,8 +396,9 @@ int BoutMesh::load() {
         }
         output_info.write(_("\t -> Good value\n"));
         // Found an acceptable value
-        if ((NXPE < 1) || (fabs(ideal - i) < fabs(ideal - NXPE)))
+        if ((NXPE < 1) || (fabs(ideal - i) < fabs(ideal - NXPE))) {
           NXPE = i; // Keep value nearest to the ideal
+        }
       }
     }
 
