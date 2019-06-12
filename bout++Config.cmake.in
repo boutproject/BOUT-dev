@@ -19,10 +19,19 @@ set(BOUT_HAS_GETTEXT @BOUT_HAS_GETTEXT@)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}")
 
-# This is almost certainly bad practice, but means the user doesn't
-# need to find these manually
-set(PETSC_DIR @PETSC_DIR@)
-set(SUNDIALS_ROOT @SUNDIALS_ROOT@)
+if(EXISTS "@PETSC_DIR@")
+  set(PETSC_DIR "@PETSC_DIR@")
+endif()
+if(EXISTS "@SUNDIALS_ROOT@")
+  set(SUNDIALS_ROOT "@SUNDIALS_ROOT@")
+endif()
+if(EXISTS "@FFTW_ROOT@")
+  set(FFTW_ROOT "@FFTW_ROOT@")
+endif()
+if(EXISTS "@LAPACK_ROOT@")
+  set(LAPACK_ROOT "@LAPACK_ROOT@")
+endif()
+
 set(mpark_variant_DIR "${CMAKE_CURRENT_LIST_DIR}/../../../lib/cmake/mpark_variant")
 set(MPIEXEC_EXECUTABLE @MPIEXEC_EXECUTABLE@)
 
