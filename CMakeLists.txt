@@ -11,6 +11,9 @@ project(BOUT++
   VERSION 4.2.2
   LANGUAGES CXX)
 
+# This might not be entirely sensible, but helps CMake to find the
+# correct MPI, workaround for https://gitlab.kitware.com/cmake/cmake/issues/18895
+find_program(MPIEXEC_EXECUTABLE NAMES mpiexec mpirun)
 find_package(MPI REQUIRED)
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
