@@ -386,7 +386,7 @@ find_package(NetCDF)
 if (NetCDF_FOUND)
   target_compile_definitions(bout++
     PUBLIC "NCDF4")
-  target_link_libraries(bout++ PUBLIC NetCDF::NetCDF)
+  target_link_libraries(bout++ PUBLIC NetCDF::NetCDF_CXX)
 endif()
 message(STATUS "NetCDF support: ${NetCDF_FOUND}")
 set(BOUT_HAS_NETCDF ${NetCDF_FOUND})
