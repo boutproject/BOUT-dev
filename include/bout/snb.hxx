@@ -7,7 +7,7 @@ class HeatFluxSNB {
 public:
   HeatFluxSNB() : HeatFluxSNB(Options::root()["snb"]) {}
   
-  HeatFluxSNB(Options &options) {
+  explicit HeatFluxSNB(Options &options) {
     invertpar = InvertPar::Create();
 
     // Read options. Note that the defaults are initialised already
@@ -34,8 +34,8 @@ private:
   
   BoutReal Z{1}; // Average ion charge (1 = Hydrogen)
   BoutReal r{2}; // Electron-electron mean free path scaling factor
-  BoutReal beta_max{5.0}; // Maximum energy group to consider (multiple of eT)
-  int ngroups{20}; // Number of energy groups
+  BoutReal beta_max{10.0}; // Maximum energy group to consider (multiple of eT)
+  int ngroups{40}; // Number of energy groups
 
   /// Indefinite integral of beta^4 * exp(-beta)
   /// with constant set to zero

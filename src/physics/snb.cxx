@@ -5,7 +5,6 @@
 #include "derivs.hxx"
 #include "bout/fv_ops.hxx"
 #include "bout/constants.hxx"
-#include "output.hxx"
 
 Field3D HeatFluxSNB::divHeatFlux(const Field3D &Te, const Field3D &Ne, Field3D *Div_Q_SH_out) {
   Coordinates *coord = Te.getCoordinates();
@@ -16,13 +15,14 @@ Field3D HeatFluxSNB::divHeatFlux(const Field3D &Te, const Field3D &Ne, Field3D *
   Field3D coulomb_log = 6.6 - 0.5 * log(Ne * 1e-20) + 1.5 * log(Te);
 
   // Thermal electron-electron mean free path [m]
-  Field3D lambda_ee_T = pow(thermal_speed, 3) / (Y * Ne  * coulomb_log);
-  Field3D lambda_ei_T = lambda_ee_T / SQ(Z);
+  Field3D lambda_ee_T = pow(thermal_speed, 4) / (Y * Ne  * coulomb_log);
+  Field3D lambda_ei_T = lambda_ee_T / Z;  // Note: Z rather than Z^2 since Ni = Ne / Z
   
   // Thermal electron-ion collision time [s]
   Field3D tau_ei_T  = lambda_ei_T / thermal_speed;
   
   // Divergence of Spitzer-Harm heat flux
+  // Note: 13.58 from 128/(3pi)
   Field3D Div_Q_SH = -FV::Div_par_K_Grad_par((Ne * SI::qe * Te / SI::Me)
                                              * (0.25 * 3 * sqrt(PI) * tau_ei_T)
                                              * 13.58 * (Z + 0.24) / (Z + 4.2),
@@ -66,14 +66,9 @@ Field3D HeatFluxSNB::divHeatFlux(const Field3D &Te, const Field3D &Ne, Field3D *
     // Note: The sum of weight over all groups approaches 1 as beta_max -> infinity
     Div_Q -= weight * Div_Q_SH + H_g / lambda_g_ee;
     
-    output.write("%d: %e, %e => %e\n", i, beta, weight, Div_Q(0,4,0));
-    
     // move to next group, updating lower limit 
     beta_last = beta;
   }
-  
-  output.write("%e, %e, %e => %e, %e\n", tau_ei_T(0,4,0), thermal_speed(0,4,0), lambda_ee_T(0,4,0),
-               Div_Q_SH(0,4,0), Div_Q(0,4,0));
   
   return Div_Q;
 }

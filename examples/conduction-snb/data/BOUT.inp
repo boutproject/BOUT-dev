@@ -1,7 +1,7 @@
 
 MXG = 0
 
-Ne = 1e14  # Electron density, m^-3
+Ne = 1e20  # Electron density, m^-3
 Te = 1 + 0.01*sin(y)     # Electron temperature, eV
 
 [mesh]

@@ -12,6 +12,8 @@ int main(int argc, char **argv) {
   Field3D Ne = opt["Ne"].doc("Electron density in m^-3").as<Field3D>();
   Field3D Te = opt["Te"].doc("Electron temperature in eV").as<Field3D>();
 
+  mesh->communicate(Ne, Te);
+  
   // Calculate divergence of heat flux
   HeatFluxSNB snb;
   Field3D Div_Q_SH;
