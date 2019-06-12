@@ -47,10 +47,13 @@ FUNCTION hypnotoad_version
   ;           Less sensitive to small changes in implementation (e.g. changes
   ;           in indexing due to different number of y-boundary guard cells).
   ; 1.2.1   * Don't smooth 'beta' after calculating
+  ; 1.2.2   * Revert incorrect change in 1.1.4 to the calculation of 'H' - the
+  ;           derivative was with respect to theta, but the integral was in y
+  ;           and for non-orthogonal grids thetaxy and yxy are different.
   
   major_version = 1
   minor_version = 2
-  patch_number = 1
+  patch_number = 2
 
   RETURN, LONG([major_version, minor_version, patch_number])
 

@@ -112,7 +112,7 @@ TEST_F(Field3DInterpToTest, CellCentreToXlowNoBndry) {
 
   // CELL_CENTRE -> CELL_XLOW
   input.setLocation(CELL_CENTRE);
-  output = interp_to(input, CELL_XLOW, RGN_NOBNDRY);
+  output = interp_to(input, CELL_XLOW, "RGN_NOBNDRY");
   EXPECT_TRUE(output.getLocation() == CELL_XLOW);
   EXPECT_NEAR(output(2, 2, 2), 1.95, 1.e-15);
 }
@@ -134,7 +134,7 @@ TEST_F(Field3DInterpToTest, CellXlowToCentreNoBndry) {
 
   // CELL_XLOW -> CELL_CENTRE
   input.setLocation(CELL_XLOW);
-  output = interp_to(input, CELL_CENTRE, RGN_NOBNDRY);
+  output = interp_to(input, CELL_CENTRE, "RGN_NOBNDRY");
   EXPECT_TRUE(output.getLocation() == CELL_CENTRE);
   EXPECT_NEAR(output(2, 2, 2), 1.65, 1.e-15);
 }
@@ -156,7 +156,7 @@ TEST_F(Field3DInterpToTest, CellCentreToYlowNoBndry) {
 
   // CELL_CENTRE -> CELL_YLOW
   input.setLocation(CELL_CENTRE);
-  output = interp_to(input, CELL_YLOW, RGN_NOBNDRY);
+  output = interp_to(input, CELL_YLOW, "RGN_NOBNDRY");
   EXPECT_TRUE(output.getLocation() == CELL_YLOW);
   EXPECT_NEAR(output(2, 2, 2), 2.825, 1.e-15);
 }
@@ -178,7 +178,7 @@ TEST_F(Field3DInterpToTest, CellYlowToCentreNoBndry) {
 
   // CELL_YLOW -> CELL_CENTRE
   input.setLocation(CELL_YLOW);
-  output = interp_to(input, CELL_CENTRE, RGN_NOBNDRY);
+  output = interp_to(input, CELL_CENTRE, "RGN_NOBNDRY");
   EXPECT_TRUE(output.getLocation() == CELL_CENTRE);
   EXPECT_NEAR(output(2, 2, 2), 2.525, 1.e-15);
 }
@@ -200,7 +200,7 @@ TEST_F(Field3DInterpToTest, CellCentreToZlowNoBndry) {
 
   // CELL_CENTRE -> CELL_ZLOW
   input.setLocation(CELL_CENTRE);
-  output = interp_to(input, CELL_ZLOW, RGN_NOBNDRY);
+  output = interp_to(input, CELL_ZLOW, "RGN_NOBNDRY");
   EXPECT_TRUE(output.getLocation() == CELL_ZLOW);
   EXPECT_NEAR(output(2, 2, 2), 3.7, 1.e-15);
 }
@@ -222,7 +222,7 @@ TEST_F(Field3DInterpToTest, CellZlowToCentreNoBndry) {
 
   // CELL_XLOW -> CELL_CENTRE
   input.setLocation(CELL_ZLOW);
-  output = interp_to(input, CELL_CENTRE, RGN_NOBNDRY);
+  output = interp_to(input, CELL_CENTRE, "RGN_NOBNDRY");
   EXPECT_TRUE(output.getLocation() == CELL_CENTRE);
   EXPECT_NEAR(output(2, 2, 2), 3.4, 1.e-15);
 }

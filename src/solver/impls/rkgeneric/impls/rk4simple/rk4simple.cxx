@@ -109,11 +109,6 @@ RK4SIMPLEScheme::RK4SIMPLEScheme(Options *options):RKScheme(options){
 
 }
 
-RK4SIMPLEScheme::~RK4SIMPLEScheme(){
-  //Do my cleanup
-  
-}
-
 BoutReal RK4SIMPLEScheme::setOutputStates(const Array<BoutReal> &start, const BoutReal dt,
                                           Array<BoutReal> &resultFollow) {
   //return RKScheme::setOutputStates(start,dt,resultFollow);

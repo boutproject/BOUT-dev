@@ -97,11 +97,11 @@ public:
   }
 
   using Laplacian::solve;
-  const FieldPerp solve(const FieldPerp &b) override;
-  const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override;
+  FieldPerp solve(const FieldPerp &b) override;
+  FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override;
   
-  const Field3D solve(const Field3D &b) override;
-  const Field3D solve(const Field3D &b, const Field3D &x0) override;
+  Field3D solve(const Field3D &b) override;
+  Field3D solve(const Field3D &b, const Field3D &x0) override;
 private:
   enum { SPT_DATA = 1123 }; ///< 'magic' number for SPT MPI messages
   

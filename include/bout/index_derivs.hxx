@@ -83,7 +83,7 @@ template <typename FF>
 class DerivativeType {
 public:
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
-  void standard(const T& var, T& result, REGION region) const {
+  void standard(const T& var, T& result, const std::string& region) const {
     AUTO_TRACE();
     ASSERT2(meta.derivType == DERIV::Standard || meta.derivType == DERIV::StandardSecond
             || meta.derivType == DERIV::StandardFourth)
@@ -96,7 +96,7 @@ public:
   }
 
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
-  void upwindOrFlux(const T& vel, const T& var, T& result, REGION region) const {
+  void upwindOrFlux(const T& vel, const T& var, T& result, const std::string& region) const {
     AUTO_TRACE();
     ASSERT2(meta.derivType == DERIV::Upwind || meta.derivType == DERIV::Flux)
     ASSERT2(var.getMesh()->getNguard(direction) >= nGuards);

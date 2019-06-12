@@ -3,7 +3,7 @@
 
 class FieldAlign : public PhysicsModel {
 protected:
-  int init(bool restarting) {
+  int init(bool UNUSED(restarting)) {
     mesh->get(vx, "vx");
     mesh->get(vy, "vy");
     mesh->get(vz, "vz");

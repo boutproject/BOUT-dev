@@ -36,7 +36,7 @@
 #ifndef HDF5
 
 #include "../emptyformat.hxx"
-typedef EmptyFormat H5Format;
+using H5Format = EmptyFormat;
 
 #else
 
@@ -86,6 +86,7 @@ class H5Format : public DataFormat {
   bool addVarBoutReal(const std::string &name, bool repeat) override;
   bool addVarField2D(const std::string &name, bool repeat) override;
   bool addVarField3D(const std::string &name, bool repeat) override;
+  bool addVarFieldPerp(const std::string &name, bool repeat) override;
   
   // Read / Write simple variables up to 3D
 
@@ -93,11 +94,13 @@ class H5Format : public DataFormat {
   bool read(int *var, const std::string &name, int lx = 1, int ly = 0, int lz = 0) override;
   bool read(BoutReal *var, const char *name, int lx = 1, int ly = 0, int lz = 0) override;
   bool read(BoutReal *var, const std::string &name, int lx = 1, int ly = 0, int lz = 0) override;
+  bool read_perp(BoutReal *var, const std::string &name, int lx = 1, int lz = 0) override;
 
   bool write(int *var, const char *name, int lx = 0, int ly = 0, int lz = 0) override;
   bool write(int *var, const std::string &name, int lx = 0, int ly = 0, int lz = 0) override;
   bool write(BoutReal *var, const char *name, int lx = 0, int ly = 0, int lz = 0) override;
   bool write(BoutReal *var, const std::string &name, int lx = 0, int ly = 0, int lz = 0) override;
+  bool write_perp(BoutReal *var, const std::string &name, int lx = 0, int lz = 0) override;
 
   // Read / Write record-based variables
 
@@ -105,11 +108,13 @@ class H5Format : public DataFormat {
   bool read_rec(int *var, const std::string &name, int lx = 1, int ly = 0, int lz = 0) override;
   bool read_rec(BoutReal *var, const char *name, int lx = 1, int ly = 0, int lz = 0) override;
   bool read_rec(BoutReal *var, const std::string &name, int lx = 1, int ly = 0, int lz = 0) override;
+  bool read_rec_perp(BoutReal *var, const std::string &name, int lx = 1, int lz = 0) override;
 
   bool write_rec(int *var, const char *name, int lx = 0, int ly = 0, int lz = 0) override;
   bool write_rec(int *var, const std::string &name, int lx = 0, int ly = 0, int lz = 0) override;
   bool write_rec(BoutReal *var, const char *name, int lx = 0, int ly = 0, int lz = 0) override;
   bool write_rec(BoutReal *var, const std::string &name, int lx = 0, int ly = 0, int lz = 0) override;
+  bool write_rec_perp(BoutReal *var, const std::string &name, int lx = 0, int lz = 0) override;
   
   void setLowPrecision() override { lowPrecision = true; }
 
@@ -141,7 +146,7 @@ class H5Format : public DataFormat {
   
   hsize_t chunk_length;
 
-  bool addVar(const std::string &name, bool repeat, hid_t write_hdf5_type, int nd);
+  bool addVar(const std::string &name, bool repeat, hid_t write_hdf5_type, std::string datatype);
   bool read(void *var, hid_t hdf5_type, const char *name, int lx = 1, int ly = 0, int lz = 0);
   bool write(void *var, hid_t mem_hdf5_type, const char *name, int lx = 0, int ly = 0, int lz = 0);
   bool read_rec(void *var, hid_t hdf5_type, const char *name, int lx = 1, int ly = 0, int lz = 0);

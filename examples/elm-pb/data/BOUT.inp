@@ -9,11 +9,8 @@ TIMESTEP = 1       # time between outputs
 archive = 20        # Archive restart files after this number of outputs
 wall_limit = 1.55  # wall time limit (in hours)
 
-ShiftXderivs = true # use shifted radial derivatives?
-TwistShift = true   # use twist-shift condition?
-
-MZ = 16             # number of points in z direction (2^n + 1)
 ZPERIOD = 15        # Fraction of a torus to simulate
+MZ = 16             # Number of points in Z
 
 grid = "cbm18_dens8.grid_nx68ny64.nc"  # Grid file
 
@@ -23,6 +20,7 @@ restart_format = "nc"   # Restart file format
 StaggerGrids = false    # Use staggered grids (EXPERIMENTAL)
 
 [mesh]
+
 paralleltransform = shifted # Use shifted metric method
 
 ##################################################
@@ -145,9 +143,9 @@ relax_j_tconst = 1e-2  # Time constant for vacuum relaxation
 filter_z = true   # remove all except one mode
 filter_z_mode = 1  # Specify which harmonic to keep (1 = fundamental)
 low_pass_z = 16    # Keep up to and including this harmonic (-1 = keep all)
-zonal_flow = 0    # remove this zonal harmonic  (-1 = keep zonal harmonic)
-zonal_field= 0     # remove this zonal harmonic  (-1 = keep zonal harmonic)
-zonal_bkgd = -1    # remove this zonal harmonic  (-1 = keep zonal harmonic)
+zonal_flow = false    # keep this zonal harmonic?
+zonal_field= false     # keep this zonal harmonic?
+zonal_bkgd = true    # keep this zonal harmonic?
 
 ## Jpar smoothing
 smooth_j_x = true   # Filter Jpar in the X direction

@@ -10,6 +10,7 @@
 #include <iostream>
 #include <numeric>
 
+#ifdef BOUT_HAS_FFTW
 class FFTTest : public ::testing::TestWithParam<int> {
 public:
   FFTTest()
@@ -108,3 +109,4 @@ TEST_P(FFTTest, RoundTrip) {
     EXPECT_NEAR(output[i], real_signal[i], FFTTolerance);
   }
 }
+#endif

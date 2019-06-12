@@ -16,7 +16,7 @@ using namespace bout::globals;
 
 class GridFromOptionsTest : public ::testing::Test {
 public:
-  GridFromOptionsTest() : options(), griddata(nullptr) {
+  GridFromOptionsTest() : options() {
 
     mesh_from_options.StaggerGrids = true;
     mesh_from_options.xstart = 2;
@@ -64,7 +64,7 @@ public:
         &mesh_from_options);
   }
 
-  ~GridFromOptionsTest() {
+  ~GridFromOptionsTest() override {
     Options::cleanup();
     output_info.enable();
     output_progress.enable();
@@ -78,7 +78,7 @@ public:
 
   std::shared_ptr<Coordinates> test_coords;
   Options options;
-  GridFromOptions* griddata;
+  GridFromOptions* griddata{nullptr};
   std::string expected_string{"x + y + z + 3"};
   Field2D expected_2d;
   Field3D expected_3d;
@@ -193,11 +193,12 @@ TEST_F(GridFromOptionsTest, GetField3DNoneWithDefault) {
 }
 
 TEST_F(GridFromOptionsTest, GetVectorInt) {
+  // Getting a vector<int> from GridFromOptions is not currently implemented
   std::vector<int> result{};
-  std::vector<int> expected{3, 3, 3};
+  //std::vector<int> expected{3, 3, 3};
 
-  EXPECT_TRUE(griddata->get(&mesh_from_options, result, "f", 3));
-  EXPECT_EQ(result, expected);
+  EXPECT_THROW(griddata->get(&mesh_from_options, result, "f", 3), BoutException);
+  //EXPECT_EQ(result, expected);
 }
 
 TEST_F(GridFromOptionsTest, GetVectorIntNone) {

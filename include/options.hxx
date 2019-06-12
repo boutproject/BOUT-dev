@@ -425,6 +425,33 @@ public:
     return withDefault<std::string>(std::string(def));
   }
   
+  /// Overloaded version to copy from another option
+  Options& withDefault(const Options& def) {
+    // if def is a section, then it does not make sense to try to use it as a default for
+    // a value
+    ASSERT0(def.is_value);
+
+    if (!is_value) {
+      // Option not found
+      *this = def;
+
+      output_info << _("\tOption ") << full_name << " = " << def.full_name << " ("
+                  << DEFAULT_SOURCE << ")" << std::endl;
+    } else {
+      // Check if this was previously set as a default option
+      if (bout::utils::variantEqualTo(attributes.at("source"), DEFAULT_SOURCE)) {
+        // Check that the default values are the same
+        if (!similar(bout::utils::variantToString(value),
+                     bout::utils::variantToString(def.value))) {
+          throw BoutException("Inconsistent default values for '%s': '%s' then '%s'",
+              full_name.c_str(), bout::utils::variantToString(value).c_str(),
+              bout::utils::variantToString(def.value).c_str());
+        }
+      }
+    }
+    return *this;
+  }
+
   /// Get the value of this option. If not found,
   /// return the default value but do not set
   template <typename T> T withDefault(T def) const {

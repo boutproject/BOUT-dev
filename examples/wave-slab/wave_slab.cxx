@@ -15,7 +15,7 @@
 
 class WaveTest : public PhysicsModel {
 public:
-  int init(bool restarting) {
+  int init(bool UNUSED(restarting)) {
     auto *coords = mesh->getCoordinates();
     Field2D Rxy, Bpxy, Btxy, hthe, I;
     GRID_LOAD(Rxy);
@@ -54,7 +54,7 @@ public:
     
     return 0;
   }
-  int rhs(BoutReal time) {
+  int rhs(BoutReal UNUSED(time)) {
     mesh->communicate(f,g);
     
     ddt(f) = Grad_par(g);

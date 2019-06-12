@@ -14,12 +14,12 @@ class TestSolver : public PhysicsModel {
 public:
   Field3D field;
 
-  int init(bool UNUSED(restarting)) {
+  int init(bool UNUSED(restarting)) override {
     solver->add(field, "field");
     return 0;
   }
 
-  int rhs(BoutReal time) {
+  int rhs(BoutReal time) override {
     ddt(field) = sin(time) * sin(time);
     return 0;
   }
@@ -28,7 +28,7 @@ public:
 int main(int argc, char** argv) {
 
   // The expected answer to the integral of \f$\int_0^{\pi/2}\sin^2(t)\f$
-  const BoutReal expected = PI / 4.;
+  constexpr BoutReal expected = PI / 4.;
   // Absolute tolerance for difference between the actual value and the
   // expected value
   constexpr BoutReal tolerance = 1.e-5;
@@ -77,9 +77,9 @@ int main(int argc, char** argv) {
   bout::globals::mesh->load();
 
   bout::globals::dump =
-    bout::experimental::setupDumpFile(Options::root(), *bout::globals::mesh, ".");
+      bout::experimental::setupDumpFile(Options::root(), *bout::globals::mesh, ".");
 
-  const BoutReal end = PI / 2.;
+  constexpr BoutReal end = PI / 2.;
   constexpr int NOUT = 100;
 
   // Global options
@@ -106,6 +106,11 @@ int main(int argc, char** argv) {
 
   root["snes"]["adaptive"] = true;
 
+  root["splitrk"]["timestep"] = end / (NOUT * 500);
+  root["splitrk"]["nstages"] = 3;
+  root["splitrk"]["mxstep"] = 10000;
+  root["splitrk"]["adaptive"] = false;
+
   // Solver and its actual value if it didn't pass
   std::map<std::string, BoutReal> errors;
 
@@ -117,7 +122,7 @@ int main(int argc, char** argv) {
       // "solver" section, as we run into problems when solvers use the same
       // name for an option with inconsistent defaults
       auto options = Options::getRoot()->getSection(name);
-      std::unique_ptr<Solver> solver{SolverFactory::getInstance()->createSolver(name, options)};
+      auto solver = std::unique_ptr<Solver>{Solver::create(name, options)};
 
       TestSolver model{};
       solver->setModel(&model);

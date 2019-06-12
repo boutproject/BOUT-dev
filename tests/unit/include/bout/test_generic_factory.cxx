@@ -50,8 +50,8 @@ public:
 };
 
 // Save some typing later
-typedef Factory<BaseComplicated, std::function<BaseComplicated *(const std::string &)>>
-    ComplicatedFactory;
+using ComplicatedFactory =
+    Factory<BaseComplicated, std::function<BaseComplicated*(const std::string&)>>;
 
 // We need to specialise the helper class to pass arguments to the constructor
 template<typename DerivedType>

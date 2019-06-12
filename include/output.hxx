@@ -59,8 +59,8 @@ using std::endl;
 class Output : private multioutbuf_init<char, std::char_traits<char>>,
                public std::basic_ostream<char, std::char_traits<char>> {
 
-  typedef std::char_traits<char> _Tr;
-  typedef ::multioutbuf_init<char, _Tr> multioutbuf_init;
+  using _Tr = std::char_traits<char>;
+  using multioutbuf_init = ::multioutbuf_init<char, _Tr>;
 
 public:
   Output() : multioutbuf_init(), std::basic_ostream<char, _Tr>(multioutbuf_init::buf()) {

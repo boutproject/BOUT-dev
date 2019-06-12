@@ -76,7 +76,7 @@ class Mesh;
 #include <map>
 
 /// Type used to return pointers to handles
-typedef void* comm_handle;
+using comm_handle = void*;
 
 class Mesh {
  public:
@@ -165,6 +165,16 @@ class Mesh {
   ///
   /// @returns zero if successful, non-zero on failure
   int get(Field3D &var, const std::string &name, BoutReal def=0.0, bool communicate=true);
+
+  /// Get a FieldPerp from the input source
+  ///
+  /// @param[out] var   This will be set to the value. Will be allocated if needed
+  /// @param[in] name   Name of the variable to read
+  /// @param[in] def    The default value if not found
+  /// @param[in] communicate  Should the field be communicated to fill guard cells?
+  ///
+  /// @returns zero if successful, non-zero on failure
+  int get(FieldPerp &var, const std::string &name, BoutReal def=0.0, bool communicate=true);
 
   /// Get a Vector2D from the input source.
   /// If \p var is covariant then this gets three
@@ -266,6 +276,7 @@ class Mesh {
   /// @param[in] buffer A buffer of data to send
   /// @param[in] size   The length of \p buffer
   /// @param[in] tag    A label, must be the same at receive
+  [[gnu::deprecated("This experimental functionality will be removed in 5.0")]]
   virtual MPI_Request sendToProc(int xproc, int yproc, BoutReal *buffer, int size, int tag) = 0;
 
   /// Low-level communication routine
@@ -278,6 +289,7 @@ class Mesh {
   /// @param[inout] buffer  The buffer to fill with data. Must already be allocated of length \p size
   /// @param[in] size  The length of \p buffer
   /// @param[in] tag   A label, must be the same as send
+  [[gnu::deprecated("This experimental functionality will be removed in 5.0")]]
   virtual comm_handle receiveFromProc(int xproc, int yproc, BoutReal *buffer, int size, int tag) = 0;
   
   virtual int getNXPE() = 0; ///< The number of processors in the X direction
@@ -360,19 +372,25 @@ class Mesh {
   virtual bool lastY() const = 0; ///< Is this processor last in Y? i.e. is there a boundary at upper Y?
   virtual bool firstY(int xpos) const = 0; ///< Is this processor first in Y? i.e. is there a boundary at lower Y?
   virtual bool lastY(int xpos) const = 0; ///< Is this processor last in Y? i.e. is there a boundary at upper Y?
+  [[gnu::deprecated("This experimental functionality will be removed in 5.0")]]
   virtual int UpXSplitIndex() = 0;  ///< If the upper Y guard cells are split in two, return the X index where the split occurs
+  [[gnu::deprecated("This experimental functionality will be removed in 5.0")]]
   virtual int DownXSplitIndex() = 0; ///< If the lower Y guard cells are split in two, return the X index where the split occurs
 
   /// Send data
+  [[gnu::deprecated("This experimental functionality will be removed in 5.0")]]
   virtual int sendYOutIndest(BoutReal *buffer, int size, int tag) = 0;
 
-  /// 
+  ///
+  [[gnu::deprecated("This experimental functionality will be removed in 5.0")]]
   virtual int sendYOutOutdest(BoutReal *buffer, int size, int tag) = 0;
 
   ///
+  [[gnu::deprecated("This experimental functionality will be removed in 5.0")]]
   virtual int sendYInIndest(BoutReal *buffer, int size, int tag) = 0;
 
   ///
+  [[gnu::deprecated("This experimental functionality will be removed in 5.0")]]
   virtual int sendYInOutdest(BoutReal *buffer, int size, int tag) = 0;
 
   /// Non-blocking receive. Must be followed by a call to wait()
@@ -380,6 +398,7 @@ class Mesh {
   /// @param[out] buffer  A buffer of length \p size which must already be allocated
   /// @param[in] size The number of BoutReals expected
   /// @param[in] tag  The tag number of the expected message
+  [[gnu::deprecated("This experimental functionality will be removed in 5.0")]]
   virtual comm_handle irecvYOutIndest(BoutReal *buffer, int size, int tag) = 0;
 
   /// Non-blocking receive. Must be followed by a call to wait()
@@ -387,6 +406,7 @@ class Mesh {
   /// @param[out] buffer  A buffer of length \p size which must already be allocated
   /// @param[in] size The number of BoutReals expected
   /// @param[in] tag  The tag number of the expected message
+  [[gnu::deprecated("This experimental functionality will be removed in 5.0")]]
   virtual comm_handle irecvYOutOutdest(BoutReal *buffer, int size, int tag) = 0;
 
   /// Non-blocking receive. Must be followed by a call to wait()
@@ -394,6 +414,7 @@ class Mesh {
   /// @param[out] buffer  A buffer of length \p size which must already be allocated
   /// @param[in] size The number of BoutReals expected
   /// @param[in] tag  The tag number of the expected message
+  [[gnu::deprecated("This experimental functionality will be removed in 5.0")]]
   virtual comm_handle irecvYInIndest(BoutReal *buffer, int size, int tag) = 0;
 
   /// Non-blocking receive. Must be followed by a call to wait()
@@ -401,6 +422,7 @@ class Mesh {
   /// @param[out] buffer  A buffer of length \p size which must already be allocated
   /// @param[in] size The number of BoutReals expected
   /// @param[in] tag  The tag number of the expected message
+  [[gnu::deprecated("This experimental functionality will be removed in 5.0")]]
   virtual comm_handle irecvYInOutdest(BoutReal *buffer, int size, int tag) = 0;
   
   // Boundary region iteration
@@ -446,12 +468,19 @@ class Mesh {
   int OffsetX, OffsetY, OffsetZ;    ///< Offset of this mesh within the global array
                                     ///< so startx on this processor is OffsetX in global
   
-  /// Returns the global X index given a local indexs
+  /// Returns the global X index given a local index
   /// If the local index includes the boundary cells, then so does the global.
   virtual int XGLOBAL(int xloc) const = 0;
   /// Returns the global Y index given a local index
   /// The local index must include the boundary, the global index does not.
   virtual int YGLOBAL(int yloc) const = 0;
+
+  /// Returns the local X index given a global index
+  /// If the global index includes the boundary cells, then so does the local.
+  virtual int XLOCAL(int xglo) const = 0;
+  /// Returns the local Y index given a global index
+  /// If the global index includes the boundary cells, then so does the local.
+  virtual int YLOCAL(int yglo) const = 0;
 
   /// Size of the mesh on this processor including guard/boundary cells
   int LocalNx, LocalNy, LocalNz;
@@ -724,22 +753,22 @@ class Mesh {
 
   [[gnu::deprecated("Please use free function toFieldAligned instead")]]
   const Field3D toFieldAligned(const Field3D &f, const REGION region = RGN_ALL) {
-    return ::toFieldAligned(f, region);
+    return ::toFieldAligned(f, toString(region));
   }
 
   [[gnu::deprecated("Please use free function fromFieldAligned instead")]]
   const Field3D fromFieldAligned(const Field3D &f, const REGION region = RGN_ALL) {
-    return ::fromFieldAligned(f, region);
+    return ::fromFieldAligned(f, toString(region));
   }
 
   [[gnu::deprecated("Please use free function toFieldAligned instead")]]
   const Field2D toFieldAligned(const Field2D &f, const REGION region = RGN_ALL) {
-    return ::toFieldAligned(f, region);
+    return ::toFieldAligned(f, toString(region));
   }
 
   [[gnu::deprecated("Please use free function fromFieldAligned instead")]]
   const Field2D fromFieldAligned(const Field2D &f, const REGION region = RGN_ALL) {
-    return ::fromFieldAligned(f, region);
+    return ::fromFieldAligned(f, toString(region));
   }
 
   [[gnu::deprecated("Please use "

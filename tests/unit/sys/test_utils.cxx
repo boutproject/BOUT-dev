@@ -668,3 +668,69 @@ TEST(StringUtilitiesTest, StringTrimComments) {
 
   EXPECT_EQ("space  ", trimComments(input, "#"));
 }
+
+namespace {
+using function_typedef = int(*)(char, int, double);
+int function_pointer(double, char) {return 0;};
+template <typename T>
+void function_template(T) {}
+} // namespace
+
+TEST(FunctionTraitsTest, ResultType) {
+  using bout::utils::function_traits;
+  static_assert(std::is_same<function_traits<function_typedef>::result_type, int>::value,
+                "Wrong result_type for function_traits of a typedef");
+  static_assert(
+      std::is_same<function_traits<decltype(&function_pointer)>::result_type, int>::value,
+      "Wrong result_type for function_traits of a function pointer");
+  static_assert(
+      std::is_same<function_traits<decltype(&function_template<int>)>::result_type,
+                   void>::value,
+      "Wrong result_type for function_traits of a template function");
+
+  // Use foo to suppress warning
+  function_pointer(0, 0);
+}
+
+TEST(FunctionTraitsTest, NumberOfArgs) {
+  using bout::utils::function_traits;
+  static_assert(function_traits<function_typedef>::nargs == 3,
+                "Wrong number of arguments for function_traits of a typedef>");
+  static_assert(function_traits<decltype(&function_pointer)>::nargs == 2,
+                "Wrong number of arguments for function_traits of a function pointer");
+  static_assert(function_traits<decltype(&function_template<int>)>::nargs == 1,
+                "Wrong number of arguments for function_traits of a template function");
+}
+
+TEST(FunctionTraitsTest, FirstArg) {
+  using bout::utils::function_traits;
+  static_assert(
+      std::is_same<function_traits<function_typedef>::arg<0>::type, char>::value,
+      "Wrong first argument type for function_traits of a typedef");
+  static_assert(std::is_same<function_traits<decltype(&function_pointer)>::arg<0>::type,
+                             double>::value,
+                "Wrong first argument type for function_traits of a function pointer");
+  static_assert(
+      std::is_same<function_traits<decltype(&function_template<int>)>::arg<0>::type,
+                   int>::value,
+      "Wrong first argument type for function_traits of a template function");
+
+  static_assert(std::is_same<function_traits<function_typedef>::arg_t<0>, char>::value,
+                "Wrong first argument type for function_traits of a typedef using arg_t");
+  static_assert(
+      std::is_same<function_traits<decltype(&function_pointer)>::arg_t<0>, double>::value,
+      "Wrong first argument type for function_traits of a function pointer using arg_t");
+  static_assert(
+      std::is_same<function_traits<decltype(&function_template<int>)>::arg_t<0>,
+                   int>::value,
+      "Wrong first argument type for function_traits of a template function using arg_t");
+}
+
+TEST(FunctionTraitsTest, SecondArg) {
+  using bout::utils::function_traits;
+  static_assert(std::is_same<function_traits<function_typedef>::arg<1>::type, int>::value,
+                "Wrong second argument type for function_traits of a typedef");
+  static_assert(
+      std::is_same<function_traits<function_typedef>::arg_t<1>, int>::value,
+      "Wrong second argument type for function_traits of a typedef using arg_t");
+}

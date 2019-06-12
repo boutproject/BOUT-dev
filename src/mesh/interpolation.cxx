@@ -30,10 +30,10 @@
 #include <unused.hxx>
 
 void printLocation(const Field3D& var) {
-  output.write("%s", strLocation(var.getLocation()));
+  output << toString(var.getLocation());
 }
 void printLocation(const Field2D& var) {
-  output.write("%s", strLocation(var.getLocation()));
+  output << toString(var.getLocation());
 }
 
 const char* strLocation(CELL_LOC loc) { return toString(loc).c_str(); }

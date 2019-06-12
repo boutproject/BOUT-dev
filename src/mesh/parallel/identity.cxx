@@ -10,6 +10,12 @@
 #include "bout/paralleltransform.hxx"
 
 void ParallelTransformIdentity::calcParallelSlices(Field3D& f) {
+  if (f.getDirectionY() == YDirectionType::Aligned) {
+    // Cannot calculate parallel slices for field-aligned fields, so just return without
+    // setting yup or ydown
+    return;
+  }
+
   f.splitParallelSlices();
 
   for (int i = 0; i < f.getMesh()->ystart; ++i) {

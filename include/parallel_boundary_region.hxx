@@ -35,8 +35,8 @@ class BoundaryRegionPar : public BoundaryRegionBase {
     BoutReal angle;
   };
 
-  typedef std::vector<Indices> IndicesVec;
-  typedef IndicesVec::iterator IndicesIter;
+  using IndicesVec = std::vector<Indices>;
+  using IndicesIter = IndicesVec::iterator;
 
   /// Vector of points in the boundary
   IndicesVec bndry_points;

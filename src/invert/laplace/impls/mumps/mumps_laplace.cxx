@@ -558,11 +558,11 @@ LaplaceMumps::LaplaceMumps(Options *opt, const CELL_LOC loc, Mesh *mesh_in = mes
 // 
 // }
 
-const FieldPerp LaplaceMumps::solve(const FieldPerp &b, const FieldPerp &x0) {
+FieldPerp LaplaceMumps::solve(const FieldPerp& b, const FieldPerp& x0) {
   return solve(b);
 }
 
-const FieldPerp LaplaceMumps::solve(const FieldPerp &b) {
+FieldPerp LaplaceMumps::solve(const FieldPerp& b) {
   ASSERT1(localmesh == b.getMesh());
   ASSERT1(b.getLocation() == location);
 

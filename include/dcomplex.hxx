@@ -35,7 +35,7 @@
 #include <complex>
 #include "bout_types.hxx"
 
-typedef std::complex<BoutReal> dcomplex;
+using dcomplex = std::complex<BoutReal>;
 
 const dcomplex Im(0,1); // 1i 
 

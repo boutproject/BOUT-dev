@@ -201,7 +201,7 @@ BOUT_OMP(master)
   }  
 }
 
-const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &x0) {
+FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
 
   TRACE("LaplaceMultigrid::solve(const FieldPerp, const FieldPerp)");
 

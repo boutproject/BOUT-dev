@@ -13,9 +13,6 @@
 
 RK4Solver::RK4Solver(Options *options) : Solver(options) { canReset = true; }
 
-RK4Solver::~RK4Solver() {
-}
-
 void RK4Solver::setMaxTimestep(BoutReal dt) {
   if (dt > timestep)
     return; // Already less than this

@@ -36,7 +36,7 @@ private:
   Laplacian *phiSolver; // Old Laplacian in X-Z
   LaplaceXZ *newSolver; // New Laplacian in X-Z
 protected:
-  int init(bool restarting) {
+  int init(bool UNUSED(restarting)) {
 
     // Normalisation
     auto opt = Options::root()["alfven"];

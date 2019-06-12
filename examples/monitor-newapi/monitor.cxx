@@ -6,13 +6,13 @@
 class MonitorExample : public PhysicsModel {
 protected:
   // Initialisation
-  int init(bool restarting) {
+  int init(bool UNUSED(restarting)) {
     solver->add(f, "f");
     return 0;
   }
   
   // Calculate time-derivatives
-  int rhs(BoutReal t) {
+  int rhs(BoutReal UNUSED(t)) {
     ddt(f) = -f;
     return 0;
   } 

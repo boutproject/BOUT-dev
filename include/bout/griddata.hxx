@@ -58,6 +58,7 @@ public:
                    const std::string &name) = 0; ///< Get a BoutReal number
   virtual bool get(Mesh *m, Field2D &var, const std::string &name, BoutReal def = 0.0) = 0;
   virtual bool get(Mesh *m, Field3D &var, const std::string &name, BoutReal def = 0.0) = 0;
+  virtual bool get(Mesh *m, FieldPerp &var, const std::string &name, BoutReal def = 0.0) = 0;
 
   enum Direction { X = 1, Y = 2, Z = 3 };
   virtual bool get(Mesh *m, std::vector<int> &var, const std::string &name, int len, int offset = 0,
@@ -89,10 +90,9 @@ public:
   bool get(Mesh *m, int &ival, const std::string &name) override; ///< Get an integer
   bool get(Mesh *m, BoutReal &rval,
            const std::string &name) override; ///< Get a BoutReal number
-  bool get(Mesh *m, Field2D &var, const std::string &name, BoutReal def = 0.0) override {
-    return getField(m, var, name, def);
-  }
-  bool get(Mesh *m, Field3D &var, const std::string &name, BoutReal def = 0.0) override {
+  bool get(Mesh *m, Field2D &var, const std::string &name, BoutReal def = 0.0) override;
+  bool get(Mesh *m, Field3D &var, const std::string &name, BoutReal def = 0.0) override;
+  bool get(Mesh *m, FieldPerp &var, const std::string &name, BoutReal def = 0.0) override {
     return getField(m, var, name, def);
   }
 
@@ -119,8 +119,14 @@ private:
   bool readgrid_3dvar_real(const std::string &name, int yread, int ydest, int ysize,
                            int xread, int xdest, int xsize, Field3D &var);
 
-  // convenience template method to remove code duplication between Field2D and
-  // Field3D versions of get
+  bool readgrid_perpvar_fft(Mesh *m, const std::string &name, int xread, int xdest,
+                            int xsize, FieldPerp &var);
+
+  bool readgrid_perpvar_real(const std::string &name, int xread, int xdest, int xsize,
+                             FieldPerp &var);
+
+  // convenience template method to remove code duplication between Field2D,
+  // Field3D and FieldPerp versions of get
   template<typename T>
   bool getField(Mesh* m, T& var, const std::string& name, BoutReal def = 0.0);
   // utility method for Field2D to implement unshared parts of getField
@@ -129,6 +135,9 @@ private:
   // utility method for Field3D to implement unshared parts of getField
   void readField(Mesh* m, const std::string& name, int ys, int yd, int ny_to_read,
       int xs, int xd, int nx_to_read, const std::vector<int>& size, Field3D& var);
+  // utility method for FieldPerp to implement unshared parts of getField
+  void readField(Mesh* m, const std::string& name, int ys, int yd, int ny_to_read,
+      int xs, int xd, int nx_to_read, const std::vector<int>& size, FieldPerp& var);
 };
 
 /*!
@@ -208,6 +217,17 @@ public:
    * @param[in] def   Default value to use if option not found
    */
   bool get(Mesh *mesh, Field3D &var, const std::string &name, BoutReal def = 0.0) override;
+
+  /*!
+   * Get a FieldPerp object by finding the option with the given name,
+   * and passing the string to FieldFactory
+   *
+   * @param[in] mesh  The Mesh object over which the field is defined
+   * @param[out] var  The variable which will be set
+   * @param[in] name  The name in the options. Not case sensitive
+   * @param[in] def   Default value to use if option not found
+   */
+  bool get(Mesh *mesh, FieldPerp &var, const std::string &name, BoutReal def = 0.0) override;
 
   /*!
    * Get an array of integers. Currently reads a single

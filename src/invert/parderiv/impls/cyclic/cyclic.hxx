@@ -47,7 +47,6 @@
 class InvertParCR : public InvertPar {
 public:
   InvertParCR(Options *opt, Mesh *mesh_in = bout::globals::mesh);
-  ~InvertParCR();
 
   using InvertPar::solve;
   const Field3D solve(const Field3D &f) override;

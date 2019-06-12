@@ -319,7 +319,8 @@ int BoutMesh::load() {
 
     NXPE = -1; // Best option
     
-    BoutReal ideal = sqrt(MX * NPES / static_cast<BoutReal>(ny)); // Results in square domains
+    // Results in square domains
+    const BoutReal ideal = sqrt(MX * NPES / static_cast<BoutReal>(ny));
 
     output_info.write(_("Finding value for NXPE (ideal = %f)\n"), ideal);
 
@@ -330,11 +331,11 @@ int BoutMesh::load() {
 
         output_info.write(_("\tCandidate value: %d\n"), i);
 
-        int nyp = NPES / i;
-        int ysub = ny / nyp;
+        const int nyp = NPES / i;
+        const int ysub = ny / nyp;
 
-        // Check size of Y mesh
-        if (ysub < MYG) {
+        // Check size of Y mesh if we've got multiple processors
+        if (ysub < MYG and NPES != 1) {
           output_info.write(_("\t -> ny/NYPE (%d/%d = %d) must be >= MYG (%d)\n"), ny, nyp,
                             ysub, MYG);
           continue;
@@ -395,8 +396,9 @@ int BoutMesh::load() {
         }
         output_info.write(_("\t -> Good value\n"));
         // Found an acceptable value
-        if ((NXPE < 1) || (fabs(ideal - i) < fabs(ideal - NXPE)))
+        if ((NXPE < 1) || (fabs(ideal - i) < fabs(ideal - NXPE))) {
           NXPE = i; // Keep value nearest to the ideal
+        }
       }
     }
 
@@ -1078,7 +1080,7 @@ int BoutMesh::wait(comm_handle handle) {
   if (handle == nullptr)
     return 1;
 
-  CommHandle *ch = static_cast<CommHandle *>(handle);
+  auto* ch = static_cast<CommHandle*>(handle);
 
   if (!ch->in_progress)
     return 2;
@@ -1159,34 +1161,41 @@ int BoutMesh::wait(comm_handle handle) {
   }
 
   // TWIST-SHIFT CONDITION
-  if (TwistShift) {
-    int jx, jy;
+  // Loop over 3D fields
+  for (const auto &var : ch->var_list.field3d()) {
+    if (var->requiresTwistShift(TwistShift)) {
 
-    // Perform Twist-shift using shifting method
-    // Loop over 3D fields
-    for (const auto &var : ch->var_list.field3d()) {
-      // Lower boundary
-      if (TS_down_in && (DDATA_INDEST != -1)) {
-        for (jx = 0; jx < DDATA_XSPLIT; jx++)
-          for (jy = 0; jy != MYG; jy++)
-            shiftZ(*var, jx, jy, ShiftAngle[jx]);
-      }
-      if (TS_down_out && (DDATA_OUTDEST != -1)) {
-        for (jx = DDATA_XSPLIT; jx < LocalNx; jx++)
-          for (jy = 0; jy != MYG; jy++)
-            shiftZ(*var, jx, jy, ShiftAngle[jx]);
-      }
+      // Twist-shift only needed for field-aligned fields
+      int jx, jy;
 
-      // Upper boundary
-      if (TS_up_in && (UDATA_INDEST != -1)) {
-        for (jx = 0; jx < UDATA_XSPLIT; jx++)
-          for (jy = LocalNy - MYG; jy != LocalNy; jy++)
-            shiftZ(*var, jx, jy, -ShiftAngle[jx]);
-      }
-      if (TS_up_out && (UDATA_OUTDEST != -1)) {
-        for (jx = UDATA_XSPLIT; jx < LocalNx; jx++)
-          for (jy = LocalNy - MYG; jy != LocalNy; jy++)
-            shiftZ(*var, jx, jy, -ShiftAngle[jx]);
+      // Perform Twist-shift using shifting method
+      if (var->getDirectionY() == YDirectionType::Aligned) {
+        // Only variables in field-aligned coordinates need the twist-shift boundary
+        // condition to be applied
+
+        // Lower boundary
+        if (TS_down_in && (DDATA_INDEST != -1)) {
+          for (jx = 0; jx < DDATA_XSPLIT; jx++)
+            for (jy = 0; jy != MYG; jy++)
+              shiftZ(*var, jx, jy, ShiftAngle[jx]);
+        }
+        if (TS_down_out && (DDATA_OUTDEST != -1)) {
+          for (jx = DDATA_XSPLIT; jx < LocalNx; jx++)
+            for (jy = 0; jy != MYG; jy++)
+              shiftZ(*var, jx, jy, ShiftAngle[jx]);
+        }
+
+        // Upper boundary
+        if (TS_up_in && (UDATA_INDEST != -1)) {
+          for (jx = 0; jx < UDATA_XSPLIT; jx++)
+            for (jy = LocalNy - MYG; jy != LocalNy; jy++)
+              shiftZ(*var, jx, jy, -ShiftAngle[jx]);
+        }
+        if (TS_up_out && (UDATA_OUTDEST != -1)) {
+          for (jx = UDATA_XSPLIT; jx < LocalNx; jx++)
+            for (jy = LocalNy - MYG; jy != LocalNy; jy++)
+              shiftZ(*var, jx, jy, -ShiftAngle[jx]);
+        }
       }
     }
   }
@@ -2236,9 +2245,9 @@ void BoutMesh::addBoundaryRegions() {
     xe = -2;
   }
   
-  addRegion3D("RGN_UPPER_INNER_Y", Region<Ind3D>(xs, xe, 0, ystart-1, 0, LocalNz-1,
+  addRegion3D("RGN_UPPER_INNER_Y", Region<Ind3D>(xs, xe, yend+1, LocalNy-1, 0, LocalNz-1,
                                                  LocalNy, LocalNz, maxregionblocksize));
-  addRegion2D("RGN_UPPER_INNER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
+  addRegion2D("RGN_UPPER_INNER_Y", Region<Ind2D>(xs, xe, yend+1, LocalNy-1, 0, 0,
                                                  LocalNy, 1, maxregionblocksize));
   all_boundaries.emplace_back("RGN_UPPER_INNER_Y");
 
@@ -2262,9 +2271,9 @@ void BoutMesh::addBoundaryRegions() {
       xe = xend;
   }
 
-  addRegion3D("RGN_UPPER_OUTER_Y", Region<Ind3D>(xs, xe, 0, ystart-1, 0, LocalNz-1,
+  addRegion3D("RGN_UPPER_OUTER_Y", Region<Ind3D>(xs, xe, yend+1, LocalNy-1, 0, LocalNz-1,
                                                  LocalNy, LocalNz, maxregionblocksize));
-  addRegion2D("RGN_UPPER_OUTER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
+  addRegion2D("RGN_UPPER_OUTER_Y", Region<Ind2D>(xs, xe, yend+1, LocalNy-1, 0, 0,
                                                  LocalNy, 1, maxregionblocksize));
   all_boundaries.emplace_back("RGN_UPPER_OUTER_Y");
 
@@ -2282,9 +2291,9 @@ void BoutMesh::addBoundaryRegions() {
   if (xe > xend)
     xe = xend;
 
-  addRegion3D("RGN_UPPER_Y", Region<Ind3D>(xs, xe, 0, ystart-1, 0, LocalNz-1,
+  addRegion3D("RGN_UPPER_Y", Region<Ind3D>(xs, xe, yend+1, LocalNy-1, 0, LocalNz-1,
                                            LocalNy, LocalNz, maxregionblocksize));
-  addRegion2D("RGN_UPPER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
+  addRegion2D("RGN_UPPER_Y", Region<Ind2D>(xs, xe, yend+1, LocalNy-1, 0, 0,
                                            LocalNy, 1, maxregionblocksize));
   all_boundaries.emplace_back("RGN_UPPER_Y");
   

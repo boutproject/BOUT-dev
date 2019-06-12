@@ -1,5 +1,7 @@
 .. default-role:: math
 
+.. _sec-field-aligned-coordinates:
+
 =========================
 Field-aligned coordinates
 =========================
@@ -14,8 +16,6 @@ Introduction
 
 This manual covers the field-aligned coordinate system used in many
 BOUT++ tokamak models, and useful derivations and expressions.
-
-.. _sec:coordinates:
 
 Orthogonal toroidal coordinates
 ===============================

@@ -232,7 +232,7 @@ class Field3D : public Field, public FieldData {
     return *this;
   }
   Field3D& setDirectionY(YDirectionType d) {
-    Field::setDirectionY(d);
+    directions.y = d;
     return *this;
   }
 
@@ -296,6 +296,10 @@ class Field3D : public Field, public FieldData {
   /// \p offset of 0 returns the main field itself
   Field3D& ynext(int offset);
   const Field3D& ynext(int offset) const;
+
+  /// If \p twist_shift_enabled is true, does this Field3D require a twist-shift at branch
+  /// cuts on closed field lines?
+  bool requiresTwistShift(bool twist_shift_enabled);
 
   /////////////////////////////////////////////////////////
   // Data access
@@ -562,182 +566,57 @@ Field3D operator-(const Field3D &f);
 
 // Non-member functions
 
-Field3D toFieldAligned(const Field3D& f, const REGION region = RGN_ALL);
-Field3D fromFieldAligned(const Field3D& f, const REGION region = RGN_ALL);
-
-/// Calculates the minimum of a field, excluding the boundary/guard
-/// cells by default (can be changed with \p rgn argument).
-///
-/// By default this is only on the local processor, but setting \p
-/// allpe true does a collective Allreduce over all processors.
-///
-/// @param[in] f      The field to loop over
-/// @param[in] allpe  Minimum over all processors?
-/// @param[in] rgn    The region to calculate the result over
-BoutReal min(const Field3D &f, bool allpe=false, REGION rgn=RGN_NOBNDRY);
-
-/// Calculates the maximum of a field, excluding the boundary/guard
-/// cells by default (can be changed with \p rgn argument).
-///
-/// By default this is only on the local processor, but setting \p
-/// allpe to true does a collective Allreduce over all processors.
-///
-/// @param[in] f      The field to loop over
-/// @param[in] allpe  Maximum over all processors?
-/// @param[in] rgn    The region to calculate the result over
-BoutReal max(const Field3D &f, bool allpe=false, REGION rgn=RGN_NOBNDRY);
-
-/// Calculates the mean of a field, excluding the boundary/guard
-/// cells by default (can be changed with \p rgn argument).
-///
-/// By default this is only on the local processor, but setting \p
-/// allpe to true does a collective Allreduce over all processors.
-///
-/// @param[in] f      The field to loop over
-/// @param[in] allpe  Mean over all processors?
-/// @param[in] rgn    The region to calculate the result over
-BoutReal mean(const Field3D &f, bool allpe=false, REGION rgn=RGN_NOBNDRY);
-
 /// Exponent: pow(lhs, lhs) is \p lhs raised to the power of \p rhs
 ///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the \p rgn argument)
-/// If CHECK >= 3 then the result will be checked for non-finite numbers
-Field3D pow(const Field3D &lhs, const Field3D &rhs, REGION rgn = RGN_ALL);
-Field3D pow(const Field3D &lhs, const Field2D &rhs, REGION rgn = RGN_ALL);
-FieldPerp pow(const Field3D &lhs, const FieldPerp &rhs, REGION rgn = RGN_ALL);
-Field3D pow(const Field3D &lhs, BoutReal rhs, REGION rgn = RGN_ALL);
-Field3D pow(BoutReal lhs, const Field3D &rhs, REGION rgn = RGN_ALL);
-
-/// Square root of \p f over region \p rgn
+/// Extra overloads not provided by the templates in field.hxx
 ///
 /// This loops over the entire domain, including guard/boundary cells by
 /// default (can be changed using the \p rgn argument).
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
-Field3D sqrt(const Field3D &f, REGION rgn = RGN_ALL);
-
-/// Absolute value (modulus, |f|) of \p f over region \p rgn
-///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the \p rgn argument).
-/// If CHECK >= 3 then the result will be checked for non-finite numbers
-Field3D abs(const Field3D &f, REGION rgn = RGN_ALL);
-
-/// Exponential: \f$\exp(f)\f$ is e to the power of \p f, over region
-/// \p rgn
-///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the \p rgn argument).
-/// If CHECK >= 3 then the result will be checked for non-finite numbers
-Field3D exp(const Field3D &f, REGION rgn = RGN_ALL);
-
-/// Natural logarithm of \p f over region \p rgn, inverse of
-/// exponential
-///
-///     \f$\ln(\exp(f)) = f\f$
-///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the rgn argument)
-/// If CHECK >= 3 then the result will be checked for non-finite numbers
-///
-Field3D log(const Field3D &f, REGION rgn = RGN_ALL);
-
-/// Sine trigonometric function.
-///
-/// @param[in] f    Angle in radians
-/// @param[in] rgn  The region to calculate the result over
-///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the \p rgn argument).
-/// If CHECK >= 3 then the result will be checked for non-finite numbers
-Field3D sin(const Field3D &f, REGION rgn = RGN_ALL);
-
-/// Cosine trigonometric function.
-///
-/// @param[in] f    Angle in radians
-/// @param[in] rgn  The region to calculate the result over
-///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the \p rgn argument).
-/// If CHECK >= 3 then the result will be checked for non-finite numbers
-Field3D cos(const Field3D &f, REGION rgn = RGN_ALL);
-
-/// Tangent trigonometric function.
-///
-/// @param[in] f    Angle in radians
-/// @param[in] rgn  The region to calculate the result over
-///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the \p rgn argument).
-/// If CHECK >= 3 then the result will be checked for non-finite numbers
-Field3D tan(const Field3D &f, REGION rgn = RGN_ALL);
-
-/// Hyperbolic sine trigonometric function.
-///
-/// @param[in] f    Angle in radians
-/// @param[in] rgn  The region to calculate the result over
-///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the \p rgn argument).
-/// If CHECK >= 3 then the result will be checked for non-finite numbers
-Field3D sinh(const Field3D &f, REGION rgn = RGN_ALL);
-
-/// Hyperbolic cosine trigonometric function.
-///
-/// @param[in] f    Angle in radians
-/// @param[in] rgn  The region to calculate the result over
-///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the \p rgn argument).
-/// If CHECK >= 3 then the result will be checked for non-finite numbers
-Field3D cosh(const Field3D &f, REGION rgn = RGN_ALL);
-
-/// Hyperbolic tangent trigonometric function.
-///
-/// @param[in] f    Angle in radians
-/// @param[in] rgn  The region to calculate the result over
-///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the \p rgn argument).
-/// If CHECK >= 3 then the result will be checked for non-finite numbers
-Field3D tanh(const Field3D &f, REGION rgn = RGN_ALL);
-
-/// Check if all values of a field \p var are finite.
-/// Loops over all points including the boundaries by
-/// default (can be changed using the \p rgn argument
-bool finite(const Field3D &var, REGION rgn = RGN_ALL);
-
+Field3D pow(const Field3D& lhs, const Field2D& rhs, const std::string& rgn = "RGN_ALL");
+[[gnu::deprecated("Please use pow(const Field3D& lhs, const Field2D& rhs"
+    "const std::string& region = \"RGN_ALL\") instead")]]
+inline Field3D pow(const Field3D &lhs, const Field2D &rhs, REGION rgn) {
+  return pow(lhs, rhs, toString(rgn));
+}
+FieldPerp pow(const Field3D& lhs, const FieldPerp& rhs, const std::string& rgn = "RGN_ALL");
+[[gnu::deprecated("Please use pow(const Field3D& lhs, const FieldPerp& rhs"
+    "const std::string& region = \"RGN_ALL\") instead")]]
+inline FieldPerp pow(const Field3D& lhs, const FieldPerp& rhs, REGION rgn) {
+  return pow(lhs, rhs, toString(rgn));
+}
 
 #if CHECK > 0
 /// Throw an exception if \p f is not allocated or if any
 /// elements are non-finite (for CHECK > 2).
 /// Loops over all points including the boundaries by
 /// default (can be changed using the \p rgn argument
-void checkData(const Field3D &f, REGION region = RGN_NOBNDRY);
+void checkData(const Field3D& f, const std::string& region = "RGN_NOBNDRY");
+[[gnu::deprecated("Please use checkData(const Field3D& f, "
+    "const std::string& region = \"RGN_NOBNDRY\") instead")]]
+inline void checkData(const Field3D &f, REGION region) {
+  return checkData(f, toString(region));
+}
 #else
 /// Ignored with disabled CHECK; Throw an exception if \p f is not
 /// allocated or if any elements are non-finite (for CHECK > 2)
-inline void checkData(const Field3D &UNUSED(f), REGION UNUSED(region) = RGN_NOBNDRY){};
+inline void checkData(const Field3D& UNUSED(f), const std::string& UNUSED(region) = "RGN_NOBNDRY") {};
+[[gnu::deprecated("Please use checkData(const Field3D& f, "
+    "const std::string& region = \"RGN_NOBNDRY\") instead")]]
+inline void checkData(const Field3D &UNUSED(f), REGION UNUSED(region)) {}
 #endif
-
-/// Makes a copy of a field \p f, ensuring that the underlying data is
-/// not shared.
-Field3D copy(const Field3D &f);
-
-/// Apply a floor value \p f to a field \p var. Any value lower than
-/// the floor is set to the floor.
-///
-/// @param[in] var  Variable to apply floor to
-/// @param[in] f    The floor value
-/// @param[in] rgn  The region to calculate the result over
-Field3D floor(const Field3D &var, BoutReal f, REGION rgn = RGN_ALL);
 
 /// Fourier filtering, removes all except one mode
 ///
 /// @param[in] var Variable to apply filter to
 /// @param[in] N0  The component to keep
 /// @param[in] rgn The region to calculate the result over
-Field3D filter(const Field3D &var, int N0, REGION rgn = RGN_ALL);
+Field3D filter(const Field3D& var, int N0, const std::string& rgn = "RGN_ALL");
+[[gnu::deprecated("Please use filter(const Field3D& var, int N0, "
+    "const std::string& region = \"RGN_ALL\") instead")]]
+inline Field3D filter(const Field3D& var, int N0, REGION rgn) {
+  return filter(var, N0, toString(rgn));
+}
 
 /// Fourier low pass filtering. Removes modes
 /// higher than \p zmax and optionally the zonal component
@@ -746,14 +625,20 @@ Field3D filter(const Field3D &var, int N0, REGION rgn = RGN_ALL);
 /// @param[in] zmax  Maximum mode in Z
 /// @param[in] keep_zonal  Keep the zonal component if true
 /// @param[in] rgn   The region to calculate the result over
-Field3D lowPass(const Field3D &var, int zmax, bool keep_zonal, REGION rgn = RGN_ALL);
+Field3D lowPass(const Field3D& var, int zmax, bool keep_zonal,
+    const std::string& rgn = "RGN_ALL");
+[[gnu::deprecated("Please use lowpass(const Field3D& var, int zmax, bool keep_zonal, "
+    "const std::string& region = \"RGN_ALL\") instead")]]
+inline Field3D lowPass(const Field3D& var, int zmax, bool keep_zonal, REGION rgn) {
+  return lowPass(var, zmax, keep_zonal, toString(rgn));
+}
 
 /// The argument \p keep_zonal used to be integer "zmin" -- this was a
 /// misnomer. Please use the version above which uses a bool instead
 DEPRECATED(inline Field3D lowPass(const Field3D& var, int zmax, int keep_zonal,
                                   REGION rgn = RGN_ALL)) {
   ASSERT0(static_cast<bool>(keep_zonal) == keep_zonal);
-  return lowPass(var, zmax, static_cast<bool>(keep_zonal), rgn);
+  return lowPass(var, zmax, static_cast<bool>(keep_zonal), toString(rgn));
 }
 
 /// Fourier low pass filtering. Removes modes higher than \p zmax
@@ -761,8 +646,13 @@ DEPRECATED(inline Field3D lowPass(const Field3D& var, int zmax, int keep_zonal,
 /// @param[in] var   Variable to apply filter to
 /// @param[in] zmax  Maximum mode in Z
 /// @param[in] rgn   The region to calculate the result over
-inline Field3D lowPass(const Field3D &var, int zmax, REGION rgn = RGN_ALL) {
+inline Field3D lowPass(const Field3D &var, int zmax, const std::string rgn = "RGN_ALL") {
   return lowPass(var, zmax, true, rgn);
+}
+[[gnu::deprecated("Please use lowpass(const Field3D& var, int zmax, "
+    "const std::string& region = \"RGN_ALL\") instead")]]
+inline Field3D lowPass(const Field3D &var, int zmax, REGION rgn) {
+  return lowPass(var, zmax, toString(rgn));
 }
 
 /// Perform a shift by a given angle in Z
@@ -778,13 +668,23 @@ void shiftZ(Field3D &var, int jx, int jy, double zangle);
 /// @param[inout] var  The variable to modify in-place
 /// @param[in] zangle  The angle to shift by in Z
 /// @param[in] rgn     The region to calculate the result over
-void shiftZ(Field3D &var, double zangle, REGION rgn=RGN_ALL);
+void shiftZ(Field3D &var, BoutReal zangle, const std::string& rgn="RGN_ALL");
+[[gnu::deprecated("Please use shiftZ(const Field3D& var, BoutReal zangle, "
+    "const std::string& region = \"RGN_ALL\") instead")]]
+inline void shiftZ(Field3D &var, BoutReal zangle, REGION rgn) {
+  return shiftZ(var, zangle, toString(rgn));
+}
 
 /// Average in the Z direction
 ///
 /// @param[in] f     Variable to average
 /// @param[in] rgn   The region to calculate the result over
-Field2D DC(const Field3D &f, REGION rgn = RGN_ALL);
+Field2D DC(const Field3D &f, const std::string& rgn = "RGN_ALL");
+[[gnu::deprecated("Please use DC(const Field3D& f, "
+    "const std::string& region = \"RGN_ALL\") instead")]]
+inline Field2D DC(const Field3D &f, REGION rgn) {
+  return DC(f, toString(rgn));
+}
 
 /// Force guard cells of passed field \p var to NaN
 #if CHECK > 2

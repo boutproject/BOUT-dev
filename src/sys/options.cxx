@@ -126,7 +126,7 @@ bool Options::isSection(const std::string& name) const {
   }
 
   // Is there a child section?
-  auto it = children.find(name);
+  auto it = children.find(lowercase(name));
   if (it == children.end()) {
     return false;
   } else {

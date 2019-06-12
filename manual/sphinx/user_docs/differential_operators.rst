@@ -240,6 +240,84 @@ store using key `"C2"` for all three directions and both fields with
 no staggering.
 
 
+.. _sec-diffmethod-mixedsecond:
+
+Mixed second-derivative operators
+---------------------------------
+
+Coordinate derivatives commute, as long as the coordinates are globally well-defined, i.e.
+
+.. math::
+
+    \frac{\partial}{\partial x} \left(\frac{\partial}{\partial y} f \right)
+    = \frac{\partial}{\partial y} \left(\frac{\partial}{\partial x} f \right) \\
+    \frac{\partial}{\partial y} \left(\frac{\partial}{\partial z} f \right)
+    = \frac{\partial}{\partial z} \left(\frac{\partial}{\partial y} f \right) \\
+    \frac{\partial}{\partial z} \left(\frac{\partial}{\partial x} f \right)
+    = \frac{\partial}{\partial x} \left(\frac{\partial}{\partial z} f \right)
+
+When using ``paralleltransform = shifted`` or ``paralleltransform = fci`` (see
+:ref:`sec-parallel-transforms`) we do not have globally well-defined coordinates. In those
+cases the coordinate systems are field-aligned, but the grid points are at constant
+toroidal angle. The field-aligned coordinates are defined locally, on planes of constant
+:math:`y`. There are different coordinate systems for each plane. However, within each
+local coordinate system the derivatives do commute. :math:`y`-derivatives are taken in the
+local field-aligned coordinate system, so mixed derivatives are calculated as
+
+::
+
+    D2DXDY(f) = DDX(DDY(f))
+    D2DYDZ(f) = DDZ(DDY(f))
+
+This order is simpler -- the alternative is possible. Using second-order central
+difference operators for the y-derivatives we could calculate (not worring about
+communications or boundary conditions here)
+
+::
+
+    Field3D D2DXDY(Field3D f) {
+      auto result{emptyFrom(f)};
+      auto& coords = \*f.getCoordinates()
+
+      auto dfdx_yup = DDX(f.yup());
+      auto dfdx_ydown = DDX(f.ydown());
+
+      BOUT_FOR(i, f.getRegion()) {
+        result[i] = (dfdx_yup[i.yp()] - dfdx_ydown[i.ym()]) / (2. * coords.dy[i])
+      }
+
+      return result;
+    }
+
+This would give equivalent results to the previous form [#]_ as ``yup`` and ``ydown`` give
+the values of ``f`` one grid point along the magnetic field *in the local field-aligned
+coordinate system*.
+
+The :math:`x\mathrm{-}z` derivative is unaffected as it is taken entirely on a plane of
+constant :math:`y` anyway. It is evaluated as
+
+::
+
+    D2DXDZ(f) = DDZ(DDX(f))
+
+As the ``z``-direction is periodic and the ``z``-grid is not split across processors,
+``DDZ`` does not require any guard cells. By taking ``DDZ`` second, we do not have to
+communicate or set boundary conditions on the result of ``DDX`` or ``DDY`` before taking
+``DDZ``.
+
+The derivatives in ``D2DXDY(f)`` are applied in two steps. First ``dfdy = DDY(f)`` is
+calculated; ``dfdy`` is communicated and has a boundary condition applied so that all the
+x-guard cells are filled. The boundary condition is ``free_o3`` by default (3rd order
+extrapolation into the boundary cells), but can be specified with the fifth argument to
+``D2DXDY`` (see :ref:`sec-bndryopts` for possible options). Second ``DDX(dfdy)`` is
+calculated, and returned from the function.
+
+.. [#] Equivalent but not exactly the same numerically. Expanding out the derivatives in
+       second-order central-difference form shows that the two differ in the grid points
+       at which they evaluate ``dx`` and ``dy``. As long as the grid spacings are smooth
+       this should not affect the order of accuracy of the scheme (?).
+
+
 .. _sec-diffmethod-nonuniform:
 
 Non-uniform meshes
@@ -693,7 +771,7 @@ well defined Fourier transform. This means that
 In our case, we are dealing with periodic boundary conditions. Strictly
 speaking, the Fourier transform does not exist in such cases, but it is
 possible to define a Fourier transform in the limit which in the end
-lead to the Fourier series [1]_ By discretising the spatial domain, it
+lead to the Fourier series [#]_ By discretising the spatial domain, it
 is no longer possible to represent the infinite amount of Fourier modes,
 but only :math:`N+1` number of modes, where :math:`N` is the number of
 points (this includes the modes with negative frequencies, and the
@@ -724,5 +802,5 @@ The discrete version of equation (:eq:`f_derivative`) thus gives
 
    \partial_z^n F(x,y)_k = (i k)^n F(x,y)_k
 
-.. [1] For more detail see Bracewell, R. N. - The Fourier Transform
+.. [#] For more detail see Bracewell, R. N. - The Fourier Transform
        and Its Applications 3rd Edition chapter 10

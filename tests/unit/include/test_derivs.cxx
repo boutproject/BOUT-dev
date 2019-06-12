@@ -75,18 +75,18 @@ public:
       nx = grid_size;
       dir = &Index::x;
       x_guards = 2;
-      region = RGN_NOX;
+      region = "RGN_NOX";
       break;
     case DIRECTION::Y:
       ny = grid_size;
       dir = &Index::y;
       y_guards = 2;
-      region = RGN_NOY;
+      region = "RGN_NOY";
       break;
     case DIRECTION::Z:
       nz = grid_size;
       dir = &Index::z;
-      region = RGN_ALL;
+      region = "RGN_ALL";
       break;
     default:
       throw BoutException("bad direction");
@@ -154,7 +154,7 @@ public:
   Field3D expected;
 
   // Region not including the guard cells in current direction
-  REGION region;
+  std::string region;
 };
 
 using DerivativesTestAdvection = DerivativesTest;
