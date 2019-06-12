@@ -1,21 +1,21 @@
 #include "../options.hxx"
 #include "../invert_parderiv.hxx"
 
+/// Calculate heat flux using the SNB model
+/// 
 class HeatFluxSNB {
 public:
-  HeatFluxSNB(Options *options = nullptr) {
+  HeatFluxSNB() : HeatFluxSNB(Options::root()["snb"]) {}
+  
+  HeatFluxSNB(Options &options) {
     invertpar = InvertPar::Create();
 
-    if (!options) {
-      options = &Options::root()["snb"];
-    }
-
     // Read options. Note that the defaults are initialised already
-    r = (*options)["r"].doc("Scaling of the electron-electron mean free path")
+    r = options["r"].doc("Scaling of the electron-electron mean free path")
       .withDefault(r);
-    beta_max = (*options)["beta_max"].doc("Maximum energy group to consider (multiple of eT)")
+    beta_max = options["beta_max"].doc("Maximum energy group to consider (multiple of eT)")
       .withDefault(beta_max);
-    ngroups = (*options)["ngroups"].doc("Number of energy groups").withDefault(ngroups);
+    ngroups = options["ngroups"].doc("Number of energy groups").withDefault(ngroups);
     
   }
   ~HeatFluxSNB() {
@@ -25,7 +25,9 @@ public:
   /// Calculate divergence of heat flux
   /// Te: Electron temperature in eV
   /// Ne: Electron density in m^-3
-  Field3D div_heatflux(const Field3D &Te, const Field3D &Ne);
+  ///
+  /// Div_Q_SH_out : An optional output field to store the Spitzer-Harm heat flux
+  Field3D divHeatFlux(const Field3D &Te, const Field3D &Ne, Field3D *Div_Q_SH_out = nullptr);
   
 private:
   InvertPar *invertpar;
@@ -41,8 +43,8 @@ private:
     return - exp(- beta) * (24 + beta * (24 + beta * (12 + beta * (4 + beta))));
   }
   
-  /// Integral of beta^4 * exp(-beta) from beta_min to beta_max
+  /// (1/24) * Integral of beta^4 * exp(-beta) from beta_min to beta_max
   BoutReal groupWeight(BoutReal beta_min, BoutReal beta_max) {
-    return int_beta4_exp(beta_max) - int_beta4_exp(beta_min);
+    return (1./24) * (int_beta4_exp(beta_max) - int_beta4_exp(beta_min));
   }
 };

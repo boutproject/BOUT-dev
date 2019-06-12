@@ -5,8 +5,9 @@
 #include "derivs.hxx"
 #include "bout/fv_ops.hxx"
 #include "bout/constants.hxx"
+#include "output.hxx"
 
-Field3D HeatFluxSNB::div_heatflux(const Field3D &Te, const Field3D &Ne) {
+Field3D HeatFluxSNB::divHeatFlux(const Field3D &Te, const Field3D &Ne, Field3D *Div_Q_SH_out) {
   Coordinates *coord = Te.getCoordinates();
 
   Field3D thermal_speed = sqrt(2.*SI::qe  * Te / SI::Me);
@@ -18,15 +19,18 @@ Field3D HeatFluxSNB::div_heatflux(const Field3D &Te, const Field3D &Ne) {
   Field3D lambda_ee_T = pow(thermal_speed, 3) / (Y * Ne  * coulomb_log);
   Field3D lambda_ei_T = lambda_ee_T / SQ(Z);
   
-
   // Thermal electron-ion collision time [s]
-  Field3D tau_ei_T  = thermal_speed / lambda_ei_T;
+  Field3D tau_ei_T  = lambda_ei_T / thermal_speed;
   
   // Divergence of Spitzer-Harm heat flux
-  Field3D Div_Q_SH = FV::Div_par_K_Grad_par((Ne * SI::qe * Te / SI::Me)
-                                            * (0.25 * 3 * sqrt(PI) * tau_ei_T)
-                                            * 13.58 * (Z + 0.24) / (Z + 4.2),
-                                            Te);
+  Field3D Div_Q_SH = -FV::Div_par_K_Grad_par((Ne * SI::qe * Te / SI::Me)
+                                             * (0.25 * 3 * sqrt(PI) * tau_ei_T)
+                                             * 13.58 * (Z + 0.24) / (Z + 4.2),
+                                             Te);
+  // User can supply an out parameter to get the S-H heat flux divergence
+  if (Div_Q_SH_out) {
+    *Div_Q_SH_out = Div_Q_SH;
+  }
   
   Field3D lambda_ee_Tprime = lambda_ee_T / r;
   Field3D lambda_ei_Tprime = lambda_ei_T * ((Z + 0.25) / (Z + 4.2));
@@ -56,15 +60,20 @@ Field3D HeatFluxSNB::div_heatflux(const Field3D &Te, const Field3D &Ne) {
     invertpar->setCoefE(DDY(coefB * coord->J / coord->g_22) / coord->J); // DDY
 
     // Solve to get H_g
-    Field3D H_g = invertpar->solve((-weight) * Div_Q);
+    Field3D H_g = invertpar->solve((-weight) * Div_Q_SH);
 
     // Add correction to divergence of heat flux
-    // Note: The sum of weight over all groups approaches 24 as beta_max -> infinity
-    Div_Q -= weight * Div_Q_SH - H_g / lambda_g_ee;
+    // Note: The sum of weight over all groups approaches 1 as beta_max -> infinity
+    Div_Q -= weight * Div_Q_SH + H_g / lambda_g_ee;
+    
+    output.write("%d: %e, %e => %e\n", i, beta, weight, Div_Q(0,4,0));
     
     // move to next group, updating lower limit 
     beta_last = beta;
   }
-
+  
+  output.write("%e, %e, %e => %e, %e\n", tau_ei_T(0,4,0), thermal_speed(0,4,0), lambda_ee_T(0,4,0),
+               Div_Q_SH(0,4,0), Div_Q(0,4,0));
+  
   return Div_Q;
 }
