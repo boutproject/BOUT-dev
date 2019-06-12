@@ -5,15 +5,16 @@ MXG = 0
 Ne = 5e26  # Electron density, m^-3
 
 # Electron temperature, eV
-Tmin = 195   # Minimum temperature, on right of domain
-Tmax = 950   # Maximum temperature, on left
+Tmin = 190   # Minimum temperature, on right of domain
+Tmax = 960   # Maximum temperature, on left
 
-mid = 2.5e-4   # Middle of the tanh profile [m]
+mid = 2.2e-4   # Middle of the tanh profile [m]
 
 # Width of the tanh profile [m]
-width0 = 8e-5
-width1 = 1e-5
-width = width0 - 0.5*(1 + tanh((ypos - mid) / width0))*(width0 - width1)
+width0 = 1.1e-4
+width1 = 4e-5
+mid_width = 2.4e-4
+width = width0 - 0.5*(1 + tanh((ypos - mid_width) / 1e-4))*(width0 - width1)
 
 Te = Tmax - 0.5*(1 + tanh((ypos - mid) / width)) * (Tmax - Tmin)
 

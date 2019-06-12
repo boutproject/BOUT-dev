@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 
 from boututils.run_wrapper import shell_safe, launch_safe
 from boutdata.collect import collect
-from sys import exit
 
 shell_safe("make > make.log")
 

@@ -38,10 +38,26 @@ q_SH = np.cumsum(div_q_SH) * qe * dy
 q -= np.amin(q)
 q_SH -= np.amin(q_SH)
 
+# Read reference values
+Te_ref = np.loadtxt("temperature.csv", delimiter=",")
+Te_ref[:,0] *= 1e-4 # Convert X axis to m
+
+SH_ref = np.loadtxt("spitzer-harm.csv", delimiter=",")
+SH_ref[:,0] *= 1e-4
+
+SNB_ref = np.loadtxt("snb.csv", delimiter=",")
+SNB_ref[:,0] *= 1e-4
+
+VFP_ref = np.loadtxt("vfp.csv", delimiter=",")
+VFP_ref[:,0] *= 1e-4
+
+#########################################
+
 fig, ax1 = plt.subplots()
 
 color='tab:red'
 ax1.plot(position, Te * 1e-3, color=color)
+ax1.plot(Te_ref[:,0], Te_ref[:,1], color=color, marker="o")
 ax1.set_xlabel("position [m]")
 ax1.set_ylabel("Electron temperature [keV]", color=color)
 ax1.set_ylim(0,1)
@@ -49,7 +65,13 @@ ax1.tick_params(axis='y', colors=color)
 
 ax2 = ax1.twinx()
 ax2.plot(position, q_SH * 1e-4, '--k', label="Spitzer-Harm")
-ax2.plot(position, q * 1e-4, label="SNB")
+ax2.plot(SH_ref[:,0], SH_ref[:,1], 'ok', label="Reference SH")
+
+ax2.plot(position, q * 1e-4, '-b', label="SNB")
+ax2.plot(SNB_ref[:,0], SNB_ref[:,1], 'ob', label="Reference SNB")
+
+ax2.plot(VFP_ref[:,0], VFP_ref[:,1], 'or', label="Reference VFP")
+
 ax2.set_ylabel("Heat flux W/cm^2")
 ax2.set_ylim(bottom=0.0)
 
