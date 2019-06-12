@@ -1,12 +1,22 @@
 #include "../options.hxx"
 #include "../invert_parderiv.hxx"
 
-/// Calculate heat flux using the SNB model
+/// Calculate heat flux using the Shurtz-Nicolai-Busquet (SNB) model
+///
+/// Useful references:
+///
+///   Braginskii equations by R.Fitzpatrick: http://farside.ph.utexas.edu/teaching/plasma/Plasmahtml/node35.html
 /// 
+///   J.P.Brodrick et al 2017: https://doi.org/10.1063/1.5001079 and https://arxiv.org/abs/1704.08963
+///
+///   Shurtz, Nicolai and Busquet 2000: https://doi.org/10.1063/1.1289512
+///
 class HeatFluxSNB {
 public:
+  /// Construct using the options in the "snb" section.
   HeatFluxSNB() : HeatFluxSNB(Options::root()["snb"]) {}
-  
+
+  /// Construct using options in given section.
   explicit HeatFluxSNB(Options &options) {
     invertpar = InvertPar::Create();
 
@@ -16,8 +26,8 @@ public:
     beta_max = options["beta_max"].doc("Maximum energy group to consider (multiple of eT)")
       .withDefault(beta_max);
     ngroups = options["ngroups"].doc("Number of energy groups").withDefault(ngroups);
-    
   }
+  
   ~HeatFluxSNB() {
     delete invertpar;
   }
@@ -27,15 +37,18 @@ public:
   /// Ne: Electron density in m^-3
   ///
   /// Div_Q_SH_out : An optional output field to store the Spitzer-Harm heat flux
+  ///
+  /// Returns the divergence of heat flux in units of eV per cubic meter per second
+  /// -> multiply by e=1.602e-19 to get Watts per cubic meter.
   Field3D divHeatFlux(const Field3D &Te, const Field3D &Ne, Field3D *Div_Q_SH_out = nullptr);
   
 private:
-  InvertPar *invertpar;
+  InvertPar *invertpar; ///< Parallel inversion of tridiagonal matrices
   
-  BoutReal Z{1}; // Average ion charge (1 = Hydrogen)
-  BoutReal r{2}; // Electron-electron mean free path scaling factor
-  BoutReal beta_max{10.0}; // Maximum energy group to consider (multiple of eT)
-  int ngroups{40}; // Number of energy groups
+  BoutReal Z{1}; ///< Average ion charge (1 = Hydrogen)
+  BoutReal r{2}; ///< Electron-electron mean free path scaling factor
+  BoutReal beta_max{10.0}; ///< Maximum energy group to consider (multiple of eT)
+  int ngroups{40}; ///< Number of energy groups
 
   /// Indefinite integral of beta^4 * exp(-beta)
   /// with constant set to zero
