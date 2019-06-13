@@ -4,6 +4,7 @@ NOUT = 1
 TIMESTEP = 0.2
 
 MYG = 0
+dump_on_restart = false
 
 [mesh]
 
