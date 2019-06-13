@@ -298,9 +298,6 @@ int SlepcSolver::run() {
   //Find the eigenvalues
   EPSSolve(eps);
 
-  //The following prints the used solver settings
-  EPSView(eps,PETSC_VIEWER_STDOUT_WORLD);
-
   //Analyse and dump to file
   if(!eigenValOnly) {
     //if(debug) output<<"Writing eigenpairs"<<endl;
