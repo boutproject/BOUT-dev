@@ -115,29 +115,19 @@ PetscErrorCode stBackTransformWrapper(ST st, PetscInt nEig, PetscScalar *eigr,
   PetscFunctionReturn(0);
 }
 
+// Helper function
+std::string formatEig(BoutReal reEig, BoutReal imEig) {
 
-//Helper function
-std::string formatEig(BoutReal reEig, BoutReal imEig){
-  std::string rePad, imPad;
-
-  if(reEig<0){
-    rePad="-";
-  }else{
-    rePad=" ";
-  }
-
-  if(imEig<0){
-    imPad="-";
-  }else{
-    imPad="+";
-  }
+  const std::string rePad = (reEig < 0) ? "-" : " ";
+  const std::string imPad = (imEig < 0) ? "-" : " ";
 
   std::stringstream tmp;
-  tmp.precision(5); tmp<<std::scientific;
-  //Note we use abs here and put the -/+ into pads to cope with
-  //the case where the Eig is -0.000/0.000 which require different
-  //padding but evaluate as the same number when doing comparisons
-  tmp<<rePad<<std::abs(reEig)<<imPad<<std::abs(imEig)<<"i";
+  tmp.precision(5);
+  tmp << std::scientific;
+  // Note we use abs here and put the -/+ into pads to cope with
+  // the case where the Eig is -0.000/0.000 which require different
+  // padding but evaluate as the same number when doing comparisons
+  tmp << rePad << std::abs(reEig) << imPad << std::abs(imEig) << "i";
   return tmp.str();
 }
 
@@ -542,9 +532,8 @@ int SlepcSolver::compareEigs(PetscScalar ar, PetscScalar ai, PetscScalar br, Pet
   slepcToBout(br,bi,brBout,biBout);
 
   //Now we calculate the distance between eigenvalues and target.
-  BoutReal da, db;
-  da=sqrt(pow(arBout-targRe,2)+pow(aiBout-targIm,2));
-  db=sqrt(pow(brBout-targRe,2)+pow(biBout-targIm,2));
+  const auto da = sqrt(pow(arBout - targRe, 2) + pow(aiBout - targIm, 2));
+  const auto db = sqrt(pow(brBout - targRe, 2) + pow(biBout - targIm, 2));
 
   //Now we decide which eigenvalue is preferred.
   int retVal;
@@ -590,12 +579,7 @@ void SlepcSolver::monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[],
   BoutReal reEigBout, imEigBout;
   slepcToBout(eigr[nconv],eigi[nconv],reEigBout,imEigBout);
 
-  std::string joinNum, joinNumSlepc;
-  if(imEigBout<0){
-    joinNum="";
-  }else{
-    joinNum="+";
-  }
+  const std::string joinNum = (imEigBout < 0) ? "" : "+";
 
   //This line more or less replicates the normal slepc output (when using -eps_monitor)
   //but reports Bout eigenvalues rather than the Slepc values. Note we haven't changed error estimate.
@@ -603,7 +587,7 @@ void SlepcSolver::monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[],
   output<<formatEig(reEigBout,imEigBout)<<"\t ("<<errest[nconv]<<")"<<endl;
 
   //The following can be quite noisy so may want to add a flag to disable/enable.
-  int newConv=nconv-nConvPrev;
+  const int newConv = nconv - nConvPrev;
   if(newConv>0){
     output<<"Found "<<newConv<<" new converged eigenvalues:"<<endl;
     for (PetscInt i=nConvPrev;i<nconv;i++){
@@ -650,20 +634,17 @@ void SlepcSolver::slepcToBout(PetscScalar &reEigIn, PetscScalar &imEigIn,
     return;
   }
 
-  dcomplex slepcEig(reEigIn,imEigIn), ci(0.0,1.0);
-  dcomplex boutEig;
+  const dcomplex slepcEig(reEigIn,imEigIn);
+  const dcomplex ci(0.0,1.0);
 
-  if(ddtMode){
-    boutEig=slepcEig*ci;
-  }else{
-    //Protect against the 0,0 trivial eigenvalue
-    if(std::abs(slepcEig)<1.0e-10){
-      reEigOut=0.0;
-      imEigOut=0.0;
-      return;
-    }
-    boutEig=ci*log(slepcEig)/(tstep*nout);
-  };
+  // Protect against the 0,0 trivial eigenvalue
+  if (ddtMode and std::abs(slepcEig) < 1.0e-10) {
+    reEigOut = 0.0;
+    imEigOut = 0.0;
+    return;
+  }
+
+  const dcomplex boutEig = ddtMode ? slepcEig * ci : ci * log(slepcEig) / (tstep * nout);
 
   //Set return values
   reEigOut=boutEig.real();
@@ -683,13 +664,9 @@ void SlepcSolver::boutToSlepc(BoutReal &reEigIn, BoutReal &imEigIn,
     return;
   }
 
-  dcomplex boutEig(reEigIn,imEigIn), ci(0.0,1.0);
-  dcomplex slepcEig;
-  if(ddtMode){
-    slepcEig=-ci*boutEig;
-  }else{
-    slepcEig = exp(-ci * boutEig * (tstep * nout));
-  };
+  const dcomplex boutEig(reEigIn, imEigIn);
+  const dcomplex ci(0.0, 1.0);
+  const dcomplex slepcEig = ddtMode ? -ci * boutEig : exp(-ci * boutEig * (tstep * nout));
 
   //Set return values
   reEigOut=slepcEig.real();
