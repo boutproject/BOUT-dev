@@ -199,7 +199,7 @@ SlepcSolver::SlepcSolver(Options *options){
     //advanceSolver elsewhere. The other option would be to
     //create advanceSolver below in ddtMode but we just don't
     //use it.
-    output<<"Overridding selfSolve as ddtMode = true"<<endl;
+    output<<"Overridding selfSolve as ddtMode = true\n";
     selfSolve = true;
   }
   eigenValOnly = options_ref["eigenValOnly"].withDefault(false);
@@ -299,12 +299,8 @@ int SlepcSolver::run() {
 
   //Analyse and dump to file
   if(!eigenValOnly) {
-    //if(debug) output<<"Writing eigenpairs"<<endl;
     analyseResults();
-    //if(debug) output<<"-- Done"<<endl;
   }
-  //if(debug) output<<"Finished run"<<endl;
-  //Return ok
   return 0;
 }
 
@@ -374,7 +370,7 @@ void SlepcSolver::fieldsToVec(Vec &outVec){
 
 //Create a shell matrix operator
 void SlepcSolver::createShellMat(){
-  output<<"Creating shellMat with local size : "<<localSize<<endl;
+  output<<"Creating shellMat with local size : "<<localSize<<"\n";
 
   //Create the shell matrix
   MatCreateShell(comm,localSize,localSize,PETSC_DETERMINE,
@@ -583,17 +579,17 @@ void SlepcSolver::monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[],
 
   //This line more or less replicates the normal slepc output (when using -eps_monitor)
   //but reports Bout eigenvalues rather than the Slepc values. Note we haven't changed error estimate.
-  output<<" "<<its<<" nconv="<<nconv<<"\t first unconverged value (error) ";
-  output<<formatEig(reEigBout,imEigBout)<<"\t ("<<errest[nconv]<<")"<<endl;
+  output << " " << its << " nconv=" << nconv << "\t first unconverged value (error) "
+         << formatEig(reEigBout, imEigBout) << "\t (" << errest[nconv] << ")\n";
 
   //The following can be quite noisy so may want to add a flag to disable/enable.
   const int newConv = nconv - nConvPrev;
   if(newConv>0){
-    output<<"Found "<<newConv<<" new converged eigenvalues:"<<endl;
+    output<<"Found "<<newConv<<" new converged eigenvalues:\n";
     for (PetscInt i=nConvPrev;i<nconv;i++){
       slepcToBout(eigr[i],eigi[i],reEigBout,imEigBout);
       output<<"\t"<<i<<"\t: "<<formatEig(eigr[i],eigi[i])<<" --> ";
-      output<<formatEig(reEigBout,imEigBout)<<endl;
+      output<<formatEig(reEigBout,imEigBout)<<"\n";
       if(eigenValOnly){
         simtime=reEigBout;
         bout::globals::dump.write();
@@ -683,8 +679,8 @@ void SlepcSolver::analyseResults(){
 
   //Now loop over each converged eigenpair and output eigenvalue
   if(nEigFound>0){
-    output<<"Converged eigenvalues :"<<endl;
-    output<<"\tIndex\tSlepc eig (mag.)\t\t\tBOUT eig (mag.)"<<endl;
+    output << "Converged eigenvalues :\n"
+              "\tIndex\tSlepc eig (mag.)\t\t\tBOUT eig (mag.)\n";
 
     iteration=0;
 
@@ -715,7 +711,7 @@ void SlepcSolver::analyseResults(){
       dcomplex boutEig(reEigBout,imEigBout);
 
       //Report
-      output<<"\t"<<formatEig(reEigBout,imEigBout)<<"\t("<<std::abs(boutEig)<<")"<<endl;
+      output<<"\t"<<formatEig(reEigBout,imEigBout)<<"\t("<<std::abs(boutEig)<<")\n";
 
       //Get eigenvector
       EPSGetEigenvector(eps,iEig,vecReal,vecImag);
@@ -748,7 +744,7 @@ void SlepcSolver::analyseResults(){
     VecDestroy(&vecReal); VecDestroy(&vecImag);
   }
   else{
-    output<<"Warning : No converged eigenvalues found!"<<endl;
+    output<<"Warning : No converged eigenvalues found!\n";
   }
 }
 
