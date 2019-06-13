@@ -24,4 +24,5 @@ int main(int argc, char **argv) {
   dump.write();
   
   BoutFinalise();
+  return 0;
 }
