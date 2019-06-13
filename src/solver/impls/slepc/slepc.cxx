@@ -677,75 +677,76 @@ void SlepcSolver::analyseResults(){
   //Find how many eigenvalues have been found
   EPSGetConverged(eps,&nEigFound);
 
+  if (nEigFound < 1) {
+    output<<"Warning : No converged eigenvalues found!\n";
+    return;
+  }
+
   //Now loop over each converged eigenpair and output eigenvalue
-  if(nEigFound>0){
-    output << "Converged eigenvalues :\n"
-              "\tIndex\tSlepc eig (mag.)\t\t\tBOUT eig (mag.)\n";
 
-    iteration=0;
+  output << "Converged eigenvalues :\n"
+    "\tIndex\tSlepc eig (mag.)\t\t\tBOUT eig (mag.)\n";
 
-    //Declare and create vectors to store eigenfunctions
-    Vec vecReal, vecImag;
+  iteration=0;
+
+  //Declare and create vectors to store eigenfunctions
+  Vec vecReal, vecImag;
 #if PETSC_VERSION_LT(3, 6, 0)        
-    MatGetVecs(shellMat,&vecReal,&vecImag);
+  MatGetVecs(shellMat,&vecReal,&vecImag);
 #else
-    MatCreateVecs(shellMat,&vecReal,&vecImag);    
+  MatCreateVecs(shellMat,&vecReal,&vecImag);    
 #endif    
 
-    //This allows us to set the simtime in bout++.cxx directly
-    //rather than calling the monitors which are noisy |--> Not very nice way to do this
-    extern BoutReal simtime;
+  //This allows us to set the simtime in bout++.cxx directly
+  //rather than calling the monitors which are noisy |--> Not very nice way to do this
+  extern BoutReal simtime;
 
-    for(PetscInt iEig=0; iEig<nEigFound; iEig++){
-      //Get slepc eigenvalue
-      PetscScalar reEig, imEig;
-      EPSGetEigenvalue(eps,iEig,&reEig,&imEig);
-      dcomplex slepcEig(reEig,imEig);
+  for(PetscInt iEig=0; iEig<nEigFound; iEig++){
+    //Get slepc eigenvalue
+    PetscScalar reEig, imEig;
+    EPSGetEigenvalue(eps,iEig,&reEig,&imEig);
+    dcomplex slepcEig(reEig,imEig);
 
-      //Report
-      output<<"\t"<<iEig<<"\t"<<formatEig(reEig,imEig)<<"\t("<<std::abs(slepcEig)<<")";
+    //Report
+    output<<"\t"<<iEig<<"\t"<<formatEig(reEig,imEig)<<"\t("<<std::abs(slepcEig)<<")";
 
-      //Get BOUT eigenvalue
-      BoutReal reEigBout, imEigBout;
-      slepcToBout(reEig,imEig,reEigBout,imEigBout);
-      dcomplex boutEig(reEigBout,imEigBout);
+    //Get BOUT eigenvalue
+    BoutReal reEigBout, imEigBout;
+    slepcToBout(reEig,imEig,reEigBout,imEigBout);
+    dcomplex boutEig(reEigBout,imEigBout);
 
-      //Report
-      output<<"\t"<<formatEig(reEigBout,imEigBout)<<"\t("<<std::abs(boutEig)<<")\n";
+    //Report
+    output<<"\t"<<formatEig(reEigBout,imEigBout)<<"\t("<<std::abs(boutEig)<<")\n";
 
-      //Get eigenvector
-      EPSGetEigenvector(eps,iEig,vecReal,vecImag);
+    //Get eigenvector
+    EPSGetEigenvector(eps,iEig,vecReal,vecImag);
 
-      //Write real part of eigen data
-      //First dump real part to fields
-      vecToFields(vecReal);
-      //Set the simtime to omega
-      simtime=reEigBout;
+    //Write real part of eigen data
+    //First dump real part to fields
+    vecToFields(vecReal);
+    //Set the simtime to omega
+    simtime=reEigBout;
 
-      //Run the rhs in order to calculate aux fields
-      run_rhs(0.0);
+    //Run the rhs in order to calculate aux fields
+    run_rhs(0.0);
 
-      //Write to file
-      bout::globals::dump.write();
-      iteration++;
+    //Write to file
+    bout::globals::dump.write();
+    iteration++;
 
-      //Now write imaginary part of eigen data
-      //First dump imag part to fields
-      vecToFields(vecImag);
-      //Set the simtime to gamma
-      simtime=imEigBout;
+    //Now write imaginary part of eigen data
+    //First dump imag part to fields
+    vecToFields(vecImag);
+    //Set the simtime to gamma
+    simtime=imEigBout;
 
-      //Write to file
-      bout::globals::dump.write();
-      iteration++;
-    }
-
-    //Destroy vectors
-    VecDestroy(&vecReal); VecDestroy(&vecImag);
+    //Write to file
+    bout::globals::dump.write();
+    iteration++;
   }
-  else{
-    output<<"Warning : No converged eigenvalues found!\n";
-  }
+
+  //Destroy vectors
+  VecDestroy(&vecReal); VecDestroy(&vecImag);
 }
 
 #endif // BOUT_HAS_SLEPC
