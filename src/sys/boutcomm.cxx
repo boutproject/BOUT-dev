@@ -73,3 +73,57 @@ void BoutComm::cleanup() {
   if(instance != nullptr) delete instance;
   instance = nullptr;
 }
+
+// Communicator interface
+
+Communicator::Request BoutComm::irecvBytes(void *data, int length, int destination, int identifier) {
+  MPI_Request request;
+  
+  MPI_Irecv(data,
+            length,
+            MPI_BYTE, // Just sending raw data, unknown type
+            destination, // Destination processor
+            identifier,
+            get(),    // Communicator
+            &request);
+
+  return request;
+}
+
+void BoutComm::sendBytes(void *data, int length, int destination, int identifier) {
+  MPI_Send(data,     // Data pointer
+           length,   // Number
+           MPI_BYTE, // Type
+           destination, // Destination processor
+           identifier,
+           get());   // Communicator
+}
+
+int BoutComm::waitAny(const std::vector<Communicator::Request> &requests) {
+  std::vector<MPI_Request> mpi_requests;
+  std::vector<int> indices;
+
+  for (std::vector<Communicator::Request>::size_type i = 0; i < requests.size(); i++) {
+    const auto& req = requests[i];
+    
+    if (req != Communicator::REQUEST_NULL) {
+      mpi_requests.push_back(bout::utils::get<MPI_Request>(req));
+      indices.push_back(i); // Keep track of original index
+    }
+  }
+
+  if (mpi_requests.empty()) {
+    return Communicator::UNDEFINED;
+  }
+  
+  int ind;
+  MPI_Status stat;
+  MPI_Waitany(mpi_requests.size(), mpi_requests.data(), &ind, &stat);
+
+  if (ind == MPI_UNDEFINED) {
+    return Communicator::UNDEFINED;
+  }
+
+  // Look up original index
+  return indices[ind];
+}

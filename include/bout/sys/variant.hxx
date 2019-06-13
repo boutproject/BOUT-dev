@@ -40,6 +40,7 @@ using mpark::variant;
 using mpark::visit;
 using mpark::holds_alternative;
 using mpark::get;
+using mpark::monostate;
   
 ////////////////////////////////////////////////////////////
 // Variant comparison
