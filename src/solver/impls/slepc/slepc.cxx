@@ -337,11 +337,11 @@ void SlepcSolver::vecToFields(Vec &inVec){
    */
 
   //Get pointer to data
-  PetscScalar *point;
-  VecGetArray(inVec,&point);
+  const BoutReal *point;
+  VecGetArrayRead(inVec, &point);
 
   //Copy data from point into fields
-  load_vars(point);
+  load_vars(const_cast<BoutReal*>(point));
   //Note as the solver instances only have pointers to the
   //fields we can use the SlepcSolver load_vars even if we're
   //not using selfSolve=True
@@ -353,7 +353,7 @@ void SlepcSolver::vecToFields(Vec &inVec){
   }
 
   //Restore array
-  VecRestoreArray(inVec,&point);
+  VecRestoreArrayRead(inVec, &point);
 }
 
 //This routine packs the local fields into a vector
