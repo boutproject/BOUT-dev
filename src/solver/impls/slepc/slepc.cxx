@@ -147,18 +147,28 @@ SlepcSolver::SlepcSolver(Options *options){
   stIsShell=PETSC_FALSE;
 
   // Slepc settings in the Solver section
+  auto& options_ref = *options;
 
-  options->get("nEig",nEig,0);//0 means keep the current value, i.e. autoset
+  nEig = options_ref["nEig"]
+             .doc("Number of eigenvalues to compute. 0 means keep the current value, "
+                  "i.e. autoset")
+             .withDefault(0);
 
-  options->get("tol",tol,1.0e-6);// Tolerance --> Note this is on SLEPc eig not BOUT
-  options->get("maxIt",maxIt,PETSC_DECIDE);
+  tol = options_ref["tol"].doc("SLEPc tolerance").withDefault(1.0e-6);
+  maxIt = options_ref["maxIt"].doc("Maximum iterations").withDefault(PETSC_DEFAULT);
 
-  options->get("mpd", mpd, PETSC_DECIDE);
+  mpd = options_ref["mpd"]
+            .doc("Maximum dimension allowed for the projected problem")
+            .withDefault(PETSC_DEFAULT);
 
-  options->get("ddtMode", ddtMode, true);
+  ddtMode = options_ref["ddtMode"].withDefault(true);
 
-  options->get("targRe",targRe,0.0); // Target frequency when using user eig comparison
-  options->get("targIm",targIm,0.0); // Target growth rate when using user eig comparison
+  targRe = options_ref["targRe"]
+               .doc("Target frequency when using user eig comparison")
+               .withDefault(0.0);
+  targIm = options_ref["targIm"]
+               .doc("Target growth rate when using user eig comparison")
+               .withDefault(0.0);
 
   //Convert bout targs to slepc
   bool userWhichDefault=false;
@@ -181,21 +191,19 @@ SlepcSolver::SlepcSolver(Options *options){
     //specify targRe/targIm *and* explicitly set userWhich=false
     userWhichDefault=true;
   }
-  options->get("target",target,target); //If 999 we don't set the target. This is SLEPc eig target
 
-  options->get("userWhich",userWhich,userWhichDefault);
+  target = options_ref["target"]
+               .doc("If 999 we don't set the target. This is SLEPc eig target")
+               .withDefault(target);
+
+  userWhich = options_ref["userWhich"].withDefault(userWhichDefault);
 
   //Generic settings
-  bool useInitialDefault = true;
-  if(ddtMode){
-    //If ddtMode then we probably don't want to useInitial
-    useInitialDefault = false;
-  };
-  options->get("useInitial",useInitial,useInitialDefault);
-  options->get("debugMonitor",debugMonitor,false);
+  useInitial = options_ref["useInitial"].withDefault(!ddtMode);
+  debugMonitor = options_ref["debugMonitor"].withDefault(false);
 
-  // Solver to advance the state of the system
-  options->get("selfSolve", selfSolve, false);
+  selfSolve = options_ref["selfSolve"].doc("Solver to advance the state of the system").withDefault(false);
+
   if(ddtMode && !selfSolve){
     //We need to ensure this so that we don't try to use
     //advanceSolver elsewhere. The other option would be to
@@ -204,7 +212,8 @@ SlepcSolver::SlepcSolver(Options *options){
     output<<"Overridding selfSolve as ddtMode = true"<<endl;
     selfSolve = true;
   }
-  options->get("eigenValOnly", eigenValOnly, false);
+  eigenValOnly = options_ref["eigenValOnly"].withDefault(false);
+
   if(!selfSolve && !ddtMode) {
     // Use a sub-section called "advance"
     advanceSolver=SolverFactory::getInstance()->createSolver(options->getSection("advance"));
