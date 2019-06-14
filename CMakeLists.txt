@@ -305,7 +305,8 @@ if (NOT CHECK IN_LIST CHECK_LEVELS)
 endif()
 message(STATUS "Runtime checking level: CHECK=${CHECK}")
 target_compile_definitions(bout++
-  PUBLIC "CHECK=${CHECK}")
+  PUBLIC "CHECK=${CHECK}"
+  PUBLIC "BOUT_CHECK=${CHECK}")
 set(BOUT_CHECK_LEVEL ${CHECK})
 
 option(DEBUG_ENABLED "Enable extra debug output" OFF)
@@ -320,7 +321,8 @@ set(BOUT_DEBUG_ENABLED ${DEBUG_ENABLED})
 option(ENABLE_SIGNAL "SegFault handling" ON)
 if (ENABLE_SIGNAL)
   target_compile_definitions(bout++
-    PUBLIC "SIGHANDLE")
+    PUBLIC "SIGHANDLE"
+    PUBLIC "BOUT_SIGHANDLE")
 endif()
 message(STATUS "Signal handling: SIGHANDLE=${ENABLE_SIGNAL}")
 set(BOUT_USE_SIGNAL ${ENABLE_SIGNAL})
@@ -328,7 +330,8 @@ set(BOUT_USE_SIGNAL ${ENABLE_SIGNAL})
 option(ENABLE_COLOR "Output coloring" ON)
 if (ENABLE_COLOR)
   target_compile_definitions(bout++
-    PUBLIC "LOGCOLOR")
+    PUBLIC "LOGCOLOR"
+    PUBLIC "BOUT_LOGCOLOR")
 endif()
 message(STATUS "Output coloring: LOGCOLOR=${ENABLE_COLOR}")
 set(BOUT_USE_COLOR ${ENABLE_COLOR})
@@ -336,7 +339,8 @@ set(BOUT_USE_COLOR ${ENABLE_COLOR})
 option(ENABLE_TRACK "Field name tracking" ON)
 if (ENABLE_TRACK)
   target_compile_definitions(bout++
-    PUBLIC "TRACK")
+    PUBLIC "TRACK"
+    PUBLIC "BOUT_TRACK")
 endif()
 message(STATUS "Field name tracking: TRACK=${ENABLE_TRACK}")
 set(BOUT_USE_TRACK ${ENABLE_TRACK})
@@ -356,7 +360,8 @@ if (ENABLE_BACKTRACE)
     message(FATAL_ERROR "addr2line not found")
   endif()
   target_compile_definitions(bout++
-    PUBLIC "BACKTRACE")
+    PUBLIC "BACKTRACE"
+    PUBLIC "BOUT_BACKTRACE")
   target_link_libraries(bout++ PUBLIC ${CMAKE_DL_LIBS})
 endif()
 message(STATUS "Enable backtrace: BACKTRACE=${ENABLE_BACKTRACE}")
@@ -376,7 +381,8 @@ if (ENABLE_OPENMP)
     message(FATAL_ERROR "OPENMP_SCHEDULE must be one of ${possible_openmp_schedules}")
   endif()
   target_compile_definitions(bout++
-    PUBLIC "OPENMP_SCHEDULE=${OPENMP_SCHEDULE}")
+    PUBLIC "OPENMP_SCHEDULE=${OPENMP_SCHEDULE}"
+    PUBLIC "BOUT_OPENMP_SCHEDULE=${OPENMP_SCHEDULE}")
   message(STATUS "OpenMP schedule: ${OPENMP_SCHEDULE}")
 endif()
 message(STATUS "Enable OpenMP: ${ENABLE_OPENMP}")
@@ -394,7 +400,8 @@ set(BOUT_GIT_REVISION ${GIT_SHA1})
 find_package(NetCDF)
 if (NetCDF_FOUND)
   target_compile_definitions(bout++
-    PUBLIC "NCDF4")
+    PUBLIC "NCDF4"
+    PUBLIC "BOUT_HAS_NETCDF")
   target_link_libraries(bout++ PUBLIC NetCDF::NetCDF_CXX)
 endif()
 message(STATUS "NetCDF support: ${NetCDF_FOUND}")
@@ -412,7 +419,8 @@ set(BOUT_HAS_FFTW ${FFTW_FOUND})
 find_package(LAPACK)
 if (LAPACK_FOUND)
   target_compile_definitions(bout++
-    PUBLIC "LAPACK")
+    PUBLIC "LAPACK"
+    PUBLIC "BOUT_HAS_LAPACK")
   target_link_libraries(bout++ PUBLIC "${LAPACK_LIBRARIES}")
 endif()
 message(STATUS "LAPACK support: ${LAPACK_FOUND}")
@@ -447,7 +455,8 @@ if (SUNDIALS_FOUND)
   target_compile_definitions(bout++
     PUBLIC "BOUT_HAS_CVODE"
     PUBLIC "BOUT_HAS_IDA"
-    PUBLIC "BOUT_HAS_ARKODE")
+    PUBLIC "BOUT_HAS_ARKODE"
+    PUBLIC "BOUT_HAS_SUNDIALS")
   target_link_libraries(bout++ PUBLIC SUNDIALS_cvode::cvode)
   target_link_libraries(bout++ PUBLIC SUNDIALS_ida::ida)
   target_link_libraries(bout++ PUBLIC SUNDIALS_arkode::arkode)
