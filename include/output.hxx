@@ -252,7 +252,7 @@ template <typename T> ConditionalOutput &operator<<(ConditionalOutput &out, cons
 /// To allow statements like "output.write(...)" or "output << ..."
 /// Output for debugging
 #ifdef DEBUG_ENABLED
-extern Output output_debug;
+extern ConditionalOutput output_debug;
 #else
 extern DummyOutput output_debug;
 #endif
