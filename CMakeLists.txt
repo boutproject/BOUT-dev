@@ -409,14 +409,29 @@ endif()
 message(STATUS "LAPACK support: ${LAPACK_FOUND}")
 set(BOUT_HAS_LAPACK ${LAPACK_FOUND})
 
-find_package(PETSc)
-if (PETSC_FOUND)
-  target_compile_definitions(bout++
-    PUBLIC "BOUT_HAS_PETSC")
-  target_link_libraries(bout++ PUBLIC PETSC::PETSc)
+option(USE_PETSC "Enable support for PETSc" OFF)
+if (USE_PETSC)
+  find_package(PETSc REQUIRED)
+  if (PETSC_FOUND)
+    target_compile_definitions(bout++
+      PUBLIC "BOUT_HAS_PETSC")
+    target_link_libraries(bout++ PUBLIC PETSc::PETSc)
+  endif()
 endif()
-message(STATUS "PETSc support: ${PETSC_FOUND}")
-set(BOUT_HAS_PETSC ${PETSC_FOUND})
+message(STATUS "PETSc support: ${USE_PETSC}")
+set(BOUT_HAS_PETSC ${USE_PETSC})
+
+option(USE_SLEPC "Enable support for SLEPc" OFF)
+if (USE_SLEPC)
+  find_package(SLEPc REQUIRED)
+  if (SLEPC_FOUND)
+    target_compile_definitions(bout++
+      PUBLIC "BOUT_HAS_SLEPC")
+    target_link_libraries(bout++ PUBLIC SLEPc::SLEPc)
+  endif()
+endif()
+message(STATUS "SLEPc support: ${USE_SLEPC}")
+set(BOUT_HAS_SLEPC ${USE_SLEPC})
 
 find_package(SUNDIALS)
 if (SUNDIALS_FOUND)
@@ -594,6 +609,7 @@ message("
    --------------------------------
 
    PETSc support            : ${BOUT_HAS_PETSC}
+   SLEPc support            : ${BOUT_HAS_SLEPC}
    SUNDIALS support         : ${BOUT_HAS_SUNDIALS}
    NetCDF support           : ${BOUT_HAS_NETCDF}
    FFTW support             : ${BOUT_HAS_FFTW}

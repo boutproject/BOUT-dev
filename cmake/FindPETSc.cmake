@@ -21,6 +21,7 @@
 # Redistribution and use is allowed according to the terms of the BSD license.
 # For details see the accompanying COPYING-CMAKE-SCRIPTS file.
 #
+# Taken from https://github.com/jedbrown/cmake-modules/blob/master/FindPETSc.cmake
 
 cmake_policy(VERSION 3.3)
 
@@ -286,12 +287,20 @@ int main(int argc,char *argv[]) {
   endmacro (PETSC_TEST_RUNS)
 
 
-  find_path (PETSC_INCLUDE_DIR petscts.h HINTS "${PETSC_DIR}" PATH_SUFFIXES include NO_DEFAULT_PATH)
-  find_path (PETSC_INCLUDE_CONF petscconf.h HINTS "${PETSC_DIR}" PATH_SUFFIXES "${PETSC_ARCH}/include" "bmake/${PETSC_ARCH}" NO_DEFAULT_PATH)
+  find_path (PETSC_INCLUDE_DIR petscts.h
+    HINTS "${PETSC_DIR}"
+    PATH_SUFFIXES include
+    NO_DEFAULT_PATH)
+  find_path (PETSC_INCLUDE_CONF petscconf.h
+    HINTS "${PETSC_DIR}"
+    PATH_SUFFIXES "${PETSC_ARCH}/include" "bmake/${PETSC_ARCH}"
+    NO_DEFAULT_PATH)
   mark_as_advanced (PETSC_INCLUDE_DIR PETSC_INCLUDE_CONF)
   set (petsc_includes_minimal ${PETSC_INCLUDE_CONF} ${PETSC_INCLUDE_DIR})
 
-  petsc_test_runs ("${petsc_includes_minimal}" "${PETSC_LIBRARIES_TS}" petsc_works_minimal)
+  petsc_test_runs ("${petsc_includes_minimal}"
+    "${PETSC_LIBRARIES_TS};MPI::MPI_${PETSC_LANGUAGE_BINDINGS}"
+    petsc_works_minimal)
   if (petsc_works_minimal)
     message (STATUS "Minimal PETSc includes and libraries work.  This probably means we are building with shared libs.")
     set (petsc_includes_needed "${petsc_includes_minimal}")
@@ -346,9 +355,9 @@ find_package_handle_standard_args (PETSc
   FAIL_MESSAGE "PETSc could not be found.  Be sure to set PETSC_DIR and PETSC_ARCH.")
 
 if (PETSC_FOUND)
-  if (NOT TARGET PETSC::PETSc)
-    add_library(PETSC::PETSc UNKNOWN IMPORTED)
-    set_target_properties(PETSC::PETSc PROPERTIES
+  if (NOT TARGET PETSc::PETSc)
+    add_library(PETSc::PETSc UNKNOWN IMPORTED)
+    set_target_properties(PETSc::PETSc PROPERTIES
       IMPORTED_LOCATION "${PETSC_LIBRARIES}"
       INTERFACE_INCLUDE_DIRECTORIES "${PETSC_INCLUDES}"
       )
