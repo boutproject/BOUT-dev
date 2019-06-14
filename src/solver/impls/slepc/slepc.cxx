@@ -118,7 +118,7 @@ PetscErrorCode stBackTransformWrapper(ST st, PetscInt nEig, PetscScalar* eigr,
 std::string formatEig(BoutReal reEig, BoutReal imEig) {
 
   const std::string rePad = (reEig < 0) ? "-" : " ";
-  const std::string imPad = (imEig < 0) ? "-" : " ";
+  const std::string imPad = (imEig < 0) ? "-" : "+";
 
   std::stringstream tmp;
   tmp.precision(5);
