@@ -586,8 +586,6 @@ void SlepcSolver::monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[],
   BoutReal reEigBout, imEigBout;
   slepcToBout(eigr[nconv], eigi[nconv], reEigBout, imEigBout);
 
-  const std::string joinNum = (imEigBout < 0) ? "" : "+";
-
   // This line more or less replicates the normal slepc output (when using -eps_monitor)
   // but reports Bout eigenvalues rather than the Slepc values. Note we haven't changed
   // error estimate.
