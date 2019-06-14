@@ -69,7 +69,7 @@ protected:
     solutionInv = mySolver.invert(n, 0.0);
     mesh->communicate(solutionInv);
 
-    passVerification = mySolver.verify(n);
+    passVerification = mySolver.verify(n, 1.e-3);
 
     solutionLap = laplacianSolver->solve(n);
 
