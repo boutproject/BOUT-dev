@@ -308,6 +308,15 @@ target_compile_definitions(bout++
   PUBLIC "CHECK=${CHECK}")
 set(BOUT_CHECK_LEVEL ${CHECK})
 
+option(DEBUG_ENABLED "Enable extra debug output" OFF)
+if (DEBUG_ENABLED)
+  target_compile_definitions(bout++
+    PUBLIC "DEBUG_ENABLED"
+    PUBLIC "BOUT_DEBUG_ENABLED")
+endif()
+message(STATUS "Extra debug output: DEBUG_ENABLED=${DEBUG_ENABLED}")
+set(BOUT_DEBUG_ENABLED ${DEBUG_ENABLED})
+
 option(ENABLE_SIGNAL "SegFault handling" ON)
 if (ENABLE_SIGNAL)
   target_compile_definitions(bout++
