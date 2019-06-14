@@ -76,6 +76,15 @@ matrix:
       - *default_env
       - CONFIGURE_OPTIONS="--enable-openmp --with-petsc --with-slepc --with-sundials=$HOME/local"
       - OMP_NUM_THREADS=2
+#CMAKE
+  - env:
+      - *default_env
+      - OMP_NUM_THREADS=2
+    script:
+      - mkdir build && cd build
+      - cmake .. -DUSE_PETSC=ON -DUSE_SLEPC=ON -DUSE_SUNDIALS=ON -DSUNDIALS_ROOT="$HOME/local" -DENABLE_OPENMP=ON
+      - cmake --build .
+      - ctest --output-on-failure
 #CLANG
   - env:
       - *default_env
