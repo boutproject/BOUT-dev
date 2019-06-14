@@ -3,17 +3,19 @@
 NOUT = 1
 TIMESTEP = 0.2
 
+MXG = 1
 MYG = 0
+dump_on_restart = false
 
 [mesh]
 
 length = 1  # Length of the domain
 
-nx = 36
+nx = 32 + 2*MXG
 ny = 1
 nz = 1
 
-dx = length / (nx - 4)
+dx = length / (nx - 2*MXG)
 dy = 1
 
 [solver]

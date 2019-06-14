@@ -1,0 +1,18 @@
+NOUT = 1
+TIMESTEP = 1
+
+MXG = 1
+MYG = 0
+dump_on_restart = false
+
+[mesh]
+nx = 3
+ny = 1
+nz = 1
+
+dx = 1
+dy = 1
+
+[solver]
+type = "slepc"
+neig = 1
