@@ -107,7 +107,7 @@ PETSC_ARCH = ${PETSC_ARCH}
 PETSC_DIR = ${PETSC_DIR}
 include ${SLEPC_CONFIG_FILE}
 show :
-    -@echo -n \${\${VARIABLE}}
+	-@echo -n \${\${VARIABLE}}
 ")
 
   # Define macro for getting SLEPc variables from Makefile
