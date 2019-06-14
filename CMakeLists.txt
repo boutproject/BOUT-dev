@@ -316,7 +316,7 @@ if (DEBUG_ENABLED)
     PUBLIC "BOUT_DEBUG_ENABLED")
 endif()
 message(STATUS "Extra debug output: DEBUG_ENABLED=${DEBUG_ENABLED}")
-set(BOUT_DEBUG_ENABLED ${DEBUG_ENABLED})
+set(BOUT_HAS_OUTPUT_DEBUG ${DEBUG_ENABLED})
 
 option(ENABLE_SIGNAL "SegFault handling" ON)
 if (ENABLE_SIGNAL)
@@ -369,12 +369,8 @@ set(BOUT_USE_BACKTRACE ${ENABLE_BACKTRACE})
 
 option(ENABLE_OPENMP "Enable OpenMP support" OFF)
 if (ENABLE_OPENMP)
-  find_package(OpenMP)
-  if (OpenMP_CXX_FOUND)
-    target_link_libraries(bout++ PUBLIC OpenMP::OpenMP_CXX)
-  else()
-    message(FATAL_ERROR "OpenMP support requested but could not be enabled")
-  endif()
+  find_package(OpenMP REQUIRED)
+  target_link_libraries(bout++ PUBLIC OpenMP::OpenMP_CXX)
   set(possible_openmp_schedules static dynamic guided auto)
   set(OPENMP_SCHEDULE static CACHE STRINGS "Set OpenMP schedule")
   if (NOT OPENMP_SCHEDULE IN_LIST possible_openmp_schedules)
@@ -397,61 +393,61 @@ set(BOUT_GIT_REVISION ${GIT_SHA1})
 
 # Optional dependencies
 
-find_package(NetCDF)
-if (NetCDF_FOUND)
+option(USE_NETCDF "Enable support for NetCDF output" ON)
+if (USE_NETCDF)
+  find_package(NetCDF REQUIRED)
   target_compile_definitions(bout++
     PUBLIC "NCDF4"
     PUBLIC "BOUT_HAS_NETCDF")
   target_link_libraries(bout++ PUBLIC NetCDF::NetCDF_CXX)
 endif()
-message(STATUS "NetCDF support: ${NetCDF_FOUND}")
-set(BOUT_HAS_NETCDF ${NetCDF_FOUND})
+message(STATUS "NetCDF support: ${USE_NETCDF}")
+set(BOUT_HAS_NETCDF ${USE_NETCDF})
 
-find_package(FFTW)
-if (FFTW_FOUND)
+option(USE_FFTW "Enable support for FFTW" ON)
+if (USE_FFTW)
+  find_package(FFTW REQUIRED)
   target_compile_definitions(bout++
     PUBLIC "BOUT_HAS_FFTW")
   target_link_libraries(bout++ PUBLIC FFTW::FFTW)
 endif()
-message(STATUS "FFTW support: ${FFTW_FOUND}")
-set(BOUT_HAS_FFTW ${FFTW_FOUND})
+message(STATUS "FFTW support: ${USE_FFTW}")
+set(BOUT_HAS_FFTW ${USE_FFTW})
 
-find_package(LAPACK)
-if (LAPACK_FOUND)
+option(USE_LAPACK "Enable support for LAPACK" ON)
+if (USE_LAPACK)
+  find_package(LAPACK REQUIRED)
   target_compile_definitions(bout++
     PUBLIC "LAPACK"
     PUBLIC "BOUT_HAS_LAPACK")
   target_link_libraries(bout++ PUBLIC "${LAPACK_LIBRARIES}")
 endif()
-message(STATUS "LAPACK support: ${LAPACK_FOUND}")
-set(BOUT_HAS_LAPACK ${LAPACK_FOUND})
+message(STATUS "LAPACK support: ${USE_LAPACK}")
+set(BOUT_HAS_LAPACK ${USE_LAPACK})
 
-option(USE_PETSC "Enable support for PETSc" OFF)
+option(USE_PETSC "Enable support for PETSc time solvers and inversions" OFF)
 if (USE_PETSC)
   find_package(PETSc REQUIRED)
-  if (PETSC_FOUND)
-    target_compile_definitions(bout++
-      PUBLIC "BOUT_HAS_PETSC")
-    target_link_libraries(bout++ PUBLIC PETSc::PETSc)
-  endif()
+  target_compile_definitions(bout++
+    PUBLIC "BOUT_HAS_PETSC")
+  target_link_libraries(bout++ PUBLIC PETSc::PETSc)
 endif()
 message(STATUS "PETSc support: ${USE_PETSC}")
 set(BOUT_HAS_PETSC ${USE_PETSC})
 
-option(USE_SLEPC "Enable support for SLEPc" OFF)
+option(USE_SLEPC "Enable support for SLEPc eigen solver" OFF)
 if (USE_SLEPC)
   find_package(SLEPc REQUIRED)
-  if (SLEPC_FOUND)
-    target_compile_definitions(bout++
-      PUBLIC "BOUT_HAS_SLEPC")
-    target_link_libraries(bout++ PUBLIC SLEPc::SLEPc)
-  endif()
+  target_compile_definitions(bout++
+    PUBLIC "BOUT_HAS_SLEPC")
+  target_link_libraries(bout++ PUBLIC SLEPc::SLEPc)
 endif()
 message(STATUS "SLEPc support: ${USE_SLEPC}")
 set(BOUT_HAS_SLEPC ${USE_SLEPC})
 
-find_package(SUNDIALS)
-if (SUNDIALS_FOUND)
+option(USE_SUNDIALS "Enable support for SUNDIALS time solvers" OFF)
+if (USE_SUNDIALS)
+  find_package(SUNDIALS)
   target_compile_definitions(bout++
     PUBLIC "BOUT_HAS_CVODE"
     PUBLIC "BOUT_HAS_IDA"
@@ -461,9 +457,10 @@ if (SUNDIALS_FOUND)
   target_link_libraries(bout++ PUBLIC SUNDIALS_ida::ida)
   target_link_libraries(bout++ PUBLIC SUNDIALS_arkode::arkode)
 endif()
-message(STATUS "SUNDIALS support: ${SUNDIALS_FOUND}")
-set(BOUT_HAS_SUNDIALS ${SUNDIALS_FOUND})
+message(STATUS "SUNDIALS support: ${USE_SUNDIALS}")
+set(BOUT_HAS_SUNDIALS ${USE_SUNDIALS})
 
+option(USE_NLS "Enable Native Language Support" ON)
 find_package(Gettext)
 if (GETTEXT_FOUND)
   target_compile_definitions(bout++
@@ -635,6 +632,13 @@ message("
    OpenMP support           : ${BOUT_USE_OPENMP}
    Natural language support : ${BOUT_HAS_GETTEXT}
    ScoreP support           : ${BOUT_HAS_SCOREP}
+   Extra debug output       : ${BOUT_HAS_OUTPUT_DEBUG}
+   CHECK level              : ${BOUT_CHECK_LEVEL}
+   Signal handling          : ${BOUT_USE_SIGNAL}
+   Output coloring          : ${BOUT_USE_COLOR}
+   Field name tracking      : ${BOUT_USE_TRACK}
+   Floating point exceptions: ${BOUT_USE_SIGFPE}
+   Backtrace enabled        : ${BOUT_USE_BACKTRACE}
 
    === Python ===
 
