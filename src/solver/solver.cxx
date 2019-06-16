@@ -50,6 +50,10 @@ char ***Solver::pargv = nullptr;
 Solver::Solver(Options* opts)
     : options(opts == nullptr ? &Options::root()["solver"] : opts),
       monitor_timestep((*options)["monitor_timestep"].withDefault(false)),
+      is_nonsplit_model_diffusive(
+          (*options)["is_nonsplit_model_diffusive"]
+              .doc("If not a split operator, treat RHS as diffusive?")
+              .withDefault(true)),
       mms((*options)["mms"].withDefault(false)),
       mms_initialise((*options)["mms_initialise"].withDefault(mms)) {}
 
@@ -152,7 +156,7 @@ void Solver::add(Field3D &v, const std::string name) {
   ddt(v).copyBoundary(v); // Set boundary to be the same as v
 
   if (mesh->StaggerGrids && (v.getLocation() != CELL_CENTRE)) {
-    output_info.write("\tVariable %s shifted to %s\n", name.c_str(), strLocation(v.getLocation()));
+    output_info.write("\tVariable %s shifted to %s\n", name.c_str(), toString(v.getLocation()).c_str());
     ddt(v).setLocation(v.getLocation()); // Make sure both at the same location
   }
 
@@ -1023,9 +1027,12 @@ void Solver::save_derivs(BoutReal *dudata) {
   }
 
   // Make sure 3D fields are at the correct cell location
-  for(const auto& f : f3d) {
-    if(f.var->getLocation() != (f.F_var)->getLocation()) {
-      throw BoutException(_("Time derivative at wrong location - Field is at %s, derivative is at %s for field '%s'\n"),strLocation(f.var->getLocation()), strLocation(f.F_var->getLocation()),f.name.c_str());
+  for (const auto& f : f3d) {
+    if (f.var->getLocation() != (f.F_var)->getLocation()) {
+      throw BoutException(_("Time derivative at wrong location - Field is at %s, "
+                            "derivative is at %s for field '%s'\n"),
+                          toString(f.var->getLocation()).c_str(),
+                          toString(f.F_var->getLocation()).c_str(), f.name.c_str());
     }
   }
 
@@ -1161,27 +1168,34 @@ int Solver::run_rhs(BoutReal t) {
 /// NOTE: This calls add_mms_sources
 int Solver::run_convective(BoutReal t) {
   int status;
-  
+
   Timer timer("rhs");
   pre_rhs(t);
-  if(split_operator) {
-    if(model) {
+  if (split_operator) {
+    if (model) {
       status = model->runConvective(t);
-    }else
+    } else
       status = (*phys_conv)(t);
-  }else {
+  } else if (!is_nonsplit_model_diffusive) {
+    // Return total
+    if (model) {
+      status = model->runRHS(t);
+    } else {
+      status = (*phys_run)(t);
+    }
+  } else {
     // Zero if not split
-    for(const auto& f : f3d)
+    for (const auto& f : f3d)
       *(f.F_var) = 0.0;
-    for(const auto& f : f2d)
+    for (const auto& f : f2d)
       *(f.F_var) = 0.0;
     status = 0;
   }
   post_rhs(t);
-  
+
   // If using Method of Manufactured Solutions
   add_mms_sources(t);
-  
+
   rhs_ncalls++;
   rhs_ncalls_e++;
   return status;
@@ -1189,22 +1203,30 @@ int Solver::run_convective(BoutReal t) {
 
 int Solver::run_diffusive(BoutReal t, bool linear) {
   int status = 0;
-  
+
   Timer timer("rhs");
   pre_rhs(t);
-  if(split_operator) {
+  if (split_operator) {
 
-    if(model) {
+    if (model) {
       status = model->runDiffusive(t, linear);
-    }else 
+    } else {
       status = (*phys_diff)(t);
+    }
     post_rhs(t);
-  }else {
+  } else if (is_nonsplit_model_diffusive) {
     // Return total
-    if(model) {
+    if (model) {
       status = model->runRHS(t);
-    }else
+    } else
       status = (*phys_run)(t);
+  } else {
+    // Zero if not split
+    for (const auto& f : f3d)
+      *(f.F_var) = 0.0;
+    for (const auto& f : f2d)
+      *(f.F_var) = 0.0;
+    status = 0;
   }
   rhs_ncalls_i++;
   return status;

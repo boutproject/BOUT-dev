@@ -76,11 +76,9 @@ LaplaceSPT::~LaplaceSPT() {
   delete[] alldata;
 }
 
-const FieldPerp LaplaceSPT::solve(const FieldPerp &b) {
-  return solve(b,b);
-}
+FieldPerp LaplaceSPT::solve(const FieldPerp& b) { return solve(b, b); }
 
-const FieldPerp LaplaceSPT::solve(const FieldPerp &b, const FieldPerp &x0) {
+FieldPerp LaplaceSPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   ASSERT1(localmesh == b.getMesh() && localmesh == x0.getMesh());
   ASSERT1(b.getLocation() == location);
   ASSERT1(x0.getLocation() == location);
@@ -120,7 +118,7 @@ const FieldPerp LaplaceSPT::solve(const FieldPerp &b, const FieldPerp &x0) {
  * This is done at the expense of more memory useage. Setting low_mem
  * in the config file uses less memory, and less communication overlap
  */
-const Field3D LaplaceSPT::solve(const Field3D &b) {
+Field3D LaplaceSPT::solve(const Field3D& b) {
 
   ASSERT1(b.getLocation() == location);
   ASSERT1(localmesh = b.getMesh());
@@ -157,7 +155,7 @@ const Field3D LaplaceSPT::solve(const Field3D &b) {
   return x;
 }
 
-const Field3D LaplaceSPT::solve(const Field3D &b, const Field3D &x0) {
+Field3D LaplaceSPT::solve(const Field3D& b, const Field3D& x0) {
   ASSERT1(localmesh == b.getMesh() && localmesh == x0.getMesh());
 
   if(  ((inner_boundary_flags & INVERT_SET) && localmesh->firstX()) ||

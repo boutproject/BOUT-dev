@@ -127,7 +127,7 @@ private:
   /// Lexing info, used when splitting input into tokens
   struct LexInfo {
 
-    LexInfo(const std::string& input, const std::string& reserved_chars = "");
+    LexInfo(const std::string& input, std::string reserved_chars = "");
 
     /// Current token. -1 for number, -2 for symbol, -3 for {string}, 0 for "end of input"
     signed char curtok = 0;

@@ -50,6 +50,11 @@ KarniadakisSolver::KarniadakisSolver(Options *options) : Solver(options) {
 int KarniadakisSolver::init(int nout, BoutReal tstep) {
   TRACE("Initialising Karniadakis solver");
   
+  output_error << "\nWARNING:\n"
+    "        The Karniadakis solver is now deprecated and will be removed in BOUT++ 5.0!\n"
+    "        Try the \"splitrk\", \"imexbdf2\" (requires PETSc) or \"arkode\" (requires SUNDIALS)\n"
+    "        solvers for other split-schemes\n\n";
+
   /// Call the generic initialisation first
   if (Solver::init(nout, tstep))
     return 1;

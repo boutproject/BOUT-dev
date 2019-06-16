@@ -19,29 +19,40 @@ int main(int argc, char **argv) {
   BoutReal rvar, rvar_evol;
   Field2D f2d;
   Field3D f3d;
+  // fperp is at yindex_global=0.
+  // fperp2 is at yindex_global=11, it is included to make sure the test does not pass
+  // only for the special case of the FieldPerp being present on processor number 0.
+  FieldPerp fperp, fperp2, fperp2_evol;
   Vector2D v2d;
   Vector3D v3d;
 
   f2d = 0.0;
   f3d = 0.0;
+  fperp = 0.0;
+  fperp2 = 0.0;
 
   // Read data from grid file
   mesh->get(ivar, "ivar");
   mesh->get(rvar, "rvar");
   mesh->get(f2d, "f2d");
   mesh->get(f3d, "f3d");
+  mesh->get(fperp, "fperp");
+  mesh->get(fperp2, "fperp2");
 
   // Non-evolving variables
   dump.add(ivar, "ivar", false);
   dump.add(rvar, "rvar", false);
   dump.add(f2d, "f2d", false);
   dump.add(f3d, "f3d", false);
+  dump.add(fperp, "fperp", false);
+  dump.add(fperp2, "fperp2", false);
 
   // Evolving variables
   dump.add(ivar_evol, "ivar_evol", true);
   dump.add(rvar_evol, "rvar_evol", true);
   dump.add(v2d, "v2d_evol", true);
   dump.add(v3d, "v3d_evol", true);
+  dump.add(fperp2_evol, "fperp2_evol", true);
 
   int MYPE;
   MPI_Comm_rank(BoutComm::get(), &MYPE);
@@ -51,6 +62,7 @@ int main(int argc, char **argv) {
     rvar_evol = rvar + 0.5 * i;
     v2d.x = v2d.y = v2d.z = f2d;
     v3d.x = v3d.y = v3d.z = f3d;
+    fperp2_evol = fperp2;
 
     dump.write();
   }

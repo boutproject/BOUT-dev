@@ -194,12 +194,12 @@ public:
 
   bool uses3DCoefs() const override { return true; }
 
-  const FieldPerp solve(const FieldPerp &b) override {
+  FieldPerp solve(const FieldPerp &b) override {
     ASSERT1(localmesh == b.getMesh());
 
     return solve(b, zeroFrom(b));
   }
-  const FieldPerp solve(const FieldPerp &b_in, const FieldPerp &x0) override;
+  FieldPerp solve(const FieldPerp &b_in, const FieldPerp &x0) override;
 
 private:
   Field3D A,C1,C2,D; // ODE Coefficients

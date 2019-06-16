@@ -305,9 +305,8 @@ FieldGeneratorPtr ExpressionParser::parseExpression(LexInfo& lex) const {
 //////////////////////////////////////////////////////////
 // LexInfo
 
-ExpressionParser::LexInfo::LexInfo(const std::string& input,
-                                   const std::string& reserved_chars)
-    : reserved_chars(reserved_chars) {
+ExpressionParser::LexInfo::LexInfo(const std::string& input, std::string reserved_chars)
+    : reserved_chars(std::move(reserved_chars)) {
   ss.clear();
   ss.str(input); // Set the input stream
   ss.seekg(0, std::ios_base::beg);

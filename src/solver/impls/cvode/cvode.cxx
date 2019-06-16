@@ -36,6 +36,7 @@
 #include "output.hxx"
 #include "unused.hxx"
 #include "bout/mesh.hxx"
+#include "utils.hxx"
 
 #include <cvode/cvode.h>
 
@@ -60,7 +61,11 @@ class Field2D;
 #define ONE RCONST(1.0)
 
 #ifndef CVODEINT
-using CVODEINT = int;
+#if SUNDIALS_VERSION_MAJOR < 3
+using CVODEINT = bout::utils::function_traits<CVLocalFn>::arg_t<0>;
+#else
+using CVODEINT = sunindextype;
+#endif
 #endif
 
 static int cvode_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data);
@@ -569,7 +574,7 @@ static int cvode_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data) {
   BoutReal* udata = NV_DATA_P(u);
   BoutReal* dudata = NV_DATA_P(du);
 
-  CvodeSolver* s = static_cast<CvodeSolver*>(user_data);
+  auto* s = static_cast<CvodeSolver*>(user_data);
 
   // Calculate RHS function
   try {
@@ -594,7 +599,7 @@ static int cvode_pre(BoutReal t, N_Vector yy, N_Vector UNUSED(yp), N_Vector rvec
   BoutReal* rdata = NV_DATA_P(rvec);
   BoutReal* zdata = NV_DATA_P(zvec);
 
-  CvodeSolver* s = static_cast<CvodeSolver*>(user_data);
+  auto* s = static_cast<CvodeSolver*>(user_data);
 
   // Calculate residuals
   s->pre(t, gamma, delta, udata, rdata, zdata);
@@ -609,7 +614,7 @@ static int cvode_jac(N_Vector v, N_Vector Jv, realtype t, N_Vector y, N_Vector U
   BoutReal* vdata = NV_DATA_P(v);   ///< Input vector
   BoutReal* Jvdata = NV_DATA_P(Jv); ///< Jacobian*vector output
 
-  CvodeSolver* s = static_cast<CvodeSolver*>(user_data);
+  auto* s = static_cast<CvodeSolver*>(user_data);
 
   s->jac(t, ydata, vdata, Jvdata);
 

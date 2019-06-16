@@ -56,7 +56,11 @@
 #define ONE RCONST(1.0)
 
 #ifndef IDAINT
-using IDAINT = int;
+#if SUNDIALS_VERSION_MAJOR < 3
+using IDAINT = bout::utils::function_traits<IDABBDLocalFn>::arg_t<0>;
+#else
+using IDAINT = sunindextype;
+#endif
 #endif
 
 static int idares(BoutReal t, N_Vector u, N_Vector du, N_Vector rr, void* user_data);
@@ -353,7 +357,7 @@ static int idares(BoutReal t, N_Vector u, N_Vector du, N_Vector rr, void* user_d
   BoutReal* dudata = NV_DATA_P(du);
   BoutReal* rdata = NV_DATA_P(rr);
 
-  IdaSolver* s = static_cast<IdaSolver*>(user_data);
+  auto* s = static_cast<IdaSolver*>(user_data);
 
   // Calculate residuals
   s->res(t, udata, dudata, rdata);
@@ -375,7 +379,7 @@ static int ida_pre(BoutReal t, N_Vector yy, N_Vector UNUSED(yp), N_Vector UNUSED
   BoutReal* rdata = NV_DATA_P(rvec);
   BoutReal* zdata = NV_DATA_P(zvec);
 
-  IdaSolver* s = static_cast<IdaSolver*>(user_data);
+  auto* s = static_cast<IdaSolver*>(user_data);
 
   // Calculate residuals
   s->pre(t, cj, delta, udata, rdata, zdata);

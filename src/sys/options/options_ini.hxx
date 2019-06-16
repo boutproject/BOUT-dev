@@ -47,9 +47,6 @@ class OptionINI;
  */
 class OptionINI : public OptionParser {
 public:
-  OptionINI();
-  ~OptionINI();
-
   /// Read options from file
   void read(Options *options, const std::string &filename) override;
 

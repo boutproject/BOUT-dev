@@ -323,9 +323,7 @@ LaplacePetsc::LaplacePetsc(Options *opt, const CELL_LOC loc, Mesh *mesh_in) :
   //  lastflag = -1;
 }
 
-const FieldPerp LaplacePetsc::solve(const FieldPerp &b) {
-  return solve(b,b);
-}
+FieldPerp LaplacePetsc::solve(const FieldPerp& b) { return solve(b, b); }
 
 /*!
  * Solves Ax=b for x given a b and an initial guess for x (x0)
@@ -344,7 +342,7 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b) {
  *
  * \returns sol     The solution x of the problem Ax=b.
  */
-const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
+FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
   TRACE("LaplacePetsc::solve");
 
   ASSERT1(localmesh == b.getMesh() && localmesh == x0.getMesh());

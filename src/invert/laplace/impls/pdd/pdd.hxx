@@ -78,8 +78,8 @@ public:
   }
 
   using Laplacian::solve;
-  const FieldPerp solve(const FieldPerp &b) override;
-  const Field3D solve(const Field3D &b) override;
+  FieldPerp solve(const FieldPerp &b) override;
+  Field3D solve(const Field3D &b) override;
 private:
   Field2D Acoef, Ccoef, Dcoef;
   
@@ -87,7 +87,7 @@ private:
   const int PDD_COMM_Y;  // Second tag
   
   /// Data structure for PDD algorithm
-  typedef struct {
+  struct PDD_data {
     Matrix<dcomplex> bk;  ///< b vector in Fourier space
 
     Matrix<dcomplex> avec, bvec, cvec; ///< Diagonal bands of matrix
@@ -103,7 +103,7 @@ private:
     comm_handle recv_handle;
 
     Array<dcomplex> y2i;
-  }PDD_data;
+  };
   
   void start(const FieldPerp &b, PDD_data &data);
   void next(PDD_data &data);

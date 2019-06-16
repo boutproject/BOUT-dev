@@ -3,7 +3,7 @@
 
 class TestFieldGroupComm : public PhysicsModel{
 protected:
-  int init(bool restarting) {
+  int init(bool UNUSED(restarting)) {
     //Create identical fields
     solver->add(fld1,"fld1");
     solver->add(fld2,"fld2");
@@ -17,7 +17,7 @@ protected:
     return 0;
   }
 
-  int rhs(BoutReal t) {
+  int rhs(BoutReal UNUSED(t)) {
     //Communicate -- ideally would all produce the same result
     //1. As it should be
     mesh->communicate(comm1);

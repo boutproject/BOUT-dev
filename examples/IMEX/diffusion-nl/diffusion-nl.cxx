@@ -21,9 +21,9 @@
 
 class DiffusionNL : public PhysicsModel {
 protected:
-  int init(bool restarting) {
+  int init(bool) {
     // Get the input parameter alpha
-    auto opt = Options::root();
+    auto& opt = Options::root();
     alpha = opt["alpha"].withDefault(2.5);
 
     // Specify that the operator is split
@@ -42,7 +42,7 @@ protected:
    * Convective part of the problem. In an IMEX scheme
    * this will be treated explicitly
    */
-  int convective(BoutReal time) {
+  int convective(BoutReal) {
     ddt(f) = 0.0;
     return 0;
   }
@@ -62,7 +62,7 @@ protected:
    * -------
    * ddt(f)  = Time derivative of f
    */
-  int diffusive(BoutReal time, bool linear) {
+  int diffusive(BoutReal, bool linear) {
     mesh->communicate(f);
     if (!linear) {
       // Update diffusion coefficient
@@ -96,7 +96,7 @@ protected:
    * 
    * ddt(f) = Result of the inversion
    */
-  int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
+  int precon(BoutReal, BoutReal gamma, BoutReal) {
     // Preconditioner
     
     static InvertPar *inv = NULL;

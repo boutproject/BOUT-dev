@@ -50,9 +50,9 @@
 /// upwind and flux).
 template <typename FieldType>
 struct DerivativeStore {
-  using standardFunc = std::function<void(const FieldType&, FieldType&, const REGION)>;
+  using standardFunc = std::function<void(const FieldType&, FieldType&, const std::string&)>;
   using flowFunc =
-      std::function<void(const FieldType&, const FieldType&, FieldType&, const REGION)>;
+      std::function<void(const FieldType&, const FieldType&, FieldType&, const std::string&)>;
   using upwindFunc = flowFunc;
   using fluxFunc = flowFunc;
 

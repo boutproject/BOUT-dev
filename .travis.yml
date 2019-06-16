@@ -65,7 +65,7 @@ matrix:
           - *standard_packages
     env:
       - *default_env
-      - CONFIGURE_OPTIONS="--enable-debug --with-petsc --with-slepc --with-sundials=$HOME/local"
+      - CONFIGURE_OPTIONS="--enable-sigfpe --enable-debug --with-petsc --with-slepc --with-sundials=$HOME/local"
       - CC=gcc-7 CXX=g++-7
       - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
   - env:

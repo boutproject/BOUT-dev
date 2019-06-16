@@ -323,7 +323,7 @@ void NcPutVarCountVisitor::operator()<Field3D>(const Field3D& value) {
 
 /// Visit a variant type, and put the data into an attributute
 struct NcPutAttVisitor {
-  NcPutAttVisitor(NcVar& var, std::string name) : var(var), name(name) {}
+  NcPutAttVisitor(NcVar& var, std::string name) : var(var), name(std::move(name)) {}
   template <typename T>
   void operator()(const T& UNUSED(value)) {
     // Default is to ignore if unhandled

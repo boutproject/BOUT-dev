@@ -473,13 +473,29 @@ class DataFile_netCDF(DataFile):
         dims_dict = {
             ('t', 'x', 'y', 'z'): "Field3D_t",
             ('t', 'x', 'y'): "Field2D_t",
+            ('t', 'x', 'z'): "FieldPerp_t",
             ('t',): "scalar_t",
             ('x', 'y', 'z'): "Field3D",
             ('x', 'y'): "Field2D",
+            ('x', 'z'): "FieldPerp",
             (): "scalar",
         }
 
         return dims_dict.get(dims, None)
+
+    def _bout_dimensions_from_type(self, bout_type):
+        dims_dict = {
+            "Field3D_t": ('t', 'x', 'y', 'z'),
+            "Field2D_t": ('t', 'x', 'y'),
+            "FieldPerp_t": ('t', 'x', 'z'),
+            "scalar_t": ('t',),
+            "Field3D": ('x', 'y', 'z'),
+            "Field2D": ('x', 'y'),
+            "FieldPerp": ('x', 'z'),
+            "scalar": (),
+        }
+
+        return dims_dict.get(bout_type, None)
 
     def write(self, name, data, info=False):
 
@@ -523,11 +539,15 @@ class DataFile_netCDF(DataFile):
             # Not found, so add.
 
             # Get dimensions
-            defdims = [(),
-                       ('t',),
-                       ('x', 'y'),
-                       ('x', 'y', 'z'),
-                       ('t', 'x', 'y', 'z')]
+            if t == 'BoutArray':
+                defdims = _bout_dimensions_from_type(data.attributes['bout_type'])
+            else:
+                defdims_list = [(),
+                                ('t',),
+                                ('x', 'y'),
+                                ('x', 'y', 'z'),
+                                ('t', 'x', 'y', 'z')]
+                defdims = defdims_list[len(s)]
 
             def find_dim(dim):
                 # Find a dimension with given name and size
@@ -585,7 +605,7 @@ class DataFile_netCDF(DataFile):
                 return name
 
             # List of (size, 'name') tuples
-            dlist = list(zip(s, defdims[len(s)]))
+            dlist = list(zip(s, defdims))
             # Get new list of variables, and turn into a tuple
             dims = tuple(map(find_dim, dlist))
 
@@ -760,9 +780,11 @@ class DataFile_HDF5(DataFile):
         bout_type = self.bout_type(varname)
         dims_dict = {
             "Field3D_t": ('t', 'x', 'y', 'z'),
+            "FieldPerp_t": ('t', 'x', 'z'),
             "Field2D_t": ('t', 'x', 'y'),
             "scalar_t": ('t',),
             "Field3D": ('x', 'y', 'z'),
+            "FieldPerp": ('x', 'z'),
             "Field2D": ('x', 'y'),
             "scalar": (),
         }
@@ -866,7 +888,7 @@ class DataFile_HDF5(DataFile):
             print("Creating variable '" + name +
                   "' with bout_type '" + bout_type + "'")
 
-        if bout_type in ["Field3D_t", "Field2D_t", "scalar_t"]:
+        if bout_type in ["Field3D_t", "Field2D_t", "FieldPerp_t", "scalar_t"]:
             # time evolving fields
             shape = list(data.shape)
             # set time dimension to None to make unlimited
@@ -896,7 +918,7 @@ class DataFile_HDF5(DataFile):
         try:
             for attrname in data.attributes:
                 attrval = data.attributes[attrname]
-                if type(attrval == str):
+                if type(attrval) == str:
                     attrval = attrval.encode(encoding='utf-8')
                 self.handle[name].attrs.create(attrname, attrval)
         except AttributeError:

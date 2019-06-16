@@ -3,18 +3,12 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 100     # number of time-steps
+NOUT = 50     # number of time-steps
 TIMESTEP = 1e-2  # time between outputs
 
-MZ = 129     # number of points in z direction (2^n + 1)
-
-ZPERIOD = 6.28319 # Fraction of a torus. 2*PI sets Z length to 1
-
-dump_format = "nc" # Set extension for dump files (nc = NetCDF)
-
-#NXPE = 1 
-
 periodicX = true   # Make domain periodic in X
+
+myg = 0
 
 ##################################################
 # derivative methods
@@ -42,71 +36,34 @@ flux = U1
 
 [mesh]
 
-nx = 132   
-#dx = 0.03125  # 1/32  
-#dx = 0.015625 #1/64
-dx = 0.0078125 #1/128
-#dx = 0.00390625 #1/256
-#dx = 0.001953125 #1/512
-#dx = 0.0009765625 #1/1024
+nx = 132
+ny = 1
+nz = 128
 
-ny = 5
-dy = 0.1   # 1/512
-
-#ixseps1 = -1	#Specify ixseps to stop y from being periodic
-#ixseps2 = -1
+dx = 1 / nx
+dz = 1 / (nz-4)
 
 ##################################################
 # Solver settings
 
 [solver]
 
-# mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1.0e-10 # absolute tolerance
-RTOL = 1.0e-5  # relative tolerance
-mxstep = 50000
-
-type=arkode	#use arkode solver
-imex=true	#use split operator ImEx method
-explicit=true	#include explicit operator
-implicit=true	#include implicit operator
-
-
+type = splitrk
+timestep = 1e-4   # Internal timestep
+nstages = 9       # Stages in RKL steps for diffusive component
+adapt_period = 5  # Internal steps between accuracy checks
 
 ##################################################
 # settings for split operator model
 
 [imex]
 
-cz = 100.0
-cx = 1.0 
-##################################################
-# settings for individual variables
-# The section "All" defines default settings for all variables
-# These can be overridden for individual variables in
-# a section of that name.
+vx = 2.0    # Advection velocity in X
+Dz = 1.0    # Diffusion coefficient in Z
 
-[All]
-scale = 1.0 # default size of initial perturbations
-
-# boundary conditions
-# -------------------
-# dirichlet    - Zero value
-# neumann      - Zero gradient
-# zerolaplace  - Laplacian = 0, decaying solution
-# constlaplace - Laplacian = const, decaying solution
-#
-# relax( )   - Make boundary condition relaxing
-
-#bndry_xin = dirichlet_o2(1.0) # Default zero value
-#bndry_all = neumann
-# form of initial profile:
-# 0 - constant
-# 1 - Gaussian
-# 2 - Sinusoidal
-# 3 - Mix of mode numbers
+# Settings for evolving variable
 [U]
-scale = 1.0
-function = 0.125*gauss(x-0.2,0.05)*gauss(z-0.5*2*3.14159,0.05*2*3.14159) + H(x-0.7)*(1-H(x-0.8))*H(z-0.45*2*3.14159)*(1-H(z-0.55*2*3.14159))
+zs = z / (2π)
+function = exp(-((x-0.5)/0.1)^2 - ((zs-0.5)/0.1)^2)
 
 

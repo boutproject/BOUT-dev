@@ -20,6 +20,7 @@
  *
  **************************************************************************/
 
+#include "bout/traits.hxx"
 #include <bout/index_derivs.hxx>
 #include <bout/mesh.hxx>
 #include <msg_stack.hxx>
@@ -409,23 +410,21 @@ REGISTER_FLUX_DERIVATIVE_STAGGERED(FDDX_U2_stag, "U2", 2, DERIV::Flux) {
 /// into the standard stencil based approach.
 // /////////////////////////////////////////////////////////////////////////////////
 
+#ifdef BOUT_HAS_FFTW
 class FFTDerivativeType {
 public:
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
-  void standard(const T& var, T& result, REGION region) const {
+  void standard(const T& var, T& result, const std::string& region) const {
     AUTO_TRACE();
     ASSERT2(meta.derivType == DERIV::Standard)
     ASSERT2(var.getMesh()->getNguard(direction) >= nGuards);
     ASSERT2(direction == DIRECTION::Z); // Only in Z for now
     ASSERT2(stagger == STAGGER::None);  // Staggering not currently supported
-    ASSERT2((std::is_base_of<Field3D,
-                             T>::value)); // Should never need to call this with Field2D
-
-    const auto region_str = toString(region);
+    ASSERT2(bout::utils::is_Field3D<T>::value); // Should never need to call this with Field2D
 
     // Only allow a whitelist of regions for now
-    ASSERT2(region_str == "RGN_ALL" || region_str == "RGN_NOBNDRY"
-            || region_str == "RGN_NOX" || region_str == "RGN_NOY");
+    ASSERT2(region == "RGN_ALL" || region == "RGN_NOBNDRY"
+            || region == "RGN_NOX" || region == "RGN_NOY");
 
     auto* theMesh = var.getMesh();
 
@@ -453,7 +452,7 @@ public:
       // With this in mind we could perhaps avoid the use of the BOUT_FOR_INNER macro
       // here,
       // but should be ok for now.
-      BOUT_FOR_INNER(i, theMesh->getRegion2D(region_str)) {
+      BOUT_FOR_INNER(i, theMesh->getRegion2D(region)) {
         auto i3D = theMesh->ind2Dto3D(i, 0);
         rfft(&var[i3D], ncz, cv.begin()); // Forward FFT
 
@@ -474,7 +473,7 @@ public:
 
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
   void upwindOrFlux(const T& UNUSED(vel), const T& UNUSED(var), T& UNUSED(result),
-                    REGION UNUSED(region)) const {
+                    const std::string& UNUSED(region)) const {
     AUTO_TRACE();
     throw BoutException("The FFT METHOD isn't available in upwind/Flux");
   }
@@ -484,20 +483,17 @@ public:
 class FFT2ndDerivativeType {
 public:
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
-  void standard(const T& var, T& result, REGION region) const {
+  void standard(const T& var, T& result, const std::string& region) const {
     AUTO_TRACE();
     ASSERT2(meta.derivType == DERIV::StandardSecond);
     ASSERT2(var.getMesh()->getNguard(direction) >= nGuards);
     ASSERT2(direction == DIRECTION::Z); // Only in Z for now
     ASSERT2(stagger == STAGGER::None);  // Staggering not currently supported
-    ASSERT2((std::is_base_of<Field3D,
-                             T>::value)); // Should never need to call this with Field2D
-
-    const auto region_str = toString(region);
+    ASSERT2(bout::utils::is_Field3D<T>::value); // Should never need to call this with Field2D
 
     // Only allow a whitelist of regions for now
-    ASSERT2(region_str == "RGN_ALL" || region_str == "RGN_NOBNDRY"
-            || region_str == "RGN_NOX" || region_str == "RGN_NOY");
+    ASSERT2(region == "RGN_ALL" || region == "RGN_NOBNDRY"
+            || region == "RGN_NOX" || region == "RGN_NOY");
 
     auto* theMesh = var.getMesh();
 
@@ -518,7 +514,7 @@ public:
       // With this in mind we could perhaps avoid the use of the BOUT_FOR_INNER macro
       // here,
       // but should be ok for now.
-      BOUT_FOR_INNER(i, theMesh->getRegion2D(region_str)) {
+      BOUT_FOR_INNER(i, theMesh->getRegion2D(region)) {
         auto i3D = theMesh->ind2Dto3D(i, 0);
         rfft(&var[i3D], ncz, cv.begin()); // Forward FFT
 
@@ -539,7 +535,7 @@ public:
 
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
   void upwindOrFlux(const T& UNUSED(vel), const T& UNUSED(var), T& UNUSED(result),
-                    REGION UNUSED(region)) const {
+                    const std::string& UNUSED(region)) const {
     AUTO_TRACE();
     throw BoutException("The FFT METHOD isn't available in upwind/Flux");
   }
@@ -550,17 +546,18 @@ produceCombinations<Set<WRAP_ENUM(DIRECTION, Z)>, Set<WRAP_ENUM(STAGGER, None)>,
                     Set<TypeContainer<Field3D>>,
                     Set<FFTDerivativeType, FFT2ndDerivativeType>>
     registerFFTDerivative(registerMethod{});
+#endif
 
 class SplitFluxDerivativeType {
 public:
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
-  void standard(const T&, T&, REGION) const {
+  void standard(const T&, T&, const std::string) const {
     AUTO_TRACE();
     throw BoutException("The SPLIT method isn't available for standard");
   }
 
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
-  void upwindOrFlux(const T& vel, const T& var, T& result, REGION region) const {
+  void upwindOrFlux(const T& vel, const T& var, T& result, const std::string region) const {
     AUTO_TRACE();
     // Split into an upwind and a central differencing part
     // d/dx(v*f) = v*d/dx(f) + f*d/dx(v)

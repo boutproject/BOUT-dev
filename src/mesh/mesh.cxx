@@ -80,9 +80,6 @@ int Mesh::get(BoutReal &rval, const std::string &name) {
 int Mesh::get(Field2D &var, const std::string &name, BoutReal def) {
   TRACE("Loading 2D field: Mesh::get(Field2D, %s)", name.c_str());
 
-  // Ensure data allocated
-  var.allocate();
-
   if (source == nullptr or !source->get(this, var, name, def))
     return 1;
 
@@ -98,9 +95,6 @@ int Mesh::get(Field2D &var, const std::string &name, BoutReal def) {
 int Mesh::get(Field3D &var, const std::string &name, BoutReal def, bool communicate) {
   TRACE("Loading 3D field: Mesh::get(Field3D, %s)", name.c_str());
 
-  // Ensure data allocated
-  var.allocate();
-
   if (source == nullptr or !source->get(this, var, name, def))
     return 1;
 
@@ -111,6 +105,25 @@ int Mesh::get(Field3D &var, const std::string &name, BoutReal def, bool communic
 
   // Check that the data is valid
   checkData(var);
+
+  return 0;
+}
+
+int Mesh::get(FieldPerp &var, const std::string &name, BoutReal def,
+    bool UNUSED(communicate)) {
+  TRACE("Loading FieldPerp: Mesh::get(FieldPerp, %s)", name.c_str());
+
+  if (source == nullptr or !source->get(this, var, name, def))
+    return 1;
+
+  int yindex = var.getIndex();
+  if (yindex >= 0 and yindex < var.getMesh()->LocalNy) {
+    // Communicate to get guard cell data
+    Mesh::communicate(var);
+
+    // Check that the data is valid
+    checkData(var);
+  }
 
   return 0;
 }
@@ -166,6 +179,16 @@ bool Mesh::sourceHasVar(const std::string &name) {
   if (source == nullptr)
     return false;
   return source->hasVar(name);
+}
+
+/// Wrapper for GridDataSource::hasXBoundaryGuards
+bool Mesh::sourceHasXBoundaryGuards() {
+  return source->hasXBoundaryGuards(this);
+}
+
+/// Wrapper for GridDataSource::hasYBoundaryGuards
+bool Mesh::sourceHasYBoundaryGuards() {
+  return source->hasYBoundaryGuards();
 }
 
 /**************************************************************************
@@ -387,6 +410,21 @@ void Mesh::createDefaultRegions(){
   addRegion3D("RGN_NOZ", Region<Ind3D>(0, LocalNx - 1, 0, LocalNy - 1, zstart, zend,
                                        LocalNy, LocalNz, maxregionblocksize));
   addRegion3D("RGN_GUARDS", mask(getRegion3D("RGN_ALL"), getRegion3D("RGN_NOBNDRY")));
+  addRegion3D("RGN_XGUARDS", Region<Ind3D>(0, xstart - 1, ystart, yend, zstart, zend,
+          LocalNy, LocalNz, maxregionblocksize)
+      + Region<Ind3D>(xend + 1, LocalNx - 1, ystart, yend, zstart, zend,
+          LocalNy, LocalNz, maxregionblocksize));
+  addRegion3D("RGN_YGUARDS", Region<Ind3D>(xstart, xend, 0, ystart - 1, zstart, zend,
+          LocalNy, LocalNz, maxregionblocksize)
+      + Region<Ind3D>(xstart, xend, yend + 1, LocalNy - 1, zstart, zend,
+          LocalNy, LocalNz, maxregionblocksize));
+  addRegion3D("RGN_ZGUARDS", Region<Ind3D>(xstart, xend, ystart, yend, 0, zstart - 1,
+          LocalNy, LocalNz, maxregionblocksize)
+      + Region<Ind3D>(xstart, xend, ystart, yend, zend + 1, LocalNz - 1,
+          LocalNy, LocalNz, maxregionblocksize));
+  addRegion3D("RGN_NOCORNERS",
+      (getRegion3D("RGN_NOBNDRY") + getRegion3D("RGN_XGUARDS") +
+        getRegion3D("RGN_YGUARDS") + getRegion3D("RGN_ZGUARDS")).unique());
 
   //2D regions
   addRegion2D("RGN_ALL", Region<Ind2D>(0, LocalNx - 1, 0, LocalNy - 1, 0, 0, LocalNy, 1,
@@ -397,7 +435,24 @@ void Mesh::createDefaultRegions(){
                                        maxregionblocksize));
   addRegion2D("RGN_NOY", Region<Ind2D>(0, LocalNx - 1, ystart, yend, 0, 0, LocalNy, 1,
                                        maxregionblocksize));
+  addRegion2D("RGN_NOZ", Region<Ind2D>(0, LocalNx - 1, 0, LocalNy - 1, 0, 0, LocalNy, 1,
+                                       maxregionblocksize));
   addRegion2D("RGN_GUARDS", mask(getRegion2D("RGN_ALL"), getRegion2D("RGN_NOBNDRY")));
+  addRegion2D("RGN_XGUARDS", Region<Ind2D>(0, xstart - 1, ystart, yend, 0, 0, LocalNy, 1,
+          maxregionblocksize)
+      + Region<Ind2D>(xend + 1, LocalNx - 1, ystart, yend, 0, 0, LocalNy, 1,
+          maxregionblocksize));
+  addRegion2D("RGN_YGUARDS", Region<Ind2D>(xstart, xend, 0, ystart - 1, 0, 0, LocalNy, 1,
+          maxregionblocksize)
+      + Region<Ind2D>(xstart, xend, yend + 1, LocalNy - 1, 0, 0, LocalNy, 1,
+          maxregionblocksize));
+  addRegion2D("RGN_ZGUARDS", Region<Ind2D>(xstart, xend, ystart, yend, 0, -1, LocalNy, 1,
+          maxregionblocksize)
+      + Region<Ind2D>(xstart, xend, ystart, yend, 0, -1, LocalNy, 1,
+          maxregionblocksize));
+  addRegion2D("RGN_NOCORNERS",
+      (getRegion2D("RGN_NOBNDRY") + getRegion2D("RGN_XGUARDS") +
+        getRegion2D("RGN_YGUARDS") + getRegion2D("RGN_ZGUARDS")).unique());
 
   // Perp regions
   addRegionPerp("RGN_ALL", Region<IndPerp>(0, LocalNx - 1, 0, 0, 0, LocalNz - 1, 1,
@@ -412,6 +467,21 @@ void Mesh::createDefaultRegions(){
   addRegionPerp("RGN_NOZ", Region<IndPerp>(0, LocalNx - 1, 0, 0, zstart, zend, 1, LocalNz,
                                            maxregionblocksize));
   addRegionPerp("RGN_GUARDS", mask(getRegionPerp("RGN_ALL"), getRegionPerp("RGN_NOBNDRY")));
+  addRegionPerp("RGN_XGUARDS", Region<IndPerp>(0, xstart - 1, 0, 0, zstart, zend, 1,
+          LocalNz, maxregionblocksize)
+      + Region<IndPerp>(xend + 1, LocalNx - 1, 0, 0, zstart, zend, 1,
+          LocalNz, maxregionblocksize));
+  addRegionPerp("RGN_YGUARDS", Region<IndPerp>(xstart, xend, 0, -1, zstart, zend, 1,
+          LocalNz, maxregionblocksize)
+      + Region<IndPerp>(xstart, xend, 0, -1, zstart, zend, 1,
+          LocalNz, maxregionblocksize));
+  addRegionPerp("RGN_ZGUARDS", Region<IndPerp>(xstart, xend, 0, 0, 0, zstart - 1, 1,
+          LocalNz, maxregionblocksize)
+      + Region<IndPerp>(xstart, xend, 0, 0, zend + 1, LocalNz - 1, 1,
+          LocalNz, maxregionblocksize));
+  addRegionPerp("RGN_NOCORNERS",
+      (getRegionPerp("RGN_NOBNDRY") + getRegionPerp("RGN_XGUARDS") +
+        getRegionPerp("RGN_YGUARDS") + getRegionPerp("RGN_ZGUARDS")).unique());
 
   // Construct index lookup for 3D-->2D
   indexLookup3Dto2D = Array<int>(LocalNx*LocalNy*LocalNz);

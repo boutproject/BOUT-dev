@@ -7,7 +7,7 @@
 
 #include <string>
 
-class OptionsTest : public ::testing::Test {
+class OptionsTest : public FakeMeshFixture {
 public:
   virtual ~OptionsTest() = default;
   WithQuietOutput quiet_info{output_info};
@@ -49,6 +49,22 @@ TEST_F(OptionsTest, IsSection) {
   ASSERT_TRUE(options.isSection("subsection"));
 }
 
+TEST_F(OptionsTest, IsSectionNotCaseSensitive) {
+  Options options;
+
+  // make sure options is initialized as a section
+  options["Testkey"] = 1.;
+
+  ASSERT_TRUE(options.isSection());
+  ASSERT_FALSE(options["testKey"].isSection());
+  ASSERT_TRUE(options.isSection(""));
+  ASSERT_FALSE(options.isSection("Subsection"));
+
+  options["subSection"]["testkey"] = 1.;
+
+  ASSERT_TRUE(options.isSection("Subsection"));
+}
+
 TEST_F(OptionsTest, SetGetInt) {
   Options options;
   options.set("int_key", 42, "code");
@@ -57,6 +73,18 @@ TEST_F(OptionsTest, SetGetInt) {
 
   int value;
   options.get("int_key", value, 99, false);
+
+  EXPECT_EQ(value, 42);
+}
+
+TEST_F(OptionsTest, SetGetIntNotCaseSensitive) {
+  Options options;
+  options.set("Int_key", 42, "code");
+
+  ASSERT_TRUE(options.isSet("int_Key"));
+
+  int value;
+  options.get("iNt_key", value, 99, false);
 
   EXPECT_EQ(value, 42);
 }
@@ -98,6 +126,16 @@ TEST_F(OptionsTest, InconsistentDefaultValueInt) {
   EXPECT_EQ(value, 99);
 }
 
+TEST_F(OptionsTest, InconsistentDefaultValueIntNotCaseSensitive) {
+  Options options;
+
+  int value;
+  options.get("Int_key", value, 99, false);
+  EXPECT_THROW(options.get("int_Key", value, 98, false), BoutException);
+
+  EXPECT_EQ(value, 99);
+}
+
 TEST_F(OptionsTest, SetGetReal) {
   Options options;
   options.set("real_key", 6.7e8, "code");
@@ -106,6 +144,18 @@ TEST_F(OptionsTest, SetGetReal) {
 
   BoutReal value;
   options.get("real_key", value, -78.0, false);
+
+  EXPECT_DOUBLE_EQ(value, 6.7e8);
+}
+
+TEST_F(OptionsTest, SetGetRealNotCaseSensitive) {
+  Options options;
+  options.set("Real_key", 6.7e8, "code");
+
+  ASSERT_TRUE(options.isSet("real_Key"));
+
+  BoutReal value;
+  options.get("Real_Key", value, -78.0, false);
 
   EXPECT_DOUBLE_EQ(value, 6.7e8);
 }
@@ -172,6 +222,18 @@ TEST_F(OptionsTest, SetGetBool) {
   EXPECT_EQ(value, true);
 }
 
+TEST_F(OptionsTest, SetGetBoolNotCaseSensitive) {
+  Options options;
+  options.set("Bool_key", true, "code");
+
+  ASSERT_TRUE(options.isSet("bool_Key"));
+
+  bool value;
+  options.get("Bool_Key", value, false, false);
+
+  EXPECT_EQ(value, true);
+}
+
 TEST_F(OptionsTest, SetGetBoolFalse) {
   Options options;
   options.set("bool_key", false, "code");
@@ -233,6 +295,20 @@ TEST_F(OptionsTest, SetGetString) {
   EXPECT_EQ(value, "abcdef");
 }
 
+TEST_F(OptionsTest, SetGetStringNotCaseSensitive) {
+  Options options;
+  // Note, string values are case sensitive
+  options.set("String_key", "AbCdEf", "code");
+
+  ASSERT_TRUE(options.isSet("string_Key"));
+
+  std::string value;
+  options.get("String_Key", value, "GhIjKl", false);
+
+  EXPECT_EQ(value, "AbCdEf");
+  EXPECT_NE(value, "abcdef");
+}
+
 TEST_F(OptionsTest, DefaultValueString) {
   Options options;
 
@@ -240,6 +316,17 @@ TEST_F(OptionsTest, DefaultValueString) {
   options.get("string_key", value, "ghijkl", false);
 
   EXPECT_EQ(value, "ghijkl");
+}
+
+TEST_F(OptionsTest, DefaultValueStringNotCaseSensitive) {
+  Options options;
+
+  std::string value;
+  // Note, string values are case sensitive
+  options.get("String_key", value, "GhIjKl", false);
+
+  EXPECT_EQ(value, "GhIjKl");
+  EXPECT_NE(value, "ghijkl");
 }
 
 TEST_F(OptionsTest, InconsistentDefaultValueString) {
@@ -253,6 +340,31 @@ TEST_F(OptionsTest, InconsistentDefaultValueString) {
   EXPECT_THROW(options.get("string_key", value, "_ghijkl", false), BoutException);
 
   EXPECT_EQ(value, "ghijkl");
+}
+
+TEST_F(OptionsTest, DefaultValueOptions) {
+  Options options, default_options;
+
+  default_options.set("int_key", 99);
+
+  int value = options["int_key"].withDefault(default_options["int_key"]).as<int>();
+
+  EXPECT_EQ(value, 99);
+}
+
+TEST_F(OptionsTest, InconsistentDefaultValueOptions) {
+  Options options, default_options;
+
+  default_options.set("int_key", 99);
+
+  EXPECT_EQ(options["int_key"].withDefault(42), 42);
+
+  int value = 0;
+  EXPECT_THROW(
+      value = options["int_key"].withDefault(default_options["int_key"]).as<int>(),
+      BoutException);
+
+  EXPECT_EQ(value, 0);
 }
 
 TEST_F(OptionsTest, SingletonTest) {
@@ -382,6 +494,18 @@ TEST_F(OptionsTest, SetSameOptionTwice) {
   EXPECT_NO_THROW(options.set("key", "value", "code",true));
 }
 
+TEST_F(OptionsTest, SetSameOptionTwiceNotCaseSensitive) {
+  Options options;
+  // Note string values are case sensitive
+  options.set("Key", "Value", "code");
+  EXPECT_THROW(options.set("keY", "New Value", "code"),BoutException);
+
+  options.set("kEy", "Value", "code");
+  EXPECT_THROW(options.set("keY", "vAlue", "code"),BoutException);
+  EXPECT_NO_THROW(options.forceSet("KeY", "nEw valUe", "code"));
+  EXPECT_NO_THROW(options.set("KEY", "valuE", "code",true));
+}
+
 /// New interface
 
 
@@ -389,10 +513,20 @@ TEST_F(OptionsTest, NewIsSet) {
   Options options;
 
   ASSERT_FALSE(options["int_key"].isSet());
-  
+
   options["int_key"].assign(42, "code");
 
   ASSERT_TRUE(options["int_key"].isSet());
+}
+
+TEST_F(OptionsTest, NewIsSetNotCaseSensitive) {
+  Options options;
+
+  ASSERT_FALSE(options["Int_key"].isSet());
+
+  options["int_Key"].assign(42, "code");
+
+  ASSERT_TRUE(options["Int_key"].isSet());
 }
 
 TEST_F(OptionsTest, NewSubSection) {
@@ -404,6 +538,18 @@ TEST_F(OptionsTest, NewSubSection) {
   ASSERT_TRUE(options["sub-section"]["int_key"].isSet());
   
   int value = options["sub-section"]["int_key"].withDefault(99);
+  EXPECT_EQ(value, 42);
+}
+
+TEST_F(OptionsTest, NewSubSectionNotCaseSensitive) {
+  Options options;
+
+  options["Sub-section"]["Int_key"].assign(42, "code");
+
+  ASSERT_FALSE(options["int_key"].isSet());
+  ASSERT_TRUE(options["sub-Section"]["int_Key"].isSet());
+
+  int value = options["sub-secTion"]["inT_key"].withDefault(99);
   EXPECT_EQ(value, 42);
 }
 
@@ -440,6 +586,20 @@ TEST_F(OptionsTest, NewSetGetIntFromReal) {
   EXPECT_THROW(options["key2"].as<int>(), BoutException);
 }
 
+TEST_F(OptionsTest, NewSetGetIntFromRealNotCaseSensitive) {
+  Options options;
+  options["Key1"] = 42.00001;
+
+  ASSERT_TRUE(options["kEy1"].isSet());
+
+  int value = options["keY1"].withDefault(99);
+
+  EXPECT_EQ(value, 42);
+
+  options["Key2"] = 12.5;
+  EXPECT_THROW(options["kEy2"].as<int>(), BoutException);
+}
+
 TEST_F(OptionsTest, NewDefaultValueInt) {
   Options options;
 
@@ -452,6 +612,13 @@ TEST_F(OptionsTest, WithDefaultString) {
 
   std::string value = options.withDefault("hello");
   EXPECT_EQ(value, "hello");
+}
+
+TEST_F(OptionsTest, WithDefaultStringCaseSensitive) {
+  Options options;
+
+  std::string value = options.withDefault("Hello");
+  EXPECT_NE(value, "hello");
 }
 
 TEST_F(OptionsTest, OptionsMacroPointer) {
@@ -571,6 +738,17 @@ TEST_F(OptionsTest, AssignSectionReplace) {
   EXPECT_EQ(option2["key"].as<int>(), 42);
 }
 
+TEST_F(OptionsTest, AssignSectionReplaceNotCaseSensitive) {
+  Options option1, option2;
+
+  option1["Key"] = 42;
+  option2["kEy"] = 23;
+
+  option2 = option1;
+
+  EXPECT_EQ(option2["keY"].as<int>(), 42);
+}
+
 TEST_F(OptionsTest, AssignSectionParent) {
   Options option1, option2;
 
@@ -639,12 +817,28 @@ TEST_F(OptionsTest, AttributeStoreBool) {
   EXPECT_FALSE(option.attributes["test"].as<bool>());
 }
 
+TEST_F(OptionsTest, AttributeStoreBoolCaseSensitive) {
+  Options option;
+  option.attributes["Test"] = true;
+
+  EXPECT_FALSE(option.attributes["test"].as<bool>());
+  EXPECT_TRUE(option.attributes["Test"].as<bool>());
+}
+
 TEST_F(OptionsTest, AttributeStoreInt) {
   Options option;
   option.attributes["test"] = 42;
 
   int value = option.attributes["test"];
   EXPECT_EQ(value, 42);
+}
+
+TEST_F(OptionsTest, AttributeStoreIntCaseSensitive) {
+  Options option;
+  option.attributes["Test"] = 42;
+
+  int value = option.attributes["tEst"];
+  EXPECT_NE(value, 42);
 }
 
 TEST_F(OptionsTest, AttributeStoreBoutReal) {
@@ -655,6 +849,14 @@ TEST_F(OptionsTest, AttributeStoreBoutReal) {
   EXPECT_DOUBLE_EQ(value, 3.1415);
 }
 
+TEST_F(OptionsTest, AttributeStoreBoutRealCaseSensitive) {
+  Options option;
+  option.attributes["Test"] = 3.1415;
+
+  BoutReal value = option.attributes["tEst"];
+  EXPECT_DOUBLE_EQ(value, 0.);
+}
+
 TEST_F(OptionsTest, AttributeStoreConstChars) {
   Options option;
   option.attributes["test"] = "hello";
@@ -663,7 +865,16 @@ TEST_F(OptionsTest, AttributeStoreConstChars) {
   EXPECT_EQ(test, "hello");
 }
 
-TEST_F(OptionsTest,  AttributeTimeDimension) {
+TEST_F(OptionsTest, AttributeStoreConstCharsCaseSensitive) {
+  Options option;
+  option.attributes["Test"] = "HeLlO";
+
+  std::string test = option.attributes["Test"];
+  EXPECT_EQ(test, "HeLlO");
+  EXPECT_NE(test, "hello");
+}
+
+TEST_F(OptionsTest, AttributeTimeDimension) {
   Options option;
 
   option = 3;
@@ -705,6 +916,16 @@ TEST_F(OptionsTest, EqualityString) {
   option = "hello";
 
   EXPECT_TRUE(option == "hello");
+  EXPECT_FALSE(option == "goodbye");
+}
+
+TEST_F(OptionsTest, EqualityStringCaseSensitive) {
+  Options option;
+
+  option = "HeLlO";
+
+  EXPECT_TRUE(option == "HeLlO");
+  EXPECT_FALSE(option == "hello");
   EXPECT_FALSE(option == "goodbye");
 }
 
@@ -769,30 +990,22 @@ TEST_F(OptionsTest, TypeAttributeInt) {
 }
 
 TEST_F(OptionsTest, TypeAttributeField2D) {
-  // Note: Need a Mesh to create Field2D
-  FakeMesh fieldmesh(6,6,2);
-  fieldmesh.createDefaultRegions();
-
   Options option;
   option = "42";
 
   // Casting to bool should modify the "type" attribute
-  Field2D value = option.withDefault<Field2D>(Field2D(-1,&fieldmesh));
+  Field2D value = option.withDefault<Field2D>(Field2D(-1, bout::globals::mesh));
 
   EXPECT_EQ(value(0,0), 42);
   EXPECT_EQ(option.attributes["type"].as<std::string>(), "Field2D");
 }
 
 TEST_F(OptionsTest, TypeAttributeField3D) {
-  // Note: Need a Mesh to create Field3D
-  FakeMesh fieldmesh(6,6,2);
-  fieldmesh.createDefaultRegions();
-  
   Options option;
   option = "42";
 
   // Casting to bool should modify the "type" attribute
-  Field3D value = option.withDefault<Field3D>(Field3D(-1,&fieldmesh));
+  Field3D value = option.withDefault<Field3D>(Field3D(-1, bout::globals::mesh));
 
   EXPECT_EQ(value(0,0,0), 42);
   EXPECT_EQ(option.attributes["type"].as<std::string>(), "Field3D");

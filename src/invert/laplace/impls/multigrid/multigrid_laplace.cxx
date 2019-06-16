@@ -44,6 +44,9 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt, const CELL_LOC loc, Mesh *mesh_
 
   TRACE("LaplaceMultigrid::LaplaceMultigrid(Options *opt)");
   
+  // periodic x-direction not handled: see MultigridAlg::communications
+  ASSERT1(!localmesh->periodicX);
+
   A.setLocation(location);
   C1.setLocation(location);
   C2.setLocation(location);
@@ -198,7 +201,7 @@ BOUT_OMP(master)
   }  
 }
 
-const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &x0) {
+FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
 
   TRACE("LaplaceMultigrid::solve(const FieldPerp, const FieldPerp)");
 

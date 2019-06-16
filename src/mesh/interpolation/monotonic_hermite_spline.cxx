@@ -37,7 +37,7 @@ Field3D MonotonicHermiteSpline::interpolate(const Field3D &f) const {
   // coordinates
   Field3D fx = bout::derivatives::index::DDX(f, CELL_DEFAULT, "DEFAULT");
   localmesh->communicateXZ(fx);
-  Field3D fz = bout::derivatives::index::DDZ(f, CELL_DEFAULT, "DEFAULT", RGN_ALL);
+  Field3D fz = bout::derivatives::index::DDZ(f, CELL_DEFAULT, "DEFAULT", "RGN_ALL");
   localmesh->communicateXZ(fz);
   Field3D fxz = bout::derivatives::index::DDX(fz, CELL_DEFAULT, "DEFAULT");
   localmesh->communicateXZ(fxz);

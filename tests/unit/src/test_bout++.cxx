@@ -314,6 +314,11 @@ TEST_F(PrintStartupTest, CommandLineArguments) {
 }
 
 #ifdef SIGHANDLE
+
+#ifdef BOUT_FPE
+#include <fenv.h>
+#endif
+
 class SignalHandlerTest : public ::testing::Test {
 public:
   SignalHandlerTest() = default;
@@ -321,6 +326,10 @@ public:
     std::signal(SIGUSR1, SIG_DFL);
     std::signal(SIGFPE, SIG_DFL);
     std::signal(SIGSEGV, SIG_DFL);
+#ifdef BOUT_FPE
+    std::signal(SIGFPE, SIG_DFL);
+    fedisableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+#endif
   }
 };
 

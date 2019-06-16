@@ -51,9 +51,11 @@ def verify(f1, f2):
         for v in d1.keys():
             if d1[v].shape != d2[v].shape:
                 raise RuntimeError("shape mismatch in ", v, d1[v], d2[v])
-            if v in ["MXSUB", "MYSUB", "NXPE", "NYPE", "iteration"]:
+            if v in ["MXSUB", "MYSUB", "NXPE", "NYPE", "iteration","wall_time"]:
                 continue
-            if not np.allclose(d1[v], d2[v]):
+            if v.startswith("wtime") or v.startswith("ncalls"):
+                continue
+            if not np.allclose(d1[v], d2[v], equal_nan=True):
                 err = ""
                 dimensions = [range(x) for x in d1[v].shape]
                 for i in itertools.product(*dimensions):
