@@ -127,7 +127,7 @@ Field2D FieldFactory::create2D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC 
   result.setLocation(loc);
 
   BOUT_FOR(i, result.getRegion("RGN_ALL")) {
-    result[i] = gen->generate(Position(i, loc, localmesh, t));
+    result[i] = gen->generate(Context(i, loc, localmesh, t));
   };
 
   return result;
@@ -158,7 +158,7 @@ Field3D FieldFactory::create3D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC 
   result.setLocation(loc);
 
   BOUT_FOR(i, result.getRegion("RGN_ALL")) {
-    result[i] = gen->generate(Position(i, loc, localmesh, t));
+    result[i] = gen->generate(Context(i, loc, localmesh, t));
   };
 
   if (transform_from_field_aligned) {
@@ -199,46 +199,9 @@ FieldPerp FieldFactory::createPerp(FieldGeneratorPtr gen, Mesh* localmesh, CELL_
   FieldPerp result(localmesh);
   result.allocate();
   result.setLocation(loc);
-
-  switch (loc) {
-  case CELL_XLOW: {
-    BOUT_FOR(i, result.getRegion("RGN_ALL")) {
-      BoutReal xpos = 0.5 * (localmesh->GlobalX(i.x() - 1) + localmesh->GlobalX(i.x()));
-      result[i] = gen->generate(xpos, 0.,
-                                TWOPI * static_cast<BoutReal>(i.z())
-                                    / static_cast<BoutReal>(localmesh->LocalNz),
-                                t);
-    }
-    break;
-  }
-  case CELL_YLOW: {
-    BOUT_FOR(i, result.getRegion("RGN_ALL")) {
-      result[i] = gen->generate(localmesh->GlobalX(i.x()), 0.,
-                                TWOPI * static_cast<BoutReal>(i.z())
-                                    / static_cast<BoutReal>(localmesh->LocalNz),
-                                t);
-    }
-    break;
-  }
-  case CELL_ZLOW: {
-    BOUT_FOR(i, result.getRegion("RGN_ALL")) {
-      result[i] =
-          gen->generate(localmesh->GlobalX(i.x()), 0.,
-                        TWOPI * (static_cast<BoutReal>(i.z()) - 0.5)
-                            / static_cast<BoutReal>(localmesh->LocalNz),
-                        t);
-    }
-    break;
-  }
-  default: { // CELL_CENTRE
-    BOUT_FOR(i, result.getRegion("RGN_ALL")) {
-      result[i] =
-          gen->generate(localmesh->GlobalX(i.x()), 0.,
-                        TWOPI * static_cast<BoutReal>(i.z())
-                            / static_cast<BoutReal>(localmesh->LocalNz),
-                        t);
-    }
-  }
+  
+  BOUT_FOR(i, result.getRegion("RGN_ALL")) {
+    result[i] = gen->generate(Context(i, loc, localmesh, t));
   };
 
   if (transform_from_field_aligned) {

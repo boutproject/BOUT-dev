@@ -30,6 +30,13 @@ using std::list;
 using std::string;
 using std::stringstream;
 
+// Note: Here rather than in header to avoid many deprecated warnings
+// Remove in future and make this function pure virtual
+double FieldGenerator::generate(const Context& pos) {
+  return generate(pos.x(), pos.y(), pos.z(), pos.t());
+}
+
+
 /////////////////////////////////////////////
 namespace { // These classes only visible in this file
 
@@ -40,7 +47,7 @@ public:
   FieldGeneratorPtr clone(const list<FieldGeneratorPtr> UNUSED(args)) override {
     return std::make_shared<FieldX>();
   }
-  double generate(Position pos) override {
+  double generate(const Context& pos) override {
     return pos.x();
   }
   std::string str() const override { return std::string("x"); }
@@ -51,7 +58,7 @@ public:
   FieldGeneratorPtr clone(const list<FieldGeneratorPtr> UNUSED(args)) override {
     return std::make_shared<FieldY>();
   }
-  double generate(Position pos) override {
+  double generate(const Context& pos) override {
     return pos.y();
   }
   std::string str() const override { return std::string("y"); }
@@ -62,7 +69,7 @@ public:
   FieldGeneratorPtr clone(const list<FieldGeneratorPtr> UNUSED(args)) override {
     return std::make_shared<FieldZ>();
   }
-  double generate(Position pos) override {
+  double generate(const Context& pos) override {
     return pos.z();
   }
   std::string str() const override { return std::string("z"); }
@@ -73,7 +80,7 @@ public:
   FieldGeneratorPtr clone(const list<FieldGeneratorPtr> UNUSED(args)) override {
     return std::make_shared<FieldT>();
   }
-  double generate(Position pos) override {
+  double generate(const Context& pos) override {
     return pos.t();
   }
   std::string str() const override { return std::string("t"); }
@@ -82,7 +89,7 @@ public:
 class FieldParam : public FieldGenerator {
 public:
   FieldParam(const std::string name) : name(name) {}
-  double generate(Position pos) override {
+  double generate(const Context& pos) override {
     return pos.get(name); // Get a parameter
   }
   std::string str() const override { return std::string("{") + name + std::string("}"); }
@@ -99,7 +106,7 @@ FieldGeneratorPtr FieldBinary::clone(const list<FieldGeneratorPtr> args) {
   return std::make_shared<FieldBinary>(args.front(), args.back(), op);
 }
 
-BoutReal FieldBinary::generate(Position pos) {
+BoutReal FieldBinary::generate(const Context& pos) {
   BoutReal lval = lhs->generate(pos);
   BoutReal rval = rhs->generate(pos);
   switch(op) {

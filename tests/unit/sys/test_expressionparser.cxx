@@ -23,12 +23,8 @@ public:
   std::vector<double> t_array = {-1., 0., 1., 5., 10., 3.14e8};
 };
 
-Position LegacyPosition(BoutReal x, BoutReal y, BoutReal z, BoutReal t){
-  Position pos{0,0,0, CELL_CENTRE, nullptr, t};
-  pos.setX(x);
-  pos.setY(y);
-  pos.setZ(z);
-  return pos;
+Context LegacyPosition(BoutReal x, BoutReal y, BoutReal z, BoutReal t) {
+  return Context().set("x", x, "y", y, "z", z, "t", t);
 }
 
 /// For testing, a generator function of two inputs
@@ -49,7 +45,7 @@ public:
     return std::make_shared<BinaryGenerator>(args.front(), args.back());
   }
 
-  BoutReal generate(Position pos) {
+  BoutReal generate(const Context& pos) override {
     return a->generate(pos) + b->generate(pos);
   }
   std::string str() const {
@@ -75,7 +71,7 @@ public:
     return std::make_shared<IncrementGenerator>(args.front());
   }
 
-  BoutReal generate(Position pos) {
+  BoutReal generate(const Context& pos) override {
     return gen->generate(pos) + 1;
   }
   std::string str() const { return std::string{"increment(" + gen->str() + ")"}; }
@@ -100,7 +96,7 @@ public:
     return std::make_shared<NullaryGenerator>();
   }
 
-  BoutReal generate(Position UNUSED(pos)) {
+  BoutReal generate(const Context &) override {
     return 4.0;
   }
 };

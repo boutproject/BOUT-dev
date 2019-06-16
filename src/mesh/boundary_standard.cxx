@@ -154,7 +154,7 @@ void BoundaryDirichlet::apply(Field2D& f, BoutReal t) {
 
         for (; !bndry->isDone(); bndry->next1d()) {
           if (fg) {
-            val = fg->generate(Position(bndry, loc, t, mesh));
+            val = fg->generate(Context(bndry, loc, t, mesh));
           }
 
           f(bndry->x, bndry->y) = val;
@@ -173,7 +173,7 @@ void BoundaryDirichlet::apply(Field2D& f, BoutReal t) {
         // Inner x boundary. Set one point inwards
         for (; !bndry->isDone(); bndry->next1d()) {
           if (fg) {
-            val = fg->generate(Position(bndry, loc, t, mesh));
+            val = fg->generate(Context(bndry, loc, t, mesh));
           }
 
           f(bndry->x - bndry->bx, bndry->y) = val;
@@ -192,7 +192,7 @@ void BoundaryDirichlet::apply(Field2D& f, BoutReal t) {
         // y boundaries
         for (; !bndry->isDone(); bndry->next1d()) {
           if (fg) {
-            val = fg->generate(Position(bndry, loc, t, mesh));
+            val = fg->generate(Context(bndry, loc, t, mesh));
           }
           f(bndry->x, bndry->y) = 2 * val - f(bndry->x - bndry->bx, bndry->y - bndry->by);
 
@@ -213,7 +213,7 @@ void BoundaryDirichlet::apply(Field2D& f, BoutReal t) {
 
         for (; !bndry->isDone(); bndry->next1d()) {
           if (fg) {
-            val = fg->generate(Position(bndry, loc, t, mesh));
+            val = fg->generate(Context(bndry, loc, t, mesh));
           }
 
           f(bndry->x, bndry->y) = val;
@@ -231,7 +231,7 @@ void BoundaryDirichlet::apply(Field2D& f, BoutReal t) {
         // Lower y boundary. Set one point inwards
         for (; !bndry->isDone(); bndry->next1d()) {
           if (fg) {
-            val = fg->generate(Position(bndry, loc, t, mesh));
+            val = fg->generate(Context(bndry, loc, t, mesh));
           }
 
           f(bndry->x, bndry->y - bndry->by) = val;
@@ -250,7 +250,7 @@ void BoundaryDirichlet::apply(Field2D& f, BoutReal t) {
         for (; !bndry->isDone(); bndry->next1d()) {
 
           if (fg) {
-            val = fg->generate(Position(bndry, loc, t, mesh));
+            val = fg->generate(Context(bndry, loc, t, mesh));
           }
           f(bndry->x, bndry->y) = 2 * val - f(bndry->x - bndry->bx, bndry->y - bndry->by);
 
@@ -270,7 +270,7 @@ void BoundaryDirichlet::apply(Field2D& f, BoutReal t) {
     for (; !bndry->isDone(); bndry->next1d()) {
 
       if (fg) {
-        val = fg->generate(Position(bndry, loc, t, mesh));
+        val = fg->generate(Context(bndry, loc, t, mesh));
       }
 
       f(bndry->x, bndry->y) = 2 * val - f(bndry->x - bndry->bx, bndry->y - bndry->by);
@@ -319,7 +319,7 @@ void BoundaryDirichlet::apply(Field3D& f, BoutReal t) {
         for (; !bndry->isDone(); bndry->next1d()) {
           for (int zk = 0; zk < mesh->LocalNz; zk++) {
             if (fg) {
-              val = fg->generate(Position(bndry, zk, loc, t, mesh));
+              val = fg->generate(Context(bndry, zk, loc, t, mesh));
             }
             f(bndry->x, bndry->y, zk) = val;
 
@@ -340,7 +340,7 @@ void BoundaryDirichlet::apply(Field3D& f, BoutReal t) {
         for (; !bndry->isDone(); bndry->next1d()) {
           for (int zk = 0; zk < mesh->LocalNz; zk++) {
             if (fg) {
-              val = fg->generate(Position(bndry, zk, loc, t, mesh));
+              val = fg->generate(Context(bndry, zk, loc, t, mesh));
             }
             f(bndry->x - bndry->bx, bndry->y, zk) = val;
             f(bndry->x, bndry->y, zk) = f(bndry->x - bndry->bx, bndry->y, zk);
@@ -362,7 +362,7 @@ void BoundaryDirichlet::apply(Field3D& f, BoutReal t) {
         for (; !bndry->isDone(); bndry->next1d()) {
           for (int zk = 0; zk < mesh->LocalNz; zk++) {
             if (fg) {
-              val = fg->generate(Position(bndry, zk, loc, t, mesh));
+              val = fg->generate(Context(bndry, zk, loc, t, mesh));
             }
             f(bndry->x, bndry->y, zk) =
                 2 * val - f(bndry->x - bndry->bx, bndry->y - bndry->by, zk);
@@ -388,7 +388,7 @@ void BoundaryDirichlet::apply(Field3D& f, BoutReal t) {
         for (; !bndry->isDone(); bndry->next1d()) {
           for (int zk = 0; zk < mesh->LocalNz; zk++) {
             if (fg) {
-              val = fg->generate(Position(bndry, zk, loc, t, mesh));
+              val = fg->generate(Context(bndry, zk, loc, t, mesh));
             }
             f(bndry->x, bndry->y, zk) = val;
 
@@ -409,7 +409,7 @@ void BoundaryDirichlet::apply(Field3D& f, BoutReal t) {
         for (; !bndry->isDone(); bndry->next1d()) {
           for (int zk = 0; zk < mesh->LocalNz; zk++) {
             if (fg) {
-              val = fg->generate(Position(bndry, zk, loc, t, mesh));
+              val = fg->generate(Context(bndry, zk, loc, t, mesh));
             }
             f(bndry->x, bndry->y - bndry->by, zk) = val;
 
@@ -430,7 +430,7 @@ void BoundaryDirichlet::apply(Field3D& f, BoutReal t) {
         for (; !bndry->isDone(); bndry->next1d()) {
           for (int zk = 0; zk < mesh->LocalNz; zk++) {
             if (fg) {
-              val = fg->generate(Position(bndry, zk, loc, t, mesh));
+              val = fg->generate(Context(bndry, zk, loc, t, mesh));
             }
 
             f(bndry->x, bndry->y, zk) =
@@ -454,7 +454,7 @@ void BoundaryDirichlet::apply(Field3D& f, BoutReal t) {
     for (; !bndry->isDone(); bndry->next1d()) {
       for (int zk = 0; zk < mesh->LocalNz; zk++) {
         if (fg) {
-          val = fg->generate(Position(bndry, zk, loc, t, mesh));
+          val = fg->generate(Context(bndry, zk, loc, t, mesh));
         }
         f(bndry->x, bndry->y, zk) =
             2 * val - f(bndry->x - bndry->bx, bndry->y - bndry->by, zk);
@@ -498,7 +498,7 @@ void BoundaryDirichlet::apply(Field3D& f, BoutReal t) {
         int yi = bndry->y + i * bndry->by;
         for (int zk = 0; zk < mesh->LocalNz; zk++) {
           if (fg) {
-            val = fg->generate(Position(bndry, zk, loc, t, mesh));
+            val = fg->generate(Context(bndry, zk, loc, t, mesh));
           }
           f(xi, yi, zk) = val;
         }
@@ -567,7 +567,7 @@ void BoundaryDirichlet_O3::apply(Field2D& f, BoutReal t) {
         // Outer x boundary
         for (; !bndry->isDone(); bndry->next1d()) {
           if (fg) {
-            val = fg->generate(Position(bndry, loc, t, mesh));
+            val = fg->generate(Context(bndry, loc, t, mesh));
           }
 
           f(bndry->x, bndry->y) = val;
@@ -587,7 +587,7 @@ void BoundaryDirichlet_O3::apply(Field2D& f, BoutReal t) {
         // Inner x boundary. Set one point inwards
         for (; !bndry->isDone(); bndry->next1d()) {
           if (fg) {
-            val = fg->generate(Position(bndry, loc, t, mesh));
+            val = fg->generate(Context(bndry, loc, t, mesh));
           }
           f(bndry->x - bndry->bx, bndry->y) = val;
 
@@ -605,7 +605,7 @@ void BoundaryDirichlet_O3::apply(Field2D& f, BoutReal t) {
       if (bndry->by != 0) {
         for (; !bndry->isDone(); bndry->next1d()) {
           if (fg) {
-            val = fg->generate(Position(bndry, loc, t, mesh));
+            val = fg->generate(Context(bndry, loc, t, mesh));
           }
 
           f(bndry->x, bndry->y) =
@@ -631,7 +631,7 @@ void BoundaryDirichlet_O3::apply(Field2D& f, BoutReal t) {
 
         for (; !bndry->isDone(); bndry->next1d()) {
           if (fg) {
-            val = fg->generate(Position(bndry, loc, t, mesh));
+            val = fg->generate(Context(bndry, loc, t, mesh));
           }
 
           f(bndry->x, bndry->y) = val;
@@ -651,7 +651,7 @@ void BoundaryDirichlet_O3::apply(Field2D& f, BoutReal t) {
         // Lower y boundary. Set one point inwards
         for (; !bndry->isDone(); bndry->next1d()) {
           if (fg) {
-            val = fg->generate(Position(bndry, loc, t, mesh));
+            val = fg->generate(Context(bndry, loc, t, mesh));
           }
 
           f(bndry->x, bndry->y - bndry->by) = val;
@@ -671,7 +671,7 @@ void BoundaryDirichlet_O3::apply(Field2D& f, BoutReal t) {
         for (; !bndry->isDone(); bndry->next1d()) {
 
           if (fg) {
-            val = fg->generate(Position(bndry, loc, t, mesh));
+            val = fg->generate(Context(bndry, loc, t, mesh));
           }
 
           f(bndry->x, bndry->y) =
@@ -696,7 +696,7 @@ void BoundaryDirichlet_O3::apply(Field2D& f, BoutReal t) {
     for (; !bndry->isDone(); bndry->next1d()) {
 
       if (fg) {
-        val = fg->generate(Position(bndry, loc, t, mesh));
+        val = fg->generate(Context(bndry, loc, t, mesh));
       }
 
       f(bndry->x, bndry->y) =
@@ -748,7 +748,7 @@ void BoundaryDirichlet_O3::apply(Field3D& f, BoutReal t) {
         for (; !bndry->isDone(); bndry->next1d()) {
           for (int zk = 0; zk < mesh->LocalNz; zk++) {
             if (fg) {
-              val = fg->generate(Position(bndry, zk, loc, t, mesh));
+              val = fg->generate(Context(bndry, zk, loc, t, mesh));
             }
             f(bndry->x, bndry->y, zk) = val;
 
@@ -769,7 +769,7 @@ void BoundaryDirichlet_O3::apply(Field3D& f, BoutReal t) {
         for (; !bndry->isDone(); bndry->next1d()) {
           for (int zk = 0; zk < mesh->LocalNz; zk++) {
             if (fg) {
-              val = fg->generate(Position(bndry, zk, loc, t, mesh));
+              val = fg->generate(Context(bndry, zk, loc, t, mesh));
             }
             f(bndry->x - bndry->bx, bndry->y, zk) = val;
 
@@ -791,7 +791,7 @@ void BoundaryDirichlet_O3::apply(Field3D& f, BoutReal t) {
         for (; !bndry->isDone(); bndry->next1d()) {
           for (int zk = 0; zk < mesh->LocalNz; zk++) {
             if (fg) {
-              val = fg->generate(Position(bndry, zk, loc, t, mesh));
+              val = fg->generate(Context(bndry, zk, loc, t, mesh));
             }
 
             f(bndry->x, bndry->y, zk) =
@@ -819,7 +819,7 @@ void BoundaryDirichlet_O3::apply(Field3D& f, BoutReal t) {
         for (; !bndry->isDone(); bndry->next1d()) {
           for (int zk = 0; zk < mesh->LocalNz; zk++) {
             if (fg) {
-              val = fg->generate(Position(bndry, zk, loc, t, mesh));
+              val = fg->generate(Context(bndry, zk, loc, t, mesh));
             }
             f(bndry->x, bndry->y, zk) = val;
 
@@ -840,7 +840,7 @@ void BoundaryDirichlet_O3::apply(Field3D& f, BoutReal t) {
         for (; !bndry->isDone(); bndry->next1d()) {
           for (int zk = 0; zk < mesh->LocalNz; zk++) {
             if (fg) {
-              val = fg->generate(Position(bndry, zk, loc, t, mesh));
+              val = fg->generate(Context(bndry, zk, loc, t, mesh));
             }
             f(bndry->x, bndry->y - bndry->by, zk) = val;
 
@@ -861,7 +861,7 @@ void BoundaryDirichlet_O3::apply(Field3D& f, BoutReal t) {
         for (; !bndry->isDone(); bndry->next1d()) {
           for (int zk = 0; zk < mesh->LocalNz; zk++) {
             if (fg) {
-              val = fg->generate(Position(bndry, zk, loc, t, mesh));
+              val = fg->generate(Context(bndry, zk, loc, t, mesh));
             }
 
             f(bndry->x, bndry->y, zk) =
@@ -886,7 +886,7 @@ void BoundaryDirichlet_O3::apply(Field3D& f, BoutReal t) {
     for (; !bndry->isDone(); bndry->next1d()) {
       for (int zk = 0; zk < mesh->LocalNz; zk++) {
         if (fg) {
-          val = fg->generate(Position(bndry, zk, loc, t, mesh));
+          val = fg->generate(Context(bndry, zk, loc, t, mesh));
         }
 
         f(bndry->x, bndry->y, zk) =
@@ -972,7 +972,7 @@ void BoundaryDirichlet_O4::apply(Field2D& f, BoutReal t) {
 
         for (; !bndry->isDone(); bndry->next1d()) {
           if (fg) {
-            val = fg->generate(Position(bndry, loc, t, mesh));
+            val = fg->generate(Context(bndry, loc, t, mesh));
           }
           f(bndry->x, bndry->y) = val;
 
@@ -993,7 +993,7 @@ void BoundaryDirichlet_O4::apply(Field2D& f, BoutReal t) {
         // Inner boundary. Set one point inwards
         for (; !bndry->isDone(); bndry->next1d()) {
           if (fg) {
-            val = fg->generate(Position(bndry, loc, t, mesh));
+            val = fg->generate(Context(bndry, loc, t, mesh));
           }
 
           f(bndry->x - bndry->bx, bndry->y) = val;
@@ -1015,7 +1015,7 @@ void BoundaryDirichlet_O4::apply(Field2D& f, BoutReal t) {
         for (; !bndry->isDone(); bndry->next1d()) {
 
           if (fg) {
-            val = fg->generate(Position(bndry, loc, t, mesh));
+            val = fg->generate(Context(bndry, loc, t, mesh));
           }
 
           f(bndry->x, bndry->y) =
@@ -1043,7 +1043,7 @@ void BoundaryDirichlet_O4::apply(Field2D& f, BoutReal t) {
 
         for (; !bndry->isDone(); bndry->next1d()) {
           if (fg) {
-            val = fg->generate(Position(bndry, loc, t, mesh));
+            val = fg->generate(Context(bndry, loc, t, mesh));
           }
           f(bndry->x, bndry->y) = val;
 
@@ -1063,7 +1063,7 @@ void BoundaryDirichlet_O4::apply(Field2D& f, BoutReal t) {
         // Inner y boundary. Set one point inwards
         for (; !bndry->isDone(); bndry->next1d()) {
           if (fg) {
-            val = fg->generate(Position(bndry, loc, t, mesh));
+            val = fg->generate(Context(bndry, loc, t, mesh));
           }
 
           f(bndry->x, bndry->y - bndry->by) = val;
@@ -1086,7 +1086,7 @@ void BoundaryDirichlet_O4::apply(Field2D& f, BoutReal t) {
         for (; !bndry->isDone(); bndry->next1d()) {
 
           if (fg) {
-            val = fg->generate(Position(bndry, loc, t, mesh));
+            val = fg->generate(Context(bndry, loc, t, mesh));
           }
 
           f(bndry->x, bndry->y) =
@@ -1113,7 +1113,7 @@ void BoundaryDirichlet_O4::apply(Field2D& f, BoutReal t) {
     for (; !bndry->isDone(); bndry->next1d()) {
 
       if (fg) {
-        val = fg->generate(Position(bndry, loc, t, mesh));
+        val = fg->generate(Context(bndry, loc, t, mesh));
       }
 
       f(bndry->x, bndry->y) =
@@ -1167,7 +1167,7 @@ void BoundaryDirichlet_O4::apply(Field3D& f, BoutReal t) {
         for (; !bndry->isDone(); bndry->next1d()) {
           for (int zk = 0; zk < mesh->LocalNz; zk++) {
             if (fg) {
-              val = fg->generate(Position(bndry, zk, loc, t, mesh));
+              val = fg->generate(Context(bndry, zk, loc, t, mesh));
             }
             f(bndry->x, bndry->y, zk) = val;
 
@@ -1189,7 +1189,7 @@ void BoundaryDirichlet_O4::apply(Field3D& f, BoutReal t) {
         for (; !bndry->isDone(); bndry->next1d()) {
           for (int zk = 0; zk < mesh->LocalNz; zk++) {
             if (fg) {
-              val = fg->generate(Position(bndry, zk, loc, t, mesh));
+              val = fg->generate(Context(bndry, zk, loc, t, mesh));
             }
             f(bndry->x - bndry->bx, bndry->y, zk) = val;
 
@@ -1212,7 +1212,7 @@ void BoundaryDirichlet_O4::apply(Field3D& f, BoutReal t) {
         for (; !bndry->isDone(); bndry->next1d()) {
           for (int zk = 0; zk < mesh->LocalNz; zk++) {
             if (fg) {
-              val = fg->generate(Position(bndry, zk, loc, t, mesh));
+              val = fg->generate(Context(bndry, zk, loc, t, mesh));
             }
             f(bndry->x, bndry->y, zk) =
                 (16. / 5) * val - 3. * f(bndry->x - bndry->bx, bndry->y - bndry->by, zk)
@@ -1241,7 +1241,7 @@ void BoundaryDirichlet_O4::apply(Field3D& f, BoutReal t) {
         for (; !bndry->isDone(); bndry->next1d()) {
           for (int zk = 0; zk < mesh->LocalNz; zk++) {
             if (fg) {
-              val = fg->generate(Position(bndry, zk, loc, t, mesh));
+              val = fg->generate(Context(bndry, zk, loc, t, mesh));
             }
 
             f(bndry->x, bndry->y, zk) = val;
@@ -1264,7 +1264,7 @@ void BoundaryDirichlet_O4::apply(Field3D& f, BoutReal t) {
         for (; !bndry->isDone(); bndry->next1d()) {
           for (int zk = 0; zk < mesh->LocalNz; zk++) {
             if (fg) {
-              val = fg->generate(Position(bndry, zk, loc, t, mesh));
+              val = fg->generate(Context(bndry, zk, loc, t, mesh));
             }
 
             f(bndry->x, bndry->y - bndry->by, zk) = val;
@@ -1288,7 +1288,7 @@ void BoundaryDirichlet_O4::apply(Field3D& f, BoutReal t) {
         for (; !bndry->isDone(); bndry->next1d()) {
           for (int zk = 0; zk < mesh->LocalNz; zk++) {
             if (fg) {
-              val = fg->generate(Position(bndry, zk, loc, t, mesh));
+              val = fg->generate(Context(bndry, zk, loc, t, mesh));
             }
 
             f(bndry->x, bndry->y, zk) =
@@ -1315,7 +1315,7 @@ void BoundaryDirichlet_O4::apply(Field3D& f, BoutReal t) {
     for (; !bndry->isDone(); bndry->next1d()) {
       for (int zk = 0; zk < mesh->LocalNz; zk++) {
         if (fg) {
-          val = fg->generate(Position(bndry, zk, loc, t, mesh));
+          val = fg->generate(Context(bndry, zk, loc, t, mesh));
         }
 
         f(bndry->x, bndry->y, zk) =
@@ -1590,7 +1590,7 @@ void BoundaryNeumann::apply(Field2D& f, BoutReal t) {
         for (; !bndry->isDone(); bndry->next1d()) {
 
           if (fg) {
-            val = fg->generate(Position(bndry, loc, t, mesh));
+            val = fg->generate(Context(bndry, loc, t, mesh));
           }
 
           f(bndry->x, bndry->y) = (4. * f(bndry->x - bndry->bx, bndry->y)
@@ -1615,7 +1615,7 @@ void BoundaryNeumann::apply(Field2D& f, BoutReal t) {
         for (; !bndry->isDone(); bndry->next1d()) {
 
           if (fg) {
-            val = fg->generate(Position(bndry, loc, t, mesh));
+            val = fg->generate(Context(bndry, loc, t, mesh));
           }
 
           f(bndry->x - bndry->bx, bndry->y) =
@@ -1645,7 +1645,7 @@ void BoundaryNeumann::apply(Field2D& f, BoutReal t) {
                            + bndry->by * metric->dy(bndry->x, bndry->y);
 
           if (fg) {
-            val = fg->generate(Position(bndry, loc, t, mesh));
+            val = fg->generate(Context(bndry, loc, t, mesh));
           }
 
           f(bndry->x, bndry->y) =
@@ -1664,7 +1664,7 @@ void BoundaryNeumann::apply(Field2D& f, BoutReal t) {
 
         for (; !bndry->isDone(); bndry->next1d()) {
           if (fg) {
-            val = fg->generate(Position(bndry, loc, t, mesh));
+            val = fg->generate(Context(bndry, loc, t, mesh));
           }
           f(bndry->x, bndry->y) = (4. * f(bndry->x, bndry->y - bndry->by)
                                    - f(bndry->x, bndry->y - 2 * bndry->by) + 2. * val)
@@ -1689,7 +1689,7 @@ void BoundaryNeumann::apply(Field2D& f, BoutReal t) {
         for (; !bndry->isDone(); bndry->next1d()) {
 
           if (fg) {
-            val = fg->generate(Position(bndry, loc, t, mesh));
+            val = fg->generate(Context(bndry, loc, t, mesh));
           }
           f(bndry->x, bndry->y - bndry->by) =
               (4. * f(bndry->x, bndry->y - 2 * bndry->by)
@@ -1717,7 +1717,7 @@ void BoundaryNeumann::apply(Field2D& f, BoutReal t) {
                            + bndry->by * metric->dy(bndry->x, bndry->y);
 
           if (fg) {
-            val = fg->generate(Position(bndry, loc, t, mesh));
+            val = fg->generate(Context(bndry, loc, t, mesh));
           }
 
           f(bndry->x, bndry->y) =
@@ -1737,7 +1737,7 @@ void BoundaryNeumann::apply(Field2D& f, BoutReal t) {
                        + bndry->by * metric->dy(bndry->x, bndry->y);
 
       if (fg) {
-        val = fg->generate(Position(bndry, loc, t, mesh));
+        val = fg->generate(Context(bndry, loc, t, mesh));
       }
 
       f(bndry->x, bndry->y) = f(bndry->x - bndry->bx, bndry->y - bndry->by) + delta * val;
@@ -1781,7 +1781,7 @@ void BoundaryNeumann::apply(Field3D& f, BoutReal t) {
         for (; !bndry->isDone(); bndry->next1d()) {
           for (int zk = 0; zk < mesh->LocalNz; zk++) {
             if (fg) {
-              val = fg->generate(Position(bndry, zk, loc, t, mesh));
+              val = fg->generate(Context(bndry, zk, loc, t, mesh));
             }
 
             f(bndry->x, bndry->y, zk) =
@@ -1809,7 +1809,7 @@ void BoundaryNeumann::apply(Field3D& f, BoutReal t) {
         for (; !bndry->isDone(); bndry->next1d()) {
           for (int zk = 0; zk < mesh->LocalNz; zk++) {
             if (fg) {
-              val = fg->generate(Position(bndry, zk, loc, t, mesh));
+              val = fg->generate(Context(bndry, zk, loc, t, mesh));
             }
 
             f(bndry->x - bndry->bx, bndry->y, zk) =
@@ -1839,7 +1839,7 @@ void BoundaryNeumann::apply(Field3D& f, BoutReal t) {
 
           for (int zk = 0; zk < mesh->LocalNz; zk++) {
             if (fg) {
-              val = fg->generate(Position(bndry, zk, loc, t, mesh));
+              val = fg->generate(Context(bndry, zk, loc, t, mesh));
             }
             f(bndry->x, bndry->y, zk) =
                 f(bndry->x - bndry->bx, bndry->y - bndry->by, zk) + delta * val;
@@ -1859,7 +1859,7 @@ void BoundaryNeumann::apply(Field3D& f, BoutReal t) {
         for (; !bndry->isDone(); bndry->next1d()) {
           for (int zk = 0; zk < mesh->LocalNz; zk++) {
             if (fg) {
-              val = fg->generate(Position(bndry, zk, loc, t, mesh));
+              val = fg->generate(Context(bndry, zk, loc, t, mesh));
             }
             f(bndry->x, bndry->y, zk) =
                 (4. * f(bndry->x, bndry->y - bndry->by, zk)
@@ -1886,7 +1886,7 @@ void BoundaryNeumann::apply(Field3D& f, BoutReal t) {
         for (; !bndry->isDone(); bndry->next1d()) {
           for (int zk = 0; zk < mesh->LocalNz; zk++) {
             if (fg) {
-              val = fg->generate(Position(bndry, zk, loc, t, mesh));
+              val = fg->generate(Context(bndry, zk, loc, t, mesh));
             }
 
             f(bndry->x, bndry->y - bndry->by, zk) =
@@ -1917,7 +1917,7 @@ void BoundaryNeumann::apply(Field3D& f, BoutReal t) {
 
           for (int zk = 0; zk < mesh->LocalNz; zk++) {
             if (fg) {
-              val = fg->generate(Position(bndry, zk, loc, t, mesh));
+              val = fg->generate(Context(bndry, zk, loc, t, mesh));
             }
             f(bndry->x, bndry->y, zk) =
                 f(bndry->x - bndry->bx, bndry->y - bndry->by, zk) + delta * val;
@@ -1937,7 +1937,7 @@ void BoundaryNeumann::apply(Field3D& f, BoutReal t) {
 
       for (int zk = 0; zk < mesh->LocalNz; zk++) {
         if (fg) {
-          val = fg->generate(Position(bndry, zk, loc, t, mesh));
+          val = fg->generate(Context(bndry, zk, loc, t, mesh));
         }
         f(bndry->x, bndry->y, zk) =
             f(bndry->x - bndry->bx, bndry->y - bndry->by, zk) + delta * val;
@@ -2009,7 +2009,7 @@ void BoundaryNeumann_O4::apply(Field2D& f, BoutReal t) {
                        + bndry->by * coords->dy(bndry->x, bndry->y);
 
       if (fg) {
-        val = fg->generate(Position(bndry, loc, t, mesh));
+        val = fg->generate(Context(bndry, loc, t, mesh));
       }
 
       f(bndry->x, bndry->y) =
@@ -2053,7 +2053,7 @@ void BoundaryNeumann_O4::apply(Field3D& f, BoutReal t) {
 
       for (int zk = 0; zk < mesh->LocalNz; zk++) {
         if (fg) {
-          val = fg->generate(Position(bndry, zk, loc, t, mesh));
+          val = fg->generate(Context(bndry, zk, loc, t, mesh));
         }
 
         f(bndry->x, bndry->y, zk) =

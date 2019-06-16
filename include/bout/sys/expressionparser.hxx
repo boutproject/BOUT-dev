@@ -38,7 +38,7 @@
 #include <string>
 #include <utility>
 
-#include "position.hxx"
+#include "generator-context.hxx"
 
 class FieldGenerator;
 using FieldGeneratorPtr = std::shared_ptr<FieldGenerator>;
@@ -62,9 +62,21 @@ public:
     return nullptr;
   }
 
+  /// Note: This will be removed in a future version. Implementations should
+  /// override the Context version of this function.
+  DEPRECATED(virtual double generate(BoutReal x, BoutReal y, BoutReal z, BoutReal t)) {
+    return generate(Context().set("x", x, "y", y, "z", z, "t", t));
+  }
+  
   /// Generate a value at the given coordinates (x,y,z,t)
   /// This should be deterministic, always returning the same value given the same inputs
-  virtual double generate(Position pos) = 0;
+  ///
+  /// Note: The default implementations of generate call each other;
+  /// the implementor of a FieldGenerator type must implement one of
+  /// them or an infinite recursion results.  This is for backward
+  /// compatibility for users and implementors.  In a future version
+  /// this function will be made pure virtual.
+  virtual double generate(const Context& pos);
 
   /// Create a string representation of the generator, for debugging output
   virtual std::string str() const { return std::string("?"); }
@@ -162,7 +174,7 @@ public:
   FieldBinary(FieldGeneratorPtr l, FieldGeneratorPtr r, char o)
       : lhs(std::move(l)), rhs(std::move(r)), op(o) {}
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override;
-  double generate(Position pos) override;
+  double generate(const Context& context) override;
 
   std::string str() const override {
     return std::string("(") + lhs->str() + std::string(1, op) + rhs->str()
@@ -183,7 +195,7 @@ public:
     return std::make_shared<FieldValue>(value);
   }
 
-  double generate(Position UNUSED(pos)) override {
+  double generate(const Context&) override {
     return value;
   }
   std::string str() const override {
