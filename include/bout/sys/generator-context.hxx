@@ -18,7 +18,7 @@ public:
 
   // If Ind2D, z should be 0.0 even if ZLOW (Is this sensible?)
   Context(const Ind2D& i, CELL_LOC loc, Mesh* msh, BoutReal t)
-    : Context(i, (loc == CELL_ZLOW) ? CELL_CENTRE : loc, msh, t) {}
+    : Context(i.x(), i.y(), 0, (loc == CELL_ZLOW) ? CELL_CENTRE : loc, msh, t) {}
   
   /// Specify a cell index, together with the cell location, mesh and time
   /// 
