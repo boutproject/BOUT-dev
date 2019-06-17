@@ -1809,7 +1809,7 @@ void BoundaryNeumann::apply(Field3D& f, BoutReal t) {
         for (; !bndry->isDone(); bndry->next1d()) {
           for (int zk = 0; zk < mesh->LocalNz; zk++) {
             if (fg) {
-              val = fg->generate(Context(bndry, zk, loc, t, mesh));
+              val = fg->generate(Context(bndry, zk, loc, t, mesh)) * metric->dx(bndry->x - bndry->bx, bndry->y);
             }
 
             f(bndry->x - bndry->bx, bndry->y, zk) =
