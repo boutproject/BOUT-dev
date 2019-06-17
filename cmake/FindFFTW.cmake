@@ -22,9 +22,25 @@ if (FFTW_INCLUDE_DIRS)
   set (FFTW_FIND_QUIETLY TRUE)
 endif (FFTW_INCLUDE_DIRS)
 
-find_path (FFTW_INCLUDE_DIRS fftw3.h)
+find_program(FFTW_WISDOM "fftw-wisdom"
+  DOC "Path to fftw-wisdom executable"
+  )
+get_filename_component(FFTW_WISDOM_TMP "${FFTW_WISDOM}" DIRECTORY)
+get_filename_component(FFTW_HINT_DIR "${FFTW_WISDOM_TMP}" DIRECTORY)
 
-find_library (FFTW_LIBRARIES NAMES fftw3)
+find_path(FFTW_INCLUDE_DIRS
+  NAMES fftw3.h
+  DOC "FFTW include directory"
+  HINTS "${FFTW_HINT_DIR}"
+  PATH_SUFFIXES "include"
+  )
+
+find_library (FFTW_LIBRARIES
+  NAMES fftw3
+  DOC "FFTW library location"
+  HINTS "${FFTW_HINT_DIR}"
+  PATH_SUFFIXES "lib" "lib64"
+  )
 
 # handle the QUIETLY and REQUIRED arguments and set FFTW_FOUND to TRUE if
 # all listed variables are TRUE
