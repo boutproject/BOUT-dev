@@ -16,6 +16,13 @@
 #
 # This module will also export the ``FFTW::FFTW`` target.
 #
+# You can also set the following variables:
+#
+# ``FFTW_ROOT``
+#   Specify the path to the FFTW installation to use
+#
+# ``FFTW_DEBUG``
+#   Set to TRUE to get extra debugging output
 
 if (FFTW_INCLUDE_DIRS)
   # Already in cache, be silent
@@ -25,6 +32,12 @@ endif (FFTW_INCLUDE_DIRS)
 find_program(FFTW_WISDOM "fftw-wisdom"
   DOC "Path to fftw-wisdom executable"
   )
+if (FFTW_DEBUG)
+  message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
+    " FFTW_WISDOM = ${FFTW_WISDOM}"
+    )
+endif()
+
 get_filename_component(FFTW_WISDOM_TMP "${FFTW_WISDOM}" DIRECTORY)
 get_filename_component(FFTW_HINT_DIR "${FFTW_WISDOM_TMP}" DIRECTORY)
 
@@ -34,6 +47,12 @@ find_path(FFTW_INCLUDE_DIRS
   HINTS "${FFTW_HINT_DIR}"
   PATH_SUFFIXES "include"
   )
+if (FFTW_DEBUG)
+  message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
+    " FFTW_INCLUDE_DIRS = ${FFTW_INCLUDE_DIRS}"
+    " FFTW_HINT_DIR = ${FFTW_HINT_DIR}"
+    )
+endif()
 
 find_library (FFTW_LIBRARIES
   NAMES fftw3
@@ -41,6 +60,12 @@ find_library (FFTW_LIBRARIES
   HINTS "${FFTW_HINT_DIR}"
   PATH_SUFFIXES "lib" "lib64"
   )
+if (FFTW_DEBUG)
+  message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
+    " FFTW_LIBRARIES = ${FFTW_LIBRARIES}"
+    " FFTW_HINT_DIR = ${FFTW_HINT_DIR}"
+    )
+endif()
 
 # handle the QUIETLY and REQUIRED arguments and set FFTW_FOUND to TRUE if
 # all listed variables are TRUE

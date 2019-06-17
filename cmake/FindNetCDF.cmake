@@ -18,6 +18,16 @@
 #
 # This module will also export ``NetCDF::NetCDF_C`` and
 # ``NetCDF::NetCDF_CXX`` targets.
+#
+# You can also set the following variables:
+#
+# ``NetCDF_ROOT``
+#   Specify the path to the NetCDF installation to use
+#
+# ``NetCDF_DEBUG``
+#   Set to TRUE to get extra debugging output
+
+
 # Taken from https://github.com/conan-io/conan/issues/2125#issuecomment-351176653
 # This is needed so we can make a clone of the NetCDF C++ target which
 # has the name "netcdf-cxx4" by default
@@ -56,12 +66,20 @@ find_program(NC_CONFIG "nc-config"
   )
 get_filename_component(NC_CONFIG_TMP "${NC_CONFIG}" DIRECTORY)
 get_filename_component(NC_CONFIG_LOCATION "${NC_CONFIG_TMP}" DIRECTORY)
+if (NetCDF_DEBUG)
+  message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
+    " NC_CONFIG_LOCATION = ${NC_CONFIG_LOCATION}")
+endif()
 
 find_program(NCXX4_CONFIG "ncxx4-config"
   DOC "Path to NetCDF C++ config helper"
   )
 get_filename_component(NCXX4_CONFIG_TMP "${NCXX4_CONFIG}" DIRECTORY)
 get_filename_component(NCXX4_CONFIG_LOCATION "${NCXX4_CONFIG_TMP}" DIRECTORY)
+if (NetCDF_DEBUG)
+  message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
+    " NCXX4_CONFIG_LOCATION = ${NCXX4_CONFIG_LOCATION}")
+endif()
 
 inspect_netcdf_config(NC_HINTS_INCLUDE_DIR "${NC_CONFIG}" "--includedir")
 inspect_netcdf_config(NC_HINTS_PREFIX "${NC_CONFIG}" "--prefix")
@@ -76,7 +94,13 @@ find_path(NetCDF_C_INCLUDE_DIR
   PATH_SUFFIXES
     "include"
   )
-message(${NetCDF_INCLUDE_DIR})
+if (NetCDF_DEBUG)
+  message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
+    " NetCDF_C_INCLUDE_DIR = ${NetCDF_C_INCLUDE_DIR}"
+    " NC_HINTS_INCLUDE_DIR = ${NC_HINTS_INCLUDE_DIR}"
+    " NC_HINTS_PREFIX = ${NC_HINTS_PREFIX}"
+    )
+endif()
 mark_as_advanced(NetCDF_C_INCLUDE_DIR)
 
 find_library(NetCDF_C_LIBRARY
@@ -89,6 +113,13 @@ find_library(NetCDF_C_LIBRARY
   PATH_SUFFIXES
     "lib" "lib64"
  )
+if (NetCDF_DEBUG)
+  message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
+    " NetCDF_C_LIBRARY = ${NetCDF_C_LIBRARY}"
+    " NC_HINTS_INCLUDE_DIR = ${NC_HINTS_INCLUDE_DIR}"
+    " NC_HINTS_PREFIX = ${NC_HINTS_PREFIX}"
+    )
+endif()
 mark_as_advanced(NetCDF_C_LIBRARY)
 
 inspect_netcdf_config(NCXX4_HINTS_INCLUDE_DIR "${NCXX4_CONFIG}" "--includedir")
@@ -105,6 +136,13 @@ find_path(NetCDF_CXX_INCLUDE_DIR
   PATH_SUFFIXES
     "include"
   )
+if (NetCDF_DEBUG)
+  message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
+    " NetCDF_CXX_INCLUDE_DIR = ${NetCDF_CXX_INCLUDE_DIR}"
+    " NCXX4_HINTS_INCLUDE_DIR = ${NCXX4_HINTS_INCLUDE_DIR}"
+    " NCXX4_HINTS_PREFIX = ${NCXX4_HINTS_PREFIX}"
+    )
+endif()
 mark_as_advanced(NetCDF_CXX_INCLUDE_DIR)
 
 find_library(NetCDF_CXX_LIBRARY
@@ -117,6 +155,13 @@ find_library(NetCDF_CXX_LIBRARY
   PATH_SUFFIXES
     "lib" "lib64"
   )
+if (NetCDF_DEBUG)
+  message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
+    " NetCDF_CXX_LIBRARY = ${NetCDF_CXX_LIBRARY}"
+    " NCXX4_HINTS_INCLUDE_DIR = ${NCXX4_HINTS_INCLUDE_DIR}"
+    " NCXX4_HINTS_PREFIX = ${NCXX4_HINTS_PREFIX}"
+    )
+endif()
 mark_as_advanced(NetCDF_CXX_LIBRARY)
 
 if (NetCDF_INCLUDE_DIR)
