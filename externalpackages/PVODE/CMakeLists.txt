@@ -17,10 +17,10 @@ add_library(pvode
   source/cvode.cpp
   source/nvector.cpp
   source/llnlmath.cpp
-  source/cvspgmr.cpp 
-  source/spgmr.cpp 
+  source/cvspgmr.cpp
+  source/spgmr.cpp
   source/iterativ.cpp
-  source/cvdiag.cpp 
+  source/cvdiag.cpp
   source/smalldense.cpp
   include/band.h
   include/cvdiag.h
@@ -42,7 +42,7 @@ target_include_directories(pvode PUBLIC
 target_link_libraries(pvode PUBLIC MPI::MPI_CXX)
 
 add_library(pvpre
-  precon/pvbbdpre.cpp 
+  precon/pvbbdpre.cpp
   precon/pvbbdpre.h
   precon/band.cpp
   precon/band.h
@@ -53,3 +53,12 @@ target_include_directories(pvpre PUBLIC
   $<INSTALL_INTERFACE:include>
   )
 target_link_libraries(pvpre PUBLIC MPI::MPI_CXX)
+
+include(GNUInstallDirs)
+install(TARGETS pvode pvpre
+  EXPORT bout++Targets
+  LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+  ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+  RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+  INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+  )

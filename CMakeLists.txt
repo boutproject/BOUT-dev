@@ -575,7 +575,7 @@ endif()
 # Installation
 
 include(GNUInstallDirs)
-install(TARGETS bout++ pvode pvpre mpark_variant
+install(TARGETS bout++
   EXPORT bout++Targets
   LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
   ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
