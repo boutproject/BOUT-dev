@@ -33,10 +33,8 @@ add_executable(serial_tests
   ./include/test_mask.cxx
   ./invert/test_fft.cxx
   ./mesh/data/test_gridfromoptions.cxx
-  ./mesh/parallel/test_fci.cxx
   ./mesh/parallel/test_shiftedmetric.cxx
   ./mesh/test_boundary_factory.cxx
-  ./mesh/test_boundary_testtest.cxx
   ./mesh/test_boutmesh.cxx
   ./mesh/test_coordinates.cxx
   ./mesh/test_interpolation.cxx
