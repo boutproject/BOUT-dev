@@ -35,60 +35,30 @@ private:
 //////////////////////////////////////////////////////////
 // Functions
 
-/// Sine function field generator
-class FieldSin : public FieldGenerator {
-public:
-  FieldSin(FieldGeneratorPtr g) : gen(g) {}
-
-  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override;
-  BoutReal generate(const Context& pos) override;
-  std::string str() const override {
-    return std::string("sin(") + gen->str() + std::string(")");
-  }
-
-private:
-  FieldGeneratorPtr gen;
-};
-
-/// Cosine function field generator
-class FieldCos : public FieldGenerator {
-public:
-  FieldCos(FieldGeneratorPtr g) : gen(g) {}
-
-  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override;
-  BoutReal generate(const Context& pos) override;
-
-  std::string str() const override {
-    return std::string("cos(") + gen->str() + std::string(")");
-  }
-
-private:
-  FieldGeneratorPtr gen;
-};
-
 /// Template class to define generators around a C function
 using single_arg_op = BoutReal (*)(BoutReal);
 template<single_arg_op Op>
 class FieldGenOneArg : public FieldGenerator { ///< Template for single-argument function
 public:
-  FieldGenOneArg(FieldGeneratorPtr g) : gen(g) {}
+  FieldGenOneArg(FieldGeneratorPtr g, const std::string& name = "function") : gen(g), name(name) {}
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override {
     if (args.size() != 1) {
       throw ParseException(
-          "Incorrect number of arguments to function. Expecting 1, got %lu",
-          static_cast<unsigned long>(args.size()));
+          "Incorrect number of arguments to %s. Expecting 1, got %lu",
+          name.c_str(), static_cast<unsigned long>(args.size()));
     }
-    return std::make_shared<FieldGenOneArg<Op>>(args.front());
+    return std::make_shared<FieldGenOneArg<Op>>(args.front(), name);
   }
   BoutReal generate(const Context& pos) override {
     return Op(gen->generate(pos));
   }
   std::string str() const override {
-    return std::string("func(") + gen->str() + std::string(")");
+    return name + std::string("(") + gen->str() + std::string(")");
   }
 
 private:
   FieldGeneratorPtr gen;
+  std::string name; ///< A string describing the function, to be printed in error messages
 };
 
 /// Template for a FieldGenerator with two input arguments
@@ -96,24 +66,25 @@ using double_arg_op = BoutReal (*)(BoutReal, BoutReal);
 template <double_arg_op Op>
 class FieldGenTwoArg : public FieldGenerator { ///< Template for two-argument function
 public:
-  FieldGenTwoArg(FieldGeneratorPtr a, FieldGeneratorPtr b) : A(a), B(b) {}
+  FieldGenTwoArg(FieldGeneratorPtr a, FieldGeneratorPtr b, const std::string& name = "function") : A(a), B(b), name(name) {}
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override {
     if (args.size() != 2) {
       throw ParseException(
-          "Incorrect number of arguments to function. Expecting 2, got %lu",
-          static_cast<unsigned long>(args.size()));
+          "Incorrect number of arguments to %s. Expecting 2, got %lu",
+          name.c_str(), static_cast<unsigned long>(args.size()));
     }
-    return std::make_shared<FieldGenTwoArg<Op>>(args.front(), args.back());
+    return std::make_shared<FieldGenTwoArg<Op>>(args.front(), args.back(), name);
   }
   BoutReal generate(const Context& pos) override {
     return Op(A->generate(pos), B->generate(pos));
   }
   std::string str() const override {
-    return std::string("cos(") + A->str() + "," + B->str() + std::string(")");
+    return name + std::string("(") + A->str() + "," + B->str() + std::string(")");
   }
 
 private:
   FieldGeneratorPtr A, B;
+  std::string name; ///< The name of the function, to be printed in error messages
 };
 
 /// Arc (Inverse) tangent. Either one or two argument versions
@@ -140,42 +111,6 @@ private:
   FieldGeneratorPtr A, B;
 };
 
-/// Hyperbolic sine function
-class FieldSinh : public FieldGenerator {
-public:
-  FieldSinh(FieldGeneratorPtr g) : gen(g) {}
-
-  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override;
-  BoutReal generate(const Context& pos) override;
-
-private:
-  FieldGeneratorPtr gen;
-};
-
-/// Hyperbolic cosine
-class FieldCosh : public FieldGenerator {
-public:
-  FieldCosh(FieldGeneratorPtr g) : gen(g) {}
-
-  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override;
-  BoutReal generate(const Context& pos) override;
-
-private:
-  FieldGeneratorPtr gen;
-};
-
-/// Hyperbolic tangent
-class FieldTanh : public FieldGenerator {
-public:
-  FieldTanh(FieldGeneratorPtr g = nullptr) : gen(g) {}
-
-  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override;
-  BoutReal generate(const Context& pos) override;
-
-private:
-  FieldGeneratorPtr gen;
-};
-
 /// Gaussian distribution, taking mean and width arguments
 class FieldGaussian : public FieldGenerator {
 public:
@@ -188,30 +123,6 @@ private:
   FieldGeneratorPtr X, s;
 };
 
-/// Absolute value
-class FieldAbs : public FieldGenerator {
-public:
-  FieldAbs(FieldGeneratorPtr g) : gen(g) {}
-
-  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override;
-  BoutReal generate(const Context& pos) override;
-
-private:
-  FieldGeneratorPtr gen;
-};
-
-/// Square root function
-class FieldSqrt : public FieldGenerator {
-public:
-  FieldSqrt(FieldGeneratorPtr g) : gen(g) {}
-
-  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override;
-  BoutReal generate(const Context& pos) override;
-
-private:
-  FieldGeneratorPtr gen;
-};
-
 /// Heaviside function, switches between 0 and 1
 class FieldHeaviside : public FieldGenerator {
 public:
@@ -222,18 +133,6 @@ public:
   std::string str() const override {
     return std::string("H(") + gen->str() + std::string(")");
   }
-
-private:
-  FieldGeneratorPtr gen;
-};
-
-/// Generator for the error function erf
-class FieldErf : public FieldGenerator {
-public:
-  FieldErf(FieldGeneratorPtr g) : gen(g) {}
-
-  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override;
-  BoutReal generate(const Context& pos) override;
 
 private:
   FieldGeneratorPtr gen;
