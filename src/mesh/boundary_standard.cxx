@@ -1590,7 +1590,7 @@ void BoundaryNeumann::apply(Field2D& f, BoutReal t) {
         for (; !bndry->isDone(); bndry->next1d()) {
 
           if (fg) {
-            val = fg->generate(Context(bndry, loc, t, mesh));
+            val = fg->generate(Context(bndry, loc, t, mesh)) * metric->dx(bndry->x, bndry->y);
           }
 
           f(bndry->x, bndry->y) = (4. * f(bndry->x - bndry->bx, bndry->y)
@@ -1615,7 +1615,7 @@ void BoundaryNeumann::apply(Field2D& f, BoutReal t) {
         for (; !bndry->isDone(); bndry->next1d()) {
 
           if (fg) {
-            val = fg->generate(Context(bndry, loc, t, mesh));
+            val = fg->generate(Context(bndry, loc, t, mesh)) * metric->dx(bndry->x, bndry->y);
           }
 
           f(bndry->x - bndry->bx, bndry->y) =
@@ -1664,7 +1664,7 @@ void BoundaryNeumann::apply(Field2D& f, BoutReal t) {
 
         for (; !bndry->isDone(); bndry->next1d()) {
           if (fg) {
-            val = fg->generate(Context(bndry, loc, t, mesh));
+            val = fg->generate(Context(bndry, loc, t, mesh)) * metric->dy(bndry->x, bndry->y);
           }
           f(bndry->x, bndry->y) = (4. * f(bndry->x, bndry->y - bndry->by)
                                    - f(bndry->x, bndry->y - 2 * bndry->by) + 2. * val)
@@ -1689,7 +1689,7 @@ void BoundaryNeumann::apply(Field2D& f, BoutReal t) {
         for (; !bndry->isDone(); bndry->next1d()) {
 
           if (fg) {
-            val = fg->generate(Context(bndry, loc, t, mesh));
+            val = fg->generate(Context(bndry, loc, t, mesh)) * metric->dy(bndry->x, bndry->y - bndry->by);
           }
           f(bndry->x, bndry->y - bndry->by) =
               (4. * f(bndry->x, bndry->y - 2 * bndry->by)
@@ -1781,7 +1781,7 @@ void BoundaryNeumann::apply(Field3D& f, BoutReal t) {
         for (; !bndry->isDone(); bndry->next1d()) {
           for (int zk = 0; zk < mesh->LocalNz; zk++) {
             if (fg) {
-              val = fg->generate(Context(bndry, zk, loc, t, mesh));
+              val = fg->generate(Context(bndry, zk, loc, t, mesh)) * metric->dx(bndry->x, bndry->y);
             }
 
             f(bndry->x, bndry->y, zk) =
@@ -1809,7 +1809,7 @@ void BoundaryNeumann::apply(Field3D& f, BoutReal t) {
         for (; !bndry->isDone(); bndry->next1d()) {
           for (int zk = 0; zk < mesh->LocalNz; zk++) {
             if (fg) {
-              val = fg->generate(Context(bndry, zk, loc, t, mesh));
+              val = fg->generate(Context(bndry, zk, loc, t, mesh)) * metric->dx(bndry->x - bndry->bx, bndry->y);
             }
 
             f(bndry->x - bndry->bx, bndry->y, zk) =
@@ -1859,7 +1859,7 @@ void BoundaryNeumann::apply(Field3D& f, BoutReal t) {
         for (; !bndry->isDone(); bndry->next1d()) {
           for (int zk = 0; zk < mesh->LocalNz; zk++) {
             if (fg) {
-              val = fg->generate(Context(bndry, zk, loc, t, mesh));
+              val = fg->generate(Context(bndry, zk, loc, t, mesh)) * metric->dy(bndry->x, bndry->y);
             }
             f(bndry->x, bndry->y, zk) =
                 (4. * f(bndry->x, bndry->y - bndry->by, zk)
@@ -1886,7 +1886,7 @@ void BoundaryNeumann::apply(Field3D& f, BoutReal t) {
         for (; !bndry->isDone(); bndry->next1d()) {
           for (int zk = 0; zk < mesh->LocalNz; zk++) {
             if (fg) {
-              val = fg->generate(Context(bndry, zk, loc, t, mesh));
+              val = fg->generate(Context(bndry, zk, loc, t, mesh)) * metric->dy(bndry->x, bndry->y - bndry->by);
             }
 
             f(bndry->x, bndry->y - bndry->by, zk) =
