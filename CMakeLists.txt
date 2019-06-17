@@ -416,21 +416,27 @@ set(BOUT_HAS_FFTW ${USE_FFTW})
 
 option(USE_LAPACK "Enable support for LAPACK" ON)
 if (USE_LAPACK)
-  find_package(LAPACK REQUIRED)
+  if (NOT CMAKE_SYSTEM_NAME STREQUAL "CrayLinuxEnvironment")
+    # Cray wrappers sort this out for us
+    find_package(LAPACK REQUIRED)
+    target_link_libraries(bout++ PUBLIC "${LAPACK_LIBRARIES}")
+  endif()
   target_compile_definitions(bout++
     PUBLIC "LAPACK"
     PUBLIC "BOUT_HAS_LAPACK")
-  target_link_libraries(bout++ PUBLIC "${LAPACK_LIBRARIES}")
 endif()
 message(STATUS "LAPACK support: ${USE_LAPACK}")
 set(BOUT_HAS_LAPACK ${USE_LAPACK})
 
 option(USE_PETSC "Enable support for PETSc time solvers and inversions" OFF)
 if (USE_PETSC)
-  find_package(PETSc REQUIRED)
+  if (NOT CMAKE_SYSTEM_NAME STREQUAL "CrayLinuxEnvironment")
+    # Cray wrappers sort this out for us
+    find_package(PETSc REQUIRED)
+    target_link_libraries(bout++ PUBLIC PETSc::PETSc)
+  endif()
   target_compile_definitions(bout++
     PUBLIC "BOUT_HAS_PETSC")
-  target_link_libraries(bout++ PUBLIC PETSc::PETSc)
 endif()
 message(STATUS "PETSc support: ${USE_PETSC}")
 set(BOUT_HAS_PETSC ${USE_PETSC})
