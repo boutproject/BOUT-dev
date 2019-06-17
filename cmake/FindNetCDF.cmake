@@ -47,8 +47,7 @@ function(inspect_netcdf_config VAR NX_CONFIG ARG)
         OUTPUT_STRIP_TRAILING_WHITESPACE
     )
     if(EXISTS "${NX_CONFIG_OUTPUT}")
-        list(APPEND ${VAR} ${NX_CONFIG_OUTPUT})
-        set(${VAR} ${${VAR}} PARENT_SCOPE)
+        set(${VAR} ${NX_CONFIG_OUTPUT} PARENT_SCOPE)
     endif()
 endfunction()
 
@@ -64,15 +63,15 @@ find_program(NCXX4_CONFIG "ncxx4-config"
 get_filename_component(NCXX4_CONFIG_TMP "${NCXX4_CONFIG}" DIRECTORY)
 get_filename_component(NCXX4_CONFIG_LOCATION "${NCXX4_CONFIG_TMP}" DIRECTORY)
 
-set(NC_HINTS "")
-inspect_netcdf_config(NC_HINTS "${NC_CONFIG}" "--includedir")
-inspect_netcdf_config(NC_HINTS "${NC_CONFIG}" "--prefix")
+inspect_netcdf_config(NC_HINTS_INCLUDE_DIR "${NC_CONFIG}" "--includedir")
+inspect_netcdf_config(NC_HINTS_PREFIX "${NC_CONFIG}" "--prefix")
 
 find_path(NetCDF_C_INCLUDE_DIR
   NAMES netcdf.h
   DOC "NetCDF C include directories"
   HINTS
-    "${NC_HINTS}"
+    "${NC_HINTS_INCLUDE_DIR}"
+    "${NC_HINTS_PREFIX}"
     "${NC_CONFIG_LOCATION}"
   PATH_SUFFIXES
     "include"
@@ -84,22 +83,24 @@ find_library(NetCDF_C_LIBRARY
   NAMES netcdf
   DOC "NetCDF C library"
   HINTS
-    "${NC_HINTS}"
+    "${NC_HINTS_INCLUDE_DIR}"
+    "${NC_HINTS_PREFIX}"
     "${NC_CONFIG_LOCATION}"
   PATH_SUFFIXES
     "lib" "lib64"
  )
 mark_as_advanced(NetCDF_C_LIBRARY)
 
-set(NCXX4_HINTS "")
-inspect_netcdf_config(NCXX4_HINTS "${NCXX4_CONFIG}" "--includedir")
-inspect_netcdf_config(NCXX4_HINTS "${NCXX4_CONFIG}" "--prefix")
+inspect_netcdf_config(NCXX4_HINTS_INCLUDE_DIR "${NCXX4_CONFIG}" "--includedir")
+inspect_netcdf_config(NCXX4_HINTS_PREFIX "${NCXX4_CONFIG}" "--prefix")
 
 find_path(NetCDF_CXX_INCLUDE_DIR
   NAMES netcdf
   DOC "NetCDF C++ include directories"
   HINTS
-    "${NCXX4_HINTS}"
+    "${NetCDF_C_INCLUDE_DIR}"
+    "${NCXX4_HINTS_INCLUDE_DIR}"
+    "${NCXX4_HINTS_PREFIX}"
     "${NCXX4_CONFIG_LOCATION}"
   PATH_SUFFIXES
     "include"
@@ -110,7 +111,8 @@ find_library(NetCDF_CXX_LIBRARY
   NAMES netcdf_c++4 netcdf-cxx4
   DOC "NetCDF C++ library"
   HINTS
-    "${NCXX4_HINTS}"
+    "${NCXX4_HINTS_INCLUDE_DIR}"
+    "${NCXX4_HINTS_PREFIX}"
     "${NCXX4_CONFIG_LOCATION}"
   PATH_SUFFIXES
     "lib" "lib64"
