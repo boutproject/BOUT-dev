@@ -6,75 +6,6 @@
 
 //////////////////////////////////////////////////////////
 
-FieldGeneratorPtr FieldSin::clone(const std::list<FieldGeneratorPtr> args) {
-  if (args.size() != 1) {
-    throw ParseException(
-        "Incorrect number of arguments to sin function. Expecting 1, got %lu",
-        static_cast<unsigned long>(args.size()));
-  }
-
-  return std::make_shared<FieldSin>(args.front());
-}
-
-BoutReal FieldSin::generate(const Context& pos) {
-  return sin(gen->generate(pos));
-}
-
-FieldGeneratorPtr FieldCos::clone(const std::list<FieldGeneratorPtr> args) {
-  if (args.size() != 1) {
-    throw ParseException(
-        "Incorrect number of arguments to cos function. Expecting 1, got %lu",
-        static_cast<unsigned long>(args.size()));
-  }
-
-  return std::make_shared<FieldCos>(args.front());
-}
-
-BoutReal FieldCos::generate(const Context& pos) {
-  return cos(gen->generate(pos));
-}
-
-FieldGeneratorPtr FieldSinh::clone(const std::list<FieldGeneratorPtr> args) {
-  if (args.size() != 1) {
-    throw ParseException(
-        "Incorrect number of arguments to sinh function. Expecting 1, got %lu",
-        static_cast<unsigned long>(args.size()));
-  }
-
-  return std::make_shared<FieldSinh>(args.front());
-}
-
-BoutReal FieldSinh::generate(const Context& pos) {
-  return sinh(gen->generate(pos));
-}
-
-FieldGeneratorPtr FieldCosh::clone(const std::list<FieldGeneratorPtr> args) {
-  if (args.size() != 1) {
-    throw ParseException(
-        "Incorrect number of arguments to cosh function. Expecting 1, got %lu",
-        static_cast<unsigned long>(args.size()));
-  }
-
-  return std::make_shared<FieldCosh>(args.front());
-}
-
-BoutReal FieldCosh::generate(const Context& pos) {
-  return cosh(gen->generate(pos));
-}
-
-FieldGeneratorPtr FieldTanh::clone(const std::list<FieldGeneratorPtr> args) {
-  if (args.size() != 1) {
-    throw ParseException(
-        "Incorrect number of arguments to tanh function. Expecting 1, got %lu",
-        static_cast<unsigned long>(args.size()));
-  }
-  return std::make_shared<FieldTanh>(args.front());
-}
-
-BoutReal FieldTanh::generate(const Context& pos) {
-  return tanh(gen->generate(pos));
-}
-
 FieldGeneratorPtr FieldGaussian::clone(const std::list<FieldGeneratorPtr> args) {
   if ((args.size() < 1) || (args.size() > 2)) {
     throw ParseException(
@@ -97,34 +28,6 @@ BoutReal FieldGaussian::generate(const Context& pos) {
   return exp(-SQ(X->generate(pos)/sigma)/2.) / (sqrt(TWOPI) * sigma);
 }
 
-FieldGeneratorPtr FieldAbs::clone(const std::list<FieldGeneratorPtr> args) {
-  if (args.size() != 1) {
-    throw ParseException(
-        "Incorrect number of arguments to abs function. Expecting 1, got %lu",
-        static_cast<unsigned long>(args.size()));
-  }
-
-  return std::make_shared<FieldAbs>(args.front());
-}
-
-BoutReal FieldAbs::generate(const Context& pos) {
-  return std::fabs(gen->generate(pos));
-}
-
-FieldGeneratorPtr FieldSqrt::clone(const std::list<FieldGeneratorPtr> args) {
-  if (args.size() != 1) {
-    throw ParseException(
-        "Incorrect number of arguments to sqrt function. Expecting 1, got %lu",
-        static_cast<unsigned long>(args.size()));
-  }
-
-  return std::make_shared<FieldSqrt>(args.front());
-}
-
-BoutReal FieldSqrt::generate(const Context& pos) {
-  return sqrt(gen->generate(pos));
-}
-
 FieldGeneratorPtr FieldHeaviside::clone(const std::list<FieldGeneratorPtr> args) {
   if (args.size() != 1) {
     throw ParseException(
@@ -137,20 +40,6 @@ FieldGeneratorPtr FieldHeaviside::clone(const std::list<FieldGeneratorPtr> args)
 
 BoutReal FieldHeaviside::generate(const Context& pos) {
   return (gen->generate(pos) > 0.0) ? 1.0 : 0.0;
-}
-
-FieldGeneratorPtr FieldErf::clone(const std::list<FieldGeneratorPtr> args) {
-  if (args.size() != 1) {
-    throw ParseException(
-        "Incorrect number of arguments to erf function. Expecting 1, got %lu",
-        static_cast<unsigned long>(args.size()));
-  }
-
-  return std::make_shared<FieldErf>(args.front());
-}
-
-BoutReal FieldErf::generate(const Context& pos) {
-  return erf(gen->generate(pos));
 }
 
 //////////////////////////////////////////////////////////

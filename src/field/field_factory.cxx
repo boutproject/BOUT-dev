@@ -62,25 +62,25 @@ FieldFactory::FieldFactory(Mesh* localmesh, Options* opt)
   addGenerator("π", std::make_shared<FieldValue>(PI));
 
   // Some standard functions
-  addGenerator("sin", std::make_shared<FieldSin>(nullptr));
-  addGenerator("cos", std::make_shared<FieldCos>(nullptr));
-  addGenerator("tan", std::make_shared<FieldGenOneArg<tan>>(nullptr));
+  addGenerator("sin", std::make_shared<FieldGenOneArg<sin>>(nullptr, "sin"));
+  addGenerator("cos", std::make_shared<FieldGenOneArg<cos>>(nullptr, "cos"));
+  addGenerator("tan", std::make_shared<FieldGenOneArg<tan>>(nullptr, "tan"));
 
-  addGenerator("acos", std::make_shared<FieldGenOneArg<acos>>(nullptr));
-  addGenerator("asin", std::make_shared<FieldGenOneArg<asin>>(nullptr));
+  addGenerator("acos", std::make_shared<FieldGenOneArg<acos>>(nullptr, "acos"));
+  addGenerator("asin", std::make_shared<FieldGenOneArg<asin>>(nullptr, "asin"));
   addGenerator("atan", std::make_shared<FieldATan>(nullptr));
 
-  addGenerator("sinh", std::make_shared<FieldSinh>(nullptr));
-  addGenerator("cosh", std::make_shared<FieldCosh>(nullptr));
-  addGenerator("tanh", std::make_shared<FieldTanh>());
+  addGenerator("sinh", std::make_shared<FieldGenOneArg<sinh>>(nullptr, "sinh"));
+  addGenerator("cosh", std::make_shared<FieldGenOneArg<cosh>>(nullptr, "cosh"));
+  addGenerator("tanh", std::make_shared<FieldGenOneArg<tanh>>(nullptr, "tanh"));
 
-  addGenerator("exp", std::make_shared<FieldGenOneArg<exp>>(nullptr));
-  addGenerator("log", std::make_shared<FieldGenOneArg<log>>(nullptr));
+  addGenerator("exp", std::make_shared<FieldGenOneArg<exp>>(nullptr, "exp"));
+  addGenerator("log", std::make_shared<FieldGenOneArg<log>>(nullptr, "log"));
   addGenerator("gauss", std::make_shared<FieldGaussian>(nullptr, nullptr));
-  addGenerator("abs", std::make_shared<FieldAbs>(nullptr));
-  addGenerator("sqrt", std::make_shared<FieldSqrt>(nullptr));
+  addGenerator("abs", std::make_shared<FieldGenOneArg<fabs>>(nullptr, "abs"));
+  addGenerator("sqrt", std::make_shared<FieldGenOneArg<sqrt>>(nullptr, "sqrt"));
   addGenerator("h", std::make_shared<FieldHeaviside>(nullptr));
-  addGenerator("erf", std::make_shared<FieldErf>(nullptr));
+  addGenerator("erf", std::make_shared<FieldGenOneArg<erf>>(nullptr, "erf"));
   addGenerator("fmod", std::make_shared<FieldGenTwoArg<fmod>>(nullptr, nullptr));
 
   addGenerator("min", std::make_shared<FieldMin>());
