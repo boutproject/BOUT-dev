@@ -38,7 +38,7 @@
 #include <string>
 #include <utility>
 
-#include "generator-context.hxx"
+#include "generator_context.hxx"
 
 class FieldGenerator;
 using FieldGeneratorPtr = std::shared_ptr<FieldGenerator>;

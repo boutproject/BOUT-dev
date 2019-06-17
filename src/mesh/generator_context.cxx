@@ -1,4 +1,4 @@
-#include "bout/sys/generator-context.hxx"
+#include "bout/sys/generator_context.hxx"
 #include "boundary_region.hxx"
 #include "bout/constants.hxx"
 #include "bout/mesh.hxx"
