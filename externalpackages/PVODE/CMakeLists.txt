@@ -22,33 +22,35 @@ add_library(pvode
   source/iterativ.cpp
   source/cvdiag.cpp
   source/smalldense.cpp
-  include/band.h
-  include/cvdiag.h
-  include/cvode.h
-  include/cvspgmr.h
-  include/iterativ.h
-  include/llnlmath.h
-  include/llnltyps.h
-  include/nvector.h
-  include/smalldense.h
-  include/spgmr.h
-  include/vector.h
+  include/pvode/band.h
+  include/pvode/cvdiag.h
+  include/pvode/cvode.h
+  include/pvode/cvspgmr.h
+  include/pvode/iterativ.h
+  include/pvode/llnlmath.h
+  include/pvode/llnltyps.h
+  include/pvode/nvector.h
+  include/pvode/smalldense.h
+  include/pvode/spgmr.h
+  include/pvode/vector.h
   )
 
 target_include_directories(pvode PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/pvode>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
   )
 target_link_libraries(pvode PUBLIC MPI::MPI_CXX)
 
 add_library(pvpre
+  include/pvode/pvbbdpre.h
   precon/pvbbdpre.cpp
-  precon/pvbbdpre.h
   precon/band.cpp
   precon/band.h
   )
 
 target_include_directories(pvpre PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/pvode>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
   )
@@ -62,3 +64,4 @@ install(TARGETS pvode pvpre
   RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
   INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
   )
+install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})

@@ -1140,7 +1140,7 @@ AS_IF([test "$with_pvode" != "no"], [
 
   # Set the correct libraries and copy them to bout
   AS_MKDIR_P(include/pvode)
-  cp externalpackages/PVODE/precon/pvbbdpre.h externalpackages/PVODE/include/*.h include/pvode
+  cp -r externalpackages/PVODE/include/pvode include
   cp externalpackages/PVODE/lib/*.a lib/
   EXTRA_LIBS="$EXTRA_LIBS -L\$(BOUT_LIB_PATH) -lpvode -lpvpre"
   CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PVODE"
