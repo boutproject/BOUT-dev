@@ -65,6 +65,22 @@ desirable to profile the optimized code, configuring with the flags
 ``--enable-optimize=3 --enable-checks=0``. Build the code with ``make`` as
 normal.
 
+With CMake:
+
+.. code-block:: bash
+
+    $ SCOREP_WRAPPER=off cmake \
+      -DCMAKE_C_COMPILER=scorep-mpicc \
+      -DCMAKE_CXX_COMPILER=scorep-mpicxx \
+      <other CMake options>
+
+This will turn off the instrumentation during the configure
+step. Please be aware that if you change ``CMakeLists.txt``, CMake
+will try to automatically reconfigure the build, which the Score-P
+wrappers interfere with. In this case you will need to restart the
+configure step from scratch (i.e. remove the build directory and start
+again).
+
 Run and analysis
 ~~~~~~~~~~~~~~~~
 

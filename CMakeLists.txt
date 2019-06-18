@@ -512,22 +512,12 @@ set(BOUT_HAS_GETTEXT ${GETTEXT_FOUND})
 
 option(USE_SCOREP "Enable support for Score-P based instrumentation" OFF)
 if (USE_SCOREP)
-  find_package(ScoreP REQUIRED)
-  if (ScoreP_FOUND)
-    target_link_libraries(bout++
-      PUBLIC ScoreP::ScoreP)
-    target_compile_definitions(bout++
-      PUBLIC "BOUT_HAS_SCOREP")
+  target_compile_definitions(bout++
+    PUBLIC "BOUT_HAS_SCOREP")
+  message(STATUS "Score-P support enabled. Please make sure you are calling CMake like so:
 
-    if (NOT DEFINED CMAKE_CXX_COMPILER_LAUNCHER)
-      set_target_properties(bout++ PROPERTIES
-        CXX_COMPILER_LAUNCHER "${ScoreP_COMPILER_LAUNCHER}")
-    else()
-      if (NOT "${CMAKE_CXX_COMPILER_LAUNCHER}" STREQUAL "${ScoreP_COMPILER_LAUNCHER}")
-        message(FATAL_ERROR "Score-P conflicts with an existing compiler wrapper: ${CMAKE_CXX_COMPILER_LAUNCHER}")
-      endif()
-    endif()
-  endif()
+  SCOREP_WRAPPER=off cmake -DCMAKE_C_COMPILER=scorep-mpicc -DCMAKE_CXX_COMPILER=scorep-mpicxx <other CMake options>
+")
 endif()
 set(BOUT_HAS_SCOREP ${USE_SCOREP})
 
