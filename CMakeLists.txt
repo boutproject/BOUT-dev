@@ -453,15 +453,15 @@ set(BOUT_HAS_SLEPC ${USE_SLEPC})
 
 option(USE_SUNDIALS "Enable support for SUNDIALS time solvers" OFF)
 if (USE_SUNDIALS)
-  find_package(SUNDIALS)
+  find_package(SUNDIALS REQUIRED)
   target_compile_definitions(bout++
     PUBLIC "BOUT_HAS_CVODE"
     PUBLIC "BOUT_HAS_IDA"
     PUBLIC "BOUT_HAS_ARKODE"
     PUBLIC "BOUT_HAS_SUNDIALS")
-  target_link_libraries(bout++ PUBLIC SUNDIALS_cvode::cvode)
-  target_link_libraries(bout++ PUBLIC SUNDIALS_ida::ida)
-  target_link_libraries(bout++ PUBLIC SUNDIALS_arkode::arkode)
+  target_link_libraries(bout++ PUBLIC SUNDIALS::cvode)
+  target_link_libraries(bout++ PUBLIC SUNDIALS::ida)
+  target_link_libraries(bout++ PUBLIC SUNDIALS::arkode)
 endif()
 message(STATUS "SUNDIALS support: ${USE_SUNDIALS}")
 set(BOUT_HAS_SUNDIALS ${USE_SUNDIALS})

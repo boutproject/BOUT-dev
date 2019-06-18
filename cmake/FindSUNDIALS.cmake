@@ -1,12 +1,33 @@
+# FindSUNDIALS
+# ------------
+#
 # Find SUNDIALS, the SUite of Nonlinear and DIfferential/ALgebraic equation Solvers
 #
 # Currently only actually looks for arkode, cvode and ida, as well as nvecparallel
 #
 # This module will define the following variables:
-#   SUNDIALS_FOUND: true if SUNDIALS was found on the system
-#   SUNDIALS_INCLUDE_DIRS: Location of the SUNDIALS includes
-#   SUNDIALS_LIBRARIES: Required libraries
-#   SUNDIALS_VERSION: Full version string
+#
+# ::
+#
+#   SUNDIALS_FOUND        - true if SUNDIALS was found on the system
+#   SUNDIALS_INCLUDE_DIRS - Location of the SUNDIALS includes
+#   SUNDIALS_LIBRARIES    - Required libraries
+#   SUNDIALS_VERSION      - Full version string
+#
+# This module will export the following targets:
+#
+# ``SUNDIALS::NVecParallel``
+# ``SUNDIALS::arkode``
+# ``SUNDIALS::cvode``
+# ``SUNDIALS::ida``
+#
+# You can also set the following variables:
+#
+# ``SUNDIALS_ROOT`` or ``SUNDIALS_DIR`` (as an environment variable)
+#   Specify the path to the SUNDIALS installation to use
+#
+# ``SUNDIALS_DEBUG``
+#   Set to TRUE to get extra debugging output
 
 include(FindPackageHandleStandardArgs)
 
@@ -16,10 +37,9 @@ find_path(SUNDIALS_INCLUDE_DIR
   PATH_SUFFIXES include include/sundials
   DOC "SUNDIALS Directory")
 
-if (SUNDIALS_INCLUDE_DIR)
-  message(STATUS "Found SUNDIALS include directory: ${SUNDIALS_INCLUDE_DIR}")
-else()
-  message(STATUS "Could not find SUNDIALS include directory")
+if (SUNDIALS_DEBUG)
+  message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
+    " SUNDIALS_INCLUDE_DIR = ${SUNDIALS_INCLUDE_DIR}")
 endif()
 
 set(SUNDIALS_INCLUDE_DIRS
@@ -33,6 +53,11 @@ find_library(SUNDIALS_nvecparallel_LIBRARY
     "${SUNDIALS_INCLUDE_DIR}/../.."
   PATH_SUFFIXES lib lib64
   )
+
+if (SUNDIALS_DEBUG)
+  message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
+    " SUNDIALS_nvecparallel_LIBRARY = ${SUNDIALS_nvecparallel_LIBRARY}")
+endif()
 
 if (SUNDIALS_nvecparallel_LIBRARY)
   list(APPEND SUNDIALS_LIBRARIES "${SUNDIALS_nvecparallel_LIBRARY}")
@@ -49,6 +74,11 @@ foreach (LIB ${SUNDIALS_COMPONENTS})
       "${SUNDIALS_INCLUDE_DIR}/../.."
     PATH_SUFFIXES lib lib64
     )
+
+  if (SUNDIALS_DEBUG)
+    message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
+      " SUNDIALS_${LIB}_LIBRARY = ${SUNDIALS_${LIB}_LIBRARY}")
+  endif()
 
   if (SUNDIALS_${LIB}_LIBRARY)
     list(APPEND SUNDIALS_LIBRARIES "${SUNDIALS_${LIB}_LIBRARY}")
@@ -75,6 +105,11 @@ if (SUNDIALS_INCLUDE_DIR)
   set(SUNDIALS_VERSION "${SUNDIALS_VERSION_MAJOR}.${SUNDIALS_VERSION_MINOR}.${SUNDIALS_VERSION_PATCH}")
 endif()
 
+if (SUNDIALS_DEBUG)
+  message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
+    " SUNDIALS_VERSION = ${SUNDIALS_VERSION}")
+endif()
+
 find_package_handle_standard_args(SUNDIALS
   REQUIRED_VARS SUNDIALS_LIBRARIES SUNDIALS_INCLUDE_DIR SUNDIALS_INCLUDE_DIRS
   VERSION_VAR SUNDIALS_VERSION
@@ -89,9 +124,9 @@ if (SUNDIALS_FOUND AND NOT TARGET SUNDIALS::SUNDIALS)
     INTERFACE_INCLUDE_DIRECTORIES "${SUNDIALS_INCLUDE_DIRS}")
 
   foreach (LIB ${SUNDIALS_COMPONENTS})  
-    add_library(SUNDIALS_${LIB}::${LIB} UNKNOWN IMPORTED)
-    target_link_libraries(SUNDIALS_${LIB}::${LIB} INTERFACE SUNDIALS::NVecParallel)
-    set_target_properties(SUNDIALS_${LIB}::${LIB} PROPERTIES
+    add_library(SUNDIALS::${LIB} UNKNOWN IMPORTED)
+    target_link_libraries(SUNDIALS::${LIB} INTERFACE SUNDIALS::NVecParallel)
+    set_target_properties(SUNDIALS::${LIB} PROPERTIES
       IMPORTED_LOCATION "${SUNDIALS_${LIB}_LIBRARY}"
       INTERFACE_INCLUDE_DIRECTORIES "${SUNDIALS_INCLUDE_DIRS}")
   endforeach()
