@@ -19,7 +19,6 @@ find_package(MPI REQUIRED)
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
 add_subdirectory(externalpackages/mpark.variant)
-add_subdirectory(externalpackages/PVODE)
 
 set(BOUT_SOURCES
   ./include/boundary_factory.hxx
@@ -279,7 +278,7 @@ add_library(bout++
   ${BOUT_SOURCES}
   )
 add_library(bout++::bout++ ALIAS bout++)
-target_link_libraries(bout++ PUBLIC MPI::MPI_CXX pvode pvpre mpark_variant)
+target_link_libraries(bout++ PUBLIC MPI::MPI_CXX mpark_variant)
 target_include_directories(bout++ PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
@@ -288,7 +287,6 @@ target_include_directories(bout++ PUBLIC
 target_compile_definitions(bout++
   PUBLIC "BOUT_VERSION_STRING=\"4.2.2\""
   PUBLIC "BOUT_VERSION_DOUBLE=4.22"
-  PUBLIC "BOUT_HAS_PVODE"
   )
 set(BOUT_HAS_PVODE TRUE)
 
@@ -393,6 +391,16 @@ target_compile_definitions(bout++
 set(BOUT_GIT_REVISION ${GIT_SHA1})
 
 # Optional dependencies
+
+option(USE_PVODE "Enable support for bundled PVODE" ON)
+if (USE_PVODE)
+  add_subdirectory(externalpackages/PVODE)
+  target_link_libraries(bout++ PUBLIC pvode pvpre)
+  target_compile_definitions(bout++
+    PUBLIC "BOUT_HAS_PVODE")
+endif()
+message(STATUS "PVODE support: ${USE_PVODE}")
+set(BOUT_HAS_PVODE ${USE_PVODE})
 
 option(USE_NETCDF "Enable support for NetCDF output" ON)
 if (USE_NETCDF)
@@ -632,6 +640,7 @@ message("
      BOUT++ Configuration Summary
    --------------------------------
 
+   Bundled PVODE support    : ${BOUT_HAS_PVODE}
    PETSc support            : ${BOUT_HAS_PETSC}
    SLEPc support            : ${BOUT_HAS_SLEPC}
    SUNDIALS support         : ${BOUT_HAS_SUNDIALS}
