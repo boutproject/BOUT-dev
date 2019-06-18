@@ -610,6 +610,8 @@ install(
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindNetCDF.cmake"
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindPackageMultipass.cmake"
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindPETSc.cmake"
+      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindScoreP.cmake"
+      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindSLEPc.cmake"
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindSUNDIALS.cmake"
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/ResolveCompilerPaths.cmake"
   DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/bout++"
