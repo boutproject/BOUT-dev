@@ -310,13 +310,14 @@ target_compile_definitions(bout++
 set(BOUT_CHECK_LEVEL ${CHECK})
 
 option(DEBUG_ENABLED "Enable extra debug output" OFF)
-if (DEBUG_ENABLED)
+option(ENABLE_OUTPUT_DEBUG "Enable extra debug output" OFF)
+if (ENABLE_OUTPUT_DEBUG OR DEBUG_ENABLED)
   target_compile_definitions(bout++
     PUBLIC "DEBUG_ENABLED"
-    PUBLIC "BOUT_DEBUG_ENABLED")
+    PUBLIC "BOUT_OUTPUT_DEBUG")
 endif()
 message(STATUS "Extra debug output: DEBUG_ENABLED=${DEBUG_ENABLED}")
-set(BOUT_HAS_OUTPUT_DEBUG ${DEBUG_ENABLED})
+set(BOUT_USE_OUTPUT_DEBUG ${DEBUG_ENABLED})
 
 option(ENABLE_SIGNAL "SegFault handling" ON)
 if (ENABLE_SIGNAL)
@@ -638,7 +639,7 @@ message("
    OpenMP support           : ${BOUT_USE_OPENMP}
    Natural language support : ${BOUT_HAS_GETTEXT}
    ScoreP support           : ${BOUT_HAS_SCOREP}
-   Extra debug output       : ${BOUT_HAS_OUTPUT_DEBUG}
+   Extra debug output       : ${BOUT_USE_OUTPUT_DEBUG}
    CHECK level              : ${BOUT_CHECK_LEVEL}
    Signal handling          : ${BOUT_USE_SIGNAL}
    Output coloring          : ${BOUT_USE_COLOR}
