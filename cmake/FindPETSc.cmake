@@ -25,6 +25,8 @@
 
 cmake_policy(VERSION 3.3)
 
+find_package(MPI REQUIRED)
+
 set(PETSC_VALID_COMPONENTS
   C
   CXX)
