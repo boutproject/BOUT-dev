@@ -12062,7 +12062,7 @@ $as_echo "$as_me: Building PVODE" >&6;}
   CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
   CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/source/ >> config-build.log 2>&1
 
-  if test -f externalpackages/PVODE/lib/libpvode.a ; then :
+  if test -f externalpackages/PVODE/lib/libpvode.a && test -f externalpackages/PVODE/lib/libpvpre.a; then :
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: Successfully built PVODE" >&5
 $as_echo "$as_me: Successfully built PVODE" >&6;}
