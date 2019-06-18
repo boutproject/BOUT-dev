@@ -62,18 +62,35 @@ function(inspect_netcdf_config VAR NX_CONFIG ARG)
 endfunction()
 
 find_program(NC_CONFIG "nc-config"
+  PATHS "${NetCDF_ROOT}"
+  PATH_SUFFIXES bin
+  DOC "Path to NetCDF C config helper"
+  NO_DEFAULT_PATH
+  )
+
+find_program(NC_CONFIG "nc-config"
   DOC "Path to NetCDF C config helper"
   )
+
 get_filename_component(NC_CONFIG_TMP "${NC_CONFIG}" DIRECTORY)
 get_filename_component(NC_CONFIG_LOCATION "${NC_CONFIG_TMP}" DIRECTORY)
 if (NetCDF_DEBUG)
   message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
-    " NC_CONFIG_LOCATION = ${NC_CONFIG_LOCATION}")
+    " NC_CONFIG_LOCATION = ${NC_CONFIG_LOCATION}"
+    " NetCDF_ROOT = ${NetCDF_ROOT}")
 endif()
+
+find_program(NCXX4_CONFIG "ncxx4-config"
+  PATHS "${NetCDF_ROOT}"
+  PATH_SUFFIXES bin
+  DOC "Path to NetCDF C++ config helper"
+  NO_DEFAULT_PATH
+  )
 
 find_program(NCXX4_CONFIG "ncxx4-config"
   DOC "Path to NetCDF C++ config helper"
   )
+
 get_filename_component(NCXX4_CONFIG_TMP "${NCXX4_CONFIG}" DIRECTORY)
 get_filename_component(NCXX4_CONFIG_LOCATION "${NCXX4_CONFIG_TMP}" DIRECTORY)
 if (NetCDF_DEBUG)

@@ -30,6 +30,13 @@ if (FFTW_INCLUDE_DIRS)
 endif (FFTW_INCLUDE_DIRS)
 
 find_program(FFTW_WISDOM "fftw-wisdom"
+  PATHS "${FFTW_ROOT}"
+  PATH_SUFFIXES bin
+  NO_DEFAULT_PATH
+  DOC "Path to fftw-wisdom executable"
+  )
+
+find_program(FFTW_WISDOM "fftw-wisdom"
   DOC "Path to fftw-wisdom executable"
   )
 if (FFTW_DEBUG)

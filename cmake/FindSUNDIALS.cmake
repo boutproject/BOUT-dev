@@ -33,13 +33,16 @@ include(FindPackageHandleStandardArgs)
 
 find_path(SUNDIALS_INCLUDE_DIR
   sundials_config.h
-  HINTS ENV SUNDIALS_DIR
+  HINTS
+    "${SUNDIALS_ROOT}"
+    ENV SUNDIALS_DIR
   PATH_SUFFIXES include include/sundials
   DOC "SUNDIALS Directory")
 
 if (SUNDIALS_DEBUG)
   message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
-    " SUNDIALS_INCLUDE_DIR = ${SUNDIALS_INCLUDE_DIR}")
+    " SUNDIALS_INCLUDE_DIR = ${SUNDIALS_INCLUDE_DIR}"
+    " SUNDIALS_ROOT = ${SUNDIALS_ROOT}")
 endif()
 
 set(SUNDIALS_INCLUDE_DIRS
