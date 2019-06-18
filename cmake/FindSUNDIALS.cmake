@@ -28,7 +28,9 @@ set(SUNDIALS_INCLUDE_DIRS
 
 find_library(SUNDIALS_nvecparallel_LIBRARY
   NAMES sundials_nvecparallel
-  HINTS "${SUNDIALS_INCLUDE_DIR}/../.."
+  HINTS
+    "${SUNDIALS_INCLUDE_DIR}/.."
+    "${SUNDIALS_INCLUDE_DIR}/../.."
   PATH_SUFFIXES lib lib64
   )
 
@@ -42,7 +44,9 @@ set(SUNDIALS_COMPONENTS arkode cvode ida)
 foreach (LIB ${SUNDIALS_COMPONENTS})
   find_library(SUNDIALS_${LIB}_LIBRARY
     NAMES sundials_${LIB}
-    HINTS "${SUNDIALS_INCLUDE_DIR}/../.."
+    HINTS
+      "${SUNDIALS_INCLUDE_DIR}/.."
+      "${SUNDIALS_INCLUDE_DIR}/../.."
     PATH_SUFFIXES lib lib64
     )
 
