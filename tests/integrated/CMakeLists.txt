@@ -1,4 +1,8 @@
 add_subdirectory(test-attribs)
+add_subdirectory(test-command-args)
+add_subdirectory(test-coordinates-initialization)
+add_subdirectory(test-cyclic)
+add_subdirectory(test-delp2)
 add_subdirectory(test-griddata)
 add_subdirectory(test-initial)
 add_subdirectory(test-invertable-operator)
