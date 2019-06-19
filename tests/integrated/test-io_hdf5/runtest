@@ -35,7 +35,7 @@ for v in vars:
 print("Running I/O test")
 success = True
 for nproc in [1,2,4]:
-  cmd = "./test_io"
+  cmd = "./test_io_hdf5"
 
   # On some machines need to delete dmp files first
   # or data isn't written correctly
