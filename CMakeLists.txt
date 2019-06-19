@@ -308,7 +308,6 @@ target_compile_definitions(bout++
   PUBLIC "BOUT_VERSION_STRING=\"4.2.2\""
   PUBLIC "BOUT_VERSION_DOUBLE=4.22"
   )
-set(BOUT_HAS_PVODE TRUE)
 
 target_compile_features(bout++ PUBLIC cxx_std_11)
 set_target_properties(bout++ PROPERTIES CXX_EXTENSIONS OFF)
