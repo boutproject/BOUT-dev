@@ -25,7 +25,7 @@ vars = ['ivar', 'rvar', 'f2d', 'f3d', 'fperp', 'fperp2', 'ivar_evol', 'rvar_evol
 field_vars = ['f2d', 'f3d', 'fperp', 'fperp2', 'v2d_evol_x', 'v2d_evol_y', 'v2d_evol_z',
         'fperp2_evol'] # Field quantities, not scalars
 
-tol = 1e-10
+tol = 1e-6
 
 print("Reading benchmark data")
 bmk = {}
