@@ -11,8 +11,6 @@ from scipy.special import erf
 import numpy as np
 import os
 
-from .make_test_functions_include import make_test_functions_include
-
 #requires not make
 
 ########################################
