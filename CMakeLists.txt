@@ -433,6 +433,18 @@ endif()
 message(STATUS "NetCDF support: ${USE_NETCDF}")
 set(BOUT_HAS_NETCDF ${USE_NETCDF})
 
+option(USE_HDF5 "Enable support for HDF5 output" ON)
+if (USE_HDF5)
+  find_package(HDF5 REQUIRED COMPONENTS CXX)
+  target_compile_definitions(bout++
+    PUBLIC "HDF5"
+    PUBLIC "BOUT_HAS_HDF5")
+  target_link_libraries(bout++ PUBLIC "${HDF5_CXX_LIBRARIES}")
+  target_include_directories(bout++ PUBLIC "${HDF5_CXX_INCLUDE_DIRS}")
+endif()
+message(STATUS "HDF5 support: ${USE_HDF5}")
+set(BOUT_HAS_HDF5 ${USE_HDF5})
+
 option(USE_FFTW "Enable support for FFTW" ON)
 if (USE_FFTW)
   find_package(FFTW REQUIRED)
@@ -655,6 +667,7 @@ message("
    SLEPc support            : ${BOUT_HAS_SLEPC}
    SUNDIALS support         : ${BOUT_HAS_SUNDIALS}
    NetCDF support           : ${BOUT_HAS_NETCDF}
+   HDF5 support             : ${BOUT_HAS_HDF5}
    FFTW support             : ${BOUT_HAS_FFTW}
    LAPACK support           : ${BOUT_HAS_LAPACK}
    OpenMP support           : ${BOUT_USE_OPENMP}
