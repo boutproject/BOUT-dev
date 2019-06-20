@@ -4,7 +4,7 @@
 class TestDelp2 : public PhysicsModel {
 protected:
 
-  int init(bool UNUSED(restarting)) {
+  int init(bool UNUSED(restarting)) override {
     Options *opt = Options::getRoot()->getSection("diffusion");
     OPTION(opt, D, 0.1);
     OPTION(opt, useFFT, true);
@@ -14,7 +14,7 @@ protected:
     return 0;
   }
 
-  int rhs(BoutReal UNUSED(t)) {
+  int rhs(BoutReal UNUSED(t)) override {
     mesh->communicate(n);
 
     ddt(n) = D * Delp2(n, CELL_DEFAULT, useFFT);

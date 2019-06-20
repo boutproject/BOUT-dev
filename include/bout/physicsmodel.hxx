@@ -264,7 +264,7 @@ protected:
   public:
     PhysicsModelMonitor() = delete;
     PhysicsModelMonitor(PhysicsModel *model) : model(model) {}
-    int call(Solver* UNUSED(solver), BoutReal simtime, int iter, int nout) {
+    int call(Solver* UNUSED(solver), BoutReal simtime, int iter, int nout) override {
       // Save state to restart file
       model->restart.write();
       // Call user output monitor
