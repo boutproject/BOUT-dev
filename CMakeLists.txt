@@ -305,8 +305,8 @@ target_include_directories(bout++ PUBLIC
   )
 
 target_compile_definitions(bout++
-  PUBLIC "BOUT_VERSION_STRING=\"4.2.2\""
-  PUBLIC "BOUT_VERSION_DOUBLE=4.22"
+  PUBLIC "BOUT_VERSION_STRING=\"${PROJECT_VERSION}\""
+  PUBLIC "BOUT_VERSION_DOUBLE=${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}${PROJECT_VERSION_PATCH}"
   )
 
 target_compile_features(bout++ PUBLIC cxx_std_11)
