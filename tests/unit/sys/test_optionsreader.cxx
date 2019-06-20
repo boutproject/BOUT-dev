@@ -44,7 +44,7 @@ public:
 
 TEST_F(OptionsReaderTest, BadFilename) {
   OptionsReader reader;
-  EXPECT_THROW(reader.read(nullptr, NULL), BoutException);
+  EXPECT_THROW(reader.read(nullptr, nullptr), BoutException);
 }
 
 TEST_F(OptionsReaderTest, BadCommandLineMultipleEquals) {
