@@ -312,6 +312,24 @@ target_compile_definitions(bout++
 target_compile_features(bout++ PUBLIC cxx_std_11)
 set_target_properties(bout++ PROPERTIES CXX_EXTENSIONS OFF)
 
+option(ENABLE_WARNINGS "Enable compiler warnings" ON)
+if (ENABLE_WARNINGS)
+  target_compile_options(bout++ PRIVATE
+    $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>:
+      -Wall -Wextra >
+    $<$<CXX_COMPILER_ID:MSVC>:
+      /W4 >
+   )
+
+ include(EnableCXXWarningIfSupport)
+ # Note we explicitly turn off -Wcast-function-type as PETSc *requires*
+ # we cast a function to the wrong type in MatFDColoringSetFunction
+ target_enable_cxx_warning_if_supported(bout++
+   FLAGS -Wnull-dereference -Wno-cast-function-type
+   )
+
+endif()
+
 # Compile time features
 
 set(CHECK_LEVELS 0 1 2 3 4)
