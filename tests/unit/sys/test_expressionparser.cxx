@@ -28,7 +28,7 @@ class BinaryGenerator : public FieldGenerator {
 public:
   BinaryGenerator(std::shared_ptr<FieldGenerator> a = nullptr,
                   std::shared_ptr<FieldGenerator> b = nullptr)
-      : a(a), b(b) {}
+      : a(std::move(a)), b(std::move(b)) {}
 
   std::shared_ptr<FieldGenerator>
   clone(const std::list<std::shared_ptr<FieldGenerator>> args) override {
@@ -54,7 +54,8 @@ private:
 
 class IncrementGenerator : public FieldGenerator {
 public:
-  IncrementGenerator(std::shared_ptr<FieldGenerator> gen = nullptr) : gen(gen) {}
+  IncrementGenerator(std::shared_ptr<FieldGenerator> gen = nullptr)
+      : gen(std::move(gen)) {}
 
   std::shared_ptr<FieldGenerator>
   clone(const std::list<std::shared_ptr<FieldGenerator>> args) override {

@@ -576,7 +576,7 @@ public:
     /// This constructor needed for map::emplace
     /// Can be removed in C++17 with map::insert and brace initialisation
     OptionValue(std::string value, std::string source, bool used)
-        : value(value), source(source), used(used) {}
+        : value(std::move(value)), source(std::move(source)), used(used) {}
   };
 
   /// Read-only access to internal options and sections

@@ -52,8 +52,9 @@ public:
                        replace, ///< Overwrite file when writing
                        append   ///< Append to file when writing
   };
-  
-  OptionsNetCDF(const std::string &filename, FileMode mode = FileMode::replace) : filename(filename), file_mode(mode) {}
+
+  OptionsNetCDF(std::string filename, FileMode mode = FileMode::replace)
+      : filename(std::move(filename)), file_mode(mode) {}
 
   /// Read options from file
   Options read();

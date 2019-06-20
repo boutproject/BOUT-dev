@@ -35,18 +35,18 @@ RegisterInFactory<Base, Derived2> registerme2("derived2");
 class BaseComplicated {
 public:
   std::string name;
-  BaseComplicated(std::string name) : name(name) {}
+  BaseComplicated(std::string name) : name(std::move(name)) {}
   virtual std::string foo() { return name; }
 };
 
 class DerivedComplicated1 : public BaseComplicated {
 public:
-  DerivedComplicated1(std::string name) : BaseComplicated(name) {}
+  DerivedComplicated1(std::string name) : BaseComplicated(std::move(name)) {}
 };
 
 class DerivedComplicated2 : public BaseComplicated {
 public:
-  DerivedComplicated2(std::string name) : BaseComplicated(name) {}
+  DerivedComplicated2(std::string name) : BaseComplicated(std::move(name)) {}
 };
 
 // Save some typing later
