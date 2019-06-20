@@ -381,7 +381,7 @@ endif()
 message(STATUS "Field name tracking: TRACK=${ENABLE_TRACK}")
 set(BOUT_USE_TRACK ${ENABLE_TRACK})
 
-option(ENABLE_SIGFPE "Signalling floating point exceptions" ON)
+option(ENABLE_SIGFPE "Signalling floating point exceptions" OFF)
 if (ENABLE_SIGFPE)
   target_compile_definitions(bout++
     PUBLIC "BOUT_FPE")
@@ -450,7 +450,7 @@ endif()
 message(STATUS "NetCDF support: ${USE_NETCDF}")
 set(BOUT_HAS_NETCDF ${USE_NETCDF})
 
-option(USE_HDF5 "Enable support for HDF5 output" ON)
+option(USE_HDF5 "Enable support for HDF5 output" OFF)
 if (USE_HDF5)
   find_package(HDF5 REQUIRED COMPONENTS CXX)
   target_compile_definitions(bout++
