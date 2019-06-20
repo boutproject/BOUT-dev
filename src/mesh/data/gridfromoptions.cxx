@@ -20,9 +20,8 @@ bool GridFromOptions::get(Mesh* UNUSED(m), std::string& sval, const std::string&
   return true;
 }
 
-bool GridFromOptions::get(Mesh* UNUSED(m), int& ival, const std::string& name) {
+bool GridFromOptions::get(Mesh* UNUSED(m), int& ival, const std::string& name, int def) {
   if (!hasVar(name)) {
-    constexpr int def{0};
     output_warn.write("Variable '%s' not in mesh options. Setting to %d\n", name.c_str(),
                       def);
     ival = def;

@@ -58,10 +58,10 @@ int Mesh::get(std::string &sval, const std::string &name) {
 }
 
 /// Get an integer
-int Mesh::get(int &ival, const std::string &name) {
+int Mesh::get(int &ival, const std::string &name, int def) {
   TRACE("Mesh::get(ival, %s)", name.c_str());
 
-  if (source == nullptr or !source->get(this, ival, name))
+  if (source == nullptr or !source->get(this, ival, name, def))
     return 1;
 
   return 0;

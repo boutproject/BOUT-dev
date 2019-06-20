@@ -134,9 +134,10 @@ class Mesh {
   /// 
   /// @param[out] ival  The value will be put into this variable
   /// @param[in] name   The name of the variable to read
+  /// @param[in] def    The default value if not found
   ///
   /// @returns zero if successful, non-zero on failure
-  int get(int &ival, const std::string &name);
+  int get(int &ival, const std::string &name, int def = 0);
 
   /// Get a BoutReal from the input source
   /// 
