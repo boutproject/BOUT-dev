@@ -85,7 +85,7 @@ int Mesh::get(Field2D &var, const std::string &name, BoutReal def) {
 
   if (source == nullptr or !source->get(this, var, name, def)) {
     // set val to default in source==nullptr too:
-    val = def;
+    var = def;
     return 1;
   }
 
@@ -103,7 +103,7 @@ int Mesh::get(Field3D &var, const std::string &name, BoutReal def, bool communic
 
   if (source == nullptr or !source->get(this, var, name, def)) {
     // set val to default in source==nullptr too:
-    val = def;
+    var = def;
     return 1;
   }
 
@@ -124,7 +124,7 @@ int Mesh::get(FieldPerp &var, const std::string &name, BoutReal def,
 
   if (source == nullptr or !source->get(this, var, name, def)) {
     // set val to default in source==nullptr too:
-    val = def;
+    var = def;
     return 1;
   }
 
