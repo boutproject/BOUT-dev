@@ -164,10 +164,10 @@ int BoutMesh::load() {
   // separatrix location
   Mesh::get(ixseps1, "ixseps1", GlobalNx);
   Mesh::get(ixseps2, "ixseps2", GlobalNx);
-  Mesh::get(jyseps1_1, "ixseps1_1", -1);
-  Mesh::get(jyseps1_2, "ixseps1_2", ny / 2);
-  Mesh::get(jyseps2_1, "ixseps2_1", jyseps1_2);
-  Mesh::get(jyseps2_2, "ixseps2_2", ny - 1);
+  Mesh::get(jyseps1_1, "jyseps1_1", -1);
+  Mesh::get(jyseps1_2, "jyseps1_2", ny / 2);
+  Mesh::get(jyseps2_1, "jyseps2_1", jyseps1_2);
+  Mesh::get(jyseps2_2, "jyseps2_2", ny - 1);
   Mesh::get(ny_inner, "ny_inner", jyseps2_1);
 
   /// Check inputs
