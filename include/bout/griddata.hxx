@@ -177,8 +177,9 @@ public:
    * expressions
    *
    * @param[in] mesh   Not used
+   * @param[out] ival  The variable which will be set
    * @param[in] name   Name of variable
-   * @param[out] ival  Always given a value, defaults to 0
+   * @param[in] def   Default value to use if option not found
    *
    * @return True if option is set, false if ival is default (0)
    */

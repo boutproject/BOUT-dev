@@ -134,7 +134,7 @@ bool GridFile::get(Mesh *UNUSED(m), std::string &sval, const std::string &name) 
  *   Boolean. True on success.
  * 
  */
-bool GridFile::get(Mesh *UNUSED(m), int &ival, const std::string &name) {
+bool GridFile::get(Mesh *UNUSED(m), int &ival, const std::string &name, int UNUSED(def)) {
   Timer timer("io");
   TRACE("GridFile::get(int)");
   

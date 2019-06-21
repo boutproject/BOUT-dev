@@ -335,7 +335,8 @@ class FakeGridDataSource : public GridDataSource {
   bool get(Mesh* UNUSED(m), std::string& UNUSED(sval), const std::string& UNUSED(name)) {
     return false;
   }
-  bool get(Mesh* UNUSED(m), int& UNUSED(ival), const std::string& UNUSED(name)) {
+  bool get(Mesh* UNUSED(m), int& UNUSED(ival), const std::string& UNUSED(name),
+      int UNUSED(def) = 0) {
     return false;
   }
   bool get(Mesh* UNUSED(m), BoutReal& UNUSED(rval), const std::string& UNUSED(name)) {
