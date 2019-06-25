@@ -9,17 +9,15 @@
 
 /// Test fixture to make sure the global mesh is our fake one
 class MeshTest : public ::testing::Test {
-protected:
-  static void SetUpTestCase() { output_info.disable(); }
-
-  static void TearDownTestCase() { output_info.enable(); }
-
 public:
   MeshTest() : localmesh(nx, ny, nz) {}
   static const int nx = 3;
   static const int ny = 5;
   static const int nz = 7;
   FakeMesh localmesh;
+
+  WithQuietOutput info{output_info};
+  WithQuietOutput warn{output_warn};
 };
 
 TEST_F(MeshTest, CreateDefaultRegions) {
