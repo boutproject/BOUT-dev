@@ -126,9 +126,10 @@ class Mesh {
   /// 
   /// @param[out] sval  The value will be put into this variable
   /// @param[in] name   The name of the variable to read
+  /// @param[in] def    The default value if not found
   ///
   /// @returns zero if successful, non-zero on failure
-  int get(std::string &sval, const std::string &name);
+  int get(std::string& sval, const std::string& name, const std::string& def="");
 
   /// Get an integer from the input source
   /// 
@@ -137,15 +138,16 @@ class Mesh {
   /// @param[in] def    The default value if not found
   ///
   /// @returns zero if successful, non-zero on failure
-  int get(int &ival, const std::string &name, int def = 0);
+  int get(int &ival, const std::string &name, int def=0);
 
   /// Get a BoutReal from the input source
   /// 
   /// @param[out] rval  The value will be put into this variable
   /// @param[in] name   The name of the variable to read
+  /// @param[in] def    The default value if not found
   ///
   /// @returns zero if successful, non-zero on failure
-  int get(BoutReal &rval, const std::string &name);
+  int get(BoutReal& rval, const std::string& name, BoutReal def=0.0);
 
   /// Get a Field2D from the input source
   /// including communicating guard cells
@@ -186,9 +188,10 @@ class Mesh {
   ///
   /// @param[in] var  This will be set to the value read
   /// @param[in] name  The name of the vector. Individual fields are read based on this name by appending. See above
+  /// @param[in] def   The default value if not found (used for all the components)
   ///
   /// @returns zero always. 
-  int get(Vector2D &var, const std::string &name);
+  int get(Vector2D &var, const std::string &name, BoutReal def=0.0);
 
   /// Get a Vector3D from the input source.
   /// If \p var is covariant then this gets three
@@ -199,9 +202,10 @@ class Mesh {
   ///
   /// @param[in] var  This will be set to the value read
   /// @param[in] name  The name of the vector. Individual fields are read based on this name by appending. See above
+  /// @param[in] def    The default value if not found (used for all the components)
   ///
   /// @returns zero always. 
-  int get(Vector3D &var, const std::string &name);
+  int get(Vector3D &var, const std::string &name, BoutReal def=0.0);
 
   /// Wrapper for GridDataSource::hasVar
   bool sourceHasVar(const std::string &name);

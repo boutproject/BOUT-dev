@@ -52,10 +52,15 @@ public:
 
   virtual bool hasVar(const std::string &name) = 0; ///< Test if source can supply a variable
 
-  virtual bool get(Mesh *m, std::string &sval, const std::string &name) = 0; ///< Get a string
-  virtual bool get(Mesh *m, int &ival, const std::string &name, int def = 0) = 0; ///< Get an integer
-  virtual bool get(Mesh *m, BoutReal &rval,
-                   const std::string &name) = 0; ///< Get a BoutReal number
+  /// Get a string
+  virtual bool get(Mesh* m, std::string& sval, const std::string& name,
+                   const std::string& def = "") = 0;
+  /// Get an integer
+  virtual bool get(Mesh* m, int& ival, const std::string& name,
+                   int def = 0) = 0;
+  /// Get a BoutReal number
+  virtual bool get(Mesh* m, BoutReal& rval, const std::string& name,
+                   BoutReal def = 0.0) = 0;
   virtual bool get(Mesh *m, Field2D &var, const std::string &name, BoutReal def = 0.0) = 0;
   virtual bool get(Mesh *m, Field3D &var, const std::string &name, BoutReal def = 0.0) = 0;
   virtual bool get(Mesh *m, FieldPerp &var, const std::string &name, BoutReal def = 0.0) = 0;
@@ -86,11 +91,14 @@ public:
 
   bool hasVar(const std::string &name) override;
 
-  bool get(Mesh *m, std::string &sval, const std::string &name) override; ///< Get a string
-  bool get(Mesh *m, int &ival, const std::string &name, int def = 0) override; ///< Get an integer
-  bool get(Mesh *m, BoutReal &rval,
-           const std::string &name) override; ///< Get a BoutReal number
-  bool get(Mesh *m, Field2D &var, const std::string &name, BoutReal def = 0.0) override;
+  /// Get a string
+  bool get(Mesh* m, std::string& sval, const std::string& name,
+           const std::string& def = "") override;
+  /// Get an integer
+  bool get(Mesh* m, int& ival, const std::string& name, int def = 0) override;
+  /// Get a BoutReal number
+  bool get(Mesh* m, BoutReal& rval, const std::string& name, BoutReal def = 0.0) override;
+  bool get(Mesh* m, Field2D& var, const std::string& name, BoutReal def = 0.0) override;
   bool get(Mesh *m, Field3D &var, const std::string &name, BoutReal def = 0.0) override;
   bool get(Mesh *m, FieldPerp &var, const std::string &name, BoutReal def = 0.0) override {
     return getField(m, var, name, def);
@@ -170,7 +178,8 @@ public:
    *
    * @return True if option is set, false if ival is default (0)
    */
-  bool get(Mesh *mesh, std::string &sval, const std::string &name) override;
+  bool get(Mesh* mesh, std::string& sval, const std::string& name,
+           const std::string& def = "") override;
 
   /*!
    * Reads integers from options. Uses Options::get to handle
@@ -195,7 +204,8 @@ public:
    *
    * @return True if option is set, false if ival is default (0)
    */
-  bool get(Mesh *mesh, BoutReal &rval, const std::string &name) override;
+  bool get(Mesh* mesh, BoutReal& rval, const std::string& name,
+           BoutReal def = 0.0) override;
 
   /*!
    * Get a Field2D object by finding the option with the given name,
