@@ -3,6 +3,7 @@
 #include "bout/sys/expressionparser.hxx"
 #include "bout_types.hxx"
 #include "unused.hxx"
+#include "test_extras.hxx"
 
 #include <vector>
 
@@ -21,6 +22,7 @@ public:
   std::vector<double> y_array = {-1., 0., 1., 5., 10., 3.14e8};
   std::vector<double> z_array = {-1., 0., 1., 5., 10., 3.14e8};
   std::vector<double> t_array = {-1., 0., 1., 5., 10., 3.14e8};
+  WithQuietOutput quiet_warn{output_warn};
 };
 
 /// For testing, a generator function of two inputs

@@ -368,7 +368,8 @@ class FakeGridDataSource : public GridDataSource {
 class FakeMeshFixture : public ::testing::Test {
 public:
   FakeMeshFixture() {
-    WithQuietOutput quiet{output_info};
+    WithQuietOutput quiet_info{output_info};
+    WithQuietOutput quiet_warn{output_warn};
 
     delete bout::globals::mesh;
     bout::globals::mesh = new FakeMesh(nx, ny, nz);

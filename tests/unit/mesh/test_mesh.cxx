@@ -16,8 +16,7 @@ public:
   static const int nz = 7;
   FakeMesh localmesh;
 
-  WithQuietOutput info{output_info};
-  WithQuietOutput warn{output_warn};
+  WithQuietOutput quiet_warn{output_warn};
 };
 
 TEST_F(MeshTest, CreateDefaultRegions) {
@@ -195,6 +194,8 @@ TEST_F(MeshTest, GetBoutRealNoSourceWithDefault) {
 }
 
 TEST_F(MeshTest, GetField2DNoSource) {
+  WithQuietOutput warn{output_warn};
+
   localmesh.createDefaultRegions();
   localmesh.setCoordinates(nullptr);
 
@@ -204,6 +205,8 @@ TEST_F(MeshTest, GetField2DNoSource) {
 }
 
 TEST_F(MeshTest, GetField2DNoSourceWithDefault) {
+  WithQuietOutput warn{output_warn};
+
   localmesh.createDefaultRegions();
   localmesh.setCoordinates(nullptr);
 
@@ -214,6 +217,8 @@ TEST_F(MeshTest, GetField2DNoSourceWithDefault) {
 }
 
 TEST_F(MeshTest, GetField3DNoSource) {
+  WithQuietOutput warn{output_warn};
+
   localmesh.createDefaultRegions();
   localmesh.setCoordinates(nullptr);
 
@@ -223,6 +228,8 @@ TEST_F(MeshTest, GetField3DNoSource) {
 }
 
 TEST_F(MeshTest, GetField3DNoSourceWithDefault) {
+  WithQuietOutput warn{output_warn};
+
   localmesh.createDefaultRegions();
   localmesh.setCoordinates(nullptr);
 

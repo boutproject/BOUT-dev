@@ -43,7 +43,8 @@ public:
     }
   }
 
-  WithQuietOutput quiet{output_info};
+  WithQuietOutput quiet_info{output_info};
+  WithQuietOutput quiet_warn{output_warn};
 
   FieldFactory factory;
 
@@ -612,6 +613,7 @@ public:
   virtual ~FieldFactoryTest() {}
 
   WithQuietOutput quiet_info{output_info}, quiet{output}, quiet_error{output_error};
+  WithQuietOutput quiet_warn{output_warn};
 
   FieldFactory factory;
 };
