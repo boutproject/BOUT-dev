@@ -25,7 +25,7 @@ public:
   int rhs(BoutReal) {
     mesh->communicate(f);
     ddt(f) = -bracket(g, f, (BRACKET_METHOD) method)
-      - 20.*(dx_sq_sq*D4DX4(f) + dz_sq_sq*D4DZ4(f))
+      - (dx_sq_sq*D4DX4(f) + dz_sq_sq*D4DZ4(f))
       ;
 
     return 0;
