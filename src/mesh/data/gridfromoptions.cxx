@@ -12,13 +12,18 @@ namespace {
 /// if it doesn't exist
 template <class T>
 auto getWithDefault(const Options& options, const std::string& name, const T& def) -> T {
+  const bool has_var = options.isSet(name);
+  if (!has_var) {
+    output_warn.write("Variable '%s' not in mesh options. Setting to ", name.c_str());
+    output_warn << def << "\n";
+  }
   // Note! We don't use `Options::withDefault` here because that
   // records the default in the `Options` object and we don't know if
   // we'll actually end up using that value. This is because
   // `GridFromOptions::get` is probably being called via `Mesh::get`,
   // and the calling site may use the return value of that to set its
   // own default
-  return options.isSet(name) ? options[name].as<T>() : def;
+  return has_var ? options[name].as<T>() : def;
 }
 } // namespace
 
