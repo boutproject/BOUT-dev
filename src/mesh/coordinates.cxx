@@ -223,39 +223,28 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
           "cells\n"));
   }
 
-  if (mesh->get(dx, "dx")) {
-    output_warn.write(_("\tWARNING: differencing quantity 'dx' not found. Set to 1.0\n"));
-    dx = 1.0;
-  }
+  mesh->get(dx, "dx", 1.0);
   dx = interpolateAndExtrapolate(dx, location, extrapolate_x, extrapolate_y);
 
   if (mesh->periodicX) {
     mesh->communicate(dx);
   }
 
-  if (mesh->get(dy, "dy")) {
-    output_warn.write(_("\tWARNING: differencing quantity 'dy' not found. Set to 1.0\n"));
-    dy = 1.0;
-  }
+  mesh->get(dy, "dy", 1.0);
   dy = interpolateAndExtrapolate(dy, location, extrapolate_x, extrapolate_y);
 
   nz = mesh->LocalNz;
 
-  if (mesh->get(dz, "dz")) {
-    // Couldn't read dz from input
-    BoutReal ZMIN, ZMAX;
-    Options* options = Options::getRoot();
-    if (options->isSet("zperiod")) {
-      int zperiod;
-      OPTION(options, zperiod, 1);
-      ZMIN = 0.0;
-      ZMAX = 1.0 / static_cast<BoutReal>(zperiod);
-    } else {
-      OPTION(options, ZMIN, 0.0);
-      OPTION(options, ZMAX, 1.0);
-    }
+  {
+    auto& options = Options::root();
+    const bool has_zperiod = options.isSet("zperiod");
+    const auto zmin = has_zperiod ? 0.0 : options["ZMIN"].withDefault(0.0);
+    const auto zmax = has_zperiod ? 1.0 / options["zperiod"].withDefault(1.0)
+                                  : options["ZMAX"].withDefault(1.0);
 
-    dz = (ZMAX - ZMIN) * TWOPI / nz;
+    const auto default_dz = (zmax - zmin) * TWOPI / nz;
+
+    mesh->get(dz, "dz", default_dz);
   }
 
   // Diagonal components of metric tensor g^{ij} (default to 1)
@@ -448,11 +437,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     }
 
     checkStaggeredGet(mesh, "dx", suffix);
-    if (mesh->get(dx, "dx"+suffix)) {
-      output_warn.write(
-          "\tWARNING: differencing quantity 'dx%s' not found. Set to 1.0\n", suffix.c_str());
-      dx = 1.0;
-    }
+    mesh->get(dx, "dx"+suffix, 1.0);
     dx.setLocation(location);
     dx = interpolateAndExtrapolate(dx, location, extrapolate_x, extrapolate_y);
 
@@ -461,11 +446,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     }
 
     checkStaggeredGet(mesh, "dy", suffix);
-    if (mesh->get(dy, "dy"+suffix)) {
-      output_warn.write(
-          "\tWARNING: differencing quantity 'dy%s' not found. Set to 1.0\n", suffix.c_str());
-      dy = 1.0;
-    }
+    mesh->get(dy, "dy"+suffix, 1.0);
     dy.setLocation(location);
     dy = interpolateAndExtrapolate(dy, location, extrapolate_x, extrapolate_y);
 
