@@ -89,7 +89,7 @@ int Mesh::get(BoutReal& rval, const std::string& name, BoutReal def) {
     return true;
   }
 
-  return !source->get(this, rval, name);
+  return !source->get(this, rval, name, def);
 }
 
 int Mesh::get(Field2D &var, const std::string &name, BoutReal def) {
