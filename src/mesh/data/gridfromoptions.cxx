@@ -7,24 +7,35 @@
 
 bool GridFromOptions::hasVar(const std::string& name) { return options->isSet(name); }
 
-bool GridFromOptions::get(Mesh* UNUSED(m), std::string& sval, const std::string& name,
+namespace {
+/// Return value of \p name in \p options, using \p def as a default
+/// if it doesn't exist
+template <class T>
+auto getWithDefault(const Options& options, const std::string& name, const T& def) -> T {
+  // Note! We don't use `Options::withDefault` here because that
+  // records the default in the `Options` object and we don't know if
+  // we'll actually end up using that value. This is because
+  // `GridFromOptions::get` is probably being called via `Mesh::get`,
+  // and the calling site may use the return value of that to set its
+  // own default
+  return options.isSet(name) ? options[name].as<T>() : def;
+}
+} // namespace
+
+bool GridFromOptions::get(Mesh*, std::string& sval, const std::string& name,
                           const std::string& def) {
-  const bool has_var = hasVar(name);
-  sval = (*options)[name].withDefault(def);
-  return has_var;
+  sval = getWithDefault(*options, name, def);
+  return hasVar(name);
 }
 
-bool GridFromOptions::get(Mesh* UNUSED(m), int& ival, const std::string& name, int def) {
-  const bool has_var = hasVar(name);
-  ival = (*options)[name].withDefault(def);
-  return has_var;
+bool GridFromOptions::get(Mesh*, int& ival, const std::string& name, int def) {
+  ival = getWithDefault(*options, name, def);
+  return hasVar(name);
 }
 
-bool GridFromOptions::get(Mesh* UNUSED(m), BoutReal& rval, const std::string& name,
-                          BoutReal def) {
-  const bool has_var = hasVar(name);
-  rval = (*options)[name].withDefault(def);
-  return has_var;
+bool GridFromOptions::get(Mesh*, BoutReal& rval, const std::string& name, BoutReal def) {
+  rval = getWithDefault(*options, name, def);
+  return hasVar(name);
 }
 
 bool GridFromOptions::get(Mesh* m, Field2D& var, const std::string& name, BoutReal def) {
