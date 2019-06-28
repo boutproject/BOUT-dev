@@ -85,7 +85,7 @@ public:
 
 protected:
   /// This method should be called in the constructor to check that if the grid
-  /// has a 'coordinates_type' variable, it has the correct value
+  /// has a 'parallel_transform' variable, it has the correct value
   virtual void checkInputGrid() = 0;
 
   Mesh &mesh; ///< The mesh this paralleltransform is part of

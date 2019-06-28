@@ -27,14 +27,14 @@ ShiftedMetric::ShiftedMetric(Mesh& m, CELL_LOC location_in, Field2D zShift_,
 }
 
 void ShiftedMetric::checkInputGrid() {
-  std::string coordinates_type = "";
-  if (!mesh.get(coordinates_type, "coordinates_type")) {
-    if (coordinates_type != "orthogonal") {
-      throw BoutException("Incorrect coordinate system type '" + coordinates_type
+  std::string parallel_transform;
+  if (!mesh.get(parallel_transform, "parallel_transform")) {
+    if (parallel_transform != "shiftedmetric") {
+      throw BoutException("Incorrect parallel transform type '" + parallel_transform
                           + "' used to generate metric components for ShiftedMetric. "
-                            "Should be 'orthogonal'.");
+                            "Should be 'shiftedmetric'.");
     }
-  } // else: coordinate_system variable not found in grid input, indicates older input
+  } // else: parallel_transform variable not found in grid input, indicates older input
     //       file so must rely on the user having ensured the type is correct
 }
 
