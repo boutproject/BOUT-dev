@@ -183,10 +183,13 @@ public:
     setCoefEz(f);
   }
   
-  virtual void setFlags(int f);
   virtual void setGlobalFlags(int f) { global_flags = f; }
   virtual void setInnerBoundaryFlags(int f) { inner_boundary_flags = f; }
   virtual void setOuterBoundaryFlags(int f) { outer_boundary_flags = f; }
+
+  [[gnu::deprecated("Please use setGlobalFlags, setInnerBoundaryFlags and "
+      "setOuterBoundaryFlags methods instead")]]
+  virtual void setFlags(int f);
 
   /// Does this solver use Field3D coefficients (true) or only their DC component (false)
   virtual bool uses3DCoefs() const { return false; }
