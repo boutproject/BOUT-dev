@@ -115,20 +115,9 @@ parallel_lc = true  # Use LtoC and CtoL differencing
 
 bracket_method = 2  # 0 = std, 1=simplified, 2 = arakawa, 3 = ctu
 
-# field inversion flags: Add the following
-#  1 - Zero-gradient DC component on inner boundary
-#  2 - Zero-gradient AC component on inner boundary
-#  4 -      "        DC     "      " outer    "
-#  8 -      "        AC     "      " outer    "
-# 16 - Zero all DC components of the result
-# 32 - Don't use previous solution to start iterations
-#      (iterative methods only)
-# 64 - Set the width of the boundary layer to 1
-# 128 - use 4th order differencing
-# 256 - Laplacian = 0 inner boundary (combine 2nd & 4th-order)
-# 512 - Laplacian = 0 outer boundary ( sometimes works )
-
-phi_flags = 769  # inversion flags for phi
+[laplace]
+inner_boundary_flags = 1 + 4 # INVERT_DC_GRAD + INVERT_AC_LAP
+outer_boundary_flags = 1 + 4 # INVERT_DC_GRAD + INVERT_AC_LAP
 
 ##################################################
 # settings for individual variables
