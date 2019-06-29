@@ -71,8 +71,6 @@ private:
   
   bool log_density;  // Evolve logarithm of the density
   
-  int phi_flags, apar_flags; // Inversion flags
-  
   bool niprofile;
   
   bool evolve_source_ni, evolve_source_te; // If true, evolve a source/sink profile
@@ -191,9 +189,6 @@ protected:
     input_source = options["input_source"].withDefault(false);
     remove_tor_av_ni = options["remove_tor_av_ni"].withDefault(false);
     remove_tor_av_te = options["remove_tor_av_te"].withDefault(false);
-
-    phi_flags = options["phi_flags"].withDefault(0);
-    apar_flags = options["apar_flags"].withDefault(0);
 
     nonlinear = options["nonlinear"].withDefault(true);
 
@@ -423,7 +418,6 @@ protected:
 
     // Laplacian inversion solver
     phiSolver = Laplacian::create();
-    phiSolver->setFlags(phi_flags);
     phiSolver->setCoefC(Ni0);
     
     return 0;
