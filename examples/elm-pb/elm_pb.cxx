@@ -109,7 +109,6 @@ private:
   BoutReal vacuum_trans; // Transition width
   Field3D vac_mask;
 
-  int phi_flags, apar_flags;
   bool nonlinear;
   bool evolve_jpar;
   BoutReal g; // Only if compressible
@@ -590,10 +589,6 @@ protected:
     phi_curv = options["phi_curv"].doc("ExB compression in P equation?").withDefault(true);
     g = options["gamma"].doc("Ratio of specific heats").withDefault(5.0 / 3.0);
 
-    // Field inversion flags
-    phi_flags = options["phi_flags"].withDefault(0);
-    apar_flags = options["apar_flags"].withDefault(0);
-
     x = (Psixy - Psiaxis) / (Psibndry - Psiaxis);
 
     if (experiment_Er) { // get er from experiment
@@ -1063,11 +1058,9 @@ protected:
     }
 
     // Create a solver for the Laplacian
-    phiSolver = std::unique_ptr<Laplacian>(Laplacian::create());
-    phiSolver->setFlags(phi_flags);
+    phiSolver = std::unique_ptr<Laplacian>(Laplacian::create(&options["phiSolver"]));
 
-    aparSolver = std::unique_ptr<Laplacian>(Laplacian::create());
-    aparSolver->setFlags(apar_flags);
+    aparSolver = std::unique_ptr<Laplacian>(Laplacian::create(&options["aparSolver"]));
 
     /////////////// CHECK VACUUM ///////////////////////
     // In vacuum region, initial vorticity should equal zero
