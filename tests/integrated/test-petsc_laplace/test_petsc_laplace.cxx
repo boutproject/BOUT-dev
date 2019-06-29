@@ -248,7 +248,7 @@ int main(int argc, char** argv) {
 
   invert_4th->setInnerBoundaryFlags(INVERT_AC_GRAD);
   invert_4th->setOuterBoundaryFlags(INVERT_AC_GRAD);
-  invert_4th->setFlags(INVERT_4TH_ORDER);
+  invert_4th->setGlobalFlags(INVERT_4TH_ORDER);
   invert_4th->setCoefA(a1);
   invert_4th->setCoefC(c1);
   invert_4th->setCoefD(d1);
@@ -555,7 +555,7 @@ int main(int argc, char** argv) {
   BoutReal max_error6; //Output of test
   invert_4th->setInnerBoundaryFlags(INVERT_AC_GRAD);
   invert_4th->setOuterBoundaryFlags(INVERT_AC_GRAD);
-  invert_4th->setFlags(INVERT_4TH_ORDER);
+  invert_4th->setGlobalFlags(INVERT_4TH_ORDER);
   invert_4th->setCoefA(a5);
   invert_4th->setCoefC(c5);
   invert_4th->setCoefD(d5);
