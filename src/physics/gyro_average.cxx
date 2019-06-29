@@ -38,6 +38,122 @@ Field3D gyroTaylor0(const Field3D& f, const Field3D& rho) {
   return f + SQ(rho) * Delp2(f);
 }
 
+Field3D gyroPade0(const Field3D& f, BoutReal rho, int inner_boundary_flags, int outer_boundary_flags) {
+  const Field2D a = 1.0;
+  const Field2D d = -rho * rho;
+
+  // Invert, leaving boundaries unchanged
+
+  Timer timer("invert");
+
+  auto* lap = Laplacian::defaultInstance();
+
+  lap->setCoefA(a);
+  lap->setCoefC(1.0);
+  lap->setCoefD(d);
+  lap->setInnerBoundaryFlags(inner_boundary_flags);
+  lap->setOuterBoundaryFlags(outer_boundary_flags);
+
+  return lap->solve(f).setLocation(f.getLocation());
+}
+
+Field3D gyroPade0(const Field3D& f, const Field2D& rho, int inner_boundary_flags, int outer_boundary_flags) {
+  const Field2D a = 1.0;
+  const Field2D d = -rho * rho;
+
+  // Invert, leaving boundaries unchanged
+  Timer timer("invert");
+
+  auto* lap = Laplacian::defaultInstance();
+
+  lap->setCoefA(a);
+  lap->setCoefC(1.0);
+  lap->setCoefD(d);
+  lap->setInnerBoundaryFlags(inner_boundary_flags);
+  lap->setOuterBoundaryFlags(outer_boundary_flags);
+
+  return lap->solve(f).setLocation(f.getLocation());
+}
+
+Field3D gyroPade0(const Field3D& f, const Field3D& rho, int inner_boundary_flags, int outer_boundary_flags) {
+  // Have to use Z average of rho for efficient inversion
+  return gyroPade0(f, DC(rho), inner_boundary_flags, outer_boundary_flags);
+}
+
+Field3D gyroPade1(const Field3D& f, BoutReal rho, int inner_boundary_flags, int outer_boundary_flags) {
+  const Field2D a = 1.0;
+  const Field2D d = -0.5 * rho * rho;
+
+  // Invert, leaving boundaries unchanged
+  Timer timer("invert");
+
+  auto* lap = Laplacian::defaultInstance();
+
+  lap->setCoefA(a);
+  lap->setCoefC(1.0);
+  lap->setCoefD(d);
+  lap->setInnerBoundaryFlags(inner_boundary_flags);
+  lap->setOuterBoundaryFlags(outer_boundary_flags);
+
+  return lap->solve(f).setLocation(f.getLocation());
+}
+
+Field3D gyroPade1(const Field3D& f, const Field2D& rho, int inner_boundary_flags, int outer_boundary_flags) {
+  const Field2D a = 1.0;
+  const Field2D d = -0.5 * rho * rho;
+
+  // Invert, leaving boundaries unchanged
+  Timer timer("invert");
+
+  auto* lap = Laplacian::defaultInstance();
+
+  lap->setCoefA(a);
+  lap->setCoefC(1.0);
+  lap->setCoefD(d);
+  lap->setInnerBoundaryFlags(inner_boundary_flags);
+  lap->setOuterBoundaryFlags(outer_boundary_flags);
+
+  return lap->solve(f).setLocation(f.getLocation());
+}
+
+Field3D gyroPade1(const Field3D& f, const Field3D& rho, int inner_boundary_flags, int outer_boundary_flags) {
+  return gyroPade1(f, DC(rho), inner_boundary_flags, outer_boundary_flags);
+}
+
+Field2D gyroPade1(const Field2D& f, const Field2D& rho, int inner_boundary_flags, int outer_boundary_flags) {
+  // Very inefficient implementation
+  Field3D tmp = f;
+  tmp = gyroPade1(tmp, rho, inner_boundary_flags, outer_boundary_flags);
+  return DC(tmp);
+}
+
+Field3D gyroPade2(const Field3D& f, BoutReal rho, int inner_boundary_flags, int outer_boundary_flags) {
+  Field3D result = gyroPade1(gyroPade1(f, rho, inner_boundary_flags, outer_boundary_flags),
+      rho, inner_boundary_flags, outer_boundary_flags);
+
+  result.getMesh()->communicate(result);
+  result = 0.5 * rho * rho * Delp2(result);
+  result.applyBoundary("dirichlet");
+  return result;
+}
+
+Field3D gyroPade2(const Field3D& f, const Field2D& rho, int inner_boundary_flags, int outer_boundary_flags) {
+  Field3D result = gyroPade1(gyroPade1(f, rho, inner_boundary_flags, outer_boundary_flags),
+      rho, inner_boundary_flags, outer_boundary_flags);
+  result.getMesh()->communicate(result);
+  result = 0.5 * rho * rho * Delp2(result);
+  result.applyBoundary("dirichlet");
+  return result;
+}
+
+Field3D gyroPade2(const Field3D& f, const Field3D& rho, int inner_boundary_flags, int outer_boundary_flags) {
+  // Have to use Z average of rho for efficient inversion
+  return gyroPade2(f, DC(rho), inner_boundary_flags, outer_boundary_flags);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Deprecated version of gyroPade operators, using old-style flags
+////////////////////////////////////////////////////////////////////////////////
 Field3D gyroPade0(const Field3D& f, BoutReal rho, int flags) {
   const Field2D a = 1.0;
   const Field2D d = -rho * rho;
