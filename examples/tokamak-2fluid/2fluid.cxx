@@ -87,8 +87,6 @@ private:
   
   int lowPass_z; // Low-pass filter result
   
-  int phi_flags, apar_flags; // Inversion flags
-  
   // Group of objects for communications
   FieldGroup comms;
 
@@ -213,9 +211,6 @@ private:
     vort_include_pi = options["vort_include_pi"].withDefault(false);
 
     lowPass_z = options["lowPass_z"].withDefault(-1);
-
-    phi_flags = options["phi_flags"].withDefault(0);
-    apar_flags = options["apar_flags"].withDefault(0);
 
     evolve_ni = globalOptions["Ni"]["evolve"].withDefault(true);
     evolve_rho = globalOptions["rho"]["evolve"].withDefault(true);
@@ -493,8 +488,7 @@ private:
     dump.addOnce(wci,   "wci");
     
     // Create a solver for the Laplacian
-    phiSolver = Laplacian::create();
-    phiSolver->setFlags(phi_flags);
+    phiSolver = Laplacian::create(&options["phiSolver"]);
     if (laplace_extra_rho_term) {
       // Include the first order term Grad_perp Ni dot Grad_perp phi
       phiSolver->setCoefC(Ni0);
@@ -502,8 +496,7 @@ private:
 
     if (! (estatic || ZeroElMass)) {
       // Create a solver for the electromagnetic potential
-      aparSolver = Laplacian::create();
-      aparSolver->setFlags(apar_flags);
+      aparSolver = Laplacian::create(&options["aparSolver"]);
       acoef = (-0.5 * beta_p / fmei) * Ni0;
       aparSolver->setCoefA(acoef);
     }
