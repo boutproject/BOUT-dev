@@ -113,9 +113,6 @@ constexpr int INVERT_KX_ZERO = 16;
   const int INVERT_DC_IN_GRADPARINV = 2097152;
  */
 
-const int INVERT_IN_RHS  = 16384; ///< Use input value in RHS at inner boundary
-const int INVERT_OUT_RHS = 32768; ///< Use input value in RHS at outer boundary
-
 /// Base class for Laplacian inversion
 class Laplacian {
 public:
