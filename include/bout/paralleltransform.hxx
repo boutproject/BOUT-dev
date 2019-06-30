@@ -83,6 +83,21 @@ public:
   /// require a twist-shift at branch cuts on closed field lines?
   virtual bool requiresTwistShift(bool twist_shift_enabled, YDirectionType ytype) = 0;
 
+  /// Shift part of a Field3D by a given angle in Z
+  ///
+  /// @param[inout] var  The variable to be modified in-place
+  /// @param[in] jx      X index
+  /// @param[in] jy      Y index
+  /// @param[in] zangle  The Z angle to apply
+  virtual void shiftZ(Field3D& f, int jx, int jy, BoutReal zangle);
+
+  /// Apply a phase shift by a given angle \p zangle in Z to all points
+  ///
+  /// @param[inout] var  The variable to modify in-place
+  /// @param[in] zangle  The angle to shift by in Z
+  /// @param[in] rgn     The region to calculate the result over
+  void shiftZ(Field3D &var, BoutReal zangle, const std::string& rgn="RGN_ALL");
+
 protected:
   /// This method should be called in the constructor to check that if the grid
   /// has a 'parallel_transform' variable, it has the correct value
