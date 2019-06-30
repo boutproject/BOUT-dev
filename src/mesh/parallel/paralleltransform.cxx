@@ -3,8 +3,10 @@
  *
  */
 
+#include <bout/constants.hxx>
 #include "bout/mesh.hxx"
 #include "bout/paralleltransform.hxx"
+#include <fft.hxx>
 
 /*
  * Use FFT to shift by an angle in the Z direction

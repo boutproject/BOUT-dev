@@ -208,9 +208,8 @@ Field3D &Field3D::ynext(int dir) {
   return const_cast<Field3D&>(static_cast<const Field3D&>(*this).ynext(dir));
 }
 
-bool Field3D::requiresTwistShift(bool twist_shift_enabled) {
-  return getCoordinates()->getParallelTransform().requiresTwistShift(twist_shift_enabled,
-      getDirectionY());
+void Field3D::applyTwistShift(bool twist_shift_enabled) {
+  getCoordinates()->getParallelTransform().applyTwistShift(*this, twist_shift_enabled);
 }
 
 // Not in header because we need to access fieldmesh

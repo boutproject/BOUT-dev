@@ -35,3 +35,25 @@ void ParallelTransformIdentity::checkInputGrid() {
   } // else: parallel_transform variable not found in grid input, indicates older input
     //       file so must rely on the user having ensured the type is correct
 }
+
+void ParallelTransformIdentity::applyTwistShift(Field3D& f, bool twist_shift_enabled) {
+  // All Field3Ds require twist-shift, because all are effectively field-aligned, but
+  // allow twist-shift to be turned off by twist_shift_enabled
+  if (twist_shift_enabled) {
+    // Lower boundary
+    // Note "TwistShiftDown" Region is empty if no twist-shift is required at the lower
+    // boundary of this processor
+    BOUT_FOR(i, f.getRegion2D("TwistShiftDown")) {
+      int x = i.x();
+      ParallelTransform::shiftZ(f, x, i.y(), ShiftAngle[x]);
+    }
+
+    // Upper boundary
+    // Note "TwistShiftUp" Region is empty if no twist-shift is required at the upper
+    // boundary of this processor
+    BOUT_FOR(i, f.getRegion2D("TwistShiftUp")) {
+      int x = i.x();
+      ParallelTransform::shiftZ(f, x, i.y(), -ShiftAngle[x]);
+    }
+  }
+}

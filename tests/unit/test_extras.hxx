@@ -397,7 +397,8 @@ public:
     // May need a ParallelTransform to create fields, because create3D calls
     // fromFieldAligned
     test_coords->setParallelTransform(
-        bout::utils::make_unique<ParallelTransformIdentity>(*bout::globals::mesh));
+        bout::utils::make_unique<ParallelTransformIdentity>(*bout::globals::mesh,
+        std::vector<BoutReal>()));
 
     delete mesh_staggered;
     mesh_staggered = new FakeMesh(nx, ny, nz);
@@ -419,7 +420,8 @@ public:
         Field2D{0.0, mesh_staggered}, Field2D{0.0, mesh_staggered},
         Field2D{0.0, mesh_staggered}, Field2D{0.0, mesh_staggered}, false);
     test_coords_staggered->setParallelTransform(
-        bout::utils::make_unique<ParallelTransformIdentity>(*mesh_staggered));
+        bout::utils::make_unique<ParallelTransformIdentity>(*mesh_staggered,
+        std::vector<BoutReal>()));
   }
 
   virtual ~FakeMeshFixture() {

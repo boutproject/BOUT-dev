@@ -1102,7 +1102,14 @@ void Coordinates::setParallelTransform(Options* options) {
 
   if(ptstr == "identity") {
     // Identity method i.e. no transform needed
-    transform = bout::utils::make_unique<ParallelTransformIdentity>(*localmesh);
+
+    std::vector<BoutReal> ShiftAngle(localmesh->LocalNx);
+    for (int x=0; x<localmesh->LocalNx; x++) {
+      localmesh->periodicY(x, ShiftAngle[x]);
+    }
+
+    transform = bout::utils::make_unique<ParallelTransformIdentity>(*localmesh,
+        ShiftAngle);
 
   } else if (ptstr == "shifted") {
     // Shifted metric method

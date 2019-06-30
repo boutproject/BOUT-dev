@@ -30,7 +30,8 @@ public:
     static_cast<FakeMesh*>(mesh)->setCoordinates(test_coords);
 
     mesh->getCoordinates()->setParallelTransform(
-        bout::utils::make_unique<ParallelTransformIdentity>(*mesh));
+        bout::utils::make_unique<ParallelTransformIdentity>(*mesh,
+          std::vector<BoutReal>()));
 
     for (const auto& location
         : std::list<CELL_LOC>{CELL_CENTRE, CELL_XLOW, CELL_YLOW, CELL_ZLOW}) {
@@ -39,7 +40,8 @@ public:
                                                              location);
 
       mesh_staggered->getCoordinates(location)->setParallelTransform(
-          bout::utils::make_unique<ParallelTransformIdentity>(*mesh_staggered));
+          bout::utils::make_unique<ParallelTransformIdentity>(*mesh_staggered,
+          std::vector<BoutReal>()));
     }
   }
 
@@ -573,7 +575,8 @@ TYPED_TEST(FieldFactoryCreationTest, CreateOnMesh) {
       Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, false));
 
   localmesh.getCoordinates()->setParallelTransform(
-      bout::utils::make_unique<ParallelTransformIdentity>(localmesh));
+      bout::utils::make_unique<ParallelTransformIdentity>(localmesh,
+        std::vector<BoutReal>()));
 
   auto output = this->create("x", nullptr, &localmesh);
 

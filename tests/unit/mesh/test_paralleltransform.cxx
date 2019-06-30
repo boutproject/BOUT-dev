@@ -13,7 +13,8 @@ using ParallelTransformTest = FakeMeshFixture;
 
 TEST_F(ParallelTransformTest, IdentityCalcParallelSlices) {
 
-  ParallelTransformIdentity transform{*bout::globals::mesh};
+  ParallelTransformIdentity transform{*bout::globals::mesh,
+    std::vector<BoutReal>()};
 
   Field3D field{1.0};
 
@@ -25,7 +26,8 @@ TEST_F(ParallelTransformTest, IdentityCalcParallelSlices) {
 
 TEST_F(ParallelTransformTest, IdentityCalcTwoParallelSlices) {
 
-  ParallelTransformIdentity transform{*bout::globals::mesh};
+  ParallelTransformIdentity transform{*bout::globals::mesh,
+    std::vector<BoutReal>()};
 
   bout::globals::mesh->ystart = 2;
 
@@ -42,7 +44,8 @@ TEST_F(ParallelTransformTest, IdentityCalcTwoParallelSlices) {
 
 TEST_F(ParallelTransformTest, IdentityToFieldAligned) {
 
-  ParallelTransformIdentity transform{*bout::globals::mesh};
+  ParallelTransformIdentity transform{*bout::globals::mesh,
+    std::vector<BoutReal>()};
 
   Field3D field{1.0};
 
@@ -54,7 +57,8 @@ TEST_F(ParallelTransformTest, IdentityToFieldAligned) {
 
 TEST_F(ParallelTransformTest, IdentityFromFieldAligned) {
 
-  ParallelTransformIdentity transform{*bout::globals::mesh};
+  ParallelTransformIdentity transform{*bout::globals::mesh,
+    std::vector<BoutReal>()};
 
   Field3D field{1.0};
   field.setDirectionY(YDirectionType::Aligned);
@@ -67,7 +71,8 @@ TEST_F(ParallelTransformTest, IdentityFromFieldAligned) {
 
 TEST_F(ParallelTransformTest, IdentityToFieldAlignedFieldPerp) {
 
-  ParallelTransformIdentity transform{*bout::globals::mesh};
+  ParallelTransformIdentity transform{*bout::globals::mesh,
+    std::vector<BoutReal>()};
 
   FieldPerp field{1.0};
   field.setIndex(2);
@@ -80,7 +85,8 @@ TEST_F(ParallelTransformTest, IdentityToFieldAlignedFieldPerp) {
 
 TEST_F(ParallelTransformTest, IdentityFromFieldAlignedFieldPerp) {
 
-  ParallelTransformIdentity transform{*bout::globals::mesh};
+  ParallelTransformIdentity transform{*bout::globals::mesh,
+    std::vector<BoutReal>()};
 
   FieldPerp field{1.0};
   field.setIndex(2);
