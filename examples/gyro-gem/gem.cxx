@@ -628,8 +628,8 @@ class GEM : public PhysicsModel {
         Phi_G = 0.0;
       } else {
         // Gyro-reduced potentials
-        phi_G = gyroPade1(phi, rho_e, INVERT_IN_RHS | INVERT_OUT_RHS);
-        Phi_G = gyroPade2(phi, rho_e, INVERT_IN_RHS | INVERT_OUT_RHS);
+        phi_G = gyroPade1(phi, rho_e, INVERT_RHS, INVERT_RHS);
+        Phi_G = gyroPade2(phi, rho_e, INVERT_RHS, INVERT_RHS);
         
         mesh->communicate(phi_G, Phi_G);
       }
@@ -785,8 +785,8 @@ class GEM : public PhysicsModel {
     // Ion equations
   
     // Calculate gyroreduced potentials
-    phi_G = gyroPade1(phi, rho_i, INVERT_IN_RHS | INVERT_OUT_RHS);
-    Phi_G = gyroPade2(phi, rho_i, INVERT_IN_RHS | INVERT_OUT_RHS);
+    phi_G = gyroPade1(phi, rho_i, INVERT_RHS, INVERT_RHS);
+    Phi_G = gyroPade2(phi, rho_i, INVERT_RHS, INVERT_RHS);
     
     mesh->communicate(phi_G, Phi_G);
     
@@ -968,8 +968,8 @@ class GEM : public PhysicsModel {
         Phi_G = 0.0;
       } else {
         // Gyro-reduced potentials
-        phi_G = gyroPade1(phi, rho_e, INVERT_IN_RHS | INVERT_OUT_RHS);
-        Phi_G = gyroPade2(phi, rho_e, INVERT_IN_RHS | INVERT_OUT_RHS);
+        phi_G = gyroPade1(phi, rho_e, INVERT_RHS, INVERT_RHS);
+        Phi_G = gyroPade2(phi, rho_e, INVERT_RHS, INVERT_RHS);
         
         mesh->communicate(phi_G, Phi_G);
       }
@@ -1017,8 +1017,8 @@ class GEM : public PhysicsModel {
     // Ion equations
     
     // Calculate gyroreduced potentials
-    phi_G = gyroPade1(phi, rho_i, INVERT_IN_RHS | INVERT_OUT_RHS);
-    Phi_G = gyroPade2(phi, rho_i, INVERT_IN_RHS | INVERT_OUT_RHS);
+    phi_G = gyroPade1(phi, rho_i, INVERT_RHS, INVERT_RHS);
+    Phi_G = gyroPade2(phi, rho_i, INVERT_RHS, INVERT_RHS);
     
     mesh->communicate(phi_G, Phi_G);
     
