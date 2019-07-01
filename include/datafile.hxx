@@ -98,8 +98,8 @@ class Datafile {
   bool init_missing; // Initialise missing variables?
   bool shiftOutput{false}; // Do we want to write out in shifted space?
   bool shiftInput{false};  // Read in shifted space?
-  int flushFrequencyCounter{
-      0};                // Counter used in determining when next openclose required
+  // Counter used in determining when next openclose required
+  int flushFrequencyCounter{0};
   int flushFrequency{1}; // How many write calls do we want between openclose
 
   std::unique_ptr<DataFormat> file;
