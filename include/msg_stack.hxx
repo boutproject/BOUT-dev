@@ -65,7 +65,7 @@ class MsgStack;
  */
 class MsgStack {
 public:
-  MsgStack()  = default;;
+  MsgStack() = default;
   ~MsgStack() { clear(); }
 
 #if CHECK > 1

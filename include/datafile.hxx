@@ -89,16 +89,17 @@ class Datafile {
  private:
   Mesh* mesh;
   bool parallel{false}; // Use parallel formats?
-  bool flush{true};        // Flush after every write?
-  bool guards{true};       // Write guard cells?
+  bool flush{true};     // Flush after every write?
+  bool guards{true};    // Write guard cells?
   bool floats{false};   // Low precision?
-  bool openclose{true};    // Open and close file for each write
+  bool openclose{true}; // Open and close file for each write
   int Lx,Ly,Lz; // The sizes in the x-, y- and z-directions of the arrays to be written
   bool enabled{true}; // Enable / Disable writing
   bool init_missing; // Initialise missing variables?
   bool shiftOutput{false}; // Do we want to write out in shifted space?
-  bool shiftInput{false}; // Read in shifted space?
-  int flushFrequencyCounter{0}; // Counter used in determining when next openclose required
+  bool shiftInput{false};  // Read in shifted space?
+  int flushFrequencyCounter{
+      0};                // Counter used in determining when next openclose required
   int flushFrequency{1}; // How many write calls do we want between openclose
 
   std::unique_ptr<DataFormat> file;

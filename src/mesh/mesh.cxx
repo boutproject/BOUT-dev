@@ -34,9 +34,7 @@ Mesh::Mesh(GridDataSource *s, Options* opt) : source(s), options(opt) {
   derivs_init(options);  // in index_derivs.cxx for now
 }
 
-Mesh::~Mesh() {
-  delete source;
-}
+Mesh::~Mesh() { delete source; }
 
 /**************************************************************************
  * Functions for reading data from external sources

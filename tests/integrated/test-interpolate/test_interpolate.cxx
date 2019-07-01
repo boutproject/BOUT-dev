@@ -17,7 +17,7 @@
 
 /// Get a FieldGenerator from the options for a variable
 std::shared_ptr<FieldGenerator> getGeneratorFromOptions(const std::string& varname,
-                                                        std::string &func) {
+                                                        std::string& func) {
   Options *options = Options::getRoot()->getSection(varname);
   options->get("solution", func, "0.0");
 

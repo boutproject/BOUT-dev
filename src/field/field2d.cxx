@@ -94,9 +94,7 @@ Field2D::Field2D(Array<BoutReal> data_in, Mesh* localmesh, CELL_LOC datalocation
   setLocation(datalocation);
 }
 
-Field2D::~Field2D() {
-  delete deriv;
-}
+Field2D::~Field2D() { delete deriv; }
 
 Field2D& Field2D::allocate() {
   if(data.empty()) {

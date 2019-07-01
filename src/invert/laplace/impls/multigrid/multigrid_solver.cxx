@@ -95,7 +95,7 @@ Multigrid1DP::Multigrid1DP(int level,int lx, int lz, int gx, int dl, int merge,
         if(nz*2 <= mm) {
           nz = 2*nz;
           nx = nx/2;
-	} else {
+        } else {
           n = kk;
         }
       }

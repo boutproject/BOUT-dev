@@ -106,9 +106,7 @@ Field3D::Field3D(Array<BoutReal> data_in, Mesh* localmesh, CELL_LOC datalocation
   setLocation(datalocation);
 }
 
-Field3D::~Field3D() {
-  delete deriv;
-}
+Field3D::~Field3D() { delete deriv; }
 
 Field3D& Field3D::allocate() {
   if(data.empty()) {
@@ -553,7 +551,7 @@ void Field3D::applyParallelBoundary(const std::string &region, const std::string
 
     /// Loop over the mesh boundary regions
     for(const auto& reg : fieldmesh->getBoundariesPar()) {
-      if(reg->label == region) {
+      if (reg->label == region) {
         auto op = std::unique_ptr<BoundaryOpPar>{
             dynamic_cast<BoundaryOpPar*>(bfact->create(condition, reg))};
         op->apply(*this);
@@ -580,7 +578,7 @@ void Field3D::applyParallelBoundary(const std::string &region, const std::string
 
     /// Loop over the mesh boundary regions
     for(const auto& reg : fieldmesh->getBoundariesPar()) {
-      if(reg->label == region) {
+      if (reg->label == region) {
         // BoundaryFactory can't create boundaries using Field3Ds, so get temporary
         // boundary of the right type
         auto tmp = std::unique_ptr<BoundaryOpPar>{

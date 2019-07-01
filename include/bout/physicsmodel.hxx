@@ -270,6 +270,7 @@ protected:
       // Call user output monitor
       return model->outputMonitor(simtime, iter, nout);
     }
+
   private:
     PhysicsModel *model;
   };
@@ -277,11 +278,14 @@ protected:
   /// write restarts and pass outputMonitor method inside a Monitor subclass
   PhysicsModelMonitor modelMonitor;
 private:
-  bool splitop{false}; ///< Split operator model?
-  preconfunc userprecon{nullptr}; ///< Pointer to user-supplied preconditioner function
-  jacobianfunc userjacobian{nullptr}; ///< Pointer to user-supplied Jacobian-vector multiply function
-
-  bool initialised{false}; ///< True if model already initialised
+  /// Split operator model?
+  bool splitop{false};
+  /// Pointer to user-supplied preconditioner function
+  preconfunc userprecon{nullptr};
+  /// Pointer to user-supplied Jacobian-vector multiply function
+  jacobianfunc userjacobian{nullptr};
+  /// True if model already initialised
+  bool initialised{false};
 };
 
 /*!

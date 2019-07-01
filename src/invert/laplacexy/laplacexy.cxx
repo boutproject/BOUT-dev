@@ -116,7 +116,7 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
   if(localmesh->firstX()) {
     // Lower X boundary
     for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
-      const int localIndex = globalIndex(localmesh->xstart-1, y);
+      const int localIndex = globalIndex(localmesh->xstart - 1, y);
       ASSERT1( (localIndex >= 0) && (localIndex < localN) );
     
       d_nnz[localIndex] = 2; // Diagonal sub-matrix
@@ -134,7 +134,7 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
   if(localmesh->lastX()) {
     // Upper X boundary
     for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
-      const int localIndex = globalIndex(localmesh->xend+1, y);
+      const int localIndex = globalIndex(localmesh->xend + 1, y);
       ASSERT1( (localIndex >= 0) && (localIndex < localN) );
       d_nnz[localIndex] = 2; // Diagonal sub-matrix
       o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
@@ -157,42 +157,42 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
     //   then this will result in PETSc warnings about out of range allocations
     {
       const int localIndex = globalIndex(x, localmesh->ystart);
-      ASSERT1( (localIndex >= 0) && (localIndex < localN) );
-      //d_nnz[localIndex] -= 1;  // Note: Slightly inefficient
+      ASSERT1((localIndex >= 0) && (localIndex < localN));
+      // d_nnz[localIndex] -= 1;  // Note: Slightly inefficient
       o_nnz[localIndex] += 1;
     }
     {
       const int localIndex = globalIndex(x, localmesh->yend);
-      ASSERT1( (localIndex >= 0) && (localIndex < localN) );
-      //d_nnz[localIndex] -= 1; // Note: Slightly inefficient
+      ASSERT1((localIndex >= 0) && (localIndex < localN));
+      // d_nnz[localIndex] -= 1; // Note: Slightly inefficient
       o_nnz[localIndex] += 1;
     }
   }
   
   for(RangeIterator it=localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
     {
-      const int localIndex = globalIndex(it.ind, localmesh->ystart-1);
-      ASSERT1( (localIndex >= 0) && (localIndex < localN) );
+      const int localIndex = globalIndex(it.ind, localmesh->ystart - 1);
+      ASSERT1((localIndex >= 0) && (localIndex < localN));
       d_nnz[localIndex] = 2; // Diagonal sub-matrix
       o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
     }
     {
       const int localIndex = globalIndex(it.ind, localmesh->ystart);
-      ASSERT1( (localIndex >= 0) && (localIndex < localN) );
+      ASSERT1((localIndex >= 0) && (localIndex < localN));
       d_nnz[localIndex] += 1;
       o_nnz[localIndex] -= 1;
     }
   }
   for(RangeIterator it=localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
     {
-      const int localIndex = globalIndex(it.ind, localmesh->yend+1);
-      ASSERT1( (localIndex >= 0) && (localIndex < localN) );
+      const int localIndex = globalIndex(it.ind, localmesh->yend + 1);
+      ASSERT1((localIndex >= 0) && (localIndex < localN));
       d_nnz[localIndex] = 2; // Diagonal sub-matrix
       o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
     }
     {
       const int localIndex = globalIndex(it.ind, localmesh->yend);
-      ASSERT1( (localIndex >= 0) && (localIndex < localN) );
+      ASSERT1((localIndex >= 0) && (localIndex < localN));
       d_nnz[localIndex] += 1;
       o_nnz[localIndex] -= 1;
     }

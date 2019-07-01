@@ -82,7 +82,7 @@ void Solver::setModel(PhysicsModel *m) {
  * Add fields
  **************************************************************************/
 
-void Solver::add(Field2D &v, const std::string& name) {
+void Solver::add(Field2D& v, const std::string& name) {
   TRACE("Adding 2D field: Solver::add(%s)", name.c_str());
 
 #if CHECK > 0
@@ -139,7 +139,7 @@ void Solver::add(Field2D &v, const std::string& name) {
   f2d.emplace_back(std::move(d));
 }
 
-void Solver::add(Field3D &v, const std::string& name) {
+void Solver::add(Field3D& v, const std::string& name) {
   TRACE("Adding 3D field: Solver::add(%s)", name.c_str());
 
   Mesh* mesh = v.getMesh();
@@ -276,7 +276,7 @@ void Solver::add(Vector3D& v, const std::string& name) {
  * Constraints
  **************************************************************************/
 
-void Solver::constraint(Field2D &v, Field2D &C_v, std::string name) {
+void Solver::constraint(Field2D& v, Field2D& C_v, std::string name) {
   TRACE("Constrain 2D scalar: Solver::constraint(%s)", name.c_str());
 
   if (name.empty()) {
@@ -304,7 +304,7 @@ void Solver::constraint(Field2D &v, Field2D &C_v, std::string name) {
   f2d.emplace_back(std::move(d));
 }
 
-void Solver::constraint(Field3D &v, Field3D &C_v, std::string name) {
+void Solver::constraint(Field3D& v, Field3D& C_v, std::string name) {
   TRACE("Constrain 3D scalar: Solver::constraint(%s)", name.c_str());
 
   if (name.empty()) {
@@ -329,11 +329,11 @@ void Solver::constraint(Field3D &v, Field3D &C_v, std::string name) {
   d.F_var = &C_v;
   d.location = v.getLocation();
   d.name = std::move(name);
-  
+
   f3d.emplace_back(std::move(d));
 }
 
-void Solver::constraint(Vector2D &v, Vector2D &C_v, std::string name) {
+void Solver::constraint(Vector2D& v, Vector2D& C_v, std::string name) {
   TRACE("Constrain 2D vector: Solver::constraint(%s)", name.c_str());
 
   if (name.empty()) {
@@ -353,13 +353,13 @@ void Solver::constraint(Vector2D &v, Vector2D &C_v, std::string name) {
 
   // Add suffix, depending on co- /contravariance
   if (v.covariant) {
-    constraint(v.x, C_v.x, name+"_x");
-    constraint(v.y, C_v.y, name+"_y");
-    constraint(v.z, C_v.z, name+"_z");
+    constraint(v.x, C_v.x, name + "_x");
+    constraint(v.y, C_v.y, name + "_y");
+    constraint(v.z, C_v.z, name + "_z");
   } else {
-    constraint(v.x, C_v.x, name+"x");
-    constraint(v.y, C_v.y, name+"y");
-    constraint(v.z, C_v.z, name+"z");
+    constraint(v.x, C_v.x, name + "x");
+    constraint(v.y, C_v.y, name + "y");
+    constraint(v.z, C_v.z, name + "z");
   }
 
   VarStr<Vector2D> d;
@@ -373,7 +373,7 @@ void Solver::constraint(Vector2D &v, Vector2D &C_v, std::string name) {
   v2d.emplace_back(std::move(d));
 }
 
-void Solver::constraint(Vector3D &v, Vector3D &C_v, std::string name) {
+void Solver::constraint(Vector3D& v, Vector3D& C_v, std::string name) {
   TRACE("Constrain 3D vector: Solver::constraint(%s)", name.c_str());
 
   if (name.empty()) {
@@ -393,13 +393,13 @@ void Solver::constraint(Vector3D &v, Vector3D &C_v, std::string name) {
 
   // Add suffix, depending on co- /contravariance
   if (v.covariant) {
-    constraint(v.x, C_v.x, name+"_x");
-    constraint(v.y, C_v.y, name+"_y");
-    constraint(v.z, C_v.z, name+"_z");
+    constraint(v.x, C_v.x, name + "_x");
+    constraint(v.y, C_v.y, name + "_y");
+    constraint(v.z, C_v.z, name + "_z");
   } else {
-    constraint(v.x, C_v.x, name+"x");
-    constraint(v.y, C_v.y, name+"y");
-    constraint(v.z, C_v.z, name+"z");
+    constraint(v.x, C_v.x, name + "x");
+    constraint(v.y, C_v.y, name + "y");
+    constraint(v.z, C_v.z, name + "z");
   }
 
   VarStr<Vector3D> d;

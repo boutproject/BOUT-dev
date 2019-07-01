@@ -83,7 +83,7 @@ class Vector3D : public FieldData {
   /*!
    * Flag to specify whether the components (x,y,z)
    * are co- or contra-variant.
-   * 
+   *
    * true if the components are covariant (default)
    * false if the components are contravariant
    *
@@ -91,7 +91,7 @@ class Vector3D : public FieldData {
    * the toContravariant and toCovariant methods.
    *
    * Only modify this variable directly if you know what you are doing!
-   * 
+   *
    */
   bool covariant{true};
 
@@ -196,7 +196,7 @@ class Vector3D : public FieldData {
   void applyBoundary(const char* condition) { applyBoundary(std::string(condition)); }
   void applyTDerivBoundary() override;
  private:
-   Vector3D* deriv{nullptr}; ///< Time-derivative, can be NULL
+   Vector3D* deriv{nullptr};       ///< Time-derivative, can be NULL
    CELL_LOC location{CELL_CENTRE}; ///< Location of the variable in the cell
 };
 

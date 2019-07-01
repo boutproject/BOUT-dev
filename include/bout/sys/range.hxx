@@ -27,7 +27,7 @@
 class RangeIterator {
 public:
   /// Can be given a single range
-  RangeIterator()  = default;
+  RangeIterator() = default;
   RangeIterator(int start, int end, RangeIterator *join = nullptr);
   RangeIterator(int start, int end, const RangeIterator &join);
   RangeIterator(const RangeIterator &r);
@@ -68,8 +68,8 @@ public:
 
 private:
   int is{1}, ie{0};
-  RangeIterator *n{nullptr};         // Next range. Doesn't change after creation
-  RangeIterator *cur{nullptr};       // Currently iterating. Changes during iteration
+  RangeIterator* n{nullptr};   // Next range. Doesn't change after creation
+  RangeIterator* cur{nullptr}; // Currently iterating. Changes during iteration
   int curend;               // End of current range
   bool delete_next = false; // Flag to delete this->n if we created it
 };

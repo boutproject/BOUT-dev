@@ -164,7 +164,8 @@ NcType NcTypeVisitor::operator()<double>(const double& UNUSED(t)) {
 }
 
 template <>
-MAYBE_UNUSED() NcType NcTypeVisitor::operator()<float>(const float& UNUSED(t)) {
+MAYBE_UNUSED()
+NcType NcTypeVisitor::operator()<float>(const float& UNUSED(t)) {
   return ncFloat;
 }
 
@@ -347,7 +348,8 @@ void NcPutAttVisitor::operator()(const double& value) {
   var.putAtt(name, ncDouble, value);
 }
 template <>
-MAYBE_UNUSED() void NcPutAttVisitor::operator()(const float& value) {
+MAYBE_UNUSED()
+void NcPutAttVisitor::operator()(const float& value) {
   var.putAtt(name, ncFloat, value);
 }
 template <>

@@ -97,29 +97,29 @@ void BoutException::makeBacktrace() {
 /// Common set up for exceptions
 ///
 /// Formats the message s using C-style printf formatting
-#define INIT_EXCEPTION(s)                                                                \
-  {                                                                                      \
-    buflen = 0;                                                                          \
-    buffer = nullptr;                                                                    \
-    if ((s) == nullptr) {                                                                \
-      message = "No error message given!\n";                                             \
-    } else {                                                                             \
-      buflen = BoutException::BUFFER_LEN;                                                \
-      buffer = new char[buflen];                                                         \
-      bout_vsnprintf(buffer, buflen, s);                                                 \
-      for (int i = 0; i < buflen; ++i) {                                                 \
-        if (buffer[i] == 0) {                                                            \
-          if (i > 0 && buffer[i - 1] == '\n') {                                          \
-            buffer[i - 1] = 0;                                                           \
-          }                                                                              \
-          break;                                                                         \
-        }                                                                                \
-      }                                                                                  \
-      message.assign(buffer);                                                            \
-      delete[] buffer;                                                                   \
-      buffer = nullptr;                                                                  \
-    }                                                                                    \
-    makeBacktrace();                                                                     \
+#define INIT_EXCEPTION(s)                       \
+  {                                             \
+    buflen = 0;                                 \
+    buffer = nullptr;                           \
+    if ((s) == nullptr) {                       \
+      message = "No error message given!\n";    \
+    } else {                                    \
+      buflen = BoutException::BUFFER_LEN;       \
+      buffer = new char[buflen];                \
+      bout_vsnprintf(buffer, buflen, s);        \
+      for (int i = 0; i < buflen; ++i) {        \
+        if (buffer[i] == 0) {                   \
+          if (i > 0 && buffer[i - 1] == '\n') { \
+            buffer[i - 1] = 0;                  \
+          }                                     \
+          break;                                \
+        }                                       \
+      }                                         \
+      message.assign(buffer);                   \
+      delete[] buffer;                          \
+      buffer = nullptr;                         \
+    }                                           \
+    makeBacktrace();                            \
   }
 
 BoutException::BoutException(const char *s, ...) { INIT_EXCEPTION(s); }

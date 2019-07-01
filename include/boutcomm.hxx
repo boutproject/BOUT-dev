@@ -60,8 +60,8 @@ public:
   BoutComm();
 
   int* pargc{nullptr};
-  char*** pargv{nullptr}; ///< Command-line arguments. These can be modified by MPI init, so
-                          ///< pointers are used
+  char*** pargv{nullptr}; ///< Command-line arguments. These can be modified by MPI init,
+                          ///< so pointers are used
   bool hasBeenSet{false};
   MPI_Comm comm;
   

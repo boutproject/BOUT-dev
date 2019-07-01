@@ -129,8 +129,8 @@ class Matrix {
 public:
   using data_type = T;
   using size_type = int;
-  
-  Matrix()  = default;;
+
+  Matrix() = default;
   Matrix(size_type n1, size_type n2) : n1(n1), n2(n2) {
     ASSERT2(n1 >= 0);
     ASSERT2(n2 >= 0);
@@ -221,7 +221,7 @@ public:
   using data_type = T;
   using size_type = int;
 
-  Tensor()  = default;;
+  Tensor() = default;
   Tensor(size_type n1, size_type n2, size_type n3) : n1(n1), n2(n2), n3(n3) {
     ASSERT2(n1 >= 0);
     ASSERT2(n2 >= 0);

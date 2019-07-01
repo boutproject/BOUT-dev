@@ -61,8 +61,7 @@ class FieldPerp : public Field {
    * Copy constructor. After this the data
    * will be shared (non unique)
    */
-  FieldPerp(const FieldPerp& f)
-       = default;
+  FieldPerp(const FieldPerp& f) = default;
 
   /*!
    * Move constructor

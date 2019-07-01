@@ -191,13 +191,10 @@ public:
     addBoundary(new BoundaryRegionYDown("lower_target", xstart, xend, this));
   }
 
-  comm_handle send(FieldGroup& UNUSED(g)) override {
-    return nullptr;
-  };
+  comm_handle send(FieldGroup& UNUSED(g)) override { return nullptr; };
   int wait(comm_handle UNUSED(handle)) override { return 0; }
   MPI_Request sendToProc(int UNUSED(xproc), int UNUSED(yproc), BoutReal* UNUSED(buffer),
-                         int UNUSED(size),
-                         int UNUSED(tag)) override {
+                         int UNUSED(size), int UNUSED(tag)) override {
     return MPI_Request();
   }
   comm_handle receiveFromProc(int UNUSED(xproc), int UNUSED(yproc),
@@ -211,12 +208,10 @@ public:
   int getYProcIndex() override { return 1; }
   bool firstX() override { return true; }
   bool lastX() override { return true; }
-  int sendXOut(BoutReal* UNUSED(buffer), int UNUSED(size),
-               int UNUSED(tag)) override {
+  int sendXOut(BoutReal* UNUSED(buffer), int UNUSED(size), int UNUSED(tag)) override {
     return 0;
   }
-  int sendXIn(BoutReal* UNUSED(buffer), int UNUSED(size),
-              int UNUSED(tag)) override {
+  int sendXIn(BoutReal* UNUSED(buffer), int UNUSED(size), int UNUSED(tag)) override {
     return 0;
   }
   comm_handle irecvXOut(BoutReal* UNUSED(buffer), int UNUSED(size),
@@ -227,25 +222,14 @@ public:
                        int UNUSED(tag)) override {
     return nullptr;
   }
-  MPI_Comm getXcomm(int UNUSED(jy)) const override {
-    return MPI_COMM_NULL;
-  }
-  MPI_Comm getYcomm(int UNUSED(jx)) const override {
-    return MPI_COMM_NULL;
-  }
-  bool periodicY(int UNUSED(jx)) const override {
-    return true;
-  }
-  bool periodicY(int UNUSED(jx),
-                 BoutReal& UNUSED(ts)) const override {
-    return true;
-  }
-  std::pair<bool, BoutReal>
-  hasBranchCutLower(int UNUSED(jx)) const override {
+  MPI_Comm getXcomm(int UNUSED(jy)) const override { return MPI_COMM_NULL; }
+  MPI_Comm getYcomm(int UNUSED(jx)) const override { return MPI_COMM_NULL; }
+  bool periodicY(int UNUSED(jx)) const override { return true; }
+  bool periodicY(int UNUSED(jx), BoutReal& UNUSED(ts)) const override { return true; }
+  std::pair<bool, BoutReal> hasBranchCutLower(int UNUSED(jx)) const override {
     return std::make_pair(false, 0.);
   }
-  std::pair<bool, BoutReal>
-  hasBranchCutUpper(int UNUSED(jx)) const override {
+  std::pair<bool, BoutReal> hasBranchCutUpper(int UNUSED(jx)) const override {
     return std::make_pair(false, 0.);
   }
   bool firstY() const override { return true; }
@@ -286,34 +270,14 @@ public:
                               int UNUSED(tag)) override {
     return nullptr;
   }
-  const RangeIterator iterateBndryLowerY() const override {
-    return RangeIterator();
-  }
-  const RangeIterator iterateBndryUpperY() const override {
-    return RangeIterator();
-  }
-  const RangeIterator
-  iterateBndryLowerOuterY() const override {
-    return RangeIterator();
-  }
-  const RangeIterator
-  iterateBndryLowerInnerY() const override {
-    return RangeIterator();
-  }
-  const RangeIterator
-  iterateBndryUpperOuterY() const override {
-    return RangeIterator();
-  }
-  const RangeIterator
-  iterateBndryUpperInnerY() const override {
-    return RangeIterator();
-  }
-  void addBoundary(BoundaryRegion* region) override {
-    boundaries.push_back(region);
-  }
-  std::vector<BoundaryRegion*> getBoundaries() override {
-    return boundaries;
-  }
+  const RangeIterator iterateBndryLowerY() const override { return RangeIterator(); }
+  const RangeIterator iterateBndryUpperY() const override { return RangeIterator(); }
+  const RangeIterator iterateBndryLowerOuterY() const override { return RangeIterator(); }
+  const RangeIterator iterateBndryLowerInnerY() const override { return RangeIterator(); }
+  const RangeIterator iterateBndryUpperOuterY() const override { return RangeIterator(); }
+  const RangeIterator iterateBndryUpperInnerY() const override { return RangeIterator(); }
+  void addBoundary(BoundaryRegion* region) override { boundaries.push_back(region); }
+  std::vector<BoundaryRegion*> getBoundaries() override { return boundaries; }
   std::vector<BoundaryRegionPar*> getBoundariesPar() override {
     return std::vector<BoundaryRegionPar*>();
   }
@@ -378,16 +342,13 @@ private:
 /// allow testing of methods that use 'source' - in particular allowing
 /// source->hasXBoundaryGuards and source->hasXBoundaryGuards to be called.
 class FakeGridDataSource : public GridDataSource {
-  bool hasVar(const std::string& UNUSED(name)) override {
-    return false;
-  }
+  bool hasVar(const std::string& UNUSED(name)) override { return false; }
 
   bool get(Mesh* UNUSED(m), std::string& UNUSED(sval),
            const std::string& UNUSED(name)) override {
     return false;
   }
-  bool get(Mesh* UNUSED(m), int& UNUSED(ival),
-           const std::string& UNUSED(name)) override {
+  bool get(Mesh* UNUSED(m), int& UNUSED(ival), const std::string& UNUSED(name)) override {
     return false;
   }
   bool get(Mesh* UNUSED(m), BoutReal& UNUSED(rval),
@@ -407,22 +368,18 @@ class FakeGridDataSource : public GridDataSource {
     return false;
   }
 
-  bool
-  get(Mesh* UNUSED(m), std::vector<int>& UNUSED(var), const std::string& UNUSED(name),
-      int UNUSED(len), int UNUSED(offset) = 0,
-      Direction UNUSED(dir) = GridDataSource::X) override {
+  bool get(Mesh* UNUSED(m), std::vector<int>& UNUSED(var),
+           const std::string& UNUSED(name), int UNUSED(len), int UNUSED(offset) = 0,
+           Direction UNUSED(dir) = GridDataSource::X) override {
     return false;
   }
-  bool
-  get(Mesh* UNUSED(m), std::vector<BoutReal>& UNUSED(var),
-      const std::string& UNUSED(name), int UNUSED(len), int UNUSED(offset) = 0,
-      Direction UNUSED(dir) = GridDataSource::X) override {
+  bool get(Mesh* UNUSED(m), std::vector<BoutReal>& UNUSED(var),
+           const std::string& UNUSED(name), int UNUSED(len), int UNUSED(offset) = 0,
+           Direction UNUSED(dir) = GridDataSource::X) override {
     return false;
   }
 
-  bool hasXBoundaryGuards(Mesh* UNUSED(m)) override {
-    return true;
-  }
+  bool hasXBoundaryGuards(Mesh* UNUSED(m)) override { return true; }
 
   bool hasYBoundaryGuards() override { return true; }
 };

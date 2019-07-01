@@ -493,7 +493,7 @@ public:
 
   // Want to make this private to disable but think it may be needed as we put Regions
   // into maps which seems to need to be able to make "empty" objects.
-  Region<T>()= default;;
+  Region<T>() = default;
 
   Region<T>(int xstart, int xend, int ystart, int yend, int zstart, int zend, int ny,
             int nz, int maxregionblocksize = MAXREGIONBLOCKSIZE)
@@ -532,7 +532,7 @@ public:
   };
 
   /// Destructor
-  ~Region()= default;;
+  ~Region() = default;
 
   /// Expose the iterator over indices for use in range-based
   /// for-loops or with STL algorithms, etc.
