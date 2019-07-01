@@ -45,8 +45,6 @@ private:
   bool filter_z;
   int filter_z_mode;
 
-  int phi_flags; // Inversion flags
-
   // Coefficients for linear sheath problem
   Field2D LAMBDA1, LAMBDA2;
 
@@ -118,8 +116,6 @@ private:
     nu_perp = options["nu_perp"].withDefault(0.0);
     ShearFactor = options["ShearFactor"].withDefault(1.0);
     bout_exb = options["bout_exb"].withDefault(false);
-
-    phi_flags = options["phi_flags"].withDefault(0);
 
     // Toroidal filtering
     filter_z = options["filter_z"].withDefault(false); // Filter a single n
@@ -238,7 +234,6 @@ private:
     
     // Create a solver for the Laplacian
     phiSolver = Laplacian::create();
-    phiSolver->setFlags(phi_flags);
     
     return 0;
   }

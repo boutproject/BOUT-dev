@@ -86,17 +86,13 @@ output_ddt = false  # Save time derivs to file
 
 curv_logB = true   # For flux-tube, read in logB separately
 
-# field inversion flags: Add the following
-#  1 - Zero-gradient DC component on inner boundary
-#  2 - Zero-gradient AC component on inner boundary
-#  4 -      "        DC     "      " outer    "
-#  8 -      "        AC     "      " outer    "
-# 16 - Zero all DC components of the result
-# 32 - Don't use previous solution to start iterations
-#      (iterative methods only)
+[phiSolver]
+inner_boundary_flags = 0
+outer_boundary_flags = 0
 
-phi_flags = 0  # inversion flags for phi
-apar_flags =0 # flags for apar inversion
+[aparSolver]
+inner_boundary_flags = 0
+outer_boundary_flags = 0
 
 low_pass_z = -1 # Toroidal filtering
 

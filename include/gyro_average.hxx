@@ -37,7 +37,7 @@
 
 /// INVERT_BNDRY_ONE | INVERT_IN_RHS | INVERT_OUT_RHS; uses old-style
 /// Laplacian inversion flags
-constexpr int GYRO_FLAGS = 64 + 16384 + 32768;
+constexpr int GYRO_FLAGS = INVERT_BNDRY_ONE + INVERT_RHS;
 
 /// Gyro-average using Taylor series approximation
 ///
@@ -58,9 +58,28 @@ Field3D gyroTaylor0(const Field3D& f, const Field3D& rho);
 /// @param[in] f   The field to gyro-average
 /// @param[in] rho  Gyro-radius
 /// @param[in] flags  Flags to be passed to the Laplacian inversion operator
-Field3D gyroPade0(const Field3D& f, const Field3D& rho, int flags = GYRO_FLAGS);
-Field3D gyroPade0(const Field3D& f, const Field2D& rho, int flags = GYRO_FLAGS);
-Field3D gyroPade0(const Field3D& f, BoutReal rho, int flags = GYRO_FLAGS);
+Field3D gyroPade0(const Field3D& f, const Field3D& rho, int inner_boundary_flags, int outer_boundary_flags);
+Field3D gyroPade0(const Field3D& f, const Field2D& rho, int inner_boundary_flags, int outer_boundary_flags);
+Field3D gyroPade0(const Field3D& f, BoutReal rho, int inner_boundary_flags, int outer_boundary_flags);
+
+// Can replace these with default arguments to versions above once the deprecated versions
+// below are removed
+inline Field3D gyroPade0(const Field3D& f, const Field3D& rho) {
+  return gyroPade0(f, rho, GYRO_FLAGS, GYRO_FLAGS);
+}
+inline Field3D gyroPade0(const Field3D& f, const Field2D& rho) {
+  return gyroPade0(f, rho, GYRO_FLAGS, GYRO_FLAGS);
+}
+inline Field3D gyroPade0(const Field3D& f, BoutReal rho) {
+  return gyroPade0(f, rho, GYRO_FLAGS, GYRO_FLAGS);
+}
+
+[[gnu::deprecated("Please use version with separate inner_boundary_flags and outer_boundary_flags")]]
+Field3D gyroPade0(const Field3D& f, const Field3D& rho, int flags);
+[[gnu::deprecated("Please use version with separate inner_boundary_flags and outer_boundary_flags")]]
+Field3D gyroPade0(const Field3D& f, const Field2D& rho, int flags);
+[[gnu::deprecated("Please use version with separate inner_boundary_flags and outer_boundary_flags")]]
+Field3D gyroPade0(const Field3D& f, BoutReal rho, int flags);
 
 /// Pade approximation \f$Gamma_1 = (1 - \frac{1}{2} \rho^2 \nabla_\perp^2)g = f\f$
 ///
@@ -69,10 +88,34 @@ Field3D gyroPade0(const Field3D& f, BoutReal rho, int flags = GYRO_FLAGS);
 /// @param[in] f   The field to gyro-average
 /// @param[in] rho  Gyro-radius
 /// @param[in] flags  Flags to be passed to the Laplacian inversion operator
-Field3D gyroPade1(const Field3D& f, const Field3D& rho, int flags = GYRO_FLAGS);
-Field3D gyroPade1(const Field3D& f, const Field2D& rho, int flags = GYRO_FLAGS);
-Field3D gyroPade1(const Field3D& f, BoutReal rho, int flags = GYRO_FLAGS);
-Field2D gyroPade1(const Field2D& f, const Field2D& rho, int flags = GYRO_FLAGS);
+Field3D gyroPade1(const Field3D& f, const Field3D& rho, int inner_boundary_flags, int outer_boundary_flags);
+Field3D gyroPade1(const Field3D& f, const Field2D& rho, int inner_boundary_flags, int outer_boundary_flags);
+Field3D gyroPade1(const Field3D& f, BoutReal rho, int inner_boundary_flags, int outer_boundary_flags);
+Field2D gyroPade1(const Field2D& f, const Field2D& rho, int inner_boundary_flags, int outer_boundary_flags);
+
+// Can replace these with default arguments to versions above once the deprecated versions
+// below are removed
+inline Field3D gyroPade1(const Field3D& f, const Field3D& rho) {
+  return gyroPade1(f, rho, GYRO_FLAGS, GYRO_FLAGS);
+}
+inline Field3D gyroPade1(const Field3D& f, const Field2D& rho) {
+  return gyroPade1(f, rho, GYRO_FLAGS, GYRO_FLAGS);
+}
+inline Field3D gyroPade1(const Field3D& f, BoutReal rho) {
+  return gyroPade1(f, rho, GYRO_FLAGS, GYRO_FLAGS);
+}
+inline Field2D gyroPade1(const Field2D& f, const Field2D& rho) {
+  return gyroPade1(f, rho, GYRO_FLAGS, GYRO_FLAGS);
+}
+
+[[gnu::deprecated("Please use version with separate inner_boundary_flags and outer_boundary_flags")]]
+Field3D gyroPade1(const Field3D& f, const Field3D& rho, int flags);
+[[gnu::deprecated("Please use version with separate inner_boundary_flags and outer_boundary_flags")]]
+Field3D gyroPade1(const Field3D& f, const Field2D& rho, int flags);
+[[gnu::deprecated("Please use version with separate inner_boundary_flags and outer_boundary_flags")]]
+Field3D gyroPade1(const Field3D& f, BoutReal rho, int flags);
+[[gnu::deprecated("Please use version with separate inner_boundary_flags and outer_boundary_flags")]]
+Field2D gyroPade1(const Field2D& f, const Field2D& rho, int flags);
 
 /// Pade approximation 
 ///
@@ -85,8 +128,27 @@ Field2D gyroPade1(const Field2D& f, const Field2D& rho, int flags = GYRO_FLAGS);
 /// @param[in] f   The field to gyro-average
 /// @param[in] rho  Gyro-radius
 /// @param[in] flags  Flags to be passed to the Laplacian inversion operator
-Field3D gyroPade2(const Field3D& f, const Field3D& rho, int flags = GYRO_FLAGS);
-Field3D gyroPade2(const Field3D& f, const Field2D& rho, int flags = GYRO_FLAGS);
-Field3D gyroPade2(const Field3D& f, BoutReal rho, int flags = GYRO_FLAGS);
+Field3D gyroPade2(const Field3D& f, const Field3D& rho, int inner_boundary_flags, int outer_boundary_flags);
+Field3D gyroPade2(const Field3D& f, const Field2D& rho, int inner_boundary_flags, int outer_boundary_flags);
+Field3D gyroPade2(const Field3D& f, BoutReal rho, int inner_boundary_flags, int outer_boundary_flags);
+
+// Can replace these with default arguments to versions above once the deprecated versions
+// below are removed
+inline Field3D gyroPade2(const Field3D& f, const Field3D& rho) {
+  return gyroPade2(f, rho, GYRO_FLAGS, GYRO_FLAGS);
+}
+inline Field3D gyroPade2(const Field3D& f, const Field2D& rho) {
+  return gyroPade2(f, rho, GYRO_FLAGS, GYRO_FLAGS);
+}
+inline Field3D gyroPade2(const Field3D& f, BoutReal rho) {
+  return gyroPade2(f, rho, GYRO_FLAGS, GYRO_FLAGS);
+}
+
+[[gnu::deprecated("Please use version with separate inner_boundary_flags and outer_boundary_flags")]]
+Field3D gyroPade2(const Field3D& f, const Field3D& rho, int flags);
+[[gnu::deprecated("Please use version with separate inner_boundary_flags and outer_boundary_flags")]]
+Field3D gyroPade2(const Field3D& f, const Field2D& rho, int flags);
+[[gnu::deprecated("Please use version with separate inner_boundary_flags and outer_boundary_flags")]]
+Field3D gyroPade2(const Field3D& f, BoutReal rho, int flags);
 
 #endif // __GYRO_AVERAGE_H__
