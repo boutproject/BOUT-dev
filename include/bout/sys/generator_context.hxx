@@ -9,6 +9,9 @@ class Mesh;
 #include <map>
 #include <string>
 
+namespace bout {
+namespace generator {
+    
 class Context {
 public:
   /// Set using an index. Can be Ind2D, Ind3D or IndPerp.
@@ -77,3 +80,6 @@ private:
   /// Contains user-set values which can be set and retrieved
   std::map<std::string, BoutReal> parameters;
 };
+
+} // namespace generator
+} // namespace bout

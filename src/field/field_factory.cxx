@@ -33,6 +33,8 @@
 
 #include "fieldgenerators.hxx"
 
+using bout::generator::Context;
+
 /// Helper function to create a FieldValue generator from a BoutReal
 FieldGeneratorPtr generator(BoutReal value) {
   return std::make_shared<FieldValue>(value);

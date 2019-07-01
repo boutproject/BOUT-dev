@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
     deltax[index] = dx;
     deltaz[index] = dz;
     // Get the global indices
-    Context pos{index, CELL_CENTRE, deltax.getMesh(), 0.0};
+    bout::generator::Context pos{index, CELL_CENTRE, deltax.getMesh(), 0.0};
     pos.set("x", mesh->GlobalX(dx),
             "z", TWOPI * static_cast<BoutReal>(dz) / static_cast<BoutReal>(mesh->LocalNz));
     // Generate the analytic solution at the displacements

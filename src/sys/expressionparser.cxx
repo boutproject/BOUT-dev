@@ -30,6 +30,8 @@ using std::list;
 using std::string;
 using std::stringstream;
 
+using bout::generator::Context;
+
 // Note: Here rather than in header to avoid many deprecated warnings
 // Remove in future and make this function pure virtual
 double FieldGenerator::generate(const Context& pos) {

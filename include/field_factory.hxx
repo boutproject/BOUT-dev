@@ -133,7 +133,7 @@ class FieldFunction : public FieldGenerator {
 public:
   FieldFunction() = delete;
   FieldFunction(FuncPtr userfunc) : func(userfunc) {}
-  BoutReal generate(const Context& pos) override {
+  BoutReal generate(const bout::generator::Context& pos) override {
     return func(pos.t(), pos.x(), pos.y(), pos.z());
   }
 
@@ -147,7 +147,7 @@ private:
 class FieldNull : public FieldGenerator {
 public:
   FieldNull() = default;
-  BoutReal generate(const Context&) override {
+  BoutReal generate(const bout::generator::Context&) override {
     return 0.0;
   }
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> UNUSED(args)) override {

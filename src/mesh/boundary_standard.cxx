@@ -10,6 +10,8 @@
 #include <output.hxx>
 #include <utils.hxx>
 
+using bout::generator::Context;
+
 // #define BOUNDARY_CONDITIONS_UPGRADE_EXTRAPOLATE_FOR_2ND_ORDER
 
 ///////////////////////////////////////////////////////////////

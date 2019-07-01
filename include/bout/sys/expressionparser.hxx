@@ -65,7 +65,7 @@ public:
   /// Note: This will be removed in a future version. Implementations should
   /// override the Context version of this function.
   DEPRECATED(virtual double generate(BoutReal x, BoutReal y, BoutReal z, BoutReal t)) {
-    return generate(Context().set("x", x, "y", y, "z", z, "t", t));
+    return generate(bout::generator::Context().set("x", x, "y", y, "z", z, "t", t));
   }
   
   /// Generate a value at the given coordinates (x,y,z,t)
@@ -76,7 +76,7 @@ public:
   /// them or an infinite recursion results.  This is for backward
   /// compatibility for users and implementors.  In a future version
   /// this function will be made pure virtual.
-  virtual double generate(const Context& pos);
+  virtual double generate(const bout::generator::Context& pos);
 
   /// Create a string representation of the generator, for debugging output
   virtual std::string str() const { return std::string("?"); }
@@ -174,7 +174,7 @@ public:
   FieldBinary(FieldGeneratorPtr l, FieldGeneratorPtr r, char o)
       : lhs(std::move(l)), rhs(std::move(r)), op(o) {}
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override;
-  double generate(const Context& context) override;
+  double generate(const bout::generator::Context& context) override;
 
   std::string str() const override {
     return std::string("(") + lhs->str() + std::string(1, op) + rhs->str()
@@ -195,7 +195,7 @@ public:
     return std::make_shared<FieldValue>(value);
   }
 
-  double generate(const Context&) override {
+  double generate(const bout::generator::Context&) override {
     return value;
   }
   std::string str() const override {

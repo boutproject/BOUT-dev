@@ -4,6 +4,8 @@
 #include <bout/constants.hxx>
 #include <utils.hxx>
 
+using bout::generator::Context;
+
 //////////////////////////////////////////////////////////
 
 FieldGeneratorPtr FieldGaussian::clone(const std::list<FieldGeneratorPtr> args) {

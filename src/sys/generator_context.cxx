@@ -3,6 +3,9 @@
 #include "bout/constants.hxx"
 #include "bout/mesh.hxx"
 
+namespace bout {
+namespace generator {
+
 Context::Context(int ix, int iy, int iz, CELL_LOC loc, Mesh* msh, BoutReal t) : localmesh(msh) {
   
   parameters["x"] = (loc == CELL_XLOW) ?
@@ -41,3 +44,6 @@ Context::Context(const BoundaryRegion* bndry, int iz, CELL_LOC loc, BoutReal t, 
 
   parameters["t"] = t;
 }
+
+} // namespace generator
+} // namespace bout

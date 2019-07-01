@@ -5,6 +5,8 @@
 #include <output.hxx>
 #include <unused.hxx>
 
+using bout::generator::Context;
+
 bool GridFromOptions::hasVar(const std::string& name) { return options->isSet(name); }
 
 bool GridFromOptions::get(Mesh* UNUSED(m), std::string& sval, const std::string& name) {

@@ -5,6 +5,8 @@
 #include "output.hxx"
 #include "parallel_boundary_op.hxx"
 
+using bout::generator::Context;
+
 BoutReal BoundaryOpPar::getValue(int x, int y, int z, BoutReal t) {
 
   Mesh* mesh = bndry->localmesh;
