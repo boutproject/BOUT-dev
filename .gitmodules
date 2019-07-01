@@ -7,3 +7,6 @@
 [submodule "mpark.variant"]
 	path = externalpackages/mpark.variant
 	url = https://github.com/mpark/variant.git
+[submodule "3rdparty/variant"]
+	path = 3rdparty/variant
+	url = https://github.com/mpark/variant.git
