@@ -35,7 +35,6 @@ private:
 
 public:
   ~InterpolationFactory() = default;
-  ;
 
   /// Create or get the singleton instance of the factory
   static InterpolationFactory* getInstance();
