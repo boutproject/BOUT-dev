@@ -55,7 +55,11 @@ options = [
 ]
 
 # List of NX values to use
-nxlist = [16, 32, 64, 128, 256]
+# Careful! upwind-3rd order fails at low resolution with the default
+# tolerance, when it is very good over the rest of the
+# domain. _Pretty_ sure this isn't anything to worry about, as there
+# must be a lower limit
+nxlist = [32, 64, 128, 256]
 
 nproc = 2
 mthread = 2
@@ -99,9 +103,7 @@ for opts, label, sym, exp_ord in options:
     order = check_scaling.get_order(dx, error_2)
     print("Convergence order = {:f} ({:f} at small spacing)".format(*order))
 
-    # Loose tolerance because upwind-3rd order would otherwise fail at
-    # low resolution, when it is very good over the rest of the domain
-    if check_scaling.check_order(error_2, exp_ord, tolerance=3.e-1):
+    if check_scaling.check_order(error_2, exp_ord):
         print("... Success")
     else:
         failures.append(label)
