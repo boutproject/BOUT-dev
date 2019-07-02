@@ -9,22 +9,23 @@
 
 class AdvectMMS : public PhysicsModel {
 public:
-  int init(bool UNUSED(restarting)) {
+  int init(bool) {
     solver->add(f, "f");
     
     Options::getRoot()->get("method", method, 0);
+    g = FieldFactory::get()->create3D("g:solution", Options::getRoot(), mesh, CELL_CENTRE);
+
+    Coordinates *coords = mesh->getCoordinates();
+
+    dx_sq_sq = SQ(SQ(coords->dx));
+    dz_sq_sq = SQ(SQ(coords->dz));
     
     return 0;
   }
-  int rhs(BoutReal time) {
+  int rhs(BoutReal) {
     mesh->communicate(f);
-    Coordinates *coords = mesh->getCoordinates();
-    
-    g = FieldFactory::get()->create3D("g:solution", Options::getRoot(), mesh, CELL_CENTRE, time);
-    
     ddt(f) = -bracket(g, f, (BRACKET_METHOD) method)
-      - 20.*(SQ(SQ(coords->dx))*D4DX4(f) + SQ(SQ(coords->dz))*D4DZ4(f))
-      //+ 20.*(SQ(coords->dx)*D2DX2(f) + SQ(coords->dz)*D2DZ2(f))
+      - (dx_sq_sq*D4DX4(f) + dz_sq_sq*D4DZ4(f))
       ;
 
     return 0;
@@ -32,6 +33,7 @@ public:
 private:
   int method;
   Field3D f,g;
+  Field3D dx_sq_sq, dz_sq_sq;
 };
 
 BOUTMAIN(AdvectMMS);
