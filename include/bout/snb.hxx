@@ -1,6 +1,8 @@
 #include "../options.hxx"
 #include "../invert_parderiv.hxx"
 
+#include <memory>
+
 /// Calculate heat flux using the Shurtz-Nicolai-Busquet (SNB) model
 ///
 /// Useful references:
@@ -18,7 +20,7 @@ public:
 
   /// Construct using options in given section.
   explicit HeatFluxSNB(Options &options) {
-    invertpar = InvertPar::Create();
+    invertpar = std::unique_ptr<InvertPar>{InvertPar::Create()};
 
     // Read options. Note that the defaults are initialised already
     r = options["r"].doc("Scaling of the electron-electron mean free path")
@@ -28,9 +30,7 @@ public:
     ngroups = options["ngroups"].doc("Number of energy groups").withDefault(ngroups);
   }
   
-  ~HeatFluxSNB() {
-    delete invertpar;
-  }
+  ~HeatFluxSNB() = default;
 
   /// Calculate divergence of heat flux
   /// Te: Electron temperature in eV
@@ -43,7 +43,8 @@ public:
   Field3D divHeatFlux(const Field3D &Te, const Field3D &Ne, Field3D *Div_Q_SH_out = nullptr);
   
 private:
-  InvertPar *invertpar; ///< Parallel inversion of tridiagonal matrices
+  /// Parallel inversion of tridiagonal matrices
+  std::unique_ptr<InvertPar> invertpar{nullptr};
   
   BoutReal Z{1}; ///< Average ion charge (1 = Hydrogen)
   BoutReal r{2}; ///< Electron-electron mean free path scaling factor
