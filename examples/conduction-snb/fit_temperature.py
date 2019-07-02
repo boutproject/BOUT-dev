@@ -10,7 +10,7 @@ def te_function(ypos, mid, wwid, w0, w1, w2, Tmax, Tmin, clip=False):
 
     if clip:
         width = np.clip(width, 1e-10, None)
-    
+
     return Tmax - 0.5 * (1 + np.tanh((ypos - mid)/width)) * (Tmax - Tmin)
 
 popt, pcov = optimize.curve_fit(te_function, Te_ref[:,0], Te_ref[:,1],
