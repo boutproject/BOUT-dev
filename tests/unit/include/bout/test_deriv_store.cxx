@@ -26,7 +26,7 @@ void flowReturnSixSetToTwo(const FieldType& UNUSED(vel), const FieldType& UNUSED
 class DerivativeStoreTest : public ::testing::Test {
 public:
   DerivativeStoreTest() : store(DerivativeStore<FieldType>::getInstance()) {}
-  virtual ~DerivativeStoreTest() { store.reset(); }
+  ~DerivativeStoreTest() override { store.reset(); }
 
   DerivativeStore<FieldType>& store;
 };

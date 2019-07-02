@@ -77,7 +77,7 @@ void FieldData::addBndryGenerator(FieldGeneratorPtr gen, BndryLoc location) {
       bndry_generator[reg->location] = gen;
     }
   } else {
-    bndry_generator[location] = gen;
+    bndry_generator[location] = std::move(gen);
   }
 }
 

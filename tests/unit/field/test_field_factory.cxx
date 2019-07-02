@@ -610,7 +610,7 @@ TYPED_TEST(FieldFactoryCreationTest, CreateOnMeshWithoutCoordinates) {
 class FieldFactoryTest : public FakeMeshFixture {
 public:
   FieldFactoryTest() : FakeMeshFixture{}, factory{mesh} {}
-  virtual ~FieldFactoryTest() {}
+  virtual ~FieldFactoryTest() = default;
 
   WithQuietOutput quiet_info{output_info}, quiet{output}, quiet_error{output_error};
   WithQuietOutput quiet_warn{output_warn};

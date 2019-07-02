@@ -50,10 +50,12 @@ FUNCTION hypnotoad_version
   ; 1.2.2   * Revert incorrect change in 1.1.4 to the calculation of 'H' - the
   ;           derivative was with respect to theta, but the integral was in y
   ;           and for non-orthogonal grids thetaxy and yxy are different.
-  
+  ; 1.2.3   * Rename 'coordinates_type' to 'parallel_transform', 'orthogonal'
+  ;           to 'shiftedmetric', and 'field_aligned' to 'identity'
+
   major_version = 1
   minor_version = 2
-  patch_number = 2
+  patch_number = 3
 
   RETURN, LONG([major_version, minor_version, patch_number])
 

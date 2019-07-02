@@ -113,15 +113,12 @@ constexpr int INVERT_KX_ZERO = 16;
   const int INVERT_DC_IN_GRADPARINV = 2097152;
  */
 
-const int INVERT_IN_RHS  = 16384; ///< Use input value in RHS at inner boundary
-const int INVERT_OUT_RHS = 32768; ///< Use input value in RHS at outer boundary
-
 /// Base class for Laplacian inversion
 class Laplacian {
 public:
   Laplacian(Options *options = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh* mesh_in = nullptr);
-  virtual ~Laplacian() {}
-  
+  virtual ~Laplacian() = default;
+
   /// Set coefficients for inversion. Re-builds matrices if necessary
   virtual void setCoefA(const Field2D &val) = 0;
   virtual void setCoefA(const Field3D &val) { setCoefA(DC(val)); }
@@ -183,10 +180,13 @@ public:
     setCoefEz(f);
   }
   
-  virtual void setFlags(int f);
   virtual void setGlobalFlags(int f) { global_flags = f; }
   virtual void setInnerBoundaryFlags(int f) { inner_boundary_flags = f; }
   virtual void setOuterBoundaryFlags(int f) { outer_boundary_flags = f; }
+
+  [[gnu::deprecated("Please use setGlobalFlags, setInnerBoundaryFlags and "
+      "setOuterBoundaryFlags methods instead")]]
+  virtual void setFlags(int f);
 
   /// Does this solver use Field3D coefficients (true) or only their DC component (false)
   virtual bool uses3DCoefs() const { return false; }

@@ -556,8 +556,8 @@ introduce some quantities
    :nowrap:
 
       \begin{align}
-       &A_0 = a(x,y_{\text{current}},z)& &A_1 = dg^{xx}&\\
-       &A_2 = dg^{zz}& &A_3 = 2dg^{xz}&
+       &A_0 = a(x,y_{\text{current}},z) &A_1 = dg^{xx}&\\
+       &A_2 = dg^{zz} &A_3 = 2dg^{xz}
       \end{align}
 
 In addition, we have:
@@ -566,25 +566,24 @@ Second order approximation (5-point stencil)
 
 .. math::
 
-       \texttt{ddx_c} = \frac{\texttt{c2}_{x+1} - \texttt{c2}_{x-1} }{2\texttt{c1}\text{d}x}
-
-       \texttt{ddz_c} = \frac{\texttt{c2}_{z+1} - \texttt{c2}_{z-1} }{2\texttt{c1}\text{d}z}
+       \texttt{ddx\_c} = \frac{\texttt{c2}_{x+1} - \texttt{c2}_{x-1} }{2\texttt{c1}\text{d}x} \\
+       \texttt{ddz\_c} = \frac{\texttt{c2}_{z+1} - \texttt{c2}_{z-1} }{2\texttt{c1}\text{d}z}
 
 Fourth order approximation (9-point stencil)
 
 .. math::
 
-       \texttt{ddx_c} = \frac{-\texttt{c2}_{x+2} + 8\texttt{c2}_{x+1} -
+       \texttt{ddx\_c} = \frac{-\texttt{c2}_{x+2} + 8\texttt{c2}_{x+1} -
        8\texttt{c2}_{x-1} + \texttt{c2}_{x-1} }{ 12\texttt{c1}\text{d}x} \\
-       \texttt{ddz_c} = \frac{-\texttt{c2}_{z+2} + 8\texttt{c2}_{z+1} -
+       \texttt{ddz\_c} = \frac{-\texttt{c2}_{z+2} + 8\texttt{c2}_{z+1} -
        8\texttt{c2}_{z-1} + \texttt{c2}_{z-1} }{ 12\texttt{c1}\text{d}z}
 
 
 This gives
 
 .. math::
-   A_4 &= dG^x + g^{xx}\texttt{ddx_c} + g^{xz}\texttt{ddz_c} \\
-   A_5 &= dG^z + g^{xz}\texttt{ddx_c} + g^{xx}\texttt{ddz_c}
+   A_4 &= dG^x + g^{xx}\texttt{ddx\_c} + g^{xz}\texttt{ddz\_c} \\
+   A_5 &= dG^z + g^{xz}\texttt{ddx\_c} + g^{xx}\texttt{ddz\_c}
 
 The coefficients :math:`c_{i+m,j+n}` are finally being set according
 to the appropriate order of discretisation. The coefficients can be
@@ -802,7 +801,7 @@ This scheme was introduced for BOUT++ by Michael Løiten in the `CELMA code
 his thesis [Løiten2017]_.
 
 The iteration can be under-relaxed (see ``naulin_laplace.cxx`` for more details of the
-implementation). A factor :math:`0< \text{underrelax_factor}<=1` is used, with a value of 1 corresponding
+implementation). A factor :math:`0< \text{underrelax\_factor}<=1` is used, with a value of 1 corresponding
 to no under-relaxation. If the iteration starts to diverge (the error increases on any
 step) the underrelax_factor is reduced by a factor of 0.9, and the iteration is restarted
 from the initial guess. The initial value of underrelax_factor, which underrelax_factor is

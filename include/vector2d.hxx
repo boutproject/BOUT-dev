@@ -46,14 +46,14 @@ class Vector3D; //#include "vector3d.hxx"
  * (x and y). Implemented as a collection of three Field2D objects.
  */ 
 class Vector2D : public FieldData {
- public:
+public:
   Vector2D(Mesh * fieldmesh = nullptr);
   Vector2D(const Vector2D &f);
   ~Vector2D() override;
 
   Field2D x, y, z; ///< components
 
-  bool covariant; ///< true if the components are covariant (default)
+  bool covariant{true}; ///< true if the components are covariant (default)
 
   /// In-place conversion to covariant form
   void toCovariant();
@@ -152,10 +152,9 @@ class Vector2D : public FieldData {
   }
   void applyBoundary(const char* condition) { applyBoundary(std::string(condition)); }
   void applyTDerivBoundary() override;
- private:
-  
-  Vector2D *deriv; ///< Time-derivative, can be NULL
-  CELL_LOC location; ///< Location of the variable in the cell
+private:
+  Vector2D* deriv{nullptr};       ///< Time-derivative, can be NULL
+  CELL_LOC location{CELL_CENTRE}; ///< Location of the variable in the cell
 };
 
 // Non-member overloaded operators

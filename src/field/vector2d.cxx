@@ -36,8 +36,7 @@
 #include <bout/scorepwrapper.hxx>
 #include <interpolation.hxx>
 
-Vector2D::Vector2D(Mesh *localmesh)
-    : x(localmesh), y(localmesh), z(localmesh), covariant(true), deriv(nullptr), location(CELL_CENTRE) {}
+Vector2D::Vector2D(Mesh* localmesh) : x(localmesh), y(localmesh), z(localmesh) {}
 
 Vector2D::Vector2D(const Vector2D &f)
     : x(f.x), y(f.y), z(f.z), covariant(f.covariant), deriv(nullptr),

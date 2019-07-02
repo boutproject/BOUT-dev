@@ -80,9 +80,9 @@ Field2D::Field2D(BoutReal val, Mesh* localmesh) : Field2D(localmesh) {
   *this = val;
 }
 
-Field2D::Field2D(Array<BoutReal> data, Mesh* localmesh, CELL_LOC datalocation,
+Field2D::Field2D(Array<BoutReal> data_in, Mesh* localmesh, CELL_LOC datalocation,
                  DirectionTypes directions_in)
-    : Field(localmesh, datalocation, directions_in), data(data) {
+    : Field(localmesh, datalocation, directions_in), data(std::move(data_in)) {
 
   ASSERT1(fieldmesh != nullptr);
 
@@ -94,10 +94,7 @@ Field2D::Field2D(Array<BoutReal> data, Mesh* localmesh, CELL_LOC datalocation,
   setLocation(datalocation);
 }
 
-Field2D::~Field2D() {
-  if(deriv)
-    delete deriv;
-}
+Field2D::~Field2D() { delete deriv; }
 
 Field2D& Field2D::allocate() {
   if(data.empty()) {
@@ -260,7 +257,7 @@ void Field2D::applyBoundary(const std::string &region, const std::string &condit
   bool region_found = false;
   /// Loop over the mesh boundary regions
   for (const auto &reg : fieldmesh->getBoundaries()) {
-    if (reg->label.compare(region) == 0) {
+    if (reg->label == region) {
       region_found = true;
       auto op = std::unique_ptr<BoundaryOp>{
           dynamic_cast<BoundaryOp*>(bfact->create(condition, reg))};

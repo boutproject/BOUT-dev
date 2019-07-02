@@ -129,7 +129,7 @@ TEST_F(RegionTest, numberOfBlocks) {
   Region<Ind3D> region(0, mesh->LocalNx - 1, 0, mesh->LocalNy - 1, 0, mesh->LocalNz - 1,
                        mesh->LocalNy, mesh->LocalNz);
 
-  auto blocks = region.getBlocks();
+  const auto& blocks = region.getBlocks();
   int nmesh = RegionTest::nx * RegionTest::ny * RegionTest::nz;
   int nblocks = blocks.size();
 
@@ -413,7 +413,7 @@ TEST_F(RegionTest, regionAsUnique) {
 
   // Now get a unique version of the region
   Region<Ind3D> regionUnique2 = regionIn2.asUnique();
-  Region<Ind3D>::RegionIndices regionIndicesUnique2 = regionUnique2.getIndices();
+  const Region<Ind3D>::RegionIndices& regionIndicesUnique2 = regionUnique2.getIndices();
 
   EXPECT_EQ(regionIndicesUnique2.size(), 8);
 
@@ -478,7 +478,7 @@ TEST_F(RegionTest, regionSetBlocks) {
   Region<Ind3D> region(0, mesh->LocalNx - 1, 0, mesh->LocalNy - 1, 0, mesh->LocalNz - 1,
                        mesh->LocalNy, mesh->LocalNz);
   auto blocks = region.getBlocks();
-  auto indices = region.getIndices();
+  const auto& indices = region.getIndices();
 
   EXPECT_EQ(indices.size(), nmesh);
 
@@ -722,7 +722,7 @@ TEST_F(RegionTest, regionFriendMask) {
   }
 
   auto masked2 = mask(regionIn, mask2);
-  auto masked2Indices = masked2.getIndices();
+  const auto& masked2Indices = masked2.getIndices();
   EXPECT_EQ(masked2Indices.size(), indicesIn.size());
 
   // Check size of other regions not changed
@@ -762,7 +762,7 @@ TEST_F(RegionTest, regionOperatorAdd) {
   }
 
   auto region4 = region1 + region2 + region2;
-  auto indices4 = region4.getIndices();
+  const auto& indices4 = region4.getIndices();
   EXPECT_EQ(indices4.size(), indicesIn1.size() + 2 * indicesIn2.size());
   EXPECT_EQ(region1.getIndices().size(), indicesIn1.size());
   EXPECT_EQ(region2.getIndices().size(), indicesIn2.size());

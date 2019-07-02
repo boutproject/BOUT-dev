@@ -5,7 +5,7 @@
 
 BOUT_TOP = ../../..
 
-CINCLUDES = -I../include
+CINCLUDES = -I../include/pvode
 FLAGS    = $(CXXFLAGS) $(CINCLUDES)
 
 # PVODE library file

@@ -23,7 +23,7 @@ class Mesh;
 class ParallelTransform {
 public:
   ParallelTransform(Mesh& mesh_in) : mesh(mesh_in) {}
-  virtual ~ParallelTransform() {}
+  virtual ~ParallelTransform() = default;
 
   /// Given a 3D field, calculate and set the Y up down fields
   virtual void calcParallelSlices(Field3D &f) = 0;
@@ -85,7 +85,7 @@ public:
 
 protected:
   /// This method should be called in the constructor to check that if the grid
-  /// has a 'coordinates_type' variable, it has the correct value
+  /// has a 'parallel_transform' variable, it has the correct value
   virtual void checkInputGrid() = 0;
 
   Mesh &mesh; ///< The mesh this paralleltransform is part of

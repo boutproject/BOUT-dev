@@ -40,7 +40,7 @@ public:
   }
 
 private:
-  SolverFactory() {}
+  SolverFactory() = default;
   static SolverFactory* instance;
 };
 

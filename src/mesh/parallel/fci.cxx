@@ -325,13 +325,13 @@ Field3D FCIMap::integrate(Field3D &f) const {
 }
 
 void FCITransform::checkInputGrid() {
-  std::string coordinates_type = "";
-  if (!mesh.get(coordinates_type, "coordinates_type")) {
-    if (coordinates_type != "fci") {
-      throw BoutException("Incorrect coordinate system type '"+coordinates_type+"' used "
+  std::string parallel_transform;
+  if (!mesh.get(parallel_transform, "parallel_transform")) {
+    if (parallel_transform != "fci") {
+      throw BoutException("Incorrect parallel transform type '"+parallel_transform+"' used "
           "to generate metric components for FCITransform. Should be 'fci'.");
     }
-  } // else: coordinate_system variable not found in grid input, indicates older input
+  } // else: parallel_transform variable not found in grid input, indicates older input
     //       file so must rely on the user having ensured the type is correct
 }
 

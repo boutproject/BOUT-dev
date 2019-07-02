@@ -48,7 +48,7 @@ class GridDataSource;
  */
 class GridDataSource {
 public:
-  virtual ~GridDataSource() {}
+  virtual ~GridDataSource() = default;
 
   virtual bool hasVar(const std::string &name) = 0; ///< Test if source can supply a variable
 

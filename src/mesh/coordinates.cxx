@@ -210,17 +210,17 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   // 'interpolateAndExtrapolate' to set them. Ensures that derivatives are
   // smooth at all the boundaries.
 
-  const bool extrapolate_x = not mesh->sourceHasXBoundaryGuards();
-  const bool extrapolate_y = not mesh->sourceHasYBoundaryGuards();
+  const bool extrapolate_x = (*options)["extrapolate_x"].withDefault(not mesh->sourceHasXBoundaryGuards());
+  const bool extrapolate_y = (*options)["extrapolate_y"].withDefault(not mesh->sourceHasYBoundaryGuards());
 
   if (extrapolate_x) {
     output_warn.write(_("WARNING: extrapolating input mesh quantities into x-boundary "
-          "cells\n"));
+          "cells. Set option extrapolate_x=false to disable this.\n"));
   }
 
   if (extrapolate_y) {
     output_warn.write(_("WARNING: extrapolating input mesh quantities into y-boundary "
-          "cells\n"));
+          "cells. Set option extrapolate_y=false to disable this.\n"));
   }
 
   mesh->get(dx, "dx", 1.0);
