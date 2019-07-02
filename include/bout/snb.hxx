@@ -3,6 +3,8 @@
 
 #include <memory>
 
+namespace bout {
+
 /// Calculate heat flux using the Shurtz-Nicolai-Busquet (SNB) model
 ///
 /// Useful references:
@@ -69,3 +71,5 @@ private:
     return (1./24) * (int_beta4_exp(beta_max) - int_beta4_exp(beta_min));
   }
 };
+
+} // namespace bout

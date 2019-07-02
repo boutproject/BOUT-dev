@@ -4,6 +4,8 @@
 #include <bout.hxx>
 
 int main(int argc, char **argv) {
+  using bout::HeatFluxSNB;
+
   BoutInitialise(argc, argv);
 
   // Read the density and temperature profiles

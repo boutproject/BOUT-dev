@@ -6,6 +6,8 @@
 #include "bout/fv_ops.hxx"
 #include "bout/constants.hxx"
 
+namespace bout {
+
 Field3D HeatFluxSNB::divHeatFlux(const Field3D &Te, const Field3D &Ne, Field3D *Div_Q_SH_out) {
   Coordinates *coord = Te.getCoordinates();
 
@@ -72,3 +74,5 @@ Field3D HeatFluxSNB::divHeatFlux(const Field3D &Te, const Field3D &Ne, Field3D *
   
   return Div_Q;
 }
+
+} // namespace bout

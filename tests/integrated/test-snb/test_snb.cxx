@@ -63,6 +63,8 @@ bool IsFieldClose(const T& field, const U& reference,
 }
 
 int main(int argc, char **argv) {
+  using bout::HeatFluxSNB;
+
   BoutInitialise(argc, argv);
 
   ///////////////////////////////////////////////////////////
