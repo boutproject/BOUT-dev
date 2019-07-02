@@ -92,9 +92,9 @@ Field3D::Field3D(const BoutReal val, Mesh* localmesh) : Field3D(localmesh) {
   *this = val;
 }
 
-Field3D::Field3D(Array<BoutReal> data, Mesh* localmesh, CELL_LOC datalocation,
+Field3D::Field3D(Array<BoutReal> data_in, Mesh* localmesh, CELL_LOC datalocation,
                  DirectionTypes directions_in)
-    : Field(localmesh, datalocation, directions_in), data(data) {
+    : Field(localmesh, datalocation, directions_in), data(std::move(data_in)) {
   TRACE("Field3D: Copy constructor from Array and Mesh");
 
   nx = fieldmesh->LocalNx;
@@ -106,12 +106,7 @@ Field3D::Field3D(Array<BoutReal> data, Mesh* localmesh, CELL_LOC datalocation,
   setLocation(datalocation);
 }
 
-Field3D::~Field3D() {
-  /// Delete the time derivative variable if allocated
-  if (deriv != nullptr) {
-    delete deriv;
-  }
-}
+Field3D::~Field3D() { delete deriv; }
 
 Field3D& Field3D::allocate() {
   if(data.empty()) {
@@ -423,7 +418,7 @@ void Field3D::applyBoundary(const std::string &region, const std::string &condit
   bool region_found = false;
   /// Loop over the mesh boundary regions
   for (const auto &reg : fieldmesh->getBoundaries()) {
-    if (reg->label.compare(region) == 0) {
+    if (reg->label == region) {
       region_found = true;
       auto op = std::unique_ptr<BoundaryOp>{
           dynamic_cast<BoundaryOp*>(bfact->create(condition, reg))};
@@ -556,7 +551,7 @@ void Field3D::applyParallelBoundary(const std::string &region, const std::string
 
     /// Loop over the mesh boundary regions
     for(const auto& reg : fieldmesh->getBoundariesPar()) {
-      if(reg->label.compare(region) == 0) {
+      if (reg->label == region) {
         auto op = std::unique_ptr<BoundaryOpPar>{
             dynamic_cast<BoundaryOpPar*>(bfact->create(condition, reg))};
         op->apply(*this);
@@ -583,7 +578,7 @@ void Field3D::applyParallelBoundary(const std::string &region, const std::string
 
     /// Loop over the mesh boundary regions
     for(const auto& reg : fieldmesh->getBoundariesPar()) {
-      if(reg->label.compare(region) == 0) {
+      if (reg->label == region) {
         // BoundaryFactory can't create boundaries using Field3Ds, so get temporary
         // boundary of the right type
         auto tmp = std::unique_ptr<BoundaryOpPar>{

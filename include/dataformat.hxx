@@ -48,7 +48,7 @@ class FieldPerp;
 class DataFormat {
  public:
   DataFormat(Mesh* mesh_in = nullptr);
-  virtual ~DataFormat() { }
+  virtual ~DataFormat() = default;
   // File opening routines
   virtual bool openr(const char *name) = 0;
   virtual bool openr(const std::string &name) {

@@ -10,7 +10,7 @@
 using namespace netCDF;
 
 namespace {
-void readGroup(const std::string& filename, NcGroup group, Options& result) {
+void readGroup(const std::string& filename, const NcGroup& group, Options& result) {
 
   // Iterate over all variables
   for (const auto& varpair : group.getVars()) {
@@ -164,6 +164,7 @@ NcType NcTypeVisitor::operator()<double>(const double& UNUSED(t)) {
 }
 
 template <>
+MAYBE_UNUSED()
 NcType NcTypeVisitor::operator()<float>(const float& UNUSED(t)) {
   return ncFloat;
 }
@@ -347,6 +348,7 @@ void NcPutAttVisitor::operator()(const double& value) {
   var.putAtt(name, ncDouble, value);
 }
 template <>
+MAYBE_UNUSED()
 void NcPutAttVisitor::operator()(const float& value) {
   var.putAtt(name, ncFloat, value);
 }
@@ -382,7 +384,7 @@ void writeGroup(const Options& options, NcGroup group,
         if (time_it != child.attributes.end()) {
           // Has a time dimension
 
-          auto time_name = bout::utils::get<std::string>(time_it->second);
+          const auto& time_name = bout::utils::get<std::string>(time_it->second);
           time_dim = group.getDim(time_name, NcGroup::ParentsAndCurrent);
           if (time_dim.isNull()) {
             time_dim = group.addDim(time_name);

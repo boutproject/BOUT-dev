@@ -467,8 +467,6 @@ public:
         irfft(cv.begin(), ncz, &result[i3D]); // Reverse FFT
       }
     }
-
-    return;
   }
 
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
@@ -529,8 +527,6 @@ public:
         irfft(cv.begin(), ncz, &result[i3D]); // Reverse FFT
       }
     }
-
-    return;
   }
 
   template <DIRECTION direction, STAGGER stagger, int nGuards, typename T>
@@ -566,7 +562,6 @@ public:
     result += bout::derivatives::index::standardDerivative<T, direction, DERIV::Standard>(
                   vel, result.getLocation(), "DEFAULT", region)
               * interp_to(var, result.getLocation());
-    return;
   }
   metaData meta{"SPLIT", 2, DERIV::Flux};
 };

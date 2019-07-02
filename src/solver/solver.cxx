@@ -34,6 +34,7 @@
 #include "bout/solverfactory.hxx"
 #include "bout/sys/timer.hxx"
 
+#include <cmath>
 #include <cstring>
 #include <ctime>
 #include <numeric>
@@ -81,7 +82,7 @@ void Solver::setModel(PhysicsModel *m) {
  * Add fields
  **************************************************************************/
 
-void Solver::add(Field2D &v, const std::string name) {
+void Solver::add(Field2D& v, const std::string& name) {
   TRACE("Adding 2D field: Solver::add(%s)", name.c_str());
 
 #if CHECK > 0
@@ -138,7 +139,7 @@ void Solver::add(Field2D &v, const std::string name) {
   f2d.emplace_back(std::move(d));
 }
 
-void Solver::add(Field3D &v, const std::string name) {
+void Solver::add(Field3D& v, const std::string& name) {
   TRACE("Adding 3D field: Solver::add(%s)", name.c_str());
 
   Mesh* mesh = v.getMesh();
@@ -197,7 +198,7 @@ void Solver::add(Field3D &v, const std::string name) {
   f3d.emplace_back(std::move(d));
 }
 
-void Solver::add(Vector2D& v, const std::string name) {
+void Solver::add(Vector2D& v, const std::string& name) {
   TRACE("Adding 2D vector: Solver::add(%s)", name.c_str());
 
   if (varAdded(name))
@@ -236,7 +237,7 @@ void Solver::add(Vector2D& v, const std::string name) {
   v2d.emplace_back(std::move(d));
 }
 
-void Solver::add(Vector3D& v, const std::string name) {
+void Solver::add(Vector3D& v, const std::string& name) {
   TRACE("Adding 3D vector: Solver::add(%s)", name.c_str());
 
   if (varAdded(name))
@@ -275,7 +276,7 @@ void Solver::add(Vector3D& v, const std::string name) {
  * Constraints
  **************************************************************************/
 
-void Solver::constraint(Field2D &v, Field2D &C_v, const std::string name) {
+void Solver::constraint(Field2D& v, Field2D& C_v, std::string name) {
   TRACE("Constrain 2D scalar: Solver::constraint(%s)", name.c_str());
 
   if (name.empty()) {
@@ -298,12 +299,12 @@ void Solver::constraint(Field2D &v, Field2D &C_v, const std::string name) {
   d.constraint = true;
   d.var = &v;
   d.F_var = &C_v;
-  d.name = name;
+  d.name = std::move(name);
 
   f2d.emplace_back(std::move(d));
 }
 
-void Solver::constraint(Field3D &v, Field3D &C_v, const std::string name) {
+void Solver::constraint(Field3D& v, Field3D& C_v, std::string name) {
   TRACE("Constrain 3D scalar: Solver::constraint(%s)", name.c_str());
 
   if (name.empty()) {
@@ -327,12 +328,12 @@ void Solver::constraint(Field3D &v, Field3D &C_v, const std::string name) {
   d.var = &v;
   d.F_var = &C_v;
   d.location = v.getLocation();
-  d.name = name;
-  
+  d.name = std::move(name);
+
   f3d.emplace_back(std::move(d));
 }
 
-void Solver::constraint(Vector2D &v, Vector2D &C_v, const std::string name) {
+void Solver::constraint(Vector2D& v, Vector2D& C_v, std::string name) {
   TRACE("Constrain 2D vector: Solver::constraint(%s)", name.c_str());
 
   if (name.empty()) {
@@ -350,29 +351,29 @@ void Solver::constraint(Vector2D &v, Vector2D &C_v, const std::string name) {
   if (initialised)
     throw BoutException("Error: Cannot add constraints to solver after initialisation\n");
 
+  // Add suffix, depending on co- /contravariance
+  if (v.covariant) {
+    constraint(v.x, C_v.x, name + "_x");
+    constraint(v.y, C_v.y, name + "_y");
+    constraint(v.z, C_v.z, name + "_z");
+  } else {
+    constraint(v.x, C_v.x, name + "x");
+    constraint(v.y, C_v.y, name + "y");
+    constraint(v.z, C_v.z, name + "z");
+  }
+
   VarStr<Vector2D> d;
-  
+
   d.constraint = true;
   d.var = &v;
   d.F_var = &C_v;
   d.covariant = v.covariant;
-  d.name = name;
-  
-  v2d.emplace_back(std::move(d));
+  d.name = std::move(name);
 
-  // Add suffix, depending on co- /contravariance
-  if (v.covariant) {
-    constraint(v.x, C_v.x, d.name+"_x");
-    constraint(v.y, C_v.y, d.name+"_y");
-    constraint(v.z, C_v.z, d.name+"_z");
-  } else {
-    constraint(v.x, C_v.x, d.name+"x");
-    constraint(v.y, C_v.y, d.name+"y");
-    constraint(v.z, C_v.z, d.name+"z");
-  }
+  v2d.emplace_back(std::move(d));
 }
 
-void Solver::constraint(Vector3D &v, Vector3D &C_v, const std::string name) {
+void Solver::constraint(Vector3D& v, Vector3D& C_v, std::string name) {
   TRACE("Constrain 3D vector: Solver::constraint(%s)", name.c_str());
 
   if (name.empty()) {
@@ -390,26 +391,26 @@ void Solver::constraint(Vector3D &v, Vector3D &C_v, const std::string name) {
   if (initialised)
     throw BoutException("Error: Cannot add constraints to solver after initialisation\n");
 
+  // Add suffix, depending on co- /contravariance
+  if (v.covariant) {
+    constraint(v.x, C_v.x, name + "_x");
+    constraint(v.y, C_v.y, name + "_y");
+    constraint(v.z, C_v.z, name + "_z");
+  } else {
+    constraint(v.x, C_v.x, name + "x");
+    constraint(v.y, C_v.y, name + "y");
+    constraint(v.z, C_v.z, name + "z");
+  }
+
   VarStr<Vector3D> d;
-  
+
   d.constraint = true;
   d.var = &v;
   d.F_var = &C_v;
   d.covariant = v.covariant;
-  d.name = name;
-  
-  v3d.emplace_back(std::move(d));
+  d.name = std::move(name);
 
-  // Add suffix, depending on co- /contravariance
-  if (v.covariant) {
-    constraint(v.x, C_v.x, d.name+"_x");
-    constraint(v.y, C_v.y, d.name+"_y");
-    constraint(v.z, C_v.z, d.name+"_z");
-  } else {
-    constraint(v.x, C_v.x, d.name+"x");
-    constraint(v.y, C_v.y, d.name+"y");
-    constraint(v.z, C_v.z, d.name+"z");
-  }
+  v3d.emplace_back(std::move(d));
 }
 
 /**************************************************************************
@@ -576,7 +577,8 @@ BoutReal Solver::adjustMonitorPeriods(Monitor* new_monitor) {
 
   if (new_monitor->timestep > internal_timestep * 1.5) {
     // Monitor has a larger timestep
-    new_monitor->period = (new_monitor->timestep / internal_timestep) + .5;
+    new_monitor->period =
+        static_cast<int>(std::round(new_monitor->timestep / internal_timestep));
     return internal_timestep;
   }
 
@@ -590,7 +592,8 @@ BoutReal Solver::adjustMonitorPeriods(Monitor* new_monitor) {
   }
 
   // This is the relative increase in timestep
-  const int multiplier = internal_timestep / new_monitor->timestep + .5;
+  const auto multiplier =
+      static_cast<int>(std::round(internal_timestep / new_monitor->timestep));
   for (const auto& monitor : monitors) {
     monitor->period *= multiplier;
   }
@@ -611,13 +614,15 @@ void Solver::finaliseMonitorPeriods(int& NOUT, BoutReal& output_timestep) {
           "A monitor requested a timestep not compatible with the output_step!");
     }
     if (internal_timestep < output_timestep * 1.5) {
-      default_monitor_period = output_timestep / internal_timestep + .5;
+      default_monitor_period =
+          static_cast<int>(std::round(output_timestep / internal_timestep));
       NOUT *= default_monitor_period;
       output_timestep = internal_timestep;
     } else {
       default_monitor_period = 1;
       // update old monitors
-      int multiplier = internal_timestep / output_timestep + .5;
+      const auto multiplier =
+          static_cast<int>(std::round(internal_timestep / output_timestep));
       for (const auto& i : monitors) {
         i->period = i->period * multiplier;
       }

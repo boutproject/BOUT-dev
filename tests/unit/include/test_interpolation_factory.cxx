@@ -54,7 +54,7 @@ public:
     output_info.disable();
     output_warn.disable();
   }
-  ~InterpolationFactoryTest() {
+  ~InterpolationFactoryTest() override {
     output_warn.enable();
     output_info.enable();
     InterpolationFactory::getInstance()->cleanup();

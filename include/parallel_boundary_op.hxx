@@ -14,7 +14,7 @@
 
 class BoundaryOpPar : public BoundaryOpBase {
 public:
-  BoundaryOpPar() : bndry(nullptr), real_value(0.), value_type(REAL) {}
+  BoundaryOpPar() = default;
   BoundaryOpPar(BoundaryRegionPar *region, std::shared_ptr<FieldGenerator> value)
       : bndry(region), gen_values(std::move(value)), value_type(GEN) {}
   BoundaryOpPar(BoundaryRegionPar *region, Field3D* value) :
@@ -25,7 +25,7 @@ public:
     bndry(region),
     real_value(value),
     value_type(REAL) {}
-  ~BoundaryOpPar() override {}
+  ~BoundaryOpPar() override = default;
 
   // Note: All methods must implement clone, except for modifiers (see below)
   virtual BoundaryOpPar* clone(BoundaryRegionPar *UNUSED(region), const std::list<std::string> &UNUSED(args)) {return nullptr; }
@@ -46,18 +46,18 @@ public:
     throw BoutException("Can't apply parallel boundary conditions to Field2D!");
   }
 
-  BoundaryRegionPar *bndry;
+  BoundaryRegionPar* bndry{nullptr};
 
 protected:
 
   /// Possible ways to get boundary values
   std::shared_ptr<FieldGenerator>  gen_values;
   Field3D* field_values;
-  BoutReal real_value;
+  BoutReal real_value{0.};
 
   /// Where to take boundary values from - the generator, field or BoutReal
   enum ValueType { GEN, FIELD, REAL };
-  const ValueType value_type;
+  const ValueType value_type{REAL};
 
   BoutReal getValue(int x, int y, int z, BoutReal t);
   BoutReal getValue(const BoundaryRegionPar &bndry, BoutReal t);

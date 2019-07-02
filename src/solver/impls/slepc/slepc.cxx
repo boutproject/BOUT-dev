@@ -223,9 +223,7 @@ SlepcSolver::~SlepcSolver() {
     if (shellMat) {
       MatDestroy(&shellMat);
     };
-    if (advanceSolver) {
-      delete advanceSolver;
-    };
+    delete advanceSolver;
     initialised = false;
   }
 }
