@@ -32,6 +32,13 @@ public:
   
   ~HeatFluxSNB() = default;
 
+  HeatFluxSNB(HeatFluxSNB&&) = default;
+  HeatFluxSNB& operator=(HeatFluxSNB&&) = default;
+
+  // No copy constructors because invertpar is std::unique_ptr
+  HeatFluxSNB(const HeatFluxSNB&) = delete;
+  HeatFluxSNB& operator=(const HeatFluxSNB&) = delete;
+
   /// Calculate divergence of heat flux
   /// Te: Electron temperature in eV
   /// Ne: Electron density in m^-3
