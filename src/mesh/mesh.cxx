@@ -43,41 +43,59 @@ Mesh::~Mesh() { delete source; }
  * which may then read from a file, options, or other sources.
  **************************************************************************/
 
-/// Get a string
-int Mesh::get(std::string &sval, const std::string &name) {
+namespace {
+// Wrapper for writing nicely to the screen
+template <class T>
+void warn_default_used(const T& value, const std::string& name) {
+  output_warn << "\tWARNING: Mesh has no source. Setting '" << name << "' = " << value
+              << std::endl;
+}
+} // namespace
+
+int Mesh::get(std::string& sval, const std::string& name, const std::string& def) {
   TRACE("Mesh::get(sval, %s)", name.c_str());
 
-  if (source == nullptr or !source->get(this, sval, name))
-    return 1;
+  if (source == nullptr) {
+    warn_default_used(def, name);
+    sval = def;
+    return true;
+  }
 
-  return 0;
+  return !source->get(this, sval, name, def);
 }
 
-/// Get an integer
-int Mesh::get(int &ival, const std::string &name) {
+int Mesh::get(int &ival, const std::string &name, int def) {
   TRACE("Mesh::get(ival, %s)", name.c_str());
 
-  if (source == nullptr or !source->get(this, ival, name))
-    return 1;
+  if (source == nullptr) {
+    warn_default_used(def, name);
+    ival = def;
+    return true;
+  }
 
-  return 0;
+  return !source->get(this, ival, name, def);
 }
 
-/// A BoutReal number
-int Mesh::get(BoutReal &rval, const std::string &name) {
+int Mesh::get(BoutReal& rval, const std::string& name, BoutReal def) {
   TRACE("Mesh::get(rval, %s)", name.c_str());
 
-  if (source == nullptr or !source->get(this, rval, name))
-    return 1;
+  if (source == nullptr) {
+    warn_default_used(def, name);
+    rval = def;
+    return true;
+  }
 
-  return 0;
+  return !source->get(this, rval, name, def);
 }
 
 int Mesh::get(Field2D &var, const std::string &name, BoutReal def) {
   TRACE("Loading 2D field: Mesh::get(Field2D, %s)", name.c_str());
 
-  if (source == nullptr or !source->get(this, var, name, def))
+  if (source == nullptr or !source->get(this, var, name, def)) {
+    // set val to default in source==nullptr too:
+    var = def;
     return 1;
+  }
 
   // Communicate to get guard cell data
   Mesh::communicate(var);
@@ -91,8 +109,11 @@ int Mesh::get(Field2D &var, const std::string &name, BoutReal def) {
 int Mesh::get(Field3D &var, const std::string &name, BoutReal def, bool communicate) {
   TRACE("Loading 3D field: Mesh::get(Field3D, %s)", name.c_str());
 
-  if (source == nullptr or !source->get(this, var, name, def))
+  if (source == nullptr or !source->get(this, var, name, def)) {
+    // set val to default in source==nullptr too:
+    var = def;
     return 1;
+  }
 
   // Communicate to get guard cell data
   if(communicate) {
@@ -109,8 +130,11 @@ int Mesh::get(FieldPerp &var, const std::string &name, BoutReal def,
     bool UNUSED(communicate)) {
   TRACE("Loading FieldPerp: Mesh::get(FieldPerp, %s)", name.c_str());
 
-  if (source == nullptr or !source->get(this, var, name, def))
+  if (source == nullptr or !source->get(this, var, name, def)) {
+    // set val to default in source==nullptr too:
+    var = def;
     return 1;
+  }
 
   int yindex = var.getIndex();
   if (yindex >= 0 and yindex < var.getMesh()->LocalNy) {
@@ -128,43 +152,43 @@ int Mesh::get(FieldPerp &var, const std::string &name, BoutReal def,
  * Data get routines
  **************************************************************************/
 
-int Mesh::get(Vector2D &var, const std::string &name) {
+int Mesh::get(Vector2D &var, const std::string &name, BoutReal def) {
   TRACE("Loading 2D vector: Mesh::get(Vector2D, %s)", name.c_str());
 
   if(var.covariant) {
     output << _("\tReading covariant vector ") << name << endl;
 
-    get(var.x, name+"_x");
-    get(var.y, name+"_y");
-    get(var.z, name+"_z");
+    get(var.x, name+"_x", def);
+    get(var.y, name+"_y", def);
+    get(var.z, name+"_z", def);
 
   }else {
     output << _("\tReading contravariant vector ") << name << endl;
 
-    get(var.x, name+"x");
-    get(var.y, name+"y");
-    get(var.z, name+"z");
+    get(var.x, name+"x", def);
+    get(var.y, name+"y", def);
+    get(var.z, name+"z", def);
   }
 
   return 0;
 }
 
-int Mesh::get(Vector3D &var, const std::string &name) {
+int Mesh::get(Vector3D &var, const std::string &name, BoutReal def) {
   TRACE("Loading 3D vector: Mesh::get(Vector3D, %s)", name.c_str());
 
   if(var.covariant) {
     output << _("\tReading covariant vector ") << name << endl;
 
-    get(var.x, name+"_x");
-    get(var.y, name+"_y");
-    get(var.z, name+"_z");
+    get(var.x, name+"_x", def);
+    get(var.y, name+"_y", def);
+    get(var.z, name+"_z", def);
 
   }else {
     output << ("\tReading contravariant vector ") << name << endl;
 
-    get(var.x, name+"x");
-    get(var.y, name+"y");
-    get(var.z, name+"z");
+    get(var.x, name+"x", def);
+    get(var.y, name+"y", def);
+    get(var.z, name+"z", def);
   }
 
   return 0;

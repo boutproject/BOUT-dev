@@ -9,17 +9,14 @@
 
 /// Test fixture to make sure the global mesh is our fake one
 class MeshTest : public ::testing::Test {
-protected:
-  static void SetUpTestCase() { output_info.disable(); }
-
-  static void TearDownTestCase() { output_info.enable(); }
-
 public:
   MeshTest() : localmesh(nx, ny, nz) {}
   static const int nx = 3;
   static const int ny = 5;
   static const int nz = 7;
   FakeMesh localmesh;
+
+  WithQuietOutput quiet_warn{output_warn};
 };
 
 TEST_F(MeshTest, CreateDefaultRegions) {
@@ -155,4 +152,89 @@ TEST_F(MeshTest, Ind3DToPerp) {
       EXPECT_EQ(tmpPerp.ind, converted.ind);
     }
   }
+}
+
+TEST_F(MeshTest, GetStringNoSource) {
+  std::string string_value;
+  EXPECT_NE(localmesh.get(string_value, "no_source"), 0);
+  EXPECT_EQ(string_value, "");
+}
+
+TEST_F(MeshTest, GetStringNoSourceWithDefault) {
+  std::string string_value;
+  const std::string default_value = "some default";
+  EXPECT_NE(localmesh.get(string_value, "no_source", default_value), 0);
+  EXPECT_EQ(string_value, default_value);
+}
+
+TEST_F(MeshTest, GetIntNoSource) {
+  int int_value;
+  EXPECT_NE(localmesh.get(int_value, "no_source"), 0);
+  EXPECT_EQ(int_value, 0);
+}
+
+TEST_F(MeshTest, GetIntNoSourceWithDefault) {
+  int int_value;
+  constexpr int default_value = 42;
+  EXPECT_NE(localmesh.get(int_value, "no_source", default_value), 0);
+  EXPECT_EQ(int_value, default_value);
+}
+
+TEST_F(MeshTest, GetBoutRealNoSource) {
+  BoutReal boutreal_value;
+  EXPECT_NE(localmesh.get(boutreal_value, "no_source"), 0);
+  EXPECT_EQ(boutreal_value, 0.0);
+}
+
+TEST_F(MeshTest, GetBoutRealNoSourceWithDefault) {
+  BoutReal boutreal_value;
+  constexpr BoutReal default_value = 3.14;
+  EXPECT_NE(localmesh.get(boutreal_value, "no_source", default_value), 0);
+  EXPECT_DOUBLE_EQ(boutreal_value, default_value);
+}
+
+TEST_F(MeshTest, GetField2DNoSource) {
+  WithQuietOutput warn{output_warn};
+
+  localmesh.createDefaultRegions();
+  localmesh.setCoordinates(nullptr);
+
+  Field2D field2d_value{&localmesh};
+  EXPECT_NE(localmesh.get(field2d_value, "no_source"), 0);
+  EXPECT_TRUE(IsFieldEqual(field2d_value, 0.0));
+}
+
+TEST_F(MeshTest, GetField2DNoSourceWithDefault) {
+  WithQuietOutput warn{output_warn};
+
+  localmesh.createDefaultRegions();
+  localmesh.setCoordinates(nullptr);
+
+  Field2D field2d_value{&localmesh};
+  constexpr BoutReal default_value = 4.2;
+  EXPECT_NE(localmesh.get(field2d_value, "no_source", default_value), 0);
+  EXPECT_TRUE(IsFieldEqual(field2d_value, default_value));
+}
+
+TEST_F(MeshTest, GetField3DNoSource) {
+  WithQuietOutput warn{output_warn};
+
+  localmesh.createDefaultRegions();
+  localmesh.setCoordinates(nullptr);
+
+  Field3D field3d_value{&localmesh};
+  EXPECT_NE(localmesh.get(field3d_value, "no_source"), 0);
+  EXPECT_TRUE(IsFieldEqual(field3d_value, 0.0));
+}
+
+TEST_F(MeshTest, GetField3DNoSourceWithDefault) {
+  WithQuietOutput warn{output_warn};
+
+  localmesh.createDefaultRegions();
+  localmesh.setCoordinates(nullptr);
+
+  Field3D field3d_value{&localmesh};
+  constexpr BoutReal default_value = 4.2;
+  EXPECT_NE(localmesh.get(field3d_value, "no_source", default_value), 0);
+  EXPECT_TRUE(IsFieldEqual(field3d_value, default_value));
 }

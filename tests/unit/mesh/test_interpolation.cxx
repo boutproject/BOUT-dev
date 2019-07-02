@@ -49,7 +49,8 @@ protected:
   }
 
   static void SetUpTestCase() {
-    WithQuietOutput quiet{output_info};
+    WithQuietOutput quiet_info{output_info};
+    WithQuietOutput quiet_warn{output_warn};
     delete mesh;
     mesh = new FakeMesh(nx, ny, nz);
     mesh->StaggerGrids = true;

@@ -344,37 +344,24 @@ private:
 class FakeGridDataSource : public GridDataSource {
   bool hasVar(const std::string& UNUSED(name)) override { return false; }
 
-  bool get(Mesh* UNUSED(m), std::string& UNUSED(sval),
-           const std::string& UNUSED(name)) override {
+  bool get(Mesh*, std::string&, const std::string&, const std::string& = "") override {
     return false;
   }
-  bool get(Mesh* UNUSED(m), int& UNUSED(ival), const std::string& UNUSED(name)) override {
+  bool get(Mesh*, int&, const std::string&, int = 0) override { return false; }
+  bool get(Mesh*, BoutReal&, const std::string&, BoutReal = 0.0) override {
     return false;
   }
-  bool get(Mesh* UNUSED(m), BoutReal& UNUSED(rval),
-           const std::string& UNUSED(name)) override {
-    return false;
-  }
-  bool get(Mesh* UNUSED(m), Field2D& UNUSED(var), const std::string& UNUSED(name),
-           BoutReal UNUSED(def) = 0.0) override {
-    return false;
-  }
-  bool get(Mesh* UNUSED(m), Field3D& UNUSED(var), const std::string& UNUSED(name),
-           BoutReal UNUSED(def) = 0.0) override {
-    return false;
-  }
-  bool get(Mesh* UNUSED(m), FieldPerp& UNUSED(var), const std::string& UNUSED(name),
-           BoutReal UNUSED(def) = 0.0) override {
+  bool get(Mesh*, Field2D&, const std::string&, BoutReal = 0.0) override { return false; }
+  bool get(Mesh*, Field3D&, const std::string&, BoutReal = 0.0) override { return false; }
+  bool get(Mesh*, FieldPerp&, const std::string&, BoutReal = 0.0) override {
     return false;
   }
 
-  bool get(Mesh* UNUSED(m), std::vector<int>& UNUSED(var),
-           const std::string& UNUSED(name), int UNUSED(len), int UNUSED(offset) = 0,
-           Direction UNUSED(dir) = GridDataSource::X) override {
+  bool get(Mesh*, std::vector<int>&, const std::string&, int, int = 0,
+           Direction = GridDataSource::X) override {
     return false;
   }
-  bool get(Mesh* UNUSED(m), std::vector<BoutReal>& UNUSED(var),
-           const std::string& UNUSED(name), int UNUSED(len), int UNUSED(offset) = 0,
+  bool get(Mesh*, std::vector<BoutReal>&, const std::string&, int, int = 0,
            Direction UNUSED(dir) = GridDataSource::X) override {
     return false;
   }
@@ -393,7 +380,8 @@ class FakeGridDataSource : public GridDataSource {
 class FakeMeshFixture : public ::testing::Test {
 public:
   FakeMeshFixture() {
-    WithQuietOutput quiet{output_info};
+    WithQuietOutput quiet_info{output_info};
+    WithQuietOutput quiet_warn{output_warn};
 
     delete bout::globals::mesh;
     bout::globals::mesh = new FakeMesh(nx, ny, nz);

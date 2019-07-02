@@ -45,7 +45,8 @@ class DerivativesTest
     : public ::testing::TestWithParam<std::tuple<DIRECTION, DERIV, std::string>> {
 public:
   DerivativesTest() : input{mesh}, expected{mesh} {
-    WithQuietOutput quiet{output_info};
+    WithQuietOutput quiet_info{output_info};
+    WithQuietOutput quiet_warn{output_warn};
 
     using Index = Field3D::ind_type;
 
