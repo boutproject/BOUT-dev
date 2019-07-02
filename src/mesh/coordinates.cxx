@@ -210,17 +210,27 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   // 'interpolateAndExtrapolate' to set them. Ensures that derivatives are
   // smooth at all the boundaries.
 
-  const bool extrapolate_x = (*options)["extrapolate_x"].withDefault(not mesh->sourceHasXBoundaryGuards());
-  const bool extrapolate_y = (*options)["extrapolate_y"].withDefault(not mesh->sourceHasYBoundaryGuards());
+  bool extrapolate_x = not mesh->sourceHasXBoundaryGuards();
+  bool extrapolate_y = not mesh->sourceHasYBoundaryGuards();
+
+  // Allow extrapolation to be replaced by nearest-grid point value according to option
+  if (extrapolate_x) {
+    extrapolate_x = (*options)["extrapolate_x"].withDefault(true);
+  }
+  if (extrapolate_y) {
+    extrapolate_y = (*options)["extrapolate_y"].withDefault(true);
+  }
 
   if (extrapolate_x) {
     output_warn.write(_("WARNING: extrapolating input mesh quantities into x-boundary "
-          "cells. Set option extrapolate_x=false to disable this.\n"));
+          "cells. Set option extrapolate_x=false to use the nearest grid-cell value "
+          "instead.\n"));
   }
 
   if (extrapolate_y) {
     output_warn.write(_("WARNING: extrapolating input mesh quantities into y-boundary "
-          "cells. Set option extrapolate_y=false to disable this.\n"));
+          "cells. Set option extrapolate_y=false to use the nearest grid-cell value "
+          "instead.\n"));
   }
 
   if (mesh->get(dx, "dx")) {
