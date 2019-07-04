@@ -98,6 +98,43 @@ public:
 private:
   std::string name; // The name of the parameter to look up
 };
+
+/// Define a new context to evaluate an expression in
+/// This is essentially a dynamic scope mechanism
+class FieldContext : public FieldGenerator {
+public:
+  using variable_list = std::list<std::pair<string, FieldGeneratorPtr>>;
+
+  /// Create with a list of context variables to modify
+  /// and an expression to evaluate in that new context
+  FieldContext(variable_list variables, FieldGeneratorPtr expr)
+      : variables(std::move(variables)), expr(std::move(expr)) {}
+
+  double generate(const Context& pos) override {
+    // Create a new context
+    Context new_context{pos};
+
+    // Set values in the context by evaluating the generators
+    for (auto const& var : variables) {
+      new_context.set(var.first, var.second->generate(pos));
+    }
+
+    // Evaluate the expression in the new context
+    return expr->generate(new_context);
+  }
+  std::string str() const override {
+    auto result = std::string("[");
+    for (auto const& var : variables) {
+      result += var.first + std::string("=") + var.second->str() + std::string(",");
+    }
+    result += std::string("](") + expr->str() + std::string(")");
+    return result;
+  }
+private:
+  variable_list variables; ///< A list of context variables to modify
+  FieldGeneratorPtr expr;  ///< The expression to evaluate in the new context
+};
+
 } // namespace
 
 FieldGeneratorPtr FieldBinary::clone(const list<FieldGeneratorPtr> args) {
@@ -154,7 +191,14 @@ FieldGeneratorPtr ExpressionParser::parseString(const string& input) const {
   LexInfo lex(input, reserved_chars);
 
   // Parse
-  return parseExpression(lex);
+  auto expr = parseExpression(lex);
+
+  // Check for remaining characters
+  if (lex.curtok != 0) {
+    throw ParseException("Tokens remaining unparsed in '%s'", input.c_str());
+  }
+  
+  return expr;
 }
 
 //////////////////////////////////////////////////////////
@@ -226,6 +270,50 @@ FieldGeneratorPtr ExpressionParser::parseParenExpr(LexInfo& lex) const {
   return g;
 }
 
+// This will return a pointer to a FieldContext.
+FieldGeneratorPtr ExpressionParser::parseContextExpr(LexInfo& lex) const {
+  lex.nextToken(); // eat '['
+
+  FieldContext::variable_list variables;
+  
+  while (lex.curtok != ']') {
+    if (lex.curtok == 0) {
+      throw ParseException("Expecting ']' in context expression");
+    }
+    
+    // Definition, ident = expression
+    // First comes the identifier symbol
+    if (lex.curtok != -2) {
+      throw ParseException("Expecting an identifier in context expression, but got curtok=%d (%c)",
+                           static_cast<int>(lex.curtok), lex.curtok);
+    }
+    string symbol = lex.curident;
+    lex.nextToken();
+    
+    // Now should be '='
+    if (lex.curtok != '=') {
+      throw ParseException("Expecting '=' after '%s' in context expression, but got curtok=%d (%c)",
+                           symbol.c_str(), static_cast<int>(lex.curtok), lex.curtok);
+    }
+    lex.nextToken();
+
+    // Should be expression
+    FieldGeneratorPtr value = parseExpression(lex);
+
+    variables.push_back(std::make_pair(symbol, value));
+  }
+  lex.nextToken(); // eat ']'
+
+  // Should now be '('
+  if (lex.curtok != '(') {
+    throw ParseException("Expecting '(' after ] context expression,  but got curtok=%d (%c)",
+                         static_cast<int>(lex.curtok), lex.curtok);
+  }
+  
+  // Get the next expression to evaluate, put into FieldContext
+  return std::make_shared<FieldContext>(variables, parseExpression(lex));
+}
+  
 FieldGeneratorPtr ExpressionParser::parsePrimary(LexInfo& lex) const {
   switch (lex.curtok) {
   case -1: {         // a number
@@ -246,9 +334,13 @@ FieldGeneratorPtr ExpressionParser::parsePrimary(LexInfo& lex) const {
     // Don't eat the minus, and return an implicit zero
     return std::make_shared<FieldValue>(0.0);
   }
-  case '(':
-  case '[':
+  case '(': {
     return parseParenExpr(lex);
+  }
+  case '[': {
+    // Define a new context (scope). 
+    return parseContextExpr(lex);
+  }
   }
   throw ParseException("Unexpected token %d (%c)", static_cast<int>(lex.curtok),
                        lex.curtok);
@@ -259,7 +351,7 @@ FieldGeneratorPtr ExpressionParser::parseBinOpRHS(LexInfo& lex, int ExprPrec,
 
   while (true) {
     // Check for end of input
-    if ((lex.curtok == 0) || (lex.curtok == ')') || (lex.curtok == ','))
+    if ((lex.curtok == 0) || (lex.curtok == ')') || (lex.curtok == ',') || (lex.curtok == ']'))
       return lhs;
 
     // Next token should be a binary operator
@@ -278,7 +370,7 @@ FieldGeneratorPtr ExpressionParser::parseBinOpRHS(LexInfo& lex, int ExprPrec,
 
     FieldGeneratorPtr rhs = parsePrimary(lex);
 
-    if ((lex.curtok == 0) || (lex.curtok == ')') || (lex.curtok == ',')) {
+    if ((lex.curtok == 0) || (lex.curtok == ')') || (lex.curtok == ',') || (lex.curtok == ']')) {
       // Done
 
       list<FieldGeneratorPtr> args;

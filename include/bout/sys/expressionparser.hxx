@@ -130,7 +130,7 @@ protected:
   /// Characters which cannot be used in symbols; all other allowed
   /// In addition, whitespace cannot be used
   /// Adding a binary operator adds its symbol to this string
-  std::string reserved_chars = "+-*/^[](){},";
+  std::string reserved_chars = "+-*/^[](){},=";
 
 private:
   std::map<std::string, FieldGeneratorPtr> gen; ///< Generators, addressed by name
@@ -154,11 +154,19 @@ private:
   FieldGeneratorPtr parseIdentifierExpr(LexInfo& lex) const;
   FieldGeneratorPtr parseParenExpr(LexInfo& lex) const;
 
+  /// Context definition
+  ///
+  /// Returns a pointer to a FieldContext object.
+  ///
+  /// Matches
+  /// [ symbol = expression , symbol = expression ... ] ( expression )
+  FieldGeneratorPtr parseContextExpr(LexInfo& lex) const;
+  
   /// Parse a primary expression, one of:
   ///   - number
   ///   - identifier
-  ///   - ( ... )
-  ///   - [ ... ]
+  ///   - ( ... )    parenexpr
+  ///   - [ ... ]()  context
   ///   - a unary '-', which is converted to '0 -'
   ///   A ParseException is thrown if none of these is found
   FieldGeneratorPtr parsePrimary(LexInfo& lex) const;
