@@ -766,3 +766,10 @@ TEST_F(FieldFactoryTest, TanhhatArgs) {
   EXPECT_THROW(factory.parse("tanhhat()"), ParseException);
   EXPECT_THROW(factory.parse("tanhhat(x, x, x, x, x)"), ParseException);
 }
+
+TEST_F(FieldFactoryTest, Where) {
+  auto fieldgen = factory.parse("where({val}, 3, 5)");
+
+  EXPECT_DOUBLE_EQ(fieldgen->generate(Context().set("val", 1.0)), 3);
+  EXPECT_DOUBLE_EQ(fieldgen->generate(Context().set("val", -1.0)), 5);
+}

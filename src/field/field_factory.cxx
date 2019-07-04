@@ -101,6 +101,9 @@ FieldFactory::FieldFactory(Mesh* localmesh, Options* opt)
   // TanhHat function
   addGenerator("tanhhat",
                std::make_shared<FieldTanhHat>(nullptr, nullptr, nullptr, nullptr));
+
+  // Where switch function
+  addGenerator("where", std::make_shared<FieldWhere>(nullptr, nullptr, nullptr));
 }
 
 Field2D FieldFactory::create2D(const std::string& value, const Options* opt,
