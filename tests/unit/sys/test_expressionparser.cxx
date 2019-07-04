@@ -604,6 +604,11 @@ TEST_F(ExpressionParserTest, ContextValueExpr) {
   EXPECT_DOUBLE_EQ(fieldgen->generate({}), 42);
 }
 
+TEST_F(ExpressionParserTest, ContextValueExprTwoArgs) {
+  auto fieldgen = parser.parseString("[val = 21, val2 = 13]({val} + {val2})");
+  EXPECT_DOUBLE_EQ(fieldgen->generate({}), 34);
+}
+
 class GeneratorCloneCopy : public FieldGenerator {
 public:
   GeneratorCloneCopy(FieldGeneratorPtr expr) : expr(expr) {}
@@ -624,3 +629,4 @@ TEST_F(ExpressionParserTest, ContextFunction) {
   auto fieldgen = parser.parseString("[x=3](func)");
   EXPECT_DOUBLE_EQ(fieldgen->generate({}), 6);
 }
+

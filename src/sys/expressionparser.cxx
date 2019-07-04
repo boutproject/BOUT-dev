@@ -301,6 +301,10 @@ FieldGeneratorPtr ExpressionParser::parseContextExpr(LexInfo& lex) const {
     FieldGeneratorPtr value = parseExpression(lex);
 
     variables.push_back(std::make_pair(symbol, value));
+
+    if (lex.curtok == ',') {
+      lex.nextToken(); // Skip comma
+    }
   }
   lex.nextToken(); // eat ']'
 

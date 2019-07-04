@@ -19,6 +19,7 @@ extern Mesh* mesh;
 
 // The unit tests use the global mesh
 using namespace bout::globals;
+using bout::generator::Context;
 
 // Reuse the "standard" fixture for FakeMesh
 template <typename T>

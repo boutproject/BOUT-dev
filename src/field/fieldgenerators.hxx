@@ -291,7 +291,7 @@ public:
 
     return std::make_shared<FieldWhere>(first, second, third);
   }
-  double generate(const Context& pos) override {
+  double generate(const bout::generator::Context& pos) override {
     if (test->generate(pos) > 0.0) {
       return gt0->generate(pos);
     }
