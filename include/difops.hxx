@@ -72,9 +72,9 @@ DEPRECATED(const Field3D Grad_par(const Field3D& var, const std::string& method,
 inline const DEPRECATED(Field3D Grad_par(const Field3D& var, CELL_LOC outloc,
                                          DIFF_METHOD method)) {
   return Grad_par(var, outloc, toString(method));
-}
-DEPRECATED(inline const DEPRECATED(
-    Field3D Grad_par(const Field3D& var, DIFF_METHOD method, CELL_LOC outloc))) {
+};
+DEPRECATED(inline const
+    Field3D Grad_par(const Field3D& var, DIFF_METHOD method, CELL_LOC outloc)) {
   return Grad_par(var, outloc, toString(method));
 }
 
