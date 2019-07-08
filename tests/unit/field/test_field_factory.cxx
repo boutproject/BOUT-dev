@@ -774,3 +774,22 @@ TEST_F(FieldFactoryTest, Where) {
   EXPECT_DOUBLE_EQ(fieldgen->generate(Context().set("val", 1.0)), 3);
   EXPECT_DOUBLE_EQ(fieldgen->generate(Context().set("val", -1.0)), 5);
 }
+
+TEST_F(FieldFactoryTest, Recursion) {
+  // Need to enable recursion
+  Options opt;
+  opt["input"]["max_recursion_depth"] = 4; // Should be sufficient for n=6
+
+  // Create a factory with a max_recursion_depth != 0
+  FieldFactory factory_rec(nullptr, &opt);
+  
+  // Fibonacci sequence: 1 1 2 3 5 8
+  opt["fib"] = "where({n} - 2.5, [n={n}-1](fib) + [n={n}-2](fib), 1)";
+  
+  auto gen = factory_rec.parse("fib", &opt);
+  EXPECT_DOUBLE_EQ(gen->generate(Context().set("n", 3)), 2);
+  EXPECT_DOUBLE_EQ(gen->generate(Context().set("n", 4)), 3);
+  EXPECT_DOUBLE_EQ(gen->generate(Context().set("n", 5)), 5);
+  EXPECT_DOUBLE_EQ(gen->generate(Context().set("n", 6)), 8);
+  EXPECT_THROW(gen->generate(Context().set("n", 7)), BoutException); // Max recursion exceeded
+}

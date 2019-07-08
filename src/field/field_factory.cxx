@@ -45,6 +45,39 @@ FieldGeneratorPtr generator(BoutReal* ptr) {
   return std::make_shared<FieldValuePtr>(ptr);
 }
 
+namespace {
+  /// Provides a placeholder whose target can be changed after creation.
+  /// This enables recursive FieldGenerator expressions to be generated
+  class FieldIndirect : public FieldGenerator {
+  public:
+    /// depth_limit sets the maximum iteration depth. Set to < 0 for no limit
+    FieldIndirect(std::string name, int depth_limit = 0) : name(name), depth_limit(depth_limit) {}
+
+    /// Set the target, to be called when generator is called
+    void setTarget(FieldGeneratorPtr fieldgen) { target = fieldgen; }
+    
+    double generate(const Context& ctx) override {
+      if (depth_counter == depth_limit) {
+        throw BoutException("Calling %s to recursion depth %d exceeds maximum %d\n",
+                            name.c_str(), depth_counter, depth_limit);
+      }
+      ++depth_counter;
+      BoutReal result = target->generate(ctx);
+      --depth_counter;
+      return result;
+    }
+
+    /// Note: returns the name rather than target->str, to avoid infinite recursion
+    std::string str() const override { return name; }
+  private:
+    std::string name;  ///< Name of the expression being pointed to
+    int depth_counter {0}; ///< Counts the iteration depth, to provide a maximum number of iterations
+    int depth_limit{0};  ///< Maximum call depth. If 0 then no recursion allowed (generate fails first time).
+    
+    FieldGeneratorPtr target;
+  };
+}
+
 //////////////////////////////////////////////////////////
 // FieldFactory public functions
 
@@ -58,6 +91,11 @@ FieldFactory::FieldFactory(Mesh* localmesh, Options* opt)
   Options& nonconst_options{opt == nullptr ? Options::root() : *opt};
   transform_from_field_aligned
     = nonconst_options["input"]["transform_from_field_aligned"].withDefault(true);
+
+  max_recursion_depth = nonconst_options["input"]["max_recursion_depth"]
+                            .doc("Maximum recursion depth allowed in expressions. 0 = no "
+                                 "recursion; -1 = unlimited")
+                            .withDefault(0);
 
   // Useful values
   addGenerator("pi", std::make_shared<FieldValue>(PI));
@@ -310,6 +348,23 @@ FieldGeneratorPtr FieldFactory::resolve(std::string& name) const {
     std::string value;
     const Options* section = findOption(options, name, value);
 
+    if (max_recursion_depth != 0) {
+      // Recursion allowed. If < 0 then no limit, if > 0 then recursion limited
+      
+      // Create an object which can be used in FieldGenerator trees.
+      // The target does not yet exist, but will be set after parsing is complete
+      auto indirection = std::make_shared<FieldIndirect>(name, max_recursion_depth);
+      
+      cache[key] = indirection;
+      FieldGeneratorPtr g = parse(value, section);
+      indirection->setTarget(g); // set so that calls to self will point to the right place
+      cache[key] = g;
+      return g;
+    }
+    // Recursion not allowed. Keep track of keys being resolved
+    // This is done so that an error can be printed at parse time rather
+    // than run time (generate call).
+    
     lookup.push_back(key);
 
     FieldGeneratorPtr g = parse(value, section);
