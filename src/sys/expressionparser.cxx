@@ -391,7 +391,9 @@ FieldGeneratorPtr ExpressionParser::parseContextExpr(LexInfo& lex) const {
   }
   
   // Get the next expression to evaluate, put into FieldContext
-  return std::make_shared<FieldContext>(variables, parseExpression(lex));
+  // Note: Ensure that only the first expression in parentheses is parsed
+  //       by calling parseParenExpr rather than parseExpression
+  return std::make_shared<FieldContext>(variables, parseParenExpr(lex));
 }
   
 FieldGeneratorPtr ExpressionParser::parsePrimary(LexInfo& lex) const {

@@ -630,6 +630,16 @@ TEST_F(ExpressionParserTest, ContextFunction) {
   EXPECT_DOUBLE_EQ(fieldgen->generate({}), 6);
 }
 
+TEST_F(ExpressionParserTest, ContextLocal) {
+  auto gen = parser.parseString("[x={x}-1]({x}) + {x}");
+  EXPECT_DOUBLE_EQ(gen->generate(Context().set("x", 5)), 9); // 4 + 5
+}
+
+TEST_F(ExpressionParserTest, ContextTwice) {
+  auto gen = parser.parseString("[x={x}-1]({x}) + [x={x}-2]({x})");
+  EXPECT_DOUBLE_EQ(gen->generate(Context().set("x", 5)), 7); // 4 + 3
+}
+
 TEST_F(ExpressionParserTest, SumNothing) {
   auto fieldgen = parser.parseString("sum(i, 0, 42)");
   EXPECT_DOUBLE_EQ(fieldgen->generate({}), 0.0);
