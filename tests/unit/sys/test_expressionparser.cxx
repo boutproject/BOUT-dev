@@ -630,3 +630,22 @@ TEST_F(ExpressionParserTest, ContextFunction) {
   EXPECT_DOUBLE_EQ(fieldgen->generate({}), 6);
 }
 
+TEST_F(ExpressionParserTest, SumNothing) {
+  auto fieldgen = parser.parseString("sum(i, 0, 42)");
+  EXPECT_DOUBLE_EQ(fieldgen->generate({}), 0.0);
+}
+
+TEST_F(ExpressionParserTest, SumOne) {
+  auto fieldgen = parser.parseString("sum(i, 1, 42)");
+  EXPECT_DOUBLE_EQ(fieldgen->generate({}), 42);
+}
+
+TEST_F(ExpressionParserTest, SumExpr) {
+  auto fieldgen = parser.parseString("sum(i, 2 + 1, {i}^2)"); // => 0^2 + 1^2 + 2^2
+  EXPECT_DOUBLE_EQ(fieldgen->generate({}), 5);
+}
+
+TEST_F(ExpressionParserTest, SumNestedScope) {
+  auto fieldgen = parser.parseString("sum(i, 3, sum(i, 2*{i}, {i}+1))"); // => (0) + (1 + 2) + (1 + 2 + 3 + 4) = 13
+  EXPECT_DOUBLE_EQ(fieldgen->generate({}), 13);
+}

@@ -135,6 +135,47 @@ private:
   FieldGeneratorPtr expr;  ///< The expression to evaluate in the new context
 };
 
+  /// Sum expressions in a loop, given symbol, count and expression
+  class FieldSum : public FieldGenerator {
+  public:
+    /// Loop a symbol counter SYM from 0 to count-1
+    /// The count is calculated by evaluating COUNTEXPR, which must be a non-negative integer
+    /// Each iteration the expression EXPR is evaluated and the results summed.
+    FieldSum(const std::string& sym, FieldGeneratorPtr countexpr, FieldGeneratorPtr expr)
+        : sym(sym), countexpr(countexpr), expr(expr) {}
+
+    double generate(const Context& ctx) override {
+      // Get the count by evaluating the count expression
+      BoutReal countval = countexpr->generate(ctx);
+      int count = ROUND(countval);
+      
+      // Check that the count is a non-negaitve integer
+      if (fabs(countval - static_cast<BoutReal>(count)) > 1e-4) {
+        throw BoutException("Count %e is not an integer in sum expression", countval);
+      }
+      if (count < 0) {
+        throw BoutException("Negative count %d in sum expression", count);
+      }
+
+      BoutReal result {0.0};
+      Context new_context{ctx}; // Make a copy, so the counter value can be set
+      for (int i = 0; i < count; i++) {
+        // Evaluate the expression, setting the given symbol to the loop counter
+        new_context.set(sym, i);
+        result += expr->generate(new_context);
+      }
+      return result;
+    }
+    
+    std::string str() const override {
+      return std::string("sum(") + sym + std::string(",") + countexpr->str()
+             + std::string(",") + expr->str() + std::string(")");
+    }
+  private:
+    std::string sym;
+    FieldGeneratorPtr countexpr, expr;
+  };
+  
 } // namespace
 
 FieldGeneratorPtr FieldBinary::clone(const list<FieldGeneratorPtr> args) {
@@ -208,6 +249,41 @@ FieldGeneratorPtr ExpressionParser::parseIdentifierExpr(LexInfo& lex) const {
   string name = lowercase(lex.curident);
   lex.nextToken();
 
+  // sum(symbol, count, expr)
+  // e.g. sum(i, 10, {i}^2) -> 0 + 1^2 + 2^2 + 3^2 + ... + 9^2 
+  if (name == "sum") {
+    if (lex.curtok != '(') {
+      throw ParseException("Expecting ')' after 'sum' in 'sum(symbol, count, expr)'");
+    }
+    lex.nextToken();
+    
+    if ((lex.curtok != -2) && (lex.curtok != -3)) {
+      throw ParseException("Expecting symbol in 'sum(symbol, count, expr)'");
+    }
+    string sym = lex.curident;
+    lex.nextToken();
+
+    if (lex.curtok != ',') {
+      throw ParseException("Expecting , after symbol %s in 'sum(symbol, count, expr)'", sym.c_str());
+    }
+    lex.nextToken();
+    
+    auto countexpr = parseExpression(lex);
+
+    if (lex.curtok != ',') {
+      throw ParseException("Expecting , after count expression in 'sum(symbol, count, expr)'");
+    }
+    lex.nextToken();
+    
+    auto expr = parseExpression(lex);
+
+    if (lex.curtok != ')') {
+      throw ParseException("Expecting ) after expr in 'sum(symbol, count, expr)'");
+    }
+    lex.nextToken();
+    return std::make_shared<FieldSum>(sym, countexpr, expr);
+  }
+  
   if (lex.curtok == '(') {
     // Argument list. Find if a generator or function
 
