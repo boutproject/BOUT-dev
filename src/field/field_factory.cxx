@@ -92,10 +92,12 @@ FieldFactory::FieldFactory(Mesh* localmesh, Options* opt)
   transform_from_field_aligned
     = nonconst_options["input"]["transform_from_field_aligned"].withDefault(true);
 
-  max_recursion_depth = nonconst_options["input"]["max_recursion_depth"]
-                            .doc("Maximum recursion depth allowed in expressions. 0 = no "
-                                 "recursion; -1 = unlimited")
-                            .withDefault(0);
+  // Convert using stoi rather than Options, or a FieldFactory is used to parse
+  // the string, leading to infinite loop.
+  max_recursion_depth = std::stoi(nonconst_options["input"]["max_recursion_depth"]
+                                  .doc("Maximum recursion depth allowed in expressions. 0 = no "
+                                       "recursion; -1 = unlimited")
+                                  .withDefault<std::string>("0"));
 
   // Useful values
   addGenerator("pi", std::make_shared<FieldValue>(PI));
