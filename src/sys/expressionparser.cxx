@@ -103,7 +103,7 @@ private:
 /// This is essentially a dynamic scope mechanism
 class FieldContext : public FieldGenerator {
 public:
-  using variable_list = std::list<std::pair<string, FieldGeneratorPtr>>;
+  using variable_list = std::vector<std::pair<string, FieldGeneratorPtr>>;
 
   /// Create with a list of context variables to modify
   /// and an expression to evaluate in that new context
