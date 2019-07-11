@@ -76,7 +76,7 @@ public:
   /// them or an infinite recursion results.  This is for backward
   /// compatibility for users and implementors.  In a future version
   /// this function will be made pure virtual.
-  virtual double generate(const bout::generator::Context& pos);
+  virtual double generate(const bout::generator::Context& ctx);
 
   /// Create a string representation of the generator, for debugging output
   virtual std::string str() const { return std::string("?"); }
@@ -127,8 +127,8 @@ protected:
   /// Parses a given string into a tree of FieldGenerator objects
   FieldGeneratorPtr parseString(const std::string& input) const;
 
-  /// Characters which cannot be used in symbols; all other allowed
-  /// In addition, whitespace cannot be used
+  /// Characters which cannot be used in symbols without escaping;
+  /// all other allowed. In addition, whitespace cannot be used.
   /// Adding a binary operator adds its symbol to this string
   std::string reserved_chars = "+-*/^[](){},=";
 
