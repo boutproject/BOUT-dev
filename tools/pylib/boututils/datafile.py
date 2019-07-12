@@ -478,6 +478,7 @@ class DataFile_netCDF(DataFile):
             ('x', 'y', 'z'): "Field3D",
             ('x', 'y'): "Field2D",
             ('x', 'z'): "FieldPerp",
+            ('x'): "ArrayX",
             (): "scalar",
         }
 
@@ -492,6 +493,7 @@ class DataFile_netCDF(DataFile):
             "Field3D": ('x', 'y', 'z'),
             "Field2D": ('x', 'y'),
             "FieldPerp": ('x', 'z'),
+            "ArrayX": ('x'),
             "scalar": (),
         }
 
@@ -786,6 +788,7 @@ class DataFile_HDF5(DataFile):
             "Field3D": ('x', 'y', 'z'),
             "FieldPerp": ('x', 'z'),
             "Field2D": ('x', 'y'),
+            "ArrayX": ('x'),
             "scalar": (),
         }
         try:
