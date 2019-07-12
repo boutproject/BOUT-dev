@@ -539,9 +539,9 @@ class DataFile_netCDF(DataFile):
             # Not found, so add.
 
             # Get dimensions
-            if t == 'BoutArray':
-                defdims = _bout_dimensions_from_type(data.attributes['bout_type'])
-            else:
+            try:
+                defdims = self._bout_dimensions_from_type(data.attributes['bout_type'])
+            except AttributeError:
                 defdims_list = [(),
                                 ('t',),
                                 ('x', 'y'),
