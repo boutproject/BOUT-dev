@@ -188,8 +188,11 @@ const Field3D ShiftedMetric::shiftZ(const Field3D& f, const Tensor<dcomplex>& ph
   ASSERT1(f.getMesh() == &mesh);
   ASSERT1(f.getLocation() == location);
 
-  if (mesh.LocalNz == 1)
-    return f; // Shifting makes no difference
+  if (mesh.LocalNz == 1) {
+    // Shifting does not change the array values
+    Field3D result = copy(f).setDirectionY(y_direction_out);
+    return result;
+  }
 
   Field3D result{emptyFrom(f).setDirectionY(y_direction_out)};
 
@@ -206,8 +209,11 @@ const FieldPerp ShiftedMetric::shiftZ(const FieldPerp& f, const Tensor<dcomplex>
   ASSERT1(f.getMesh() == &mesh);
   ASSERT1(f.getLocation() == location);
 
-  if (mesh.LocalNz == 1)
-    return f; // Shifting makes no difference
+  if (mesh.LocalNz == 1) {
+    // Shifting does not change the array values
+    FieldPerp result = copy(f).setDirectionY(y_direction_out);
+    return result;
+  }
 
   FieldPerp result{emptyFrom(f).setDirectionY(y_direction_out)};
 
