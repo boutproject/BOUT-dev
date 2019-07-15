@@ -475,9 +475,11 @@ class Mesh {
   
   /// Returns the global X index given a local index
   /// If the local index includes the boundary cells, then so does the global.
+  [[gnu::deprecated("Use getGlobalXIndex instead")]]
   virtual int XGLOBAL(int xloc) const = 0;
   /// Returns the global Y index given a local index
   /// The local index must include the boundary, the global index does not.
+  [[gnu::deprecated("Use getGlobalYIndex instead")]]
   virtual int YGLOBAL(int yloc) const = 0;
 
   /// Returns the local X index given a global index
@@ -486,6 +488,18 @@ class Mesh {
   /// Returns the local Y index given a global index
   /// If the global index includes the boundary cells, then so does the local.
   virtual int YLOCAL(int yglo) const = 0;
+
+  /// Returns a global X index given a local index.
+  /// Global index includes boundary cells, local index includes boundary or guard cells.
+  virtual int getGlobalXIndex(int xlocal) const = 0;
+
+  /// Returns a global Y index given a local index.
+  /// Global index includes boundary cells, local index includes boundary or guard cells.
+  virtual int getGlobalYIndex(int ylocal) const = 0;
+
+  /// Returns a global Z index given a local index.
+  /// Global index includes boundary cells, local index includes boundary or guard cells.
+  virtual int getGlobalZIndex(int zlocal) const = 0;
 
   /// Size of the mesh on this processor including guard/boundary cells
   int LocalNx, LocalNy, LocalNz;

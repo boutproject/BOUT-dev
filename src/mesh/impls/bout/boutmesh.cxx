@@ -1500,6 +1500,10 @@ int BoutMesh::XGLOBAL(BoutReal xloc, BoutReal &xglo) const {
   return static_cast<int>(xglo);
 }
 
+/// Returns a global X index given a local index.
+/// Global index includes boundary cells, local index includes boundary or guard cells.
+int BoutMesh::getGlobalXIndex(int xlocal) const { return xlocal + PE_XIND * MXSUB; }
+
 /// Returns a local X index given a global index
 int BoutMesh::XLOCAL(int xglo) const { return xglo - PE_XIND * MXSUB; }
 
@@ -1512,6 +1516,17 @@ int BoutMesh::YGLOBAL(BoutReal yloc, BoutReal &yglo) const {
   return static_cast<int>(yglo);
 }
 
+/// Returns a global Y index given a local index.
+/// Global index includes boundary cells, local index includes boundary or guard cells.
+int BoutMesh::getGlobalYIndex(int ylocal) const {
+  int yglobal =  ylocal + PE_YIND * MYSUB;
+  if (jyseps1_2 > jyseps2_1 and PE_YIND*MYSUB + 2*MYG + 1 > ny_inner) {
+    // Double null, and we are past the upper target
+    yglobal += 2*MYG;
+  }
+  return yglobal;
+}
+
 /// Global Y index given local index and processor
 int BoutMesh::YGLOBAL(int yloc, int yproc) const { return yloc + yproc * MYSUB - MYG; }
 
@@ -1519,6 +1534,10 @@ int BoutMesh::YGLOBAL(int yloc, int yproc) const { return yloc + yproc * MYSUB -
 int BoutMesh::YLOCAL(int yglo) const { return yglo - PE_YIND * MYSUB + MYG; }
 
 int BoutMesh::YLOCAL(int yglo, int yproc) const { return yglo - yproc * MYSUB + MYG; }
+
+/// Returns a global Z index given a local index.
+/// Global index includes boundary cells, local index includes boundary or guard cells.
+int BoutMesh::getGlobalZIndex(int zlocal) const { return zlocal; }
 
 /// Return the Y processor number given a global Y index
 int BoutMesh::YPROC(int yind) {

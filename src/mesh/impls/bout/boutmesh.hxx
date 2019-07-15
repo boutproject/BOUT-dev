@@ -180,6 +180,10 @@ class BoutMesh : public Mesh {
   int XGLOBAL(BoutReal xloc, BoutReal& xglo) const;
   int YGLOBAL(BoutReal yloc, BoutReal& yglo) const;
 
+  int getGlobalXIndex(int xlocal) const override;
+  int getGlobalYIndex(int ylocal) const override;
+  int getGlobalZIndex(int zlocal) const override;
+
   int XLOCAL(int xglo) const override;
   int YLOCAL(int yglo) const override;
 
