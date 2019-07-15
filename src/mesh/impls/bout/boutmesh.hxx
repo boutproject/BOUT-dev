@@ -177,8 +177,6 @@ class BoutMesh : public Mesh {
 
   int XGLOBAL(int xloc) const override;
   int YGLOBAL(int yloc) const override;
-  int XGLOBAL(BoutReal xloc, BoutReal& xglo) const;
-  int YGLOBAL(BoutReal yloc, BoutReal& yglo) const;
 
   int getGlobalXIndex(int xlocal) const override;
   int getGlobalYIndex(int ylocal) const override;
@@ -203,6 +201,10 @@ private:
   int NZPE;
 
   int MYPE_IN_CORE; // 1 if processor in core
+
+  int getGlobalYIndexNoBoundaries(int ylocal) const;
+  int XGLOBAL(BoutReal xloc, BoutReal& xglo) const;
+  int YGLOBAL(BoutReal yloc, BoutReal& yglo) const;
 
   // Topology
   int ixseps1, ixseps2, jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2;

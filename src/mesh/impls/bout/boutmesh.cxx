@@ -469,7 +469,7 @@ int BoutMesh::load() {
 
   ShiftAngle.resize(LocalNx);
 
-  if (!source->get(this, ShiftAngle, "ShiftAngle", LocalNx, XGLOBAL(0))) {
+  if (!source->get(this, ShiftAngle, "ShiftAngle", LocalNx, getGlobalXIndex(0))) {
     ShiftAngle.clear();
   }
 
@@ -812,7 +812,7 @@ int BoutMesh::load() {
     if (PE_XIND == 0) {
       // Inner either core or PF
 
-      int yg = YGLOBAL(MYG); // Get a global index in this processor
+      int yg = getGlobalYIndexNoBoundaries(MYG); // Get a global index in this processor
 
       if (((yg > jyseps1_1) && (yg <= jyseps2_1)) ||
           ((yg > jyseps1_2) && (yg <= jyseps2_2))) {
@@ -1299,7 +1299,7 @@ bool BoutMesh::firstY() const { return PE_YIND == 0; }
 bool BoutMesh::lastY() const { return PE_YIND == NYPE - 1; }
 
 bool BoutMesh::firstY(int xpos) const {
-  int xglobal = XGLOBAL(xpos);
+  int xglobal = getGlobalXIndex(xpos);
   int rank;
 
   if (xglobal < ixseps_inner) {
@@ -1313,7 +1313,7 @@ bool BoutMesh::firstY(int xpos) const {
 }
 
 bool BoutMesh::lastY(int xpos) const {
-  int xglobal = XGLOBAL(xpos);
+  int xglobal = getGlobalXIndex(xpos);
   int rank;
   int size;
 
@@ -1525,6 +1525,12 @@ int BoutMesh::getGlobalYIndex(int ylocal) const {
     yglobal += 2*MYG;
   }
   return yglobal;
+}
+
+/// Private method that keeps the behaviour of the old YGLOBAL method, excluding all
+/// boundary cells, for use inside BoutMesh.
+int BoutMesh::getGlobalYIndexNoBoundaries(int ylocal) const {
+  return ylocal + PE_YIND * MYSUB - MYG;
 }
 
 /// Global Y index given local index and processor
@@ -2044,12 +2050,12 @@ int BoutMesh::unpack_data(const std::vector<FieldData *> &var_list, int xge, int
  ****************************************************************/
 
 bool BoutMesh::periodicY(int jx) const {
-  return (XGLOBAL(jx) < ixseps_inner) && MYPE_IN_CORE;
+  return (getGlobalXIndex(jx) < ixseps_inner) && MYPE_IN_CORE;
 }
 
 bool BoutMesh::periodicY(int jx, BoutReal &ts) const {
   ts = 0.;
-  if ((XGLOBAL(jx) < ixseps_inner) && MYPE_IN_CORE) {
+  if ((getGlobalXIndex(jx) < ixseps_inner) && MYPE_IN_CORE) {
     if (TwistShift)
       ts = ShiftAngle[jx];
     return true;
@@ -2087,8 +2093,8 @@ std::pair<bool, BoutReal> BoutMesh::hasBranchCutUpper(int jx) const {
 }
 
 int BoutMesh::ySize(int xpos) const {
-  int xglobal = XGLOBAL(xpos);
-  int yglobal = YGLOBAL(MYG);
+  int xglobal = getGlobalXIndex(xpos);
+  int yglobal = getGlobalYIndexNoBoundaries(MYG);
 
   if ((xglobal < ixseps_lower) && ((yglobal <= jyseps1_1) || (yglobal > jyseps2_2))) {
     // Lower PF region
@@ -2126,7 +2132,7 @@ int BoutMesh::ySize(int xpos) const {
 }
 
 MPI_Comm BoutMesh::getYcomm(int xpos) const {
-  int xglobal = XGLOBAL(xpos);
+  int xglobal = getGlobalXIndex(xpos);
 
   if (xglobal < ixseps_inner) {
     return comm_inner;
@@ -2507,9 +2513,9 @@ const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {
 BoutReal BoutMesh::GlobalX(int jx) const {
   if (symmetricGlobalX) {
     // With this definition the boundary sits dx/2 away form the first/last inner points
-    return (0.5 + XGLOBAL(jx) - (nx - MX) * 0.5) / static_cast<BoutReal>(MX);
+    return (0.5 + getGlobalXIndex(jx) - (nx - MX) * 0.5) / static_cast<BoutReal>(MX);
   }
-  return static_cast<BoutReal>(XGLOBAL(jx)) / static_cast<BoutReal>(MX);
+  return static_cast<BoutReal>(getGlobalXIndex(jx)) / static_cast<BoutReal>(MX);
 }
 
 BoutReal BoutMesh::GlobalX(BoutReal jx) const {
@@ -2527,7 +2533,7 @@ BoutReal BoutMesh::GlobalX(BoutReal jx) const {
 
 BoutReal BoutMesh::GlobalY(int jy) const {
   if (symmetricGlobalY) {
-    BoutReal yi = YGLOBAL(jy);
+    BoutReal yi = getGlobalYIndexNoBoundaries(jy);
     int nycore = (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2);
 
     if (yi < ny_inner) {
@@ -2539,7 +2545,7 @@ BoutReal BoutMesh::GlobalY(int jy) const {
     return yi / nycore;
   }
 
-  int ly = YGLOBAL(jy); // global poloidal index across subdomains
+  int ly = getGlobalYIndexNoBoundaries(jy); // global poloidal index across subdomains
   int nycore = (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2);
 
   if (MYPE_IN_CORE) {
