@@ -45,6 +45,8 @@ LaplaceParallelTri::LaplaceParallelTri(Options *opt, CELL_LOC loc, Mesh *mesh_in
   C.setLocation(location);
   D.setLocation(location);
 
+  OPTION(opt, rtol, 1.e-7);
+  OPTION(opt, atol, 1.e-20);
   OPTION(opt, maxits, 100);
 }
 
@@ -115,6 +117,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   auto bk1d = Array<dcomplex>(ncx);
   auto xk = Matrix<dcomplex>(ncx, ncz / 2 + 1);
   auto xk1d = Array<dcomplex>(ncx);
+  auto xk1dlast = Array<dcomplex>(ncx);
+  auto error = Array<dcomplex>(ncx);
+  BoutReal error_rel = 1e20, error_abs=1e20, last_error=error_abs;
 
   // Initialise xk to 0 as we only visit 0<= kz <= maxmode in solve
   for (int ix = 0; ix < ncx; ix++) {
@@ -167,8 +172,11 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
     for (int ix = 0; ix < ncx; ix++) {
       // Get bk of the current fourier mode
       bk1d[ix] = bk(ix, kz);
-      xk1d[ix] = 0.0;
+      xk1d[ix] = 0.2;
+      xk1dlast[ix] = -0.2;
     }
+
+    int count = 0;
 
     /* Set the matrix A used in the inversion of Ax=b
      * by calling tridagCoef and setting the BC
@@ -195,12 +203,11 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
     if (!localmesh->periodicX) {
 
       // Call tridiagonal solver
-      for(int it = 0; it < maxits; it++){ 
-
+      //for(int it = 0; it < maxits; it++){ 
+      BoutReal error_last = 1e20;
+      while(true){ 
 	// Patch up internal boundaries
-	//if(not localmesh->lastX() and not localmesh->firstY() and not localmesh->lastY() ) { 
 	if(not localmesh->lastX()) { 
-          //std::cout<<"in loop, proc "<< BoutComm::rank() <<endl;
 	  for(int ix = localmesh->xend+1; ix<localmesh->LocalNx ; ix++) {
 	    avec[ix] = 0;
 	    bvec[ix] = 1;
@@ -208,7 +215,6 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	    bk1d[ix] = xk1d[ix];
 	  }
 	} 
-        std::cout<<"beforeloop2, proc "<< BoutComm::rank() << endl;
 	if(not localmesh->firstX()) { 
 	  for(int ix = 0; ix<localmesh->xstart ; ix++) {
 	    avec[ix] = 0;
@@ -224,36 +230,111 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 ///	  }
 ///	}
 //
-        std::cout<<"beforetridag, proc "<< BoutComm::rank() << endl;
+        //std::cout<<"beforetridag, proc "<< BoutComm::rank() << endl;
+	//if( BoutComm::rank() == 0 ) {
+        //  std::cout<<"proc "<< BoutComm::rank() << " cn " << cvec[localmesh->xend] << endl;
+	//}
 
         tridag(std::begin(avec), std::begin(bvec), std::begin(cvec), std::begin(bk1d),
              std::begin(xk1d), ncx);
 
+///        if( BoutComm::rank() == 1 ){
+///          for (int ix = 0; ix < ncx; ix++) {
+///	    std::cout << jy << " " << kz << " " << count << " " << ix << " " << xk1d[ix].real() << " " << xk1d[ix].imag()  << endl;
+///      	  }
+///	}
+
         //std::cout<<"aftertridag, proc "<< BoutComm::rank() << endl;
+///	if ( BoutComm::rank() == 0 and count == 0 ){
+///	  for (int ix = 0; ix < ncx; ix++) {
+///	    xk1d[ix] = 0.0;
+///	  }
+///	}
 
         for (int ix = 0; ix < ncx; ix++) {
-///	  if( BoutComm::rank() == 1 ){
-///	    std::cout << it << " " << kz << " " << ix << " " << xk1d[ix].real() << " " << xk1d[ix].imag()  << endl;
+///	  if( BoutComm::rank() == 0 ){
+///	    std::cout << "rank 0 sending " << count << " " << kz << " " << ix << " " << xk1d[ix].real() << " " << xk1d[ix].imag()  << endl;
 ///	  }
 	  tmpreal(ix,kz) = xk1d[ix].real();
 	  tmpimag(ix,kz) = xk1d[ix].imag();
 	}
+
 	localmesh->communicate(tmpreal);
 	localmesh->communicate(tmpimag);
-	if( BoutComm::rank() == 0 && kz == 0 ){
-	  std::cout << "xk1d for kz " << kz << " it " << it << endl;
-	}
-        for (int ix = 0; ix < ncx; ix++) {
-	  xk1d[ix] = dcomplex(tmpreal(ix,kz), tmpimag(ix,kz));
-	  if( BoutComm::rank() == 0 && kz == 0 ){
-	    std::cout << ix << " " << xk1d[ix] << endl;
+
+///        for (int ix = 0; ix < ncx; ix++) {
+///	  if( BoutComm::rank() == 1 ){
+///	    std::cout << "rank 1 has " << count << " " << kz << " " << ix << " " << xk1d[ix].real() << " " << xk1d[ix].imag()  << endl;
+///	  }
+///	}
+
+	if(not localmesh->firstX()) { 
+	  for(int ix = 0; ix<localmesh->xstart ; ix++) {
+	    xk1d[ix] = dcomplex(tmpreal(ix,kz), tmpimag(ix,kz));
+	    //xk1d[ix] = 0.5*(xk1d[ix] + dcomplex(tmpreal(ix,kz), tmpimag(ix,kz)));
 	  }
 	}
-	if( BoutComm::rank() == 0 && kz == 0 ){
-	  std::cout << "" << endl;
+	if(not localmesh->lastX()) { 
+	  for(int ix = localmesh->xend+1; ix<localmesh->LocalNx ; ix++) {
+	    xk1d[ix] = dcomplex(tmpreal(ix,kz), tmpimag(ix,kz));
+	    //xk1d[ix] = 0.5*(xk1d[ix] + dcomplex(tmpreal(ix,kz), tmpimag(ix,kz)));
+	  }
 	}
+///	if( BoutComm::rank() == 1 ){
+///	  for (int ix = 0; ix < ncx; ix++) {
+///	    std::cout << "rank 1 recving " << count << " " << kz << " " << ix << " " << xk1d[ix].real() << " " << xk1d[ix].imag()  << endl;
+///	  }
+///	}
+
+        //std::cout<<"Start loop, proc "<< BoutComm::rank() <<endl;
+	error_abs = 0.0;
+	BoutReal xmax = 0.0;
+        for (int ix = 0; ix < ncx; ix++) {
+	  BoutReal diff = abs(xk1d[ix] - xk1dlast[ix]);
+	  BoutReal xabs = abs(xk1d[ix]);
+	  if (diff > error_abs) {
+	    error_abs = diff;
+	  }
+	  if (xabs > xmax) {
+	    xmax = xabs;
+	  }
+	}
+	error_rel = error_abs / xmax;
+
+	//if( error_last < error_abs ){
+        //  std::cout<<"Error increased on proc "<< BoutComm::rank() << endl;
+	//}
+
+        //std::cout<<"Before error, proc "<< BoutComm::rank() << ", count "<<count<<" error_rel "<<error_rel<<" rtol "<<rtol<<" error_abs "<<error_abs<<" atol "<<atol<<endl;
+
+	if (error_rel<rtol or error_abs<atol) {
+          std::cout<<"Converged, proc "<< BoutComm::rank() << ", count "<<count<<endl;
+	  //break;
+	  // Ideally this proc would now inform its neighbours that its halo cells
+	  // will no longer be updated
+	}
+
+        //std::cout<<"Before count, proc "<< BoutComm::rank() <<endl;
+	++count;
+	if (count>maxits) {
+	  break;
+	  //throw BoutException("LaplaceParallelTri error: Not converged within maxits=%i iterations.", maxits);
+	}
+
+        //std::cout<<"After count, proc "<< BoutComm::rank() <<endl;
+
+        for (int ix = 0; ix < ncx; ix++) {
+	  xk1dlast[ix] = xk1d[ix];
+	}
+	error_last = error_abs;
 	
       }
+      // bad here
+///      if( BoutComm::rank() == 1 ){
+///	for (int ix = 0; ix < ncx; ix++) {
+///	  std::cout << " end of loop " << jy << " " << kz << " " << count << " " << ix << " " << xk1d[ix].real() << " " << xk1d[ix].imag()  << endl;
+///	}
+///      }
 
     } else {
       // Periodic in X, so cyclic tridiagonal
@@ -268,7 +349,13 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       }
     }
 
-    std::cout<<"endloop"<<endl;
+    //std::cout<<"endloop"<<endl;
+    // large here
+///    if( BoutComm::rank() == 0 ){
+///      for (int ix = 0; ix < ncx; ix++) {
+///	std::cout << jy << " " << kz << " " << count << " " << ix << " " << xk1d[ix].real() << " " << xk1d[ix].imag()  << endl;
+///      }
+///    }
 
     // If the global flag is set to INVERT_KX_ZERO
     if ((global_flags & INVERT_KX_ZERO) && (kz == 0)) {
@@ -282,14 +369,20 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       }
     }
 
+    // 1e+10 exists here
+///    if( BoutComm::rank() == 1 ){
+///      for (int ix = 0; ix < ncx; ix++) {
+///	std::cout << "after faff " << jy << " " << kz << " " << count << " " << ix << " " << xk1d[ix].real() << " " << xk1d[ix].imag()  << endl;
+///      }
+///    }
+
     // Store the solution xk for the current fourier mode in a 2D array
     for (int ix = 0; ix < ncx; ix++) {
       xk(ix, kz) = xk1d[ix];
     }
   }
 
-  std::cout<<"end"<<endl;
-
+  //std::cout<<"end"<<endl;
 
   // Done inversion, transform back
   for (int ix = 0; ix < ncx; ix++) {
