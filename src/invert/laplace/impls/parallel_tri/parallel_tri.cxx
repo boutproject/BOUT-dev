@@ -84,6 +84,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   //FieldPerp tmpimag = 0.0; //{emptyFrom(b)};
   FieldPerp tmpreal{emptyFrom(b)};
   FieldPerp tmpimag{emptyFrom(b)};
+  FieldPerp imdone{emptyFrom(b)};
 
   int jy = b.getIndex();
 
@@ -172,11 +173,20 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
     for (int ix = 0; ix < ncx; ix++) {
       // Get bk of the current fourier mode
       bk1d[ix] = bk(ix, kz);
-      xk1d[ix] = 0.2;
-      xk1dlast[ix] = -0.2;
+      xk1d[ix] = 0.0;
+      xk1dlast[ix] = 0.0;
     }
 
     int count = 0;
+    // Guard cells of imdone signal if a proc has converged in the in/out direction 
+    imdone = 0.0;
+    // Boundary values are "converged" at the start
+    if(localmesh->lastX()) { 
+      imdone(localmesh->xend+1,kz) = 1.0;
+    }
+    if(localmesh->firstX()) { 
+      imdone(localmesh->xstart-1,kz) = 1.0;
+    }
 
     /* Set the matrix A used in the inversion of Ax=b
      * by calling tridagCoef and setting the BC
@@ -251,41 +261,6 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 ///	  }
 ///	}
 
-        for (int ix = 0; ix < ncx; ix++) {
-///	  if( BoutComm::rank() == 0 ){
-///	    std::cout << "rank 0 sending " << count << " " << kz << " " << ix << " " << xk1d[ix].real() << " " << xk1d[ix].imag()  << endl;
-///	  }
-	  tmpreal(ix,kz) = xk1d[ix].real();
-	  tmpimag(ix,kz) = xk1d[ix].imag();
-	}
-
-	localmesh->communicate(tmpreal);
-	localmesh->communicate(tmpimag);
-
-///        for (int ix = 0; ix < ncx; ix++) {
-///	  if( BoutComm::rank() == 1 ){
-///	    std::cout << "rank 1 has " << count << " " << kz << " " << ix << " " << xk1d[ix].real() << " " << xk1d[ix].imag()  << endl;
-///	  }
-///	}
-
-	if(not localmesh->firstX()) { 
-	  for(int ix = 0; ix<localmesh->xstart ; ix++) {
-	    xk1d[ix] = dcomplex(tmpreal(ix,kz), tmpimag(ix,kz));
-	    //xk1d[ix] = 0.5*(xk1d[ix] + dcomplex(tmpreal(ix,kz), tmpimag(ix,kz)));
-	  }
-	}
-	if(not localmesh->lastX()) { 
-	  for(int ix = localmesh->xend+1; ix<localmesh->LocalNx ; ix++) {
-	    xk1d[ix] = dcomplex(tmpreal(ix,kz), tmpimag(ix,kz));
-	    //xk1d[ix] = 0.5*(xk1d[ix] + dcomplex(tmpreal(ix,kz), tmpimag(ix,kz)));
-	  }
-	}
-///	if( BoutComm::rank() == 1 ){
-///	  for (int ix = 0; ix < ncx; ix++) {
-///	    std::cout << "rank 1 recving " << count << " " << kz << " " << ix << " " << xk1d[ix].real() << " " << xk1d[ix].imag()  << endl;
-///	  }
-///	}
-
         //std::cout<<"Start loop, proc "<< BoutComm::rank() <<endl;
 	error_abs = 0.0;
 	BoutReal xmax = 0.0;
@@ -308,11 +283,95 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
         //std::cout<<"Before error, proc "<< BoutComm::rank() << ", count "<<count<<" error_rel "<<error_rel<<" rtol "<<rtol<<" error_abs "<<error_abs<<" atol "<<atol<<endl;
 
 	if (error_rel<rtol or error_abs<atol) {
-          std::cout<<"Converged, proc "<< BoutComm::rank() << ", count "<<count<<endl;
-	  //break;
-	  // Ideally this proc would now inform its neighbours that its halo cells
-	  // will no longer be updated
+	  //output<<"Converged, proc "<< BoutComm::rank() << ", count "<<count<<endl;
+	  imdone(localmesh->xstart,kz) = 1.0;
+	  imdone(localmesh->xend,kz) = 1.0;
+	  // In the next iteration this proc informs its neighbours that its halo cells
+	  // will no longer be updated, then breaks.
 	}
+
+	if(imdone(localmesh->xstart-1, kz) == 0 or imdone(localmesh->xend+1, kz) == 0) {
+	  for (int ix = 0; ix < ncx; ix++) {
+	    tmpreal(ix,kz) = xk1d[ix].real();
+	    tmpimag(ix,kz) = xk1d[ix].imag();
+	  }
+	}
+
+	// Communication
+	// A proc is finished when it is both in- and out-converged.
+	// Once this happens, that processor communicates once, then breaks.
+	//
+	// A proc can be converged in only one of the directions. This happens
+	// if it has not met the error tolerance, but one of its neighbours has
+	// converged. In this case, that boundary will no longer update (and 
+	// communication in that direction should stop), but the other boundary
+	// may still be changing.
+	//
+	// There are four values to consider:
+	//   imdone(xstart - 1, kz) = whether this proc has in-converged
+	//   imdone(xstart, kz)     = whether my in-neighbouring proc has out-converged
+	//   imdone(xend + 1, kz)   = whether this proc has out-converged
+	//   imdone(xend, kz)       = whether my out-neighbouring proc has in-converged
+	//
+	//if( BoutComm::rank() == 0 ){
+	  //output<<count<<", jy "<<jy<<" kz "<<kz<<", "<<imdone(localmesh->xstart-1,kz)<<" "<<imdone(localmesh->xstart,kz)<<" "<<imdone(localmesh->xend,kz)<<" "<<imdone(localmesh->xend+1,kz)<<" e_rel "<<error_rel<<" e_abs "<<error_abs<<std::flush<<endl;
+	//}
+	
+	// If imdone(xstart-1, kz) != 0, I must have been told this by my neighbour. My 
+	// neighbour has therefore done its one post-converged communication. My in-boundary
+	// values are therefore correct, and I am in-converged. My neighbour is not 
+	// expecting us to communicate.
+	if(imdone(localmesh->xstart-1, kz) == 0) {
+	  // Communicate in
+	  localmesh->communicateXIn(imdone);
+	  localmesh->communicateXIn(tmpreal);
+	  localmesh->communicateXIn(tmpimag);
+	  if(not localmesh->firstX()) { 
+	    for(int ix = 0; ix<localmesh->xstart ; ix++) {
+	      xk1d[ix] = dcomplex(tmpreal(ix,kz), tmpimag(ix,kz));
+	      //xk1d[ix] = 0.5*(xk1d[ix] + dcomplex(tmpreal(ix,kz), tmpimag(ix,kz)));
+	    }
+	  }
+	}
+
+	// See note above for inward communication.
+	if(imdone(localmesh->xend+1, kz) == 0) {
+	  // Communicate out
+	  localmesh->communicateXOut(imdone);
+	  localmesh->communicateXOut(tmpreal);
+	  localmesh->communicateXOut(tmpimag);
+	  if(not localmesh->lastX()) { 
+	    for(int ix = localmesh->xend+1; ix<localmesh->LocalNx ; ix++) {
+	      xk1d[ix] = dcomplex(tmpreal(ix,kz), tmpimag(ix,kz));
+	      //xk1d[ix] = 0.5*(xk1d[ix] + dcomplex(tmpreal(ix,kz), tmpimag(ix,kz)));
+	    }
+	  }
+	}
+
+	// Now I've done my communication, exit if I am both in- and out-converged
+	if( imdone(localmesh->xend, kz) != 0.0 and imdone(localmesh->xstart, kz) != 0.0 ) {
+          //output<<"Breaking, proc "<< BoutComm::rank() << ", count "<<count<<endl<<std::flush;
+	  break;
+	}
+
+	if(imdone(localmesh->xstart-1, kz) != 0) {
+	  imdone(localmesh->xstart, kz) = 1.0;
+	}
+	if(imdone(localmesh->xend+1, kz) != 0) {
+	  imdone(localmesh->xend, kz) = 1.0;
+	}
+
+///        for (int ix = 0; ix < ncx; ix++) {
+///	  if( BoutComm::rank() == 1 ){
+///	    std::cout << "rank 1 has " << count << " " << kz << " " << ix << " " << xk1d[ix].real() << " " << xk1d[ix].imag()  << endl;
+///	  }
+///	}
+
+///	if( BoutComm::rank() == 1 ){
+///	  for (int ix = 0; ix < ncx; ix++) {
+///	    std::cout << "rank 1 recving " << count << " " << kz << " " << ix << " " << xk1d[ix].real() << " " << xk1d[ix].imag()  << endl;
+///	  }
+///	}
 
         //std::cout<<"Before count, proc "<< BoutComm::rank() <<endl;
 	++count;

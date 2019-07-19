@@ -224,6 +224,9 @@ void Mesh::communicate(FieldGroup &g) {
 
 /// This is a bit of a hack for now to get FieldPerp communications
 /// The FieldData class needs to be changed to accomodate FieldPerp objects
+/// This is equivalent to calling both communicateXIn and communicateXOut, 
+/// but when communicating in both directions, it is (probably) faster to
+/// fully separate sends and receives.
 void Mesh::communicate(FieldPerp &f) {
   comm_handle recv[2];
   
@@ -242,6 +245,40 @@ void Mesh::communicate(FieldPerp &f) {
   // Wait for receive
   wait(recv[0]);
   wait(recv[1]);
+}
+
+/// This communicates a FieldPerp with the neighbouring X processor in the
+/// inward direction.
+void Mesh::communicateXIn(FieldPerp &f) {
+  comm_handle recv[1];
+  
+  int nin = xstart; // Number of x points in inner guard cell
+
+  // Post receives for guard cell regions
+  recv[0] = irecvXIn(f[0],       nin*LocalNz, 0);
+  
+  // Send data
+  sendXIn(f[xstart], nin*LocalNz, 1);
+ 
+  // Wait for receive
+  wait(recv[0]);
+}
+
+/// This communicates a FieldPerp with the neighbouring X processor in the
+/// outward direction.
+void Mesh::communicateXOut(FieldPerp &f) {
+  comm_handle recv[1];
+  
+  int nout = LocalNx-xend-1; // Number of x points in outer guard cell
+
+  // Post receives for guard cell regions
+  recv[0] = irecvXOut(f[xend+1], nout*LocalNz, 1);
+  
+  // Send data
+  sendXOut(f[xend-nout+1], nout*LocalNz, 0);
+ 
+  // Wait for receive
+  wait(recv[0]);
 }
 
 int Mesh::msg_len(const std::vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt) {

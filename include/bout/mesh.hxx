@@ -243,7 +243,17 @@ class Mesh {
   /*!
    * Communicate an X-Z field
    */
-  void communicate(FieldPerp &f); 
+  void communicate(FieldPerp &f);
+
+  /*!
+   * Communicate an X-Z field with inward X direction
+   */
+  void communicateXIn(FieldPerp &f);
+
+  /*!
+   * Communicate an X-Z field with outward X direction
+   */
+  void communicateXOut(FieldPerp &f);
 
   /*!
    * Send a list of FieldData objects
