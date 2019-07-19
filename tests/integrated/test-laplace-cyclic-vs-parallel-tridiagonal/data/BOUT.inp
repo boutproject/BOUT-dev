@@ -1,0 +1,28 @@
+# Test of the FieldFactory class 
+#
+# Generates a set of fields and writes them to output file
+#
+
+NOUT = 0  # No timesteps
+
+MZ = 32    # Z size
+
+#grid = "test_laplace.grd.nc"
+
+dump_format = "nc"  # NetCDF format. Alternative is "pdb"
+
+[mesh]
+nx = 12
+ny = 128
+symmetricGlobalX = false
+symmetricGlobalY = false
+
+[laplace]
+all_terms = false
+include_yguards = false
+filter = 0.2
+type = ptri
+maxits = 0
+
+[output]
+floats = true
