@@ -473,6 +473,28 @@ public:
     return val;
   }
 
+  /// Allow the user to override defaults set later, also used by the
+  /// BOUT_OVERRIDE_DEFAULT_OPTION.
+  template <typename T> T overrideDefault(T def) {
+
+    // Set the type
+    attributes["type"] = bout::utils::typeName<T>();
+
+    if (!is_value) {
+      // Option not found
+      assign(def, "user_default");
+      value_used = true; // Mark the option as used
+      is_value = true; // Prevent this default being replaced by setDefault()
+
+      output_info << _("\tOption ") << full_name << " = " << def << " (" << "user_default"
+                  << ")" << std::endl;
+      return def;
+    }
+
+    // Return value of this option as type 'T'
+    return as<T>(def);
+  }
+
   /// Get the parent Options object
   Options &parent() {
     if (parent_instance == nullptr) {
