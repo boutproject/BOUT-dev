@@ -1060,3 +1060,23 @@ TEST_F(OptionsTest, DocStringNotCopied) {
   EXPECT_EQ(option2.attributes["doc"].as<std::string>(), "test value");
   EXPECT_EQ(option.attributes.count("doc"), 0);
 }
+
+TEST_F(OptionsTest, InitializeInt) {
+  Options option {3};
+  EXPECT_EQ(option.as<int>(), 3);
+}
+
+TEST_F(OptionsTest, InitialiseTree) {
+  Options option {{"section1", {{"value1", 42},
+                                {"value2", "hello"}}},
+                  {"section2", {{"subsection1", {{"value3", true},
+                                                 {"value4", 3.2}}},
+                                {"value5", 3}}}};
+  
+  EXPECT_EQ(option["section1"]["value1"].as<int>(), 42);
+  EXPECT_EQ(option["section1"]["value2"].as<std::string>(), "hello");
+  EXPECT_EQ(option["section2"]["subsection1"]["value3"].as<bool>(), true);
+  EXPECT_DOUBLE_EQ(option["section2"]["subsection1"]["value4"].as<BoutReal>(), 3.2);
+  EXPECT_EQ(option["section2"]["value5"].as<int>(), 3);
+}
+
