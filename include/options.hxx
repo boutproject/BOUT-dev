@@ -486,8 +486,6 @@ public:
       value_used = true; // Mark the option as used
       is_value = true; // Prevent this default being replaced by setDefault()
 
-      output_info << _("\tOption ") << full_name << " = " << def << " (" << "user_default"
-                  << ")" << std::endl;
       return def;
     }
 
