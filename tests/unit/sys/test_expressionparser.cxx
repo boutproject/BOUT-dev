@@ -274,11 +274,13 @@ TEST_F(ExpressionParserTest, BadExpressions) {
   EXPECT_THROW(parser.parseString("increment(x"), ParseException);
   EXPECT_THROW(parser.parseString("increment"), ParseException);
   EXPECT_THROW(parser.parseString("2]"), ParseException);
+  EXPECT_THROW(parser.parseString("2)"), ParseException);
   EXPECT_THROW(parser.parseString("4+"), ParseException);
   EXPECT_THROW(parser.parseString("+4"), ParseException);
   EXPECT_THROW(parser.parseString("\n"), ParseException);
   EXPECT_THROW(parser.parseString("(3"), ParseException);
   EXPECT_THROW(parser.parseString("2-3[4"), ParseException);
+  EXPECT_THROW(parser.parseString("[val = 42]{val}"), ParseException);
 }
 
 TEST_F(ExpressionParserTest, AddGenerator) {
@@ -585,4 +587,75 @@ TEST_F(ExpressionParserTest, PassMultipleParameters) {
       }
     }
   }
+}
+
+TEST_F(ExpressionParserTest, ContextValue) {
+  auto fieldgen = parser.parseString("[val = 42]({val})");
+  EXPECT_DOUBLE_EQ(fieldgen->generate({}), 42);
+}
+
+TEST_F(ExpressionParserTest, ContextValueReplace) {
+  auto fieldgen = parser.parseString("[val = 42]({val})");
+  EXPECT_DOUBLE_EQ(fieldgen->generate(Context().set("val", 21)), 42);
+}
+
+TEST_F(ExpressionParserTest, ContextValueExpr) {
+  auto fieldgen = parser.parseString("[val = 21]({val} + {val})");
+  EXPECT_DOUBLE_EQ(fieldgen->generate({}), 42);
+}
+
+TEST_F(ExpressionParserTest, ContextValueExprTwoArgs) {
+  auto fieldgen = parser.parseString("[val = 21, val2 = 13]({val} + {val2})");
+  EXPECT_DOUBLE_EQ(fieldgen->generate({}), 34);
+}
+
+class GeneratorCloneCopy : public FieldGenerator {
+public:
+  GeneratorCloneCopy(FieldGeneratorPtr expr) : expr(expr) {}
+  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> UNUSED(args)) override {
+    return std::make_shared<GeneratorCloneCopy>(expr);
+  }
+  double generate(const Context& pos) override {
+    return expr->generate(pos);
+  }
+private:
+  FieldGeneratorPtr expr;
+};
+
+TEST_F(ExpressionParserTest, ContextFunction) {
+  parser.addGenerator("func",
+                      std::make_shared<GeneratorCloneCopy>(parser.parseString("2 * {x}")));
+
+  auto fieldgen = parser.parseString("[x=3](func)");
+  EXPECT_DOUBLE_EQ(fieldgen->generate({}), 6);
+}
+
+TEST_F(ExpressionParserTest, ContextLocal) {
+  auto gen = parser.parseString("[x={x}-1]({x}) + {x}");
+  EXPECT_DOUBLE_EQ(gen->generate(Context().set("x", 5)), 9); // 4 + 5
+}
+
+TEST_F(ExpressionParserTest, ContextTwice) {
+  auto gen = parser.parseString("[x={x}-1]({x}) + [x={x}-2]({x})");
+  EXPECT_DOUBLE_EQ(gen->generate(Context().set("x", 5)), 7); // 4 + 3
+}
+
+TEST_F(ExpressionParserTest, SumNothing) {
+  auto fieldgen = parser.parseString("sum(i, 0, 42)");
+  EXPECT_DOUBLE_EQ(fieldgen->generate({}), 0.0);
+}
+
+TEST_F(ExpressionParserTest, SumOne) {
+  auto fieldgen = parser.parseString("sum(i, 1, 42)");
+  EXPECT_DOUBLE_EQ(fieldgen->generate({}), 42);
+}
+
+TEST_F(ExpressionParserTest, SumExpr) {
+  auto fieldgen = parser.parseString("sum(i, 2 + 1, {i}^2)"); // => 0^2 + 1^2 + 2^2
+  EXPECT_DOUBLE_EQ(fieldgen->generate({}), 5);
+}
+
+TEST_F(ExpressionParserTest, SumNestedScope) {
+  auto fieldgen = parser.parseString("sum(i, 3, sum(i, 2*{i}, {i}+1))"); // => (0) + (1 + 2) + (1 + 2 + 3 + 4) = 13
+  EXPECT_DOUBLE_EQ(fieldgen->generate({}), 13);
 }

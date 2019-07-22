@@ -274,4 +274,38 @@ private:
   FieldGeneratorPtr width, center, steepness;
 };
 
+class FieldWhere : public FieldGenerator {
+public:
+  FieldWhere(FieldGeneratorPtr test, FieldGeneratorPtr gt0, FieldGeneratorPtr lt0)
+      : test(test), gt0(gt0), lt0(lt0){};
+
+  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override {
+    if (args.size() != 3) {
+      throw ParseException("where expects 3 arguments (test, gt0, lt0) but got %lu",
+                           static_cast<unsigned long>(args.size()));
+    }
+    auto arg_it = std::begin(args);
+    auto first = *arg_it++;
+    auto second = *arg_it++;
+    auto third = *arg_it;
+
+    return std::make_shared<FieldWhere>(first, second, third);
+  }
+  double generate(const bout::generator::Context& pos) override {
+    if (test->generate(pos) > 0.0) {
+      return gt0->generate(pos);
+    }
+    return lt0->generate(pos);
+  }
+
+  std::string str() const override {
+    return std::string("where(") + test->str() + std::string(",") + gt0->str()
+           + std::string(",") + lt0->str() + std::string(")");
+  }
+
+private:
+  FieldGeneratorPtr test, gt0, lt0;
+};
+
+
 #endif // __FIELDGENERATORS_H__
