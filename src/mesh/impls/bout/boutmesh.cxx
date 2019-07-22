@@ -2596,6 +2596,9 @@ void BoutMesh::outputVars(Datafile &file) {
   file.add(MXSUB, "MXSUB", false);
   file.add(MYSUB, "MYSUB", false);
   file.add(MZSUB, "MZSUB", false);
+  file.add(PE_XIND, "PE_XIND", false);
+  file.add(PE_YIND, "PE_YIND", false);
+  file.add(MYPE, "MYPE", false);
   file.add(MXG, "MXG", false);
   file.add(MYG, "MYG", false);
   file.add(MZG, "MZG", false);
