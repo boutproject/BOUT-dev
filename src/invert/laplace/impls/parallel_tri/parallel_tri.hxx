@@ -78,6 +78,13 @@ private:
 
   /// Maximum number of iterations
   int maxits;
+
+  /// Mean number of iterations taken by the solver
+  BoutReal ipt_mean_its;
+
+  /// Counter for the number of times the solver has been called
+  int ncalls;
+
 };
 
 #endif // __PARALLEL_TRI_H__

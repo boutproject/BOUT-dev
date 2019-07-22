@@ -35,12 +35,13 @@
 #include <bout/constants.hxx>
 #include <bout/openmpwrap.hxx>
 #include <cmath>
+#include <bout/sys/timer.hxx>
 
 #include <output.hxx>
 #include "boutcomm.hxx"
 
 LaplaceParallelTri::LaplaceParallelTri(Options *opt, CELL_LOC loc, Mesh *mesh_in)
-    : Laplacian(opt, loc, mesh_in), A(0.0), C(1.0), D(1.0) {
+    : Laplacian(opt, loc, mesh_in), A(0.0), C(1.0), D(1.0), ipt_mean_its(0.), ncalls(0) {
   A.setLocation(location);
   C.setLocation(location);
   D.setLocation(location);
@@ -48,6 +49,11 @@ LaplaceParallelTri::LaplaceParallelTri(Options *opt, CELL_LOC loc, Mesh *mesh_in
   OPTION(opt, rtol, 1.e-7);
   OPTION(opt, atol, 1.e-20);
   OPTION(opt, maxits, 100);
+
+  static int ipt_solver_count = 1;
+  bout::globals::dump.addRepeat(ipt_mean_its,
+      "ipt_solver"+std::to_string(ipt_solver_count)+"_mean_its");
+  ++ipt_solver_count;
 }
 
 FieldPerp LaplaceParallelTri::solve(const FieldPerp& b) { return solve(b, b); }
@@ -73,6 +79,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b) { return solve(b, b); }
  * \return          The inverted variable.
  */
 FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
+
+  Timer timer("invert"); ///< Start timer
+
   ASSERT1(localmesh == b.getMesh() && localmesh == x0.getMesh());
   ASSERT1(b.getLocation() == location);
   ASSERT1(x0.getLocation() == location);
@@ -283,11 +292,12 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
         //std::cout<<"Before error, proc "<< BoutComm::rank() << ", count "<<count<<" error_rel "<<error_rel<<" rtol "<<rtol<<" error_abs "<<error_abs<<" atol "<<atol<<endl;
 
 	if (error_rel<rtol or error_abs<atol) {
-	  //output<<"Converged, proc "<< BoutComm::rank() << ", count "<<count<<endl;
-	  imdone(localmesh->xstart,kz) = 1.0;
-	  imdone(localmesh->xend,kz) = 1.0;
 	  // In the next iteration this proc informs its neighbours that its halo cells
 	  // will no longer be updated, then breaks.
+	  imdone(localmesh->xstart,kz) = 1.0;
+	  imdone(localmesh->xend,kz) = 1.0;
+
+	  //output<<"Converged, proc "<< BoutComm::rank() << ", count "<<count<<endl;
 	}
 
 	if(imdone(localmesh->xstart-1, kz) == 0 or imdone(localmesh->xend+1, kz) == 0) {
@@ -380,20 +390,12 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	  //throw BoutException("LaplaceParallelTri error: Not converged within maxits=%i iterations.", maxits);
 	}
 
-        //std::cout<<"After count, proc "<< BoutComm::rank() <<endl;
-
         for (int ix = 0; ix < ncx; ix++) {
 	  xk1dlast[ix] = xk1d[ix];
 	}
 	error_last = error_abs;
 	
       }
-      // bad here
-///      if( BoutComm::rank() == 1 ){
-///	for (int ix = 0; ix < ncx; ix++) {
-///	  std::cout << " end of loop " << jy << " " << kz << " " << count << " " << ix << " " << xk1d[ix].real() << " " << xk1d[ix].imag()  << endl;
-///	}
-///      }
 
     } else {
       // Periodic in X, so cyclic tridiagonal
@@ -408,13 +410,10 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       }
     }
 
-    //std::cout<<"endloop"<<endl;
-    // large here
-///    if( BoutComm::rank() == 0 ){
-///      for (int ix = 0; ix < ncx; ix++) {
-///	std::cout << jy << " " << kz << " " << count << " " << ix << " " << xk1d[ix].real() << " " << xk1d[ix].imag()  << endl;
-///      }
-///    }
+    ++ncalls;
+    ipt_mean_its = (ipt_mean_its * BoutReal(ncalls-1)
+	+ BoutReal(count))/BoutReal(ncalls);
+    output << jy << " " << kz << " " << count << " " << ncalls << " " << ipt_mean_its << endl;
 
     // If the global flag is set to INVERT_KX_ZERO
     if ((global_flags & INVERT_KX_ZERO) && (kz == 0)) {
@@ -427,13 +426,6 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
         xk1d[ix] -= offset;
       }
     }
-
-    // 1e+10 exists here
-///    if( BoutComm::rank() == 1 ){
-///      for (int ix = 0; ix < ncx; ix++) {
-///	std::cout << "after faff " << jy << " " << kz << " " << count << " " << ix << " " << xk1d[ix].real() << " " << xk1d[ix].imag()  << endl;
-///      }
-///    }
 
     // Store the solution xk for the current fourier mode in a 2D array
     for (int ix = 0; ix < ncx; ix++) {
