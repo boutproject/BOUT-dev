@@ -9,6 +9,7 @@ INTEGRATED=0
 MMS=0
 TESTS=0
 MAIN_TARGET=
+UPDATE_SCRIPT=0
 
 usage() {
     echo "$0 options are: "
@@ -18,7 +19,7 @@ usage() {
 }
 
 #Handle input flags
-while getopts "cuimt:" arg;
+while getopts "cuimt:5" arg;
 do
     case $arg in
 	c) ### Run the coverage-post job tasks
@@ -36,17 +37,34 @@ do
 	    MMS=1
 	    TESTS=1
 	    ;;
-    t) ### Set target to build
-        MAIN_TARGET+=("$OPTARG")
-        ;;
-	*) ### Show usage message
+        t) ### Set target to build
+            MAIN_TARGET="$OPTARG"
+            ;;
+        5) ### Run the update to version 5 script
+            UPDATE_SCRIPT=1
+            ;;
+        *) ### Show usage message
 	    usage
 	    ;;
     esac
 done
 
-
 ./.build_sundials_for_travis.sh
+
+if test $UPDATE_SCRIPT -gt 0
+then
+    # Make sure the header list is up to date
+    if ! diff bin/bout_4to5_header_file_list <(cd include/;ls *xx|grep -v ^bout.hxx|sort)
+    then
+	echo "Some header files changed."
+	echo "Please update the list by running:"
+	echo "(cd include/;ls *xx|grep -v ^bout.hxx|sort) > bin/bout_4to5_header_file_list"
+	echo "And commit the updated file."
+	exit 1
+    fi
+
+    bin/bout_4to5 -f
+fi
 
 export MAKEFLAGS="-j 2 -k"
 echo "****************************************"

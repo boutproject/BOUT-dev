@@ -53,8 +53,8 @@ public:
 
   /// Add a point to the boundary
   void add_point(int jx,int jy,int jz,
-                 const BoutReal x,BoutReal y,BoutReal z,
-                 const BoutReal length,BoutReal angle);
+                 BoutReal x,BoutReal y,BoutReal z,
+                 BoutReal length,BoutReal angle);
 
   void first() override;
   void next() override;
