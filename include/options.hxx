@@ -167,13 +167,10 @@ public:
   /// Initialise with a value
   /// These enable Options to be constructed using initializer lists
   /// @{
-  Options(bool value);
-  Options(int value);
-  Options(BoutReal value);
-  Options(const char* value);
-  Options(std::string value);
-  Options(Field2D value);
-  Options(Field3D value);
+  template <typename T>
+  Options(T value) {
+    assign<T>(value);
+  }
   /// @}
   
   /// Construct with a nested initializer list

@@ -39,32 +39,9 @@ Options::Options(const Options& other)
   }
 }
 
-Options::Options(bool value) {
-  assign<bool>(value);
-}
-
-Options::Options(int value) {
-  assign<int>(value);
-}
-
-Options::Options(BoutReal value) {
-  assign<BoutReal>(value);
-}
-
+template <>
 Options::Options(const char* value) {
   assign<std::string>(value);
-}
-
-Options::Options(std::string value) {
-  assign<std::string>(value);
-}
-
-Options::Options(Field2D value) {
-  assign<Field2D>(value);
-}
-
-Options::Options(Field3D value) {
-  assign<Field3D>(value);
 }
 
 Options::Options(std::initializer_list<std::pair<const std::string, const Options>> values) {
