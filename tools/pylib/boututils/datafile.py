@@ -478,6 +478,7 @@ class DataFile_netCDF(DataFile):
             ('x', 'y', 'z'): "Field3D",
             ('x', 'y'): "Field2D",
             ('x', 'z'): "FieldPerp",
+            ('x'): "ArrayX",
             (): "scalar",
         }
 
@@ -492,6 +493,7 @@ class DataFile_netCDF(DataFile):
             "Field3D": ('x', 'y', 'z'),
             "Field2D": ('x', 'y'),
             "FieldPerp": ('x', 'z'),
+            "ArrayX": ('x'),
             "scalar": (),
         }
 
@@ -539,9 +541,9 @@ class DataFile_netCDF(DataFile):
             # Not found, so add.
 
             # Get dimensions
-            if t == 'BoutArray':
-                defdims = _bout_dimensions_from_type(data.attributes['bout_type'])
-            else:
+            try:
+                defdims = self._bout_dimensions_from_type(data.attributes['bout_type'])
+            except AttributeError:
                 defdims_list = [(),
                                 ('t',),
                                 ('x', 'y'),
@@ -786,6 +788,7 @@ class DataFile_HDF5(DataFile):
             "Field3D": ('x', 'y', 'z'),
             "FieldPerp": ('x', 'z'),
             "Field2D": ('x', 'y'),
+            "ArrayX": ('x'),
             "scalar": (),
         }
         try:
