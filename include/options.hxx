@@ -166,12 +166,10 @@ public:
 
   /// Initialise with a value
   /// These enable Options to be constructed using initializer lists
-  /// @{
   template <typename T>
   Options(T value) {
     assign<T>(value);
   }
-  /// @}
   
   /// Construct with a nested initializer list
   /// This allows Options trees to be constructed, using a mix of types.
