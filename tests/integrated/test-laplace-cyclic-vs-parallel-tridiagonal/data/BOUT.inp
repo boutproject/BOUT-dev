@@ -22,7 +22,8 @@ all_terms = false
 include_yguards = false
 filter = 0.2
 type = ptri
-maxits = 0
+maxits = 1000
+rtol = 1e-10
 
 [output]
 floats = true
