@@ -225,6 +225,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       //for(int it = 0; it < maxits; it++){ 
       BoutReal error_last = 1e20;
       while(true){ 
+
 	// Patch up internal boundaries
 	if(not localmesh->lastX()) { 
 	  for(int ix = localmesh->xend+1; ix<localmesh->LocalNx ; ix++) {
@@ -243,34 +244,11 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	  }
 	}
 
-///	if( BoutComm::rank() == 0 ){
-///	  for (int ix = 0; ix < ncx; ix++) {
-///	    std::cout << ix << " " << bvec[ix] << endl;
-///	  }
-///	}
-//
-        //std::cout<<"beforetridag, proc "<< BoutComm::rank() << endl;
-	//if( BoutComm::rank() == 0 ) {
-        //  std::cout<<"proc "<< BoutComm::rank() << " cn " << cvec[localmesh->xend] << endl;
-	//}
-
+	// Invert local matrices
         tridag(std::begin(avec), std::begin(bvec), std::begin(cvec), std::begin(bk1d),
              std::begin(xk1d), ncx);
 
-///        if( BoutComm::rank() == 1 ){
-///          for (int ix = 0; ix < ncx; ix++) {
-///	    std::cout << jy << " " << kz << " " << count << " " << ix << " " << xk1d[ix].real() << " " << xk1d[ix].imag()  << endl;
-///      	  }
-///	}
-
-        //std::cout<<"aftertridag, proc "<< BoutComm::rank() << endl;
-///	if ( BoutComm::rank() == 0 and count == 0 ){
-///	  for (int ix = 0; ix < ncx; ix++) {
-///	    xk1d[ix] = 0.0;
-///	  }
-///	}
-
-        //std::cout<<"Start loop, proc "<< BoutComm::rank() <<endl;
+	// Calculate errors
 	error_abs = 0.0;
 	BoutReal xmax = 0.0;
         for (int ix = 0; ix < ncx; ix++) {
@@ -285,21 +263,15 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	}
 	error_rel = error_abs / xmax;
 
-	//if( error_last < error_abs ){
-        //  std::cout<<"Error increased on proc "<< BoutComm::rank() << endl;
-	//}
-
-        //std::cout<<"Before error, proc "<< BoutComm::rank() << ", count "<<count<<" error_rel "<<error_rel<<" rtol "<<rtol<<" error_abs "<<error_abs<<" atol "<<atol<<endl;
-
+	// Set communication flags
 	if (error_rel<rtol or error_abs<atol) {
 	  // In the next iteration this proc informs its neighbours that its halo cells
 	  // will no longer be updated, then breaks.
 	  imdone(localmesh->xstart,kz) = 1.0;
 	  imdone(localmesh->xend,kz) = 1.0;
-
-	  //output<<"Converged, proc "<< BoutComm::rank() << ", count "<<count<<endl;
 	}
 
+	// Pack buffers for communication
 	if(imdone(localmesh->xstart-1, kz) == 0 or imdone(localmesh->xend+1, kz) == 0) {
 	  for (int ix = 0; ix < ncx; ix++) {
 	    tmpreal(ix,kz) = xk1d[ix].real();
@@ -323,10 +295,6 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	//   imdone(xend + 1, kz)   = whether this proc has out-converged
 	//   imdone(xend, kz)       = whether my out-neighbouring proc has in-converged
 	//
-	//if( BoutComm::rank() == 0 ){
-	  //output<<count<<", jy "<<jy<<" kz "<<kz<<", "<<imdone(localmesh->xstart-1,kz)<<" "<<imdone(localmesh->xstart,kz)<<" "<<imdone(localmesh->xend,kz)<<" "<<imdone(localmesh->xend+1,kz)<<" e_rel "<<error_rel<<" e_abs "<<error_abs<<std::flush<<endl;
-	//}
-	
 	// If imdone(xstart-1, kz) != 0, I must have been told this by my neighbour. My 
 	// neighbour has therefore done its one post-converged communication. My in-boundary
 	// values are therefore correct, and I am in-converged. My neighbour is not 
@@ -339,11 +307,11 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	  if(not localmesh->firstX()) { 
 	    for(int ix = 0; ix<localmesh->xstart ; ix++) {
 	      xk1d[ix] = dcomplex(tmpreal(ix,kz), tmpimag(ix,kz));
-	      //xk1d[ix] = 0.5*(xk1d[ix] + dcomplex(tmpreal(ix,kz), tmpimag(ix,kz)));
 	    }
 	  }
 	}
 
+	// Outward communication
 	// See note above for inward communication.
 	if(imdone(localmesh->xend+1, kz) == 0) {
 	  // Communicate out
@@ -353,7 +321,6 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	  if(not localmesh->lastX()) { 
 	    for(int ix = localmesh->xend+1; ix<localmesh->LocalNx ; ix++) {
 	      xk1d[ix] = dcomplex(tmpreal(ix,kz), tmpimag(ix,kz));
-	      //xk1d[ix] = 0.5*(xk1d[ix] + dcomplex(tmpreal(ix,kz), tmpimag(ix,kz)));
 	    }
 	  }
 	}
@@ -364,6 +331,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	  break;
 	}
 
+	// If my neighbour has converged, I know that I am also converged on that
+	// boundary. Set this flag after the break loop above, to ensure we do one
+	// iteration using our neighbour's converged value.
 	if(imdone(localmesh->xstart-1, kz) != 0) {
 	  imdone(localmesh->xstart, kz) = 1.0;
 	}
@@ -371,19 +341,6 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	  imdone(localmesh->xend, kz) = 1.0;
 	}
 
-///        for (int ix = 0; ix < ncx; ix++) {
-///	  if( BoutComm::rank() == 1 ){
-///	    std::cout << "rank 1 has " << count << " " << kz << " " << ix << " " << xk1d[ix].real() << " " << xk1d[ix].imag()  << endl;
-///	  }
-///	}
-
-///	if( BoutComm::rank() == 1 ){
-///	  for (int ix = 0; ix < ncx; ix++) {
-///	    std::cout << "rank 1 recving " << count << " " << kz << " " << ix << " " << xk1d[ix].real() << " " << xk1d[ix].imag()  << endl;
-///	  }
-///	}
-
-        //std::cout<<"Before count, proc "<< BoutComm::rank() <<endl;
 	++count;
 	if (count>maxits) {
 	  break;
