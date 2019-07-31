@@ -263,7 +263,13 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 //      else {
 //	B = Bvals(0,0,kz);
 //      }
-      B = Borig;
+      if( kz == 0 ) {
+	B = Borig;
+      }
+      else {
+	B = 10.0;
+      }
+      //B = Borig;
       bool allow_B_change = true;
 
 
@@ -309,8 +315,8 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	sub_it += 1;
 	if( sub_it == 3 ) {
 	  sub_it = 0;
-	    //if( count % 10 == 0 ) {
 	  if( allow_B_change and count > 10 ) {
+	    //if( count % 10 == 0 ) {
 	      if(error_abs < last_error) {
 		B *= 0.9;
 		//output << jy << " " << kz << " " << last_error << " " << error_abs << " " << sub_it << " "  << count << " reducing B to" << B << endl;
