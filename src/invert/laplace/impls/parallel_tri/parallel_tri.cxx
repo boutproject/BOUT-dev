@@ -41,7 +41,7 @@
 #include "boutcomm.hxx"
 
 LaplaceParallelTri::LaplaceParallelTri(Options *opt, CELL_LOC loc, Mesh *mesh_in)
-    : Laplacian(opt, loc, mesh_in), A(0.0), C(1.0), D(1.0), ipt_mean_its(0.), ncalls(0) {
+    : Laplacian(opt, loc, mesh_in), A(0.0), C(1.0), D(1.0), ipt_mean_its(0.), ncalls(0), Borig(50.) {
   A.setLocation(location);
   C.setLocation(location);
   D.setLocation(location);
@@ -49,11 +49,16 @@ LaplaceParallelTri::LaplaceParallelTri(Options *opt, CELL_LOC loc, Mesh *mesh_in
   OPTION(opt, rtol, 1.e-7);
   OPTION(opt, atol, 1.e-20);
   OPTION(opt, maxits, 100);
+  OPTION(opt, B, 1000.0);
+  OPTION(opt, om, 1.0);
 
   static int ipt_solver_count = 1;
   bout::globals::dump.addRepeat(ipt_mean_its,
       "ipt_solver"+std::to_string(ipt_solver_count)+"_mean_its");
   ++ipt_solver_count;
+
+  Borig = B;
+
 }
 
 FieldPerp LaplaceParallelTri::solve(const FieldPerp& b) { return solve(b, b); }
@@ -75,6 +80,8 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b) { return solve(b, b); }
  *                  the equation Ax = b
  * \param[in] x0    Variable used to set BC (if the right flags are set, see
  *                  the user manual)
+ * \param[in] b0    Initial guess for solution x (probably better named x0 but this is
+ *                  taken!) Default value 0.
  *
  * \return          The inverted variable.
  */
@@ -134,7 +141,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   // Initialise xk to 0 as we only visit 0<= kz <= maxmode in solve
   for (int ix = 0; ix < ncx; ix++) {
     for (int kz = maxmode + 1; kz < ncz / 2 + 1; kz++) {
-      xk(ix, kz) = 0.0;
+      xk(ix, kz) = 0.0; //b0(ix, kz);
     }
   }
 
@@ -218,12 +225,48 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
                  kz * kwaveFactor, global_flags, inner_boundary_flags,
                  outer_boundary_flags, &A, &C, &D);
 
+//    if( BoutComm::rank() == 0 ) {
+//      output << kz << endl;
+//      for(int ix = 0; ix<localmesh->LocalNx ; ix++) {
+//	output << avec[ix] << " " << bvec[ix] << " " << cvec[ix] << endl;
+//      }
+//    }
+//
+
+    BoutReal omorig = om ;
+//    if( kz == 0 ) {
+//      om = 1.1433;
+//    }
+//    else {
+//      om = 1.0;
+//    }	
+//    output << om << " " << omorig << endl;
+//  Over/under-relaxation
+//    for(int ix = 0; ix<localmesh->LocalNx ; ix++) {
+//      avec[ix] = om*avec[ix];
+//      cvec[ix] = om*cvec[ix];
+//    }
+
     ///////// PERFORM INVERSION /////////
     if (!localmesh->periodicX) {
 
       // Call tridiagonal solver
       //for(int it = 0; it < maxits; it++){ 
       BoutReal error_last = 1e20;
+      int sub_it = 0;
+      auto lh = Matrix<dcomplex>(3,ncx);
+      auto rh = Matrix<dcomplex>(3,ncx);
+
+//      if( Bvals(0,0,kz) < 0.0 ) {
+//	B = Borig;
+//      }
+//      else {
+//	B = Bvals(0,0,kz);
+//      }
+      B = Borig;
+      bool allow_B_change = true;
+
+
       while(true){ 
 
 	// Patch up internal boundaries
@@ -232,6 +275,11 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	    avec[ix] = 0;
 	    bvec[ix] = 1;
 	    cvec[ix] = 0;
+	    rh(sub_it,ix) = xk1d[ix];
+	    if( sub_it == 2 ) {
+	      xk1d[ix] = (rh(2,ix) - rh(0,ix)*exp(-B))/(1.0 - exp(-B));
+	      rh(0,ix) = xk1d[ix];
+	    }
 	    bk1d[ix] = xk1d[ix];
 	  }
 	} 
@@ -240,7 +288,44 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	    avec[ix] = 0;
 	    bvec[ix] = 1;
 	    cvec[ix] = 0;
+	    lh(sub_it,ix) = xk1d[ix];
+	    if( sub_it == 2 ) {
+	      xk1d[ix] = (lh(2,ix) - lh(0,ix)*exp(-B))/(1.0 - exp(-B));
+	      lh(0,ix) = xk1d[ix];
+	    }
 	    bk1d[ix] = xk1d[ix];
+	  }
+	}
+
+//	for(int ix = localmesh->xstart; ix < localmesh->xend; ix++) {
+//	  if( ix != localmesh->LocalNx-1) {
+//	    bk1d[ix] = bk1d[ix] - (1.0-om)*avec[ix]*xk1d[ix+1];
+//	  }
+//	  if( ix != 0) {
+//	    bk1d[ix] = bk1d[ix] - (1.0-om)*cvec[ix]*xk1d[ix-1];
+//	  }
+//	}
+
+	sub_it += 1;
+	if( sub_it == 3 ) {
+	  sub_it = 0;
+	    //if( count % 10 == 0 ) {
+	  if( allow_B_change and count > 10 ) {
+	      if(error_abs < last_error) {
+		B *= 0.9;
+		//output << jy << " " << kz << " " << last_error << " " << error_abs << " " << sub_it << " "  << count << " reducing B to" << B << endl;
+	      }
+	      else {
+		B /= 0.9;
+		allow_B_change = false;
+		//output << jy << " " << kz << " " << last_error << " " << error_abs << " " << sub_it << " "  << count << " inceasing B to" << B << endl;
+//		for(int ix = 0; ix<localmesh->LocalNx ; ix++) {
+//		  xk1d[ix] = xk1dlast[ix];
+//		  xk1dlast[ix] = 0.0;
+//		}
+	      }
+	    //}
+	    last_error = error_abs;
 	  }
 	}
 
@@ -263,6 +348,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	}
 	error_rel = error_abs / xmax;
 
+	TRACE("set comm flags pack");
 	// Set communication flags
 	if (error_rel<rtol or error_abs<atol) {
 	  // In the next iteration this proc informs its neighbours that its halo cells
@@ -271,6 +357,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	  imdone(localmesh->xend,kz) = 1.0;
 	}
 
+	TRACE("buffer pack");
 	// Pack buffers for communication
 	if(imdone(localmesh->xstart-1, kz) == 0 or imdone(localmesh->xend+1, kz) == 0) {
 	  for (int ix = 0; ix < ncx; ix++) {
@@ -370,7 +457,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
     ++ncalls;
     ipt_mean_its = (ipt_mean_its * BoutReal(ncalls-1)
 	+ BoutReal(count))/BoutReal(ncalls);
-    output << jy << " " << kz << " " << count << " " << ncalls << " " << ipt_mean_its << endl;
+    output << jy << " " << kz << " " << count << " " << ncalls << " " << ipt_mean_its << " " << B << endl;
+    om = omorig;
+    //Bvals(0,0,kz) = B;
 
     // If the global flag is set to INVERT_KX_ZERO
     if ((global_flags & INVERT_KX_ZERO) && (kz == 0)) {

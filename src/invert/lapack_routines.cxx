@@ -40,6 +40,10 @@
 #include <boutexception.hxx>
 #include <utils.hxx>
 
+// for dev
+#include <output.hxx>
+#include "boutcomm.hxx"
+
 #ifdef LAPACK
 
 // LAPACK prototypes
@@ -101,6 +105,21 @@ int tridag(const dcomplex *a, const dcomplex *b, const dcomplex *c, const dcompl
   for (int i = 0; i < n; i++) {
     u[i] = dcomplex(x[i].r, x[i].i);
   }
+
+//  if( BoutComm::rank() == 0 ) {
+//    std::cout << "proc " << BoutComm::rank() <<  " vn " << d[n-2].r << endl;
+//  }
+
+  BoutReal S = a[2].real()/d[2].r;
+  BoutReal fac = S;
+  for (int i = 2; i < n-1; i++) {
+    fac = fac*c[i-1].real()*a[i].real()/(d[i-1].r*d[i].r);
+    S = S + fac;
+  }
+
+//  if( BoutComm::rank() == 1 ) {
+//    std::cout << "proc " << BoutComm::rank() <<  " S " << S << endl;
+//  }
 
   return 0;
 }

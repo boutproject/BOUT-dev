@@ -12,7 +12,9 @@ MZ = 32    # Z size
 dump_format = "nc"  # NetCDF format. Alternative is "pdb"
 
 [mesh]
+#nx = 388
 nx = 12
+#dx = 0.01
 ny = 128
 symmetricGlobalX = false
 symmetricGlobalY = false
@@ -22,8 +24,13 @@ all_terms = false
 include_yguards = false
 filter = 0.2
 type = ptri
-maxits = 1000
+maxits = 10000
 rtol = 1e-10
+B = 10.0
+#B = 0.0207 # 4 procs, 42 its
+#B = 0.4
+#om = 1.1433
+om = 1.0
 
 [output]
 floats = true

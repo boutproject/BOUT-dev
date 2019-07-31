@@ -15,7 +15,7 @@ int main(int argc, char **argv) {
   FieldFactory f(mesh);
 
   Field3D input = f.create3D("(1-gauss(x-0.5,0.2))*gauss(y-pi)*gauss(z-pi)");
-  Field2D a = f.create2D("gauss(x) * sin(y)");
+  Field2D a = f.create2D("gauss(x,0.24) * sin(y)");
   Field2D c = f.create2D("sin(x) * gauss(x-0.5) * gauss(y-pi)");
   Field2D d = f.create2D("y - pi/2");
   SAVE_ONCE4(input, a, c, d);
@@ -27,6 +27,9 @@ int main(int argc, char **argv) {
   Field3D flag0a = invert_laplace(input, 0, &a);
   Field3D flag3a = invert_laplace(input, 3, &a);
   SAVE_ONCE2(flag0a, flag3a);
+
+  Field3D res0a  = Delp2(flag0a);
+  SAVE_ONCE(res0a);
 
   Field3D flag0ac = invert_laplace(input, 0, &a, &c);
   Field3D flag3ac = invert_laplace(input, 3, &a, &c);

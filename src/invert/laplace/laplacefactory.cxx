@@ -74,7 +74,8 @@ Laplacian* LaplaceFactory::createLaplacian(Options *options, const CELL_LOC loc,
       return new LaplaceNaulin(options, loc, mesh_in);
     }else if(strcasecmp(type.c_str(), LAPLACE_PTRI) == 0) {
       /// Revert to serial version
-      return new LaplaceSerialTri(options, loc, mesh_in);
+      //return new LaplaceSerialTri(options, loc, mesh_in);
+      return new LaplaceParallelTri(options, loc, mesh_in);
     }else {
       throw BoutException("Unknown serial Laplacian solver type '%s'", type.c_str());
     }

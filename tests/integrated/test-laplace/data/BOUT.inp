@@ -13,6 +13,8 @@ grid = "test_laplace.grd.nc"
 dump_format = "nc"  # NetCDF format. Alternative is "pdb"
 
 [mesh]
+#nx = 12
+#ny = 16
 symmetricGlobalX = false
 symmetricGlobalY = false
 

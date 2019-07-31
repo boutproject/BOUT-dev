@@ -11,7 +11,7 @@ except:
   pass
 
 # Variables to compare
-#vars =  ['flag0', 'flag3', 'flagis', 'flagos',
+#vars =  ['flag0', 'flag3', 'flagis', 'flagos']#,
 vars = ['flag0a']#, 'flag3a', 'flagisa', 'flagosa',
        # 'flag0ac', 'flag3ac','flagisac', 'flagosac',
        # 'flag0ad', 'flag3ad', 'flagisad', 'flagosad']  
@@ -37,7 +37,7 @@ for v in vars:
 print("Running Laplacian inversion test")
 success = True
 
-maxits=4
+maxits=200
 
 for nproc in [2]:
   nxpe = 1
@@ -57,12 +57,12 @@ for nproc in [2]:
   for v in vars:
     stdout.write("      Checking variable "+v+" ... ")
     result = collect(v, path="data", info=False)
-    np.savetxt("its_"+str(maxits)+".txt",result[:,5,0])
+    np.savetxt("its_"+str(maxits)+".txt",result[:,2,0])
     print(np.shape(result))
-    print(result[:,5,0])
-    print(bmk[v][:,5,0])
-    print(result[:,5,0]/bmk[v][:,5,0])
-    np.savetxt("bm.txt",bmk[v][:,5,0])
+    print(result[:,2,0])
+    print(bmk[v][:,2,0])
+    print(result[:,2,0]/bmk[v][:,2,0])
+    np.savetxt("bm.txt",bmk[v][:,2,0])
 ###    for ix, _ in enumerate(result[:,0,0]):
 ###        for iy, _ in enumerate(result[0,:,0]):
 ###            for iz, _ in enumerate(result[0,0,:]):

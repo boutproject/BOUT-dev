@@ -68,16 +68,24 @@ public:
   using Laplacian::solve;
   FieldPerp solve(const FieldPerp &b) override;
   FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override;
+  //FieldPerp solve(const FieldPerp &b, const FieldPerp &x0, const FieldPerp &b0 = 0.0);
 private:
   // The coefficents in
   // D*grad_perp^2(x) + (1/C)*(grad_perp(C))*grad_perp(x) + A*x = b
   Field2D A, C, D;
+
+  BoutReal om;
+  BoutReal Borig;
+  //Field3D Bvals;
 
   /// Solver tolerances
   BoutReal rtol, atol;
 
   /// Maximum number of iterations
   int maxits;
+
+  /// Kludge factor
+  BoutReal B;
 
   /// Mean number of iterations taken by the solver
   BoutReal ipt_mean_its;
