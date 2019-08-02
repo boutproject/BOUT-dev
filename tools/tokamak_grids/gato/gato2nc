@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Convert a GATO file to a NetCDF equilibrium file
 # This code should be more resiliant than the C
