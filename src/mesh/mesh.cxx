@@ -88,6 +88,21 @@ int Mesh::get(BoutReal& rval, const std::string& name, BoutReal def) {
   return !source->get(this, rval, name, def);
 }
 
+int Mesh::get(bool &bval, const std::string &name, bool def) {
+  TRACE("Mesh::get(bval, %s)", name.c_str());
+
+  if (source == nullptr) {
+    warn_default_used(def, name);
+    bval = def;
+    return true;
+  }
+
+  int bval_as_int = 0;
+  bool success = source->get(this, bval_as_int, name, def);
+  bval = bool(bval_as_int);
+  return !success;
+}
+
 int Mesh::get(Field2D &var, const std::string &name, BoutReal def) {
   TRACE("Loading 2D field: Mesh::get(Field2D, %s)", name.c_str());
 

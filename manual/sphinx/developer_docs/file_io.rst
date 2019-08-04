@@ -56,6 +56,7 @@ interface.
       }
       void add(int &i, const char *name, bool save_repeat = false);
       void add(BoutReal &r, const char *name, bool save_repeat = false);
+      void add(bool &b, const char* name, bool save_repeat = false);
       void add(Field2D &f, const char *name, bool save_repeat = false);
       void add(Field3D &f, const char *name, bool save_repeat = false);
       void add(FieldPerp &f, const char *name, bool save_repeat = false);

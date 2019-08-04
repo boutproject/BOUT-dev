@@ -80,8 +80,9 @@ Datafile::Datafile(Datafile &&other) noexcept
       flushFrequency(other.flushFrequency), file(std::move(other.file)),
       writable(other.writable), appending(other.appending), first_time(other.first_time),
       int_arr(std::move(other.int_arr)), BoutReal_arr(std::move(other.BoutReal_arr)),
-      f2d_arr(std::move(other.f2d_arr)), f3d_arr(std::move(other.f3d_arr)),
-      v2d_arr(std::move(other.v2d_arr)), v3d_arr(std::move(other.v3d_arr)) {
+      bool_arr(std::move(other.bool_arr)), f2d_arr(std::move(other.f2d_arr)),
+      f3d_arr(std::move(other.f3d_arr)), v2d_arr(std::move(other.v2d_arr)),
+      v3d_arr(std::move(other.v3d_arr)) {
   filenamelen = other.filenamelen;
   filename = other.filename;
   other.filenamelen = 0;
@@ -95,8 +96,8 @@ Datafile::Datafile(const Datafile &other) :
   enabled(other.enabled), shiftOutput(other.shiftOutput), shiftInput(other.shiftInput), flushFrequencyCounter(other.flushFrequencyCounter), flushFrequency(other.flushFrequency), 
   file(nullptr), writable(other.writable), appending(other.appending), first_time(other.first_time),
   int_arr(other.int_arr), BoutReal_arr(other.BoutReal_arr),
-  f2d_arr(other.f2d_arr), f3d_arr(other.f3d_arr), v2d_arr(other.v2d_arr),
-  v3d_arr(other.v3d_arr)
+  bool_arr(other.bool_arr), f2d_arr(other.f2d_arr), f3d_arr(other.f3d_arr),
+  v2d_arr(other.v2d_arr), v3d_arr(other.v3d_arr)
 {
   filenamelen=other.filenamelen;
   filename=new char[filenamelen];
@@ -123,6 +124,7 @@ Datafile& Datafile::operator=(Datafile &&rhs) noexcept {
   first_time   = rhs.first_time;
   int_arr      = std::move(rhs.int_arr);
   BoutReal_arr = std::move(rhs.BoutReal_arr);
+  bool_arr     = std::move(rhs.bool_arr);
   f2d_arr      = std::move(rhs.f2d_arr);
   f3d_arr      = std::move(rhs.f3d_arr);
   v2d_arr      = std::move(rhs.v2d_arr);
@@ -226,6 +228,13 @@ bool Datafile::openw(const char *format, ...) {
   for(const auto& var : BoutReal_arr) {
     if (!file->addVarBoutReal(var.name, var.save_repeat)) {
       throw BoutException("Failed to add BoutReal variable %s to Datafile", var.name.c_str());
+    }
+  }
+
+  // Add bools
+  for(const auto& var : bool_arr) {
+    if (!file->addVarInt(var.name, var.save_repeat)) {
+      throw BoutException("Failed to add bool variable %s to Datafile", var.name.c_str());
     }
   }
 
@@ -333,6 +342,13 @@ bool Datafile::opena(const char *format, ...) {
   for(const auto& var : BoutReal_arr) {
     if (!file->addVarBoutReal(var.name, var.save_repeat)) {
       throw BoutException("Failed to add BoutReal variable %s to Datafile", var.name.c_str());
+    }
+  }
+
+  // Add bools
+  for(const auto& var : bool_arr) {
+    if (!file->addVarInt(var.name, var.save_repeat)) {
+      throw BoutException("Failed to add bool variable %s to Datafile", var.name.c_str());
     }
   }
 
@@ -508,6 +524,54 @@ void Datafile::add(BoutReal &r, const char *name, bool save_repeat) {
     // Add variable to file
     if (!file->addVarBoutReal(name, save_repeat)) {
       throw BoutException("Failed to add BoutReal variable %s to Datafile", name);
+    }
+
+    if(openclose) {
+      file->close();
+    }
+  }
+}
+
+void Datafile::add(bool &b, const char *name, bool save_repeat) {
+  TRACE("DataFile::add(bool)");
+  if (!enabled)
+    return;
+  if (varAdded(name)) {
+    // Check if it's the same variable
+    if (&b == varPtr(name)) {
+      output_warn.write("WARNING: variable '%s' added again to Datafile\n", name);
+    } else {
+      throw BoutException("Variable with name '%s' already added to Datafile", name);
+    }
+  }
+
+  VarStr<bool> d;
+
+  d.ptr = &b;
+  d.name = name;
+  d.save_repeat = save_repeat;
+  d.covar = false;
+
+  bool_arr.push_back(d);
+
+  if (writable) {
+    // Otherwise will add variables when Datafile is opened for writing/appending
+    if (openclose) {
+      // Open the file
+      // Check filename has been set
+      if (strcmp(filename, "") == 0)
+        throw BoutException("Datafile::add: Filename has not been set");
+      if(!file->openw(filename, BoutComm::rank(), appending))
+        throw BoutException("Datafile::add: Failed to open file!");
+      appending = true;
+    }
+
+    if(!file->is_valid())
+      throw BoutException("Datafile::add: File is not valid!");
+
+    // Add variable to file
+    if (!file->addVarInt(name, save_repeat)) {
+      throw BoutException("Failed to add bool variable %s to Datafile", name);
     }
 
     if(openclose) {
@@ -838,6 +902,31 @@ bool Datafile::read() {
     }
   }
   
+  // Read bools
+  for(const auto& var : bool_arr) {
+    int var_as_int = 0;
+    if(var.save_repeat) {
+      if(!file->read_rec(&var_as_int, var.name.c_str())) {
+        if(!init_missing) {
+          throw BoutException("Missing data for %s in input. Set init_missing=true to set to false.", var.name.c_str());
+        }
+        output_warn.write("\tWARNING: Could not read bool %s. Setting to false\n", var.name.c_str());
+        *(var.ptr) = false;
+        continue;
+      }
+    } else {
+      if(!file->read(&var_as_int, var.name.c_str())) {
+        if(!init_missing) {
+          throw BoutException("Missing data for %s in input. Set init_missing=true to set to false.", var.name.c_str());
+        }
+        output_warn.write("\tWARNING: Could not read bool %s. Setting to false\n", var.name.c_str());
+        *(var.ptr) = false;
+        continue;
+      }
+    }
+    *var.ptr = bool(var_as_int);
+  }
+
   // Read 2D fields
   for(const auto& var : f2d_arr) {
     read_f2d(var.name, var.ptr, var.save_repeat);
@@ -966,6 +1055,12 @@ bool Datafile::write() {
   // Write BoutReals
   for(const auto& var : BoutReal_arr) {
     write_real(var.name, var.ptr, var.save_repeat);
+  }
+
+  // Write bools
+  for(const auto& var : bool_arr) {
+    int var_as_int = int(*var.ptr);
+    write_int(var.name, &var_as_int, var.save_repeat);
   }
 
   // Write 2D fields
@@ -1360,6 +1455,11 @@ bool Datafile::varAdded(const std::string &name) {
       return true;
   }
 
+  for(const auto& var : bool_arr ) {
+    if(name == var.name)
+      return true;
+  }
+
   for(const auto& var : f2d_arr ) {
     if(name == var.name)
       return true;
@@ -1390,6 +1490,12 @@ void *Datafile::varPtr(const std::string &name) {
   }
 
   for (const auto &var : BoutReal_arr) {
+    if (name == var.name) {
+      return static_cast<void *>(var.ptr);
+    }
+  }
+
+  for (const auto &var : bool_arr) {
     if (name == var.name) {
       return static_cast<void *>(var.ptr);
     }
