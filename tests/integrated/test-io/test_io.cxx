@@ -61,6 +61,7 @@ int main(int argc, char **argv) {
   int MYPE;
   MPI_Comm_rank(BoutComm::get(), &MYPE);
 
+  bvar_evol = bvar;
   for(int i=0;i<3;i++) {
     ivar_evol = ivar + i;
     rvar_evol = rvar + 0.5 * i;
