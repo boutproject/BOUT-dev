@@ -703,7 +703,7 @@ CFLAGS
 CC
 H5CC
 AWK
-NCMPIDUMP_PATH
+PNCCONF
 NCCONF
 fftw_path
 works
@@ -7204,72 +7204,47 @@ fi
 # Parallel NetCDF support
 #############################################################
 
-PNCPATH=""
-if test "$with_pnetcdf" != "no" && test "x$with_pnetcdf" != "x" ; then :
+PNCCONF="" # Configuration script
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: Searching for Parallel-NetCDF library" >&5
-$as_echo "$as_me: Searching for Parallel-NetCDF library" >&6;}
+if test "x$with_pnetcdf" != "xno"; then :
 
-  if test "x$with_pnetcdf" != "xyes"; then :
+  ##########################################
+  # Try to find a valid parallel NetCDF configuration
+  #
+  # at first, try to find ncconf script
 
-    # Given a path to the library
-    as_ac_File=`$as_echo "ac_cv_file_$with_pnetcdf/include/pnetcdf.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_pnetcdf/include/pnetcdf.h" >&5
-$as_echo_n "checking for $with_pnetcdf/include/pnetcdf.h... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$with_pnetcdf/include/pnetcdf.h"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$with_pnetcdf/include/pnetcdf.h" | $as_tr_cpp` 1
-_ACEOF
-PNCPATH=$with_pnetcdf
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: parallel-netcdf not found in given directory" >&5
-$as_echo "$as_me: parallel-netcdf not found in given directory" >&6;}
-
-fi
-
-
-fi
-
-  # Find the utilities included with pnetcdf
-  if test "x$PNCPATH" = "x"; then :
-
-    if test "x$with_pnetcdf" = "xyes"; then :
-
-      # Extract the first word of "ncmpidump", so it can be a program name with args.
-set dummy ncmpidump; ac_word=$2
+  # Search for NetCDF config scripts, use nc-config as ncxx4-config does not
+  # have the --has-parallel option
+  # Check if the path to the config script has been supplied directly, otherwise
+  # check the path provided by --with-pnetcdf, appending "/bin" if need
+  # be, then check system path
+  # Set PNCCONF to the full path of the found script
+  case `basename $with_pnetcdf 2> /dev/null` in #(
+  "nc-config") :
+    PNCCONF=$with_pnetcdf ;; #(
+  *) :
+    for ac_prog in nc-config
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_NCMPIDUMP_PATH+:} false; then :
+if ${ac_cv_path_PNCCONF+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  case $NCMPIDUMP_PATH in
+  case $PNCCONF in
   [\\/]* | ?:[\\/]*)
-  ac_cv_path_NCMPIDUMP_PATH="$NCMPIDUMP_PATH" # Let the user override the test with a path.
+  ac_cv_path_PNCCONF="$PNCCONF" # Let the user override the test with a path.
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
+for as_dir in $with_pnetcdf$PATH_SEPARATOR$with_pnetcdf/bin$PATH_SEPARATOR$PATH
 do
   IFS=$as_save_IFS
   test -z "$as_dir" && as_dir=.
     for ac_exec_ext in '' $ac_executable_extensions; do
   if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_NCMPIDUMP_PATH="$as_dir/$ac_word$ac_exec_ext"
+    ac_cv_path_PNCCONF="$as_dir/$ac_word$ac_exec_ext"
     $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
     break 2
   fi
@@ -7280,180 +7255,147 @@ IFS=$as_save_IFS
   ;;
 esac
 fi
-NCMPIDUMP_PATH=$ac_cv_path_NCMPIDUMP_PATH
-if test -n "$NCMPIDUMP_PATH"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $NCMPIDUMP_PATH" >&5
-$as_echo "$NCMPIDUMP_PATH" >&6; }
+PNCCONF=$ac_cv_path_PNCCONF
+if test -n "$PNCCONF"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PNCCONF" >&5
+$as_echo "$PNCCONF" >&6; }
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 fi
 
 
-
-else
-
-      # Extract the first word of "ncmpidump", so it can be a program name with args.
-set dummy ncmpidump; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_NCMPIDUMP_PATH+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $NCMPIDUMP_PATH in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_NCMPIDUMP_PATH="$NCMPIDUMP_PATH" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_NCMPIDUMP_PATH="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
+  test -n "$PNCCONF" && break
 done
-  done
-IFS=$as_save_IFS
-
-  test -z "$ac_cv_path_NCMPIDUMP_PATH" && ac_cv_path_NCMPIDUMP_PATH="$with_pnetcdf$PATH_SEPARATOR$PATH"
-  ;;
+ ;;
 esac
+
+  ##########################################
+  # Get configuration
+  if test "x$PNCCONF" = "x" ; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}:  -> Parallel NetCDF support disabled" >&5
+$as_echo "$as_me:  -> Parallel NetCDF support disabled" >&6;}
+else
+
+     { $as_echo "$as_me:${as_lineno-$LINENO}:  \"checking BBB parallel netcdf x$PNCCONF y$nc_has_parallel\" " >&5
+$as_echo "$as_me:  \"checking BBB parallel netcdf x$PNCCONF y$nc_has_parallel\" " >&6;}
+     # If we found nc-config rather than ncxx4-config, we need to check if it supports C++
+     if test `basename $PNCCONF` = 'nc-config'; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if $PNCCONF has C++4 support" >&5
+$as_echo_n "checking if $PNCCONF has C++4 support... " >&6; }
+            nc_has_cpp4=`$PNCCONF --has-c++4`
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $nc_has_cpp4" >&5
+$as_echo "$nc_has_cpp4" >&6; }
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking if $PNCCONF has C++ support" >&5
+$as_echo_n "checking if $PNCCONF has C++ support... " >&6; }
+            nc_has_cpp=`$PNCCONF --has-c++`
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $nc_has_cpp" >&5
+$as_echo "$nc_has_cpp" >&6; }
+
+else
+
+            nc_has_cpp4="yes"
+
 fi
-NCMPIDUMP_PATH=$ac_cv_path_NCMPIDUMP_PATH
-if test -n "$NCMPIDUMP_PATH"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $NCMPIDUMP_PATH" >&5
-$as_echo "$NCMPIDUMP_PATH" >&6; }
+
+     # Check netcdf has mpi support
+     nc_has_parallel=`$PNCCONF --has-parallel`
+     if test "x$nc_has_parallel" != "xyes"; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}:  -> Parallel NetCDF support disabled" >&5
+$as_echo "$as_me:  -> Parallel NetCDF support disabled" >&6;}
+else
+
+
+       NCINC=`$PNCCONF --cflags`
+       EXTRA_INCS="$EXTRA_INCS $NCINC"
+       if test "x$nc_has_cpp4" = "xyes"; then :
+
+          NCLIB=`$PNCCONF --libs`
+          CXXFLAGS="$CXXFLAGS -DPNCDF4"
+          { $as_echo "$as_me:${as_lineno-$LINENO}:  -> Parallel NetCDF-4 support enabled" >&5
+$as_echo "$as_me:  -> Parallel NetCDF-4 support enabled" >&6;}
+
+else
+
+          # nc-config might not *say* it has C++ support, but we can try anyway
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can compile NetCDF with C++" >&5
+$as_echo_n "checking if we can compile NetCDF with C++... " >&6; }
+          # Note netcdf_c++ needed
+          NCLIB=`$PNCCONF --libs | sed s/-lnetcdf/-lnetcdf_c++\ -lnetcdf/`
+
+          save_LIBS=$LIBS
+          save_LDFLAGS=$LDFLAGS
+          save_CXXFLAGS=$CXXFLAGS
+          ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+          LIBS="$save_LIBS $NCLIB"
+          LDFLAGS="$save_LDFLAGS $NCLIB"
+          CXXFLAGS="$save_CXXFLAGS $NCINC"
+          cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+               #include <netcdfcpp.h>
+
+int
+main ()
+{
+NcFile file("foo.nc");
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+             { $as_echo "$as_me:${as_lineno-$LINENO}:  -> Legacy NetCDF support enabled" >&5
+$as_echo "$as_me:  -> Legacy NetCDF support enabled" >&6;}
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-fi
-
-
-
-fi
-    if test "$NCMPIDUMP_PATH" != ""; then :
-
-      as_ac_File=`$as_echo "ac_cv_file_$NCMPIDUMP_PATH/../include/pnetcdf.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $NCMPIDUMP_PATH/../include/pnetcdf.h" >&5
-$as_echo_n "checking for $NCMPIDUMP_PATH/../include/pnetcdf.h... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$NCMPIDUMP_PATH/../include/pnetcdf.h"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$NCMPIDUMP_PATH/../include/pnetcdf.h" | $as_tr_cpp` 1
-_ACEOF
-PNCPATH=$NCMPIDUMP_PATH/../
-fi
-
-
-fi
-
-fi
-
-  if test "x$PNCPATH" != "x"; then :
-
-    as_ac_File=`$as_echo "ac_cv_file_$path/lib/libpnetcdf.a" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $path/lib/libpnetcdf.a" >&5
-$as_echo_n "checking for $path/lib/libpnetcdf.a... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$path/lib/libpnetcdf.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$path/lib/libpnetcdf.a" | $as_tr_cpp` 1
-_ACEOF
-PNCPATHLIB='lib'
-else
-  as_ac_File=`$as_echo "ac_cv_file_$path/lib64/libpnetcdf.a" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $path/lib64/libpnetcdf.a" >&5
-$as_echo_n "checking for $path/lib64/libpnetcdf.a... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "$path/lib64/libpnetcdf.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-
-cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$path/lib64/libpnetcdf.a" | $as_tr_cpp` 1
-_ACEOF
-PNCPATHLIB='lib64'
-else
-  PNCPATH=''
-fi
-
-fi
-
-
-fi
-
-  if test "x$PNCPATH" = "x" && test "x$with_pnetcdf" != "x"; then :
-
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+             { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "*** Parallel-NetCDF requested but not found
+as_fn_error $? "*** Could not compile NetCDF C++ program!
 See \`config.log' for more details" "$LINENO" 5; }
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+          ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+          LIBS=$save_LIBS
+          LDFLAGS=$save_LDFLAGS
+          CXXFLAGS="$save_CXXFLAGS -DPNCDF"
+
+fi
+        EXTRA_LIBS="$EXTRA_LIBS $NCLIB"
+
+        file_formats="$file_formats Parallel-NetCDF"
+        PNCPATH="found"
+        PNCFOUND=yes
 
 fi
 
 fi
 
-if test "x$PNCPATH" = "x"; then :
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: Parallel-NetCDF support disabled" >&5
-$as_echo "$as_me: Parallel-NetCDF support disabled" >&6;}
-
-else
-
-  # Set a compile-time flag
-  CXXFLAGS="$CXXFLAGS -DPNCDF"
-  EXTRA_INCS="$EXTRA_INCS -I$PNCPATH/include"
-  EXTRA_LIBS="$EXTRA_LIBS -L$PNCPATH/$PNCPATHLIB -lpnetcdf"
-
-  file_formats="$file_formats Parallel-NetCDF"
-  { $as_echo "$as_me:${as_lineno-$LINENO}: Parallel-NetCDF support enabled" >&5
-$as_echo "$as_me: Parallel-NetCDF support enabled" >&6;}
+  { $as_echo "$as_me:${as_lineno-$LINENO}:  \"checking parallel netcdf x$PNCFOUND y$nc_has_parallel\" " >&5
+$as_echo "$as_me:  \"checking parallel netcdf x$PNCFOUND y$nc_has_parallel\" " >&6;}
+  if test $with_pnetcdf && test "x$PNCFOUND" != "xyes" ; then :
+  as_fn_error $? "Parallel-NetCDF requested but not found" "$LINENO" 5
+fi
+  if test "x$PNCFOUND" != "xyes"; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}:  -> Parallel-NetCDF support disabled" >&5
+$as_echo "$as_me:  -> Parallel-NetCDF support disabled" >&6;}
+fi
 
 fi
+
 
 #############################################################
 # HDF5 library
@@ -12117,7 +12059,7 @@ $as_echo "$USE_NLS" >&6; }
 
 
 
-      GETTEXT_MACRO_VERSION=0.19
+      GETTEXT_MACRO_VERSION=0.18
 
 
 
@@ -13310,21 +13252,16 @@ else
 /* end confdefs.h.  */
 
 #include <libintl.h>
-#ifndef __GNU_GETTEXT_SUPPORTED_REVISION
+$gt_revision_test_code
 extern int _nl_msg_cat_cntr;
 extern int *_nl_domain_bindings;
-#define __GNU_GETTEXT_SYMBOL_EXPRESSION (_nl_msg_cat_cntr + *_nl_domain_bindings)
-#else
-#define __GNU_GETTEXT_SYMBOL_EXPRESSION 0
-#endif
-$gt_revision_test_code
 
 int
 main ()
 {
 
 bindtextdomain ("", "");
-return * gettext ("")$gt_expression_test_code + __GNU_GETTEXT_SYMBOL_EXPRESSION
+return * gettext ("")$gt_expression_test_code + _nl_msg_cat_cntr + *_nl_domain_bindings
 
   ;
   return 0;
@@ -13444,42 +13381,36 @@ else
       if test $am_cv_lib_iconv = yes; then
         LIBS="$LIBS $LIBICONV"
       fi
-      am_cv_func_iconv_works=no
-      for ac_iconv_const in '' 'const'; do
-        if test "$cross_compiling" = yes; then :
-  case "$host_os" in
-             aix* | hpux*) am_cv_func_iconv_works="guessing no" ;;
-             *)            am_cv_func_iconv_works="guessing yes" ;;
-           esac
+      if test "$cross_compiling" = yes; then :
+
+         case "$host_os" in
+           aix* | hpux*) am_cv_func_iconv_works="guessing no" ;;
+           *)            am_cv_func_iconv_works="guessing yes" ;;
+         esac
+
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 #include <iconv.h>
 #include <string.h>
-
-#ifndef ICONV_CONST
-# define ICONV_CONST $ac_iconv_const
-#endif
-
-int
-main ()
+int main ()
 {
-int result = 0;
+  int result = 0;
   /* Test against AIX 5.1 bug: Failures are not distinguishable from successful
      returns.  */
   {
     iconv_t cd_utf8_to_88591 = iconv_open ("ISO8859-1", "UTF-8");
     if (cd_utf8_to_88591 != (iconv_t)(-1))
       {
-        static ICONV_CONST char input[] = "\342\202\254"; /* EURO SIGN */
+        static const char input[] = "\342\202\254"; /* EURO SIGN */
         char buf[10];
-        ICONV_CONST char *inptr = input;
+        const char *inptr = input;
         size_t inbytesleft = strlen (input);
         char *outptr = buf;
         size_t outbytesleft = sizeof (buf);
         size_t res = iconv (cd_utf8_to_88591,
-                            &inptr, &inbytesleft,
+                            (char **) &inptr, &inbytesleft,
                             &outptr, &outbytesleft);
         if (res == 0)
           result |= 1;
@@ -13492,14 +13423,14 @@ int result = 0;
     iconv_t cd_ascii_to_88591 = iconv_open ("ISO8859-1", "646");
     if (cd_ascii_to_88591 != (iconv_t)(-1))
       {
-        static ICONV_CONST char input[] = "\263";
+        static const char input[] = "\263";
         char buf[10];
-        ICONV_CONST char *inptr = input;
+        const char *inptr = input;
         size_t inbytesleft = strlen (input);
         char *outptr = buf;
         size_t outbytesleft = sizeof (buf);
         size_t res = iconv (cd_ascii_to_88591,
-                            &inptr, &inbytesleft,
+                            (char **) &inptr, &inbytesleft,
                             &outptr, &outbytesleft);
         if (res == 0)
           result |= 2;
@@ -13511,14 +13442,14 @@ int result = 0;
     iconv_t cd_88591_to_utf8 = iconv_open ("UTF-8", "ISO-8859-1");
     if (cd_88591_to_utf8 != (iconv_t)(-1))
       {
-        static ICONV_CONST char input[] = "\304";
+        static const char input[] = "\304";
         static char buf[2] = { (char)0xDE, (char)0xAD };
-        ICONV_CONST char *inptr = input;
+        const char *inptr = input;
         size_t inbytesleft = 1;
         char *outptr = buf;
         size_t outbytesleft = 1;
         size_t res = iconv (cd_88591_to_utf8,
-                            &inptr, &inbytesleft,
+                            (char **) &inptr, &inbytesleft,
                             &outptr, &outbytesleft);
         if (res != (size_t)(-1) || outptr - buf > 1 || buf[1] != (char)0xAD)
           result |= 4;
@@ -13531,14 +13462,14 @@ int result = 0;
     iconv_t cd_88591_to_utf8 = iconv_open ("utf8", "iso88591");
     if (cd_88591_to_utf8 != (iconv_t)(-1))
       {
-        static ICONV_CONST char input[] = "\304rger mit b\366sen B\374bchen ohne Augenma\337";
+        static const char input[] = "\304rger mit b\366sen B\374bchen ohne Augenma\337";
         char buf[50];
-        ICONV_CONST char *inptr = input;
+        const char *inptr = input;
         size_t inbytesleft = strlen (input);
         char *outptr = buf;
         size_t outbytesleft = sizeof (buf);
         size_t res = iconv (cd_88591_to_utf8,
-                            &inptr, &inbytesleft,
+                            (char **) &inptr, &inbytesleft,
                             &outptr, &outbytesleft);
         if ((int)res > 0)
           result |= 8;
@@ -13558,20 +13489,17 @@ int result = 0;
       && iconv_open ("utf8", "eucJP") == (iconv_t)(-1))
     result |= 16;
   return result;
-
-  ;
-  return 0;
 }
 _ACEOF
 if ac_fn_cxx_try_run "$LINENO"; then :
   am_cv_func_iconv_works=yes
+else
+  am_cv_func_iconv_works=no
 fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
 
-        test "$am_cv_func_iconv_works" = no || break
-      done
       LIBS="$am_save_LIBS"
 
 fi
@@ -14077,25 +14005,20 @@ else
 /* end confdefs.h.  */
 
 #include <libintl.h>
-#ifndef __GNU_GETTEXT_SUPPORTED_REVISION
+$gt_revision_test_code
 extern int _nl_msg_cat_cntr;
 extern
 #ifdef __cplusplus
 "C"
 #endif
 const char *_nl_expand_alias (const char *);
-#define __GNU_GETTEXT_SYMBOL_EXPRESSION (_nl_msg_cat_cntr + *_nl_expand_alias (""))
-#else
-#define __GNU_GETTEXT_SYMBOL_EXPRESSION 0
-#endif
-$gt_revision_test_code
 
 int
 main ()
 {
 
 bindtextdomain ("", "");
-return * gettext ("")$gt_expression_test_code + __GNU_GETTEXT_SYMBOL_EXPRESSION
+return * gettext ("")$gt_expression_test_code + _nl_msg_cat_cntr + *_nl_expand_alias ("")
 
   ;
   return 0;
@@ -14114,25 +14037,20 @@ rm -f core conftest.err conftest.$ac_objext \
 /* end confdefs.h.  */
 
 #include <libintl.h>
-#ifndef __GNU_GETTEXT_SUPPORTED_REVISION
+$gt_revision_test_code
 extern int _nl_msg_cat_cntr;
 extern
 #ifdef __cplusplus
 "C"
 #endif
 const char *_nl_expand_alias (const char *);
-#define __GNU_GETTEXT_SYMBOL_EXPRESSION (_nl_msg_cat_cntr + *_nl_expand_alias (""))
-#else
-#define __GNU_GETTEXT_SYMBOL_EXPRESSION 0
-#endif
-$gt_revision_test_code
 
 int
 main ()
 {
 
 bindtextdomain ("", "");
-return * gettext ("")$gt_expression_test_code + __GNU_GETTEXT_SYMBOL_EXPRESSION
+return * gettext ("")$gt_expression_test_code + _nl_msg_cat_cntr + *_nl_expand_alias ("")
 
   ;
   return 0;

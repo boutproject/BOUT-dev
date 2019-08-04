@@ -531,50 +531,93 @@ AS_IF([test "x$with_netcdf" != "xno"],
 # Parallel NetCDF support
 #############################################################
 
-PNCPATH=""
-AS_IF([test "$with_pnetcdf" != "no" && test "x$with_pnetcdf" != "x" ], [
-  AC_MSG_NOTICE([Searching for Parallel-NetCDF library])
+PNCCONF="" # Configuration script
 
-  AS_IF([test "x$with_pnetcdf" != "xyes"], [
-    # Given a path to the library
-    AC_CHECK_FILES([$with_pnetcdf/include/pnetcdf.h], [PNCPATH=$with_pnetcdf],
-      AC_MSG_NOTICE([parallel-netcdf not found in given directory])
-    )
-  ])
+AS_IF([test "x$with_pnetcdf" != "xno"],
+[
+  ##########################################
+  # Try to find a valid parallel NetCDF configuration
+  #
+  # at first, try to find ncconf script
 
-  # Find the utilities included with pnetcdf
-  AS_IF([test "x$PNCPATH" = "x"], [
-    AS_IF([test "x$with_pnetcdf" = "xyes"], [
-      AC_PATH_PROG([NCMPIDUMP_PATH], [ncmpidump])
-    ], [
-      AC_PATH_PROG([NCMPIDUMP_PATH], [ncmpidump], [$with_pnetcdf$PATH_SEPARATOR$PATH])
-    ])
-    AS_IF([test "$NCMPIDUMP_PATH" != ""], [
-      AC_CHECK_FILES([$NCMPIDUMP_PATH/../include/pnetcdf.h], [PNCPATH=$NCMPIDUMP_PATH/../])
-    ])
-  ])
+  # Search for NetCDF config scripts, use nc-config as ncxx4-config does not
+  # have the --has-parallel option
+  # Check if the path to the config script has been supplied directly, otherwise
+  # check the path provided by --with-pnetcdf, appending "/bin" if need
+  # be, then check system path
+  # Set PNCCONF to the full path of the found script
+  AS_CASE([`basename $with_pnetcdf 2> /dev/null`],
+    ["nc-config"], [PNCCONF=$with_pnetcdf],
+    [AC_PATH_PROGS([PNCCONF], [nc-config], [],
+       [$with_pnetcdf$PATH_SEPARATOR$with_pnetcdf/bin$PATH_SEPARATOR$PATH])])
 
-  AS_IF([test "x$PNCPATH" != "x"], [
-    AC_CHECK_FILES($path/lib/libpnetcdf.a, PNCPATHLIB='lib',
-      AC_CHECK_FILES($path/lib64/libpnetcdf.a, PNCPATHLIB='lib64', PNCPATH=''))
-  ])
+  ##########################################
+  # Get configuration
+  AS_IF([test "x$PNCCONF" = "x" ], [AC_MSG_NOTICE([ -> Parallel NetCDF support disabled])],
+  [
+     AC_MSG_NOTICE([ "checking BBB parallel netcdf x$PNCCONF y$nc_has_parallel" ])
+     # If we found nc-config rather than ncxx4-config, we need to check if it supports C++
+     AS_IF([test `basename $PNCCONF` = 'nc-config'],
+           [AC_MSG_CHECKING([if $PNCCONF has C++4 support])
+            nc_has_cpp4=`$PNCCONF --has-c++4`
+            AC_MSG_RESULT([$nc_has_cpp4])
+            AC_MSG_CHECKING([if $PNCCONF has C++ support])
+            nc_has_cpp=`$PNCCONF --has-c++`
+            AC_MSG_RESULT([$nc_has_cpp])
+           ], [
+            nc_has_cpp4="yes"
+           ])
 
-  AS_IF([test "x$PNCPATH" = "x" && test "x$with_pnetcdf" != "x"], [
-    AC_MSG_FAILURE([*** Parallel-NetCDF requested but not found])
-  ])
-])
+     # Check netcdf has mpi support
+     nc_has_parallel=`$PNCCONF --has-parallel`
+     AS_IF([test "x$nc_has_parallel" != "xyes"], [AC_MSG_NOTICE([ -> Parallel NetCDF support disabled])], [
 
-AS_IF([test "x$PNCPATH" = "x"], [
-  AC_MSG_NOTICE([Parallel-NetCDF support disabled])
-], [
-  # Set a compile-time flag
-  CXXFLAGS="$CXXFLAGS -DPNCDF"
-  EXTRA_INCS="$EXTRA_INCS -I$PNCPATH/include"
-  EXTRA_LIBS="$EXTRA_LIBS -L$PNCPATH/$PNCPATHLIB -lpnetcdf"
+       NCINC=`$PNCCONF --cflags`
+       EXTRA_INCS="$EXTRA_INCS $NCINC"
+       AS_IF([test "x$nc_has_cpp4" = "xyes"],
+         [
+          NCLIB=`$PNCCONF --libs`
+          CXXFLAGS="$CXXFLAGS -DPNCDF4"
+          AC_MSG_NOTICE([ -> Parallel NetCDF-4 support enabled])
+         ], [
+          # nc-config might not *say* it has C++ support, but we can try anyway
+          AC_MSG_CHECKING([if we can compile NetCDF with C++])
+          # Note netcdf_c++ needed
+          NCLIB=`$PNCCONF --libs | sed s/-lnetcdf/-lnetcdf_c++\ -lnetcdf/`
 
-  file_formats="$file_formats Parallel-NetCDF"
-  AC_MSG_NOTICE([Parallel-NetCDF support enabled])
-])
+          save_LIBS=$LIBS
+          save_LDFLAGS=$LDFLAGS
+          save_CXXFLAGS=$CXXFLAGS
+          AC_LANG_PUSH([C++])
+          LIBS="$save_LIBS $NCLIB"
+          LDFLAGS="$save_LDFLAGS $NCLIB"
+          CXXFLAGS="$save_CXXFLAGS $NCINC"
+          AC_LINK_IFELSE(
+            [AC_LANG_PROGRAM([
+               #include <netcdfcpp.h>
+               ], [NcFile file("foo.nc");])],
+            [AC_MSG_RESULT([yes])
+             AC_MSG_NOTICE([ -> Legacy NetCDF support enabled])],
+            [AC_MSG_RESULT([no])
+             AC_MSG_FAILURE([*** Could not compile NetCDF C++ program!])])
+          AC_LANG_POP([C++])
+          LIBS=$save_LIBS
+          LDFLAGS=$save_LDFLAGS
+          CXXFLAGS="$save_CXXFLAGS -DPNCDF"
+         ])
+        EXTRA_LIBS="$EXTRA_LIBS $NCLIB"
+
+        file_formats="$file_formats Parallel-NetCDF"
+        PNCPATH="found"
+        PNCFOUND=yes
+      ])
+   ])
+
+  AC_MSG_NOTICE([ "checking parallel netcdf x$PNCFOUND y$nc_has_parallel" ])
+  AS_IF([test $with_pnetcdf && test "x$PNCFOUND" != "xyes" ], AC_MSG_ERROR([Parallel-NetCDF requested but not found]), [])
+  AS_IF([test "x$PNCFOUND" != "xyes"], [AC_MSG_NOTICE([ -> Parallel-NetCDF support disabled])], [])
+], [])
+
 
 #############################################################
 # HDF5 library
