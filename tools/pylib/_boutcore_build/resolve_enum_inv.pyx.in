@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# We are trying to parse bout_types, to translate the list of enums to
+# We are trying to parse bout_types.hxx, to translate the list of enums to
 # a python dictionary.
 
 for file in ../../../include/bout_types.hxx other_enums.hxx
