@@ -639,6 +639,16 @@ int BoutFinalise(bool write_settings) {
  * Called each timestep by the solver
  **************************************************************************/
 
+BoutMonitor::BoutMonitor(BoutReal timestep) : Monitor(timestep) {
+  auto write_run_metrics = Options::root()["output"]["write_run_metrics"]
+                               .doc("Add wall clock time etc to dump file")
+                               .withDefault(false);
+
+  if (write_run_metrics) {
+    run_data.outputVars(bout::globals::dump);
+  }
+}
+
 int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
   TRACE("BoutMonitor::call(%e, %d, %d)", t, iter, NOUT);
 

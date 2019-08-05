@@ -189,10 +189,7 @@ int bout_run(Solver* solver, rhsfunc physics_run);
  */
 class BoutMonitor : public Monitor {
 public:
-  BoutMonitor(BoutReal timestep = -1) : Monitor(timestep) {
-    // Add wall clock time etc to dump file
-    run_data.outputVars(bout::globals::dump);
-  }
+  explicit BoutMonitor(BoutReal timestep = -1);
 
 private:
   int call(Solver* solver, BoutReal t, int iter, int NOUT) override;
