@@ -149,6 +149,15 @@ class Mesh {
   /// @returns zero if successful, non-zero on failure
   int get(BoutReal& rval, const std::string& name, BoutReal def=0.0);
 
+  /// Get a bool from the input source
+  ///
+  /// @param[out] bval  The value will be put into this variable
+  /// @param[in] name   The name of the variable to read
+  /// @param[in] def    The default value if not found
+  ///
+  /// @returns zero if successful, non-zero on failure
+  int get(bool &bval, const std::string &name, bool def=false);
+
   /// Get a Field2D from the input source
   /// including communicating guard cells
   ///
