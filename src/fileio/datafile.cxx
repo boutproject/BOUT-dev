@@ -577,8 +577,15 @@ void Datafile::add(bool &b, const char *name, bool save_repeat) {
       // Check filename has been set
       if (strcmp(filename, "") == 0)
         throw BoutException("Datafile::add: Filename has not been set");
-      if(!file->openw(filename, BoutComm::rank(), appending))
-        throw BoutException("Datafile::add: Failed to open file!");
+      if(!file->openw(filename, BoutComm::rank(), appending)) {
+        if (appending) {
+          throw BoutException("Datafile::add: Failed to open file %s for appending!",
+              filename);
+        } else {
+          throw BoutException("Datafile::add: Failed to open file %s for writing!",
+              filename);
+        }
+      }
       appending = true;
     }
 
