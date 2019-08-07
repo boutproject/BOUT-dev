@@ -69,6 +69,9 @@ public:
   FieldPerp solve(const FieldPerp &b) override;
   FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override;
   //FieldPerp solve(const FieldPerp &b, const FieldPerp &x0, const FieldPerp &b0 = 0.0);
+
+  BoutReal getMeanIterations() const { return ipt_mean_its; }
+  void resetMeanIterations() { ipt_mean_its = 0; }
 private:
   // The coefficents in
   // D*grad_perp^2(x) + (1/C)*(grad_perp(C))*grad_perp(x) + A*x = b

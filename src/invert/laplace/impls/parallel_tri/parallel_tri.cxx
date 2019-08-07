@@ -40,6 +40,8 @@
 #include <output.hxx>
 #include "boutcomm.hxx"
 
+#include <bout/scorepwrapper.hxx>
+
 LaplaceParallelTri::LaplaceParallelTri(Options *opt, CELL_LOC loc, Mesh *mesh_in)
     : Laplacian(opt, loc, mesh_in), A(0.0), C(1.0), D(1.0), ipt_mean_its(0.), ncalls(0), Borig(50.) {
   A.setLocation(location);
@@ -85,8 +87,10 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b) { return solve(b, b); }
  *
  * \return          The inverted variable.
  */
+//FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0, const FieldPerp& b0) {
 FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 
+  SCOREP0();
   Timer timer("invert"); ///< Start timer
 
   ASSERT1(localmesh == b.getMesh() && localmesh == x0.getMesh());
@@ -141,7 +145,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   // Initialise xk to 0 as we only visit 0<= kz <= maxmode in solve
   for (int ix = 0; ix < ncx; ix++) {
     for (int kz = maxmode + 1; kz < ncz / 2 + 1; kz++) {
-      xk(ix, kz) = 0.0; //b0(ix, kz);
+      xk(ix, kz) = 0.0; // b0(ix, kz);
     }
   }
 
@@ -170,12 +174,14 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 
       // x0 is the input
       // bk is the output
+      output << "here" << endl;
       rfft(x0[ix], ncz, &bk(ix, 0));
 
     } else {
       // b is the input
       // bk is the output
       rfft(b[ix], ncz, &bk(ix, 0));
+      rfft(x0[ix], ncz, &xk(ix, 0));
     }
   }
 
@@ -189,8 +195,8 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
     for (int ix = 0; ix < ncx; ix++) {
       // Get bk of the current fourier mode
       bk1d[ix] = bk(ix, kz);
-      xk1d[ix] = 0.0;
-      xk1dlast[ix] = 0.0;
+      xk1d[ix] = xk(ix, kz);
+      xk1dlast[ix] = xk(ix, kz);
     }
 
     int count = 0;
@@ -463,8 +469,8 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
     ++ncalls;
     ipt_mean_its = (ipt_mean_its * BoutReal(ncalls-1)
 	+ BoutReal(count))/BoutReal(ncalls);
-    output << jy << " " << kz << " " << count << " " << ncalls << " " << ipt_mean_its << " " << B << endl;
-    om = omorig;
+    //output << jy << " " << kz << " " << count << " " << ncalls << " " << ipt_mean_its << " " << B << endl;
+    //om = omorig;
     //Bvals(0,0,kz) = B;
 
     // If the global flag is set to INVERT_KX_ZERO
