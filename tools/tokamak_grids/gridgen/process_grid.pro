@@ -786,7 +786,8 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   ; Grid spacing
   dx = DBLARR(nx, ny_total)
   FOR y=0, ny_total-1 DO BEGIN
-    dx[0:(nx-2),y] = psixy[1:*,y] - psixy[0:(nx-2),y]
+    dx[1:(nx-2),y] = 0.5D*(psixy[2:*,y] - psixy[0:(nx-3),y])
+    dx[0,y] = dx[1,y]
     dx[nx-1,y] = dx[nx-2,y]
   ENDFOR
   
