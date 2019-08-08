@@ -253,7 +253,7 @@ class Mesh {
   /*!
    * Communicate an X-sized complex array in the inward X direction
    */
-  void communicateXIn(dcomplex *f);
+  void communicateXIn(Array<dcomplex> &f);
 
   /*!
    * Communicate an X-Z field with outward X direction
@@ -263,7 +263,7 @@ class Mesh {
   /*!
    * Communicate an X-sized complex array in the outward X direction
    */
-  void communicateXOut(dcomplex *f);
+  void communicateXOut(Array<dcomplex> &f);
 
   /*!
    * Send a list of FieldData objects
@@ -359,14 +359,14 @@ class Mesh {
   /// @param[in] buffer  The data to send. Must be at least length \p size
   /// @param[in] size    The number of dcomplex to send
   /// @param[in] tag     A label for the communication. Must be the same at receive
-  virtual comm_handle isendXOut(dcomplex *buffer, int size, int tag) = 0;
+  virtual comm_handle isendXOut(const dcomplex *buffer, int size, int tag) = 0;
 
   /// Send a buffer of complex data to processor at X index -1
   ///
   /// @param[in] buffer  The data to send. Must be at least length \p size
   /// @param[in] size    The number of dcomplex to send
   /// @param[in] tag     A label for the communication. Must be the same at receive
-  virtual comm_handle isendXIn(dcomplex *buffer, int size, int tag) = 0;
+  virtual comm_handle isendXIn(const dcomplex *buffer, int size, int tag) = 0;
 
   /// Receive a buffer of complex data from X index +1
   ///

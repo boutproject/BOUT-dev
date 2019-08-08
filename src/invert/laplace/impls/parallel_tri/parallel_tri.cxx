@@ -369,7 +369,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	if(imdone(localmesh->xstart-1, kz) == 0) {
 	  // Communicate in
 	  localmesh->communicateXIn(imdone);
-	  localmesh->communicateXIn(std::begin(xk1d));
+	  localmesh->communicateXIn(xk1d);
 	}
 
 	// Outward communication
@@ -377,7 +377,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	if(imdone(localmesh->xend+1, kz) == 0) {
 	  // Communicate out
 	  localmesh->communicateXOut(imdone);
-	  localmesh->communicateXOut(std::begin(xk1d));
+	  localmesh->communicateXOut(xk1d);
 	}
 
 	// Now I've done my communication, exit if I am both in- and out-converged
