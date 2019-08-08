@@ -1258,7 +1258,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       nrad = LONARR(critical.n_xpoint + 1)
       tot = 0
       FOR i=0, critical.n_xpoint-1 DO BEGIN
-        w = WHERE(psi_vals LT xpt_psi[si[i]], count)
+        w = WHERE( (psi_vals - xpt_psi[si[i]]) LT 1.D-12, count)
         nrad[i] = count - tot
         tot = tot + nrad[i]
       ENDFOR
@@ -1611,15 +1611,15 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       xind = si[i]
       
       ; Get number of points in this PF region (npf)
-      w = WHERE(psi_vals LT xpt_psi[xind], npf)
+      w = WHERE( (psi_vals - xpt_psi[xind]) LT 1.D-12, npf)
       w = WHERE(ci EQ xind)
       id = w[0]
       
       IF KEYWORD_SET(single_rad_grid) THEN BEGIN
         ; Gridding as one region
-        IF (npf+1) LT TOTAL(nrad,/int) THEN BEGIN
+        IF npf LT TOTAL(nrad,/int) THEN BEGIN
           dpsi = pf_psi_vals[xind,0,npf+1] - pf_psi_vals[xind,0,npf]
-          pf_psi_out = (pf_psi_vals[xind,0,npf] - 0.5D*dpsi) < xpt_psi[xind]
+          pf_psi_out = pf_psi_vals[xind,0,npf] - 0.5D*dpsi
           pf_psi_vals[xind,0,0:(npf-1)] = radial_grid(npf, psi_inner[id+1], $
                                                       pf_psi_out, $
                                                       1, 0, $
