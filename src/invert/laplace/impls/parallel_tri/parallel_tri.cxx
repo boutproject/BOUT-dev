@@ -346,21 +346,6 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	  imdone(localmesh->xend,kz) = 1.0;
 	}
 
-	TRACE("buffer pack");
-	// Pack buffers for communication
-	if(imdone(localmesh->xstart-1, kz) == 0) {
-	  for (int ix = 0; ix < localmesh->xstart+1; ix++) {
-	    tmpreal(ix,kz) = xk1d[ix].real();
-	    tmpimag(ix,kz) = xk1d[ix].imag();
-	  }
-	}
-	if(imdone(localmesh->xend+1, kz) == 0) {
-	  for (int ix = localmesh->xend; ix < ncx; ix++) {
-	    tmpreal(ix,kz) = xk1d[ix].real();
-	    tmpimag(ix,kz) = xk1d[ix].imag();
-	  }
-	}
-
 	// Communication
 	// A proc is finished when it is both in- and out-converged.
 	// Once this happens, that processor communicates once, then breaks.
@@ -384,13 +369,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	if(imdone(localmesh->xstart-1, kz) == 0) {
 	  // Communicate in
 	  localmesh->communicateXIn(imdone);
-	  localmesh->communicateXIn(tmpreal);
-	  localmesh->communicateXIn(tmpimag);
-	  if(not localmesh->firstX()) { 
-	    for(int ix = 0; ix<localmesh->xstart ; ix++) {
-	      xk1d[ix] = dcomplex(tmpreal(ix,kz), tmpimag(ix,kz));
-	    }
-	  }
+	  localmesh->communicateXIn(std::begin(xk1d));
 	}
 
 	// Outward communication
@@ -398,13 +377,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	if(imdone(localmesh->xend+1, kz) == 0) {
 	  // Communicate out
 	  localmesh->communicateXOut(imdone);
-	  localmesh->communicateXOut(tmpreal);
-	  localmesh->communicateXOut(tmpimag);
-	  if(not localmesh->lastX()) { 
-	    for(int ix = localmesh->xend+1; ix<localmesh->LocalNx ; ix++) {
-	      xk1d[ix] = dcomplex(tmpreal(ix,kz), tmpimag(ix,kz));
-	    }
-	  }
+	  localmesh->communicateXOut(std::begin(xk1d));
 	}
 
 	// Now I've done my communication, exit if I am both in- and out-converged

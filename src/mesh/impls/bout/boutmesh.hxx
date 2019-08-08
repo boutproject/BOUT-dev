@@ -96,28 +96,28 @@ class BoutMesh : public Mesh {
   /// @param[in] buffer  The data to send. Must be at least length \p size
   /// @param[in] size    The number of dcomplex to send
   /// @param[in] tag     A label for the communication. Must be the same at receive
-  comm_handle isendXOutComplex(dcomplex *buffer, int size, int tag);
+  comm_handle isendXOut(dcomplex *buffer, int size, int tag);
 
   /// Send a buffer of complex data to processor at X index -1
   ///
   /// @param[in] buffer  The data to send. Must be at least length \p size
   /// @param[in] size    The number of dcomplex to send
   /// @param[in] tag     A label for the communication. Must be the same at receive
-  comm_handle isendXInComplex(dcomplex *buffer, int size, int tag);
+  comm_handle isendXIn(dcomplex *buffer, int size, int tag);
 
   /// Receive a buffer of complex data from X index +1
   ///
   /// @param[in] buffer  A buffer to put the data in. Must already be allocated of length \p size
   /// @param[in] size    The number of dcomplex to receive and put in \p buffer
   /// @param[in] tag     A label for the communication. Must be the same as sent
-  comm_handle irecvXOutComplex(dcomplex *buffer, int size, int tag);
+  comm_handle irecvXOut(dcomplex *buffer, int size, int tag);
 
   /// Receive a buffer of complex data from X index -1
   ///
   /// @param[in] buffer  A buffer to put the data in. Must already be allocated of length \p size
   /// @param[in] size    The number of dcomplex to receive and put in \p buffer
   /// @param[in] tag     A label for the communication. Must be the same as sent
-  comm_handle irecvXInComplex(dcomplex *buffer, int size, int tag);
+  comm_handle irecvXIn(dcomplex *buffer, int size, int tag);
 
   MPI_Comm getXcomm(int UNUSED(jy)) const {return comm_x; } ///< Return communicator containing all processors in X
   MPI_Comm getYcomm(int jx) const; ///< Return communicator containing all processors in Y

@@ -1316,7 +1316,7 @@ comm_handle BoutMesh::irecvXIn(BoutReal *buffer, int size, int tag) {
   return static_cast<comm_handle>(ch);
 }
 
-comm_handle BoutMesh::isendXOutComplex(dcomplex *buffer, int size, int tag) {
+comm_handle BoutMesh::isendXOut(dcomplex *buffer, int size, int tag) {
   if (PE_XIND == NXPE - 1)
     return nullptr;
 
@@ -1331,7 +1331,7 @@ comm_handle BoutMesh::isendXOutComplex(dcomplex *buffer, int size, int tag) {
   return static_cast<comm_handle>(ch);
 }
 
-comm_handle BoutMesh::isendXInComplex(dcomplex *buffer, int size, int tag) {
+comm_handle BoutMesh::isendXIn(dcomplex *buffer, int size, int tag) {
   if (PE_XIND == 0)
     return nullptr;
 
@@ -1346,7 +1346,7 @@ comm_handle BoutMesh::isendXInComplex(dcomplex *buffer, int size, int tag) {
   return static_cast<comm_handle>(ch);
 }
 
-comm_handle BoutMesh::irecvXOutComplex(dcomplex *buffer, int size, int tag) {
+comm_handle BoutMesh::irecvXOut(dcomplex *buffer, int size, int tag) {
   if (PE_XIND == NXPE - 1)
     return nullptr;
 
@@ -1363,7 +1363,7 @@ comm_handle BoutMesh::irecvXOutComplex(dcomplex *buffer, int size, int tag) {
   return static_cast<comm_handle>(ch);
 }
 
-comm_handle BoutMesh::irecvXInComplex(dcomplex *buffer, int size, int tag) {
+comm_handle BoutMesh::irecvXIn(dcomplex *buffer, int size, int tag) {
   if (PE_XIND == 0)
     return nullptr;
 

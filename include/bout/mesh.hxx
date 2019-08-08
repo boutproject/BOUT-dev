@@ -251,9 +251,19 @@ class Mesh {
   void communicateXIn(FieldPerp &f);
 
   /*!
+   * Communicate an X-sized complex array in the inward X direction
+   */
+  void communicateXIn(dcomplex *f);
+
+  /*!
    * Communicate an X-Z field with outward X direction
    */
   void communicateXOut(FieldPerp &f);
+
+  /*!
+   * Communicate an X-sized complex array in the outward X direction
+   */
+  void communicateXOut(dcomplex *f);
 
   /*!
    * Send a list of FieldData objects
@@ -343,6 +353,34 @@ class Mesh {
   /// @param[in] size    The number of BoutReals to receive and put in \p buffer
   /// @param[in] tag     A label for the communication. Must be the same as sent
   virtual comm_handle irecvXIn(BoutReal *buffer, int size, int tag) = 0;
+
+  /// Send a complex buffer of data to processor at X index +1
+  ///
+  /// @param[in] buffer  The data to send. Must be at least length \p size
+  /// @param[in] size    The number of dcomplex to send
+  /// @param[in] tag     A label for the communication. Must be the same at receive
+  virtual comm_handle isendXOut(dcomplex *buffer, int size, int tag) = 0;
+
+  /// Send a buffer of complex data to processor at X index -1
+  ///
+  /// @param[in] buffer  The data to send. Must be at least length \p size
+  /// @param[in] size    The number of dcomplex to send
+  /// @param[in] tag     A label for the communication. Must be the same at receive
+  virtual comm_handle isendXIn(dcomplex *buffer, int size, int tag) = 0;
+
+  /// Receive a buffer of complex data from X index +1
+  ///
+  /// @param[in] buffer  A buffer to put the data in. Must already be allocated of length \p size
+  /// @param[in] size    The number of dcomplex to receive and put in \p buffer
+  /// @param[in] tag     A label for the communication. Must be the same as sent
+  virtual comm_handle irecvXOut(dcomplex *buffer, int size, int tag) = 0;
+
+  /// Receive a buffer of complex data from X index -1
+  ///
+  /// @param[in] buffer  A buffer to put the data in. Must already be allocated of length \p size
+  /// @param[in] size    The number of dcomplex to receive and put in \p buffer
+  /// @param[in] tag     A label for the communication. Must be the same as sent
+  virtual comm_handle irecvXIn(dcomplex *buffer, int size, int tag) = 0;
 
   MPI_Comm getXcomm() {return getXcomm(0);} ///< Return communicator containing all processors in X
   virtual MPI_Comm getXcomm(int jy) const = 0; ///< Return X communicator
