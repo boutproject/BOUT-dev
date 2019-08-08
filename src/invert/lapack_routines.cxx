@@ -109,14 +109,14 @@ int tridag(const dcomplex *a, const dcomplex *b, const dcomplex *c, const dcompl
 //  if( BoutComm::rank() == 0 ) {
 //    std::cout << "proc " << BoutComm::rank() <<  " vn " << d[n-2].r << endl;
 //  }
-
-  BoutReal S = a[2].real()/d[2].r;
-  BoutReal fac = S;
-  for (int i = 2; i < n-1; i++) {
-    fac = fac*c[i-1].real()*a[i].real()/(d[i-1].r*d[i].r);
-    S = S + fac;
-  }
-
+///
+///  BoutReal S = a[2].real()/d[2].r;
+///  BoutReal fac = S;
+///  for (int i = 2; i < n-1; i++) {
+///    fac = fac*c[i-1].real()*a[i].real()/(d[i-1].r*d[i].r);
+///    S = S + fac;
+///  }
+///
 //  if( BoutComm::rank() == 1 ) {
 //    std::cout << "proc " << BoutComm::rank() <<  " S " << S << endl;
 //  }
