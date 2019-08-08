@@ -79,7 +79,8 @@ private:
 
   BoutReal om;
   BoutReal Borig;
-  //Field3D Bvals;
+  Field3D Bvals;
+  bool first_call;
 
   /// Solver tolerances
   BoutReal rtol, atol;
