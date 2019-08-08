@@ -1316,6 +1316,70 @@ comm_handle BoutMesh::irecvXIn(BoutReal *buffer, int size, int tag) {
   return static_cast<comm_handle>(ch);
 }
 
+comm_handle BoutMesh::isendXOutComplex(dcomplex *buffer, int size, int tag) {
+  if (PE_XIND == NXPE - 1)
+    return nullptr;
+
+  Timer timer("comms");
+
+  // Get a communications handle. Not fussy about size of arrays
+  CommHandle *ch = get_handle(0, 0);
+
+  MPI_Isend(buffer, size, MPI_DOUBLE_COMPLEX, PROC_NUM(PE_XIND + 1, PE_YIND), tag,
+           BoutComm::get(), &(ch->sendreq[0]));
+
+  return static_cast<comm_handle>(ch);
+}
+
+comm_handle BoutMesh::isendXInComplex(dcomplex *buffer, int size, int tag) {
+  if (PE_XIND == 0)
+    return nullptr;
+
+  Timer timer("comms");
+
+  // Get a communications handle. Not fussy about size of arrays
+  CommHandle *ch = get_handle(0, 0);
+
+  MPI_Isend(buffer, size, MPI_DOUBLE_COMPLEX, PROC_NUM(PE_XIND - 1, PE_YIND), tag,
+           BoutComm::get(), &(ch->sendreq[0]));
+
+  return static_cast<comm_handle>(ch);
+}
+
+comm_handle BoutMesh::irecvXOutComplex(dcomplex *buffer, int size, int tag) {
+  if (PE_XIND == NXPE - 1)
+    return nullptr;
+
+  Timer timer("comms");
+
+  // Get a communications handle. Not fussy about size of arrays
+  CommHandle *ch = get_handle(0, 0);
+
+  MPI_Irecv(buffer, size, MPI_DOUBLE_COMPLEX, PROC_NUM(PE_XIND + 1, PE_YIND), tag,
+            BoutComm::get(), ch->request);
+
+  ch->in_progress = true;
+
+  return static_cast<comm_handle>(ch);
+}
+
+comm_handle BoutMesh::irecvXInComplex(dcomplex *buffer, int size, int tag) {
+  if (PE_XIND == 0)
+    return nullptr;
+
+  Timer timer("comms");
+
+  // Get a communications handle. Not fussy about size of arrays
+  CommHandle *ch = get_handle(0, 0);
+
+  MPI_Irecv(buffer, size, MPI_DOUBLE_COMPLEX, PROC_NUM(PE_XIND - 1, PE_YIND), tag,
+            BoutComm::get(), ch->request);
+
+  ch->in_progress = true;
+
+  return static_cast<comm_handle>(ch);
+}
+
 /****************************************************************
  *                 Y COMMUNICATIONS
  *
