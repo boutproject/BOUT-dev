@@ -43,7 +43,7 @@ private:
   bool compressible; ///< If allow inclusion of n grad phi term in density evolution
   bool sheath;       ///< Sheath connected?
 
-  Laplacian *phiSolver; ///< Performs Laplacian inversions to calculate phi
+  std::unique_ptr<Laplacian> phiSolver{nullptr}; ///< Performs Laplacian inversions to calculate phi
 
 protected:
   int init(bool UNUSED(restarting)) {
@@ -97,10 +97,10 @@ protected:
 
     if (boussinesq) {
        // BOUT.inp section "phiBoussinesq"
-      phiSolver = Laplacian::create(Options::getRoot()->getSection("phiBoussinesq"));
+      phiSolver = std::unique_ptr<Laplacian>(Laplacian::create(Options::getRoot()->getSection("phiBoussinesq")));
     } else {
       // BOUT.inp section "phiSolver"
-      phiSolver = Laplacian::create(Options::getRoot()->getSection("phiSolver")); 
+      phiSolver = std::unique_ptr<Laplacian>(Laplacian::create(Options::getRoot()->getSection("phiSolver")));
     }
     phi = 0.0; // Starting guess for first solve (if iterative)
 

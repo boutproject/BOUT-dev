@@ -9,8 +9,8 @@
 
 # settings used by the core code
 
-NOUT = 100      # number of time-steps
-TIMESTEP = 20  # time between outputs [1/wci]
+NOUT = 20      # number of time-steps
+TIMESTEP = 10  # time between outputs [1/wci]
 
 
 MXG = 2      # Number of X guard cells
@@ -51,9 +51,11 @@ upwind = W3
 
 [solver]
 
+type = rk4
 ATOL = 1.0e-10  # absolute tolerance
-RTOL = 1.0e-5   # relative tolerance
+RTOL = 1.0e-8   # relative tolerance
 mxstep = 10000  # Maximum internal steps per output
+max_timestep = 1.0
 
 ###################################################
 # Electrostatic potential solver
@@ -81,6 +83,11 @@ flags      = 49152  # set_rhs i.e. identity matrix in boundaries
 [phiBoussinesq]
 # By default type is tri (serial) or spt (parallel)
 flags = 0
+type = ptri
+atol = 1e-20
+rtol = 1e-6
+B = 10
+maxits = 32
 
 ##################################################
 # general settings for the model
