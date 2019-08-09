@@ -268,7 +268,8 @@ void Mesh::communicateXIn(FieldPerp &f) {
 /// inward direction, assuming the elements 0 to xstart correspond to the inward
 /// guard cells.
 void Mesh::communicateXIn(Array<dcomplex> &f) {
-  comm_handle recv[1], send[1];
+  comm_handle recv[1];
+  //comm_handle send[1];
   
   int nin = xstart; // Number of x points in inner guard cell
 
@@ -276,13 +277,14 @@ void Mesh::communicateXIn(Array<dcomplex> &f) {
   recv[0] = irecvXIn(&f[0], nin, 0);
   
   // Send data
-  send[0] = isendXIn(&f[xstart], nin, 1);
+  //send[0] = isendXIn(&f[xstart], nin, 1);
+  sendXIn(&f[xstart], nin, 1);
  
   // Wait for receive
   wait(recv[0]);
 
   // Wait for send
-  wait(send[0]);
+  //wait(send[0]);
 }
 
 /// This communicates a FieldPerp with the neighbouring X processor in the
@@ -306,7 +308,8 @@ void Mesh::communicateXOut(FieldPerp &f) {
 /// outward direction, assuming the elements 0 to xstart correspond to the outward
 /// guard cells.
 void Mesh::communicateXOut(Array<dcomplex>& f) {
-  comm_handle recv[1], send[1];
+  comm_handle recv[1];
+  //comm_handle send[1];
   
   int nout = LocalNx-xend-1; // Number of x points in outer guard cell
 
@@ -314,13 +317,14 @@ void Mesh::communicateXOut(Array<dcomplex>& f) {
   recv[0] = irecvXOut(&f[xend+1], nout, 1);
   
   // Send data
-  send[0] = isendXOut(&f[xend-nout+1], nout, 0);
+  //send[0] = isendXOut(&f[xend-nout+1], nout, 0);
+  sendXOut(&f[xend-nout+1], nout, 0);
  
   // Wait for receive
   wait(recv[0]);
 
   // Wait for send
-  wait(send[0]);
+  //wait(send[0]);
 }
 
 int Mesh::msg_len(const std::vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt) {

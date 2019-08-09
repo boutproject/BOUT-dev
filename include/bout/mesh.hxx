@@ -354,19 +354,33 @@ class Mesh {
   /// @param[in] tag     A label for the communication. Must be the same as sent
   virtual comm_handle irecvXIn(BoutReal *buffer, int size, int tag) = 0;
 
-  /// Send a complex buffer of data to processor at X index +1
+  /// Non-blocking send of a buffer of complex data to processor at X index +1
   ///
   /// @param[in] buffer  The data to send. Must be at least length \p size
   /// @param[in] size    The number of dcomplex to send
   /// @param[in] tag     A label for the communication. Must be the same at receive
   virtual comm_handle isendXOut(const dcomplex *buffer, int size, int tag) = 0;
 
-  /// Send a buffer of complex data to processor at X index -1
+  /// Send a complex buffer of data to processor at X index +1
+  ///
+  /// @param[in] buffer  The data to send. Must be at least length \p size
+  /// @param[in] size    The number of dcomplex to send
+  /// @param[in] tag     A label for the communication. Must be the same at receive
+  virtual int sendXOut(const dcomplex *buffer, int size, int tag) = 0;
+
+  /// Non-blocking send of a buffer of complex data to processor at X index -1
   ///
   /// @param[in] buffer  The data to send. Must be at least length \p size
   /// @param[in] size    The number of dcomplex to send
   /// @param[in] tag     A label for the communication. Must be the same at receive
   virtual comm_handle isendXIn(const dcomplex *buffer, int size, int tag) = 0;
+
+  /// Send a buffer of complex data to processor at X index -1
+  ///
+  /// @param[in] buffer  The data to send. Must be at least length \p size
+  /// @param[in] size    The number of dcomplex to send
+  /// @param[in] tag     A label for the communication. Must be the same at receive
+  virtual int sendXIn(const dcomplex *buffer, int size, int tag) = 0;
 
   /// Receive a buffer of complex data from X index +1
   ///

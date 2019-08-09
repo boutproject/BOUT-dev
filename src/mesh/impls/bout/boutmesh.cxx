@@ -1331,6 +1331,18 @@ comm_handle BoutMesh::isendXOut(const dcomplex *buffer, int size, int tag) {
   return static_cast<comm_handle>(ch);
 }
 
+int BoutMesh::sendXOut(const dcomplex *buffer, int size, int tag) {
+  if (PE_XIND == NXPE - 1)
+    return 1;
+
+  Timer timer("comms");
+
+  MPI_Send(buffer, size, MPI_DOUBLE_COMPLEX, PROC_NUM(PE_XIND + 1, PE_YIND), tag,
+           BoutComm::get());
+
+  return 0;
+}
+
 comm_handle BoutMesh::isendXIn(const dcomplex *buffer, int size, int tag) {
   if (PE_XIND == 0)
     return nullptr;
@@ -1344,6 +1356,18 @@ comm_handle BoutMesh::isendXIn(const dcomplex *buffer, int size, int tag) {
            BoutComm::get(), ch->request);
 
   return static_cast<comm_handle>(ch);
+}
+
+int BoutMesh::sendXIn(const dcomplex *buffer, int size, int tag) {
+  if (PE_XIND == 0)
+    return 1;
+
+  Timer timer("comms");
+
+  MPI_Send(buffer, size, MPI_DOUBLE_COMPLEX, PROC_NUM(PE_XIND - 1, PE_YIND), tag,
+           BoutComm::get());
+
+  return 0;
 }
 
 comm_handle BoutMesh::irecvXOut(dcomplex *buffer, int size, int tag) {
