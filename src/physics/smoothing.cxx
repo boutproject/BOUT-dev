@@ -46,7 +46,6 @@ const Field3D smooth_x(const Field3D &f) {
   TRACE("smooth_x");
   Mesh *mesh = f.getMesh();
   Field3D result{emptyFrom(f)};
-  result.allocate();
   
   // Copy boundary region
   for(int jy=0;jy<mesh->LocalNy;jy++)
@@ -74,7 +73,6 @@ const Field3D smooth_y(const Field3D &f) {
   TRACE("smooth_y");
   Mesh *mesh = f.getMesh();
   Field3D result{emptyFrom(f)};
-  result.allocate();
   
   // Copy boundary region
   for(int jx=0;jx<mesh->LocalNx;jx++)

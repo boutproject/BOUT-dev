@@ -625,7 +625,6 @@ FieldPerp pow(const Field3D &lhs, const FieldPerp &rhs, const std::string& rgn) 
   ASSERT1(areFieldsCompatible(lhs, rhs));
 
   FieldPerp result{emptyFrom(rhs)};
-  result.allocate();
   
   BOUT_FOR(i, result.getRegion(rgn)) {
     result[i] = ::pow(lhs(i, rhs.getIndex()), rhs[i]);
