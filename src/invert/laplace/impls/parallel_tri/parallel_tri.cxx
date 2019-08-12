@@ -102,11 +102,6 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   FieldPerp x{emptyFrom(b)};
 
-  //FieldPerp tmpreal = 0.0; //{emptyFrom(b)};
-  //FieldPerp tmpimag = 0.0; //{emptyFrom(b)};
-  FieldPerp tmpreal{emptyFrom(b)};
-  FieldPerp tmpimag{emptyFrom(b)};
-
   // Convergence flags
   bool self_in = false;
   bool self_out = false;
@@ -259,9 +254,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       // Call tridiagonal solver
       //for(int it = 0; it < maxits; it++){ 
       BoutReal error_last = 1e20;
-      int sub_it = 0;
-      auto lh = Matrix<dcomplex>(3,ncx);
-      auto rh = Matrix<dcomplex>(3,ncx);
+//      int sub_it = 0;
+//      auto lh = Matrix<dcomplex>(3,ncx);
+//      auto rh = Matrix<dcomplex>(3,ncx);
 
 ///      if( first_call ) {
 ///	B = Borig;
@@ -274,14 +269,27 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       //if( !first_call ) allow_B_change = false;
       //output << first_call << " " << allow_B_change << endl;
 
+      // Patch up internal boundaries
+      if(not localmesh->lastX()) { 
+	for(int ix = localmesh->xend+1; ix<localmesh->LocalNx ; ix++) {
+	  avec[ix] = 0;
+	  bvec[ix] = 1;
+	  cvec[ix] = 0;
+	}
+      } 
+      if(not localmesh->firstX()) { 
+	for(int ix = 0; ix<localmesh->xstart ; ix++) {
+	  avec[ix] = 0;
+	  bvec[ix] = 1;
+	  cvec[ix] = 0;
+	}
+      }
+
       while(true){ 
 
 	// Patch up internal boundaries
 	if(not localmesh->lastX()) { 
 	  for(int ix = localmesh->xend+1; ix<localmesh->LocalNx ; ix++) {
-	    avec[ix] = 0;
-	    bvec[ix] = 1;
-	    cvec[ix] = 0;
 ///	    rh(sub_it,ix) = xk1d[ix];
 ///	    if( sub_it == 2 ) {
 ///	      xk1d[ix] = (rh(2,ix) - rh(0,ix)*exp(-B))/(1.0 - exp(-B));
@@ -292,9 +300,6 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	} 
 	if(not localmesh->firstX()) { 
 	  for(int ix = 0; ix<localmesh->xstart ; ix++) {
-	    avec[ix] = 0;
-	    bvec[ix] = 1;
-	    cvec[ix] = 0;
 ///	    lh(sub_it,ix) = xk1d[ix];
 ///	    if( sub_it == 2 ) {
 ///	      xk1d[ix] = (lh(2,ix) - lh(0,ix)*exp(-B))/(1.0 - exp(-B));
@@ -348,7 +353,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	  }
 	}
 	if( xmax > 0.0 ){
-		error_rel = error_abs / xmax;
+          error_rel = error_abs / xmax;
 	}
 	else{
 	  error_rel = error_abs;
@@ -360,8 +365,6 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	if (error_rel<rtol or error_abs<atol) {
 	  // In the next iteration this proc informs its neighbours that its halo cells
 	  // will no longer be updated, then breaks.
-	  //imdone(localmesh->xstart,kz) = 1.0;
-	  //imdone(localmesh->xend,kz) = 1.0;
 	  self_in = true;
 	  self_out = true;
 	}
