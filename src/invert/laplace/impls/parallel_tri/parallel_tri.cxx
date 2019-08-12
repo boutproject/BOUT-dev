@@ -61,7 +61,8 @@ LaplaceParallelTri::LaplaceParallelTri(Options *opt, CELL_LOC loc, Mesh *mesh_in
 
   Borig = B;
 
-  first_call = true;
+  first_call = Array<bool>(localmesh->LocalNy);
+  //first_call = true;
 
   x0saved = Tensor<dcomplex>(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
 
@@ -203,7 +204,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       //xk1d[ix] = xk(ix, kz);
       //xk1dlast[ix] = xk(ix, kz);
 
-      if( first_call ){
+      if( first_call[jy] ){
 	//output << "start "<<ix<<" "<<jy<<" "<<kz<<endl;
 	x0saved(ix,jy,kz) = 0.0;
       }
@@ -503,7 +504,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   //if( first_call ){
   //  bout::globals::dump.add(Bvals, "exponents", false);
   //}
-  first_call = false;
+  first_call[jy] = false;
 
   return x; // Result of the inversion
 }
