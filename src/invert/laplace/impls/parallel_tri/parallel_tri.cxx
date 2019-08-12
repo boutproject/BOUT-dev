@@ -347,8 +347,14 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	    xmax = xabs;
 	  }
 	}
-	error_rel = error_abs / xmax;
+	if( xmax > 0.0 ){
+		error_rel = error_abs / xmax;
+	}
+	else{
+	  error_rel = error_abs;
+	}
 
+	//output << BoutComm::rank() << " " <<error_rel << " " << error_abs << " " << xmax << " " << endl;
 	TRACE("set comm flags pack");
 	// Set communication flags
 	if (error_rel<rtol or error_abs<atol) {
