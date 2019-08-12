@@ -81,6 +81,8 @@ private:
   BoutReal Borig;
   Field3D Bvals;
   bool first_call;
+  // Save previous x in Fourier space
+  Tensor<dcomplex> x0saved;
 
   /// Solver tolerances
   BoutReal rtol, atol;

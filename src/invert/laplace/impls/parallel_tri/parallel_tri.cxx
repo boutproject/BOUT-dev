@@ -63,6 +63,8 @@ LaplaceParallelTri::LaplaceParallelTri(Options *opt, CELL_LOC loc, Mesh *mesh_in
 
   first_call = true;
 
+  x0saved = Tensor<dcomplex>(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
+
 }
 
 FieldPerp LaplaceParallelTri::solve(const FieldPerp& b) { return solve(b, b); }
@@ -183,7 +185,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       // b is the input
       // bk is the output
       rfft(b[ix], ncz, &bk(ix, 0));
-      rfft(x0[ix], ncz, &xk(ix, 0));
+      //rfft(x0[ix], ncz, &xk(ix, 0));
     }
   }
 
@@ -197,8 +199,19 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
     for (int ix = 0; ix < ncx; ix++) {
       // Get bk of the current fourier mode
       bk1d[ix] = bk(ix, kz);
-      xk1d[ix] = xk(ix, kz);
-      xk1dlast[ix] = xk(ix, kz);
+
+      //xk1d[ix] = xk(ix, kz);
+      //xk1dlast[ix] = xk(ix, kz);
+
+      if( first_call ){
+	//output << "start "<<ix<<" "<<jy<<" "<<kz<<endl;
+	x0saved(ix,jy,kz) = 0.0;
+      }
+      //output << "start1 "<<ix<<" "<<jy<<" "<<kz<<endl;
+      xk1d[ix] = x0saved(ix, jy, kz);
+      //output << "start2 "<<ix<<" "<<jy<<" "<<kz<<endl;
+      xk1dlast[ix] = x0saved(ix, jy, kz);
+      //output << "start3 "<<ix<<" "<<jy<<" "<<kz<<endl;
     }
 
     int count = 0;
@@ -466,6 +479,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
     // Store the solution xk for the current fourier mode in a 2D array
     for (int ix = 0; ix < ncx; ix++) {
       xk(ix, kz) = xk1d[ix];
+      x0saved(ix, jy, kz) = xk(ix, kz);
     }
   }
 
@@ -489,7 +503,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   //if( first_call ){
   //  bout::globals::dump.add(Bvals, "exponents", false);
   //}
-  //first_call = false;
+  first_call = false;
 
   return x; // Result of the inversion
 }
