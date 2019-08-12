@@ -106,7 +106,12 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   //FieldPerp tmpimag = 0.0; //{emptyFrom(b)};
   FieldPerp tmpreal{emptyFrom(b)};
   FieldPerp tmpimag{emptyFrom(b)};
-  FieldPerp imdone{emptyFrom(b)};
+
+  // Convergence flags
+  bool self_in = false;
+  bool self_out = false;
+  bool neighbour_in = false;
+  bool neighbour_out = false;
 
   int jy = b.getIndex();
 
@@ -202,14 +207,21 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
     }
 
     int count = 0;
-    // Guard cells of imdone signal if a proc has converged in the in/out direction 
-    imdone = 0.0;
+
+    // Set all convergence flags to false
+    self_in = false;
+    self_out = false;
+    neighbour_in = false;
+    neighbour_out = false;
+
     // Boundary values are "converged" at the start
+    // Note: set neighbour's flag (not self's flag) to ensure we do at least
+    // one iteration
     if(localmesh->lastX()) { 
-      imdone(localmesh->xend+1,kz) = 1.0;
+      neighbour_out = true;
     }
     if(localmesh->firstX()) { 
-      imdone(localmesh->xstart-1,kz) = 1.0;
+      neighbour_in = true;
     }
 
     /* Set the matrix A used in the inversion of Ax=b
@@ -342,8 +354,10 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	if (error_rel<rtol or error_abs<atol) {
 	  // In the next iteration this proc informs its neighbours that its halo cells
 	  // will no longer be updated, then breaks.
-	  imdone(localmesh->xstart,kz) = 1.0;
-	  imdone(localmesh->xend,kz) = 1.0;
+	  //imdone(localmesh->xstart,kz) = 1.0;
+	  //imdone(localmesh->xend,kz) = 1.0;
+	  self_in = true;
+	  self_out = true;
 	}
 
 	// Communication
@@ -357,31 +371,31 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	// may still be changing.
 	//
 	// There are four values to consider:
-	//   imdone(xstart - 1, kz) = whether this proc has in-converged
-	//   imdone(xstart, kz)     = whether my in-neighbouring proc has out-converged
-	//   imdone(xend + 1, kz)   = whether this proc has out-converged
-	//   imdone(xend, kz)       = whether my out-neighbouring proc has in-converged
+	//   neighbour_in  = whether my in-neighbouring proc has out-converged
+	//   self_in       = whether this proc has in-converged
+	//   self_out      = whether this proc has out-converged
+	//   neighbour_out = whether my out-neighbouring proc has in-converged
 	//
-	// If imdone(xstart-1, kz) != 0, I must have been told this by my neighbour. My 
+	// If neighbour_in = true, I must have been told this by my neighbour. My
 	// neighbour has therefore done its one post-converged communication. My in-boundary
 	// values are therefore correct, and I am in-converged. My neighbour is not 
 	// expecting us to communicate.
-	if(imdone(localmesh->xstart-1, kz) == 0) {
+	if(!neighbour_in) {
 	  // Communicate in
-	  localmesh->communicateXIn(imdone);
+	  neighbour_in = localmesh->communicateXIn(self_in);
 	  localmesh->communicateXIn(xk1d);
 	}
 
 	// Outward communication
 	// See note above for inward communication.
-	if(imdone(localmesh->xend+1, kz) == 0) {
+	if(!neighbour_out) {
 	  // Communicate out
-	  localmesh->communicateXOut(imdone);
+	  neighbour_out = localmesh->communicateXOut(self_out);
 	  localmesh->communicateXOut(xk1d);
 	}
 
 	// Now I've done my communication, exit if I am both in- and out-converged
-	if( imdone(localmesh->xend, kz) != 0.0 and imdone(localmesh->xstart, kz) != 0.0 ) {
+	if( self_in and self_out ) {
           //output<<"Breaking, proc "<< BoutComm::rank() << ", count "<<count<<endl<<std::flush;
 	  break;
 	}
@@ -389,11 +403,11 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	// If my neighbour has converged, I know that I am also converged on that
 	// boundary. Set this flag after the break loop above, to ensure we do one
 	// iteration using our neighbour's converged value.
-	if(imdone(localmesh->xstart-1, kz) != 0) {
-	  imdone(localmesh->xstart, kz) = 1.0;
+	if(neighbour_in) {
+	  self_in = true;
 	}
-	if(imdone(localmesh->xend+1, kz) != 0) {
-	  imdone(localmesh->xend, kz) = 1.0;
+	if(neighbour_out) {
+	  self_out = true;
 	}
 
 	++count;

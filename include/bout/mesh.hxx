@@ -256,6 +256,11 @@ class Mesh {
   void communicateXIn(Array<dcomplex> &f);
 
   /*!
+   * Swap a bool with the proc in the inward X direction
+   */
+  bool communicateXIn(const bool &f);
+
+  /*!
    * Communicate an X-Z field with outward X direction
    */
   void communicateXOut(FieldPerp &f);
@@ -264,6 +269,11 @@ class Mesh {
    * Communicate an X-sized complex array in the outward X direction
    */
   void communicateXOut(Array<dcomplex> &f);
+
+  /*!
+   * Swap a bool with the proc in the outward X direction
+   */
+  bool communicateXOut(const bool &f);
 
   /*!
    * Send a list of FieldData objects
@@ -395,6 +405,30 @@ class Mesh {
   /// @param[in] size    The number of dcomplex to receive and put in \p buffer
   /// @param[in] tag     A label for the communication. Must be the same as sent
   virtual comm_handle irecvXIn(dcomplex *buffer, int size, int tag) = 0;
+
+  /// Send a logical to processor at X index +1
+  ///
+  /// @param[in] buffer  The logical to send.
+  /// @param[in] tag     A label for the communication. Must be the same at receive
+  virtual int sendXOut(const bool *buffer, int tag) = 0;
+
+  /// Send a logical to processor at X index -1
+  ///
+  /// @param[in] buffer  The logical to send.
+  /// @param[in] tag     A label for the communication. Must be the same at receive
+  virtual int sendXIn(const bool *buffer, int tag) = 0;
+
+  /// Receive a logical from X index +1
+  ///
+  /// @param[in] buffer  A buffer to put the logical in.
+  /// @param[in] tag     A label for the communication. Must be the same as sent
+  virtual comm_handle irecvXOut(bool *buffer, int tag) = 0;
+
+  /// Receive a logical from X index -1
+  ///
+  /// @param[in] buffer  A buffer to put the logical in.
+  /// @param[in] tag     A label for the communication. Must be the same as sent
+  virtual comm_handle irecvXIn(bool *buffer, int tag) = 0;
 
   MPI_Comm getXcomm() {return getXcomm(0);} ///< Return communicator containing all processors in X
   virtual MPI_Comm getXcomm(int jy) const = 0; ///< Return X communicator

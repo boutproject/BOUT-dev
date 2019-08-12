@@ -1404,6 +1404,64 @@ comm_handle BoutMesh::irecvXIn(dcomplex *buffer, int size, int tag) {
   return static_cast<comm_handle>(ch);
 }
 
+int BoutMesh::sendXOut(const bool *buffer, int tag) {
+  if (PE_XIND == NXPE - 1)
+    return 1;
+
+  Timer timer("comms");
+
+  MPI_Send(buffer, sizeof(*buffer), MPI_BYTE, PROC_NUM(PE_XIND + 1, PE_YIND), tag,
+           BoutComm::get());
+
+  return 0;
+}
+
+int BoutMesh::sendXIn(const bool *buffer, int tag) {
+  if (PE_XIND == 0)
+    return 1;
+
+  Timer timer("comms");
+
+  MPI_Send(buffer, sizeof(*buffer), MPI_BYTE, PROC_NUM(PE_XIND - 1, PE_YIND), tag,
+           BoutComm::get());
+
+  return 0;
+}
+
+comm_handle BoutMesh::irecvXOut(bool *buffer, int tag) {
+  if (PE_XIND == NXPE - 1)
+    return nullptr;
+
+  Timer timer("comms");
+
+  // Get a communications handle. Not fussy about size of arrays
+  CommHandle *ch = get_handle(0, 0);
+
+  MPI_Irecv(buffer, sizeof(*buffer), MPI_BYTE, PROC_NUM(PE_XIND + 1, PE_YIND), tag,
+            BoutComm::get(), ch->request);
+
+  ch->in_progress = true;
+
+  return static_cast<comm_handle>(ch);
+}
+
+comm_handle BoutMesh::irecvXIn(bool *buffer, int tag) {
+  if (PE_XIND == 0)
+    return nullptr;
+
+  Timer timer("comms");
+
+  // Get a communications handle. Not fussy about size of arrays
+  CommHandle *ch = get_handle(0, 0);
+
+  MPI_Irecv(buffer, sizeof(*buffer), MPI_BYTE, PROC_NUM(PE_XIND - 1, PE_YIND), tag,
+            BoutComm::get(), ch->request);
+
+  ch->in_progress = true;
+
+  return static_cast<comm_handle>(ch);
+}
+
 /****************************************************************
  *                 Y COMMUNICATIONS
  *

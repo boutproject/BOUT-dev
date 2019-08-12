@@ -251,15 +251,15 @@ void Mesh::communicate(FieldPerp &f) {
 /// inward direction.
 void Mesh::communicateXIn(FieldPerp &f) {
   comm_handle recv[1];
-  
+
   int nin = xstart; // Number of x points in inner guard cell
 
   // Post receives for guard cell regions
   recv[0] = irecvXIn(f[0],       nin*LocalNz, 0);
-  
+
   // Send data
   sendXIn(f[xstart], nin*LocalNz, 1);
- 
+
   // Wait for receive
   wait(recv[0]);
 }
@@ -270,16 +270,16 @@ void Mesh::communicateXIn(FieldPerp &f) {
 void Mesh::communicateXIn(Array<dcomplex> &f) {
   comm_handle recv[1];
   //comm_handle send[1];
-  
+
   int nin = xstart; // Number of x points in inner guard cell
 
   // Post receives for guard cell regions
   recv[0] = irecvXIn(&f[0], nin, 0);
-  
+
   // Send data
   //send[0] = isendXIn(&f[xstart], nin, 1);
   sendXIn(&f[xstart], nin, 1);
- 
+
   // Wait for receive
   wait(recv[0]);
 
@@ -287,19 +287,37 @@ void Mesh::communicateXIn(Array<dcomplex> &f) {
   //wait(send[0]);
 }
 
+/// This swaps a bool with the neighbouring X processor in the
+/// inward direction.
+bool Mesh::communicateXIn(const bool &f) {
+  comm_handle recv[1];
+  bool g;
+
+  // Post receives for guard cell regions
+  recv[0] = irecvXIn(&g, 0);
+
+  // Send data
+  sendXIn(&f, 1);
+
+  // Wait for receive
+  wait(recv[0]);
+
+  return g;
+}
+
 /// This communicates a FieldPerp with the neighbouring X processor in the
 /// outward direction.
 void Mesh::communicateXOut(FieldPerp &f) {
   comm_handle recv[1];
-  
+
   int nout = LocalNx-xend-1; // Number of x points in outer guard cell
 
   // Post receives for guard cell regions
   recv[0] = irecvXOut(f[xend+1], nout*LocalNz, 1);
-  
+
   // Send data
   sendXOut(f[xend-nout+1], nout*LocalNz, 0);
- 
+
   // Wait for receive
   wait(recv[0]);
 }
@@ -310,21 +328,39 @@ void Mesh::communicateXOut(FieldPerp &f) {
 void Mesh::communicateXOut(Array<dcomplex>& f) {
   comm_handle recv[1];
   //comm_handle send[1];
-  
+
   int nout = LocalNx-xend-1; // Number of x points in outer guard cell
 
   // Post receives for guard cell regions
   recv[0] = irecvXOut(&f[xend+1], nout, 1);
-  
+
   // Send data
   //send[0] = isendXOut(&f[xend-nout+1], nout, 0);
   sendXOut(&f[xend-nout+1], nout, 0);
- 
+
   // Wait for receive
   wait(recv[0]);
 
   // Wait for send
   //wait(send[0]);
+}
+
+/// This swaps a bool with the neighbouring X processor in the
+/// inward direction.
+bool Mesh::communicateXOut(const bool &f) {
+  comm_handle recv[1];
+  bool g;
+
+  // Post receives for guard cell regions
+  recv[0] = irecvXOut(&g, 1);
+
+  // Send data
+  sendXOut(&f, 0);
+
+  // Wait for receive
+  wait(recv[0]);
+
+  return g;
 }
 
 int Mesh::msg_len(const std::vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt) {

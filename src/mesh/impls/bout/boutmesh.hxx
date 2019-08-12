@@ -133,6 +133,30 @@ class BoutMesh : public Mesh {
   /// @param[in] tag     A label for the communication. Must be the same as sent
   comm_handle irecvXIn(dcomplex *buffer, int size, int tag);
 
+  /// Send a logical to processor at X index +1
+  ///
+  /// @param[in] buffer  The logical to send.
+  /// @param[in] tag     A label for the communication. Must be the same at receive
+  int sendXOut(const bool *buffer, int tag);
+
+  /// Send a logical to processor at X index -1
+  ///
+  /// @param[in] buffer  The logical to send.
+  /// @param[in] tag     A label for the communication. Must be the same at receive
+  int sendXIn(const bool *buffer, int tag);
+
+  /// Receive a logical from X index +1
+  ///
+  /// @param[in] buffer  A buffer to put the logical in.
+  /// @param[in] tag     A label for the communication. Must be the same as sent
+  comm_handle irecvXOut(bool *buffer, int tag);
+
+  /// Receive a logical from X index -1
+  ///
+  /// @param[in] buffer  A buffer to put the logical in.
+  /// @param[in] tag     A label for the communication. Must be the same as sent
+  comm_handle irecvXIn(bool *buffer, int tag);
+
   MPI_Comm getXcomm(int UNUSED(jy)) const {return comm_x; } ///< Return communicator containing all processors in X
   MPI_Comm getYcomm(int jx) const; ///< Return communicator containing all processors in Y
 
