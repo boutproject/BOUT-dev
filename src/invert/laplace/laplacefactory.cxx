@@ -77,7 +77,7 @@ Laplacian* LaplaceFactory::createLaplacian(Options *options, const CELL_LOC loc,
     }else if(strcasecmp(type.c_str(), LAPLACE_PETSCAMG) == 0) {
       return new LaplacePetscAmg(options);
     }else if(strcasecmp(type.c_str(), LAPLACE_PETSC3DAMG) == 0) {
-      return new LaplacePetsc3DAmg(options);
+      return new LaplacePetsc3dAmg(options);
     }else {
       throw BoutException("Unknown serial Laplacian solver type '%s'", type.c_str());
     }
@@ -105,7 +105,7 @@ Laplacian* LaplaceFactory::createLaplacian(Options *options, const CELL_LOC loc,
   }else if(strcasecmp(type.c_str(), LAPLACE_PETSCAMG) == 0) {
       return new LaplacePetscAmg(options);
   }else if(strcasecmp(type.c_str(), LAPLACE_PETSC3DAMG) == 0) {
-      return new LaplacePetsc3DAmg(options);
+      return new LaplacePetsc3dAmg(options);
   }else {
     throw BoutException("Unknown parallel Laplacian solver type '%s'", type.c_str());
   }
