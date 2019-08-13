@@ -49,10 +49,10 @@
 
 /// Instrument a region with scorep
 #ifdef BOUT_HAS_SCOREP
-#define SCOREP_REGION(...)						\
+#define BOUT_SCOREP_REGION(...)						\
   SCOREP_USER_REGION(__VA_ARGS__, SCOREP_USER_REGION_TYPE_COMMON)
 #else
-#define SCOREP_REGION(...)
+#define BOUT_SCOREP_REGION(...)
 #endif
 
 #endif
