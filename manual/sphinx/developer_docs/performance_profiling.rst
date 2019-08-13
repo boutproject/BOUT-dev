@@ -49,7 +49,7 @@ and then write the macro ``SCOREP0()`` at the top of the function, e.g.
     };
 
 Regions of a function can also be timed by enclosing the region in braces and using the
-``SCOREP_USER_REGION`` macro. For example,
+``SCOREP_REGION`` macro. For example,
 
 .. code-block:: c++
 
@@ -59,7 +59,7 @@ Regions of a function can also be timed by enclosing the region in braces and us
       checkData(*this);
 
       {
-      SCOREP_USER_REGION("display name",SCOREP_USER_REGION_TYPE_COMMON);
+      SCOREP_REGION("display name");
         for (const auto& bndry : bndry_op) {
           bndry->apply(*this, time);
         }
