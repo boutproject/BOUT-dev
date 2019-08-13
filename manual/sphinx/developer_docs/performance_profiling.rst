@@ -27,7 +27,7 @@ Scorep/Scalasca profiling
 Instrumentation
 ~~~~~~~~~~~~~~~
 
-Scorep automatically reports the time spend in MPI communications and OpenMP
+Scorep automatically reports the time spent in MPI communications and OpenMP
 loops. However, to obtain information on the time spent in specific functions,
 it is necessary to instrument the source code. The macros to do this are 
 provided in ``scorepwrapper.hxx``.
