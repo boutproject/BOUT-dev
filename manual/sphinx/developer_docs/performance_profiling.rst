@@ -48,6 +48,30 @@ and then write the macro ``SCOREP0()`` at the top of the function, e.g.
       return getMesh()->LocalNx;
     };
 
+Regions of a function can also be timed by instrumenting with the
+``SCOREP_USER_REGION`` macros. For example,
+
+.. code-block:: c++
+
+    void Field2D::applyBoundary(BoutReal time) {
+      SCOREP0();
+
+      checkData(*this);
+
+      SCOREP_USER_REGION_DEFINE(unique_region_name);
+      SCOREP_USER_REGION_BEGIN(unique_region_name,"display name",SCOREP_USER_REGION_TYPE_COMMON);
+      for (const auto& bndry : bndry_op) {
+        bndry->apply(*this, time);
+      }
+      SCOREP_USER_REGION_END(unique_region_name);
+    };
+
+Here, the ``SCOREP0`` macro ensures the whole ``applyBoundary`` function is timed. In
+addition, the code between ``SCOREP_USER_REGION_BEGIN`` and ``SCOREP_USER_REGION_END`` is
+timed and appears in the Scalasca profile as a region inside ``applyBoundary`` with the
+name "display name". Any number of Scorep user regions can be used in a function; user
+regions can also be nested.
+
 **Caution** Instrumenting a function makes it execute more slowly. This can
 result in misleading profiling information, particularly if 
 fast-but-frequently-called functions are instrumented. Try to instrument 
