@@ -98,8 +98,8 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   SCOREP0();
   Timer timer("invert"); ///< Start timer
 
-  SCOREP_USER_REGION_DEFINE(initvars);
-  SCOREP_USER_REGION_BEGIN(initvars, "init vars",SCOREP_USER_REGION_TYPE_COMMON);
+///  SCOREP_USER_REGION_DEFINE(initvars);
+///  SCOREP_USER_REGION_BEGIN(initvars, "init vars",SCOREP_USER_REGION_TYPE_COMMON);
 
   ASSERT1(localmesh == b.getMesh() && localmesh == x0.getMesh());
   ASSERT1(b.getLocation() == location);
@@ -150,9 +150,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   auto error = Array<dcomplex>(ncx);
   BoutReal error_rel = 1e20, error_abs=1e20, last_error=error_abs;
 
-  SCOREP_USER_REGION_END(initvars);
-  SCOREP_USER_REGION_DEFINE(initloop);
-  SCOREP_USER_REGION_BEGIN(initloop, "init xk loop",SCOREP_USER_REGION_TYPE_COMMON);
+///  SCOREP_USER_REGION_END(initvars);
+///  SCOREP_USER_REGION_DEFINE(initloop);
+///  SCOREP_USER_REGION_BEGIN(initloop, "init xk loop",SCOREP_USER_REGION_TYPE_COMMON);
 
   // Initialise xk to 0 as we only visit 0<= kz <= maxmode in solve
   for (int ix = 0; ix < ncx; ix++) {
@@ -160,9 +160,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       xk(ix, kz) = 0.0;
     }
   }
-  SCOREP_USER_REGION_END(initloop);
-  SCOREP_USER_REGION_DEFINE(fftloop);
-  SCOREP_USER_REGION_BEGIN(fftloop, "init fft loop",SCOREP_USER_REGION_TYPE_COMMON);
+///  SCOREP_USER_REGION_END(initloop);
+///  SCOREP_USER_REGION_DEFINE(fftloop);
+///  SCOREP_USER_REGION_BEGIN(fftloop, "init fft loop",SCOREP_USER_REGION_TYPE_COMMON);
 
   /* Coefficents in the tridiagonal solver matrix
    * Following the notation in "Numerical recipes"
@@ -199,9 +199,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       //rfft(x0[ix], ncz, &xk(ix, 0));
     }
   }
-  SCOREP_USER_REGION_END(fftloop);
-  SCOREP_USER_REGION_DEFINE(mainloop);
-  SCOREP_USER_REGION_BEGIN(mainloop, "main loop",SCOREP_USER_REGION_TYPE_COMMON);
+///  SCOREP_USER_REGION_END(fftloop);
+///  SCOREP_USER_REGION_DEFINE(mainloop);
+///  SCOREP_USER_REGION_BEGIN(mainloop, "main loop",SCOREP_USER_REGION_TYPE_COMMON);
 
   /* Solve differential equation in x for each fourier mode
    * Note that only the non-degenerate fourier modes are being used (i.e. the
@@ -209,8 +209,8 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
    */
   for (int kz = 0; kz <= maxmode; kz++) {
 
-    SCOREP_USER_REGION_DEFINE(kzinit);
-    SCOREP_USER_REGION_BEGIN(kzinit, "kz init",SCOREP_USER_REGION_TYPE_COMMON);
+///    SCOREP_USER_REGION_DEFINE(kzinit);
+///    SCOREP_USER_REGION_BEGIN(kzinit, "kz init",SCOREP_USER_REGION_TYPE_COMMON);
     // set bk1d
     for (int ix = 0; ix < ncx; ix++) {
       // Get bk of the current fourier mode
@@ -314,13 +314,13 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	}
       }
 
-      SCOREP_USER_REGION_END(kzinit);
-      SCOREP_USER_REGION_DEFINE(whileloop);
-      SCOREP_USER_REGION_BEGIN(whileloop, "while loop",SCOREP_USER_REGION_TYPE_COMMON);
+///      SCOREP_USER_REGION_END(kzinit);
+///      SCOREP_USER_REGION_DEFINE(whileloop);
+///      SCOREP_USER_REGION_BEGIN(whileloop, "while loop",SCOREP_USER_REGION_TYPE_COMMON);
       while(true){ 
 
-	SCOREP_USER_REGION_DEFINE(setboundaries);
-	SCOREP_USER_REGION_BEGIN(setboundaries, "set internal boundaries",SCOREP_USER_REGION_TYPE_COMMON);
+///	SCOREP_USER_REGION_DEFINE(setboundaries);
+///	SCOREP_USER_REGION_BEGIN(setboundaries, "set internal boundaries",SCOREP_USER_REGION_TYPE_COMMON);
 	// Patch up internal boundaries
 	if(not localmesh->lastX()) { 
 	  for(int ix = localmesh->xend+1; ix<localmesh->LocalNx ; ix++) {
@@ -342,9 +342,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	    bk1d[ix] = xk1d[ix];
 	  }
 	}
-	SCOREP_USER_REGION_END(setboundaries);
-	SCOREP_USER_REGION_DEFINE(subitloop);
-	SCOREP_USER_REGION_BEGIN(subitloop, "sub iteration",SCOREP_USER_REGION_TYPE_COMMON);
+///	SCOREP_USER_REGION_END(setboundaries);
+///	SCOREP_USER_REGION_DEFINE(subitloop);
+///	SCOREP_USER_REGION_BEGIN(subitloop, "sub iteration",SCOREP_USER_REGION_TYPE_COMMON);
 
 	sub_it += 1;
 	//output << "jy "<<jy<<" kz "<<kz<< "subit " << sub_it << " count " << count << endl ; 
@@ -371,23 +371,34 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	    last_error = error_abs;
 	  }
 	}
-	SCOREP_USER_REGION_END(subitloop);
-	SCOREP_USER_REGION_DEFINE(invert);
-	SCOREP_USER_REGION_BEGIN(invert, "invert local matrices",SCOREP_USER_REGION_TYPE_COMMON);
+///	SCOREP_USER_REGION_END(subitloop);
+///	SCOREP_USER_REGION_DEFINE(invert);
+///	SCOREP_USER_REGION_BEGIN(invert, "invert local matrices",SCOREP_USER_REGION_TYPE_COMMON);
 
 	// Invert local matrices
         tridag(std::begin(avec), std::begin(bvec), std::begin(cvec), std::begin(bk1d),
              std::begin(xk1d), ncx);
-	SCOREP_USER_REGION_END(invert);
-	SCOREP_USER_REGION_DEFINE(errors);
-	SCOREP_USER_REGION_BEGIN(errors, "calculate errors",SCOREP_USER_REGION_TYPE_COMMON);
+///	SCOREP_USER_REGION_END(invert);
+///	SCOREP_USER_REGION_DEFINE(errors);
+///	SCOREP_USER_REGION_BEGIN(errors, "calculate errors",SCOREP_USER_REGION_TYPE_COMMON);
 
 	// Calculate errors
 	error_abs = 0.0;
 	BoutReal xmax = 0.0;
-        for (int ix = 0; ix < ncx; ix++) {
-	  BoutReal diff = abs(xk1d[ix] - xk1dlast[ix]);
-	  BoutReal xabs = abs(xk1d[ix]);
+	BoutReal diff, xabs;
+        for (int ix = 0; ix < localmesh->xstart; ix++) {
+	  diff = abs(xk1d[ix] - xk1dlast[ix]);
+	  xabs = abs(xk1d[ix]);
+	  if (diff > error_abs) {
+	    error_abs = diff;
+	  }
+	  if (xabs > xmax) {
+	    xmax = xabs;
+	  }
+	}
+        for (int ix = localmesh->xend+1; ix < ncx; ix++) {
+	  diff = abs(xk1d[ix] - xk1dlast[ix]);
+	  xabs = abs(xk1d[ix]);
 	  if (diff > error_abs) {
 	    error_abs = diff;
 	  }
@@ -401,9 +412,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	else{
 	  error_rel = error_abs;
 	}
-	SCOREP_USER_REGION_END(errors);
-	SCOREP_USER_REGION_DEFINE(comms);
-	SCOREP_USER_REGION_BEGIN(comms, "communication",SCOREP_USER_REGION_TYPE_COMMON);
+///	SCOREP_USER_REGION_END(errors);
+///	SCOREP_USER_REGION_DEFINE(comms);
+///	SCOREP_USER_REGION_BEGIN(comms, "communication",SCOREP_USER_REGION_TYPE_COMMON);
 
 	//output << BoutComm::rank() << " " <<error_rel << " " << error_abs << " " << xmax << " " << endl;
 	TRACE("set comm flags pack");
@@ -448,7 +459,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	  neighbour_out = localmesh->communicateXOut(self_out);
 	  localmesh->communicateXOut(xk1d);
 	}
-	SCOREP_USER_REGION_END(comms);
+///	SCOREP_USER_REGION_END(comms);
 
 	// Now I've done my communication, exit if I am both in- and out-converged
 	if( self_in and self_out ) {
@@ -472,16 +483,16 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	  //throw BoutException("LaplaceParallelTri error: Not converged within maxits=%i iterations.", maxits);
 	}
 
-	SCOREP_USER_REGION_DEFINE(copylast);
-	SCOREP_USER_REGION_BEGIN(copylast, "copy to last",SCOREP_USER_REGION_TYPE_COMMON);
+///	SCOREP_USER_REGION_DEFINE(copylast);
+///	SCOREP_USER_REGION_BEGIN(copylast, "copy to last",SCOREP_USER_REGION_TYPE_COMMON);
         for (int ix = 0; ix < ncx; ix++) {
 	  xk1dlast[ix] = xk1d[ix];
 	}
 	error_last = error_abs;
-	SCOREP_USER_REGION_END(copylast);
+///	SCOREP_USER_REGION_END(copylast);
 	
       }
-      SCOREP_USER_REGION_END(whileloop);
+///      SCOREP_USER_REGION_END(whileloop);
 
     } else {
       // Periodic in X, so cyclic tridiagonal
@@ -496,8 +507,8 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       }
     }
 
-    SCOREP_USER_REGION_DEFINE(afterloop);
-    SCOREP_USER_REGION_BEGIN(afterloop, "after faff",SCOREP_USER_REGION_TYPE_COMMON);
+///    SCOREP_USER_REGION_DEFINE(afterloop);
+///    SCOREP_USER_REGION_BEGIN(afterloop, "after faff",SCOREP_USER_REGION_TYPE_COMMON);
     ++ncalls;
     ipt_mean_its = (ipt_mean_its * BoutReal(ncalls-1)
 	+ BoutReal(count))/BoutReal(ncalls);
@@ -521,9 +532,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       xk(ix, kz) = xk1d[ix];
       x0saved(ix, jy, kz) = xk(ix, kz);
     }
-    SCOREP_USER_REGION_END(afterloop);
+///    SCOREP_USER_REGION_END(afterloop);
   }
-  SCOREP_USER_REGION_END(mainloop);
+///  SCOREP_USER_REGION_END(mainloop);
 
   //std::cout<<"end"<<endl;
 
