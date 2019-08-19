@@ -256,6 +256,11 @@ class Mesh {
   void communicateXIn(Array<dcomplex> &f);
 
   /*!
+   * Swap a dcomplex with the proc in the inward X direction
+   */
+  dcomplex communicateXIn(const dcomplex &f);
+
+  /*!
    * Swap a bool with the proc in the inward X direction
    */
   bool communicateXIn(const bool &f);
@@ -269,6 +274,11 @@ class Mesh {
    * Communicate an X-sized complex array in the outward X direction
    */
   void communicateXOut(Array<dcomplex> &f);
+
+  /*!
+   * Swap a dcomplex with the proc in the outward X direction
+   */
+  dcomplex communicateXOut(const dcomplex &f);
 
   /*!
    * Swap a bool with the proc in the outward X direction
@@ -405,6 +415,30 @@ class Mesh {
   /// @param[in] size    The number of dcomplex to receive and put in \p buffer
   /// @param[in] tag     A label for the communication. Must be the same as sent
   virtual comm_handle irecvXIn(dcomplex *buffer, int size, int tag) = 0;
+
+  /// Send a dcomplex to processor at X index +1
+  ///
+  /// @param[in] buffer  The dcomplex to send.
+  /// @param[in] tag     A label for the communication. Must be the same at receive
+  virtual int sendXOut(const dcomplex *buffer, int tag) = 0;
+
+  /// Send a dcomplex to processor at X index -1
+  ///
+  /// @param[in] buffer  The dcomplex to send.
+  /// @param[in] tag     A label for the communication. Must be the same at receive
+  virtual int sendXIn(const dcomplex *buffer, int tag) = 0;
+
+  /// Receive a dcomplex from X index +1
+  ///
+  /// @param[in] buffer  A buffer to put the dcomplex in.
+  /// @param[in] tag     A label for the communication. Must be the same as sent
+  virtual comm_handle irecvXOut(dcomplex *buffer, int tag) = 0;
+
+  /// Receive a dcomplex from X index -1
+  ///
+  /// @param[in] buffer  A buffer to put the dcomplex in.
+  /// @param[in] tag     A label for the communication. Must be the same as sent
+  virtual comm_handle irecvXIn(dcomplex *buffer, int tag) = 0;
 
   /// Send a logical to processor at X index +1
   ///

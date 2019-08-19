@@ -62,10 +62,73 @@ LaplaceParallelTri::LaplaceParallelTri(Options *opt, CELL_LOC loc, Mesh *mesh_in
   Borig = B;
 
   first_call = Array<bool>(localmesh->LocalNy);
-  //first_call = true;
+  for(int jy=0; jy<localmesh->LocalNy; jy++){
+    first_call[jy] = true;
+  }
 
   x0saved = Tensor<dcomplex>(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
 
+}
+
+/*!
+ * Stability condition depends on eigenvalues of the matrices we are inverting.
+ */
+BoutReal LaplaceParallelTri::calculate_stability(const Array<dcomplex> &avec, const Array<dcomplex> &bvec, const Array<dcomplex> &cvec, const int ncx) {
+
+
+  BoutReal maxEig = 0.0;
+  BoutReal thisEig = 0.0;
+
+  Array<dcomplex> xvec, evec;
+  xvec = Array<dcomplex>(ncx);
+  evec = Array<dcomplex>(ncx);
+  // If not on innermost boundary, calculate required matrix element and send up
+  if(!localmesh->firstX()) {
+    // Need the xend-th element
+    evec = Array<dcomplex>(ncx);
+    for(int i=0; i<ncx; i++){
+      evec[i] = 0.0;
+    }
+    evec[localmesh->xstart] = avec[localmesh->xstart];
+
+    tridag(std::begin(avec), std::begin(bvec), std::begin(cvec), std::begin(evec),
+             std::begin(xvec), ncx);
+
+    dcomplex eval_self_in = xvec[localmesh->xstart];
+    dcomplex eval_neighbour_out;
+    eval_neighbour_out = localmesh->communicateXIn(eval_self_in);
+    BoutReal thisEig = (eval_self_in*eval_neighbour_out).real();
+    //std::cout << BoutComm::rank() << thisEig << endl;
+    if(abs(thisEig) > maxEig) {
+      maxEig = abs(thisEig);
+      output << maxEig << endl;
+    }
+
+  }
+
+  // If not on outermost boundary, calculate required matrix element and send down
+  if(!localmesh->lastX()) {
+    // Need the xend-th element
+    for(int i=0; i<ncx; i++){
+      evec[i] = 0.0;
+    }
+    evec[localmesh->xend] = cvec[localmesh->xend];
+
+    tridag(std::begin(avec), std::begin(bvec), std::begin(cvec), std::begin(evec),
+             std::begin(xvec), ncx);
+
+    dcomplex eval_self_out = xvec[localmesh->xend];
+    dcomplex eval_neighbour_in;
+    eval_neighbour_in = localmesh->communicateXOut(eval_self_out);
+    thisEig = (eval_self_out*eval_neighbour_in).real();
+    //std::cout << BoutComm::rank() << thisEig << endl;
+    if(abs(thisEig) > maxEig) {
+      maxEig = abs(thisEig);
+      output << maxEig << endl;
+    }
+  }
+
+  return maxEig;
 }
 
 FieldPerp LaplaceParallelTri::solve(const FieldPerp& b) { return solve(b, b); }
@@ -189,7 +252,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 
       // x0 is the input
       // bk is the output
-      output << "here" << endl;
+      //output << "here" << endl;
       rfft(x0[ix], ncz, &bk(ix, 0));
 
     } else {
@@ -219,10 +282,10 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       //xk1d[ix] = xk(ix, kz);
       //xk1dlast[ix] = xk(ix, kz);
 
-      if( first_call[jy] ){
+      //if( first_call[jy] ){
 	//output << "start "<<ix<<" "<<jy<<" "<<kz<<endl;
 	x0saved(ix,jy,kz) = 0.0;
-      }
+      //}
       //output << "start1 "<<ix<<" "<<jy<<" "<<kz<<endl;
       xk1d[ix] = x0saved(ix, jy, kz);
       //output << "start2 "<<ix<<" "<<jy<<" "<<kz<<endl;
@@ -283,9 +346,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       // Call tridiagonal solver
       //for(int it = 0; it < maxits; it++){ 
       BoutReal error_last = 1e20;
-      int sub_it = 0;
-      auto lh = Matrix<dcomplex>(3,ncx);
-      auto rh = Matrix<dcomplex>(3,ncx);
+///      int sub_it = 0;
+///      auto lh = Matrix<dcomplex>(3,ncx);
+///      auto rh = Matrix<dcomplex>(3,ncx);
 
 ///      if( first_call ) {
 ///	B = Borig;
@@ -314,6 +377,11 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	}
       }
 
+      BoutReal thisEig = calculate_stability(avec,bvec,cvec,ncx);
+      if( thisEig > 1 ) {
+	//std::cout << BoutComm::rank() << " " << thisEig << endl;
+      }
+
 ///      SCOREP_USER_REGION_END(kzinit);
 ///      SCOREP_USER_REGION_DEFINE(whileloop);
 ///      SCOREP_USER_REGION_BEGIN(whileloop, "while loop",SCOREP_USER_REGION_TYPE_COMMON);
@@ -324,21 +392,21 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	// Patch up internal boundaries
 	if(not localmesh->lastX()) { 
 	  for(int ix = localmesh->xend+1; ix<localmesh->LocalNx ; ix++) {
-	    rh(sub_it,ix) = xk1d[ix];
-	    if( sub_it == 2 ) {
-	      xk1d[ix] = (rh(2,ix) - rh(0,ix)*exp(-B))/(1.0 - exp(-B));
-	      rh(0,ix) = xk1d[ix];
-	    }
+///	    rh(sub_it,ix) = xk1d[ix];
+///	    if( sub_it == 2 ) {
+///	      xk1d[ix] = (rh(2,ix) - rh(0,ix)*exp(-B))/(1.0 - exp(-B));
+///	      rh(0,ix) = xk1d[ix];
+///	    }
 	    bk1d[ix] = xk1d[ix];
 	  }
 	} 
 	if(not localmesh->firstX()) { 
 	  for(int ix = 0; ix<localmesh->xstart ; ix++) {
-	    lh(sub_it,ix) = xk1d[ix];
-	    if( sub_it == 2 ) {
-	      xk1d[ix] = (lh(2,ix) - lh(0,ix)*exp(-B))/(1.0 - exp(-B));
-	      lh(0,ix) = xk1d[ix];
-	    }
+///	    lh(sub_it,ix) = xk1d[ix];
+///	    if( sub_it == 2 ) {
+///	      xk1d[ix] = (lh(2,ix) - lh(0,ix)*exp(-B))/(1.0 - exp(-B));
+///	      lh(0,ix) = xk1d[ix];
+///	    }
 	    bk1d[ix] = xk1d[ix];
 	  }
 	}
@@ -346,31 +414,31 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 ///	SCOREP_USER_REGION_DEFINE(subitloop);
 ///	SCOREP_USER_REGION_BEGIN(subitloop, "sub iteration",SCOREP_USER_REGION_TYPE_COMMON);
 
-	sub_it += 1;
-	//output << "jy "<<jy<<" kz "<<kz<< "subit " << sub_it << " count " << count << endl ; 
-	if( sub_it == 3 ) {
-	  sub_it = 0;
-	  //output << "before " << endl ; 
-	  if( allow_B_change ) {
-	      //output << "here " << endl ; 
-	    //if( count % 10 == 0 ) {
-	      if(error_abs < last_error) {
-		B *= 0.9;
-		//output << jy << " " << kz << " " << last_error << " " << error_abs << " " << sub_it << " "  << count << " reducing B to" << B << endl;
-	      }
-	      else {
-		B /= 0.9;
-		allow_B_change = false;
-		//output << jy << " " << kz << " " << last_error << " " << error_abs << " " << sub_it << " "  << count << " inceasing B to" << B << endl;
-//		for(int ix = 0; ix<localmesh->LocalNx ; ix++) {
-//		  xk1d[ix] = xk1dlast[ix];
-//		  xk1dlast[ix] = 0.0;
-//		}
-	      }
-	    //}
-	    last_error = error_abs;
-	  }
-	}
+///	sub_it += 1;
+///	//output << "jy "<<jy<<" kz "<<kz<< "subit " << sub_it << " count " << count << endl ; 
+///	if( sub_it == 3 ) {
+///	  sub_it = 0;
+///	  //output << "before " << endl ; 
+///	  if( allow_B_change ) {
+///	      //output << "here " << endl ; 
+///	    //if( count % 10 == 0 ) {
+///	      if(error_abs < last_error) {
+///		B *= 0.9;
+///		//output << jy << " " << kz << " " << last_error << " " << error_abs << " " << sub_it << " "  << count << " reducing B to" << B << endl;
+///	      }
+///	      else {
+///		B /= 0.9;
+///		allow_B_change = false;
+///		//output << jy << " " << kz << " " << last_error << " " << error_abs << " " << sub_it << " "  << count << " inceasing B to" << B << endl;
+/////		for(int ix = 0; ix<localmesh->LocalNx ; ix++) {
+/////		  xk1d[ix] = xk1dlast[ix];
+/////		  xk1dlast[ix] = 0.0;
+/////		}
+///	      }
+///	    //}
+///	    last_error = error_abs;
+///	  }
+///	}
 ///	SCOREP_USER_REGION_END(subitloop);
 ///	SCOREP_USER_REGION_DEFINE(invert);
 ///	SCOREP_USER_REGION_BEGIN(invert, "invert local matrices",SCOREP_USER_REGION_TYPE_COMMON);
@@ -386,17 +454,18 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	error_abs = 0.0;
 	BoutReal xmax = 0.0;
 	BoutReal diff, xabs;
-        for (int ix = 0; ix < localmesh->xstart; ix++) {
-	  diff = abs(xk1d[ix] - xk1dlast[ix]);
-	  xabs = abs(xk1d[ix]);
-	  if (diff > error_abs) {
-	    error_abs = diff;
-	  }
-	  if (xabs > xmax) {
-	    xmax = xabs;
-	  }
-	}
-        for (int ix = localmesh->xend+1; ix < ncx; ix++) {
+///        for (int ix = 0; ix < localmesh->xstart; ix++) {
+///	  diff = abs(xk1d[ix] - xk1dlast[ix]);
+///	  xabs = abs(xk1d[ix]);
+///	  if (diff > error_abs) {
+///	    error_abs = diff;
+///	  }
+///	  if (xabs > xmax) {
+///	    xmax = xabs;
+///	  }
+///	}
+///        for (int ix = localmesh->xend+1; ix < ncx; ix++) {
+        for (int ix = 0; ix < ncx; ix++) {
 	  diff = abs(xk1d[ix] - xk1dlast[ix]);
 	  xabs = abs(xk1d[ix]);
 	  if (diff > error_abs) {

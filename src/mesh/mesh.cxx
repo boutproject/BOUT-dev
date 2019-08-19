@@ -287,6 +287,25 @@ void Mesh::communicateXIn(Array<dcomplex> &f) {
   //wait(send[0]);
 }
 
+/// This swaps a dcomplex with the neighbouring X processor in the
+/// inward direction.
+dcomplex Mesh::communicateXIn(const dcomplex &f) {
+  comm_handle recv[1];
+  dcomplex g;
+
+  output << "commXIn" << endl;
+  // Post receives for guard cell regions
+  recv[0] = irecvXIn(&g, 0);
+
+  // Send data
+  sendXIn(&f, 1);
+
+  // Wait for receive
+  wait(recv[0]);
+
+  return g;
+}
+
 /// This swaps a bool with the neighbouring X processor in the
 /// inward direction.
 bool Mesh::communicateXIn(const bool &f) {
@@ -343,6 +362,24 @@ void Mesh::communicateXOut(Array<dcomplex>& f) {
 
   // Wait for send
   //wait(send[0]);
+}
+
+/// This swaps a dcomplex with the neighbouring X processor in the
+/// outward direction.
+dcomplex Mesh::communicateXOut(const dcomplex &f) {
+  comm_handle recv[1];
+  dcomplex g;
+
+  // Post receives for guard cell regions
+  recv[0] = irecvXOut(&g, 1);
+
+  // Send data
+  sendXOut(&f, 0);
+
+  // Wait for receive
+  wait(recv[0]);
+
+  return g;
 }
 
 /// This swaps a bool with the neighbouring X processor in the

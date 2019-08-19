@@ -133,6 +133,30 @@ class BoutMesh : public Mesh {
   /// @param[in] tag     A label for the communication. Must be the same as sent
   comm_handle irecvXIn(dcomplex *buffer, int size, int tag);
 
+  /// Send a dcomplex to processor at X index +1
+  ///
+  /// @param[in] buffer  The dcomplex to send.
+  /// @param[in] tag     A label for the communication. Must be the same at receive
+  int sendXOut(const dcomplex *buffer, int tag);
+
+  /// Send a dcomplex to processor at X index -1
+  ///
+  /// @param[in] buffer  The dcomplex to send.
+  /// @param[in] tag     A label for the communication. Must be the same at receive
+  int sendXIn(const dcomplex *buffer, int tag);
+
+  /// Receive a dcomplex from X index +1
+  ///
+  /// @param[in] buffer  A buffer to put the dcomplex in.
+  /// @param[in] tag     A label for the communication. Must be the same as sent
+  comm_handle irecvXOut(dcomplex *buffer, int tag);
+
+  /// Receive a dcomplex from X index -1
+  ///
+  /// @param[in] buffer  A buffer to put the dcomplex in.
+  /// @param[in] tag     A label for the communication. Must be the same as sent
+  comm_handle irecvXIn(dcomplex *buffer, int tag);
+
   /// Send a logical to processor at X index +1
   ///
   /// @param[in] buffer  The logical to send.
