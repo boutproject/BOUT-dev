@@ -101,7 +101,7 @@ BoutReal LaplaceParallelTri::calculate_stability(const Array<dcomplex> &avec, co
     //std::cout << BoutComm::rank() << thisEig << endl;
     if(abs(thisEig) > maxEig) {
       maxEig = abs(thisEig);
-      output << maxEig << endl;
+      //output << maxEig << endl;
     }
 
   }
@@ -124,11 +124,35 @@ BoutReal LaplaceParallelTri::calculate_stability(const Array<dcomplex> &avec, co
     //std::cout << BoutComm::rank() << thisEig << endl;
     if(abs(thisEig) > maxEig) {
       maxEig = abs(thisEig);
-      output << maxEig << endl;
+      //output << maxEig << endl;
     }
   }
 
   return maxEig;
+}
+
+/// Check whether matrix is diagonally dominant, i.e. whether for every row the absolute
+/// value of the diagonal element is greater-or-equal-to the sum of the absolute values
+/// of the other elements. Being diagonally dominant is sufficient (but necessary) for
+/// the Jacobi iteration to converge.
+void LaplaceParallelTri::check_diagonal_dominance(const Array<dcomplex> &avec, const Array<dcomplex> &bvec, const Array<dcomplex> &cvec, const int ncx, const int jy, const int kz) {
+
+    BoutReal on_diag;
+    BoutReal off_diag;
+
+    for(int i=0; i<ncx; i++){
+      on_diag = abs(bvec[i]);
+      off_diag = 0.0;
+      if(i > 0){
+	off_diag = abs(avec[i-1]);
+      }
+      if(i < ncx-1){
+	off_diag = off_diag + abs(cvec[i]);
+      }
+      if( off_diag > on_diag){
+	output << "Not diagonally dominant on row "<<i<<" jy "<<jy<<" kz "<<kz<<" of proc "<<BoutComm::rank()<<endl;
+      }
+    }
 }
 
 FieldPerp LaplaceParallelTri::solve(const FieldPerp& b) { return solve(b, b); }
@@ -207,6 +231,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
    */
   auto bk = Matrix<dcomplex>(ncx, ncz / 2 + 1);
   auto bk1d = Array<dcomplex>(ncx);
+  auto bk1d_eff = Array<dcomplex>(ncx);
   auto xk = Matrix<dcomplex>(ncx, ncz / 2 + 1);
   auto xk1d = Array<dcomplex>(ncx);
   auto xk1dlast = Array<dcomplex>(ncx);
@@ -238,6 +263,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   auto avec = Array<dcomplex>(ncx);
   auto bvec = Array<dcomplex>(ncx);
   auto cvec = Array<dcomplex>(ncx);
+  auto avec_eff = Array<dcomplex>(ncx);
+  auto bvec_eff = Array<dcomplex>(ncx);
+  auto cvec_eff = Array<dcomplex>(ncx);
 
   BOUT_OMP(parallel for)
   for (int ix = 0; ix < ncx; ix++) {
@@ -367,6 +395,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	  avec[ix] = 0;
 	  bvec[ix] = 1;
 	  cvec[ix] = 0;
+	  avec_eff[ix] = 0;
+	  bvec_eff[ix] = 1;
+	  cvec_eff[ix] = 0;
 	}
       } 
       if(not localmesh->firstX()) { 
@@ -374,12 +405,16 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	  avec[ix] = 0;
 	  bvec[ix] = 1;
 	  cvec[ix] = 0;
+	  avec_eff[ix] = 0;
+	  bvec_eff[ix] = 1;
+	  cvec_eff[ix] = 0;
 	}
       }
 
       BoutReal thisEig = calculate_stability(avec,bvec,cvec,ncx);
+      //check_diagonal_dominance(avec,bvec,cvec,ncx,jy,kz);
       if( thisEig > 1 ) {
-	//std::cout << BoutComm::rank() << " " << thisEig << endl;
+	output << "EIGENVALUE TOO LARGE " << BoutComm::rank() << " " << thisEig << " " << jy << " " << kz << endl;
       }
 
 ///      SCOREP_USER_REGION_END(kzinit);
@@ -442,9 +477,41 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 ///	SCOREP_USER_REGION_END(subitloop);
 ///	SCOREP_USER_REGION_DEFINE(invert);
 ///	SCOREP_USER_REGION_BEGIN(invert, "invert local matrices",SCOREP_USER_REGION_TYPE_COMMON);
+//
+        // Adjust rows to allow over-relaxation
+	//for(int ix = localmesh->xstart; ix<localmesh->xend ; ix++) {
+	for(int ix = 0; ix<ncx ; ix++) {
+	  avec_eff[ix] = om*avec[ix];
+	  bvec_eff[ix] = bvec[ix];
+	  cvec_eff[ix] = 0.0; //om*cvec[ix];
+	  bk1d_eff[ix] = om*bk1d[ix] - (om-1)*bvec[ix]*xk1d[ix] ; //- om*cvec[ix]*xk1d[ix+1] - om*avec[ix]*xk1d[ix-1];
+	  if(ix>0){
+	    bk1d_eff[ix] = bk1d_eff[ix] ;//- om*avec[ix]*xk1d[ix-1];
+	  }
+	  if(ix<ncx-1){
+	    bk1d_eff[ix] = bk1d_eff[ix] - om*cvec[ix]*xk1d[ix+1];
+	  }
+	}
+	// Patch up internal boundaries
+	if(not localmesh->lastX()) { 
+	  for(int ix = localmesh->xend+1; ix<localmesh->LocalNx ; ix++) {
+	    avec_eff[ix] = 0;
+	    bvec_eff[ix] = 1;
+	    cvec_eff[ix] = 0;
+	    bk1d[ix] = xk1d[ix];
+	  }
+	} 
+	if(not localmesh->firstX()) { 
+	  for(int ix = 0; ix<localmesh->xstart ; ix++) {
+	    avec_eff[ix] = 0;
+	    bvec_eff[ix] = 1;
+	    cvec_eff[ix] = 0;
+	    bk1d[ix] = xk1d[ix];
+	  }
+	}
 
 	// Invert local matrices
-        tridag(std::begin(avec), std::begin(bvec), std::begin(cvec), std::begin(bk1d),
+        tridag(std::begin(avec_eff), std::begin(bvec_eff), std::begin(cvec_eff), std::begin(bk1d_eff),
              std::begin(xk1d), ncx);
 ///	SCOREP_USER_REGION_END(invert);
 ///	SCOREP_USER_REGION_DEFINE(errors);
@@ -581,7 +648,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
     ++ncalls;
     ipt_mean_its = (ipt_mean_its * BoutReal(ncalls-1)
 	+ BoutReal(count))/BoutReal(ncalls);
-    //output << jy << " " << kz << " " << count << " " << ncalls << " " << ipt_mean_its << " " << B << endl;
+    output<<"jy="<<jy<<" kz="<<kz<<" count="<<count<<" ncalls="<<ncalls<<" ipt_mean_its="<<ipt_mean_its<<" B="<<B<< endl;
     //Bvals(0,jy,kz) = B;
 
     // If the global flag is set to INVERT_KX_ZERO

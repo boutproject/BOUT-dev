@@ -75,6 +75,8 @@ public:
 
   BoutReal calculate_stability(const Array<dcomplex> &a, const Array<dcomplex> &b,
       const Array<dcomplex> &c, const int ncx);
+  void check_diagonal_dominance(const Array<dcomplex> &a, const Array<dcomplex> &b,
+      const Array<dcomplex> &c, const int ncx, const int jy, const int kz);
 
 private:
   // The coefficents in
