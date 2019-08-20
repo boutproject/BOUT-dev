@@ -124,6 +124,9 @@ private:
   Matrix<BoutReal> acoef, bcoef, ccoef, xvals, bvals;
   std::unique_ptr<CyclicReduce<BoutReal>> cr; ///< Tridiagonal solver
 
+  // Use finite volume or finite difference discretization
+  bool finite_volume{true};
+
   // Y derivatives
   bool include_y_derivs; // Include Y derivative terms?
   
