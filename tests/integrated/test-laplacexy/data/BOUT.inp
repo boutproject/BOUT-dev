@@ -1,0 +1,53 @@
+mz = 1
+
+[mesh]
+nx = 132
+ny = 128
+
+dx = 1./nx
+dy = 40./ny
+
+g11 = 1.
+g22 = 1.
+g33 = 1.
+g12 = 0.3
+g13 = 0.
+g23 = 0.5
+
+jyseps1_1 = 15
+jyseps2_1 = 47
+ny_inner = 64
+jyseps1_2 = 79
+jyseps2_2 = 111
+
+ixseps1 = 64
+ixseps2 = 64
+
+[laplacexy]
+pctype = shell    # Supply a second solver as a preconditioner
+#pctype = hypre    # Algebraic multigrid preconditioner using hypre library
+finite_volume = false
+rtol = 1.e-14
+
+core_bndry_dirichlet = true
+pf_bndry_dirichlet = true
+y_bndry_dirichlet = false
+
+[f]
+# make an input:
+# - compatible with both Dirichlet and Neumann boundary conditions in either x-
+#   or y-directions
+# - y-boundaries at -pi/2, 3pi/2, pi/2 and 5pi/2
+# - periodic in y 0->2pi
+function = sin(2.*pi*x)^2 * sin(y - pi/2.)^2
+
+bndry_xin = dirichlet
+bndry_xout = dirichlet
+bndry_yup = neumann
+bndry_ydown = neumann
+
+[a]
+function = 1. + .1*sin(x + .1)*sin(y/pi + .1)
+
+[b]
+function = 0.
