@@ -38,6 +38,10 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
     opt = &(Options::root()["laplacexy"]);
   }
   
+  finite_volume = (*opt)["finite_volume"].doc(
+      "Use finite volume rather than finite difference discritisation."
+      ).withDefault(true);
+
   // Get MPI communicator
   MPI_Comm comm = BoutComm::get();
   
@@ -67,8 +71,26 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
   for(RangeIterator it=localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
     indexXY(it.ind, localmesh->ystart-1) = ind++;
   }
+  if ((not finite_volume) and localmesh->hasBndryLowerY()) {
+    // Corner boundary cells
+    if (localmesh->firstX()) {
+      indexXY(localmesh->xstart-1, localmesh->ystart-1) = ind++;
+    }
+    if (localmesh->lastX()) {
+      indexXY(localmesh->xend+1, localmesh->ystart-1) = ind++;
+    }
+  }
   for(RangeIterator it=localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
     indexXY(it.ind, localmesh->yend+1) = ind++;
+  }
+  if ((not finite_volume) and localmesh->hasBndryUpperY()) {
+    // Corner boundary cells
+    if (localmesh->firstX()) {
+      indexXY(localmesh->xstart-1, localmesh->yend+1) = ind++;
+    }
+    if (localmesh->lastX()) {
+      indexXY(localmesh->xend+1, localmesh->yend+1) = ind++;
+    }
   }
   
   xstart = localmesh->xstart;
@@ -106,96 +128,217 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
   PetscMalloc( (localN)*sizeof(PetscInt), &d_nnz );
   PetscMalloc( (localN)*sizeof(PetscInt), &o_nnz );
   
-  for(int i=0;i<localN;i++) {
-    // Non-zero elements on this processor
-    d_nnz[i] = 5; // Star pattern in 2D
-    // Non-zero elements on neighboring processor
-    o_nnz[i] = 0;
-  }
-  
-  // X boundaries
-  if(localmesh->firstX()) {
-    // Lower X boundary
-    for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
-      const int localIndex = globalIndex(localmesh->xstart - 1, y);
-      ASSERT1( (localIndex >= 0) && (localIndex < localN) );
-    
-      d_nnz[localIndex] = 2; // Diagonal sub-matrix
-      o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
+  if (finite_volume) {
+    // This discretisation uses a 5-point stencil
+    for(int i=0;i<localN;i++) {
+      // Non-zero elements on this processor
+      d_nnz[i] = 5; // Star pattern in 2D
+      // Non-zero elements on neighboring processor
+      o_nnz[i] = 0;
     }
-  }else {
-    // On another processor
-    for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
-      const int localIndex = globalIndex(localmesh->xstart, y);
-      ASSERT1( (localIndex >= 0) && (localIndex < localN) );
-      d_nnz[localIndex] -= 1;
-      o_nnz[localIndex] += 1;
+
+    // X boundaries
+    if(localmesh->firstX()) {
+      // Lower X boundary
+      for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
+        const int localIndex = globalIndex(localmesh->xstart - 1, y);
+        ASSERT1( (localIndex >= 0) && (localIndex < localN) );
+
+        d_nnz[localIndex] = 2; // Diagonal sub-matrix
+        o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
+      }
+    }else {
+      // On another processor
+      for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
+        const int localIndex = globalIndex(localmesh->xstart, y);
+        ASSERT1( (localIndex >= 0) && (localIndex < localN) );
+        d_nnz[localIndex] -= 1;
+        o_nnz[localIndex] += 1;
+      }
     }
-  }
-  if(localmesh->lastX()) {
-    // Upper X boundary
-    for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
-      const int localIndex = globalIndex(localmesh->xend + 1, y);
-      ASSERT1( (localIndex >= 0) && (localIndex < localN) );
-      d_nnz[localIndex] = 2; // Diagonal sub-matrix
-      o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
+    if(localmesh->lastX()) {
+      // Upper X boundary
+      for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
+        const int localIndex = globalIndex(localmesh->xend + 1, y);
+        ASSERT1( (localIndex >= 0) && (localIndex < localN) );
+        d_nnz[localIndex] = 2; // Diagonal sub-matrix
+        o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
+      }
+    }else {
+      // On another processor
+      for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
+        const int localIndex = globalIndex(localmesh->xend, y);
+        ASSERT1( (localIndex >= 0) && (localIndex < localN) );
+        d_nnz[localIndex] -= 1;
+        o_nnz[localIndex] += 1;
+      }
     }
-  }else {
-    // On another processor
-    for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
-      const int localIndex = globalIndex(localmesh->xend, y);
-      ASSERT1( (localIndex >= 0) && (localIndex < localN) );
-      d_nnz[localIndex] -= 1;
-      o_nnz[localIndex] += 1;
+    // Y boundaries
+
+    for(int x=localmesh->xstart; x <=localmesh->xend; x++) {
+      // Default to no boundary
+      // NOTE: This assumes that communications in Y are to other
+      //   processors. If Y is communicated with this processor (e.g. NYPE=1)
+      //   then this will result in PETSc warnings about out of range allocations
+      {
+        const int localIndex = globalIndex(x, localmesh->ystart);
+        ASSERT1((localIndex >= 0) && (localIndex < localN));
+        // d_nnz[localIndex] -= 1;  // Note: Slightly inefficient
+        o_nnz[localIndex] += 1;
+      }
+      {
+        const int localIndex = globalIndex(x, localmesh->yend);
+        ASSERT1((localIndex >= 0) && (localIndex < localN));
+        // d_nnz[localIndex] -= 1; // Note: Slightly inefficient
+        o_nnz[localIndex] += 1;
+      }
     }
-  }
-  // Y boundaries
-  
-  for(int x=localmesh->xstart; x <=localmesh->xend; x++) {
-    // Default to no boundary
-    // NOTE: This assumes that communications in Y are to other
-    //   processors. If Y is communicated with this processor (e.g. NYPE=1)
-    //   then this will result in PETSc warnings about out of range allocations
-    {
-      const int localIndex = globalIndex(x, localmesh->ystart);
-      ASSERT1((localIndex >= 0) && (localIndex < localN));
-      // d_nnz[localIndex] -= 1;  // Note: Slightly inefficient
-      o_nnz[localIndex] += 1;
+
+    for(RangeIterator it=localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
+      {
+        const int localIndex = globalIndex(it.ind, localmesh->ystart - 1);
+        ASSERT1((localIndex >= 0) && (localIndex < localN));
+        d_nnz[localIndex] = 2; // Diagonal sub-matrix
+        o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
+      }
+      {
+        const int localIndex = globalIndex(it.ind, localmesh->ystart);
+        ASSERT1((localIndex >= 0) && (localIndex < localN));
+        d_nnz[localIndex] += 1;
+        o_nnz[localIndex] -= 1;
+      }
     }
-    {
-      const int localIndex = globalIndex(x, localmesh->yend);
-      ASSERT1((localIndex >= 0) && (localIndex < localN));
-      // d_nnz[localIndex] -= 1; // Note: Slightly inefficient
-      o_nnz[localIndex] += 1;
+    for(RangeIterator it=localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
+      {
+        const int localIndex = globalIndex(it.ind, localmesh->yend + 1);
+        ASSERT1((localIndex >= 0) && (localIndex < localN));
+        d_nnz[localIndex] = 2; // Diagonal sub-matrix
+        o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
+      }
+      {
+        const int localIndex = globalIndex(it.ind, localmesh->yend);
+        ASSERT1((localIndex >= 0) && (localIndex < localN));
+        d_nnz[localIndex] += 1;
+        o_nnz[localIndex] -= 1;
+      }
     }
-  }
-  
-  for(RangeIterator it=localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
-    {
-      const int localIndex = globalIndex(it.ind, localmesh->ystart - 1);
-      ASSERT1((localIndex >= 0) && (localIndex < localN));
-      d_nnz[localIndex] = 2; // Diagonal sub-matrix
-      o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
+  } else {
+    // This discretisation uses a 9-point stencil
+    for(int i=0;i<localN;i++) {
+      // Non-zero elements on this processor
+      d_nnz[i] = 9; // Square pattern in 2D
+      // Non-zero elements on neighboring processor
+      o_nnz[i] = 0;
     }
-    {
-      const int localIndex = globalIndex(it.ind, localmesh->ystart);
-      ASSERT1((localIndex >= 0) && (localIndex < localN));
-      d_nnz[localIndex] += 1;
-      o_nnz[localIndex] -= 1;
+
+    // X boundaries
+    if(localmesh->firstX()) {
+      // Lower X boundary
+      for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
+        const int localIndex = globalIndex(localmesh->xstart - 1, y);
+        ASSERT1( (localIndex >= 0) && (localIndex < localN) );
+
+        d_nnz[localIndex] = 2; // Diagonal sub-matrix
+        o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
+      }
+    }else {
+      // On another processor
+      for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
+        const int localIndex = globalIndex(localmesh->xstart, y);
+        ASSERT1( (localIndex >= 0) && (localIndex < localN) );
+        d_nnz[localIndex] -= 3;
+        o_nnz[localIndex] += 3;
+      }
     }
-  }
-  for(RangeIterator it=localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
-    {
-      const int localIndex = globalIndex(it.ind, localmesh->yend + 1);
-      ASSERT1((localIndex >= 0) && (localIndex < localN));
-      d_nnz[localIndex] = 2; // Diagonal sub-matrix
-      o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
+    if(localmesh->lastX()) {
+      // Upper X boundary
+      for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
+        const int localIndex = globalIndex(localmesh->xend + 1, y);
+        ASSERT1( (localIndex >= 0) && (localIndex < localN) );
+        d_nnz[localIndex] = 2; // Diagonal sub-matrix
+        o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
+      }
+    }else {
+      // On another processor
+      for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
+        const int localIndex = globalIndex(localmesh->xend, y);
+        ASSERT1( (localIndex >= 0) && (localIndex < localN) );
+        d_nnz[localIndex] -= 3;
+        o_nnz[localIndex] += 3;
+      }
     }
-    {
-      const int localIndex = globalIndex(it.ind, localmesh->yend);
-      ASSERT1((localIndex >= 0) && (localIndex < localN));
-      d_nnz[localIndex] += 1;
-      o_nnz[localIndex] -= 1;
+    // Y boundaries
+
+    for(int x=localmesh->xstart; x <=localmesh->xend; x++) {
+      // Default to no boundary
+      // NOTE: This assumes that communications in Y are to other
+      //   processors. If Y is communicated with this processor (e.g. NYPE=1)
+      //   then this will result in PETSc warnings about out of range allocations
+      {
+        const int localIndex = globalIndex(x, localmesh->ystart);
+        ASSERT1((localIndex >= 0) && (localIndex < localN));
+        // d_nnz[localIndex] -= 3;  // Note: Slightly inefficient
+        o_nnz[localIndex] += 3;
+      }
+      {
+        const int localIndex = globalIndex(x, localmesh->yend);
+        ASSERT1((localIndex >= 0) && (localIndex < localN));
+        // d_nnz[localIndex] -= 3; // Note: Slightly inefficient
+        o_nnz[localIndex] += 3;
+      }
+    }
+
+    for(RangeIterator it=localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
+      {
+        const int localIndex = globalIndex(it.ind, localmesh->ystart - 1);
+        ASSERT1((localIndex >= 0) && (localIndex < localN));
+        d_nnz[localIndex] = 2; // Diagonal sub-matrix
+        o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
+      }
+      {
+        const int localIndex = globalIndex(it.ind, localmesh->ystart);
+        ASSERT1((localIndex >= 0) && (localIndex < localN));
+        //d_nnz[localIndex] += 3;
+        o_nnz[localIndex] -= 3;
+      }
+    }
+    if (localmesh->hasBndryLowerY()) {
+      if (localmesh->firstX()) {
+        const int localIndex = globalIndex(localmesh->xstart-1, localmesh->ystart-1);
+        ASSERT1((localIndex >= 0) && (localIndex < localN));
+        d_nnz[localIndex] = 2;
+      }
+      if (localmesh->lastX()) {
+        const int localIndex = globalIndex(localmesh->xend+1, localmesh->ystart-1);
+        ASSERT1((localIndex >= 0) && (localIndex < localN));
+        d_nnz[localIndex] = 2;
+      }
+    }
+    for(RangeIterator it=localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
+      {
+        const int localIndex = globalIndex(it.ind, localmesh->yend + 1);
+        ASSERT1((localIndex >= 0) && (localIndex < localN));
+        d_nnz[localIndex] = 2; // Diagonal sub-matrix
+        o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
+      }
+      {
+        const int localIndex = globalIndex(it.ind, localmesh->yend);
+        ASSERT1((localIndex >= 0) && (localIndex < localN));
+        d_nnz[localIndex] += 1;
+        o_nnz[localIndex] -= 1;
+      }
+    }
+    if (localmesh->hasBndryUpperY()) {
+      if (localmesh->firstX()) {
+        const int localIndex = globalIndex(localmesh->xstart-1, localmesh->yend+1);
+        ASSERT1((localIndex >= 0) && (localIndex < localN));
+        d_nnz[localIndex] = 2;
+      }
+      if (localmesh->lastX()) {
+        const int localIndex = globalIndex(localmesh->xend+1, localmesh->yend+1);
+        ASSERT1((localIndex >= 0) && (localIndex < localN));
+        d_nnz[localIndex] = 2;
+      }
     }
   }
   // Pre-allocate
@@ -215,6 +358,67 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
   // Now communicate to fill guard cells
   localmesh->communicate(indexXY);
 
+  // Fill corner guard cells by getting the y-guard cells from the x-neighbours.
+  // This is an arbitrary choice, which makes a difference at the X-point, where taking
+  // the x-guard cells from the y-neighbours would give points in different regions.
+  auto xcomm = localmesh->getXcomm();
+  int proc_xind = localmesh->getXProcIndex();
+  int tag0 = localmesh->getYProcIndex()*localmesh->getNXPE();
+  MPI_Request requests[] = {MPI_REQUEST_NULL, MPI_REQUEST_NULL};
+  MPI_Status statuses[2];
+
+  // Get lower, inner corner
+  if (not localmesh->firstX()) {
+    // Receive from inner
+    MPI_Irecv(&indexXY(localmesh->xstart-1, localmesh->ystart-1), 1, MPI_DOUBLE,
+        proc_xind-1, tag0 + 1*proc_xind, xcomm, &requests[0]);
+  }
+  if (not localmesh->lastX()) {
+    // Need to send lower outer point out
+    MPI_Isend(&indexXY(localmesh->xend, localmesh->ystart-1), 1, MPI_DOUBLE, proc_xind+1,
+        tag0 + 1*(proc_xind + 1), xcomm, &requests[1]);
+  }
+  MPI_Waitall(2, requests, statuses);
+
+  // Get upper, inner corner
+  if (not localmesh->firstX()) {
+    // Receive from inner
+    MPI_Irecv(&indexXY(localmesh->xstart-1, localmesh->yend+1), 1, MPI_DOUBLE,
+        proc_xind-1, tag0 + 1*proc_xind, xcomm, &requests[0]);
+  }
+  if (not localmesh->lastX()) {
+    // Need to send upper outer point out
+    MPI_Isend(&indexXY(localmesh->xend, localmesh->yend+1), 1, MPI_DOUBLE, proc_xind+1,
+        tag0 + 1*(proc_xind + 1), xcomm, &requests[1]);
+  }
+  MPI_Waitall(2, requests, statuses);
+
+  // Get lower, outer corner
+  if (not localmesh->lastX()) {
+    // Receive from outer
+    MPI_Irecv(&indexXY(localmesh->xend+1, localmesh->ystart-1), 1, MPI_DOUBLE,
+        proc_xind+1, tag0 + proc_xind, xcomm, &requests[0]);
+  }
+  if (not localmesh->firstX()) {
+    // Need to send lower inner point in
+    MPI_Isend(&indexXY(localmesh->xstart, localmesh->ystart-1), 1, MPI_DOUBLE,
+        proc_xind-1, tag0 + (proc_xind - 1), xcomm, &requests[1]);
+  }
+  MPI_Waitall(2, requests, statuses);
+
+  // Get upper, outer corner
+  if (not localmesh->lastX()) {
+    // Receive from outer
+    MPI_Irecv(&indexXY(localmesh->xend+1, localmesh->yend+1), 1, MPI_DOUBLE,
+        proc_xind+1, tag0 + proc_xind, xcomm, &requests[0]);
+  }
+  if (not localmesh->firstX()) {
+    // Need to send upper inner point in
+    MPI_Isend(&indexXY(localmesh->xstart, localmesh->yend+1), 1, MPI_DOUBLE,
+        proc_xind-1, tag0 + (proc_xind - 1), xcomm, &requests[1]);
+  }
+  MPI_Waitall(2, requests, statuses);
+
   //////////////////////////////////////////////////
   // Set up KSP
   
@@ -223,9 +427,6 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
   
   // Configure Linear Solver
   
-  finite_volume = (*opt)["finite_volume"].doc(
-      "Use finite volume rather than finite difference discritisation."
-      ).withDefault(true);
   bool direct = (*opt)["direct"].doc("Use a direct LU solver").withDefault(false);
   
   if(direct) {
@@ -425,10 +626,10 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
 
     Field2D coef_dfdy = coords->G2 - DDY(coords->J/coords->g_22)/coords->J;
 
-    for(int x=localmesh->xstart; x <= localmesh->xend; x++) {
-      for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
+    for(int x = localmesh->xstart; x <= localmesh->xend; x++) {
+      for(int y = localmesh->ystart; y <= localmesh->yend; y++) {
         // stencil entries
-        PetscScalar c, xm, xp, ym, yp;
+        PetscScalar c, xm, xp, ym, yp, xpyp, xpym, xmyp, xmym;
 
         BoutReal dx = coords->dx(x,y);
 
@@ -458,6 +659,8 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
 
         if(include_y_derivs) {
           BoutReal dy = coords->dy(x,y);
+          BoutReal dAdx = (A(x+1, y) - A(x-1, y))/(2.*dx);
+          BoutReal dAdy = (A(x, y+1) - A(x, y-1))/(2.*dy);
 
           // A*(G2-1/J*d/dy(J/g_22))*dfdy
           val = A(x, y)*coef_dfdy(x, y)/(2.*dy);
@@ -470,10 +673,12 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
           c -= 2.*val;
           ym += val;
 
-          // 2*g12*d2dfdxdy
-          // This term would turn the 5-point stencil into a 9-point stencil, and the corner
-          // points are not well defined adjacent to an X-point (corner guard cells). So for
-          // now assume an orthogonal grid where g12=0
+          // 2*A*g12*d2dfdxdy
+          val = A(x, y)*coords->g12(x, y)/(2.*dx*dy);
+          xpyp = val;
+          xpym = -val;
+          xmyp = -val;
+          xmym = val;
 
           // g22*dAdy*dfdy
           val = (coords->g22(x, y) - 1./coords->g_22(x,y))*dAdy/(2.*dy);
@@ -481,11 +686,16 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
           ym -= val;
 
           // g12*(dAdx*dfdy + dAdy*dfdx)
-          // Assume orthogonal grid with g12=0 again
+          val = coords->g12(x, y)*dAdx/(2.*dy);
+          yp += val;
+          ym -= val;
+          val = coords->g12(x, y)*dAdy/(2.*dx);
+          xp += val;
+          xm -= val;
         }
 
         /////////////////////////////////////////////////
-        // Now have a 5-point stencil for the Laplacian
+        // Now have a 9-point stencil for the Laplacian
 
         int row = globalIndex(x,y);
 
@@ -508,6 +718,22 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
           // Y - 1
           col = globalIndex(x, y-1);
           MatSetValues(MatA,1,&row,1,&col,&ym,INSERT_VALUES);
+
+          // X + 1, Y + 1
+          col = globalIndex(x+1, y+1);
+          MatSetValues(MatA,1,&row,1,&col,&xpyp,INSERT_VALUES);
+
+          // X + 1, Y - 1
+          col = globalIndex(x+1, y-1);
+          MatSetValues(MatA,1,&row,1,&col,&xpym,INSERT_VALUES);
+
+          // X - 1, Y + 1
+          col = globalIndex(x-1, y+1);
+          MatSetValues(MatA,1,&row,1,&col,&xmyp,INSERT_VALUES);
+
+          // X - 1, Y - 1
+          col = globalIndex(x-1, y-1);
+          MatSetValues(MatA,1,&row,1,&col,&xmym,INSERT_VALUES);
         }
       }
     }
@@ -606,6 +832,51 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
       val = -1.0;
       int col = globalIndex(it.ind, localmesh->yend);
       MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
+    }
+  }
+
+  if (not finite_volume) {
+    // Handle corner boundary cells in case we need to include D2DXDY
+    // Apply the y-boundary-condition to the cells in the x-boundary - this is an
+    // arbitrary choice, cf. connections around the X-point
+
+    if (localmesh->hasBndryLowerY()) {
+      if (localmesh->firstX()) {
+        if (y_bndry_dirichlet) {
+          // Both Dirichlet
+          throw BoutException("Dirichlet y-boundary-condition not supported for mixed "
+              "second derivatives.");
+        } else {
+          // Neumann y-bc
+          // f(xs-1,ys-1) = f(xs-1,ys)
+          PetscScalar val = 1.0;
+          int row = globalIndex(localmesh->xstart-1, localmesh->ystart-1);
+          MatSetValues(MatA,1,&row,1,&row,&val,INSERT_VALUES);
+
+          val = -1.0;
+          int col = globalIndex(localmesh->xstart-1, localmesh->ystart);
+          MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
+        }
+      }
+    }
+    if (localmesh->hasBndryUpperY()) {
+      if (localmesh->firstX()) {
+        if (y_bndry_dirichlet) {
+          // Both Dirichlet
+          throw BoutException("Dirichlet y-boundary-condition not supported for mixed "
+              "second derivatives.");
+        } else {
+          // Neumann y-bc
+          // f(xs-1,ys-1) = f(xs-1,ys)
+          PetscScalar val = 1.0;
+          int row = globalIndex(localmesh->xstart-1, localmesh->yend+1);
+          MatSetValues(MatA,1,&row,1,&row,&val,INSERT_VALUES);
+
+          val = -1.0;
+          int col = globalIndex(localmesh->xstart-1, localmesh->yend);
+          MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
+        }
+      }
     }
   }
   
@@ -816,6 +1087,11 @@ const Field2D LaplaceXY::solve(const Field2D &rhs, const Field2D &x0) {
         val = x0(it.ind, localmesh->yend+1);
         VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
       }
+
+      if ((localmesh->hasBndryLowerY() or localmesh->hasBndryUpperY())
+          and (localmesh->firstX() or localmesh->lastX())) {
+        throw BoutException("Dirichlet not implemented for mixed-derivatives.");
+      }
     } else {
       // Y boundaries Neumann
       for(RangeIterator it=localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
@@ -829,6 +1105,26 @@ const Field2D LaplaceXY::solve(const Field2D &rhs, const Field2D &x0) {
         val = 0.0;
         VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
       }
+      if (localmesh->hasBndryLowerY()) {
+        if (localmesh->firstX()) {
+          int ind = globalIndex(localmesh->xstart-1, localmesh->ystart-1);
+
+          PetscScalar val = x0(localmesh->xstart-1, localmesh->ystart);
+          VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+
+          val = 0.0;
+          VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+        }
+        if (localmesh->lastX()) {
+          int ind = globalIndex(localmesh->xend+1, localmesh->ystart-1);
+
+          PetscScalar val = x0(localmesh->xend+1, localmesh->ystart);
+          VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+
+          val = 0.0;
+          VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+        }
+      }
 
       for(RangeIterator it=localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
         int ind = globalIndex(it.ind, localmesh->yend+1);
@@ -840,6 +1136,26 @@ const Field2D LaplaceXY::solve(const Field2D &rhs, const Field2D &x0) {
 
         val = 0.0;
         VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
+      }
+      if (localmesh->hasBndryUpperY()) {
+        if (localmesh->firstX()) {
+          int ind = globalIndex(localmesh->xstart-1, localmesh->yend+1);
+
+          PetscScalar val = x0(localmesh->xstart-1, localmesh->yend);
+          VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+
+          val = 0.0;
+          VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+        }
+        if (localmesh->lastX()) {
+          int ind = globalIndex(localmesh->xend+1, localmesh->yend+1);
+
+          PetscScalar val = x0(localmesh->xend+1, localmesh->yend);
+          VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+
+          val = 0.0;
+          VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+        }
       }
     }
   }
@@ -1009,8 +1325,24 @@ int LaplaceXY::localSize() {
   for(RangeIterator it=localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
     n++;
   }
+  if ((not finite_volume) and localmesh->hasBndryLowerY()) {
+    if (localmesh->firstX()) {
+      n++;
+    }
+    if (localmesh->lastX()) {
+      n++;
+    }
+  }
   for(RangeIterator it=localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
     n++;
+  }
+  if ((not finite_volume) and localmesh->hasBndryUpperY()) {
+    if (localmesh->firstX()) {
+      n++;
+    }
+    if (localmesh->lastX()) {
+      n++;
+    }
   }
   
   return n;
