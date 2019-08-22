@@ -400,6 +400,7 @@ public:
     // fromFieldAligned
     test_coords->setParallelTransform(
         bout::utils::make_unique<ParallelTransformIdentity>(*bout::globals::mesh));
+    static_cast<FakeMesh*>(bout::globals::mesh)->createBoundaryRegions();
 
     delete mesh_staggered;
     mesh_staggered = new FakeMesh(nx, ny, nz);

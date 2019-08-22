@@ -248,7 +248,7 @@ class Mesh {
   /*!
    * Communicate an X-Z field
    */
-  void communicate(FieldPerp &f); 
+  virtual void communicate(FieldPerp &f); 
 
   /*!
    * Send a list of FieldData objects

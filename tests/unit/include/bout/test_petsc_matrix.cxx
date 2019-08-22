@@ -207,12 +207,12 @@ TYPED_TEST(PetscMatrixTest, TestDestroy) {
 // Test getting yup
 TYPED_TEST(PetscMatrixTest, TestYUp) {
   PetscMatrix<TypeParam> matrix(this->field), expected(this->field);
-  BoutReal val = 3.141592;
   MockTransform* transform = this->pt;
   SCOPED_TRACE("YUp");
   if constexpr(std::is_same<TypeParam, FieldPerp>::value) {
     EXPECT_THROW(matrix.yup(), BoutException);
   } else {
+    BoutReal val = 3.141592;
     EXPECT_CALL(*transform, getWeightsForYDownApproximation(this->indexA.x(),
                 this->indexA.y(), this->indexA.z()))
       .WillOnce(Return(this->yDownWeights));
@@ -350,5 +350,42 @@ TYPED_TEST(PetscMatrixTest, TestSwap) {
   EXPECT_EQ(r0, l1);
 }
 
+// Test matrix/vector multiplication (Identity)
+TYPED_TEST(PetscMatrixTest, TestMatrixVectorMultiplyIdentity) {
+  PetscMatrix<TypeParam> matrix(this->field);
+  PetscVector<TypeParam> vector(this->field);
+  BOUT_FOR(i, this->field.getRegion("RGN_ALL")) {
+    vector(i) = (BoutReal)i.ind;
+    matrix(i, i) = 1.0;
+  }
+  vector.assemble();
+  matrix.assemble();
+  PetscVector<TypeParam> product = matrix * vector;
+  TypeParam prodField = product.toField();
+  BOUT_FOR(i, prodField.getRegion("RGN_ALL")) {
+    EXPECT_NEAR(prodField[i], this->field[i], 1.e-10);
+  }
+}
+
+// Test matrix/vector multiplication (Ones)
+TYPED_TEST(PetscMatrixTest, TestMatrixVectorMultiplyOnes) {
+  PetscMatrix<TypeParam> matrix(this->field);
+  PetscVector<TypeParam> vector(this->field);
+  BoutReal total = 0.0;
+  BOUT_FOR(i, this->field.getRegion("RGN_ALL")) {
+    vector(i) = (BoutReal)i.ind;
+    total += i.ind;
+    BOUT_FOR(j, this->field.getRegion("RGN_ALL")) {
+      matrix(i, j) = 1.0;
+    }
+  }
+  vector.assemble();
+  matrix.assemble();
+  PetscVector<TypeParam> product = matrix * vector;
+  TypeParam prodField = product.toField();
+  BOUT_FOR(i, prodField.getRegion("RGN_ALL")) {
+    EXPECT_NEAR(prodField[i], total, 1.e-10);
+  }
+}
 
 #endif // BOUT_HAS_PETSC

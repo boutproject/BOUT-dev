@@ -48,6 +48,7 @@ using InterpolationWeights = std::vector<ParallelTransform::positionsAndWeights>
 
 enum PetscObjectMode {unset_mode, insert_mode, add_mode};
 
+template<class I> I makeGlobalIndexer(Mesh* localmesh);
 /*!
  * A singleton which accepts index objects produced by iterating over
  * fields and returns a global index. This index can be used when
@@ -60,18 +61,31 @@ public:
   /// If \p localmesh is the same as the global one, return a pointer
   /// to the global instance. Otherwise create a new one.
   static IndexerPtr getInstance(Mesh* localmesh);
+  /// Call this immediately after construction when running unit tests.
+  void initialiseTest();
+  /// Finish setting up the indexer, communicating indices across processes.
+  void initialise();
   /// Convert the local index object to a global index which can be
   /// used in PETSc vectors and matrices.
   PetscInt getGlobal(Ind2D ind);
   PetscInt getGlobal(Ind3D ind);
   PetscInt getGlobal(IndPerp ind);
 
+protected:
+  GlobalIndexer(Mesh* localmesh);
+
 private:
-  GlobalIndexer();
+  /// This gets called by initialiseTest and is used to register
+  /// fields with fake parallel meshes.
+  virtual void registerFieldsForTest(Mesh* localmesh, FieldData& f);
+  virtual void registerFieldsForTest(Mesh* localmesh, FieldPerp& f);
+
   /// The only instance of this class acting on the global Mesh
   static IndexerPtr globalInstance;
   Mesh* fieldmesh;
+  bool initialised;
 };
+
 
 /*!
  * An abstract class used when assigning to an element of a PETSc
@@ -160,6 +174,9 @@ template <class F>
 class PetscVector {
 public:
   using ind_type = typename F::ind_type;
+  /// Default constructor does nothing
+  PetscVector() {}
+  
   /// Copy constructor
   PetscVector(const PetscVector<F>& v) {
     throw BoutException("Not implemented");
@@ -202,6 +219,11 @@ public:
     throw BoutException("Not implemented");
   }
 
+  /// Returns a field constructed from the contents of thsi vector
+  const F toField() {
+    throw BoutException("Not implemented");
+  }
+
   /// Provides a reference to the raw PETSc Vec object.
   Vec* getVectorPointer() {
     return &vector;
@@ -225,6 +247,8 @@ template <class F>
 class PetscMatrix {
 public:
   using ind_type = typename F::ind_type;
+  /// Default constructor does nothing
+  PetscMatrix() {}
 
   /// Copy constructor
   PetscMatrix(const PetscMatrix<F>& v) : pt(v.pt) {
@@ -235,7 +259,7 @@ public:
     throw BoutException("Not implemented");
   }
 
-  PetscMatrix(F f);
+  PetscMatrix(F &f);
   
   ~PetscMatrix() {
     throw BoutException("Not implemented");
@@ -259,13 +283,13 @@ public:
     throw BoutException("Not implemented");
   }
 
-  PetscMatrix& yup(int index = 0) {
+  PetscMatrix<F>& yup(int index = 0) {
     return ynext(index + 1);
   }
-  PetscMatrix& ydown(int index = 0) {
+  PetscMatrix<F>& ydown(int index = 0) {
     return ynext(-index - 1);
   }
-  PetscMatrix& ynext(int dir) {
+  PetscMatrix<F>& ynext(int dir) {
     throw BoutException("Not implemented");
   }
 
@@ -299,6 +323,16 @@ template <class F>
 void swap(PetscMatrix<F>& first, PetscMatrix<F>& second) {
     throw BoutException("Not implemented");
 }
+
+/*!
+ *  Performs matrix-multiplication on the supplied vector
+ */
+template <class F>
+PetscVector<F> operator*(const PetscMatrix<F>& mat, PetscVector<F>& vec) {
+  throw BoutException("Not implemented");
+}
+  
+
 #endif // BOUT_HAS_PETSC
 
 #endif // __PETSC_INTERFACE_H__

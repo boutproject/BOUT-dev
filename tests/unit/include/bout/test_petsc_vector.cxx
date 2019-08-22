@@ -52,6 +52,9 @@ void testVectorsEqual(Vec* v1, Vec* v2) {
 // Test constructor from field?
 TYPED_TEST(PetscVectorTest, FieldConstructor) {
   SCOPED_TRACE("FieldConstructor");
+  BOUT_FOR(i, this->field.getRegion("RGN_ALL")) {
+    this->field[i] = (BoutReal)i.ind;
+  }
   PetscVector<TypeParam> vector(this->field);
   Vec *vectorPtr = vector.getVectorPointer();
   PetscScalar *vecContents;
@@ -191,15 +194,28 @@ TYPED_TEST(PetscVectorTest, TestDestroy) {
 // Test swap
 TYPED_TEST(PetscVectorTest, TestSwap) {
   PetscVector<TypeParam> lhs(this->field), rhs(this->field);
-  Vec *l0 = lhs.getVectorPointer(), *r0 = rhs.getVectorPointer();
+  Vec l0 = *lhs.getVectorPointer(), r0 = *rhs.getVectorPointer();
   EXPECT_NE(l0, nullptr);
   EXPECT_NE(r0, nullptr);
   swap(lhs, rhs);
-  Vec *l1 = lhs.getVectorPointer(), *r1 = rhs.getVectorPointer();
+  Vec l1 = *lhs.getVectorPointer(), r1 = *rhs.getVectorPointer();
   EXPECT_NE(l0, l1);
   EXPECT_NE(r0, r1);
   EXPECT_EQ(l0, r1);
   EXPECT_EQ(r0, l1);
+}
+
+// Test toField() method
+TYPED_TEST(PetscVectorTest, TestToField) {
+  BOUT_FOR(i, this->field.getRegion("RGN_ALL")) {
+    this->field[i] = (BoutReal)i.ind;
+  }
+  PetscVector<TypeParam> vec(this->field);
+  vec.assemble();
+  TypeParam outField = vec.toField();
+  BOUT_FOR(i, outField.getRegion("RGN_ALL")) {
+    EXPECT_NEAR(this->field[i], outField[i], 1.e-10);
+  }
 }
 
 #endif // BOUT_HAS_PETSC

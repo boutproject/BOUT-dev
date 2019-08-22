@@ -1530,6 +1530,114 @@ int BoutMesh::YPROC(int yind) {
 /// Return the X processor number given a global X index
 int BoutMesh::XPROC(int xind) { return (xind >= MXG) ? (xind - MXG) / MXSUB : 0; }
 
+
+/****************************************************************
+ *                     TESTING UTILITIES
+ ****************************************************************/
+
+/// A constructor used when making fake meshes for testing. This
+/// will make a mesh which thinks it corresponds to the subdomain on
+/// one processor, even though it's actually being run in serial.
+BoutMesh::BoutMesh(int  input_nx, int input_ny, int input_nz, int mxg, int myg,
+		   int nxpe, int nype, int pe_yind, int pe_xind) :
+  nx(input_nx), ny(input_ny), nz(input_nz), MXG(mxg), MYG(myg), MZG(0)
+{
+  symmetricGlobalX = true;
+  symmetricGlobalY = true;
+
+  comm_x = MPI_COMM_NULL;
+  comm_inner = MPI_COMM_NULL;
+  comm_middle = MPI_COMM_NULL;
+  comm_outer = MPI_COMM_NULL;
+
+  PE_XIND = pe_xind;
+  PE_YIND = pe_yind;
+  NPES = nxpe*nype;
+  MYPE = nxpe*pe_yind + pe_xind;
+
+    // Set global grid sizes
+  GlobalNx = nx;
+  GlobalNy = ny + 2 * MYG;
+  GlobalNz = nz;
+
+  if (2 * MXG >= nx)
+    throw BoutException(_("nx must be greater than 2*MXG"));
+
+  ixseps1 = GlobalNx;
+  ixseps2 = GlobalNx;
+  jyseps1_1 = -1;
+  jyseps1_2 = ny / 2;
+  jyseps2_1 = jyseps1_2;
+  jyseps2_2 = ny - 1;
+  ny_inner = jyseps2_1;
+  numberOfXPoints = 0;
+
+  NXPE = nxpe;
+  NYPE = nype;
+  NZPE = 1;
+
+  MX = nx - 2 * MXG;
+  MXSUB = MX / NXPE;
+  if ((MX % NXPE) != 0) {
+    throw BoutException(_("Cannot split %d X points equally between %d processors\n"), MX,
+                        NXPE);
+  }
+
+  /// NOTE: No grid data reserved for Y boundary cells - copy from neighbours
+  MY = ny;
+  MYSUB = MY / NYPE;
+  if ((MY % NYPE) != 0) {
+    throw BoutException(
+        _("\tERROR: Cannot split %d Y points equally between %d processors\n"), MY, NYPE);
+  }
+
+  MZ = nz;
+  MZSUB = MZ / NZPE;
+  if ((MZ % NZPE) != 0) {
+    throw BoutException(
+        _("\tERROR: Cannot split %d Z points equally between %d processors\n"), MZ, NZPE);
+  }
+
+  periodicX = false;
+  async_send = false;
+
+  // Set global offsets
+  OffsetX = PE_XIND * MXSUB;
+  OffsetY = PE_YIND * MYSUB;
+  OffsetZ = 0;
+
+  ZMIN = 0.0;
+  ZMAX = 1.0;
+  zperiod = 1.0;
+
+  /// Number of grid cells is ng* = M*SUB + guard/boundary cells
+  LocalNx = MXSUB + 2 * MXG;
+  LocalNy = MYSUB + 2 * MYG;
+  LocalNz = MZSUB + 2 * MZG;
+
+  // Set local index ranges
+  zstart = MZG;
+  zend = MZG + MZSUB - 1;
+  xstart = MXG;
+  xend = MXG + MXSUB - 1;
+  ystart = MYG;
+  yend = MYG + MYSUB - 1;
+
+  // Call topology to set layout of grid
+  topology();
+
+  TwistShift = false;
+  ShiftAngle.resize(LocalNx);
+
+  if (!source->get(this, ShiftAngle, "ShiftAngle", LocalNx, XGLOBAL(0))) {
+    ShiftAngle.clear();
+  }
+
+  addBoundaryRegions();
+}
+
+
+
 /****************************************************************
  *                       CONNECTIONS
  ****************************************************************/
