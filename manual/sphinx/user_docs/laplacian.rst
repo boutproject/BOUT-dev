@@ -889,6 +889,17 @@ Notes:
 
 -  The ShiftXderivs option must be true for this to work, since it
    assumes that :math:`g^{xz} = 0`
+-  Setting the option ``pctype = hypre`` seems to work well, if PETSc has been
+   compiled with the algebraic multigrid library hypre; this can be included by
+   passing the option ``--download-hypre`` to PETSc's ``configure`` script.
+
+An alternative discretization is available if the option ``finite_volume =
+false`` is set. Then a finite-difference discretization very close to the one used when
+calling ``A*Laplace_perp(f) + Grad_perp(A)*Grad_perp(f) + B*f`` is used. This also
+supports non-orthogonal grids with :math:`g^{xy} \neq 0`. The difference is that when
+:math:`g^{xy} \neq 0`, ``Laplace_perp`` calls ``D2DXDY(f)`` which applies a boundary
+condition to ``dfdy = DDY(f)`` before calculating ``DDX(dfdy)`` with a slightly different
+result than the way boundary conditions are applied in ``LaplaceXY``.
 
 .. _sec-LaplaceXZ:
 
