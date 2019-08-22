@@ -64,6 +64,7 @@ public:
 #include <options.hxx>
 #include <invert_laplace.hxx>
 #include <bout/petsclib.hxx>
+#include <bout/petsc_interface.hxx>
 #include <boutexception.hxx>
 
 class LaplacePetsc3dAmg : public Laplacian {
@@ -156,14 +157,23 @@ public:
     issetE = true;
   }
 
-  const Field3D solve(const Field3D &b) override {
+  
+  // Return a reference to the matrix objects representing the Laplace
+  // operator. These will be (re)construct if necessary.
+  PetscMatrix<Field3D>& getMatrix3D();
+  PetscMatrix<Field2D>& getMatrix2D();
+
+  virtual const Field2D solve(const Field2D &b) override;
+
+  virtual const Field3D solve(const Field3D &b) override {
     Field3D zero(b.getMesh());
     zero = 0.;
     return solve(b, zero);
   }
-  const Field3D solve(const Field3D &b_in, const Field3D &x0) override;
+  virtual const Field3D solve(const Field3D &b_in, const Field3D &x0) override;
 
-  const FieldPerp solve(const FieldPerp& UNUSED(b)) override {
+
+  virtual const FieldPerp solve(const FieldPerp& UNUSED(b)) override {
     throw BoutException("LaplacePetsc3DAmg cannot solve for FieldPerp");
   }
 
@@ -180,6 +190,8 @@ private:
   bool issetC;
   bool issetE;
   int lastflag;               // The flag used to construct the matrix
+  int inner_y_boundary_flags;
+  int outer_y_boundary_flags;
 
   int meshx, meshz, size, localN; // Mesh sizes, total size, no of points on this processor
   MPI_Comm comm;

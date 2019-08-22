@@ -2,6 +2,11 @@
 #ifndef __BOUTMESH_H__
 #define __BOUTMESH_H__
 
+// Place MPI in a namespace, which is then used. This will mean its
+// functions can be called as though there were no namespace
+// present. However, if a class now defines methods with the same
+// signature as MPI functions (i.e., as a wrapper) the original
+// function can still be called by prefixing with `mpi::`.
 #include "mpi.h"
 
 #include <bout/mesh.hxx>
@@ -178,6 +183,11 @@ class BoutMesh : public Mesh {
   int XLOCAL(int xglo) const;
   int YLOCAL(int yglo) const;
 
+ protected:
+  BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg,
+	   int nxpe, int nype, int pe_yind, int pe_xind);
+  void setAdjacentMeshes(std::vector<BoutMesh&>& meshes);
+
  private:
   std::string gridname;
   int nx, ny, nz; ///< Size of the grid in the input file
@@ -283,6 +293,28 @@ class BoutMesh : public Mesh {
   int pack_data(const std::vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, BoutReal *buffer);
   /// Copy data from a buffer back into the fields
   int unpack_data(const std::vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, BoutReal *buffer);
+
+  // Wrappers around MPI functions, taking the same names. These can
+  // then be overloaded for testing purposes.
+  virtual int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source,
+			int tag, MPI_Comm comm, MPI_Request *request) {
+    return ::MPI_Irecv(buf, count, datatype, source, tag, comm, request);
+  }
+  virtual int MPI_Isend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag,
+			MPI_Comm comm, MPI_Request *request) {
+    return ::MPI_Isend(buf, count, datatype, dest, tag, comm, request);
+  }
+  virtual int MPI_Send(const void *buf, int count, MPI_Datatype datatype, int dest, int tag,
+		       MPI_Comm comm) {
+    return ::MPI_Send(buf, count, datatype, dest, tag, comm);
+  }
+  virtual int MPI_Wait(MPI_Request *request, MPI_Status *status) {
+    return ::MPI_Wait(request, status);
+  }
+  virtual int MPI_Waitany(int count, MPI_Request array_of_requests[], int *indx,
+			  MPI_Status *status) {
+    return ::MPI_Waitany(count, array_of_requests, indx, status);
+  }
 };
 
 #endif // __BOUTMESH_H__
