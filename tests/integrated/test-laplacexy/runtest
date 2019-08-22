@@ -5,6 +5,7 @@
 #
 
 #requires: petsc
+#requires: all_tests
 
 from boututils.run_wrapper import shell, shell_safe, launch_safe
 from boutdata.collect import collect
