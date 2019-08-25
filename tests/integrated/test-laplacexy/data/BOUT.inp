@@ -31,7 +31,7 @@ rtol = 1.e-14
 
 core_bndry_dirichlet = true
 pf_bndry_dirichlet = true
-y_bndry_dirichlet = false
+y_bndry = neumann
 
 [f]
 # make an input:
