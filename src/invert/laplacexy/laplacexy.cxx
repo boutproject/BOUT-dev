@@ -324,8 +324,8 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
       {
         const int localIndex = globalIndex(it.ind, localmesh->yend);
         ASSERT1((localIndex >= 0) && (localIndex < localN));
-        d_nnz[localIndex] += 1;
-        o_nnz[localIndex] -= 1;
+        //d_nnz[localIndex] += 3;
+        o_nnz[localIndex] -= 3;
       }
     }
     if (localmesh->hasBndryUpperY()) {
