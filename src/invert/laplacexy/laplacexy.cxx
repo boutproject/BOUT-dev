@@ -858,6 +858,23 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
           MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
         }
       }
+      if (localmesh->lastX()) {
+        if (y_bndry_dirichlet) {
+          // Both Dirichlet
+          throw BoutException("Dirichlet y-boundary-condition not supported for mixed "
+              "second derivatives.");
+        } else {
+          // Neumann y-bc
+          // f(xe+1,ys-1) = f(xe+1,ys)
+          PetscScalar val = 1.0;
+          int row = globalIndex(localmesh->xend+1, localmesh->ystart-1);
+          MatSetValues(MatA,1,&row,1,&row,&val,INSERT_VALUES);
+
+          val = -1.0;
+          int col = globalIndex(localmesh->xend+1, localmesh->ystart);
+          MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
+        }
+      }
     }
     if (localmesh->hasBndryUpperY()) {
       if (localmesh->firstX()) {
@@ -874,6 +891,23 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
 
           val = -1.0;
           int col = globalIndex(localmesh->xstart-1, localmesh->yend);
+          MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
+        }
+      }
+      if (localmesh->lastX()) {
+        if (y_bndry_dirichlet) {
+          // Both Dirichlet
+          throw BoutException("Dirichlet y-boundary-condition not supported for mixed "
+              "second derivatives.");
+        } else {
+          // Neumann y-bc
+          // f(xe+1,ys-1) = f(xe+1,ys)
+          PetscScalar val = 1.0;
+          int row = globalIndex(localmesh->xend+1, localmesh->yend+1);
+          MatSetValues(MatA,1,&row,1,&row,&val,INSERT_VALUES);
+
+          val = -1.0;
+          int col = globalIndex(localmesh->xend+1, localmesh->yend);
           MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
         }
       }
