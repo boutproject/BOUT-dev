@@ -1011,7 +1011,7 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
           col = globalIndex(localmesh->xstart-1, localmesh->yend-1);
           MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
 
-          val = 3.0;
+          val = 1.0;
           col = globalIndex(localmesh->xstart-1, localmesh->yend-2);
           MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
         } else {
