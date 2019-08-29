@@ -26,14 +26,21 @@
 #include <bout.hxx>
 #include <bout/constants.hxx>
 #include <bout/invert/laplacexy.hxx>
+#include <derivs.hxx>
 #include <initialprofiles.hxx>
 #include <options.hxx>
 
 int main(int argc, char** argv) {
 
   BoutInitialise(argc, argv);
+
+  auto coords = mesh->getCoordinates();
+
+  auto& opt = Options::root();
   
   LaplaceXY laplacexy;
+
+  bool include_y_derivs = opt["laplacexy"]["include_y_derivs"];
 
   // Solving equations of the form
   // Div(A Grad_perp(f)) + B*f = rhs
@@ -53,7 +60,12 @@ int main(int argc, char** argv) {
 
   ////////////////////////////////////////////////////////////////////////////////////////
 
-  Field2D rhs = a*Laplace_perp(f) + Grad_perp(a)*Grad_perp(f) + b*f;
+  Field2D rhs;
+  if (include_y_derivs) {
+    rhs = a*Laplace_perp(f) + Grad_perp(a)*Grad_perp(f) + b*f;
+  } else {
+    rhs = a*Delp2(f, CELL_DEFAULT, false) + coords->g11*DDX(a)*DDX(f) + b*f;
+  }
 
   laplacexy.setCoefs(a, b);
   

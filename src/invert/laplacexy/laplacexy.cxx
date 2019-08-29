@@ -658,15 +658,19 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
         BoutReal dx = coords->dx(x,y);
 
         // A*G1*dfdx
-        BoutReal val = A(x,y)*coords->G1(x,y)/(2.*dx);
+        BoutReal val = A(x, y)*coords->G1(x, y)/(2.*dx);
         xp = val;
         xm = -val;
 
         // A*g11*d2fdx2
-        val = A(x,y)*coords->g11(x,y)/SQ(dx);
+        val = A(x, y)*coords->g11(x, y)/SQ(dx);
         xp += val;
         c = -2.*val;
         xm += val;
+        // Non-uniform grid correction
+        val = A(x, y)*coords->g11(x, y)*coords->d1_dx(x, y)/(2.*dx);
+        xp += val;
+        xm -= val;
 
         // g11*dAdx*dfdx
         val = coords->g11(x, y)*(A(x+1, y) - A(x-1, y))/(4.*SQ(dx));
@@ -696,6 +700,11 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
           yp += val;
           c -= 2.*val;
           ym += val;
+          // Non-uniform mesh correction
+          val = A(x, y)*(coords->g22(x, y) - 1./coords->g_22(x,y))
+                *coords->d1_dy(x, y)/(2.*dy);
+          yp += val;
+          ym -= val;
 
           // 2*A*g12*d2dfdxdy
           val = A(x, y)*coords->g12(x, y)/(2.*dx*dy);

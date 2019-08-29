@@ -4,8 +4,8 @@ mz = 1
 nx = 132
 ny = 128
 
-dx = 1./nx
-dy = 40./ny
+dx = (1.+.1*cos(pi*x))/nx
+dy = 40.*(1.+.1*sin(y))/ny
 
 g11 = 1.
 g22 = 1.
