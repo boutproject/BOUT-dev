@@ -277,6 +277,12 @@ public:
   int YGLOBAL(int UNUSED(yloc)) const { return 0; }
   int XLOCAL(int UNUSED(xglo)) const { return 0; }
   int YLOCAL(int UNUSED(yglo)) const { return 0; }
+  virtual int localSize3D() override { return LocalNx * LocalNy * LocalNz; }
+  virtual int localSize2D() override { return LocalNx * LocalNy; }
+  virtual int localSizePerp() override { return LocalNx * LocalNz; }
+  virtual int globalStartIndex3D() override { return 0; }
+  virtual int globalStartIndex2D() override { return 0; }
+  virtual int globalStartIndexPerp() override { return 0; }
 
   void initDerivs(Options * opt){
     StaggerGrids=true;

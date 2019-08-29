@@ -32,11 +32,13 @@
 
 #include <vector>
 #include <memory>
+#include <type_traits>
 
 #include <bout_types.hxx>
 #include <bout/petsclib.hxx>
 #include <bout/region.hxx>
 #include <bout/mesh.hxx>
+#include <boutcomm.hxx>
 #include <bout/paralleltransform.hxx>
 
 using namespace std;
@@ -46,9 +48,7 @@ class GlobalIndexer;
 using IndexerPtr = shared_ptr<GlobalIndexer>;
 using InterpolationWeights = std::vector<ParallelTransform::positionsAndWeights>;
 
-enum PetscObjectMode {unset_mode, insert_mode, add_mode};
 
-template<class I> I makeGlobalIndexer(Mesh* localmesh);
 /*!
  * A singleton which accepts index objects produced by iterating over
  * fields and returns a global index. This index can be used when
@@ -65,6 +65,7 @@ public:
   void initialiseTest();
   /// Finish setting up the indexer, communicating indices across processes.
   void initialise();
+  
   /// Convert the local index object to a global index which can be
   /// used in PETSc vectors and matrices.
   PetscInt getGlobal(Ind2D ind);
@@ -73,28 +74,25 @@ public:
 
 protected:
   GlobalIndexer(Mesh* localmesh);
+  Mesh* fieldmesh;
 
 private:
   /// This gets called by initialiseTest and is used to register
   /// fields with fake parallel meshes.
-  virtual void registerFieldsForTest(Mesh* localmesh, FieldData& f);
-  virtual void registerFieldsForTest(Mesh* localmesh, FieldPerp& f);
+  virtual void registerFieldForTest(FieldData& f);
+  virtual void registerFieldForTest(FieldPerp& f);
 
+  PetscLib lib;
+
+  /// Fields containing the indices for each element (as reals)
+  Field3D indices3D;
+  Field2D indices2D;
+  FieldPerp indicesPerp;
+  
   /// The only instance of this class acting on the global Mesh
   static IndexerPtr globalInstance;
-  Mesh* fieldmesh;
+  static bool initialisedGlobal;
   bool initialised;
-};
-
-
-/*!
- * An abstract class used when assigning to an element of a PETSc
- * vector or matrix.
- */
-class PetscElement {
-public:
-  virtual BoutReal operator=(BoutReal val);
-  virtual BoutReal operator+=(BoutReal val);
 };
 
 
@@ -104,10 +102,10 @@ public:
  * after use. In general you should not try to assign an instance to a
  * variable.
  */
-class PetscVectorElement : public PetscElement {
+class PetscVectorElement {
 public:
-  BoutReal operator=(BoutReal val) override;
-  BoutReal operator+=(BoutReal val) override;
+  BoutReal operator=(BoutReal val);
+  BoutReal operator+=(BoutReal val);
 
   /// This is the only valid method for constructing new instances,
   /// guaranteeing they can be safely deleted once used.
@@ -120,8 +118,7 @@ public:
   PetscVectorElement& operator=(PetscVectorElement&& rhs) = delete;
 
 private:
-  PetscVectorElement(Vec* vector, int index) : petscVector(vector),
-					       petscIndex(index) {};
+  PetscVectorElement(Vec* vector, int index);
   Vec* petscVector;
   PetscInt petscIndex;
 };
@@ -133,12 +130,12 @@ private:
  * and will be destroyed immediately after use. In general you should
  * not try to assign an instance to a variable.
  */
-class PetscMatrixElement : public PetscElement {
+class PetscMatrixElement {
 public:
-  BoutReal operator=(BoutReal val) override;
-  BoutReal operator+=(BoutReal val) override;
+  BoutReal operator=(BoutReal val);
+  BoutReal operator+=(BoutReal val);
 
-    /// This is the only valid method for constructing new instances,
+  /// This is the only valid method for constructing new instances,
   /// guaranteeing they can be safely deleted once used.
   static PetscMatrixElement& newElement(Mat* matrix, PetscInt row, PetscInt col,
 					std::vector<PetscInt> p = std::vector<PetscInt>(),
@@ -151,13 +148,11 @@ public:
   PetscMatrixElement& operator=(PetscMatrixElement&& rhs) = delete;
 
 private:
-  PetscMatrixElement(Mat* matrix, PetscInt row, PetscInt col,
-		     std::vector<PetscInt> p,
-		     std::vector<BoutReal> w)
-    : petscMatrix(matrix), petscRow(row), petscCol(col), positions(p),
-      weights(w) {};
+  PetscMatrixElement(Mat* matrix, PetscInt row,
+		     std::vector<PetscInt> p, std::vector<BoutReal> w);
+  void setValues(BoutReal val, InsertMode mode);
   Mat* petscMatrix;
-  PetscInt petscRow, petscCol;
+  PetscInt petscRow;
   std::vector<PetscInt> positions;
   std::vector<BoutReal> weights;
 };
@@ -175,53 +170,112 @@ class PetscVector {
 public:
   using ind_type = typename F::ind_type;
   /// Default constructor does nothing
-  PetscVector() {}
+  PetscVector() {
+    initialised = false;
+  }
   
   /// Copy constructor
   PetscVector(const PetscVector<F>& v) {
-    throw BoutException("Not implemented");
+    VecCopy(v.vector, vector);
+    indexConverter = v.indexConverter;
+    location = v.location;
+    initialised = v.initialised;
   }
   /// Move constrcutor
   PetscVector(PetscVector<F>&& v) {
-    throw BoutException("Not implemented");
+    vector = v.vector;
+    indexConverter = v.indexConverter;
+    location = v.location;
+    initialised = v.initialised;
   }
 
   /// Construct from a field, copying over the field values
   PetscVector(F f) {
-    throw BoutException("Not implemented");    
+    MPI_Comm comm;
+    if (std::is_same<F, FieldPerp>::value) {
+      comm = f.getMesh()->getXcomm();
+    } else {
+      comm = BoutComm::get();
+    }
+    indexConverter = GlobalIndexer::getInstance(f.getMesh());
+    int size;
+    if (std::is_same<F, FieldPerp>::value) {
+      size = f.localSizePerp();
+    } else if (std::is_same<F, Field2D>::value) {
+      size = f.localSize2D();
+    } else if (std::is_same<F, Field3D>::value) {
+      size = f.localSize3D();
+    } else {
+      throw BoutException("PetscVector initialised for non-field type.");
+    }
+    VecCreateMPI(comm, size, PETSC_DECIDE, &vector);
+    location = f.getLocation();
+    initialised = true;
+    *this = f;
   }
   
   ~PetscVector() {
-    throw BoutException("Not implemented");
+    // FIXME: Should I add a check to ensure the vector has actually been created in the first place? Is that possible in Petsc?
+    VecDestroy(&vector);
   }
   
   /// Copy assignment
   PetscVector<F>& operator=(const PetscVector<F>& rhs) {
-    throw BoutException("Not implemented");
+    swap(*this, rhs);
+    return *this;
   }
+  
   /// Move assignment
   PetscVector<F>& operator=(PetscVector<F>&& rhs) {
-    throw BoutException("Not implemented");
+    vector = rhs.vector;
+    indexConverter = rhs.indexConverter;
+    location = rhs.location;
+    initialised = rhs.initialised;
   }
+  
   friend void swap<F>(PetscVector<F>& first, PetscVector<F>& second);
-  /// Assign from field, copying over field values
+
+  /// Assign from field, copying over field values. The vector must
+  /// already have been created for this to work.
   PetscVector<F>& operator=(F& rhs) {
-    throw BoutException("Not Implemented");
+    PetscInt ind;
+    ASSERT1(initialised);
+    ASSERT2(location == rhs.getLocation());
+    // Note that physical boundaries will not be set here. Not sure if that matters.
+    BOUT_FOR(i, rhs.getRegion(RGN_NOBNDRY)) {
+      ind = indexConverter(i);
+      VecSetValues(vector, 1, &ind, &rhs[i], INSERT_VALUES);
+    }
+    assemble();
+    return *this;
   }
 
   PetscVectorElement& operator()(ind_type& index) {
-    throw BoutException("Not implemented");
+    return PetscVectorElement::newElement(vector, indexConverter->getGlobal(index));
   }
+  
   void assemble() {
-    throw BoutException("Not implemented");
+    VecAssemblyBegin(vector);
+    VecAssemblyEnd(vector);
   }
+  
   void destroy() {
-    throw BoutException("Not implemented");
+    VecDestroy(&vector);
   }
 
-  /// Returns a field constructed from the contents of thsi vector
+  /// Returns a field constructed from the contents of this vector
   const F toField() {
-    throw BoutException("Not implemented");
+    F result;
+    result.allocate();
+    result.setLocation(location);
+    PetscScalar val;
+    PetscInt ind;
+    // Need to set the physical boundaries, I think
+    BOUT_FOR(i, result.getRegion(RGN_NOBNDRY)) {
+      ind = indexConverter(i);
+      VecGetValues(vector, 1, &ind, &val);
+      result[i] = val;
+    }
   }
 
   /// Provides a reference to the raw PETSc Vec object.
@@ -231,6 +285,9 @@ public:
 
 private:
   Vec vector;
+  IndexerPtr indexConverter;
+  CELL_LOC location;
+  bool initialised;
   PetscLib lib;
 };
 
@@ -248,7 +305,7 @@ class PetscMatrix {
 public:
   using ind_type = typename F::ind_type;
   /// Default constructor does nothing
-  PetscMatrix() {}
+  PetscMatrix() {  }
 
   /// Copy constructor
   PetscMatrix(const PetscMatrix<F>& v) : pt(v.pt) {
@@ -259,7 +316,9 @@ public:
     throw BoutException("Not implemented");
   }
 
-  PetscMatrix(F &f);
+  PetscMatrix(F &f) {
+    throw BoutException("Not implemented");    
+  }
   
   ~PetscMatrix() {
     throw BoutException("Not implemented");
@@ -267,7 +326,8 @@ public:
 
   /// Copy assignment
   PetscMatrix<F>& operator=(const PetscMatrix<F>& rhs) {
-    throw BoutException("Not implemented");
+    swap(*this, rhs);
+    return *this;
   }
   /// Move assignment
   PetscMatrix<F>& operator=(PetscMatrix<F>&& rhs);
@@ -312,7 +372,10 @@ private:
  */
 template <class F>
 void swap(PetscVector<F>& first, PetscVector<F>& second) {
-    throw BoutException("Not implemented");
+  VecSwap(first.vector, second.vector);
+  swap(first.indexConverter, second.indexConverter);
+  swap(first.location, second.location);
+  swap(first.initialised, second.initialised);
 }
 
 /*!

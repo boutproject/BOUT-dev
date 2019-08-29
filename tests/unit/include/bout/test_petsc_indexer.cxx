@@ -207,15 +207,15 @@ public:
   FakeParallelIndexer(Mesh* localmesh) : GlobalIndexer(localmesh) {}
 
 private:
-  virtual void registerFieldsForTest(Mesh* localmesh, FieldData& f) {
-    auto* meshPtr = static_cast<FakeParallelMesh*>(localmesh);
+  virtual void registerFieldForTest(FieldData& f) {
+    auto* meshPtr = static_cast<FakeParallelMesh*>(fieldmesh);
     if (meshPtr) {
       int idnum = f.is3D() ? 0 : 1;
       meshPtr->registerField(f, idnum);
     }
   }
-  virtual void registerFieldsForTest(Mesh* localmesh, FieldPerp& f) {
-    auto* meshPtr = static_cast<FakeParallelMesh*>(localmesh);
+  virtual void registerFieldsForTest(FieldPerp& f) {
+    auto* meshPtr = static_cast<FakeParallelMesh*>(fieldmesh);
     if (meshPtr) {
       meshPtr->registerField(f, 2);
     }
