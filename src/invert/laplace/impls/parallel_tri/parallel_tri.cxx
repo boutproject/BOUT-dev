@@ -61,9 +61,11 @@ LaplaceParallelTri::LaplaceParallelTri(Options *opt, CELL_LOC loc, Mesh *mesh_in
 
   Borig = B;
 
-  first_call = Array<bool>(localmesh->LocalNy);
+  first_call = Matrix<bool>(localmesh->LocalNy,localmesh->LocalNz);
   for(int jy=0; jy<localmesh->LocalNy; jy++){
-    first_call[jy] = true;
+    for(int jz=0; jz<localmesh->LocalNz; jz++){
+      first_call(jy,jz) = true;
+    }
   }
 
   x0saved = Tensor<dcomplex>(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
@@ -234,6 +236,10 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
    *        LaplaceParallelTri::solve()
    * xk1d = The 1d array of xk
    */
+  auto evec = Array<dcomplex>(ncx);
+  auto tmp = Array<dcomplex>(ncx);
+  auto upperGuardVector = Matrix<dcomplex>(ncx,2);
+  auto lowerGuardVector = Matrix<dcomplex>(ncx,2);
   auto bk = Matrix<dcomplex>(ncx, ncz / 2 + 1);
   auto bk1d = Array<dcomplex>(ncx);
   auto bk1d_eff = Array<dcomplex>(ncx);
@@ -271,6 +277,8 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   auto avec_eff = Array<dcomplex>(ncx);
   auto bvec_eff = Array<dcomplex>(ncx);
   auto cvec_eff = Array<dcomplex>(ncx);
+  
+  auto minvb = Array<dcomplex>(ncx);
 
   BOUT_OMP(parallel for)
   for (int ix = 0; ix < ncx; ix++) {
@@ -387,7 +395,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 ///      }
       bool allow_B_change = true;
 
-      if( !first_call[jy] ) allow_B_change = false;
+      if( !first_call(jy,0) ) allow_B_change = false;
       //output << first_call << " " << allow_B_change << endl;
 
       // Patch up internal boundaries
@@ -435,126 +443,227 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 ///	}
       }
 
+      // Calculate Minv*b
+      // Patch up internal boundaries
+      if(not localmesh->lastX()) { 
+	for(int ix = localmesh->xend+1; ix<localmesh->LocalNx ; ix++) {
+	  avec[ix] = 0;
+	  bvec[ix] = 1;
+	  cvec[ix] = 0;
+	  bk1d[ix] = 0;
+	}
+      } 
+      if(not localmesh->firstX()) { 
+	for(int ix = 0; ix<localmesh->xstart ; ix++) {
+	  avec[ix] = 0;
+	  bvec[ix] = 1;
+	  cvec[ix] = 0;
+	  bk1d[ix] = 0;
+	}
+      }
+///	SCOREP_USER_REGION_END(setboundaries);
+///	SCOREP_USER_REGION_DEFINE(subitloop);
+///	SCOREP_USER_REGION_BEGIN(subitloop, "sub iteration",SCOREP_USER_REGION_TYPE_COMMON);
+
+///	SCOREP_USER_REGION_DEFINE(invert);
+///	SCOREP_USER_REGION_BEGIN(invert, "invert local matrices",SCOREP_USER_REGION_TYPE_COMMON);
+      // Invert local matrices
+      tridag(std::begin(avec), std::begin(bvec), std::begin(cvec), std::begin(bk1d),
+	   std::begin(minvb), ncx);
+      // Now minvb is a constant vector throughout the iterations
+      //
+      // Find edge update vectors
+      //
+      // Upper interface (nguard vectors, hard-coded to two for now)
+      if(not localmesh->lastX()) { 
+	// Need the xend-th element
+	for(int i=0; i<ncx; i++){
+	  evec[i] = 0.0;
+	}
+	evec[localmesh->LocalNx-2] = 1;
+	tridag(std::begin(avec), std::begin(bvec), std::begin(cvec), std::begin(evec),
+	     std::begin(tmp), ncx);
+	for(int i=0; i<ncx; i++){
+	  upperGuardVector(i,0) = tmp[i];
+	}
+
+	for(int i=0; i<ncx; i++){
+	  evec[i] = 0.0;
+	}
+	evec[localmesh->LocalNx-1] = 1;
+	tridag(std::begin(avec), std::begin(bvec), std::begin(cvec), std::begin(evec),
+	     std::begin(tmp), ncx);
+	for(int i=0; i<ncx; i++){
+	  upperGuardVector(i,1) = tmp[i];
+	}
+      } 
+
+      // Lower interface (nguard vectors, hard-coded to two for now)
+      if(not localmesh->firstX()) { 
+	// Need the xend-th element
+	for(int i=0; i<ncx; i++){
+	  evec[i] = 0.0;
+	}
+	evec[0] = 1;
+	tridag(std::begin(avec), std::begin(bvec), std::begin(cvec), std::begin(evec),
+	     std::begin(tmp), ncx);
+	for(int i=0; i<ncx; i++){
+	  lowerGuardVector(i,0) = tmp[i];
+	}
+
+	for(int i=0; i<ncx; i++){
+	  evec[i] = 0.0;
+	}
+	evec[1] = 1;
+	tridag(std::begin(avec), std::begin(bvec), std::begin(cvec), std::begin(evec),
+	     std::begin(tmp), ncx);
+	for(int i=0; i<ncx; i++){
+	  lowerGuardVector(i,1) = tmp[i];
+	}
+      } 
+
+///	SCOREP_USER_REGION_END(invert);
+
+
 ///      SCOREP_USER_REGION_END(kzinit);
 ///      SCOREP_USER_REGION_DEFINE(whileloop);
 ///      SCOREP_USER_REGION_BEGIN(whileloop, "while loop",SCOREP_USER_REGION_TYPE_COMMON);
       while(true){ 
 
-///	SCOREP_USER_REGION_DEFINE(setboundaries);
-///	SCOREP_USER_REGION_BEGIN(setboundaries, "set internal boundaries",SCOREP_USER_REGION_TYPE_COMMON);
-	// Patch up internal boundaries
+	for(int i=0; i<ncx; i++){
+	  xk1d[i] = minvb[i];
+	}
+
 	if(not localmesh->lastX()) { 
-	  for(int ix = localmesh->xend+1; ix<localmesh->LocalNx ; ix++) {
-///	    rh(sub_it,ix) = xk1d[ix];
-///	    if( sub_it == 2 ) {
-///	      xk1d[ix] = (rh(2,ix) - rh(0,ix)*exp(-B))/(1.0 - exp(-B));
-///	      rh(0,ix) = xk1d[ix];
-///	    }
-	    avec[ix] = 0;
-	    bvec[ix] = 1;
-	    cvec[ix] = 0;
-	    bk1d[ix] = xk1d[ix];
+	  for(int i=0; i<ncx; i++){
+	    xk1d[i] += upperGuardVector(i,0)*xk1dlast[localmesh->LocalNx-2] + upperGuardVector(i,1)*xk1dlast[localmesh->LocalNx-1];
+	  }
+	}
+
+	if(not localmesh->firstX()) { 
+	  for(int i=0; i<ncx; i++){
+	    xk1d[i] += lowerGuardVector(i,0)*xk1dlast[0] + lowerGuardVector(i,1)*xk1dlast[1];
 	  }
 	} 
-	if(not localmesh->firstX()) { 
-	  for(int ix = 0; ix<localmesh->xstart ; ix++) {
-///	    lh(sub_it,ix) = xk1d[ix];
-///	    if( sub_it == 2 ) {
-///	      xk1d[ix] = (lh(2,ix) - lh(0,ix)*exp(-B))/(1.0 - exp(-B));
-///	      lh(0,ix) = xk1d[ix];
-///	    }
-	    avec[ix] = 0;
-	    bvec[ix] = 1;
-	    cvec[ix] = 0;
-	    bk1d[ix] = xk1d[ix];
-	  }
-	}
-///	SCOREP_USER_REGION_END(setboundaries);
-///	SCOREP_USER_REGION_DEFINE(subitloop);
-///	SCOREP_USER_REGION_BEGIN(subitloop, "sub iteration",SCOREP_USER_REGION_TYPE_COMMON);
 
-///	sub_it += 1;
-///	//output << "jy "<<jy<<" kz "<<kz<< "subit " << sub_it << " count " << count << endl ; 
-///	if( sub_it == 3 ) {
-///	  sub_it = 0;
-///	  //output << "before " << endl ; 
-///	  if( allow_B_change ) {
-///	      //output << "here " << endl ; 
-///	    //if( count % 10 == 0 ) {
-///	      if(error_abs < last_error) {
-///		B *= 0.9;
-///		//output << jy << " " << kz << " " << last_error << " " << error_abs << " " << sub_it << " "  << count << " reducing B to" << B << endl;
-///	      }
-///	      else {
-///		B /= 0.9;
-///		allow_B_change = false;
-///		//output << jy << " " << kz << " " << last_error << " " << error_abs << " " << sub_it << " "  << count << " inceasing B to" << B << endl;
-/////		for(int ix = 0; ix<localmesh->LocalNx ; ix++) {
-/////		  xk1d[ix] = xk1dlast[ix];
-/////		  xk1dlast[ix] = 0.0;
-/////		}
-///	      }
-///	    //}
-///	    last_error = error_abs;
-///	  }
-///	}
-///	SCOREP_USER_REGION_END(subitloop);
-///	SCOREP_USER_REGION_DEFINE(invert);
-///	SCOREP_USER_REGION_BEGIN(invert, "invert local matrices",SCOREP_USER_REGION_TYPE_COMMON);
-//
-        // Adjust rows to allow over-relaxation
-///	for(int ix = 0; ix<localmesh->xstart ; ix++) {
-///	  avec_eff[ix] = avec[ix];
-///	  bvec_eff[ix] = bvec[ix];
-///	  cvec_eff[ix] = cvec[ix];
-///	  bk1d_eff[ix] = bk1d[ix];
-///	}
-///	for(int ix = localmesh->xstart; ix<localmesh->xend+1 ; ix++) {
-	for(int ix = 0; ix<ncx ; ix++) {
-	  avec_eff[ix] = om*avec[ix];
-	  bvec_eff[ix] = bvec[ix];
-	  cvec_eff[ix] = 0.0; //om*cvec[ix];
-	  bk1d_eff[ix] = om*bk1d[ix] - (om-1)*bvec[ix]*xk1d[ix] ;
-	  if(ix<ncx-1){
-	    bk1d_eff[ix] = bk1d_eff[ix] - om*cvec[ix]*xk1d[ix+1];
-	  }
-	}
-///	for(int ix = localmesh->xend+1; ix<ncx ; ix++) {
-///	  avec_eff[ix] = avec[ix];
-///	  bvec_eff[ix] = bvec[ix];
-///	  cvec_eff[ix] = cvec[ix];
-///	  bk1d_eff[ix] = bk1d[ix];
-///	}
+///	SCOREP_USER_REGION_DEFINE(setboundaries);
+///	SCOREP_USER_REGION_BEGIN(setboundaries, "set internal boundaries",SCOREP_USER_REGION_TYPE_COMMON);
 ///	// Patch up internal boundaries
 ///	if(not localmesh->lastX()) { 
 ///	  for(int ix = localmesh->xend+1; ix<localmesh->LocalNx ; ix++) {
-///	    avec_eff[ix] = 0;
-///	    bvec_eff[ix] = 1;
-///	    cvec_eff[ix] = 0;
+//////	    rh(sub_it,ix) = xk1d[ix];
+//////	    if( sub_it == 2 ) {
+//////	      xk1d[ix] = (rh(2,ix) - rh(0,ix)*exp(-B))/(1.0 - exp(-B));
+//////	      rh(0,ix) = xk1d[ix];
+//////	    }
+///	    avec[ix] = 0;
+///	    bvec[ix] = 1;
+///	    cvec[ix] = 0;
 ///	    bk1d[ix] = xk1d[ix];
 ///	  }
 ///	} 
 ///	if(not localmesh->firstX()) { 
 ///	  for(int ix = 0; ix<localmesh->xstart ; ix++) {
-///	    avec_eff[ix] = 0;
-///	    bvec_eff[ix] = 1;
-///	    cvec_eff[ix] = 0;
+//////	    lh(sub_it,ix) = xk1d[ix];
+//////	    if( sub_it == 2 ) {
+//////	      xk1d[ix] = (lh(2,ix) - lh(0,ix)*exp(-B))/(1.0 - exp(-B));
+//////	      lh(0,ix) = xk1d[ix];
+//////	    }
+///	    avec[ix] = 0;
+///	    bvec[ix] = 1;
+///	    cvec[ix] = 0;
 ///	    bk1d[ix] = xk1d[ix];
 ///	  }
 ///	}
+//////	SCOREP_USER_REGION_END(setboundaries);
+//////	SCOREP_USER_REGION_DEFINE(subitloop);
+//////	SCOREP_USER_REGION_BEGIN(subitloop, "sub iteration",SCOREP_USER_REGION_TYPE_COMMON);
+///
+//////	sub_it += 1;
+//////	//output << "jy "<<jy<<" kz "<<kz<< "subit " << sub_it << " count " << count << endl ; 
+//////	if( sub_it == 3 ) {
+//////	  sub_it = 0;
+//////	  //output << "before " << endl ; 
+//////	  if( allow_B_change ) {
+//////	      //output << "here " << endl ; 
+//////	    //if( count % 10 == 0 ) {
+//////	      if(error_abs < last_error) {
+//////		B *= 0.9;
+//////		//output << jy << " " << kz << " " << last_error << " " << error_abs << " " << sub_it << " "  << count << " reducing B to" << B << endl;
+//////	      }
+//////	      else {
+//////		B /= 0.9;
+//////		allow_B_change = false;
+//////		//output << jy << " " << kz << " " << last_error << " " << error_abs << " " << sub_it << " "  << count << " inceasing B to" << B << endl;
+////////		for(int ix = 0; ix<localmesh->LocalNx ; ix++) {
+////////		  xk1d[ix] = xk1dlast[ix];
+////////		  xk1dlast[ix] = 0.0;
+////////		}
+//////	      }
+//////	    //}
+//////	    last_error = error_abs;
+//////	  }
+//////	}
+//////	SCOREP_USER_REGION_END(subitloop);
+//////	SCOREP_USER_REGION_DEFINE(invert);
+//////	SCOREP_USER_REGION_BEGIN(invert, "invert local matrices",SCOREP_USER_REGION_TYPE_COMMON);
+/////
+///        // Adjust rows to allow over-relaxation
+//////	for(int ix = 0; ix<localmesh->xstart ; ix++) {
+//////	  avec_eff[ix] = avec[ix];
+//////	  bvec_eff[ix] = bvec[ix];
+//////	  cvec_eff[ix] = cvec[ix];
+//////	  bk1d_eff[ix] = bk1d[ix];
+//////	}
+//////	for(int ix = localmesh->xstart; ix<localmesh->xend+1 ; ix++) {
+///	for(int ix = 0; ix<ncx ; ix++) {
+///	  avec_eff[ix] = om*avec[ix];
+///	  bvec_eff[ix] = bvec[ix];
+///	  cvec_eff[ix] = 0.0; //om*cvec[ix];
+///	  bk1d_eff[ix] = om*bk1d[ix] - (om-1)*bvec[ix]*xk1d[ix] ;
+///	  if(ix<ncx-1){
+///	    bk1d_eff[ix] = bk1d_eff[ix] - om*cvec[ix]*xk1d[ix+1];
+///	  }
+///	}
+//////	for(int ix = localmesh->xend+1; ix<ncx ; ix++) {
+//////	  avec_eff[ix] = avec[ix];
+//////	  bvec_eff[ix] = bvec[ix];
+//////	  cvec_eff[ix] = cvec[ix];
+//////	  bk1d_eff[ix] = bk1d[ix];
+//////	}
+//////	// Patch up internal boundaries
+//////	if(not localmesh->lastX()) { 
+//////	  for(int ix = localmesh->xend+1; ix<localmesh->LocalNx ; ix++) {
+//////	    avec_eff[ix] = 0;
+//////	    bvec_eff[ix] = 1;
+//////	    cvec_eff[ix] = 0;
+//////	    bk1d[ix] = xk1d[ix];
+//////	  }
+//////	} 
+//////	if(not localmesh->firstX()) { 
+//////	  for(int ix = 0; ix<localmesh->xstart ; ix++) {
+//////	    avec_eff[ix] = 0;
+//////	    bvec_eff[ix] = 1;
+//////	    cvec_eff[ix] = 0;
+//////	    bk1d[ix] = xk1d[ix];
+//////	  }
+//////	}
+///
+///	if( BoutComm::rank() == 0) { // and jy == 55 and kz == 0){
+///	  for(int ix = 0; ix<ncx ; ix++) {
+///	    std::cout << ix << " " << jy << " " << kz << " " << xk1d[ix] << endl;
+///	  }
+///	}
+///
+///	// Invert local matrices
+///        tridag(std::begin(avec_eff), std::begin(bvec_eff), std::begin(cvec_eff), std::begin(bk1d_eff),
+///             std::begin(xk1d), ncx);
+//////	SCOREP_USER_REGION_END(invert);
+//////	SCOREP_USER_REGION_DEFINE(errors);
+//////	SCOREP_USER_REGION_BEGIN(errors, "calculate errors",SCOREP_USER_REGION_TYPE_COMMON);
+//
 
-	if( BoutComm::rank() == 1 and jy == 55 and kz == 0){
-	  for(int ix = 0; ix<ncx ; ix++) {
-	    std::cout << ix << " " << jy << " " << kz << " " << avec_eff[ix] << " " << bvec_eff[ix] << " " << cvec_eff[ix] << " " << bk1d_eff[ix] << " " << xk1d[ix] << endl;
-	  }
-	}
 
-	// Invert local matrices
-        tridag(std::begin(avec_eff), std::begin(bvec_eff), std::begin(cvec_eff), std::begin(bk1d_eff),
-             std::begin(xk1d), ncx);
-///	SCOREP_USER_REGION_END(invert);
-///	SCOREP_USER_REGION_DEFINE(errors);
-///	SCOREP_USER_REGION_BEGIN(errors, "calculate errors",SCOREP_USER_REGION_TYPE_COMMON);
 
 	// Calculate errors
 	error_abs = 0.0;
@@ -731,7 +840,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   //if( first_call ){
   //  bout::globals::dump.add(Bvals, "exponents", false);
   //}
-  first_call[jy] = false;
+  first_call(jy,0) = false;
 
   return x; // Result of the inversion
 }

@@ -88,7 +88,7 @@ private:
   BoutReal om;
   BoutReal Borig;
   Field3D Bvals;
-  Array<bool> first_call;
+  Matrix<bool> first_call;
   // Save previous x in Fourier space
   Tensor<dcomplex> x0saved;
 
