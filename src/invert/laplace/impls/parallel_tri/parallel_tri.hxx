@@ -78,6 +78,8 @@ public:
   void check_diagonal_dominance(const Array<dcomplex> &a, const Array<dcomplex> &b,
       const Array<dcomplex> &c, const int ncx, const int jy, const int kz);
 
+  void resetSolver();
+
 private:
   // The coefficents in
   // D*grad_perp^2(x) + (1/C)*(grad_perp(C))*grad_perp(x) + A*x = b

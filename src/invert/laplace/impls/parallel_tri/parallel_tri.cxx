@@ -68,6 +68,13 @@ LaplaceParallelTri::LaplaceParallelTri(Options *opt, CELL_LOC loc, Mesh *mesh_in
 
   x0saved = Tensor<dcomplex>(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
 
+  resetSolver();
+
+}
+
+void LaplaceParallelTri::resetSolver(){
+  x0saved = 0.0;
+  resetMeanIterations();
 }
 
 /*!
@@ -174,8 +181,6 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b) { return solve(b, b); }
  *                  the equation Ax = b
  * \param[in] x0    Variable used to set BC (if the right flags are set, see
  *                  the user manual)
- * \param[in] b0    Initial guess for solution x (probably better named x0 but this is
- *                  taken!) Default value 0.
  *
  * \return          The inverted variable.
  */
@@ -310,11 +315,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       //xk1d[ix] = xk(ix, kz);
       //xk1dlast[ix] = xk(ix, kz);
 
-      //if( first_call[jy] ){
-	//output << "start "<<ix<<" "<<jy<<" "<<kz<<endl;
-	x0saved(ix,jy,kz) = 0.0;
-      //}
-      //output << "start1 "<<ix<<" "<<jy<<" "<<kz<<endl;
+      //output << "start1 "<<ix<<" "<<jy<<" "<<kz<<" "<<x0saved(ix,jy,kz)<<endl;
       xk1d[ix] = x0saved(ix, jy, kz);
       //output << "start2 "<<ix<<" "<<jy<<" "<<kz<<endl;
       xk1dlast[ix] = x0saved(ix, jy, kz);
@@ -395,9 +396,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	  avec[ix] = 0;
 	  bvec[ix] = 1;
 	  cvec[ix] = 0;
-	  avec_eff[ix] = 0;
-	  bvec_eff[ix] = 1;
-	  cvec_eff[ix] = 0;
+///	  avec_eff[ix] = 0;
+///	  bvec_eff[ix] = 1;
+///	  cvec_eff[ix] = 0;
 	}
       } 
       if(not localmesh->firstX()) { 
@@ -405,9 +406,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	  avec[ix] = 0;
 	  bvec[ix] = 1;
 	  cvec[ix] = 0;
-	  avec_eff[ix] = 0;
-	  bvec_eff[ix] = 1;
-	  cvec_eff[ix] = 0;
+///	  avec_eff[ix] = 0;
+///	  bvec_eff[ix] = 1;
+///	  cvec_eff[ix] = 0;
 	}
       }
 
@@ -415,6 +416,23 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       //check_diagonal_dominance(avec,bvec,cvec,ncx,jy,kz);
       if( thisEig > 1 ) {
 	output << "EIGENVALUE TOO LARGE " << BoutComm::rank() << " " << thisEig << " " << jy << " " << kz << endl;
+      }
+
+      BoutReal bmin=abs(bvec[localmesh->xstart]);
+      BoutReal bmax=abs(bvec[localmesh->xstart]);
+///      if( BoutComm::rank() == 0 ){
+///        std::cout <<  "0 " << avec[0] << " " << bvec[0] << " " << cvec[0] << endl;
+///      }
+      for(int ix = 1; ix<ncx ; ix++) {
+	if(abs(bvec[ix]) < bmin){
+	  bmin = abs(bvec[ix]);
+	}
+	if(abs(bvec[ix]) > bmax){
+	  bmax = abs(bvec[ix]);
+	}
+///	if( BoutComm::rank() == 0 ){
+///	std::cout << ix << " " << avec[ix] << " " << bvec[ix] << " " << cvec[ix] << endl;
+///	}
       }
 
 ///      SCOREP_USER_REGION_END(kzinit);
@@ -432,6 +450,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 ///	      xk1d[ix] = (rh(2,ix) - rh(0,ix)*exp(-B))/(1.0 - exp(-B));
 ///	      rh(0,ix) = xk1d[ix];
 ///	    }
+	    avec[ix] = 0;
+	    bvec[ix] = 1;
+	    cvec[ix] = 0;
 	    bk1d[ix] = xk1d[ix];
 	  }
 	} 
@@ -442,6 +463,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 ///	      xk1d[ix] = (lh(2,ix) - lh(0,ix)*exp(-B))/(1.0 - exp(-B));
 ///	      lh(0,ix) = xk1d[ix];
 ///	    }
+	    avec[ix] = 0;
+	    bvec[ix] = 1;
+	    cvec[ix] = 0;
 	    bk1d[ix] = xk1d[ix];
 	  }
 	}
@@ -479,34 +503,49 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 ///	SCOREP_USER_REGION_BEGIN(invert, "invert local matrices",SCOREP_USER_REGION_TYPE_COMMON);
 //
         // Adjust rows to allow over-relaxation
-	//for(int ix = localmesh->xstart; ix<localmesh->xend ; ix++) {
+///	for(int ix = 0; ix<localmesh->xstart ; ix++) {
+///	  avec_eff[ix] = avec[ix];
+///	  bvec_eff[ix] = bvec[ix];
+///	  cvec_eff[ix] = cvec[ix];
+///	  bk1d_eff[ix] = bk1d[ix];
+///	}
+///	for(int ix = localmesh->xstart; ix<localmesh->xend+1 ; ix++) {
 	for(int ix = 0; ix<ncx ; ix++) {
 	  avec_eff[ix] = om*avec[ix];
 	  bvec_eff[ix] = bvec[ix];
 	  cvec_eff[ix] = 0.0; //om*cvec[ix];
-	  bk1d_eff[ix] = om*bk1d[ix] - (om-1)*bvec[ix]*xk1d[ix] ; //- om*cvec[ix]*xk1d[ix+1] - om*avec[ix]*xk1d[ix-1];
-	  if(ix>0){
-	    bk1d_eff[ix] = bk1d_eff[ix] ;//- om*avec[ix]*xk1d[ix-1];
-	  }
+	  bk1d_eff[ix] = om*bk1d[ix] - (om-1)*bvec[ix]*xk1d[ix] ;
 	  if(ix<ncx-1){
 	    bk1d_eff[ix] = bk1d_eff[ix] - om*cvec[ix]*xk1d[ix+1];
 	  }
 	}
-	// Patch up internal boundaries
-	if(not localmesh->lastX()) { 
-	  for(int ix = localmesh->xend+1; ix<localmesh->LocalNx ; ix++) {
-	    avec_eff[ix] = 0;
-	    bvec_eff[ix] = 1;
-	    cvec_eff[ix] = 0;
-	    bk1d[ix] = xk1d[ix];
-	  }
-	} 
-	if(not localmesh->firstX()) { 
-	  for(int ix = 0; ix<localmesh->xstart ; ix++) {
-	    avec_eff[ix] = 0;
-	    bvec_eff[ix] = 1;
-	    cvec_eff[ix] = 0;
-	    bk1d[ix] = xk1d[ix];
+///	for(int ix = localmesh->xend+1; ix<ncx ; ix++) {
+///	  avec_eff[ix] = avec[ix];
+///	  bvec_eff[ix] = bvec[ix];
+///	  cvec_eff[ix] = cvec[ix];
+///	  bk1d_eff[ix] = bk1d[ix];
+///	}
+///	// Patch up internal boundaries
+///	if(not localmesh->lastX()) { 
+///	  for(int ix = localmesh->xend+1; ix<localmesh->LocalNx ; ix++) {
+///	    avec_eff[ix] = 0;
+///	    bvec_eff[ix] = 1;
+///	    cvec_eff[ix] = 0;
+///	    bk1d[ix] = xk1d[ix];
+///	  }
+///	} 
+///	if(not localmesh->firstX()) { 
+///	  for(int ix = 0; ix<localmesh->xstart ; ix++) {
+///	    avec_eff[ix] = 0;
+///	    bvec_eff[ix] = 1;
+///	    cvec_eff[ix] = 0;
+///	    bk1d[ix] = xk1d[ix];
+///	  }
+///	}
+
+	if( BoutComm::rank() == 1 and jy == 55 and kz == 0){
+	  for(int ix = 0; ix<ncx ; ix++) {
+	    std::cout << ix << " " << jy << " " << kz << " " << avec_eff[ix] << " " << bvec_eff[ix] << " " << cvec_eff[ix] << " " << bk1d_eff[ix] << " " << xk1d[ix] << endl;
 	  }
 	}
 
@@ -648,7 +687,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
     ++ncalls;
     ipt_mean_its = (ipt_mean_its * BoutReal(ncalls-1)
 	+ BoutReal(count))/BoutReal(ncalls);
-    output<<"jy="<<jy<<" kz="<<kz<<" count="<<count<<" ncalls="<<ncalls<<" ipt_mean_its="<<ipt_mean_its<<" B="<<B<< endl;
+    //output<<"jy="<<jy<<" kz="<<kz<<" count="<<count<<" ncalls="<<ncalls<<" ipt_mean_its="<<ipt_mean_its<<" B="<<B<< endl;
     //Bvals(0,jy,kz) = B;
 
     // If the global flag is set to INVERT_KX_ZERO

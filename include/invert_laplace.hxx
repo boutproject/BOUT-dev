@@ -213,6 +213,9 @@ public:
   static Laplacian* defaultInstance(); ///< Return pointer to global singleton
   
   static void cleanup(); ///< Frees all memory
+
+  /// Removes persistent data from solver
+  virtual void resetSolver() {};
 protected:
   bool async_send; ///< If true, use asyncronous send in parallel algorithms
   
