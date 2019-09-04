@@ -24,13 +24,16 @@ all_terms = false
 include_yguards = false
 filter = 0.2
 type = ptri
-maxits = 10000
-rtol = 1e-10
-B = 10.0
+maxits = 100000
+rtol = 1e-12
 #B = 0.0207 # 4 procs, 42 its
 #B = 0.4
 #om = 1.1433
+# kz = 0 mode
+#om = 1.19
+#B = 0.55
 om = 1.0
+B = 20
 
 [output]
 floats = true

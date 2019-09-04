@@ -55,7 +55,7 @@ type = rk4
 ATOL = 1.0e-10  # absolute tolerance
 RTOL = 1.0e-8   # relative tolerance
 mxstep = 10000  # Maximum internal steps per output
-max_timestep = 1.0
+max_timestep = 1
 
 ###################################################
 # Electrostatic potential solver
