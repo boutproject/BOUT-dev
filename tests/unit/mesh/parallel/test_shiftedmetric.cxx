@@ -124,7 +124,7 @@ TEST_F(ShiftedMetricTest, ToFieldAligned) {
 
   EXPECT_TRUE(IsFieldEqual(result, expected, "RGN_ALL",
                            FFTTolerance));
-  EXPECT_TRUE(IsFieldEqual(fromFieldAligned(input), input));
+  EXPECT_TRUE(IsFieldEqual(fromFieldAligned(result), input));
   EXPECT_TRUE(areFieldsCompatible(result, expected));
   EXPECT_FALSE(areFieldsCompatible(result, input));
 }
@@ -166,7 +166,7 @@ TEST_F(ShiftedMetricTest, FromFieldAligned) {
   // Loosen tolerance a bit due to FFTs
   EXPECT_TRUE(IsFieldEqual(result, expected, "RGN_ALL",
                            FFTTolerance));
-  EXPECT_TRUE(IsFieldEqual(toFieldAligned(input), input));
+  EXPECT_TRUE(IsFieldEqual(toFieldAligned(result), input));
   EXPECT_TRUE(areFieldsCompatible(result, expected));
   EXPECT_FALSE(areFieldsCompatible(result, input));
 }
@@ -217,7 +217,7 @@ TEST_F(ShiftedMetricTest, ToFieldAlignedFieldPerp) {
   // FieldPerp does not have a getRegion2D() method. Values are never set in
   // the x-guard or x-boundary cells
   EXPECT_TRUE(IsFieldEqual(result, sliceXZ(expected, 3), "RGN_NOBNDRY", FFTTolerance));
-  EXPECT_TRUE(IsFieldEqual(fromFieldAligned(sliceXZ(input,2)), sliceXZ(input, 2)));
+  EXPECT_TRUE(IsFieldEqual(fromFieldAligned(result), sliceXZ(input, 3)));
   EXPECT_TRUE(areFieldsCompatible(result, sliceXZ(expected, 3)));
   EXPECT_FALSE(areFieldsCompatible(result, sliceXZ(input, 3)));
 }
@@ -260,7 +260,7 @@ TEST_F(ShiftedMetricTest, FromFieldAlignedFieldPerp) {
   // FieldPerp does not have a getRegion2D() method. Values are never set in
   // the x-guard or x-boundary cells
   EXPECT_TRUE(IsFieldEqual(result, sliceXZ(expected, 4), "RGN_NOBNDRY", FFTTolerance));
-  EXPECT_TRUE(IsFieldEqual(toFieldAligned(sliceXZ(input, 0)), sliceXZ(input, 0)));
+  EXPECT_TRUE(IsFieldEqual(toFieldAligned(result), sliceXZ(input, 4)));
   EXPECT_TRUE(areFieldsCompatible(result, sliceXZ(expected, 4)));
   EXPECT_FALSE(areFieldsCompatible(result, sliceXZ(input, 4)));
 }
