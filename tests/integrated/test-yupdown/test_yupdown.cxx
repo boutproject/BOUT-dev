@@ -5,10 +5,7 @@
 
 // Y derivative using yup() and ydown() fields
 const Field3D DDY_yud(const Field3D &f) {
-  Field3D result;
-  result.allocate();
-
-  result = 0.0;
+  Field3D result = emptyFrom(f);
   
   for(int i=0;i<mesh->LocalNx;i++)
     for(int j=mesh->ystart;j<=mesh->yend;j++)
@@ -20,9 +17,7 @@ const Field3D DDY_yud(const Field3D &f) {
 
 // Y derivative assuming field is aligned in Y
 const Field3D DDY_aligned(const Field3D &f) {
-  Field3D result;
-  result.allocate();
-  result = 0.0;
+  Field3D result = emptyFrom(f);
   
   for(int i=0;i<mesh->LocalNx;i++)
     for(int j=mesh->ystart;j<=mesh->yend;j++)
