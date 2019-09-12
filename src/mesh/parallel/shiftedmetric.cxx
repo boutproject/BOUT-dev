@@ -121,65 +121,32 @@ void ShiftedMetric::cachePhases() {
  * and Y is then field aligned.
  */
 const Field3D ShiftedMetric::toFieldAligned(const Field3D& f, const std::string& region) {
-  switch (f.getDirectionY()) {
-  case (YDirectionType::Standard):
-    return shiftZ(f, toAlignedPhs, YDirectionType::Aligned, region);
-  case (YDirectionType::Aligned):
-    // f is already in field-aligned coordinates
-    return f;
-  default:
-    throw BoutException("Unrecognized y-direction type for Field3D passed to "
-                        "ShiftedMetric::toFieldAligned");
-    // This should never happen, but use 'return f' to avoid compiler warnings
-    return f;
-  }
+  ASSERT2(f.getDirectionY() == YDirectionType::Standard);
+  return shiftZ(f, toAlignedPhs, YDirectionType::Aligned, region);
 }
-const FieldPerp ShiftedMetric::toFieldAligned(const FieldPerp& f, const std::string& region) {
-  switch (f.getDirectionY()) {
-  case (YDirectionType::Standard):
-    return shiftZ(f, toAlignedPhs, YDirectionType::Aligned, region);
-  case (YDirectionType::Aligned):
-    // f is already in field-aligned coordinates
-    return f;
-  default:
-    throw BoutException("Unrecognized y-direction type for FieldPerp passed to "
-                        "ShiftedMetric::toFieldAligned");
-    // This should never happen, but use 'return f' to avoid compiler warnings
-    return f;
-  }
+const FieldPerp ShiftedMetric::toFieldAligned(const FieldPerp& f,
+                                              const std::string& region) {
+  ASSERT2(f.getDirectionY() == YDirectionType::Standard);
+  // In principle, other regions are possible, but not yet implemented
+  ASSERT2(region == "RGN_NOX");
+  return shiftZ(f, toAlignedPhs, YDirectionType::Aligned, region);
 }
 
 /*!
  * Shift back, so that X-Z is orthogonal,
  * but Y is not field aligned.
  */
-const Field3D ShiftedMetric::fromFieldAligned(const Field3D& f, const std::string& region) {
-  switch (f.getDirectionY()) {
-  case (YDirectionType::Aligned):
-    return shiftZ(f, fromAlignedPhs, YDirectionType::Standard, region);
-  case (YDirectionType::Standard):
-    // f is already in orthogonal coordinates
-    return f;
-  default:
-    throw BoutException("Unrecognized y-direction type for Field3D passed to "
-                        "ShiftedMetric::toFieldAligned");
-    // This should never happen, but use 'return f' to avoid compiler warnings
-    return f;
-  }
+const Field3D ShiftedMetric::fromFieldAligned(const Field3D& f,
+                                              const std::string& region) {
+  ASSERT2(f.getDirectionY() == YDirectionType::Aligned);
+  return shiftZ(f, fromAlignedPhs, YDirectionType::Standard, region);
 }
-const FieldPerp ShiftedMetric::fromFieldAligned(const FieldPerp& f, const std::string& region) {
-  switch (f.getDirectionY()) {
-  case (YDirectionType::Aligned):
-    return shiftZ(f, fromAlignedPhs, YDirectionType::Standard, region);
-  case (YDirectionType::Standard):
-    // f is already in orthogonal coordinates
-    return f;
-  default:
-    throw BoutException("Unrecognized y-direction type for FieldPerp passed to "
-                        "ShiftedMetric::toFieldAligned");
-    // This should never happen, but use 'return f' to avoid compiler warnings
-    return f;
-  }
+const FieldPerp ShiftedMetric::fromFieldAligned(const FieldPerp& f,
+                                                const std::string& region) {
+  ASSERT2(f.getDirectionY() == YDirectionType::Aligned);
+  // In principle, other regions are possible, but not yet implemented
+  ASSERT2(region == "RGN_NOX");
+  return shiftZ(f, fromAlignedPhs, YDirectionType::Standard, region);
 }
 
 const Field3D ShiftedMetric::shiftZ(const Field3D& f, const Tensor<dcomplex>& phs,
@@ -218,6 +185,7 @@ const FieldPerp ShiftedMetric::shiftZ(const FieldPerp& f, const Tensor<dcomplex>
   FieldPerp result{emptyFrom(f).setDirectionY(y_direction_out)};
 
   int y = f.getIndex();
+  // Note that this loop is essentially hardcoded to be RGN_NOX
   for (int i=mesh.xstart; i<=mesh.xend; ++i) {
     shiftZ(&f(i, 0), &phs(i, y, 0), &result(i, 0));
   }
