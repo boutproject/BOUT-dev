@@ -401,22 +401,22 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       // Patch up internal boundaries
       if(not localmesh->lastX()) { 
 	for(int ix = localmesh->xend+1; ix<localmesh->LocalNx ; ix++) {
+	  avec_eff[ix] = avec[ix];
+	  bvec_eff[ix] = bvec[ix];
+	  cvec_eff[ix] = cvec[ix];
 	  avec[ix] = 0;
 	  bvec[ix] = 1;
 	  cvec[ix] = 0;
-///	  avec_eff[ix] = 0;
-///	  bvec_eff[ix] = 1;
-///	  cvec_eff[ix] = 0;
 	}
       } 
       if(not localmesh->firstX()) { 
 	for(int ix = 0; ix<localmesh->xstart ; ix++) {
+	  avec_eff[ix] = avec[ix];
+	  bvec_eff[ix] = bvec[ix];
+	  cvec_eff[ix] = cvec[ix];
 	  avec[ix] = 0;
 	  bvec[ix] = 1;
 	  cvec[ix] = 0;
-///	  avec_eff[ix] = 0;
-///	  bvec_eff[ix] = 1;
-///	  cvec_eff[ix] = 0;
 	}
       }
 
@@ -452,6 +452,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	  cvec[ix] = 0;
 	  bk1d[ix] = 0;
 	}
+	avec[localmesh->xend+1] = cvec_eff[localmesh->xend];
       } 
       if(not localmesh->firstX()) { 
 	for(int ix = 0; ix<localmesh->xstart ; ix++) {
@@ -460,10 +461,45 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	  cvec[ix] = 0;
 	  bk1d[ix] = 0;
 	}
+	cvec[localmesh->xstart-1] = avec_eff[localmesh->xstart];
       }
 ///	SCOREP_USER_REGION_END(setboundaries);
 ///	SCOREP_USER_REGION_DEFINE(subitloop);
 ///	SCOREP_USER_REGION_BEGIN(subitloop, "sub iteration",SCOREP_USER_REGION_TYPE_COMMON);
+//
+//    Precondition
+//    Jacobi
+//      avec[0] and cvec[ncx-1] ignored as not in matrix
+///	for(int ix = 0; ix<ncx ; ix++) {
+///	  const dcomplex b = 1.0/bvec[ix];
+///	  avec[ix] = b*avec[ix];
+///	  cvec[ix] = b*cvec[ix];
+///	  bk1d[ix] = b*bk1d[ix];
+///	  bvec[ix] = 1;
+///	}
+//    Symmetric
+//      Premultiply by 1/sqrt(bvec)
+///	for(int ix = 0; ix<ncx ; ix++) {
+///	  const dcomplex b = 1.0/sqrt(bvec[ix]);
+///	  //output<<b<<endl;
+///	  avec[ix] = b*avec[ix];
+///	  cvec[ix] = b*cvec[ix];
+///	  bk1d[ix] = b*bk1d[ix];
+///	  //xk1d[ix] = xk1d[ix]*conj(sqrt(bvec[ix]));
+///	}
+/////      Postmultiply by 1/sqrt(bvec)
+///	for(int ix = 0; ix<ncx ; ix++) {
+///	  const dcomplex b = conj(1.0/sqrt(bvec[ix]));
+///	  if(ix<ncx-1){
+///	    avec[ix+1] = b*avec[ix+1];
+///	  }
+///	  if(ix>0){
+///	    cvec[ix-1] = b*cvec[ix-1];
+///	  }
+///	}
+///	for(int ix = 0; ix<ncx ; ix++) {
+///	  bvec[ix] = bvec[ix]/abs(bvec[ix]);
+///	}
 
 ///	SCOREP_USER_REGION_DEFINE(invert);
 ///	SCOREP_USER_REGION_BEGIN(invert, "invert local matrices",SCOREP_USER_REGION_TYPE_COMMON);
@@ -536,13 +572,13 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 
 	if(not localmesh->lastX()) { 
 	  for(int i=0; i<ncx; i++){
-	    xk1d[i] += upperGuardVector(i,0)*xk1dlast[localmesh->LocalNx-2] + upperGuardVector(i,1)*xk1dlast[localmesh->LocalNx-1];
+	    xk1d[i] += upperGuardVector(i,0)*(cvec_eff[localmesh->LocalNx-3]*xk1dlast[localmesh->LocalNx-3] + xk1dlast[localmesh->LocalNx-2]) + upperGuardVector(i,1)*xk1dlast[localmesh->LocalNx-1];
 	  }
 	}
 
 	if(not localmesh->firstX()) { 
 	  for(int i=0; i<ncx; i++){
-	    xk1d[i] += lowerGuardVector(i,0)*xk1dlast[0] + lowerGuardVector(i,1)*xk1dlast[1];
+	    xk1d[i] += lowerGuardVector(i,0)*xk1dlast[0] + lowerGuardVector(i,1)*( avec_eff[2]*xk1dlast[2] + xk1dlast[1]);
 	  }
 	} 
 
@@ -798,6 +834,12 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	+ BoutReal(count))/BoutReal(ncalls);
     //output<<"jy="<<jy<<" kz="<<kz<<" count="<<count<<" ncalls="<<ncalls<<" ipt_mean_its="<<ipt_mean_its<<" B="<<B<< endl;
     //Bvals(0,jy,kz) = B;
+
+    // Undo preconditioner's rescaling of xk1d
+	for(int ix = 0; ix<ncx ; ix++) {
+	  const dcomplex b = conj(1.0/sqrt(bvec[ix]));
+	  //xk1d[ix] = b*xk1d[ix];
+	}
 
     // If the global flag is set to INVERT_KX_ZERO
     if ((global_flags & INVERT_KX_ZERO) && (kz == 0)) {
