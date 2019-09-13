@@ -222,8 +222,8 @@ public:
                        int UNUSED(tag)) override {
     return nullptr;
   }
-  MPI_Comm getXcomm(int UNUSED(jy)) const override { return MPI_COMM_NULL; }
-  MPI_Comm getYcomm(int UNUSED(jx)) const override { return MPI_COMM_NULL; }
+  MPI_Comm getXcomm(int UNUSED(jy)) const override { return BoutComm::get(); }
+  MPI_Comm getYcomm(int UNUSED(jx)) const override { return BoutComm::get(); }
   bool periodicY(int UNUSED(jx)) const override { return true; }
   bool periodicY(int UNUSED(jx), BoutReal& UNUSED(ts)) const override { return true; }
   std::pair<bool, BoutReal> hasBranchCutLower(int UNUSED(jx)) const override {
@@ -270,8 +270,8 @@ public:
                               int UNUSED(tag)) override {
     return nullptr;
   }
-  const RangeIterator iterateBndryLowerY() const override { return RangeIterator(); }
-  const RangeIterator iterateBndryUpperY() const override { return RangeIterator(); }
+  const RangeIterator iterateBndryLowerY() const override { return RangeIterator(xstart, xend); }
+  const RangeIterator iterateBndryUpperY() const override { return RangeIterator(xstart, xend); }
   const RangeIterator iterateBndryLowerOuterY() const override { return RangeIterator(); }
   const RangeIterator iterateBndryLowerInnerY() const override { return RangeIterator(); }
   const RangeIterator iterateBndryUpperOuterY() const override { return RangeIterator(); }

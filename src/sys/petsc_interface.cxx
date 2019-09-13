@@ -27,7 +27,6 @@
  **************************************************************************/
 #include <vector>
 #include <memory>
-#include <iostream>
 #include "mpi.h"
 
 #include <bout_types.hxx>
@@ -45,9 +44,17 @@
 
 bool GlobalIndexer::initialisedGlobal = false;
 IndexerPtr GlobalIndexer::globalInstance;
+Mesh* GlobalIndexer::globalmesh = nullptr;
+
 
 IndexerPtr GlobalIndexer::getInstance(Mesh* localmesh) {
-  if (localmesh == bout::globals::mesh) {
+  // Check that the identity of bout::globals::mesh hasn't changed
+  // since last call. (Needed for unit tests)
+  if (bout::globals::mesh != globalmesh) {
+    globalmesh = bout::globals::mesh;
+    initialisedGlobal = false;
+  }
+  if (localmesh == globalmesh) {
     if (!initialisedGlobal) {
       globalInstance = shared_ptr<GlobalIndexer>(new GlobalIndexer(localmesh));
       initialisedGlobal = true;
@@ -93,10 +100,10 @@ void GlobalIndexer::registerFieldForTest(FieldPerp& UNUSED(f)) {
   return;
 }
 
-GlobalIndexer::GlobalIndexer(Mesh* localmesh) : indices3D(-2., localmesh),
+GlobalIndexer::GlobalIndexer(Mesh* localmesh) : fieldmesh(localmesh),
+						indices3D(-2., localmesh),
 						indices2D(-2., localmesh),
 						indicesPerp(-2., localmesh) {
-  std::cout << "Setting up 3D indices";
   // Set up the 3D indices
   int counter = localmesh->globalStartIndex3D();
   for (RangeIterator it=localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
@@ -106,7 +113,7 @@ GlobalIndexer::GlobalIndexer(Mesh* localmesh) : indices3D(-2., localmesh),
   }
   for (RangeIterator it=localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
     for (int z = 0; z < localmesh->LocalNz; z++) {
-      indices3D(it.ind, localmesh->ystart + 1, z) = counter++;
+      indices3D(it.ind, localmesh->yend + 1, z) = counter++;
     }
   }
   BOUT_FOR(i, localmesh->getRegion3D("RGN_NOY")) {
@@ -117,14 +124,13 @@ GlobalIndexer::GlobalIndexer(Mesh* localmesh) : indices3D(-2., localmesh),
     }
   }
 
-  std::cout << "Setting up 2D indices";
   // Set up the 2D indices
   counter = localmesh->globalStartIndex2D();
   for (RangeIterator it=localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
     indices2D(it.ind, localmesh->ystart - 1) = counter++;
   }
   for (RangeIterator it=localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
-    indices2D(it.ind, localmesh->ystart + 1) = counter++;
+    indices2D(it.ind, localmesh->yend + 1) = counter++;
   }
   BOUT_FOR(i, localmesh->getRegion2D("RGN_NOY")) {
     if ((i.x() >= localmesh->xstart && i.x() <= localmesh->xend) ||
@@ -134,7 +140,6 @@ GlobalIndexer::GlobalIndexer(Mesh* localmesh) : indices3D(-2., localmesh),
     }
   }
 
-  std::cout << "Setting up Perp indices";
   // Set up the Perp indices; will these work in general or will
   // different ones be needed for each value of y?
   counter = localmesh->globalStartIndexPerp();
@@ -146,7 +151,6 @@ GlobalIndexer::GlobalIndexer(Mesh* localmesh) : indices3D(-2., localmesh),
     }
   }
 }
-
 
 // PetscVectorElement implementation
 

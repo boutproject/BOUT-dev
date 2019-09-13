@@ -41,16 +41,16 @@ class Options;
 ///
 class FakeParallelMesh : public BoutMesh {
 public:
-  FakeParallelMesh(int nx, int ny, int nz, int nxpe, int nype, int pe_yind, int pe_xind) :
-    BoutMesh(nx, ny, nz, 1, 1, nxpe, nype, pe_yind, pe_xind), yUpMesh(nullptr),
+  FakeParallelMesh(int nx, int ny, int nz, int nxpe, int nype, int pe_xind, int pe_yind) :
+    BoutMesh((nxpe*(nx-2))+2, nype*ny, nz, 1, 1, nxpe, nype, pe_xind, pe_yind), yUpMesh(nullptr),
     yDownMesh(nullptr), xInMesh(nullptr), xOutMesh(nullptr)
   {
     StaggerGrids=false;
     periodicX = false;
     IncIntShear = false;
-    maxregionblocksize = MAXREGIONBLOCKSIZE;
     calcParallelSlices_on_communicate = true;
     options = Options::getRoot();
+    wait_any_count = -1;
   }
 
   void initDerivs(Options * opt){
@@ -73,29 +73,31 @@ public:
     addBoundary(new BoundaryRegionYUp("upper_target", xstart, xend, this));
     addBoundary(new BoundaryRegionYDown("lower_target", xstart, xend, this));
   }
-
+  
   comm_handle send(FieldGroup &g) override {
-    for (FieldData *f : g.get()) {
-      if (registeredFields.count(f) != 0) {
-        int id = registeredFields[f];
-        ASSERT1(registeredFieldIds[id] == f);
-        if (yUpMesh != nullptr && yUpMesh->registeredFieldIds.count(id) != 0) {
-	  FieldGroup yUpGroup(*yUpMesh->registeredFieldIds[id]);
-          yUpMesh->parentSend(yUpGroup);
-        }
-        if (yDownMesh != nullptr && yDownMesh->registeredFieldIds.count(id) != 0) {
-	  FieldGroup yDownGroup(*yDownMesh->registeredFieldIds[id]);
-          yDownMesh->parentSend(yDownGroup);
-        }
-        if (xInMesh != nullptr && xInMesh->registeredFieldIds.count(id) != 0) {
-	  FieldGroup xInGroup(*xInMesh->registeredFieldIds[id]);
-          xInMesh->parentSend(xInGroup);
-        }
-        if (xOutMesh != nullptr && xOutMesh->registeredFieldIds.count(id) != 0) {
-	  FieldGroup xOutGroup(*xOutMesh->registeredFieldIds[id]);
-          xOutMesh->parentSend(xOutGroup);
-        }
-      }
+    overlapHandleMemory(yUpMesh, yDownMesh, xInMesh, xOutMesh);
+    std::vector<int> ids;
+    int i = 0;
+    for (auto f: g) {
+      ids.push_back(registeredFields[f]);
+      ASSERT1(registeredFieldIds[ids[i]] == f);
+      i++;
+    }
+    if (yUpMesh != nullptr && yUpMesh != this) {
+      FieldGroup yUpGroup = makeGroup(yUpMesh, ids);
+      yUpMesh->parentSend(yUpGroup);
+    }
+    if (yDownMesh != nullptr && yDownMesh != this) {
+      FieldGroup yDownGroup = makeGroup(yDownMesh, ids);
+      yDownMesh->parentSend(yDownGroup);
+    }
+    if (xInMesh != nullptr && xInMesh != this) {
+      FieldGroup xInGroup = makeGroup(xInMesh, ids);
+      xInMesh->parentSend(xInGroup);
+    }
+    if (xOutMesh != nullptr && xOutMesh != this) {
+      FieldGroup xOutGroup = makeGroup(xOutMesh, ids);
+      xOutMesh->parentSend(xOutGroup);
     }
     return parentSend(g);
   }
@@ -111,15 +113,17 @@ public:
 
       if (xInMesh != nullptr && xInMesh->registeredFieldPerpIds.count(id) != 0) {
         FieldPerp *xInField = xInMesh->registeredFieldPerpIds[id];
-        for (int i = 0; i < nin*LocalNz; i++) {
-          f[IndPerp(i)] = (*xInField)[IndPerp(xend-nout+1 + i)];
+        for (int i = 0; i < nin * LocalNz; i++) {
+	  IndPerp ind(i, 1, LocalNz);
+          f[ind] = (*xInField)[ind.xp(xend - xstart + 1)];
         }
       }
 
       if (xOutMesh != nullptr && xOutMesh->registeredFieldPerpIds.count(id) != 0) {
         FieldPerp *xOutField = xOutMesh->registeredFieldPerpIds[id];
-        for (int i = 0; i < nin * LocalNz; i++) {
-          f[IndPerp(xend + 1 + i)] = (*xOutField)[IndPerp(xstart + i - 1)];
+        for (int i = 0; i < nout * LocalNz; i++) {
+	  IndPerp ind((xend+1)*LocalNz + i, 1, LocalNz);
+          f[ind] = (*xOutField)[ind.xm(xend - xstart + 1)];
         }
       }
     }
@@ -139,17 +143,14 @@ public:
   }
 
   virtual int globalStartIndex3D() override {
-    std::cout << "globalStartIndex3D";
     return start3D;
   }
 
   virtual int globalStartIndex2D() override {
-    std::cout << "globalStartIndex2D";
     return start2D;
   }
 
   virtual int globalStartIndexPerp() override {
-    std::cout << "globalStartIndexPerp";
     return startPerp;
   }
 
@@ -178,6 +179,7 @@ private:
 
   int local3D, local2D, localPerp;
   int start3D, start2D, startPerp;
+  int wait_any_count;
 
   comm_handle parentSend(FieldGroup &g) {
     return BoutMesh::send(g);
@@ -201,54 +203,98 @@ private:
     return 0;
   }
   virtual int MPI_Waitany(int UNUSED(count), MPI_Request UNUSED(array_of_requests[]),
-                          int *UNUSED(indx), MPI_Status *UNUSED(status)) override {
+                          int *indx, MPI_Status *UNUSED(status)) override {
+    if (yUpMesh && wait_any_count < 0 && UpXSplitIndex() > 0) {
+      *indx = wait_any_count = 0;
+    } else if (yDownMesh && wait_any_count < 1 && UpXSplitIndex() == 0) {
+      *indx = wait_any_count = 1;
+    } else if (yDownMesh && wait_any_count < 2 && DownXSplitIndex() > 0) {
+      *indx = wait_any_count = 2;
+    } else if (yDownMesh && wait_any_count < 3 && DownXSplitIndex() == 0) {
+      *indx = wait_any_count = 3;
+    } else if (xInMesh && wait_any_count < 4) {
+      *indx = wait_any_count = 4;
+    } else if (xOutMesh && wait_any_count < 5) {
+      *indx = wait_any_count = 5;
+    } else {
+      *indx = MPI_UNDEFINED;
+      wait_any_count = -1;
+    }
     return 0;
+  }
+
+  FieldGroup makeGroup(FakeParallelMesh* m, const std::vector<int> ids) {
+    FieldGroup g;
+    for (int i : ids) {
+      ASSERT1(m->registeredFieldIds.count(i) != 0);
+      g.add(*m->registeredFieldIds[i]);
+    }
+    return g;
   }
 };
 
 std::vector<FakeParallelMesh> createFakeProcessors(int nx, int ny, int nz,
 						   int nxpe, int nype) {
+  std::shared_ptr<Coordinates> test_coords{nullptr};
   std::vector<FakeParallelMesh> meshes;
   for (int i = 0; i < nxpe; i++) {
-    for (int j = 0; j < nxpe; j++) {
+    for (int j = 0; j < nype; j++) {
       meshes.push_back(FakeParallelMesh(nx, ny, nz, nxpe, nype, i, j));
+      meshes[j + i*nype].createDefaultRegions();
+      bout::globals::mesh = &meshes[j + i*nype];
+      static_cast<FakeParallelMesh*>(bout::globals::mesh)->setCoordinates(nullptr);
+      test_coords = std::make_shared<Coordinates>(
+          bout::globals::mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0},
+          Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
+          Field2D{0.0}, Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0},
+          Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0},
+          false);
+      static_cast<FakeParallelMesh*>(&meshes[j + i*nype])->setCoordinates(test_coords);
+      test_coords->setParallelTransform(
+        bout::utils::make_unique<ParallelTransformIdentity>(*bout::globals::mesh));
     }
   }
   int start3 = 0, start2 = 0, startP = 0;
-  for (int j = 0; j < nxpe; j++) {
-    for (int i = 0; i < nxpe; i++) {
-      meshes[j*nype + i].local3D = (nx - 2) * (ny - 2) * nz;
-      meshes[j*nype + i].local2D = (nx - 2) * (ny - 2);
-      meshes[j*nype + i].localPerp = (nx - 2) * nz;
-      if (i > 0) {
-        meshes[j*nype + i].local3D += (ny - 2) * nz;
-        meshes[j*nype + i].local2D += (ny - 2);
-        meshes[j*nype + i].localPerp += (nx - 2) * nz;
-        meshes[j*nype + i].xInMesh = &meshes[j*nype + i - 1];
+  for (int i = 0; i < nxpe; i++) {
+    for (int j = 0; j < nype; j++) {
+      meshes.at(j + i*nype).local3D = (nx - 2) * ny * nz;
+      meshes.at(j + i*nype).local2D = (nx - 2) * ny;
+      meshes.at(j + i*nype).localPerp = (nx - 2) * nz;
+      if (i == 0) {
+        meshes.at(j + i*nype).local3D += ny * nz;
+        meshes.at(j + i*nype).local2D += ny;
+        meshes.at(j + i*nype).localPerp += nz;
+      } else {
+        meshes.at(j + i*nype).xInMesh = &meshes.at(j + (i-1)*nype);
       }
-      if (i < nxpe - 1) {
-        meshes[j*nype + i].local3D += (ny - 2) * nz;
-        meshes[j*nype + i].local2D += (ny - 2);
-        meshes[j*nype + i].localPerp += (nx - 2) * nz;
-	meshes[j*nype + i].xOutMesh = &meshes[j*nype + i + 1];
+      if (i == nxpe - 1) {
+        meshes.at(j + i*nype).local3D += ny * nz;
+        meshes.at(j + i*nype).local2D += ny;
+        meshes.at(j + i*nype).localPerp += nz;
+      } else {
+	meshes.at(j + i*nype).xOutMesh = &meshes.at(j + (i+1)*nype);
       }
-      if (j > 0) {
-        meshes[j*nype + i].local3D += (nx - 2) * nz;
-        meshes[j*nype + i].local2D += (nx - 2);
-	meshes[j*nype + i].yUpMesh = &meshes[(j - 1)*nype + i];
+      if (j == 0) {
+        meshes.at(j + i*nype).local3D += (nx - 2) * nz;
+        //meshes.at(j + i*nype).local2D += (nx - 2);
+      } else {
+	meshes.at(j + i*nype).yDownMesh = &meshes.at(j - 1 + i*nype);
       }
-      if (j < nype - 1) {
-        meshes[j*nype + i].local3D += (nx - 2) * nz;
-        meshes[j*nype + i].local2D += (nx - 2);
-	meshes[j*nype + i].yDownMesh = &meshes[(j + 1)*nype + i];
+      if (j == nype - 1) {
+        meshes.at(j + i*nype).local3D += (nx - 2) * nz;
+	//        meshes.at(j + i*nype).local2D += (nx - 2);
+      } else {
+	meshes.at(j + i*nype).yUpMesh = &meshes.at(j + 1 + i*nype);
       }
-      meshes[j*nype + i].start3D = start3;
-      meshes[j*nype + i].start2D = start2;
-      meshes[j*nype + i].startPerp = startP;
-      start3 += meshes[j*nype + i].start3D;
-      start2 += meshes[j*nype + i].start2D;
-      startP += meshes[j*nype + i].startPerp;
+      meshes.at(j + i*nype).start3D = start3;
+      meshes.at(j + i*nype).start2D = start2;
+      meshes.at(j + i*nype).startPerp = startP;
+      start3 += meshes.at(j + i*nype).local3D;
+      start2 += meshes.at(j + i*nype).local2D;
+      startP += meshes.at(j + i*nype).localPerp;
     }
+    meshes.at(nype-1 + i*nype).yUpMesh = &meshes.at(i*nype);
+    meshes.at(i*nype).yDownMesh = &meshes.at(nype-1 + i*nype);
   }
   return meshes;
 }

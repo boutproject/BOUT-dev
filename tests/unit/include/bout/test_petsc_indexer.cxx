@@ -25,73 +25,49 @@ using IndexerTest = FakeMeshFixture;
 
 TEST_F(IndexerTest, TestIndexerConstructor){
   FakeMesh mesh2(1, 1, 1);
+  mesh2.createDefaultRegions();
+  mesh2.setCoordinates(nullptr);
+  test_coords = std::make_shared<Coordinates>(
+      bout::globals::mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0},
+      Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
+      Field2D{0.0}, Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0},
+      Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0},
+      false);
+  mesh2.setCoordinates(test_coords);
+  // May need a ParallelTransform to create fields, because create3D calls
+  // fromFieldAligned
+  test_coords->setParallelTransform(
+      bout::utils::make_unique<ParallelTransformIdentity>(*bout::globals::mesh));
+  mesh2.createBoundaryRegions();
+  
   IndexerPtr i1 = GlobalIndexer::getInstance(mesh);
   IndexerPtr i2 = GlobalIndexer::getInstance(mesh);
   IndexerPtr i3 = GlobalIndexer::getInstance(&mesh2);
   IndexerPtr i4 = GlobalIndexer::getInstance(&mesh2);
 
   // Check only one instance for the global mesh
-  EXPECT_EQ(&i1, &i2);
+  EXPECT_EQ(i1.get(), i2.get());
   // Check all other instances are unique
-  EXPECT_NE(&i1, &i3);
-  EXPECT_NE(&i3, &i4);
+  EXPECT_NE(i1.get(), i3.get());
+  EXPECT_NE(i3.get(), i4.get());
 }
 
-
-class SingleProcIndexerTest : public testing::TestWithParam<Mesh*> {
-};
-
-class FakeNonperiodicMesh : public FakeMesh {
-public:
-  FakeNonperiodicMesh(int nx, int ny, int nz): FakeMesh(nx, ny, nz) {
-    periodicX = false;
-  }
-  bool periodicY(int UNUSED(jx)) const { return false; }
-};
-
-class FakeXPeriodicMesh : public FakeMesh {
-public:
-  FakeXPeriodicMesh(int nx, int ny, int nz): FakeMesh(nx, ny, nz) {
-    periodicX = true;
-  }
-  bool periodicY(int UNUSED(jx)) const { return false; }
-};
-
-using FakeYPeriodicMesh = FakeMesh;
-
-class FakePeriodicMesh : public FakeMesh {
-public:
-  FakePeriodicMesh(int nx, int ny, int nz): FakeMesh(nx, ny, nz) {
-    periodicX = true;
-  }
-  bool periodicY(int UNUSED(jx)) const { return true; }
-};
-
-FakeNonperiodicMesh mesh_nonperiod(FakeMeshFixture::nx, FakeMeshFixture::ny,
-				   FakeMeshFixture::nz);
-FakeXPeriodicMesh mesh_Xperiod(FakeMeshFixture::nx, FakeMeshFixture::ny,
-				   FakeMeshFixture::nz);
-FakeYPeriodicMesh mesh_Yperiod(FakeMeshFixture::nx, FakeMeshFixture::ny,
-				   FakeMeshFixture::nz);
-FakePeriodicMesh mesh_XYperiod(FakeMeshFixture::nx, FakeMeshFixture::ny,
-				   FakeMeshFixture::nz);
-
-INSTANTIATE_TEST_SUITE_P(UniqueIndices, SingleProcIndexerTest,
-			 testing::Values(&mesh_nonperiod, &mesh_Xperiod,
-					 &mesh_Yperiod, &mesh_XYperiod));
-
-TEST_P(SingleProcIndexerTest, TestConvertIndex3D) {
-  Mesh* localmesh = GetParam();
+TEST_F(IndexerTest, TestConvertIndex3D) {
+  Mesh* localmesh = bout::globals::mesh;
   IndexerPtr index = GlobalIndexer::getInstance(localmesh);
+  index->initialise();
   set <int, greater <int>> returnedIndices;
-  localmesh->addRegion3D("RGN_XGUARDS", mask(localmesh->getRegion3D("RGN_ALL"),
-                                        localmesh->getRegion3D("RGN_NOX")));
-  localmesh->addRegion3D("RGN_YGUARDS", mask(localmesh->getRegion3D("RGN_ALL"),
-                                        localmesh->getRegion3D("RGN_NOY")));
+  Region<Ind3D> tmpX = mask(localmesh->getRegion3D("RGN_ALL"),
+			    localmesh->getRegion3D("RGN_NOX"));
+  Region<Ind3D> tmpY = mask(localmesh->getRegion3D("RGN_ALL"),
+			    localmesh->getRegion3D("RGN_NOY"));
+  localmesh->addRegion3D("RGN_XGUARDS", mask(tmpX, tmpY));
+  localmesh->addRegion3D("RGN_YGUARDS", mask(tmpY, tmpX));
 
   // Check each of the interior global indices is unique
   BOUT_FOR(i, localmesh->getRegion3D("RGN_NOBNDRY")) {
     int global = index->getGlobal(i);
+    EXPECT_GE(global, 0);
     EXPECT_EQ(returnedIndices.count(global), 0);
     returnedIndices.insert(global);
   }
@@ -100,38 +76,35 @@ TEST_P(SingleProcIndexerTest, TestConvertIndex3D) {
   // otherwise check that they are
   BOUT_FOR(i, localmesh->getRegion3D("RGN_XGUARDS")) {
     int global = index->getGlobal(i);
-    if (localmesh->periodicX) {
-      EXPECT_NE(returnedIndices.count(global), 0);
-    } else {
-      EXPECT_EQ(returnedIndices.count(global), 0);
-      returnedIndices.insert(global);
-    }
+    EXPECT_GE(global, 0);
+    EXPECT_EQ(returnedIndices.count(global), 0);
+    returnedIndices.insert(global);
   }
 
   // If periodic in Y, check indices of Y guard cells are not unique;
   // otherwise check that they are
   BOUT_FOR(i, localmesh->getRegion3D("RGN_YGUARDS")) {
     int global = index->getGlobal(i);
-    if (localmesh->periodicY(i.y())) {
-      EXPECT_NE(returnedIndices.count(global), 0);
-    } else {
-      EXPECT_EQ(returnedIndices.count(global), 0);
-      returnedIndices.insert(global);
-    }
+    EXPECT_GE(global, 0);
+    EXPECT_EQ(returnedIndices.count(global), 0);
+    returnedIndices.insert(global);
   }
   ASSERT_LT(*returnedIndices.rbegin(),
 	    localmesh->LocalNx*localmesh->LocalNy*localmesh->LocalNz);
 }
 
 
-TEST_P(SingleProcIndexerTest, TestConvertIndex2D) {
-  Mesh* localmesh = GetParam();
+TEST_F(IndexerTest, TestConvertIndex2D) {
+  Mesh* localmesh = bout::globals::mesh;
   IndexerPtr index = GlobalIndexer::getInstance(localmesh);
   set <int, greater <int>> returnedIndices;
-  localmesh->addRegion2D("RGN_XGUARDS", mask(localmesh->getRegion2D("RGN_ALL"),
-                                        localmesh->getRegion2D("RGN_NOX")));
-  localmesh->addRegion2D("RGN_YGUARDS", mask(localmesh->getRegion2D("RGN_ALL"),
-                                        localmesh->getRegion2D("RGN_NOY")));
+  index->initialise();
+  Region<Ind2D> tmpX = mask(localmesh->getRegion2D("RGN_ALL"),
+			    localmesh->getRegion2D("RGN_NOX"));
+  Region<Ind2D> tmpY = mask(localmesh->getRegion2D("RGN_ALL"),
+			    localmesh->getRegion2D("RGN_NOY"));
+  localmesh->addRegion2D("RGN_XGUARDS", mask(tmpX, tmpY));
+  localmesh->addRegion2D("RGN_YGUARDS", mask(tmpY, tmpX));
 
   // Check each of the interior global indices is unique
   BOUT_FOR(i, localmesh->getRegion2D("RGN_NOBNDRY")) {
@@ -146,12 +119,8 @@ TEST_P(SingleProcIndexerTest, TestConvertIndex2D) {
   BOUT_FOR(i, localmesh->getRegion2D("RGN_XGUARDS")) {
     int global = index->getGlobal(i);
     EXPECT_GE(global, 0);
-    if (localmesh->periodicX) {
-      EXPECT_NE(returnedIndices.count(global), 0);
-    } else {
-      EXPECT_EQ(returnedIndices.count(global), 0);
-      returnedIndices.insert(global);
-    }
+    EXPECT_EQ(returnedIndices.count(global), 0);
+    returnedIndices.insert(global);
   }
 
   // If periodic in Y, check indices of Y guard cells are not unique;
@@ -159,21 +128,18 @@ TEST_P(SingleProcIndexerTest, TestConvertIndex2D) {
   BOUT_FOR(i, localmesh->getRegion2D("RGN_YGUARDS")) {
     int global = index->getGlobal(i);
     EXPECT_GE(global, 0);
-    if (localmesh->periodicY(i.y())) {
-      EXPECT_NE(returnedIndices.count(global), 0);
-    } else {
-      EXPECT_EQ(returnedIndices.count(global), 0);
-      returnedIndices.insert(global);
-    }
+    EXPECT_EQ(returnedIndices.count(global), 0);
+    returnedIndices.insert(global);
   }
 
   ASSERT_LT(*returnedIndices.rbegin(), localmesh->LocalNx*localmesh->LocalNy);
 }
 
 
-TEST_P(SingleProcIndexerTest, TestConvertIndexPerp) {
-  Mesh* localmesh = GetParam();
+TEST_F(IndexerTest, TestConvertIndexPerp) {
+  Mesh* localmesh = bout::globals::mesh;
   IndexerPtr index = GlobalIndexer::getInstance(localmesh);
+  index->initialise();
   set <int, greater <int>> returnedIndices;
   localmesh->addRegionPerp("RGN_XGUARDS", mask(localmesh->getRegionPerp("RGN_ALL"),
 					       localmesh->getRegionPerp("RGN_NOX")));
@@ -189,12 +155,8 @@ TEST_P(SingleProcIndexerTest, TestConvertIndexPerp) {
   // otherwise check that they are
   BOUT_FOR(i, localmesh->getRegionPerp("RGN_XGUARDS")) {
     int global = index->getGlobal(i);
-    if (localmesh->periodicX) {
-      EXPECT_NE(returnedIndices.count(global), 0);
-    } else {
-      EXPECT_EQ(returnedIndices.count(global), 0);
-      returnedIndices.insert(global);
-    }
+    EXPECT_EQ(returnedIndices.count(global), 0);
+    returnedIndices.insert(global);
   }
 
   ASSERT_LT(*returnedIndices.rbegin(), localmesh->LocalNx*localmesh->LocalNz);
@@ -214,7 +176,7 @@ private:
       meshPtr->registerField(f, idnum);
     }
   }
-  virtual void registerFieldsForTest(FieldPerp& f) {
+  virtual void registerFieldForTest(FieldPerp& f) {
     auto* meshPtr = static_cast<FakeParallelMesh*>(fieldmesh);
     if (meshPtr) {
       meshPtr->registerField(f, 2);
@@ -230,22 +192,24 @@ public:
     pe_xind = std::get<2>(GetParam());
     pe_yind = std::get<3>(GetParam());
     meshes = createFakeProcessors(nx, ny, nz, nxpe, nype);
+    
     xstart = meshes[0].xstart;
     xend = meshes[0].xend;
     ystart = meshes[0].ystart;
     yend = meshes[0].yend;
     int i = 0;
-    for (auto &ind : indexers) {
-      ind = std::make_unique<FakeParallelIndexer>(&meshes[i]);
+    for (i = 0; i < nxpe*nype; i++) {
+      auto ind = std::make_shared<FakeParallelIndexer>(&meshes[i]);
       ind->initialiseTest();
-      i++;
+      indexers.push_back(ind);
     }
-    i = 0;
-    for (auto &ind : indexers) {
-      ind->initialise();
-      i++;
-    }
-    localmesh = &meshes[nype*pe_yind + pe_xind];
+//    i = 0;
+//    for (auto &ind : indexers) {
+//      ind->initialise();
+//      i++;
+//    }
+    indexers[pe_yind + pe_xind*nype]->initialise();
+    localmesh = &meshes[pe_yind + pe_xind*nype];
   }
 
   static constexpr int nx = 7;
@@ -260,7 +224,7 @@ public:
   Mesh* localmesh;
 
   IndexerPtr getIndexer(int xind, int yind) {
-    return indexers[nype*yind + xind];
+    return indexers[(yind + nype)%nype + xind*nype];
   }
 };
 
@@ -289,53 +253,47 @@ TEST_P(ParallelIndexerTest, TestConvertIndex3D) {
                                         localmesh->getRegion3D("RGN_NOY")));
 
   // Test xIn boundary
-  if (pe_xind > 0) {
-    IndexerPtr xInIndex = getIndexer(pe_xind - 1, pe_yind);
-    BOUT_FOR(i, localmesh->getRegion3D("RGN_XGUARDS")) {
-      if (i.x() < xstart) {
-        int global = index->getGlobal(i);
-	int otherGlobal = xInIndex->getGlobal(i.xp(xend - xstart));
-	ASSERT_EQ(global, otherGlobal);
+  BOUT_FOR(i, localmesh->getRegion3D("RGN_XGUARDS")) {
+    if (i.x() < xstart && i.y() >= ystart && i.y() <= yend) {
+      int global = index->getGlobal(i);
+      if (pe_xind > 0) {
+	int otherGlobal = getIndexer(pe_xind - 1, pe_yind)->getGlobal(i.xp(xend - xstart + 1));
+	EXPECT_EQ(global, otherGlobal);
+      } else {
+	EXPECT_NE(global, -1);
       }
     }
   }
   
   // Test xOut boundary
-  if (pe_xind < nxpe - 1) {
-    IndexerPtr xOutIndex = getIndexer(pe_xind + 1, pe_yind);
-    BOUT_FOR(i, localmesh->getRegion3D("RGN_XGUARDS")) {
-      if (i.x() >= xend) {
-        int global = index->getGlobal(i);
-	int otherGlobal = xOutIndex->getGlobal(i.xm(xend - xstart));
-	ASSERT_EQ(global, otherGlobal);
+  BOUT_FOR(i, localmesh->getRegion3D("RGN_XGUARDS")) {
+    if (i.x() >= xend && i.y() >= ystart && i.y() <= yend) {
+      int global = index->getGlobal(i);
+      if (pe_xind < nxpe - 1) {
+	int otherGlobal = getIndexer(pe_xind + 1, pe_yind)->getGlobal(i.xm(xend - xstart + 1));
+	EXPECT_EQ(global, otherGlobal);
+      } else {
+	EXPECT_NE(global, -1);
       }
     }
   }
   
   // Test yDown boundary
-  if (pe_yind > 0) {
-    IndexerPtr yDownIndex = getIndexer(pe_xind, pe_yind - 1);
-    BOUT_FOR(i, localmesh->getRegion3D("RGN_YGUARDS")) {
-      if (i.y() < ystart) {
-        int global = index->getGlobal(i);
-	int otherGlobal = yDownIndex->getGlobal(i.yp(yend - ystart));
-	ASSERT_EQ(global, otherGlobal);
-      }
+  BOUT_FOR(i, localmesh->getRegion3D("RGN_YGUARDS")) {
+    if (i.y() < ystart && i.x() >= xstart && i.x() <= xend) {
+      int global = index->getGlobal(i);
+      int otherGlobal = getIndexer(pe_xind, pe_yind - 1)->getGlobal(i.yp(yend - ystart + 1));
+      EXPECT_EQ(global, otherGlobal);
     }
-    
   }
   
   // Test yUp boundary
-  if (pe_yind < nype - 1) {
-    IndexerPtr yUpIndex = getIndexer(pe_xind, pe_yind + 1);
-    BOUT_FOR(i, localmesh->getRegion3D("RGN_YGUARDS")) {
-      if (i.y() >= yend) {
-        int global = index->getGlobal(i);
-	int otherGlobal = yUpIndex->getGlobal(i.ym(yend - ystart));
-	ASSERT_EQ(global, otherGlobal);
-      }
+  BOUT_FOR(i, localmesh->getRegion3D("RGN_YGUARDS")) {
+    if (i.y() >= yend && i.x() >= xstart && i.x() <= xend) {
+      int global = index->getGlobal(i);
+      int otherGlobal = getIndexer(pe_xind, pe_yind + 1)->getGlobal(i.ym(yend - ystart + 1));
+      EXPECT_EQ(global, otherGlobal);
     }
-    
   }
 }
 
@@ -347,51 +305,46 @@ TEST_P(ParallelIndexerTest, TestConvertIndex2D) {
                                         localmesh->getRegion2D("RGN_NOY")));
 
   // Test xIn boundary
-  if (pe_xind > 0) {
-    IndexerPtr xInIndex = getIndexer(pe_xind - 1, pe_yind);
-    BOUT_FOR(i, localmesh->getRegion2D("RGN_XGUARDS")) {
-      if (i.x() < xstart) {
-        int global = index->getGlobal(i);
-	int otherGlobal = xInIndex->getGlobal(i.xp(xend - xstart));
-	ASSERT_EQ(global, otherGlobal);
+  BOUT_FOR(i, localmesh->getRegion2D("RGN_XGUARDS")) {
+    if (i.x() < xstart && i.y() >= ystart && i.y() <= yend) {
+      int global = index->getGlobal(i);
+      if (pe_xind > 0) {
+	int otherGlobal = getIndexer(pe_xind - 1, pe_yind)->getGlobal(i.xp(xend - xstart + 1));
+	EXPECT_EQ(global, otherGlobal);
+      } else {
+	EXPECT_NE(global, -1);
       }
     }
   }
   
   // Test xOut boundary
-  if (pe_xind < nxpe - 1) {
-    IndexerPtr xOutIndex = getIndexer(pe_xind + 1, pe_yind);
-    BOUT_FOR(i, localmesh->getRegion2D("RGN_XGUARDS")) {
-      if (i.x() >= xend) {
-        int global = index->getGlobal(i);
-	int otherGlobal = xOutIndex->getGlobal(i.xm(xend - xstart));
-	ASSERT_EQ(global, otherGlobal);
+  BOUT_FOR(i, localmesh->getRegion2D("RGN_XGUARDS")) {
+    if (i.x() >= xend && i.y() >= ystart && i.y() <= yend) {
+      int global = index->getGlobal(i);
+      if (pe_xind < nxpe - 1) {
+	int otherGlobal = getIndexer(pe_xind + 1, pe_yind)->getGlobal(i.xm(xend - xstart + 1));
+	EXPECT_EQ(global, otherGlobal);
+      } else {
+	EXPECT_NE(global, -1);
       }
     }
   }
   
   // Test yDown boundary
-  if (pe_yind > 0) {
-    IndexerPtr yDownIndex = getIndexer(pe_xind, pe_yind - 1);
-    BOUT_FOR(i, localmesh->getRegion2D("RGN_YGUARDS")) {
-      if (i.y() < ystart) {
-        int global = index->getGlobal(i);
-	int otherGlobal = yDownIndex->getGlobal(i.yp(yend - ystart));
-	ASSERT_EQ(global, otherGlobal);
-      }
-    }
-    
+  BOUT_FOR(i, localmesh->getRegion2D("RGN_YGUARDS")) {
+    if (i.y() < ystart && i.x() >= xstart && i.x() <= xend) {
+      int global = index->getGlobal(i);
+      int otherGlobal = getIndexer(pe_xind, pe_yind - 1)->getGlobal(i.yp(yend - ystart + 1));
+      EXPECT_EQ(global, otherGlobal);
+    }    
   }
   
   // Test yUp boundary
-  if (pe_yind < nype - 1) {
-    IndexerPtr yUpIndex = getIndexer(pe_xind, pe_yind + 1);
-    BOUT_FOR(i, localmesh->getRegion2D("RGN_YGUARDS")) {
-      if (i.y() >= yend) {
-        int global = index->getGlobal(i);
-	int otherGlobal = yUpIndex->getGlobal(i.ym(yend - ystart));
-	ASSERT_EQ(global, otherGlobal);
-      }
+  BOUT_FOR(i, localmesh->getRegion2D("RGN_YGUARDS")) {
+    if (i.y() >= yend && i.x() >= xstart && i.x() <= xend) {
+      int global = index->getGlobal(i);
+      int otherGlobal = getIndexer(pe_xind, pe_yind + 1)->getGlobal(i.ym(yend - ystart + 1));
+      EXPECT_EQ(global, otherGlobal);
     }
   }
 }
@@ -403,25 +356,27 @@ TEST_P(ParallelIndexerTest, TestConvertIndexPerp) {
                                         localmesh->getRegionPerp("RGN_NOX")));
 
   // Test xIn boundary
-  if (pe_xind > 0) {
-    IndexerPtr xInIndex = getIndexer(pe_xind - 1, pe_yind);
-    BOUT_FOR(i, localmesh->getRegionPerp("RGN_XGUARDS")) {
-      if (i.x() < xstart) {
-        int global = index->getGlobal(i);
-	int otherGlobal = xInIndex->getGlobal(i.xp(xend - xstart));
-	ASSERT_EQ(global, otherGlobal);
+  BOUT_FOR(i, localmesh->getRegionPerp("RGN_XGUARDS")) {
+    if (i.x() < xstart) {
+      int global = index->getGlobal(i);
+      if (pe_xind > 0) {
+	int otherGlobal = getIndexer(pe_xind - 1, pe_yind)->getGlobal(i.xp(xend - xstart + 1));
+	EXPECT_EQ(global, otherGlobal);
+      } else {
+	EXPECT_NE(global, -1);
       }
     }
   }
   
   // Test xOut boundary
-  if (pe_xind < nxpe - 1) {
-    IndexerPtr xOutIndex = getIndexer(pe_xind + 1, pe_yind);
-    BOUT_FOR(i, localmesh->getRegionPerp("RGN_XGUARDS")) {
-      if (i.x() >= xend) {
-        int global = index->getGlobal(i);
-	int otherGlobal = xOutIndex->getGlobal(i.xm(xend - xstart));
-	ASSERT_EQ(global, otherGlobal);
+  BOUT_FOR(i, localmesh->getRegionPerp("RGN_XGUARDS")) {
+    if (i.x() >= xend) {
+      int global = index->getGlobal(i);
+      if (pe_xind < nxpe - 1) {
+	int otherGlobal = getIndexer(pe_xind + 1, pe_yind)->getGlobal(i.xm(xend - xstart + 1));
+	EXPECT_EQ(global, otherGlobal);
+      } else {
+	EXPECT_NE(global, -1);
       }
     }
   }

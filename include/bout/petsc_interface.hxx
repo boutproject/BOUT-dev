@@ -92,6 +92,7 @@ private:
   /// The only instance of this class acting on the global Mesh
   static IndexerPtr globalInstance;
   static bool initialisedGlobal;
+  static Mesh* globalmesh;
   bool initialised;
 };
 
@@ -200,11 +201,11 @@ public:
     indexConverter = GlobalIndexer::getInstance(f.getMesh());
     int size;
     if (std::is_same<F, FieldPerp>::value) {
-      size = f.localSizePerp();
+      size = f.getMesh()->localSizePerp();
     } else if (std::is_same<F, Field2D>::value) {
-      size = f.localSize2D();
+      size = f.getMesh()->localSize2D();
     } else if (std::is_same<F, Field3D>::value) {
-      size = f.localSize3D();
+      size = f.getMesh()->localSize3D();
     } else {
       throw BoutException("PetscVector initialised for non-field type.");
     }
@@ -243,7 +244,7 @@ public:
     ASSERT2(location == rhs.getLocation());
     // Note that physical boundaries will not be set here. Not sure if that matters.
     BOUT_FOR(i, rhs.getRegion(RGN_NOBNDRY)) {
-      ind = indexConverter(i);
+      ind = indexConverter->getGlobal(i);
       VecSetValues(vector, 1, &ind, &rhs[i], INSERT_VALUES);
     }
     assemble();
@@ -251,7 +252,7 @@ public:
   }
 
   PetscVectorElement& operator()(ind_type& index) {
-    return PetscVectorElement::newElement(vector, indexConverter->getGlobal(index));
+    return PetscVectorElement::newElement(&vector, indexConverter->getGlobal(index));
   }
   
   void assemble() {
@@ -272,10 +273,11 @@ public:
     PetscInt ind;
     // Need to set the physical boundaries, I think
     BOUT_FOR(i, result.getRegion(RGN_NOBNDRY)) {
-      ind = indexConverter(i);
+      ind = indexConverter->getGlobal(i);
       VecGetValues(vector, 1, &ind, &val);
       result[i] = val;
     }
+    return result;
   }
 
   /// Provides a reference to the raw PETSc Vec object.

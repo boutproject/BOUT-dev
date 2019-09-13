@@ -185,8 +185,13 @@ class BoutMesh : public Mesh {
 
 protected:
   BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg,
-	   int nxpe, int nype, int pe_yind, int pe_xind);
-  void setAdjacentMeshes(std::vector<BoutMesh&>& meshes);
+	   int nxpe, int nype, int pe_xind, int pe_yind);
+  /// For debugging purposes (when creating fake parallel meshes), make
+  /// the send and receive buffers share memory. This allows for
+  /// communications to be faked between meshes as though they were on
+  /// different processors.
+  void overlapHandleMemory(BoutMesh* yup, BoutMesh* ydown, BoutMesh* xin,
+				     BoutMesh* xout);
 
 private:
   std::string gridname;
