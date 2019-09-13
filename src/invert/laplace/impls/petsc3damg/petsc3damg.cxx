@@ -133,4 +133,15 @@ const Field3D LaplacePetsc3dAmg::solve(const Field3D &b_in, const Field3D &x0) {
   // Configure preconditioner (or do this in constructor?)
 }
 
+const Field2D LaplacePetsc3dAmg::solve(const Field2D &b) {
+  return Laplacian::solve(b);
+}
+
+PetscMatrix<Field3D>& LaplacePetsc3dAmg::getMatrix3D() {
+}
+
+PetscMatrix<Field2D>& LaplacePetsc3dAmg::getMatrix2D() {
+}
+
+
 #endif // BOUT_HAS_PETSC_3_3

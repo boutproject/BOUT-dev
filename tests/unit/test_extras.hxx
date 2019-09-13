@@ -216,8 +216,8 @@ public:
   comm_handle irecvXIn(BoutReal *UNUSED(buffer), int UNUSED(size), int UNUSED(tag)) {
     return nullptr;
   }
-  MPI_Comm getXcomm(int UNUSED(jy)) const { return MPI_COMM_NULL; }
-  MPI_Comm getYcomm(int UNUSED(jx)) const { return MPI_COMM_NULL; }
+  MPI_Comm getXcomm(int UNUSED(jy)) const { return BoutComm::get(); }
+  MPI_Comm getYcomm(int UNUSED(jx)) const { return BoutComm::get(); }
   bool periodicY(int UNUSED(jx)) const { return true; }
   bool periodicY(int UNUSED(jx), BoutReal &UNUSED(ts)) const { return true; }
   std::pair<bool, BoutReal> hasBranchCutLower(int UNUSED(jx)) const {
@@ -260,8 +260,8 @@ public:
                               int UNUSED(tag)) {
     return nullptr;
   }
-  const RangeIterator iterateBndryLowerY() const { return RangeIterator(); }
-  const RangeIterator iterateBndryUpperY() const { return RangeIterator(); }
+  const RangeIterator iterateBndryLowerY() const { return RangeIterator(xstart, xend); }
+  const RangeIterator iterateBndryUpperY() const { return RangeIterator(xstart, xend); }
   const RangeIterator iterateBndryLowerOuterY() const { return RangeIterator(); }
   const RangeIterator iterateBndryLowerInnerY() const { return RangeIterator(); }
   const RangeIterator iterateBndryUpperOuterY() const { return RangeIterator(); }
