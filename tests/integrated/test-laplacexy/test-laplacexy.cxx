@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
 
   ////////////////////////////////////////////////////////////////////////////////////////
 
-  Field2D rhs;
+  Field2D rhs, rhs_check;
   if (include_y_derivs) {
     rhs = a*Laplace_perp(f) + Grad_perp(a)*Grad_perp(f) + b*f;
   } else {
@@ -76,6 +76,13 @@ int main(int argc, char** argv) {
 
   output<<"Magnitude of maximum absolute error is "<<max_error<<endl;
 
+  mesh->communicate(sol);
+  if (include_y_derivs) {
+    rhs_check = a*Laplace_perp(sol) + Grad_perp(a)*Grad_perp(sol) + b*sol;
+  } else {
+    rhs_check = a*Delp2(sol, CELL_DEFAULT, false) + coords->g11*DDX(a)*DDX(sol) + b*sol;
+  }
+
   dump.add(a, "a");
   dump.add(b, "b");
   dump.add(f, "f");
@@ -83,6 +90,8 @@ int main(int argc, char** argv) {
   dump.add(error, "error");
   dump.add(absolute_error, "absolute_error");
   dump.add(max_error, "max_error");
+  dump.add(rhs, "rhs");
+  dump.add(rhs_check, "rhs_check");
 
   dump.write();
   dump.close();
