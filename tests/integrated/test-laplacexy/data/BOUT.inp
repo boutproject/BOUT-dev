@@ -7,12 +7,12 @@ ny = 128
 dx = (1.+.1*cos(pi*x))/nx
 dy = 40.*(1.+.1*sin(y))/ny
 
-g11 = 1.
-g22 = 1.
-g33 = 1.
-g12 = 0.3
+g11 = 1. + .1*sin(2.*pi*x)*cos(y)
+g22 = 1. + .05872*sin(2.*pi*x)*cos(y)
+g33 = 1. + .115832*sin(2.*pi*x)*cos(y)
+g12 = 0.3 + .08363*sin(2.*pi*x)*cos(y)
 g13 = 0.
-g23 = 0.5
+g23 = 0.5 + .04672*sin(2.*pi*x)*cos(y)
 
 jyseps1_1 = 15
 jyseps2_1 = 47
