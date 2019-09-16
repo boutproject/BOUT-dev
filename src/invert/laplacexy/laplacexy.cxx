@@ -870,36 +870,36 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
     // 'free_o3' extrapolating boundary condition on Y boundaries
     for(RangeIterator it=localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
       int row = globalIndex(it.ind, localmesh->ystart-1);
-      PetscScalar val = -1.0;
+      PetscScalar val = 1.0;
       MatSetValues(MatA,1,&row,1,&row,&val,INSERT_VALUES);
 
-      val = 3.0;
+      val = -3.0;
       int col = globalIndex(it.ind, localmesh->ystart);
       MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
 
-      val = -3.0;
+      val = 3.0;
       col = globalIndex(it.ind, localmesh->ystart+1);
       MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
 
-      val = 1.0;
+      val = -1.0;
       col = globalIndex(it.ind, localmesh->ystart+2);
       MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
     }
 
     for(RangeIterator it=localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
       int row = globalIndex(it.ind, localmesh->yend+1);
-      PetscScalar val = -1.0;
+      PetscScalar val = 1.0;
       MatSetValues(MatA,1,&row,1,&row,&val,INSERT_VALUES);
 
-      val = 3.0;
+      val = -3.0;
       int col = globalIndex(it.ind, localmesh->yend);
       MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
 
-      val = -3.0;
+      val = 3.0;
       col = globalIndex(it.ind, localmesh->yend-1);
       MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
 
-      val = 1.0;
+      val = -1.0;
       col = globalIndex(it.ind, localmesh->yend-2);
       MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
     }
@@ -931,19 +931,19 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
         } else if (y_bndry == "free_o3") {
           // 'free_o3' extrapolating boundary condition on Y boundaries
           // f(xs-1,ys-1) = 3*f(xs-1,ys) - 3*f(xs-1,ys+1) + f(xs-1,ys+2)
-          PetscScalar val = -1.0;
+          PetscScalar val = 1.0;
           int row = globalIndex(localmesh->xstart-1, localmesh->ystart-1);
           MatSetValues(MatA,1,&row,1,&row,&val,INSERT_VALUES);
 
-          val = 3.0;
+          val = -3.0;
           int col = globalIndex(localmesh->xstart-1, localmesh->ystart);
           MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
 
-          val = -3.0;
+          val = 3.0;
           col = globalIndex(localmesh->xstart-1, localmesh->ystart+1);
           MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
 
-          val = 1.0;
+          val = -1.0;
           col = globalIndex(localmesh->xstart-1, localmesh->ystart+2);
           MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
         } else {
@@ -968,19 +968,19 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
         } else if (y_bndry == "free_o3") {
           // 'free_o3' extrapolating boundary condition on Y boundaries
           // f(xe+1,ys-1) = 3*f(xe+1,ys) - 3*f(xe+1,ys+1) + f(xe+1,ys+2)
-          PetscScalar val = -1.0;
+          PetscScalar val = 1.0;
           int row = globalIndex(localmesh->xend+1, localmesh->ystart-1);
           MatSetValues(MatA,1,&row,1,&row,&val,INSERT_VALUES);
 
-          val = 3.0;
+          val = -3.0;
           int col = globalIndex(localmesh->xend+1, localmesh->ystart);
           MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
 
-          val = -3.0;
+          val = 3.0;
           col = globalIndex(localmesh->xend+1, localmesh->ystart+1);
           MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
 
-          val = 1.0;
+          val = -1.0;
           col = globalIndex(localmesh->xend+1, localmesh->ystart+2);
           MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
         } else {
@@ -1008,19 +1008,19 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
         } else if (y_bndry == "free_o3") {
           // 'free_o3' extrapolating boundary condition on Y boundaries
           // f(xs-1,ys-1) = 3*f(xs-1,ys) - 3*f(xs-1,ys+1) + f(xs-1,ys+2)
-          PetscScalar val = -1.0;
+          PetscScalar val = 1.0;
           int row = globalIndex(localmesh->xstart-1, localmesh->yend+1);
           MatSetValues(MatA,1,&row,1,&row,&val,INSERT_VALUES);
 
-          val = 3.0;
+          val = -3.0;
           int col = globalIndex(localmesh->xstart-1, localmesh->yend);
           MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
 
-          val = -3.0;
+          val = 3.0;
           col = globalIndex(localmesh->xstart-1, localmesh->yend-1);
           MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
 
-          val = 1.0;
+          val = -1.0;
           col = globalIndex(localmesh->xstart-1, localmesh->yend-2);
           MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
         } else {
@@ -1045,19 +1045,19 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
         } else if (y_bndry == "free_o3") {
           // 'free_o3' extrapolating boundary condition on Y boundaries
           // f(xe+1,ys-1) = 3*f(xe+1,ys) - 3*f(xe+1,ys+1) + f(xe+1,ys+2)
-          PetscScalar val = -1.0;
+          PetscScalar val = 1.0;
           int row = globalIndex(localmesh->xend+1, localmesh->yend+1);
           MatSetValues(MatA,1,&row,1,&row,&val,INSERT_VALUES);
 
-          val = 3.0;
+          val = -3.0;
           int col = globalIndex(localmesh->xend+1, localmesh->yend);
           MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
 
-          val = -3.0;
+          val = 3.0;
           col = globalIndex(localmesh->xend+1, localmesh->yend-1);
           MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
 
-          val = 1.0;
+          val = -1.0;
           col = globalIndex(localmesh->xend+1, localmesh->yend-2);
           MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
         } else {
