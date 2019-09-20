@@ -76,6 +76,10 @@ void GlobalIndexer::initialise() {
   fieldmesh->communicate(indicesPerp);
 }
 
+Mesh* GlobalIndexer::getMesh() {
+  return fieldmesh;
+}
+
 PetscInt GlobalIndexer::getGlobal(Ind2D ind) {
   return (PetscInt) (indices2D[ind] + 0.5);
 }
@@ -159,14 +163,20 @@ PetscVectorElement::PetscVectorElement(Vec* vector, int index) :
 }
 
 BoutReal PetscVectorElement::operator=(BoutReal val) {
-  VecSetValues(*petscVector, 1, &petscIndex, &val, INSERT_VALUES);
+  auto status = VecSetValues(*petscVector, 1, &petscIndex, &val, INSERT_VALUES);
   delete this;
+  if (status != 0) {
+    throw BoutException("Error when setting elements of a PETSc vector.");
+  }
   return val;
 }
 
 BoutReal PetscVectorElement::operator+=(BoutReal val) {
-  VecSetValues(*petscVector, 1, &petscIndex, &val, ADD_VALUES);
+  auto status = VecSetValues(*petscVector, 1, &petscIndex, &val, ADD_VALUES);
   delete this;
+  if (status != 0) {
+    throw BoutException("Error when setting elements of a PETSc vector.");
+  }
   return val;
 }
 
@@ -204,9 +214,12 @@ void PetscMatrixElement::setValues(BoutReal val, InsertMode mode) {
     columns[i] = positions[i];
     values[i] = weights[i]*val;
   }
-  MatSetValues(*petscMatrix, 1, &petscRow, num, columns, values, mode);
+  auto status = MatSetValues(*petscMatrix, 1, &petscRow, num, columns, values, mode);
   delete[] columns;
   delete[] values;
+  if (status != 0) {
+    throw BoutException("Error when setting elements of a PETSc matrix.");
+  }
 }
 
 PetscMatrixElement& PetscMatrixElement::newElement(Mat* matrix, PetscInt row, PetscInt col,

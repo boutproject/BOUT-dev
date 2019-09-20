@@ -65,6 +65,7 @@ public:
   void initialiseTest();
   /// Finish setting up the indexer, communicating indices across processes.
   void initialise();
+  Mesh* getMesh();
   
   /// Convert the local index object to a global index which can be
   /// used in PETSc vectors and matrices.
@@ -173,21 +174,26 @@ public:
   /// Default constructor does nothing
   PetscVector() {
     initialised = false;
+    vector = nullptr;
   }
   
   /// Copy constructor
   PetscVector(const PetscVector<F>& v) {
+    VecDuplicate(v.vector, &vector);
     VecCopy(v.vector, vector);
     indexConverter = v.indexConverter;
     location = v.location;
     initialised = v.initialised;
   }
+
   /// Move constrcutor
   PetscVector(PetscVector<F>&& v) {
     vector = v.vector;
     indexConverter = v.indexConverter;
     location = v.location;
     initialised = v.initialised;
+    v.vector = nullptr;
+    v.initialised = false;
   }
 
   /// Construct from a field, copying over the field values
@@ -217,23 +223,28 @@ public:
   
   ~PetscVector() {
     // FIXME: Should I add a check to ensure the vector has actually been created in the first place? Is that possible in Petsc?
-    VecDestroy(&vector);
+    if (vector != nullptr && initialised) {
+      VecDestroy(&vector);
+    }
   }
-  
+
   /// Copy assignment
   PetscVector<F>& operator=(const PetscVector<F>& rhs) {
     swap(*this, rhs);
     return *this;
   }
-  
+
   /// Move assignment
   PetscVector<F>& operator=(PetscVector<F>&& rhs) {
     vector = rhs.vector;
     indexConverter = rhs.indexConverter;
     location = rhs.location;
     initialised = rhs.initialised;
+    rhs.vector = nullptr;
+    rhs.initialised = false;
+    return *this;
   }
-  
+
   friend void swap<F>(PetscVector<F>& first, PetscVector<F>& second);
 
   /// Assign from field, copying over field values. The vector must
@@ -242,17 +253,22 @@ public:
     PetscInt ind;
     ASSERT1(initialised);
     ASSERT2(location == rhs.getLocation());
-    // Note that physical boundaries will not be set here. Not sure if that matters.
-    BOUT_FOR(i, rhs.getRegion(RGN_NOBNDRY)) {
+    BOUT_FOR(i, rhs.getRegion(RGN_ALL)) {
       ind = indexConverter->getGlobal(i);
-      VecSetValues(vector, 1, &ind, &rhs[i], INSERT_VALUES);
+      if (ind != -1) {
+	VecSetValues(vector, 1, &ind, &rhs[i], INSERT_VALUES);
+      }
     }
     assemble();
     return *this;
   }
 
   PetscVectorElement& operator()(ind_type& index) {
-    return PetscVectorElement::newElement(&vector, indexConverter->getGlobal(index));
+    if (initialised) {
+      return PetscVectorElement::newElement(&vector, indexConverter->getGlobal(index));
+    } else {
+      throw BoutException("Can not return element of uninitialised vector");
+    }
   }
   
   void assemble() {
@@ -261,21 +277,28 @@ public:
   }
   
   void destroy() {
-    VecDestroy(&vector);
+    if (vector != nullptr && initialised) {
+      VecDestroy(&vector);
+      vector = nullptr;
+    }
   }
 
   /// Returns a field constructed from the contents of this vector
   const F toField() {
-    F result;
+    F result(indexConverter->getMesh());
     result.allocate();
     result.setLocation(location);
     PetscScalar val;
     PetscInt ind;
-    // Need to set the physical boundaries, I think
-    BOUT_FOR(i, result.getRegion(RGN_NOBNDRY)) {
+    // Note that this only works when yguards have a width of 1.
+    BOUT_FOR(i, result.getRegion(RGN_ALL)) {
       ind = indexConverter->getGlobal(i);
-      VecGetValues(vector, 1, &ind, &val);
-      result[i] = val;
+      if (ind == -1) {
+	result[i] = -1.0;
+      } else {
+	VecGetValues(vector, 1, &ind, &val);
+	result[i] = val;
+      }
     }
     return result;
   }
@@ -374,7 +397,10 @@ private:
  */
 template <class F>
 void swap(PetscVector<F>& first, PetscVector<F>& second) {
-  VecSwap(first.vector, second.vector);
+  Vec tmp;
+  tmp = first.vector;
+  first.vector = second.vector;
+  second.vector = tmp;
   swap(first.indexConverter, second.indexConverter);
   swap(first.location, second.location);
   swap(first.initialised, second.initialised);
