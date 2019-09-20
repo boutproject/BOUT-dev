@@ -296,6 +296,13 @@ direction can be specified:
 
     NXPE = 1  # Set number of X processors
 
+Alternatively, the number in the Y direction can be specified (if both are
+given, ``NXPE`` takes precedence and ``NYPE`` is ignored):
+
+.. code-block:: cfg
+
+    NYPE = 1  # Set number of Y processors
+
 If you need to specify complex input values, e.g. numerical values
 from experiment, you may want to use a grid file. The grid file to use
 is specified relative to the root directory where the simulation is
