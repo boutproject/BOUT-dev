@@ -25,7 +25,10 @@ template <typename F>
 class PetscVectorTest : public FakeMeshFixture {
 public:
   F field;
-  PetscVectorTest() : FakeMeshFixture(), field(bout::globals::mesh) {}
+  PetscVectorTest() : FakeMeshFixture(), field(bout::globals::mesh) {
+    field.allocate();
+    field = 1.5;
+  }
 };
 
 using FieldTypes = ::testing::Types<Field3D, Field2D, FieldPerp>;
@@ -33,7 +36,7 @@ TYPED_TEST_SUITE(PetscVectorTest, FieldTypes);
 
 void testArraysEqual(PetscScalar* s1, PetscScalar* s2, PetscInt n) {
   for (int i = 0; i < n; i++) {
-    ASSERT_DOUBLE_EQ(s1[i], s2[i]);
+    EXPECT_DOUBLE_EQ(s1[i], s2[i]);
   }
 }
 
@@ -49,9 +52,8 @@ void testVectorsEqual(Vec* v1, Vec* v2) {
 }
 
 
-// Test constructor from field?
+// Test constructor from field
 TYPED_TEST(PetscVectorTest, FieldConstructor) {
-  SCOPED_TRACE("FieldConstructor");
   BOUT_FOR(i, this->field.getRegion("RGN_ALL")) {
     this->field[i] = (BoutReal)i.ind;
   }
@@ -63,9 +65,10 @@ TYPED_TEST(PetscVectorTest, FieldConstructor) {
   VecGetLocalSize(*vectorPtr, &n);
   ASSERT_EQ(n, this->field.getNx() * this->field.getNy() *
 	    this->field.getNz());
-  PetscReal *fieldData = &this->field(0, 0, 0), *vectorData;
-  VecGetArray(*vectorPtr, &vectorData);
-  testArraysEqual(fieldData, vectorData, n);
+  TypeParam result = vector.toField();
+  BOUT_FOR(i, this->field.getRegion("RGN_NOY")) {
+    EXPECT_EQ(result[i], this->field[i]);
+  }
 }
 
 // Test copy constructor
@@ -82,19 +85,20 @@ TYPED_TEST(PetscVectorTest, CopyConstructor) {
 // Test move constructor
 TYPED_TEST(PetscVectorTest, MoveConstructor) {
   PetscVector<TypeParam> vector(this->field);
-  Vec* vectorPtr = vector.getVectorPointer();
+  Vec vectorPtr = *vector.getVectorPointer();
   EXPECT_NE(vectorPtr, nullptr);
   PetscVector<TypeParam> moved(std::move(vector));
-  Vec *movedPtr = moved.getVectorPointer();
+  Vec movedPtr = *moved.getVectorPointer();
   EXPECT_EQ(vectorPtr, movedPtr);
-  EXPECT_EQ(vector.getVectorPointer(), nullptr);
+  EXPECT_EQ(*vector.getVectorPointer(), nullptr);
 }
 
 // Test assignment from field
 TYPED_TEST(PetscVectorTest, FieldAssignment) {
   SCOPED_TRACE("FieldAssignment");
-  PetscVector<TypeParam> vector(2.5*this->field);
-  vector = this->field;
+  PetscVector<TypeParam> vector(this->field);
+  TypeParam val(-10.);
+  vector = val;
   Vec *vectorPtr = vector.getVectorPointer();
   PetscScalar *vecContents;
   PetscInt n;
@@ -102,9 +106,10 @@ TYPED_TEST(PetscVectorTest, FieldAssignment) {
   VecGetLocalSize(*vectorPtr, &n);
   ASSERT_EQ(n, this->field.getNx() * this->field.getNy() *
 	    this->field.getNz());
-  PetscReal *fieldData = &this->field(0, 0, 0), *vectorData;
-  VecGetArray(*vectorPtr, &vectorData);
-  testArraysEqual(fieldData, vectorData, n);
+  TypeParam result = vector.toField();
+  BOUT_FOR(i, this->field.getRegion("RGN_NOY")) {
+    EXPECT_EQ(result[i], val[i]);
+  }
 }
 
 // Test copy assignment
@@ -121,34 +126,42 @@ TYPED_TEST(PetscVectorTest, CopyAssignment) {
 // Test move assignment
 TYPED_TEST(PetscVectorTest, MoveAssignment) {
   PetscVector<TypeParam> vector(this->field);
-  Vec* vectorPtr = vector.getVectorPointer();
+  Vec vectorPtr = *vector.getVectorPointer();
   EXPECT_NE(vectorPtr, nullptr);
   PetscVector<TypeParam> moved = std::move(vector);
-  Vec *movedPtr = moved.getVectorPointer();
+  Vec movedPtr = *moved.getVectorPointer();
   EXPECT_EQ(vectorPtr, movedPtr);
-  EXPECT_EQ(vector.getVectorPointer(), nullptr);
+  EXPECT_EQ(*vector.getVectorPointer(), nullptr);
 }
 
 // Test getting elements
 TYPED_TEST(PetscVectorTest, TestGetElements) {
   PetscVector<TypeParam> vector(this->field);
-  for (auto i: this->field) {
-    vector(i) = 2.5*this->field[i] - 1.0;
+  for (auto i: this->field.getRegion("RGN_NOBNDRY")) {
+    vector(i) = (2.5*this->field[i] - 1.0);
   }
   Vec *rawvec = vector.getVectorPointer();
   PetscScalar *vecContents;
   VecAssemblyBegin(*rawvec);
   VecAssemblyEnd(*rawvec);
   VecGetArray(*rawvec, &vecContents);
-  for (auto i : this->field) {
-    ASSERT_EQ(vecContents[i.ind], 2.5*this->field[i] - 1.0);
+  TypeParam result = vector.toField();
+  for (auto i : this->field.getRegion("RGN_NOBNDRY")) {
+    EXPECT_EQ(result[i], 2.5*this->field[i] - 1.0);
   }
+}
+
+// Test trying to get an element from an unitialised vector
+TYPED_TEST(PetscVectorTest, TestGetUnitialised) {
+  PetscVector<TypeParam> vector;
+  typename TypeParam::ind_type index(0);
+  EXPECT_THROW(vector(index), BoutException);
 }
 
 // Test trying to get an element that is out of bounds
 TYPED_TEST(PetscVectorTest, TestGetOutOfBounds) {
   PetscVector<TypeParam> vector(this->field);
-  typename TypeParam::ind_type index1(this->field.getNx() * this->field.getNy() * this->field.getNy());
+  typename TypeParam::ind_type index1(this->field.getNx() * this->field.getNy() * this->field.getNz());
   EXPECT_THROW(vector(index1), BoutException);
   typename TypeParam::ind_type index2(-1);
   EXPECT_THROW(vector(index2), BoutException);
@@ -172,12 +185,11 @@ TYPED_TEST(PetscVectorTest, TestAssemble) {
 // Test trying to use both INSERT_VALUES and ADD_VALUES
 TYPED_TEST(PetscVectorTest, TestMixedSetting) {
   PetscVector<TypeParam> vector(this->field);
-  Vec *rawvec = vector.getVectorPointer();
-  const PetscInt i = 4, j = 5;
+  typename TypeParam::ind_type i = *(this->field.getRegion("RGN_NOBNDRY").begin());
+  typename TypeParam::ind_type j(i.ind + 1);
   const PetscScalar r = 3.141592;
-  VecSetValues(*rawvec, 1, &i, &r, INSERT_VALUES); 
-  VecSetValues(*rawvec, 1, &j, &r, ADD_VALUES); 
-  EXPECT_THROW(vector.assemble(), BoutException);
+  vector(i) = r;
+  EXPECT_THROW(vector(j) += r, BoutException);
 }
 
 // Test destroy
@@ -203,19 +215,6 @@ TYPED_TEST(PetscVectorTest, TestSwap) {
   EXPECT_NE(r0, r1);
   EXPECT_EQ(l0, r1);
   EXPECT_EQ(r0, l1);
-}
-
-// Test toField() method
-TYPED_TEST(PetscVectorTest, TestToField) {
-  BOUT_FOR(i, this->field.getRegion("RGN_ALL")) {
-    this->field[i] = (BoutReal)i.ind;
-  }
-  PetscVector<TypeParam> vec(this->field);
-  vec.assemble();
-  TypeParam outField = vec.toField();
-  BOUT_FOR(i, outField.getRegion("RGN_ALL")) {
-    EXPECT_NEAR(this->field[i], outField[i], 1.e-10);
-  }
 }
 
 #endif // BOUT_HAS_PETSC
