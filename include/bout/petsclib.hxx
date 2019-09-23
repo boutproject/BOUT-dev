@@ -47,6 +47,8 @@ class PetscLib;
 
 #ifdef BOUT_HAS_PETSC
 
+#include "options.hxx"
+
 #include <petsc.h>
 #include <petscversion.h>
 
@@ -61,7 +63,7 @@ public:
   /*!
    * Ensure that PETSc has been initialised
    */
-  PetscLib();
+  PetscLib(Options* opt = nullptr);
   
   /*!
    * Calls PetscFinalize when all PetscLib instances are destroyed
@@ -109,7 +111,7 @@ private:
 
 class PetscLib {
 public:
-  PetscLib() {}
+  PetscLib(Options* UNUSED(opt) = nullptr) {}
   ~PetscLib() {}
   
   static void setArgs(int &UNUSED(c), char** &UNUSED(v)) {}
