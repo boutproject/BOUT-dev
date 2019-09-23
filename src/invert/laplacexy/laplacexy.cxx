@@ -1282,7 +1282,7 @@ const Field2D LaplaceXY::solve(const Field2D &rhs, const Field2D &x0) {
           and (localmesh->firstX() or localmesh->lastX())) {
         throw BoutException("Dirichlet not implemented for mixed-derivatives.");
       }
-    } else if (y_bndry == "neumann" or y_bndry == "free_o3") {
+    } else if (y_bndry == "neumann") {
       // Y boundaries Neumann
       for(RangeIterator it=localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
         int ind = globalIndex(it.ind, localmesh->ystart-1);
@@ -1341,6 +1341,81 @@ const Field2D LaplaceXY::solve(const Field2D &rhs, const Field2D &x0) {
           int ind = globalIndex(localmesh->xend+1, localmesh->yend+1);
 
           PetscScalar val = x0(localmesh->xend+1, localmesh->yend);
+          VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+
+          val = 0.0;
+          VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+        }
+      }
+    } else if (y_bndry == "free_o3") {
+      // Y boundaries Neumann
+      for(RangeIterator it=localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
+        int ind = globalIndex(it.ind, localmesh->ystart-1);
+
+        // Use the value that would be set by applying the boundary condition to the
+        // initial guess
+        PetscScalar val = 3.*x0(it.ind, localmesh->ystart)
+          - 3.*x0(it.ind, localmesh->ystart+1) + x0(it.ind, localmesh->ystart+2);
+        VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+
+        val = 0.0;
+        VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+      }
+      if (localmesh->hasBndryLowerY()) {
+        if (localmesh->firstX()) {
+          int ind = globalIndex(localmesh->xstart-1, localmesh->ystart-1);
+
+          PetscScalar val = 3.*x0(localmesh->xstart-1, localmesh->ystart)
+            - 3.*x0(localmesh->xstart-1, localmesh->ystart+1)
+            + x0(localmesh->xstart-1, localmesh->ystart+2);
+          VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+
+          val = 0.0;
+          VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+        }
+        if (localmesh->lastX()) {
+          int ind = globalIndex(localmesh->xend+1, localmesh->ystart-1);
+
+          PetscScalar val = 3.*x0(localmesh->xend+1, localmesh->ystart)
+            - 3.*x0(localmesh->xend+1, localmesh->ystart+1)
+            + x0(localmesh->xend+1, localmesh->ystart+2);
+          VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+
+          val = 0.0;
+          VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+        }
+      }
+
+      for(RangeIterator it=localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
+        int ind = globalIndex(it.ind, localmesh->yend+1);
+
+        // Use the value that would be set by applying the boundary condition to the
+        // initial guess
+        PetscScalar val = 3.*x0(it.ind, localmesh->yend)
+          - 3.*x0(it.ind, localmesh->yend-1) + x0(it.ind, localmesh->yend-2);
+        VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
+
+        val = 0.0;
+        VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
+      }
+      if (localmesh->hasBndryUpperY()) {
+        if (localmesh->firstX()) {
+          int ind = globalIndex(localmesh->xstart-1, localmesh->yend+1);
+
+          PetscScalar val = 3.*x0(localmesh->xstart-1, localmesh->yend)
+            - 3.*x0(localmesh->xstart-1, localmesh->yend-1)
+            + x0(localmesh->xstart-1, localmesh->yend-2);
+          VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+
+          val = 0.0;
+          VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+        }
+        if (localmesh->lastX()) {
+          int ind = globalIndex(localmesh->xend+1, localmesh->yend+1);
+
+          PetscScalar val = 3.*x0(localmesh->xend+1, localmesh->yend)
+            - 3.*x0(localmesh->xend+1, localmesh->yend-1)
+            + x0(localmesh->xend+1, localmesh->yend-2);
           VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
 
           val = 0.0;
