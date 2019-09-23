@@ -134,7 +134,8 @@ public:
       : operatorFunction(func), preconditionerFunction(func),
         opt(optIn == nullptr ? optIn
                              : Options::getRoot()->getSection("invertableOperator")),
-        localmesh(localmeshIn == nullptr ? bout::globals::mesh : localmeshIn) {
+        localmesh(localmeshIn == nullptr ? bout::globals::mesh : localmeshIn),
+        lib(opt) {
     AUTO_TRACE();
   };
 
@@ -338,8 +339,7 @@ public:
     CHKERRQ(ierr);
 
     /// Now create and setup the linear solver with the matrix
-    ierr = KSPCreate(BoutComm::get(), &ksp);
-    CHKERRQ(ierr);
+    lib.createKSPWithOptions(BoutComm::get(), &ksp);
 
 #if PETSC_VERSION_LT(3, 5, 0)
     /// Need to provide a MatStructure flag in versions <3.5. This details if we expect

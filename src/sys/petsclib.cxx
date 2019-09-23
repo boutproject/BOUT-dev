@@ -13,7 +13,7 @@ int *PetscLib::pargc = nullptr;
 char ***PetscLib::pargv = nullptr;
 PetscLogEvent PetscLib::USER_EVENT = 0;
 
-PetscLib::PetscLib(Options* opt) {
+PetscLib::PetscLib(Options* opt) : options_prefix("") {
   if(count == 0) {
     // Initialise PETSc
     
@@ -22,42 +22,24 @@ PetscLib::PetscLib(Options* opt) {
     PetscInitialize(pargc,pargv,PETSC_NULL,help);
     PetscLogEventRegister("Total BOUT++",0,&USER_EVENT);
     PetscLogEventBegin(USER_EVENT,0,0,0,0);
+
+    // Load global PETSc options from the [petsc] section of the input
+    setPetscOptions(Options::root()["petsc"], "");
   }
 
-  if (count == 0 or opt != nullptr) {
-    // Pass options to Petsc's global options database.
-    // (PetscOptions type exists for non-global options, but its use is not discussed in
-    // the Petsc manual, so ignoring the possibility here.)
+  if (opt != nullptr and opt->isSection("petsc")) {
+    // Use options specific to this PetscLib
+    // Pass options to PETSc's global options database, with a unique prefix, that will be
+    // passed to a KSP later.
+    // (PetscOptions type exists for non-global options, but apparently is only for user
+    // options, and cannot be passed to KSP, etc. Non-global options can be passed by
+    // defining a custom prefix for the options string, and then passing that to the KSP.)
 
-    if (opt == nullptr) {
-      // Options read by default from the [petsc] section of the input
-      opt = Options::getRoot()->getSection("petsc");
-    }
+    options_prefix = "boutpetsclib" + std::to_string(count) + "_";
 
-    Options& options = *opt;
+    Options& options = (*opt)["petsc"];
 
-    // Pass all options in the section to Petsc
-    for (auto& i : options.getChildren()) {
-      if (not i.second.isValue()) {
-        throw BoutException("Found subsection %s in %s when reading Petsc options - only "
-            "values are allowed in the Petsc options, not subsections",
-            i.first.c_str(), options.str().c_str());
-      }
-      // Note, option names in the input file don't start with "-", but need to be passed
-      // to Petsc with "-" prepended
-      PetscErrorCode ierr;
-      if (lowercase(i.second) == "true") {
-        // Petsc flag with no value
-        ierr = PetscOptionsSetValue(nullptr, ("-"+i.first).c_str(), nullptr);
-      } else {
-        // Option with actual value to pass
-        ierr = PetscOptionsSetValue(nullptr, ("-"+i.first).c_str(),
-            i.second.as<std::string>().c_str());
-      }
-      if (ierr) {
-        throw BoutException("PetscOptionsSetValue returned error code %i", ierr);
-      }
-    }
+    setPetscOptions(options, options_prefix);
   }
   count++;
 }
@@ -72,6 +54,18 @@ PetscLib::~PetscLib() {
   }
 }
 
+void PetscLib::createKSPWithOptions(MPI_Comm& comm, KSP& ksp) {
+  auto ierr = KSPCreate(comm, &ksp);
+  if (ierr) {
+    throw BoutException("KSPCreate failed with error %i", ierr);
+  }
+
+  ierr = KSPSetOptionsPrefix(ksp, options_prefix.c_str());
+  if (ierr) {
+    throw BoutException("KSPSetOptionsPrefix failed with error %i", ierr);
+  }
+}
+
 void PetscLib::cleanup() {
   if(count == 0)
     return; // Either never initialised, or already cleaned up
@@ -83,5 +77,30 @@ void PetscLib::cleanup() {
   count = 0; // ensure that finalise is not called again later
 }
 
+void PetscLib::setPetscOptions(Options& options, std::string pass_options_prefix) {
+  // Pass all options in the section to PETSc
+  for (auto& i : options.getChildren()) {
+    if (not i.second.isValue()) {
+      throw BoutException("Found subsection %s in %s when reading PETSc options - only "
+          "values are allowed in the PETSc options, not subsections",
+          i.first.c_str(), options.str().c_str());
+    }
+    // Note, option names in the input file don't start with "-", but need to be passed
+    // to PETSc with "-" prepended
+    PetscErrorCode ierr;
+    if (lowercase(i.second) == "true") {
+      // PETSc flag with no value
+      ierr = PetscOptionsSetValue(nullptr, ("-"+pass_options_prefix+i.first).c_str(),
+          nullptr);
+    } else {
+      // Option with actual value to pass
+      ierr = PetscOptionsSetValue(nullptr, ("-"+pass_options_prefix+i.first).c_str(),
+          i.second.as<std::string>().c_str());
+    }
+    if (ierr) {
+      throw BoutException("PetscOptionsSetValue returned error code %i", ierr);
+    }
+  }
+}
 #endif // BOUT_HAS_PETSC
 

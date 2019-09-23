@@ -29,7 +29,8 @@ static PetscErrorCode laplacePCapply(PC pc,Vec x,Vec y) {
 }
 
 LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
-    : localmesh(m==nullptr ? bout::globals::mesh : m), location(loc) {
+    : lib(opt==nullptr ? &(Options::root()["laplacexy"]) : opt),
+      localmesh(m==nullptr ? bout::globals::mesh : m), location(loc) {
   Timer timer("invert");
 
   if (opt == nullptr) {
@@ -218,7 +219,7 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
   // Set up KSP
   
   // Declare KSP Context 
-  KSPCreate( comm, &ksp ); 
+  lib.createKSPWithOptions(comm, ksp);
   
   // Configure Linear Solver
   

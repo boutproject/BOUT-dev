@@ -61,7 +61,8 @@ static PetscErrorCode laplacePCapply(PC pc,Vec x,Vec y) {
 LaplacePetsc::LaplacePetsc(Options *opt, const CELL_LOC loc, Mesh *mesh_in) :
   Laplacian(opt, loc, mesh_in),
   A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
-  issetD(false), issetC(false), issetE(false)
+  issetD(false), issetC(false), issetE(false),
+  lib(opt==nullptr ? &(Options::root()["laplace"]) : opt)
 {
   A.setLocation(location);
   C1.setLocation(location);
@@ -273,7 +274,7 @@ LaplacePetsc::LaplacePetsc(Options *opt, const CELL_LOC loc, Mesh *mesh_in) :
   MatSetUp(MatA);
 
   // Declare KSP Context (abstract PETSc object that manages all Krylov methods)
-  KSPCreate( comm, &ksp );
+  lib.createKSPWithOptions(comm, ksp);
 
   // Get KSP Solver Type (Generalizes Minimal RESidual is the default)
   ksptype = (*opts)["ksptype"].doc("KSP solver type").withDefault(KSP_GMRES);

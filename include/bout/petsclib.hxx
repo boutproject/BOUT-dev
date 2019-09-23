@@ -77,7 +77,10 @@ public:
    * The arguments will be passed to PetscInitialize()
    */ 
   static void setArgs(int &c, char** &v) { pargc = &c; pargv = &v;}
-  
+
+  /// Create a KSP linear solver that uses the options specific to this PetscLib
+  void createKSPWithOptions(MPI_Comm& comm, KSP& ksp);
+
   /*!
    * Force cleanup. This will call PetscFinalize, printing a warning
    * if any instances of PetscLib still exist
@@ -91,7 +94,12 @@ private:
   static int* pargc;
   static char*** pargv;
   
+  // Prefix for object-specific options
+  std::string options_prefix;
+
   static PetscLogEvent USER_EVENT;
+
+  void setPetscOptions(Options& options, std::string pass_options_prefix);
 };
 
 #ifndef PETSC_VERSION_GE
@@ -116,6 +124,8 @@ public:
   
   static void setArgs(int &UNUSED(c), char** &UNUSED(v)) {}
   
+  void createKSPWithOptions(MPI_Comm& comm, KSP& ksp);
+
   static void cleanup() {}
 };
 
