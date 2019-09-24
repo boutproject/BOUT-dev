@@ -35,3 +35,6 @@ in the input file you would put::
        e.g.::
 
             -boutpetsclib1_ksp_type gmres
+
+       The PETSc arguments ``-options_view`` and ``options_left`` might be helpful for
+       this - they will show what options have been set, so will show the prefixes used.
