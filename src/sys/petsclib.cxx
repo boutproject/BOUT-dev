@@ -90,12 +90,24 @@ void PetscLib::setPetscOptions(Options& options, std::string pass_options_prefix
     PetscErrorCode ierr;
     if (lowercase(i.second) == "true") {
       // PETSc flag with no value
+#if PETSC_VERSION_GE(3, 7, 0)
       ierr = PetscOptionsSetValue(nullptr, ("-"+pass_options_prefix+i.first).c_str(),
           nullptr);
+#else
+// no PetscOptions as first argument
+      ierr = PetscOptionsSetValue(("-"+pass_options_prefix+i.first).c_str(),
+          nullptr);
+#endif
     } else {
       // Option with actual value to pass
+#if PETSC_VERSION_GE(3, 7, 0)
       ierr = PetscOptionsSetValue(nullptr, ("-"+pass_options_prefix+i.first).c_str(),
           i.second.as<std::string>().c_str());
+#else
+// no PetscOptions as first argument
+      ierr = PetscOptionsSetValue(("-"+pass_options_prefix+i.first).c_str(),
+          i.second.as<std::string>().c_str());
+#endif
     }
     if (ierr) {
       throw BoutException("PetscOptionsSetValue returned error code %i", ierr);
