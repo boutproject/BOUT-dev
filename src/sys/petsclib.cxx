@@ -115,7 +115,7 @@ void PetscLib::setPetscOptions(Options& options, const std::string& prefix) {
     }
     if (ierr) {
       throw BoutException("PetscOptionsSetValue returned error code %i when setting %s",
-                          ierr, petsc_option_name);
+                          ierr, petsc_option_name.c_str());
     }
   }
 }
