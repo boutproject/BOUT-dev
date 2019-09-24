@@ -19,7 +19,8 @@
 #include <output.hxx>
 
 LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt, const CELL_LOC loc)
-  : LaplaceXZ(m, opt, loc), lib(opt==nullptr ? &(Options::root()["laplacexz"]) : opt),
+  : LaplaceXZ(m, opt, loc),
+    lib(opt==nullptr ? &(Options::root()["laplacexz"]["petsc"]) : &(*opt)["petsc"]),
     coefs_set(false) {
 
   /* Constructor: LaplaceXZpetsc

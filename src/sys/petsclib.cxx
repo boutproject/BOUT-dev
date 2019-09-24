@@ -27,7 +27,7 @@ PetscLib::PetscLib(Options* opt) {
     setPetscOptions(Options::root()["petsc"], "");
   }
 
-  if (opt != nullptr and opt->isSection("petsc")) {
+  if (opt != nullptr and opt->isSection()) {
     // Use options specific to this PetscLib
     // Pass options to PETSc's global options database, with a unique prefix, that will be
     // passed to a KSP later.
@@ -37,9 +37,7 @@ PetscLib::PetscLib(Options* opt) {
 
     options_prefix = "boutpetsclib" + std::to_string(count) + "_";
 
-    Options& options = (*opt)["petsc"];
-
-    setPetscOptions(options, options_prefix);
+    setPetscOptions(*opt, options_prefix);
   }
   count++;
 }
