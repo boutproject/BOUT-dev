@@ -493,7 +493,7 @@ LaplaceXY::LaplaceXY(Mesh* m, Options* opt, const CELL_LOC loc)
   // Set up KSP
   
   // Declare KSP Context 
-  lib.createKSPWithOptions(comm, ksp);
+  ksp = lib.createKSPWithOptions(comm);
   
   // Configure Linear Solver
   

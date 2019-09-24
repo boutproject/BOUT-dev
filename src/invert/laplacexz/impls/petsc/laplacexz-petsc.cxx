@@ -227,7 +227,7 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt, const CELL_LOC loc)
 
     //////////////////////////////////////////////////
     // Declare KSP Context
-    lib.createKSPWithOptions(comm, data.ksp);
+    data.ksp = lib.createKSPWithOptions(comm);
 
     // Set KSP type
     KSPSetType( data.ksp, ksptype.c_str() );
