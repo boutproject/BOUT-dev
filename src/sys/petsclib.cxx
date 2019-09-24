@@ -13,7 +13,7 @@ int *PetscLib::pargc = nullptr;
 char ***PetscLib::pargv = nullptr;
 PetscLogEvent PetscLib::USER_EVENT = 0;
 
-PetscLib::PetscLib(Options* opt) : options_prefix("") {
+PetscLib::PetscLib(Options* opt) {
   if(count == 0) {
     // Initialise PETSc
     
@@ -77,7 +77,7 @@ void PetscLib::cleanup() {
   count = 0; // ensure that finalise is not called again later
 }
 
-void PetscLib::setPetscOptions(Options& options, std::string pass_options_prefix) {
+void PetscLib::setPetscOptions(Options& options, const std::string& prefix) {
   // Pass all options in the section to PETSc
   for (auto& i : options.getChildren()) {
     if (not i.second.isValue()) {
@@ -88,29 +88,29 @@ void PetscLib::setPetscOptions(Options& options, std::string pass_options_prefix
     // Note, option names in the input file don't start with "-", but need to be passed
     // to PETSc with "-" prepended
     PetscErrorCode ierr;
+    auto petsc_option_name = "-"+prefix+i.first;
     if (lowercase(i.second) == "true") {
       // PETSc flag with no value
 #if PETSC_VERSION_GE(3, 7, 0)
-      ierr = PetscOptionsSetValue(nullptr, ("-"+pass_options_prefix+i.first).c_str(),
-          nullptr);
+      ierr = PetscOptionsSetValue(nullptr, petsc_option_name.c_str(), nullptr);
 #else
 // no PetscOptions as first argument
-      ierr = PetscOptionsSetValue(("-"+pass_options_prefix+i.first).c_str(),
-          nullptr);
+      ierr = PetscOptionsSetValue(petsc_option_name.c_str(), nullptr);
 #endif
     } else {
       // Option with actual value to pass
 #if PETSC_VERSION_GE(3, 7, 0)
-      ierr = PetscOptionsSetValue(nullptr, ("-"+pass_options_prefix+i.first).c_str(),
-          i.second.as<std::string>().c_str());
+      ierr = PetscOptionsSetValue(nullptr, petsc_option_name.c_str(),
+                                  i.second.as<std::string>().c_str());
 #else
 // no PetscOptions as first argument
-      ierr = PetscOptionsSetValue(("-"+pass_options_prefix+i.first).c_str(),
-          i.second.as<std::string>().c_str());
+      ierr = PetscOptionsSetValue(petsc_option_name.c_str(),
+                                  i.second.as<std::string>().c_str());
 #endif
     }
     if (ierr) {
-      throw BoutException("PetscOptionsSetValue returned error code %i", ierr);
+      throw BoutException("PetscOptionsSetValue returned error code %i when setting %s",
+                          ierr, petsc_option_name);
     }
   }
 }

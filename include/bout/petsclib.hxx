@@ -99,7 +99,7 @@ private:
 
   static PetscLogEvent USER_EVENT;
 
-  void setPetscOptions(Options& options, std::string pass_options_prefix);
+  void setPetscOptions(Options& options, const std::string& pass_options_prefix);
 };
 
 #ifndef PETSC_VERSION_GE
