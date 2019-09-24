@@ -47,7 +47,7 @@ class PetscLib;
 
 #ifdef BOUT_HAS_PETSC
 
-#include "options.hxx"
+class Options;
 
 #include <petsc.h>
 #include <petscversion.h>
@@ -88,6 +88,7 @@ public:
   static void cleanup(); 
 private:
   static int count; ///< How many instances?
+  static int unique_id; ///< Unique identifier for each created instance
   static char help[]; ///< Help string
   
   // Command-line arguments
@@ -117,6 +118,10 @@ private:
 
 #include "unused.hxx"
 
+// PETSc not available, so KSP not already defined. KSP should never be called, so forward
+// declaration OK here.
+class KSP;
+
 class PetscLib {
 public:
   PetscLib(Options* UNUSED(opt) = nullptr) {}
@@ -124,7 +129,7 @@ public:
   
   static void setArgs(int &UNUSED(c), char** &UNUSED(v)) {}
   
-  KSP createKSPWithOptions(MPI_Comm& comm);
+  KSP createKSPWithOptions(MPI_Comm& comm) {}
 
   static void cleanup() {}
 };
