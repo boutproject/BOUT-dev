@@ -9,6 +9,7 @@
 #include "bout/constants.hxx"
 #include "bout/mesh.hxx"
 #include "bout/traits.hxx"
+#include "bout/paralleltransform.hxx"
 
 /// Global mesh
 namespace bout {
@@ -767,4 +768,148 @@ TEST_F(FieldFactoryTest, MixmodeArgs) {
 TEST_F(FieldFactoryTest, TanhhatArgs) {
   EXPECT_THROW(factory.parse("tanhhat()"), ParseException);
   EXPECT_THROW(factory.parse("tanhhat(x, x, x, x, x)"), ParseException);
+}
+
+// A mock ParallelTransform to test transform_from_field_aligned
+// property of FieldFactory. For now, the transform just returns the
+// negative of the input. Ideally, this will get moved to GoogleMock
+// when we start using it.
+//
+// Can turn off the ability to do the transform. Should still be valid
+class MockParallelTransform : public ParallelTransform {
+public:
+  MockParallelTransform(Mesh& mesh, bool allow_transform_)
+      : ParallelTransform(mesh), allow_transform(allow_transform_) {}
+  ~MockParallelTransform() = default;
+
+  void calcParallelSlices(Field3D&) override {}
+
+  bool canToFromFieldAligned() override { return allow_transform; }
+
+  bool requiresTwistShift(bool, YDirectionType) override { return false; }
+
+  void checkInputGrid() override {}
+
+  const Field3D fromFieldAligned(const Field3D& f, const std::string&) override {
+    if (f.getDirectionY() != YDirectionType::Aligned) {
+      throw BoutException("Unaligned field passed to fromFieldAligned");
+    }
+    return -f;
+  }
+
+  const FieldPerp fromFieldAligned(const FieldPerp& f, const std::string&) override {
+    if (f.getDirectionY() != YDirectionType::Aligned) {
+      throw BoutException("Unaligned field passed to fromFieldAligned");
+    }
+    return -f;
+  }
+
+  const Field3D toFieldAligned(const Field3D& f, const std::string&) override { return -f; }
+  const FieldPerp toFieldAligned(const FieldPerp& f, const std::string&) override { return -f; }
+
+private:
+  const bool allow_transform;
+};
+
+class FieldFactoryCreateAndTransformTest : public FakeMeshFixture {
+public:
+  FieldFactoryCreateAndTransformTest() : FakeMeshFixture{} {
+    // We need Coordinates so a parallel transform is available as
+    // FieldFactory::create3D wants to un-field-align the result
+    static_cast<FakeMesh*>(mesh)->setCoordinates(test_coords);
+  }
+
+  WithQuietOutput quiet_info{output_info};
+  WithQuietOutput quiet_warn{output_warn};
+};
+
+TEST_F(FieldFactoryCreateAndTransformTest, Create2D) {
+  mesh->getCoordinates()->setParallelTransform(
+    bout::utils::make_unique<MockParallelTransform>(*mesh, true));
+
+  FieldFactory factory;
+
+  auto output = factory.create2D("x");
+
+  // Field2Ds can't be transformed, so expect no change
+  auto expected = makeField<Field2D>(
+      [](typename Field2D::ind_type& index) -> BoutReal { return index.x(); }, mesh);
+
+  EXPECT_TRUE(IsFieldEqual(output, expected));
+}
+
+TEST_F(FieldFactoryCreateAndTransformTest, Create3D) {
+  mesh->getCoordinates()->setParallelTransform(
+    bout::utils::make_unique<MockParallelTransform>(*mesh, true));
+
+  FieldFactory factory;
+
+  auto output = factory.create3D("x");
+
+  auto expected = makeField<Field3D>(
+      [](typename Field3D::ind_type& index) -> BoutReal { return -index.x(); }, mesh);
+
+  EXPECT_TRUE(IsFieldEqual(output, expected));
+}
+
+TEST_F(FieldFactoryCreateAndTransformTest, Create2DNoTransform) {
+  mesh->getCoordinates()->setParallelTransform(
+    bout::utils::make_unique<MockParallelTransform>(*mesh, true));
+
+  Options options;
+  options["input"]["transform_from_field_aligned"] = false;
+  FieldFactory factory{mesh, &options};
+
+  auto output = factory.create2D("x");
+
+  // Field2Ds can't be transformed, so expect no change
+  auto expected = makeField<Field2D>(
+      [](typename Field2D::ind_type& index) -> BoutReal { return index.x(); }, mesh);
+
+  EXPECT_TRUE(IsFieldEqual(output, expected));
+}
+
+TEST_F(FieldFactoryCreateAndTransformTest, Create3DNoTransform) {
+  mesh->getCoordinates()->setParallelTransform(
+    bout::utils::make_unique<MockParallelTransform>(*mesh, true));
+
+  Options options;
+  options["input"]["transform_from_field_aligned"] = false;
+  FieldFactory factory{mesh, &options};
+
+  auto output = factory.create3D("x");
+
+  auto expected = makeField<Field3D>(
+      [](typename Field3D::ind_type& index) -> BoutReal { return index.x(); }, mesh);
+
+  EXPECT_TRUE(IsFieldEqual(output, expected));
+}
+
+TEST_F(FieldFactoryCreateAndTransformTest, Create2DCantTransform) {
+  mesh->getCoordinates()->setParallelTransform(
+    bout::utils::make_unique<MockParallelTransform>(*mesh, false));
+
+  FieldFactory factory{mesh};
+
+  auto output = factory.create2D("x");
+
+  // Field2Ds can't be transformed, so expect no change
+  auto expected = makeField<Field2D>(
+      [](typename Field2D::ind_type& index) -> BoutReal { return index.x(); }, mesh);
+
+  EXPECT_TRUE(IsFieldEqual(output, expected));
+}
+
+TEST_F(FieldFactoryCreateAndTransformTest, Create3DCantTransform) {
+  mesh->getCoordinates()->setParallelTransform(
+    bout::utils::make_unique<MockParallelTransform>(*mesh, false));
+
+  FieldFactory factory{mesh};
+
+  auto output = factory.create3D("x");
+
+  auto expected = makeField<Field3D>(
+      [](typename Field3D::ind_type& index) -> BoutReal { return index.x(); }, mesh);
+
+  EXPECT_TRUE(IsFieldEqual(output, expected));
 }
