@@ -225,6 +225,9 @@ inline const Field3D abs(const Vector3D& v, REGION region) {
   return abs(v, toString(region));
 }
 
+const Vector3D toFieldAligned(const Vector3D& v, const std::string& region = "RGN_ALL");
+const Vector3D fromFieldAligned(const Vector3D& v, const std::string& region = "RGN_ALL");
+
 /*!
  * @brief Time derivative of 3D vector field
  */

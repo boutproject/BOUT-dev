@@ -603,6 +603,34 @@ const Field3D abs(const Vector3D &v, const std::string& region) {
   return sqrt(v*v, region);
 }
 
+const Vector3D toFieldAligned(const Vector3D& v, const std::string& region) {
+  Vector3D result;
+  result.setLocation(v.getLocation());
+  if (not v.covariant) {
+    result.toContravariant();
+  }
+
+  result.x = toFieldAligned(v.x, region);
+  result.y = toFieldAligned(v.y, region);
+  result.z = toFieldAligned(v.z, region);
+
+  return result;
+}
+
+const Vector3D fromFieldAligned(const Vector3D& v, const std::string& region) {
+  Vector3D result;
+  result.setLocation(v.getLocation());
+  if (not v.covariant) {
+    result.toContravariant();
+  }
+
+  result.x = fromFieldAligned(v.x, region);
+  result.y = fromFieldAligned(v.y, region);
+  result.z = fromFieldAligned(v.z, region);
+
+  return result;
+}
+
 /***************************************************************
  *               FieldData VIRTUAL FUNCTIONS
  ***************************************************************/
