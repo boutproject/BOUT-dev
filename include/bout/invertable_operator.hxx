@@ -339,7 +339,7 @@ public:
     CHKERRQ(ierr);
 
     /// Now create and setup the linear solver with the matrix
-    lib.createKSPWithOptions(BoutComm::get(), &ksp);
+    lib.createKSPWithOptions(BoutComm::get(), ksp);
 
 #if PETSC_VERSION_LT(3, 5, 0)
     /// Need to provide a MatStructure flag in versions <3.5. This details if we expect
