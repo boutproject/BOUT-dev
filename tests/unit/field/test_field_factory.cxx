@@ -25,23 +25,10 @@ using namespace bout::globals;
 template <typename T>
 class FieldFactoryCreationTest : public FakeMeshFixture {
 public:
-  FieldFactoryCreationTest() : FakeMeshFixture{}, factory{mesh} {
-    // We need Coordinates so a parallel transform is available as
-    // FieldFactory::create3D wants to un-field-align the result
-    static_cast<FakeMesh*>(mesh)->setCoordinates(test_coords);
-
-    mesh->getCoordinates()->setParallelTransform(
-        bout::utils::make_unique<ParallelTransformIdentity>(*mesh));
-
-    for (const auto& location
-        : std::list<CELL_LOC>{CELL_CENTRE, CELL_XLOW, CELL_YLOW, CELL_ZLOW}) {
-
-      static_cast<FakeMesh*>(mesh_staggered)->setCoordinates(test_coords_staggered,
-                                                             location);
-
-      mesh_staggered->getCoordinates(location)->setParallelTransform(
-          bout::utils::make_unique<ParallelTransformIdentity>(*mesh_staggered));
-    }
+  FieldFactoryCreationTest() : FakeMeshFixture() {
+    Options options;
+    options["input"]["transform_from_field_aligned"] = false;
+    factory = FieldFactory{mesh, &options};
   }
 
   WithQuietOutput quiet_info{output_info};
@@ -589,21 +576,6 @@ TYPED_TEST(FieldFactoryCreationTest, CreateOnMesh) {
   EXPECT_EQ(output.getNz(), nz);
 }
 
-TYPED_TEST(FieldFactoryCreationTest, CreateOnMeshWithoutCoordinates) {
-  constexpr auto nx = int{1};
-  constexpr auto ny = int{1};
-  constexpr auto nz = int{1};
-
-  FakeMesh localmesh{nx, ny, nz};
-  localmesh.setCoordinates(nullptr);
-  localmesh.createDefaultRegions();
-
-  // Field2D version doesn't try to transform back
-  if (bout::utils::is_Field3D<TypeParam>::value) {
-    EXPECT_THROW(this->create("x", nullptr, &localmesh), BoutException);
-  }
-}
-
 // The following tests still use the FieldFactory, but don't need to
 // be typed and make take longer as they check that exceptions get
 // thrown. Doing these twice will slow down the test unnecessarily
@@ -629,6 +601,11 @@ TEST_F(FieldFactoryTest, RequireMesh) {
   EXPECT_THROW(local_factory.create3D("x", nullptr, nullptr), BoutException);
 }
 
+TEST_F(FieldFactoryTest, CreateOnMeshWithoutCoordinates) {
+  static_cast<FakeMesh*>(mesh)->setCoordinates(nullptr);
+  EXPECT_THROW(factory.create3D("x"), BoutException);
+}
+
 TEST_F(FieldFactoryTest, CleanCache) {
   auto a_value = int{6};
 
@@ -642,8 +619,6 @@ TEST_F(FieldFactoryTest, CleanCache) {
 }
 
 TEST_F(FieldFactoryTest, ParseSelfReference) {
-  // This one doesn't need to be typed, but easier than creating a
-  // whole new test suite for this one test
   auto options = Options{};
   options["a"] = "a";
 
