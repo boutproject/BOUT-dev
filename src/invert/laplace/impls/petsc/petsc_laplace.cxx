@@ -274,7 +274,7 @@ LaplacePetsc::LaplacePetsc(Options *opt, const CELL_LOC loc, Mesh *mesh_in) :
   MatSetUp(MatA);
 
   // Declare KSP Context (abstract PETSc object that manages all Krylov methods)
-  lib.createKSPWithOptions(comm, ksp);
+  ksp = lib.createKSPWithOptions(comm);
 
   // Get KSP Solver Type (Generalizes Minimal RESidual is the default)
   ksptype = (*opts)["ksptype"].doc("KSP solver type").withDefault(KSP_GMRES);
