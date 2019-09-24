@@ -33,6 +33,7 @@
 #include <vector>
 #include <memory>
 #include <type_traits>
+#include <algorithm>
 
 #include <bout_types.hxx>
 #include <bout/petsclib.hxx>
@@ -220,7 +221,30 @@ public:
     initialised = true;
     *this = f;
   }
-  
+
+  /// Construct a vector like v, but using data from a raw PETSc
+  /// Vec. That Vec (not a copy) will then be owned by the new object.
+  PetscVector(const PetscVector<F> v, Vec vec) {
+#if CHECKLEVEL >= 2
+    int fsize, msize;
+    if (std::is_same<F, FieldPerp>::value) {
+      fsize = v.indexConverter->getMesh()->localSizePerp();
+    } else if (std::is_same<F, Field2D>::value) {
+      fsize = v.indexConverter->getMesh()->localSize2D();
+    } else if (std::is_same<F, Field3D>::value) {
+      fsize = v.indexConverter->getMesh()->localSize3D();
+    } else {
+      throw BoutException("PetscVector initialised for non-field type.");
+    }
+    VecGetSize(vec, &msize);
+    ASSERT2(fsize == msize);
+#endif
+    vector = vec;
+    indexConverter = v.indexConverter;
+    location = v.location;
+    initialised = true;
+}
+
   ~PetscVector() {
     // FIXME: Should I add a check to ensure the vector has actually been created in the first place? Is that possible in Petsc?
     if (vector != nullptr && initialised) {
@@ -264,11 +288,15 @@ public:
   }
 
   PetscVectorElement& operator()(ind_type& index) {
-    if (initialised) {
-      return PetscVectorElement::newElement(&vector, indexConverter->getGlobal(index));
-    } else {
+    int global = indexConverter->getGlobal(index);
+#if CHECKLEVEL >= 1
+    if (!initialised) {
       throw BoutException("Can not return element of uninitialised vector");
+    } else if (global == -1) {
+      throw BoutException("Request to return invalid vector element");
     }
+#endif
+    return PetscVectorElement::newElement(&vector, global);
   }
   
   void assemble() {
@@ -280,6 +308,7 @@ public:
     if (vector != nullptr && initialised) {
       VecDestroy(&vector);
       vector = nullptr;
+      initialised = false;
     }
   }
 
@@ -329,53 +358,153 @@ template <class F>
 class PetscMatrix {
 public:
   using ind_type = typename F::ind_type;
+
+  struct MatrixDeleter { 
+    void operator()(Mat* m) const {
+      if (*m != nullptr) MatDestroy(m);
+      delete m;
+    }
+  };
+  
   /// Default constructor does nothing
-  PetscMatrix() {  }
+  PetscMatrix() : matrix(new Mat(), MatrixDeleter()) {
+    initialised = false;
+    *matrix = nullptr;
+    yoffset = 0;
+  }
 
   /// Copy constructor
-  PetscMatrix(const PetscMatrix<F>& v) : pt(v.pt) {
-    throw BoutException("Not implemented");
-  }
-  /// Move constrcutor
-  PetscMatrix(PetscMatrix<F>&& v) : pt(v.pt) {
-    throw BoutException("Not implemented");
-  }
-
-  PetscMatrix(F &f) {
-    throw BoutException("Not implemented");    
+  PetscMatrix(const PetscMatrix<F>& m) : matrix(new Mat(), MatrixDeleter()), pt(m.pt) {
+    MatDuplicate(*m.matrix, MAT_COPY_VALUES, matrix.get());
+    // MatCopy(*m.matrix, *matrix);
+    indexConverter = m.indexConverter;
+    yoffset = m.yoffset;
+    initialised = m.initialised;
   }
   
-  ~PetscMatrix() {
-    throw BoutException("Not implemented");
+  /// Move constrcutor
+  PetscMatrix(PetscMatrix<F>&& m) : pt(m.pt) {
+    matrix = m.matrix;
+    indexConverter = m.indexConverter;
+    yoffset = m.yoffset;
+    initialised = m.initialised;
+    m.initialised = false;
   }
 
+  // Construct a matrix capable of operating on the specified field
+  PetscMatrix(F &f) : matrix(new Mat(), MatrixDeleter()) {
+    MPI_Comm comm;
+    if (std::is_same<F, FieldPerp>::value) {
+      comm = f.getMesh()->getXcomm();
+    } else {
+      comm = BoutComm::get();
+    }
+    indexConverter = GlobalIndexer::getInstance(f.getMesh());
+    pt = &f.getMesh()->getCoordinates()->getParallelTransform();
+    int size;
+    if (std::is_same<F, FieldPerp>::value) {
+      size = f.getMesh()->localSizePerp();
+    } else if (std::is_same<F, Field2D>::value) {
+      size = f.getMesh()->localSize2D();
+    } else if (std::is_same<F, Field3D>::value) {
+      size = f.getMesh()->localSize3D();
+    } else {
+      throw BoutException("PetscVector initialised for non-field type.");
+    }
+    MatCreate(comm, matrix.get());
+    MatSetSizes(*matrix, size, size, PETSC_DECIDE, PETSC_DECIDE);
+    MatSetType(*matrix, MATMPIAIJ);
+    MatSetUp(*matrix);
+    yoffset = 0;
+    initialised = true;
+  }
+  
   /// Copy assignment
   PetscMatrix<F>& operator=(const PetscMatrix<F>& rhs) {
     swap(*this, rhs);
     return *this;
   }
   /// Move assignment
-  PetscMatrix<F>& operator=(PetscMatrix<F>&& rhs);
+  PetscMatrix<F>& operator=(PetscMatrix<F>&& rhs) {
+    matrix = rhs.matrix;
+    indexConverter = rhs.indexConverter;
+    pt = rhs.pt;
+    yoffset = rhs.yoffset;
+    initialised = rhs.initialised;
+    rhs.initialised = false;
+  }
   friend void swap<F>(PetscMatrix<F>& first, PetscMatrix<F>& second);
 
   PetscMatrixElement& operator()(ind_type& index1, ind_type& index2) {
-    throw BoutException("Not implemented");
-  }
-  void assemble() {
-    throw BoutException("Not implemented");
-  }
-  void destroy() {
-    throw BoutException("Not implemented");
+    int global1 = indexConverter->getGlobal(index1),
+        global2 = indexConverter->getGlobal(index2);
+#if CHECKLEVEL >= 1
+    if (!initialised) {
+      throw BoutException("Can not return element of uninitialised vector");
+    } else if (global1 == -1 || global2 == -1) {
+      throw BoutException("Request to return invalid matrix element");
+    }
+#endif
+    std::vector<PetscInt> positions;
+    std::vector<PetscScalar> weights;
+    if (yoffset != 0) {
+      std::vector<ParallelTransform::positionsAndWeights> pw;
+      if (yoffset == -1) {
+	pw = pt->getWeightsForYDownApproximation(index2.x(), index2.y(), index2.y());
+      } else if (yoffset == 1) {
+	pw = pt->getWeightsForYUpApproximation(index2.x(), index2.y(), index2.y());
+      } else {
+	pw = pt->getWeightsForYApproximation(index2.x(), index2.y(), index2.z(), yoffset);
+      }
+      int ny = indexConverter->getMesh()->LocalNy, nz = indexConverter->getMesh()->LocalNz;
+      if (std::is_same<F, FieldPerp>::value) {
+	ny = 1;
+      } else if (std::is_same<F, Field2D>::value) {
+	nz = 1;
+      }
+      std::transform(pw.begin(), pw.end(), std::back_inserter(positions),
+		     [this, &ny, &nz](ParallelTransform::positionsAndWeights p) -> PetscInt
+		     {return this->indexConverter->getGlobal(ind_type(p.i*ny*nz + p.j*nz
+								      + p.k, ny, nz));});
+      std::transform(pw.begin(), pw.end(), std::back_inserter(weights),
+		     [](ParallelTransform::positionsAndWeights p) ->
+		     PetscScalar {return p.weight;});
+    }
+    return PetscMatrixElement::newElement(matrix.get(), global1, global2, positions, weights);
   }
 
-  PetscMatrix<F>& yup(int index = 0) {
+  void assemble() {
+    MatAssemblyBegin(*matrix, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(*matrix, MAT_FINAL_ASSEMBLY);
+  }
+
+  void destroy() {
+    if (*matrix != nullptr && initialised) {
+      MatDestroy(matrix.get());
+      *matrix = nullptr;
+      initialised = false;
+    }
+  }
+
+  PetscMatrix<F> yup(int index = 0) {
     return ynext(index + 1);
   }
-  PetscMatrix<F>& ydown(int index = 0) {
+  PetscMatrix<F> ydown(int index = 0) {
     return ynext(-index - 1);
   }
-  PetscMatrix<F>& ynext(int dir) {
-    throw BoutException("Not implemented");
+  PetscMatrix<F> ynext(int dir) {
+    if (std::is_same<F, FieldPerp>::value && yoffset + dir != 0) {
+      throw BoutException("Can not get ynext for FieldPerp");
+    } else {
+      PetscMatrix<F> result; // Can't use copy constructor because don't
+                             // want to duplicate the matrix
+      result.matrix = matrix;
+      result.indexConverter = indexConverter;
+      result.pt = pt;
+      result.yoffset = std::is_same<F, Field2D>::value ? 0 : yoffset + dir;
+      result.initialised = initialised;
+      return result;
+    }
   }
 
   /// Provides a reference to the raw PETSc Mat object.
@@ -385,8 +514,10 @@ public:
 
 private:
   shared_ptr<Mat> matrix;
+  IndexerPtr indexConverter;
   ParallelTransform* pt;
   int yoffset;
+  bool initialised;
   PetscLib lib;
 };
 
@@ -397,10 +528,7 @@ private:
  */
 template <class F>
 void swap(PetscVector<F>& first, PetscVector<F>& second) {
-  Vec tmp;
-  tmp = first.vector;
-  first.vector = second.vector;
-  second.vector = tmp;
+  swap(first.vector, second.vector);
   swap(first.indexConverter, second.indexConverter);
   swap(first.location, second.location);
   swap(first.initialised, second.initialised);
@@ -412,15 +540,25 @@ void swap(PetscVector<F>& first, PetscVector<F>& second) {
  */
 template <class F>
 void swap(PetscMatrix<F>& first, PetscMatrix<F>& second) {
-    throw BoutException("Not implemented");
+  swap(first.matrix, second.matrix);
+  swap(first.indexConverter, second.indexConverter);
+  swap(first.pt, second.pt);
+  swap(first.yoffset, second.yoffset);
+  swap(first.initialised, second.initialised);
 }
 
 /*!
  *  Performs matrix-multiplication on the supplied vector
  */
 template <class F>
-PetscVector<F> operator*(const PetscMatrix<F>& mat, PetscVector<F>& vec) {
-  throw BoutException("Not implemented");
+PetscVector<F> operator*(PetscMatrix<F>& mat, PetscVector<F>& vec) {
+  Vec rhs = *vec.getVectorPointer(), result;
+  VecDuplicate(rhs, &result);
+  VecAssemblyBegin(result);
+  VecAssemblyEnd(result);  
+  int err = MatMult(*mat.getMatrixPointer(), rhs, result);
+  ASSERT2(err == 0);
+  return PetscVector<F>(vec, result);
 }
   
 
