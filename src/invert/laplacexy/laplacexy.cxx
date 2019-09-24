@@ -32,7 +32,7 @@ static PetscErrorCode laplacePCapply(PC pc,Vec x,Vec y) {
 int LaplaceXY::instance_count = 0;
 
 LaplaceXY::LaplaceXY(Mesh* m, Options* opt, const CELL_LOC loc)
-    : lib(opt == nullptr ? &(Options::root()["laplacexy"]) : opt),
+    : lib(opt == nullptr ? &(Options::root()["laplacexy"]["petsc"]) : &(*opt)["petsc"]),
       localmesh(m == nullptr ? bout::globals::mesh : m), location(loc), monitor(*this) {
   Timer timer("invert");
 
