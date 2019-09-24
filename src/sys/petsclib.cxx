@@ -55,7 +55,7 @@ PetscLib::~PetscLib() {
   }
 }
 
-KSP PetscLib::createKSPWithOptions(MPI_Comm& comm) {
+KSP PetscLib::createKSPWithOptions(MPI_Comm comm) {
   KSP ksp;
 
   auto ierr = KSPCreate(comm, &ksp);
