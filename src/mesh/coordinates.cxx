@@ -816,7 +816,7 @@ int Coordinates::geometry(bool recalculate_staggered,
   Field2D d2x(localmesh), d2y(localmesh); // d^2 x / d i^2
   // Read correction for non-uniform meshes
   std::string suffix = getLocationSuffix(location);
-  if (CELL_CENTRE or (!force_interpolate_from_centre
+  if (location == CELL_CENTRE or (!force_interpolate_from_centre
                       and localmesh->sourceHasVar("dx"+suffix))) {
     bool extrapolate_x = not localmesh->sourceHasXBoundaryGuards();
     bool extrapolate_y = not localmesh->sourceHasYBoundaryGuards();
