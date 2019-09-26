@@ -570,7 +570,7 @@ public:
   };
 
   /// Sort this Region in place
-  Region<T> sort(){
+  Region<T>& sort() {
     *this = this->asSorted();
     return *this;
   }
@@ -592,7 +592,7 @@ public:
   }
 
   /// Make this Region unique in-place
-  Region<T> unique(){
+  Region<T>& unique() {
     *this = this->asUnique();
     return *this;
   }
