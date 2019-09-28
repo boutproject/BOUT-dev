@@ -55,20 +55,16 @@ PetscLib::~PetscLib() {
   }
 }
 
-KSP PetscLib::createKSPWithOptions(const MPI_Comm& comm) {
-  KSP ksp;
-
-  auto ierr = KSPCreate(comm, &ksp);
-  if (ierr) {
-    throw BoutException("KSPCreate failed with error %i", ierr);
-  }
-
-  ierr = KSPSetOptionsPrefix(ksp, options_prefix.c_str());
+void PetscLib::setOptionsFromInputFile(KSP& ksp) {
+  auto ierr = KSPSetOptionsPrefix(ksp, options_prefix.c_str());
   if (ierr) {
     throw BoutException("KSPSetOptionsPrefix failed with error %i", ierr);
   }
 
-  return ksp;
+  ierr = KSPSetFromOptions(ksp);
+  if (ierr) {
+    throw BoutException("KSPSetFromOptions failed with error %i", ierr);
+  }
 }
 
 void PetscLib::cleanup() {

@@ -78,8 +78,11 @@ public:
    */ 
   static void setArgs(int &c, char** &v) { pargc = &c; pargv = &v;}
 
-  /// Create a KSP linear solver that uses the options specific to this PetscLib
-  KSP createKSPWithOptions(const MPI_Comm& comm);
+  /// Set options for a KSP linear solver that uses the options specific to this PetscLib,
+  /// by setting an options prefix for the KSP, and adding that prefix to all the options
+  /// set in the [petsc] section, or [petsc] subsection of the options, if non-null 'opt'
+  /// was passed to the constructor.
+  void setOptionsFromInputFile(KSP& ksp);
 
   /*!
    * Force cleanup. This will call PetscFinalize, printing a warning
@@ -129,7 +132,7 @@ public:
   
   static void setArgs(int &UNUSED(c), char** &UNUSED(v)) {}
   
-  KSP createKSPWithOptions(MPI_Comm& comm) {}
+  KSP setOptionsFromInputFile(KSP& ksp) {}
 
   static void cleanup() {}
 };
