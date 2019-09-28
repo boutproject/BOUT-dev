@@ -53,7 +53,18 @@ DEPRECATED(inline std::string CELL_LOC_STRING(CELL_LOC location)) {
 }
 
 /// Differential methods. Both central and upwind
-enum DIFF_METHOD {DIFF_DEFAULT, DIFF_U1, DIFF_U2, DIFF_C2, DIFF_W2, DIFF_W3, DIFF_C4, DIFF_U3, DIFF_FFT, DIFF_SPLIT, DIFF_S2};
+enum class DIFF_METHOD {deflt, u1, u2, c2, w2, w3, c4, u3, fft, split, s2};
+#define DIFF_DEFAULT DIFF_METHOD::deflt
+#define DIFF_U1 DIFF_METHOD::u1
+#define DIFF_U2 DIFF_METHOD::u2
+#define DIFF_C2 DIFF_METHOD::c2
+#define DIFF_W2 DIFF_METHOD::w2
+#define DIFF_W3 DIFF_METHOD::w3
+#define DIFF_C4 DIFF_METHOD::c4
+#define DIFF_U3 DIFF_METHOD::u3
+#define DIFF_FFT DIFF_METHOD::fft
+#define DIFF_SPLIT DIFF_METHOD::split
+#define DIFF_S2 DIFF_METHOD::s2
 
 std::string toString(DIFF_METHOD location);
 DEPRECATED(inline std::string DIFF_METHOD_STRING(DIFF_METHOD location)) {
