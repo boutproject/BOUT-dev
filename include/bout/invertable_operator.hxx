@@ -339,7 +339,8 @@ public:
     CHKERRQ(ierr);
 
     /// Now create and setup the linear solver with the matrix
-    ksp = lib.createKSPWithOptions(BoutComm::get());
+    ierr = KSPCreate(BoutComm::get(), &ksp);
+    CHKERRQ(ierr);
 
 #if PETSC_VERSION_LT(3, 5, 0)
     /// Need to provide a MatStructure flag in versions <3.5. This details if we expect
@@ -361,7 +362,9 @@ public:
     ierr = KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
     CHKERRQ(ierr);
 
-    ierr = KSPSetFromOptions(ksp);
+    ierr = KSPSetOptionsPrefix(ksp, "invertable_");
+    CHKERRQ(ierr);
+    lib.setOptionsFromInputFile(ksp);
     CHKERRQ(ierr);
 
     /// Do required setup so solve can proceed in invert

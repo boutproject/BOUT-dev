@@ -274,7 +274,7 @@ LaplacePetsc::LaplacePetsc(Options *opt, const CELL_LOC loc, Mesh *mesh_in) :
   MatSetUp(MatA);
 
   // Declare KSP Context (abstract PETSc object that manages all Krylov methods)
-  ksp = lib.createKSPWithOptions(comm);
+  KSPCreate(comm, &ksp);
 
   // Get KSP Solver Type (Generalizes Minimal RESidual is the default)
   ksptype = (*opts)["ksptype"].doc("KSP solver type").withDefault(KSP_GMRES);
@@ -783,7 +783,7 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
       //ierr = KSPSetPCSide(ksp, PC_RIGHT);CHKERRQ(ierr);
     }
 
-    KSPSetFromOptions( ksp );
+    lib.setOptionsFromInputFile(ksp);
   }
   }
 

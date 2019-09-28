@@ -228,7 +228,7 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt, const CELL_LOC loc)
 
     //////////////////////////////////////////////////
     // Declare KSP Context
-    data.ksp = lib.createKSPWithOptions(comm);
+    KSPCreate(comm, &data.ksp);
 
     // Set KSP type
     KSPSetType( data.ksp, ksptype.c_str() );
@@ -245,7 +245,7 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt, const CELL_LOC loc)
     PCFactorSetMatSolverPackage(pc,factor_package.c_str());
 #endif
 
-    KSPSetFromOptions( data.ksp );
+    lib.setOptionsFromInputFile(data.ksp);
 
     /// Add to slice vector
     slice.push_back(data);
