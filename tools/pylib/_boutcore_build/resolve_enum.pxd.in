@@ -132,6 +132,18 @@ EOF
 		echo "       \"RGN_NOX\":<int>nox,"
 		echo "       \"RGN_NOY\":<int>noy,"
 		echo "       \"RGN_NOZ\":<int>noz,"
+	    elif test ${lower} = "bracket_method"
+		then
+		echo "       \"BRACKET_STD\":<int>standard,"
+		echo "       \"STD\":<int>standard,"
+		echo "       \"BRACKET_SIMPLE\":<int>simple,"
+		echo "       \"SIMPLE\":<int>simple,"
+		echo "       \"BRACKET_ARAKAWA\":<int>arakawa,"
+		echo "       \"ARAKAWA\":<int>arakawa,"
+		echo "       \"BRACKET_CTU\":<int>ctu,"
+		echo "       \"CTU\":<int>ctu,"
+		echo "       \"BRACKET_ARAKAWA_OLD\":<int>arakawa_old,"
+		echo "       \"ARAKAWA_OLD\":<int>arakawa_old,"
 	    fi
 	    echo "          }"
 	    test $class &&

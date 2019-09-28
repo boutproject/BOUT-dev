@@ -1,4 +1,4 @@
 #ifdef YOU_SHOULDNT_READ_THIS
 #error YOU_SHOULDNT_BE_HERE
-enum BRACKET_METHOD {BRACKET_STD=0,  BRACKET_SIMPLE=1, BRACKET_ARAKAWA=2, BRACKET_CTU=3,BRACKET_ARAKAWA_OLD=4 };
+enum class BRACKET_METHOD {standard=0, simple=1, arakawa=2, ctu=3, arakawa_old=4};
 #endif
