@@ -361,9 +361,6 @@ public:
     ierr = KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
     CHKERRQ(ierr);
 
-    /// Allow options to be set on command line using a --invertable_ksp_* prefix.
-    ierr = KSPSetOptionsPrefix(ksp, "invertable_");
-    CHKERRQ(ierr);
     ierr = KSPSetFromOptions(ksp);
     CHKERRQ(ierr);
 
