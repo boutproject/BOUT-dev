@@ -79,7 +79,7 @@ public:
   static void setArgs(int &c, char** &v) { pargc = &c; pargv = &v;}
 
   /// Create a KSP linear solver that uses the options specific to this PetscLib
-  KSP createKSPWithOptions(MPI_Comm comm);
+  KSP createKSPWithOptions(const MPI_Comm& comm);
 
   /*!
    * Force cleanup. This will call PetscFinalize, printing a warning
