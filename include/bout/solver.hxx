@@ -91,7 +91,7 @@ constexpr auto SOLVERIMEXBDF2 = "imexbdf2";
 constexpr auto SOLVERSNES = "snes";
 constexpr auto SOLVERRKGENERIC = "rkgeneric";
 
-enum SOLVER_VAR_OP {LOAD_VARS, LOAD_DERIVS, SET_ID, SAVE_VARS, SAVE_DERIVS};
+enum class SOLVER_VAR_OP {LOAD_VARS, LOAD_DERIVS, SET_ID, SAVE_VARS, SAVE_DERIVS};
 
 ///////////////////////////////////////////////////////////////////
 
