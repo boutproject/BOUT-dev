@@ -84,6 +84,24 @@ EOF
 		test $class &&
 		    echo "        \"${name}_${shrt}\":$res,"
 	    done
+	    if test ${lower} = "cell_loc"
+	    then
+		# CELL_LOCs are renamed by a macro in the C++ code, so need to handle specially here
+		echo "        \"CELL_DEFAULT\":<int>deflt,"
+		echo "        \"DEFAULT\":<int>deflt,"
+		echo "        \"CELL_CENTRE\":<int>centre,"
+		echo "        \"CENTRE\":<int>centre,"
+		echo "        \"CELL_CENTER\":<int>centre,"
+		echo "        \"CENTER\":<int>centre,"
+		echo "        \"CELL_XLOW\":<int>xlow,"
+		echo "        \"XLOW\":<int>xlow,"
+		echo "        \"CELL_YLOW\":<int>ylow,"
+		echo "        \"YLOW\":<int>ylow,"
+		echo "        \"CELL_ZLOW\":<int>zlow,"
+		echo "        \"ZLOW\":<int>zlow,"
+		echo "        \"CELL_VSHIFT\":<int>vshift,"
+		echo "        \"VSHIFT\":<int>vshift,"
+	    fi
 	    echo "          }"
 	    test $class &&
 		echo "    return <$name><int> opts[str]" ||
