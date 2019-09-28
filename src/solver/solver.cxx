@@ -643,7 +643,7 @@ void Solver::addMonitor(Monitor* monitor, MonitorPosition pos) {
 
   monitor->is_added = true;
 
-  if (pos == Solver::FRONT) {
+  if (pos == MonitorPosition::FRONT) {
     monitors.push_front(monitor);
   } else {
     monitors.push_back(monitor);
