@@ -37,13 +37,14 @@ constexpr BoutReal BoutNaN = std::numeric_limits<BoutReal>::quiet_NaN();
 #define STRENUM(val) {#val, val}
 
 /// 4 possible variable locations. Default is for passing to functions
-enum class CELL_LOC {CELL_DEFAULT=0, CELL_CENTRE=1, CELL_CENTER=1, CELL_XLOW=2, CELL_YLOW=3, CELL_ZLOW=4, CELL_VSHIFT=5};
-#define CELL_DEFAULT CELL_LOC::CELL_DEFAULT
-#define CELL_CENTRE CELL_LOC::CELL_CENTRE
-#define CELL_XLOW CELL_LOC::CELL_XLOW
-#define CELL_YLOW CELL_LOC::CELL_YLOW
-#define CELL_ZLOW CELL_LOC::CELL_ZLOW
-#define CELL_VSHIFT CELL_LOC::CELL_VSHIFT
+enum class CELL_LOC {deflt=0, centre=1, xlow=2, ylow=3, zlow=4, vshift=5};
+#define CELL_DEFAULT CELL_LOC::deflt
+#define CELL_CENTRE CELL_LOC::centre
+#define CELL_CENTER CELL_LOC::centre
+#define CELL_XLOW CELL_LOC::xlow
+#define CELL_YLOW CELL_LOC::ylow
+#define CELL_ZLOW CELL_LOC::zlow
+#define CELL_VSHIFT CELL_LOC::vshift
 
 std::string toString(CELL_LOC location);
 CELL_LOC CELL_LOCFromString(const std::string& location_string);
