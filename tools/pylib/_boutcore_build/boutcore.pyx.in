@@ -381,7 +381,7 @@ cat <<EOF
             Representation of the field's location.
         """
         cdef benum.CELL_LOC loc = self.cobj[0].getLocation()
-        return _resolve_inv_cell_loc(loc)
+        return _resolve_inv_cell_loc(<int> loc)
 
     def ddt(self,val=None):
         """
