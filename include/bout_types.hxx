@@ -72,7 +72,12 @@ DEPRECATED(inline std::string DIFF_METHOD_STRING(DIFF_METHOD location)) {
 }
 
 /// Specify grid region for looping
-enum REGION { RGN_ALL, RGN_NOBNDRY, RGN_NOX, RGN_NOY, RGN_NOZ };
+enum class REGION {all, nobndry, nox, noy, noz};
+#define RGN_ALL REGION::all
+#define RGN_NOBNDRY REGION::nobndry
+#define RGN_NOX REGION::nox
+#define RGN_NOY REGION::noy
+#define RGN_NOZ REGION::noz
 
 std::string toString(REGION region);
 DEPRECATED(inline std::string REGION_STRING(REGION region)) { return toString(region); }

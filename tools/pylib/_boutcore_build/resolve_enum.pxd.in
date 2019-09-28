@@ -125,6 +125,13 @@ EOF
 		echo "       \"SPLIT\":<int>split,"
 		echo "       \"DIFF_S2\":<int>s2,"
 		echo "       \"S2\":<int>s2,"
+	    elif test ${lower} = "region"
+		then
+		echo "       \"RGN_ALL\":<int>all,"
+		echo "       \"RGN_NOBNDRY\":<int>nobndry,"
+		echo "       \"RGN_NOX\":<int>nox,"
+		echo "       \"RGN_NOY\":<int>noy,"
+		echo "       \"RGN_NOZ\":<int>noz,"
 	    fi
 	    echo "          }"
 	    test $class &&
