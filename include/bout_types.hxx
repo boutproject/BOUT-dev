@@ -38,13 +38,13 @@ constexpr BoutReal BoutNaN = std::numeric_limits<BoutReal>::quiet_NaN();
 
 /// 4 possible variable locations. Default is for passing to functions
 enum class CELL_LOC {deflt, centre, xlow, ylow, zlow, vshift};
-#define CELL_DEFAULT CELL_LOC::deflt
-#define CELL_CENTRE CELL_LOC::centre
-#define CELL_CENTER CELL_LOC::centre
-#define CELL_XLOW CELL_LOC::xlow
-#define CELL_YLOW CELL_LOC::ylow
-#define CELL_ZLOW CELL_LOC::zlow
-#define CELL_VSHIFT CELL_LOC::vshift
+constexpr CELL_LOC CELL_DEFAULT = CELL_LOC::deflt;
+constexpr CELL_LOC CELL_CENTRE = CELL_LOC::centre;
+constexpr CELL_LOC CELL_CENTER = CELL_LOC::centre;
+constexpr CELL_LOC CELL_XLOW = CELL_LOC::xlow;
+constexpr CELL_LOC CELL_YLOW = CELL_LOC::ylow;
+constexpr CELL_LOC CELL_ZLOW = CELL_LOC::zlow;
+constexpr CELL_LOC CELL_VSHIFT = CELL_LOC::vshift;
 
 std::string toString(CELL_LOC location);
 CELL_LOC CELL_LOCFromString(const std::string& location_string);
@@ -54,17 +54,17 @@ DEPRECATED(inline std::string CELL_LOC_STRING(CELL_LOC location)) {
 
 /// Differential methods. Both central and upwind
 enum class DIFF_METHOD {deflt, u1, u2, c2, w2, w3, c4, u3, fft, split, s2};
-#define DIFF_DEFAULT DIFF_METHOD::deflt
-#define DIFF_U1 DIFF_METHOD::u1
-#define DIFF_U2 DIFF_METHOD::u2
-#define DIFF_C2 DIFF_METHOD::c2
-#define DIFF_W2 DIFF_METHOD::w2
-#define DIFF_W3 DIFF_METHOD::w3
-#define DIFF_C4 DIFF_METHOD::c4
-#define DIFF_U3 DIFF_METHOD::u3
-#define DIFF_FFT DIFF_METHOD::fft
-#define DIFF_SPLIT DIFF_METHOD::split
-#define DIFF_S2 DIFF_METHOD::s2
+constexpr DIFF_METHOD DIFF_DEFAULT = DIFF_METHOD::deflt;
+constexpr DIFF_METHOD DIFF_U1 = DIFF_METHOD::u1;
+constexpr DIFF_METHOD DIFF_U2 = DIFF_METHOD::u2;
+constexpr DIFF_METHOD DIFF_C2 = DIFF_METHOD::c2;
+constexpr DIFF_METHOD DIFF_W2 = DIFF_METHOD::w2;
+constexpr DIFF_METHOD DIFF_W3 = DIFF_METHOD::w3;
+constexpr DIFF_METHOD DIFF_C4 = DIFF_METHOD::c4;
+constexpr DIFF_METHOD DIFF_U3 = DIFF_METHOD::u3;
+constexpr DIFF_METHOD DIFF_FFT = DIFF_METHOD::fft;
+constexpr DIFF_METHOD DIFF_SPLIT = DIFF_METHOD::split;
+constexpr DIFF_METHOD DIFF_S2 = DIFF_METHOD::s2;
 
 std::string toString(DIFF_METHOD location);
 DEPRECATED(inline std::string DIFF_METHOD_STRING(DIFF_METHOD location)) {
@@ -73,11 +73,11 @@ DEPRECATED(inline std::string DIFF_METHOD_STRING(DIFF_METHOD location)) {
 
 /// Specify grid region for looping
 enum class REGION {all, nobndry, nox, noy, noz};
-#define RGN_ALL REGION::all
-#define RGN_NOBNDRY REGION::nobndry
-#define RGN_NOX REGION::nox
-#define RGN_NOY REGION::noy
-#define RGN_NOZ REGION::noz
+constexpr REGION RGN_ALL = REGION::all;
+constexpr REGION RGN_NOBNDRY = REGION::nobndry;
+constexpr REGION RGN_NOX = REGION::nox;
+constexpr REGION RGN_NOY = REGION::noy;
+constexpr REGION RGN_NOZ = REGION::noz;
 
 std::string toString(REGION region);
 DEPRECATED(inline std::string REGION_STRING(REGION region)) { return toString(region); }
