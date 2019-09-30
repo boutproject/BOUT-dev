@@ -428,7 +428,7 @@ include(GetGitRevisionDescription)
 get_git_head_revision(GIT_REFSPEC GIT_SHA1)
 message(STATUS "Git revision: ${GIT_SHA1}")
 target_compile_definitions(bout++
-  PUBLIC "GIT_REVISION=${GIT_SHA1}")
+  PUBLIC "REVISION=${GIT_SHA1}")
 set(BOUT_GIT_REVISION ${GIT_SHA1})
 
 # Optional dependencies
