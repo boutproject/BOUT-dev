@@ -591,11 +591,14 @@ endmacro()
 # - EXTRA_FILES: any extra files that are required to run the test
 #
 # - REQUIRES: list of variables that must be truthy to enable test
+#
+# - EXECUTABLE_NAME: name of the executable, if different from the test name
 
 function(bout_add_integrated_test TESTNAME)
   set(options USE_RUNTEST USE_DATA_BOUT_INP)
+  set(oneValueArgs EXECUTABLE_NAME)
   set(multiValueArgs SOURCES EXTRA_FILES REQUIRES)
-  cmake_parse_arguments(BOUT_TEST_OPTIONS "${options}" "" "${multiValueArgs}" ${ARGN})
+  cmake_parse_arguments(BOUT_TEST_OPTIONS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
   foreach (REQUIREMENT IN LISTS BOUT_TEST_OPTIONS_REQUIRES)
     if (NOT ${REQUIREMENT})
@@ -607,6 +610,10 @@ function(bout_add_integrated_test TESTNAME)
   add_executable(${TESTNAME} ${BOUT_TEST_OPTIONS_SOURCES})
   target_link_libraries(${TESTNAME} bout++)
   target_include_directories(${TESTNAME} PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
+
+  if (BOUT_TEST_OPTIONS_EXECUTABLE_NAME)
+    set_target_properties(${TESTNAME} PROPERTIES OUTPUT_NAME ${BOUT_TEST_OPTIONS_EXECUTABLE_NAME})
+  endif()
 
   if (BOUT_TEST_OPTIONS_USE_RUNTEST)
     add_test(NAME ${TESTNAME} COMMAND ./runtest)
