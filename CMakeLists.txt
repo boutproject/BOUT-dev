@@ -566,12 +566,11 @@ if (HAS_PRETTY_FUNCTION)
 endif()
 
 # Copy FILENAME from source directory to build directory
-# and add dependency on TARGET
-macro(bout_test_copy_file TARGET FILENAME)
-  add_custom_command(TARGET "${TARGET}" POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy
-    ${CMAKE_CURRENT_SOURCE_DIR}/"${FILENAME}"
-    ${CMAKE_CURRENT_BINARY_DIR}/"${FILENAME}")
+macro(bout_test_copy_file FILENAME)
+  configure_file(
+      ${CMAKE_CURRENT_SOURCE_DIR}/${FILENAME}
+      ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME}
+      COPYONLY)
 endmacro()
 
 # Add a new integrated test
@@ -611,16 +610,16 @@ function(bout_add_integrated_test TESTNAME)
 
   if (BOUT_TEST_OPTIONS_USE_RUNTEST)
     add_test(NAME ${TESTNAME} COMMAND ./runtest)
-    bout_test_copy_file("${TESTNAME}" runtest)
+    bout_test_copy_file(runtest)
   else()
     add_test(NAME ${TESTNAME} COMMAND ${TESTNAME})
   endif()
   if (BOUT_TEST_OPTIONS_USE_DATA_BOUT_INP)
-    bout_test_copy_file("${TESTNAME}" data/BOUT.inp)
+    bout_test_copy_file(data/BOUT.inp)
   endif()
   if (BOUT_TEST_OPTIONS_EXTRA_FILES)
     foreach (FILE ${BOUT_TEST_OPTIONS_EXTRA_FILES})
-      bout_test_copy_file("${TESTNAME}" "${FILE}")
+      bout_test_copy_file("${FILE}")
     endforeach()
   endif()
   set_target_properties(${TESTNAME} PROPERTIES FOLDER tests/integrated)
