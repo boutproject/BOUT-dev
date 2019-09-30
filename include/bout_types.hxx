@@ -37,7 +37,7 @@ constexpr BoutReal BoutNaN = std::numeric_limits<BoutReal>::quiet_NaN();
 #define STRENUM(val) {#val, val}
 
 /// 4 possible variable locations. Default is for passing to functions
-enum class CELL_LOC {deflt=0, centre=1, xlow=2, ylow=3, zlow=4, vshift=5};
+enum class CELL_LOC {deflt, centre, xlow, ylow, zlow, vshift};
 #define CELL_DEFAULT CELL_LOC::deflt
 #define CELL_CENTRE CELL_LOC::centre
 #define CELL_CENTER CELL_LOC::centre

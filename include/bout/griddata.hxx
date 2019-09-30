@@ -65,7 +65,7 @@ public:
   virtual bool get(Mesh *m, Field3D &var, const std::string &name, BoutReal def = 0.0) = 0;
   virtual bool get(Mesh *m, FieldPerp &var, const std::string &name, BoutReal def = 0.0) = 0;
 
-  enum class Direction { X = 1, Y = 2, Z = 3 };
+  enum class Direction {X, Y, Z};
   // Define some aliases so GridDataSource::X, GridDataSource::Y and GridDataSource::Z can
   // be used, for backward compatibility
   static constexpr Direction X = Direction::X;
@@ -73,9 +73,9 @@ public:
   static constexpr Direction Z = Direction::Z;
 
   virtual bool get(Mesh *m, std::vector<int> &var, const std::string &name, int len, int offset = 0,
-                   Direction dir = GridDataSource::Direction::X) = 0;
+                   Direction dir = GridDataSource::X) = 0;
   virtual bool get(Mesh *m, std::vector<BoutReal> &var, const std::string &name, int len,
-                   int offset = 0, Direction dir = GridDataSource::Direction::X) = 0;
+                   int offset = 0, Direction dir = GridDataSource::X) = 0;
 
   /// Are x-boundary guard cells read from the source?
   virtual bool hasXBoundaryGuards(Mesh* m) = 0;
@@ -111,9 +111,9 @@ public:
   }
 
   bool get(Mesh *m, std::vector<int> &var, const std::string &name, int len, int offset = 0,
-           GridDataSource::Direction dir = GridDataSource::Direction::X) override;
+           GridDataSource::Direction dir = GridDataSource::X) override;
   bool get(Mesh *m, std::vector<BoutReal> &var, const std::string &name, int len, int offset = 0,
-           GridDataSource::Direction dir = GridDataSource::Direction::X) override;
+           GridDataSource::Direction dir = GridDataSource::X) override;
 
   /// Are x-boundary guard cells read from the source?
   bool hasXBoundaryGuards(Mesh* m) override;
@@ -258,7 +258,7 @@ public:
    * @param[in] dir  The direction (X,Y,Z) of the array
    */
   bool get(Mesh *mesh, std::vector<int> &var, const std::string &name, int len, int offset = 0,
-           GridDataSource::Direction dir = GridDataSource::Direction::X) override;
+           GridDataSource::Direction dir = GridDataSource::X) override;
 
   /*!
    * Get an array of BoutReals. Uses FieldFactory to generate
@@ -274,7 +274,7 @@ public:
    * @param[in] dir  The direction (X,Y,Z) of the array
    */
   bool get(Mesh *mesh, std::vector<BoutReal> &var, const std::string &name, int len, int offset = 0,
-           GridDataSource::Direction dir = GridDataSource::Direction::X) override;
+           GridDataSource::Direction dir = GridDataSource::X) override;
 
   /// Are x-boundary guard cells read from the source?
   bool hasXBoundaryGuards(Mesh* UNUSED(m)) override { return true; }

@@ -15,13 +15,13 @@ namespace globals {
 } // namespace globals
 
 /// Location of boundary
-enum class BndryLoc {xin=1,
-                     xout=2,
-                     ydown=4,
-                     yup=8,
-                     all=15,
-                     par_fwd=16,   // Don't include parallel boundaries
-                     par_bkwd=32};
+enum class BndryLoc {xin,
+                     xout,
+                     ydown,
+                     yup,
+                     all,
+                     par_fwd,   // Don't include parallel boundaries
+                     par_bkwd};
 #define BNDRY_XIN BndryLoc::xin
 #define BNDRY_XOUT BndryLoc::xout
 #define BNDRY_YDOWN BndryLoc::ydown

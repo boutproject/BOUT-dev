@@ -123,19 +123,19 @@ bool GridFromOptions::get(Mesh* m, std::vector<BoutReal>& var, const std::string
   var.resize(len);
 
   switch (dir) {
-  case GridDataSource::Direction::X: {
+  case GridDataSource::X: {
     for (int x = 0; x < len; x++) {
       var[x] = gen->generate(m->GlobalX(x - m->OffsetX + offset), 0.0, 0.0, 0.0);
     }
     break;
   }
-  case GridDataSource::Direction::Y: {
+  case GridDataSource::Y: {
     for (int y = 0; y < len; y++) {
       var[y] = gen->generate(0.0, TWOPI * m->GlobalY(y - m->OffsetY + offset), 0.0, 0.0);
     }
     break;
   }
-  case GridDataSource::Direction::Z: {
+  case GridDataSource::Z: {
     for (int z = 0; z < len; z++) {
       var[z] = gen->generate(
           0.0, 0.0,

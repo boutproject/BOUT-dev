@@ -315,14 +315,12 @@ const Field3D b0xGrad_dot_Grad(const Field3D &phi, const Field3D &A, CELL_LOC ou
  * Poisson bracket methods
  */
 enum class BRACKET_METHOD {
-  standard = 0,        ///< Use b0xGrad_dot_Grad
-  simple = 1,     ///< Keep only terms in X-Z
-  arakawa = 2,    ///< Arakawa method in X-Z (optimised)
-  ctu = 3,        ///< Corner Transport Upwind (CTU)
-                          /// method. Explicit method only,
-                          /// needs the timestep from the
-                          /// solver
-  arakawa_old = 4 ///< Older version, for regression testing of optimised version.
+  standard,   ///< Use b0xGrad_dot_Grad
+  simple,     ///< Keep only terms in X-Z
+  arakawa,    ///< Arakawa method in X-Z (optimised)
+  ctu,        ///< Corner Transport Upwind (CTU) method. Explicit method only, needs the
+              ///  timestep from the solver
+  arakawa_old ///< Older version, for regression testing of optimised version.
 };
 #define BRACKET_STD BRACKET_METHOD::standard
 #define BRACKET_SIMPLE BRACKET_METHOD::simple
