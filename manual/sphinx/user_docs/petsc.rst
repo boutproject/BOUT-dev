@@ -15,17 +15,20 @@ passed on the command line [*]_, will be ignored for that solver if the subsecti
 is created.
 
 Any options that can be passed on the command line to PETSc can be set, with no preceding
-hyphen. Any PETSc options that are passed as flags with no value set should be given the
-value ``true`` so BOUT++ knows to read them. So for example, if the command line options
-would be::
+hyphen. Flags passed with no value can be passed as options with no value. Internally,
+BOUT++ sets options passed with no value to ``"true"``, and ``PetscLib`` passes a null
+pointer signifying no value when the option value is ``"true"``. As a workaround, to pass
+the string ``"true"`` to the PETSc option, set the option to ``petsc_true``. So for
+example, if the command line options would be::
 
-    -ksp_monitor -ksp_type gmres
+    -ksp_monitor -ksp_type gmres -some_boolean_option true
 
 in the input file you would put::
 
     [petsc]
-    ksp_monitor = true
+    ksp_monitor
     ksp_type = gmres
+    some_boolean_option = petsc_true
 
 
 .. [*] The object-specific options are passed to PETSc by creating an object-specific
