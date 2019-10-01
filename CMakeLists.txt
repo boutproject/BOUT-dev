@@ -578,6 +578,47 @@ if (HAS_PRETTY_FUNCTION)
     PUBLIC "BOUT_HAS_PRETTY_FUNCTION")
 endif()
 
+# We want to compile the actual flags used into the library so we can
+# see them at runtime. This needs a few steps:
+
+# 1. Get the macro definitions. They come as a ;-separated list and
+#    without the -D. We also need to also stick a -D on the front of
+#    the first item
+get_property(BOUT_COMPILE_DEFINITIONS
+  TARGET bout++
+  PROPERTY COMPILE_DEFINITIONS)
+string(REPLACE ";" " -D" BOUT_COMPILE_DEFINITIONS "${BOUT_COMPILE_DEFINITIONS}")
+string(CONCAT BOUT_COMPILE_DEFINITIONS " -D" "${BOUT_COMPILE_DEFINITIONS}")
+
+# 2. Get the compiler options. Again, they come as a ;-separated
+#    list. Note that they don't include optimisation or debug flags:
+#    they're in the CMAKE_CXX_FLAGS* variables
+get_property(BOUT_COMPILE_OPTIONS
+  TARGET bout++
+  PROPERTY COMPILE_OPTIONS)
+string(REPLACE ";" " " BOUT_COMPILE_OPTIONS "${BOUT_COMPILE_OPTIONS}")
+
+# 3. The optimisation and/or debug flags are in the CMAKE_CXX_FLAGS*
+#    variables. We need both the common flags as well as those for the
+#    build type actually being used. Note: this might behave weirdly
+#    on Windows. Might need to expand CMAKE_CONFIGURATION_TYPES
+#    instead?
+string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_UPPER)
+string(CONCAT BOUT_COMPILE_BUILD_FLAGS
+  " "
+  "${CMAKE_CXX_FLAGS}"
+  "${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE_UPPER}}")
+
+# 4. Now we join all the flags from the first three steps together
+string(CONCAT BOUT_FLAGS_STRING
+  "${BOUT_COMPILE_OPTIONS}"
+  "${BOUT_COMPILE_DEFINITIONS}"
+  "${BOUT_COMPILE_BUILD_FLAGS}")
+
+# 5. Finally actually add the flags as a define
+target_compile_definitions(bout++
+  PRIVATE BOUT_FLAGS_STRING=${BOUT_FLAGS_STRING})
+
 # Copy FILENAME from source directory to build directory
 macro(bout_test_copy_file FILENAME)
   configure_file(
