@@ -86,29 +86,27 @@ void PetscLib::setPetscOptions(Options& options, const std::string& prefix) {
           "values are allowed in the PETSc options, not subsections",
           i.first.c_str(), options.str().c_str());
     }
+
     // Note, option names in the input file don't start with "-", but need to be passed
     // to PETSc with "-" prepended
-    PetscErrorCode ierr;
     auto petsc_option_name = "-"+prefix+i.first;
-    if (lowercase(i.second) == "true") {
-      // PETSc flag with no value
+    const char* value =
+      // "true" is the value given to an option with no value, when read from BOUT.inp
+      lowercase(i.second) == "true" ? nullptr :
+      // workaround to allow passing "true" to the petsc option
+      lowercase(i.second) == "petsc_true" ? "true" :
+      // allow this for symmetry with "petsc_true"
+      lowercase(i.second) == "petsc_false" ? "false" :
+      // default case: pass the value of the option
+      i.second.as<std::string>().c_str();
+
+    PetscErrorCode ierr;
 #if PETSC_VERSION_GE(3, 7, 0)
-      ierr = PetscOptionsSetValue(nullptr, petsc_option_name.c_str(), nullptr);
+    ierr = PetscOptionsSetValue(nullptr, petsc_option_name.c_str(), value);
 #else
 // no PetscOptions as first argument
-      ierr = PetscOptionsSetValue(petsc_option_name.c_str(), nullptr);
+    ierr = PetscOptionsSetValue(petsc_option_name.c_str(), value);
 #endif
-    } else {
-      // Option with actual value to pass
-#if PETSC_VERSION_GE(3, 7, 0)
-      ierr = PetscOptionsSetValue(nullptr, petsc_option_name.c_str(),
-                                  i.second.as<std::string>().c_str());
-#else
-// no PetscOptions as first argument
-      ierr = PetscOptionsSetValue(petsc_option_name.c_str(),
-                                  i.second.as<std::string>().c_str());
-#endif
-    }
     if (ierr) {
       throw BoutException("PetscOptionsSetValue returned error code %i when setting %s",
                           ierr, petsc_option_name.c_str());
