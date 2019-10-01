@@ -90,15 +90,12 @@ void PetscLib::setPetscOptions(Options& options, const std::string& prefix) {
     // Note, option names in the input file don't start with "-", but need to be passed
     // to PETSc with "-" prepended
     auto petsc_option_name = "-"+prefix+i.first;
+
+    // "true" is the value given to an option with no value, when read from BOUT.inp. Also
+    // when nullptr is passed to PetscOptionsSetValue for a boolean option, it defaults to
+    // true so we should always be OK passing nullptr for null or "true".
     const char* value =
-      // "true" is the value given to an option with no value, when read from BOUT.inp
-      lowercase(i.second) == "true" ? nullptr :
-      // workaround to allow passing "true" to the petsc option
-      lowercase(i.second) == "petsc_true" ? "true" :
-      // allow this for symmetry with "petsc_true"
-      lowercase(i.second) == "petsc_false" ? "false" :
-      // default case: pass the value of the option
-      i.second.as<std::string>().c_str();
+      lowercase(i.second) == "true" ? nullptr : i.second.as<std::string>().c_str();
 
     PetscErrorCode ierr;
 #if PETSC_VERSION_GE(3, 7, 0)
