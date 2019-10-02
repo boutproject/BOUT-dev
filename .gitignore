@@ -41,3 +41,6 @@ src/.libfast
 .BOUT.pid.*
 build/
 build*/
+/.vs
+/CMakeSettings.json
+/CppProperties.json
