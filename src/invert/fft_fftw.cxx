@@ -475,7 +475,7 @@ Array<dcomplex> rfft(const Array<BoutReal>& in) {
   int size{in.size()};
   Array<dcomplex> out{(size / 2) + 1};
 
-  rfft(in.begin(), size, out.begin());
+  bout::fft::rfft(in.begin(), size, out.begin());
   return out;
 }
 
@@ -485,7 +485,7 @@ Array<BoutReal> irfft(const Array<dcomplex>& in, int length) {
 
   Array<BoutReal> out{length};
 
-  irfft(in.begin(), length, out.begin());
+  bout::fft::irfft(in.begin(), length, out.begin());
   return out;
 }
 
