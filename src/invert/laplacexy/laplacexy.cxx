@@ -338,15 +338,30 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
       }
     }
     if (localmesh->hasBndryLowerY()) {
-      if (localmesh->firstX()) {
-        const int localIndex = globalIndex(localmesh->xstart-1, localmesh->ystart-1);
-        ASSERT1((localIndex >= 0) && (localIndex < localN));
-        d_nnz[localIndex] = y_bndry_stencil_size;
-      }
-      if (localmesh->lastX()) {
-        const int localIndex = globalIndex(localmesh->xend+1, localmesh->ystart-1);
-        ASSERT1((localIndex >= 0) && (localIndex < localN));
-        d_nnz[localIndex] = y_bndry_stencil_size;
+      if (y_bndry == "dirichlet") {
+        // special handling for the corners, since we use a free_o3 y-boundary
+        // condition just in the corners when y_bndry=="dirichlet"
+        if (localmesh->firstX()) {
+          const int localIndex = globalIndex(localmesh->xstart-1, localmesh->ystart-1);
+          ASSERT1((localIndex >= 0) && (localIndex < localN));
+          d_nnz[localIndex] = 4;
+        }
+        if (localmesh->lastX()) {
+          const int localIndex = globalIndex(localmesh->xend+1, localmesh->ystart-1);
+          ASSERT1((localIndex >= 0) && (localIndex < localN));
+          d_nnz[localIndex] = 4;
+        }
+      } else {
+        if (localmesh->firstX()) {
+          const int localIndex = globalIndex(localmesh->xstart-1, localmesh->ystart-1);
+          ASSERT1((localIndex >= 0) && (localIndex < localN));
+          d_nnz[localIndex] = y_bndry_stencil_size;
+        }
+        if (localmesh->lastX()) {
+          const int localIndex = globalIndex(localmesh->xend+1, localmesh->ystart-1);
+          ASSERT1((localIndex >= 0) && (localIndex < localN));
+          d_nnz[localIndex] = y_bndry_stencil_size;
+        }
       }
     }
     for(RangeIterator it=localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
@@ -364,15 +379,30 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
       }
     }
     if (localmesh->hasBndryUpperY()) {
-      if (localmesh->firstX()) {
-        const int localIndex = globalIndex(localmesh->xstart-1, localmesh->yend+1);
-        ASSERT1((localIndex >= 0) && (localIndex < localN));
-        d_nnz[localIndex] = y_bndry_stencil_size;
-      }
-      if (localmesh->lastX()) {
-        const int localIndex = globalIndex(localmesh->xend+1, localmesh->yend+1);
-        ASSERT1((localIndex >= 0) && (localIndex < localN));
-        d_nnz[localIndex] = y_bndry_stencil_size;
+      if (y_bndry == "dirichlet") {
+        // special handling for the corners, since we use a free_o3 y-boundary
+        // condition just in the corners when y_bndry=="dirichlet"
+        if (localmesh->firstX()) {
+          const int localIndex = globalIndex(localmesh->xstart-1, localmesh->yend+1);
+          ASSERT1((localIndex >= 0) && (localIndex < localN));
+          d_nnz[localIndex] = 4;
+        }
+        if (localmesh->lastX()) {
+          const int localIndex = globalIndex(localmesh->xend+1, localmesh->yend+1);
+          ASSERT1((localIndex >= 0) && (localIndex < localN));
+          d_nnz[localIndex] = 4;
+        }
+      } else {
+        if (localmesh->firstX()) {
+          const int localIndex = globalIndex(localmesh->xstart-1, localmesh->yend+1);
+          ASSERT1((localIndex >= 0) && (localIndex < localN));
+          d_nnz[localIndex] = y_bndry_stencil_size;
+        }
+        if (localmesh->lastX()) {
+          const int localIndex = globalIndex(localmesh->xend+1, localmesh->yend+1);
+          ASSERT1((localIndex >= 0) && (localIndex < localN));
+          d_nnz[localIndex] = y_bndry_stencil_size;
+        }
       }
     }
   }
@@ -914,11 +944,7 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
 
     if (localmesh->hasBndryLowerY()) {
       if (localmesh->firstX()) {
-        if (y_bndry == "dirichlet") {
-          // Both Dirichlet
-          throw BoutException("Dirichlet y-boundary-condition not supported for mixed "
-              "second derivatives.");
-        } else if (y_bndry == "neumann") {
+        if (y_bndry == "neumann") {
           // Neumann y-bc
           // f(xs-1,ys-1) = f(xs-1,ys)
           PetscScalar val = 1.0;
@@ -928,9 +954,12 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
           val = -1.0;
           int col = globalIndex(localmesh->xstart-1, localmesh->ystart);
           MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
-        } else if (y_bndry == "free_o3") {
+        } else if (y_bndry == "free_o3" or y_bndry == "dirichlet") {
           // 'free_o3' extrapolating boundary condition on Y boundaries
           // f(xs-1,ys-1) = 3*f(xs-1,ys) - 3*f(xs-1,ys+1) + f(xs-1,ys+2)
+          //
+          // Use free_o3 at the corners for Dirichlet y-boundaries because we don't know
+          // what value to pass for the corner
           PetscScalar val = 1.0;
           int row = globalIndex(localmesh->xstart-1, localmesh->ystart-1);
           MatSetValues(MatA,1,&row,1,&row,&val,INSERT_VALUES);
@@ -951,11 +980,7 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
         }
       }
       if (localmesh->lastX()) {
-        if (y_bndry == "dirichlet") {
-          // Both Dirichlet
-          throw BoutException("Dirichlet y-boundary-condition not supported for mixed "
-              "second derivatives.");
-        } else if (y_bndry == "neumann") {
+        if (y_bndry == "neumann") {
           // Neumann y-bc
           // f(xe+1,ys-1) = f(xe+1,ys)
           PetscScalar val = 1.0;
@@ -965,9 +990,12 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
           val = -1.0;
           int col = globalIndex(localmesh->xend+1, localmesh->ystart);
           MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
-        } else if (y_bndry == "free_o3") {
+        } else if (y_bndry == "free_o3" or y_bndry == "dirichlet") {
           // 'free_o3' extrapolating boundary condition on Y boundaries
           // f(xe+1,ys-1) = 3*f(xe+1,ys) - 3*f(xe+1,ys+1) + f(xe+1,ys+2)
+          //
+          // Use free_o3 at the corners for Dirichlet y-boundaries because we don't know
+          // what value to pass for the corner
           PetscScalar val = 1.0;
           int row = globalIndex(localmesh->xend+1, localmesh->ystart-1);
           MatSetValues(MatA,1,&row,1,&row,&val,INSERT_VALUES);
@@ -991,11 +1019,7 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
     }
     if (localmesh->hasBndryUpperY()) {
       if (localmesh->firstX()) {
-        if (y_bndry == "dirichlet") {
-          // Both Dirichlet
-          throw BoutException("Dirichlet y-boundary-condition not supported for mixed "
-              "second derivatives.");
-        } else if (y_bndry == "neumann") {
+        if (y_bndry == "neumann") {
           // Neumann y-bc
           // f(xs-1,ys-1) = f(xs-1,ys)
           PetscScalar val = 1.0;
@@ -1005,9 +1029,12 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
           val = -1.0;
           int col = globalIndex(localmesh->xstart-1, localmesh->yend);
           MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
-        } else if (y_bndry == "free_o3") {
+        } else if (y_bndry == "free_o3" or y_bndry == "dirichlet") {
           // 'free_o3' extrapolating boundary condition on Y boundaries
           // f(xs-1,ys-1) = 3*f(xs-1,ys) - 3*f(xs-1,ys+1) + f(xs-1,ys+2)
+          //
+          // Use free_o3 at the corners for Dirichlet y-boundaries because we don't know
+          // what value to pass for the corner
           PetscScalar val = 1.0;
           int row = globalIndex(localmesh->xstart-1, localmesh->yend+1);
           MatSetValues(MatA,1,&row,1,&row,&val,INSERT_VALUES);
@@ -1028,11 +1055,7 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
         }
       }
       if (localmesh->lastX()) {
-        if (y_bndry == "dirichlet") {
-          // Both Dirichlet
-          throw BoutException("Dirichlet y-boundary-condition not supported for mixed "
-              "second derivatives.");
-        } else if (y_bndry == "neumann") {
+        if (y_bndry == "neumann") {
           // Neumann y-bc
           // f(xe+1,ys-1) = f(xe+1,ys)
           PetscScalar val = 1.0;
@@ -1042,9 +1065,12 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
           val = -1.0;
           int col = globalIndex(localmesh->xend+1, localmesh->yend);
           MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
-        } else if (y_bndry == "free_o3") {
+        } else if (y_bndry == "free_o3" or y_bndry == "dirichlet") {
           // 'free_o3' extrapolating boundary condition on Y boundaries
           // f(xe+1,ys-1) = 3*f(xe+1,ys) - 3*f(xe+1,ys+1) + f(xe+1,ys+2)
+          //
+          // Use free_o3 at the corners for Dirichlet y-boundaries because we don't know
+          // what value to pass for the corner
           PetscScalar val = 1.0;
           int row = globalIndex(localmesh->xend+1, localmesh->yend+1);
           MatSetValues(MatA,1,&row,1,&row,&val,INSERT_VALUES);
@@ -1278,9 +1304,54 @@ const Field2D LaplaceXY::solve(const Field2D &rhs, const Field2D &x0) {
         VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
       }
 
-      if ((localmesh->hasBndryLowerY() or localmesh->hasBndryUpperY())
-          and (localmesh->firstX() or localmesh->lastX())) {
-        throw BoutException("Dirichlet not implemented for mixed-derivatives.");
+      // Use free_o3 for the corner boundary cells
+      if (localmesh->hasBndryLowerY()) {
+        if (localmesh->firstX()) {
+          int ind = globalIndex(localmesh->xstart-1, localmesh->ystart-1);
+
+          PetscScalar val = 3.*x0(localmesh->xstart-1, localmesh->ystart)
+            - 3.*x0(localmesh->xstart-1, localmesh->ystart+1)
+            + x0(localmesh->xstart-1, localmesh->ystart+2);
+          VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+
+          val = 0.0;
+          VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+        }
+        if (localmesh->lastX()) {
+          int ind = globalIndex(localmesh->xend+1, localmesh->ystart-1);
+
+          PetscScalar val = 3.*x0(localmesh->xend+1, localmesh->ystart)
+            - 3.*x0(localmesh->xend+1, localmesh->ystart+1)
+            + x0(localmesh->xend+1, localmesh->ystart+2);
+          VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+
+          val = 0.0;
+          VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+        }
+      }
+      if (localmesh->hasBndryUpperY()) {
+        if (localmesh->firstX()) {
+          int ind = globalIndex(localmesh->xstart-1, localmesh->yend+1);
+
+          PetscScalar val = 3.*x0(localmesh->xstart-1, localmesh->yend)
+            - 3.*x0(localmesh->xstart-1, localmesh->yend-1)
+            + x0(localmesh->xstart-1, localmesh->yend-2);
+          VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+
+          val = 0.0;
+          VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+        }
+        if (localmesh->lastX()) {
+          int ind = globalIndex(localmesh->xend+1, localmesh->yend+1);
+
+          PetscScalar val = 3.*x0(localmesh->xend+1, localmesh->yend)
+            - 3.*x0(localmesh->xend+1, localmesh->yend-1)
+            + x0(localmesh->xend+1, localmesh->yend-2);
+          VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+
+          val = 0.0;
+          VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+        }
       }
     } else if (y_bndry == "neumann") {
       // Y boundaries Neumann
@@ -1348,7 +1419,7 @@ const Field2D LaplaceXY::solve(const Field2D &rhs, const Field2D &x0) {
         }
       }
     } else if (y_bndry == "free_o3") {
-      // Y boundaries Neumann
+      // Y boundaries free_o3
       for(RangeIterator it=localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
         int ind = globalIndex(it.ind, localmesh->ystart-1);
 
