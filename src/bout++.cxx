@@ -61,9 +61,21 @@ const char DEFAULT_DIR[] = "data";
 #include <string>
 #include <vector>
 
-// POSIX headers
 #include <sys/stat.h>
+
+// Define S_ISDIR if not defined by system headers (that is, MSVC)
+// Taken from https://github.com/curl/curl/blob/e59540139a398dc70fde6aec487b19c5085105af/lib/curl_setup.h#L748-L751
+#if !defined(S_ISDIR) && defined(S_IFMT) && defined(S_IFDIR)
+#define S_ISDIR(m) (((m)&S_IFMT) == S_IFDIR)
+#endif
+
+#ifdef _MSC_VER
+#include <windows.h>
+inline auto getpid() -> int { return GetCurrentProcessId(); }
+#else
+// POSIX headers
 #include <unistd.h>
+#endif
 
 #ifdef BOUT_FPE
 #include <fenv.h>
@@ -181,8 +193,10 @@ void setupSignalHandler(SignalHandler signal_handler) {
   feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 #endif
 
+#ifndef _MSC_VER
   /// Trap SIGUSR1 to allow a clean exit after next write
   std::signal(SIGUSR1, signal_handler);
+#endif
 }
 
 // This is currently just an alias to the existing handler
@@ -785,12 +799,14 @@ void bout_signal_handler(int sig) {
   case SIGINT:
     throw BoutException("\n****** SigInt caught ******\n\n");
     break;
+#ifndef _MSC_VER
   case SIGKILL:
     throw BoutException("\n****** SigKill caught ******\n\n");
     break;
   case SIGUSR1:
     user_requested_exit = true;
     break;
+#endif
   default:
     throw BoutException("\n****** Signal %d  caught ******\n\n", sig);
     break;
