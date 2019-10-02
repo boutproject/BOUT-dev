@@ -531,19 +531,21 @@ message(STATUS "SUNDIALS support: ${USE_SUNDIALS}")
 set(BOUT_HAS_SUNDIALS ${USE_SUNDIALS})
 
 option(USE_NLS "Enable Native Language Support" ON)
-find_package(Gettext)
-if (GETTEXT_FOUND)
-  target_compile_definitions(bout++
-    PUBLIC "BOUT_HAS_GETTEXT")
-  find_package(Intl)
-  if (Intl_FOUND)
-    target_link_libraries(bout++
-      PUBLIC ${Intl_LIBRARIES})
-    target_include_directories(bout++
-      PUBLIC ${Intl_INCLUDE_DIRS})
+if (USE_NLS)
+  find_package(Gettext)
+  if (GETTEXT_FOUND)
+	target_compile_definitions(bout++
+	  PUBLIC "BOUT_HAS_GETTEXT")
+	find_package(Intl)
+	if (Intl_FOUND)
+	  target_link_libraries(bout++
+		PUBLIC ${Intl_LIBRARIES})
+	  target_include_directories(bout++
+		PUBLIC ${Intl_INCLUDE_DIRS})
+	endif()
   endif()
 endif()
-set(BOUT_HAS_GETTEXT ${GETTEXT_FOUND})
+set(BOUT_HAS_GETTEXT ${USE_NLS})
 
 option(USE_SCOREP "Enable support for Score-P based instrumentation" OFF)
 if (USE_SCOREP)
