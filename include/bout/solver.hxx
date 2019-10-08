@@ -308,9 +308,9 @@ public:
 
   // Solver status. Optional functions used to query the solver
   /// Number of 2D variables. Vectors count as 3
-  virtual int n2Dvars() const { return f2d.size(); }
+  virtual int n2Dvars() const { return static_cast<int>(f2d.size()); }
   /// Number of 3D variables. Vectors count as 3
-  virtual int n3Dvars() const { return f3d.size(); }
+  virtual int n3Dvars() const { return static_cast<int>(f3d.size()); }
 
   /// Get and reset the number of calls to the RHS function
   int resetRHSCounter();
