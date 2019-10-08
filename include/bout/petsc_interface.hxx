@@ -49,7 +49,6 @@ class GlobalIndexer;
 using IndexerPtr = shared_ptr<GlobalIndexer>;
 using InterpolationWeights = std::vector<ParallelTransform::positionsAndWeights>;
 
-
 /*!
  * A singleton which accepts index objects produced by iterating over
  * fields and returns a global index. This index can be used when
@@ -198,7 +197,7 @@ public:
   }
 
   /// Construct from a field, copying over the field values
-  PetscVector(F f) {
+  PetscVector(const F &f) {
     MPI_Comm comm;
     if (std::is_same<F, FieldPerp>::value) {
       comm = f.getMesh()->getXcomm();
@@ -219,7 +218,14 @@ public:
     VecCreateMPI(comm, size, PETSC_DECIDE, &vector);
     location = f.getLocation();
     initialised = true;
-    *this = f;
+    PetscInt ind;
+    BOUT_FOR(i, f.getRegion(RGN_ALL)) {
+      ind = indexConverter->getGlobal(i);
+      if (ind != -1) {
+	VecSetValues(vector, 1, &ind, &f[i], INSERT_VALUES);
+      }
+    }
+    assemble();
   }
 
   /// Construct a vector like v, but using data from a raw PETSc
@@ -273,26 +279,29 @@ public:
 
   /// Assign from field, copying over field values. The vector must
   /// already have been created for this to work.
-  PetscVector<F>& operator=(F& rhs) {
-    PetscInt ind;
-    ASSERT1(initialised);
-    ASSERT2(location == rhs.getLocation());
-    BOUT_FOR(i, rhs.getRegion(RGN_ALL)) {
-      ind = indexConverter->getGlobal(i);
-      if (ind != -1) {
-	VecSetValues(vector, 1, &ind, &rhs[i], INSERT_VALUES);
-      }
-    }
-    assemble();
-    return *this;
-  }
+//  PetscVector<F>& operator=(F& rhs) {
+//    PetscInt ind;
+//    ASSERT1(initialised);
+//    ASSERT2(location == rhs.getLocation());
+//    BOUT_FOR(i, rhs.getRegion(RGN_ALL)) {
+//      ind = indexConverter->getGlobal(i);
+//      if (ind != -1) {
+//	VecSetValues(vector, 1, &ind, &rhs[i], INSERT_VALUES);
+//      }
+//    }
+//    assemble();
+//    return *this;
+//  }
 
   PetscVectorElement& operator()(ind_type& index) {
-    int global = indexConverter->getGlobal(index);
 #if CHECKLEVEL >= 1
     if (!initialised) {
       throw BoutException("Can not return element of uninitialised vector");
-    } else if (global == -1) {
+    } 
+#endif
+    int global = indexConverter->getGlobal(index);
+#if CHECKLEVEL >= 1
+    if (global == -1) {
       throw BoutException("Request to return invalid vector element");
     }
 #endif
@@ -440,7 +449,7 @@ public:
         global2 = indexConverter->getGlobal(index2);
 #if CHECKLEVEL >= 1
     if (!initialised) {
-      throw BoutException("Can not return element of uninitialised vector");
+      throw BoutException("Can not return element of uninitialised matrix");
     } else if (global1 == -1 || global2 == -1) {
       throw BoutException("Request to return invalid matrix element");
     }
@@ -450,9 +459,9 @@ public:
     if (yoffset != 0) {
       std::vector<ParallelTransform::positionsAndWeights> pw;
       if (yoffset == -1) {
-	pw = pt->getWeightsForYDownApproximation(index2.x(), index2.y(), index2.y());
+	pw = pt->getWeightsForYDownApproximation(index2.x(), index2.y(), index2.z());
       } else if (yoffset == 1) {
-	pw = pt->getWeightsForYUpApproximation(index2.x(), index2.y(), index2.y());
+	pw = pt->getWeightsForYUpApproximation(index2.x(), index2.y(), index2.z());
       } else {
 	pw = pt->getWeightsForYApproximation(index2.x(), index2.y(), index2.z(), yoffset);
       }

@@ -70,18 +70,20 @@ public:
 class LaplacePetsc3dAmg : public Laplacian {
 public:
   LaplacePetsc3dAmg(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr);
-  ~LaplacePetsc3dAmg(){};
+  virtual ~LaplacePetsc3dAmg() override;
 
   void setCoefA(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     A = val;
+    updateRequired = true;
   }
   void setCoefC(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     C1 = val;
     C2 = val;
+    updateRequired = issetC = true;
   }
   void setCoefC1(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
@@ -93,68 +95,69 @@ public:
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     C2 = val;
-    issetC = true;
+    updateRequired = issetC = true;
   }
   void setCoefD(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     D = val;
-    issetD = true;
+    updateRequired = issetD = true;
   }
   void setCoefEx(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     Ex = val;
-    issetE = true;
+    updateRequired = issetE = true;
   }
   void setCoefEz(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     Ez = val;
-    issetE = true;
+    updateRequired = issetE = true;
   }
 
   void setCoefA(const Field3D &val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     A = val;
+    updateRequired = true;
   }
   void setCoefC(const Field3D &val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     C1 = val;
     C2 = val;
-    issetC = true;
+    updateRequired = issetC = true;
   }
   void setCoefC1(const Field3D &val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     C1 = val;
-    issetC = true;
+    updateRequired = issetC = true;
   }
   void setCoefC2(const Field3D &val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     C2 = val;
-    issetC = true;
+    updateRequired = issetC = true;
   }
   void setCoefD(const Field3D &val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     D = val;
-    issetD = true;
+    updateRequired = issetD = true;
   }
   void setCoefEx(const Field3D &val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     Ex = val;
-    issetE = true;
+    updateRequired = issetE = true;
   }
   void setCoefEz(const Field3D &val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     Ez = val;
-    issetE = true;
+    updateRequired = issetE = true;
   }
 
   
@@ -178,7 +181,11 @@ public:
   }
 
 private:
- 
+
+  // (Re)compute the values of the matrix representing the Laplacian operator
+  void updateMatrix3D();
+  void updateMatrix2D();
+  
   /* Ex and Ez
    * Additional 1st derivative terms to allow for solution field to be
    * components of a vector
@@ -189,16 +196,21 @@ private:
   bool issetD;
   bool issetC;
   bool issetE;
+  bool updateRequired;
   int lastflag;               // The flag used to construct the matrix
-  int inner_y_boundary_flags;
-  int outer_y_boundary_flags;
+  int lower_boundary_flags;
+  int upper_boundary_flags;
 
   int meshx, meshz, size, localN; // Mesh sizes, total size, no of points on this processor
-  MPI_Comm comm;
 
   Options *opts;              // Laplace Section Options Object
   std::string ksptype; ///< KSP solver type
   std::string pctype;  ///< Preconditioner type
+
+  // Values specific to particular solvers
+  BoutReal richardson_damping_factor;
+  BoutReal chebyshev_max, chebyshev_min;
+  int gmres_max_steps;
 
   // Convergence Parameters. Solution is considered converged if |r_k| < max( rtol * |b| , atol )
   // where r_k = b - Ax_k. The solution is considered diverged if |r_k| > dtol * |b|.
@@ -207,8 +219,11 @@ private:
   bool direct; //Use direct LU solver if true.
   bool fourth_order;
 
-  PetscLib lib;
+  PetscMatrix<Field3D> operator3D;
+  PetscMatrix<Field2D> operator2D;
+  KSP ksp;
 
+  bool kspInitialised;
   bool use_precon;  // Switch for preconditioning
   bool rightprec;   // Right preconditioning
 

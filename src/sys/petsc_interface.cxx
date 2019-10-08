@@ -74,6 +74,9 @@ void GlobalIndexer::initialiseTest() {
 void GlobalIndexer::initialise() {
   fieldmesh->communicate(indices3D, indices2D);
   fieldmesh->communicate(indicesPerp);
+  // Communicate a second time to get any corner values
+  fieldmesh->communicate(indices3D, indices2D);
+  fieldmesh->communicate(indicesPerp);
 }
 
 Mesh* GlobalIndexer::getMesh() {
@@ -112,11 +115,15 @@ GlobalIndexer::GlobalIndexer(Mesh* localmesh) : fieldmesh(localmesh),
   int counter = localmesh->globalStartIndex3D();
   for (RangeIterator it=localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
     for (int z = 0; z < localmesh->LocalNz; z++) {
+      if (it.ind == localmesh->xstart) indices3D(it.ind - 1, localmesh->ystart - 1, z) = counter++;
+      if (it.ind == localmesh->xend) indices3D(it.ind + 1, localmesh->ystart - 1, z) = counter++;
       indices3D(it.ind, localmesh->ystart - 1, z) = counter++;
     }
   }
   for (RangeIterator it=localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
     for (int z = 0; z < localmesh->LocalNz; z++) {
+      if (it.ind == localmesh->xstart) indices3D(it.ind - 1, localmesh->yend + 1, z) = counter++;
+      if (it.ind == localmesh->xend) indices3D(it.ind + 1, localmesh->yend + 1, z) = counter++;
       indices3D(it.ind, localmesh->yend + 1, z) = counter++;
     }
   }
@@ -131,9 +138,13 @@ GlobalIndexer::GlobalIndexer(Mesh* localmesh) : fieldmesh(localmesh),
   // Set up the 2D indices
   counter = localmesh->globalStartIndex2D();
   for (RangeIterator it=localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
+      if (it.ind == localmesh->xstart) indices2D(it.ind - 1, localmesh->ystart - 1) = counter++;
+      if (it.ind == localmesh->xend) indices2D(it.ind + 1, localmesh->ystart - 1) = counter++;
     indices2D(it.ind, localmesh->ystart - 1) = counter++;
   }
   for (RangeIterator it=localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
+      if (it.ind == localmesh->xstart) indices2D(it.ind - 1, localmesh->yend + 1) = counter++;
+      if (it.ind == localmesh->xend) indices2D(it.ind + 1, localmesh->ystart + 1) = counter++;
     indices2D(it.ind, localmesh->yend + 1) = counter++;
   }
   BOUT_FOR(i, localmesh->getRegion2D("RGN_NOY")) {

@@ -72,8 +72,7 @@ TEST_F(IndexerTest, TestConvertIndex3D) {
     returnedIndices.insert(global);
   }
 
-  // If periodic in X, check indices of X guard cells are not unique;
-  // otherwise check that they are
+  // Check indices of X guard cells are unique
   BOUT_FOR(i, localmesh->getRegion3D("RGN_XGUARDS")) {
     int global = index->getGlobal(i);
     EXPECT_GE(global, 0);
@@ -81,8 +80,7 @@ TEST_F(IndexerTest, TestConvertIndex3D) {
     returnedIndices.insert(global);
   }
 
-  // If periodic in Y, check indices of Y guard cells are not unique;
-  // otherwise check that they are
+  // Check indices of Y guard cells are unique
   BOUT_FOR(i, localmesh->getRegion3D("RGN_YGUARDS")) {
     int global = index->getGlobal(i);
     EXPECT_GE(global, 0);
