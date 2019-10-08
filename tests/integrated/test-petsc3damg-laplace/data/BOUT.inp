@@ -21,17 +21,11 @@ g_23 = 0.
 type=petsc3damg
 include_yguards=false
 all_terms=true
-#these aren't read from [laplace] section by LaplacePetscAmg/LaplacePetsc3DAmg
-#rtol=1.e-6
-## Note, set a fairly high atol here because the RHS in this test is large, O(10^6)
-#atol=1.e-10
-#dtol=1.e12
-maxits=1000
-
-[petscamg]
 rtol=1.e-6
+## Note, set a fairly high atol here because the RHS in this test is large, O(10^6)
 atol=1.e-10
-solvertype = hy
+dtol=1.e12
+maxits=1000
 
 #############################################
 # input variables for tests
