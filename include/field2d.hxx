@@ -120,8 +120,8 @@ class Field2D : public Field, public FieldData {
   int getNz() const override {return 1;};
 
   // these methods return Field2D to allow method chaining
-  Field2D& setLocation(CELL_LOC location) {
-    Field::setLocation(location);
+  Field2D& setLocation(CELL_LOC new_location) {
+    Field::setLocation(new_location);
     return *this;
   }
   Field2D& setDirectionY(YDirectionType d) {
