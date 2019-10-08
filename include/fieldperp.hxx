@@ -123,8 +123,8 @@ class FieldPerp : public Field {
   }
 
   // these methods return FieldPerp to allow method chaining
-  FieldPerp& setLocation(CELL_LOC location) {
-    Field::setLocation(location);
+  FieldPerp& setLocation(CELL_LOC new_location) {
+    Field::setLocation(new_location);
     return *this;
   }
   FieldPerp& setDirectionY(YDirectionType d) {
