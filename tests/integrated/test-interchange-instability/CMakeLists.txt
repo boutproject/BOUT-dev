@@ -1,0 +1,6 @@
+bout_add_integrated_test(interchange-instability
+  SOURCES 2fluid.cxx
+  EXECUTABLE_NAME 2fluid
+  USE_RUNTEST
+  EXTRA_FILES slab.6b5.r1.cdl slab.6b5.r10.cdl data_1/BOUT.inp data_10/BOUT.inp
+  )
