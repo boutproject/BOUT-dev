@@ -218,12 +218,17 @@ AC_SUBST([COVERAGE_FLAGS])
 # If this is passed to GCC, it will explode, so the flag must be enabled
 # conditionally.
 # This check taken from AX_COMPILER_FLAGS_CXXFLAGS
+extra_compiler_flags_test=""
 AX_CHECK_COMPILE_FLAG([-Werror=unknown-warning-option],[
   extra_compiler_flags_test="-Werror=unknown-warning-option"
-],[
-  extra_compiler_flags_test=""
 ])
-
+# A similar check to above, but for Intel. -we is undocumented, but
+# the equivalent (?) -diag-error gets accepted by GCC. 10006 is
+# "unknown option", and 10148 is the more recent "unknown warning
+# option"
+AX_CHECK_COMPILE_FLAG([-we10006,10148],[
+  extra_compiler_flags_test="-we10006,10148"
+])
 
 AS_IF([test "x$enable_warnings" != "xno"], [
 # Some hopefully sensible default compiler warning flags

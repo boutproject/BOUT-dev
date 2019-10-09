@@ -5614,6 +5614,7 @@ fi
 # If this is passed to GCC, it will explode, so the flag must be enabled
 # conditionally.
 # This check taken from AX_COMPILER_FLAGS_CXXFLAGS
+extra_compiler_flags_test=""
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C++ compiler accepts -Werror=unknown-warning-option" >&5
 $as_echo_n "checking whether C++ compiler accepts -Werror=unknown-warning-option... " >&6; }
 if ${ax_cv_check_cxxflags___Werror_unknown_warning_option+:} false; then :
@@ -5648,11 +5649,49 @@ if test "x$ax_cv_check_cxxflags___Werror_unknown_warning_option" = xyes; then :
   extra_compiler_flags_test="-Werror=unknown-warning-option"
 
 else
-
-  extra_compiler_flags_test=""
-
+  :
 fi
 
+# A similar check to above, but for Intel. -we is undocumented, but
+# the equivalent (?) -diag-error gets accepted by GCC. 10006 is
+# "unknown option", and 10148 is the more recent "unknown warning
+# option"
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C++ compiler accepts -we10006,10148" >&5
+$as_echo_n "checking whether C++ compiler accepts -we10006,10148... " >&6; }
+if ${ax_cv_check_cxxflags___we10006_10148+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+  ax_check_save_flags=$CXXFLAGS
+  CXXFLAGS="$CXXFLAGS  -we10006,10148"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+  ax_cv_check_cxxflags___we10006_10148=yes
+else
+  ax_cv_check_cxxflags___we10006_10148=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  CXXFLAGS=$ax_check_save_flags
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cxxflags___we10006_10148" >&5
+$as_echo "$ax_cv_check_cxxflags___we10006_10148" >&6; }
+if test "x$ax_cv_check_cxxflags___we10006_10148" = xyes; then :
+
+  extra_compiler_flags_test="-we10006,10148"
+
+else
+  :
+fi
 
 
 if test "x$enable_warnings" != "xno"; then :
