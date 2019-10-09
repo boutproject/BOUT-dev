@@ -144,7 +144,7 @@ Field3D Laplacian::solve(const Field3D& b) {
   TRACE("Laplacian::solve(Field3D)");
 
   ASSERT1(b.getLocation() == location);
-  ASSERT1(localmesh = b.getMesh());
+  ASSERT1(localmesh == b.getMesh());
 
   Timer timer("invert");
   int ys = localmesh->ystart, ye = localmesh->yend;
