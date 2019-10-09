@@ -82,6 +82,7 @@ set(BOUT_SOURCES
   ./include/bout/rvec.hxx
   ./include/bout/scorepwrapper.hxx
   ./include/bout/slepclib.hxx
+  ./include/bout/snb.hxx
   ./include/bout/solver.hxx
   ./include/bout/solverfactory.hxx
   ./include/bout/surfaceiter.hxx
@@ -233,6 +234,7 @@ set(BOUT_SOURCES
   ./src/physics/gyro_average.cxx
   ./src/physics/physicsmodel.cxx
   ./src/physics/smoothing.cxx
+  ./src/physics/snb.cxx
   ./src/physics/sourcex.cxx
   ./src/solver/impls/arkode/arkode.cxx
   ./src/solver/impls/arkode/arkode.hxx
