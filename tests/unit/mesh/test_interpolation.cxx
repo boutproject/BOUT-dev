@@ -75,7 +75,8 @@ protected:
           Field2D{0.0, mesh}, Field2D{0.0, mesh}, Field2D{0.0, mesh}, false),
           location);
       mesh->getCoordinates(location)->setParallelTransform(
-          bout::utils::make_unique<ParallelTransformIdentity>(*mesh));
+          bout::utils::make_unique<ParallelTransformIdentity>(*mesh,
+            std::vector<BoutReal>()));
     }
   }
 

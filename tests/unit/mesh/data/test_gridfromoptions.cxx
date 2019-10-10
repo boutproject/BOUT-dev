@@ -49,7 +49,8 @@ public:
     // We need a parallel transform as FieldFactory::create3D wants to
     // un-field-align the result
     mesh_from_options.getCoordinates()->setParallelTransform(
-        bout::utils::make_unique<ParallelTransformIdentity>(mesh_from_options));
+        bout::utils::make_unique<ParallelTransformIdentity>(mesh_from_options,
+          std::vector<BoutReal>()));
 
     expected_2d = makeField<Field2D>(
         [](Field2D::ind_type& index) {

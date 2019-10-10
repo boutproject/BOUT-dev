@@ -72,6 +72,24 @@ void ShiftedMetric::cachePhases() {
     }
   }
 
+  // Allocate storage for our twist-shift phase information.
+  twistShiftDownPhs = Matrix<dcomplex>(mesh.LocalNx, nmodes);
+  twistShiftUpPhs = Matrix<dcomplex>(mesh.LocalNx, nmodes);
+
+  // To/From field aligned phases
+  for (int ix=0; ix<mesh.LocalNx; ix++) {
+    BoutReal ShiftAngle = 0.;
+    mesh.periodicY(ix, ShiftAngle);
+
+    for (int jz = 0; jz < nmodes; jz++) {
+      BoutReal kwave = jz * 2.0 * PI / zlength; // wave number is 1/[rad]
+      twistShiftDownPhs(ix, jz) =
+          dcomplex(cos(kwave * ShiftAngle), -sin(kwave * ShiftAngle));
+      twistShiftUpPhs(ix, jz) =
+          dcomplex(cos(-kwave * ShiftAngle), -sin(-kwave * ShiftAngle));
+    }
+  }
+
   // Allocate space for parallel slice caches: y-guard cells in each
   // direction
   parallel_slice_phases.resize(mesh.ystart * 2);
@@ -179,6 +197,34 @@ const FieldPerp ShiftedMetric::fromFieldAligned(const FieldPerp& f, const std::s
                         "ShiftedMetric::toFieldAligned");
     // This should never happen, but use 'return f' to avoid compiler warnings
     return f;
+  }
+}
+
+void ShiftedMetric::applyTwistShift(Field3D& f, bool twist_shift_enabled) {
+  if (f.getDirectionY() == YDirectionType::Aligned) {
+    // Twist-shift only if field-aligned
+
+    if (mesh.LocalNz == 1)
+      return; // Shifting makes no difference
+
+    if (not twist_shift_enabled) {
+      throw BoutException("'TwistShift = true' is required to communicate field-aligned "
+          "Field3Ds when using ShiftedMetric.");
+    }
+
+    // Lower boundary
+    // Note "TwistShiftDown" Region is empty if no twist-shift is required at the lower
+    // boundary of this processor
+    BOUT_FOR(i, f.getRegion2D("TwistShiftDown")) {
+      shiftZ(&f(i, 0), &twistShiftDownPhs(i.x(), 0), &f(i, 0));
+    }
+
+    // Upper boundary
+    // Note "TwistShiftUp" Region is empty if no twist-shift is required at the upper
+    // boundary of this processor
+    BOUT_FOR(i, f.getRegion2D("TwistShiftUp")) {
+      shiftZ(&f(i, 0), &twistShiftUpPhs(i.x(), 0), &f(i, 0));
+    }
   }
 }
 

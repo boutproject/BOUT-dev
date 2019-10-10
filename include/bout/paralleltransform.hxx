@@ -79,9 +79,23 @@ public:
   /// Output variables used by a ParallelTransform instance to the dump files
   virtual void outputVars(Datafile& UNUSED(file)) {}
 
-  /// If \p twist_shift_enabled is true, does a `Field3D` with Y direction \p ytype
-  /// require a twist-shift at branch cuts on closed field lines?
-  virtual bool requiresTwistShift(bool twist_shift_enabled, YDirectionType ytype) = 0;
+  /// If \p twist_shift_enabled is true, apply twist-shift to `Field3D f`
+  virtual void applyTwistShift(Field3D& f, bool twist_shift_enabled) = 0;
+
+  /// Shift part of a Field3D by a given angle in Z
+  ///
+  /// @param[inout] var  The variable to be modified in-place
+  /// @param[in] jx      X index
+  /// @param[in] jy      Y index
+  /// @param[in] zangle  The Z angle to apply
+  virtual void shiftZ(Field3D& f, int jx, int jy, BoutReal zangle);
+
+  /// Apply a phase shift by a given angle \p zangle in Z to all points
+  ///
+  /// @param[inout] var  The variable to modify in-place
+  /// @param[in] zangle  The angle to shift by in Z
+  /// @param[in] rgn     The region to calculate the result over
+  void shiftZ(Field3D &var, BoutReal zangle, const std::string& rgn="RGN_ALL");
 
 protected:
   /// This method should be called in the constructor to check that if the grid
@@ -98,7 +112,9 @@ protected:
  */
 class ParallelTransformIdentity : public ParallelTransform {
 public:
-  ParallelTransformIdentity(Mesh& mesh_in) : ParallelTransform(mesh_in) {
+  ParallelTransformIdentity(Mesh& mesh_in, std::vector<BoutReal> ShiftAngle_in)
+      : ParallelTransform(mesh_in), ShiftAngle(std::move(ShiftAngle_in)) {
+
     // check the coordinate system used for the grid data source
     ParallelTransformIdentity::checkInputGrid();
   }
@@ -137,14 +153,12 @@ public:
 
   bool canToFromFieldAligned() override { return true; }
 
-  bool requiresTwistShift(bool twist_shift_enabled, YDirectionType UNUSED(ytype)) override {
-    // All Field3Ds require twist-shift, because all are effectively field-aligned, but
-    // allow twist-shift to be turned off by twist_shift_enabled
-    return twist_shift_enabled;
-  }
+  void applyTwistShift(Field3D& f, bool twist_shift_enabled);
 
 protected:
   void checkInputGrid() override;
+
+  std::vector<BoutReal> ShiftAngle;  ///< Angle for twist-shift location
 };
 
 /*!
@@ -192,14 +206,7 @@ public:
   /// Save zShift to the output
   void outputVars(Datafile& file) override;
 
-  bool requiresTwistShift(bool twist_shift_enabled, YDirectionType ytype) override {
-    // Twist-shift only if field-aligned
-    if (ytype == YDirectionType::Aligned and not twist_shift_enabled) {
-      throw BoutException("'TwistShift = true' is required to communicate field-aligned "
-          "Field3Ds when using ShiftedMetric.");
-    }
-    return ytype == YDirectionType::Aligned;
-  }
+  void applyTwistShift(Field3D& f, bool twist_shift_enabled);
 
 protected:
   void checkInputGrid() override;
@@ -220,7 +227,12 @@ private:
                                    /// orthogonal coordinates to field-aligned coordinates
   Tensor<dcomplex> fromAlignedPhs; ///< Cache of phase shifts for transforming from
                                    /// field-aligned coordinates to X-Z orthogonal
-  /// coordinates
+                                   /// coordinates
+
+  Matrix<dcomplex> twistShiftDownPhs; ///< Cache of phase shifts for twist-shift by
+                                      /// ShiftAngle going down in Y
+  Matrix<dcomplex> twistShiftUpPhs;   ///< Cache of phase shifts for twist-shift by
+                                      /// ShiftAngle going up in Y
 
   /// Helper POD for parallel slice phase shifts
   struct ParallelSlicePhase {

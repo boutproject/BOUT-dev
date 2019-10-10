@@ -203,9 +203,8 @@ Field3D &Field3D::ynext(int dir) {
   return const_cast<Field3D&>(static_cast<const Field3D&>(*this).ynext(dir));
 }
 
-bool Field3D::requiresTwistShift(bool twist_shift_enabled) {
-  return getCoordinates()->getParallelTransform().requiresTwistShift(twist_shift_enabled,
-      getDirectionY());
+void Field3D::applyTwistShift(bool twist_shift_enabled) {
+  getCoordinates()->getParallelTransform().applyTwistShift(*this, twist_shift_enabled);
 }
 
 // Not in header because we need to access fieldmesh
@@ -729,49 +728,6 @@ Field3D lowPass(const Field3D &var, int zmax, bool keep_zonal, const std::string
   return result;
 }
 
-/* 
- * Use FFT to shift by an angle in the Z direction
- */
-void shiftZ(Field3D &var, int jx, int jy, double zangle) {
-  TRACE("shiftZ");
-  checkData(var);
-  var.allocate(); // Ensure that var is unique
-  Mesh *localmesh = var.getMesh();
-
-  int ncz = localmesh->LocalNz;
-  if(ncz == 1)
-    return; // Shifting doesn't do anything
-  
-  Array<dcomplex> v(ncz/2 + 1);
-  
-  rfft(&(var(jx,jy,0)), ncz, v.begin()); // Forward FFT
-
-  BoutReal zlength = var.getCoordinates()->zlength();
-
-  // Apply phase shift
-  for(int jz=1;jz<=ncz/2;jz++) {
-    BoutReal kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
-    v[jz] *= dcomplex(cos(kwave*zangle) , -sin(kwave*zangle));
-  }
-
-  irfft(v.begin(), ncz, &(var(jx,jy,0))); // Reverse FFT
-}
-
-void shiftZ(Field3D &var, double zangle, const std::string& rgn) {
-  const auto region_str = toString(rgn);
-
-  // Only allow a whitelist of regions for now
-  ASSERT2(region_str == "RGN_ALL" || region_str == "RGN_NOBNDRY" ||
-          region_str == "RGN_NOX" || region_str == "RGN_NOY");
-
-  const Region<Ind2D> &region = var.getRegion2D(region_str);
-
-  // Could be OpenMP if shiftZ(Field3D, int, int, double) didn't throw
-  BOUT_FOR_SERIAL(i, region) {
-    shiftZ(var, i.x(), i.y(), zangle);
-  }
-}
-
 namespace {
   // Internal routine to avoid ugliness with interactions between CHECK
   // levels and UNUSED parameters
@@ -799,6 +755,17 @@ void checkData(const Field3D &f, const std::string& region) {
   checkDataIsFiniteOnRegion(f, region);
 }
 #endif
+
+void shiftZ(Field3D& var, int jx, int jy, double zangle) {
+  var.getCoordinates()->getParallelTransform().shiftZ(var, jx, jy, zangle);
+}
+
+void shiftZ(Field3D& var, BoutReal zangle, const std::string& rgn) {
+  var.getCoordinates()->getParallelTransform().shiftZ(var, zangle, rgn);
+}
+void shiftZ(Field3D& var, BoutReal zangle, REGION rgn) {
+  var.getCoordinates()->getParallelTransform().shiftZ(var, zangle, toString(rgn));
+}
 
 Field2D DC(const Field3D &f, const std::string& rgn) {
   TRACE("DC(Field3D)");

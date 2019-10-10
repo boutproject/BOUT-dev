@@ -26,7 +26,8 @@ public:
     static_cast<FakeMesh*>(mesh)->setCoordinates(test_coords);
 
     mesh->getCoordinates()->setParallelTransform(
-        bout::utils::make_unique<ParallelTransformIdentity>(*mesh));
+        bout::utils::make_unique<ParallelTransformIdentity>(*mesh,
+          std::vector<BoutReal>()));
   }
 
   virtual ~InitialProfileTest() { Options::cleanup(); }

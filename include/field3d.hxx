@@ -297,9 +297,9 @@ class Field3D : public Field, public FieldData {
   Field3D& ynext(int offset);
   const Field3D& ynext(int offset) const;
 
-  /// If \p twist_shift_enabled is true, does this Field3D require a twist-shift at branch
-  /// cuts on closed field lines?
-  bool requiresTwistShift(bool twist_shift_enabled);
+  /// If \p twist_shift_enabled is true, apply twist-shift to this Field3D at branch cuts
+  /// on closed field lines?
+  void applyTwistShift(bool twist_shift_enabled);
 
   /////////////////////////////////////////////////////////
   // Data access
@@ -661,19 +661,19 @@ inline Field3D lowPass(const Field3D &var, int zmax, REGION rgn) {
 /// @param[in] jx      X index
 /// @param[in] jy      Y index
 /// @param[in] zangle  The Z angle to apply
-void shiftZ(Field3D &var, int jx, int jy, double zangle);
+[[gnu::deprecated("Use ParallelTransform::shiftZ instead")]]
+void shiftZ(Field3D& var, int jx, int jy, double zangle);
 
 /// Apply a phase shift by a given angle \p zangle in Z to all points
 ///
 /// @param[inout] var  The variable to modify in-place
 /// @param[in] zangle  The angle to shift by in Z
 /// @param[in] rgn     The region to calculate the result over
-void shiftZ(Field3D &var, BoutReal zangle, const std::string& rgn="RGN_ALL");
-[[gnu::deprecated("Please use shiftZ(const Field3D& var, BoutReal zangle, "
-    "const std::string& region = \"RGN_ALL\") instead")]]
-inline void shiftZ(Field3D &var, BoutReal zangle, REGION rgn) {
-  return shiftZ(var, zangle, toString(rgn));
-}
+[[gnu::deprecated("Use ParallelTransform::shiftZ instead")]]
+void shiftZ(Field3D& var, BoutReal zangle, const std::string& rgn="RGN_ALL");
+[[gnu::deprecated("Please use ParallelTransform::shiftZ(const Field3D& var, BoutReal "
+    "zangle, const std::string& region = \"RGN_ALL\") instead")]]
+void shiftZ(Field3D& var, BoutReal zangle, REGION rgn);
 
 /// Average in the Z direction
 ///

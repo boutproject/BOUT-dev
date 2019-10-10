@@ -109,11 +109,13 @@ public:
 
   bool canToFromFieldAligned() override { return false; }
 
-  bool requiresTwistShift(bool UNUSED(twist_shift_enabled), MAYBE_UNUSED(YDirectionType ytype)) override {
+  void applyTwistShift(MAYBE_UNUSED(Field3D& f), bool UNUSED(twist_shift_enabled)) {
     // No Field3Ds require twist-shift, because they cannot be field-aligned
-    ASSERT1(ytype == YDirectionType::Standard);
+    ASSERT1(f.getDirectionY() == YDirectionType::Standard);
+  }
 
-    return false;
+  void shiftZ(Field3D& UNUSED(f), int UNUSED(jx), int UNUSED(jy), BoutReal UNUSED(zangle)) {
+    throw BoutException("FCI method cannot shift Field3D by an angle in Z");
   }
 
 protected:

@@ -141,7 +141,7 @@ public:
     }
 
     // We need the parallel slices for the y-direction
-    ParallelTransformIdentity identity{*mesh};
+    ParallelTransformIdentity identity{*mesh, std::vector<BoutReal>()};
     identity.calcParallelSlices(input);
     identity.calcParallelSlices(velocity);
   };

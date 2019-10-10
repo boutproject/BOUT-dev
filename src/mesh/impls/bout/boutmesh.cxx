@@ -1133,41 +1133,7 @@ int BoutMesh::wait(comm_handle handle) {
   // TWIST-SHIFT CONDITION
   // Loop over 3D fields
   for (const auto &var : ch->var_list.field3d()) {
-    if (var->requiresTwistShift(TwistShift)) {
-
-      // Twist-shift only needed for field-aligned fields
-      int jx, jy;
-
-      // Perform Twist-shift using shifting method
-      if (var->getDirectionY() == YDirectionType::Aligned) {
-        // Only variables in field-aligned coordinates need the twist-shift boundary
-        // condition to be applied
-
-        // Lower boundary
-        if (TS_down_in && (DDATA_INDEST != -1)) {
-          for (jx = 0; jx < DDATA_XSPLIT; jx++)
-            for (jy = 0; jy != MYG; jy++)
-              shiftZ(*var, jx, jy, ShiftAngle[jx]);
-        }
-        if (TS_down_out && (DDATA_OUTDEST != -1)) {
-          for (jx = DDATA_XSPLIT; jx < LocalNx; jx++)
-            for (jy = 0; jy != MYG; jy++)
-              shiftZ(*var, jx, jy, ShiftAngle[jx]);
-        }
-
-        // Upper boundary
-        if (TS_up_in && (UDATA_INDEST != -1)) {
-          for (jx = 0; jx < UDATA_XSPLIT; jx++)
-            for (jy = LocalNy - MYG; jy != LocalNy; jy++)
-              shiftZ(*var, jx, jy, -ShiftAngle[jx]);
-        }
-        if (TS_up_out && (UDATA_OUTDEST != -1)) {
-          for (jx = UDATA_XSPLIT; jx < LocalNx; jx++)
-            for (jy = LocalNy - MYG; jy != LocalNy; jy++)
-              shiftZ(*var, jx, jy, -ShiftAngle[jx]);
-        }
-      }
-    }
+    var->applyTwistShift(TwistShift);
   }
 
 #if CHECK > 0
@@ -1853,6 +1819,29 @@ void BoutMesh::topology() {
     DDATA_XSPLIT = LocalNx;
   if (UDATA_XSPLIT > LocalNx)
     UDATA_XSPLIT = LocalNx;
+
+  // Create Regions for applying twist-shift
+  auto twist_shift_down = Region<Ind2D>();
+  if (TS_down_in && (DDATA_INDEST != -1)) {
+    twist_shift_down += Region<Ind2D>(0, DDATA_XSPLIT - 1, 0, ystart - 1, 0, 0, LocalNy,
+        1, maxregionblocksize);
+  }
+  if (TS_down_out && (DDATA_OUTDEST != -1)) {
+    twist_shift_down += Region<Ind2D>(DDATA_XSPLIT, LocalNx - 1, 0, ystart - 1, 0, 0,
+        LocalNy, 1, maxregionblocksize);
+  }
+  addRegion2D("TwistShiftDown", twist_shift_down);
+
+  auto twist_shift_up = Region<Ind2D>();
+  if (TS_up_in && (UDATA_INDEST != -1)) {
+    twist_shift_up += Region<Ind2D>(0, UDATA_XSPLIT - 1, yend + 1, LocalNy - 1, 0, 0,
+        LocalNy, 1, maxregionblocksize);
+  }
+  if (TS_up_out && (UDATA_OUTDEST != -1)) {
+    twist_shift_up += Region<Ind2D>(UDATA_XSPLIT, LocalNx - 1, yend + 1, LocalNy - 1, 0,
+        0, LocalNy, 1, maxregionblocksize);
+  }
+  addRegion2D("TwistShiftUp", twist_shift_up);
 
   // Print out settings
   output_info.write("\tMYPE_IN_CORE = %d\n", MYPE_IN_CORE);
