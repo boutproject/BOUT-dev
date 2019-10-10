@@ -230,7 +230,7 @@ Field3D FieldFactory::create3D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC 
     if (coords->getParallelTransform().canToFromFieldAligned()) {
       // Transform from field aligned coordinates, to be compatible with
       // older BOUT++ inputs. This is not a particularly "nice" solution.
-      result = fromFieldAligned(result, RGN_ALL);
+      result = fromFieldAligned(result, "RGN_ALL");
     }
   }
 
@@ -310,7 +310,7 @@ FieldPerp FieldFactory::createPerp(FieldGeneratorPtr gen, Mesh* localmesh, CELL_
     if (coords->getParallelTransform().canToFromFieldAligned()) {
       // Transform from field aligned coordinates, to be compatible with
       // older BOUT++ inputs. This is not a particularly "nice" solution.
-      result = fromFieldAligned(result, RGN_ALL);
+      result = fromFieldAligned(result, "RGN_ALL");
     }
   }
 
@@ -386,7 +386,7 @@ FieldGeneratorPtr FieldFactory::resolve(std::string& name) const {
 
     // Check if already looking up this symbol
     for (const auto& lookup_value : lookup) {
-      if (key.compare(lookup_value) == 0) {
+      if (key == lookup_value) {
         // Name matches, so already looking up
         output_error << "ExpressionParser lookup stack:\n";
         for (const auto& stack_value : lookup) {

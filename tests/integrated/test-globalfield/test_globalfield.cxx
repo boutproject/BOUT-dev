@@ -8,7 +8,7 @@
 #include <boutmain.hxx>
 #include <bout/globalfield.hxx>
 
-int physics_init(bool restarting) {
+int physics_init(bool UNUSED(restarting)) {
   
   /////////////////////////////////////////////////////////////
   // 2D fields
@@ -117,7 +117,7 @@ int physics_init(bool restarting) {
   return 1; // Signal an error, so quits
 }
 
-int physics_run(BoutReal t) {
+int physics_run(BoutReal UNUSED(t)) {
   // Doesn't do anything
   return 1;
 }

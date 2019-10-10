@@ -44,7 +44,6 @@ private:
   // Method to use: BRACKET_ARAKAWA, BRACKET_STD or BRACKET_SIMPLE
   BRACKET_METHOD bm; // Bracket method for advection terms
 
-  int phi_flags; // Inversion flags
 
   bool nonlinear;
   bool parallel_lc;
@@ -85,8 +84,6 @@ protected:
     eta = options["eta"].doc("Normalised resistivity").withDefault(1e-3);
     mu = options["mu"].doc("Normalised vorticity").withDefault(1.e-3);
 
-    phi_flags = options["phi_flags"].withDefault(0);
-    
     switch (options["bracket_method"].withDefault(0)) {
     case 0: {
       bm = BRACKET_STD;
@@ -213,7 +210,6 @@ protected:
 
     // Create a solver for the Laplacian
     phiSolver = Laplacian::create();
-    phiSolver->setFlags(phi_flags);
     
     return 0;
   }

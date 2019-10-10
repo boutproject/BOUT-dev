@@ -132,7 +132,6 @@ BoutReal vacuum_pressure;
 BoutReal vacuum_trans; // Transition width
 Field3D vac_mask;
 
-int phi_flags, apar_flags;
 bool nonlinear;
 bool evolve_jpar;
 BoutReal g; // Only if compressible
@@ -614,10 +613,6 @@ int physics_init(bool restarting) {
   // Compressional terms
   phi_curv = options["phi_curv"].withDefault(true);
   g = options["gamma"].withDefault(5.0 / 3.0);
-
-  // Field inversion flags
-  phi_flags = options["phi_flags"].withDefault(0);
-  apar_flags = options["apar_flags"].withDefault(0);
 
   if (!include_curvature)
     b0xcv = 0.0;
@@ -1130,11 +1125,9 @@ int physics_init(bool restarting) {
   SAVE_ONCE3(Ti0, Te0, N0);
 
   // Create a solver for the Laplacian
-  phiSolver = Laplacian::create();
-  phiSolver->setFlags(phi_flags);
+  phiSolver = Laplacian::create(&options["phiSolver"]);
 
-  aparSolver = Laplacian::create();
-  aparSolver->setFlags(apar_flags);
+  aparSolver = Laplacian::create(&options["aparSolver"]);
 
   /////////////// CHECK VACUUM ///////////////////////
   // In vacuum region, initial vorticity should equal zero

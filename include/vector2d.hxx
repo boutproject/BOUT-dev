@@ -46,14 +46,14 @@ class Vector3D; //#include "vector3d.hxx"
  * (x and y). Implemented as a collection of three Field2D objects.
  */ 
 class Vector2D : public FieldData {
- public:
+public:
   Vector2D(Mesh * fieldmesh = nullptr);
   Vector2D(const Vector2D &f);
   ~Vector2D() override;
 
   Field2D x, y, z; ///< components
 
-  bool covariant; ///< true if the components are covariant (default)
+  bool covariant{true}; ///< true if the components are covariant (default)
 
   /// In-place conversion to covariant form
   void toCovariant();
@@ -152,10 +152,9 @@ class Vector2D : public FieldData {
   }
   void applyBoundary(const char* condition) { applyBoundary(std::string(condition)); }
   void applyTDerivBoundary() override;
- private:
-  
-  Vector2D *deriv; ///< Time-derivative, can be NULL
-  CELL_LOC location; ///< Location of the variable in the cell
+private:
+  Vector2D* deriv{nullptr};       ///< Time-derivative, can be NULL
+  CELL_LOC location{CELL_CENTRE}; ///< Location of the variable in the cell
 };
 
 // Non-member overloaded operators
@@ -175,7 +174,12 @@ const Vector3D cross(const Vector2D & lhs, const Vector3D &rhs);
  *
  * |v| = sqrt( v dot v )
  */
-const Field2D abs(const Vector2D &v, REGION region = RGN_ALL);
+const Field2D abs(const Vector2D& v, const std::string& region = "RGN_ALL");
+[[gnu::deprecated("Please use Vector2D abs(const Vector2D& f, "
+    "const std::string& region = \"RGN_ALL\") instead")]]
+inline const Field2D abs(const Vector2D &v, REGION region) {
+  return abs(v, toString(region));
+}
 
 /*!
  * @brief Time derivative of 2D vector field

@@ -210,7 +210,21 @@ latex_elements = {
 
     # Additional stuff for the LaTeX preamble.
     #
-    # 'preamble': '',
+    'preamble': r'''
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\makeatletter
+\def\UTFviii@defined#1{%
+  \ifx#1\relax
+      ?%
+  \else\expandafter
+    #1%
+  \fi
+}
+\makeatother
+
+
+''',
 
     # Latex figure (float) alignment
     #

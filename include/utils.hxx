@@ -82,6 +82,39 @@ typename _Unique_if<T>::_Known_bound make_unique(Args&&...) = delete;
 #else
 using std::make_unique;
 #endif
+
+template <typename T>
+struct function_traits;
+
+/// Traits class to get the types of function arguments for function pointers
+///
+/// Use like:
+///
+//      // A function signature we'd like to check:
+///     using some_function = int(*)(int, double, std::string);
+///     // Get the type of the first argument:
+///     using first_argument_type =
+///         bout::utils::function_traits<some_function>::arg<1>::type;
+///     // The following prints "true":
+///     std::cout << std::boolalpha
+///         << std::is_same<double, first_argument_type>::value;
+///
+/// Adapted from https://stackoverflow.com/a/9065203/2043465
+template <typename R, typename... Args>
+struct function_traits<R (*)(Args...)> {
+  /// Total number of arguments
+  static constexpr size_t nargs = sizeof...(Args);
+
+  using result_type = R;
+
+  template <size_t i>
+  struct arg {
+    using type = typename std::tuple_element<i, std::tuple<Args...>>::type;
+  };
+
+  template <size_t i>
+  using arg_t = typename arg<i>::type;
+};
 } // namespace utils
 } // namespace bout
 
@@ -96,8 +129,8 @@ class Matrix {
 public:
   using data_type = T;
   using size_type = int;
-  
-  Matrix() : n1(0), n2(0){};
+
+  Matrix() = default;
   Matrix(size_type n1, size_type n2) : n1(n1), n2(n2) {
     ASSERT2(n1 >= 0);
     ASSERT2(n2 >= 0);
@@ -171,7 +204,7 @@ public:
   const Array<T>& getData() const { return data; }
 
 private:
-  size_type n1, n2;
+  size_type n1{0}, n2{0};
   /// Underlying 1D storage array
   Array<T> data;
 };
@@ -188,7 +221,7 @@ public:
   using data_type = T;
   using size_type = int;
 
-  Tensor() : n1(0), n2(0), n3(0) {};
+  Tensor() = default;
   Tensor(size_type n1, size_type n2, size_type n3) : n1(n1), n2(n2), n3(n3) {
     ASSERT2(n1 >= 0);
     ASSERT2(n2 >= 0);
@@ -269,7 +302,7 @@ public:
   const Array<T>& getData() const { return data; }
 
 private:
-  size_type n1, n2, n3;
+  size_type n1{0}, n2{0}, n3{0};
   /// Underlying 1D storage array
   Array<T> data;
 };

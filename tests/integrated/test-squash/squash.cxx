@@ -6,14 +6,14 @@
 class SquashRun : public PhysicsModel {
 protected:
   // Initialisation
-  int init(bool restarting) {
+  int init(bool UNUSED(restarting)) {
     solver->add(f2, "f2");
     solver->add(f3, "f3");
     return 0;
   }
   
   // Calculate time-derivatives
-  int rhs(BoutReal t) {
+  int rhs(BoutReal UNUSED(t)) {
     ddt(f2) = 1;
     ddt(f3) = -1;
     f2.applyBoundary();

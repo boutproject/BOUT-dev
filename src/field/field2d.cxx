@@ -80,9 +80,9 @@ Field2D::Field2D(BoutReal val, Mesh* localmesh) : Field2D(localmesh) {
   *this = val;
 }
 
-Field2D::Field2D(Array<BoutReal> data, Mesh* localmesh, CELL_LOC datalocation,
+Field2D::Field2D(Array<BoutReal> data_in, Mesh* localmesh, CELL_LOC datalocation,
                  DirectionTypes directions_in)
-    : Field(localmesh, datalocation, directions_in), data(data) {
+    : Field(localmesh, datalocation, directions_in), data(std::move(data_in)) {
 
   ASSERT1(fieldmesh != nullptr);
 
@@ -94,10 +94,7 @@ Field2D::Field2D(Array<BoutReal> data, Mesh* localmesh, CELL_LOC datalocation,
   setLocation(datalocation);
 }
 
-Field2D::~Field2D() {
-  if(deriv)
-    delete deriv;
-}
+Field2D::~Field2D() { delete deriv; }
 
 Field2D& Field2D::allocate() {
   if(data.empty()) {
@@ -260,7 +257,7 @@ void Field2D::applyBoundary(const std::string &region, const std::string &condit
   bool region_found = false;
   /// Loop over the mesh boundary regions
   for (const auto &reg : fieldmesh->getBoundaries()) {
-    if (reg->label.compare(region) == 0) {
+    if (reg->label == region) {
       region_found = true;
       auto op = std::unique_ptr<BoundaryOp>{
           dynamic_cast<BoundaryOp*>(bfact->create(condition, reg))};
@@ -329,185 +326,11 @@ Field2D operator-(const Field2D &f) { return -1.0 * f; }
 
 //////////////// NON-MEMBER FUNCTIONS //////////////////
 
-BoutReal min(const Field2D &f, bool allpe, REGION rgn) {
-  TRACE("Field2D::Min() %s",allpe? "over all PEs" : "");
-
-  checkData(f);
-
-  const auto region = f.getRegion(rgn);
-  BoutReal result = f[*region.cbegin()];
-
-  BOUT_FOR_OMP(i, region, parallel for reduction(min:result)) {
-    if (f[i] < result) {
-      result = f[i];
-    }
-  }
-
-  if(allpe) {
-    // MPI reduce
-    BoutReal localresult = result;
-    MPI_Allreduce(&localresult, &result, 1, MPI_DOUBLE, MPI_MIN, BoutComm::get());
-  }
-
-  return result;
-}
-
-BoutReal max(const Field2D &f, bool allpe,REGION rgn) {
-  TRACE("Field2D::Max() %s",allpe? "over all PEs" : "");
-
-  checkData(f);
-
-  const auto region = f.getRegion(rgn);
-  BoutReal result = f[*region.cbegin()];
-
-  BOUT_FOR_OMP(i, region, parallel for reduction(max:result)) {
-    if (f[i] > result) {
-      result = f[i];
-    }
-  }
-
-  if(allpe) {
-    // MPI reduce
-    BoutReal localresult = result;
-    MPI_Allreduce(&localresult, &result, 1, MPI_DOUBLE, MPI_MAX, BoutComm::get());
-  }
-
-  return result;
-}
-
-bool finite(const Field2D &f, REGION rgn) {
-  TRACE("finite(Field2D)");
-
-  if (!f.isAllocated()) {
-    return false;
-  }
-
-  BOUT_FOR_SERIAL(i, f.getRegion(rgn)) {
-    if (!::finite(f[i])) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-/////////////////////////////////////////////////
-// functions
-
-/*!
- * This macro takes a function \p func, which is
- * assumed to operate on a single BoutReal and return
- * a single BoutReal, and wraps it up into a function
- * of a Field2D called \p name.
- *
- * @param name  The name of the function to define
- * @param func  The function to apply to each value
- *
- * If CHECK >= 1, checks if the Field2D is allocated
- *
- * Loops over the entire domain, applies function,
- * and uses checkData() to, if CHECK >= 3, check
- * result for non-finite numbers
- *
- */
-#define F2D_FUNC(name, func)                                                             \
-  const Field2D name(const Field2D &f, REGION rgn) {                                     \
-    TRACE(#name "(Field2D)");                                                            \
-    /* Check if the input is allocated */                                                \
-    checkData(f);                                                                        \
-    /* Define and allocate the output result */                                          \
-    Field2D result{emptyFrom(f)};                                                        \
-    BOUT_FOR(d, result.getRegion(rgn)) { result[d] = func(f[d]); }                       \
-    checkData(result);                                                                   \
-    return result;                                                                       \
-  }
-
-F2D_FUNC(abs, ::fabs);
-
-F2D_FUNC(sqrt, ::sqrt);
-
-F2D_FUNC(exp, ::exp);
-F2D_FUNC(log, ::log);
-
-F2D_FUNC(sin, ::sin);
-F2D_FUNC(cos, ::cos);
-F2D_FUNC(tan, ::tan);
-
-F2D_FUNC(sinh, ::sinh);
-F2D_FUNC(cosh, ::cosh);
-F2D_FUNC(tanh, ::tanh);
-
-const Field2D copy(const Field2D &f) {
-  Field2D result = f;
-  result.allocate();
-  return result;
-}
-
-const Field2D floor(const Field2D &var, BoutReal f, REGION rgn) {
-  checkData(var);
-
-  Field2D result = copy(var);
-
-  BOUT_FOR(d, result.getRegion(rgn)) {
-    if (result[d] < f) {
-      result[d] = f;
-    }
-  }
-
-  return result;
-}
-
-Field2D pow(const Field2D &lhs, const Field2D &rhs, REGION rgn) {
-  TRACE("pow(Field2D, Field2D)");
-  // Check if the inputs are allocated
-  checkData(lhs);
-  checkData(rhs);
-  ASSERT1(areFieldsCompatible(lhs, rhs));
-
-  // Define and allocate the output result
-  Field2D result{emptyFrom(lhs)};
-
-  BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs[i], rhs[i]); }
-
-  checkData(result);
-  return result;
-}
-
-Field2D pow(const Field2D &lhs, BoutReal rhs, REGION rgn) {
-  TRACE("pow(Field2D, BoutReal)");
-  // Check if the inputs are allocated
-  checkData(lhs);
-  checkData(rhs);
-
-  // Define and allocate the output result
-  Field2D result{emptyFrom(lhs)};
-
-  BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs[i], rhs); }
-
-  checkData(result);
-  return result;
-}
-
-Field2D pow(BoutReal lhs, const Field2D &rhs, REGION rgn) {
-  TRACE("pow(lhs, Field2D)");
-  // Check if the inputs are allocated
-  checkData(lhs);
-  checkData(rhs);
-
-  // Define and allocate the output result
-  Field2D result{emptyFrom(rhs)};
-
-  BOUT_FOR(i, result.getRegion(rgn)) { result[i] = ::pow(lhs, rhs[i]); }
-
-  checkData(result);
-  return result;
-}
-
 namespace {
   // Internal routine to avoid ugliness with interactions between CHECK
   // levels and UNUSED parameters
 #if CHECK > 2
-void checkDataIsFiniteOnRegion(const Field2D& f, REGION region) {
+void checkDataIsFiniteOnRegion(const Field2D& f, const std::string& region) {
   // Do full checks
   BOUT_FOR_SERIAL(i, f.getRegion(region)) {
     if (!::finite(f[i])) {
@@ -518,13 +341,13 @@ void checkDataIsFiniteOnRegion(const Field2D& f, REGION region) {
 }
 #elif CHECK > 0
 // No-op for no checking
-void checkDataIsFiniteOnRegion(const Field2D &UNUSED(f), REGION UNUSED(region)) {}
+void checkDataIsFiniteOnRegion(const Field2D &UNUSED(f), const std::string& UNUSED(region)) {}
 #endif
 }
 
 #if CHECK > 0
 /// Check if the data is valid
-void checkData(const Field2D &f, REGION region) {
+void checkData(const Field2D &f, const std::string& region) {
   if (!f.isAllocated()) {
     throw BoutException("Field2D: Operation on empty data\n");
   }

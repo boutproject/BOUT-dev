@@ -69,16 +69,16 @@ void Output::close() {
   remove(file);
   file.close();
 }
-#define bout_vsnprintf_(buf, len, fmt, va)                                               \
-  {                                                                                      \
-    int _vsnprintflen = vsnprintf(buf, len, fmt, va);                                    \
-    if (_vsnprintflen + 1 > len) {                                                       \
-      _vsnprintflen += 1;                                                                \
-      delete[] buf;                                                                      \
-      buf = new char[_vsnprintflen];                                                     \
-      len = _vsnprintflen;                                                               \
-      vsnprintf(buf, len, fmt, va);                                                      \
-    }                                                                                    \
+#define bout_vsnprintf_(buf, len, fmt, va)            \
+  {                                                   \
+    int _vsnprintflen = vsnprintf(buf, len, fmt, va); \
+    if (_vsnprintflen + 1 > (len)) {                  \
+      _vsnprintflen += 1;                             \
+      delete[](buf);                                  \
+      (buf) = new char[_vsnprintflen];                \
+      (len) = _vsnprintflen;                          \
+      vsnprintf(buf, len, fmt, va);                   \
+    }                                                 \
   }
 
 void Output::write(const char *string, ...) {

@@ -56,7 +56,7 @@ protected:
     mesh_staggered->createDefaultRegions();
   }
 
-  virtual ~Vector3DTest() {
+  ~Vector3DTest() override {
     if (mesh != nullptr) {
       // Delete boundary regions
       for (auto &r : mesh->getBoundaries()) {

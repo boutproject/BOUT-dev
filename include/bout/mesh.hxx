@@ -126,25 +126,28 @@ class Mesh {
   /// 
   /// @param[out] sval  The value will be put into this variable
   /// @param[in] name   The name of the variable to read
+  /// @param[in] def    The default value if not found
   ///
   /// @returns zero if successful, non-zero on failure
-  int get(std::string &sval, const std::string &name);
+  int get(std::string& sval, const std::string& name, const std::string& def="");
 
   /// Get an integer from the input source
   /// 
   /// @param[out] ival  The value will be put into this variable
   /// @param[in] name   The name of the variable to read
+  /// @param[in] def    The default value if not found
   ///
   /// @returns zero if successful, non-zero on failure
-  int get(int &ival, const std::string &name);
+  int get(int &ival, const std::string &name, int def=0);
 
   /// Get a BoutReal from the input source
   /// 
   /// @param[out] rval  The value will be put into this variable
   /// @param[in] name   The name of the variable to read
+  /// @param[in] def    The default value if not found
   ///
   /// @returns zero if successful, non-zero on failure
-  int get(BoutReal &rval, const std::string &name);
+  int get(BoutReal& rval, const std::string& name, BoutReal def=0.0);
 
   /// Get a Field2D from the input source
   /// including communicating guard cells
@@ -185,9 +188,10 @@ class Mesh {
   ///
   /// @param[in] var  This will be set to the value read
   /// @param[in] name  The name of the vector. Individual fields are read based on this name by appending. See above
+  /// @param[in] def   The default value if not found (used for all the components)
   ///
   /// @returns zero always. 
-  int get(Vector2D &var, const std::string &name);
+  int get(Vector2D &var, const std::string &name, BoutReal def=0.0);
 
   /// Get a Vector3D from the input source.
   /// If \p var is covariant then this gets three
@@ -198,9 +202,10 @@ class Mesh {
   ///
   /// @param[in] var  This will be set to the value read
   /// @param[in] name  The name of the vector. Individual fields are read based on this name by appending. See above
+  /// @param[in] def    The default value if not found (used for all the components)
   ///
   /// @returns zero always. 
-  int get(Vector3D &var, const std::string &name);
+  int get(Vector3D &var, const std::string &name, BoutReal def=0.0);
 
   /// Wrapper for GridDataSource::hasVar
   bool sourceHasVar(const std::string &name);
@@ -276,6 +281,7 @@ class Mesh {
   /// @param[in] buffer A buffer of data to send
   /// @param[in] size   The length of \p buffer
   /// @param[in] tag    A label, must be the same at receive
+  [[gnu::deprecated("This experimental functionality will be removed in 5.0")]]
   virtual MPI_Request sendToProc(int xproc, int yproc, BoutReal *buffer, int size, int tag) = 0;
 
   /// Low-level communication routine
@@ -288,6 +294,7 @@ class Mesh {
   /// @param[inout] buffer  The buffer to fill with data. Must already be allocated of length \p size
   /// @param[in] size  The length of \p buffer
   /// @param[in] tag   A label, must be the same as send
+  [[gnu::deprecated("This experimental functionality will be removed in 5.0")]]
   virtual comm_handle receiveFromProc(int xproc, int yproc, BoutReal *buffer, int size, int tag) = 0;
   
   virtual int getNXPE() = 0; ///< The number of processors in the X direction
@@ -370,19 +377,25 @@ class Mesh {
   virtual bool lastY() const = 0; ///< Is this processor last in Y? i.e. is there a boundary at upper Y?
   virtual bool firstY(int xpos) const = 0; ///< Is this processor first in Y? i.e. is there a boundary at lower Y?
   virtual bool lastY(int xpos) const = 0; ///< Is this processor last in Y? i.e. is there a boundary at upper Y?
+  [[gnu::deprecated("This experimental functionality will be removed in 5.0")]]
   virtual int UpXSplitIndex() = 0;  ///< If the upper Y guard cells are split in two, return the X index where the split occurs
+  [[gnu::deprecated("This experimental functionality will be removed in 5.0")]]
   virtual int DownXSplitIndex() = 0; ///< If the lower Y guard cells are split in two, return the X index where the split occurs
 
   /// Send data
+  [[gnu::deprecated("This experimental functionality will be removed in 5.0")]]
   virtual int sendYOutIndest(BoutReal *buffer, int size, int tag) = 0;
 
-  /// 
+  ///
+  [[gnu::deprecated("This experimental functionality will be removed in 5.0")]]
   virtual int sendYOutOutdest(BoutReal *buffer, int size, int tag) = 0;
 
   ///
+  [[gnu::deprecated("This experimental functionality will be removed in 5.0")]]
   virtual int sendYInIndest(BoutReal *buffer, int size, int tag) = 0;
 
   ///
+  [[gnu::deprecated("This experimental functionality will be removed in 5.0")]]
   virtual int sendYInOutdest(BoutReal *buffer, int size, int tag) = 0;
 
   /// Non-blocking receive. Must be followed by a call to wait()
@@ -390,6 +403,7 @@ class Mesh {
   /// @param[out] buffer  A buffer of length \p size which must already be allocated
   /// @param[in] size The number of BoutReals expected
   /// @param[in] tag  The tag number of the expected message
+  [[gnu::deprecated("This experimental functionality will be removed in 5.0")]]
   virtual comm_handle irecvYOutIndest(BoutReal *buffer, int size, int tag) = 0;
 
   /// Non-blocking receive. Must be followed by a call to wait()
@@ -397,6 +411,7 @@ class Mesh {
   /// @param[out] buffer  A buffer of length \p size which must already be allocated
   /// @param[in] size The number of BoutReals expected
   /// @param[in] tag  The tag number of the expected message
+  [[gnu::deprecated("This experimental functionality will be removed in 5.0")]]
   virtual comm_handle irecvYOutOutdest(BoutReal *buffer, int size, int tag) = 0;
 
   /// Non-blocking receive. Must be followed by a call to wait()
@@ -404,6 +419,7 @@ class Mesh {
   /// @param[out] buffer  A buffer of length \p size which must already be allocated
   /// @param[in] size The number of BoutReals expected
   /// @param[in] tag  The tag number of the expected message
+  [[gnu::deprecated("This experimental functionality will be removed in 5.0")]]
   virtual comm_handle irecvYInIndest(BoutReal *buffer, int size, int tag) = 0;
 
   /// Non-blocking receive. Must be followed by a call to wait()
@@ -411,6 +427,7 @@ class Mesh {
   /// @param[out] buffer  A buffer of length \p size which must already be allocated
   /// @param[in] size The number of BoutReals expected
   /// @param[in] tag  The tag number of the expected message
+  [[gnu::deprecated("This experimental functionality will be removed in 5.0")]]
   virtual comm_handle irecvYInOutdest(BoutReal *buffer, int size, int tag) = 0;
   
   // Boundary region iteration
@@ -758,22 +775,22 @@ class Mesh {
 
   [[gnu::deprecated("Please use free function toFieldAligned instead")]]
   const Field3D toFieldAligned(const Field3D &f, const REGION region = RGN_ALL) {
-    return ::toFieldAligned(f, region);
+    return ::toFieldAligned(f, toString(region));
   }
 
   [[gnu::deprecated("Please use free function fromFieldAligned instead")]]
   const Field3D fromFieldAligned(const Field3D &f, const REGION region = RGN_ALL) {
-    return ::fromFieldAligned(f, region);
+    return ::fromFieldAligned(f, toString(region));
   }
 
   [[gnu::deprecated("Please use free function toFieldAligned instead")]]
   const Field2D toFieldAligned(const Field2D &f, const REGION region = RGN_ALL) {
-    return ::toFieldAligned(f, region);
+    return ::toFieldAligned(f, toString(region));
   }
 
   [[gnu::deprecated("Please use free function fromFieldAligned instead")]]
   const Field2D fromFieldAligned(const Field2D &f, const REGION region = RGN_ALL) {
-    return ::fromFieldAligned(f, region);
+    return ::fromFieldAligned(f, toString(region));
   }
 
   [[gnu::deprecated("Please use "

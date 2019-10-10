@@ -35,6 +35,7 @@ class InvertableOperator;
 
 #ifdef BOUT_HAS_PETSC
 
+#include "bout/traits.hxx"
 #include <bout/mesh.hxx>
 #include <bout/sys/timer.hxx>
 #include <boutcomm.hxx>
@@ -76,7 +77,7 @@ PetscErrorCode fieldToPetscVec(const T& in, Vec out) {
   int counter = 0;
 
   // Should explore ability to OpenMP this
-  BOUT_FOR_SERIAL(i, in.getRegion("RGN_NOCORNERS")) {
+  BOUT_FOR_SERIAL(i, in.getRegion("RGN_WITHBNDRIES")) {
     vecData[counter] = in[i];
     counter++;
   }
@@ -101,7 +102,7 @@ PetscErrorCode petscVecToField(Vec in, T& out) {
   int counter = 0;
 
   // Should explore ability to OpenMP this
-  BOUT_FOR_SERIAL(i, out.getRegion("RGN_NOCORNERS")) {
+  BOUT_FOR_SERIAL(i, out.getRegion("RGN_WITHBNDRIES")) {
     out[i] = vecData[counter];
     counter++;
   }
@@ -117,8 +118,7 @@ PetscErrorCode petscVecToField(Vec in, T& out) {
 template <typename T>
 class InvertableOperator {
   static_assert(
-      std::is_base_of<Field3D, T>::value || std::is_base_of<Field2D, T>::value
-          || std::is_base_of<FieldPerp, T>::value,
+      bout::utils::is_Field<T>::value,
       "InvertableOperator must be templated with one of FieldPerp, Field2D or Field3D");
 
 public:
@@ -134,7 +134,7 @@ public:
       : operatorFunction(func), preconditionerFunction(func),
         opt(optIn == nullptr ? optIn
                              : Options::getRoot()->getSection("invertableOperator")),
-        localmesh(localmeshIn == nullptr ? bout::globals::mesh : localmeshIn), doneSetup(false) {
+        localmesh(localmeshIn == nullptr ? bout::globals::mesh : localmeshIn) {
     AUTO_TRACE();
   };
 
@@ -194,9 +194,9 @@ public:
           "already been setup.");
     }
 
-    // Add the RGN_NOCORNERS region to the mesh. Requires RGN_NOBNDRY to be defined.
+    // Add the RGN_WITHBNDRIES region to the mesh. Requires RGN_NOBNDRY to be defined.
     if (std::is_same<Field3D, T>::value) {
-      if (not localmesh->hasRegion3D("RGN_NOCORNERS")) {
+      if (not localmesh->hasRegion3D("RGN_WITHBNDRIES")) {
         // This avoids all guard cells and corners but includes boundaries
         // Note we probably don't want to include periodic boundaries as these
         // are essentially just duplicate points so should be careful here (particularly
@@ -233,11 +233,11 @@ public:
         }
 
         nocorner3D.unique();
-        localmesh->addRegion3D("RGN_NOCORNERS", nocorner3D);
+        localmesh->addRegion3D("RGN_WITHBNDRIES", nocorner3D);
       }
 
     } else if (std::is_same<Field2D, T>::value) {
-      if (not localmesh->hasRegion2D("RGN_NOCORNERS")) {
+      if (not localmesh->hasRegion2D("RGN_WITHBNDRIES")) {
         // This avoids all guard cells and corners but includes boundaries
         Region<Ind2D> nocorner2D = localmesh->getRegion2D("RGN_NOBNDRY");
         if (!localmesh->periodicX) {
@@ -267,11 +267,11 @@ public:
           }
         }
         nocorner2D.unique();
-        localmesh->addRegion2D("RGN_NOCORNERS", nocorner2D);
+        localmesh->addRegion2D("RGN_WITHBNDRIES", nocorner2D);
       }
 
     } else if (std::is_same<FieldPerp, T>::value) {
-      if (not localmesh->hasRegionPerp("RGN_NOCORNERS")) {
+      if (not localmesh->hasRegionPerp("RGN_WITHBNDRIES")) {
         // This avoids all guard cells and corners but includes boundaries
         Region<IndPerp> nocornerPerp = localmesh->getRegionPerp("RGN_NOBNDRY");
         if (!localmesh->periodicX) {
@@ -286,7 +286,7 @@ public:
                                 1, localmesh->LocalNz, localmesh->maxregionblocksize);
         }
         nocornerPerp.unique();
-        localmesh->addRegionPerp("RGN_NOCORNERS", nocornerPerp);
+        localmesh->addRegionPerp("RGN_WITHBNDRIES", nocornerPerp);
       }
 
     } else {
@@ -297,7 +297,7 @@ public:
     PetscInt nlocal = 0;
     {
       T tmp(localmesh);
-      nlocal = tmp.getRegion("RGN_NOCORNERS").size();
+      nlocal = tmp.getRegion("RGN_WITHBNDRIES").size();
     }
 
     PetscInt nglobal = PETSC_DETERMINE; // Depends on type of T
@@ -323,8 +323,7 @@ public:
     CHKERRQ(ierr);
 
     /// Now register Matrix_multiply operation
-    ierr =
-        MatShellSetOperation(matOperator, MATOP_MULT, (void (*)(void))(functionWrapper));
+    ierr = MatShellSetOperation(matOperator, MATOP_MULT, (void (*)())(functionWrapper));
     CHKERRQ(ierr);
 
     /// Create the shell matrix representing the operator to invert
@@ -335,7 +334,7 @@ public:
 
     /// Now register Matrix_multiply operation
     ierr = MatShellSetOperation(matPreconditioner, MATOP_MULT,
-                                (void (*)(void))(preconditionerWrapper));
+                                (void (*)())(preconditionerWrapper));
     CHKERRQ(ierr);
 
     /// Now create and setup the linear solver with the matrix

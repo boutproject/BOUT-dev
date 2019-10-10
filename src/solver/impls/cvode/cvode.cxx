@@ -36,6 +36,7 @@
 #include "output.hxx"
 #include "unused.hxx"
 #include "bout/mesh.hxx"
+#include "utils.hxx"
 
 #include <cvode/cvode.h>
 
@@ -60,7 +61,11 @@ class Field2D;
 #define ONE RCONST(1.0)
 
 #ifndef CVODEINT
-using CVODEINT = int;
+#if SUNDIALS_VERSION_MAJOR < 3
+using CVODEINT = bout::utils::function_traits<CVLocalFn>::arg_t<0>;
+#else
+using CVODEINT = sunindextype;
+#endif
 #endif
 
 static int cvode_rhs(BoutReal t, N_Vector u, N_Vector du, void* user_data);

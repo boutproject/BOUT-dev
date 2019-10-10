@@ -54,8 +54,8 @@ a second derivative along Y using the Field3D iterators (section
 
 Note the use of yp() and ym() to increase and decrease the Y index.
 
-Slab geometries
----------------
+Field-aligned grid
+------------------
 
 The default `ParallelTransform` is the identity transform, which sets
 yup() and ydown() to point to the same field. In the input options the
@@ -69,6 +69,20 @@ setting is
 
 This then uses the `ParallelTransformIdentity` class to calculate the
 yup and ydown fields.
+
+This is mostly useful for slab geometries, where for a straight magnetic field
+the grid is either periodic in the y-direction or ends on a y-boundary. By
+setting the global option ``TwistShift = true`` and providing a ``ShiftAngle``
+in the gridfile or ``[mesh]`` options a branch cut can be introduced between
+the beginning and end of the y-domain.
+
+`ParallelTransformIdentity` can also be used in non-slab geometries. Then
+``TwistShift = true`` should be set so that a twist-shift boundary condition is
+applied on closed field lines, as field-line following coordinates are not
+periodic in poloidal angle. Note that it is not recommended to use
+`ParallelTransformIdentity` with toroidal geometries, as magnetic shear will
+make the radial derivatives inaccurate away from the outboard midplane (which
+is normall chosen as the zero point for the integrated shear).
 
 Shifted metric
 --------------

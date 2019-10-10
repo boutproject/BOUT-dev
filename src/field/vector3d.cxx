@@ -37,8 +37,7 @@
 #include <bout/scorepwrapper.hxx>
 #include <interpolation.hxx>
 
-Vector3D::Vector3D(Mesh *localmesh)
-    : x(localmesh), y(localmesh), z(localmesh), covariant(true), deriv(nullptr), location(CELL_CENTRE) {}
+Vector3D::Vector3D(Mesh* localmesh) : x(localmesh), y(localmesh), z(localmesh) {}
 
 Vector3D::Vector3D(const Vector3D &f)
     : x(f.x), y(f.y), z(f.z), covariant(f.covariant), deriv(nullptr),
@@ -600,7 +599,7 @@ const Vector3D operator*(const Field3D &lhs, const Vector3D &rhs)
  ***************************************************************/
 
 // Return the magnitude of a vector
-const Field3D abs(const Vector3D &v, REGION region) {
+const Field3D abs(const Vector3D &v, const std::string& region) {
   return sqrt(v*v, region);
 }
 

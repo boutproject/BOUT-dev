@@ -61,8 +61,7 @@ class FieldPerp : public Field {
    * Copy constructor. After this the data
    * will be shared (non unique)
    */
-  FieldPerp(const FieldPerp& f)
-      : Field(f), yindex(f.yindex), nx(f.nx), nz(f.nz), data(f.data) {}
+  FieldPerp(const FieldPerp& f) = default;
 
   /*!
    * Move constructor
@@ -76,7 +75,7 @@ class FieldPerp : public Field {
    */ 
   FieldPerp(BoutReal val, Mesh *localmesh = nullptr);
 
-  ~FieldPerp() override {}
+  ~FieldPerp() override = default;
 
   /*!
    * Assignment operators
@@ -129,7 +128,7 @@ class FieldPerp : public Field {
     return *this;
   }
   FieldPerp& setDirectionY(YDirectionType d) {
-    Field::setDirectionY(d);
+    directions.y = d;
     return *this;
   }
 
@@ -271,9 +270,6 @@ private:
   
 // Non-member functions
 
-FieldPerp toFieldAligned(const FieldPerp& f, const REGION region = RGN_ALL);
-FieldPerp fromFieldAligned(const FieldPerp& f, const REGION region = RGN_ALL);
-
 // Non-member overloaded operators
   
 FieldPerp operator+(const FieldPerp &lhs, const FieldPerp &rhs);
@@ -306,121 +302,8 @@ FieldPerp operator/(BoutReal lhs, const FieldPerp &rhs);
  */
 FieldPerp operator-(const FieldPerp &f);
 
-/// Square root
-const FieldPerp sqrt(const FieldPerp &f, REGION rgn=RGN_ALL);
-
-/// Absolute value
-const FieldPerp abs(const FieldPerp &f, REGION rgn=RGN_ALL);
-
-/// Exponential
-const FieldPerp exp(const FieldPerp &f, REGION rgn=RGN_ALL);
-
-/// Natural logarithm
-const FieldPerp log(const FieldPerp &f, REGION rgn=RGN_ALL);
-
-/// Sine trigonometric function.
-///
-/// @param[in] f    Angle in radians
-/// @param[in] rgn  The region to calculate the result over
-///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the \p rgn argument).
-/// If CHECK >= 3 then the result will be checked for non-finite numbers
-const FieldPerp sin(const FieldPerp &f, REGION rgn=RGN_ALL);
-
-/// Cosine trigonometric function.
-///
-/// @param[in] f    Angle in radians
-/// @param[in] rgn  The region to calculate the result over
-///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the \p rgn argument).
-/// If CHECK >= 3 then the result will be checked for non-finite numbers
-const FieldPerp cos(const FieldPerp &f, REGION rgn=RGN_ALL);
-
-/// Tangent trigonometric function.
-///
-/// @param[in] f    Angle in radians
-/// @param[in] rgn  The region to calculate the result over
-///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the \p rgn argument).
-/// If CHECK >= 3 then the result will be checked for non-finite numbers
-const FieldPerp tan(const FieldPerp &f, REGION rgn=RGN_ALL);
-
-/// Hyperbolic sine function.
-///
-/// @param[in] f    Angle in radians
-/// @param[in] rgn  The region to calculate the result over
-///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the \p rgn argument).
-/// If CHECK >= 3 then the result will be checked for non-finite numbers
-const FieldPerp sinh(const FieldPerp &f, REGION rgn=RGN_ALL);
-
-/// Hyperbolic cosine function.
-///
-/// @param[in] f    Angle in radians
-/// @param[in] rgn  The region to calculate the result over
-///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the \p rgn argument).
-/// If CHECK >= 3 then the result will be checked for non-finite numbers
-const FieldPerp cosh(const FieldPerp &f, REGION rgn=RGN_ALL);
-
-/// Hyperbolic tangent function.
-///
-/// @param[in] f    Angle in radians
-/// @param[in] rgn  The region to calculate the result over
-///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the \p rgn argument).
-/// If CHECK >= 3 then the result will be checked for non-finite numbers
-const FieldPerp tanh(const FieldPerp &f, REGION rgn=RGN_ALL);
-
-/// Create a unique copy of a FieldPerp, ensuring
-/// that they do not share an underlying data array
-const FieldPerp copy(const FieldPerp &f);
-
-/// Sets a floor on var, so minimum of the return value is >= f
-const FieldPerp floor(const FieldPerp &var, BoutReal f, REGION rgn=RGN_ALL);
-
-/// Power, lhs ** rhs
-FieldPerp pow(const FieldPerp &lhs, const FieldPerp &rhs, REGION rgn=RGN_ALL);
-FieldPerp pow(const FieldPerp &lhs, BoutReal rhs, REGION rgn=RGN_ALL);
-FieldPerp pow(BoutReal lhs, const FieldPerp &rhs, REGION rgn=RGN_ALL);
-
 /// Create a FieldPerp by slicing a 3D field at a given y
 const FieldPerp sliceXZ(const Field3D& f, int y);
-
-/// Calculates the minimum of a field, excluding
-/// the boundary/guard cells by default (this can be
-/// changed with the rgn argument).
-/// By default this is only on the local processor,
-/// but setting allpe=true does a collective Allreduce
-/// over all processors.
-///
-/// @param[in] f      The field to loop over
-/// @param[in] allpe  Minimum over all processors?
-/// @param[in] rgn    The region to calculate the result over
-BoutReal min(const FieldPerp &f, bool allpe=false, REGION rgn=RGN_NOX);
-
-/// Calculates the maximum of a field, excluding
-/// the boundary/guard cells by default (this can be
-/// changed with the rgn argument).
-/// By default this is only on the local processor,
-/// but setting allpe=true does a collective Allreduce
-/// over all processors.
-///
-/// @param[in] f      The field to loop over
-/// @param[in] allpe  Minimum over all processors?
-/// @param[in] rgn    The region to calculate the result over
-BoutReal max(const FieldPerp &f, bool allpe=false, REGION rgn=RGN_NOX);
-
-/// Test if all values of this field are finite
-/// Loops over the entire domain including boundaries by
-/// default (can be changed using the \p rgn argument)
-bool finite(const FieldPerp &f, REGION rgn=RGN_ALL);
 
 // Specialize newEmptyField templates for FieldPerp
 /// Return an empty shell field of some type derived from Field, with metadata
@@ -431,9 +314,17 @@ inline FieldPerp emptyFrom<FieldPerp>(const FieldPerp& f) {
 }
 
 #if CHECK > 0
-void checkData(const FieldPerp &f, REGION region = RGN_NOX);
+void checkData(const FieldPerp &f, const std::string& region = "RGN_NOX");
+[[gnu::deprecated("Please use checkData(const FieldPerp& f, "
+    "const std::string& region = \"RGN_NOBNDRY\") instead")]]
+inline void checkData(const FieldPerp &f, REGION region) {
+  return checkData(f, toString(region));
+}
 #else
-inline void checkData(const FieldPerp &UNUSED(f), REGION UNUSED(region) = RGN_NOX) {}
+inline void checkData(const FieldPerp &UNUSED(f), const std::string& UNUSED(region) = "RGN_NOX") {}
+[[gnu::deprecated("Please use checkData(const FieldPerp& f, "
+    "const std::string& region = \"RGN_NOBNDRY\") instead")]]
+inline void checkData(const FieldPerp &UNUSED(f), REGION UNUSED(region)) {}
 #endif
 
 /// Force guard cells of passed field \p var to NaN

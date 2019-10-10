@@ -16,7 +16,8 @@ extern Mesh* mesh;
 class ShiftedMetricTest : public ::testing::Test {
 public:
   ShiftedMetricTest() {
-    WithQuietOutput quiet{output_info};
+    WithQuietOutput quiet_info{output_info};
+    WithQuietOutput quiet_warn{output_warn};
 
     delete mesh;
     mesh = new FakeMesh(nx, ny, nz);

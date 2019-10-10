@@ -15,8 +15,8 @@ int main(int argc, char** argv) {
 
   Field3D result{bracket(g, f, method)};
   Field3D error{result - solution};
-  BoutReal l_2{sqrt(mean(SQ(error), true, RGN_NOBNDRY))};
-  BoutReal l_inf{max(abs(error), true, RGN_NOBNDRY)};
+  BoutReal l_2{sqrt(mean(SQ(error), true, "RGN_NOBNDRY"))};
+  BoutReal l_inf{max(abs(error), true, "RGN_NOBNDRY")};
 
   SAVE_ONCE2(f, g);
   SAVE_ONCE5(solution, result, error, l_2, l_inf);

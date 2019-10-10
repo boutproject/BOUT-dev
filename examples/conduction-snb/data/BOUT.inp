@@ -1,0 +1,22 @@
+
+MXG = 0
+
+Ne = 1e20  # Electron density, m^-3
+Te = 1 + 0.01*sin(y)     # Electron temperature, eV
+
+[mesh]
+# Size of the domain
+nx = 1
+ny = 64  # Along magnetic field
+nz = 1
+
+length = 1 # in meters
+dy = length / ny # Grid spacing
+
+# Set periodic
+ixseps1 = 1000
+ixseps2 = 1000
+
+[snb]
+ngroups = 20 # Number of energy groups
+beta_max = 10 # Maximum energy group to consider (multiple of eT)

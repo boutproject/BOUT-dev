@@ -26,6 +26,7 @@
 #ifndef __INTERP_H__
 #define __INTERP_H__
 
+#include "bout/traits.hxx"
 #include "bout_types.hxx"
 #include "field3d.hxx"
 #include "mask.hxx"
@@ -58,9 +59,9 @@ inline BoutReal interp(const stencil& s) {
   @param[in]   region  Region where output will be calculated
 */
 template <typename T>
-const T interp_to(const T& var, CELL_LOC loc, REGION region = RGN_ALL) {
+const T interp_to(const T& var, CELL_LOC loc, const std::string region = "RGN_ALL") {
   AUTO_TRACE();
-  static_assert(std::is_base_of<Field2D, T>::value || std::is_base_of<Field3D, T>::value,
+  static_assert(bout::utils::is_Field2D<T>::value || bout::utils::is_Field3D<T>::value,
                 "interp_to must be templated with one of Field2D or Field3D.");
   ASSERT1(loc != CELL_DEFAULT); // doesn't make sense to interplote to CELL_DEFAULT
 
@@ -84,7 +85,7 @@ const T interp_to(const T& var, CELL_LOC loc, REGION region = RGN_ALL) {
   TRACE("Interpolating %s -> %s", toString(var.getLocation()).c_str(),
         toString(loc).c_str());
 
-  if (region != RGN_NOBNDRY) {
+  if (region != "RGN_NOBNDRY") {
     // result is requested in some boundary region(s)
     result = var; // NOTE: This is just for boundaries. FIX!
     result.setLocation(loc); // location gets reset when assigning from var
@@ -124,10 +125,8 @@ const T interp_to(const T& var, CELL_LOC loc, REGION region = RGN_ALL) {
       ASSERT0(fieldmesh->ystart >= 2);
 
       // We can't interpolate in y unless we're field-aligned
-      // FIXME: Add check once we label fields as orthogonal/aligned
-
-      const T var_fa = toFieldAligned(var, RGN_NOX);
-      if (region != RGN_NOBNDRY) {
+      const T var_fa = toFieldAligned(var, "RGN_NOX");
+      if (region != "RGN_NOBNDRY") {
         // repeat the hack above for boundary points
         // this avoids a duplicate toFieldAligned call if we had called
         // result = toFieldAligned(result)
@@ -153,7 +152,7 @@ const T interp_to(const T& var, CELL_LOC loc, REGION region = RGN_ALL) {
         }
       }
 
-      result = fromFieldAligned(result, RGN_NOBNDRY);
+      result = fromFieldAligned(result, "RGN_NOBNDRY");
 
       break;
     }
@@ -180,7 +179,7 @@ const T interp_to(const T& var, CELL_LOC loc, REGION region = RGN_ALL) {
     }
     };
 
-    if ((dir != CELL_ZLOW) && (region != RGN_NOBNDRY)) {
+    if ((dir != CELL_ZLOW) && (region != "RGN_NOBNDRY")) {
       fieldmesh->communicate(result);
     }
 
@@ -192,6 +191,12 @@ const T interp_to(const T& var, CELL_LOC loc, REGION region = RGN_ALL) {
     result = interp_to(interp_to(var, CELL_CENTRE), loc, region);
   }
   return result;
+}
+template<typename T>
+[[gnu::deprecated("Please use interp_to(const T& var, CELL_LOC loc, "
+    "const std::string& region = \"RGN_ALL\") instead")]]
+const T interp_to(const T& var, CELL_LOC loc, REGION region) {
+  return interp_to(var, loc, toString(region));
 }
 
 /// Print out the cell location (for debugging)
@@ -226,7 +231,7 @@ public:
       : Interpolation(y_offset, mesh) {
     skip_mask = mask;
   }
-  virtual ~Interpolation() {}
+  virtual ~Interpolation() = default;
 
   virtual void calcWeights(const Field3D &delta_x, const Field3D &delta_z) = 0;
   virtual void calcWeights(const Field3D &delta_x, const Field3D &delta_z,

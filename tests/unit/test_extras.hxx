@@ -191,98 +191,104 @@ public:
     addBoundary(new BoundaryRegionYDown("lower_target", xstart, xend, this));
   }
 
-  comm_handle send(FieldGroup &UNUSED(g)) { return nullptr; };
-  int wait(comm_handle UNUSED(handle)) { return 0; }
-  MPI_Request sendToProc(int UNUSED(xproc), int UNUSED(yproc), BoutReal *UNUSED(buffer),
-                         int UNUSED(size), int UNUSED(tag)) {
+  comm_handle send(FieldGroup& UNUSED(g)) override { return nullptr; };
+  int wait(comm_handle UNUSED(handle)) override { return 0; }
+  MPI_Request sendToProc(int UNUSED(xproc), int UNUSED(yproc), BoutReal* UNUSED(buffer),
+                         int UNUSED(size), int UNUSED(tag)) override {
     return MPI_Request();
   }
   comm_handle receiveFromProc(int UNUSED(xproc), int UNUSED(yproc),
-                              BoutReal *UNUSED(buffer), int UNUSED(size),
-                              int UNUSED(tag)) {
+                              BoutReal* UNUSED(buffer), int UNUSED(size),
+                              int UNUSED(tag)) override {
     return nullptr;
   }
-  int getNXPE() { return 1; }
-  int getNYPE() { return 1; }
-  int getXProcIndex() { return 1; }
-  int getYProcIndex() { return 1; }
-  bool firstX() { return true; }
-  bool lastX() { return true; }
-  int sendXOut(BoutReal *UNUSED(buffer), int UNUSED(size), int UNUSED(tag)) { return 0; }
-  int sendXIn(BoutReal *UNUSED(buffer), int UNUSED(size), int UNUSED(tag)) { return 0; }
-  comm_handle irecvXOut(BoutReal *UNUSED(buffer), int UNUSED(size), int UNUSED(tag)) {
+  int getNXPE() override { return 1; }
+  int getNYPE() override { return 1; }
+  int getXProcIndex() override { return 1; }
+  int getYProcIndex() override { return 1; }
+  bool firstX() override { return true; }
+  bool lastX() override { return true; }
+  int sendXOut(BoutReal* UNUSED(buffer), int UNUSED(size), int UNUSED(tag)) override {
+    return 0;
+  }
+  int sendXIn(BoutReal* UNUSED(buffer), int UNUSED(size), int UNUSED(tag)) override {
+    return 0;
+  }
+  comm_handle irecvXOut(BoutReal* UNUSED(buffer), int UNUSED(size),
+                        int UNUSED(tag)) override {
     return nullptr;
   }
-  comm_handle irecvXIn(BoutReal *UNUSED(buffer), int UNUSED(size), int UNUSED(tag)) {
+  comm_handle irecvXIn(BoutReal* UNUSED(buffer), int UNUSED(size),
+                       int UNUSED(tag)) override {
     return nullptr;
   }
-  MPI_Comm getXcomm(int UNUSED(jy)) const { return BoutComm::get(); }
-  MPI_Comm getYcomm(int UNUSED(jx)) const { return BoutComm::get(); }
-  bool periodicY(int UNUSED(jx)) const { return true; }
-  bool periodicY(int UNUSED(jx), BoutReal &UNUSED(ts)) const { return true; }
-  std::pair<bool, BoutReal> hasBranchCutLower(int UNUSED(jx)) const {
+  MPI_Comm getXcomm(int UNUSED(jy)) const override { return BoutComm::get(); }
+  MPI_Comm getYcomm(int UNUSED(jx)) const override { return BoutComm::get(); }
+  bool periodicY(int UNUSED(jx)) const override { return true; }
+  bool periodicY(int UNUSED(jx), BoutReal &UNUSED(ts)) const override { return true; }
+  std::pair<bool, BoutReal> hasBranchCutLower(int UNUSED(jx)) const override {
     return std::make_pair(false, 0.);
   }
-  std::pair<bool, BoutReal> hasBranchCutUpper(int UNUSED(jx)) const {
+  std::pair<bool, BoutReal> hasBranchCutUpper(int UNUSED(jx)) const override {
     return std::make_pair(false, 0.);
   }
-  bool firstY() const { return true; }
-  bool lastY() const { return true; }
-  bool firstY(int UNUSED(xpos)) const { return true; }
-  bool lastY(int UNUSED(xpos)) const { return true; }
-  int UpXSplitIndex() { return 0; }
-  int DownXSplitIndex() { return 0; }
-  int sendYOutIndest(BoutReal *UNUSED(buffer), int UNUSED(size), int UNUSED(tag)) {
+  bool firstY() const override { return true; }
+  bool lastY() const override { return true; }
+  bool firstY(int UNUSED(xpos)) const override { return true; }
+  bool lastY(int UNUSED(xpos)) const override { return true; }
+  int UpXSplitIndex() override { return 0; }
+  int DownXSplitIndex() override { return 0; }
+  int sendYOutIndest(BoutReal* UNUSED(buffer), int UNUSED(size),
+                     int UNUSED(tag)) override {
     return 0;
   }
-  int sendYOutOutdest(BoutReal *UNUSED(buffer), int UNUSED(size), int UNUSED(tag)) {
+  int sendYOutOutdest(BoutReal* UNUSED(buffer), int UNUSED(size),
+                      int UNUSED(tag)) override {
     return 0;
   }
-  int sendYInIndest(BoutReal *UNUSED(buffer), int UNUSED(size), int UNUSED(tag)) {
+  int sendYInIndest(BoutReal* UNUSED(buffer), int UNUSED(size),
+                    int UNUSED(tag)) override {
     return 0;
   }
-  int sendYInOutdest(BoutReal *UNUSED(buffer), int UNUSED(size), int UNUSED(tag)) {
+  int sendYInOutdest(BoutReal* UNUSED(buffer), int UNUSED(size),
+                     int UNUSED(tag)) override {
     return 0;
   }
-  comm_handle irecvYOutIndest(BoutReal *UNUSED(buffer), int UNUSED(size),
-                              int UNUSED(tag)) {
+  comm_handle irecvYOutIndest(BoutReal* UNUSED(buffer), int UNUSED(size),
+                              int UNUSED(tag)) override {
     return nullptr;
   }
-  comm_handle irecvYOutOutdest(BoutReal *UNUSED(buffer), int UNUSED(size),
-                               int UNUSED(tag)) {
+  comm_handle irecvYOutOutdest(BoutReal* UNUSED(buffer), int UNUSED(size),
+                               int UNUSED(tag)) override {
     return nullptr;
   }
-  comm_handle irecvYInIndest(BoutReal *UNUSED(buffer), int UNUSED(size),
-                             int UNUSED(tag)) {
+  comm_handle irecvYInIndest(BoutReal* UNUSED(buffer), int UNUSED(size),
+                             int UNUSED(tag)) override {
     return nullptr;
   }
-  comm_handle irecvYInOutdest(BoutReal *UNUSED(buffer), int UNUSED(size),
-                              int UNUSED(tag)) {
+  comm_handle irecvYInOutdest(BoutReal* UNUSED(buffer), int UNUSED(size),
+                              int UNUSED(tag)) override {
     return nullptr;
   }
-  const RangeIterator iterateBndryLowerY() const { return RangeIterator(xstart, xend); }
-  const RangeIterator iterateBndryUpperY() const { return RangeIterator(xstart, xend); }
-  const RangeIterator iterateBndryLowerOuterY() const { return RangeIterator(); }
-  const RangeIterator iterateBndryLowerInnerY() const { return RangeIterator(); }
-  const RangeIterator iterateBndryUpperOuterY() const { return RangeIterator(); }
-  const RangeIterator iterateBndryUpperInnerY() const { return RangeIterator(); }
-  void addBoundary(BoundaryRegion* region) {boundaries.push_back(region);}
-  std::vector<BoundaryRegion *> getBoundaries() { return boundaries; }
-  std::vector<BoundaryRegionPar *> getBoundariesPar() { return std::vector<BoundaryRegionPar *>(); }
-  BoutReal GlobalX(int jx) const { return jx; }
-  BoutReal GlobalY(int jy) const { return jy; }
-  BoutReal GlobalX(BoutReal jx) const { return jx; }
-  BoutReal GlobalY(BoutReal jy) const { return jy; }
-  int XGLOBAL(int UNUSED(xloc)) const { return 0; }
-  int YGLOBAL(int UNUSED(yloc)) const { return 0; }
-  int XLOCAL(int UNUSED(xglo)) const { return 0; }
-  int YLOCAL(int UNUSED(yglo)) const { return 0; }
-  virtual int localSize3D() override { return LocalNx * LocalNy * LocalNz; }
-  virtual int localSize2D() override { return LocalNx * LocalNy; }
-  virtual int localSizePerp() override { return LocalNx * LocalNz; }
-  virtual int globalStartIndex3D() override { return 0; }
-  virtual int globalStartIndex2D() override { return 0; }
-  virtual int globalStartIndexPerp() override { return 0; }
+  const RangeIterator iterateBndryLowerY() const override { return RangeIterator(xstart, xend); }
+  const RangeIterator iterateBndryUpperY() const override { return RangeIterator(xstart, xend); }
+  const RangeIterator iterateBndryLowerOuterY() const override { return RangeIterator(); }
+  const RangeIterator iterateBndryLowerInnerY() const override { return RangeIterator(); }
+  const RangeIterator iterateBndryUpperOuterY() const override { return RangeIterator(); }
+  const RangeIterator iterateBndryUpperInnerY() const override { return RangeIterator(); }
+  void addBoundary(BoundaryRegion* region) override { boundaries.push_back(region); }
+  std::vector<BoundaryRegion*> getBoundaries() override { return boundaries; }
+  std::vector<BoundaryRegionPar*> getBoundariesPar() override {
+    return std::vector<BoundaryRegionPar*>();
+  }
+  BoutReal GlobalX(int jx) const override { return jx; }
+  BoutReal GlobalY(int jy) const override { return jy; }
+  BoutReal GlobalX(BoutReal jx) const override { return jx; }
+  BoutReal GlobalY(BoutReal jy) const override { return jy; }
+  int XGLOBAL(int UNUSED(xloc)) const override { return 0; }
+  int YGLOBAL(int UNUSED(yloc)) const override { return 0; }
+  int XLOCAL(int UNUSED(xglo)) const override { return 0; }
+  int YLOCAL(int UNUSED(yglo)) const override { return 0; }
 
   void initDerivs(Options * opt){
     StaggerGrids=true;
@@ -332,6 +338,39 @@ private:
   std::vector<BoundaryRegion *> boundaries;
 };
 
+/// FakeGridDataSource provides a non-null GridDataSource* source to use with FakeMesh, to
+/// allow testing of methods that use 'source' - in particular allowing
+/// source->hasXBoundaryGuards and source->hasXBoundaryGuards to be called.
+class FakeGridDataSource : public GridDataSource {
+  bool hasVar(const std::string& UNUSED(name)) override { return false; }
+
+  bool get(Mesh*, std::string&, const std::string&, const std::string& = "") override {
+    return false;
+  }
+  bool get(Mesh*, int&, const std::string&, int = 0) override { return false; }
+  bool get(Mesh*, BoutReal&, const std::string&, BoutReal = 0.0) override {
+    return false;
+  }
+  bool get(Mesh*, Field2D&, const std::string&, BoutReal = 0.0) override { return false; }
+  bool get(Mesh*, Field3D&, const std::string&, BoutReal = 0.0) override { return false; }
+  bool get(Mesh*, FieldPerp&, const std::string&, BoutReal = 0.0) override {
+    return false;
+  }
+
+  bool get(Mesh*, std::vector<int>&, const std::string&, int, int = 0,
+           Direction = GridDataSource::X) override {
+    return false;
+  }
+  bool get(Mesh*, std::vector<BoutReal>&, const std::string&, int, int = 0,
+           Direction UNUSED(dir) = GridDataSource::X) override {
+    return false;
+  }
+
+  bool hasXBoundaryGuards(Mesh* UNUSED(m)) override { return true; }
+
+  bool hasYBoundaryGuards() override { return true; }
+};
+
 /// Test fixture to make sure the global mesh is our fake
 /// one. Also initialize the global mesh_staggered for use in tests with
 /// staggering. Multiple tests have exactly the same fixture, so use a type
@@ -341,7 +380,8 @@ private:
 class FakeMeshFixture : public ::testing::Test {
 public:
   FakeMeshFixture() {
-    WithQuietOutput quiet{output_info};
+    WithQuietOutput quiet_info{output_info};
+    WithQuietOutput quiet_warn{output_warn};
 
     delete bout::globals::mesh;
     bout::globals::mesh = new FakeMesh(nx, ny, nz);
@@ -354,6 +394,8 @@ public:
         Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0},
         false);
     static_cast<FakeMesh*>(bout::globals::mesh)->setCoordinates(test_coords);
+    static_cast<FakeMesh*>(bout::globals::mesh)->setGridDataSource(
+        new FakeGridDataSource());
     // May need a ParallelTransform to create fields, because create3D calls
     // fromFieldAligned
     test_coords->setParallelTransform(
@@ -383,7 +425,7 @@ public:
         bout::utils::make_unique<ParallelTransformIdentity>(*mesh_staggered));
   }
 
-  virtual ~FakeMeshFixture() {
+  ~FakeMeshFixture() override {
     delete bout::globals::mesh;
     bout::globals::mesh = nullptr;
     delete mesh_staggered;

@@ -1,0 +1,11 @@
+MXG = 0
+
+[mesh]
+nx = 1
+ny = 16
+nz = 1
+
+# Set periodic
+ixseps1 = 1000
+ixseps2 = 1000
+

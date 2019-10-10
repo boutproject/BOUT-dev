@@ -87,7 +87,7 @@ public:
 
 protected:
   std::map<std::string, TypeCreator> type_map;
-  Factory() {}
+  Factory() = default;
 };
 
 /// Helper class for adding new types to Factory

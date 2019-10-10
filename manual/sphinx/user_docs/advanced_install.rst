@@ -77,6 +77,10 @@ As of 20th April 2018, the following configuration should work
     $ module load fftw
     $ module load archer-netcdf/4.1.3
 
+When using CMake on Cray systems like Archer, you need to pass
+``-DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment`` so that the Cray compiler
+wrappers are detected properly.
+
 KNL @ Archer
 ~~~~~~~~~~~~
 

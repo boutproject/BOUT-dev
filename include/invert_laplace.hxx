@@ -48,24 +48,38 @@ class Laplacian;
 #include "options.hxx"
 
 // Inversion flags for each boundary
-const int INVERT_DC_GRAD  = 1; ///< Zero-gradient for DC (constant in Z) component. Default is zero value
-const int INVERT_AC_GRAD  = 2; ///< Zero-gradient for AC (non-constant in Z) component. Default is zero value
-const int INVERT_AC_LAP   = 4; ///< Use zero-laplacian (decaying solution) to AC component
-const int INVERT_SYM      = 8; ///< Use symmetry to enforce either zero-value or zero-gradient
-const int INVERT_SET      = 16; ///< Set boundary to value
-const int INVERT_RHS      = 32; ///< Use input value in RHS boundary
-const int INVERT_DC_LAP   = 64; ///< Use zero-laplacian solution for DC component
-const int INVERT_BNDRY_ONE = 128; ///< Only use one boundary point
-const int INVERT_DC_GRADPAR = 256;
-const int INVERT_DC_GRADPARINV = 512;
-const int INVERT_IN_CYLINDER = 1024; ///< For use in cylindrical coordiate system.
+/// Zero-gradient for DC (constant in Z) component. Default is zero value
+constexpr int INVERT_DC_GRAD = 1;
+/// Zero-gradient for AC (non-constant in Z) component. Default is zero value
+constexpr int INVERT_AC_GRAD = 2;
+/// Use zero-laplacian (decaying solution) to AC component
+constexpr int INVERT_AC_LAP = 4;
+/// Use symmetry to enforce either zero-value or zero-gradient
+constexpr int INVERT_SYM = 8;
+/// Set boundary to value
+constexpr int INVERT_SET = 16;
+/// Use input value in RHS boundary
+constexpr int INVERT_RHS = 32;
+/// Use zero-laplacian solution for DC component
+constexpr int INVERT_DC_LAP = 64;
+/// Only use one boundary point
+constexpr int INVERT_BNDRY_ONE = 128;
+constexpr int INVERT_DC_GRADPAR = 256;
+constexpr int INVERT_DC_GRADPARINV = 512;
+/// For use in cylindrical coordiate system.
+constexpr int INVERT_IN_CYLINDER = 1024;
 
 // Global flags
-const int INVERT_ZERO_DC     = 1; ///< Zero the DC (constant in Z) component of the solution
-const int INVERT_START_NEW   = 2; ///< Iterative method start from solution=0. Has no effect for direct solvers
-const int INVERT_BOTH_BNDRY_ONE = 4; ///< Sets the width of the boundaries to 1
-const int INVERT_4TH_ORDER   = 8; ///< Use band solver for 4th order in x
-const int INVERT_KX_ZERO     = 16; ///< Zero the kx=0, n = 0 component
+/// Zero the DC (constant in Z) component of the solution
+constexpr int INVERT_ZERO_DC = 1;
+/// Iterative method start from solution=0. Has no effect for direct solvers
+constexpr int INVERT_START_NEW = 2;
+/// Sets the width of the boundaries to 1
+constexpr int INVERT_BOTH_BNDRY_ONE = 4;
+/// Use band solver for 4th order in x
+constexpr int INVERT_4TH_ORDER = 8;
+/// Zero the kx=0, n = 0 component
+constexpr int INVERT_KX_ZERO = 16;
 
 /*
 // Legacy flags, can be used in calls to setFlags()
@@ -99,15 +113,12 @@ const int INVERT_KX_ZERO     = 16; ///< Zero the kx=0, n = 0 component
   const int INVERT_DC_IN_GRADPARINV = 2097152;
  */
 
-const int INVERT_IN_RHS  = 16384; ///< Use input value in RHS at inner boundary
-const int INVERT_OUT_RHS = 32768; ///< Use input value in RHS at outer boundary
-
 /// Base class for Laplacian inversion
 class Laplacian {
 public:
   Laplacian(Options *options = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh* mesh_in = nullptr);
-  virtual ~Laplacian() {}
-  
+  virtual ~Laplacian() = default;
+
   /// Set coefficients for inversion. Re-builds matrices if necessary
   virtual void setCoefA(const Field2D &val) = 0;
   virtual void setCoefA(const Field3D &val) { setCoefA(DC(val)); }
@@ -169,21 +180,24 @@ public:
     setCoefEz(f);
   }
   
-  virtual void setFlags(int f);
   virtual void setGlobalFlags(int f) { global_flags = f; }
   virtual void setInnerBoundaryFlags(int f) { inner_boundary_flags = f; }
   virtual void setOuterBoundaryFlags(int f) { outer_boundary_flags = f; }
 
+  [[gnu::deprecated("Please use setGlobalFlags, setInnerBoundaryFlags and "
+      "setOuterBoundaryFlags methods instead")]]
+  virtual void setFlags(int f);
+
   /// Does this solver use Field3D coefficients (true) or only their DC component (false)
   virtual bool uses3DCoefs() const { return false; }
   
-  virtual const FieldPerp solve(const FieldPerp &b) = 0;
-  virtual const Field3D solve(const Field3D &b);
-  virtual const Field2D solve(const Field2D &b);
+  virtual FieldPerp solve(const FieldPerp &b) = 0;
+  virtual Field3D solve(const Field3D &b);
+  virtual Field2D solve(const Field2D &b);
   
-  virtual const FieldPerp solve(const FieldPerp &b, const FieldPerp &UNUSED(x0)) { return solve(b); }
-  virtual const Field3D solve(const Field3D &b, const Field3D &x0);
-  virtual const Field2D solve(const Field2D &b, const Field2D &x0);
+  virtual FieldPerp solve(const FieldPerp &b, const FieldPerp &UNUSED(x0)) { return solve(b); }
+  virtual Field3D solve(const Field3D &b, const Field3D &x0);
+  virtual Field2D solve(const Field2D &b, const Field2D &x0);
 
   /// Coefficients in tridiagonal inversion
   void tridagCoefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcomplex &c,

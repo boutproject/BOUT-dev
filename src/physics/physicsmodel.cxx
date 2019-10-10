@@ -34,9 +34,7 @@
 
 #include <bout/mesh.hxx>
 
-PhysicsModel::PhysicsModel()
-    : solver(nullptr), modelMonitor(this), splitop(false), userprecon(nullptr),
-      userjacobian(nullptr), initialised(false) {
+PhysicsModel::PhysicsModel() : modelMonitor(this) {
 
   // Set up restart file
   restart = Datafile(Options::getRoot()->getSection("restart"));

@@ -9,7 +9,7 @@
 
 Field3D n, v;
 
-int physics_init(bool restart) {
+int physics_init(bool UNUSED(restart)) {
   
   v.setLocation(CELL_YLOW); // Staggered relative to n
   
@@ -18,7 +18,7 @@ int physics_init(bool restart) {
   return 0;
 }
 
-int physics_run(BoutReal time) {
+int physics_run(BoutReal UNUSED(time)) {
   mesh->communicate(n, v);
   
   //ddt(n) = -Div_par_flux(v, n, CELL_CENTRE);

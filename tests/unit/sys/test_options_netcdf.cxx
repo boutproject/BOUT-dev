@@ -24,7 +24,7 @@ extern Mesh* mesh;
 class OptionsNetCDFTest: public FakeMeshFixture {
 public:
   OptionsNetCDFTest() : FakeMeshFixture() {}
-  virtual ~OptionsNetCDFTest() { std::remove(filename.c_str()); }
+  ~OptionsNetCDFTest() override { std::remove(filename.c_str()); }
 
   // A temporary filename
   std::string filename{std::tmpnam(nullptr)};

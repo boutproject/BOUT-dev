@@ -49,13 +49,8 @@
 #include <cstring>
 #include "formatfactory.hxx"
 
-Datafile::Datafile(Options *opt, Mesh* mesh_in)
-  : mesh(mesh_in==nullptr ? bout::globals::mesh : mesh_in),
-    parallel(false), flush(true), guards(true), floats(false), openclose(true),
-    enabled(true), shiftOutput(false), shiftInput(false),
-    flushFrequencyCounter(0), flushFrequency(1), file(nullptr), writable(false),
-    appending(false), first_time(true)
-{
+Datafile::Datafile(Options* opt, Mesh* mesh_in)
+    : mesh(mesh_in == nullptr ? bout::globals::mesh : mesh_in), file(nullptr) {
   filenamelen=FILENAMELEN;
   filename=new char[filenamelen];
   filename[0] = 0; // Terminate the string
@@ -75,7 +70,6 @@ Datafile::Datafile(Options *opt, Mesh* mesh_in)
   OPTION(opt, shiftOutput, false); // Do we want to write 3D fields in shifted space?
   OPTION(opt, shiftInput, false); // Do we want to read 3D fields in shifted space?
   OPTION(opt, flushFrequency, 1); // How frequently do we flush the file
-  
 }
 
 Datafile::Datafile(Datafile &&other) noexcept
@@ -1222,7 +1216,7 @@ bool Datafile::read_f3d(const std::string &name, Field3D *f, bool save_repeat) {
   
   if (shiftInput) {
     // Input file is in field-aligned coordinates e.g. BOUT++ 3.x restart file
-    *f = fromFieldAligned(*f, RGN_ALL);
+    *f = fromFieldAligned(*f, "RGN_ALL");
   }
   
   return true;
@@ -1269,7 +1263,7 @@ bool Datafile::read_fperp(const std::string &name, FieldPerp *f, bool save_repea
 
     if (shiftInput) {
       // Input file is in field-aligned coordinates e.g. BOUT++ 3.x restart file
-      *f = fromFieldAligned(*f, RGN_ALL);
+      *f = fromFieldAligned(*f, "RGN_ALL");
     }
   }
 
