@@ -1,4 +1,4 @@
-bout_add_integrated_test(interchange-instability
+bout_add_integrated_test(test-interchange-instability
   SOURCES 2fluid.cxx
   EXECUTABLE_NAME 2fluid
   USE_RUNTEST

@@ -1,4 +1,4 @@
-bout_add_integrated_test(drift-instability
+bout_add_integrated_test(test-drift-instability
   SOURCES 2fluid.cxx
   EXECUTABLE_NAME 2fluid
   USE_RUNTEST
