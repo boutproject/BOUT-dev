@@ -1,6 +1,5 @@
 bout_add_integrated_test(test-griddata-yboundary-guards
   SOURCES test_griddata.cxx
-  EXECUTABLE_NAME test_griddata
   USE_RUNTEST
   EXTRA_FILES
     data-doublenull-0/BOUT.inp

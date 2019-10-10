@@ -1,6 +1,5 @@
 bout_add_integrated_test(test-petsc-laplace-MAST-grid
   SOURCES test_petsc_laplace_MAST_grid.cxx
-  EXECUTABLE_NAME test_petsc_laplace_MAST_grid
   REQUIRES BOUT_HAS_PETSC
   USE_RUNTEST
   USE_DATA_BOUT_INP

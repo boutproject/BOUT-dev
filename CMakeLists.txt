@@ -616,7 +616,8 @@ macro(bout_test_copy_file FILENAME)
       COPYONLY)
 endmacro()
 
-# Add a new integrated test
+# Add a new integrated test. By default, the executable is named like
+# the first source, stripped of its file extension.
 #
 # Required arguments:
 #
@@ -635,7 +636,8 @@ endmacro()
 #
 # - REQUIRES: list of variables that must be truthy to enable test
 #
-# - EXECUTABLE_NAME: name of the executable, if different from the test name
+# - EXECUTABLE_NAME: name of the executable, if different from the
+#   first source name
 
 function(bout_add_integrated_test TESTNAME)
   set(options USE_RUNTEST USE_DATA_BOUT_INP)
@@ -656,6 +658,17 @@ function(bout_add_integrated_test TESTNAME)
 
   if (BOUT_TEST_OPTIONS_EXECUTABLE_NAME)
     set_target_properties(${TESTNAME} PROPERTIES OUTPUT_NAME ${BOUT_TEST_OPTIONS_EXECUTABLE_NAME})
+  else()
+    # If more than one source file, just get the first one
+    list(LENGTH ${BOUT_TEST_OPTIONS_SOURCES} BOUT_SOURCES_LENGTH)
+    if (BOUT_SOURCES_LENGTH GREATER 0)
+      list(GET ${BOUT_TEST_OPTIONS_SOURCES} 0 BOUT_TEST_FIRST_SOURCE)
+    else()
+      set(BOUT_TEST_FIRST_SOURCE ${BOUT_TEST_OPTIONS_SOURCES})
+    endif()
+    # Strip the directory and file extension from the source file
+    get_filename_component(BOUT_TEST_EXECUTABLE_NAME ${BOUT_TEST_FIRST_SOURCE} NAME_WE)
+    set_target_properties(${TESTNAME} PROPERTIES OUTPUT_NAME ${BOUT_TEST_EXECUTABLE_NAME})
   endif()
 
   if (BOUT_TEST_OPTIONS_USE_RUNTEST)
