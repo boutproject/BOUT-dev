@@ -255,7 +255,7 @@ LaplacePetsc3dAmg::~LaplacePetsc3dAmg() {
 }
 
 
-const Field3D LaplacePetsc3dAmg::solve(const Field3D &b_in, const Field3D &x0) {
+Field3D LaplacePetsc3dAmg::solve(const Field3D &b_in, const Field3D &x0) {
   // If necessary, update the values in the matrix operator and initialise
   // the Krylov solver
   if (updateRequired) updateMatrix3D();
@@ -357,18 +357,13 @@ const Field3D LaplacePetsc3dAmg::solve(const Field3D &b_in, const Field3D &x0) {
   return guess.toField();
 }
 
-const Field2D LaplacePetsc3dAmg::solve(const Field2D &b) {
+Field2D LaplacePetsc3dAmg::solve(const Field2D &b) {
   return Laplacian::solve(b);
 }
 
 PetscMatrix<Field3D>& LaplacePetsc3dAmg::getMatrix3D() {
   if (updateRequired) updateMatrix3D();
   return operator3D;
-}
-
-PetscMatrix<Field2D>& LaplacePetsc3dAmg::getMatrix2D() {
-  updateMatrix2D();
-  return operator2D;
 }
 
 void LaplacePetsc3dAmg::updateMatrix3D() {
@@ -513,9 +508,6 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
   KSPSetPCSide(ksp, PC_LEFT);
 
   updateRequired = false;
-}
-
-void LaplacePetsc3dAmg::updateMatrix2D() {
 }
 
 #endif // BOUT_HAS_PETSC_3_3

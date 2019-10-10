@@ -53,7 +53,7 @@ public:
   void setCoefEz(const Field2D &UNUSED(val)) override {}
 
   using Laplacian::solve;
-  const FieldPerp solve(const FieldPerp &UNUSED(b)) override {throw BoutException("PETSc not available");}
+  FieldPerp solve(const FieldPerp &UNUSED(b)) override {throw BoutException("PETSc not available");}
 };
 
 #else
@@ -164,19 +164,18 @@ public:
   // Return a reference to the matrix objects representing the Laplace
   // operator. These will be (re)construct if necessary.
   PetscMatrix<Field3D>& getMatrix3D();
-  PetscMatrix<Field2D>& getMatrix2D();
 
-  virtual const Field2D solve(const Field2D &b) override;
+  virtual Field2D solve(const Field2D &b) override;
 
-  virtual const Field3D solve(const Field3D &b) override {
+  virtual Field3D solve(const Field3D &b) override {
     Field3D zero(b.getMesh());
     zero = 0.;
     return solve(b, zero);
   }
-  virtual const Field3D solve(const Field3D &b_in, const Field3D &x0) override;
+  virtual Field3D solve(const Field3D &b_in, const Field3D &x0) override;
 
 
-  virtual const FieldPerp solve(const FieldPerp& UNUSED(b)) override {
+  virtual FieldPerp solve(const FieldPerp& UNUSED(b)) override {
     throw BoutException("LaplacePetsc3DAmg cannot solve for FieldPerp");
   }
 
@@ -184,7 +183,6 @@ private:
 
   // (Re)compute the values of the matrix representing the Laplacian operator
   void updateMatrix3D();
-  void updateMatrix2D();
   
   /* Ex and Ez
    * Additional 1st derivative terms to allow for solution field to be
@@ -220,7 +218,6 @@ private:
   bool fourth_order;
 
   PetscMatrix<Field3D> operator3D;
-  PetscMatrix<Field2D> operator2D;
   KSP ksp;
 
   bool kspInitialised;

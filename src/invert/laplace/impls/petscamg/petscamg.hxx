@@ -87,8 +87,8 @@ public:
   void settingSolver(int);
 
   
-  const FieldPerp solve(const FieldPerp &b) override { FieldPerp zero(b.getMesh()); zero = 0.; return solve(b, zero); }
-  const FieldPerp solve(const FieldPerp &b_in, const FieldPerp &x0) override;
+  FieldPerp solve(const FieldPerp &b) override { FieldPerp zero(b.getMesh()); zero = 0.; return solve(b, zero); }
+  FieldPerp solve(const FieldPerp &b_in, const FieldPerp &x0) override;
 
   FieldPerp multiplyAx(const FieldPerp &x);
   

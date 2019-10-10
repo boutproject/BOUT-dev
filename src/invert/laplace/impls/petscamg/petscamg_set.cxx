@@ -140,7 +140,7 @@ void LaplacePetscAmg::settingSolver(int kflag){
   KSPSetFromOptions(ksp);
 }
 
-const FieldPerp LaplacePetscAmg::solve(const FieldPerp &rhs, const FieldPerp &x0) {
+FieldPerp LaplacePetscAmg::solve(const FieldPerp &rhs, const FieldPerp &x0) {
   // Timer timer("invert");
   TRACE("LaplacePetscAmg::solve(const FieldPerp, const FieldPerp)");
   
