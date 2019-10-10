@@ -1,4 +1,4 @@
-bout_add_integrated_test(griddata-yboundary-guards
+bout_add_integrated_test(test-griddata-yboundary-guards
   SOURCES test_griddata.cxx
   EXECUTABLE_NAME test_griddata
   USE_RUNTEST
