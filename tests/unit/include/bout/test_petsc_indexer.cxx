@@ -57,12 +57,6 @@ TEST_F(IndexerTest, TestConvertIndex3D) {
   IndexerPtr index = GlobalIndexer::getInstance(localmesh);
   index->initialise();
   std::set<int, std::greater <int>> returnedIndices;
-  Region<Ind3D> tmpX = mask(localmesh->getRegion3D("RGN_ALL"),
-			    localmesh->getRegion3D("RGN_NOX"));
-  Region<Ind3D> tmpY = mask(localmesh->getRegion3D("RGN_ALL"),
-			    localmesh->getRegion3D("RGN_NOY"));
-  localmesh->addRegion3D("RGN_XGUARDS", mask(tmpX, tmpY));
-  localmesh->addRegion3D("RGN_YGUARDS", mask(tmpY, tmpX));
 
   // Check each of the interior global indices is unique
   BOUT_FOR(i, localmesh->getRegion3D("RGN_NOBNDRY")) {
@@ -97,12 +91,6 @@ TEST_F(IndexerTest, TestConvertIndex2D) {
   IndexerPtr index = GlobalIndexer::getInstance(localmesh);
   std::set<int, std::greater <int>> returnedIndices;
   index->initialise();
-  Region<Ind2D> tmpX = mask(localmesh->getRegion2D("RGN_ALL"),
-			    localmesh->getRegion2D("RGN_NOX"));
-  Region<Ind2D> tmpY = mask(localmesh->getRegion2D("RGN_ALL"),
-			    localmesh->getRegion2D("RGN_NOY"));
-  localmesh->addRegion2D("RGN_XGUARDS", mask(tmpX, tmpY));
-  localmesh->addRegion2D("RGN_YGUARDS", mask(tmpY, tmpX));
 
   // Check each of the interior global indices is unique
   BOUT_FOR(i, localmesh->getRegion2D("RGN_NOBNDRY")) {
@@ -139,8 +127,6 @@ TEST_F(IndexerTest, TestConvertIndexPerp) {
   IndexerPtr index = GlobalIndexer::getInstance(localmesh);
   index->initialise();
   std::set<int, std::greater <int>> returnedIndices;
-  localmesh->addRegionPerp("RGN_XGUARDS", mask(localmesh->getRegionPerp("RGN_ALL"),
-					       localmesh->getRegionPerp("RGN_NOX")));
 
   // Check each of the interior global indices is unique
   BOUT_FOR(i, localmesh->getRegionPerp("RGN_NOBNDRY")) {
@@ -245,10 +231,6 @@ INSTANTIATE_TEST_SUITE_P(3by3, ParallelIndexerTest,
 
 TEST_P(ParallelIndexerTest, TestConvertIndex3D) {
   IndexerPtr index = getIndexer(pe_xind, pe_yind);
-  localmesh->addRegion3D("RGN_XGUARDS", mask(localmesh->getRegion3D("RGN_ALL"),
-                                        localmesh->getRegion3D("RGN_NOX")));
-  localmesh->addRegion3D("RGN_YGUARDS", mask(localmesh->getRegion3D("RGN_ALL"),
-                                        localmesh->getRegion3D("RGN_NOY")));
 
   // Test xIn boundary
   BOUT_FOR(i, localmesh->getRegion3D("RGN_XGUARDS")) {
@@ -297,10 +279,6 @@ TEST_P(ParallelIndexerTest, TestConvertIndex3D) {
 
 TEST_P(ParallelIndexerTest, TestConvertIndex2D) {
   IndexerPtr index = getIndexer(pe_xind, pe_yind);
-  localmesh->addRegion2D("RGN_XGUARDS", mask(localmesh->getRegion2D("RGN_ALL"),
-                                        localmesh->getRegion2D("RGN_NOX")));
-  localmesh->addRegion2D("RGN_YGUARDS", mask(localmesh->getRegion2D("RGN_ALL"),
-                                        localmesh->getRegion2D("RGN_NOY")));
 
   // Test xIn boundary
   BOUT_FOR(i, localmesh->getRegion2D("RGN_XGUARDS")) {
@@ -350,8 +328,6 @@ TEST_P(ParallelIndexerTest, TestConvertIndex2D) {
 
 TEST_P(ParallelIndexerTest, TestConvertIndexPerp) {
   IndexerPtr index = getIndexer(pe_xind, pe_yind);
-  localmesh->addRegionPerp("RGN_XGUARDS", mask(localmesh->getRegionPerp("RGN_ALL"),
-                                        localmesh->getRegionPerp("RGN_NOX")));
 
   // Test xIn boundary
   BOUT_FOR(i, localmesh->getRegionPerp("RGN_XGUARDS")) {
