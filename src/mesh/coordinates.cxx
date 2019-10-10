@@ -1441,25 +1441,34 @@ Field3D Coordinates::Laplace_par(const Field3D& f, CELL_LOC outloc) {
 
 // Full Laplacian operator on scalar field
 
-Field2D Coordinates::Laplace(const Field2D& f, CELL_LOC outloc) {
+Field2D Coordinates::Laplace(const Field2D& f, CELL_LOC outloc,
+                             const std::string& dfdy_boundary_conditions,
+                             const std::string& dfdy_dy_region) {
   TRACE("Coordinates::Laplace( Field2D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
-  Field2D result = G1 * DDX(f, outloc) + G2 * DDY(f, outloc) + g11 * D2DX2(f, outloc)
-                   + g22 * D2DY2(f, outloc) + 2.0 * g12 * D2DXDY(f, outloc);
+  Field2D result =
+      G1 * DDX(f, outloc) + G2 * DDY(f, outloc) + g11 * D2DX2(f, outloc)
+      + g22 * D2DY2(f, outloc)
+      + 2.0 * g12 * D2DXDY(f, outloc, dfdy_boundary_conditions, dfdy_dy_region);
 
   return result;
 }
 
-Field3D Coordinates::Laplace(const Field3D& f, CELL_LOC outloc) {
+Field3D Coordinates::Laplace(const Field3D& f, CELL_LOC outloc,
+                             const std::string& dfdy_boundary_conditions,
+                             const std::string& dfdy_dy_region) {
   TRACE("Coordinates::Laplace( Field3D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
   Field3D result = G1 * ::DDX(f, outloc) + G2 * ::DDY(f, outloc) + G3 * ::DDZ(f, outloc)
                    + g11 * D2DX2(f, outloc) + g22 * D2DY2(f, outloc)
                    + g33 * D2DZ2(f, outloc)
-                   + 2.0 * (g12 * D2DXDY(f, outloc) + g13 * D2DXDZ(f, outloc)
-                            + g23 * D2DYDZ(f, outloc));
+                   + 2.0
+                         * (g12
+                                * D2DXDY(f, outloc, "DEFAULT", "RGN_NOBNDRY",
+                                         dfdy_boundary_conditions, dfdy_dy_region)
+                            + g13 * D2DXDZ(f, outloc) + g23 * D2DYDZ(f, outloc));
 
   return result;
 }
