@@ -624,6 +624,7 @@ ac_includes_default="\
 gt_needs=
 ac_subst_vars='HAS_FFTW
 HAS_NLS
+HAS_PYBIND11
 HAS_OPENMP
 SLEPC_ARCH
 SLEPC_DIR
@@ -706,6 +707,15 @@ AWK
 NCMPIDUMP_PATH
 NCCONF
 fftw_path
+pkgpyexecdir
+pyexecdir
+pkgpythondir
+pythondir
+PYTHON_PLATFORM
+PYTHON_EXEC_PREFIX
+PYTHON_PREFIX
+PYTHON_VERSION
+PYTHON
 works
 COVERAGE_FLAGS
 CODE_COVERAGE_RULES
@@ -768,6 +778,7 @@ infodir
 docdir
 oldincludedir
 includedir
+runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -800,6 +811,7 @@ with_lapack
 with_petsc
 with_slepc
 with_pvode
+with_pybind11
 with_mumps
 with_arkode
 with_scorep
@@ -839,6 +851,7 @@ CXX
 CPPFLAGS
 CCC
 CXXCPP
+PYTHON
 CC
 CFLAGS
 CPP'
@@ -880,6 +893,7 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
+runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -1132,6 +1146,15 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
+  -runstatedir | --runstatedir | --runstatedi | --runstated \
+  | --runstate | --runstat | --runsta | --runst | --runs \
+  | --run | --ru | --r)
+    ac_prev=runstatedir ;;
+  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
+  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
+  | --run=* | --ru=* | --r=*)
+    runstatedir=$ac_optarg ;;
+
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1269,7 +1292,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir
+		libdir localedir mandir runstatedir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1422,6 +1445,7 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
+  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -1487,6 +1511,7 @@ Optional Packages:
   --with-petsc            Enable PETSc interface
   --with-slepc            Enable SLEPc interface
   --with-pvode            Build and enable PVODE 98 (DEFAULT)
+  --with-pybind11         Enable pybind11 bindings
   --with-mumps            Link with MUMPS library for direct matrix inversions
   --with-arkode           Use the SUNDIALS ARKODE solver
   --with-scorep           Enable support for scorep based instrumentation
@@ -1513,6 +1538,7 @@ Some influential environment variables:
   CPPFLAGS    (Objective) C/C++ preprocessor flags, e.g. -I<include dir> if
               you have headers in a nonstandard directory <include dir>
   CXXCPP      C++ preprocessor
+  PYTHON      the Python interpreter
   CC          C compiler command
   CFLAGS      C compiler flags
   CPP         C preprocessor
@@ -2608,6 +2634,14 @@ fi
 # Check whether --with-pvode was given.
 if test "${with_pvode+set}" = set; then :
   withval=$with_pvode;
+fi
+
+
+# Check whether --with-pybind11 was given.
+if test "${with_pybind11+set}" = set; then :
+  withval=$with_pybind11;
+else
+  with_pybind11=no
 fi
 
 
@@ -6214,6 +6248,322 @@ fi
 
 fi
 
+fi
+
+
+#############################################################
+# Enable pybind11 -- fetch submodule if required
+#############################################################
+
+HAS_PYBIND11="no"
+PYBIND_TARGET_DIR=externalpackages/pybind11
+if test "$with_pybind11" != "no"; then :
+
+  if test -f ${PYBIND_TARGET_DIR}/README.md; then :
+
+     { $as_echo "$as_me:${as_lineno-$LINENO}: Using existing pybind11 submodule" >&5
+$as_echo "$as_me: Using existing pybind11 submodule" >&6;}
+
+else
+
+     { $as_echo "$as_me:${as_lineno-$LINENO}: Getting pybind11 submodule" >&5
+$as_echo "$as_me: Getting pybind11 submodule" >&6;}
+              	if git submodule update --init --recursive -- ${PYBIND_TARGET_DIR}; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Success in getting pybind11" >&5
+$as_echo "$as_me: Success in getting pybind11" >&6;}
+else
+  as_fn_error $? "Failed to get pybind11" "$LINENO" 5
+fi
+
+fi
+
+  #Ensure we have asked to enable_shared as well as -fPIC is required
+  #in CXXFLAGS. We could of course just add -fPIC to CXXFLAGS here but
+  #probably better to force consistent options
+  if test "x$enable_shared" != "xyes"; then :
+  as_fn_error $? "Configuring with pybind11 requires --enable-shared=yes" "$LINENO" 5
+fi
+
+  #We require python if using pybind11 so check we have access to it
+  #Note strictly pybind11 can work with python 2 and 3, but here we
+  #restrict ourselves to >= v3.0. This will abort configure if a suitable
+  #interpreter isn't found
+
+
+
+
+
+
+        if test -n "$PYTHON"; then
+      # If the user set $PYTHON, use it and don't search something else.
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $PYTHON version is >= 3" >&5
+$as_echo_n "checking whether $PYTHON version is >= 3... " >&6; }
+      prog="import sys
+# split strings by '.' and convert to numeric.  Append some zeros
+# because we need at least 4 digits for the hex conversion.
+# map returns an iterator in Python 3.0 and a list in 2.x
+minver = list(map(int, '3'.split('.'))) + [0, 0, 0]
+minverhex = 0
+# xrange is not present in Python 3.0 and range returns an iterator
+for i in list(range(0, 4)): minverhex = (minverhex << 8) + minver[i]
+sys.exit(sys.hexversion < minverhex)"
+  if { echo "$as_me:$LINENO: $PYTHON -c "$prog"" >&5
+   ($PYTHON -c "$prog") >&5 2>&5
+   ac_status=$?
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); }; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+			       as_fn_error $? "Python interpreter is too old" "$LINENO" 5
+fi
+      am_display_PYTHON=$PYTHON
+    else
+      # Otherwise, try each interpreter until we find one that satisfies
+      # VERSION.
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for a Python interpreter with version >= 3" >&5
+$as_echo_n "checking for a Python interpreter with version >= 3... " >&6; }
+if ${am_cv_pathless_PYTHON+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+	for am_cv_pathless_PYTHON in python python2 python3 python3.3 python3.2 python3.1 python3.0 python2.7  python2.6 python2.5 python2.4 python2.3 python2.2 python2.1 python2.0 none; do
+	  test "$am_cv_pathless_PYTHON" = none && break
+	  prog="import sys
+# split strings by '.' and convert to numeric.  Append some zeros
+# because we need at least 4 digits for the hex conversion.
+# map returns an iterator in Python 3.0 and a list in 2.x
+minver = list(map(int, '3'.split('.'))) + [0, 0, 0]
+minverhex = 0
+# xrange is not present in Python 3.0 and range returns an iterator
+for i in list(range(0, 4)): minverhex = (minverhex << 8) + minver[i]
+sys.exit(sys.hexversion < minverhex)"
+  if { echo "$as_me:$LINENO: $am_cv_pathless_PYTHON -c "$prog"" >&5
+   ($am_cv_pathless_PYTHON -c "$prog") >&5 2>&5
+   ac_status=$?
+   echo "$as_me:$LINENO: \$? = $ac_status" >&5
+   (exit $ac_status); }; then :
+  break
+fi
+	done
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $am_cv_pathless_PYTHON" >&5
+$as_echo "$am_cv_pathless_PYTHON" >&6; }
+      # Set $PYTHON to the absolute path of $am_cv_pathless_PYTHON.
+      if test "$am_cv_pathless_PYTHON" = none; then
+	PYTHON=:
+      else
+        # Extract the first word of "$am_cv_pathless_PYTHON", so it can be a program name with args.
+set dummy $am_cv_pathless_PYTHON; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_PYTHON+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $PYTHON in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PYTHON="$PYTHON" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_PYTHON="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+PYTHON=$ac_cv_path_PYTHON
+if test -n "$PYTHON"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PYTHON" >&5
+$as_echo "$PYTHON" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+      fi
+      am_display_PYTHON=$am_cv_pathless_PYTHON
+    fi
+
+
+  if test "$PYTHON" = :; then
+      as_fn_error $? "no suitable Python interpreter found" "$LINENO" 5
+  else
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $am_display_PYTHON version" >&5
+$as_echo_n "checking for $am_display_PYTHON version... " >&6; }
+if ${am_cv_python_version+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  am_cv_python_version=`$PYTHON -c "import sys; sys.stdout.write(sys.version[:3])"`
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $am_cv_python_version" >&5
+$as_echo "$am_cv_python_version" >&6; }
+  PYTHON_VERSION=$am_cv_python_version
+
+
+
+  PYTHON_PREFIX='${prefix}'
+
+  PYTHON_EXEC_PREFIX='${exec_prefix}'
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $am_display_PYTHON platform" >&5
+$as_echo_n "checking for $am_display_PYTHON platform... " >&6; }
+if ${am_cv_python_platform+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  am_cv_python_platform=`$PYTHON -c "import sys; sys.stdout.write(sys.platform)"`
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $am_cv_python_platform" >&5
+$as_echo "$am_cv_python_platform" >&6; }
+  PYTHON_PLATFORM=$am_cv_python_platform
+
+
+  # Just factor out some code duplication.
+  am_python_setup_sysconfig="\
+import sys
+# Prefer sysconfig over distutils.sysconfig, for better compatibility
+# with python 3.x.  See automake bug#10227.
+try:
+    import sysconfig
+except ImportError:
+    can_use_sysconfig = 0
+else:
+    can_use_sysconfig = 1
+# Can't use sysconfig in CPython 2.7, since it's broken in virtualenvs:
+# <https://github.com/pypa/virtualenv/issues/118>
+try:
+    from platform import python_implementation
+    if python_implementation() == 'CPython' and sys.version[:3] == '2.7':
+        can_use_sysconfig = 0
+except ImportError:
+    pass"
+
+
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $am_display_PYTHON script directory" >&5
+$as_echo_n "checking for $am_display_PYTHON script directory... " >&6; }
+if ${am_cv_python_pythondir+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test "x$prefix" = xNONE
+     then
+       am_py_prefix=$ac_default_prefix
+     else
+       am_py_prefix=$prefix
+     fi
+     am_cv_python_pythondir=`$PYTHON -c "
+$am_python_setup_sysconfig
+if can_use_sysconfig:
+    sitedir = sysconfig.get_path('purelib', vars={'base':'$am_py_prefix'})
+else:
+    from distutils import sysconfig
+    sitedir = sysconfig.get_python_lib(0, 0, prefix='$am_py_prefix')
+sys.stdout.write(sitedir)"`
+     case $am_cv_python_pythondir in
+     $am_py_prefix*)
+       am__strip_prefix=`echo "$am_py_prefix" | sed 's|.|.|g'`
+       am_cv_python_pythondir=`echo "$am_cv_python_pythondir" | sed "s,^$am__strip_prefix,$PYTHON_PREFIX,"`
+       ;;
+     *)
+       case $am_py_prefix in
+         /usr|/System*) ;;
+         *)
+	  am_cv_python_pythondir=$PYTHON_PREFIX/lib/python$PYTHON_VERSION/site-packages
+	  ;;
+       esac
+       ;;
+     esac
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $am_cv_python_pythondir" >&5
+$as_echo "$am_cv_python_pythondir" >&6; }
+  pythondir=$am_cv_python_pythondir
+
+
+
+  pkgpythondir=\${pythondir}/$PACKAGE
+
+
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $am_display_PYTHON extension module directory" >&5
+$as_echo_n "checking for $am_display_PYTHON extension module directory... " >&6; }
+if ${am_cv_python_pyexecdir+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test "x$exec_prefix" = xNONE
+     then
+       am_py_exec_prefix=$am_py_prefix
+     else
+       am_py_exec_prefix=$exec_prefix
+     fi
+     am_cv_python_pyexecdir=`$PYTHON -c "
+$am_python_setup_sysconfig
+if can_use_sysconfig:
+    sitedir = sysconfig.get_path('platlib', vars={'platbase':'$am_py_prefix'})
+else:
+    from distutils import sysconfig
+    sitedir = sysconfig.get_python_lib(1, 0, prefix='$am_py_prefix')
+sys.stdout.write(sitedir)"`
+     case $am_cv_python_pyexecdir in
+     $am_py_exec_prefix*)
+       am__strip_prefix=`echo "$am_py_exec_prefix" | sed 's|.|.|g'`
+       am_cv_python_pyexecdir=`echo "$am_cv_python_pyexecdir" | sed "s,^$am__strip_prefix,$PYTHON_EXEC_PREFIX,"`
+       ;;
+     *)
+       case $am_py_exec_prefix in
+         /usr|/System*) ;;
+         *)
+	   am_cv_python_pyexecdir=$PYTHON_EXEC_PREFIX/lib/python$PYTHON_VERSION/site-packages
+	   ;;
+       esac
+       ;;
+     esac
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $am_cv_python_pyexecdir" >&5
+$as_echo "$am_cv_python_pyexecdir" >&6; }
+  pyexecdir=$am_cv_python_pyexecdir
+
+
+
+  pkgpyexecdir=\${pyexecdir}/$PACKAGE
+
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found python version $PYTHON_VERSION" >&5
+$as_echo "$as_me: Found python version $PYTHON_VERSION" >&6;}
+  fi
+
+
+  EXTRA_INCS="$EXTRA_INCS $(PYTHONPATH=${PYTHONPATH}:${PWD}/${PYBIND_TARGET_DIR} python3 -m pybind11 --includes)"
+  EXTRA_LIBS="$EXTRA_LIBS $(python3-config --libs)"
+  LDFLAGS="$LDFLAGS $(python3-config --ldflags)"
+
+  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PYBIND11"
+  HAS_PYBIND11="yes"
+
+  #Now copy/link the pybind headers into bout includes
+  ac_config_links="$ac_config_links include/pybind11:${PYBIND_TARGET_DIR}/include/pybind11/"
+
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Building without pybind11 submodule" >&5
+$as_echo "$as_me: Building without pybind11 submodule" >&6;}
 fi
 
 #############################################################
@@ -13310,21 +13660,16 @@ else
 /* end confdefs.h.  */
 
 #include <libintl.h>
-#ifndef __GNU_GETTEXT_SUPPORTED_REVISION
+$gt_revision_test_code
 extern int _nl_msg_cat_cntr;
 extern int *_nl_domain_bindings;
-#define __GNU_GETTEXT_SYMBOL_EXPRESSION (_nl_msg_cat_cntr + *_nl_domain_bindings)
-#else
-#define __GNU_GETTEXT_SYMBOL_EXPRESSION 0
-#endif
-$gt_revision_test_code
 
 int
 main ()
 {
 
 bindtextdomain ("", "");
-return * gettext ("")$gt_expression_test_code + __GNU_GETTEXT_SYMBOL_EXPRESSION
+return * gettext ("")$gt_expression_test_code + _nl_msg_cat_cntr + *_nl_domain_bindings
 
   ;
   return 0;
@@ -14077,25 +14422,20 @@ else
 /* end confdefs.h.  */
 
 #include <libintl.h>
-#ifndef __GNU_GETTEXT_SUPPORTED_REVISION
+$gt_revision_test_code
 extern int _nl_msg_cat_cntr;
 extern
 #ifdef __cplusplus
 "C"
 #endif
 const char *_nl_expand_alias (const char *);
-#define __GNU_GETTEXT_SYMBOL_EXPRESSION (_nl_msg_cat_cntr + *_nl_expand_alias (""))
-#else
-#define __GNU_GETTEXT_SYMBOL_EXPRESSION 0
-#endif
-$gt_revision_test_code
 
 int
 main ()
 {
 
 bindtextdomain ("", "");
-return * gettext ("")$gt_expression_test_code + __GNU_GETTEXT_SYMBOL_EXPRESSION
+return * gettext ("")$gt_expression_test_code + _nl_msg_cat_cntr + *_nl_expand_alias ("")
 
   ;
   return 0;
@@ -14114,25 +14454,20 @@ rm -f core conftest.err conftest.$ac_objext \
 /* end confdefs.h.  */
 
 #include <libintl.h>
-#ifndef __GNU_GETTEXT_SUPPORTED_REVISION
+$gt_revision_test_code
 extern int _nl_msg_cat_cntr;
 extern
 #ifdef __cplusplus
 "C"
 #endif
 const char *_nl_expand_alias (const char *);
-#define __GNU_GETTEXT_SYMBOL_EXPRESSION (_nl_msg_cat_cntr + *_nl_expand_alias (""))
-#else
-#define __GNU_GETTEXT_SYMBOL_EXPRESSION 0
-#endif
-$gt_revision_test_code
 
 int
 main ()
 {
 
 bindtextdomain ("", "");
-return * gettext ("")$gt_expression_test_code + __GNU_GETTEXT_SYMBOL_EXPRESSION
+return * gettext ("")$gt_expression_test_code + _nl_msg_cat_cntr + *_nl_expand_alias ("")
 
   ;
   return 0;
@@ -14924,6 +15259,7 @@ esac
 cat >>$CONFIG_STATUS <<_ACEOF || ac_write_fail=1
 # Files that config.status was made for.
 config_files="$ac_config_files"
+config_links="$ac_config_links"
 config_commands="$ac_config_commands"
 
 _ACEOF
@@ -14948,6 +15284,9 @@ Usage: $0 [OPTION]... [TAG]...
 
 Configuration files:
 $config_files
+
+Configuration links:
+$config_links
 
 Configuration commands:
 $config_commands
@@ -15082,6 +15421,7 @@ cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
 for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
+    "include/pybind11") CONFIG_LINKS="$CONFIG_LINKS include/pybind11:${PYBIND_TARGET_DIR}/include/pybind11/" ;;
     "po-directories") CONFIG_COMMANDS="$CONFIG_COMMANDS po-directories" ;;
     "make.config") CONFIG_FILES="$CONFIG_FILES make.config" ;;
 
@@ -15096,6 +15436,7 @@ done
 # bizarre bug on SunOS 4.1.3.
 if $ac_need_defaults; then
   test "${CONFIG_FILES+set}" = set || CONFIG_FILES=$config_files
+  test "${CONFIG_LINKS+set}" = set || CONFIG_LINKS=$config_links
   test "${CONFIG_COMMANDS+set}" = set || CONFIG_COMMANDS=$config_commands
 fi
 
@@ -15285,7 +15626,7 @@ cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
 fi # test -n "$CONFIG_FILES"
 
 
-eval set X "  :F $CONFIG_FILES      :C $CONFIG_COMMANDS"
+eval set X "  :F $CONFIG_FILES    :L $CONFIG_LINKS  :C $CONFIG_COMMANDS"
 shift
 for ac_tag
 do
@@ -15505,7 +15846,38 @@ which seems to be undefined.  Please make sure it is defined" >&2;}
   || as_fn_error $? "could not create $ac_file" "$LINENO" 5
  ;;
 
+  :L)
+  #
+  # CONFIG_LINK
+  #
 
+  if test "$ac_source" = "$ac_file" && test "$srcdir" = '.'; then
+    :
+  else
+    # Prefer the file from the source tree if names are identical.
+    if test "$ac_source" = "$ac_file" || test ! -r "$ac_source"; then
+      ac_source=$srcdir/$ac_source
+    fi
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: linking $ac_source to $ac_file" >&5
+$as_echo "$as_me: linking $ac_source to $ac_file" >&6;}
+
+    if test ! -r "$ac_source"; then
+      as_fn_error $? "$ac_source: file not found" "$LINENO" 5
+    fi
+    rm -f "$ac_file"
+
+    # Try a relative symlink, then a hard link, then a copy.
+    case $ac_source in
+    [\\/$]* | ?:[\\/]* ) ac_rel_source=$ac_source ;;
+	*) ac_rel_source=$ac_top_build_prefix$ac_source ;;
+    esac
+    ln -s "$ac_rel_source" "$ac_file" 2>/dev/null ||
+      ln "$ac_source" "$ac_file" 2>/dev/null ||
+      cp -p "$ac_source" "$ac_file" ||
+      as_fn_error $? "cannot link or copy $ac_source to $ac_file" "$LINENO" 5
+  fi
+ ;;
   :C)  { $as_echo "$as_me:${as_lineno-$LINENO}: executing $ac_file commands" >&5
 $as_echo "$as_me: executing $ac_file commands" >&6;}
  ;;
@@ -15688,6 +16060,7 @@ CONFIG_LDFLAGS=`$MAKE ldflags -f output.make`
 BOUT_LIB_PATH=$PWD/lib
 BOUT_INCLUDE_PATH=$PWD/include
 MPARK_VARIANT_INCLUDE_PATH=$PWD/externalpackages/mpark.variant/include
+
 
 
 
@@ -16293,6 +16666,7 @@ esac
 cat >>$CONFIG_STATUS <<_ACEOF || ac_write_fail=1
 # Files that config.status was made for.
 config_files="$ac_config_files"
+config_links="$ac_config_links"
 config_commands="$ac_config_commands"
 
 _ACEOF
@@ -16317,6 +16691,9 @@ Usage: $0 [OPTION]... [TAG]...
 
 Configuration files:
 $config_files
+
+Configuration links:
+$config_links
 
 Configuration commands:
 $config_commands
@@ -16451,6 +16828,7 @@ cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
 for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
+    "include/pybind11") CONFIG_LINKS="$CONFIG_LINKS include/pybind11:${PYBIND_TARGET_DIR}/include/pybind11/" ;;
     "po-directories") CONFIG_COMMANDS="$CONFIG_COMMANDS po-directories" ;;
     "make.config") CONFIG_FILES="$CONFIG_FILES make.config" ;;
     "bin/bout-config") CONFIG_FILES="$CONFIG_FILES bin/bout-config" ;;
@@ -16466,6 +16844,7 @@ done
 # bizarre bug on SunOS 4.1.3.
 if $ac_need_defaults; then
   test "${CONFIG_FILES+set}" = set || CONFIG_FILES=$config_files
+  test "${CONFIG_LINKS+set}" = set || CONFIG_LINKS=$config_links
   test "${CONFIG_COMMANDS+set}" = set || CONFIG_COMMANDS=$config_commands
 fi
 
@@ -16655,7 +17034,7 @@ cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
 fi # test -n "$CONFIG_FILES"
 
 
-eval set X "  :F $CONFIG_FILES      :C $CONFIG_COMMANDS"
+eval set X "  :F $CONFIG_FILES    :L $CONFIG_LINKS  :C $CONFIG_COMMANDS"
 shift
 for ac_tag
 do
@@ -16875,7 +17254,38 @@ which seems to be undefined.  Please make sure it is defined" >&2;}
   || as_fn_error $? "could not create $ac_file" "$LINENO" 5
  ;;
 
+  :L)
+  #
+  # CONFIG_LINK
+  #
 
+  if test "$ac_source" = "$ac_file" && test "$srcdir" = '.'; then
+    :
+  else
+    # Prefer the file from the source tree if names are identical.
+    if test "$ac_source" = "$ac_file" || test ! -r "$ac_source"; then
+      ac_source=$srcdir/$ac_source
+    fi
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: linking $ac_source to $ac_file" >&5
+$as_echo "$as_me: linking $ac_source to $ac_file" >&6;}
+
+    if test ! -r "$ac_source"; then
+      as_fn_error $? "$ac_source: file not found" "$LINENO" 5
+    fi
+    rm -f "$ac_file"
+
+    # Try a relative symlink, then a hard link, then a copy.
+    case $ac_source in
+    [\\/$]* | ?:[\\/]* ) ac_rel_source=$ac_source ;;
+	*) ac_rel_source=$ac_top_build_prefix$ac_source ;;
+    esac
+    ln -s "$ac_rel_source" "$ac_file" 2>/dev/null ||
+      ln "$ac_source" "$ac_file" 2>/dev/null ||
+      cp -p "$ac_source" "$ac_file" ||
+      as_fn_error $? "cannot link or copy $ac_source to $ac_file" "$LINENO" 5
+  fi
+ ;;
   :C)  { $as_echo "$as_me:${as_lineno-$LINENO}: executing $ac_file commands" >&5
 $as_echo "$as_me: executing $ac_file commands" >&6;}
  ;;
@@ -17054,6 +17464,8 @@ $as_echo "$as_me:   PETSc support           : $HAS_PETSC (has SUNDIALS: $PETSC_H
 $as_echo "$as_me:   SLEPc support           : $HAS_SLEPC" >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}:   IDA support             : $HAS_IDA" >&5
 $as_echo "$as_me:   IDA support             : $HAS_IDA" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}:   PVODE support           : $HAS_PVODE" >&5
+$as_echo "$as_me:   PVODE support           : $HAS_PVODE" >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}:   CVODE support           : $HAS_CVODE" >&5
 $as_echo "$as_me:   CVODE support           : $HAS_CVODE" >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}:   ARKODE support          : $HAS_ARKODE" >&5
@@ -17072,6 +17484,8 @@ $as_echo "$as_me:   MUMPS support           : $HAS_MUMPS" >&6;}
 $as_echo "$as_me:   Lapack support          : $HAS_LAPACK" >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}:   Scorep support          : $HAS_SCOREP" >&5
 $as_echo "$as_me:   Scorep support          : $HAS_SCOREP" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}:   PyBind11 support        : $HAS_PYBIND11" >&5
+$as_echo "$as_me:   PyBind11 support        : $HAS_PYBIND11" >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}:   OpenMP support          : $HAS_OPENMP (schedule: $OPENMP_SCHEDULE)" >&5
 $as_echo "$as_me:   OpenMP support          : $HAS_OPENMP (schedule: $OPENMP_SCHEDULE)" >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}:   Natural language support: $HAS_NLS (path: $localedir)" >&5

@@ -56,6 +56,8 @@ AC_ARG_WITH(slepc,        [AS_HELP_STRING([--with-slepc],
         [Enable SLEPc interface])],,[with_slepc=no])
 AC_ARG_WITH(pvode,        [AS_HELP_STRING([--with-pvode],
         [Build and enable PVODE 98 (DEFAULT)])],,[])
+AC_ARG_WITH(pybind11,        [AS_HELP_STRING([--with-pybind11],
+        [Enable pybind11 bindings])],,[with_pybind11=no])
 AC_ARG_WITH(mumps,        [AS_HELP_STRING([--with-mumps],
         [Link with MUMPS library for direct matrix inversions])],,[])
 AC_ARG_WITH(arkode,       [AS_HELP_STRING([--with-arkode],
@@ -372,6 +374,45 @@ AS_IF([test "x$enable_backtrace" = "xyes" || test "x$enable_backtrace" = "xmaybe
     ])
   ])
 ])
+
+
+#############################################################
+# Enable pybind11 -- fetch submodule if required
+#############################################################
+
+HAS_PYBIND11="no"
+PYBIND_TARGET_DIR=externalpackages/pybind11
+AS_IF([test "$with_pybind11" != "no"], [
+  AS_IF([test -f ${PYBIND_TARGET_DIR}/README.md], [
+     AC_MSG_NOTICE([Using existing pybind11 submodule])
+  ], [
+     AC_MSG_NOTICE([Getting pybind11 submodule])
+              	AS_IF([git submodule update --init --recursive -- ${PYBIND_TARGET_DIR}],
+                                [AC_MSG_NOTICE([Success in getting pybind11])],
+                                [AC_MSG_ERROR([Failed to get pybind11])])
+  ])
+
+  #Ensure we have asked to enable_shared as well as -fPIC is required
+  #in CXXFLAGS. We could of course just add -fPIC to CXXFLAGS here but
+  #probably better to force consistent options
+  AS_IF([test "x$enable_shared" != "xyes"],
+              [AC_MSG_ERROR([Configuring with pybind11 requires --enable-shared=yes])])
+
+  #We require python if using pybind11 so check we have access to it
+  #Note strictly pybind11 can work with python 2 and 3, but here we
+  #restrict ourselves to >= v3.0. This will abort configure if a suitable
+  #interpreter isn't found
+  AM_PATH_PYTHON([3],AC_MSG_NOTICE([Found python version $PYTHON_VERSION]))
+  EXTRA_INCS="$EXTRA_INCS $(PYTHONPATH=${PYTHONPATH}:${PWD}/${PYBIND_TARGET_DIR} python3 -m pybind11 --includes)"
+  EXTRA_LIBS="$EXTRA_LIBS $(python3-config --libs)"
+  LDFLAGS="$LDFLAGS $(python3-config --ldflags)"
+  
+  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PYBIND11"
+  HAS_PYBIND11="yes"
+
+  #Now copy/link the pybind headers into bout includes
+  AC_CONFIG_LINKS(include/pybind11:${PYBIND_TARGET_DIR}/include/pybind11/)
+], [AC_MSG_NOTICE([Building without pybind11 submodule])])
 
 #############################################################
 # Build into shared object (pic)
@@ -1292,6 +1333,7 @@ AC_SUBST(SLEPC_MAKE_INCLUDE)
 AC_SUBST(SLEPC_DIR)
 AC_SUBST(SLEPC_ARCH)
 AC_SUBST(HAS_OPENMP)
+AC_SUBST(HAS_PYBIND11)
 AC_SUBST(HAS_NLS)
 AC_SUBST(HAS_FFTW)
 
@@ -1310,6 +1352,7 @@ AC_MSG_NOTICE([-------------------------])
 AC_MSG_NOTICE([  PETSc support           : $HAS_PETSC (has SUNDIALS: $PETSC_HAS_SUNDIALS)])
 AC_MSG_NOTICE([  SLEPc support           : $HAS_SLEPC])
 AC_MSG_NOTICE([  IDA support             : $HAS_IDA])
+AC_MSG_NOTICE([  PVODE support           : $HAS_PVODE])
 AC_MSG_NOTICE([  CVODE support           : $HAS_CVODE])
 AC_MSG_NOTICE([  ARKODE support          : $HAS_ARKODE])
 AC_MSG_NOTICE([  FFTW support            : $HAS_FFTW])
@@ -1319,6 +1362,7 @@ AC_MSG_NOTICE([  HDF5 support            : $HAS_HDF5 (parallel: $HAS_PHDF5)])
 AC_MSG_NOTICE([  MUMPS support           : $HAS_MUMPS])
 AC_MSG_NOTICE([  Lapack support          : $HAS_LAPACK])
 AC_MSG_NOTICE([  Scorep support          : $HAS_SCOREP])
+AC_MSG_NOTICE([  PyBind11 support        : $HAS_PYBIND11])
 AC_MSG_NOTICE([  OpenMP support          : $HAS_OPENMP (schedule: $OPENMP_SCHEDULE)])
 AC_MSG_NOTICE([  Natural language support: $HAS_NLS (path: $localedir)])
 

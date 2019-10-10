@@ -38,6 +38,7 @@ bout-coverage/
 src/.libfast
 .*.mk
 *.mo
+include/pybind11
 .BOUT.pid.*
 build/
 build*/
