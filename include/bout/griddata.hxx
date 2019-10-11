@@ -65,7 +65,13 @@ public:
   virtual bool get(Mesh *m, Field3D &var, const std::string &name, BoutReal def = 0.0) = 0;
   virtual bool get(Mesh *m, FieldPerp &var, const std::string &name, BoutReal def = 0.0) = 0;
 
-  enum Direction { X = 1, Y = 2, Z = 3 };
+  enum class Direction {X, Y, Z};
+  // Define some aliases so GridDataSource::X, GridDataSource::Y and GridDataSource::Z can
+  // be used, for backward compatibility
+  static constexpr Direction X = Direction::X;
+  static constexpr Direction Y = Direction::Y;
+  static constexpr Direction Z = Direction::Z;
+
   virtual bool get(Mesh *m, std::vector<int> &var, const std::string &name, int len, int offset = 0,
                    Direction dir = GridDataSource::X) = 0;
   virtual bool get(Mesh *m, std::vector<BoutReal> &var, const std::string &name, int len,

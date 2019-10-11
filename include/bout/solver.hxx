@@ -91,7 +91,10 @@ constexpr auto SOLVERIMEXBDF2 = "imexbdf2";
 constexpr auto SOLVERSNES = "snes";
 constexpr auto SOLVERRKGENERIC = "rkgeneric";
 
-enum SOLVER_VAR_OP {LOAD_VARS, LOAD_DERIVS, SET_ID, SAVE_VARS, SAVE_DERIVS};
+enum class SOLVER_VAR_OP {LOAD_VARS, LOAD_DERIVS, SET_ID, SAVE_VARS, SAVE_DERIVS};
+
+/// A type to set where in the list monitors are added
+enum class MonitorPosition {BACK, FRONT};
 
 ///////////////////////////////////////////////////////////////////
 
@@ -197,8 +200,10 @@ public:
   /////////////////////////////////////////////
   // Monitors
 
-  /// A type to set where in the list monitors are added
-  enum MonitorPosition { BACK, FRONT };
+  // Alternative names so that Solver::BACK and Solver::FRONT can be used as names for
+  // MonitorPositions, for backward compatibility.
+  static constexpr MonitorPosition BACK = MonitorPosition::BACK;
+  static constexpr MonitorPosition FRONT = MonitorPosition::FRONT;
 
   /// Add a \p monitor to be called regularly
   ///
@@ -213,7 +218,7 @@ public:
   /// Adding new Monitors after the Solver has been initialised is
   /// only possible if their timestep is a multiple of the Solver's
   /// timestep. Smaller timesteps will throw an exception.
-  void addMonitor(Monitor* monitor, MonitorPosition pos = FRONT);
+  void addMonitor(Monitor* monitor, MonitorPosition pos = MonitorPosition::FRONT);
   /// Remove a monitor function previously added
   void removeMonitor(Monitor* monitor);
 

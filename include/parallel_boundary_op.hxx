@@ -16,15 +16,15 @@ class BoundaryOpPar : public BoundaryOpBase {
 public:
   BoundaryOpPar() = default;
   BoundaryOpPar(BoundaryRegionPar *region, std::shared_ptr<FieldGenerator> value)
-      : bndry(region), gen_values(std::move(value)), value_type(GEN) {}
+      : bndry(region), gen_values(std::move(value)), value_type(ValueType::GEN) {}
   BoundaryOpPar(BoundaryRegionPar *region, Field3D* value) :
     bndry(region),
     field_values(value),
-    value_type(FIELD) {}
+    value_type(ValueType::FIELD) {}
   BoundaryOpPar(BoundaryRegionPar *region, BoutReal value) :
     bndry(region),
     real_value(value),
-    value_type(REAL) {}
+    value_type(ValueType::REAL) {}
   ~BoundaryOpPar() override = default;
 
   // Note: All methods must implement clone, except for modifiers (see below)
@@ -56,8 +56,8 @@ protected:
   BoutReal real_value{0.};
 
   /// Where to take boundary values from - the generator, field or BoutReal
-  enum ValueType { GEN, FIELD, REAL };
-  const ValueType value_type{REAL};
+  enum class ValueType {GEN, FIELD, REAL};
+  const ValueType value_type{ValueType::REAL};
 
   BoutReal getValue(int x, int y, int z, BoutReal t);
   BoutReal getValue(const BoundaryRegionPar &bndry, BoutReal t);

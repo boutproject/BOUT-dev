@@ -314,16 +314,19 @@ const Field3D b0xGrad_dot_Grad(const Field3D &phi, const Field3D &A, CELL_LOC ou
 /*!
  * Poisson bracket methods
  */
-enum BRACKET_METHOD {
-  BRACKET_STD = 0,        ///< Use b0xGrad_dot_Grad
-  BRACKET_SIMPLE = 1,     ///< Keep only terms in X-Z
-  BRACKET_ARAKAWA = 2,    ///< Arakawa method in X-Z (optimised)
-  BRACKET_CTU = 3,        ///< Corner Transport Upwind (CTU)
-                          /// method. Explicit method only,
-                          /// needs the timestep from the
-                          /// solver
-  BRACKET_ARAKAWA_OLD = 4 ///< Older version, for regression testing of optimised version.
+enum class BRACKET_METHOD {
+  standard,   ///< Use b0xGrad_dot_Grad
+  simple,     ///< Keep only terms in X-Z
+  arakawa,    ///< Arakawa method in X-Z (optimised)
+  ctu,        ///< Corner Transport Upwind (CTU) method. Explicit method only, needs the
+              ///  timestep from the solver
+  arakawa_old ///< Older version, for regression testing of optimised version.
 };
+constexpr BRACKET_METHOD BRACKET_STD = BRACKET_METHOD::standard;
+constexpr BRACKET_METHOD BRACKET_SIMPLE = BRACKET_METHOD::simple;
+constexpr BRACKET_METHOD BRACKET_ARAKAWA = BRACKET_METHOD::arakawa;
+constexpr BRACKET_METHOD BRACKET_CTU = BRACKET_METHOD::ctu;
+constexpr BRACKET_METHOD BRACKET_ARAKAWA_OLD = BRACKET_METHOD::arakawa_old;
 
 /*!
  * Compute advection operator terms, which can be cast as
