@@ -151,8 +151,8 @@ TYPED_TEST(PetscVectorTest, TestGetElements) {
   }
 }
 
-// Test trying to get an element from an unitialised vector
-TYPED_TEST(PetscVectorTest, TestGetUnitialised) {
+// Test trying to get an element from an uninitialised vector
+TYPED_TEST(PetscVectorTest, TestGetUninitialised) {
   PetscVector<TypeParam> vector;
   typename TypeParam::ind_type index(0);
   EXPECT_THROW(vector(index), BoutException);

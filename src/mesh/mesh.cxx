@@ -327,9 +327,13 @@ int Mesh::localSize3D() {
     int nz = LocalNz;
     localNumCells3D = nx * ny * nz;
     for(RangeIterator it=iterateBndryLowerY(); !it.isDone(); it++) {
+      if (it.ind == xstart) localNumCells3D += nz * ystart;
+      if (it.ind == xend) localNumCells3D += nz * ystart;
       localNumCells3D += nz * ystart;
     }
     for(RangeIterator it=iterateBndryUpperY(); !it.isDone(); it++) {
+      if (it.ind == xstart) localNumCells3D += nz * ystart;
+      if (it.ind == xend) localNumCells3D += nz * ystart;
       localNumCells3D += nz * ystart;
     }
   }
@@ -344,9 +348,13 @@ int Mesh::localSize2D() {
     int ny = yend - ystart + 1;
     localNumCells2D = nx * ny;
     for(RangeIterator it=iterateBndryLowerY(); !it.isDone(); it++) {
+      if (it.ind == xstart) localNumCells3D += ystart;
+      if (it.ind == xend) localNumCells3D += ystart;
       localNumCells2D += ystart;
     }
     for(RangeIterator it=iterateBndryUpperY(); !it.isDone(); it++) {
+      if (it.ind == xstart) localNumCells3D += ystart;
+      if (it.ind == xend) localNumCells3D += ystart;
       localNumCells2D += ystart;
     }
   }
@@ -358,14 +366,8 @@ int Mesh::localSizePerp() {
     int xs = firstX() ? 0 : xstart;
     int xe = lastX() ? LocalNx : xend + 1;
     int nx = xe - xs;
-    int ny = yend - ystart + 1;
-    localNumCellsPerp = nx * ny;
-    for(RangeIterator it=iterateBndryLowerY(); !it.isDone(); it++) {
-      localNumCellsPerp += ystart;
-    }
-    for (RangeIterator it = iterateBndryUpperY(); !it.isDone(); it++) {
-      localNumCellsPerp += ystart;
-    }
+    int nz = LocalNz;
+    localNumCellsPerp = nx * nz;
   }
   return localNumCellsPerp;
 }
