@@ -56,12 +56,12 @@ IndexerPtr GlobalIndexer::getInstance(Mesh* localmesh) {
   }
   if (localmesh == globalmesh) {
     if (!initialisedGlobal) {
-      globalInstance = shared_ptr<GlobalIndexer>(new GlobalIndexer(localmesh));
+      globalInstance = std::shared_ptr<GlobalIndexer>(new GlobalIndexer(localmesh));
       initialisedGlobal = true;
     }
     return globalInstance;
   } else {
-    return shared_ptr<GlobalIndexer>(new GlobalIndexer(localmesh));
+    return std::shared_ptr<GlobalIndexer>(new GlobalIndexer(localmesh));
   }
 }
 

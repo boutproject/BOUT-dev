@@ -42,11 +42,9 @@
 #include <boutcomm.hxx>
 #include <bout/paralleltransform.hxx>
 
-using namespace std;
-
 #ifdef BOUT_HAS_PETSC
 class GlobalIndexer;
-using IndexerPtr = shared_ptr<GlobalIndexer>;
+using IndexerPtr = std::shared_ptr<GlobalIndexer>;
 using InterpolationWeights = std::vector<ParallelTransform::positionsAndWeights>;
 
 /*!
@@ -522,7 +520,7 @@ public:
   }
 
 private:
-  shared_ptr<Mat> matrix;
+  std::shared_ptr<Mat> matrix;
   IndexerPtr indexConverter;
   ParallelTransform* pt;
   int yoffset;
