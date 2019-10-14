@@ -420,6 +420,10 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
                              const Field2D *d,
                              bool includeguards) {
 
+  // Better have either both or neither C coefficients
+  ASSERT3((c1coef == nullptr and c2coef == nullptr)
+          or (c1coef != nullptr and c2coef != nullptr))
+
   int xs = 0;            // xstart set to the start of x on this processor (including ghost points)
   int xe = localmesh->LocalNx-1;  // xend set to the end of x on this processor (including ghost points)
 
