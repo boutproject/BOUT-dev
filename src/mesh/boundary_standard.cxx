@@ -299,7 +299,7 @@ void BoundaryDirichlet::apply(Field2D &f,BoutReal t) {
       // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
       for(int i=1;i<bndry->width;i++) {
 	int xi = bndry->x + i*bndry->bx;
-	int yi = bndry->y + i*bndry->bx;						
+	int yi = bndry->y + i*bndry->by;						
 	f(xi, yi) = 2*f(xi - bndry->bx, yi - bndry->by) - f(xi - 2*bndry->bx, yi - 2*bndry->by);	
       }	
     }
