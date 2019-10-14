@@ -2,11 +2,6 @@
 #ifndef __BOUTMESH_H__
 #define __BOUTMESH_H__
 
-// Place MPI in a namespace, which is then used. This will mean its
-// functions can be called as though there were no namespace
-// present. However, if a class now defines methods with the same
-// signature as MPI functions (i.e., as a wrapper) the original
-// function can still be called by prefixing with `mpi::`.
 #include "mpi.h"
 
 #include <bout/mesh.hxx>

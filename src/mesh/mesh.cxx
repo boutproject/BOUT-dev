@@ -10,6 +10,7 @@
 
 #include "meshfactory.hxx"
 
+#include <boutcomm.hxx>
 #include <output.hxx>
 
 Mesh* Mesh::create(GridDataSource *s, Options *opt) {
@@ -315,6 +316,79 @@ bool Mesh::hasBndryUpperY() {
   answer = static_cast<bool>(allbndry);
   calc = true;
   return answer;
+}
+
+int Mesh::localSize3D() {
+  if (localNumCells3D < 0) {
+    int xs = firstX() ? 0 : xstart;
+    int xe = lastX() ? LocalNx : xend + 1;
+    int nx = xe - xs;
+    int ny = yend - ystart + 1;
+    int nz = LocalNz;
+    localNumCells3D = nx * ny * nz;
+    for(RangeIterator it=iterateBndryLowerY(); !it.isDone(); it++) {
+      localNumCells3D += nz * ystart;
+    }
+    for(RangeIterator it=iterateBndryUpperY(); !it.isDone(); it++) {
+      localNumCells3D += nz * ystart;
+    }
+  }
+  return localNumCells3D;
+}
+
+int Mesh::localSize2D() {
+  if (localNumCells2D < 0) {
+    int xs = firstX() ? 0 : xstart;
+    int xe = lastX() ? LocalNx : xend + 1;
+    int nx = xe - xs;
+    int ny = yend - ystart + 1;
+    localNumCells2D = nx * ny;
+    for(RangeIterator it=iterateBndryLowerY(); !it.isDone(); it++) {
+      localNumCells2D += ystart;
+    }
+    for(RangeIterator it=iterateBndryUpperY(); !it.isDone(); it++) {
+      localNumCells2D += ystart;
+    }
+  }
+  return localNumCells2D;
+}
+
+int Mesh::localSizePerp() {
+  if (localNumCellsPerp < 0) {
+    int xs = firstX() ? 0 : xstart;
+    int xe = lastX() ? LocalNx : xend + 1;
+    int nx = xe - xs;
+    int ny = yend - ystart + 1;
+    localNumCellsPerp = nx * ny;
+    for(RangeIterator it=iterateBndryLowerY(); !it.isDone(); it++) {
+      localNumCellsPerp += ystart;
+    }
+    for (RangeIterator it = iterateBndryUpperY(); !it.isDone(); it++) {
+      localNumCellsPerp += ystart;
+    }
+  }
+  return localNumCellsPerp;
+}
+
+int Mesh::globalStartIndex3D() {
+  int localSize = localSize3D();
+  int cumulativeSize;
+  MPI_Scan(&localSize, &cumulativeSize, 1, MPI_INT, MPI_SUM, BoutComm::get());
+  return cumulativeSize - localSize;
+}
+
+int Mesh::globalStartIndex2D() {
+  int localSize = localSize2D();
+  int cumulativeSize;
+  MPI_Scan(&localSize, &cumulativeSize, 1, MPI_INT, MPI_SUM, BoutComm::get());
+  return cumulativeSize - localSize;
+}
+
+int Mesh::globalStartIndexPerp() {
+  int localSize = localSizePerp();
+  int cumulativeSize;
+  MPI_Scan(&localSize, &cumulativeSize, 1, MPI_INT, MPI_SUM, getXcomm());
+  return cumulativeSize - localSize;
 }
 
 const std::vector<int> Mesh::readInts(const std::string &name, int n) {

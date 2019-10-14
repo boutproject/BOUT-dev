@@ -1,6 +1,6 @@
 #ifndef FAKE_PARALLEL_MESH_H__
 #define FAKE_PARALLEL_MESH_H__
-
+#include <iostream>
 #include "gtest/gtest.h"
 
 #include <vector>
@@ -126,6 +126,33 @@ public:
     
   }
 
+  virtual int localSize3D() override {
+    return local3D;
+  }
+
+  virtual int localSize2D() override {
+    return local2D;
+  }
+
+  virtual int localSizePerp() override {
+    return localPerp;
+  }
+
+  virtual int globalStartIndex3D() override {
+    std::cout << "globalStartIndex3D";
+    return start3D;
+  }
+
+  virtual int globalStartIndex2D() override {
+    std::cout << "globalStartIndex2D";
+    return start2D;
+  }
+
+  virtual int globalStartIndexPerp() override {
+    std::cout << "globalStartIndexPerp";
+    return startPerp;
+  }
+
   /// Use these methods to let the mesh know that this field has been
   /// created with it. It can then check in with its sibling meshes
   /// (representing other processors) to see if a corresponding field
@@ -148,6 +175,9 @@ private:
   std::map<int, FieldData*> registeredFieldIds;
   std::map<FieldPerp*, int, std::less<void> > registeredFieldPerps;
   std::map<int, FieldPerp*> registeredFieldPerpIds;
+
+  int local3D, local2D, localPerp;
+  int start3D, start2D, startPerp;
 
   comm_handle parentSend(FieldGroup &g) {
     return BoutMesh::send(g);
@@ -183,21 +213,41 @@ std::vector<FakeParallelMesh> createFakeProcessors(int nx, int ny, int nz,
     for (int j = 0; j < nxpe; j++) {
       meshes.push_back(FakeParallelMesh(nx, ny, nz, nxpe, nype, i, j));
     }
-  }  
-  for (int i = 0; i < nxpe; i++) {
-    for (int j = 0; j < nxpe; j++) {
+  }
+  int start3 = 0, start2 = 0, startP = 0;
+  for (int j = 0; j < nxpe; j++) {
+    for (int i = 0; i < nxpe; i++) {
+      meshes[j*nype + i].local3D = (nx - 2) * (ny - 2) * nz;
+      meshes[j*nype + i].local2D = (nx - 2) * (ny - 2);
+      meshes[j*nype + i].localPerp = (nx - 2) * nz;
       if (i > 0) {
-	meshes[j*nype + i].xInMesh = &meshes[j*nype + i - 1];
+        meshes[j*nype + i].local3D += (ny - 2) * nz;
+        meshes[j*nype + i].local2D += (ny - 2);
+        meshes[j*nype + i].localPerp += (nx - 2) * nz;
+        meshes[j*nype + i].xInMesh = &meshes[j*nype + i - 1];
       }
       if (i < nxpe - 1) {
+        meshes[j*nype + i].local3D += (ny - 2) * nz;
+        meshes[j*nype + i].local2D += (ny - 2);
+        meshes[j*nype + i].localPerp += (nx - 2) * nz;
 	meshes[j*nype + i].xOutMesh = &meshes[j*nype + i + 1];
       }
       if (j > 0) {
+        meshes[j*nype + i].local3D += (nx - 2) * nz;
+        meshes[j*nype + i].local2D += (nx - 2);
 	meshes[j*nype + i].yUpMesh = &meshes[(j - 1)*nype + i];
       }
       if (j < nype - 1) {
+        meshes[j*nype + i].local3D += (nx - 2) * nz;
+        meshes[j*nype + i].local2D += (nx - 2);
 	meshes[j*nype + i].yDownMesh = &meshes[(j + 1)*nype + i];
       }
+      meshes[j*nype + i].start3D = start3;
+      meshes[j*nype + i].start2D = start2;
+      meshes[j*nype + i].startPerp = startP;
+      start3 += meshes[j*nype + i].start3D;
+      start2 += meshes[j*nype + i].start2D;
+      startP += meshes[j*nype + i].startPerp;
     }
   }
   return meshes;

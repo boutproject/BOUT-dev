@@ -487,6 +487,23 @@ class Mesh {
   /// If the global index includes the boundary cells, then so does the local.
   virtual int YLOCAL(int yglo) const = 0;
 
+  /// Returns the number of unique cells (i.e., ones not used for
+  /// communication) on this processor for 3D fields.
+  virtual int localSize3D();
+  /// Returns the number of unique cells (i.e., ones not used for
+  /// communication) on this processor for 2D fields.
+  virtual int localSize2D();
+  /// Returns the number of unique cells (i.e., ones not used for
+  /// communication) on this processor for perpendicular fields.
+  virtual int localSizePerp();
+
+  /// Get the value of the first global 3D index on this processor.
+  virtual int globalStartIndex3D();
+  /// Get the value of the first global 2D index on this processor.
+  virtual int globalStartIndex2D();
+  /// Get the value of the first global perpendicular index on this processor.
+  virtual int globalStartIndexPerp();
+  
   /// Size of the mesh on this processor including guard/boundary cells
   int LocalNx, LocalNy, LocalNz;
   
@@ -903,6 +920,8 @@ private:
   std::map<std::string, Region<Ind2D>> regionMap2D;
   std::map<std::string, Region<IndPerp>> regionMapPerp;
   Array<int> indexLookup3Dto2D;
+
+  int localNumCells3D = -1, localNumCells2D = -1, localNumCellsPerp = -1;
 };
 
 #endif // __MESH_H__

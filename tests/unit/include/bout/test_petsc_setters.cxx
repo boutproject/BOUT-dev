@@ -15,25 +15,17 @@ public:
   Vec v;
   PetscInt n = 10;
   PetscScalar defaultVal = 1.;
-  PetscLogEvent USER_EVENT = 0;
+  PetscLib lib;
 
   PetscVectorElementTest() {
-    char help[] = "BOUT++: Uses finite difference methods to solve "
-      "plasma fluid problems in curvilinear coordinates";
-    int *pargc = nullptr;
-    char ***pargv = nullptr;
-    PetscInitialize(pargc,pargv,PETSC_NULL,help);
-    PetscLogEventRegister("Total BOUT++",0,&USER_EVENT);
-    PetscLogEventBegin(USER_EVENT,0,0,0,0);
-
     VecCreateMPI(MPI_COMM_WORLD, n, PETSC_DETERMINE, &v);
     VecSet(v, defaultVal);
+    VecAssemblyBegin(v);
+    VecAssemblyEnd(v);
   }
 
   ~PetscVectorElementTest() {
     VecDestroy(&v);
-    PetscLogEventEnd(USER_EVENT,0,0,0,0);
-    PetscFinalize();
   }
 };
 
@@ -62,7 +54,6 @@ TEST_F(PetscVectorElementTest, AssignInsert) {
   EXPECT_DOUBLE_EQ(defaultVal, vecContents[7]);
   EXPECT_DOUBLE_EQ(defaultVal, vecContents[8]);
   EXPECT_DOUBLE_EQ(9.5, vecContents[9]);
-  free(vecContents);
 }
 
 TEST_F(PetscVectorElementTest, AssignAdd) {
@@ -74,7 +65,7 @@ TEST_F(PetscVectorElementTest, AssignAdd) {
   v1 += 1.5;
   v2 += 2.5;
   v3 += 3.5;
-  v3b = 4.0;
+  v3b += 4.0;
   v9 += 9.5;
   VecAssemblyBegin(v);
   VecAssemblyEnd(v);
@@ -90,7 +81,6 @@ TEST_F(PetscVectorElementTest, AssignAdd) {
   EXPECT_DOUBLE_EQ(defaultVal, vecContents[7]);
   EXPECT_DOUBLE_EQ(defaultVal, vecContents[8]);
   EXPECT_DOUBLE_EQ(10.5, vecContents[9]);
-  free(vecContents);
 }
 
 TEST_F(PetscVectorElementTest, NoMixedSetting) {
@@ -107,20 +97,14 @@ public:
   PetscScalar defaultVal = 1.;
   std::vector<PetscInt> positions;
   std::vector<BoutReal> weights;
-  PetscLogEvent USER_EVENT = 0;
+  PetscLib lib;
   
   PetscMatrixElementTest() {
     PetscInt low, high;
-    char help[] = "BOUT++: Uses finite difference methods to solve "
-      "plasma fluid problems in curvilinear coordinates";
-    int *pargc = nullptr;
-    char ***pargv = nullptr;
-    PetscInitialize(pargc,pargv,PETSC_NULL,help);
-    PetscLogEventRegister("Total BOUT++",0,&USER_EVENT);
-    PetscLogEventBegin(USER_EVENT,0,0,0,0);
-
     MatCreate(MPI_COMM_WORLD, &m);
+    MatSetType(m, MATSEQDENSE);
     MatSetSizes(m, n1, n2, PETSC_DETERMINE, PETSC_DETERMINE);
+    MatSetUp(m);
     VecCreateMPI(MPI_COMM_WORLD, n1, PETSC_DETERMINE, &b);
     VecCreateMPI(MPI_COMM_WORLD, n2, PETSC_DETERMINE, &x);
     VecGetOwnershipRange(x, &low, &high);
@@ -143,8 +127,6 @@ public:
     MatDestroy(&m);
     VecDestroy(&b);
     VecDestroy(&x);
-    PetscLogEventEnd(USER_EVENT,0,0,0,0);
-    PetscFinalize();
   }
 };
 
@@ -169,12 +151,12 @@ TEST_F(PetscMatrixElementTest, AssignInsert) {
   v2_13 = 0.5;
   v4_11 = 7.0;
   v4_11b = 0.5; // Should overwrite previous call
+  MatAssemblyBegin(m, MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(m, MAT_FINAL_ASSEMBLY);
   MatMult(m, x, b);
   PetscScalar *bconts, *xconts;
   VecGetArray(b, &bconts);
   VecGetArray(x, &xconts);
-  MatAssemblyBegin(m, MAT_FINAL_ASSEMBLY);
-  MatAssemblyEnd(m, MAT_FINAL_ASSEMBLY);
   EXPECT_DOUBLE_EQ(0.0, bconts[0]);
   EXPECT_DOUBLE_EQ(1.5*xconts[1], bconts[1]);
   EXPECT_DOUBLE_EQ(1.0*xconts[3] + -1.0*0.5*xconts[12] + 2.0*0.5*xconts[13]
@@ -187,8 +169,6 @@ TEST_F(PetscMatrixElementTest, AssignInsert) {
   EXPECT_DOUBLE_EQ(0.0, bconts[7]);
   EXPECT_DOUBLE_EQ(0.0, bconts[8]);
   EXPECT_DOUBLE_EQ(-1.0*xconts[6], bconts[9]);
-  free(bconts);
-  free(xconts);
 }
 
 TEST_F(PetscMatrixElementTest, AssignAdd) {
@@ -212,12 +192,12 @@ TEST_F(PetscMatrixElementTest, AssignAdd) {
   v2_13 += 0.5;
   v4_11 += 7.0;
   v4_11b += 0.5; // Should overwrite previous call
+  MatAssemblyBegin(m, MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(m, MAT_FINAL_ASSEMBLY);
   MatMult(m, x, b);
   PetscScalar *bconts, *xconts;
   VecGetArray(b, &bconts);
   VecGetArray(x, &xconts);
-  MatAssemblyBegin(m, MAT_FINAL_ASSEMBLY);
-  MatAssemblyEnd(m, MAT_FINAL_ASSEMBLY);
   EXPECT_DOUBLE_EQ(0.0, bconts[0]);
   EXPECT_DOUBLE_EQ(1.5*xconts[1], bconts[1]);
   EXPECT_DOUBLE_EQ(1.0*xconts[3] + -1.0*0.5*xconts[12] + 2.0*0.5*xconts[13]
@@ -230,8 +210,6 @@ TEST_F(PetscMatrixElementTest, AssignAdd) {
   EXPECT_DOUBLE_EQ(0.0, bconts[7]);
   EXPECT_DOUBLE_EQ(0.0, bconts[8]);
   EXPECT_DOUBLE_EQ(-1.0*xconts[6], bconts[9]);
-  free(bconts);
-  free(xconts);
 }
 
 #endif // BOUT_HAS_PETSC
