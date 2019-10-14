@@ -56,7 +56,7 @@ TEST_F(IndexerTest, TestConvertIndex3D) {
   Mesh* localmesh = bout::globals::mesh;
   IndexerPtr index = GlobalIndexer::getInstance(localmesh);
   index->initialise();
-  set <int, greater <int>> returnedIndices;
+  std::set<int, std::greater <int>> returnedIndices;
   Region<Ind3D> tmpX = mask(localmesh->getRegion3D("RGN_ALL"),
 			    localmesh->getRegion3D("RGN_NOX"));
   Region<Ind3D> tmpY = mask(localmesh->getRegion3D("RGN_ALL"),
@@ -95,7 +95,7 @@ TEST_F(IndexerTest, TestConvertIndex3D) {
 TEST_F(IndexerTest, TestConvertIndex2D) {
   Mesh* localmesh = bout::globals::mesh;
   IndexerPtr index = GlobalIndexer::getInstance(localmesh);
-  set <int, greater <int>> returnedIndices;
+  std::set<int, std::greater <int>> returnedIndices;
   index->initialise();
   Region<Ind2D> tmpX = mask(localmesh->getRegion2D("RGN_ALL"),
 			    localmesh->getRegion2D("RGN_NOX"));
@@ -138,7 +138,7 @@ TEST_F(IndexerTest, TestConvertIndexPerp) {
   Mesh* localmesh = bout::globals::mesh;
   IndexerPtr index = GlobalIndexer::getInstance(localmesh);
   index->initialise();
-  set <int, greater <int>> returnedIndices;
+  std::set<int, std::greater <int>> returnedIndices;
   localmesh->addRegionPerp("RGN_XGUARDS", mask(localmesh->getRegionPerp("RGN_ALL"),
 					       localmesh->getRegionPerp("RGN_NOX")));
 

@@ -1,4 +1,5 @@
 #include <utility>
+#include <memory>
 
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
@@ -59,7 +60,7 @@ public:
       iWD1 = indexB;
       iWD2 = indexB.yp();
     }
-    unique_ptr<MockTransform> transform = bout::utils::make_unique<MockTransform>(*bout::globals::mesh);
+    std::unique_ptr<MockTransform> transform = bout::utils::make_unique<MockTransform>(*bout::globals::mesh);
     ParallelTransform::positionsAndWeights wUp0 = {iWU0.x(), iWU0.y(), iWU0.z(), 0.5},
       wUp1 = {iWU1.x(), iWU1.y(), iWU1.z(), 1.0},
       wUp2 = {iWU2.x(), iWU2.y(), iWU2.z(), 0.5},

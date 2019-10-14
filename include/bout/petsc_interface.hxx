@@ -535,10 +535,10 @@ private:
  */
 template <class F>
 void swap(PetscVector<F>& first, PetscVector<F>& second) {
-  swap(first.vector, second.vector);
-  swap(first.indexConverter, second.indexConverter);
-  swap(first.location, second.location);
-  swap(first.initialised, second.initialised);
+  std::swap(first.vector, second.vector);
+  std::swap(first.indexConverter, second.indexConverter);
+  std::swap(first.location, second.location);
+  std::swap(first.initialised, second.initialised);
 }
 
 /*!
@@ -547,11 +547,11 @@ void swap(PetscVector<F>& first, PetscVector<F>& second) {
  */
 template <class F>
 void swap(PetscMatrix<F>& first, PetscMatrix<F>& second) {
-  swap(first.matrix, second.matrix);
-  swap(first.indexConverter, second.indexConverter);
-  swap(first.pt, second.pt);
-  swap(first.yoffset, second.yoffset);
-  swap(first.initialised, second.initialised);
+  std::swap(first.matrix, second.matrix);
+  std::swap(first.indexConverter, second.indexConverter);
+  std::swap(first.pt, second.pt);
+  std::swap(first.yoffset, second.yoffset);
+  std::swap(first.initialised, second.initialised);
 }
 
 /*!
