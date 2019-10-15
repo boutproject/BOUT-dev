@@ -56,7 +56,7 @@ TEST_F(IndexerTest, TestConvertIndex3D) {
   Mesh* localmesh = bout::globals::mesh;
   IndexerPtr index = GlobalIndexer::getInstance(localmesh);
   index->initialise();
-  set <int, greater <int>> returnedIndices;
+  std::set<int, std::greater <int>> returnedIndices;
 
   // Check each of the interior global indices is unique
   BOUT_FOR(i, localmesh->getRegion3D("RGN_NOBNDRY")) {
@@ -89,7 +89,7 @@ TEST_F(IndexerTest, TestConvertIndex3D) {
 TEST_F(IndexerTest, TestConvertIndex2D) {
   Mesh* localmesh = bout::globals::mesh;
   IndexerPtr index = GlobalIndexer::getInstance(localmesh);
-  set <int, greater <int>> returnedIndices;
+  std::set<int, std::greater <int>> returnedIndices;
   index->initialise();
 
   // Check each of the interior global indices is unique
@@ -126,7 +126,7 @@ TEST_F(IndexerTest, TestConvertIndexPerp) {
   Mesh* localmesh = bout::globals::mesh;
   IndexerPtr index = GlobalIndexer::getInstance(localmesh);
   index->initialise();
-  set <int, greater <int>> returnedIndices;
+  std::set<int, std::greater <int>> returnedIndices;
 
   // Check each of the interior global indices is unique
   BOUT_FOR(i, localmesh->getRegionPerp("RGN_NOBNDRY")) {

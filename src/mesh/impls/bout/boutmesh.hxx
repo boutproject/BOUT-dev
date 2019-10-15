@@ -183,7 +183,7 @@ class BoutMesh : public Mesh {
   int XLOCAL(int xglo) const override;
   int YLOCAL(int yglo) const override;
 
- protected:
+protected:
   BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg,
 	   int nxpe, int nype, int pe_xind, int pe_yind);
   /// For debugging purposes (when creating fake parallel meshes), make
@@ -305,8 +305,9 @@ private:
   int pack_data(const std::vector<FieldData*>& var_list, int xge, int xlt, int yge,
                 int ylt, BoutReal* buffer);
   /// Copy data from a buffer back into the fields
-  int unpack_data(const std::vector<FieldData*> &var_list, int xge, int xlt, int yge,
-		  int ylt, BoutReal *buffer);
+
+  int unpack_data(const std::vector<FieldData*>& var_list, int xge, int xlt, int yge,
+                  int ylt, BoutReal* buffer);
 
   // Wrappers around MPI functions, taking the same names. These can
   // then be overloaded for testing purposes.
@@ -329,6 +330,7 @@ private:
 			  MPI_Status *status) {
     return ::MPI_Waitany(count, array_of_requests, indx, status);
   }
+
 };
 
 #endif // __BOUTMESH_H__

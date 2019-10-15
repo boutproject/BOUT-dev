@@ -56,12 +56,12 @@ IndexerPtr GlobalIndexer::getInstance(Mesh* localmesh) {
   }
   if (localmesh == globalmesh) {
     if (!initialisedGlobal) {
-      globalInstance = shared_ptr<GlobalIndexer>(new GlobalIndexer(localmesh));
+      globalInstance = std::shared_ptr<GlobalIndexer>(new GlobalIndexer(localmesh));
       initialisedGlobal = true;
     }
     return globalInstance;
   } else {
-    return shared_ptr<GlobalIndexer>(new GlobalIndexer(localmesh));
+    return std::shared_ptr<GlobalIndexer>(new GlobalIndexer(localmesh));
   }
 }
 
@@ -84,15 +84,15 @@ Mesh* GlobalIndexer::getMesh() {
 }
 
 PetscInt GlobalIndexer::getGlobal(Ind2D ind) {
-  return (PetscInt) (indices2D[ind] + 0.5);
+  return static_cast<PetscInt>(indices2D[ind] + 0.5);
 }
 
 PetscInt GlobalIndexer::getGlobal(Ind3D ind) {
-  return (PetscInt) (indices3D[ind] + 0.5);
+  return static_cast<PetscInt>(indices3D[ind] + 0.5);
 }
 
 PetscInt GlobalIndexer::getGlobal(IndPerp ind) {
-  return (PetscInt) (indicesPerp[ind] + 0.5);
+  return static_cast<PetscInt>(indicesPerp[ind] + 0.5);
 }
 
 void GlobalIndexer::registerFieldForTest(FieldData& UNUSED(f)) {
@@ -129,8 +129,8 @@ GlobalIndexer::GlobalIndexer(Mesh* localmesh) : fieldmesh(localmesh),
   }
   BOUT_FOR(i, localmesh->getRegion3D("RGN_NOY")) {
     if ((i.x() >= localmesh->xstart && i.x() <= localmesh->xend) ||
-	(i.x() < localmesh->xstart && localmesh->firstX()) ||
-	(i.x() > localmesh->xend && localmesh->lastX())) {
+	(i.x() == localmesh->xstart - 1 && localmesh->firstX()) ||
+	(i.x() == localmesh->xend + 1 && localmesh->lastX())) {
       indices3D[i] = counter++;
     }
   }
@@ -149,8 +149,8 @@ GlobalIndexer::GlobalIndexer(Mesh* localmesh) : fieldmesh(localmesh),
   }
   BOUT_FOR(i, localmesh->getRegion2D("RGN_NOY")) {
     if ((i.x() >= localmesh->xstart && i.x() <= localmesh->xend) ||
-	(i.x() < localmesh->xstart && localmesh->firstX()) ||
-	(i.x() > localmesh->xend && localmesh->lastX())) {
+	(i.x() == localmesh->xstart - 1 && localmesh->firstX()) ||
+	(i.x() == localmesh->xend + 1&& localmesh->lastX())) {
       indices2D[i] = counter++;
     }
   }
@@ -160,89 +160,11 @@ GlobalIndexer::GlobalIndexer(Mesh* localmesh) : fieldmesh(localmesh),
   counter = localmesh->globalStartIndexPerp();
   BOUT_FOR(i, localmesh->getRegionPerp("RGN_NOY")) {
     if ((i.x() >= localmesh->xstart && i.x() <= localmesh->xend) ||
-	(i.x() < localmesh->xstart && localmesh->firstX()) ||
-	(i.x() > localmesh->xend && localmesh->lastX())) {
+	(i.x() == localmesh->xstart - 1 && localmesh->firstX()) ||
+	(i.x() == localmesh->xend + 1 && localmesh->lastX())) {
       indicesPerp[i] = counter++;
     }
   }
-}
-
-// PetscVectorElement implementation
-
-PetscVectorElement::PetscVectorElement(Vec* vector, int index) :
-  petscVector(vector), petscIndex(index) {
-}
-
-BoutReal PetscVectorElement::operator=(BoutReal val) {
-  auto status = VecSetValues(*petscVector, 1, &petscIndex, &val, INSERT_VALUES);
-  delete this;
-  if (status != 0) {
-    throw BoutException("Error when setting elements of a PETSc vector.");
-  }
-  return val;
-}
-
-BoutReal PetscVectorElement::operator+=(BoutReal val) {
-  auto status = VecSetValues(*petscVector, 1, &petscIndex, &val, ADD_VALUES);
-  delete this;
-  if (status != 0) {
-    throw BoutException("Error when setting elements of a PETSc vector.");
-  }
-  return val;
-}
-
-PetscVectorElement& PetscVectorElement::newElement(Vec* vector, PetscInt index) {
-  PetscVectorElement* ve = new PetscVectorElement(vector, index);
-  return *ve;
-}
-
-
-// PetscMatrixElement implementation
-
-PetscMatrixElement::PetscMatrixElement(Mat* matrix, PetscInt row,
-    std::vector<PetscInt> p, std::vector<BoutReal> w) : petscMatrix(matrix),
-    petscRow(row),  positions(p), weights(w) {
-}
-
-BoutReal PetscMatrixElement::operator=(BoutReal val) {
-  setValues(val, INSERT_VALUES);
-  delete this;
-  return val;
-}
-
-BoutReal PetscMatrixElement::operator+=(BoutReal val) {
-  setValues(val, ADD_VALUES);
-  delete this;
-  return val;
-}
-
-void PetscMatrixElement::setValues(BoutReal val, InsertMode mode) {
-  int num = positions.size();
-  ASSERT3(num > 0);
-  PetscInt* columns = new PetscInt[num];
-  PetscScalar* values = new PetscScalar[num];
-  for (int i = 0; i < num; i++) {
-    columns[i] = positions[i];
-    values[i] = weights[i]*val;
-  }
-  auto status = MatSetValues(*petscMatrix, 1, &petscRow, num, columns, values, mode);
-  delete[] columns;
-  delete[] values;
-  if (status != 0) {
-    throw BoutException("Error when setting elements of a PETSc matrix.");
-  }
-}
-
-PetscMatrixElement& PetscMatrixElement::newElement(Mat* matrix, PetscInt row, PetscInt col,
-						   std::vector<PetscInt> p,
-						   std::vector<BoutReal> w) {
-  ASSERT2(p.size() == w.size());
-  if (p.size() == 0) {
-    p = { col };
-    w = { 1.0 };
-  }
-  PetscMatrixElement* me = new PetscMatrixElement(matrix, row, p, w);
-  return *me;
 }
 
 #endif // BOUT_HAS_PETSC
