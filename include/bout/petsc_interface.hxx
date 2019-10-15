@@ -142,24 +142,21 @@ public:
 
   /// Construct from a field, copying over the field values
   PetscVector(const T &f) : vector(new Vec(), VectorDeleter()) {
-    MPI_Comm comm;
-    if (std::is_same<T, FieldPerp>::value) {
-      comm = f.getMesh()->getXcomm();
-    } else {
-      comm = BoutComm::get();
-    }
+    const MPI_Comm comm = std::is_same<T, FieldPerp>::value ?
+       f.getMesh()->getXcomm() : BoutComm::get();
     indexConverter = GlobalIndexer::getInstance(f.getMesh());
-    int size;
-    if (std::is_same<T, FieldPerp>::value) {
-      size = f.getMesh()->localSizePerp();
-    } else if (std::is_same<T, Field2D>::value) {
-      size = f.getMesh()->localSize2D();
-    } else if (std::is_same<T, Field3D>::value) {
-      size = f.getMesh()->localSize3D();
-    } else {
-      throw BoutException("PetscVector initialised for non-field type.");
-    }
-    VecCreateMPI(comm, size, PETSC_DECIDE, vector.get());
+    const auto size = [&f]() {
+			if (std::is_same<T, FieldPerp>::value) {
+			  return f.getMesh()->localSizePerp();
+			} else if (std::is_same<T, Field2D>::value) {
+			  return f.getMesh()->localSize2D();
+			} else if (std::is_same<T, Field3D>::value) {
+			  return f.getMesh()->localSize3D();
+			} else {
+			  throw BoutException("PetscVector initialised for non-field type.");
+			}
+		      };
+    VecCreateMPI(comm, size(), PETSC_DECIDE, vector.get());
     location = f.getLocation();
     initialised = true;
     PetscInt ind;
@@ -219,14 +216,14 @@ public:
     Element() = delete;
     Element(Vec* vector, int index) : petscVector(vector), petscIndex(index) {}
     Element operator=(BoutReal val) {
-      auto status = VecSetValues(*petscVector, 1, &petscIndex, &val, INSERT_VALUES);
+      const auto status = VecSetValues(*petscVector, 1, &petscIndex, &val, INSERT_VALUES);
       if (status != 0) {
 	throw BoutException("Error when setting elements of a PETSc vector.");
       }
       return *this;
     }
     Element operator+=(BoutReal val) {
-      auto status = VecSetValues(*petscVector, 1, &petscIndex, &val, ADD_VALUES);
+      const auto status = VecSetValues(*petscVector, 1, &petscIndex, &val, ADD_VALUES);
       if (status != 0) {
 	throw BoutException("Error when setting elements of a PETSc vector.");
       }
@@ -234,7 +231,7 @@ public:
     }
     operator BoutReal() const {
       BoutReal value;
-      auto status = VecGetValues(*petscVector, 1, &petscIndex, &value);
+      const auto status = VecGetValues(*petscVector, 1, &petscIndex, &value);
       if (status != 0) {
 	throw BoutException("Error when getting elements of a PETSc vector.");
       }  
@@ -252,7 +249,7 @@ public:
       throw BoutException("Can not return element of uninitialised vector");
     } 
 #endif
-    int global = indexConverter->getGlobal(index);
+    const int global = indexConverter->getGlobal(index);
 #if CHECKLEVEL >= 1
     if (global == -1) {
       throw BoutException("Request to return invalid vector element");
@@ -352,26 +349,23 @@ public:
 
   // Construct a matrix capable of operating on the specified field
   PetscMatrix(T &f) : matrix(new Mat(), MatrixDeleter()) {
-    MPI_Comm comm;
-    if (std::is_same<T, FieldPerp>::value) {
-      comm = f.getMesh()->getXcomm();
-    } else {
-      comm = BoutComm::get();
-    }
+    const MPI_Comm comm = std::is_same<T, FieldPerp>::value ?
+      f.getMesh()->getXcomm() : BoutComm::get();
     indexConverter = GlobalIndexer::getInstance(f.getMesh());
     pt = &f.getMesh()->getCoordinates()->getParallelTransform();
-    int size;
-    if (std::is_same<T, FieldPerp>::value) {
-      size = f.getMesh()->localSizePerp();
-    } else if (std::is_same<T, Field2D>::value) {
-      size = f.getMesh()->localSize2D();
-    } else if (std::is_same<T, Field3D>::value) {
-      size = f.getMesh()->localSize3D();
-    } else {
-      throw BoutException("PetscVector initialised for non-field type.");
-    }
+    const auto size = [&f]() {
+			if (std::is_same<T, FieldPerp>::value) {
+			  return f.getMesh()->localSizePerp();
+			} else if (std::is_same<T, Field2D>::value) {
+			  return f.getMesh()->localSize2D();
+			} else if (std::is_same<T, Field3D>::value) {
+			  return f.getMesh()->localSize3D();
+			} else {
+			  throw BoutException("PetscVector initialised for non-field type.");
+			}
+		      };
     MatCreate(comm, matrix.get());
-    MatSetSizes(*matrix, size, size, PETSC_DECIDE, PETSC_DECIDE);
+    MatSetSizes(*matrix, size(), size(), PETSC_DECIDE, PETSC_DECIDE);
     MatSetType(*matrix, MATMPIAIJ);
     MatSetUp(*matrix);
     yoffset = 0;
@@ -444,8 +438,8 @@ public:
   };
   
   Element operator()(ind_type& index1, ind_type& index2) {
-    int global1 = indexConverter->getGlobal(index1),
-        global2 = indexConverter->getGlobal(index2);
+    const int global1 = indexConverter->getGlobal(index1),
+              global2 = indexConverter->getGlobal(index2);
 #if CHECKLEVEL >= 1
     if (!initialised) {
       throw BoutException("Can not return element of uninitialised matrix");
@@ -467,12 +461,8 @@ public:
 	    }
       }();
       
-      int ny = indexConverter->getMesh()->LocalNy, nz = indexConverter->getMesh()->LocalNz;
-      if (std::is_same<T, FieldPerp>::value) {
-	ny = 1;
-      } else if (std::is_same<T, Field2D>::value) {
-	nz = 1;
-      }
+      const int ny = std::is_same<T, FieldPerp>::value ? 1 : indexConverter->getMesh()->LocalNy,
+	nz = std::is_same<T, Field2D>::value ? 1 : indexConverter->getMesh()->LocalNz;
       std::transform(pw.begin(), pw.end(), std::back_inserter(positions),
 		     [this, &ny, &nz](ParallelTransform::PositionsAndWeights p) -> PetscInt
 		     {return this->indexConverter->getGlobal(ind_type(p.i*ny*nz + p.j*nz
@@ -563,12 +553,12 @@ void swap(PetscMatrix<T>& first, PetscMatrix<T>& second) {
  */
 template <class T>
 PetscVector<T> operator*(PetscMatrix<T>& mat, PetscVector<T>& vec) {
-  Vec rhs = *vec.getVectorPointer();
+  const Vec rhs = *vec.getVectorPointer();
   Vec* result = new Vec();
   VecDuplicate(rhs, result);
   VecAssemblyBegin(*result);
   VecAssemblyEnd(*result);  
-  int err = MatMult(*mat.getMatrixPointer(), rhs, *result);
+  const int err = MatMult(*mat.getMatrixPointer(), rhs, *result);
   ASSERT2(err == 0);
   return PetscVector<T>(vec, result);
 }
