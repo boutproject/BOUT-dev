@@ -26,9 +26,9 @@ using ::testing::Return;
 class MockTransform : public ParallelTransformIdentity {
 public:
   MockTransform(Mesh& mesh_in) : ParallelTransformIdentity(mesh_in) {};
-  MOCK_METHOD(std::vector<positionsAndWeights>, getWeightsForYUpApproximation,
+  MOCK_METHOD(std::vector<PositionsAndWeights>, getWeightsForYUpApproximation,
 	      (int i, int j, int k), (override));
-  MOCK_METHOD(std::vector<positionsAndWeights>, getWeightsForYDownApproximation,
+  MOCK_METHOD(std::vector<PositionsAndWeights>, getWeightsForYDownApproximation,
 	      (int i, int j, int k), (override));
 };
 
@@ -39,7 +39,7 @@ public:
   F field;
   using ind_type = typename F::ind_type;
   MockTransform* pt;
-  std::vector<ParallelTransform::positionsAndWeights> yUpWeights, yDownWeights;
+  std::vector<ParallelTransform::PositionsAndWeights> yUpWeights, yDownWeights;
   typename F::ind_type indexA, indexB, iWU0, iWU1, iWU2, iWD0, iWD1, iWD2;
   PetscMatrixTest() : FakeMeshFixture(), field(bout::globals::mesh) {
     indexA = ind_type(field.getNy() * field.getNz() + 1, field.getNy(), field.getNz());
@@ -61,7 +61,7 @@ public:
       iWD2 = indexB.yp();
     }
     std::unique_ptr<MockTransform> transform = bout::utils::make_unique<MockTransform>(*bout::globals::mesh);
-    ParallelTransform::positionsAndWeights wUp0 = {iWU0.x(), iWU0.y(), iWU0.z(), 0.5},
+    ParallelTransform::PositionsAndWeights wUp0 = {iWU0.x(), iWU0.y(), iWU0.z(), 0.5},
       wUp1 = {iWU1.x(), iWU1.y(), iWU1.z(), 1.0},
       wUp2 = {iWU2.x(), iWU2.y(), iWU2.z(), 0.5},
       wDown0 = {iWD0.x(), iWD0.y(), iWD0.z(), 0.5},

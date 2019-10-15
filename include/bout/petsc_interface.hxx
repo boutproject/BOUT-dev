@@ -45,7 +45,7 @@
 #ifdef BOUT_HAS_PETSC
 class GlobalIndexer;
 using IndexerPtr = std::shared_ptr<GlobalIndexer>;
-using InterpolationWeights = std::vector<ParallelTransform::positionsAndWeights>;
+using InterpolationWeights = std::vector<ParallelTransform::PositionsAndWeights>;
 
 /*!
  * A singleton which accepts index objects produced by iterating over
@@ -457,14 +457,17 @@ public:
     std::vector<PetscInt> positions;
     std::vector<PetscScalar> weights;
     if (yoffset != 0) {
-      std::vector<ParallelTransform::positionsAndWeights> pw;
-      if (yoffset == -1) {
-	pw = pt->getWeightsForYDownApproximation(index2.x(), index2.y(), index2.z());
-      } else if (yoffset == 1) {
-	pw = pt->getWeightsForYUpApproximation(index2.x(), index2.y(), index2.z());
-      } else {
-	pw = pt->getWeightsForYApproximation(index2.x(), index2.y(), index2.z(), yoffset);
-      }
+      const auto pw = [this, &index2]() {
+	    if (this->yoffset == -1) {
+	      return pt->getWeightsForYDownApproximation(index2.x(), index2.y(), index2.z());
+	    } else if (this->yoffset == 1) {
+	      return pt->getWeightsForYUpApproximation(index2.x(), index2.y(), index2.z());
+	    } else {
+	      return pt->getWeightsForYApproximation(index2.x(), index2.y(), index2.z(),
+						     this->yoffset);
+	    }
+      }();
+      
       int ny = indexConverter->getMesh()->LocalNy, nz = indexConverter->getMesh()->LocalNz;
       if (std::is_same<F, FieldPerp>::value) {
 	ny = 1;
@@ -472,11 +475,11 @@ public:
 	nz = 1;
       }
       std::transform(pw.begin(), pw.end(), std::back_inserter(positions),
-		     [this, &ny, &nz](ParallelTransform::positionsAndWeights p) -> PetscInt
+		     [this, &ny, &nz](ParallelTransform::PositionsAndWeights p) -> PetscInt
 		     {return this->indexConverter->getGlobal(ind_type(p.i*ny*nz + p.j*nz
 								      + p.k, ny, nz));});
       std::transform(pw.begin(), pw.end(), std::back_inserter(weights),
-		     [](ParallelTransform::positionsAndWeights p) ->
+		     [](ParallelTransform::PositionsAndWeights p) ->
 		     PetscScalar {return p.weight;});
     }
     return PetscMatrixElement::newElement(matrix.get(), global1, global2, positions, weights);
