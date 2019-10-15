@@ -126,7 +126,6 @@ public:
   PetscVector(const PetscVector<T>& v) : vector(new Vec(), VectorDeleter()) {
     VecDuplicate(*v.vector, vector.get());
     VecCopy(*v.vector, *vector);
->>>>>>> petsc_interface
     indexConverter = v.indexConverter;
     location = v.location;
     initialised = v.initialised;
