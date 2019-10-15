@@ -77,12 +77,12 @@ public:
 
   bool canToFromFieldAligned() override { return true; }
 
-  std::vector<ParallelTransform::positionsAndWeights>
-  getWeightsForYUpApproximation(int i, int j, int k) {
+  std::vector<ParallelTransform::PositionsAndWeights>
+  getWeightsForYUpApproximation(int i, int j, int k) override {
     return interp_yup->getWeightsForYApproximation(i, j, k, 1);
   }
-  std::vector<ParallelTransform::positionsAndWeights>
-  getWeightsForYDownApproximation(int i, int j, int k) {
+  std::vector<ParallelTransform::PositionsAndWeights>
+  getWeightsForYDownApproximation(int i, int j, int k) override {
     return interp_ydown->getWeightsForYApproximation(i, j, k, -1);
   }
 
