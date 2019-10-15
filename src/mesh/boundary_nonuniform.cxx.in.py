@@ -21,7 +21,7 @@ header="""\
 env=Environment(trim_blocks=True);
 
 apply_str="""
-void Boundary{{what}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
+void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
   bndry->first();
 
   // Decide which generator to use
@@ -37,27 +37,27 @@ void Boundary{{what}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
   BoutReal vals[mesh->LocalNz];
   int bx = bndry->bx;
   int by = bndry->by;
-  int stag = 0;
+  int stagger = 0;
   if (loc == CELL_XLOW) {
     if (bx == 0) {
       bx = -1;
     } else if (bx < 0) {
-      stag = -1;
+      stagger = -1;
     } else {
-      stag = 1;
+      stagger = 1;
     }
   }
   if (loc == CELL_YLOW) {
     if (by == 0) {
       by = -1;
     } else if (by < 0) {
-      stag = -1;
+      stagger = -1;
     } else {
-      stag = 1;
+      stagger = 1;
     }
   }
-{% if what == "Dirichlet" %}
-  int istart = (stag == -1) ? -1 : 0;
+{% if type == "Dirichlet" %}
+  int istart = (stagger == -1) ? -1 : 0;
 {% endif %}
 
   for (; !bndry->isDone(); bndry->next1d()) {
@@ -81,12 +81,12 @@ void Boundary{{what}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
 
     const Field2D &dy =
         bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
-{% if what != "Free" %}
+{% if type != "Free" %}
 {% for i in range(1,order) %}
     Indices i{{i}}{bndry->x - {{i}} * bndry->bx, bndry->y - {{i}} * bndry->by, 0};
 {% endfor %}
     BoutReal t;
-    if (stag == 0) {
+    if (stagger == 0) {
       x0 = 0;
       BoutReal st=0;
 {% for i in range(1,order) %}
@@ -100,8 +100,8 @@ void Boundary{{what}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
       x{{i}} = x{{i-1}} + dy[i{{i}}];
 {% endfor %}
     }
-{% if what == "Dirichlet" %}
-    if (stag == -1) {
+{% if type == "Dirichlet" %}
+    if (stagger == -1) {
 {% for i in range(1,order) %}
       i{{i}} = {bndry->x - {{i+1}} * bndry->bx, bndry->y - {{i+1}} * bndry->by, 0};
 {% endfor %}
@@ -111,7 +111,7 @@ void Boundary{{what}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
 {% for i in range(order) %}
     Indices i{{i}}{bndry->x - {{i+1}} * bndry->bx, bndry->y - {{i+1}} * bndry->by, 0};
 {% endfor %}
-    if (stag == 0) {
+    if (stagger == 0) {
       BoutReal st=0;
 {% for i in range(order) %}
       t = dy[i{{i}}];
@@ -126,18 +126,18 @@ void Boundary{{what}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
     }
 
 {% endif %}
-{% if what == "Dirichlet" %}
+{% if type == "Dirichlet" %}
     for (int i = istart; i < bndry->width; i++) {
 {% else %}
     for (int i = 0; i < bndry->width; i++) {
 {% endif %}
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
-      if (stag == 0) {
+      if (stagger == 0) {
         t = dy[ic] / 2;
 {% for i in range(order) %}
         x{{i}} += t;
 {% endfor %}
-        // printf("%+2d: %d %d %g %g %g %g\\n", stag, ic.x, ic.y, x0, x1, x2, x3);
+        // printf("%+2d: %d %d %g %g %g %g\\n", stagger, ic.x, ic.y, x0, x1, x2, x3);
         calc_interp_to_stencil(
 {% for i in range(order) %}x{{i}}, {% endfor %}
 {% for i in range(order) %}fac{{i}}{% if not loop.last %}, {% endif %}{% endfor %});
@@ -146,8 +146,8 @@ void Boundary{{what}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
 {% endfor %}
       } else {
         t = dy[ic];
-        if (stag == -1
-{% if what == "Dirichlet" %}
+        if (stagger == -1
+{% if type == "Dirichlet" %}
               && i != -1
 {% endif %}
                      ) {
@@ -158,7 +158,7 @@ void Boundary{{what}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
         calc_interp_to_stencil(
 {% for i in range(order) %}x{{i}}, {% endfor %}
 {% for i in range(order) %}fac{{i}}{% if not loop.last %}, {% endif %}{% endfor %});
-        if (stag == 1) {
+        if (stagger == 1) {
 {% for i in range(order) %}
           x{{i}} += t;
 {% endfor %}
@@ -168,7 +168,7 @@ void Boundary{{what}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
 {% for i in range(1,order) %}
         i{{i}}.z = ic.z;
 {% endfor %}
-{% if what != "Free" %}
+{% if type != "Free" %}
         val = (fg) ? vals[ic.z] : 0.0;
         t = fac0 * val 
 {% else %}
@@ -208,14 +208,14 @@ void {{class}}::calc_interp_to_stencil(
 """
 
 orders=range(2,5)
-whats=["Dirichlet","Neumann","Free"]
+boundaries=["Dirichlet","Neumann","Free"]
 
 if __name__ == "__main__":
     print(header)
 
     for order in orders:
-        for what in whats:
-            if what == "Neumann":
+        for boundary in boundaries:
+            if boundary == "Neumann":
                 mat=sten.neumann
             else:
                 mat=sten.dirichlet
@@ -223,12 +223,12 @@ if __name__ == "__main__":
                 code=sten.gen_code(order,mat)
             except:
                 import sys
-                print("Order:",order,"what:",what,file=sys.stderr)
+                print("Order:",order,"boundary:",boundary,file=sys.stderr)
                 raise
             args={
                 'order':order,
-                'what':what,
-                'class':"Boundary%sNonUniform_O%d"%(what,order),
+                'type':boundary,
+                'class':"Boundary%sNonUniform_O%d"%(boundary,order),
                 'stencil_code': code,
             }
 

@@ -8,11 +8,13 @@ env=Environment(trim_blocks=True);
 orders=range(2,5)
 whats=["Dirichlet","Neumann","Free"]
 
-class_str="""
-
+header="""
 #include <utility>
 
 #include "boundary_op.hxx"
+"""
+
+class_str="""
 
 class {{class}} : public BoundaryOp {
 public:
@@ -21,7 +23,7 @@ public:
   BoundaryOp *clone(BoundaryRegion *region, const std::list<std::string> &args) override;
 
   using BoundaryOp::apply;
-  void apply(Field2D &f) override {
+  void apply(Field2D &UNUSED(f)) override {
     throw BoutException("Not Implemented");
   };
  
@@ -40,6 +42,7 @@ private:
 
 
 if __name__ == "__main__":
+    print(header)
     for order in orders:
         for what in whats:
             args={

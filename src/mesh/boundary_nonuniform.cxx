@@ -1,7 +1,4 @@
-#include "boundary_nonuniform.hxx"
-
 #include <bout/constants.hxx>
-
 #include <boundary_standard.hxx>
 #include <boutexception.hxx>
 #include <derivs.hxx>
@@ -11,6 +8,8 @@
 #include <msg_stack.hxx>
 #include <output.hxx>
 #include <utils.hxx>
+
+#include "boundary_nonuniform.hxx"
 
 void BoundaryDirichletNonUniform_O2::apply(Field3D& f, BoutReal t) {
   bndry->first();
@@ -28,26 +27,26 @@ void BoundaryDirichletNonUniform_O2::apply(Field3D& f, BoutReal t) {
   BoutReal vals[mesh->LocalNz];
   int bx = bndry->bx;
   int by = bndry->by;
-  int stag = 0;
+  int stagger = 0;
   if (loc == CELL_XLOW) {
     if (bx == 0) {
       bx = -1;
     } else if (bx < 0) {
-      stag = -1;
+      stagger = -1;
     } else {
-      stag = 1;
+      stagger = 1;
     }
   }
   if (loc == CELL_YLOW) {
     if (by == 0) {
       by = -1;
     } else if (by < 0) {
-      stag = -1;
+      stagger = -1;
     } else {
-      stag = 1;
+      stagger = 1;
     }
   }
-  int istart = (stag == -1) ? -1 : 0;
+  int istart = (stagger == -1) ? -1 : 0;
 
   for (; !bndry->isDone(); bndry->next1d()) {
     if (fg) {
@@ -74,7 +73,7 @@ void BoundaryDirichletNonUniform_O2::apply(Field3D& f, BoutReal t) {
         bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
     Indices i1{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
     BoutReal t;
-    if (stag == 0) {
+    if (stagger == 0) {
       x0 = 0;
       BoutReal st = 0;
       t = dy[i1];
@@ -84,27 +83,27 @@ void BoundaryDirichletNonUniform_O2::apply(Field3D& f, BoutReal t) {
       x0 = 0; // dy(bndry->x, bndry->y) / 2;
       x1 = x0 + dy[i1];
     }
-    if (stag == -1) {
+    if (stagger == -1) {
       i1 = {bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
     }
     for (int i = istart; i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
-      if (stag == 0) {
+      if (stagger == 0) {
         t = dy[ic] / 2;
         x0 += t;
         x1 += t;
-        // printf("%+2d: %d %d %g %g %g %g\n", stag, ic.x, ic.y, x0, x1, x2, x3);
+        // printf("%+2d: %d %d %g %g %g %g\n", stagger, ic.x, ic.y, x0, x1, x2, x3);
         calc_interp_to_stencil(x0, x1, fac0, fac1);
         x0 += t;
         x1 += t;
       } else {
         t = dy[ic];
-        if (stag == -1 && i != -1) {
+        if (stagger == -1 && i != -1) {
           x0 += t;
           x1 += t;
         }
         calc_interp_to_stencil(x0, x1, fac0, fac1);
-        if (stag == 1) {
+        if (stagger == 1) {
           x0 += t;
           x1 += t;
         }
@@ -156,23 +155,23 @@ void BoundaryNeumannNonUniform_O2::apply(Field3D& f, BoutReal t) {
   BoutReal vals[mesh->LocalNz];
   int bx = bndry->bx;
   int by = bndry->by;
-  int stag = 0;
+  int stagger = 0;
   if (loc == CELL_XLOW) {
     if (bx == 0) {
       bx = -1;
     } else if (bx < 0) {
-      stag = -1;
+      stagger = -1;
     } else {
-      stag = 1;
+      stagger = 1;
     }
   }
   if (loc == CELL_YLOW) {
     if (by == 0) {
       by = -1;
     } else if (by < 0) {
-      stag = -1;
+      stagger = -1;
     } else {
-      stag = 1;
+      stagger = 1;
     }
   }
 
@@ -201,7 +200,7 @@ void BoundaryNeumannNonUniform_O2::apply(Field3D& f, BoutReal t) {
         bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
     Indices i1{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
     BoutReal t;
-    if (stag == 0) {
+    if (stagger == 0) {
       x0 = 0;
       BoutReal st = 0;
       t = dy[i1];
@@ -213,22 +212,22 @@ void BoundaryNeumannNonUniform_O2::apply(Field3D& f, BoutReal t) {
     }
     for (int i = 0; i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
-      if (stag == 0) {
+      if (stagger == 0) {
         t = dy[ic] / 2;
         x0 += t;
         x1 += t;
-        // printf("%+2d: %d %d %g %g %g %g\n", stag, ic.x, ic.y, x0, x1, x2, x3);
+        // printf("%+2d: %d %d %g %g %g %g\n", stagger, ic.x, ic.y, x0, x1, x2, x3);
         calc_interp_to_stencil(x0, x1, fac0, fac1);
         x0 += t;
         x1 += t;
       } else {
         t = dy[ic];
-        if (stag == -1) {
+        if (stagger == -1) {
           x0 += t;
           x1 += t;
         }
         calc_interp_to_stencil(x0, x1, fac0, fac1);
-        if (stag == 1) {
+        if (stagger == 1) {
           x0 += t;
           x1 += t;
         }
@@ -280,23 +279,23 @@ void BoundaryFreeNonUniform_O2::apply(Field3D& f, BoutReal t) {
   BoutReal vals[mesh->LocalNz];
   int bx = bndry->bx;
   int by = bndry->by;
-  int stag = 0;
+  int stagger = 0;
   if (loc == CELL_XLOW) {
     if (bx == 0) {
       bx = -1;
     } else if (bx < 0) {
-      stag = -1;
+      stagger = -1;
     } else {
-      stag = 1;
+      stagger = 1;
     }
   }
   if (loc == CELL_YLOW) {
     if (by == 0) {
       by = -1;
     } else if (by < 0) {
-      stag = -1;
+      stagger = -1;
     } else {
-      stag = 1;
+      stagger = 1;
     }
   }
 
@@ -325,7 +324,7 @@ void BoundaryFreeNonUniform_O2::apply(Field3D& f, BoutReal t) {
         bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
     Indices i0{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
     Indices i1{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
-    if (stag == 0) {
+    if (stagger == 0) {
       BoutReal st = 0;
       t = dy[i0];
       x0 = st + t / 2;
@@ -340,22 +339,22 @@ void BoundaryFreeNonUniform_O2::apply(Field3D& f, BoutReal t) {
 
     for (int i = 0; i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
-      if (stag == 0) {
+      if (stagger == 0) {
         t = dy[ic] / 2;
         x0 += t;
         x1 += t;
-        // printf("%+2d: %d %d %g %g %g %g\n", stag, ic.x, ic.y, x0, x1, x2, x3);
+        // printf("%+2d: %d %d %g %g %g %g\n", stagger, ic.x, ic.y, x0, x1, x2, x3);
         calc_interp_to_stencil(x0, x1, fac0, fac1);
         x0 += t;
         x1 += t;
       } else {
         t = dy[ic];
-        if (stag == -1) {
+        if (stagger == -1) {
           x0 += t;
           x1 += t;
         }
         calc_interp_to_stencil(x0, x1, fac0, fac1);
-        if (stag == 1) {
+        if (stagger == 1) {
           x0 += t;
           x1 += t;
         }
@@ -406,26 +405,26 @@ void BoundaryDirichletNonUniform_O3::apply(Field3D& f, BoutReal t) {
   BoutReal vals[mesh->LocalNz];
   int bx = bndry->bx;
   int by = bndry->by;
-  int stag = 0;
+  int stagger = 0;
   if (loc == CELL_XLOW) {
     if (bx == 0) {
       bx = -1;
     } else if (bx < 0) {
-      stag = -1;
+      stagger = -1;
     } else {
-      stag = 1;
+      stagger = 1;
     }
   }
   if (loc == CELL_YLOW) {
     if (by == 0) {
       by = -1;
     } else if (by < 0) {
-      stag = -1;
+      stagger = -1;
     } else {
-      stag = 1;
+      stagger = 1;
     }
   }
-  int istart = (stag == -1) ? -1 : 0;
+  int istart = (stagger == -1) ? -1 : 0;
 
   for (; !bndry->isDone(); bndry->next1d()) {
     if (fg) {
@@ -455,7 +454,7 @@ void BoundaryDirichletNonUniform_O3::apply(Field3D& f, BoutReal t) {
     Indices i1{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
     Indices i2{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
     BoutReal t;
-    if (stag == 0) {
+    if (stagger == 0) {
       x0 = 0;
       BoutReal st = 0;
       t = dy[i1];
@@ -469,31 +468,31 @@ void BoundaryDirichletNonUniform_O3::apply(Field3D& f, BoutReal t) {
       x1 = x0 + dy[i1];
       x2 = x1 + dy[i2];
     }
-    if (stag == -1) {
+    if (stagger == -1) {
       i1 = {bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
       i2 = {bndry->x - 3 * bndry->bx, bndry->y - 3 * bndry->by, 0};
     }
     for (int i = istart; i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
-      if (stag == 0) {
+      if (stagger == 0) {
         t = dy[ic] / 2;
         x0 += t;
         x1 += t;
         x2 += t;
-        // printf("%+2d: %d %d %g %g %g %g\n", stag, ic.x, ic.y, x0, x1, x2, x3);
+        // printf("%+2d: %d %d %g %g %g %g\n", stagger, ic.x, ic.y, x0, x1, x2, x3);
         calc_interp_to_stencil(x0, x1, x2, fac0, fac1, fac2);
         x0 += t;
         x1 += t;
         x2 += t;
       } else {
         t = dy[ic];
-        if (stag == -1 && i != -1) {
+        if (stagger == -1 && i != -1) {
           x0 += t;
           x1 += t;
           x2 += t;
         }
         calc_interp_to_stencil(x0, x1, x2, fac0, fac1, fac2);
-        if (stag == 1) {
+        if (stagger == 1) {
           x0 += t;
           x1 += t;
           x2 += t;
@@ -549,23 +548,23 @@ void BoundaryNeumannNonUniform_O3::apply(Field3D& f, BoutReal t) {
   BoutReal vals[mesh->LocalNz];
   int bx = bndry->bx;
   int by = bndry->by;
-  int stag = 0;
+  int stagger = 0;
   if (loc == CELL_XLOW) {
     if (bx == 0) {
       bx = -1;
     } else if (bx < 0) {
-      stag = -1;
+      stagger = -1;
     } else {
-      stag = 1;
+      stagger = 1;
     }
   }
   if (loc == CELL_YLOW) {
     if (by == 0) {
       by = -1;
     } else if (by < 0) {
-      stag = -1;
+      stagger = -1;
     } else {
-      stag = 1;
+      stagger = 1;
     }
   }
 
@@ -597,7 +596,7 @@ void BoundaryNeumannNonUniform_O3::apply(Field3D& f, BoutReal t) {
     Indices i1{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
     Indices i2{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
     BoutReal t;
-    if (stag == 0) {
+    if (stagger == 0) {
       x0 = 0;
       BoutReal st = 0;
       t = dy[i1];
@@ -613,25 +612,25 @@ void BoundaryNeumannNonUniform_O3::apply(Field3D& f, BoutReal t) {
     }
     for (int i = 0; i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
-      if (stag == 0) {
+      if (stagger == 0) {
         t = dy[ic] / 2;
         x0 += t;
         x1 += t;
         x2 += t;
-        // printf("%+2d: %d %d %g %g %g %g\n", stag, ic.x, ic.y, x0, x1, x2, x3);
+        // printf("%+2d: %d %d %g %g %g %g\n", stagger, ic.x, ic.y, x0, x1, x2, x3);
         calc_interp_to_stencil(x0, x1, x2, fac0, fac1, fac2);
         x0 += t;
         x1 += t;
         x2 += t;
       } else {
         t = dy[ic];
-        if (stag == -1) {
+        if (stagger == -1) {
           x0 += t;
           x1 += t;
           x2 += t;
         }
         calc_interp_to_stencil(x0, x1, x2, fac0, fac1, fac2);
-        if (stag == 1) {
+        if (stagger == 1) {
           x0 += t;
           x1 += t;
           x2 += t;
@@ -687,23 +686,23 @@ void BoundaryFreeNonUniform_O3::apply(Field3D& f, BoutReal t) {
   BoutReal vals[mesh->LocalNz];
   int bx = bndry->bx;
   int by = bndry->by;
-  int stag = 0;
+  int stagger = 0;
   if (loc == CELL_XLOW) {
     if (bx == 0) {
       bx = -1;
     } else if (bx < 0) {
-      stag = -1;
+      stagger = -1;
     } else {
-      stag = 1;
+      stagger = 1;
     }
   }
   if (loc == CELL_YLOW) {
     if (by == 0) {
       by = -1;
     } else if (by < 0) {
-      stag = -1;
+      stagger = -1;
     } else {
-      stag = 1;
+      stagger = 1;
     }
   }
 
@@ -735,7 +734,7 @@ void BoundaryFreeNonUniform_O3::apply(Field3D& f, BoutReal t) {
     Indices i0{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
     Indices i1{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
     Indices i2{bndry->x - 3 * bndry->bx, bndry->y - 3 * bndry->by, 0};
-    if (stag == 0) {
+    if (stagger == 0) {
       BoutReal st = 0;
       t = dy[i0];
       x0 = st + t / 2;
@@ -754,25 +753,25 @@ void BoundaryFreeNonUniform_O3::apply(Field3D& f, BoutReal t) {
 
     for (int i = 0; i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
-      if (stag == 0) {
+      if (stagger == 0) {
         t = dy[ic] / 2;
         x0 += t;
         x1 += t;
         x2 += t;
-        // printf("%+2d: %d %d %g %g %g %g\n", stag, ic.x, ic.y, x0, x1, x2, x3);
+        // printf("%+2d: %d %d %g %g %g %g\n", stagger, ic.x, ic.y, x0, x1, x2, x3);
         calc_interp_to_stencil(x0, x1, x2, fac0, fac1, fac2);
         x0 += t;
         x1 += t;
         x2 += t;
       } else {
         t = dy[ic];
-        if (stag == -1) {
+        if (stagger == -1) {
           x0 += t;
           x1 += t;
           x2 += t;
         }
         calc_interp_to_stencil(x0, x1, x2, fac0, fac1, fac2);
-        if (stag == 1) {
+        if (stagger == 1) {
           x0 += t;
           x1 += t;
           x2 += t;
@@ -827,26 +826,26 @@ void BoundaryDirichletNonUniform_O4::apply(Field3D& f, BoutReal t) {
   BoutReal vals[mesh->LocalNz];
   int bx = bndry->bx;
   int by = bndry->by;
-  int stag = 0;
+  int stagger = 0;
   if (loc == CELL_XLOW) {
     if (bx == 0) {
       bx = -1;
     } else if (bx < 0) {
-      stag = -1;
+      stagger = -1;
     } else {
-      stag = 1;
+      stagger = 1;
     }
   }
   if (loc == CELL_YLOW) {
     if (by == 0) {
       by = -1;
     } else if (by < 0) {
-      stag = -1;
+      stagger = -1;
     } else {
-      stag = 1;
+      stagger = 1;
     }
   }
-  int istart = (stag == -1) ? -1 : 0;
+  int istart = (stagger == -1) ? -1 : 0;
 
   for (; !bndry->isDone(); bndry->next1d()) {
     if (fg) {
@@ -879,7 +878,7 @@ void BoundaryDirichletNonUniform_O4::apply(Field3D& f, BoutReal t) {
     Indices i2{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
     Indices i3{bndry->x - 3 * bndry->bx, bndry->y - 3 * bndry->by, 0};
     BoutReal t;
-    if (stag == 0) {
+    if (stagger == 0) {
       x0 = 0;
       BoutReal st = 0;
       t = dy[i1];
@@ -897,20 +896,20 @@ void BoundaryDirichletNonUniform_O4::apply(Field3D& f, BoutReal t) {
       x2 = x1 + dy[i2];
       x3 = x2 + dy[i3];
     }
-    if (stag == -1) {
+    if (stagger == -1) {
       i1 = {bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
       i2 = {bndry->x - 3 * bndry->bx, bndry->y - 3 * bndry->by, 0};
       i3 = {bndry->x - 4 * bndry->bx, bndry->y - 4 * bndry->by, 0};
     }
     for (int i = istart; i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
-      if (stag == 0) {
+      if (stagger == 0) {
         t = dy[ic] / 2;
         x0 += t;
         x1 += t;
         x2 += t;
         x3 += t;
-        // printf("%+2d: %d %d %g %g %g %g\n", stag, ic.x, ic.y, x0, x1, x2, x3);
+        // printf("%+2d: %d %d %g %g %g %g\n", stagger, ic.x, ic.y, x0, x1, x2, x3);
         calc_interp_to_stencil(x0, x1, x2, x3, fac0, fac1, fac2, fac3);
         x0 += t;
         x1 += t;
@@ -918,14 +917,14 @@ void BoundaryDirichletNonUniform_O4::apply(Field3D& f, BoutReal t) {
         x3 += t;
       } else {
         t = dy[ic];
-        if (stag == -1 && i != -1) {
+        if (stagger == -1 && i != -1) {
           x0 += t;
           x1 += t;
           x2 += t;
           x3 += t;
         }
         calc_interp_to_stencil(x0, x1, x2, x3, fac0, fac1, fac2, fac3);
-        if (stag == 1) {
+        if (stagger == 1) {
           x0 += t;
           x1 += t;
           x2 += t;
@@ -983,23 +982,23 @@ void BoundaryNeumannNonUniform_O4::apply(Field3D& f, BoutReal t) {
   BoutReal vals[mesh->LocalNz];
   int bx = bndry->bx;
   int by = bndry->by;
-  int stag = 0;
+  int stagger = 0;
   if (loc == CELL_XLOW) {
     if (bx == 0) {
       bx = -1;
     } else if (bx < 0) {
-      stag = -1;
+      stagger = -1;
     } else {
-      stag = 1;
+      stagger = 1;
     }
   }
   if (loc == CELL_YLOW) {
     if (by == 0) {
       by = -1;
     } else if (by < 0) {
-      stag = -1;
+      stagger = -1;
     } else {
-      stag = 1;
+      stagger = 1;
     }
   }
 
@@ -1034,7 +1033,7 @@ void BoundaryNeumannNonUniform_O4::apply(Field3D& f, BoutReal t) {
     Indices i2{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
     Indices i3{bndry->x - 3 * bndry->bx, bndry->y - 3 * bndry->by, 0};
     BoutReal t;
-    if (stag == 0) {
+    if (stagger == 0) {
       x0 = 0;
       BoutReal st = 0;
       t = dy[i1];
@@ -1054,13 +1053,13 @@ void BoundaryNeumannNonUniform_O4::apply(Field3D& f, BoutReal t) {
     }
     for (int i = 0; i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
-      if (stag == 0) {
+      if (stagger == 0) {
         t = dy[ic] / 2;
         x0 += t;
         x1 += t;
         x2 += t;
         x3 += t;
-        // printf("%+2d: %d %d %g %g %g %g\n", stag, ic.x, ic.y, x0, x1, x2, x3);
+        // printf("%+2d: %d %d %g %g %g %g\n", stagger, ic.x, ic.y, x0, x1, x2, x3);
         calc_interp_to_stencil(x0, x1, x2, x3, fac0, fac1, fac2, fac3);
         x0 += t;
         x1 += t;
@@ -1068,14 +1067,14 @@ void BoundaryNeumannNonUniform_O4::apply(Field3D& f, BoutReal t) {
         x3 += t;
       } else {
         t = dy[ic];
-        if (stag == -1) {
+        if (stagger == -1) {
           x0 += t;
           x1 += t;
           x2 += t;
           x3 += t;
         }
         calc_interp_to_stencil(x0, x1, x2, x3, fac0, fac1, fac2, fac3);
-        if (stag == 1) {
+        if (stagger == 1) {
           x0 += t;
           x1 += t;
           x2 += t;
@@ -1146,23 +1145,23 @@ void BoundaryFreeNonUniform_O4::apply(Field3D& f, BoutReal t) {
   BoutReal vals[mesh->LocalNz];
   int bx = bndry->bx;
   int by = bndry->by;
-  int stag = 0;
+  int stagger = 0;
   if (loc == CELL_XLOW) {
     if (bx == 0) {
       bx = -1;
     } else if (bx < 0) {
-      stag = -1;
+      stagger = -1;
     } else {
-      stag = 1;
+      stagger = 1;
     }
   }
   if (loc == CELL_YLOW) {
     if (by == 0) {
       by = -1;
     } else if (by < 0) {
-      stag = -1;
+      stagger = -1;
     } else {
-      stag = 1;
+      stagger = 1;
     }
   }
 
@@ -1197,7 +1196,7 @@ void BoundaryFreeNonUniform_O4::apply(Field3D& f, BoutReal t) {
     Indices i1{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
     Indices i2{bndry->x - 3 * bndry->bx, bndry->y - 3 * bndry->by, 0};
     Indices i3{bndry->x - 4 * bndry->bx, bndry->y - 4 * bndry->by, 0};
-    if (stag == 0) {
+    if (stagger == 0) {
       BoutReal st = 0;
       t = dy[i0];
       x0 = st + t / 2;
@@ -1220,13 +1219,13 @@ void BoundaryFreeNonUniform_O4::apply(Field3D& f, BoutReal t) {
 
     for (int i = 0; i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
-      if (stag == 0) {
+      if (stagger == 0) {
         t = dy[ic] / 2;
         x0 += t;
         x1 += t;
         x2 += t;
         x3 += t;
-        // printf("%+2d: %d %d %g %g %g %g\n", stag, ic.x, ic.y, x0, x1, x2, x3);
+        // printf("%+2d: %d %d %g %g %g %g\n", stagger, ic.x, ic.y, x0, x1, x2, x3);
         calc_interp_to_stencil(x0, x1, x2, x3, fac0, fac1, fac2, fac3);
         x0 += t;
         x1 += t;
@@ -1234,14 +1233,14 @@ void BoundaryFreeNonUniform_O4::apply(Field3D& f, BoutReal t) {
         x3 += t;
       } else {
         t = dy[ic];
-        if (stag == -1) {
+        if (stagger == -1) {
           x0 += t;
           x1 += t;
           x2 += t;
           x3 += t;
         }
         calc_interp_to_stencil(x0, x1, x2, x3, fac0, fac1, fac2, fac3);
-        if (stag == 1) {
+        if (stagger == 1) {
           x0 += t;
           x1 += t;
           x2 += t;

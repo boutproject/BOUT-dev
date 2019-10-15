@@ -28,20 +28,13 @@ def gen_code(order,matrix):
     for i in range(order):
         x.append(Symbol("x%d"%i))
     A=Matrix(order,order,matrix)
-    #print(A)
+
     try:
         iA=A.inv()
     except:
         import sys
         print(A,matrix,file=sys.stderr)
         raise
-    #for i in range(order):
-    #    for j in range(order):
-    #        print(i,j, simp(iA[i,j]))
-    #print(iA)
-    #r=Matrix(order,1, lambda i,j: 1 if i==0 else 0)
-    #print(r)
-    #s=iA*r
     ret=""
     for i in range(order):
         ret+=ccode(simp(iA[0,i]),assign_to="fac%d"%i)

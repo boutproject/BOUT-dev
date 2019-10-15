@@ -831,17 +831,8 @@ unsigned int size(const Region<T> &region){
 }
 
 
-class Indices{
-public:
+struct Indices{
   int x,y,z;
-  Indices(Ind3D i):x(i.x()), y(i.y()),z(i.z())
-  {};
-  Indices(Ind2D i):x(i.x()), y(i.y())
-  {};
-  Indices(const Indices& i):x(i.x), y(i.y),z(i.z)
-  {};
-  Indices(int x,int y,int z):x(x),y(y),z(z)
-  {};
 };
 
 #endif /* __REGION_H__ */

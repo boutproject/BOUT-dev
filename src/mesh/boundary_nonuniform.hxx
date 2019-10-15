@@ -1,8 +1,7 @@
 
+#include <utility>
 
 #include "boundary_op.hxx"
-
-#include <utility>
 
 class BoundaryDirichletNonUniform_O2 : public BoundaryOp {
 public:
@@ -13,7 +12,7 @@ public:
   BoundaryOp* clone(BoundaryRegion* region, const std::list<std::string>& args) override;
 
   using BoundaryOp::apply;
-  void apply(Field2D& f) override { throw BoutException("Not Implemented"); };
+  void apply(Field2D& UNUSED(f)) override { throw BoutException("Not Implemented"); };
 
   void apply(Field3D& f) override { apply(f, 0.0); };
   void apply(Field3D& f, BoutReal t) override;
@@ -23,10 +22,6 @@ private:
   void calc_interp_to_stencil(BoutReal x0, BoutReal x1, BoutReal& fac0,
                               BoutReal& fac1) const;
 };
-
-#include "boundary_op.hxx"
-
-#include <utility>
 
 class BoundaryNeumannNonUniform_O2 : public BoundaryOp {
 public:
@@ -37,7 +32,7 @@ public:
   BoundaryOp* clone(BoundaryRegion* region, const std::list<std::string>& args) override;
 
   using BoundaryOp::apply;
-  void apply(Field2D& f) override { throw BoutException("Not Implemented"); };
+  void apply(Field2D& UNUSED(f)) override { throw BoutException("Not Implemented"); };
 
   void apply(Field3D& f) override { apply(f, 0.0); };
   void apply(Field3D& f, BoutReal t) override;
@@ -47,10 +42,6 @@ private:
   void calc_interp_to_stencil(BoutReal x0, BoutReal x1, BoutReal& fac0,
                               BoutReal& fac1) const;
 };
-
-#include "boundary_op.hxx"
-
-#include <utility>
 
 class BoundaryFreeNonUniform_O2 : public BoundaryOp {
 public:
@@ -61,7 +52,7 @@ public:
   BoundaryOp* clone(BoundaryRegion* region, const std::list<std::string>& args) override;
 
   using BoundaryOp::apply;
-  void apply(Field2D& f) override { throw BoutException("Not Implemented"); };
+  void apply(Field2D& UNUSED(f)) override { throw BoutException("Not Implemented"); };
 
   void apply(Field3D& f) override { apply(f, 0.0); };
   void apply(Field3D& f, BoutReal t) override;
@@ -72,10 +63,6 @@ private:
                               BoutReal& fac1) const;
 };
 
-#include "boundary_op.hxx"
-
-#include <utility>
-
 class BoundaryDirichletNonUniform_O3 : public BoundaryOp {
 public:
   BoundaryDirichletNonUniform_O3() {}
@@ -85,7 +72,7 @@ public:
   BoundaryOp* clone(BoundaryRegion* region, const std::list<std::string>& args) override;
 
   using BoundaryOp::apply;
-  void apply(Field2D& f) override { throw BoutException("Not Implemented"); };
+  void apply(Field2D& UNUSED(f)) override { throw BoutException("Not Implemented"); };
 
   void apply(Field3D& f) override { apply(f, 0.0); };
   void apply(Field3D& f, BoutReal t) override;
@@ -95,10 +82,6 @@ private:
   void calc_interp_to_stencil(BoutReal x0, BoutReal x1, BoutReal x2, BoutReal& fac0,
                               BoutReal& fac1, BoutReal& fac2) const;
 };
-
-#include "boundary_op.hxx"
-
-#include <utility>
 
 class BoundaryNeumannNonUniform_O3 : public BoundaryOp {
 public:
@@ -109,7 +92,7 @@ public:
   BoundaryOp* clone(BoundaryRegion* region, const std::list<std::string>& args) override;
 
   using BoundaryOp::apply;
-  void apply(Field2D& f) override { throw BoutException("Not Implemented"); };
+  void apply(Field2D& UNUSED(f)) override { throw BoutException("Not Implemented"); };
 
   void apply(Field3D& f) override { apply(f, 0.0); };
   void apply(Field3D& f, BoutReal t) override;
@@ -119,10 +102,6 @@ private:
   void calc_interp_to_stencil(BoutReal x0, BoutReal x1, BoutReal x2, BoutReal& fac0,
                               BoutReal& fac1, BoutReal& fac2) const;
 };
-
-#include "boundary_op.hxx"
-
-#include <utility>
 
 class BoundaryFreeNonUniform_O3 : public BoundaryOp {
 public:
@@ -133,7 +112,7 @@ public:
   BoundaryOp* clone(BoundaryRegion* region, const std::list<std::string>& args) override;
 
   using BoundaryOp::apply;
-  void apply(Field2D& f) override { throw BoutException("Not Implemented"); };
+  void apply(Field2D& UNUSED(f)) override { throw BoutException("Not Implemented"); };
 
   void apply(Field3D& f) override { apply(f, 0.0); };
   void apply(Field3D& f, BoutReal t) override;
@@ -144,10 +123,6 @@ private:
                               BoutReal& fac1, BoutReal& fac2) const;
 };
 
-#include "boundary_op.hxx"
-
-#include <utility>
-
 class BoundaryDirichletNonUniform_O4 : public BoundaryOp {
 public:
   BoundaryDirichletNonUniform_O4() {}
@@ -157,7 +132,7 @@ public:
   BoundaryOp* clone(BoundaryRegion* region, const std::list<std::string>& args) override;
 
   using BoundaryOp::apply;
-  void apply(Field2D& f) override { throw BoutException("Not Implemented"); };
+  void apply(Field2D& UNUSED(f)) override { throw BoutException("Not Implemented"); };
 
   void apply(Field3D& f) override { apply(f, 0.0); };
   void apply(Field3D& f, BoutReal t) override;
@@ -168,10 +143,6 @@ private:
                               BoutReal& fac0, BoutReal& fac1, BoutReal& fac2,
                               BoutReal& fac3) const;
 };
-
-#include "boundary_op.hxx"
-
-#include <utility>
 
 class BoundaryNeumannNonUniform_O4 : public BoundaryOp {
 public:
@@ -182,7 +153,7 @@ public:
   BoundaryOp* clone(BoundaryRegion* region, const std::list<std::string>& args) override;
 
   using BoundaryOp::apply;
-  void apply(Field2D& f) override { throw BoutException("Not Implemented"); };
+  void apply(Field2D& UNUSED(f)) override { throw BoutException("Not Implemented"); };
 
   void apply(Field3D& f) override { apply(f, 0.0); };
   void apply(Field3D& f, BoutReal t) override;
@@ -194,10 +165,6 @@ private:
                               BoutReal& fac3) const;
 };
 
-#include "boundary_op.hxx"
-
-#include <utility>
-
 class BoundaryFreeNonUniform_O4 : public BoundaryOp {
 public:
   BoundaryFreeNonUniform_O4() {}
@@ -207,7 +174,7 @@ public:
   BoundaryOp* clone(BoundaryRegion* region, const std::list<std::string>& args) override;
 
   using BoundaryOp::apply;
-  void apply(Field2D& f) override { throw BoutException("Not Implemented"); };
+  void apply(Field2D& UNUSED(f)) override { throw BoutException("Not Implemented"); };
 
   void apply(Field3D& f) override { apply(f, 0.0); };
   void apply(Field3D& f, BoutReal t) override;
