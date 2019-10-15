@@ -97,7 +97,7 @@ TYPED_TEST(PetscVectorTest, MoveConstructor) {
 TYPED_TEST(PetscVectorTest, FieldAssignment) {
   SCOPED_TRACE("FieldAssignment");
   PetscVector<TypeParam> vector(this->field);
-  TypeParam val(-10.);
+  const TypeParam val(-10.);
   vector = val;
   Vec *vectorPtr = vector.getVectorPointer();
   PetscScalar *vecContents;

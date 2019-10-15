@@ -8,7 +8,7 @@
 
 #ifdef BOUT_HAS_PETSC
 
-///////////////// Test PetscVectorElement /////////////////
+///////////////// Test PetscVector::Element /////////////////
 
 class PetscVectorElementTest : public ::testing::Test {
 public:
@@ -30,11 +30,11 @@ public:
 };
 
 TEST_F(PetscVectorElementTest, AssignInsert) {
-  PetscVectorElement& v1 = PetscVectorElement::newElement(&v, 1),
-                    & v2 = PetscVectorElement::newElement(&v, 2),
-                    & v3 = PetscVectorElement::newElement(&v, 3),
-                    & v3b = PetscVectorElement::newElement(&v, 3),
-                    & v9 = PetscVectorElement::newElement(&v, 9);
+  PetscVector<Field3D>::Element v1 = PetscVector<Field3D>::Element(&v, 1),
+    v2 = PetscVector<Field3D>::Element(&v, 2),
+    v3 = PetscVector<Field3D>::Element(&v, 3),
+    v3b = PetscVector<Field3D>::Element(&v, 3),
+    v9 = PetscVector<Field3D>::Element(&v, 9);
   v1 = 1.5;
   v2 = 2.5;
   v3 = 3.5;
@@ -57,11 +57,11 @@ TEST_F(PetscVectorElementTest, AssignInsert) {
 }
 
 TEST_F(PetscVectorElementTest, AssignAdd) {
-  PetscVectorElement& v1 = PetscVectorElement::newElement(&v, 1),
-                    & v2 = PetscVectorElement::newElement(&v, 2),
-                    & v3 = PetscVectorElement::newElement(&v, 3),
-                    & v3b = PetscVectorElement::newElement(&v, 3),
-                    & v9 = PetscVectorElement::newElement(&v, 9);
+  PetscVector<Field3D>::Element v1 = PetscVector<Field3D>::Element(&v, 1),
+    v2 = PetscVector<Field3D>::Element(&v, 2),
+    v3 = PetscVector<Field3D>::Element(&v, 3),
+    v3b = PetscVector<Field3D>::Element(&v, 3),
+    v9 = PetscVector<Field3D>::Element(&v, 9);
   v1 += 1.5;
   v2 += 2.5;
   v3 += 3.5;
@@ -81,10 +81,6 @@ TEST_F(PetscVectorElementTest, AssignAdd) {
   EXPECT_DOUBLE_EQ(defaultVal, vecContents[7]);
   EXPECT_DOUBLE_EQ(defaultVal, vecContents[8]);
   EXPECT_DOUBLE_EQ(10.5, vecContents[9]);
-}
-
-TEST_F(PetscVectorElementTest, NoMixedSetting) {
-  
 }
 
 ///////////////// Test PetscMatrixElement /////////////////
@@ -131,18 +127,18 @@ public:
 };
 
 TEST_F(PetscMatrixElementTest, AssignInsert) {
-  PetscMatrixElement& v1_1 = PetscMatrixElement::newElement(&m, 1, 1),
-                    & v2_3 = PetscMatrixElement::newElement(&m, 2, 3),
-                    & v3_13 = PetscMatrixElement::newElement(&m, 3, 13,
-							     positions,
-							     weights),
-                    & v9_6 = PetscMatrixElement::newElement(&m, 9, 6),
-                    & v2_13 = PetscMatrixElement::newElement(&m, 2, 13,
-							     positions,
-							     weights),
-                    & v2_14 = PetscMatrixElement::newElement(&m, 2, 14),
-                    & v4_11 = PetscMatrixElement::newElement(&m, 4, 11),
-                    & v4_11b = PetscMatrixElement::newElement(&m, 4, 11);
+  PetscMatrix<Field3D>::Element v1_1 = PetscMatrix<Field3D>::Element(&m, 1, 1),
+    v2_3 = PetscMatrix<Field3D>::Element(&m, 2, 3),
+    v3_13 = PetscMatrix<Field3D>::Element(&m, 3, 13,
+					  positions,
+					  weights),
+    v9_6 = PetscMatrix<Field3D>::Element(&m, 9, 6),
+    v2_13 = PetscMatrix<Field3D>::Element(&m, 2, 13,
+					  positions,
+					  weights),
+    v2_14 = PetscMatrix<Field3D>::Element(&m, 2, 14),
+    v4_11 = PetscMatrix<Field3D>::Element(&m, 4, 11),
+    v4_11b = PetscMatrix<Field3D>::Element(&m, 4, 11);
   v1_1 = 1.5;
   v2_3 = 1.0;
   v3_13 = -3.5;
@@ -172,18 +168,18 @@ TEST_F(PetscMatrixElementTest, AssignInsert) {
 }
 
 TEST_F(PetscMatrixElementTest, AssignAdd) {
-  PetscMatrixElement& v1_1 = PetscMatrixElement::newElement(&m, 1, 1),
-                    & v2_3 = PetscMatrixElement::newElement(&m, 2, 3),
-                    & v3_13 = PetscMatrixElement::newElement(&m, 3, 13,
-							     positions,
-							     weights),
-                    & v9_6 = PetscMatrixElement::newElement(&m, 9, 6),
-                    & v2_13 = PetscMatrixElement::newElement(&m, 2, 13,
-							     positions,
-							     weights),
-                    & v2_14 = PetscMatrixElement::newElement(&m, 2, 14),
-                    & v4_11 = PetscMatrixElement::newElement(&m, 4, 11),
-                    & v4_11b = PetscMatrixElement::newElement(&m, 4, 11);
+  PetscMatrix<Field3D>::Element v1_1 = PetscMatrix<Field3D>::Element(&m, 1, 1),
+    v2_3 = PetscMatrix<Field3D>::Element(&m, 2, 3),
+    v3_13 = PetscMatrix<Field3D>::Element(&m, 3, 13,
+					  positions,
+					  weights),
+    v9_6 = PetscMatrix<Field3D>::Element(&m, 9, 6),
+    v2_13 = PetscMatrix<Field3D>::Element(&m, 2, 13,
+					  positions,
+					  weights),
+    v2_14 = PetscMatrix<Field3D>::Element(&m, 2, 14),
+    v4_11 = PetscMatrix<Field3D>::Element(&m, 4, 11),
+    v4_11b = PetscMatrix<Field3D>::Element(&m, 4, 11);
   v1_1 += 1.5;
   v2_3 += 1.0;
   v3_13 += -3.5;
