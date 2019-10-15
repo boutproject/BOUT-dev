@@ -69,9 +69,9 @@ public:
   
   /// Convert the local index object to a global index which can be
   /// used in PETSc vectors and matrices.
-  PetscInt getGlobal(Ind2D ind);
-  PetscInt getGlobal(Ind3D ind);
-  PetscInt getGlobal(IndPerp ind);
+  PetscInt getGlobal(const Ind2D ind);
+  PetscInt getGlobal(const Ind3D ind);
+  PetscInt getGlobal(const IndPerp ind);
 
 protected:
   GlobalIndexer(Mesh* localmesh);
@@ -243,7 +243,7 @@ public:
     PetscInt petscIndex;
   };
   
-  Element operator()(ind_type& index) {
+  Element operator()(const ind_type& index) {
 #if CHECKLEVEL >= 1
     if (!initialised) {
       throw BoutException("Can not return element of uninitialised vector");
@@ -437,7 +437,7 @@ public:
     std::vector<BoutReal> weights;
   };
   
-  Element operator()(ind_type& index1, ind_type& index2) {
+  Element operator()(const ind_type& index1, const ind_type& index2) {
     const int global1 = indexConverter->getGlobal(index1),
               global2 = indexConverter->getGlobal(index2);
 #if CHECKLEVEL >= 1

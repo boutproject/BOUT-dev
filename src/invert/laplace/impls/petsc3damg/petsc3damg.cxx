@@ -35,18 +35,18 @@
 #include <derivs.hxx>
 #include <bout/petsc_interface.hxx>
 
-#define KSP_RICHARDSON "richardson"
-#define KSP_CHEBYSHEV   "chebyshev"
-#define KSP_CG          "cg"
-#define KSP_GMRES       "gmres"
-#define KSP_TCQMR       "tcqmr"
-#define KSP_BCGS        "bcgs"
-#define KSP_CGS         "cgs"
-#define KSP_TFQMR       "tfqmr"
-#define KSP_CR          "cr"
-#define KSP_LSQR        "lsqr"
-#define KSP_BICG        "bicg"
-#define KSP_PREONLY     "preonly"
+constexpr auto KSP_RICHARDSON = "richardson";
+constexpr auto KSP_CHEBYSHEV  = "chebyshev";
+constexpr auto KSP_CG         = "cg";
+constexpr auto KSP_GMRES      = "gmres";
+constexpr auto KSP_TCQMR      = "tcqmr";
+constexpr auto KSP_BCGS       = "bcgs";
+constexpr auto KSP_CGS        = "cgs";
+constexpr auto KSP_TFQMR      = "tfqmr";
+constexpr auto KSP_CR         = "cr";
+constexpr auto KSP_LSQR       = "lsqr";
+constexpr auto KSP_BICG       = "bicg";
+constexpr auto KSP_PREONLY    = "preonly";
 
 LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mesh_in) :
   Laplacian(opt, loc, mesh_in),
@@ -66,8 +66,11 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mes
   Ez.setLocation(location);
 
   // Get Options in Laplace Section
-  if (!opt) opts = Options::getRoot()->getSection("laplace");
-  else opts=opt;
+  if (!opt) {
+    opts = Options::getRoot()->getSection("laplace");
+  } else {
+    opts=opt;
+  }
 
   // Get y boundary flags
   lower_boundary_flags = (*opts)["lower_boundary_flags"].withDefault(0);
@@ -429,34 +432,26 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
   BOUT_FOR(l, localmesh->getRegion3D("RGN_NOBNDRY")) {
     // Index is called l for "location". It is not called i so as to
     // avoid confusing it with the x-index.
-    Ind3D lxp = l.xp(), lxm = l.xm(), lyp = l.yp(), lym = l.ym(),
-      lzp = l.zp(), lzm = l.zm();
-    Ind3D lxpyp = l.xp().yp(), lxpym = l.xp().ym(),
-      lxmyp = l.xm().yp(), lxmym = l.xm().ym();
-    Ind3D lxpzp = l.xp().zp(), lxpzm = l.xp().zm(),
-      lxmzp = l.xm().zp(), lxmzm = l.xm().zm();
-    Ind3D lypzp = l.yp().zp(), lypzm = l.yp().zm(),
-      lymzp = l.ym().zp(), lymzm = l.ym().zm();
 
     operator3D(l, l) = -2*(C_d2f_dx2[l] + C_d2f_dy2[l] + C_d2f_dz2[l]) + A[l];
-    operator3D(l, lxp) = C_df_dx[l] + C_d2f_dx2[l];
-    operator3D(l, lxm) = -C_df_dx[l] + C_d2f_dx2[l];
-    operator3D.yup()(l, lyp) = C_df_dy[l] + C_d2f_dy2[l];
-    operator3D.ydown()(l, lym) = -C_df_dy[l] + C_d2f_dy2[l];
-    operator3D(l, lzp) = C_df_dz[l] + C_d2f_dz2[l];
-    operator3D(l, lzm) = -C_df_dz[l] + C_d2f_dz2[l];
-    operator3D.yup()(l, lxpyp) = C_d2f_dxdy[l]/coords->dy[lxp];
-    operator3D.ydown()(l, lxpym) = -C_d2f_dxdy[l]/coords->dy[lxp];
-    operator3D.yup()(l, lxmyp) = -C_d2f_dxdy[l]/coords->dy[lxm];
-    operator3D.ydown()(l, lxmym) = C_d2f_dxdy[l]/coords->dy[lxm];
-    operator3D(l, lxpzp) = C_d2f_dxdz[l];
-    operator3D(l, lxpzm) = -C_d2f_dxdz[l];
-    operator3D(l, lxmzp) = -C_d2f_dxdz[l];
-    operator3D(l, lxmzm) = C_d2f_dxdz[l];
-    operator3D.yup()(l, lypzp) = C_d2f_dydz[l];
-    operator3D.yup()(l, lypzm) = -C_d2f_dydz[l];
-    operator3D.ydown()(l, lymzp) = -C_d2f_dydz[l];
-    operator3D.ydown()(l, lymzm) = C_d2f_dydz[l];
+    operator3D(l, l.xp()) = C_df_dx[l] + C_d2f_dx2[l];
+    operator3D(l, l.xm()) = -C_df_dx[l] + C_d2f_dx2[l];
+    operator3D.yup()(l, l.yp()) = C_df_dy[l] + C_d2f_dy2[l];
+    operator3D.ydown()(l, l.ym()) = -C_df_dy[l] + C_d2f_dy2[l];
+    operator3D(l, l.zp()) = C_df_dz[l] + C_d2f_dz2[l];
+    operator3D(l, l.zm()) = -C_df_dz[l] + C_d2f_dz2[l];
+    operator3D.yup()(l, l.xp().yp()) = C_d2f_dxdy[l]/coords->dy[l.xp()];
+    operator3D.ydown()(l, l.xp().ym()) = -C_d2f_dxdy[l]/coords->dy[l.xp()];
+    operator3D.yup()(l, l.xm().yp()) = -C_d2f_dxdy[l]/coords->dy[l.xm()];
+    operator3D.ydown()(l, l.xm().ym()) = C_d2f_dxdy[l]/coords->dy[l.xm()];
+    operator3D(l, l.xp().zp()) = C_d2f_dxdz[l];
+    operator3D(l, l.xp().zm()) = -C_d2f_dxdz[l];
+    operator3D(l, l.xm().zp()) = -C_d2f_dxdz[l];
+    operator3D(l, l.xm().zm()) = C_d2f_dxdz[l];
+    operator3D.yup()(l, l.yp().zp()) = C_d2f_dydz[l];
+    operator3D.yup()(l, l.yp().zm()) = -C_d2f_dydz[l];
+    operator3D.ydown()(l, l.ym().zp()) = -C_d2f_dydz[l];
+    operator3D.ydown()(l, l.ym().zm()) = C_d2f_dydz[l];
   }
   operator3D.assemble();
   PetscViewer view;

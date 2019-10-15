@@ -83,15 +83,15 @@ Mesh* GlobalIndexer::getMesh() {
   return fieldmesh;
 }
 
-PetscInt GlobalIndexer::getGlobal(Ind2D ind) {
+PetscInt GlobalIndexer::getGlobal(const Ind2D ind) {
   return static_cast<PetscInt>(indices2D[ind] + 0.5);
 }
 
-PetscInt GlobalIndexer::getGlobal(Ind3D ind) {
+PetscInt GlobalIndexer::getGlobal(const Ind3D ind) {
   return static_cast<PetscInt>(indices3D[ind] + 0.5);
 }
 
-PetscInt GlobalIndexer::getGlobal(IndPerp ind) {
+PetscInt GlobalIndexer::getGlobal(const IndPerp ind) {
   return static_cast<PetscInt>(indicesPerp[ind] + 0.5);
 }
 
