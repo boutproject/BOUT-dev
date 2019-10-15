@@ -90,7 +90,6 @@ TYPED_TEST(PetscVectorTest, MoveConstructor) {
   PetscVector<TypeParam> moved(std::move(vector));
   Vec movedPtr = *moved.getVectorPointer();
   EXPECT_EQ(vectorPtr, movedPtr);
-  EXPECT_EQ(*vector.getVectorPointer(), nullptr);
 }
 
 // Test assignment from field
@@ -131,7 +130,6 @@ TYPED_TEST(PetscVectorTest, MoveAssignment) {
   PetscVector<TypeParam> moved = std::move(vector);
   Vec movedPtr = *moved.getVectorPointer();
   EXPECT_EQ(vectorPtr, movedPtr);
-  EXPECT_EQ(*vector.getVectorPointer(), nullptr);
 }
 
 // Test getting elements
@@ -195,10 +193,11 @@ TYPED_TEST(PetscVectorTest, TestMixedSetting) {
 // Test destroy
 TYPED_TEST(PetscVectorTest, TestDestroy) {
   PetscVector<TypeParam> vector(this->field);
+  Vec oldVec = *vector.getVectorPointer();
   Vec newVec;
   PetscErrorCode err;
   vector.destroy();
-  err = VecDuplicate(*vector.getVectorPointer(), &newVec);
+  err = VecDuplicate(oldVec, &newVec);
   ASSERT_NE(err, 0); // If original vector was destroyed, should not
 		     // be able to duplicate it.
 }

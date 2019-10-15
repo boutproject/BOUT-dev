@@ -111,13 +111,21 @@ class PetscVector {
 public:
   static_assert(bout::utils::is_Field<T>::value, "PetscVector only works with Fields");
   using ind_type = typename T::ind_type;
+
+  struct VectorDeleter { 
+    void operator()(Vec* v) const {
+      VecDestroy(v);
+      delete v;
+    }
+  };
+
   /// Default constructor does nothing
-  PetscVector() = default;
-  
+  PetscVector() : vector(new Vec(), VectorDeleter()) {}
+
   /// Copy constructor
-  PetscVector(const PetscVector<T>& v) {
-    VecDuplicate(v.vector, &vector);
-    VecCopy(v.vector, vector);
+  PetscVector(const PetscVector<T>& v) : vector(new Vec(), VectorDeleter()) {
+    VecDuplicate(*v.vector, vector.get());
+    VecCopy(*v.vector, *vector);
     indexConverter = v.indexConverter;
     location = v.location;
     initialised = v.initialised;
@@ -125,16 +133,15 @@ public:
 
   /// Move constrcutor
   PetscVector(PetscVector<T>&& v) {
-    vector = v.vector;
+    std::swap(vector, v.vector);
     indexConverter = v.indexConverter;
     location = v.location;
     initialised = v.initialised;
-    v.vector = nullptr;
     v.initialised = false;
   }
 
   /// Construct from a field, copying over the field values
-  PetscVector(const T &f) {
+  PetscVector(const T &f) : vector(new Vec(), VectorDeleter()) {
     MPI_Comm comm;
     if (std::is_same<T, FieldPerp>::value) {
       comm = f.getMesh()->getXcomm();
@@ -152,14 +159,14 @@ public:
     } else {
       throw BoutException("PetscVector initialised for non-field type.");
     }
-    VecCreateMPI(comm, size, PETSC_DECIDE, &vector);
+    VecCreateMPI(comm, size, PETSC_DECIDE, vector.get());
     location = f.getLocation();
     initialised = true;
     PetscInt ind;
     BOUT_FOR(i, f.getRegion(RGN_ALL)) {
       ind = indexConverter->getGlobal(i);
       if (ind != -1) {
-	VecSetValues(vector, 1, &ind, &f[i], INSERT_VALUES);
+	VecSetValues(*vector, 1, &ind, &f[i], INSERT_VALUES);
       }
     }
     assemble();
@@ -167,7 +174,7 @@ public:
 
   /// Construct a vector like v, but using data from a raw PETSc
   /// Vec. That Vec (not a copy) will then be owned by the new object.
-  PetscVector(const PetscVector<T> v, Vec vec) {
+  PetscVector(const PetscVector<T> v, Vec* vec) {
 #if CHECKLEVEL >= 2
     int fsize, msize;
     if (std::is_same<T, FieldPerp>::value) {
@@ -179,20 +186,13 @@ public:
     } else {
       throw BoutException("PetscVector initialised for non-field type.");
     }
-    VecGetSize(vec, &msize);
+    VecGetSize(*vec, &msize);
     ASSERT2(fsize == msize);
 #endif
-    vector = vec;
+    vector.reset(vec);
     indexConverter = v.indexConverter;
     location = v.location;
     initialised = true;
-}
-
-  ~PetscVector() {
-    // FIXME: Should I add a check to ensure the vector has actually been created in the first place? Is that possible in Petsc?
-    if (vector != nullptr && initialised) {
-      VecDestroy(&vector);
-    }
   }
 
   /// Copy assignment
@@ -242,7 +242,7 @@ public:
     }
 
   private:
-    Vec* petscVector;
+    Vec* petscVector = nullptr;
     PetscInt petscIndex;
   };
   
@@ -258,18 +258,18 @@ public:
       throw BoutException("Request to return invalid vector element");
     }
 #endif
-    return Element(&vector, global);
+    return Element(vector.get(), global);
   }
   
   void assemble() {
-    VecAssemblyBegin(vector);
-    VecAssemblyEnd(vector);
+    VecAssemblyBegin(*vector);
+    VecAssemblyEnd(*vector);
   }
   
   void destroy() {
-    if (vector != nullptr && initialised) {
-      VecDestroy(&vector);
-      vector = nullptr;
+    if (*vector != nullptr && initialised) {
+      VecDestroy(vector.get());
+      *vector = nullptr;
       initialised = false;
     }
   }
@@ -287,7 +287,7 @@ public:
       if (ind == -1) {
 	result[i] = -1.0;
       } else {
-	VecGetValues(vector, 1, &ind, &val);
+	VecGetValues(*vector, 1, &ind, &val);
 	result[i] = val;
       }
     }
@@ -296,11 +296,11 @@ public:
 
   /// Provides a reference to the raw PETSc Vec object.
   Vec* getVectorPointer() {
-    return &vector;
+    return vector.get();
   }
 
 private:
-  Vec vector = nullptr;
+  std::unique_ptr<Vec, VectorDeleter> vector = nullptr;
   IndexerPtr indexConverter;
   CELL_LOC location;
   bool initialised = false;
@@ -563,11 +563,12 @@ void swap(PetscMatrix<T>& first, PetscMatrix<T>& second) {
  */
 template <class T>
 PetscVector<T> operator*(PetscMatrix<T>& mat, PetscVector<T>& vec) {
-  Vec rhs = *vec.getVectorPointer(), result;
-  VecDuplicate(rhs, &result);
-  VecAssemblyBegin(result);
-  VecAssemblyEnd(result);  
-  int err = MatMult(*mat.getMatrixPointer(), rhs, result);
+  Vec rhs = *vec.getVectorPointer();
+  Vec* result = new Vec();
+  VecDuplicate(rhs, result);
+  VecAssemblyBegin(*result);
+  VecAssemblyEnd(*result);  
+  int err = MatMult(*mat.getMatrixPointer(), rhs, *result);
   ASSERT2(err == 0);
   return PetscVector<T>(vec, result);
 }

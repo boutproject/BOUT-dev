@@ -218,10 +218,11 @@ TYPED_TEST(PetscMatrixTest, TestMixedSetting) {
 // Test destroy
 TYPED_TEST(PetscMatrixTest, TestDestroy) {
   PetscMatrix<TypeParam> matrix(this->field);
+  Mat oldMat = *matrix.getMatrixPointer();
   Mat newMat;
   PetscErrorCode err;
   matrix.destroy();
-  err = MatDuplicate(*matrix.getMatrixPointer(), MAT_COPY_VALUES, &newMat);
+  err = MatDuplicate(oldMat, MAT_COPY_VALUES, &newMat);
   ASSERT_NE(err, 0); // If original matrix was destroyed, should not
 		     // be able to duplicate it.
 }
