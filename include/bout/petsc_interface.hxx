@@ -52,7 +52,8 @@ using InterpolationWeights = std::vector<ParallelTransform::positionsAndWeights>
  * fields and returns a global index. This index can be used when
  * constructing PETSc arrays. Guard regions used for communication
  * between processes will have the indices of the part of the interior
- * region they are mirroring.
+ * region they are mirroring. Boundaries will have unique indices, but
+ * are only included to a depth of 1.
  */
 class GlobalIndexer {
 public:
@@ -160,7 +161,8 @@ private:
 
 /*!
  * A class which wraps PETSc vector objects, allowing them to be
- * indexed using the BOUT++ scheme.
+ * indexed using the BOUT++ scheme. Note that boundaries are only
+ * included in the vector to a depth of 1.
  */
 template<class F> class PetscVector;
 template<class F> void swap(PetscVector<F>& first, PetscVector<F>& second);

@@ -129,8 +129,8 @@ GlobalIndexer::GlobalIndexer(Mesh* localmesh) : fieldmesh(localmesh),
   }
   BOUT_FOR(i, localmesh->getRegion3D("RGN_NOY")) {
     if ((i.x() >= localmesh->xstart && i.x() <= localmesh->xend) ||
-	(i.x() < localmesh->xstart && localmesh->firstX()) ||
-	(i.x() > localmesh->xend && localmesh->lastX())) {
+	(i.x() == localmesh->xstart - 1 && localmesh->firstX()) ||
+	(i.x() == localmesh->xend + 1 && localmesh->lastX())) {
       indices3D[i] = counter++;
     }
   }
@@ -149,8 +149,8 @@ GlobalIndexer::GlobalIndexer(Mesh* localmesh) : fieldmesh(localmesh),
   }
   BOUT_FOR(i, localmesh->getRegion2D("RGN_NOY")) {
     if ((i.x() >= localmesh->xstart && i.x() <= localmesh->xend) ||
-	(i.x() < localmesh->xstart && localmesh->firstX()) ||
-	(i.x() > localmesh->xend && localmesh->lastX())) {
+	(i.x() == localmesh->xstart - 1 && localmesh->firstX()) ||
+	(i.x() == localmesh->xend + 1&& localmesh->lastX())) {
       indices2D[i] = counter++;
     }
   }
@@ -160,8 +160,8 @@ GlobalIndexer::GlobalIndexer(Mesh* localmesh) : fieldmesh(localmesh),
   counter = localmesh->globalStartIndexPerp();
   BOUT_FOR(i, localmesh->getRegionPerp("RGN_NOY")) {
     if ((i.x() >= localmesh->xstart && i.x() <= localmesh->xend) ||
-	(i.x() < localmesh->xstart && localmesh->firstX()) ||
-	(i.x() > localmesh->xend && localmesh->lastX())) {
+	(i.x() == localmesh->xstart - 1 && localmesh->firstX()) ||
+	(i.x() == localmesh->xend + 1 && localmesh->lastX())) {
       indicesPerp[i] = counter++;
     }
   }
