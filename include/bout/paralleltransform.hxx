@@ -154,7 +154,7 @@ public:
     return result.setDirectionY(YDirectionType::Standard);
   }
 
-  virtual std::vector<positionsAndWeights> getWeightsForYApproximation(int i,
+  virtual std::vector<PositionsAndWeights> getWeightsForYApproximation(int i,
       int j, int k, int UNUSED(yoffset)) override {
     return {{i, j, k, 1.0}};
   }
