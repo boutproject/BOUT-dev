@@ -239,7 +239,7 @@ T D4DY4(const T& f, CELL_LOC outloc = CELL_DEFAULT, const std::string& method = 
     return standardDerivative<T, DIRECTION::YOrthogonal, DERIV::StandardFourth>(
         f, outloc, method, region);
   } else {
-    const bool is_unaligned = (f.getDirectionY() == YDirectionType::Aligned);
+    const bool is_unaligned = (f.getDirectionY() == YDirectionType::Standard);
     const T f_aligned = is_unaligned ? toFieldAligned(f, "RGN_NOX") : f;
     T result = standardDerivative<T, DIRECTION::Y, DERIV::StandardFourth>(
         f_aligned, outloc, method, region);
