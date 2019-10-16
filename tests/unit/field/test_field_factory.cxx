@@ -779,8 +779,18 @@ public:
     return -f;
   }
 
-  const Field3D toFieldAligned(const Field3D& f, const std::string&) override { return -f; }
-  const FieldPerp toFieldAligned(const FieldPerp& f, const std::string&) override { return -f; }
+  const Field3D toFieldAligned(const Field3D& f, const std::string&) override {
+    if (f.getDirectionY() != YDirectionType::Standard) {
+      throw BoutException("Aligned field passed to toFieldAligned");
+    }
+    return -f;
+  }
+  const FieldPerp toFieldAligned(const FieldPerp& f, const std::string&) override {
+    if (f.getDirectionY() != YDirectionType::Standard) {
+      throw BoutException("Aligned field passed to toFieldAligned");
+    }
+    return -f;
+  }
 
 private:
   const bool allow_transform;
