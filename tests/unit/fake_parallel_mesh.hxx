@@ -172,9 +172,9 @@ public:
 							    int nxpe, int nype);
 private:
   FakeParallelMesh *yUpMesh, *yDownMesh, *xInMesh, *xOutMesh;
-  std::map<FieldData*, int, std::less<void> > registeredFields;
+  std::map<FieldData*, int> registeredFields;
   std::map<int, FieldData*> registeredFieldIds;
-  std::map<FieldPerp*, int, std::less<void> > registeredFieldPerps;
+  std::map<FieldPerp*, int> registeredFieldPerps;
   std::map<int, FieldPerp*> registeredFieldPerpIds;
 
   int local3D, local2D, localPerp;

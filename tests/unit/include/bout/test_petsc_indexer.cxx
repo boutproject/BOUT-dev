@@ -170,6 +170,8 @@ private:
 
 class ParallelIndexerTest : public ::testing::TestWithParam<std::tuple<int, int, int, int> > {
 public:
+  WithQuietOutput info{output_info}, warn{output_warn}, all{output};
+
   ParallelIndexerTest() {
     nxpe = std::get<0>(GetParam());
     nype = std::get<1>(GetParam());

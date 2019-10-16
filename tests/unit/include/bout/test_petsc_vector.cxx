@@ -24,10 +24,16 @@ using namespace bout::globals;
 template <typename F>
 class PetscVectorTest : public FakeMeshFixture {
 public:
+  WithQuietOutput all{output};
   F field;
   PetscVectorTest() : FakeMeshFixture(), field(bout::globals::mesh) {
     field.allocate();
     field = 1.5;
+    PetscErrorPrintf = PetscErrorPrintfNone;
+  }
+
+  ~PetscVectorTest() {
+    PetscErrorPrintf = PetscErrorPrintfDefault;
   }
 };
 
