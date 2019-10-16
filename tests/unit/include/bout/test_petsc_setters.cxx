@@ -12,6 +12,7 @@
 
 class PetscVectorElementTest : public ::testing::Test {
 public:
+  WithQuietOutput all{output};
   Vec v;
   PetscInt n = 10;
   PetscScalar defaultVal = 1.;
@@ -87,6 +88,7 @@ TEST_F(PetscVectorElementTest, AssignAdd) {
 
 class PetscMatrixElementTest : public ::testing::Test {
 public:
+  WithQuietOutput all{output};
   Mat m;
   Vec b, x;
   PetscInt n1 = 10, n2 = 15;

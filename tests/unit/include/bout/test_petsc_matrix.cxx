@@ -36,11 +36,13 @@ public:
 template <typename F>
 class PetscMatrixTest : public FakeMeshFixture {
 public:
+  WithQuietOutput all{output};
   F field;
   using ind_type = typename F::ind_type;
   MockTransform* pt;
   std::vector<ParallelTransform::PositionsAndWeights> yUpWeights, yDownWeights;
   typename F::ind_type indexA, indexB, iWU0, iWU1, iWU2, iWD0, iWD1, iWD2;
+  
   PetscMatrixTest() : FakeMeshFixture(), field(bout::globals::mesh) {
     indexA = ind_type(field.getNy() * field.getNz() + 1, field.getNy(), field.getNz());
     if (std::is_same<F, FieldPerp>::value) {
@@ -71,6 +73,11 @@ public:
     yDownWeights = {wDown0, wDown1, wDown2};
     pt = transform.get();
     field.getCoordinates()->setParallelTransform(std::move(transform));
+    PetscErrorPrintf = PetscErrorPrintfNone;
+  }
+
+  ~PetscMatrixTest() {
+    PetscErrorPrintf = PetscErrorPrintfDefault;
   }
 };
 
