@@ -84,6 +84,12 @@ TEST_F(PetscVectorElementTest, AssignAdd) {
   EXPECT_DOUBLE_EQ(10.5, vecContents[9]);
 }
 
+TEST_F(PetscVectorElementTest, ConvertToBoutReal) {
+  PetscVector<Field3D>::Element v1 = PetscVector<Field3D>::Element(&v, 1);
+  BoutReal val = v1;
+  EXPECT_DOUBLE_EQ(defaultVal, val);
+}
+
 ///////////////// Test PetscMatrixElement /////////////////
 
 class PetscMatrixElementTest : public ::testing::Test {
