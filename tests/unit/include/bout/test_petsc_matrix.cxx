@@ -76,7 +76,7 @@ public:
     PetscErrorPrintf = PetscErrorPrintfNone;
   }
 
-  ~PetscMatrixTest() {
+  virtual ~PetscMatrixTest() {
     PetscErrorPrintf = PetscErrorPrintfDefault;
   }
 };

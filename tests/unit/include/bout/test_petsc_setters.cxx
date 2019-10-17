@@ -25,7 +25,7 @@ public:
     VecAssemblyEnd(v);
   }
 
-  ~PetscVectorElementTest() {
+  virtual ~PetscVectorElementTest() {
     VecDestroy(&v);
   }
 };
@@ -121,7 +121,7 @@ public:
     weights.push_back(-1.0);
   }
 
-  ~PetscMatrixElementTest() {
+  virtual ~PetscMatrixElementTest() {
     MatDestroy(&m);
     VecDestroy(&b);
     VecDestroy(&x);

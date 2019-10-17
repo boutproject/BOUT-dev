@@ -198,6 +198,9 @@ public:
     localmesh = &meshes[pe_yind + pe_xind*nype];
   }
 
+  virtual ~ParallelIndexerTest() {
+  }
+
   static constexpr int nx = 7;
   static constexpr int ny = 5;
   static constexpr int nz = 3;

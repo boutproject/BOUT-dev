@@ -32,7 +32,7 @@ public:
     PetscErrorPrintf = PetscErrorPrintfNone;
   }
 
-  ~PetscVectorTest() {
+  virtual ~PetscVectorTest() {
     PetscErrorPrintf = PetscErrorPrintfDefault;
   }
 };
