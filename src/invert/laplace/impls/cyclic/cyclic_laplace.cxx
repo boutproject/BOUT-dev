@@ -232,19 +232,19 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
       auto k1d = Array<dcomplex>((localmesh->LocalNz) / 2 +
                                  1); // ZFFT routine expects input of this length
 
-      int startz = 0;
+      bool zero_DC = false;
       if(global_flags & INVERT_ZERO_DC) {
         // No DC component
-        startz = 1;
+        zero_DC = true;
       }
 
       BOUT_OMP(for nowait)
       for (int ix = xs; ix <= xe; ix++) {
-        if (startz == 1) {
+        if (zero_DC) {
           k1d[0] = 0.;
         }
 
-        for (int kz = startz; kz < nmode; kz++)
+        for (int kz = zero_DC; kz < nmode; kz++)
           k1d[kz] = xcmplx(kz, ix - xs);
 
         for (int kz = nmode; kz < (localmesh->LocalNz) / 2 + 1; kz++)
@@ -450,10 +450,10 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
       auto k1d = Array<dcomplex>((localmesh->LocalNz) / 2 +
                                  1); // ZFFT routine expects input of this length
 
-      int startz = 0;
+      bool zero_DC = false;
       if(global_flags & INVERT_ZERO_DC) {
         // No DC component
-        startz = 1;
+        zero_DC = true;
       }
 
       BOUT_OMP(for nowait)
@@ -462,11 +462,11 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
         int ix = xs + ind / ny;
         int iy = ys + ind % ny;
 
-        if (startz == 1) {
+        if (zero_DC) {
           k1d[0] = 0.;
         }
 
-        for (int kz = startz; kz < nmode; kz++)
+        for (int kz = zero_DC; kz < nmode; kz++)
           k1d[kz] = xcmplx3D((iy - ys) * nmode + kz, ix - xs);
 
         for (int kz = nmode; kz < localmesh->LocalNz / 2 + 1; kz++)
