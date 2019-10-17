@@ -29,9 +29,14 @@ static PetscErrorCode laplacePCapply(PC pc,Vec x,Vec y) {
   PetscFunctionReturn(s->precon(x, y));
 }
 
+int LaplaceXY::instance_count = 0;
+
 LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
-    : localmesh(m==nullptr ? bout::globals::mesh : m), location(loc) {
+    : localmesh(m==nullptr ? bout::globals::mesh : m), location(loc), monitor(*this) {
   Timer timer("invert");
+
+  instance_count++;
+  my_id = instance_count;
 
   if (opt == nullptr) {
     // If no options supplied, use default
@@ -1515,6 +1520,17 @@ const Field2D LaplaceXY::solve(const Field2D &rhs, const Field2D &x0) {
   if(reason <= 0) {
     throw BoutException("LaplaceXY failed to converge. Reason %d", reason);
   }
+
+  if (save_performance) {
+    // Update performance monitoring information
+    n_calls++;
+
+    int iterations = 0;
+    KSPGetIterationNumber(ksp, &iterations);
+
+    average_iterations = BoutReal(n_calls - 1)/BoutReal(n_calls)*average_iterations
+                         + BoutReal(iterations)/BoutReal(n_calls);
+  }
   
   //////////////////////////
   // Copy data into result
@@ -1693,5 +1709,24 @@ int LaplaceXY::globalIndex(int x, int y) {
  
   // Get the index from a Field2D, round to integer
   return static_cast<int>(std::round(indexXY(x, y)));
+}
+
+void LaplaceXY::savePerformance(Datafile& output_file, Solver& solver,
+                                std::string name) {
+  // set flag so that performance monitoring values are calculated
+  save_performance = true;
+
+  // add values to be saved to the output
+  if (name == "") {
+    name = "laplacexy";
+    if (my_id > 1) {
+      name += std::to_string(my_id);
+    }
+  }
+  output_file.addRepeat(output_average_iterations, name + "_average_iterations");
+
+  // add monitor to reset counters/averages for new output timestep
+  // monitor added to back of queue, so that values are reset after being saved
+  solver.addMonitor(&monitor, Solver::BACK);
 }
 #endif // BOUT_HAS_PETSC
