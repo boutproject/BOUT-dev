@@ -199,6 +199,7 @@ public:
   }
 
   virtual ~ParallelIndexerTest() {
+    bout::globals::mesh = nullptr;
   }
 
   static constexpr int nx = 7;
