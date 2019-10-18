@@ -41,7 +41,7 @@ int EulerSolver::init(int nout, BoutReal tstep) {
   
   // Get total problem size
   int neq;
-  if(MPI_Allreduce(&nlocal, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
+  if(bout::globals::mpi->MPI_Allreduce(&nlocal, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
     throw BoutException("MPI_Allreduce failed in EulerSolver::init");
   }
   
@@ -88,7 +88,7 @@ int EulerSolver::run() {
         newdt_local = timestep;
       
       BoutReal newdt;
-      if(MPI_Allreduce(&newdt_local, &newdt, 1, MPI_DOUBLE, MPI_MIN, BoutComm::get())) {
+      if(bout::globals::mpi->MPI_Allreduce(&newdt_local, &newdt, 1, MPI_DOUBLE, MPI_MIN, BoutComm::get())) {
         throw BoutException("MPI_Allreduce failed in EulerSolver::run");
       }
 

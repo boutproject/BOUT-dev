@@ -7,8 +7,10 @@
 #include <numeric>
 #include <functional>
 #include <map>
+#include <memory>
 
 #include "boutcomm.hxx"
+#include "bout/mpi_wrapper.hxx"
 #include "bout/mesh.hxx"
 #include "bout/coordinates.hxx"
 #include "bout/fieldgroup.hxx"
@@ -42,15 +44,15 @@ class Options;
 class FakeParallelMesh : public BoutMesh {
 public:
   FakeParallelMesh(int nx, int ny, int nz, int nxpe, int nype, int pe_xind, int pe_yind) :
-    BoutMesh((nxpe*(nx-2))+2, nype*ny, nz, 1, 1, nxpe, nype, pe_xind, pe_yind), yUpMesh(nullptr),
-    yDownMesh(nullptr), xInMesh(nullptr), xOutMesh(nullptr)
-  {
+    BoutMesh((nxpe*(nx-2))+2, nype*ny, nz, 1, 1, nxpe, nype, pe_xind, pe_yind),
+    yUpMesh(nullptr), yDownMesh(nullptr), xInMesh(nullptr), xOutMesh(nullptr),
+    mpiSmart(new FakeMpiWrapper(this)) {
     StaggerGrids=false;
     periodicX = false;
     IncIntShear = false;
     calcParallelSlices_on_communicate = true;
     options = Options::getRoot();
-    wait_any_count = -1;
+    mpi = mpiSmart.get();
   }
 
   void initDerivs(Options * opt){
@@ -66,7 +68,7 @@ public:
     source = source_in;
   }
 
-  // Use this if the FakeMesh needs x- and y-boundaries
+  // Use this if the FakeParallelMesh needs x- and y-boundaries
   void createBoundaries() {
     addBoundary(new BoundaryRegionXIn("core", ystart, yend, this));
     addBoundary(new BoundaryRegionXOut("sol", ystart, yend, this));
@@ -170,57 +172,69 @@ public:
 
   friend std::vector<FakeParallelMesh> createFakeProcessors(int nx, int ny, int nz,
 							    int nxpe, int nype);
+
+  class FakeMpiWrapper : public MpiWrapper {
+  public:
+    FakeParallelMesh* mesh;
+    FakeMpiWrapper(FakeParallelMesh* parent_mesh) : mesh(parent_mesh), wait_any_count(-1) {}
+    
+    virtual int MPI_Irecv(void *UNUSED(buf), int UNUSED(count), MPI_Datatype UNUSED(datatype),
+                          int UNUSED(source), int UNUSED(tag), MPI_Comm UNUSED(comm),
+                          MPI_Request *UNUSED(request)) override {
+      return 0;
+    }
+    virtual int MPI_Isend(const void *UNUSED(buf), int UNUSED(count),
+                          MPI_Datatype UNUSED(datatype), int UNUSED(dest), int UNUSED(tag),
+                          MPI_Comm UNUSED(comm), MPI_Request *UNUSED(request)) override {
+      return 0;
+    }
+    virtual int MPI_Send(const void *UNUSED(buf), int UNUSED(count),
+                         MPI_Datatype UNUSED(datatype), int UNUSED(dest), int UNUSED(tag),
+                         MPI_Comm UNUSED(comm)) override {
+      return 0;
+    }
+    virtual int MPI_Wait(MPI_Request *UNUSED(request), MPI_Status *UNUSED(status)) override {
+      return 0;
+    }
+    virtual int MPI_Waitany(int UNUSED(count), MPI_Request UNUSED(array_of_requests[]),
+                            int *indx, MPI_Status *UNUSED(status)) override {
+      if (mesh->yUpMesh && wait_any_count < 0 && mesh->UpXSplitIndex() > 0) {
+        *indx = wait_any_count = 0;
+      } else if (mesh->yDownMesh && wait_any_count < 1 && mesh->UpXSplitIndex() == 0) {
+        *indx = wait_any_count = 1;
+      } else if (mesh->yDownMesh && wait_any_count < 2 && mesh->DownXSplitIndex() > 0) {
+        *indx = wait_any_count = 2;
+      } else if (mesh->yDownMesh && wait_any_count < 3 && mesh->DownXSplitIndex() == 0) {
+        *indx = wait_any_count = 3;
+      } else if (mesh->xInMesh && wait_any_count < 4) {
+        *indx = wait_any_count = 4;
+      } else if (mesh->xOutMesh && wait_any_count < 5) {
+        *indx = wait_any_count = 5;
+      } else {
+        *indx = MPI_UNDEFINED;
+        wait_any_count = -1;
+      }
+      return 0;
+    }
+
+    
+  private:
+    int wait_any_count;
+  };
+
 private:
   FakeParallelMesh *yUpMesh, *yDownMesh, *xInMesh, *xOutMesh;
   std::map<FieldData*, int> registeredFields;
   std::map<int, FieldData*> registeredFieldIds;
   std::map<FieldPerp*, int> registeredFieldPerps;
   std::map<int, FieldPerp*> registeredFieldPerpIds;
+  std::unique_ptr<FakeMpiWrapper> mpiSmart;
 
   int local3D, local2D, localPerp;
   int start3D, start2D, startPerp;
-  int wait_any_count;
 
   comm_handle parentSend(FieldGroup &g) {
     return BoutMesh::send(g);
-  }
-  virtual int MPI_Irecv(void *UNUSED(buf), int UNUSED(count), MPI_Datatype UNUSED(datatype),
-                        int UNUSED(source), int UNUSED(tag), MPI_Comm UNUSED(comm),
-                        MPI_Request *UNUSED(request)) override {
-    return 0;
-  }
-  virtual int MPI_Isend(const void *UNUSED(buf), int UNUSED(count),
-                        MPI_Datatype UNUSED(datatype), int UNUSED(dest), int UNUSED(tag),
-                        MPI_Comm UNUSED(comm), MPI_Request *UNUSED(request)) override {
-    return 0;
-  }
-  virtual int MPI_Send(const void *UNUSED(buf), int UNUSED(count),
-                       MPI_Datatype UNUSED(datatype), int UNUSED(dest), int UNUSED(tag),
-                       MPI_Comm UNUSED(comm)) override {
-    return 0;
-  }
-  virtual int MPI_Wait(MPI_Request *UNUSED(request), MPI_Status *UNUSED(status)) override {
-    return 0;
-  }
-  virtual int MPI_Waitany(int UNUSED(count), MPI_Request UNUSED(array_of_requests[]),
-                          int *indx, MPI_Status *UNUSED(status)) override {
-    if (yUpMesh && wait_any_count < 0 && UpXSplitIndex() > 0) {
-      *indx = wait_any_count = 0;
-    } else if (yDownMesh && wait_any_count < 1 && UpXSplitIndex() == 0) {
-      *indx = wait_any_count = 1;
-    } else if (yDownMesh && wait_any_count < 2 && DownXSplitIndex() > 0) {
-      *indx = wait_any_count = 2;
-    } else if (yDownMesh && wait_any_count < 3 && DownXSplitIndex() == 0) {
-      *indx = wait_any_count = 3;
-    } else if (xInMesh && wait_any_count < 4) {
-      *indx = wait_any_count = 4;
-    } else if (xOutMesh && wait_any_count < 5) {
-      *indx = wait_any_count = 5;
-    } else {
-      *indx = MPI_UNDEFINED;
-      wait_any_count = -1;
-    }
-    return 0;
   }
 
   FieldGroup makeGroup(FakeParallelMesh* m, const std::vector<int> ids) {
@@ -233,10 +247,12 @@ private:
   }
 };
 
+
 std::vector<FakeParallelMesh> createFakeProcessors(int nx, int ny, int nz,
 						   int nxpe, int nype) {
   std::shared_ptr<Coordinates> test_coords{nullptr};
   std::vector<FakeParallelMesh> meshes;
+  meshes.reserve(nx*ny);
   for (int i = 0; i < nxpe; i++) {
     for (int j = 0; j < nype; j++) {
       meshes.push_back(FakeParallelMesh(nx, ny, nz, nxpe, nype, i, j));
@@ -257,6 +273,7 @@ std::vector<FakeParallelMesh> createFakeProcessors(int nx, int ny, int nz,
   int start3 = 0, start2 = 0, startP = 0;
   for (int i = 0; i < nxpe; i++) {
     for (int j = 0; j < nype; j++) {
+      meshes.at(j + i*nype).mpiSmart->mesh = &meshes.at(j + i*nype);
       meshes.at(j + i*nype).local3D = (nx - 2) * ny * nz;
       meshes.at(j + i*nype).local2D = (nx - 2) * ny;
       meshes.at(j + i*nype).localPerp = (nx - 2) * nz;

@@ -16,7 +16,7 @@ int SplitRK::init(int nout, BoutReal tstep) {
   nlocal = getLocalN();
   
   // Get total problem size
-  if(MPI_Allreduce(&nlocal, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
+  if(bout::globals::mpi->MPI_Allreduce(&nlocal, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
     throw BoutException("MPI_Allreduce failed!");
   }
   
@@ -123,7 +123,7 @@ int SplitRK::run() {
           
           // Average over all processors
           BoutReal err;
-          if (MPI_Allreduce(&local_err, &err, 1, MPI_DOUBLE, MPI_SUM, BoutComm::get())) {
+          if (bout::globals::mpi->MPI_Allreduce(&local_err, &err, 1, MPI_DOUBLE, MPI_SUM, BoutComm::get())) {
             throw BoutException("MPI_Allreduce failed");
           }
 

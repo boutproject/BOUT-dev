@@ -1,4 +1,4 @@
-
+#include <bout/mpi_wrapper.hxx>
 #include <boutcomm.hxx>
 #include <invert_parderiv.hxx>
 #include <boutexception.hxx>
@@ -31,7 +31,7 @@ InvertPar* ParDerivFactory::createInvertPar(Mesh *mesh_in) {
 
 InvertPar* ParDerivFactory::createInvertPar(const char* type, Options *opt, Mesh *mesh_in) {
   int NPES;
-  MPI_Comm_size(BoutComm::get(), &NPES);
+  bout::globals::mpi->MPI_Comm_size(BoutComm::get(), &NPES);
 
   if (opt == nullptr)
     opt = Options::getRoot()->getSection(default_section);

@@ -657,7 +657,7 @@ void Solver::removeMonitor(Monitor * f) {
 extern bool user_requested_exit;
 int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
   bool abort;
-  MPI_Allreduce(&user_requested_exit, &abort, 1, MPI_C_BOOL, MPI_LOR, BoutComm::get());
+  bout::globals::mpi->MPI_Allreduce(&user_requested_exit, &abort, 1, MPI_C_BOOL, MPI_LOR, BoutComm::get());
   if (abort) {
     NOUT = iter + 1;
   }
@@ -687,7 +687,7 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
   }
 
   // Check if any of the monitors has asked to quit
-  MPI_Allreduce(&user_requested_exit, &abort, 1, MPI_C_BOOL, MPI_LOR, BoutComm::get());
+  bout::globals::mpi->MPI_Allreduce(&user_requested_exit, &abort, 1, MPI_C_BOOL, MPI_LOR, BoutComm::get());
 
   if (iter == NOUT || abort) {
     for (const auto& it : monitors) {

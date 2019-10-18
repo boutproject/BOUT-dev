@@ -1,4 +1,4 @@
-/**************************************************************************
+#/**************************************************************************
  * Interface to SLEPc solver
  *
  **************************************************************************
@@ -273,7 +273,7 @@ int SlepcSolver::init(int NOUT, BoutReal TIMESTEP) {
 
   // Get total problem size
   int neq;
-  if (MPI_Allreduce(&localSize, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
+  if (bout::globals::mpi->MPI_Allreduce(&localSize, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
     throw BoutException("MPI_Allreduce failed in SlepcSolver::init");
   }
 

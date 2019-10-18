@@ -309,28 +309,6 @@ private:
   int unpack_data(const std::vector<FieldData*>& var_list, int xge, int xlt, int yge,
                   int ylt, BoutReal* buffer);
 
-  // Wrappers around MPI functions, taking the same names. These can
-  // then be overloaded for testing purposes.
-  virtual int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source,
-			int tag, MPI_Comm comm, MPI_Request *request) {
-    return ::MPI_Irecv(buf, count, datatype, source, tag, comm, request);
-  }
-  virtual int MPI_Isend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag,
-			MPI_Comm comm, MPI_Request *request) {
-    return ::MPI_Isend(buf, count, datatype, dest, tag, comm, request);
-  }
-  virtual int MPI_Send(const void *buf, int count, MPI_Datatype datatype, int dest, int tag,
-		       MPI_Comm comm) {
-    return ::MPI_Send(buf, count, datatype, dest, tag, comm);
-  }
-  virtual int MPI_Wait(MPI_Request *request, MPI_Status *status) {
-    return ::MPI_Wait(request, status);
-  }
-  virtual int MPI_Waitany(int count, MPI_Request array_of_requests[], int *indx,
-			  MPI_Status *status) {
-    return ::MPI_Waitany(count, array_of_requests, indx, status);
-  }
-
 };
 
 #endif // __BOUTMESH_H__

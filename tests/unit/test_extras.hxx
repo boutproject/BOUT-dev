@@ -10,6 +10,7 @@
 
 #include "boutcomm.hxx"
 #include "bout/mesh.hxx"
+#include "bout/mpi_wrapper.hxx"
 #include "bout/coordinates.hxx"
 #include "field3d.hxx"
 #include "unused.hxx"
@@ -173,6 +174,7 @@ public:
 
     // Need some options for parallelTransform
     options = Options::getRoot();
+    mpi = bout::globals::mpi;
   }
 
   void setCoordinates(std::shared_ptr<Coordinates> coords, CELL_LOC location = CELL_CENTRE) {
@@ -390,6 +392,7 @@ public:
     WithQuietOutput quiet_warn{output_warn};
 
     delete bout::globals::mesh;
+    bout::globals::mpi = new MpiWrapper();
     bout::globals::mesh = new FakeMesh(nx, ny, nz);
     bout::globals::mesh->createDefaultRegions();
     static_cast<FakeMesh*>(bout::globals::mesh)->setCoordinates(nullptr);
@@ -436,6 +439,8 @@ public:
     bout::globals::mesh = nullptr;
     delete mesh_staggered;
     mesh_staggered = nullptr;
+    delete bout::globals::mpi;
+    bout::globals::mpi = nullptr;
   }
 
   static constexpr int nx = 3;

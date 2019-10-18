@@ -40,7 +40,7 @@ int SNESSolver::init(int nout, BoutReal tstep) {
   
   // Get total problem size
   int ntmp;
-  if(MPI_Allreduce(&nlocal, &ntmp, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
+  if(bout::globals::mpi->MPI_Allreduce(&nlocal, &ntmp, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
     throw BoutException("MPI_Allreduce failed!");
   }
   neq = ntmp;

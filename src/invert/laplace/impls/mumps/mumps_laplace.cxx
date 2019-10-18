@@ -83,7 +83,7 @@ LaplaceMumps::LaplaceMumps(Options *opt, const CELL_LOC loc, Mesh *mesh_in = mes
   
 
   // Calculate total number of points in physical grid
-  if(MPI_Allreduce(&localN, &size, 1, MPI_INT, MPI_SUM, comm) != MPI_SUCCESS)
+  if(bout::globals::mpi->MPI_Allreduce(&localN, &size, 1, MPI_INT, MPI_SUM, comm) != MPI_SUCCESS)
     throw BoutException("Error in MPI_Allreduce during LaplacePetsc initialisation");
   
   // Calculate total (physical) grid dimensions
@@ -426,7 +426,7 @@ LaplaceMumps::LaplaceMumps(Options *opt, const CELL_LOC loc, Mesh *mesh_in = mes
   // output<<endl<<"solution vector indices:"<<endl;for (int k=0; k<mumps_struc.n;k++)
   // output<<k<<" "<<mumps_struc.isol_loc[k]<<endl;
   // output<<"nz="<<mumps_struc.nz<<" nz_loc="<<mumps_struc.nz_loc<<endl;
-  // MPI_Barrier(BoutComm::get()); exit(13);
+  // bout::globals::mpi->MPI_Barrier(BoutComm::get()); exit(13);
 
   mumps_struc.job = MUMPS_JOB_ANALYSIS;
   dmumps_c( &mumps_struc );
@@ -461,7 +461,7 @@ LaplaceMumps::LaplaceMumps(Options *opt, const CELL_LOC loc, Mesh *mesh_in = mes
 //   
 //   BoutReal* localrhs = **x.getData(); // Input the rhs in the solution field as solution will be returned in place by MUMPS
 //   if (!localmesh->firstX()) localrhs += localmesh->xstart*localmesh->LocalNy*localmesh->LocalNz;
-//   MPI_Gatherv(localrhs,localrhssize,MPI_DOUBLE,rhs,localrhs_size_array,rhs_positions,MPI_DOUBLE,0,localmesh->getXcomm());
+//   bout::globals::mpi->MPI_Gatherv(localrhs,localrhssize,MPI_DOUBLE,rhs,localrhs_size_array,rhs_positions,MPI_DOUBLE,0,localmesh->getXcomm());
 //   
 //   if ( ++iteration_count > repeat_analysis ) {
 //     mumps_struc.job = MUMPS_JOB_ALL;
@@ -496,7 +496,7 @@ LaplaceMumps::LaplaceMumps(Options *opt, const CELL_LOC loc, Mesh *mesh_in = mes
 //     }
 //   }
 //   
-//   MPI_Scatterv(rhs,localrhs_size_array,rhs_positions,MPI_DOUBLE,localrhs,localrhssize,MPI_DOUBLE,0,localmesh->getXcomm()); // Scatters solution from host back to localrhs (which points to x's data) on all processors
+//   bout::globals::mpi->MPI_Scatterv(rhs,localrhs_size_array,rhs_positions,MPI_DOUBLE,localrhs,localrhssize,MPI_DOUBLE,0,localmesh->getXcomm()); // Scatters solution from host back to localrhs (which points to x's data) on all processors
 //   
 // #if CHECK > 0
 //   msg_stack.pop();
@@ -597,11 +597,11 @@ FieldPerp LaplaceMumps::solve(const FieldPerp& b) {
     for (int z=0; z<localmesh->LocalNz; z++)
       localrhs[(x-xs)*(localmesh->LocalNz)+z] = bdata[x*localmesh->LocalNz+z];
   
-  MPI_Gatherv(localrhs,localrhssize,MPI_DOUBLE,rhs,localrhs_size_array,rhs_positions,MPI_DOUBLE,0,comm);
+  bout::globals::mpi->MPI_Gatherv(localrhs,localrhssize,MPI_DOUBLE,rhs,localrhs_size_array,rhs_positions,MPI_DOUBLE,0,comm);
   
   solve(rhs,y);
   
-  MPI_Scatterv(rhs,localrhs_size_array,rhs_positions,MPI_DOUBLE,localrhs,localrhssize,MPI_DOUBLE,0,comm); // Scatters solution from host back to localrhs (which points to x's data) on all processors
+  bout::globals::mpi->MPI_Scatterv(rhs,localrhs_size_array,rhs_positions,MPI_DOUBLE,localrhs,localrhssize,MPI_DOUBLE,0,comm); // Scatters solution from host back to localrhs (which points to x's data) on all processors
   
   BoutReal* soldata = *sol.getData();
   for (int x=xs; x<=xe; x++)

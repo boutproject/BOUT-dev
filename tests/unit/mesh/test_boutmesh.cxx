@@ -28,6 +28,9 @@ TEST(BoutMeshTest, SingleCoreDecomposition) {
   options["MXG"] = 1;
   options["MYG"] = 0;
 
+  bout::globals::mpi = new MpiWrapper();
   BoutMesh mesh{new GridFromOptions{&options}, &options};
   EXPECT_NO_THROW(mesh.load());
+  delete bout::globals::mpi;
+  bout::globals::mpi = nullptr;
 }

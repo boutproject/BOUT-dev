@@ -103,7 +103,7 @@ int IMEXBDF2::init(int nout, BoutReal tstep) {
 
   // Get total problem size
   int ntmp;
-  if(MPI_Allreduce(&nlocal, &ntmp, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
+  if(bout::globals::mpi->MPI_Allreduce(&nlocal, &ntmp, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
     throw BoutException("MPI_Allreduce failed!");
   }
   neq = ntmp;
@@ -884,7 +884,7 @@ int IMEXBDF2::run() {
 	  };
 
 	  //Now reduce across procs
-	  MPI_Allreduce(&errTot,&errGlobTot,3,MPI_DOUBLE,MPI_SUM,BoutComm::get());
+	  bout::globals::mpi->MPI_Allreduce(&errTot,&errGlobTot,3,MPI_DOUBLE,MPI_SUM,BoutComm::get());
 
 	  BoutReal aRtol = errGlobTot[0]/errGlobTot[1];
           if(verbose) {

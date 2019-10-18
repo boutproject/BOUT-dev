@@ -48,6 +48,8 @@ class IMEXBDF2;
 
 #include <petsc.h>
 #include <petscsnes.h>
+// PETSc creates macros for MPI calls, which interfere with the MpiWrapper class
+#undef MPI_Allreduce
 
 #include <bout/solverfactory.hxx>
 namespace {

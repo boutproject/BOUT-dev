@@ -2,6 +2,7 @@
 
 #include "bout/constants.hxx"
 #include "bout/mesh.hxx"
+#include "bout/mpi_wrapper.hxx"
 #include "boutexception.hxx"
 #include "output.hxx"
 #include "test_extras.hxx"
@@ -33,6 +34,7 @@ protected:
       delete mesh;
       mesh = nullptr;
     }
+    bout::globals::mpi = new MpiWrapper();
     mesh = new FakeMesh(nx, ny, nz);
     static_cast<FakeMesh*>(mesh)->setCoordinates(nullptr);
     mesh->createDefaultRegions();
@@ -67,6 +69,8 @@ protected:
     mesh = nullptr;
     delete mesh_staggered;
     mesh_staggered = nullptr;
+    delete bout::globals::mpi;
+    bout::globals::mpi = nullptr;
   }
 
 public:
