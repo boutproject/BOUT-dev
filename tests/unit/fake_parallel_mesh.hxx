@@ -273,7 +273,12 @@ std::vector<FakeParallelMesh> createFakeProcessors(int nx, int ny, int nz,
   int start3 = 0, start2 = 0, startP = 0;
   for (int i = 0; i < nxpe; i++) {
     for (int j = 0; j < nype; j++) {
+      // The meshes seem to be moved when constructing the vector,
+      // meaning the reference FakeMpiWrapper::mesh now points to an
+      // invalid address. This line of code will update it to point at
+      // the correct one.
       meshes.at(j + i*nype).mpiSmart->mesh = &meshes.at(j + i*nype);
+      
       meshes.at(j + i*nype).local3D = (nx - 2) * ny * nz;
       meshes.at(j + i*nype).local2D = (nx - 2) * ny;
       meshes.at(j + i*nype).localPerp = (nx - 2) * nz;
