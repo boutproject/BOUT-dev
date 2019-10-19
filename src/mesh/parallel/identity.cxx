@@ -26,12 +26,13 @@ void ParallelTransformIdentity::calcParallelSlices(Field3D& f) {
 
 void ParallelTransformIdentity::checkInputGrid() {
   std::string parallel_transform;
-  if (!mesh.get(parallel_transform, "parallel_transform")) {
+  if (mesh.isSourceFile() and !mesh.get(parallel_transform, "parallel_transform")) {
     if (parallel_transform != "identity") {
       throw BoutException("Incorrect parallel transform type '"+parallel_transform+"' used "
           "to generate metric components for ParallelTransformIdentity. Should be "
           "'identity'.");
     }
   } // else: parallel_transform variable not found in grid input, indicates older input
-    //       file so must rely on the user having ensured the type is correct
+    //       file or grid from options so must rely on the user having ensured the type is
+    //       correct
 }

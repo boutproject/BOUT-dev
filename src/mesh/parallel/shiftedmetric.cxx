@@ -28,14 +28,15 @@ ShiftedMetric::ShiftedMetric(Mesh& m, CELL_LOC location_in, Field2D zShift_,
 
 void ShiftedMetric::checkInputGrid() {
   std::string parallel_transform;
-  if (!mesh.get(parallel_transform, "parallel_transform")) {
+  if (mesh.isSourceFile() and !mesh.get(parallel_transform, "parallel_transform")) {
     if (parallel_transform != "shiftedmetric") {
       throw BoutException("Incorrect parallel transform type '" + parallel_transform
                           + "' used to generate metric components for ShiftedMetric. "
                             "Should be 'shiftedmetric'.");
     }
   } // else: parallel_transform variable not found in grid input, indicates older input
-    //       file so must rely on the user having ensured the type is correct
+    //       file or grid from options so must rely on the user having ensured the type is
+    //       correct
 }
 
 void ShiftedMetric::outputVars(Datafile& file) {

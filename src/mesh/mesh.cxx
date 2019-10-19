@@ -209,6 +209,10 @@ int Mesh::get(Vector3D &var, const std::string &name, BoutReal def) {
   return 0;
 }
 
+bool Mesh::isSourceFile() const {
+  return source->is_file;
+}
+
 bool Mesh::sourceHasVar(const std::string &name) {
   TRACE("Mesh::sourceHasVar(%s)", name.c_str());
   if (source == nullptr)
