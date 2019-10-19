@@ -184,6 +184,54 @@ TEST_F(Field3DInterpToTest, CellYlowToCentreNoBndry) {
   EXPECT_NEAR(output(2, 2, 2), 2.525, 1.e-15);
 }
 
+TEST_F(Field3DInterpToTest, AlignedCellCentreToYlow) {
+
+  Field3D output = Field3D(mesh);
+
+  // CELL_CENTRE -> CELL_YLOW
+  input.setLocation(CELL_CENTRE).setDirectionY(YDirectionType::Aligned);
+  output = interp_to(input, CELL_YLOW);
+  EXPECT_TRUE(output.getLocation() == CELL_YLOW);
+  EXPECT_TRUE(output.getDirectionY() == YDirectionType::Aligned);
+  EXPECT_NEAR(output(2, 2, 2), 2.825, 1.e-15);
+}
+
+TEST_F(Field3DInterpToTest, AlignedCellCentreToYlowNoBndry) {
+
+  Field3D output = Field3D(mesh);
+
+  // CELL_CENTRE -> CELL_YLOW
+  input.setLocation(CELL_CENTRE).setDirectionY(YDirectionType::Aligned);
+  output = interp_to(input, CELL_YLOW, "RGN_NOBNDRY");
+  EXPECT_TRUE(output.getLocation() == CELL_YLOW);
+  EXPECT_TRUE(output.getDirectionY() == YDirectionType::Aligned);
+  EXPECT_NEAR(output(2, 2, 2), 2.825, 1.e-15);
+}
+
+TEST_F(Field3DInterpToTest, AlignedCellYlowToCentre) {
+
+  Field3D output = Field3D(mesh);
+
+  // CELL_YLOW -> CELL_CENTRE
+  input.setLocation(CELL_YLOW).setDirectionY(YDirectionType::Aligned);
+  output = interp_to(input, CELL_CENTRE);
+  EXPECT_TRUE(output.getLocation() == CELL_CENTRE);
+  EXPECT_TRUE(output.getDirectionY() == YDirectionType::Aligned);
+  EXPECT_NEAR(output(2, 2, 2), 2.525, 1.e-15);
+}
+
+TEST_F(Field3DInterpToTest, AlignedCellYlowToCentreNoBndry) {
+
+  Field3D output = Field3D(mesh);
+
+  // CELL_YLOW -> CELL_CENTRE
+  input.setLocation(CELL_YLOW).setDirectionY(YDirectionType::Aligned);
+  output = interp_to(input, CELL_CENTRE, "RGN_NOBNDRY");
+  EXPECT_TRUE(output.getLocation() == CELL_CENTRE);
+  EXPECT_TRUE(output.getDirectionY() == YDirectionType::Aligned);
+  EXPECT_NEAR(output(2, 2, 2), 2.525, 1.e-15);
+}
+
 TEST_F(Field3DInterpToTest, CellCentreToZlow) {
 
   Field3D output = Field3D(mesh);
