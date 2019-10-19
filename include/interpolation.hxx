@@ -125,7 +125,11 @@ const T interp_to(const T& var, CELL_LOC loc, const std::string region = "RGN_AL
       ASSERT0(fieldmesh->ystart >= 2);
 
       // We can't interpolate in y unless we're field-aligned
-      const T var_fa = toFieldAligned(var, "RGN_NOX");
+      const bool is_unaligned = (var.getDirectionY() == YDirectionType::Standard);
+      const T var_fa = is_unaligned ? toFieldAligned(var, "RGN_NOX") : var;
+
+      result.setDirectionY(YDirectionType::Aligned);
+
       if (region != "RGN_NOBNDRY") {
         // repeat the hack above for boundary points
         // this avoids a duplicate toFieldAligned call if we had called
@@ -152,7 +156,9 @@ const T interp_to(const T& var, CELL_LOC loc, const std::string region = "RGN_AL
         }
       }
 
-      result = fromFieldAligned(result, "RGN_NOBNDRY");
+      if (is_unaligned) {
+        result = fromFieldAligned(result, "RGN_NOBNDRY");
+      }
 
       break;
     }
