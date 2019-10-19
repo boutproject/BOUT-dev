@@ -128,7 +128,12 @@ const T interp_to(const T& var, CELL_LOC loc, const std::string region = "RGN_AL
       const bool is_unaligned = (var.getDirectionY() == YDirectionType::Standard);
       const T var_fa = is_unaligned ? toFieldAligned(var, "RGN_NOX") : var;
 
-      result.setDirectionY(YDirectionType::Aligned);
+      if (not std::is_base_of<Field2D, T>::value) {
+        // Field2D is axisymmetric, so YDirectionType::Standard and
+        // YDirectionType::Aligned are equivalent, but trying to set
+        // YDirectionType::Aligned explicitly is an error
+        result.setDirectionY(YDirectionType::Aligned);
+      }
 
       if (region != "RGN_NOBNDRY") {
         // repeat the hack above for boundary points
