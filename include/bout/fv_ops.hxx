@@ -188,12 +188,16 @@ namespace FV {
 
     CellEdges cellboundary;
     
-    Field3D f = toFieldAligned(f_in, "RGN_NOX");
-    Field3D v = toFieldAligned(v_in, "RGN_NOX");
+    ASSERT2(f_in.getDirectionY() == v_in.getDirectionY());
+    const bool are_unaligned = ((f_in.getDirectionY() == YDirectionType::Standard)
+                                and (v_in.getDirectionY() == YDirectionType::Standard));
+
+    Field3D f = are_unaligned ? toFieldAligned(f_in, "RGN_NOX") : f_in;
+    Field3D v = are_unaligned ? toFieldAligned(v_in, "RGN_NOX") : v_in;
 
     Coordinates *coord = f_in.getCoordinates();
 
-    Field3D result{zeroFrom(f_in)};
+    Field3D result{zeroFrom(f)};
     
     // Only need one guard cell, so no need to communicate fluxes
     // Instead calculate in guard cells to preserve fluxes
@@ -326,7 +330,7 @@ namespace FV {
         }
       }
     }
-    return fromFieldAligned(result, "RGN_NOBNDRY");
+    return are_unaligned ? fromFieldAligned(result, "RGN_NOBNDRY") : result;
   }
   
   /*!
@@ -474,6 +478,7 @@ namespace FV {
     Field3D vy = toFieldAligned(v.y, "RGN_NOX");
     
     Field3D yresult = 0.0;    
+    yresult.setDirectionY(YDirectionType::Aligned);
     for(int i=mesh->xstart;i<=mesh->xend;i++)
       for(int j=mesh->ystart;j<=mesh->yend;j++)
         for(int k=0;k<mesh->LocalNz;k++) {
