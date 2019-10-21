@@ -261,51 +261,29 @@ bool Datafile::openw(const char *format, ...) {
 
   // 2D vectors
   for(const auto& var : v2d_arr) {
-    if(var.covar) {
-      if (!file->addVarField2D(var.name + "_x", var.save_repeat)) {
-        throw BoutException("Failed to add Vector2D variable %s to Datafile", var.name.c_str());
-      }
-      if (!file->addVarField2D(var.name + "_y", var.save_repeat)) {
-        throw BoutException("Failed to add Vector2D variable %s to Datafile", var.name.c_str());
-      }
-      if (!file->addVarField2D(var.name + "_z", var.save_repeat)) {
-        throw BoutException("Failed to add Vector2D variable %s to Datafile", var.name.c_str());
-      }
-    } else {
-      if (!file->addVarField2D(var.name + "x", var.save_repeat)) {
-        throw BoutException("Failed to add Vector2D variable %s to Datafile", var.name.c_str());
-      }
-      if (!file->addVarField2D(var.name + "y", var.save_repeat)) {
-        throw BoutException("Failed to add Vector2D variable %s to Datafile", var.name.c_str());
-      }
-      if (!file->addVarField2D(var.name + "z", var.save_repeat)) {
-        throw BoutException("Failed to add Vector2D variable %s to Datafile", var.name.c_str());
-      }
+    auto name = var.covar ? var.name + "_" : var.name;
+    if (!file->addVarField2D(name + "x", var.save_repeat)) {
+      throw BoutException("Failed to add Vector2D variable %s to Datafile", name.c_str());
+    }
+    if (!file->addVarField2D(name + "y", var.save_repeat)) {
+      throw BoutException("Failed to add Vector2D variable %s to Datafile", name.c_str());
+    }
+    if (!file->addVarField2D(name + "z", var.save_repeat)) {
+      throw BoutException("Failed to add Vector2D variable %s to Datafile", name.c_str());
     }
   }
 
   // 3D vectors
   for(const auto& var : v3d_arr) {
-    if(var.covar) {
-      if (!file->addVarField3D(var.name + "_x", var.save_repeat)) {
-        throw BoutException("Failed to add Vector3D variable %s to Datafile", var.name.c_str());
-      }
-      if (!file->addVarField3D(var.name + "_y", var.save_repeat)) {
-        throw BoutException("Failed to add Vector3D variable %s to Datafile", var.name.c_str());
-      }
-      if (!file->addVarField3D(var.name + "_z", var.save_repeat)) {
-        throw BoutException("Failed to add Vector3D variable %s to Datafile", var.name.c_str());
-      }
-    } else {
-      if (!file->addVarField3D(var.name + "x", var.save_repeat)) {
-        throw BoutException("Failed to add Vector3D variable %s to Datafile", var.name.c_str());
-      }
-      if (!file->addVarField3D(var.name + "y", var.save_repeat)) {
-        throw BoutException("Failed to add Vector3D variable %s to Datafile", var.name.c_str());
-      }
-      if (!file->addVarField3D(var.name + "z", var.save_repeat)) {
-        throw BoutException("Failed to add Vector3D variable %s to Datafile", var.name.c_str());
-      }
+    auto name = var.covar ? var.name + "_" : var.name;
+    if (!file->addVarField3D(name + "x", var.save_repeat)) {
+      throw BoutException("Failed to add Vector3D variable %s to Datafile", name.c_str());
+    }
+    if (!file->addVarField3D(name + "y", var.save_repeat)) {
+      throw BoutException("Failed to add Vector3D variable %s to Datafile", name.c_str());
+    }
+    if (!file->addVarField3D(name + "z", var.save_repeat)) {
+      throw BoutException("Failed to add Vector3D variable %s to Datafile", name.c_str());
     }
   }
   if (openclose) {
@@ -399,51 +377,29 @@ bool Datafile::opena(const char *format, ...) {
 
   // 2D vectors
   for(const auto& var : v2d_arr) {
-    if (var.covar) {
-      if (!file->addVarField2D(var.name + "_x", var.save_repeat)) {
-        throw BoutException("Failed to add Vector2D variable %s to Datafile", var.name.c_str());
-      }
-      if (!file->addVarField2D(var.name + "_y", var.save_repeat)) {
-        throw BoutException("Failed to add Vector2D variable %s to Datafile", var.name.c_str());
-      }
-      if (!file->addVarField2D(var.name + "_z", var.save_repeat)) {
-        throw BoutException("Failed to add Vector2D variable %s to Datafile", var.name.c_str());
-      }
-    } else {
-      if (!file->addVarField2D(var.name + "x", var.save_repeat)) {
-        throw BoutException("Failed to add Vector2D variable %s to Datafile", var.name.c_str());
-      }
-      if (!file->addVarField2D(var.name + "y", var.save_repeat)) {
-        throw BoutException("Failed to add Vector2D variable %s to Datafile", var.name.c_str());
-      }
-      if (!file->addVarField2D(var.name + "z", var.save_repeat)) {
-        throw BoutException("Failed to add Vector2D variable %s to Datafile", var.name.c_str());
-      }
+    auto name = var.covar ? var.name + "_" : var.name;
+    if (!file->addVarField2D(name + "x", var.save_repeat)) {
+      throw BoutException("Failed to add Vector2D variable %s to Datafile", name.c_str());
+    }
+    if (!file->addVarField2D(name + "y", var.save_repeat)) {
+      throw BoutException("Failed to add Vector2D variable %s to Datafile", name.c_str());
+    }
+    if (!file->addVarField2D(name + "z", var.save_repeat)) {
+      throw BoutException("Failed to add Vector2D variable %s to Datafile", name.c_str());
     }
   }
 
   // 3D vectors
   for(const auto& var : v3d_arr) {
-    if (var.covar) {
-      if (!file->addVarField3D(var.name + "_x", var.save_repeat)) {
-        throw BoutException("Failed to add Vector3D variable %s to Datafile", var.name.c_str());
-      }
-      if (!file->addVarField3D(var.name + "_y", var.save_repeat)) {
-        throw BoutException("Failed to add Vector3D variable %s to Datafile", var.name.c_str());
-      }
-      if (!file->addVarField3D(var.name + "_z", var.save_repeat)) {
-        throw BoutException("Failed to add Vector3D variable %s to Datafile", var.name.c_str());
-      }
-    } else {
-      if (!file->addVarField3D(var.name + "x", var.save_repeat)) {
-        throw BoutException("Failed to add Vector3D variable %s to Datafile", var.name.c_str());
-      }
-      if (!file->addVarField3D(var.name + "y", var.save_repeat)) {
-        throw BoutException("Failed to add Vector3D variable %s to Datafile", var.name.c_str());
-      }
-      if (!file->addVarField3D(var.name + "z", var.save_repeat)) {
-        throw BoutException("Failed to add Vector3D variable %s to Datafile", var.name.c_str());
-      }
+    auto name = var.covar ? var.name + "_" : var.name;
+    if (!file->addVarField3D(name + "x", var.save_repeat)) {
+      throw BoutException("Failed to add Vector3D variable %s to Datafile", name.c_str());
+    }
+    if (!file->addVarField3D(name + "y", var.save_repeat)) {
+      throw BoutException("Failed to add Vector3D variable %s to Datafile", name.c_str());
+    }
+    if (!file->addVarField3D(name + "z", var.save_repeat)) {
+      throw BoutException("Failed to add Vector3D variable %s to Datafile", name.c_str());
     }
   }
   if (openclose) {
@@ -818,27 +774,18 @@ void Datafile::add(Vector2D &f, const char *name, bool save_repeat) {
       file->setLowPrecision();
 
     // Add variables to file
-    if (d.covar) {
-      if (!file->addVarField2D(d.name + "_x", save_repeat)) {
-        throw BoutException("Failed to add Vector2D variable %s to Datafile", name);
-      }
-      if (!file->addVarField2D(d.name + "_y", save_repeat)) {
-        throw BoutException("Failed to add Vector2D variable %s to Datafile", name);
-      }
-      if (!file->addVarField2D(d.name + "_z", save_repeat)) {
-        throw BoutException("Failed to add Vector2D variable %s to Datafile", name);
-      }
-    } else {
-      if (!file->addVarField2D(d.name + "x", save_repeat)) {
-        throw BoutException("Failed to add Vector2D variable %s to Datafile", name);
-      }
-      if (!file->addVarField2D(d.name + "y", save_repeat)) {
-        throw BoutException("Failed to add Vector2D variable %s to Datafile", name);
-      }
-      if (!file->addVarField2D(d.name + "z", save_repeat)) {
-        throw BoutException("Failed to add Vector2D variable %s to Datafile", name);
-      }
-
+    auto dname = d.covar ? d.name + "_" : d.name;
+    if (!file->addVarField2D(dname + "x", save_repeat)) {
+      throw BoutException("Failed to add Vector2D variable %s to Datafile",
+                          dname.c_str());
+    }
+    if (!file->addVarField2D(dname + "y", save_repeat)) {
+      throw BoutException("Failed to add Vector2D variable %s to Datafile",
+                          dname.c_str());
+    }
+    if (!file->addVarField2D(dname + "z", save_repeat)) {
+      throw BoutException("Failed to add Vector2D variable %s to Datafile",
+                          dname.c_str());
     }
 
     if(openclose) {
@@ -887,26 +834,18 @@ void Datafile::add(Vector3D &f, const char *name, bool save_repeat) {
       file->setLowPrecision();
 
     // Add variables to file
-    if (d.covar) {
-      if (!file->addVarField3D(d.name + "_x", save_repeat)) {
-        throw BoutException("Failed to add Vector3D variable %s to Datafile", name);
-      }
-      if (!file->addVarField3D(d.name + "_y", save_repeat)) {
-        throw BoutException("Failed to add Vector3D variable %s to Datafile", name);
-      }
-      if (!file->addVarField3D(d.name + "_z", save_repeat)) {
-        throw BoutException("Failed to add Vector3D variable %s to Datafile", name);
-      }
-    } else {
-      if (!file->addVarField3D(d.name + "x", save_repeat)) {
-        throw BoutException("Failed to add Vector3D variable %s to Datafile", name);
-      }
-      if (!file->addVarField3D(d.name + "y", save_repeat)) {
-        throw BoutException("Failed to add Vector3D variable %s to Datafile", name);
-      }
-      if (!file->addVarField3D(d.name + "z", save_repeat)) {
-        throw BoutException("Failed to add Vector3D variable %s to Datafile", name);
-      }
+    auto dname = d.covar ? d.name + "_" : d.name;
+    if (!file->addVarField3D(dname + "x", save_repeat)) {
+      throw BoutException("Failed to add Vector3D variable %s to Datafile",
+                          dname.c_str());
+    }
+    if (!file->addVarField3D(dname + "y", save_repeat)) {
+      throw BoutException("Failed to add Vector3D variable %s to Datafile",
+                          dname.c_str());
+    }
+    if (!file->addVarField3D(dname + "z", save_repeat)) {
+      throw BoutException("Failed to add Vector3D variable %s to Datafile",
+                          dname.c_str());
     }
 
     if(openclose) {
@@ -1106,29 +1045,19 @@ bool Datafile::write() {
     // 2D vectors
     for(const auto& var : v2d_arr) {
       Vector2D v  = *(var.ptr);
-      if (var.covar) {
-        file->writeFieldAttributes(var.name+"_x", v.x);
-        file->writeFieldAttributes(var.name+"_y", v.y);
-        file->writeFieldAttributes(var.name+"_z", v.z);
-      } else {
-        file->writeFieldAttributes(var.name+"x", v.x);
-        file->writeFieldAttributes(var.name+"y", v.y);
-        file->writeFieldAttributes(var.name+"z", v.z);
-      }
+      auto name = var.covar ? var.name + "_" : var.name;
+      file->writeFieldAttributes(name+"x", v.x);
+      file->writeFieldAttributes(name+"y", v.y);
+      file->writeFieldAttributes(name+"z", v.z);
     }
 
     // 3D vectors
     for(const auto& var : v3d_arr) {
       Vector3D v  = *(var.ptr);
-      if (var.covar) {
-        file->writeFieldAttributes(var.name+"_x", v.x);
-        file->writeFieldAttributes(var.name+"_y", v.y);
-        file->writeFieldAttributes(var.name+"_z", v.z);
-      } else {
-        file->writeFieldAttributes(var.name+"x", v.x);
-        file->writeFieldAttributes(var.name+"y", v.y);
-        file->writeFieldAttributes(var.name+"z", v.z);
-      }
+      auto name = var.covar ? var.name + "_" : var.name;
+      file->writeFieldAttributes(name+"x", v.x);
+      file->writeFieldAttributes(name+"y", v.y);
+      file->writeFieldAttributes(name+"z", v.z);
     }
   }
 
@@ -1165,44 +1094,40 @@ bool Datafile::write() {
 
   // 2D vectors
   for(const auto& var : v2d_arr) {
+    Vector2D v  = *(var.ptr);
+    auto name = var.name;
+
     if(var.covar) {
       // Writing covariant vector
-      Vector2D v  = *(var.ptr);
       v.toCovariant();
-      
-      write_f2d(var.name+"_x", &(v.x), var.save_repeat);
-      write_f2d(var.name+"_y", &(v.y), var.save_repeat);
-      write_f2d(var.name+"_z", &(v.z), var.save_repeat);
+      name += "_";
     } else {
       // Writing contravariant vector
-      Vector2D v  = *(var.ptr);
       v.toContravariant();
-      
-      write_f2d(var.name+"x", &(v.x), var.save_repeat);
-      write_f2d(var.name+"y", &(v.y), var.save_repeat);
-      write_f2d(var.name+"z", &(v.z), var.save_repeat);
     }
+
+    write_f2d(name+"x", &(v.x), var.save_repeat);
+    write_f2d(name+"y", &(v.y), var.save_repeat);
+    write_f2d(name+"z", &(v.z), var.save_repeat);
   }
 
   // 3D vectors
   for(const auto& var : v3d_arr) {
+    Vector3D v  = *(var.ptr);
+    auto name = var.name;
+
     if(var.covar) {
       // Writing covariant vector
-      Vector3D v  = *(var.ptr);
       v.toCovariant();
-      
-      write_f3d(var.name+"_x", &(v.x), var.save_repeat);
-      write_f3d(var.name+"_y", &(v.y), var.save_repeat);
-      write_f3d(var.name+"_z", &(v.z), var.save_repeat);
+      name += "_";
     } else {
       // Writing contravariant vector
-      Vector3D v  = *(var.ptr);
       v.toContravariant();
-      
-      write_f3d(var.name+"x", &(v.x), var.save_repeat);
-      write_f3d(var.name+"y", &(v.y), var.save_repeat);
-      write_f3d(var.name+"z", &(v.z), var.save_repeat);
     }
+
+    write_f3d(name+"x", &(v.x), var.save_repeat);
+    write_f3d(name+"y", &(v.y), var.save_repeat);
+    write_f3d(name+"z", &(v.z), var.save_repeat);
   }
   
   if(openclose  && (flushFrequencyCounter+1 % flushFrequency == 0)){
