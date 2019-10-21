@@ -210,12 +210,28 @@ public:
    * vector. It is meant to be transient and will be destroyed immediately
    * after use. In general you should not try to assign an instance to a
    * variable.
+   *
+   * The Element object will store a copy of the value which has been
+   * assigned to it. This is because mixing calls to the PETSc
+   * function VecGetValues() and VecSetValues() without intermediate
+   * vector assembly will cause errors. Thus, if the user wishes to
+   * get the value of the vector, it must be stored here.
    */
   class Element {
   public:
     Element() = delete;
-    Element(Vec* vector, int index) : petscVector(vector), petscIndex(index) {}
+    Element(const Element& other) = default;
+    Element(Vec* vector, int index) : petscVector(vector), petscIndex(index) {
+      const auto status = VecGetValues(*petscVector, 1, &petscIndex, &value);
+      if (status != 0) {
+	value = 0.;
+      }  
+    }
+    Element operator=(Element& other) {
+      return *this = static_cast<BoutReal>(other);
+    }
     Element operator=(BoutReal val) {
+      value = val;
       const auto status = VecSetValues(*petscVector, 1, &petscIndex, &val, INSERT_VALUES);
       if (status != 0) {
 	throw BoutException("Error when setting elements of a PETSc vector.");
@@ -223,6 +239,7 @@ public:
       return *this;
     }
     Element operator+=(BoutReal val) {
+      value += val;
       const auto status = VecSetValues(*petscVector, 1, &petscIndex, &val, ADD_VALUES);
       if (status != 0) {
 	throw BoutException("Error when setting elements of a PETSc vector.");
@@ -230,17 +247,13 @@ public:
       return *this;
     }
     operator BoutReal() const {
-      BoutReal value;
-      const auto status = VecGetValues(*petscVector, 1, &petscIndex, &value);
-      if (status != 0) {
-	throw BoutException("Error when getting elements of a PETSc vector.");
-      }  
       return value;
     }
 
   private:
     Vec* petscVector = nullptr;
     PetscInt petscIndex;
+    PetscScalar value;
   };
   
   Element operator()(ind_type& index) {
@@ -393,38 +406,54 @@ public:
    * matrix, potentially with a y-offset. It is meant to be transient
    * and will be destroyed immediately after use. In general you should
    * not try to assign an instance to a variable.
+   *
+   * The Element object will store a copy of the value which has been
+   * assigned to it. This is because mixing calls to the PETSc
+   * function MatGetValues() and MatSetValues() without intermediate
+   * matrix assembly will cause errors. Thus, if the user wishes to
+   * get the value of the matrix, it must be stored here.
    */
   class Element {
   public:
     Element() = delete;
+    Element(const Element& other) = default;
     Element(Mat* matrix, PetscInt row, PetscInt col, std::vector<PetscInt> p = {},
-	    std::vector<BoutReal> w = {}) : petscMatrix(matrix),
-					    petscRow(row), positions(p),
+	    std::vector<BoutReal> w = {}) : petscMatrix(matrix), petscRow(row),
+					    petscCol(col), positions(p),
 					    weights(w) {
       ASSERT2(positions.size() == weights.size());
       if (positions.size() == 0) {
 	positions = { col };
 	weights = { 1.0 };
       }
+      const auto status = MatGetValues(*petscMatrix, 1, &petscRow, 1, &petscCol, &value);
+      if (status != 0) {
+	value = 0.;
+      }
+    }
+    Element operator=(Element& other) {
+      return *this = static_cast<BoutReal>(other);
     }
     Element operator=(BoutReal val) {
-      setValues(val, INSERT_VALUES);
+      value = val;
+      setValues(INSERT_VALUES);
       return *this;
     }
     Element operator+=(BoutReal val) {
-      setValues(val, ADD_VALUES);
+      value += val;
+      setValues(ADD_VALUES);
       return *this;
     }
-    //operator BoutReal() const {
-      // Tricky...
-    //}
+    operator BoutReal() const {
+      return value;
+    }
     
   private:
-    void setValues(BoutReal val, InsertMode mode) {
+    void setValues(InsertMode mode) {
       ASSERT3(positions.size() > 0);
       std::vector<PetscScalar> values;
       std::transform(weights.begin(), weights.end(), std::back_inserter(values),
-		     [&val](BoutReal weight) -> PetscScalar {return weight * val;});
+		     [this](BoutReal weight) -> PetscScalar {return weight * this->value;});
       auto status = MatSetValues(*petscMatrix, 1, &petscRow, positions.size(),
 				 positions.data(), values.data(), mode);
       if (status != 0) {
@@ -432,7 +461,8 @@ public:
       }
     }
     Mat* petscMatrix;
-    PetscInt petscRow;
+    PetscInt petscRow, petscCol;
+    PetscScalar value;
     std::vector<PetscInt> positions;
     std::vector<BoutReal> weights;
   };
