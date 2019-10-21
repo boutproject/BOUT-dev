@@ -436,12 +436,17 @@ public:
     }
     Element operator=(BoutReal val) {
       value = val;
-      setValues(INSERT_VALUES);
+      setValues(val, INSERT_VALUES);
       return *this;
     }
     Element operator+=(BoutReal val) {
       value += val;
-      setValues(ADD_VALUES);
+      auto columnPosition = std::find(positions.begin(), positions.end(), petscCol);
+      if (columnPosition != positions.end()) {
+	int i = std::distance(positions.begin(), columnPosition);
+	value += weights[i] * val;
+      }
+      setValues(val, ADD_VALUES);
       return *this;
     }
     operator BoutReal() const {
@@ -449,11 +454,11 @@ public:
     }
     
   private:
-    void setValues(InsertMode mode) {
+    void setValues(BoutReal val, InsertMode mode) {
       ASSERT3(positions.size() > 0);
       std::vector<PetscScalar> values;
       std::transform(weights.begin(), weights.end(), std::back_inserter(values),
-		     [this](BoutReal weight) -> PetscScalar {return weight * this->value;});
+		     [&val](BoutReal weight) -> PetscScalar {return weight * val;});
       auto status = MatSetValues(*petscMatrix, 1, &petscRow, positions.size(),
 				 positions.data(), values.data(), mode);
       if (status != 0) {
