@@ -170,7 +170,8 @@ bool Datafile::openr(const char *format, ...) {
   if(!openclose) {
     // Open the file now. Otherwise defer until later
     if(!file->openr(filename, BoutComm::rank()))
-      throw BoutException("Datafile::open: Failed to open file!");
+      throw BoutException("Datafile::open: Failed to open file %s for reading!",
+          filename);
   }
 
   writable = false;
@@ -211,7 +212,7 @@ bool Datafile::openw(const char *format, ...) {
   appending = false;
   // Open the file
   if(!file->openw(filename, BoutComm::rank(), appending))
-    throw BoutException("Datafile::open: Failed to open file!");
+    throw BoutException("Datafile::open: Failed to open file %s for writing!", filename);
 
   appending = true;
   first_time = true; // newly opened file, so write attributes when variables are first written
@@ -328,7 +329,8 @@ bool Datafile::opena(const char *format, ...) {
   appending = true;
   // Open the file
   if(!file->openw(filename, BoutComm::rank(), true))
-    throw BoutException("Datafile::open: Failed to open file!");
+    throw BoutException("Datafile::open: Failed to open file %s for appending!",
+        filename);
 
   first_time = true; // newly opened file, so write attributes when variables are first written
 
@@ -467,8 +469,15 @@ void Datafile::add(int &i, const char *name, bool save_repeat) {
       // Check filename has been set
       if (strcmp(filename, "") == 0)
         throw BoutException("Datafile::add: Filename has not been set");
-      if(!file->openw(filename, BoutComm::rank(), appending))
-        throw BoutException("Datafile::add: Failed to open file!");
+      if(!file->openw(filename, BoutComm::rank(), appending)) {
+        if (appending) {
+          throw BoutException("Datafile::add: Failed to open file %s for appending!",
+              filename);
+        } else {
+          throw BoutException("Datafile::add: Failed to open file %s for writing!",
+              filename);
+        }
+      }
       appending = true;
     }
 
@@ -514,8 +523,15 @@ void Datafile::add(BoutReal &r, const char *name, bool save_repeat) {
       // Open the file
       if (strcmp(filename, "") == 0)
         throw BoutException("Datafile::add: Filename has not been set");
-      if(!file->openw(filename, BoutComm::rank(), appending))
-        throw BoutException("Datafile::add: Failed to open file!");
+      if(!file->openw(filename, BoutComm::rank(), appending)) {
+        if (appending) {
+          throw BoutException("Datafile::add: Failed to open file %s for appending!",
+              filename);
+        } else {
+          throw BoutException("Datafile::add: Failed to open file %s for writing!",
+              filename);
+        }
+      }
       appending = true;
     }
 
@@ -565,8 +581,15 @@ void Datafile::add(bool &b, const char *name, bool save_repeat) {
       // Check filename has been set
       if (strcmp(filename, "") == 0)
         throw BoutException("Datafile::add: Filename has not been set");
-      if(!file->openw(filename, BoutComm::rank(), appending))
-        throw BoutException("Datafile::add: Failed to open file!");
+      if(!file->openw(filename, BoutComm::rank(), appending)) {
+        if (appending) {
+          throw BoutException("Datafile::add: Failed to open file %s for appending!",
+              filename);
+        } else {
+          throw BoutException("Datafile::add: Failed to open file %s for writing!",
+              filename);
+        }
+      }
       appending = true;
     }
 
@@ -612,8 +635,15 @@ void Datafile::add(Field2D &f, const char *name, bool save_repeat) {
       // Open the file
       if (strcmp(filename, "") == 0)
         throw BoutException("Datafile::add: Filename has not been set");
-      if(!file->openw(filename, BoutComm::rank(), appending))
-        throw BoutException("Datafile::add: Failed to open file!");
+      if(!file->openw(filename, BoutComm::rank(), appending)) {
+        if (appending) {
+          throw BoutException("Datafile::add: Failed to open file %s for appending!",
+              filename);
+        } else {
+          throw BoutException("Datafile::add: Failed to open file %s for writing!",
+              filename);
+        }
+      }
       appending = true;
     }
 
@@ -662,8 +692,15 @@ void Datafile::add(Field3D &f, const char *name, bool save_repeat) {
       // Open the file
       if (strcmp(filename, "") == 0)
         throw BoutException("Datafile::add: Filename has not been set");
-      if(!file->openw(filename, BoutComm::rank(), appending))
-        throw BoutException("Datafile::add: Failed to open file!");
+      if(!file->openw(filename, BoutComm::rank(), appending)) {
+        if (appending) {
+          throw BoutException("Datafile::add: Failed to open file %s for appending!",
+              filename);
+        } else {
+          throw BoutException("Datafile::add: Failed to open file %s for writing!",
+              filename);
+        }
+      }
       appending = true;
     }
 
@@ -712,8 +749,15 @@ void Datafile::add(FieldPerp &f, const char *name, bool save_repeat) {
       // Open the file
       if (strcmp(filename, "") == 0)
         throw BoutException("Datafile::add: Filename has not been set");
-      if(!file->openw(filename, BoutComm::rank(), appending))
-        throw BoutException("Datafile::add: Failed to open file!");
+      if(!file->openw(filename, BoutComm::rank(), appending)) {
+        if (appending) {
+          throw BoutException("Datafile::add: Failed to open file %s for appending!",
+              filename);
+        } else {
+          throw BoutException("Datafile::add: Failed to open file %s for writing!",
+              filename);
+        }
+      }
       appending = true;
     }
 
@@ -762,8 +806,15 @@ void Datafile::add(Vector2D &f, const char *name, bool save_repeat) {
       // Open the file
       if (strcmp(filename, "") == 0)
         throw BoutException("Datafile::add: Filename has not been set");
-      if(!file->openw(filename, BoutComm::rank(), appending))
-        throw BoutException("Datafile::add: Failed to open file!");
+      if(!file->openw(filename, BoutComm::rank(), appending)) {
+        if (appending) {
+          throw BoutException("Datafile::add: Failed to open file %s for appending!",
+              filename);
+        } else {
+          throw BoutException("Datafile::add: Failed to open file %s for writing!",
+              filename);
+        }
+      }
       appending = true;
     }
 
@@ -822,8 +873,15 @@ void Datafile::add(Vector3D &f, const char *name, bool save_repeat) {
       // Open the file
       if (strcmp(filename, "") == 0)
         throw BoutException("Datafile::add: Filename has not been set");
-      if(!file->openw(filename, BoutComm::rank(), appending))
-        throw BoutException("Datafile::add: Failed to open file!");
+      if(!file->openw(filename, BoutComm::rank(), appending)) {
+        if (appending) {
+          throw BoutException("Datafile::add: Failed to open file %s for appending!",
+              filename);
+        } else {
+          throw BoutException("Datafile::add: Failed to open file %s for writing!",
+              filename);
+        }
+      }
       appending = true;
     }
 
@@ -859,8 +917,10 @@ bool Datafile::read() {
 
   if(openclose) {
     // Open the file
-    if(!file->openr(filename, BoutComm::rank()))
-      throw BoutException("Datafile::read: Failed to open file!");
+    if(!file->openr(filename, BoutComm::rank())) {
+      throw BoutException("Datafile::read: Failed to open file %s for reading!",
+          filename);
+    }
   }
   
   if(!file->is_valid())
@@ -1005,8 +1065,15 @@ bool Datafile::write() {
 
   if(openclose && (flushFrequencyCounter % flushFrequency == 0)) {
     // Open the file
-    if(!file->openw(filename, BoutComm::rank(), appending))
-      throw BoutException("Datafile::write: Failed to open file!");
+    if(!file->openw(filename, BoutComm::rank(), appending)) {
+      if (appending) {
+        throw BoutException("Datafile::add: Failed to open file %s for appending!",
+            filename);
+      } else {
+        throw BoutException("Datafile::add: Failed to open file %s for writing!",
+            filename);
+      }
+    }
     appending = true;
     flushFrequencyCounter = 0;
   }
@@ -1173,8 +1240,15 @@ void Datafile::setAttribute(const std::string &varname, const std::string &attrn
 
   if(openclose && (flushFrequencyCounter % flushFrequency == 0)) {
     // Open the file
-    if(!file->openw(filename, BoutComm::rank(), appending))
-      throw BoutException("Datafile::write: Failed to open file!");
+    if(!file->openw(filename, BoutComm::rank(), appending)) {
+      if (appending) {
+        throw BoutException("Datafile::add: Failed to open file %s for appending!",
+            filename);
+      } else {
+        throw BoutException("Datafile::add: Failed to open file %s for writing!",
+            filename);
+      }
+    }
     appending = true;
     flushFrequencyCounter = 0;
   }
@@ -1200,8 +1274,15 @@ void Datafile::setAttribute(const std::string &varname, const std::string &attrn
 
   if(openclose && (flushFrequencyCounter % flushFrequency == 0)) {
     // Open the file
-    if(!file->openw(filename, BoutComm::rank(), appending))
-      throw BoutException("Datafile::write: Failed to open file!");
+    if(!file->openw(filename, BoutComm::rank(), appending)) {
+      if (appending) {
+        throw BoutException("Datafile::add: Failed to open file %s for appending!",
+            filename);
+      } else {
+        throw BoutException("Datafile::add: Failed to open file %s for writing!",
+            filename);
+      }
+    }
     appending = true;
     flushFrequencyCounter = 0;
   }
@@ -1227,8 +1308,15 @@ void Datafile::setAttribute(const std::string &varname, const std::string &attrn
 
   if(openclose && (flushFrequencyCounter % flushFrequency == 0)) {
     // Open the file
-    if(!file->openw(filename, BoutComm::rank(), appending))
-      throw BoutException("Datafile::write: Failed to open file!");
+    if(!file->openw(filename, BoutComm::rank(), appending)) {
+      if (appending) {
+        throw BoutException("Datafile::add: Failed to open file %s for appending!",
+            filename);
+      } else {
+        throw BoutException("Datafile::add: Failed to open file %s for writing!",
+            filename);
+      }
+    }
     appending = true;
     flushFrequencyCounter = 0;
   }
