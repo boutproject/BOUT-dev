@@ -3,6 +3,7 @@
 #include "gtest/gtest.h"
 #include "test_extras.hxx"
 
+#include <petscconf.h>
 #include "bout/petsc_interface.hxx"
 #include "bout/region.hxx"
 #include "field3d.hxx"
@@ -155,6 +156,21 @@ TYPED_TEST(PetscVectorTest, TestGetElements) {
   }
 }
 
+// Test assemble
+TYPED_TEST(PetscVectorTest, TestAssemble) {
+  PetscVector<TypeParam> vector(this->field);
+  Vec *rawvec = vector.getVectorPointer();
+  const PetscInt i = 4;
+  const PetscScalar r = 3.141592;
+  VecSetValues(*rawvec, 1, &i, &r, INSERT_VALUES); 
+  vector.assemble();
+  PetscScalar *vecContents;
+  VecGetArray(*rawvec, &vecContents);
+  ASSERT_EQ(vecContents[i], r);
+}
+
+#ifdef PETSC_USE_DEBUG
+
 // Test trying to get an element from an uninitialised vector
 TYPED_TEST(PetscVectorTest, TestGetUninitialised) {
   PetscVector<TypeParam> vector;
@@ -173,20 +189,7 @@ TYPED_TEST(PetscVectorTest, TestGetOutOfBounds) {
   EXPECT_THROW(vector(index3), BoutException);  
 }
 
-// Test assemble
-TYPED_TEST(PetscVectorTest, TestAssemble) {
-  PetscVector<TypeParam> vector(this->field);
-  Vec *rawvec = vector.getVectorPointer();
-  const PetscInt i = 4;
-  const PetscScalar r = 3.141592;
-  VecSetValues(*rawvec, 1, &i, &r, INSERT_VALUES); 
-  vector.assemble();
-  PetscScalar *vecContents;
-  VecGetArray(*rawvec, &vecContents);
-  ASSERT_EQ(vecContents[i], r);
-}
-
-// Test trying to use both INSERT_VALUES and ADD_VALUES
+Test trying to use both INSERT_VALUES and ADD_VALUES
 TYPED_TEST(PetscVectorTest, TestMixedSetting) {
   PetscVector<TypeParam> vector(this->field);
   typename TypeParam::ind_type i = *(this->field.getRegion("RGN_NOBNDRY").begin());
@@ -207,6 +210,8 @@ TYPED_TEST(PetscVectorTest, TestDestroy) {
   ASSERT_NE(err, 0); // If original vector was destroyed, should not
 		     // be able to duplicate it.
 }
+
+#endif // PETSC_USE_DEBUG
 
 // Test swap
 TYPED_TEST(PetscVectorTest, TestSwap) {

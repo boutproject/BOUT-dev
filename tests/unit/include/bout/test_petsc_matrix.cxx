@@ -5,6 +5,7 @@
 #include "gmock/gmock.h"
 #include "test_extras.hxx"
 
+#include <petscconf.h>
 #include "bout/petsc_interface.hxx"
 #include "bout/region.hxx"
 #include "field3d.hxx"
@@ -182,6 +183,21 @@ TYPED_TEST(PetscMatrixTest, TestGetElements) {
   }
 }
 
+// Test assemble
+TYPED_TEST(PetscMatrixTest, TestAssemble) {
+  PetscMatrix<TypeParam> matrix(this->field);
+  Mat *rawmat = matrix.getMatrixPointer();
+  const PetscInt i = 4, j = 1;
+  const PetscScalar r = 3.141592;
+  MatSetValues(*rawmat, 1, &i, 1, &j, &r, INSERT_VALUES); 
+  matrix.assemble();
+  PetscScalar matContents;
+  MatGetValues(*rawmat, 1, &i, 1, &j, &matContents);
+  ASSERT_EQ(matContents, r);
+}
+
+#ifdef PETSC_USE_DEBUG
+
 // Test trying to get an element that is out of bounds
 TYPED_TEST(PetscMatrixTest, TestGetOutOfBounds) {
   PetscMatrix<TypeParam> matrix(this->field);
@@ -198,19 +214,6 @@ TYPED_TEST(PetscMatrixTest, TestGetOutOfBounds) {
   EXPECT_THROW((matrix(index3, indexa)), BoutException);
   EXPECT_THROW((matrix(index3, indexb)), BoutException);
   EXPECT_THROW((matrix(index3, indexc)), BoutException);
-}
-
-// Test assemble
-TYPED_TEST(PetscMatrixTest, TestAssemble) {
-  PetscMatrix<TypeParam> matrix(this->field);
-  Mat *rawmat = matrix.getMatrixPointer();
-  const PetscInt i = 4, j = 1;
-  const PetscScalar r = 3.141592;
-  MatSetValues(*rawmat, 1, &i, 1, &j, &r, INSERT_VALUES); 
-  matrix.assemble();
-  PetscScalar matContents;
-  MatGetValues(*rawmat, 1, &i, 1, &j, &matContents);
-  ASSERT_EQ(matContents, r);
 }
 
 // Test trying to use both INSERT_VALUES and ADD_VALUES
@@ -233,6 +236,8 @@ TYPED_TEST(PetscMatrixTest, TestDestroy) {
   ASSERT_NE(err, 0); // If original matrix was destroyed, should not
 		     // be able to duplicate it.
 }
+
+#endif //PETSC_USE_DEBUG
 
 // Test getting yup
 TYPED_TEST(PetscMatrixTest, TestYUp) {
