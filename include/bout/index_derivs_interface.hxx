@@ -309,6 +309,10 @@ T VDDY(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
        const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY") {
   AUTO_TRACE();
 
+  // Note the following chunk is copy+pasted from flowDerivative
+  // above. Not pulled out as a separate function due the number of
+  // local variables from it that flowDerivative ends up needing.
+  // The two should probably remain in sync!
   auto* localmesh = f.getMesh();
   const CELL_LOC allowedStaggerLoc = localmesh->getAllowedStaggerLoc(DIRECTION::Y);
   const CELL_LOC inloc = f.getLocation();
