@@ -218,14 +218,18 @@ void ShiftedMetric::calcParallelSlices(Field3D& f) {
     return;
   }
 
-  auto results = shiftZ(f, parallel_slice_phases);
-
-  ASSERT3(results.size() == parallel_slice_phases.size());
-
   f.splitParallelSlices();
 
-  for (std::size_t i = 0; i < results.size(); ++i) {
-    f.ynext(parallel_slice_phases[i].y_offset) = std::move(results[i]);
+  for (const auto& phase : parallel_slice_phases) {
+    auto& f_slice = f.ynext(phase.y_offset);
+    f_slice.allocate();
+    BOUT_FOR(i, mesh.getRegion2D("RGN_NOY")) {
+      const int ix = i.x();
+      const int iy = i.y();
+      const int iy_offset = iy + phase.y_offset;
+      shiftZ(&(f(ix, iy_offset, 0)), &(phase.phase_shift(ix, iy, 0)),
+             &(f_slice(ix, iy_offset, 0)));
+    }
   }
 }
 
