@@ -175,9 +175,6 @@ class BoutMesh : public Mesh {
 
   void outputVars(Datafile& file) override;
 
-  int XGLOBAL(int xloc) const override;
-  int YGLOBAL(int yloc) const override;
-
   int getGlobalXIndex(int xlocal) const override;
   int getGlobalXIndexNoBoundaries(int xlocal) const override;
   int getGlobalYIndex(int ylocal) const override;

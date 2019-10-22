@@ -1492,9 +1492,6 @@ int BoutMesh::PROC_NUM(int xind, int yind) {
 }
 
 /// Returns the global X index given a local index
-int BoutMesh::XGLOBAL(int xloc) const { return xloc + PE_XIND * MXSUB; }
-
-/// Returns the global X index given a local index
 int BoutMesh::XGLOBAL(BoutReal xloc, BoutReal &xglo) const {
   xglo = xloc + PE_XIND * MXSUB;
   return static_cast<int>(xglo);
@@ -1512,9 +1509,6 @@ int BoutMesh::getGlobalXIndexNoBoundaries(int xlocal) const {
 
 /// Returns a local X index given a global index
 int BoutMesh::XLOCAL(int xglo) const { return xglo - PE_XIND * MXSUB; }
-
-/// Returns the global Y index given a local index
-int BoutMesh::YGLOBAL(int yloc) const { return yloc + PE_YIND * MYSUB - MYG; }
 
 /// Returns the global Y index given a local index
 int BoutMesh::YGLOBAL(BoutReal yloc, BoutReal &yglo) const {

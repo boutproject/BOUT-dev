@@ -285,8 +285,6 @@ public:
   BoutReal GlobalY(int jy) const override { return jy; }
   BoutReal GlobalX(BoutReal jx) const override { return jx; }
   BoutReal GlobalY(BoutReal jy) const override { return jy; }
-  int XGLOBAL(int UNUSED(xloc)) const override { return 0; }
-  int YGLOBAL(int UNUSED(yloc)) const override { return 0; }
   int getGlobalXIndex(int) const override { return 0; }
   int getGlobalXIndexNoBoundaries(int) const override { return 0; }
   int getGlobalYIndex(int) const override { return 0; }
