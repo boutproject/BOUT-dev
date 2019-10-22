@@ -326,7 +326,7 @@ Field3D FCIMap::integrate(Field3D &f) const {
 
 void FCITransform::checkInputGrid() {
   std::string parallel_transform;
-  if (mesh.isSourceFile() && !mesh.get(parallel_transform, "parallel_transform")) {
+  if (mesh.isDataSourceGridFile() && !mesh.get(parallel_transform, "parallel_transform")) {
     if (parallel_transform != "fci") {
       throw BoutException("Incorrect parallel transform type '"+parallel_transform+"' used "
           "to generate metric components for FCITransform. Should be 'fci'.");

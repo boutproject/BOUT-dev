@@ -209,7 +209,7 @@ int Mesh::get(Vector3D &var, const std::string &name, BoutReal def) {
   return 0;
 }
 
-bool Mesh::isSourceFile() const {
+bool Mesh::isDataSourceGridFile() const {
   return source != nullptr and source->is_file;
 }
 

@@ -28,7 +28,7 @@ ShiftedMetric::ShiftedMetric(Mesh& m, CELL_LOC location_in, Field2D zShift_,
 
 void ShiftedMetric::checkInputGrid() {
   std::string parallel_transform;
-  if (mesh.isSourceFile() and !mesh.get(parallel_transform, "parallel_transform")) {
+  if (mesh.isDataSourceGridFile() and !mesh.get(parallel_transform, "parallel_transform")) {
     if (parallel_transform != "shiftedmetric") {
       throw BoutException("Incorrect parallel transform type '" + parallel_transform
                           + "' used to generate metric components for ShiftedMetric. "
