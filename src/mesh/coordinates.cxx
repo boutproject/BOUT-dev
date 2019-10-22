@@ -629,6 +629,11 @@ void Coordinates::outputVars(Datafile& file) {
   file.addOnce(g_23, "g_23" + loc_string);
 
   file.addOnce(J, "J" + loc_string);
+  file.addOnce(Bxy, "Bxy" + loc_string);
+
+  file.addOnce(G1, "G1" + loc_string);
+  file.addOnce(G2, "G2" + loc_string);
+  file.addOnce(G3, "G3" + loc_string);
 
   getParallelTransform().outputVars(file);
 }
