@@ -6,6 +6,8 @@
 #include <string>
 #include <type_traits>
 
+#include "output.hxx"
+
 /*!
  * Timing class for performance benchmarking and diagnosis
  *
@@ -104,6 +106,29 @@ private:
 
   /// Get the elapsed time, reset timing info to zero
   static double resetTime(timer_info& info);
+
+public:
+  static std::map<std::string, timer_info> getAllInfo() { return info; }
+
+  static void listAllInfo() {
+    const auto info = Timer::getAllInfo();
+    const std::string headerOne = "Timer name";
+    const std::string separator = " | ";
+    auto max_width = static_cast<unsigned int>(headerOne.length());
+
+    for (const auto &kv: info) {
+      max_width = std::max(max_width, static_cast<unsigned int>(kv.first.length()));
+    }
+
+    output << "Timer report \n\n";
+    output << std::setw(max_width) << headerOne << separator << "Time (s)" << "\n";
+    output << std::setw(max_width) << std::string(max_width,'-') << separator << std::string(max_width,'-') << "\n";
+    for (const auto &kv: info) {
+      output << std::setw(max_width) << kv.first << " | " << kv.second.time.count() << "\n";
+    }
+    output << "\n";
+  };
+
 };
 
 #endif // __TIMER_H__
