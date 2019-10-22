@@ -232,11 +232,7 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
       auto k1d = Array<dcomplex>((localmesh->LocalNz) / 2 +
                                  1); // ZFFT routine expects input of this length
 
-      bool zero_DC = false;
-      if(global_flags & INVERT_ZERO_DC) {
-        // No DC component
-        zero_DC = true;
-      }
+      const bool zero_DC = global_flags & INVERT_ZERO_DC;
 
       BOUT_OMP(for nowait)
       for (int ix = xs; ix <= xe; ix++) {
@@ -450,11 +446,7 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
       auto k1d = Array<dcomplex>((localmesh->LocalNz) / 2 +
                                  1); // ZFFT routine expects input of this length
 
-      bool zero_DC = false;
-      if(global_flags & INVERT_ZERO_DC) {
-        // No DC component
-        zero_DC = true;
-      }
+      const bool zero_DC = global_flags & INVERT_ZERO_DC;
 
       BOUT_OMP(for nowait)
       for (int ind = 0; ind < nxny; ++ind) { // Loop over X and Y
