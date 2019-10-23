@@ -81,6 +81,8 @@ private:
     double time;    ///< Total time
     bool running;   ///< Is the timer currently running?
     double started; ///< Start time
+    unsigned int counter; ///< Number of Timer objects associated with this
+                          ///< timer_info
   };
   
   static std::map<std::string, timer_info*> info;

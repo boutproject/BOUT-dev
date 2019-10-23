@@ -5,20 +5,29 @@ using namespace std;
 
 Timer::Timer() {
   timing = getInfo("");
-  timing->started = MPI_Wtime();
-  timing->running = true;
+  if (timing->counter == 0) {
+    timing->started = MPI_Wtime();
+    timing->running = true;
+  }
+  timing->counter++;
 }
 
 Timer::Timer(const std::string &label) {
   timing = getInfo(label);
-  timing->started = MPI_Wtime();
-  timing->running = true;
+  if (timing->counter == 0) {
+    timing->started = MPI_Wtime();
+    timing->running = true;
+  }
+  timing->counter++;
 }
 
 Timer::~Timer() {
-  double finished = MPI_Wtime();
-  timing->running = false;
-  timing->time += finished - timing->started;
+  timing->counter--;
+  if (timing->counter == 0) {
+    double finished = MPI_Wtime();
+    timing->running = false;
+    timing->time += finished - timing->started;
+  }
 }
 
 double Timer::getTime() {
@@ -75,6 +84,7 @@ Timer::timer_info* Timer::getInfo(const std::string &label) {
     timer_info *t = new timer_info;
     t->time = 0.0;
     t->running = false;
+    t->counter = 0;
     info[label] = t;
     return t;
   }
