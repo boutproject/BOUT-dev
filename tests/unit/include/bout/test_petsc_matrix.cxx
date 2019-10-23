@@ -169,14 +169,13 @@ TYPED_TEST(PetscMatrixTest, TestGetElements) {
   MatAssemblyEnd(*rawmat, MAT_FINAL_ASSEMBLY);
   MatGetLocalSize(*rawmat, &m, &n);
   auto indexer = GlobalIndexer::getInstance(this->field.getMesh());
-  int i_ind, j_ind;
-  for (auto i: this->field.getRegion("RGN_NOY")) {
-    for (auto j : this->field.getRegion("RGN_NOY")) {
-      i_ind = indexer->getGlobal(i);
-      j_ind = indexer->getGlobal(j);
-      MatGetValues(*rawmat, 1, &i_ind, 1, &j_ind, &matContents);
+  BOUT_FOR (i, this->field.getRegion("RGN_NOY")) {
+    BOUT_FOR_SERIAL (j, this->field.getRegion("RGN_NOY")) {
+      int i_ind = indexer->getGlobal(i);
+      int j_ind = indexer->getGlobal(j);
+      BOUT_OMP(critical) MatGetValues(*rawmat, 1, &i_ind, 1, &j_ind, &matContents);
       if (i==j) {
-	EXPECT_EQ(matContents, (BoutReal)i.ind);
+	EXPECT_EQ(matContents, static_cast<BoutReal>(i.ind));
       } else {
 	EXPECT_EQ(matContents, 0.0);
       }      
@@ -408,10 +407,11 @@ TYPED_TEST(PetscMatrixTest, TestMatrixVectorMultiplyOnes) {
   this->field.allocate();
   PetscVector<TypeParam> vector(this->field);
   BoutReal total = 0.0;
-  BOUT_FOR(i, this->field.getRegion("RGN_NOY")) {
-    vector(i) = (BoutReal)i.ind;
+  BOUT_FOR_OMP(i, this->field.getRegion("RGN_NOY"),
+     	       parallel for reduction(+:total) schedule(OPENMP_SCHEDULE)) {
+    vector(i) = static_cast<BoutReal>(i.ind);
     total += i.ind;
-    BOUT_FOR(j, this->field.getRegion("RGN_NOY")) {
+    BOUT_FOR_SERIAL(j, this->field.getRegion("RGN_NOY")) {
       matrix(i, j) = 1.0;
     }
   }

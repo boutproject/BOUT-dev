@@ -159,11 +159,10 @@ public:
     VecCreateMPI(comm, size(), PETSC_DECIDE, vector.get());
     location = f.getLocation();
     initialised = true;
-    PetscInt ind;
     BOUT_FOR(i, f.getRegion(RGN_ALL)) {
-      ind = indexConverter->getGlobal(i);
+      PetscInt ind = indexConverter->getGlobal(i);
       if (ind != -1) {
-	VecSetValues(*vector, 1, &ind, &f[i], INSERT_VALUES);
+	BOUT_OMP(critical) VecSetValues(*vector, 1, &ind, &f[i], INSERT_VALUES);
       }
     }
     assemble();
@@ -222,17 +221,20 @@ public:
     Element() = delete;
     Element(const Element& other) = default;
     Element(Vec* vector, int index) : petscVector(vector), petscIndex(index) {
-      const auto status = VecGetValues(*petscVector, 1, &petscIndex, &value);
+      int status;
+      BOUT_OMP(critical) status = VecGetValues(*petscVector, 1, &petscIndex, &value);
       if (status != 0) {
 	value = 0.;
-      }  
+      } 
     }
     Element operator=(Element& other) {
       return *this = static_cast<BoutReal>(other);
     }
     Element operator=(BoutReal val) {
       value = val;
-      const auto status = VecSetValues(*petscVector, 1, &petscIndex, &val, INSERT_VALUES);
+      int status;
+      BOUT_OMP(critical)
+	status = VecSetValues(*petscVector, 1, &petscIndex, &val, INSERT_VALUES);
       if (status != 0) {
 	throw BoutException("Error when setting elements of a PETSc vector.");
       }
@@ -240,7 +242,9 @@ public:
     }
     Element operator+=(BoutReal val) {
       value += val;
-      const auto status = VecSetValues(*petscVector, 1, &petscIndex, &val, ADD_VALUES);
+      int status;
+      BOUT_OMP(critical)
+	status = VecSetValues(*petscVector, 1, &petscIndex, &val, ADD_VALUES);
       if (status != 0) {
 	throw BoutException("Error when setting elements of a PETSc vector.");
       }
@@ -289,15 +293,14 @@ public:
     T result(indexConverter->getMesh());
     result.allocate();
     result.setLocation(location);
-    PetscScalar val;
-    PetscInt ind;
     // Note that this only populates boundaries to a depth of 1
     BOUT_FOR(i, result.getRegion(RGN_ALL)) {
-      ind = indexConverter->getGlobal(i);
+      PetscInt ind = indexConverter->getGlobal(i);
       if (ind == -1) {
 	result[i] = -1.0;
       } else {
-	VecGetValues(*vector, 1, &ind, &val);
+	PetscScalar val;
+	BOUT_OMP(critical) VecGetValues(*vector, 1, &ind, &val);
 	result[i] = val;
       }
     }
@@ -426,7 +429,9 @@ public:
 	positions = { col };
 	weights = { 1.0 };
       }
-      const auto status = MatGetValues(*petscMatrix, 1, &petscRow, 1, &petscCol, &value);
+      int status;
+      BOUT_OMP(critical)
+	status = MatGetValues(*petscMatrix, 1, &petscRow, 1, &petscCol, &value);
       if (status != 0) {
 	value = 0.;
       }
@@ -459,8 +464,10 @@ public:
       std::vector<PetscScalar> values;
       std::transform(weights.begin(), weights.end(), std::back_inserter(values),
 		     [&val](BoutReal weight) -> PetscScalar {return weight * val;});
-      auto status = MatSetValues(*petscMatrix, 1, &petscRow, positions.size(),
-				 positions.data(), values.data(), mode);
+      int status;
+      BOUT_OMP(critical)
+	status = MatSetValues(*petscMatrix, 1, &petscRow, positions.size(),
+					 positions.data(), values.data(), mode);
       if (status != 0) {
 	throw BoutException("Error when setting elements of a PETSc matrix.");
       }

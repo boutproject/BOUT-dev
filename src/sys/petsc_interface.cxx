@@ -127,7 +127,7 @@ GlobalIndexer::GlobalIndexer(Mesh* localmesh) : fieldmesh(localmesh),
       indices3D(it.ind, localmesh->yend + 1, z) = counter++;
     }
   }
-  BOUT_FOR(i, localmesh->getRegion3D("RGN_NOY")) {
+  BOUT_FOR_SERIAL(i, localmesh->getRegion3D("RGN_NOY")) {
     if ((i.x() >= localmesh->xstart && i.x() <= localmesh->xend) ||
 	(i.x() == localmesh->xstart - 1 && localmesh->firstX()) ||
 	(i.x() == localmesh->xend + 1 && localmesh->lastX())) {
@@ -147,7 +147,7 @@ GlobalIndexer::GlobalIndexer(Mesh* localmesh) : fieldmesh(localmesh),
       if (it.ind == localmesh->xend) indices2D(it.ind + 1, localmesh->ystart + 1) = counter++;
     indices2D(it.ind, localmesh->yend + 1) = counter++;
   }
-  BOUT_FOR(i, localmesh->getRegion2D("RGN_NOY")) {
+  BOUT_FOR_SERIAL(i, localmesh->getRegion2D("RGN_NOY")) {
     if ((i.x() >= localmesh->xstart && i.x() <= localmesh->xend) ||
 	(i.x() == localmesh->xstart - 1 && localmesh->firstX()) ||
 	(i.x() == localmesh->xend + 1&& localmesh->lastX())) {
@@ -158,7 +158,7 @@ GlobalIndexer::GlobalIndexer(Mesh* localmesh) : fieldmesh(localmesh),
   // Set up the Perp indices; will these work in general or will
   // different ones be needed for each value of y?
   counter = localmesh->globalStartIndexPerp();
-  BOUT_FOR(i, localmesh->getRegionPerp("RGN_NOY")) {
+  BOUT_FOR_SERIAL(i, localmesh->getRegionPerp("RGN_NOY")) {
     if ((i.x() >= localmesh->xstart && i.x() <= localmesh->xend) ||
 	(i.x() == localmesh->xstart - 1 && localmesh->firstX()) ||
 	(i.x() == localmesh->xend + 1 && localmesh->lastX())) {
