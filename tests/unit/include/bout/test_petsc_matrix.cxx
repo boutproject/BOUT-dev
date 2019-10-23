@@ -199,6 +199,7 @@ TYPED_TEST(PetscMatrixTest, TestAssemble) {
 
 #ifdef PETSC_USE_DEBUG
 
+#if CHECKLEVEL >= 3
 // Test trying to get an element that is out of bounds
 TYPED_TEST(PetscMatrixTest, TestGetOutOfBounds) {
   PetscMatrix<TypeParam> matrix(this->field);
@@ -216,6 +217,7 @@ TYPED_TEST(PetscMatrixTest, TestGetOutOfBounds) {
   EXPECT_THROW((matrix(index3, indexb)), BoutException);
   EXPECT_THROW((matrix(index3, indexc)), BoutException);
 }
+#endif // CHECKLEVEL >= 3
 
 // Test trying to use both INSERT_VALUES and ADD_VALUES
 TYPED_TEST(PetscMatrixTest, TestMixedSetting) {

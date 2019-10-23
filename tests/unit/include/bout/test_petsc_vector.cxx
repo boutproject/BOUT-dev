@@ -179,6 +179,7 @@ TYPED_TEST(PetscVectorTest, TestGetUninitialised) {
   EXPECT_THROW(vector(index), BoutException);
 }
 
+#if CHECKLEVEL >= 3
 // Test trying to get an element that is out of bounds
 TYPED_TEST(PetscVectorTest, TestGetOutOfBounds) {
   PetscVector<TypeParam> vector(this->field);
@@ -189,8 +190,9 @@ TYPED_TEST(PetscVectorTest, TestGetOutOfBounds) {
   typename TypeParam::ind_type index3(10000000);
   EXPECT_THROW(vector(index3), BoutException);  
 }
+#endif // CHECKLEVEL >= 3
 
-Test trying to use both INSERT_VALUES and ADD_VALUES
+// Test trying to use both INSERT_VALUES and ADD_VALUES
 TYPED_TEST(PetscVectorTest, TestMixedSetting) {
   PetscVector<TypeParam> vector(this->field);
   typename TypeParam::ind_type i = *(this->field.getRegion("RGN_NOBNDRY").begin());
