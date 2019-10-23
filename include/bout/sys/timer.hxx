@@ -8,6 +8,7 @@
 #include <iomanip>
 
 #include "output.hxx"
+#include "msg_stack.hxx"
 
 /*!
  * Timing class for performance benchmarking and diagnosis
@@ -132,4 +133,5 @@ public:
 
 };
 
+#define AUTO_TIME() Timer CONCATENATE(time_,__LINE__)(__thefunc__)
 #endif // __TIMER_H__
