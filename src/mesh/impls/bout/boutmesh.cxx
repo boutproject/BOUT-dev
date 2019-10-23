@@ -214,25 +214,39 @@ int BoutMesh::load() {
     numberOfXPoints = 2;
   }
 
-  if (options.isSet("NXPE")) {    // Specified NXPE
-    NXPE = options["NXPE"]
-               .doc("Decomposition in the radial direction. If not given then calculated "
-                    "automatically.")
-               .withDefault(1);
-    if ((NPES % NXPE) != 0) {
-      throw BoutException(
-          _("Number of processors (%d) not divisible by NPs in x direction (%d)\n"), NPES,
-          NXPE);
+  if (options.isSet("NXPE") or options.isSet("NYPE")) {    // Specified NXPE
+    if (options.isSet("NXPE")) {
+      NXPE = options["NXPE"]
+                 .doc("Decomposition in the radial direction. If not given then calculated "
+                      "automatically.")
+                 .withDefault(1);
+      if ((NPES % NXPE) != 0) {
+        throw BoutException(
+            _("Number of processors (%d) not divisible by NPs in x direction (%d)\n"), NPES,
+            NXPE);
+      }
+
+      NYPE = NPES / NXPE;
+    } else {
+      // NXPE not set, but NYPE is
+      NYPE = options["NYPE"]
+                 .doc("Decomposition in the parallel direction. Can be given instead of "
+                      "NXPE. If neither is given, then calculated automatically.")
+                 .withDefault(1);
+      if ((NPES % NYPE) != 0) {
+        throw BoutException(
+            _("Number of processors (%d) not divisible by NPs in y direction (%d)\n"), NPES,
+            NYPE);
+      }
+
+      NXPE = NPES / NYPE;
     }
 
-    NYPE = NPES / NXPE;
-
-    int nyp = NPES / NXPE;
     int ysub = ny / NYPE;
 
     // Check size of Y mesh
     if (ysub < MYG) {
-      throw BoutException("\t -> ny/NYPE (%d/%d = %d) must be >= MYG (%d)\n", ny, nyp,
+      throw BoutException("\t -> ny/NYPE (%d/%d = %d) must be >= MYG (%d)\n", ny, NYPE,
                         ysub, MYG);
     }
     // Check branch cuts
