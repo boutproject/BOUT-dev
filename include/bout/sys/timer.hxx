@@ -112,7 +112,6 @@ public:
   static std::map<std::string, timer_info> getAllInfo() { return info; }
 
   static void listAllInfo() {
-    const auto info = Timer::getAllInfo();
     const std::string headerOne = "Timer name";
     const std::string separator = " | ";
     auto max_width = static_cast<unsigned int>(headerOne.length());
@@ -125,7 +124,8 @@ public:
     output << std::setw(max_width) << headerOne << separator << "Time (s)" << "\n";
     output << std::setw(max_width) << std::string(max_width,'-') << separator << std::string(max_width,'-') << "\n";
     for (const auto &kv: info) {
-      output << std::setw(max_width) << kv.first << " | " << kv.second.time.count() << "\n";
+      output << std::left << std::setw(max_width) << kv.first << " | " << kv.second.time.count()
+             << " ("<<kv.second.ntimes<<")\n";
     }
     output << "\n";
   };
