@@ -66,7 +66,6 @@ matrix:
       - *default_env
       - CONFIGURE_OPTIONS='--enable-shared --with-petsc --with-slepc'
       - SCRIPT_FLAGS="-uim -t python -t shared"
-      - PIP_PACKAGES='netcdf4 cython'
   - env:
       - *default_env
       - CONFIGURE_OPTIONS='--enable-openmp --with-petsc --with-slepc'
