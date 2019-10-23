@@ -187,6 +187,9 @@ AS_IF([test "x$enable_openmp" = "xyes"], [
   OPENMP_CXXFLAGS="$OPENMP_CXXFLAGS -DOPENMP_SCHEDULE=$OPENMP_SCHEDULE"
 ])
 
+# Check if we have access to __PRETTY_FUNCTION__
+BOUT_CHECK_PRETTYFUNCTION
+
 #############################################################
 # Code coverage using gcov
 #
@@ -1089,7 +1092,6 @@ Please supply the path using --with-scorep=/path/to/scorep])
       # Set a compile-time flag
       CXXFLAGS="$CXXFLAGS -DBOUT_HAS_SCOREP"
       MPICXX="$SCOREPPATH --user --nocompiler $MPICXX"
-      BOUT_CHECK_PRETTYFUNCTION
       HAS_SCOREP="yes"
       AC_MSG_NOTICE([Scorep support enabled])
   ])
