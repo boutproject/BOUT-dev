@@ -5,7 +5,6 @@
 #include "gmock/gmock.h"
 #include "test_extras.hxx"
 
-#include <petscconf.h>
 #include "bout/petsc_interface.hxx"
 #include "bout/region.hxx"
 #include "field3d.hxx"
@@ -13,6 +12,8 @@
 #include "fieldperp.hxx"
 
 #ifdef BOUT_HAS_PETSC
+
+#include <petscconf.h>
 
 namespace bout{
 namespace globals{
