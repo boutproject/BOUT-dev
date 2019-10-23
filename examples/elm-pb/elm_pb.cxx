@@ -247,9 +247,9 @@ private:
         BoutReal mgx = mesh->GlobalX(i.x());
         BoutReal xgrid_num = (Jxsep + 1.) / Grid_NX;
 
-        int globaly = mesh->YGLOBAL(i.y());
+        int globaly = mesh->getGlobalYIndex(i.y());
 
-        if (mgx > xgrid_num || (globaly <= int(Jysep) - 4) || (globaly > int(Jysep2)))
+        if (mgx > xgrid_num || (globaly <= int(Jysep) - 2) || (globaly > int(Jysep2) + 2))
           mgx = xgrid_num;
         BoutReal rlx = mgx - n0_center;
         BoutReal temp = exp(rlx / n0_width);

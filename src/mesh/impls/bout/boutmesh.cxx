@@ -469,7 +469,7 @@ int BoutMesh::load() {
 
   ShiftAngle.resize(LocalNx);
 
-  if (!source->get(this, ShiftAngle, "ShiftAngle", LocalNx, XGLOBAL(0))) {
+  if (!source->get(this, ShiftAngle, "ShiftAngle", LocalNx, getGlobalXIndex(0))) {
     ShiftAngle.clear();
   }
 
@@ -812,7 +812,7 @@ int BoutMesh::load() {
     if (PE_XIND == 0) {
       // Inner either core or PF
 
-      int yg = YGLOBAL(MYG); // Get a global index in this processor
+      int yg = getGlobalYIndexNoBoundaries(MYG); // Get a global index in this processor
 
       if (((yg > jyseps1_1) && (yg <= jyseps2_1)) ||
           ((yg > jyseps1_2) && (yg <= jyseps2_2))) {
@@ -1299,7 +1299,7 @@ bool BoutMesh::firstY() const { return PE_YIND == 0; }
 bool BoutMesh::lastY() const { return PE_YIND == NYPE - 1; }
 
 bool BoutMesh::firstY(int xpos) const {
-  int xglobal = XGLOBAL(xpos);
+  int xglobal = getGlobalXIndex(xpos);
   int rank;
 
   if (xglobal < ixseps_inner) {
@@ -1313,7 +1313,7 @@ bool BoutMesh::firstY(int xpos) const {
 }
 
 bool BoutMesh::lastY(int xpos) const {
-  int xglobal = XGLOBAL(xpos);
+  int xglobal = getGlobalXIndex(xpos);
   int rank;
   int size;
 
@@ -1492,24 +1492,45 @@ int BoutMesh::PROC_NUM(int xind, int yind) {
 }
 
 /// Returns the global X index given a local index
-int BoutMesh::XGLOBAL(int xloc) const { return xloc + PE_XIND * MXSUB; }
-
-/// Returns the global X index given a local index
 int BoutMesh::XGLOBAL(BoutReal xloc, BoutReal &xglo) const {
   xglo = xloc + PE_XIND * MXSUB;
   return static_cast<int>(xglo);
+}
+
+/// Returns a global X index given a local index.
+/// Global index includes boundary cells, local index includes boundary or guard cells.
+int BoutMesh::getGlobalXIndex(int xlocal) const { return xlocal + PE_XIND * MXSUB; }
+
+/// Returns a global X index given a local index.
+/// Global index excludes boundary cells, local index includes boundary or guard cells.
+int BoutMesh::getGlobalXIndexNoBoundaries(int xlocal) const {
+  return xlocal + PE_XIND * MXSUB - MXG;
 }
 
 /// Returns a local X index given a global index
 int BoutMesh::XLOCAL(int xglo) const { return xglo - PE_XIND * MXSUB; }
 
 /// Returns the global Y index given a local index
-int BoutMesh::YGLOBAL(int yloc) const { return yloc + PE_YIND * MYSUB - MYG; }
-
-/// Returns the global Y index given a local index
 int BoutMesh::YGLOBAL(BoutReal yloc, BoutReal &yglo) const {
   yglo = yloc + PE_YIND * MYSUB - MYG;
   return static_cast<int>(yglo);
+}
+
+/// Returns a global Y index given a local index.
+/// Global index includes boundary cells, local index includes boundary or guard cells.
+int BoutMesh::getGlobalYIndex(int ylocal) const {
+  int yglobal =  ylocal + PE_YIND * MYSUB;
+  if (jyseps1_2 > jyseps2_1 and PE_YIND*MYSUB + 2*MYG + 1 > ny_inner) {
+    // Double null, and we are past the upper target
+    yglobal += 2*MYG;
+  }
+  return yglobal;
+}
+
+/// Returns a global Y index given a local index.
+/// Global index excludes boundary cells, local index includes boundary or guard cells.
+int BoutMesh::getGlobalYIndexNoBoundaries(int ylocal) const {
+  return ylocal + PE_YIND * MYSUB - MYG;
 }
 
 /// Global Y index given local index and processor
@@ -1519,6 +1540,15 @@ int BoutMesh::YGLOBAL(int yloc, int yproc) const { return yloc + yproc * MYSUB -
 int BoutMesh::YLOCAL(int yglo) const { return yglo - PE_YIND * MYSUB + MYG; }
 
 int BoutMesh::YLOCAL(int yglo, int yproc) const { return yglo - yproc * MYSUB + MYG; }
+
+/// Returns a global Z index given a local index.
+/// Global index includes boundary cells, local index includes boundary or guard cells.
+int BoutMesh::getGlobalZIndex(int zlocal) const { return zlocal; }
+
+/// Returns a global Z index given a local index.
+/// Global index excludes boundary cells, local index includes boundary or guard cells.
+/// Note: at the moment z-direction is always periodic, so has zero boundary cells
+int BoutMesh::getGlobalZIndexNoBoundaries(int zlocal) const { return zlocal; }
 
 /// Return the Y processor number given a global Y index
 int BoutMesh::YPROC(int yind) {
@@ -2025,12 +2055,12 @@ int BoutMesh::unpack_data(const std::vector<FieldData *> &var_list, int xge, int
  ****************************************************************/
 
 bool BoutMesh::periodicY(int jx) const {
-  return (XGLOBAL(jx) < ixseps_inner) && MYPE_IN_CORE;
+  return (getGlobalXIndex(jx) < ixseps_inner) && MYPE_IN_CORE;
 }
 
 bool BoutMesh::periodicY(int jx, BoutReal &ts) const {
   ts = 0.;
-  if ((XGLOBAL(jx) < ixseps_inner) && MYPE_IN_CORE) {
+  if ((getGlobalXIndex(jx) < ixseps_inner) && MYPE_IN_CORE) {
     if (TwistShift)
       ts = ShiftAngle[jx];
     return true;
@@ -2068,8 +2098,8 @@ std::pair<bool, BoutReal> BoutMesh::hasBranchCutUpper(int jx) const {
 }
 
 int BoutMesh::ySize(int xpos) const {
-  int xglobal = XGLOBAL(xpos);
-  int yglobal = YGLOBAL(MYG);
+  int xglobal = getGlobalXIndex(xpos);
+  int yglobal = getGlobalYIndexNoBoundaries(MYG);
 
   if ((xglobal < ixseps_lower) && ((yglobal <= jyseps1_1) || (yglobal > jyseps2_2))) {
     // Lower PF region
@@ -2107,7 +2137,7 @@ int BoutMesh::ySize(int xpos) const {
 }
 
 MPI_Comm BoutMesh::getYcomm(int xpos) const {
-  int xglobal = XGLOBAL(xpos);
+  int xglobal = getGlobalXIndex(xpos);
 
   if (xglobal < ixseps_inner) {
     return comm_inner;
@@ -2488,9 +2518,9 @@ const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {
 BoutReal BoutMesh::GlobalX(int jx) const {
   if (symmetricGlobalX) {
     // With this definition the boundary sits dx/2 away form the first/last inner points
-    return (0.5 + XGLOBAL(jx) - (nx - MX) * 0.5) / static_cast<BoutReal>(MX);
+    return (0.5 + getGlobalXIndex(jx) - (nx - MX) * 0.5) / static_cast<BoutReal>(MX);
   }
-  return static_cast<BoutReal>(XGLOBAL(jx)) / static_cast<BoutReal>(MX);
+  return static_cast<BoutReal>(getGlobalXIndex(jx)) / static_cast<BoutReal>(MX);
 }
 
 BoutReal BoutMesh::GlobalX(BoutReal jx) const {
@@ -2508,7 +2538,7 @@ BoutReal BoutMesh::GlobalX(BoutReal jx) const {
 
 BoutReal BoutMesh::GlobalY(int jy) const {
   if (symmetricGlobalY) {
-    BoutReal yi = YGLOBAL(jy);
+    BoutReal yi = getGlobalYIndexNoBoundaries(jy);
     int nycore = (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2);
 
     if (yi < ny_inner) {
@@ -2520,7 +2550,7 @@ BoutReal BoutMesh::GlobalY(int jy) const {
     return yi / nycore;
   }
 
-  int ly = YGLOBAL(jy); // global poloidal index across subdomains
+  int ly = getGlobalYIndexNoBoundaries(jy); // global poloidal index across subdomains
   int nycore = (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2);
 
   if (MYPE_IN_CORE) {
