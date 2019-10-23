@@ -92,6 +92,7 @@ private:
     clock_type::time_point started; ///< Start time
     unsigned int counter;           ///< Number of Timer objects associated with this
                                     ///  timer_info
+    unsigned int ntimes;
   };
 
   /// Store of existing timing info objects
