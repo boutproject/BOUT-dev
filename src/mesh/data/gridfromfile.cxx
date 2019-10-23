@@ -26,7 +26,7 @@
  *            destructor
  */
 GridFile::GridFile(std::unique_ptr<DataFormat> format, std::string gridfilename)
-    : file(std::move(format)), filename(std::move(gridfilename)) {
+    : GridDataSource(true), file(std::move(format)), filename(std::move(gridfilename)) {
   TRACE("GridFile constructor");
 
   if (! file->openr(filename) ) {
