@@ -63,7 +63,7 @@ void testVectorsEqual(Vec* v1, Vec* v2) {
 // Test constructor from field
 TYPED_TEST(PetscVectorTest, FieldConstructor) {
   BOUT_FOR(i, this->field.getRegion("RGN_ALL")) {
-    this->field[i] = (BoutReal)i.ind;
+    this->field[i] = static_cast<BoutReal>(i.ind);
   }
   PetscVector<TypeParam> vector(this->field);
   Vec *vectorPtr = vector.getVectorPointer();
@@ -143,7 +143,7 @@ TYPED_TEST(PetscVectorTest, MoveAssignment) {
 // Test getting elements
 TYPED_TEST(PetscVectorTest, TestGetElements) {
   PetscVector<TypeParam> vector(this->field);
-  for (auto i: this->field.getRegion("RGN_NOBNDRY")) {
+  BOUT_FOR(i, this->field.getRegion("RGN_NOBNDRY")) {
     vector(i) = (2.5*this->field[i] - 1.0);
   }
   Vec *rawvec = vector.getVectorPointer();
@@ -152,7 +152,7 @@ TYPED_TEST(PetscVectorTest, TestGetElements) {
   VecAssemblyEnd(*rawvec);
   VecGetArray(*rawvec, &vecContents);
   TypeParam result = vector.toField();
-  for (auto i : this->field.getRegion("RGN_NOBNDRY")) {
+  BOUT_FOR(i, this->field.getRegion("RGN_NOBNDRY")) {
     EXPECT_EQ(result[i], 2.5*this->field[i] - 1.0);
   }
 }

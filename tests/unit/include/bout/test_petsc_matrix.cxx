@@ -159,8 +159,8 @@ TYPED_TEST(PetscMatrixTest, MoveAssignment) {
 // Test getting elements
 TYPED_TEST(PetscMatrixTest, TestGetElements) {
   PetscMatrix<TypeParam> matrix(this->field);
-  for (auto i: this->field.getRegion("RGN_NOY")) {
-    matrix(i, i) = (BoutReal)i.ind;
+  BOUT_FOR (i, this->field.getRegion("RGN_NOY")) {
+    matrix(i, i) = static_cast<BoutReal>(i.ind);
   }
   Mat *rawmat = matrix.getMatrixPointer();
   PetscInt m, n;
@@ -388,7 +388,7 @@ TYPED_TEST(PetscMatrixTest, TestMatrixVectorMultiplyIdentity) {
   PetscMatrix<TypeParam> matrix(this->field);
   this->field.allocate();
   BOUT_FOR(i, this->field.getRegion("RGN_NOY")) {
-    this->field[i] = (BoutReal)i.ind;
+    this->field[i] = static_cast<BoutReal>(i.ind);
     matrix(i, i) = 1.0;
   }
   PetscVector<TypeParam> vector(this->field);
