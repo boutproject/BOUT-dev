@@ -1,0 +1,26 @@
+#!/usr/bin/env python3
+
+from boutdata import collect
+from boututils.run_wrapper import launch_safe, shell_safe
+from sys import exit
+
+test_directories = [('data_slab_core', 1)]
+tolerance = 1.e-6
+
+shell_safe('make')
+
+success = True
+for directory,nproc in test_directories:
+    launch_safe('test-laplace3d -d ' + directory, nproc=nproc)
+
+    error_max = collect('error_max', path=directory)
+
+    if error_max > tolerance:
+        print(directory + ' failed')
+        success = False
+
+if success:
+    print('Pass')
+    exit(0)
+else:
+    exit(1)
