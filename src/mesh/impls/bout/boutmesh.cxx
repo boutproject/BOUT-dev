@@ -1530,7 +1530,6 @@ int BoutMesh::YPROC(int yind) {
 /// Return the X processor number given a global X index
 int BoutMesh::XPROC(int xind) { return (xind >= MXG) ? (xind - MXG) / MXSUB : 0; }
 
-
 /****************************************************************
  *                     TESTING UTILITIES
  ****************************************************************/
@@ -1538,10 +1537,9 @@ int BoutMesh::XPROC(int xind) { return (xind >= MXG) ? (xind - MXG) / MXSUB : 0;
 /// A constructor used when making fake meshes for testing. This
 /// will make a mesh which thinks it corresponds to the subdomain on
 /// one processor, even though it's actually being run in serial.
-BoutMesh::BoutMesh(int  input_nx, int input_ny, int input_nz, int mxg, int myg,
-		   int nxpe, int nype, int pe_xind, int pe_yind) :
-  nx(input_nx), ny(input_ny), nz(input_nz), MXG(mxg), MYG(myg), MZG(0)
-{
+BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int nxpe,
+                   int nype, int pe_xind, int pe_yind)
+    : nx(input_nx), ny(input_ny), nz(input_nz), MXG(mxg), MYG(myg), MZG(0) {
   maxregionblocksize = MAXREGIONBLOCKSIZE;
   symmetricGlobalX = true;
   symmetricGlobalY = true;
@@ -1553,10 +1551,10 @@ BoutMesh::BoutMesh(int  input_nx, int input_ny, int input_nz, int mxg, int myg,
 
   PE_XIND = pe_xind;
   PE_YIND = pe_yind;
-  NPES = nxpe*nype;
-  MYPE = nxpe*pe_yind + pe_xind;
+  NPES = nxpe * nype;
+  MYPE = nxpe * pe_yind + pe_xind;
 
-    // Set global grid sizes
+  // Set global grid sizes
   GlobalNx = nx;
   GlobalNy = ny + 2 * MYG;
   GlobalNz = nz;
@@ -1634,8 +1632,6 @@ BoutMesh::BoutMesh(int  input_nx, int input_ny, int input_nz, int mxg, int myg,
 
   addBoundaryRegions();
 }
-
-
 
 /****************************************************************
  *                       CONNECTIONS
@@ -2064,36 +2060,40 @@ void BoutMesh::clear_handles() {
 /// communications to be faked between meshes as though they were on
 /// different processors.
 void BoutMesh::overlapHandleMemory(BoutMesh* yup, BoutMesh* ydown, BoutMesh* xin,
-				   BoutMesh* xout) {
-  int xlen = LocalNy*LocalNz*5, ylen = LocalNx*LocalNz*5;
-  CommHandle *ch = get_handle(xlen, ylen);
+                                   BoutMesh* xout) {
+  int xlen = LocalNy * LocalNz * 5, ylen = LocalNx * LocalNz * 5;
+  CommHandle* ch = get_handle(xlen, ylen);
   if (yup) {
-    CommHandle *other = (yup == this) ? ch : yup->get_handle(xlen, ylen);
+    CommHandle* other = (yup == this) ? ch : yup->get_handle(xlen, ylen);
     if (other->dmsg_sendbuff.unique()) {
       ch->umsg_recvbuff = other->dmsg_sendbuff;
     }
-    if (yup != this) yup->free_handle(other);
+    if (yup != this)
+      yup->free_handle(other);
   }
   if (ydown) {
-    CommHandle *other = (ydown == this) ? ch : ydown->get_handle(xlen, ylen);
+    CommHandle* other = (ydown == this) ? ch : ydown->get_handle(xlen, ylen);
     if (other->umsg_sendbuff.unique()) {
       ch->dmsg_recvbuff = other->umsg_sendbuff;
     }
-    if (ydown != this) ydown->free_handle(other);
+    if (ydown != this)
+      ydown->free_handle(other);
   }
   if (xin) {
-    CommHandle *other = (xin == this) ? ch : xin->get_handle(xlen, ylen);
+    CommHandle* other = (xin == this) ? ch : xin->get_handle(xlen, ylen);
     if (other->omsg_sendbuff.unique()) {
       ch->imsg_recvbuff = other->omsg_sendbuff;
     }
-    if (xin != this) xin->free_handle(other);
+    if (xin != this)
+      xin->free_handle(other);
   }
   if (xout) {
-    CommHandle *other = (xout == this) ? ch : xout->get_handle(xlen, ylen);
+    CommHandle* other = (xout == this) ? ch : xout->get_handle(xlen, ylen);
     if (other->imsg_sendbuff.unique()) {
       ch->omsg_recvbuff = other->imsg_sendbuff;
     }
-    if (xout != this) xout->free_handle(other);
+    if (xout != this)
+      xout->free_handle(other);
   }
   free_handle(ch);
 }

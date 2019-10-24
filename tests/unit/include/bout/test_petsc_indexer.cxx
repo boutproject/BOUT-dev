@@ -1,10 +1,10 @@
 #include <set>
-#include <vector>
 #include <tuple>
+#include <vector>
 
-#include "gtest/gtest.h"
-#include "test_extras.hxx"
 #include "fake_parallel_mesh.hxx"
+#include "test_extras.hxx"
+#include "gtest/gtest.h"
 
 #include "bout/petsc_interface.hxx"
 #include "bout/region.hxx"
@@ -12,9 +12,9 @@
 #ifdef BOUT_HAS_PETSC
 
 /// Global mesh
-namespace bout{
-namespace globals{
-extern Mesh *mesh;
+namespace bout {
+namespace globals {
+extern Mesh* mesh;
 } // namespace globals
 } // namespace bout
 
@@ -23,23 +23,22 @@ using namespace bout::globals;
 
 using IndexerTest = FakeMeshFixture;
 
-TEST_F(IndexerTest, TestIndexerConstructor){
+TEST_F(IndexerTest, TestIndexerConstructor) {
   FakeMesh mesh2(1, 1, 1);
   mesh2.createDefaultRegions();
   mesh2.setCoordinates(nullptr);
   test_coords = std::make_shared<Coordinates>(
       bout::globals::mesh, Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{1.0},
-      Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},
-      Field2D{0.0}, Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0},
-      Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0},
-      false);
+      Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0},
+      Field2D{0.0}, Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0}, Field2D{0.0},
+      Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, false);
   mesh2.setCoordinates(test_coords);
   // May need a ParallelTransform to create fields, because create3D calls
   // fromFieldAligned
   test_coords->setParallelTransform(
       bout::utils::make_unique<ParallelTransformIdentity>(*bout::globals::mesh));
   mesh2.createBoundaryRegions();
-  
+
   IndexerPtr i1 = GlobalIndexer::getInstance(mesh);
   IndexerPtr i2 = GlobalIndexer::getInstance(mesh);
   IndexerPtr i3 = GlobalIndexer::getInstance(&mesh2);
@@ -56,7 +55,7 @@ TEST_F(IndexerTest, TestConvertIndex3D) {
   Mesh* localmesh = bout::globals::mesh;
   IndexerPtr index = GlobalIndexer::getInstance(localmesh);
   index->initialise();
-  std::set<int, std::greater <int>> returnedIndices;
+  std::set<int, std::greater<int>> returnedIndices;
 
   // Check each of the interior global indices is unique
   BOUT_FOR(i, localmesh->getRegion3D("RGN_NOBNDRY")) {
@@ -82,14 +81,13 @@ TEST_F(IndexerTest, TestConvertIndex3D) {
     BOUT_OMP(critical) returnedIndices.insert(global);
   }
   ASSERT_LT(*returnedIndices.rbegin(),
-	    localmesh->LocalNx*localmesh->LocalNy*localmesh->LocalNz);
+            localmesh->LocalNx * localmesh->LocalNy * localmesh->LocalNz);
 }
-
 
 TEST_F(IndexerTest, TestConvertIndex2D) {
   Mesh* localmesh = bout::globals::mesh;
   IndexerPtr index = GlobalIndexer::getInstance(localmesh);
-  std::set<int, std::greater <int>> returnedIndices;
+  std::set<int, std::greater<int>> returnedIndices;
   index->initialise();
 
   // Check each of the interior global indices is unique
@@ -118,15 +116,14 @@ TEST_F(IndexerTest, TestConvertIndex2D) {
     BOUT_OMP(critical) returnedIndices.insert(global);
   }
 
-  ASSERT_LT(*returnedIndices.rbegin(), localmesh->LocalNx*localmesh->LocalNy);
+  ASSERT_LT(*returnedIndices.rbegin(), localmesh->LocalNx * localmesh->LocalNy);
 }
-
 
 TEST_F(IndexerTest, TestConvertIndexPerp) {
   Mesh* localmesh = bout::globals::mesh;
   IndexerPtr index = GlobalIndexer::getInstance(localmesh);
   index->initialise();
-  std::set<int, std::greater <int>> returnedIndices;
+  std::set<int, std::greater<int>> returnedIndices;
 
   // Check each of the interior global indices is unique
   BOUT_FOR(i, localmesh->getRegionPerp("RGN_NOBNDRY")) {
@@ -143,9 +140,8 @@ TEST_F(IndexerTest, TestConvertIndexPerp) {
     BOUT_OMP(critical) returnedIndices.insert(global);
   }
 
-  ASSERT_LT(*returnedIndices.rbegin(), localmesh->LocalNx*localmesh->LocalNz);
+  ASSERT_LT(*returnedIndices.rbegin(), localmesh->LocalNx * localmesh->LocalNz);
 }
-
 
 // TODO: Add tests for communicating indices across processors, somehow...
 class FakeParallelIndexer : public GlobalIndexer {
@@ -168,7 +164,8 @@ private:
   }
 };
 
-class ParallelIndexerTest : public ::testing::TestWithParam<std::tuple<int, int, int, int> > {
+class ParallelIndexerTest
+    : public ::testing::TestWithParam<std::tuple<int, int, int, int>> {
 public:
   WithQuietOutput info{output_info}, warn{output_warn}, all{output};
 
@@ -178,29 +175,27 @@ public:
     pe_xind = std::get<2>(GetParam());
     pe_yind = std::get<3>(GetParam());
     meshes = createFakeProcessors(nx, ny, nz, nxpe, nype);
-    
+
     xstart = meshes[0].xstart;
     xend = meshes[0].xend;
     ystart = meshes[0].ystart;
     yend = meshes[0].yend;
     int i = 0;
-    for (i = 0; i < nxpe*nype; i++) {
+    for (i = 0; i < nxpe * nype; i++) {
       auto ind = std::make_shared<FakeParallelIndexer>(&meshes[i]);
       ind->initialiseTest();
       indexers.push_back(ind);
     }
-//    i = 0;
-//    for (auto &ind : indexers) {
-//      ind->initialise();
-//      i++;
-//    }
-    indexers[pe_yind + pe_xind*nype]->initialise();
-    localmesh = &meshes[pe_yind + pe_xind*nype];
+    //    i = 0;
+    //    for (auto &ind : indexers) {
+    //      ind->initialise();
+    //      i++;
+    //    }
+    indexers[pe_yind + pe_xind * nype]->initialise();
+    localmesh = &meshes[pe_yind + pe_xind * nype];
   }
 
-  virtual ~ParallelIndexerTest() {
-    bout::globals::mesh = nullptr;
-  }
+  virtual ~ParallelIndexerTest() { bout::globals::mesh = nullptr; }
 
   static constexpr int nx = 7;
   static constexpr int ny = 5;
@@ -214,12 +209,12 @@ public:
   Mesh* localmesh;
 
   IndexerPtr getIndexer(int xind, int yind) {
-    return indexers[(yind + nype)%nype + xind*nype];
+    return indexers[(yind + nype) % nype + xind * nype];
   }
 };
 
-std::vector<std::tuple<int, int, int, int> > makeParallelTestCases(int nxpe, int nype) {
-  std::vector<std::tuple<int, int, int, int> > cases;
+std::vector<std::tuple<int, int, int, int>> makeParallelTestCases(int nxpe, int nype) {
+  std::vector<std::tuple<int, int, int, int>> cases;
   for (int i = 0; i < nxpe; i++) {
     for (int j = 0; j < nype; j++) {
       cases.push_back(std::make_tuple(nxpe, nype, i, j));
@@ -229,11 +224,11 @@ std::vector<std::tuple<int, int, int, int> > makeParallelTestCases(int nxpe, int
 }
 
 INSTANTIATE_TEST_SUITE_P(1by3, ParallelIndexerTest,
-			 testing::ValuesIn(makeParallelTestCases(1, 3)));
+                         testing::ValuesIn(makeParallelTestCases(1, 3)));
 INSTANTIATE_TEST_SUITE_P(3by1, ParallelIndexerTest,
-			 testing::ValuesIn(makeParallelTestCases(3, 1)));
+                         testing::ValuesIn(makeParallelTestCases(3, 1)));
 INSTANTIATE_TEST_SUITE_P(3by3, ParallelIndexerTest,
-			 testing::ValuesIn(makeParallelTestCases(3, 3)));
+                         testing::ValuesIn(makeParallelTestCases(3, 3)));
 
 TEST_P(ParallelIndexerTest, TestConvertIndex3D) {
   IndexerPtr index = getIndexer(pe_xind, pe_yind);
@@ -243,41 +238,45 @@ TEST_P(ParallelIndexerTest, TestConvertIndex3D) {
     if (i.x() < xstart && i.y() >= ystart && i.y() <= yend) {
       int global = index->getGlobal(i);
       if (pe_xind > 0) {
-	int otherGlobal = getIndexer(pe_xind - 1, pe_yind)->getGlobal(i.xp(xend - xstart + 1));
-	EXPECT_EQ(global, otherGlobal);
+        int otherGlobal =
+            getIndexer(pe_xind - 1, pe_yind)->getGlobal(i.xp(xend - xstart + 1));
+        EXPECT_EQ(global, otherGlobal);
       } else {
-	EXPECT_NE(global, -1);
+        EXPECT_NE(global, -1);
       }
     }
   }
-  
+
   // Test xOut boundary
   BOUT_FOR(i, localmesh->getRegion3D("RGN_XGUARDS")) {
     if (i.x() >= xend && i.y() >= ystart && i.y() <= yend) {
       int global = index->getGlobal(i);
       if (pe_xind < nxpe - 1) {
-	int otherGlobal = getIndexer(pe_xind + 1, pe_yind)->getGlobal(i.xm(xend - xstart + 1));
-	EXPECT_EQ(global, otherGlobal);
+        int otherGlobal =
+            getIndexer(pe_xind + 1, pe_yind)->getGlobal(i.xm(xend - xstart + 1));
+        EXPECT_EQ(global, otherGlobal);
       } else {
-	EXPECT_NE(global, -1);
+        EXPECT_NE(global, -1);
       }
     }
   }
-  
+
   // Test yDown boundary
   BOUT_FOR(i, localmesh->getRegion3D("RGN_YGUARDS")) {
     if (i.y() < ystart && i.x() >= xstart && i.x() <= xend) {
       int global = index->getGlobal(i);
-      int otherGlobal = getIndexer(pe_xind, pe_yind - 1)->getGlobal(i.yp(yend - ystart + 1));
+      int otherGlobal =
+          getIndexer(pe_xind, pe_yind - 1)->getGlobal(i.yp(yend - ystart + 1));
       EXPECT_EQ(global, otherGlobal);
     }
   }
-  
+
   // Test yUp boundary
   BOUT_FOR(i, localmesh->getRegion3D("RGN_YGUARDS")) {
     if (i.y() >= yend && i.x() >= xstart && i.x() <= xend) {
       int global = index->getGlobal(i);
-      int otherGlobal = getIndexer(pe_xind, pe_yind + 1)->getGlobal(i.ym(yend - ystart + 1));
+      int otherGlobal =
+          getIndexer(pe_xind, pe_yind + 1)->getGlobal(i.ym(yend - ystart + 1));
       EXPECT_EQ(global, otherGlobal);
     }
   }
@@ -291,46 +290,49 @@ TEST_P(ParallelIndexerTest, TestConvertIndex2D) {
     if (i.x() < xstart && i.y() >= ystart && i.y() <= yend) {
       int global = index->getGlobal(i);
       if (pe_xind > 0) {
-	int otherGlobal = getIndexer(pe_xind - 1, pe_yind)->getGlobal(i.xp(xend - xstart + 1));
-	EXPECT_EQ(global, otherGlobal);
+        int otherGlobal =
+            getIndexer(pe_xind - 1, pe_yind)->getGlobal(i.xp(xend - xstart + 1));
+        EXPECT_EQ(global, otherGlobal);
       } else {
-	EXPECT_NE(global, -1);
+        EXPECT_NE(global, -1);
       }
     }
   }
-  
+
   // Test xOut boundary
   BOUT_FOR(i, localmesh->getRegion2D("RGN_XGUARDS")) {
     if (i.x() >= xend && i.y() >= ystart && i.y() <= yend) {
       int global = index->getGlobal(i);
       if (pe_xind < nxpe - 1) {
-	int otherGlobal = getIndexer(pe_xind + 1, pe_yind)->getGlobal(i.xm(xend - xstart + 1));
-	EXPECT_EQ(global, otherGlobal);
+        int otherGlobal =
+            getIndexer(pe_xind + 1, pe_yind)->getGlobal(i.xm(xend - xstart + 1));
+        EXPECT_EQ(global, otherGlobal);
       } else {
-	EXPECT_NE(global, -1);
+        EXPECT_NE(global, -1);
       }
     }
   }
-  
+
   // Test yDown boundary
   BOUT_FOR(i, localmesh->getRegion2D("RGN_YGUARDS")) {
     if (i.y() < ystart && i.x() >= xstart && i.x() <= xend) {
       int global = index->getGlobal(i);
-      int otherGlobal = getIndexer(pe_xind, pe_yind - 1)->getGlobal(i.yp(yend - ystart + 1));
+      int otherGlobal =
+          getIndexer(pe_xind, pe_yind - 1)->getGlobal(i.yp(yend - ystart + 1));
       EXPECT_EQ(global, otherGlobal);
-    }    
+    }
   }
-  
+
   // Test yUp boundary
   BOUT_FOR(i, localmesh->getRegion2D("RGN_YGUARDS")) {
     if (i.y() >= yend && i.x() >= xstart && i.x() <= xend) {
       int global = index->getGlobal(i);
-      int otherGlobal = getIndexer(pe_xind, pe_yind + 1)->getGlobal(i.ym(yend - ystart + 1));
+      int otherGlobal =
+          getIndexer(pe_xind, pe_yind + 1)->getGlobal(i.ym(yend - ystart + 1));
       EXPECT_EQ(global, otherGlobal);
     }
   }
 }
-
 
 TEST_P(ParallelIndexerTest, TestConvertIndexPerp) {
   IndexerPtr index = getIndexer(pe_xind, pe_yind);
@@ -340,23 +342,25 @@ TEST_P(ParallelIndexerTest, TestConvertIndexPerp) {
     if (i.x() < xstart) {
       int global = index->getGlobal(i);
       if (pe_xind > 0) {
-	int otherGlobal = getIndexer(pe_xind - 1, pe_yind)->getGlobal(i.xp(xend - xstart + 1));
-	EXPECT_EQ(global, otherGlobal);
+        int otherGlobal =
+            getIndexer(pe_xind - 1, pe_yind)->getGlobal(i.xp(xend - xstart + 1));
+        EXPECT_EQ(global, otherGlobal);
       } else {
-	EXPECT_NE(global, -1);
+        EXPECT_NE(global, -1);
       }
     }
   }
-  
+
   // Test xOut boundary
   BOUT_FOR(i, localmesh->getRegionPerp("RGN_XGUARDS")) {
     if (i.x() >= xend) {
       int global = index->getGlobal(i);
       if (pe_xind < nxpe - 1) {
-	int otherGlobal = getIndexer(pe_xind + 1, pe_yind)->getGlobal(i.xm(xend - xstart + 1));
-	EXPECT_EQ(global, otherGlobal);
+        int otherGlobal =
+            getIndexer(pe_xind + 1, pe_yind)->getGlobal(i.xm(xend - xstart + 1));
+        EXPECT_EQ(global, otherGlobal);
       } else {
-	EXPECT_NE(global, -1);
+        EXPECT_NE(global, -1);
       }
     }
   }

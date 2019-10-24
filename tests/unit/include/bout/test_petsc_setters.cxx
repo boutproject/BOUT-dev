@@ -1,7 +1,7 @@
 #include <vector>
 
-#include "gtest/gtest.h"
 #include "test_extras.hxx"
+#include "gtest/gtest.h"
 
 #include "bout/petsc_interface.hxx"
 #include "bout/region.hxx"
@@ -25,17 +25,11 @@ public:
     VecAssemblyEnd(v);
   }
 
-  virtual ~PetscVectorElementTest() {
-    VecDestroy(&v);
-  }
+  virtual ~PetscVectorElementTest() { VecDestroy(&v); }
 };
 
 TEST_F(PetscVectorElementTest, AssignInsert) {
-  PetscVector<Field3D>::Element v1(&v, 1),
-    v2(&v, 2),
-    v3(&v, 3),
-    v3b(&v, 3),
-    v9(&v, 9);
+  PetscVector<Field3D>::Element v1(&v, 1), v2(&v, 2), v3(&v, 3), v3b(&v, 3), v9(&v, 9);
   v1 = 1.5;
   v2 = 2.5;
   v3 = 3.5;
@@ -69,11 +63,7 @@ TEST_F(PetscVectorElementTest, AssignElement) {
 }
 
 TEST_F(PetscVectorElementTest, AssignAdd) {
-  PetscVector<Field3D>::Element v1(&v, 1),
-    v2(&v, 2),
-    v3(&v, 3),
-    v3b(&v, 3),
-    v9(&v, 9);
+  PetscVector<Field3D>::Element v1(&v, 1), v2(&v, 2), v3(&v, 3), v3b(&v, 3), v9(&v, 9);
   v1 += 1.5;
   v2 += 2.5;
   v3 += 3.5;
@@ -113,7 +103,7 @@ public:
   std::vector<PetscInt> positions;
   std::vector<BoutReal> weights;
   PetscLib lib;
-  
+
   PetscMatrixElementTest() {
     PetscInt low, high;
     MatCreate(MPI_COMM_WORLD, &m);
@@ -148,14 +138,10 @@ public:
 };
 
 TEST_F(PetscMatrixElementTest, AssignInsert) {
-  PetscMatrix<Field3D>::Element v1_1(&m, 1, 1),
-    v2_3(&m, 2, 3),
-    v3_13(&m, 3, 13, positions, weights),
-    v9_6(&m, 9, 6),
-    v2_13(&m, 2, 13, positions, weights),
-    v2_14(&m, 2, 14),
-    v4_11(&m, 4, 11),
-    v4_11b(&m, 4, 11);
+  PetscMatrix<Field3D>::Element v1_1(&m, 1, 1), v2_3(&m, 2, 3),
+      v3_13(&m, 3, 13, positions, weights), v9_6(&m, 9, 6),
+      v2_13(&m, 2, 13, positions, weights), v2_14(&m, 2, 14), v4_11(&m, 4, 11),
+      v4_11b(&m, 4, 11);
   v1_1 = 1.5;
   v2_3 = 1.0;
   v3_13 = -3.5;
@@ -171,17 +157,19 @@ TEST_F(PetscMatrixElementTest, AssignInsert) {
   VecGetArray(b, &bconts);
   VecGetArray(x, &xconts);
   EXPECT_DOUBLE_EQ(0.0, bconts[0]);
-  EXPECT_DOUBLE_EQ(1.5*xconts[1], bconts[1]);
-  EXPECT_DOUBLE_EQ(1.0*xconts[3] + -1.0*0.5*xconts[12] + 2.0*0.5*xconts[13]
-		   - 1.0*0.5*xconts[14], bconts[2]);
-  EXPECT_DOUBLE_EQ(-1.0*-3.5*xconts[12] + 2.0*-3.5*xconts[13]
-		   - 1.0*-3.5*xconts[14], bconts[3]);
-  EXPECT_DOUBLE_EQ(0.5*xconts[11], bconts[4]);
+  EXPECT_DOUBLE_EQ(1.5 * xconts[1], bconts[1]);
+  EXPECT_DOUBLE_EQ(1.0 * xconts[3] + -1.0 * 0.5 * xconts[12] + 2.0 * 0.5 * xconts[13]
+                       - 1.0 * 0.5 * xconts[14],
+                   bconts[2]);
+  EXPECT_DOUBLE_EQ(-1.0 * -3.5 * xconts[12] + 2.0 * -3.5 * xconts[13]
+                       - 1.0 * -3.5 * xconts[14],
+                   bconts[3]);
+  EXPECT_DOUBLE_EQ(0.5 * xconts[11], bconts[4]);
   EXPECT_DOUBLE_EQ(0.0, bconts[5]);
   EXPECT_DOUBLE_EQ(0.0, bconts[6]);
   EXPECT_DOUBLE_EQ(0.0, bconts[7]);
   EXPECT_DOUBLE_EQ(0.0, bconts[8]);
-  EXPECT_DOUBLE_EQ(-1.0*xconts[6], bconts[9]);
+  EXPECT_DOUBLE_EQ(-1.0 * xconts[6], bconts[9]);
 }
 
 TEST_F(PetscMatrixElementTest, AssignElement) {
@@ -193,19 +181,14 @@ TEST_F(PetscMatrixElementTest, AssignElement) {
   PetscScalar *bconts, *xconts;
   VecGetArray(b, &bconts);
   VecGetArray(x, &xconts);
-  EXPECT_DOUBLE_EQ(1.5*(xconts[1] + xconts[2]), bconts[1]);
+  EXPECT_DOUBLE_EQ(1.5 * (xconts[1] + xconts[2]), bconts[1]);
 }
 
-
 TEST_F(PetscMatrixElementTest, AssignAdd) {
-  PetscMatrix<Field3D>::Element v1_1(&m, 1, 1),
-    v2_3(&m, 2, 3),
-    v3_13(&m, 3, 13, positions, weights),
-    v9_6(&m, 9, 6),
-    v2_13(&m, 2, 13, positions, weights),
-    v2_14(&m, 2, 14),
-    v4_11(&m, 4, 11),
-    v4_11b(&m, 4, 11);
+  PetscMatrix<Field3D>::Element v1_1(&m, 1, 1), v2_3(&m, 2, 3),
+      v3_13(&m, 3, 13, positions, weights), v9_6(&m, 9, 6),
+      v2_13(&m, 2, 13, positions, weights), v2_14(&m, 2, 14), v4_11(&m, 4, 11),
+      v4_11b(&m, 4, 11);
   v1_1 += 1.5;
   v2_3 += 1.0;
   v3_13 += -3.5;
@@ -221,17 +204,19 @@ TEST_F(PetscMatrixElementTest, AssignAdd) {
   VecGetArray(b, &bconts);
   VecGetArray(x, &xconts);
   EXPECT_DOUBLE_EQ(0.0, bconts[0]);
-  EXPECT_DOUBLE_EQ(1.5*xconts[1], bconts[1]);
-  EXPECT_DOUBLE_EQ(1.0*xconts[3] + -1.0*0.5*xconts[12] + 2.0*0.5*xconts[13]
-		   - 1.0*0.5*xconts[14]  + 1.0*xconts[14], bconts[2]);
-  EXPECT_DOUBLE_EQ(-1.0*-3.5*xconts[12] + 2.0*-3.5*xconts[13]
-		   - 1.0*-3.5*xconts[14], bconts[3]);
-  EXPECT_DOUBLE_EQ(7.5*xconts[11], bconts[4]);
+  EXPECT_DOUBLE_EQ(1.5 * xconts[1], bconts[1]);
+  EXPECT_DOUBLE_EQ(1.0 * xconts[3] + -1.0 * 0.5 * xconts[12] + 2.0 * 0.5 * xconts[13]
+                       - 1.0 * 0.5 * xconts[14] + 1.0 * xconts[14],
+                   bconts[2]);
+  EXPECT_DOUBLE_EQ(-1.0 * -3.5 * xconts[12] + 2.0 * -3.5 * xconts[13]
+                       - 1.0 * -3.5 * xconts[14],
+                   bconts[3]);
+  EXPECT_DOUBLE_EQ(7.5 * xconts[11], bconts[4]);
   EXPECT_DOUBLE_EQ(0.0, bconts[5]);
   EXPECT_DOUBLE_EQ(0.0, bconts[6]);
   EXPECT_DOUBLE_EQ(0.0, bconts[7]);
   EXPECT_DOUBLE_EQ(0.0, bconts[8]);
-  EXPECT_DOUBLE_EQ(-1.0*xconts[6], bconts[9]);
+  EXPECT_DOUBLE_EQ(-1.0 * xconts[6], bconts[9]);
 }
 
 TEST_F(PetscMatrixElementTest, ConvertToBoutReal) {

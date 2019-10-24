@@ -270,8 +270,12 @@ public:
                               int UNUSED(tag)) override {
     return nullptr;
   }
-  const RangeIterator iterateBndryLowerY() const override { return RangeIterator(xstart, xend); }
-  const RangeIterator iterateBndryUpperY() const override { return RangeIterator(xstart, xend); }
+  const RangeIterator iterateBndryLowerY() const override {
+    return RangeIterator(xstart, xend);
+  }
+  const RangeIterator iterateBndryUpperY() const override {
+    return RangeIterator(xstart, xend);
+  }
   const RangeIterator iterateBndryLowerOuterY() const override { return RangeIterator(); }
   const RangeIterator iterateBndryLowerInnerY() const override { return RangeIterator(); }
   const RangeIterator iterateBndryUpperOuterY() const override { return RangeIterator(); }
