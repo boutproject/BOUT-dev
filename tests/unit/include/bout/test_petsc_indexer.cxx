@@ -63,7 +63,7 @@ TEST_F(IndexerTest, TestConvertIndex3D) {
     int global = index->getGlobal(i);
     EXPECT_GE(global, 0);
     EXPECT_EQ(returnedIndices.count(global), 0);
-    returnedIndices.insert(global);
+    BOUT_OMP(critical) returnedIndices.insert(global);
   }
 
   // Check indices of X guard cells are unique
@@ -71,7 +71,7 @@ TEST_F(IndexerTest, TestConvertIndex3D) {
     int global = index->getGlobal(i);
     EXPECT_GE(global, 0);
     EXPECT_EQ(returnedIndices.count(global), 0);
-    returnedIndices.insert(global);
+    BOUT_OMP(critical) returnedIndices.insert(global);
   }
 
   // Check indices of Y guard cells are unique
@@ -79,7 +79,7 @@ TEST_F(IndexerTest, TestConvertIndex3D) {
     int global = index->getGlobal(i);
     EXPECT_GE(global, 0);
     EXPECT_EQ(returnedIndices.count(global), 0);
-    returnedIndices.insert(global);
+    BOUT_OMP(critical) returnedIndices.insert(global);
   }
   ASSERT_LT(*returnedIndices.rbegin(),
 	    localmesh->LocalNx*localmesh->LocalNy*localmesh->LocalNz);
@@ -97,7 +97,7 @@ TEST_F(IndexerTest, TestConvertIndex2D) {
     int global = index->getGlobal(i);
     EXPECT_GE(global, 0);
     EXPECT_EQ(returnedIndices.count(global), 0);
-    returnedIndices.insert(global);
+    BOUT_OMP(critical) returnedIndices.insert(global);
   }
 
   // If periodic in X, check indices of X guard cells are not unique;
@@ -106,7 +106,7 @@ TEST_F(IndexerTest, TestConvertIndex2D) {
     int global = index->getGlobal(i);
     EXPECT_GE(global, 0);
     EXPECT_EQ(returnedIndices.count(global), 0);
-    returnedIndices.insert(global);
+    BOUT_OMP(critical) returnedIndices.insert(global);
   }
 
   // If periodic in Y, check indices of Y guard cells are not unique;
@@ -115,7 +115,7 @@ TEST_F(IndexerTest, TestConvertIndex2D) {
     int global = index->getGlobal(i);
     EXPECT_GE(global, 0);
     EXPECT_EQ(returnedIndices.count(global), 0);
-    returnedIndices.insert(global);
+    BOUT_OMP(critical) returnedIndices.insert(global);
   }
 
   ASSERT_LT(*returnedIndices.rbegin(), localmesh->LocalNx*localmesh->LocalNy);
@@ -132,7 +132,7 @@ TEST_F(IndexerTest, TestConvertIndexPerp) {
   BOUT_FOR(i, localmesh->getRegionPerp("RGN_NOBNDRY")) {
     int global = index->getGlobal(i);
     EXPECT_EQ(returnedIndices.count(global), 0);
-    returnedIndices.insert(global);
+    BOUT_OMP(critical) returnedIndices.insert(global);
   }
 
   // If periodic in X, check indices of X guard cells are not unique;
@@ -140,7 +140,7 @@ TEST_F(IndexerTest, TestConvertIndexPerp) {
   BOUT_FOR(i, localmesh->getRegionPerp("RGN_XGUARDS")) {
     int global = index->getGlobal(i);
     EXPECT_EQ(returnedIndices.count(global), 0);
-    returnedIndices.insert(global);
+    BOUT_OMP(critical) returnedIndices.insert(global);
   }
 
   ASSERT_LT(*returnedIndices.rbegin(), localmesh->LocalNx*localmesh->LocalNz);

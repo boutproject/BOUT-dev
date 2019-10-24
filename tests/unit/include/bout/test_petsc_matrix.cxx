@@ -163,16 +163,14 @@ TYPED_TEST(PetscMatrixTest, TestGetElements) {
     matrix(i, i) = static_cast<BoutReal>(i.ind);
   }
   Mat *rawmat = matrix.getMatrixPointer();
-  PetscInt m, n;
-  PetscScalar matContents;
   MatAssemblyBegin(*rawmat, MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(*rawmat, MAT_FINAL_ASSEMBLY);
-  MatGetLocalSize(*rawmat, &m, &n);
   auto indexer = GlobalIndexer::getInstance(this->field.getMesh());
   BOUT_FOR (i, this->field.getRegion("RGN_NOY")) {
     BOUT_FOR_SERIAL (j, this->field.getRegion("RGN_NOY")) {
       int i_ind = indexer->getGlobal(i);
       int j_ind = indexer->getGlobal(j);
+      PetscScalar matContents;
       BOUT_OMP(critical) MatGetValues(*rawmat, 1, &i_ind, 1, &j_ind, &matContents);
       if (i==j) {
 	EXPECT_EQ(matContents, static_cast<BoutReal>(i.ind));

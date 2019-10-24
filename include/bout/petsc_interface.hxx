@@ -467,7 +467,7 @@ public:
       int status;
       BOUT_OMP(critical)
 	status = MatSetValues(*petscMatrix, 1, &petscRow, positions.size(),
-					 positions.data(), values.data(), mode);
+			      positions.data(), values.data(), mode);
       if (status != 0) {
 	throw BoutException("Error when setting elements of a PETSc matrix.");
       }
