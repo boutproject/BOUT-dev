@@ -220,7 +220,13 @@ uninstall:
 # Builds the library with $(OBJ) which is defined from the SOURCEC variable
 ####################################################################
 
+MPARK_VARIANT_SENTINEL = $(MPARK_VARIANT_INCLUDE_PATH)/mpark/variant.hpp
+$(MPARK_VARIANT_SENTINEL):
+	@echo "Downloading mpark.variant"
+	git submodule update --init --recursive $(BOUT_TOP)/externalpackages/mpark.variant
+
 ifeq ("$(TARGET)", "libfast")
+libfast: | $(MPARK_VARIANT_SENTINEL)
 libfast: makefile $(BOUT_CONFIG_FILE) $(BOUT_TOP)/include $(OBJ) $(DIRS)
 endif
 
