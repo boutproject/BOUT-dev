@@ -56,6 +56,10 @@ authors:
   - family-names: Breyiannia
     given-names: George
 
+  - family-names: Muhammed
+    given-names: Hasan
+    affiliation: University of York
+
   - family-names: Seto
     given-names: Haruki
 
@@ -90,6 +94,9 @@ authors:
   - family-names: Easy
     given-names: Luke
     orcid: https://orcid.org/0000-0002-9087-9180
+
+  - family-names: Estarellas
+    given-names: Marta
 
   - family-names: Thomas
     given-names: Matt
