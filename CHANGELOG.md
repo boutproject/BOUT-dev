@@ -291,6 +291,20 @@
 - Add support for enum class [\#1328](https://github.com/boutproject/BOUT-dev/pull/1328) ([dschwoerer](https://github.com/dschwoerer))
 - Remove deprecated routines [\#1326](https://github.com/boutproject/BOUT-dev/pull/1326) ([d7919](https://github.com/d7919))
 
+## [v4.2.3](https://github.com/boutproject/BOUT-dev/tree/v4.2.3) (2019-10-23)
+[Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v4.2.2...v4.2.3)
+
+**Merged pull requests:**
+
+- Add counters to Timers to avoid double-counting sections [\#1817](https://github.com/boutproject/BOUT-dev/pull/1817) ([ZedThree](https://github.com/ZedThree))
+- Bugfix: cyclic parallel derivative inversion done in wrong space [\#1807](https://github.com/boutproject/BOUT-dev/pull/1807) ([ZedThree](https://github.com/ZedThree))
+- Add instructions for Ubuntu 16.04 [\#1690](https://github.com/boutproject/BOUT-dev/pull/1690) ([dschwoerer](https://github.com/dschwoerer))
+- Allow relative paths to be followed when making [\#1670](https://github.com/boutproject/BOUT-dev/pull/1670) ([johnomotani](https://github.com/johnomotani))
+- Update examples/staggered\_grid for v4.2 [\#1645](https://github.com/boutproject/BOUT-dev/pull/1645) ([johnomotani](https://github.com/johnomotani))
+- Add EXTRA\_LIBS to LIBS when searching for libraries [\#1632](https://github.com/boutproject/BOUT-dev/pull/1632) ([ZedThree](https://github.com/ZedThree))
+- Recent fixes/improvements for Travis into master [\#1627](https://github.com/boutproject/BOUT-dev/pull/1627) ([ZedThree](https://github.com/ZedThree))
+- Bug in calculation of ShiftAngle \(qloop\) [\#1626](https://github.com/boutproject/BOUT-dev/pull/1626) ([bendudson](https://github.com/bendudson))
+
 ## [v4.2.2](https://github.com/boutproject/BOUT-dev/tree/v4.2.2) (2019-02-27)
 
 [Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v4.2.1...v4.2.2)

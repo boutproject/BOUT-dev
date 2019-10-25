@@ -310,8 +310,8 @@ endif
 # -MT  add a target to the generated dependency
 # Ignore failure, in case some compiler does not support this
 %.o: $(BOUT_CONFIG_FILE) %.cxx
-	@echo "  Compiling " $(@F:.o=.cxx)
-	@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -c $(@F:.o=.cxx) -o $@
+	@echo "  Compiling " $(@:.o=.cxx)
+	@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -c $(@:.o=.cxx) -o $@
 ifeq ("$(TARGET)","libfast")
 	test "$@" = "bout++.o" || touch $(BOUT_TOP)/lib/.last.o.file
 endif

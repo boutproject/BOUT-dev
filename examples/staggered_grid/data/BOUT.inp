@@ -6,6 +6,8 @@ MZ = 1
 
 grid = "test-staggered.nc"
 
+[mesh]
+
 StaggerGrids = true
 
 [mesh:ddy]
