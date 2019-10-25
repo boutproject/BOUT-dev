@@ -5,11 +5,12 @@ the changes from the full [changelog](CHANGELOG.md)
 
 4.3.0 is a big feature release:
 - `Field`s are now "tagged" with their "y-direction": that is, whether
-  they are in field-aligned space or not; as well as their
-  "z-direction", whether or not they are constant in z. This allows us
-  to perform more internal checking, for example, that only
-  field-aligned `Field3D`s are passed to `fromFieldAligned` and that
-  calculations are done in the correct space
+  they are in field-aligned space or not. This allows us to perform
+  more internal checking, for example, that only field-aligned
+  `Field3D`s are passed to `fromFieldAligned` and that calculations
+  are done in the correct y-direction space. Users may need to call
+  `f.setDirectionY(YDirectionType::Aligned)` for a `Field3D f` to set
+  the direction tag
 - Add `toFieldAligned` and `fromFieldAligned` free functions
 - `bout::utils::is_Field` and variants provide simpler methods of
   checking that input types are `Field`s in templated code
@@ -17,7 +18,7 @@ the changes from the full [changelog](CHANGELOG.md)
   now also much more consistent about checking function arguments have
   compatible staggered locations
 - New `emptyFrom(f)` and `zeroFrom(f)` helper functions for creating
-  `Field`s either allocated but initialised, or allocated and
+  `Field`s either allocated but not initialised, or allocated and
   initialised to `0.0` respectively, while ensuring the result is
   compatible with the `Field` `f` (same mesh, same staggering, etc.)
 - Expressions used in input files now have support for unicode,
@@ -60,7 +61,7 @@ the changes from the full [changelog](CHANGELOG.md)
 - `Array`, `Matrix` and `Tensor` all gained a `reallocate`
   method. This allows dynamic resizing of those objects, but
   invalidates the existing data
-- `FieldFactory` now has separate parsing and generatoring stages, so
+- `FieldFactory` now has separate parsing and generating stages, so
   functions can be parsed once and evaluated multiple times (e.g. for
   time-dependent functions)
 - Enable communications for simulations with no core, only divertor
