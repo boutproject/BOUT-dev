@@ -37,7 +37,7 @@ private:
   int boussinesq_used;  // How many times has it been reused
 
 protected:
-  int init(bool restarting) {
+  int init(bool UNUSED(restarting)) {
 
     /******************Reading options *****************/
 
@@ -56,15 +56,18 @@ protected:
 
     R_c = options["R_c"].withDefault(1.5);    // Radius of curvature
     L_par = options["L_par"].withDefault(10); // Parallel connection length
-    OPTION(options, B0, 0.35);                // Value of magnetic field strength
+    B0 = options["B0"].withDefault(0.35);     // Value of magnetic field strength
 
     // System option switches
 
-    OPTION(options, compressible, false); // Include compressible ExB term in density equation
-    OPTION(options, boussinesq, true); // Use Boussinesq approximation in vorticity
-    OPTION(options, sheath, true);     // Sheath closure
+    compressible = options["compressible"].withDefault(
+        false); // Include compressible ExB term in density equation
+    boussinesq = options["boussinesq"].withDefault(
+        true); // Use Boussinesq approximation in vorticity
+    sheath = options["sheath"].withDefault(true); // Sheath closure
 
-    OPTION(options, boussinesq_reuse, 0);   // How many times to reuse n in vorticity?
+    boussinesq_reuse = options["boussinesq_reuse"].withDefault(
+        0);                                 // How many times to reuse n in vorticity?
     boussinesq_used = boussinesq_reuse + 1; // Ensure updated first time
 
     /***************Calculate the Parameters **********/
@@ -106,7 +109,7 @@ protected:
     return 0;
   }
 
-  int rhs(BoutReal t) {
+  int rhs(BoutReal UNUSED(t)) {
 
     // Run communications
     ////////////////////////////////////////////////////////////////////////////

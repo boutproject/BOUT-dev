@@ -41,36 +41,46 @@
 
 #include "invert_parderiv.hxx"
 #include "dcomplex.hxx"
+#include <globals.hxx>
 #include "utils.hxx"
 
 class InvertParCR : public InvertPar {
 public:
-  InvertParCR(Options *opt);
-  ~InvertParCR();
+  InvertParCR(Options *opt, Mesh *mesh_in = bout::globals::mesh);
 
   using InvertPar::solve;
   const Field3D solve(const Field3D &f) override;
 
   using InvertPar::setCoefA;
-  void setCoefA(const Field2D &f) override { A = f; }
+  void setCoefA(const Field2D &f) override {
+    ASSERT1(localmesh == f.getMesh());
+    A = f;
+  }
   using InvertPar::setCoefB;
-  void setCoefB(const Field2D &f) override { B = f; }
+  void setCoefB(const Field2D &f) override {
+    ASSERT1(localmesh == f.getMesh());
+    B = f;
+  }
   using InvertPar::setCoefC;
-  void setCoefC(const Field2D &f) override { C = f; }
+  void setCoefC(const Field2D &f) override {
+    ASSERT1(localmesh == f.getMesh());
+    C = f;
+  }
   using InvertPar::setCoefD;
-  void setCoefD(const Field2D &f) override { D = f; }
+  void setCoefD(const Field2D &f) override {
+    ASSERT1(localmesh == f.getMesh());
+    D = f;
+  }
   using InvertPar::setCoefE;
-  void setCoefE(const Field2D &f) override { E = f; }
+  void setCoefE(const Field2D &f) override {
+    ASSERT1(localmesh == f.getMesh());
+    E = f;
+  }
 
 private:
   Field2D A, B, C, D, E;
   
   int nsys;
-  
-  Matrix<dcomplex>rhs;
-  Matrix<dcomplex>rhsk;
-  Matrix<dcomplex>xk;
-  Matrix<dcomplex> a, b, c; // Matrix coefficients
 };
 
 

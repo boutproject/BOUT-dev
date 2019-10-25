@@ -1,7 +1,10 @@
 mz = 129
-#MYG = 0
-grid = "grids/flat_grid.nc"
+MYG = 0
 dump_format = "nc"
+
+[mesh]
+nx = 132
+ny = 1
 
 [mesh:ddx]
 first=C4

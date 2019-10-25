@@ -48,12 +48,13 @@
  * LaplaceXY is used.
  */
 class LaplaceXY {
- public:
-  LaplaceXY(Mesh *UNUSED(m), Options *UNUSED(opt) = nullptr, const CELL_LOC = CELL_CENTRE) {
+public:
+  LaplaceXY(Mesh* UNUSED(m) = nullptr, Options* UNUSED(opt) = nullptr,
+            const CELL_LOC UNUSED(loc) = CELL_CENTRE) {
     throw BoutException("LaplaceXY requires PETSc. No LaplaceXY available");
   }
-  void setCoefs(const Field2D &UNUSED(A), const Field2D &UNUSED(B)) {}
-  const Field2D solve(const Field2D &UNUSED(rhs), const Field2D &UNUSED(x0)) {
+  void setCoefs(const Field2D& UNUSED(A), const Field2D& UNUSED(B)) {}
+  const Field2D solve(const Field2D& UNUSED(rhs), const Field2D& UNUSED(x0)) {
     throw BoutException("LaplaceXY requires PETSc. No LaplaceXY available");
   }
 };
@@ -70,7 +71,7 @@ public:
   /*! 
    * Constructor
    */
-  LaplaceXY(Mesh *m, Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE);
+  LaplaceXY(Mesh *m = nullptr, Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE);
   /*!
    * Destructor
    */
@@ -115,7 +116,7 @@ private:
   KSP ksp;          ///< Krylov Subspace solver
   PC pc;            ///< Preconditioner
 
-  Mesh *mesh;   ///< The mesh this operates on, provides metrics and communication
+  Mesh *localmesh;   ///< The mesh this operates on, provides metrics and communication
   
   // Preconditioner
   int xstart, xend;
@@ -156,12 +157,6 @@ private:
    */
   int globalIndex(int x, int y);  
   Field2D indexXY; ///< Global index (integer stored as BoutReal)
-
-  /*!
-   * Round a number to the nearest integer
-   */
-  int roundInt(BoutReal f);
-  
 };
 
 #endif // BOUT_HAS_PETSC

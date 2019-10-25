@@ -68,6 +68,11 @@ build-check-integrated-tests: libfast
 
 build-check: build-check-integrated-tests build-check-mms-tests build-check-unit-tests
 
+# Build the .mo files needed for Natural Language Support (gettext)
+.PHONY: locale
+locale:
+	$(MAKE) -C locale
+
 ######################################################################
 # Releases
 ######################################################################

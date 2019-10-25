@@ -1,0 +1,110 @@
+# French translations for BOUT++ package.
+# Copyright (C) 2018 THE BOUT++'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the BOUT++ package.
+#  <benjamin.dudson@york.ac.uk>, 2018.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: BOUT++ 4.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2018-10-22 22:26+0100\n"
+"PO-Revision-Date: 2018-10-21 22:46+0100\n"
+"Last-Translator:  <benjamin.dudson@york.ac.uk>\n"
+"Language-Team: French\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: src/bout++.cxx:365
+msgid "\tChecking disabled\n"
+msgstr "\tVérification désactivée\n"
+
+#: src/bout++.cxx:363
+#, c-format
+msgid "\tChecking enabled, level %d\n"
+msgstr "\tVérification activée, niveau %d\n"
+
+#: src/bout++.cxx:371
+msgid "\tSignal handling disabled\n"
+msgstr "\tTraitement du signal désactivé\n"
+
+#: src/bout++.cxx:369
+msgid "\tSignal handling enabled\n"
+msgstr "\tTraitement du signal activé\n"
+
+#: src/solver/solver.cxx:563
+#, c-format
+msgid ""
+"\n"
+"Run finished at  : %s\n"
+msgstr ""
+"\n"
+"L'exécution se termine à %s\n"
+
+#: src/solver/solver.cxx:534
+#, fuzzy, c-format
+msgid ""
+"\n"
+"Run started at  : %s\n"
+msgstr ""
+"\n"
+"L'exécution se termine à %s\n"
+
+#: src/bout++.cxx:350
+#, c-format
+msgid ""
+"Code compiled on %s at %s\n"
+"\n"
+msgstr ""
+"Code compilé le %s à %s\n"
+"\n"
+
+#: src/bout++.cxx:256
+#, c-format
+msgid "DataDir \"%s\" does not exist or is not accessible\n"
+msgstr "Le répertoire de données \"%s\" n'existe pas ou n'est pas accessible\n"
+
+#: src/bout++.cxx:253
+#, c-format
+msgid "DataDir \"%s\" is not a directory\n"
+msgstr "\"%s\" n'est pas un répertoire\n"
+
+#: src/bout++.cxx:424
+#, fuzzy
+msgid "Error encountered during initialisation\n"
+msgstr "Erreur rencontrée lors de l'initialisation\n"
+
+#: src/bout++.cxx:469
+#, c-format
+msgid "Error encountered during initialisation: %s\n"
+msgstr "Erreur rencontrée lors de l'initialisation : %s\n"
+
+#: src/solver/solver.cxx:526
+msgid "Failed to initialise solver-> Aborting\n"
+msgstr "Échec d'initialisation du solutionneur -> Abandonner\n"
+
+#: src/solver/solver.cxx:564
+msgid "Run time : "
+msgstr "Temps d'exécution : "
+
+#. / Run the solver
+#: src/solver/solver.cxx:531
+msgid ""
+"Running simulation\n"
+"\n"
+msgstr ""
+"L'exécution commence\n"
+"\n"
+
+#: src/solver/solver.cxx:521
+#, c-format
+msgid "Solver running for %d outputs with monitor timestep of %e\n"
+msgstr ""
+"Le solveur fonctionne pour %d sorties avec un temps de moniteur de %e\n"
+
+#: src/solver/solver.cxx:519
+#, c-format
+msgid "Solver running for %d outputs with output timestep of %e\n"
+msgstr "Le solveur fonctionne pour %d sorties avec un pas de sortie de %e\n"

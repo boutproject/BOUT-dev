@@ -226,6 +226,46 @@ public:
   int y() const { return (ind / nz) % ny; }
   int z() const { return (ind % nz); }
 
+  /// Templated routine to return index.?p(offset), where `?` is one of {x,y,z}
+  /// and is determined by the `dir` template argument. The offset corresponds
+  /// to the `dd` template argument.
+  template<int dd, DIRECTION dir>
+  const inline SpecificInd plus() const{
+    static_assert(dir == DIRECTION::X || dir == DIRECTION::Y || dir == DIRECTION::Z
+                      || dir == DIRECTION::YAligned || dir == DIRECTION::YOrthogonal,
+                  "Unhandled DIRECTION in SpecificInd::plus");
+    switch(dir) {
+    case(DIRECTION::X):
+      return xp(dd);
+    case(DIRECTION::Y):
+    case(DIRECTION::YAligned):
+    case(DIRECTION::YOrthogonal):
+      return yp(dd);
+    case(DIRECTION::Z):
+      return zp(dd);
+    }
+  }
+
+  /// Templated routine to return index.?m(offset), where `?` is one of {x,y,z}
+  /// and is determined by the `dir` template argument. The offset corresponds
+  /// to the `dd` template argument.
+  template<int dd, DIRECTION dir>
+  const inline SpecificInd minus() const{
+    static_assert(dir == DIRECTION::X || dir == DIRECTION::Y || dir == DIRECTION::Z
+                      || dir == DIRECTION::YAligned || dir == DIRECTION::YOrthogonal,
+                  "Unhandled DIRECTION in SpecificInd::minus");
+    switch(dir) {
+    case(DIRECTION::X):
+      return xm(dd);
+    case(DIRECTION::Y):
+    case(DIRECTION::YAligned):
+    case(DIRECTION::YOrthogonal):
+      return ym(dd);
+    case(DIRECTION::Z):
+      return zm(dd);
+    }
+  }
+
   const inline SpecificInd xp(int dx = 1) const { return {ind + (dx * ny * nz), ny, nz}; }
   /// The index one point -1 in x
   const inline SpecificInd xm(int dx = 1) const { return xp(-dx); }
@@ -327,6 +367,23 @@ using Ind3D = SpecificInd<IND_TYPE::IND_3D>;
 using Ind2D = SpecificInd<IND_TYPE::IND_2D>;
 using IndPerp = SpecificInd<IND_TYPE::IND_PERP>;
 
+/// Get string representation of Ind3D
+inline const std::string toString(const Ind3D& i) {
+  return "(" + std::to_string(i.x()) + ", "
+             + std::to_string(i.y()) + ", "
+             + std::to_string(i.z()) + ")";
+}
+/// Get string representation of Ind2D
+inline const std::string toString(const Ind2D& i) {
+  return "(" + std::to_string(i.x()) + ", "
+             + std::to_string(i.y()) + ")";
+}
+/// Get string representation of IndPerp
+inline const std::string toString(const IndPerp& i) {
+  return "(" + std::to_string(i.x()) + ", "
+             + std::to_string(i.z()) + ")";
+}
+
 /// Structure to hold various derived "statistics" from a particular region
 struct RegionStats {
   int numBlocks = 0;           ///< How many blocks
@@ -411,19 +468,19 @@ inline std::ostream &operator<<(std::ostream &out, const RegionStats &stats){
 ///     }
 template <typename T = Ind3D> class Region {
   // Following prevents a Region being created with anything other
-  // than Ind2D or Ind3D as template type
+  // than Ind2D, Ind3D or IndPerp as template type
   static_assert(std::is_base_of<Ind2D, T>::value || std::is_base_of<Ind3D, T>::value || std::is_base_of<IndPerp, T>::value,
                 "Region must be templated with one of IndPerp, Ind2D or Ind3D");
 
 public:
-  typedef T data_type;
+  using data_type = T;
 
   /// Indices to iterate over
-  typedef std::vector<T> RegionIndices;
+  using RegionIndices = std::vector<T>;
   /// Start and end of contiguous region. This describes a range [block.first,block.second)
-  typedef std::pair<T, T> ContiguousBlock;
+  using ContiguousBlock = std::pair<T, T>;
   /// Collection of contiguous regions
-  typedef std::vector<ContiguousBlock> ContiguousBlocks;
+  using ContiguousBlocks = std::vector<ContiguousBlock>;
 
   // NOTE::
   // Probably want to require a mesh in constructor, both to know nx/ny/nz
@@ -436,7 +493,7 @@ public:
 
   // Want to make this private to disable but think it may be needed as we put Regions
   // into maps which seems to need to be able to make "empty" objects.
-  Region<T>(){};
+  Region<T>() = default;
 
   Region<T>(int xstart, int xend, int ystart, int yend, int zstart, int zend, int ny,
             int nz, int maxregionblocksize = MAXREGIONBLOCKSIZE)
@@ -475,7 +532,7 @@ public:
   };
 
   /// Destructor
-  ~Region(){};
+  ~Region() = default;
 
   /// Expose the iterator over indices for use in range-based
   /// for-loops or with STL algorithms, etc.
@@ -513,7 +570,7 @@ public:
   };
 
   /// Sort this Region in place
-  Region<T> sort(){
+  Region<T>& sort() {
     *this = this->asSorted();
     return *this;
   }
@@ -535,7 +592,7 @@ public:
   }
 
   /// Make this Region unique in-place
-  Region<T> unique(){
+  Region<T>& unique() {
     *this = this->asUnique();
     return *this;
   }

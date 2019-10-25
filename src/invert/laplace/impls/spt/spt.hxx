@@ -50,12 +50,12 @@ class LaplaceSPT;
 /*!
  * This is a reference code which performs the same operations as the serial code.
  * To invert a single XZ slice (FieldPerp object), data must pass from the innermost
- * processor (mesh->PE_XIND = 0) to the outermost (mesh->PE_XIND = mesh->NXPE-1) and back again.
+ * processor (localmesh->PE_XIND = 0) to the outermost (localmesh->PE_XIND = localmesh->NXPE-1) and back again.
  *
  * Some parallelism is achieved by running several inversions simultaneously, so while
  * processor #1 is inverting Y=0, processor #0 is starting on Y=1. This works ok as long
- * as the number of slices to be inverted is greater than the number of X processors (MYSUB > mesh->NXPE).
- * If MYSUB < mesh->NXPE then not all processors can be busy at once, and so efficiency will fall sharply.
+ * as the number of slices to be inverted is greater than the number of X processors (MYSUB > localmesh->NXPE).
+ * If MYSUB < localmesh->NXPE then not all processors can be busy at once, and so efficiency will fall sharply.
  *
  * @param[in]    b      RHS values (Ax = b)
  * @param[in]    flags  Inversion settings (see boundary.h for values)
@@ -66,22 +66,25 @@ class LaplaceSPT;
  */
 class LaplaceSPT : public Laplacian {
 public:
-  LaplaceSPT(Options *opt = nullptr, const CELL_LOC = CELL_CENTRE);
+  LaplaceSPT(Options *opt = nullptr, const CELL_LOC = CELL_CENTRE, Mesh *mesh_in = nullptr);
   ~LaplaceSPT();
   
   using Laplacian::setCoefA;
   void setCoefA(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     Acoef = val;
   }
   using Laplacian::setCoefC;
   void setCoefC(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     Ccoef = val;
   }
   using Laplacian::setCoefD;
   void setCoefD(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     Dcoef = val;
   }
   using Laplacian::setCoefEx;
@@ -94,11 +97,11 @@ public:
   }
 
   using Laplacian::solve;
-  const FieldPerp solve(const FieldPerp &b) override;
-  const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override;
+  FieldPerp solve(const FieldPerp &b) override;
+  FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override;
   
-  const Field3D solve(const Field3D &b) override;
-  const Field3D solve(const Field3D &b, const Field3D &x0) override;
+  Field3D solve(const Field3D &b) override;
+  Field3D solve(const Field3D &b, const Field3D &x0) override;
 private:
   enum { SPT_DATA = 1123 }; ///< 'magic' number for SPT MPI messages
   

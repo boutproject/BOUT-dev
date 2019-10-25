@@ -56,7 +56,7 @@ public:
   BoutMask(Mesh& mesh, bool value=false) :
     BoutMask(mesh.LocalNx, mesh.LocalNy, mesh.LocalNz, value) {}
   // Default constructor uses global mesh
-  BoutMask() : BoutMask(*mesh) {}
+  BoutMask() : BoutMask(*bout::globals::mesh) {}
 
   // Assignment from bool
   BoutMask& operator=(bool value) {

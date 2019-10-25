@@ -25,8 +25,6 @@
 
 //#include <globals.hxx>
 
-#include <stdarg.h>
-
 #include <field.hxx>
 #include <output.hxx>
 #include <msg_stack.hxx>
@@ -34,26 +32,52 @@
 #include <utils.hxx>
 #include <bout/mesh.hxx>
 
-Field::Field() : fieldmesh(nullptr), fieldCoordinates(nullptr) {
-#if CHECK > 0
-  bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true;
-#endif
+Field::Field(Mesh *localmesh, CELL_LOC location_in,
+             DirectionTypes directions_in)
+    : fieldmesh(localmesh==nullptr ? bout::globals::mesh : localmesh),
+      location(location_in), directions(directions_in) {
+
+  // Need to check for nullptr again, because the fieldmesh might still be
+  // nullptr if the global mesh hasn't been initialized yet
+  if (fieldmesh != nullptr) {
+    // sets fieldCoordinates by getting Coordinates for our location from
+    // fieldmesh
+    getCoordinates();
+  }
 }
 
-Field::Field(Mesh *localmesh) : fieldmesh(localmesh), fieldCoordinates(nullptr) {
-  if (fieldmesh == nullptr) {
-    fieldmesh = mesh;
+void Field::setLocation(CELL_LOC new_location) {
+  AUTO_TRACE();
+  if (getMesh()->StaggerGrids) {
+    if (new_location == CELL_VSHIFT) {
+      throw BoutException(
+          "Field: CELL_VSHIFT cell location only makes sense for vectors");
+    }
+    if (new_location == CELL_DEFAULT) {
+      new_location = CELL_CENTRE;
+    }
+
+    location = new_location;
+  } else {
+#if CHECK > 0
+    if (new_location != CELL_CENTRE && new_location != CELL_DEFAULT) {
+      throw BoutException("Field: Trying to set off-centre location on "
+                          "non-staggered grid\n"
+                          "         Did you mean to enable staggered grids?");
+    }
+#endif
+    location = CELL_CENTRE;
   }
 
-// Note we would like to do `fieldCoordinates = getCoordinates();` here but can't
-// currently as this would lead to circular/recursive behaviour (getCoordinates would
-// call fieldmesh->coordinates, which would create fields, which would then call
-// getCoordinates again etc.). This also requires care in the derived class
-// constructors.
-  
-#if CHECK > 0
-  bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true;
-#endif
+  fieldCoordinates = nullptr;
+  // Sets correct fieldCoordinates pointer and ensures Coordinates object is
+  // initialized for this Field's location
+  getCoordinates();
+}
+
+CELL_LOC Field::getLocation() const {
+  AUTO_TRACE();
+  return location;
 }
 
 Coordinates *Field::getCoordinates() const {
@@ -81,30 +105,3 @@ int Field::getNy() const{
 int Field::getNz() const{
   return getMesh()->LocalNz;
 };
-
-/////////////////// PROTECTED ////////////////////
-
-
-// Report an error occurring
-void Field::error(const char *s, ...) const {
-  int buf_len=512;
-  char * err_buffer=new char[buf_len];
-
-  if (s == nullptr) {
-    output_error.write("Unspecified error in field\n");
-  } else {
-
-    bout_vsnprintf(err_buffer,buf_len, s);
-
-#ifdef TRACK
-      output_error.write("Error in '%s': %s", name.c_str(), err_buffer);
-#else
-      output_error.write("Error in field: %s", err_buffer);
-#endif
-  }
-  std::string msg="Error in field: ";
-  msg+=err_buffer;
-  delete[] err_buffer;
-  throw BoutException(msg);
-}
-

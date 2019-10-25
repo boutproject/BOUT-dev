@@ -34,14 +34,15 @@ class LaplacePDD;
 #ifndef __LAPLACE_PDD_H__
 #define __LAPLACE_PDD_H__
 
+#include <bout/mesh.hxx>
 #include <invert_laplace.hxx>
 #include <options.hxx>
 #include <utils.hxx>
 
 class LaplacePDD : public Laplacian {
 public:
-  LaplacePDD(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE)
-      : Laplacian(opt, loc), Acoef(0.0), Ccoef(1.0), Dcoef(1.0), PDD_COMM_XV(123),
+  LaplacePDD(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr)
+      : Laplacian(opt, loc, mesh_in), Acoef(0.0), Ccoef(1.0), Dcoef(1.0), PDD_COMM_XV(123),
         PDD_COMM_Y(456) {
     Acoef.setLocation(location);
     Ccoef.setLocation(location);
@@ -52,16 +53,19 @@ public:
   using Laplacian::setCoefA;
   void setCoefA(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     Acoef = val;
   }
   using Laplacian::setCoefC;
   void setCoefC(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     Ccoef = val;
   }
   using Laplacian::setCoefD;
   void setCoefD(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     Dcoef = val;
   }
   using Laplacian::setCoefEx;
@@ -74,8 +78,8 @@ public:
   }
 
   using Laplacian::solve;
-  const FieldPerp solve(const FieldPerp &b) override;
-  const Field3D solve(const Field3D &b) override;
+  FieldPerp solve(const FieldPerp &b) override;
+  Field3D solve(const Field3D &b) override;
 private:
   Field2D Acoef, Ccoef, Dcoef;
   
@@ -83,7 +87,7 @@ private:
   const int PDD_COMM_Y;  // Second tag
   
   /// Data structure for PDD algorithm
-  typedef struct {
+  struct PDD_data {
     Matrix<dcomplex> bk;  ///< b vector in Fourier space
 
     Matrix<dcomplex> avec, bvec, cvec; ///< Diagonal bands of matrix
@@ -99,7 +103,7 @@ private:
     comm_handle recv_handle;
 
     Array<dcomplex> y2i;
-  }PDD_data;
+  };
   
   void start(const FieldPerp &b, PDD_data &data);
   void next(PDD_data &data);

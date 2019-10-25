@@ -1,0 +1,19 @@
+#!/bin/bash
+
+make || exit
+
+test -z $MPIRUN  && MPIRUN=mpirun
+# Kill the test after 3 seconds, if it hasn't already exited
+OMP_NUM_THREADS=1 $MPIRUN -n 3 timeout 3s ./test-coordinates-initialization
+
+e=$?
+
+if test $e -ne 0
+then
+    echo "The test failed. That can be caused by a timeout."
+    echo "If this test is run on high load, it may fail occasionally."
+    echo "The load is:"
+    uptime
+fi
+
+exit $e

@@ -7,6 +7,8 @@
 
 BoutReal BoundaryOpPar::getValue(int x, int y, int z, BoutReal t) {
 
+  Mesh* mesh = bndry->localmesh;
+
   BoutReal xnorm;
   BoutReal ynorm;
   BoutReal znorm;
@@ -14,7 +16,7 @@ BoutReal BoundaryOpPar::getValue(int x, int y, int z, BoutReal t) {
   BoutReal value;
 
   switch (value_type) {
-  case GEN:
+  case ValueType::GEN:
     // This works but doesn't quite do the right thing... should
     // generate value on the boundary, but that gives wrong
     // answer. This instead generates the value at the gridpoint
@@ -22,10 +24,10 @@ BoutReal BoundaryOpPar::getValue(int x, int y, int z, BoutReal t) {
     ynorm = mesh->GlobalY(y);
     znorm = static_cast<BoutReal>(z) / (mesh->LocalNz);
     return gen_values->generate(xnorm, TWOPI*ynorm, TWOPI*znorm, t);
-  case FIELD:
+  case ValueType::FIELD:
     value = (*field_values)(x,y,z);
     return value;
-  case REAL:
+  case ValueType::REAL:
     return real_value;
   default:
     throw BoutException("Invalid value_type encountered in BoundaryOpPar::getValue");
@@ -35,6 +37,8 @@ BoutReal BoundaryOpPar::getValue(int x, int y, int z, BoutReal t) {
 
 BoutReal BoundaryOpPar::getValue(const BoundaryRegionPar &bndry, BoutReal t) {
 
+  Mesh* mesh = bndry.localmesh;
+
   BoutReal xnorm;
   BoutReal ynorm;
   BoutReal znorm;
@@ -42,17 +46,17 @@ BoutReal BoundaryOpPar::getValue(const BoundaryRegionPar &bndry, BoutReal t) {
   BoutReal value;
 
   switch (value_type) {
-  case GEN:
+  case ValueType::GEN:
     // Need to use GlobalX, except with BoutReal as argument...
     xnorm = mesh->GlobalX(bndry.s_x);
     ynorm = mesh->GlobalY(bndry.s_y);
     znorm = bndry.s_z/(mesh->LocalNz);
     return gen_values->generate(xnorm, TWOPI*ynorm, TWOPI*znorm, t);
-  case FIELD:
+  case ValueType::FIELD:
     // FIXME: Interpolate to s_x, s_y, s_z...
     value = (*field_values)(bndry.x,bndry.y,bndry.z);
     return value;
-  case REAL:
+  case ValueType::REAL:
     return real_value;
   default:
     throw BoutException("Invalid value_type encountered in BoundaryOpPar::getValue");
@@ -63,7 +67,7 @@ BoutReal BoundaryOpPar::getValue(const BoundaryRegionPar &bndry, BoutReal t) {
 //////////////////////////////////////////
 // Dirichlet boundary
 
-BoundaryOpPar* BoundaryOpPar_dirichlet::clone(BoundaryRegionPar *region, const list<string> &args) {
+BoundaryOpPar* BoundaryOpPar_dirichlet::clone(BoundaryRegionPar *region, const std::list<std::string> &args) {
   if(!args.empty()) {
     try {
       real_value = stringToReal(args.front());
@@ -108,7 +112,7 @@ void BoundaryOpPar_dirichlet::apply(Field3D &f, BoutReal t) {
 //////////////////////////////////////////
 // Dirichlet boundary - Third order
 
-BoundaryOpPar* BoundaryOpPar_dirichlet_O3::clone(BoundaryRegionPar *region, const list<string> &args) {
+BoundaryOpPar* BoundaryOpPar_dirichlet_O3::clone(BoundaryRegionPar *region, const std::list<std::string> &args) {
   if(!args.empty()) {
     try {
       real_value = stringToReal(args.front());
@@ -160,7 +164,7 @@ void BoundaryOpPar_dirichlet_O3::apply(Field3D &f, BoutReal t) {
 //////////////////////////////////////////
 // Dirichlet with interpolation
 
-BoundaryOpPar* BoundaryOpPar_dirichlet_interp::clone(BoundaryRegionPar *region, const list<string> &args) {
+BoundaryOpPar* BoundaryOpPar_dirichlet_interp::clone(BoundaryRegionPar *region, const std::list<std::string> &args) {
   if(!args.empty()) {
     try {
       real_value = stringToReal(args.front());
@@ -209,7 +213,7 @@ void BoundaryOpPar_dirichlet_interp::apply(Field3D &f, BoutReal t) {
 //////////////////////////////////////////
 // Neumann boundary
 
-BoundaryOpPar* BoundaryOpPar_neumann::clone(BoundaryRegionPar *region, const list<string> &args) {
+BoundaryOpPar* BoundaryOpPar_neumann::clone(BoundaryRegionPar *region, const std::list<std::string> &args) {
   if(!args.empty()) {
     try {
       real_value = stringToReal(args.front());

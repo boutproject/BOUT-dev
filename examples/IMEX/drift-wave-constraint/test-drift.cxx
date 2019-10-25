@@ -7,7 +7,7 @@
 
 class DriftWave : public PhysicsModel { 
 protected:
-  int init(bool restart) {
+  int init(bool UNUSED(restart)) {
     // Specify evolving variables
     solver->add(Vort, "Vort"); // Vorticity
     solver->add(Ne, "Ne");     // Electron density
@@ -26,12 +26,12 @@ protected:
     phi = 0.0;
     
     // Coordinate system
-    coord = mesh->coordinates();
+    coord = mesh->getCoordinates();
 
     return 0;
   }
   
-  int convective(BoutReal time) {
+  int convective(BoutReal UNUSED(time)) {
     // Non-stiff parts of the problem here
     // Here just the nonlinear advection
     
@@ -52,7 +52,7 @@ protected:
     return 0;
   }
   
-  int diffusive(BoutReal time) {
+  int diffusive(BoutReal UNUSED(time)) {
     // Parallel dynamics treated implicitly
     
     mesh->communicate(phi, Vort, Ne);

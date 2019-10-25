@@ -32,7 +32,7 @@
 #
 
 AC_PREREQ([2.69])
-AC_INIT([BOUT++],[4.2.3],[bd512@york.ac.uk])
+AC_INIT([BOUT++],[4.3.0],[bd512@york.ac.uk])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -87,7 +87,7 @@ AC_ARG_ENABLE(shared,       [AS_HELP_STRING([--enable-shared],
         [Enable building bout++ into an shared object])],,[enable_shared=no])
 AC_ARG_ENABLE(openmp,       [AS_HELP_STRING([--enable-openmp],
         [Enable building with OpenMP support])],,[enable_openmp=no])
-AC_ARG_WITH(openmp_schedule,[AS_HELP_STRING([--with-openmp-schedule=static],
+AC_ARG_WITH(openmp_schedule,[AS_HELP_STRING([--with-openmp-schedule=static/dynamic/guided/auto],
         [Set OpenMP schedule (default: static)])],,[with_openmp_schedule=static])
 AC_ARG_ENABLE(pvode_openmp, [AS_HELP_STRING([--enable-pvode-openmp],
         [Enable building PVODE with OpenMP support])],,[enable_pvode_openmp=no])
@@ -187,6 +187,9 @@ AS_IF([test "x$enable_openmp" = "xyes"], [
   OPENMP_CXXFLAGS="$OPENMP_CXXFLAGS -DOPENMP_SCHEDULE=$OPENMP_SCHEDULE"
 ])
 
+# Check if we have access to __PRETTY_FUNCTION__
+BOUT_CHECK_PRETTYFUNCTION
+
 #############################################################
 # Code coverage using gcov
 #
@@ -218,12 +221,17 @@ AC_SUBST([COVERAGE_FLAGS])
 # If this is passed to GCC, it will explode, so the flag must be enabled
 # conditionally.
 # This check taken from AX_COMPILER_FLAGS_CXXFLAGS
+extra_compiler_flags_test=""
 AX_CHECK_COMPILE_FLAG([-Werror=unknown-warning-option],[
   extra_compiler_flags_test="-Werror=unknown-warning-option"
-],[
-  extra_compiler_flags_test=""
 ])
-
+# A similar check to above, but for Intel. -we is undocumented, but
+# the equivalent (?) -diag-error gets accepted by GCC. 10006 is
+# "unknown option", and 10148 is the more recent "unknown warning
+# option"
+AX_CHECK_COMPILE_FLAG([-we10006,10148],[
+  extra_compiler_flags_test="-we10006,10148"
+])
 
 AS_IF([test "x$enable_warnings" != "xno"], [
 # Some hopefully sensible default compiler warning flags
@@ -405,16 +413,27 @@ AS_IF([test $? = 0], [
 # FFT routines
 #############################################################
 
+AS_IF([test "x$with_fftw" != "xno"], [
 AC_PATH_PROG([fftw_path], [fftw-wisdom], [no], [$with_fftw$PATH_SEPARATOR$PATH])
 
-AS_IF([test "x$fftw_path" != "xno"], [
-  fftw_wisdom0=`AS_DIRNAME(["$fftw_path"])`
-  fftw_wisdom=`AS_DIRNAME(["$fftw_wisdom0"])`
-  with_fftw="$with_fftw $fftw_wisdom"
-])
+  AS_IF([test "x$fftw_path" != "xno"], [
+    fftw_wisdom0=`AS_DIRNAME(["$fftw_path"])`
+    fftw_wisdom=`AS_DIRNAME(["$fftw_wisdom0"])`
+    with_fftw="$with_fftw $fftw_wisdom"
+  ], AC_MSG_NOTICE([FFTW3 requested but fftw-wisdom not found]))
 
-BOUT_ADDPATH_CHECK_HEADER(fftw3.h, ,AC_MSG_ERROR([FFTW3 is needed by BOUT++]), $with_fftw)
-BOUT_ADDPATH_CHECK_LIB(fftw3, fftw_plan_dft_r2c_1d, ,AC_MSG_ERROR([FFTW3 is needed by BOUT++]), $with_fftw)
+  BOUT_ADDPATH_CHECK_HEADER(fftw3.h, ,AC_MSG_ERROR([FFTW3 requested but header not found]), $with_fftw)
+  BOUT_ADDPATH_CHECK_LIB(fftw3, fftw_plan_dft_r2c_1d, ,AC_MSG_ERROR([FFTW3 requested but library not found]), $with_fftw)
+
+  #If we've reached this point then we're happy that we have FFTW so
+  #add our define to CXXFLAGS
+  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_FFTW"
+  HAS_FFTW="yes"
+],
+[
+AC_MSG_NOTICE([Configuring without FFTW3 is not recommended])
+HAS_FFTW="no"
+])
 
 #############################################################
 # netCDF support
@@ -982,33 +1001,19 @@ AS_IF([test "x$with_sundials" != "x" && test "x$with_sundials" != "xno"], [
     [AC_MSG_RESULT([no])
      AC_MSG_FAILURE([*** Could not determine SUNDIALS version])])
 
-  # Version 3.0.0 changed the name of this define to just SUNDIALS_VERSION
-  AC_MSG_CHECKING([for SUNDIALS major version])
-  AC_EGREP_CPP([yes], [
-    #include "sundials/sundials_config.h"
-    #ifdef SUNDIALS_PACKAGE_VERSION
-      yes
-    #endif
-  ], [sundials_major_ver=2], [sundials_major_ver=3])
-  AC_MSG_RESULT([$sundials_major_ver])
-
-  AS_IF([test $sundials_major_ver = 3], [
-    AC_MSG_FAILURE([*** Unsupported SUNDIALS version: Only 2.6-2.7 are supported currently])
-  ])
-
   AC_MSG_CHECKING([for SUNDIALS minor version])
-  AC_EGREP_CPP([^ *\"? *2\.[67]\.], [
+  AC_EGREP_CPP([^ *\"? *[12]\.[0-5]\.], [
     #include "sundials/sundials_config.h"
     #ifdef SUNDIALS_PACKAGE_VERSION
     SUNDIALS_PACKAGE_VERSION
     #endif
-  ], [sundials_minor_ver=ok], [sundials_minor_ver="too low"])
+  ], [sundials_minor_ver="too low"], [sundials_minor_ver=ok])
   AC_MSG_RESULT([$sundials_minor_ver])
 
   CPPFLAGS=$save_CPPFLAGS
 
   AS_IF([test "$sundials_minor_ver" = "too low"], [
-    AC_MSG_FAILURE([*** Unsupported SUNDIALS version: Only 2.6-2.7 are supported currently])
+    AC_MSG_FAILURE([*** Unsupported SUNDIALS version: Requires at least 2.6])
   ])
 
   # Set both IDA and CVODE if not set already
@@ -1030,10 +1035,7 @@ AS_IF([test "x$with_ida" != "x" && test "x$with_ida" != "xno"], [
     #include <nvector/nvector_parallel.h>
     #include <ida/ida.h>
     extern void foo(N_Vector);
-  ], [IDACreate();], [
-    #include <ida/ida_bbdpre.h>
-    extern int ida_bbd_rhs(IDAINT, double, N_Vector, N_Vector, N_Vector, void *);
-  ], [IDABBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, ida_bbd_rhs, nullptr);])
+  ], [IDACreate();])
 ])
 
 AS_IF([test "x$with_cvode" != "x" && test "x$with_cvode" != "xno"], [
@@ -1041,21 +1043,31 @@ AS_IF([test "x$with_cvode" != "x" && test "x$with_cvode" != "xno"], [
     #include <nvector/nvector_parallel.h>
     #include <cvode/cvode.h>
     extern void foo(N_Vector);
-  ], [CVodeCreate(0, 0);], [
-    #include <cvode/cvode_bbdpre.h>
-    extern int cvode_bbd_rhs(CVODEINT, double, N_Vector, N_Vector, void *);
-  ], [CVBBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, cvode_bbd_rhs, nullptr);])
+  ], [
+    #if SUNDIALS_VERSION_MAJOR >= 4
+    CVodeCreate(0);
+    #else
+    CVodeCreate(0, 0);
+    #endif
+  ])
 ])
 
 AS_IF([test "x$with_arkode" != "x" && test "x$with_arkode" != "xno"], [
   BOUT_FIND_SUNDIALS_MODULE([arkode], [
     #include <nvector/nvector_parallel.h>
+    #if SUNDIALS_VERSION_MAJOR >= 4
+    #include <arkode/arkode_arkstep.h>
+    #else
     #include <arkode/arkode.h>
+    #endif
     extern void foo(N_Vector);
-  ], [ARKodeCreate();], [
-    #include <arkode/arkode_bbdpre.h>
-    extern int arkode_bbd_rhs(ARKODEINT, double, N_Vector, N_Vector, void *);
-  ], [ARKBBDPrecInit(nullptr, 0, 0, 0, 0, 0, 0, arkode_bbd_rhs, nullptr);])
+  ], [
+    #if SUNDIALS_VERSION_MAJOR >= 4
+    ARKStepCreate(0, 0, 0, 0);
+    #else
+    ARKodeCreate();
+    #endif
+  ])
 ])
 
 #############################################################
@@ -1080,7 +1092,6 @@ Please supply the path using --with-scorep=/path/to/scorep])
       # Set a compile-time flag
       CXXFLAGS="$CXXFLAGS -DBOUT_HAS_SCOREP"
       MPICXX="$SCOREPPATH --user --nocompiler $MPICXX"
-      BOUT_CHECK_PRETTYFUNCTION
       HAS_SCOREP="yes"
       AC_MSG_NOTICE([Scorep support enabled])
   ])
@@ -1121,7 +1132,7 @@ AS_IF([test "$with_pvode" != "no"], [
   CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
   CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/source/ >> config-build.log 2>&1
 
-  AS_IF([test -f externalpackages/PVODE/lib/libpvode.a ], [
+  AS_IF([test -f externalpackages/PVODE/lib/libpvode.a && test -f externalpackages/PVODE/lib/libpvpre.a], [
     AC_MSG_NOTICE([Successfully built PVODE])
     AC_MSG_NOTICE([Installing PVODE into BOUT++ sourcetree])
 
@@ -1136,12 +1147,39 @@ AS_IF([test "$with_pvode" != "no"], [
 
   # Set the correct libraries and copy them to bout
   AS_MKDIR_P(include/pvode)
-  cp externalpackages/PVODE/precon/pvbbdpre.h externalpackages/PVODE/include/*.h include/pvode
+  cp -r externalpackages/PVODE/include/pvode include
   cp externalpackages/PVODE/lib/*.a lib/
   EXTRA_LIBS="$EXTRA_LIBS -L\$(BOUT_LIB_PATH) -lpvode -lpvpre"
   CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PVODE"
   HAS_PVODE="yes"
 ])
+
+#############################################################
+# Localisation (i18n) with gettext
+#############################################################
+
+HAS_NLS="no"
+# Use macro to test if Natural Language Support (gettext) is available.
+# If available sets:
+#  - USE_NLS to "yes"
+#  - LIBINTL to the linker options
+#  - Modifies CPPFLAGS if needed
+AM_GNU_GETTEXT([external])
+AS_IF([test "$USE_NLS" = "yes"], [
+  AC_MSG_NOTICE([Enabling language support with gettext])
+  # Turn the .po files into .mo files
+  $MAKE -C locale | tee -a config-build.log 2>&1
+
+  # Note: BOUT_LOCALE_PATH is defined in make.config, and may be changed by `make install`.
+  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_GETTEXT -DBOUT_LOCALE_PATH=\$(BOUT_LOCALE_PATH)"
+
+  EXTRA_LIBS="$EXTRA_LIBS $LIBINTL"
+
+  # Set variable substituted into bout-config 
+  HAS_NLS="yes"
+],[
+  AC_MSG_NOTICE([Language support with gettext not available])
+]) 
 
 #############################################################
 # Check environment
@@ -1229,8 +1267,10 @@ AC_SUBST(CONFIG_LDFLAGS)
 # If make install is run then that replaces these paths
 BOUT_LIB_PATH=$PWD/lib
 BOUT_INCLUDE_PATH=$PWD/include
+MPARK_VARIANT_INCLUDE_PATH=$PWD/externalpackages/mpark.variant/include
 AC_SUBST(BOUT_LIB_PATH)
 AC_SUBST(BOUT_INCLUDE_PATH)
+AC_SUBST(MPARK_VARIANT_INCLUDE_PATH)
 
 AC_SUBST(PREFIX)
 AC_SUBST(IDLCONFIGPATH)
@@ -1259,6 +1299,8 @@ AC_SUBST(SLEPC_MAKE_INCLUDE)
 AC_SUBST(SLEPC_DIR)
 AC_SUBST(SLEPC_ARCH)
 AC_SUBST(HAS_OPENMP)
+AC_SUBST(HAS_NLS)
+AC_SUBST(HAS_FFTW)
 
 AC_CONFIG_FILES([bin/bout-config])
 AC_OUTPUT
@@ -1277,6 +1319,7 @@ AC_MSG_NOTICE([  SLEPc support           : $HAS_SLEPC])
 AC_MSG_NOTICE([  IDA support             : $HAS_IDA])
 AC_MSG_NOTICE([  CVODE support           : $HAS_CVODE])
 AC_MSG_NOTICE([  ARKODE support          : $HAS_ARKODE])
+AC_MSG_NOTICE([  FFTW support            : $HAS_FFTW])
 AC_MSG_NOTICE([  NetCDF support          : $HAS_NETCDF])
 AC_MSG_NOTICE([  Parallel-NetCDF support : $HAS_PNETCDF])
 AC_MSG_NOTICE([  HDF5 support            : $HAS_HDF5 (parallel: $HAS_PHDF5)])
@@ -1284,6 +1327,7 @@ AC_MSG_NOTICE([  MUMPS support           : $HAS_MUMPS])
 AC_MSG_NOTICE([  Lapack support          : $HAS_LAPACK])
 AC_MSG_NOTICE([  Scorep support          : $HAS_SCOREP])
 AC_MSG_NOTICE([  OpenMP support          : $HAS_OPENMP (schedule: $OPENMP_SCHEDULE)])
+AC_MSG_NOTICE([  Natural language support: $HAS_NLS (path: $localedir)])
 
 AC_MSG_NOTICE([])
 AC_MSG_NOTICE([-------------------------------])

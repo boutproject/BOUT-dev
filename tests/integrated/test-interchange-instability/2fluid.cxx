@@ -10,9 +10,9 @@
 #include <invert_laplace.hxx>
 #include <unused.hxx>
 
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
 
 class Interchange : public PhysicsModel {
 
@@ -32,11 +32,12 @@ class Interchange : public PhysicsModel {
   // Parameters
   BoutReal Te_x, Ti_x, Ni_x, bmag, rho_s, AA, ZZ, wci;
 
-  int phi_flags; // Inversion flags
+  // Laplacian inversion
+  Laplacian* phi_solver;
 
   Coordinates *coord;
 protected:
-  int init(bool UNUSED(restarting)) {
+  int init(bool UNUSED(restarting)) override {
     Field2D I; // Shear factor
 
     output << "Solving 2-variable equations\n";
@@ -85,7 +86,8 @@ protected:
     BoutReal ShearFactor;
     OPTION(options, ShearFactor, 1.0);
 
-    OPTION(options, phi_flags, 0);
+    /*************** INITIALIZE LAPLACE SOLVER ***********/
+    phi_solver = Laplacian::create();
 
     /************* SHIFTED RADIAL COORDINATES ************/
     bool ShiftXderivs;
@@ -167,9 +169,9 @@ protected:
     return (0);
   }
 
-  int rhs(BoutReal UNUSED(t)) {
+  int rhs(BoutReal UNUSED(t)) override {
     // Solve EM fields
-    invert_laplace(rho / Ni0, phi, phi_flags, NULL);
+    phi = phi_solver->solve(rho / Ni0, phi);
 
     // Communicate variables
     mesh->communicate(rho, Ni, phi);

@@ -9,17 +9,14 @@
 
 /// Test fixture to make sure the global mesh is our fake one
 class MeshTest : public ::testing::Test {
-protected:
-  static void SetUpTestCase() { output_info.disable(); }
-
-  static void TearDownTestCase() { output_info.enable(); }
-
 public:
   MeshTest() : localmesh(nx, ny, nz) {}
   static const int nx = 3;
   static const int ny = 5;
   static const int nz = 7;
   FakeMesh localmesh;
+
+  WithQuietOutput quiet_warn{output_warn};
 };
 
 TEST_F(MeshTest, CreateDefaultRegions) {
@@ -157,120 +154,87 @@ TEST_F(MeshTest, Ind3DToPerp) {
   }
 }
 
-extern Mesh::deriv_func fDDX, fDDY, fDDZ;       ///< Differencing methods for each dimension
-extern Mesh::deriv_func fD2DX2, fD2DY2, fD2DZ2; ///< second differential operators
-extern Mesh::upwind_func fVDDX, fVDDY, fVDDZ;   ///< Upwind functions in the three directions
-extern Mesh::flux_func fFDDX, fFDDY, fFDDZ;     ///< Default flux functions
-extern Mesh::deriv_func sfDDX, sfDDY, sfDDZ;
-extern Mesh::deriv_func sfD2DX2, sfD2DY2, sfD2DZ2;
-extern Mesh::flux_func sfVDDX, sfVDDY, sfVDDZ;
-extern Mesh::flux_func sfFDDX, sfFDDY, sfFDDZ;
-
-#define RESET                                   \
-  fDDX=nullptr; fDDY=nullptr; fDDZ=nullptr;     \
-  fD2DX2=nullptr; fD2DY2=nullptr; fD2DZ2=nullptr;       \
-  fVDDX=nullptr; fVDDY=nullptr; fVDDZ=nullptr;          \
-  fFDDX=nullptr; fFDDY=nullptr; fFDDZ=nullptr;          \
-  sfDDX=nullptr; sfDDY=nullptr; sfDDZ=nullptr;          \
-  sfD2DX2=nullptr; sfD2DY2=nullptr; sfD2DZ2=nullptr;    \
-  sfVDDX=nullptr; sfVDDY=nullptr; sfVDDZ=nullptr;       \
-  sfFDDX=nullptr; sfFDDY=nullptr; sfFDDZ=nullptr;
-
-
-BoutReal DDX_C2(stencil &f);
-BoutReal DDX_C4(stencil &f);
-BoutReal DDX_CWENO2(stencil &f);
-BoutReal DDX_S2(stencil &f);
-BoutReal VDDX_C2(BoutReal vc, stencil &f);
-BoutReal VDDX_C4(BoutReal vc, stencil &f);
-BoutReal VDDX_U1(BoutReal vc, stencil &f);
-BoutReal VDDX_U2(BoutReal vc, stencil &f);
-BoutReal VDDX_U3(BoutReal vc, stencil &f);
-BoutReal VDDX_WENO3(BoutReal vc, stencil &f);
-BoutReal DDX_CWENO3(stencil &f);
-BoutReal FDDX_U1(stencil &v, stencil &f);
-BoutReal FDDX_C2(stencil &v, stencil &f);
-BoutReal FDDX_C4(stencil &v, stencil &f);
-BoutReal DDX_C2_stag(stencil &f);
-BoutReal DDX_C4_stag(stencil &f);
-BoutReal VDDX_U1_stag(stencil &v, stencil &f);
-BoutReal VDDX_U2_stag(stencil &v, stencil &f);
-BoutReal VDDX_C2_stag(stencil &v, stencil &f);
-BoutReal VDDX_C4_stag(stencil &v, stencil &f);
-BoutReal FDDX_U1_stag(stencil &v, stencil &f);
-
-TEST_F(MeshTest, SetDerivativesDefault) {
-  RESET
-  Options opt;
-  localmesh.initDerivs(&opt);
-  EXPECT_EQ(fDDX,&DDX_C2);
-  EXPECT_EQ(sfDDX,&DDX_C2_stag);
+TEST_F(MeshTest, GetStringNoSource) {
+  std::string string_value;
+  EXPECT_NE(localmesh.get(string_value, "no_source"), 0);
+  EXPECT_EQ(string_value, "");
 }
 
-TEST_F(MeshTest, SetDerivativesDiff) {
-  RESET
-  Options opt;
-  opt.getSection("diff")->set("first","C4","test");
-  localmesh.initDerivs(&opt);
-  EXPECT_EQ(fDDY,&DDX_C4);
-  EXPECT_EQ(sfDDY,&DDX_C4_stag);
+TEST_F(MeshTest, GetStringNoSourceWithDefault) {
+  std::string string_value;
+  const std::string default_value = "some default";
+  EXPECT_NE(localmesh.get(string_value, "no_source", default_value), 0);
+  EXPECT_EQ(string_value, default_value);
 }
 
-TEST_F(MeshTest, SetDerivativesDiffStag) {
-  RESET
-  Options opt;
-  opt.getSection("diff")->set("first","C2","test");
-  opt.getSection("diff")->set("firstStag","C4","test");
-  localmesh.initDerivs(&opt);
-  EXPECT_EQ(fDDZ,&DDX_C2);
-  EXPECT_EQ(sfDDZ,&DDX_C4_stag);
+TEST_F(MeshTest, GetIntNoSource) {
+  int int_value;
+  EXPECT_NE(localmesh.get(int_value, "no_source"), 0);
+  EXPECT_EQ(int_value, 0);
 }
 
-TEST_F(MeshTest, SetDerivativesDdxBeforeDiff) {
-  RESET
-  Options opt;
-  opt.getSection("diff")->set("firstStag","C4","test");
-  opt.getSection("ddx")->set("firstStag","C2","test");
-  localmesh.initDerivs(&opt);
-  EXPECT_EQ(sfDDZ,&DDX_C4_stag);
-  EXPECT_EQ(sfDDX,&DDX_C2_stag);
+TEST_F(MeshTest, GetIntNoSourceWithDefault) {
+  int int_value;
+  constexpr int default_value = 42;
+  EXPECT_NE(localmesh.get(int_value, "no_source", default_value), 0);
+  EXPECT_EQ(int_value, default_value);
 }
 
-TEST_F(MeshTest, SetDerivativesDiffStagBeforeDDXNone) {
-  RESET
-  Options opt;
-  opt.getSection("diff")->set("firstStag","C4","test");
-  opt.getSection("ddx")->set("first","C2","test");
-  localmesh.initDerivs(&opt);
-  EXPECT_EQ(sfDDX,&DDX_C4_stag);
+TEST_F(MeshTest, GetBoutRealNoSource) {
+  BoutReal boutreal_value;
+  EXPECT_NE(localmesh.get(boutreal_value, "no_source"), 0);
+  EXPECT_EQ(boutreal_value, 0.0);
 }
 
-TEST_F(MeshTest, SetDerivativesInvalid) {
-  RESET
-  Options opt;
-  // An invalid but unused option is fine
-  opt.getSection("diff")->set("firstStag","XXX","test");
-  opt.getSection("ddx")->set("firstStag","C2","test");
-  opt.getSection("ddy")->set("firstStag","C2","test");
-  opt.getSection("ddz")->set("firstStag","C2","test");
-  localmesh.initDerivs(&opt);
-  EXPECT_EQ(sfDDX,&DDX_C2_stag);
+TEST_F(MeshTest, GetBoutRealNoSourceWithDefault) {
+  BoutReal boutreal_value;
+  constexpr BoutReal default_value = 3.14;
+  EXPECT_NE(localmesh.get(boutreal_value, "no_source", default_value), 0);
+  EXPECT_DOUBLE_EQ(boutreal_value, default_value);
 }
 
-TEST_F(MeshTest, SetDerivativesInvalid2) {
-  RESET
-  Options opt;
-  opt.getSection("diff")->set("firstStag","XXX","test");
-  EXPECT_THROW(localmesh.initDerivs(&opt),BoutException);
+TEST_F(MeshTest, GetField2DNoSource) {
+  WithQuietOutput warn{output_warn};
+
+  localmesh.createDefaultRegions();
+  localmesh.setCoordinates(nullptr);
+
+  Field2D field2d_value{&localmesh};
+  EXPECT_NE(localmesh.get(field2d_value, "no_source"), 0);
+  EXPECT_TRUE(IsFieldEqual(field2d_value, 0.0));
 }
 
-TEST_F(MeshTest, SetDerivativesInvalid3) {
-  RESET
-  Options opt;
-  // Invalid for this option - expect error
-  opt.getSection("diff")->set("SecondStag","C4","test");
-  EXPECT_THROW(localmesh.initDerivs(&opt),BoutException);
+TEST_F(MeshTest, GetField2DNoSourceWithDefault) {
+  WithQuietOutput warn{output_warn};
+
+  localmesh.createDefaultRegions();
+  localmesh.setCoordinates(nullptr);
+
+  Field2D field2d_value{&localmesh};
+  constexpr BoutReal default_value = 4.2;
+  EXPECT_NE(localmesh.get(field2d_value, "no_source", default_value), 0);
+  EXPECT_TRUE(IsFieldEqual(field2d_value, default_value));
 }
 
+TEST_F(MeshTest, GetField3DNoSource) {
+  WithQuietOutput warn{output_warn};
 
-#undef RESET
+  localmesh.createDefaultRegions();
+  localmesh.setCoordinates(nullptr);
+
+  Field3D field3d_value{&localmesh};
+  EXPECT_NE(localmesh.get(field3d_value, "no_source"), 0);
+  EXPECT_TRUE(IsFieldEqual(field3d_value, 0.0));
+}
+
+TEST_F(MeshTest, GetField3DNoSourceWithDefault) {
+  WithQuietOutput warn{output_warn};
+
+  localmesh.createDefaultRegions();
+  localmesh.setCoordinates(nullptr);
+
+  Field3D field3d_value{&localmesh};
+  constexpr BoutReal default_value = 4.2;
+  EXPECT_NE(localmesh.get(field3d_value, "no_source", default_value), 0);
+  EXPECT_TRUE(IsFieldEqual(field3d_value, default_value));
+}

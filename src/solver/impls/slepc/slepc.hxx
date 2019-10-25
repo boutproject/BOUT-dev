@@ -55,8 +55,6 @@ namespace {
 RegisterSolver<SlepcSolver> registersolverslepc("slepc");
 }
 
-using std::vector;
-
 class SlepcSolver : public Solver {
 public:
   SlepcSolver(Options *options);
@@ -98,25 +96,25 @@ public:
   //////Following overrides all just pass through to advanceSolver
 
   // Override virtual add functions in order to pass through to advanceSolver
-  void add(Field2D &v, const std::string name) override {
+  void add(Field2D& v, const std::string& name) override {
     Solver::add(v, name);
     if (!selfSolve) {
       advanceSolver->add(v, name);
     }
   }
-  void add(Field3D &v, const std::string name) override {
+  void add(Field3D& v, const std::string& name) override {
     Solver::add(v, name);
     if (!selfSolve) {
       advanceSolver->add(v, name);
     }
   }
-  void add(Vector2D &v, const std::string name) override {
+  void add(Vector2D& v, const std::string& name) override {
     Solver::add(v, name);
     if (!selfSolve) {
       advanceSolver->add(v, name);
     }
   }
-  void add(Vector3D &v, const std::string name) override {
+  void add(Vector3D& v, const std::string& name) override {
     Solver::add(v, name);
     if (!selfSolve) {
       advanceSolver->add(v, name);
@@ -145,24 +143,24 @@ public:
       return advanceSolver->constraints();
     }
   }
-  void constraint(Field2D &v, Field2D &C_v, const std::string name) override {
+  void constraint(Field2D& v, Field2D& C_v, std::string name) override {
     if (!selfSolve) {
-      advanceSolver->constraint(v, C_v, name);
+      advanceSolver->constraint(v, C_v, std::move(name));
     }
   }
-  void constraint(Field3D &v, Field3D &C_v, const std::string name) override {
+  void constraint(Field3D& v, Field3D& C_v, std::string name) override {
     if (!selfSolve) {
-      advanceSolver->constraint(v, C_v, name);
+      advanceSolver->constraint(v, C_v, std::move(name));
     }
   }
-  void constraint(Vector2D &v, Vector2D &C_v, const std::string name) override {
+  void constraint(Vector2D& v, Vector2D& C_v, std::string name) override {
     if (!selfSolve) {
-      advanceSolver->constraint(v, C_v, name);
+      advanceSolver->constraint(v, C_v, std::move(name));
     }
   }
-  void constraint(Vector3D &v, Vector3D &C_v, const std::string name) override {
+  void constraint(Vector3D& v, Vector3D& C_v, std::string name) override {
     if (!selfSolve) {
-      advanceSolver->constraint(v, C_v, name);
+      advanceSolver->constraint(v, C_v, std::move(name));
     }
   }
 

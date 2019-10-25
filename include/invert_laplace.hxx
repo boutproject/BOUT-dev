@@ -48,24 +48,38 @@ class Laplacian;
 #include "options.hxx"
 
 // Inversion flags for each boundary
-const int INVERT_DC_GRAD  = 1; ///< Zero-gradient for DC (constant in Z) component. Default is zero value
-const int INVERT_AC_GRAD  = 2; ///< Zero-gradient for AC (non-constant in Z) component. Default is zero value
-const int INVERT_AC_LAP   = 4; ///< Use zero-laplacian (decaying solution) to AC component
-const int INVERT_SYM      = 8; ///< Use symmetry to enforce either zero-value or zero-gradient
-const int INVERT_SET      = 16; ///< Set boundary to value
-const int INVERT_RHS      = 32; ///< Use input value in RHS boundary
-const int INVERT_DC_LAP   = 64; ///< Use zero-laplacian solution for DC component
-const int INVERT_BNDRY_ONE = 128; ///< Only use one boundary point
-const int INVERT_DC_GRADPAR = 256;
-const int INVERT_DC_GRADPARINV = 512;
-const int INVERT_IN_CYLINDER = 1024; ///< For use in cylindrical coordiate system.
+/// Zero-gradient for DC (constant in Z) component. Default is zero value
+constexpr int INVERT_DC_GRAD = 1;
+/// Zero-gradient for AC (non-constant in Z) component. Default is zero value
+constexpr int INVERT_AC_GRAD = 2;
+/// Use zero-laplacian (decaying solution) to AC component
+constexpr int INVERT_AC_LAP = 4;
+/// Use symmetry to enforce either zero-value or zero-gradient
+constexpr int INVERT_SYM = 8;
+/// Set boundary to value
+constexpr int INVERT_SET = 16;
+/// Use input value in RHS boundary
+constexpr int INVERT_RHS = 32;
+/// Use zero-laplacian solution for DC component
+constexpr int INVERT_DC_LAP = 64;
+/// Only use one boundary point
+constexpr int INVERT_BNDRY_ONE = 128;
+constexpr int INVERT_DC_GRADPAR = 256;
+constexpr int INVERT_DC_GRADPARINV = 512;
+/// For use in cylindrical coordiate system.
+constexpr int INVERT_IN_CYLINDER = 1024;
 
 // Global flags
-const int INVERT_ZERO_DC     = 1; ///< Zero the DC (constant in Z) component of the solution
-const int INVERT_START_NEW   = 2; ///< Iterative method start from solution=0. Has no effect for direct solvers
-const int INVERT_BOTH_BNDRY_ONE = 4; ///< Sets the width of the boundaries to 1
-const int INVERT_4TH_ORDER   = 8; ///< Use band solver for 4th order in x
-const int INVERT_KX_ZERO     = 16; ///< Zero the kx=0, n = 0 component
+/// Zero the DC (constant in Z) component of the solution
+constexpr int INVERT_ZERO_DC = 1;
+/// Iterative method start from solution=0. Has no effect for direct solvers
+constexpr int INVERT_START_NEW = 2;
+/// Sets the width of the boundaries to 1
+constexpr int INVERT_BOTH_BNDRY_ONE = 4;
+/// Use band solver for 4th order in x
+constexpr int INVERT_4TH_ORDER = 8;
+/// Zero the kx=0, n = 0 component
+constexpr int INVERT_KX_ZERO = 16;
 
 /*
 // Legacy flags, can be used in calls to setFlags()
@@ -99,20 +113,17 @@ const int INVERT_KX_ZERO     = 16; ///< Zero the kx=0, n = 0 component
   const int INVERT_DC_IN_GRADPARINV = 2097152;
  */
 
-const int INVERT_IN_RHS  = 16384; ///< Use input value in RHS at inner boundary
-const int INVERT_OUT_RHS = 32768; ///< Use input value in RHS at outer boundary
-
 /// Base class for Laplacian inversion
 class Laplacian {
 public:
-  Laplacian(Options *options = nullptr, const CELL_LOC loc = CELL_CENTRE);
-  virtual ~Laplacian() {}
-  
+  Laplacian(Options *options = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh* mesh_in = nullptr);
+  virtual ~Laplacian() = default;
+
   /// Set coefficients for inversion. Re-builds matrices if necessary
   virtual void setCoefA(const Field2D &val) = 0;
   virtual void setCoefA(const Field3D &val) { setCoefA(DC(val)); }
   virtual void setCoefA(BoutReal r) {
-    Field2D f(r);
+    Field2D f(r, localmesh);
     f.setLocation(location);
     setCoefA(f);
   }
@@ -120,7 +131,7 @@ public:
   virtual void setCoefC(const Field2D &val) = 0;
   virtual void setCoefC(const Field3D &val) { setCoefC(DC(val)); }
   virtual void setCoefC(BoutReal r) {
-    Field2D f(r);
+    Field2D f(r, localmesh);
     f.setLocation(location);
     setCoefC(f);
   }
@@ -130,7 +141,7 @@ public:
   }
   virtual void setCoefC1(const Field3D &val) { setCoefC1(DC(val)); }
   virtual void setCoefC1(BoutReal r) {
-    Field2D f(r);
+    Field2D f(r, localmesh);
     f.setLocation(location);
     setCoefC1(f);
   }
@@ -140,7 +151,7 @@ public:
   }
   virtual void setCoefC2(const Field3D &val) { setCoefC2(DC(val)); }
   virtual void setCoefC2(BoutReal r) {
-    Field2D f(r);
+    Field2D f(r, localmesh);
     f.setLocation(location);
     setCoefC2(f);
   }
@@ -148,7 +159,7 @@ public:
   virtual void setCoefD(const Field2D &val) = 0;
   virtual void setCoefD(const Field3D &val) { setCoefD(DC(val)); }
   virtual void setCoefD(BoutReal r) {
-    Field2D f(r);
+    Field2D f(r, localmesh);
     f.setLocation(location);
     setCoefD(f);
   }
@@ -156,7 +167,7 @@ public:
   virtual void setCoefEx(const Field2D &val) = 0;
   virtual void setCoefEx(const Field3D &val) { setCoefEx(DC(val)); }
   virtual void setCoefEx(BoutReal r) {
-    Field2D f(r);
+    Field2D f(r, localmesh);
     f.setLocation(location);
     setCoefEx(f);
   }
@@ -164,23 +175,29 @@ public:
   virtual void setCoefEz(const Field2D &val) = 0;
   virtual void setCoefEz(const Field3D &val) { setCoefEz(DC(val)); }
   virtual void setCoefEz(BoutReal r) {
-    Field2D f(r);
+    Field2D f(r, localmesh);
     f.setLocation(location);
     setCoefEz(f);
   }
   
-  virtual void setFlags(int f);
   virtual void setGlobalFlags(int f) { global_flags = f; }
   virtual void setInnerBoundaryFlags(int f) { inner_boundary_flags = f; }
   virtual void setOuterBoundaryFlags(int f) { outer_boundary_flags = f; }
+
+  [[gnu::deprecated("Please use setGlobalFlags, setInnerBoundaryFlags and "
+      "setOuterBoundaryFlags methods instead")]]
+  virtual void setFlags(int f);
+
+  /// Does this solver use Field3D coefficients (true) or only their DC component (false)
+  virtual bool uses3DCoefs() const { return false; }
   
-  virtual const FieldPerp solve(const FieldPerp &b) = 0;
-  virtual const Field3D solve(const Field3D &b);
-  virtual const Field2D solve(const Field2D &b);
+  virtual FieldPerp solve(const FieldPerp &b) = 0;
+  virtual Field3D solve(const Field3D &b);
+  virtual Field2D solve(const Field2D &b);
   
-  virtual const FieldPerp solve(const FieldPerp &b, const FieldPerp &UNUSED(x0)) { return solve(b); }
-  virtual const Field3D solve(const Field3D &b, const Field3D &x0);
-  virtual const Field2D solve(const Field2D &b, const Field2D &x0);
+  virtual FieldPerp solve(const FieldPerp &b, const FieldPerp &UNUSED(x0)) { return solve(b); }
+  virtual Field3D solve(const Field3D &b, const Field3D &x0);
+  virtual Field2D solve(const Field2D &b, const Field2D &x0);
 
   /// Coefficients in tridiagonal inversion
   void tridagCoefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcomplex &c,
@@ -192,7 +209,7 @@ public:
    * 
    * @param[in] opt  The options section to use. By default "laplace" will be used
    */
-  static Laplacian *create(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE);
+  static Laplacian *create(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr);
   static Laplacian* defaultInstance(); ///< Return pointer to global singleton
   
   static void cleanup(); ///< Frees all memory
@@ -214,20 +231,37 @@ protected:
 
   void tridagCoefs(int jx, int jy, BoutReal kwave, dcomplex &a, dcomplex &b, dcomplex &c,
                    const Field2D *ccoef = nullptr, const Field2D *d = nullptr,
+                   CELL_LOC loc = CELL_DEFAULT) {
+    tridagCoefs(jx, jy, kwave, a, b, c, ccoef, ccoef, d, loc);
+  }
+  void tridagCoefs(int jx, int jy, BoutReal kwave, dcomplex &a, dcomplex &b, dcomplex &c,
+                   const Field2D *c1coef, const Field2D *c2coef, const Field2D *d,
                    CELL_LOC loc = CELL_DEFAULT);
 
-  void tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec, dcomplex **bk,
-                    int jy, int flags, int inner_boundary_flags, int outer_boundary_flags,
-                    const Field2D *a = nullptr, const Field2D *ccoef = nullptr,
-                    const Field2D *d = nullptr);
+  void DEPRECATED(tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
+                    dcomplex **bk, int jy, int flags, int inner_boundary_flags,
+                    int outer_boundary_flags, const Field2D *a = nullptr,
+                    const Field2D *ccoef = nullptr, const Field2D *d = nullptr));
 
   void tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
                     dcomplex *bk, int jy, int kz, BoutReal kwave, 
                     int flags, int inner_boundary_flags, int outer_boundary_flags,
                     const Field2D *a, const Field2D *ccoef, 
                     const Field2D *d,
+                    bool includeguards=true) {
+    tridagMatrix(avec, bvec, cvec, bk, jy, kz, kwave, flags, inner_boundary_flags,
+        outer_boundary_flags, a, ccoef, ccoef, d, includeguards);
+  }
+  void tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
+                    dcomplex *bk, int jy, int kz, BoutReal kwave,
+                    int flags, int inner_boundary_flags, int outer_boundary_flags,
+                    const Field2D *a, const Field2D *c1coef, const Field2D *c2coef,
+                    const Field2D *d,
                     bool includeguards=true);
-  CELL_LOC location;
+  CELL_LOC location;   ///< staggered grid location of this solver
+  Mesh* localmesh;     ///< Mesh object for this solver
+  Coordinates* coords; ///< Coordinates object, so we only have to call
+                       ///  localmesh->getCoordinates(location) once
 private:
   /// Singleton instance
   static Laplacian *instance;
@@ -241,14 +275,14 @@ void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcom
                           const Field2D *ccoef = nullptr, const Field2D *d = nullptr,
                           CELL_LOC loc = CELL_DEFAULT);
 
-int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, const Field2D *a,
-                   const Field2D *c = nullptr, const Field2D *d = nullptr);
-int invert_laplace(const Field3D &b, Field3D &x, int flags, const Field2D *a,
-                   const Field2D *c = nullptr, const Field2D *d = nullptr);
+DEPRECATED(int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, const Field2D *a,
+                   const Field2D *c = nullptr, const Field2D *d = nullptr));
+DEPRECATED(int invert_laplace(const Field3D &b, Field3D &x, int flags, const Field2D *a,
+                   const Field2D *c = nullptr, const Field2D *d = nullptr));
 
 /// More readable API for calling Laplacian inversion. Returns x
-const Field3D invert_laplace(const Field3D &b, int flags, const Field2D *a = nullptr,
-                             const Field2D *c = nullptr, const Field2D *d = nullptr);
+DEPRECATED(const Field3D invert_laplace(const Field3D &b, int flags, const Field2D *a = nullptr,
+                             const Field2D *c = nullptr, const Field2D *d = nullptr));
 
 #endif // __LAPLACE_H__
 

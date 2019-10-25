@@ -19,7 +19,7 @@ int main(int argc, char **argv) {
 
   // Get options
   Options *options = Options::getRoot();
-  string acoef, bcoef, ccoef, dcoef, ecoef, func;
+  std::string acoef, bcoef, ccoef, dcoef, ecoef, func;
   options->get("acoef", acoef, "1.0");
   options->get("bcoef", bcoef, "-1.0");
   options->get("ccoef", ccoef, "0.0");

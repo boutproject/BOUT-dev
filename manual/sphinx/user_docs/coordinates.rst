@@ -1,5 +1,7 @@
 .. default-role:: math
 
+.. _sec-field-aligned-coordinates:
+
 =========================
 Field-aligned coordinates
 =========================
@@ -14,8 +16,6 @@ Introduction
 
 This manual covers the field-aligned coordinate system used in many
 BOUT++ tokamak models, and useful derivations and expressions.
-
-.. _sec:coordinates:
 
 Orthogonal toroidal coordinates
 ===============================
@@ -1365,10 +1365,10 @@ which can only be true if
 `\nabla u^i\cdot{\boldsymbol{e}}_j = \delta^i_j` i.e.
 if
 
-.. raw:: latex
+.. math::
 
-   \framebox{Sets of vectors $\ve{e}^i\equiv\nabla u^i$ and $\ve{e}_j$ are
-   reciprocal}
+   \text{Sets of vectors $\boldsymbol{e}^i\equiv\nabla u^i$ and
+   $\boldsymbol{e}_j$ are reciprocal}
 
 Since the sets of vectors
 `\left\{{\boldsymbol{e}}^i\right\}` and
@@ -1387,9 +1387,9 @@ metric coefficients `g_{ij} = \mathbf{e_i\cdot e_j}` and
 orthogonal then `g_{ij}=g^{ij} = 0` for `i\neq j` i.e. the
 metric is diagonal.
 
-.. raw:: latex
+.. math::
 
-   \framebox{$g_{ij} = h_ih_j\hv{e}_i\cdot\hv{e}_j$ and so $g_{ii} = h_i^2$}
+   \text{$g_{ij} = h_ih_j\boldsymbol{e}_i\cdot\boldsymbol{e}_j$ and so $g_{ii} = h_i^2$}
 
 For a general set of coordinates, the nabla operator can be expressed as
 
@@ -1432,17 +1432,18 @@ u^k` in equation :eq:`eq:laplacegen` gives
 .. math::
    :label: eq:general_laplacian
 
-   \nabla^2f = \nabla\cdot\nabla f = \nabla\cdot\left(\frac{\partial}{\partial
+   \begin{aligned}
+   \nabla^2f &= \nabla\cdot\nabla f = \nabla\cdot\left(\frac{\partial}{\partial
    x}\nabla x + \frac{\partial}{\partial y}\nabla y + \frac{\partial}{\partial
    z}\nabla z\right) \nonumber \\
-
-   = \frac{\partial^2 f}{\partial x^2}\left|\nabla x\right|^2 + \frac{\partial^2
+   &= \frac{\partial^2 f}{\partial x^2}\left|\nabla x\right|^2 + \frac{\partial^2
    f}{\partial y^2}\left|\nabla y\right|^2 + \frac{\partial^2 f}{\partial z^2}\left|\nabla
    z\right|^2 \\ +2\frac{\partial^2 f}{\partial x\partial y}\left(\nabla x\cdot\nabla
    y\right) +2\frac{\partial^2 f}{\partial x\partial z}\left(\nabla x\cdot\nabla z\right)
    +2\frac{\partial^2 f}{\partial y\partial z}\left(\nabla y\cdot\nabla z\right)
    \nonumber \\ +\nabla^2x\frac{\partial f}{\partial x} +\nabla^2y\frac{\partial
    f}{\partial y} + \nabla^2z\frac{\partial f}{\partial z} \nonumber
+   \end{aligned}
 
 Curl defined as:
 

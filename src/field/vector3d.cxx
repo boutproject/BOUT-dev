@@ -34,10 +34,10 @@
 #include <boundary_op.hxx>
 #include <boutexception.hxx>
 #include <bout/assert.hxx>
+#include <bout/scorepwrapper.hxx>
 #include <interpolation.hxx>
 
-Vector3D::Vector3D(Mesh *localmesh)
-    : x(localmesh), y(localmesh), z(localmesh), covariant(true), deriv(nullptr), location(CELL_CENTRE) {}
+Vector3D::Vector3D(Mesh* localmesh) : x(localmesh), y(localmesh), z(localmesh) {}
 
 Vector3D::Vector3D(const Vector3D &f)
     : x(f.x), y(f.y), z(f.z), covariant(f.covariant), deriv(nullptr),
@@ -56,59 +56,103 @@ Vector3D::~Vector3D() {
   }
 }
 
-void Vector3D::toCovariant() {  
+void Vector3D::toCovariant() {
+  SCOREP0();  
   if(!covariant) {
     Mesh *localmesh = x.getMesh();
-    Field3D gx(localmesh), gy(localmesh), gz(localmesh);
 
-    Coordinates *metric_x, *metric_y, *metric_z;
     if (location == CELL_VSHIFT) {
+      Coordinates *metric_x, *metric_y, *metric_z;
       metric_x = localmesh->getCoordinates(CELL_XLOW);
       metric_y = localmesh->getCoordinates(CELL_YLOW);
       metric_z = localmesh->getCoordinates(CELL_ZLOW);
+
+      // Fields at different locations so we need to interpolate
+      // Note : Could reduce peak memory requirement here by just
+      // dealing with the three components seperately. This would
+      // require the use of temporary fields to hold the intermediate
+      // result so would likely only reduce memory usage by one field
+      const auto y_at_x = interp_to(y, x.getLocation());
+      const auto z_at_x = interp_to(z, x.getLocation());
+      const auto x_at_y = interp_to(x, y.getLocation());
+      const auto z_at_y = interp_to(z, y.getLocation());
+      const auto x_at_z = interp_to(x, z.getLocation());
+      const auto y_at_z = interp_to(y, z.getLocation());
+
+      // multiply by g_{ij}
+      BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")){
+        x[i] = metric_x->g_11[i]*x[i] + metric_x->g_12[i]*y_at_x[i] + metric_x->g_13[i]*z_at_x[i];
+        y[i] = metric_y->g_22[i]*y[i] + metric_y->g_12[i]*x_at_y[i] + metric_y->g_23[i]*z_at_y[i];
+        z[i] = metric_z->g_33[i]*z[i] + metric_z->g_13[i]*x_at_z[i] + metric_z->g_23[i]*y_at_z[i];
+      };
     } else {
-      metric_x = localmesh->getCoordinates(location);
-      metric_y = localmesh->getCoordinates(location);
-      metric_z = localmesh->getCoordinates(location);
+      const auto metric = localmesh->getCoordinates(location);
+
+      // Need to use temporary arrays to store result
+      Field3D gx{emptyFrom(x)}, gy{emptyFrom(y)}, gz{emptyFrom(z)};
+
+      BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")){
+        gx[i] = metric->g_11[i]*x[i] + metric->g_12[i]*y[i] + metric->g_13[i]*z[i];
+        gy[i] = metric->g_22[i]*y[i] + metric->g_12[i]*x[i] + metric->g_23[i]*z[i];
+        gz[i] = metric->g_33[i]*z[i] + metric->g_13[i]*x[i] + metric->g_23[i]*y[i];
+      };
+
+      x = gx;
+      y = gy;
+      z = gz;
     }
 
-    // multiply by g_{ij}
-    gx = x*metric_x->g_11 + metric_x->g_12*interp_to(y, x.getLocation()) + metric_x->g_13*interp_to(z, x.getLocation());
-    gy = y*metric_y->g_22 + metric_y->g_12*interp_to(x, y.getLocation()) + metric_y->g_23*interp_to(z, y.getLocation());
-    gz = z*metric_z->g_33 + metric_z->g_13*interp_to(x, z.getLocation()) + metric_z->g_23*interp_to(y, z.getLocation());
-
-    x = gx;
-    y = gy;
-    z = gz;
-    
     covariant = true;
   }
 }
 void Vector3D::toContravariant() {  
+  SCOREP0();
   if(covariant) {
     // multiply by g^{ij}
     Mesh *localmesh = x.getMesh();
-    Field3D gx(localmesh), gy(localmesh), gz(localmesh);
 
-    Coordinates *metric_x, *metric_y, *metric_z;
     if (location == CELL_VSHIFT) {
+      Coordinates *metric_x, *metric_y, *metric_z;
+    
       metric_x = localmesh->getCoordinates(CELL_XLOW);
       metric_y = localmesh->getCoordinates(CELL_YLOW);
       metric_z = localmesh->getCoordinates(CELL_ZLOW);
+
+      // Fields at different locations so we need to interpolate
+      // Note : Could reduce peak memory requirement here by just
+      // dealing with the three components seperately. This would
+      // require the use of temporary fields to hold the intermediate
+      // result so would likely only reduce memory usage by one field
+      const auto y_at_x = interp_to(y, x.getLocation());
+      const auto z_at_x = interp_to(z, x.getLocation());
+      const auto x_at_y = interp_to(x, y.getLocation());
+      const auto z_at_y = interp_to(z, y.getLocation());
+      const auto x_at_z = interp_to(x, z.getLocation());
+      const auto y_at_z = interp_to(y, z.getLocation());
+
+      // multiply by g_{ij}
+      BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")){
+        x[i] = metric_x->g11[i]*x[i] + metric_x->g12[i]*y_at_x[i] + metric_x->g13[i]*z_at_x[i];
+        y[i] = metric_y->g22[i]*y[i] + metric_y->g12[i]*x_at_y[i] + metric_y->g23[i]*z_at_y[i];
+        z[i] = metric_z->g33[i]*z[i] + metric_z->g13[i]*x_at_z[i] + metric_z->g23[i]*y_at_z[i];
+      };
+
     } else {
-      metric_x = localmesh->getCoordinates(location);
-      metric_y = localmesh->getCoordinates(location);
-      metric_z = localmesh->getCoordinates(location);
+      const auto metric = localmesh->getCoordinates(location);
+
+      // Need to use temporary arrays to store result
+      Field3D gx{emptyFrom(x)}, gy{emptyFrom(y)}, gz{emptyFrom(z)};
+
+      BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")){
+        gx[i] = metric->g11[i]*x[i] + metric->g12[i]*y[i] + metric->g13[i]*z[i];
+        gy[i] = metric->g22[i]*y[i] + metric->g12[i]*x[i] + metric->g23[i]*z[i];
+        gz[i] = metric->g33[i]*z[i] + metric->g13[i]*x[i] + metric->g23[i]*y[i];
+      };
+
+      x = gx;
+      y = gy;
+      z = gz;
     }
-
-    // multiply by g_{ij}
-    gx = x*metric_x->g11 + metric_x->g12*interp_to(y, x.getLocation()) + metric_x->g13*interp_to(z, x.getLocation());
-    gy = y*metric_y->g22 + metric_y->g12*interp_to(x, y.getLocation()) + metric_y->g23*interp_to(z, y.getLocation());
-    gz = z*metric_z->g33 + metric_z->g13*interp_to(x, z.getLocation()) + metric_z->g23*interp_to(y, z.getLocation());
-
-    x = gx;
-    y = gy;
-    z = gz;
     
     covariant = false;
   }
@@ -149,6 +193,7 @@ Vector3D* Vector3D::timeDeriv() {
 /////////////////// ASSIGNMENT ////////////////////
 
 Vector3D & Vector3D::operator=(const Vector3D &rhs) {
+  SCOREP0();
   x = rhs.x;
   y = rhs.y;
   z = rhs.z;
@@ -160,6 +205,7 @@ Vector3D & Vector3D::operator=(const Vector3D &rhs) {
 }
 
 Vector3D & Vector3D::operator=(const Vector2D &rhs) {
+  SCOREP0();  
   x = rhs.x;
   y = rhs.y;
   z = rhs.z;
@@ -173,6 +219,7 @@ Vector3D & Vector3D::operator=(const Vector2D &rhs) {
 
 Vector3D & Vector3D::operator=(const BoutReal val)
 {
+  SCOREP0();
   x = val;
   y = val;
   z = val;
@@ -346,16 +393,6 @@ CROSS(Vector3D, Vector3D, Vector2D);
 CROSS(Vector3D, Vector2D, Vector3D);
 CROSS(Vector2D, Vector2D, Vector2D);
 
-Vector3D & Vector3D::operator^=(const Vector3D &rhs) {
-  *this = cross(*this, rhs);
-  return *this;
-}
-
-Vector3D & Vector3D::operator^=(const Vector2D &rhs) {
-  *this = cross(*this, rhs);
-  return *this;
-}
-
 /***************************************************************
  *                      BINARY OPERATORS 
  ***************************************************************/
@@ -431,7 +468,9 @@ const Vector3D Vector3D::operator/(const Field3D &rhs) const {
 ////////////////// DOT PRODUCT ///////////////////
 
 const Field3D Vector3D::operator*(const Vector3D &rhs) const {
-  Field3D result(x.getMesh());
+  Mesh* mesh = x.getMesh();
+
+  Field3D result{emptyFrom(x)};
   ASSERT2(location == rhs.getLocation())
 
   if(rhs.covariant ^ covariant) {
@@ -446,14 +485,14 @@ const Field3D Vector3D::operator*(const Vector3D &rhs) const {
       // Both covariant
       result = x*rhs.x*metric->g11 + y*rhs.y*metric->g22 + z*rhs.z*metric->g33;
       result += (x*rhs.y + y*rhs.x)*metric->g12
-	+ (x*rhs.z + z*rhs.x)*metric->g13
-	+ (y*rhs.z + z*rhs.y)*metric->g23;
+        + (x*rhs.z + z*rhs.x)*metric->g13
+        + (y*rhs.z + z*rhs.y)*metric->g23;
     }else {
       // Both contravariant
       result = x*rhs.x*metric->g_11 + y*rhs.y*metric->g_22 + z*rhs.z*metric->g_33;
       result += (x*rhs.y + y*rhs.x)*metric->g_12
-	+ (x*rhs.z + z*rhs.x)*metric->g_13
-	+ (y*rhs.z + z*rhs.y)*metric->g_23;
+        + (x*rhs.z + z*rhs.x)*metric->g_13
+        + (y*rhs.z + z*rhs.y)*metric->g_23;
     }
   }
   
@@ -464,7 +503,7 @@ const Field3D Vector3D::operator*(const Vector2D &rhs) const
 {
   ASSERT2(location == rhs.getLocation());
 
-  Field3D result(x.getMesh());
+  Field3D result{emptyFrom(x)};
 
   if(rhs.covariant ^ covariant) {
     // Both different - just multiply components
@@ -477,30 +516,20 @@ const Field3D Vector3D::operator*(const Vector2D &rhs) const
       // Both covariant
       result = x*rhs.x*metric->g11 + y*rhs.y*metric->g22 + z*rhs.z*metric->g33;
       result += (x*rhs.y + y*rhs.x)*metric->g12
-	+ (x*rhs.z + z*rhs.x)*metric->g13
-	+ (y*rhs.z + z*rhs.y)*metric->g23;
+        + (x*rhs.z + z*rhs.x)*metric->g13
+        + (y*rhs.z + z*rhs.y)*metric->g23;
     }else {
       // Both contravariant
       result = x*rhs.x*metric->g_11 + y*rhs.y*metric->g_22 + z*rhs.z*metric->g_33;
       result += (x*rhs.y + y*rhs.x)*metric->g_12
-	+ (x*rhs.z + z*rhs.x)*metric->g_13
-	+ (y*rhs.z + z*rhs.y)*metric->g_23;
+        + (x*rhs.z + z*rhs.x)*metric->g_13
+        + (y*rhs.z + z*rhs.y)*metric->g_23;
     }
   }
 
   return result;
 }
  
-///////////////// CROSS PRODUCT //////////////////
-
-const Vector3D Vector3D::operator^(const Vector3D &rhs) const {
-  return cross(*this,rhs);
-}
-
-const Vector3D Vector3D::operator^(const Vector2D &rhs) const {
-  return cross(*this,rhs);
-}
-
 /***************************************************************
  *       Get/set variable location for staggered meshes
  ***************************************************************/
@@ -519,6 +548,7 @@ CELL_LOC Vector3D::getLocation() const {
 }
 
 void Vector3D::setLocation(CELL_LOC loc) {
+  SCOREP0();  
   TRACE("Vector3D::setLocation");
   if (loc == CELL_DEFAULT) {
     loc = CELL_CENTRE;
@@ -569,7 +599,7 @@ const Vector3D operator*(const Field3D &lhs, const Vector3D &rhs)
  ***************************************************************/
 
 // Return the magnitude of a vector
-const Field3D abs(const Vector3D &v, REGION region) {
+const Field3D abs(const Vector3D &v, const std::string& region) {
   return sqrt(v*v, region);
 }
 

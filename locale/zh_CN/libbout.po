@@ -1,0 +1,90 @@
+# Chinese translations for BOUT++ package.
+# Copyright (C) 2018 THE BOUT++'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the BOUT++ package.
+#  <benjamin.dudson@york.ac.uk>, 2018.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: BOUT++ 4.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2018-10-23 00:03+0100\n"
+"PO-Revision-Date: 2018-10-22 22:56+0100\n"
+"Last-Translator:  <benjamin.dudson@york.ac.uk>\n"
+"Language-Team: Chinese (simplified)\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: src/bout++.cxx:365
+msgid "\tChecking disabled\n"
+msgstr "\t测试关掉\n"
+
+#: src/bout++.cxx:363
+#, c-format
+msgid "\tChecking enabled, level %d\n"
+msgstr "\t测试打开,级别 %d\n"
+
+#: src/sys/options.cxx:96 src/sys/options.cxx:136 src/sys/options.cxx:171
+#: src/sys/options.cxx:199 src/sys/options.cxx:220 src/sys/options.cxx:223
+msgid "\tOption "
+msgstr "\t选项 "
+
+#: src/solver/solver.cxx:563
+#, c-format
+msgid ""
+"\n"
+"Run finished at  : %s\n"
+msgstr ""
+"\n"
+"计算结束于 %s\n"
+
+#: src/solver/solver.cxx:534
+#, c-format
+msgid ""
+"\n"
+"Run started at  : %s\n"
+msgstr ""
+"\n"
+"计算从 %s 开始\n"
+
+#: src/bout++.cxx:350
+#, c-format
+msgid ""
+"Code compiled on %s at %s\n"
+"\n"
+msgstr ""
+"代码于 %s %s 编译\n"
+"\n"
+
+#: src/bout++.cxx:256
+#, c-format
+msgid "DataDir \"%s\" does not exist or is not accessible\n"
+msgstr "\"%s\" 不存在或不可访问\n"
+
+#: src/bout++.cxx:253
+#, c-format
+msgid "DataDir \"%s\" is not a directory\n"
+msgstr "\"%s\" 不是目录\n"
+
+#: src/bout++.cxx:424
+msgid "Error encountered during initialisation\n"
+msgstr "启动时遇到错误\n"
+
+#: src/bout++.cxx:469
+#, c-format
+msgid "Error encountered during initialisation: %s\n"
+msgstr "启动时遇到错误 : %s\n"
+
+#: src/solver/solver.cxx:564
+msgid "Run time : "
+msgstr "计算时间"
+
+#. / Run the solver
+#: src/solver/solver.cxx:531
+msgid ""
+"Running simulation\n"
+"\n"
+msgstr ""
+"模拟\n"
+"\n"

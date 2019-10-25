@@ -1,46 +1,33 @@
 #include "gtest/gtest.h"
 
 #include "../src/mesh/impls/bout/boutmesh.hxx"
-#include "bout/mesh.hxx"
+#include "options.hxx"
 #include "output.hxx"
-#include "unused.hxx"
+#include "bout/griddata.hxx"
 
-class FakeGridDataSource : public GridDataSource {
-public:
-  FakeGridDataSource(){};
-  ~FakeGridDataSource(){};
-  bool hasVar(const string &UNUSED(name)) { return false; };
-  bool get(Mesh *UNUSED(m), int &UNUSED(ival), const string &UNUSED(name)) {
-    return true;
-  };
-  bool get(Mesh *UNUSED(m), BoutReal &UNUSED(rval), const string &UNUSED(name)) {
-    return true;
-  }
-  bool get(Mesh *UNUSED(m), Field2D &UNUSED(var), const string &UNUSED(name),
-           BoutReal UNUSED(def) = 0.0) {
-    return true;
-  }
-  bool get(Mesh *UNUSED(m), Field3D &UNUSED(var), const string &UNUSED(name),
-           BoutReal UNUSED(def) = 0.0) {
-    return true;
-  }
-  bool get(Mesh *UNUSED(m), vector<int> &UNUSED(var), const string &UNUSED(name),
-           int UNUSED(len), int UNUSED(offset) = 0,
-           Direction UNUSED(dir) = GridDataSource::X) {
-    return true;
-  }
-  bool get(Mesh *UNUSED(m), vector<BoutReal> &UNUSED(var), const string &UNUSED(name),
-           int UNUSED(len), int UNUSED(offset) = 0,
-           Direction UNUSED(dir) = GridDataSource::X) {
-    return true;
-  }
-};
+#include "test_extras.hxx"
 
 TEST(BoutMeshTest, NullOptionsCheck) {
-  // Temporarily turn off outputs to make test quiet
-  output_info.disable();
-  output_warn.disable();
+  WithQuietOutput info{output_info};
+  WithQuietOutput warn{output_warn};
+
   EXPECT_NO_THROW(BoutMesh mesh(new FakeGridDataSource, nullptr));
-  output_info.enable();
-  output_warn.enable();
+}
+
+// Not a great test as it's not specific to the thing we want to test,
+// and also takes a whopping ~300ms!
+TEST(BoutMeshTest, SingleCoreDecomposition) {
+  WithQuietOutput info{output_info};
+  WithQuietOutput warn{output_warn};
+  WithQuietOutput progress{output_progress};
+
+  Options options{};
+  options["ny"] = 1;
+  options["nx"] = 4;
+  options["nz"] = 1;
+  options["MXG"] = 1;
+  options["MYG"] = 0;
+
+  BoutMesh mesh{new GridFromOptions{&options}, &options};
+  EXPECT_NO_THROW(mesh.load());
 }

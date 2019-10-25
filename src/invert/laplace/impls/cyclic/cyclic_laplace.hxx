@@ -44,22 +44,36 @@ class LaplaceCyclic;
  */
 class LaplaceCyclic : public Laplacian {
 public:
-  LaplaceCyclic(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE);
+  LaplaceCyclic(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr);
   ~LaplaceCyclic();
   
   using Laplacian::setCoefA;
   void setCoefA(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     Acoef = val;
   }
   using Laplacian::setCoefC;
   void setCoefC(const Field2D &val) override {
+    setCoefC1(val);
+    setCoefC2(val);
+  }
+  using Laplacian::setCoefC1;
+  void setCoefC1(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
-    Ccoef = val;
+    ASSERT1(localmesh == val.getMesh());
+    C1coef = val;
+  }
+  using Laplacian::setCoefC2;
+  void setCoefC2(const Field2D &val) override {
+    ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
+    C2coef = val;
   }
   using Laplacian::setCoefD;
   void setCoefD(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     Dcoef = val;
   }
   using Laplacian::setCoefEx;
@@ -72,13 +86,13 @@ public:
   }
 
   using Laplacian::solve;
-  const FieldPerp solve(const FieldPerp &b) override {return solve(b,b);}
-  const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override;
+  FieldPerp solve(const FieldPerp &b) override {return solve(b,b);}
+  FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override;
 
-  const Field3D solve(const Field3D &b) override {return solve(b,b);}
-  const Field3D solve(const Field3D &b, const Field3D &x0) override;
+  Field3D solve(const Field3D &b) override {return solve(b,b);}
+  Field3D solve(const Field3D &b, const Field3D &x0) override;
 private:
-  Field2D Acoef, Ccoef, Dcoef;
+  Field2D Acoef, C1coef, C2coef, Dcoef;
   
   int nmode;  // Number of modes being solved
   int xs, xe; // Start and end X indices

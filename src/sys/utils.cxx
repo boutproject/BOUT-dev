@@ -24,74 +24,15 @@
  **************************************************************************/
 
 #include <utils.hxx>
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <ctype.h>
+#include <cstring>
+#include <cstdlib>
+#include <cctype>
 #include <vector>
 #include <algorithm>
 #include <sstream>
 #include <cmath>
-
-BoutReal ***r3tensor(int nrow, int ncol, int ndep) {
-  int i,j;
-  BoutReal ***t;
-
-  /* allocate pointers to pointers to rows */
-  t = static_cast<BoutReal ***>(malloc(nrow * sizeof(BoutReal **)));
-
-  /* allocate pointers to rows and set pointers to them */
-  t[0] = static_cast<BoutReal **>(malloc(nrow * ncol * sizeof(BoutReal *)));
-
-  /* allocate rows and set pointers to them */
-  t[0][0] = static_cast<BoutReal *>(malloc(nrow * ncol * ndep * sizeof(BoutReal)));
-
-  for(j=1;j!=ncol;j++) t[0][j]=t[0][j-1]+ndep;
-  for(i=1;i!=nrow;i++) {
-    t[i]=t[i-1]+ncol;
-    t[i][0]=t[i-1][0]+ncol*ndep;
-    for(j=1;j!=ncol;j++) t[i][j]=t[i][j-1]+ndep;
-  }
-
-  /* return pointer to array of pointers to rows */
-  return t;
-}
-
-void free_r3tensor(BoutReal ***m) {
-  free(m[0][0]);
-  free(m[0]);
-  free(m);
-}
-
-int ***i3tensor(int nrow, int ncol, int ndep) {
-  int i,j;
-  int ***t;
-
-  /* allocate pointers to pointers to rows */
-  t = static_cast<int ***>(malloc(nrow * sizeof(int **)));
-
-  /* allocate pointers to rows and set pointers to them */
-  t[0] = static_cast<int **>(malloc(nrow * ncol * sizeof(int *)));
-
-  /* allocate rows and set pointers to them */
-  t[0][0] = static_cast<int *>(malloc(nrow * ncol * ndep * sizeof(int)));
-
-  for(j=1;j!=ncol;j++) t[0][j]=t[0][j-1]+ndep;
-  for(i=1;i!=nrow;i++) {
-    t[i]=t[i-1]+ncol;
-    t[i][0]=t[i-1][0]+ncol*ndep;
-    for(j=1;j!=ncol;j++) t[i][j]=t[i][j-1]+ndep;
-  }
-
-  /* return pointer to array of pointers to rows */
-  return t;
-}
-
-void free_i3tensor(int ***m) {
-  free(m[0][0]);
-  free(m[0]);
-  free(m);
-}
+#include <ctime>
+#include <iomanip>
 
 /**************************************************************************
  * String routines
@@ -112,16 +53,24 @@ char* copy_string(const char* s) {
 }
 
 // Convert a string to lower case
-const string lowercase(const string &str) {
-  string strlow(str);
+const std::string lowercase(const std::string &str) {
+  std::string strlow(str);
 
   std::transform(strlow.begin(), strlow.end(), strlow.begin(), ::tolower);
   return strlow;
 }
 
+// Convert a string to upper case
+const std::string uppercase(const std::string& str) {
+  std::string strup(str);
+
+  std::transform(strup.begin(), strup.end(), strup.begin(), ::toupper);
+  return strup;
+}
+
 // Convert to lowercase, except for inside strings
-const string lowercasequote(const string &str) {
-  string strlow(str);
+const std::string lowercasequote(const std::string &str) {
+  std::string strlow(str);
 
   bool quote = false, dquote = false;
   for (char &i : strlow) {
@@ -189,3 +138,17 @@ std::string trimComments(const std::string &s, const std::string &c) {
   return s.substr(0, s.find_first_of(c));
 }
 
+std::string toString(const time_t& time) {
+  // Get local time
+  std::tm *tm = std::localtime(&time);
+
+  // Note: With GCC >= 5 `put_time` becomes available
+  // std::stringstream ss;
+  // ss << std::put_time(tm, "%c %Z");
+  // return ss.str();
+
+  // Older compilers
+  char buffer[80];
+  strftime(buffer, 80, "%Ec", tm);
+  return std::string(buffer);
+}

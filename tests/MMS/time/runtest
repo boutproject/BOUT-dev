@@ -9,7 +9,7 @@ from __future__ import division
 from __future__ import print_function
 from builtins import str
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
+from boututils.run_wrapper import shell, shell_safe, launch_safe
 from boutdata.collect import collect
 
 #requires: all_tests
@@ -27,7 +27,7 @@ try:
 except:
     plt=None
 
-MPIRUN = getmpirun()
+
 
 print("Making MMS time integration test")
 shell_safe("make > make.log")
@@ -35,23 +35,18 @@ shell_safe("make > make.log")
 # List of options to be passed for each test
 if "only_petsc" in sys.argv:
     # this requires petsc:
-    options = [("solver:type=imexbdf2 -snes_mf", "IMEX-BDF2", "-+",2)]# What's the expected order?
-    # should petsc solver also be added?
-    #options.append(("solver:type=petsc",    "petsc",     "-+",2))# What's the expected order?
+    options = [("solver:type=imexbdf2 -snes_mf", "IMEX-BDF2", "-+",2)]
 else:
     options = [
         ("solver:type=euler", "Euler", "-^",1)
-        ,("solver:type=karniadakis", "Karniadakis", "-x",2) # Whats the expected order?
         ,("solver:type=rk3ssp", "RK3-SSP", "-s",3)
         ,("solver:type=rk4", "RK4", "-o",4)
-        ,("solver:type=rkgeneric solver:adaptive=false", "RK-generic", "-o",4)
-        #,("solver:type=pvode solver:", "P-Vode", "-o",2)
+        ,("solver:type=rkgeneric", "RK-generic", "-o",4)
+        ,("solver:type=splitrk", "SplitRK", "-x", 2)
     ]
 
 #Missing: cvode, ida, slepc, power, arkode, snes
 # Is there a better way to check a certain solver should be enabled?
-
-#options.append(("solver:type=power",    "power",     "-+",2))# What's the expected order?
 
 # List of NX values to use
 timesteps = [4, 8, 16, 32, 64, 128, 256]
@@ -78,7 +73,7 @@ for opts,label,sym,expected_order in options:
         # Command to run
         cmd = "./time "+args
         # Launch using MPI
-        s, out = launch_safe(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
+        s, out = launch_safe(cmd, nproc=nproc, pipe=True)
         
         # Save output to log file
         f = open("run.log."+label+"."+str(nt), "w")

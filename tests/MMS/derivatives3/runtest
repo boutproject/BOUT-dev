@@ -17,9 +17,9 @@ def runtests(functions,derivatives,directions,stag,msg):
     global errorlist
     for direction in directions:
       direction, fac,guards, diff_func = direction
-      locations=['CENTRE']
+      locations=['centre']
       if stag:
-        locations.append(direction.upper()+"LOW")
+        locations.append(direction.lower()+"low")
       for funcs, derivative , inloc, outloc in itertools.product(functions,
                                                                  derivatives, locations,locations):
         infunc, outfunc = funcs
@@ -122,7 +122,7 @@ derivatives=[
 
 runtests(functions,derivatives,directions,True,"D2D2")
 
-
+boutcore.finalise()
 
 if errorlist:
     for error in errorlist:

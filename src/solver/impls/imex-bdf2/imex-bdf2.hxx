@@ -123,7 +123,7 @@ class IMEXBDF2 : public Solver {
   BoutReal dtMinFatal; ///< If timestep wants to drop below this we abort. Set -ve to deactivate
 
   //Scheme coefficients
-  vector<BoutReal> uFac, fFac, gFac;
+  std::vector<BoutReal> uFac, fFac, gFac;
   BoutReal dtImp;
 
   int nlocal, neq; ///< Number of variables on local processor and in total
@@ -150,9 +150,9 @@ class IMEXBDF2 : public Solver {
 
   // Working memory
   Array<BoutReal> u ; ///< System state at current time
-  vector<Array<BoutReal>> uV; ///< The solution history
-  vector<Array<BoutReal>> fV; ///< The non-stiff solution history
-  vector<BoutReal> timesteps; ///< Timestep history
+  std::vector<Array<BoutReal>> uV; ///< The solution history
+  std::vector<Array<BoutReal>> fV; ///< The non-stiff solution history
+  std::vector<BoutReal> timesteps; ///< Timestep history
   Array<BoutReal> rhs;
   Array<BoutReal> err;
 

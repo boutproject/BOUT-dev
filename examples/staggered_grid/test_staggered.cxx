@@ -10,7 +10,7 @@
 Field3D n, v;
 CELL_LOC maybe_ylow{CELL_CENTRE};
 
-int physics_init(bool restart) {
+int physics_init(bool UNUSED(restart)) {
 
   if (mesh->StaggerGrids) {
     maybe_ylow = CELL_YLOW;
@@ -23,7 +23,7 @@ int physics_init(bool restart) {
   return 0;
 }
 
-int physics_run(BoutReal time) {
+int physics_run(BoutReal UNUSED(time)) {
   mesh->communicate(n, v);
   
   //ddt(n) = -Div_par_flux(v, n, CELL_CENTRE);

@@ -24,11 +24,10 @@ private:
     Vector2D v0, B0;
 
     // read options
-    auto globalOptions = Options::root();
-    auto options = globalOptions["mhd"];
-    OPTION(options, g, 5.0 / 3.0);
-    OPTION(options, include_viscos, false);
-    OPTION(options, viscos, 0.1);
+    auto& options = Options::root()["mhd"];
+    g = options["g"].withDefault(5.0 / 3.0);
+    include_viscos = options["include_viscos"].withDefault(false);
+    viscos = options["viscos"].withDefault(0.1);
 
     // Read 2D initial profiles
     GRID_LOAD(rho0);
@@ -65,7 +64,7 @@ private:
 
       // Added this for modifying the Orszag-Tang vortex problem
       BoutReal v_fact;
-      OPTION(options, v_fact, 1.0);
+      v_fact = options["v_fact"].withDefault(1.0);
       v *= v_fact;
     }
 
@@ -86,7 +85,7 @@ private:
     return 0;
   }
 
-  int rhs(BoutReal t) override {
+  int rhs(BoutReal UNUSED(time)) override {
     // Communicate variables
 
     mesh->communicate(v, B, p, rho);

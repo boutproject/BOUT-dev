@@ -8,7 +8,7 @@
 #include <boutmain.hxx>
 #include <bout/globalfield.hxx>
 
-int physics_init(bool restarting) {
+int physics_init(bool UNUSED(restarting)) {
   
   /////////////////////////////////////////////////////////////
   // 2D fields
@@ -21,8 +21,8 @@ int physics_init(bool restarting) {
   
   for(int x=0;x<mesh->LocalNx;x++) {
     for(int y=0;y<mesh->LocalNy;y++) {
-      localX(x,y) = mesh->XGLOBAL(x);
-      localY(x,y) = mesh->YGLOBAL(y);
+      localX(x,y) = mesh->getGlobalXIndex(x);
+      localY(x,y) = mesh->getGlobalYIndex(y - mesh->ystart);
     }
   }
   
@@ -73,8 +73,8 @@ int physics_init(bool restarting) {
   for(int x=0;x<mesh->LocalNx;x++)
     for(int y=0;y<mesh->LocalNy;y++)
       for(int z=0;z<mesh->LocalNz;z++) {
-        localX3D(x,y,z) = mesh->XGLOBAL(x) + z;
-        localY3D(x,y,z) = mesh->YGLOBAL(y) + z;
+        localX3D(x,y,z) = mesh->getGlobalXIndex(x) + z;
+        localY3D(x,y,z) = mesh->getGlobalYIndex(y - mesh->ystart) + z;
       }
   
   // Gather onto one processor (0 by default)
@@ -117,7 +117,7 @@ int physics_init(bool restarting) {
   return 1; // Signal an error, so quits
 }
 
-int physics_run(BoutReal t) {
+int physics_run(BoutReal UNUSED(t)) {
   // Doesn't do anything
   return 1;
 }

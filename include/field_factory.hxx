@@ -1,12 +1,12 @@
 /**************************************************************************
  * Generate a field with specified values, mainly for creating
  * initial perturbations
- * 
- * 
+ *
+ *
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -24,7 +24,6 @@
  *
  **************************************************************************/
 
-
 class FieldFactory;
 
 #ifndef __FIELD_FACTORY_H__
@@ -40,50 +39,91 @@ class FieldFactory;
 
 #include "unused.hxx"
 
-#include <string>
-#include <map>
 #include <list>
+#include <map>
+#include <string>
 
 // Utility routines to create generators from values
 
 FieldGeneratorPtr generator(BoutReal value);
-FieldGeneratorPtr generator(BoutReal *ptr);
+FieldGeneratorPtr generator(BoutReal* ptr);
 
 //////////////////////////////////////////////////////////
 // Create a tree of generators from an input string
 
 class FieldFactory : public ExpressionParser {
 public:
-  FieldFactory(Mesh *m, Options *opt = nullptr);
-  ~FieldFactory() override;
+  FieldFactory(Mesh* mesh = nullptr, Options* opt = nullptr);
+  ~FieldFactory() override = default;
 
-  const Field2D create2D(const std::string &value, const Options *opt = nullptr,
-                         Mesh *m = nullptr, CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0);
-  const Field3D create3D(const std::string &value, const Options *opt = nullptr,
-                         Mesh *m = nullptr, CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0);
+  /// Create a 2D field by parsing a string and evaluating the expression
+  /// using the given options \p opt, over Mesh \p m at time \p t.
+  /// The resulting field is at cell location \p loc.
+  Field2D create2D(const std::string& value, const Options* opt = nullptr,
+                   Mesh* m = nullptr, CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0) const;
 
-  // Parse a string into a tree of generators
-  FieldGeneratorPtr parse(const std::string &input, const Options *opt = nullptr);
+  /// Create a 3D field by parsing a string and evaluating the expression
+  /// using the given options \p opt, over Mesh \p m at time \p t.
+  /// The resulting field is at cell location \p loc.
+  Field3D create3D(const std::string& value, const Options* opt = nullptr,
+                   Mesh* m = nullptr, CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0) const;
 
-  // Singleton object
-  static FieldFactory *get();
+  /// Create a FieldPerp by parsing a string and evaluating the expression
+  /// using the given options \p opt, over Mesh \p m at time \p t.
+  /// The resulting field is at cell location \p loc.
+  FieldPerp createPerp(const std::string& value, const Options* opt = nullptr,
+      Mesh* m = nullptr, CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0) const;
+
+  /// Parse a string into a tree of generators
+  FieldGeneratorPtr parse(const std::string& input, const Options* opt = nullptr) const;
+
+  /// Create a 2D field from a generator, over a given mesh
+  /// at a given cell location and time.
+  Field2D create2D(FieldGeneratorPtr generator, Mesh* m = nullptr,
+                   CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0) const;
+
+  /// Create a 3D field from a generator, over a given mesh
+  /// at a given cell location and time.
+  Field3D create3D(FieldGeneratorPtr generator, Mesh* m = nullptr,
+                   CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0) const;
+
+  /// Create a FieldPerp from a generator, over a given mesh
+  /// at a given cell location and time.
+  FieldPerp createPerp(FieldGeneratorPtr generator, Mesh* m = nullptr,
+      CELL_LOC loc = CELL_CENTRE, BoutReal t = 0.0) const;
+
+  /// Get the Singleton object
+  static FieldFactory* get();
 
   /// clean the cache of parsed strings
   void cleanCache();
+
 protected:
-  // These functions called by the parser
-  FieldGeneratorPtr resolve(std::string &name) override;
+  /// These functions called by the parser to resolve unknown symbols.
+  /// This is used to enable options to be referred to in expressions.
+  FieldGeneratorPtr resolve(std::string& name) const override;
 
 private:
-  Mesh *fieldmesh;  
-  const Options *options;
+  /// The default mesh for create functions.
+  Mesh* fieldmesh;
 
-  std::list<std::string> lookup; // Names currently being parsed
-  
-  // Cache parsed strings
-  std::map<std::string, FieldGeneratorPtr > cache;
-  
-  const Options* findOption(const Options *opt, const std::string &name, std::string &val);
+  /// Should we transform input from field-aligned coordinates (if possible)?
+  bool transform_from_field_aligned{true};
+
+  /// The default options used in resolve(), can be *temporarily*
+  /// overridden in parse()/create2D()/create3D()
+  mutable const Options* options;
+
+  /// Names currently being parsed
+  mutable std::list<std::string> lookup;
+
+  /// Cache parsed strings so repeated evaluations
+  /// don't result in allocating more generators.
+  mutable std::map<std::string, FieldGeneratorPtr> cache;
+
+  /// Find an Options object which contains the given \p name
+  const Options* findOption(const Options* opt, const std::string& name,
+                            std::string& val) const;
 };
 
 //////////////////////////////////////////////////////////
@@ -93,20 +133,22 @@ class FieldFunction : public FieldGenerator {
 public:
   FieldFunction() = delete;
   FieldFunction(FuncPtr userfunc) : func(userfunc) {}
-  double generate(double x, double y, double z, double t) override {
+  BoutReal generate(BoutReal x, BoutReal y, BoutReal z, BoutReal t) override {
     return func(t, x, y, z);
   }
+
 private:
   FuncPtr func;
 };
 
 //////////////////////////////////////////////////////////
-// Null generator 
+// Null generator
 
 class FieldNull : public FieldGenerator {
 public:
-  double generate(double UNUSED(x), double UNUSED(y), double UNUSED(z),
-                  double UNUSED(t)) override {
+  FieldNull() = default;
+  BoutReal generate(BoutReal UNUSED(x), BoutReal UNUSED(y), BoutReal UNUSED(z),
+                    BoutReal UNUSED(t)) override {
     return 0.0;
   }
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> UNUSED(args)) override {
@@ -114,13 +156,9 @@ public:
   }
   /// Singeton
   static FieldGeneratorPtr get() {
-    static FieldGeneratorPtr instance = nullptr;
-
-    if(!instance)
-      instance = std::make_shared<FieldNull>();
+    static FieldGeneratorPtr instance = std::make_shared<FieldNull>();
     return instance;
   }
-private:
 };
 
 #endif // __FIELD_FACTORY_H__

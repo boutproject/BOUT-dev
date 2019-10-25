@@ -83,7 +83,7 @@ class Vector3D : public FieldData {
   /*!
    * Flag to specify whether the components (x,y,z)
    * are co- or contra-variant.
-   * 
+   *
    * true if the components are covariant (default)
    * false if the components are contravariant
    *
@@ -91,9 +91,9 @@ class Vector3D : public FieldData {
    * the toContravariant and toCovariant methods.
    *
    * Only modify this variable directly if you know what you are doing!
-   * 
-   */ 
-  bool covariant;
+   *
+   */
+  bool covariant{true};
 
   /*!
    * In-place conversion to covariant form. 
@@ -149,13 +149,6 @@ class Vector3D : public FieldData {
   Vector3D & operator/=(BoutReal rhs);
   Vector3D & operator/=(const Field2D &rhs);
   Vector3D & operator/=(const Field3D &rhs);
-
-  /// Cross-product of two vectors
-  /// Deprecated: use a=cross(a,b) instead
-  DEPRECATED(Vector3D & operator^=(const Vector3D &rhs);)
-  /// Cross-product of two vectors
-  /// Deprecated: use a=cross(a,b) instead
-  DEPRECATED(Vector3D & operator^=(const Vector2D &rhs);)
   
   // Binary operators
 
@@ -176,14 +169,6 @@ class Vector3D : public FieldData {
   const Field3D operator*(const Vector3D &rhs) const; // Dot product
   const Field3D operator*(const Vector2D &rhs) const;
 
-  /// Cross-product of two vectors
-  /// Deprecated: use cross(a,b) instead
-  DEPRECATED(const Vector3D operator^(const Vector3D &rhs) const;)
-
-  /// Cross-product of two vectors
-  /// Deprecated: use cross(a,b) instead
-  DEPRECATED(const Vector3D operator^(const Vector2D &rhs) const;)
-  
   /*!
    * Set variable cell location
    */ 
@@ -203,16 +188,16 @@ class Vector3D : public FieldData {
   int  BoutRealSize() const override { return 3; }
   
   void applyBoundary(bool init=false) override;
-  void applyBoundary(const string &condition) {
+  void applyBoundary(const std::string &condition) {
     x.applyBoundary(condition);
     y.applyBoundary(condition);
     z.applyBoundary(condition);
   }
-  void applyBoundary(const char* condition) { applyBoundary(string(condition)); }
+  void applyBoundary(const char* condition) { applyBoundary(std::string(condition)); }
   void applyTDerivBoundary() override;
  private:
-  Vector3D *deriv; ///< Time-derivative, can be NULL
-  CELL_LOC location; ///< Location of the variable in the cell
+   Vector3D* deriv{nullptr};       ///< Time-derivative, can be NULL
+   CELL_LOC location{CELL_CENTRE}; ///< Location of the variable in the cell
 };
 
 // Non-member overloaded operators
@@ -233,7 +218,12 @@ const Vector3D cross(const Vector3D & lhs, const Vector2D &rhs);
  * 
  * sqrt( v.x^2 + v.y^2 + v.z^2 )
  */ 
-const Field3D abs(const Vector3D &v, REGION region = RGN_ALL);
+const Field3D abs(const Vector3D& v, const std::string& region = "RGN_ALL");
+[[gnu::deprecated("Please use Vector3D abs(const Vector3D& f, "
+    "const std::string& region = \"RGN_ALL\") instead")]]
+inline const Field3D abs(const Vector3D& v, REGION region) {
+  return abs(v, toString(region));
+}
 
 /*!
  * @brief Time derivative of 3D vector field

@@ -6,8 +6,9 @@ BOUT_TOP = ../..
 
 BOUT_TEST_DIR = .
 
-GTEST_DIR = $(BOUT_TOP)/googletest/googletest
-GMOCK_DIR = $(BOUT_TOP)/googletest/googlemock
+GTEST_BASE = $(BOUT_TOP)/externalpackages/googletest
+GTEST_DIR = $(GTEST_BASE)/googletest
+GMOCK_DIR = $(GTEST_BASE)/googlemock
 
 GTEST_SOURCES = $(GTEST_DIR)/src/gtest-all.cc
 
@@ -31,7 +32,7 @@ include $(BOUT_TOP)/make.config
 LDFLAGS += -pthread
 
 # Existence of this file indicates that GTEST has been downloaded
-GTEST_SENTINEL = $(BOUT_TOP)/googletest/README.md
+GTEST_SENTINEL = $(GTEST_BASE)/README.md
 
 # House-keeping build targets.
 
@@ -42,7 +43,7 @@ clean ::
 
 # Download Google Test
 $(GTEST_SENTINEL) :
-	echo "Downloading Google Test"
+	@echo "Downloading Google Test"
 	git submodule update --init --recursive
 
 # For simplicity and to avoid depending on Google Test's
@@ -78,12 +79,15 @@ $(TARGET): makefile $(BOUT_TOP)/make.config $(OBJ) $(SUB_LIBS) bout_test_main.a
 TEST_SOURCES = $(shell find $(BOUT_TEST_DIR) -type f -name "test_*.cxx" 2> /dev/null)
 TEST_OBJECTS = $(TEST_SOURCES:%.cxx=%.o)
 
-$(TEST_SOURCES): checklib
-$(TEST_OBJECTS): $(LIB) $(GTEST_SENTINEL)
+$(TEST_OBJECTS): | $(GTEST_SENTINEL)
 
-serial_tests: makefile $(BOUT_TOP)/make.config $(OBJ) $(LIB) $(SUB_LIBS) $(TEST_OBJECTS) bout_test_main.a
+serial_tests: makefile $(BOUT_TOP)/make.config $(OBJ) $(LIB) checklib \
+              $(SUB_LIBS) $(TEST_OBJECTS) bout_test_main.a
 	@echo "  Linking tests"
 	@$(LD) -o $@ $(TEST_OBJECTS) bout_test_main.a $(LDFLAGS) $(BOUT_LIBS) $(SUB_LIBS)
+
+# Override this on the command line to print full output from the unit tests
+QUIET ?= ./quiet.sh
 
 # Note: This depends on GTEST_SENTINEL, which checks out Google Test if not present
 #       The correct behaviour relies on the dependencies being checked in left-to-right order
@@ -91,7 +95,7 @@ serial_tests: makefile $(BOUT_TOP)/make.config $(OBJ) $(LIB) $(SUB_LIBS) $(TEST_
 #       target in make.config being used instead.
 check: $(GTEST_SENTINEL) serial_tests
 	@echo "Running unit test"
-	@./quiet.sh ./serial_tests
+	@$(QUIET) ./serial_tests $(GTEST_ARGS)
 
 # This is the same target as a make rule in make.config. Adding unmet dependencies here
 # results in makefile reverting to the make.config version.

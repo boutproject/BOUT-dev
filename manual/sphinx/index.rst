@@ -68,6 +68,7 @@ The documentation is divided into the following sections:
    user_docs/algebraic_operators
    user_docs/staggered_grids
    user_docs/eigenvalue_solver
+   user_docs/nonlocal
 
 .. toctree::
    :maxdepth: 1
@@ -89,6 +90,8 @@ The documentation is divided into the following sections:
    developer_docs/data_types
    developer_docs/mesh
    developer_docs/file_io
+   developer_docs/natural_language
+   developer_docs/performance_profiling
 
    api_reference
 

@@ -5,15 +5,16 @@
 GRID_SIZES=(4 8 16 32 64 128)
 EXE=iterator-offsets
 NP=1
+NTHREADS=1
 FLAGS="-q -q -q -q performanceIterator:profileMode=true"
 
 #Make first run
 currGrid=${GRID_SIZES[0]}
-mpirun -np ${NP} ./${EXE} ${FLAGS} mesh:nx=${currGrid} mesh:ny=${currGrid} mesh:nz=${currGrid}
+OMP_NUM_THREADS=${NTHREADS} mpirun -np ${NP} ./${EXE} ${FLAGS} mesh:nx=${currGrid} mesh:ny=${currGrid} mesh:nz=${currGrid}
 #Do other values
 for currGrid in ${GRID_SIZES[@]:1}
 do
-    mpirun -np ${NP} ./${EXE} ${FLAGS} mesh:nx=${currGrid} mesh:ny=${currGrid} mesh:nz=${currGrid} performanceIterator:includeHeader=false
+    OMP_NUM_THREADS=${NTHREADS} mpirun -np ${NP} ./${EXE} ${FLAGS} mesh:nx=${currGrid} mesh:ny=${currGrid} mesh:nz=${currGrid} performanceIterator:includeHeader=false
 done
 
 

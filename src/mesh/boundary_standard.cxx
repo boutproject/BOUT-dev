@@ -1,3 +1,4 @@
+#include <bout/mesh.hxx>
 #include <globals.hxx>
 #include <boundary_standard.hxx>
 #include <invert_laplace.hxx>
@@ -28,7 +29,8 @@ void verifyNumPoints(BoundaryRegion *region, int ptsRequired) {
   TRACE("Verifying number of points available for BC");
 
   int ptsAvailGlobal, ptsAvailLocal, ptsAvail;
-  string side, gridType;
+  std::string side, gridType;
+  Mesh* mesh = region->localmesh;
   
   //Initialise var in case of no match and CHECK<=2
   ptsAvail = ptsRequired; //Ensures test passes without exception
@@ -105,7 +107,7 @@ void verifyNumPoints(BoundaryRegion*, int) {}
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryDirichlet::clone(BoundaryRegion *region, const list<string> &args){
+BoundaryOp* BoundaryDirichlet::clone(BoundaryRegion *region, const std::list<std::string> &args){
   verifyNumPoints(region,1);
 
   std::shared_ptr<FieldGenerator> newgen;
@@ -124,6 +126,8 @@ void BoundaryDirichlet::apply(Field2D &f,BoutReal t) {
   // Set (at 2nd order) the value at the mid-point between the guard cell and the grid cell to be val
   // N.B. Only first guard cells (closest to the grid) should ever be used
   
+  Mesh* mesh = bndry->localmesh;
+  ASSERT1(mesh == f.getMesh());
   bndry->first();
 
   // Decide which generator to use
@@ -137,7 +141,7 @@ void BoundaryDirichlet::apply(Field2D &f,BoutReal t) {
   // Check for staggered grids
   
   CELL_LOC loc = f.getLocation();
-  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+  if(mesh->StaggerGrids and (loc == CELL_XLOW or loc == CELL_YLOW)) {
     // Staggered. Need to apply slightly differently
     
     if( loc == CELL_XLOW ) {
@@ -295,7 +299,7 @@ void BoundaryDirichlet::apply(Field2D &f,BoutReal t) {
       // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
       for(int i=1;i<bndry->width;i++) {
 	int xi = bndry->x + i*bndry->bx;
-	int yi = bndry->y + i*bndry->bx;						
+	int yi = bndry->y + i*bndry->by;						
 	f(xi, yi) = 2*f(xi - bndry->bx, yi - bndry->by) - f(xi - 2*bndry->bx, yi - 2*bndry->by);	
       }	
     }
@@ -311,6 +315,8 @@ void BoundaryDirichlet::apply(Field3D &f,BoutReal t) {
   // Set (at 2nd order) the value at the mid-point between the guard cell and the grid cell to be val
   // N.B. Only first guard cells (closest to the grid) should ever be used
 
+  Mesh* mesh = bndry->localmesh;
+  ASSERT1(mesh == f.getMesh());
   bndry->first();
 
   // Decide which generator to use
@@ -475,6 +481,69 @@ void BoundaryDirichlet::apply(Field3D &f,BoutReal t) {
 	  }
 	}			
       }
+    } else if (loc == CELL_ZLOW) {
+      // Shifted in Z
+
+      for(; !bndry->isDone(); bndry->next1d()) {
+        // Calculate the X and Y normalised values half-way between the guard cell and grid cell
+        BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
+                                 + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
+
+        BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
+                                 + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
+
+        for(int zk=0;zk<mesh->LocalNz;zk++) {
+          if(fg){
+            val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*(zk - 0.5)/(mesh->LocalNz), t);
+          }
+          f(bndry->x,bndry->y,zk) = 2*val - f(bndry->x-bndry->bx, bndry->y-bndry->by, zk);
+
+          // We've set the first boundary point using extrapolation in
+          // the line above.  The below block of code is attempting to
+          // set the rest of the boundary cells also using
+          // extrapolation. Whilst this choice doesn't impact 2nd order
+          // methods it has been observed that with higher order
+          // methods, which actually use these points, the use of
+          // extrapolation can be unstable. For this reason we have
+          // commented out the below block and replaced it with the loop
+          // several lines below, which just sets all the rest of the
+          // boundary points to be the specified value.  We've not
+          // removed the commented out code as we may wish to revisit
+          // this in the future, however it may be that this is
+          // eventually removed.  It can be noted that we *don't* apply
+          // this treatment for other boundary treatments,
+          // i.e. elsewhere we tend to extrapolate.
+
+          // // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
+          // for(int i=1;i<bndry->width;i++) {
+          //   int xi = bndry->x + i*bndry->bx;
+          //   int yi = bndry->y + i*bndry->by;
+
+          //   f(xi, yi, zk) = 2*f(xi - bndry->bx, yi - bndry->by, zk) - f(xi - 2*bndry->bx, yi - 2*bndry->by, zk);
+          //   // f(xi, yi, zk) = 3.0*f(xi - bndry->bx, yi - bndry->by, zk) - 3.0*f(xi - 2*bndry->bx, yi - 2*bndry->by, zk) + f(xi - 3*bndry->bx, yi - 3*bndry->by, zk);
+
+          // }
+        }
+
+        // This loop is our alternative approach to setting the rest of the boundary
+        // points. Instead of extrapolating we just use the generated values. This
+        // can help with the stability of higher order methods.
+        for (int i = 1; i < bndry->width; i++) {
+          // Set any other guard cells using the values on the cells
+          int xi = bndry->x + i*bndry->bx;
+          int yi = bndry->y + i*bndry->by;
+          xnorm = mesh->GlobalX(xi);
+          ynorm = mesh->GlobalY(yi);
+          for(int zk=0;zk<mesh->LocalNz;zk++) {
+            if(fg) {
+              val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*(zk - 0.5)/(mesh->LocalNz), t);
+            }
+            f(xi, yi, zk) = val;
+          }
+        }
+      }
+    } else {
+      throw BoutException("Unrecognised location");
     }
   }
   else {
@@ -548,6 +617,8 @@ void BoundaryDirichlet::apply_ddt(Field2D &f) {
 }
 
 void BoundaryDirichlet::apply_ddt(Field3D &f) {
+  Mesh* mesh = bndry->localmesh;
+  ASSERT1(mesh == f.getMesh());
   Field3D *dt = f.timeDeriv();
   for(bndry->first(); !bndry->isDone(); bndry->next())
     for(int z=0;z<mesh->LocalNz;z++)
@@ -558,7 +629,7 @@ void BoundaryDirichlet::apply_ddt(Field3D &f) {
 ///////////////////////////////////////////////////////////////
 // New implementation, accurate to higher order
 
-BoundaryOp* BoundaryDirichlet_O3::clone(BoundaryRegion *region, const list<string> &args){
+BoundaryOp* BoundaryDirichlet_O3::clone(BoundaryRegion *region, const std::list<std::string> &args){
   verifyNumPoints(region,2);
   std::shared_ptr<FieldGenerator> newgen = nullptr;
   if(!args.empty()) {
@@ -576,6 +647,8 @@ void BoundaryDirichlet_O3::apply(Field2D &f,BoutReal t) {
   // Set (at 2nd order) the value at the mid-point between the guard cell and the grid cell to be val
   // N.B. Only first guard cells (closest to the grid) should ever be used
   
+  Mesh* mesh = bndry->localmesh;
+  ASSERT1(mesh == f.getMesh());
   bndry->first();
 
   // Decide which generator to use
@@ -589,7 +662,7 @@ void BoundaryDirichlet_O3::apply(Field2D &f,BoutReal t) {
   // Check for staggered grids
   
   CELL_LOC loc = f.getLocation();
-  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+  if(mesh->StaggerGrids and (loc == CELL_XLOW or loc == CELL_YLOW)) {
     // Staggered. Need to apply slightly differently
     
     if( loc == CELL_XLOW) {
@@ -761,6 +834,8 @@ void BoundaryDirichlet_O3::apply(Field3D &f,BoutReal t) {
   // Set (at 2nd order) the value at the mid-point between the guard cell and the grid cell to be val
   // N.B. Only first guard cells (closest to the grid) should ever be used
 
+  Mesh* mesh = bndry->localmesh;
+  ASSERT1(mesh == f.getMesh());
   bndry->first();
 
   // Decide which generator to use
@@ -923,6 +998,34 @@ void BoundaryDirichlet_O3::apply(Field3D &f,BoutReal t) {
 	  }
 	}
       }
+    } else if (loc == CELL_ZLOW) {
+      // Shifted in Z
+
+      for(; !bndry->isDone(); bndry->next1d()) {
+        // Calculate the X and Y normalised values half-way between the guard cell and grid cell
+        BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
+                                 + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
+
+        BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
+                                 + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
+
+        for(int zk=0;zk<mesh->LocalNz;zk++) {
+          if(fg)
+            val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*(zk - 0.5)/(mesh->LocalNz), t);
+
+          f(bndry->x,bndry->y,zk) = (8./3)*val - 2.*f(bndry->x-bndry->bx, bndry->y-bndry->by,zk) + f(bndry->x-2*bndry->bx, bndry->y-2*bndry->by,zk)/3.;
+
+          // Need to set remaining guard cells, as may be used for interpolation or upwinding derivatives
+          for(int i=1;i<bndry->width;i++) {
+            int xi = bndry->x + i*bndry->bx;
+            int yi = bndry->y + i*bndry->by;
+            f(xi, yi, zk) = 3.0*f(xi - bndry->bx, yi - bndry->by, zk) - 3.0*f(xi - 2*bndry->bx, yi - 2*bndry->by, zk)
+              + f(xi - 3*bndry->bx, yi - 3*bndry->by, zk);
+          }
+        }
+      }
+    } else {
+      throw BoutException("Unrecognized location");
     }
   }
   else {
@@ -960,6 +1063,8 @@ void BoundaryDirichlet_O3::apply_ddt(Field2D &f) {
 }
 
 void BoundaryDirichlet_O3::apply_ddt(Field3D &f) {
+  Mesh* mesh = bndry->localmesh;
+  ASSERT1(mesh == f.getMesh());
   Field3D *dt = f.timeDeriv();
 
   bndry->first() ; 
@@ -973,7 +1078,7 @@ void BoundaryDirichlet_O3::apply_ddt(Field3D &f) {
 ///////////////////////////////////////////////////////////////
 // Extrapolate to calculate boundary cell to 4th-order
 
-BoundaryOp* BoundaryDirichlet_O4::clone(BoundaryRegion *region, const list<string> &args){
+BoundaryOp* BoundaryDirichlet_O4::clone(BoundaryRegion *region, const std::list<std::string> &args){
   verifyNumPoints(region,3);
   std::shared_ptr<FieldGenerator> newgen = nullptr;
   if(!args.empty()) {
@@ -991,6 +1096,8 @@ void BoundaryDirichlet_O4::apply(Field2D &f,BoutReal t) {
   // Set (at 2nd order) the value at the mid-point between the guard cell and the grid cell to be val
   // N.B. Only first guard cells (closest to the grid) should ever be used
   
+  Mesh* mesh = bndry->localmesh;
+  ASSERT1(mesh == f.getMesh());
   bndry->first();
 
   // Decide which generator to use
@@ -1004,7 +1111,7 @@ void BoundaryDirichlet_O4::apply(Field2D &f,BoutReal t) {
   // Check for staggered grids
   
   CELL_LOC loc = f.getLocation();
-  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+  if(mesh->StaggerGrids and (loc == CELL_XLOW or loc == CELL_YLOW)) {
     // Staggered. Need to apply slightly differently
     
     if(loc == CELL_XLOW ) {
@@ -1188,6 +1295,8 @@ void BoundaryDirichlet_O4::apply(Field3D &f,BoutReal t) {
   // Set (at 2nd order) the value at the mid-point between the guard cell and the grid cell to be val
   // N.B. Only first guard cells (closest to the grid) should ever be used
 
+  Mesh* mesh = bndry->localmesh;
+  ASSERT1(mesh == f.getMesh());
   bndry->first();
 
   // Decide which generator to use
@@ -1355,6 +1464,33 @@ void BoundaryDirichlet_O4::apply(Field3D &f,BoutReal t) {
 	  }
 	}
       }
+    } else if (loc == CELL_ZLOW) {
+      // Shifted in Z
+      for(; !bndry->isDone(); bndry->next1d()) {
+        // Calculate the X and Y normalised values half-way between the guard cell and grid cell
+        BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
+                                 + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
+
+        BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
+                                 + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
+
+        for(int zk=0;zk<mesh->LocalNz;zk++) {
+          if(fg)
+            val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*(zk - 0.5)/(mesh->LocalNz), t);
+
+          f(bndry->x,bndry->y,zk) = (16./5)*val - 3.*f(bndry->x-bndry->bx, bndry->y-bndry->by,zk) + f(bndry->x-2*bndry->bx, bndry->y-2*bndry->by,zk) - (1./5)*f(bndry->x-3*bndry->bx, bndry->y-3*bndry->by,zk);
+
+          // Need to set remaining guard cells, as may be used for interpolation or upwinding derivatives
+          for(int i=1;i<bndry->width;i++) {
+            int xi = bndry->x + i*bndry->bx;
+            int yi = bndry->y + i*bndry->by;
+            f(xi, yi, zk) = 4.0*f(xi - bndry->bx, yi - bndry->by, zk) - 6.0*f(xi - 2*bndry->bx, yi - 2*bndry->by, zk)
+              + 4.0*f(xi - 3*bndry->bx, yi - 3*bndry->by, zk) - f(xi - 4*bndry->bx, yi - 4*bndry->by, zk);
+          }
+        }
+      }
+    } else {
+      throw BoutException("Unrecognized location");
     }
   }
   else {
@@ -1392,6 +1528,8 @@ void BoundaryDirichlet_O4::apply_ddt(Field2D &f) {
 }
 
 void BoundaryDirichlet_O4::apply_ddt(Field3D &f) {
+  Mesh* mesh = bndry->localmesh;
+  ASSERT1(mesh == f.getMesh());
   Field3D *dt = f.timeDeriv();
   for(bndry->first(); !bndry->isDone(); bndry->next())
     for(int z=0;z<mesh->LocalNz;z++)
@@ -1400,61 +1538,8 @@ void BoundaryDirichlet_O4::apply_ddt(Field3D &f) {
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryDirichlet_2ndOrder::clone(BoundaryRegion *region, const list<string> &args) {
-  output << "WARNING: Use of boundary condition \"dirichlet_2ndorder\" is deprecated!\n";
-  output << "         Consider using \"dirichlet\" instead\n";
-  verifyNumPoints(region,2);
-  if(!args.empty()) {
-    // First argument should be a value
-    val = stringToReal(args.front());
-    return new BoundaryDirichlet_2ndOrder(region, val);
-  }
-  return new BoundaryDirichlet_2ndOrder(region);
-}
-
-void BoundaryDirichlet_2ndOrder::apply(Field2D &f) {
-  // Set (at 2nd order) the value at the mid-point between the guard cell and the grid cell to be val
-  // N.B. Only first guard cells (closest to the grid) should ever be used
-  for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
-    f(bndry->x,bndry->y) = 8./3.*val - 2.*f(bndry->x-bndry->bx,bndry->y-bndry->by) + 1./3.*f(bndry->x-2*bndry->bx,bndry->y-2*bndry->by);
-#ifdef BOUNDARY_CONDITIONS_UPGRADE_EXTRAPOLATE_FOR_2ND_ORDER
-    f(bndry->x+bndry->bx,bndry->y+bndry->by) = 3.*f(bndry->x,bndry->y) - 3.*f(bndry->x-bndry->bx,bndry->y-bndry->by) + f(bndry->x-2*bndry->bx,bndry->y-2*bndry->by);
-#elif defined(CHECK)
-    f(bndry->x+bndry->bx,bndry->y+bndry->by) = 1.e60;
-#endif
-  }
-}
-
-void BoundaryDirichlet_2ndOrder::apply(Field3D &f) {
-  // Set (at 2nd order) the value at the mid-point between the guard cell and the grid cell to be val
-  // N.B. Only first guard cells (closest to the grid) should ever be used
-  for(bndry->first(); !bndry->isDone(); bndry->next1d())
-    for(int z=0;z<mesh->LocalNz;z++) {
-      f(bndry->x,bndry->y,z) = 8./3.*val - 2.*f(bndry->x-bndry->bx,bndry->y-bndry->by,z) + 1./3.*f(bndry->x-2*bndry->bx,bndry->y-2*bndry->by,z);
-#ifdef BOUNDARY_CONDITIONS_UPGRADE_EXTRAPOLATE_FOR_2ND_ORDER
-      f(bndry->x+bndry->bx,bndry->y+bndry->by,z) = 3.*f(bndry->x,bndry->y,z) - 3.*f(bndry->x-bndry->bx,bndry->y-bndry->by,z) + f(bndry->x-2*bndry->bx,bndry->y-2*bndry->by,z);
-#elif defined(CHECK)
-      f(bndry->x+bndry->bx,bndry->y+bndry->by,z) = 1.e60;
-#endif
-    }
-}
-
-void BoundaryDirichlet_2ndOrder::apply_ddt(Field2D &f) {
-  Field2D *dt = f.timeDeriv();
-  for(bndry->first(); !bndry->isDone(); bndry->next())
-    (*dt)(bndry->x,bndry->y) = 0.; // Set time derivative to zero
-}
-
-void BoundaryDirichlet_2ndOrder::apply_ddt(Field3D &f) {
-  Field3D *dt = f.timeDeriv();
-  for(bndry->first(); !bndry->isDone(); bndry->next())
-    for(int z=0;z<mesh->LocalNz;z++)
-      (*dt)(bndry->x,bndry->y,z) = 0.; // Set time derivative to zero
-}
-
-///////////////////////////////////////////////////////////////
-
-BoundaryOp* BoundaryDirichlet_4thOrder::clone(BoundaryRegion *region, const list<string> &args) {
+BoundaryOp* BoundaryDirichlet_4thOrder::clone(BoundaryRegion* region,
+                                              const std::list<std::string>& args) {
   verifyNumPoints(region,4);
   if(!args.empty()) {
     // First argument should be a value
@@ -1473,6 +1558,8 @@ void BoundaryDirichlet_4thOrder::apply(Field2D &f) {
 }
 
 void BoundaryDirichlet_4thOrder::apply(Field3D &f) {
+  Mesh* mesh = bndry->localmesh;
+  ASSERT1(mesh == f.getMesh());
   // Set (at 4th order) the value at the mid-point between the guard cell and the grid cell to be val
   for(bndry->first(); !bndry->isDone(); bndry->next1d())
     for(int z=0;z<mesh->LocalNz;z++) {
@@ -1488,6 +1575,8 @@ void BoundaryDirichlet_4thOrder::apply_ddt(Field2D &f) {
 }
 
 void BoundaryDirichlet_4thOrder::apply_ddt(Field3D &f) {
+  Mesh* mesh = bndry->localmesh;
+  ASSERT1(mesh == f.getMesh());
   Field3D *dt = f.timeDeriv();
   for(bndry->first(); !bndry->isDone(); bndry->next())
     for(int z=0;z<mesh->LocalNz;z++)
@@ -1496,7 +1585,7 @@ void BoundaryDirichlet_4thOrder::apply_ddt(Field3D &f) {
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryNeumann_NonOrthogonal::clone(BoundaryRegion *region, const list<string> &args) {
+BoundaryOp* BoundaryNeumann_NonOrthogonal::clone(BoundaryRegion *region, const std::list<std::string> &args) {
   verifyNumPoints(region,1); 
   if(!args.empty()) {
     output << "WARNING: arguments is set to BoundaryNeumann None Zero Gradient\n";
@@ -1508,6 +1597,8 @@ BoundaryOp* BoundaryNeumann_NonOrthogonal::clone(BoundaryRegion *region, const l
 }
 
 void BoundaryNeumann_NonOrthogonal::apply(Field2D &f) {
+  Mesh* mesh = bndry->localmesh;
+  ASSERT1(mesh == f.getMesh());
   Coordinates *metric = f.getCoordinates();
   // Calculate derivatives for metric use
   mesh->communicate(f);
@@ -1548,6 +1639,8 @@ void BoundaryNeumann_NonOrthogonal::apply(Field2D &f) {
 }
 
 void BoundaryNeumann_NonOrthogonal::apply(Field3D &f) {
+  Mesh* mesh = bndry->localmesh;
+  ASSERT1(mesh == f.getMesh());
   Coordinates *metric = f.getCoordinates();
   // Calculate derivatives for metric use
   mesh->communicate(f);
@@ -1593,95 +1686,8 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D &f) {
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryNeumann2::clone(BoundaryRegion *region, const list<string> &args) {
-  output << "WARNING: Use of boundary condition \"neumann2\" is deprecated!\n";
-  output << "         Consider using \"neumann\" instead\n";
-  verifyNumPoints(region,2);
-  if(!args.empty()) {
-    output << "WARNING: Ignoring arguments to BoundaryNeumann2\n";
-  }
-  return new BoundaryNeumann2(region);
-}
-
-void BoundaryNeumann2::apply(Field2D &f) {
-  // Loop over all elements and use one-sided differences
-  for(bndry->first(); !bndry->isDone(); bndry->next())
-    f(bndry->x, bndry->y) = (4.*f(bndry->x - bndry->bx, bndry->y - bndry->by) - f(bndry->x - 2*bndry->bx, bndry->y - 2*bndry->by))/3.;
-}
-
-void BoundaryNeumann2::apply(Field3D &f) {
-  for(bndry->first(); !bndry->isDone(); bndry->next())
-    for(int z=0;z<mesh->LocalNz;z++)
-      f(bndry->x, bndry->y, z) = (4.*f(bndry->x - bndry->bx, bndry->y - bndry->by, z) - f(bndry->x - 2*bndry->bx, bndry->y - 2*bndry->by, z))/3.;
-}
-
-///////////////////////////////////////////////////////////////
-
-BoundaryOp* BoundaryNeumann_2ndOrder::clone(BoundaryRegion *region, const list<string> &args) {
-  output << "WARNING: Use of boundary condition \"neumann_2ndorder\" is deprecated!\n";
-  output << "         Consider using \"neumann\" instead\n";
-#ifdef BOUNDARY_CONDITIONS_UPGRADE_EXTRAPOLATE_FOR_2ND_ORDER
-  verifyNumPoints(region,2);
-#else
-  verifyNumPoints(region,1);
-#endif
-  if(!args.empty()) {
-    // First argument should be a value
-    val = stringToReal(args.front());
-    return new BoundaryNeumann_2ndOrder(region, val);
-  }
-  return new BoundaryNeumann_2ndOrder(region);
-}
-
-void BoundaryNeumann_2ndOrder::apply(Field2D &f) {
-  Coordinates *metric = f.getCoordinates();
-  
-  // Set (at 2nd order) the gradient at the mid-point between the guard cell and the grid cell to be val
-  // This sets the value of the co-ordinate derivative, i.e. DDX/DDY not Grad_par/Grad_perp.x
-  // N.B. Only first guard cells (closest to the grid) should ever be used
-  for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
-    f(bndry->x,bndry->y) = f(bndry->x-bndry->bx,bndry->y-bndry->by) + val*(bndry->bx*metric->dx(bndry->x,bndry->y)+bndry->by*metric->dy(bndry->x,bndry->y));
-#ifdef BOUNDARY_CONDITIONS_UPGRADE_EXTRAPOLATE_FOR_2ND_ORDER
-    f(bndry->x+bndry->bx,bndry->y+bndry->by) = 3.*f(bndry->x,bndry->y) - 3.*f(bndry->x-bndry->bx,bndry->y-bndry->by) + f(bndry->x-2*bndry->bx,bndry->y-2*bndry->by);
-#elif defined(CHECK)
-    f(bndry->x+bndry->bx,bndry->y+bndry->by) = 1.e60;
-#endif
-  }
-}
-
-void BoundaryNeumann_2ndOrder::apply(Field3D &f) {
-  Coordinates *metric = f.getCoordinates();
-  // Set (at 2nd order) the gradient at the mid-point between the guard cell and the grid cell to be val
-  // This sets the value of the co-ordinate derivative, i.e. DDX/DDY not Grad_par/Grad_perp.x
-  // N.B. Only first guard cells (closest to the grid) should ever be used
-  for(bndry->first(); !bndry->isDone(); bndry->next1d())
-    for(int z=0;z<mesh->LocalNz;z++) {
-      BoutReal delta = bndry->bx*metric->dx(bndry->x,bndry->y)+bndry->by*metric->dy(bndry->x,bndry->y);
-      f(bndry->x,bndry->y,z) = f(bndry->x-bndry->bx,bndry->y-bndry->by,z) + val*delta;
-#ifdef BOUNDARY_CONDITIONS_UPGRADE_EXTRAPOLATE_FOR_2ND_ORDER
-      f(bndry->x+bndry->bx,bndry->y+bndry->by,z) = 3.*f(bndry->x,bndry->y,z) - 3.*f(bndry->x-bndry->bx,bndry->y-bndry->by,z) + f(bndry->x-2*bndry->bx,bndry->y-2*bndry->by,z);
-#elif defined(CHECK)
-      f(bndry->x+bndry->bx,bndry->y+bndry->by,z) = 1.e60;
-#endif
-    }
-}
-
-void BoundaryNeumann_2ndOrder::apply_ddt(Field2D &f) {
-  Field2D *dt = f.timeDeriv();
-  for(bndry->first(); !bndry->isDone(); bndry->next())
-    (*dt)(bndry->x,bndry->y) = 0.; // Set time derivative to zero
-}
-
-void BoundaryNeumann_2ndOrder::apply_ddt(Field3D &f) {
-  Field3D *dt = f.timeDeriv();
-  for(bndry->first(); !bndry->isDone(); bndry->next())
-    for(int z=0;z<mesh->LocalNz;z++)
-      (*dt)(bndry->x,bndry->y,z) = 0.; // Set time derivative to zero
-}
-
-///////////////////////////////////////////////////////////////
-
-BoundaryOp* BoundaryNeumann::clone(BoundaryRegion *region, const list<string> &args){
+BoundaryOp* BoundaryNeumann::clone(BoundaryRegion* region,
+                                   const std::list<std::string>& args) {
   verifyNumPoints(region,1);
   std::shared_ptr<FieldGenerator> newgen = nullptr;
   if(!args.empty()) {
@@ -1700,6 +1706,8 @@ void BoundaryNeumann::apply(Field2D &f,BoutReal t) {
   // Set (at 2nd order) the value at the mid-point between the guard cell and the grid cell to be val
   // N.B. Only first guard cells (closest to the grid) should ever be used
   
+  Mesh* mesh = bndry->localmesh;
+  ASSERT1(mesh == f.getMesh());
   Coordinates *metric = f.getCoordinates();
   
   bndry->first();
@@ -1714,7 +1722,7 @@ void BoundaryNeumann::apply(Field2D &f,BoutReal t) {
   // Check for staggered grids
   
   CELL_LOC loc = f.getLocation();
-  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+  if(mesh->StaggerGrids and (loc == CELL_XLOW or loc == CELL_YLOW)) {
     // Staggered. Need to apply slightly differently
     // Use one-sided differencing. Cell is now on
     // the boundary, so use one-sided differencing
@@ -1897,6 +1905,8 @@ void BoundaryNeumann::apply(Field3D &f) {
 
 
 void BoundaryNeumann::apply(Field3D &f,BoutReal t) {
+  Mesh* mesh = bndry->localmesh;
+  ASSERT1(mesh == f.getMesh());
   Coordinates *metric = f.getCoordinates();
   
   bndry->first();
@@ -2067,6 +2077,30 @@ void BoundaryNeumann::apply(Field3D &f,BoutReal t) {
 	  }
 	}
       }
+    } else if (loc == CELL_ZLOW) {
+      // Shifted in Z
+      for(; !bndry->isDone(); bndry->next1d()) {
+        // Calculate the X and Y normalised values half-way between the guard cell and grid cell
+        BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
+                                 + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
+
+        BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
+                                 + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
+
+        BoutReal delta = bndry->bx*metric->dx(bndry->x,bndry->y)+bndry->by*metric->dy(bndry->x,bndry->y);
+
+        for(int zk=0;zk<mesh->LocalNz;zk++) {
+          if(fg){
+            val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*(zk - 0.5)/(mesh->LocalNz),t);
+          }
+          f(bndry->x,bndry->y, zk) = f(bndry->x-bndry->bx, bndry->y-bndry->by, zk) + delta*val;
+          if (bndry->width == 2){
+            f(bndry->x + bndry->bx, bndry->y + bndry->by, zk) = f(bndry->x - 2*bndry->bx, bndry->y - 2*bndry->by, zk) + 3.0*delta*val;
+          }
+        }
+      }
+    } else {
+      throw BoutException("Unrecognized location");
     }
   }
   else {
@@ -2100,6 +2134,8 @@ void BoundaryNeumann::apply_ddt(Field2D &f) {
 }
 
 void BoundaryNeumann::apply_ddt(Field3D &f) {
+  Mesh* mesh = bndry->localmesh;
+  ASSERT1(mesh == f.getMesh());
   Field3D *dt = f.timeDeriv();
   for(bndry->first(); !bndry->isDone(); bndry->next())
     for(int z=0;z<mesh->LocalNz;z++)
@@ -2108,7 +2144,7 @@ void BoundaryNeumann::apply_ddt(Field3D &f) {
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryNeumann_O4::clone(BoundaryRegion *region, const list<string> &args){
+BoundaryOp* BoundaryNeumann_O4::clone(BoundaryRegion *region, const std::list<std::string> &args){
   std::shared_ptr<FieldGenerator> newgen = nullptr;
   if(!args.empty()) {
     // First argument should be an expression
@@ -2122,6 +2158,8 @@ void BoundaryNeumann_O4::apply(Field2D &f) {
 }
 
 void BoundaryNeumann_O4::apply(Field2D &f,BoutReal t) {
+  Mesh* mesh = bndry->localmesh;
+  ASSERT1(mesh == f.getMesh());
   
   // Set (at 4th order) the value at the mid-point between the guard cell and the grid cell to be val
   // N.B. Only first guard cells (closest to the grid) should ever be used
@@ -2179,6 +2217,8 @@ void BoundaryNeumann_O4::apply(Field3D &f) {
 }
 
 void BoundaryNeumann_O4::apply(Field3D &f,BoutReal t) {
+  Mesh* mesh = bndry->localmesh;
+  ASSERT1(mesh == f.getMesh());
   bndry->first();
 
   // Decide which generator to use
@@ -2234,6 +2274,8 @@ void BoundaryNeumann_O4::apply_ddt(Field2D &f) {
 }
 
 void BoundaryNeumann_O4::apply_ddt(Field3D &f) {
+  Mesh* mesh = bndry->localmesh;
+  ASSERT1(mesh == f.getMesh());
   Field3D *dt = f.timeDeriv();
   for(bndry->first(); !bndry->isDone(); bndry->next())
     for(int z=0;z<mesh->LocalNz;z++)
@@ -2242,7 +2284,7 @@ void BoundaryNeumann_O4::apply_ddt(Field3D &f) {
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryNeumann_4thOrder::clone(BoundaryRegion *region, const list<string> &args) {
+BoundaryOp* BoundaryNeumann_4thOrder::clone(BoundaryRegion *region, const std::list<std::string> &args) {
   verifyNumPoints(region,4);
   if(!args.empty()) {
     // First argument should be a value
@@ -2264,6 +2306,8 @@ void BoundaryNeumann_4thOrder::apply(Field2D &f) {
 }
 
 void BoundaryNeumann_4thOrder::apply(Field3D &f) {
+  Mesh* mesh = bndry->localmesh;
+  ASSERT1(mesh == f.getMesh());
   Coordinates *metric = f.getCoordinates();
   // Set (at 4th order) the gradient at the mid-point between the guard cell and the grid cell to be val
   // This sets the value of the co-ordinate derivative, i.e. DDX/DDY not Grad_par/Grad_perp.x
@@ -2282,6 +2326,8 @@ void BoundaryNeumann_4thOrder::apply_ddt(Field2D &f) {
 }
 
 void BoundaryNeumann_4thOrder::apply_ddt(Field3D &f) {
+  Mesh* mesh = bndry->localmesh;
+  ASSERT1(mesh == f.getMesh());
   Field3D *dt = f.timeDeriv();
   for(bndry->first(); !bndry->isDone(); bndry->next())
     for(int z=0;z<mesh->LocalNz;z++)
@@ -2290,7 +2336,7 @@ void BoundaryNeumann_4thOrder::apply_ddt(Field3D &f) {
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryNeumannPar::clone(BoundaryRegion *region, const list<string> &args) {
+BoundaryOp* BoundaryNeumannPar::clone(BoundaryRegion *region, const std::list<std::string> &args) {
   verifyNumPoints(region,1);
   if(!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryNeumann2\n";
@@ -2307,6 +2353,8 @@ void BoundaryNeumannPar::apply(Field2D &f) {
 }
 
 void BoundaryNeumannPar::apply(Field3D &f) {
+  Mesh* mesh = bndry->localmesh;
+  ASSERT1(mesh == f.getMesh());
   Coordinates *metric = f.getCoordinates();
   for(bndry->first(); !bndry->isDone(); bndry->next())
     for(int z=0;z<mesh->LocalNz;z++)
@@ -2315,33 +2363,35 @@ void BoundaryNeumannPar::apply(Field3D &f) {
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryRobin::clone(BoundaryRegion *region, const list<string> &args) {
-  verifyNumPoints(region,1);
+BoundaryOp *BoundaryRobin::clone(BoundaryRegion *region,
+                                 const std::list<std::string> &args) {
+  verifyNumPoints(region, 1);
   BoutReal a = 0.5, b = 1.0, g = 0.;
-  
-  list<string>::const_iterator it = args.begin();
-  
-  if(it != args.end()) {
+
+  auto it = args.begin();
+
+  if (it != args.end()) {
     // First argument is 'a'
     a = stringToReal(*it);
     it++;
-    
-    if(it != args.end()) {
+
+    if (it != args.end()) {
       // Second is 'b'
       b = stringToReal(*it);
       it++;
-      
-      if(it != args.end()) {
-	// Third is 'g'
-	g = stringToReal(*it);
-	it++;
-	if(it != args.end()) {
-	  output << "WARNING: BoundaryRobin takes maximum of 3 arguments. Ignoring extras\n";
-	}
+
+      if (it != args.end()) {
+        // Third is 'g'
+        g = stringToReal(*it);
+        it++;
+        if (it != args.end()) {
+          output
+              << "WARNING: BoundaryRobin takes maximum of 3 arguments. Ignoring extras\n";
+        }
       }
     }
   }
-  
+
   return new BoundaryRobin(region, a, b, g);
 }
 
@@ -2360,6 +2410,8 @@ void BoundaryRobin::apply(Field2D &f) {
 }
 
 void BoundaryRobin::apply(Field3D &f) {
+  Mesh* mesh = bndry->localmesh;
+  ASSERT1(mesh == f.getMesh());
   if(fabs(bval) < 1.e-12) {
     for(bndry->first(); !bndry->isDone(); bndry->next())
       for(int z=0;z<mesh->LocalNz;z++)
@@ -2383,6 +2435,8 @@ void BoundaryConstGradient::apply(Field2D &f){
 }
 
 void BoundaryConstGradient::apply(Field3D &f) {
+  Mesh* mesh = bndry->localmesh;
+  ASSERT1(mesh == f.getMesh());
   for(bndry->first(); !bndry->isDone(); bndry->next())
     for(int z=0;z<mesh->LocalNz;z++)
       f(bndry->x, bndry->y, z) = 2.*f(bndry->x - bndry->bx, bndry->y - bndry->by, z) - f(bndry->x - 2*bndry->bx,bndry->y - 2*bndry->by,z);
@@ -2390,7 +2444,7 @@ void BoundaryConstGradient::apply(Field3D &f) {
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryConstGradient::clone(BoundaryRegion *region, const list<string> &args) {
+BoundaryOp* BoundaryConstGradient::clone(BoundaryRegion *region, const std::list<std::string> &args) {
   verifyNumPoints(region,2);
   if(!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryConstGradient\n";
@@ -2400,7 +2454,7 @@ BoundaryOp* BoundaryConstGradient::clone(BoundaryRegion *region, const list<stri
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryZeroLaplace::clone(BoundaryRegion *region, const list<string> &args) {
+BoundaryOp* BoundaryZeroLaplace::clone(BoundaryRegion *region, const std::list<std::string> &args) {
   verifyNumPoints(region,2);
   if(!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryZeroLaplace\n";
@@ -2431,6 +2485,8 @@ void BoundaryZeroLaplace::apply(Field2D &f) {
 }
 
 void BoundaryZeroLaplace::apply(Field3D &f) {
+  Mesh* mesh = bndry->localmesh;
+  ASSERT1(mesh == f.getMesh());
   int ncz = mesh->LocalNz;
 
   Coordinates *metric = f.getCoordinates();
@@ -2486,7 +2542,7 @@ void BoundaryZeroLaplace::apply(Field3D &f) {
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp *BoundaryZeroLaplace2::clone(BoundaryRegion *region,
-                                        const list<string> &args) {
+                                        const std::list<std::string> &args) {
   verifyNumPoints(region, 3);
   if (!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryZeroLaplace2\n";
@@ -2521,6 +2577,8 @@ void BoundaryZeroLaplace2::apply(Field2D &f) {
 }
 
 void BoundaryZeroLaplace2::apply(Field3D &f) {
+  Mesh* mesh = bndry->localmesh;
+  ASSERT1(mesh == f.getMesh());
   int ncz = mesh->LocalNz;
 
   ASSERT0(ncz % 2 == 0); // Allocation assumes even number
@@ -2573,7 +2631,7 @@ void BoundaryZeroLaplace2::apply(Field3D &f) {
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryConstLaplace::clone(BoundaryRegion *region, const list<string> &args) {
+BoundaryOp* BoundaryConstLaplace::clone(BoundaryRegion *region, const std::list<std::string> &args) {
   verifyNumPoints(region,2);
   if(!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryConstLaplace\n";
@@ -2617,6 +2675,8 @@ void BoundaryConstLaplace::apply(Field3D &f) {
     throw BoutException("ERROR: Can't apply Zero Laplace condition to non-X boundaries\n");
   }
   
+  Mesh* mesh = bndry->localmesh;
+  ASSERT1(mesh == f.getMesh());
   Coordinates *metric = f.getCoordinates();
   
   int ncz = mesh->LocalNz;
@@ -2673,7 +2733,7 @@ void BoundaryConstLaplace::apply(Field3D &f) {
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryDivCurl::clone(BoundaryRegion *region, const list<string> &args) {
+BoundaryOp* BoundaryDivCurl::clone(BoundaryRegion *region, const std::list<std::string> &args) {
   if(!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryDivCurl\n";
   }
@@ -2685,6 +2745,9 @@ void BoundaryDivCurl::apply(Vector2D &UNUSED(f)) {
 }
 
 void BoundaryDivCurl::apply(Vector3D &var) {
+  Mesh* mesh = bndry->localmesh;
+  ASSERT1(mesh == var.x.getMesh());
+
   int jx, jy, jz, jzp, jzm;
   BoutReal tmp;
   
@@ -2750,7 +2813,7 @@ void BoundaryDivCurl::apply(Vector3D &var) {
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryFree::clone(BoundaryRegion *region, const list<string> &args) {
+BoundaryOp* BoundaryFree::clone(BoundaryRegion *region, const std::list<std::string> &args) {
   if(!args.empty()) {
     // First argument should be a value
     val = stringToReal(args.front());
@@ -2781,7 +2844,7 @@ void BoundaryFree::apply_ddt(Field3D &UNUSED(f)) {
 
 // 2nd order extrapolation:
 
-BoundaryOp* BoundaryFree_O2::clone(BoundaryRegion *region, const list<string> &args){
+BoundaryOp* BoundaryFree_O2::clone(BoundaryRegion *region, const std::list<std::string> &args){
   verifyNumPoints(region,2);
   if(!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryFree\n";
@@ -2793,12 +2856,14 @@ void BoundaryFree_O2::apply(Field2D &f) {
   // Set (at 2nd order) the value at the mid-point between the guard cell and the grid cell to be val
   // N.B. Only first guard cells (closest to the grid) should ever be used
   
+  Mesh* mesh = bndry->localmesh;
+  ASSERT1(mesh == f.getMesh());
   bndry->first();
 
   // Check for staggered grids
   
   CELL_LOC loc = f.getLocation();
-  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+  if(mesh->StaggerGrids and (loc == CELL_XLOW or loc == CELL_YLOW)) {
     // Staggered. Need to apply slightly differently
     
     if( loc == CELL_XLOW) {
@@ -2890,13 +2955,14 @@ void BoundaryFree_O2::apply(Field2D &f) {
 void BoundaryFree_O2::apply(Field3D &f) {
   // Extrapolate from the last evolved simulation cells into the guard cells at 3rd order.  
 
+  Mesh* mesh = bndry->localmesh;
+  ASSERT1(mesh == f.getMesh());
   bndry->first();
-
 
   // Check for staggered grids
   
   CELL_LOC loc = f.getLocation();
-  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+  if(mesh->StaggerGrids and (loc == CELL_XLOW or loc == CELL_YLOW)) {
     // Staggered. Need to apply slightly differently
     
     if( loc == CELL_XLOW ) {
@@ -3009,6 +3075,8 @@ void BoundaryFree_O2::apply_ddt(Field2D &f) {
 }
 
 void BoundaryFree_O2::apply_ddt(Field3D &f) {
+  Mesh* mesh = bndry->localmesh;
+  ASSERT1(mesh == f.getMesh());
   Field3D *dt = f.timeDeriv();
   for(bndry->first(); !bndry->isDone(); bndry->next())
     for(int z=0;z<mesh->LocalNz;z++)
@@ -3019,7 +3087,7 @@ void BoundaryFree_O2::apply_ddt(Field3D &f) {
 //////////////////////////////////
 // Third order extrapolation:
 //////////////////////////////////
-BoundaryOp* BoundaryFree_O3::clone(BoundaryRegion *region, const list<string> &args){
+BoundaryOp* BoundaryFree_O3::clone(BoundaryRegion *region, const std::list<std::string> &args){
   verifyNumPoints(region,3);
 
   if(!args.empty()) {
@@ -3030,12 +3098,14 @@ BoundaryOp* BoundaryFree_O3::clone(BoundaryRegion *region, const list<string> &a
 
 void BoundaryFree_O3::apply(Field2D &f) {
 
+  Mesh* mesh = bndry->localmesh;
+  ASSERT1(mesh == f.getMesh());
   bndry->first();
 
   // Check for staggered grids
   
   CELL_LOC loc = f.getLocation();
-  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+  if(mesh->StaggerGrids and (loc == CELL_XLOW or loc == CELL_YLOW)) {
     // Staggered. Need to apply slightly differently
     
     if( loc == CELL_XLOW) {
@@ -3128,13 +3198,15 @@ void BoundaryFree_O3::apply(Field2D &f) {
 void BoundaryFree_O3::apply(Field3D &f) {
   // Extrapolate from the last evolved simulation cells into the guard cells at 3rd order.  
 
+  Mesh* mesh = bndry->localmesh;
+  ASSERT1(mesh == f.getMesh());
   bndry->first();
 
 
   // Check for staggered grids
   
   CELL_LOC loc = f.getLocation();
-  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+  if(mesh->StaggerGrids and (loc == CELL_XLOW or loc == CELL_YLOW)) {
     // Staggered. Need to apply slightly differently
     
     if( loc == CELL_XLOW ) {
@@ -3255,6 +3327,8 @@ void BoundaryFree_O3::apply_ddt(Field2D &f) {
 }
 
 void BoundaryFree_O3::apply_ddt(Field3D &f) {
+  Mesh* mesh = bndry->localmesh;
+  ASSERT1(mesh == f.getMesh());
   Field3D *dt = f.timeDeriv();
   for(bndry->first(); !bndry->isDone(); bndry->next())
     for(int z=0;z<mesh->LocalNz;z++)
@@ -3264,8 +3338,8 @@ void BoundaryFree_O3::apply_ddt(Field3D &f) {
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryRelax::cloneMod(BoundaryOp *operation, const list<string> &args) {
-  BoundaryRelax* result = new BoundaryRelax(operation, r);
+BoundaryOp* BoundaryRelax::cloneMod(BoundaryOp *operation, const std::list<std::string> &args) {
+  auto* result = new BoundaryRelax(operation, r);
   
   if(!args.empty()) {
     // First argument should be the rate
@@ -3306,6 +3380,9 @@ void BoundaryRelax::apply_ddt(Field2D &f) {
 void BoundaryRelax::apply_ddt(Field3D &f) {
   TRACE("BoundaryRelax::apply_ddt(Field3D)");
   
+  Mesh* mesh = bndry->localmesh;
+  ASSERT1(mesh == f.getMesh());
+
   // Make a copy of f
   Field3D g = f; // NOTE: This is not very efficient... copying entire field
   // Apply the boundary to g
@@ -3319,8 +3396,8 @@ void BoundaryRelax::apply_ddt(Field3D &f) {
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryWidth::cloneMod(BoundaryOp *operation, const list<string> &args) {
-  BoundaryWidth* result = new BoundaryWidth(operation, width);
+BoundaryOp* BoundaryWidth::cloneMod(BoundaryOp *operation, const std::list<std::string> &args) {
+  auto* result = new BoundaryWidth(operation, width);
   
   if(args.empty()) {
     output << "WARNING: BoundaryWidth expected 1 argument\n";
@@ -3363,8 +3440,8 @@ void BoundaryWidth::apply_ddt(Field3D &f) {
 }
 
 ///////////////////////////////////////////////////////////////
-BoundaryOp* BoundaryToFieldAligned::cloneMod(BoundaryOp *operation, const list<string> &args) {
-  BoundaryToFieldAligned* result = new BoundaryToFieldAligned(operation);
+BoundaryOp* BoundaryToFieldAligned::cloneMod(BoundaryOp *operation, const std::list<std::string> &args) {
+  auto* result = new BoundaryToFieldAligned(operation);
   
   if(!args.empty()) {
     output << "WARNING: BoundaryToFieldAligned expected no argument\n";
@@ -3379,14 +3456,16 @@ void BoundaryToFieldAligned::apply(Field2D &f, BoutReal t) {
 }
 
 void BoundaryToFieldAligned::apply(Field3D &f, BoutReal t) {
+  ASSERT1(bndry->localmesh == f.getMesh());
+
   //NOTE: This is not very efficient... updating entire field
-  f = mesh->fromFieldAligned(f); 
+  f = fromFieldAligned(f);
 
   // Apply the boundary to shifted field
   op->apply(f, t);
 
   //Shift back
-  f = mesh->toFieldAligned(f);
+  f = toFieldAligned(f);
 
   //This is inefficient -- could instead use the shiftZ just in the bndry
   //but this is not portable to other parallel transforms -- we could instead
@@ -3398,16 +3477,18 @@ void BoundaryToFieldAligned::apply_ddt(Field2D &f) {
 }
 
 void BoundaryToFieldAligned::apply_ddt(Field3D &f) {
-  f = mesh->fromFieldAligned(f);
-  ddt(f) = mesh->fromFieldAligned(ddt(f));
+  ASSERT1(bndry->localmesh == f.getMesh());
+
+  f = fromFieldAligned(f);
+  ddt(f) = fromFieldAligned(ddt(f));
   op->apply_ddt(f);
-  ddt(f) = mesh->toFieldAligned(ddt(f));
+  ddt(f) = toFieldAligned(ddt(f));
 }
 
 
 ///////////////////////////////////////////////////////////////
-BoundaryOp* BoundaryFromFieldAligned::cloneMod(BoundaryOp *operation, const list<string> &args) {
-  BoundaryFromFieldAligned* result = new BoundaryFromFieldAligned(operation);
+BoundaryOp* BoundaryFromFieldAligned::cloneMod(BoundaryOp *operation, const std::list<std::string> &args) {
+  auto* result = new BoundaryFromFieldAligned(operation);
   
   if(!args.empty()) {
     output << "WARNING: BoundaryFromFieldAligned expected no argument\n";
@@ -3422,14 +3503,16 @@ void BoundaryFromFieldAligned::apply(Field2D &f, BoutReal t) {
 }
 
 void BoundaryFromFieldAligned::apply(Field3D &f, BoutReal t) {
+  ASSERT1(bndry->localmesh == f.getMesh());
+
   //NOTE: This is not very efficient... shifting entire field
-  f = mesh->toFieldAligned(f); 
+  f = toFieldAligned(f);
 
   // Apply the boundary to shifted field
   op->apply(f, t);
 
   //Shift back
-  f = mesh->fromFieldAligned(f);
+  f = fromFieldAligned(f);
 
   //This is inefficient -- could instead use the shiftZ just in the bndry
   //but this is not portable to other parallel transforms -- we could instead
@@ -3441,8 +3524,10 @@ void BoundaryFromFieldAligned::apply_ddt(Field2D &f) {
 }
 
 void BoundaryFromFieldAligned::apply_ddt(Field3D &f) {
-  f = mesh->toFieldAligned(f);
-  ddt(f) = mesh->toFieldAligned(ddt(f));
+  ASSERT1(bndry->localmesh == f.getMesh());
+
+  f = toFieldAligned(f);
+  ddt(f) = toFieldAligned(ddt(f));
   op->apply_ddt(f);
-  ddt(f) = mesh->fromFieldAligned(ddt(f));
+  ddt(f) = fromFieldAligned(ddt(f));
 }

@@ -18,10 +18,9 @@ public:
   OptionsReaderTest() : sbuf(std::cout.rdbuf()) {
     // Redirect cout to our stringstream buffer or any other ostream
     std::cout.rdbuf(buffer.rdbuf());
-    output_info.disable();
   }
 
-  ~OptionsReaderTest() {
+  ~OptionsReaderTest() override {
     // Clear buffer
     buffer.str("");
     // When done redirect cout to its old self
@@ -30,18 +29,22 @@ public:
     // Make sure options singleton is clean
     Options::cleanup();
 
-    output_info.enable();
+    std::remove(filename.c_str());
   }
 
   // Write cout to buffer instead of stdout
   std::stringstream buffer;
   // Save cout's buffer here
   std::streambuf *sbuf;
+
+  WithQuietOutput quiet{output_info};
+  // A temporary filename
+  std::string filename{std::tmpnam(nullptr)};
 };
 
 TEST_F(OptionsReaderTest, BadFilename) {
   OptionsReader reader;
-  EXPECT_THROW(reader.read(nullptr, NULL), BoutException);
+  EXPECT_THROW(reader.read(nullptr, nullptr), BoutException);
 }
 
 TEST_F(OptionsReaderTest, BadCommandLineMultipleEquals) {
@@ -252,14 +255,13 @@ real_key = 42.34e-67
 bool_key = false
 )";
 
-  char *filename = std::tmpnam(nullptr);
   std::ofstream test_file(filename, std::ios::out);
   test_file << text;
   test_file.close();
 
   OptionsReader reader;
   Options *options = Options::getRoot();
-  reader.read(options, "%s", filename);
+  reader.read(options, "%s", filename.c_str());
 
   ASSERT_TRUE(options->isSet("flag"));
 
@@ -294,15 +296,12 @@ bool_key = false
   subsection2->get("bool_key", bool_value, true);
 
   EXPECT_FALSE(bool_value);
-
-  std::remove(filename);
 }
 
 TEST_F(OptionsReaderTest, ReadBadFile) {
-  char *filename = std::tmpnam(nullptr);
   OptionsReader reader;
   Options *options = Options::getRoot();
-  EXPECT_THROW(reader.read(options, "%s", filename), BoutException);
+  EXPECT_THROW(reader.read(options, "%s", filename.c_str()), BoutException);
 }
 
 TEST_F(OptionsReaderTest, ReadBadFileSectionIncomplete) {
@@ -311,14 +310,13 @@ TEST_F(OptionsReaderTest, ReadBadFileSectionIncomplete) {
 int_key = 34
 )";
 
-  char *filename = std::tmpnam(nullptr);
-  std::ofstream test_file(filename, std::ios::out);
+  std::ofstream test_file(filename.c_str(), std::ios::out);
   test_file << text;
   test_file.close();
 
   OptionsReader reader;
   Options *options = Options::getRoot();
-  EXPECT_THROW(reader.read(options, "%s", filename), BoutException);
+  EXPECT_THROW(reader.read(options, "%s", filename.c_str()), BoutException);
 };
 
 TEST_F(OptionsReaderTest, ReadBadFileSectionEmptyName) {
@@ -327,18 +325,16 @@ TEST_F(OptionsReaderTest, ReadBadFileSectionEmptyName) {
 int_key = 34
 )";
 
-  char *filename = std::tmpnam(nullptr);
   std::ofstream test_file(filename, std::ios::out);
   test_file << text;
   test_file.close();
 
   OptionsReader reader;
   Options *options = Options::getRoot();
-  EXPECT_THROW(reader.read(options, "%s", filename), BoutException);
+  EXPECT_THROW(reader.read(options, "%s", filename.c_str()), BoutException);
 };
 
 TEST_F(OptionsReaderTest, WriteFile) {
-  char *filename = std::tmpnam(nullptr);
   OptionsReader reader;
   Options *options = Options::getRoot();
 
@@ -349,7 +345,7 @@ TEST_F(OptionsReaderTest, WriteFile) {
   Options *subsection2 = section1->getSection("subsection2");
   subsection2->set("string_key", "BOUT++", "test");
 
-  reader.write(options, "%s", filename);
+  reader.write(options, "%s", filename.c_str());
 
   std::ifstream test_file(filename);
   std::stringstream test_buffer;
@@ -357,19 +353,16 @@ TEST_F(OptionsReaderTest, WriteFile) {
   test_file.close();
 
   std::vector<std::string> expected = {"bool_key = true",        "[section1]",
-                                       "int_key = 17",           "real_key = 6.17000000000000006e+23",
+                                       "int_key = 17",           "real_key = 6.17e+23",
                                        "[section1:subsection2]", "string_key = BOUT++"};
 
   for (auto &result : expected) {
     EXPECT_TRUE(IsSubString(test_buffer.str(), result));
   }
-
-  std::remove(filename);
 }
 
 TEST_F(OptionsReaderTest, WriteBadFile) {
-  std::string filename1 = std::tmpnam(nullptr);
-  std::string filename = filename1 + std::tmpnam(nullptr);
+  std::string filename1 = filename + std::tmpnam(nullptr);
   OptionsReader reader;
   Options *options = Options::getRoot();
 
@@ -377,9 +370,9 @@ TEST_F(OptionsReaderTest, WriteBadFile) {
   Options *section1 = options->getSection("section1");
   section1->set("int_key", 17, "test");
 
-  EXPECT_THROW(reader.write(options, "%s", filename.c_str()), BoutException);
+  EXPECT_THROW(reader.write(options, "%s", filename1.c_str()), BoutException);
 
-  std::remove(filename.c_str());
+  std::remove(filename1.c_str());
 }
 
 TEST_F(OptionsReaderTest, ReadEmptyString) {
@@ -387,7 +380,6 @@ const std::string text = R"(
 value =
 )";
 
-  char *filename = std::tmpnam(nullptr);
   std::ofstream test_file(filename, std::ios::out);
   test_file << text;
   test_file.close();
@@ -395,8 +387,85 @@ value =
   Options opt;
   OptionsReader reader;
 
-  reader.read(&opt, "%s", filename);
+  reader.read(&opt, "%s", filename.c_str());
 
   std::string val = opt["value"];
   EXPECT_TRUE(val.empty());
+}
+
+TEST_F(OptionsReaderTest, ReadFileEscapedChars) {
+  const std::string text = R"(
+some-value = 3  # Names can contain symbols, but need to be escaped
+
+[h2+]           # Sections can contain symbols
+another = 5
+one-more = 2
+
+[tests]
+test1 = some\-value                  # Escaping of single characters
+test2 = h2\+:another * some\-value   # Including in section names
+test3 = `some-value` + 1             # Escaping character sequence
+test4 = `h2+:one-more` * 2           # Escape sequence including :
+test5 = `h2+`:another                # Escape only start of sequence
+test6 = h2`+`:on`e-`more             # Escape sequences in the middle
+)";
+
+  std::ofstream test_file(filename, std::ios::out);
+  test_file << text;
+  test_file.close();
+
+  OptionsReader reader;
+  reader.read(Options::getRoot(), "%s", filename.c_str());
+
+  auto options = Options::root()["tests"];
+  
+  EXPECT_EQ(options["test1"].as<int>(), 3);
+  EXPECT_EQ(options["test2"].as<int>(), 15);
+  EXPECT_EQ(options["test3"].as<int>(), 4);
+  EXPECT_EQ(options["test4"].as<int>(), 4);
+  EXPECT_EQ(options["test5"].as<int>(), 5);
+  EXPECT_EQ(options["test6"].as<int>(), 2);
+}
+
+// Variable names must not contain colons, escaped or otherwise
+// Sections can contain colons, where they indicate subsections.
+// That is tested elsewhere.
+TEST_F(OptionsReaderTest, ReadFileVariablesNoColons) {
+  const std::string text = R"(
+some:value = 3 
+)";
+
+  std::ofstream test_file(filename, std::ios::out);
+  test_file << text;
+  test_file.close();
+
+  OptionsReader reader;
+  
+  EXPECT_THROW(reader.read(Options::getRoot(), "%s", filename.c_str()), BoutException);
+}
+
+TEST_F(OptionsReaderTest, ReadUnicodeNames) {
+  const std::string text = R"(
+
+α = 1.3
+重要的數字 = 3
+
+[tests]
+結果 = 重要的數字 + 5
+value = α*(1 + 重要的數字)
+twopi = 2 * π   # Unicode symbol defined for pi
+)";
+
+  std::ofstream test_file(filename, std::ios::out);
+  test_file << text;
+  test_file.close();
+
+  OptionsReader reader;
+  reader.read(Options::getRoot(), "%s", filename.c_str());
+
+  auto options = Options::root()["tests"];
+  
+  EXPECT_EQ(options["結果"].as<int>(), 8);
+  EXPECT_DOUBLE_EQ(options["value"].as<BoutReal>(), 1.3*(1+3));
+  EXPECT_DOUBLE_EQ(options["twopi"].as<BoutReal>(), 2 * 3.141592653589793);
 }

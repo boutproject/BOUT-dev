@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 #Default flags
 COVERAGE=0
 UNIT=0
@@ -7,6 +9,7 @@ INTEGRATED=0
 MMS=0
 TESTS=0
 MAIN_TARGET=
+UPDATE_SCRIPT=0
 
 usage() {
     echo "$0 options are: "
@@ -16,7 +19,7 @@ usage() {
 }
 
 #Handle input flags
-while getopts "cuimt:" arg;
+while getopts "cuimt:5" arg;
 do
     case $arg in
 	c) ### Run the coverage-post job tasks
@@ -34,19 +37,41 @@ do
 	    MMS=1
 	    TESTS=1
 	    ;;
-    t) ### Set target to build
-        MAIN_TARGET+=("$OPTARG")
-        ;;
-	*) ### Show usage message
+        t) ### Set target to build
+            MAIN_TARGET="$OPTARG"
+            ;;
+        5) ### Run the update to version 5 script
+            UPDATE_SCRIPT=1
+            ;;
+        *) ### Show usage message
 	    usage
 	    ;;
     esac
 done
 
+./.build_sundials_for_travis.sh
+
+if test $UPDATE_SCRIPT -gt 0
+then
+    # Make sure the header list is up to date
+    if ! diff bin/bout_4to5_header_file_list <(cd include/;ls *xx|grep -v ^bout.hxx|sort)
+    then
+	echo "Some header files changed."
+	echo "Please update the list by running:"
+	echo "(cd include/;ls *xx|grep -v ^bout.hxx|sort) > bin/bout_4to5_header_file_list"
+	echo "And commit the updated file."
+	exit 1
+    fi
+
+    bin/bout_4to5 -f
+fi
+
 export MAKEFLAGS="-j 2 -k"
+echo "****************************************"
 echo "Configuring with $CONFIGURE_OPTIONS"
-time ./configure $CONFIGURE_OPTIONS MAKEFLAGS="$MAKEFLAGS"
-conf=$?
+echo "****************************************"
+conf=0
+time ./configure $CONFIGURE_OPTIONS MAKEFLAGS="$MAKEFLAGS" || conf=$?
 if test $conf -gt 0
 then
     RED_FG="\033[031m"
@@ -72,8 +97,8 @@ export PYTHONPATH=$(pwd)/tools/pylib/:$PYTHONPATH
 
 for target in ${MAIN_TARGET[@]}
 do
-    time make $target
-    make_exit=$?
+    make_exit=0
+    time make $target || make_exit=$?
     if [[ $make_exit -gt 0 ]]; then
 	make clean > /dev/null
 	echo -e $RED_FG
@@ -89,22 +114,23 @@ done
 
 if [[ ${TESTS} == 1 ]]
 then
-    time make build-check || exit
+    time make build-check
 fi
 
 if [[ ${UNIT} == 1 ]]
 then
-    time make check-unit-tests || exit
+    time make check-unit-tests
 fi
 
 if [[ ${INTEGRATED} == 1 ]]
 then
-    time make check-integrated-tests || exit
+    time make check-integrated-tests
+    time py.test-3 tools/pylib/
 fi
 
 if [[ ${MMS} == 1 ]]
 then
-   time make check-mms-tests || exit
+   time make check-mms-tests
 fi
 
 if [[ ${COVERAGE} == 1 ]]
@@ -120,5 +146,4 @@ then
 
     #For codacy
     bash ./.codacy_coverage.sh
-    
 fi

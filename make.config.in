@@ -30,6 +30,13 @@ BOUT_INCLUDE_PATH=$(BOUT_TOP)/include
 BOUT_LIB_PATH=$(BOUT_TOP)/lib
 BOUT_CONFIG_FILE=$(BOUT_TOP)/make.config
 
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+datarootdir = @datarootdir@
+
+# This path to the locale (.mo) files is hard-wired into bout++.cxx at compile time
+BOUT_LOCALE_PATH=@localedir@
+
 # Created this variable so that a user won't overwrite the CXXFLAGS variable
 # on the command line, just add to this one
 BOUT_FLAGS = $(CXXFLAGS) @CXXFLAGS@ @OPENMP_CXXFLAGS@ @CXX11_FLAGS@ @COVERAGE_FLAGS@
@@ -81,7 +88,8 @@ LIB    = $(BOUT_LIB_PATH)/libbout++.a
 LIB_SO = $(BOUT_LIB_PATH)/libbout++.so
 endif
 
-BOUT_INCLUDE = -I$(BOUT_INCLUDE_PATH) $(CXXINCLUDE) $(EXTRA_INCS)
+MPARK_VARIANT_INCLUDE_PATH=@MPARK_VARIANT_INCLUDE_PATH@
+BOUT_INCLUDE = -I$(BOUT_INCLUDE_PATH) $(CXXINCLUDE) $(EXTRA_INCS) -I$(MPARK_VARIANT_INCLUDE_PATH)
 BOUT_LIBS    = -lm -L$(BOUT_LIB_PATH) -lbout++ $(EXTRA_LIBS)
 
 CHANGED = $(shell find -f $(BOUT_TOP)/include $(BOUT_TOP)/src -type f \( -name \*.cxx -or -name \*.h \) -newer $(LIB) -print 2> /dev/null)
@@ -140,9 +148,6 @@ $(BOUT_TOP)/include $(BOUT_TOP)/lib:
 ####################################################################
 # Install header files and libraries
 ####################################################################
-prefix = @prefix@
-exec_prefix = @exec_prefix@
-datarootdir = @datarootdir@
 
 INSTALL = @INSTALL@
 INSTALL_PROGRAM = ${INSTALL}
@@ -150,14 +155,18 @@ INSTALL_DATA = ${INSTALL} -m 644
 
 INSTALL_INCLUDE_PATH = $(DESTDIR)@includedir@/bout++/
 
+# A list of relative paths e.g. "fr/LC_MESSAGES/libbout.mo zh_CN/LC_MESSAGES/libbout.mo"
+MO_FILES = $(shell cd locale; ls */LC_MESSAGES/libbout.mo)
+
 install: libfast
 	$(PRE_INSTALL)     # Pre-install commands follow.
 
 	$(NORMAL_INSTALL)  # Normal commands follow.
-	$(MKDIR) $(INSTALL_INCLUDE_PATH)/{,pvode,bout/sys,bout/invert}
+	$(MKDIR) $(INSTALL_INCLUDE_PATH)/{,pvode,bout/sys,bout/invert,mpark}
 	$(MKDIR) $(DESTDIR)/{@libdir@,@bindir@,@datadir@/bout++/idllib}
 	$(MKDIR) $(DESTDIR)/@datadir@/bout++/pylib/{boutdata,boututils}
 	$(INSTALL_DATA) include/*.hxx $(INSTALL_INCLUDE_PATH)
+	$(INSTALL_DATA) $(MPARK_VARIANT_INCLUDE_PATH)/mpark/*.hpp $(INSTALL_INCLUDE_PATH)/mpark
 	$(INSTALL_DATA) include/pvode/*.h $(INSTALL_INCLUDE_PATH)/pvode/
 	$(INSTALL_DATA) include/bout/*.hxx $(INSTALL_INCLUDE_PATH)/bout/
 	$(INSTALL_DATA) include/bout/sys/*.hxx $(INSTALL_INCLUDE_PATH)/bout/sys/
@@ -172,7 +181,7 @@ install: libfast
 	$(INSTALL_DATA)  tools/pylib/boutdata/*.py $(DESTDIR)@datadir@/bout++/pylib/boutdata/
 	$(INSTALL_DATA)  tools/pylib/boututils/*.py $(DESTDIR)@datadir@/bout++/pylib/boututils/
 	$(INSTALL_DATA)  make.config $(DESTDIR)@datadir@/bout++/
-
+	for mo in $(MO_FILES); do $(MKDIR) $(DESTDIR)@localedir@/`dirname $$mo`; $(INSTALL_DATA) locale/$$mo $(DESTDIR)@localedir@/$$mo; done
 	$(POST_INSTALL)    # Post-install commands follow.
 
 	@# Modify paths in the bout-config script 
@@ -181,11 +190,13 @@ install: libfast
 	sed -i "s|^BOUT_CONFIG_FILE=.*|BOUT_CONFIG_FILE=@datadir@/bout++/make.config|" $(DESTDIR)@bindir@/bout-config
 	sed -i "s|^idlpath=.*|idlpath=@datadir@/bout++/idllib/|" $(DESTDIR)@bindir@/bout-config
 	sed -i "s|^pythonpath=.*|pythonpath=@datadir@/bout++/pylib/|" $(DESTDIR)@bindir@/bout-config
+	sed -i "s|^MPARK_VARIANT_INCLUDE_PATH=.*|MPARK_VARIANT_INCLUDE_PATH=@includedir@/bout++|" $(DESTDIR)@bindir@/bout-config
 
 	@# Modify paths in the make.config file
 	sed -i "s|^BOUT_INCLUDE_PATH=.*|BOUT_INCLUDE_PATH=@includedir@/bout++|" $(DESTDIR)@datadir@/bout++/make.config
 	sed -i "s|^BOUT_LIB_PATH=.*|BOUT_LIB_PATH=@libdir@|" $(DESTDIR)@datadir@/bout++/make.config
 	sed -i "s|^BOUT_CONFIG_FILE=.*|BOUT_CONFIG_FILE=@datadir@/bout++/make.config|" $(DESTDIR)@datadir@/bout++/make.config
+	sed -i "s|^MPARK_VARIANT_INCLUDE_PATH=.*|MPARK_VARIANT_INCLUDE_PATH=@includedir@/bout++|" $(DESTDIR)@datadir@/bout++/make.config
 
 uninstall:
 	$(PRE_UNINSTALL)     # Pre-uninstall commands follow.
@@ -201,6 +212,7 @@ uninstall:
 	$(RM) $(DESTDIR)@libdir@/libpvode.a
 	$(RM) $(DESTDIR)@libdir@/libpvpre.a
 	$(RM) -r  $(DESTDIR)@includedir@/bout++/
+	$(RM) $(DESTDIR)@localedir@/*/LC_MESSAGES/libbout.mo
 
 	$(POST_UNINSTALL)    # Post-uninstall commands follow.
 
@@ -208,7 +220,13 @@ uninstall:
 # Builds the library with $(OBJ) which is defined from the SOURCEC variable
 ####################################################################
 
+MPARK_VARIANT_SENTINEL = $(MPARK_VARIANT_INCLUDE_PATH)/mpark/variant.hpp
+$(MPARK_VARIANT_SENTINEL):
+	@echo "Downloading mpark.variant"
+	git submodule update --init --recursive $(BOUT_TOP)/externalpackages/mpark.variant
+
 ifeq ("$(TARGET)", "libfast")
+libfast: | $(MPARK_VARIANT_SENTINEL)
 libfast: makefile $(BOUT_CONFIG_FILE) $(BOUT_TOP)/include $(OBJ) $(DIRS)
 endif
 
@@ -309,6 +327,7 @@ clean::
 	-@$(RM) -rf $(OBJ) $(DEPS) $(TARGET)
 	@for pp in $(DIRS); do echo "  " $$pp cleaned; $(MAKE) --no-print-directory -C $$pp clean; done
 	@$(RM) -f $(SUB_LIBS)
+	-@$(RM) .*.mk
 	@test -f make.config && ( find src | grep '\.o$$' && echo "WARNING: Some object files remain - which might cause issues. Clean with $(MAKE) clean-remove-object-files" ) || exit 0
 
 clean-remove-object-files:

@@ -126,9 +126,9 @@ The bare-minimum requirements for compiling and running BOUT++ are:
    MPICH ( `https://www.mpich.org/ <https://www.mpich.org/>`__) or
    LAM (`www.lam-mpi.org/ <www.lam-mpi.org/>`__)
    
-#. The FFTW-3 library ( `http://www.fftw.org/ <http://www.fftw.org/>`__ )
-   
 #. The NetCDF library ( `https://www.unidata.ucar.edu/downloads/netcdf <https://www.unidata.ucar.edu/downloads/netcdf>`__ )
+   
+The FFTW-3 library ( `http://www.fftw.org/ <http://www.fftw.org/>`__ ) is also strongly recommended
 
 .. note::
    If you use an Intel compiler, you must also make sure that you have
@@ -277,6 +277,96 @@ configuration::
 If not, see :ref:`sec-advancedinstall` for some things you can try to
 resolve common problems.
 
+.. _sec-cmake:
+
+CMake
+-----
+
+There is now (experimental) support for `CMake <https://cmake.org/>`_. You will need CMake >
+3.9. CMake supports out-of-source builds by default, which are A Good
+Idea. Basic configuration with CMake looks like::
+
+  $ mkdir build && cd build
+  $ cmake ..
+
+You can then run ``make`` as usual.
+
+You can see what build options are available with::
+
+  $ cmake .. -LH
+  ...
+  // Enable backtrace
+  ENABLE_BACKTRACE:BOOL=ON
+
+  // Output coloring
+  ENABLE_COLOR:BOOL=ON
+
+  // Enable OpenMP support
+  ENABLE_OPENMP:BOOL=OFF
+
+  // Enable support for PETSc time solvers and inversions
+  USE_PETSC:BOOL=OFF
+  ...
+
+CMake uses the ``-D<variable>=<choice>`` syntax to control these
+variables. You can set ``<package>_ROOT`` to guide CMake in finding
+the various optional third-party packages (except for PETSc/SLEPc,
+which use ``_DIR``). CMake understands the usual environment variables
+for setting the compiler, compiler/linking flags, as well as having
+built-in options to control them and things like static vs shared
+libraries, etc. See the `CMake documentation
+<https://cmake.org/documentation/>`_ for more infomation.
+
+A more complicated CMake configuration command
+might look like::
+
+  $ CC=mpicc CXX=mpic++ cmake .. \
+      -DUSE_PETSC=ON -DPETSC_DIR=/path/to/petsc/ \
+      -DUSE_SLEPC=ON -DSLEPC_DIR=/path/to/slepc/ \
+      -DUSE_SUNDIALS=ON -DSUNDIALS_ROOT=/path/to/sundials \
+      -DUSE_NETCDF=ON -DNetCDF_ROOT=/path/to/netcdf \
+      -DENABLE_OPENMP=ON \
+      -DENABLE_SIGFPE=OFF \
+      -DCMAKE_BUILD_TYPE=Debug \
+      -DBUILD_SHARED_LIBS=ON
+      -DCMAKE_INSTALL_PREFIX=/path/to/install/BOUT++
+
+You can write a CMake configuration file (``CMakeLists.txt``) for your
+physics model in only four lines:
+
+.. code-block:: cmake
+
+    project(blob2d LANGUAGES CXX)
+    find_package(bout++ REQUIRED)
+    add_executable(blob2d blob2d.cxx)
+    target_link_libraries(blob2d PRIVATE bout++::bout++)
+
+You just need to give CMake the location where you installed BOUT++
+via the ``CMAKE_PREFIX_PATH`` variable::
+
+  $ mkdir build && cd build
+  $ cmake .. -DCMAKE_PREFIX_PATH=/path/to/install/BOUT++
+
+.. _sec-config-nls:
+
+Natural Language Support
+------------------------
+
+BOUT++ has support for languages other than English, using GNU
+gettext. If you are planning on installing BOUT++ (see
+:ref:`sec-install-bout`) then this should work automatically, but if
+you will be running BOUT++ from the directory you downloaded it into,
+then configure with the option::
+
+  ./configure --localedir=$PWD/locale
+
+This will enable BOUT++ to find the translations. When ``configure``
+finishes, the configuration summary should contain a line like::
+
+  configure:   Natural language support: yes (path: /home/user/BOUT-dev/locale)
+
+where the ``path`` is the directory containing the translations.
+  
 .. _sec-configanalysis:
 
 Configuring analysis routines

@@ -6,6 +6,6 @@
 #include <bout_types.hxx>
 
 #include <vector>
-typedef std::vector<BoutReal> rvec;
+using rvec = std::vector<BoutReal>;
 
 #endif // __RVEC_H__

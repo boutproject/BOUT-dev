@@ -14,8 +14,7 @@ namespace FV {
 
     Mesh *mesh = a.getMesh();
 
-    Field3D result(mesh);
-    result = 0.0;
+    Field3D result{zeroFrom(f)};
 
     Coordinates *coord = f.getCoordinates();
     
@@ -38,17 +37,17 @@ namespace FV {
 	for(int k=0;k<mesh->LocalNz;k++) {
 	  // Calculate flux from i to i+1
 	
-	  BoutReal fout = (coord->J(i,j)*a(i,j,k)*coord->g11(i,j) + coord->J(i+1,j)*a(i+1,j,k)*coord->g11(i+1,j)) *
+	  BoutReal fout = 0.5*(a(i,j,k) + a(i+1,j,k)) * (coord->J(i,j)*coord->g11(i,j) + coord->J(i+1,j)*coord->g11(i+1,j)) *
 	    (f(i+1,j,k) - f(i,j,k))/(coord->dx(i,j) + coord->dx(i+1,j));
                      
 	  result(i,j,k) += fout / (coord->dx(i,j)*coord->J(i,j));
 	  result(i+1,j,k) -= fout / (coord->dx(i+1,j)*coord->J(i+1,j));
 	}
       }
-    
+
 
     // Y and Z fluxes require Y derivatives
-    
+
     // Fields containing values along the magnetic field
     Field3D fup(mesh), fdown(mesh);
     Field3D aup(mesh), adown(mesh);
@@ -62,7 +61,7 @@ namespace FV {
     Field3D yzresult(mesh);
     yzresult.allocate();
 
-    if (f.hasYupYdown() && a.hasYupYdown()) {
+    if (f.hasParallelSlices() && a.hasParallelSlices()) {
       // Both inputs have yup and ydown
 
       fup = f.yup();
@@ -74,14 +73,15 @@ namespace FV {
       // At least one input doesn't have yup/ydown fields.
       // Need to shift to/from field aligned coordinates
 
-      fup = fdown = fc = mesh->toFieldAligned(f);
-      aup = adown = ac = mesh->toFieldAligned(a);
+      fup = fdown = fc = toFieldAligned(f);
+      aup = adown = ac = toFieldAligned(a);
+      yzresult.setDirectionY(YDirectionType::Aligned);
     }
 
     // Y flux
 
     for (int i = mesh->xstart; i <= mesh->xend; i++) {
-      for (int j = mesh->ystart - 1; j <= mesh->yend; j++) {
+      for (int j = mesh->ystart; j <= mesh->yend; j++) {
 
         BoutReal coef =
             0.5 * (coord->g_23(i, j) / SQ(coord->J(i, j) * coord->Bxy(i, j)) +
@@ -89,8 +89,8 @@ namespace FV {
 
         for (int k = 0; k < mesh->LocalNz; k++) {
           // Calculate flux between j and j+1
-          int kp = (k + 1) % (mesh->LocalNz);
-          int km = (k - 1 + (mesh->LocalNz)) % (mesh->LocalNz);
+          int kp = (k + 1) % mesh->LocalNz;
+          int km = (k - 1 + mesh->LocalNz) % mesh->LocalNz;
 
           // Calculate Z derivative at y boundary
           BoutReal dfdz = 0.25 * (fc(i, j, kp) - fc(i, j, km) + fup(i, j + 1, kp) -
@@ -101,9 +101,9 @@ namespace FV {
           BoutReal dfdy = 2. * (fup(i, j + 1, k) - fc(i, j, k)) /
                           (coord->dy(i, j + 1) + coord->dy(i, j));
 
-          BoutReal fout = 0.5 *
-                          (coord->J(i, j) * ac(i, j, k) * coord->g23(i, j) +
-                           coord->J(i, j + 1) * aup(i, j + 1, k) * coord->g23(i, j + 1)) *
+          BoutReal fout = 0.25 * (ac(i, j, k) + aup(i, j + 1, k)) * 
+                          (coord->J(i, j) * coord->g23(i, j) +
+                           coord->J(i, j + 1) * coord->g23(i, j + 1)) *
                           (dfdz - coef * dfdy);
 
           yzresult(i, j, k) = fout / (coord->dy(i, j) * coord->J(i, j));
@@ -116,8 +116,9 @@ namespace FV {
           dfdy = 2. * (fc(i, j, k) - fdown(i, j - 1, k)) /
                  (coord->dy(i, j) + coord->dy(i, j - 1));
 
-          fout = 0.5 * (coord->J(i, j) * ac(i, j, k) * coord->g23(i, j) +
-                        coord->J(i, j - 1) * aup(i, j + 1, k) * coord->g23(i, j + 1)) *
+          fout = 0.25 * (ac(i, j, k) + adown(i, j - 1, k)) * 
+                        (coord->J(i, j) * coord->g23(i, j) +
+                         coord->J(i, j - 1) * coord->g23(i, j - 1)) *
                  (dfdz - coef * dfdy);
 
           yzresult(i, j, k) -= fout / (coord->dy(i, j) * coord->J(i, j));
@@ -155,10 +156,10 @@ namespace FV {
       }
     }
     // Check if we need to transform back
-    if (f.hasYupYdown() && a.hasYupYdown()) {
+    if (f.hasParallelSlices() && a.hasParallelSlices()) {
       result += yzresult;
     } else {
-      result += mesh->fromFieldAligned(yzresult);
+      result += fromFieldAligned(yzresult);
     }
     
     return result;
@@ -170,34 +171,23 @@ namespace FV {
     ASSERT2(Kin.getLocation() == fin.getLocation());
 
     Mesh *mesh = Kin.getMesh();
-    Field3D result(0.0, mesh);
+
+    bool use_parallel_slices = (Kin.hasParallelSlices() && fin.hasParallelSlices());
+
+    const auto& K = use_parallel_slices ? Kin : toFieldAligned(Kin, "RGN_NOX");
+    const auto& f = use_parallel_slices ? fin : toFieldAligned(fin, "RGN_NOX");
+
+    Field3D result{zeroFrom(f)};
 
     // K and f fields in yup and ydown directions
-    Field3D Kup(mesh), Kdown(mesh);
-    Field3D fup(mesh), fdown(mesh);
-    Field3D f = fin;
-    Field3D K = Kin;
-    if (K.hasYupYdown() && f.hasYupYdown()) {
-      // Both inputs have yup and ydown
-      Kup = K.yup();
-      Kdown = K.ydown();
-      
-      fup = f.yup();
-      fdown = f.ydown();
-    } else {
-      // At least one input doesn't have yup/ydown fields.
-      // Need to shift to/from field aligned coordinates
-      
-      f = mesh->toFieldAligned(fin);
-      K = mesh->toFieldAligned(Kin);
-      
-      fup = fdown = f;
-      Kup = Kdown = K;
-    }
+    const auto& Kup = use_parallel_slices ? Kin.yup() : K;
+    const auto& Kdown = use_parallel_slices ? Kin.ydown() : K;
+    const auto& fup = use_parallel_slices ? fin.yup() : f;
+    const auto& fdown = use_parallel_slices ? fin.ydown() : f;
     
     Coordinates *coord = fin.getCoordinates();
-    
-    BOUT_FOR(i, mesh->getRegion3D("RGN_NOBNDRY")) {
+
+    BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
       // Calculate flux at upper surface
       
       const auto iyp = i.yp();
@@ -231,25 +221,30 @@ namespace FV {
       }
     }
     
-    if (!(K.hasYupYdown() && f.hasYupYdown())) {
+    if (!use_parallel_slices) {
       // Shifted to field aligned coordinates, so need to shift back
-      result = mesh->fromFieldAligned(result);
+      result = fromFieldAligned(result, "RGN_NOBNDRY");
     }
     
     return result;
   }
 
   const Field3D D4DY4(const Field3D &d_in, const Field3D &f_in) {
-    ASSERT2(d_in.getLocation() == f_in.getLocation());
+    ASSERT1(areFieldsCompatible(d_in, f_in));
 
-    Field3D result = 0.0;
-    result.setLocation(f_in.getLocation());
-    
+    Mesh* mesh = d_in.getMesh();
+
     Coordinates *coord = f_in.getCoordinates();
     
+    ASSERT2(d_in.getDirectionY() == f_in.getDirectionY());
+    const bool are_unaligned = ((d_in.getDirectionY() == YDirectionType::Standard)
+                                and (f_in.getDirectionY() == YDirectionType::Standard));
+
     // Convert to field aligned coordinates
-    Field3D d = mesh->toFieldAligned(d_in);
-    Field3D f = mesh->toFieldAligned(f_in);
+    Field3D d = are_unaligned ? toFieldAligned(d_in, "RGN_NOX") : d_in;
+    Field3D f = are_unaligned ? toFieldAligned(f_in, "RGN_NOX") : f_in;
+
+    Field3D result{zeroFrom(f)};
     
     for(int i=mesh->xstart;i<=mesh->xend;i++)
       for(int j=mesh->ystart;j<=mesh->yend;j++) {
@@ -288,15 +283,17 @@ namespace FV {
       }
     
     // Convert result back to non-aligned coordinates
-    return mesh->fromFieldAligned(result);
+    return are_unaligned ? fromFieldAligned(result, "RGN_NOBNDRY") : result;
   }
 
   const Field3D D4DY4_Index(const Field3D &f_in, bool bndry_flux) {
-    Field3D result = 0.0;
-    result.setLocation(f_in.getLocation());
-    
+    Mesh* mesh = f_in.getMesh();
+
     // Convert to field aligned coordinates
-    Field3D f = mesh->toFieldAligned(f_in);
+    const bool is_unaligned = (f_in.getDirectionY() == YDirectionType::Standard);
+    Field3D f = is_unaligned ? toFieldAligned(f_in, "RGN_NOX") : f_in;
+
+    Field3D result{zeroFrom(f)};
 
     Coordinates *coord = f_in.getCoordinates();
     
@@ -397,10 +394,11 @@ namespace FV {
     }
     
     // Convert result back to non-aligned coordinates
-    return mesh->fromFieldAligned(result);
+    return is_unaligned ? fromFieldAligned(result, "RGN_NOBNDRY") : result;
   }
 
   void communicateFluxes(Field3D &f) {
+    Mesh* mesh = f.getMesh();
 
     // Use X=0 as temporary buffer
     if (mesh->xstart != 2)

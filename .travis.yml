@@ -30,7 +30,9 @@ addons:
     - netcdf-bin
     - hdf5-tools
     - python3
+    - python3-h5py
     - python3-pip
+    - python3-pytest
     - python3-numpy
     - python3-scipy
     - lcov
@@ -42,13 +44,18 @@ addons:
     - liblapack-dev
     - libparpack2-dev
 
+cache:
+  directories:
+  - $HOME/local
+
 matrix:
   fast_finish: true
   include:
   - env: &default_env
-      - CONFIGURE_OPTIONS='--enable-checks=no --enable-optimize=3 --disable-signal --disable-track --disable-backtrace --with-petsc --with-slepc'
+      - CONFIGURE_OPTIONS="--enable-checks=no --enable-optimize=3 --disable-signal --disable-track --disable-backtrace --with-petsc --with-slepc --with-sundials=$HOME/local"
       - SCRIPT_FLAGS='-uim'
       - PIP_PACKAGES='cython==0.29.6 netcdf4==1.4.2 sympy==1.3'
+      - LD_LIBRARY_PATH=$HOME/local/lib:$LD_LIBRARY_PATH
       - *petsc_vars
   - addons:
       apt:
@@ -59,21 +66,36 @@ matrix:
           - *standard_packages
     env:
       - *default_env
-      - CONFIGURE_OPTIONS='--enable-debug --with-petsc --with-slepc'
+      - CONFIGURE_OPTIONS="--enable-sigfpe --enable-debug --with-petsc --with-slepc --with-sundials=$HOME/local"
       - CC=gcc-7 CXX=g++-7
       - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
   - env:
       - *default_env
-      - CONFIGURE_OPTIONS='--enable-shared --with-petsc --with-slepc'
+      - CONFIGURE_OPTIONS="--enable-shared --with-petsc --with-slepc --with-sundials=$HOME/local"
       - SCRIPT_FLAGS="-uim -t python -t shared"
   - env:
       - *default_env
-      - CONFIGURE_OPTIONS='--enable-openmp --with-petsc --with-slepc'
+      - CONFIGURE_OPTIONS="--enable-shared --with-petsc --with-slepc --with-sundials=$HOME/local"
+      - SCRIPT_FLAGS="-uim5t python"
+  - env:
+      - *default_env
+      - CONFIGURE_OPTIONS="--enable-openmp --with-petsc --with-slepc --with-sundials=$HOME/local"
       - OMP_NUM_THREADS=2
+#CMAKE
+  - env:
+      - *default_env
+      - OMP_NUM_THREADS=2
+      - PYTHONPATH="${TRAVIS_BUILD_DIR}/tools/pylib:$PYTHONPATH"
+    script:
+      - ./.build_sundials_for_travis.sh
+      - mkdir build && cd build
+      - cmake .. -DUSE_PETSC=ON -DUSE_SLEPC=ON -DUSE_SUNDIALS=ON -DSUNDIALS_ROOT="$HOME/local" -DENABLE_OPENMP=ON
+      - cmake --build .
+      - ctest --output-on-failure
 #CLANG
   - env:
       - *default_env
-      - CONFIGURE_OPTIONS='--enable-debug --with-petsc --with-slepc'
+      - CONFIGURE_OPTIONS="--enable-debug --with-petsc --with-slepc --with-sundials=$HOME/local"
       - MPICH_CC=clang MPICH_CXX=clang++
       - OMPI_CC=clang OMPI_CXX=clang++
     compiler: clang
@@ -85,8 +107,9 @@ matrix:
           - *standard_packages
           - jq
     env:
-      - CONFIGURE_OPTIONS='--enable-code-coverage --enable-debug --enable-track --enable-checks=3 --with-petsc --with-lapack --with-slepc --enable-openmp'
+      - CONFIGURE_OPTIONS="--enable-code-coverage --enable-debug --enable-track --enable-checks=3 --with-petsc --with-lapack --with-slepc --enable-openmp --with-sundials=$HOME/local"
       - OMP_NUM_THREADS=2
+      - LD_LIBRARY_PATH=$HOME/local/lib:$LD_LIBRARY_PATH
       - *coverage_vars
       - *petsc_vars
       - *codecov_secure
@@ -97,7 +120,7 @@ matrix:
           - *standard_packages
           - jq
     env:
-      - CONFIGURE_OPTIONS='--enable-code-coverage --disable-debug --disable-checks'
+      - CONFIGURE_OPTIONS="--enable-code-coverage --disable-debug --disable-checks"
       - *coverage_vars
       - *codecov_secure
 

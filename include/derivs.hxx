@@ -36,10 +36,45 @@
 
 #include "bout_types.hxx"
 
-// Feel free to edit this file (derivs.hxx) rather then the generating
-// files. If this is easier then changing derivx.hxx.in.py or
-// derivs.hxx.in.jinja do so, but please remove the derivs.hxx.in.*
-// files to make clear the file is not auto-generated anymore.
+#ifdef DERIV_FUNC_REGION_ENUM_TO_STRING
+#error This utility macro should not clash with another one
+#else
+#define DERIV_FUNC_REGION_ENUM_TO_STRING(func, T) \
+[[gnu::deprecated("Please use #func(const #T& f, CELL_LOC outloc = CELL_DEFAULT, " \
+    "const std::string& method = \"DEFAULT\", const std::string& region = \"RGN_ALL\") " \
+    "instead")]] \
+inline T func(const T& f, CELL_LOC outloc, const std::string& method, \
+    REGION region) { \
+  return func(f, outloc, method, toString(region)); \
+} \
+[[gnu::deprecated("Please use #func(const #T& f, CELL_LOC outloc = CELL_DEFAULT, " \
+    "const std::string& method = \"DEFAULT\", const std::string& region = \"RGN_ALL\") " \
+    "instead")]] \
+inline T func(const T& f, CELL_LOC outloc, DIFF_METHOD method, \
+    REGION region = RGN_NOBNDRY) { \
+  return func(f, outloc, toString(method), toString(region)); \
+}
+#endif
+
+#ifdef VDERIV_FUNC_REGION_ENUM_TO_STRING
+#error This utility macro should not clash with another one
+#else
+#define VDERIV_FUNC_REGION_ENUM_TO_STRING(func, T, T1, T2) \
+[[gnu::deprecated("Please use #func(const #T1 v, const #T2& f, " \
+    "CELL_LOC outloc = CELL_DEFAULT, const std::string& method = \"DEFAULT\", const " \
+    "std::string& region = \"RGN_ALL\") instead")]] \
+inline T func(const T1& v, const T2& f, CELL_LOC outloc, const std::string& method, \
+    REGION region) { \
+  return func(v, f, outloc, method, toString(region)); \
+} \
+[[gnu::deprecated("Please use #func(const #T1& v, const #T2& f, " \
+    "CELL_LOC outloc = CELL_DEFAULT, const std::string& method = \"DEFAULT\", " \
+    "const std::string& region = \"RGN_ALL\") instead")]] \
+inline T func(const T1& v, const T2& f, CELL_LOC outloc, DIFF_METHOD method, \
+    REGION region = RGN_NOBNDRY) { \
+  return func(v, f, outloc, toString(method), toString(region)); \
+}
+#endif
 
 ////////// FIRST DERIVATIVES //////////
 
@@ -55,15 +90,9 @@
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field3D DDX(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
-                  DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match DDX(const Field3D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field3D DDX(const Field3D &f, DIFF_METHOD method,
-                                    CELL_LOC outloc = CELL_DEFAULT,
-                                    REGION region = RGN_NOBNDRY)) {
-  return DDX(f, outloc, method, region);
-}
+Field3D DDX(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, const std::string&
+    method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+DERIV_FUNC_REGION_ENUM_TO_STRING(DDX, Field3D)
 
 /// Calculate first partial derivative in X
 ///
@@ -77,15 +106,9 @@ DEPRECATED(inline const Field3D DDX(const Field3D &f, DIFF_METHOD method,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field2D DDX(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
-                  DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match DDX(const Field2D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field2D DDX(const Field2D &f, DIFF_METHOD method,
-                                    CELL_LOC outloc = CELL_DEFAULT,
-                                    REGION region = RGN_NOBNDRY)) {
-  return DDX(f, outloc, method, region);
-}
+Field2D DDX(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT, const std::string&
+    method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+DERIV_FUNC_REGION_ENUM_TO_STRING(DDX, Field2D)
 
 /// Calculate first partial derivative in Y
 ///
@@ -99,15 +122,9 @@ DEPRECATED(inline const Field2D DDX(const Field2D &f, DIFF_METHOD method,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field3D DDY(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
-                  DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match DDY(const Field3D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field3D DDY(const Field3D &f, DIFF_METHOD method,
-                                    CELL_LOC outloc = CELL_DEFAULT,
-                                    REGION region = RGN_NOBNDRY)) {
-  return DDY(f, outloc, method, region);
-}
+Field3D DDY(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, const std::string&
+    method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+DERIV_FUNC_REGION_ENUM_TO_STRING(DDY, Field3D)
 
 /// Calculate first partial derivative in Y
 ///
@@ -121,15 +138,9 @@ DEPRECATED(inline const Field3D DDY(const Field3D &f, DIFF_METHOD method,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field2D DDY(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
-                  DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match DDY(const Field2D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field2D DDY(const Field2D &f, DIFF_METHOD method,
-                                    CELL_LOC outloc = CELL_DEFAULT,
-                                    REGION region = RGN_NOBNDRY)) {
-  return DDY(f, outloc, method, region);
-}
+Field2D DDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT, const std::string&
+    method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+DERIV_FUNC_REGION_ENUM_TO_STRING(DDY, Field2D)
 
 /// Calculate first partial derivative in Z
 ///
@@ -143,15 +154,9 @@ DEPRECATED(inline const Field2D DDY(const Field2D &f, DIFF_METHOD method,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field3D DDZ(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
-                  DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match DDZ(const Field3D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field3D DDZ(const Field3D &f, DIFF_METHOD method,
-                                    CELL_LOC outloc = CELL_DEFAULT,
-                                    REGION region = RGN_NOBNDRY)) {
-  return DDZ(f, outloc, method, region);
-}
+Field3D DDZ(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, const std::string&
+    method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+DERIV_FUNC_REGION_ENUM_TO_STRING(DDZ, Field3D)
 
 /// Calculate first partial derivative in Z
 ///
@@ -165,15 +170,42 @@ DEPRECATED(inline const Field3D DDZ(const Field3D &f, DIFF_METHOD method,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field2D DDZ(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
-                  DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
+Field2D DDZ(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT, const std::string&
+    method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+DERIV_FUNC_REGION_ENUM_TO_STRING(DDZ, Field2D)
 
-/// Reorder arguments to match DDZ(const Field2D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field2D DDZ(const Field2D &f, DIFF_METHOD method,
-                                    CELL_LOC outloc = CELL_DEFAULT,
-                                    REGION region = RGN_NOBNDRY)) {
-  return DDZ(f, outloc, method, region);
-}
+/// Calculate first partial derivative in Z
+///
+///   \f$\partial / \partial z\f$
+///
+/// @param[in] f       The field to be differentiated
+/// @param[in] outloc  The cell location where the result is desired. If
+///                    staggered grids is not enabled then this has no effect
+///                    If not given, defaults to CELL_DEFAULT
+/// @param[in] method  Differencing method to use. This overrides the default
+///                    If not given, defaults to DIFF_DEFAULT
+/// @param[in] region  What region is expected to be calculated
+///                    If not given, defaults to RGN_NOBNDRY
+Vector3D DDZ(const Vector3D& f, CELL_LOC outloc = CELL_DEFAULT, const std::string&
+    method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+DERIV_FUNC_REGION_ENUM_TO_STRING(DDZ, Vector3D)
+
+/// Calculate first partial derivative in Z
+///
+///   \f$\partial / \partial z\f$
+///
+/// @param[in] f       The field to be differentiated
+/// @param[in] outloc  The cell location where the result is desired. If
+///                    staggered grids is not enabled then this has no effect
+///                    If not given, defaults to CELL_DEFAULT
+/// @param[in] method  Differencing method to use. This overrides the default
+///                    If not given, defaults to DIFF_DEFAULT
+/// @param[in] region  What region is expected to be calculated
+///                    If not given, defaults to RGN_NOBNDRY
+Vector2D DDZ(const Vector2D& f, CELL_LOC outloc = CELL_DEFAULT, const std::string&
+    method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+DERIV_FUNC_REGION_ENUM_TO_STRING(DDZ, Vector2D)
+
 ////////// SECOND DERIVATIVES //////////
 
 /// Calculate second partial derivative in X
@@ -188,15 +220,9 @@ DEPRECATED(inline const Field2D DDZ(const Field2D &f, DIFF_METHOD method,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field3D D2DX2(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
-                    DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match D2DX2(const Field3D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field3D D2DX2(const Field3D &f, DIFF_METHOD method,
-                                      CELL_LOC outloc = CELL_DEFAULT,
-                                      REGION region = RGN_NOBNDRY)) {
-  return D2DX2(f, outloc, method, region);
-}
+Field3D D2DX2(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, const std::string&
+    method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+DERIV_FUNC_REGION_ENUM_TO_STRING(D2DX2, Field3D)
 
 /// Calculate second partial derivative in X
 ///
@@ -210,15 +236,9 @@ DEPRECATED(inline const Field3D D2DX2(const Field3D &f, DIFF_METHOD method,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field2D D2DX2(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
-                    DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match D2DX2(const Field2D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field2D D2DX2(const Field2D &f, DIFF_METHOD method,
-                                      CELL_LOC outloc = CELL_DEFAULT,
-                                      REGION region = RGN_NOBNDRY)) {
-  return D2DX2(f, outloc, method, region);
-}
+Field2D D2DX2(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT, const std::string&
+    method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+DERIV_FUNC_REGION_ENUM_TO_STRING(D2DX2, Field2D)
 
 /// Calculate second partial derivative in Y
 ///
@@ -232,15 +252,9 @@ DEPRECATED(inline const Field2D D2DX2(const Field2D &f, DIFF_METHOD method,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field3D D2DY2(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
-                    DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match D2DY2(const Field3D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field3D D2DY2(const Field3D &f, DIFF_METHOD method,
-                                      CELL_LOC outloc = CELL_DEFAULT,
-                                      REGION region = RGN_NOBNDRY)) {
-  return D2DY2(f, outloc, method, region);
-}
+Field3D D2DY2(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, const std::string&
+    method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+DERIV_FUNC_REGION_ENUM_TO_STRING(D2DY2, Field3D)
 
 /// Calculate second partial derivative in Y
 ///
@@ -254,15 +268,9 @@ DEPRECATED(inline const Field3D D2DY2(const Field3D &f, DIFF_METHOD method,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field2D D2DY2(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
-                    DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match D2DY2(const Field2D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field2D D2DY2(const Field2D &f, DIFF_METHOD method,
-                                      CELL_LOC outloc = CELL_DEFAULT,
-                                      REGION region = RGN_NOBNDRY)) {
-  return D2DY2(f, outloc, method, region);
-}
+Field2D D2DY2(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT, const std::string&
+    method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+DERIV_FUNC_REGION_ENUM_TO_STRING(D2DY2, Field2D)
 
 /// Calculate second partial derivative in Z
 ///
@@ -276,15 +284,9 @@ DEPRECATED(inline const Field2D D2DY2(const Field2D &f, DIFF_METHOD method,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field3D D2DZ2(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
-                    DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match D2DZ2(const Field3D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field3D D2DZ2(const Field3D &f, DIFF_METHOD method,
-                                      CELL_LOC outloc = CELL_DEFAULT,
-                                      REGION region = RGN_NOBNDRY)) {
-  return D2DZ2(f, outloc, method, region);
-}
+Field3D D2DZ2(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, const std::string&
+    method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+DERIV_FUNC_REGION_ENUM_TO_STRING(D2DZ2, Field3D)
 
 /// Calculate second partial derivative in Z
 ///
@@ -298,16 +300,11 @@ DEPRECATED(inline const Field3D D2DZ2(const Field3D &f, DIFF_METHOD method,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field2D D2DZ2(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
-                    DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
+Field2D D2DZ2(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT, const std::string&
+    method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+DERIV_FUNC_REGION_ENUM_TO_STRING(D2DZ2, Field2D)
 
-/// Reorder arguments to match D2DZ2(const Field2D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field2D D2DZ2(const Field2D &f, DIFF_METHOD method,
-                                      CELL_LOC outloc = CELL_DEFAULT,
-                                      REGION region = RGN_NOBNDRY)) {
-  return D2DZ2(f, outloc, method, region);
-}
-////////// FORTH DERIVATIVES //////////
+////////// FOURTH DERIVATIVES //////////
 
 /// Calculate forth partial derivative in X
 ///
@@ -321,15 +318,9 @@ DEPRECATED(inline const Field2D D2DZ2(const Field2D &f, DIFF_METHOD method,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field3D D4DX4(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
-                    DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match D4DX4(const Field3D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field3D D4DX4(const Field3D &f, DIFF_METHOD method,
-                                      CELL_LOC outloc = CELL_DEFAULT,
-                                      REGION region = RGN_NOBNDRY)) {
-  return D4DX4(f, outloc, method, region);
-}
+Field3D D4DX4(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, const std::string&
+    method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+DERIV_FUNC_REGION_ENUM_TO_STRING(D4DX4, Field3D)
 
 /// Calculate forth partial derivative in X
 ///
@@ -343,15 +334,9 @@ DEPRECATED(inline const Field3D D4DX4(const Field3D &f, DIFF_METHOD method,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field2D D4DX4(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
-                    DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match D4DX4(const Field2D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field2D D4DX4(const Field2D &f, DIFF_METHOD method,
-                                      CELL_LOC outloc = CELL_DEFAULT,
-                                      REGION region = RGN_NOBNDRY)) {
-  return D4DX4(f, outloc, method, region);
-}
+Field2D D4DX4(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT, const std::string&
+    method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+DERIV_FUNC_REGION_ENUM_TO_STRING(D4DX4, Field2D)
 
 /// Calculate forth partial derivative in Y
 ///
@@ -365,15 +350,9 @@ DEPRECATED(inline const Field2D D4DX4(const Field2D &f, DIFF_METHOD method,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field3D D4DY4(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
-                    DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match D4DY4(const Field3D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field3D D4DY4(const Field3D &f, DIFF_METHOD method,
-                                      CELL_LOC outloc = CELL_DEFAULT,
-                                      REGION region = RGN_NOBNDRY)) {
-  return D4DY4(f, outloc, method, region);
-}
+Field3D D4DY4(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, const std::string&
+    method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+DERIV_FUNC_REGION_ENUM_TO_STRING(D4DY4, Field3D)
 
 /// Calculate forth partial derivative in Y
 ///
@@ -387,15 +366,9 @@ DEPRECATED(inline const Field3D D4DY4(const Field3D &f, DIFF_METHOD method,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field2D D4DY4(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
-                    DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match D4DY4(const Field2D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field2D D4DY4(const Field2D &f, DIFF_METHOD method,
-                                      CELL_LOC outloc = CELL_DEFAULT,
-                                      REGION region = RGN_NOBNDRY)) {
-  return D4DY4(f, outloc, method, region);
-}
+Field2D D4DY4(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT, const std::string&
+    method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+DERIV_FUNC_REGION_ENUM_TO_STRING(D4DY4, Field2D)
 
 /// Calculate forth partial derivative in Z
 ///
@@ -409,15 +382,9 @@ DEPRECATED(inline const Field2D D4DY4(const Field2D &f, DIFF_METHOD method,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field3D D4DZ4(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
-                    DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match D4DZ4(const Field3D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field3D D4DZ4(const Field3D &f, DIFF_METHOD method,
-                                      CELL_LOC outloc = CELL_DEFAULT,
-                                      REGION region = RGN_NOBNDRY)) {
-  return D4DZ4(f, outloc, method, region);
-}
+Field3D D4DZ4(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, const std::string&
+    method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+DERIV_FUNC_REGION_ENUM_TO_STRING(D4DZ4, Field3D)
 
 /// Calculate forth partial derivative in Z
 ///
@@ -431,16 +398,9 @@ DEPRECATED(inline const Field3D D4DZ4(const Field3D &f, DIFF_METHOD method,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field2D D4DZ4(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
-                    DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match D4DZ4(const Field2D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field2D D4DZ4(const Field2D &f, DIFF_METHOD method,
-                                      CELL_LOC outloc = CELL_DEFAULT,
-                                      REGION region = RGN_NOBNDRY)) {
-  return D4DZ4(f, outloc, method, region);
-}
-///////// UPWINDING METHODS /////////////
+Field2D D4DZ4(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT, const std::string&
+    method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+DERIV_FUNC_REGION_ENUM_TO_STRING(D4DZ4, Field2D)
 
 /// For terms of form v * grad(f)
 ///
@@ -455,16 +415,9 @@ DEPRECATED(inline const Field2D D4DZ4(const Field2D &f, DIFF_METHOD method,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field3D VDDX(const Field3D &v, const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
-                   DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match VDDX(const Field3D &v, const Field3D &f, CELL_LOC,
-/// DIFF_METHOD, REGION)
-DEPRECATED(inline const Field3D VDDX(const Field3D &v, const Field3D &f,
-                                     DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT,
-                                     REGION region = RGN_NOBNDRY)) {
-  return VDDX(v, f, outloc, method, region);
-}
+Field3D VDDX(const Field3D& v, const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+    const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+VDERIV_FUNC_REGION_ENUM_TO_STRING(VDDX, Field3D, Field3D, Field3D)
 
 /// For terms of form v * grad(f)
 ///
@@ -479,16 +432,9 @@ DEPRECATED(inline const Field3D VDDX(const Field3D &v, const Field3D &f,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field2D VDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
-                   DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match VDDX(const Field2D &v, const Field2D &f, CELL_LOC,
-/// DIFF_METHOD, REGION)
-DEPRECATED(inline const Field2D VDDX(const Field2D &v, const Field2D &f,
-                                     DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT,
-                                     REGION region = RGN_NOBNDRY)) {
-  return VDDX(v, f, outloc, method, region);
-}
+Field2D VDDX(const Field2D& v, const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+    const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+VDERIV_FUNC_REGION_ENUM_TO_STRING(VDDX, Field2D, Field2D, Field2D)
 
 /// For terms of form v * grad(f)
 ///
@@ -503,16 +449,9 @@ DEPRECATED(inline const Field2D VDDX(const Field2D &v, const Field2D &f,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field3D VDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
-                   DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match VDDY(const Field3D &v, const Field3D &f, CELL_LOC,
-/// DIFF_METHOD, REGION)
-DEPRECATED(inline const Field3D VDDY(const Field3D &v, const Field3D &f,
-                                     DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT,
-                                     REGION region = RGN_NOBNDRY)) {
-  return VDDY(v, f, outloc, method, region);
-}
+Field3D VDDY(const Field3D& v, const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+    const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+VDERIV_FUNC_REGION_ENUM_TO_STRING(VDDY, Field3D, Field3D, Field3D)
 
 /// For terms of form v * grad(f)
 ///
@@ -527,16 +466,9 @@ DEPRECATED(inline const Field3D VDDY(const Field3D &v, const Field3D &f,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field2D VDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
-                   DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match VDDY(const Field2D &v, const Field2D &f, CELL_LOC,
-/// DIFF_METHOD, REGION)
-DEPRECATED(inline const Field2D VDDY(const Field2D &v, const Field2D &f,
-                                     DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT,
-                                     REGION region = RGN_NOBNDRY)) {
-  return VDDY(v, f, outloc, method, region);
-}
+Field2D VDDY(const Field2D& v, const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+    const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+VDERIV_FUNC_REGION_ENUM_TO_STRING(VDDY, Field2D, Field2D, Field2D)
 
 /// For terms of form v * grad(f)
 ///
@@ -551,16 +483,9 @@ DEPRECATED(inline const Field2D VDDY(const Field2D &v, const Field2D &f,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field3D VDDZ(const Field3D &v, const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
-                   DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match VDDZ(const Field3D &v, const Field3D &f, CELL_LOC,
-/// DIFF_METHOD, REGION)
-DEPRECATED(inline const Field3D VDDZ(const Field3D &v, const Field3D &f,
-                                     DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT,
-                                     REGION region = RGN_NOBNDRY)) {
-  return VDDZ(v, f, outloc, method, region);
-}
+Field3D VDDZ(const Field3D& v, const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+    const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+VDERIV_FUNC_REGION_ENUM_TO_STRING(VDDZ, Field3D, Field3D, Field3D)
 
 /// For terms of form v * grad(f)
 ///
@@ -575,17 +500,26 @@ DEPRECATED(inline const Field3D VDDZ(const Field3D &v, const Field3D &f,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field2D VDDZ(const Field2D &v, const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
-                   DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
+Field2D VDDZ(const Field2D& v, const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+    const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+VDERIV_FUNC_REGION_ENUM_TO_STRING(VDDZ, Field2D, Field2D, Field2D)
 
-/// Reorder arguments to match VDDZ(const Field2D &v, const Field2D &f, CELL_LOC,
-/// DIFF_METHOD, REGION)
-DEPRECATED(inline const Field2D VDDZ(const Field2D &v, const Field2D &f,
-                                     DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT,
-                                     REGION region = RGN_NOBNDRY)) {
-  return VDDZ(v, f, outloc, method, region);
-}
-///////// FLUX METHODS /////////////
+/// For terms of form v * grad(f)
+///
+///   \f$v \cdot \partial f / \partial z\f$
+///
+/// @param[in] v       The velocity field
+/// @param[in] f       The field of the advected quantity
+/// @param[in] outloc  The cell location where the result is desired. If
+///                    staggered grids is not enabled then this has no effect
+///                    If not given, defaults to CELL_DEFAULT
+/// @param[in] method  Differencing method to use. This overrides the default
+///                    If not given, defaults to DIFF_DEFAULT
+/// @param[in] region  What region is expected to be calculated
+///                    If not given, defaults to RGN_NOBNDRY
+Field2D VDDZ(const Field3D& v, const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+    const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+VDERIV_FUNC_REGION_ENUM_TO_STRING(VDDZ, Field2D, Field3D, Field2D)
 
 /// for terms of form div(v * f)
 ///
@@ -600,16 +534,9 @@ DEPRECATED(inline const Field2D VDDZ(const Field2D &v, const Field2D &f,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field3D FDDX(const Field3D &v, const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
-                   DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match FDDX(const Field3D &v, const Field3D &f, CELL_LOC,
-/// DIFF_METHOD, REGION)
-DEPRECATED(inline const Field3D FDDX(const Field3D &v, const Field3D &f,
-                                     DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT,
-                                     REGION region = RGN_NOBNDRY)) {
-  return FDDX(v, f, outloc, method, region);
-}
+Field3D FDDX(const Field3D& v, const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+    const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+VDERIV_FUNC_REGION_ENUM_TO_STRING(FDDX, Field3D, Field3D, Field3D)
 
 /// for terms of form div(v * f)
 ///
@@ -624,16 +551,9 @@ DEPRECATED(inline const Field3D FDDX(const Field3D &v, const Field3D &f,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field2D FDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
-                   DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match FDDX(const Field2D &v, const Field2D &f, CELL_LOC,
-/// DIFF_METHOD, REGION)
-DEPRECATED(inline const Field2D FDDX(const Field2D &v, const Field2D &f,
-                                     DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT,
-                                     REGION region = RGN_NOBNDRY)) {
-  return FDDX(v, f, outloc, method, region);
-}
+Field2D FDDX(const Field2D& v, const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+    const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+VDERIV_FUNC_REGION_ENUM_TO_STRING(FDDX, Field2D, Field2D, Field2D)
 
 /// for terms of form div(v * f)
 ///
@@ -648,16 +568,9 @@ DEPRECATED(inline const Field2D FDDX(const Field2D &v, const Field2D &f,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field3D FDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
-                   DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match FDDY(const Field3D &v, const Field3D &f, CELL_LOC,
-/// DIFF_METHOD, REGION)
-DEPRECATED(inline const Field3D FDDY(const Field3D &v, const Field3D &f,
-                                     DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT,
-                                     REGION region = RGN_NOBNDRY)) {
-  return FDDY(v, f, outloc, method, region);
-}
+Field3D FDDY(const Field3D& v, const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+    const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+VDERIV_FUNC_REGION_ENUM_TO_STRING(FDDY, Field3D, Field3D, Field3D)
 
 /// for terms of form div(v * f)
 ///
@@ -672,16 +585,9 @@ DEPRECATED(inline const Field3D FDDY(const Field3D &v, const Field3D &f,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field2D FDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
-                   DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match FDDY(const Field2D &v, const Field2D &f, CELL_LOC,
-/// DIFF_METHOD, REGION)
-DEPRECATED(inline const Field2D FDDY(const Field2D &v, const Field2D &f,
-                                     DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT,
-                                     REGION region = RGN_NOBNDRY)) {
-  return FDDY(v, f, outloc, method, region);
-}
+Field2D FDDY(const Field2D& v, const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+    const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+VDERIV_FUNC_REGION_ENUM_TO_STRING(FDDY, Field2D, Field2D, Field2D)
 
 /// for terms of form div(v * f)
 ///
@@ -696,16 +602,9 @@ DEPRECATED(inline const Field2D FDDY(const Field2D &v, const Field2D &f,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field3D FDDZ(const Field3D &v, const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
-                   DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match FDDZ(const Field3D &v, const Field3D &f, CELL_LOC,
-/// DIFF_METHOD, REGION)
-DEPRECATED(inline const Field3D FDDZ(const Field3D &v, const Field3D &f,
-                                     DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT,
-                                     REGION region = RGN_NOBNDRY)) {
-  return FDDZ(v, f, outloc, method, region);
-}
+Field3D FDDZ(const Field3D& v, const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+    const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+VDERIV_FUNC_REGION_ENUM_TO_STRING(FDDZ, Field3D, Field3D, Field3D)
 
 /// for terms of form div(v * f)
 ///
@@ -720,38 +619,9 @@ DEPRECATED(inline const Field3D FDDZ(const Field3D &v, const Field3D &f,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field2D FDDZ(const Field2D &v, const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
-                   DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match FDDZ(const Field2D &v, const Field2D &f, CELL_LOC,
-/// DIFF_METHOD, REGION)
-DEPRECATED(inline const Field2D FDDZ(const Field2D &v, const Field2D &f,
-                                     DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT,
-                                     REGION region = RGN_NOBNDRY)) {
-  return FDDZ(v, f, outloc, method, region);
-}
-
-/// Calculate first partial derivative in Z
-///
-///   \f$\partial / \partial z\f$
-///
-/// @param[in] f       The field to be differentiated
-/// @param[in] outloc  The cell location where the result is desired. If
-///                    staggered grids is not enabled then this has no effect
-///                    If not given, defaults to CELL_DEFAULT
-/// @param[in] method  Differencing method to use. This overrides the default
-///                    If not given, defaults to DIFF_DEFAULT
-/// @param[in] region  What region is expected to be calculated
-///                    If not given, defaults to RGN_NOBNDRY
-const Vector3D DDZ(const Vector3D &f, CELL_LOC outloc = CELL_DEFAULT,
-                   DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match DDZ(const Vector3D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Vector3D DDZ(const Vector3D &f, DIFF_METHOD method,
-                                     CELL_LOC outloc = CELL_DEFAULT,
-                                     REGION region = RGN_NOBNDRY)) {
-  return DDZ(f, outloc, method, region);
-}
+Field2D FDDZ(const Field2D& v, const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+    const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+VDERIV_FUNC_REGION_ENUM_TO_STRING(FDDZ, Field2D, Field2D, Field2D)
 
 /// Calculate mixed partial derivative in x and y
 ///
@@ -765,15 +635,28 @@ DEPRECATED(inline const Vector3D DDZ(const Vector3D &f, DIFF_METHOD method,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field2D D2DXDY(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
-                     DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match D2DXDY(const Field2D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field2D D2DXDY(const Field2D &f, DIFF_METHOD method,
-                                       CELL_LOC outloc = CELL_DEFAULT,
-                                       REGION region = RGN_NOBNDRY)) {
-  return D2DXDY(f, outloc, method, region);
+/// @param[in] dfdy_boundary_condition Boundary condition to use to set the guard cells of
+///                                    df/dy, before calculating the x-derivative.
+Field3D D2DXDY(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+                     const std::string& method = "DEFAULT",
+                     const std::string& region = "RGN_NOBNDRY",
+                     const std::string& dfdy_boundary_condition = "free_o3");
+[[gnu::deprecated("Please use D2DXDY(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, " 
+    "const std::string& method = \"DEFAULT\", const std::string& region = \"RGN_ALL\", "
+    "const std::string& dfdy_boundary_condition) instead")]]
+inline Field3D D2DXDY(const Field3D& f, CELL_LOC outloc, const std::string& method,
+                            REGION region,
+                            const std::string& dfdy_boundary_condition = "free_o3") {
+  return D2DXDY(f, outloc, method, toString(region), dfdy_boundary_condition);
 }
+[[gnu::deprecated("Please use D2DXDY(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, " 
+    "const std::string& method = \"DEFAULT\", const std::string& region = \"RGN_ALL\", "
+    "const std::string& dfdy_boundary_condition) instead")]]
+inline Field3D D2DXDY(const Field3D& f, CELL_LOC outloc, DIFF_METHOD method,
+                            REGION region = RGN_NOBNDRY,
+                            const std::string& dfdy_boundary_condition = "free_o3") {
+  return D2DXDY(f, outloc, toString(method), toString(region), dfdy_boundary_condition);
+};
 
 /// Calculate mixed partial derivative in x and y
 ///
@@ -787,15 +670,28 @@ DEPRECATED(inline const Field2D D2DXDY(const Field2D &f, DIFF_METHOD method,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field3D D2DXDY(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
-                     DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match D2DXDY(const Field3D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field3D D2DXDY(const Field3D &f, DIFF_METHOD method,
-                                       CELL_LOC outloc = CELL_DEFAULT,
-                                       REGION region = RGN_NOBNDRY)) {
-  return D2DXDY(f, outloc, method, region);
+/// @param[in] dfdy_boundary_condition Boundary condition to use to set the guard cells of
+///                                    df/dy, before calculating the x-derivative.
+Field2D D2DXDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+                     const std::string& method = "DEFAULT",
+                     const std::string& region = "RGN_NOBNDRY",
+                     const std::string& dfdy_boundary_condition = "free_o3");
+[[gnu::deprecated("Please use D2DXDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT, " 
+    "const std::string& method = \"DEFAULT\", const std::string& region = \"RGN_ALL\", "
+    "const std::string& dfdy_boundary_condition) instead")]]
+inline Field2D D2DXDY(const Field2D& f, CELL_LOC outloc, const std::string& method,
+                            REGION region,
+                            const std::string& dfdy_boundary_condition = "free_o3") {
+  return D2DXDY(f, outloc, method, toString(region), dfdy_boundary_condition);
 }
+[[gnu::deprecated("Please use D2DXDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT, " 
+    "const std::string& method = \"DEFAULT\", const std::string& region = \"RGN_ALL\", "
+    "const std::string& dfdy_boundary_condition) instead")]]
+inline Field2D D2DXDY(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method,
+                            REGION region = RGN_NOBNDRY,
+                            const std::string& dfdy_boundary_condition = "free_o3") {
+  return D2DXDY(f, outloc, toString(method), toString(region), dfdy_boundary_condition);
+};
 
 /// Calculate mixed partial derivative in x and z
 ///
@@ -809,15 +705,9 @@ DEPRECATED(inline const Field3D D2DXDY(const Field3D &f, DIFF_METHOD method,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field2D D2DXDZ(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
-                     DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match D2DXDZ(const Field2D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field2D D2DXDZ(const Field2D &f, DIFF_METHOD method,
-                                       CELL_LOC outloc = CELL_DEFAULT,
-                                       REGION region = RGN_NOBNDRY)) {
-  return D2DXDZ(f, outloc, method, region);
-}
+Field3D D2DXDZ(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, const std::string&
+    method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+DERIV_FUNC_REGION_ENUM_TO_STRING(D2DXDZ, Field3D)
 
 /// Calculate mixed partial derivative in x and z
 ///
@@ -831,15 +721,9 @@ DEPRECATED(inline const Field2D D2DXDZ(const Field2D &f, DIFF_METHOD method,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field3D D2DXDZ(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
-                     DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match D2DXDZ(const Field3D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field3D D2DXDZ(const Field3D &f, DIFF_METHOD method,
-                                       CELL_LOC outloc = CELL_DEFAULT,
-                                       REGION region = RGN_NOBNDRY)) {
-  return D2DXDZ(f, outloc, method, region);
-}
+Field2D D2DXDZ(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT, const std::string&
+    method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+DERIV_FUNC_REGION_ENUM_TO_STRING(D2DXDZ, Field2D)
 
 /// Calculate mixed partial derivative in y and z
 ///
@@ -853,15 +737,9 @@ DEPRECATED(inline const Field3D D2DXDZ(const Field3D &f, DIFF_METHOD method,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field2D D2DYDZ(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
-                     DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match D2DYDZ(const Field2D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field2D D2DYDZ(const Field2D &f, DIFF_METHOD method,
-                                       CELL_LOC outloc = CELL_DEFAULT,
-                                       REGION region = RGN_NOBNDRY)) {
-  return D2DYDZ(f, outloc, method, region);
-}
+Field3D D2DYDZ(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, const std::string&
+    method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+DERIV_FUNC_REGION_ENUM_TO_STRING(D2DYDZ, Field3D)
 
 /// Calculate mixed partial derivative in y and z
 ///
@@ -875,71 +753,11 @@ DEPRECATED(inline const Field2D D2DYDZ(const Field2D &f, DIFF_METHOD method,
 ///                    If not given, defaults to DIFF_DEFAULT
 /// @param[in] region  What region is expected to be calculated
 ///                    If not given, defaults to RGN_NOBNDRY
-const Field3D D2DYDZ(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
-                     DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
+Field2D D2DYDZ(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT, const std::string&
+    method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+DERIV_FUNC_REGION_ENUM_TO_STRING(D2DYDZ, Field2D)
 
-/// Reorder arguments to match D2DYDZ(const Field3D &f, CELL_LOC, DIFF_METHOD, REGION)
-DEPRECATED(inline const Field3D D2DYDZ(const Field3D &f, DIFF_METHOD method,
-                                       CELL_LOC outloc = CELL_DEFAULT,
-                                       REGION region = RGN_NOBNDRY)) {
-  return D2DYDZ(f, outloc, method, region);
-}
-
-/// For terms of form v * grad(f)
-///
-///   \f$v \cdot \partial f / \partial z\f$
-///
-/// @param[in] v       The velocity field
-/// @param[in] f       The field of the advected quantity
-/// @param[in] outloc  The cell location where the result is desired. If
-///                    staggered grids is not enabled then this has no effect
-///                    If not given, defaults to CELL_DEFAULT
-/// @param[in] method  Differencing method to use. This overrides the default
-///                    If not given, defaults to DIFF_DEFAULT
-/// @param[in] region  What region is expected to be calculated
-///                    If not given, defaults to RGN_NOBNDRY
-const Field2D VDDZ(const Field3D &v, const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
-                   DIFF_METHOD method = DIFF_DEFAULT, REGION region = RGN_NOBNDRY);
-
-/// Reorder arguments to match VDDZ(const Field3D &v, const Field2D &f, CELL_LOC,
-/// DIFF_METHOD, REGION)
-DEPRECATED(inline const Field2D VDDZ(const Field3D &v, const Field2D &f,
-                                     DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT,
-                                     REGION region = RGN_NOBNDRY)) {
-  return VDDZ(v, f, outloc, method, region);
-}
-
-// Deprecated methods
-//
-// Calculate first partial derivative in Z
-//
-//   $\partial / \partial z$
-//
-// @param[in] f       The field to be differentiated
-// @param[in] outloc  The cell location where the result is desired.
-//                    If staggered grids is not enabled then this has no effect
-// @param[in] method  Differencing method to use. This overrides the default
-// @param[in] inc_xbndry  DEPRECATED: use REGION flags
-//                    Determines whether the derivative should be calculated in
-//                    the X boundaries. This allows mixed operators (e.g.
-//                    D2DXDZ) without additional communication
-
-inline const Field3D DDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
-                         bool inc_xbndry) {
-  return DDZ(f, outloc, method, inc_xbndry ? RGN_NOY : RGN_NOBNDRY);
-}
-
-inline const Field3D DDZ(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc,
-                         bool inc_xbndry) {
-  return DDZ(f, outloc, method, inc_xbndry ? RGN_NOY : RGN_NOBNDRY);
-}
-
-inline const Field3D DDZ(const Field3D &f, DIFF_METHOD method, bool inc_xbndry) {
-  return DDZ(f, CELL_DEFAULT, method, inc_xbndry ? RGN_NOY : RGN_NOBNDRY);
-}
-
-inline const Field3D DDZ(const Field3D &f, bool inc_xbndry) {
-  return DDZ(f, CELL_DEFAULT, DIFF_DEFAULT, inc_xbndry ? RGN_NOY : RGN_NOBNDRY);
-}
+#undef DERIV_FUNC_REGION_ENUM_TO_STRING
+#undef VDERIV_FUNC_REGION_ENUM_TO_STRING
 
 #endif // __DERIVS_H__

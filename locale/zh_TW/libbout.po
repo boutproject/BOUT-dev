@@ -1,0 +1,225 @@
+# Chinese translations for BOUT++ package.
+# Copyright (C) 2018 THE BOUT++'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the BOUT++ package.
+#  <benjamin.dudson@york.ac.uk>, 2018.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: BOUT++ 4.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2018-10-27 16:36+0100\n"
+"PO-Revision-Date: 2018-10-22 22:56+0100\n"
+"Last-Translator:  <benjamin.dudson@york.ac.uk>\n"
+"Language-Team: Chinese (traditional)\n"
+"Language: zh_TW\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:376
+msgid "\t -> Good value\n"
+msgstr "\t -> 好的號碼\n"
+
+#. Loop over all possibilities
+#. Processors divide equally
+#. Mesh in X divides equally
+#. Mesh in Y divides equally
+#: ../src/mesh/impls/bout/boutmesh.cxx:311
+#, c-format
+msgid "\tCandidate value: %d\n"
+msgstr "\t候選人數目 %d\n"
+
+#: ../src/bout++.cxx:372
+msgid "\tChecking disabled\n"
+msgstr "\t測試關掉\n"
+
+#: ../src/bout++.cxx:370
+#, c-format
+msgid "\tChecking enabled, level %d\n"
+msgstr "\t測試打開,级别 %d\n"
+
+#. The stringify is needed here as BOUT_FLAGS_STRING may already contain quoted strings
+#. which could cause problems (e.g. terminate strings).
+#: ../src/bout++.cxx:413
+#, c-format
+msgid "\tCompiled with flags : %s\n"
+msgstr "\t用設置編譯: %s\n"
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:390
+#, c-format
+msgid ""
+"\tDomain split (NXPE=%d, NYPE=%d) into domains (localNx=%d, localNy=%d)\n"
+msgstr "\t域 (NXPE=%d, NYPE=%d) 分裂成域 (localNx=%d, localNy=%d)\n"
+
+#: ../src/sys/optionsreader.cxx:140
+#, c-format
+msgid "\tEmpty key or value in command line '%s'\n"
+msgstr "\t命令行中的空鍵或值 '%s'\n"
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:127
+msgid "\tGrid size: "
+msgstr "\t網格大小: "
+
+#: ../src/bout++.cxx:400
+msgid "\tOpenMP parallelisation disabled\n"
+msgstr "\tOpenMP並行化已禁用\n"
+
+#: ../src/bout++.cxx:398
+#, c-format
+msgid "\tOpenMP parallelisation enabled, using %d threads\n"
+msgstr "\t啟用OpenMP並行化。 使用%d個線程\n"
+
+#. Mark the option as used
+#. Option not found
+#: ../src/sys/options.cxx:96 ../src/sys/options.cxx:136
+#: ../src/sys/options.cxx:172 ../src/sys/options.cxx:200
+#: ../src/sys/options.cxx:221 ../src/sys/options.cxx:224
+#: ../include/options.hxx:298 ../include/options.hxx:319
+msgid "\tOption "
+msgstr "\t選項 "
+
+#: ../src/sys/options.cxx:226
+#, c-format
+msgid "\tOption '%s': Boolean expected. Got '%s'\n"
+msgstr "\t選項 '%s': 布爾預期. 拿到 '%s'\n"
+
+#: ../src/sys/options/options_ini.cxx:74
+#, c-format
+msgid "\tOptions file '%s' not found\n"
+msgstr "\t找不到選項文件 '%s'\n"
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:842
+msgid "\tdone\n"
+msgstr "\t完\n"
+
+#: ../src/solver/solver.cxx:563
+#, c-format
+msgid ""
+"\n"
+"Run finished at  : %s\n"
+msgstr ""
+"\n"
+"计算结束于 %s\n"
+
+#: ../src/solver/solver.cxx:534
+#, c-format
+msgid ""
+"\n"
+"Run started at  : %s\n"
+msgstr ""
+"\n"
+"计算从 %s 开始\n"
+
+#. / Print intro
+#: ../src/bout++.cxx:350
+#, c-format
+msgid "BOUT++ version %s\n"
+msgstr "BOUT++ 版 %s\n"
+
+#: ../src/bout++.cxx:357
+#, c-format
+msgid ""
+"Code compiled on %s at %s\n"
+"\n"
+msgstr ""
+"代碼於 %s %s 编译\n"
+"\n"
+
+#. / Print compile-time options
+#: ../src/bout++.cxx:367
+msgid "Compile-time options:\n"
+msgstr "編譯選項:\n"
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:384
+msgid ""
+"Could not find a valid value for NXPE. Try a different number of processors."
+msgstr "無法找到NXPE的有效值。 嘗試不同數量的處理器。"
+
+#: ../src/sys/options/options_ini.cxx:132
+#, c-format
+msgid "Could not open output file '%s'\n"
+msgstr "無法打開輸出文件 '%s'\n"
+
+#: ../src/bout++.cxx:263
+#, c-format
+msgid "DataDir \"%s\" does not exist or is not accessible\n"
+msgstr "\"%s\" 不存在或不可訪問\n"
+
+#: ../src/bout++.cxx:260
+#, c-format
+msgid "DataDir \"%s\" is not a directory\n"
+msgstr "\"%s\" 不是目錄\n"
+
+#: ../src/bout++.cxx:431
+msgid "Error encountered during initialisation\n"
+msgstr "啟動時遇到錯誤\n"
+
+#: ../src/bout++.cxx:476
+#, c-format
+msgid "Error encountered during initialisation: %s\n"
+msgstr "啟動時遇到錯誤 : %s\n"
+
+#: ../src/solver/solver.cxx:599
+msgid "Initialising solver\n"
+msgstr "初始化求解器\n"
+
+#: ../src/mesh/impls/bout/boutmesh.cxx:91
+msgid "Loading mesh"
+msgstr "加載網格"
+
+#: ../src/sys/options.cxx:59
+#, fuzzy, c-format
+msgid "Option %s is not a section"
+msgstr "\"%s\" 不是目錄\n"
+
+#. Doesn't exist
+#: ../src/sys/options.cxx:70
+#, c-format
+msgid "Option %s:%s does not exist"
+msgstr "選項%s:%s不存在"
+
+#: ../src/bout++.cxx:352
+#, c-format
+msgid "Revision: %s\n"
+msgstr "版: %s\n"
+
+#: ../src/solver/solver.cxx:564
+msgid "Run time : "
+msgstr "計算時間"
+
+#. / Run the solver
+#: ../src/solver/solver.cxx:531
+msgid ""
+"Running simulation\n"
+"\n"
+msgstr ""
+"模擬\n"
+"\n"
+
+#: ../src/bout++.cxx:621
+msgid ""
+"Sim Time  |  RHS evals  | Wall Time |  Calc    Inv   Comm    I/O   SOLVER\n"
+"\n"
+msgstr ""
+"模擬時間   |   評估數量   |  時鐘時間   |  計算    逆溫   通訊   輸入輸出  時間整合\n"
+"\n"
+
+#: ../src/bout++.cxx:624
+msgid ""
+"Sim Time  |  RHS_e evals  | RHS_I evals  | Wall Time |  Calc    Inv   "
+"Comm    I/O   SOLVER\n"
+"\n"
+msgstr ""
+"模擬時間   |   評估數量(e)  | 評估數量(I)    |  時鐘時間   |  計算    逆溫   "
+"通訊   輸入輸出  時間整合\n"
+"\n"
+
+#: ../src/sys/optionsreader.cxx:60
+msgid "Writing options to file "
+msgstr "寫選項到文件 "
+
+#. / The source label given to default values
+#: ../src/sys/options.cxx:11
+msgid "default"
+msgstr "默认设置"
+

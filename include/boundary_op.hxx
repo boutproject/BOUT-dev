@@ -15,13 +15,11 @@ class BoundaryModifier;
 #include <cmath>
 #include <string>
 #include <list>
-using std::string;
-using std::list;
 
 class BoundaryOpBase {
 public:
-  BoundaryOpBase() {}
-  virtual ~BoundaryOpBase() {}
+  BoundaryOpBase() = default;
+  virtual ~BoundaryOpBase() = default;
 
   /// Apply a boundary condition on field f
   virtual void apply(Field2D &f) = 0;
@@ -50,11 +48,23 @@ public:
     apply_to_ddt = false;
   }
   BoundaryOp(BoundaryRegion *region) {bndry = region; apply_to_ddt=false;}
-  ~BoundaryOp() override {}
+  ~BoundaryOp() override = default;
 
   // Note: All methods must implement clone, except for modifiers (see below)
-  virtual BoundaryOp* clone(BoundaryRegion *UNUSED(region), const list<string> &UNUSED(args)) {
-    return nullptr;
+  virtual BoundaryOp* clone(BoundaryRegion *UNUSED(region), const std::list<std::string> &UNUSED(args)) {
+    throw BoutException("BoundaryOp::clone not implemented");
+  }
+
+  /// Clone using positional args and keywords
+  /// If not implemented, check if keywords are passed, then call two-argument version
+  virtual BoundaryOp *clone(BoundaryRegion *region, const std::list<std::string> &args,
+                            const std::map<std::string, std::string> &keywords) {
+    if (!keywords.empty()) {
+      // Given keywords, but not using
+      throw BoutException("Keywords ignored in boundary : %s", keywords.begin()->first.c_str());
+    }
+    
+    return clone(region, args);
   }
 
   /// Apply a boundary condition on ddt(f)
@@ -77,11 +87,11 @@ public:
 
 class BoundaryModifier : public BoundaryOp {
 public:
-  BoundaryModifier() : op(nullptr) {}
+  BoundaryModifier() = default;
   BoundaryModifier(BoundaryOp *operation) : BoundaryOp(operation->bndry), op(operation) {}
-  virtual BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args) = 0;
+  virtual BoundaryOp* cloneMod(BoundaryOp *op, const std::list<std::string> &args) = 0;
 protected:
-  BoundaryOp *op;
+  BoundaryOp* op{nullptr};
 };
 
 #endif // __BNDRY_OP__

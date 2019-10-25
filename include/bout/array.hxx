@@ -34,12 +34,33 @@
 #include <omp.h>
 #endif
 
-#ifdef BOUT_ARRAY_WITH_VALARRAY
-#include <valarray>
-#endif
-
 #include <bout/assert.hxx>
 #include <bout/openmpwrap.hxx>
+
+namespace {
+template <typename T>
+using iterator = T*;
+template <typename T>
+using const_iterator = const T*;
+}
+
+/*!
+ * ArrayData holds the actual data
+ * Handles the allocation and deletion of data
+ */
+template <typename T>
+struct ArrayData {
+  ArrayData(int size) : len(size) { data = new T[len]; }
+  ~ArrayData() { delete[] data; }
+  iterator<T> begin() const { return data; }
+  iterator<T> end() const { return data + len; }
+  int size() const { return len; }
+  void operator=(ArrayData<T>& in) { std::copy(std::begin(in), std::end(in), begin()); }
+  T& operator[](int ind) { return data[ind]; };
+private:
+  int len; ///< Size of the array
+  T* data; ///< Array of data  
+};
 
 /*!
  * Data array type with automatic memory management
@@ -55,7 +76,7 @@
  * vals[10] = 1.0;  // ok
  * 
  * When an Array goes out of scope or is deleted,
- * the underlying memory (ArrayData) is put into
+ * the underlying memory (dataBlock/Backing) is put into
  * a map, rather than being freed. 
  * If the same size arrays are used repeatedly then this
  * avoids the need to use new and delete.
@@ -64,11 +85,17 @@
  *
  * Array<dcomplex>::useStore(false); // Disables memory store
  * 
+ * The second template argument determines what type of container to use to
+ * store data. This defaults to a custom struct but can be std::valarray (
+ * provided T is a compatible type), std::vector etc. Must provide the following :
+ *  size, operator=, operator[], begin, end
  */
-template<typename T>
+template<typename T, typename Backing = ArrayData<T>>
 class Array {
 public:
-  typedef T data_type;
+  using data_type = T;
+  using backing_type = Backing;
+  using size_type = int;
     
   /*!
    * Create an empty array
@@ -77,36 +104,36 @@ public:
    * a.empty(); // True
    * 
    */
-  Array() : ptr(nullptr) {}
+  Array() noexcept : ptr(nullptr) {}
   
   /*!
    * Create an array of given length
    */
-  Array(int len) {
+  Array(size_type len) {
     ptr = get(len);
   }
   
   /*!
-   * Destructor. Releases the underlying ArrayData
+   * Destructor. Releases the underlying dataBlock
    */
-  ~Array() {
+  ~Array() noexcept {
     release(ptr);
   }
   
   /*!
    * Copy constructor
    */
-  Array(const Array &other) {
+  Array(const Array &other) noexcept {
     ptr = other.ptr; 
   }
 
   /*!
    * Assignment operator
-   * After this both Arrays share the same ArrayData
+   * After this both Arrays share the same dataBlock
    *
    * Uses copy-and-swap idiom
    */
-  Array& operator=(Array other) {
+  Array& operator=(Array other) noexcept {
     swap(*this, other);
     return *this;
   }
@@ -114,20 +141,30 @@ public:
   /*!
    * Move constructor
    */
-  Array(Array&& other) {
+  Array(Array&& other) noexcept {
     swap(*this, other);
   }
 
- /*!
+  /*!
+   * Reallocate the array with size = \p new_size
+   *
+   * Note that this invalidates the existing data!
+   */
+  void reallocate(size_type new_size) {
+    release(ptr);
+    ptr = get(new_size);
+  }
+
+  /*!
    * Holds a static variable which controls whether
-   * memory blocks (ArrayData) are put into a store
+   * memory blocks (dataBlock) are put into a store
    * or new/deleted each time. 
    *
    * The variable is initialised to true on first use,
    * but can be set to false by passing "false" as input.
    * Once set to false it can't be changed back to true.
    */
-  static bool useStore( bool keep_using = true ) {
+  static bool useStore( bool keep_using = true ) noexcept {
     static bool value = true;
     if (keep_using) {
       return value; 
@@ -141,7 +178,7 @@ public:
    * Release data. After this the Array is empty and any data access
    * will be invalid
    */
-  void clear() {
+  void clear() noexcept {
     release(ptr);
   }
 
@@ -161,28 +198,28 @@ public:
   /*!
    * Returns true if the Array is empty
    */
-  bool empty() const {
+  bool empty() const noexcept {
     return ptr == nullptr;
   }
 
   /*!
    * Return size of the array. Zero if the array is empty.
    */
-  int size() const {
+  size_type size() const noexcept {
     if(!ptr)
       return 0;
-#ifdef BOUT_ARRAY_WITH_VALARRAY
+
+    // Note: std::valarray::size is technically not noexcept, so
+    // Array::size shouldn't be either if we're using valarrays -- in
+    // practice, it is so this shouldn't matter
     return ptr->size();
-#else
-    return ptr->len;
-#endif    
   }
   
   /*!
    * Returns true if the data is unique to this Array.
    * 
    */
-  bool unique() const {
+  bool unique() const noexcept {
     return ptr.use_count() == 1;
   }
 
@@ -199,11 +236,7 @@ public:
     dataPtrType p = get(size());
 
     //Make copy of the underlying data
-#ifdef BOUT_ARRAY_WITH_VALARRAY    
     p->operator=((*ptr));
-#else
-    std::copy(begin(), end(), p->begin());
-#endif    
 
     //Update the local pointer and release old
     //Can't just do ptr=p as need to try to add to store.
@@ -213,43 +246,16 @@ public:
 
   //////////////////////////////////////////////////////////
   // Iterators
-  typedef T* iterator;
-  typedef const T* const_iterator;
-#ifndef BOUT_ARRAY_WITH_VALARRAY
-  iterator begin() { 
-    return (ptr) ? ptr->data : nullptr;
-  }
 
-  iterator end() {
-    return (ptr) ? ptr->data + ptr->len : nullptr;
-  }
+  iterator<T> begin() noexcept { return (ptr) ? std::begin(*ptr) : nullptr; }
 
-  // Const iterators  
-  const_iterator begin() const {
-    return (ptr) ? ptr->data : nullptr;
-  }
+  iterator<T> end() noexcept { return (ptr) ? std::end(*ptr) : nullptr; }
 
-  const_iterator end() const {
-    return (ptr) ? ptr->data + ptr->len : nullptr;
-  }
-#else
-  iterator begin() { 
-    return (ptr) ? std::begin(*ptr) : nullptr;
-  }
+  // Const iterators
+  const_iterator<T> begin() const noexcept { return (ptr) ? std::begin(*ptr) : nullptr; }
 
-  iterator end() {
-    return (ptr) ? std::end(*ptr) : nullptr;
-  }
+  const_iterator<T> end() const noexcept { return (ptr) ? std::end(*ptr) : nullptr; }
 
-  // Const iterators -- should revisit with cbegin and cend in c++14 and greater
-  const_iterator begin() const {
-    return (ptr) ? std::begin(*ptr) : nullptr;
-  }
-
-  const_iterator end() const {
-    return (ptr) ? std::end(*ptr) : nullptr;
-  } 
-#endif
   //////////////////////////////////////////////////////////
   // Element access
 
@@ -258,66 +264,29 @@ public:
    * or if ind is out of bounds. For efficiency no checking is performed,
    * so the user should perform checks.
    */
-  T& operator[](int ind) {
+  T& operator[](size_type ind) {
     ASSERT3(0 <= ind && ind < size());
-#ifdef BOUT_ARRAY_WITH_VALARRAY
     return ptr->operator[](ind);
-#else    
-    return ptr->data[ind];
-#endif    
   }
-  const T& operator[](int ind) const {
+  const T& operator[](size_type ind) const {
     ASSERT3(0 <= ind && ind < size());
-#ifdef BOUT_ARRAY_WITH_VALARRAY
     return ptr->operator[](ind);
-#else    
-    return ptr->data[ind];
-#endif    
   }
 
   /*!
    * Exchange contents with another Array of the same type.
    * Sizes of the arrays may differ.
    */
-  friend void swap(Array<T> &first, Array<T> &second) {
+  friend void swap(Array<T> &first, Array<T> &second) noexcept {
     using std::swap;
     swap(first.ptr, second.ptr);
   }
 
 private:
 
-#ifndef BOUT_ARRAY_WITH_VALARRAY  
-  /*!
-   * ArrayData holds the actual data, and reference count
-   * Handles the allocation and deletion of data
-   */
-  struct ArrayData {
-    int len;    ///< Size of the array
-    T *data;    ///< Array of data
-    
-    ArrayData(int size) : len(size) {
-      data = new T[len];
-    }
-    ~ArrayData() {
-      delete[] data;
-    }
-    iterator begin() {
-      return data;
-    }
-    iterator end() {
-      return data + len;
-    }
-  };
-#endif
-
-    //Type defs to help keep things brief -- which backing do we use
-#ifdef BOUT_ARRAY_WITH_VALARRAY
-  typedef std::valarray<T> dataBlock;
-#else
-  typedef ArrayData dataBlock;
-#endif
-
-  typedef std::shared_ptr<dataBlock>  dataPtrType;
+  //Type defs to help keep things brief -- which backing do we use
+  using dataBlock = Backing;
+  using dataPtrType = std::shared_ptr<dataBlock>;
 
   /*!
    * Pointer to the data container object owned by this Array. 
@@ -325,11 +294,11 @@ private:
    */
   dataPtrType ptr;
 
-  typedef std::map< int, std::vector<dataPtrType> > storeType;
-  typedef std::vector< storeType > arenaType;
+  using storeType = std::map<size_type, std::vector<dataPtrType>>;
+  using arenaType = std::vector<storeType>;
 
   /*!
-   * This maps from array size (int) to vectors of pointers to ArrayData objects
+   * This maps from array size (size_type) to vectors of pointers to dataBlock objects
    *
    * By putting the static store inside a function it is initialised on first use,
    * and doesn't need to be separately declared for each type T
@@ -337,7 +306,7 @@ private:
    * Inputs
    * ------
    *
-   * @param[in] cleanup   If set to true, deletes all ArrayData and clears the store
+   * @param[in] cleanup   If set to true, deletes all dataBlock and clears the store
    */
   static storeType& store(bool cleanup=false) {
 #ifdef _OPENMP    
@@ -379,10 +348,14 @@ private:
   }
   
   /*!
-   * Returns a pointer to an ArrayData object with no
+   * Returns a pointer to a dataBlock object of size \p len with no
    * references. This is either from the store, or newly allocated
+   *
+   * Expects \p len >= 0
    */
-  dataPtrType get(int len) {
+  dataPtrType get(size_type len) {
+    ASSERT3(len >= 0);
+
     dataPtrType p;
 
     auto& st = store()[len];
@@ -391,48 +364,52 @@ private:
       p = st.back();
       st.pop_back();
     } else {
+      // Ensure that when we release the data block later we'll have
+      // enough space to put it in the store so that `release` can be
+      // noexcept
+      st.reserve(1);
       p = std::make_shared<dataBlock>(len);
     }
 
     return p;
   }
-  
+
   /*!
-   * Release an ArrayData object, reducing its reference count by one. 
+   * Release an dataBlock object, reducing its reference count by one.
    * If no more references, then put back into the store.
    * It's important to pass a reference to the pointer, otherwise we get
    * a copy of the shared_ptr, which therefore increases the use count
    * and doesn't allow us to free the pass pointer directly
+   *
+   * Note that this is noexcept only because we've ensure that both a)
+   * store()[<size>] already exists, and b) it has space for at least
+   * one data block. Of course, store() could throw -- in which case
+   * we're doomed anyway, so the only thing we can do is abort
    */
-  void release(dataPtrType &d) {
+  void release(dataPtrType& d) noexcept {
     if (!d)
       return;
-    
+
     // Reduce reference count, and if zero return to store
-    if(d.use_count()==1) {
+    if (d.use_count() == 1) {
       if (useStore()) {
-	// Put back into store
-#ifdef BOUT_ARRAY_WITH_VALARRAY
-	store()[d->size()].push_back(std::move(d));
-#else	  
-	store()[d->len   ].push_back(std::move(d));
-#endif
-	//Could return here but seems to slow things down a lot
+        // Put back into store
+        store()[d->size()].push_back(std::move(d));
+        // Could return here but seems to slow things down a lot
       }
     }
 
-    //Finish by setting pointer to nullptr if not putting on store
-    d=nullptr;
+    // Finish by setting pointer to nullptr if not putting on store
+    d = nullptr;
   }
-  
 };
 
 /*!
  * Create a copy of an Array, which does not share data
- */ 
-template<typename T>
-Array<T> copy(const Array<T> &other) {
-  Array<T> a(other);
+ */
+template <typename T, typename Backing>
+Array<T, Backing> copy(const Array<T, Backing>& other) {
+  Array<T, Backing> a(other);
   a.ensureUnique();
   return a;
 }

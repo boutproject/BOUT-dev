@@ -27,6 +27,7 @@
 #include "globals.hxx"
 #include "serial_tri.hxx"
 
+#include <bout/mesh.hxx>
 #include <boutexception.hxx>
 #include <utils.hxx>
 #include <fft.hxx>
@@ -37,19 +38,18 @@
 
 #include <output.hxx>
 
-LaplaceSerialTri::LaplaceSerialTri(Options *opt, CELL_LOC loc) : Laplacian(opt, loc), A(0.0), C(1.0), D(1.0) {
+LaplaceSerialTri::LaplaceSerialTri(Options *opt, CELL_LOC loc, Mesh *mesh_in)
+    : Laplacian(opt, loc, mesh_in), A(0.0), C(1.0), D(1.0) {
   A.setLocation(location);
   C.setLocation(location);
   D.setLocation(location);
 
-  if(!mesh->firstX() || !mesh->lastX()) {
-    throw BoutException("LaplaceSerialTri only works for mesh->NXPE = 1");
+  if(!localmesh->firstX() || !localmesh->lastX()) {
+    throw BoutException("LaplaceSerialTri only works for localmesh->NXPE = 1");
   }
 }
 
-const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b) {
-  return solve(b,b);   // Call the solver below
-}
+FieldPerp LaplaceSerialTri::solve(const FieldPerp& b) { return solve(b, b); }
 
 /*!
  * Solve Ax=b for x given b
@@ -71,25 +71,26 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b) {
  *
  * \return          The inverted variable.
  */
-const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0) {
-  Mesh *mesh = b.getMesh();
-  FieldPerp x(mesh);
-  x.allocate();
+FieldPerp LaplaceSerialTri::solve(const FieldPerp& b, const FieldPerp& x0) {
+  ASSERT1(localmesh == b.getMesh() && localmesh == x0.getMesh());
+  ASSERT1(b.getLocation() == location);
+  ASSERT1(x0.getLocation() == location);
+
+  FieldPerp x{emptyFrom(b)};
 
   int jy = b.getIndex();
-  x.setIndex(jy);
 
-  int ncz = mesh->LocalNz; // No of z pnts
-  int ncx = mesh->LocalNx; // No of x pnts
+  int ncz = localmesh->LocalNz; // No of z pnts
+  int ncx = localmesh->LocalNx; // No of x pnts
 
-  BoutReal kwaveFactor = 2.0 * PI / mesh->getCoordinates(location)->zlength();
+  BoutReal kwaveFactor = 2.0 * PI / coords->zlength();
 
   // Setting the width of the boundary.
   // NOTE: The default is a width of 2 guard cells
-  int inbndry = mesh->xstart, outbndry=mesh->xstart;
+  int inbndry = localmesh->xstart, outbndry=localmesh->xstart;
 
   // If the flags to assign that only one guard cell should be used is set
-  if((global_flags & INVERT_BOTH_BNDRY_ONE) || (mesh->xstart < 2))  {
+  if((global_flags & INVERT_BOTH_BNDRY_ONE) || (localmesh->xstart < 2))  {
     inbndry = outbndry = 1;
   }
   if (inner_boundary_flags & INVERT_BNDRY_ONE)
@@ -185,7 +186,7 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
                  outer_boundary_flags, &A, &C, &D);
 
     ///////// PERFORM INVERSION /////////
-    if (!mesh->periodicX) {
+    if (!localmesh->periodicX) {
       // Call tridiagonal solver
       tridag(std::begin(avec), std::begin(bvec), std::begin(cvec), std::begin(bk1d),
              std::begin(xk1d), ncx);
@@ -193,7 +194,7 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
     } else {
       // Periodic in X, so cyclic tridiagonal
 
-      int xs = mesh->xstart;
+      int xs = localmesh->xstart;
       cyclic_tridag(&avec[xs], &bvec[xs], &cvec[xs], &bk1d[xs], &xk1d[xs], ncx - 2 * xs);
 
       // Copy boundary regions
@@ -206,11 +207,11 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
     // If the global flag is set to INVERT_KX_ZERO
     if ((global_flags & INVERT_KX_ZERO) && (kz == 0)) {
       dcomplex offset(0.0);
-      for (int ix = mesh->xstart; ix <= mesh->xend; ix++) {
+      for (int ix = localmesh->xstart; ix <= localmesh->xend; ix++) {
         offset += xk1d[ix];
       }
-      offset /= static_cast<BoutReal>(mesh->xend - mesh->xstart + 1);
-      for (int ix = mesh->xstart; ix <= mesh->xend; ix++) {
+      offset /= static_cast<BoutReal>(localmesh->xend - localmesh->xstart + 1);
+      for (int ix = localmesh->xstart; ix <= localmesh->xend; ix++) {
         xk1d[ix] -= offset;
       }
     }

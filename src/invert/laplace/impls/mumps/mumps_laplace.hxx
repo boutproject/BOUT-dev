@@ -36,7 +36,7 @@ class LaplaceMumps;
  
 class LaplaceMumps : public Laplacian {
 public:
-  LaplaceMumps(Options *UNUSED(opt) = nullptr, const CELL_LOC UNUSED(loc) = CELL_CENTRE) {
+  LaplaceMumps(Options *UNUSED(opt) = nullptr, const CELL_LOC UNUSED(loc) = CELL_CENTRE, Mesh *UNUSED(mesh_in) = nullptr) {
     throw BoutException("Mumps library not available");
   }
 
@@ -52,7 +52,7 @@ public:
   void setCoefEz(const Field2D &UNUSED(val)) override {}
 
   using Laplacian::solve;
-  const FieldPerp solve(const FieldPerp &UNUSED(b)) override{
+  FieldPerp solve(const FieldPerp &UNUSED(b)) override{
     throw BoutException("Mumps library not available");
   }
 };
@@ -76,7 +76,7 @@ public:
 
 class LaplaceMumps : public Laplacian {
 public:
-  LaplaceMumps(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE);
+  LaplaceMumps(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr);
   ~LaplaceMumps() {
     mumps_struc.job = -2;
     dmumps_c(&mumps_struc);
@@ -88,80 +88,96 @@ public:
   
   void setCoefA(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     A = val;
   }
   void setCoefC(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     C1 = val;
     C2 = val;
     issetC = true;
   }
   void setCoefC1(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     C1 = val;
     issetC = true;
   }
   void setCoefC2(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     C2 = val;
     issetC = true;
   }
   void setCoefD(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     D = val;
     issetD = true;
   }
   void setCoefEx(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     Ex = val;
     issetE = true;
   }
   void setCoefEz(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     Ez = val;
     issetE = true;
   }
 
   void setCoefA(const Field3D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     A = val;
   }
   void setCoefC(const Field3D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     C1 = val;
     C2 = val;
     issetC = true;
   }
   void setCoefC1(const Field3D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     C1 = val;
     issetC = true;
   }
   void setCoefC2(const Field3D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     C2 = val;
     issetC = true;
   }
   void setCoefD(const Field3D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     D = val;
     issetD = true;
   }
   void setCoefEx(const Field3D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     Ex = val;
     issetE = true;
   }
   void setCoefEz(const Field3D &val) override {
     ASSERT1(val.getLocation() == location);
+    ASSERT1(localmesh == val.getMesh());
     Ez = val;
     issetE = true;
   }
   
+  bool uses3DCoefs() const override { return true; }
+
   void setFlags(int f) {throw BoutException("May not change the value of flags during run in LaplaceMumps as it might change the number of non-zero matrix elements: flags may only be set in the options file.");}
   
-  const FieldPerp solve(const FieldPerp &b) override;
-  const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override;
+  FieldPerp solve(const FieldPerp &b) override;
+  FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override;
 //   const Field3D solve(const Field3D &b);
 //   const Field3D solve(const Field3D &b, const Field3D &x0);
 

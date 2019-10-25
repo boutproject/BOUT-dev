@@ -25,9 +25,9 @@
  **************************************************************************/
 
 #include "bout/openmpwrap.hxx"
-#include <cstdarg>
 #include <msg_stack.hxx>
 #include <output.hxx>
+#include <cstdarg>
 #include <string>
 
 #if CHECK > 1

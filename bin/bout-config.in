@@ -12,7 +12,7 @@
 
 BOUT_LIB_PATH=@BOUT_LIB_PATH@
 BOUT_INCLUDE_PATH=@BOUT_INCLUDE_PATH@
-
+MPARK_VARIANT_INCLUDE_PATH=@MPARK_VARIANT_INCLUDE_PATH@
 BOUT_CONFIG_FILE=@PREFIX@/make.config
 
 cc="@MPICXX@"
@@ -39,6 +39,8 @@ has_slepc="@HAS_SLEPC@"
 has_mumps="@HAS_MUMPS@"
 has_arkode="@HAS_ARKODE@"
 has_openmp="@HAS_OPENMP@"
+has_nls="@HAS_NLS@"
+has_fftw="@HAS_FFTW@"
 
 petsc_has_sundials="@PETSC_HAS_SUNDIALS@"
 
@@ -75,6 +77,7 @@ Available values for OPTION include:
   --has-petsc   PETSc support
   --has-slepc   SLEPc support
   --has-mumps   MUMPS support
+  --has-nls     Natural Language Support
 
   --petsc-has-sundials 
 EOF
@@ -111,6 +114,7 @@ all()
         echo "  --has-slepc   -> $has_slepc"
         echo "  --has-mumps   -> $has_mumps"
         echo "  --has-arkode  -> $has_arkode"
+        echo "  --has-nls     -> $has_nls"
         echo
         echo "  --petsc-has-sundials -> $petsc_has_sundials"
         echo
@@ -231,6 +235,11 @@ while test $# -gt 0; do
 	    echo $has_openmp
 	    ;;
 
+    --has-nls)
+	    echo $has_nls
+	    ;;
+
+    
     --petsc-version)
         # TODO: Remove in next release
         # Left in for backwards-compatibility

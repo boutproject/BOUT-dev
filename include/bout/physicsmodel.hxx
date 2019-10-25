@@ -42,18 +42,20 @@ class PhysicsModel;
 #include <msg_stack.hxx>
 #include "solver.hxx"
 #include "unused.hxx"
+#include "utils.hxx"
 #include "bout/macro_for_each.hxx"
+
 /*!
   Base class for physics models
  */
 class PhysicsModel {
 public:
-  typedef int (PhysicsModel::*preconfunc)(BoutReal t, BoutReal gamma, BoutReal delta);
-  typedef int (PhysicsModel::*jacobianfunc)(BoutReal t);
-  
+  using preconfunc = int (PhysicsModel::*)(BoutReal t, BoutReal gamma, BoutReal delta);
+  using jacobianfunc = int (PhysicsModel::*)(BoutReal t);
+
   PhysicsModel();
   
-  virtual ~PhysicsModel();
+  virtual ~PhysicsModel() = default;
   
   /*!
    * Initialse the model, calling the init() and postInit() methods
@@ -221,7 +223,7 @@ protected:
   void setJacobian(jacobianfunc jset) {userjacobian = jset;}
 
   /// This is set by a call to initialise, and can be used by models to specify evolving variables
-  Solver *solver;
+  Solver* solver{nullptr};
 
   /*!
    * Specify a variable for the solver to evolve
@@ -262,12 +264,13 @@ protected:
   public:
     PhysicsModelMonitor() = delete;
     PhysicsModelMonitor(PhysicsModel *model) : model(model) {}
-    int call(Solver* UNUSED(solver), BoutReal simtime, int iter, int nout) {
+    int call(Solver* UNUSED(solver), BoutReal simtime, int iter, int nout) override {
       // Save state to restart file
       model->restart.write();
       // Call user output monitor
       return model->outputMonitor(simtime, iter, nout);
     }
+
   private:
     PhysicsModel *model;
   };
@@ -275,11 +278,14 @@ protected:
   /// write restarts and pass outputMonitor method inside a Monitor subclass
   PhysicsModelMonitor modelMonitor;
 private:
-  bool splitop; ///< Split operator model?
-  preconfunc   userprecon; ///< Pointer to user-supplied preconditioner function
-  jacobianfunc userjacobian; ///< Pointer to user-supplied Jacobian-vector multiply function
-  
-  bool initialised; ///< True if model already initialised
+  /// Split operator model?
+  bool splitop{false};
+  /// Pointer to user-supplied preconditioner function
+  preconfunc userprecon{nullptr};
+  /// Pointer to user-supplied Jacobian-vector multiply function
+  jacobianfunc userjacobian{nullptr};
+  /// True if model already initialised
+  bool initialised{false};
 };
 
 /*!
@@ -297,31 +303,28 @@ private:
  *
  * BOUTMAIN(MyModel);
  */
-#define BOUTMAIN(ModelClass)                          \
-  int main(int argc, char **argv) {                   \
-    int init_err = BoutInitialise(argc, argv);        \
-    if (init_err < 0)				      \
-      return 0;                                       \
-    else if (init_err > 0) 			      \
-      return init_err;				      \
-    try {                                             \
-      ModelClass *model = new ModelClass();           \
-      Solver *solver = Solver::create();              \
-      solver->setModel(model);                        \
-      Monitor * bout_monitor = new BoutMonitor();     \
-      solver->addMonitor(bout_monitor, Solver::BACK); \
-      solver->outputVars(dump);                       \
-      solver->solve();                                \
-      delete model;                                   \
-      delete solver;                                  \
-      delete bout_monitor;                            \
-    }catch (BoutException &e) {                       \
-      output << "Error encountered\n";                \
-      output << e.what() << endl;                     \
-      MPI_Abort(BoutComm::get(), 1);                  \
-    }                                                 \
-    BoutFinalise();                                   \
-    return 0;                                         \
+#define BOUTMAIN(ModelClass)                                       \
+  int main(int argc, char** argv) {                                \
+    int init_err = BoutInitialise(argc, argv);                     \
+    if (init_err < 0)                                              \
+      return 0;                                                    \
+    else if (init_err > 0)                                         \
+      return init_err;                                             \
+    try {                                                          \
+      auto model = bout::utils::make_unique<ModelClass>();         \
+      auto solver = std::unique_ptr<Solver>(Solver::create());     \
+      solver->setModel(model.get());                               \
+      auto bout_monitor = bout::utils::make_unique<BoutMonitor>(); \
+      solver->addMonitor(bout_monitor.get(), Solver::BACK);        \
+      solver->outputVars(bout::globals::dump);                     \
+      solver->solve();                                             \
+    } catch (const BoutException& e) {                             \
+      output << "Error encountered\n";                             \
+      output << e.getBacktrace() << endl;                          \
+      MPI_Abort(BoutComm::get(), 1);                               \
+    }                                                              \
+    BoutFinalise();                                                \
+    return 0;                                                      \
   }
 
 /// Macro to replace solver->add, passing variable name

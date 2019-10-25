@@ -7,10 +7,6 @@ Supported libraries:
 
 - ``h5py`` (for HDF5 files)
 - ``netCDF4`` (preferred NetCDF library)
-- ``Scientific.IO.NetCDF``
-- ``scipy.io.netcdf``:
-  - old version (``create_dimension``, ``create_variable``)
-  - new version (``createDimension``, ``createVariable``)
 
 NOTE
 ----
@@ -36,31 +32,12 @@ import getpass
 from boututils.boutwarnings import alwayswarn
 from boututils.boutarray import BoutArray
 
-# Record which library to use
-library = None
-
 try:
     from netCDF4 import Dataset
-    library = "netCDF4"
     has_netCDF = True
 except ImportError:
-    try:
-        from Scientific.IO.NetCDF import NetCDFFile as Dataset
-        from Scientific.N import Int, Float, Float32
-        library = "Scientific"
-        has_netCDF = True
-    except ImportError:
-        try:
-            from scipy.io.netcdf import netcdf_file as Dataset
-            library = "scipy"
-            has_netCDF = True
-            if hasattr(Dataset, "create_dimension"):
-                # Monkey-patch old version
-                Dataset.createDimension = Dataset.create_dimension
-                Dataset.createVariable = Dataset.create_variable
-        except ImportError:
-            raise ImportError(
-                "DataFile: No supported NetCDF modules available")
+    raise ImportError(
+        "DataFile: No supported NetCDF modules available -- requires netCDF4")
 
 try:
     import h5py
@@ -350,36 +327,15 @@ class DataFile(object):
 
 class DataFile_netCDF(DataFile):
     handle = None
-    # Print warning if netcdf is used without the netcdf library
-    if library != "netCDF4":
-        print("WARNING: netcdf4-python module not found")
-        print("         expect poor performance")
-        if library == "Scientific":
-            print("  => Using Scientific.IO.NetCDF instead")
-        elif library == "scipy":
-            print("  => Using scipy.io.netcdf instead")
 
     def open(self, filename, write=False, create=False,
              format='NETCDF3_CLASSIC'):
         if (not write) and (not create):
-            if library == "scipy":
-                self.handle = Dataset(filename, "r", mmap=False)
-            else:
-                self.handle = Dataset(filename, "r")
+            self.handle = Dataset(filename, "r")
         elif create:
-            if library == "Scientific":
-                self.handle = Dataset(filename, "w",
-                                      'Created ' + time.ctime(time.time())
-                                      + ' by ' + getpass.getuser())
-            elif library == "scipy":
-                self.handle = Dataset(filename, "w")
-            else:
-                self.handle = Dataset(filename, "w", format=format)
+            self.handle = Dataset(filename, "w", format=format)
         else:
-            if library == "scipy":
-                raise Exception("scipy.io.netcdf doesn't support appending")
-            else:
-                self.handle = Dataset(filename, "a")
+            self.handle = Dataset(filename, "a")
         # Record if writing
         self.writeable = write or create
 
@@ -446,12 +402,7 @@ class DataFile_netCDF(DataFile):
                                      "(got {}, expected {} or {})"
                                      .format(len(ranges), ndims, 2 * ndims))
 
-                if library == "Scientific":
-                    # Passing ranges to var[] doesn't seem to work
-                    data = var[:]
-                    data = data[ranges[:ndims]]
-                else:
-                    data = var[ranges[:ndims]]
+                data = var[ranges[:ndims]]
                 if asBoutArray:
                     data = BoutArray(data, attributes=attributes)
                 return data
@@ -522,13 +473,31 @@ class DataFile_netCDF(DataFile):
         dims_dict = {
             ('t', 'x', 'y', 'z'): "Field3D_t",
             ('t', 'x', 'y'): "Field2D_t",
+            ('t', 'x', 'z'): "FieldPerp_t",
             ('t',): "scalar_t",
             ('x', 'y', 'z'): "Field3D",
             ('x', 'y'): "Field2D",
+            ('x', 'z'): "FieldPerp",
+            ('x'): "ArrayX",
             (): "scalar",
         }
 
         return dims_dict.get(dims, None)
+
+    def _bout_dimensions_from_type(self, bout_type):
+        dims_dict = {
+            "Field3D_t": ('t', 'x', 'y', 'z'),
+            "Field2D_t": ('t', 'x', 'y'),
+            "FieldPerp_t": ('t', 'x', 'z'),
+            "scalar_t": ('t',),
+            "Field3D": ('x', 'y', 'z'),
+            "Field2D": ('x', 'y'),
+            "FieldPerp": ('x', 'z'),
+            "ArrayX": ('x'),
+            "scalar": (),
+        }
+
+        return dims_dict.get(bout_type, None)
 
     def write(self, name, data, info=False):
 
@@ -572,11 +541,15 @@ class DataFile_netCDF(DataFile):
             # Not found, so add.
 
             # Get dimensions
-            defdims = [(),
-                       ('t',),
-                       ('x', 'y'),
-                       ('x', 'y', 'z'),
-                       ('t', 'x', 'y', 'z')]
+            try:
+                defdims = self._bout_dimensions_from_type(data.attributes['bout_type'])
+            except AttributeError:
+                defdims_list = [(),
+                                ('t',),
+                                ('x', 'y'),
+                                ('x', 'y', 'z'),
+                                ('t', 'x', 'y', 'z')]
+                defdims = defdims_list[len(s)]
 
             def find_dim(dim):
                 # Find a dimension with given name and size
@@ -634,32 +607,26 @@ class DataFile_netCDF(DataFile):
                 return name
 
             # List of (size, 'name') tuples
-            dlist = list(zip(s, defdims[len(s)]))
+            dlist = list(zip(s, defdims))
             # Get new list of variables, and turn into a tuple
             dims = tuple(map(find_dim, dlist))
 
             # Create the variable
-            if library == "Scientific":
-                if t == 'int' or t == '<i4' or t == 'int32':
-                    tc = Int
-                elif t == '<f4':
-                    tc = Float32
-                else:
-                    tc = Float
-                var = self.handle.createVariable(name, tc, dims, **self._kwargs)
-            else:
-                var = self.handle.createVariable(name, t, dims, **self._kwargs)
+            var = self.handle.createVariable(name, t, dims, **self._kwargs)
 
             if var is None:
                 raise Exception("Couldn't create variable")
 
         # Write the data
-        try:
-            # Some libraries allow this for arrays
-            var.assignValue(data)
-        except:
-            # And some others only this
-            var[:] = data
+        if t == 'str':
+            var[0] = data
+        else:
+            try:
+                # Some libraries allow this for arrays
+                var.assignValue(data)
+            except:
+                # And some others only this
+                var[:] = data
 
         # Write attributes, if present
         try:
@@ -691,7 +658,6 @@ class DataFile_netCDF(DataFile):
             attributes = {}  # Map of attribute names to values
 
             try:
-                # This code tested with NetCDF4 library
                 attribs = var.ncattrs()  # List of attributes
                 for attrname in attribs:
                     attributes[attrname] = var.getncattr(
@@ -816,10 +782,13 @@ class DataFile_HDF5(DataFile):
         bout_type = self.bout_type(varname)
         dims_dict = {
             "Field3D_t": ('t', 'x', 'y', 'z'),
+            "FieldPerp_t": ('t', 'x', 'z'),
             "Field2D_t": ('t', 'x', 'y'),
             "scalar_t": ('t',),
             "Field3D": ('x', 'y', 'z'),
+            "FieldPerp": ('x', 'z'),
             "Field2D": ('x', 'y'),
+            "ArrayX": ('x'),
             "scalar": (),
         }
         try:
@@ -922,7 +891,7 @@ class DataFile_HDF5(DataFile):
             print("Creating variable '" + name +
                   "' with bout_type '" + bout_type + "'")
 
-        if bout_type in ["Field3D_t", "Field2D_t", "scalar_t"]:
+        if bout_type in ["Field3D_t", "Field2D_t", "FieldPerp_t", "scalar_t"]:
             # time evolving fields
             shape = list(data.shape)
             # set time dimension to None to make unlimited
@@ -952,7 +921,7 @@ class DataFile_HDF5(DataFile):
         try:
             for attrname in data.attributes:
                 attrval = data.attributes[attrname]
-                if type(attrval == str):
+                if type(attrval) == str:
                     attrval = attrval.encode(encoding='utf-8')
                 self.handle[name].attrs.create(attrname, attrval)
         except AttributeError:

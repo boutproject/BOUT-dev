@@ -1,49 +1,70 @@
+#!/usr/bin/env bash
+
+# We are trying to parse bout_types.hxx, to translate the list of enums to
+# a python dictionary.
+
 for file in ../../../include/bout_types.hxx other_enums.hxx
 do
-end=${file##*/}
-grep enum $file| \
-    while read line
-do
-    what=${line:5}
-    name=${what%\{*}
-    tmp=${what#*\{}
-    enums=${tmp%\}*}
-    while test "$enums"
-    do
-        cur=${enums%%,*}
-        test "$cur" == "$enums" && enums=
-        cur=$(echo $cur)
-        enums=${enums#*,}
-        shrt=${cur%=*}
-        shrts+=" $shrt"
-    done
-    echo
-    same=1
-    continue=yes
-    while test $continue
-    do
-        same=$((same + 1))
-        same_=${shrt::$same}
-        for shrt in $shrts:
-        do
-            if test ${shrt::$same} != $same_
-            then
-                same=$((same - 1))
-                continue=
-                break;
-            fi
-        done
-    done
-    lower=$(echo ${name}|tr [:upper:] [:lower:])
-    echo "def _resolve_inv_${lower}(benum.$name tores):"
-    echo "    opts={"
-    for shrt in $shrts
-    do
-        echo "        benum.$shrt:\"${shrt:$same}\","
-    done
-    echo "          }"
-    echo "    return opts[tores]"
-    echo
-    shrts=
-done
+    end=${file##*/}
+
+    # In each file we are checking for enums, and then parse them
+    grep -E "^[ \t]*\benum\b" $file| \
+	while read line
+	do
+	    # first remove the start, which is just enum
+	    what=${line:5}
+	    # the name is before { - maybe remove "class " from that
+	    fullname=$(echo ${what%\{*})
+	    name=${fullname#class }
+	    test "$name" = "$fullname" && class= || class=yes
+	    # between { and } all the enums are listed
+	    tmp=${what#*\{}
+	    enums=${tmp%\}*}
+	    # Split the list of enums, which are separated by ","
+	    # Also doe some parsing, check if a value is assigned, etc
+	    while test "$enums"
+	    do
+		cur=${enums%%,*}
+		test "$cur" == "$enums" && enums=
+		cur=$(echo $cur)
+		enums=${enums#*,}
+		shrt=${cur%=*}
+		test "$shrt" = None && continue
+		#test $shrt = "None" && shrt=NONE && cur=${cur/None/NONE} || echo &>/dev/stderr $cur
+		shrts+=" $shrt"
+	    done
+	    echo
+	    same=0
+	    continue=yes
+	    # check for duplicates - e.g. CENTER = CENTRE
+	    while test $continue
+	    do
+		same=$((same + 1))
+		same_=${shrt::$same}
+		for shrt in $shrts:
+		do
+		    if test ${shrt::$same} != $same_
+		    then
+			same=$((same - 1))
+			continue=
+			break;
+		    fi
+		done
+	    done
+	    lower=$(echo ${name}|tr [:upper:] [:lower:])
+	    test $class && prefix="<int>" || prefix=
+	    test $class &&
+		echo "def _resolve_inv_${lower}(int tores):" ||
+		    echo "def _resolve_inv_${lower}(benum.$name tores):"
+	    echo "    opts={"
+	    for shrt in $shrts
+	    do
+		test "$shrt" = None && continue
+		echo "        $prefix benum.$shrt:\"${shrt:$same}\","
+	    done
+	    echo "          }"
+	    echo "    return opts[$prefix tores]"
+	    echo
+	    shrts=
+	done
 done

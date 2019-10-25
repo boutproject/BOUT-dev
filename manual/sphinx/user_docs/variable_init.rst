@@ -87,7 +87,7 @@ following values are also already defined:
 +--------+------------------------------------------------------------------------------------+
 | z      | :math:`z` position between :math:`0` and :math:`2\pi` (excluding the last point)   |
 +--------+------------------------------------------------------------------------------------+
-| pi     | :math:`3.1415\ldots`                                                               |
+| pi  π  | :math:`3.1415\ldots`                                                               |
 +--------+------------------------------------------------------------------------------------+
 
 Table: Initialisation expression values
@@ -108,6 +108,18 @@ To do this, set in BOUT.inp
 
 This will change the definition of :math:`x` to ``i / (nx - 1)``, so
 :math:`x` is then between :math:`0` and :math:`1` everywhere.
+
+By default the expressions are evaluated in a field-aligned coordinate system,
+i.e. if you are using the ``[mesh]`` option ``paralleltransform = shifted``,
+the input ``f`` will have ``f = fromFieldAligned(f)`` applied before being
+returned. To switch off this behaviour and evaluate the input expressions in
+coordinates with orthogonal x-z (i.e. toroidal :math:`\{\psi,\theta,\phi\}`
+coordinates when using ``paralleltransform = shifted``), set in BOUT.inp
+
+.. code-block:: cfg
+
+      [input]
+      transform_from_field_aligned = false
 
 The functions in :numref:`tab-initexprfunc` are also available in
 expressions.
@@ -169,6 +181,8 @@ expressions.
    | ``TanhHat(x, width, centre, steepness)`` | The hat function                                     |
    |                                          | :math:`\frac{1}{2}(\tanh[s (x-[c-\frac{w}{2}])]`     |
    |                                          | :math:`- \tanh[s (x-[c+\frac{w}{2}])] )`             |
+   +------------------------------------------+------------------------------------------------------+
+   | ``fmod(x)``                              | The modulo operator, returns floating point remainder|
    +------------------------------------------+------------------------------------------------------+
 
 For field-aligned tokamak simulations, the Y direction is along the

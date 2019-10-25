@@ -4,13 +4,13 @@
 
 class VecTest : public PhysicsModel {
 protected:
-  int init(bool restarting);
-  int rhs(BoutReal t);
+  int init(bool restarting) override;
+  int rhs(BoutReal t) override;
 
 public:
   Field3D n;
   Vector3D gradPerpN;
-  string ownOpType;
+  std::string ownOpType;
 };
 
 

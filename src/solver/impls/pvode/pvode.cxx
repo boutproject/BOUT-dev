@@ -27,6 +27,7 @@
 
 #ifdef BOUT_HAS_PVODE
 
+#include <bout/mesh.hxx>
 #include <boutcomm.hxx>
 #include <output.hxx>
 #include <msg_stack.hxx>
@@ -121,10 +122,20 @@ int PvodeSolver::init(int nout, BoutReal tstep) {
   ///////////// GET OPTIONS /////////////
 
   int pvode_mxstep;
-  int MXSUB = mesh->xend - mesh->xstart + 1;
+  // Compute band_width_default from actually added fields, to allow for multiple Mesh objects
+  //
+  // Previous implementation was equivalent to:
+  //   int MXSUB = mesh->xend - mesh->xstart + 1;
+  //   int band_width_default = n3Dvars()*(MXSUB+2);
+  int band_width_default = 0;
+  for (const auto& fvar : f3d) {
+    Mesh* localmesh = fvar.var->getMesh();
+    band_width_default += localmesh->xend - localmesh->xstart + 3;
+  }
+
   
-  options->get("mudq", mudq, n3d*(MXSUB+2));
-  options->get("mldq", mldq, n3d*(MXSUB+2));
+  options->get("mudq", mudq, band_width_default);
+  options->get("mldq", mldq, band_width_default);
   options->get("mukeep", mukeep, 0);
   options->get("mlkeep", mlkeep, 0);
   options->get("ATOL", abstol, 1.0e-12);

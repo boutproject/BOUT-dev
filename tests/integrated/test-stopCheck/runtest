@@ -1,5 +1,24 @@
-#!/bin/sh
+#!/bin/bash
 
-./runtest1 || exit
+make || exit
 
-./runtest2 || exit
+./test_stopCheck nout=10000  > run.log.signal 2>&1 &
+
+# stop backgroud process
+kill -s USR1 $!
+
+# wait for background process
+wait
+
+# check number of iteration processed
+num=$(ncdump -h data/BOUT.dmp.0.nc |grep UNL|grep [0-9]* -o)
+
+# make sure not all have been run
+if test $num -lt 10000
+then
+    echo " => Test successful"
+else
+    cat run.log.signal
+    echo
+    echo " => Test failed"
+fi

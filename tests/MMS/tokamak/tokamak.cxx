@@ -12,7 +12,7 @@
 
 class TokamakMMS : public PhysicsModel {
 public:
-  int init(bool restarting) {
+  int init(bool UNUSED(restarting)) {
     solver->add(laplacepar, "laplacepar");
     solver->add(delp2, "delp2");
     solver->add(advect, "advect");

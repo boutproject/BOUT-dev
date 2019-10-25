@@ -33,12 +33,23 @@ class MsgStack;
 #include "bout/format.hxx"
 
 #include <exception>
-#include <stdarg.h>
+#include <cstdarg>
 #include <string>
 #include <vector>
 
 /// The maximum length (in chars) of messages, not including terminating '0'
 #define MSG_MAX_SIZE 127
+
+/// The __PRETTY_FUNCTION__ variable is defined by GCC (and some other families) but is not a part 
+/// of the standard. The __func__ variable *is* a part of the c++11 standard so we'd like to fall back
+/// to this if possible. However as these are variables/constants and not macros we can't just
+/// check if __PRETTY_FUNCITON__ is defined or not. Instead we need to say if we support this
+/// or not by defining HAS_PRETTY_FUNCTION (to be implemented in configure)
+#ifdef HAS_PRETTY_FUNCTION
+#define __thefunc__ __PRETTY_FUNCTION__ 
+#else
+#define __thefunc__ __func__
+#endif
 
 /*!
  * Message stack
@@ -54,13 +65,14 @@ class MsgStack;
  */
 class MsgStack {
 public:
-  MsgStack() : position(0){};
+  MsgStack() = default;
   ~MsgStack() { clear(); }
 
 #if CHECK > 1
   int push(const char *s, ...)
     BOUT_FORMAT_ARGS( 2, 3); ///< Add a message to the stack. Returns a message id
 
+  [[gnu::deprecated("Please use `MsgStack::push` with an empty message instead")]]
   int setPoint(); ///< get a message point
 
   void pop();       ///< Remove the last message
@@ -73,6 +85,7 @@ public:
   /// Dummy functions which should be optimised out
   int push(const char *UNUSED(s), ...) { return 0; }
 
+  [[gnu::deprecated("Please use `MsgStack::push` with an empty message instead")]]
   int setPoint() { return 0; }
 
   void pop() {}
@@ -87,7 +100,7 @@ private:
   char buffer[256]; ///< Buffer for vsnprintf
 
   std::vector<std::string> stack;               ///< Message stack;
-  std::vector<std::string>::size_type position; ///< Position in stack
+  std::vector<std::string>::size_type position{0}; ///< Position in stack
 };
 
 /*!
@@ -159,6 +172,7 @@ private:
  * } // Scope ends, message popped
  */
 #if CHECK > 0
+
 /* Would like to have something like TRACE(message, ...) so that we can directly refer
    to the (required) first argument, which is the main message string. However because
    we want to allow TRACE("Message with no args") we have to deal with the case where
@@ -174,5 +188,24 @@ private:
 #else
 #define TRACE(...)
 #endif
+
+/*!
+ * The AUTO_TRACE macro provides a convenient way to put messages onto the msg_stack
+ * It pushes a message onto the stack, and pops it when the scope ends
+ * The message is automatically derived from the function signature
+ * as identified by the compiler. This will be PRETTY_FUNCTION if available
+ * else it will be the mangled form.
+ *
+ * This is implemented as a use of the TRACE macro with specific arguments.
+ *
+ * Example
+ * -------
+ *
+ * {
+ *   AUTO_TRACE();
+ *
+ * } // Scope ends, message popped
+ */
+#define AUTO_TRACE() TRACE("%s", __thefunc__)
 
 #endif // __MSG_STACK_H__

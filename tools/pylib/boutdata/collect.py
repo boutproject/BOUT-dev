@@ -192,6 +192,8 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
 
         f = getDataFile(0)
 
+        dimensions = f.dimensions(varname)
+
         try:
             mxg = f["MXG"]
         except KeyError:
@@ -234,27 +236,31 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
         if not yguards:
             yind = slice(yind.start+myg, yind.stop+myg, yind.step)
 
-        ndims = f.ndims(varname)
-        if ndims == 0:
+        if len(dimensions) == ():
             ranges = []
-        elif ndims == 1:
+        elif dimensions == ('t'):
             ranges = [tind]
-        elif ndims == 2:
+        elif dimensions == ('x', 'y'):
             # Field2D
             ranges = [xind, yind]
-        elif ndims == 3:
-            if f.dimensions(varname)[2] == 'z':
-                # Field3D
-                ranges = [xind, yind, zind]
-            else:
-                # evolving Field2D
-                ranges = [tind, xind, yind]
-        elif ndims == 4:
+        elif dimensions == ('x', 'z'):
+            # FieldPerp
+            ranges = [xind, zind]
+        elif dimensions == ('t', 'x', 'y'):
+            # evolving Field2D
+            ranges = [tind, xind, yind]
+        elif dimensions == ('t', 'x', 'z'):
+            # evolving FieldPerp
+            ranges = [tind, xind, zind]
+        elif dimensions == ('x', 'y', 'z'):
+            # Field3D
+            ranges = [xind, yind, zind]
+        elif dimensions == ('t', 'x', 'y', 'z'):
             # evolving Field3D
             ranges = [tind, xind, yind, zind]
         else:
-            raise ValueError("Variable has too many dimensions ({}), expected at most 4"
-                             .format(ndims))
+            raise ValueError("Variable has incorrect dimensions ({})"
+                             .format(dimensions))
 
         data = f.read(varname, ranges)
         var_attributes = f.attributes(varname)
@@ -265,6 +271,8 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
     # Read data from the first file
     f = getDataFile(0)
 
+    dimensions = f.dimensions(varname)
+
     if varname not in f.keys():
         if strict:
             raise ValueError("Variable '{}' not found".format(varname))
@@ -272,8 +280,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
             varname = findVar(varname, f.list())
 
     var_attributes = f.attributes(varname)
-    dimens = f.dimensions(varname)
-    ndims = f.ndims(varname)
+    ndims = len(dimensions)
 
     # ndims is 0 for reals, and 1 for f.ex. t_array
     if ndims == 0:
@@ -387,10 +394,15 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
     sizes = {'x': xsize, 'y': ysize, 'z': zsize, 't': tsize}
 
     # Create a list with size of each dimension
-    ddims = [sizes[d] for d in dimens]
+    ddims = [sizes[d] for d in dimensions]
 
     # Create the data array
     data = np.zeros(ddims)
+
+    if dimensions == ('t', 'x', 'z') or dimensions == ('x', 'z'):
+        yindex_global = None
+        # The pe_yind that this FieldPerp is going to be read from
+        fieldperp_yproc = None
 
     for i in range(npe):
         # Get X and Y processor indices
@@ -519,34 +531,76 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
 
         f = getDataFile(i)
 
-        if ndims == 4:
+        if dimensions == ('t', 'x', 'y', 'z'):
             d = f.read(varname, ranges=[tind,
                                         slice(xstart, xstop),
                                         slice(ystart, ystop),
                                         zind])
             data[:, (xgstart-xind.start):(xgstart-xind.start+nx_loc),
                  (ygstart-yind.start):(ygstart-yind.start+ny_loc), :] = d
-        elif ndims == 3:
-            # Could be xyz or txy
+        elif dimensions == ('x', 'y', 'z'):
+            d = f.read(varname, ranges=[slice(xstart, xstop),
+                                        slice(ystart, ystop),
+                                        zind])
+            data[(xgstart-xind.start):(xgstart-xind.start+nx_loc),
+                 (ygstart-yind.start):(ygstart-yind.start+ny_loc), :] = d
+        elif dimensions == ('t', 'x', 'y'):
+            d = f.read(varname, ranges=[tind,
+                                        slice(xstart, xstop),
+                                        slice(ystart, ystop)])
+            data[:, (xgstart-xind.start):(xgstart-xind.start+nx_loc),
+                 (ygstart-yind.start):(ygstart-yind.start+ny_loc)] = d
+        elif dimensions == ('t', 'x', 'z'):
+            # FieldPerp should only be defined on processors which contain its yindex_global
+            f_attributes = f.attributes(varname)
+            temp_yindex = f_attributes["yindex_global"]
 
-            if dimens[2] == 'z':  # xyz
-                d = f.read(varname, ranges=[slice(xstart, xstop),
-                                            slice(ystart, ystop),
-                                            zind])
-                data[(xgstart-xind.start):(xgstart-xind.start+nx_loc),
-                     (ygstart-yind.start):(ygstart-yind.start+ny_loc), :] = d
-            else:  # txy
+            if temp_yindex >= 0:
+                if yindex_global is None:
+                    yindex_global = temp_yindex
+
+                    # we have found a file with containing the FieldPerp, get the attributes from here
+                    var_attributes = f_attributes
+                assert temp_yindex == yindex_global
+
+            if temp_yindex >= 0:
+                # Check we only read from one pe_yind
+                assert fieldperp_yproc is None or fieldperp_yproc == pe_yind
+
+                fieldperp_yproc = pe_yind
+
                 d = f.read(varname, ranges=[tind,
                                             slice(xstart, xstop),
-                                            slice(ystart, ystop)])
-                data[:, (xgstart-xind.start):(xgstart-xind.start+nx_loc),
-                     (ygstart-yind.start):(ygstart-yind.start+ny_loc)] = d
-        elif ndims == 2:
-            # xy
+                                            zind])
+                data[:, (xgstart-xind.start):(xgstart-xind.start+nx_loc), :] = d
+        elif dimensions == ('x', 'y'):
             d = f.read(varname, ranges=[slice(xstart, xstop),
                                         slice(ystart, ystop)])
             data[(xgstart-xind.start):(xgstart-xind.start+nx_loc),
                  (ygstart-yind.start):(ygstart-yind.start+ny_loc)] = d
+        elif dimensions == ('x', 'z'):
+            # FieldPerp should only be defined on processors which contain its yindex_global
+            f_attributes = f.attributes(varname)
+            temp_yindex = f_attributes["yindex_global"]
+
+            if temp_yindex >= 0:
+                if yindex_global is None:
+                    yindex_global = temp_yindex
+
+                    # we have found a file with containing the FieldPerp, get the attributes from here
+                    var_attributes = f_attributes
+                assert temp_yindex == yindex_global
+
+            if temp_yindex >= 0:
+                # Check we only read from one pe_yind
+                assert fieldperp_yproc is None or fieldperp_yproc == pe_yind
+
+                fieldperp_yproc = pe_yind
+
+                d = f.read(varname, ranges=[slice(xstart, xstop), zind])
+                data[(xgstart-xind.start):(xgstart-xind.start+nx_loc), :] = d
+        else:
+            raise ValueError('Incorrect dimensions '+str(dimensions)+' in collect')
 
         if datafile_cache is None:
             # close the DataFile if we are not keeping it in a cache
@@ -554,15 +608,20 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
 
     # if a step was requested in x or y, need to apply it here
     if xind.step is not None or yind.step is not None:
-        if ndims == 4:
+        if dimensions == ('t', 'x', 'y', 'z'):
             data = data[:, ::xind.step, ::yind.step]
-        elif ndims == 3:
-            if dimens[2] == 'z':
-                data = data[::xind.step, ::yind.step, :]
-            else:
-                data = data[:, ::xind.step, ::yind.step]
-        elif ndims == 2:
+        elif dimensions == ('x', 'y', 'z'):
+            data = data[::xind.step, ::yind.step, :]
+        elif dimensions == ('t', 'x', 'y'):
+            data = data[:, ::xind.step, ::yind.step]
+        elif dimensions == ('t', 'x', 'z'):
+            data = data[:, ::xind.step, :]
+        elif dimensions == ('x', 'y'):
             data = data[::xind.step, ::yind.step]
+        elif dimensions == ('x', 'z'):
+            data = data[::xind.step, :]
+        else:
+            raise ValueError('Incorrect dimensions '+str(dimensions)+' applying steps in collect')
 
     # Force the precision of arrays of dimension>1
     if ndims > 1:

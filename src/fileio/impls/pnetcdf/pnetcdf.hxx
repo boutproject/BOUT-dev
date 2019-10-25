@@ -36,7 +36,7 @@
 #ifndef PNCDF
 
 #include "../emptyformat.hxx"
-typedef EmptyFormat PncFormat;
+using PncFormat = EmptyFormat;
 
 #else
 
@@ -50,21 +50,19 @@ class PncFormat;
 #include <map>
 #include <string>
 
-using std::string;
-using std::map;
-
 class PncFormat : public DataFormat {
  public:
-  PncFormat();
-  PncFormat(const char *name);
-  PncFormat(const string &name) : PncFormat(name.c_str()) {}
+  PncFormat(Mesh* mesh_in = nullptr);
+  PncFormat(const char *name, Mesh* mesh_in = nullptr);
+  PncFormat(const std::string &name, Mesh* mesh_in = nullptr)
+    : PncFormat(name.c_str(), mesh_in) {}
   ~PncFormat();
 
   bool openr(const char *name) override;
-  bool openr(const string &name, int mype) {return openr(name);}
+  bool openr(const std::string &name, int mype) {return openr(name);}
 
   bool openw(const char *name, bool append=false) override;
-  bool openw(const string &name, int mype, bool append=false) {return openw(name, append);}
+  bool openw(const std::string &name, int mype, bool append=false) {return openw(name, append);}
 
   bool is_valid() override { return fname != nullptr; }
 
@@ -75,7 +73,7 @@ class PncFormat : public DataFormat {
   const char* filename() { return fname; };
 
   const vector<int> getSize(const char *var) override;
-  const vector<int> getSize(const string &var) override { return getSize(var.c_str()); }
+  const vector<int> getSize(const std::string &var) override { return getSize(var.c_str()); }
   
   // Set the origin for all subsequent calls
   bool setGlobalOrigin(int x = 0, int y = 0, int z = 0) override;
@@ -84,26 +82,26 @@ class PncFormat : public DataFormat {
   // Read / Write simple variables up to 3D
 
   bool read(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0) override;
-  bool read(int *var, const string &name, int lx = 1, int ly = 0, int lz = 0) override;
+  bool read(int *var, const std::string &name, int lx = 1, int ly = 0, int lz = 0) override;
   bool read(BoutReal *var, const char *name, int lx = 1, int ly = 0, int lz = 0) override;
-  bool read(BoutReal *var, const string &name, int lx = 1, int ly = 0, int lz = 0) override;
+  bool read(BoutReal *var, const std::string &name, int lx = 1, int ly = 0, int lz = 0) override;
 
   bool write(int *var, const char *name, int lx = 0, int ly = 0, int lz = 0) override;
-  bool write(int *var, const string &name, int lx = 0, int ly = 0, int lz = 0) override;
+  bool write(int *var, const std::string &name, int lx = 0, int ly = 0, int lz = 0) override;
   bool write(BoutReal *var, const char *name, int lx = 0, int ly = 0, int lz = 0) override;
-  bool write(BoutReal *var, const string &name, int lx = 0, int ly = 0, int lz = 0) override;
+  bool write(BoutReal *var, const std::string &name, int lx = 0, int ly = 0, int lz = 0) override;
 
   // Read / Write record-based variables
 
   bool read_rec(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0) override;
-  bool read_rec(int *var, const string &name, int lx = 1, int ly = 0, int lz = 0) override;
+  bool read_rec(int *var, const std::string &name, int lx = 1, int ly = 0, int lz = 0) override;
   bool read_rec(BoutReal *var, const char *name, int lx = 1, int ly = 0, int lz = 0) override;
-  bool read_rec(BoutReal *var, const string &name, int lx = 1, int ly = 0, int lz = 0) override;
+  bool read_rec(BoutReal *var, const std::string &name, int lx = 1, int ly = 0, int lz = 0) override;
 
   bool write_rec(int *var, const char *name, int lx = 0, int ly = 0, int lz = 0) override;
-  bool write_rec(int *var, const string &name, int lx = 0, int ly = 0, int lz = 0) override;
+  bool write_rec(int *var, const std::string &name, int lx = 0, int ly = 0, int lz = 0) override;
   bool write_rec(BoutReal *var, const char *name, int lx = 0, int ly = 0, int lz = 0) override;
-  bool write_rec(BoutReal *var, const string &name, int lx = 0, int ly = 0, int lz = 0) override;
+  bool write_rec(BoutReal *var, const std::string &name, int lx = 0, int ly = 0, int lz = 0) override;
   
   void setLowPrecision() override { lowPrecision = true; }
 
@@ -126,7 +124,7 @@ class PncFormat : public DataFormat {
 
   int x0, y0, z0, t0; ///< Data origins (global offsets)
 
-  map<string, int> rec_nr; // Record number for each variable (bit nasty)
+  std::map<std::string, int> rec_nr; // Record number for each variable (bit nasty)
   int default_rec;  // Starting record. Useful when appending to existing file
 };
 

@@ -16,8 +16,8 @@
 #include "interpolation_factory.hxx"
 
 /// Get a FieldGenerator from the options for a variable
-std::shared_ptr<FieldGenerator> getGeneratorFromOptions(const std::string varname,
-                                                        std::string &func) {
+std::shared_ptr<FieldGenerator> getGeneratorFromOptions(const std::string& varname,
+                                                        std::string& func) {
   Options *options = Options::getRoot()->getSection(varname);
   options->get("solution", func, "0.0");
 
@@ -65,18 +65,18 @@ int main(int argc, char **argv) {
 
   for (const auto &index : deltax) {
     // Get some random displacements
-    BoutReal dx = index.x + dice();
-    BoutReal dz = index.z + dice();
+    BoutReal dx = index.x() + dice();
+    BoutReal dz = index.z() + dice();
     // For the last point, put the displacement inwards
     // Otherwise we try to interpolate in the guard cells, which doesn't work so well
-    if (index.x >= mesh->xend) {
-      dx = index.x - dice();
+    if (index.x() >= mesh->xend) {
+      dx = index.x() - dice();
     }
     deltax[index] = dx;
     deltaz[index] = dz;
     // Get the global indices
     BoutReal x = mesh->GlobalX(dx);
-    BoutReal y = TWOPI * mesh->GlobalY(index.y);
+    BoutReal y = TWOPI * mesh->GlobalY(index.y());
     BoutReal z = TWOPI * static_cast<BoutReal>(dz) / static_cast<BoutReal>(mesh->LocalNz);
     // Generate the analytic solution at the displacements
     a_solution[index] = a_gen->generate(x, y, z, 0.0);

@@ -37,12 +37,11 @@ class Field3D; //#include "field3d.hxx"
 #include "fieldperp.hxx"
 #include "stencils.hxx"
 
-#include "bout/dataiterator.hxx"
-
 #include "bout/field_visitor.hxx"
 
 #include "bout/array.hxx"
 #include "bout/region.hxx"
+#include "utils.hxx"
 
 #include "unused.hxx"
 
@@ -65,7 +64,9 @@ class Field2D : public Field, public FieldData {
    * 
    * By default the global Mesh pointer (mesh) is used.
    */ 
-  Field2D(Mesh *localmesh = nullptr);
+  Field2D(Mesh *localmesh = nullptr, CELL_LOC location_in=CELL_CENTRE,
+          DirectionTypes directions_in =
+          {YDirectionType::Standard, ZDirectionType::Average});
 
   /*!
    * Copy constructor. After this both fields
@@ -76,7 +77,7 @@ class Field2D : public Field, public FieldData {
   /*!
    * Move constructor
    */
-  Field2D(Field2D&& f) = default;
+  Field2D(Field2D&& f) noexcept { swap(*this, f); };
 
   /*!
    * Constructor. This creates a Field2D using the global Mesh pointer (mesh)
@@ -84,6 +85,11 @@ class Field2D : public Field, public FieldData {
    * boundary cells.
    */ 
   Field2D(BoutReal val, Mesh *localmesh = nullptr);
+  
+  /// Constructor from Array and Mesh
+  Field2D(Array<BoutReal> data, Mesh* localmesh, CELL_LOC location = CELL_CENTRE,
+          DirectionTypes directions_in = {YDirectionType::Standard,
+                                          ZDirectionType::Average});
 
   /*!
    * Destructor
@@ -94,7 +100,7 @@ class Field2D : public Field, public FieldData {
   using value_type = BoutReal;
 
   /// Ensure data is allocated
-  void allocate();
+  Field2D& allocate();
   bool isAllocated() const { return !data.empty(); } ///< Test if data is allocated
 
   /// Return a pointer to the time-derivative field
@@ -113,8 +119,49 @@ class Field2D : public Field, public FieldData {
    */
   int getNz() const override {return 1;};
 
-  // Operators
+  // these methods return Field2D to allow method chaining
+  Field2D& setLocation(CELL_LOC location) {
+    Field::setLocation(location);
+    return *this;
+  }
+  Field2D& setDirectionY(YDirectionType d) {
+    // This method included in case it is wanted in a templated function also dealing with
+    // Field3D or FieldPerp - there is no difference between orthogonal and field-aligned
+    // coordinates for Field2D, so should always have YDirectionType::Standard.
+    ASSERT1(d == YDirectionType::Standard);
+    directions.y = d;
+    return *this;
+  }
 
+  /// Check if this field has yup and ydown fields
+  bool hasParallelSlices() const {
+    return true;
+  }
+
+  [[gnu::deprecated("Please use Field2D::hasParallelSlices instead")]]
+  bool hasYupYdown() const {
+    return hasParallelSlices();
+  }
+  
+  Field2D& yup(std::vector<Field2D>::size_type UNUSED(index) = 0) {
+    return *this;
+  }
+  const Field2D& yup(std::vector<Field2D>::size_type UNUSED(index) = 0) const {
+    return *this;
+  }
+
+  Field2D& ydown(std::vector<Field2D>::size_type UNUSED(index) = 0) {
+    return *this;
+  }
+  const Field2D& ydown(std::vector<Field2D>::size_type UNUSED(index) = 0) const {
+    return *this;
+  }
+
+  Field2D& ynext(int UNUSED(dir)) { return *this; }
+  const Field2D& ynext(int UNUSED(dir)) const { return *this; }
+
+  // Operators
+  
   /*!
    * Assignment from Field2D. After this both fields will
    * share the same underlying data. To make a true copy,
@@ -122,7 +169,6 @@ class Field2D : public Field, public FieldData {
    * function.
    */
   Field2D & operator=(const Field2D &rhs);
-  Field2D & operator=(Field2D &&rhs) = default;
 
   /*!
    * Allocates data if not already allocated, then
@@ -130,33 +176,15 @@ class Field2D : public Field, public FieldData {
    */ 
   Field2D & operator=(BoutReal rhs);
 
-  /// Set variable location for staggered grids to @param new_location
-  ///
-  /// Throws BoutException if new_location is not `CELL_CENTRE` and
-  /// staggered grids are turned off and checks are on. If checks are
-  /// off, silently sets location to ``CELL_CENTRE`` instead.
-  void setLocation(CELL_LOC new_location) override;
-  /// Get variable location
-  CELL_LOC getLocation() const override;
-
   /////////////////////////////////////////////////////////
   // Data access
-
-  /// Iterator over the Field2D indices
-  const DataIterator DEPRECATED(iterator() const);
-
-  const DataIterator DEPRECATED(begin()) const;
-  const DataIterator DEPRECATED(end()) const;
-  
-  /*!
-   * Returns a range of indices which can be iterated over
-   * Uses the REGION flags in bout_types.hxx
-   */
-  const IndexRange DEPRECATED(region(REGION rgn)) const override;
 
   /// Return a Region<Ind2D> reference to use to iterate over this field
   const Region<Ind2D>& getRegion(REGION region) const;  
   const Region<Ind2D>& getRegion(const std::string &region_name) const;
+
+  Region<Ind2D>::RegionIndices::const_iterator begin() const {return std::begin(getRegion("RGN_ALL"));};
+  Region<Ind2D>::RegionIndices::const_iterator end() const {return std::end(getRegion("RGN_ALL"));};
   
   BoutReal& operator[](const Ind2D &d) {
     return data[d.ind];
@@ -166,29 +194,6 @@ class Field2D : public Field, public FieldData {
   }
   BoutReal& operator[](const Ind3D &d);
   const BoutReal& operator[](const Ind3D &d) const;
-
-  /*!
-   * Direct access to the data array. Since operator() is used
-   * to implement this, no checks are performed if CHECK <= 2
-   */
-  inline BoutReal& DEPRECATED(operator[](const DataIterator &d)) {
-    return operator()(d.x, d.y);
-  }
-
-  /// Const access to data array
-  inline const BoutReal& DEPRECATED(operator[](const DataIterator &d)) const {
-    return operator()(d.x, d.y);
-  }
-
-  /// Indices are also used as a lightweight way to specify indexing
-  /// for example DataIterator offsets (xp, xm, yp etc.) return Indices
-  inline BoutReal& DEPRECATED(operator[](const Indices &i)) {
-    return operator()(i.x, i.y);
-  }
-  /// const Indices data access
-  inline const BoutReal& DEPRECATED(operator[](const Indices &i)) const override {
-    return operator()(i.x, i.y);
-  }
 
   /*!
    * Access to the underlying data array. 
@@ -264,21 +269,39 @@ class Field2D : public Field, public FieldData {
   friend class Vector2D;
   
   void applyBoundary(bool init=false) override;
-  void applyBoundary(const string &condition);
-  void applyBoundary(const char* condition) { applyBoundary(string(condition)); }
-  void applyBoundary(const string &region, const string &condition);
+  void applyBoundary(BoutReal time);
+  void applyBoundary(const std::string &condition);
+  void applyBoundary(const char* condition) { applyBoundary(std::string(condition)); }
+  void applyBoundary(const std::string &region, const std::string &condition);
   void applyTDerivBoundary() override;
   void setBoundaryTo(const Field2D &f2d); ///< Copy the boundary region
-  
- private:
-  int nx, ny;      ///< Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
-  
+
+  friend void swap(Field2D& first, Field2D& second) noexcept {
+    using std::swap;
+
+    // Swap base class members
+    swap(static_cast<Field&>(first), static_cast<Field&>(second));
+
+    swap(first.data, second.data);
+    swap(first.nx, second.nx);
+    swap(first.ny, second.ny);
+    swap(first.deriv, second.deriv);
+    swap(first.bndry_op, second.bndry_op);
+    swap(first.boundaryIsCopy, second.boundaryIsCopy);
+    swap(first.boundaryIsSet, second.boundaryIsSet);
+    swap(first.bndry_op_par, second.bndry_op_par);
+    swap(first.bndry_generator, second.bndry_generator);
+  }
+
+private:
+  /// Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
+  int nx{-1}, ny{-1};
+
   /// Internal data array. Handles allocation/freeing of memory
   Array<BoutReal> data;
-  
-  CELL_LOC location = CELL_CENTRE; ///< Location of the variable in the cell
 
-  Field2D *deriv; ///< Time-derivative, can be NULL
+  /// Time-derivative, can be nullptr
+  Field2D *deriv{nullptr};
 };
 
 // Non-member overloaded operators
@@ -311,138 +334,40 @@ Field2D operator-(const Field2D &f);
 
 // Non-member functions
 
-/// Square root of \p f over region \p rgn
-///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the \p rgn argument).
-const Field2D sqrt(const Field2D &f, REGION rgn=RGN_ALL);
+inline Field2D toFieldAligned(const Field2D& f, const std::string& UNUSED(region) = "RGN_ALL") {
+  return f;
+}
+[[gnu::deprecated("Please use toFieldAligned(const Field2D& f, "
+    "const std::string& region = \"RGN_ALL\") instead")]]
+inline Field2D toFieldAligned(const Field2D& f, REGION region) {
+  return toFieldAligned(f, toString(region));
+}
 
-/// Absolute value (modulus, |f|) of \p f over region \p rgn
-///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the \p rgn argument).
-const Field2D abs(const Field2D &f, REGION rgn=RGN_ALL);
-
-/// Calculates the minimum of a field, excluding the boundary/guard
-/// cells by default (can be changed with \p rgn argument).
-///
-/// By default this is only on the local processor, but setting \p
-/// allpe true does a collective Allreduce over all processors.
-///
-/// @param[in] f      The field to loop over
-/// @param[in] allpe  Minimum over all processors?
-/// @param[in] rgn    The region to calculate the result over
-BoutReal min(const Field2D &f, bool allpe=false, REGION rgn=RGN_NOBNDRY);
-
-/// Calculates the maximum of a field, excluding the boundary/guard
-/// cells by default (can be changed with \p rgn argument).
-///
-/// By default this is only on the local processor, but setting \p
-/// allpe to true does a collective Allreduce over all processors.
-///
-/// @param[in] f      The field to loop over
-/// @param[in] allpe  Maximum over all processors?
-/// @param[in] rgn    The region to calculate the result over
-BoutReal max(const Field2D &f, bool allpe=false, REGION rgn=RGN_NOBNDRY);
-
-/// Check if all values of a field \p var are finite.
-/// Loops over all points including the boundaries by
-/// default (can be changed using the \p rgn argument
-bool finite(const Field2D &f, REGION rgn=RGN_ALL);
-
-/// Exponential
-const Field2D exp(const Field2D &f, REGION rgn=RGN_ALL);
-
-/// Natural logarithm
-const Field2D log(const Field2D &f, REGION rgn=RGN_ALL);
-
-/// Sine trigonometric function.
-///
-/// @param[in] f    Angle in radians
-/// @param[in] rgn  The region to calculate the result over
-///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the \p rgn argument).
-/// If CHECK >= 3 then the result will be checked for non-finite numbers
-const Field2D sin(const Field2D &f, REGION rgn=RGN_ALL);
-
-/// Cosine trigonometric function.
-///
-/// @param[in] f    Angle in radians
-/// @param[in] rgn  The region to calculate the result over
-///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the \p rgn argument).
-/// If CHECK >= 3 then the result will be checked for non-finite numbers
-const Field2D cos(const Field2D &f, REGION rgn=RGN_ALL);
-
-/// Tangent trigonometric function.
-///
-/// @param[in] f    Angle in radians
-/// @param[in] rgn  The region to calculate the result over
-///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the \p rgn argument).
-/// If CHECK >= 3 then the result will be checked for non-finite numbers
-const Field2D tan(const Field2D &f, REGION rgn=RGN_ALL);
-
-/// Hyperbolic sine trigonometric function.
-///
-/// @param[in] f    Angle in radians
-/// @param[in] rgn  The region to calculate the result over
-///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the \p rgn argument).
-/// If CHECK >= 3 then the result will be checked for non-finite numbers
-const Field2D sinh(const Field2D &f, REGION rgn=RGN_ALL);
-
-/// Hyperbolic cosine trigonometric function.
-///
-/// @param[in] f    Angle in radians
-/// @param[in] rgn  The region to calculate the result over
-///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the \p rgn argument).
-/// If CHECK >= 3 then the result will be checked for non-finite numbers
-const Field2D cosh(const Field2D &f, REGION rgn=RGN_ALL);
-
-/// Hyperbolic tangent trigonometric function.
-///
-/// @param[in] f    Angle in radians
-/// @param[in] rgn  The region to calculate the result over
-///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the \p rgn argument).
-/// If CHECK >= 3 then the result will be checked for non-finite numbers
-const Field2D tanh(const Field2D &f, REGION rgn=RGN_ALL);
-
-/// Make an independent copy of field \p f
-const Field2D copy(const Field2D &f);
-
-/// Apply a floor value \p f to a field \p var. Any value lower than
-/// the floor is set to the floor.
-///
-/// @param[in] var  Variable to apply floor to
-/// @param[in] f    The floor value
-/// @param[in] rgn  The region to calculate the result over
-const Field2D floor(const Field2D &var, BoutReal f, REGION rgn=RGN_ALL);
-
-/// Exponent: pow(lhs, lhs) is \p lhs raised to the power of \p rhs
-///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the \p rgn argument)
-Field2D pow(const Field2D &lhs, const Field2D &rhs, REGION rgn=RGN_ALL);
-Field2D pow(const Field2D &lhs, BoutReal rhs, REGION rgn=RGN_ALL);
-Field2D pow(BoutReal lhs, const Field2D &rhs, REGION rgn=RGN_ALL);
+inline Field2D fromFieldAligned(const Field2D& f, const std::string& UNUSED(region) = "RGN_ALL") {
+  return f;
+}
+[[gnu::deprecated("Please use fromFieldAligned(const Field2D& f, "
+    "const std::string& region = \"RGN_ALL\") instead")]]
+inline Field2D fromFieldAligned(const Field2D& f, REGION region) {
+  return fromFieldAligned(f, toString(region));
+}
 
 #if CHECK > 0
 /// Throw an exception if \p f is not allocated or if any
 /// elements are non-finite (for CHECK > 2).
 /// Loops over all points including the boundaries by
 /// default (can be changed using the \p rgn argument
-void checkData(const Field2D &f, REGION region = RGN_NOBNDRY);
+void checkData(const Field2D &f, const std::string& region = "RGN_NOBNDRY");
+[[gnu::deprecated("Please use checkData(const Field2D& f, "
+    "const std::string& region = \"RGN_NOBNDRY\") instead")]]
+inline void checkData(const Field2D &f, REGION region) {
+  return checkData(f, toString(region));
+}
 #else
-inline void checkData(const Field2D &UNUSED(f), REGION UNUSED(region) = RGN_NOBNDRY) {}
+inline void checkData(const Field2D &UNUSED(f), std::string UNUSED(region) = "RGN_NOBNDRY") {}
+[[gnu::deprecated("Please use checkData(const Field2D& f, "
+    "const std::string& region = \"RGN_NOBNDRY\") instead")]]
+inline void checkData(const Field2D &UNUSED(f), REGION UNUSED(region)) {}
 #endif
 
 /// Force guard cells of passed field \p var to NaN
@@ -458,5 +383,18 @@ inline void invalidateGuards(Field2D &UNUSED(var)) {}
 inline Field2D& ddt(Field2D &f) {
   return *(f.timeDeriv());
 }
+
+/// toString template specialisation
+/// Defined in utils.hxx
+template <>
+inline std::string toString<>(const Field2D& UNUSED(val)) {
+  return "<Field2D>";
+}
+
+/// Test if two fields are the same, by calculating
+/// the minimum absolute difference between them
+bool operator==(const Field2D &a, const Field2D &b);
+
+std::ostream& operator<<(std::ostream &out, const Field2D &value);
 
 #endif /* __FIELD2D_H__ */

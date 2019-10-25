@@ -17,38 +17,17 @@
 #include <vector>
 
 /// Global mesh
+namespace bout{
+namespace globals{
 extern Mesh *mesh;
+} // namespace globals
+} // namespace bout
+
+// The unit tests use the global mesh
+using namespace bout::globals;
 
 /// Test fixture to make sure the global mesh is our fake one
-class FieldPerpTest : public ::testing::Test {
-protected:
-  static void SetUpTestCase() {
-    // Delete any existing mesh
-    if (mesh != nullptr) {
-      delete mesh;
-      mesh = nullptr;
-    }
-    mesh = new FakeMesh(nx, ny, nz);
-
-    output_info.disable();
-    mesh->createDefaultRegions();
-    output_info.enable();
-  }
-
-  static void TearDownTestCase() {
-    delete mesh;
-    mesh = nullptr;
-  }
-
-public:
-  static const int nx;
-  static const int ny;
-  static const int nz;
-};
-
-const int FieldPerpTest::nx = 3;
-const int FieldPerpTest::ny = 5;
-const int FieldPerpTest::nz = 7;
+using FieldPerpTest = FakeMeshFixture;
 
 TEST_F(FieldPerpTest, Allocate) {
   FieldPerp field;
@@ -60,7 +39,7 @@ TEST_F(FieldPerpTest, Allocate) {
   EXPECT_TRUE(field.isAllocated());
 
   int counter = 0;
-  for (const auto &i : field.region(RGN_ALL)) {
+  for (const auto &i : field) {
     field[i] = 1.; // Hits Array bounds checking
     counter++;
   }
@@ -93,6 +72,7 @@ TEST_F(FieldPerpTest, SliceXZ) {
   auto result = sliceXZ(masterField, yindex);
 
   EXPECT_EQ(result.getIndex(), yindex);
+  EXPECT_TRUE(areFieldsCompatible(masterField, result));
 
   for (const auto &i : result) {
     EXPECT_EQ(result[i], 1.0);
@@ -126,14 +106,15 @@ TEST_F(FieldPerpTest, GetSetIndex) {
 }
 
 TEST_F(FieldPerpTest, CreateOnGivenMesh) {
+  WithQuietOutput quiet{output_info};
+
   int test_nx = FieldPerpTest::nx + 2;
   int test_ny = FieldPerpTest::ny + 2;
   int test_nz = FieldPerpTest::nz + 2;
 
   FakeMesh fieldmesh{test_nx, test_ny, test_nz};
-  output_info.disable();
+  fieldmesh.setCoordinates(nullptr);
   fieldmesh.createDefaultRegions();
-  output_info.enable();
 
   FieldPerp field{&fieldmesh};
 
@@ -145,14 +126,15 @@ TEST_F(FieldPerpTest, CreateOnGivenMesh) {
 }
 
 TEST_F(FieldPerpTest, CopyCheckFieldmesh) {
+  WithQuietOutput quiet{output_info};
+
   int test_nx = FieldPerpTest::nx + 2;
   int test_ny = FieldPerpTest::ny + 2;
   int test_nz = FieldPerpTest::nz + 2;
 
   FakeMesh fieldmesh{test_nx, test_ny, test_nz};
-  output_info.disable();
+  fieldmesh.setCoordinates(nullptr);
   fieldmesh.createDefaultRegions();
-  output_info.enable();
 
   FieldPerp field{&fieldmesh};
   field = 1.0;
@@ -162,6 +144,7 @@ TEST_F(FieldPerpTest, CopyCheckFieldmesh) {
   EXPECT_EQ(field2.getNx(), test_nx);
   EXPECT_EQ(field2.getNy(), 1);
   EXPECT_EQ(field2.getNz(), test_nz);
+  EXPECT_TRUE(areFieldsCompatible(field, field2));
 }
 
 #if CHECK > 0
@@ -218,6 +201,41 @@ TEST_F(FieldPerpTest, CreateCopyOnNullMesh) {
 }
 #endif
 
+TEST_F(FieldPerpTest, SetGetLocation) {
+  FieldPerp field(mesh_staggered);
+
+  field.setLocation(CELL_XLOW);
+  EXPECT_EQ(field.getLocation(), CELL_XLOW);
+
+  field.setLocation(CELL_DEFAULT);
+  EXPECT_EQ(field.getLocation(), CELL_CENTRE);
+
+  EXPECT_THROW(field.setLocation(CELL_VSHIFT), BoutException);
+}
+
+TEST_F(FieldPerpTest, SetGetLocationNonStaggered) {
+  FieldPerp field;
+
+  field.getMesh()->StaggerGrids = false;
+
+#if CHECK > 0
+  EXPECT_THROW(field.setLocation(CELL_XLOW), BoutException);
+  EXPECT_THROW(field.setLocation(CELL_VSHIFT), BoutException);
+
+  field.setLocation(CELL_DEFAULT);
+  EXPECT_EQ(field.getLocation(), CELL_CENTRE);
+#else
+  field.setLocation(CELL_XLOW);
+  EXPECT_EQ(field.getLocation(), CELL_CENTRE);
+
+  field.setLocation(CELL_DEFAULT);
+  EXPECT_EQ(field.getLocation(), CELL_CENTRE);
+
+  field.setLocation(CELL_VSHIFT);
+  EXPECT_EQ(field.getLocation(), CELL_CENTRE);
+#endif
+}
+
 /// This test is split into two parts: a very basic sanity check first
 /// (do we visit the right number of elements?), followed by a
 /// slightly more complex check one which checks certain indices are
@@ -268,7 +286,7 @@ TEST_F(FieldPerpTest, IterateOverWholeField) {
   for (auto &i : field) {
     sum += field[i];
     if (field[i] == sentinel) {
-      result_indices.insert({i.x, i.z});
+      result_indices.insert({i.x(), i.z()});
       ++found_sentinels;
     }
   }
@@ -302,10 +320,10 @@ TEST_F(FieldPerpTest, IterateOverRGN_ALL) {
   BoutReal sum = 0.0;
   std::set<std::vector<int>> result_indices;
 
-  for (auto &i : field.region(RGN_ALL)) {
+  for (auto &i : field) {
     sum += field[i];
     if (field[i] == sentinel) {
-      result_indices.insert({i.x, i.z});
+      result_indices.insert({i.x(), i.z()});
       ++found_sentinels;
     }
   }
@@ -346,10 +364,10 @@ TEST_F(FieldPerpTest, IterateOverRGN_NOZ) {
   BoutReal sum = 0.0;
   std::set<std::vector<int>> result_indices;
 
-  for (auto &i : field.region(RGN_NOZ)) {
+  for (auto &i : field.getRegion(RGN_NOZ)) {
     sum += field[i];
     if (field[i] == sentinel) {
-      result_indices.insert({i.x, i.z});
+      result_indices.insert({i.x(), i.z()});
       ++found_sentinels;
     }
   }
@@ -388,10 +406,10 @@ TEST_F(FieldPerpTest, IterateOverRGN_NOX) {
   BoutReal sum = 0.0;
   std::set<std::vector<int>> result_indices;
 
-  for (auto &i : field.region(RGN_NOX)) {
+  for (auto &i : field.getRegion(RGN_NOX)) {
     sum += field[i];
     if (field[i] == sentinel) {
-      result_indices.insert({i.x, i.z});
+      result_indices.insert({i.x(), i.z()});
       ++found_sentinels;
     }
   }
@@ -401,19 +419,180 @@ TEST_F(FieldPerpTest, IterateOverRGN_NOX) {
   EXPECT_TRUE(region_indices == result_indices);
 }
 
-TEST_F(FieldPerpTest, IterateOverRGN_NOBNDRY) {
-  FieldPerp field(mesh);
+TEST_F(FieldPerpTest, IterateOverRGN_XGUARDS) {
+  FieldPerp field;
 
-  // This is not a valid region for FieldPerp
-  EXPECT_THROW(field.region(RGN_NOBNDRY), BoutException);
+  field = 1.0;
+
+  const BoutReal sentinel = -99.0;
+
+  // We use a set in case for some reason the iterator doesn't visit
+  // each point in the order we expect.
+  std::set<std::vector<int>> test_indices;
+  test_indices.insert({0, 0});
+  test_indices.insert({0, 1});
+  test_indices.insert({1, 0});
+  test_indices.insert({1, 1});
+
+  // This is the set of indices actually inside the region we want
+  std::set<std::vector<int>> region_indices;
+  region_indices.insert({0, 0});
+  region_indices.insert({0, 1});
+
+  const int num_sentinels = region_indices.size();
+
+  // Assign sentinel value to watch out for to our chosen points
+  for (const auto index : test_indices) {
+    field(index[0], index[1]) = sentinel;
+  }
+
+  int found_sentinels = 0;
+  BoutReal sum = 0.0;
+  std::set<std::vector<int>> result_indices;
+
+  for (const auto &i : field.getRegion("RGN_XGUARDS")) {
+    sum += field[i];
+    if (field[i] == sentinel) {
+      result_indices.insert({i.x(), i.z()});
+      ++found_sentinels;
+    }
+  }
+
+  EXPECT_EQ(found_sentinels, num_sentinels);
+  EXPECT_EQ(sum, ((2 * nz) - num_sentinels) + (num_sentinels * sentinel));
+  EXPECT_TRUE(region_indices == result_indices);
 }
 
-TEST_F(FieldPerpTest, IterateOverRGN_NOY) {
-  FieldPerp field(mesh);
+TEST_F(FieldPerpTest, IterateOverRGN_YGUARDS) {
+  FieldPerp field;
 
-  // This is not a valid region for FieldPerp
-  EXPECT_THROW(field.region(RGN_NOY), BoutException);
+  field = 1.0;
+
+  const BoutReal sentinel = -99.0;
+
+  // We use a set in case for some reason the iterator doesn't visit
+  // each point in the order we expect.
+  std::set<std::vector<int>> test_indices;
+  test_indices.insert({0, 0});
+  test_indices.insert({0, 1});
+  test_indices.insert({1, 0});
+  test_indices.insert({1, 1});
+
+  // This is the set of indices actually inside the region we want
+  std::set<std::vector<int>> region_indices;
+
+  const int num_sentinels = region_indices.size();
+
+  // Assign sentinel value to watch out for to our chosen points
+  for (const auto index : test_indices) {
+    field(index[0], index[1]) = sentinel;
+  }
+
+  int found_sentinels = 0;
+  BoutReal sum = 0.0;
+  std::set<std::vector<int>> result_indices;
+
+  for (const auto &i : field.getRegion("RGN_YGUARDS")) {
+    sum += field[i];
+    if (field[i] == sentinel) {
+      result_indices.insert({i.x(), i.z()});
+      ++found_sentinels;
+    }
+  }
+
+  EXPECT_EQ(found_sentinels, num_sentinels);
+  EXPECT_EQ(sum, (((nx - 2) * 0 * nz) - num_sentinels) + (num_sentinels * sentinel));
+  EXPECT_TRUE(region_indices == result_indices);
 }
+
+TEST_F(FieldPerpTest, IterateOverRGN_ZGUARDS) {
+  FieldPerp field;
+
+  field = 1.0;
+
+  const BoutReal sentinel = -99.0;
+
+  // We use a set in case for some reason the iterator doesn't visit
+  // each point in the order we expect.
+  std::set<std::vector<int>> test_indices;
+  test_indices.insert({0, 0});
+  test_indices.insert({0, 1});
+  test_indices.insert({1, 0});
+  test_indices.insert({1, 1});
+
+  // This is the set of indices actually inside the region we want
+  std::set<std::vector<int>> region_indices;
+
+  const int num_sentinels = region_indices.size();
+
+  // Assign sentinel value to watch out for to our chosen points
+  for (const auto index : test_indices) {
+    field(index[0], index[1]) = sentinel;
+  }
+
+  int found_sentinels = 0;
+  BoutReal sum = 0.0;
+  std::set<std::vector<int>> result_indices;
+
+  for (const auto &i : field.getRegion("RGN_ZGUARDS")) {
+    sum += field[i];
+    if (field[i] == sentinel) {
+      result_indices.insert({i.x(), i.z()});
+      ++found_sentinels;
+    }
+  }
+
+  EXPECT_EQ(found_sentinels, num_sentinels);
+  EXPECT_EQ(sum, ((nx - 2) * 0 - num_sentinels) + (num_sentinels * sentinel));
+  EXPECT_TRUE(region_indices == result_indices);
+}
+
+TEST_F(FieldPerpTest, IterateOverRGN_NOCORNERS) {
+  FieldPerp field;
+
+  field = 1.0;
+
+  const BoutReal sentinel = -99.0;
+
+  // We use a set in case for some reason the iterator doesn't visit
+  // each point in the order we expect.
+  std::set<std::vector<int>> test_indices;
+  test_indices.insert({0, 0});
+  test_indices.insert({0, 1});
+  test_indices.insert({1, 0});
+  test_indices.insert({1, 1});
+
+  // This is the set of indices actually inside the region we want
+  std::set<std::vector<int>> region_indices;
+  region_indices.insert({0, 0});
+  region_indices.insert({0, 1});
+  region_indices.insert({1, 0});
+  region_indices.insert({1, 1});
+
+  const int num_sentinels = region_indices.size();
+
+  // Assign sentinel value to watch out for to our chosen points
+  for (const auto index : test_indices) {
+    field(index[0], index[1]) = sentinel;
+  }
+
+  int found_sentinels = 0;
+  BoutReal sum = 0.0;
+  std::set<std::vector<int>> result_indices;
+
+  for (const auto &i : field.getRegion("RGN_NOCORNERS")) {
+    sum += field[i];
+    if (field[i] == sentinel) {
+      result_indices.insert({i.x(), i.z()});
+      ++found_sentinels;
+    }
+  }
+
+  EXPECT_EQ(found_sentinels, num_sentinels);
+  EXPECT_EQ(sum, ((nx * nz) - num_sentinels) + (num_sentinels * sentinel));
+  EXPECT_TRUE(region_indices == result_indices);
+}
+
 
 TEST_F(FieldPerpTest, Indexing) {
   FieldPerp field;
@@ -443,26 +622,6 @@ TEST_F(FieldPerpTest, IndexingAs3D) {
   }
 
   EXPECT_DOUBLE_EQ(field(2, 2), 4 + ny - 1);
-}
-
-TEST_F(FieldPerpTest, IndexingWithIndices) {
-  FieldPerp field;
-
-  field.allocate();
-
-  for (int i = 0; i < nx; ++i) {
-    for (int j = 0; j < nz; ++j) {
-      field(i, j) = i + j;
-    }
-  }
-  Indices ii{2, -1, 2};
-  EXPECT_DOUBLE_EQ(field[ii], 4);
-}
-
-TEST_F(FieldPerpTest, ConstIndexingWithIndices) {
-  const FieldPerp field = 2.0;
-  const Indices ii{2, -1, 2};
-  EXPECT_DOUBLE_EQ(field[ii], 2.0);
 }
 
 TEST_F(FieldPerpTest, IndexingWithIndPerp) {
@@ -646,7 +805,7 @@ TEST_F(FieldPerpTest, InvalidateGuards) {
   const int nmesh = nx * nz;
 
   int sum = 0;
-  for (const auto &i : field.region(RGN_ALL)) {
+  for (const auto &i : field) {
     field[i] = 0.0; // Reset field value
     sum++;
   }
@@ -654,7 +813,7 @@ TEST_F(FieldPerpTest, InvalidateGuards) {
 
   // Count the number of non-boundary points
   sum = 0;
-  for (const auto &i : field.region(RGN_NOX)) {
+  for (const auto &i : field.getRegion(RGN_NOX)) {
     field[i] = 0.0; // Reset field value
     sum++;
   }
@@ -670,7 +829,7 @@ TEST_F(FieldPerpTest, InvalidateGuards) {
   EXPECT_NO_THROW(checkData(field(localmesh->xstart, 0)));
 
   sum = 0;
-  for (const auto &i : field.region(RGN_ALL)) {
+  for (const auto &i : field) {
     if (!finite(field[i]))
       sum++;
   }
@@ -682,14 +841,14 @@ TEST_F(FieldPerpTest, InvalidateGuards) {
 TEST_F(FieldPerpTest, CreateFromBoutReal) {
   FieldPerp field(1.0);
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(field, 1.0));
+  EXPECT_TRUE(IsFieldEqual(field, 1.0));
 }
 
 TEST_F(FieldPerpTest, CreateFromFieldPerp) {
   FieldPerp field(99.0);
   FieldPerp result(field);
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(result, 99.0));
+  EXPECT_TRUE(IsFieldEqual(result, 99.0));
 }
 
 TEST_F(FieldPerpTest, AssignFromBoutReal) {
@@ -697,17 +856,14 @@ TEST_F(FieldPerpTest, AssignFromBoutReal) {
 
   field = 2.0;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(field, 2.0));
+  EXPECT_TRUE(IsFieldEqual(field, 2.0));
 }
 
 TEST_F(FieldPerpTest, AssignFromInvalid) {
   FieldPerp field;
 
-#if CHECK > 0
-  EXPECT_THROW(field = std::nan(""), BoutException);
-#else
   EXPECT_NO_THROW(field = std::nan(""));
-#endif
+  EXPECT_TRUE(IsFieldEqual(field, std::nan("")));
 }
 
 TEST_F(FieldPerpTest, UnaryMinus) {
@@ -717,7 +873,7 @@ TEST_F(FieldPerpTest, UnaryMinus) {
   field = 2.0;
   field = -field;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(field, -2.0));
+  EXPECT_TRUE(IsFieldEqual(field, -2.0));
 }
 
 TEST_F(FieldPerpTest, AddEqualsBoutReal) {
@@ -727,14 +883,14 @@ TEST_F(FieldPerpTest, AddEqualsBoutReal) {
   a = 1.0;
   a += 5.0;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, 6.0));
+  EXPECT_TRUE(IsFieldEqual(a, 6.0));
 
   // Check case where field is not unique
   auto c = a;
   c += 5.0;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, 6.0));
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, 11.0));
+  EXPECT_TRUE(IsFieldEqual(a, 6.0));
+  EXPECT_TRUE(IsFieldEqual(c, 11.0));
 }
 
 TEST_F(FieldPerpTest, AddEqualsFieldPerp) {
@@ -746,14 +902,14 @@ TEST_F(FieldPerpTest, AddEqualsFieldPerp) {
   b = 3.0;
   a += b;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, 5.0));
+  EXPECT_TRUE(IsFieldEqual(a, 5.0));
 
   // Check case where field is not unique
   auto c = a;
   c += b;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, 5.0));
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, 8.0));
+  EXPECT_TRUE(IsFieldEqual(a, 5.0));
+  EXPECT_TRUE(IsFieldEqual(c, 8.0));
 }
 
 TEST_F(FieldPerpTest, AddEqualsField2D) {
@@ -768,14 +924,14 @@ TEST_F(FieldPerpTest, AddEqualsField2D) {
   a.setIndex(1);
   EXPECT_NO_THROW(a += b);
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, 5.0));
+  EXPECT_TRUE(IsFieldEqual(a, 5.0));
 
   // Check case where field is not unique
   auto c = a;
   c += b;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, 5.0));
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, 8.0));
+  EXPECT_TRUE(IsFieldEqual(a, 5.0));
+  EXPECT_TRUE(IsFieldEqual(c, 8.0));
 }
 
 TEST_F(FieldPerpTest, AddEqualsField3D) {
@@ -790,14 +946,14 @@ TEST_F(FieldPerpTest, AddEqualsField3D) {
   a.setIndex(1);
   EXPECT_NO_THROW(a += b);
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, 5.0));
+  EXPECT_TRUE(IsFieldEqual(a, 5.0));
 
   // Check case where field is not unique
   auto c = a;
   c += b;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, 5.0));
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, 8.0));
+  EXPECT_TRUE(IsFieldEqual(a, 5.0));
+  EXPECT_TRUE(IsFieldEqual(c, 8.0));
 }
 
 TEST_F(FieldPerpTest, AddFieldPerpBoutReal) {
@@ -807,7 +963,7 @@ TEST_F(FieldPerpTest, AddFieldPerpBoutReal) {
   a = 1.0;
   b = a + 2.0;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(b, 3.0));
+  EXPECT_TRUE(IsFieldEqual(b, 3.0));
 }
 
 TEST_F(FieldPerpTest, AddBoutRealFieldPerp) {
@@ -817,7 +973,7 @@ TEST_F(FieldPerpTest, AddBoutRealFieldPerp) {
   a = 1.0;
   b = 3.0 + a;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(b, 4.0));
+  EXPECT_TRUE(IsFieldEqual(b, 4.0));
 }
 
 TEST_F(FieldPerpTest, AddFieldPerpFieldPerp) {
@@ -829,7 +985,7 @@ TEST_F(FieldPerpTest, AddFieldPerpFieldPerp) {
   b = 2.0;
   c = a + b;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, 3.0));
+  EXPECT_TRUE(IsFieldEqual(c, 3.0));
 }
 
 TEST_F(FieldPerpTest, AddFieldPerpField2D) {
@@ -841,7 +997,19 @@ TEST_F(FieldPerpTest, AddFieldPerpField2D) {
   b = 2.0;
   c = a + b;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, 3.0));
+  EXPECT_TRUE(IsFieldEqual(c, 3.0));
+}
+
+TEST_F(FieldPerpTest, AddField2DFieldPerp) {
+  FieldPerp b, c;
+  Field2D a;
+
+  b.setIndex(1);
+  a = 1.0;
+  b = 2.0;
+  c = a + b;
+
+  EXPECT_TRUE(IsFieldEqual(c, 3.0));
 }
 
 TEST_F(FieldPerpTest, AddFieldPerpField3D) {
@@ -853,7 +1021,19 @@ TEST_F(FieldPerpTest, AddFieldPerpField3D) {
   b = 2.0;
   c = a + b;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, 3.0));
+  EXPECT_TRUE(IsFieldEqual(c, 3.0));
+}
+
+TEST_F(FieldPerpTest, AddField3DFieldPerp) {
+  FieldPerp b, c;
+  Field3D a;
+
+  b.setIndex(1);
+  a = 1.0;
+  b = 2.0;
+  c = a + b;
+
+  EXPECT_TRUE(IsFieldEqual(c, 3.0));
 }
 
 TEST_F(FieldPerpTest, MultiplyEqualsBoutReal) {
@@ -863,14 +1043,14 @@ TEST_F(FieldPerpTest, MultiplyEqualsBoutReal) {
   a = 2.0;
   a *= 1.5;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, 3.0));
+  EXPECT_TRUE(IsFieldEqual(a, 3.0));
 
   // Check case where field is not unique
   auto c = a;
   c *= 1.5;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, 3.0));
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, 4.5));
+  EXPECT_TRUE(IsFieldEqual(a, 3.0));
+  EXPECT_TRUE(IsFieldEqual(c, 4.5));
 }
 
 TEST_F(FieldPerpTest, MultiplyEqualsFieldPerp) {
@@ -882,14 +1062,14 @@ TEST_F(FieldPerpTest, MultiplyEqualsFieldPerp) {
   b = 4.0;
   a *= b;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, 10.0));
+  EXPECT_TRUE(IsFieldEqual(a, 10.0));
 
   // Check case where field is not unique
   auto c = a;
   c *= b;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, 10.0));
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, 40.0));
+  EXPECT_TRUE(IsFieldEqual(a, 10.0));
+  EXPECT_TRUE(IsFieldEqual(c, 40.0));
 }
 
 TEST_F(FieldPerpTest, MultiplyEqualsField2D) {
@@ -904,14 +1084,14 @@ TEST_F(FieldPerpTest, MultiplyEqualsField2D) {
   a.setIndex(1);
   EXPECT_NO_THROW(a *= b);
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, 10.0));
+  EXPECT_TRUE(IsFieldEqual(a, 10.0));
 
   // Check case where field is not unique
   auto c = a;
   c *= b;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, 10.0));
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, 40.0));
+  EXPECT_TRUE(IsFieldEqual(a, 10.0));
+  EXPECT_TRUE(IsFieldEqual(c, 40.0));
 }
 
 TEST_F(FieldPerpTest, MultiplyEqualsField3D) {
@@ -926,14 +1106,14 @@ TEST_F(FieldPerpTest, MultiplyEqualsField3D) {
   a.setIndex(1);
   EXPECT_NO_THROW(a *= b);
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, 10.0));
+  EXPECT_TRUE(IsFieldEqual(a, 10.0));
 
   // Check case where field is not unique
   auto c = a;
   c *= b;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, 10.0));
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, 40.0));
+  EXPECT_TRUE(IsFieldEqual(a, 10.0));
+  EXPECT_TRUE(IsFieldEqual(c, 40.0));
 }
 
 TEST_F(FieldPerpTest, MultiplyFieldPerpBoutReal) {
@@ -943,7 +1123,7 @@ TEST_F(FieldPerpTest, MultiplyFieldPerpBoutReal) {
   a = 1.5;
   b = a * 2.0;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(b, 3.0));
+  EXPECT_TRUE(IsFieldEqual(b, 3.0));
 }
 
 TEST_F(FieldPerpTest, MultiplyBoutRealFieldPerp) {
@@ -953,7 +1133,7 @@ TEST_F(FieldPerpTest, MultiplyBoutRealFieldPerp) {
   a = 2.5;
   b = 3.0 * a;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(b, 7.5));
+  EXPECT_TRUE(IsFieldEqual(b, 7.5));
 }
 
 TEST_F(FieldPerpTest, MultiplyFieldPerpFieldPerp) {
@@ -965,7 +1145,7 @@ TEST_F(FieldPerpTest, MultiplyFieldPerpFieldPerp) {
   b = 8.0;
   c = a * b;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, 32.0));
+  EXPECT_TRUE(IsFieldEqual(c, 32.0));
 }
 
 TEST_F(FieldPerpTest, MultiplyFieldPerpField2D) {
@@ -977,7 +1157,19 @@ TEST_F(FieldPerpTest, MultiplyFieldPerpField2D) {
   b = 8.0;
   c = a * b;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, 32.0));
+  EXPECT_TRUE(IsFieldEqual(c, 32.0));
+}
+
+TEST_F(FieldPerpTest, MultiplyField2DFieldPerp) {
+  FieldPerp b, c;
+  Field2D a;
+
+  b.setIndex(1);
+  a = 4.0;
+  b = 8.0;
+  c = a * b;
+
+  EXPECT_TRUE(IsFieldEqual(c, 32.0));
 }
 
 TEST_F(FieldPerpTest, MultiplyFieldPerpField3D) {
@@ -989,7 +1181,19 @@ TEST_F(FieldPerpTest, MultiplyFieldPerpField3D) {
   b = 8.0;
   c = a * b;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, 32.0));
+  EXPECT_TRUE(IsFieldEqual(c, 32.0));
+}
+
+TEST_F(FieldPerpTest, MultiplyField3DFieldPerp) {
+  FieldPerp b, c;
+  Field3D a;
+
+  b.setIndex(1);
+  a = 4.0;
+  b = 8.0;
+  c = a * b;
+
+  EXPECT_TRUE(IsFieldEqual(c, 32.0));
 }
 
 TEST_F(FieldPerpTest, SubtractEqualsBoutReal) {
@@ -999,14 +1203,14 @@ TEST_F(FieldPerpTest, SubtractEqualsBoutReal) {
   a = 1.0;
   a -= 5.0;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, -4.0));
+  EXPECT_TRUE(IsFieldEqual(a, -4.0));
 
   // Check case where field is not unique
   auto c = a;
   c -= 5.0;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, -4.0));
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, -9.0));
+  EXPECT_TRUE(IsFieldEqual(a, -4.0));
+  EXPECT_TRUE(IsFieldEqual(c, -9.0));
 }
 
 TEST_F(FieldPerpTest, SubtractEqualsFieldPerp) {
@@ -1018,14 +1222,14 @@ TEST_F(FieldPerpTest, SubtractEqualsFieldPerp) {
   b = 7.0;
   a -= b;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, -5.0));
+  EXPECT_TRUE(IsFieldEqual(a, -5.0));
 
   // Check case where field is not unique
   auto c = a;
   c -= b;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, -5.0));
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, -12.0));
+  EXPECT_TRUE(IsFieldEqual(a, -5.0));
+  EXPECT_TRUE(IsFieldEqual(c, -12.0));
 }
 
 TEST_F(FieldPerpTest, SubtractEqualsField2D) {
@@ -1040,14 +1244,14 @@ TEST_F(FieldPerpTest, SubtractEqualsField2D) {
   a.setIndex(1);
   EXPECT_NO_THROW(a -= b);
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, -5.0));
+  EXPECT_TRUE(IsFieldEqual(a, -5.0));
 
   // Check case where field is not unique
   auto c = a;
   c -= b;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, -5.0));
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, -12.0));
+  EXPECT_TRUE(IsFieldEqual(a, -5.0));
+  EXPECT_TRUE(IsFieldEqual(c, -12.0));
 }
 
 TEST_F(FieldPerpTest, SubtractEqualsField3D) {
@@ -1062,14 +1266,14 @@ TEST_F(FieldPerpTest, SubtractEqualsField3D) {
   a.setIndex(1);
   EXPECT_NO_THROW(a -= b);
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, -5.0));
+  EXPECT_TRUE(IsFieldEqual(a, -5.0));
 
   // Check case where field is not unique
   auto c = a;
   c -= b;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, -5.0));
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, -12.0));
+  EXPECT_TRUE(IsFieldEqual(a, -5.0));
+  EXPECT_TRUE(IsFieldEqual(c, -12.0));
 }
 
 TEST_F(FieldPerpTest, SubtractFieldPerpBoutReal) {
@@ -1079,7 +1283,7 @@ TEST_F(FieldPerpTest, SubtractFieldPerpBoutReal) {
   a = 10.0;
   b = a - 2.0;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(b, 8.0));
+  EXPECT_TRUE(IsFieldEqual(b, 8.0));
 }
 
 TEST_F(FieldPerpTest, SubtractBoutRealFieldPerp) {
@@ -1089,7 +1293,7 @@ TEST_F(FieldPerpTest, SubtractBoutRealFieldPerp) {
   a = 10.0;
   b = 3.0 - a;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(b, -7.0));
+  EXPECT_TRUE(IsFieldEqual(b, -7.0));
 }
 
 TEST_F(FieldPerpTest, SubtractFieldPerpFieldPerp) {
@@ -1101,7 +1305,7 @@ TEST_F(FieldPerpTest, SubtractFieldPerpFieldPerp) {
   b = 20.0;
   c = a - b;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, -10.0));
+  EXPECT_TRUE(IsFieldEqual(c, -10.0));
 }
 
 TEST_F(FieldPerpTest, SubtractFieldPerpField2D) {
@@ -1113,7 +1317,19 @@ TEST_F(FieldPerpTest, SubtractFieldPerpField2D) {
   b = 20.0;
   c = a - b;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, -10.0));
+  EXPECT_TRUE(IsFieldEqual(c, -10.0));
+}
+
+TEST_F(FieldPerpTest, SubtractField2DFieldPerp) {
+  FieldPerp b, c;
+  Field2D a;
+
+  b.setIndex(1);
+  a = 10.0;
+  b = 20.0;
+  c = a - b;
+
+  EXPECT_TRUE(IsFieldEqual(c, -10.0));
 }
 
 TEST_F(FieldPerpTest, SubtractFieldPerpField3D) {
@@ -1125,7 +1341,19 @@ TEST_F(FieldPerpTest, SubtractFieldPerpField3D) {
   b = 20.0;
   c = a - b;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, -10.0));
+  EXPECT_TRUE(IsFieldEqual(c, -10.0));
+}
+
+TEST_F(FieldPerpTest, SubtractField3DFieldPerp) {
+  FieldPerp b, c;
+  Field3D a;
+
+  b.setIndex(1);
+  a = 10.0;
+  b = 20.0;
+  c = a - b;
+
+  EXPECT_TRUE(IsFieldEqual(c, -10.0));
 }
 
 TEST_F(FieldPerpTest, DivideEqualsBoutReal) {
@@ -1135,14 +1363,14 @@ TEST_F(FieldPerpTest, DivideEqualsBoutReal) {
   a = 2.5;
   a /= 5.0;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, 0.5));
+  EXPECT_TRUE(IsFieldEqual(a, 0.5));
 
   // Check case where field is not unique
   auto c = a;
   c /= 5.0;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, 0.5));
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, 0.1));
+  EXPECT_TRUE(IsFieldEqual(a, 0.5));
+  EXPECT_TRUE(IsFieldEqual(c, 0.1));
 }
 
 TEST_F(FieldPerpTest, DivideEqualsFieldPerp) {
@@ -1154,14 +1382,14 @@ TEST_F(FieldPerpTest, DivideEqualsFieldPerp) {
   b = 2.5;
   a /= b;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, 2.0));
+  EXPECT_TRUE(IsFieldEqual(a, 2.0));
 
   // Check case where field is not unique
   auto c = a;
   c /= b;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, 2.0));
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, 0.8));
+  EXPECT_TRUE(IsFieldEqual(a, 2.0));
+  EXPECT_TRUE(IsFieldEqual(c, 0.8));
 }
 
 TEST_F(FieldPerpTest, DivideEqualsField2D) {
@@ -1176,14 +1404,14 @@ TEST_F(FieldPerpTest, DivideEqualsField2D) {
   a.setIndex(1);
   EXPECT_NO_THROW(a /= b);
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, 2.0));
+  EXPECT_TRUE(IsFieldEqual(a, 2.0));
 
   // Check case where field is not unique
   auto c = a;
   c /= b;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, 2.0));
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, 0.8));
+  EXPECT_TRUE(IsFieldEqual(a, 2.0));
+  EXPECT_TRUE(IsFieldEqual(c, 0.8));
 }
 
 TEST_F(FieldPerpTest, DivideEqualsField3D) {
@@ -1198,14 +1426,14 @@ TEST_F(FieldPerpTest, DivideEqualsField3D) {
   a.setIndex(1);
   EXPECT_NO_THROW(a /= b);
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, 2.0));
+  EXPECT_TRUE(IsFieldEqual(a, 2.0));
 
   // Check case where field is not unique
   auto c = a;
   c /= b;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(a, 2.0));
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, 0.8));
+  EXPECT_TRUE(IsFieldEqual(a, 2.0));
+  EXPECT_TRUE(IsFieldEqual(c, 0.8));
 }
 
 TEST_F(FieldPerpTest, DivideFieldPerpBoutReal) {
@@ -1215,7 +1443,7 @@ TEST_F(FieldPerpTest, DivideFieldPerpBoutReal) {
   a = 3.0;
   b = a / 2.0;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(b, 1.5));
+  EXPECT_TRUE(IsFieldEqual(b, 1.5));
 }
 
 TEST_F(FieldPerpTest, DivideBoutRealFieldPerp) {
@@ -1225,7 +1453,7 @@ TEST_F(FieldPerpTest, DivideBoutRealFieldPerp) {
   a = 2.5;
   b = 10.0 / a;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(b, 4.0));
+  EXPECT_TRUE(IsFieldEqual(b, 4.0));
 }
 
 TEST_F(FieldPerpTest, DivideFieldPerpFieldPerp) {
@@ -1237,7 +1465,7 @@ TEST_F(FieldPerpTest, DivideFieldPerpFieldPerp) {
   b = 8.0;
   c = a / b;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, 4.0));
+  EXPECT_TRUE(IsFieldEqual(c, 4.0));
 }
 
 TEST_F(FieldPerpTest, DivideFieldPerpField2D) {
@@ -1249,7 +1477,19 @@ TEST_F(FieldPerpTest, DivideFieldPerpField2D) {
   b = 8.0;
   c = a / b;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, 4.0));
+  EXPECT_TRUE(IsFieldEqual(c, 4.0));
+}
+
+TEST_F(FieldPerpTest, DivideField2DFieldPerp) {
+  FieldPerp b, c;
+  Field2D a;
+
+  b.setIndex(1);
+  a = 32.0;
+  b = 8.0;
+  c = a / b;
+
+  EXPECT_TRUE(IsFieldEqual(c, 4.0));
 }
 
 TEST_F(FieldPerpTest, DivideFieldPerpField3D) {
@@ -1261,7 +1501,19 @@ TEST_F(FieldPerpTest, DivideFieldPerpField3D) {
   b = 8.0;
   c = a / b;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, 4.0));
+  EXPECT_TRUE(IsFieldEqual(c, 4.0));
+}
+
+TEST_F(FieldPerpTest, DivideField3DFieldPerp) {
+  FieldPerp b, c;
+  Field3D a;
+
+  b.setIndex(1);
+  a = 32.0;
+  b = 8.0;
+  c = a / b;
+
+  EXPECT_TRUE(IsFieldEqual(c, 4.0));
 }
 
 TEST_F(FieldPerpTest, PowBoutRealFieldPerp) {
@@ -1272,7 +1524,7 @@ TEST_F(FieldPerpTest, PowBoutRealFieldPerp) {
   a = 5.0;
   b = pow(2.0, a);
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(b, 32.0));
+  EXPECT_TRUE(IsFieldEqual(b, 32.0));
 }
 
 TEST_F(FieldPerpTest, PowFieldPerpBoutReal) {
@@ -1282,7 +1534,7 @@ TEST_F(FieldPerpTest, PowFieldPerpBoutReal) {
   a = 5.0;
   b = pow(a, 2.0);
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(b, 25.0));
+  EXPECT_TRUE(IsFieldEqual(b, 25.0));
 }
 
 TEST_F(FieldPerpTest, PowFieldPerpFieldPerp) {
@@ -1294,7 +1546,7 @@ TEST_F(FieldPerpTest, PowFieldPerpFieldPerp) {
   b = 6.0;
   c = pow(a, b);
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(c, 64.0));
+  EXPECT_TRUE(IsFieldEqual(c, 64.0));
 }
 
 TEST_F(FieldPerpTest, Sqrt) {
@@ -1302,7 +1554,7 @@ TEST_F(FieldPerpTest, Sqrt) {
   field.setIndex(0);
 
   field = 16.0;
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(sqrt(field), 4.0));
+  EXPECT_TRUE(IsFieldEqual(sqrt(field), 4.0));
 }
 
 TEST_F(FieldPerpTest, Abs) {
@@ -1310,7 +1562,7 @@ TEST_F(FieldPerpTest, Abs) {
   field.setIndex(0);
 
   field = -31.0;
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(abs(field), 31.0));
+  EXPECT_TRUE(IsFieldEqual(abs(field), 31.0));
 }
 
 TEST_F(FieldPerpTest, Exp) {
@@ -1319,7 +1571,7 @@ TEST_F(FieldPerpTest, Exp) {
 
   field = 2.5;
   const BoutReal expected = 12.182493960703473;
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(exp(field), expected));
+  EXPECT_TRUE(IsFieldEqual(exp(field), expected));
 }
 
 TEST_F(FieldPerpTest, Log) {
@@ -1328,7 +1580,7 @@ TEST_F(FieldPerpTest, Log) {
 
   field = 12.182493960703473;
   const BoutReal expected = 2.5;
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(log(field), expected));
+  EXPECT_TRUE(IsFieldEqual(log(field), expected));
 }
 
 TEST_F(FieldPerpTest, LogExp) {
@@ -1337,7 +1589,7 @@ TEST_F(FieldPerpTest, LogExp) {
 
   field = 2.5;
   const BoutReal expected = 2.5;
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(log(exp(field)), expected));
+  EXPECT_TRUE(IsFieldEqual(log(exp(field)), expected));
 }
 
 TEST_F(FieldPerpTest, Sin) {
@@ -1345,10 +1597,10 @@ TEST_F(FieldPerpTest, Sin) {
   field.setIndex(0);
 
   field = PI / 2.0;
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(sin(field), 1.0));
+  EXPECT_TRUE(IsFieldEqual(sin(field), 1.0));
 
   field = PI;
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(sin(field), 0.0));
+  EXPECT_TRUE(IsFieldEqual(sin(field), 0.0));
 }
 
 TEST_F(FieldPerpTest, Cos) {
@@ -1356,10 +1608,10 @@ TEST_F(FieldPerpTest, Cos) {
   field.setIndex(0);
 
   field = PI / 2.0;
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(cos(field), 0.0));
+  EXPECT_TRUE(IsFieldEqual(cos(field), 0.0));
 
   field = PI;
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(cos(field), -1.0));
+  EXPECT_TRUE(IsFieldEqual(cos(field), -1.0));
 }
 
 TEST_F(FieldPerpTest, Tan) {
@@ -1367,10 +1619,10 @@ TEST_F(FieldPerpTest, Tan) {
   field.setIndex(0);
 
   field = PI / 4.0;
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(tan(field), 1.0));
+  EXPECT_TRUE(IsFieldEqual(tan(field), 1.0));
 
   field = PI;
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(tan(field), 0.0));
+  EXPECT_TRUE(IsFieldEqual(tan(field), 0.0));
 }
 
 TEST_F(FieldPerpTest, Sinh) {
@@ -1379,10 +1631,10 @@ TEST_F(FieldPerpTest, Sinh) {
 
   field = 1.0;
   const BoutReal expected = 1.1752011936438014;
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(sinh(field), expected));
+  EXPECT_TRUE(IsFieldEqual(sinh(field), expected));
 
   field = -1.0;
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(sinh(field), -expected));
+  EXPECT_TRUE(IsFieldEqual(sinh(field), -expected));
 }
 
 TEST_F(FieldPerpTest, Cosh) {
@@ -1391,10 +1643,10 @@ TEST_F(FieldPerpTest, Cosh) {
 
   field = 1.0;
   const BoutReal expected = 1.5430806348152437;
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(cosh(field), expected));
+  EXPECT_TRUE(IsFieldEqual(cosh(field), expected));
 
   field = -1.0;
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(cosh(field), expected));
+  EXPECT_TRUE(IsFieldEqual(cosh(field), expected));
 }
 
 TEST_F(FieldPerpTest, Tanh) {
@@ -1403,10 +1655,10 @@ TEST_F(FieldPerpTest, Tanh) {
 
   field = 1.0;
   const BoutReal expected = 0.761594155955764;
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(tanh(field), expected));
+  EXPECT_TRUE(IsFieldEqual(tanh(field), expected));
 
   field = -1.0;
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(tanh(field), -expected));
+  EXPECT_TRUE(IsFieldEqual(tanh(field), -expected));
 }
 
 TEST_F(FieldPerpTest, Floor) {
@@ -1419,7 +1671,7 @@ TEST_F(FieldPerpTest, Floor) {
 
   const BoutReal floor_value = 50.0;
 
-  EXPECT_TRUE(IsFieldPerpEqualBoutReal(floor(field, floor_value), floor_value));
+  EXPECT_TRUE(IsFieldEqual(floor(field, floor_value), floor_value));
 }
 
 TEST_F(FieldPerpTest, Min) {
@@ -1456,5 +1708,58 @@ TEST_F(FieldPerpTest, Max) {
   EXPECT_EQ(max(field, false), max_value);
   EXPECT_EQ(max(field, false, RGN_ALL), 99.0);
   EXPECT_EQ(max(field, true, RGN_ALL), 99.0);
+}
+
+TEST_F(FieldPerpTest, OperatorEqualsFieldPerp) {
+  FieldPerp field;
+
+  // Create field with non-default arguments so we can check they get copied
+  // to 'field'.
+  // Note that Average z-direction type is not really allowed for FieldPerp, but
+  // we don't check anywhere at the moment.
+  FieldPerp field2{mesh_staggered, CELL_XLOW, 2, {YDirectionType::Aligned, ZDirectionType::Average}};
+
+  field = field2;
+
+  EXPECT_TRUE(areFieldsCompatible(field, field2));
+  EXPECT_EQ(field.getMesh(), field2.getMesh());
+  EXPECT_EQ(field.getLocation(), field2.getLocation());
+  EXPECT_EQ(field.getDirectionY(), field2.getDirectionY());
+  EXPECT_EQ(field.getDirectionZ(), field2.getDirectionZ());
+}
+
+TEST_F(FieldPerpTest, EmptyFrom) {
+  // Create field with non-default arguments so we can check they get copied
+  // to 'field2'.
+  // Note that Average z-direction type is not really allowed for FieldPerp, but
+  // we don't check anywhere at the moment.
+  FieldPerp field{mesh_staggered, CELL_XLOW, 3, {YDirectionType::Aligned, ZDirectionType::Average}};
+  field = 5.;
+
+  FieldPerp field2{emptyFrom(field)};
+  EXPECT_EQ(field2.getMesh(), mesh_staggered);
+  EXPECT_EQ(field2.getLocation(), CELL_XLOW);
+  EXPECT_EQ(field2.getIndex(), 3);
+  EXPECT_EQ(field2.getDirectionY(), YDirectionType::Aligned);
+  EXPECT_EQ(field2.getDirectionZ(), ZDirectionType::Average);
+  EXPECT_TRUE(field2.isAllocated());
+}
+
+TEST_F(FieldPerpTest, ZeroFrom) {
+  // Create field with non-default arguments so we can check they get copied
+  // to 'field2'.
+  // Note that Average z-direction type is not really allowed for FieldPerp, but
+  // we don't check anywhere at the moment.
+  FieldPerp field{mesh_staggered, CELL_XLOW, 3, {YDirectionType::Aligned, ZDirectionType::Average}};
+  field = 5.;
+
+  FieldPerp field2{zeroFrom(field)};
+  EXPECT_EQ(field2.getMesh(), mesh_staggered);
+  EXPECT_EQ(field2.getLocation(), CELL_XLOW);
+  EXPECT_EQ(field2.getIndex(), 3);
+  EXPECT_EQ(field2.getDirectionY(), YDirectionType::Aligned);
+  EXPECT_EQ(field2.getDirectionZ(), ZDirectionType::Average);
+  EXPECT_TRUE(field2.isAllocated());
+  EXPECT_TRUE(IsFieldEqual(field2, 0.));
 }
 #pragma GCC diagnostic pop

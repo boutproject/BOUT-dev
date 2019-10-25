@@ -13,8 +13,8 @@ int physics_init(bool restarting)
   // Read initial conditions
 
   mesh->get(V0, "V0");
-  mesh->get(mesh->dx,   "dx");
-  mesh->get(mesh->dy,   "dy");
+  mesh->get(mesh->getCoordinates()->dx,   "dx");
+  mesh->get(mesh->getCoordinates()->dy,   "dy");
 
 
   // read options
