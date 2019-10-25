@@ -150,10 +150,10 @@ authors:
   - family-names: Wang
     given-names: Zhanhui
 version: 4.3.0
-date-released: 2019-03-01
+date-released: 2019-10-25
 repository-code: https://github.com/boutproject/BOUT-dev
 url: http://boutproject.github.io/
-doi: 10.5281/zenodo.2579077
+doi: 10.5281/zenodo.3518905
 license: 'LGPL-3.0-or-later'
 references:
   - type: article
