@@ -4,7 +4,10 @@ from boutdata import collect
 from boututils.run_wrapper import launch_safe, shell_safe
 from sys import exit
 
-test_directories = [('data_slab_core', 1), ('data_slab_sol', 1)]
+test_directories = [('data_slab_core', 1),
+                    ('data_slab_sol', 1),
+                    ('data_circular_core', 1)]
+
 tolerance = 1.e-6
 
 shell_safe('make')
