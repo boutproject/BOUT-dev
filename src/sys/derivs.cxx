@@ -334,8 +334,8 @@ Field3D D2DXDY(const Field3D& f, CELL_LOC outloc, const std::string& method,
   Field3D dfdy = DDY(f, y_location, method, dy_region);
 
   // Set x-guard cells and x-boundary cells before calculating DDX
-  f.getMesh()->communicate(dfdy);
   dfdy.applyBoundary(dfdy_boundary_condition);
+  f.getMesh()->communicate(dfdy);
 
   return DDX(dfdy, outloc, method, region);
 }
