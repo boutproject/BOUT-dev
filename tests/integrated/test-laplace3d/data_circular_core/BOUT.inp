@@ -16,6 +16,7 @@ function = 1. + .1*mixmode(x, 10.)*mixmode(y, 11.)*mixmode(z, 12.)
 [C2]
 #function = 0.
 function = .1*mixmode(x, 13.)*mixmode(y, 14.)*mixmode(z, 15.)
+bndry_par_all = parallel_neumann
 
 [A]
 function = 0.

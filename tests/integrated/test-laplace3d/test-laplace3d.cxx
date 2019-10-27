@@ -80,6 +80,8 @@ int main(int argc, char** argv) {
   initial_profile("C1", C1);
   initial_profile("C2", C2);
   mesh->communicate(C2);
+  C2.setBoundary("C2");
+  C2.applyParallelBoundary();
   initial_profile("D", D);
   laplace_solver->setCoefA(A);
   laplace_solver->setCoefC1(C1);
