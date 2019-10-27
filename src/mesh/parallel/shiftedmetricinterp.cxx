@@ -29,6 +29,7 @@
 
 #include "shiftedmetricinterp.hxx"
 #include <interpolation_factory.hxx>
+#include "mask.hxx"
 #include <bout/constants.hxx>
 
 ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in, Field2D zShift_in)
@@ -64,7 +65,16 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in, Field
       + (zShift[i.yp()] - zShift[i])*static_cast<BoutReal>(mesh.GlobalNz)/TWOPI;
   }
 
-  interp_yup->calcWeights(xt_prime, zt_prime_up);
+  // Make a mask, to skip interpolating to points inside y-boundaries that need to be set
+  // by boundary conditions.
+  auto mask_up = BoutMask(mesh.LocalNx, mesh.LocalNy, mesh.LocalNz);
+  for (auto it = mesh.iterateBndryUpperY(); not it.isDone(); it.next()) {
+    for (int z = mesh.zstart; z <= mesh.zend; z++) {
+      mask_up(it.ind, mesh.yend, z) = true;
+    }
+  }
+
+  interp_yup->calcWeights(xt_prime, zt_prime_up, mask_up);
 
   for (const auto &i : xt_prime) {
     // no interpolation in x, all field lines stay at constant x
@@ -78,7 +88,14 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in, Field
       - (zShift[i] - zShift[i.ym()])*static_cast<BoutReal>(mesh.GlobalNz)/TWOPI;
   }
 
-  interp_ydown->calcWeights(xt_prime, zt_prime_down);
+  auto mask_down = BoutMask(mesh.LocalNx, mesh.LocalNy, mesh.LocalNz);
+  for (auto it = mesh.iterateBndryLowerY(); not it.isDone(); it.next()) {
+    for (int z = mesh.zstart; z <= mesh.zend; z++) {
+      mask_down(it.ind, mesh.ystart, z) = true;
+    }
+  }
+
+  interp_ydown->calcWeights(xt_prime, zt_prime_down, mask_down);
 
   // Set up interpolation to/from field-aligned coordinates
   interp_to_aligned = InterpolationFactory::getInstance()->create(&mesh);
@@ -107,6 +124,45 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in, Field
 
   interp_from_aligned->calcWeights(xt_prime, zt_prime_from);
 
+  // Create regions for parallel boundary conditions
+  Field2D dy;
+  mesh.get(dy, "dy", 1.);
+  auto forward_boundary = new BoundaryRegionPar("parallel_forward", BNDRY_PAR_FWD, +1,
+                                                &mesh);
+  for (auto it = mesh.iterateBndryUpperY(); not it.isDone(); it.next()) {
+    for (int z = mesh.zstart; z <= mesh.zend; z++) {
+      forward_boundary->add_point(it.ind, mesh.yend, z,
+                                  mesh.GlobalX(it.ind),                     // x
+                                  2.*PI*mesh.GlobalY(mesh.yend + 0.5),      // y
+                                  2.*PI*BoutReal(z)/BoutReal(mesh.GlobalNz) // z
+                                    + 0.5*(zShift(it.ind, mesh.yend + 1)
+                                    - zShift(it.ind, mesh.yend)),
+                                  0.25*(dy(it.ind, mesh.yend)               // dy/2
+                                        + dy(it.ind, mesh.yend + 1)),
+                                  0.                                        // angle?
+                                 );
+    }
+  }
+  auto backward_boundary = new BoundaryRegionPar("parallel_backward", BNDRY_PAR_BKWD, -1,
+                                                 &mesh);
+  for (auto it = mesh.iterateBndryLowerY(); not it.isDone(); it.next()) {
+    for (int z = mesh.zstart; z <= mesh.zend; z++) {
+      backward_boundary->add_point(it.ind, mesh.ystart, z,
+                                   mesh.GlobalX(it.ind),                     // x
+                                   2.*PI*mesh.GlobalY(mesh.ystart - 0.5),    // y
+                                   2.*PI*BoutReal(z)/BoutReal(mesh.GlobalNz) // z
+                                     + 0.5*(zShift(it.ind, mesh.ystart)
+                                     - zShift(it.ind, mesh.ystart - 1)),
+                                   0.25*(dy(it.ind, mesh.ystart - 1)         // dy/2
+                                         + dy(it.ind, mesh.ystart)),
+                                   0.                                        // angle?
+                                  );
+    }
+  }
+
+  // Add the boundary region to the mesh's vector of parallel boundaries
+  mesh.addBoundaryPar(forward_boundary);
+  mesh.addBoundaryPar(backward_boundary);
 }
 
 void ShiftedMetricInterp::checkInputGrid() {
