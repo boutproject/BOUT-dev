@@ -1,0 +1,70 @@
+grid = data/grid.nc
+mz = 128
+
+[f]
+#function = 0.
+function = mixmode(x, 1.)*mixmode(y, 2.)*mixmode(z, 3.)
+bndry_xin = none
+bndry_xout = none
+bndry_par_all = parallel_neumann
+
+[rhs]
+function = mixmode(x, 4.)*mixmode(y, 5.)*mixmode(z, 6.)
+
+[D]
+#function = 1.
+function = 1. + .1*mixmode(x, 7.)*mixmode(y, 8.)*mixmode(z, 9.)
+
+[C1]
+#function = 1.
+function = 1. + .1*mixmode(x, 10.)*mixmode(y, 11.)*mixmode(z, 12.)
+
+[C2]
+#function = 0.
+function = .1*mixmode(x, 13.)*mixmode(y, 14.)*mixmode(z, 15.)
+bndry_par_all = parallel_neumann
+
+[A]
+function = 0.
+
+#################################################################################
+[mesh]
+paralleltransform = shiftedinterp
+
+[interpolation]
+type = hermitesplineonlyz
+
+#################################################################################
+[laplace]
+type = multigrid
+rtol = 1.e-8
+atol = 1.e-12
+
+[input]
+transform_from_field_aligned = false
+
+[initial]
+bndry_xin = neumann
+bndry_xout = neumann
+bndry_par_all = parallel_neumann
+
+[input1]
+function = mixmode(x, 1.)*mixmode(z, 2.)
+
+[input2]
+function = mixmode(x, 3.)*mixmode(z, 4.)
+
+[input3]
+function = mixmode(x, 5.)*mixmode(z, 6.)
+
+[input4]
+function = mixmode(x, 7.)*mixmode(z, 8.)
+
+[input5]
+function = mixmode(x, 9.)*mixmode(z, 10.)
+
+[input6]
+function = mixmode(x, 11.)*mixmode(z, 12.)
+
+[solver]
+mxstep = 1e6
