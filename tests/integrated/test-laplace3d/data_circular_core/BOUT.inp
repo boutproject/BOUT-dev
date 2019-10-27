@@ -62,6 +62,9 @@ shiftangle = r^2 * 2.*pi/(1. - r^2)^1.5
 
 paralleltransform = shiftedinterp
 
+[interpolation]
+type = hermitesplineonlyz
+
 #################################################################################
 [laplace]
 type = multigrid
