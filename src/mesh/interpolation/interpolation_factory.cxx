@@ -6,6 +6,7 @@ InterpolationFactory* InterpolationFactory::instance = nullptr;
 InterpolationFactory::InterpolationFactory() {
   add(HermiteSpline::CreateHermiteSpline, "hermitespline");
   add(MonotonicHermiteSpline::CreateMonotonicHermiteSpline, "monotonichermitespline");
+  add(HermiteSplineOnlyZ::CreateHermiteSplineOnlyZ, "hermitesplineonlyz");
   add(Lagrange4pt::CreateLagrange4pt, "lagrange4pt");
   add(Bilinear::CreateBilinear, "bilinear");
 }

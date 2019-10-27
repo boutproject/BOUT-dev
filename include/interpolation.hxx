@@ -342,6 +342,49 @@ public:
   Field3D interpolate(const Field3D &f) const override;
 };
 
+/// Like HermiteSpline but with interpolation only in the z-direction
+class HermiteSplineOnlyZ : public Interpolation {
+public:
+  HermiteSplineOnlyZ(Mesh *mesh = nullptr) : HermiteSplineOnlyZ(0, mesh) {}
+  HermiteSplineOnlyZ(int y_offset = 0, Mesh *mesh = nullptr);
+  HermiteSplineOnlyZ(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
+      : HermiteSplineOnlyZ(y_offset, mesh) {
+    skip_mask = mask;
+  }
+
+  /// Callback function for InterpolationFactory
+  static Interpolation *CreateHermiteSplineOnlyZ(Mesh *mesh) {
+    return new HermiteSplineOnlyZ(mesh);
+  }
+
+  void calcWeights(const Field3D& UNUSED(delta_x), const Field3D& delta_z) override;
+  void calcWeights(const Field3D& UNUSED(delta_x), const Field3D& delta_z,
+                   const BoutMask &mask) override;
+
+  // Use precalculated weights
+  Field3D interpolate(const Field3D &f) const override;
+  // Calculate weights and interpolate
+  Field3D interpolate(const Field3D &f, const Field3D &delta_x,
+                      const Field3D &delta_z) override;
+  Field3D interpolate(const Field3D &f, const Field3D &delta_x, const Field3D &delta_z,
+                      const BoutMask &mask) override;
+  std::vector<ParallelTransform::positionsAndWeights> getWeightsForYApproximation(int i, int j, int k, int yoffset);
+
+private:
+  Tensor<int> k_corner; // z-index of bottom-left grid point
+
+  // Basis functions for cubic Hermite spline interpolation
+  //    see http://en.wikipedia.org/wiki/Cubic_Hermite_spline
+  // The h00 and h01 basis functions are applied to the function itself
+  // and the h10 and h11 basis functions are applied to its derivative
+  // along the interpolation direction.
+
+  Field3D h00_z;
+  Field3D h01_z;
+  Field3D h10_z;
+  Field3D h11_z;
+};
+
 class Lagrange4pt : public Interpolation {
   Tensor<int> i_corner; // x-index of bottom-left grid point
   Tensor<int> k_corner; // z-index of bottom-left grid point
