@@ -97,7 +97,9 @@ class Petsc3dAmgTest : public FakeMeshFixture,
 		       public testing::WithParamInterface<std::tuple<bool, bool,
 								     bool, bool > > {
 public:
+  WithQuietOutput info{output_info}, warn{output_warn}, progress{output_progress}, all{output};
   Petsc3dAmgTest() : FakeMeshFixture() {
+    PetscErrorPrintf = PetscErrorPrintfNone;
     int nx = mesh->GlobalNx,
         ny = mesh->GlobalNy,
         nz = mesh->GlobalNz;
@@ -144,6 +146,7 @@ public:
   ~Petsc3dAmgTest() {
     delete solver;
     Options::cleanup();
+    PetscErrorPrintf = PetscErrorPrintfDefault;
   }
 
   const BoutReal sigmasq = 0.02;

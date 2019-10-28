@@ -35,18 +35,18 @@
 #include <derivs.hxx>
 #include <bout/petsc_interface.hxx>
 
-#define KSP_RICHARDSON "richardson"
-#define KSP_CHEBYSHEV   "chebyshev"
-#define KSP_CG          "cg"
-#define KSP_GMRES       "gmres"
-#define KSP_TCQMR       "tcqmr"
-#define KSP_BCGS        "bcgs"
-#define KSP_CGS         "cgs"
-#define KSP_TFQMR       "tfqmr"
-#define KSP_CR          "cr"
-#define KSP_LSQR        "lsqr"
-#define KSP_BICG        "bicg"
-#define KSP_PREONLY     "preonly"
+constexpr auto KSP_RICHARDSON = "richardson";
+constexpr auto KSP_CHEBYSHEV  = "chebyshev";
+constexpr auto KSP_CG         = "cg";
+constexpr auto KSP_GMRES      = "gmres";
+constexpr auto KSP_TCQMR      = "tcqmr";
+constexpr auto KSP_BCGS       = "bcgs";
+constexpr auto KSP_CGS        = "cgs";
+constexpr auto KSP_TFQMR      = "tfqmr";
+constexpr auto KSP_CR         = "cr";
+constexpr auto KSP_LSQR       = "lsqr";
+constexpr auto KSP_BICG       = "bicg";
+constexpr auto KSP_PREONLY    = "preonly";
 
 LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mesh_in) :
   Laplacian(opt, loc, mesh_in),
@@ -66,8 +66,11 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mes
   Ez.setLocation(location);
 
   // Get Options in Laplace Section
-  if (!opt) opts = Options::getRoot()->getSection("laplace");
-  else opts=opt;
+  if (!opt) {
+    opts = Options::getRoot()->getSection("laplace");
+  } else {
+    opts=opt;
+  }
 
   // Get y boundary flags
   lower_boundary_flags = (*opts)["lower_boundary_flags"].withDefault(0);
@@ -367,96 +370,96 @@ PetscMatrix<Field3D>& LaplacePetsc3dAmg::getMatrix3D() {
 }
 
 void LaplacePetsc3dAmg::updateMatrix3D() {
-  // Calculate coefficients for the terms in the differential operator
-  Field3D C_df_dx = coords->G1,
-    C_df_dy = (coords->G2 - DDY(coords->J/coords->g_22)/coords->J),
-    C_df_dz = coords->G3;
-  if (issetD) {
-    C_df_dx *= D;
-    C_df_dy *= D;
-    C_df_dz *= D;
-  }
-  if (issetC) {
-    Field3D dc_dx = DDX(C2), dc_dy = DDY(C2), dc_dz = DDZ(C2);
-    C_df_dx += (coords->g11*dc_dx + coords->g12*dc_dy + coords->g13*dc_dz)/C1;
-    C_df_dy += (coords->g12*dc_dx + (coords->g22 - 1./coords->g_22)*dc_dy +
-		coords->g23*dc_dz)/C1;
-    C_df_dz += (coords->g13*dc_dx + coords->g23*dc_dy + coords->g33*dc_dz)/C1;
-  }
-  if (issetE) {
-    C_df_dx += Ex;
-    C_df_dz += Ez;
-  }
-  
-  Field3D C_d2f_dx2 = coords->g11,
-    C_d2f_dy2 = (coords->g22 - 1.0/coords->g_22),
-    C_d2f_dz2 = coords->g33;
-  if (issetD) {
-    C_d2f_dx2 *= D;
-    C_d2f_dy2 *= D;
-    C_d2f_dz2 *= D;
-  }
-
-  Field3D C_d2f_dxdy = 2*coords->g12,
-    C_d2f_dxdz = 2*coords->g13,
-    C_d2f_dydz = 2*coords->g23;
-  if (issetD) {
-    C_d2f_dxdy *= D;
-    C_d2f_dxdz *= D;
-    C_d2f_dydz *= D;
-  }
-
-  // Adjust the coefficients to include finite-difference factors
-  if (nonuniform) {
-    C_df_dx -= C_d2f_dx2*coords->d1_dx;
-    C_df_dy -= C_d2f_dy2*coords->d1_dy;
-  }
-  C_df_dx /= 2*coords->dx;
-  C_df_dy /= 2*coords->dy;
-  C_df_dz /= 2*coords->dz;
-  
-  C_d2f_dx2 /= SQ(coords->dx);
-  C_d2f_dy2 /= SQ(coords->dy);
-  C_d2f_dz2 /= SQ(coords->dz);
-  
-  C_d2f_dxdy /= 4*coords->dy; // NOTE: This is unfinished; will also need to
-                                // divide by dx(i +/- 1, j, k) when using
-  C_d2f_dxdz /= 4*coords->dx*coords->dz;
-  C_d2f_dydz /= 4*coords->dy*coords->dz;
+  const Field3D dc_dx = issetC ? DDX(C2) : Field3D(),
+    dc_dy = issetC ? DDY(C2) : Field3D(),
+    dc_dz = issetC ? DDZ(C2) : Field3D(),
+    dJ_dy = DDY(coords->J/coords->g_22);
 
   // Set up the matrix for the internal points on the grid.
   // Boundary conditions were set in the constructor.
   BOUT_FOR(l, localmesh->getRegion3D("RGN_NOBNDRY")) {
     // Index is called l for "location". It is not called i so as to
     // avoid confusing it with the x-index.
-    Ind3D lxp = l.xp(), lxm = l.xm(), lyp = l.yp(), lym = l.ym(),
-      lzp = l.zp(), lzm = l.zm();
-    Ind3D lxpyp = l.xp().yp(), lxpym = l.xp().ym(),
-      lxmyp = l.xm().yp(), lxmym = l.xm().ym();
-    Ind3D lxpzp = l.xp().zp(), lxpzm = l.xp().zm(),
-      lxmzp = l.xm().zp(), lxmzm = l.xm().zm();
-    Ind3D lypzp = l.yp().zp(), lypzm = l.yp().zm(),
-      lymzp = l.ym().zp(), lymzm = l.ym().zm();
 
-    operator3D(l, l) = -2*(C_d2f_dx2[l] + C_d2f_dy2[l] + C_d2f_dz2[l]) + A[l];
-    operator3D(l, lxp) = C_df_dx[l] + C_d2f_dx2[l];
-    operator3D(l, lxm) = -C_df_dx[l] + C_d2f_dx2[l];
-    operator3D.yup()(l, lyp) = C_df_dy[l] + C_d2f_dy2[l];
-    operator3D.ydown()(l, lym) = -C_df_dy[l] + C_d2f_dy2[l];
-    operator3D(l, lzp) = C_df_dz[l] + C_d2f_dz2[l];
-    operator3D(l, lzm) = -C_df_dz[l] + C_d2f_dz2[l];
-    operator3D.yup()(l, lxpyp) = C_d2f_dxdy[l]/coords->dy[lxp];
-    operator3D.ydown()(l, lxpym) = -C_d2f_dxdy[l]/coords->dy[lxp];
-    operator3D.yup()(l, lxmyp) = -C_d2f_dxdy[l]/coords->dy[lxm];
-    operator3D.ydown()(l, lxmym) = C_d2f_dxdy[l]/coords->dy[lxm];
-    operator3D(l, lxpzp) = C_d2f_dxdz[l];
-    operator3D(l, lxpzm) = -C_d2f_dxdz[l];
-    operator3D(l, lxmzp) = -C_d2f_dxdz[l];
-    operator3D(l, lxmzm) = C_d2f_dxdz[l];
-    operator3D.yup()(l, lypzp) = C_d2f_dydz[l];
-    operator3D.yup()(l, lypzm) = -C_d2f_dydz[l];
-    operator3D.ydown()(l, lymzp) = -C_d2f_dydz[l];
-    operator3D.ydown()(l, lymzm) = C_d2f_dydz[l];
+    // Calculate coefficients for the terms in the differential operator
+    BoutReal C_df_dx = coords->G1[l],
+      C_df_dy = (coords->G2[l] - dJ_dy[l]/coords->J[l]),
+      C_df_dz = coords->G3[l];
+    if (issetD) {
+      C_df_dx *= D[l];
+      C_df_dy *= D[l];
+      C_df_dz *= D[l];
+    }
+    if (issetC) {
+      C_df_dx += (coords->g11[l]*dc_dx[l] + coords->g12[l]*dc_dy[l] +
+		  coords->g13[l]*dc_dz[l])/C1[l];
+      C_df_dy += (coords->g12[l]*dc_dx[l] + (coords->g22[l] - 1./coords->g_22[l])*dc_dy[l] +
+		  coords->g23[l]*dc_dz[l])/C1[l];
+      C_df_dz += (coords->g13[l]*dc_dx[l] + coords->g23[l]*dc_dy[l] +
+		  coords->g33[l]*dc_dz[l])/C1[l];
+    }
+    if (issetE) {
+      C_df_dx += Ex[l];
+      C_df_dz += Ez[l];
+    }
+    
+    BoutReal C_d2f_dx2 = coords->g11[l],
+      C_d2f_dy2 = (coords->g22[l] - 1.0/coords->g_22[l]),
+      C_d2f_dz2 = coords->g33[l];
+    if (issetD) {
+      C_d2f_dx2 *= D[l];
+      C_d2f_dy2 *= D[l];
+      C_d2f_dz2 *= D[l];
+    }
+  
+    BoutReal C_d2f_dxdy = 2*coords->g12[l],
+      C_d2f_dxdz = 2*coords->g13[l],
+      C_d2f_dydz = 2*coords->g23[l];
+    if (issetD) {
+      C_d2f_dxdy *= D[l];
+      C_d2f_dxdz *= D[l];
+      C_d2f_dydz *= D[l];
+    }
+  
+    // Adjust the coefficients to include finite-difference factors
+    if (nonuniform) {
+      C_df_dx -= C_d2f_dx2*coords->d1_dx[l];
+      C_df_dy -= C_d2f_dy2*coords->d1_dy[l];
+    }
+    C_df_dx /= 2*coords->dx[l];
+    C_df_dy /= 2*coords->dy[l];
+    C_df_dz /= 2*coords->dz;
+    
+    C_d2f_dx2 /= SQ(coords->dx[l]);
+    C_d2f_dy2 /= SQ(coords->dy[l]);
+    C_d2f_dz2 /= SQ(coords->dz);
+    
+    C_d2f_dxdy /= 4*coords->dy[l]; // NOTE: This is unfinished; will also need to
+                                   // divide by dx(i +/- 1, j, k) when using
+    C_d2f_dxdz /= 4*coords->dx[l]*coords->dz;
+    C_d2f_dydz /= 4*coords->dy[l]*coords->dz;
+
+  
+    
+    operator3D(l, l) = -2*(C_d2f_dx2 + C_d2f_dy2 + C_d2f_dz2) + A[l];
+    operator3D(l, l.xp()) = C_df_dx + C_d2f_dx2;
+    operator3D(l, l.xm()) = -C_df_dx + C_d2f_dx2;
+    operator3D.yup()(l, l.yp()) = C_df_dy + C_d2f_dy2;
+    operator3D.ydown()(l, l.ym()) = -C_df_dy + C_d2f_dy2;
+    operator3D(l, l.zp()) = C_df_dz + C_d2f_dz2;
+    operator3D(l, l.zm()) = -C_df_dz + C_d2f_dz2;
+    operator3D.yup()(l, l.xp().yp()) = C_d2f_dxdy/coords->dy[l.xp()];
+    operator3D.ydown()(l, l.xp().ym()) = -C_d2f_dxdy/coords->dy[l.xp()];
+    operator3D.yup()(l, l.xm().yp()) = -C_d2f_dxdy/coords->dy[l.xm()];
+    operator3D.ydown()(l, l.xm().ym()) = C_d2f_dxdy/coords->dy[l.xm()];
+    operator3D(l, l.xp().zp()) = C_d2f_dxdz;
+    operator3D(l, l.xp().zm()) = -C_d2f_dxdz;
+    operator3D(l, l.xm().zp()) = -C_d2f_dxdz;
+    operator3D(l, l.xm().zm()) = C_d2f_dxdz;
+    operator3D.yup()(l, l.yp().zp()) = C_d2f_dydz;
+    operator3D.yup()(l, l.yp().zm()) = -C_d2f_dydz;
+    operator3D.ydown()(l, l.ym().zp()) = -C_d2f_dydz;
+    operator3D.ydown()(l, l.ym().zm()) = C_d2f_dydz;
   }
   operator3D.assemble();
   PetscViewer view;
