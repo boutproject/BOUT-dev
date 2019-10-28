@@ -370,7 +370,7 @@ public:
                       const Field3D &delta_z) override;
   Field3D interpolate(const Field3D &f, const Field3D &delta_x, const Field3D &delta_z,
                       const BoutMask &mask) override;
-  std::vector<ParallelTransform::positionsAndWeights> getWeightsForYApproximation(int i, int j, int k, int yoffset);
+  std::vector<ParallelTransform::PositionsAndWeights> getWeightsForYApproximation(int i, int j, int k, int yoffset);
 
 private:
   Tensor<int> k_corner; // z-index of bottom-left grid point
