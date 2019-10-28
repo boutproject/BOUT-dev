@@ -30,18 +30,18 @@
 #ifndef __PETSC_INTERFACE_H__
 #define __PETSC_INTERFACE_H__
 
-#include <vector>
+#include <algorithm>
 #include <memory>
 #include <type_traits>
-#include <algorithm>
+#include <vector>
 
-#include <bout_types.hxx>
+#include <bout/mesh.hxx>
+#include <bout/paralleltransform.hxx>
 #include <bout/petsclib.hxx>
 #include <bout/region.hxx>
-#include <bout/mesh.hxx>
-#include <boutcomm.hxx>
-#include <bout/paralleltransform.hxx>
 #include <bout/traits.hxx>
+#include <bout_types.hxx>
+#include <boutcomm.hxx>
 
 #ifdef BOUT_HAS_PETSC
 class GlobalIndexer;
@@ -66,7 +66,7 @@ public:
   /// Finish setting up the indexer, communicating indices across processes.
   void initialise();
   Mesh* getMesh();
-  
+
   /// Convert the local index object to a global index which can be
   /// used in PETSc vectors and matrices.
   PetscInt getGlobal(const Ind2D ind);
@@ -89,7 +89,7 @@ private:
   Field3D indices3D;
   Field2D indices2D;
   FieldPerp indicesPerp;
-  
+
   /// The only instance of this class acting on the global Mesh
   static IndexerPtr globalInstance;
   static bool initialisedGlobal;
@@ -97,14 +97,15 @@ private:
   bool initialised;
 };
 
-
 /*!
  * A class which wraps PETSc vector objects, allowing them to be
  * indexed using the BOUT++ scheme. Note that boundaries are only
  * included in the vector to a depth of 1.
  */
-template<class T> class PetscVector;
-template<class T> void swap(PetscVector<T>& first, PetscVector<T>& second);
+template <class T>
+class PetscVector;
+template <class T>
+void swap(PetscVector<T>& first, PetscVector<T>& second);
 
 template <class T>
 class PetscVector {
@@ -112,7 +113,7 @@ public:
   static_assert(bout::utils::is_Field<T>::value, "PetscVector only works with Fields");
   using ind_type = typename T::ind_type;
 
-  struct VectorDeleter { 
+  struct VectorDeleter {
     void operator()(Vec* v) const {
       VecDestroy(v);
       delete v;
@@ -141,29 +142,28 @@ public:
   }
 
   /// Construct from a field, copying over the field values
-  PetscVector(const T &f) : vector(new Vec(), VectorDeleter()) {
-    const MPI_Comm comm = std::is_same<T, FieldPerp>::value ?
-       f.getMesh()->getXcomm() : BoutComm::get();
+  PetscVector(const T& f) : vector(new Vec(), VectorDeleter()) {
+    const MPI_Comm comm =
+        std::is_same<T, FieldPerp>::value ? f.getMesh()->getXcomm() : BoutComm::get();
     indexConverter = GlobalIndexer::getInstance(f.getMesh());
     const auto size = [&f]() {
-			if (std::is_same<T, FieldPerp>::value) {
-			  return f.getMesh()->localSizePerp();
-			} else if (std::is_same<T, Field2D>::value) {
-			  return f.getMesh()->localSize2D();
-			} else if (std::is_same<T, Field3D>::value) {
-			  return f.getMesh()->localSize3D();
-			} else {
-			  throw BoutException("PetscVector initialised for non-field type.");
-			}
-		      };
+      if (std::is_same<T, FieldPerp>::value) {
+        return f.getMesh()->localSizePerp();
+      } else if (std::is_same<T, Field2D>::value) {
+        return f.getMesh()->localSize2D();
+      } else if (std::is_same<T, Field3D>::value) {
+        return f.getMesh()->localSize3D();
+      } else {
+        throw BoutException("PetscVector initialised for non-field type.");
+      }
+    };
     VecCreateMPI(comm, size(), PETSC_DECIDE, vector.get());
     location = f.getLocation();
     initialised = true;
-    PetscInt ind;
     BOUT_FOR(i, f.getRegion(RGN_ALL)) {
-      ind = indexConverter->getGlobal(i);
+      PetscInt ind = indexConverter->getGlobal(i);
       if (ind != -1) {
-	VecSetValues(*vector, 1, &ind, &f[i], INSERT_VALUES);
+        BOUT_OMP(critical) VecSetValues(*vector, 1, &ind, &f[i], INSERT_VALUES);
       }
     }
     assemble();
@@ -210,44 +210,58 @@ public:
    * vector. It is meant to be transient and will be destroyed immediately
    * after use. In general you should not try to assign an instance to a
    * variable.
+   *
+   * The Element object will store a copy of the value which has been
+   * assigned to it. This is because mixing calls to the PETSc
+   * function VecGetValues() and VecSetValues() without intermediate
+   * vector assembly will cause errors. Thus, if the user wishes to
+   * get the value of the vector, it must be stored here.
    */
   class Element {
   public:
     Element() = delete;
-    Element(Vec* vector, int index) : petscVector(vector), petscIndex(index) {}
-    Element operator=(BoutReal val) {
-      const auto status = VecSetValues(*petscVector, 1, &petscIndex, &val, INSERT_VALUES);
+    Element(const Element& other) = default;
+    Element(Vec* vector, int index) : petscVector(vector), petscIndex(index) {
+      int status;
+      BOUT_OMP(critical) status = VecGetValues(*petscVector, 1, &petscIndex, &value);
       if (status != 0) {
-	throw BoutException("Error when setting elements of a PETSc vector.");
+        value = 0.;
+      }
+    }
+    Element operator=(Element& other) { return *this = static_cast<BoutReal>(other); }
+    Element operator=(BoutReal val) {
+      value = val;
+      int status;
+      BOUT_OMP(critical)
+      status = VecSetValues(*petscVector, 1, &petscIndex, &val, INSERT_VALUES);
+      if (status != 0) {
+        throw BoutException("Error when setting elements of a PETSc vector.");
       }
       return *this;
     }
     Element operator+=(BoutReal val) {
-      const auto status = VecSetValues(*petscVector, 1, &petscIndex, &val, ADD_VALUES);
+      value += val;
+      int status;
+      BOUT_OMP(critical)
+      status = VecSetValues(*petscVector, 1, &petscIndex, &val, ADD_VALUES);
       if (status != 0) {
-	throw BoutException("Error when setting elements of a PETSc vector.");
+        throw BoutException("Error when setting elements of a PETSc vector.");
       }
       return *this;
     }
-    operator BoutReal() const {
-      BoutReal value;
-      const auto status = VecGetValues(*petscVector, 1, &petscIndex, &value);
-      if (status != 0) {
-	throw BoutException("Error when getting elements of a PETSc vector.");
-      }  
-      return value;
-    }
+    operator BoutReal() const { return value; }
 
   private:
     Vec* petscVector = nullptr;
     PetscInt petscIndex;
+    PetscScalar value;
   };
-  
+
   Element operator()(const ind_type& index) {
 #if CHECKLEVEL >= 1
     if (!initialised) {
       throw BoutException("Can not return element of uninitialised vector");
-    } 
+    }
 #endif
     const int global = indexConverter->getGlobal(index);
 #if CHECKLEVEL >= 1
@@ -257,12 +271,12 @@ public:
 #endif
     return Element(vector.get(), global);
   }
-  
+
   void assemble() {
     VecAssemblyBegin(*vector);
     VecAssemblyEnd(*vector);
   }
-  
+
   void destroy() {
     if (*vector != nullptr && initialised) {
       VecDestroy(vector.get());
@@ -276,25 +290,22 @@ public:
     T result(indexConverter->getMesh());
     result.allocate();
     result.setLocation(location);
-    PetscScalar val;
-    PetscInt ind;
     // Note that this only populates boundaries to a depth of 1
     BOUT_FOR(i, result.getRegion(RGN_ALL)) {
-      ind = indexConverter->getGlobal(i);
+      PetscInt ind = indexConverter->getGlobal(i);
       if (ind == -1) {
-	result[i] = -1.0;
+        result[i] = -1.0;
       } else {
-	VecGetValues(*vector, 1, &ind, &val);
-	result[i] = val;
+        PetscScalar val;
+        BOUT_OMP(critical) VecGetValues(*vector, 1, &ind, &val);
+        result[i] = val;
       }
     }
     return result;
   }
 
   /// Provides a reference to the raw PETSc Vec object.
-  Vec* getVectorPointer() {
-    return vector.get();
-  }
+  Vec* getVectorPointer() { return vector.get(); }
 
 private:
   std::unique_ptr<Vec, VectorDeleter> vector = nullptr;
@@ -304,14 +315,15 @@ private:
   PetscLib lib;
 };
 
-
 /*!
  * A class which wraps PETSc vector objects, allowing them to be
  * indexed using the BOUT++ scheme. It provides the option of setting
  * a y-offset that interpolates onto field lines.
  */
-template<class T> class PetscMatrix;
-template<class T> void swap(PetscMatrix<T>& first, PetscMatrix<T>& second);
+template <class T>
+class PetscMatrix;
+template <class T>
+void swap(PetscMatrix<T>& first, PetscMatrix<T>& second);
 
 template <class T>
 class PetscMatrix {
@@ -319,13 +331,13 @@ public:
   static_assert(bout::utils::is_Field<T>::value, "PetscMatrix only works with Fields");
   using ind_type = typename T::ind_type;
 
-  struct MatrixDeleter { 
+  struct MatrixDeleter {
     void operator()(Mat* m) const {
       MatDestroy(m);
       delete m;
     }
   };
-  
+
   /// Default constructor does nothing
   PetscMatrix() : matrix(new Mat(), MatrixDeleter()) {}
 
@@ -337,7 +349,7 @@ public:
     yoffset = m.yoffset;
     initialised = m.initialised;
   }
-  
+
   /// Move constrcutor
   PetscMatrix(PetscMatrix<T>&& m) : pt(m.pt) {
     matrix = m.matrix;
@@ -348,22 +360,22 @@ public:
   }
 
   // Construct a matrix capable of operating on the specified field
-  PetscMatrix(T &f) : matrix(new Mat(), MatrixDeleter()) {
-    const MPI_Comm comm = std::is_same<T, FieldPerp>::value ?
-      f.getMesh()->getXcomm() : BoutComm::get();
+  PetscMatrix(T& f) : matrix(new Mat(), MatrixDeleter()) {
+    const MPI_Comm comm =
+        std::is_same<T, FieldPerp>::value ? f.getMesh()->getXcomm() : BoutComm::get();
     indexConverter = GlobalIndexer::getInstance(f.getMesh());
     pt = &f.getMesh()->getCoordinates()->getParallelTransform();
     const auto size = [&f]() {
-			if (std::is_same<T, FieldPerp>::value) {
-			  return f.getMesh()->localSizePerp();
-			} else if (std::is_same<T, Field2D>::value) {
-			  return f.getMesh()->localSize2D();
-			} else if (std::is_same<T, Field3D>::value) {
-			  return f.getMesh()->localSize3D();
-			} else {
-			  throw BoutException("PetscVector initialised for non-field type.");
-			}
-		      };
+      if (std::is_same<T, FieldPerp>::value) {
+        return f.getMesh()->localSizePerp();
+      } else if (std::is_same<T, Field2D>::value) {
+        return f.getMesh()->localSize2D();
+      } else if (std::is_same<T, Field3D>::value) {
+        return f.getMesh()->localSize3D();
+      } else {
+        throw BoutException("PetscVector initialised for non-field type.");
+      }
+    };
     MatCreate(comm, matrix.get());
     MatSetSizes(*matrix, size(), size(), PETSC_DECIDE, PETSC_DECIDE);
     MatSetType(*matrix, MATMPIAIJ);
@@ -371,7 +383,7 @@ public:
     yoffset = 0;
     initialised = true;
   }
-  
+
   /// Copy assignment
   PetscMatrix<T>& operator=(PetscMatrix<T> rhs) {
     swap(*this, rhs);
@@ -393,46 +405,67 @@ public:
    * matrix, potentially with a y-offset. It is meant to be transient
    * and will be destroyed immediately after use. In general you should
    * not try to assign an instance to a variable.
+   *
+   * The Element object will store a copy of the value which has been
+   * assigned to it. This is because mixing calls to the PETSc
+   * function MatGetValues() and MatSetValues() without intermediate
+   * matrix assembly will cause errors. Thus, if the user wishes to
+   * get the value of the matrix, it must be stored here.
    */
   class Element {
   public:
     Element() = delete;
+    Element(const Element& other) = default;
     Element(Mat* matrix, PetscInt row, PetscInt col, std::vector<PetscInt> p = {},
-	    std::vector<BoutReal> w = {}) : petscMatrix(matrix),
-					    petscRow(row), positions(p),
-					    weights(w) {
+            std::vector<BoutReal> w = {})
+        : petscMatrix(matrix), petscRow(row), petscCol(col), positions(p), weights(w) {
       ASSERT2(positions.size() == weights.size());
       if (positions.size() == 0) {
-	positions = { col };
-	weights = { 1.0 };
+        positions = {col};
+        weights = {1.0};
+      }
+      int status;
+      BOUT_OMP(critical)
+      status = MatGetValues(*petscMatrix, 1, &petscRow, 1, &petscCol, &value);
+      if (status != 0) {
+        value = 0.;
       }
     }
+    Element operator=(Element& other) { return *this = static_cast<BoutReal>(other); }
     Element operator=(BoutReal val) {
+      value = val;
       setValues(val, INSERT_VALUES);
       return *this;
     }
     Element operator+=(BoutReal val) {
+      value += val;
+      auto columnPosition = std::find(positions.begin(), positions.end(), petscCol);
+      if (columnPosition != positions.end()) {
+        int i = std::distance(positions.begin(), columnPosition);
+        value += weights[i] * val;
+      }
       setValues(val, ADD_VALUES);
       return *this;
     }
-    //operator BoutReal() const {
-      // Tricky...
-    //}
-    
+    operator BoutReal() const { return value; }
+
   private:
     void setValues(BoutReal val, InsertMode mode) {
       ASSERT3(positions.size() > 0);
       std::vector<PetscScalar> values;
       std::transform(weights.begin(), weights.end(), std::back_inserter(values),
-		     [&val](BoutReal weight) -> PetscScalar {return weight * val;});
-      auto status = MatSetValues(*petscMatrix, 1, &petscRow, positions.size(),
-				 positions.data(), values.data(), mode);
+                     [&val](BoutReal weight) -> PetscScalar { return weight * val; });
+      int status;
+      BOUT_OMP(critical)
+      status = MatSetValues(*petscMatrix, 1, &petscRow, positions.size(),
+                            positions.data(), values.data(), mode);
       if (status != 0) {
-	throw BoutException("Error when setting elements of a PETSc matrix.");
+        throw BoutException("Error when setting elements of a PETSc matrix.");
       }
     }
     Mat* petscMatrix;
-    PetscInt petscRow;
+    PetscInt petscRow, petscCol;
+    PetscScalar value;
     std::vector<PetscInt> positions;
     std::vector<BoutReal> weights;
   };
@@ -451,25 +484,31 @@ public:
     std::vector<PetscScalar> weights;
     if (yoffset != 0) {
       const auto pw = [this, &index2]() {
-	    if (this->yoffset == -1) {
-	      return pt->getWeightsForYDownApproximation(index2.x(), index2.y(), index2.z());
-	    } else if (this->yoffset == 1) {
-	      return pt->getWeightsForYUpApproximation(index2.x(), index2.y(), index2.z());
-	    } else {
-	      return pt->getWeightsForYApproximation(index2.x(), index2.y(), index2.z(),
-						     this->yoffset);
-	    }
+        if (this->yoffset == -1) {
+          return pt->getWeightsForYDownApproximation(index2.x(), index2.y(), index2.z());
+        } else if (this->yoffset == 1) {
+          return pt->getWeightsForYUpApproximation(index2.x(), index2.y(), index2.z());
+        } else {
+          return pt->getWeightsForYApproximation(index2.x(), index2.y(), index2.z(),
+                                                 this->yoffset);
+        }
       }();
-      
-      const int ny = std::is_same<T, FieldPerp>::value ? 1 : indexConverter->getMesh()->LocalNy,
-	nz = std::is_same<T, Field2D>::value ? 1 : indexConverter->getMesh()->LocalNz;
-      std::transform(pw.begin(), pw.end(), std::back_inserter(positions),
-		     [this, &ny, &nz](ParallelTransform::PositionsAndWeights p) -> PetscInt
-		     {return this->indexConverter->getGlobal(ind_type(p.i*ny*nz + p.j*nz
-								      + p.k, ny, nz));});
+
+      const int ny = std::is_same<T, FieldPerp>::value
+                         ? 1
+                         : indexConverter->getMesh()->LocalNy,
+                nz = std::is_same<T, Field2D>::value ? 1
+                                                     : indexConverter->getMesh()->LocalNz;
+      std::transform(
+          pw.begin(), pw.end(), std::back_inserter(positions),
+          [this, &ny, &nz](ParallelTransform::PositionsAndWeights p) -> PetscInt {
+            return this->indexConverter->getGlobal(
+                ind_type(p.i * ny * nz + p.j * nz + p.k, ny, nz));
+          });
       std::transform(pw.begin(), pw.end(), std::back_inserter(weights),
-		     [](ParallelTransform::PositionsAndWeights p) ->
-		     PetscScalar {return p.weight;});
+                     [](ParallelTransform::PositionsAndWeights p) -> PetscScalar {
+                       return p.weight;
+                     });
     }
     return Element(matrix.get(), global1, global2, positions, weights);
   }
@@ -487,12 +526,8 @@ public:
     }
   }
 
-  PetscMatrix<T> yup(int index = 0) {
-    return ynext(index + 1);
-  }
-  PetscMatrix<T> ydown(int index = 0) {
-    return ynext(-index - 1);
-  }
+  PetscMatrix<T> yup(int index = 0) { return ynext(index + 1); }
+  PetscMatrix<T> ydown(int index = 0) { return ynext(-index - 1); }
   PetscMatrix<T> ynext(int dir) {
     if (std::is_same<T, FieldPerp>::value && yoffset + dir != 0) {
       throw BoutException("Can not get ynext for FieldPerp");
@@ -509,9 +544,7 @@ public:
   }
 
   /// Provides a reference to the raw PETSc Mat object.
-  Mat* getMatrixPointer() {
-    return matrix.get();
-  }
+  Mat* getMatrixPointer() { return matrix.get(); }
 
 private:
   std::shared_ptr<Mat> matrix = nullptr;
@@ -521,7 +554,6 @@ private:
   bool initialised = false;
   PetscLib lib;
 };
-
 
 /*!
  * Move reference to one Vec from \p first to \p second and
@@ -557,12 +589,11 @@ PetscVector<T> operator*(PetscMatrix<T>& mat, PetscVector<T>& vec) {
   Vec* result = new Vec();
   VecDuplicate(rhs, result);
   VecAssemblyBegin(*result);
-  VecAssemblyEnd(*result);  
+  VecAssemblyEnd(*result);
   const int err = MatMult(*mat.getMatrixPointer(), rhs, *result);
   ASSERT2(err == 0);
   return PetscVector<T>(vec, result);
 }
-  
 
 #endif // BOUT_HAS_PETSC
 

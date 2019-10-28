@@ -248,7 +248,7 @@ class Mesh {
   /*!
    * Communicate an X-Z field
    */
-  virtual void communicate(FieldPerp &f); 
+  virtual void communicate(FieldPerp& f);
 
   /*!
    * Send a list of FieldData objects
@@ -506,7 +506,7 @@ class Mesh {
   virtual int globalStartIndex2D();
   /// Get the value of the first global perpendicular index on this processor.
   virtual int globalStartIndexPerp();
-  
+
   /// Size of the mesh on this processor including guard/boundary cells
   int LocalNx, LocalNy, LocalNz;
   

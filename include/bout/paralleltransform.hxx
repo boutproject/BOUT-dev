@@ -82,17 +82,18 @@ public:
   };
 
   virtual std::vector<PositionsAndWeights> getWeightsForYUpApproximation(int i, int j,
-      int k) {
-    return getWeightsForYApproximation(i,j,k,1);
+                                                                         int k) {
+    return getWeightsForYApproximation(i, j, k, 1);
   }
   virtual std::vector<PositionsAndWeights> getWeightsForYDownApproximation(int i, int j,
-      int k) {
-    return getWeightsForYApproximation(i,j,k,-1);
+                                                                           int k) {
+    return getWeightsForYApproximation(i, j, k, -1);
   }
-  virtual std::vector<PositionsAndWeights> getWeightsForYApproximation(int UNUSED(i),
-      int UNUSED(j), int UNUSED(k), int UNUSED(yoffset)) {
+  virtual std::vector<PositionsAndWeights>
+  getWeightsForYApproximation(int UNUSED(i), int UNUSED(j), int UNUSED(k),
+                              int UNUSED(yoffset)) {
     throw BoutException("ParallelTransform::getWeightsForYApproximation not implemented "
-        "in this subclass");
+                        "in this subclass");
   }
 
   /// Output variables used by a ParallelTransform instance to the dump files

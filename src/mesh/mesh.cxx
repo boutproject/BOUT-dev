@@ -326,14 +326,18 @@ int Mesh::localSize3D() {
     const int ny = yend - ystart + 1;
     const int nz = LocalNz;
     localNumCells3D = nx * ny * nz;
-    for(RangeIterator it=iterateBndryLowerY(); !it.isDone(); it++) {
-      if (it.ind == xstart) localNumCells3D += nz * ystart;
-      if (it.ind == xend) localNumCells3D += nz * ystart;
+    for (RangeIterator it = iterateBndryLowerY(); !it.isDone(); it++) {
+      if (it.ind == xstart)
+        localNumCells3D += nz * ystart;
+      if (it.ind == xend)
+        localNumCells3D += nz * ystart;
       localNumCells3D += nz * ystart;
     }
-    for(RangeIterator it=iterateBndryUpperY(); !it.isDone(); it++) {
-      if (it.ind == xstart) localNumCells3D += nz * ystart;
-      if (it.ind == xend) localNumCells3D += nz * ystart;
+    for (RangeIterator it = iterateBndryUpperY(); !it.isDone(); it++) {
+      if (it.ind == xstart)
+        localNumCells3D += nz * ystart;
+      if (it.ind == xend)
+        localNumCells3D += nz * ystart;
       localNumCells3D += nz * ystart;
     }
   }
@@ -347,14 +351,18 @@ int Mesh::localSize2D() {
     const int nx = xe - xs;
     const int ny = yend - ystart + 1;
     localNumCells2D = nx * ny;
-    for(RangeIterator it=iterateBndryLowerY(); !it.isDone(); it++) {
-      if (it.ind == xstart) localNumCells2D += ystart;
-      if (it.ind == xend) localNumCells2D += ystart;
+    for (RangeIterator it = iterateBndryLowerY(); !it.isDone(); it++) {
+      if (it.ind == xstart)
+        localNumCells2D += ystart;
+      if (it.ind == xend)
+        localNumCells2D += ystart;
       localNumCells2D += ystart;
     }
-    for(RangeIterator it=iterateBndryUpperY(); !it.isDone(); it++) {
-      if (it.ind == xstart) localNumCells2D += ystart;
-      if (it.ind == xend) localNumCells2D += ystart;
+    for (RangeIterator it = iterateBndryUpperY(); !it.isDone(); it++) {
+      if (it.ind == xstart)
+        localNumCells2D += ystart;
+      if (it.ind == xend)
+        localNumCells2D += ystart;
       localNumCells2D += ystart;
     }
   }
