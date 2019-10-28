@@ -1,17 +1,18 @@
 #include <vector>
 
-#include "gtest/gtest.h"
 #include "test_extras.hxx"
+#include "gtest/gtest.h"
 
 #include "bout/petsc_interface.hxx"
 #include "bout/region.hxx"
 
 #ifdef BOUT_HAS_PETSC
 
-///////////////// Test PetscVectorElement /////////////////
+///////////////// Test PetscVector::Element /////////////////
 
 class PetscVectorElementTest : public ::testing::Test {
 public:
+  WithQuietOutput all{output};
   Vec v;
   PetscInt n = 10;
   PetscScalar defaultVal = 1.;
@@ -24,17 +25,11 @@ public:
     VecAssemblyEnd(v);
   }
 
-  ~PetscVectorElementTest() {
-    VecDestroy(&v);
-  }
+  virtual ~PetscVectorElementTest() { VecDestroy(&v); }
 };
 
 TEST_F(PetscVectorElementTest, AssignInsert) {
-  PetscVectorElement& v1 = PetscVectorElement::newElement(&v, 1),
-                    & v2 = PetscVectorElement::newElement(&v, 2),
-                    & v3 = PetscVectorElement::newElement(&v, 3),
-                    & v3b = PetscVectorElement::newElement(&v, 3),
-                    & v9 = PetscVectorElement::newElement(&v, 9);
+  PetscVector<Field3D>::Element v1(&v, 1), v2(&v, 2), v3(&v, 3), v3b(&v, 3), v9(&v, 9);
   v1 = 1.5;
   v2 = 2.5;
   v3 = 3.5;
@@ -56,12 +51,19 @@ TEST_F(PetscVectorElementTest, AssignInsert) {
   EXPECT_DOUBLE_EQ(9.5, vecContents[9]);
 }
 
+TEST_F(PetscVectorElementTest, AssignElement) {
+  PetscVector<Field3D>::Element v1(&v, 1), v2(&v, 2);
+  v2 = v1 = 1.5;
+  VecAssemblyBegin(v);
+  VecAssemblyEnd(v);
+  PetscScalar* vecContents;
+  VecGetArray(v, &vecContents);
+  EXPECT_DOUBLE_EQ(1.5, vecContents[1]);
+  EXPECT_DOUBLE_EQ(1.5, vecContents[2]);
+}
+
 TEST_F(PetscVectorElementTest, AssignAdd) {
-  PetscVectorElement& v1 = PetscVectorElement::newElement(&v, 1),
-                    & v2 = PetscVectorElement::newElement(&v, 2),
-                    & v3 = PetscVectorElement::newElement(&v, 3),
-                    & v3b = PetscVectorElement::newElement(&v, 3),
-                    & v9 = PetscVectorElement::newElement(&v, 9);
+  PetscVector<Field3D>::Element v1(&v, 1), v2(&v, 2), v3(&v, 3), v3b(&v, 3), v9(&v, 9);
   v1 += 1.5;
   v2 += 2.5;
   v3 += 3.5;
@@ -83,14 +85,17 @@ TEST_F(PetscVectorElementTest, AssignAdd) {
   EXPECT_DOUBLE_EQ(10.5, vecContents[9]);
 }
 
-TEST_F(PetscVectorElementTest, NoMixedSetting) {
-  
+TEST_F(PetscVectorElementTest, ConvertToBoutReal) {
+  PetscVector<Field3D>::Element v1(&v, 1);
+  BoutReal val = v1;
+  EXPECT_DOUBLE_EQ(defaultVal, val);
 }
 
 ///////////////// Test PetscMatrixElement /////////////////
 
 class PetscMatrixElementTest : public ::testing::Test {
 public:
+  WithQuietOutput all{output};
   Mat m;
   Vec b, x;
   PetscInt n1 = 10, n2 = 15;
@@ -98,13 +103,15 @@ public:
   std::vector<PetscInt> positions;
   std::vector<BoutReal> weights;
   PetscLib lib;
-  
+
   PetscMatrixElementTest() {
     PetscInt low, high;
     MatCreate(MPI_COMM_WORLD, &m);
     MatSetType(m, MATSEQDENSE);
     MatSetSizes(m, n1, n2, PETSC_DETERMINE, PETSC_DETERMINE);
     MatSetUp(m);
+    MatAssemblyBegin(m, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(m, MAT_FINAL_ASSEMBLY);
     VecCreateMPI(MPI_COMM_WORLD, n1, PETSC_DETERMINE, &b);
     VecCreateMPI(MPI_COMM_WORLD, n2, PETSC_DETERMINE, &x);
     VecGetOwnershipRange(x, &low, &high);
@@ -123,7 +130,7 @@ public:
     weights.push_back(-1.0);
   }
 
-  ~PetscMatrixElementTest() {
+  virtual ~PetscMatrixElementTest() {
     MatDestroy(&m);
     VecDestroy(&b);
     VecDestroy(&x);
@@ -131,18 +138,10 @@ public:
 };
 
 TEST_F(PetscMatrixElementTest, AssignInsert) {
-  PetscMatrixElement& v1_1 = PetscMatrixElement::newElement(&m, 1, 1),
-                    & v2_3 = PetscMatrixElement::newElement(&m, 2, 3),
-                    & v3_13 = PetscMatrixElement::newElement(&m, 3, 13,
-							     positions,
-							     weights),
-                    & v9_6 = PetscMatrixElement::newElement(&m, 9, 6),
-                    & v2_13 = PetscMatrixElement::newElement(&m, 2, 13,
-							     positions,
-							     weights),
-                    & v2_14 = PetscMatrixElement::newElement(&m, 2, 14),
-                    & v4_11 = PetscMatrixElement::newElement(&m, 4, 11),
-                    & v4_11b = PetscMatrixElement::newElement(&m, 4, 11);
+  PetscMatrix<Field3D>::Element v1_1(&m, 1, 1), v2_3(&m, 2, 3),
+      v3_13(&m, 3, 13, positions, weights), v9_6(&m, 9, 6),
+      v2_13(&m, 2, 13, positions, weights), v2_14(&m, 2, 14), v4_11(&m, 4, 11),
+      v4_11b(&m, 4, 11);
   v1_1 = 1.5;
   v2_3 = 1.0;
   v3_13 = -3.5;
@@ -158,32 +157,38 @@ TEST_F(PetscMatrixElementTest, AssignInsert) {
   VecGetArray(b, &bconts);
   VecGetArray(x, &xconts);
   EXPECT_DOUBLE_EQ(0.0, bconts[0]);
-  EXPECT_DOUBLE_EQ(1.5*xconts[1], bconts[1]);
-  EXPECT_DOUBLE_EQ(1.0*xconts[3] + -1.0*0.5*xconts[12] + 2.0*0.5*xconts[13]
-		   - 1.0*0.5*xconts[14], bconts[2]);
-  EXPECT_DOUBLE_EQ(-1.0*-3.5*xconts[12] + 2.0*-3.5*xconts[13]
-		   - 1.0*-3.5*xconts[14], bconts[3]);
-  EXPECT_DOUBLE_EQ(0.5*xconts[11], bconts[4]);
+  EXPECT_DOUBLE_EQ(1.5 * xconts[1], bconts[1]);
+  EXPECT_DOUBLE_EQ(1.0 * xconts[3] + -1.0 * 0.5 * xconts[12] + 2.0 * 0.5 * xconts[13]
+                       - 1.0 * 0.5 * xconts[14],
+                   bconts[2]);
+  EXPECT_DOUBLE_EQ(-1.0 * -3.5 * xconts[12] + 2.0 * -3.5 * xconts[13]
+                       - 1.0 * -3.5 * xconts[14],
+                   bconts[3]);
+  EXPECT_DOUBLE_EQ(0.5 * xconts[11], bconts[4]);
   EXPECT_DOUBLE_EQ(0.0, bconts[5]);
   EXPECT_DOUBLE_EQ(0.0, bconts[6]);
   EXPECT_DOUBLE_EQ(0.0, bconts[7]);
   EXPECT_DOUBLE_EQ(0.0, bconts[8]);
-  EXPECT_DOUBLE_EQ(-1.0*xconts[6], bconts[9]);
+  EXPECT_DOUBLE_EQ(-1.0 * xconts[6], bconts[9]);
+}
+
+TEST_F(PetscMatrixElementTest, AssignElement) {
+  PetscMatrix<Field3D>::Element v1_1(&m, 1, 1), v1_2(&m, 1, 2);
+  v1_2 = v1_1 = 1.5;
+  MatAssemblyBegin(m, MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(m, MAT_FINAL_ASSEMBLY);
+  MatMult(m, x, b);
+  PetscScalar *bconts, *xconts;
+  VecGetArray(b, &bconts);
+  VecGetArray(x, &xconts);
+  EXPECT_DOUBLE_EQ(1.5 * (xconts[1] + xconts[2]), bconts[1]);
 }
 
 TEST_F(PetscMatrixElementTest, AssignAdd) {
-  PetscMatrixElement& v1_1 = PetscMatrixElement::newElement(&m, 1, 1),
-                    & v2_3 = PetscMatrixElement::newElement(&m, 2, 3),
-                    & v3_13 = PetscMatrixElement::newElement(&m, 3, 13,
-							     positions,
-							     weights),
-                    & v9_6 = PetscMatrixElement::newElement(&m, 9, 6),
-                    & v2_13 = PetscMatrixElement::newElement(&m, 2, 13,
-							     positions,
-							     weights),
-                    & v2_14 = PetscMatrixElement::newElement(&m, 2, 14),
-                    & v4_11 = PetscMatrixElement::newElement(&m, 4, 11),
-                    & v4_11b = PetscMatrixElement::newElement(&m, 4, 11);
+  PetscMatrix<Field3D>::Element v1_1(&m, 1, 1), v2_3(&m, 2, 3),
+      v3_13(&m, 3, 13, positions, weights), v9_6(&m, 9, 6),
+      v2_13(&m, 2, 13, positions, weights), v2_14(&m, 2, 14), v4_11(&m, 4, 11),
+      v4_11b(&m, 4, 11);
   v1_1 += 1.5;
   v2_3 += 1.0;
   v3_13 += -3.5;
@@ -199,17 +204,26 @@ TEST_F(PetscMatrixElementTest, AssignAdd) {
   VecGetArray(b, &bconts);
   VecGetArray(x, &xconts);
   EXPECT_DOUBLE_EQ(0.0, bconts[0]);
-  EXPECT_DOUBLE_EQ(1.5*xconts[1], bconts[1]);
-  EXPECT_DOUBLE_EQ(1.0*xconts[3] + -1.0*0.5*xconts[12] + 2.0*0.5*xconts[13]
-		   - 1.0*0.5*xconts[14]  + 1.0*xconts[14], bconts[2]);
-  EXPECT_DOUBLE_EQ(-1.0*-3.5*xconts[12] + 2.0*-3.5*xconts[13]
-		   - 1.0*-3.5*xconts[14], bconts[3]);
-  EXPECT_DOUBLE_EQ(7.5*xconts[11], bconts[4]);
+  EXPECT_DOUBLE_EQ(1.5 * xconts[1], bconts[1]);
+  EXPECT_DOUBLE_EQ(1.0 * xconts[3] + -1.0 * 0.5 * xconts[12] + 2.0 * 0.5 * xconts[13]
+                       - 1.0 * 0.5 * xconts[14] + 1.0 * xconts[14],
+                   bconts[2]);
+  EXPECT_DOUBLE_EQ(-1.0 * -3.5 * xconts[12] + 2.0 * -3.5 * xconts[13]
+                       - 1.0 * -3.5 * xconts[14],
+                   bconts[3]);
+  EXPECT_DOUBLE_EQ(7.5 * xconts[11], bconts[4]);
   EXPECT_DOUBLE_EQ(0.0, bconts[5]);
   EXPECT_DOUBLE_EQ(0.0, bconts[6]);
   EXPECT_DOUBLE_EQ(0.0, bconts[7]);
   EXPECT_DOUBLE_EQ(0.0, bconts[8]);
-  EXPECT_DOUBLE_EQ(-1.0*xconts[6], bconts[9]);
+  EXPECT_DOUBLE_EQ(-1.0 * xconts[6], bconts[9]);
+}
+
+TEST_F(PetscMatrixElementTest, ConvertToBoutReal) {
+  PetscMatrix<Field3D>::Element m1_1(&m, 1, 1);
+  m1_1 = 5.;
+  BoutReal val = m1_1;
+  EXPECT_DOUBLE_EQ(5., val);
 }
 
 #endif // BOUT_HAS_PETSC

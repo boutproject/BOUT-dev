@@ -270,8 +270,12 @@ public:
                               int UNUSED(tag)) override {
     return nullptr;
   }
-  const RangeIterator iterateBndryLowerY() const override { return RangeIterator(xstart, xend); }
-  const RangeIterator iterateBndryUpperY() const override { return RangeIterator(xstart, xend); }
+  const RangeIterator iterateBndryLowerY() const override {
+    return RangeIterator(xstart, xend);
+  }
+  const RangeIterator iterateBndryUpperY() const override {
+    return RangeIterator(xstart, xend);
+  }
   const RangeIterator iterateBndryLowerOuterY() const override { return RangeIterator(); }
   const RangeIterator iterateBndryLowerInnerY() const override { return RangeIterator(); }
   const RangeIterator iterateBndryUpperOuterY() const override { return RangeIterator(); }
@@ -289,6 +293,12 @@ public:
   int YGLOBAL(int UNUSED(yloc)) const override { return 0; }
   int XLOCAL(int UNUSED(xglo)) const override { return 0; }
   int YLOCAL(int UNUSED(yglo)) const override { return 0; }
+  virtual int localSize3D() override { return LocalNx * LocalNy * LocalNz; }
+  virtual int localSize2D() override { return LocalNx * LocalNy; }
+  virtual int localSizePerp() override { return LocalNx * LocalNz; }
+  virtual int globalStartIndex3D() override { return 0; }
+  virtual int globalStartIndex2D() override { return 0; }
+  virtual int globalStartIndexPerp() override { return 0; }
 
   void initDerivs(Options * opt){
     StaggerGrids=true;

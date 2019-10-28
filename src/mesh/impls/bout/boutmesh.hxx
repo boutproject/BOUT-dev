@@ -183,15 +183,14 @@ class BoutMesh : public Mesh {
   int XLOCAL(int xglo) const override;
   int YLOCAL(int yglo) const override;
 
- protected:
-  BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg,
-	   int nxpe, int nype, int pe_xind, int pe_yind);
+protected:
+  BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int nxpe, int nype,
+           int pe_xind, int pe_yind);
   /// For debugging purposes (when creating fake parallel meshes), make
   /// the send and receive buffers share memory. This allows for
   /// communications to be faked between meshes as though they were on
   /// different processors.
-  void overlapHandleMemory(BoutMesh* yup, BoutMesh* ydown, BoutMesh* xin,
-				     BoutMesh* xout);
+  void overlapHandleMemory(BoutMesh* yup, BoutMesh* ydown, BoutMesh* xin, BoutMesh* xout);
 
 private:
   std::string gridname;
@@ -305,28 +304,29 @@ private:
   int pack_data(const std::vector<FieldData*>& var_list, int xge, int xlt, int yge,
                 int ylt, BoutReal* buffer);
   /// Copy data from a buffer back into the fields
-  int unpack_data(const std::vector<FieldData*> &var_list, int xge, int xlt, int yge,
-		  int ylt, BoutReal *buffer);
+
+  int unpack_data(const std::vector<FieldData*>& var_list, int xge, int xlt, int yge,
+                  int ylt, BoutReal* buffer);
 
   // Wrappers around MPI functions, taking the same names. These can
   // then be overloaded for testing purposes.
-  virtual int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source,
-			int tag, MPI_Comm comm, MPI_Request *request) {
+  virtual int MPI_Irecv(void* buf, int count, MPI_Datatype datatype, int source, int tag,
+                        MPI_Comm comm, MPI_Request* request) {
     return ::MPI_Irecv(buf, count, datatype, source, tag, comm, request);
   }
-  virtual int MPI_Isend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag,
-			MPI_Comm comm, MPI_Request *request) {
+  virtual int MPI_Isend(const void* buf, int count, MPI_Datatype datatype, int dest,
+                        int tag, MPI_Comm comm, MPI_Request* request) {
     return ::MPI_Isend(buf, count, datatype, dest, tag, comm, request);
   }
-  virtual int MPI_Send(const void *buf, int count, MPI_Datatype datatype, int dest, int tag,
-		       MPI_Comm comm) {
+  virtual int MPI_Send(const void* buf, int count, MPI_Datatype datatype, int dest,
+                       int tag, MPI_Comm comm) {
     return ::MPI_Send(buf, count, datatype, dest, tag, comm);
   }
-  virtual int MPI_Wait(MPI_Request *request, MPI_Status *status) {
+  virtual int MPI_Wait(MPI_Request* request, MPI_Status* status) {
     return ::MPI_Wait(request, status);
   }
-  virtual int MPI_Waitany(int count, MPI_Request array_of_requests[], int *indx,
-			  MPI_Status *status) {
+  virtual int MPI_Waitany(int count, MPI_Request array_of_requests[], int* indx,
+                          MPI_Status* status) {
     return ::MPI_Waitany(count, array_of_requests, indx, status);
   }
 };
