@@ -24,7 +24,7 @@ using namespace bout::globals;
 using IndexerTest = FakeMeshFixture;
 
 TEST_F(IndexerTest, TestIndexerConstructor) {
-  FakeMesh mesh2(1, 1, 1);
+  FakeMesh mesh2(2, 2, 2);
   mesh2.createDefaultRegions();
   mesh2.setCoordinates(nullptr);
   test_coords = std::make_shared<Coordinates>(
@@ -54,7 +54,6 @@ TEST_F(IndexerTest, TestIndexerConstructor) {
 TEST_F(IndexerTest, TestConvertIndex3D) {
   Mesh* localmesh = bout::globals::mesh;
   IndexerPtr index = GlobalIndexer::getInstance(localmesh);
-  index->initialise();
   std::set<int, std::greater<int>> returnedIndices;
 
   // Check each of the interior global indices is unique
@@ -88,7 +87,6 @@ TEST_F(IndexerTest, TestConvertIndex2D) {
   Mesh* localmesh = bout::globals::mesh;
   IndexerPtr index = GlobalIndexer::getInstance(localmesh);
   std::set<int, std::greater<int>> returnedIndices;
-  index->initialise();
 
   // Check each of the interior global indices is unique
   BOUT_FOR(i, localmesh->getRegion2D("RGN_NOBNDRY")) {
@@ -122,7 +120,6 @@ TEST_F(IndexerTest, TestConvertIndex2D) {
 TEST_F(IndexerTest, TestConvertIndexPerp) {
   Mesh* localmesh = bout::globals::mesh;
   IndexerPtr index = GlobalIndexer::getInstance(localmesh);
-  index->initialise();
   std::set<int, std::greater<int>> returnedIndices;
 
   // Check each of the interior global indices is unique
