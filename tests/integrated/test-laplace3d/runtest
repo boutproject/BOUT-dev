@@ -27,10 +27,10 @@ for directory,nproc in test_directories:
     error_max = collect('error_max', path=directory, info=False)
 
     if error_max > tolerance:
-        print(directory + ' failed')
+        print(directory + ' failed with maximum error {}'.format(error_max))
         success = False
     else:
-        print(directory + ' passed')
+        print(directory + ' passed with maximum error {}'.format(error_max))
 
 if success:
     print('All passed')
