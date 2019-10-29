@@ -332,6 +332,7 @@ public:
     return new MonotonicHermiteSpline(mesh);
   }
   
+  using HermiteSpline::interpolate;
   /// Interpolate using precalculated weights.
   /// This function is called by the other interpolate functions
   /// in the base class HermiteSpline.

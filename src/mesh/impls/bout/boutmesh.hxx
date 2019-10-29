@@ -202,6 +202,7 @@ private:
 
   int MYPE_IN_CORE; // 1 if processor in core
 
+  using Mesh::YGLOBAL;
   int XGLOBAL(BoutReal xloc, BoutReal& xglo) const;
   int YGLOBAL(BoutReal yloc, BoutReal& yglo) const;
 
