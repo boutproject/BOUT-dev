@@ -611,7 +611,7 @@ void SlepcSolver::monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[],
 
   // Update the number of converged modes already investigated.
   nConvPrev = nconv;
-};
+}
 
 // Convert a slepc eigenvalue to a BOUT one
 void SlepcSolver::slepcToBout(PetscScalar& reEigIn, PetscScalar& imEigIn,

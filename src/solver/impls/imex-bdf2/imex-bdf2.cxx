@@ -734,7 +734,7 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
     output<<"PC Type : "<<pctype<<endl;
   }
 
-};
+}
 
 int IMEXBDF2::run() {
   TRACE("IMEXBDF2::run()");
@@ -1125,7 +1125,7 @@ void IMEXBDF2::shuffleState(){
   //here we say lets just use the same timestep as last time by default.
   //That way we only need to fiddle with timesteps if we're adapting.
   timesteps[0] = timesteps[1];
-};
+}
 
 /*
  * Solves u - gamma*G(u) = rhs

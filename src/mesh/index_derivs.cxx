@@ -70,7 +70,7 @@ STAGGER Mesh::getStagger(const CELL_LOC vloc, MAYBE_UNUSED(const CELL_LOC inloc)
 /// central, 2nd order
 REGISTER_STANDARD_DERIVATIVE(DDX_C2, "C2", 1, DERIV::Standard) {
   return 0.5 * (f.p - f.m);
-};
+}
 
 /// central, 4th order
 REGISTER_STANDARD_DERIVATIVE(DDX_C4, "C4", 2, DERIV::Standard) {
