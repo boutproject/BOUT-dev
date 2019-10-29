@@ -178,6 +178,12 @@ set(BOUT_SOURCES
   ./src/invert/laplace/impls/pdd/pdd.hxx
   ./src/invert/laplace/impls/petsc/petsc_laplace.cxx
   ./src/invert/laplace/impls/petsc/petsc_laplace.hxx
+  ./src/invert/laplace/impls/petsc3damg/petsc3damg.cxx
+  ./src/invert/laplace/impls/petsc3damg/petsc3damg.hxx
+  ./src/invert/laplace/impls/petscamg/petscamg.cxx
+  ./src/invert/laplace/impls/petscamg/petscamg.hxx
+  ./src/invert/laplace/impls/petscamg/petscamg_gen.cxx
+  ./src/invert/laplace/impls/petscamg/petscamg_set.cxx
   ./src/invert/laplace/impls/serial_band/serial_band.cxx
   ./src/invert/laplace/impls/serial_band/serial_band.hxx
   ./src/invert/laplace/impls/serial_tri/serial_tri.cxx
@@ -214,6 +220,7 @@ set(BOUT_SOURCES
   ./src/mesh/interpolation.cxx
   ./src/mesh/interpolation/bilinear.cxx
   ./src/mesh/interpolation/hermite_spline.cxx
+  ./src/mesh/interpolation/hermite_spline_only_z.cxx
   ./src/mesh/interpolation/interpolation_factory.cxx
   ./src/mesh/interpolation/lagrange_4pt.cxx
   ./src/mesh/interpolation/monotonic_hermite_spline.cxx
@@ -224,6 +231,7 @@ set(BOUT_SOURCES
   ./src/mesh/parallel/fci.hxx
   ./src/mesh/parallel/identity.cxx
   ./src/mesh/parallel/shiftedmetric.cxx
+  ./src/mesh/parallel/shiftedmetricinterp.cxx
   ./src/mesh/parallel_boundary_op.cxx
   ./src/mesh/parallel_boundary_region.cxx
   ./src/mesh/surfaceiter.cxx
