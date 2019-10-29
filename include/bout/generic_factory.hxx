@@ -34,6 +34,8 @@
 template <typename BaseType, typename TypeCreator = std::function<BaseType *()>>
 class Factory {
 public:
+  virtual ~Factory() = default;
+
   /// Add a new type \p name to the factory
   ///
   /// @param[in] name     An identifier for this type
