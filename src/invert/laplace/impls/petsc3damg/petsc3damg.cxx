@@ -129,125 +129,52 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mes
     output << endl << "Using LU decompostion for direct solution of system" << endl << endl;
   }
 
-  //FIXME: Still need to implement boundary conditions in corners
-
   // Set up boundary conditions in operator
-  int ny = localmesh->LocalNy, nz = localmesh->LocalNz;
-  if(localmesh->firstX()) {
-    int x = localmesh->xstart - 1;
-    for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
-      for (int z = localmesh->zstart; z <= localmesh->zend; z++) {
-	Ind3D i(x*ny*nz + y*nz + z, ny, nz), ixp = i.xp();
-	if(inner_boundary_flags & INVERT_AC_GRAD) {
-	  // Neumann on inner X boundary
-	  operator3D(i, i) = -1./coords->dx[i]/sqrt(coords->g_11[i]);
-	  operator3D(i, ixp) = 1./coords->dx[i]/sqrt(coords->g_11[i]);
-	} else {
-	  // Dirichlet on inner X boundary
-	  operator3D(i, i) = 0.5;
-	  operator3D(i, ixp) = 0.5;
-	}
-      }
+  BOUT_FOR(i, localmesh->getRegion3D("RGN_INNER_X_THIN")) {
+    if(inner_boundary_flags & INVERT_AC_GRAD) {
+      // Neumann on inner X boundary
+      operator3D(i, i) = -1./coords->dx[i]/sqrt(coords->g_11[i]);
+      operator3D(i, i.xp()) = 1./coords->dx[i]/sqrt(coords->g_11[i]);
+    } else {
+      // Dirichlet on inner X boundary
+      operator3D(i, i) = 0.5;
+      operator3D(i, i.xp()) = 0.5;
     }
   }
 
-  if(localmesh->lastX()) {
-    int x = localmesh->xend + 1;
-    for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
-      for (int z = localmesh->zstart; z <= localmesh->zend; z++) {
-	Ind3D i(x*ny*nz + y*nz + z, ny, nz), ixm = i.xm();
-	if(outer_boundary_flags & INVERT_AC_GRAD) {
-	  // Neumann on outer X boundary
-	  operator3D(i, i) = 1./coords->dx[i]/sqrt(coords->g_11[i]);
-	  operator3D(i, ixm) = -1./coords->dx[i]/sqrt(coords->g_11[i]);
-        } else {
-	  // Dirichlet on outer X boundary
-          operator3D(i, i) = 0.5;
-          operator3D(i, ixm) = 0.5;
-        }
-      }
+  BOUT_FOR(i, localmesh->getRegion3D("RGN_OUTER_X_THIN")) {
+    if(outer_boundary_flags & INVERT_AC_GRAD) {
+      // Neumann on outer X boundary
+      operator3D(i, i) = 1./coords->dx[i]/sqrt(coords->g_11[i]);
+      operator3D(i, i.xm()) = -1./coords->dx[i]/sqrt(coords->g_11[i]);
+    } else {
+      // Dirichlet on outer X boundary
+      operator3D(i, i) = 0.5;
+      operator3D(i, i.xm()) = 0.5;
     }
   }
 
-  int y = localmesh->ystart - 1;
-  for(RangeIterator it=localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
-    for  (int z = localmesh->zstart; z <= localmesh->zend; z++) {
-      int x = it.ind;
-      if (x == localmesh->xstart) {
-	Ind3D i((x-1)*ny*nz + y*nz + z, ny, nz), iyp = i.yp();
-	if(lower_boundary_flags & INVERT_AC_GRAD) {
-	  // Neumann on lower Y boundary
-          operator3D(i, i) = -1./coords->dy[i]/sqrt(coords->g_22[i]);
-          operator3D(i, iyp) = 1./coords->dy[i]/sqrt(coords->g_22[i]);
-        } else {
-	  // Dirichlet on lower Y boundary
-          operator3D(i, i) = 0.5;
-          operator3D(i, iyp) = 0.5;
-        }
-      }
-      if (x == localmesh->xend) {
-	Ind3D i((x+1)*ny*nz + y*nz + z, ny, nz), iyp = i.yp();
-	if(lower_boundary_flags & INVERT_AC_GRAD) {
-	  // Neumann on lower Y boundary
-          operator3D(i, i) = -1./coords->dy[i]/sqrt(coords->g_22[i]);
-          operator3D(i, iyp) = 1./coords->dy[i]/sqrt(coords->g_22[i]);
-        } else {
-	  // Dirichlet on lower Y boundary
-          operator3D(i, i) = 0.5;
-          operator3D(i, iyp) = 0.5;
-        }
-      }
-      Ind3D i(x*ny*nz + y*nz + z, ny, nz), iyp = i.yp();
-      if(lower_boundary_flags & INVERT_AC_GRAD) {
-	// Neumann on lower Y boundary
-	operator3D(i, i) = -1./coords->dy[i]/sqrt(coords->g_22[i]);
-	operator3D(i, iyp) = 1./coords->dy[i]/sqrt(coords->g_22[i]);
-      } else {
-	// Dirichlet on lower Y boundary
-        operator3D(i, i) = 0.5;
-        operator3D(i, iyp) = 0.5;
-      }
+  BOUT_FOR(i, localmesh->getRegion3D("RGN_LOWER_Y_THIN")) {
+    if(lower_boundary_flags & INVERT_AC_GRAD) {
+      // Neumann on lower Y boundary
+      operator3D(i, i) = -1./coords->dy[i]/sqrt(coords->g_22[i]);
+      operator3D(i, i.yp()) = 1./coords->dy[i]/sqrt(coords->g_22[i]);
+    } else {
+      // Dirichlet on lower Y boundary
+      operator3D(i, i) = 0.5;
+      operator3D(i, i.yp()) = 0.5;
     }
   }
 
-  y = localmesh->yend + 1;
-  for(RangeIterator it=localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
-    for  (int z = localmesh->zstart; z <= localmesh->zend; z++) {
-      int x = it.ind;
-      if (x == localmesh->xstart) {
-	Ind3D i((x-1)*ny*nz + y*nz + z, ny, nz), iym = i.ym();
-	if(upper_boundary_flags & INVERT_AC_GRAD) {
-	  // Neumann on upper Y boundary
-          operator3D(i, i) = 1./coords->dy[i]/sqrt(coords->g_22[i]);
-          operator3D(i, iym) = -1./coords->dy[i]/sqrt(coords->g_22[i]);
-       } else {
-	  // Dirichlet on upper Y boundary
-          operator3D(i, i) = 0.5;
-          operator3D(i, iym) = 0.5;
-        }
-      }
-      if (x == localmesh->xend) {
-	Ind3D i((x+1)*ny*nz + y*nz + z, ny, nz), iym = i.ym();
-	if(upper_boundary_flags & INVERT_AC_GRAD) {
-	  // Neumann on upper Y boundary
-          operator3D(i, i) = 1./coords->dy[i]/sqrt(coords->g_22[i]);
-          operator3D(i, iym) = -1./coords->dy[i]/sqrt(coords->g_22[i]);
-        } else {
-	  // Dirichlet on upper Y boundary
-          operator3D(i, i) = 0.5;
-          operator3D(i, iym) = 0.5;
-        }
-      }
-      Ind3D i(x*ny*nz + y*nz + z, ny, nz), iym = i.ym();
-      if(upper_boundary_flags & INVERT_AC_GRAD) {
-	// Neumann on upper Y boundary
-	operator3D(i, i) = 1./coords->dy[i]/sqrt(coords->g_22[i]);
-	operator3D(i, iym) = -1./coords->dy[i]/sqrt(coords->g_22[i]);
-      } else {
-	// Dirichlet on upper Y boundary
-        operator3D(i, i) = 0.5;
-        operator3D(i, iym) = 0.5;
-      }
+  BOUT_FOR(i, localmesh->getRegion3D("RGN_UPPER_Y_THIN")) {
+    if(upper_boundary_flags & INVERT_AC_GRAD) {
+      // Neumann on upper Y boundary
+      operator3D(i, i) = 1./coords->dy[i]/sqrt(coords->g_22[i]);
+      operator3D(i, i.ym()) = -1./coords->dy[i]/sqrt(coords->g_22[i]);
+    } else {
+      // Dirichlet on upper Y boundary
+      operator3D(i, i) = 0.5;
+      operator3D(i, i.ym()) = 0.5;
     }
   }
 }
@@ -265,69 +192,31 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D &b_in, const Field3D &x0) {
   PetscVector<Field3D> rhs(b_in), guess(x0);
   
   // Adjust vectors to represent boundary conditions
-  int ny = localmesh->LocalNy, nz = localmesh->LocalNz;
-  BoutReal val;
-  if(localmesh->firstX()) {
-    int x = localmesh->xstart - 1;
-    for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
-      for (int z = localmesh->zstart; z <= localmesh->zend; z++) {
-	Ind3D i(x*ny*nz + y*nz + z, ny, nz);
-	val = (inner_boundary_flags & INVERT_SET) ? x0[i] : 0.;
-	if (!(inner_boundary_flags & INVERT_RHS)) rhs(i) = val;
-      }
+  BOUT_FOR(i, localmesh->getRegion3D("RGN_INNER_X_THIN")) {
+    const BoutReal val = (inner_boundary_flags & INVERT_SET) ? x0[i] : 0.;
+    if (!(inner_boundary_flags & INVERT_RHS)) {
+      rhs(i) = val;
     }
   }
 
-  if(localmesh->lastX()) {
-    int x = localmesh->xend + 1;
-    for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
-      for (int z = localmesh->zstart; z <= localmesh->zend; z++) {
-	Ind3D i(x*ny*nz + y*nz + z, ny, nz);
-	val = (outer_boundary_flags & INVERT_SET) ? x0[i] : 0.;
-	if (!(outer_boundary_flags & INVERT_RHS)) rhs(i) = val;
-      }
+  BOUT_FOR(i, localmesh->getRegion3D("RGN_OUTER_X_THIN")) {
+    const BoutReal val = (outer_boundary_flags & INVERT_SET) ? x0[i] : 0.;
+    if (!(outer_boundary_flags & INVERT_RHS)) {
+      rhs(i) = val;
     }
   }
 
-  int y = localmesh->ystart - 1;
-  for(RangeIterator it=localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
-    for  (int z = localmesh->zstart; z <= localmesh->zend; z++) {
-      int x = it.ind;
-      // Set corner values according to y boundary conditions
-      if (x == localmesh->xstart) {
-	Ind3D i((x-1)*ny*nz + y*nz + z, ny, nz);
-	val = (lower_boundary_flags & INVERT_SET) ? x0[i] : 0.;
-	if (!(lower_boundary_flags & INVERT_RHS)) rhs(i) = val;
-      }
-      if (x == localmesh->xend) {
-	Ind3D i((x+1)*ny*nz + y*nz + z, ny, nz);
-	val = (lower_boundary_flags & INVERT_SET) ? x0[i] : 0.;
-	if (!(lower_boundary_flags & INVERT_RHS)) rhs(i) = val;
-      }
-      Ind3D i(x*ny*nz + y*nz + z, ny, nz);
-      val = (lower_boundary_flags & INVERT_SET) ? x0[i] : 0.;
-      if (!(lower_boundary_flags & INVERT_RHS)) rhs(i) = val;
+  BOUT_FOR(i, localmesh->getRegion3D("RGN_LOWER_Y_THIN")) {
+    const BoutReal val = (lower_boundary_flags & INVERT_SET) ? x0[i] : 0.;
+    if (!(lower_boundary_flags & INVERT_RHS)) {
+      rhs(i) = val;
     }
   }
 
-  y = localmesh->yend + 1;
-  for(RangeIterator it=localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
-    for  (int z = localmesh->zstart; z <= localmesh->zend; z++) {
-      int x = it.ind;
-      // Set corner values according to y boundary conditions
-      if (x == localmesh->xstart) {
-	Ind3D i((x-1)*ny*nz + y*nz + z, ny, nz);
-	val = (upper_boundary_flags & INVERT_SET) ? x0[i] : 0.;
-	if (!(upper_boundary_flags & INVERT_RHS)) rhs(i) = val;
-      }
-      if (x == localmesh->xend) {
-	Ind3D i((x+1)*ny*nz + y*nz + z, ny, nz);
-	val = (upper_boundary_flags & INVERT_SET) ? x0[i] : 0.;
-	if (!(upper_boundary_flags & INVERT_RHS)) rhs(i) = val;
-      }
-      Ind3D i(x*ny*nz + y*nz + z, ny, nz);
-      val = (upper_boundary_flags & INVERT_SET) ? x0[i] : 0.;
-      if (!(upper_boundary_flags & INVERT_RHS)) rhs(i) = val;
+  BOUT_FOR(i, localmesh->getRegion3D("RGN_UPPER_Y_THIN")) {
+    const BoutReal val = (upper_boundary_flags & INVERT_SET) ? x0[i] : 0.;
+    if (!(upper_boundary_flags & INVERT_RHS)) {
+      rhs(i) = val;
     }
   }
 
@@ -352,7 +241,7 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D &b_in, const Field3D &x0) {
     throw BoutIterationFail("Petsc3dAmg: too many iterations");
   }
   else if (reason<=0) {
-    output<<"KSPConvergedReason is "<<reason<<endl;
+    output << "KSPConvergedReason is " << reason << endl;
     throw BoutException("Petsc3dAmg: inversion failed to converge.");
   }
 

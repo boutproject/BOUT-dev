@@ -147,6 +147,7 @@ public:
     delete solver;
     Options::cleanup();
     PetscErrorPrintf = PetscErrorPrintfDefault;
+    GlobalIndexer::recreateGlobalInstance();
   }
 
   const BoutReal sigmasq = 0.02;
