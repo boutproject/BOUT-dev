@@ -73,6 +73,10 @@ public:
   PetscInt getGlobal(const Ind3D ind);
   PetscInt getGlobal(const IndPerp ind);
 
+  // Mark the globalIndexer instance to be recreated next time it is
+  // requested (useful for unit tests)
+  static void recreateGlobalInstance();
+  
 protected:
   GlobalIndexer(Mesh* localmesh);
   Mesh* fieldmesh;
@@ -93,8 +97,6 @@ private:
   /// The only instance of this class acting on the global Mesh
   static IndexerPtr globalInstance;
   static bool initialisedGlobal;
-  static Mesh* globalmesh;
-  bool initialised;
 };
 
 /*!
@@ -160,11 +162,9 @@ public:
     VecCreateMPI(comm, size(), PETSC_DECIDE, vector.get());
     location = f.getLocation();
     initialised = true;
-    BOUT_FOR(i, f.getRegion(RGN_ALL)) {
+    BOUT_FOR_SERIAL(i, f.getRegion("RGN_ALL_THIN")) {
       PetscInt ind = indexConverter->getGlobal(i);
-      if (ind != -1) {
-        BOUT_OMP(critical) VecSetValues(*vector, 1, &ind, &f[i], INSERT_VALUES);
-      }
+      VecSetValues(*vector, 1, &ind, &f[i], INSERT_VALUES);
     }
     assemble();
   }
@@ -291,15 +291,11 @@ public:
     result.allocate();
     result.setLocation(location);
     // Note that this only populates boundaries to a depth of 1
-    BOUT_FOR(i, result.getRegion(RGN_ALL)) {
+    BOUT_FOR_SERIAL(i, result.getRegion("RGN_ALL_THIN")) {
       PetscInt ind = indexConverter->getGlobal(i);
-      if (ind == -1) {
-        result[i] = -1.0;
-      } else {
-        PetscScalar val;
-        BOUT_OMP(critical) VecGetValues(*vector, 1, &ind, &val);
-        result[i] = val;
-      }
+      PetscScalar val;
+      VecGetValues(*vector, 1, &ind, &val);
+      result[i] = val;
     }
     return result;
   }
@@ -424,11 +420,13 @@ public:
         positions = {col};
         weights = {1.0};
       }
-      int status;
-      BOUT_OMP(critical)
-      status = MatGetValues(*petscMatrix, 1, &petscRow, 1, &petscCol, &value);
-      if (status != 0) {
-        value = 0.;
+      PetscBool assembled;
+      MatAssembled(*petscMatrix, &assembled);
+      if (assembled == PETSC_TRUE) {
+	BOUT_OMP(critical)
+	MatGetValues(*petscMatrix, 1, &petscRow, 1, &petscCol, &value);
+      } else {
+	value = 0.;
       }
     }
     Element operator=(Element& other) { return *this = static_cast<BoutReal>(other); }
@@ -477,6 +475,8 @@ public:
     if (!initialised) {
       throw BoutException("Can not return element of uninitialised matrix");
     } else if (global1 == -1 || global2 == -1) {
+      std::cout << "(" << index1.x() << ", " << index1.y() << ", " << index1.z() << ")  ";
+      std::cout << "(" << index2.x() << ", " << index2.y() << ", " << index2.z() << ")\n";
       throw BoutException("Request to return invalid matrix element");
     }
 #endif

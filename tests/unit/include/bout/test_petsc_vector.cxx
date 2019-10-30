@@ -34,7 +34,10 @@ public:
     PetscErrorPrintf = PetscErrorPrintfNone;
   }
 
-  virtual ~PetscVectorTest() { PetscErrorPrintf = PetscErrorPrintfDefault; }
+  virtual ~PetscVectorTest() {
+    PetscErrorPrintf = PetscErrorPrintfDefault;
+    GlobalIndexer::recreateGlobalInstance();
+  }
 };
 
 using FieldTypes = ::testing::Types<Field3D, Field2D, FieldPerp>;

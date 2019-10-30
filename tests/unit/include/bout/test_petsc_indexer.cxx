@@ -49,6 +49,8 @@ TEST_F(IndexerTest, TestIndexerConstructor) {
   // Check all other instances are unique
   EXPECT_NE(i1.get(), i3.get());
   EXPECT_NE(i3.get(), i4.get());
+
+  GlobalIndexer::recreateGlobalInstance();
 }
 
 TEST_F(IndexerTest, TestConvertIndex3D) {
@@ -81,6 +83,8 @@ TEST_F(IndexerTest, TestConvertIndex3D) {
   }
   ASSERT_LT(*returnedIndices.rbegin(),
             localmesh->LocalNx * localmesh->LocalNy * localmesh->LocalNz);
+
+  GlobalIndexer::recreateGlobalInstance();
 }
 
 TEST_F(IndexerTest, TestConvertIndex2D) {
@@ -115,6 +119,8 @@ TEST_F(IndexerTest, TestConvertIndex2D) {
   }
 
   ASSERT_LT(*returnedIndices.rbegin(), localmesh->LocalNx * localmesh->LocalNy);
+
+  GlobalIndexer::recreateGlobalInstance();
 }
 
 TEST_F(IndexerTest, TestConvertIndexPerp) {
@@ -138,6 +144,8 @@ TEST_F(IndexerTest, TestConvertIndexPerp) {
   }
 
   ASSERT_LT(*returnedIndices.rbegin(), localmesh->LocalNx * localmesh->LocalNz);
+
+  GlobalIndexer::recreateGlobalInstance();
 }
 
 // TODO: Add tests for communicating indices across processors, somehow...
@@ -192,7 +200,10 @@ public:
     localmesh = &meshes[pe_yind + pe_xind * nype];
   }
 
-  virtual ~ParallelIndexerTest() { bout::globals::mesh = nullptr; }
+  virtual ~ParallelIndexerTest() {
+    bout::globals::mesh = nullptr;
+    GlobalIndexer::recreateGlobalInstance();
+  }
 
   static constexpr int nx = 7;
   static constexpr int ny = 5;
