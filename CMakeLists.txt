@@ -8,7 +8,7 @@ endif()
 
 # CMake currently doesn't support proper semver
 # Set the version here, strip the prerelease identifier to use in `project`
-set(BOUT_FULL_VERSION 4.2.2)
+set(BOUT_FULL_VERSION 5.0.0-alpha)
 string(REPLACE "-alpha" "" BOUT_CMAKE_ACCEPTABLE_VERSION ${BOUT_FULL_VERSION})
 
 project(BOUT++
