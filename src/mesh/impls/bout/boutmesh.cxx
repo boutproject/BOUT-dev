@@ -153,14 +153,6 @@ int BoutMesh::load() {
     throw BoutException(_("Error: nx must be greater than 2 times MXG (2 * %d)"), MXG);
   }
 
-  // Set global grid sizes
-  GlobalNx = nx;
-  GlobalNy = ny + 2 * MYG;
-  GlobalNz = nz;
-
-  if (2 * MXG >= nx)
-    throw BoutException(_("nx must be greater than 2*MXG"));
-
   // separatrix location
   Mesh::get(ixseps1, "ixseps1", GlobalNx);
   Mesh::get(ixseps2, "ixseps2", GlobalNx);
@@ -169,6 +161,17 @@ int BoutMesh::load() {
   Mesh::get(jyseps2_1, "jyseps2_1", jyseps1_2);
   Mesh::get(jyseps2_2, "jyseps2_2", ny - 1);
   Mesh::get(ny_inner, "ny_inner", jyseps2_1);
+
+  // Set global grid sizes
+  GlobalNx = nx;
+  GlobalNy = ny + 2 * MYG;
+  if (jyseps1_2 != jyseps2_1) {
+    GlobalNy += 2*MYG;
+  }
+  GlobalNz = nz;
+
+  if (2 * MXG >= nx)
+    throw BoutException(_("nx must be greater than 2*MXG"));
 
   /// Check inputs
   if (jyseps1_1 < -1) {
