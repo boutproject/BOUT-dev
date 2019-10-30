@@ -6,9 +6,14 @@ else()
   cmake_policy(VERSION 3.12)
 endif()
 
+# CMake currently doesn't support proper semver
+# Set the version here, strip the prerelease identifier to use in `project`
+set(BOUT_FULL_VERSION 4.2.2)
+string(REPLACE "-alpha" "" BOUT_CMAKE_ACCEPTABLE_VERSION ${BOUT_FULL_VERSION})
+
 project(BOUT++
   DESCRIPTION "Fluid PDE solver framework"
-  VERSION 4.2.2
+  VERSION ${BOUT_CMAKE_ACCEPTABLE_VERSION}
   LANGUAGES CXX)
 
 # This might not be entirely sensible, but helps CMake to find the
@@ -305,7 +310,7 @@ target_include_directories(bout++ PUBLIC
   )
 
 target_compile_definitions(bout++
-  PUBLIC "BOUT_VERSION_STRING=\"${PROJECT_VERSION}\""
+  PUBLIC "BOUT_VERSION_STRING=\"${BOUT_FULL_VERSION}\""
   PUBLIC "BOUT_VERSION_DOUBLE=${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}${PROJECT_VERSION_PATCH}"
   )
 
