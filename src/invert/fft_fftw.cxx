@@ -98,13 +98,13 @@ void rfft(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUS
     fft_init();
 
     // Initialize the input for the fourier transformation
-    fin = (double*) fftw_malloc(sizeof(double) * length);
+    fin = static_cast<double*>(fftw_malloc(sizeof(double) * length));
     // Initialize the output of the fourier transformation
     /* NOTE: Only the non-redundant output is given
      *       I.e the offset and the positive frequencies (so no mirroring
      *       around the Nyquist frequency)
      */
-    fout = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (length/2 + 1));
+    fout = static_cast<fftw_complex*>(fftw_malloc(sizeof(fftw_complex) * (length/2 + 1)));
 
     unsigned int flags = FFTW_ESTIMATE;
     if (fft_measure) {
@@ -129,7 +129,7 @@ void rfft(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUS
   fftw_execute(p);
   
   //Normalising factor
-  const BoutReal fac = 1.0/((double) n);
+  const BoutReal fac = 1.0 / n;
   const int nmodes = (n/2) + 1;
 
   // Store the output in out, and normalize
@@ -165,9 +165,9 @@ void irfft(MAYBE_UNUSED(const dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNU
      *       I.e the offset and the positive frequencies (so no mirroring
      *       around the Nyquist frequency)
      */
-    fin = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (length/2 + 1));
+    fin = static_cast<fftw_complex*>(fftw_malloc(sizeof(fftw_complex) * (length/2 + 1)));
     // Initialize the output of the fourier transformation
-    fout = (double*) fftw_malloc(sizeof(double) * length);
+    fout = static_cast<double*>(fftw_malloc(sizeof(double) * length));
 
     unsigned int flags = FFTW_ESTIMATE;
     if (fft_measure) {
