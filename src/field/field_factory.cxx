@@ -175,9 +175,10 @@ Field3D FieldFactory::create3D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC 
     throw BoutException("Couldn't create 3D field from null generator");
   }
 
-  Field3D result(localmesh);
-  result.allocate();
-  result.setLocation(loc);
+  const auto y_direction =
+      transform_from_field_aligned ? YDirectionType::Aligned : YDirectionType::Standard;
+
+  auto result = Field3D(localmesh).setLocation(loc).setDirectionY(y_direction).allocate();
 
   switch (loc) {
   case CELL_XLOW: {
@@ -231,6 +232,8 @@ Field3D FieldFactory::create3D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC 
       // Transform from field aligned coordinates, to be compatible with
       // older BOUT++ inputs. This is not a particularly "nice" solution.
       result = fromFieldAligned(result, "RGN_ALL");
+    } else {
+      result.setDirectionY(YDirectionType::Standard);
     }
   }
 
@@ -257,9 +260,10 @@ FieldPerp FieldFactory::createPerp(FieldGeneratorPtr gen, Mesh* localmesh, CELL_
     throw BoutException("Couldn't create FieldPerp from null generator");
   }
 
-  FieldPerp result(localmesh);
-  result.allocate();
-  result.setLocation(loc);
+  const auto y_direction =
+      transform_from_field_aligned ? YDirectionType::Aligned : YDirectionType::Standard;
+
+  auto result = FieldPerp(localmesh).setLocation(loc).setDirectionY(y_direction).allocate();
 
   switch (loc) {
   case CELL_XLOW: {

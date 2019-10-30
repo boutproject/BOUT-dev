@@ -61,7 +61,7 @@ int main(int argc, char** argv) {
   for (int jx=mesh->xstart; jx<=mesh->xend; jx++)
     for (int jy=0; jy<mesh->LocalNy; jy++)
       for (int jz=0; jz<mesh->LocalNz; jz++) {
-	BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
+	BoutReal x = BoutReal(mesh->getGlobalXIndex(jx)-mesh->xstart)/nx;
 	BoutReal z = BoutReal(jz)/nz;
 	f1(jx, jy, jz) = 0. + exp(-(50.*pow(x-p,2)+1.-cos( 2.*PI*(z-q) )))
 			 - 50.*(2.*p*exp(-50.*pow(-p,2))*x + (-p*exp(-50.*pow(-p,2))-(1-p)*exp(-50.*pow(1-p,2)))*pow(x,2)  )*exp(-(1.-cos( 2.*PI*(z-q) ))) //make the gradients zero at both x-boundaries
@@ -71,7 +71,7 @@ int main(int argc, char** argv) {
     for (int jx=mesh->xstart-1; jx>=0; jx--)
       for (int jy=0; jy<mesh->LocalNy; jy++)
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
-	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
+	  BoutReal x = BoutReal(mesh->getGlobalXIndex(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
  	  f1(jx, jy, jz) = 0. + exp(-(50.*pow(x-p,2)+1.-cos( 2.*PI*(z-q) )))
 			 - 50.*(2.*p*exp(-50.*pow(-p,2))*x + (-p*exp(-50.*pow(-p,2))-(1-p)*exp(-50.*pow(1-p,2)))*pow(x,2)  )*exp(-(1.-cos( 2.*PI*(z-q) ))); //make the gradients zero at both x-boundaries
@@ -80,7 +80,7 @@ int main(int argc, char** argv) {
     for (int jx=mesh->xend+1; jx<mesh->LocalNx; jx++)
       for (int jy=0; jy<mesh->LocalNy; jy++)
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
-	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
+	  BoutReal x = BoutReal(mesh->getGlobalXIndex(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
 	f1(jx, jy, jz) = 0. + exp(-(50.*pow(x-p,2)+1.-cos( 2.*PI*(z-q) )))
 			 - 50.*(2.*p*exp(-50.*pow(-p,2))*x + (-p*exp(-50.*pow(-p,2))-(1-p)*exp(-50.*pow(1-p,2)))*pow(x,2)  )*exp(-(1.-cos( 2.*PI*(z-q) ))); //make the gradients zero at both x-boundaries
@@ -92,7 +92,7 @@ int main(int argc, char** argv) {
   for (int jx=mesh->xstart; jx<=mesh->xend; jx++)
     for (int jy=0; jy<mesh->LocalNy; jy++)
       for (int jz=0; jz<mesh->LocalNz; jz++) {
-	BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
+	BoutReal x = BoutReal(mesh->getGlobalXIndex(jx)-mesh->xstart)/nx;
 	BoutReal z = BoutReal(jz)/nz;
 	d1(jx, jy, jz) = 1.e-7*(1. + 0.2*exp(-50.*pow(x-p,2)/4.)*sin(2.*PI*(z-q) * 3.));
       }
@@ -100,7 +100,7 @@ int main(int argc, char** argv) {
     for (int jx=mesh->xstart-1; jx>=0; jx--)
       for (int jy=0; jy<mesh->LocalNy; jy++)
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
-	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
+	  BoutReal x = BoutReal(mesh->getGlobalXIndex(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
 	  d1(jx, jy, jz) = 1.e-7*(1. + 0.2*exp(-50.*pow(x-p,2)/4.)*sin(2.*PI*(z-q) * 3.));
 	}
@@ -108,7 +108,7 @@ int main(int argc, char** argv) {
     for (int jx=mesh->xend+1; jx<mesh->LocalNx; jx++)
       for (int jy=0; jy<mesh->LocalNy; jy++)
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
-	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
+	  BoutReal x = BoutReal(mesh->getGlobalXIndex(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
 	  d1(jx, jy, jz) = 1.e-7*(1. + 0.2*exp(-50.*pow(x-p,2)/4.)*sin(2.*PI*(z-q) * 3.));
 	}
@@ -119,7 +119,7 @@ int main(int argc, char** argv) {
   for (int jx=mesh->xstart; jx<=mesh->xend; jx++)
     for (int jy=0; jy<mesh->LocalNy; jy++)
       for (int jz=0; jz<mesh->LocalNz; jz++) {
-	BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
+	BoutReal x = BoutReal(mesh->getGlobalXIndex(jx)-mesh->xstart)/nx;
 	BoutReal z = BoutReal(jz)/nz;
 	c1(jx, jy, jz) = 1. + 1.e-6*0.15*exp(-50.*pow(x-p,2)*2.)*sin(2.*PI*(z-q) * 2.);
       }
@@ -127,7 +127,7 @@ int main(int argc, char** argv) {
     for (int jx=mesh->xstart-1; jx>=0; jx--)
       for (int jy=0; jy<mesh->LocalNy; jy++)
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
-	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
+	  BoutReal x = BoutReal(mesh->getGlobalXIndex(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
 	  c1(jx, jy, jz) = 1. + 1.e-6*0.15*exp(-50.*pow(x-p,2)*2.)*sin(2.*PI*(z-q) * 2.);
 	}
@@ -135,7 +135,7 @@ int main(int argc, char** argv) {
     for (int jx=mesh->xend+1; jx<mesh->LocalNx; jx++)
       for (int jy=0; jy<mesh->LocalNy; jy++)
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
-	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
+	  BoutReal x = BoutReal(mesh->getGlobalXIndex(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
 	  c1(jx, jy, jz) = 1. + 1.e-6*0.15*exp(-50.*pow(x-p,2)*2.)*sin(2.*PI*(z-q) * 2.);
 	}
@@ -146,7 +146,7 @@ int main(int argc, char** argv) {
   for (int jx=mesh->xstart; jx<=mesh->xend; jx++)
     for (int jy=0; jy<mesh->LocalNy; jy++)
       for (int jz=0; jz<mesh->LocalNz; jz++) {
-	BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
+	BoutReal x = BoutReal(mesh->getGlobalXIndex(jx)-mesh->xstart)/nx;
 	BoutReal z = BoutReal(jz)/nz;
 	a1(jx, jy, jz) = -1. + 0.1*exp(-50.*pow(x-p,2)*2.5)*sin(2.*PI*(z-q) * 7.);
       }
@@ -154,7 +154,7 @@ int main(int argc, char** argv) {
     for (int jx=mesh->xstart-1; jx>=0; jx--)
       for (int jy=0; jy<mesh->LocalNy; jy++)
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
-	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
+	  BoutReal x = BoutReal(mesh->getGlobalXIndex(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
 	  a1(jx, jy, jz) = -1. + 0.1*exp(-50.*pow(x-p,2)*2.5)*sin(2.*PI*(z-q) * 7.);
 	}
@@ -162,7 +162,7 @@ int main(int argc, char** argv) {
     for (int jx=mesh->xend+1; jx<mesh->LocalNx; jx++)
       for (int jy=0; jy<mesh->LocalNy; jy++)
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
-	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
+	  BoutReal x = BoutReal(mesh->getGlobalXIndex(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
 	  a1(jx, jy, jz) = -1. + 0.1*exp(-50.*pow(x-p,2)*2.5)*sin(2.*PI*(z-q) * 7.);
 	}
@@ -369,7 +369,7 @@ int main(int argc, char** argv) {
   for (int jx=mesh->xstart; jx<=mesh->xend; jx++)
     for (int jy=0; jy<mesh->LocalNy; jy++)
       for (int jz=0; jz<mesh->LocalNz; jz++) {
-	BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
+	BoutReal x = BoutReal(mesh->getGlobalXIndex(jx)-mesh->xstart)/nx;
 	BoutReal z = BoutReal(jz)/nz;
 	f5(jx, jy, jz) = 0. + exp(-(50.*pow(x-p,2)+1.-cos( 2.*PI*(z-q) )))
 			 - 50.*(2.*p*exp(-50.*pow(-p,2))*x + (-p*exp(-50.*pow(-p,2))-(1-p)*exp(-50.*pow(1-p,2)))*pow(x,2)  )*exp(-(1.-cos( 2.*PI*(z-q) ))) //make the gradients zero at both x-boundaries
@@ -379,7 +379,7 @@ int main(int argc, char** argv) {
     for (int jx=mesh->xstart-1; jx>=0; jx--)
       for (int jy=0; jy<mesh->LocalNy; jy++)
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
-	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
+	  BoutReal x = BoutReal(mesh->getGlobalXIndex(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
           f5(jx, jy, jz) = 0. + exp(-(50.*pow(x-p,2)+1.-cos( 2.*PI*(z-q) )))
 			 - 50.*(2.*p*exp(-50.*pow(-p,2))*x + (-p*exp(-50.*pow(-p,2))-(1-p)*exp(-50.*pow(1-p,2)))*pow(x,2)  )*exp(-(1.-cos( 2.*PI*(z-q) ))); //make the gradients zero at both x-boundaries
@@ -388,7 +388,7 @@ int main(int argc, char** argv) {
     for (int jx=mesh->xend+1; jx<mesh->LocalNx; jx++)
       for (int jy=0; jy<mesh->LocalNy; jy++)
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
-	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
+	  BoutReal x = BoutReal(mesh->getGlobalXIndex(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
           f5(jx, jy, jz) = 0. + exp(-(50.*pow(x-p,2)+1.-cos( 2.*PI*(z-q) )))
 			 - 50.*(2.*p*exp(-50.*pow(-p,2))*x + (-p*exp(-50.*pow(-p,2))-(1-p)*exp(-50.*pow(1-p,2)))*pow(x,2)  )*exp(-(1.-cos( 2.*PI*(z-q) ))); //make the gradients zero at both x-boundaries
@@ -400,7 +400,7 @@ int main(int argc, char** argv) {
   for (int jx=mesh->xstart; jx<=mesh->xend; jx++)
     for (int jy=0; jy<mesh->LocalNy; jy++)
       for (int jz=0; jz<mesh->LocalNz; jz++) {
-	BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
+	BoutReal x = BoutReal(mesh->getGlobalXIndex(jx)-mesh->xstart)/nx;
 	BoutReal z = BoutReal(jz)/nz;
 	d5(jx, jy, jz) = 1.e-7*(1. + p*cos(2.*PI*x)*sin(2.*PI*(z-q) * 3.));
       }
@@ -408,7 +408,7 @@ int main(int argc, char** argv) {
     for (int jx=mesh->xstart-1; jx>=0; jx--)
       for (int jy=0; jy<mesh->LocalNy; jy++)
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
-	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
+	  BoutReal x = BoutReal(mesh->getGlobalXIndex(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
 	  d5(jx, jy, jz) = 1.e-7*(1. + p*cos(2.*PI*x)*sin(2.*PI*(z-q) * 3.));
 	}
@@ -416,7 +416,7 @@ int main(int argc, char** argv) {
     for (int jx=mesh->xend+1; jx<mesh->LocalNx; jx++)
       for (int jy=0; jy<mesh->LocalNy; jy++)
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
-	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
+	  BoutReal x = BoutReal(mesh->getGlobalXIndex(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
 	  d5(jx, jy, jz) = 1.e-7*(1. + p*cos(2.*PI*x)*sin(2.*PI*(z-q) * 3.));
 	}
@@ -427,7 +427,7 @@ int main(int argc, char** argv) {
   for (int jx=mesh->xstart; jx<=mesh->xend; jx++)
     for (int jy=0; jy<mesh->LocalNy; jy++)
       for (int jz=0; jz<mesh->LocalNz; jz++) {
-	BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
+	BoutReal x = BoutReal(mesh->getGlobalXIndex(jx)-mesh->xstart)/nx;
 	BoutReal z = BoutReal(jz)/nz;
 	c5(jx, jy, jz) = 1. + 1.e-6*p*cos(2.*PI*x*5)*sin(2.*PI*(z-q) * 2.);
       }
@@ -435,7 +435,7 @@ int main(int argc, char** argv) {
     for (int jx=mesh->xstart-1; jx>=0; jx--)
       for (int jy=0; jy<mesh->LocalNy; jy++)
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
-	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
+	  BoutReal x = BoutReal(mesh->getGlobalXIndex(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
 	  c5(jx, jy, jz) = 1. + 1.e-6*p*cos(2.*PI*x*5)*sin(2.*PI*(z-q) * 2.);
 	}
@@ -443,7 +443,7 @@ int main(int argc, char** argv) {
     for (int jx=mesh->xend+1; jx<mesh->LocalNx; jx++)
       for (int jy=0; jy<mesh->LocalNy; jy++)
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
-	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
+	  BoutReal x = BoutReal(mesh->getGlobalXIndex(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
 	  c5(jx, jy, jz) = 1. + 1.e-6*p*cos(2.*PI*x*5)*sin(2.*PI*(z-q) * 2.);
 	}
@@ -454,7 +454,7 @@ int main(int argc, char** argv) {
   for (int jx=mesh->xstart; jx<=mesh->xend; jx++)
     for (int jy=0; jy<mesh->LocalNy; jy++)
       for (int jz=0; jz<mesh->LocalNz; jz++) {
-	BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
+	BoutReal x = BoutReal(mesh->getGlobalXIndex(jx)-mesh->xstart)/nx;
 	BoutReal z = BoutReal(jz)/nz;
 	a5(jx, jy, jz) = -1. + p*cos(2.*PI*x*2.)*sin(2.*PI*(z-q) * 7.);
       }
@@ -462,7 +462,7 @@ int main(int argc, char** argv) {
     for (int jx=mesh->xstart-1; jx>=0; jx--)
       for (int jy=0; jy<mesh->LocalNy; jy++)
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
-	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
+	  BoutReal x = BoutReal(mesh->getGlobalXIndex(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
 	  a5(jx, jy, jz) = -1. + p*cos(2.*PI*x*2.)*sin(2.*PI*(z-q) * 7.);
 	}
@@ -470,7 +470,7 @@ int main(int argc, char** argv) {
     for (int jx=mesh->xend+1; jx<mesh->LocalNx; jx++)
       for (int jy=0; jy<mesh->LocalNy; jy++)
 	for (int jz=0; jz<mesh->LocalNz; jz++) {
-	  BoutReal x = BoutReal(mesh->XGLOBAL(jx)-mesh->xstart)/nx;
+	  BoutReal x = BoutReal(mesh->getGlobalXIndex(jx)-mesh->xstart)/nx;
 	  BoutReal z = BoutReal(jz)/nz;
 	  a5(jx, jy, jz) = -1. + p*cos(2.*PI*x*2.)*sin(2.*PI*(z-q) * 7.);
 	}

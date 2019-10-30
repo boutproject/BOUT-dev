@@ -15,13 +15,20 @@ namespace globals {
 } // namespace globals
 
 /// Location of boundary
-enum BndryLoc {BNDRY_XIN=1,
-               BNDRY_XOUT=2,
-               BNDRY_YDOWN=4,
-               BNDRY_YUP=8,
-               BNDRY_ALL=15,
-               BNDRY_PAR_FWD=16,   // Don't include parallel boundaries
-               BNDRY_PAR_BKWD=32};
+enum class BndryLoc {xin,
+                     xout,
+                     ydown,
+                     yup,
+                     all,
+                     par_fwd,   // Don't include parallel boundaries
+                     par_bkwd};
+constexpr BndryLoc BNDRY_XIN = BndryLoc::xin;
+constexpr BndryLoc BNDRY_XOUT = BndryLoc::xout;
+constexpr BndryLoc BNDRY_YDOWN = BndryLoc::ydown;
+constexpr BndryLoc BNDRY_YUP = BndryLoc::yup;
+constexpr BndryLoc BNDRY_ALL = BndryLoc::all;
+constexpr BndryLoc BNDRY_PAR_FWD = BndryLoc::par_fwd;
+constexpr BndryLoc BNDRY_PAR_BKWD = BndryLoc::par_bkwd;
 
 class BoundaryRegionBase {
 public:

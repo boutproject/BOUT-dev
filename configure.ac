@@ -32,7 +32,7 @@
 #
 
 AC_PREREQ([2.69])
-AC_INIT([BOUT++],[4.2.2],[bd512@york.ac.uk])
+AC_INIT([BOUT++],[4.3.0],[bd512@york.ac.uk])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -187,6 +187,9 @@ AS_IF([test "x$enable_openmp" = "xyes"], [
   OPENMP_CXXFLAGS="$OPENMP_CXXFLAGS -DOPENMP_SCHEDULE=$OPENMP_SCHEDULE"
 ])
 
+# Check if we have access to __PRETTY_FUNCTION__
+BOUT_CHECK_PRETTYFUNCTION
+
 #############################################################
 # Code coverage using gcov
 #
@@ -218,12 +221,17 @@ AC_SUBST([COVERAGE_FLAGS])
 # If this is passed to GCC, it will explode, so the flag must be enabled
 # conditionally.
 # This check taken from AX_COMPILER_FLAGS_CXXFLAGS
+extra_compiler_flags_test=""
 AX_CHECK_COMPILE_FLAG([-Werror=unknown-warning-option],[
   extra_compiler_flags_test="-Werror=unknown-warning-option"
-],[
-  extra_compiler_flags_test=""
 ])
-
+# A similar check to above, but for Intel. -we is undocumented, but
+# the equivalent (?) -diag-error gets accepted by GCC. 10006 is
+# "unknown option", and 10148 is the more recent "unknown warning
+# option"
+AX_CHECK_COMPILE_FLAG([-we10006,10148],[
+  extra_compiler_flags_test="-we10006,10148"
+])
 
 AS_IF([test "x$enable_warnings" != "xno"], [
 # Some hopefully sensible default compiler warning flags
@@ -1084,7 +1092,6 @@ Please supply the path using --with-scorep=/path/to/scorep])
       # Set a compile-time flag
       CXXFLAGS="$CXXFLAGS -DBOUT_HAS_SCOREP"
       MPICXX="$SCOREPPATH --user --nocompiler $MPICXX"
-      BOUT_CHECK_PRETTYFUNCTION
       HAS_SCOREP="yes"
       AC_MSG_NOTICE([Scorep support enabled])
   ])

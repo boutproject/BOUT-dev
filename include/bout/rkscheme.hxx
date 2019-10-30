@@ -57,14 +57,14 @@ class RKScheme {
 
   //Finish generic initialisation
   void init(int nlocalIn, int neqIn, bool adaptiveIn, BoutReal atolIn,
-            const BoutReal rtolIn, Options *options = nullptr);
+            BoutReal rtolIn, Options *options = nullptr);
 
   //Get the time at given stage
   BoutReal setCurTime(BoutReal timeIn,BoutReal dt,int curStage);
 
   //Get the state vector at given stage
   virtual void setCurState(const Array<BoutReal> &start, Array<BoutReal> &out,int curStage, 
-			   const BoutReal dt);
+			   BoutReal dt);
 
   //Calculate the output state and return the error estimate (if adaptive)
   virtual BoutReal setOutputStates(const Array<BoutReal> &start,BoutReal dt, Array<BoutReal> &resultFollow);
@@ -110,10 +110,10 @@ class RKScheme {
   virtual BoutReal getErr(Array<BoutReal> &solA, Array<BoutReal> &solB);
 
   virtual void constructOutput(const Array<BoutReal> &start,BoutReal dt, 
-			       const int index, Array<BoutReal> &sol);
+			       int index, Array<BoutReal> &sol);
 
   virtual void constructOutputs(const Array<BoutReal> &start,BoutReal dt, 
-				const int indexFollow,int indexAlt,
+				int indexFollow,int indexAlt,
 				Array<BoutReal> &solFollow, Array<BoutReal> &solAlt);
 
  private:
