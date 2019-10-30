@@ -6119,9 +6119,10 @@ $as_echo "$as_me: Signaling floating point exceptions disabled" >&6;}
 fi
 
 BOUT_VERSION=$PACKAGE_VERSION
-BOUT_VERSION_MAJOR=${PACKAGE_VERSION%%.*}
-BOUT_VERSION_MINOR=${PACKAGE_VERSION#*.}
-BOUT_VERSION_DOUBLE=${BOUT_VERSION_MAJOR}.$(echo ${BOUT_VERSION_MINOR}|tr -d .)
+BOUT_VERSION_MAJOR=$(echo $PACKAGE_VERSION | cut -d. -f1)
+BOUT_VERSION_MINOR=$(echo $PACKAGE_VERSION | cut -d. -f2)
+BOUT_VERSION_PATCH=$(echo ${PACKAGE_VERSION%-alpha} | cut -d. -f3)
+BOUT_VERSION_DOUBLE=${BOUT_VERSION_MAJOR}.${BOUT_VERSION_MINOR}${BOUT_VERSION_PATCH}
 CXXFLAGS="$CXXFLAGS -DBOUT_VERSION_STRING=\"\\\"$BOUT_VERSION\\\"\" -DBOUT_VERSION_DOUBLE=$BOUT_VERSION_DOUBLE "
 #############################################################
 # Enable Backtrace if possible
