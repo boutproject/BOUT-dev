@@ -157,9 +157,9 @@ do
 done
 test -z $ARFLAGS && AC_MSG_ERROR([Failed to find suitable flags for ar])
 
-# Check for and enable C++11 support
+# Check for and enable C++14 support
 # Error if not supported
-AX_CXX_COMPILE_STDCXX([11], [noext], [mandatory])
+AX_CXX_COMPILE_STDCXX([14], [noext], [mandatory])
 
 #############################################################
 # STD Library functions
