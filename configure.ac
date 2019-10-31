@@ -1091,7 +1091,7 @@ Please supply the path using --with-scorep=/path/to/scorep])
   ],[
       # Set a compile-time flag
       CXXFLAGS="$CXXFLAGS -DBOUT_HAS_SCOREP"
-      MPICXX="$SCOREPPATH --user --nocompiler $MPICXX"
+      CXX="$SCOREPPATH --user --nocompiler $CXX"
       HAS_SCOREP="yes"
       AC_MSG_NOTICE([Scorep support enabled])
   ])
@@ -1112,25 +1112,25 @@ HAS_PVODE="no"
 AS_IF([test "$with_pvode" != "no"], [
   AS_IF([test "$enable_pvode_openmp" != "no"  ], [
     AS_IF([test "$enable_openmp" != "no" ], [
-      PVODE_FLAGS="$CXXFLAGS $OPENMP_CXXFLAGS $CXX11_FLAGS"
+      PVODE_FLAGS="$CXXFLAGS $OPENMP_CXXFLAGS"
       AC_MSG_NOTICE([PVODE being built with OpenMP support])
     ], [
       AC_MSG_ERROR([Cannot enable openmp in PVODE as configuring with OpenMP disabled])
     ])
   ], [
-    PVODE_FLAGS="$CXXFLAGS $CXX11_FLAGS"
+    PVODE_FLAGS="$CXXFLAGS"
     AC_MSG_NOTICE([PVODE being built without OpenMP support])
   ])
   # Clean PVODE
-  CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-  CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+  CXX="$CXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
+  CXX="$CXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
 
   AC_MSG_NOTICE([Building PVODE])
   echo "* Building PVODE" >> config-build.log
   echo "*************************************************************" >> config-build.log
 
-  CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-  CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+  CXX="$CXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
+  CXX="$CXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/source/ >> config-build.log 2>&1
 
   AS_IF([test -f externalpackages/PVODE/lib/libpvode.a && test -f externalpackages/PVODE/lib/libpvpre.a], [
     AC_MSG_NOTICE([Successfully built PVODE])
