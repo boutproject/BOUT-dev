@@ -43,13 +43,15 @@ Before merging PR:
     - Add any new authors
     - Save draft
 - [ ] Change DOI in [`CITATION.cff`][citation] to new DOI
+- [ ] Change DOI in [`README.md`][README.md] to new DOI
 - [ ] Change date-released in [`CITATION.cff`][citation]
-- [ ] Change version number in:
+- [ ] Change version number, removing prerelease tag in:
     - [ ]  [`configure.ac`][configure]: `AC_INIT`
     - [ ]  [`CITATION.cff`][citation]: `version`
     - [ ]  [`manual/sphinx/conf.py`][sphinx_conf]: `version` and `release`
     - [ ]  [`manual/doxygen/Doxyfile_readthedocs`][Doxyfile_readthedocs]: `PROJECT_NUMBER`
     - [ ]  [`manual/doxygen/Doxyfile`][Doxyfile]: `PROJECT_NUMBER`
+    - [ ]  [`CMakeLists.txt`][CMakeLists.txt]: `BOUT_FULL_VERSION`
 
 After PR is merged:
 
@@ -61,7 +63,15 @@ After PR is merged:
 - [ ] Upload tarball to Zenodo and publish new version
 - [ ] Email BOUT++ User Group mailing list, include change summary
 - [ ] Make news post on project website, include change summary
+- [ ] Update downloads page
 - [ ] PR `master` into `next`
+- [ ] Bump version number and add prerelease tag in:
+    - [ ]  [`configure.ac`][configure]: `AC_INIT`
+    - [ ]  [`CITATION.cff`][citation]: `version`
+    - [ ]  [`manual/sphinx/conf.py`][sphinx_conf]: `version` and `release`
+    - [ ]  [`manual/doxygen/Doxyfile_readthedocs`][Doxyfile_readthedocs]: `PROJECT_NUMBER`
+    - [ ]  [`manual/doxygen/Doxyfile`][Doxyfile]: `PROJECT_NUMBER`
+    - [ ]  [`CMakeLists.txt`][CMakeLists.txt]: `BOUT_FULL_VERSION`
 
 [Doxyfile]: ../manual/doxygen/Doxyfile
 [Doxyfile_readthedocs]: ../manual/doxygen/Doxyfile_readthedocs

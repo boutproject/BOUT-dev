@@ -32,7 +32,7 @@
 #
 
 AC_PREREQ([2.69])
-AC_INIT([BOUT++],[4.3.0],[bd512@york.ac.uk])
+AC_INIT([BOUT++],[5.0.0-alpha],[bd512@york.ac.uk])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -346,9 +346,10 @@ AS_IF([test "x$enable_sigfpe" = "xyes"], [
 ])
 
 BOUT_VERSION=$PACKAGE_VERSION
-BOUT_VERSION_MAJOR=${PACKAGE_VERSION%%.*}
-BOUT_VERSION_MINOR=${PACKAGE_VERSION#*.}
-BOUT_VERSION_DOUBLE=${BOUT_VERSION_MAJOR}.$(echo ${BOUT_VERSION_MINOR}|tr -d .)
+BOUT_VERSION_MAJOR=$(echo $PACKAGE_VERSION | cut -d. -f1)
+BOUT_VERSION_MINOR=$(echo $PACKAGE_VERSION | cut -d. -f2)
+BOUT_VERSION_PATCH=$(echo ${PACKAGE_VERSION%-alpha} | cut -d. -f3)
+BOUT_VERSION_DOUBLE=${BOUT_VERSION_MAJOR}.${BOUT_VERSION_MINOR}${BOUT_VERSION_PATCH}
 CXXFLAGS="$CXXFLAGS -DBOUT_VERSION_STRING=\"\\\"$BOUT_VERSION\\\"\" -DBOUT_VERSION_DOUBLE=$BOUT_VERSION_DOUBLE "
 #############################################################
 # Enable Backtrace if possible
