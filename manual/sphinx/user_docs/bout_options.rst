@@ -570,6 +570,16 @@ This string is stored in the attributes of the option::
 
   std::string docstring = options["value"].attributes["doc"];
 
+Overriding library defaults
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+BOUT++ sets defaults for options controlling the mesh, etc. A physics model (or
+other user code) can override these defaults by using the convenience macro
+BOUT_OVERRIDE_DEFAULT_OPTION, for example if you want to change the default
+value of ``mesh::staggergrids`` from false to true, put (outside any
+class/function body)::
+
+    BOUT_OVERRIDE_DEFAULT_OPTION("mesh:staggergrids", true);
 
 Older interface
 ~~~~~~~~~~~~~~~

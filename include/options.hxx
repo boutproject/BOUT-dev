@@ -741,4 +741,11 @@ template <> Field3D Options::as<Field3D>(const Field3D& similar_to) const;
       Options::getRoot()->getSection("all")->get(#var, var, def);	\
     }}									\
 
+/// Define for over-riding library defaults for options, should be called in global
+/// namespace so that the new default is set before main() is called.
+#define BOUT_OVERRIDE_DEFAULT_OPTION(name, value)     \
+  namespace {                                         \
+    const auto user_default##__FILE__##__LINE__ =     \
+      Options::root()[name].overrideDefault(value); } \
+
 #endif // __OPTIONS_H__
