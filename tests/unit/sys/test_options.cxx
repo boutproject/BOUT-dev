@@ -65,6 +65,28 @@ TEST_F(OptionsTest, IsSectionNotCaseSensitive) {
   ASSERT_TRUE(options.isSection("Subsection"));
 }
 
+TEST_F(OptionsTest, CompoundName) {
+  Options options;
+
+  // make sure options is initialized as a section
+  options["testkey"] = 1.;
+
+  ASSERT_TRUE(options.isSection());
+  ASSERT_FALSE(options["testkey"].isSection());
+  ASSERT_TRUE(options.isSection(""));
+  ASSERT_FALSE(options.isSection("subsection"));
+
+  options["subsection:testkey"] = 1.;
+
+  ASSERT_TRUE(options.isSection("subsection"));
+
+  BoutReal value = options["subsection"]["testkey"];
+  EXPECT_EQ(value, 1.);
+
+  BoutReal value2 = options["subsection:testkey"];
+  EXPECT_EQ(value2, 1.);
+}
+
 TEST_F(OptionsTest, SetGetInt) {
   Options options;
   options.set("int_key", 42, "code");
