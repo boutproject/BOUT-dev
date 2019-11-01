@@ -475,8 +475,9 @@ public:
     AUTO_TRACE();
     throw BoutException("The FFT METHOD isn't available in upwind/Flux");
   }
-  metaData meta{"FFT", 0, DERIV::Standard};
+  static constexpr metaData meta{"FFT", 0, DERIV::Standard};
 };
+constexpr metaData FFTDerivativeType::meta;
 
 class FFT2ndDerivativeType {
 public:
@@ -535,8 +536,9 @@ public:
     AUTO_TRACE();
     throw BoutException("The FFT METHOD isn't available in upwind/Flux");
   }
-  metaData meta{"FFT", 0, DERIV::StandardSecond};
+  static constexpr metaData meta{"FFT", 0, DERIV::StandardSecond};
 };
+constexpr metaData FFT2ndDerivativeType::meta;
 
 produceCombinations<Set<WRAP_ENUM(DIRECTION, Z)>, Set<WRAP_ENUM(STAGGER, None)>,
                     Set<TypeContainer<Field3D>>,
@@ -563,8 +565,9 @@ public:
                   vel, result.getLocation(), "DEFAULT", region)
               * interp_to(var, result.getLocation());
   }
-  metaData meta{"SPLIT", 2, DERIV::Flux};
+  static constexpr metaData meta{"SPLIT", 2, DERIV::Flux};
 };
+constexpr metaData SplitFluxDerivativeType::meta;
 
 produceCombinations<Set<WRAP_ENUM(DIRECTION, X), WRAP_ENUM(DIRECTION, Y),
                         WRAP_ENUM(DIRECTION, YOrthogonal), WRAP_ENUM(DIRECTION, Z)>,

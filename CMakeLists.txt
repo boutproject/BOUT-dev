@@ -314,7 +314,7 @@ target_compile_definitions(bout++
   PUBLIC "BOUT_VERSION_DOUBLE=${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}${PROJECT_VERSION_PATCH}"
   )
 
-target_compile_features(bout++ PUBLIC cxx_std_11)
+target_compile_features(bout++ PUBLIC cxx_std_14)
 set_target_properties(bout++ PROPERTIES CXX_EXTENSIONS OFF)
 
 option(ENABLE_WARNINGS "Enable compiler warnings" ON)
