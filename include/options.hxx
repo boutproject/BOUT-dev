@@ -490,6 +490,12 @@ public:
     return as<T>();
   }
 
+  /// Overloaded version for const char*
+  /// Note: Different from template since return type is different to input
+  std::string overrideDefault(const char* def) {
+    return overrideDefault<std::string>(std::string(def));
+  }
+
   /// Get the parent Options object
   Options &parent() {
     if (parent_instance == nullptr) {
