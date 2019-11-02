@@ -69,22 +69,22 @@ TEST_F(OptionsTest, CompoundName) {
   Options options;
 
   // make sure options is initialized as a section
-  options["testkey"] = 1.;
+  options["compoundkey"] = 321.;
 
   ASSERT_TRUE(options.isSection());
-  ASSERT_FALSE(options["testkey"].isSection());
+  ASSERT_FALSE(options["compoundkey"].isSection());
   ASSERT_TRUE(options.isSection(""));
-  ASSERT_FALSE(options.isSection("subsection"));
+  ASSERT_FALSE(options.isSection("compoundsubsection"));
 
-  options["subsection:testkey"] = 1.;
+  options["compoundsubsection:compoundkey"] = 321.;
 
-  ASSERT_TRUE(options.isSection("subsection"));
+  ASSERT_TRUE(options.isSection("compoundsubsection"));
 
-  BoutReal value = options["subsection"]["testkey"];
-  EXPECT_EQ(value, 1.);
+  BoutReal value = options["compoundsubsection"]["compoundkey"];
+  EXPECT_EQ(value, 321.);
 
-  BoutReal value2 = options["subsection:testkey"];
-  EXPECT_EQ(value2, 1.);
+  BoutReal value2 = options["compoundsubsection:compoundkey"];
+  EXPECT_EQ(value2, 321.);
 }
 
 TEST_F(OptionsTest, SetGetInt) {
