@@ -389,6 +389,16 @@ TEST_F(OptionsTest, InconsistentDefaultValueOptions) {
   EXPECT_EQ(value, 0);
 }
 
+TEST_F(OptionsTest, OverrideDefaultValueOptions) {
+  Options options;
+
+  options["override_key"].overrideDefault("override_value");
+
+  std::string value = options["override_key"].withDefault("default_value");
+
+  EXPECT_EQ(value, "override_value");
+}
+
 TEST_F(OptionsTest, SingletonTest) {
   Options *root = Options::getRoot();
   Options *second = Options::getRoot();
