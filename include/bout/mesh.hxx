@@ -366,6 +366,10 @@ class Mesh {
   /// \param[out] ts  The Twist-Shift angle if periodic
   virtual bool periodicY(int jx, BoutReal &ts) const = 0;
 
+  /// Get number of boundaries in the y-direction, i.e. locations where there are boundary
+  /// cells in the global grid
+  virtual int numberOfYBoundaries() const = 0;
+
   /// Is there a branch cut at this processor's lower y-boundary?
   ///
   /// @param[in] jx             The local (on this processor) index in X

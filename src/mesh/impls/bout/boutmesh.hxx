@@ -111,6 +111,10 @@ class BoutMesh : public Mesh {
   /// \param[in] jx   The local (on this processor) index in X
   bool periodicY(int jx) const override;
 
+  /// Get number of boundaries in the y-direction, i.e. locations where there are boundary
+  /// cells in the global grid
+  int numberOfYBoundaries() const = 0;
+
   /// Is there a branch cut at this processor's lower boundary?
   ///
   /// @param[in] jx             The local (on this processor) index in X
