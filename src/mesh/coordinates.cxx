@@ -82,7 +82,10 @@ Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
 
         // set boundary guard cells
         if ((bndry->bx != 0 && localmesh->GlobalNx - 2 * bndry->width >= 3)
-            || (bndry->by != 0 && localmesh->GlobalNy - 2 * bndry->width >= 3)) {
+            || (bndry->by != 0
+                && localmesh->GlobalNy - localmesh->numberOfYBoundaries() * bndry->width
+                   >= 3))
+        {
           if (bndry->bx != 0 && localmesh->LocalNx == 1 && bndry->width == 1) {
             throw BoutException(
                 "Not enough points in the x-direction on this "

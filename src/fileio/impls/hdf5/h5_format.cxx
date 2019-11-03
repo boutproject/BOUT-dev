@@ -277,7 +277,7 @@ bool H5Format::addVar(const std::string &name, bool repeat, hid_t write_hdf5_typ
       if (datatype == "FieldPerp_t") {
         init_size[2]=mesh->GlobalNz;
       } else {
-        init_size[2]=mesh->GlobalNy-2*mesh->ystart;
+        init_size[2]=mesh->GlobalNy - mesh->numberOfYBoundaries()*mesh->ystart;
       }
       init_size[3]=mesh->GlobalNz;
     }
@@ -348,7 +348,7 @@ bool H5Format::addVar(const std::string &name, bool repeat, hid_t write_hdf5_typ
       if (parallel) {
         init_size[0] = mesh->GlobalNx - 2 * mesh->xstart;
         if (datatype == "FieldPerp") {
-          init_size[1] = mesh->GlobalNy - 2 * mesh->ystart;
+          init_size[1] = mesh->GlobalNy - mesh->numberOfYBoundaries() * mesh->ystart;
         } else {
           init_size[1] = mesh->GlobalNz;
         }
