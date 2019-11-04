@@ -329,7 +329,7 @@ BoutReal Vol_Integral(const Field2D &var) {
   Int_Glb = Average_XY(result);
   Int_Glb *= static_cast<BoutReal>(
                (mesh->GlobalNx-2*mesh->xstart)
-               * (mesh->GlobalNy-mesh->numberOfYBoundaries())) * PI * 2.;
+               * (mesh->GlobalNy-mesh->numberOfYBoundaries()*2*mesh->ystart)) * PI * 2.;
 
   return Int_Glb;
 }

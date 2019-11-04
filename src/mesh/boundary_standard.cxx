@@ -66,7 +66,7 @@ void verifyNumPoints(BoundaryRegion *region, int ptsRequired) {
 
     //Here mesh->numberOfYBoundaries()*mesh->ystart is the total number of guard/boundary
     //cells
-    ptsAvailGlobal = mesh->GlobalNy - mesh->numberOfYBoundaries()*mesh->ystart;
+    ptsAvailGlobal = mesh->GlobalNy - mesh->numberOfYBoundaries()*2*mesh->ystart;
 
     //Work out how many processor local points we have excluding boundaries
     //but including ghost/guard cells
