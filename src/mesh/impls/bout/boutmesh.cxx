@@ -172,9 +172,6 @@ int BoutMesh::load() {
     GlobalNy += 2*MYG;
   }
 
-  if (2 * MXG >= nx)
-    throw BoutException(_("nx must be greater than 2*MXG"));
-
   /// Check inputs
   if (jyseps1_1 < -1) {
     output_warn.write("\tWARNING: jyseps1_1 (%d) must be >= -1. Setting to -1\n",
