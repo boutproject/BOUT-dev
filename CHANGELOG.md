@@ -1,5 +1,15 @@
 # Change Log
 
+## [v5.0.0-alpha](https://github.com/boutproject/BOUT-dev/tree/next)
+[Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v4.3.0...next)
+
+### Breaking changes
+
+- `BoutMesh::GlobalNy` now counts points from all y-boundaries. Previously it
+  only counted points from the boundaries at the upper and lower edges of the
+  logical grid, even if there was another boundary in the grid.
+  [\#1829](https://github.com/boutproject/BOUT-dev/pull/1829)
+
 ## [v4.3.0](https://github.com/boutproject/BOUT-dev/tree/v4.3.0) (2019-10-24)
 [Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v4.2.3...v4.3.0)
 
