@@ -23,7 +23,7 @@ static PetscErrorCode laplacePCapply(PC pc,Vec x,Vec y) {
   
   // Get the context
   LaplaceXY *s;
-  ierr = PCShellGetContext(pc,(void**)&s);CHKERRQ(ierr);
+  ierr = PCShellGetContext(pc, reinterpret_cast<void**>(&s)); CHKERRQ(ierr);
   
   PetscFunctionReturn(s->precon(x, y));
 }
@@ -255,9 +255,9 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
 
     KSPSetType( ksp, ksptype.c_str() );
     KSPSetTolerances( ksp, rtol, atol, dtol, maxits );
-    
-    KSPSetInitialGuessNonzero( ksp, (PetscBool) true );
-    
+
+    KSPSetInitialGuessNonzero(ksp, static_cast<PetscBool>(true));
+
     KSPGetPC(ksp,&pc);
     PCSetType(pc, pctype.c_str());
 

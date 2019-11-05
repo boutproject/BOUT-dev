@@ -406,7 +406,7 @@ R V_dot_Grad(const T &v, const F &a) {
 
   return result;
   
-};
+}
 
 // Implement vector-vector operation in terms of templated routine above
 const Vector2D V_dot_Grad(const Vector2D &v, const Vector2D &a) {

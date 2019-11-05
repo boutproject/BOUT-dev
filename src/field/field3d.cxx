@@ -227,17 +227,17 @@ const BoutReal &Field3D::operator()(const Ind2D &d, int jz) const {
 
 const Region<Ind3D> &Field3D::getRegion(REGION region) const {
   return fieldmesh->getRegion3D(toString(region));
-};
+}
 const Region<Ind3D> &Field3D::getRegion(const std::string &region_name) const {
   return fieldmesh->getRegion3D(region_name);
-};
+}
 
 const Region<Ind2D> &Field3D::getRegion2D(REGION region) const {
   return fieldmesh->getRegion2D(toString(region));
-};
+}
 const Region<Ind2D> &Field3D::getRegion2D(const std::string &region_name) const {
   return fieldmesh->getRegion2D(region_name);
-};
+}
 
 /***************************************************************
  *                         OPERATORS 

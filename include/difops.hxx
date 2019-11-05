@@ -59,11 +59,11 @@ DEPRECATED(const Field2D Grad_par(const Field2D& var, const std::string& method,
                                   CELL_LOC outloc = CELL_DEFAULT));
 inline const Field2D Grad_par(const Field2D& var, CELL_LOC outloc, DIFF_METHOD method) {
   return Grad_par(var, outloc, toString(method));
-};
+}
 DEPRECATED(inline const Field2D Grad_par(const Field2D& var, DIFF_METHOD method,
                                          CELL_LOC outloc)) {
   return Grad_par(var, outloc, toString(method));
-};
+}
 
 const Field3D Grad_par(const Field3D& var, CELL_LOC outloc = CELL_DEFAULT,
                        const std::string& method = "DEFAULT");
@@ -72,11 +72,11 @@ DEPRECATED(const Field3D Grad_par(const Field3D& var, const std::string& method,
 inline const DEPRECATED(Field3D Grad_par(const Field3D& var, CELL_LOC outloc,
                                          DIFF_METHOD method)) {
   return Grad_par(var, outloc, toString(method));
-};
+}
 DEPRECATED(inline const DEPRECATED(
     Field3D Grad_par(const Field3D& var, DIFF_METHOD method, CELL_LOC outloc))) {
   return Grad_par(var, outloc, toString(method));
-};
+}
 
 /*!
  * Derivative along perturbed magnetic field
@@ -113,11 +113,11 @@ DEPRECATED(const Field2D Vpar_Grad_par(const Field2D& v, const Field2D& f,
 inline const Field2D Vpar_Grad_par(const Field2D& v, const Field2D& f, CELL_LOC outloc,
                                    DIFF_METHOD method) {
   return Vpar_Grad_par(v, f, outloc, toString(method));
-};
+}
 DEPRECATED(inline const Field2D Vpar_Grad_par(const Field2D& v, const Field2D& f,
                                               DIFF_METHOD method, CELL_LOC outloc)) {
   return Vpar_Grad_par(v, f, outloc, toString(method));
-};
+}
 
 const Field3D Vpar_Grad_par(const Field3D& v, const Field3D& f,
                             CELL_LOC outloc = CELL_DEFAULT,
@@ -128,11 +128,11 @@ DEPRECATED(const Field3D Vpar_Grad_par(const Field3D& v, const Field3D& f,
 inline const Field3D Vpar_Grad_par(const Field3D& v, const Field3D& f, CELL_LOC outloc,
                                    DIFF_METHOD method) {
   return Vpar_Grad_par(v, f, outloc, toString(method));
-};
+}
 DEPRECATED(inline const Field3D Vpar_Grad_par(const Field3D& v, const Field3D& f,
                                               DIFF_METHOD method, CELL_LOC outloc)) {
   return Vpar_Grad_par(v, f, outloc, toString(method));
-};
+}
 
 /*!
  * parallel divergence operator
@@ -152,11 +152,11 @@ DEPRECATED(const Field2D Div_par(const Field2D& f, const std::string& method,
                                  CELL_LOC outloc = CELL_DEFAULT));
 inline const Field2D Div_par(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method) {
   return Div_par(f, outloc, toString(method));
-};
+}
 DEPRECATED(inline const Field2D Div_par(const Field2D& f, DIFF_METHOD method,
                                         CELL_LOC outloc)) {
   return Div_par(f, outloc, toString(method));
-};
+}
 
 const Field3D Div_par(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
                       const std::string& method = "DEFAULT");
@@ -164,11 +164,11 @@ DEPRECATED(const Field3D Div_par(const Field3D& f, const std::string& method,
                                  CELL_LOC outloc = CELL_DEFAULT));
 inline const Field3D Div_par(const Field3D& f, CELL_LOC outloc, DIFF_METHOD method) {
   return Div_par(f, outloc, toString(method));
-};
+}
 DEPRECATED(inline const Field3D Div_par(const Field3D& f, DIFF_METHOD method,
                                         CELL_LOC outloc)) {
   return Div_par(f, outloc, toString(method));
-};
+}
 
 // Divergence of a parallel flow: Div(f*v)
 // Both f and v are interpolated onto cell boundaries
@@ -187,12 +187,12 @@ DEPRECATED(const Field3D Div_par_flux(const Field3D& v, const Field3D& f,
 inline const Field3D Div_par_flux(const Field3D& v, const Field3D& f, CELL_LOC outloc,
                                   DIFF_METHOD method) {
   return Div_par_flux(v, f, outloc, toString(method));
-};
+}
 DEPRECATED(inline const Field3D Div_par_flux(const Field3D& v, const Field3D& f,
                                              DIFF_METHOD method,
                                              CELL_LOC outloc = CELL_DEFAULT)) {
   return Div_par_flux(v, f, outloc, toString(method));
-};
+}
 
 /*!
  * second parallel derivative
@@ -209,13 +209,13 @@ const Field2D Grad2_par2(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                          const std::string& method = "DEFAULT");
 inline const Field2D Grad2_par2(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method) {
   return Grad2_par2(f, outloc, toString(method));
-};
+}
 
 const Field3D Grad2_par2(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
                          const std::string& method = "DEFAULT");
 inline const Field3D Grad2_par2(const Field3D& f, CELL_LOC outloc, DIFF_METHOD method) {
   return Grad2_par2(f, outloc, toString(method));
-};
+}
 
 /*!
  * Parallel derivatives, converting between cell-centred and lower cell boundary

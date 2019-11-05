@@ -358,7 +358,7 @@ template <typename T> int invert3x3(Matrix<T> &a, BoutReal small = 1.0e-15) {
   a(2, 2) = I * detinv;
 
   return 0;
-};
+}
 
 /*!
  * Get Random number between 0 and 1
