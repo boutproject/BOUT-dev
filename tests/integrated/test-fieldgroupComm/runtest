@@ -25,7 +25,7 @@ seterr(divide='ignore', invalid='ignore')
 varCorrect="fld1"
 varsComp  = ["fld2", "fld3"]
 name = "FieldGroup comm"
-exeName = "test"
+exeName = "test_fieldgroupcomm"
 tol = 1e-10  # Relative tolerance
 
 
