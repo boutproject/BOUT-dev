@@ -621,6 +621,9 @@ string(CONCAT BOUT_FLAGS_STRING
 target_compile_definitions(bout++
   PRIVATE BOUT_FLAGS_STRING=${BOUT_FLAGS_STRING})
 
+##################################################
+# Tests
+
 # Copy FILENAME from source directory to build directory
 macro(bout_test_copy_file FILENAME)
   configure_file(
@@ -669,6 +672,8 @@ function(bout_add_integrated_test TESTNAME)
   target_link_libraries(${TESTNAME} bout++)
   target_include_directories(${TESTNAME} PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 
+  # Set the name of the executable. We either take it as an option,
+  # or use the first source file, stripping the file suffix
   if (BOUT_TEST_OPTIONS_EXECUTABLE_NAME)
     set_target_properties(${TESTNAME} PROPERTIES OUTPUT_NAME ${BOUT_TEST_OPTIONS_EXECUTABLE_NAME})
   else()
@@ -684,28 +689,60 @@ function(bout_add_integrated_test TESTNAME)
     set_target_properties(${TESTNAME} PROPERTIES OUTPUT_NAME ${BOUT_TEST_EXECUTABLE_NAME})
   endif()
 
+  # Set the actual test command
   if (BOUT_TEST_OPTIONS_USE_RUNTEST)
     add_test(NAME ${TESTNAME} COMMAND ./runtest)
     bout_test_copy_file(runtest)
   else()
     add_test(NAME ${TESTNAME} COMMAND ${TESTNAME})
   endif()
+
+  # Copy the input file if needed
   if (BOUT_TEST_OPTIONS_USE_DATA_BOUT_INP)
     bout_test_copy_file(data/BOUT.inp)
   endif()
+
+  # Copy any other needed files
   if (BOUT_TEST_OPTIONS_EXTRA_FILES)
     foreach (FILE ${BOUT_TEST_OPTIONS_EXTRA_FILES})
       bout_test_copy_file("${FILE}")
     endforeach()
   endif()
+
   set_target_properties(${TESTNAME} PROPERTIES FOLDER tests/integrated)
+
+  # Add the test to the build-check-integrated-tests target
+  add_dependencies(build-check-integrated-tests ${TESTNAME})
 endfunction()
 
 option(PACKAGE_TESTS "Build the tests" ON)
 if(PACKAGE_TESTS)
   enable_testing()
-  add_subdirectory(tests/unit)
-  add_subdirectory(tests/integrated)
+
+  # Targets for just building the tests
+  # Tests need to add themselves as dependencies to these targets
+  add_custom_target(build-check-unit-tests)
+  add_custom_target(build-check-integrated-tests)
+
+  # Build all the tests
+  add_custom_target(build-check)
+  add_dependencies(build-check build-check-unit-tests build-check-integrated-tests)
+
+  add_subdirectory(tests/unit EXCLUDE_FROM_ALL)
+  add_subdirectory(tests/integrated EXCLUDE_FROM_ALL)
+
+  # Targets for running the tests
+  add_custom_target(check-unit-tests
+    COMMAND ctest -R serial_tests --output-on-failure)
+  add_dependencies(check-unit-tests build-check-unit-tests)
+
+  add_custom_target(check-integrated-tests
+    COMMAND ctest -R "test-" --output-on-failure)
+  add_dependencies(check-integrated-tests build-check-integrated-tests)
+
+  # Run all the tests
+  add_custom_target(check)
+  add_dependencies(check check-unit-tests check-integrated-tests)
 endif()
 
 ##################################################
