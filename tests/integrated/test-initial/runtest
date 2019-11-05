@@ -171,7 +171,6 @@ for coord in ["var_x", "var_y", "var_z"]:
     varlist.remove(coord)
 
 print("Making initial conditions test")
-shell_safe("make clean")
 shell_safe("make > make.log")
 
 nprocs = [1, 2, 3, 4]
