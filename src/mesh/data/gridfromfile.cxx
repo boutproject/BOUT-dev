@@ -312,12 +312,12 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def) 
   if (not bout::utils::is_FieldPerp<T>::value) {
     ///Check if field dimensions are correct. y-direction
     if (grid_yguards > 0) { ///including ghostpoints
-      ASSERT1(field_dimensions[1] == m->GlobalNy - 2*myg + total_grid_yguards);
+      ASSERT1(field_dimensions[1] == m->GlobalNy);
       ny_to_read = m->LocalNy;
       yd = grid_yguards - myg;
       ASSERT1(yd >= 0);
     } else if (grid_yguards == 0) { ///excluding ghostpoints
-      ASSERT1(field_dimensions[1] == m->GlobalNy - 2*myg);
+      ASSERT1(field_dimensions[1] == m->GlobalNy - m->numberOfYBoundaries()*2*myg);
       ny_to_read = m->LocalNy - 2*myg;
       yd = myg;
     } else {

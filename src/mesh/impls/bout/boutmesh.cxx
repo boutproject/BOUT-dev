@@ -153,13 +153,9 @@ int BoutMesh::load() {
     throw BoutException(_("Error: nx must be greater than 2 times MXG (2 * %d)"), MXG);
   }
 
-  // Set global grid sizes
+  // Set global x- and z-grid sizes
   GlobalNx = nx;
-  GlobalNy = ny + 2 * MYG;
   GlobalNz = nz;
-
-  if (2 * MXG >= nx)
-    throw BoutException(_("nx must be greater than 2*MXG"));
 
   // separatrix location
   Mesh::get(ixseps1, "ixseps1", GlobalNx);
@@ -169,6 +165,12 @@ int BoutMesh::load() {
   Mesh::get(jyseps2_1, "jyseps2_1", jyseps1_2);
   Mesh::get(jyseps2_2, "jyseps2_2", ny - 1);
   Mesh::get(ny_inner, "ny_inner", jyseps2_1);
+
+  // Set global y-grid size
+  GlobalNy = ny + 2 * MYG;
+  if (jyseps1_2 != jyseps2_1) {
+    GlobalNy += 2*MYG;
+  }
 
   /// Check inputs
   if (jyseps1_1 < -1) {
@@ -2080,6 +2082,14 @@ bool BoutMesh::periodicY(int jx, BoutReal &ts) const {
     return true;
   }
   return false;
+}
+
+int BoutMesh::numberOfYBoundaries() const {
+  if (jyseps2_1 != jyseps1_2) {
+    return 2;
+  } else {
+    return 1;
+  }
 }
 
 std::pair<bool, BoutReal> BoutMesh::hasBranchCutLower(int jx) const {
