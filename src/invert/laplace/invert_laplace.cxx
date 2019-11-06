@@ -52,8 +52,8 @@
  **********************************************************************************/
 
 /// Laplacian inversion initialisation. Called once at the start to get settings
-Laplacian::Laplacian(Options *options, const CELL_LOC loc, Mesh *mesh_in)
-  : location(loc), localmesh(mesh_in==nullptr ? bout::globals::mesh : mesh_in) {
+Laplacian::Laplacian(Options* options, const CELL_LOC loc, Mesh* mesh_in)
+    : location(loc), localmesh(mesh_in == nullptr ? bout::globals::mesh : mesh_in) {
 
   if (options == nullptr) {
     // Use the default options
@@ -71,34 +71,56 @@ Laplacian::Laplacian(Options *options, const CELL_LOC loc, Mesh *mesh_in)
   // Communication option. Controls if asyncronous sends are used
   async_send = (*options)["async"].doc("Use asyncronous MPI send?").withDefault(true);
 
-  BoutReal filter = (*options)["filter"]
-                        .doc("Fraction of Z modes to filter out. Between 0 and 1")
-                        .withDefault(0.0);
-  int ncz = localmesh->LocalNz;
+  const BoutReal filter = (*options)["filter"]
+                              .doc("Fraction of Z modes to filter out. Between 0 and 1")
+                              .withDefault(0.0);
+  const int ncz = localmesh->LocalNz;
   // convert filtering into an integer number of modes
-  maxmode = ROUND((1.0 - filter) * static_cast<BoutReal>(ncz / 2));
-  // Can be overriden by max_mode option
-  OPTION(options, maxmode, maxmode);
-  if(maxmode < 0) maxmode = 0;
-  if(maxmode > ncz/2) maxmode = ncz/2;
+  maxmode = (*options)["maxmode"]
+                .doc("The maximum Z mode to solve for")
+                .withDefault(ROUND((1.0 - filter) * static_cast<BoutReal>(ncz / 2)));
 
-  OPTION(options, low_mem, false);
+  // Clamp maxmode between 0 and nz/2
+  if (maxmode < 0) {
+    maxmode = 0;
+  }
+  if (maxmode > ncz / 2) {
+    maxmode = ncz / 2;
+  }
+
+  low_mem = (*options)["low_mem"]
+                .doc("If true, reduce the amount of memory used")
+                .withDefault(false);
 
   nonuniform = (*options)["nonuniform"]
                    .doc("Use non-uniform grid corrections? Default is the mesh setting.")
                    .withDefault(coords->non_uniform);
 
-  all_terms = (*options)["all_terms"].doc("Include first derivative terms?").withDefault(true);
+  all_terms =
+      (*options)["all_terms"].doc("Include first derivative terms?").withDefault(true);
 
-  OPTION(options, global_flags, 0);
-  OPTION(options, inner_boundary_flags, 0);
-  OPTION(options, outer_boundary_flags, 0);
+  global_flags = (*options)["global_flags"].doc("Default flags").withDefault(0);
+  inner_boundary_flags = (*options)["inner_boundary_flags"]
+                             .doc("Flags to set inner boundary condition")
+                             .withDefault(0);
+  outer_boundary_flags = (*options)["outer_boundary_flags"]
+                             .doc("Flags to set outer boundary condition")
+                             .withDefault(0);
 
   include_yguards = (*options)["include_yguards"]
                         .doc("Solve Laplacian in Y guard cells?")
                         .withDefault(false);
 
-  OPTION2(options, extra_yguards_lower, extra_yguards_upper, 0);
+  extra_yguards_lower =
+      (*options)["extra_yguards_lower"]
+          .doc("Exclude some number of points at the lower boundary, useful for "
+               "staggered grids or when boundary conditions make inversion redundant")
+          .withDefault(0);
+  extra_yguards_upper =
+      (*options)["extra_yguards_upper"]
+          .doc("Exclude some number of points at the upper boundary, useful for "
+               "staggered grids or when boundary conditions make inversion redundant")
+          .withDefault(0);
 }
 
 Laplacian* Laplacian::create(Options *opts, const CELL_LOC location, Mesh *mesh_in) {
