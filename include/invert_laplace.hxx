@@ -184,10 +184,6 @@ public:
   virtual void setInnerBoundaryFlags(int f) { inner_boundary_flags = f; }
   virtual void setOuterBoundaryFlags(int f) { outer_boundary_flags = f; }
 
-  [[gnu::deprecated("Please use setGlobalFlags, setInnerBoundaryFlags and "
-      "setOuterBoundaryFlags methods instead")]]
-  virtual void setFlags(int f);
-
   /// Does this solver use Field3D coefficients (true) or only their DC component (false)
   virtual bool uses3DCoefs() const { return false; }
   
@@ -238,11 +234,6 @@ protected:
                    const Field2D *c1coef, const Field2D *c2coef, const Field2D *d,
                    CELL_LOC loc = CELL_DEFAULT);
 
-  void DEPRECATED(tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
-                    dcomplex **bk, int jy, int flags, int inner_boundary_flags,
-                    int outer_boundary_flags, const Field2D *a = nullptr,
-                    const Field2D *ccoef = nullptr, const Field2D *d = nullptr));
-
   void tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
                     dcomplex *bk, int jy, int kz, BoutReal kwave, 
                     int flags, int inner_boundary_flags, int outer_boundary_flags,
@@ -274,15 +265,6 @@ private:
 void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcomplex &c,
                           const Field2D *ccoef = nullptr, const Field2D *d = nullptr,
                           CELL_LOC loc = CELL_DEFAULT);
-
-DEPRECATED(int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, const Field2D *a,
-                   const Field2D *c = nullptr, const Field2D *d = nullptr));
-DEPRECATED(int invert_laplace(const Field3D &b, Field3D &x, int flags, const Field2D *a,
-                   const Field2D *c = nullptr, const Field2D *d = nullptr));
-
-/// More readable API for calling Laplacian inversion. Returns x
-DEPRECATED(const Field3D invert_laplace(const Field3D &b, int flags, const Field2D *a = nullptr,
-                             const Field2D *c = nullptr, const Field2D *d = nullptr));
 
 #endif // __LAPLACE_H__
 
