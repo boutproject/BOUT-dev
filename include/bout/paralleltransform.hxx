@@ -156,8 +156,8 @@ public:
   }
 
   virtual std::vector<PositionsAndWeights> getWeightsForYApproximation(int i,
-      int j, int k, int UNUSED(yoffset)) override {
-    return {{i, j, k, 1.0}};
+      int j, int k, int yoffset) override {
+    return {{i, j + yoffset, k, 1.0}};
   }
 
 

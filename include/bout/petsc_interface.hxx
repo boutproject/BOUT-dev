@@ -436,7 +436,6 @@ public:
       return *this;
     }
     Element operator+=(BoutReal val) {
-      value += val;
       auto columnPosition = std::find(positions.begin(), positions.end(), petscCol);
       if (columnPosition != positions.end()) {
         int i = std::distance(positions.begin(), columnPosition);
@@ -483,13 +482,14 @@ public:
     std::vector<PetscInt> positions;
     std::vector<PetscScalar> weights;
     if (yoffset != 0) {
-      const auto pw = [this, &index2]() {
+      ASSERT1(yoffset == index2.y() - index1.y());
+      const auto pw = [this, &index1, &index2]() {
         if (this->yoffset == -1) {
-          return pt->getWeightsForYDownApproximation(index2.x(), index2.y(), index2.z());
+          return pt->getWeightsForYDownApproximation(index2.x(), index1.y(), index2.z());
         } else if (this->yoffset == 1) {
-          return pt->getWeightsForYUpApproximation(index2.x(), index2.y(), index2.z());
+          return pt->getWeightsForYUpApproximation(index2.x(), index1.y(), index2.z());
         } else {
-          return pt->getWeightsForYApproximation(index2.x(), index2.y(), index2.z(),
+          return pt->getWeightsForYApproximation(index2.x(), index1.y(), index2.z(),
                                                  this->yoffset);
         }
       }();

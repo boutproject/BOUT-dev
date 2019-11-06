@@ -253,7 +253,7 @@ TYPED_TEST(PetscMatrixTest, TestYUp) {
       expected(this->indexA, this->indexB) = val;
     } else if (std::is_same<TypeParam, Field3D>::value) {
       EXPECT_CALL(*transform, getWeightsForYUpApproximation(
-                                  this->indexB.x(), this->indexB.y(), this->indexB.z()))
+                                  this->indexB.x(), this->indexA.y(), this->indexB.z()))
           .WillOnce(Return(this->yUpWeights));
       expected(this->indexA, this->iWU0) = this->yUpWeights[0].weight * val;
       expected(this->indexA, this->iWU1) = this->yUpWeights[1].weight * val;
@@ -279,16 +279,16 @@ TYPED_TEST(PetscMatrixTest, TestYDown) {
     EXPECT_THROW(matrix.ydown(), BoutException);
   } else {
     if (std::is_same<TypeParam, Field2D>::value) {
-      expected(this->indexA, this->indexB) = val;
+      expected(this->indexB, this->indexA) = val;
     } else if (std::is_same<TypeParam, Field3D>::value) {
       EXPECT_CALL(*transform, getWeightsForYDownApproximation(
-                                  this->indexB.x(), this->indexB.y(), this->indexB.z()))
+                                  this->indexA.x(), this->indexB.y(), this->indexA.z()))
           .WillOnce(Return(this->yDownWeights));
-      expected(this->indexA, this->iWD0) = this->yDownWeights[0].weight * val;
-      expected(this->indexA, this->iWD1) = this->yDownWeights[1].weight * val;
-      expected(this->indexA, this->iWD2) = this->yDownWeights[2].weight * val;
+      expected(this->indexB, this->iWD0) = this->yDownWeights[0].weight * val;
+      expected(this->indexB, this->iWD1) = this->yDownWeights[1].weight * val;
+      expected(this->indexB, this->iWD2) = this->yDownWeights[2].weight * val;
     }
-    matrix.ydown()(this->indexA, this->indexB) = val;
+    matrix.ydown()(this->indexB, this->indexA) = val;
     Mat *rawmat = matrix.getMatrixPointer(), *rawexp = expected.getMatrixPointer();
     MatAssemblyBegin(*rawmat, MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(*rawmat, MAT_FINAL_ASSEMBLY);
@@ -324,7 +324,7 @@ TYPED_TEST(PetscMatrixTest, TestYNextPos) {
   } else {
     if (std::is_same<TypeParam, Field3D>::value) {
       EXPECT_CALL(*transform, getWeightsForYUpApproximation(
-                                  this->indexB.x(), this->indexB.y(), this->indexB.z()))
+                                  this->indexB.x(), this->indexA.y(), this->indexB.z()))
           .Times(2)
           .WillRepeatedly(Return(this->yDownWeights));
     }
@@ -350,12 +350,12 @@ TYPED_TEST(PetscMatrixTest, TestYNextNeg) {
   } else {
     if (std::is_same<TypeParam, Field3D>::value) {
       EXPECT_CALL(*transform, getWeightsForYDownApproximation(
-                                  this->indexB.x(), this->indexB.y(), this->indexB.z()))
+                                  this->indexA.x(), this->indexB.y(), this->indexA.z()))
           .Times(2)
           .WillRepeatedly(Return(this->yDownWeights));
     }
-    matrix.ynext(-1)(this->indexA, this->indexB) = val;
-    expected.ydown()(this->indexA, this->indexB) = val;
+    matrix.ynext(-1)(this->indexB, this->indexA) = val;
+    expected.ydown()(this->indexB, this->indexA) = val;
     Mat *rawmat = matrix.getMatrixPointer(), *rawexp = expected.getMatrixPointer();
     MatAssemblyBegin(*rawmat, MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(*rawmat, MAT_FINAL_ASSEMBLY);
