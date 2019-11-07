@@ -1457,7 +1457,8 @@ Field3D Coordinates::Laplace(const Field3D& f, CELL_LOC outloc,
   Field3D result = G1 * ::DDX(f, outloc) + G2 * ::DDY(f, outloc) + G3 * ::DDZ(f, outloc)
                    + g11 * D2DX2(f, outloc) + g22 * D2DY2(f, outloc)
                    + g33 * D2DZ2(f, outloc)
-    + 2.0 * (g12 * D2DXDY(f, outloc, "DEFAULT", "RGN_NOBNDRY", dfdy_boundary_conditions,
+                   + 2.0 * (g12 * D2DXDY(f, outloc, "DEFAULT", "RGN_NOBNDRY",
+					 dfdy_boundary_conditions,
 					 dfdy_dy_region)
 			    + g13 * D2DXDZ(f, outloc) + g23 * D2DYDZ(f, outloc));
 
