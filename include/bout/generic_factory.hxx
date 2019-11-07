@@ -123,7 +123,7 @@ public:
 
     auto type = (*options)["type"].withDefault(Traits::getDefaultType());
 
-    return BaseFactory::getInstance().create(type, options);
+    return static_cast<BaseFactory*>(this)->create(type, options);
   }
 
   ReturnType create(const std::string& name) {
@@ -132,7 +132,7 @@ public:
 
   ReturnType create(const std::string& name, Options* options) {
     try {
-      return BaseFactory::getInstance().create(name, options);
+      return static_cast<BaseFactory*>(this)->create(name, options);
     } catch (const BoutException& e) {
       throw BoutException("Error when trying to create a %s: %s", Traits::type_name,
                           e.what());
