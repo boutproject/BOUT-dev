@@ -394,6 +394,7 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
   if (direct) {
   // Set the type of the preconditioner
     PCSetType(pc, PCLU);
+    KSPSetType(ksp, KSP_PREONLY);
 #if PETSC_VERSION_GE(3,9,0)
     PCFactorSetMatSolverType(pc,"mumps");
 #else
