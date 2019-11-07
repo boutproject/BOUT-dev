@@ -1,28 +1,29 @@
-
-class RKSchemeFactory;
-
 #ifndef __RKSCHEME_FACTORY_H__
 #define __RKSCHEME_FACTORY_H__
 
 #include <bout/rkscheme.hxx>
+#include "bout/generic_factory.hxx"
 
-#include <string.h>
-
-class RKSchemeFactory {
- public:
-  /// Return a pointer to the only instance
-  static RKSchemeFactory* getInstance();
-  
-  RKSchemeType getDefaultRKSchemeType();
-
-  RKScheme *createRKScheme(Options *opts = nullptr);
-  RKScheme *createRKScheme(RKSchemeType &, Options *opts = nullptr);
-
-private:
-  RKSchemeFactory() {} // Prevent instantiation of this class
-  static RKSchemeFactory* instance; ///< The only instance of this class (Singleton)
-
+template<>
+struct StandardFactoryTraits<RKScheme> {
+  static constexpr auto type_name = "RKScheme";
+  static constexpr auto section_name = "solver";
+  static constexpr auto option_name = "scheme";
+  static std::string getDefaultType();
 };
+
+using RKSchemeFactory = StandardFactory<RKScheme>;
+
+/// Simpler name for Factory registration helper class
+///
+/// Usage:
+///
+///     #include <bout/rkschemefactory.hxx>
+///     namespace {
+///     RegisterRKScheme<MyRKScheme> registerrkschememine("myrkscheme");
+///     }
+template <typename DerivedType>
+using RegisterRKScheme = RegisterInStandardFactory<RKScheme, DerivedType>;
 
 #endif // __RKSCHEME_FACTORY_H__
 

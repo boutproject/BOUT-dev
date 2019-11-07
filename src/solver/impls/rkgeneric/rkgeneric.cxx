@@ -12,14 +12,9 @@
 
 #include <output.hxx>
 
-RKGenericSolver::RKGenericSolver(Options *options) : Solver(options) {
-  //Create scheme
-  scheme=RKSchemeFactory::getInstance()->createRKScheme(options);
+RKGenericSolver::RKGenericSolver(Options* options) : Solver(options) {
+  scheme = RKSchemeFactory::getInstance().create(options);
   canReset = true;
-}
-
-RKGenericSolver::~RKGenericSolver() {
-  delete scheme;
 }
 
 void RKGenericSolver::setMaxTimestep(BoutReal dt) {

@@ -42,11 +42,10 @@ class RKScheme;
 #include <iomanip>
 #include <string>
 
-#define RKSchemeType const char*
-#define RKSCHEME_RKF45       "rkf45"
-#define RKSCHEME_CASHKARP    "cashkarp"
-#define RKSCHEME_RK4         "rk4"
-#define RKSCHEME_RKF34       "rkf34"
+constexpr auto RKSCHEME_RKF45 = "rkf45";
+constexpr auto RKSCHEME_CASHKARP = "cashkarp";
+constexpr auto RKSCHEME_RK4 = "rk4";
+constexpr auto RKSCHEME_RKF34 = "rkf34";
 
 class RKScheme {
  public:
