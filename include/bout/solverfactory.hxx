@@ -10,6 +10,7 @@ template<>
 struct StandardFactoryTraits<Solver> {
   static constexpr auto type_name = "Solver";
   static constexpr auto section_name = "solver";
+  static constexpr auto option_name = "type";
   static std::string getDefaultType();
 };
 

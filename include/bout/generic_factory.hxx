@@ -115,13 +115,14 @@ public:
 
   static std::string getDefaultType() { return Traits::getDefaultType(); }
   static std::string getSectionName() { return Traits::section_name; }
+  static std::string getOptionName() { return Traits::option_name; }
 
   ReturnType create(Options* options = nullptr) {
     if (options == nullptr) {
       options = &Options::root()[Traits::section_name];
     }
 
-    auto type = (*options)["type"].withDefault(Traits::getDefaultType());
+    auto type = (*options)[Traits::option_name].withDefault(Traits::getDefaultType());
 
     return static_cast<BaseFactory*>(this)->create(type, options);
   }
