@@ -781,12 +781,12 @@ int Solver::getLocalN() {
   return local_N;
 }
 
-Solver* Solver::create(Options* opts) {
-  return SolverFactory::getInstance()->createSolver(opts);
+std::unique_ptr<Solver> Solver::create(Options* opts) {
+  return SolverFactory::getInstance().create(opts);
 }
 
-Solver* Solver::create(const SolverType& type, Options* opts) {
-  return SolverFactory::getInstance()->createSolver(type, opts);
+std::unique_ptr<Solver> Solver::create(const SolverType& type, Options* opts) {
+  return SolverFactory::getInstance().create(type, opts);
 }
 
 /**************************************************************************

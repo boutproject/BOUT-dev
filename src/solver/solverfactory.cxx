@@ -16,17 +16,7 @@
 #include "impls/snes/snes.hxx"
 #include "impls/split-rk/split-rk.hxx"
 
-SolverFactory* SolverFactory::instance = nullptr;
-
-SolverFactory* SolverFactory::getInstance() {
-  if (instance == nullptr) {
-    // Create the singleton object
-    instance = new SolverFactory();
-  }
-  return instance;
-}
-
-SolverType SolverFactory::getDefaultSolverType() {
+std::string StandardFactoryTraits<Solver>::getDefaultType() {
   return
 #if defined BOUT_HAS_CVODE
       SOLVERCVODE;
@@ -35,14 +25,4 @@ SolverType SolverFactory::getDefaultSolverType() {
 #else
       SOLVERPVODE;
 #endif
-}
-
-Solver* SolverFactory::createSolver(Options* options) {
-  if (options == nullptr) {
-    options = Options::getRoot()->getSection("solver");
-  }
-
-  auto type = (*options)["type"].withDefault(getDefaultSolverType());
-
-  return createSolver(type, options);
 }
