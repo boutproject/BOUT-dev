@@ -518,9 +518,17 @@ public:
     return Element(matrix.get(), global1, global2, positions, weights);
   }
 
+  // Assemble the matrix prior to use
   void assemble() {
     MatAssemblyBegin(*matrix, MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(*matrix, MAT_FINAL_ASSEMBLY);
+  }
+
+  // Partially assemble the matrix so you can switch between adding
+  // and inserting values
+  void partialAssemble() {
+    MatAssemblyBegin(*matrix, MAT_FLUSH_ASSEMBLY);
+    MatAssemblyEnd(*matrix, MAT_FLUSH_ASSEMBLY);
   }
 
   void destroy() {
