@@ -259,6 +259,7 @@ PetscMatrix<Field3D>& LaplacePetsc3dAmg::getMatrix3D() {
 }
 
 void LaplacePetsc3dAmg::updateMatrix3D() {
+  localmesh->communicate(C2);
   const Field3D dc_dx = issetC ? DDX(C2) : Field3D(),
     dc_dy = issetC ? DDY(C2) : Field3D(),
     dc_dz = issetC ? DDZ(C2) : Field3D(),
