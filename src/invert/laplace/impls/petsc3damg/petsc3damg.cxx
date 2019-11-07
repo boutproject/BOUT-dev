@@ -223,12 +223,6 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D &b_in, const Field3D &x0) {
   rhs.assemble();
   guess.assemble();
 
-  PetscViewer view, view2;
-  PetscViewerASCIIOpen(PETSC_COMM_WORLD, "rhs.out", &view);
-  VecView(*rhs.getVectorPointer(), view);
-  PetscViewerASCIIOpen(PETSC_COMM_WORLD, "guess.out", &view2);
-  VecView(*guess.getVectorPointer(), view2);
-  
   // Invoke solver
   { Timer timer("petscsolve");
     KSPSolve(ksp, *rhs.getVectorPointer(), *guess.getVectorPointer());
@@ -373,10 +367,7 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
     operator3D.ydown()(l, l.ym().zm()) += C_d2f_dydz;    
   }
   operator3D.assemble();
-  PetscViewer view;
-  PetscViewerASCIIOpen(PETSC_COMM_WORLD, "matrix.out", &view);
-  MatView(*operator3D.getMatrixPointer(), view);
-  
+
   // Declare KSP Context (abstract PETSc object that manages all Krylov methods)
   if (kspInitialised) KSPDestroy(&ksp);
   KSPCreate(BoutComm::get(), &ksp);
