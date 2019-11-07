@@ -50,15 +50,17 @@ public:
 
 // Save some typing later
 using ComplicatedFactory =
-    Factory<BaseComplicated, std::function<BaseComplicated*(const std::string&)>>;
+  Factory<BaseComplicated, std::function<std::unique_ptr<BaseComplicated>(const std::string&)>>;
 
 // We need to specialise the helper class to pass arguments to the constructor
 template<typename DerivedType>
 class RegisterInFactory<BaseComplicated, DerivedType> {
 public:
-  RegisterInFactory(const std::string &name) {
+  RegisterInFactory(const std::string& name) {
     ComplicatedFactory::getInstance().add(
-        name, [](std::string name) -> BaseComplicated * { return new DerivedType(name); });
+        name, [](std::string name) -> std::unique_ptr<BaseComplicated> {
+          return std::make_unique<DerivedType>(name);
+        });
   }
 };
 
@@ -73,13 +75,13 @@ RegisterInFactory<BaseComplicated, DerivedComplicated2>
 
 TEST(GenericFactory, RegisterAndCreate) {
 
-  std::unique_ptr<Base> base_{Factory<Base>::getInstance().create("base")};
+  auto base_{Factory<Base>::getInstance().create("base")};
   EXPECT_EQ(base_->foo(), "Base");
 
-  std::unique_ptr<Base> derived1_{Factory<Base>::getInstance().create("derived1")};
+  auto derived1_{Factory<Base>::getInstance().create("derived1")};
   EXPECT_EQ(derived1_->foo(), "Derived1");
 
-  std::unique_ptr<Base> derived2_{Factory<Base>::getInstance().create("derived2")};
+  auto derived2_{Factory<Base>::getInstance().create("derived2")};
   EXPECT_EQ(derived2_->foo(), "Derived2");
 }
 

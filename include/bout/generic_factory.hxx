@@ -5,10 +5,11 @@
 #define __BOUT_GENERIC_FACTORY_H__
 
 #include "boutexception.hxx"
+#include "options.hxx"
 
 #include <functional>
-#include <iostream>
 #include <map>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -31,7 +32,8 @@
 /// @tparam TypeCreator    The function signature for creating a new BaseType
 ///
 /// MIT Licence
-template <typename BaseType, typename TypeCreator = std::function<BaseType *()>>
+template <typename BaseType,
+          typename TypeCreator = std::function<std::unique_ptr<BaseType>()>>
 class Factory {
 public:
   virtual ~Factory() = default;
@@ -49,17 +51,17 @@ public:
   ///
   /// @param[in] name  The identifier for the type to be removed
   /// @returns true if the type was successfully removed
-  virtual bool remove(const std::string &name) { return type_map.erase(name) == 1; }
+  virtual bool remove(const std::string& name) { return type_map.erase(name) == 1; }
 
   /// Create a new object of type \p name
   ///
   /// @param[in] name  The identifier for the type to be created
   /// @returns a pointer to the new object
-  template<typename... Args>
-  BaseType *create(const std::string &name, Args&&... args) {
+  template <typename... Args>
+  std::unique_ptr<BaseType> create(const std::string& name, Args&&... args) {
     auto index = type_map.find(name);
     if (index != std::end(type_map)) {
-      return index->second(std::forward<Args>(args) ...);
+      return index->second(std::forward<Args>(args)...);
     }
     // List available options in error
     std::string available;
@@ -92,6 +94,52 @@ protected:
   Factory() = default;
 };
 
+template <class BaseType>
+struct StandardFactoryTraits;
+
+template <class BaseType,
+          class TypeCreator = std::function<std::unique_ptr<BaseType>(Options*)>,
+          class BaseFactory = Factory<BaseType, TypeCreator>>
+class StandardFactory : public BaseFactory {
+  using ReturnType = typename TypeCreator::result_type;
+  using Traits = StandardFactoryTraits<BaseType>;
+
+protected:
+  StandardFactory() = default;
+
+public:
+  static StandardFactory& getInstance() {
+    static StandardFactory instance{};
+    return instance;
+  }
+
+  static std::string getDefaultType() { return Traits::getDefaultType(); }
+  static std::string getSectionName() { return Traits::section_name; }
+
+  ReturnType create(Options* options = nullptr) {
+    if (options == nullptr) {
+      options = &Options::root()[Traits::section_name];
+    }
+
+    auto type = (*options)["type"].withDefault(Traits::getDefaultType());
+
+    return BaseFactory::getInstance().create(type, options);
+  }
+
+  ReturnType create(const std::string& name) {
+    return create(name, &Options::root()[Traits::section_name]);
+  }
+
+  ReturnType create(const std::string& name, Options* options) {
+    try {
+      return BaseFactory::getInstance().create(name, options);
+    } catch (const BoutException& e) {
+      throw BoutException("Error when trying to create a %s: %s", Traits::type_name,
+                          e.what());
+    }
+  }
+};
+
 /// Helper class for adding new types to Factory
 ///
 /// Example:
@@ -109,9 +157,21 @@ protected:
 template <typename BaseType, typename DerivedType>
 class RegisterInFactory {
 public:
-  RegisterInFactory(const std::string &name) {
-    Factory<BaseType>::getInstance().add(name,
-                                         []() -> BaseType * { return new DerivedType; });
+  RegisterInFactory(const std::string& name) {
+    Factory<BaseType>::getInstance().add(name, []() -> std::unique_ptr<BaseType> {
+      return std::make_unique<DerivedType>();
+    });
+  }
+};
+
+template <typename BaseType, typename DerivedType>
+class RegisterInStandardFactory {
+public:
+  RegisterInStandardFactory(const std::string& name) {
+    StandardFactory<BaseType>::getInstance().add(
+        name, [](Options* options) -> std::unique_ptr<BaseType> {
+          return std::make_unique<DerivedType>(options);
+        });
   }
 };
 
