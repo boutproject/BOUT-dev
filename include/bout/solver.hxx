@@ -67,6 +67,7 @@ using TimestepMonitorFunc = int (*)(Solver* solver, BoutReal simtime, BoutReal l
 #include "field3d.hxx"
 #include "vector2d.hxx"
 #include "vector3d.hxx"
+#include "bout/generic_factory.hxx"
 
 #define BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 #include "physicsmodel.hxx"
@@ -95,6 +96,36 @@ enum class SOLVER_VAR_OP {LOAD_VARS, LOAD_DERIVS, SET_ID, SAVE_VARS, SAVE_DERIVS
 
 /// A type to set where in the list monitors are added
 enum class MonitorPosition {BACK, FRONT};
+
+template<>
+struct StandardFactoryTraits<Solver> {
+  static constexpr auto type_name = "Solver";
+  static constexpr auto section_name = "solver";
+  static constexpr auto option_name = "type";
+  static std::string getDefaultType() {
+    return
+#if defined BOUT_HAS_CVODE
+        SOLVERCVODE;
+#elif defined BOUT_HAS_IDA
+        SOLVERIDA;
+#else
+        SOLVERPVODE;
+#endif
+  }
+};
+
+class SolverFactory : public StandardFactory<Solver, SolverFactory>{};
+
+/// Simpler name for Factory registration helper class
+///
+/// Usage:
+///
+///     #include <bout/solverfactory.hxx>
+///     namespace {
+///     RegisterSolver<MySolver> registersolvermine("mysolver");
+///     }
+template <typename DerivedType>
+using RegisterSolver = RegisterInStandardFactory<Solver, DerivedType, SolverFactory>;
 
 ///////////////////////////////////////////////////////////////////
 

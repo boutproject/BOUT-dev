@@ -1,6 +1,5 @@
 
 #include "rkgeneric.hxx"
-#include "rkschemefactory.hxx"
 #include <bout/rkscheme.hxx>
 
 #include <boutcomm.hxx>

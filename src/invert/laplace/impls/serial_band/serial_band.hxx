@@ -34,8 +34,6 @@ class LaplaceSerialBand;
 #include <options.hxx>
 #include <utils.hxx>
 
-#include "../../laplacefactory.hxx"
-
 namespace {
 RegisterLaplace<LaplaceSerialBand> registerlaplaceserialband(LAPLACE_BAND);
 }

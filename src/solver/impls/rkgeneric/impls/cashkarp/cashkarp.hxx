@@ -7,8 +7,6 @@ class CASHKARPScheme;
 #include <bout/rkscheme.hxx>
 #include <utils.hxx>
 
-#include "../../rkschemefactory.hxx"
-
 class CASHKARPScheme : public RKScheme {
 public:
   CASHKARPScheme(Options* options);

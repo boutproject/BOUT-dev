@@ -4,7 +4,6 @@
 #include "test_extras.hxx"
 #include "test_fakesolver.hxx"
 #include "bout/solver.hxx"
-#include "bout/solverfactory.hxx"
 
 #include <algorithm>
 

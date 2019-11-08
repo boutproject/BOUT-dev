@@ -1,6 +1,5 @@
 #include "bout/constants.hxx"
 #include "bout/physicsmodel.hxx"
-#include "bout/solverfactory.hxx"
 #include "bout/petsclib.hxx"
 #include "bout/slepclib.hxx"
 

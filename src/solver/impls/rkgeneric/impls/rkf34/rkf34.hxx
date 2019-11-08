@@ -7,8 +7,6 @@ class RKF34Scheme;
 #include <bout/rkscheme.hxx>
 #include <utils.hxx>
 
-#include "../../rkschemefactory.hxx"
-
 class RKF34Scheme : public RKScheme {
 public:
   RKF34Scheme(Options* options);

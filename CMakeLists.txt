@@ -83,7 +83,6 @@ set(BOUT_SOURCES
   ./include/bout/scorepwrapper.hxx
   ./include/bout/slepclib.hxx
   ./include/bout/solver.hxx
-  ./include/bout/solverfactory.hxx
   ./include/bout/surfaceiter.hxx
   ./include/bout/sys/expressionparser.hxx
   ./include/bout/sys/gettext.hxx
@@ -191,8 +190,6 @@ set(BOUT_SOURCES
   ./src/invert/laplace/impls/spt/spt.cxx
   ./src/invert/laplace/impls/spt/spt.hxx
   ./src/invert/laplace/invert_laplace.cxx
-  ./src/invert/laplace/laplacefactory.cxx
-  ./src/invert/laplace/laplacefactory.hxx
   ./src/invert/laplacexy/laplacexy.cxx
   ./src/invert/laplacexz/impls/cyclic/laplacexz-cyclic.cxx
   ./src/invert/laplacexz/impls/cyclic/laplacexz-cyclic.hxx
@@ -268,8 +265,6 @@ set(BOUT_SOURCES
   ./src/solver/impls/rkgeneric/rkgeneric.cxx
   ./src/solver/impls/rkgeneric/rkgeneric.hxx
   ./src/solver/impls/rkgeneric/rkscheme.cxx
-  ./src/solver/impls/rkgeneric/rkschemefactory.cxx
-  ./src/solver/impls/rkgeneric/rkschemefactory.hxx
   ./src/solver/impls/slepc/slepc.cxx
   ./src/solver/impls/slepc/slepc.hxx
   ./src/solver/impls/snes/snes.cxx
@@ -277,7 +272,6 @@ set(BOUT_SOURCES
   ./src/solver/impls/split-rk/split-rk.cxx
   ./src/solver/impls/split-rk/split-rk.hxx
   ./src/solver/solver.cxx
-  ./src/solver/solverfactory.cxx
   ./src/sys/bout_types.cxx
   ./src/sys/boutcomm.cxx
   ./src/sys/boutexception.cxx

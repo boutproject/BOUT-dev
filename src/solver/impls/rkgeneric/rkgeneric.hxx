@@ -34,7 +34,6 @@ class RKGenericSolver;
 #include <bout/solver.hxx>
 #include <bout/rkscheme.hxx>
 
-#include <bout/solverfactory.hxx>
 namespace {
 RegisterSolver<RKGenericSolver> registersolverrkgeneric("rkgeneric");
 }

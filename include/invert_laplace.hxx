@@ -43,6 +43,7 @@ class Laplacian;
 #include "field2d.hxx"
 #include <boutexception.hxx>
 #include "unused.hxx"
+#include "bout/generic_factory.hxx"
 
 #include "dcomplex.hxx"
 #include "options.hxx"
@@ -123,6 +124,49 @@ constexpr int INVERT_KX_ZERO = 16;
   const int INVERT_DC_IN_GRADPAR = 1048576;
   const int INVERT_DC_IN_GRADPARINV = 2097152;
  */
+
+template<>
+struct StandardFactoryTraits<Laplacian> {
+  static constexpr auto type_name = "Laplacian";
+  static constexpr auto section_name = "laplace";
+  static constexpr auto option_name = "type";
+  static std::string getDefaultType() {
+    return LAPLACE_CYCLIC;
+  }
+};
+
+class LaplaceFactory
+    : public StandardFactory<
+          Laplacian, LaplaceFactory,
+          std::function<std::unique_ptr<Laplacian>(Options*, CELL_LOC, Mesh*)>> {
+public:
+  ReturnType create(Options* options = nullptr, CELL_LOC loc = CELL_CENTRE,
+                    Mesh* mesh = nullptr) {
+    return StandardFactory::create(getType(options), options, loc, mesh);
+  }
+};
+
+/// Simpler name for Factory registration helper class
+///
+/// Usage:
+///
+///     #include <bout/laplacefactory.hxx>
+///     namespace {
+///     RegisterLaplace<MyLaplace> registerlaplacemine("mylaplace");
+///     }
+template <class DerivedType>
+class RegisterInStandardFactory<Laplacian, DerivedType, LaplaceFactory> {
+public:
+  RegisterInStandardFactory(const std::string& name) {
+    LaplaceFactory::getInstance().add(
+      name, [](Options* options, CELL_LOC loc, Mesh* mesh) -> std::unique_ptr<Laplacian> {
+        return std::make_unique<DerivedType>(options, loc, mesh);
+      });
+  }
+};
+
+template <class DerivedType>
+using RegisterLaplace = RegisterInStandardFactory<Laplacian, DerivedType, LaplaceFactory>;
 
 /// Base class for Laplacian inversion
 class Laplacian {
@@ -217,12 +261,14 @@ public:
 
   /*!
    * Create a new Laplacian solver
-   * 
+   *
    * @param[in] opt  The options section to use. By default "laplace" will be used
    */
-  static std::unique_ptr<Laplacian> create(Options* opt = nullptr,
-                                           const CELL_LOC loc = CELL_CENTRE,
-                                           Mesh* mesh_in = nullptr);
+  static std::unique_ptr<Laplacian> create(Options* opts = nullptr,
+                                           const CELL_LOC location = CELL_CENTRE,
+                                           Mesh* mesh_in = nullptr) {
+    return LaplaceFactory::getInstance().create(opts, location, mesh_in);
+  }
   static Laplacian* defaultInstance(); ///< Return pointer to global singleton
 
   static void cleanup(); ///< Frees all memory

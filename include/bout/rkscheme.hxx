@@ -38,6 +38,7 @@ class RKScheme;
 #include <bout_types.hxx>
 #include <options.hxx>
 #include <utils.hxx>
+#include "bout/generic_factory.hxx"
 
 #include <iomanip>
 #include <string>
@@ -46,6 +47,27 @@ constexpr auto RKSCHEME_RKF45 = "rkf45";
 constexpr auto RKSCHEME_CASHKARP = "cashkarp";
 constexpr auto RKSCHEME_RK4 = "rk4";
 constexpr auto RKSCHEME_RKF34 = "rkf34";
+
+template<>
+struct StandardFactoryTraits<RKScheme> {
+  static constexpr auto type_name = "RKScheme";
+  static constexpr auto section_name = "solver";
+  static constexpr auto option_name = "scheme";
+  static std::string getDefaultType() { return RKSCHEME_RKF45; }
+};
+
+class RKSchemeFactory : public StandardFactory<RKScheme, RKSchemeFactory>{};
+
+/// Simpler name for Factory registration helper class
+///
+/// Usage:
+///
+///     #include <bout/rkschemefactory.hxx>
+///     namespace {
+///     RegisterRKScheme<MyRKScheme> registerrkschememine("myrkscheme");
+///     }
+template <typename DerivedType>
+using RegisterRKScheme = RegisterInStandardFactory<RKScheme, DerivedType, RKSchemeFactory>;
 
 class RKScheme {
  public:

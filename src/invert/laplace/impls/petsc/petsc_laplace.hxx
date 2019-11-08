@@ -39,8 +39,6 @@
 #include <bout/petsclib.hxx>
 #include <boutexception.hxx>
 
-#include "../../laplacefactory.hxx"
-
 class LaplacePetsc;
 
 namespace {

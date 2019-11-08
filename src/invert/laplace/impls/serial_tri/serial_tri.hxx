@@ -33,8 +33,6 @@ class LaplaceSerialTri;
 #include <dcomplex.hxx>
 #include <options.hxx>
 
-#include "../../laplacefactory.hxx"
-
 namespace {
 RegisterLaplace<LaplaceSerialTri> registerlaplaceserialtri(LAPLACE_TRI);
 }

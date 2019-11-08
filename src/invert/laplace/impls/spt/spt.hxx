@@ -46,8 +46,6 @@ class LaplaceSPT;
 #include <options.hxx>
 #include <utils.hxx>
 
-#include "../../laplacefactory.hxx"
-
 namespace {
 RegisterLaplace<LaplaceSPT> registerlaplacespt(LAPLACE_SPT);
 }

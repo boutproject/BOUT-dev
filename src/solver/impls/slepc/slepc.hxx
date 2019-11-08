@@ -33,7 +33,6 @@ class SlepcSolver;
 
 #include <slepc.h>
 
-#include "bout/solverfactory.hxx"
 #include <bout/solver.hxx>
 #include <field2d.hxx>
 #include <field3d.hxx>

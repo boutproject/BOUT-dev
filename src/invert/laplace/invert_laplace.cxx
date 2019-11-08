@@ -45,7 +45,17 @@
 #include <bout/constants.hxx>
 #include <bout/openmpwrap.hxx>
 
-#include "laplacefactory.hxx"
+// Implementations:
+#include "impls/serial_tri/serial_tri.hxx"
+#include "impls/serial_band/serial_band.hxx"
+#include "impls/pdd/pdd.hxx"
+#include "impls/spt/spt.hxx"
+#include "impls/petsc/petsc_laplace.hxx"
+#include "impls/mumps/mumps_laplace.hxx"
+#include "impls/cyclic/cyclic_laplace.hxx"
+#include "impls/shoot/shoot_laplace.hxx"
+#include "impls/multigrid/multigrid_laplace.hxx"
+#include "impls/naulin/naulin_laplace.hxx"
 
 /**********************************************************************************
  *                         INITIALISATION AND CREATION
@@ -110,11 +120,6 @@ Laplacian::Laplacian(Options *options, const CELL_LOC loc, Mesh *mesh_in)
                         .withDefault(false);
 
   OPTION2(options, extra_yguards_lower, extra_yguards_upper, 0);
-}
-
-std::unique_ptr<Laplacian> Laplacian::create(Options* opts, const CELL_LOC location,
-                                             Mesh* mesh_in) {
-  return LaplaceFactory::getInstance().create(opts, location, mesh_in);
 }
 
 std::unique_ptr<Laplacian> Laplacian::instance = nullptr;

@@ -38,8 +38,6 @@ class LaplaceCyclic;
 
 #include "utils.hxx"
 
-#include "../../laplacefactory.hxx"
-
 namespace {
 RegisterLaplace<LaplaceCyclic> registerlaplacecycle(LAPLACE_CYCLIC);
 }

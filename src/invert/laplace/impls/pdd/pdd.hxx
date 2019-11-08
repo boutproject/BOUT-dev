@@ -39,8 +39,6 @@ class LaplacePDD;
 #include <options.hxx>
 #include <utils.hxx>
 
-#include "../../laplacefactory.hxx"
-
 namespace {
 RegisterLaplace<LaplacePDD> registerlaplacepdd(LAPLACE_PDD);
 }

@@ -1,30 +1,12 @@
 #ifndef __SOLVER_FACTORY_H__
 #define __SOLVER_FACTORY_H__
 
-#include "bout/generic_factory.hxx"
-#include "bout/solver.hxx"
+#ifndef _MSC_VER
+# warning("Deprecated header: use #include <bout/solver.hxx> instead")
+#else
+# pragma message("Warning: deprecated header: use #include <bout/solver.hxx> instead")
+#endif
 
-#include <string>
-
-template<>
-struct StandardFactoryTraits<Solver> {
-  static constexpr auto type_name = "Solver";
-  static constexpr auto section_name = "solver";
-  static constexpr auto option_name = "type";
-  static std::string getDefaultType();
-};
-
-class SolverFactory : public StandardFactory<Solver, SolverFactory>{};
-
-/// Simpler name for Factory registration helper class
-///
-/// Usage:
-///
-///     #include <bout/solverfactory.hxx>
-///     namespace {
-///     RegisterSolver<MySolver> registersolvermine("mysolver");
-///     }
-template <typename DerivedType>
-using RegisterSolver = RegisterInStandardFactory<Solver, DerivedType, SolverFactory>;
+#include <bout/solver.hxx>
 
 #endif // __SOLVER_FACTORY_H__
