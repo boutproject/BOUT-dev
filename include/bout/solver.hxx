@@ -97,24 +97,20 @@ enum class SOLVER_VAR_OP {LOAD_VARS, LOAD_DERIVS, SET_ID, SAVE_VARS, SAVE_DERIVS
 /// A type to set where in the list monitors are added
 enum class MonitorPosition {BACK, FRONT};
 
-template<>
-struct StandardFactoryTraits<Solver> {
+class SolverFactory : public StandardFactory<Solver, SolverFactory> {
+public:
   static constexpr auto type_name = "Solver";
   static constexpr auto section_name = "solver";
   static constexpr auto option_name = "type";
-  static std::string getDefaultType() {
-    return
+  static constexpr auto default_type =
 #if defined BOUT_HAS_CVODE
-        SOLVERCVODE;
+      SOLVERCVODE;
 #elif defined BOUT_HAS_IDA
-        SOLVERIDA;
+      SOLVERIDA;
 #else
-        SOLVERPVODE;
+      SOLVERPVODE;
 #endif
-  }
 };
-
-class SolverFactory : public StandardFactory<Solver, SolverFactory>{};
 
 /// Simpler name for Factory registration helper class
 ///

@@ -48,15 +48,13 @@ constexpr auto RKSCHEME_CASHKARP = "cashkarp";
 constexpr auto RKSCHEME_RK4 = "rk4";
 constexpr auto RKSCHEME_RKF34 = "rkf34";
 
-template<>
-struct StandardFactoryTraits<RKScheme> {
+class RKSchemeFactory : public StandardFactory<RKScheme, RKSchemeFactory> {
+public:
   static constexpr auto type_name = "RKScheme";
   static constexpr auto section_name = "solver";
   static constexpr auto option_name = "scheme";
-  static std::string getDefaultType() { return RKSCHEME_RKF45; }
+  static constexpr auto default_type = RKSCHEME_RKF45;
 };
-
-class RKSchemeFactory : public StandardFactory<RKScheme, RKSchemeFactory>{};
 
 /// Simpler name for Factory registration helper class
 ///

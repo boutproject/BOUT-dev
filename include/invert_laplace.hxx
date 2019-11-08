@@ -125,21 +125,16 @@ constexpr int INVERT_KX_ZERO = 16;
   const int INVERT_DC_IN_GRADPARINV = 2097152;
  */
 
-template<>
-struct StandardFactoryTraits<Laplacian> {
-  static constexpr auto type_name = "Laplacian";
-  static constexpr auto section_name = "laplace";
-  static constexpr auto option_name = "type";
-  static std::string getDefaultType() {
-    return LAPLACE_CYCLIC;
-  }
-};
-
 class LaplaceFactory
     : public StandardFactory<
           Laplacian, LaplaceFactory,
           std::function<std::unique_ptr<Laplacian>(Options*, CELL_LOC, Mesh*)>> {
 public:
+  static constexpr auto type_name = "Laplacian";
+  static constexpr auto section_name = "laplace";
+  static constexpr auto option_name = "type";
+  static constexpr auto default_type = LAPLACE_CYCLIC;
+
   ReturnType create(Options* options = nullptr, CELL_LOC loc = CELL_CENTRE,
                     Mesh* mesh = nullptr) {
     return StandardFactory::create(getType(options), options, loc, mesh);

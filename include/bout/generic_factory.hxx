@@ -95,17 +95,13 @@ protected:
   Factory() = default;
 };
 
-template <class BaseType>
-struct StandardFactoryTraits;
-
-template <class BaseType,
-          class DerivedFactory,
+template <class BaseType, class DerivedFactory,
           class TypeCreator = std::function<std::unique_ptr<BaseType>(Options*)>,
           class BaseFactory = Factory<BaseType, TypeCreator>>
 class StandardFactory : public BaseFactory {
 protected:
   using ReturnType = typename TypeCreator::result_type;
-  using Traits = StandardFactoryTraits<BaseType>;
+  using Traits = DerivedFactory;
   using BaseFactoryType = BaseFactory;
   StandardFactory() = default;
 
@@ -115,9 +111,9 @@ public:
     return instance;
   }
 
-  static std::string getDefaultType() { return Traits::getDefaultType(); }
-  static std::string getSectionName() { return Traits::section_name; }
-  static std::string getOptionName() { return Traits::option_name; }
+  static constexpr auto getDefaultType() { return Traits::default_type; }
+  static constexpr auto getSectionName() { return Traits::section_name; }
+  static constexpr auto getOptionName() { return Traits::option_name; }
 
   std::string getType(Options* options = nullptr) {
     if (options == nullptr) {
