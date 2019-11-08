@@ -111,19 +111,19 @@ enum class MonitorPosition {BACK, FRONT};
  *
  * Instead, use the create() static function:
  *
- *     Solver *solver = Solver::create(); // ok
+ *     auto solver = Solver::create(); // ok
  *
  * By default this will use the options in the "solver" section
  * of the options, equivalent to:
  *
  *     Options *opts = Options::getRoot()->getSection("solver");
- *     Solver *solver = Solver::create(opts);
+ *     auto solver = Solver::create(opts);
  *
  * To use a different set of options, for example if there are
  * multiple solvers, use a different option section:
  *
  *     Options *opts = Options::getRoot()->getSection("anothersolver");
- *     Solver *anothersolver = Solver::create(opts);
+ *     auto anothersolver = Solver::create(opts);
  *
  * Problem specification
  * ---------------------

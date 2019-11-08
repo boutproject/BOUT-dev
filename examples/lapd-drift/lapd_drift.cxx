@@ -105,7 +105,7 @@ private:
   FieldGroup comms;
 
   // Laplacian inversion object
-  Laplacian *phiSolver;
+  std::unique_ptr<Laplacian> phiSolver;
 protected:
   
   /// Function called once at the start of the simulation

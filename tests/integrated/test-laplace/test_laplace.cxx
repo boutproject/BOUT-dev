@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
   Field2D set_to = f.create2D("cos(2*y)*(x - 0.5)");
   SAVE_ONCE(set_to);
 
-  Laplacian *lap = Laplacian::create();
+  auto lap = Laplacian::create();
   lap->setFlags(4096);
   Field3D flagis = lap->solve(input, set_to);
   lap->setFlags(8192);
@@ -69,9 +69,6 @@ int main(int argc, char **argv) {
   lap->setFlags(8192);
   Field3D flagosad = lap->solve(input, set_to);
   SAVE_ONCE2(flagisad, flagosad);
-
-  // Delete Laplacian when done
-  delete lap;
 
   // Write and close the output file
 

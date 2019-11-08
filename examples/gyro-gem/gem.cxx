@@ -145,8 +145,8 @@ class GEM : public PhysicsModel {
   FieldGroup comms; // Communications
 
   /// Solver for inverting Laplacian
-  Laplacian *phiSolver;
-  Laplacian *aparSolver;
+  std::unique_ptr<Laplacian> phiSolver{nullptr};
+  std::unique_ptr<Laplacian> aparSolver{nullptr};
   
   ////////////////////////////////////////////////////////////////////////
   // Initialisation

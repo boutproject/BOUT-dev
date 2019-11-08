@@ -56,7 +56,7 @@ private:
   Coordinates *coord;
 
   // Inverts a Laplacian to get potential
-  Laplacian *phiSolver;
+  std::unique_ptr<Laplacian> phiSolver{nullptr};
   
 protected:
   int init(bool UNUSED(restarting)) override {
