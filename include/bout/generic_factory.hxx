@@ -43,7 +43,7 @@ public:
   /// @param[in] name     An identifier for this type
   /// @param[in] creator  A function for creating this type
   /// @returns true if the type was successfully added
-  virtual bool add(const std::string &name, TypeCreator creator) {
+  virtual bool add(const std::string& name, TypeCreator creator) {
     return type_map.insert(std::make_pair(name, creator)).second;
   }
 
@@ -69,22 +69,23 @@ public:
     for (auto i : available_list) {
       available += i + "\n";
     }
-    throw BoutException("Available:\n%s\nCould not find '%s'", available.c_str(), name.c_str());
+    throw BoutException("Available:\n%s\nCould not find '%s'", available.c_str(),
+                        name.c_str());
   }
 
   /// List available types that can be created
   ///
   /// @returns a vector of std::string
-  virtual std::vector<std::string> listAvailable() {
+  virtual std::vector<std::string> listAvailable() const {
     std::vector<std::string> available;
-    for (const auto &name : type_map) {
+    for (const auto& name : type_map) {
       available.push_back(name.first);
     }
     return available;
   }
 
   /// Get the singleton instance
-  static Factory &getInstance() {
+  static Factory& getInstance() {
     static Factory instance;
     return instance;
   }
