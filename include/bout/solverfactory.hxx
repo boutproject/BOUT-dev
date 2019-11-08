@@ -14,7 +14,7 @@ struct StandardFactoryTraits<Solver> {
   static std::string getDefaultType();
 };
 
-using SolverFactory = StandardFactory<Solver>;
+class SolverFactory : public StandardFactory<Solver, SolverFactory>{};
 
 /// Simpler name for Factory registration helper class
 ///
@@ -25,6 +25,6 @@ using SolverFactory = StandardFactory<Solver>;
 ///     RegisterSolver<MySolver> registersolvermine("mysolver");
 ///     }
 template <typename DerivedType>
-using RegisterSolver = RegisterInStandardFactory<Solver, DerivedType>;
+using RegisterSolver = RegisterInStandardFactory<Solver, DerivedType, SolverFactory>;
 
 #endif // __SOLVER_FACTORY_H__

@@ -98,18 +98,19 @@ template <class BaseType>
 struct StandardFactoryTraits;
 
 template <class BaseType,
+          class DerivedFactory,
           class TypeCreator = std::function<std::unique_ptr<BaseType>(Options*)>,
           class BaseFactory = Factory<BaseType, TypeCreator>>
 class StandardFactory : public BaseFactory {
+protected:
   using ReturnType = typename TypeCreator::result_type;
   using Traits = StandardFactoryTraits<BaseType>;
-
-protected:
+  using BaseFactoryType = BaseFactory;
   StandardFactory() = default;
 
 public:
-  static StandardFactory& getInstance() {
-    static StandardFactory instance{};
+  static DerivedFactory& getInstance() {
+    static DerivedFactory instance{};
     return instance;
   }
 
@@ -117,23 +118,27 @@ public:
   static std::string getSectionName() { return Traits::section_name; }
   static std::string getOptionName() { return Traits::option_name; }
 
-  ReturnType create(Options* options = nullptr) {
+  std::string getType(Options* options = nullptr) {
     if (options == nullptr) {
       options = &Options::root()[Traits::section_name];
     }
 
-    auto type = (*options)[Traits::option_name].withDefault(Traits::getDefaultType());
+    return (*options)[Traits::option_name].withDefault(Traits::getDefaultType());
+  }
 
-    return static_cast<BaseFactory*>(this)->create(type, options);
+  ReturnType create(Options* options = nullptr) {
+    auto type = getType(options);
+    return create(type, options);
   }
 
   ReturnType create(const std::string& name) {
     return create(name, &Options::root()[Traits::section_name]);
   }
 
-  ReturnType create(const std::string& name, Options* options) {
+  template <typename... Args>
+  ReturnType create(const std::string& name, Args&&... args) {
     try {
-      return static_cast<BaseFactory*>(this)->create(name, options);
+      return static_cast<BaseFactory*>(this)->create(name, std::forward<Args>(args)...);
     } catch (const BoutException& e) {
       throw BoutException("Error when trying to create a %s: %s", Traits::type_name,
                           e.what());
@@ -165,14 +170,14 @@ public:
   }
 };
 
-template <typename BaseType, typename DerivedType>
+template <class BaseType, class DerivedType, class DerivedFactory>
 class RegisterInStandardFactory {
 public:
   RegisterInStandardFactory(const std::string& name) {
-    StandardFactory<BaseType>::getInstance().add(
-        name, [](Options* options) -> std::unique_ptr<BaseType> {
-          return std::make_unique<DerivedType>(options);
-        });
+    DerivedFactory::getInstance().add(
+      name, [](Options* options) -> std::unique_ptr<BaseType> {
+        return std::make_unique<DerivedType>(options);
+      });
   }
 };
 

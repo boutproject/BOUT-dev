@@ -12,7 +12,7 @@ struct StandardFactoryTraits<RKScheme> {
   static std::string getDefaultType();
 };
 
-using RKSchemeFactory = StandardFactory<RKScheme>;
+class RKSchemeFactory : public StandardFactory<RKScheme, RKSchemeFactory>{};
 
 /// Simpler name for Factory registration helper class
 ///
@@ -23,7 +23,7 @@ using RKSchemeFactory = StandardFactory<RKScheme>;
 ///     RegisterRKScheme<MyRKScheme> registerrkschememine("myrkscheme");
 ///     }
 template <typename DerivedType>
-using RegisterRKScheme = RegisterInStandardFactory<RKScheme, DerivedType>;
+using RegisterRKScheme = RegisterInStandardFactory<RKScheme, DerivedType, RKSchemeFactory>;
 
 #endif // __RKSCHEME_FACTORY_H__
 
