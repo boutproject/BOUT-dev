@@ -34,6 +34,12 @@ class LaplaceSerialBand;
 #include <options.hxx>
 #include <utils.hxx>
 
+#include "../../laplacefactory.hxx"
+
+namespace {
+RegisterLaplace<LaplaceSerialBand> registerlaplaceserialband(LAPLACE_BAND);
+}
+
 class LaplaceSerialBand : public Laplacian {
 public:
   LaplaceSerialBand(Options *opt = nullptr, const CELL_LOC = CELL_CENTRE, Mesh *mesh_in = nullptr);

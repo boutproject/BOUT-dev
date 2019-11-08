@@ -47,6 +47,17 @@ class Laplacian;
 #include "dcomplex.hxx"
 #include "options.hxx"
 
+constexpr auto LAPLACE_SPT = "spt";
+constexpr auto LAPLACE_PDD = "pdd";
+constexpr auto LAPLACE_TRI = "tri";
+constexpr auto LAPLACE_BAND = "band";
+constexpr auto LAPLACE_PETSC = "petsc";
+constexpr auto LAPLACE_MUMPS = "mumps";
+constexpr auto LAPLACE_CYCLIC = "cyclic";
+constexpr auto LAPLACE_SHOOT = "shoot";
+constexpr auto LAPLACE_MULTIGRID = "multigrid";
+constexpr auto LAPLACE_NAULIN = "naulin";
+
 // Inversion flags for each boundary
 /// Zero-gradient for DC (constant in Z) component. Default is zero value
 constexpr int INVERT_DC_GRAD = 1;
@@ -209,9 +220,11 @@ public:
    * 
    * @param[in] opt  The options section to use. By default "laplace" will be used
    */
-  static Laplacian *create(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr);
+  static std::unique_ptr<Laplacian> create(Options* opt = nullptr,
+                                           const CELL_LOC loc = CELL_CENTRE,
+                                           Mesh* mesh_in = nullptr);
   static Laplacian* defaultInstance(); ///< Return pointer to global singleton
-  
+
   static void cleanup(); ///< Frees all memory
 protected:
   bool async_send; ///< If true, use asyncronous send in parallel algorithms
@@ -264,7 +277,7 @@ protected:
                        ///  localmesh->getCoordinates(location) once
 private:
   /// Singleton instance
-  static Laplacian *instance;
+  static std::unique_ptr<Laplacian> instance;
 };
 
 ////////////////////////////////////////////

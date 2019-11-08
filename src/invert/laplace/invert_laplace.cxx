@@ -112,28 +112,21 @@ Laplacian::Laplacian(Options *options, const CELL_LOC loc, Mesh *mesh_in)
   OPTION2(options, extra_yguards_lower, extra_yguards_upper, 0);
 }
 
-Laplacian* Laplacian::create(Options *opts, const CELL_LOC location, Mesh *mesh_in) {
-  // Factory pattern:
-  // 1. getInstance() is making an instance of LaplacianFactory
-  // 2. createLaplacian() is accessing this instance and returning a Laplacian
-  //    form one of the child classes of the Laplacian (the laplace solver
-  //    implementations)
-  return LaplaceFactory::getInstance()->createLaplacian(opts, location, mesh_in);
+std::unique_ptr<Laplacian> Laplacian::create(Options* opts, const CELL_LOC location,
+                                             Mesh* mesh_in) {
+  return LaplaceFactory::getInstance().create(opts, location, mesh_in);
 }
 
-Laplacian *Laplacian::instance = nullptr;
+std::unique_ptr<Laplacian> Laplacian::instance = nullptr;
 
 Laplacian* Laplacian::defaultInstance() {
   if (instance == nullptr)
     instance = create();
-  return instance;
+  return instance.get();
 }
 
 void Laplacian::cleanup() {
-  if (instance == nullptr)
-    return;
-  delete instance;
-  instance = nullptr;
+  instance.reset();
 }
 
 /**********************************************************************************

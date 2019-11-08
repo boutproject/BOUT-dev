@@ -309,7 +309,6 @@ LaplacePetsc::LaplacePetsc(Options *opt, const CELL_LOC loc, Mesh *mesh_in) :
     output << endl << "Using LU decompostion for direct solution of system" << endl << endl;
   }
 
-  pcsolve = nullptr;
   if (pctype == PCSHELL) {
 
     rightprec = (*opts)["rightprec"].doc("Right preconditioning?").withDefault(true);

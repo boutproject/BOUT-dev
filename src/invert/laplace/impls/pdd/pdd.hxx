@@ -39,6 +39,12 @@ class LaplacePDD;
 #include <options.hxx>
 #include <utils.hxx>
 
+#include "../../laplacefactory.hxx"
+
+namespace {
+RegisterLaplace<LaplacePDD> registerlaplacepdd(LAPLACE_PDD);
+}
+
 class LaplacePDD : public Laplacian {
 public:
   LaplacePDD(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr)

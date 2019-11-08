@@ -38,6 +38,12 @@ class LaplaceCyclic;
 
 #include "utils.hxx"
 
+#include "../../laplacefactory.hxx"
+
+namespace {
+RegisterLaplace<LaplaceCyclic> registerlaplacecycle(LAPLACE_CYCLIC);
+}
+
 /// Solves the 2D Laplacian equation using the CyclicReduce class
 /*!
  * 

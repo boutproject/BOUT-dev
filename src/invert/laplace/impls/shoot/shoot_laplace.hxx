@@ -35,6 +35,12 @@ class LaplaceShoot;
 #include <boutexception.hxx>
 #include <utils.hxx>
 
+#include "../../laplacefactory.hxx"
+
+namespace {
+RegisterLaplace<LaplaceShoot> registerlaplaceshot(LAPLACE_SHOOT);
+}
+
 class LaplaceShoot : public Laplacian {
 public:
   LaplaceShoot(Options *opt = nullptr, const CELL_LOC = CELL_CENTRE, Mesh *mesh_in = nullptr);

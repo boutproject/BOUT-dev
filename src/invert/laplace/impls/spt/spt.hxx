@@ -46,6 +46,12 @@ class LaplaceSPT;
 #include <options.hxx>
 #include <utils.hxx>
 
+#include "../../laplacefactory.hxx"
+
+namespace {
+RegisterLaplace<LaplaceSPT> registerlaplacespt(LAPLACE_SPT);
+}
+
 /// Simple parallelisation of the Thomas tridiagonal solver algorithm (serial code)
 /*!
  * This is a reference code which performs the same operations as the serial code.
