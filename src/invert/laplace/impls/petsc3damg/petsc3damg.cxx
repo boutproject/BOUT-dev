@@ -112,7 +112,7 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mes
   // Get Tolerances for KSP solver
   rtol = (*opts)["rtol"].doc("Relative tolerance for KSP solver").withDefault(1e-5);
   atol = (*opts)["atol"].doc("Absolute tolerance for KSP solver").withDefault(1e-5);
-  dtol = (*opts)["dtol"].doc("Divergence tolerance for KSP solver").withDefault(1e5);
+  dtol = (*opts)["dtol"].doc("Divergence tolerance for KSP solver").withDefault(1e6);
   maxits = (*opts)["maxits"].doc("Maximum number of KSP iterations").withDefault(100000);
 
   richardson_damping_factor = (*opts)["richardson_damping_factor"].withDefault(1.0);
@@ -367,7 +367,8 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
     operator3D.ydown()(l, l.ym().zm()) += C_d2f_dydz;    
   }
   operator3D.assemble();
-
+  MatSetBlockSize(*operator3D.getMatrixPointer(), 1);
+  
   // Declare KSP Context (abstract PETSc object that manages all Krylov methods)
   if (kspInitialised) KSPDestroy(&ksp);
   KSPCreate(BoutComm::get(), &ksp);

@@ -168,8 +168,7 @@ public:
   virtual Field2D solve(const Field2D &b) override;
 
   virtual Field3D solve(const Field3D &b) override {
-    Field3D zero(b.getMesh());
-    zero = 0.;
+    Field3D zero = zeroFrom(b);
     return solve(b, zero);
   }
   virtual Field3D solve(const Field3D &b_in, const Field3D &x0) override;
