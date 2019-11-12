@@ -63,12 +63,6 @@ IndexerPtr GlobalIndexer::getInstance(Mesh* localmesh) {
   }
 }
 
-void GlobalIndexer::initialiseTest() {
-  registerFieldForTest(indices3D);
-  registerFieldForTest(indices2D);
-  registerFieldForTest(indicesPerp);
-}
-
 void GlobalIndexer::initialise() {
   fieldmesh->communicate(indices3D, indices2D);
   fieldmesh->communicate(indicesPerp);
@@ -77,18 +71,16 @@ void GlobalIndexer::initialise() {
   fieldmesh->communicate(indicesPerp);
 }
 
-Mesh* GlobalIndexer::getMesh() { return fieldmesh; }
-
 PetscInt GlobalIndexer::getGlobal(Ind2D ind) {
-  return static_cast<PetscInt>(indices2D[ind] + 0.5);
+  return static_cast<PetscInt>(std::round(indices2D[ind]));
 }
 
 PetscInt GlobalIndexer::getGlobal(Ind3D ind) {
-  return static_cast<PetscInt>(indices3D[ind] + 0.5);
+  return static_cast<PetscInt>(std::round(indices3D[ind]));
 }
 
 PetscInt GlobalIndexer::getGlobal(IndPerp ind) {
-  return static_cast<PetscInt>(indicesPerp[ind] + 0.5);
+  return static_cast<PetscInt>(std::round(indicesPerp[ind]));
 }
 
 void GlobalIndexer::registerFieldForTest(FieldData& UNUSED(f)) {
@@ -104,8 +96,8 @@ void GlobalIndexer::registerFieldForTest(FieldPerp& UNUSED(f)) {
 }
 
 GlobalIndexer::GlobalIndexer(Mesh* localmesh)
-    : fieldmesh(localmesh), indices3D(-2., localmesh), indices2D(-2., localmesh),
-      indicesPerp(-2., localmesh) {
+    : fieldmesh(localmesh), indices3D(-1., localmesh), indices2D(-1., localmesh),
+      indicesPerp(-1., localmesh) {
   // Set up the 3D indices
   int counter = localmesh->globalStartIndex3D();
   for (RangeIterator it = localmesh->iterateBndryLowerY(); !it.isDone(); it++) {

@@ -105,14 +105,14 @@ void testMatricesEqual(Mat* m1, Mat* m2) {
 TYPED_TEST(PetscMatrixTest, CopyConstructor) {
   SCOPED_TRACE("CopyConstructor");
   PetscMatrix<TypeParam> matrix(this->field);
-  Mat* rawmat = matrix.getMatrixPointer();
+  Mat* rawmat = matrix.get();
   const PetscInt i = 4, j = 1;
   const PetscScalar r = 3.141592;
   MatSetValues(*rawmat, 1, &i, 1, &j, &r, INSERT_VALUES);
   MatAssemblyBegin(*rawmat, MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(*rawmat, MAT_FINAL_ASSEMBLY);
   PetscMatrix<TypeParam> copy(matrix);
-  Mat *matrixPtr = matrix.getMatrixPointer(), *copyPtr = copy.getMatrixPointer();
+  Mat *matrixPtr = matrix.get(), *copyPtr = copy.get();
   EXPECT_NE(*matrixPtr, *copyPtr);
   testMatricesEqual(matrixPtr, copyPtr);
 }
@@ -120,10 +120,10 @@ TYPED_TEST(PetscMatrixTest, CopyConstructor) {
 // Test move constructor
 TYPED_TEST(PetscMatrixTest, MoveConstructor) {
   PetscMatrix<TypeParam> matrix(this->field);
-  Mat* matrixPtr = matrix.getMatrixPointer();
+  Mat* matrixPtr = matrix.get();
   EXPECT_NE(matrixPtr, nullptr);
   PetscMatrix<TypeParam> moved(std::move(matrix));
-  Mat* movedPtr = moved.getMatrixPointer();
+  Mat* movedPtr = moved.get();
   EXPECT_EQ(*matrixPtr, *movedPtr);
 }
 
@@ -131,14 +131,14 @@ TYPED_TEST(PetscMatrixTest, MoveConstructor) {
 TYPED_TEST(PetscMatrixTest, CopyAssignment) {
   SCOPED_TRACE("CopyAssignment");
   PetscMatrix<TypeParam> matrix(this->field);
-  Mat* rawmat = matrix.getMatrixPointer();
+  Mat* rawmat = matrix.get();
   const PetscInt i = 4, j = 1;
   const PetscScalar r = 3.141592;
   MatSetValues(*rawmat, 1, &i, 1, &j, &r, INSERT_VALUES);
   MatAssemblyBegin(*rawmat, MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(*rawmat, MAT_FINAL_ASSEMBLY);
   PetscMatrix<TypeParam> copy = matrix;
-  Mat* copyPtr = copy.getMatrixPointer();
+  Mat* copyPtr = copy.get();
   EXPECT_NE(*rawmat, *copyPtr);
   testMatricesEqual(rawmat, copyPtr);
 }
@@ -146,10 +146,10 @@ TYPED_TEST(PetscMatrixTest, CopyAssignment) {
 // Test move assignment
 TYPED_TEST(PetscMatrixTest, MoveAssignment) {
   PetscMatrix<TypeParam> matrix(this->field);
-  Mat* matrixPtr = matrix.getMatrixPointer();
+  Mat* matrixPtr = matrix.get();
   EXPECT_NE(matrixPtr, nullptr);
   PetscMatrix<TypeParam> moved = std::move(matrix);
-  Mat* movedPtr = moved.getMatrixPointer();
+  Mat* movedPtr = moved.get();
   EXPECT_EQ(*matrixPtr, *movedPtr);
 }
 
@@ -159,7 +159,7 @@ TYPED_TEST(PetscMatrixTest, TestGetElements) {
   BOUT_FOR(i, this->field.getRegion("RGN_NOY")) {
     matrix(i, i) = static_cast<BoutReal>(i.ind);
   }
-  Mat* rawmat = matrix.getMatrixPointer();
+  Mat* rawmat = matrix.get();
   MatAssemblyBegin(*rawmat, MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(*rawmat, MAT_FINAL_ASSEMBLY);
   auto indexer = GlobalIndexer::getInstance(this->field.getMesh());
@@ -181,7 +181,7 @@ TYPED_TEST(PetscMatrixTest, TestGetElements) {
 // Test assemble
 TYPED_TEST(PetscMatrixTest, TestAssemble) {
   PetscMatrix<TypeParam> matrix(this->field);
-  Mat* rawmat = matrix.getMatrixPointer();
+  Mat* rawmat = matrix.get();
   const PetscInt i = 4, j = 1;
   const PetscScalar r = 3.141592;
   MatSetValues(*rawmat, 1, &i, 1, &j, &r, INSERT_VALUES);
@@ -226,7 +226,7 @@ TYPED_TEST(PetscMatrixTest, TestMixedSetting) {
 // Test destroy
 TYPED_TEST(PetscMatrixTest, TestDestroy) {
   PetscMatrix<TypeParam> matrix(this->field);
-  Mat oldMat = *matrix.getMatrixPointer();
+  Mat oldMat = *matrix.get();
   Mat newMat;
   PetscErrorCode err;
   matrix.destroy();
@@ -257,7 +257,7 @@ TYPED_TEST(PetscMatrixTest, TestYUp) {
       expected(this->indexA, this->iWU2) = this->yUpWeights[2].weight * val;
     }
     matrix.yup()(this->indexA, this->indexB) = val;
-    Mat *rawmat = matrix.getMatrixPointer(), *rawexp = expected.getMatrixPointer();
+    Mat *rawmat = matrix.get(), *rawexp = expected.get();
     MatAssemblyBegin(*rawmat, MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(*rawmat, MAT_FINAL_ASSEMBLY);
     MatAssemblyBegin(*rawexp, MAT_FINAL_ASSEMBLY);
@@ -286,7 +286,7 @@ TYPED_TEST(PetscMatrixTest, TestYDown) {
       expected(this->indexA, this->iWD2) = this->yDownWeights[2].weight * val;
     }
     matrix.ydown()(this->indexA, this->indexB) = val;
-    Mat *rawmat = matrix.getMatrixPointer(), *rawexp = expected.getMatrixPointer();
+    Mat *rawmat = matrix.get(), *rawexp = expected.get();
     MatAssemblyBegin(*rawmat, MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(*rawmat, MAT_FINAL_ASSEMBLY);
     MatAssemblyBegin(*rawexp, MAT_FINAL_ASSEMBLY);
@@ -302,7 +302,7 @@ TYPED_TEST(PetscMatrixTest, TestYNext0) {
   SCOPED_TRACE("YNext0");
   matrix.ynext(0)(this->indexA, this->indexB) = val;
   expected(this->indexA, this->indexB) = val;
-  Mat rawmat = *matrix.getMatrixPointer(), rawexp = *expected.getMatrixPointer();
+  Mat rawmat = *matrix.get(), rawexp = *expected.get();
   MatAssemblyBegin(rawmat, MAT_FINAL_ASSEMBLY);
   MatAssemblyEnd(rawmat, MAT_FINAL_ASSEMBLY);
   MatAssemblyBegin(rawexp, MAT_FINAL_ASSEMBLY);
@@ -327,7 +327,7 @@ TYPED_TEST(PetscMatrixTest, TestYNextPos) {
     }
     matrix.ynext(1)(this->indexA, this->indexB) = val;
     expected.yup()(this->indexA, this->indexB) = val;
-    Mat *rawmat = matrix.getMatrixPointer(), *rawexp = expected.getMatrixPointer();
+    Mat *rawmat = matrix.get(), *rawexp = expected.get();
     MatAssemblyBegin(*rawmat, MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(*rawmat, MAT_FINAL_ASSEMBLY);
     MatAssemblyBegin(*rawexp, MAT_FINAL_ASSEMBLY);
@@ -353,7 +353,7 @@ TYPED_TEST(PetscMatrixTest, TestYNextNeg) {
     }
     matrix.ynext(-1)(this->indexA, this->indexB) = val;
     expected.ydown()(this->indexA, this->indexB) = val;
-    Mat *rawmat = matrix.getMatrixPointer(), *rawexp = expected.getMatrixPointer();
+    Mat *rawmat = matrix.get(), *rawexp = expected.get();
     MatAssemblyBegin(*rawmat, MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(*rawmat, MAT_FINAL_ASSEMBLY);
     MatAssemblyBegin(*rawexp, MAT_FINAL_ASSEMBLY);
@@ -365,11 +365,11 @@ TYPED_TEST(PetscMatrixTest, TestYNextNeg) {
 // Test swap
 TYPED_TEST(PetscMatrixTest, TestSwap) {
   PetscMatrix<TypeParam> lhs(this->field), rhs(this->field);
-  Mat l0 = *lhs.getMatrixPointer(), r0 = *rhs.getMatrixPointer();
+  Mat l0 = *lhs.get(), r0 = *rhs.get();
   EXPECT_NE(l0, nullptr);
   EXPECT_NE(r0, nullptr);
   swap(lhs, rhs);
-  Mat l1 = *lhs.getMatrixPointer(), r1 = *rhs.getMatrixPointer();
+  Mat l1 = *lhs.get(), r1 = *rhs.get();
   EXPECT_NE(l0, l1);
   EXPECT_NE(r0, r1);
   EXPECT_EQ(l0, r1);
