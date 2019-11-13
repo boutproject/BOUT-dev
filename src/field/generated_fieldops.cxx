@@ -491,7 +491,8 @@ Field3D operator/(const Field3D& lhs, const BoutReal rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs[index] / rhs; }
+  const auto tmp = 1.0 / rhs;
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs[index] * tmp; }
 
   checkData(result);
   return result;
@@ -510,7 +511,8 @@ Field3D& Field3D::operator/=(const BoutReal rhs) {
     checkData(*this);
     checkData(rhs);
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] /= rhs; }
+    const auto tmp = 1.0 / rhs;
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= tmp; }
 
     checkData(*this);
 
@@ -939,7 +941,8 @@ Field2D operator/(const Field2D& lhs, const BoutReal rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs[index] / rhs; }
+  const auto tmp = 1.0 / rhs;
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs[index] * tmp; }
 
   checkData(result);
   return result;
@@ -954,7 +957,8 @@ Field2D& Field2D::operator/=(const BoutReal rhs) {
     checkData(*this);
     checkData(rhs);
 
-    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] /= rhs; }
+    const auto tmp = 1.0 / rhs;
+    BOUT_FOR(index, this->getRegion("RGN_ALL")) { (*this)[index] *= tmp; }
 
     checkData(*this);
 
@@ -1579,7 +1583,8 @@ FieldPerp operator/(const FieldPerp& lhs, const BoutReal rhs) {
   checkData(lhs);
   checkData(rhs);
 
-  BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs[index] / rhs; }
+  const auto tmp = 1.0 / rhs;
+  BOUT_FOR(index, result.getRegion("RGN_ALL")) { result[index] = lhs[index] * tmp; }
 
   checkData(result);
   return result;

@@ -134,10 +134,12 @@ public:
    * does nothing
    */
   const Field3D toFieldAligned(const Field3D& f, const std::string& UNUSED(region) = "RGN_ALL") override {
+    ASSERT2(f.getDirectionY() == YDirectionType::Standard);
     Field3D result = f;
     return result.setDirectionY(YDirectionType::Aligned);
   }
   const FieldPerp toFieldAligned(const FieldPerp& f, const std::string& UNUSED(region) = "RGN_ALL") override {
+    ASSERT2(f.getDirectionY() == YDirectionType::Standard);
     FieldPerp result = f;
     return result.setDirectionY(YDirectionType::Aligned);
   }
@@ -147,10 +149,12 @@ public:
    * does nothing
    */
   const Field3D fromFieldAligned(const Field3D& f, const std::string& UNUSED(region) = "RGN_ALL") override {
+    ASSERT2(f.getDirectionY() == YDirectionType::Aligned);
     Field3D result = f;
     return result.setDirectionY(YDirectionType::Standard);
   }
   const FieldPerp fromFieldAligned(const FieldPerp& f, const std::string& UNUSED(region) = "RGN_ALL") override {
+    ASSERT2(f.getDirectionY() == YDirectionType::Aligned);
     FieldPerp result = f;
     return result.setDirectionY(YDirectionType::Standard);
   }

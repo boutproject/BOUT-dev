@@ -125,7 +125,16 @@ const T interp_to(const T& var, CELL_LOC loc, const std::string region = "RGN_AL
       ASSERT0(fieldmesh->ystart >= 2);
 
       // We can't interpolate in y unless we're field-aligned
-      const T var_fa = toFieldAligned(var, "RGN_NOX");
+      const bool is_unaligned = (var.getDirectionY() == YDirectionType::Standard);
+      const T var_fa = is_unaligned ? toFieldAligned(var, "RGN_NOX") : var;
+
+      if (not std::is_base_of<Field2D, T>::value) {
+        // Field2D is axisymmetric, so YDirectionType::Standard and
+        // YDirectionType::Aligned are equivalent, but trying to set
+        // YDirectionType::Aligned explicitly is an error
+        result.setDirectionY(YDirectionType::Aligned);
+      }
+
       if (region != "RGN_NOBNDRY") {
         // repeat the hack above for boundary points
         // this avoids a duplicate toFieldAligned call if we had called
@@ -152,7 +161,9 @@ const T interp_to(const T& var, CELL_LOC loc, const std::string region = "RGN_AL
         }
       }
 
-      result = fromFieldAligned(result, "RGN_NOBNDRY");
+      if (is_unaligned) {
+        result = fromFieldAligned(result, "RGN_NOBNDRY");
+      }
 
       break;
     }
@@ -338,6 +349,7 @@ public:
     return new MonotonicHermiteSpline(mesh);
   }
   
+  using HermiteSpline::interpolate;
   /// Interpolate using precalculated weights.
   /// This function is called by the other interpolate functions
   /// in the base class HermiteSpline.

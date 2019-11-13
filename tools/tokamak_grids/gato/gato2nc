@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Convert a GATO file to a NetCDF equilibrium file
 # This code should be more resiliant than the C
@@ -12,30 +12,10 @@ from __future__ import division
 from builtins import str
 from builtins import next
 from past.utils import old_div
-try:
-    import sys
-
-except ImportError:
-    print("ERROR: sys module not available")
-    raise SystemExit
-
-try:
-    import numpy as np
-except ImportError:
-    print("ERROR: NumPy module not available")
-    raise SystemExit
-
-try:
-    import re
-except:
-    print("ERROR: Regular expression module 're' not available")
-    raise SystemExit
-
-try:
-    from boututils.datafile import DataFile
-except ImportError:
-    print("ERROR: Missing boututils.Datafile. Add pylib to your PYTHONPATH")
-    raise SystemExit
+import sys
+import numpy as np
+import re
+from boututils.datafile import DataFile
 
 # Check command-line arguments
 

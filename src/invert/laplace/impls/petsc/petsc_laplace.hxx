@@ -78,6 +78,14 @@ public:
     MatDestroy( &MatA );
   }
 
+  using Laplacian::setCoefA;
+  using Laplacian::setCoefC;
+  using Laplacian::setCoefC1;
+  using Laplacian::setCoefC2;
+  using Laplacian::setCoefD;
+  using Laplacian::setCoefEx;
+  using Laplacian::setCoefEz;
+
   void setCoefA(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
@@ -176,6 +184,7 @@ public:
     if(pcsolve) pcsolve->setCoefEz(val);
   }
 
+  using Laplacian::solve;
   FieldPerp solve(const FieldPerp &b) override;
   FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override;
 

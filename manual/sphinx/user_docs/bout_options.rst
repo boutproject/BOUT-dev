@@ -296,6 +296,13 @@ direction can be specified:
 
     NXPE = 1  # Set number of X processors
 
+Alternatively, the number in the Y direction can be specified (if both are
+given, ``NXPE`` takes precedence and ``NYPE`` is ignored):
+
+.. code-block:: cfg
+
+    NYPE = 1  # Set number of Y processors
+
 If you need to specify complex input values, e.g. numerical values
 from experiment, you may want to use a grid file. The grid file to use
 is specified relative to the root directory where the simulation is
@@ -400,7 +407,7 @@ contain a single time-slice, and are controlled by a section called
    +-------------+----------------------------------------------------+--------------+
    | enabled     | Writing is enabled                                 | true         |
    +-------------+----------------------------------------------------+--------------+
-   | floats      | Write floats rather than doubles                   | true (dmp)   |
+   | floats      | Write floats rather than doubles                   | false        |
    +-------------+----------------------------------------------------+--------------+
    | flush       | Flush the file to disk after each write            | true         |
    +-------------+----------------------------------------------------+--------------+
@@ -413,11 +420,10 @@ contain a single time-slice, and are controlled by a section called
 
 |
 
-**enabled** is useful mainly for doing performance or scaling tests,
-where you want to exclude I/O from the timings. **floats** is used to
-reduce the size of the output files: restart files are stored as double
-by default (since these will be used to restart a simulation), but
-output dump files are set to floats by default.
+**enabled** is useful mainly for doing performance or scaling tests, where you
+want to exclude I/O from the timings. **floats** can be used to reduce the size
+of the output files: files are stored as double by default, but setting
+**floats = true** changes the output to single-precision floats.
 
 To enable parallel I/O for either output or restart files, set
 

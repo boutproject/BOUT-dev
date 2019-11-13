@@ -132,8 +132,8 @@ public:
   InvertableOperator(const function_signature& func = identity<T>,
                      Options* optIn = nullptr, Mesh* localmeshIn = nullptr)
       : operatorFunction(func), preconditionerFunction(func),
-        opt(optIn == nullptr ? optIn
-                             : Options::getRoot()->getSection("invertableOperator")),
+        opt(optIn == nullptr ? Options::getRoot()->getSection("invertableOperator")
+                             : optIn),
         localmesh(localmeshIn == nullptr ? bout::globals::mesh : localmeshIn) {
     AUTO_TRACE();
   };

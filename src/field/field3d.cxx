@@ -227,17 +227,17 @@ const BoutReal &Field3D::operator()(const Ind2D &d, int jz) const {
 
 const Region<Ind3D> &Field3D::getRegion(REGION region) const {
   return fieldmesh->getRegion3D(toString(region));
-};
+}
 const Region<Ind3D> &Field3D::getRegion(const std::string &region_name) const {
   return fieldmesh->getRegion3D(region_name);
-};
+}
 
 const Region<Ind2D> &Field3D::getRegion2D(REGION region) const {
   return fieldmesh->getRegion2D(toString(region));
-};
+}
 const Region<Ind2D> &Field3D::getRegion2D(const std::string &region_name) const {
   return fieldmesh->getRegion2D(region_name);
-};
+}
 
 /***************************************************************
  *                         OPERATORS 
@@ -285,7 +285,11 @@ Field3D & Field3D::operator=(const Field2D &rhs) {
   ASSERT1(areFieldsCompatible(*this, rhs));
 
   /// Copy data
-  BOUT_FOR(i, getRegion("RGN_ALL")) { (*this)[i] = rhs[i]; }
+  BOUT_FOR(i, rhs.getRegion("RGN_ALL")) {
+    for (int iz = 0; iz < nz; iz++) {
+      (*this)(i, iz) = rhs[i];
+    }
+  }
 
   return *this;
 }
@@ -625,7 +629,6 @@ FieldPerp pow(const Field3D &lhs, const FieldPerp &rhs, const std::string& rgn) 
   ASSERT1(areFieldsCompatible(lhs, rhs));
 
   FieldPerp result{emptyFrom(rhs)};
-  result.allocate();
   
   BOUT_FOR(i, result.getRegion(rgn)) {
     result[i] = ::pow(lhs(i, rhs.getIndex()), rhs[i]);

@@ -226,6 +226,7 @@ public:
   MPI_Comm getYcomm(int UNUSED(jx)) const override { return BoutComm::get(); }
   bool periodicY(int UNUSED(jx)) const override { return true; }
   bool periodicY(int UNUSED(jx), BoutReal& UNUSED(ts)) const override { return true; }
+  int numberOfYBoundaries() const { return 1; }
   std::pair<bool, BoutReal> hasBranchCutLower(int UNUSED(jx)) const override {
     return std::make_pair(false, 0.);
   }
@@ -289,8 +290,12 @@ public:
   BoutReal GlobalY(int jy) const override { return jy; }
   BoutReal GlobalX(BoutReal jx) const override { return jx; }
   BoutReal GlobalY(BoutReal jy) const override { return jy; }
-  int XGLOBAL(int UNUSED(xloc)) const override { return 0; }
-  int YGLOBAL(int UNUSED(yloc)) const override { return 0; }
+  int getGlobalXIndex(int) const override { return 0; }
+  int getGlobalXIndexNoBoundaries(int) const override { return 0; }
+  int getGlobalYIndex(int) const override { return 0; }
+  int getGlobalYIndexNoBoundaries(int) const override { return 0; }
+  int getGlobalZIndex(int) const override { return 0; }
+  int getGlobalZIndexNoBoundaries(int) const override { return 0; }
   int XLOCAL(int UNUSED(xglo)) const override { return 0; }
   int YLOCAL(int UNUSED(yglo)) const override { return 0; }
   virtual int localSize3D() override { return LocalNx * LocalNy * LocalNz; }

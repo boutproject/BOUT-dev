@@ -214,6 +214,9 @@ private:
     SOLVE_FOR(te);
     comms.add(te);
 
+    // Set boundary conditions for phi
+    phi.setBoundary("phi");
+
     /************** SETUP COMMUNICATIONS **************/
 
     // add extra variables to communication
@@ -252,6 +255,9 @@ private:
     // Communicate variables
     mesh->communicate(comms);
 
+    // 'initial guess' for phi boundary values, before applying sheath boundary conditions
+    // to set the parallel current.
+    phi.applyBoundary();
     phi_sheath_bndryconds();
 
     // Evolve rho and te
