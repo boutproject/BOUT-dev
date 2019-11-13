@@ -79,7 +79,10 @@ public:
     PetscErrorPrintf = PetscErrorPrintfNone;
   }
 
-  virtual ~PetscMatrixTest() { PetscErrorPrintf = PetscErrorPrintfDefault; }
+  virtual ~PetscMatrixTest() {
+    PetscErrorPrintf = PetscErrorPrintfDefault;
+    GlobalIndexer::recreateGlobalInstance();
+  }
 };
 
 using FieldTypes = ::testing::Types<Field3D, Field2D, FieldPerp>;
