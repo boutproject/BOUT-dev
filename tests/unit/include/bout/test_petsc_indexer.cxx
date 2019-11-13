@@ -152,6 +152,11 @@ TEST_F(IndexerTest, TestConvertIndexPerp) {
 class FakeParallelIndexer : public GlobalIndexer {
 public:
   FakeParallelIndexer(Mesh* localmesh) : GlobalIndexer(localmesh) {}
+  void initialiseTest() {
+    registerFieldForTest(getIndices3D());
+    registerFieldForTest(getIndices2D());
+    registerFieldForTest(getIndicesPerp());
+  }
 
 private:
   virtual void registerFieldForTest(FieldData& f) {
@@ -167,13 +172,6 @@ private:
       meshPtr->registerField(f, 2);
     }
   }
-  void initialiseTest() {
-    registerFieldForTest(getIndices3D());
-    registerFieldForTest(getIndices2D());
-    registerFieldForTest(getIndicesPerp());
-  }
-
-
 };
 
 class ParallelIndexerTest
