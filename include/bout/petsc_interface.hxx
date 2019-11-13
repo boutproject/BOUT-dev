@@ -76,7 +76,7 @@ public:
   // Mark the globalIndexer instance to be recreated next time it is
   // requested (useful for unit tests)
   static void recreateGlobalInstance();
-  
+
 protected:
   GlobalIndexer(Mesh* localmesh);
   Field3D& getIndices3D() { return indices3D; }
@@ -168,9 +168,9 @@ public:
     BOUT_FOR_SERIAL(i, f.getRegion("RGN_ALL_THIN")) {
       const PetscInt ind = indexConverter->getGlobal(i);
       if (ind != -1) {
-	// TODO: consider how VecSetValues() could be used where there
-	// are continuous stretches of field data which should be
-	// copied into the vector.
+        // TODO: consider how VecSetValues() could be used where there
+        // are continuous stretches of field data which should be
+        // copied into the vector.
         VecSetValue(*vector, ind, f[i], INSERT_VALUES);
       }
     }
@@ -431,10 +431,10 @@ public:
       PetscBool assembled;
       MatAssembled(*petscMatrix, &assembled);
       if (assembled == PETSC_TRUE) {
-	BOUT_OMP(critical)
-	MatGetValues(*petscMatrix, 1, &petscRow, 1, &petscCol, &value);
+        BOUT_OMP(critical)
+        MatGetValues(*petscMatrix, 1, &petscRow, 1, &petscCol, &value);
       } else {
-	value = 0.;
+        value = 0.;
       }
     }
     Element operator=(Element& other) { return *this = static_cast<BoutReal>(other); }
@@ -503,9 +503,9 @@ public:
       }();
 
       const int ny =
-	std::is_same<T, FieldPerp>::value ? 1 : indexConverter->getMesh()->LocalNy;
+          std::is_same<T, FieldPerp>::value ? 1 : indexConverter->getMesh()->LocalNy;
       const int nz =
-	std::is_same<T, Field2D>::value ? 1 : indexConverter->getMesh()->LocalNz;
+          std::is_same<T, Field2D>::value ? 1 : indexConverter->getMesh()->LocalNz;
 
       std::transform(
           pw.begin(), pw.end(), std::back_inserter(positions),

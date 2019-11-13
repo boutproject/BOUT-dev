@@ -113,10 +113,10 @@ void HermiteSpline::calcWeights(const Field3D &delta_x, const Field3D &delta_z, 
 }
 
 /*!
- * Return position and weight of points needed to approximate the function value at the point that the
- * field line through (i,j,k) meets the (j+1)-plane.
- * For the case where only the z-direction is not aligned to grid points, the approximation is:
- *   f(i,j+1,k*) = h00_z * f(i,j+1,k) + h01_z * f(i,j+1,k+1)
+ * Return position and weight of points needed to approximate the function value at the
+ * point that the field line through (i,j,k) meets the (j+1)-plane. For the case where
+ * only the z-direction is not aligned to grid points, the approximation is: f(i,j+1,k*) =
+ * h00_z * f(i,j+1,k) + h01_z * f(i,j+1,k+1)
  *                 + h10_z * dfdz(i,j+1,k) + h11_z * dfdz(i,j+1,k+1)
  *               = h00_z * f(i,j+1,k) + h01_z * f(i,j+1,k+1)
  *                 + h10_z * ( f(i,j+1,k+1) - f(i,j+1,k-1) ) / 2

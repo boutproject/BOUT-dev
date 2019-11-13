@@ -327,10 +327,10 @@ public:
 
     addRegion2D("RGN_INNER_X",
                 Region<Ind2D>(0, xstart - 1, ystart, yend, 0, 0, LocalNy, 1));
-    addRegion3D("RGN_INNER_X", Region<Ind3D>(0, xstart - 1, ystart, yend, 0,
-                                             LocalNz - 1, LocalNy, LocalNz));
-    addRegionPerp("RGN_INNER_X_THIN", Region<IndPerp>(0, xstart - 1, 0, 0, 0,
-                                             LocalNz - 1, 1, LocalNz));
+    addRegion3D("RGN_INNER_X", Region<Ind3D>(0, xstart - 1, ystart, yend, 0, LocalNz - 1,
+                                             LocalNy, LocalNz));
+    addRegionPerp("RGN_INNER_X_THIN",
+                  Region<IndPerp>(0, xstart - 1, 0, 0, 0, LocalNz - 1, 1, LocalNz));
     addRegion2D("RGN_INNER_X_THIN", getRegion2D("RGN_INNER_X"));
     addRegion3D("RGN_INNER_X_THIN", getRegion3D("RGN_INNER_X"));
 
@@ -339,7 +339,7 @@ public:
     addRegion3D("RGN_OUTER_X", Region<Ind3D>(xend + 1, LocalNx - 1, ystart, yend, 0,
                                              LocalNz - 1, LocalNy, LocalNz));
     addRegionPerp("RGN_OUTER_X_THIN", Region<IndPerp>(xend + 1, LocalNx - 1, 0, 0, 0,
-                                             LocalNz - 1, 1, LocalNz));
+                                                      LocalNz - 1, 1, LocalNz));
     addRegion2D("RGN_OUTER_X_THIN", getRegion2D("RGN_OUTER_X"));
     addRegion3D("RGN_OUTER_X_THIN", getRegion3D("RGN_OUTER_X"));
 
