@@ -328,17 +328,17 @@ int Mesh::localSize3D() {
     localNumCells3D = nx * ny * nz;
     for (RangeIterator it = iterateBndryLowerY(); !it.isDone(); it++) {
       if (it.ind == xstart)
-        localNumCells3D += nz * ystart;
+        localNumCells3D += nz;
       if (it.ind == xend)
-        localNumCells3D += nz * ystart;
-      localNumCells3D += nz * ystart;
+        localNumCells3D += nz;
+      localNumCells3D += nz;
     }
     for (RangeIterator it = iterateBndryUpperY(); !it.isDone(); it++) {
       if (it.ind == xstart)
-        localNumCells3D += nz * ystart;
+        localNumCells3D += nz;
       if (it.ind == xend)
-        localNumCells3D += nz * ystart;
-      localNumCells3D += nz * ystart;
+        localNumCells3D += nz;
+      localNumCells3D += nz;
     }
   }
   return localNumCells3D;
@@ -353,17 +353,17 @@ int Mesh::localSize2D() {
     localNumCells2D = nx * ny;
     for (RangeIterator it = iterateBndryLowerY(); !it.isDone(); it++) {
       if (it.ind == xstart)
-        localNumCells2D += ystart;
+        localNumCells2D += 1;
       if (it.ind == xend)
-        localNumCells2D += ystart;
-      localNumCells2D += ystart;
+        localNumCells2D += 1;
+      localNumCells2D += 1;
     }
     for (RangeIterator it = iterateBndryUpperY(); !it.isDone(); it++) {
       if (it.ind == xstart)
-        localNumCells2D += ystart;
+        localNumCells2D += 1;
       if (it.ind == xend)
-        localNumCells2D += ystart;
-      localNumCells2D += ystart;
+        localNumCells2D += 1;
+      localNumCells2D += 1;
     }
   }
   return localNumCells2D;
