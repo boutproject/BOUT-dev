@@ -13,6 +13,11 @@ factories = {
         "type_name": "Laplacian",
         "create_method": "create",
     },
+    "LaplaceXZ": {
+        "factory_name": "LaplaceXZ",
+        "type_name": "LaplaceXZ",
+        "create_method": "create",
+    },
     "SolverFactory": {
         "factory_name": "SolverFactory",
         "type_name": "Solver",
