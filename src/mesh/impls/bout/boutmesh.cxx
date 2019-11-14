@@ -1577,6 +1577,109 @@ int BoutMesh::YPROC(int yind) {
 int BoutMesh::XPROC(int xind) { return (xind >= MXG) ? (xind - MXG) / MXSUB : 0; }
 
 /****************************************************************
+ *                     TESTING UTILITIES
+ ****************************************************************/
+
+/// A constructor used when making fake meshes for testing. This
+/// will make a mesh which thinks it corresponds to the subdomain on
+/// one processor, even though it's actually being run in serial.
+BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int nxpe,
+                   int nype, int pe_xind, int pe_yind)
+    : nx(input_nx), ny(input_ny), nz(input_nz), MXG(mxg), MYG(myg), MZG(0) {
+  maxregionblocksize = MAXREGIONBLOCKSIZE;
+  symmetricGlobalX = true;
+  symmetricGlobalY = true;
+
+  comm_x = MPI_COMM_NULL;
+  comm_inner = MPI_COMM_NULL;
+  comm_middle = MPI_COMM_NULL;
+  comm_outer = MPI_COMM_NULL;
+
+  PE_XIND = pe_xind;
+  PE_YIND = pe_yind;
+  NPES = nxpe * nype;
+  MYPE = nxpe * pe_yind + pe_xind;
+
+  // Set global grid sizes
+  GlobalNx = nx;
+  GlobalNy = ny + 2 * MYG;
+  GlobalNz = nz;
+
+  if (2 * MXG >= nx)
+    throw BoutException(_("nx must be greater than 2*MXG"));
+
+  ixseps1 = GlobalNx;
+  ixseps2 = GlobalNx;
+  jyseps1_1 = -1;
+  jyseps1_2 = ny / 2;
+  jyseps2_1 = jyseps1_2;
+  jyseps2_2 = ny - 1;
+  ny_inner = jyseps2_1;
+  numberOfXPoints = 0;
+
+  NXPE = nxpe;
+  NYPE = nype;
+  NZPE = 1;
+
+  MX = nx - 2 * MXG;
+  MXSUB = MX / NXPE;
+  if ((MX % NXPE) != 0) {
+    throw BoutException(_("Cannot split %d X points equally between %d processors\n"), MX,
+                        NXPE);
+  }
+
+  /// NOTE: No grid data reserved for Y boundary cells - copy from neighbours
+  MY = ny;
+  MYSUB = MY / NYPE;
+  if ((MY % NYPE) != 0) {
+    throw BoutException(
+        _("\tERROR: Cannot split %d Y points equally between %d processors\n"), MY, NYPE);
+  }
+
+  MZ = nz;
+  MZSUB = MZ / NZPE;
+  if ((MZ % NZPE) != 0) {
+    throw BoutException(
+        _("\tERROR: Cannot split %d Z points equally between %d processors\n"), MZ, NZPE);
+  }
+
+  periodicX = false;
+  async_send = false;
+
+  // Set global offsets
+  OffsetX = PE_XIND * MXSUB;
+  OffsetY = PE_YIND * MYSUB;
+  OffsetZ = 0;
+
+  ZMIN = 0.0;
+  ZMAX = 1.0;
+  zperiod = 1.0;
+
+  /// Number of grid cells is ng* = M*SUB + guard/boundary cells
+  LocalNx = MXSUB + 2 * MXG;
+  LocalNy = MYSUB + 2 * MYG;
+  LocalNz = MZSUB + 2 * MZG;
+
+  // Set local index ranges
+  zstart = MZG;
+  zend = MZG + MZSUB - 1;
+  xstart = MXG;
+  xend = MXG + MXSUB - 1;
+  ystart = MYG;
+  yend = MYG + MYSUB - 1;
+
+  // Call topology to set layout of grid
+  topology();
+
+  TwistShift = false;
+  ShiftAngle.resize(LocalNx);
+
+  ShiftAngle.clear();
+
+  addBoundaryRegions();
+}
+
+/****************************************************************
  *                       CONNECTIONS
  ****************************************************************/
 
@@ -1998,6 +2101,49 @@ void BoutMesh::clear_handles() {
   }
 }
 
+/// For debugging purposes (when creating fake parallel meshes), make
+/// the send and receive buffers share memory. This allows for
+/// communications to be faked between meshes as though they were on
+/// different processors.
+void BoutMesh::overlapHandleMemory(BoutMesh* yup, BoutMesh* ydown, BoutMesh* xin,
+                                   BoutMesh* xout) {
+  int xlen = LocalNy * LocalNz * 5, ylen = LocalNx * LocalNz * 5;
+  CommHandle* ch = get_handle(xlen, ylen);
+  if (yup) {
+    CommHandle* other = (yup == this) ? ch : yup->get_handle(xlen, ylen);
+    if (other->dmsg_sendbuff.unique()) {
+      ch->umsg_recvbuff = other->dmsg_sendbuff;
+    }
+    if (yup != this)
+      yup->free_handle(other);
+  }
+  if (ydown) {
+    CommHandle* other = (ydown == this) ? ch : ydown->get_handle(xlen, ylen);
+    if (other->umsg_sendbuff.unique()) {
+      ch->dmsg_recvbuff = other->umsg_sendbuff;
+    }
+    if (ydown != this)
+      ydown->free_handle(other);
+  }
+  if (xin) {
+    CommHandle* other = (xin == this) ? ch : xin->get_handle(xlen, ylen);
+    if (other->omsg_sendbuff.unique()) {
+      ch->imsg_recvbuff = other->omsg_sendbuff;
+    }
+    if (xin != this)
+      xin->free_handle(other);
+  }
+  if (xout) {
+    CommHandle* other = (xout == this) ? ch : xout->get_handle(xlen, ylen);
+    if (other->imsg_sendbuff.unique()) {
+      ch->omsg_recvbuff = other->imsg_sendbuff;
+    }
+    if (xout != this)
+      xout->free_handle(other);
+  }
+  free_handle(ch);
+}
+
 /****************************************************************
  *                   Communication utilities
  ****************************************************************/
@@ -2239,6 +2385,17 @@ void BoutMesh::addBoundaryRegions() {
     xe = DDATA_XSPLIT - 1;
 
   if (xs < xstart)
+    xs = xstart - 1;
+  if (xe > xend)
+    xe = xend + 1;
+
+  addRegion3D("RGN_LOWER_Y_THIN",
+              Region<Ind3D>(xs, xe, ystart - 1, ystart - 1, 0, LocalNz - 1, LocalNy,
+                            LocalNz, maxregionblocksize));
+  addRegion2D("RGN_LOWER_Y_THIN", Region<Ind2D>(xs, xe, ystart - 1, ystart - 1, 0, 0,
+                                                LocalNy, 1, maxregionblocksize));
+
+  if (xs < xstart)
     xs = xstart;
   if (xe > xend)
     xe = xend;
@@ -2311,6 +2468,17 @@ void BoutMesh::addBoundaryRegions() {
     xe = UDATA_XSPLIT - 1;
 
   if (xs < xstart)
+    xs = xstart - 1;
+  if (xe > xend)
+    xe = xend + 1;
+
+  addRegion3D("RGN_UPPER_Y_THIN",
+              Region<Ind3D>(xs, xe, yend + 1, yend + 1, 0, LocalNz - 1, LocalNy, LocalNz,
+                            maxregionblocksize));
+  addRegion2D("RGN_UPPER_Y_THIN", Region<Ind2D>(xs, xe, yend + 1, yend + 1, 0, 0, LocalNy,
+                                                1, maxregionblocksize));
+
+  if (xs < xstart)
     xs = xstart;
   if (xe > xend)
     xe = xend;
@@ -2323,6 +2491,14 @@ void BoutMesh::addBoundaryRegions() {
   
   // Inner X
   if(firstX() && !periodicX) {
+    addRegion3D("RGN_INNER_X_THIN",
+                Region<Ind3D>(xstart - 1, xstart - 1, ystart, yend, 0, LocalNz - 1,
+                              LocalNy, LocalNz, maxregionblocksize));
+    addRegion2D("RGN_INNER_X_THIN", Region<Ind2D>(xstart - 1, xstart - 1, ystart, yend, 0,
+                                                  0, LocalNy, 1, maxregionblocksize));
+    addRegionPerp("RGN_INNER_X_THIN",
+                  Region<IndPerp>(xstart - 1, xstart - 1, 0, 0, 0, LocalNz - 1, 1,
+                                  LocalNz, maxregionblocksize));
     addRegion3D("RGN_INNER_X", Region<Ind3D>(0, xstart-1, ystart, yend, 0, LocalNz-1,
                                              LocalNy, LocalNz, maxregionblocksize));
     addRegion2D("RGN_INNER_X", Region<Ind2D>(0, xstart-1, ystart, yend, 0, 0,
@@ -2332,6 +2508,12 @@ void BoutMesh::addBoundaryRegions() {
     output_info.write("\tBoundary region inner X\n");
   } else {
     // Empty region
+    addRegion3D("RGN_INNER_X_THIN",
+                Region<Ind3D>(0, -1, 0, 0, 0, 0, LocalNy, LocalNz, maxregionblocksize));
+    addRegion2D("RGN_INNER_X_THIN",
+                Region<Ind2D>(0, -1, 0, 0, 0, 0, LocalNy, 1, maxregionblocksize));
+    addRegionPerp("RGN_INNER_X_THIN",
+                  Region<IndPerp>(0, -1, 0, 0, 0, 0, 1, LocalNz, maxregionblocksize));
     addRegion3D("RGN_INNER_X", Region<Ind3D>(0, -1, 0, 0, 0, 0,
                                              LocalNy, LocalNz, maxregionblocksize));
     addRegion2D("RGN_INNER_X", Region<Ind2D>(0, -1, 0, 0, 0, 0,
@@ -2340,6 +2522,14 @@ void BoutMesh::addBoundaryRegions() {
 
   // Outer X
   if(lastX() && !periodicX) {
+    addRegion3D("RGN_OUTER_X_THIN",
+                Region<Ind3D>(xend + 1, xend + 1, ystart, yend, 0, LocalNz - 1, LocalNy,
+                              LocalNz, maxregionblocksize));
+    addRegion2D("RGN_OUTER_X_THIN", Region<Ind2D>(xend + 1, xend + 1, ystart, yend, 0, 0,
+                                                  LocalNy, 1, maxregionblocksize));
+    addRegionPerp("RGN_OUTER_X_THIN",
+                  Region<IndPerp>(xend + 1, xend + 1, 0, 0, 0, LocalNz - 1, 1, LocalNz,
+                                  maxregionblocksize));
     addRegion3D("RGN_OUTER_X", Region<Ind3D>(xend+1, LocalNx-1, ystart, yend, 0, LocalNz-1,
                                              LocalNy, LocalNz, maxregionblocksize));
     addRegion2D("RGN_OUTER_X", Region<Ind2D>(xend+1, LocalNx-1, ystart, yend, 0, 0,
@@ -2349,6 +2539,12 @@ void BoutMesh::addBoundaryRegions() {
     output_info.write("\tBoundary region outer X\n");
   } else {
     // Empty region
+    addRegion3D("RGN_OUTER_X_THIN",
+                Region<Ind3D>(0, -1, 0, 0, 0, 0, LocalNy, LocalNz, maxregionblocksize));
+    addRegion2D("RGN_OUTER_X_THIN",
+                Region<Ind2D>(0, -1, 0, 0, 0, 0, LocalNy, 1, maxregionblocksize));
+    addRegionPerp("RGN_OUTER_X_THIN",
+                  Region<IndPerp>(0, -1, 0, 0, 0, 0, 1, LocalNz, maxregionblocksize));
     addRegion3D("RGN_OUTER_X", Region<Ind3D>(0, -1, 0, 0, 0, 0,
                                              LocalNy, LocalNz, maxregionblocksize));
     addRegion2D("RGN_OUTER_X", Region<Ind2D>(0, -1, 0, 0, 0, 0,

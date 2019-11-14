@@ -259,6 +259,21 @@ public:
   // Interpolate using the field at (x,y+y_offset,z), rather than (x,y,z)
   int y_offset;
   void setYOffset(int offset) { y_offset = offset; }
+
+  virtual std::vector<ParallelTransform::PositionsAndWeights>
+  getWeightsForYUpApproximation(int i, int j, int k) {
+    return getWeightsForYApproximation(i, j, k, 1);
+  }
+  virtual std::vector<ParallelTransform::PositionsAndWeights>
+  getWeightsForYDownApproximation(int i, int j, int k) {
+    return getWeightsForYApproximation(i, j, k, -1);
+  }
+  virtual std::vector<ParallelTransform::PositionsAndWeights>
+  getWeightsForYApproximation(int UNUSED(i), int UNUSED(j), int UNUSED(k),
+                              int UNUSED(yoffset)) {
+    throw BoutException(
+        "Interpolation::getWeightsForYApproximation not implemented in this subclass");
+  }
 };
 
 class HermiteSpline : public Interpolation {
@@ -308,6 +323,8 @@ public:
                       const Field3D &delta_z) override;
   Field3D interpolate(const Field3D &f, const Field3D &delta_x, const Field3D &delta_z,
                       const BoutMask &mask) override;
+  std::vector<ParallelTransform::PositionsAndWeights>
+  getWeightsForYApproximation(int i, int j, int k, int yoffset);
 };
 
 

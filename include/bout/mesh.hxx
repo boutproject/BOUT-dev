@@ -260,7 +260,7 @@ class Mesh {
   /*!
    * Communicate an X-Z field
    */
-  void communicate(FieldPerp &f); 
+  virtual void communicate(FieldPerp& f);
 
   /*!
    * Send a list of FieldData objects
@@ -504,6 +504,26 @@ class Mesh {
   /// Returns the local Y index given a global index
   /// If the global index includes the boundary cells, then so does the local.
   virtual int YLOCAL(int yglo) const = 0;
+
+  /// Returns the number of unique cells (i.e., ones not used for
+  /// communication) on this processor for 3D fields. Boundaries
+  /// are only included to a depth of 1.
+  virtual int localSize3D();
+  /// Returns the number of unique cells (i.e., ones not used for
+  /// communication) on this processor for 2D fields. Boundaries
+  /// are only included to a depth of 1.
+  virtual int localSize2D();
+  /// Returns the number of unique cells (i.e., ones not used for
+  /// communication) on this processor for perpendicular fields.
+  /// Boundaries are only included to a depth of 1.
+  virtual int localSizePerp();
+
+  /// Get the value of the first global 3D index on this processor.
+  virtual int globalStartIndex3D();
+  /// Get the value of the first global 2D index on this processor.
+  virtual int globalStartIndex2D();
+  /// Get the value of the first global perpendicular index on this processor.
+  virtual int globalStartIndexPerp();
 
   /// Returns a global X index given a local index.
   /// Global index includes boundary cells, local index includes boundary or guard cells.
@@ -945,6 +965,8 @@ private:
   std::map<std::string, Region<Ind2D>> regionMap2D;
   std::map<std::string, Region<IndPerp>> regionMapPerp;
   Array<int> indexLookup3Dto2D;
+
+  int localNumCells3D = -1, localNumCells2D = -1, localNumCellsPerp = -1;
 };
 
 #endif // __MESH_H__
