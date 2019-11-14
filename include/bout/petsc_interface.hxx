@@ -236,8 +236,8 @@ public:
         value = 0.;
       }
     }
-    Element operator=(Element& other) { return *this = static_cast<BoutReal>(other); }
-    Element operator=(BoutReal val) {
+    Element& operator=(Element& other) { return *this = static_cast<BoutReal>(other); }
+    Element& operator=(BoutReal val) {
       value = val;
       int status;
       BOUT_OMP(critical)
@@ -247,7 +247,7 @@ public:
       }
       return *this;
     }
-    Element operator+=(BoutReal val) {
+    Element& operator+=(BoutReal val) {
       value += val;
       int status;
       BOUT_OMP(critical)
@@ -401,6 +401,7 @@ public:
     yoffset = rhs.yoffset;
     initialised = rhs.initialised;
     rhs.initialised = false;
+    return *this;
   }
   friend void swap<T>(PetscMatrix<T>& first, PetscMatrix<T>& second);
 
@@ -437,13 +438,13 @@ public:
         value = 0.;
       }
     }
-    Element operator=(Element& other) { return *this = static_cast<BoutReal>(other); }
-    Element operator=(BoutReal val) {
+    Element& operator=(Element& other) { return *this = static_cast<BoutReal>(other); }
+    Element& operator=(BoutReal val) {
       value = val;
       setValues(val, INSERT_VALUES);
       return *this;
     }
-    Element operator+=(BoutReal val) {
+    Element& operator+=(BoutReal val) {
       auto columnPosition = std::find(positions.begin(), positions.end(), petscCol);
       if (columnPosition != positions.end()) {
         int i = std::distance(positions.begin(), columnPosition);
