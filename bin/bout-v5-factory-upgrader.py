@@ -13,6 +13,7 @@ factories = {
         "type_name": "InvertPar",
         "create_method": "Create",
     },
+    "Mesh": {"factory_name": "Mesh", "type_name": "Mesh", "create_method": "Create"},
     "Laplacian": {
         "factory_name": "Laplacian",
         "type_name": "Laplacian",
