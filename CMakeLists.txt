@@ -217,8 +217,6 @@ set(BOUT_SOURCES
   ./src/mesh/interpolation/lagrange_4pt.cxx
   ./src/mesh/interpolation/monotonic_hermite_spline.cxx
   ./src/mesh/mesh.cxx
-  ./src/mesh/meshfactory.cxx
-  ./src/mesh/meshfactory.hxx
   ./src/mesh/parallel/fci.cxx
   ./src/mesh/parallel/fci.hxx
   ./src/mesh/parallel/identity.cxx
