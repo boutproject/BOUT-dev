@@ -153,13 +153,9 @@ int BoutMesh::load() {
     throw BoutException(_("Error: nx must be greater than 2 times MXG (2 * %d)"), MXG);
   }
 
-  // Set global grid sizes
+  // Set global x- and z-grid sizes
   GlobalNx = nx;
-  GlobalNy = ny + 2 * MYG;
   GlobalNz = nz;
-
-  if (2 * MXG >= nx)
-    throw BoutException(_("nx must be greater than 2*MXG"));
 
   // separatrix location
   Mesh::get(ixseps1, "ixseps1", GlobalNx);
@@ -169,6 +165,12 @@ int BoutMesh::load() {
   Mesh::get(jyseps2_1, "jyseps2_1", jyseps1_2);
   Mesh::get(jyseps2_2, "jyseps2_2", ny - 1);
   Mesh::get(ny_inner, "ny_inner", jyseps2_1);
+
+  // Set global y-grid size
+  GlobalNy = ny + 2 * MYG;
+  if (jyseps1_2 != jyseps2_1) {
+    GlobalNy += 2*MYG;
+  }
 
   /// Check inputs
   if (jyseps1_1 < -1) {
@@ -214,25 +216,39 @@ int BoutMesh::load() {
     numberOfXPoints = 2;
   }
 
-  if (options.isSet("NXPE")) {    // Specified NXPE
-    NXPE = options["NXPE"]
-               .doc("Decomposition in the radial direction. If not given then calculated "
-                    "automatically.")
-               .withDefault(1);
-    if ((NPES % NXPE) != 0) {
-      throw BoutException(
-          _("Number of processors (%d) not divisible by NPs in x direction (%d)\n"), NPES,
-          NXPE);
+  if (options.isSet("NXPE") or options.isSet("NYPE")) {    // Specified NXPE
+    if (options.isSet("NXPE")) {
+      NXPE = options["NXPE"]
+                 .doc("Decomposition in the radial direction. If not given then calculated "
+                      "automatically.")
+                 .withDefault(1);
+      if ((NPES % NXPE) != 0) {
+        throw BoutException(
+            _("Number of processors (%d) not divisible by NPs in x direction (%d)\n"), NPES,
+            NXPE);
+      }
+
+      NYPE = NPES / NXPE;
+    } else {
+      // NXPE not set, but NYPE is
+      NYPE = options["NYPE"]
+                 .doc("Decomposition in the parallel direction. Can be given instead of "
+                      "NXPE. If neither is given, then calculated automatically.")
+                 .withDefault(1);
+      if ((NPES % NYPE) != 0) {
+        throw BoutException(
+            _("Number of processors (%d) not divisible by NPs in y direction (%d)\n"), NPES,
+            NYPE);
+      }
+
+      NXPE = NPES / NYPE;
     }
 
-    NYPE = NPES / NXPE;
-
-    int nyp = NPES / NXPE;
     int ysub = ny / NYPE;
 
     // Check size of Y mesh
     if (ysub < MYG) {
-      throw BoutException("\t -> ny/NYPE (%d/%d = %d) must be >= MYG (%d)\n", ny, nyp,
+      throw BoutException("\t -> ny/NYPE (%d/%d = %d) must be >= MYG (%d)\n", ny, NYPE,
                         ysub, MYG);
     }
     // Check branch cuts
@@ -469,7 +485,7 @@ int BoutMesh::load() {
 
   ShiftAngle.resize(LocalNx);
 
-  if (!source->get(this, ShiftAngle, "ShiftAngle", LocalNx, XGLOBAL(0))) {
+  if (!source->get(this, ShiftAngle, "ShiftAngle", LocalNx, getGlobalXIndex(0))) {
     ShiftAngle.clear();
   }
 
@@ -812,7 +828,7 @@ int BoutMesh::load() {
     if (PE_XIND == 0) {
       // Inner either core or PF
 
-      int yg = YGLOBAL(MYG); // Get a global index in this processor
+      int yg = getGlobalYIndexNoBoundaries(MYG); // Get a global index in this processor
 
       if (((yg > jyseps1_1) && (yg <= jyseps2_1)) ||
           ((yg > jyseps1_2) && (yg <= jyseps2_2))) {
@@ -1299,7 +1315,7 @@ bool BoutMesh::firstY() const { return PE_YIND == 0; }
 bool BoutMesh::lastY() const { return PE_YIND == NYPE - 1; }
 
 bool BoutMesh::firstY(int xpos) const {
-  int xglobal = XGLOBAL(xpos);
+  int xglobal = getGlobalXIndex(xpos);
   int rank;
 
   if (xglobal < ixseps_inner) {
@@ -1313,7 +1329,7 @@ bool BoutMesh::firstY(int xpos) const {
 }
 
 bool BoutMesh::lastY(int xpos) const {
-  int xglobal = XGLOBAL(xpos);
+  int xglobal = getGlobalXIndex(xpos);
   int rank;
   int size;
 
@@ -1492,24 +1508,45 @@ int BoutMesh::PROC_NUM(int xind, int yind) {
 }
 
 /// Returns the global X index given a local index
-int BoutMesh::XGLOBAL(int xloc) const { return xloc + PE_XIND * MXSUB; }
-
-/// Returns the global X index given a local index
 int BoutMesh::XGLOBAL(BoutReal xloc, BoutReal &xglo) const {
   xglo = xloc + PE_XIND * MXSUB;
   return static_cast<int>(xglo);
+}
+
+/// Returns a global X index given a local index.
+/// Global index includes boundary cells, local index includes boundary or guard cells.
+int BoutMesh::getGlobalXIndex(int xlocal) const { return xlocal + PE_XIND * MXSUB; }
+
+/// Returns a global X index given a local index.
+/// Global index excludes boundary cells, local index includes boundary or guard cells.
+int BoutMesh::getGlobalXIndexNoBoundaries(int xlocal) const {
+  return xlocal + PE_XIND * MXSUB - MXG;
 }
 
 /// Returns a local X index given a global index
 int BoutMesh::XLOCAL(int xglo) const { return xglo - PE_XIND * MXSUB; }
 
 /// Returns the global Y index given a local index
-int BoutMesh::YGLOBAL(int yloc) const { return yloc + PE_YIND * MYSUB - MYG; }
-
-/// Returns the global Y index given a local index
 int BoutMesh::YGLOBAL(BoutReal yloc, BoutReal &yglo) const {
   yglo = yloc + PE_YIND * MYSUB - MYG;
   return static_cast<int>(yglo);
+}
+
+/// Returns a global Y index given a local index.
+/// Global index includes boundary cells, local index includes boundary or guard cells.
+int BoutMesh::getGlobalYIndex(int ylocal) const {
+  int yglobal =  ylocal + PE_YIND * MYSUB;
+  if (jyseps1_2 > jyseps2_1 and PE_YIND*MYSUB + 2*MYG + 1 > ny_inner) {
+    // Double null, and we are past the upper target
+    yglobal += 2*MYG;
+  }
+  return yglobal;
+}
+
+/// Returns a global Y index given a local index.
+/// Global index excludes boundary cells, local index includes boundary or guard cells.
+int BoutMesh::getGlobalYIndexNoBoundaries(int ylocal) const {
+  return ylocal + PE_YIND * MYSUB - MYG;
 }
 
 /// Global Y index given local index and processor
@@ -1519,6 +1556,15 @@ int BoutMesh::YGLOBAL(int yloc, int yproc) const { return yloc + yproc * MYSUB -
 int BoutMesh::YLOCAL(int yglo) const { return yglo - PE_YIND * MYSUB + MYG; }
 
 int BoutMesh::YLOCAL(int yglo, int yproc) const { return yglo - yproc * MYSUB + MYG; }
+
+/// Returns a global Z index given a local index.
+/// Global index includes boundary cells, local index includes boundary or guard cells.
+int BoutMesh::getGlobalZIndex(int zlocal) const { return zlocal; }
+
+/// Returns a global Z index given a local index.
+/// Global index excludes boundary cells, local index includes boundary or guard cells.
+/// Note: at the moment z-direction is always periodic, so has zero boundary cells
+int BoutMesh::getGlobalZIndexNoBoundaries(int zlocal) const { return zlocal; }
 
 /// Return the Y processor number given a global Y index
 int BoutMesh::YPROC(int yind) {
@@ -2171,17 +2217,25 @@ int BoutMesh::unpack_data(const std::vector<FieldData *> &var_list, int xge, int
  ****************************************************************/
 
 bool BoutMesh::periodicY(int jx) const {
-  return (XGLOBAL(jx) < ixseps_inner) && MYPE_IN_CORE;
+  return (getGlobalXIndex(jx) < ixseps_inner) && MYPE_IN_CORE;
 }
 
 bool BoutMesh::periodicY(int jx, BoutReal &ts) const {
   ts = 0.;
-  if ((XGLOBAL(jx) < ixseps_inner) && MYPE_IN_CORE) {
+  if ((getGlobalXIndex(jx) < ixseps_inner) && MYPE_IN_CORE) {
     if (TwistShift)
       ts = ShiftAngle[jx];
     return true;
   }
   return false;
+}
+
+int BoutMesh::numberOfYBoundaries() const {
+  if (jyseps2_1 != jyseps1_2) {
+    return 2;
+  } else {
+    return 1;
+  }
 }
 
 std::pair<bool, BoutReal> BoutMesh::hasBranchCutLower(int jx) const {
@@ -2214,8 +2268,8 @@ std::pair<bool, BoutReal> BoutMesh::hasBranchCutUpper(int jx) const {
 }
 
 int BoutMesh::ySize(int xpos) const {
-  int xglobal = XGLOBAL(xpos);
-  int yglobal = YGLOBAL(MYG);
+  int xglobal = getGlobalXIndex(xpos);
+  int yglobal = getGlobalYIndexNoBoundaries(MYG);
 
   if ((xglobal < ixseps_lower) && ((yglobal <= jyseps1_1) || (yglobal > jyseps2_2))) {
     // Lower PF region
@@ -2253,7 +2307,7 @@ int BoutMesh::ySize(int xpos) const {
 }
 
 MPI_Comm BoutMesh::getYcomm(int xpos) const {
-  int xglobal = XGLOBAL(xpos);
+  int xglobal = getGlobalXIndex(xpos);
 
   if (xglobal < ixseps_inner) {
     return comm_inner;
@@ -2335,10 +2389,11 @@ void BoutMesh::addBoundaryRegions() {
   if (xe > xend)
     xe = xend + 1;
 
-  addRegion3D("RGN_LOWER_Y_THIN", Region<Ind3D>(xs, xe, ystart-1, ystart-1, 0, LocalNz-1,
-						LocalNy, LocalNz, maxregionblocksize));
-  addRegion2D("RGN_LOWER_Y_THIN", Region<Ind2D>(xs, xe, ystart-1, ystart-1, 0, 0,
-						LocalNy, 1, maxregionblocksize));  
+  addRegion3D("RGN_LOWER_Y_THIN",
+              Region<Ind3D>(xs, xe, ystart - 1, ystart - 1, 0, LocalNz - 1, LocalNy,
+                            LocalNz, maxregionblocksize));
+  addRegion2D("RGN_LOWER_Y_THIN", Region<Ind2D>(xs, xe, ystart - 1, ystart - 1, 0, 0,
+                                                LocalNy, 1, maxregionblocksize));
 
   if (xs < xstart)
     xs = xstart;
@@ -2417,10 +2472,11 @@ void BoutMesh::addBoundaryRegions() {
   if (xe > xend)
     xe = xend + 1;
 
-  addRegion3D("RGN_UPPER_Y_THIN", Region<Ind3D>(xs, xe, yend+1, yend+1, 0, LocalNz-1,
-						LocalNy, LocalNz, maxregionblocksize));
-  addRegion2D("RGN_UPPER_Y_THIN", Region<Ind2D>(xs, xe, yend+1, yend+1, 0, 0,
-						LocalNy, 1, maxregionblocksize));
+  addRegion3D("RGN_UPPER_Y_THIN",
+              Region<Ind3D>(xs, xe, yend + 1, yend + 1, 0, LocalNz - 1, LocalNy, LocalNz,
+                            maxregionblocksize));
+  addRegion2D("RGN_UPPER_Y_THIN", Region<Ind2D>(xs, xe, yend + 1, yend + 1, 0, 0, LocalNy,
+                                                1, maxregionblocksize));
 
   if (xs < xstart)
     xs = xstart;
@@ -2435,12 +2491,14 @@ void BoutMesh::addBoundaryRegions() {
   
   // Inner X
   if(firstX() && !periodicX) {
-    addRegion3D("RGN_INNER_X_THIN", Region<Ind3D>(xstart-1, xstart-1, ystart, yend, 0, LocalNz-1,
-                                             LocalNy, LocalNz, maxregionblocksize));
-    addRegion2D("RGN_INNER_X_THIN", Region<Ind2D>(xstart-1, xstart-1, ystart, yend, 0, 0,
-                                             LocalNy, 1, maxregionblocksize));
-    addRegionPerp("RGN_INNER_X_THIN", Region<IndPerp>(xstart-1, xstart-1, 0, 0, 0, LocalNz-1,
-                                             1, LocalNz, maxregionblocksize));
+    addRegion3D("RGN_INNER_X_THIN",
+                Region<Ind3D>(xstart - 1, xstart - 1, ystart, yend, 0, LocalNz - 1,
+                              LocalNy, LocalNz, maxregionblocksize));
+    addRegion2D("RGN_INNER_X_THIN", Region<Ind2D>(xstart - 1, xstart - 1, ystart, yend, 0,
+                                                  0, LocalNy, 1, maxregionblocksize));
+    addRegionPerp("RGN_INNER_X_THIN",
+                  Region<IndPerp>(xstart - 1, xstart - 1, 0, 0, 0, LocalNz - 1, 1,
+                                  LocalNz, maxregionblocksize));
     addRegion3D("RGN_INNER_X", Region<Ind3D>(0, xstart-1, ystart, yend, 0, LocalNz-1,
                                              LocalNy, LocalNz, maxregionblocksize));
     addRegion2D("RGN_INNER_X", Region<Ind2D>(0, xstart-1, ystart, yend, 0, 0,
@@ -2450,12 +2508,12 @@ void BoutMesh::addBoundaryRegions() {
     output_info.write("\tBoundary region inner X\n");
   } else {
     // Empty region
-    addRegion3D("RGN_INNER_X_THIN", Region<Ind3D>(0, -1, 0, 0, 0, 0,
-                                             LocalNy, LocalNz, maxregionblocksize));
-    addRegion2D("RGN_INNER_X_THIN", Region<Ind2D>(0, -1, 0, 0, 0, 0,
-                                             LocalNy, 1, maxregionblocksize));
-    addRegionPerp("RGN_INNER_X_THIN", Region<IndPerp>(0, -1, 0, 0, 0, 0,
-                                             1, LocalNz, maxregionblocksize));
+    addRegion3D("RGN_INNER_X_THIN",
+                Region<Ind3D>(0, -1, 0, 0, 0, 0, LocalNy, LocalNz, maxregionblocksize));
+    addRegion2D("RGN_INNER_X_THIN",
+                Region<Ind2D>(0, -1, 0, 0, 0, 0, LocalNy, 1, maxregionblocksize));
+    addRegionPerp("RGN_INNER_X_THIN",
+                  Region<IndPerp>(0, -1, 0, 0, 0, 0, 1, LocalNz, maxregionblocksize));
     addRegion3D("RGN_INNER_X", Region<Ind3D>(0, -1, 0, 0, 0, 0,
                                              LocalNy, LocalNz, maxregionblocksize));
     addRegion2D("RGN_INNER_X", Region<Ind2D>(0, -1, 0, 0, 0, 0,
@@ -2464,12 +2522,14 @@ void BoutMesh::addBoundaryRegions() {
 
   // Outer X
   if(lastX() && !periodicX) {
-    addRegion3D("RGN_OUTER_X_THIN", Region<Ind3D>(xend+1, xend+1, ystart, yend, 0, LocalNz-1,
-                                             LocalNy, LocalNz, maxregionblocksize));
-    addRegion2D("RGN_OUTER_X_THIN", Region<Ind2D>(xend+1, xend+1, ystart, yend, 0, 0,
-                                             LocalNy, 1, maxregionblocksize));
-    addRegionPerp("RGN_OUTER_X_THIN", Region<IndPerp>(xend+1, xend+1, 0, 0, 0, LocalNz-1,
-                                             1, LocalNz, maxregionblocksize));
+    addRegion3D("RGN_OUTER_X_THIN",
+                Region<Ind3D>(xend + 1, xend + 1, ystart, yend, 0, LocalNz - 1, LocalNy,
+                              LocalNz, maxregionblocksize));
+    addRegion2D("RGN_OUTER_X_THIN", Region<Ind2D>(xend + 1, xend + 1, ystart, yend, 0, 0,
+                                                  LocalNy, 1, maxregionblocksize));
+    addRegionPerp("RGN_OUTER_X_THIN",
+                  Region<IndPerp>(xend + 1, xend + 1, 0, 0, 0, LocalNz - 1, 1, LocalNz,
+                                  maxregionblocksize));
     addRegion3D("RGN_OUTER_X", Region<Ind3D>(xend+1, LocalNx-1, ystart, yend, 0, LocalNz-1,
                                              LocalNy, LocalNz, maxregionblocksize));
     addRegion2D("RGN_OUTER_X", Region<Ind2D>(xend+1, LocalNx-1, ystart, yend, 0, 0,
@@ -2479,12 +2539,12 @@ void BoutMesh::addBoundaryRegions() {
     output_info.write("\tBoundary region outer X\n");
   } else {
     // Empty region
-    addRegion3D("RGN_OUTER_X_THIN", Region<Ind3D>(0, -1, 0, 0, 0, 0,
-                                             LocalNy, LocalNz, maxregionblocksize));
-    addRegion2D("RGN_OUTER_X_THIN", Region<Ind2D>(0, -1, 0, 0, 0, 0,
-                                             LocalNy, 1, maxregionblocksize));
-    addRegionPerp("RGN_OUTER_X_THIN", Region<IndPerp>(0, -1, 0, 0, 0, 0,
-                                             1, LocalNz, maxregionblocksize));
+    addRegion3D("RGN_OUTER_X_THIN",
+                Region<Ind3D>(0, -1, 0, 0, 0, 0, LocalNy, LocalNz, maxregionblocksize));
+    addRegion2D("RGN_OUTER_X_THIN",
+                Region<Ind2D>(0, -1, 0, 0, 0, 0, LocalNy, 1, maxregionblocksize));
+    addRegionPerp("RGN_OUTER_X_THIN",
+                  Region<IndPerp>(0, -1, 0, 0, 0, 0, 1, LocalNz, maxregionblocksize));
     addRegion3D("RGN_OUTER_X", Region<Ind3D>(0, -1, 0, 0, 0, 0,
                                              LocalNy, LocalNz, maxregionblocksize));
     addRegion2D("RGN_OUTER_X", Region<Ind2D>(0, -1, 0, 0, 0, 0,
@@ -2678,9 +2738,9 @@ const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {
 BoutReal BoutMesh::GlobalX(int jx) const {
   if (symmetricGlobalX) {
     // With this definition the boundary sits dx/2 away form the first/last inner points
-    return (0.5 + XGLOBAL(jx) - (nx - MX) * 0.5) / static_cast<BoutReal>(MX);
+    return (0.5 + getGlobalXIndex(jx) - (nx - MX) * 0.5) / static_cast<BoutReal>(MX);
   }
-  return static_cast<BoutReal>(XGLOBAL(jx)) / static_cast<BoutReal>(MX);
+  return static_cast<BoutReal>(getGlobalXIndex(jx)) / static_cast<BoutReal>(MX);
 }
 
 BoutReal BoutMesh::GlobalX(BoutReal jx) const {
@@ -2698,7 +2758,7 @@ BoutReal BoutMesh::GlobalX(BoutReal jx) const {
 
 BoutReal BoutMesh::GlobalY(int jy) const {
   if (symmetricGlobalY) {
-    BoutReal yi = YGLOBAL(jy);
+    BoutReal yi = getGlobalYIndexNoBoundaries(jy);
     int nycore = (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2);
 
     if (yi < ny_inner) {
@@ -2710,7 +2770,7 @@ BoutReal BoutMesh::GlobalY(int jy) const {
     return yi / nycore;
   }
 
-  int ly = YGLOBAL(jy); // global poloidal index across subdomains
+  int ly = getGlobalYIndexNoBoundaries(jy); // global poloidal index across subdomains
   int nycore = (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2);
 
   if (MYPE_IN_CORE) {
@@ -2786,6 +2846,9 @@ void BoutMesh::outputVars(Datafile &file) {
   file.add(MXSUB, "MXSUB", false);
   file.add(MYSUB, "MYSUB", false);
   file.add(MZSUB, "MZSUB", false);
+  file.add(PE_XIND, "PE_XIND", false);
+  file.add(PE_YIND, "PE_YIND", false);
+  file.add(MYPE, "MYPE", false);
   file.add(MXG, "MXG", false);
   file.add(MYG, "MYG", false);
   file.add(MZG, "MZG", false);

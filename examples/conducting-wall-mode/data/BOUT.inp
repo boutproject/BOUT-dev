@@ -111,3 +111,9 @@ scale = -1.0e-8
 function = sin(y) * sin(z)
 
 [te]
+
+[phi]
+bndry_xin = none
+bndry_xout = none
+bndry_ydown = free_o3
+bndry_yup = free_o3

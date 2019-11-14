@@ -66,7 +66,7 @@ TYPED_TEST(PetscVectorTest, FieldConstructor) {
     this->field[i] = static_cast<BoutReal>(i.ind);
   }
   PetscVector<TypeParam> vector(this->field);
-  Vec* vectorPtr = vector.getVectorPointer();
+  Vec* vectorPtr = vector.get();
   PetscScalar* vecContents;
   PetscInt n;
   VecGetArray(*vectorPtr, &vecContents);
@@ -81,7 +81,7 @@ TYPED_TEST(PetscVectorTest, CopyConstructor) {
   SCOPED_TRACE("CopyConstructor");
   PetscVector<TypeParam> vector(this->field);
   PetscVector<TypeParam> copy(vector);
-  Vec *vectorPtr = vector.getVectorPointer(), *copyPtr = copy.getVectorPointer();
+  Vec *vectorPtr = vector.get(), *copyPtr = copy.get();
   EXPECT_NE(vectorPtr, copyPtr);
   testVectorsEqual(vectorPtr, copyPtr);
 }
@@ -89,10 +89,10 @@ TYPED_TEST(PetscVectorTest, CopyConstructor) {
 // Test move constructor
 TYPED_TEST(PetscVectorTest, MoveConstructor) {
   PetscVector<TypeParam> vector(this->field);
-  Vec vectorPtr = *vector.getVectorPointer();
+  Vec vectorPtr = *vector.get();
   EXPECT_NE(vectorPtr, nullptr);
   PetscVector<TypeParam> moved(std::move(vector));
-  Vec movedPtr = *moved.getVectorPointer();
+  Vec movedPtr = *moved.get();
   EXPECT_EQ(vectorPtr, movedPtr);
 }
 
@@ -102,7 +102,7 @@ TYPED_TEST(PetscVectorTest, FieldAssignment) {
   PetscVector<TypeParam> vector(this->field);
   const TypeParam val(-10.);
   vector = val;
-  Vec* vectorPtr = vector.getVectorPointer();
+  Vec* vectorPtr = vector.get();
   PetscScalar* vecContents;
   PetscInt n;
   VecGetArray(*vectorPtr, &vecContents);
@@ -117,7 +117,7 @@ TYPED_TEST(PetscVectorTest, CopyAssignment) {
   SCOPED_TRACE("CopyAssignment");
   PetscVector<TypeParam> vector(this->field);
   PetscVector<TypeParam> copy = vector;
-  Vec *vectorPtr = vector.getVectorPointer(), *copyPtr = copy.getVectorPointer();
+  Vec *vectorPtr = vector.get(), *copyPtr = copy.get();
   EXPECT_NE(vectorPtr, copyPtr);
   testVectorsEqual(vectorPtr, copyPtr);
 }
@@ -125,10 +125,10 @@ TYPED_TEST(PetscVectorTest, CopyAssignment) {
 // Test move assignment
 TYPED_TEST(PetscVectorTest, MoveAssignment) {
   PetscVector<TypeParam> vector(this->field);
-  Vec vectorPtr = *vector.getVectorPointer();
+  Vec vectorPtr = *vector.get();
   EXPECT_NE(vectorPtr, nullptr);
   PetscVector<TypeParam> moved = std::move(vector);
-  Vec movedPtr = *moved.getVectorPointer();
+  Vec movedPtr = *moved.get();
   EXPECT_EQ(vectorPtr, movedPtr);
 }
 
@@ -138,7 +138,7 @@ TYPED_TEST(PetscVectorTest, TestGetElements) {
   BOUT_FOR(i, this->field.getRegion("RGN_NOBNDRY")) {
     vector(i) = (2.5 * this->field[i] - 1.0);
   }
-  Vec* rawvec = vector.getVectorPointer();
+  Vec* rawvec = vector.get();
   PetscScalar* vecContents;
   VecAssemblyBegin(*rawvec);
   VecAssemblyEnd(*rawvec);
@@ -152,7 +152,7 @@ TYPED_TEST(PetscVectorTest, TestGetElements) {
 // Test assemble
 TYPED_TEST(PetscVectorTest, TestAssemble) {
   PetscVector<TypeParam> vector(this->field);
-  Vec* rawvec = vector.getVectorPointer();
+  Vec* rawvec = vector.get();
   const PetscInt i = 4;
   const PetscScalar r = 3.141592;
   VecSetValues(*rawvec, 1, &i, &r, INSERT_VALUES);
@@ -198,7 +198,7 @@ TYPED_TEST(PetscVectorTest, TestMixedSetting) {
 // Test destroy
 TYPED_TEST(PetscVectorTest, TestDestroy) {
   PetscVector<TypeParam> vector(this->field);
-  Vec oldVec = *vector.getVectorPointer();
+  Vec oldVec = *vector.get();
   Vec newVec;
   PetscErrorCode err;
   vector.destroy();
@@ -212,11 +212,11 @@ TYPED_TEST(PetscVectorTest, TestDestroy) {
 // Test swap
 TYPED_TEST(PetscVectorTest, TestSwap) {
   PetscVector<TypeParam> lhs(this->field), rhs(this->field);
-  Vec l0 = *lhs.getVectorPointer(), r0 = *rhs.getVectorPointer();
+  Vec l0 = *lhs.get(), r0 = *rhs.get();
   EXPECT_NE(l0, nullptr);
   EXPECT_NE(r0, nullptr);
   swap(lhs, rhs);
-  Vec l1 = *lhs.getVectorPointer(), r1 = *rhs.getVectorPointer();
+  Vec l1 = *lhs.get(), r1 = *rhs.get();
   EXPECT_NE(l0, l1);
   EXPECT_NE(r0, r1);
   EXPECT_EQ(l0, r1);

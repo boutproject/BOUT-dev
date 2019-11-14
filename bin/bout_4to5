@@ -1,0 +1,217 @@
+#!/bin/bash
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+VERBOSE=1
+FORCE=0
+
+usage() {
+    echo "$0 options are: "
+    #Just pull out special comments from this file
+    grep "\#\#\#" $0
+    exit 1
+}
+
+while getopts "fvqd" arg;
+do
+    case $arg in
+	f) ### Force mode - run without asking
+	    FORCE=1
+	    ;;
+        v) ### Enable verbose mode
+            VERBOSE=1
+            ;;
+        q) ### Enable quite mode
+            VERBOSE=0
+            ;;
+        d) ### Debug mode - print everything before doing it
+            set -v
+            ;;
+        *) ### Show usage
+            usage
+	    ;;
+    esac
+done
+
+# remove the processed options from the input arguments
+shift $((OPTIND-1))
+
+function maybe_proceed() {
+    echo $1
+    if test $FORCE -gt 0
+    then
+        verbose "Runing in force mode - continuing"
+    else
+           echo "Are you sure you want to continue? [y/N]"
+           continue=y
+           read continue
+           continue=$(echo $continue |tr :lower: :upper:)
+           if test ".$continue" == .y || test ".$continue" == .yes
+           then
+               echo "Continuing at your risk ..."
+           else
+               echo "Maybe soon :)"
+               exit 0
+           fi
+    fi
+}
+
+GREP=$(which grep)
+# Wrapper for grep to detect errors
+function grep () {
+    ex=0
+    $GREP "$@" || ex=$?
+    if test $ex -eq 2
+    then
+        echo "grep failed for $@" > /dev/stderr
+        exit 2
+    fi
+}
+
+# Set to false to be quiet
+function verbose() {
+    if test $VERBOSE -gt 0
+    then
+        echo $@
+    fi
+}
+
+# If there is any error - we don't want to continue
+set -e
+
+version=
+
+test -f $DIR/bout-config && version=$($DIR/bout-config --version )
+if test -z $version
+then
+    maybe_proceed "The BOUT++ version could not be detected.
+This script is intend to update to BOUT++ 5"
+else
+    major=$(echo $version|cut -d. -f1)
+    if test $major -lt 5
+    then
+        maybe_proceed "The BOUT++ version appears to be $version.
+This script is intend to update to BOUT++ 5"
+    fi
+fi
+
+if ! git diff --exit-code &>/dev/null
+then
+    maybe_proceed "Git shows that you have uncommited changes."
+else
+    echo git is clean
+fi
+
+if test $# -eq 0
+then
+    for dir in src tools examples tests include
+    do
+        work="$work $DIR/../$dir"
+    done
+    WORK=default
+else
+    work=$@
+    WORK=other
+fi
+echo $work
+
+# Set to false if you don't want to run the script:
+true &&
+    printordo=   || printordo=echo
+
+
+verbose "  Renaming LocalNx  -> local_nx"
+verbose "  Renaming GlobalNx -> global_nx"
+verbose "  Renaming OffsetNx -> offset_nx"
+for dir in $work
+do
+    allmatches=$(grep -EHr 'LocalN|GlobalN|OffsetN' $dir )
+    for d in x y z
+    do
+        for f in $(echo $allmatches|grep 'N$d'|cut -d: -f1|sort -u)
+        do
+            $printordo sed "s/LocalN$d/local_n$d/g"   $f -i
+            $printordo sed "s/GlobalN$d/global_n$d/g" $f -i
+            $printordo sed "s/OffsetN$d/offset_n$d/g" $f -i
+        done
+    done
+done
+
+headerfilelist="$(cat ${0}_header_file_list)"
+
+include=$DIR/../include/
+function gen_compat() {
+    for f in $headerfilelist
+    do
+        mv $f bout -i
+        echo "#pragma once
+#warning <$f> has moved to <bout/$f> - this can be fixed with bin/bout_fix_headerlocation.sh
+#include \"bout/$f\"" > $f
+    done
+}
+
+if test $(cat $include/boundary_factory.hxx|wc -l) -gt 20
+then
+    verbose "  Creating compat headerfiles"
+    (cd $include ; $printordo gen_compat)
+else
+    verbose "  Compat headerfiles seem to be available"
+fi
+
+verbose "  Update files to look for headers in bout/ subfolder"
+for dir in $work
+do
+    includes=$(grep "#include" $dir -Hr )
+    for f in  $headerfilelist
+    do
+        matched=$(echo "$includes"|grep [^/]$f )
+        todo=$(echo "$matched"|cut -d: -f1 )
+        for doit in $todo
+        do
+            $printordo sed -i "s/\([<\"]\)$f/\1bout\/$f/" $doit
+        done
+    done
+done
+if test $WORK == default
+then
+    for f in $DIR/../include/bout/*
+    do
+        if test -f $f
+        then
+            $printordo sed -i "s|\.\./||" $f
+        fi
+    done
+
+    pydir=$DIR/../tools/pylib/_boutcore_build
+    for f in $pydir/*in
+    do
+	matched=$(grep '[/_a-z$A-Z0-9]*.hxx' -o $f|sort -u)
+	for h in $matched
+	do
+	    test -f $pydir/$h && continue
+	    #test  b=${h::5} = bout/ && continue
+	    test $h = bout.hxx && continue
+	    echo "$h" | $GREP -q '/' && continue
+	    sed -i "s|$h|bout/$h|" $f
+	done
+    done
+fi
+
+
+# # clang-format everything - disabled due to issue https://github.com/boutproject/BOUT-dev/issues/1017
+# if test $# -eq 0
+# then
+#     for dir in $work
+#     do
+#         files=$(find $dir|grep xx\$ )
+#         if test "$files"
+#         then
+#             verbose "  Running clang-format on all files in $dir"
+#             clang-format -i $files
+#         fi
+#     done
+# fi
+
+
+#Further changes:
+
+#${d}end should be changed to ${d}end+1

@@ -65,7 +65,7 @@ public:
   void initialiseTest();
   /// Finish setting up the indexer, communicating indices across processes.
   void initialise();
-  Mesh* getMesh();
+  Mesh* getMesh() { return fieldmesh; }
 
   /// Convert the local index object to a global index which can be
   /// used in PETSc vectors and matrices.
@@ -76,10 +76,12 @@ public:
   // Mark the globalIndexer instance to be recreated next time it is
   // requested (useful for unit tests)
   static void recreateGlobalInstance();
-  
+
 protected:
   GlobalIndexer(Mesh* localmesh);
-  Mesh* fieldmesh;
+  Field3D& getIndices3D() { return indices3D; }
+  Field2D& getIndices2D() { return indices2D; }
+  FieldPerp& getIndicesPerp() { return indicesPerp; }
 
 private:
   /// This gets called by initialiseTest and is used to register
@@ -88,6 +90,7 @@ private:
   virtual void registerFieldForTest(FieldPerp& f);
 
   PetscLib lib;
+  Mesh* fieldmesh;
 
   /// Fields containing the indices for each element (as reals)
   Field3D indices3D;
@@ -158,20 +161,25 @@ public:
       } else {
         throw BoutException("PetscVector initialised for non-field type.");
       }
-    };
-    VecCreateMPI(comm, size(), PETSC_DECIDE, vector.get());
+    }();
+    VecCreateMPI(comm, size, PETSC_DECIDE, vector.get());
     location = f.getLocation();
     initialised = true;
     BOUT_FOR_SERIAL(i, f.getRegion("RGN_ALL_THIN")) {
-      PetscInt ind = indexConverter->getGlobal(i);
-      VecSetValues(*vector, 1, &ind, &f[i], INSERT_VALUES);
+      const PetscInt ind = indexConverter->getGlobal(i);
+      if (ind != -1) {
+        // TODO: consider how VecSetValues() could be used where there
+        // are continuous stretches of field data which should be
+        // copied into the vector.
+        VecSetValue(*vector, ind, f[i], INSERT_VALUES);
+      }
     }
     assemble();
   }
 
   /// Construct a vector like v, but using data from a raw PETSc
   /// Vec. That Vec (not a copy) will then be owned by the new object.
-  PetscVector(const PetscVector<T> v, Vec* vec) {
+  PetscVector(const PetscVector<T>& v, Vec* vec) {
 #if CHECKLEVEL >= 2
     int fsize, msize;
     if (std::is_same<T, FieldPerp>::value) {
@@ -228,22 +236,22 @@ public:
         value = 0.;
       }
     }
-    Element operator=(Element& other) { return *this = static_cast<BoutReal>(other); }
-    Element operator=(BoutReal val) {
+    Element& operator=(Element& other) { return *this = static_cast<BoutReal>(other); }
+    Element& operator=(BoutReal val) {
       value = val;
       int status;
       BOUT_OMP(critical)
-      status = VecSetValues(*petscVector, 1, &petscIndex, &val, INSERT_VALUES);
+      status = VecSetValue(*petscVector, petscIndex, val, INSERT_VALUES);
       if (status != 0) {
         throw BoutException("Error when setting elements of a PETSc vector.");
       }
       return *this;
     }
-    Element operator+=(BoutReal val) {
+    Element& operator+=(BoutReal val) {
       value += val;
       int status;
       BOUT_OMP(critical)
-      status = VecSetValues(*petscVector, 1, &petscIndex, &val, ADD_VALUES);
+      status = VecSetValue(*petscVector, petscIndex, val, ADD_VALUES);
       if (status != 0) {
         throw BoutException("Error when setting elements of a PETSc vector.");
       }
@@ -286,7 +294,7 @@ public:
   }
 
   /// Returns a field constructed from the contents of this vector
-  T toField() {
+  const T toField() {
     T result(indexConverter->getMesh());
     result.allocate();
     result.setLocation(location);
@@ -301,7 +309,8 @@ public:
   }
 
   /// Provides a reference to the raw PETSc Vec object.
-  Vec* getVectorPointer() { return vector.get(); }
+  Vec* get() { return vector.get(); }
+  const Vec* get() const { return vector.get(); }
 
 private:
   std::unique_ptr<Vec, VectorDeleter> vector = nullptr;
@@ -340,7 +349,6 @@ public:
   /// Copy constructor
   PetscMatrix(const PetscMatrix<T>& m) : matrix(new Mat(), MatrixDeleter()), pt(m.pt) {
     MatDuplicate(*m.matrix, MAT_COPY_VALUES, matrix.get());
-    // MatCopy(*m.matrix, *matrix);
     indexConverter = m.indexConverter;
     yoffset = m.yoffset;
     initialised = m.initialised;
@@ -371,9 +379,9 @@ public:
       } else {
         throw BoutException("PetscVector initialised for non-field type.");
       }
-    };
+    }();
     MatCreate(comm, matrix.get());
-    MatSetSizes(*matrix, size(), size(), PETSC_DECIDE, PETSC_DECIDE);
+    MatSetSizes(*matrix, size, size, PETSC_DECIDE, PETSC_DECIDE);
     MatSetType(*matrix, MATMPIAIJ);
     MatSetUp(*matrix);
     yoffset = 0;
@@ -393,6 +401,7 @@ public:
     yoffset = rhs.yoffset;
     initialised = rhs.initialised;
     rhs.initialised = false;
+    return *this;
   }
   friend void swap<T>(PetscMatrix<T>& first, PetscMatrix<T>& second);
 
@@ -423,19 +432,19 @@ public:
       PetscBool assembled;
       MatAssembled(*petscMatrix, &assembled);
       if (assembled == PETSC_TRUE) {
-	BOUT_OMP(critical)
-	MatGetValues(*petscMatrix, 1, &petscRow, 1, &petscCol, &value);
+        BOUT_OMP(critical)
+        MatGetValues(*petscMatrix, 1, &petscRow, 1, &petscCol, &value);
       } else {
-	value = 0.;
+        value = 0.;
       }
     }
-    Element operator=(Element& other) { return *this = static_cast<BoutReal>(other); }
-    Element operator=(BoutReal val) {
+    Element& operator=(Element& other) { return *this = static_cast<BoutReal>(other); }
+    Element& operator=(BoutReal val) {
       value = val;
       setValues(val, INSERT_VALUES);
       return *this;
     }
-    Element operator+=(BoutReal val) {
+    Element& operator+=(BoutReal val) {
       auto columnPosition = std::find(positions.begin(), positions.end(), petscCol);
       if (columnPosition != positions.end()) {
         int i = std::distance(positions.begin(), columnPosition);
@@ -494,11 +503,11 @@ public:
         }
       }();
 
-      const int ny = std::is_same<T, FieldPerp>::value
-                         ? 1
-                         : indexConverter->getMesh()->LocalNy,
-                nz = std::is_same<T, Field2D>::value ? 1
-                                                     : indexConverter->getMesh()->LocalNz;
+      const int ny =
+          std::is_same<T, FieldPerp>::value ? 1 : indexConverter->getMesh()->LocalNy;
+      const int nz =
+          std::is_same<T, Field2D>::value ? 1 : indexConverter->getMesh()->LocalNz;
+
       std::transform(
           pw.begin(), pw.end(), std::back_inserter(positions),
           [this, &ny, &nz](ParallelTransform::PositionsAndWeights p) -> PetscInt {
@@ -539,20 +548,20 @@ public:
   PetscMatrix<T> ynext(int dir) {
     if (std::is_same<T, FieldPerp>::value && yoffset + dir != 0) {
       throw BoutException("Can not get ynext for FieldPerp");
-    } else {
-      PetscMatrix<T> result; // Can't use copy constructor because don't
-                             // want to duplicate the matrix
-      result.matrix = matrix;
-      result.indexConverter = indexConverter;
-      result.pt = pt;
-      result.yoffset = std::is_same<T, Field2D>::value ? 0 : yoffset + dir;
-      result.initialised = initialised;
-      return result;
     }
+    PetscMatrix<T> result; // Can't use copy constructor because don't
+                           // want to duplicate the matrix
+    result.matrix = matrix;
+    result.indexConverter = indexConverter;
+    result.pt = pt;
+    result.yoffset = std::is_same<T, Field2D>::value ? 0 : yoffset + dir;
+    result.initialised = initialised;
+    return result;
   }
 
   /// Provides a reference to the raw PETSc Mat object.
-  Mat* getMatrixPointer() { return matrix.get(); }
+  Mat* get() { return matrix.get(); }
+  const Mat* get() const { return matrix.get(); }
 
 private:
   std::shared_ptr<Mat> matrix = nullptr;
@@ -592,13 +601,13 @@ void swap(PetscMatrix<T>& first, PetscMatrix<T>& second) {
  *  Performs matrix-multiplication on the supplied vector
  */
 template <class T>
-PetscVector<T> operator*(PetscMatrix<T>& mat, PetscVector<T>& vec) {
-  const Vec rhs = *vec.getVectorPointer();
+PetscVector<T> operator*(const PetscMatrix<T>& mat, const PetscVector<T>& vec) {
+  const Vec rhs = *vec.get();
   Vec* result = new Vec();
   VecDuplicate(rhs, result);
   VecAssemblyBegin(*result);
   VecAssemblyEnd(*result);
-  const int err = MatMult(*mat.getMatrixPointer(), rhs, *result);
+  const int err = MatMult(*mat.get(), rhs, *result);
   ASSERT2(err == 0);
   return PetscVector<T>(vec, result);
 }

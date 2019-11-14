@@ -2,6 +2,7 @@
 #define __BOUT_SCOREP_H__
 
 #include <bout_types.hxx>
+#include "msg_stack.hxx"
 
 #ifdef BOUT_HAS_SCOREP
 #include <scorep/SCOREP_User.h>

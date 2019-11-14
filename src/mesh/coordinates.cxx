@@ -83,7 +83,10 @@ Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
 
         // set boundary guard cells
         if ((bndry->bx != 0 && localmesh->GlobalNx - 2 * bndry->width >= 3)
-            || (bndry->by != 0 && localmesh->GlobalNy - 2 * bndry->width >= 3)) {
+            || (bndry->by != 0
+                && localmesh->GlobalNy - localmesh->numberOfYBoundaries() * bndry->width
+                   >= 3))
+        {
           if (bndry->bx != 0 && localmesh->LocalNx == 1 && bndry->width == 1) {
             throw BoutException(
                 "Not enough points in the x-direction on this "
@@ -437,18 +440,14 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
             "cells\n"));
     }
 
-    checkStaggeredGet(mesh, "dx", suffix);
-    mesh->get(dx, "dx"+suffix, 1.0);
-    dx.setLocation(location);
+    getAtLoc(mesh, dx, "dx", suffix, location, 1.0);
     dx = interpolateAndExtrapolate(dx, location, extrapolate_x, extrapolate_y);
 
     if (mesh->periodicX) {
       mesh->communicate(dx);
     }
 
-    checkStaggeredGet(mesh, "dy", suffix);
-    mesh->get(dy, "dy"+suffix, 1.0);
-    dy.setLocation(location);
+    getAtLoc(mesh, dy, "dy", suffix, location, 1.0);
     dy = interpolateAndExtrapolate(dy, location, extrapolate_x, extrapolate_y);
 
     // grid data source has staggered fields, so read instead of interpolating
@@ -634,6 +633,11 @@ void Coordinates::outputVars(Datafile& file) {
   file.addOnce(g_23, "g_23" + loc_string);
 
   file.addOnce(J, "J" + loc_string);
+  file.addOnce(Bxy, "Bxy" + loc_string);
+
+  file.addOnce(G1, "G1" + loc_string);
+  file.addOnce(G2, "G2" + loc_string);
+  file.addOnce(G3, "G3" + loc_string);
 
   getParallelTransform().outputVars(file);
 }
@@ -821,7 +825,7 @@ int Coordinates::geometry(bool recalculate_staggered,
   Field2D d2x(localmesh), d2y(localmesh); // d^2 x / d i^2
   // Read correction for non-uniform meshes
   std::string suffix = getLocationSuffix(location);
-  if (CELL_CENTRE or (!force_interpolate_from_centre
+  if (location == CELL_CENTRE or (!force_interpolate_from_centre
                       and localmesh->sourceHasVar("dx"+suffix))) {
     bool extrapolate_x = not localmesh->sourceHasXBoundaryGuards();
     bool extrapolate_y = not localmesh->sourceHasYBoundaryGuards();
@@ -834,6 +838,7 @@ int Coordinates::geometry(bool recalculate_staggered,
       localmesh->communicate(d1_dx);
       d1_dx = interpolateAndExtrapolate(d1_dx, location, true, true, true);
     } else {
+      d2x.setLocation(location);
       // set boundary cells if necessary
       d2x = interpolateAndExtrapolate(d2x, location, extrapolate_x, extrapolate_y);
 
@@ -848,7 +853,8 @@ int Coordinates::geometry(bool recalculate_staggered,
       localmesh->communicate(d1_dy);
       d1_dy = interpolateAndExtrapolate(d1_dy, location, true, true, true);
     } else {
-      // Shift d2y to our location
+      d2y.setLocation(location);
+      // set boundary cells if necessary
       d2y = interpolateAndExtrapolate(d2y, location, extrapolate_x, extrapolate_y);
 
       d1_dy = -d2y / (dy * dy);
@@ -1103,6 +1109,7 @@ void Coordinates::setParallelTransform(Options* options) {
           throw BoutException("Could not read zShift"+suffix+" from grid file");
         }
       }
+      zShift.setLocation(location);
     } else {
       Field2D zShift_centre;
       if (localmesh->get(zShift_centre, "zShift")) {
@@ -1444,8 +1451,6 @@ Field2D Coordinates::Laplace(const Field2D& f, CELL_LOC outloc,
                    + g22 * D2DY2(f, outloc)
                    + 2.0 * g12 * D2DXDY(f, outloc, dfdy_boundary_conditions, dfdy_dy_region);
 
-  ASSERT2(result.getLocation() == outloc);
-
   return result;
 }
 
@@ -1461,8 +1466,6 @@ Field3D Coordinates::Laplace(const Field3D& f, CELL_LOC outloc,
 					 dfdy_boundary_conditions,
 					 dfdy_dy_region)
 			    + g13 * D2DXDZ(f, outloc) + g23 * D2DYDZ(f, outloc));
-
-  ASSERT2(result.getLocation() == f.getLocation());
 
   return result;
 }

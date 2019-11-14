@@ -262,13 +262,11 @@ std::vector<FakeParallelMesh> createFakeProcessors(int nx, int ny, int nz, int n
       }
       if (j == 0) {
         meshes.at(j + i * nype).local3D += (nx - 2) * nz;
-        // meshes.at(j + i*nype).local2D += (nx - 2);
       } else {
         meshes.at(j + i * nype).yDownMesh = &meshes.at(j - 1 + i * nype);
       }
       if (j == nype - 1) {
         meshes.at(j + i * nype).local3D += (nx - 2) * nz;
-        //        meshes.at(j + i*nype).local2D += (nx - 2);
       } else {
         meshes.at(j + i * nype).yUpMesh = &meshes.at(j + 1 + i * nype);
       }

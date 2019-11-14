@@ -40,6 +40,14 @@ public:
   LaplaceNaulin(Options *opt = NULL, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr);
   ~LaplaceNaulin();
   
+  using Laplacian::setCoefA;
+  using Laplacian::setCoefC;
+  using Laplacian::setCoefC1;
+  using Laplacian::setCoefC2;
+  using Laplacian::setCoefD;
+  using Laplacian::setCoefEx;
+  using Laplacian::setCoefEz;
+
   // ACoef is not implemented because the delp2solver that we use can probably
   // only handle a Field2D for Acoef, but we would have to pass Acoef/Dcoef,
   // where we allow Dcoef to be a Field3D
@@ -103,6 +111,8 @@ public:
   }
 
   bool uses3DCoefs() const override { return true; }
+
+  using Laplacian::solve;
 
   FieldPerp solve(const FieldPerp &b) override {return solve(b,b);}
   FieldPerp solve(const FieldPerp &UNUSED(b),

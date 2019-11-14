@@ -59,12 +59,6 @@ IndexerPtr GlobalIndexer::getInstance(Mesh* localmesh) {
   }
 }
 
-void GlobalIndexer::initialiseTest() {
-  registerFieldForTest(indices3D);
-  registerFieldForTest(indices2D);
-  registerFieldForTest(indicesPerp);
-}
-
 void GlobalIndexer::initialise() {
   fieldmesh->communicate(indices3D, indices2D);
   fieldmesh->communicate(indicesPerp);
@@ -72,8 +66,6 @@ void GlobalIndexer::initialise() {
   fieldmesh->communicate(indices3D, indices2D);
   fieldmesh->communicate(indicesPerp);
 }
-
-Mesh* GlobalIndexer::getMesh() { return fieldmesh; }
 
 PetscInt GlobalIndexer::getGlobal(const Ind2D ind) {
   return static_cast<PetscInt>(indices2D[ind] + 0.5);
@@ -100,44 +92,40 @@ void GlobalIndexer::registerFieldForTest(FieldPerp& UNUSED(f)) {
 }
 
 GlobalIndexer::GlobalIndexer(Mesh* localmesh)
-    : fieldmesh(localmesh), indices3D(-2., localmesh), indices2D(-2., localmesh),
-      indicesPerp(-2., localmesh) {
+    : fieldmesh(localmesh), indices3D(-1., localmesh), indices2D(-1., localmesh),
+      indicesPerp(-1., localmesh) {
   // Set up the 3D indices
   if (!localmesh->hasRegion3D("RGN_ALL_THIN")) {
     Region<Ind3D> bndry3d = localmesh->getRegion3D("RGN_LOWER_Y_THIN")
-      + localmesh->getRegion3D("RGN_UPPER_Y_THIN")
-      + localmesh->getRegion3D("RGN_INNER_X_THIN")
-      + localmesh->getRegion3D("RGN_NOBNDRY")
-      + localmesh->getRegion3D("RGN_OUTER_X_THIN");
+                            + localmesh->getRegion3D("RGN_UPPER_Y_THIN")
+                            + localmesh->getRegion3D("RGN_INNER_X_THIN")
+                            + localmesh->getRegion3D("RGN_NOBNDRY")
+                            + localmesh->getRegion3D("RGN_OUTER_X_THIN");
     bndry3d.unique();
     localmesh->addRegion3D("RGN_ALL_THIN", bndry3d);
   }
   int counter = localmesh->globalStartIndex3D();
-  BOUT_FOR_SERIAL(i, localmesh->getRegion3D("RGN_ALL_THIN")) {
-    indices3D[i] = counter++;
-  }
+  BOUT_FOR_SERIAL(i, localmesh->getRegion3D("RGN_ALL_THIN")) { indices3D[i] = counter++; }
 
   // Set up the 2D indices
   if (!localmesh->hasRegion2D("RGN_ALL_THIN")) {
     Region<Ind2D> bndry2d = localmesh->getRegion2D("RGN_LOWER_Y_THIN")
-      + localmesh->getRegion2D("RGN_UPPER_Y_THIN")
-      + localmesh->getRegion2D("RGN_INNER_X_THIN")
-      + localmesh->getRegion2D("RGN_NOBNDRY")
-      + localmesh->getRegion2D("RGN_OUTER_X_THIN");
+                            + localmesh->getRegion2D("RGN_UPPER_Y_THIN")
+                            + localmesh->getRegion2D("RGN_INNER_X_THIN")
+                            + localmesh->getRegion2D("RGN_NOBNDRY")
+                            + localmesh->getRegion2D("RGN_OUTER_X_THIN");
     bndry2d.unique();
     localmesh->addRegion2D("RGN_ALL_THIN", bndry2d);
   }
   counter = localmesh->globalStartIndex2D();
-  BOUT_FOR_SERIAL(i, localmesh->getRegion2D("RGN_ALL_THIN")) {
-    indices2D[i] = counter++;
-  }
+  BOUT_FOR_SERIAL(i, localmesh->getRegion2D("RGN_ALL_THIN")) { indices2D[i] = counter++; }
 
   // Set up the Perp indices; will these work in general or will
   // different ones be needed for each value of y?
   if (!localmesh->hasRegionPerp("RGN_ALL_THIN")) {
     Region<IndPerp> bndryPerp = localmesh->getRegionPerp("RGN_INNER_X_THIN")
-      + localmesh->getRegionPerp("RGN_NOBNDRY")
-      + localmesh->getRegionPerp("RGN_OUTER_X_THIN");
+                                + localmesh->getRegionPerp("RGN_NOBNDRY")
+                                + localmesh->getRegionPerp("RGN_OUTER_X_THIN");
     bndryPerp.unique();
     localmesh->addRegionPerp("RGN_ALL_THIN", bndryPerp);
   }
@@ -147,8 +135,6 @@ GlobalIndexer::GlobalIndexer(Mesh* localmesh)
   }
 }
 
-void GlobalIndexer::recreateGlobalInstance() {
-  initialisedGlobal = false;
-}
+void GlobalIndexer::recreateGlobalInstance() { initialisedGlobal = false; }
 
 #endif // BOUT_HAS_PETSC

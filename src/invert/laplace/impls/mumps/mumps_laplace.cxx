@@ -265,11 +265,11 @@ LaplaceMumps::LaplaceMumps(Options *opt, const CELL_LOC loc, Mesh *mesh_in = mes
       }
   for (int x=localmesh->xstart; x<=localmesh->xend; x++)
     for (int z=0; z<localmesh->LocalNz; z++) {
-      int xmm = localmesh->XGLOBAL(x)-2;
-      int xm = localmesh->XGLOBAL(x)-1;
-      int x0 = localmesh->XGLOBAL(x);
-      int xp = localmesh->XGLOBAL(x)+1;
-      int xpp = localmesh->XGLOBAL(x)+2;
+      int xmm = localmesh->getGlobalXIndex(x)-2;
+      int xm = localmesh->getGlobalXIndex(x)-1;
+      int x0 = localmesh->getGlobalXIndex(x);
+      int xp = localmesh->getGlobalXIndex(x)+1;
+      int xpp = localmesh->getGlobalXIndex(x)+2;
       int zmm = (z-2<0) ? (z-2+meshz) : (z-2);
       int zm = (z-1<0) ? (z-1+meshz) : (z-1);
       int z0 = z;
@@ -387,9 +387,9 @@ LaplaceMumps::LaplaceMumps(Options *opt, const CELL_LOC loc, Mesh *mesh_in = mes
   if (localmesh->lastX())
     for (int x=localmesh->xend+1; x<localmesh->LocalNx; x++)
       for (int z=0; z<localmesh->LocalNz; z++) {
-	int xmm = localmesh->XGLOBAL(localmesh->xend)+x-localmesh->xend-2;
-	int xm = localmesh->XGLOBAL(localmesh->xend)+x-localmesh->xend-1;
-	int x0 = localmesh->XGLOBAL(localmesh->xend)+x-localmesh->xend;
+	int xmm = localmesh->getGlobalXIndex(localmesh->xend)+x-localmesh->xend-2;
+	int xm = localmesh->getGlobalXIndex(localmesh->xend)+x-localmesh->xend-1;
+	int x0 = localmesh->getGlobalXIndex(localmesh->xend)+x-localmesh->xend;
 	int z0 = z;
 	if(outer_boundary_flags & INVERT_AC_GRAD) {
 	  mumps_struc.irn_loc[i] = x0*meshz + z0 + 1; // Indices for fortran arrays that start at 1

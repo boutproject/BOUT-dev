@@ -111,6 +111,10 @@ class BoutMesh : public Mesh {
   /// \param[in] jx   The local (on this processor) index in X
   bool periodicY(int jx) const override;
 
+  /// Get number of boundaries in the y-direction, i.e. locations where there are boundary
+  /// cells in the global grid
+  int numberOfYBoundaries() const;
+
   /// Is there a branch cut at this processor's lower boundary?
   ///
   /// @param[in] jx             The local (on this processor) index in X
@@ -175,10 +179,12 @@ class BoutMesh : public Mesh {
 
   void outputVars(Datafile& file) override;
 
-  int XGLOBAL(int xloc) const override;
-  int YGLOBAL(int yloc) const override;
-  int XGLOBAL(BoutReal xloc, BoutReal& xglo) const;
-  int YGLOBAL(BoutReal yloc, BoutReal& yglo) const;
+  int getGlobalXIndex(int xlocal) const override;
+  int getGlobalXIndexNoBoundaries(int xlocal) const override;
+  int getGlobalYIndex(int ylocal) const override;
+  int getGlobalYIndexNoBoundaries(int ylocal) const override;
+  int getGlobalZIndex(int zlocal) const override;
+  int getGlobalZIndexNoBoundaries(int zlocal) const override;
 
   int XLOCAL(int xglo) const override;
   int YLOCAL(int yglo) const override;
@@ -208,6 +214,10 @@ private:
   int NZPE;
 
   int MYPE_IN_CORE; // 1 if processor in core
+
+  using Mesh::YGLOBAL;
+  int XGLOBAL(BoutReal xloc, BoutReal& xglo) const;
+  int YGLOBAL(BoutReal yloc, BoutReal& yglo) const;
 
   // Topology
   int ixseps1, ixseps2, jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2;

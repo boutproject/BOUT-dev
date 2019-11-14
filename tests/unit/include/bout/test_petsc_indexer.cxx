@@ -152,17 +152,22 @@ TEST_F(IndexerTest, TestConvertIndexPerp) {
 class FakeParallelIndexer : public GlobalIndexer {
 public:
   FakeParallelIndexer(Mesh* localmesh) : GlobalIndexer(localmesh) {}
+  void initialiseTest() {
+    registerFieldForTest(getIndices3D());
+    registerFieldForTest(getIndices2D());
+    registerFieldForTest(getIndicesPerp());
+  }
 
 private:
   virtual void registerFieldForTest(FieldData& f) {
-    auto* meshPtr = static_cast<FakeParallelMesh*>(fieldmesh);
+    auto* meshPtr = static_cast<FakeParallelMesh*>(getMesh());
     if (meshPtr) {
       int idnum = f.is3D() ? 0 : 1;
       meshPtr->registerField(f, idnum);
     }
   }
   virtual void registerFieldForTest(FieldPerp& f) {
-    auto* meshPtr = static_cast<FakeParallelMesh*>(fieldmesh);
+    auto* meshPtr = static_cast<FakeParallelMesh*>(getMesh());
     if (meshPtr) {
       meshPtr->registerField(f, 2);
     }

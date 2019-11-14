@@ -70,6 +70,7 @@ class Datafile {
   }
   void add(int &i, const char *name, bool save_repeat = false);
   void add(BoutReal &r, const char *name, bool save_repeat = false);
+  void add(bool &b, const char* name, bool save_repeat = false);
   void add(Field2D &f, const char *name, bool save_repeat = false);
   void add(Field3D &f, const char *name, bool save_repeat = false);
   void add(FieldPerp &f, const char *name, bool save_repeat = false);
@@ -126,6 +127,7 @@ class Datafile {
   // one set per variable type
   std::vector<VarStr<int>> int_arr;
   std::vector<VarStr<BoutReal>> BoutReal_arr;
+  std::vector<VarStr<bool>> bool_arr;
   std::vector<VarStr<Field2D>> f2d_arr;
   std::vector<VarStr<Field3D>> f3d_arr;
   std::vector<VarStr<FieldPerp>> fperp_arr;

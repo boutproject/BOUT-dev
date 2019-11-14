@@ -40,14 +40,12 @@
 
 // Allocate memory for a copy of given string
 char* copy_string(const char* s) {
-  char *s2;
-  int n;
 
   if (s == nullptr)
     return nullptr;
 
-  n = strlen(s);
-  s2 = static_cast<char *>(malloc(n + 1));
+  const auto n = strlen(s);
+  auto s2 = static_cast<char*>(malloc(n + 1));
   strcpy(s2, s);
   return s2;
 }

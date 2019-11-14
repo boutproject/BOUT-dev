@@ -225,7 +225,8 @@ public:
   MPI_Comm getXcomm(int UNUSED(jy)) const override { return BoutComm::get(); }
   MPI_Comm getYcomm(int UNUSED(jx)) const override { return BoutComm::get(); }
   bool periodicY(int UNUSED(jx)) const override { return true; }
-  bool periodicY(int UNUSED(jx), BoutReal &UNUSED(ts)) const override { return true; }
+  bool periodicY(int UNUSED(jx), BoutReal& UNUSED(ts)) const override { return true; }
+  int numberOfYBoundaries() const { return 1; }
   std::pair<bool, BoutReal> hasBranchCutLower(int UNUSED(jx)) const override {
     return std::make_pair(false, 0.);
   }
@@ -289,8 +290,12 @@ public:
   BoutReal GlobalY(int jy) const override { return jy; }
   BoutReal GlobalX(BoutReal jx) const override { return jx; }
   BoutReal GlobalY(BoutReal jy) const override { return jy; }
-  int XGLOBAL(int UNUSED(xloc)) const override { return 0; }
-  int YGLOBAL(int UNUSED(yloc)) const override { return 0; }
+  int getGlobalXIndex(int) const override { return 0; }
+  int getGlobalXIndexNoBoundaries(int) const override { return 0; }
+  int getGlobalYIndex(int) const override { return 0; }
+  int getGlobalYIndexNoBoundaries(int) const override { return 0; }
+  int getGlobalZIndex(int) const override { return 0; }
+  int getGlobalZIndexNoBoundaries(int) const override { return 0; }
   int XLOCAL(int UNUSED(xglo)) const override { return 0; }
   int YLOCAL(int UNUSED(yglo)) const override { return 0; }
   virtual int localSize3D() override { return LocalNx * LocalNy * LocalNz; }
@@ -322,10 +327,10 @@ public:
 
     addRegion2D("RGN_INNER_X",
                 Region<Ind2D>(0, xstart - 1, ystart, yend, 0, 0, LocalNy, 1));
-    addRegion3D("RGN_INNER_X", Region<Ind3D>(0, xstart - 1, ystart, yend, 0,
-                                             LocalNz - 1, LocalNy, LocalNz));
-    addRegionPerp("RGN_INNER_X_THIN", Region<IndPerp>(0, xstart - 1, 0, 0, 0,
-                                             LocalNz - 1, 1, LocalNz));
+    addRegion3D("RGN_INNER_X", Region<Ind3D>(0, xstart - 1, ystart, yend, 0, LocalNz - 1,
+                                             LocalNy, LocalNz));
+    addRegionPerp("RGN_INNER_X_THIN",
+                  Region<IndPerp>(0, xstart - 1, 0, 0, 0, LocalNz - 1, 1, LocalNz));
     addRegion2D("RGN_INNER_X_THIN", getRegion2D("RGN_INNER_X"));
     addRegion3D("RGN_INNER_X_THIN", getRegion3D("RGN_INNER_X"));
 
@@ -334,7 +339,7 @@ public:
     addRegion3D("RGN_OUTER_X", Region<Ind3D>(xend + 1, LocalNx - 1, ystart, yend, 0,
                                              LocalNz - 1, LocalNy, LocalNz));
     addRegionPerp("RGN_OUTER_X_THIN", Region<IndPerp>(xend + 1, LocalNx - 1, 0, 0, 0,
-                                             LocalNz - 1, 1, LocalNz));
+                                                      LocalNz - 1, 1, LocalNz));
     addRegion2D("RGN_OUTER_X_THIN", getRegion2D("RGN_OUTER_X"));
     addRegion3D("RGN_OUTER_X_THIN", getRegion3D("RGN_OUTER_X"));
 

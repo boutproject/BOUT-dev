@@ -570,7 +570,7 @@ public:
   };
 
   /// Sort this Region in place
-  Region<T> sort(){
+  Region<T>& sort() {
     *this = this->asSorted();
     return *this;
   }
@@ -592,7 +592,7 @@ public:
   }
 
   /// Make this Region unique in-place
-  Region<T> unique(){
+  Region<T>& unique() {
     *this = this->asUnique();
     return *this;
   }
@@ -840,20 +840,20 @@ private:
 template<typename T>
 Region<T> sort(Region<T> &region) {
   return region.asSorted();
-};
+}
 
 /// Return a new region with unique indices
 template<typename T>
 Region<T> unique(Region<T> &region) {
   return region.asUnique();
-};
+}
 
 /// Return a masked version of a region
 template<typename T>
 Region<T> mask(const Region<T> &region, const Region<T> &mask) {
   auto result = region;
   return result.mask(mask);
-};
+}
 
 /// Return a new region with combined indices from two Regions
 /// This doesn't attempt to avoid duplicate elements or enforce
