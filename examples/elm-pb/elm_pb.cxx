@@ -1718,7 +1718,7 @@ protected:
     U1 += (gamma * B0 * B0) * Grad_par(Jrhs, CELL_CENTRE) + (gamma * b0xcv) * Grad(P);
 
     // Second matrix, solving Alfven wave dynamics
-    static InvertPar* invU = 0;
+    static std::unique_ptr<InvertPar> invU{nullptr};
     if (!invU)
       invU = InvertPar::Create();
 

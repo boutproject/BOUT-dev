@@ -50,7 +50,7 @@ private:
   bool include_jpar0;
   int jpar_bndry;
 
-  InvertPar *inv; // Parallel inversion class used in preconditioner
+  std::unique_ptr<InvertPar> inv{nullptr}; // Parallel inversion class used in preconditioner
 
   // Coordinate system metric
   Coordinates *coord;
