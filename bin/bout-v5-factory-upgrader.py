@@ -107,7 +107,7 @@ def fix_declarations(factory, variables, source):
             flags=re.VERBOSE,
         )
 
-        # Declarations with initialisation
+        # Declarations with initialisation from factory
         source = re.sub(
             r"""
             (.*?)(class\s*)?       # optional "class" keyword
@@ -119,6 +119,22 @@ def fix_declarations(factory, variables, source):
                 variable_name=variable, **factory
             ),
             r"\1auto \4 = \5;",
+            source,
+            flags=re.VERBOSE,
+        )
+
+        # Declarations with zero initialisation
+        source = re.sub(
+            r"""
+            (.*?)(?:class\s*)?     # optional "class" keyword
+            ({type_name})\s*\*\s*  # Type-pointer
+            ({variable_name})\s*   # Variable
+            =\s*                   # Assignment
+            (0|nullptr|NULL);
+            """.format(
+                variable_name=variable, **factory
+            ),
+            r"\1std::unique_ptr<\2> \3{nullptr};",
             source,
             flags=re.VERBOSE,
         )
