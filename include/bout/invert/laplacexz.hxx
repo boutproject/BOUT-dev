@@ -35,6 +35,39 @@
 #include <field3d.hxx>
 #include <bout/mesh.hxx>
 #include <unused.hxx>
+#include <bout/generic_factory.hxx>
+
+class LaplaceXZ;
+
+class LaplaceXZFactory
+    : public StandardFactory<
+          LaplaceXZ, LaplaceXZFactory,
+          std::function<std::unique_ptr<LaplaceXZ>(Mesh*, Options*, CELL_LOC)>> {
+public:
+  static constexpr auto type_name = "LaplaceXZ";
+  static constexpr auto section_name = "laplacexz";
+  static constexpr auto option_name = "type";
+  static constexpr auto default_type = "cyclic";
+
+  ReturnType create(Mesh* mesh = nullptr, Options* options = nullptr,
+                    CELL_LOC loc = CELL_CENTRE) {
+    return StandardFactory::create(getType(options), mesh, options, loc);
+  }
+};
+
+template <class DerivedType>
+class RegisterInStandardFactory<LaplaceXZ, DerivedType, LaplaceXZFactory> {
+public:
+  RegisterInStandardFactory(const std::string& name) {
+    LaplaceXZFactory::getInstance().add(
+      name, [](Mesh* mesh, Options* options, CELL_LOC loc) -> std::unique_ptr<LaplaceXZ> {
+        return std::make_unique<DerivedType>(mesh, options, loc);
+      });
+  }
+};
+
+template <class DerivedType>
+using RegisterLaplaceXZ = RegisterInStandardFactory<LaplaceXZ, DerivedType, LaplaceXZFactory>;
 
 class LaplaceXZ {
 public:
@@ -48,7 +81,8 @@ public:
 
   virtual Field3D solve(const Field3D &b, const Field3D &x0) = 0;
 
-  static LaplaceXZ *create(Mesh *m = nullptr, Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE);
+  static std::unique_ptr<LaplaceXZ> create(Mesh* m = nullptr, Options* opt = nullptr,
+                                           CELL_LOC loc = CELL_CENTRE);
 
 protected:
   static const int INVERT_DC_GRAD  = 1;
