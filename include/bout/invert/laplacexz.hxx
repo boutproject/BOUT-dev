@@ -53,6 +53,8 @@ public:
                     CELL_LOC loc = CELL_CENTRE) {
     return StandardFactory::create(getType(options), mesh, options, loc);
   }
+
+  static void ensureRegistered();
 };
 
 template <class DerivedType>
@@ -82,7 +84,9 @@ public:
   virtual Field3D solve(const Field3D &b, const Field3D &x0) = 0;
 
   static std::unique_ptr<LaplaceXZ> create(Mesh* m = nullptr, Options* opt = nullptr,
-                                           CELL_LOC loc = CELL_CENTRE);
+                                           CELL_LOC loc = CELL_CENTRE) {
+    return LaplaceXZFactory::getInstance().create(m, opt, loc);
+  }
 
 protected:
   static const int INVERT_DC_GRAD  = 1;

@@ -54,6 +54,7 @@ public:
   ReturnType create(Options* options = nullptr, Mesh* mesh = nullptr) {
     return StandardFactory::create(getType(options), options, mesh);
   }
+  static void ensureRegistered();
 };
 
 template <class DerivedType>

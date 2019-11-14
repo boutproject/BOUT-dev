@@ -104,10 +104,11 @@ protected:
   using Traits = DerivedFactory;
   using BaseFactoryType = BaseFactory;
   StandardFactory() = default;
-
+  static void ensureRegistered() {}
 public:
   static DerivedFactory& getInstance() {
     static DerivedFactory instance{};
+    DerivedFactory::ensureRegistered();
     return instance;
   }
 

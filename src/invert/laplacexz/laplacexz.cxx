@@ -3,6 +3,5 @@
 
 #include <bout/invert/laplacexz.hxx>
 
-std::unique_ptr<LaplaceXZ> LaplaceXZ::create(Mesh *m, Options *options, CELL_LOC loc) {
-  return LaplaceXZFactory::getInstance().create(m, options, loc);
-}
+// DO NOT REMOVE: ensures linker keeps all symbols in this TU
+void LaplaceXZFactory::ensureRegistered() {}
