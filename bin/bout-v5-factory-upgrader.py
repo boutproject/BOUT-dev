@@ -8,6 +8,11 @@ import re
 
 # Dictionary of factory methods that may need updating
 factories = {
+    "Interpolation": {
+        "factory_name": "InterpolationFactory",
+        "type_name": "Interpolation",
+        "create_method": "create",
+    },
     "InvertPar": {
         "factory_name": "InvertPar",
         "type_name": "InvertPar",
