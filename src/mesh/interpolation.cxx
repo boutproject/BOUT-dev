@@ -87,3 +87,13 @@ const Field3D interpolate(const Field2D &f, const Field3D &delta_x) {
   }
   return result;
 }
+
+void InterpolationFactory::ensureRegistered() {}
+
+namespace {
+RegisterInterpolation<HermiteSpline> registerinterphermitespline{"hermitespline"};
+RegisterInterpolation<MonotonicHermiteSpline> registerinterpmonotonichermitespline{
+    "monotonichermitespline"};
+RegisterInterpolation<Lagrange4pt> registerinterplagrange4pt{"lagrange4pt"};
+RegisterInterpolation<Bilinear> registerinterpbilinear{"bilinear"};
+} // namespace

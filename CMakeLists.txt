@@ -113,7 +113,6 @@ set(BOUT_SOURCES
   ./include/gyro_average.hxx
   ./include/initialprofiles.hxx
   ./include/interpolation.hxx
-  ./include/interpolation_factory.hxx
   ./include/invert_laplace.hxx
   ./include/invert_parderiv.hxx
   ./include/lapack_routines.hxx
@@ -213,7 +212,6 @@ set(BOUT_SOURCES
   ./src/mesh/interpolation.cxx
   ./src/mesh/interpolation/bilinear.cxx
   ./src/mesh/interpolation/hermite_spline.cxx
-  ./src/mesh/interpolation/interpolation_factory.cxx
   ./src/mesh/interpolation/lagrange_4pt.cxx
   ./src/mesh/interpolation/monotonic_hermite_spline.cxx
   ./src/mesh/mesh.cxx

@@ -32,6 +32,7 @@
 #include "mask.hxx"
 #include "stencils.hxx"
 #include "utils.hxx"
+#include "bout/generic_factory.hxx"
 
 /// Perform interpolation between centre -> shifted or vice-versa
 /*!
@@ -401,5 +402,37 @@ public:
   Field3D interpolate(const Field3D &f, const Field3D &delta_x, const Field3D &delta_z,
                       const BoutMask &mask) override;
 };
+
+class InterpolationFactory
+    : public StandardFactory<Interpolation, InterpolationFactory,
+                             std::function<std::unique_ptr<Interpolation>(Mesh*)>> {
+public:
+  static constexpr auto type_name = "Interpolation";
+  static constexpr auto section_name = "interpolation";
+  static constexpr auto option_name = "type";
+  static constexpr auto default_type = "hermitespline";
+
+  using StandardFactory::create;
+  ReturnType create(Mesh* mesh) {
+    return StandardFactory::create(getType(nullptr), mesh);
+  }
+
+  static void ensureRegistered();
+};
+
+template <class DerivedType>
+class RegisterInStandardFactory<Interpolation, DerivedType, InterpolationFactory> {
+public:
+  RegisterInStandardFactory(const std::string& name) {
+    InterpolationFactory::getInstance().add(
+        name, [](Mesh* mesh) -> std::unique_ptr<Interpolation> {
+          return std::make_unique<DerivedType>(mesh);
+        });
+  }
+};
+
+template <class DerivedType>
+using RegisterInterpolation =
+    RegisterInStandardFactory<Interpolation, DerivedType, InterpolationFactory>;
 
 #endif // __INTERP_H__
