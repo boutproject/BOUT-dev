@@ -101,10 +101,10 @@ template <class BaseType, class DerivedFactory,
 class StandardFactory : public BaseFactory {
 protected:
   using ReturnType = typename TypeCreator::result_type;
-  using Traits = DerivedFactory;
   using BaseFactoryType = BaseFactory;
   StandardFactory() = default;
   static void ensureRegistered() {}
+
 public:
   static DerivedFactory& getInstance() {
     static DerivedFactory instance{};
@@ -112,16 +112,17 @@ public:
     return instance;
   }
 
-  static constexpr auto getDefaultType() { return Traits::default_type; }
-  static constexpr auto getSectionName() { return Traits::section_name; }
-  static constexpr auto getOptionName() { return Traits::option_name; }
+  static constexpr auto getDefaultType() { return DerivedFactory::default_type; }
+  static constexpr auto getSectionName() { return DerivedFactory::section_name; }
+  static constexpr auto getOptionName() { return DerivedFactory::option_name; }
 
   std::string getType(Options* options = nullptr) {
     if (options == nullptr) {
-      options = &Options::root()[Traits::section_name];
+      options = &Options::root()[DerivedFactory::section_name];
     }
 
-    return (*options)[Traits::option_name].withDefault(Traits::getDefaultType());
+    return (*options)[DerivedFactory::option_name].withDefault(
+        DerivedFactory::getDefaultType());
   }
 
   ReturnType create(Options* options = nullptr) {
@@ -130,7 +131,7 @@ public:
   }
 
   ReturnType create(const std::string& name) {
-    return create(name, &Options::root()[Traits::section_name]);
+    return create(name, &Options::root()[DerivedFactory::section_name]);
   }
 
   template <typename... Args>
@@ -138,8 +139,8 @@ public:
     try {
       return static_cast<BaseFactory*>(this)->create(name, std::forward<Args>(args)...);
     } catch (const BoutException& e) {
-      throw BoutException("Error when trying to create a %s: %s", Traits::type_name,
-                          e.what());
+      throw BoutException("Error when trying to create a %s: %s",
+                          DerivedFactory::type_name, e.what());
     }
   }
 };
