@@ -54,6 +54,7 @@ const char DEFAULT_DIR[] = "data";
 #include "bout/invert/laplacexz.hxx"
 #include "invert_parderiv.hxx"
 #include "bout/rkscheme.hxx"
+#include "interpolation.hxx"
 
 #define BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 #include "bout.hxx"
@@ -284,6 +285,13 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
     if (current_arg == "--list-meshes") {
       for (const auto &mesh : MeshFactory::getInstance().listAvailable()) {
         std::cout << mesh << "\n";
+      }
+      std::exit(EXIT_SUCCESS);
+    }
+    if (current_arg == "--list-interpolations") {
+      for (const auto& interpolation :
+           InterpolationFactory::getInstance().listAvailable()) {
+        std::cout << interpolation << "\n";
       }
       std::exit(EXIT_SUCCESS);
     }
