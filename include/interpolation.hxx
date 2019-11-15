@@ -430,7 +430,7 @@ public:
   static constexpr auto default_type = "hermitespline";
 
   using Factory::create;
-  ReturnType create(Mesh* mesh) {
+  ReturnType create(Mesh* mesh = nullptr) {
     return Factory::create(getType(nullptr), mesh);
   }
 
