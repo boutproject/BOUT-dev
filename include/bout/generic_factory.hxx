@@ -105,7 +105,7 @@ public:
   ///
   /// @param[in] options  Options section to look for type name
   /// @returns the name of the type to create
-  std::string getType(Options* options = nullptr) {
+  std::string getType(Options* options = nullptr) const {
     if (options == nullptr) {
       options = &Options::root()[DerivedFactory::section_name];
     }
@@ -115,12 +115,12 @@ public:
   }
 
   /// Create a new object using the type set in \p options
-  ReturnType create(Options* options = nullptr) {
+  ReturnType create(Options* options = nullptr) const {
     return create(getType(options), options);
   }
 
   /// Create a new object of type \p name using the root Options
-  ReturnType create(const std::string& name) {
+  ReturnType create(const std::string& name) const {
     return create(name, &Options::root()[DerivedFactory::section_name]);
   }
 
@@ -129,7 +129,7 @@ public:
   /// @param[in] name  The identifier for the type to be created
   /// @returns the new object
   template <typename... Args>
-  ReturnType create(const std::string& name, Args&&... args) {
+  ReturnType create(const std::string& name, Args&&... args) const {
     auto index = type_map.find(name);
     if (index != std::end(type_map)) {
       return index->second(std::forward<Args>(args)...);
