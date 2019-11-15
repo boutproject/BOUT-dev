@@ -558,8 +558,6 @@ TEST_F(SolverTest, GetLocalN) {
 
   solver.init(0, 0);
 
-  static_cast<FakeMesh*>(field1.getMesh())->createBoundaryRegions();
-
   constexpr auto globalmesh_nx_no_boundry = SolverTest::nx - 2;
   constexpr auto globalmesh_ny_no_boundry = SolverTest::ny - 2;
   constexpr auto localmesh_nx_no_boundry = localmesh_nx - 2;

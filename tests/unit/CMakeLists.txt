@@ -25,6 +25,10 @@ add_executable(serial_tests
   ./include/bout/test_generic_factory.cxx
   ./include/bout/test_macro_for_each.cxx
   ./include/bout/test_monitor.cxx
+  ./include/bout/test_petsc_indexer.cxx
+  ./include/bout/test_petsc_matrix.cxx
+  ./include/bout/test_petsc_setters.cxx
+  ./include/bout/test_petsc_vector.cxx
   ./include/bout/test_region.cxx
   ./include/bout/test_template_combinations.cxx
   ./include/test_cyclic_reduction.cxx

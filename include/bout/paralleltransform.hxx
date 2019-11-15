@@ -76,6 +76,26 @@ public:
 
   virtual bool canToFromFieldAligned() = 0;
 
+  struct PositionsAndWeights {
+    int i, j, k;
+    BoutReal weight;
+  };
+
+  virtual std::vector<PositionsAndWeights> getWeightsForYUpApproximation(int i, int j,
+                                                                         int k) {
+    return getWeightsForYApproximation(i, j, k, 1);
+  }
+  virtual std::vector<PositionsAndWeights> getWeightsForYDownApproximation(int i, int j,
+                                                                           int k) {
+    return getWeightsForYApproximation(i, j, k, -1);
+  }
+  virtual std::vector<PositionsAndWeights>
+  getWeightsForYApproximation(int UNUSED(i), int UNUSED(j), int UNUSED(k),
+                              int UNUSED(yoffset)) {
+    throw BoutException("ParallelTransform::getWeightsForYApproximation not implemented "
+                        "in this subclass");
+  }
+
   /// Output variables used by a ParallelTransform instance to the dump files
   virtual void outputVars(Datafile& UNUSED(file)) {}
 
