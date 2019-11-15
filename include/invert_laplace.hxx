@@ -150,18 +150,16 @@ public:
 ///     RegisterLaplace<MyLaplace> registerlaplacemine("mylaplace");
 ///     }
 template <class DerivedType>
-class RegisterInFactory<Laplacian, DerivedType, LaplaceFactory> {
+class RegisterLaplace {
 public:
-  RegisterInFactory(const std::string& name) {
+  RegisterLaplace(const std::string& name) {
     LaplaceFactory::getInstance().add(
-      name, [](Options* options, CELL_LOC loc, Mesh* mesh) -> std::unique_ptr<Laplacian> {
-        return std::make_unique<DerivedType>(options, loc, mesh);
-      });
+        name,
+        [](Options* options, CELL_LOC loc, Mesh* mesh) -> std::unique_ptr<Laplacian> {
+          return std::make_unique<DerivedType>(options, loc, mesh);
+        });
   }
 };
-
-template <class DerivedType>
-using RegisterLaplace = RegisterInFactory<Laplacian, DerivedType, LaplaceFactory>;
 
 /// Base class for Laplacian inversion
 class Laplacian {

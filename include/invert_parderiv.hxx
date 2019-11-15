@@ -58,19 +58,15 @@ public:
 };
 
 template <class DerivedType>
-class RegisterInFactory<InvertPar, DerivedType, InvertParFactory> {
+class RegisterInvertPar {
 public:
-  RegisterInFactory(const std::string& name) {
+  RegisterInvertPar(const std::string& name) {
     InvertParFactory::getInstance().add(
         name, [](Options* options, Mesh* mesh) -> std::unique_ptr<InvertPar> {
           return std::make_unique<DerivedType>(options, mesh);
         });
   }
 };
-
-template <class DerivedType>
-using RegisterInvertPar =
-    RegisterInFactory<InvertPar, DerivedType, InvertParFactory>;
 
 /// Base class for parallel inversion solvers
 /*!

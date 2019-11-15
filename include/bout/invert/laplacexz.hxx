@@ -58,18 +58,15 @@ public:
 };
 
 template <class DerivedType>
-class RegisterInFactory<LaplaceXZ, DerivedType, LaplaceXZFactory> {
+class RegisterLaplaceXZ {
 public:
-  RegisterInFactory(const std::string& name) {
+  RegisterLaplaceXZ(const std::string& name) {
     LaplaceXZFactory::getInstance().add(
       name, [](Mesh* mesh, Options* options, CELL_LOC loc) -> std::unique_ptr<LaplaceXZ> {
         return std::make_unique<DerivedType>(mesh, options, loc);
       });
   }
 };
-
-template <class DerivedType>
-using RegisterLaplaceXZ = RegisterInFactory<LaplaceXZ, DerivedType, LaplaceXZFactory>;
 
 class LaplaceXZ {
 public:

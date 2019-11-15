@@ -421,18 +421,14 @@ public:
 };
 
 template <class DerivedType>
-class RegisterInFactory<Interpolation, DerivedType, InterpolationFactory> {
+class RegisterInterpolation {
 public:
-  RegisterInFactory(const std::string& name) {
+  RegisterInterpolation(const std::string& name) {
     InterpolationFactory::getInstance().add(
         name, [](Mesh* mesh) -> std::unique_ptr<Interpolation> {
           return std::make_unique<DerivedType>(mesh);
         });
   }
 };
-
-template <class DerivedType>
-using RegisterInterpolation =
-    RegisterInFactory<Interpolation, DerivedType, InterpolationFactory>;
 
 #endif // __INTERP_H__

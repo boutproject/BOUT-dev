@@ -89,18 +89,15 @@ public:
 };
 
 template <class DerivedType>
-class RegisterInFactory<Mesh, DerivedType, MeshFactory> {
+class RegisterMesh {
 public:
-  RegisterInFactory(const std::string& name) {
+  RegisterMesh(const std::string& name) {
     MeshFactory::getInstance().add(
         name, [](GridDataSource* source, Options* options) -> std::unique_ptr<Mesh> {
           return std::make_unique<DerivedType>(source, options);
         });
   }
 };
-
-template <class DerivedType>
-using RegisterMesh = RegisterInFactory<Mesh, DerivedType, MeshFactory>;
 
 /// Type used to return pointers to handles
 using comm_handle = void*;
