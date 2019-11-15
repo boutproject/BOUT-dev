@@ -151,6 +151,7 @@ public:
   /// @returns a vector of std::string
   std::vector<std::string> listAvailable() const {
     std::vector<std::string> available;
+    available.reserve(type_map.size());
     for (const auto& name : type_map) {
       available.push_back(name.first);
     }
