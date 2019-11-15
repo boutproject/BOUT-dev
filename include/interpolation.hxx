@@ -404,7 +404,7 @@ public:
 };
 
 class InterpolationFactory
-    : public StandardFactory<Interpolation, InterpolationFactory,
+    : public Factory<Interpolation, InterpolationFactory,
                              std::function<std::unique_ptr<Interpolation>(Mesh*)>> {
 public:
   static constexpr auto type_name = "Interpolation";
@@ -412,18 +412,18 @@ public:
   static constexpr auto option_name = "type";
   static constexpr auto default_type = "hermitespline";
 
-  using StandardFactory::create;
+  using Factory::create;
   ReturnType create(Mesh* mesh) {
-    return StandardFactory::create(getType(nullptr), mesh);
+    return Factory::create(getType(nullptr), mesh);
   }
 
   static void ensureRegistered();
 };
 
 template <class DerivedType>
-class RegisterInStandardFactory<Interpolation, DerivedType, InterpolationFactory> {
+class RegisterInFactory<Interpolation, DerivedType, InterpolationFactory> {
 public:
-  RegisterInStandardFactory(const std::string& name) {
+  RegisterInFactory(const std::string& name) {
     InterpolationFactory::getInstance().add(
         name, [](Mesh* mesh) -> std::unique_ptr<Interpolation> {
           return std::make_unique<DerivedType>(mesh);
@@ -433,6 +433,6 @@ public:
 
 template <class DerivedType>
 using RegisterInterpolation =
-    RegisterInStandardFactory<Interpolation, DerivedType, InterpolationFactory>;
+    RegisterInFactory<Interpolation, DerivedType, InterpolationFactory>;
 
 #endif // __INTERP_H__

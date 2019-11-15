@@ -13,7 +13,7 @@
 
 MeshFactory::ReturnType MeshFactory::create(Options* options, GridDataSource* source) {
   if (source != nullptr) {
-    return StandardFactory::create(getType(options), source, options);
+    return Factory::create(getType(options), source, options);
   }
 
   if (options == nullptr) {
@@ -39,7 +39,7 @@ MeshFactory::ReturnType MeshFactory::create(Options* options, GridDataSource* so
     source = static_cast<GridDataSource*>(new GridFromOptions(options));
   }
 
-  return StandardFactory::create(getType(options), source, options);
+  return Factory::create(getType(options), source, options);
 }
 
 Mesh* Mesh::create(GridDataSource *s, Options *opt) {

@@ -40,7 +40,7 @@
 class LaplaceXZ;
 
 class LaplaceXZFactory
-    : public StandardFactory<
+    : public Factory<
           LaplaceXZ, LaplaceXZFactory,
           std::function<std::unique_ptr<LaplaceXZ>(Mesh*, Options*, CELL_LOC)>> {
 public:
@@ -51,16 +51,16 @@ public:
 
   ReturnType create(Mesh* mesh = nullptr, Options* options = nullptr,
                     CELL_LOC loc = CELL_CENTRE) {
-    return StandardFactory::create(getType(options), mesh, options, loc);
+    return Factory::create(getType(options), mesh, options, loc);
   }
 
   static void ensureRegistered();
 };
 
 template <class DerivedType>
-class RegisterInStandardFactory<LaplaceXZ, DerivedType, LaplaceXZFactory> {
+class RegisterInFactory<LaplaceXZ, DerivedType, LaplaceXZFactory> {
 public:
-  RegisterInStandardFactory(const std::string& name) {
+  RegisterInFactory(const std::string& name) {
     LaplaceXZFactory::getInstance().add(
       name, [](Mesh* mesh, Options* options, CELL_LOC loc) -> std::unique_ptr<LaplaceXZ> {
         return std::make_unique<DerivedType>(mesh, options, loc);
@@ -69,7 +69,7 @@ public:
 };
 
 template <class DerivedType>
-using RegisterLaplaceXZ = RegisterInStandardFactory<LaplaceXZ, DerivedType, LaplaceXZFactory>;
+using RegisterLaplaceXZ = RegisterInFactory<LaplaceXZ, DerivedType, LaplaceXZFactory>;
 
 class LaplaceXZ {
 public:

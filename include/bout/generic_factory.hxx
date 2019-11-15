@@ -17,26 +17,72 @@
 /// Generic Factory, adapted from Modern C++ Design/Loki by A. Alexandrescu
 ///
 /// Use with RegisterInFactory to provide a generic way of creating
-/// new derived types at runtime
+/// new derived types at runtime. By default assumes the type can be
+/// created with an Options*
+///
+/// Uses static polymorphism (via CRTP) to overload static data. This
+/// is done by inheriting from this class and templating on the
+/// _inherited_ class, and then providing four public data members:
 ///
 /// Example:
 ///
-///     class Base {};
-///     class Derived : public Base {};
-///     RegisterInFactory<Base, Derived> register("derived_type");
-///     auto foo = Factory<Base>::getInstance().create("derived_type");
+///     class Base {
+///     public:
+///       Base(Options*) {}
+///     };
+///     class Derived : public Base {
+///     public:
+///       Derived(Options*) : Base({}) {}
+///     };
 ///
-/// TODO: Use std::unique_ptr<BaseType> instead of BaseType*
+///     class MyFactory : public Factory<Base, MyFactory> {
+///       static constexpr auto type_name = "Base";
+///       static constexpr auto section_name = "base";
+///       static constexpr auto option_name = "type";
+///       static constexpr auto default_type = "derived_type";
+///     };
+///
+///     RegisterInFactory<Base, Derived, MyFactory> register("derived_type");
+///     auto foo = MyFactory::getInstance().create("derived_type");
 ///
 /// @tparam BaseType       The base class that this factory creates
+/// @tparam DerivedFactory The derived factory inheriting from this class
 /// @tparam TypeCreator    The function signature for creating a new BaseType
 ///
 /// MIT Licence
-template <typename BaseType,
-          typename TypeCreator = std::function<std::unique_ptr<BaseType>()>>
+template <class BaseType, class DerivedFactory,
+          class TypeCreator = std::function<std::unique_ptr<BaseType>(Options*)>>
 class Factory {
+protected:
+  // Type returned from the creation function
+  using ReturnType = typename TypeCreator::result_type;
+
+  Factory() = default;
+
+  /// Disgusting hack to defeat linker throwing out the registration
+  /// symbols. If necessary, override this and put the (empty)
+  /// implementation in the same TU as the registration symbols
+  static void ensureRegistered() {}
+
+  /// Storage of the creation functions
+  std::map<std::string, TypeCreator> type_map;
+
 public:
   virtual ~Factory() = default;
+
+  /// Get the singleton instance
+  static DerivedFactory& getInstance() {
+    static DerivedFactory instance{};
+    DerivedFactory::ensureRegistered();
+    return instance;
+  }
+
+  /// Return the name of the default type to create
+  static constexpr auto getDefaultType() { return DerivedFactory::default_type; }
+  /// Return the name of the section to get from the root Options
+  static constexpr auto getSectionName() { return DerivedFactory::section_name; }
+  /// Return the name of the Option value that sets the type
+  static constexpr auto getOptionName() { return DerivedFactory::option_name; }
 
   /// Add a new type \p name to the factory
   ///
@@ -53,12 +99,37 @@ public:
   /// @returns true if the type was successfully removed
   virtual bool remove(const std::string& name) { return type_map.erase(name) == 1; }
 
+  /// Get the name of the type to create
+  ///
+  /// Looks in \p options first, then the root Options
+  ///
+  /// @param[in] options  Options section to look for type name
+  /// @returns the name of the type to create
+  std::string getType(Options* options = nullptr) {
+    if (options == nullptr) {
+      options = &Options::root()[DerivedFactory::section_name];
+    }
+
+    return (*options)[DerivedFactory::option_name].withDefault(
+        DerivedFactory::getDefaultType());
+  }
+
+  /// Create a new object using the type set in \p options
+  ReturnType create(Options* options = nullptr) {
+    return create(getType(options), options);
+  }
+
+  /// Create a new object of type \p name using the root Options
+  ReturnType create(const std::string& name) {
+    return create(name, &Options::root()[DerivedFactory::section_name]);
+  }
+
   /// Create a new object of type \p name
   ///
   /// @param[in] name  The identifier for the type to be created
-  /// @returns a pointer to the new object
+  /// @returns the new object
   template <typename... Args>
-  std::unique_ptr<BaseType> create(const std::string& name, Args&&... args) {
+  ReturnType create(const std::string& name, Args&&... args) {
     auto index = type_map.find(name);
     if (index != std::end(type_map)) {
       return index->second(std::forward<Args>(args)...);
@@ -69,114 +140,41 @@ public:
     for (auto i : available_list) {
       available += i + "\n";
     }
-    throw BoutException("Available:\n%s\nCould not find '%s'", available.c_str(),
-                        name.c_str());
+    throw BoutException(
+        "Error when trying to create a %s: Could not find '%s'\nAvailable %s are:\n%s",
+        DerivedFactory::type_name, name.c_str(), DerivedFactory::type_name,
+        available.c_str());
   }
 
   /// List available types that can be created
   ///
   /// @returns a vector of std::string
-  virtual std::vector<std::string> listAvailable() const {
+  std::vector<std::string> listAvailable() const {
     std::vector<std::string> available;
     for (const auto& name : type_map) {
       available.push_back(name.first);
     }
     return available;
   }
-
-  /// Get the singleton instance
-  static Factory& getInstance() {
-    static Factory instance;
-    return instance;
-  }
-
-protected:
-  std::map<std::string, TypeCreator> type_map;
-  Factory() = default;
-};
-
-template <class BaseType, class DerivedFactory,
-          class TypeCreator = std::function<std::unique_ptr<BaseType>(Options*)>,
-          class BaseFactory = Factory<BaseType, TypeCreator>>
-class StandardFactory : public BaseFactory {
-protected:
-  using ReturnType = typename TypeCreator::result_type;
-  using BaseFactoryType = BaseFactory;
-  StandardFactory() = default;
-  static void ensureRegistered() {}
-
-public:
-  static DerivedFactory& getInstance() {
-    static DerivedFactory instance{};
-    DerivedFactory::ensureRegistered();
-    return instance;
-  }
-
-  static constexpr auto getDefaultType() { return DerivedFactory::default_type; }
-  static constexpr auto getSectionName() { return DerivedFactory::section_name; }
-  static constexpr auto getOptionName() { return DerivedFactory::option_name; }
-
-  std::string getType(Options* options = nullptr) {
-    if (options == nullptr) {
-      options = &Options::root()[DerivedFactory::section_name];
-    }
-
-    return (*options)[DerivedFactory::option_name].withDefault(
-        DerivedFactory::getDefaultType());
-  }
-
-  ReturnType create(Options* options = nullptr) {
-    auto type = getType(options);
-    return create(type, options);
-  }
-
-  ReturnType create(const std::string& name) {
-    return create(name, &Options::root()[DerivedFactory::section_name]);
-  }
-
-  template <typename... Args>
-  ReturnType create(const std::string& name, Args&&... args) {
-    try {
-      return static_cast<BaseFactory*>(this)->create(name, std::forward<Args>(args)...);
-    } catch (const BoutException& e) {
-      throw BoutException("Error when trying to create a %s: %s",
-                          DerivedFactory::type_name, e.what());
-    }
-  }
 };
 
 /// Helper class for adding new types to Factory
 ///
-/// Example:
-///
-///     class Base {};
-///     class Derived : public Base {};
-///     RegisterInFactory<Base, Derived> register("derived_type");
-///     auto foo = Factory<Base>::getInstance().create("derived_type");
+/// See Factory for example
 ///
 /// Adapted from
 /// http://www.drdobbs.com/conversations-abstract-factory-template/184403786
 ///
 /// @tparam BaseType       Which factory to add \p DerivedType to
 /// @tparam DerivedType    The new type to add to Factory<BaseType>
-template <typename BaseType, typename DerivedType>
+template <class BaseType, class DerivedType, class DerivedFactory>
 class RegisterInFactory {
 public:
   RegisterInFactory(const std::string& name) {
-    Factory<BaseType>::getInstance().add(name, []() -> std::unique_ptr<BaseType> {
-      return std::make_unique<DerivedType>();
-    });
-  }
-};
-
-template <class BaseType, class DerivedType, class DerivedFactory>
-class RegisterInStandardFactory {
-public:
-  RegisterInStandardFactory(const std::string& name) {
-    DerivedFactory::getInstance().add(
-      name, [](Options* options) -> std::unique_ptr<BaseType> {
-        return std::make_unique<DerivedType>(options);
-      });
+    DerivedFactory::getInstance().add(name,
+                                      [](Options* options) -> std::unique_ptr<BaseType> {
+                                        return std::make_unique<DerivedType>(options);
+                                      });
   }
 };
 

@@ -76,7 +76,7 @@ class Mesh;
 #include <memory>
 #include <map>
 
-class MeshFactory : public StandardFactory<
+class MeshFactory : public Factory<
   Mesh, MeshFactory,
   std::function<std::unique_ptr<Mesh>(GridDataSource*, Options*)>> {
 public:
@@ -89,9 +89,9 @@ public:
 };
 
 template <class DerivedType>
-class RegisterInStandardFactory<Mesh, DerivedType, MeshFactory> {
+class RegisterInFactory<Mesh, DerivedType, MeshFactory> {
 public:
-  RegisterInStandardFactory(const std::string& name) {
+  RegisterInFactory(const std::string& name) {
     MeshFactory::getInstance().add(
         name, [](GridDataSource* source, Options* options) -> std::unique_ptr<Mesh> {
           return std::make_unique<DerivedType>(source, options);
@@ -100,7 +100,7 @@ public:
 };
 
 template <class DerivedType>
-using RegisterMesh = RegisterInStandardFactory<Mesh, DerivedType, MeshFactory>;
+using RegisterMesh = RegisterInFactory<Mesh, DerivedType, MeshFactory>;
 
 /// Type used to return pointers to handles
 using comm_handle = void*;

@@ -126,7 +126,7 @@ constexpr int INVERT_KX_ZERO = 16;
  */
 
 class LaplaceFactory
-    : public StandardFactory<
+    : public Factory<
           Laplacian, LaplaceFactory,
           std::function<std::unique_ptr<Laplacian>(Options*, CELL_LOC, Mesh*)>> {
 public:
@@ -137,7 +137,7 @@ public:
 
   ReturnType create(Options* options = nullptr, CELL_LOC loc = CELL_CENTRE,
                     Mesh* mesh = nullptr) {
-    return StandardFactory::create(getType(options), options, loc, mesh);
+    return Factory::create(getType(options), options, loc, mesh);
   }
 };
 
@@ -150,9 +150,9 @@ public:
 ///     RegisterLaplace<MyLaplace> registerlaplacemine("mylaplace");
 ///     }
 template <class DerivedType>
-class RegisterInStandardFactory<Laplacian, DerivedType, LaplaceFactory> {
+class RegisterInFactory<Laplacian, DerivedType, LaplaceFactory> {
 public:
-  RegisterInStandardFactory(const std::string& name) {
+  RegisterInFactory(const std::string& name) {
     LaplaceFactory::getInstance().add(
       name, [](Options* options, CELL_LOC loc, Mesh* mesh) -> std::unique_ptr<Laplacian> {
         return std::make_unique<DerivedType>(options, loc, mesh);
@@ -161,7 +161,7 @@ public:
 };
 
 template <class DerivedType>
-using RegisterLaplace = RegisterInStandardFactory<Laplacian, DerivedType, LaplaceFactory>;
+using RegisterLaplace = RegisterInFactory<Laplacian, DerivedType, LaplaceFactory>;
 
 /// Base class for Laplacian inversion
 class Laplacian {
