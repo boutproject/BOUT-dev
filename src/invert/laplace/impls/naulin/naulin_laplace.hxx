@@ -31,6 +31,10 @@ class LaplaceNaulin;
 #include <invert_laplace.hxx>
 #include <options.hxx>
 
+namespace {
+RegisterLaplace<LaplaceNaulin> registerlaplacenaulin(LAPLACE_NAULIN);
+}
+
 /// Solves the 2D Laplacian equation
 /*!
  * 

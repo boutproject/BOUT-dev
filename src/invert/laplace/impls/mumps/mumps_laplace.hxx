@@ -38,8 +38,6 @@
 
 class LaplaceMumps;
 
-#include "../../laplacefactory.hxx"
-
 namespace {
 RegisterLaplace<LaplaceMumps> registerlaplacemumps(LAPLACE_MUMPS);
 }
