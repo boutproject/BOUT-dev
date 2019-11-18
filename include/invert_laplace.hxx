@@ -137,6 +137,7 @@ public:
 
   ReturnType create(Options* options = nullptr, CELL_LOC loc = CELL_CENTRE,
                     Mesh* mesh = nullptr) {
+    options = optionsOrDefaultSection(options);
     return Factory::create(getType(options), options, loc, mesh);
   }
 };

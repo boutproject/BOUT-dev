@@ -67,6 +67,14 @@ protected:
   /// Storage of the creation functions
   std::map<std::string, TypeCreator> type_map;
 
+  /// Return either \p options or the section from root
+  Options* optionsOrDefaultSection(Options* options) const {
+    if (options == nullptr) {
+      options = &Options::root()[DerivedFactory::section_name];
+    }
+    return options;
+  }
+
 public:
   virtual ~Factory() = default;
 
@@ -106,16 +114,14 @@ public:
   /// @param[in] options  Options section to look for type name
   /// @returns the name of the type to create
   std::string getType(Options* options = nullptr) const {
-    if (options == nullptr) {
-      options = &Options::root()[DerivedFactory::section_name];
-    }
-
+    options = optionsOrDefaultSection(options);
     return (*options)[DerivedFactory::option_name].withDefault(
         DerivedFactory::getDefaultType());
   }
 
   /// Create a new object using the type set in \p options
   ReturnType create(Options* options = nullptr) const {
+    options = optionsOrDefaultSection(options);
     return create(getType(options), options);
   }
 
