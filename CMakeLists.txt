@@ -309,6 +309,13 @@ target_compile_definitions(bout++
 target_compile_features(bout++ PUBLIC cxx_std_14)
 set_target_properties(bout++ PROPERTIES CXX_EXTENSIONS OFF)
 
+find_package(fmt 6 QUIET)
+if(NOT FMT_FOUND)
+  add_subdirectory(externalpackages/fmt)
+  message(STATUS "Using fmt submodule")
+endif()
+target_link_libraries(bout++ PUBLIC fmt::fmt)
+
 option(ENABLE_WARNINGS "Enable compiler warnings" ON)
 if (ENABLE_WARNINGS)
   target_compile_options(bout++ PRIVATE
@@ -732,6 +739,7 @@ endif()
 include(GNUInstallDirs)
 install(TARGETS bout++
   EXPORT bout++Targets
+  EXPORT fmt-targets
   LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
   ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
   RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
