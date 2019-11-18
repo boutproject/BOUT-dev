@@ -141,8 +141,7 @@ int BoutInitialise(int& argc, char**& argv) {
 
     // Load settings file
     OptionsReader* reader = OptionsReader::getInstance();
-    reader->read(Options::getRoot(), "%s/%s", args.data_dir.c_str(),
-                 args.opt_file.c_str());
+    reader->read(Options::getRoot(), "{}/{}", args.data_dir, args.opt_file);
 
     // Get options override from command-line
     reader->parseCommandLine(Options::getRoot(), argc, argv);
@@ -595,8 +594,7 @@ Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir
 
 void writeSettingsFile(Options& options, const std::string& data_dir,
                        const std::string& settings_file) {
-  OptionsReader::getInstance()->write(&options, "%s/%s", data_dir.c_str(),
-                                      settings_file.c_str());
+  OptionsReader::getInstance()->write(&options, "{}/{}", data_dir, settings_file);
 }
 
 } // namespace experimental
