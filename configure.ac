@@ -1183,6 +1183,23 @@ AS_IF([test "$USE_NLS" = "yes"], [
 ]) 
 
 #############################################################
+# Sort out fmt
+#############################################################
+
+dnl If in a git repo, get submodule, unless BOUT_DONT_UPDATE_GIT_SUBMODULE is set
+AC_CHECK_FILE([.git], [
+  AS_IF([test "x$BOUT_DONT_UPDATE_GIT_SUBMODULE" == "x"], [
+    git submodule update --init externalpackages/fmt
+  ])
+])
+
+dnl Copy the one file we need to somewhere else
+AC_CONFIG_LINKS(src/fmt/format.cxx:externalpackages/fmt/src/format.cc)
+
+dnl This include must come _first_
+EXTRA_INCS="-I\$(BOUT_TOP)/externalpackages/fmt/include $EXTRA_INCS"
+
+#############################################################
 # Check environment
 #############################################################
 
