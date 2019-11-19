@@ -87,8 +87,7 @@ public:
 
 FieldGeneratorPtr FieldBinary::clone(const list<FieldGeneratorPtr> args) {
   if (args.size() != 2)
-    throw ParseException("Binary operator expecting 2 arguments. Got '%lu'",
-                         static_cast<unsigned long>(args.size()));
+    throw ParseException("Binary operator expecting 2 arguments. Got {}", args.size());
 
   return std::make_shared<FieldBinary>(args.front(), args.back(), op);
 }
@@ -104,7 +103,7 @@ BoutReal FieldBinary::generate(double x, double y, double z, double t) {
   case '^': return pow(lval, rval);
   }
   // Unknown operator.
-  throw ParseException("Unknown binary operator '%c'", op);
+  throw ParseException("Unknown binary operator '{:c}'", op);
 }
 
 /////////////////////////////////////////////
@@ -154,7 +153,7 @@ FieldGeneratorPtr ExpressionParser::parseIdentifierExpr(LexInfo& lex) const {
 
     auto it = gen.find(name);
     if (it == gen.end())
-      throw ParseException("Couldn't find generator '%s'", name.c_str());
+      throw ParseException("Couldn't find generator '{:s}'", name);
 
     // Parse arguments (if any)
     list<FieldGeneratorPtr> args;
@@ -177,8 +176,8 @@ FieldGeneratorPtr ExpressionParser::parseIdentifierExpr(LexInfo& lex) const {
         return it->second->clone(args);
       }
       if (lex.curtok != ',') {
-        throw ParseException("Expecting ',' or ')' in function argument list (%s)\n",
-                             name.c_str());
+        throw ParseException("Expecting ',' or ')' in function argument list ({:s})\n",
+                             name);
       }
       lex.nextToken();
     } while (true);
@@ -190,7 +189,7 @@ FieldGeneratorPtr ExpressionParser::parseIdentifierExpr(LexInfo& lex) const {
       // Not in internal map. Try to resolve
       FieldGeneratorPtr g = resolve(name);
       if (g == nullptr)
-        throw ParseException("Couldn't find generator '%s'", name.c_str());
+        throw ParseException("Couldn't find generator '{:s}'", name);
       return g;
     }
     list<FieldGeneratorPtr> args;
@@ -204,8 +203,8 @@ FieldGeneratorPtr ExpressionParser::parseParenExpr(LexInfo& lex) const {
   FieldGeneratorPtr g = parseExpression(lex);
 
   if ((lex.curtok != ')') && (lex.curtok != ']'))
-    throw ParseException("Expecting ')' or ']' but got curtok=%d (%c)",
-                         static_cast<int>(lex.curtok), lex.curtok);
+    throw ParseException("Expecting ')' or ']' but got curtok={:d} ({:c})",
+                         lex.curtok, static_cast<char>(lex.curtok));
 
   lex.nextToken(); // eat ')'
   return g;
@@ -229,8 +228,7 @@ FieldGeneratorPtr ExpressionParser::parsePrimary(LexInfo& lex) const {
   case '[':
     return parseParenExpr(lex);
   }
-  throw ParseException("Unexpected token %d (%c)", static_cast<int>(lex.curtok),
-                       lex.curtok);
+  throw ParseException("Unexpected token {:d} ({:c})", lex.curtok, static_cast<char>(lex.curtok));
 }
 
 FieldGeneratorPtr ExpressionParser::parseBinOpRHS(LexInfo& lex, int ExprPrec,
@@ -245,7 +243,7 @@ FieldGeneratorPtr ExpressionParser::parseBinOpRHS(LexInfo& lex, int ExprPrec,
     auto it = bin_op.find(lex.curtok);
 
     if (it == bin_op.end())
-      throw ParseException("Unexpected binary operator '%c'", lex.curtok);
+      throw ParseException("Unexpected binary operator '{:c}'", static_cast<char>(lex.curtok));
 
     FieldGeneratorPtr op = it->second.first;
     int TokPrec = it->second.second;
@@ -270,7 +268,7 @@ FieldGeneratorPtr ExpressionParser::parseBinOpRHS(LexInfo& lex, int ExprPrec,
     it = bin_op.find(lex.curtok);
 
     if (it == bin_op.end())
-      throw ParseException("Unexpected character '%c'", lex.curtok);
+      throw ParseException("Unexpected character '{:c}'", static_cast<char>(lex.curtok));
 
     int NextPrec = it->second.second;
     if (TokPrec < NextPrec) {
@@ -409,20 +407,3 @@ char ExpressionParser::LexInfo::nextToken() {
   LastChar = static_cast<signed char>(ss.get());
   return curtok;
 }
-
-//////////////////////////////////////////////////////////
-// ParseException
-
-ParseException::ParseException(const char* s, ...) {
-  if (s == nullptr)
-    return;
-
-  int buf_len = 1024;
-  char* buffer = new char[buf_len];
-  bout_vsnprintf(buffer, buf_len, s);
-
-  message.assign(buffer);
-  delete[] buffer;
-}
-
-const char* ParseException::what() const noexcept { return message.c_str(); }
