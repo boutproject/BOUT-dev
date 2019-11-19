@@ -688,7 +688,7 @@ Field3D filter(const Field3D &var, int N0, const std::string& rgn) {
 
 // Fourier filter in z with zmin
 Field3D lowPass(const Field3D &var, int zmax, bool keep_zonal, const std::string& rgn) {
-  TRACE("lowPass(Field3D, %d, %d)", zmax, keep_zonal);
+  TRACE("lowPass(Field3D, {}, {})", zmax, keep_zonal);
 
   checkData(var);
   int ncz = var.getNz();

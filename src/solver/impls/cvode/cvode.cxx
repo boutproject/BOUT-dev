@@ -441,7 +441,7 @@ int CvodeSolver::run() {
 }
 
 BoutReal CvodeSolver::run(BoutReal tout) {
-  TRACE("Running solver: solver::run(%e)", tout);
+  TRACE("Running solver: solver::run({})", tout);
 
   MPI_Barrier(BoutComm::get());
 
@@ -492,7 +492,7 @@ BoutReal CvodeSolver::run(BoutReal tout) {
  **************************************************************************/
 
 void CvodeSolver::rhs(BoutReal t, BoutReal* udata, BoutReal* dudata) {
-  TRACE("Running RHS: CvodeSolver::res(%e)", t);
+  TRACE("Running RHS: CvodeSolver::res({})", t);
 
   // Load state from udata
   load_vars(udata);
@@ -514,7 +514,7 @@ void CvodeSolver::rhs(BoutReal t, BoutReal* udata, BoutReal* dudata) {
 
 void CvodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* udata,
                       BoutReal* rvec, BoutReal* zvec) {
-  TRACE("Running preconditioner: CvodeSolver::pre(%e)", t);
+  TRACE("Running preconditioner: CvodeSolver::pre({})", t);
 
   BoutReal tstart = MPI_Wtime();
 
@@ -547,7 +547,7 @@ void CvodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* udat
  **************************************************************************/
 
 void CvodeSolver::jac(BoutReal t, BoutReal* ydata, BoutReal* vdata, BoutReal* Jvdata) {
-  TRACE("Running Jacobian: CvodeSolver::jac(%e)", t);
+  TRACE("Running Jacobian: CvodeSolver::jac({})", t);
 
   if (jacfunc == nullptr)
     throw BoutException("No jacobian function supplied!\n");

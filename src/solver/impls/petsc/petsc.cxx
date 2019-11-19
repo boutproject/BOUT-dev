@@ -534,7 +534,7 @@ PetscErrorCode PetscSolver::run() {
  **************************************************************************/
 
 PetscErrorCode PetscSolver::rhs(TS UNUSED(ts), BoutReal t, Vec udata, Vec dudata) {
-  TRACE("Running RHS: PetscSolver::rhs(%e)", t);
+  TRACE("Running RHS: PetscSolver::rhs({:e})", t);
 
   const BoutReal *udata_array;
   BoutReal *dudata_array;

@@ -686,7 +686,7 @@ int BoutFinalise(bool write_settings) {
  **************************************************************************/
 
 int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
-  TRACE("BoutMonitor::call(%e, %d, %d)", t, iter, NOUT);
+  TRACE("BoutMonitor::call({:e}, {:d}, {:d})", t, iter, NOUT);
 
   // Data used for timing
   static bool first_time = true;

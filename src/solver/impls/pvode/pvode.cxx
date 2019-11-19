@@ -239,7 +239,7 @@ int PvodeSolver::run() {
 }
 
 BoutReal PvodeSolver::run(BoutReal tout) {
-  TRACE("Running solver: solver::run(%e)", tout);
+  TRACE("Running solver: solver::run({})", tout);
 
   BoutReal *udata;
   
@@ -293,7 +293,7 @@ BoutReal PvodeSolver::run(BoutReal tout) {
  **************************************************************************/
 
 void PvodeSolver::rhs(int UNUSED(N), BoutReal t, BoutReal *udata, BoutReal *dudata) {
-  TRACE("Running RHS: PvodeSolver::rhs(%e)", t);
+  TRACE("Running RHS: PvodeSolver::rhs({})", t);
 
   // Get current timestep
   hcur = 0.0; //((CVodeMemRec*) cvode_mem)->cv_h;
@@ -309,7 +309,7 @@ void PvodeSolver::rhs(int UNUSED(N), BoutReal t, BoutReal *udata, BoutReal *duda
 }
 
 void PvodeSolver::gloc(int UNUSED(N), BoutReal t, BoutReal *udata, BoutReal *dudata) {
-  TRACE("Running RHS: PvodeSolver::gloc(%e)", t);
+  TRACE("Running RHS: PvodeSolver::gloc({})", t);
 
   Timer timer("rhs");
 

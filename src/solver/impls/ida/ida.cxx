@@ -267,7 +267,7 @@ int IdaSolver::run() {
 }
 
 BoutReal IdaSolver::run(BoutReal tout) {
-  TRACE("Running solver: solver::run(%e)", tout);
+  TRACE("Running solver: solver::run({:e})", tout);
 
   if (!initialised)
     throw BoutException("Running IDA solver without initialisation\n");
@@ -296,7 +296,7 @@ BoutReal IdaSolver::run(BoutReal tout) {
  **************************************************************************/
 
 void IdaSolver::res(BoutReal t, BoutReal* udata, BoutReal* dudata, BoutReal* rdata) {
-  TRACE("Running RHS: IdaSolver::res(%e)", t);
+  TRACE("Running RHS: IdaSolver::res({:e})", t);
 
   // Load state from udata
   load_vars(udata);
@@ -322,7 +322,7 @@ void IdaSolver::res(BoutReal t, BoutReal* udata, BoutReal* dudata, BoutReal* rda
 
 void IdaSolver::pre(BoutReal t, BoutReal cj, BoutReal delta, BoutReal* udata,
                     BoutReal* rvec, BoutReal* zvec) {
-  TRACE("Running preconditioner: IdaSolver::pre(%e)", t);
+  TRACE("Running preconditioner: IdaSolver::pre({:e})", t);
 
   const BoutReal tstart = MPI_Wtime();
 

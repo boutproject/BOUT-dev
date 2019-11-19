@@ -51,7 +51,7 @@ FCIMap::FCIMap(Mesh& mesh, int offset_, BoundaryRegionPar* boundary, bool zperio
     : map_mesh(mesh), offset(offset_), boundary_mask(map_mesh),
       corner_boundary_mask(map_mesh) {
 
-  TRACE("Creating FCIMAP for direction %d", offset);
+  TRACE("Creating FCIMAP for direction {:d}", offset);
 
   if (offset == 0) {
     throw BoutException("FCIMap called with offset = 0; You probably didn't mean to do that");

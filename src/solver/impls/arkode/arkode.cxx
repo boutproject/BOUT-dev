@@ -537,7 +537,7 @@ int ArkodeSolver::run() {
 }
 
 BoutReal ArkodeSolver::run(BoutReal tout) {
-  TRACE("Running solver: solver::run(%e)", tout);
+  TRACE("Running solver: solver::run({:e})", tout);
 
   MPI_Barrier(BoutComm::get());
 
@@ -589,7 +589,7 @@ BoutReal ArkodeSolver::run(BoutReal tout) {
  **************************************************************************/
 
 void ArkodeSolver::rhs_e(BoutReal t, BoutReal* udata, BoutReal* dudata) {
-  TRACE("Running RHS: ArkodeSolver::rhs_e(%e)", t);
+  TRACE("Running RHS: ArkodeSolver::rhs_e({:e})", t);
 
   // Load state from udata
   load_vars(udata);
@@ -610,7 +610,7 @@ void ArkodeSolver::rhs_e(BoutReal t, BoutReal* udata, BoutReal* dudata) {
  **************************************************************************/
 
 void ArkodeSolver::rhs_i(BoutReal t, BoutReal* udata, BoutReal* dudata) {
-  TRACE("Running RHS: ArkodeSolver::rhs_i(%e)", t);
+  TRACE("Running RHS: ArkodeSolver::rhs_i({:e})", t);
 
   load_vars(udata);
   ARKStepGetLastStep(arkode_mem, &hcur);
@@ -623,7 +623,7 @@ void ArkodeSolver::rhs_i(BoutReal t, BoutReal* udata, BoutReal* dudata) {
  *   Full  RHS function du = F(t, u)
  **************************************************************************/
 void ArkodeSolver::rhs(BoutReal t, BoutReal* udata, BoutReal* dudata) {
-  TRACE("Running RHS: ArkodeSolver::rhs(%e)", t);
+  TRACE("Running RHS: ArkodeSolver::rhs({:e})", t);
 
   load_vars(udata);
   ARKStepGetLastStep(arkode_mem, &hcur);
@@ -638,7 +638,7 @@ void ArkodeSolver::rhs(BoutReal t, BoutReal* udata, BoutReal* dudata) {
 
 void ArkodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* udata,
                        BoutReal* rvec, BoutReal* zvec) {
-  TRACE("Running preconditioner: ArkodeSolver::pre(%e)", t);
+  TRACE("Running preconditioner: ArkodeSolver::pre({:e})", t);
 
   const BoutReal tstart = MPI_Wtime();
 
@@ -669,7 +669,7 @@ void ArkodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* uda
  **************************************************************************/
 
 void ArkodeSolver::jac(BoutReal t, BoutReal* ydata, BoutReal* vdata, BoutReal* Jvdata) {
-  TRACE("Running Jacobian: ArkodeSolver::jac(%e)", t);
+  TRACE("Running Jacobian: ArkodeSolver::jac({:e})", t);
 
   if (jacfunc == nullptr)
     throw BoutException("No jacobian function supplied!\n");

@@ -610,7 +610,7 @@ int BoutMesh::load() {
 
     if ((jyseps1_1 >= 0) || (jyseps2_2 + 1 < ny)) {
       // A lower PF region exists
-      TRACE("Creating lower PF communicators for xp=%d", i);
+      TRACE("Creating lower PF communicators for xp={:d}", i);
 
       output_debug << "Creating lower PF communicators for xp = " << i << endl;
 
@@ -669,7 +669,7 @@ int BoutMesh::load() {
     if (jyseps2_1 != jyseps1_2) {
       // Upper PF region
       // Note need to order processors so that a continuous surface is formed
-      TRACE("Creating upper PF communicators for xp=%d", i);
+      TRACE("Creating upper PF communicators for xp={:d}", i);
 
       output_debug << "Creating upper PF communicators for xp = " << i << endl;
 

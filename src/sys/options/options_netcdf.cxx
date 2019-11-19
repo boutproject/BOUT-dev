@@ -499,7 +499,7 @@ void writeGroup(const Options& options, NcGroup group,
 
     if (child.isSection()) {
       // Check if the group exists
-      TRACE("Writing group '%s'", name.c_str());
+      TRACE("Writing group '{:s}'", name);
 
       auto subgroup = group.getGroup(name);
       if (subgroup.isNull()) {

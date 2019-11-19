@@ -84,7 +84,7 @@ void warn_default_used(const T& value, const std::string& name) {
 } // namespace
 
 int Mesh::get(std::string& sval, const std::string& name, const std::string& def) {
-  TRACE("Mesh::get(sval, %s)", name.c_str());
+  TRACE("Mesh::get(sval, {:s})", name);
 
   if (source == nullptr) {
     warn_default_used(def, name);
@@ -96,7 +96,7 @@ int Mesh::get(std::string& sval, const std::string& name, const std::string& def
 }
 
 int Mesh::get(int &ival, const std::string &name, int def) {
-  TRACE("Mesh::get(ival, %s)", name.c_str());
+  TRACE("Mesh::get(ival, {:s})", name);
 
   if (source == nullptr) {
     warn_default_used(def, name);
@@ -108,7 +108,7 @@ int Mesh::get(int &ival, const std::string &name, int def) {
 }
 
 int Mesh::get(BoutReal& rval, const std::string& name, BoutReal def) {
-  TRACE("Mesh::get(rval, %s)", name.c_str());
+  TRACE("Mesh::get(rval, {:s})", name);
 
   if (source == nullptr) {
     warn_default_used(def, name);
@@ -120,7 +120,7 @@ int Mesh::get(BoutReal& rval, const std::string& name, BoutReal def) {
 }
 
 int Mesh::get(bool &bval, const std::string &name, bool def) {
-  TRACE("Mesh::get(bval, %s)", name.c_str());
+  TRACE("Mesh::get(bval, {:s})", name);
 
   if (source == nullptr) {
     warn_default_used(def, name);
@@ -135,7 +135,7 @@ int Mesh::get(bool &bval, const std::string &name, bool def) {
 }
 
 int Mesh::get(Field2D &var, const std::string &name, BoutReal def) {
-  TRACE("Loading 2D field: Mesh::get(Field2D, %s)", name.c_str());
+  TRACE("Loading 2D field: Mesh::get(Field2D, {:s})", name);
 
   if (source == nullptr or !source->get(this, var, name, def)) {
     // set val to default in source==nullptr too:
@@ -153,7 +153,7 @@ int Mesh::get(Field2D &var, const std::string &name, BoutReal def) {
 }
 
 int Mesh::get(Field3D &var, const std::string &name, BoutReal def, bool communicate) {
-  TRACE("Loading 3D field: Mesh::get(Field3D, %s)", name.c_str());
+  TRACE("Loading 3D field: Mesh::get(Field3D, {:s})", name);
 
   if (source == nullptr or !source->get(this, var, name, def)) {
     // set val to default in source==nullptr too:
@@ -174,7 +174,7 @@ int Mesh::get(Field3D &var, const std::string &name, BoutReal def, bool communic
 
 int Mesh::get(FieldPerp &var, const std::string &name, BoutReal def,
     bool UNUSED(communicate)) {
-  TRACE("Loading FieldPerp: Mesh::get(FieldPerp, %s)", name.c_str());
+  TRACE("Loading FieldPerp: Mesh::get(FieldPerp, {:s})", name);
 
   if (source == nullptr or !source->get(this, var, name, def)) {
     // set val to default in source==nullptr too:
@@ -199,7 +199,7 @@ int Mesh::get(FieldPerp &var, const std::string &name, BoutReal def,
  **************************************************************************/
 
 int Mesh::get(Vector2D &var, const std::string &name, BoutReal def) {
-  TRACE("Loading 2D vector: Mesh::get(Vector2D, %s)", name.c_str());
+  TRACE("Loading 2D vector: Mesh::get(Vector2D, {:s})", name);
 
   if(var.covariant) {
     output << _("\tReading covariant vector ") << name << endl;
@@ -220,7 +220,7 @@ int Mesh::get(Vector2D &var, const std::string &name, BoutReal def) {
 }
 
 int Mesh::get(Vector3D &var, const std::string &name, BoutReal def) {
-  TRACE("Loading 3D vector: Mesh::get(Vector3D, %s)", name.c_str());
+  TRACE("Loading 3D vector: Mesh::get(Vector3D, {:s})", name);
 
   if(var.covariant) {
     output << _("\tReading covariant vector ") << name << endl;
@@ -245,7 +245,7 @@ bool Mesh::isDataSourceGridFile() const {
 }
 
 bool Mesh::sourceHasVar(const std::string &name) {
-  TRACE("Mesh::sourceHasVar(%s)", name.c_str());
+  TRACE("Mesh::sourceHasVar({:s})", name);
   if (source == nullptr)
     return false;
   return source->hasVar(name);
@@ -451,7 +451,7 @@ int Mesh::globalStartIndexPerp() {
 }
 
 const std::vector<int> Mesh::readInts(const std::string &name, int n) {
-  TRACE("Mesh::readInts(%s)", name.c_str());
+  TRACE("Mesh::readInts({:s})", name);
 
   if (source == nullptr) {
     throw BoutException("Can't read integer array %s as 'Mesh::source' is nullptr\n",
