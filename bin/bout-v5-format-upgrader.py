@@ -45,11 +45,41 @@ def fix_trivial_format(source):
         r"""
         (.*)?
         "{:s}",\s*                  # Entire format is just a string
-        (?:([\w_]+)\.c_str\(\)       # And replacement is std::string::c_str
+        (?:([\w_]+)\.c_str\(\)      # And replacement is std::string::c_str
         |(".*?"))
         (.*)?
         """,
         trivial_replace,
+        source,
+        flags=re.VERBOSE,
+    )
+
+
+def fix_string_c_str(source):
+    """Fix formats that use {:s} where the replacement is using std::string::c_str
+
+    """
+    return re.sub(
+        r"""
+        (".*{:s}[^;]*?",)       # A format string containing {:s}
+        \s*([^);]+?)\.c_str\(\) # Replacement of std::string::c_str
+        """,
+        r"\1 \2",
+        source,
+        flags=re.DOTALL | re.VERBOSE,
+    )
+
+
+def fix_trace(source):
+    """Fix TRACE macros where fix_string_c_str has failed for some reason
+
+    """
+    return re.sub(
+        r"""
+        (TRACE\(".*{:s}.*",)
+        \s*([\w_]+)\.c_str\(\)\); # Replacement of std::string::c_str
+        """,
+        r"\1 \2);",
         source,
         flags=re.VERBOSE,
     )
@@ -73,6 +103,8 @@ def apply_fixes(format_replacements, source):
         modified = fix_format_replacement(format_replacement, modified)
 
     modified = fix_trivial_format(modified)
+    modified = fix_string_c_str(modified)
+    modified = fix_trace(modified)
 
     return modified
 
