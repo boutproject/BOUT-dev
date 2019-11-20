@@ -117,9 +117,9 @@ int PhysicsModel::postInit(bool restarting) {
 
     /// Load restart file
     if (!restart.openr(filename))
-      throw BoutException("Error: Could not open restart file %s\n", filename.c_str());
+      throw BoutException("Error: Could not open restart file {:s}\n", filename);
     if (!restart.read())
-      throw BoutException("Error: Could not read restart file %s\n", filename.c_str());
+      throw BoutException("Error: Could not read restart file {:s}\n", filename);
     restart.close();
   }
 

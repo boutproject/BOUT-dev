@@ -123,7 +123,7 @@ int SNESSolver::run() {
   SNESGetConvergedReason(snes,&reason);
   if(reason < 0) {
     // Diverged
-    throw BoutException("SNES failed to converge. Reason: %d\n", reason);
+    throw BoutException("SNES failed to converge. Reason: {:d}\n", reason);
   }
   
   int its;

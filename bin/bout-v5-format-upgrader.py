@@ -70,7 +70,7 @@ def fix_string_c_str(source):
         """,
         r"\1 \2",
         source,
-        flags=re.DOTALL | re.VERBOSE,
+        flags=re.VERBOSE,
     )
 
 

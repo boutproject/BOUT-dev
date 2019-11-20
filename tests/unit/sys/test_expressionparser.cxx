@@ -36,7 +36,7 @@ public:
   clone(const std::list<std::shared_ptr<FieldGenerator>> args) override {
     if (args.size() != 2) {
       throw ParseException(
-          "Incorrect number of arguments to increment function. Expecting 2, got %zu",
+          "Incorrect number of arguments to increment function. Expecting 2, got {:d}",
           args.size());
     }
 

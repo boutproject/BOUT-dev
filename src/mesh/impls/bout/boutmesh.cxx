@@ -150,7 +150,7 @@ int BoutMesh::load() {
 
   // Check that nx is large enough
   if (nx <= 2 * MXG) {
-    throw BoutException(_("Error: nx must be greater than 2 times MXG (2 * %d)"), MXG);
+    throw BoutException(_("Error: nx must be greater than 2 times MXG (2 * {:d})"), MXG);
   }
 
   // Set global x- and z-grid sizes
@@ -198,7 +198,7 @@ int BoutMesh::load() {
   }
   if (jyseps2_2 < jyseps1_2) {
     if (jyseps1_2 >= ny) {
-      throw BoutException("jyseps1_2 (%d) must be < ny (%d).", jyseps1_2, ny);
+      throw BoutException("jyseps1_2 ({:d}) must be < ny ({:d}).", jyseps1_2, ny);
     }
     output_warn.write("\tWARNING: jyseps2_2 (%d) must be >= jyseps1_2 (%d). Setting to %d\n",
                       jyseps2_2, jyseps1_2, jyseps1_2);
@@ -224,8 +224,8 @@ int BoutMesh::load() {
                  .withDefault(1);
       if ((NPES % NXPE) != 0) {
         throw BoutException(
-            _("Number of processors (%d) not divisible by NPs in x direction (%d)\n"), NPES,
-            NXPE);
+            _("Number of processors ({:d}) not divisible by NPs in x direction ({:d})\n"),
+            NPES, NXPE);
       }
 
       NYPE = NPES / NXPE;
@@ -237,8 +237,8 @@ int BoutMesh::load() {
                  .withDefault(1);
       if ((NPES % NYPE) != 0) {
         throw BoutException(
-            _("Number of processors (%d) not divisible by NPs in y direction (%d)\n"), NPES,
-            NYPE);
+            _("Number of processors ({:d}) not divisible by NPs in y direction ({:d})\n"),
+            NPES, NYPE);
       }
 
       NXPE = NPES / NYPE;
@@ -248,13 +248,13 @@ int BoutMesh::load() {
 
     // Check size of Y mesh
     if (ysub < MYG) {
-      throw BoutException("\t -> ny/NYPE (%d/%d = %d) must be >= MYG (%d)\n", ny, NYPE,
-                        ysub, MYG);
+      throw BoutException("\t -> ny/NYPE ({:d}/{:d} = {:d}) must be >= MYG ({:d})\n", ny,
+                          NYPE, ysub, MYG);
     }
     // Check branch cuts
     if ((jyseps1_1 + 1) % ysub != 0) {
       throw BoutException(
-          "\t -> Leg region jyseps1_1+1 (%d) must be a multiple of MYSUB (%d)\n",
+          "\t -> Leg region jyseps1_1+1 ({:d}) must be a multiple of MYSUB ({:d})\n",
           jyseps1_1 + 1, ysub);
     }
 
@@ -262,41 +262,47 @@ int BoutMesh::load() {
       // Double Null
 
       if ((jyseps2_1 - jyseps1_1) % ysub != 0) {
-        throw BoutException("\t -> Core region jyseps2_1-jyseps1_1 (%d-%d = %d) must "
-                          "be a multiple of MYSUB (%d)\n",
-                          jyseps2_1, jyseps1_1, jyseps2_1 - jyseps1_1, ysub);
+        throw BoutException(
+            "\t -> Core region jyseps2_1-jyseps1_1 ({:d}-{:d} = {:d}) must "
+            "be a multiple of MYSUB ({:d})\n",
+            jyseps2_1, jyseps1_1, jyseps2_1 - jyseps1_1, ysub);
       }
 
       if ((jyseps2_2 - jyseps1_2) % ysub != 0) {
-        throw BoutException("\t -> Core region jyseps2_2-jyseps1_2 (%d-%d = %d) must "
-                          "be a multiple of MYSUB (%d)\n",
-                          jyseps2_2, jyseps1_2, jyseps2_2 - jyseps1_2, ysub);
+        throw BoutException(
+            "\t -> Core region jyseps2_2-jyseps1_2 ({:d}-{:d} = {:d}) must "
+            "be a multiple of MYSUB ({:d})\n",
+            jyseps2_2, jyseps1_2, jyseps2_2 - jyseps1_2, ysub);
       }
 
       // Check upper legs
       if ((ny_inner - jyseps2_1 - 1) % ysub != 0) {
-        throw BoutException("\t -> leg region ny_inner-jyseps2_1-1 (%d-%d-1 = %d) must "
-                          "be a multiple of MYSUB (%d)\n",
-                          ny_inner, jyseps2_1, ny_inner - jyseps2_1 - 1, ysub);
+        throw BoutException(
+            "\t -> leg region ny_inner-jyseps2_1-1 ({:d}-{:d}-1 = {:d}) must "
+            "be a multiple of MYSUB ({:d})\n",
+            ny_inner, jyseps2_1, ny_inner - jyseps2_1 - 1, ysub);
       }
       if ((jyseps1_2 - ny_inner + 1) % ysub != 0) {
-        throw BoutException("\t -> leg region jyseps1_2-ny_inner+1 (%d-%d+1 = %d) must "
-                          "be a multiple of MYSUB (%d)\n",
-                          jyseps1_2, ny_inner, jyseps1_2 - ny_inner + 1, ysub);
+        throw BoutException(
+            "\t -> leg region jyseps1_2-ny_inner+1 ({:d}-{:d}+1 = {:d}) must "
+            "be a multiple of MYSUB ({:d})\n",
+            jyseps1_2, ny_inner, jyseps1_2 - ny_inner + 1, ysub);
       }
     } else {
       // Single Null
       if ((jyseps2_2 - jyseps1_1) % ysub != 0) {
-        throw BoutException("\t -> Core region jyseps2_2-jyseps1_1 (%d-%d = %d) must "
-                          "be a multiple of MYSUB (%d)\n",
-                          jyseps2_2, jyseps1_1, jyseps2_2 - jyseps1_1, ysub);
+        throw BoutException(
+            "\t -> Core region jyseps2_2-jyseps1_1 ({:d}-{:d} = {:d}) must "
+            "be a multiple of MYSUB ({:d})\n",
+            jyseps2_2, jyseps1_1, jyseps2_2 - jyseps1_1, ysub);
       }
     }
 
     if ((ny - jyseps2_2 - 1) % ysub != 0) {
-      throw BoutException("\t -> leg region ny-jyseps2_2-1 (%d-%d-1 = %d) must be a "
-                        "multiple of MYSUB (%d)\n",
-                        ny, jyseps2_2, ny - jyseps2_2 - 1, ysub);
+      throw BoutException(
+          "\t -> leg region ny-jyseps2_2-1 ({:d}-{:d}-1 = {:d}) must be a "
+          "multiple of MYSUB ({:d})\n",
+          ny, jyseps2_2, ny - jyseps2_2 - 1, ysub);
     }
   } else {
     // Choose NXPE
@@ -411,8 +417,8 @@ int BoutMesh::load() {
   /// Split MX points between NXPE processors
   MXSUB = MX / NXPE;
   if ((MX % NXPE) != 0) {
-    throw BoutException(_("Cannot split %d X points equally between %d processors\n"), MX,
-                        NXPE);
+    throw BoutException(_("Cannot split {:d} X points equally between {:d} processors\n"),
+                        MX, NXPE);
   }
 
   /// NOTE: No grid data reserved for Y boundary cells - copy from neighbours
@@ -420,13 +426,15 @@ int BoutMesh::load() {
   MYSUB = MY / NYPE;
   if ((MY % NYPE) != 0) {
     throw BoutException(
-        _("\tERROR: Cannot split %d Y points equally between %d processors\n"), MY, NYPE);
+        _("\tERROR: Cannot split {:d} Y points equally between {:d} processors\n"), MY,
+        NYPE);
   }
 
   MZSUB = MZ / NZPE;
   if ((MZ % NZPE) != 0) {
     throw BoutException(
-        _("\tERROR: Cannot split %d Z points equally between %d processors\n"), MZ, NZPE);
+        _("\tERROR: Cannot split {:d} Z points equally between {:d} processors\n"), MZ,
+        NZPE);
   }
 
   /// Get mesh options
@@ -520,11 +528,12 @@ int BoutMesh::load() {
 
     if (MPI_Group_range_incl(group_world, 1, &proc, &group) != MPI_SUCCESS)
       throw BoutException(
-          "Could not create X communication group for yp=%d (xind=%d,yind=%d)\n", yp,
-          PE_XIND, PE_YIND);
+          "Could not create X communication group for yp={:d} (xind={:d},yind={:d})\n",
+          yp, PE_XIND, PE_YIND);
     if (MPI_Comm_create(BoutComm::get(), group, &comm_tmp) != MPI_SUCCESS)
-      throw BoutException("Could not create X communicator for yp=%d (xind=%d,yind=%d)\n",
-                          yp, PE_XIND, PE_YIND);
+      throw BoutException(
+          "Could not create X communicator for yp={:d} (xind={:d},yind={:d})\n", yp,
+          PE_XIND, PE_YIND);
     MPI_Group_free(&group);
 
     if (yp == PE_YIND) {
@@ -584,7 +593,7 @@ int BoutMesh::load() {
       output_debug << "Double Null inner SOL " << proc[0] << ", " << proc[1] << endl;
 
       if (MPI_Group_range_incl(group_world, 1, &proc, &group) != MPI_SUCCESS)
-        throw BoutException("MPI_Group_range_incl failed for xp = %d", NXPE);
+        throw BoutException("MPI_Group_range_incl failed for xp = {:d}", NXPE);
       MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
       if (comm_tmp != MPI_COMM_NULL)
         comm_outer = comm_tmp;
@@ -1624,8 +1633,8 @@ BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, i
   MX = nx - 2 * MXG;
   MXSUB = MX / NXPE;
   if ((MX % NXPE) != 0) {
-    throw BoutException(_("Cannot split %d X points equally between %d processors\n"), MX,
-                        NXPE);
+    throw BoutException(_("Cannot split {:d} X points equally between {:d} processors\n"),
+                        MX, NXPE);
   }
 
   /// NOTE: No grid data reserved for Y boundary cells - copy from neighbours
@@ -1633,14 +1642,16 @@ BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, i
   MYSUB = MY / NYPE;
   if ((MY % NYPE) != 0) {
     throw BoutException(
-        _("\tERROR: Cannot split %d Y points equally between %d processors\n"), MY, NYPE);
+        _("\tERROR: Cannot split {:d} Y points equally between {:d} processors\n"), MY,
+        NYPE);
   }
 
   MZ = nz;
   MZSUB = MZ / NZPE;
   if ((MZ % NZPE) != 0) {
     throw BoutException(
-        _("\tERROR: Cannot split %d Z points equally between %d processors\n"), MZ, NZPE);
+        _("\tERROR: Cannot split {:d} Z points equally between {:d} processors\n"), MZ,
+        NZPE);
   }
 
   periodicX = false;
@@ -1746,15 +1757,15 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
     ypedown = ype2;
   } else {
     throw BoutException(
-        "ERROR adding connection: y index %d or %d not on processor boundary\n", ypos1,
-        ypos2);
+        "ERROR adding connection: y index {:d} or {:d} not on processor boundary\n",
+        ypos1, ypos2);
   }
 
   /* check the x ranges are possible */
   if ((xge != 0) && (xlt != MX)) {
     throw BoutException(
-        "ERROR adding connection(%d,%d,%d,%d): can only divide X domain in 2\n", ypos1,
-        ypos2, xge, xlt);
+        "ERROR adding connection({:d},{:d},{:d},{:d}): can only divide X domain in 2\n",
+        ypos1, ypos2, xge, xlt);
   }
 
   output_info.write(
@@ -1847,7 +1858,8 @@ void BoutMesh::add_target(int ypos, int xge, int xlt) {
   int ypeup = YPROC(ypos);
   int ypedown = YPROC(ypos + 1);
   if (ypeup == ypedown) {
-    throw BoutException("Adding target at y=%d in middle of processor %d\n", ypos, ypeup);
+    throw BoutException("Adding target at y={:d} in middle of processor {:d}\n", ypos,
+                        ypeup);
   }
 
   output_info.write(
@@ -1911,16 +1923,16 @@ void BoutMesh::topology() {
   // Perform checks common to all topologies
 
   if (NPES != NXPE * NYPE) {
-    throw BoutException("\tTopology error: npes=%d is not equal to NXPE*NYPE=%d\n", NPES,
-                        NXPE * NYPE);
+    throw BoutException("\tTopology error: npes={:d} is not equal to NXPE*NYPE={:d}\n",
+                        NPES, NXPE * NYPE);
   }
   if (MYSUB * NYPE != MY) {
-    throw BoutException("\tTopology error: MYSUB[%d] * NYPE[%d] != MY[%d]\n", MYSUB, NYPE,
-                        MY);
+    throw BoutException("\tTopology error: MYSUB[{:d}] * NYPE[{:d}] != MY[{:d}]\n", MYSUB,
+                        NYPE, MY);
   }
   if (MXSUB * NXPE != MX) {
-    throw BoutException("\tTopology error: MXSUB[%d] * NXPE[%d] != MX[%d]\n", MXSUB, NXPE,
-                        MX);
+    throw BoutException("\tTopology error: MXSUB[{:d}] * NXPE[{:d}] != MX[{:d}]\n", MXSUB,
+                        NXPE, MX);
   }
 
   if ((NXPE > 1) && (MXSUB < MXG)) {

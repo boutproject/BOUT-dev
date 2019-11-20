@@ -117,7 +117,8 @@ int RKGenericSolver::run() {
 	  //to do any solves so could perhaps be check during init instead.
           internal_steps++;
           if(internal_steps > mxstep)
-            throw BoutException("ERROR: MXSTEP exceeded. timestep = %e, err=%e\n", timestep, err);
+            throw BoutException("ERROR: MXSTEP exceeded. timestep = {:e}, err={:e}\n",
+                                timestep, err);
 
 	  //Update the time step if required, note we ignore increases to the timestep
 	  //when on the last internal step as here we may have an artificially small dt

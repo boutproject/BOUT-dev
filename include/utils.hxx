@@ -330,7 +330,7 @@ template <typename T> int invert3x3(Matrix<T> &a, BoutReal small = 1.0e-15) {
 
   if (std::abs(det) < std::abs(small)) {
     if (small >=0 ){
-      throw BoutException("Determinant of matrix < %e --> Poorly conditioned", small);
+      throw BoutException("Determinant of matrix < {:e} --> Poorly conditioned", small);
     } else {
       return 1;
     }      

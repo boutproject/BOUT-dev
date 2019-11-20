@@ -87,7 +87,7 @@ BoutReal stringToReal(const std::string &s) {
   std::stringstream ss(s);
   BoutReal val;
   if(!(ss >> val)) {
-    throw BoutException("Could not convert string '%s' to BoutReal\n", s.c_str());
+    throw BoutException("Could not convert string '{:s}' to BoutReal\n", s);
   }
   return val;
 }
@@ -96,7 +96,7 @@ int stringToInt(const std::string &s) {
   std::stringstream ss(s);
   int val;
   if(!(ss >> val)) {
-    throw BoutException("Could not convert string '%s' to int\n", s.c_str());
+    throw BoutException("Could not convert string '{:s}' to int\n", s);
   }
   return val;
 }

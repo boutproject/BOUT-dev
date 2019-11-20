@@ -30,7 +30,7 @@ GridFile::GridFile(std::unique_ptr<DataFormat> format, std::string gridfilename)
   TRACE("GridFile constructor");
 
   if (! file->openr(filename) ) {
-    throw BoutException("Could not open file '%s'", filename.c_str());
+    throw BoutException("Could not open file '{:s}'", filename);
   }
 
   file->setGlobalOrigin(); // Set default global origin
@@ -206,7 +206,7 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def) 
   AUTO_TRACE();
 
   if (!file->is_valid()) {
-    throw BoutException("Could not read '%s' from file: File cannot be read", name.c_str());
+    throw BoutException("Could not read '{:s}' from file: File cannot be read", name);
   }
   std::vector<int> size = file->getSize(name);
   
@@ -220,11 +220,13 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def) 
   case 1: {
     // 0 or 1 dimension
     if (size[0] != 1) {
-      throw BoutException("Expecting a 2D variable, but '%s' is 1D with %d elements\n", name.c_str(), size[0]);
+      throw BoutException(
+          "Expecting a 2D variable, but '{:s}' is 1D with {:d} elements\n", name,
+          size[0]);
     }
     BoutReal rval;
     if (!file->read(&rval, name)) {
-      throw BoutException("Couldn't read 0D variable '%s'\n", name.c_str());
+      throw BoutException("Couldn't read 0D variable '{:s}'\n", name);
     }
     var = rval;
     return true;
@@ -304,9 +306,11 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def) 
     nx_to_read = m->LocalNx - 2*mxg;
     xd = mxg;
   } else {
-    throw BoutException("Could not read '%s' from file: number of x-boundary guard cells "
-                "in the grid file grid_xguards=%i neither matches grid_xguards >= mxg=%i "
-                "nor grid_xguards = 0", name.c_str(), grid_xguards, mxg);
+    throw BoutException(
+        "Could not read '{:s}' from file: number of x-boundary guard cells "
+        "in the grid file grid_xguards={:d} neither matches grid_xguards >= mxg={:d} "
+        "nor grid_xguards = 0",
+        name, grid_xguards, mxg);
   }
 
   if (not bout::utils::is_FieldPerp<T>::value) {
@@ -321,9 +325,11 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def) 
       ny_to_read = m->LocalNy - 2*myg;
       yd = myg;
     } else {
-      throw BoutException("Could not read '%s' from file: number of y-boundary guard cells "
-                  "in the grid file grid_yguards=%i neither matches grid_yguards >= myg=%i "
-                  "nor grid_yguards = 0", name.c_str(), grid_yguards, myg);
+      throw BoutException(
+          "Could not read '{:s}' from file: number of y-boundary guard cells "
+          "in the grid file grid_yguards={:d} neither matches grid_yguards >= myg={:d} "
+          "nor grid_yguards = 0",
+          name, grid_yguards, myg);
     }
   }
 
@@ -385,7 +391,7 @@ void GridFile::readField(Mesh* UNUSED(m), const std::string& name, int ys, int y
   for(int x = xs; x < xs+nx_to_read; x++) {
     file->setGlobalOrigin(x,ys,0);
     if (!file->read(&var(x-xs+xd, yd), name, 1, ny_to_read) ) {
-      throw BoutException("Could not fetch data for '%s'", name.c_str());
+      throw BoutException("Could not fetch data for '{:s}'", name);
     }
   }
   file->setGlobalOrigin();
@@ -402,8 +408,8 @@ void GridFile::readField(Mesh* m, const std::string& name, int ys, int yd,
   if (hasVar("nz")) {
     // Check the array is the right size
     if (size[2] != m->LocalNz) {
-      throw BoutException("3D variable '%s' has incorrect size %d (expecting %d)",
-          name.c_str(), size[2], m->LocalNz);
+      throw BoutException("3D variable '{:s}' has incorrect size {:d} (expecting {:d})",
+                          name, size[2], m->LocalNz);
     }
 
     if (!readgrid_3dvar_real(name,
@@ -414,8 +420,8 @@ void GridFile::readField(Mesh* m, const std::string& name, int ys, int yd,
           xd,// Insert data starting from x=xd
           nx_to_read, // Length of data in X
           var) ) {
-      throw BoutException("\tWARNING: Could not read '%s' from grid. Setting to zero\n",
-          name.c_str());
+      throw BoutException("\tWARNING: Could not read '{:s}' from grid. Setting to zero\n",
+                          name);
     }
   } else {
     // No Z size specified in file. Assume FFT format
@@ -427,8 +433,8 @@ void GridFile::readField(Mesh* m, const std::string& name, int ys, int yd,
           xd,// Insert data starting from x=xd
           nx_to_read, // Length of data in X
           var) ) {
-      throw BoutException("\tWARNING: Could not read '%s' from grid. Setting to zero\n",
-          name.c_str());
+      throw BoutException("\tWARNING: Could not read '{:s}' from grid. Setting to zero\n",
+                          name);
     }
   }
 }
@@ -450,8 +456,9 @@ void GridFile::readField(Mesh* m, const std::string& name, int UNUSED(ys), int U
     if (hasVar("nz")) {
       // Check the array is the right size
       if (size[2] != m->LocalNz) {
-        throw BoutException("FieldPerp variable '%s' has incorrect size %d (expecting %d)",
-            name.c_str(), size[2], m->LocalNz);
+        throw BoutException(
+            "FieldPerp variable '{:s}' has incorrect size {:d} (expecting {:d})", name,
+            size[2], m->LocalNz);
       }
 
       if (!readgrid_perpvar_real(name,
@@ -459,8 +466,8 @@ void GridFile::readField(Mesh* m, const std::string& name, int UNUSED(ys), int U
             xd,// Insert data starting from x=xd
             nx_to_read, // Length of data in X
             var) ) {
-        throw BoutException("\tWARNING: Could not read '%s' from grid. Setting to zero\n",
-            name.c_str());
+        throw BoutException(
+            "\tWARNING: Could not read '{:s}' from grid. Setting to zero\n", name);
       }
     } else {
       // No Z size specified in file. Assume FFT format
@@ -469,8 +476,8 @@ void GridFile::readField(Mesh* m, const std::string& name, int UNUSED(ys), int U
             xd,// Insert data starting from x=xd
             nx_to_read, // Length of data in X
             var) ) {
-        throw BoutException("\tWARNING: Could not read '%s' from grid. Setting to zero\n",
-            name.c_str());
+        throw BoutException(
+            "\tWARNING: Could not read '{:s}' from grid. Setting to zero\n", name);
       }
     }
   }

@@ -69,7 +69,7 @@ const Options &Options::operator[](const std::string &name) const {
   TRACE("Options::operator[] const");
   
   if (!is_section) {
-    throw BoutException(_("Option %s is not a section"), full_name.c_str());
+    throw BoutException(_("Option {:s} is not a section"), full_name);
   }
 
   if (name.empty()) {
@@ -80,7 +80,7 @@ const Options &Options::operator[](const std::string &name) const {
   auto it = children.find(lowercase(name));
   if (it == children.end()) {
     // Doesn't exist
-    throw BoutException(_("Option %s:%s does not exist"), full_name.c_str(), name.c_str());
+    throw BoutException(_("Option {:s}:{:s} does not exist"), full_name, name);
   }
 
   return it->second;
@@ -172,7 +172,7 @@ void Options::assign<>(Tensor<BoutReal> val, std::string source) {
 
 template <> std::string Options::as<std::string>(const std::string& UNUSED(similar_to)) const {
   if (!is_value) {
-    throw BoutException(_("Option %s has no value"), full_name.c_str());
+    throw BoutException(_("Option {:s} has no value"), full_name);
   }
 
   // Mark this option as used
@@ -192,7 +192,7 @@ template <> std::string Options::as<std::string>(const std::string& UNUSED(simil
 
 template <> int Options::as<int>(const int& UNUSED(similar_to)) const {
   if (!is_value) {
-    throw BoutException(_("Option %s has no value"), full_name.c_str());
+    throw BoutException(_("Option {:s} has no value"), full_name);
   }
 
   int result;
@@ -213,14 +213,13 @@ template <> int Options::as<int>(const int& UNUSED(similar_to)) const {
       // then generate a value at t,x,y,z = 0,0,0,0
       auto gen = FieldFactory::get()->parse(bout::utils::get<std::string>(value), this);
       if (!gen) {
-        throw BoutException(_("Couldn't get integer from option %s = '%s'"),
-                            full_name.c_str(), bout::utils::variantToString(value).c_str());
+        throw BoutException(_("Couldn't get integer from option {:s} = '{:s}'"),
+                            full_name, bout::utils::variantToString(value));
       }
       rval = gen->generate(0, 0, 0, 0);
     } else {
       // Another type which can't be converted
-      throw BoutException(_("Value for option %s is not an integer"),
-                            full_name.c_str());
+      throw BoutException(_("Value for option {:s} is not an integer"), full_name);
     }
     
     // Convert to int by rounding
@@ -228,8 +227,8 @@ template <> int Options::as<int>(const int& UNUSED(similar_to)) const {
     
     // Check that the value is close to an integer
     if (fabs(rval - static_cast<BoutReal>(result)) > 1e-3) {
-      throw BoutException(_("Value for option %s = %e is not an integer"),
-                          full_name.c_str(), rval);
+      throw BoutException(_("Value for option {:s} = {:e} is not an integer"), full_name,
+                          rval);
     }
   }
 
@@ -247,7 +246,7 @@ template <> int Options::as<int>(const int& UNUSED(similar_to)) const {
 
 template <> BoutReal Options::as<BoutReal>(const BoutReal& UNUSED(similar_to)) const {
   if (!is_value) {
-    throw BoutException(_("Option %s has no value"), full_name.c_str());
+    throw BoutException(_("Option {:s} has no value"), full_name);
   }
 
   BoutReal result;
@@ -265,13 +264,13 @@ template <> BoutReal Options::as<BoutReal>(const BoutReal& UNUSED(similar_to)) c
     // then generate a value at t,x,y,z = 0,0,0,0
     auto gen = FieldFactory::get()->parse(bout::utils::get<std::string>(value), this);
     if (!gen) {
-      throw BoutException(_("Couldn't get BoutReal from option %s = '%s'"), full_name.c_str(),
-                          bout::utils::get<std::string>(value).c_str());
+      throw BoutException(_("Couldn't get BoutReal from option {:s} = '{:s}'"), full_name,
+                          bout::utils::get<std::string>(value));
     }
     result = gen->generate(0, 0, 0, 0);
   } else {
-    throw BoutException(_("Value for option %s cannot be converted to a BoutReal"),
-                        full_name.c_str());
+    throw BoutException(_("Value for option {:s} cannot be converted to a BoutReal"),
+                        full_name);
   }
   
   // Mark this option as used
@@ -289,7 +288,7 @@ template <> BoutReal Options::as<BoutReal>(const BoutReal& UNUSED(similar_to)) c
 
 template <> bool Options::as<bool>(const bool& UNUSED(similar_to)) const {
   if (!is_value) {
-    throw BoutException(_("Option %s has no value"), full_name.c_str());
+    throw BoutException(_("Option {:s} has no value"), full_name);
   }
   
   bool result;
@@ -306,12 +305,12 @@ template <> bool Options::as<bool>(const bool& UNUSED(similar_to)) const {
     } else if ((c == 'N') || (c == 'F') || (c == '0')) {
       result = false;
     } else {
-      throw BoutException(_("\tOption '%s': Boolean expected. Got '%s'\n"), full_name.c_str(),
-                          strvalue.c_str());
+      throw BoutException(_("\tOption '{:s}': Boolean expected. Got '{:s}'\n"), full_name,
+                          strvalue);
     }
   } else {
-    throw BoutException(_("Value for option %s cannot be converted to a bool"),
-                        full_name.c_str());
+    throw BoutException(_("Value for option {:s} cannot be converted to a bool"),
+                        full_name);
   }
   
   value_used = true;
@@ -329,7 +328,7 @@ template <> bool Options::as<bool>(const bool& UNUSED(similar_to)) const {
 
 template <> Field3D Options::as<Field3D>(const Field3D& similar_to) const {
   if (!is_value) {
-    throw BoutException("Option %s has no value", full_name.c_str());
+    throw BoutException("Option {:s} has no value", full_name);
   }
 
   // Mark value as used
@@ -387,13 +386,13 @@ template <> Field3D Options::as<Field3D>(const Field3D& similar_to) const {
 
     }
   }
-  throw BoutException(_("Value for option %s cannot be converted to a Field3D"),
-                      full_name.c_str());
+  throw BoutException(_("Value for option {:s} cannot be converted to a Field3D"),
+                      full_name);
 }
 
 template <> Field2D Options::as<Field2D>(const Field2D& similar_to) const {
   if (!is_value) {
-    throw BoutException("Option %s has no value", full_name.c_str());
+    throw BoutException("Option {:s} has no value", full_name);
   }
   
   // Mark value as used
@@ -437,8 +436,8 @@ template <> Field2D Options::as<Field2D>(const Field2D& similar_to) const {
       }
     }
   }
-  throw BoutException(_("Value for option %s cannot be converted to a Field2D"),
-                      full_name.c_str());
+  throw BoutException(_("Value for option {:s} cannot be converted to a Field2D"),
+                      full_name);
 }
 
 // Note: This is defined here rather than in the header

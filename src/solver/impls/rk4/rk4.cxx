@@ -118,7 +118,8 @@ int RK4Solver::run() {
 
           internal_steps++;
           if(internal_steps > mxstep)
-            throw BoutException("ERROR: MXSTEP exceeded. timestep = %e, err=%e\n", timestep, err);
+            throw BoutException("ERROR: MXSTEP exceeded. timestep = {:e}, err={:e}\n",
+                                timestep, err);
 
           if((err > rtol) || (err < 0.1*rtol)) {
             // Need to change timestep. Error ~ dt^5

@@ -103,7 +103,7 @@ void Solver::add(Field2D& v, const std::string& name) {
 
 #if CHECK > 0
   if (varAdded(name))
-    throw BoutException("Variable '%s' already added to Solver", name.c_str());
+    throw BoutException("Variable '{:s}' already added to Solver", name);
 #endif
 
   if (initialised)
@@ -162,7 +162,7 @@ void Solver::add(Field3D& v, const std::string& name) {
 
 #if CHECK > 0  
   if (varAdded(name))
-    throw BoutException("Variable '%s' already added to Solver", name.c_str());
+    throw BoutException("Variable '{:s}' already added to Solver", name);
 #endif
 
   if (initialised)
@@ -218,7 +218,7 @@ void Solver::add(Vector2D& v, const std::string& name) {
   TRACE("Adding 2D vector: Solver::add({:s})", name);
 
   if (varAdded(name))
-    throw BoutException("Variable '%s' already added to Solver", name.c_str());
+    throw BoutException("Variable '{:s}' already added to Solver", name);
 
   if (initialised)
     throw BoutException("Error: Cannot add to solver after initialisation\n");
@@ -257,7 +257,7 @@ void Solver::add(Vector3D& v, const std::string& name) {
   TRACE("Adding 3D vector: Solver::add({:s})", name);
 
   if (varAdded(name))
-    throw BoutException("Variable '%s' already added to Solver", name.c_str());
+    throw BoutException("Variable '{:s}' already added to Solver", name);
 
   if (initialised)
     throw BoutException("Error: Cannot add to solver after initialisation\n");
@@ -301,7 +301,7 @@ void Solver::constraint(Field2D& v, Field2D& C_v, std::string name) {
 
 #if CHECK > 0  
   if (varAdded(name))
-    throw BoutException("Variable '%s' already added to Solver", name.c_str());
+    throw BoutException("Variable '{:s}' already added to Solver", name);
 #endif
 
   if (!has_constraints)
@@ -329,7 +329,7 @@ void Solver::constraint(Field3D& v, Field3D& C_v, std::string name) {
 
 #if CHECK > 0
   if (varAdded(name))
-    throw BoutException("Variable '%s' already added to Solver", name.c_str());
+    throw BoutException("Variable '{:s}' already added to Solver", name);
 #endif
 
   if (!has_constraints)
@@ -358,7 +358,7 @@ void Solver::constraint(Vector2D& v, Vector2D& C_v, std::string name) {
 
 #if CHECK > 0  
   if (varAdded(name))
-    throw BoutException("Variable '%s' already added to Solver", name.c_str());
+    throw BoutException("Variable '{:s}' already added to Solver", name);
 #endif
 
   if (!has_constraints)
@@ -398,7 +398,7 @@ void Solver::constraint(Vector3D& v, Vector3D& C_v, std::string name) {
 
 #if CHECK > 0  
   if (varAdded(name))
-    throw BoutException("Variable '%s' already added to Solver", name.c_str());
+    throw BoutException("Variable '{:s}' already added to Solver", name);
 #endif
 
   if (!has_constraints)
@@ -587,8 +587,8 @@ BoutReal Solver::adjustMonitorPeriods(Monitor* new_monitor) {
   }
 
   if (!isMultiple(internal_timestep, new_monitor->timestep)) {
-    throw BoutException(_("Couldn't add Monitor: %g is not a multiple of %g!"), internal_timestep,
-                        new_monitor->timestep);
+    throw BoutException(_("Couldn't add Monitor: {:g} is not a multiple of {:g}!"),
+                        internal_timestep, new_monitor->timestep);
   }
 
   if (new_monitor->timestep > internal_timestep * 1.5) {
@@ -602,9 +602,10 @@ BoutReal Solver::adjustMonitorPeriods(Monitor* new_monitor) {
   // along with that of all of the other monitors
 
   if (initialised) {
-    throw BoutException(_("Solver::addMonitor: Cannot reduce timestep (from %g to %g) "
-                          "after init is called!"),
-                        internal_timestep, new_monitor->timestep);
+    throw BoutException(
+        _("Solver::addMonitor: Cannot reduce timestep (from {:g} to {:g}) "
+          "after init is called!"),
+        internal_timestep, new_monitor->timestep);
   }
 
   // This is the relative increase in timestep
@@ -1009,12 +1010,12 @@ void Solver::load_derivs(BoutReal *udata) {
 void Solver::save_vars(BoutReal *udata) {
   for(const auto& f : f2d) 
     if(!f.var->isAllocated())
-      throw BoutException(_("Variable '%s' not initialised"), f.name.c_str());
+      throw BoutException(_("Variable '{:s}' not initialised"), f.name);
 
   for(const auto& f : f3d) 
     if(!f.var->isAllocated())
-      throw BoutException(_("Variable '%s' not initialised"), f.name.c_str());
-  
+      throw BoutException(_("Variable '{:s}' not initialised"), f.name);
+
   // Make sure vectors in correct basis
   for(const auto& v : v2d) {
     if(v.covariant) {
@@ -1050,10 +1051,10 @@ void Solver::save_derivs(BoutReal *dudata) {
   // Make sure 3D fields are at the correct cell location
   for (const auto& f : f3d) {
     if (f.var->getLocation() != (f.F_var)->getLocation()) {
-      throw BoutException(_("Time derivative at wrong location - Field is at %s, "
-                            "derivative is at %s for field '%s'\n"),
-                          toString(f.var->getLocation()).c_str(),
-                          toString(f.F_var->getLocation()).c_str(), f.name.c_str());
+      throw BoutException(_("Time derivative at wrong location - Field is at {:s}, "
+                            "derivative is at {:s} for field '{:s}'\n"),
+                          toString(f.var->getLocation()),
+                          toString(f.F_var->getLocation()), f.name);
     }
   }
 
@@ -1272,7 +1273,7 @@ void Solver::post_rhs(BoutReal UNUSED(t)) {
 #if CHECK > 0
   for(const auto& f : f3d) {
     if(!f.F_var->isAllocated())
-      throw BoutException(_("Time derivative for variable '%s' not set"), f.name.c_str());
+      throw BoutException(_("Time derivative for variable '{:s}' not set"), f.name);
   }
 #endif
   // Make sure vectors in correct basis

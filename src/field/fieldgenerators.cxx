@@ -9,8 +9,8 @@
 FieldGeneratorPtr FieldSin::clone(const std::list<FieldGeneratorPtr> args) {
   if (args.size() != 1) {
     throw ParseException(
-        "Incorrect number of arguments to sin function. Expecting 1, got %lu",
-        static_cast<unsigned long>(args.size()));
+        "Incorrect number of arguments to sin function. Expecting 1, got {:d}",
+        args.size());
   }
 
   return std::make_shared<FieldSin>(args.front());
@@ -23,8 +23,8 @@ BoutReal FieldSin::generate(double x, double y, double z, double t) {
 FieldGeneratorPtr FieldCos::clone(const std::list<FieldGeneratorPtr> args) {
   if (args.size() != 1) {
     throw ParseException(
-        "Incorrect number of arguments to cos function. Expecting 1, got %lu",
-        static_cast<unsigned long>(args.size()));
+        "Incorrect number of arguments to cos function. Expecting 1, got {:d}",
+        args.size());
   }
 
   return std::make_shared<FieldCos>(args.front());
@@ -37,8 +37,8 @@ BoutReal FieldCos::generate(double x, double y, double z, double t) {
 FieldGeneratorPtr FieldSinh::clone(const std::list<FieldGeneratorPtr> args) {
   if (args.size() != 1) {
     throw ParseException(
-        "Incorrect number of arguments to sinh function. Expecting 1, got %lu",
-        static_cast<unsigned long>(args.size()));
+        "Incorrect number of arguments to sinh function. Expecting 1, got {:d}",
+        args.size());
   }
 
   return std::make_shared<FieldSinh>(args.front());
@@ -51,8 +51,8 @@ BoutReal FieldSinh::generate(double x, double y, double z, double t) {
 FieldGeneratorPtr FieldCosh::clone(const std::list<FieldGeneratorPtr> args) {
   if (args.size() != 1) {
     throw ParseException(
-        "Incorrect number of arguments to cosh function. Expecting 1, got %lu",
-        static_cast<unsigned long>(args.size()));
+        "Incorrect number of arguments to cosh function. Expecting 1, got {:d}",
+        args.size());
   }
 
   return std::make_shared<FieldCosh>(args.front());
@@ -65,8 +65,8 @@ BoutReal FieldCosh::generate(double x, double y, double z, double t) {
 FieldGeneratorPtr FieldTanh::clone(const std::list<FieldGeneratorPtr> args) {
   if (args.size() != 1) {
     throw ParseException(
-        "Incorrect number of arguments to tanh function. Expecting 1, got %lu",
-        static_cast<unsigned long>(args.size()));
+        "Incorrect number of arguments to tanh function. Expecting 1, got {:d}",
+        args.size());
   }
   return std::make_shared<FieldTanh>(args.front());
 }
@@ -78,8 +78,8 @@ BoutReal FieldTanh::generate(double x, double y, double z, double t) {
 FieldGeneratorPtr FieldGaussian::clone(const std::list<FieldGeneratorPtr> args) {
   if ((args.size() < 1) || (args.size() > 2)) {
     throw ParseException(
-        "Incorrect number of arguments to gaussian function. Expecting 1 or 2, got %lu",
-        static_cast<unsigned long>(args.size()));
+        "Incorrect number of arguments to gaussian function. Expecting 1 or 2, got {:d}",
+        args.size());
   }
 
   FieldGeneratorPtr xin = args.front();
@@ -100,8 +100,8 @@ BoutReal FieldGaussian::generate(double x, double y, double z, double t) {
 FieldGeneratorPtr FieldAbs::clone(const std::list<FieldGeneratorPtr> args) {
   if (args.size() != 1) {
     throw ParseException(
-        "Incorrect number of arguments to abs function. Expecting 1, got %lu",
-        static_cast<unsigned long>(args.size()));
+        "Incorrect number of arguments to abs function. Expecting 1, got {:d}",
+        args.size());
   }
 
   return std::make_shared<FieldAbs>(args.front());
@@ -114,8 +114,8 @@ BoutReal FieldAbs::generate(double x, double y, double z, double t) {
 FieldGeneratorPtr FieldSqrt::clone(const std::list<FieldGeneratorPtr> args) {
   if (args.size() != 1) {
     throw ParseException(
-        "Incorrect number of arguments to sqrt function. Expecting 1, got %lu",
-        static_cast<unsigned long>(args.size()));
+        "Incorrect number of arguments to sqrt function. Expecting 1, got {:d}",
+        args.size());
   }
 
   return std::make_shared<FieldSqrt>(args.front());
@@ -128,8 +128,8 @@ BoutReal FieldSqrt::generate(double x, double y, double z, double t) {
 FieldGeneratorPtr FieldHeaviside::clone(const std::list<FieldGeneratorPtr> args) {
   if (args.size() != 1) {
     throw ParseException(
-        "Incorrect number of arguments to heaviside function. Expecting 1, got %lu",
-        static_cast<unsigned long>(args.size()));
+        "Incorrect number of arguments to heaviside function. Expecting 1, got {:d}",
+        args.size());
   }
 
   return std::make_shared<FieldHeaviside>(args.front());
@@ -142,8 +142,8 @@ BoutReal FieldHeaviside::generate(double x, double y, double z, double t) {
 FieldGeneratorPtr FieldErf::clone(const std::list<FieldGeneratorPtr> args) {
   if (args.size() != 1) {
     throw ParseException(
-        "Incorrect number of arguments to erf function. Expecting 1, got %lu",
-        static_cast<unsigned long>(args.size()));
+        "Incorrect number of arguments to erf function. Expecting 1, got {:d}",
+        args.size());
   }
 
   return std::make_shared<FieldErf>(args.front());
@@ -268,8 +268,8 @@ BoutReal FieldMixmode::genRand(BoutReal seed) {
 FieldGeneratorPtr FieldTanhHat::clone(const std::list<FieldGeneratorPtr> args) {
   if (args.size() != 4) {
     throw ParseException(
-        "Incorrect number of arguments to TanhHat function. Expecting 4, got %lu",
-        static_cast<unsigned long>(args.size()));
+        "Incorrect number of arguments to TanhHat function. Expecting 4, got {:d}",
+        args.size());
   }
 
   // As lists are not meant to be indexed, we may use an iterator to get the

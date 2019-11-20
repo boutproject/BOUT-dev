@@ -36,7 +36,11 @@
 #include <output.hxx>
 #include <msg_stack.hxx>
 
-#define CHKERR(ret) { if( ret != NC_NOERR ) throw BoutException("pnetcdf line %d: %s", __LINE__, ncmpi_strerror(ret)); }
+#define CHKERR(ret)                                                                  \
+  {                                                                                  \
+    if (ret != NC_NOERR)                                                             \
+      throw BoutException("pnetcdf line {:d}: {:s}", __LINE__, ncmpi_strerror(ret)); \
+  }
 
 // Define this to see loads of info messages
 //#define NCDF_VERBOSE
@@ -138,16 +142,22 @@ bool PncFormat::openw(const char *name, bool append) {
     MPI_Offset len;
     ret = ncmpi_inq_dimlen(ncfile, xDim, &len); CHKERR(ret);
     if(len != mesh->GlobalNx)
-      throw BoutException("ERROR: x dimension length (%d) incompatible with mesh size (%d)", (int) len, mesh->GlobalNx);
+      throw BoutException(
+          "ERROR: x dimension length ({:d}) incompatible with mesh size ({:d})", (int)len,
+          mesh->GlobalNx);
 
     ret = ncmpi_inq_dimlen(ncfile, yDim, &len); CHKERR(ret);
     if(len != mesh->GlobalNy)
-      throw BoutException("ERROR: y dimension length (%d) incompatible with mesh size (%d)", (int) len, mesh->GlobalNy);
-    
+      throw BoutException(
+          "ERROR: y dimension length ({:d}) incompatible with mesh size ({:d})", (int)len,
+          mesh->GlobalNy);
+
     ret = ncmpi_inq_dimlen(ncfile, zDim, &len); CHKERR(ret);
     if(len != mesh->GlobalNz)
-      throw BoutException("ERROR: z dimension length (%d) incompatible with mesh size (%d)", (int) len, mesh->GlobalNz);
-    
+      throw BoutException(
+          "ERROR: z dimension length ({:d}) incompatible with mesh size ({:d})", (int)len,
+          mesh->GlobalNz);
+
     // Get the size of the 't' dimension for records
     ret = ncmpi_inq_dimlen(ncfile, tDim, &len); CHKERR(ret);
     default_rec = (int) len;

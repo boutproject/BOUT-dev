@@ -988,7 +988,7 @@ void Ncxx4::setAttribute(const std::string &varname, const std::string &attrname
     // write attribute of variable
     NcVar var = dataFile->getVar(varname);
     if (var.isNull()) {
-      throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
+      throw BoutException("Variable '{:s}' not in NetCDF file", varname);
     }
 
     var.putAtt(attrname, text);
@@ -1015,7 +1015,7 @@ void Ncxx4::setAttribute(const std::string &varname, const std::string &attrname
     // write attribute of variable
     NcVar var = dataFile->getVar(varname);
     if (var.isNull()) {
-      throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
+      throw BoutException("Variable '{:s}' not in NetCDF file", varname);
     }
 
     var.putAtt(attrname, NcType::nc_INT, value);
@@ -1042,7 +1042,7 @@ void Ncxx4::setAttribute(const std::string &varname, const std::string &attrname
     // write attribute of variable
     NcVar var = dataFile->getVar(varname);
     if (var.isNull()) {
-      throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
+      throw BoutException("Variable '{:s}' not in NetCDF file", varname);
     }
 
     var.putAtt(attrname, NcType::nc_DOUBLE, value);
@@ -1068,7 +1068,7 @@ bool Ncxx4::getAttribute(const std::string &varname, const std::string &attrname
     // attribute of variable
     NcVar var = dataFile->getVar(varname);
     if (var.isNull()) {
-      throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
+      throw BoutException("Variable '{:s}' not in NetCDF file", varname);
     }
 
     // Check if attribute exists without throwing exception when it doesn't
@@ -1102,7 +1102,7 @@ bool Ncxx4::getAttribute(const std::string &varname, const std::string &attrname
   } else {
     NcVar var = dataFile->getVar(varname);
     if (var.isNull()) {
-      throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
+      throw BoutException("Variable '{:s}' not in NetCDF file", varname);
     }
 
     // Check if attribute exists without throwing exception when it doesn't
@@ -1136,7 +1136,7 @@ bool Ncxx4::getAttribute(const std::string &varname, const std::string &attrname
   } else {
     NcVar var = dataFile->getVar(varname);
     if (var.isNull()) {
-      throw BoutException("Variable '%s' not in NetCDF file", varname.c_str());
+      throw BoutException("Variable '{:s}' not in NetCDF file", varname);
     }
 
     // Check if attribute exists without throwing exception when it doesn't

@@ -180,8 +180,8 @@ const Field3D& Field3D::ynext(int dir) const {
   // Asked for more than yguards
   if (std::abs(dir) > fieldmesh->ystart) {
     throw BoutException(
-        "Field3D: Call to ynext with %d which is more than number of yguards (%d)", dir,
-        fieldmesh->ystart);
+        "Field3D: Call to ynext with {:d} which is more than number of yguards ({:d})",
+        dir, fieldmesh->ystart);
   }
 #endif
 
@@ -432,7 +432,7 @@ void Field3D::applyBoundary(const std::string &region, const std::string &condit
   }
 
   if (!region_found) {
-    throw BoutException("Region '%s' not found", region.c_str());
+    throw BoutException("Region '{:s}' not found", region);
   }
 
   //Field2D sets the corners to zero here, should we do the same here?
@@ -783,7 +783,7 @@ void checkDataIsFiniteOnRegion(const Field3D& f, const std::string& region) {
   // Do full checks
   BOUT_FOR_SERIAL(i, f.getRegion(region)) {
     if (!finite(f[i])) {
-      throw BoutException("Field3D: Operation on non-finite data at [%d][%d][%d]\n",
+      throw BoutException("Field3D: Operation on non-finite data at [{:d}][{:d}][{:d}]\n",
                           i.x(), i.y(), i.z());
     }
   }

@@ -454,8 +454,8 @@ const std::vector<int> Mesh::readInts(const std::string &name, int n) {
   TRACE("Mesh::readInts({:s})", name);
 
   if (source == nullptr) {
-    throw BoutException("Can't read integer array %s as 'Mesh::source' is nullptr\n",
-                        name.c_str());
+    throw BoutException("Can't read integer array {:s} as 'Mesh::source' is nullptr\n",
+                        name);
   }
 
   std::vector<int> result;
@@ -463,11 +463,11 @@ const std::vector<int> Mesh::readInts(const std::string &name, int n) {
   if(source->hasVar(name)) {
     if(!source->get(this, result, name, n, 0)) {
       // Error reading
-      throw BoutException(_("Could not read integer array '%s'\n"), name.c_str());
+      throw BoutException(_("Could not read integer array '{:s}'\n"), name.c_str());
     }
   }else {
     // Not found
-    throw BoutException(_("Missing integer array %s\n"), name.c_str());
+    throw BoutException(_("Missing integer array {:s}\n"), name.c_str());
   }
 
   return result;
@@ -489,7 +489,7 @@ std::shared_ptr<Coordinates> Mesh::createDefaultCoordinates(const CELL_LOC locat
 const Region<>& Mesh::getRegion3D(const std::string& region_name) const {
   const auto found = regionMap3D.find(region_name);
   if (found == end(regionMap3D)) {
-    throw BoutException(_("Couldn't find region %s in regionMap3D"), region_name.c_str());
+    throw BoutException(_("Couldn't find region {:s} in regionMap3D"), region_name);
   }
   return found->second;
 }
@@ -497,7 +497,7 @@ const Region<>& Mesh::getRegion3D(const std::string& region_name) const {
 const Region<Ind2D>& Mesh::getRegion2D(const std::string& region_name) const {
   const auto found = regionMap2D.find(region_name);
   if (found == end(regionMap2D)) {
-    throw BoutException(_("Couldn't find region %s in regionMap2D"), region_name.c_str());
+    throw BoutException(_("Couldn't find region {:s} in regionMap2D"), region_name);
   }
   return found->second;
 }
@@ -505,8 +505,7 @@ const Region<Ind2D>& Mesh::getRegion2D(const std::string& region_name) const {
 const Region<IndPerp>& Mesh::getRegionPerp(const std::string& region_name) const {
   const auto found = regionMapPerp.find(region_name);
   if (found == end(regionMapPerp)) {
-    throw BoutException(_("Couldn't find region %s in regionMapPerp"),
-                        region_name.c_str());
+    throw BoutException(_("Couldn't find region {:s} in regionMapPerp"), region_name);
   }
   return found->second;
 }
@@ -525,7 +524,8 @@ bool Mesh::hasRegionPerp(const std::string& region_name) const {
 
 void Mesh::addRegion3D(const std::string &region_name, const Region<> &region) {
   if (regionMap3D.count(region_name)) {
-    throw BoutException(_("Trying to add an already existing region %s to regionMap3D"), region_name.c_str());
+    throw BoutException(_("Trying to add an already existing region {:s} to regionMap3D"),
+                        region_name);
   }
   regionMap3D[region_name] = region;
   output_verbose.write(_("Registered region 3D %s"),region_name.c_str());
@@ -534,7 +534,8 @@ void Mesh::addRegion3D(const std::string &region_name, const Region<> &region) {
 
 void Mesh::addRegion2D(const std::string &region_name, const Region<Ind2D> &region) {
   if (regionMap2D.count(region_name)) {
-    throw BoutException(_("Trying to add an already existing region %s to regionMap2D"), region_name.c_str());
+    throw BoutException(_("Trying to add an already existing region {:s} to regionMap2D"),
+                        region_name);
   }
   regionMap2D[region_name] = region;
   output_verbose.write(_("Registered region 2D %s"),region_name.c_str());
@@ -543,7 +544,8 @@ void Mesh::addRegion2D(const std::string &region_name, const Region<Ind2D> &regi
 
 void Mesh::addRegionPerp(const std::string &region_name, const Region<IndPerp> &region) {
   if (regionMapPerp.count(region_name)) {
-    throw BoutException(_("Trying to add an already existing region %s to regionMapPerp"), region_name.c_str());
+    throw BoutException(
+        _("Trying to add an already existing region {:s} to regionMapPerp"), region_name);
   }
   regionMapPerp[region_name] = region;
   output_verbose.write(_("Registered region Perp %s"),region_name.c_str());

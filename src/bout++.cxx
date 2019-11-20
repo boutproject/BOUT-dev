@@ -305,7 +305,7 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
     if (string(argv[i]) == "-d") {
       // Set data directory
       if (i + 1 >= argc) {
-        throw BoutException(_("Usage is %s -d <data directory>\n"), argv[0]);
+        throw BoutException(_("Usage is {:s} -d <data directory>\n"), argv[0]);
       }
 
       args.data_dir = argv[++i];
@@ -316,7 +316,7 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
     } else if (string(argv[i]) == "-f") {
       // Set options file
       if (i + 1 >= argc) {
-        throw BoutException(_("Usage is %s -f <options filename>\n"), argv[0]);
+        throw BoutException(_("Usage is {:s} -f <options filename>\n"), argv[0]);
       }
 
       args.opt_file = argv[++i];
@@ -327,7 +327,7 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
     } else if (string(argv[i]) == "-o") {
       // Set options file
       if (i + 1 >= argc) {
-        throw BoutException(_("Usage is %s -o <settings filename>\n"), argv[0]);
+        throw BoutException(_("Usage is {:s} -o <settings filename>\n"), argv[0]);
       }
 
       args.set_file = argv[++i];
@@ -337,7 +337,7 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
 
     } else if ((string(argv[i]) == "-l") || (string(argv[i]) == "--log")) {
       if (i + 1 >= argc) {
-        throw BoutException(_("Usage is %s -l <log filename>\n"), argv[0]);
+        throw BoutException(_("Usage is {:s} -l <log filename>\n"), argv[0]);
       }
 
       args.log_file = argv[++i];
@@ -378,11 +378,11 @@ void checkDataDirectoryIsAccessible(const std::string& data_dir) {
   struct stat test;
   if (stat(data_dir.c_str(), &test) == 0) {
     if (!S_ISDIR(test.st_mode)) {
-      throw BoutException(_("DataDir \"%s\" is not a directory\n"), data_dir.c_str());
+      throw BoutException(_("DataDir \"{:s}\" is not a directory\n"), data_dir);
     }
   } else {
-    throw BoutException(_("DataDir \"%s\" does not exist or is not accessible\n"),
-                        data_dir.c_str());
+    throw BoutException(_("DataDir \"{:s}\" does not exist or is not accessible\n"),
+                        data_dir);
   }
 }
 
@@ -393,7 +393,7 @@ void savePIDtoFile(const std::string& data_dir, int MYPE) {
   pid_file.open(filename.str(), std::ios::out | std::ios::trunc);
 
   if (not pid_file.is_open()) {
-    throw BoutException(_("Could not create PID file %s"), filename.str().c_str());
+    throw BoutException(_("Could not create PID file {:s}"), filename.str());
   }
 
   pid_file << getpid() << "\n";
@@ -527,8 +527,8 @@ void setupOutput(const std::string& data_dir, const std::string& log_file, int v
     /// Open an output file to echo everything to
     /// On processor 0 anything written to output will go to stdout and the file
     if (output.open("%s/%s.%d", data_dir.c_str(), log_file.c_str(), MYPE)) {
-      throw BoutException(_("Could not open %s/%s.%d for writing"), data_dir.c_str(),
-                          log_file.c_str(), MYPE);
+      throw BoutException(_("Could not open {:s}/{:s}.{:d} for writing"), data_dir,
+                          log_file, MYPE);
     }
   }
 
@@ -827,7 +827,7 @@ void bout_signal_handler(int sig) {
     user_requested_exit = true;
     break;
   default:
-    throw BoutException("\n****** Signal %d  caught ******\n\n", sig);
+    throw BoutException("\n****** Signal {:d}  caught ******\n\n", sig);
     break;
   }
 }

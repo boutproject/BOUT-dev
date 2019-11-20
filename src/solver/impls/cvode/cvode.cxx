@@ -462,7 +462,7 @@ BoutReal CvodeSolver::run(BoutReal tout) {
       flag = CVode(cvode_mem, tout, uvec, &internal_time, CV_ONE_STEP);
 
       if (flag < 0) {
-        throw BoutException("ERROR CVODE solve failed at t = %e, flag = %d\n",
+        throw BoutException("ERROR CVODE solve failed at t = {:e}, flag = {:d}\n",
                             internal_time, flag);
       }
 
@@ -481,7 +481,8 @@ BoutReal CvodeSolver::run(BoutReal tout) {
   run_rhs(simtime);
 
   if (flag < 0) {
-    throw BoutException("ERROR CVODE solve failed at t = %e, flag = %d\n", simtime, flag);
+    throw BoutException("ERROR CVODE solve failed at t = {:e}, flag = {:d}\n", simtime,
+                        flag);
   }
 
   return simtime;

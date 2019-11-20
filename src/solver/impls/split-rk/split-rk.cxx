@@ -131,7 +131,7 @@ int SplitRK::run() {
           
           internal_steps++;
           if (internal_steps > mxstep) {
-            throw BoutException("ERROR: MXSTEP exceeded. timestep = %e, err=%e\n",
+            throw BoutException("ERROR: MXSTEP exceeded. timestep = {:e}, err={:e}\n",
                                 timestep, err);
           }
 

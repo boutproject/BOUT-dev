@@ -141,7 +141,7 @@ int IMEXBDF2::init(int nout, BoutReal tstep) {
   if((ninternal == 0) || (out_timestep / ninternal > timestep))
     ++ninternal;
   if(ninternal>mxstep){
-    throw BoutException("Error: Number of internal timesteps (%i) exceeds mxstep (%i)", ninternal, mxstep);
+    throw BoutException("Error: Number of internal timesteps ({:d}) exceeds mxstep ({:d})", ninternal, mxstep);
   };
 
   timestep = out_timestep / ninternal;
@@ -150,7 +150,7 @@ int IMEXBDF2::init(int nout, BoutReal tstep) {
 
   OPTION(options, maxOrder, 2); //Maximum order of the scheme (1/2/3)
   if(maxOrder > MAX_SUPPORTED_ORDER){
-    throw BoutException("Requested maxOrder greater than MAX_SUPPORTED_ORDER (%i)",MAX_SUPPORTED_ORDER);
+    throw BoutException("Requested maxOrder greater than MAX_SUPPORTED_ORDER ({:d})",MAX_SUPPORTED_ORDER);
   }
 
   // Allocate memory and initialise structures
@@ -785,7 +785,7 @@ int IMEXBDF2::run() {
 
 	//Validate our desired next timestep
 	if(dtNext<dtMinFatal){ //Don't allow the timestep to go below requested fatal min
-	  throw BoutException("Aborting: Timestep (%f) tried to go below minimum allowed",dtNext);
+	  throw BoutException("Aborting: Timestep ({:f}) tried to go below minimum allowed",dtNext);
 	}else if(dtNext<dtMin){ //Don't allow timestep below requested min
 	  dtNext = dtMin;
 	}else if(dtNext>dtMax){ //Don't allow timestep above request max
@@ -936,7 +936,7 @@ int IMEXBDF2::run() {
 	
 	  adaptCounter++;
 	  if(adaptCounter>mxstepAdapt){
-	    throw BoutException("Aborting: Maximum number of adapative iterations (%i) exceeded", mxstepAdapt);
+	    throw BoutException("Aborting: Maximum number of adapative iterations ({:d}) exceeded", mxstepAdapt);
 	  }
 	}else if(artificalLimit) {
           // Reset dtNext if it was artificially limited
@@ -964,7 +964,7 @@ int IMEXBDF2::run() {
       //Increment iteration counter to ensure we don't get an infinite loop
       counter++;
       if(counter>mxstep){
-	throw BoutException("Aborting: Maximum number of internal iterations (%i) exceeded", mxstep);
+	throw BoutException("Aborting: Maximum number of internal iterations ({:d}) exceeded", mxstep);
       };
     }
 
@@ -1208,7 +1208,7 @@ PetscErrorCode IMEXBDF2::solve_implicit(BoutReal curtime, BoutReal gamma) {
     if(verbose) {
       output << "SNES failed to converge with reason " << reason << endl;
     }
-    throw BoutException("SNES failed to converge. Reason: %d\n", reason);
+    throw BoutException("SNES failed to converge. Reason: {:d}\n", reason);
   }
 
   int its;

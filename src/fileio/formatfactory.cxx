@@ -111,7 +111,7 @@ std::unique_ptr<DataFormat> FormatFactory::createDataFormat(const char *filename
   }
 #endif
 
-  throw BoutException("\tFile extension not recognised for '%s'\n", filename);
+  throw BoutException("\tFile extension not recognised for '{:s}'\n", filename);
   return nullptr;
 }
 

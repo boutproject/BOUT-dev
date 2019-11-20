@@ -99,7 +99,10 @@ void OptionsReader::parseCommandLine(Options* options, int argc, char** argv) {
     } else {
       size_t endpos = buffer.find_last_of('=');
 
-      if(startpos != endpos) throw BoutException(_("\tMultiple '=' in command-line argument '%s'\n"), buffer.c_str());
+      if (startpos != endpos) {
+        throw BoutException(_("\tMultiple '=' in command-line argument '{:s}'\n"),
+                            buffer);
+      }
 
       std::string key = trim(buffer.substr(0, startpos));
       std::string value = trim(buffer.substr(startpos+1));
@@ -111,8 +114,10 @@ void OptionsReader::parseCommandLine(Options* options, int argc, char** argv) {
 	key = trim(key.substr(scorepos+1));
 	options = options->getSection(section);
       }
-      
-      if(key.empty() || value.empty()) throw BoutException(_("\tEmpty key or value in command line '%s'\n"), buffer.c_str());
+
+      if (key.empty() || value.empty()) {
+        throw BoutException(_("\tEmpty key or value in command line '{:s}'\n"), buffer);
+      }
 
       options->set(key, value, _("Command line"));
     }

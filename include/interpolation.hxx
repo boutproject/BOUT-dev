@@ -185,8 +185,8 @@ const T interp_to(const T& var, CELL_LOC loc, const std::string region = "RGN_AL
     default: {
       // This should never happen
       throw BoutException("Unsupported direction of interpolation\n"
-                          " - don't know how to interpolate to %s",
-                          toString(loc).c_str());
+                          " - don't know how to interpolate to {:s}",
+                          toString(loc));
     }
     };
 
