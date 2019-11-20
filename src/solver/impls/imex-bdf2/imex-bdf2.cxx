@@ -17,6 +17,9 @@
 #include "petscsnes.h"
 #include "petscmat.h"
 
+// Redundent definition because < C++17
+constexpr int IMEXBDF2::MAX_SUPPORTED_ORDER;
+
 IMEXBDF2::IMEXBDF2(Options *opt)
     : Solver(opt), snes_f(nullptr), snes_x(nullptr), snes(nullptr), snesAlt(nullptr),
       snesUse(nullptr), Jmf(nullptr) {
