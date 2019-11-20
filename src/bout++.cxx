@@ -210,9 +210,13 @@ void setupGetText() {
 
     bindtextdomain(GETTEXT_PACKAGE, BUILDFLAG(BOUT_LOCALE_PATH));
   } catch (const std::runtime_error& e) {
-    fprintf(stderr, "WARNING: Could not set locale. Check the LANG environment variable "
-        "(get available values by running 'locale -a'). If LANG is correct, there may be "
-        "a problem with the BOUT_LOCALE_PATH=%s that BOUT++ was compiled with.\n",
+    fmt::print(
+        stderr,
+        FMT_STRING(
+            "WARNING: Could not set locale. Check the LANG environment variable "
+            "(get available values by running 'locale -a'). If LANG is correct, there "
+            "may be "
+            "a problem with the BOUT_LOCALE_PATH={:s} that BOUT++ was compiled with.\n"),
         BUILDFLAG(BOUT_LOCALE_PATH));
   }
 #endif // BOUT_HAS_GETTEXT
@@ -805,8 +809,8 @@ void bout_signal_handler(int sig) {
   // Set signal handler back to default to prevent possible infinite loop
   signal(SIGSEGV, SIG_DFL);
   // print number of process to stderr, so the user knows which log to check
-  fprintf(stderr, "\nSighandler called on process %d with sig %d\n", BoutComm::rank(),
-          sig);
+  fmt::print(stderr, FMT_STRING("\nSighandler called on process {:d} with sig {:d}\n"),
+             BoutComm::rank(), sig);
 
   switch (sig) {
   case SIGSEGV:
@@ -844,10 +848,7 @@ std::string time_to_hms(BoutReal t) {
   m = static_cast<int>(t / 60);
   t -= 60 * static_cast<BoutReal>(m);
 
-  char buffer[256];
-  sprintf(buffer, "%d:%02d:%04.1f", h, m, t);
-
-  return string(buffer);
+  return fmt::format(FMT_STRING("{:d}:{:02d}:{:04.1f}"), h, m, t);
 }
 
 /// Produce a spinning bar character
