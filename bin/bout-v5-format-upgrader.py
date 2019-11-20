@@ -66,7 +66,7 @@ def fix_string_c_str(source):
     return re.sub(
         r"""
         (".*{:s}[^;]*?",)       # A format string containing {:s}
-        \s*([^);]+?)\.c_str\(\) # Replacement of std::string::c_str
+        \s*([^;]+?)\.c_str\(\) # Replacement of std::string::c_str
         """,
         r"\1 \2",
         source,
@@ -84,6 +84,22 @@ def fix_trace(source):
         \s*([\w_]+)\.c_str\(\)\); # Replacement of std::string::c_str
         """,
         r"\1 \2);",
+        source,
+        flags=re.VERBOSE,
+    )
+
+
+def fix_toString_c_str(source):
+    """Fix formats that call toString where the replacement is using std::string::c_str
+
+
+    """
+    return re.sub(
+        r"""
+        (".*{:s}[^;]*?",.*?)         # A format string containing {:s}
+        (toString\(.*?\))\.c_str\(\) # Replacement of std::string::c_str
+        """,
+        r"\1\2",
         source,
         flags=re.VERBOSE,
     )
