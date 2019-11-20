@@ -116,7 +116,7 @@ int PhysicsModel::postInit(bool restarting) {
     output.write("Loading restart file: %s\n", filename.c_str());
 
     /// Load restart file
-    if (!restart.openr("%s",filename.c_str()))
+    if (!restart.openr(filename))
       throw BoutException("Error: Could not open restart file %s\n", filename.c_str());
     if (!restart.read())
       throw BoutException("Error: Could not read restart file %s\n", filename.c_str());
@@ -131,7 +131,7 @@ int PhysicsModel::postInit(bool restarting) {
   restart.addOnce(const_cast<BoutReal &>(BOUT_VERSION), "BOUT_VERSION");
 
   /// Open the restart file for writing
-  if (!restart.openw("%s",filename.c_str()))
+  if (!restart.openw(filename))
     throw BoutException("Error: Could not open restart file for writing\n");
 
   // Add monitor to the solver which calls restart.write() and

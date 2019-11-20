@@ -575,9 +575,9 @@ Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir
   auto dump_file = Datafile(&(options["output"]), &mesh);
 
   if (append) {
-    dump_file.opena("%s/BOUT.dmp.%s", data_dir.c_str(), dump_ext.c_str());
+    dump_file.opena("{}/BOUT.dmp.{}", data_dir, dump_ext);
   } else {
-    dump_file.openw("%s/BOUT.dmp.%s", data_dir.c_str(), dump_ext.c_str());
+    dump_file.openw("{}/BOUT.dmp.{}", data_dir, dump_ext);
   }
 
   // Add book-keeping variables to the output files
