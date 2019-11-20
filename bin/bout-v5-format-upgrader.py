@@ -7,18 +7,18 @@ import re
 
 
 format_replacements = {
-    "%c": "{:c}",
-    "%d": "{:d}",
-    "%e": "{:e}",
-    "%f": "{:f}",
-    "%g": "{:g}",
-    "%i": "{:d}",
-    "%ld": "{:d}",
-    "%le": "{:e}",
-    "%lu": "{:d}",
-    "%p": "{:p}",
-    "%s": "{:s}",
-    "%zu": "{:d}",
+    "c": "c",
+    "d": "d",
+    "e": "e",
+    "f": "f",
+    "g": "g",
+    "i": "d",
+    "ld": "d",
+    "le": "e",
+    "lu": "d",
+    "p": "p",
+    "s": "s",
+    "zu": "d",
 }
 
 
@@ -26,7 +26,11 @@ def fix_format_replacement(format_replacement, source):
     """Replace printf format with fmt format
 
     """
-    return re.sub(format_replacement[0], format_replacement[1], source)
+    return re.sub(
+        r"%([0-9]*\.?[0-9]*){}".format(format_replacement[0]),
+        r"{{:\1{}}}".format(format_replacement[1]),
+        source,
+    )
 
 
 def fix_trivial_format(source):
