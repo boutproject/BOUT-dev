@@ -166,7 +166,7 @@ int BoutInitialise(int& argc, char**& argv) {
         setupDumpFile(Options::root(), *bout::globals::mesh, args.data_dir);
 
   } catch (const BoutException& e) {
-    output_error.write(_("Error encountered during initialisation: %s\n"), e.what());
+    output_error.write(_("Error encountered during initialisation: {:s}\n"), e.what());
     throw;
   }
 
@@ -226,7 +226,7 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
     if (current_arg == "-h" || current_arg == "--help") {
       // Print help message -- note this will be displayed once per processor as we've not
       // started MPI yet.
-      output.write(_("Usage: %s [-d <data directory>] [-f <options filename>] [restart "
+      output.write(_("Usage: {:s} [-d <data directory>] [-f <options filename>] [restart "
                      "[append]] [VAR=VALUE]\n"),
                    argv[0]);
       output.write(
@@ -246,7 +246,7 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
             "append to the existing output files, otherwise overwrite them\n"
             "  VAR=VALUE\t\tSpecify a VALUE for input parameter VAR\n"
             "\nFor all possible input parameters, see the user manual and/or the "
-            "physics model source (e.g. %s.cxx)\n"),
+            "physics model source (e.g. {:s}.cxx)\n"),
           argv[0]);
 
       std::exit(EXIT_SUCCESS);
@@ -401,27 +401,27 @@ void savePIDtoFile(const std::string& data_dir, int MYPE) {
 }
 
 void printStartupHeader(int MYPE, int NPES) {
-  output_progress.write(_("BOUT++ version %s\n"), BOUT_VERSION_STRING);
+  output_progress.write(_("BOUT++ version {:s}\n"), BOUT_VERSION_STRING);
 #ifdef REVISION
-  output_progress.write(_("Revision: %s\n"), BUILDFLAG(REVISION));
+  output_progress.write(_("Revision: {:s}\n"), BUILDFLAG(REVISION));
 #endif
 #ifdef MD5SUM
-  output_progress.write("MD5 checksum: %s\n", BUILDFLAG(MD5SUM));
+  output_progress.write("MD5 checksum: {:s}\n", BUILDFLAG(MD5SUM));
 #endif
-  output_progress.write(_("Code compiled on %s at %s\n\n"), __DATE__, __TIME__);
+  output_progress.write(_("Code compiled on {:s} at {:s}\n\n"), __DATE__, __TIME__);
   output_info.write("B.Dudson (University of York), M.Umansky (LLNL) 2007\n");
   output_info.write("Based on BOUT by Xueqiao Xu, 1999\n\n");
 
-  output_info.write(_("Processor number: %d of %d\n\n"), MYPE, NPES);
+  output_info.write(_("Processor number: {:d} of {:d}\n\n"), MYPE, NPES);
 
-  output_info.write("pid: %d\n\n", getpid());
+  output_info.write("pid: {:d}\n\n", getpid());
 }
 
 void printCompileTimeOptions() {
   output_info.write(_("Compile-time options:\n"));
 
 #if CHECK > 0
-  output_info.write(_("\tChecking enabled, level %d\n"), CHECK);
+  output_info.write(_("\tChecking enabled, level {:d}\n"), CHECK);
 #else
   output_info.write(_("\tChecking disabled\n"));
 #endif
@@ -449,7 +449,7 @@ void printCompileTimeOptions() {
 #endif
 
 #ifdef _OPENMP
-  output_info.write(_("\tOpenMP parallelisation enabled, using %d threads\n"),
+  output_info.write(_("\tOpenMP parallelisation enabled, using {:d} threads\n"),
                     omp_get_max_threads());
 #else
   output_info.write(_("\tOpenMP parallelisation disabled\n"));
@@ -465,7 +465,7 @@ void printCompileTimeOptions() {
 
   // The stringify is needed here as BOUT_FLAGS_STRING may already contain quoted strings
   // which could cause problems (e.g. terminate strings).
-  output_info.write(_("\tCompiled with flags : %s\n"), STRINGIFY(BOUT_FLAGS_STRING));
+  output_info.write(_("\tCompiled with flags : {:s}\n"), STRINGIFY(BOUT_FLAGS_STRING));
 }
 
 void printCommandLineArguments(const std::vector<std::string>& original_argv) {
@@ -526,7 +526,7 @@ void setupOutput(const std::string& data_dir, const std::string& log_file, int v
     }
     /// Open an output file to echo everything to
     /// On processor 0 anything written to output will go to stdout and the file
-    if (output.open("%s/%s.%d", data_dir.c_str(), log_file.c_str(), MYPE)) {
+    if (output.open("{:s}/{:s}.{:d}", data_dir, log_file, MYPE)) {
       throw BoutException(_("Could not open {:s}/{:s}.{:d} for writing"), data_dir,
                           log_file, MYPE);
     }
@@ -761,12 +761,11 @@ int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
 
   run_data.t_elapsed = MPI_Wtime() - mpi_start_time;
 
-  output_progress.print("%c  Step %d of %d. Elapsed %s", get_spin(), iteration + 1, NOUT,
-                        (time_to_hms(run_data.t_elapsed)).c_str());
+  output_progress.print("{:c}  Step {:d} of {:d}. Elapsed {:s}", get_spin(),
+                        iteration + 1, NOUT, time_to_hms(run_data.t_elapsed));
   output_progress.print(
-      " ETA %s",
-      (time_to_hms(run_data.wtime * static_cast<BoutReal>(NOUT - iteration - 1)))
-          .c_str());
+      " ETA {:s}",
+      time_to_hms(run_data.wtime * static_cast<BoutReal>(NOUT - iteration - 1)));
 
   /// Write dump file
   bout::globals::dump.write();
@@ -777,11 +776,11 @@ int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
     BoutReal t_remain = mpi_start_time + wall_limit - MPI_Wtime();
     if (t_remain < run_data.wtime * 2) {
       // Less than 2 time-steps left
-      output_warn.write(_("Only %e seconds (%.2f steps) left. Quitting\n"), t_remain,
+      output_warn.write(_("Only {:e} seconds ({:.2f} steps) left. Quitting\n"), t_remain,
                         t_remain / run_data.wtime);
       user_requested_exit = true;
     } else {
-      output_progress.print(" Wall %s", (time_to_hms(t_remain)).c_str());
+      output_progress.print(" Wall {:s}", time_to_hms(t_remain));
     }
   }
 
@@ -905,7 +904,7 @@ void RunMetrics::calculateDerivedMetrics() {
 void RunMetrics::writeProgress(BoutReal simtime, bool output_split) {
   if (!output_split) {
     output_progress.write(
-        "%.3e      %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n", simtime, ncalls,
+        "{:.3e}      {:5d}       {:.2e}   {:5.1f}  {:5.1f}  {:5.1f}  {:5.1f}  {:5.1f}\n", simtime, ncalls,
         wtime, 100. * (wtime_rhs - wtime_comms - wtime_invert) / wtime,
         100. * wtime_invert / wtime,                    // Inversions
         100. * wtime_comms / wtime,                     // Communications
@@ -914,7 +913,7 @@ void RunMetrics::writeProgress(BoutReal simtime, bool output_split) {
 
   } else {
     output_progress.write(
-        "%.3e      %5d            %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n",
+        "{:.3e}      {:5d}            {:5d}       {:.2e}   {:5.1f}  {:5.1f}  {:5.1f}  {:5.1f}  {:5.1f}\n",
         simtime, ncalls_e, ncalls_i, wtime,
         100. * (wtime_rhs - wtime_comms - wtime_invert) / wtime,
         100. * wtime_invert / wtime,                    // Inversions

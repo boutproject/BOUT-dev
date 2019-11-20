@@ -426,7 +426,7 @@ void Datafile::add(int &i, const char *name, bool save_repeat) {
   if (varAdded(name)) {
     // Check if it's the same variable
     if (&i == varPtr(name)) {
-      output_warn.write("WARNING: variable '%s' added again to Datafile\n", name);
+      output_warn.write("WARNING: variable '{:s}' added again to Datafile\n", name);
     } else {
       throw BoutException("Variable with name '{:s}' already added to Datafile", name);
     }
@@ -481,7 +481,7 @@ void Datafile::add(BoutReal &r, const char *name, bool save_repeat) {
   if (varAdded(name)) {
     // Check if it's the same variable
     if (&r == varPtr(name)) {
-      output_warn.write("WARNING: variable '%s' added again to Datafile\n", name);
+      output_warn.write("WARNING: variable '{:s}' added again to Datafile\n", name);
     } else {
       throw BoutException("Variable with name '{:s}' already added to Datafile", name);
     }
@@ -538,7 +538,7 @@ void Datafile::add(bool &b, const char *name, bool save_repeat) {
   if (varAdded(name)) {
     // Check if it's the same variable
     if (&b == varPtr(name)) {
-      output_warn.write("WARNING: variable '%s' added again to Datafile\n", name);
+      output_warn.write("WARNING: variable '{:s}' added again to Datafile\n", name);
     } else {
       throw BoutException("Variable with name '{:s}' already added to Datafile", name);
     }
@@ -593,7 +593,7 @@ void Datafile::add(Field2D &f, const char *name, bool save_repeat) {
   if (varAdded(name)) {
     // Check if it's the same variable
     if (&f == varPtr(name)) {
-      output_warn.write("WARNING: variable '%s' added again to Datafile", name);
+      output_warn.write("WARNING: variable '{:s}' added again to Datafile", name);
     } else {
       throw BoutException("Variable with name '{:s}' already added to Datafile", name);
     }
@@ -650,7 +650,7 @@ void Datafile::add(Field3D &f, const char *name, bool save_repeat) {
   if (varAdded(name)) {
     // Check if it's the same variable
     if (&f == varPtr(name)) {
-      output_warn.write("WARNING: variable '%s' added again to Datafile\n", name);
+      output_warn.write("WARNING: variable '{:s}' added again to Datafile\n", name);
     } else {
       throw BoutException("Variable with name '{:s}' already added to Datafile", name);
     }
@@ -707,7 +707,7 @@ void Datafile::add(FieldPerp &f, const char *name, bool save_repeat) {
   if (varAdded(name)) {
     // Check if it's the same variable
     if (&f == varPtr(name)) {
-      output_warn.write("WARNING: variable '%s' added again to Datafile\n", name);
+      output_warn.write("WARNING: variable '{:s}' added again to Datafile\n", name);
     } else {
       throw BoutException("Variable with name '{:s}' already added to Datafile", name);
     }
@@ -764,7 +764,7 @@ void Datafile::add(Vector2D &f, const char *name, bool save_repeat) {
   if (varAdded(name)) {
     // Check if it's the same variable
     if (&f == varPtr(name)) {
-      output_warn.write("WARNING: variable '%s' added again to Datafile\n", name);
+      output_warn.write("WARNING: variable '{:s}' added again to Datafile\n", name);
     } else {
       throw BoutException("Variable with name '{:s}' already added to Datafile", name);
     }
@@ -828,7 +828,7 @@ void Datafile::add(Vector3D &f, const char *name, bool save_repeat) {
   if (varAdded(name)) {
     // Check if it's the same variable
     if (&f == varPtr(name)) {
-      output_warn.write("WARNING: variable '%s' added again to Datafile\n", name);
+      output_warn.write("WARNING: variable '{:s}' added again to Datafile\n", name);
     } else {
       throw BoutException("Variable with name '{:s}' already added to Datafile", name);
     }
@@ -910,7 +910,7 @@ bool Datafile::read() {
               "Missing data for {:s} in input. Set init_missing=true to set to zero.",
               var.name);
         }
-        output_warn.write("\tWARNING: Could not read integer %s. Setting to zero\n", var.name.c_str());
+        output_warn.write("\tWARNING: Could not read integer {:s}. Setting to zero\n", var.name);
         *(var.ptr) = 0;
         continue;
       }
@@ -921,7 +921,7 @@ bool Datafile::read() {
               "Missing data for {:s} in input. Set init_missing=true to set to zero.",
               var.name);
         }
-        output_warn.write("\tWARNING: Could not read integer %s. Setting to zero\n", var.name.c_str());
+        output_warn.write("\tWARNING: Could not read integer {:s}. Setting to zero\n", var.name);
         *(var.ptr) = 0;
         continue;
       }
@@ -937,7 +937,7 @@ bool Datafile::read() {
               "Missing data for {:s} in input. Set init_missing=true to set to zero.",
               var.name);
         }
-        output_warn.write("\tWARNING: Could not read BoutReal %s. Setting to zero\n", var.name.c_str());
+        output_warn.write("\tWARNING: Could not read BoutReal {:s}. Setting to zero\n", var.name);
         *(var.ptr) = 0;
         continue;
       }
@@ -948,7 +948,7 @@ bool Datafile::read() {
               "Missing data for {:s} in input. Set init_missing=true to set to zero.",
               var.name);
         }
-        output_warn.write("\tWARNING: Could not read BoutReal %s. Setting to zero\n", var.name.c_str());
+        output_warn.write("\tWARNING: Could not read BoutReal {:s}. Setting to zero\n", var.name);
         *(var.ptr) = 0;
         continue;
       }
@@ -965,7 +965,7 @@ bool Datafile::read() {
               "Missing data for {:s} in input. Set init_missing=true to set to false.",
               var.name);
         }
-        output_warn.write("\tWARNING: Could not read bool %s. Setting to false\n", var.name.c_str());
+        output_warn.write("\tWARNING: Could not read bool {:s}. Setting to false\n", var.name);
         *(var.ptr) = false;
         continue;
       }
@@ -976,7 +976,7 @@ bool Datafile::read() {
               "Missing data for {:s} in input. Set init_missing=true to set to false.",
               var.name);
         }
-        output_warn.write("\tWARNING: Could not read bool %s. Setting to false\n", var.name.c_str());
+        output_warn.write("\tWARNING: Could not read bool {:s}. Setting to false\n", var.name);
         *(var.ptr) = false;
         continue;
       }
@@ -1316,7 +1316,7 @@ bool Datafile::read_f2d(const std::string &name, Field2D *f, bool save_repeat) {
     file->readFieldAttributes(name, *f);
   } catch (const BoutException &e) {
     if (init_missing) {
-      output_warn.write("\tWARNING: Could not read 2D field %s attributes.\n", name.c_str());
+      output_warn.write("\tWARNING: Could not read 2D field {:s} attributes.\n", name);
     } else {
       throw;
     }
@@ -1327,7 +1327,7 @@ bool Datafile::read_f2d(const std::string &name, Field2D *f, bool save_repeat) {
   if(save_repeat) {
     if(!file->read_rec(&((*f)(0,0)), name, mesh->LocalNx, mesh->LocalNy)) {
       if(init_missing) {
-        output_warn.write("\tWARNING: Could not read 2D field %s. Setting to zero\n", name.c_str());
+        output_warn.write("\tWARNING: Could not read 2D field {:s}. Setting to zero\n", name);
         *f = 0.0;
       } else {
         throw BoutException("Missing 2D evolving field {:s} in input. Set "
@@ -1339,7 +1339,7 @@ bool Datafile::read_f2d(const std::string &name, Field2D *f, bool save_repeat) {
   }else {
     if(!file->read(&((*f)(0,0)), name, mesh->LocalNx, mesh->LocalNy)) {
       if(init_missing) {
-        output_warn.write("\tWARNING: Could not read 2D field %s. Setting to zero\n", name.c_str());
+        output_warn.write("\tWARNING: Could not read 2D field {:s}. Setting to zero\n", name);
         *f = 0.0;
       } else {
         throw BoutException(
@@ -1358,7 +1358,7 @@ bool Datafile::read_f3d(const std::string &name, Field3D *f, bool save_repeat) {
     file->readFieldAttributes(name, *f);
   } catch (const BoutException &e) {
     if (init_missing) {
-      output_warn.write("\tWARNING: Could not read 3D field %s attributes.\n", name.c_str());
+      output_warn.write("\tWARNING: Could not read 3D field {:s} attributes.\n", name);
     } else {
       throw;
     }
@@ -1369,7 +1369,7 @@ bool Datafile::read_f3d(const std::string &name, Field3D *f, bool save_repeat) {
   if(save_repeat) {
     if(!file->read_rec(&((*f)(0,0,0)), name, mesh->LocalNx, mesh->LocalNy, mesh->LocalNz)) {
       if(init_missing) {
-        output_warn.write("\tWARNING: Could not read 3D field %s. Setting to zero\n", name.c_str());
+        output_warn.write("\tWARNING: Could not read 3D field {:s}. Setting to zero\n", name);
         *f = 0.0;
       }else {
         throw BoutException("Missing 3D evolving field {:s} in input. Set "
@@ -1381,7 +1381,7 @@ bool Datafile::read_f3d(const std::string &name, Field3D *f, bool save_repeat) {
   }else {
     if(!file->read(&((*f)(0,0,0)), name, mesh->LocalNx, mesh->LocalNy, mesh->LocalNz)) {
       if(init_missing) {
-        output_warn.write("\tWARNING: Could not read 3D field %s. Setting to zero\n", name.c_str());
+        output_warn.write("\tWARNING: Could not read 3D field {:s}. Setting to zero\n", name);
         *f = 0.0;
       }else {
         throw BoutException(
@@ -1406,7 +1406,7 @@ bool Datafile::read_fperp(const std::string &name, FieldPerp *f, bool save_repea
     file->readFieldAttributes(name, *f);
   } catch (const BoutException &e) {
     if (init_missing) {
-      output_warn.write("\tWARNING: Could not read FieldPerp %s attributes.\n", name.c_str());
+      output_warn.write("\tWARNING: Could not read FieldPerp {:s} attributes.\n", name);
     } else {
       throw;
     }
@@ -1421,7 +1421,7 @@ bool Datafile::read_fperp(const std::string &name, FieldPerp *f, bool save_repea
     if(save_repeat) {
       if(!file->read_rec_perp(&((*f)(0,0)), name, mesh->LocalNx, mesh->LocalNz)) {
         if(init_missing) {
-          output_warn.write("\tWARNING: Could not read FieldPerp %s. Setting to zero\n", name.c_str());
+          output_warn.write("\tWARNING: Could not read FieldPerp {:s}. Setting to zero\n", name);
           *f = 0.0;
         }else {
           throw BoutException("Missing evolving FieldPerp {:s} in input. Set "
@@ -1433,7 +1433,7 @@ bool Datafile::read_fperp(const std::string &name, FieldPerp *f, bool save_repea
     }else {
       if(!file->read_perp(&((*f)(0,0)), name, mesh->LocalNx, mesh->LocalNz)) {
         if(init_missing) {
-          output_warn.write("\tWARNING: Could not read FieldPerp %s. Setting to zero\n", name.c_str());
+          output_warn.write("\tWARNING: Could not read FieldPerp {:s}. Setting to zero\n", name);
           *f = 0.0;
         }else {
           throw BoutException(

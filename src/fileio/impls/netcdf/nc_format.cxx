@@ -380,7 +380,7 @@ bool NcFormat::addVarInt(const string &name, bool repeat) {
       var = dataFile->add_var(name.c_str(), ncInt, 0, dimList);
 
     if(!var->is_valid()) {
-      output_error.write("ERROR: NetCDF could not add int '%s' to file '%s'\n", name.c_str(), fname);
+      output_error.write("ERROR: NetCDF could not add int '{:s}' to file '{:s}'\n", name, fname);
       return false;
     }
   }
@@ -408,7 +408,7 @@ bool NcFormat::addVarBoutReal(const string &name, bool repeat) {
       var = dataFile->add_var(name.c_str(), nc_float_type, 0, dimList);
 
     if(!var->is_valid()) {
-      output_error.write("ERROR: NetCDF could not add BoutReal '%s' to file '%s'\n", name.c_str(), fname);
+      output_error.write("ERROR: NetCDF could not add BoutReal '{:s}' to file '{:s}'\n", name, fname);
       return false;
     }
   }
@@ -436,7 +436,7 @@ bool NcFormat::addVarField2D(const string &name, bool repeat) {
       var = dataFile->add_var(name.c_str(), nc_float_type, 2, dimList);
 
     if(!var->is_valid()) {
-      output_error.write("ERROR: NetCDF could not add Field2D '%s' to file '%s'\n", name.c_str(), fname);
+      output_error.write("ERROR: NetCDF could not add Field2D '{:s}' to file '{:s}'\n", name, fname);
       return false;
     }
   }
@@ -464,7 +464,7 @@ bool NcFormat::addVarField3D(const string &name, bool repeat) {
       var = dataFile->add_var(name.c_str(), nc_float_type, 3, dimList);
 
     if(!var->is_valid()) {
-      output_error.write("ERROR: NetCDF could not add Field3D '%s' to file '%s'\n", name.c_str(), fname);
+      output_error.write("ERROR: NetCDF could not add Field3D '{:s}' to file '{:s}'\n", name, fname);
       return false;
     }
   }
@@ -495,7 +495,7 @@ bool NcFormat::addVarFieldPerp(const string &name, bool repeat) {
     }
 
     if(!var->is_valid()) {
-      output_error.write("ERROR: NetCDF could not add FieldPerp '%s' to file '%s'\n", name.c_str(), fname);
+      output_error.write("ERROR: NetCDF could not add FieldPerp '{:s}' to file '{:s}'\n", name, fname);
       return false;
     }
   }
@@ -525,7 +525,7 @@ bool NcFormat::read(int *data, const char *name, int lx, int ly, int lz) {
   
   if(!(var = dataFile->get_var(name))) {
 #ifdef NCDF_VERBOSE
-    output_info.write("INFO: NetCDF variable '%s' not found\n", name);
+    output_info.write("INFO: NetCDF variable '{:s}' not found\n", name);
 #endif
     return false;
   }
@@ -536,15 +536,16 @@ bool NcFormat::read(int *data, const char *name, int lx, int ly, int lz) {
 
   if(!(var->set_cur(cur))) {
 #ifdef NCDF_VERBOSE
-    output_info.write("INFO: NetCDF Could not set cur(%d,%d,%d) for variable '%s'\n", 
-		 x0,y0,z0, name);
+    output_info.write(
+        "INFO: NetCDF Could not set cur({:d},{:d},{:d}) for variable '{:s}'\n", x0, y0,
+        z0, name);
 #endif
     return false;
   }
 
   if(!(var->get(data, counts))) {
 #ifdef NCDF_VERBOSE
-    output_info.write("INFO: NetCDF could not read data for '%s'\n", name);
+    output_info.write("INFO: NetCDF could not read data for '{:s}'\n", name);
 #endif
     return false;
   }
@@ -654,7 +655,7 @@ bool NcFormat::write(int *data, const char *name, int lx, int ly, int lz) {
   
   NcVar *var;
   if(!(var = dataFile->get_var(name))) {
-    output_error.write("ERROR: NetCDF int variable '%s' has not been added to file '%s'\n", name, fname);
+    output_error.write("ERROR: NetCDF int variable '{:s}' has not been added to file '{:s}'\n", name, fname);
     return false;
   }
   
@@ -695,7 +696,7 @@ bool NcFormat::write(BoutReal *data, const char *name, int lx, int ly, int lz) {
 
   NcVar *var;
   if(!(var = dataFile->get_var(name))) {
-    output_error.write("ERROR: NetCDF BoutReal variable '%s' has not been added to file '%s'\n", name, fname);
+    output_error.write("ERROR: NetCDF BoutReal variable '{:s}' has not been added to file '{:s}'\n", name, fname);
     return false;
   }  
 
@@ -757,7 +758,7 @@ bool NcFormat::write_perp(BoutReal *data, const std::string& name, int lx, int l
 
   NcVar *var;
   if(!(var = dataFile->get_var(name.c_str()))) {
-    output_error.write("ERROR: NetCDF BoutReal variable '%s' has not been added to file '%s'\n", name.c_str(), fname);
+    output_error.write("ERROR: NetCDF BoutReal variable '{:s}' has not been added to file '{:s}'\n", name, fname);
     return false;
   }
 
@@ -937,7 +938,7 @@ bool NcFormat::write_rec(int *data, const char *name, int lx, int ly, int lz) {
   
   // Try to find variable
   if(!(var = dataFile->get_var(name))) {
-    output_error.write("ERROR: NetCDF int variable '%s' has not been added to file '%s'\n", name, fname);
+    output_error.write("ERROR: NetCDF int variable '{:s}' has not been added to file '{:s}'\n", name, fname);
     return false;
   }else {
     // Get record number
@@ -984,7 +985,7 @@ bool NcFormat::write_rec(BoutReal *data, const char *name, int lx, int ly, int l
 
   // Try to find variable
   if(!(var = dataFile->get_var(name))) {
-    output_error.write("ERROR: NetCDF BoutReal variable '%s' has not been added to file '%s'\n", name, fname);
+    output_error.write("ERROR: NetCDF BoutReal variable '{:s}' has not been added to file '{:s}'\n", name, fname);
     return false;
   }else {
     // Get record number
@@ -997,7 +998,7 @@ bool NcFormat::write_rec(BoutReal *data, const char *name, int lx, int ly, int l
   int t = rec_nr[name];
 
 #ifdef NCDF_VERBOSE
-  output_info.write("INFO: NetCDF writing record %d of '%s' in '%s'\n",t, name, fname); 
+  output_info.write("INFO: NetCDF writing record {:d} of '{:s}' in '{:s}'\n",t, name, fname); 
 #endif
 
   if(lowPrecision) {
@@ -1059,7 +1060,7 @@ bool NcFormat::write_rec_perp(BoutReal *data, const std::string& name, int lx, i
 
   // Try to find variable
   if(!(var = dataFile->get_var(name.c_str()))) {
-    output_error.write("ERROR: NetCDF BoutReal variable '%s' has not been added to file '%s'\n", name.c_str(), fname);
+    output_error.write("ERROR: NetCDF BoutReal variable '{:s}' has not been added to file '{:s}'\n", name, fname);
     return false;
   }else {
     // Get record number
@@ -1072,7 +1073,7 @@ bool NcFormat::write_rec_perp(BoutReal *data, const std::string& name, int lx, i
   int t = rec_nr[name];
 
 #ifdef NCDF_VERBOSE
-  output_info.write("INFO: NetCDF writing record %d of '%s' in '%s'\n",t, name.c_str(), fname);
+  output_info.write("INFO: NetCDF writing record {:d} of '{:s}' in '{:s}'\n", t, name, fname);
 #endif
 
   if(lowPrecision) {
@@ -1124,8 +1125,9 @@ void NcFormat::setAttribute(const std::string &varname, const std::string &attrn
   std::string existing_att;
   if (getAttribute(varname, attrname, existing_att)) {
     if (text != existing_att) {
-      output_warn.write("Overwriting attribute '%s' of variable '%s' with '%s', was previously '%s'",
-          attrname.c_str(), varname.c_str(), text.c_str(), existing_att.c_str());
+      output_warn.write("Overwriting attribute '{:s}' of variable '{:s}' with '{:s}', "
+                        "was previously '{:s}'",
+                        attrname, varname, text, existing_att);
     }
   }
   // else: attribute does not exist, so just write it
@@ -1157,8 +1159,9 @@ void NcFormat::setAttribute(const std::string &varname, const std::string &attrn
   int existing_att;
   if (getAttribute(varname, attrname, existing_att)) {
     if (value != existing_att) {
-      output_warn.write("Overwriting attribute '%s' of variable '%s' with '%i', was previously '%i'",
-          attrname.c_str(), varname.c_str(), value, existing_att);
+      output_warn.write("Overwriting attribute '{:s}' of variable '{:s}' with '{:d}', "
+                        "was previously '{:d}'",
+                        attrname, varname, value, existing_att);
     }
   }
   // else: attribute does not exist, so just write it
@@ -1190,8 +1193,9 @@ void NcFormat::setAttribute(const std::string &varname, const std::string &attrn
   int existing_att;
   if (getAttribute(varname, attrname, existing_att)) {
     if (value != existing_att) {
-      output_warn.write("Overwriting attribute '%s' of variable '%s' with '%f', was previously '%d'",
-			attrname.c_str(), varname.c_str(), value, existing_att);
+      output_warn.write("Overwriting attribute '{:s}' of variable '{:s}' with '{:f}', "
+                        "was previously '{:d}'",
+                        attrname, varname, value, existing_att);
     }
   }
   // else: attribute does not exist, so just write it

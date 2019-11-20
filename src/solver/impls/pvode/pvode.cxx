@@ -105,7 +105,7 @@ int PvodeSolver::init(int nout, BoutReal tstep) {
     throw BoutException("\tERROR: MPI_Allreduce failed!\n");
   }
   
-  output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n",
+  output.write("\t3d fields = {:d}, 2d fields = {:d} neq={:d}, local_N={:d}\n",
 	       n3d, n2d, neq, local_N);
 
   // Set machEnv block
@@ -261,7 +261,7 @@ BoutReal PvodeSolver::run(BoutReal tout) {
       BoutReal last_time = internal_time;
       flag = CVode(cvode_mem, tout, u, &internal_time, ONE_STEP);
       if(flag < 0) {
-        output_error.write("ERROR CVODE solve failed at t = %e, flag = %d\n", internal_time, flag);
+        output_error.write("ERROR CVODE solve failed at t = {:e}, flag = {:d}\n", internal_time, flag);
         return -1.0;
       }
       
@@ -281,7 +281,7 @@ BoutReal PvodeSolver::run(BoutReal tout) {
 
   // Check return flag
   if(flag != SUCCESS) {
-    output_error.write("ERROR CVODE step failed, flag = %d\n", flag);
+    output_error.write("ERROR CVODE step failed, flag = {:d}\n", flag);
     return(-1.0);
   }
 

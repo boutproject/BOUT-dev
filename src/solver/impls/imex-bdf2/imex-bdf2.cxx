@@ -111,7 +111,7 @@ int IMEXBDF2::init(int nout, BoutReal tstep) {
   }
   neq = ntmp;
 
-  output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n",
+  output.write("\t3d fields = {:d}, 2d fields = {:d} neq={:d}, local_N={:d}\n",
                n3Dvars(), n2Dvars(), neq, nlocal);
   
   // Check if there are any constraints
@@ -148,7 +148,7 @@ int IMEXBDF2::init(int nout, BoutReal tstep) {
   };
 
   timestep = out_timestep / ninternal;
-  output.write("\tUsing timestep = %e, %d internal steps per output\n", timestep, ninternal);
+  output.write("\tUsing timestep = {:e}, {:d} internal steps per output\n", timestep, ninternal);
 
 
   OPTION(options, maxOrder, 2); //Maximum order of the scheme (1/2/3)
@@ -514,7 +514,7 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
               for(int j=0;j<n2d;j++) {
                 PetscInt col = ind2 + j;
 
-                //output.write("SETTING 1: %d, %d\n", row, col);
+                //output.write("SETTING 1: {:d}, {:d}\n", row, col);
                 MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
               }
             }
@@ -533,7 +533,7 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
               // Depends on 2D fields
               for(int j=0;j<n2d;j++) {
                 PetscInt col = ind0 + j;
-                //output.write("SETTING 2: %d, %d\n", row, col);
+                //output.write("SETTING 2: {:d}, {:d}\n", row, col);
                 MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
               }
               
@@ -556,7 +556,7 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
                 // 3D fields on this cell
                 for(int j=0;j<n3d;j++) {
                   PetscInt col = ind2 + j;
-                  //output.write("SETTING 3: %d, %d\n", row, col);
+                  //output.write("SETTING 3: {:d}, {:d}\n", row, col);
                   MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
                 }
               }
@@ -572,7 +572,7 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
                   ind2 += n2d;
                 for(int j=0;j<n3d;j++) {
                   PetscInt col = ind2 + j;
-                  //output.write("SETTING 4: %d, %d\n", row, col);
+                  //output.write("SETTING 4: {:d}, {:d}\n", row, col);
                   MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
                 }
 
@@ -582,7 +582,7 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
                   ind2 += n2d;
                 for(int j=0;j<n3d;j++) {
                   PetscInt col = ind2 + j;
-                  //output.write("SETTING 5: %d, %d\n", row, col);
+                  //output.write("SETTING 5: {:d}, {:d}\n", row, col);
                   MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
                 }
                 
@@ -972,8 +972,8 @@ int IMEXBDF2::run() {
     }
 
     if(diagnose) {
-      output.write("\n   Last dt = %e, order = %d\n", timesteps[0], lastOrder);
-      output.write("   Linear fails = %d, nonlinear fails = %d\n", linear_fails, nonlinear_fails);
+      output.write("\n   Last dt = {:e}, order = {:d}\n", timesteps[0], lastOrder);
+      output.write("   Linear fails = {:d}, nonlinear fails = {:d}\n", linear_fails, nonlinear_fails);
     }
 
     loadVars(std::begin(u));// Put result into variables

@@ -153,7 +153,7 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
     throw BoutException("Allreduce localN -> GlobalN failed!\n");
   }
 
-  output_info.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n", n3Dvars(),
+  output_info.write("\t3d fields = {:d}, 2d fields = {:d} neq={:d}, local_N={:d}\n", n3Dvars(),
                     n2Dvars(), neq, local_N);
 
   // Allocate memory
@@ -391,14 +391,14 @@ int CvodeSolver::run() {
       CVSpilsGetNumLinIters(cvode_mem, &nliters);
 
       output.write(
-          "\nCVODE: nsteps %ld, nfevals %ld, nniters %ld, npevals %ld, nliters %ld\n",
+          "\nCVODE: nsteps {:d}, nfevals {:d}, nniters {:d}, npevals {:d}, nliters {:d}\n",
           nsteps, nfevals, nniters, npevals, nliters);
 
-      output.write("    -> Newton iterations per step: %e\n",
+      output.write("    -> Newton iterations per step: {:e}\n",
                    static_cast<BoutReal>(nniters) / static_cast<BoutReal>(nsteps));
-      output.write("    -> Linear iterations per Newton iteration: %e\n",
+      output.write("    -> Linear iterations per Newton iteration: {:e}\n",
                    static_cast<BoutReal>(nliters) / static_cast<BoutReal>(nniters));
-      output.write("    -> Preconditioner evaluations per Newton: %e\n",
+      output.write("    -> Preconditioner evaluations per Newton: {:e}\n",
                    static_cast<BoutReal>(npevals) / static_cast<BoutReal>(nniters));
 
       // Last step size
@@ -409,7 +409,7 @@ int CvodeSolver::run() {
       int last_order;
       CVodeGetLastOrder(cvode_mem, &last_order);
 
-      output.write("    -> Last step size: %e, order: %d\n", last_step, last_order);
+      output.write("    -> Last step size: {:e}, order: {:d}\n", last_step, last_order);
 
       // Local error test failures
       long int num_fails;
@@ -419,14 +419,14 @@ int CvodeSolver::run() {
       long int nonlin_fails;
       CVodeGetNumNonlinSolvConvFails(cvode_mem, &nonlin_fails);
 
-      output.write("    -> Local error fails: %ld, nonlinear convergence fails: %ld\n",
+      output.write("    -> Local error fails: {:d}, nonlinear convergence fails: {:d}\n",
                    num_fails, nonlin_fails);
 
       // Stability limit order reductions
       long int stab_lims;
       CVodeGetNumStabLimOrderReds(cvode_mem, &stab_lims);
 
-      output.write("    -> Stability limit order reductions: %ld\n", stab_lims);
+      output.write("    -> Stability limit order reductions: {:d}\n", stab_lims);
     }
 
     /// Call the monitor function

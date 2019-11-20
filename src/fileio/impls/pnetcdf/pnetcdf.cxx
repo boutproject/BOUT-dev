@@ -279,7 +279,7 @@ bool PncFormat::read(int *data, const char *name, int lx, int ly, int lz) {
   if(ret = ncmpi_inq_varid(ncfile, name, &var)) {
     // Variable not in file
 #ifdef NCDF_VERBOSE
-    output_info.write("INFO: Parallel NetCDF variable '%s' not found\n", name);
+    output_info.write("INFO: Parallel NetCDF variable '{:s}' not found\n", name);
 #endif
     return false;
   }
@@ -337,7 +337,7 @@ bool PncFormat::read(BoutReal *data, const char *name, int lx, int ly, int lz) {
   if(ret = ncmpi_inq_varid(ncfile, name, &var)) {
     // Variable not in file
 #ifdef NCDF_VERBOSE
-    output_info.write("INFO: Parallel NetCDF variable '%s' not found\n", name);
+    output_info.write("INFO: Parallel NetCDF variable '{:s}' not found\n", name);
 #endif
     return false;
   }
@@ -515,7 +515,7 @@ bool PncFormat::read_rec(int *data, const char *name, int lx, int ly, int lz) {
   if(ret = ncmpi_inq_varid(ncfile, name, &var)) {
     // Variable not in file
 #ifdef NCDF_VERBOSE
-    output_info.write("INFO: Parallel NetCDF variable '%s' not found\n", name);
+    output_info.write("INFO: Parallel NetCDF variable '{:s}' not found\n", name);
 #endif
     return false;
   }
@@ -547,7 +547,7 @@ bool PncFormat::read_rec(BoutReal *data, const char *name, int lx, int ly, int l
   if(ret = ncmpi_inq_varid(ncfile, name, &var)) {
     // Variable not in file
 #ifdef NCDF_VERBOSE
-    output_info.write("INFO: Parallel NetCDF variable '%s' not found\n", name);
+    output_info.write("INFO: Parallel NetCDF variable '{:s}' not found\n", name);
 #endif
     return false;
   }
@@ -653,7 +653,7 @@ bool PncFormat::write_rec(BoutReal *data, const char *name, int lx, int ly, int 
   }
 
 #ifdef NCDF_VERBOSE
-  output_info.write("INFO: NetCDF writing record %d of '%s' in '%s'\n",t, name, fname); 
+  output_info.write("INFO: NetCDF writing record {:d} of '{:s}' in '{:s}'\n",t, name, fname); 
 #endif
 
   if(lowPrecision) {

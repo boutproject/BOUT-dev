@@ -528,7 +528,7 @@ void Mesh::addRegion3D(const std::string &region_name, const Region<> &region) {
                         region_name);
   }
   regionMap3D[region_name] = region;
-  output_verbose.write(_("Registered region 3D %s"),region_name.c_str());
+  output_verbose.write(_("Registered region 3D {:s}"),region_name);
   output_verbose << "\n:\t" << region.getStats() << "\n";
 }
 
@@ -538,7 +538,7 @@ void Mesh::addRegion2D(const std::string &region_name, const Region<Ind2D> &regi
                         region_name);
   }
   regionMap2D[region_name] = region;
-  output_verbose.write(_("Registered region 2D %s"),region_name.c_str());
+  output_verbose.write(_("Registered region 2D {:s}"),region_name);
   output_verbose << "\n:\t" << region.getStats() << "\n";
 }
 
@@ -548,7 +548,7 @@ void Mesh::addRegionPerp(const std::string &region_name, const Region<IndPerp> &
         _("Trying to add an already existing region {:s} to regionMapPerp"), region_name);
   }
   regionMapPerp[region_name] = region;
-  output_verbose.write(_("Registered region Perp %s"),region_name.c_str());
+  output_verbose.write(_("Registered region Perp {:s}"),region_name);
   output_verbose << "\n:\t" << region.getStats() << "\n";
 }
 

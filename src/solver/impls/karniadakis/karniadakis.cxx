@@ -74,7 +74,7 @@ int KarniadakisSolver::init(int nout, BoutReal tstep) {
     return 1;
   }
   
-  output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n",
+  output.write("\t3d fields = {:d}, 2d fields = {:d} neq={:d}, local_N={:d}\n",
 	       n3Dvars(), n2Dvars(), neq, nlocal);
   
   // Allocate memory
@@ -103,7 +103,7 @@ int KarniadakisSolver::init(int nout, BoutReal tstep) {
   // Number of sub-steps, rounded up
   nsubsteps = static_cast<int>(std::round(tstep / timestep));
 
-  output.write("\tNumber of substeps: %e / %e -> %d\n", tstep, timestep, nsubsteps);
+  output.write("\tNumber of substeps: {:e} / {:e} -> {:d}\n", tstep, timestep, nsubsteps);
 
   timestep = tstep / static_cast<BoutReal>(nsubsteps);
 

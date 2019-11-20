@@ -173,7 +173,7 @@ void Solver::add(Field3D& v, const std::string& name) {
   ddt(v).copyBoundary(v); // Set boundary to be the same as v
 
   if (mesh->StaggerGrids && (v.getLocation() != CELL_CENTRE)) {
-    output_info.write("\tVariable %s shifted to %s\n", name.c_str(), toString(v.getLocation()).c_str());
+    output_info.write("\tVariable {:s} shifted to {:s}\n", name, toString(v.getLocation()));
     ddt(v).setLocation(v.getLocation()); // Make sure both at the same location
   }
 
@@ -453,11 +453,11 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
 
   finaliseMonitorPeriods(NOUT, TIMESTEP);
 
-  output_progress.write(_("Solver running for %d outputs with output timestep of %e\n"),
+  output_progress.write(_("Solver running for {:d} outputs with output timestep of {:e}\n"),
                         NOUT, TIMESTEP);
   if (default_monitor_period > 1)
     output_progress.write(
-        _("Solver running for %d outputs with monitor timestep of %e\n"),
+        _("Solver running for {:d} outputs with monitor timestep of {:e}\n"),
         NOUT / default_monitor_period, TIMESTEP * default_monitor_period);
 
   // Initialise
@@ -469,7 +469,7 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
   output_info.write(_("Running simulation\n\n"));
 
   time_t start_time = time(nullptr);
-  output_progress.write(_("\nRun started at  : %s\n"), toString(start_time).c_str());
+  output_progress.write(_("\nRun started at  : {:s}\n"), toString(start_time));
 
   Timer timer("run"); // Start timer
 
@@ -504,21 +504,21 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
     status = run();
 
     time_t end_time = time(nullptr);
-    output_progress.write(_("\nRun finished at  : %s\n"), toString(end_time).c_str());
+    output_progress.write(_("\nRun finished at  : {:s}\n"), toString(end_time));
     output_progress.write(_("Run time : "));
 
     int dt = end_time - start_time;
     int i = static_cast<int>(dt / (60. * 60.));
     if (i > 0) {
-      output_progress.write("%d h ", i);
+      output_progress.write("{:d} h ", i);
       dt -= i * 60 * 60;
     }
     i = static_cast<int>(dt / 60.);
     if (i > 0) {
-      output_progress.write("%d m ", i);
+      output_progress.write("{:d} m ", i);
       dt -= i * 60;
     }
-    output_progress.write("%d s\n", dt);
+    output_progress.write("{:d} s\n", dt);
   } catch (BoutException& e) {
     output_error << "Error encountered in solver run\n";
     output_error << e.what() << endl;

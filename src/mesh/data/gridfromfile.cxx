@@ -213,7 +213,7 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def) 
   switch(size.size()) {
   case 0: {
     // Variable not found
-    output_warn.write("\tWARNING: Could not read '%s' from grid. Setting to %le\n", name.c_str(), def);
+    output_warn.write("\tWARNING: Could not read '{:s}' from grid. Setting to {:e}\n", name, def);
     var = def;
     return false;
   }
@@ -238,16 +238,14 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def) 
   case 3: {
     // Check size if getting Field3D
     if (bout::utils::is_Field2D<T>::value or bout::utils::is_FieldPerp<T>::value) {
-      output_warn.write("WARNING: Variable '%s' should be 2D, but has %zu dimensions. Ignored\n",
-                        name.c_str(), size.size());
+      output_warn.write("WARNING: Variable '{:s}' should be 2D, but has {:d} dimensions. Ignored\n", name, size.size());
       var = def;
       return false;
     }
     break;
   }
   default: {
-    output_warn.write("WARNING: Variable '%s' should be 2D or 3D, but has %zu dimensions. Ignored\n",
-                      name.c_str(), size.size());
+    output_warn.write("WARNING: Variable '{:s}' should be 2D or 3D, but has {:d} dimensions. Ignored\n", name, size.size());
     var = def;
     return false;
   }
@@ -560,7 +558,7 @@ bool GridFile::readgrid_3dvar_fft(Mesh *m, const std::string &name,
   std::vector<int> size = file->getSize(name);
   
   if (size.size() != 3) {
-    output_warn.write("\tWARNING: Number of dimensions of %s incorrect\n", name.c_str());
+    output_warn.write("\tWARNING: Number of dimensions of {:s} incorrect\n", name);
     return false;
   }
 
@@ -580,7 +578,7 @@ bool GridFile::readgrid_3dvar_fft(Mesh *m, const std::string &name,
   // Print out which modes are going to be read in
   if (zperiod > maxmode) {
     // Domain is too small: Only DC
-    output_warn.write("zperiod (%d) > maxmode (%d) => Only reading n = 0 component\n", zperiod, maxmode);
+    output_warn.write("zperiod ({:d}) > maxmode ({:d}) => Only reading n = 0 component\n", zperiod, maxmode);
   } else {
     // Get maximum mode in the input which is a multiple of zperiod
     int mm = (maxmode / zperiod) * zperiod;
@@ -588,9 +586,9 @@ bool GridFile::readgrid_3dvar_fft(Mesh *m, const std::string &name,
       mm = (ncz/2)*zperiod; // Limited by Z resolution
     
     if (mm == zperiod) {
-      output_info.write(" => Reading n = 0, %d\n", zperiod);
+      output_info.write(" => Reading n = 0, {:d}\n", zperiod);
     } else {
-      output_info.write(" => Reading n = 0, %d ... %d\n", zperiod, mm);
+      output_info.write(" => Reading n = 0, {:d} ... {:d}\n", zperiod, mm);
     }
   }
 
@@ -649,7 +647,7 @@ bool GridFile::readgrid_3dvar_real(const std::string &name,
   std::vector<int> size = file->getSize(name);
   
   if (size.size() != 3) {
-    output_warn.write("\tWARNING: Number of dimensions of %s incorrect\n", name.c_str());
+    output_warn.write("\tWARNING: Number of dimensions of {:s} incorrect\n", name);
     return false;
   }
   
@@ -691,7 +689,7 @@ bool GridFile::readgrid_perpvar_fft(Mesh *m, const std::string &name,
   std::vector<int> size = file->getSize(name);
 
   if (size.size() != 2) {
-    output_warn.write("\tWARNING: Number of dimensions of %s incorrect\n", name.c_str());
+    output_warn.write("\tWARNING: Number of dimensions of {:s} incorrect\n", name);
     return false;
   }
 
@@ -711,7 +709,7 @@ bool GridFile::readgrid_perpvar_fft(Mesh *m, const std::string &name,
   // Print out which modes are going to be read in
   if (zperiod > maxmode) {
     // Domain is too small: Only DC
-    output_warn.write("zperiod (%d) > maxmode (%d) => Only reading n = 0 component\n", zperiod, maxmode);
+    output_warn.write("zperiod ({:d}) > maxmode ({:d}) => Only reading n = 0 component\n", zperiod, maxmode);
   } else {
     // Get maximum mode in the input which is a multiple of zperiod
     int mm = (maxmode / zperiod) * zperiod;
@@ -719,9 +717,9 @@ bool GridFile::readgrid_perpvar_fft(Mesh *m, const std::string &name,
       mm = (ncz/2)*zperiod; // Limited by Z resolution
 
     if (mm == zperiod) {
-      output_info.write(" => Reading n = 0, %d\n", zperiod);
+      output_info.write(" => Reading n = 0, {:d}\n", zperiod);
     } else {
-      output_info.write(" => Reading n = 0, %d ... %d\n", zperiod, mm);
+      output_info.write(" => Reading n = 0, {:d} ... {:d}\n", zperiod, mm);
     }
   }
 
@@ -774,7 +772,7 @@ bool GridFile::readgrid_perpvar_real(const std::string &name,
   std::vector<int> size = file->getSize(name);
 
   if (size.size() != 2) {
-    output_warn.write("\tWARNING: Number of dimensions of %s incorrect\n", name.c_str());
+    output_warn.write("\tWARNING: Number of dimensions of {:s} incorrect\n", name);
     return false;
   }
 

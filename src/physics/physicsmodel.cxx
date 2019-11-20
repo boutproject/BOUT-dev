@@ -113,7 +113,7 @@ int PhysicsModel::postInit(bool restarting) {
 
   std::string filename = restart_dir + "/BOUT.restart."+restart_ext;
   if (restarting) {
-    output.write("Loading restart file: %s\n", filename.c_str());
+    output.write("Loading restart file: {:s}\n", filename);
 
     /// Load restart file
     if (!restart.openr(filename))

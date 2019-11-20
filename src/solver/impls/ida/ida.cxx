@@ -134,7 +134,7 @@ int IdaSolver::init(int nout, BoutReal tstep) {
     return 1;
   }
 
-  output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n", n3d, n2d, neq,
+  output.write("\t3d fields = {:d}, 2d fields = {:d} neq={:d}, local_N={:d}\n", n3d, n2d, neq,
                local_N);
 
   // Allocate memory
@@ -284,7 +284,7 @@ BoutReal IdaSolver::run(BoutReal tout) {
   run_rhs(simtime);
 
   if (flag < 0) {
-    output_error.write("ERROR IDA solve failed at t = %e, flag = %d\n", simtime, flag);
+    output_error.write("ERROR IDA solve failed at t = {:e}, flag = {:d}\n", simtime, flag);
     return -1.0;
   }
 

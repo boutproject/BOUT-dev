@@ -45,7 +45,7 @@ int RK4Solver::init(int nout, BoutReal tstep) {
   }
   neq = ntmp;
   
-  output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n",
+  output.write("\t3d fields = {:d}, 2d fields = {:d} neq={:d}, local_N={:d}\n",
 	       n3Dvars(), n2Dvars(), neq, nlocal);
   
   // Allocate memory
