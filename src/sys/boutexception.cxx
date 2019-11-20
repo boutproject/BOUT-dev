@@ -26,6 +26,9 @@ BoutException::~BoutException() {
   // up the msg_stack. We also won't know how many messages to pop, so
   // just clear everything
   msg_stack.clear();
+#ifdef BACKTRACE
+  free(messages);
+#endif
 }
 
 std::string BoutException::getBacktrace() const {
