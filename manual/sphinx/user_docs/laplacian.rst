@@ -887,8 +887,10 @@ cell faces.
 
 Notes:
 
--  The ShiftXderivs option must be true for this to work, since it
-   assumes that :math:`g^{xz} = 0`
+-  The ``ShiftedMetric`` or ``FCITransform`` ParallelTransform must be used
+   (i.e. ``mesh:paralleltransform = shifted`` or
+   ``mesh:paralleltransform = fci``) for this to work, since it assumes that
+   :math:`g^{xz} = 0`
 -  Setting the option ``pctype = hypre`` seems to work well, if PETSc has been
    compiled with the algebraic multigrid library hypre; this can be included by
    passing the option ``--download-hypre`` to PETSc's ``configure`` script.
