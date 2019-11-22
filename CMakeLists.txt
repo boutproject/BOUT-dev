@@ -87,6 +87,7 @@ set(BOUT_SOURCES
   ./include/bout/snb.hxx
   ./include/bout/solver.hxx
   ./include/bout/surfaceiter.hxx
+  ./include/bout/operatorstencil.hxx
   ./include/bout/sys/expressionparser.hxx
   ./include/bout/sys/generator_context.hxx
   ./include/bout/sys/gettext.hxx
