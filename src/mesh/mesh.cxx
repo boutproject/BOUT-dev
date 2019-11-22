@@ -657,3 +657,8 @@ void Mesh::recalculateStaggeredCoordinates() {
     *coords_map[location] = std::move(*createDefaultCoordinates(location, true));
   }
 }
+
+constexpr decltype(MeshFactory::type_name) MeshFactory::type_name;
+constexpr decltype(MeshFactory::section_name) MeshFactory::section_name;
+constexpr decltype(MeshFactory::option_name) MeshFactory::option_name;
+constexpr decltype(MeshFactory::default_type) MeshFactory::default_type;

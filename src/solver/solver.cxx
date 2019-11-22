@@ -1365,3 +1365,8 @@ void Solver::calculate_mms_error(BoutReal t) {
     *(f.MMS_err) = *(f.var) - solution;
   }
 }
+
+constexpr decltype(SolverFactory::type_name) SolverFactory::type_name;
+constexpr decltype(SolverFactory::section_name) SolverFactory::section_name;
+constexpr decltype(SolverFactory::option_name) SolverFactory::option_name;
+constexpr decltype(SolverFactory::default_type) SolverFactory::default_type;
