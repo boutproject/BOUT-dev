@@ -40,12 +40,13 @@ for directory,nproc in test_directories:
 
         # parallel diffusion
         launch_safe('./create-initial-profiles parallel=true nout=1 timestep=10 -d '
-                    + directory, nproc=nproc, output=directory+'/parallel.log 2>&1')
+                    + directory, runcmd="mpirun --oversubscribe -np",
+                    nproc=nproc, output=directory+'/parallel.log 2>&1')
 
         # perpendicular diffusion
         launch_safe('./create-initial-profiles perpendicular=true nout=1 timestep=1.e-5 -d '
-                    + directory + ' restart append', nproc=nproc,
-                    output=directory+'/perpendicular.log 2>&1')
+                    + directory + ' restart append', runcmd="mpirun --oversubscribe -np",
+                    nproc=nproc, output=directory+'/perpendicular.log 2>&1')
 
         if gridshape[1] == ny:
             yguards = False
@@ -85,8 +86,8 @@ for directory,nproc in test_directories:
 
     # run test
     try:
-        launch_safe('test-laplace3d -d ' + directory, nproc=nproc,
-                    output=directory+'/output.log 2>&1')
+        launch_safe('test-laplace3d -d ' + directory, runcmd="mpirun --oversubscribe -np",
+                    nproc=nproc, output=directory+'/output.log 2>&1')
     except RuntimeError:
         print(directory + ' run crashed')
         success = False
@@ -95,10 +96,10 @@ for directory,nproc in test_directories:
     error_max = collect('error_max', path=directory)
 
     if error_max > tolerance:
-        print(directory + ' failed')
+        print(directory + ' failed with maximum error ' + str(error_max))
         success = False
     else:
-        print(directory + ' passed')
+        print(directory + ' passed with maximum error ' + str(error_max))
 
 if success:
     print('All passed')
