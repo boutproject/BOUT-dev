@@ -72,6 +72,22 @@ class TestCommandLineArgs(unittest.TestCase):
         self.assertTrue(os.path.exists("test/BOUT.log.0"),
                         msg="FAIL: No BOUT.log.0 file in data directory")
 
+    def testDirectoryArgumentNonExistentDirectory(self):
+        with self.assertRaises(RuntimeError):
+            shell_safe(self.command + " -d non_existent", pipe=True)
+        with open("stderr.log") as f:
+            contents = f.read()
+            self.assertIn('"non_existent" does not exist', contents,
+                          msg="FAIL: Error message not printed when missing input directory")
+
+    def testDirectoryArgumentNonDirectory(self):
+        with self.assertRaises(RuntimeError):
+            shell_safe(self.command + " -d runtest", pipe=True)
+        with open("stderr.log") as f:
+            contents = f.read()
+            self.assertIn('"runtest" is not a directory', contents,
+                          msg="FAIL: Error message not printed when missing input directory")
+
     def testDirectoryArgumentOldSettingsFile(self):
         self.makeDirAndCopyInput("test")
         shell_safe(self.command + " -d test", pipe=True)

@@ -38,12 +38,11 @@ for nproc in [1,2,4]:
   #    nxpe = 2
   for jy in [2,34,65,81,113]:
 
-    cmd = "./test_petsc_laplace_MAST_grid "
-    "grid=grids/grid_MAST_SOL_jyis"+str(jy)+".nc"
+    cmd = "./test_petsc_laplace_MAST_grid grid=grids/grid_MAST_SOL_jyis{}.nc".format(jy)
 
     shell("rm data/BOUT.dmp.*.nc")
 
-    print("   %d processors...." % nproc)
+    print("   {} processors, grid_MAST_SOL_jyis{}".format(nproc, jy))
     s, out = launch_safe(cmd, nproc=nproc, pipe=True)
     f = open("run.log."+str(nproc), "w")
     f.write(out)
