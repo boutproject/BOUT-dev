@@ -146,10 +146,9 @@ public:
     for (auto i : available_list) {
       available += i + "\n";
     }
-    throw BoutException("Error when trying to create a {:s}: Could not find "
-                        "'{:s}'\nAvailable {:s} are:\n{:s}",
-                        DerivedFactory::type_name, name, DerivedFactory::type_name,
-                        available);
+    throw BoutException("Error when trying to create a {0:s}: Could not find "
+                        "'{1:s}'\nAvailable {0:s}s are:\n{2:s}",
+                        DerivedFactory::type_name, name, available);
   }
 
   /// List available types that can be created
