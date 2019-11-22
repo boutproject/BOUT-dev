@@ -220,7 +220,13 @@ uninstall:
 # Builds the library with $(OBJ) which is defined from the SOURCEC variable
 ####################################################################
 
+MPARK_VARIANT_SENTINEL = $(MPARK_VARIANT_INCLUDE_PATH)/mpark/variant.hpp
+$(MPARK_VARIANT_SENTINEL):
+	@echo "Downloading mpark.variant"
+	git submodule update --init --recursive $(BOUT_TOP)/externalpackages/mpark.variant
+
 ifeq ("$(TARGET)", "libfast")
+libfast: | $(MPARK_VARIANT_SENTINEL)
 libfast: makefile $(BOUT_CONFIG_FILE) $(BOUT_TOP)/include $(OBJ) $(DIRS)
 endif
 
@@ -304,8 +310,8 @@ endif
 # -MT  add a target to the generated dependency
 # Ignore failure, in case some compiler does not support this
 %.o: $(BOUT_CONFIG_FILE) %.cxx
-	@echo "  Compiling " $(@F:.o=.cxx)
-	@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -c $(@F:.o=.cxx) -o $@
+	@echo "  Compiling " $(@:.o=.cxx)
+	@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -c $(@:.o=.cxx) -o $@
 ifeq ("$(TARGET)","libfast")
 	test "$@" = "bout++.o" || touch $(BOUT_TOP)/lib/.last.o.file
 endif

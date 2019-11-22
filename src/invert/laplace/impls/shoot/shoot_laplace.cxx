@@ -70,7 +70,7 @@ LaplaceShoot::LaplaceShoot(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
 }
 
 FieldPerp LaplaceShoot::solve(const FieldPerp& rhs) {
-  ASSERT1(localmesh = rhs.getMesh());
+  ASSERT1(localmesh == rhs.getMesh());
   ASSERT1(rhs.getLocation() == location);
 
   FieldPerp x{emptyFrom(rhs)}; // Result
