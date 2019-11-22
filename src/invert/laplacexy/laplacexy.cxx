@@ -434,8 +434,10 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
   auto xcomm = localmesh->getXcomm();
   int proc_xind = localmesh->getXProcIndex();
   int tag0 = localmesh->getYProcIndex()*localmesh->getNXPE();
-  MPI_Request requests[] = {MPI_REQUEST_NULL, MPI_REQUEST_NULL};
-  MPI_Status statuses[2];
+  MPI_Request requests[] = {MPI_REQUEST_NULL, MPI_REQUEST_NULL, MPI_REQUEST_NULL,
+                            MPI_REQUEST_NULL, MPI_REQUEST_NULL, MPI_REQUEST_NULL,
+                            MPI_REQUEST_NULL, MPI_REQUEST_NULL};
+  MPI_Status statuses[8];
 
   // Get lower, inner corner
   if (not localmesh->firstX()) {
@@ -448,46 +450,43 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
     MPI_Isend(&indexXY(localmesh->xend, localmesh->ystart-1), 1, MPI_DOUBLE, proc_xind+1,
         tag0 + 1*(proc_xind + 1), xcomm, &requests[1]);
   }
-  MPI_Waitall(2, requests, statuses);
 
   // Get upper, inner corner
   if (not localmesh->firstX()) {
     // Receive from inner
     MPI_Irecv(&indexXY(localmesh->xstart-1, localmesh->yend+1), 1, MPI_DOUBLE,
-        proc_xind-1, tag0 + 1*proc_xind, xcomm, &requests[0]);
+        proc_xind-1, tag0 + 1*proc_xind, xcomm, &requests[2]);
   }
   if (not localmesh->lastX()) {
     // Need to send upper outer point out
     MPI_Isend(&indexXY(localmesh->xend, localmesh->yend+1), 1, MPI_DOUBLE, proc_xind+1,
-        tag0 + 1*(proc_xind + 1), xcomm, &requests[1]);
+        tag0 + 1*(proc_xind + 1), xcomm, &requests[3]);
   }
-  MPI_Waitall(2, requests, statuses);
 
   // Get lower, outer corner
   if (not localmesh->lastX()) {
     // Receive from outer
     MPI_Irecv(&indexXY(localmesh->xend+1, localmesh->ystart-1), 1, MPI_DOUBLE,
-        proc_xind+1, tag0 + proc_xind, xcomm, &requests[0]);
+        proc_xind+1, tag0 + proc_xind, xcomm, &requests[4]);
   }
   if (not localmesh->firstX()) {
     // Need to send lower inner point in
     MPI_Isend(&indexXY(localmesh->xstart, localmesh->ystart-1), 1, MPI_DOUBLE,
-        proc_xind-1, tag0 + (proc_xind - 1), xcomm, &requests[1]);
+        proc_xind-1, tag0 + (proc_xind - 1), xcomm, &requests[5]);
   }
-  MPI_Waitall(2, requests, statuses);
 
   // Get upper, outer corner
   if (not localmesh->lastX()) {
     // Receive from outer
     MPI_Irecv(&indexXY(localmesh->xend+1, localmesh->yend+1), 1, MPI_DOUBLE,
-        proc_xind+1, tag0 + proc_xind, xcomm, &requests[0]);
+        proc_xind+1, tag0 + proc_xind, xcomm, &requests[6]);
   }
   if (not localmesh->firstX()) {
     // Need to send upper inner point in
     MPI_Isend(&indexXY(localmesh->xstart, localmesh->yend+1), 1, MPI_DOUBLE,
-        proc_xind-1, tag0 + (proc_xind - 1), xcomm, &requests[1]);
+        proc_xind-1, tag0 + (proc_xind - 1), xcomm, &requests[7]);
   }
-  MPI_Waitall(2, requests, statuses);
+  MPI_Waitall(8, requests, statuses);
 
   //////////////////////////////////////////////////
   // Set up KSP
