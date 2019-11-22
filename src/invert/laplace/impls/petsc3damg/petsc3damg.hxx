@@ -66,6 +66,7 @@ public:
 #include <bout/petsclib.hxx>
 #include <bout/petsc_interface.hxx>
 #include <boutexception.hxx>
+#include <bout/operatorstencil.hxx>
 
 class LaplacePetsc3dAmg : public Laplacian {
 public:
@@ -182,6 +183,15 @@ private:
 
   // (Re)compute the values of the matrix representing the Laplacian operator
   void updateMatrix3D();
+
+  // Set up a stencil describing the structure of the operator. This
+  // will be used to preallocate the correct ammount of memory in the
+  // matrix.
+  //
+  // The interpolation done to get along-field values in y makes this
+  // tricky. For now we will just assume that the footprint of cells
+  // used for interpolation is the same everywhere.
+  static OperatorStencil<Ind3D> getStencil(Mesh* localmesh);
   
   /* Ex and Ez
    * Additional 1st derivative terms to allow for solution field to be

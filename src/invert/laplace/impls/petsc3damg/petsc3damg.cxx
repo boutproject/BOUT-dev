@@ -34,6 +34,7 @@
 #include <utils.hxx>
 #include <derivs.hxx>
 #include <bout/petsc_interface.hxx>
+#include <bout/operatorstencil.hxx>
 
 constexpr auto KSP_RICHARDSON = "richardson";
 constexpr auto KSP_CHEBYSHEV  = "chebyshev";
@@ -52,9 +53,8 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mes
   Laplacian(opt, loc, mesh_in),
   A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
   issetD(false), issetC(false), issetE(false), updateRequired(true), 
-  operator3D(A), kspInitialised(false)
+  operator3D(A, getStencil(localmesh)), kspInitialised(false)
 {
-
   // Provide basic initialisation of field coefficients, etc.
   // Get relevent options from user input
   // Initialise PETSc objects
@@ -225,7 +225,7 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D &b_in, const Field3D &x0) {
 
   // Invoke solver
   { Timer timer("petscsolve");
-    KSPSolve(ksp, *rhs.getVectorPointer(), *guess.getVectorPointer());
+    KSPSolve(ksp, *rhs.get(), *guess.get());
   }
 
   // Check for convergence
@@ -308,7 +308,7 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
     C_d2f_dz2 /= SQ(coords->dz);
     
     C_d2f_dxdz /= 4*coords->dx[l]*coords->dz;
-    
+
     operator3D(l, l) = -2*(C_d2f_dx2 + C_d2f_dy2 + C_d2f_dz2) + A[l];
     operator3D(l, l.xp()) = C_df_dx + C_d2f_dx2;
     operator3D(l, l.xm()) = -C_df_dx + C_d2f_dx2;
@@ -347,7 +347,7 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
     if (issetD) {
       C_d2f_dy2 *= D[l];
     }
-  
+
     BoutReal C_d2f_dxdy = 2*coords->g12[l],
       C_d2f_dydz = 2*coords->g23[l];
     if (issetD) {
@@ -377,16 +377,16 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
     operator3D.ydown()(l, l.ym().zm()) += C_d2f_dydz;    
   }
   operator3D.assemble();
-  MatSetBlockSize(*operator3D.getMatrixPointer(), 1);
+  MatSetBlockSize(*operator3D.get(), 1);
   
   // Declare KSP Context (abstract PETSc object that manages all Krylov methods)
   if (kspInitialised) KSPDestroy(&ksp);
   KSPCreate(BoutComm::get(), &ksp);
   kspInitialised = true;
 #if PETSC_VERSION_GE(3,5,0)
-  KSPSetOperators(ksp, *operator3D.getMatrixPointer(), *operator3D.getMatrixPointer());
+  KSPSetOperators(ksp, *operator3D.get(), *operator3D.get());
 #else
-  KSPSetOperators(ksp, *operator3D.getMatrixPointer(), *operator3D.getMatrixPointer(),
+  KSPSetOperators(ksp, *operator3D.get(), *operator3D.get(),
 		  DIFFERENT_NONZERO_PATTERN );
 #endif
 
@@ -425,6 +425,77 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
   KSPSetPCSide(ksp, PC_LEFT);
 
   updateRequired = false;
+}
+
+OperatorStencil<Ind3D> LaplacePetsc3dAmg::getStencil(Mesh* localmesh) {
+  OperatorStencil<Ind3D> stencil;
+
+  // Get the pattern used for interpolation. This is assumed to be the
+  // same across the whole grid.
+  const auto pw = localmesh->getCoordinates()->getParallelTransform().getWeightsForYDownApproximation(localmesh->xstart, localmesh->ystart + 1, localmesh->zstart);
+  std::vector<OffsetInd3D> interpPattern;
+  std::transform(pw.begin(), pw.end(), std::back_inserter(interpPattern),
+          [localmesh](ParallelTransform::PositionsAndWeights p) -> OffsetInd3D {
+            return {localmesh->xstart - p.i, localmesh->ystart - p.j,
+		    localmesh->LocalNz - p.k < p.k ? p.k - localmesh->LocalNz : p.k};
+          });
+
+  OffsetInd3D zero;
+
+  // Add interior cells
+  std::vector<OffsetInd3D> interpolatedElements = {zero.xp().yp(), zero.xp().ym(),
+						   zero.xm().yp(), zero.xm().ym(),
+						   zero.yp().zp(), zero.yp().zm(),
+						   zero.ym().zp(), zero.ym().zm()};
+  std::set<OffsetInd3D> interiorStencil = {zero, zero.xp(), zero.xm(), zero.yp(),
+					   zero.ym(), zero.zp(), zero.zm(),
+					   zero.xp().zp(), zero.xp().zm(),
+					   zero.xm().zp(), zero.xm().zm()};
+  for (auto& i : interpolatedElements) {
+    for (auto& j : interpPattern) {
+      interiorStencil.insert(i + j);
+    }
+  }
+  std::vector<OffsetInd3D> interiorStencilVector(interiorStencil.begin(), interiorStencil.end());
+  stencil.add([localmesh](Ind3D ind) -> bool {
+		return (localmesh->xstart <= ind.x() &&
+			ind.x() <= localmesh->xend &&
+			localmesh->ystart <= ind.y() &&
+			ind.y() <= localmesh->yend &&
+			localmesh->zstart <= ind.z() &&
+			ind.z() <= localmesh->zend); },
+    interiorStencilVector);
+
+  // Add Y boundaries before X boundaries so corners are assigned to
+  // the former.
+
+  // Note that the tests for whether a cell is in the boundary
+  // actually are not exclusive enough. They really only correspond to
+  // whether the cell is in the guard regions. However, these tests
+  // are much simpler and other checks will prevent guard-cells which
+  // are not boundaries from having memory pre-allocated.
+  
+  // Add lower Y boundary.
+  stencil.add([localmesh](Ind3D ind) -> bool {
+		return ind.y() == localmesh->ystart - 1;
+	      }, {zero, zero.yp()});
+  // Add upper Y boundary
+  stencil.add([localmesh](Ind3D ind) -> bool {
+		return ind.y() == localmesh->yend + 1;
+	      }, {zero, zero.ym()});
+  // Add inner X boundary
+  if (localmesh->firstX()) {
+    stencil.add(
+        [localmesh](Ind3D ind) -> bool { return ind.x() == localmesh->xstart - 1; },
+        {zero, zero.xp()});
+  }
+  // Add upper X boundary
+  if (localmesh->lastX()) {
+    stencil.add([localmesh](Ind3D ind) -> bool { return ind.x() == localmesh->xend + 1; },
+                {zero, zero.xm()});
+  }
+
+  return stencil;
 }
 
 #endif // BOUT_HAS_PETSC_3_3
