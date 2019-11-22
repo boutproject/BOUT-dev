@@ -240,7 +240,10 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D &b_in, const Field3D &x0) {
   }
 
   // Create field from result
-  return guess.toField();
+  Field3D solution = guess.toField();
+  localmesh->communicate(solution);
+  // TODO: set boundarise in parallel slices
+  return solution;
 }
 
 Field2D LaplacePetsc3dAmg::solve(const Field2D &b) {
@@ -253,7 +256,6 @@ PetscMatrix<Field3D>& LaplacePetsc3dAmg::getMatrix3D() {
 }
 
 void LaplacePetsc3dAmg::updateMatrix3D() {
-  localmesh->communicate(C2);
   const Field3D dc_dx = issetC ? DDX(C2) : Field3D(),
     dc_dy = issetC ? DDY(C2) : Field3D(),
     dc_dz = issetC ? DDZ(C2) : Field3D(),
