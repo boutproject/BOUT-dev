@@ -79,6 +79,23 @@ PetscInt GlobalIndexer::getGlobal(const IndPerp ind) {
   return static_cast<PetscInt>(indicesPerp[ind] + 0.5);
 }
 
+bool GlobalIndexer::isLocal(const Ind2D ind) {
+  PetscInt index = getGlobal(ind);
+  return (globalStart2D <= index) && (index <= globalEnd2D);
+}
+
+bool GlobalIndexer::isLocal(const Ind3D ind) {
+  PetscInt index = getGlobal(ind);
+  return (globalStart3D <= index) && (index <= globalEnd3D);
+
+}
+
+bool GlobalIndexer::isLocal(const IndPerp ind) {
+  PetscInt index = getGlobal(ind);
+  return (globalStartPerp <= index) && (index <= globalEndPerp);  
+}
+
+
 void GlobalIndexer::registerFieldForTest(FieldData& UNUSED(f)) {
   // This is a place-holder which does nothing. It can be overridden
   // by descendent classes if necessary to set up testing.
@@ -104,8 +121,9 @@ GlobalIndexer::GlobalIndexer(Mesh* localmesh)
     bndry3d.unique();
     localmesh->addRegion3D("RGN_ALL_THIN", bndry3d);
   }
-  int counter = localmesh->globalStartIndex3D();
+  int counter = globalStart3D = localmesh->globalStartIndex3D();
   BOUT_FOR_SERIAL(i, localmesh->getRegion3D("RGN_ALL_THIN")) { indices3D[i] = counter++; }
+  globalEnd3D = counter - 1;
 
   // Set up the 2D indices
   if (!localmesh->hasRegion2D("RGN_ALL_THIN")) {
@@ -117,8 +135,9 @@ GlobalIndexer::GlobalIndexer(Mesh* localmesh)
     bndry2d.unique();
     localmesh->addRegion2D("RGN_ALL_THIN", bndry2d);
   }
-  counter = localmesh->globalStartIndex2D();
+  counter = globalStart2D = localmesh->globalStartIndex2D();
   BOUT_FOR_SERIAL(i, localmesh->getRegion2D("RGN_ALL_THIN")) { indices2D[i] = counter++; }
+  globalEnd2D = counter - 1;
 
   // Set up the Perp indices; will these work in general or will
   // different ones be needed for each value of y?
@@ -129,10 +148,11 @@ GlobalIndexer::GlobalIndexer(Mesh* localmesh)
     bndryPerp.unique();
     localmesh->addRegionPerp("RGN_ALL_THIN", bndryPerp);
   }
-  counter = localmesh->globalStartIndexPerp();
+  counter = globalStartPerp = localmesh->globalStartIndexPerp();
   BOUT_FOR_SERIAL(i, localmesh->getRegionPerp("RGN_ALL_THIN")) {
     indicesPerp[i] = counter++;
   }
+  globalEndPerp = counter - 1;
 }
 
 void GlobalIndexer::recreateGlobalInstance() { initialisedGlobal = false; }

@@ -42,6 +42,7 @@
 #include <bout/traits.hxx>
 #include <bout_types.hxx>
 #include <boutcomm.hxx>
+#include <bout/operatorstencil.hxx>
 
 #ifdef BOUT_HAS_PETSC
 class GlobalIndexer;
@@ -73,6 +74,16 @@ public:
   PetscInt getGlobal(const Ind3D ind);
   PetscInt getGlobal(const IndPerp ind);
 
+  /// Check whether the local index corresponds to an element which is
+  /// stored locally.
+  bool isLocal(const Ind2D ind);
+  bool isLocal(const Ind3D ind);
+  bool isLocal(const IndPerp ind);
+
+  PetscInt getGlobalStart3D() { return globalStart3D; }
+  PetscInt getGlobalStart2D() { return globalStart2D; }
+  PetscInt getGlobalStartPerp() { return globalStartPerp; }
+
   // Mark the globalIndexer instance to be recreated next time it is
   // requested (useful for unit tests)
   static void recreateGlobalInstance();
@@ -96,6 +107,8 @@ private:
   Field3D indices3D;
   Field2D indices2D;
   FieldPerp indicesPerp;
+  PetscInt globalStart3D, globalEnd3D, globalStart2D, globalEnd2D,
+    globalStartPerp, globalEndPerp;
 
   /// The only instance of this class acting on the global Mesh
   static IndexerPtr globalInstance;
@@ -364,12 +377,13 @@ public:
   }
 
   // Construct a matrix capable of operating on the specified field
-  PetscMatrix(T& f) : matrix(new Mat(), MatrixDeleter()) {
+  PetscMatrix(T& f, const OperatorStencil<ind_type>& stencils = {})
+      : matrix(new Mat(), MatrixDeleter()) {
     const MPI_Comm comm =
         std::is_same<T, FieldPerp>::value ? f.getMesh()->getXcomm() : BoutComm::get();
     indexConverter = GlobalIndexer::getInstance(f.getMesh());
     pt = &f.getMesh()->getCoordinates()->getParallelTransform();
-    const auto size = [&f]() {
+    const int size = [&f]() {
       if (std::is_same<T, FieldPerp>::value) {
         return f.getMesh()->localSizePerp();
       } else if (std::is_same<T, Field2D>::value) {
@@ -380,9 +394,74 @@ public:
         throw BoutException("PetscVector initialised for non-field type.");
       }
     }();
+
     MatCreate(comm, matrix.get());
     MatSetSizes(*matrix, size, size, PETSC_DECIDE, PETSC_DECIDE);
     MatSetType(*matrix, MATMPIAIJ);
+
+    // If a stencil has been provided, preallocate memory
+    if (stencils.getNumParts() > 0) {
+      const int start = [this, &f]() {
+			  if (std::is_same<T, FieldPerp>::value) {
+			    return this->indexConverter->getGlobalStartPerp();
+			  } else if (std::is_same<T, Field2D>::value) {
+			    return this->indexConverter->getGlobalStart2D();
+			  } else {
+			    return this->indexConverter->getGlobalStart3D();
+			  }
+			}();
+      // Set interior
+      std::vector<int> numDiagonal(size), numOffDiagonal(size, 0);
+
+      // Set initial guess for number of on-diagonal elements
+      BOUT_FOR(i, f.getRegion("RGN_ALL_THIN")) {
+	numDiagonal[indexConverter->getGlobal(i) - start] = stencils.getStencilSize(i);
+      }
+
+      // Adjust at boundaries
+      const int maxblocksize = indexConverter->getMesh()->maxregionblocksize,
+	xstart = indexConverter->getMesh()->xstart,
+	xend = indexConverter->getMesh()->xend;
+      const int ystart =
+	std::is_same<T, FieldPerp>::value ? 0 : indexConverter->getMesh()->ystart;
+      const int yend =
+	std::is_same<T, FieldPerp>::value ? 0 : indexConverter->getMesh()->yend;
+      const int zstart = 0;
+      const int zend =
+	std::is_same<T, Field2D>::value ? 0 : indexConverter->getMesh()->LocalNz - 1;
+      const int ny =
+          std::is_same<T, FieldPerp>::value ? 1 : indexConverter->getMesh()->LocalNy;
+      const int nz =
+          std::is_same<T, Field2D>::value ? 1 : indexConverter->getMesh()->LocalNz;
+      const Region<ind_type> bounds =
+          Region<ind_type>(xstart - 1, xstart - 1, ystart, yend, zstart, zend, ny, nz,
+                           maxblocksize)
+	+ Region<ind_type>(xend + 1, xend + 1, ystart, yend, zstart, zend, ny, nz, maxblocksize)
+          + (std::is_same<T, FieldPerp>::value ? Region<ind_type>() 
+                 : Region<ind_type>(xstart - 1, xend + 1, ystart - 1, ystart - 1, zstart, zend,
+                                    ny, nz, maxblocksize)
+	     + Region<ind_type>(xstart - 1, xend + 1, yend + 1, yend + 1,
+				zstart, zend, ny, nz, maxblocksize));
+      BOUT_FOR_SERIAL(i, bounds) {
+	if (!indexConverter->isLocal(i)) {
+	  for (const auto& item : stencils) {
+	    auto& stencilApplies = item.first;
+	    auto& stencilPart = item.second;
+            for (const auto& j : stencilPart) {
+	      ind_type ind = i - j;
+	      if (stencilApplies(ind) && indexConverter->isLocal(ind)) {
+		int n = indexConverter->getGlobal(ind) - start;
+		numDiagonal[n] -= 1;
+		numOffDiagonal[n] += 1;
+	      }
+	    }
+          }
+	}
+      }
+      
+      MatMPIAIJSetPreallocation(*matrix, 0, numDiagonal.data(), 0, numOffDiagonal.data());
+    }
+
     MatSetUp(*matrix);
     yoffset = 0;
     initialised = true;
