@@ -366,7 +366,10 @@ finishes, the configuration summary should contain a line like::
   configure:   Natural language support: yes (path: /home/user/BOUT-dev/locale)
 
 where the ``path`` is the directory containing the translations.
-  
+
+See :ref:`sec-run-nls` for details of how to switch language when running
+BOUT++ simulations.
+
 .. _sec-configanalysis:
 
 Configuring analysis routines
