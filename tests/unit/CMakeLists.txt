@@ -30,6 +30,7 @@ add_executable(serial_tests
   ./include/bout/test_petsc_setters.cxx
   ./include/bout/test_petsc_vector.cxx
   ./include/bout/test_region.cxx
+  ./include/bout/test_stencil.cxx
   ./include/bout/test_template_combinations.cxx
   ./include/test_cyclic_reduction.cxx
   ./include/test_derivs.cxx
