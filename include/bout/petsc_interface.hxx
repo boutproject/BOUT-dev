@@ -6,7 +6,7 @@
  * up a linear system.
  *
  **************************************************************************
- * Copyright 2013 J. Buchanan, J.Omotani
+ * Copyright 2019 C. MacMackin
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
  *
