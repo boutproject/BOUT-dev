@@ -1,5 +1,6 @@
 #include "bout/solverfactory.hxx"
 
+#include "impls/adams_bashforth/adams_bashforth.hxx"
 #include "impls/arkode/arkode.hxx"
 #include "impls/cvode/cvode.hxx"
 #include "impls/euler/euler.hxx"
