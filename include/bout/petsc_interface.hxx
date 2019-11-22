@@ -42,6 +42,7 @@
 #include <bout/traits.hxx>
 #include <bout_types.hxx>
 #include <boutcomm.hxx>
+#include <bout/operatorstencil.hxx>
 
 #ifdef BOUT_HAS_PETSC
 template <class T>
