@@ -45,7 +45,17 @@
 #include <bout/constants.hxx>
 #include <bout/openmpwrap.hxx>
 
-#include "laplacefactory.hxx"
+// Implementations:
+#include "impls/serial_tri/serial_tri.hxx"
+#include "impls/serial_band/serial_band.hxx"
+#include "impls/pdd/pdd.hxx"
+#include "impls/spt/spt.hxx"
+#include "impls/petsc/petsc_laplace.hxx"
+#include "impls/mumps/mumps_laplace.hxx"
+#include "impls/cyclic/cyclic_laplace.hxx"
+#include "impls/shoot/shoot_laplace.hxx"
+#include "impls/multigrid/multigrid_laplace.hxx"
+#include "impls/naulin/naulin_laplace.hxx"
 
 /**********************************************************************************
  *                         INITIALISATION AND CREATION
@@ -123,28 +133,16 @@ Laplacian::Laplacian(Options* options, const CELL_LOC loc, Mesh* mesh_in)
           .withDefault(0);
 }
 
-Laplacian* Laplacian::create(Options *opts, const CELL_LOC location, Mesh *mesh_in) {
-  // Factory pattern:
-  // 1. getInstance() is making an instance of LaplacianFactory
-  // 2. createLaplacian() is accessing this instance and returning a Laplacian
-  //    form one of the child classes of the Laplacian (the laplace solver
-  //    implementations)
-  return LaplaceFactory::getInstance()->createLaplacian(opts, location, mesh_in);
-}
-
-Laplacian *Laplacian::instance = nullptr;
+std::unique_ptr<Laplacian> Laplacian::instance = nullptr;
 
 Laplacian* Laplacian::defaultInstance() {
   if (instance == nullptr)
     instance = create();
-  return instance;
+  return instance.get();
 }
 
 void Laplacian::cleanup() {
-  if (instance == nullptr)
-    return;
-  delete instance;
-  instance = nullptr;
+  instance.reset();
 }
 
 /**********************************************************************************

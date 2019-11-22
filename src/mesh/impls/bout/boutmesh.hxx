@@ -341,4 +341,8 @@ private:
   }
 };
 
+namespace {
+RegisterMesh<BoutMesh> registermeshbout{"bout"};
+}
+
 #endif // __BOUTMESH_H__

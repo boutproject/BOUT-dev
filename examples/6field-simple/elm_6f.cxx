@@ -235,8 +235,8 @@ const BoutReal eV_K = 11605.0;   // 1eV = 11605K
 FieldGroup comms;
 
 /// Solver for inverting Laplacian
-Laplacian* phiSolver;
-Laplacian* aparSolver;
+std::unique_ptr<Laplacian> phiSolver{nullptr};
+std::unique_ptr<Laplacian> aparSolver{nullptr};
 
 void advect_tracer(const Field3D& p, // phi (input)
                    const Field3D& delta_x,

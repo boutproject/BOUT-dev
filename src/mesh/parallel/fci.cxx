@@ -37,7 +37,6 @@
  **************************************************************************/
 
 #include "fci.hxx"
-#include "interpolation_factory.hxx"
 #include "parallel_boundary_op.hxx"
 #include "parallel_boundary_region.hxx"
 #include <bout/constants.hxx>
@@ -58,12 +57,10 @@ FCIMap::FCIMap(Mesh& mesh, int offset_, BoundaryRegionPar* boundary, bool zperio
     throw BoutException("FCIMap called with offset = 0; You probably didn't mean to do that");
   }
 
-  interp =
-      std::unique_ptr<Interpolation>(InterpolationFactory::getInstance()->create(&map_mesh));
+  interp = InterpolationFactory::getInstance().create(&map_mesh);
   interp->setYOffset(offset);
 
-  interp_corner =
-      std::unique_ptr<Interpolation>(InterpolationFactory::getInstance()->create(&map_mesh));
+  interp_corner = InterpolationFactory::getInstance().create(&map_mesh);
   interp_corner->setYOffset(offset);
 
   // Index arrays contain guard cells in order to get subscripts right

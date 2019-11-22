@@ -33,7 +33,6 @@ add_executable(serial_tests
   ./include/bout/test_template_combinations.cxx
   ./include/test_cyclic_reduction.cxx
   ./include/test_derivs.cxx
-  ./include/test_interpolation_factory.cxx
   ./include/test_mask.cxx
   ./invert/test_fft.cxx
   ./mesh/data/test_gridfromoptions.cxx

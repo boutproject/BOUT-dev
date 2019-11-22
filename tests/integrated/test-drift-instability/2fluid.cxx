@@ -53,8 +53,8 @@ bool evolve_rho, evolve_te, evolve_ni, evolve_ajpar, evolve_vi, evolve_ti;
 BoutReal ShearFactor;
 
 // Inversion objects
-Laplacian* phi_solver;
-Laplacian* apar_solver;
+std::unique_ptr<Laplacian> phi_solver;
+std::unique_ptr<Laplacian> apar_solver;
 
 FieldGroup comms; // Group of variables for communications
 

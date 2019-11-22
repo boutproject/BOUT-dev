@@ -58,7 +58,7 @@ private:
   Coordinates* coord;
 
   // Inverts a Laplacian to get potential
-  Laplacian* phiSolver;
+  std::unique_ptr<Laplacian> phiSolver{nullptr};
 
   int init(bool UNUSED(restarting)) override {
     Field2D I; // Shear factor

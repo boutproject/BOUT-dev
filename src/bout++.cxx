@@ -51,6 +51,10 @@ const char DEFAULT_DIR[] = "data";
 #include "bout/slepclib.hxx"
 #include "bout/solver.hxx"
 #include "bout/sys/timer.hxx"
+#include "bout/invert/laplacexz.hxx"
+#include "invert_parderiv.hxx"
+#include "bout/rkscheme.hxx"
+#include "interpolation.hxx"
 
 #define BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 #include "bout.hxx"
@@ -219,7 +223,8 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
   /// NB: "restart" and "append" are now caught by options
   /// Check for help flag separately
   for (int i = 1; i < argc; i++) {
-    if (string(argv[i]) == "-h" || string(argv[i]) == "--help") {
+    const std::string current_arg{argv[i]};
+    if (current_arg == "-h" || current_arg == "--help") {
       // Print help message -- note this will be displayed once per processor as we've not
       // started MPI yet.
       output.write(_("Usage: %s [-d <data directory>] [-f <options filename>] [restart "
@@ -245,6 +250,49 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
             "physics model source (e.g. %s.cxx)\n"),
           argv[0]);
 
+      std::exit(EXIT_SUCCESS);
+    }
+    if (current_arg == "--list-solvers") {
+      for (const auto &solver : SolverFactory::getInstance().listAvailable()) {
+        std::cout << solver << "\n";
+      }
+      std::exit(EXIT_SUCCESS);
+    }
+    if (current_arg == "--list-laplacians") {
+      for (const auto &laplacian : LaplaceFactory::getInstance().listAvailable()) {
+        std::cout << laplacian << "\n";
+      }
+      std::exit(EXIT_SUCCESS);
+    }
+    if (current_arg == "--list-laplacexzs") {
+      for (const auto &laplacexz : LaplaceXZFactory::getInstance().listAvailable()) {
+        std::cout << laplacexz << "\n";
+      }
+      std::exit(EXIT_SUCCESS);
+    }
+    if (current_arg == "--list-invertpars") {
+      for (const auto &invertpar : InvertParFactory::getInstance().listAvailable()) {
+        std::cout << invertpar << "\n";
+      }
+      std::exit(EXIT_SUCCESS);
+    }
+    if (current_arg == "--list-rkschemes") {
+      for (const auto &rkscheme : RKSchemeFactory::getInstance().listAvailable()) {
+        std::cout << rkscheme << "\n";
+      }
+      std::exit(EXIT_SUCCESS);
+    }
+    if (current_arg == "--list-meshes") {
+      for (const auto &mesh : MeshFactory::getInstance().listAvailable()) {
+        std::cout << mesh << "\n";
+      }
+      std::exit(EXIT_SUCCESS);
+    }
+    if (current_arg == "--list-interpolations") {
+      for (const auto& interpolation :
+           InterpolationFactory::getInstance().listAvailable()) {
+        std::cout << interpolation << "\n";
+      }
       std::exit(EXIT_SUCCESS);
     }
   }

@@ -14,7 +14,7 @@ private:
   Field2D sigma_n, sigma_T, sigma_vort; // dissipation terms
   BoutReal zeta;                        // rho/R0
   BRACKET_METHOD bm;                    // Bracket method for advection terms
-  Laplacian* phiSolver;                 // Laplacian solver for vort -> phi
+  std::unique_ptr<Laplacian> phiSolver{nullptr};                 // Laplacian solver for vort -> phi
   bool test_laplacian; // If true, compute the error on the Laplacian inversion and abort
   Field3D vort_error;
 

@@ -63,7 +63,7 @@ BoutReal vacuum_pressure;
 BoutReal vacuum_trans; // Transition width
 Field3D vac_mask;
 
-Laplacian* phi_solver;
+std::unique_ptr<Laplacian> phi_solver{nullptr};
 
 bool nonlinear;
 BoutReal g; // Only if compressible

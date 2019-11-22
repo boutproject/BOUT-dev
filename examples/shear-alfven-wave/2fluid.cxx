@@ -47,8 +47,8 @@ private:
   Coordinates *coord;
 
   /// Solver for inverting Laplacian
-  Laplacian *phiSolver;
-  Laplacian *aparSolver;
+  std::unique_ptr<Laplacian> phiSolver;
+  std::unique_ptr<Laplacian> aparSolver;
   
 protected:
   int init(bool UNUSED(restarting)) override {
