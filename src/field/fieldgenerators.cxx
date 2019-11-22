@@ -4,76 +4,9 @@
 #include <bout/constants.hxx>
 #include <utils.hxx>
 
+using bout::generator::Context;
+
 //////////////////////////////////////////////////////////
-
-FieldGeneratorPtr FieldSin::clone(const std::list<FieldGeneratorPtr> args) {
-  if (args.size() != 1) {
-    throw ParseException(
-        "Incorrect number of arguments to sin function. Expecting 1, got %lu",
-        static_cast<unsigned long>(args.size()));
-  }
-
-  return std::make_shared<FieldSin>(args.front());
-}
-
-BoutReal FieldSin::generate(Position pos) {
-  return sin(gen->generate(pos));
-}
-
-FieldGeneratorPtr FieldCos::clone(const std::list<FieldGeneratorPtr> args) {
-  if (args.size() != 1) {
-    throw ParseException(
-        "Incorrect number of arguments to cos function. Expecting 1, got %lu",
-        static_cast<unsigned long>(args.size()));
-  }
-
-  return std::make_shared<FieldCos>(args.front());
-}
-
-BoutReal FieldCos::generate(Position pos) {
-  return cos(gen->generate(pos));
-}
-
-FieldGeneratorPtr FieldSinh::clone(const std::list<FieldGeneratorPtr> args) {
-  if (args.size() != 1) {
-    throw ParseException(
-        "Incorrect number of arguments to sinh function. Expecting 1, got %lu",
-        static_cast<unsigned long>(args.size()));
-  }
-
-  return std::make_shared<FieldSinh>(args.front());
-}
-
-BoutReal FieldSinh::generate(Position pos) {
-  return sinh(gen->generate(pos));
-}
-
-FieldGeneratorPtr FieldCosh::clone(const std::list<FieldGeneratorPtr> args) {
-  if (args.size() != 1) {
-    throw ParseException(
-        "Incorrect number of arguments to cosh function. Expecting 1, got %lu",
-        static_cast<unsigned long>(args.size()));
-  }
-
-  return std::make_shared<FieldCosh>(args.front());
-}
-
-BoutReal FieldCosh::generate(Position pos) {
-  return cosh(gen->generate(pos));
-}
-
-FieldGeneratorPtr FieldTanh::clone(const std::list<FieldGeneratorPtr> args) {
-  if (args.size() != 1) {
-    throw ParseException(
-        "Incorrect number of arguments to tanh function. Expecting 1, got %lu",
-        static_cast<unsigned long>(args.size()));
-  }
-  return std::make_shared<FieldTanh>(args.front());
-}
-
-BoutReal FieldTanh::generate(Position pos) {
-  return tanh(gen->generate(pos));
-}
 
 FieldGeneratorPtr FieldGaussian::clone(const std::list<FieldGeneratorPtr> args) {
   if ((args.size() < 1) || (args.size() > 2)) {
@@ -92,37 +25,9 @@ FieldGeneratorPtr FieldGaussian::clone(const std::list<FieldGeneratorPtr> args) 
   return std::make_shared<FieldGaussian>(xin, sin);
 }
 
-BoutReal FieldGaussian::generate(Position pos) {
-  BoutReal sigma = s->generate(pos);
-  return exp(-SQ(X->generate(pos)/sigma)/2.) / (sqrt(TWOPI) * sigma);
-}
-
-FieldGeneratorPtr FieldAbs::clone(const std::list<FieldGeneratorPtr> args) {
-  if (args.size() != 1) {
-    throw ParseException(
-        "Incorrect number of arguments to abs function. Expecting 1, got %lu",
-        static_cast<unsigned long>(args.size()));
-  }
-
-  return std::make_shared<FieldAbs>(args.front());
-}
-
-BoutReal FieldAbs::generate(Position pos) {
-  return std::fabs(gen->generate(pos));
-}
-
-FieldGeneratorPtr FieldSqrt::clone(const std::list<FieldGeneratorPtr> args) {
-  if (args.size() != 1) {
-    throw ParseException(
-        "Incorrect number of arguments to sqrt function. Expecting 1, got %lu",
-        static_cast<unsigned long>(args.size()));
-  }
-
-  return std::make_shared<FieldSqrt>(args.front());
-}
-
-BoutReal FieldSqrt::generate(Position pos) {
-  return sqrt(gen->generate(pos));
+BoutReal FieldGaussian::generate(const Context& ctx) {
+  BoutReal sigma = s->generate(ctx);
+  return exp(-SQ(X->generate(ctx)/sigma)/2.) / (sqrt(TWOPI) * sigma);
 }
 
 FieldGeneratorPtr FieldHeaviside::clone(const std::list<FieldGeneratorPtr> args) {
@@ -135,22 +40,8 @@ FieldGeneratorPtr FieldHeaviside::clone(const std::list<FieldGeneratorPtr> args)
   return std::make_shared<FieldHeaviside>(args.front());
 }
 
-BoutReal FieldHeaviside::generate(Position pos) {
-  return (gen->generate(pos) > 0.0) ? 1.0 : 0.0;
-}
-
-FieldGeneratorPtr FieldErf::clone(const std::list<FieldGeneratorPtr> args) {
-  if (args.size() != 1) {
-    throw ParseException(
-        "Incorrect number of arguments to erf function. Expecting 1, got %lu",
-        static_cast<unsigned long>(args.size()));
-  }
-
-  return std::make_shared<FieldErf>(args.front());
-}
-
-BoutReal FieldErf::generate(Position pos) {
-  return erf(gen->generate(pos));
+BoutReal FieldHeaviside::generate(const Context& ctx) {
+  return (gen->generate(ctx) > 0.0) ? 1.0 : 0.0;
 }
 
 //////////////////////////////////////////////////////////
@@ -163,7 +54,7 @@ FieldGeneratorPtr FieldBallooning::clone(const std::list<FieldGeneratorPtr> args
   case 2: {
     // Second optional argument is ball_n, an integer
     // This should probably warn if arg isn't constant
-    n = ROUND( args.back()->generate(Position()) );
+    n = ROUND( args.back()->generate(Context()) );
   } // Fall through
   case 1: {
     return std::make_shared<FieldBallooning>(mesh, args.front(), n);
@@ -173,31 +64,35 @@ FieldGeneratorPtr FieldBallooning::clone(const std::list<FieldGeneratorPtr> args
   throw ParseException("ballooning function must have one or two arguments");
 }
 
-BoutReal FieldBallooning::generate(Position pos) {
-  if(!mesh)
+BoutReal FieldBallooning::generate(const Context& ctx) {
+  Mesh *localmesh = ctx.getMesh();
+  if (!localmesh)
     throw BoutException("ballooning function needs a valid mesh");
-  if(ball_n < 1)
+  if (ball_n < 1)
     throw BoutException("ballooning function ball_n less than 1");
 
   BoutReal ts; // Twist-shift angle
-  Coordinates* coords = mesh->getCoordinates();
+  Coordinates* coords = localmesh->getCoordinates();
 
-  int jx = pos.getIx();
-  
-  if(mesh->periodicY(jx, ts)) {
+  // Need to find the nearest flux surface (x index)
+  // This assumes that localmesh->GlobalX is linear in x index
+  BoutReal dx = (localmesh->GlobalX(localmesh->xend) - localmesh->GlobalX(localmesh->xstart))
+                / (localmesh->xend - localmesh->xstart);
+  int jx = ROUND((ctx.x() - localmesh->GlobalX(0)) / dx);
+
+  if (localmesh->periodicY(jx, ts)) {
     // Start with the value at this point
-    BoutReal value = arg->generate(pos);
+    BoutReal value = arg->generate(ctx);
 
-    for(int i=1; i<= ball_n; i++) {
+    for (int i = 1; i <= ball_n; i++) {
       // y - i * 2pi
-      Position cp = pos;
-      cp.setY(pos.y() - i*TWOPI);
-      cp.setZ(pos.z() + i*ts*TWOPI/coords->zlength());
-      value += arg->generate(cp);
-      
-      cp.setY(pos.y() + i*TWOPI);
-      cp.setZ(pos.z() - i*ts*TWOPI/coords->zlength());
-      value += arg->generate(cp);
+      value += arg->generate(Context(ctx).set(
+          "y", ctx.y() - i * TWOPI,
+          "z", ctx.z() + i * ts * TWOPI / coords->zlength()));
+
+      value += arg->generate(Context(ctx).set(
+          "y", ctx.y() + i * TWOPI,
+          "z", ctx.z() - i * ts * TWOPI / coords->zlength()));
     }
     return value;
   }
@@ -212,8 +107,8 @@ FieldMixmode::FieldMixmode(FieldGeneratorPtr a, BoutReal seed) : arg(std::move(a
   // Calculate the phases -PI to +PI
   // using genRand [0,1]
 
-  for(int i=0;i<14;i++)
-    phase[i] = PI * (2.*genRand(seed + i) - 1.);
+  for (int i = 0; i < 14; i++)
+    phase[i] = PI * (2. * genRand(seed + i) - 1.);
 }
 
 FieldGeneratorPtr FieldMixmode::clone(const std::list<FieldGeneratorPtr> args) {
@@ -221,7 +116,7 @@ FieldGeneratorPtr FieldMixmode::clone(const std::list<FieldGeneratorPtr> args) {
   switch(args.size()) {
   case 2: {
     // Second optional argument is the seed, which should be a constant
-    seed = args.back()->generate(Position());
+    seed = args.back()->generate(Context());
   } // Fall through
   case 1: {
     return std::make_shared<FieldMixmode>(args.front(), seed);
@@ -231,14 +126,14 @@ FieldGeneratorPtr FieldMixmode::clone(const std::list<FieldGeneratorPtr> args) {
   throw ParseException("mixmode function must have one or two arguments");
 }
 
-BoutReal FieldMixmode::generate(Position pos) {
+BoutReal FieldMixmode::generate(const Context& ctx) {
   BoutReal result = 0.0;
 
   // A mixture of mode numbers
   for(int i=0;i<14;i++) {
     // This produces a spectrum which is peaked around mode number 4
     result += ( 1./SQ(1. + std::abs(i - 4)) ) *
-      cos(i * arg->generate(pos) + phase[i]);
+      cos(i * arg->generate(ctx) + phase[i]);
   }
 
   return result;
@@ -290,13 +185,13 @@ FieldGeneratorPtr FieldTanhHat::clone(const std::list<FieldGeneratorPtr> args) {
   return std::make_shared<FieldTanhHat>(xin, widthin, centerin, steepnessin);
 }
 
-BoutReal FieldTanhHat::generate(Position pos) {
+BoutReal FieldTanhHat::generate(const Context& ctx) {
   // The following are constants
-  BoutReal w = width    ->generate(Position());
-  BoutReal c = center   ->generate(Position());
-  BoutReal s = steepness->generate(Position());
+  BoutReal w = width    ->generate(Context());
+  BoutReal c = center   ->generate(Context());
+  BoutReal s = steepness->generate(Context());
   return 0.5*(
-                 tanh( s*(X->generate(pos) - (c - 0.5*w)) )
-               - tanh( s*(X->generate(pos) - (c + 0.5*w)) )
+                 tanh( s*(X->generate(ctx) - (c - 0.5*w)) )
+               - tanh( s*(X->generate(ctx) - (c + 0.5*w)) )
              );
 }

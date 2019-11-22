@@ -5,6 +5,8 @@
 #include <output.hxx>
 #include <unused.hxx>
 
+using bout::generator::Context;
+
 bool GridFromOptions::hasVar(const std::string& name) { return options->isSet(name); }
 
 bool GridFromOptions::get(Mesh* UNUSED(m), std::string& sval, const std::string& name) {
@@ -126,26 +128,26 @@ bool GridFromOptions::get(Mesh* m, std::vector<BoutReal>& var, const std::string
 
   var.resize(len);
 
-  Position pos(0,0,0,CELL_CENTRE, m, 0.0);
+  Context pos(0,0,0,CELL_CENTRE, m, 0.0);
 
   switch (dir) {
   case GridDataSource::X: {
     for (int x = 0; x < len; x++) {
-      pos.setX(m->GlobalX(x - m->OffsetX + offset));
+      pos.set("x", m->GlobalX(x - m->OffsetX + offset));
       var[x] = gen->generate(pos);
     }
     break;
   }
   case GridDataSource::Y: {
     for (int y = 0; y < len; y++){
-      pos.setY(TWOPI * m->GlobalY(y - m->OffsetY + offset));
+      pos.set("y", TWOPI * m->GlobalY(y - m->OffsetY + offset));
       var[y] = gen->generate(pos);
     }
     break;
   }
   case GridDataSource::Z: {
     for (int z = 0; z < len; z++) {
-      pos.setZ((TWOPI * (z - m->OffsetZ + offset)) / static_cast<BoutReal>(m->LocalNz));
+      pos.set("z", (TWOPI * (z - m->OffsetZ + offset)) / static_cast<BoutReal>(m->LocalNz));
       var[z] = gen->generate(pos);
     }
     break;

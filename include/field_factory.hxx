@@ -110,6 +110,8 @@ private:
   /// Should we transform input from field-aligned coordinates (if possible)?
   bool transform_from_field_aligned{true};
 
+  int max_recursion_depth{0};
+  
   /// The default options used in resolve(), can be *temporarily*
   /// overridden in parse()/create2D()/create3D()
   mutable const Options* options;
@@ -133,7 +135,7 @@ class FieldFunction : public FieldGenerator {
 public:
   FieldFunction() = delete;
   FieldFunction(FuncPtr userfunc) : func(userfunc) {}
-  BoutReal generate(Position pos) override {
+  BoutReal generate(const bout::generator::Context& pos) override {
     return func(pos.t(), pos.x(), pos.y(), pos.z());
   }
 
@@ -147,7 +149,7 @@ private:
 class FieldNull : public FieldGenerator {
 public:
   FieldNull() = default;
-  BoutReal generate(Position UNUSED(pos)) override {
+  BoutReal generate(const bout::generator::Context&) override {
     return 0.0;
   }
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> UNUSED(args)) override {
