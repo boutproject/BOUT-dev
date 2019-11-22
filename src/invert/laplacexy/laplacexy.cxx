@@ -44,7 +44,7 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
   }
   
   finite_volume = (*opt)["finite_volume"].doc(
-      "Use finite volume rather than finite difference discritisation."
+      "Use finite volume rather than finite difference discretisation."
       ).withDefault(true);
 
   ///////////////////////////////////////////////////
