@@ -318,6 +318,16 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
     operator3D(l, l.xp().zm()) = -C_d2f_dxdz;
     operator3D(l, l.xm().zp()) = -C_d2f_dxdz;
     operator3D(l, l.xm().zm()) = C_d2f_dxdz;
+    operator3D.yup()(l, l.yp()) = 0.0;
+    operator3D.ydown()(l, l.ym()) = 0.0;
+    operator3D.yup()(l, l.xp().yp()) = 0.0;
+    operator3D.ydown()(l, l.xp().ym()) = 0.0;
+    operator3D.yup()(l, l.xm().yp()) = 0.0;
+    operator3D.ydown()(l, l.xm().ym()) = 0.0;
+    operator3D.yup()(l, l.yp().zp()) = 0.0;
+    operator3D.yup()(l, l.yp().zm()) = 0.0;
+    operator3D.ydown()(l, l.ym().zp()) = 0.0;
+    operator3D.ydown()(l, l.ym().zm()) = 0.0;
   }
   operator3D.partialAssemble();
 
