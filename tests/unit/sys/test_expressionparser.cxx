@@ -611,7 +611,7 @@ TEST_F(ExpressionParserTest, ContextValueExprTwoArgs) {
 
 class GeneratorCloneCopy : public FieldGenerator {
 public:
-  GeneratorCloneCopy(FieldGeneratorPtr expr) : expr(expr) {}
+  GeneratorCloneCopy(explicit FieldGeneratorPtr expr) : expr(expr) {}
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> UNUSED(args)) override {
     return std::make_shared<GeneratorCloneCopy>(expr);
   }
