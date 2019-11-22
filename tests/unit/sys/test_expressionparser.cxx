@@ -47,8 +47,8 @@ public:
     return std::make_shared<BinaryGenerator>(args.front(), args.back());
   }
 
-  BoutReal generate(const Context& pos) override {
-    return a->generate(pos) + b->generate(pos);
+  BoutReal generate(const Context& ctx) override {
+    return a->generate(ctx) + b->generate(ctx);
   }
   std::string str() const {
     return std::string{"add(" + a->str() + ", " + b->str() + ")"};
@@ -73,8 +73,8 @@ public:
     return std::make_shared<IncrementGenerator>(args.front());
   }
 
-  BoutReal generate(const Context& pos) override {
-    return gen->generate(pos) + 1;
+  BoutReal generate(const Context& ctx) override {
+    return gen->generate(ctx) + 1;
   }
   std::string str() const { return std::string{"increment(" + gen->str() + ")"}; }
 
@@ -111,8 +111,8 @@ TEST_F(ExpressionParserTest, Parse2) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-	  auto pos = LegacyContext(x, y, z, t);
-          EXPECT_DOUBLE_EQ(fieldgen->generate(pos), 2);
+	  auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(ctx), 2);
         }
       }
     }
@@ -127,8 +127,8 @@ TEST_F(ExpressionParserTest, ParseX) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-	  auto pos = LegacyContext(x, y, z, t);
-          EXPECT_DOUBLE_EQ(fieldgen->generate(pos), x);
+	  auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(ctx), x);
         }
       }
     }
@@ -143,8 +143,8 @@ TEST_F(ExpressionParserTest, ParseY) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-	  auto pos = LegacyContext(x, y, z, t);
-	  EXPECT_DOUBLE_EQ(fieldgen->generate(pos), y);
+	  auto ctx = LegacyContext(x, y, z, t);
+	  EXPECT_DOUBLE_EQ(fieldgen->generate(ctx), y);
         }
       }
     }
@@ -159,8 +159,8 @@ TEST_F(ExpressionParserTest, ParseZ) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-	  auto pos = LegacyContext(x, y, z, t);
-          EXPECT_DOUBLE_EQ(fieldgen->generate(pos), z);
+	  auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(ctx), z);
         }
       }
     }
@@ -175,8 +175,8 @@ TEST_F(ExpressionParserTest, ParseT) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-	  auto pos = LegacyContext(x, y, z, t);
-          EXPECT_DOUBLE_EQ(fieldgen->generate(pos), t);
+	  auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(ctx), t);
         }
       }
     }
@@ -190,8 +190,8 @@ TEST_F(ExpressionParserTest, ParseXPlus2) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-	  auto pos = LegacyContext(x, y, z, t);
-          EXPECT_DOUBLE_EQ(fieldgen->generate(pos), x + 2);
+	  auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(ctx), x + 2);
         }
       }
     }
@@ -205,8 +205,8 @@ TEST_F(ExpressionParserTest, ParseXTimesMinus4) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-	  auto pos = LegacyContext(x, y, z, t);
-          EXPECT_DOUBLE_EQ(fieldgen->generate(pos), x * (-4));
+	  auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(ctx), x * (-4));
         }
       }
     }
@@ -220,8 +220,8 @@ TEST_F(ExpressionParserTest, ParseXDividedBy3e8) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-	  auto pos = LegacyContext(x, y, z, t);
-          EXPECT_DOUBLE_EQ(fieldgen->generate(pos), x / 3.e8);
+	  auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(ctx), x / 3.e8);
         }
       }
     }
@@ -235,8 +235,8 @@ TEST_F(ExpressionParserTest, ParseXSquared) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-	  auto pos = LegacyContext(x, y, z, t);
-          EXPECT_DOUBLE_EQ(fieldgen->generate(pos), x * x);
+	  auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(ctx), x * x);
         }
       }
     }
@@ -293,8 +293,8 @@ TEST_F(ExpressionParserTest, AddGenerator) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-	  auto pos = LegacyContext(x, y, z, t);
-          EXPECT_DOUBLE_EQ(fieldgen->generate(pos), x + 1);
+	  auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(ctx), x + 1);
         }
       }
     }
@@ -314,8 +314,8 @@ TEST_F(ExpressionParserTest, AddFieldValue) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          auto pos = LegacyContext(x, y, z, t);
-          EXPECT_DOUBLE_EQ(fieldgen->generate(pos), 42.0);
+          auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(ctx), 42.0);
         }
       }
     }
@@ -332,8 +332,8 @@ TEST_F(ExpressionParserTest, AddNullaryFunction) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          auto pos = LegacyContext(x, y, z, t);
-          EXPECT_DOUBLE_EQ(fieldgen->generate(pos), 4.0);
+          auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(ctx), 4.0);
         }
       }
     }
@@ -354,9 +354,9 @@ TEST_F(ExpressionParserTest, CloneBinaryOp) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-  	  auto pos = LegacyContext(x, y, z, t);
-          EXPECT_DOUBLE_EQ(actualFieldgen->generate(pos),
-                           clonedFieldgen->generate(pos));
+  	  auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(actualFieldgen->generate(ctx),
+                           clonedFieldgen->generate(ctx));
         }
       }
     }
@@ -373,9 +373,9 @@ TEST_F(ExpressionParserTest, BadBinaryOp) {
   // Refers to an unrecognised binary operator "?"
   parser.addBinaryOp('&', std::make_shared<FieldBinary>(nullptr, nullptr, '?'), 5);
   auto fieldgen = parser.parseString("2 & x + 3");
-  auto pos = LegacyContext(0,0,0,0);
+  auto ctx = LegacyContext(0,0,0,0);
 
-  EXPECT_THROW(fieldgen->generate(pos), ParseException);
+  EXPECT_THROW(fieldgen->generate(ctx), ParseException);
 }
 
 TEST_F(ExpressionParserTest, AddBinaryOp) {
@@ -389,8 +389,8 @@ TEST_F(ExpressionParserTest, AddBinaryOp) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          auto pos = LegacyContext(x, y, z, t);
-          EXPECT_DOUBLE_EQ(fieldgen->generate(pos), 2 * (x + 3));
+          auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(ctx), 2 * (x + 3));
         }
       }
     }
@@ -414,8 +414,8 @@ TEST_F(ExpressionParserTest, EscapeSymbol) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          auto pos = LegacyContext(x, y, z, t);
-          EXPECT_DOUBLE_EQ(fieldgen->generate(pos), x);
+          auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(ctx), x);
         }
       }
     }
@@ -432,8 +432,8 @@ TEST_F(ExpressionParserTest, GeneratorNameEscape) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          auto pos = LegacyContext(x, y, z, t);
-          EXPECT_DOUBLE_EQ(fieldgen->generate(pos), x + 1);
+          auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(ctx), x + 1);
         }
       }
     }
@@ -450,8 +450,8 @@ TEST_F(ExpressionParserTest, GeneratorNameLongEscape) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          auto pos = LegacyContext(x, y, z, t);
-          EXPECT_DOUBLE_EQ(fieldgen->generate(pos), x + 1);
+          auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(ctx), x + 1);
         }
       }
     }
@@ -468,8 +468,8 @@ TEST_F(ExpressionParserTest, GeneratorNamePartEscape) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          auto pos = LegacyContext(x, y, z, t);
-          EXPECT_DOUBLE_EQ(fieldgen->generate(pos), x + 1);
+          auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(ctx), x + 1);
         }
       }
     }
@@ -486,8 +486,8 @@ TEST_F(ExpressionParserTest, AddBinaryGenerator) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          auto pos = LegacyContext(x, y, z, t);
-          EXPECT_DOUBLE_EQ(fieldgen->generate(pos), x + y);
+          auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(ctx), x + y);
         }
       }
     }
@@ -502,8 +502,8 @@ TEST_F(ExpressionParserTest, ImplicitMultiply) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          auto pos = LegacyContext(x, y, z, t);
-          EXPECT_DOUBLE_EQ(fieldgen->generate(pos), 2*x + 3*y);
+          auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(ctx), 2*x + 3*y);
         }
       }
     }
@@ -518,8 +518,8 @@ TEST_F(ExpressionParserTest, ImplicitMultiplyBracket) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          auto pos = LegacyContext(x, y, z, t);
-          EXPECT_DOUBLE_EQ(fieldgen->generate(pos), 2*(x + 3*y));
+          auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(ctx), 2*(x + 3*y));
         }
       }
     }
@@ -540,8 +540,8 @@ TEST_F(ExpressionParserTest, PassParameter) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          auto pos = LegacyContext(x, y, z, t);
-          EXPECT_DOUBLE_EQ(fieldgen->generate(pos.set("value", y + z)), y + z);
+          auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(ctx.set("value", y + z)), y + z);
         }
       }
     }
@@ -563,8 +563,8 @@ TEST_F(ExpressionParserTest, PassParameterImplicitMultiply) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          auto pos = LegacyContext(x, y, z, t);
-          EXPECT_DOUBLE_EQ(fieldgen->generate(pos.set("value", 1 + y + z)), x - 3 * (1 + y + z));
+          auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(ctx.set("value", 1 + y + z)), x - 3 * (1 + y + z));
         }
       }
     }
@@ -579,9 +579,9 @@ TEST_F(ExpressionParserTest, PassMultipleParameters) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          auto pos = LegacyContext(x, y, z, t);
+          auto ctx = LegacyContext(x, y, z, t);
           EXPECT_DOUBLE_EQ(
-              fieldgen->generate(pos.set("value", 1 + y + z).set("other", x - y)),
+              fieldgen->generate(ctx.set("value", 1 + y + z).set("other", x - y)),
               x + (1 + y + z) - 2 * (x - y));
         }
       }
@@ -615,8 +615,8 @@ public:
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> UNUSED(args)) override {
     return std::make_shared<GeneratorCloneCopy>(expr);
   }
-  double generate(const Context& pos) override {
-    return expr->generate(pos);
+  double generate(const Context& ctx) override {
+    return expr->generate(ctx);
   }
 private:
   FieldGeneratorPtr expr;

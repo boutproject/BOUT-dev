@@ -25,9 +25,9 @@ FieldGeneratorPtr FieldGaussian::clone(const std::list<FieldGeneratorPtr> args) 
   return std::make_shared<FieldGaussian>(xin, sin);
 }
 
-BoutReal FieldGaussian::generate(const Context& pos) {
-  BoutReal sigma = s->generate(pos);
-  return exp(-SQ(X->generate(pos)/sigma)/2.) / (sqrt(TWOPI) * sigma);
+BoutReal FieldGaussian::generate(const Context& ctx) {
+  BoutReal sigma = s->generate(ctx);
+  return exp(-SQ(X->generate(ctx)/sigma)/2.) / (sqrt(TWOPI) * sigma);
 }
 
 FieldGeneratorPtr FieldHeaviside::clone(const std::list<FieldGeneratorPtr> args) {
@@ -40,8 +40,8 @@ FieldGeneratorPtr FieldHeaviside::clone(const std::list<FieldGeneratorPtr> args)
   return std::make_shared<FieldHeaviside>(args.front());
 }
 
-BoutReal FieldHeaviside::generate(const Context& pos) {
-  return (gen->generate(pos) > 0.0) ? 1.0 : 0.0;
+BoutReal FieldHeaviside::generate(const Context& ctx) {
+  return (gen->generate(ctx) > 0.0) ? 1.0 : 0.0;
 }
 
 //////////////////////////////////////////////////////////
@@ -64,8 +64,8 @@ FieldGeneratorPtr FieldBallooning::clone(const std::list<FieldGeneratorPtr> args
   throw ParseException("ballooning function must have one or two arguments");
 }
 
-BoutReal FieldBallooning::generate(const Context& pos) {
-  Mesh *localmesh = pos.getMesh();
+BoutReal FieldBallooning::generate(const Context& ctx) {
+  Mesh *localmesh = ctx.getMesh();
   if (!localmesh)
     throw BoutException("ballooning function needs a valid mesh");
   if (ball_n < 1)
@@ -78,21 +78,21 @@ BoutReal FieldBallooning::generate(const Context& pos) {
   // This assumes that localmesh->GlobalX is linear in x index
   BoutReal dx = (localmesh->GlobalX(localmesh->xend) - localmesh->GlobalX(localmesh->xstart))
                 / (localmesh->xend - localmesh->xstart);
-  int jx = ROUND((pos.x() - localmesh->GlobalX(0)) / dx);
+  int jx = ROUND((ctx.x() - localmesh->GlobalX(0)) / dx);
 
   if (localmesh->periodicY(jx, ts)) {
     // Start with the value at this point
-    BoutReal value = arg->generate(pos);
+    BoutReal value = arg->generate(ctx);
 
     for (int i = 1; i <= ball_n; i++) {
       // y - i * 2pi
-      value += arg->generate(Context(pos).set(
-          "y", pos.y() - i * TWOPI,
-          "z", pos.z() + i * ts * TWOPI / coords->zlength()));
+      value += arg->generate(Context(ctx).set(
+          "y", ctx.y() - i * TWOPI,
+          "z", ctx.z() + i * ts * TWOPI / coords->zlength()));
 
-      value += arg->generate(Context(pos).set(
-          "y", pos.y() + i * TWOPI,
-          "z", pos.z() - i * ts * TWOPI / coords->zlength()));
+      value += arg->generate(Context(ctx).set(
+          "y", ctx.y() + i * TWOPI,
+          "z", ctx.z() - i * ts * TWOPI / coords->zlength()));
     }
     return value;
   }
@@ -126,14 +126,14 @@ FieldGeneratorPtr FieldMixmode::clone(const std::list<FieldGeneratorPtr> args) {
   throw ParseException("mixmode function must have one or two arguments");
 }
 
-BoutReal FieldMixmode::generate(const Context& pos) {
+BoutReal FieldMixmode::generate(const Context& ctx) {
   BoutReal result = 0.0;
 
   // A mixture of mode numbers
   for(int i=0;i<14;i++) {
     // This produces a spectrum which is peaked around mode number 4
     result += ( 1./SQ(1. + std::abs(i - 4)) ) *
-      cos(i * arg->generate(pos) + phase[i]);
+      cos(i * arg->generate(ctx) + phase[i]);
   }
 
   return result;
@@ -185,13 +185,13 @@ FieldGeneratorPtr FieldTanhHat::clone(const std::list<FieldGeneratorPtr> args) {
   return std::make_shared<FieldTanhHat>(xin, widthin, centerin, steepnessin);
 }
 
-BoutReal FieldTanhHat::generate(const Context& pos) {
+BoutReal FieldTanhHat::generate(const Context& ctx) {
   // The following are constants
   BoutReal w = width    ->generate(Context());
   BoutReal c = center   ->generate(Context());
   BoutReal s = steepness->generate(Context());
   return 0.5*(
-                 tanh( s*(X->generate(pos) - (c - 0.5*w)) )
-               - tanh( s*(X->generate(pos) - (c + 0.5*w)) )
+                 tanh( s*(X->generate(ctx) - (c - 0.5*w)) )
+               - tanh( s*(X->generate(ctx) - (c + 0.5*w)) )
              );
 }

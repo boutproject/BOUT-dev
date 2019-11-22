@@ -34,8 +34,8 @@ using bout::generator::Context;
 
 // Note: Here rather than in header to avoid many deprecated warnings
 // Remove in future and make this function pure virtual
-double FieldGenerator::generate(const Context& pos) {
-  return generate(pos.x(), pos.y(), pos.z(), pos.t());
+double FieldGenerator::generate(const Context& ctx) {
+  return generate(ctx.x(), ctx.y(), ctx.z(), ctx.t());
 }
 
 
@@ -49,8 +49,8 @@ public:
   FieldGeneratorPtr clone(const list<FieldGeneratorPtr> UNUSED(args)) override {
     return std::make_shared<FieldX>();
   }
-  double generate(const Context& pos) override {
-    return pos.x();
+  double generate(const Context& ctx) override {
+    return ctx.x();
   }
   std::string str() const override { return std::string("x"); }
 };
@@ -60,8 +60,8 @@ public:
   FieldGeneratorPtr clone(const list<FieldGeneratorPtr> UNUSED(args)) override {
     return std::make_shared<FieldY>();
   }
-  double generate(const Context& pos) override {
-    return pos.y();
+  double generate(const Context& ctx) override {
+    return ctx.y();
   }
   std::string str() const override { return std::string("y"); }
 };
@@ -71,8 +71,8 @@ public:
   FieldGeneratorPtr clone(const list<FieldGeneratorPtr> UNUSED(args)) override {
     return std::make_shared<FieldZ>();
   }
-  double generate(const Context& pos) override {
-    return pos.z();
+  double generate(const Context& ctx) override {
+    return ctx.z();
   }
   std::string str() const override { return std::string("z"); }
 };
@@ -82,8 +82,8 @@ public:
   FieldGeneratorPtr clone(const list<FieldGeneratorPtr> UNUSED(args)) override {
     return std::make_shared<FieldT>();
   }
-  double generate(const Context& pos) override {
-    return pos.t();
+  double generate(const Context& ctx) override {
+    return ctx.t();
   }
   std::string str() const override { return std::string("t"); }
 };
@@ -91,8 +91,8 @@ public:
 class FieldParam : public FieldGenerator {
 public:
   FieldParam(const std::string name) : name(name) {}
-  double generate(const Context& pos) override {
-    return pos.get(name); // Get a parameter
+  double generate(const Context& ctx) override {
+    return ctx.get(name); // Get a parameter
   }
   std::string str() const override { return std::string("{") + name + std::string("}"); }
 private:
@@ -110,13 +110,13 @@ public:
   FieldContext(variable_list variables, FieldGeneratorPtr expr)
       : variables(std::move(variables)), expr(std::move(expr)) {}
 
-  double generate(const Context& pos) override {
+  double generate(const Context& ctx) override {
     // Create a new context
-    Context new_context{pos};
+    Context new_context{ctx};
 
     // Set values in the context by evaluating the generators
     for (auto const& var : variables) {
-      new_context.set(var.first, var.second->generate(pos));
+      new_context.set(var.first, var.second->generate(ctx));
     }
 
     // Evaluate the expression in the new context
@@ -186,9 +186,9 @@ FieldGeneratorPtr FieldBinary::clone(const list<FieldGeneratorPtr> args) {
   return std::make_shared<FieldBinary>(args.front(), args.back(), op);
 }
 
-BoutReal FieldBinary::generate(const Context& pos) {
-  BoutReal lval = lhs->generate(pos);
-  BoutReal rval = rhs->generate(pos);
+BoutReal FieldBinary::generate(const Context& ctx) {
+  BoutReal lval = lhs->generate(ctx);
+  BoutReal rval = rhs->generate(ctx);
   switch(op) {
   case '+': return lval + rval;
   case '-': return lval - rval;
