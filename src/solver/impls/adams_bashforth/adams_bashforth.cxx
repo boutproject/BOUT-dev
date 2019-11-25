@@ -64,6 +64,10 @@ int AdamsBashforthSolver::init(int nout, BoutReal tstep) {
                .withDefault(50000);
   adaptive =
       (*options)["adaptive"].doc("Adapt internal timestep using rtol.").withDefault(true);
+  adaptive_order = (*options)["adaptive_order"]
+                       .doc("Adapt algorithm order using rtol.")
+                       .withDefault(true);
+
   maximum_order =
       (*options)["order"].doc("The requested maximum order of the scheme").withDefault(5);
   followHighOrder =
@@ -118,6 +122,7 @@ int AdamsBashforthSolver::run() {
 
     bool running = true;
     int internal_steps = 0;
+    bool use_lower = false;
 
     // Take a single output time step
     while (running) {
@@ -176,16 +181,68 @@ int AdamsBashforthSolver::run() {
           // that would just satisfy the tolerance. In cases where we
           // move to the next step we actually end up using this new
           // timestep for the next step.
-          const BoutReal dt_lim = dt * exp(-log(err / rtol) / current_order);
+          BoutReal dt_lim = dt * get_timestep_limit(err, rtol, current_order);
 
-          if (err < rtol) {
+          if (err < rtol) { // Successful step
+
+            // Now we can consider what result we would get at
+            // lower/higher order Our timestep limit gets smaller as
+            // the order increases for fixed error, hence we really
+            // want to use the lowest order that satisfies the
+            // tolerance. Or in other words we want to use the order
+            // that gives us the biggest timestep. For now we just see
+            // what the error is when using one order lower.
+            //
+            // For now we only do this when we've had a successful
+            // step, in general we might want to do this for failing
+            // steps as well, but as the error drops quicker with
+            // higher orders we might hope higher order is better when
+            // the error condition is not met.
+            if (adaptive_order and current_order > 2) {
+              Array<BoutReal> lowerNextState(nlocal);
+              // Currently we just reuse the existing code to take a
+              // step but just do it with lower order
+              // coefficients. This means we have to do another rhs
+              // call. We might be able to get away with reusing the
+              // half point derivatives from the higher order method
+              // here instead, which would save the rhs call. This may
+              // mean we don't trust the error as much and hence have
+              // to scale the timestep more conservatively but this
+              // may be worth it.
+              const BoutReal lowerErr =
+                  take_step(simtime, dt, current_order - 1, state, lowerNextState);
+
+              const BoutReal lower_dt_lim =
+                  dt * get_timestep_limit(lowerErr, rtol, current_order - 1);
+
+              // Decide if we want to use the lower order method based
+              // on which gives us the biggest timestep.
+              use_lower = lower_dt_lim > dt_lim;
+
+              // If we decide the lower order is better then swap/set
+              // the associated values to use the lower order result.
+              if (use_lower) {
+                dt_lim = lower_dt_lim;
+                swap(nextState, lowerNextState);
+                current_order = current_order - 1;
+              }
+            }
+
             // Try to limit increases in the timestep to no more than 5%.
+            // We could/should make these numbers runtime to give more
+            // control to the users, just wary of option overload.
             timestep = std::min(timestep * 1.05, dt_lim * 0.75);
+
+            // For developers
             previous_fail = false;
+
             break;
+
           } else {
             // Be more conservative if we've failed;
             timestep = 0.75 * dt_lim;
+
+            // For developers
             if (previous_fail) {
               nwasted_following_fail++;
             }
@@ -198,17 +255,16 @@ int AdamsBashforthSolver::run() {
       // Taken an internal step, update times
       simtime += dt;
 
-      if (current_order == maximum_order) {
-        // Ditch last history point
+      // Ditch last history point if we have enough
+      if (times.size() == maximum_order)
         times.pop_back();
+      if (history.size() == maximum_order)
         history.pop_back();
-      } else {
-        // Here we unconditionally increase the order if we've yet to
-        // reach the maximum. In general it is probably better to
-        // consider an adaptive order scheme to try to maximise the
-        // timestep we can take. This is something to explore in the
-        // future.
-        current_order++;
+
+      if (current_order < maximum_order) {
+        // Don't increase the order if we wanted to use the lower order.
+        if (not use_lower)
+          current_order++;
       }
 
       // Call the per internal timestep monitors
@@ -285,10 +341,12 @@ BoutReal AdamsBashforthSolver::take_step(const BoutReal timeIn, const BoutReal d
   // clearer, compatible with OMP and empirically slightly faster.
   // std::transform(std::begin(current), std::end(current), std::begin(full_update),
   //                std::begin(result), std::plus<BoutReal>{});
-  BOUT_OMP(parallel for);
-  for (int i = 0; i < nlocal; i++) {
-    result[i] = current[i] + full_update[i];
-  };
+  if (not(adaptive and followHighOrder)) {
+    BOUT_OMP(parallel for);
+    for (int i = 0; i < nlocal; i++) {
+      result[i] = current[i] + full_update[i];
+    };
+  }
 
   if (adaptive) {
 
@@ -340,9 +398,8 @@ BoutReal AdamsBashforthSolver::take_step(const BoutReal timeIn, const BoutReal d
 
     // Put intermediate result into variables, call rhs and save the derivatives
     load_vars(std::begin(result2));
-    run_rhs(timeIn
-            + firstPart
-                  * dt); // This is typically the most expensive part of this routine
+    // This is typically the most expensive part of this routine
+    run_rhs(timeIn + firstPart * dt);
     save_derivs(std::begin(history[0]));
 
     // Calculate the coefficients to get to timeIn + dt
@@ -365,26 +422,31 @@ BoutReal AdamsBashforthSolver::take_step(const BoutReal timeIn, const BoutReal d
     history.pop_front();
     times.pop_front();
 
-    // Note here we don't add a small change onto result2, we recalculate using the
-    // "full" two half step half_update
-    // std::transform(std::begin(current), std::end(current), std::begin(half_update),
-    //                std::begin(result2), std::plus<BoutReal>{});
-    BOUT_OMP(parallel for);
-    for (int i = 0; i < nlocal; i++) {
-      result2[i] = current[i] + half_update[i];
-    };
-
     // Here we calculate the error by comparing the updates rather than output states
     // this is to avoid issues where we have large fields but small derivatives (i.e. to
     // avoid possible numerical issues at looking at the difference between two large
     // numbers).
     err = get_error(full_update, half_update);
 
-    // Swap the result to use the more accurate value if requested
+    // Note here we don't add a small change onto result, we recalculate using the
+    // "full" two half step half_update. Rather than using result2 we just replace
+    // result here as we want to use this smaller step result
     if (followHighOrder) {
-      swap(result, result2);
+      BOUT_OMP(parallel for);
+      for (int i = 0; i < nlocal; i++) {
+        result[i] = current[i] + half_update[i];
+      };
     }
   }
 
   return err;
 }
+
+// Free function to return an estimate of the factor by which a
+// timestep giving aerror = error should be scaled to give aerror =
+// tolerance when using a scheme of order = order, where aerror =
+// abs(soln_accurate - soln_approx)
+BoutReal get_timestep_limit(const BoutReal error, const BoutReal tolerance,
+                            const int order) {
+  return exp(-log(error / tolerance) / order);
+};
