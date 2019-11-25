@@ -249,6 +249,8 @@ int AdamsBashforthSolver::run() {
             previous_fail = true;
             nwasted++;
           }
+        } else {
+          break;
         }
       }
 
@@ -266,7 +268,7 @@ int AdamsBashforthSolver::run() {
         if (not use_lower)
           current_order++;
       }
-
+      
       // Call the per internal timestep monitors
       call_timestep_monitors(simtime, dt);
 
