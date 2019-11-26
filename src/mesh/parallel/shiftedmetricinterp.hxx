@@ -42,12 +42,6 @@ class ShiftedMetricInterp : public ParallelTransform {
 public:
   ShiftedMetricInterp() = delete;
   ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in, Field2D zShift_in);
-  ~ShiftedMetricInterp() {
-    delete interp_yup;
-    delete interp_ydown;
-    delete interp_to_aligned;
-    delete interp_from_aligned;
-  }
 
   /*!
    * Calculates the yup() and ydown() fields of f
@@ -115,10 +109,10 @@ private:
   // Interpolation *interp_yup, *interp_ydown;
 
   /// Interpolation objects for yup and ydown transformations
-  Interpolation *interp_yup, *interp_ydown;
+  std::unique_ptr<Interpolation> interp_yup, interp_ydown;
 
   /// Interpolation objects for shifting to and from field-aligned coordinates
-  Interpolation *interp_to_aligned, *interp_from_aligned;
+  std::unique_ptr<Interpolation> interp_to_aligned, interp_from_aligned;
 };
 
 #endif // __SHIFTEDINTERP_H__
