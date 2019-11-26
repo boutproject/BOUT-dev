@@ -122,7 +122,6 @@ int AdamsBashforthSolver::run() {
 
     bool running = true;
     int internal_steps = 0;
-    bool use_lower = false;
 
     // Take a single output time step
     while (running) {
@@ -137,6 +136,9 @@ int AdamsBashforthSolver::run() {
       // Just for developer diagnostics - set to true when the previous
       // attempt at a time step failed.
       bool previous_fail = false;
+
+      // Flag to indicate if we want to use a lower order method
+      bool use_lower = false;
 
       BoutReal dt;
 
@@ -254,9 +256,6 @@ int AdamsBashforthSolver::run() {
         }
       }
 
-      // Taken an internal step, update times
-      simtime += dt;
-
       // Ditch last history point if we have enough
       if (times.size() == maximum_order)
         times.pop_back();
@@ -269,11 +268,14 @@ int AdamsBashforthSolver::run() {
           current_order++;
       }
       
-      // Call the per internal timestep monitors
-      call_timestep_monitors(simtime, dt);
+      // Taken an internal step, update times
+      simtime += dt;
 
       // Put the new state into state.
       swap(state, nextState);
+      // Call the per internal timestep monitors
+      call_timestep_monitors(simtime, dt);
+
     };
 
     // Put result into variables
