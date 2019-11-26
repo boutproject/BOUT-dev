@@ -894,6 +894,11 @@ Notes:
 -  Setting the option ``pctype = hypre`` seems to work well, if PETSc has been
    compiled with the algebraic multigrid library hypre; this can be included by
    passing the option ``--download-hypre`` to PETSc's ``configure`` script.
+-  ``LaplaceXY`` (with the default finite-volume discretisation) has a slightly
+   different convention for passing non-zero boundary values than the
+   ``Laplacian`` solvers. ``LaplaceXY`` uses the average of the last grid cell
+   and first boundary cell of the initial guess (second argument to
+   ``solve()``) as the value to impose for the boundary condition.
 
 An alternative discretization is available if the option ``finite_volume =
 false`` is set. Then a finite-difference discretization very close to the one used when
@@ -902,6 +907,13 @@ supports non-orthogonal grids with :math:`g^{xy} \neq 0`. The difference is that
 :math:`g^{xy} \neq 0`, ``Laplace_perp`` calls ``D2DXDY(f)`` which applies a boundary
 condition to ``dfdy = DDY(f)`` before calculating ``DDX(dfdy)`` with a slightly different
 result than the way boundary conditions are applied in ``LaplaceXY``.
+
+-  The finite difference implementation of ``LaplaceXY`` passes non-zero values
+   for the boundary conditions in the same way as the ``Laplacian`` solvers.
+   The value in the first boundary cell of the initial guess (second argument
+   to ``solve()``) is used as the boundary value. (Note that this value is
+   imposed as a boundary condition on the returned solution at a location half
+   way between the last grid cell and first boundary cell.)
 
 .. _sec-LaplaceXZ:
 
