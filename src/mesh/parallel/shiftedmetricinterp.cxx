@@ -28,7 +28,6 @@
  **************************************************************************/
 
 #include "shiftedmetricinterp.hxx"
-#include <interpolation_factory.hxx>
 #include "mask.hxx"
 #include <bout/constants.hxx>
 
@@ -39,10 +38,10 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in, Field
 
   // Create the Interpolation objects and set whether they go up or down the
   // magnetic field
-  interp_yup = InterpolationFactory::getInstance()->create(&mesh);
+  interp_yup = InterpolationFactory::getInstance().create(&mesh);
   interp_yup->setYOffset(1);
 
-  interp_ydown = InterpolationFactory::getInstance()->create(&mesh);
+  interp_ydown = InterpolationFactory::getInstance().create(&mesh);
   interp_ydown->setYOffset(-1);
 
   // Find the index positions where the magnetic field line intersects the next
@@ -98,8 +97,8 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in, Field
   interp_ydown->calcWeights(xt_prime, zt_prime_down, mask_down);
 
   // Set up interpolation to/from field-aligned coordinates
-  interp_to_aligned = InterpolationFactory::getInstance()->create(&mesh);
-  interp_from_aligned = InterpolationFactory::getInstance()->create(&mesh);
+  interp_to_aligned = InterpolationFactory::getInstance().create(&mesh);
+  interp_from_aligned = InterpolationFactory::getInstance().create(&mesh);
 
   Field3D zt_prime_to(&mesh), zt_prime_from(&mesh);
   zt_prime_to.allocate();

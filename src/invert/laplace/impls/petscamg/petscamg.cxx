@@ -34,8 +34,8 @@
 
 //BoutReal amgsoltime=0.0,amgsettime=0.0;
 
-LaplacePetscAmg::LaplacePetscAmg(Options *opt) :
-  Laplacian(opt),
+LaplacePetscAmg::LaplacePetscAmg(Options *opt, const CELL_LOC loc, Mesh *mesh_in) :
+  Laplacian(opt, loc, mesh_in),
   A(0.0), C1(1.0), C2(1.0), D(1.0) {
 
   TRACE("LaplacePetscAmg::LaplacePetscAmg(Options *opt)");

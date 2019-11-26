@@ -30,43 +30,23 @@ class LaplacePetsc3dAmg;
 #ifndef __PETSC_LAPLACE_3DAMG_H__
 #define __PETSC_LAPLACE_3DAMG_H__
 
-#ifndef BOUT_HAS_PETSC
-
-#include <boutexception.hxx>
-#include <invert_laplace.hxx>
-
-class LaplacePetsc3dAmg : public Laplacian {
-public:
-  LaplacePetsc3dAmg(Options *UNUSED(opt) = nullptr, const CELL_LOC UNUSED(loc) = CELL_CENTRE, Mesh *UNUSED(mesh_in) = nullptr) {
-    throw BoutException("No PETSc solver available");
-  }
-
-  using Laplacian::setCoefA;
-  void setCoefA(const Field2D &UNUSED(val)) override {}
-  using Laplacian::setCoefC;
-  void setCoefC(const Field2D &UNUSED(val)) override {}
-  using Laplacian::setCoefD;
-  void setCoefD(const Field2D &UNUSED(val)) override {}
-  using Laplacian::setCoefEx;
-  void setCoefEx(const Field2D &UNUSED(val)) override {}
-  using Laplacian::setCoefEz;
-  void setCoefEz(const Field2D &UNUSED(val)) override {}
-
-  using Laplacian::solve;
-  FieldPerp solve(const FieldPerp &UNUSED(b)) override {throw BoutException("PETSc not available");}
-};
-
-#else
+#ifdef BOUT_HAS_PETSC
 
 #include <globals.hxx>
 #include <output.hxx>
-#include <petscksp.h>
 #include <options.hxx>
 #include <invert_laplace.hxx>
-#include <bout/petsclib.hxx>
-#include <bout/petsc_interface.hxx>
 #include <boutexception.hxx>
 #include <bout/operatorstencil.hxx>
+#include <bout/petsclib.hxx>
+#include <bout/petsc_interface.hxx>
+#include <petscksp.h>
+
+class LaplacePetsc3dAmg;
+
+namespace {
+RegisterLaplace<LaplacePetsc3dAmg> registerlaplacepetsc3damg(LAPLACE_PETSC3DAMG);
+}
 
 class LaplacePetsc3dAmg : public Laplacian {
 public:

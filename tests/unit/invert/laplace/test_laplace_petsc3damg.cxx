@@ -140,18 +140,17 @@ public:
     //    (*options)["chebyshev_max"] = 100.0;
     //    (*options)["chebyshev_min"] = 0.01;
     //    (*options)["gmres_max_steps"] = 30;
-    solver = static_cast<LaplacePetsc3dAmg*>(Laplacian::create());
+    solver = std::unique_ptr<LaplacePetsc3dAmg>(static_cast<LaplacePetsc3dAmg*>(Laplacian::create().release()));
   }
 
   ~Petsc3dAmgTest() {
-    delete solver;
     Options::cleanup();
     PetscErrorPrintf = PetscErrorPrintfDefault;
     GlobalIndexer::recreateGlobalInstance();
   }
 
   const BoutReal sigmasq = 0.02;
-  LaplacePetsc3dAmg *solver;
+  std::unique_ptr<LaplacePetsc3dAmg> solver;
   Field2D coef2;
   Field3D f3, coef3;
   const BoutReal tol = 1e-8;

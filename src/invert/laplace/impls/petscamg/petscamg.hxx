@@ -41,13 +41,8 @@
 #include <msg_stack.hxx>
 
 #include <bout/openmpwrap.hxx>
-#ifdef _OPENMP
-#include <omp.h>
-#endif
 
-#ifndef BOUT_HAS_PETSC
-
-#else
+#ifdef BOUT_HAS_PETSC
 
 // #include <petscksp.h>
 #include <petscpc.h>
@@ -59,9 +54,15 @@
 #include <omp.h>
 #endif
 
+class LaplacePetscAmg;
+
+namespace {
+RegisterLaplace<LaplacePetscAmg> registerlaplacepetscamg(LAPLACE_PETSCAMG);
+}
+
 class LaplacePetscAmg : public Laplacian {
 public:
-  LaplacePetscAmg(Options *opt = NULL);
+  LaplacePetscAmg(Options *opt = NULL, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr);
   ~LaplacePetscAmg(){
     ISLocalToGlobalMappingDestroy(&mgmapping);
     VecDestroy( &xs );
