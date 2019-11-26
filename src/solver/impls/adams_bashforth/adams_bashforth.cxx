@@ -201,7 +201,7 @@ int AdamsBashforthSolver::run() {
             // steps as well, but as the error drops quicker with
             // higher orders we might hope higher order is better when
             // the error condition is not met.
-            if (adaptive_order and current_order > 2) {
+            if (adaptive_order and current_order > 1) {
               Array<BoutReal> lowerNextState(nlocal);
               // Currently we just reuse the existing code to take a
               // step but just do it with lower order
@@ -231,10 +231,10 @@ int AdamsBashforthSolver::run() {
               }
             }
 
-            // Try to limit increases in the timestep to no more than 5%.
+            // Try to limit increases in the timestep to no more than 10%.
             // We could/should make these numbers runtime to give more
             // control to the users, just wary of option overload.
-            timestep = std::min(timestep * 1.05, dt_lim * 0.75);
+            timestep = std::min(timestep * 1.1, dt_lim);
 
             // For developers
             previous_fail = false;
@@ -243,7 +243,7 @@ int AdamsBashforthSolver::run() {
 
           } else {
             // Be more conservative if we've failed;
-            timestep = 0.75 * dt_lim;
+            timestep = 0.9 * dt_lim;
 
             // For developers
             if (previous_fail) {
@@ -268,7 +268,7 @@ int AdamsBashforthSolver::run() {
         if (not use_lower)
           current_order++;
       }
-      
+
       // Taken an internal step, update times
       simtime += dt;
 
@@ -276,7 +276,6 @@ int AdamsBashforthSolver::run() {
       swap(state, nextState);
       // Call the per internal timestep monitors
       call_timestep_monitors(simtime, dt);
-
     };
 
     // Put result into variables
