@@ -42,20 +42,20 @@ const char DEFAULT_DIR[] = "data";
 #include "boutcomm.hxx"
 #include "boutexception.hxx"
 #include "datafile.hxx"
+#include "interpolation.hxx"
 #include "invert_laplace.hxx"
+#include "invert_parderiv.hxx"
 #include "msg_stack.hxx"
 #include "optionsreader.hxx"
 #include "output.hxx"
+#include "bout/invert/laplacexz.hxx"
 #include "bout/mpi_wrapper.hxx"
 #include "bout/openmpwrap.hxx"
 #include "bout/petsclib.hxx"
+#include "bout/rkscheme.hxx"
 #include "bout/slepclib.hxx"
 #include "bout/solver.hxx"
 #include "bout/sys/timer.hxx"
-#include "bout/invert/laplacexz.hxx"
-#include "invert_parderiv.hxx"
-#include "bout/rkscheme.hxx"
-#include "interpolation.hxx"
 
 #define BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 #include "bout.hxx"
@@ -645,7 +645,7 @@ int BoutFinalise(bool write_settings) {
 
   // Close the output file
   bout::globals::dump.close();
-  
+
   // Make sure all processes have finished writing before exit
   bout::globals::mpi->MPI_Barrier(BoutComm::get());
 
@@ -680,7 +680,7 @@ int BoutFinalise(bool write_settings) {
 
   // Debugging message stack
   msg_stack.clear();
-  
+
   // Delete the MPI wrapper
   delete bout::globals::mpi;
 

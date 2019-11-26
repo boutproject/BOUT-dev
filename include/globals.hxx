@@ -44,8 +44,8 @@ namespace globals {
 #endif
 
 SETTING(Mesh *mesh, nullptr); ///< The mesh object
-SETTING(MpiWrapper *mpi, nullptr); ///< The MPI wrapper object
-  
+SETTING(MpiWrapper* mpi, nullptr); ///< The MPI wrapper object
+
 /// Define for reading a variable from the grid
 #define GRID_LOAD1(var) mesh->get(var, #var)
 #define GRID_LOAD2(var1, var2) {\

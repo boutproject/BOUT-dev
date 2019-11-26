@@ -1,6 +1,6 @@
 #include "unused.hxx"
-#include <bout/rkscheme.hxx>
 #include <bout/mpi_wrapper.hxx>
+#include <bout/rkscheme.hxx>
 #include <boutcomm.hxx>
 #include <cmath>
 #include <output.hxx>
@@ -150,7 +150,8 @@ BoutReal RKScheme::getErr(Array<BoutReal> &solA, Array<BoutReal> &solB) {
         std::abs(solA[i] - solB[i]) / (std::abs(solA[i]) + std::abs(solB[i]) + atol);
   }
   //Reduce over procs
-  if(bout::globals::mpi->MPI_Allreduce(&local_err, &err, 1, MPI_DOUBLE, MPI_SUM, BoutComm::get())) {
+  if (bout::globals::mpi->MPI_Allreduce(&local_err, &err, 1, MPI_DOUBLE, MPI_SUM,
+                                        BoutComm::get())) {
     throw BoutException("MPI_Allreduce failed");
   }
   //Normalise by number of values

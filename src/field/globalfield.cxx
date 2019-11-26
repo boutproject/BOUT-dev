@@ -117,7 +117,8 @@ void GlobalField2D::gather(const Field2D &f) {
     for(int p = 0; p < npes; p++) {
       if( p != mype ) {
         // Check size of the array
-        bout::globals::mpi->MPI_Irecv(buffer[p], msg_len(p), MPI_DOUBLE, p, 3141, comm, &req[p]);
+        bout::globals::mpi->MPI_Irecv(buffer[p], msg_len(p), MPI_DOUBLE, p, 3141, comm,
+                                      &req[p]);
       }
     }
     
@@ -172,7 +173,8 @@ void GlobalField2D::gather(const Field2D &f) {
         buffer[0][x*ysize + y] = f(local_xorig+x, local_yorig+y);
       }
 
-    bout::globals::mpi->MPI_Send(buffer[0], msg_len(mype), MPI_DOUBLE, data_on_proc, 3141, comm);
+    bout::globals::mpi->MPI_Send(buffer[0], msg_len(mype), MPI_DOUBLE, data_on_proc, 3141,
+                                 comm);
   }
   data_valid = true;
 }
@@ -198,8 +200,8 @@ const Field2D GlobalField2D::scatter() const {
         for(int y=0;y<ysize;y++) {
           buffer[p][x*ysize + y] = (*this)(x+xorig,y+yorig);
         }
-      
-      bout::globals::mpi->MPI_Send(buffer[p], xsize*ysize, MPI_DOUBLE, p, 1413, comm);
+
+      bout::globals::mpi->MPI_Send(buffer[p], xsize * ysize, MPI_DOUBLE, p, 1413, comm);
     }
 
     int local_xorig, local_yorig;
@@ -216,8 +218,9 @@ const Field2D GlobalField2D::scatter() const {
       }
   }else {
     // Receive data
-    bout::globals::mpi->MPI_Recv(buffer[0], msg_len(mype), MPI_DOUBLE, data_on_proc, 1413, comm, &status);
-    
+    bout::globals::mpi->MPI_Recv(buffer[0], msg_len(mype), MPI_DOUBLE, data_on_proc, 1413,
+                                 comm, &status);
+
     int local_xorig, local_yorig;
     proc_local_origin(mype, &local_xorig, &local_yorig);
     int xorig, yorig;
@@ -282,7 +285,8 @@ void GlobalField3D::gather(const Field3D &f) {
     for(int p = 0; p < npes; p++) {
       if( p != mype ) {
         // Check size of the array
-        bout::globals::mpi->MPI_Irecv(buffer[p], msg_len(p), MPI_DOUBLE, p, 3141, comm, &req[p]);
+        bout::globals::mpi->MPI_Irecv(buffer[p], msg_len(p), MPI_DOUBLE, p, 3141, comm,
+                                      &req[p]);
       }
     }
     
@@ -341,8 +345,9 @@ void GlobalField3D::gather(const Field3D &f) {
         for(int z=0;z<mesh->LocalNz;z++) {
           buffer[0][x*ysize*zsize + y*zsize + z] = f(local_xorig+x, local_yorig+y, z);
         }
-    
-    bout::globals::mpi->MPI_Send(buffer[0], msg_len(mype), MPI_DOUBLE, data_on_proc, 3141, comm);
+
+    bout::globals::mpi->MPI_Send(buffer[0], msg_len(mype), MPI_DOUBLE, data_on_proc, 3141,
+                                 comm);
   }
   data_valid = true;
 }
@@ -370,8 +375,9 @@ const Field3D GlobalField3D::scatter() const {
           for(int z=0;z<zsize;z++) {
             buffer[p][x*ysize*zsize + y*zsize + z] = (*this)(x+xorig,y+yorig,z);
           }
-      
-      bout::globals::mpi->MPI_Send(buffer[p], xsize*ysize*zsize, MPI_DOUBLE, p, 1413, comm);
+
+      bout::globals::mpi->MPI_Send(buffer[p], xsize * ysize * zsize, MPI_DOUBLE, p, 1413,
+                                   comm);
     }
 
     int local_xorig, local_yorig;
@@ -390,8 +396,9 @@ const Field3D GlobalField3D::scatter() const {
         }
   }else {
     // Receive data
-    bout::globals::mpi->MPI_Recv(buffer[0], msg_len(mype), MPI_DOUBLE, data_on_proc, 1413, comm, &status);
-    
+    bout::globals::mpi->MPI_Recv(buffer[0], msg_len(mype), MPI_DOUBLE, data_on_proc, 1413,
+                                 comm, &status);
+
     int local_xorig, local_yorig;
     proc_local_origin(mype, &local_xorig, &local_yorig);
     int xorig, yorig;

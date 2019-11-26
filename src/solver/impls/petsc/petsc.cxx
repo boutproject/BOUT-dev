@@ -119,7 +119,8 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
 
   ierr = PetscLogEventBegin(init_event,0,0,0,0);CHKERRQ(ierr);
   output.write("Initialising PETSc-dev solver\n");
-  ierr = bout::globals::mpi->MPI_Comm_rank(comm, &rank);CHKERRQ(ierr);
+  ierr = bout::globals::mpi->MPI_Comm_rank(comm, &rank);
+  CHKERRQ(ierr);
 
   // Save NOUT and TIMESTEP for use later
   nout = NOUT;
@@ -128,7 +129,8 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   PetscInt local_N = getLocalN(); // Number of evolving variables on this processor
 
   /********** Get total problem size **********/
-  if(bout::globals::mpi->MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
+  if (bout::globals::mpi->MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM,
+                                        BoutComm::get())) {
     output_error.write("\tERROR: MPI_Allreduce failed!\n");
     ierr = PetscLogEventEnd(init_event,0,0,0,0);CHKERRQ(ierr);
     PetscFunctionReturn(1);

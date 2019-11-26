@@ -286,7 +286,8 @@ BOUT_OMP(for collapse(2))
         }
       }
     }
-    bout::globals::mpi->MPI_Allreduce(std::begin(yl), std::begin(yg), dimg, MPI_DOUBLE, MPI_SUM, comm2D);
+    bout::globals::mpi->MPI_Allreduce(std::begin(yl), std::begin(yg), dimg, MPI_DOUBLE,
+                                      MPI_SUM, comm2D);
 
     int nz = (xProcI%rMG->zNP)*(rMG->lnz[level]);
 BOUT_OMP(parallel default(shared))
@@ -323,7 +324,8 @@ BOUT_OMP(for collapse(2))
         }
       }
     }
-    bout::globals::mpi->MPI_Allreduce(std::begin(yl), std::begin(yg), dimg, MPI_DOUBLE, MPI_SUM, comm2D);
+    bout::globals::mpi->MPI_Allreduce(std::begin(yl), std::begin(yg), dimg, MPI_DOUBLE,
+                                      MPI_SUM, comm2D);
 
     BOUT_OMP(parallel default(shared))
     {
@@ -364,7 +366,8 @@ BOUT_OMP(for collapse(2))
         }
       }
     }
-    bout::globals::mpi->MPI_Allreduce(std::begin(y), std::begin(r), dim, MPI_DOUBLE, MPI_SUM, commMG);
+    bout::globals::mpi->MPI_Allreduce(std::begin(y), std::begin(r), dim, MPI_DOUBLE,
+                                      MPI_SUM, commMG);
     BOUT_OMP(parallel default(shared))
 BOUT_OMP(for)
     for(int i = 0;i<dim;i++) y[i] = 0.0;
@@ -439,7 +442,8 @@ BOUT_OMP(for collapse(2))
     }  
     fclose(outf);
   }
-  bout::globals::mpi->MPI_Allreduce(std::begin(yl), std::begin(yg), dim * 9, MPI_DOUBLE, MPI_SUM, comm2D);
+  bout::globals::mpi->MPI_Allreduce(std::begin(yl), std::begin(yg), dim * 9, MPI_DOUBLE,
+                                    MPI_SUM, comm2D);
 
   if(pcheck == 3) {
     FILE *outf;
@@ -501,7 +505,8 @@ BOUT_OMP(for collapse(2))
       }
     }
   }
-  bout::globals::mpi->MPI_Allreduce(std::begin(yl), yg, dim * 9, MPI_DOUBLE, MPI_SUM, commMG);
+  bout::globals::mpi->MPI_Allreduce(std::begin(yl), yg, dim * 9, MPI_DOUBLE, MPI_SUM,
+                                    commMG);
 }
 
 Multigrid2DPf1D::Multigrid2DPf1D(int level,int lx,int lz, int gx, int gz,
@@ -639,7 +644,8 @@ BOUT_OMP(for collapse(2))
         }
       }
     }
-    bout::globals::mpi->MPI_Allreduce(std::begin(y), std::begin(r), dim, MPI_DOUBLE, MPI_SUM, commMG);
+    bout::globals::mpi->MPI_Allreduce(std::begin(y), std::begin(r), dim, MPI_DOUBLE,
+                                      MPI_SUM, commMG);
     BOUT_OMP(parallel default(shared))
 BOUT_OMP(for)
     for(int i = 0;i<dim;i++) y[i] = 0.0;
@@ -692,7 +698,8 @@ BOUT_OMP(for collapse(2))
       }
     }
   }
-  bout::globals::mpi->MPI_Allreduce(std::begin(yl), yg, dim * 9, MPI_DOUBLE, MPI_SUM, commMG);
+  bout::globals::mpi->MPI_Allreduce(std::begin(yl), yg, dim * 9, MPI_DOUBLE, MPI_SUM,
+                                    commMG);
 }
 
 MultigridSerial::MultigridSerial(int level, int gx, int gz, MPI_Comm comm, int check)

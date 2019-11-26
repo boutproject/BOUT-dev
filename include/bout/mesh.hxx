@@ -976,7 +976,7 @@ protected:
 
   /// Pointer to the global MPI wrapper, for convenience
   MpiWrapper* mpi = nullptr;
-  
+
 private:
 
   /// Allocates default Coordinates objects

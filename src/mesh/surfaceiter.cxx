@@ -29,7 +29,7 @@ int SurfaceIter::yGlobal(int UNUSED(yloc)) {
   bout::globals::mpi->MPI_Comm_size(comm, &np);
   int myp;
   bout::globals::mpi->MPI_Comm_rank(comm, &myp);
-  
+
   // Need a generic method
 
   throw BoutException("SurfaceIter::yGlobal not implemented");
@@ -47,7 +47,7 @@ bool SurfaceIter::firstY() { ///< Is this processor at the lower end?
   // Get processor rank
   int myp;
   bout::globals::mpi->MPI_Comm_rank(comm, &myp);
-  
+
   return myp == 0;
 }
 
@@ -63,7 +63,7 @@ bool SurfaceIter::lastY() {
   bout::globals::mpi->MPI_Comm_size(comm, &np);
   int myp;
   bout::globals::mpi->MPI_Comm_rank(comm, &myp);
-  
+
   return myp == np-1;
 }
 

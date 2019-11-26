@@ -69,7 +69,8 @@ int KarniadakisSolver::init(int nout, BoutReal tstep) {
   
   // Get total problem size
   int neq;
-  if(bout::globals::mpi->MPI_Allreduce(&nlocal, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
+  if (bout::globals::mpi->MPI_Allreduce(&nlocal, &neq, 1, MPI_INT, MPI_SUM,
+                                        BoutComm::get())) {
     output_error.write("\tERROR: MPI_Allreduce failed!\n");
     return 1;
   }

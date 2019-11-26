@@ -9,11 +9,11 @@
 #include <vector>
 
 #include "boutcomm.hxx"
-#include "bout/mesh.hxx"
-#include "bout/mpi_wrapper.hxx"
-#include "bout/coordinates.hxx"
 #include "field3d.hxx"
 #include "unused.hxx"
+#include "bout/coordinates.hxx"
+#include "bout/mesh.hxx"
+#include "bout/mpi_wrapper.hxx"
 
 static constexpr BoutReal BoutRealTolerance{1e-15};
 // FFTs have a slightly looser tolerance than other functions

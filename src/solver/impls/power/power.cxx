@@ -27,7 +27,8 @@ int PowerSolver::init(int nout, BoutReal tstep) {
   nlocal = getLocalN();
   
   // Get total problem size
-  if(bout::globals::mpi->MPI_Allreduce(&nlocal, &nglobal, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
+  if (bout::globals::mpi->MPI_Allreduce(&nlocal, &nglobal, 1, MPI_INT, MPI_SUM,
+                                        BoutComm::get())) {
     throw BoutException("MPI_Allreduce failed in EulerSolver::init");
   }
   
@@ -85,8 +86,9 @@ BoutReal PowerSolver::norm(Array<BoutReal> &state) {
 
   total /= static_cast<BoutReal>(nglobal);
 
-  bout::globals::mpi->MPI_Allreduce(&total, &result, 1, MPI_DOUBLE, MPI_SUM, BoutComm::get());
-  
+  bout::globals::mpi->MPI_Allreduce(&total, &result, 1, MPI_DOUBLE, MPI_SUM,
+                                    BoutComm::get());
+
   return sqrt(result);
 }
 

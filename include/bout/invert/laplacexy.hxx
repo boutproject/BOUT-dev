@@ -78,7 +78,6 @@ public:
 #include <cyclic_reduction.hxx>
 #include "utils.hxx"
 
-
 class LaplaceXY {
 public:
   /*! 

@@ -7,11 +7,6 @@
 #include <map>
 #include <memory>
 
-#include "boutcomm.hxx"
-#include "bout/mpi_wrapper.hxx"
-#include "bout/mesh.hxx"
-#include "bout/coordinates.hxx"
-#include "bout/fieldgroup.hxx"
 #include "../../src/mesh/impls/bout/boutmesh.hxx"
 #include "boutcomm.hxx"
 #include "field2d.hxx"
@@ -21,6 +16,7 @@
 #include "bout/coordinates.hxx"
 #include "bout/fieldgroup.hxx"
 #include "bout/mesh.hxx"
+#include "bout/mpi_wrapper.hxx"
 
 class Options;
 
@@ -45,11 +41,12 @@ class Options;
 ///
 class FakeParallelMesh : public BoutMesh {
 public:
-  FakeParallelMesh(int nx, int ny, int nz, int nxpe, int nype, int pe_xind, int pe_yind) :
-    BoutMesh((nxpe*(nx-2))+2, nype*ny, nz, 1, 1, nxpe, nype, pe_xind, pe_yind),
-    yUpMesh(nullptr), yDownMesh(nullptr), xInMesh(nullptr), xOutMesh(nullptr),
-    mpiSmart(new FakeMpiWrapper(this)) {
-    StaggerGrids=false;
+  FakeParallelMesh(int nx, int ny, int nz, int nxpe, int nype, int pe_xind, int pe_yind)
+      : BoutMesh((nxpe * (nx - 2)) + 2, nype * ny, nz, 1, 1, nxpe, nype, pe_xind,
+                 pe_yind),
+        yUpMesh(nullptr), yDownMesh(nullptr), xInMesh(nullptr), xOutMesh(nullptr),
+        mpiSmart(new FakeMpiWrapper(this)) {
+    StaggerGrids = false;
     periodicX = false;
     IncIntShear = false;
     calcParallelSlices_on_communicate = true;
@@ -159,33 +156,37 @@ public:
   }
 
   friend std::vector<FakeParallelMesh> createFakeProcessors(int nx, int ny, int nz,
-							    int nxpe, int nype);
+                                                            int nxpe, int nype);
 
   class FakeMpiWrapper : public MpiWrapper {
   public:
     FakeParallelMesh* mesh;
-    FakeMpiWrapper(FakeParallelMesh* parent_mesh) : mesh(parent_mesh), wait_any_count(-1) {}
-    
-    virtual int MPI_Irecv(void *UNUSED(buf), int UNUSED(count), MPI_Datatype UNUSED(datatype),
-                          int UNUSED(source), int UNUSED(tag), MPI_Comm UNUSED(comm),
-                          MPI_Request *UNUSED(request)) override {
+    FakeMpiWrapper(FakeParallelMesh* parent_mesh)
+        : mesh(parent_mesh), wait_any_count(-1) {}
+
+    virtual int MPI_Irecv(void* UNUSED(buf), int UNUSED(count),
+                          MPI_Datatype UNUSED(datatype), int UNUSED(source),
+                          int UNUSED(tag), MPI_Comm UNUSED(comm),
+                          MPI_Request* UNUSED(request)) override {
       return 0;
     }
-    virtual int MPI_Isend(const void *UNUSED(buf), int UNUSED(count),
-                          MPI_Datatype UNUSED(datatype), int UNUSED(dest), int UNUSED(tag),
-                          MPI_Comm UNUSED(comm), MPI_Request *UNUSED(request)) override {
+    virtual int MPI_Isend(const void* UNUSED(buf), int UNUSED(count),
+                          MPI_Datatype UNUSED(datatype), int UNUSED(dest),
+                          int UNUSED(tag), MPI_Comm UNUSED(comm),
+                          MPI_Request* UNUSED(request)) override {
       return 0;
     }
-    virtual int MPI_Send(const void *UNUSED(buf), int UNUSED(count),
+    virtual int MPI_Send(const void* UNUSED(buf), int UNUSED(count),
                          MPI_Datatype UNUSED(datatype), int UNUSED(dest), int UNUSED(tag),
                          MPI_Comm UNUSED(comm)) override {
       return 0;
     }
-    virtual int MPI_Wait(MPI_Request *UNUSED(request), MPI_Status *UNUSED(status)) override {
+    virtual int MPI_Wait(MPI_Request* UNUSED(request),
+                         MPI_Status* UNUSED(status)) override {
       return 0;
     }
     virtual int MPI_Waitany(int UNUSED(count), MPI_Request UNUSED(array_of_requests[]),
-                            int *indx, MPI_Status *UNUSED(status)) override {
+                            int* indx, MPI_Status* UNUSED(status)) override {
       if (mesh->yUpMesh && wait_any_count < 0 && mesh->UpXSplitIndex() > 0) {
         *indx = wait_any_count = 0;
       } else if (mesh->yDownMesh && wait_any_count < 1 && mesh->UpXSplitIndex() == 0) {
@@ -205,7 +206,6 @@ public:
       return 0;
     }
 
-    
   private:
     int wait_any_count;
   };
@@ -221,9 +221,7 @@ private:
   int local3D, local2D, localPerp;
   int start3D, start2D, startPerp;
 
-  comm_handle parentSend(FieldGroup &g) {
-    return BoutMesh::send(g);
-  }
+  comm_handle parentSend(FieldGroup& g) { return BoutMesh::send(g); }
 
   FieldGroup makeGroup(FakeParallelMesh* m, const std::vector<int> ids) {
     FieldGroup g;
@@ -235,12 +233,11 @@ private:
   }
 };
 
-
-std::vector<FakeParallelMesh> createFakeProcessors(int nx, int ny, int nz,
-						   int nxpe, int nype) {
+std::vector<FakeParallelMesh> createFakeProcessors(int nx, int ny, int nz, int nxpe,
+                                                   int nype) {
   std::shared_ptr<Coordinates> test_coords{nullptr};
   std::vector<FakeParallelMesh> meshes;
-  meshes.reserve(nx*ny);
+  meshes.reserve(nx * ny);
   for (int i = 0; i < nxpe; i++) {
     for (int j = 0; j < nype; j++) {
       meshes.push_back(FakeParallelMesh(nx, ny, nz, nxpe, nype, i, j));
@@ -264,11 +261,11 @@ std::vector<FakeParallelMesh> createFakeProcessors(int nx, int ny, int nz,
       // meaning the reference FakeMpiWrapper::mesh now points to an
       // invalid address. This line of code will update it to point at
       // the correct one.
-      meshes.at(j + i*nype).mpiSmart->mesh = &meshes.at(j + i*nype);
-      
-      meshes.at(j + i*nype).local3D = (nx - 2) * ny * nz;
-      meshes.at(j + i*nype).local2D = (nx - 2) * ny;
-      meshes.at(j + i*nype).localPerp = (nx - 2) * nz;
+      meshes.at(j + i * nype).mpiSmart->mesh = &meshes.at(j + i * nype);
+
+      meshes.at(j + i * nype).local3D = (nx - 2) * ny * nz;
+      meshes.at(j + i * nype).local2D = (nx - 2) * ny;
+      meshes.at(j + i * nype).localPerp = (nx - 2) * nz;
       if (i == 0) {
         meshes.at(j + i * nype).local3D += ny * nz;
         meshes.at(j + i * nype).local2D += ny;

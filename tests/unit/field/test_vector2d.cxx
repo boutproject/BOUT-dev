@@ -1,14 +1,14 @@
 #include "gtest/gtest.h"
 
-#include "bout/constants.hxx"
-#include "bout/mesh.hxx"
-#include "bout/mpi_wrapper.hxx"
 #include "boutexception.hxx"
 #include "output.hxx"
 #include "test_extras.hxx"
 #include "unused.hxx"
 #include "vector2d.hxx"
 #include "vector3d.hxx"
+#include "bout/constants.hxx"
+#include "bout/mesh.hxx"
+#include "bout/mpi_wrapper.hxx"
 
 /// Global mesh
 namespace bout{

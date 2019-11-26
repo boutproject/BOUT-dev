@@ -110,7 +110,8 @@ LaplacePetsc::LaplacePetsc(Options *opt, const CELL_LOC loc, Mesh *mesh_in) :
     localN += localmesh->xstart * (localmesh->LocalNz);    // If on last processor add on width of boundary region
 
   // Calculate 'size' (the total number of points in physical grid)
-  if(bout::globals::mpi->MPI_Allreduce(&localN, &size, 1, MPI_INT, MPI_SUM, comm) != MPI_SUCCESS)
+  if (bout::globals::mpi->MPI_Allreduce(&localN, &size, 1, MPI_INT, MPI_SUM, comm)
+      != MPI_SUCCESS)
     throw BoutException("Error in MPI_Allreduce during LaplacePetsc initialisation");
 
   // Calculate total (physical) grid dimensions

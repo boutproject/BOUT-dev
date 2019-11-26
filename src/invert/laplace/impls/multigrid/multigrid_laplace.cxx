@@ -361,12 +361,12 @@ BOUT_OMP(for)
       kMG->setPcheck(0);
     }
   }
-  
 
   t0 = bout::globals::mpi->MPI_Wtime();
-  generateMatrixF(level);  
+  generateMatrixF(level);
 
-  if (kMG->xNP > 1) bout::globals::mpi->MPI_Barrier(commX);
+  if (kMG->xNP > 1)
+    bout::globals::mpi->MPI_Barrier(commX);
 
   if ((pcheck == 3) && (mgcount == 0)) {
     FILE *outf;
@@ -414,7 +414,8 @@ BOUT_OMP(for)
   // Compute solution.
 
   mgcount++;
-  if (pcheck > 0) t0 = bout::globals::mpi->MPI_Wtime();
+  if (pcheck > 0)
+    t0 = bout::globals::mpi->MPI_Wtime();
 
   kMG->getSolution(std::begin(x), std::begin(b), 0);
 

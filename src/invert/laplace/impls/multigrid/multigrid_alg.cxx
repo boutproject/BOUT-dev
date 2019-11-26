@@ -488,8 +488,8 @@ BOUT_OMP(for reduction(+:ini_e) collapse(2))
       }
     }
   }
-  if(numP > 1) 
-    bout::globals::mpi->MPI_Allreduce(&ini_e,&val,1,MPI_DOUBLE,MPI_SUM,commMG);
+  if(numP > 1)
+    bout::globals::mpi->MPI_Allreduce(&ini_e, &val, 1, MPI_DOUBLE, MPI_SUM, commMG);
   else val = ini_e;
 
   return(val);  
@@ -626,24 +626,26 @@ void MultigridAlg::communications(BoutReal* x, int level) {
     
     // Receive from z-
     rtag = zProcM;
-    ierr = bout::globals::mpi->MPI_Irecv(&x[lnz[level]+2], 1, xvector, zProcM, rtag, commMG, &requests[2]);
+    ierr = bout::globals::mpi->MPI_Irecv(&x[lnz[level] + 2], 1, xvector, zProcM, rtag,
+                                         commMG, &requests[2]);
     ASSERT1(ierr == MPI_SUCCESS);
 
     // Receive from z+
     rtag = zProcP+numP;
-    ierr = bout::globals::mpi->MPI_Irecv(&x[2*(lnz[level]+2)-1], 1, xvector, zProcP, rtag, commMG,
-        &requests[3]);
+    ierr = bout::globals::mpi->MPI_Irecv(&x[2 * (lnz[level] + 2) - 1], 1, xvector, zProcP,
+                                         rtag, commMG, &requests[3]);
     ASSERT1(ierr == MPI_SUCCESS);
 
     // Send to z+
     stag = rProcI;
-    ierr = bout::globals::mpi->MPI_Isend(&x[2*(lnz[level]+2)-2], 1, xvector, zProcP, stag, commMG,
-        &requests[0]);
+    ierr = bout::globals::mpi->MPI_Isend(&x[2 * (lnz[level] + 2) - 2], 1, xvector, zProcP,
+                                         stag, commMG, &requests[0]);
     ASSERT1(ierr == MPI_SUCCESS);
 
     // Send to z-
     stag = rProcI+numP;
-    ierr = bout::globals::mpi->MPI_Isend(&x[lnz[level]+3], 1, xvector, zProcM, stag, commMG, &requests[1]);
+    ierr = bout::globals::mpi->MPI_Isend(&x[lnz[level] + 3], 1, xvector, zProcM, stag,
+                                         commMG, &requests[1]);
     ASSERT1(ierr == MPI_SUCCESS);
 
     // Wait for communications to complete
@@ -666,29 +668,32 @@ void MultigridAlg::communications(BoutReal* x, int level) {
     if (xProcI > 0) {
       // Receive from x-
       rtag = xProcM;
-      ierr = bout::globals::mpi->MPI_Irecv(&x[0], lnz[level]+2, MPI_DOUBLE, xProcM, rtag, commMG, &requests[2]);
+      ierr = bout::globals::mpi->MPI_Irecv(&x[0], lnz[level] + 2, MPI_DOUBLE, xProcM,
+                                           rtag, commMG, &requests[2]);
       ASSERT1(ierr == MPI_SUCCESS);
     }
     
     if (xProcI < xNP - 1) {
       // Receive from x+
       rtag = xProcP+xNP;;
-      ierr = bout::globals::mpi->MPI_Irecv(&x[(lnx[level]+1)*(lnz[level]+2)], lnz[level]+2, MPI_DOUBLE, xProcP,
-          rtag, commMG, &requests[3]);
+      ierr = bout::globals::mpi->MPI_Irecv(&x[(lnx[level] + 1) * (lnz[level] + 2)],
+                                           lnz[level] + 2, MPI_DOUBLE, xProcP, rtag,
+                                           commMG, &requests[3]);
       ASSERT1(ierr == MPI_SUCCESS);
 
       // Send to x+
       stag = rProcI;
-      ierr = bout::globals::mpi->MPI_Isend(&x[lnx[level]*(lnz[level]+2)], lnz[level]+2, MPI_DOUBLE, xProcP,
-          stag, commMG, &requests[0]);
+      ierr =
+          bout::globals::mpi->MPI_Isend(&x[lnx[level] * (lnz[level] + 2)], lnz[level] + 2,
+                                        MPI_DOUBLE, xProcP, stag, commMG, &requests[0]);
       ASSERT1(ierr == MPI_SUCCESS);
     }
 
     if (xProcI > 0) {
       // Send to x-
       stag = rProcI+xNP;
-      ierr = bout::globals::mpi->MPI_Isend(&x[lnz[level]+2], lnz[level]+2, MPI_DOUBLE, xProcM, stag, commMG,
-          &requests[1]);
+      ierr = bout::globals::mpi->MPI_Isend(&x[lnz[level] + 2], lnz[level] + 2, MPI_DOUBLE,
+                                           xProcM, stag, commMG, &requests[1]);
       ASSERT1(ierr == MPI_SUCCESS);
     }
 
