@@ -212,6 +212,9 @@ int AdamsBashforthSolver::run() {
               // mean we don't trust the error as much and hence have
               // to scale the timestep more conservatively but this
               // may be worth it.
+              //
+              // Actually currently we do skip the second rhs call
+              // and instead try to reuse the existing data.
               const BoutReal lowerErr =
                   take_step(simtime, dt, current_order - 1, state, lowerNextState);
 
@@ -401,9 +404,18 @@ BoutReal AdamsBashforthSolver::take_step(const BoutReal timeIn, const BoutReal d
     times.emplace_front(timeIn + dt * firstPart);
 
     // Put intermediate result into variables, call rhs and save the derivatives
-    load_vars(std::begin(result2));
-    // This is typically the most expensive part of this routine
-    run_rhs(timeIn + firstPart * dt);
+    // Try to cheat for now with this HACK. If the order /=
+    // current_order then call must be part of the adapative_order code
+    // so don't recalculate just reuse stored derivatives.
+    if (order == current_order) {
+      load_vars(std::begin(result2));
+      // This is typically the most expensive part of this routine.
+      //
+      run_rhs(timeIn + firstPart * dt);
+
+      // Restore fields to the original state
+      load_vars(std::begin(current));
+    }
     save_derivs(std::begin(history[0]));
 
     // Calculate the coefficients to get to timeIn + dt
@@ -418,9 +430,6 @@ BoutReal AdamsBashforthSolver::take_step(const BoutReal timeIn, const BoutReal d
         half_update[i] += history[j][i] * factor;
       }
     }
-
-    // Restore fields to the original state
-    load_vars(std::begin(current));
 
     // Drop the temporary history information
     history.pop_front();
