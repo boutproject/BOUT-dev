@@ -58,7 +58,7 @@ const Field3D InvertParCR::solve(const Field3D &f) {
   TRACE("InvertParCR::solve(Field3D)");
   ASSERT1(localmesh == f.getMesh());
 
-  Field3D result{emptyFrom(f)};
+  Field3D result = emptyFrom(f).setDirectionY(YDirectionType::Aligned);
   
   Coordinates *coord = f.getCoordinates();
 

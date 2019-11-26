@@ -294,7 +294,7 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   if(use_jacobian && (jacfunc != nullptr)) {
     // Use a user-supplied Jacobian function
     ierr = MatCreateShell(comm, local_N, local_N, neq, neq, this, &Jmf); CHKERRQ(ierr);
-    ierr = MatShellSetOperation(Jmf, MATOP_MULT, (void (*)()) PhysicsJacobianApply); CHKERRQ(ierr);
+    ierr = MatShellSetOperation(Jmf, MATOP_MULT, reinterpret_cast<void (*)()>(PhysicsJacobianApply)); CHKERRQ(ierr);
     ierr = TSSetIJacobian(ts, Jmf, Jmf, solver_ijacobian, this); CHKERRQ(ierr);
   }else {
     // Use finite difference approximation
@@ -350,12 +350,12 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   ierr = TSGetType(ts,&tstype);CHKERRQ(ierr);
   output.write("\tTS type %s, PC type %s\n",tstype,pctype);
 
-  ierr = PetscObjectTypeCompare((PetscObject)pc,PCNONE,&pcnone);CHKERRQ(ierr);
+  ierr = PetscObjectTypeCompare(reinterpret_cast<PetscObject>(pc),PCNONE,&pcnone);CHKERRQ(ierr);
   if (pcnone) {
     ierr = PetscLogEventEnd(init_event,0,0,0,0);CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
-  ierr = PetscObjectTypeCompare((PetscObject)pc,PCSHELL,&pcnone);CHKERRQ(ierr);
+  ierr = PetscObjectTypeCompare(reinterpret_cast<PetscObject>(pc),PCSHELL,&pcnone);CHKERRQ(ierr);
   if (pcnone) {
     ierr = PetscLogEventEnd(init_event,0,0,0,0);CHKERRQ(ierr);
     PetscFunctionReturn(0);
@@ -452,7 +452,7 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   
   ierr = MatFDColoringSetFromOptions(matfdcoloring);CHKERRQ(ierr);
   ierr = ISColoringDestroy(&iscoloring);CHKERRQ(ierr);
-  ierr = MatFDColoringSetFunction(matfdcoloring,(PetscErrorCode (*)())solver_f,this);CHKERRQ(ierr);
+  ierr = MatFDColoringSetFunction(matfdcoloring, reinterpret_cast<PetscErrorCode (*)()>(solver_f), this);CHKERRQ(ierr);
   ierr = SNESSetJacobian(snes,J,J,SNESComputeJacobianDefaultColor,matfdcoloring);CHKERRQ(ierr);
 
   // Write J in binary for study - see ~petsc/src/mat/examples/tests/ex124.c
@@ -706,7 +706,7 @@ PetscErrorCode solver_ijacobian(TS ts, BoutReal t, Vec globalin, Vec UNUSED(glob
   ierr = solver_rhsjacobian(ts, t, globalin, J, Jpre, f_data); CHKERRQ(ierr);
 
   ////// Save data for preconditioner
-  auto* solver = (PetscSolver*)f_data;
+  auto* solver = static_cast<PetscSolver*>(f_data);
 
   if(solver->diagnose)
     output << "Saving state, t = " << t << ", a = " << a << endl;
@@ -820,7 +820,7 @@ PetscErrorCode PhysicsPCApply(PC pc,Vec x,Vec y) {
 
   // Get the context
   PetscSolver *s;
-  ierr = PCShellGetContext(pc,(void**)&s);CHKERRQ(ierr);
+  ierr = PCShellGetContext(pc, reinterpret_cast<void**>(&s)); CHKERRQ(ierr);
 
   PetscFunctionReturn(s->pre(pc, x, y));
 }
@@ -830,7 +830,7 @@ PetscErrorCode PhysicsPCApply(PC pc,Vec x,Vec y) {
 PetscErrorCode PhysicsJacobianApply(Mat J, Vec x, Vec y) {
   // Get the context
   PetscSolver *s;
-  int ierr = MatShellGetContext(J, (void**)&s); CHKERRQ(ierr);
+  int ierr = MatShellGetContext(J, reinterpret_cast<void**>(&s)); CHKERRQ(ierr);
   PetscFunctionReturn(s->jac(x, y));
 }
 

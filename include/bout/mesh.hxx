@@ -150,6 +150,15 @@ class Mesh {
   /// @returns zero if successful, non-zero on failure
   int get(BoutReal& rval, const std::string& name, BoutReal def=0.0);
 
+  /// Get a bool from the input source
+  ///
+  /// @param[out] bval  The value will be put into this variable
+  /// @param[in] name   The name of the variable to read
+  /// @param[in] def    The default value if not found
+  ///
+  /// @returns zero if successful, non-zero on failure
+  int get(bool &bval, const std::string &name, bool def=false);
+
   /// Get a Field2D from the input source
   /// including communicating guard cells
   ///
@@ -208,6 +217,9 @@ class Mesh {
   /// @returns zero always. 
   int get(Vector3D &var, const std::string &name, BoutReal def=0.0);
 
+  /// Test if input source was a grid file
+  bool isDataSourceGridFile() const;
+
   /// Wrapper for GridDataSource::hasVar
   bool sourceHasVar(const std::string &name);
 
@@ -249,7 +261,7 @@ class Mesh {
   /*!
    * Communicate an X-Z field
    */
-  virtual void communicate(FieldPerp &f); 
+  virtual void communicate(FieldPerp& f);
 
   /*!
    * Send a list of FieldData objects
@@ -354,6 +366,10 @@ class Mesh {
   /// \param[in] jx   The local (on this processor) index in X
   /// \param[out] ts  The Twist-Shift angle if periodic
   virtual bool periodicY(int jx, BoutReal &ts) const = 0;
+
+  /// Get number of boundaries in the y-direction, i.e. locations where there are boundary
+  /// cells in the global grid
+  virtual int numberOfYBoundaries() const = 0;
 
   /// Is there a branch cut at this processor's lower y-boundary?
   ///
@@ -476,10 +492,12 @@ class Mesh {
   
   /// Returns the global X index given a local index
   /// If the local index includes the boundary cells, then so does the global.
-  virtual int XGLOBAL(int xloc) const = 0;
+  [[gnu::deprecated("Use getGlobalXIndex instead")]]
+  int XGLOBAL(int xloc) const { return getGlobalXIndex(xloc); }
   /// Returns the global Y index given a local index
   /// The local index must include the boundary, the global index does not.
-  virtual int YGLOBAL(int yloc) const = 0;
+  [[gnu::deprecated("Use getGlobalYIndex or getGlobalYIndexNoBoundaries instead")]]
+  virtual int YGLOBAL(int yloc) const { return getGlobalYIndexNoBoundaries(yloc); }
 
   /// Returns the local X index given a global index
   /// If the global index includes the boundary cells, then so does the local.
@@ -507,7 +525,31 @@ class Mesh {
   virtual int globalStartIndex2D();
   /// Get the value of the first global perpendicular index on this processor.
   virtual int globalStartIndexPerp();
-  
+
+  /// Returns a global X index given a local index.
+  /// Global index includes boundary cells, local index includes boundary or guard cells.
+  virtual int getGlobalXIndex(int xlocal) const = 0;
+
+  /// Returns a global X index given a local index.
+  /// Global index excludes boundary cells, local index includes boundary or guard cells.
+  virtual int getGlobalXIndexNoBoundaries(int xlocal) const = 0;
+
+  /// Returns a global Y index given a local index.
+  /// Global index includes boundary cells, local index includes boundary or guard cells.
+  virtual int getGlobalYIndex(int ylocal) const = 0;
+
+  /// Returns a global Y index given a local index.
+  /// Global index excludes boundary cells, local index includes boundary or guard cells.
+  virtual int getGlobalYIndexNoBoundaries(int ylocal) const = 0;
+
+  /// Returns a global Z index given a local index.
+  /// Global index includes boundary cells, local index includes boundary or guard cells.
+  virtual int getGlobalZIndex(int zlocal) const = 0;
+
+  /// Returns a global Z index given a local index.
+  /// Global index excludes boundary cells, local index includes boundary or guard cells.
+  virtual int getGlobalZIndexNoBoundaries(int zlocal) const = 0;
+
   /// Size of the mesh on this processor including guard/boundary cells
   int LocalNx, LocalNy, LocalNz;
   

@@ -144,7 +144,7 @@ Field3D Laplacian::solve(const Field3D& b) {
   TRACE("Laplacian::solve(Field3D)");
 
   ASSERT1(b.getLocation() == location);
-  ASSERT1(localmesh = b.getMesh());
+  ASSERT1(localmesh == b.getMesh());
 
   Timer timer("invert");
   int ys = localmesh->ystart, ye = localmesh->yend;
@@ -299,12 +299,6 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
     localcoords = localmesh->getCoordinates(loc);
   }
 
-  ASSERT1(c1coef == nullptr || c1coef->getLocation() == loc);
-  ASSERT1(c2coef == nullptr || c2coef->getLocation() == loc);
-  ASSERT1( (c1coef == nullptr and c2coef == nullptr)
-           or (c1coef != nullptr and c2coef != nullptr) );
-  ASSERT1(d == nullptr || d->getLocation() == loc);
-
   BoutReal coef1, coef2, coef3, coef4, coef5;
 
   coef1=localcoords->g11(jx,jy);     ///< X 2nd derivative coefficient
@@ -369,10 +363,6 @@ void Laplacian::tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
                              const Field2D *a, const Field2D *ccoef,
                              const Field2D *d) {
 
-  ASSERT1(a->getLocation() == location);
-  ASSERT1(ccoef->getLocation() == location);
-  ASSERT1(d->getLocation() == location);
-
   BOUT_OMP(parallel for)
   for(int kz = 0; kz <= maxmode; kz++) {
     BoutReal kwave=kz*2.0*PI/coords->zlength(); // wave number is 1/[rad]
@@ -430,10 +420,9 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
                              const Field2D *d,
                              bool includeguards) {
 
-  ASSERT1(a->getLocation() == location);
-  ASSERT1(c1coef->getLocation() == location);
-  ASSERT1(c2coef->getLocation() == location);
-  ASSERT1(d->getLocation() == location);
+  // Better have either both or neither C coefficients
+  ASSERT3((c1coef == nullptr and c2coef == nullptr)
+          or (c1coef != nullptr and c2coef != nullptr))
 
   int xs = 0;            // xstart set to the start of x on this processor (including ghost points)
   int xe = localmesh->LocalNx-1;  // xend set to the end of x on this processor (including ghost points)
@@ -760,13 +749,6 @@ void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcom
 }
 
 int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, const Field2D *a, const Field2D *c, const Field2D *d) {
-
-  // Laplacian::defaultInstance is at CELL_CENTRE
-  ASSERT1(b.getLocation() == CELL_CENTRE);
-  ASSERT1(x.getLocation() == CELL_CENTRE);
-  ASSERT1(a->getLocation() == CELL_CENTRE);
-  ASSERT1(c->getLocation() == CELL_CENTRE);
-  ASSERT1(d->getLocation() == CELL_CENTRE);
 
   Laplacian *lap = Laplacian::defaultInstance();
 

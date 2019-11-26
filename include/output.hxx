@@ -233,21 +233,21 @@ inline ConditionalOutput &operator<<(ConditionalOutput &out, stream_manipulator 
     *out.getBase() << pf;
   }
   return out;
-};
+}
 
 template <typename T> ConditionalOutput &operator<<(ConditionalOutput &out, T const &t) {
   if (out.isEnabled()) {
     *out.getBase() << t;
   }
   return out;
-};
+}
 
 template <typename T> ConditionalOutput &operator<<(ConditionalOutput &out, const T *t) {
   if (out.isEnabled()) {
     *out.getBase() << t;
   }
   return out;
-};
+}
 
 /// To allow statements like "output.write(...)" or "output << ..."
 /// Output for debugging

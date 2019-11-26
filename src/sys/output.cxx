@@ -89,7 +89,7 @@ void Output::write(const char *string, ...) {
 }
 
 void Output::vwrite(const char *string, va_list va) {
-  if (string == (const char *)nullptr) {
+  if (string == nullptr) {
     return;
   }
 
@@ -110,7 +110,7 @@ void Output::vprint(const char *string, va_list ap) {
     return; // Only output if to screen
   }
 
-  if (string == (const char *)nullptr) {
+  if (string == nullptr) {
     return;
   }
   bout_vsnprintf_(buffer, buffer_len, string, ap);

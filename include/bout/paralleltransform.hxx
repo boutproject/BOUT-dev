@@ -82,17 +82,18 @@ public:
   };
 
   virtual std::vector<PositionsAndWeights> getWeightsForYUpApproximation(int i, int j,
-      int k) {
-    return getWeightsForYApproximation(i,j,k,1);
+                                                                         int k) {
+    return getWeightsForYApproximation(i, j, k, 1);
   }
   virtual std::vector<PositionsAndWeights> getWeightsForYDownApproximation(int i, int j,
-      int k) {
-    return getWeightsForYApproximation(i,j,k,-1);
+                                                                           int k) {
+    return getWeightsForYApproximation(i, j, k, -1);
   }
-  virtual std::vector<PositionsAndWeights> getWeightsForYApproximation(int UNUSED(i),
-      int UNUSED(j), int UNUSED(k), int UNUSED(yoffset)) {
+  virtual std::vector<PositionsAndWeights>
+  getWeightsForYApproximation(int UNUSED(i), int UNUSED(j), int UNUSED(k),
+                              int UNUSED(yoffset)) {
     throw BoutException("ParallelTransform::getWeightsForYApproximation not implemented "
-        "in this subclass");
+                        "in this subclass");
   }
 
   /// Output variables used by a ParallelTransform instance to the dump files
@@ -133,10 +134,12 @@ public:
    * does nothing
    */
   const Field3D toFieldAligned(const Field3D& f, const std::string& UNUSED(region) = "RGN_ALL") override {
+    ASSERT2(f.getDirectionY() == YDirectionType::Standard);
     Field3D result = f;
     return result.setDirectionY(YDirectionType::Aligned);
   }
   const FieldPerp toFieldAligned(const FieldPerp& f, const std::string& UNUSED(region) = "RGN_ALL") override {
+    ASSERT2(f.getDirectionY() == YDirectionType::Standard);
     FieldPerp result = f;
     return result.setDirectionY(YDirectionType::Aligned);
   }
@@ -146,10 +149,12 @@ public:
    * does nothing
    */
   const Field3D fromFieldAligned(const Field3D& f, const std::string& UNUSED(region) = "RGN_ALL") override {
+    ASSERT2(f.getDirectionY() == YDirectionType::Aligned);
     Field3D result = f;
     return result.setDirectionY(YDirectionType::Standard);
   }
   const FieldPerp fromFieldAligned(const FieldPerp& f, const std::string& UNUSED(region) = "RGN_ALL") override {
+    ASSERT2(f.getDirectionY() == YDirectionType::Aligned);
     FieldPerp result = f;
     return result.setDirectionY(YDirectionType::Standard);
   }

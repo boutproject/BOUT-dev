@@ -220,14 +220,14 @@ struct DerivativeStore {
     AUTO_TRACE();
     registerDerivative(func, method.meta.derivType, direction.lookup(), stagger.lookup(),
                        method.meta.key);
-  };
+  }
   template <typename Direction, typename Stagger, typename Method>
   void registerDerivative(upwindFunc func, Direction direction, Stagger stagger,
                           Method method) {
     AUTO_TRACE();
     registerDerivative(func, method.meta.derivType, direction.lookup(), stagger.lookup(),
                        method.meta.key);
-  };
+  }
 
   /// Routines to return a specific differential operator. Note we
   /// have to have a separate routine for different methods as they

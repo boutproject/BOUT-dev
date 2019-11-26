@@ -6,9 +6,14 @@ else()
   cmake_policy(VERSION 3.12)
 endif()
 
+# CMake currently doesn't support proper semver
+# Set the version here, strip any extra tags to use in `project`
+set(BOUT_FULL_VERSION 5.0.0-alpha)
+string(REGEX REPLACE "^([0-9]+\.[0-9]+\.[0-9]+)-.*" "\\1" BOUT_CMAKE_ACCEPTABLE_VERSION ${BOUT_FULL_VERSION})
+
 project(BOUT++
   DESCRIPTION "Fluid PDE solver framework"
-  VERSION 4.2.2
+  VERSION ${BOUT_CMAKE_ACCEPTABLE_VERSION}
   LANGUAGES CXX)
 
 # This might not be entirely sensible, but helps CMake to find the
@@ -71,6 +76,7 @@ set(BOUT_SOURCES
   ./include/bout/openmpwrap.hxx
   ./include/bout/paralleltransform.hxx
   ./include/bout/petsclib.hxx
+  ./include/bout/petsc_interface.hxx
   ./include/bout/physicsmodel.hxx
   ./include/bout/region.hxx
   ./include/bout/rkscheme.hxx
@@ -287,6 +293,7 @@ set(BOUT_SOURCES
   ./src/sys/optionsreader.cxx
   ./src/sys/output.cxx
   ./src/sys/petsclib.cxx
+  ./src/sys/petsc_interface.cxx
   ./src/sys/range.cxx
   ./src/sys/slepclib.cxx
   ./src/sys/timer.cxx
@@ -305,11 +312,11 @@ target_include_directories(bout++ PUBLIC
   )
 
 target_compile_definitions(bout++
-  PUBLIC "BOUT_VERSION_STRING=\"${PROJECT_VERSION}\""
+  PUBLIC "BOUT_VERSION_STRING=\"${BOUT_FULL_VERSION}\""
   PUBLIC "BOUT_VERSION_DOUBLE=${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}${PROJECT_VERSION_PATCH}"
   )
 
-target_compile_features(bout++ PUBLIC cxx_std_11)
+target_compile_features(bout++ PUBLIC cxx_std_14)
 set_target_properties(bout++ PROPERTIES CXX_EXTENSIONS OFF)
 
 option(ENABLE_WARNINGS "Enable compiler warnings" ON)

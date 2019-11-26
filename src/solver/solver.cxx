@@ -643,7 +643,7 @@ void Solver::addMonitor(Monitor* monitor, MonitorPosition pos) {
 
   monitor->is_added = true;
 
-  if (pos == Solver::FRONT) {
+  if (pos == MonitorPosition::FRONT) {
     monitors.push_front(monitor);
   } else {
     monitors.push_back(monitor);
@@ -804,7 +804,7 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal *udata, int &p, SOLVER_VAR_OP op, 
   int nz = mesh->LocalNz;
   
   switch(op) {
-  case LOAD_VARS: {
+    case SOLVER_VAR_OP::LOAD_VARS: {
     /// Load variables from IDA into BOUT++
     
     // Loop over 2D variables
@@ -827,7 +827,7 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal *udata, int &p, SOLVER_VAR_OP op, 
     }
     break;
   }
-  case LOAD_DERIVS: {
+  case SOLVER_VAR_OP::LOAD_DERIVS: {
     /// Load derivatives from IDA into BOUT++
     /// Used for preconditioner
     
@@ -852,7 +852,7 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal *udata, int &p, SOLVER_VAR_OP op, 
     
     break;
   }
-  case SET_ID: {
+  case SOLVER_VAR_OP::SET_ID: {
     /// Set the type of equation (Differential or Algebraic)
     
     // Loop over 2D variables
@@ -884,7 +884,7 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal *udata, int &p, SOLVER_VAR_OP op, 
     
     break;
   }
-  case SAVE_VARS: {
+  case SOLVER_VAR_OP::SAVE_VARS: {
     /// Save variables from BOUT++ into IDA (only used at start of simulation)
     
     // Loop over 2D variables
@@ -908,7 +908,7 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal *udata, int &p, SOLVER_VAR_OP op, 
     break;
   }
     /// Save time-derivatives from BOUT++ into CVODE (returning RHS result)
-  case SAVE_DERIVS: {
+  case SOLVER_VAR_OP::SAVE_DERIVS: {
     
     // Loop over 2D variables
     for(const auto& f : f2d) {
@@ -960,7 +960,7 @@ void Solver::load_vars(BoutReal *udata) {
     f.var->setLocation(f.location);
   }
 
-  loop_vars(udata, LOAD_VARS);
+  loop_vars(udata, SOLVER_VAR_OP::LOAD_VARS);
 
   // Mark each vector as either co- or contra-variant
 
@@ -979,7 +979,7 @@ void Solver::load_derivs(BoutReal *udata) {
     f.F_var->setLocation(f.location);
   }
 
-  loop_vars(udata, LOAD_DERIVS);
+  loop_vars(udata, SOLVER_VAR_OP::LOAD_DERIVS);
 
   // Mark each vector as either co- or contra-variant
 
@@ -1013,7 +1013,7 @@ void Solver::save_vars(BoutReal *udata) {
       v.var->toContravariant();
   }
 
-  loop_vars(udata, SAVE_VARS);
+  loop_vars(udata, SOLVER_VAR_OP::SAVE_VARS);
 }
 
 void Solver::save_derivs(BoutReal *dudata) {
@@ -1041,11 +1041,11 @@ void Solver::save_derivs(BoutReal *dudata) {
     }
   }
 
-  loop_vars(dudata, SAVE_DERIVS);
+  loop_vars(dudata, SOLVER_VAR_OP::SAVE_DERIVS);
 }
 
 void Solver::set_id(BoutReal *udata) {
-  loop_vars(udata, SET_ID);
+  loop_vars(udata, SOLVER_VAR_OP::SET_ID);
 }
 
 Field3D Solver::globalIndex(int localStart) {

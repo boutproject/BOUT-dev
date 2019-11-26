@@ -772,3 +772,22 @@ to
 .. code-block:: cpp
 
     typedef long CVODEINT;
+
+Compiling with IBM xlC compiler fails
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When using the ``xlC`` compiler, an error may occur::
+
+  variant.hpp(1568) parameter pack "Ts" was referenced but not expanded
+
+
+The workaround is to change line 428 of  ``externalpackages/mpark.variant/include/mpark/lib.hpp`` from::
+  
+  #ifdef MPARK_TYPE_PACK_ELEMENT
+
+to::
+
+  #ifdef CAUSES_ERROR // MPARK_TYPE_PACK_ELEMENT
+
+This will force an alternate implementation of type_pack_element to be defined.
+See also https://software.intel.com/en-us/forums/intel-c-compiler/topic/501502

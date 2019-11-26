@@ -76,7 +76,7 @@ static PetscErrorCode imexbdf2PCapply(PC pc,Vec x,Vec y) {
 
   // Get the context
   IMEXBDF2 *s;
-  ierr = PCShellGetContext(pc,(void**)&s);CHKERRQ(ierr);
+  ierr = PCShellGetContext(pc, reinterpret_cast<void**>(&s));CHKERRQ(ierr);
 
   PetscFunctionReturn(s->precon(x, y));
 }
@@ -137,7 +137,7 @@ int IMEXBDF2::init(int nout, BoutReal tstep) {
   // Get options
   OPTION(options, timestep, tstep); // Internal timestep
   OPTION(options, mxstep, 100000); //Maximum number of internal iterations
-  ninternal = (int) (out_timestep / timestep);
+  ninternal = static_cast<int>(out_timestep / timestep);
   if((ninternal == 0) || (out_timestep / ninternal > timestep))
     ++ninternal;
   if(ninternal>mxstep){
@@ -616,7 +616,9 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
       ISColoringDestroy(&iscoloring);
       // Set the function to difference
       //MatFDColoringSetFunction(fdcoloring,(PetscErrorCode (*)(void))FormFunctionForDifferencing,this);
-      MatFDColoringSetFunction(fdcoloring,(PetscErrorCode (*)())FormFunctionForColoring,this);
+      MatFDColoringSetFunction(
+          fdcoloring, reinterpret_cast<PetscErrorCode(*)()>(FormFunctionForColoring),
+          this);
       MatFDColoringSetFromOptions(fdcoloring);
       //MatFDColoringSetUp(Jmf,iscoloring,fdcoloring);
       
@@ -734,7 +736,7 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
     output<<"PC Type : "<<pctype<<endl;
   }
 
-};
+}
 
 int IMEXBDF2::run() {
   TRACE("IMEXBDF2::run()");
@@ -1125,7 +1127,7 @@ void IMEXBDF2::shuffleState(){
   //here we say lets just use the same timestep as last time by default.
   //That way we only need to fiddle with timesteps if we're adapting.
   timesteps[0] = timesteps[1];
-};
+}
 
 /*
  * Solves u - gamma*G(u) = rhs

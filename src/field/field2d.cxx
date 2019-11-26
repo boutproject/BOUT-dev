@@ -125,10 +125,10 @@ Field2D* Field2D::timeDeriv() {
 
 const Region<Ind2D> &Field2D::getRegion(REGION region) const {
   return fieldmesh->getRegion2D(toString(region));
-};
+}
 const Region<Ind2D> &Field2D::getRegion(const std::string &region_name) const {
   return fieldmesh->getRegion2D(region_name);
-};
+}
 
 // Not in header because we need to access fieldmesh
 BoutReal& Field2D::operator[](const Ind3D &d) {

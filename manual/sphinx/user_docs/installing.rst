@@ -120,7 +120,7 @@ Installing dependencies
 
 The bare-minimum requirements for compiling and running BOUT++ are:
 
-#. A C++ compiler that supports C++11
+#. A C++ compiler that supports C++14
 
 #. An MPI compiler such as OpenMPI (`www.open-mpi.org/ <www.open-mpi.org/>`__),
    MPICH ( `https://www.mpich.org/ <https://www.mpich.org/>`__) or
@@ -132,7 +132,7 @@ The FFTW-3 library ( `http://www.fftw.org/ <http://www.fftw.org/>`__ ) is also s
 
 .. note::
    If you use an Intel compiler, you must also make sure that you have
-   a version of GCC that supports C++11 (GCC 4.8+).
+   a version of GCC that supports C++14 (GCC 5+).
 
    On supercomputers, or in other environments that use a module
    system, you may need to load modules for both Intel and GCC.
@@ -167,6 +167,9 @@ MPICH2 and the needed libraries by running::
     $ sudo apt-get install mpich2 libmpich2-dev
     $ sudo apt-get install libfftw3-dev libnetcdf-dev libnetcdf-cxx-legacy-dev
 
+On Ubuntu 16.04::
+
+    $ sudo apt-get libmpich-dev libfftw3-dev libnetcdf-dev libnetcdf-cxx-legacy-dev
 
 On Ubuntu 18.04::
 

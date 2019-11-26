@@ -89,6 +89,21 @@ int Mesh::get(BoutReal& rval, const std::string& name, BoutReal def) {
   return !source->get(this, rval, name, def);
 }
 
+int Mesh::get(bool &bval, const std::string &name, bool def) {
+  TRACE("Mesh::get(bval, %s)", name.c_str());
+
+  if (source == nullptr) {
+    warn_default_used(def, name);
+    bval = def;
+    return true;
+  }
+
+  int bval_as_int = 0;
+  bool success = source->get(this, bval_as_int, name, def);
+  bval = bool(bval_as_int);
+  return !success;
+}
+
 int Mesh::get(Field2D &var, const std::string &name, BoutReal def) {
   TRACE("Loading 2D field: Mesh::get(Field2D, %s)", name.c_str());
 
@@ -193,6 +208,10 @@ int Mesh::get(Vector3D &var, const std::string &name, BoutReal def) {
   }
 
   return 0;
+}
+
+bool Mesh::isDataSourceGridFile() const {
+  return source != nullptr and source->is_file;
 }
 
 bool Mesh::sourceHasVar(const std::string &name) {
@@ -326,15 +345,19 @@ int Mesh::localSize3D() {
     const int ny = yend - ystart + 1;
     const int nz = LocalNz;
     localNumCells3D = nx * ny * nz;
-    for(RangeIterator it=iterateBndryLowerY(); !it.isDone(); it++) {
-      if (it.ind == xstart) localNumCells3D += nz * ystart;
-      if (it.ind == xend) localNumCells3D += nz * ystart;
-      localNumCells3D += nz * ystart;
+    for (RangeIterator it = iterateBndryLowerY(); !it.isDone(); it++) {
+      if (it.ind == xstart)
+        localNumCells3D += nz;
+      if (it.ind == xend)
+        localNumCells3D += nz;
+      localNumCells3D += nz;
     }
-    for(RangeIterator it=iterateBndryUpperY(); !it.isDone(); it++) {
-      if (it.ind == xstart) localNumCells3D += nz * ystart;
-      if (it.ind == xend) localNumCells3D += nz * ystart;
-      localNumCells3D += nz * ystart;
+    for (RangeIterator it = iterateBndryUpperY(); !it.isDone(); it++) {
+      if (it.ind == xstart)
+        localNumCells3D += nz;
+      if (it.ind == xend)
+        localNumCells3D += nz;
+      localNumCells3D += nz;
     }
   }
   return localNumCells3D;
@@ -347,15 +370,19 @@ int Mesh::localSize2D() {
     const int nx = xe - xs;
     const int ny = yend - ystart + 1;
     localNumCells2D = nx * ny;
-    for(RangeIterator it=iterateBndryLowerY(); !it.isDone(); it++) {
-      if (it.ind == xstart) localNumCells2D += ystart;
-      if (it.ind == xend) localNumCells2D += ystart;
-      localNumCells2D += ystart;
+    for (RangeIterator it = iterateBndryLowerY(); !it.isDone(); it++) {
+      if (it.ind == xstart)
+        localNumCells2D += 1;
+      if (it.ind == xend)
+        localNumCells2D += 1;
+      localNumCells2D += 1;
     }
-    for(RangeIterator it=iterateBndryUpperY(); !it.isDone(); it++) {
-      if (it.ind == xstart) localNumCells2D += ystart;
-      if (it.ind == xend) localNumCells2D += ystart;
-      localNumCells2D += ystart;
+    for (RangeIterator it = iterateBndryUpperY(); !it.isDone(); it++) {
+      if (it.ind == xstart)
+        localNumCells2D += 1;
+      if (it.ind == xend)
+        localNumCells2D += 1;
+      localNumCells2D += 1;
     }
   }
   return localNumCells2D;
