@@ -48,6 +48,7 @@ class Mesh;
 #include <bout/deprecated.hxx>
 #include <bout/deriv_store.hxx>
 #include <bout/index_derivs_interface.hxx>
+#include <bout/mpi_wrapper.hxx>
 
 #include "field_data.hxx"
 #include "bout_types.hxx"
@@ -70,10 +71,34 @@ class Mesh;
 #include "unused.hxx"
 
 #include <bout/region.hxx>
+#include "bout/generic_factory.hxx"
 
 #include <list>
 #include <memory>
 #include <map>
+
+class MeshFactory : public Factory<
+  Mesh, MeshFactory,
+  std::function<std::unique_ptr<Mesh>(GridDataSource*, Options*)>> {
+public:
+  static constexpr auto type_name = "Mesh";
+  static constexpr auto section_name = "mesh";
+  static constexpr auto option_name = "type";
+  static constexpr auto default_type = "bout";
+
+  ReturnType create(Options* options = nullptr, GridDataSource* source = nullptr);
+};
+
+template <class DerivedType>
+class RegisterMesh {
+public:
+  RegisterMesh(const std::string& name) {
+    MeshFactory::getInstance().add(
+        name, [](GridDataSource* source, Options* options) -> std::unique_ptr<Mesh> {
+          return std::make_unique<DerivedType>(source, options);
+        });
+  }
+};
 
 /// Type used to return pointers to handles
 using comm_handle = void*;
@@ -948,7 +973,10 @@ protected:
   
   /// Initialise derivatives
   void derivs_init(Options* options);
-  
+
+  /// Pointer to the global MPI wrapper, for convenience
+  MpiWrapper* mpi = nullptr;
+
 private:
 
   /// Allocates default Coordinates objects

@@ -50,13 +50,13 @@ private:
   bool include_jpar0;
   int jpar_bndry;
 
-  InvertPar *inv; // Parallel inversion class used in preconditioner
+  std::unique_ptr<InvertPar> inv{nullptr}; // Parallel inversion class used in preconditioner
 
   // Coordinate system metric
   Coordinates *coord;
 
   // Inverts a Laplacian to get potential
-  Laplacian *phiSolver;
+  std::unique_ptr<Laplacian> phiSolver{nullptr};
   
 protected:
   int init(bool UNUSED(restarting)) override {

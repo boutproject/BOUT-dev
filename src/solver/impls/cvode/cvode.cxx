@@ -149,7 +149,8 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
 
   // Get total problem size
   int neq;
-  if (MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
+  if (bout::globals::mpi->MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM,
+                                        BoutComm::get())) {
     throw BoutException("Allreduce localN -> GlobalN failed!\n");
   }
 
@@ -443,7 +444,7 @@ int CvodeSolver::run() {
 BoutReal CvodeSolver::run(BoutReal tout) {
   TRACE("Running solver: solver::run(%e)", tout);
 
-  MPI_Barrier(BoutComm::get());
+  bout::globals::mpi->MPI_Barrier(BoutComm::get());
 
   pre_Wtime = 0.0;
   pre_ncalls = 0;
@@ -516,7 +517,7 @@ void CvodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* udat
                       BoutReal* rvec, BoutReal* zvec) {
   TRACE("Running preconditioner: CvodeSolver::pre(%e)", t);
 
-  BoutReal tstart = MPI_Wtime();
+  BoutReal tstart = bout::globals::mpi->MPI_Wtime();
 
   int N = NV_LOCLENGTH_P(uvec);
 
@@ -538,7 +539,7 @@ void CvodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* udat
   // Save the solution from F_vars
   save_derivs(zvec);
 
-  pre_Wtime += MPI_Wtime() - tstart;
+  pre_Wtime += bout::globals::mpi->MPI_Wtime() - tstart;
   pre_ncalls++;
 }
 

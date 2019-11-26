@@ -64,6 +64,8 @@ If you want the old setting, you have to specify mesh:symmetricGlobalY=false in 
   comm_inner = MPI_COMM_NULL;
   comm_middle = MPI_COMM_NULL;
   comm_outer = MPI_COMM_NULL;
+
+  mpi = bout::globals::mpi;
 }
 
 BoutMesh::~BoutMesh() {
@@ -905,14 +907,14 @@ void BoutMesh::post_receive(CommHandle &ch) {
   len = 0;
   if (UDATA_INDEST != -1) {
     len = msg_len(ch.var_list.get(), 0, UDATA_XSPLIT, 0, MYG);
-    MPI_Irecv(std::begin(ch.umsg_recvbuff), len, PVEC_REAL_MPI_TYPE, UDATA_INDEST,
-              IN_SENT_DOWN, BoutComm::get(), &ch.request[0]);
+    mpi->MPI_Irecv(std::begin(ch.umsg_recvbuff), len, PVEC_REAL_MPI_TYPE, UDATA_INDEST,
+                   IN_SENT_DOWN, BoutComm::get(), &ch.request[0]);
   }
   if (UDATA_OUTDEST != -1) {
     inbuff = &ch.umsg_recvbuff[len]; // pointer to second half of the buffer
-    MPI_Irecv(inbuff, msg_len(ch.var_list.get(), UDATA_XSPLIT, LocalNx, 0, MYG),
-              PVEC_REAL_MPI_TYPE, UDATA_OUTDEST, OUT_SENT_DOWN, BoutComm::get(),
-              &ch.request[1]);
+    mpi->MPI_Irecv(inbuff, msg_len(ch.var_list.get(), UDATA_XSPLIT, LocalNx, 0, MYG),
+                   PVEC_REAL_MPI_TYPE, UDATA_OUTDEST, OUT_SENT_DOWN, BoutComm::get(),
+                   &ch.request[1]);
   }
 
   /// Post receive data from below (y-1)
@@ -921,30 +923,30 @@ void BoutMesh::post_receive(CommHandle &ch) {
 
   if (DDATA_INDEST != -1) { // If sending & recieving data from a processor
     len = msg_len(ch.var_list.get(), 0, DDATA_XSPLIT, 0, MYG);
-    MPI_Irecv(std::begin(ch.dmsg_recvbuff), len, PVEC_REAL_MPI_TYPE, DDATA_INDEST,
-              IN_SENT_UP, BoutComm::get(), &ch.request[2]);
+    mpi->MPI_Irecv(std::begin(ch.dmsg_recvbuff), len, PVEC_REAL_MPI_TYPE, DDATA_INDEST,
+                   IN_SENT_UP, BoutComm::get(), &ch.request[2]);
   }
   if (DDATA_OUTDEST != -1) {
     inbuff = &ch.dmsg_recvbuff[len];
-    MPI_Irecv(inbuff, msg_len(ch.var_list.get(), DDATA_XSPLIT, LocalNx, 0, MYG),
-              PVEC_REAL_MPI_TYPE, DDATA_OUTDEST, OUT_SENT_UP, BoutComm::get(),
-              &ch.request[3]);
+    mpi->MPI_Irecv(inbuff, msg_len(ch.var_list.get(), DDATA_XSPLIT, LocalNx, 0, MYG),
+                   PVEC_REAL_MPI_TYPE, DDATA_OUTDEST, OUT_SENT_UP, BoutComm::get(),
+                   &ch.request[3]);
   }
 
   /// Post receive data from left (x-1)
 
   if (IDATA_DEST != -1) {
-    MPI_Irecv(std::begin(ch.imsg_recvbuff), msg_len(ch.var_list.get(), 0, MXG, 0, MYSUB),
-              PVEC_REAL_MPI_TYPE, IDATA_DEST, OUT_SENT_IN, BoutComm::get(),
-              &ch.request[4]);
+    mpi->MPI_Irecv(std::begin(ch.imsg_recvbuff),
+                   msg_len(ch.var_list.get(), 0, MXG, 0, MYSUB), PVEC_REAL_MPI_TYPE,
+                   IDATA_DEST, OUT_SENT_IN, BoutComm::get(), &ch.request[4]);
   }
 
   // Post receive data from right (x+1)
 
   if (ODATA_DEST != -1) {
-    MPI_Irecv(std::begin(ch.omsg_recvbuff), msg_len(ch.var_list.get(), 0, MXG, 0, MYSUB),
-              PVEC_REAL_MPI_TYPE, ODATA_DEST, IN_SENT_OUT, BoutComm::get(),
-              &ch.request[5]);
+    mpi->MPI_Irecv(std::begin(ch.omsg_recvbuff),
+                   msg_len(ch.var_list.get(), 0, MXG, 0, MYSUB), PVEC_REAL_MPI_TYPE,
+                   ODATA_DEST, IN_SENT_OUT, BoutComm::get(), &ch.request[5]);
   }
 }
 
@@ -976,15 +978,15 @@ comm_handle BoutMesh::send(FieldGroup &g) {
     // Send the data to processor UDATA_INDEST
 
     if (async_send) {
-      MPI_Isend(std::begin(ch->umsg_sendbuff), // Buffer to send
-                len,                           // Length of buffer in BoutReals
-                PVEC_REAL_MPI_TYPE,            // Real variable type
-                UDATA_INDEST,                  // Destination processor
-                IN_SENT_UP,                    // Label (tag) for the message
-                BoutComm::get(), &(ch->sendreq[0]));
+      mpi->MPI_Isend(std::begin(ch->umsg_sendbuff), // Buffer to send
+                     len,                           // Length of buffer in BoutReals
+                     PVEC_REAL_MPI_TYPE,            // Real variable type
+                     UDATA_INDEST,                  // Destination processor
+                     IN_SENT_UP,                    // Label (tag) for the message
+                     BoutComm::get(), &(ch->sendreq[0]));
     } else
-      MPI_Send(std::begin(ch->umsg_sendbuff), len, PVEC_REAL_MPI_TYPE, UDATA_INDEST,
-               IN_SENT_UP, BoutComm::get());
+      mpi->MPI_Send(std::begin(ch->umsg_sendbuff), len, PVEC_REAL_MPI_TYPE, UDATA_INDEST,
+                    IN_SENT_UP, BoutComm::get());
   }
   if (UDATA_OUTDEST != -1) {             // if destination for outer x data
     outbuff = &(ch->umsg_sendbuff[len]); // A pointer to the start of the second part
@@ -993,11 +995,11 @@ comm_handle BoutMesh::send(FieldGroup &g) {
         pack_data(ch->var_list.get(), UDATA_XSPLIT, LocalNx, MYSUB, MYSUB + MYG, outbuff);
     // Send the data to processor UDATA_OUTDEST
     if (async_send) {
-      MPI_Isend(outbuff, len, PVEC_REAL_MPI_TYPE, UDATA_OUTDEST, OUT_SENT_UP,
-                BoutComm::get(), &(ch->sendreq[1]));
+      mpi->MPI_Isend(outbuff, len, PVEC_REAL_MPI_TYPE, UDATA_OUTDEST, OUT_SENT_UP,
+                     BoutComm::get(), &(ch->sendreq[1]));
     } else
-      MPI_Send(outbuff, len, PVEC_REAL_MPI_TYPE, UDATA_OUTDEST, OUT_SENT_UP,
-               BoutComm::get());
+      mpi->MPI_Send(outbuff, len, PVEC_REAL_MPI_TYPE, UDATA_OUTDEST, OUT_SENT_UP,
+                    BoutComm::get());
   }
 
   /// Send data going down (y-1)
@@ -1008,11 +1010,11 @@ comm_handle BoutMesh::send(FieldGroup &g) {
                     std::begin(ch->dmsg_sendbuff));
     // Send the data to processor DDATA_INDEST
     if (async_send) {
-      MPI_Isend(std::begin(ch->dmsg_sendbuff), len, PVEC_REAL_MPI_TYPE, DDATA_INDEST,
-                IN_SENT_DOWN, BoutComm::get(), &(ch->sendreq[2]));
+      mpi->MPI_Isend(std::begin(ch->dmsg_sendbuff), len, PVEC_REAL_MPI_TYPE, DDATA_INDEST,
+                     IN_SENT_DOWN, BoutComm::get(), &(ch->sendreq[2]));
     } else
-      MPI_Send(std::begin(ch->dmsg_sendbuff), len, PVEC_REAL_MPI_TYPE, DDATA_INDEST,
-               IN_SENT_DOWN, BoutComm::get());
+      mpi->MPI_Send(std::begin(ch->dmsg_sendbuff), len, PVEC_REAL_MPI_TYPE, DDATA_INDEST,
+                    IN_SENT_DOWN, BoutComm::get());
   }
   if (DDATA_OUTDEST != -1) {             // if destination for outer x data
     outbuff = &(ch->dmsg_sendbuff[len]); // A pointer to the start of the second part
@@ -1021,11 +1023,11 @@ comm_handle BoutMesh::send(FieldGroup &g) {
     // Send the data to processor DDATA_OUTDEST
 
     if (async_send) {
-      MPI_Isend(outbuff, len, PVEC_REAL_MPI_TYPE, DDATA_OUTDEST, OUT_SENT_DOWN,
-                BoutComm::get(), &(ch->sendreq[3]));
+      mpi->MPI_Isend(outbuff, len, PVEC_REAL_MPI_TYPE, DDATA_OUTDEST, OUT_SENT_DOWN,
+                     BoutComm::get(), &(ch->sendreq[3]));
     } else
-      MPI_Send(outbuff, len, PVEC_REAL_MPI_TYPE, DDATA_OUTDEST, OUT_SENT_DOWN,
-               BoutComm::get());
+      mpi->MPI_Send(outbuff, len, PVEC_REAL_MPI_TYPE, DDATA_OUTDEST, OUT_SENT_DOWN,
+                    BoutComm::get());
   }
 
   /// Send to the left (x-1)
@@ -1034,11 +1036,11 @@ comm_handle BoutMesh::send(FieldGroup &g) {
     len = pack_data(ch->var_list.get(), MXG, 2 * MXG, MYG, MYG + MYSUB,
                     std::begin(ch->imsg_sendbuff));
     if (async_send) {
-      MPI_Isend(std::begin(ch->imsg_sendbuff), len, PVEC_REAL_MPI_TYPE, IDATA_DEST,
-                IN_SENT_OUT, BoutComm::get(), &(ch->sendreq[4]));
+      mpi->MPI_Isend(std::begin(ch->imsg_sendbuff), len, PVEC_REAL_MPI_TYPE, IDATA_DEST,
+                     IN_SENT_OUT, BoutComm::get(), &(ch->sendreq[4]));
     } else
-      MPI_Send(std::begin(ch->imsg_sendbuff), len, PVEC_REAL_MPI_TYPE, IDATA_DEST,
-               IN_SENT_OUT, BoutComm::get());
+      mpi->MPI_Send(std::begin(ch->imsg_sendbuff), len, PVEC_REAL_MPI_TYPE, IDATA_DEST,
+                    IN_SENT_OUT, BoutComm::get());
   }
 
   /// Send to the right (x+1)
@@ -1047,11 +1049,11 @@ comm_handle BoutMesh::send(FieldGroup &g) {
     len = pack_data(ch->var_list.get(), MXSUB, MXSUB + MXG, MYG, MYG + MYSUB,
                     std::begin(ch->omsg_sendbuff));
     if (async_send) {
-      MPI_Isend(std::begin(ch->omsg_sendbuff), len, PVEC_REAL_MPI_TYPE, ODATA_DEST,
-                OUT_SENT_IN, BoutComm::get(), &(ch->sendreq[5]));
+      mpi->MPI_Isend(std::begin(ch->omsg_sendbuff), len, PVEC_REAL_MPI_TYPE, ODATA_DEST,
+                     OUT_SENT_IN, BoutComm::get(), &(ch->sendreq[5]));
     } else
-      MPI_Send(std::begin(ch->omsg_sendbuff), len, PVEC_REAL_MPI_TYPE, ODATA_DEST,
-               OUT_SENT_IN, BoutComm::get());
+      mpi->MPI_Send(std::begin(ch->omsg_sendbuff), len, PVEC_REAL_MPI_TYPE, ODATA_DEST,
+                    OUT_SENT_IN, BoutComm::get());
   }
 
   /// Mark communication handle as in progress
@@ -1082,14 +1084,14 @@ int BoutMesh::wait(comm_handle handle) {
   if (ch->var_list.size() == 0) {
 
     // Just waiting for a single MPI request
-    MPI_Wait(ch->request, &status);
+    mpi->MPI_Wait(ch->request, &status);
     free_handle(ch);
 
     return 0;
   }
 
   do {
-    MPI_Waitany(6, ch->request, &ind, &status);
+    mpi->MPI_Waitany(6, ch->request, &ind, &status);
     switch (ind) {
     case 0: { // Up, inner
       unpack_data(ch->var_list.get(), 0, UDATA_XSPLIT, MYSUB + MYG, MYSUB + 2 * MYG,
@@ -1133,17 +1135,17 @@ int BoutMesh::wait(comm_handle handle) {
     MPI_Status async_status;
 
     if (UDATA_INDEST != -1)
-      MPI_Wait(ch->sendreq, &async_status);
+      mpi->MPI_Wait(ch->sendreq, &async_status);
     if (UDATA_OUTDEST != -1)
-      MPI_Wait(ch->sendreq + 1, &async_status);
+      mpi->MPI_Wait(ch->sendreq + 1, &async_status);
     if (DDATA_INDEST != -1)
-      MPI_Wait(ch->sendreq + 2, &async_status);
+      mpi->MPI_Wait(ch->sendreq + 2, &async_status);
     if (DDATA_OUTDEST != -1)
-      MPI_Wait(ch->sendreq + 3, &async_status);
+      mpi->MPI_Wait(ch->sendreq + 3, &async_status);
     if (IDATA_DEST != -1)
-      MPI_Wait(ch->sendreq + 4, &async_status);
+      mpi->MPI_Wait(ch->sendreq + 4, &async_status);
     if (ODATA_DEST != -1)
-      MPI_Wait(ch->sendreq + 5, &async_status);
+      mpi->MPI_Wait(ch->sendreq + 5, &async_status);
   }
 
   // TWIST-SHIFT CONDITION
@@ -1207,8 +1209,8 @@ MPI_Request BoutMesh::sendToProc(int xproc, int yproc, BoutReal *buffer, int siz
 
   MPI_Request request;
 
-  MPI_Isend(buffer, size, PVEC_REAL_MPI_TYPE, PROC_NUM(xproc, yproc), tag,
-            BoutComm::get(), &request);
+  mpi->MPI_Isend(buffer, size, PVEC_REAL_MPI_TYPE, PROC_NUM(xproc, yproc), tag,
+                 BoutComm::get(), &request);
 
   return request;
 }
@@ -1220,8 +1222,8 @@ comm_handle BoutMesh::receiveFromProc(int xproc, int yproc, BoutReal *buffer, in
   // Get a communications handle. Not fussy about size of arrays
   CommHandle *ch = get_handle(0, 0);
 
-  MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, PROC_NUM(xproc, yproc), tag,
-            BoutComm::get(), ch->request);
+  mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, PROC_NUM(xproc, yproc), tag,
+                 BoutComm::get(), ch->request);
 
   ch->in_progress = true;
 
@@ -1252,8 +1254,8 @@ int BoutMesh::sendXOut(BoutReal *buffer, int size, int tag) {
 
   Timer timer("comms");
 
-  MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, PROC_NUM(PE_XIND + 1, PE_YIND), tag,
-           BoutComm::get());
+  mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, PROC_NUM(PE_XIND + 1, PE_YIND), tag,
+                BoutComm::get());
 
   return 0;
 }
@@ -1264,8 +1266,8 @@ int BoutMesh::sendXIn(BoutReal *buffer, int size, int tag) {
 
   Timer timer("comms");
 
-  MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, PROC_NUM(PE_XIND - 1, PE_YIND), tag,
-           BoutComm::get());
+  mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, PROC_NUM(PE_XIND - 1, PE_YIND), tag,
+                BoutComm::get());
 
   return 0;
 }
@@ -1279,8 +1281,8 @@ comm_handle BoutMesh::irecvXOut(BoutReal *buffer, int size, int tag) {
   // Get a communications handle. Not fussy about size of arrays
   CommHandle *ch = get_handle(0, 0);
 
-  MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, PROC_NUM(PE_XIND + 1, PE_YIND), tag,
-            BoutComm::get(), ch->request);
+  mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, PROC_NUM(PE_XIND + 1, PE_YIND), tag,
+                 BoutComm::get(), ch->request);
 
   ch->in_progress = true;
 
@@ -1296,8 +1298,8 @@ comm_handle BoutMesh::irecvXIn(BoutReal *buffer, int size, int tag) {
   // Get a communications handle. Not fussy about size of arrays
   CommHandle *ch = get_handle(0, 0);
 
-  MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, PROC_NUM(PE_XIND - 1, PE_YIND), tag,
-            BoutComm::get(), ch->request);
+  mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, PROC_NUM(PE_XIND - 1, PE_YIND), tag,
+                 BoutComm::get(), ch->request);
 
   ch->in_progress = true;
 
@@ -1357,7 +1359,7 @@ int BoutMesh::sendYOutIndest(BoutReal *buffer, int size, int tag) {
   Timer timer("comms");
 
   if (UDATA_INDEST != -1)
-    MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, UDATA_INDEST, tag, BoutComm::get());
+    mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, UDATA_INDEST, tag, BoutComm::get());
   else
     throw BoutException("Expected UDATA_INDEST to exist, but it does not.");
   return 0;
@@ -1370,7 +1372,7 @@ int BoutMesh::sendYOutOutdest(BoutReal *buffer, int size, int tag) {
   Timer timer("comms");
 
   if (UDATA_OUTDEST != -1)
-    MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, UDATA_OUTDEST, tag, BoutComm::get());
+    mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, UDATA_OUTDEST, tag, BoutComm::get());
   else
     throw BoutException("Expected UDATA_OUTDEST to exist, but it does not.");
 
@@ -1384,7 +1386,7 @@ int BoutMesh::sendYInIndest(BoutReal *buffer, int size, int tag) {
   Timer timer("comms");
 
   if (DDATA_INDEST != -1)
-    MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, DDATA_INDEST, tag, BoutComm::get());
+    mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, DDATA_INDEST, tag, BoutComm::get());
   else
     throw BoutException("Expected DDATA_INDEST to exist, but it does not.");
 
@@ -1398,7 +1400,7 @@ int BoutMesh::sendYInOutdest(BoutReal *buffer, int size, int tag) {
   Timer timer("comms");
 
   if (DDATA_OUTDEST != -1)
-    MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, DDATA_OUTDEST, tag, BoutComm::get());
+    mpi->MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, DDATA_OUTDEST, tag, BoutComm::get());
   else
     throw BoutException("Expected DDATA_OUTDEST to exist, but it does not.");
 
@@ -1415,8 +1417,8 @@ comm_handle BoutMesh::irecvYOutIndest(BoutReal *buffer, int size, int tag) {
   CommHandle *ch = get_handle(0, 0);
 
   if (UDATA_INDEST != -1)
-    MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, UDATA_INDEST, tag, BoutComm::get(),
-              ch->request);
+    mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, UDATA_INDEST, tag, BoutComm::get(),
+                   ch->request);
   else
     throw BoutException("Expected UDATA_INDEST to exist, but it does not.");
 
@@ -1435,8 +1437,8 @@ comm_handle BoutMesh::irecvYOutOutdest(BoutReal *buffer, int size, int tag) {
   CommHandle *ch = get_handle(0, 0);
 
   if (UDATA_OUTDEST != -1)
-    MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, UDATA_OUTDEST, tag, BoutComm::get(),
-              ch->request);
+    mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, UDATA_OUTDEST, tag, BoutComm::get(),
+                   ch->request);
   else
     throw BoutException("Expected UDATA_OUTDEST to exist, but it does not.");
 
@@ -1455,8 +1457,8 @@ comm_handle BoutMesh::irecvYInIndest(BoutReal *buffer, int size, int tag) {
   CommHandle *ch = get_handle(0, 0);
 
   if (DDATA_INDEST != -1)
-    MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, DDATA_INDEST, tag, BoutComm::get(),
-              ch->request);
+    mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, DDATA_INDEST, tag, BoutComm::get(),
+                   ch->request);
   else
     throw BoutException("Expected DDATA_INDEST to exist, but it does not.");
 
@@ -1475,8 +1477,8 @@ comm_handle BoutMesh::irecvYInOutdest(BoutReal *buffer, int size, int tag) {
   CommHandle *ch = get_handle(0, 0);
 
   if (DDATA_OUTDEST != -1)
-    MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, DDATA_OUTDEST, tag, BoutComm::get(),
-              ch->request);
+    mpi->MPI_Irecv(buffer, size, PVEC_REAL_MPI_TYPE, DDATA_OUTDEST, tag, BoutComm::get(),
+                   ch->request);
   else
     throw BoutException("Expected DDATA_OUTDEST to exist, but it does not.");
 

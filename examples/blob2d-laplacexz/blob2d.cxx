@@ -30,7 +30,7 @@ private:
   bool compressible; // If allow inclusion of n grad phi term in density evolution
   bool sheath;       // Sheath connected?
 
-  LaplaceXZ *phiSolver;
+  std::unique_ptr<LaplaceXZ> phiSolver{nullptr};
 
   int boussinesq_reuse; // Determines how long between updates of the density in the
                         // vorticity

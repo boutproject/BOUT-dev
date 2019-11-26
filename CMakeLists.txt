@@ -73,6 +73,7 @@ set(BOUT_SOURCES
   ./include/bout/macro_for_each.hxx
   ./include/bout/mesh.hxx
   ./include/bout/monitor.hxx
+  ./include/bout/mpi_wrapper.hxx
   ./include/bout/openmpwrap.hxx
   ./include/bout/paralleltransform.hxx
   ./include/bout/petsclib.hxx
@@ -83,8 +84,8 @@ set(BOUT_SOURCES
   ./include/bout/rvec.hxx
   ./include/bout/scorepwrapper.hxx
   ./include/bout/slepclib.hxx
+  ./include/bout/snb.hxx
   ./include/bout/solver.hxx
-  ./include/bout/solverfactory.hxx
   ./include/bout/surfaceiter.hxx
   ./include/bout/operatorstencil.hxx
   ./include/bout/sys/expressionparser.hxx
@@ -116,7 +117,6 @@ set(BOUT_SOURCES
   ./include/gyro_average.hxx
   ./include/initialprofiles.hxx
   ./include/interpolation.hxx
-  ./include/interpolation_factory.hxx
   ./include/invert_laplace.hxx
   ./include/invert_parderiv.hxx
   ./include/lapack_routines.hxx
@@ -199,8 +199,6 @@ set(BOUT_SOURCES
   ./src/invert/laplace/impls/spt/spt.cxx
   ./src/invert/laplace/impls/spt/spt.hxx
   ./src/invert/laplace/invert_laplace.cxx
-  ./src/invert/laplace/laplacefactory.cxx
-  ./src/invert/laplace/laplacefactory.hxx
   ./src/invert/laplacexy/laplacexy.cxx
   ./src/invert/laplacexz/impls/cyclic/laplacexz-cyclic.cxx
   ./src/invert/laplacexz/impls/cyclic/laplacexz-cyclic.hxx
@@ -210,8 +208,6 @@ set(BOUT_SOURCES
   ./src/invert/parderiv/impls/cyclic/cyclic.cxx
   ./src/invert/parderiv/impls/cyclic/cyclic.hxx
   ./src/invert/parderiv/invert_parderiv.cxx
-  ./src/invert/parderiv/parderiv_factory.cxx
-  ./src/invert/parderiv/parderiv_factory.hxx
   ./src/mesh/boundary_factory.cxx
   ./src/mesh/boundary_region.cxx
   ./src/mesh/boundary_standard.cxx
@@ -227,12 +223,9 @@ set(BOUT_SOURCES
   ./src/mesh/interpolation/bilinear.cxx
   ./src/mesh/interpolation/hermite_spline.cxx
   ./src/mesh/interpolation/hermite_spline_only_z.cxx
-  ./src/mesh/interpolation/interpolation_factory.cxx
   ./src/mesh/interpolation/lagrange_4pt.cxx
   ./src/mesh/interpolation/monotonic_hermite_spline.cxx
   ./src/mesh/mesh.cxx
-  ./src/mesh/meshfactory.cxx
-  ./src/mesh/meshfactory.hxx
   ./src/mesh/parallel/fci.cxx
   ./src/mesh/parallel/fci.hxx
   ./src/mesh/parallel/identity.cxx
@@ -244,6 +237,7 @@ set(BOUT_SOURCES
   ./src/physics/gyro_average.cxx
   ./src/physics/physicsmodel.cxx
   ./src/physics/smoothing.cxx
+  ./src/physics/snb.cxx
   ./src/physics/sourcex.cxx
   ./src/solver/impls/arkode/arkode.cxx
   ./src/solver/impls/arkode/arkode.hxx
@@ -278,8 +272,6 @@ set(BOUT_SOURCES
   ./src/solver/impls/rkgeneric/rkgeneric.cxx
   ./src/solver/impls/rkgeneric/rkgeneric.hxx
   ./src/solver/impls/rkgeneric/rkscheme.cxx
-  ./src/solver/impls/rkgeneric/rkschemefactory.cxx
-  ./src/solver/impls/rkgeneric/rkschemefactory.hxx
   ./src/solver/impls/slepc/slepc.cxx
   ./src/solver/impls/slepc/slepc.hxx
   ./src/solver/impls/snes/snes.cxx
@@ -287,7 +279,6 @@ set(BOUT_SOURCES
   ./src/solver/impls/split-rk/split-rk.cxx
   ./src/solver/impls/split-rk/split-rk.hxx
   ./src/solver/solver.cxx
-  ./src/solver/solverfactory.cxx
   ./src/sys/bout_types.cxx
   ./src/sys/boutcomm.cxx
   ./src/sys/boutexception.cxx
@@ -349,7 +340,7 @@ endif()
 # Compile time features
 
 set(CHECK_LEVELS 0 1 2 3 4)
-set(CHECK 3 CACHE STRINGS "Set run-time checking level")
+set(CHECK 3 CACHE STRING "Set run-time checking level")
 set_property(CACHE CHECK PROPERTY STRINGS ${CHECK_LEVELS})
 if (NOT CHECK IN_LIST CHECK_LEVELS)
   message(FATAL_ERROR "CHECK must be one of ${CHECK_LEVELS}")
@@ -424,7 +415,7 @@ if (ENABLE_OPENMP)
   find_package(OpenMP REQUIRED)
   target_link_libraries(bout++ PUBLIC OpenMP::OpenMP_CXX)
   set(possible_openmp_schedules static dynamic guided auto)
-  set(OPENMP_SCHEDULE static CACHE STRINGS "Set OpenMP schedule")
+  set(OPENMP_SCHEDULE static CACHE STRING "Set OpenMP schedule")
   if (NOT OPENMP_SCHEDULE IN_LIST possible_openmp_schedules)
     message(FATAL_ERROR "OPENMP_SCHEDULE must be one of ${possible_openmp_schedules}")
   endif()
@@ -440,7 +431,7 @@ include(GetGitRevisionDescription)
 get_git_head_revision(GIT_REFSPEC GIT_SHA1)
 message(STATUS "Git revision: ${GIT_SHA1}")
 target_compile_definitions(bout++
-  PUBLIC "GIT_REVISION=${GIT_SHA1}")
+  PUBLIC "REVISION=${GIT_SHA1}")
 set(BOUT_GIT_REVISION ${GIT_SHA1})
 
 # Optional dependencies
@@ -576,16 +567,64 @@ if (HAS_PRETTY_FUNCTION)
     PUBLIC "BOUT_HAS_PRETTY_FUNCTION")
 endif()
 
+# We want to compile the actual flags used into the library so we can
+# see them at runtime. This needs a few steps:
+
+# 1. Get the macro definitions. They come as a ;-separated list and
+#    without the -D. We also need to also stick a -D on the front of
+#    the first item
+get_property(BOUT_COMPILE_DEFINITIONS
+  TARGET bout++
+  PROPERTY COMPILE_DEFINITIONS)
+string(REPLACE ";" " -D" BOUT_COMPILE_DEFINITIONS "${BOUT_COMPILE_DEFINITIONS}")
+string(CONCAT BOUT_COMPILE_DEFINITIONS " -D" "${BOUT_COMPILE_DEFINITIONS}")
+
+# 2. Get the compiler options. Again, they come as a ;-separated
+#    list. Note that they don't include optimisation or debug flags:
+#    they're in the CMAKE_CXX_FLAGS* variables
+get_property(BOUT_COMPILE_OPTIONS
+  TARGET bout++
+  PROPERTY COMPILE_OPTIONS)
+string(REPLACE ";" " " BOUT_COMPILE_OPTIONS "${BOUT_COMPILE_OPTIONS}")
+
+# 3. The optimisation and/or debug flags are in the CMAKE_CXX_FLAGS*
+#    variables. We need both the common flags as well as those for the
+#    build type actually being used. Note: this might behave weirdly
+#    on Windows. Might need to expand CMAKE_CONFIGURATION_TYPES
+#    instead?
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  set(CMAKE_BUILD_TYPE_UPPER "DEBUG")
+else()
+  string(TOUPPER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE_UPPER)
+endif()
+string(CONCAT BOUT_COMPILE_BUILD_FLAGS
+  " "
+  "${CMAKE_CXX_FLAGS}"
+  "${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE_UPPER}}")
+
+# 4. Now we join all the flags from the first three steps together
+string(CONCAT BOUT_FLAGS_STRING
+  "${BOUT_COMPILE_OPTIONS}"
+  "${BOUT_COMPILE_DEFINITIONS}"
+  "${BOUT_COMPILE_BUILD_FLAGS}")
+
+# 5. Finally actually add the flags as a define
+target_compile_definitions(bout++
+  PRIVATE BOUT_FLAGS_STRING=${BOUT_FLAGS_STRING})
+
+##################################################
+# Tests
+
 # Copy FILENAME from source directory to build directory
-# and add dependency on TARGET
-macro(bout_test_copy_file TARGET FILENAME)
-  add_custom_command(TARGET "${TARGET}" POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy
-    ${CMAKE_CURRENT_SOURCE_DIR}/"${FILENAME}"
-    ${CMAKE_CURRENT_BINARY_DIR}/"${FILENAME}")
+macro(bout_test_copy_file FILENAME)
+  configure_file(
+      ${CMAKE_CURRENT_SOURCE_DIR}/${FILENAME}
+      ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME}
+      COPYONLY)
 endmacro()
 
-# Add a new integrated test
+# Add a new integrated test. By default, the executable is named like
+# the first source, stripped of its file extension.
 #
 # Required arguments:
 #
@@ -603,11 +642,15 @@ endmacro()
 # - EXTRA_FILES: any extra files that are required to run the test
 #
 # - REQUIRES: list of variables that must be truthy to enable test
+#
+# - EXECUTABLE_NAME: name of the executable, if different from the
+#   first source name
 
 function(bout_add_integrated_test TESTNAME)
   set(options USE_RUNTEST USE_DATA_BOUT_INP)
+  set(oneValueArgs EXECUTABLE_NAME)
   set(multiValueArgs SOURCES EXTRA_FILES REQUIRES)
-  cmake_parse_arguments(BOUT_TEST_OPTIONS "${options}" "" "${multiValueArgs}" ${ARGN})
+  cmake_parse_arguments(BOUT_TEST_OPTIONS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
   foreach (REQUIREMENT IN LISTS BOUT_TEST_OPTIONS_REQUIRES)
     if (NOT ${REQUIREMENT})
@@ -620,28 +663,77 @@ function(bout_add_integrated_test TESTNAME)
   target_link_libraries(${TESTNAME} bout++)
   target_include_directories(${TESTNAME} PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 
+  # Set the name of the executable. We either take it as an option,
+  # or use the first source file, stripping the file suffix
+  if (BOUT_TEST_OPTIONS_EXECUTABLE_NAME)
+    set_target_properties(${TESTNAME} PROPERTIES OUTPUT_NAME ${BOUT_TEST_OPTIONS_EXECUTABLE_NAME})
+  else()
+    # If more than one source file, just get the first one
+    list(LENGTH ${BOUT_TEST_OPTIONS_SOURCES} BOUT_SOURCES_LENGTH)
+    if (BOUT_SOURCES_LENGTH GREATER 0)
+      list(GET ${BOUT_TEST_OPTIONS_SOURCES} 0 BOUT_TEST_FIRST_SOURCE)
+    else()
+      set(BOUT_TEST_FIRST_SOURCE ${BOUT_TEST_OPTIONS_SOURCES})
+    endif()
+    # Strip the directory and file extension from the source file
+    get_filename_component(BOUT_TEST_EXECUTABLE_NAME ${BOUT_TEST_FIRST_SOURCE} NAME_WE)
+    set_target_properties(${TESTNAME} PROPERTIES OUTPUT_NAME ${BOUT_TEST_EXECUTABLE_NAME})
+  endif()
+
+  # Set the actual test command
   if (BOUT_TEST_OPTIONS_USE_RUNTEST)
     add_test(NAME ${TESTNAME} COMMAND ./runtest)
-    bout_test_copy_file("${TESTNAME}" runtest)
+    bout_test_copy_file(runtest)
   else()
     add_test(NAME ${TESTNAME} COMMAND ${TESTNAME})
   endif()
+
+  # Copy the input file if needed
   if (BOUT_TEST_OPTIONS_USE_DATA_BOUT_INP)
-    bout_test_copy_file("${TESTNAME}" data/BOUT.inp)
+    bout_test_copy_file(data/BOUT.inp)
   endif()
+
+  # Copy any other needed files
   if (BOUT_TEST_OPTIONS_EXTRA_FILES)
     foreach (FILE ${BOUT_TEST_OPTIONS_EXTRA_FILES})
-      bout_test_copy_file("${TESTNAME}" "${FILE}")
+      bout_test_copy_file("${FILE}")
     endforeach()
   endif()
+
   set_target_properties(${TESTNAME} PROPERTIES FOLDER tests/integrated)
+
+  # Add the test to the build-check-integrated-tests target
+  add_dependencies(build-check-integrated-tests ${TESTNAME})
 endfunction()
 
 option(PACKAGE_TESTS "Build the tests" ON)
 if(PACKAGE_TESTS)
   enable_testing()
-  add_subdirectory(tests/unit)
-  add_subdirectory(tests/integrated)
+
+  # Targets for just building the tests
+  # Tests need to add themselves as dependencies to these targets
+  add_custom_target(build-check-unit-tests)
+  add_custom_target(build-check-integrated-tests)
+
+  # Build all the tests
+  add_custom_target(build-check)
+  add_dependencies(build-check build-check-unit-tests build-check-integrated-tests)
+
+  add_subdirectory(tests/unit EXCLUDE_FROM_ALL)
+  add_subdirectory(tests/integrated EXCLUDE_FROM_ALL)
+
+  # Targets for running the tests
+  add_custom_target(check-unit-tests
+    COMMAND ctest -R serial_tests --output-on-failure)
+  add_dependencies(check-unit-tests build-check-unit-tests)
+
+  add_custom_target(check-integrated-tests
+    COMMAND ctest -R "test-" --output-on-failure)
+  add_dependencies(check-integrated-tests build-check-integrated-tests)
+
+  # Run all the tests
+  add_custom_target(check)
+  add_dependencies(check check-unit-tests check-integrated-tests)
 endif()
 
 ##################################################

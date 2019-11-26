@@ -119,7 +119,8 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
 
   ierr = PetscLogEventBegin(init_event,0,0,0,0);CHKERRQ(ierr);
   output.write("Initialising PETSc-dev solver\n");
-  ierr = MPI_Comm_rank(comm, &rank);CHKERRQ(ierr);
+  ierr = bout::globals::mpi->MPI_Comm_rank(comm, &rank);
+  CHKERRQ(ierr);
 
   // Save NOUT and TIMESTEP for use later
   nout = NOUT;
@@ -128,7 +129,8 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   PetscInt local_N = getLocalN(); // Number of evolving variables on this processor
 
   /********** Get total problem size **********/
-  if(MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
+  if (bout::globals::mpi->MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM,
+                                        BoutComm::get())) {
     output_error.write("\tERROR: MPI_Allreduce failed!\n");
     ierr = PetscLogEventEnd(init_event,0,0,0,0);CHKERRQ(ierr);
     PetscFunctionReturn(1);
@@ -509,7 +511,7 @@ PetscErrorCode PetscSolver::run() {
 
   if(this->output_flag) {
     prev_linear_its = 0;
-    bout_snes_time = MPI_Wtime();
+    bout_snes_time = bout::globals::mpi->MPI_Wtime();
   }
 
   ierr = TSSolve(ts,u);CHKERRQ(ierr);
@@ -891,7 +893,7 @@ PetscErrorCode PetscSNESMonitor(SNES snes, PetscInt its, PetscReal norm, void *c
 
   if(!its) s->prev_linear_its = 0;
   ierr = SNESGetLinearSolveIterations(snes, &linear_its);CHKERRQ(ierr);
-  tmp = MPI_Wtime();
+  tmp = bout::globals::mpi->MPI_Wtime();
 
   row.it = its;
   s->prev_linear_its = row.linear_its = linear_its-s->prev_linear_its;

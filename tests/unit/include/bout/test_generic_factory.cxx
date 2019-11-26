@@ -8,26 +8,38 @@
 #include <string>
 #include <vector>
 
+class Options;
+
 class Base {
 public:
+  Base(Options*) {}
   virtual ~Base() = default;
   virtual std::string foo() { return "Base"; }
 };
 
 class Derived1 : public Base {
 public:
+  Derived1(Options*) : Base({}) {}
   std::string foo() override { return "Derived1"; }
 };
 
 class Derived2 : public Base {
 public:
+  Derived2(Options*) : Base({}) {}
   std::string foo() override { return "Derived2"; }
 };
 
 namespace {
-RegisterInFactory<Base, Base> registerme("base");
-RegisterInFactory<Base, Derived1> registerme1("derived1");
-RegisterInFactory<Base, Derived2> registerme2("derived2");
+class BaseFactory : public Factory<Base, BaseFactory> {
+public:
+  static constexpr auto type_name = "Base";
+  static constexpr auto section_name = "base";
+  static constexpr auto option_name = "type";
+  static constexpr auto default_type = "base";
+};
+RegisterInFactory<Base, Base, BaseFactory> registerme("base");
+RegisterInFactory<Base, Derived1, BaseFactory> registerme1("derived1");
+RegisterInFactory<Base, Derived2, BaseFactory> registerme2("derived2");
 } // namespace
 
 class BaseComplicated {
@@ -48,72 +60,81 @@ public:
   DerivedComplicated2(std::string name) : BaseComplicated(std::move(name)) {}
 };
 
-// Save some typing later
-using ComplicatedFactory =
-    Factory<BaseComplicated, std::function<BaseComplicated*(const std::string&)>>;
+class ComplicatedFactory
+    : public Factory<
+          BaseComplicated, ComplicatedFactory,
+          std::function<std::unique_ptr<BaseComplicated>(const std::string&)>> {
+public:
+  static constexpr auto type_name = "Complicated";
+  static constexpr auto section_name = "complicated";
+  static constexpr auto option_name = "type";
+  static constexpr auto default_type = "basecomplicated";
+};
 
 // We need to specialise the helper class to pass arguments to the constructor
 template<typename DerivedType>
-class RegisterInFactory<BaseComplicated, DerivedType> {
+class RegisterInFactory<BaseComplicated, DerivedType, ComplicatedFactory> {
 public:
-  RegisterInFactory(const std::string &name) {
+  RegisterInFactory(const std::string& name) {
     ComplicatedFactory::getInstance().add(
-        name, [](std::string name) -> BaseComplicated * { return new DerivedType(name); });
+        name, [](std::string name) -> std::unique_ptr<BaseComplicated> {
+          return std::make_unique<DerivedType>(name);
+        });
   }
 };
 
 namespace {
-RegisterInFactory<BaseComplicated, BaseComplicated>
+RegisterInFactory<BaseComplicated, BaseComplicated, ComplicatedFactory>
     registerme3("basecomplicated");
-RegisterInFactory<BaseComplicated, DerivedComplicated1>
+RegisterInFactory<BaseComplicated, DerivedComplicated1, ComplicatedFactory>
     registerme4("derivedcomplicated1");
-RegisterInFactory<BaseComplicated, DerivedComplicated2>
+RegisterInFactory<BaseComplicated, DerivedComplicated2, ComplicatedFactory>
     registerme5("derivedcomplicated2");
 } // namespace
 
 TEST(GenericFactory, RegisterAndCreate) {
 
-  std::unique_ptr<Base> base_{Factory<Base>::getInstance().create("base")};
+  auto base_{BaseFactory::getInstance().create("base")};
   EXPECT_EQ(base_->foo(), "Base");
 
-  std::unique_ptr<Base> derived1_{Factory<Base>::getInstance().create("derived1")};
+  auto derived1_{BaseFactory::getInstance().create("derived1")};
   EXPECT_EQ(derived1_->foo(), "Derived1");
 
-  std::unique_ptr<Base> derived2_{Factory<Base>::getInstance().create("derived2")};
+  auto derived2_{BaseFactory::getInstance().create("derived2")};
   EXPECT_EQ(derived2_->foo(), "Derived2");
 }
 
 TEST(GenericFactory, ListAvailable) {
-  auto available = Factory<Base>::getInstance().listAvailable();
+  auto available = BaseFactory::getInstance().listAvailable();
   std::vector<std::string> expected{"base", "derived1", "derived2"};
 
   EXPECT_EQ(available, expected);
 }
 
 TEST(GenericFactory, Remove) {
-  auto available = Factory<Base>::getInstance().listAvailable();
+  auto available = BaseFactory::getInstance().listAvailable();
   std::vector<std::string> expected{"base", "derived1", "derived2"};
 
   EXPECT_EQ(available, expected);
 
-  EXPECT_TRUE(Factory<Base>::getInstance().remove("derived2"));
+  EXPECT_TRUE(BaseFactory::getInstance().remove("derived2"));
 
   std::vector<std::string> expected2{"base", "derived1"};
-  available = Factory<Base>::getInstance().listAvailable();
+  available = BaseFactory::getInstance().listAvailable();
 
   EXPECT_EQ(available, expected2);
 
   // Better add this back in as this object is shared between tests!
-  RegisterInFactory<Base, Derived2> registerme("derived2");
+  RegisterInFactory<Base, Derived2, BaseFactory> registerme("derived2");
 }
 
 TEST(GenericFactory, RemoveNonexistant) {
   // Try a remove for something that shouldn't be registered
-  EXPECT_FALSE(Factory<Base>::getInstance().remove("derived83"));
+  EXPECT_FALSE(BaseFactory::getInstance().remove("derived83"));
 }
 
 TEST(GenericFactory, GetUnknownType) {
-  EXPECT_THROW(Factory<Base>::getInstance().create("unknown"), BoutException);
+  EXPECT_THROW(BaseFactory::getInstance().create("unknown"), BoutException);
 }
 
 TEST(GenericFactory, Complicated) {

@@ -7,6 +7,8 @@
 #include "vector2d.hxx"
 #include "vector3d.hxx"
 
+#include <type_traits>
+
 TEST(FieldGroupTest, CreateWithField2D) {
   Field2D a;
   FieldGroup group(a);
@@ -278,4 +280,12 @@ TEST(FieldGroupTest, ConstIterator) {
   }
 
   EXPECT_EQ(count, 2);
+}
+
+TEST(FieldGroupTest, NotConstructableFromInt) {
+  EXPECT_FALSE((std::is_constructible<FieldGroup, int>::value));
+}
+
+TEST(FieldGroupTest, NotConstructableFromBoutReal) {
+  EXPECT_FALSE((std::is_constructible<FieldGroup, BoutReal>::value));
 }

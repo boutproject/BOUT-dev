@@ -94,10 +94,10 @@ private:
   Coordinates *coord;
 
   // Inverts a Laplacian to get potential
-  Laplacian *phiSolver;
+  std::unique_ptr<Laplacian> phiSolver;
 
   // Solves the electromagnetic potential
-  Laplacian *aparSolver;
+  std::unique_ptr<Laplacian> aparSolver;
   Field2D acoef; // Coefficient in the Helmholtz equation
   
   int init(bool UNUSED(restarting)) override {

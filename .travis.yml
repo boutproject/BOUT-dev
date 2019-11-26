@@ -90,8 +90,8 @@ matrix:
       - ./.build_sundials_for_travis.sh
       - mkdir build && cd build
       - cmake .. -DUSE_PETSC=ON -DUSE_SLEPC=ON -DUSE_SUNDIALS=ON -DSUNDIALS_ROOT="$HOME/local" -DENABLE_OPENMP=ON
-      - cmake --build .
-      - ctest --output-on-failure
+      - cmake --build . --target build-check -j 2
+      - cmake --build . --target check
 #CLANG
   - env:
       - *default_env

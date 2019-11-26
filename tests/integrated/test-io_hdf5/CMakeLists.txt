@@ -1,4 +1,4 @@
-bout_add_integrated_test(test_io_hdf5
+bout_add_integrated_test(test-io-hdf5
   SOURCES test_io_hdf5.cxx
   USE_RUNTEST
   USE_DATA_BOUT_INP

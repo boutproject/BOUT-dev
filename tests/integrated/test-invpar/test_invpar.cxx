@@ -14,7 +14,7 @@ int main(int argc, char **argv) {
   // Initialise BOUT++, setting up mesh
   BoutInitialise(argc, argv);
 
-  InvertPar *inv = InvertPar::Create();
+  auto inv = InvertPar::Create();
   FieldFactory f(mesh);
 
   // Get options

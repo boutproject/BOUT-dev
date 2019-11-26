@@ -129,7 +129,8 @@ int IdaSolver::init(int nout, BoutReal tstep) {
 
   // Get total problem size
   int neq;
-  if (MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
+  if (bout::globals::mpi->MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM,
+                                        BoutComm::get())) {
     output_error.write("\tERROR: MPI_Allreduce failed!\n");
     return 1;
   }
@@ -324,7 +325,7 @@ void IdaSolver::pre(BoutReal t, BoutReal cj, BoutReal delta, BoutReal* udata,
                     BoutReal* rvec, BoutReal* zvec) {
   TRACE("Running preconditioner: IdaSolver::pre(%e)", t);
 
-  const BoutReal tstart = MPI_Wtime();
+  const BoutReal tstart = bout::globals::mpi->MPI_Wtime();
 
   if (!have_user_precon()) {
     // Identity (but should never happen)
@@ -344,7 +345,7 @@ void IdaSolver::pre(BoutReal t, BoutReal cj, BoutReal delta, BoutReal* udata,
   // Save the solution from F_vars
   save_derivs(zvec);
 
-  pre_Wtime += MPI_Wtime() - tstart;
+  pre_Wtime += bout::globals::mpi->MPI_Wtime() - tstart;
   pre_ncalls++;
 }
 

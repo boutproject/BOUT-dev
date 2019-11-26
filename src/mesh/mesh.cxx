@@ -1,4 +1,3 @@
-
 #include <globals.hxx>
 #include <bout/mesh.hxx>
 #include <bout/coordinates.hxx>
@@ -8,13 +7,44 @@
 
 #include <cmath>
 
-#include "meshfactory.hxx"
-
 #include <boutcomm.hxx>
 #include <output.hxx>
 
+#include "impls/bout/boutmesh.hxx"
+
+MeshFactory::ReturnType MeshFactory::create(Options* options, GridDataSource* source) {
+  if (source != nullptr) {
+    return Factory::create(getType(options), source, options);
+  }
+
+  if (options == nullptr) {
+    options = Options::getRoot()->getSection(section_name);
+  }
+
+  if (options->isSet("file") or Options::root().isSet("grid")) {
+    // Specified mesh file
+    const auto grid_name =
+        (*options)["file"].withDefault(Options::root()["grid"].withDefault(""));
+    output << "\nGetting grid data from file " << grid_name << "\n";
+
+    // Create a grid file, using specified format if given
+    const auto grid_ext =
+        (*options)["format"].withDefault(Options::root()["format"].withDefault(""));
+
+    // Create a grid file
+    source = static_cast<GridDataSource*>(new GridFile(
+        data_format((grid_ext.empty()) ? grid_name.c_str() : grid_ext.c_str()),
+        grid_name));
+  } else {
+    output << "\nGetting grid data from options\n";
+    source = static_cast<GridDataSource*>(new GridFromOptions(options));
+  }
+
+  return Factory::create(getType(options), source, options);
+}
+
 Mesh* Mesh::create(GridDataSource *s, Options *opt) {
-  return MeshFactory::getInstance()->createMesh(s, opt);
+  return MeshFactory::getInstance().create(opt, s).release();
 }
 
 Mesh *Mesh::create(Options *opt) { return create(nullptr, opt); }
@@ -309,7 +339,7 @@ int Mesh::ySize(int jx) const {
 
   int local = yend - ystart + 1;
   int all;
-  MPI_Allreduce(&local, &all, 1, MPI_INT, MPI_SUM, comm);
+  mpi->MPI_Allreduce(&local, &all, 1, MPI_INT, MPI_SUM, comm);
   return all;
 }
 
@@ -319,7 +349,7 @@ bool Mesh::hasBndryLowerY() {
 
   int mybndry = static_cast<int>(!(iterateBndryLowerY().isDone()));
   int allbndry;
-  MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(yend));
+  mpi->MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(yend));
   answer = static_cast<bool>(allbndry);
   calc = true;
   return answer;
@@ -331,7 +361,7 @@ bool Mesh::hasBndryUpperY() {
 
   int mybndry = static_cast<int>(!(iterateBndryUpperY().isDone()));
   int allbndry;
-  MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(ystart));
+  mpi->MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(ystart));
   answer = static_cast<bool>(allbndry);
   calc = true;
   return answer;
@@ -402,21 +432,21 @@ int Mesh::localSizePerp() {
 int Mesh::globalStartIndex3D() {
   int localSize = localSize3D();
   int cumulativeSize;
-  MPI_Scan(&localSize, &cumulativeSize, 1, MPI_INT, MPI_SUM, BoutComm::get());
+  mpi->MPI_Scan(&localSize, &cumulativeSize, 1, MPI_INT, MPI_SUM, BoutComm::get());
   return cumulativeSize - localSize;
 }
 
 int Mesh::globalStartIndex2D() {
   int localSize = localSize2D();
   int cumulativeSize;
-  MPI_Scan(&localSize, &cumulativeSize, 1, MPI_INT, MPI_SUM, BoutComm::get());
+  mpi->MPI_Scan(&localSize, &cumulativeSize, 1, MPI_INT, MPI_SUM, BoutComm::get());
   return cumulativeSize - localSize;
 }
 
 int Mesh::globalStartIndexPerp() {
   int localSize = localSizePerp();
   int cumulativeSize;
-  MPI_Scan(&localSize, &cumulativeSize, 1, MPI_INT, MPI_SUM, getXcomm());
+  mpi->MPI_Scan(&localSize, &cumulativeSize, 1, MPI_INT, MPI_SUM, getXcomm());
   return cumulativeSize - localSize;
 }
 
