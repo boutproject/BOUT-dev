@@ -155,6 +155,8 @@ int BoutInitialise(int& argc, char**& argv) {
       writeSettingsFile(Options::root(), args.data_dir, args.set_file);
     }
 
+    bout::globals::mpi = new MpiWrapper();
+
     // Create the mesh
     bout::globals::mesh = Mesh::create();
     // Load from sources. Required for Field initialisation
@@ -163,7 +165,6 @@ int BoutInitialise(int& argc, char**& argv) {
     bout::globals::dump =
         setupDumpFile(Options::root(), *bout::globals::mesh, args.data_dir);
 
-    bout::globals::mpi = new MpiWrapper();
   } catch (const BoutException& e) {
     output_error.write(_("Error encountered during initialisation: %s\n"), e.what());
     throw;
