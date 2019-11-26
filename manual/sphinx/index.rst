@@ -68,6 +68,7 @@ The documentation is divided into the following sections:
    user_docs/algebraic_operators
    user_docs/staggered_grids
    user_docs/eigenvalue_solver
+   user_docs/nonlocal
 
 .. toctree::
    :maxdepth: 1

@@ -132,9 +132,9 @@ public:
   InvertableOperator(const function_signature& func = identity<T>,
                      Options* optIn = nullptr, Mesh* localmeshIn = nullptr)
       : operatorFunction(func), preconditionerFunction(func),
-        opt(optIn == nullptr ? optIn
-                             : Options::getRoot()->getSection("invertableOperator")),
-        localmesh(localmeshIn == nullptr ? bout::globals::mesh : localmeshIn), doneSetup(false) {
+        opt(optIn == nullptr ? Options::getRoot()->getSection("invertableOperator")
+                             : optIn),
+        localmesh(localmeshIn == nullptr ? bout::globals::mesh : localmeshIn) {
     AUTO_TRACE();
   };
 
@@ -323,8 +323,7 @@ public:
     CHKERRQ(ierr);
 
     /// Now register Matrix_multiply operation
-    ierr =
-        MatShellSetOperation(matOperator, MATOP_MULT, (void (*)(void))(functionWrapper));
+    ierr = MatShellSetOperation(matOperator, MATOP_MULT, (void (*)())(functionWrapper));
     CHKERRQ(ierr);
 
     /// Create the shell matrix representing the operator to invert
@@ -335,7 +334,7 @@ public:
 
     /// Now register Matrix_multiply operation
     ierr = MatShellSetOperation(matPreconditioner, MATOP_MULT,
-                                (void (*)(void))(preconditionerWrapper));
+                                (void (*)())(preconditionerWrapper));
     CHKERRQ(ierr);
 
     /// Now create and setup the linear solver with the matrix

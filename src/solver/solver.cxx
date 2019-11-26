@@ -31,12 +31,29 @@
 #include "bout/array.hxx"
 #include "bout/assert.hxx"
 #include "bout/region.hxx"
-#include "bout/solverfactory.hxx"
 #include "bout/sys/timer.hxx"
 
+#include <cmath>
 #include <cstring>
 #include <ctime>
 #include <numeric>
+
+// Implementations:
+#include "impls/arkode/arkode.hxx"
+#include "impls/cvode/cvode.hxx"
+#include "impls/euler/euler.hxx"
+#include "impls/ida/ida.hxx"
+#include "impls/imex-bdf2/imex-bdf2.hxx"
+#include "impls/karniadakis/karniadakis.hxx"
+#include "impls/petsc/petsc.hxx"
+#include "impls/power/power.hxx"
+#include "impls/pvode/pvode.hxx"
+#include "impls/rk3-ssp/rk3-ssp.hxx"
+#include "impls/rk4/rk4.hxx"
+#include "impls/rkgeneric/rkgeneric.hxx"
+#include "impls/slepc/slepc.hxx"
+#include "impls/snes/snes.hxx"
+#include "impls/split-rk/split-rk.hxx"
 
 // Static member variables
 
@@ -81,7 +98,7 @@ void Solver::setModel(PhysicsModel *m) {
  * Add fields
  **************************************************************************/
 
-void Solver::add(Field2D &v, const std::string name) {
+void Solver::add(Field2D& v, const std::string& name) {
   TRACE("Adding 2D field: Solver::add(%s)", name.c_str());
 
 #if CHECK > 0
@@ -138,7 +155,7 @@ void Solver::add(Field2D &v, const std::string name) {
   f2d.emplace_back(std::move(d));
 }
 
-void Solver::add(Field3D &v, const std::string name) {
+void Solver::add(Field3D& v, const std::string& name) {
   TRACE("Adding 3D field: Solver::add(%s)", name.c_str());
 
   Mesh* mesh = v.getMesh();
@@ -197,7 +214,7 @@ void Solver::add(Field3D &v, const std::string name) {
   f3d.emplace_back(std::move(d));
 }
 
-void Solver::add(Vector2D& v, const std::string name) {
+void Solver::add(Vector2D& v, const std::string& name) {
   TRACE("Adding 2D vector: Solver::add(%s)", name.c_str());
 
   if (varAdded(name))
@@ -236,7 +253,7 @@ void Solver::add(Vector2D& v, const std::string name) {
   v2d.emplace_back(std::move(d));
 }
 
-void Solver::add(Vector3D& v, const std::string name) {
+void Solver::add(Vector3D& v, const std::string& name) {
   TRACE("Adding 3D vector: Solver::add(%s)", name.c_str());
 
   if (varAdded(name))
@@ -275,7 +292,7 @@ void Solver::add(Vector3D& v, const std::string name) {
  * Constraints
  **************************************************************************/
 
-void Solver::constraint(Field2D &v, Field2D &C_v, const std::string name) {
+void Solver::constraint(Field2D& v, Field2D& C_v, std::string name) {
   TRACE("Constrain 2D scalar: Solver::constraint(%s)", name.c_str());
 
   if (name.empty()) {
@@ -298,12 +315,12 @@ void Solver::constraint(Field2D &v, Field2D &C_v, const std::string name) {
   d.constraint = true;
   d.var = &v;
   d.F_var = &C_v;
-  d.name = name;
+  d.name = std::move(name);
 
   f2d.emplace_back(std::move(d));
 }
 
-void Solver::constraint(Field3D &v, Field3D &C_v, const std::string name) {
+void Solver::constraint(Field3D& v, Field3D& C_v, std::string name) {
   TRACE("Constrain 3D scalar: Solver::constraint(%s)", name.c_str());
 
   if (name.empty()) {
@@ -327,12 +344,12 @@ void Solver::constraint(Field3D &v, Field3D &C_v, const std::string name) {
   d.var = &v;
   d.F_var = &C_v;
   d.location = v.getLocation();
-  d.name = name;
-  
+  d.name = std::move(name);
+
   f3d.emplace_back(std::move(d));
 }
 
-void Solver::constraint(Vector2D &v, Vector2D &C_v, const std::string name) {
+void Solver::constraint(Vector2D& v, Vector2D& C_v, std::string name) {
   TRACE("Constrain 2D vector: Solver::constraint(%s)", name.c_str());
 
   if (name.empty()) {
@@ -350,29 +367,29 @@ void Solver::constraint(Vector2D &v, Vector2D &C_v, const std::string name) {
   if (initialised)
     throw BoutException("Error: Cannot add constraints to solver after initialisation\n");
 
+  // Add suffix, depending on co- /contravariance
+  if (v.covariant) {
+    constraint(v.x, C_v.x, name + "_x");
+    constraint(v.y, C_v.y, name + "_y");
+    constraint(v.z, C_v.z, name + "_z");
+  } else {
+    constraint(v.x, C_v.x, name + "x");
+    constraint(v.y, C_v.y, name + "y");
+    constraint(v.z, C_v.z, name + "z");
+  }
+
   VarStr<Vector2D> d;
-  
+
   d.constraint = true;
   d.var = &v;
   d.F_var = &C_v;
   d.covariant = v.covariant;
-  d.name = name;
-  
-  v2d.emplace_back(std::move(d));
+  d.name = std::move(name);
 
-  // Add suffix, depending on co- /contravariance
-  if (v.covariant) {
-    constraint(v.x, C_v.x, d.name+"_x");
-    constraint(v.y, C_v.y, d.name+"_y");
-    constraint(v.z, C_v.z, d.name+"_z");
-  } else {
-    constraint(v.x, C_v.x, d.name+"x");
-    constraint(v.y, C_v.y, d.name+"y");
-    constraint(v.z, C_v.z, d.name+"z");
-  }
+  v2d.emplace_back(std::move(d));
 }
 
-void Solver::constraint(Vector3D &v, Vector3D &C_v, const std::string name) {
+void Solver::constraint(Vector3D& v, Vector3D& C_v, std::string name) {
   TRACE("Constrain 3D vector: Solver::constraint(%s)", name.c_str());
 
   if (name.empty()) {
@@ -390,26 +407,26 @@ void Solver::constraint(Vector3D &v, Vector3D &C_v, const std::string name) {
   if (initialised)
     throw BoutException("Error: Cannot add constraints to solver after initialisation\n");
 
+  // Add suffix, depending on co- /contravariance
+  if (v.covariant) {
+    constraint(v.x, C_v.x, name + "_x");
+    constraint(v.y, C_v.y, name + "_y");
+    constraint(v.z, C_v.z, name + "_z");
+  } else {
+    constraint(v.x, C_v.x, name + "x");
+    constraint(v.y, C_v.y, name + "y");
+    constraint(v.z, C_v.z, name + "z");
+  }
+
   VarStr<Vector3D> d;
-  
+
   d.constraint = true;
   d.var = &v;
   d.F_var = &C_v;
   d.covariant = v.covariant;
-  d.name = name;
-  
-  v3d.emplace_back(std::move(d));
+  d.name = std::move(name);
 
-  // Add suffix, depending on co- /contravariance
-  if (v.covariant) {
-    constraint(v.x, C_v.x, d.name+"_x");
-    constraint(v.y, C_v.y, d.name+"_y");
-    constraint(v.z, C_v.z, d.name+"_z");
-  } else {
-    constraint(v.x, C_v.x, d.name+"x");
-    constraint(v.y, C_v.y, d.name+"y");
-    constraint(v.z, C_v.z, d.name+"z");
-  }
+  v3d.emplace_back(std::move(d));
 }
 
 /**************************************************************************
@@ -576,7 +593,8 @@ BoutReal Solver::adjustMonitorPeriods(Monitor* new_monitor) {
 
   if (new_monitor->timestep > internal_timestep * 1.5) {
     // Monitor has a larger timestep
-    new_monitor->period = (new_monitor->timestep / internal_timestep) + .5;
+    new_monitor->period =
+        static_cast<int>(std::round(new_monitor->timestep / internal_timestep));
     return internal_timestep;
   }
 
@@ -590,7 +608,8 @@ BoutReal Solver::adjustMonitorPeriods(Monitor* new_monitor) {
   }
 
   // This is the relative increase in timestep
-  const int multiplier = internal_timestep / new_monitor->timestep + .5;
+  const auto multiplier =
+      static_cast<int>(std::round(internal_timestep / new_monitor->timestep));
   for (const auto& monitor : monitors) {
     monitor->period *= multiplier;
   }
@@ -611,13 +630,15 @@ void Solver::finaliseMonitorPeriods(int& NOUT, BoutReal& output_timestep) {
           "A monitor requested a timestep not compatible with the output_step!");
     }
     if (internal_timestep < output_timestep * 1.5) {
-      default_monitor_period = output_timestep / internal_timestep + .5;
+      default_monitor_period =
+          static_cast<int>(std::round(output_timestep / internal_timestep));
       NOUT *= default_monitor_period;
       output_timestep = internal_timestep;
     } else {
       default_monitor_period = 1;
       // update old monitors
-      int multiplier = internal_timestep / output_timestep + .5;
+      const auto multiplier =
+          static_cast<int>(std::round(internal_timestep / output_timestep));
       for (const auto& i : monitors) {
         i->period = i->period * multiplier;
       }
@@ -638,7 +659,7 @@ void Solver::addMonitor(Monitor* monitor, MonitorPosition pos) {
 
   monitor->is_added = true;
 
-  if (pos == Solver::FRONT) {
+  if (pos == MonitorPosition::FRONT) {
     monitors.push_front(monitor);
   } else {
     monitors.push_back(monitor);
@@ -776,12 +797,12 @@ int Solver::getLocalN() {
   return local_N;
 }
 
-Solver* Solver::create(Options* opts) {
-  return SolverFactory::getInstance()->createSolver(opts);
+std::unique_ptr<Solver> Solver::create(Options* opts) {
+  return SolverFactory::getInstance().create(opts);
 }
 
-Solver* Solver::create(const SolverType& type, Options* opts) {
-  return SolverFactory::getInstance()->createSolver(type, opts);
+std::unique_ptr<Solver> Solver::create(const SolverType& type, Options* opts) {
+  return SolverFactory::getInstance().create(type, opts);
 }
 
 /**************************************************************************
@@ -799,7 +820,7 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal *udata, int &p, SOLVER_VAR_OP op, 
   int nz = mesh->LocalNz;
   
   switch(op) {
-  case LOAD_VARS: {
+    case SOLVER_VAR_OP::LOAD_VARS: {
     /// Load variables from IDA into BOUT++
     
     // Loop over 2D variables
@@ -822,7 +843,7 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal *udata, int &p, SOLVER_VAR_OP op, 
     }
     break;
   }
-  case LOAD_DERIVS: {
+  case SOLVER_VAR_OP::LOAD_DERIVS: {
     /// Load derivatives from IDA into BOUT++
     /// Used for preconditioner
     
@@ -847,7 +868,7 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal *udata, int &p, SOLVER_VAR_OP op, 
     
     break;
   }
-  case SET_ID: {
+  case SOLVER_VAR_OP::SET_ID: {
     /// Set the type of equation (Differential or Algebraic)
     
     // Loop over 2D variables
@@ -879,7 +900,7 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal *udata, int &p, SOLVER_VAR_OP op, 
     
     break;
   }
-  case SAVE_VARS: {
+  case SOLVER_VAR_OP::SAVE_VARS: {
     /// Save variables from BOUT++ into IDA (only used at start of simulation)
     
     // Loop over 2D variables
@@ -903,7 +924,7 @@ void Solver::loop_vars_op(Ind2D i2d, BoutReal *udata, int &p, SOLVER_VAR_OP op, 
     break;
   }
     /// Save time-derivatives from BOUT++ into CVODE (returning RHS result)
-  case SAVE_DERIVS: {
+  case SOLVER_VAR_OP::SAVE_DERIVS: {
     
     // Loop over 2D variables
     for(const auto& f : f2d) {
@@ -955,7 +976,7 @@ void Solver::load_vars(BoutReal *udata) {
     f.var->setLocation(f.location);
   }
 
-  loop_vars(udata, LOAD_VARS);
+  loop_vars(udata, SOLVER_VAR_OP::LOAD_VARS);
 
   // Mark each vector as either co- or contra-variant
 
@@ -974,7 +995,7 @@ void Solver::load_derivs(BoutReal *udata) {
     f.F_var->setLocation(f.location);
   }
 
-  loop_vars(udata, LOAD_DERIVS);
+  loop_vars(udata, SOLVER_VAR_OP::LOAD_DERIVS);
 
   // Mark each vector as either co- or contra-variant
 
@@ -1008,7 +1029,7 @@ void Solver::save_vars(BoutReal *udata) {
       v.var->toContravariant();
   }
 
-  loop_vars(udata, SAVE_VARS);
+  loop_vars(udata, SOLVER_VAR_OP::SAVE_VARS);
 }
 
 void Solver::save_derivs(BoutReal *dudata) {
@@ -1036,11 +1057,11 @@ void Solver::save_derivs(BoutReal *dudata) {
     }
   }
 
-  loop_vars(dudata, SAVE_DERIVS);
+  loop_vars(dudata, SOLVER_VAR_OP::SAVE_DERIVS);
 }
 
 void Solver::set_id(BoutReal *udata) {
-  loop_vars(udata, SET_ID);
+  loop_vars(udata, SOLVER_VAR_OP::SET_ID);
 }
 
 Field3D Solver::globalIndex(int localStart) {

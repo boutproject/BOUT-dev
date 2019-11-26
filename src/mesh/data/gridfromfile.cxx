@@ -26,7 +26,7 @@
  *            destructor
  */
 GridFile::GridFile(std::unique_ptr<DataFormat> format, std::string gridfilename)
-    : file(std::move(format)), filename(std::move(gridfilename)) {
+    : GridDataSource(true), file(std::move(format)), filename(std::move(gridfilename)) {
   TRACE("GridFile constructor");
 
   if (! file->openr(filename) ) {
@@ -72,6 +72,17 @@ bool GridFile::hasVar(const std::string &name) {
   return s.size() != 0;
 }
 
+namespace {
+// Wrapper for writing nicely to the screen
+template <class T>
+void print_read_option(const T& value, const std::string& name,
+                       const std::string& filename, bool success) {
+  const std::string used_default = success ? "" : " (default)";
+  output_info << "\tOption " << name << " = " << value << " (" << filename << ")"
+              << used_default << std::endl;
+}
+}
+
 /*!
  * Read a string from file. If the string is not
  * found, then string is set to "" and false is returned.
@@ -93,7 +104,7 @@ bool GridFile::hasVar(const std::string &name) {
  *   Boolean. True on success.
  * 
  */
-bool GridFile::get(Mesh *UNUSED(m), std::string &sval, const std::string &name) {
+bool GridFile::get(Mesh *UNUSED(m), std::string &sval, const std::string &name, const std::string& def) {
   Timer timer("io");
   TRACE("GridFile::get(std::string)");
   
@@ -102,15 +113,14 @@ bool GridFile::get(Mesh *UNUSED(m), std::string &sval, const std::string &name) 
   }
   
   // strings must be written as attributes, so read from attribute
-  bool success = file->getAttribute("", name, sval);
-  if (success) {
-    output_info << "\tOption " << name  << " = " << sval << " (" << filename <<")" << endl;
-  } else {
-    sval = "";
+  const bool success = file->getAttribute("", name, sval);
+  if (!success) {
+    sval = def;
   }
 
-  return success;
+  print_read_option(sval, name, filename, success);
 
+  return success;
 }
 
 /*!
@@ -134,7 +144,7 @@ bool GridFile::get(Mesh *UNUSED(m), std::string &sval, const std::string &name) 
  *   Boolean. True on success.
  * 
  */
-bool GridFile::get(Mesh *UNUSED(m), int &ival, const std::string &name) {
+bool GridFile::get(Mesh *UNUSED(m), int &ival, const std::string &name, int def) {
   Timer timer("io");
   TRACE("GridFile::get(int)");
   
@@ -142,33 +152,36 @@ bool GridFile::get(Mesh *UNUSED(m), int &ival, const std::string &name) {
     throw BoutException("File cannot be read");
   }
   
-  bool success = file->read(&ival, name);
-  if (success) {
-    output_info << "\tOption " << name  << " = " << ival << " (" << filename <<")" << endl;
+  const bool success = file->read(&ival, name);
+  if (!success) {
+    ival = def;
   }
 
-  return success;
+  print_read_option(ival, name, filename, success);
 
+  return success;
 }
 
 /*!
  *
  *
  */
-bool GridFile::get(Mesh *UNUSED(m), BoutReal &rval, const std::string &name) {
+bool GridFile::get(Mesh *UNUSED(m), BoutReal &rval, const std::string &name, BoutReal def) {
   Timer timer("io");
   TRACE("GridFile::get(BoutReal)");
   
   if (!file->is_valid()) {
     throw BoutException("File cannot be read");
   }
-  bool success = file->read(&rval, name);
-  if (success) {
-    output_info << "\tOption " << name  << " = " << rval << " (" << filename <<")" << endl;
+
+  const bool success = file->read(&rval, name);
+  if (!success) {
+    rval = def;
   }
 
-  return success;
+  print_read_option(rval, name, filename, success);
 
+  return success;
 }
 
 /*!
@@ -299,12 +312,12 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def) 
   if (not bout::utils::is_FieldPerp<T>::value) {
     ///Check if field dimensions are correct. y-direction
     if (grid_yguards > 0) { ///including ghostpoints
-      ASSERT1(field_dimensions[1] == m->GlobalNy - 2*myg + total_grid_yguards);
+      ASSERT1(field_dimensions[1] == m->GlobalNy);
       ny_to_read = m->LocalNy;
       yd = grid_yguards - myg;
       ASSERT1(yd >= 0);
     } else if (grid_yguards == 0) { ///excluding ghostpoints
-      ASSERT1(field_dimensions[1] == m->GlobalNy - 2*myg);
+      ASSERT1(field_dimensions[1] == m->GlobalNy - m->numberOfYBoundaries()*2*myg);
       ny_to_read = m->LocalNy - 2*myg;
       yd = myg;
     } else {

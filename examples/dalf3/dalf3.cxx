@@ -56,7 +56,6 @@ private:
   BoutReal beta_hat, mu_hat;
   BoutReal viscosity_par;
   
-  int phi_flags, apar_flags;
   bool split_n0;
   bool ZeroElMass, estatic; 
   bool curv_kappa;
@@ -74,8 +73,8 @@ private:
   
   FieldGroup comms;
 
-  Laplacian *phiSolver; // Laplacian solver in X-Z
-  Laplacian *aparSolver; // Laplacian solver in X-Z for Apar
+  std::unique_ptr<Laplacian> phiSolver{nullptr}; // Laplacian solver in X-Z
+  std::unique_ptr<Laplacian> aparSolver{nullptr}; // Laplacian solver in X-Z for Apar
   LaplaceXY *laplacexy; // Laplacian solver in X-Y (n=0)
   Field2D phi2D;   // Axisymmetric potential, used when split_n0=true
 
@@ -121,8 +120,6 @@ protected:
     auto globalOptions = Options::root();
     auto options = globalOptions["dalf3"];
 
-    phi_flags = options["phi_flags"].withDefault(0);
-    apar_flags = options["apar_flags"].withDefault(0);
     split_n0 = options["split_n0"].withDefault(false);
     estatic = options["estatic"].withDefault(false);
     ZeroElMass = options["ZeroElMass"].withDefault(false);
@@ -297,8 +294,7 @@ protected:
     }
     
     // Create a solver for the Laplacian
-    phiSolver = Laplacian::create();
-    phiSolver->setFlags(phi_flags);
+    phiSolver = Laplacian::create(&options["phiSolver"]);
     
     // LaplaceXY for n=0 solve
     if (split_n0) {
@@ -309,8 +305,7 @@ protected:
 
     // Solver for Apar
     // ajpar = beta_hat*apar + mu_hat*jpar
-    aparSolver = Laplacian::create();
-    aparSolver->setFlags(apar_flags);
+    aparSolver = Laplacian::create(&options["aparSolver"]);
     aparSolver->setCoefA(beta_hat);
     aparSolver->setCoefD(-mu_hat);
     

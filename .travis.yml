@@ -30,6 +30,7 @@ addons:
     - netcdf-bin
     - hdf5-tools
     - python3
+    - python3-h5py
     - python3-pip
     - python3-pytest
     - python3-numpy
@@ -74,8 +75,23 @@ matrix:
       - SCRIPT_FLAGS="-uim -t python -t shared"
   - env:
       - *default_env
+      - CONFIGURE_OPTIONS="--enable-shared --with-petsc --with-slepc --with-sundials=$HOME/local"
+      - SCRIPT_FLAGS="-uim5t python"
+  - env:
+      - *default_env
       - CONFIGURE_OPTIONS="--enable-openmp --with-petsc --with-slepc --with-sundials=$HOME/local"
       - OMP_NUM_THREADS=2
+#CMAKE
+  - env:
+      - *default_env
+      - OMP_NUM_THREADS=2
+      - PYTHONPATH="${TRAVIS_BUILD_DIR}/tools/pylib:$PYTHONPATH"
+    script:
+      - ./.build_sundials_for_travis.sh
+      - mkdir build && cd build
+      - cmake .. -DUSE_PETSC=ON -DUSE_SLEPC=ON -DUSE_SUNDIALS=ON -DSUNDIALS_ROOT="$HOME/local" -DENABLE_OPENMP=ON
+      - cmake --build . --target build-check -j 2
+      - cmake --build . --target check
 #CLANG
   - env:
       - *default_env

@@ -83,7 +83,11 @@ bool Ncxx4::openr(const char *name) {
     Ncxx4::close();
   }
 
-  dataFile = new NcFile(name, NcFile::read);
+  try {
+    dataFile = new NcFile(name, NcFile::read);
+  } catch (netCDF::exceptions::NcException&) {
+    return false;
+  }
 
   if(dataFile->isNull()) {
     delete dataFile;
@@ -138,7 +142,11 @@ bool Ncxx4::openw(const char *name, bool append) {
     close(); 
 
   if(append) {
-    dataFile = new NcFile(name, NcFile::write);
+    try {
+      dataFile = new NcFile(name, NcFile::write);
+    } catch (netCDF::exceptions::NcException&) {
+      return false;
+    }
 
     if(dataFile->isNull()) {
       delete dataFile;
@@ -193,7 +201,11 @@ bool Ncxx4::openw(const char *name, bool append) {
     default_rec = tDim.getSize();
     
   }else {
-    dataFile = new NcFile(name, NcFile::replace);
+    try {
+      dataFile = new NcFile(name, NcFile::replace);
+    } catch (netCDF::exceptions::NcException&) {
+      return false;
+    }
     
     if(dataFile->isNull()) {
       delete dataFile;

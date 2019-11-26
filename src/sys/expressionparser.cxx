@@ -24,6 +24,7 @@
 
 #include <bout/sys/expressionparser.hxx>
 
+#include <utility>
 #include <utils.hxx> // for lowercase
 
 using std::list;
@@ -218,7 +219,7 @@ ExpressionParser::ExpressionParser() {
 }
 
 void ExpressionParser::addGenerator(const string& name, FieldGeneratorPtr g) {
-  gen[name] = g;
+  gen[name] = std::move(g);
 }
 
 void ExpressionParser::addBinaryOp(char sym, FieldGeneratorPtr b, int precedence) {

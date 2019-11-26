@@ -14,15 +14,15 @@ BoutReal BoundaryOpPar::getValue(int x, int y, int z, BoutReal t) {
   BoutReal value;
 
   switch (value_type) {
-  case GEN:
+  case ValueType::GEN:
     // This works but doesn't quite do the right thing... should
     // generate value on the boundary, but that gives wrong
     // answer. This instead generates the value at the gridpoint
     return gen_values->generate(Context(x, y, z, CELL_CENTRE, mesh, t));
-  case FIELD:
+  case ValueType::FIELD:
     value = (*field_values)(x,y,z);
     return value;
-  case REAL:
+  case ValueType::REAL:
     return real_value;
   default:
     throw BoutException("Invalid value_type encountered in BoundaryOpPar::getValue");
@@ -37,13 +37,13 @@ BoutReal BoundaryOpPar::getValue(const BoundaryRegionPar &bndry, BoutReal t) {
   BoutReal value;
 
   switch (value_type) {
-  case GEN:
+  case ValueType::GEN:
     return gen_values->generate(Context(bndry.s_x, bndry.s_y, bndry.s_z, CELL_CENTRE, mesh, t));
-  case FIELD:
+  case ValueType::FIELD:
     // FIXME: Interpolate to s_x, s_y, s_z...
     value = (*field_values)(bndry.x,bndry.y,bndry.z);
     return value;
-  case REAL:
+  case ValueType::REAL:
     return real_value;
   default:
     throw BoutException("Invalid value_type encountered in BoundaryOpPar::getValue");

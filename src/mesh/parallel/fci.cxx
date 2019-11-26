@@ -37,7 +37,6 @@
  **************************************************************************/
 
 #include "fci.hxx"
-#include "interpolation_factory.hxx"
 #include "parallel_boundary_op.hxx"
 #include "parallel_boundary_region.hxx"
 #include <bout/constants.hxx>
@@ -58,12 +57,10 @@ FCIMap::FCIMap(Mesh& mesh, int offset_, BoundaryRegionPar* boundary, bool zperio
     throw BoutException("FCIMap called with offset = 0; You probably didn't mean to do that");
   }
 
-  interp =
-      std::unique_ptr<Interpolation>(InterpolationFactory::getInstance()->create(&map_mesh));
+  interp = InterpolationFactory::getInstance().create(&map_mesh);
   interp->setYOffset(offset);
 
-  interp_corner =
-      std::unique_ptr<Interpolation>(InterpolationFactory::getInstance()->create(&map_mesh));
+  interp_corner = InterpolationFactory::getInstance().create(&map_mesh);
   interp_corner->setYOffset(offset);
 
   // Index arrays contain guard cells in order to get subscripts right
@@ -325,14 +322,15 @@ Field3D FCIMap::integrate(Field3D &f) const {
 }
 
 void FCITransform::checkInputGrid() {
-  std::string coordinates_type = "";
-  if (!mesh.get(coordinates_type, "coordinates_type")) {
-    if (coordinates_type != "fci") {
-      throw BoutException("Incorrect coordinate system type '"+coordinates_type+"' used "
+  std::string parallel_transform;
+  if (mesh.isDataSourceGridFile() && !mesh.get(parallel_transform, "parallel_transform")) {
+    if (parallel_transform != "fci") {
+      throw BoutException("Incorrect parallel transform type '"+parallel_transform+"' used "
           "to generate metric components for FCITransform. Should be 'fci'.");
     }
-  } // else: coordinate_system variable not found in grid input, indicates older input
-    //       file so must rely on the user having ensured the type is correct
+  } // else: parallel_transform variable not found in grid input, indicates older input
+    //       file or grid from options so must rely on the user having ensured the type is
+    //       correct
 }
 
 void FCITransform::calcParallelSlices(Field3D& f) {

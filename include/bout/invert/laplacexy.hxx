@@ -157,12 +157,6 @@ private:
    */
   int globalIndex(int x, int y);  
   Field2D indexXY; ///< Global index (integer stored as BoutReal)
-
-  /*!
-   * Round a number to the nearest integer
-   */
-  int roundInt(BoutReal f);
-  
 };
 
 #endif // BOUT_HAS_PETSC

@@ -9,6 +9,7 @@ INTEGRATED=0
 MMS=0
 TESTS=0
 MAIN_TARGET=
+UPDATE_SCRIPT=0
 
 usage() {
     echo "$0 options are: "
@@ -18,7 +19,7 @@ usage() {
 }
 
 #Handle input flags
-while getopts "cuimt:" arg;
+while getopts "cuimt:5" arg;
 do
     case $arg in
 	c) ### Run the coverage-post job tasks
@@ -36,44 +37,33 @@ do
 	    MMS=1
 	    TESTS=1
 	    ;;
-    t) ### Set target to build
-        MAIN_TARGET+=("$OPTARG")
-        ;;
-	*) ### Show usage message
+        t) ### Set target to build
+            MAIN_TARGET="$OPTARG"
+            ;;
+        5) ### Run the update to version 5 script
+            UPDATE_SCRIPT=1
+            ;;
+        *) ### Show usage message
 	    usage
 	    ;;
     esac
 done
 
-if [[ ! -d $HOME/local/include/sundials ]]; then
-    echo "****************************************"
-    echo "Building SUNDIALS"
-    echo "****************************************"
-    sundials_ver=4.1.0
-    wget https://computation.llnl.gov/projects/sundials/download/sundials-${sundials_ver}.tar.gz
-    tar xvf sundials-${sundials_ver}.tar.gz
-    mkdir -p sundials-${sundials_ver}/build && cd sundials-${sundials_ver}/build
-    cmake -DCMAKE_INSTALL_PREFIX="$HOME/local" \
-          -DEXAMPLES_INSTALL=off \
-          -DMPI_ENABLE=on \
-          -DOPENMP_ENABLE=off \
-          -DBUILD_CVODES=off \
-          -DBUILD_IDAS=off \
-          -DBUILD_KINSOL=off \
-          -DBUILD_TESTING=off \
-          -DMPI_C_COMPILER="$(command -v mpicc)" \
-          -DMPI_CXX_COMPILER="$(command -v mpic++)" \
-          -DMPIEXEC_EXECUTABLE="$(command -v mpiexec)" \
-          ..
-    make && make install
-    cd "${TRAVIS_BUILD_DIR}"
-    echo "****************************************"
-    echo "Finished building SUNDIALS"
-    echo "****************************************"
-else
-    echo "****************************************"
-    echo "SUNDIALS already installed"
-    echo "****************************************"
+./.build_sundials_for_travis.sh
+
+if test $UPDATE_SCRIPT -gt 0
+then
+    # Make sure the header list is up to date
+    if ! diff bin/bout_4to5_header_file_list <(cd include/;ls *xx|grep -v ^bout.hxx|sort)
+    then
+	echo "Some header files changed."
+	echo "Please update the list by running:"
+	echo "(cd include/;ls *xx|grep -v ^bout.hxx|sort) > bin/bout_4to5_header_file_list"
+	echo "And commit the updated file."
+	exit 1
+    fi
+
+    bin/bout_4to5 -f
 fi
 
 export MAKEFLAGS="-j 2 -k"

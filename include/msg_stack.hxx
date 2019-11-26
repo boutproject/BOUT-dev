@@ -65,7 +65,7 @@ class MsgStack;
  */
 class MsgStack {
 public:
-  MsgStack() : position(0){};
+  MsgStack() = default;
   ~MsgStack() { clear(); }
 
 #if CHECK > 1
@@ -100,7 +100,7 @@ private:
   char buffer[256]; ///< Buffer for vsnprintf
 
   std::vector<std::string> stack;               ///< Message stack;
-  std::vector<std::string>::size_type position; ///< Position in stack
+  std::vector<std::string>::size_type position{0}; ///< Position in stack
 };
 
 /*!

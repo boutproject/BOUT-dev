@@ -29,7 +29,7 @@ private:
   myLaplacian mm;
   bout::inversion::InvertableOperator<Field3D> mySolver;
 
-  class Laplacian* laplacianSolver;
+  std::unique_ptr<Laplacian> laplacianSolver{nullptr};
 
 protected:
   int init(bool) override {
@@ -69,7 +69,7 @@ protected:
     solutionInv = mySolver.invert(n, 0.0);
     mesh->communicate(solutionInv);
 
-    passVerification = mySolver.verify(n);
+    passVerification = mySolver.verify(n, 1.e-3);
 
     solutionLap = laplacianSolver->solve(n);
 

@@ -67,6 +67,7 @@ using TimestepMonitorFunc = int (*)(Solver* solver, BoutReal simtime, BoutReal l
 #include "field3d.hxx"
 #include "vector2d.hxx"
 #include "vector3d.hxx"
+#include "bout/generic_factory.hxx"
 
 #define BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 #include "physicsmodel.hxx"
@@ -91,7 +92,36 @@ constexpr auto SOLVERIMEXBDF2 = "imexbdf2";
 constexpr auto SOLVERSNES = "snes";
 constexpr auto SOLVERRKGENERIC = "rkgeneric";
 
-enum SOLVER_VAR_OP {LOAD_VARS, LOAD_DERIVS, SET_ID, SAVE_VARS, SAVE_DERIVS};
+enum class SOLVER_VAR_OP {LOAD_VARS, LOAD_DERIVS, SET_ID, SAVE_VARS, SAVE_DERIVS};
+
+/// A type to set where in the list monitors are added
+enum class MonitorPosition {BACK, FRONT};
+
+class SolverFactory : public Factory<Solver, SolverFactory> {
+public:
+  static constexpr auto type_name = "Solver";
+  static constexpr auto section_name = "solver";
+  static constexpr auto option_name = "type";
+  static constexpr auto default_type =
+#if defined BOUT_HAS_CVODE
+      SOLVERCVODE;
+#elif defined BOUT_HAS_IDA
+      SOLVERIDA;
+#else
+      SOLVERPVODE;
+#endif
+};
+
+/// Simpler name for Factory registration helper class
+///
+/// Usage:
+///
+///     #include <bout/solverfactory.hxx>
+///     namespace {
+///     RegisterSolver<MySolver> registersolvermine("mysolver");
+///     }
+template <typename DerivedType>
+using RegisterSolver = RegisterInFactory<Solver, DerivedType, SolverFactory>;
 
 ///////////////////////////////////////////////////////////////////
 
@@ -108,19 +138,19 @@ enum SOLVER_VAR_OP {LOAD_VARS, LOAD_DERIVS, SET_ID, SAVE_VARS, SAVE_DERIVS};
  *
  * Instead, use the create() static function:
  *
- *     Solver *solver = Solver::create(); // ok
+ *     auto solver = Solver::create(); // ok
  *
  * By default this will use the options in the "solver" section
  * of the options, equivalent to:
  *
  *     Options *opts = Options::getRoot()->getSection("solver");
- *     Solver *solver = Solver::create(opts);
+ *     auto solver = Solver::create(opts);
  *
  * To use a different set of options, for example if there are
  * multiple solvers, use a different option section:
  *
  *     Options *opts = Options::getRoot()->getSection("anothersolver");
- *     Solver *anothersolver = Solver::create(opts);
+ *     auto anothersolver = Solver::create(opts);
  *
  * Problem specification
  * ---------------------
@@ -197,8 +227,10 @@ public:
   /////////////////////////////////////////////
   // Monitors
 
-  /// A type to set where in the list monitors are added
-  enum MonitorPosition { BACK, FRONT };
+  // Alternative names so that Solver::BACK and Solver::FRONT can be used as names for
+  // MonitorPositions, for backward compatibility.
+  static constexpr MonitorPosition BACK = MonitorPosition::BACK;
+  static constexpr MonitorPosition FRONT = MonitorPosition::FRONT;
 
   /// Add a \p monitor to be called regularly
   ///
@@ -213,7 +245,7 @@ public:
   /// Adding new Monitors after the Solver has been initialised is
   /// only possible if their timestep is a multiple of the Solver's
   /// timestep. Smaller timesteps will throw an exception.
-  void addMonitor(Monitor* monitor, MonitorPosition pos = FRONT);
+  void addMonitor(Monitor* monitor, MonitorPosition pos = MonitorPosition::FRONT);
   /// Remove a monitor function previously added
   void removeMonitor(Monitor* monitor);
 
@@ -228,20 +260,20 @@ public:
 
   /// Add a variable to be solved. This must be done in the
   /// initialisation stage, before the simulation starts.
-  virtual void add(Field2D& v, const std::string name);
-  virtual void add(Field3D& v, const std::string name);
-  virtual void add(Vector2D& v, const std::string name);
-  virtual void add(Vector3D& v, const std::string name);
+  virtual void add(Field2D& v, const std::string& name);
+  virtual void add(Field3D& v, const std::string& name);
+  virtual void add(Vector2D& v, const std::string& name);
+  virtual void add(Vector3D& v, const std::string& name);
 
   /// Returns true if constraints available
   virtual bool constraints() { return has_constraints; }
 
   /// Add constraint functions (optional). These link a variable v to
   /// a control parameter C_v such that v is adjusted to keep C_v = 0.
-  virtual void constraint(Field2D& v, Field2D& C_v, const std::string name);
-  virtual void constraint(Field3D& v, Field3D& C_v, const std::string name);
-  virtual void constraint(Vector2D& v, Vector2D& C_v, const std::string name);
-  virtual void constraint(Vector3D& v, Vector3D& C_v, const std::string name);
+  virtual void constraint(Field2D& v, Field2D& C_v, std::string name);
+  virtual void constraint(Field3D& v, Field3D& C_v, std::string name);
+  virtual void constraint(Vector2D& v, Vector2D& C_v, std::string name);
+  virtual void constraint(Vector3D& v, Vector3D& C_v, std::string name);
 
   /// Set a maximum internal timestep (only for explicit schemes)
   virtual void setMaxTimestep(BoutReal dt) { max_dt = dt; }
@@ -300,10 +332,10 @@ public:
 
   /// Create a Solver object. This uses the "type" option in the given
   /// Option section to determine which solver type to create.
-  static Solver* create(Options* opts = nullptr);
+  static std::unique_ptr<Solver> create(Options* opts = nullptr);
 
   /// Create a Solver object, specifying the type
-  static Solver* create(const SolverType& type, Options* opts = nullptr);
+  static std::unique_ptr<Solver> create(const SolverType& type, Options* opts = nullptr);
 
   /// Pass the command-line arguments. This static function is
   /// called by BoutInitialise, and puts references

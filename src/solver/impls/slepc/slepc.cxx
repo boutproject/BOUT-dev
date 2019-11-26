@@ -42,7 +42,7 @@ PetscErrorCode advanceStepWrapper(Mat matOperator, Vec inData, Vec outData) {
   PetscFunctionBegin;
   SlepcSolver* ctx;
   // Here we set the ctx pointer to the solver instance
-  MatShellGetContext(matOperator, (void**)&ctx);
+  MatShellGetContext(matOperator, reinterpret_cast<void**>(&ctx));
   // Actually advance
   PetscFunctionReturn(ctx->advanceStep(matOperator, inData, outData));
 }
@@ -55,7 +55,7 @@ PetscErrorCode compareEigsWrapper(PetscScalar ar, PetscScalar ai, PetscScalar br
 
   // Cast context as SlepcSolver and call the actual compare routine
   SlepcSolver* myCtx;
-  myCtx = (SlepcSolver*)ctx;
+  myCtx = static_cast<SlepcSolver*>(ctx);
   myCtx->compareState = myCtx->compareEigs(ar, ai, br, bi);
 
   *res = myCtx->compareState;
@@ -70,7 +70,7 @@ PetscErrorCode monitorWrapper(EPS UNUSED(eps), PetscInt its, PetscInt nconv,
   PetscFunctionBegin;
   // Cast context as SlepcSolver and call the actual compare routine
   SlepcSolver* myCtx;
-  myCtx = (SlepcSolver*)mctx;
+  myCtx = static_cast<SlepcSolver*>(mctx);
   myCtx->monitor(its, nconv, eigr, eigi, errest, nest);
   PetscFunctionReturn(0);
 }
@@ -81,7 +81,7 @@ PetscErrorCode stApplyWrapper(ST st, Vec vecIn, Vec vecOut) {
 
   // First get the context of the st object, cast to correct type
   SlepcSolver* myCtx;
-  STShellGetContext(st, (void**)&myCtx);
+  STShellGetContext(st, reinterpret_cast<void**>(&myCtx));
 
   // Do the matrix vector multiply -- same as STSHIFT with zero shift
   // Use the advanceStepWrapper so any mods made in advanceStep are
@@ -102,7 +102,7 @@ PetscErrorCode stBackTransformWrapper(ST st, PetscInt nEig, PetscScalar* eigr,
   PetscFunctionBegin;
   // First get the context of the st object and cast to correct type
   SlepcSolver* myCtx;
-  STShellGetContext(st, (void**)&myCtx);
+  STShellGetContext(st, reinterpret_cast<void**>(&myCtx));
 
   // Convert to bout eigenvalue
   BoutReal tmpR, tmpI;
@@ -208,9 +208,7 @@ SlepcSolver::SlepcSolver(Options* options) {
   if (!selfSolve && !ddtMode) {
     // Use a sub-section called "advance"
     advanceSolver =
-        SolverFactory::getInstance()->createSolver(options->getSection("advance"));
-  } else {
-    advanceSolver = nullptr;
+        SolverFactory::getInstance().create(options->getSection("advance"));
   }
 }
 
@@ -222,9 +220,6 @@ SlepcSolver::~SlepcSolver() {
     };
     if (shellMat) {
       MatDestroy(&shellMat);
-    };
-    if (advanceSolver) {
-      delete advanceSolver;
     };
     initialised = false;
   }
@@ -388,7 +383,7 @@ void SlepcSolver::createShellMat() {
                  &shellMat);
   // Define the mat_mult operation --> Define what routine returns M.x, where M
   // is the time advance operator and x are the initial field conditions
-  MatShellSetOperation(shellMat, MATOP_MULT, (void (*)()) & advanceStepWrapper);
+  MatShellSetOperation(shellMat, MATOP_MULT, reinterpret_cast<void (*)()>(&advanceStepWrapper));
 
   // The above function callback can cause issues as member functions have a hidden "this"
   // argument which means if Slepc calls this->advanceStep(Mat,Vec,Vec) this is actually
@@ -440,7 +435,7 @@ void SlepcSolver::createEPS() {
   //"-st_type shell" command line option, should really add a
   // BOUT input flag to force it
   EPSGetST(eps, &st);
-  PetscObjectTypeCompare((PetscObject)st, STSHELL, &stIsShell);
+  PetscObjectTypeCompare(reinterpret_cast<PetscObject>(st), STSHELL, &stIsShell);
   if (stIsShell) {
     // Set the user-defined routine for applying the operator
     STShellSetApply(st, &stApplyWrapper);
@@ -453,7 +448,7 @@ void SlepcSolver::createEPS() {
     STShellSetBackTransform(st, stBackTransformWrapper);
 
     // Define the transformations name (optional)
-    PetscObjectSetName((PetscObject)st, "Exponential Linear ST");
+    PetscObjectSetName(reinterpret_cast<PetscObject>(st), "Exponential Linear ST");
   };
 
   // Should probably call a routine here which interrogates eps
@@ -613,7 +608,7 @@ void SlepcSolver::monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[],
 
   // Update the number of converged modes already investigated.
   nConvPrev = nconv;
-};
+}
 
 // Convert a slepc eigenvalue to a BOUT one
 void SlepcSolver::slepcToBout(PetscScalar& reEigIn, PetscScalar& imEigIn,

@@ -9,44 +9,40 @@ using bout::generator::Context;
 
 bool GridFromOptions::hasVar(const std::string& name) { return options->isSet(name); }
 
-bool GridFromOptions::get(Mesh* UNUSED(m), std::string& sval, const std::string& name) {
-  if (!hasVar(name)) {
-    const std::string def{};
-    output_warn.write("Variable '%s' not in mesh options. Setting to \"%s\"\n",
-                      name.c_str(), def.c_str());
-    sval = def;
-    return false;
+namespace {
+/// Return value of \p name in \p options, using \p def as a default
+/// if it doesn't exist
+template <class T>
+auto getWithDefault(const Options& options, const std::string& name, const T& def) -> T {
+  const bool has_var = options.isSet(name);
+  if (!has_var) {
+    output_warn.write("Variable '%s' not in mesh options. Setting to ", name.c_str());
+    output_warn << def << "\n";
   }
+  // Note! We don't use `Options::withDefault` here because that
+  // records the default in the `Options` object and we don't know if
+  // we'll actually end up using that value. This is because
+  // `GridFromOptions::get` is probably being called via `Mesh::get`,
+  // and the calling site may use the return value of that to set its
+  // own default
+  return has_var ? options[name].as<T>() : def;
+}
+} // namespace
 
-  options->get(name, sval, "");
-  return true;
+bool GridFromOptions::get(Mesh*, std::string& sval, const std::string& name,
+                          const std::string& def) {
+  sval = getWithDefault(*options, name, def);
+  return hasVar(name);
 }
 
-bool GridFromOptions::get(Mesh* UNUSED(m), int& ival, const std::string& name) {
-  if (!hasVar(name)) {
-    constexpr int def{0};
-    output_warn.write("Variable '%s' not in mesh options. Setting to %d\n", name.c_str(),
-                      def);
-    ival = def;
-    return false;
-  }
-
-  options->get(name, ival, 0);
-  return true;
+bool GridFromOptions::get(Mesh*, int& ival, const std::string& name, int def) {
+  ival = getWithDefault(*options, name, def);
+  return hasVar(name);
 }
 
-bool GridFromOptions::get(Mesh* UNUSED(m), BoutReal& rval, const std::string& name) {
-  if (!hasVar(name)) {
-    constexpr BoutReal def{0.0};
-    output_warn.write("Variable '%s' not in mesh options. Setting to %e\n", name.c_str(),
-                      def);
-    rval = def;
-    return false;
-  }
-
-  rval = (*options)[name].withDefault(0.0);
-
-  return true;
+bool GridFromOptions::get(Mesh*, BoutReal& rval, const std::string& name, BoutReal def) {
+  rval = getWithDefault(*options, name, def);
+  return hasVar(name);
 }
 
 bool GridFromOptions::get(Mesh* m, Field2D& var, const std::string& name, BoutReal def) {

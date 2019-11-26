@@ -58,9 +58,11 @@ public:
 
  private:
   BoutComm();
-  
-  int *pargc; char ***pargv; ///< Command-line arguments. These can be modified by MPI init, so pointers are used
-  bool hasBeenSet;
+
+  int* pargc{nullptr};
+  char*** pargv{nullptr}; ///< Command-line arguments. These can be modified by MPI init,
+                          ///< so pointers are used
+  bool hasBeenSet{false};
   MPI_Comm comm;
   
   static BoutComm* instance; ///< The only instance of this class (Singleton)

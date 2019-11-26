@@ -93,14 +93,14 @@ int main(int argc, char **argv) {
     auto deriv = DerivativeStore<Field3D>::getInstance().getStandardDerivative("C2",DIRECTION::Y, STAGGER::None);
     ITERATOR_TEST_BLOCK(
 			"DerivativeStore without fetching",
-			deriv(a, result, RGN_NOY);
+			deriv(a, result, "RGN_NOY");
 			);
   };
   
   ITERATOR_TEST_BLOCK(
 		      "DerivativeStore with fetch",
 		      auto deriv = DerivativeStore<Field3D>::getInstance().getStandardDerivative("C2",DIRECTION::Y, STAGGER::None);    
-		      deriv(a, result, RGN_NOY);
+		      deriv(a, result, "RGN_NOY");
 		      );
 
   ITERATOR_TEST_BLOCK(

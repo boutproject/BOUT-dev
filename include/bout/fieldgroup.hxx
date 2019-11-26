@@ -18,10 +18,12 @@
 /// however Vector2D and Vector3D are stored by reference to their
 /// components (x,y,z) as Field2D or Field3D objects.
 class FieldGroup {
- public:
-  FieldGroup() {}
-
-  FieldGroup(const FieldGroup &other) : fvec(other.fvec), f3vec(other.f3vec) {}
+public:
+  FieldGroup() = default;
+  FieldGroup(const FieldGroup& other) = default;
+  FieldGroup(FieldGroup&& other) = default;
+  FieldGroup& operator=(const FieldGroup& other) = default;
+  FieldGroup& operator=(FieldGroup&& other) = default;
 
   /// Constructor with a single FieldData \p f
   FieldGroup(FieldData &f) { fvec.push_back(&f); }

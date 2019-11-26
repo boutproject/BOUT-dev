@@ -19,13 +19,13 @@ shell_safe("make > make.log")
 
 # Read benchmark values
 
-vars = ['ivar', 'rvar', 'f2d', 'f3d', 'fperp', 'fperp2', 'ivar_evol', 'rvar_evol',
-        'v2d_evol_x', 'v2d_evol_y', 'v2d_evol_z', 'fperp2_evol']
+vars = ['ivar', 'rvar', 'bvar', 'f2d', 'f3d', 'fperp', 'fperp2', 'ivar_evol', 'rvar_evol',
+        'bvar_evol', 'v2d_evol_x', 'v2d_evol_y', 'v2d_evol_z', 'fperp2_evol']
 
 field_vars = ['f2d', 'f3d', 'fperp', 'fperp2', 'v2d_evol_x', 'v2d_evol_y', 'v2d_evol_z',
         'fperp2_evol'] # Field quantities, not scalars
 
-tol = 1e-10
+tol = 1e-6
 
 print("Reading benchmark data")
 bmk = {}
@@ -35,7 +35,7 @@ for v in vars:
 print("Running I/O test")
 success = True
 for nproc in [1,2,4]:
-  cmd = "./test_io"
+  cmd = "./test_io_hdf5"
 
   # On some machines need to delete dmp files first
   # or data isn't written correctly

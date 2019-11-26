@@ -37,8 +37,7 @@
 #include <bout/scorepwrapper.hxx>
 #include <interpolation.hxx>
 
-Vector3D::Vector3D(Mesh *localmesh)
-    : x(localmesh), y(localmesh), z(localmesh), covariant(true), deriv(nullptr), location(CELL_CENTRE) {}
+Vector3D::Vector3D(Mesh* localmesh) : x(localmesh), y(localmesh), z(localmesh) {}
 
 Vector3D::Vector3D(const Vector3D &f)
     : x(f.x), y(f.y), z(f.z), covariant(f.covariant), deriv(nullptr),
@@ -386,13 +385,13 @@ Vector3D & Vector3D::operator/=(const Field3D &rhs)
     result.covariant = false;                                           \
                                                                         \
     return result;                                                      \
-  };                                                                    \
+  }                                                                     \
 
 
-CROSS(Vector3D, Vector3D, Vector3D);
-CROSS(Vector3D, Vector3D, Vector2D);
-CROSS(Vector3D, Vector2D, Vector3D);
-CROSS(Vector2D, Vector2D, Vector2D);
+CROSS(Vector3D, Vector3D, Vector3D)
+CROSS(Vector3D, Vector3D, Vector2D)
+CROSS(Vector3D, Vector2D, Vector3D)
+CROSS(Vector2D, Vector2D, Vector2D)
 
 /***************************************************************
  *                      BINARY OPERATORS 

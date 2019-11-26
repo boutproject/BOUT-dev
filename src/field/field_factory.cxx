@@ -198,9 +198,10 @@ Field3D FieldFactory::create3D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC 
     throw BoutException("Couldn't create 3D field from null generator");
   }
 
-  Field3D result(localmesh);
-  result.allocate();
-  result.setLocation(loc);
+  const auto y_direction =
+      transform_from_field_aligned ? YDirectionType::Aligned : YDirectionType::Standard;
+
+  auto result = Field3D(localmesh).setLocation(loc).setDirectionY(y_direction).allocate();
 
   BOUT_FOR(i, result.getRegion("RGN_ALL")) {
     result[i] = gen->generate(Context(i, loc, localmesh, t));
@@ -215,6 +216,8 @@ Field3D FieldFactory::create3D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC 
       // Transform from field aligned coordinates, to be compatible with
       // older BOUT++ inputs. This is not a particularly "nice" solution.
       result = fromFieldAligned(result, "RGN_ALL");
+    } else {
+      result.setDirectionY(YDirectionType::Standard);
     }
   }
 
@@ -241,10 +244,11 @@ FieldPerp FieldFactory::createPerp(FieldGeneratorPtr gen, Mesh* localmesh, CELL_
     throw BoutException("Couldn't create FieldPerp from null generator");
   }
 
-  FieldPerp result(localmesh);
-  result.allocate();
-  result.setLocation(loc);
-  
+  const auto y_direction =
+      transform_from_field_aligned ? YDirectionType::Aligned : YDirectionType::Standard;
+
+  auto result = FieldPerp(localmesh).setLocation(loc).setDirectionY(y_direction).allocate();
+
   BOUT_FOR(i, result.getRegion("RGN_ALL")) {
     result[i] = gen->generate(Context(i, loc, localmesh, t));
   };
@@ -333,7 +337,7 @@ FieldGeneratorPtr FieldFactory::resolve(std::string& name) const {
 
     // Check if already looking up this symbol
     for (const auto& lookup_value : lookup) {
-      if (key.compare(lookup_value) == 0) {
+      if (key == lookup_value) {
         // Name matches, so already looking up
         output_error << "ExpressionParser lookup stack:\n";
         for (const auto& stack_value : lookup) {

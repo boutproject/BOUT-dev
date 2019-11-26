@@ -60,18 +60,15 @@ class Coordinates;
  * Defines the virtual function SetStencil, used by differencing methods
  */
 class Field {
- public:
+public:
   Field() = default;
+  Field(const Field& other) = default;
+  Field(Field&& other) = default;
+  Field& operator=(const Field& other) = default;
+  Field& operator=(Field&& other) = default;
+  virtual ~Field() = default;
 
   Field(Mesh* localmesh, CELL_LOC location_in, DirectionTypes directions_in);
-
-  // Copy constructor
-  Field(const Field& f)
-    : name(f.name), fieldmesh(f.fieldmesh),
-      fieldCoordinates(f.fieldCoordinates), location(f.location),
-      directions(f.directions) {}
-
-  virtual ~Field() { }
 
   /// Set variable location for staggered grids to @param new_location
   ///
@@ -508,14 +505,14 @@ inline T pow(BoutReal lhs, const T& rhs, REGION rgn) {
 /// This loops over the entire domain, including guard/boundary cells by
 /// default (can be changed using the \p rgn argument).
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
-FIELD_FUNC(sqrt, ::sqrt);
+FIELD_FUNC(sqrt, ::sqrt)
 
 /// Absolute value (modulus, |f|) of \p f over region \p rgn
 ///
 /// This loops over the entire domain, including guard/boundary cells by
 /// default (can be changed using the \p rgn argument).
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
-FIELD_FUNC(abs, ::fabs);
+FIELD_FUNC(abs, ::fabs)
 
 /// Exponential: \f$\exp(f)\f$ is e to the power of \p f, over region
 /// \p rgn
@@ -523,7 +520,7 @@ FIELD_FUNC(abs, ::fabs);
 /// This loops over the entire domain, including guard/boundary cells by
 /// default (can be changed using the \p rgn argument).
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
-FIELD_FUNC(exp, ::exp);
+FIELD_FUNC(exp, ::exp)
 
 /// Natural logarithm of \p f over region \p rgn, inverse of
 /// exponential
@@ -533,7 +530,7 @@ FIELD_FUNC(exp, ::exp);
 /// This loops over the entire domain, including guard/boundary cells by
 /// default (can be changed using the rgn argument)
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
-FIELD_FUNC(log, ::log);
+FIELD_FUNC(log, ::log)
 
 /// Sine trigonometric function.
 ///
@@ -543,7 +540,7 @@ FIELD_FUNC(log, ::log);
 /// This loops over the entire domain, including guard/boundary cells by
 /// default (can be changed using the \p rgn argument).
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
-FIELD_FUNC(sin, ::sin);
+FIELD_FUNC(sin, ::sin)
 
 /// Cosine trigonometric function.
 ///
@@ -553,7 +550,7 @@ FIELD_FUNC(sin, ::sin);
 /// This loops over the entire domain, including guard/boundary cells by
 /// default (can be changed using the \p rgn argument).
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
-FIELD_FUNC(cos, ::cos);
+FIELD_FUNC(cos, ::cos)
 
 /// Tangent trigonometric function.
 ///
@@ -563,7 +560,7 @@ FIELD_FUNC(cos, ::cos);
 /// This loops over the entire domain, including guard/boundary cells by
 /// default (can be changed using the \p rgn argument).
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
-FIELD_FUNC(tan, ::tan);
+FIELD_FUNC(tan, ::tan)
 
 /// Hyperbolic sine trigonometric function.
 ///
@@ -573,7 +570,7 @@ FIELD_FUNC(tan, ::tan);
 /// This loops over the entire domain, including guard/boundary cells by
 /// default (can be changed using the \p rgn argument).
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
-FIELD_FUNC(sinh, ::sinh);
+FIELD_FUNC(sinh, ::sinh)
 
 /// Hyperbolic cosine trigonometric function.
 ///
@@ -583,7 +580,7 @@ FIELD_FUNC(sinh, ::sinh);
 /// This loops over the entire domain, including guard/boundary cells by
 /// default (can be changed using the \p rgn argument).
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
-FIELD_FUNC(cosh, ::cosh);
+FIELD_FUNC(cosh, ::cosh)
 
 /// Hyperbolic tangent trigonometric function.
 ///
@@ -593,7 +590,7 @@ FIELD_FUNC(cosh, ::cosh);
 /// This loops over the entire domain, including guard/boundary cells by
 /// default (can be changed using the \p rgn argument).
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
-FIELD_FUNC(tanh, ::tanh);
+FIELD_FUNC(tanh, ::tanh)
 
 /// Check if all values of a field \p var are finite.
 /// Loops over all points including the boundaries by

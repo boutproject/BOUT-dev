@@ -6,8 +6,10 @@
 /// Inherit from this class (private) to prevent copying
 class Uncopyable {
 protected:
-  Uncopyable() {}
-  ~Uncopyable() {}
+  Uncopyable() = default;
+  ~Uncopyable() = default;
+
+public:
   Uncopyable(const Uncopyable &) = delete;
   Uncopyable &operator=(const Uncopyable &) = delete;
 };

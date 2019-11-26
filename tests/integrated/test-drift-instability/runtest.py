@@ -66,9 +66,6 @@ grid = file_import("uedge.grd_std.cdl")
 code = 0 # Return code
 for zeff in zlist:
     # Create the input file, setting Zeff
-    # If we get passed Staggered or something like this, use staggered config file
-    inp='BOUT_stag.inp' if 'stag' in [i.lower()[:4] for i in argv] else 'BOUT.inp'
-    shell_safe("sed 's/Zeff = 128.0/Zeff = "+str(zeff)+"/g' "+inp+" > data/BOUT.inp")
     timestep = 5e3
     if zeff < 128:
         # reduce time-step. At large times these cases produce noise
@@ -80,7 +77,9 @@ for zeff in zlist:
     print("Running drift instability test, zeff = ", zeff)
 
     # Run the case
-    s, out = launch_safe("./2fluid timestep="+str(timestep), nproc=nproc, mthread=nthreads, pipe=True)
+    s, out = launch_safe("./2fluid 2fluid:Zeff={} timestep={}"
+                         .format(zeff, timestep),
+                         nproc=nproc, mthread=nthreads, pipe=True)
     f = open("run.log."+str(zeff), "w")
     f.write(out)
     f.close()

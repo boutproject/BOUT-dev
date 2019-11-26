@@ -45,7 +45,6 @@
 class IdaSolver;
 class Options;
 
-#include <bout/solverfactory.hxx>
 namespace {
 RegisterSolver<IdaSolver> registersolverida("ida");
 }

@@ -5,8 +5,8 @@
 
 #if BOUT_HAS_GETTEXT
 
+#include <clocale>
 #include <libintl.h>
-#include <locale.h>
 
 #define GETTEXT_PACKAGE "libbout"
 

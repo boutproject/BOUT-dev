@@ -92,9 +92,9 @@ Field3D::Field3D(const BoutReal val, Mesh* localmesh) : Field3D(localmesh) {
   *this = val;
 }
 
-Field3D::Field3D(Array<BoutReal> data, Mesh* localmesh, CELL_LOC datalocation,
+Field3D::Field3D(Array<BoutReal> data_in, Mesh* localmesh, CELL_LOC datalocation,
                  DirectionTypes directions_in)
-    : Field(localmesh, datalocation, directions_in), data(data) {
+    : Field(localmesh, datalocation, directions_in), data(std::move(data_in)) {
   TRACE("Field3D: Copy constructor from Array and Mesh");
 
   nx = fieldmesh->LocalNx;
@@ -106,12 +106,7 @@ Field3D::Field3D(Array<BoutReal> data, Mesh* localmesh, CELL_LOC datalocation,
   setLocation(datalocation);
 }
 
-Field3D::~Field3D() {
-  /// Delete the time derivative variable if allocated
-  if (deriv != nullptr) {
-    delete deriv;
-  }
-}
+Field3D::~Field3D() { delete deriv; }
 
 Field3D& Field3D::allocate() {
   if(data.empty()) {
@@ -232,17 +227,17 @@ const BoutReal &Field3D::operator()(const Ind2D &d, int jz) const {
 
 const Region<Ind3D> &Field3D::getRegion(REGION region) const {
   return fieldmesh->getRegion3D(toString(region));
-};
+}
 const Region<Ind3D> &Field3D::getRegion(const std::string &region_name) const {
   return fieldmesh->getRegion3D(region_name);
-};
+}
 
 const Region<Ind2D> &Field3D::getRegion2D(REGION region) const {
   return fieldmesh->getRegion2D(toString(region));
-};
+}
 const Region<Ind2D> &Field3D::getRegion2D(const std::string &region_name) const {
   return fieldmesh->getRegion2D(region_name);
-};
+}
 
 /***************************************************************
  *                         OPERATORS 
@@ -290,7 +285,11 @@ Field3D & Field3D::operator=(const Field2D &rhs) {
   ASSERT1(areFieldsCompatible(*this, rhs));
 
   /// Copy data
-  BOUT_FOR(i, getRegion("RGN_ALL")) { (*this)[i] = rhs[i]; }
+  BOUT_FOR(i, rhs.getRegion("RGN_ALL")) {
+    for (int iz = 0; iz < nz; iz++) {
+      (*this)(i, iz) = rhs[i];
+    }
+  }
 
   return *this;
 }
@@ -423,7 +422,7 @@ void Field3D::applyBoundary(const std::string &region, const std::string &condit
   bool region_found = false;
   /// Loop over the mesh boundary regions
   for (const auto &reg : fieldmesh->getBoundaries()) {
-    if (reg->label.compare(region) == 0) {
+    if (reg->label == region) {
       region_found = true;
       auto op = std::unique_ptr<BoundaryOp>{
           dynamic_cast<BoundaryOp*>(bfact->create(condition, reg))};
@@ -556,7 +555,7 @@ void Field3D::applyParallelBoundary(const std::string &region, const std::string
 
     /// Loop over the mesh boundary regions
     for(const auto& reg : fieldmesh->getBoundariesPar()) {
-      if(reg->label.compare(region) == 0) {
+      if (reg->label == region) {
         auto op = std::unique_ptr<BoundaryOpPar>{
             dynamic_cast<BoundaryOpPar*>(bfact->create(condition, reg))};
         op->apply(*this);
@@ -583,7 +582,7 @@ void Field3D::applyParallelBoundary(const std::string &region, const std::string
 
     /// Loop over the mesh boundary regions
     for(const auto& reg : fieldmesh->getBoundariesPar()) {
-      if(reg->label.compare(region) == 0) {
+      if (reg->label == region) {
         // BoundaryFactory can't create boundaries using Field3Ds, so get temporary
         // boundary of the right type
         auto tmp = std::unique_ptr<BoundaryOpPar>{
@@ -630,7 +629,6 @@ FieldPerp pow(const Field3D &lhs, const FieldPerp &rhs, const std::string& rgn) 
   ASSERT1(areFieldsCompatible(lhs, rhs));
 
   FieldPerp result{emptyFrom(rhs)};
-  result.allocate();
   
   BOUT_FOR(i, result.getRegion(rgn)) {
     result[i] = ::pow(lhs(i, rhs.getIndex()), rhs[i]);

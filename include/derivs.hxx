@@ -656,7 +656,7 @@ inline Field3D D2DXDY(const Field3D& f, CELL_LOC outloc, DIFF_METHOD method,
                             REGION region = RGN_NOBNDRY,
                             const std::string& dfdy_boundary_condition = "free_o3") {
   return D2DXDY(f, outloc, toString(method), toString(region), dfdy_boundary_condition);
-};
+}
 
 /// Calculate mixed partial derivative in x and y
 ///
@@ -691,7 +691,7 @@ inline Field2D D2DXDY(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method,
                             REGION region = RGN_NOBNDRY,
                             const std::string& dfdy_boundary_condition = "free_o3") {
   return D2DXDY(f, outloc, toString(method), toString(region), dfdy_boundary_condition);
-};
+}
 
 /// Calculate mixed partial derivative in x and z
 ///

@@ -47,8 +47,8 @@ private:
   Coordinates *coord;
 
   /// Solver for inverting Laplacian
-  Laplacian *phiSolver;
-  Laplacian *aparSolver;
+  std::unique_ptr<Laplacian> phiSolver;
+  std::unique_ptr<Laplacian> aparSolver;
   
 protected:
   int init(bool UNUSED(restarting)) override {
@@ -107,9 +107,6 @@ protected:
     zeff = options["zeff"].withDefault(1.0);
     nu_perp = options["nu_perp"].withDefault(0.0);
     ShearFactor = options["ShearFactor"].withDefault(1.0);
-
-    phi_flags = options["phi_flags"].withDefault(0);
-    apar_flags = options["apar_flags"].withDefault(0);
 
     /************* SHIFTED RADIAL COORDINATES ************/
 
@@ -226,11 +223,9 @@ protected:
     SAVE_ONCE(Te_x, Ti_x, Ni_x, rho_s, wci);
     
     // Create a solver for the Laplacian
-    phiSolver = Laplacian::create();
-    phiSolver->setFlags(phi_flags);
+    phiSolver = Laplacian::create(&options["phiSolver"]);
 
-    aparSolver = Laplacian::create();
-    aparSolver->setFlags(apar_flags);
+    aparSolver = Laplacian::create(&options["aparSolver"]);
     aparSolver->setCoefA((-0.5 * beta_p / fmei) * Ni0);
 
     return 0;

@@ -76,8 +76,10 @@ void GlobalField::proc_size(int proc, int *lx, int *ly, int *lz) const {
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 
-GlobalField2D::GlobalField2D(Mesh *m, int proc) : GlobalField(m, proc, m->GlobalNx, m->GlobalNy-2*m->ystart, 1), 
-  data_valid(false) {
+GlobalField2D::GlobalField2D(Mesh *m, int proc)
+  : GlobalField(m, proc, m->GlobalNx,
+                m->GlobalNy-m->numberOfYBoundaries()*2*m->ystart, 1),
+    data_valid(false) {
   
   if((proc < 0) || (proc >= npes))
     throw BoutException("Processor out of range");
@@ -239,8 +241,10 @@ int GlobalField2D::msg_len(int proc) const {
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 
-GlobalField3D::GlobalField3D(Mesh *m, int proc) : GlobalField(m, proc, m->GlobalNx, m->GlobalNy-2*m->ystart, m->LocalNz), 
-  data_valid(false) {
+GlobalField3D::GlobalField3D(Mesh *m, int proc)
+  : GlobalField(m, proc, m->GlobalNx,
+                m->GlobalNy-m->numberOfYBoundaries()*2*m->ystart, m->LocalNz),
+    data_valid(false) {
   
   if((proc < 0) || (proc >= npes))
     throw BoutException("Processor out of range");

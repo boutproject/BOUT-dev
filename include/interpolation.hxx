@@ -32,6 +32,7 @@
 #include "mask.hxx"
 #include "stencils.hxx"
 #include "utils.hxx"
+#include "bout/generic_factory.hxx"
 
 /// Perform interpolation between centre -> shifted or vice-versa
 /*!
@@ -125,9 +126,16 @@ const T interp_to(const T& var, CELL_LOC loc, const std::string region = "RGN_AL
       ASSERT0(fieldmesh->ystart >= 2);
 
       // We can't interpolate in y unless we're field-aligned
-      // FIXME: Add check once we label fields as orthogonal/aligned
+      const bool is_unaligned = (var.getDirectionY() == YDirectionType::Standard);
+      const T var_fa = is_unaligned ? toFieldAligned(var, "RGN_NOX") : var;
 
-      const T var_fa = toFieldAligned(var, "RGN_NOX");
+      if (not std::is_base_of<Field2D, T>::value) {
+        // Field2D is axisymmetric, so YDirectionType::Standard and
+        // YDirectionType::Aligned are equivalent, but trying to set
+        // YDirectionType::Aligned explicitly is an error
+        result.setDirectionY(YDirectionType::Aligned);
+      }
+
       if (region != "RGN_NOBNDRY") {
         // repeat the hack above for boundary points
         // this avoids a duplicate toFieldAligned call if we had called
@@ -154,7 +162,9 @@ const T interp_to(const T& var, CELL_LOC loc, const std::string region = "RGN_AL
         }
       }
 
-      result = fromFieldAligned(result, "RGN_NOBNDRY");
+      if (is_unaligned) {
+        result = fromFieldAligned(result, "RGN_NOBNDRY");
+      }
 
       break;
     }
@@ -233,7 +243,7 @@ public:
       : Interpolation(y_offset, mesh) {
     skip_mask = mask;
   }
-  virtual ~Interpolation() {}
+  virtual ~Interpolation() = default;
 
   virtual void calcWeights(const Field3D &delta_x, const Field3D &delta_z) = 0;
   virtual void calcWeights(const Field3D &delta_x, const Field3D &delta_z,
@@ -250,6 +260,21 @@ public:
   // Interpolate using the field at (x,y+y_offset,z), rather than (x,y,z)
   int y_offset;
   void setYOffset(int offset) { y_offset = offset; }
+
+  virtual std::vector<ParallelTransform::PositionsAndWeights>
+  getWeightsForYUpApproximation(int i, int j, int k) {
+    return getWeightsForYApproximation(i, j, k, 1);
+  }
+  virtual std::vector<ParallelTransform::PositionsAndWeights>
+  getWeightsForYDownApproximation(int i, int j, int k) {
+    return getWeightsForYApproximation(i, j, k, -1);
+  }
+  virtual std::vector<ParallelTransform::PositionsAndWeights>
+  getWeightsForYApproximation(int UNUSED(i), int UNUSED(j), int UNUSED(k),
+                              int UNUSED(yoffset)) {
+    throw BoutException(
+        "Interpolation::getWeightsForYApproximation not implemented in this subclass");
+  }
 };
 
 class HermiteSpline : public Interpolation {
@@ -299,6 +324,8 @@ public:
                       const Field3D &delta_z) override;
   Field3D interpolate(const Field3D &f, const Field3D &delta_x, const Field3D &delta_z,
                       const BoutMask &mask) override;
+  std::vector<ParallelTransform::PositionsAndWeights>
+  getWeightsForYApproximation(int i, int j, int k, int yoffset);
 };
 
 
@@ -323,6 +350,7 @@ public:
     return new MonotonicHermiteSpline(mesh);
   }
   
+  using HermiteSpline::interpolate;
   /// Interpolate using precalculated weights.
   /// This function is called by the other interpolate functions
   /// in the base class HermiteSpline.
@@ -390,6 +418,34 @@ public:
                       const Field3D &delta_z) override;
   Field3D interpolate(const Field3D &f, const Field3D &delta_x, const Field3D &delta_z,
                       const BoutMask &mask) override;
+};
+
+class InterpolationFactory
+    : public Factory<Interpolation, InterpolationFactory,
+                             std::function<std::unique_ptr<Interpolation>(Mesh*)>> {
+public:
+  static constexpr auto type_name = "Interpolation";
+  static constexpr auto section_name = "interpolation";
+  static constexpr auto option_name = "type";
+  static constexpr auto default_type = "hermitespline";
+
+  using Factory::create;
+  ReturnType create(Mesh* mesh = nullptr) {
+    return Factory::create(getType(nullptr), mesh);
+  }
+
+  static void ensureRegistered();
+};
+
+template <class DerivedType>
+class RegisterInterpolation {
+public:
+  RegisterInterpolation(const std::string& name) {
+    InterpolationFactory::getInstance().add(
+        name, [](Mesh* mesh) -> std::unique_ptr<Interpolation> {
+          return std::make_unique<DerivedType>(mesh);
+        });
+  }
 };
 
 #endif // __INTERP_H__

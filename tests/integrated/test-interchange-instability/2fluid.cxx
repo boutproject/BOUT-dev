@@ -33,7 +33,7 @@ class Interchange : public PhysicsModel {
   BoutReal Te_x, Ti_x, Ni_x, bmag, rho_s, AA, ZZ, wci;
 
   // Laplacian inversion
-  Laplacian* phi_solver;
+  std::unique_ptr<Laplacian> phi_solver;
 
   Coordinates *coord;
 protected:
