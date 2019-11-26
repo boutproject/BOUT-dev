@@ -128,6 +128,7 @@ int AdamsBashforthSolver::run() {
       // Here's the derivative calculation at the current time
       // Find d state/dt and store in history -- this doesn't
       // need repeating whilst adapting timestep
+      load_vars(std::begin(state));
       run_rhs(simtime);
       history.emplace_front(nlocal);
       save_derivs(std::begin(history[0]));
