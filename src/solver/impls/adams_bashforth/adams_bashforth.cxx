@@ -357,8 +357,7 @@ BoutReal AdamsBashforthSolver::take_step(const BoutReal timeIn, const BoutReal d
 
   if (adaptive) {
 
-    // Create some storage for the small step update and corresponding resulting state
-    Array<BoutReal> result2(nlocal);
+    // Create some storage for the small step update.
     Array<BoutReal> half_update(nlocal);
 
     // Use this variable to say how big the first small timestep should be as a fraction
@@ -386,15 +385,6 @@ BoutReal AdamsBashforthSolver::take_step(const BoutReal timeIn, const BoutReal d
       }
     }
 
-    // Now we have to calculate the state after the first small step as we will need to
-    // use this to calculate the derivatives at this point.
-    // std::transform(std::begin(current), std::end(current), std::begin(half_update),
-    //                std::begin(result2), std::plus<BoutReal>{});
-    BOUT_OMP(parallel for);
-    for (int i = 0; i < nlocal; i++) {
-      result2[i] = current[i] + half_update[i];
-    };
-
     // -------------------------------------------
     // Now do the second small timestep -- note we need to call rhs again
     // -------------------------------------------
@@ -408,6 +398,17 @@ BoutReal AdamsBashforthSolver::take_step(const BoutReal timeIn, const BoutReal d
     // current_order then call must be part of the adapative_order code
     // so don't recalculate just reuse stored derivatives.
     if (order == current_order) {
+      Array<BoutReal> result2(nlocal);
+
+      // Now we have to calculate the state after the first small step as we will need to
+      // use this to calculate the derivatives at this point.
+      // std::transform(std::begin(current), std::end(current), std::begin(half_update),
+      //                std::begin(result2), std::plus<BoutReal>{});
+      BOUT_OMP(parallel for);
+      for (int i = 0; i < nlocal; i++) {
+        result2[i] = current[i] + half_update[i];
+      };
+
       load_vars(std::begin(result2));
       // This is typically the most expensive part of this routine.
       //
