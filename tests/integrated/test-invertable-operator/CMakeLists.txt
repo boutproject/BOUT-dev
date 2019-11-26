@@ -1,4 +1,4 @@
-bout_add_integrated_test(invertable_operator
+bout_add_integrated_test(test-invertable-operator
   SOURCES invertable_operator.cxx
   USE_RUNTEST
   USE_DATA_BOUT_INP

@@ -14,4 +14,8 @@ public:
   BoutReal setOutputStates(const Array<BoutReal> &start,BoutReal dt, Array<BoutReal> &resultFollow);
 };
 
+namespace {
+RegisterRKScheme<RK4SIMPLEScheme> registerrkscheme4simple(RKSCHEME_RK4);
+}
+
 #endif // __RK4SIMPLE_SCHEME_H__

@@ -46,7 +46,6 @@ class PetscSolver;
 
 #include <vector>
 
-#include <bout/solverfactory.hxx>
 namespace {
 RegisterSolver<PetscSolver> registersolverpetsc("petsc");
 }

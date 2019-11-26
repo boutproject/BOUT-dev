@@ -25,7 +25,6 @@ from sys import stdout, exit
 
 
 print("Making Laplacian inversion test")
-shell("rm test_laplace")
 shell_safe("make > make.log")
 
 # Read benchmark values

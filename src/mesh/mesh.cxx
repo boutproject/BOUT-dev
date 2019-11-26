@@ -1,4 +1,3 @@
-
 #include <globals.hxx>
 #include <bout/mesh.hxx>
 #include <bout/coordinates.hxx>
@@ -8,13 +7,44 @@
 
 #include <cmath>
 
-#include "meshfactory.hxx"
-
 #include <boutcomm.hxx>
 #include <output.hxx>
 
+#include "impls/bout/boutmesh.hxx"
+
+MeshFactory::ReturnType MeshFactory::create(Options* options, GridDataSource* source) {
+  if (source != nullptr) {
+    return Factory::create(getType(options), source, options);
+  }
+
+  if (options == nullptr) {
+    options = Options::getRoot()->getSection(section_name);
+  }
+
+  if (options->isSet("file") or Options::root().isSet("grid")) {
+    // Specified mesh file
+    const auto grid_name =
+        (*options)["file"].withDefault(Options::root()["grid"].withDefault(""));
+    output << "\nGetting grid data from file " << grid_name << "\n";
+
+    // Create a grid file, using specified format if given
+    const auto grid_ext =
+        (*options)["format"].withDefault(Options::root()["format"].withDefault(""));
+
+    // Create a grid file
+    source = static_cast<GridDataSource*>(new GridFile(
+        data_format((grid_ext.empty()) ? grid_name.c_str() : grid_ext.c_str()),
+        grid_name));
+  } else {
+    output << "\nGetting grid data from options\n";
+    source = static_cast<GridDataSource*>(new GridFromOptions(options));
+  }
+
+  return Factory::create(getType(options), source, options);
+}
+
 Mesh* Mesh::create(GridDataSource *s, Options *opt) {
-  return MeshFactory::getInstance()->createMesh(s, opt);
+  return MeshFactory::getInstance().create(opt, s).release();
 }
 
 Mesh *Mesh::create(Options *opt) { return create(nullptr, opt); }

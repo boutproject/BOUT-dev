@@ -1,6 +1,5 @@
 #include "bout/constants.hxx"
 #include "bout/physicsmodel.hxx"
-#include "bout/solverfactory.hxx"
 #include "bout/petsclib.hxx"
 #include "bout/slepclib.hxx"
 
@@ -41,13 +40,13 @@ int main(int argc, char** argv) {
   std::vector<std::string> eigen_solvers = {"power", "slepc", "snes"};
 
   for (auto& eigen_solver : eigen_solvers) {
-    if (SolverFactory::getInstance()->remove(eigen_solver)) {
+    if (SolverFactory::getInstance().remove(eigen_solver)) {
       output_test << "Removed '" << eigen_solver << "' eigen solver\n";
     }
   }
 
   output_test << "\nTesting the following solvers:\n";
-  for (auto& solver : SolverFactory::getInstance()->listAvailable()) {
+  for (auto& solver : SolverFactory::getInstance().listAvailable()) {
     output_test << "  " << solver << "\n";
   }
   // Explicit flush to make sure list of available solvers gets printed
@@ -116,7 +115,7 @@ int main(int argc, char** argv) {
   // Solver and its actual value if it didn't pass
   std::map<std::string, BoutReal> errors;
 
-  for (auto& name : SolverFactory::getInstance()->listAvailable()) {
+  for (auto& name : SolverFactory::getInstance().listAvailable()) {
 
     output_test << "Testing " << name << " solver:";
     try {

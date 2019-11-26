@@ -33,7 +33,6 @@ add_executable(serial_tests
   ./include/bout/test_template_combinations.cxx
   ./include/test_cyclic_reduction.cxx
   ./include/test_derivs.cxx
-  ./include/test_interpolation_factory.cxx
   ./include/test_mask.cxx
   ./invert/test_fft.cxx
   ./mesh/data/test_gridfromoptions.cxx
@@ -70,3 +69,4 @@ target_include_directories(serial_tests PUBLIC .)
 target_link_libraries(serial_tests gtest gmock bout++::bout++)
 add_test(NAME serial_tests COMMAND serial_tests)
 set_target_properties(serial_tests PROPERTIES FOLDER tests/unit)
+add_dependencies(build-check-unit-tests serial_tests)

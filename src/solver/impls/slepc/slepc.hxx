@@ -44,7 +44,6 @@ class SlepcSolver;
 #undef MPI_Waitall
 #undef MPI_Waitany
 
-#include "bout/solverfactory.hxx"
 #include <bout/solver.hxx>
 #include <field2d.hxx>
 #include <field3d.hxx>
@@ -218,7 +217,7 @@ private:
   ST st;               // Spectral transform object
   PetscBool stIsShell; // Is the ST a shell object?
 
-  Solver *advanceSolver; // Pointer to actual solver used to advance fields
+  std::unique_ptr<Solver> advanceSolver{nullptr}; // Pointer to actual solver used to advance fields
 
   void vecToFields(Vec &inVec);
   void fieldsToVec(Vec &outVec);

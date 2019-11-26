@@ -36,7 +36,6 @@ class TestIntegrate : public PhysicsModel {
 public:
   ~TestIntegrate() {
     delete model;
-    delete ode;
   }
   
   int init(bool UNUSED(restarting)) {
@@ -63,7 +62,7 @@ private:
   
   Field3D f; // Some variable being evolved
   
-  Solver *ode; // Integration solver
+  std::unique_ptr<Solver> ode{nullptr}; // Integration solver
   MyFunction *model;
 };
 

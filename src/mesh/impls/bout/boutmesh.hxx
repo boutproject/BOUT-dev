@@ -319,4 +319,8 @@ private:
                   int ylt, BoutReal* buffer);
 };
 
+namespace {
+RegisterMesh<BoutMesh> registermeshbout{"bout"};
+}
+
 #endif // __BOUTMESH_H__

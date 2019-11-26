@@ -1,4 +1,3 @@
-#include "rkschemefactory.hxx"
 #include "unused.hxx"
 #include <bout/rkscheme.hxx>
 #include <bout/mpi_wrapper.hxx>
@@ -6,7 +5,11 @@
 #include <cmath>
 #include <output.hxx>
 
-
+// Implementations
+#include "impls/rkf45/rkf45.hxx"
+#include "impls/cashkarp/cashkarp.hxx"
+#include "impls/rk4simple/rk4simple.hxx"
+#include "impls/rkf34/rkf34.hxx"
 
 ////////////////////
 // PUBLIC

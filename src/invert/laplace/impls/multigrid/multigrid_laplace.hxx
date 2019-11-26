@@ -235,4 +235,8 @@ private:
   void generateMatrixF(int);
 };
 
+namespace {
+RegisterLaplace<LaplaceMultigrid> registerlaplacemultigrid(LAPLACE_MULTIGRID);
+}
+
 #endif // __MULTIGRID_LAPLACE_H__

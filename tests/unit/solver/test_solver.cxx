@@ -6,7 +6,6 @@
 #include "test_extras.hxx"
 #include "test_fakesolver.hxx"
 #include "bout/solver.hxx"
-#include "bout/solverfactory.hxx"
 
 #include <algorithm>
 #include <string>
@@ -68,7 +67,7 @@ TEST_F(SolverTest, Create) {
 
   solver->run();
 
-  EXPECT_TRUE(static_cast<FakeSolver*>(solver)->run_called);
+  EXPECT_TRUE(static_cast<FakeSolver*>(solver.get())->run_called);
 
   Options::cleanup();
 }
@@ -90,7 +89,7 @@ TEST_F(SolverTest, CreateFromOptions) {
 
   solver->run();
 
-  EXPECT_TRUE(static_cast<FakeSolver*>(solver)->run_called);
+  EXPECT_TRUE(static_cast<FakeSolver*>(solver.get())->run_called);
 }
 
 TEST_F(SolverTest, CreateFromName) {
