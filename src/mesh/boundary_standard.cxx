@@ -3506,6 +3506,10 @@ void BoundaryToFieldAligned::apply(Field3D &f, BoutReal t) {
   // have a flag to define the region in which we want to apply to/fromFieldAligned
 }
 
+void BoundaryToFieldAligned::apply_ddt(Field2D &f) {
+  op->apply_ddt(f);
+}
+
 void BoundaryToFieldAligned::apply_ddt(Field3D &f) {
   ASSERT1(bndry->localmesh == f.getMesh());
 
@@ -3545,6 +3549,10 @@ void BoundaryFromFieldAligned::apply(Field3D &f, BoutReal t) {
   // This is inefficient -- could instead use the shiftZ just in the bndry
   // but this is not portable to other parallel transforms -- we could instead
   // have a flag to define the region in which we want to apply to/fromFieldAligned
+}
+
+void BoundaryFromFieldAligned::apply_ddt(Field2D &f) {
+  op->apply_ddt(f);
 }
 
 void BoundaryFromFieldAligned::apply_ddt(Field3D &f) {
