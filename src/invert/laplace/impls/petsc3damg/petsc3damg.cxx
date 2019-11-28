@@ -473,9 +473,10 @@ OperatorStencil<Ind3D> LaplacePetsc3dAmg::getStencil(Mesh* localmesh) {
 
   // Note that the tests for whether a cell is in the boundary
   // actually are not exclusive enough. They really only correspond to
-  // whether the cell is in the guard regions. However, these tests
-  // are much simpler and other checks will prevent guard-cells which
-  // are not boundaries from having memory pre-allocated.
+  // whether the cell is in the guard regions. However, the tests are
+  // much simpler to implement this way and other checks will prevent
+  // guard-cells which are not boundaries from having memory
+  // pre-allocated.
   
   // Add lower Y boundary.
   stencil.add([localmesh](Ind3D ind) -> bool {
@@ -491,7 +492,7 @@ OperatorStencil<Ind3D> LaplacePetsc3dAmg::getStencil(Mesh* localmesh) {
         [localmesh](Ind3D ind) -> bool { return ind.x() == localmesh->xstart - 1; },
         {zero, zero.xp()});
   }
-  // Add upper X boundary
+  // Add outer X boundary
   if (localmesh->lastX()) {
     stencil.add([localmesh](Ind3D ind) -> bool { return ind.x() == localmesh->xend + 1; },
                 {zero, zero.xm()});
