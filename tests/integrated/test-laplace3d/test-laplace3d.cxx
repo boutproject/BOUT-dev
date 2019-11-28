@@ -106,8 +106,7 @@ int main(int argc, char** argv) {
   SAVE_ONCE(f, rhs, rhs_check, error, error_max);
   dump.write();
 
-  delete laplace_solver;
-
+  laplace_solver.reset(nullptr);
   BoutFinalise();
 
   return 0;

@@ -40,7 +40,7 @@ int main(int argc, char** argv) {
   // Initialise BOUT++, setting up mesh
   BoutInitialise(argc, argv);
 
-  class Laplacian* invert = Laplacian::create();
+  std::unique_ptr<Laplacian> invert = Laplacian::create();
 
   auto coords = mesh->getCoordinates();
 
@@ -271,6 +271,7 @@ int main(int argc, char** argv) {
 
   MPI_Barrier(BoutComm::get()); // Wait for all processors to write data
 
+  invert.reset(nullptr);
   BoutFinalise();
   return 0;
 

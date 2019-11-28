@@ -208,6 +208,7 @@ private:
 
   PetscMatrix<Field3D> operator3D;
   KSP ksp;
+  PetscLib lib;
 
   bool kspInitialised;
   bool use_precon;  // Switch for preconditioning

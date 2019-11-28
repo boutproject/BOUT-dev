@@ -100,7 +100,6 @@ private:
   virtual void registerFieldForTest(FieldData& f);
   virtual void registerFieldForTest(FieldPerp& f);
 
-  PetscLib lib;
   Mesh* fieldmesh;
 
   /// Fields containing the indices for each element (as reals)
@@ -326,11 +325,11 @@ public:
   const Vec* get() const { return vector.get(); }
 
 private:
+  PetscLib lib;
   std::unique_ptr<Vec, VectorDeleter> vector = nullptr;
   IndexerPtr indexConverter;
   CELL_LOC location;
   bool initialised = false;
-  PetscLib lib;
 };
 
 /*!
@@ -643,12 +642,12 @@ public:
   const Mat* get() const { return matrix.get(); }
 
 private:
+  PetscLib lib;
   std::shared_ptr<Mat> matrix = nullptr;
   IndexerPtr indexConverter;
   ParallelTransform* pt;
   int yoffset = 0;
   bool initialised = false;
-  PetscLib lib;
 };
 
 /*!
