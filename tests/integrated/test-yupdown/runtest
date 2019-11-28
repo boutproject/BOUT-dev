@@ -13,7 +13,7 @@ failed = False
 #for shifttype in ["shifted", "shiftedinterp"]:
 # Doesn't work with shiftedinterp for now, because ShiftedMetricInterp::toFieldAligned and
 # ShiftedMetricInterp::fromFieldAligned don't set the guard cells.
-for shifttype in ["shifted"]:
+for shifttype in ["shifted", "shiftedinterp"]:
 
     s, out = launch_safe("./test_yupdown mesh:paralleltransform="+shifttype, nproc=1, pipe=True, verbose=True)
 

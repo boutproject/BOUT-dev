@@ -38,7 +38,7 @@ int main(int argc, char** argv) {
   // Var starts in orthogonal X-Z coordinates
 
   // Calculate yup and ydown
-  s.calcParallelSlices(var);
+  mesh->communicate(var);
 
   // Calculate d/dy using yup() and ydown() fields
   Field3D ddy = DDY(var);
@@ -49,12 +49,15 @@ int main(int argc, char** argv) {
 
   // Change into field-aligned coordinates
   Field3D var_aligned = toFieldAligned(var);
+  var_aligned.applyBoundary("neumann");
+  mesh->communicate(var_aligned);
 
   // var now field aligned
   Field3D ddy_check = DDY_aligned(var_aligned);
 
   // Shift back to orthogonal X-Z coordinates
   ddy_check = fromFieldAligned(ddy_check);
+  mesh->communicate(ddy_check);
 
   SAVE_ONCE3(ddy, ddy2, ddy_check);
   dump.write();
