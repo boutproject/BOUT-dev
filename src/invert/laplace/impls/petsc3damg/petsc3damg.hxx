@@ -206,11 +206,13 @@ private:
   bool direct; //Use direct LU solver if true.
   bool fourth_order;
 
+  RangeIterator lowerY, upperY;
+
   PetscMatrix<Field3D> operator3D;
   KSP ksp;
+  bool kspInitialised;
   PetscLib lib;
 
-  bool kspInitialised;
   bool use_precon;  // Switch for preconditioning
   bool rightprec;   // Right preconditioning
 

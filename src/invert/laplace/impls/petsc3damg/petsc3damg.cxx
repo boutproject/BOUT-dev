@@ -53,6 +53,7 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mes
   Laplacian(opt, loc, mesh_in),
   A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
   issetD(false), issetC(false), issetE(false), updateRequired(true), 
+  lowerY(localmesh->iterateBndryLowerY()), upperY(localmesh->iterateBndryUpperY()),
   operator3D(A, getStencil(localmesh)), kspInitialised(false)
 {
   // Provide basic initialisation of field coefficients, etc.
@@ -242,7 +243,12 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D &b_in, const Field3D &x0) {
   // Create field from result
   Field3D solution = guess.toField();
   localmesh->communicate(solution);
-  // TODO: set boundarise in parallel slices
+  BOUT_FOR(i, localmesh->getRegion3D("RGN_LOWER_Y_THIN")) {
+    solution.ydown()[i] = solution[i];
+  }
+  BOUT_FOR(i, localmesh->getRegion3D("RGN_UPPER_Y_THIN")) {
+    solution.yup()[i] = solution[i];
+  }
   return solution;
 }
 
@@ -260,7 +266,7 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
     dc_dy = issetC ? DDY(C2) : Field3D(),
     dc_dz = issetC ? DDZ(C2) : Field3D(),
     dJ_dy = DDY(coords->J/coords->g_22);
-
+  
   // Set up the matrix for the internal points on the grid.
   // Boundary conditions were set in the constructor.
   BOUT_FOR(l, localmesh->getRegion3D("RGN_NOBNDRY")) {
@@ -320,16 +326,21 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
     operator3D(l, l.xp().zm()) = -C_d2f_dxdz;
     operator3D(l, l.xm().zp()) = -C_d2f_dxdz;
     operator3D(l, l.xm().zm()) = C_d2f_dxdz;
-    operator3D.yup()(l, l.yp()) = 0.0;
-    operator3D.ydown()(l, l.ym()) = 0.0;
-    operator3D.yup()(l, l.xp().yp()) = 0.0;
-    operator3D.ydown()(l, l.xp().ym()) = 0.0;
-    operator3D.yup()(l, l.xm().yp()) = 0.0;
-    operator3D.ydown()(l, l.xm().ym()) = 0.0;
-    operator3D.yup()(l, l.yp().zp()) = 0.0;
-    operator3D.yup()(l, l.yp().zm()) = 0.0;
-    operator3D.ydown()(l, l.ym().zp()) = 0.0;
-    operator3D.ydown()(l, l.ym().zm()) = 0.0;
+    // The values stored in the y-boundary are already interpolated
+    // up/down, so we don't want the matrix to do any such
+    // interpolation there.
+    const int yup = (l.y() == localmesh->yend && upperY.intersects(l.x())) ? -1 : 0,
+      ydown = (l.y() == localmesh->ystart && lowerY.intersects(l.x())) ? -1 : 0;
+    operator3D.yup(yup)(l, l.yp()) = 0.0;
+    operator3D.ydown(ydown)(l, l.ym()) = 0.0;
+    operator3D.yup(yup)(l, l.xp().yp()) = 0.0;
+    operator3D.ydown(ydown)(l, l.xp().ym()) = 0.0;
+    operator3D.yup(yup)(l, l.xm().yp()) = 0.0;
+    operator3D.ydown(ydown)(l, l.xm().ym()) = 0.0;
+    operator3D.yup(yup)(l, l.yp().zp()) = 0.0;
+    operator3D.yup(yup)(l, l.yp().zm()) = 0.0;
+    operator3D.ydown(ydown)(l, l.ym().zp()) = 0.0;
+    operator3D.ydown(ydown)(l, l.ym().zm()) = 0.0;
   }
   operator3D.partialAssemble();
 
@@ -367,16 +378,22 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
                                    // divide by dx(i +/- 1, j, k) when using
     C_d2f_dydz /= 4*coords->dy[l]*coords->dz;
 
-    operator3D.yup()(l, l.yp()) += C_df_dy + C_d2f_dy2;
-    operator3D.ydown()(l, l.ym()) += -C_df_dy + C_d2f_dy2;
-    operator3D.yup()(l, l.xp().yp()) += C_d2f_dxdy/coords->dy[l.xp()];
-    operator3D.ydown()(l, l.xp().ym()) += -C_d2f_dxdy/coords->dy[l.xp()];
-    operator3D.yup()(l, l.xm().yp()) += -C_d2f_dxdy/coords->dy[l.xm()];
-    operator3D.ydown()(l, l.xm().ym()) += C_d2f_dxdy/coords->dy[l.xm()];
-    operator3D.yup()(l, l.yp().zp()) += C_d2f_dydz;
-    operator3D.yup()(l, l.yp().zm()) += -C_d2f_dydz;
-    operator3D.ydown()(l, l.ym().zp()) += -C_d2f_dydz;
-    operator3D.ydown()(l, l.ym().zm()) += C_d2f_dydz;    
+    // The values stored in the y-boundary are already interpolated
+    // up/down, so we don't want the matrix to do any such
+    // interpolation there.
+    const int yup = (l.y() == localmesh->yend && upperY.intersects(l.x())) ? -1 : 0,
+      ydown = (l.y() == localmesh->ystart && lowerY.intersects(l.x())) ? -1 : 0;
+    
+    operator3D.yup(yup)(l, l.yp()) += C_df_dy + C_d2f_dy2;
+    operator3D.ydown(ydown)(l, l.ym()) += -C_df_dy + C_d2f_dy2;
+    operator3D.yup(yup)(l, l.xp().yp()) += C_d2f_dxdy/coords->dy[l.xp()];
+    operator3D.ydown(ydown)(l, l.xp().ym()) += -C_d2f_dxdy/coords->dy[l.xp()];
+    operator3D.yup(yup)(l, l.xm().yp()) += -C_d2f_dxdy/coords->dy[l.xm()];
+    operator3D.ydown(ydown)(l, l.xm().ym()) += C_d2f_dxdy/coords->dy[l.xm()];
+    operator3D.yup(yup)(l, l.yp().zp()) += C_d2f_dydz;
+    operator3D.yup(yup)(l, l.yp().zm()) += -C_d2f_dydz;
+    operator3D.ydown(ydown)(l, l.ym().zp()) += -C_d2f_dydz;
+    operator3D.ydown(ydown)(l, l.ym().zm()) += C_d2f_dydz;    
   }
   operator3D.assemble();
   MatSetBlockSize(*operator3D.get(), 1);
