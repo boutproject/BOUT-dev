@@ -56,7 +56,10 @@ void HermiteSpline::calcWeights(const Field3D &delta_x, const Field3D &delta_z) 
 
   BoutReal t_x, t_z;
 
-  for (int x = localmesh->xstart; x <= localmesh->xend; x++) {
+  const int xstart = localmesh->firstX() ? 0 : localmesh->xstart,
+    xend = localmesh->lastX() ? localmesh->LocalNx - 1 : localmesh->xend;
+
+  for (int x = xstart; x <= xend; x++) {
     for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
       for (int z = 0; z < localmesh->LocalNz; z++) {
 
@@ -181,7 +184,10 @@ Field3D HermiteSpline::interpolate(const Field3D &f) const {
   Field3D fxz = bout::derivatives::index::DDX(fz, CELL_DEFAULT, "DEFAULT");
   localmesh->communicateXZ(fxz);
 
-  for (int x = localmesh->xstart; x <= localmesh->xend; x++) {
+  const int xstart = localmesh->firstX() ? 0 : localmesh->xstart,
+    xend = localmesh->lastX() ? localmesh->LocalNx - 1 : localmesh->xend;
+
+  for (int x = xstart; x <= xend; x++) {
     for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
       for (int z = 0; z < localmesh->LocalNz; z++) {
 
@@ -224,7 +230,8 @@ Field3D HermiteSpline::interpolate(const Field3D &f) const {
         f_interp(x, y_next, z) = +f_z * h00_z(x, y, z) + f_zp1 * h01_z(x, y, z) +
                                  fz_z * h10_z(x, y, z) + fz_zp1 * h11_z(x, y, z);
 
-        ASSERT2(finite(f_interp(x, y_next, z)));
+        ASSERT2(finite(f_interp(x, y_next, z)) || x < localmesh->xstart ||
+		x > localmesh->xend);
       }
     }
   }

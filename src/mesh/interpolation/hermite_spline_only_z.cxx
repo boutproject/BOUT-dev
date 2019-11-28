@@ -45,11 +45,14 @@ HermiteSplineOnlyZ::HermiteSplineOnlyZ(int y_offset, Mesh *mesh)
   h11_z.allocate();
 }
 
-void HermiteSplineOnlyZ::calcWeights(const Field3D& delta_x, const Field3D& delta_z) {
+void HermiteSplineOnlyZ::calcWeights(const Field3D& UNUSED(delta_x), const Field3D& delta_z) {
 
   BoutReal t_z;
 
-  for (int x = localmesh->xstart; x <= localmesh->xend; x++) {
+  const int xstart = localmesh->firstX() ? 0 : localmesh->xstart,
+    xend = localmesh->lastX() ? localmesh->LocalNx - 1 : localmesh->xend;
+
+  for (int x = xstart; x <= xend; x++) {
     for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
       for (int z = 0; z < localmesh->LocalNz; z++) {
 
@@ -148,7 +151,10 @@ Field3D HermiteSplineOnlyZ::interpolate(const Field3D &f) const {
   Field3D fz = bout::derivatives::index::DDZ(f, CELL_DEFAULT, "DEFAULT", "RGN_ALL");
   localmesh->communicateXZ(fz);
 
-  for (int x = localmesh->xstart; x <= localmesh->xend; x++) {
+  const int xstart = localmesh->firstX() ? 0 : localmesh->xstart,
+    xend = localmesh->lastX() ? localmesh->LocalNx - 1 : localmesh->xend;
+
+  for (int x = xstart; x <= xend; x++) {
     for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
       for (int z = 0; z < localmesh->LocalNz; z++) {
 
@@ -169,7 +175,8 @@ Field3D HermiteSplineOnlyZ::interpolate(const Field3D &f) const {
                                  fz(x, y_next, z_mod) * h10_z(x, y, z) +
                                  fz(x, y_next, z_mod_p1) * h11_z(x, y, z);
 
-        ASSERT2(finite(f_interp(x, y_next, z)));
+        ASSERT2(finite(f_interp(x, y_next, z)) || x < localmesh->xstart ||
+		x > localmesh->xend);
       }
     }
   }

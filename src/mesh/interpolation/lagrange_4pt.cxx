@@ -39,7 +39,10 @@ Lagrange4pt::Lagrange4pt(int y_offset, Mesh *mesh)
 
 void Lagrange4pt::calcWeights(const Field3D &delta_x, const Field3D &delta_z) {
 
-  for (int x = localmesh->xstart; x <= localmesh->xend; x++) {
+  const int xstart = localmesh->firstX() ? 0 : localmesh->xstart,
+    xend = localmesh->lastX() ? localmesh->LocalNx - 1 : localmesh->xend;
+
+  for (int x = xstart; x <= xend; x++) {
     for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
       for (int z = 0; z < localmesh->LocalNz; z++) {
 
@@ -89,7 +92,10 @@ Field3D Lagrange4pt::interpolate(const Field3D &f) const {
   ASSERT1(f.getMesh() == localmesh);
   Field3D f_interp{emptyFrom(f)};
 
-  for (int x = localmesh->xstart; x <= localmesh->xend; x++) {
+  const int xstart = localmesh->firstX() ? 0 : localmesh->xstart,
+    xend = localmesh->lastX() ? localmesh->LocalNx - 1 : localmesh->xend;
+  
+  for (int x = xstart; x <= xend; x++) {
     for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
       for (int z = 0; z < localmesh->LocalNz; z++) {
 
