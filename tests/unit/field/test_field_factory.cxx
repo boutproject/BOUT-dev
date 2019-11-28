@@ -770,7 +770,7 @@ TEST_F(FieldFactoryTest, Recursion) {
   EXPECT_DOUBLE_EQ(gen->generate(Context().set("n", 5)), 5);
   EXPECT_DOUBLE_EQ(gen->generate(Context().set("n", 6)), 8);
   EXPECT_THROW(gen->generate(Context().set("n", 7)), BoutException); // Max recursion exceeded
-  
+}
 // A mock ParallelTransform to test transform_from_field_aligned
 // property of FieldFactory. For now, the transform just returns the
 // negative of the input. Ideally, this will get moved to GoogleMock
