@@ -21,8 +21,8 @@ extern "C" {
 
   /* Creation */
   Field3D* Field3D_new();
-  Field3D* Field3D_zerofrom(Field3D* field);
-  Field3D* Field3D_emptyfrom(Field3D* field);
+  Field3D* Field3D_new_zerofrom(Field3D* field);
+  Field3D* Field3D_new_emptyfrom(Field3D* field);
 
   /* Destroying */
   void Field3D_delete(Field3D* field);
@@ -57,6 +57,14 @@ extern "C" {
   BoutReal Field3D_set_index3d(Field3D *field, int x, int y, int z, BoutReal value);
   BoutReal Field3D_set_index1d(Field3D *field, int ind, BoutReal value);
   */
+
+  /*******************/
+  /* Physics Models  */
+  
+  typedef struct PhysicsModel PhysicsModel;
+
+  PhysicsModel* PhysicsModel_new();
+  
 #ifdef __cplusplus
 }
 #endif

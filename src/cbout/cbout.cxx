@@ -21,11 +21,11 @@ extern "C" Field3D* Field3D_new() {
   return new Field3D();
 }
 
-extern "C" Field3D* Field3D_zerofrom(Field3D* field) {
+extern "C" Field3D* Field3D_new_zerofrom(Field3D* field) {
   return new Field3D(zeroFrom(*field));
 }
 
-extern "C" Field3D* Field3D_emptyfrom(Field3D* field) {
+extern "C" Field3D* Field3D_new_emptyfrom(Field3D* field) {
   return new Field3D(emptyFrom(*field));
 }
 
@@ -53,3 +53,21 @@ extern "C" int Field3D_getarray(Field3D* x, BoutReal **data) {
     return 1;
   }
 }
+
+//////////////////////////////////////////////////////////////
+// Physics Models
+
+namespace {
+  class CAPIModel : public PhysicsModel {
+  protected:
+    /// Initialise
+    int init(bool restarting) override {
+      
+    }
+    /// Calculate time derivatives
+    int rhs(BoutReal t) override {
+      
+    }
+  };
+}
+
