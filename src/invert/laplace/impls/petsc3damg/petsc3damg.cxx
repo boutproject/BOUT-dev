@@ -54,7 +54,7 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mes
   A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
   issetD(false), issetC(false), issetE(false), updateRequired(true), 
   lowerY(localmesh->iterateBndryLowerY()), upperY(localmesh->iterateBndryUpperY()),
-  operator3D(A, getStencil(localmesh)), kspInitialised(false)
+  operator3D(A, getStencil(localmesh, lowerY, upperY)), kspInitialised(false)
 {
   // Provide basic initialisation of field coefficients, etc.
   // Get relevent options from user input
@@ -446,7 +446,9 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
   updateRequired = false;
 }
 
-OperatorStencil<Ind3D> LaplacePetsc3dAmg::getStencil(Mesh* localmesh) {
+OperatorStencil<Ind3D> LaplacePetsc3dAmg::getStencil(Mesh* localmesh,
+						     RangeIterator lowerYBound,
+						     RangeIterator upperYBound) {
   OperatorStencil<Ind3D> stencil;
 
   // Get the pattern used for interpolation. This is assumed to be the
@@ -462,20 +464,54 @@ OperatorStencil<Ind3D> LaplacePetsc3dAmg::getStencil(Mesh* localmesh) {
   OffsetInd3D zero;
 
   // Add interior cells
-  std::vector<OffsetInd3D> interpolatedElements = {zero.xp().yp(), zero.xp().ym(),
-						   zero.xm().yp(), zero.xm().ym(),
-						   zero.yp().zp(), zero.yp().zm(),
-						   zero.ym().zp(), zero.ym().zm()};
-  std::set<OffsetInd3D> interiorStencil = {zero, zero.xp(), zero.xm(), zero.yp(),
-					   zero.ym(), zero.zp(), zero.zm(),
+  std::vector<OffsetInd3D> interpolatedUpElements = {zero.yp(), zero.xp().yp(), zero.xm().yp(),
+						     zero.yp().zp(), zero.yp().zm()},
+    interpolatedDownElements = {zero.ym(), zero.xp().ym(), zero.xm().ym(), zero.ym().zp(),
+				zero.ym().zm()};
+  std::set<OffsetInd3D> interiorStencil = {zero, zero.xp(), zero.xm(),
+					   zero.zp(), zero.zm(),
 					   zero.xp().zp(), zero.xp().zm(),
-					   zero.xm().zp(), zero.xm().zm()};
-  for (auto& i : interpolatedElements) {
+					   zero.xm().zp(), zero.xm().zm()},
+    lowerEdgeStencil = interiorStencil, upperEdgeStencil = interiorStencil;
+
+  for (auto& i : interpolatedDownElements) {
     for (auto& j : interpPattern) {
       interiorStencil.insert(i + j);
+      lowerEdgeStencil.insert(i + j);
     }
+    upperEdgeStencil.insert(i);
   }
-  std::vector<OffsetInd3D> interiorStencilVector(interiorStencil.begin(), interiorStencil.end());
+  for (auto& i : interpolatedUpElements) {
+    for (auto& j : interpPattern) {
+      interiorStencil.insert(i + j);
+      upperEdgeStencil.insert(i + j);
+    }
+    lowerEdgeStencil.insert(i);
+  }
+  std::vector<OffsetInd3D> interiorStencilVector(interiorStencil.begin(), interiorStencil.end()),
+    lowerEdgeStencilVector(lowerEdgeStencil.begin(), lowerEdgeStencil.end()),
+    upperEdgeStencilVector(upperEdgeStencil.begin(), upperEdgeStencil.end());
+
+  // If there is a lower y-boundary then create a part of the stencil
+  // for cells immediately adjacent to it.
+  if (lowerYBound.max() - lowerYBound.min() > 0) {
+    stencil.add([localmesh, &lowerYBound](Ind3D ind) -> bool {
+		  return localmesh->ystart == ind.y() && lowerYBound.intersects(ind.x()); },
+      lowerEdgeStencilVector);
+  }
+
+  // If there is an upper y-boundary then create a part of the stencil
+  // for cells immediately adjacent to it.
+  if (upperYBound.max() - upperYBound.min() > 0) {
+    stencil.add([localmesh, &upperYBound](Ind3D ind) -> bool {
+		  return localmesh->yend == ind.y() && upperYBound.intersects(ind.x()); },
+      upperEdgeStencilVector);
+  }
+
+  // Create a part of the stencil for the interior cells. Although the
+  // test here would also pass for the edge-cells immediately adjacent
+  // to upper/lower y-boundaries, because those tests are run first
+  // the cells will be assigned to those regions.
   stencil.add([localmesh](Ind3D ind) -> bool {
 		return (localmesh->xstart <= ind.x() &&
 			ind.x() <= localmesh->xend &&

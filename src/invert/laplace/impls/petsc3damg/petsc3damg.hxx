@@ -171,7 +171,8 @@ private:
   // The interpolation done to get along-field values in y makes this
   // tricky. For now we will just assume that the footprint of cells
   // used for interpolation is the same everywhere.
-  static OperatorStencil<Ind3D> getStencil(Mesh* localmesh);
+  static OperatorStencil<Ind3D> getStencil(Mesh* localmesh, RangeIterator lowerYBound,
+					   RangeIterator upperYBound);
   
   /* Ex and Ez
    * Additional 1st derivative terms to allow for solution field to be
