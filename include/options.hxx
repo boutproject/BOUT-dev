@@ -475,14 +475,15 @@ public:
 
   /// Allow the user to override defaults set later, also used by the
   /// BOUT_OVERRIDE_DEFAULT_OPTION.
-  template <typename T> T overrideDefault(T def) {
+  template <typename T> T overrideDefault(T def,
+                                          const std::string& source = "user_default") {
 
     // Set the type
     attributes["type"] = bout::utils::typeName<T>();
 
     if (!is_value) {
       // Option not found
-      assign(def, "user_default");
+      assign(def, source);
       is_value = true; // Prevent this default being replaced by setDefault()
       return def;
     }
@@ -492,8 +493,9 @@ public:
 
   /// Overloaded version for const char*
   /// Note: Different from template since return type is different to input
-  std::string overrideDefault(const char* def) {
-    return overrideDefault<std::string>(std::string(def));
+  std::string overrideDefault(const char* def,
+                              const std::string& source = "user_default") {
+    return overrideDefault<std::string>(std::string(def), source);
   }
 
   /// Get the parent Options object
