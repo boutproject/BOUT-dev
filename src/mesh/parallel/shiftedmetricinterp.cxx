@@ -195,8 +195,8 @@ void ShiftedMetricInterp::calcParallelSlices(Field3D &f) {
  * and Y is then field aligned.
  */
 const Field3D ShiftedMetricInterp::toFieldAligned(const Field3D &f,
-						  const std::string& UNUSED(region)) {
-  return interp_to_aligned->interpolate(f);
+						  const std::string& region) {
+  return interp_to_aligned->interpolate(f, region);
 }
 
 /*!
@@ -204,6 +204,6 @@ const Field3D ShiftedMetricInterp::toFieldAligned(const Field3D &f,
  * but Y is not field aligned.
  */
 const Field3D ShiftedMetricInterp::fromFieldAligned(const Field3D &f,
-						    const std::string& UNUSED(region)) {
-  return interp_from_aligned->interpolate(f);
+						    const std::string& region) {
+  return interp_from_aligned->interpolate(f, region);
 }
