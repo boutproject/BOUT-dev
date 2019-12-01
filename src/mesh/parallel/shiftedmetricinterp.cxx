@@ -40,6 +40,8 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
 
   // Create the Interpolation objects and set whether they go up or down the
   // magnetic field
+  Options::root()["interpolation"]["type"].overrideDefault("hermitesplineonlyz",
+                                                           "ShiftedMetricInterp default");
   interp_yup = InterpolationFactory::getInstance().create(&mesh);
   interp_yup->setYOffset(1);
 
