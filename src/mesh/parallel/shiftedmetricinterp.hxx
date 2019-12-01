@@ -74,7 +74,7 @@ public:
   }
 
   bool canToFromFieldAligned() override{
-    return false;
+    return true;
   }
 
   std::vector<ParallelTransform::PositionsAndWeights> getWeightsForYUpApproximation(int i, int j, int k) override {
