@@ -4,6 +4,7 @@ ShiftWithoutTwist = true
 [mesh]
 nx = 12
 ny = 12
+nz = 1024
 
 zShift = y
 ShiftAngle = 2.*pi

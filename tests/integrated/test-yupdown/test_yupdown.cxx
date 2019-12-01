@@ -56,7 +56,7 @@ int main(int argc, char** argv) {
   Field3D ddy_check = DDY_aligned(var_aligned);
 
   // Shift back to orthogonal X-Z coordinates
-  ddy_check = fromFieldAligned(ddy_check);
+  ddy_check = fromFieldAligned(ddy_check, "RGN_NOBNDRY");
   mesh->communicate(ddy_check);
 
   SAVE_ONCE3(ddy, ddy2, ddy_check);
