@@ -473,6 +473,29 @@ public:
     return val;
   }
 
+  /// Allow the user to override defaults set later, also used by the
+  /// BOUT_OVERRIDE_DEFAULT_OPTION.
+  template <typename T> T overrideDefault(T def) {
+
+    // Set the type
+    attributes["type"] = bout::utils::typeName<T>();
+
+    if (!is_value) {
+      // Option not found
+      assign(def, "user_default");
+      is_value = true; // Prevent this default being replaced by setDefault()
+      return def;
+    }
+
+    return as<T>();
+  }
+
+  /// Overloaded version for const char*
+  /// Note: Different from template since return type is different to input
+  std::string overrideDefault(const char* def) {
+    return overrideDefault<std::string>(std::string(def));
+  }
+
   /// Get the parent Options object
   Options &parent() {
     if (parent_instance == nullptr) {
@@ -723,5 +746,12 @@ template <> Field3D Options::as<Field3D>(const Field3D& similar_to) const;
     } else {								\
       Options::getRoot()->getSection("all")->get(#var, var, def);	\
     }}									\
+
+/// Define for over-riding library defaults for options, should be called in global
+/// namespace so that the new default is set before main() is called.
+#define BOUT_OVERRIDE_DEFAULT_OPTION(name, value)     \
+  namespace {                                         \
+    const auto user_default##__FILE__##__LINE__ =     \
+      Options::root()[name].overrideDefault(value); } \
 
 #endif // __OPTIONS_H__
