@@ -7,6 +7,7 @@ extern "C" {
 
   typedef double BoutReal;
 
+  /* Error handling */
   #define BOUT_SUCCESS 0
   
   /*******************/
@@ -21,11 +22,11 @@ extern "C" {
   
   /* Creation */
   int Field3D_create(Field3D** field);
-  Field3D* Field3D_new_zerofrom(Field3D* field);
-  Field3D* Field3D_new_emptyfrom(Field3D* field);
+  int Field3D_create_zerofrom(Field3D** field, Field3D* like);
+  int Field3D_create_emptyfrom(Field3D** field, Field3D* like);
 
   /* Destroying */
-  void Field3D_delete(Field3D* field);
+  int Field3D_delete(Field3D* field);
   
   /* Manipulating */
 

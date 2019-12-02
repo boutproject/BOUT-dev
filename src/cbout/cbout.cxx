@@ -18,7 +18,7 @@
     output.write(e.what());          \
     return 1;                        \
   }                                  \
-  return 0
+  return BOUT_SUCCESS
 
 //////////////////////////////////////////////////////////////
 // Initialisation
@@ -40,18 +40,24 @@ extern "C" int Field3D_create(Field3D** field) {
   CWRAP_END();
 }
 
-extern "C" Field3D* Field3D_new_zerofrom(Field3D* field) {
-  return new Field3D(zeroFrom(*field));
+extern "C" int Field3D_create_zerofrom(Field3D** field, Field3D* like) {
+  CWRAP_START();
+  *field = new Field3D(zeroFrom(*like));
+  CWRAP_END();
 }
 
-extern "C" Field3D* Field3D_new_emptyfrom(Field3D* field) {
-  return new Field3D(emptyFrom(*field));
+extern "C" int Field3D_create_emptyfrom(Field3D** field, Field3D* like) {
+  CWRAP_START();
+  *field = new Field3D(emptyFrom(*like));
+  CWRAP_END();
 }
 
 // Destroying
 
-extern "C" void Field3D_delete(Field3D* field) {
+extern "C" int Field3D_delete(Field3D* field) {
+  CWRAP_START();
   delete field;
+  CWRAP_END();
 }
 
 // manipulating
