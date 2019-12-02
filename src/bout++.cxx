@@ -42,19 +42,20 @@ const char DEFAULT_DIR[] = "data";
 #include "boutcomm.hxx"
 #include "boutexception.hxx"
 #include "datafile.hxx"
+#include "interpolation.hxx"
 #include "invert_laplace.hxx"
+#include "invert_parderiv.hxx"
 #include "msg_stack.hxx"
 #include "optionsreader.hxx"
 #include "output.hxx"
+#include "bout/invert/laplacexz.hxx"
+#include "bout/mpi_wrapper.hxx"
 #include "bout/openmpwrap.hxx"
 #include "bout/petsclib.hxx"
+#include "bout/rkscheme.hxx"
 #include "bout/slepclib.hxx"
 #include "bout/solver.hxx"
 #include "bout/sys/timer.hxx"
-#include "bout/invert/laplacexz.hxx"
-#include "invert_parderiv.hxx"
-#include "bout/rkscheme.hxx"
-#include "interpolation.hxx"
 
 #define BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 #include "bout.hxx"
@@ -157,6 +158,8 @@ int BoutInitialise(int& argc, char**& argv) {
     if (MYPE == 0) {
       writeSettingsFile(Options::root(), args.data_dir, args.set_file);
     }
+
+    bout::globals::mpi = new MpiWrapper();
 
     // Create the mesh
     bout::globals::mesh = Mesh::create();
@@ -644,7 +647,7 @@ int BoutFinalise(bool write_settings) {
   bout::globals::dump.close();
 
   // Make sure all processes have finished writing before exit
-  MPI_Barrier(BoutComm::get());
+  bout::globals::mpi->MPI_Barrier(BoutComm::get());
 
   // Laplacian inversion
   Laplacian::cleanup();
@@ -677,6 +680,9 @@ int BoutFinalise(bool write_settings) {
 
   // Debugging message stack
   msg_stack.clear();
+
+  // Delete the MPI wrapper
+  delete bout::globals::mpi;
 
   return 0;
 }
@@ -743,7 +749,7 @@ int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
     }
 
     /// Record the starting time
-    mpi_start_time = MPI_Wtime() - run_data.wtime;
+    mpi_start_time = bout::globals::mpi->MPI_Wtime() - run_data.wtime;
 
     first_time = false;
 
@@ -761,7 +767,7 @@ int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
 
   // This bit only to screen, not log file
 
-  run_data.t_elapsed = MPI_Wtime() - mpi_start_time;
+  run_data.t_elapsed = bout::globals::mpi->MPI_Wtime() - mpi_start_time;
 
   output_progress.print("%c  Step %d of %d. Elapsed %s", get_spin(), iteration + 1, NOUT,
                         (time_to_hms(run_data.t_elapsed)).c_str());
@@ -776,7 +782,7 @@ int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
   if (wall_limit > 0.0) {
     // Check if enough time left
 
-    BoutReal t_remain = mpi_start_time + wall_limit - MPI_Wtime();
+    BoutReal t_remain = mpi_start_time + wall_limit - bout::globals::mpi->MPI_Wtime();
     if (t_remain < run_data.wtime * 2) {
       // Less than 2 time-steps left
       output_warn.write(_("Only %e seconds (%.2f steps) left. Quitting\n"), t_remain,
