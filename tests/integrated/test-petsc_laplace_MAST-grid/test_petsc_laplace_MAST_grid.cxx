@@ -36,7 +36,7 @@ BoutReal max_error_at_ystart(const Field3D &error);
 int main(int argc, char** argv) {
 
   BoutInitialise(argc, argv);
-  
+  {
   Options *options = Options::getRoot()->getSection("petsc2nd");
   auto invert = Laplacian::create(options);
   options = Options::getRoot()->getSection("petsc4th");
@@ -329,6 +329,8 @@ int main(int argc, char** argv) {
   Options* SPT_options;
   SPT_options = Options::getRoot()->getSection("SPT");
   auto invert_SPT = Laplacian::create(SPT_options);
+  invert_SPT->setInnerBoundaryFlags(INVERT_AC_GRAD | INVERT_DC_GRAD);
+  invert_SPT->setOuterBoundaryFlags(INVERT_AC_GRAD | INVERT_DC_GRAD);
   invert_SPT->setCoefA(a3);
   invert_SPT->setCoefC(c3);
   invert_SPT->setCoefD(d3);
@@ -664,7 +666,7 @@ int main(int argc, char** argv) {
   output << "\nFinished running test. Triggering error to quit\n\n";
   
   MPI_Barrier(BoutComm::get()); // Wait for all processors to write data
-  
+  }
   BoutFinalise();
   return 0;
 }
