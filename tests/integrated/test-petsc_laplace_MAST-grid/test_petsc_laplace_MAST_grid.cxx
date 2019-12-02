@@ -329,6 +329,8 @@ int main(int argc, char** argv) {
   Options* SPT_options;
   SPT_options = Options::getRoot()->getSection("SPT");
   auto invert_SPT = Laplacian::create(SPT_options);
+  invert_SPT->setInnerBoundaryFlags(INVERT_AC_GRAD | INVERT_DC_GRAD);
+  invert_SPT->setOuterBoundaryFlags(INVERT_AC_GRAD | INVERT_DC_GRAD);
   invert_SPT->setCoefA(a3);
   invert_SPT->setCoefC(c3);
   invert_SPT->setCoefD(d3);
