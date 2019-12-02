@@ -423,8 +423,13 @@ public:
     ASSERT2(bout::utils::is_Field3D<T>::value); // Should never need to call this with Field2D
 
     // Only allow a whitelist of regions for now
-    ASSERT2(region == "RGN_ALL" || region == "RGN_NOBNDRY"
-            || region == "RGN_NOX" || region == "RGN_NOY");
+    ASSERT2(region == "RGN_ALL" || region == "RGN_NOBNDRY" || region == "RGN_NOX"
+            || region == "RGN_NOY" || region == "RGN_GUARDS"
+            || region == "RGN_XGUARDS_INNER" || region == "RGN_XGUARDS_OUTER"
+            || region == "RGN_XGUARDS" || region == "RGN_YGUARDS_LOWER"
+            || region == "RGN_YGUARDS_UPPER" || region == "RGN_YGUARDS"
+            || region == "RGN_NOCORNERS" || region == "RGN_WITH_XBNDRY"
+            || region == "RGN_WITH_YBNDRY" || region == "RGN_WITH_BNDRIES");
 
     auto* theMesh = var.getMesh();
 
@@ -491,8 +496,13 @@ public:
     ASSERT2(bout::utils::is_Field3D<T>::value); // Should never need to call this with Field2D
 
     // Only allow a whitelist of regions for now
-    ASSERT2(region == "RGN_ALL" || region == "RGN_NOBNDRY"
-            || region == "RGN_NOX" || region == "RGN_NOY");
+    ASSERT2(region == "RGN_ALL" || region == "RGN_NOBNDRY" || region == "RGN_NOX"
+            || region == "RGN_NOY" || region == "RGN_GUARDS"
+            || region == "RGN_XGUARDS_INNER" || region == "RGN_XGUARDS_OUTER"
+            || region == "RGN_XGUARDS" || region == "RGN_YGUARDS_LOWER"
+            || region == "RGN_YGUARDS_UPPER" || region == "RGN_YGUARDS"
+            || region == "RGN_NOCORNERS" || region == "RGN_WITH_XBNDRY"
+            || region == "RGN_WITH_YBNDRY" || region == "RGN_WITH_BNDRIES");
 
     auto* theMesh = var.getMesh();
 
