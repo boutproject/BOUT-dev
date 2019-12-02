@@ -38,6 +38,8 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in, Field
 
   // Create the Interpolation objects and set whether they go up or down the
   // magnetic field
+  Options::root()["interpolation"]["type"].overrideDefault("hermitesplineonlyz",
+                                                           "ShiftedMetricInterp default");
   interp_yup = InterpolationFactory::getInstance().create(&mesh);
   interp_yup->setYOffset(1);
 
@@ -73,7 +75,7 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in, Field
     }
   }
 
-  interp_yup->calcWeights(xt_prime, zt_prime_up, mask_up);
+  interp_yup->calcWeights(xt_prime, zt_prime_up, mask_up, "RGN_ALL");
 
   for (const auto &i : xt_prime) {
     // no interpolation in x, all field lines stay at constant x
@@ -94,7 +96,7 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in, Field
     }
   }
 
-  interp_ydown->calcWeights(xt_prime, zt_prime_down, mask_down);
+  interp_ydown->calcWeights(xt_prime, zt_prime_down, mask_down, "RGN_ALL");
 
   // Set up interpolation to/from field-aligned coordinates
   interp_to_aligned = InterpolationFactory::getInstance().create(&mesh);
@@ -111,7 +113,7 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in, Field
       + zShift[i]*static_cast<BoutReal>(mesh.GlobalNz)/TWOPI;
   }
 
-  interp_to_aligned->calcWeights(xt_prime, zt_prime_to);
+  interp_to_aligned->calcWeights(xt_prime, zt_prime_to, "RGN_ALL");
 
   for (const auto &i : zt_prime_from) {
     // Field line moves in z by an angle zShift(i,j) when going
@@ -121,7 +123,7 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in, Field
       - zShift[i]*static_cast<BoutReal>(mesh.GlobalNz)/TWOPI;
   }
 
-  interp_from_aligned->calcWeights(xt_prime, zt_prime_from);
+  interp_from_aligned->calcWeights(xt_prime, zt_prime_from, "RGN_ALL");
 
   // Create regions for parallel boundary conditions
   Field2D dy;
@@ -195,8 +197,9 @@ void ShiftedMetricInterp::calcParallelSlices(Field3D &f) {
  * and Y is then field aligned.
  */
 const Field3D ShiftedMetricInterp::toFieldAligned(const Field3D &f,
-						  const std::string& UNUSED(region)) {
-  return interp_to_aligned->interpolate(f);
+						  const std::string& region) {
+  ASSERT2(f.getDirectionY() == YDirectionType::Standard);
+  return interp_to_aligned->interpolate(f, region).setDirectionY(YDirectionType::Aligned);
 }
 
 /*!
@@ -204,6 +207,7 @@ const Field3D ShiftedMetricInterp::toFieldAligned(const Field3D &f,
  * but Y is not field aligned.
  */
 const Field3D ShiftedMetricInterp::fromFieldAligned(const Field3D &f,
-						    const std::string& UNUSED(region)) {
-  return interp_from_aligned->interpolate(f);
+						    const std::string& region) {
+  ASSERT2(f.getDirectionY() == YDirectionType::Aligned);
+  return interp_from_aligned->interpolate(f, region).setDirectionY(YDirectionType::Standard);
 }

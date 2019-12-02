@@ -45,50 +45,48 @@ HermiteSplineOnlyZ::HermiteSplineOnlyZ(int y_offset, Mesh *mesh)
   h11_z.allocate();
 }
 
-void HermiteSplineOnlyZ::calcWeights(const Field3D& UNUSED(delta_x), const Field3D& delta_z) {
+void HermiteSplineOnlyZ::calcWeights(const Field3D& UNUSED(delta_x),
+                                     const Field3D& delta_z, const std::string& region) {
 
   BoutReal t_z;
 
-  const int xstart = localmesh->firstX() ? 0 : localmesh->xstart,
-    xend = localmesh->lastX() ? localmesh->LocalNx - 1 : localmesh->xend;
+  BOUT_FOR(i, delta_z.getRegion(region)) {
+    const int x = i.x();
+    const int y = i.y();
+    const int z = i.z();
 
-  for (int x = xstart; x <= xend; x++) {
-    for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
-      for (int z = 0; z < localmesh->LocalNz; z++) {
+    if (skip_mask(x, y, z))
+      continue;
 
-        if (skip_mask(x, y, z))
-          continue;
+    // The integer part of zt_prime are the indices of the cell
+    // containing the field line end-point
+    k_corner(x, y, z) = static_cast<int>(floor(delta_z(x, y, z)));
 
-        // The integer part of zt_prime are the indices of the cell
-        // containing the field line end-point
-        k_corner(x, y, z) = static_cast<int>(floor(delta_z(x, y, z)));
+    // t_z is the normalised coordinate \in [0,1) within the cell
+    // calculated by taking the remainder of the floating point index
+    t_z = delta_z(x, y, z) - static_cast<BoutReal>(k_corner(x, y, z));
 
-        // t_z is the normalised coordinate \in [0,1) within the cell
-        // calculated by taking the remainder of the floating point index
-        t_z = delta_z(x, y, z) - static_cast<BoutReal>(k_corner(x, y, z));
-
-        // Check that t_z is in range
-        if ((t_z < 0.0) || (t_z > 1.0)) {
-          throw BoutException(
-              "t_z=%e out of range at (%d,%d,%d) (delta_z=%e, k_corner=%d)", t_z, x, y,
-              z, delta_z(x, y, z), k_corner(x, y, z));
-        }
-
-        h00_z(x, y, z) = (2. * t_z * t_z * t_z) - (3. * t_z * t_z) + 1.;
-
-        h01_z(x, y, z) = (-2. * t_z * t_z * t_z) + (3. * t_z * t_z);
-
-        h10_z(x, y, z) = t_z * (1. - t_z) * (1. - t_z);
-
-        h11_z(x, y, z) = (t_z * t_z * t_z) - (t_z * t_z);
-      }
+    // Check that t_z is in range
+    if ((t_z < 0.0) || (t_z > 1.0)) {
+      throw BoutException(
+          "t_z=%e out of range at (%d,%d,%d) (delta_z=%e, k_corner=%d)", t_z, x, y,
+          z, delta_z(x, y, z), k_corner(x, y, z));
     }
+
+    h00_z(x, y, z) = (2. * t_z * t_z * t_z) - (3. * t_z * t_z) + 1.;
+
+    h01_z(x, y, z) = (-2. * t_z * t_z * t_z) + (3. * t_z * t_z);
+
+    h10_z(x, y, z) = t_z * (1. - t_z) * (1. - t_z);
+
+    h11_z(x, y, z) = (t_z * t_z * t_z) - (t_z * t_z);
   }
 }
 
-void HermiteSplineOnlyZ::calcWeights(const Field3D &delta_x, const Field3D &delta_z, const BoutMask &mask) {
+void HermiteSplineOnlyZ::calcWeights(const Field3D &delta_x, const Field3D &delta_z,
+                                     const BoutMask &mask, const std::string& region) {
   skip_mask = mask;
-  calcWeights(delta_x, delta_z);
+  calcWeights(delta_x, delta_z, region);
 }
 
 /*!
@@ -141,54 +139,58 @@ std::vector<ParallelTransform::PositionsAndWeights> HermiteSplineOnlyZ::getWeigh
 
 }
 
-Field3D HermiteSplineOnlyZ::interpolate(const Field3D &f) const {
+Field3D HermiteSplineOnlyZ::interpolate(const Field3D &f,
+                                        const std::string& region) const {
 
   ASSERT1(f.getMesh() == localmesh);
   Field3D f_interp{emptyFrom(f)};
 
   // Derivatives are used for tension and need to be on dimensionless
   // coordinates
-  Field3D fz = bout::derivatives::index::DDZ(f, CELL_DEFAULT, "DEFAULT", "RGN_ALL");
+  const std::string fz_region = (region == "RGN_NOBNDRY" or region == "RGN_NOX")
+                                ? y_offset == 0 ? "RGN_NOBNDRY" : "RGN_NOX"
+                                : "RGN_ALL";
+  Field3D fz = bout::derivatives::index::DDZ(f, CELL_DEFAULT, "DEFAULT", fz_region);
   localmesh->communicateXZ(fz);
 
-  const int xstart = localmesh->firstX() ? 0 : localmesh->xstart,
-    xend = localmesh->lastX() ? localmesh->LocalNx - 1 : localmesh->xend;
+  BOUT_FOR(i, f.getRegion(region)) {
+    const int x = i.x();
+    const int y = i.y();
+    const int z = i.z();
 
-  for (int x = xstart; x <= xend; x++) {
-    for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
-      for (int z = 0; z < localmesh->LocalNz; z++) {
+    if (skip_mask(x, y, z))
+      continue;
 
-        if (skip_mask(x, y, z))
-          continue;
+    // Due to lack of guard cells in z-direction, we need to ensure z-index
+    // wraps around
+    int ncz = localmesh->LocalNz;
+    int z_mod = ((k_corner(x, y, z) % ncz) + ncz) % ncz;
+    int z_mod_p1 = (z_mod + 1) % ncz;
 
-        // Due to lack of guard cells in z-direction, we need to ensure z-index
-        // wraps around
-        int ncz = localmesh->LocalNz;
-        int z_mod = ((k_corner(x, y, z) % ncz) + ncz) % ncz;
-        int z_mod_p1 = (z_mod + 1) % ncz;
+    int y_next = y + y_offset;
 
-        int y_next = y + y_offset;
+    // Interpolate in Z
+    f_interp(x, y_next, z) = +f(x, y_next, z_mod) * h00_z(x, y, z) +
+      f(x, y_next, z_mod_p1) * h01_z(x, y, z) +
+      fz(x, y_next, z_mod) * h10_z(x, y, z) +
+      fz(x, y_next, z_mod_p1) * h11_z(x, y, z);
 
-        // Interpolate in Z
-        f_interp(x, y_next, z) = +f(x, y_next, z_mod) * h00_z(x, y, z) +
-                                 f(x, y_next, z_mod_p1) * h01_z(x, y, z) +
-                                 fz(x, y_next, z_mod) * h10_z(x, y, z) +
-                                 fz(x, y_next, z_mod_p1) * h11_z(x, y, z);
-
-        ASSERT2(finite(f_interp(x, y_next, z)) || x < localmesh->xstart ||
-		x > localmesh->xend);
-      }
-    }
+    ASSERT2(finite(f_interp(x, y_next, z)) || x < localmesh->xstart ||
+        x > localmesh->xend);
   }
   return f_interp;
 }
 
-Field3D HermiteSplineOnlyZ::interpolate(const Field3D& f, const Field3D &delta_x, const Field3D &delta_z) {
-  calcWeights(delta_x, delta_z);
-  return interpolate(f);
+Field3D HermiteSplineOnlyZ::interpolate(const Field3D& f, const Field3D &delta_x,
+                                        const Field3D &delta_z,
+                                        const std::string& region) {
+  calcWeights(delta_x, delta_z, region);
+  return interpolate(f, region);
 }
 
-Field3D HermiteSplineOnlyZ::interpolate(const Field3D& f, const Field3D &delta_x, const Field3D &delta_z, const BoutMask &mask) {
-  calcWeights(delta_x, delta_z, mask);
-  return interpolate(f);
+Field3D HermiteSplineOnlyZ::interpolate(const Field3D& f, const Field3D &delta_x,
+                                        const Field3D &delta_z, const BoutMask &mask,
+                                        const std::string& region) {
+  calcWeights(delta_x, delta_z, mask, region);
+  return interpolate(f, region);
 }

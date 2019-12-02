@@ -245,15 +245,20 @@ public:
   }
   virtual ~Interpolation() = default;
 
-  virtual void calcWeights(const Field3D &delta_x, const Field3D &delta_z) = 0;
   virtual void calcWeights(const Field3D &delta_x, const Field3D &delta_z,
-                           const BoutMask &mask) = 0;
+                           const std::string& region = "RGN_NOBNDRY") = 0;
+  virtual void calcWeights(const Field3D &delta_x, const Field3D &delta_z,
+                           const BoutMask &mask,
+                           const std::string& region = "RGN_NOBNDRY") = 0;
 
-  virtual Field3D interpolate(const Field3D &f) const = 0;
+  virtual Field3D interpolate(const Field3D &f,
+                              const std::string& region = "RGN_NOBNDRY") const = 0;
   virtual Field3D interpolate(const Field3D &f, const Field3D &delta_x,
-                              const Field3D &delta_z) = 0;
+                              const Field3D &delta_z,
+                              const std::string& region = "RGN_NOBNDRY") = 0;
   virtual Field3D interpolate(const Field3D &f, const Field3D &delta_x,
-                              const Field3D &delta_z, const BoutMask &mask) = 0;
+                              const Field3D &delta_z, const BoutMask &mask,
+                              const std::string& region = "RGN_NOBNDRY") = 0;
 
   void setMask(const BoutMask &mask) { skip_mask = mask; }
 
@@ -313,17 +318,22 @@ public:
     return new HermiteSpline(mesh);
   }
 
-  void calcWeights(const Field3D &delta_x, const Field3D &delta_z) override;
   void calcWeights(const Field3D &delta_x, const Field3D &delta_z,
-                   const BoutMask &mask) override;
+                   const std::string& region = "RGN_NOBNDRY") override;
+  void calcWeights(const Field3D &delta_x, const Field3D &delta_z,
+                   const BoutMask &mask,
+                   const std::string& region = "RGN_NOBNDRY") override;
 
   // Use precalculated weights
-  Field3D interpolate(const Field3D &f) const override;
+  Field3D interpolate(const Field3D &f,
+                      const std::string& region = "RGN_NOBNDRY") const override;
   // Calculate weights and interpolate
   Field3D interpolate(const Field3D &f, const Field3D &delta_x,
-                      const Field3D &delta_z) override;
+                      const Field3D &delta_z,
+                      const std::string& region = "RGN_NOBNDRY") override;
   Field3D interpolate(const Field3D &f, const Field3D &delta_x, const Field3D &delta_z,
-                      const BoutMask &mask) override;
+                      const BoutMask &mask,
+                      const std::string& region = "RGN_NOBNDRY") override;
   std::vector<ParallelTransform::PositionsAndWeights>
   getWeightsForYApproximation(int i, int j, int k, int yoffset);
 };
@@ -354,7 +364,8 @@ public:
   /// Interpolate using precalculated weights.
   /// This function is called by the other interpolate functions
   /// in the base class HermiteSpline.
-  Field3D interpolate(const Field3D &f) const override;
+  Field3D interpolate(const Field3D &f,
+                      const std::string& region = "RGN_NOBNDRY") const override;
 };
 
 /// Like HermiteSpline but with interpolation only in the z-direction
@@ -372,17 +383,22 @@ public:
     return new HermiteSplineOnlyZ(mesh);
   }
 
-  void calcWeights(const Field3D& UNUSED(delta_x), const Field3D& delta_z) override;
   void calcWeights(const Field3D& UNUSED(delta_x), const Field3D& delta_z,
-                   const BoutMask &mask) override;
+                   const std::string& region = "RGN_NOBNDRY") override;
+  void calcWeights(const Field3D& UNUSED(delta_x), const Field3D& delta_z,
+                   const BoutMask &mask,
+                   const std::string& region = "RGN_NOBNDRY") override;
 
   // Use precalculated weights
-  Field3D interpolate(const Field3D &f) const override;
+  Field3D interpolate(const Field3D &f,
+                      const std::string& region = "RGN_NOBNDRY") const override;
   // Calculate weights and interpolate
   Field3D interpolate(const Field3D &f, const Field3D &delta_x,
-                      const Field3D &delta_z) override;
+                      const Field3D &delta_z,
+                      const std::string& region = "RGN_NOBNDRY") override;
   Field3D interpolate(const Field3D &f, const Field3D &delta_x, const Field3D &delta_z,
-                      const BoutMask &mask) override;
+                      const BoutMask &mask,
+                      const std::string& region = "RGN_NOBNDRY") override;
   std::vector<ParallelTransform::PositionsAndWeights> getWeightsForYApproximation(int i, int j, int k, int yoffset);
 
 private:
@@ -417,17 +433,22 @@ public:
   /// Callback function for InterpolationFactory
   static Interpolation *CreateLagrange4pt(Mesh *mesh) { return new Lagrange4pt(mesh); }
 
-  void calcWeights(const Field3D &delta_x, const Field3D &delta_z) override;
   void calcWeights(const Field3D &delta_x, const Field3D &delta_z,
-                   const BoutMask &mask) override;
+                   const std::string& region = "RGN_NOBNDRY") override;
+  void calcWeights(const Field3D &delta_x, const Field3D &delta_z,
+                   const BoutMask &mask,
+                   const std::string& region = "RGN_NOBNDRY") override;
 
   // Use precalculated weights
-  Field3D interpolate(const Field3D &f) const override;
+  Field3D interpolate(const Field3D &f,
+                      const std::string& region = "RGN_NOBNDRY") const override;
   // Calculate weights and interpolate
   Field3D interpolate(const Field3D &f, const Field3D &delta_x,
-                      const Field3D &delta_z) override;
+                      const Field3D &delta_z,
+                      const std::string& region = "RGN_NOBNDRY") override;
   Field3D interpolate(const Field3D &f, const Field3D &delta_x, const Field3D &delta_z,
-                      const BoutMask &mask) override;
+                      const BoutMask &mask,
+                      const std::string& region = "RGN_NOBNDRY") override;
   BoutReal lagrange_4pt(BoutReal v2m, BoutReal vm, BoutReal vp, BoutReal v2p,
                         BoutReal offset) const;
   BoutReal lagrange_4pt(const BoutReal v[], BoutReal offset) const;
@@ -450,17 +471,25 @@ public:
   /// Callback function for InterpolationFactory
   static Interpolation *CreateBilinear(Mesh *mesh) { return new Bilinear(mesh); }
 
-  void calcWeights(const Field3D &delta_x, const Field3D &delta_z) override;
   void calcWeights(const Field3D &delta_x, const Field3D &delta_z,
-                   const BoutMask &mask) override;
+                   const std::string& region = "RGN_NOBNDRY") override;
+  void calcWeights(const Field3D &delta_x, const Field3D &delta_z,
+                   const BoutMask &mask,
+                   const std::string& region = "RGN_NOBNDRY") override;
 
-  // Use precalculated weights
-  Field3D interpolate(const Field3D &f) const override;
+  /// Interpolate using precalculated weights
+  /// Warning: not all region arguments are possible. "RGN_NOBNDRY" is always correct.
+  /// When y_offset!=0, the x-guard and x-boundary cells cannot be included. If using
+  /// HermiteSplineOnlyZ, it is possible to include the y-guard and y-boundary cells.
+  Field3D interpolate(const Field3D &f,
+                      const std::string& region = "RGN_NOBNDRY") const override;
   // Calculate weights and interpolate
   Field3D interpolate(const Field3D &f, const Field3D &delta_x,
-                      const Field3D &delta_z) override;
+                      const Field3D &delta_z,
+                      const std::string& region = "RGN_NOBNDRY") override;
   Field3D interpolate(const Field3D &f, const Field3D &delta_x, const Field3D &delta_z,
-                      const BoutMask &mask) override;
+                      const BoutMask &mask,
+                      const std::string& region = "RGN_NOBNDRY") override;
 };
 
 class InterpolationFactory
