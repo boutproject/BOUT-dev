@@ -48,6 +48,7 @@ class Mesh;
 #include <bout/deprecated.hxx>
 #include <bout/deriv_store.hxx>
 #include <bout/index_derivs_interface.hxx>
+#include <bout/mpi_wrapper.hxx>
 
 #include "field_data.hxx"
 #include "bout_types.hxx"
@@ -972,7 +973,10 @@ protected:
   
   /// Initialise derivatives
   void derivs_init(Options* options);
-  
+
+  /// Pointer to the global MPI wrapper, for convenience
+  MpiWrapper* mpi = nullptr;
+
 private:
 
   /// Allocates default Coordinates objects

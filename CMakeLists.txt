@@ -73,6 +73,7 @@ set(BOUT_SOURCES
   ./include/bout/macro_for_each.hxx
   ./include/bout/mesh.hxx
   ./include/bout/monitor.hxx
+  ./include/bout/mpi_wrapper.hxx
   ./include/bout/openmpwrap.hxx
   ./include/bout/paralleltransform.hxx
   ./include/bout/petsclib.hxx
