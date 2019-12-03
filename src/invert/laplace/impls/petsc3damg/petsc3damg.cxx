@@ -192,33 +192,58 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D &b_in, const Field3D &x0) {
   if (updateRequired) updateMatrix3D();
   PetscVector<Field3D> rhs(b_in), guess(x0);
   
-  // Adjust vectors to represent boundary conditions
+  // Adjust vectors to represent boundary conditions and check that
+  // boundary cells are finite
   BOUT_FOR(i, localmesh->getRegion3D("RGN_INNER_X_THIN")) {
     const BoutReal val = (inner_boundary_flags & INVERT_SET) ? x0[i] : 0.;
+    ASSERT1(finite(x0[i]));
     if (!(inner_boundary_flags & INVERT_RHS)) {
       rhs(i) = val;
     }
+#if CHECK >= 1
+    else {
+      ASSERT1(finite(b_in[i]));
+    }
+#endif
   }
 
   BOUT_FOR(i, localmesh->getRegion3D("RGN_OUTER_X_THIN")) {
     const BoutReal val = (outer_boundary_flags & INVERT_SET) ? x0[i] : 0.;
+    ASSERT1(finite(x0[i]));
     if (!(outer_boundary_flags & INVERT_RHS)) {
       rhs(i) = val;
     }
+#if CHECK >= 1
+    else {
+      ASSERT1(finite(b_in[i]));
+    }
+#endif
   }
 
   BOUT_FOR(i, localmesh->getRegion3D("RGN_LOWER_Y_THIN")) {
     const BoutReal val = (lower_boundary_flags & INVERT_SET) ? x0[i] : 0.;
+    ASSERT1(finite(x0[i]));
     if (!(lower_boundary_flags & INVERT_RHS)) {
       rhs(i) = val;
     }
+#if CHECK >= 1
+    else {
+      ASSERT1(finite(b_in[i]));
+    }
+#endif
   }
 
   BOUT_FOR(i, localmesh->getRegion3D("RGN_UPPER_Y_THIN")) {
     const BoutReal val = (upper_boundary_flags & INVERT_SET) ? x0[i] : 0.;
+    ASSERT1(finite(x0[i]));
     if (!(upper_boundary_flags & INVERT_RHS)) {
       rhs(i) = val;
     }
+#if CHECK >= 1
+    else {
+      ASSERT1(finite(b_in[i]));
+    }
+#endif
   }
 
   rhs.assemble();
