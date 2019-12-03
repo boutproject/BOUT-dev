@@ -95,6 +95,7 @@ set(BOUT_SOURCES
   ./include/bout/sys/uncopyable.hxx
   ./include/bout/sys/variant.hxx
   ./include/bout/template_combinations.hxx
+  ./include/cbout/bout.h
   ./include/bout_types.hxx
   ./include/boutcomm.hxx
   ./include/boutexception.hxx
@@ -138,6 +139,7 @@ set(BOUT_SOURCES
   ./include/vector3d.hxx
   ./include/where.hxx
   ./src/bout++.cxx
+  ./src/cbout/cbout.cxx
   ./src/field/field.cxx
   ./src/field/field2d.cxx
   ./src/field/field3d.cxx

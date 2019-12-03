@@ -204,7 +204,9 @@ extern "C" int PhysicsModel_delete(PhysicsModel* model) {
 
 extern "C" int Solver_create(Solver** solver) {
   CWRAP_START();
-  *solver = Solver::create();
+  // Note: This release converts a unique_ptr into a raw pointer.
+  // Perhaps better to store the unique_ptr in a map and then return handle
+  *solver = Solver::create().release();
   (*solver)->addMonitor(new BoutMonitor(), Solver::BACK);
   CWRAP_END();
 }
