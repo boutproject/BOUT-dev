@@ -47,6 +47,12 @@ Options &Options::operator[](const std::string &name) {
     return *this;
   }
 
+  // If name is compound, e.g. "section:subsection", then split the name
+  auto subsection_split = name.find(":");
+  if (subsection_split != std::string::npos) {
+    return (*this)[name.substr(0, subsection_split)][name.substr(subsection_split+1)];
+  }
+
   // Find and return if already exists
   auto it = children.find(lowercase(name));
   if (it != children.end()) {
@@ -74,6 +80,12 @@ const Options &Options::operator[](const std::string &name) const {
 
   if (name.empty()) {
     return *this;
+  }
+
+  // If name is compound, e.g. "section:subsection", then split the name
+  auto subsection_split = name.find(":");
+  if (subsection_split != std::string::npos) {
+    return (*this)[name.substr(0, subsection_split)][name.substr(subsection_split+1)];
   }
 
   // Find and return if already exists

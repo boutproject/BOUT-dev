@@ -15,7 +15,7 @@ int jacobian(BoutReal t); // Jacobian-vector multiply
 
 Field3D u, v; // Evolving variables
 
-InvertPar *inv; // Parallel inversion class
+std::unique_ptr<InvertPar> inv{nullptr}; // Parallel inversion class
 
 int physics_init(bool UNUSED(restarting)) {
   // Set variables to evolve

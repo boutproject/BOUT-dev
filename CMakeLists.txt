@@ -73,6 +73,7 @@ set(BOUT_SOURCES
   ./include/bout/macro_for_each.hxx
   ./include/bout/mesh.hxx
   ./include/bout/monitor.hxx
+  ./include/bout/mpi_wrapper.hxx
   ./include/bout/openmpwrap.hxx
   ./include/bout/paralleltransform.hxx
   ./include/bout/petsclib.hxx
@@ -85,7 +86,6 @@ set(BOUT_SOURCES
   ./include/bout/slepclib.hxx
   ./include/bout/snb.hxx
   ./include/bout/solver.hxx
-  ./include/bout/solverfactory.hxx
   ./include/bout/surfaceiter.hxx
   ./include/bout/sys/expressionparser.hxx
   ./include/bout/sys/gettext.hxx
@@ -116,7 +116,6 @@ set(BOUT_SOURCES
   ./include/gyro_average.hxx
   ./include/initialprofiles.hxx
   ./include/interpolation.hxx
-  ./include/interpolation_factory.hxx
   ./include/invert_laplace.hxx
   ./include/invert_parderiv.hxx
   ./include/lapack_routines.hxx
@@ -193,8 +192,6 @@ set(BOUT_SOURCES
   ./src/invert/laplace/impls/spt/spt.cxx
   ./src/invert/laplace/impls/spt/spt.hxx
   ./src/invert/laplace/invert_laplace.cxx
-  ./src/invert/laplace/laplacefactory.cxx
-  ./src/invert/laplace/laplacefactory.hxx
   ./src/invert/laplacexy/laplacexy.cxx
   ./src/invert/laplacexz/impls/cyclic/laplacexz-cyclic.cxx
   ./src/invert/laplacexz/impls/cyclic/laplacexz-cyclic.hxx
@@ -204,8 +201,6 @@ set(BOUT_SOURCES
   ./src/invert/parderiv/impls/cyclic/cyclic.cxx
   ./src/invert/parderiv/impls/cyclic/cyclic.hxx
   ./src/invert/parderiv/invert_parderiv.cxx
-  ./src/invert/parderiv/parderiv_factory.cxx
-  ./src/invert/parderiv/parderiv_factory.hxx
   ./src/mesh/boundary_factory.cxx
   ./src/mesh/boundary_region.cxx
   ./src/mesh/boundary_standard.cxx
@@ -220,12 +215,9 @@ set(BOUT_SOURCES
   ./src/mesh/interpolation.cxx
   ./src/mesh/interpolation/bilinear.cxx
   ./src/mesh/interpolation/hermite_spline.cxx
-  ./src/mesh/interpolation/interpolation_factory.cxx
   ./src/mesh/interpolation/lagrange_4pt.cxx
   ./src/mesh/interpolation/monotonic_hermite_spline.cxx
   ./src/mesh/mesh.cxx
-  ./src/mesh/meshfactory.cxx
-  ./src/mesh/meshfactory.hxx
   ./src/mesh/parallel/fci.cxx
   ./src/mesh/parallel/fci.hxx
   ./src/mesh/parallel/identity.cxx
@@ -271,8 +263,6 @@ set(BOUT_SOURCES
   ./src/solver/impls/rkgeneric/rkgeneric.cxx
   ./src/solver/impls/rkgeneric/rkgeneric.hxx
   ./src/solver/impls/rkgeneric/rkscheme.cxx
-  ./src/solver/impls/rkgeneric/rkschemefactory.cxx
-  ./src/solver/impls/rkgeneric/rkschemefactory.hxx
   ./src/solver/impls/slepc/slepc.cxx
   ./src/solver/impls/slepc/slepc.hxx
   ./src/solver/impls/snes/snes.cxx
@@ -280,7 +270,6 @@ set(BOUT_SOURCES
   ./src/solver/impls/split-rk/split-rk.cxx
   ./src/solver/impls/split-rk/split-rk.hxx
   ./src/solver/solver.cxx
-  ./src/solver/solverfactory.cxx
   ./src/sys/bout_types.cxx
   ./src/sys/boutcomm.cxx
   ./src/sys/boutexception.cxx

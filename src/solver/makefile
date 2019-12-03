@@ -1,7 +1,7 @@
 BOUT_TOP = ../..
 
 DIRS		= impls
-SOURCEC		= solver.cxx solverfactory.cxx
+SOURCEC		= solver.cxx
 SOURCEH		= $(SOURCEC:%.cxx=%.hxx)
 TARGET		= lib
 

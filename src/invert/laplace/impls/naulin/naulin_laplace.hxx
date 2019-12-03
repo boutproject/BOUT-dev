@@ -31,6 +31,10 @@ class LaplaceNaulin;
 #include <invert_laplace.hxx>
 #include <options.hxx>
 
+namespace {
+RegisterLaplace<LaplaceNaulin> registerlaplacenaulin(LAPLACE_NAULIN);
+}
+
 /// Solves the 2D Laplacian equation
 /*!
  * 
@@ -38,7 +42,7 @@ class LaplaceNaulin;
 class LaplaceNaulin : public Laplacian {
 public:
   LaplaceNaulin(Options *opt = NULL, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr);
-  ~LaplaceNaulin();
+  ~LaplaceNaulin() = default;
   
   using Laplacian::setCoefA;
   using Laplacian::setCoefC;
@@ -138,7 +142,7 @@ private:
   Field3D Acoef, C1coef, C2coef, Dcoef;
 
   /// Laplacian solver used to solve the equation with constant-in-z coefficients
-  Laplacian* delp2solver;
+  std::unique_ptr<Laplacian> delp2solver{nullptr};
 
   /// Solver tolerances
   BoutReal rtol, atol;

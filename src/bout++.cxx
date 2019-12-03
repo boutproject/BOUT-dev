@@ -42,12 +42,17 @@ const char DEFAULT_DIR[] = "data";
 #include "boutcomm.hxx"
 #include "boutexception.hxx"
 #include "datafile.hxx"
+#include "interpolation.hxx"
 #include "invert_laplace.hxx"
+#include "invert_parderiv.hxx"
 #include "msg_stack.hxx"
 #include "optionsreader.hxx"
 #include "output.hxx"
+#include "bout/invert/laplacexz.hxx"
+#include "bout/mpi_wrapper.hxx"
 #include "bout/openmpwrap.hxx"
 #include "bout/petsclib.hxx"
+#include "bout/rkscheme.hxx"
 #include "bout/slepclib.hxx"
 #include "bout/solver.hxx"
 #include "bout/sys/timer.hxx"
@@ -154,6 +159,8 @@ int BoutInitialise(int& argc, char**& argv) {
       writeSettingsFile(Options::root(), args.data_dir, args.set_file);
     }
 
+    bout::globals::mpi = new MpiWrapper();
+
     // Create the mesh
     bout::globals::mesh = Mesh::create();
     // Load from sources. Required for Field initialisation
@@ -219,7 +226,8 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
   /// NB: "restart" and "append" are now caught by options
   /// Check for help flag separately
   for (int i = 1; i < argc; i++) {
-    if (string(argv[i]) == "-h" || string(argv[i]) == "--help") {
+    const std::string current_arg{argv[i]};
+    if (current_arg == "-h" || current_arg == "--help") {
       // Print help message -- note this will be displayed once per processor as we've not
       // started MPI yet.
       output.write(_("Usage: %s [-d <data directory>] [-f <options filename>] [restart "
@@ -245,6 +253,49 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
             "physics model source (e.g. %s.cxx)\n"),
           argv[0]);
 
+      std::exit(EXIT_SUCCESS);
+    }
+    if (current_arg == "--list-solvers") {
+      for (const auto &solver : SolverFactory::getInstance().listAvailable()) {
+        std::cout << solver << "\n";
+      }
+      std::exit(EXIT_SUCCESS);
+    }
+    if (current_arg == "--list-laplacians") {
+      for (const auto &laplacian : LaplaceFactory::getInstance().listAvailable()) {
+        std::cout << laplacian << "\n";
+      }
+      std::exit(EXIT_SUCCESS);
+    }
+    if (current_arg == "--list-laplacexzs") {
+      for (const auto &laplacexz : LaplaceXZFactory::getInstance().listAvailable()) {
+        std::cout << laplacexz << "\n";
+      }
+      std::exit(EXIT_SUCCESS);
+    }
+    if (current_arg == "--list-invertpars") {
+      for (const auto &invertpar : InvertParFactory::getInstance().listAvailable()) {
+        std::cout << invertpar << "\n";
+      }
+      std::exit(EXIT_SUCCESS);
+    }
+    if (current_arg == "--list-rkschemes") {
+      for (const auto &rkscheme : RKSchemeFactory::getInstance().listAvailable()) {
+        std::cout << rkscheme << "\n";
+      }
+      std::exit(EXIT_SUCCESS);
+    }
+    if (current_arg == "--list-meshes") {
+      for (const auto &mesh : MeshFactory::getInstance().listAvailable()) {
+        std::cout << mesh << "\n";
+      }
+      std::exit(EXIT_SUCCESS);
+    }
+    if (current_arg == "--list-interpolations") {
+      for (const auto& interpolation :
+           InterpolationFactory::getInstance().listAvailable()) {
+        std::cout << interpolation << "\n";
+      }
       std::exit(EXIT_SUCCESS);
     }
   }
@@ -596,7 +647,7 @@ int BoutFinalise(bool write_settings) {
   bout::globals::dump.close();
 
   // Make sure all processes have finished writing before exit
-  MPI_Barrier(BoutComm::get());
+  bout::globals::mpi->MPI_Barrier(BoutComm::get());
 
   // Laplacian inversion
   Laplacian::cleanup();
@@ -629,6 +680,9 @@ int BoutFinalise(bool write_settings) {
 
   // Debugging message stack
   msg_stack.clear();
+
+  // Delete the MPI wrapper
+  delete bout::globals::mpi;
 
   return 0;
 }
@@ -695,7 +749,7 @@ int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
     }
 
     /// Record the starting time
-    mpi_start_time = MPI_Wtime() - run_data.wtime;
+    mpi_start_time = bout::globals::mpi->MPI_Wtime() - run_data.wtime;
 
     first_time = false;
 
@@ -713,7 +767,7 @@ int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
 
   // This bit only to screen, not log file
 
-  run_data.t_elapsed = MPI_Wtime() - mpi_start_time;
+  run_data.t_elapsed = bout::globals::mpi->MPI_Wtime() - mpi_start_time;
 
   output_progress.print("%c  Step %d of %d. Elapsed %s", get_spin(), iteration + 1, NOUT,
                         (time_to_hms(run_data.t_elapsed)).c_str());
@@ -728,7 +782,7 @@ int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
   if (wall_limit > 0.0) {
     // Check if enough time left
 
-    BoutReal t_remain = mpi_start_time + wall_limit - MPI_Wtime();
+    BoutReal t_remain = mpi_start_time + wall_limit - bout::globals::mpi->MPI_Wtime();
     if (t_remain < run_data.wtime * 2) {
       // Less than 2 time-steps left
       output_warn.write(_("Only %e seconds (%.2f steps) left. Quitting\n"), t_remain,

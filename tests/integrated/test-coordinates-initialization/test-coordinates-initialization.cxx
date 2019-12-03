@@ -12,6 +12,8 @@ int main() {
   OptionsReader *reader = OptionsReader::getInstance();
   reader->read(options, "%s/%s", "data", "BOUT.inp");
 
+  bout::globals::mpi = new MpiWrapper();
+
   // Initialize a mesh
   mesh = Mesh::create();
   mesh->load();

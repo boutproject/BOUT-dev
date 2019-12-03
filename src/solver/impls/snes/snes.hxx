@@ -41,8 +41,9 @@ class SNESSolver;
 
 #include <petsc.h>
 #include <petscsnes.h>
+// PETSc creates macros for MPI calls, which interfere with the MpiWrapper class
+#undef MPI_Allreduce
 
-#include <bout/solverfactory.hxx>
 namespace {
 RegisterSolver<SNESSolver> registersolversnes("snes");
 }

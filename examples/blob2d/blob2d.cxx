@@ -43,7 +43,7 @@ private:
   bool compressible; ///< If allow inclusion of n grad phi term in density evolution
   bool sheath;       ///< Sheath connected?
 
-  Laplacian *phiSolver; ///< Performs Laplacian inversions to calculate phi
+  std::unique_ptr<Laplacian> phiSolver{nullptr}; ///< Performs Laplacian inversions to calculate phi
 
 protected:
   int init(bool UNUSED(restarting)) {

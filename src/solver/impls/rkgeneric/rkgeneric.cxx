@@ -1,6 +1,5 @@
 
 #include "rkgeneric.hxx"
-#include "rkschemefactory.hxx"
 #include <bout/rkscheme.hxx>
 
 #include <boutcomm.hxx>
@@ -12,14 +11,9 @@
 
 #include <output.hxx>
 
-RKGenericSolver::RKGenericSolver(Options *options) : Solver(options) {
-  //Create scheme
-  scheme=RKSchemeFactory::getInstance()->createRKScheme(options);
+RKGenericSolver::RKGenericSolver(Options* options) : Solver(options) {
+  scheme = RKSchemeFactory::getInstance().create(options);
   canReset = true;
-}
-
-RKGenericSolver::~RKGenericSolver() {
-  delete scheme;
 }
 
 void RKGenericSolver::setMaxTimestep(BoutReal dt) {
@@ -49,7 +43,8 @@ int RKGenericSolver::init(int nout, BoutReal tstep) {
   
   // Get total problem size
   int ntmp;
-  if(MPI_Allreduce(&nlocal, &ntmp, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
+  if (bout::globals::mpi->MPI_Allreduce(&nlocal, &ntmp, 1, MPI_INT, MPI_SUM,
+                                        BoutComm::get())) {
     throw BoutException("MPI_Allreduce failed!");
   }
   neq = ntmp;

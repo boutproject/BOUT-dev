@@ -11,6 +11,9 @@
   [\#1829](https://github.com/boutproject/BOUT-dev/pull/1829)
 - `invert_laplace` free function removed
   [\#1834](https://github.com/boutproject/BOUT-dev/pull/1834)
+- Most factories and `create` methods standardised. Run
+  `bin/bout-v5-factory-upgrader.py` on your physics models to update
+  them [\#1842](https://github.com/boutproject/BOUT-dev/pull/1842)
 
 ## [v4.3.0](https://github.com/boutproject/BOUT-dev/tree/v4.3.0) (2019-10-24)
 [Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v4.2.3...v4.3.0)

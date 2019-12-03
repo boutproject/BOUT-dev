@@ -1,4 +1,4 @@
-/**************************************************************************
+#/**************************************************************************
  * Interface to SLEPc solver
  *
  **************************************************************************
@@ -208,9 +208,7 @@ SlepcSolver::SlepcSolver(Options* options) {
   if (!selfSolve && !ddtMode) {
     // Use a sub-section called "advance"
     advanceSolver =
-        SolverFactory::getInstance()->createSolver(options->getSection("advance"));
-  } else {
-    advanceSolver = nullptr;
+        SolverFactory::getInstance().create(options->getSection("advance"));
   }
 }
 
@@ -223,7 +221,6 @@ SlepcSolver::~SlepcSolver() {
     if (shellMat) {
       MatDestroy(&shellMat);
     };
-    delete advanceSolver;
     initialised = false;
   }
 }
@@ -273,7 +270,8 @@ int SlepcSolver::init(int NOUT, BoutReal TIMESTEP) {
 
   // Get total problem size
   int neq;
-  if (MPI_Allreduce(&localSize, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
+  if (bout::globals::mpi->MPI_Allreduce(&localSize, &neq, 1, MPI_INT, MPI_SUM,
+                                        BoutComm::get())) {
     throw BoutException("MPI_Allreduce failed in SlepcSolver::init");
   }
 

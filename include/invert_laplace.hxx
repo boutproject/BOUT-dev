@@ -43,9 +43,21 @@ class Laplacian;
 #include "field2d.hxx"
 #include <boutexception.hxx>
 #include "unused.hxx"
+#include "bout/generic_factory.hxx"
 
 #include "dcomplex.hxx"
 #include "options.hxx"
+
+constexpr auto LAPLACE_SPT = "spt";
+constexpr auto LAPLACE_PDD = "pdd";
+constexpr auto LAPLACE_TRI = "tri";
+constexpr auto LAPLACE_BAND = "band";
+constexpr auto LAPLACE_PETSC = "petsc";
+constexpr auto LAPLACE_MUMPS = "mumps";
+constexpr auto LAPLACE_CYCLIC = "cyclic";
+constexpr auto LAPLACE_SHOOT = "shoot";
+constexpr auto LAPLACE_MULTIGRID = "multigrid";
+constexpr auto LAPLACE_NAULIN = "naulin";
 
 // Inversion flags for each boundary
 /// Zero-gradient for DC (constant in Z) component. Default is zero value
@@ -112,6 +124,43 @@ constexpr int INVERT_KX_ZERO = 16;
   const int INVERT_DC_IN_GRADPAR = 1048576;
   const int INVERT_DC_IN_GRADPARINV = 2097152;
  */
+
+class LaplaceFactory
+    : public Factory<
+          Laplacian, LaplaceFactory,
+          std::function<std::unique_ptr<Laplacian>(Options*, CELL_LOC, Mesh*)>> {
+public:
+  static constexpr auto type_name = "Laplacian";
+  static constexpr auto section_name = "laplace";
+  static constexpr auto option_name = "type";
+  static constexpr auto default_type = LAPLACE_CYCLIC;
+
+  ReturnType create(Options* options = nullptr, CELL_LOC loc = CELL_CENTRE,
+                    Mesh* mesh = nullptr) {
+    options = optionsOrDefaultSection(options);
+    return Factory::create(getType(options), options, loc, mesh);
+  }
+};
+
+/// Simpler name for Factory registration helper class
+///
+/// Usage:
+///
+///     #include <bout/laplacefactory.hxx>
+///     namespace {
+///     RegisterLaplace<MyLaplace> registerlaplacemine("mylaplace");
+///     }
+template <class DerivedType>
+class RegisterLaplace {
+public:
+  RegisterLaplace(const std::string& name) {
+    LaplaceFactory::getInstance().add(
+        name,
+        [](Options* options, CELL_LOC loc, Mesh* mesh) -> std::unique_ptr<Laplacian> {
+          return std::make_unique<DerivedType>(options, loc, mesh);
+        });
+  }
+};
 
 /// Base class for Laplacian inversion
 class Laplacian {
@@ -202,12 +251,16 @@ public:
 
   /*!
    * Create a new Laplacian solver
-   * 
+   *
    * @param[in] opt  The options section to use. By default "laplace" will be used
    */
-  static Laplacian *create(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr);
+  static std::unique_ptr<Laplacian> create(Options* opts = nullptr,
+                                           const CELL_LOC location = CELL_CENTRE,
+                                           Mesh* mesh_in = nullptr) {
+    return LaplaceFactory::getInstance().create(opts, location, mesh_in);
+  }
   static Laplacian* defaultInstance(); ///< Return pointer to global singleton
-  
+
   static void cleanup(); ///< Frees all memory
 protected:
   bool async_send; ///< If true, use asyncronous send in parallel algorithms
@@ -255,7 +308,7 @@ protected:
                        ///  localmesh->getCoordinates(location) once
 private:
   /// Singleton instance
-  static Laplacian *instance;
+  static std::unique_ptr<Laplacian> instance;
 };
 
 ////////////////////////////////////////////
