@@ -397,7 +397,7 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
   }
   operator3D.assemble();
   MatSetBlockSize(*operator3D.get(), 1);
-  
+
   // Declare KSP Context (abstract PETSc object that manages all Krylov methods)
   if (kspInitialised) KSPDestroy(&ksp);
   KSPCreate(BoutComm::get(), &ksp);
@@ -440,6 +440,7 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
     KSPSetFromOptions(ksp);
     PCSetType(pc, PCGAMG);
     PCGAMGSetType(pc, PCGAMGAGG); //TODO: DETERMINE IF THIS IS MOST APPROPRIATE TYPE OF SOLVER
+    PCGAMGSetSymGraph(pc, PETSC_TRUE);
   }
   KSPSetPCSide(ksp, PC_LEFT);
 
