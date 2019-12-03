@@ -67,30 +67,30 @@ void GlobalIndexer::initialise() {
   fieldmesh->communicate(indicesPerp);
 }
 
-PetscInt GlobalIndexer::getGlobal(const Ind2D ind) {
+PetscInt GlobalIndexer::getGlobal(const Ind2D &ind) {
   return static_cast<PetscInt>(indices2D[ind] + 0.5);
 }
 
-PetscInt GlobalIndexer::getGlobal(const Ind3D ind) {
+PetscInt GlobalIndexer::getGlobal(const Ind3D &ind) {
   return static_cast<PetscInt>(indices3D[ind] + 0.5);
 }
 
-PetscInt GlobalIndexer::getGlobal(const IndPerp ind) {
+PetscInt GlobalIndexer::getGlobal(const IndPerp &ind) {
   return static_cast<PetscInt>(indicesPerp[ind] + 0.5);
 }
 
-bool GlobalIndexer::isLocal(const Ind2D ind) {
+bool GlobalIndexer::isLocal(const Ind2D &ind) {
   PetscInt index = getGlobal(ind);
   return (globalStart2D <= index) && (index <= globalEnd2D);
 }
 
-bool GlobalIndexer::isLocal(const Ind3D ind) {
+bool GlobalIndexer::isLocal(const Ind3D &ind) {
   PetscInt index = getGlobal(ind);
   return (globalStart3D <= index) && (index <= globalEnd3D);
 
 }
 
-bool GlobalIndexer::isLocal(const IndPerp ind) {
+bool GlobalIndexer::isLocal(const IndPerp &ind) {
   PetscInt index = getGlobal(ind);
   return (globalStartPerp <= index) && (index <= globalEndPerp);  
 }

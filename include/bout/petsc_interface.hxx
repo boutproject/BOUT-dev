@@ -70,15 +70,15 @@ public:
 
   /// Convert the local index object to a global index which can be
   /// used in PETSc vectors and matrices.
-  PetscInt getGlobal(const Ind2D ind);
-  PetscInt getGlobal(const Ind3D ind);
-  PetscInt getGlobal(const IndPerp ind);
+  PetscInt getGlobal(const Ind2D &ind);
+  PetscInt getGlobal(const Ind3D &ind);
+  PetscInt getGlobal(const IndPerp &ind);
 
   /// Check whether the local index corresponds to an element which is
   /// stored locally.
-  bool isLocal(const Ind2D ind);
-  bool isLocal(const Ind3D ind);
-  bool isLocal(const IndPerp ind);
+  bool isLocal(const Ind2D &ind);
+  bool isLocal(const Ind3D &ind);
+  bool isLocal(const IndPerp &ind);
 
   PetscInt getGlobalStart3D() { return globalStart3D; }
   PetscInt getGlobalStart2D() { return globalStart2D; }
