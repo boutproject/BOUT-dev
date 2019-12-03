@@ -73,4 +73,4 @@ rtol = 1.e-8
 atol = 1.e-12
 
 [input]
-transform_from_field_aligned = true
+transform_from_field_aligned = false
