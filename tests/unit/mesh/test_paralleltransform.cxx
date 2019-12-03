@@ -46,7 +46,7 @@ TEST_F(ParallelTransformTest, IdentityToFieldAligned) {
 
   Field3D field{1.0};
 
-  Field3D result = transform.toFieldAligned(field, RGN_ALL);
+  Field3D result = transform.toFieldAligned(field, "RGN_ALL");
 
   EXPECT_TRUE(IsFieldEqual(result, 1.0));
   EXPECT_TRUE(result.getDirectionY() == YDirectionType::Aligned);
@@ -59,7 +59,7 @@ TEST_F(ParallelTransformTest, IdentityFromFieldAligned) {
   Field3D field{1.0};
   field.setDirectionY(YDirectionType::Aligned);
 
-  Field3D result = transform.fromFieldAligned(field, RGN_ALL);
+  Field3D result = transform.fromFieldAligned(field, "RGN_ALL");
 
   EXPECT_TRUE(IsFieldEqual(result, 1.0));
   EXPECT_TRUE(result.getDirectionY() == YDirectionType::Standard);
@@ -72,7 +72,7 @@ TEST_F(ParallelTransformTest, IdentityToFieldAlignedFieldPerp) {
   FieldPerp field{1.0};
   field.setIndex(2);
 
-  FieldPerp result = transform.toFieldAligned(field, RGN_ALL);
+  FieldPerp result = transform.toFieldAligned(field, "RGN_ALL");
 
   EXPECT_TRUE(IsFieldEqual(result, 1.0));
   EXPECT_TRUE(result.getDirectionY() == YDirectionType::Aligned);
@@ -86,7 +86,7 @@ TEST_F(ParallelTransformTest, IdentityFromFieldAlignedFieldPerp) {
   field.setIndex(2);
   field.setDirectionY(YDirectionType::Aligned);
 
-  FieldPerp result = transform.fromFieldAligned(field, RGN_ALL);
+  FieldPerp result = transform.fromFieldAligned(field, "RGN_ALL");
 
   EXPECT_TRUE(IsFieldEqual(result, 1.0));
   EXPECT_TRUE(result.getDirectionY() == YDirectionType::Standard);

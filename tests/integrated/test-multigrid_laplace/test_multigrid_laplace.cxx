@@ -40,7 +40,7 @@ int main(int argc, char** argv) {
   // Initialise BOUT++, setting up mesh
   BoutInitialise(argc, argv);
 
-  class Laplacian* invert = Laplacian::create();
+  auto invert = Laplacian::create();
 
   // Solving equations of the form d*Grad_perp2(f) + 1/c*Grad_perp(c).Grad_perp(f) + a*f = b for various boundary conditions
   Field3D f1,a1,b1,c1,d1,sol1,bcheck1;
@@ -72,7 +72,7 @@ int main(int argc, char** argv) {
     checkData(sol1);
     bcheck1 = d1*Delp2(sol1, CELL_DEFAULT, false) + this_Grad_perp_dot_Grad_perp(c1,sol1)/c1 + a1*sol1;
     absolute_error1 = f1-sol1;
-    max_error1 = max_error_at_ystart(abs(absolute_error1, RGN_NOBNDRY));
+    max_error1 = max_error_at_ystart(abs(absolute_error1, "RGN_NOBNDRY"));
   } catch (BoutException &err) {
     output << "BoutException occured in invert->solve(b1): " << err.what() << endl
            << "Laplacian inversion failed to converge (probably)" << endl;
@@ -123,7 +123,7 @@ int main(int argc, char** argv) {
     mesh->communicate(sol2);
     bcheck2 = d2*Delp2(sol2, CELL_DEFAULT, false) + this_Grad_perp_dot_Grad_perp(c2,sol2)/c2 + a2*sol2;
     absolute_error2 = f2-sol2;
-    max_error2 = max_error_at_ystart(abs(absolute_error2, RGN_NOBNDRY));
+    max_error2 = max_error_at_ystart(abs(absolute_error2, "RGN_NOBNDRY"));
   } catch (BoutException &err) {
     output << "BoutException occured in invert->solve(b2): " << err.what() << endl
            << "Laplacian inversion failed to converge (probably)" << endl;
@@ -179,7 +179,7 @@ int main(int argc, char** argv) {
     mesh->communicate(sol3);
     bcheck3 = d3*Delp2(sol3, CELL_DEFAULT, false) + this_Grad_perp_dot_Grad_perp(c3,f3)/c3 + a3*sol3;
     absolute_error3 = f3-sol3;
-    max_error3 = max_error_at_ystart(abs(absolute_error3, RGN_NOBNDRY));
+    max_error3 = max_error_at_ystart(abs(absolute_error3, "RGN_NOBNDRY"));
   } catch (BoutException &err) {
     output << "BoutException occured in invert->solve(b3): " << err.what() << endl
            << "Laplacian inversion failed to converge (probably)" << endl;
@@ -239,7 +239,7 @@ int main(int argc, char** argv) {
     mesh->communicate(sol4);
     bcheck4 = d4*Delp2(sol4, CELL_DEFAULT, false) + this_Grad_perp_dot_Grad_perp(c4,sol4)/c4 + a4*sol4;
     absolute_error4 = f4-sol4;
-    max_error4 = max_error_at_ystart(abs(absolute_error4, RGN_NOBNDRY));
+    max_error4 = max_error_at_ystart(abs(absolute_error4, "RGN_NOBNDRY"));
   } catch (BoutException &err) {
     output << "BoutException occured in invert->solve(b4): " << err.what() << endl
            << "Laplacian inversion failed to converge (probably)" << endl;

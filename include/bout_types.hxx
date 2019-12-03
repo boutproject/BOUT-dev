@@ -37,16 +37,34 @@ constexpr BoutReal BoutNaN = std::numeric_limits<BoutReal>::quiet_NaN();
 #define STRENUM(val) {#val, val}
 
 /// 4 possible variable locations. Default is for passing to functions
-enum CELL_LOC {CELL_DEFAULT=0, CELL_CENTRE=1, CELL_CENTER=1, CELL_XLOW=2, CELL_YLOW=3, CELL_ZLOW=4, CELL_VSHIFT=5};
+enum class CELL_LOC {deflt, centre, xlow, ylow, zlow, vshift};
+constexpr CELL_LOC CELL_DEFAULT = CELL_LOC::deflt;
+constexpr CELL_LOC CELL_CENTRE = CELL_LOC::centre;
+constexpr CELL_LOC CELL_CENTER = CELL_LOC::centre;
+constexpr CELL_LOC CELL_XLOW = CELL_LOC::xlow;
+constexpr CELL_LOC CELL_YLOW = CELL_LOC::ylow;
+constexpr CELL_LOC CELL_ZLOW = CELL_LOC::zlow;
+constexpr CELL_LOC CELL_VSHIFT = CELL_LOC::vshift;
 
 std::string toString(CELL_LOC location);
-CELL_LOC CELL_LOCFromString(std::string location_string);
+CELL_LOC CELL_LOCFromString(const std::string& location_string);
 DEPRECATED(inline std::string CELL_LOC_STRING(CELL_LOC location)) {
   return toString(location);
 }
 
 /// Differential methods. Both central and upwind
-enum DIFF_METHOD {DIFF_DEFAULT, DIFF_U1, DIFF_U2, DIFF_C2, DIFF_W2, DIFF_W3, DIFF_C4, DIFF_U3, DIFF_FFT, DIFF_SPLIT, DIFF_S2};
+enum class DIFF_METHOD {deflt, u1, u2, c2, w2, w3, c4, u3, fft, split, s2};
+constexpr DIFF_METHOD DIFF_DEFAULT = DIFF_METHOD::deflt;
+constexpr DIFF_METHOD DIFF_U1 = DIFF_METHOD::u1;
+constexpr DIFF_METHOD DIFF_U2 = DIFF_METHOD::u2;
+constexpr DIFF_METHOD DIFF_C2 = DIFF_METHOD::c2;
+constexpr DIFF_METHOD DIFF_W2 = DIFF_METHOD::w2;
+constexpr DIFF_METHOD DIFF_W3 = DIFF_METHOD::w3;
+constexpr DIFF_METHOD DIFF_C4 = DIFF_METHOD::c4;
+constexpr DIFF_METHOD DIFF_U3 = DIFF_METHOD::u3;
+constexpr DIFF_METHOD DIFF_FFT = DIFF_METHOD::fft;
+constexpr DIFF_METHOD DIFF_SPLIT = DIFF_METHOD::split;
+constexpr DIFF_METHOD DIFF_S2 = DIFF_METHOD::s2;
 
 std::string toString(DIFF_METHOD location);
 DEPRECATED(inline std::string DIFF_METHOD_STRING(DIFF_METHOD location)) {
@@ -54,7 +72,12 @@ DEPRECATED(inline std::string DIFF_METHOD_STRING(DIFF_METHOD location)) {
 }
 
 /// Specify grid region for looping
-enum REGION { RGN_ALL, RGN_NOBNDRY, RGN_NOX, RGN_NOY, RGN_NOZ };
+enum class REGION {all, nobndry, nox, noy, noz};
+constexpr REGION RGN_ALL = REGION::all;
+constexpr REGION RGN_NOBNDRY = REGION::nobndry;
+constexpr REGION RGN_NOX = REGION::nox;
+constexpr REGION RGN_NOY = REGION::noy;
+constexpr REGION RGN_NOZ = REGION::noz;
 
 std::string toString(REGION region);
 DEPRECATED(inline std::string REGION_STRING(REGION region)) { return toString(region); }
@@ -80,7 +103,7 @@ DEPRECATED(inline std::string DIRECTION_STRING(DIRECTION direction)) {
 enum class YDirectionType { Standard, Aligned };
 
 std::string toString(YDirectionType d);
-YDirectionType YDirectionTypeFromString(std::string y_direction_string);
+YDirectionType YDirectionTypeFromString(const std::string& y_direction_string);
 
 /// Identify kind of a field's z-direction
 /// - Standard is the default
@@ -90,7 +113,7 @@ YDirectionType YDirectionTypeFromString(std::string y_direction_string);
 enum class ZDirectionType { Standard, Average };
 
 std::string toString(ZDirectionType d);
-ZDirectionType ZDirectionTypeFromString(std::string z_direction_string);
+ZDirectionType ZDirectionTypeFromString(const std::string& z_direction_string);
 
 /// Container for direction types
 struct DirectionTypes {

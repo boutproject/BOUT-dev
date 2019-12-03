@@ -38,7 +38,7 @@ protected:
     return 0;
   }
   
-  int rhs(BoutReal t) {
+  int rhs(BoutReal UNUSED(t)) {
     // Run communications
     mesh->communicate(V);
     

@@ -15,7 +15,7 @@ vars = ['flag0', 'flag3', 'flagis', 'flagos',
         'flag0a', 'flag3a', 'flagisa', 'flagosa',
         'flag0ac', 'flag3ac','flagisac', 'flagosac',
         'flag0ad', 'flag3ad', 'flagisad', 'flagosad']  
-tol = 1e-10                  # Absolute tolerance
+tol = 1e-6                  # Absolute tolerance
 
 from boututils.run_wrapper import shell, shell_safe, launch_safe
 from boutdata.collect import collect
@@ -25,7 +25,6 @@ from sys import stdout, exit
 
 
 print("Making Laplacian inversion test")
-shell("rm test_laplace")
 shell_safe("make > make.log")
 
 # Read benchmark values

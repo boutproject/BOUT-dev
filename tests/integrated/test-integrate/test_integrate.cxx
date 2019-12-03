@@ -10,17 +10,17 @@
 // This class represents a sub-problem to be solved
 class MyFunction : public PhysicsModel {
 public:
-  int init(bool restarting) {
+  int init(bool UNUSED(restarting)) {
     solver->add(result, "result");
     return 0;
   }
   
-  int rhs(BoutReal time) {
+  int rhs(BoutReal UNUSED(time)) {
     ddt(result) = 1.0;
     return 0;
   }
   
-  int outputMonitor(BoutReal simtime, int iter, int NOUT) {
+  int outputMonitor(BoutReal simtime, int UNUSED(iter), int UNUSED(NOUT)) {
     output.write("MyFunction: time = %e\n", simtime);
     return 0;
   }
@@ -36,10 +36,9 @@ class TestIntegrate : public PhysicsModel {
 public:
   ~TestIntegrate() {
     delete model;
-    delete ode;
   }
   
-  int init(bool restarting) {
+  int init(bool UNUSED(restarting)) {
     
     // Create a model
     model = new MyFunction();
@@ -55,7 +54,7 @@ public:
     return 0;
   }
   
-  int rhs(BoutReal time) {
+  int rhs(BoutReal UNUSED(time)) {
     ddt(f) = model->result;
     return 0;
   }
@@ -63,7 +62,7 @@ private:
   
   Field3D f; // Some variable being evolved
   
-  Solver *ode; // Integration solver
+  std::unique_ptr<Solver> ode{nullptr}; // Integration solver
   MyFunction *model;
 };
 

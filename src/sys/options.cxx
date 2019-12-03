@@ -47,6 +47,12 @@ Options &Options::operator[](const std::string &name) {
     return *this;
   }
 
+  // If name is compound, e.g. "section:subsection", then split the name
+  auto subsection_split = name.find(":");
+  if (subsection_split != std::string::npos) {
+    return (*this)[name.substr(0, subsection_split)][name.substr(subsection_split+1)];
+  }
+
   // Find and return if already exists
   auto it = children.find(lowercase(name));
   if (it != children.end()) {
@@ -74,6 +80,12 @@ const Options &Options::operator[](const std::string &name) const {
 
   if (name.empty()) {
     return *this;
+  }
+
+  // If name is compound, e.g. "section:subsection", then split the name
+  auto subsection_split = name.find(":");
+  if (subsection_split != std::string::npos) {
+    return (*this)[name.substr(0, subsection_split)][name.substr(subsection_split+1)];
   }
 
   // Find and return if already exists
@@ -135,35 +147,35 @@ bool Options::isSection(const std::string& name) const {
 }
 
 template <>
-void Options::assign<>(Field2D val, const std::string source) {
+void Options::assign<>(Field2D val, std::string source) {
   value = std::move(val);
   attributes["source"] = std::move(source);
   value_used = false;
   is_value = true;
 }
 template <>
-void Options::assign<>(Field3D val, const std::string source) {
+void Options::assign<>(Field3D val, std::string source) {
   value = std::move(val);
   attributes["source"] = std::move(source);
   value_used = false;
   is_value = true;
 }
 template <>
-void Options::assign<>(Array<BoutReal> val, const std::string source) {
+void Options::assign<>(Array<BoutReal> val, std::string source) {
   value = std::move(val);
   attributes["source"] = std::move(source);
   value_used = false;
   is_value = true;
 }
 template <>
-void Options::assign<>(Matrix<BoutReal> val, const std::string source) {
+void Options::assign<>(Matrix<BoutReal> val, std::string source) {
   value = std::move(val);
   attributes["source"] = std::move(source);
   value_used = false;
   is_value = true;
 }
 template <>
-void Options::assign<>(Tensor<BoutReal> val, const std::string source) {
+void Options::assign<>(Tensor<BoutReal> val, std::string source) {
   value = std::move(val);
   attributes["source"] = std::move(source);
   value_used = false;
@@ -345,8 +357,8 @@ template <> Field3D Options::as<Field3D>(const Field3D& similar_to) const {
   }
 
   if (bout::utils::holds_alternative<Field2D>(value)) {
-    Field2D stored_value = bout::utils::get<Field2D>(value);
-    
+    const auto& stored_value = bout::utils::get<Field2D>(value);
+
     // Check that meta-data is consistent
     ASSERT1(areFieldsCompatible(stored_value, similar_to));
 

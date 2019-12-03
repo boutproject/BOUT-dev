@@ -106,7 +106,7 @@ int GBS::init(bool restarting) {
   if(mms) {
     Sn = 0.0;
   }else {
-    string source;
+    std::string source;
     optne->get("source", source, "0.0");
     Sn = FieldFactory::get()->create3D(source, NULL, mesh);
     Sn /= Omega_ci;
@@ -120,7 +120,7 @@ int GBS::init(bool restarting) {
   if(mms) {
     Sp = 0.0;
   }else {
-    string source;
+    std::string source;
     optte->get("source", source, "0.0");
     Sp = FieldFactory::get()->create3D(source, NULL, mesh);
     Sp /= Omega_ci;
@@ -249,6 +249,7 @@ int GBS::init(bool restarting) {
   }
   case 3: { // logB, taken from mesh
     logB = log(coords->Bxy);
+    break;
   }
   default:
     throw BoutException("Invalid value for curv_method");

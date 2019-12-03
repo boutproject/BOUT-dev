@@ -84,7 +84,7 @@ void OptionsReader::parseCommandLine(Options* options, int argc, char** argv) {
   for (int i = 1; i < argc; i++) {
 
     // Reset the section
-    options = options->getRoot();
+    options = Options::getRoot();
 
     buffer = argv[i];
     if (buffer.length() == 0) {

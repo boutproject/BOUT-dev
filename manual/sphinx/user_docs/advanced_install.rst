@@ -77,6 +77,10 @@ As of 20th April 2018, the following configuration should work
     $ module load fftw
     $ module load archer-netcdf/4.1.3
 
+When using CMake on Cray systems like Archer, you need to pass
+``-DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment`` so that the Cray compiler
+wrappers are detected properly.
+
 KNL @ Archer
 ~~~~~~~~~~~~
 
@@ -768,3 +772,22 @@ to
 .. code-block:: cpp
 
     typedef long CVODEINT;
+
+Compiling with IBM xlC compiler fails
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When using the ``xlC`` compiler, an error may occur::
+
+  variant.hpp(1568) parameter pack "Ts" was referenced but not expanded
+
+
+The workaround is to change line 428 of  ``externalpackages/mpark.variant/include/mpark/lib.hpp`` from::
+  
+  #ifdef MPARK_TYPE_PACK_ELEMENT
+
+to::
+
+  #ifdef CAUSES_ERROR // MPARK_TYPE_PACK_ELEMENT
+
+This will force an alternate implementation of type_pack_element to be defined.
+See also https://software.intel.com/en-us/forums/intel-c-compiler/topic/501502

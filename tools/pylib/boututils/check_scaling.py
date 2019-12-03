@@ -44,15 +44,14 @@ def check_order(error_list, expected_order, tolerance=2.e-1, spacing=None):
     if len(error_list) < 2:
         raise RuntimeError("Expected at least 2 data points to calculate error")
 
-    success=True
+    success = True
+
     for i in range(len(error_list)-1):
-        if spacing is None:
-            actual_order = log(errors[i] / errors[i+1]) / log(2)
-        else:
-            actual_order = log(errors[i] / errors[i+1]) / log(grid_spacing[i] / grid_spacing[i+1])
+        grid_spacing = 2 if spacing is None else spacing[i] / spacing[i+1]
+        actual_order = log(error_list[i] / error_list[i+1]) / log(grid_spacing)
 
         if not isclose(actual_order, expected_order, atol=tolerance, rtol=0):
-            success=False
+            success = False
     return success
 
 

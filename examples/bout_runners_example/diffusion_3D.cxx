@@ -17,7 +17,7 @@ bool use_grid;    // If the spatial size should be loaded from the grid
 
 // Initialization of the physics
 // ############################################################################
-int physics_init(bool restarting) {
+int physics_init(bool UNUSED(restarting)) {
 
     // Get the option (before any sections) in the BOUT.inp file
     Options *options   = Options::getRoot();
@@ -79,7 +79,7 @@ int physics_init(bool restarting) {
 
 // Solving the equations
 // ############################################################################
-int physics_run(BoutReal t){
+int physics_run(BoutReal UNUSED(t)) {
     mesh->communicate(n); // Communicate guard cells
 
     // Density diffusion

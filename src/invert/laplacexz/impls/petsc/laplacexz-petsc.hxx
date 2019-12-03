@@ -9,45 +9,18 @@ class LaplaceXZpetsc;
 #ifndef __LAPLACEXZ_PETSC_H__
 #define __LAPLACEXZ_PETSC_H__
 
+#ifdef BOUT_HAS_PETSC
 #include <bout/invert/laplacexz.hxx>
-
-#ifndef BOUT_HAS_PETSC
-
-#include <boutexception.hxx>
-class LaplaceXZpetsc : public LaplaceXZ {
-public:
-  LaplaceXZpetsc(Mesh *m = nullptr, Options *options = nullptr,
-      const CELL_LOC loc = CELL_CENTRE) : LaplaceXZ(m, options, loc) {
-    throw BoutException("No PETSc LaplaceXZ solver available");
-  }
-
-  using LaplaceXZ::setCoefs;
-  void setCoefs(const Field2D &UNUSED(A), const Field2D &UNUSED(B)) override {}
-
-  using LaplaceXZ::solve;
-  Field3D solve(const Field3D &UNUSED(b), const Field3D &UNUSED(x0)) override {
-    throw BoutException("No PETSc LaplaceXZ solver available");
-  }
-private:
-};
-
-#else // BOUT_HAS_PETSC
-
 #include <bout/petsclib.hxx>
 
+namespace {
+RegisterLaplaceXZ<LaplaceXZpetsc> registerlaplacexzpetsc{"petsc"};
+}
+
 class LaplaceXZpetsc : public LaplaceXZ {
 public:
-  /*!
-   * Constructor
-   */
   LaplaceXZpetsc(Mesh *m = nullptr, Options *options = nullptr, const CELL_LOC loc = CELL_CENTRE);
-
-  /*!
-   * Destructor
-   */
   ~LaplaceXZpetsc();
-
-
 
   void setCoefs(const Field3D &A, const Field3D &B);
 

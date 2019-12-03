@@ -5,7 +5,7 @@
 
 BOUT_TOP = ../../..
 
-CINCLUDES = -I../include
+CINCLUDES = -I../include/pvode
 FLAGS    = $(CXXFLAGS) $(CINCLUDES)
 
 # PVODE library file
@@ -29,7 +29,7 @@ $(LIBF): $(OBJS)
 obj:
 	$(MKDIR) obj
 
-obj/%.o: obj %.cpp %.h
+obj/%.o: obj %.cpp
 	$(CXX) $(FLAGS) -c -o $@ $*.cpp
 
 clean::

@@ -3,7 +3,7 @@
 #include <output.hxx>
 
 int main() {
-  const string izfilename="sample.nc";
+  const std::string izfilename="sample.nc";
 
   // Create a file format handler
   auto izfile = data_format(izfilename.c_str());

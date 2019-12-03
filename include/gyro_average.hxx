@@ -37,7 +37,7 @@
 
 /// INVERT_BNDRY_ONE | INVERT_IN_RHS | INVERT_OUT_RHS; uses old-style
 /// Laplacian inversion flags
-constexpr int GYRO_FLAGS = 64 + 16384 + 32768;
+constexpr int GYRO_FLAGS = INVERT_BNDRY_ONE + INVERT_RHS;
 
 /// Gyro-average using Taylor series approximation
 ///
@@ -57,10 +57,19 @@ Field3D gyroTaylor0(const Field3D& f, const Field3D& rho);
 ///
 /// @param[in] f   The field to gyro-average
 /// @param[in] rho  Gyro-radius
-/// @param[in] flags  Flags to be passed to the Laplacian inversion operator
-Field3D gyroPade0(const Field3D& f, const Field3D& rho, int flags = GYRO_FLAGS);
-Field3D gyroPade0(const Field3D& f, const Field2D& rho, int flags = GYRO_FLAGS);
-Field3D gyroPade0(const Field3D& f, BoutReal rho, int flags = GYRO_FLAGS);
+/// @param[in] inner_boundary_flags  Flags for the inner boundary to be passed
+///                                  to the Laplacian inversion operator
+/// @param[in] outer_boundary_flags  Flags for the outer boundary to be passed
+///                                  to the Laplacian inversion operator
+Field3D gyroPade0(const Field3D& f, const Field3D& rho,
+                  int inner_boundary_flags = GYRO_FLAGS,
+                  int outer_boundary_flags = GYRO_FLAGS);
+Field3D gyroPade0(const Field3D& f, const Field2D& rho,
+                  int inner_boundary_flags = GYRO_FLAGS,
+                  int outer_boundary_flags = GYRO_FLAGS);
+Field3D gyroPade0(const Field3D& f, BoutReal rho,
+                  int inner_boundary_flags = GYRO_FLAGS,
+                  int outer_boundary_flags = GYRO_FLAGS);
 
 /// Pade approximation \f$Gamma_1 = (1 - \frac{1}{2} \rho^2 \nabla_\perp^2)g = f\f$
 ///
@@ -68,11 +77,22 @@ Field3D gyroPade0(const Field3D& f, BoutReal rho, int flags = GYRO_FLAGS);
 /// 
 /// @param[in] f   The field to gyro-average
 /// @param[in] rho  Gyro-radius
-/// @param[in] flags  Flags to be passed to the Laplacian inversion operator
-Field3D gyroPade1(const Field3D& f, const Field3D& rho, int flags = GYRO_FLAGS);
-Field3D gyroPade1(const Field3D& f, const Field2D& rho, int flags = GYRO_FLAGS);
-Field3D gyroPade1(const Field3D& f, BoutReal rho, int flags = GYRO_FLAGS);
-Field2D gyroPade1(const Field2D& f, const Field2D& rho, int flags = GYRO_FLAGS);
+/// @param[in] inner_boundary_flags  Flags for the inner boundary to be passed
+///                                  to the Laplacian inversion operator
+/// @param[in] outer_boundary_flags  Flags for the outer boundary to be passed
+///                                  to the Laplacian inversion operator
+Field3D gyroPade1(const Field3D& f, const Field3D& rho,
+                  int inner_boundary_flags = GYRO_FLAGS,
+                  int outer_boundary_flags = GYRO_FLAGS);
+Field3D gyroPade1(const Field3D& f, const Field2D& rho,
+                  int inner_boundary_flags = GYRO_FLAGS,
+                  int outer_boundary_flags = GYRO_FLAGS);
+Field3D gyroPade1(const Field3D& f, BoutReal rho,
+                  int inner_boundary_flags = GYRO_FLAGS,
+                  int outer_boundary_flags = GYRO_FLAGS);
+Field2D gyroPade1(const Field2D& f, const Field2D& rho,
+                  int inner_boundary_flags = GYRO_FLAGS,
+                  int outer_boundary_flags = GYRO_FLAGS);
 
 /// Pade approximation 
 ///
@@ -83,10 +103,19 @@ Field2D gyroPade1(const Field2D& f, const Field2D& rho, int flags = GYRO_FLAGS);
 /// Note: Have to use Z average of rho for efficient inversion
 ///
 /// @param[in] f   The field to gyro-average
-/// @param[in] rho  Gyro-radius
-/// @param[in] flags  Flags to be passed to the Laplacian inversion operator
-Field3D gyroPade2(const Field3D& f, const Field3D& rho, int flags = GYRO_FLAGS);
-Field3D gyroPade2(const Field3D& f, const Field2D& rho, int flags = GYRO_FLAGS);
-Field3D gyroPade2(const Field3D& f, BoutReal rho, int flags = GYRO_FLAGS);
+/// @param[in for the inner boundary] rho  Gyro-radius
+/// @param[in] inner_boundary_flags  Flags for the inner boundary to be passed
+///                                  to Laplacian inversion operator
+/// @param[in] outer_boundary_flags  Flags for the outer boundary to be passed
+///                                  to Laplacian inversion operator
+Field3D gyroPade2(const Field3D& f, const Field3D& rho,
+                  int inner_boundary_flags = GYRO_FLAGS,
+                  int outer_boundary_flags = GYRO_FLAGS);
+Field3D gyroPade2(const Field3D& f, const Field2D& rho,
+                  int inner_boundary_flags = GYRO_FLAGS,
+                  int outer_boundary_flags = GYRO_FLAGS);
+Field3D gyroPade2(const Field3D& f, BoutReal rho,
+                  int inner_boundary_flags = GYRO_FLAGS,
+                  int outer_boundary_flags = GYRO_FLAGS);
 
 #endif // __GYRO_AVERAGE_H__

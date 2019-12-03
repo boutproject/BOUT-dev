@@ -39,3 +39,5 @@ src/.libfast
 .*.mk
 *.mo
 .BOUT.pid.*
+build/
+build*/

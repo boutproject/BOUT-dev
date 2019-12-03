@@ -334,141 +334,40 @@ Field2D operator-(const Field2D &f);
 
 // Non-member functions
 
-inline Field2D toFieldAligned(const Field2D& f, const REGION UNUSED(region)) { return f; }
-inline Field2D fromFieldAligned(const Field2D& f, const REGION UNUSED(region)) { return f; }
+inline Field2D toFieldAligned(const Field2D& f, const std::string& UNUSED(region) = "RGN_ALL") {
+  return f;
+}
+[[gnu::deprecated("Please use toFieldAligned(const Field2D& f, "
+    "const std::string& region = \"RGN_ALL\") instead")]]
+inline Field2D toFieldAligned(const Field2D& f, REGION region) {
+  return toFieldAligned(f, toString(region));
+}
 
-/// Square root of \p f over region \p rgn
-///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the \p rgn argument).
-const Field2D sqrt(const Field2D &f, REGION rgn=RGN_ALL);
-
-/// Absolute value (modulus, |f|) of \p f over region \p rgn
-///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the \p rgn argument).
-const Field2D abs(const Field2D &f, REGION rgn=RGN_ALL);
-
-/// Calculates the minimum of a field, excluding the boundary/guard
-/// cells by default (can be changed with \p rgn argument).
-///
-/// By default this is only on the local processor, but setting \p
-/// allpe true does a collective Allreduce over all processors.
-///
-/// @param[in] f      The field to loop over
-/// @param[in] allpe  Minimum over all processors?
-/// @param[in] rgn    The region to calculate the result over
-BoutReal min(const Field2D &f, bool allpe=false, REGION rgn=RGN_NOBNDRY);
-
-/// Calculates the maximum of a field, excluding the boundary/guard
-/// cells by default (can be changed with \p rgn argument).
-///
-/// By default this is only on the local processor, but setting \p
-/// allpe to true does a collective Allreduce over all processors.
-///
-/// @param[in] f      The field to loop over
-/// @param[in] allpe  Maximum over all processors?
-/// @param[in] rgn    The region to calculate the result over
-BoutReal max(const Field2D &f, bool allpe=false, REGION rgn=RGN_NOBNDRY);
-
-/// Check if all values of a field \p var are finite.
-/// Loops over all points including the boundaries by
-/// default (can be changed using the \p rgn argument
-bool finite(const Field2D &f, REGION rgn=RGN_ALL);
-
-/// Exponential
-const Field2D exp(const Field2D &f, REGION rgn=RGN_ALL);
-
-/// Natural logarithm
-const Field2D log(const Field2D &f, REGION rgn=RGN_ALL);
-
-/// Sine trigonometric function.
-///
-/// @param[in] f    Angle in radians
-/// @param[in] rgn  The region to calculate the result over
-///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the \p rgn argument).
-/// If CHECK >= 3 then the result will be checked for non-finite numbers
-const Field2D sin(const Field2D &f, REGION rgn=RGN_ALL);
-
-/// Cosine trigonometric function.
-///
-/// @param[in] f    Angle in radians
-/// @param[in] rgn  The region to calculate the result over
-///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the \p rgn argument).
-/// If CHECK >= 3 then the result will be checked for non-finite numbers
-const Field2D cos(const Field2D &f, REGION rgn=RGN_ALL);
-
-/// Tangent trigonometric function.
-///
-/// @param[in] f    Angle in radians
-/// @param[in] rgn  The region to calculate the result over
-///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the \p rgn argument).
-/// If CHECK >= 3 then the result will be checked for non-finite numbers
-const Field2D tan(const Field2D &f, REGION rgn=RGN_ALL);
-
-/// Hyperbolic sine trigonometric function.
-///
-/// @param[in] f    Angle in radians
-/// @param[in] rgn  The region to calculate the result over
-///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the \p rgn argument).
-/// If CHECK >= 3 then the result will be checked for non-finite numbers
-const Field2D sinh(const Field2D &f, REGION rgn=RGN_ALL);
-
-/// Hyperbolic cosine trigonometric function.
-///
-/// @param[in] f    Angle in radians
-/// @param[in] rgn  The region to calculate the result over
-///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the \p rgn argument).
-/// If CHECK >= 3 then the result will be checked for non-finite numbers
-const Field2D cosh(const Field2D &f, REGION rgn=RGN_ALL);
-
-/// Hyperbolic tangent trigonometric function.
-///
-/// @param[in] f    Angle in radians
-/// @param[in] rgn  The region to calculate the result over
-///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the \p rgn argument).
-/// If CHECK >= 3 then the result will be checked for non-finite numbers
-const Field2D tanh(const Field2D &f, REGION rgn=RGN_ALL);
-
-/// Make an independent copy of field \p f
-const Field2D copy(const Field2D &f);
-
-/// Apply a floor value \p f to a field \p var. Any value lower than
-/// the floor is set to the floor.
-///
-/// @param[in] var  Variable to apply floor to
-/// @param[in] f    The floor value
-/// @param[in] rgn  The region to calculate the result over
-const Field2D floor(const Field2D &var, BoutReal f, REGION rgn=RGN_ALL);
-
-/// Exponent: pow(lhs, lhs) is \p lhs raised to the power of \p rhs
-///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the \p rgn argument)
-Field2D pow(const Field2D &lhs, const Field2D &rhs, REGION rgn=RGN_ALL);
-Field2D pow(const Field2D &lhs, BoutReal rhs, REGION rgn=RGN_ALL);
-Field2D pow(BoutReal lhs, const Field2D &rhs, REGION rgn=RGN_ALL);
+inline Field2D fromFieldAligned(const Field2D& f, const std::string& UNUSED(region) = "RGN_ALL") {
+  return f;
+}
+[[gnu::deprecated("Please use fromFieldAligned(const Field2D& f, "
+    "const std::string& region = \"RGN_ALL\") instead")]]
+inline Field2D fromFieldAligned(const Field2D& f, REGION region) {
+  return fromFieldAligned(f, toString(region));
+}
 
 #if CHECK > 0
 /// Throw an exception if \p f is not allocated or if any
 /// elements are non-finite (for CHECK > 2).
 /// Loops over all points including the boundaries by
 /// default (can be changed using the \p rgn argument
-void checkData(const Field2D &f, REGION region = RGN_NOBNDRY);
+void checkData(const Field2D &f, const std::string& region = "RGN_NOBNDRY");
+[[gnu::deprecated("Please use checkData(const Field2D& f, "
+    "const std::string& region = \"RGN_NOBNDRY\") instead")]]
+inline void checkData(const Field2D &f, REGION region) {
+  return checkData(f, toString(region));
+}
 #else
-inline void checkData(const Field2D &UNUSED(f), REGION UNUSED(region) = RGN_NOBNDRY) {}
+inline void checkData(const Field2D &UNUSED(f), std::string UNUSED(region) = "RGN_NOBNDRY") {}
+[[gnu::deprecated("Please use checkData(const Field2D& f, "
+    "const std::string& region = \"RGN_NOBNDRY\") instead")]]
+inline void checkData(const Field2D &UNUSED(f), REGION UNUSED(region)) {}
 #endif
 
 /// Force guard cells of passed field \p var to NaN

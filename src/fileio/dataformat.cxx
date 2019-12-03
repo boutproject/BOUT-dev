@@ -48,10 +48,10 @@ void DataFormat::writeFieldAttributes(const std::string& name, const FieldPerp& 
   int yindex = f.getIndex();
   if (yindex >= 0 and yindex < fieldmesh.LocalNy) {
     // write global y-index as attribute
-    setAttribute(name, "yindex_global", fieldmesh.YGLOBAL(f.getIndex()));
+    setAttribute(name, "yindex_global", fieldmesh.getGlobalYIndex(f.getIndex()));
   } else {
     // y-index is not valid, set global y-index to -1 to indicate 'not-valid'
-    setAttribute(name, "yindex_global", -fieldmesh.ystart-1);
+    setAttribute(name, "yindex_global", -1);
   }
 }
 

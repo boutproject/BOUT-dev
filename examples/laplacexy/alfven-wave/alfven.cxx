@@ -33,10 +33,10 @@ private:
   LaplaceXY *laplacexy; // Laplacian solver in X-Y (n=0)
 
   bool newXZsolver;
-  Laplacian *phiSolver; // Old Laplacian in X-Z
-  LaplaceXZ *newSolver; // New Laplacian in X-Z
+  std::unique_ptr<Laplacian> phiSolver; // Old Laplacian in X-Z
+  std::unique_ptr<LaplaceXZ> newSolver{nullptr}; // New Laplacian in X-Z
 protected:
-  int init(bool restarting) {
+  int init(bool UNUSED(restarting)) {
 
     // Normalisation
     auto opt = Options::root()["alfven"];

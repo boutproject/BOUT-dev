@@ -36,8 +36,6 @@ private:
   BoutReal viscos_par, viscos_perp, viscos_coll; // Viscosity coefficients
   BoutReal hyperresist;                          // Hyper-resistivity coefficient
 
-  int phi_flags;
-
   // Constants
   const BoutReal MU0 = 4.0e-7 * PI;
   const BoutReal Charge = 1.60217646e-19;   // electron charge e (C)
@@ -82,7 +80,7 @@ private:
   Coordinates* coord;
 
   // Inverts a Laplacian to get potential
-  Laplacian* phiSolver;
+  std::unique_ptr<Laplacian> phiSolver{nullptr};
 
   int init(bool UNUSED(restarting)) override {
 
@@ -199,8 +197,6 @@ private:
     vorticity_momentum = options["vorticity_momentum"].withDefault(false);
     include_profiles = options["include_profiles"].withDefault(false);
     parallel_lc = options["parallel_lc"].withDefault(true);
-
-    phi_flags = options["phi_flags"].withDefault(0);
 
     low_pass_z = options["low_pass_z"].withDefault(-1); // Default is no filtering
 
@@ -358,7 +354,6 @@ private:
     
     // Create a solver for the Laplacian
     phiSolver = Laplacian::create();
-    phiSolver->setFlags(phi_flags);
     if (vorticity_momentum) {
       phiSolver->setCoefC(rho0);
     }

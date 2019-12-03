@@ -58,11 +58,11 @@ const Field3D InvertParCR::solve(const Field3D &f) {
   TRACE("InvertParCR::solve(Field3D)");
   ASSERT1(localmesh == f.getMesh());
 
-  Field3D result{emptyFrom(f)};
+  Field3D result = emptyFrom(f).setDirectionY(YDirectionType::Aligned);
   
   Coordinates *coord = f.getCoordinates();
 
-  Field3D alignedField = toFieldAligned(f, RGN_NOX);
+  Field3D alignedField = toFieldAligned(f, "RGN_NOX");
 
   // Create cyclic reduction object
   auto cr = bout::utils::make_unique<CyclicReduce<dcomplex>>();
@@ -71,9 +71,8 @@ const Field3D InvertParCR::solve(const Field3D &f) {
   int size = localmesh->LocalNy - 2 * localmesh->ystart;
   SurfaceIter surf(localmesh);
   for(surf.first(); !surf.isDone(); surf.next()) {
-    BoutReal ts;
     int n = localmesh->LocalNy - 2 * localmesh->ystart;
-    if (!surf.closed(ts)) {
+    if (!surf.closed()) {
       // Open field line
       if (surf.firstY())
         n += localmesh->ystart;
@@ -207,6 +206,6 @@ const Field3D InvertParCR::solve(const Field3D &f) {
       irfft(&rhs(y, 0), localmesh->LocalNz, result(x, y + localmesh->ystart - y0));
   }
 
-  return fromFieldAligned(result, RGN_NOBNDRY);
+  return fromFieldAligned(result, "RGN_NOBNDRY");
 }
 

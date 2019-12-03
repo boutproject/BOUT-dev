@@ -142,7 +142,7 @@ void addItemToDeferredFunction(theFunction func, item, nextSet, otherSets...) {
 /// Terminal routine -- the current Set is empty
 /// so nothing left to do.
 template <typename... Sets, typename theFunction>
-void processSet(theFunction UNUSED(func), Set<>, Sets...){};
+void processSet(theFunction UNUSED(func), Set<>, Sets...){}
 
 /// Here we use type inference to allow us to refer to the firstItem in the first Set
 /// and the otherItems in this Set. We use this to pass the firstItem off to the routines
@@ -181,6 +181,6 @@ struct produceCombinations {
   template <typename theFunction>
   explicit produceCombinations(theFunction func) {
     processSet(func, FirstSet{}, otherSets{}...);
-  };
+  }
 };
 #endif

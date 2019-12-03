@@ -20,7 +20,7 @@ public:
     std::cout.rdbuf(buffer.rdbuf());
   }
 
-  virtual ~OptionsReaderTest() {
+  ~OptionsReaderTest() override {
     // Clear buffer
     buffer.str("");
     // When done redirect cout to its old self
@@ -44,7 +44,7 @@ public:
 
 TEST_F(OptionsReaderTest, BadFilename) {
   OptionsReader reader;
-  EXPECT_THROW(reader.read(nullptr, NULL), BoutException);
+  EXPECT_THROW(reader.read(nullptr, nullptr), BoutException);
 }
 
 TEST_F(OptionsReaderTest, BadCommandLineMultipleEquals) {

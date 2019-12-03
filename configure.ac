@@ -32,7 +32,7 @@
 #
 
 AC_PREREQ([2.69])
-AC_INIT([BOUT++],[4.2.2],[bd512@york.ac.uk])
+AC_INIT([BOUT++],[5.0.0-alpha],[bd512@york.ac.uk])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -157,9 +157,9 @@ do
 done
 test -z $ARFLAGS && AC_MSG_ERROR([Failed to find suitable flags for ar])
 
-# Check for and enable C++11 support
+# Check for and enable C++14 support
 # Error if not supported
-AX_CXX_COMPILE_STDCXX([11], [noext], [mandatory])
+AX_CXX_COMPILE_STDCXX([14], [noext], [mandatory])
 
 #############################################################
 # STD Library functions
@@ -186,6 +186,9 @@ AS_IF([test "x$enable_openmp" = "xyes"], [
   OPENMP_SCHEDULE=$with_openmp_schedule
   OPENMP_CXXFLAGS="$OPENMP_CXXFLAGS -DOPENMP_SCHEDULE=$OPENMP_SCHEDULE"
 ])
+
+# Check if we have access to __PRETTY_FUNCTION__
+BOUT_CHECK_PRETTYFUNCTION
 
 #############################################################
 # Code coverage using gcov
@@ -218,12 +221,17 @@ AC_SUBST([COVERAGE_FLAGS])
 # If this is passed to GCC, it will explode, so the flag must be enabled
 # conditionally.
 # This check taken from AX_COMPILER_FLAGS_CXXFLAGS
+extra_compiler_flags_test=""
 AX_CHECK_COMPILE_FLAG([-Werror=unknown-warning-option],[
   extra_compiler_flags_test="-Werror=unknown-warning-option"
-],[
-  extra_compiler_flags_test=""
 ])
-
+# A similar check to above, but for Intel. -we is undocumented, but
+# the equivalent (?) -diag-error gets accepted by GCC. 10006 is
+# "unknown option", and 10148 is the more recent "unknown warning
+# option"
+AX_CHECK_COMPILE_FLAG([-we10006,10148],[
+  extra_compiler_flags_test="-we10006,10148"
+])
 
 AS_IF([test "x$enable_warnings" != "xno"], [
 # Some hopefully sensible default compiler warning flags
@@ -338,9 +346,10 @@ AS_IF([test "x$enable_sigfpe" = "xyes"], [
 ])
 
 BOUT_VERSION=$PACKAGE_VERSION
-BOUT_VERSION_MAJOR=${PACKAGE_VERSION%%.*}
-BOUT_VERSION_MINOR=${PACKAGE_VERSION#*.}
-BOUT_VERSION_DOUBLE=${BOUT_VERSION_MAJOR}.$(echo ${BOUT_VERSION_MINOR}|tr -d .)
+BOUT_VERSION_MAJOR=$(echo $PACKAGE_VERSION | cut -d. -f1)
+BOUT_VERSION_MINOR=$(echo $PACKAGE_VERSION | cut -d. -f2)
+BOUT_VERSION_PATCH=$(echo ${PACKAGE_VERSION%-alpha} | cut -d. -f3)
+BOUT_VERSION_DOUBLE=${BOUT_VERSION_MAJOR}.${BOUT_VERSION_MINOR}${BOUT_VERSION_PATCH}
 CXXFLAGS="$CXXFLAGS -DBOUT_VERSION_STRING=\"\\\"$BOUT_VERSION\\\"\" -DBOUT_VERSION_DOUBLE=$BOUT_VERSION_DOUBLE "
 #############################################################
 # Enable Backtrace if possible
@@ -1083,8 +1092,7 @@ Please supply the path using --with-scorep=/path/to/scorep])
   ],[
       # Set a compile-time flag
       CXXFLAGS="$CXXFLAGS -DBOUT_HAS_SCOREP"
-      MPICXX="$SCOREPPATH --user --nocompiler $MPICXX"
-      BOUT_CHECK_PRETTYFUNCTION
+      CXX="$SCOREPPATH --user --nocompiler $CXX"
       HAS_SCOREP="yes"
       AC_MSG_NOTICE([Scorep support enabled])
   ])
@@ -1105,27 +1113,27 @@ HAS_PVODE="no"
 AS_IF([test "$with_pvode" != "no"], [
   AS_IF([test "$enable_pvode_openmp" != "no"  ], [
     AS_IF([test "$enable_openmp" != "no" ], [
-      PVODE_FLAGS="$CXXFLAGS $OPENMP_CXXFLAGS $CXX11_FLAGS"
+      PVODE_FLAGS="$CXXFLAGS $OPENMP_CXXFLAGS"
       AC_MSG_NOTICE([PVODE being built with OpenMP support])
     ], [
       AC_MSG_ERROR([Cannot enable openmp in PVODE as configuring with OpenMP disabled])
     ])
   ], [
-    PVODE_FLAGS="$CXXFLAGS $CXX11_FLAGS"
+    PVODE_FLAGS="$CXXFLAGS"
     AC_MSG_NOTICE([PVODE being built without OpenMP support])
   ])
   # Clean PVODE
-  CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-  CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+  CXX="$CXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
+  CXX="$CXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
 
   AC_MSG_NOTICE([Building PVODE])
   echo "* Building PVODE" >> config-build.log
   echo "*************************************************************" >> config-build.log
 
-  CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-  CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+  CXX="$CXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
+  CXX="$CXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/source/ >> config-build.log 2>&1
 
-  AS_IF([test -f externalpackages/PVODE/lib/libpvode.a ], [
+  AS_IF([test -f externalpackages/PVODE/lib/libpvode.a && test -f externalpackages/PVODE/lib/libpvpre.a], [
     AC_MSG_NOTICE([Successfully built PVODE])
     AC_MSG_NOTICE([Installing PVODE into BOUT++ sourcetree])
 
@@ -1140,7 +1148,7 @@ AS_IF([test "$with_pvode" != "no"], [
 
   # Set the correct libraries and copy them to bout
   AS_MKDIR_P(include/pvode)
-  cp externalpackages/PVODE/precon/pvbbdpre.h externalpackages/PVODE/include/*.h include/pvode
+  cp -r externalpackages/PVODE/include/pvode include
   cp externalpackages/PVODE/lib/*.a lib/
   EXTRA_LIBS="$EXTRA_LIBS -L\$(BOUT_LIB_PATH) -lpvode -lpvpre"
   CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PVODE"

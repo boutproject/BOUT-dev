@@ -16,7 +16,9 @@ extern Mesh* mesh;
 } // namespace bout
 
 // Reuse the "standard" fixture for FakeMesh
-using OptionsFieldTest = FakeMeshFixture;
+class OptionsFieldTest : public FakeMeshFixture {
+  WithQuietOutput quiet_warn{output_warn};
+};
 
 TEST_F(OptionsFieldTest, StoreField3D) {
   Field3D field = 1.0;

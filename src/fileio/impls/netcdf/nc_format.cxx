@@ -1229,7 +1229,11 @@ bool NcFormat::getAttribute(const std::string &varname, const std::string &attrn
       return false;
     }
 
-    text = fileAtt->values()->as_string(0);
+    auto values = fileAtt->values();
+    if (values == nullptr)
+      return false;
+
+    text = values->as_string(0);
 
     return true;
   } else {
@@ -1243,7 +1247,11 @@ bool NcFormat::getAttribute(const std::string &varname, const std::string &attrn
       return false;
     }
 
-    text = varAtt->values()->as_string(0);
+    auto values = varAtt->values();
+    if (values == nullptr)
+      return false;
+
+    text = values->as_string(0);
 
     return true;
   }
@@ -1265,7 +1273,11 @@ bool NcFormat::getAttribute(const std::string &varname, const std::string &attrn
       return false;
     }
 
-    value = fileAtt->values()->as_int(0);
+    auto values = fileAtt->values();
+    if (values == nullptr)
+      return false;
+
+    value = values->as_int(0);
 
     return true;
   } else {
@@ -1279,7 +1291,11 @@ bool NcFormat::getAttribute(const std::string &varname, const std::string &attrn
     if (!(varAtt = var->get_att(attrname.c_str())))
       return false;
 
-    value = varAtt->values()->as_int(0);
+    auto values = varAtt->values();
+    if (values == nullptr)
+      return false;
+
+    value = values->as_int(0);
 
     return true;
   }
@@ -1301,7 +1317,11 @@ bool NcFormat::getAttribute(const std::string &varname, const std::string &attrn
       return false;
     }
 
-    value = fileAtt->values()->as_double(0);
+    auto values = fileAtt->values();
+    if (values == nullptr)
+      return false;
+
+    value = values->as_double(0);
 
     return true;
   } else {
@@ -1315,7 +1335,11 @@ bool NcFormat::getAttribute(const std::string &varname, const std::string &attrn
     if (!(varAtt = var->get_att(attrname.c_str())))
       return false;
 
-    value = varAtt->values()->as_double(0);
+    auto values = varAtt->values();
+    if (values == nullptr)
+      return false;
+
+    value = values->as_double(0);
 
     return true;
   }

@@ -69,16 +69,16 @@ void Output::close() {
   remove(file);
   file.close();
 }
-#define bout_vsnprintf_(buf, len, fmt, va)                                               \
-  {                                                                                      \
-    int _vsnprintflen = vsnprintf(buf, len, fmt, va);                                    \
-    if (_vsnprintflen + 1 > len) {                                                       \
-      _vsnprintflen += 1;                                                                \
-      delete[] buf;                                                                      \
-      buf = new char[_vsnprintflen];                                                     \
-      len = _vsnprintflen;                                                               \
-      vsnprintf(buf, len, fmt, va);                                                      \
-    }                                                                                    \
+#define bout_vsnprintf_(buf, len, fmt, va)            \
+  {                                                   \
+    int _vsnprintflen = vsnprintf(buf, len, fmt, va); \
+    if (_vsnprintflen + 1 > (len)) {                  \
+      _vsnprintflen += 1;                             \
+      delete[](buf);                                  \
+      (buf) = new char[_vsnprintflen];                \
+      (len) = _vsnprintflen;                          \
+      vsnprintf(buf, len, fmt, va);                   \
+    }                                                 \
   }
 
 void Output::write(const char *string, ...) {
@@ -89,7 +89,7 @@ void Output::write(const char *string, ...) {
 }
 
 void Output::vwrite(const char *string, va_list va) {
-  if (string == (const char *)nullptr) {
+  if (string == nullptr) {
     return;
   }
 
@@ -110,7 +110,7 @@ void Output::vprint(const char *string, va_list ap) {
     return; // Only output if to screen
   }
 
-  if (string == (const char *)nullptr) {
+  if (string == nullptr) {
     return;
   }
   bout_vsnprintf_(buffer, buffer_len, string, ap);

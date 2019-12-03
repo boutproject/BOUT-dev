@@ -73,7 +73,7 @@ function = gauss(x)
 [gauss_width]
 function = gauss(x, 1.0)
 
-[H]
+[h]
 function = H(x)
 
 [log]
@@ -121,7 +121,7 @@ function = 4*y
 [erf]
 function = erf(x)
 
-[TanhHat]
+[tanhhat]
 function = TanhHat(x, 0.5, 0.4, 0.3)
 
 [fmod]

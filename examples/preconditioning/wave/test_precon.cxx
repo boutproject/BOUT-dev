@@ -15,9 +15,9 @@ int jacobian(BoutReal t); // Jacobian-vector multiply
 
 Field3D u, v; // Evolving variables
 
-InvertPar *inv; // Parallel inversion class
+std::unique_ptr<InvertPar> inv{nullptr}; // Parallel inversion class
 
-int physics_init(bool restarting) {
+int physics_init(bool UNUSED(restarting)) {
   // Set variables to evolve
   SOLVE_FOR2(u,v);
   
@@ -34,7 +34,7 @@ int physics_init(bool restarting) {
   return 0;
 }
 
-int physics_run(BoutReal t) {
+int physics_run(BoutReal UNUSED(t)) {
   mesh->communicate(u,v);
   
   ddt(u) = Grad_par(v);
@@ -52,7 +52,7 @@ int physics_run(BoutReal t) {
  * o Return values should be in time derivatives
  * 
  *********************************************************/
-int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
+int precon(BoutReal UNUSED(t), BoutReal gamma, BoutReal UNUSED(delta)) {
   // Communicate vector to be inverted
   mesh->communicate(ddt(u), ddt(v));
   
@@ -93,7 +93,7 @@ int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
  * enable by setting solver / use_jacobian = true in BOUT.inp
  *********************************************************/
 
-int jacobian(BoutReal t) {
+int jacobian(BoutReal UNUSED(t)) {
   mesh->communicate(ddt(u), ddt(v));
   Field3D utmp = Grad_par(ddt(v)); // Shouldn't overwrite ddt(u) before using it
   ddt(v) = Grad_par(ddt(u));

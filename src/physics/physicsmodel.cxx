@@ -34,9 +34,7 @@
 
 #include <bout/mesh.hxx>
 
-PhysicsModel::PhysicsModel()
-    : solver(nullptr), modelMonitor(this), splitop(false), userprecon(nullptr),
-      userjacobian(nullptr), initialised(false) {
+PhysicsModel::PhysicsModel() : modelMonitor(this) {
 
   // Set up restart file
   restart = Datafile(Options::getRoot()->getSection("restart"));
@@ -119,9 +117,9 @@ int PhysicsModel::postInit(bool restarting) {
 
     /// Load restart file
     if (!restart.openr("%s",filename.c_str()))
-      throw BoutException("Error: Could not open restart file\n");
+      throw BoutException("Error: Could not open restart file %s\n", filename.c_str());
     if (!restart.read())
-      throw BoutException("Error: Could not read restart file\n");
+      throw BoutException("Error: Could not read restart file %s\n", filename.c_str());
     restart.close();
   }
 

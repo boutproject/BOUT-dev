@@ -14,19 +14,19 @@ using standardType = DerivativeStore<FieldType>::standardFunc;
 using flowType = DerivativeStore<FieldType>::upwindFunc;
 
 void standardReturnTenSetToOne(const FieldType& UNUSED(inp), FieldType& out,
-                               const REGION = RGN_ALL) {
+                               const std::string& = "RGN_ALL") {
   out.resize(10, 1.0);
 }
 
 void flowReturnSixSetToTwo(const FieldType& UNUSED(vel), const FieldType& UNUSED(inp),
-                           FieldType& out, const REGION = RGN_ALL) {
+                           FieldType& out, const std::string& = "RGN_ALL") {
   out.resize(6, 2.0);
 }
 
 class DerivativeStoreTest : public ::testing::Test {
 public:
   DerivativeStoreTest() : store(DerivativeStore<FieldType>::getInstance()) {}
-  virtual ~DerivativeStoreTest() { store.reset(); }
+  ~DerivativeStoreTest() override { store.reset(); }
 
   DerivativeStore<FieldType>& store;
 };
@@ -250,7 +250,7 @@ TEST_F(DerivativeStoreTest, RegisterStandardAndGetBack) {
   standardReturnTenSetToOne({}, outOrig);
 
   FieldType outRet;
-  returned(inOrig, outRet, RGN_ALL);
+  returned(inOrig, outRet, "RGN_ALL");
 
   EXPECT_EQ(outOrig.size(), 10);
   ASSERT_EQ(outRet.size(), outOrig.size());
@@ -278,7 +278,7 @@ TEST_F(DerivativeStoreTest, RegisterFlowAndGetBack) {
   flowReturnSixSetToTwo(inOrig, inOrig, outOrig);
 
   FieldType outRet;
-  returned(inOrig, inOrig, outRet, RGN_ALL);
+  returned(inOrig, inOrig, outRet, "RGN_ALL");
 
   EXPECT_EQ(outOrig.size(), 6);
   ASSERT_EQ(outRet.size(), outOrig.size());

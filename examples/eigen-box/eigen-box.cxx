@@ -10,12 +10,12 @@
 
 class EigenBox : public PhysicsModel {
 protected:
-  int init(bool restarting) {
+  int init(bool) override {
     solver->add(f, "f");
     solver->add(g, "g");
     return 0;
   }
-  int rhs(BoutReal t) {
+  int rhs(BoutReal) override {
     mesh->communicate(f);
     
     ddt(g) = D2DX2(f);

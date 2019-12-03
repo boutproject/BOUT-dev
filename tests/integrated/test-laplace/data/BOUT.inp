@@ -17,8 +17,5 @@ symmetricGlobalY = false
 
 [laplace]
 all_terms = false
-include_yguards = true
+include_yguards = false
 filter = 0.2
-
-[output]
-floats = true

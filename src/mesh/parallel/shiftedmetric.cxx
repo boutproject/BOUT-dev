@@ -23,29 +23,26 @@ ShiftedMetric::ShiftedMetric(Mesh& m, CELL_LOC location_in, Field2D zShift_,
   // check the coordinate system used for the grid data source
   ShiftedMetric::checkInputGrid();
 
-  // TwistShift should not be set for derivatives to be correct at the jump where
-  // poloidal angle theta goes 2pi->0. zShift has been corrected for the jump
-  // already in Coordinates::Coordinates
-  bool twistshift = Options::root()["TwistShift"]
-                        .doc("Enable twist-shift boundary condition in core region?")
-                        .withDefault(false);
-  if (twistshift) {
-    throw BoutException("ShiftedMetric requires the option TwistShift=false");
-  }
-
   cachePhases();
 }
 
 void ShiftedMetric::checkInputGrid() {
-  std::string coordinates_type = "";
-  if (!mesh.get(coordinates_type, "coordinates_type")) {
-    if (coordinates_type != "orthogonal") {
-      throw BoutException("Incorrect coordinate system type '" + coordinates_type
+  std::string parallel_transform;
+  if (mesh.isDataSourceGridFile() and !mesh.get(parallel_transform, "parallel_transform")) {
+    if (parallel_transform != "shiftedmetric") {
+      throw BoutException("Incorrect parallel transform type '" + parallel_transform
                           + "' used to generate metric components for ShiftedMetric. "
-                            "Should be 'orthogonal'.");
+                            "Should be 'shiftedmetric'.");
     }
-  } // else: coordinate_system variable not found in grid input, indicates older input
-    //       file so must rely on the user having ensured the type is correct
+  } // else: parallel_transform variable not found in grid input, indicates older input
+    //       file or grid from options so must rely on the user having ensured the type is
+    //       correct
+}
+
+void ShiftedMetric::outputVars(Datafile& file) {
+  const std::string loc_string = (location == CELL_CENTRE) ? "" : "_"+toString(location);
+
+  file.addOnce(zShift, "zShift" + loc_string);
 }
 
 void ShiftedMetric::cachePhases() {
@@ -124,76 +121,46 @@ void ShiftedMetric::cachePhases() {
  * Shift the field so that X-Z is not orthogonal,
  * and Y is then field aligned.
  */
-const Field3D ShiftedMetric::toFieldAligned(const Field3D& f, const REGION region) {
-  switch (f.getDirectionY()) {
-  case (YDirectionType::Standard):
-    return shiftZ(f, toAlignedPhs, YDirectionType::Aligned, region);
-  case (YDirectionType::Aligned):
-    // f is already in field-aligned coordinates
-    return f;
-  default:
-    throw BoutException("Unrecognized y-direction type for Field3D passed to "
-                        "ShiftedMetric::toFieldAligned");
-    // This should never happen, but use 'return f' to avoid compiler warnings
-    return f;
-  }
+const Field3D ShiftedMetric::toFieldAligned(const Field3D& f, const std::string& region) {
+  ASSERT2(f.getDirectionY() == YDirectionType::Standard);
+  return shiftZ(f, toAlignedPhs, YDirectionType::Aligned, region);
 }
-const FieldPerp ShiftedMetric::toFieldAligned(const FieldPerp& f, const REGION region) {
-  switch (f.getDirectionY()) {
-  case (YDirectionType::Standard):
-    return shiftZ(f, toAlignedPhs, YDirectionType::Aligned, region);
-  case (YDirectionType::Aligned):
-    // f is already in field-aligned coordinates
-    return f;
-  default:
-    throw BoutException("Unrecognized y-direction type for FieldPerp passed to "
-                        "ShiftedMetric::toFieldAligned");
-    // This should never happen, but use 'return f' to avoid compiler warnings
-    return f;
-  }
+const FieldPerp ShiftedMetric::toFieldAligned(const FieldPerp& f,
+                                              const std::string& region) {
+  ASSERT2(f.getDirectionY() == YDirectionType::Standard);
+  // In principle, other regions are possible, but not yet implemented
+  ASSERT2(region == "RGN_NOX");
+  return shiftZ(f, toAlignedPhs, YDirectionType::Aligned, region);
 }
 
 /*!
  * Shift back, so that X-Z is orthogonal,
  * but Y is not field aligned.
  */
-const Field3D ShiftedMetric::fromFieldAligned(const Field3D& f, const REGION region) {
-  switch (f.getDirectionY()) {
-  case (YDirectionType::Aligned):
-    return shiftZ(f, fromAlignedPhs, YDirectionType::Standard, region);
-  case (YDirectionType::Standard):
-    // f is already in orthogonal coordinates
-    return f;
-  default:
-    throw BoutException("Unrecognized y-direction type for Field3D passed to "
-                        "ShiftedMetric::toFieldAligned");
-    // This should never happen, but use 'return f' to avoid compiler warnings
-    return f;
-  }
+const Field3D ShiftedMetric::fromFieldAligned(const Field3D& f,
+                                              const std::string& region) {
+  ASSERT2(f.getDirectionY() == YDirectionType::Aligned);
+  return shiftZ(f, fromAlignedPhs, YDirectionType::Standard, region);
 }
-const FieldPerp ShiftedMetric::fromFieldAligned(const FieldPerp& f, const REGION region) {
-  switch (f.getDirectionY()) {
-  case (YDirectionType::Aligned):
-    return shiftZ(f, fromAlignedPhs, YDirectionType::Standard, region);
-  case (YDirectionType::Standard):
-    // f is already in orthogonal coordinates
-    return f;
-  default:
-    throw BoutException("Unrecognized y-direction type for FieldPerp passed to "
-                        "ShiftedMetric::toFieldAligned");
-    // This should never happen, but use 'return f' to avoid compiler warnings
-    return f;
-  }
+const FieldPerp ShiftedMetric::fromFieldAligned(const FieldPerp& f,
+                                                const std::string& region) {
+  ASSERT2(f.getDirectionY() == YDirectionType::Aligned);
+  // In principle, other regions are possible, but not yet implemented
+  ASSERT2(region == "RGN_NOX");
+  return shiftZ(f, fromAlignedPhs, YDirectionType::Standard, region);
 }
 
 const Field3D ShiftedMetric::shiftZ(const Field3D& f, const Tensor<dcomplex>& phs,
                                     const YDirectionType y_direction_out,
-                                    const REGION region) const {
+                                    const std::string& region) const {
   ASSERT1(f.getMesh() == &mesh);
   ASSERT1(f.getLocation() == location);
 
-  if (mesh.LocalNz == 1)
-    return f; // Shifting makes no difference
+  if (mesh.LocalNz == 1) {
+    // Shifting does not change the array values
+    Field3D result = copy(f).setDirectionY(y_direction_out);
+    return result;
+  }
 
   Field3D result{emptyFrom(f).setDirectionY(y_direction_out)};
 
@@ -206,16 +173,20 @@ const Field3D ShiftedMetric::shiftZ(const Field3D& f, const Tensor<dcomplex>& ph
 
 const FieldPerp ShiftedMetric::shiftZ(const FieldPerp& f, const Tensor<dcomplex>& phs,
                                       const YDirectionType y_direction_out,
-                                      const REGION UNUSED(region)) const {
+                                      const std::string& UNUSED(region)) const {
   ASSERT1(f.getMesh() == &mesh);
   ASSERT1(f.getLocation() == location);
 
-  if (mesh.LocalNz == 1)
-    return f; // Shifting makes no difference
+  if (mesh.LocalNz == 1) {
+    // Shifting does not change the array values
+    FieldPerp result = copy(f).setDirectionY(y_direction_out);
+    return result;
+  }
 
   FieldPerp result{emptyFrom(f).setDirectionY(y_direction_out)};
 
   int y = f.getIndex();
+  // Note that this loop is essentially hardcoded to be RGN_NOX
   for (int i=mesh.xstart; i<=mesh.xend; ++i) {
     shiftZ(&f(i, 0), &phs(i, y, 0), &result(i, 0));
   }
@@ -248,14 +219,18 @@ void ShiftedMetric::calcParallelSlices(Field3D& f) {
     return;
   }
 
-  auto results = shiftZ(f, parallel_slice_phases);
-
-  ASSERT3(results.size() == parallel_slice_phases.size());
-
   f.splitParallelSlices();
 
-  for (std::size_t i = 0; i < results.size(); ++i) {
-    f.ynext(parallel_slice_phases[i].y_offset) = std::move(results[i]);
+  for (const auto& phase : parallel_slice_phases) {
+    auto& f_slice = f.ynext(phase.y_offset);
+    f_slice.allocate();
+    BOUT_FOR(i, mesh.getRegion2D("RGN_NOY")) {
+      const int ix = i.x();
+      const int iy = i.y();
+      const int iy_offset = iy + phase.y_offset;
+      shiftZ(&(f(ix, iy_offset, 0)), &(phase.phase_shift(ix, iy, 0)),
+             &(f_slice(ix, iy_offset, 0)));
+    }
   }
 }
 
@@ -310,7 +285,7 @@ ShiftedMetric::shiftZ(const Field3D& f,
 
 // Old approach retained so we can still specify a general zShift
 const Field3D ShiftedMetric::shiftZ(const Field3D& f, const Field2D& zangle,
-                                    const REGION region) const {
+                                    const std::string& region) const {
   ASSERT1(&mesh == f.getMesh());
   ASSERT1(f.getLocation() == zangle.getLocation());
   if (mesh.LocalNz == 1)

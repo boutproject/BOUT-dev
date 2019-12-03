@@ -45,8 +45,6 @@ private:
   bool filter_z;
   int filter_z_mode;
 
-  int phi_flags; // Inversion flags
-
   // Coefficients for linear sheath problem
   Field2D LAMBDA1, LAMBDA2;
 
@@ -60,7 +58,7 @@ private:
   Coordinates* coord;
 
   // Inverts a Laplacian to get potential
-  Laplacian* phiSolver;
+  std::unique_ptr<Laplacian> phiSolver{nullptr};
 
   int init(bool UNUSED(restarting)) override {
     Field2D I; // Shear factor
@@ -118,8 +116,6 @@ private:
     nu_perp = options["nu_perp"].withDefault(0.0);
     ShearFactor = options["ShearFactor"].withDefault(1.0);
     bout_exb = options["bout_exb"].withDefault(false);
-
-    phi_flags = options["phi_flags"].withDefault(0);
 
     // Toroidal filtering
     filter_z = options["filter_z"].withDefault(false); // Filter a single n
@@ -218,6 +214,9 @@ private:
     SOLVE_FOR(te);
     comms.add(te);
 
+    // Set boundary conditions for phi
+    phi.setBoundary("phi");
+
     /************** SETUP COMMUNICATIONS **************/
 
     // add extra variables to communication
@@ -238,7 +237,6 @@ private:
     
     // Create a solver for the Laplacian
     phiSolver = Laplacian::create();
-    phiSolver->setFlags(phi_flags);
     
     return 0;
   }
@@ -257,6 +255,9 @@ private:
     // Communicate variables
     mesh->communicate(comms);
 
+    // 'initial guess' for phi boundary values, before applying sheath boundary conditions
+    // to set the parallel current.
+    phi.applyBoundary();
     phi_sheath_bndryconds();
 
     // Evolve rho and te

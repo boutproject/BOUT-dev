@@ -1,4 +1,3 @@
-
 #include <globals.hxx>
 #include <bout/mesh.hxx>
 #include <bout/coordinates.hxx>
@@ -8,12 +7,44 @@
 
 #include <cmath>
 
-#include "meshfactory.hxx"
-
+#include <boutcomm.hxx>
 #include <output.hxx>
 
+#include "impls/bout/boutmesh.hxx"
+
+MeshFactory::ReturnType MeshFactory::create(Options* options, GridDataSource* source) {
+  if (source != nullptr) {
+    return Factory::create(getType(options), source, options);
+  }
+
+  if (options == nullptr) {
+    options = Options::getRoot()->getSection(section_name);
+  }
+
+  if (options->isSet("file") or Options::root().isSet("grid")) {
+    // Specified mesh file
+    const auto grid_name =
+        (*options)["file"].withDefault(Options::root()["grid"].withDefault(""));
+    output << "\nGetting grid data from file " << grid_name << "\n";
+
+    // Create a grid file, using specified format if given
+    const auto grid_ext =
+        (*options)["format"].withDefault(Options::root()["format"].withDefault(""));
+
+    // Create a grid file
+    source = static_cast<GridDataSource*>(new GridFile(
+        data_format((grid_ext.empty()) ? grid_name.c_str() : grid_ext.c_str()),
+        grid_name));
+  } else {
+    output << "\nGetting grid data from options\n";
+    source = static_cast<GridDataSource*>(new GridFromOptions(options));
+  }
+
+  return Factory::create(getType(options), source, options);
+}
+
 Mesh* Mesh::create(GridDataSource *s, Options *opt) {
-  return MeshFactory::getInstance()->createMesh(s, opt);
+  return MeshFactory::getInstance().create(opt, s).release();
 }
 
 Mesh *Mesh::create(Options *opt) { return create(nullptr, opt); }
@@ -34,11 +65,7 @@ Mesh::Mesh(GridDataSource *s, Options* opt) : source(s), options(opt) {
   derivs_init(options);  // in index_derivs.cxx for now
 }
 
-Mesh::~Mesh() {
-  if (source) {
-    delete source;
-  }
-}
+Mesh::~Mesh() { delete source; }
 
 /**************************************************************************
  * Functions for reading data from external sources
@@ -47,41 +74,74 @@ Mesh::~Mesh() {
  * which may then read from a file, options, or other sources.
  **************************************************************************/
 
-/// Get a string
-int Mesh::get(std::string &sval, const std::string &name) {
+namespace {
+// Wrapper for writing nicely to the screen
+template <class T>
+void warn_default_used(const T& value, const std::string& name) {
+  output_warn << "\tWARNING: Mesh has no source. Setting '" << name << "' = " << value
+              << std::endl;
+}
+} // namespace
+
+int Mesh::get(std::string& sval, const std::string& name, const std::string& def) {
   TRACE("Mesh::get(sval, %s)", name.c_str());
 
-  if (source == nullptr or !source->get(this, sval, name))
-    return 1;
+  if (source == nullptr) {
+    warn_default_used(def, name);
+    sval = def;
+    return true;
+  }
 
-  return 0;
+  return !source->get(this, sval, name, def);
 }
 
-/// Get an integer
-int Mesh::get(int &ival, const std::string &name) {
+int Mesh::get(int &ival, const std::string &name, int def) {
   TRACE("Mesh::get(ival, %s)", name.c_str());
 
-  if (source == nullptr or !source->get(this, ival, name))
-    return 1;
+  if (source == nullptr) {
+    warn_default_used(def, name);
+    ival = def;
+    return true;
+  }
 
-  return 0;
+  return !source->get(this, ival, name, def);
 }
 
-/// A BoutReal number
-int Mesh::get(BoutReal &rval, const std::string &name) {
+int Mesh::get(BoutReal& rval, const std::string& name, BoutReal def) {
   TRACE("Mesh::get(rval, %s)", name.c_str());
 
-  if (source == nullptr or !source->get(this, rval, name))
-    return 1;
+  if (source == nullptr) {
+    warn_default_used(def, name);
+    rval = def;
+    return true;
+  }
 
-  return 0;
+  return !source->get(this, rval, name, def);
+}
+
+int Mesh::get(bool &bval, const std::string &name, bool def) {
+  TRACE("Mesh::get(bval, %s)", name.c_str());
+
+  if (source == nullptr) {
+    warn_default_used(def, name);
+    bval = def;
+    return true;
+  }
+
+  int bval_as_int = 0;
+  bool success = source->get(this, bval_as_int, name, def);
+  bval = bool(bval_as_int);
+  return !success;
 }
 
 int Mesh::get(Field2D &var, const std::string &name, BoutReal def) {
   TRACE("Loading 2D field: Mesh::get(Field2D, %s)", name.c_str());
 
-  if (source == nullptr or !source->get(this, var, name, def))
+  if (source == nullptr or !source->get(this, var, name, def)) {
+    // set val to default in source==nullptr too:
+    var = def;
     return 1;
+  }
 
   // Communicate to get guard cell data
   Mesh::communicate(var);
@@ -95,8 +155,11 @@ int Mesh::get(Field2D &var, const std::string &name, BoutReal def) {
 int Mesh::get(Field3D &var, const std::string &name, BoutReal def, bool communicate) {
   TRACE("Loading 3D field: Mesh::get(Field3D, %s)", name.c_str());
 
-  if (source == nullptr or !source->get(this, var, name, def))
+  if (source == nullptr or !source->get(this, var, name, def)) {
+    // set val to default in source==nullptr too:
+    var = def;
     return 1;
+  }
 
   // Communicate to get guard cell data
   if(communicate) {
@@ -113,8 +176,11 @@ int Mesh::get(FieldPerp &var, const std::string &name, BoutReal def,
     bool UNUSED(communicate)) {
   TRACE("Loading FieldPerp: Mesh::get(FieldPerp, %s)", name.c_str());
 
-  if (source == nullptr or !source->get(this, var, name, def))
+  if (source == nullptr or !source->get(this, var, name, def)) {
+    // set val to default in source==nullptr too:
+    var = def;
     return 1;
+  }
 
   int yindex = var.getIndex();
   if (yindex >= 0 and yindex < var.getMesh()->LocalNy) {
@@ -132,46 +198,50 @@ int Mesh::get(FieldPerp &var, const std::string &name, BoutReal def,
  * Data get routines
  **************************************************************************/
 
-int Mesh::get(Vector2D &var, const std::string &name) {
+int Mesh::get(Vector2D &var, const std::string &name, BoutReal def) {
   TRACE("Loading 2D vector: Mesh::get(Vector2D, %s)", name.c_str());
 
   if(var.covariant) {
     output << _("\tReading covariant vector ") << name << endl;
 
-    get(var.x, name+"_x");
-    get(var.y, name+"_y");
-    get(var.z, name+"_z");
+    get(var.x, name+"_x", def);
+    get(var.y, name+"_y", def);
+    get(var.z, name+"_z", def);
 
   }else {
     output << _("\tReading contravariant vector ") << name << endl;
 
-    get(var.x, name+"x");
-    get(var.y, name+"y");
-    get(var.z, name+"z");
+    get(var.x, name+"x", def);
+    get(var.y, name+"y", def);
+    get(var.z, name+"z", def);
   }
 
   return 0;
 }
 
-int Mesh::get(Vector3D &var, const std::string &name) {
+int Mesh::get(Vector3D &var, const std::string &name, BoutReal def) {
   TRACE("Loading 3D vector: Mesh::get(Vector3D, %s)", name.c_str());
 
   if(var.covariant) {
     output << _("\tReading covariant vector ") << name << endl;
 
-    get(var.x, name+"_x");
-    get(var.y, name+"_y");
-    get(var.z, name+"_z");
+    get(var.x, name+"_x", def);
+    get(var.y, name+"_y", def);
+    get(var.z, name+"_z", def);
 
   }else {
     output << ("\tReading contravariant vector ") << name << endl;
 
-    get(var.x, name+"x");
-    get(var.y, name+"y");
-    get(var.z, name+"z");
+    get(var.x, name+"x", def);
+    get(var.y, name+"y", def);
+    get(var.z, name+"z", def);
   }
 
   return 0;
+}
+
+bool Mesh::isDataSourceGridFile() const {
+  return source != nullptr and source->is_file;
 }
 
 bool Mesh::sourceHasVar(const std::string &name) {
@@ -295,6 +365,89 @@ bool Mesh::hasBndryUpperY() {
   answer = static_cast<bool>(allbndry);
   calc = true;
   return answer;
+}
+
+int Mesh::localSize3D() {
+  if (localNumCells3D < 0) {
+    const int xs = firstX() ? xstart - 1 : xstart;
+    const int xe = lastX() ? xend + 2 : xend + 1;
+    const int nx = xe - xs;
+    const int ny = yend - ystart + 1;
+    const int nz = LocalNz;
+    localNumCells3D = nx * ny * nz;
+    for (RangeIterator it = iterateBndryLowerY(); !it.isDone(); it++) {
+      if (it.ind == xstart)
+        localNumCells3D += nz;
+      if (it.ind == xend)
+        localNumCells3D += nz;
+      localNumCells3D += nz;
+    }
+    for (RangeIterator it = iterateBndryUpperY(); !it.isDone(); it++) {
+      if (it.ind == xstart)
+        localNumCells3D += nz;
+      if (it.ind == xend)
+        localNumCells3D += nz;
+      localNumCells3D += nz;
+    }
+  }
+  return localNumCells3D;
+}
+
+int Mesh::localSize2D() {
+  if (localNumCells2D < 0) {
+    const int xs = firstX() ? xstart - 1 : xstart;
+    const int xe = lastX() ? xend + 2 : xend + 1;
+    const int nx = xe - xs;
+    const int ny = yend - ystart + 1;
+    localNumCells2D = nx * ny;
+    for (RangeIterator it = iterateBndryLowerY(); !it.isDone(); it++) {
+      if (it.ind == xstart)
+        localNumCells2D += 1;
+      if (it.ind == xend)
+        localNumCells2D += 1;
+      localNumCells2D += 1;
+    }
+    for (RangeIterator it = iterateBndryUpperY(); !it.isDone(); it++) {
+      if (it.ind == xstart)
+        localNumCells2D += 1;
+      if (it.ind == xend)
+        localNumCells2D += 1;
+      localNumCells2D += 1;
+    }
+  }
+  return localNumCells2D;
+}
+
+int Mesh::localSizePerp() {
+  if (localNumCellsPerp < 0) {
+    const int xs = firstX() ? xstart - 1 : xstart;
+    const int xe = lastX() ? xend + 2 : xend + 1;
+    const int nx = xe - xs;
+    const int nz = LocalNz;
+    localNumCellsPerp = nx * nz;
+  }
+  return localNumCellsPerp;
+}
+
+int Mesh::globalStartIndex3D() {
+  int localSize = localSize3D();
+  int cumulativeSize;
+  MPI_Scan(&localSize, &cumulativeSize, 1, MPI_INT, MPI_SUM, BoutComm::get());
+  return cumulativeSize - localSize;
+}
+
+int Mesh::globalStartIndex2D() {
+  int localSize = localSize2D();
+  int cumulativeSize;
+  MPI_Scan(&localSize, &cumulativeSize, 1, MPI_INT, MPI_SUM, BoutComm::get());
+  return cumulativeSize - localSize;
+}
+
+int Mesh::globalStartIndexPerp() {
+  int localSize = localSizePerp();
+  int cumulativeSize;
+  MPI_Scan(&localSize, &cumulativeSize, 1, MPI_INT, MPI_SUM, getXcomm());
+  return cumulativeSize - localSize;
 }
 
 const std::vector<int> Mesh::readInts(const std::string &name, int n) {

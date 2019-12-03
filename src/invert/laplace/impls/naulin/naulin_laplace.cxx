@@ -182,10 +182,6 @@ LaplaceNaulin::LaplaceNaulin(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
   ++naulinsolver_count;
 }
 
-LaplaceNaulin::~LaplaceNaulin() {
-  delete delp2solver;
-}
-
 Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
   // Rearrange equation so first term is just Delp2(x):
   //   D*Delp2(x) + 1/C1*Grad_perp(C2).Grad_perp(phi) = rhs
@@ -206,13 +202,13 @@ Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
   Field3D C1TimesD = C1coef*Dcoef; // This is needed several times
 
   // x-component of 1./(C1*D) * Grad_perp(C2)
-  Field3D coef_x = DDX(C2coef, location, DIFF_C2)/C1TimesD;
+  Field3D coef_x = DDX(C2coef, location, "C2")/C1TimesD;
 
   // y-component of 1./(C1*D) * Grad_perp(C2)
-  Field3D coef_y = DDY(C2coef, location, DIFF_C2)/C1TimesD;
+  Field3D coef_y = DDY(C2coef, location, "C2")/C1TimesD;
 
   // z-component of 1./(C1*D) * Grad_perp(C2)
-  Field3D coef_z = DDZ(C2coef, location, DIFF_FFT)/C1TimesD;
+  Field3D coef_z = DDZ(C2coef, location, "FFT")/C1TimesD;
 
   Field3D AOverD = Acoef/Dcoef;
 
@@ -228,7 +224,7 @@ Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
   // necessarily in phase.
   // This is the piece that cannot be passed to an FFT-based Laplacian solver
   // (through our current interface).
-  Field3D coef_x_AC = coef_x - DDX(C2coef_DC, location, DIFF_C2)/C1coefTimesD_DC;
+  Field3D coef_x_AC = coef_x - DDX(C2coef_DC, location, "C2")/C1coefTimesD_DC;
 
   // coef_z is a z-derivative so must already have zero DC component
 
@@ -241,7 +237,7 @@ Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
   delp2solver->setCoefC2(C2coef_DC);
 
   // Use this below to normalize error for relative error estimate
-  BoutReal RMS_rhsOverD = sqrt(mean(SQ(rhsOverD), true, RGN_NOBNDRY)); // use sqrt(mean(SQ)) to make sure we do not divide by zero at a point
+  BoutReal RMS_rhsOverD = sqrt(mean(SQ(rhsOverD), true, "RGN_NOBNDRY")); // use sqrt(mean(SQ)) to make sure we do not divide by zero at a point
 
   BoutReal error_rel = 1e20, error_abs=1e20, last_error=error_abs;
   int count = 0;
@@ -250,8 +246,8 @@ Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
 
   auto calc_b_guess = [&] (const Field3D& x_in) {
     // Derivatives of x
-    Field3D ddx_x = DDX(x_in, location, DIFF_C2);
-    Field3D ddz_x = DDZ(x_in, location, DIFF_FFT);
+    Field3D ddx_x = DDX(x_in, location, "C2");
+    Field3D ddz_x = DDZ(x_in, location, "FFT");
     return rhsOverD - (coords->g11*coef_x_AC*ddx_x + coords->g33*coef_z*ddz_x
         + coords->g13*(coef_x_AC*ddz_x + coef_z*ddx_x)) - AOverD_AC*x_in;
   };
@@ -282,7 +278,7 @@ Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
     Field3D bnew = calc_b_guess(b_x_pair.second);
 
     Field3D error3D = b_x_pair.first - bnew;
-    error_abs = max(abs(error3D, RGN_NOBNDRY), true, RGN_NOBNDRY);
+    error_abs = max(abs(error3D, "RGN_NOBNDRY"), true, "RGN_NOBNDRY");
     error_rel = error_abs / RMS_rhsOverD;
 
     if (error_rel<rtol or error_abs<atol) break;
@@ -304,7 +300,7 @@ Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
       bnew = calc_b_guess(b_x_pair.second);
 
       error3D = b_x_pair.first - bnew;
-      error_abs = max(abs(error3D, RGN_NOBNDRY), true, RGN_NOBNDRY);
+      error_abs = max(abs(error3D, "RGN_NOBNDRY"), true, "RGN_NOBNDRY");
       error_rel = error_abs / RMS_rhsOverD;
 
       // effectively another iteration, so increment the counter

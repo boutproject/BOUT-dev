@@ -14,6 +14,8 @@
 
 #include <output.hxx>
 
+#include <cmath>
+
 #undef __FUNCT__
 #define __FUNCT__ "laplacePCapply"
 static PetscErrorCode laplacePCapply(PC pc,Vec x,Vec y) {
@@ -21,7 +23,7 @@ static PetscErrorCode laplacePCapply(PC pc,Vec x,Vec y) {
   
   // Get the context
   LaplaceXY *s;
-  ierr = PCShellGetContext(pc,(void**)&s);CHKERRQ(ierr);
+  ierr = PCShellGetContext(pc, reinterpret_cast<void**>(&s)); CHKERRQ(ierr);
   
   PetscFunctionReturn(s->precon(x, y));
 }
@@ -114,7 +116,7 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
   if(localmesh->firstX()) {
     // Lower X boundary
     for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
-      int localIndex = indexXY(localmesh->xstart-1,y);
+      const int localIndex = globalIndex(localmesh->xstart - 1, y);
       ASSERT1( (localIndex >= 0) && (localIndex < localN) );
     
       d_nnz[localIndex] = 2; // Diagonal sub-matrix
@@ -123,7 +125,7 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
   }else {
     // On another processor
     for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
-      int localIndex = indexXY(localmesh->xstart,y);
+      const int localIndex = globalIndex(localmesh->xstart, y);
       ASSERT1( (localIndex >= 0) && (localIndex < localN) );
       d_nnz[localIndex] -= 1;
       o_nnz[localIndex] += 1;
@@ -132,7 +134,7 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
   if(localmesh->lastX()) {
     // Upper X boundary
     for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
-      int localIndex = indexXY(localmesh->xend+1,y);
+      const int localIndex = globalIndex(localmesh->xend + 1, y);
       ASSERT1( (localIndex >= 0) && (localIndex < localN) );
       d_nnz[localIndex] = 2; // Diagonal sub-matrix
       o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
@@ -140,7 +142,7 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
   }else {
     // On another processor
     for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
-      int localIndex = indexXY(localmesh->xend,y);
+      const int localIndex = globalIndex(localmesh->xend, y);
       ASSERT1( (localIndex >= 0) && (localIndex < localN) );
       d_nnz[localIndex] -= 1;
       o_nnz[localIndex] += 1;
@@ -153,39 +155,47 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
     // NOTE: This assumes that communications in Y are to other
     //   processors. If Y is communicated with this processor (e.g. NYPE=1)
     //   then this will result in PETSc warnings about out of range allocations
-    
-    int localIndex = indexXY(x, localmesh->ystart);
-    ASSERT1( (localIndex >= 0) && (localIndex < localN) );
-    //d_nnz[localIndex] -= 1;  // Note: Slightly inefficient
-    o_nnz[localIndex] += 1;
-    
-    localIndex = indexXY(x, localmesh->yend);
-    ASSERT1( (localIndex >= 0) && (localIndex < localN) );
-    //d_nnz[localIndex] -= 1; // Note: Slightly inefficient
-    o_nnz[localIndex] += 1;
+    {
+      const int localIndex = globalIndex(x, localmesh->ystart);
+      ASSERT1((localIndex >= 0) && (localIndex < localN));
+      // d_nnz[localIndex] -= 1;  // Note: Slightly inefficient
+      o_nnz[localIndex] += 1;
+    }
+    {
+      const int localIndex = globalIndex(x, localmesh->yend);
+      ASSERT1((localIndex >= 0) && (localIndex < localN));
+      // d_nnz[localIndex] -= 1; // Note: Slightly inefficient
+      o_nnz[localIndex] += 1;
+    }
   }
   
   for(RangeIterator it=localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
-    int localIndex = indexXY(it.ind, localmesh->ystart-1);
-    ASSERT1( (localIndex >= 0) && (localIndex < localN) );
-    d_nnz[localIndex] = 2; // Diagonal sub-matrix
-    o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
-    
-    localIndex = indexXY(it.ind, localmesh->ystart);
-    ASSERT1( (localIndex >= 0) && (localIndex < localN) );
-    d_nnz[localIndex] += 1;
-    o_nnz[localIndex] -= 1;
+    {
+      const int localIndex = globalIndex(it.ind, localmesh->ystart - 1);
+      ASSERT1((localIndex >= 0) && (localIndex < localN));
+      d_nnz[localIndex] = 2; // Diagonal sub-matrix
+      o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
+    }
+    {
+      const int localIndex = globalIndex(it.ind, localmesh->ystart);
+      ASSERT1((localIndex >= 0) && (localIndex < localN));
+      d_nnz[localIndex] += 1;
+      o_nnz[localIndex] -= 1;
+    }
   }
   for(RangeIterator it=localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
-    int localIndex = indexXY(it.ind, localmesh->yend+1);
-    ASSERT1( (localIndex >= 0) && (localIndex < localN) );
-    d_nnz[localIndex] = 2; // Diagonal sub-matrix
-    o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
-    
-    localIndex = indexXY(it.ind, localmesh->yend);
-    ASSERT1( (localIndex >= 0) && (localIndex < localN) );
-    d_nnz[localIndex] += 1;
-    o_nnz[localIndex] -= 1;
+    {
+      const int localIndex = globalIndex(it.ind, localmesh->yend + 1);
+      ASSERT1((localIndex >= 0) && (localIndex < localN));
+      d_nnz[localIndex] = 2; // Diagonal sub-matrix
+      o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
+    }
+    {
+      const int localIndex = globalIndex(it.ind, localmesh->yend);
+      ASSERT1((localIndex >= 0) && (localIndex < localN));
+      d_nnz[localIndex] += 1;
+      o_nnz[localIndex] -= 1;
+    }
   }
   // Pre-allocate
   MatMPIAIJSetPreallocation( MatA, 0, d_nnz, 0, o_nnz );
@@ -245,9 +255,9 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
 
     KSPSetType( ksp, ksptype.c_str() );
     KSPSetTolerances( ksp, rtol, atol, dtol, maxits );
-    
-    KSPSetInitialGuessNonzero( ksp, (PetscBool) true );
-    
+
+    KSPSetInitialGuessNonzero(ksp, static_cast<PetscBool>(true));
+
     KSPGetPC(ksp,&pc);
     PCSetType(pc, pctype.c_str());
 
@@ -805,14 +815,6 @@ int LaplaceXY::globalIndex(int x, int y) {
     return -1; // Out of range
  
   // Get the index from a Field2D, round to integer
-  return roundInt(indexXY(x,y));
+  return static_cast<int>(std::round(indexXY(x, y)));
 }
-
-int LaplaceXY::roundInt(BoutReal f) {
-  if(f > 0.0) {
-    return (int) (f + 0.5);
-  }
-  return (int) (f - 0.5);
-}
-
 #endif // BOUT_HAS_PETSC

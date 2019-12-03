@@ -23,7 +23,7 @@ class Mesh;
 class ParallelTransform {
 public:
   ParallelTransform(Mesh& mesh_in) : mesh(mesh_in) {}
-  virtual ~ParallelTransform() {}
+  virtual ~ParallelTransform() = default;
 
   /// Given a 3D field, calculate and set the Y up down fields
   virtual void calcParallelSlices(Field3D &f) = 0;
@@ -46,19 +46,66 @@ public:
   
   /// Convert a field into field-aligned coordinates
   /// so that the y index is along the magnetic field
-  virtual const Field3D toFieldAligned(const Field3D &f, const REGION region = RGN_ALL) = 0;
-  virtual const FieldPerp toFieldAligned(const FieldPerp &f, const REGION region = RGN_ALL) = 0;
+  virtual const Field3D toFieldAligned(const Field3D &f, const std::string& region = "RGN_ALL") = 0;
+  [[gnu::deprecated("Please use toFieldAligned(const Field3D& f, "
+      "const std::string& region = \"RGN_ALL\") instead")]]
+  const Field3D toFieldAligned(const Field3D &f, REGION region) {
+    return toFieldAligned(f, toString(region));
+  }
+  virtual const FieldPerp toFieldAligned(const FieldPerp &f, const std::string& region = "RGN_ALL") = 0;
+  [[gnu::deprecated("Please use toFieldAligned(const FieldPerp& f, "
+      "const std::string& region = \"RGN_ALL\") instead")]]
+  const FieldPerp toFieldAligned(const FieldPerp &f, REGION region) {
+    return toFieldAligned(f, toString(region));
+  }
   
   /// Convert back from field-aligned coordinates
   /// into standard form
-  virtual const Field3D fromFieldAligned(const Field3D &f, const REGION region = RGN_ALL) = 0;
-  virtual const FieldPerp fromFieldAligned(const FieldPerp &f, const REGION region = RGN_ALL) = 0;
+  virtual const Field3D fromFieldAligned(const Field3D &f, const std::string& region = "RGN_ALL") = 0;
+  [[gnu::deprecated("Please use fromFieldAligned(const Field3D& f, "
+      "const std::string& region = \"RGN_ALL\") instead")]]
+  const Field3D fromFieldAligned(const Field3D &f, REGION region) {
+    return fromFieldAligned(f, toString(region));
+  }
+  virtual const FieldPerp fromFieldAligned(const FieldPerp &f, const std::string& region = "RGN_ALL") = 0;
+  [[gnu::deprecated("Please use fromFieldAligned(const FieldPerp& f, "
+      "const std::string& region = \"RGN_ALL\") instead")]]
+  const FieldPerp fromFieldAligned(const FieldPerp &f, REGION region) {
+    return fromFieldAligned(f, toString(region));
+  }
 
   virtual bool canToFromFieldAligned() = 0;
 
+  struct PositionsAndWeights {
+    int i, j, k;
+    BoutReal weight;
+  };
+
+  virtual std::vector<PositionsAndWeights> getWeightsForYUpApproximation(int i, int j,
+                                                                         int k) {
+    return getWeightsForYApproximation(i, j, k, 1);
+  }
+  virtual std::vector<PositionsAndWeights> getWeightsForYDownApproximation(int i, int j,
+                                                                           int k) {
+    return getWeightsForYApproximation(i, j, k, -1);
+  }
+  virtual std::vector<PositionsAndWeights>
+  getWeightsForYApproximation(int UNUSED(i), int UNUSED(j), int UNUSED(k),
+                              int UNUSED(yoffset)) {
+    throw BoutException("ParallelTransform::getWeightsForYApproximation not implemented "
+                        "in this subclass");
+  }
+
+  /// Output variables used by a ParallelTransform instance to the dump files
+  virtual void outputVars(Datafile& UNUSED(file)) {}
+
+  /// If \p twist_shift_enabled is true, does a `Field3D` with Y direction \p ytype
+  /// require a twist-shift at branch cuts on closed field lines?
+  virtual bool requiresTwistShift(bool twist_shift_enabled, YDirectionType ytype) = 0;
+
 protected:
   /// This method should be called in the constructor to check that if the grid
-  /// has a 'coordinates_type' variable, it has the correct value
+  /// has a 'parallel_transform' variable, it has the correct value
   virtual void checkInputGrid() = 0;
 
   Mesh &mesh; ///< The mesh this paralleltransform is part of
@@ -86,11 +133,13 @@ public:
    * The field is already aligned in Y, so this
    * does nothing
    */
-  const Field3D toFieldAligned(const Field3D& f, const REGION UNUSED(region)) override {
+  const Field3D toFieldAligned(const Field3D& f, const std::string& UNUSED(region) = "RGN_ALL") override {
+    ASSERT2(f.getDirectionY() == YDirectionType::Standard);
     Field3D result = f;
     return result.setDirectionY(YDirectionType::Aligned);
   }
-  const FieldPerp toFieldAligned(const FieldPerp& f, const REGION UNUSED(region)) override {
+  const FieldPerp toFieldAligned(const FieldPerp& f, const std::string& UNUSED(region) = "RGN_ALL") override {
+    ASSERT2(f.getDirectionY() == YDirectionType::Standard);
     FieldPerp result = f;
     return result.setDirectionY(YDirectionType::Aligned);
   }
@@ -99,16 +148,24 @@ public:
    * The field is already aligned in Y, so this
    * does nothing
    */
-  const Field3D fromFieldAligned(const Field3D& f, const REGION UNUSED(region)) override {
+  const Field3D fromFieldAligned(const Field3D& f, const std::string& UNUSED(region) = "RGN_ALL") override {
+    ASSERT2(f.getDirectionY() == YDirectionType::Aligned);
     Field3D result = f;
     return result.setDirectionY(YDirectionType::Standard);
   }
-  const FieldPerp fromFieldAligned(const FieldPerp& f, const REGION UNUSED(region)) override {
+  const FieldPerp fromFieldAligned(const FieldPerp& f, const std::string& UNUSED(region) = "RGN_ALL") override {
+    ASSERT2(f.getDirectionY() == YDirectionType::Aligned);
     FieldPerp result = f;
     return result.setDirectionY(YDirectionType::Standard);
   }
 
   bool canToFromFieldAligned() override { return true; }
+
+  bool requiresTwistShift(bool twist_shift_enabled, YDirectionType UNUSED(ytype)) override {
+    // All Field3Ds require twist-shift, because all are effectively field-aligned, but
+    // allow twist-shift to be turned off by twist_shift_enabled
+    return twist_shift_enabled;
+  }
 
 protected:
   void checkInputGrid() override;
@@ -141,20 +198,32 @@ public:
    * in X-Z, and the metric tensor will need to be changed
    * if X derivatives are used.
    */
-  const Field3D toFieldAligned(const Field3D& f, const REGION region = RGN_ALL) override;
+  const Field3D toFieldAligned(const Field3D& f, const std::string& region = "RGN_ALL") override;
   const FieldPerp toFieldAligned(const FieldPerp& f,
-                                 const REGION region = RGN_ALL) override;
+                                 const std::string& region = "RGN_ALL") override;
 
   /*!
    * Converts a field back to X-Z orthogonal coordinates
    * from field aligned coordinates.
    */
   const Field3D fromFieldAligned(const Field3D& f,
-                                 const REGION region = RGN_ALL) override;
+                                 const std::string& region = "RGN_ALL") override;
   const FieldPerp fromFieldAligned(const FieldPerp& f,
-                                   const REGION region = RGN_ALL) override;
+                                   const std::string& region = "RGN_ALL") override;
 
   bool canToFromFieldAligned() override { return true; }
+
+  /// Save zShift to the output
+  void outputVars(Datafile& file) override;
+
+  bool requiresTwistShift(bool twist_shift_enabled, YDirectionType ytype) override {
+    // Twist-shift only if field-aligned
+    if (ytype == YDirectionType::Aligned and not twist_shift_enabled) {
+      throw BoutException("'TwistShift = true' is required to communicate field-aligned "
+          "Field3Ds when using ShiftedMetric.");
+    }
+    return ytype == YDirectionType::Aligned;
+  }
 
 protected:
   void checkInputGrid() override;
@@ -196,7 +265,13 @@ private:
    * Since 2D fields are constant in Z, this has no effect
    */
   const Field2D shiftZ(const Field2D& f, const Field2D& UNUSED(zangle),
-                       const REGION UNUSED(region) = RGN_NOX) const {
+                       const std::string UNUSED(region) = "RGN_NOX") const {
+    return f;
+  };
+  [[gnu::deprecated("Please use shiftZ(const Field2D& f, const Field2D& zangle, "
+      "const std::string& region = \"RGN_NOX\") instead")]]
+  const Field2D shiftZ(const Field2D& f, const Field2D& UNUSED(zangle),
+                       REGION UNUSED(region)) const {
     return f;
   };
 
@@ -208,7 +283,13 @@ private:
    *
    */
   const Field3D shiftZ(const Field3D& f, const Field2D& zangle,
-                       const REGION region = RGN_NOX) const;
+                       const std::string& region = "RGN_NOX") const;
+  [[gnu::deprecated("Please use shiftZ(const Field3D& f, const Field2D& zangle, "
+      "const std::string& region = \"RGN_NOX\") instead")]]
+  const Field3D shiftZ(const Field3D& f, const Field2D& zangle,
+                       REGION region) const {
+    return shiftZ(f, zangle, toString(region));
+  };
 
   /*!
    * Shift a 3D field or FieldPerp \p f by the given phase \p phs in Z
@@ -222,10 +303,10 @@ private:
    */
   const Field3D shiftZ(const Field3D& f, const Tensor<dcomplex>& phs,
                        const YDirectionType y_direction_out,
-                       const REGION region = RGN_NOX) const;
+                       const std::string& region = "RGN_NOX") const;
   const FieldPerp shiftZ(const FieldPerp& f, const Tensor<dcomplex>& phs,
                          const YDirectionType y_direction_out,
-                         const REGION region = RGN_NOX) const;
+                         const std::string& region = "RGN_NOX") const;
 
   /*!
    * Shift a given 1D array, assumed to be in Z, by the given \p zangle

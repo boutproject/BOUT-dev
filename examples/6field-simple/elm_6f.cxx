@@ -132,7 +132,6 @@ BoutReal vacuum_pressure;
 BoutReal vacuum_trans; // Transition width
 Field3D vac_mask;
 
-int phi_flags, apar_flags;
 bool nonlinear;
 bool evolve_jpar;
 BoutReal g; // Only if compressible
@@ -236,8 +235,8 @@ const BoutReal eV_K = 11605.0;   // 1eV = 11605K
 FieldGroup comms;
 
 /// Solver for inverting Laplacian
-Laplacian* phiSolver;
-Laplacian* aparSolver;
+std::unique_ptr<Laplacian> phiSolver{nullptr};
+std::unique_ptr<Laplacian> aparSolver{nullptr};
 
 void advect_tracer(const Field3D& p, // phi (input)
                    const Field3D& delta_x,
@@ -304,9 +303,9 @@ const Field2D N0tanh(BoutReal n0_height, BoutReal n0_ave, BoutReal n0_width,
       BoutReal xgrid_num = (Jxsep + 1.) / Grid_NX;
       // output.write("mgx = %e xgrid_num = %e\n", mgx);
       for (int jy = 0; jy < mesh->LocalNy; jy++) {
-        int globaly = mesh->YGLOBAL(jy);
+        int globaly = mesh->getGlobalYIndex(jy);
         // output.write("local y = %i;   global y: %i\n", jy, globaly);
-        if (mgx > xgrid_num || (globaly <= int(Jysep) - 4) || (globaly > int(Jysep2)))
+        if (mgx > xgrid_num || (globaly <= int(Jysep) - 2) || (globaly > int(Jysep2) + 2))
           mgx = xgrid_num;
         BoutReal rlx = mgx - n0_center;
         BoutReal temp = exp(rlx / n0_width);
@@ -614,10 +613,6 @@ int physics_init(bool restarting) {
   // Compressional terms
   phi_curv = options["phi_curv"].withDefault(true);
   g = options["gamma"].withDefault(5.0 / 3.0);
-
-  // Field inversion flags
-  phi_flags = options["phi_flags"].withDefault(0);
-  apar_flags = options["apar_flags"].withDefault(0);
 
   if (!include_curvature)
     b0xcv = 0.0;
@@ -1130,11 +1125,9 @@ int physics_init(bool restarting) {
   SAVE_ONCE3(Ti0, Te0, N0);
 
   // Create a solver for the Laplacian
-  phiSolver = Laplacian::create();
-  phiSolver->setFlags(phi_flags);
+  phiSolver = Laplacian::create(&options["phiSolver"]);
 
-  aparSolver = Laplacian::create();
-  aparSolver->setFlags(apar_flags);
+  aparSolver = Laplacian::create(&options["aparSolver"]);
 
   /////////////// CHECK VACUUM ///////////////////////
   // In vacuum region, initial vorticity should equal zero

@@ -43,16 +43,14 @@ private:
   BoutReal ShearFactor;
   BoutReal nu_factor;
 
-  int phi_flags, apar_flags; // Inversion flags
-
   // Communication object
   FieldGroup comms;
 
   // Inverts a Laplacian to get potential
-  Laplacian *phiSolver;
+  std::unique_ptr<Laplacian> phiSolver;
   
   // Solves the electromagnetic potential
-  Laplacian *aparSolver;
+  std::unique_ptr<Laplacian> aparSolver;
   Field2D acoef; // Coefficient in the Helmholtz equation
   
   int init(bool UNUSED(restarting)) override {
@@ -102,9 +100,6 @@ private:
     nu_perp = options["nu_perp"].withDefault(0.0);
     ShearFactor = options["ShearFactor"].withDefault(1.0);
     nu_factor = options["nu_factor"].withDefault(1.0);
-
-    phi_flags = options["phi_flags"].withDefault(0);
-    apar_flags = options["apar_flags"].withDefault(0);
 
     evolve_ajpar = globalOptions["Ajpar"]["evolve"].withDefault(true);
 
@@ -231,13 +226,11 @@ private:
     SAVE_ONCE(Te_x, Ti_x, Ni_x, rho_s, wci, zeff, AA);
     
     // Create a solver for the Laplacian
-    phiSolver = Laplacian::create();
-    phiSolver->setFlags(phi_flags);
+    phiSolver = Laplacian::create(&options["phiSolver"]);
 
     if (! (estatic || ZeroElMass)) {
       // Create a solver for the electromagnetic potential
-      aparSolver = Laplacian::create();
-      aparSolver->setFlags(apar_flags);
+      aparSolver = Laplacian::create(&options["aparSolver"]);
       acoef = (-0.5 * beta_p / fmei) * Ni0;
       aparSolver->setCoefA(acoef);
     }

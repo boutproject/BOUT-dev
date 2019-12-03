@@ -109,7 +109,6 @@ private:
   BoutReal vacuum_trans; // Transition width
   Field3D vac_mask;
 
-  int phi_flags, apar_flags;
   bool nonlinear;
   bool evolve_jpar;
   BoutReal g; // Only if compressible
@@ -248,9 +247,9 @@ private:
         BoutReal mgx = mesh->GlobalX(i.x());
         BoutReal xgrid_num = (Jxsep + 1.) / Grid_NX;
 
-        int globaly = mesh->YGLOBAL(i.y());
+        int globaly = mesh->getGlobalYIndex(i.y());
 
-        if (mgx > xgrid_num || (globaly <= int(Jysep) - 4) || (globaly > int(Jysep2)))
+        if (mgx > xgrid_num || (globaly <= int(Jysep) - 2) || (globaly > int(Jysep2) + 2))
           mgx = xgrid_num;
         BoutReal rlx = mgx - n0_center;
         BoutReal temp = exp(rlx / n0_width);
@@ -589,10 +588,6 @@ protected:
     // Compressional terms
     phi_curv = options["phi_curv"].doc("ExB compression in P equation?").withDefault(true);
     g = options["gamma"].doc("Ratio of specific heats").withDefault(5.0 / 3.0);
-
-    // Field inversion flags
-    phi_flags = options["phi_flags"].withDefault(0);
-    apar_flags = options["apar_flags"].withDefault(0);
 
     x = (Psixy - Psiaxis) / (Psibndry - Psiaxis);
 
@@ -1063,11 +1058,9 @@ protected:
     }
 
     // Create a solver for the Laplacian
-    phiSolver = std::unique_ptr<Laplacian>(Laplacian::create());
-    phiSolver->setFlags(phi_flags);
+    phiSolver = std::unique_ptr<Laplacian>(Laplacian::create(&options["phiSolver"]));
 
-    aparSolver = std::unique_ptr<Laplacian>(Laplacian::create());
-    aparSolver->setFlags(apar_flags);
+    aparSolver = std::unique_ptr<Laplacian>(Laplacian::create(&options["aparSolver"]));
 
     /////////////// CHECK VACUUM ///////////////////////
     // In vacuum region, initial vorticity should equal zero
@@ -1725,7 +1718,7 @@ protected:
     U1 += (gamma * B0 * B0) * Grad_par(Jrhs, CELL_CENTRE) + (gamma * b0xcv) * Grad(P);
 
     // Second matrix, solving Alfven wave dynamics
-    static InvertPar* invU = 0;
+    static std::unique_ptr<InvertPar> invU{nullptr};
     if (!invU)
       invU = InvertPar::Create();
 

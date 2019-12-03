@@ -172,28 +172,38 @@ namespace FV {
   /// @param[in] v_in   The advection velocity.
   ///                   This will be interpolated to cell boundaries
   ///                   using linear interpolation
-  /// @param[in] wave_speed  Maximum wave speed in the system
+  /// @param[in] wave_speed_in  Local maximum speed of all waves in the system at each
+  //                            point in space
   /// @param[in] fixflux     Fix the flux at the boundary to be the value at the
   ///                        midpoint (for boundary conditions)
   ///
   /// NB: Uses to/from FieldAligned coordinates
   template<typename CellEdges = MC>
   const Field3D Div_par(const Field3D &f_in, const Field3D &v_in,
-                        const Field3D &wave_speed, bool fixflux=true) {
+                        const Field3D &wave_speed_in, bool fixflux=true) {
 
     ASSERT1(areFieldsCompatible(f_in, v_in));
-    ASSERT1(areFieldsCompatible(f_in, wave_speed));
+    ASSERT1(areFieldsCompatible(f_in, wave_speed_in));
 
     Mesh* mesh = f_in.getMesh();
 
     CellEdges cellboundary;
     
-    Field3D f = toFieldAligned(f_in, RGN_NOX);
-    Field3D v = toFieldAligned(v_in, RGN_NOX);
+    ASSERT2(f_in.getDirectionY() == v_in.getDirectionY());
+    ASSERT2(f_in.getDirectionY() == wave_speed_in.getDirectionY());
+    const bool are_unaligned
+      = ((f_in.getDirectionY() == YDirectionType::Standard)
+         and (v_in.getDirectionY() == YDirectionType::Standard)
+         and (wave_speed_in.getDirectionY() == YDirectionType::Standard));
+
+    Field3D f = are_unaligned ? toFieldAligned(f_in, "RGN_NOX") : f_in;
+    Field3D v = are_unaligned ? toFieldAligned(v_in, "RGN_NOX") : v_in;
+    Field3D wave_speed = are_unaligned ? toFieldAligned(wave_speed_in, "RGN_NOX")
+                                       : wave_speed_in;
 
     Coordinates *coord = f_in.getCoordinates();
 
-    Field3D result{zeroFrom(f_in)};
+    Field3D result{zeroFrom(f)};
     
     // Only need one guard cell, so no need to communicate fluxes
     // Instead calculate in guard cells to preserve fluxes
@@ -326,7 +336,7 @@ namespace FV {
         }
       }
     }
-    return fromFieldAligned(result, RGN_NOBNDRY);
+    return are_unaligned ? fromFieldAligned(result, "RGN_NOBNDRY") : result;
   }
   
   /*!
@@ -470,10 +480,11 @@ namespace FV {
     // Currently just using simple centered differences
     // so no fluxes need to be exchanged
     
-    n = toFieldAligned(n_in, RGN_NOX);
-    Field3D vy = toFieldAligned(v.y, RGN_NOX);
+    n = toFieldAligned(n_in, "RGN_NOX");
+    Field3D vy = toFieldAligned(v.y, "RGN_NOX");
     
     Field3D yresult = 0.0;    
+    yresult.setDirectionY(YDirectionType::Aligned);
     for(int i=mesh->xstart;i<=mesh->xend;i++)
       for(int j=mesh->ystart;j<=mesh->yend;j++)
         for(int k=0;k<mesh->LocalNz;k++) {
@@ -490,7 +501,7 @@ namespace FV {
           yresult(i,j,k) = (nU*vU - nD*vD) / (coord->J(i,j)*coord->dy(i,j));
         }
     
-    return result + fromFieldAligned(yresult, RGN_NOBNDRY);
+    return result + fromFieldAligned(yresult, "RGN_NOBNDRY");
   }
 }
 

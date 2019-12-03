@@ -58,7 +58,7 @@ template <class T> class CyclicReduce {
 public:
   CyclicReduce() = default;
 
-  CyclicReduce(MPI_Comm c, int size) : comm(c), N(size), Nsys(0) {
+  CyclicReduce(MPI_Comm c, int size) : comm(c), N(size) {
     MPI_Comm_size(c, &nprocs);
     MPI_Comm_rank(c, &myproc);
   }
@@ -210,7 +210,7 @@ public:
     int ns = Nsys / nprocs;      // Number of systems to assign to all processors
     int nsextra = Nsys % nprocs; // Number of processors with 1 extra
 
-    MPI_Request *req = new MPI_Request[nprocs];
+    auto* req = new MPI_Request[nprocs];
 
     if (myns > 0) {
       // Post receives from all other processors

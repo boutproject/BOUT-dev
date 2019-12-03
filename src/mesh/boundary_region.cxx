@@ -4,11 +4,11 @@
 #include <boundary_region.hxx>
 #include <utils.hxx>
 
+#include <utility>
 using std::swap;
 
 BoundaryRegionXIn::BoundaryRegionXIn(std::string name, int ymin, int ymax, Mesh* passmesh)
-  : BoundaryRegion(name, -1, 0, passmesh), ys(ymin), ye(ymax)
-{
+    : BoundaryRegion(std::move(name), -1, 0, passmesh), ys(ymin), ye(ymax) {
   location = BNDRY_XIN;
   width = localmesh->xstart;
   x = width-1; // First point inside the boundary
@@ -59,10 +59,9 @@ bool BoundaryRegionXIn::isDone()
 
 ///////////////////////////////////////////////////////////////
 
-
-BoundaryRegionXOut::BoundaryRegionXOut(std::string name, int ymin, int ymax, Mesh* passmesh)
-  : BoundaryRegion(name, 1, 0, passmesh), ys(ymin), ye(ymax)
-{
+BoundaryRegionXOut::BoundaryRegionXOut(std::string name, int ymin, int ymax,
+                                       Mesh* passmesh)
+    : BoundaryRegion(std::move(name), 1, 0, passmesh), ys(ymin), ye(ymax) {
   location = BNDRY_XOUT;
   width = localmesh->LocalNx - localmesh->xend - 1;
   x = localmesh->LocalNx - width; // First point inside the boundary
@@ -113,10 +112,9 @@ bool BoundaryRegionXOut::isDone()
 
 ///////////////////////////////////////////////////////////////
 
-
-BoundaryRegionYDown::BoundaryRegionYDown(std::string name, int xmin, int xmax, Mesh* passmesh)
-  : BoundaryRegion(name, 0, -1, passmesh), xs(xmin), xe(xmax)
-{
+BoundaryRegionYDown::BoundaryRegionYDown(std::string name, int xmin, int xmax,
+                                         Mesh* passmesh)
+    : BoundaryRegion(std::move(name), 0, -1, passmesh), xs(xmin), xe(xmax) {
   location = BNDRY_YDOWN;
   width = localmesh->ystart;
   y = width-1; // First point inside the boundary
@@ -168,10 +166,8 @@ bool BoundaryRegionYDown::isDone()
 
 ///////////////////////////////////////////////////////////////
 
-
 BoundaryRegionYUp::BoundaryRegionYUp(std::string name, int xmin, int xmax, Mesh* passmesh)
-  : BoundaryRegion(name, 0, 1, passmesh), xs(xmin), xe(xmax)
-{
+    : BoundaryRegion(std::move(name), 0, 1, passmesh), xs(xmin), xe(xmax) {
   location = BNDRY_YUP;
   width = localmesh->LocalNy - localmesh->yend - 1;
   y = localmesh->LocalNy - width; // First point inside the boundary

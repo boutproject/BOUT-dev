@@ -53,8 +53,8 @@ bool evolve_rho, evolve_te, evolve_ni, evolve_ajpar, evolve_vi, evolve_ti;
 BoutReal ShearFactor;
 
 // Inversion objects
-Laplacian* phi_solver;
-Laplacian* apar_solver;
+std::unique_ptr<Laplacian> phi_solver;
+std::unique_ptr<Laplacian> apar_solver;
 
 FieldGroup comms; // Group of variables for communications
 
@@ -293,8 +293,8 @@ int physics_init(bool UNUSED(restarting)) {
     maybe_ylow = CELL_CENTRE;
   }
   Vi = interp_to(Vi,maybe_ylow);
-  Ni0_maybe_ylow = interp_to(Ni0, maybe_ylow, RGN_NOBNDRY);
-  Te0_maybe_ylow = interp_to(Te0, maybe_ylow, RGN_NOBNDRY);
+  Ni0_maybe_ylow = interp_to(Ni0, maybe_ylow, "RGN_NOBNDRY");
+  Te0_maybe_ylow = interp_to(Te0, maybe_ylow, "RGN_NOBNDRY");
 
   return(0);
 }

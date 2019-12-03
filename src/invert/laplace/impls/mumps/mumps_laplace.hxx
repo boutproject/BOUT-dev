@@ -23,47 +23,24 @@
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  *
  **************************************************************************/
-class LaplaceMumps;
 
 #ifndef __MUMPS_LAPLACE_H__
 #define __MUMPS_LAPLACE_H__
 
+#ifdef BOUT_HAS_MUMPS
+
 #include <invert_laplace.hxx>
-
-#ifndef BOUT_HAS_MUMPS
- 
-#include <boutexception.hxx>
- 
-class LaplaceMumps : public Laplacian {
-public:
-  LaplaceMumps(Options *UNUSED(opt) = nullptr, const CELL_LOC UNUSED(loc) = CELL_CENTRE, Mesh *UNUSED(mesh_in) = nullptr) {
-    throw BoutException("Mumps library not available");
-  }
-
-  using Laplacian::setCoefA;
-  void setCoefA(const Field2D &UNUSED(val)) override {}
-  using Laplacian::setCoefC;
-  void setCoefC(const Field2D &UNUSED(val)) override {}
-  using Laplacian::setCoefD;
-  void setCoefD(const Field2D &UNUSED(val)) override {}
-  using Laplacian::setCoefEx;
-  void setCoefEx(const Field2D &UNUSED(val)) override {}
-  using Laplacian::setCoefEz;
-  void setCoefEz(const Field2D &UNUSED(val)) override {}
-
-  using Laplacian::solve;
-  FieldPerp solve(const FieldPerp &UNUSED(b)) override{
-    throw BoutException("Mumps library not available");
-  }
-};
- 
-#else
-
 #include <globals.hxx>
 #include <output.hxx>
 #include <options.hxx>
 #include <boutexception.hxx>
 #include "dmumps_c.h"
+
+class LaplaceMumps;
+
+namespace {
+RegisterLaplace<LaplaceMumps> registerlaplacemumps(LAPLACE_MUMPS);
+}
 
 #define MUMPS_JOB_INIT -1
 #define MUMPS_JOB_END -2

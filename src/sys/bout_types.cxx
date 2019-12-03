@@ -15,7 +15,7 @@ const std::string& safeAt(const std::map<T, std::string>& mymap, T t) {
 }
 
 template <typename T>
-const T& safeAt(const std::map<std::string, T>& mymap, std::string s) {
+const T& safeAt(const std::map<std::string, T>& mymap, const std::string& s) {
   AUTO_TRACE();
   auto found = mymap.find(s);
   if (found == mymap.end()) {
@@ -34,7 +34,7 @@ std::string toString(CELL_LOC location) {
   return safeAt(CELL_LOCtoString, location);
 }
 
-CELL_LOC CELL_LOCFromString(std::string location_string) {
+CELL_LOC CELL_LOCFromString(const std::string& location_string) {
   AUTO_TRACE();
   const static std::map<std::string, CELL_LOC> stringtoCELL_LOC = {
     STRENUM(CELL_DEFAULT), STRENUM(CELL_CENTRE), STRENUM(CELL_XLOW),
@@ -146,7 +146,7 @@ std::string toString(YDirectionType d) {
   return safeAt(YDirectionTypeToString, d);
 }
 
-YDirectionType YDirectionTypeFromString(std::string y_direction_string) {
+YDirectionType YDirectionTypeFromString(const std::string& y_direction_string) {
   AUTO_TRACE();
   const static std::map<std::string, YDirectionType> stringToYDirectionType = {
     {"Standard", YDirectionType::Standard},
@@ -164,7 +164,7 @@ std::string toString(ZDirectionType d) {
   return safeAt(ZDirectionTypeToString, d);
 }
 
-ZDirectionType ZDirectionTypeFromString(std::string z_direction_string) {
+ZDirectionType ZDirectionTypeFromString(const std::string& z_direction_string) {
   AUTO_TRACE();
   const static std::map<std::string, ZDirectionType> stringToZDirectionType = {
     {"Standard", ZDirectionType::Standard},

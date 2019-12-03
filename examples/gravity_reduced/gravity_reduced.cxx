@@ -50,13 +50,10 @@ private:
   BoutReal viscos_perp; // Perpendicular viscosity
   BoutReal hyperviscos; // Hyper-viscosity (radial)
   
-  // Number which specifies the boundary condition on phi in the inversion
-  int phi_flags; 
-  
   BRACKET_METHOD bm = BRACKET_ARAKAWA;
 
   /// Solver for inverting Laplacian
-  Laplacian *phiSolver;
+  std::unique_ptr<Laplacian> phiSolver{nullptr};
   
   int init(bool restarting) override {
 
@@ -99,7 +96,6 @@ private:
       output <<"Solving WITHOUT nonlinear terms\n";
     }
 
-    phi_flags = options["phi_flags"].withDefault(0);
     phi.setBoundary("phi");
 
     viscos_par = options["viscos_par"].withDefault(0.);
@@ -154,14 +150,13 @@ private:
 
     // Create a solver for the Laplacian
     phiSolver = Laplacian::create();
-    phiSolver->setFlags(phi_flags);
     
     return 0;
   }
   
   int rhs(BoutReal UNUSED(t)) override {
     //   U = Delp2(phi);
-    phi = phiSolver->solve(U); // Invert Laplacian, setting boundary condition in phi_flags
+    phi = phiSolver->solve(U); // Invert Laplacian
     phi.applyBoundary(); // Apply boundary condition in Y
     
     mesh->communicate(comms);

@@ -27,7 +27,7 @@ Scorep/Scalasca profiling
 Instrumentation
 ~~~~~~~~~~~~~~~
 
-Scorep automatically reports the time spend in MPI communications and OpenMP
+Scorep automatically reports the time spent in MPI communications and OpenMP
 loops. However, to obtain information on the time spent in specific functions,
 it is necessary to instrument the source code. The macros to do this are 
 provided in ``scorepwrapper.hxx``.
@@ -48,6 +48,29 @@ and then write the macro ``SCOREP0()`` at the top of the function, e.g.
       return getMesh()->LocalNx;
     };
 
+Regions of a function can also be timed by enclosing the region in braces and using the
+``BOUT_SCOREP_REGION`` macro. For example,
+
+.. code-block:: c++
+
+    void Field2D::applyBoundary(BoutReal time) {
+      SCOREP0();
+
+      checkData(*this);
+
+      {
+      BOUT_SCOREP_REGION("display name");
+        for (const auto& bndry : bndry_op) {
+          bndry->apply(*this, time);
+        }
+      }
+    };
+
+Here, the ``SCOREP0`` macro ensures the whole ``applyBoundary`` function is timed. In
+addition, the for loop is also timed and appears in the Scalasca profile as a region
+inside ``applyBoundary`` with the name "display name". Any number of Scorep user regions
+can be used in a function; user regions can also be nested.
+
 **Caution** Instrumenting a function makes it execute more slowly. This can
 result in misleading profiling information, particularly if 
 fast-but-frequently-called functions are instrumented. Try to instrument 
@@ -64,6 +87,22 @@ as normal.  This option can be combined with other options, but it is usually
 desirable to profile the optimized code, configuring with the flags
 ``--enable-optimize=3 --enable-checks=0``. Build the code with ``make`` as
 normal.
+
+With CMake:
+
+.. code-block:: bash
+
+    $ SCOREP_WRAPPER=off cmake \
+      -DCMAKE_C_COMPILER=scorep-mpicc \
+      -DCMAKE_CXX_COMPILER=scorep-mpicxx \
+      <other CMake options>
+
+This will turn off the instrumentation during the configure
+step. Please be aware that if you change ``CMakeLists.txt``, CMake
+will try to automatically reconfigure the build, which the Score-P
+wrappers interfere with. In this case you will need to restart the
+configure step from scratch (i.e. remove the build directory and start
+again).
 
 Run and analysis
 ~~~~~~~~~~~~~~~~
