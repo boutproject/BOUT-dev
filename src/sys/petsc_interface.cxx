@@ -68,29 +68,38 @@ void GlobalIndexer::initialise() {
 }
 
 PetscInt GlobalIndexer::getGlobal(const Ind2D &ind) {
-  return static_cast<PetscInt>(indices2D[ind] + 0.5);
+  return static_cast<PetscInt>(std::round(indices2D[ind]));
 }
 
 PetscInt GlobalIndexer::getGlobal(const Ind3D &ind) {
-  return static_cast<PetscInt>(indices3D[ind] + 0.5);
+  return static_cast<PetscInt>(std::round(indices3D[ind]));
 }
 
 PetscInt GlobalIndexer::getGlobal(const IndPerp &ind) {
-  return static_cast<PetscInt>(indicesPerp[ind] + 0.5);
+  return static_cast<PetscInt>(std::round(indicesPerp[ind]));
 }
 
 bool GlobalIndexer::isLocal(const Ind2D &ind) {
+  if (ind.ind < 0) {
+    return false;
+  }
   PetscInt index = getGlobal(ind);
   return (globalStart2D <= index) && (index <= globalEnd2D);
 }
 
 bool GlobalIndexer::isLocal(const Ind3D &ind) {
+  if (ind.ind < 0) {
+    return false;
+  }
   PetscInt index = getGlobal(ind);
   return (globalStart3D <= index) && (index <= globalEnd3D);
 
 }
 
 bool GlobalIndexer::isLocal(const IndPerp &ind) {
+  if (ind.ind < 0) {
+    return false;
+  }
   PetscInt index = getGlobal(ind);
   return (globalStartPerp <= index) && (index <= globalEndPerp);  
 }
@@ -122,7 +131,9 @@ GlobalIndexer::GlobalIndexer(Mesh* localmesh)
     localmesh->addRegion3D("RGN_ALL_THIN", bndry3d);
   }
   int counter = globalStart3D = localmesh->globalStartIndex3D();
-  BOUT_FOR_SERIAL(i, localmesh->getRegion3D("RGN_ALL_THIN")) { indices3D[i] = counter++; }
+  BOUT_FOR_SERIAL(i, localmesh->getRegion3D("RGN_ALL_THIN")) {
+    indices3D[i] = counter++;
+  }
   globalEnd3D = counter - 1;
 
   // Set up the 2D indices
