@@ -443,18 +443,13 @@ public:
 				zstart, zend, ny, nz, maxblocksize));
       BOUT_FOR_SERIAL(i, bounds) {
 	if (!indexConverter->isLocal(i)) {
-	  for (const auto& item : stencils) {
-	    auto& stencilApplies = item.first;
-	    auto& stencilPart = item.second;
-            for (const auto& j : stencilPart) {
-	      ind_type ind = i - j;
-	      if (stencilApplies(ind) && indexConverter->isLocal(ind)) {
-		int n = indexConverter->getGlobal(ind) - start;
-		numDiagonal[n] -= 1;
-		numOffDiagonal[n] += 1;
-	      }
+	  for (const auto &j: stencils.getIndicesWithStencilIncluding(i)) {
+	    if (indexConverter->isLocal(j)) {
+	      int n = indexConverter->getGlobal(j) - start;
+	      numDiagonal[n] -= 1;
+	      numOffDiagonal[n] += 1;
 	    }
-          }
+	  }
 	}
       }
       

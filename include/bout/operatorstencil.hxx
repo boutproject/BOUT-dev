@@ -36,6 +36,7 @@
 #include <tuple>
 #include <utility>
 #include <iterator>
+#include <algorithm>
 
 #include <bout/mesh.hxx>
 #include <bout/region.hxx>
@@ -129,11 +130,10 @@ using OffsetIndPerp = IndexOffset<IndPerp>;
 
 /// A class which can be used to represent the shape of a stencil used
 /// to perform some operation. A stencil is made up of pairs of
-/// stencil-parts and stencil-tests. A stencil-part is a vector
-/// indices, all corresponding to offsets from 0. When added to
-/// another index, the result is part of the stencil. A stencil-test
-/// indicates whether a particular stencil-part should be applied at a
-/// given index.
+/// stencil-parts and stencil-tests. A stencil-part is a vector of
+/// OffsetIndices. When added to another index, the result is part of
+/// the stencil. A stencil-test indicates whether a particular
+/// stencil-part should be applied at a given index.
 ///
 /// When trying to get the stencil part for an index, this class will
 /// iterate through the part/test pairs in the order which they were
@@ -184,6 +184,23 @@ public:
   /// Get the number of stencil-parts to have been added
   int getNumParts() const { return stencils.size(); }
 
+  /// Returns a list of indices for which the stencils contain the
+  /// argument
+  const std::vector<T> getIndicesWithStencilIncluding(const T &i) const {
+    std::vector<T> indices;
+    int count = 0;
+    for (const auto& item : stencils) {
+      for (const auto& j : item.second) {
+	T ind = i - j;
+	if (getStencilNumber(ind) == count) {
+	  indices.push_back(ind);
+	}
+      }
+      count++;
+    }
+    return indices;
+  }
+  
   /// Iterators for the underlying vector data type
   using iterator = typename std::vector<std::pair<stencil_test, stencil_part>>::iterator;
   using const_iterator =
@@ -208,6 +225,17 @@ public:
 
 private:
   std::vector<std::pair<stencil_test, stencil_part>> stencils = {};
+
+  /// Returns the position of the first passing stencil test for this
+  /// index, or -1 if no test passes.
+  int getStencilNumber(const T &i) const {
+    for (int j = 0; j < static_cast<int>(stencils.size()); j++) {
+      if (stencils[j].first(i)) {
+	return j;
+      }
+    }
+    return -1;
+  }
 };  
 
 #endif // __OPERATORSTENCIL_H__
