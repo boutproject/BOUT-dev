@@ -368,65 +368,15 @@ bool Mesh::hasBndryUpperY() {
 }
 
 int Mesh::localSize3D() {
-  if (localNumCells3D < 0) {
-    const int xs = firstX() ? xstart - 1 : xstart;
-    const int xe = lastX() ? xend + 2 : xend + 1;
-    const int nx = xe - xs;
-    const int ny = yend - ystart + 1;
-    const int nz = LocalNz;
-    localNumCells3D = nx * ny * nz;
-    for (RangeIterator it = iterateBndryLowerY(); !it.isDone(); it++) {
-      if (it.ind == xstart)
-        localNumCells3D += nz;
-      if (it.ind == xend)
-        localNumCells3D += nz;
-      localNumCells3D += nz;
-    }
-    for (RangeIterator it = iterateBndryUpperY(); !it.isDone(); it++) {
-      if (it.ind == xstart)
-        localNumCells3D += nz;
-      if (it.ind == xend)
-        localNumCells3D += nz;
-      localNumCells3D += nz;
-    }
-  }
-  return localNumCells3D;
+  return getRegion3D("RGN_ALL_THIN").size();
 }
 
 int Mesh::localSize2D() {
-  if (localNumCells2D < 0) {
-    const int xs = firstX() ? xstart - 1 : xstart;
-    const int xe = lastX() ? xend + 2 : xend + 1;
-    const int nx = xe - xs;
-    const int ny = yend - ystart + 1;
-    localNumCells2D = nx * ny;
-    for (RangeIterator it = iterateBndryLowerY(); !it.isDone(); it++) {
-      if (it.ind == xstart)
-        localNumCells2D += 1;
-      if (it.ind == xend)
-        localNumCells2D += 1;
-      localNumCells2D += 1;
-    }
-    for (RangeIterator it = iterateBndryUpperY(); !it.isDone(); it++) {
-      if (it.ind == xstart)
-        localNumCells2D += 1;
-      if (it.ind == xend)
-        localNumCells2D += 1;
-      localNumCells2D += 1;
-    }
-  }
-  return localNumCells2D;
+  return getRegion2D("RGN_ALL_THIN").size();
 }
 
 int Mesh::localSizePerp() {
-  if (localNumCellsPerp < 0) {
-    const int xs = firstX() ? xstart - 1 : xstart;
-    const int xe = lastX() ? xend + 2 : xend + 1;
-    const int nx = xe - xs;
-    const int nz = LocalNz;
-    localNumCellsPerp = nx * nz;
-  }
-  return localNumCellsPerp;
+  return getRegionPerp("RGN_ALL_THIN").size();
 }
 
 int Mesh::globalStartIndex3D() {
