@@ -1,4 +1,5 @@
 #include <type_traits>
+#include <algorithm>
 
 #include "test_extras.hxx"
 #include "gtest/gtest.h"
@@ -244,6 +245,20 @@ TYPED_TEST(StencilUnitTests, GetSizeByIndex) {
 // Test getting number of this->stencil-parts
 TYPED_TEST(StencilUnitTests, GetNumStencils) {
   EXPECT_EQ(this->stencil.getNumParts(), static_cast<int>(this->sizes.size()));
+}
+
+// Test getting all cells whose stencils contain a given index
+TYPED_TEST(StencilUnitTests, GetIndicesWithStencilIncluding) {
+  for (int i = 0; i < static_cast<int>(this->sizes.size()); i++) {
+    auto indicesList = this->stencil.getIndicesWithStencilIncluding(this->zero.xp(i));
+    std::sort(indicesList.begin(), indicesList.end());
+    EXPECT_EQ(indicesList.size(), i + 1);
+    for (int j = 0; j < static_cast<int>(indicesList.size()); j++) {
+      EXPECT_EQ(indicesList[j].x(), j);
+      EXPECT_EQ(indicesList[j].y(), 0);
+      EXPECT_EQ(indicesList[j].z(), 0);
+    }
+  }  
 }
 
 // Test iterator
