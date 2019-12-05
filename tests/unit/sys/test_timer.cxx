@@ -14,12 +14,11 @@ constexpr auto sleep_length = ms(1.);
 } // namespace bout
 
 TEST(TimerTest, GetTime) {
-  auto start = Timer::clock_type::now();
-
   Timer timer{};
-
+  auto start = Timer::clock_type::now();
   std::this_thread::sleep_for(bout::testing::sleep_length);
 
+  auto gettime = timer.getTime();
   auto end = Timer::clock_type::now();
   Timer::seconds elapsed = end - start;
 
