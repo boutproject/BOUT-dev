@@ -117,7 +117,7 @@ def _convert_to_nice_slice(r, N, name="range"):
         temp_slice = slice(r2[0], r2[1] + 1)
     elif len(r) == 3:
         # Convert 3 element list to slice object
-        temp_slice = slice(r[0],r[1],r[2])
+        temp_slice = slice(r[0], r[1] + 1, r[2])
     else:
         raise ValueError("Couldn't convert {} ('{}') to slice".format(name, r))
 
@@ -136,9 +136,9 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
         Name of the variable
     xind, yind, zind, tind : int, slice or list of int, optional
         Range of X, Y, Z or time indices to collect. Either a single
-        index to collect, a list containing [start, end] (inclusive
-        end), or a slice object (usual python indexing). Default is to
-        fetch all indices
+        index to collect, a list containing [start, end] or [start, end,
+        step] (inclusive end), or a slice object (usual python indexing).
+        Default is to fetch all indices
     path : str, optional
         Path to data files (default: ".")
     prefix : str, optional
