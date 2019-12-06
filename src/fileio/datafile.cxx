@@ -1235,6 +1235,10 @@ void Datafile::setAttribute(const std::string &varname, const std::string &attrn
 
   Timer timer("io");
 
+  if (!enabled) {
+    return;
+  }
+
   if(!file)
     throw BoutException("Datafile::write: File is not valid!");
 
@@ -1269,6 +1273,10 @@ void Datafile::setAttribute(const std::string &varname, const std::string &attrn
 
   Timer timer("io");
 
+  if (!enabled) {
+    return;
+  }
+
   if(!file)
     throw BoutException("Datafile::write: File is not valid!");
 
@@ -1302,6 +1310,10 @@ void Datafile::setAttribute(const std::string &varname, const std::string &attrn
   TRACE("Datafile::setAttribute(string, string, BoutReal)");
 
   Timer timer("io");
+
+  if (!enabled) {
+    return;
+  }
 
   if(!file)
     throw BoutException("Datafile::write: File is not valid!");
