@@ -535,6 +535,7 @@ Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir
 
   // Add book-keeping variables to the output files
   dump_file.add(const_cast<BoutReal&>(BOUT_VERSION), "BOUT_VERSION", false);
+  dump_file.setAttribute("", "BOUT_REVISION", BUILDFLAG(REVISION));
   // Appends the time of dumps into an array
   dump_file.add(simtime, "t_array", true);
   dump_file.add(iteration, "iteration", false);
