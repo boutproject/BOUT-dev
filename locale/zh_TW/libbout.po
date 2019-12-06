@@ -72,7 +72,7 @@ msgstr ""
 #: ../src/mesh/impls/bout/boutmesh.cxx:324
 #, fuzzy
 msgid "\tCandidate value: {:d}\n"
-msgstr "\t候選人數目 %d\n"
+msgstr "\t候選人數目 {:d}\n"
 
 #: ../src/bout++.cxx:430
 msgid "\tChecking disabled\n"
@@ -81,7 +81,7 @@ msgstr "\t測試關掉\n"
 #: ../src/bout++.cxx:428
 #, fuzzy
 msgid "\tChecking enabled, level {:d}\n"
-msgstr "\t測試打開,级别 %d\n"
+msgstr "\t測試打開,级别 {:d}\n"
 
 #: ../src/bout++.cxx:476
 msgid "\tCommand line options for this run : "
@@ -92,14 +92,14 @@ msgstr ""
 #: ../src/bout++.cxx:472
 #, fuzzy
 msgid "\tCompiled with flags : {:s}\n"
-msgstr "\t用設置編譯: %s\n"
+msgstr "\t用設置編譯: {:s}\n"
 
 #: ../src/mesh/impls/bout/boutmesh.cxx:404
 #, fuzzy
 msgid ""
 "\tDomain split (NXPE={:d}, NYPE={:d}) into domains (localNx={:d}, localNy={:"
 "d})\n"
-msgstr "\t域 (NXPE=%d, NYPE=%d) 分裂成域 (localNx=%d, localNy=%d)\n"
+msgstr "\t域 (NXPE={:d}, NYPE={:d}) 分裂成域 (localNx={:d}, localNy={:d})\n"
 
 #: ../src/mesh/impls/bout/boutmesh.cxx:429
 #: ../src/mesh/impls/bout/boutmesh.cxx:1645
@@ -120,7 +120,7 @@ msgstr ""
 #: ../src/sys/optionsreader.cxx:119
 #, fuzzy
 msgid "\tEmpty key or value in command line '{:s}'\n"
-msgstr "\t命令行中的空鍵或值 '%s'\n"
+msgstr "\t命令行中的空鍵或值 '{:s}'\n"
 
 #: ../src/mesh/impls/bout/boutmesh.cxx:128
 msgid "\tGrid size: "
@@ -147,7 +147,7 @@ msgstr "\tOpenMP並行化已禁用\n"
 #: ../src/bout++.cxx:456
 #, fuzzy
 msgid "\tOpenMP parallelisation enabled, using {:d} threads\n"
-msgstr "\t啟用OpenMP並行化。 使用%d個線程\n"
+msgstr "\t啟用OpenMP並行化。 使用{:d}個線程\n"
 
 #. Mark the option as used
 #. Option not found
@@ -161,12 +161,12 @@ msgstr "\t選項 "
 #: ../src/sys/options.cxx:308
 #, fuzzy
 msgid "\tOption '{:s}': Boolean expected. Got '{:s}'\n"
-msgstr "\t選項 '%s': 布爾預期. 拿到 '%s'\n"
+msgstr "\t選項 '{:s}': 布爾預期. 拿到 '{:s}'\n"
 
 #: ../src/sys/options/options_ini.cxx:68
 #, fuzzy
 msgid "\tOptions file '{:s}' not found\n"
-msgstr "\t找不到選項文件 '%s'\n"
+msgstr "\t找不到選項文件 '{:s}'\n"
 
 #: ../src/bout++.cxx:452
 #, fuzzy
@@ -242,7 +242,7 @@ msgid ""
 "Run finished at  : {:s}\n"
 msgstr ""
 "\n"
-"计算结束于 %s\n"
+"计算结束于 {:s}\n"
 
 #: ../src/solver/solver.cxx:472
 #, fuzzy
@@ -251,7 +251,7 @@ msgid ""
 "Run started at  : {:s}\n"
 msgstr ""
 "\n"
-"计算从 %s 开始\n"
+"计算从 {:s} 开始\n"
 
 #: ../src/bout++.cxx:245
 msgid "  -c, --color\t\tColor output using bout-log-color\n"
@@ -283,7 +283,7 @@ msgstr ""
 #: ../src/bout++.cxx:408
 #, fuzzy
 msgid "BOUT++ version {:s}\n"
-msgstr "BOUT++ 版 %s\n"
+msgstr "BOUT++ 版 {:s}\n"
 
 #: ../src/bout++.cxx:116
 msgid "Bad command line arguments:\n"
@@ -308,7 +308,7 @@ msgid ""
 "Code compiled on {:s} at {:s}\n"
 "\n"
 msgstr ""
-"代碼於 %s %s 编译\n"
+"代碼於 {:s} {:s} 编译\n"
 "\n"
 
 #: ../src/sys/optionsreader.cxx:122
@@ -322,7 +322,7 @@ msgstr "編譯選項:\n"
 #: ../tests/unit/src/test_bout++.cxx:304
 #, fuzzy
 msgid "Compiled with flags"
-msgstr "\t用設置編譯: %s\n"
+msgstr "\t用設置編譯: {:s}\n"
 
 #: ../src/mesh/impls/bout/boutmesh.cxx:882
 msgid "Constructing default regions"
@@ -331,7 +331,7 @@ msgstr ""
 #: ../src/bout++.cxx:400
 #, fuzzy
 msgid "Could not create PID file {:s}"
-msgstr "無法打開輸出文件 '%s'\n"
+msgstr "無法打開輸出文件 '{:s}'\n"
 
 #: ../src/mesh/impls/bout/boutmesh.cxx:398
 msgid ""
@@ -341,7 +341,7 @@ msgstr "無法找到NXPE的有效值。 嘗試不同數量的處理器。"
 #: ../src/sys/options/options_ini.cxx:127
 #, fuzzy
 msgid "Could not open output file '{:s}'\n"
-msgstr "無法打開輸出文件 '%s'\n"
+msgstr "無法打開輸出文件 '{:s}'\n"
 
 #: ../src/bout++.cxx:534
 msgid "Could not open {:s}/{:s}.{:d} for writing"
@@ -384,12 +384,12 @@ msgstr ""
 #: ../src/bout++.cxx:388
 #, fuzzy
 msgid "DataDir \"{:s}\" does not exist or is not accessible\n"
-msgstr "\"%s\" 不存在或不可訪問\n"
+msgstr "\"{:s}\" 不存在或不可訪問\n"
 
 #: ../src/bout++.cxx:385
 #, fuzzy
 msgid "DataDir \"{:s}\" is not a directory\n"
-msgstr "\"%s\" 不是目錄\n"
+msgstr "\"{:s}\" 不是目錄\n"
 
 #: ../src/solver/solver.cxx:540
 msgid "ERROR: Solver is already initialised\n"
@@ -398,7 +398,7 @@ msgstr ""
 #: ../src/bout++.cxx:169
 #, fuzzy
 msgid "Error encountered during initialisation: {:s}\n"
-msgstr "啟動時遇到錯誤 : %s\n"
+msgstr "啟動時遇到錯誤 : {:s}\n"
 
 #: ../src/bout++.cxx:638
 msgid "Error whilst writing settings"
@@ -482,18 +482,18 @@ msgstr ""
 #: ../src/sys/options.cxx:249 ../src/sys/options.cxx:291
 #, fuzzy
 msgid "Option {:s} has no value"
-msgstr "\"%s\" 不是目錄\n"
+msgstr "\"{:s}\" 不是目錄\n"
 
 #: ../src/sys/options.cxx:72
 #, fuzzy
 msgid "Option {:s} is not a section"
-msgstr "\"%s\" 不是目錄\n"
+msgstr "\"{:s}\" 不是目錄\n"
 
 #. Doesn't exist
 #: ../src/sys/options.cxx:83
 #, fuzzy
 msgid "Option {:s}:{:s} does not exist"
-msgstr "選項%s:%s不存在"
+msgstr "選項{:s}:{:s}不存在"
 
 #: ../include/options.hxx:646
 msgid ""
@@ -522,7 +522,7 @@ msgstr ""
 #: ../src/bout++.cxx:410
 #, fuzzy
 msgid "Revision: {:s}\n"
-msgstr "版: %s\n"
+msgstr "版: {:s}\n"
 
 #: ../src/solver/solver.cxx:508
 msgid "Run time : "
