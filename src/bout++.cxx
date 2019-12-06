@@ -503,7 +503,9 @@ void setRunStartInfo(Options& options) {
   // Note: have to force value, since may already be set if a previously
   // output BOUT.settings file was used as input
   runinfo["version"].force(BOUT_VERSION_STRING, "");
+#ifdef REVISION
   runinfo["revision"].force(BUILDFLAG(REVISION), "");
+#endif
 
   time_t start_time = time(nullptr);
   runinfo["started"].force(ctime(&start_time), "");
@@ -535,7 +537,9 @@ Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir
 
   // Add book-keeping variables to the output files
   dump_file.add(const_cast<BoutReal&>(BOUT_VERSION), "BOUT_VERSION", false);
+#ifdef REVISION
   dump_file.setAttribute("", "BOUT_REVISION", BUILDFLAG(REVISION));
+#endif
   // Appends the time of dumps into an array
   dump_file.add(simtime, "t_array", true);
   dump_file.add(iteration, "iteration", false);
