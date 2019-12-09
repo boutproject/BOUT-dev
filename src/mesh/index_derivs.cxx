@@ -425,12 +425,12 @@ public:
     // Only allow a whitelist of regions for now
     ASSERT2(region == "RGN_ALL" || region == "RGN_NOBNDRY"
             || region == "RGN_NOX" || region == "RGN_NOY"
-            || region == "RGN_GUARDS" || region == "RGN_XGUARDS_INNER"
-            || region == "RGN_XGUARDS_OUTER" || region == "RGN_XGUARDS"
-            || region == "RGN_YGUARDS_LOWER" || region == "RGN_YGUARDS_UPPER"
-            || region == "RGN_YGUARDS" || region == "RGN_NOCORNERS"
-            || region == "RGN_WITH_XBNDRY" || region == "RGN_WITH_YBNDRY"
-            || region == "RGN_WITH_BNDRIES");
+            || region == "RGN_INNER_X" || region == "RGN_OUTER_X"
+            || region == "RGN_LOWER_INNER_Y" || region == "RGN_UPPER_INNER_Y"
+            || region == "RGN_LOWER_OUTER_Y" || region == "RGN_UPPER_OUTER_Y"
+            || region == "RGN_LOWER_Y" || region == "RGN_UPPER_Y"
+            || region == "RGN_BNDRY" || region == "RGN_WITH_XBNDRIES"
+            || region == "RGN_WITH_YBNDRIES" || region == "RGN_WITH_BNDRIES");
 
     auto* theMesh = var.getMesh();
 
@@ -499,12 +499,12 @@ public:
     // Only allow a whitelist of regions for now
     ASSERT2(region == "RGN_ALL" || region == "RGN_NOBNDRY"
             || region == "RGN_NOX" || region == "RGN_NOY"
-            || region == "RGN_GUARDS" || region == "RGN_XGUARDS_INNER"
-            || region == "RGN_XGUARDS_OUTER" || region == "RGN_XGUARDS"
-            || region == "RGN_YGUARDS_LOWER" || region == "RGN_YGUARDS_UPPER"
-            || region == "RGN_YGUARDS" || region == "RGN_NOCORNERS"
-            || region == "RGN_WITH_XBNDRY" || region == "RGN_WITH_YBNDRY"
-            || region == "RGN_WITH_BNDRIES");
+            || region == "RGN_INNER_X" || region == "RGN_OUTER_X"
+            || region == "RGN_LOWER_INNER_Y" || region == "RGN_UPPER_INNER_Y"
+            || region == "RGN_LOWER_OUTER_Y" || region == "RGN_UPPER_OUTER_Y"
+            || region == "RGN_LOWER_Y" || region == "RGN_UPPER_Y"
+            || region == "RGN_BNDRY" || region == "RGN_WITH_XBNDRIES"
+            || region == "RGN_WITH_YBNDRIES" || region == "RGN_WITH_BNDRIES");
 
     auto* theMesh = var.getMesh();
 
