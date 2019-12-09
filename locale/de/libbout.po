@@ -587,7 +587,7 @@ msgid ""
 "Options: Setting a value from same source ({:s}) to new value '{:s}' - old "
 "value was '{:s}'."
 msgstr ""
-"Optionen: Der Wert %3$s wird mit dem Wert %2$s gleichen Ursprungs (%1$s) "
+"Optionen: Der Wert {2:s} wird mit dem Wert {1:s} gleichen Ursprungs ({0:s}) "
 "überschrieben."
 
 #: ../src/bout++.cxx:419
@@ -659,7 +659,7 @@ msgstr ""
 #, fuzzy
 msgid "Solver running for {:d} outputs with monitor timestep of {:e}\n"
 msgstr ""
-"Integriere mit einem `Monitor`-Zeitschritt von %2$e für %1$d Aufrufe.\n"
+"Integriere mit einem `Monitor`-Zeitschritt von {1:e} für {0:d} Aufrufe.\n"
 
 #: ../src/solver/solver.cxx:456
 #, fuzzy
@@ -681,8 +681,8 @@ msgid ""
 "Time derivative at wrong location - Field is at {:s}, derivative is at {:s} "
 "for field '{:s}'\n"
 msgstr ""
-"Die zeitliche Ableitung ist an der falschen Stelle. Das Feld '%3$s' ist an "
-"Position %1$s, während die Ableitung an Position %2$s ist.\n"
+"Die zeitliche Ableitung ist an der falschen Stelle. Das Feld '{2:s}' ist an "
+"Position {0:s}, während die Ableitung an Position {1:s} ist.\n"
 
 #: ../src/solver/solver.cxx:1276
 #, fuzzy

@@ -80,7 +80,7 @@ msgstr "\t测试关掉\n"
 #: ../src/bout++.cxx:428
 #, fuzzy
 msgid "\tChecking enabled, level {:d}\n"
-msgstr "\t测试打开,级别 %d\n"
+msgstr "\t测试打开,级别 {:d}\n"
 
 #: ../src/bout++.cxx:476
 msgid "\tCommand line options for this run : "
@@ -234,7 +234,7 @@ msgid ""
 "Run finished at  : {:s}\n"
 msgstr ""
 "\n"
-"计算结束于 %s\n"
+"计算结束于 {:s}\n"
 
 #: ../src/solver/solver.cxx:472
 #, fuzzy
@@ -243,7 +243,7 @@ msgid ""
 "Run started at  : {:s}\n"
 msgstr ""
 "\n"
-"计算从 %s 开始\n"
+"计算从 {:s} 开始\n"
 
 #: ../src/bout++.cxx:245
 msgid "  -c, --color\t\tColor output using bout-log-color\n"
@@ -299,7 +299,7 @@ msgid ""
 "Code compiled on {:s} at {:s}\n"
 "\n"
 msgstr ""
-"代码于 %s %s 编译\n"
+"代码于 {:s} {:s} 编译\n"
 "\n"
 
 #: ../src/sys/optionsreader.cxx:122
@@ -372,12 +372,12 @@ msgstr ""
 #: ../src/bout++.cxx:388
 #, fuzzy
 msgid "DataDir \"{:s}\" does not exist or is not accessible\n"
-msgstr "\"%s\" 不存在或不可访问\n"
+msgstr "\"{:s}\" 不存在或不可访问\n"
 
 #: ../src/bout++.cxx:385
 #, fuzzy
 msgid "DataDir \"{:s}\" is not a directory\n"
-msgstr "\"%s\" 不是目录\n"
+msgstr "\"{:s}\" 不是目录\n"
 
 #: ../src/solver/solver.cxx:540
 msgid "ERROR: Solver is already initialised\n"
@@ -386,7 +386,7 @@ msgstr ""
 #: ../src/bout++.cxx:169
 #, fuzzy
 msgid "Error encountered during initialisation: {:s}\n"
-msgstr "启动时遇到错误 : %s\n"
+msgstr "启动时遇到错误 : {:s}\n"
 
 #: ../src/bout++.cxx:638
 msgid "Error whilst writing settings"
@@ -474,7 +474,7 @@ msgstr ""
 #: ../src/sys/options.cxx:72
 #, fuzzy
 msgid "Option {:s} is not a section"
-msgstr "\"%s\" 不是目录\n"
+msgstr "\"{:s}\" 不是目录\n"
 
 #. Doesn't exist
 #: ../src/sys/options.cxx:83
