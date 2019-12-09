@@ -242,11 +242,15 @@ endif
 
 ifeq ("$(TARGET)", "sub")
 LIB=$(MODULE_DIR)/$(SUB_NAME).a
-sub: makefile $(BOUT_CONFIG_FILE) $(BOUT_TOP)/include $(BOUT_TOP)/lib $(OBJ)
+sub:$(LIB)
+
+$(LIB): makefile $(BOUT_CONFIG_FILE) $(BOUT_TOP)/include $(BOUT_TOP)/lib $(OBJ)
 ifneq ("$(OBJ)foo", "foo")
 	@echo "  Adding $(OBJ) to $(LIB)"
-	@$(AR) $(ARFLAGS) $(LIB) $(OBJ)
-	@$(RANLIB) $(LIB)
+	@LIBT=$(LIB).$$$$.a && \
+		$(AR) $(ARFLAGS) $${LIBT} $(OBJ) && \
+		$(RANLIB) $${LIBT} && \
+		mv $${LIBT} $(LIB)
 endif
 endif
 
@@ -282,6 +286,7 @@ $(SUB_LIBS):$(DIRS__)
 
 $(SOURCEC): checklib
 $(SOURCEC:%.cxx=%.o): $(LIB)
+$(TARGET): | $(DIRS)
 $(TARGET): makefile $(BOUT_CONFIG_FILE) $(OBJ) $(SUB_LIBS)
 	@echo "  Linking" $(TARGET)
 	@$(LD) $(LDFLAGS) -o $(TARGET) $(OBJ) $(SUB_LIBS) $(BOUT_LIBS)
