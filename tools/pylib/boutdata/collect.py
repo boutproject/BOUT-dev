@@ -115,11 +115,10 @@ def _convert_to_nice_slice(r, N, name="range"):
                              .format(name, *r2))
         # Lists uses inclusive end, we need exclusive end
         temp_slice = slice(r2[0], r2[1] + 1)
-    elif len(r) == 3:
-        # Convert 3 element list to slice object
-        temp_slice = slice(r[0],r[1],r[2])
     else:
-        raise ValueError("Couldn't convert {} ('{}') to slice".format(name, r))
+        raise ValueError("Couldn't convert {} ('{}') to slice. Please pass a "
+                         "slice(start, stop, step) if you need to set a step."
+                         .format(name, r))
 
     # slice.indices converts None to actual values
     return slice(*temp_slice.indices(N))
