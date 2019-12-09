@@ -311,6 +311,8 @@ set_target_properties(bout++ PROPERTIES CXX_EXTENSIONS OFF)
 
 find_package(fmt 6 QUIET)
 if(NOT FMT_FOUND)
+  # Need to install fmt alongside BOUT++
+  set(FMT_INSTALL ON CACHE BOOL "")
   add_subdirectory(externalpackages/fmt)
   message(STATUS "Using fmt submodule")
 endif()
@@ -739,7 +741,6 @@ endif()
 include(GNUInstallDirs)
 install(TARGETS bout++
   EXPORT bout++Targets
-  EXPORT fmt-targets
   LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
   ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
   RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
