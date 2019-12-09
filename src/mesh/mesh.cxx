@@ -563,54 +563,21 @@ void Mesh::createDefaultRegions(){
   addRegion3D("RGN_NOZ", Region<Ind3D>(0, LocalNx - 1, 0, LocalNy - 1, zstart, zend,
                                        LocalNy, LocalNz, maxregionblocksize));
   addRegion3D("RGN_GUARDS", mask(getRegion3D("RGN_ALL"), getRegion3D("RGN_NOBNDRY")));
-  addRegion3D("RGN_XGUARDS_INNER", Region<Ind3D>(0, xstart - 1, ystart, yend, zstart,
-        zend, LocalNy, LocalNz, maxregionblocksize));
-  addRegion3D("RGN_XGUARDS_OUTER", Region<Ind3D>(xend + 1, LocalNx - 1, ystart, yend,
-        zstart, zend, LocalNy, LocalNz, maxregionblocksize));
-  addRegion3D("RGN_XGUARDS", regionMap3D["RGN_XGUARDS_INNER"]
-      + regionMap3D["RGN_XGUARDS_OUTER"]);
-  addRegion3D("RGN_YGUARDS_LOWER", Region<Ind3D>(xstart, xend, 0, ystart - 1, zstart,
-        zend, LocalNy, LocalNz, maxregionblocksize));
-  addRegion3D("RGN_YGUARDS_UPPER", Region<Ind3D>(xstart, xend, yend + 1, LocalNy - 1,
-        zstart, zend, LocalNy, LocalNz, maxregionblocksize));
-  addRegion3D("RGN_YGUARDS", regionMap3D["RGN_YGUARDS_LOWER"]
-      + regionMap3D["RGN_YGUARDS_UPPER"]);
-  addRegion3D("RGN_ZGUARDS_LOWER", Region<Ind3D>(xstart, xend, ystart, yend, 0, zstart -
-        1, LocalNy, LocalNz, maxregionblocksize));
-  addRegion3D("RGN_ZGUARDS_UPPER", Region<Ind3D>(xstart, xend, ystart, yend, zend + 1,
-        LocalNz - 1, LocalNy, LocalNz, maxregionblocksize));
-  addRegion3D("RGN_ZGUARDS", regionMap3D["RGN_ZGUARDS_LOWER"]
-      + regionMap3D["RGN_ZGUARDS_UPPER"]);
+  addRegion3D("RGN_XGUARDS", Region<Ind3D>(0, xstart - 1, ystart, yend, zstart, zend,
+          LocalNy, LocalNz, maxregionblocksize)
+      + Region<Ind3D>(xend + 1, LocalNx - 1, ystart, yend, zstart, zend,
+          LocalNy, LocalNz, maxregionblocksize));
+  addRegion3D("RGN_YGUARDS", Region<Ind3D>(xstart, xend, 0, ystart - 1, zstart, zend,
+          LocalNy, LocalNz, maxregionblocksize)
+      + Region<Ind3D>(xstart, xend, yend + 1, LocalNy - 1, zstart, zend,
+          LocalNy, LocalNz, maxregionblocksize));
+  addRegion3D("RGN_ZGUARDS", Region<Ind3D>(xstart, xend, ystart, yend, 0, zstart - 1,
+          LocalNy, LocalNz, maxregionblocksize)
+      + Region<Ind3D>(xstart, xend, ystart, yend, zend + 1, LocalNz - 1,
+          LocalNy, LocalNz, maxregionblocksize));
   addRegion3D("RGN_NOCORNERS",
       (getRegion3D("RGN_NOBNDRY") + getRegion3D("RGN_XGUARDS") +
         getRegion3D("RGN_YGUARDS") + getRegion3D("RGN_ZGUARDS")).unique());
-  // regions without guard cells but including some or all boundary cells
-  auto rgn3D = regionMap3D["RGN_NOBNDRY"];
-  if (firstX()) {
-    rgn3D += regionMap3D["RGN_XGUARDS_INNER"];
-  }
-  if (lastX()) {
-    rgn3D += regionMap3D["RGN_XGUARDS_OUTER"];
-  }
-  addRegion3D("RGN_WITH_XBNDRY", rgn3D.asUnique());
-  rgn3D = regionMap3D["RGN_NOBNDRY"];
-  if (hasBndryLowerY()) {
-    // May include some guard cells in geometries with a limiter, but this is not a common
-    // case.
-    rgn3D += regionMap3D["RGN_YGUARDS_LOWER"];
-  }
-  if (hasBndryUpperY()) {
-    // May include some guard cells in geometries with a limiter, but this is not a common
-    // case.
-    rgn3D += regionMap3D["RGN_YGUARDS_UPPER"];
-  }
-  addRegion3D("RGN_WITH_YBNDRY", rgn3D.asUnique());
-  rgn3D = regionMap3D["RGN_NOBNDRY"];
-  rgn3D += regionMap3D["RGN_ZGUARDS_LOWER"];
-  rgn3D += regionMap3D["RGN_ZGUARDS_UPPER"];
-  addRegion3D("RGN_WITH_ZBNDRY", rgn3D.asUnique());
-  addRegion3D("RGN_WITH_BNDRIES", (regionMap3D["RGN_WITH_XBNDRY"] +
-        regionMap3D["RGN_WITH_YBNDRY"] + regionMap3D["RGN_WITH_ZBNDRY"]).asUnique());
 
   //2D regions
   addRegion2D("RGN_ALL", Region<Ind2D>(0, LocalNx - 1, 0, LocalNy - 1, 0, 0, LocalNy, 1,
@@ -624,54 +591,21 @@ void Mesh::createDefaultRegions(){
   addRegion2D("RGN_NOZ", Region<Ind2D>(0, LocalNx - 1, 0, LocalNy - 1, 0, 0, LocalNy, 1,
                                        maxregionblocksize));
   addRegion2D("RGN_GUARDS", mask(getRegion2D("RGN_ALL"), getRegion2D("RGN_NOBNDRY")));
-  addRegion2D("RGN_XGUARDS_INNER", Region<Ind2D>(0, xstart - 1, ystart, yend, 0, 0,
-        LocalNy, 1, maxregionblocksize));
-  addRegion2D("RGN_XGUARDS_OUTER", Region<Ind2D>(xend + 1, LocalNx - 1, ystart, yend, 0,
-        0, LocalNy, 1, maxregionblocksize));
-  addRegion2D("RGN_XGUARDS", regionMap2D["RGN_XGUARDS_INNER"]
-      + regionMap2D["RGN_XGUARDS_OUTER"]);
-  addRegion2D("RGN_YGUARDS_LOWER", Region<Ind2D>(xstart, xend, 0, ystart - 1, 0, 0,
-        LocalNy, 1, maxregionblocksize));
-  addRegion2D("RGN_YGUARDS_UPPER", Region<Ind2D>(xstart, xend, yend + 1, LocalNy - 1, 0,
-        0, LocalNy, 1, maxregionblocksize));
-  addRegion2D("RGN_YGUARDS", regionMap2D["RGN_YGUARDS_LOWER"]
-      + regionMap2D["RGN_YGUARDS_UPPER"]);
-  addRegion2D("RGN_ZGUARDS_LOWER", Region<Ind2D>(xstart, xend, ystart, yend, 0, -1,
-        LocalNy, 1, maxregionblocksize));
-  addRegion2D("RGN_ZGUARDS_UPPER", Region<Ind2D>(xstart, xend, ystart, yend, 0, -1,
-        LocalNy, 1, maxregionblocksize));
-  addRegion2D("RGN_ZGUARDS", regionMap2D["RGN_ZGUARDS_LOWER"]
-      + regionMap2D["RGN_ZGUARDS_UPPER"]);
+  addRegion2D("RGN_XGUARDS", Region<Ind2D>(0, xstart - 1, ystart, yend, 0, 0, LocalNy, 1,
+          maxregionblocksize)
+      + Region<Ind2D>(xend + 1, LocalNx - 1, ystart, yend, 0, 0, LocalNy, 1,
+          maxregionblocksize));
+  addRegion2D("RGN_YGUARDS", Region<Ind2D>(xstart, xend, 0, ystart - 1, 0, 0, LocalNy, 1,
+          maxregionblocksize)
+      + Region<Ind2D>(xstart, xend, yend + 1, LocalNy - 1, 0, 0, LocalNy, 1,
+          maxregionblocksize));
+  addRegion2D("RGN_ZGUARDS", Region<Ind2D>(xstart, xend, ystart, yend, 0, -1, LocalNy, 1,
+          maxregionblocksize)
+      + Region<Ind2D>(xstart, xend, ystart, yend, 0, -1, LocalNy, 1,
+          maxregionblocksize));
   addRegion2D("RGN_NOCORNERS",
       (getRegion2D("RGN_NOBNDRY") + getRegion2D("RGN_XGUARDS") +
         getRegion2D("RGN_YGUARDS") + getRegion2D("RGN_ZGUARDS")).unique());
-  // regions without guard cells but including some or all boundary cells
-  auto rgn2D = regionMap2D["RGN_NOBNDRY"];
-  if (firstX()) {
-    rgn2D += regionMap2D["RGN_XGUARDS_INNER"];
-  }
-  if (lastX()) {
-    rgn2D += regionMap2D["RGN_XGUARDS_OUTER"];
-  }
-  addRegion2D("RGN_WITH_XBNDRY", rgn2D.asUnique());
-  rgn2D = regionMap2D["RGN_NOBNDRY"];
-  if (hasBndryLowerY()) {
-    // May include some guard cells in geometries with a limiter, but this is not a common
-    // case.
-    rgn2D += regionMap2D["RGN_YGUARDS_LOWER"];
-  }
-  if (hasBndryUpperY()) {
-    // May include some guard cells in geometries with a limiter, but this is not a common
-    // case.
-    rgn2D += regionMap2D["RGN_YGUARDS_UPPER"];
-  }
-  addRegion2D("RGN_WITH_YBNDRY", rgn2D.asUnique());
-  rgn2D = regionMap2D["RGN_NOBNDRY"];
-  rgn2D += regionMap2D["RGN_ZGUARDS_LOWER"];
-  rgn2D += regionMap2D["RGN_ZGUARDS_UPPER"];
-  addRegion2D("RGN_WITH_ZBNDRY", rgn2D.asUnique());
-  addRegion2D("RGN_WITH_BNDRIES", (regionMap2D["RGN_WITH_XBNDRY"] +
-        regionMap2D["RGN_WITH_YBNDRY"] + regionMap2D["RGN_WITH_ZBNDRY"]).asUnique());
 
   // Perp regions
   addRegionPerp("RGN_ALL", Region<IndPerp>(0, LocalNx - 1, 0, 0, 0, LocalNz - 1, 1,
@@ -686,54 +620,21 @@ void Mesh::createDefaultRegions(){
   addRegionPerp("RGN_NOZ", Region<IndPerp>(0, LocalNx - 1, 0, 0, zstart, zend, 1, LocalNz,
                                            maxregionblocksize));
   addRegionPerp("RGN_GUARDS", mask(getRegionPerp("RGN_ALL"), getRegionPerp("RGN_NOBNDRY")));
-  addRegionPerp("RGN_XGUARDS_INNER", Region<IndPerp>(0, xstart - 1, 0, 0, zstart, zend, 1,
-        LocalNz, maxregionblocksize));
-  addRegionPerp("RGN_XGUARDS_OUTER", Region<IndPerp>(xend + 1, LocalNx - 1, 0, 0, zstart,
-        zend, 1, LocalNz, maxregionblocksize));
-  addRegionPerp("RGN_XGUARDS", regionMapPerp["RGN_XGUARDS_INNER"]
-      + regionMapPerp["RGN_XGUARDS_OUTER"]);
-  addRegionPerp("RGN_YGUARDS_LOWER", Region<IndPerp>(xstart, xend, 0, -1, zstart, zend, 1,
-        LocalNz, maxregionblocksize));
-  addRegionPerp("RGN_YGUARDS_UPPER", Region<IndPerp>(xstart, xend, 0, -1, zstart, zend, 1,
-        LocalNz, maxregionblocksize));
-  addRegionPerp("RGN_YGUARDS", regionMapPerp["RGN_YGUARDS_LOWER"]
-      + regionMapPerp["RGN_YGUARDS_UPPER"]);
-  addRegionPerp("RGN_ZGUARDS_LOWER", Region<IndPerp>(xstart, xend, 0, 0, 0, zstart - 1, 1,
-        LocalNz, maxregionblocksize));
-  addRegionPerp("RGN_ZGUARDS_UPPER", Region<IndPerp>(xstart, xend, 0, 0, zend + 1, LocalNz - 1, 1,
+  addRegionPerp("RGN_XGUARDS", Region<IndPerp>(0, xstart - 1, 0, 0, zstart, zend, 1,
+          LocalNz, maxregionblocksize)
+      + Region<IndPerp>(xend + 1, LocalNx - 1, 0, 0, zstart, zend, 1,
           LocalNz, maxregionblocksize));
-  addRegionPerp("RGN_ZGUARDS", regionMapPerp["RGN_ZGUARDS_LOWER"]
-      + regionMapPerp["RGN_ZGUARDS_UPPER"]);
+  addRegionPerp("RGN_YGUARDS", Region<IndPerp>(xstart, xend, 0, -1, zstart, zend, 1,
+          LocalNz, maxregionblocksize)
+      + Region<IndPerp>(xstart, xend, 0, -1, zstart, zend, 1,
+          LocalNz, maxregionblocksize));
+  addRegionPerp("RGN_ZGUARDS", Region<IndPerp>(xstart, xend, 0, 0, 0, zstart - 1, 1,
+          LocalNz, maxregionblocksize)
+      + Region<IndPerp>(xstart, xend, 0, 0, zend + 1, LocalNz - 1, 1,
+          LocalNz, maxregionblocksize));
   addRegionPerp("RGN_NOCORNERS",
       (getRegionPerp("RGN_NOBNDRY") + getRegionPerp("RGN_XGUARDS") +
         getRegionPerp("RGN_YGUARDS") + getRegionPerp("RGN_ZGUARDS")).unique());
-  // regions without guard cells but including some or all boundary cells
-  auto rgnPerp = regionMapPerp["RGN_NOBNDRY"];
-  if (firstX()) {
-    rgnPerp += regionMapPerp["RGN_XGUARDS_INNER"];
-  }
-  if (lastX()) {
-    rgnPerp += regionMapPerp["RGN_XGUARDS_OUTER"];
-  }
-  addRegionPerp("RGN_WITH_XBNDRY", rgnPerp.asUnique());
-  rgnPerp = regionMapPerp["RGN_NOBNDRY"];
-  if (hasBndryLowerY()) {
-    // May include some guard cells in geometries with a limiter, but this is not a common
-    // case.
-    rgnPerp += regionMapPerp["RGN_YGUARDS_LOWER"];
-  }
-  if (hasBndryUpperY()) {
-    // May include some guard cells in geometries with a limiter, but this is not a common
-    // case.
-    rgnPerp += regionMapPerp["RGN_YGUARDS_UPPER"];
-  }
-  addRegionPerp("RGN_WITH_YBNDRY", rgnPerp.asUnique());
-  rgnPerp = regionMapPerp["RGN_NOBNDRY"];
-  rgnPerp += regionMapPerp["RGN_ZGUARDS_LOWER"];
-  rgnPerp += regionMapPerp["RGN_ZGUARDS_UPPER"];
-  addRegionPerp("RGN_WITH_ZBNDRY", rgnPerp.asUnique());
-  addRegionPerp("RGN_WITH_BNDRIES", (regionMapPerp["RGN_WITH_XBNDRY"] +
-        regionMapPerp["RGN_WITH_YBNDRY"] + regionMapPerp["RGN_WITH_ZBNDRY"]).asUnique());
 
   // Construct index lookup for 3D-->2D
   indexLookup3Dto2D = Array<int>(LocalNx*LocalNy*LocalNz);
