@@ -41,3 +41,6 @@ src/.libfast
 .BOUT.pid.*
 build/
 build*/
+
+# Following is copied in by configure
+src/fmt/format.cxx
