@@ -649,6 +649,7 @@ BOUT_VERSION
 PYTHONCONFIGPATH
 IDLCONFIGPATH
 PREFIX
+FMT_INCLUDE_PATH
 MPARK_VARIANT_INCLUDE_PATH
 BOUT_INCLUDE_PATH
 BOUT_LIB_PATH
@@ -14174,8 +14175,6 @@ fi
 ac_config_links="$ac_config_links src/fmt/format.cxx:externalpackages/fmt/src/format.cc"
 
 
-EXTRA_INCS="-I\$(BOUT_TOP)/externalpackages/fmt/include $EXTRA_INCS"
-
 #############################################################
 # Check environment
 #############################################################
@@ -15620,6 +15619,8 @@ CONFIG_LDFLAGS=`$MAKE ldflags -f output.make`
 BOUT_LIB_PATH=$PWD/lib
 BOUT_INCLUDE_PATH=$PWD/include
 MPARK_VARIANT_INCLUDE_PATH=$PWD/externalpackages/mpark.variant/include
+FMT_INCLUDE_PATH=$PWD/externalpackages/fmt/include
+
 
 
 

@@ -1196,9 +1196,6 @@ AC_CHECK_FILE([.git], [
 dnl Copy the one file we need to somewhere else
 AC_CONFIG_LINKS(src/fmt/format.cxx:externalpackages/fmt/src/format.cc)
 
-dnl This include must come _first_
-EXTRA_INCS="-I\$(BOUT_TOP)/externalpackages/fmt/include $EXTRA_INCS"
-
 #############################################################
 # Check environment
 #############################################################
@@ -1286,9 +1283,11 @@ AC_SUBST(CONFIG_LDFLAGS)
 BOUT_LIB_PATH=$PWD/lib
 BOUT_INCLUDE_PATH=$PWD/include
 MPARK_VARIANT_INCLUDE_PATH=$PWD/externalpackages/mpark.variant/include
+FMT_INCLUDE_PATH=$PWD/externalpackages/fmt/include
 AC_SUBST(BOUT_LIB_PATH)
 AC_SUBST(BOUT_INCLUDE_PATH)
 AC_SUBST(MPARK_VARIANT_INCLUDE_PATH)
+AC_SUBST(FMT_INCLUDE_PATH)
 
 AC_SUBST(PREFIX)
 AC_SUBST(IDLCONFIGPATH)
