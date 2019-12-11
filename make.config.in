@@ -83,7 +83,7 @@ BOUT_VERSION  = @PACKAGE_VERSION@
 # Files that are needed by configure and should be dependencies for 'all'
 
 OBJ    = $(SOURCEC:%.cxx=%.o)
-ifndef RELEASE
+ifndef RELEASED
 LIB    = $(BOUT_LIB_PATH)/libbout++.a
 LIB_SO = $(BOUT_LIB_PATH)/libbout++.so
 endif
