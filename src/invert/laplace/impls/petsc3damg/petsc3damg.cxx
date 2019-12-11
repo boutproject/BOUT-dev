@@ -503,16 +503,16 @@ OperatorStencil<Ind3D> LaplacePetsc3dAmg::getStencil(Mesh* localmesh,
   for (auto& i : interpolatedDownElements) {
     for (auto& j : interpPattern) {
       interiorStencil.insert(i + j);
-      lowerEdgeStencil.insert(i + j);
+      upperEdgeStencil.insert(i + j);
     }
-    upperEdgeStencil.insert(i);
+    lowerEdgeStencil.insert(i);
   }
   for (auto& i : interpolatedUpElements) {
     for (auto& j : interpPattern) {
       interiorStencil.insert(i + j);
-      upperEdgeStencil.insert(i + j);
+      lowerEdgeStencil.insert(i + j);
     }
-    lowerEdgeStencil.insert(i);
+    upperEdgeStencil.insert(i);
   }
   std::vector<OffsetInd3D> interiorStencilVector(interiorStencil.begin(), interiorStencil.end()),
     lowerEdgeStencilVector(lowerEdgeStencil.begin(), lowerEdgeStencil.end()),
