@@ -1678,6 +1678,7 @@ BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, i
 
   ShiftAngle.clear();
 
+  createDefaultRegions();
   addBoundaryRegions();
 }
 

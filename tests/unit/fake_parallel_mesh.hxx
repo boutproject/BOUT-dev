@@ -241,7 +241,6 @@ std::vector<FakeParallelMesh> createFakeProcessors(int nx, int ny, int nz, int n
   for (int i = 0; i < nxpe; i++) {
     for (int j = 0; j < nype; j++) {
       meshes.push_back(FakeParallelMesh(nx, ny, nz, nxpe, nype, i, j));
-      meshes[j + i * nype].createDefaultRegions();
       bout::globals::mesh = &meshes[j + i * nype];
       static_cast<FakeParallelMesh*>(bout::globals::mesh)->setCoordinates(nullptr);
       test_coords = std::make_shared<Coordinates>(
