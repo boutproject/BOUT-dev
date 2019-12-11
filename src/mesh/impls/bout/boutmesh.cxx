@@ -2386,10 +2386,12 @@ void BoutMesh::addBoundaryRegions() {
   if ((DDATA_OUTDEST >= 0) && (DDATA_XSPLIT < xend + 1))
     xe = DDATA_XSPLIT - 1;
 
-  if (xs < xstart)
-    xs = xstart - 1;
-  if (xe > xend)
-    xe = xend + 1;
+  if (xs < xstart) {
+    xs = firstX() ? xstart - 1 : xstart;
+  }
+  if (xe > xend) {
+    xe = lastX() ? xend + 1 : xend;
+  }
 
   addRegion3D("RGN_LOWER_Y_THIN",
               Region<Ind3D>(xs, xe, ystart - 1, ystart - 1, 0, LocalNz - 1, LocalNy,
@@ -2469,10 +2471,12 @@ void BoutMesh::addBoundaryRegions() {
   if ((UDATA_OUTDEST >= 0) && (UDATA_XSPLIT < xend + 1))
     xe = UDATA_XSPLIT - 1;
 
-  if (xs < xstart)
-    xs = xstart - 1;
-  if (xe > xend)
-    xe = xend + 1;
+  if (xs < xstart) {
+    xs = firstX() ? xstart - 1 : xstart;
+  }
+  if (xe > xend) {
+    xe = lastX() ? xend + 1 : xend;
+  }
 
   addRegion3D("RGN_UPPER_Y_THIN",
               Region<Ind3D>(xs, xe, yend + 1, yend + 1, 0, LocalNz - 1, LocalNy, LocalNz,
