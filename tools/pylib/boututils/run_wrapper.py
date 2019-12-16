@@ -228,7 +228,11 @@ def launch(command, runcmd=None, nproc=None, mthread=None,
         cmd = cmd + " > "+output
 
     if mthread is not None:
-        cmd = "OMP_NUM_THREADS={j} ".format(j=mthread)+cmd
+        if os.name == "nt":
+            # We're on windows, so we have to do it a little different
+            cmd = 'cmd /C "set OMP_NUM_THREADS={} && {}"'.format(mthread, cmd)
+        else:
+            cmd = "OMP_NUM_THREADS={} {}".format(mthread, cmd)
         
     if verbose == True:
          print(cmd)
