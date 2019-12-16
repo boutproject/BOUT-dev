@@ -287,3 +287,18 @@ def launch_safe(command, *args, **kwargs):
                            "Output was\n\n%s"%
                            (s,command,out))
     return s, out
+
+
+def build_and_log(test):
+    """Run make and redirect the output to a log file. Prints input
+
+    On Windows, does nothing because executable should have already
+    been built
+
+    """
+
+    if os.name == "nt":
+        return
+
+    print("Making {}".format(test))
+    return shell_safe("make > make.log")

@@ -17,20 +17,18 @@ nproc = 2       # Number of processors to run on
 omega_tol = 1e-2
 gamma_tol = 1e-2
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe
+from boututils.run_wrapper import build_and_log, shell, launch_safe
 from boututils.file_import import file_import
 from boututils.calculus import deriv
 from boututils.linear_regression import linear_regression
 
 from boutdata.collect import collect
 import numpy as np
-from sys import exit ,argv
+from sys import exit, argv
 
 nthreads=1
 
-
-print("Making resistive drift instability test")
-shell_safe("make > make.log")
+build_and_log("resistive drift instability test")
 
 zlist          = [2, 32, 256]  # Just test a few
 
@@ -54,11 +52,6 @@ gamma_orig     = {1:0.0784576199501,
                   64:0.222344013151,
                   128:0.1716229,
                   256:0.12957680451} #0.130220286897} Changed 25th April 2014
-
-#zlist = map(lambda x:2**x, range(9))
-
-# Create a directory for the data
-shell_safe("mkdir -p data")
 
 # Import the grid file
 grid = file_import("uedge.grd_std.cdl")
