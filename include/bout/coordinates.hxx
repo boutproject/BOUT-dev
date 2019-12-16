@@ -145,14 +145,14 @@ public:
 #error This utility macro should not clash with another one
 #else
 #define DERIV_FUNC_REGION_ENUM_TO_STRING(func, T) \
-  [[gnu::deprecated("Please use Coordinates::#func(const #T& f, " \
+  [[deprecated("Please use Coordinates::#func(const #T& f, " \
       "CELL_LOC outloc = CELL_DEFAULT, const std::string& method = \"DEFAULT\", " \
       "const std::string& region = \"RGN_ALL\") instead")]] \
   inline T func(const T& f, CELL_LOC outloc, const std::string& method, \
       REGION region) { \
     return func(f, outloc, method, toString(region)); \
   } \
-  [[gnu::deprecated("Please use Coordinates::#func(const #T& f, " \
+  [[deprecated("Please use Coordinates::#func(const #T& f, " \
       "CELL_LOC outloc = CELL_DEFAULT, const std::string& method = \"DEFAULT\", " \
       "const std::string& region = \"RGN_ALL\") instead")]] \
   inline T func(const T& f, CELL_LOC outloc, DIFF_METHOD method, \
@@ -165,7 +165,7 @@ public:
 #error This utility macro should not clash with another one
 #else
 #define GRAD_FUNC_REGION_ENUM_TO_STRING(func, T) \
-  [[gnu::deprecated("Please use Coordinates::#func(const #T& f, " \
+  [[deprecated("Please use Coordinates::#func(const #T& f, " \
       "CELL_LOC outloc = CELL_DEFAULT, const std::string& method = \"DEFAULT\") " \
       "instead")]] \
   inline T func(const T& f, CELL_LOC outloc, DIFF_METHOD method) { \
@@ -197,7 +197,7 @@ public:
   /// Advection along magnetic field V*b.Grad(f)
   Field2D Vpar_Grad_par(const Field2D& v, const Field2D& f,
       CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT");
-  [[gnu::deprecated("Please use Coordinates::Vpar_Grad_par(const Field2D& v, "
+  [[deprecated("Please use Coordinates::Vpar_Grad_par(const Field2D& v, "
       "const Field2D& f, CELL_LOC outloc = CELL_DEFAULT, "
       "const std::string& method = \"DEFAULT\") instead")]]
   inline Field2D Vpar_Grad_par(const Field2D& v, const Field2D& f, CELL_LOC outloc,
@@ -207,7 +207,7 @@ public:
 
   Field3D Vpar_Grad_par(const Field3D& v, const Field3D& f,
       CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT");
-  [[gnu::deprecated("Please use Coordinates::Vpar_Grad_par(const Field3D& v, "
+  [[deprecated("Please use Coordinates::Vpar_Grad_par(const Field3D& v, "
       "const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, "
       "const std::string& method = \"DEFAULT\") instead")]]
   inline Field3D Vpar_Grad_par(const Field3D& v, const Field3D& f, CELL_LOC outloc,
