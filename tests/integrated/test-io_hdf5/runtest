@@ -6,16 +6,14 @@
 
 #Requires: hdf5
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe
+from boututils.run_wrapper import build_and_log, shell, launch_safe
 from boutdata.collect import collect
 from boututils.datafile import DataFile
 import numpy as np
 from sys import stdout, exit
 
 
-
-print("Making I/O test")
-shell_safe("make > make.log")
+build_and_log("I/O test")
 
 # Read benchmark values
 

@@ -7,16 +7,13 @@ try:
 except:
   pass
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe
+from boututils.run_wrapper import build_and_log, shell, launch_safe
 from boutdata.collect import collect
 import numpy as np
 from sys import stdout, exit
 
 
-
-
-print("Making griddata test")
-shell_safe("make > make.log")
+build_and_log("griddata test")
 
 for nproc in [1]:
   stdout.write("Checking %d processors ... " % (nproc))
