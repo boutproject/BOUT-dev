@@ -15,8 +15,14 @@ except ImportError:
     from os import popen4, system
     lib = "system"
 
+if os.name == "nt":
+    # Default on Windows
+    DEFAULT_MPIRUN = "mpiexec.exe -n"
+else:
+    DEFAULT_MPIRUN = "mpirun -np"
 
-def getmpirun(default="mpirun -np"):
+
+def getmpirun(default=DEFAULT_MPIRUN):
   """Return environment variable named MPIRUN, if it exists else return
    a default mpirun command
 
