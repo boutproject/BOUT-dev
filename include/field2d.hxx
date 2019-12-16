@@ -138,7 +138,7 @@ class Field2D : public Field, public FieldData {
     return true;
   }
 
-  [[gnu::deprecated("Please use Field2D::hasParallelSlices instead")]]
+  [[deprecated("Please use Field2D::hasParallelSlices instead")]]
   bool hasYupYdown() const {
     return hasParallelSlices();
   }
@@ -337,7 +337,7 @@ Field2D operator-(const Field2D &f);
 inline Field2D toFieldAligned(const Field2D& f, const std::string& UNUSED(region) = "RGN_ALL") {
   return f;
 }
-[[gnu::deprecated("Please use toFieldAligned(const Field2D& f, "
+[[deprecated("Please use toFieldAligned(const Field2D& f, "
     "const std::string& region = \"RGN_ALL\") instead")]]
 inline Field2D toFieldAligned(const Field2D& f, REGION region) {
   return toFieldAligned(f, toString(region));
@@ -346,7 +346,7 @@ inline Field2D toFieldAligned(const Field2D& f, REGION region) {
 inline Field2D fromFieldAligned(const Field2D& f, const std::string& UNUSED(region) = "RGN_ALL") {
   return f;
 }
-[[gnu::deprecated("Please use fromFieldAligned(const Field2D& f, "
+[[deprecated("Please use fromFieldAligned(const Field2D& f, "
     "const std::string& region = \"RGN_ALL\") instead")]]
 inline Field2D fromFieldAligned(const Field2D& f, REGION region) {
   return fromFieldAligned(f, toString(region));
@@ -358,14 +358,14 @@ inline Field2D fromFieldAligned(const Field2D& f, REGION region) {
 /// Loops over all points including the boundaries by
 /// default (can be changed using the \p rgn argument
 void checkData(const Field2D &f, const std::string& region = "RGN_NOBNDRY");
-[[gnu::deprecated("Please use checkData(const Field2D& f, "
+[[deprecated("Please use checkData(const Field2D& f, "
     "const std::string& region = \"RGN_NOBNDRY\") instead")]]
 inline void checkData(const Field2D &f, REGION region) {
   return checkData(f, toString(region));
 }
 #else
 inline void checkData(const Field2D &UNUSED(f), std::string UNUSED(region) = "RGN_NOBNDRY") {}
-[[gnu::deprecated("Please use checkData(const Field2D& f, "
+[[deprecated("Please use checkData(const Field2D& f, "
     "const std::string& region = \"RGN_NOBNDRY\") instead")]]
 inline void checkData(const Field2D &UNUSED(f), REGION UNUSED(region)) {}
 #endif
