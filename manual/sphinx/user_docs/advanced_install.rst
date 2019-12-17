@@ -846,7 +846,11 @@ really want shared libraries, ``-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON``.
 The latter is untested, use at your own risk!
 
 The unit tests should all pass, but most of the integrated tests will
-not run work out of the box yet.
+not run work out of the box yet as Windows doesn't understand
+shabangs. That is, without a file extension, it doesn't know what
+program to use to run ``runtest``. The majority of the tests can be
+run manually with ``python.exe runtest``. You will stil need to set
+``PYTHONPATH`` and have a suitable Python environment.
 
 Issues
 ------
