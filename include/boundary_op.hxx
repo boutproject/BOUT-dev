@@ -61,7 +61,7 @@ public:
                             const std::map<std::string, std::string> &keywords) {
     if (!keywords.empty()) {
       // Given keywords, but not using
-      throw BoutException("Keywords ignored in boundary : %s", keywords.begin()->first.c_str());
+      throw BoutException("Keywords ignored in boundary : {:s}", keywords.begin()->first);
     }
     
     return clone(region, args);

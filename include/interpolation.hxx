@@ -83,8 +83,7 @@ const T interp_to(const T& var, CELL_LOC loc, const std::string region = "RGN_AL
   T result{emptyFrom(var).setLocation(loc)};
 
   // Staggered grids enabled, and need to perform interpolation
-  TRACE("Interpolating %s -> %s", toString(var.getLocation()).c_str(),
-        toString(loc).c_str());
+  TRACE("Interpolating {} -> {}", toString(var.getLocation()), toString(loc));
 
   if (region != "RGN_NOBNDRY") {
     // result is requested in some boundary region(s)
@@ -186,8 +185,8 @@ const T interp_to(const T& var, CELL_LOC loc, const std::string region = "RGN_AL
     default: {
       // This should never happen
       throw BoutException("Unsupported direction of interpolation\n"
-                          " - don't know how to interpolate to %s",
-                          toString(loc).c_str());
+                          " - don't know how to interpolate to {:s}",
+                          toString(loc));
     }
     };
 

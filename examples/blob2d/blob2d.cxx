@@ -85,12 +85,12 @@ protected:
     c_s = sqrt(e * Te0 / m_i); // Bohm sound speed
     rho_s = c_s / Omega_i;     // Bohm gyro-radius
 
-    output.write("\n\n\t----------Parameters: ------------ \n\tOmega_i = %e /s,\n\tc_s = "
-                 "%e m/s,\n\trho_s = %e m\n",
+    output.write("\n\n\t----------Parameters: ------------ \n\tOmega_i = {:e} /s,\n\tc_s = "
+                 "{:e} m/s,\n\trho_s = {:e} m\n",
                  Omega_i, c_s, rho_s);
 
     // Calculate delta_*, blob size scaling
-    output.write("\tdelta_* = rho_s * (dn/n) * %e ",
+    output.write("\tdelta_* = rho_s * (dn/n) * {:e} ",
                  pow(L_par * L_par / (R_c * rho_s), 1. / 5));
 
     /************ Create a solver for potential ********/

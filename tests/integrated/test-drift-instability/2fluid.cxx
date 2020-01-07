@@ -170,12 +170,12 @@ int physics_init(bool UNUSED(restarting)) {
   
   BoutReal hthe0;
   if(mesh->get(hthe0, "hthe0") == 0) {
-    output.write("    ****NOTE: input from BOUT, Z length needs to be divided by %e\n", hthe0/rho_s);
+    output.write("    ****NOTE: input from BOUT, Z length needs to be divided by {:e}\n", hthe0/rho_s);
   }
 
   /************** NORMALISE QUANTITIES *****************/
 
-  output.write("\tNormalising to rho_s = %e\n", rho_s);
+  output.write("\tNormalising to rho_s = {:e}\n", rho_s);
 
   // Normalise profiles
   Ni0 /= Ni_x/1.0e14;

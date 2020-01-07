@@ -161,7 +161,7 @@ protected:
           
           E_f(xi,yj,zk) = f(xi,yj,zk) - Sf(xi,yj,zk);
           E_g(xi,yj,zk) = g(xi,yj,zk) - Sg(xi,yj,zk);
-          output_error.write("Error at %d,%d,%d = %e, %e",
+          output_error.write("Error at {:d},{:d},{:d} = {:e}, {:e}",
                        xi, yj, zk, E_f(xi,yj,zk), E_g(xi,yj,zk));
         }
       }

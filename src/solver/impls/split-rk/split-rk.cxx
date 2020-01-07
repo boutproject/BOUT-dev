@@ -72,7 +72,7 @@ int SplitRK::init(int nout, BoutReal tstep) {
   ASSERT0(ninternal_steps > 0);
   
   timestep = out_timestep / ninternal_steps;
-  output.write(_("\tUsing a timestep %e\n"), timestep);
+  output.write(_("\tUsing a timestep {:e}\n"), timestep);
   
   nstages = opt["nstages"].doc("Number of stages in RKL step. Must be > 1").withDefault(10);
   ASSERT0(nstages > 1);
@@ -133,12 +133,12 @@ int SplitRK::run() {
           
           internal_steps++;
           if (internal_steps > mxstep) {
-            throw BoutException("ERROR: MXSTEP exceeded. timestep = %e, err=%e\n",
+            throw BoutException("ERROR: MXSTEP exceeded. timestep = {:e}, err={:e}\n",
                                 timestep, err);
           }
 
           if (diagnose) {
-            output.write("\nError: %e. atol=%e, rtol=%e\n", err, atol, rtol);
+            output.write("\nError: {:e}. atol={:e}, rtol={:e}\n", err, atol, rtol);
           }
 
           if ((err > rtol) || (err < 0.1 * rtol)) {
@@ -159,7 +159,7 @@ int SplitRK::run() {
             }
 
             if (diagnose) {
-              output.write("\tAdapting. timestep %e (factor %e). Max=%e\n", timestep, factor, max_timestep);
+              output.write("\tAdapting. timestep {:e} (factor {:e}). Max={:e}\n", timestep, factor, max_timestep);
             }
           }
           if (err < rtol) {

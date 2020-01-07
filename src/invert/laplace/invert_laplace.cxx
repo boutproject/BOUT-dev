@@ -734,3 +734,8 @@ void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcom
                           const Field2D *ccoef, const Field2D *d, CELL_LOC loc) {
   Laplacian::defaultInstance()->tridagCoefs(jx,jy, jz, a, b, c, ccoef, d, loc);
 }
+
+constexpr decltype(LaplaceFactory::type_name) LaplaceFactory::type_name;
+constexpr decltype(LaplaceFactory::section_name) LaplaceFactory::section_name;
+constexpr decltype(LaplaceFactory::option_name) LaplaceFactory::option_name;
+constexpr decltype(LaplaceFactory::default_type) LaplaceFactory::default_type;

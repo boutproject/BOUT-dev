@@ -886,8 +886,8 @@ void LaplacePetsc::Element(int i, int x, int z,
 
 #if CHECK > 2
   if (!finite(ele)) {
-    throw BoutException("Non-finite element at x=%d, z=%d, row=%d, col=%d\n",
-                        x, z, i, index);
+    throw BoutException("Non-finite element at x={:d}, z={:d}, row={:d}, col={:d}\n", x,
+                        z, i, index);
   }
 #endif
   

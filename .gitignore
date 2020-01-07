@@ -44,3 +44,6 @@ build*/
 /.vs
 /CMakeSettings.json
 /CppProperties.json
+
+# Following is copied in by configure
+src/fmt/format.cxx

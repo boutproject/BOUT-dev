@@ -100,7 +100,7 @@ class IMEXBDF2 : public Solver {
   /// @param[out] f  The result of the operation
   PetscErrorCode precon(Vec x, Vec f);
  private:
-  static const int MAX_SUPPORTED_ORDER = 4; //Should this be #defined instead?
+  static constexpr int MAX_SUPPORTED_ORDER = 4; //Should this be #defined instead?
 
   int maxOrder; ///< Specify the maximum order of the scheme to use (1/2/3)
 
