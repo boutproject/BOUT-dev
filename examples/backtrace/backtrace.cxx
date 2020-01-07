@@ -10,7 +10,7 @@ void f1(){
   BoutReal a=1;
   BoutReal b=0;
   BoutReal c = a/b;
-  output.write("c is %f\n",c);
+  output.write("c is {:f}\n",c);
   throw BoutException("Tomatoes are red?\n");
 }
 void f2(int UNUSED(a)) {

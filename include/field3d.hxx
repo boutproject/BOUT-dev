@@ -359,8 +359,9 @@ class Field3D : public Field, public FieldData {
     if((jx < 0) || (jx >= nx) || 
        (jy < 0) || (jy >= ny) || 
        (jz < 0) || (jz >= nz))
-      throw BoutException("Field3D: (%d, %d, %d) operator out of bounds (%d, %d, %d)", 
-			  jx, jy, jz, nx, ny, nz);
+      throw BoutException(
+          "Field3D: ({:d}, {:d}, {:d}) operator out of bounds ({:d}, {:d}, {:d})", jx, jy,
+          jz, nx, ny, nz);
 #endif
     return data[(jx*ny +jy)*nz + jz];
   }
@@ -373,8 +374,9 @@ class Field3D : public Field, public FieldData {
     if((jx < 0) || (jx >= nx) || 
        (jy < 0) || (jy >= ny) || 
        (jz < 0) || (jz >= nz))
-      throw BoutException("Field3D: (%d, %d, %d) operator out of bounds (%d, %d, %d)", 
-			  jx, jy, jz, nx, ny, nz);
+      throw BoutException(
+          "Field3D: ({:d}, {:d}, {:d}) operator out of bounds ({:d}, {:d}, {:d})", jx, jy,
+          jz, nx, ny, nz);
 #endif
     return data[(jx*ny +jy)*nz + jz];
   }
@@ -393,8 +395,8 @@ class Field3D : public Field, public FieldData {
 
     if((jx < 0) || (jx >= nx) ||
        (jy < 0) || (jy >= ny))
-      throw BoutException("Field3D: (%d, %d) operator out of bounds (%d, %d)",
-                          jx, jy, nx, ny);
+      throw BoutException("Field3D: ({:d}, {:d}) operator out of bounds ({:d}, {:d})", jx,
+                          jy, nx, ny);
 #endif
     return &data[(jx*ny +jy)*nz];
   }
@@ -406,8 +408,8 @@ class Field3D : public Field, public FieldData {
 
     if((jx < 0) || (jx >= nx) ||
        (jy < 0) || (jy >= ny))
-      throw BoutException("Field3D: (%d, %d) operator out of bounds (%d, %d)",
-                          jx, jy, nx, ny);
+      throw BoutException("Field3D: ({:d}, {:d}) operator out of bounds ({:d}, {:d})", jx,
+                          jy, nx, ny);
 #endif
     return &data[(jx*ny +jy)*nz];
   }

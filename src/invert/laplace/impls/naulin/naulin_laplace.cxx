@@ -285,7 +285,8 @@ Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
 
     ++count;
     if (count>maxits) {
-      throw BoutException("LaplaceNaulin error: Not converged within maxits=%i iterations.", maxits);
+      throw BoutException(
+          "LaplaceNaulin error: Not converged within maxits={:d} iterations.", maxits);
     }
 
     while (error_abs > last_error) {
@@ -306,7 +307,8 @@ Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
       // effectively another iteration, so increment the counter
       ++count;
       if (count>maxits) {
-        throw BoutException("LaplaceNaulin error: Not converged within maxits=%i iterations.", maxits);
+        throw BoutException(
+            "LaplaceNaulin error: Not converged within maxits={:d} iterations.", maxits);
       }
     }
 

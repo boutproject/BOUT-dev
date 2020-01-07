@@ -34,6 +34,8 @@
 #include <ctime>
 #include <iomanip>
 
+#include "fmt/chrono.h"
+
 /**************************************************************************
  * String routines
  **************************************************************************/
@@ -87,7 +89,7 @@ BoutReal stringToReal(const std::string &s) {
   std::stringstream ss(s);
   BoutReal val;
   if(!(ss >> val)) {
-    throw BoutException("Could not convert string '%s' to BoutReal\n", s.c_str());
+    throw BoutException("Could not convert string '{:s}' to BoutReal\n", s);
   }
   return val;
 }
@@ -96,7 +98,7 @@ int stringToInt(const std::string &s) {
   std::stringstream ss(s);
   int val;
   if(!(ss >> val)) {
-    throw BoutException("Could not convert string '%s' to int\n", s.c_str());
+    throw BoutException("Could not convert string '{:s}' to int\n", s);
   }
   return val;
 }
@@ -137,16 +139,5 @@ std::string trimComments(const std::string &s, const std::string &c) {
 }
 
 std::string toString(const time_t& time) {
-  // Get local time
-  std::tm *tm = std::localtime(&time);
-
-  // Note: With GCC >= 5 `put_time` becomes available
-  // std::stringstream ss;
-  // ss << std::put_time(tm, "%c %Z");
-  // return ss.str();
-
-  // Older compilers
-  char buffer[80];
-  strftime(buffer, 80, "%Ec", tm);
-  return std::string(buffer);
+  return fmt::format("{:%c}", *std::localtime(&time));
 }

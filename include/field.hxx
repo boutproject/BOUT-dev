@@ -237,12 +237,12 @@ inline void checkFinite(const T& f, const std::string& name="field", const std::
   AUTO_TRACE();
 
   if (!f.isAllocated()) {
-    throw BoutException("%s is not allocated", name.c_str());
+    throw BoutException("{:s} is not allocated", name);
   }
 
   BOUT_FOR_SERIAL(i, f.getRegion(rgn)) {
     if (!::finite(f[i])) {
-      throw BoutException("%s is not finite at %s", name.c_str(), toString(i).c_str());
+      throw BoutException("{:s} is not finite at {:s}", name, toString(i));
     }
   }
 }
@@ -260,12 +260,12 @@ inline void checkPositive(const T& f, const std::string& name="field", const std
   AUTO_TRACE();
 
   if (!f.isAllocated()) {
-    throw BoutException("%s is not allocated", name.c_str());
+    throw BoutException("{:s} is not allocated", name);
   }
 
   BOUT_FOR_SERIAL(i, f.getRegion(rgn)) {
     if (f[i] <= 0.) {
-      throw BoutException("%s is not positive at %s", name.c_str(), toString(i).c_str());
+      throw BoutException("{:s} is not positive at {:s}", name, toString(i));
     }
   }
 }

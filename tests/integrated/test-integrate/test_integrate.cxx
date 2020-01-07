@@ -21,7 +21,7 @@ public:
   }
   
   int outputMonitor(BoutReal simtime, int UNUSED(iter), int UNUSED(NOUT)) {
-    output.write("MyFunction: time = %e\n", simtime);
+    output.write("MyFunction: time = {:e}\n", simtime);
     return 0;
   }
   

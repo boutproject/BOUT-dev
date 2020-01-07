@@ -333,7 +333,7 @@ const Options* FieldFactory::findOption(const Options* opt, const std::string& n
     while (!result->isSet(name)) {
       result = result->getParent();
       if (result == nullptr)
-        throw ParseException("Cannot find variable '%s'", name.c_str());
+        throw ParseException("Cannot find variable '{:s}'", name);
     }
     result->get(name, val, "");
 
@@ -356,7 +356,7 @@ const Options* FieldFactory::findOption(const Options* opt, const std::string& n
 
     if (!result->isSet(varname)) {
       // Not in this section
-      throw ParseException("Cannot find variable '%s'", name.c_str());
+      throw ParseException("Cannot find variable '{:s}'", name);
     }
 
     result->get(varname, val, "");
@@ -397,8 +397,8 @@ FieldGeneratorPtr FieldFactory::resolve(std::string& name) const {
           output_error << stack_value << " -> ";
         }
         output_error << name << endl;
-        throw BoutException("ExpressionParser: Infinite recursion in parsing '%s'",
-                            name.c_str());
+        throw BoutException("ExpressionParser: Infinite recursion in parsing '{:s}'",
+                            name);
       }
     }
 

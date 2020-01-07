@@ -218,7 +218,7 @@ BOUT_OMP(for collapse(2))
            - matmg[level][nn*9+2]*x0[nn-mm+1] - matmg[level][nn*9+6]*x0[nn+mm-1]
            - matmg[level][nn*9+8]*x0[nn+mm+1];
           if(fabs(matmg[level][nn*9+4]) <atol)
-            throw BoutException("Error at matmg(%d-%d)",level,nn);
+            throw BoutException("Error at matmg({:d}-{:d})", level, nn);
 
           x[nn] = (1.0-omega)*x[nn] + omega*val/matmg[level][nn*9+4];
         } 
@@ -235,7 +235,7 @@ BOUT_OMP(for collapse(2))
             - matmg[level][nn*9+2]*x[nn-mm+1] - matmg[level][nn*9+6]*x[nn+mm-1]
             - matmg[level][nn*9+8]*x[nn+mm+1];
           if(fabs(matmg[level][nn*9+4]) <atol)
-            throw BoutException("Error at matmg(%d-%d)",level,nn);
+            throw BoutException("Error at matmg({:d}-{:d})", level, nn);
         x[nn] = val/matmg[level][nn*9+4];
       } 
     communications(x,level);
@@ -248,7 +248,7 @@ BOUT_OMP(for collapse(2))
             - matmg[level][nn*9+2]*x[nn-mm+1] - matmg[level][nn*9+6]*x[nn+mm-1]
             - matmg[level][nn*9+8]*x[nn+mm+1];
           if(fabs(matmg[level][nn*9+4]) <atol)
-            throw BoutException("Error at matmg(%d-%d)",level,nn);
+            throw BoutException("Error at matmg({:d}-{:d})", level, nn);
         x[nn] = val/matmg[level][nn*9+4];
       } 
     communications(x,level);
@@ -393,9 +393,11 @@ BOUT_OMP(for)
       error = sqrt(vectorProd(level, std::begin(r), std::begin(r)));
       num += 1;
       if(error > dtol)
-        throw BoutException("GMRES reached dtol with error %16.10f at iteration %d\n",error,num);
+        throw BoutException("GMRES reached dtol with error {:16.10f} at iteration {:d}\n",
+                            error, num);
       if(num > MAXIT)
-        throw BoutException("GMRES reached MAXIT with error %16.10f at iteration %d\n",error,num);
+        throw BoutException(
+            "GMRES reached MAXIT with error {:16.10f} at iteration {:d}\n", error, num);
       if(error <= rtol*ini_e+atol) {
         etest = 0;
         break;
@@ -720,7 +722,7 @@ BOUT_OMP(for)
 
   ini_e = vectorProd(level,rhs,rhs);
   if(ini_e < 0.0)
-    throw BoutException("In MG Initial Error %10.4e \n",ini_e);
+    throw BoutException("In MG Initial Error {:10.4e} \n", ini_e);
   ini_e = sqrt(ini_e);
   if((pcheck == 1) && (rProcI == 0)) 
     printf("%d \n  In MGsolve ini = %24.18f\n",numP,ini_e);
@@ -745,7 +747,7 @@ BOUT_OMP(for)
       printf("%d \n  In MGsolve error = %24.18f\n",m,error);
     if(error < rtol*ini_e+atol) break;
     if((fabs(perror-error)/error <rtol) || (error > dtol))
-      throw BoutException("In MG Limited Error %10.4e \n",error);
+      throw BoutException("In MG Limited Error {:10.4e} \n", error);
     perror = error;
   }
 

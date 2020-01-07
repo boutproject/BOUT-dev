@@ -142,8 +142,7 @@ int BoutInitialise(int& argc, char**& argv) {
 
     // Load settings file
     OptionsReader* reader = OptionsReader::getInstance();
-    reader->read(Options::getRoot(), "%s/%s", args.data_dir.c_str(),
-                 args.opt_file.c_str());
+    reader->read(Options::getRoot(), "{}/{}", args.data_dir, args.opt_file);
 
     // Get options override from command-line
     reader->parseCommandLine(Options::getRoot(), argc, argv);
@@ -170,7 +169,7 @@ int BoutInitialise(int& argc, char**& argv) {
         setupDumpFile(Options::root(), *bout::globals::mesh, args.data_dir);
 
   } catch (const BoutException& e) {
-    output_error.write(_("Error encountered during initialisation: %s\n"), e.what());
+    output_error.write(_("Error encountered during initialisation: {:s}\n"), e.what());
     throw;
   }
 
@@ -214,9 +213,13 @@ void setupGetText() {
 
     bindtextdomain(GETTEXT_PACKAGE, BUILDFLAG(BOUT_LOCALE_PATH));
   } catch (const std::runtime_error& e) {
-    fprintf(stderr, "WARNING: Could not set locale. Check the LANG environment variable "
-        "(get available values by running 'locale -a'). If LANG is correct, there may be "
-        "a problem with the BOUT_LOCALE_PATH=%s that BOUT++ was compiled with.\n",
+    fmt::print(
+        stderr,
+        FMT_STRING(
+            "WARNING: Could not set locale. Check the LANG environment variable "
+            "(get available values by running 'locale -a'). If LANG is correct, there "
+            "may be "
+            "a problem with the BOUT_LOCALE_PATH={:s} that BOUT++ was compiled with.\n"),
         BUILDFLAG(BOUT_LOCALE_PATH));
   }
 #endif // BOUT_HAS_GETTEXT
@@ -230,7 +233,7 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
     if (current_arg == "-h" || current_arg == "--help") {
       // Print help message -- note this will be displayed once per processor as we've not
       // started MPI yet.
-      output.write(_("Usage: %s [-d <data directory>] [-f <options filename>] [restart "
+      output.write(_("Usage: {:s} [-d <data directory>] [-f <options filename>] [restart "
                      "[append]] [VAR=VALUE]\n"),
                    argv[0]);
       output.write(
@@ -250,7 +253,7 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
             "append to the existing output files, otherwise overwrite them\n"
             "  VAR=VALUE\t\tSpecify a VALUE for input parameter VAR\n"
             "\nFor all possible input parameters, see the user manual and/or the "
-            "physics model source (e.g. %s.cxx)\n"),
+            "physics model source (e.g. {:s}.cxx)\n"),
           argv[0]);
 
       std::exit(EXIT_SUCCESS);
@@ -309,7 +312,7 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
     if (string(argv[i]) == "-d") {
       // Set data directory
       if (i + 1 >= argc) {
-        throw BoutException(_("Usage is %s -d <data directory>\n"), argv[0]);
+        throw BoutException(_("Usage is {:s} -d <data directory>\n"), argv[0]);
       }
 
       args.data_dir = argv[++i];
@@ -320,7 +323,7 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
     } else if (string(argv[i]) == "-f") {
       // Set options file
       if (i + 1 >= argc) {
-        throw BoutException(_("Usage is %s -f <options filename>\n"), argv[0]);
+        throw BoutException(_("Usage is {:s} -f <options filename>\n"), argv[0]);
       }
 
       args.opt_file = argv[++i];
@@ -331,7 +334,7 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
     } else if (string(argv[i]) == "-o") {
       // Set options file
       if (i + 1 >= argc) {
-        throw BoutException(_("Usage is %s -o <settings filename>\n"), argv[0]);
+        throw BoutException(_("Usage is {:s} -o <settings filename>\n"), argv[0]);
       }
 
       args.set_file = argv[++i];
@@ -341,7 +344,7 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
 
     } else if ((string(argv[i]) == "-l") || (string(argv[i]) == "--log")) {
       if (i + 1 >= argc) {
-        throw BoutException(_("Usage is %s -l <log filename>\n"), argv[0]);
+        throw BoutException(_("Usage is {:s} -l <log filename>\n"), argv[0]);
       }
 
       args.log_file = argv[++i];
@@ -382,11 +385,11 @@ void checkDataDirectoryIsAccessible(const std::string& data_dir) {
   struct stat test;
   if (stat(data_dir.c_str(), &test) == 0) {
     if (!S_ISDIR(test.st_mode)) {
-      throw BoutException(_("DataDir \"%s\" is not a directory\n"), data_dir.c_str());
+      throw BoutException(_("DataDir \"{:s}\" is not a directory\n"), data_dir);
     }
   } else {
-    throw BoutException(_("DataDir \"%s\" does not exist or is not accessible\n"),
-                        data_dir.c_str());
+    throw BoutException(_("DataDir \"{:s}\" does not exist or is not accessible\n"),
+                        data_dir);
   }
 }
 
@@ -397,7 +400,7 @@ void savePIDtoFile(const std::string& data_dir, int MYPE) {
   pid_file.open(filename.str(), std::ios::out | std::ios::trunc);
 
   if (not pid_file.is_open()) {
-    throw BoutException(_("Could not create PID file %s"), filename.str().c_str());
+    throw BoutException(_("Could not create PID file {:s}"), filename.str());
   }
 
   pid_file << getpid() << "\n";
@@ -405,27 +408,27 @@ void savePIDtoFile(const std::string& data_dir, int MYPE) {
 }
 
 void printStartupHeader(int MYPE, int NPES) {
-  output_progress.write(_("BOUT++ version %s\n"), BOUT_VERSION_STRING);
+  output_progress.write(_("BOUT++ version {:s}\n"), BOUT_VERSION_STRING);
 #ifdef REVISION
-  output_progress.write(_("Revision: %s\n"), BUILDFLAG(REVISION));
+  output_progress.write(_("Revision: {:s}\n"), BUILDFLAG(REVISION));
 #endif
 #ifdef MD5SUM
-  output_progress.write("MD5 checksum: %s\n", BUILDFLAG(MD5SUM));
+  output_progress.write("MD5 checksum: {:s}\n", BUILDFLAG(MD5SUM));
 #endif
-  output_progress.write(_("Code compiled on %s at %s\n\n"), __DATE__, __TIME__);
+  output_progress.write(_("Code compiled on {:s} at {:s}\n\n"), __DATE__, __TIME__);
   output_info.write("B.Dudson (University of York), M.Umansky (LLNL) 2007\n");
   output_info.write("Based on BOUT by Xueqiao Xu, 1999\n\n");
 
-  output_info.write(_("Processor number: %d of %d\n\n"), MYPE, NPES);
+  output_info.write(_("Processor number: {:d} of {:d}\n\n"), MYPE, NPES);
 
-  output_info.write("pid: %d\n\n", getpid());
+  output_info.write("pid: {:d}\n\n", getpid());
 }
 
 void printCompileTimeOptions() {
   output_info.write(_("Compile-time options:\n"));
 
 #if CHECK > 0
-  output_info.write(_("\tChecking enabled, level %d\n"), CHECK);
+  output_info.write(_("\tChecking enabled, level {:d}\n"), CHECK);
 #else
   output_info.write(_("\tChecking disabled\n"));
 #endif
@@ -453,7 +456,7 @@ void printCompileTimeOptions() {
 #endif
 
 #ifdef _OPENMP
-  output_info.write(_("\tOpenMP parallelisation enabled, using %d threads\n"),
+  output_info.write(_("\tOpenMP parallelisation enabled, using {:d} threads\n"),
                     omp_get_max_threads());
 #else
   output_info.write(_("\tOpenMP parallelisation disabled\n"));
@@ -469,7 +472,7 @@ void printCompileTimeOptions() {
 
   // The stringify is needed here as BOUT_FLAGS_STRING may already contain quoted strings
   // which could cause problems (e.g. terminate strings).
-  output_info.write(_("\tCompiled with flags : %s\n"), STRINGIFY(BOUT_FLAGS_STRING));
+  output_info.write(_("\tCompiled with flags : {:s}\n"), STRINGIFY(BOUT_FLAGS_STRING));
 }
 
 void printCommandLineArguments(const std::vector<std::string>& original_argv) {
@@ -530,9 +533,9 @@ void setupOutput(const std::string& data_dir, const std::string& log_file, int v
     }
     /// Open an output file to echo everything to
     /// On processor 0 anything written to output will go to stdout and the file
-    if (output.open("%s/%s.%d", data_dir.c_str(), log_file.c_str(), MYPE)) {
-      throw BoutException(_("Could not open %s/%s.%d for writing"), data_dir.c_str(),
-                          log_file.c_str(), MYPE);
+    if (output.open("{:s}/{:s}.{:d}", data_dir, log_file, MYPE)) {
+      throw BoutException(_("Could not open {:s}/{:s}.{:d} for writing"), data_dir,
+                          log_file, MYPE);
     }
   }
 
@@ -579,9 +582,9 @@ Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir
   auto dump_file = Datafile(&(options["output"]), &mesh);
 
   if (append) {
-    dump_file.opena("%s/BOUT.dmp.%s", data_dir.c_str(), dump_ext.c_str());
+    dump_file.opena("{}/BOUT.dmp.{}", data_dir, dump_ext);
   } else {
-    dump_file.openw("%s/BOUT.dmp.%s", data_dir.c_str(), dump_ext.c_str());
+    dump_file.openw("{}/BOUT.dmp.{}", data_dir, dump_ext);
   }
 
   // Add book-keeping variables to the output files
@@ -598,8 +601,7 @@ Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir
 
 void writeSettingsFile(Options& options, const std::string& data_dir,
                        const std::string& settings_file) {
-  OptionsReader::getInstance()->write(&options, "%s/%s", data_dir.c_str(),
-                                      settings_file.c_str());
+  OptionsReader::getInstance()->write(&options, "{}/{}", data_dir, settings_file);
 }
 
 } // namespace experimental
@@ -694,7 +696,7 @@ int BoutFinalise(bool write_settings) {
  **************************************************************************/
 
 int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
-  TRACE("BoutMonitor::call(%e, %d, %d)", t, iter, NOUT);
+  TRACE("BoutMonitor::call({:e}, {:d}, {:d})", t, iter, NOUT);
 
   // Data used for timing
   static bool first_time = true;
@@ -769,12 +771,11 @@ int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
 
   run_data.t_elapsed = bout::globals::mpi->MPI_Wtime() - mpi_start_time;
 
-  output_progress.print("%c  Step %d of %d. Elapsed %s", get_spin(), iteration + 1, NOUT,
-                        (time_to_hms(run_data.t_elapsed)).c_str());
+  output_progress.print("{:c}  Step {:d} of {:d}. Elapsed {:s}", get_spin(),
+                        iteration + 1, NOUT, time_to_hms(run_data.t_elapsed));
   output_progress.print(
-      " ETA %s",
-      (time_to_hms(run_data.wtime * static_cast<BoutReal>(NOUT - iteration - 1)))
-          .c_str());
+      " ETA {:s}",
+      time_to_hms(run_data.wtime * static_cast<BoutReal>(NOUT - iteration - 1)));
 
   /// Write dump file
   bout::globals::dump.write();
@@ -785,11 +786,11 @@ int BoutMonitor::call(Solver* solver, BoutReal t, int iter, int NOUT) {
     BoutReal t_remain = mpi_start_time + wall_limit - bout::globals::mpi->MPI_Wtime();
     if (t_remain < run_data.wtime * 2) {
       // Less than 2 time-steps left
-      output_warn.write(_("Only %e seconds (%.2f steps) left. Quitting\n"), t_remain,
+      output_warn.write(_("Only {:e} seconds ({:.2f} steps) left. Quitting\n"), t_remain,
                         t_remain / run_data.wtime);
       user_requested_exit = true;
     } else {
-      output_progress.print(" Wall %s", (time_to_hms(t_remain)).c_str());
+      output_progress.print(" Wall {:s}", time_to_hms(t_remain));
     }
   }
 
@@ -814,8 +815,8 @@ void bout_signal_handler(int sig) {
   // Set signal handler back to default to prevent possible infinite loop
   signal(SIGSEGV, SIG_DFL);
   // print number of process to stderr, so the user knows which log to check
-  fprintf(stderr, "\nSighandler called on process %d with sig %d\n", BoutComm::rank(),
-          sig);
+  fmt::print(stderr, FMT_STRING("\nSighandler called on process {:d} with sig {:d}\n"),
+             BoutComm::rank(), sig);
 
   switch (sig) {
   case SIGSEGV:
@@ -835,7 +836,7 @@ void bout_signal_handler(int sig) {
     user_requested_exit = true;
     break;
   default:
-    throw BoutException("\n****** Signal %d  caught ******\n\n", sig);
+    throw BoutException("\n****** Signal {:d}  caught ******\n\n", sig);
     break;
   }
 }
@@ -853,10 +854,7 @@ std::string time_to_hms(BoutReal t) {
   m = static_cast<int>(t / 60);
   t -= 60 * static_cast<BoutReal>(m);
 
-  char buffer[256];
-  sprintf(buffer, "%d:%02d:%04.1f", h, m, t);
-
-  return string(buffer);
+  return fmt::format(FMT_STRING("{:d}:{:02d}:{:04.1f}"), h, m, t);
 }
 
 /// Produce a spinning bar character
@@ -913,7 +911,7 @@ void RunMetrics::calculateDerivedMetrics() {
 void RunMetrics::writeProgress(BoutReal simtime, bool output_split) {
   if (!output_split) {
     output_progress.write(
-        "%.3e      %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n", simtime, ncalls,
+        "{:.3e}      {:5d}       {:.2e}   {:5.1f}  {:5.1f}  {:5.1f}  {:5.1f}  {:5.1f}\n", simtime, ncalls,
         wtime, 100. * (wtime_rhs - wtime_comms - wtime_invert) / wtime,
         100. * wtime_invert / wtime,                    // Inversions
         100. * wtime_comms / wtime,                     // Communications
@@ -922,7 +920,7 @@ void RunMetrics::writeProgress(BoutReal simtime, bool output_split) {
 
   } else {
     output_progress.write(
-        "%.3e      %5d            %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n",
+        "{:.3e}      {:5d}            {:5d}       {:.2e}   {:5.1f}  {:5.1f}  {:5.1f}  {:5.1f}  {:5.1f}\n",
         simtime, ncalls_e, ncalls_i, wtime,
         100. * (wtime_rhs - wtime_comms - wtime_invert) / wtime,
         100. * wtime_invert / wtime,                    // Inversions
