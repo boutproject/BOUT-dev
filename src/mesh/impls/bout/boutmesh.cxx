@@ -50,7 +50,17 @@
 /// MPI type of BoutReal for communications
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 
-BoutMesh::BoutMesh(GridDataSource *s, Options *opt) : Mesh(s, opt) {
+BoutMesh::BoutMesh(GridDataSource *s, Options *opt)
+  : Mesh(s, opt),
+    include_corner_cells((*options)["include_corner_cells"]
+                         .doc("Communicate corner guard and boundary cells. Can be set "
+                               "to false if you are sure that you will not need these "
+                               "cells, for mixed derivatives D2DXDY (or anything else), "
+                               "for example if your grid has orthogonal x- and "
+                               "y-directions.  This might slightly reduce communication "
+                               "time.")
+                         .withDefault(true)) {
+
   OPTION(options, symmetricGlobalX, true);
   if (!options->isSet("symmetricGlobalY")) {
     std::string optionfile = Options::root()["optionfile"].withDefault("");

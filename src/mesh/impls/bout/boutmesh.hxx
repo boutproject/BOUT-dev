@@ -185,6 +185,9 @@ class BoutMesh : public Mesh {
   int XLOCAL(int xglo) const override;
   int YLOCAL(int yglo) const override;
 
+  // Switch for communication of corner guard and boundary cells
+  const bool include_corner_cells;
+
 private:
   std::string gridname;
   int nx, ny, nz; ///< Size of the grid in the input file
