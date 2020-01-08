@@ -111,27 +111,11 @@ private:
   static double resetTime(timer_info& info);
 
 public:
+  /// Return the map of all the individual timers
   static std::map<std::string, timer_info> getAllInfo() { return info; }
 
-  static void listAllInfo() {
-    const std::string headerOne = "Timer name";
-    const std::string separator = " | ";
-    auto max_width = static_cast<unsigned int>(headerOne.length());
-
-    for (const auto &kv: info) {
-      max_width = std::max(max_width, static_cast<unsigned int>(kv.first.length()));
-    }
-
-    output << "Timer report \n\n";
-    output << std::setw(max_width) << headerOne << separator << "Time (s)" << "\n";
-    output << std::setw(max_width) << std::string(max_width,'-') << separator << std::string(max_width,'-') << "\n";
-    for (const auto &kv: info) {
-      output << std::left << std::setw(max_width) << kv.first << " | " << kv.second.time.count()
-             << " ("<<kv.second.ntimes<<")\n";
-    }
-    output << "\n";
-  };
-
+  /// Print all the timers
+  static void listAllInfo();
 };
 
 #define AUTO_TIME() Timer CONCATENATE(time_,__LINE__)(__thefunc__)

@@ -58,3 +58,24 @@ double Timer::resetTime(Timer::timer_info& info) {
   }
   return seconds{val}.count();
 }
+
+void Timer::listAllInfo() {
+  const std::string headerOne = "Timer name";
+  const std::string separator = " | ";
+  auto max_width = static_cast<unsigned int>(headerOne.length());
+
+  for (const auto& kv : info) {
+    max_width = std::max(max_width, static_cast<unsigned int>(kv.first.length()));
+  }
+
+  output << "Timer report \n\n";
+  output << std::setw(max_width) << headerOne << separator << "Time (s)"
+         << "\n";
+  output << std::setw(max_width) << std::string(max_width, '-') << separator
+         << std::string(max_width, '-') << "\n";
+  for (const auto& kv : info) {
+    output << std::left << std::setw(max_width) << kv.first << " | "
+           << kv.second.time.count() << " (" << kv.second.ntimes << ")\n";
+  }
+  output << "\n";
+}
