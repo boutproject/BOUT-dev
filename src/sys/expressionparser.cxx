@@ -31,6 +31,8 @@ using std::list;
 using std::string;
 using std::stringstream;
 
+using namespace std::string_literals;
+
 using bout::generator::Context;
 
 // Note: Here rather than in header to avoid many deprecated warnings
@@ -53,7 +55,7 @@ public:
   double generate(const Context& ctx) override {
     return ctx.x();
   }
-  std::string str() const override { return std::string("x"); }
+  std::string str() const override { return "x"s; }
 };
 
 class FieldY : public FieldGenerator {
@@ -64,7 +66,7 @@ public:
   double generate(const Context& ctx) override {
     return ctx.y();
   }
-  std::string str() const override { return std::string("y"); }
+  std::string str() const override { return "y"s; }
 };
 
 class FieldZ : public FieldGenerator {
@@ -75,7 +77,7 @@ public:
   double generate(const Context& ctx) override {
     return ctx.z();
   }
-  std::string str() const override { return std::string("z"); }
+  std::string str() const override { return "z"; }
 };
 
 class FieldT : public FieldGenerator {
@@ -86,7 +88,7 @@ public:
   double generate(const Context& ctx) override {
     return ctx.t();
   }
-  std::string str() const override { return std::string("t"); }
+  std::string str() const override { return "t"s; }
 };
 
 class FieldParam : public FieldGenerator {
@@ -95,7 +97,7 @@ public:
   double generate(const Context& ctx) override {
     return ctx.get(name); // Get a parameter
   }
-  std::string str() const override { return std::string("{") + name + std::string("}"); }
+  std::string str() const override { return "{"s + name + "}"s; }
 private:
   std::string name; // The name of the parameter to look up
 };
@@ -124,11 +126,11 @@ public:
     return expr->generate(new_context);
   }
   std::string str() const override {
-    auto result = std::string("[");
+    auto result = "["s;
     for (auto const& var : variables) {
-      result += var.first + std::string("=") + var.second->str() + std::string(",");
+      result += var.first + "="s + var.second->str() + ","s;
     }
-    result += std::string("](") + expr->str() + std::string(")");
+    result += "]("s + expr->str() + ")"s;
     return result;
   }
 private:
@@ -169,8 +171,7 @@ private:
     }
     
     std::string str() const override {
-      return std::string("sum(") + sym + std::string(",") + countexpr->str()
-             + std::string(",") + expr->str() + std::string(")");
+      return "sum("s + sym + ","s + countexpr->str() + ","s + expr->str() + ")"s;
     }
   private:
     std::string sym;
@@ -254,7 +255,7 @@ FieldGeneratorPtr ExpressionParser::parseIdentifierExpr(LexInfo& lex) const {
   // e.g. sum(i, 10, {i}^2) -> 0 + 1^2 + 2^2 + 3^2 + ... + 9^2 
   if (name == "sum") {
     if (lex.curtok != '(') {
-      throw ParseException("Expecting ')' after 'sum' in 'sum(symbol, count, expr)'");
+      throw ParseException("Expecting '(' after 'sum' in 'sum(symbol, count, expr)'");
     }
     lex.nextToken();
     

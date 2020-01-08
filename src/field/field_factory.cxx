@@ -94,11 +94,15 @@ FieldFactory::FieldFactory(Mesh* localmesh, Options* opt)
 
   // Convert using stoi rather than Options, or a FieldFactory is used to parse
   // the string, leading to infinite loop.
-  max_recursion_depth = std::stoi(nonconst_options["input"]["max_recursion_depth"]
-                                  .doc("Maximum recursion depth allowed in expressions. 0 = no "
-                                       "recursion; -1 = unlimited")
-                                  .withDefault<std::string>("0"));
-
+  try {
+    max_recursion_depth = std::stoi(nonconst_options["input"]["max_recursion_depth"]
+                                    .doc("Maximum recursion depth allowed in expressions. 0 = no "
+                                         "recursion; -1 = unlimited")
+                                    .withDefault<std::string>("0"));
+  } catch (const std::exception&) {
+    throw BoutException("Invalid integer given as input:max_recursion_depth: '%s'", nonconst_options["input"]["max_recursion_depth"].as<std::string>().c_str());
+  }
+  
   // Useful values
   addGenerator("pi", std::make_shared<FieldValue>(PI));
   addGenerator("π", std::make_shared<FieldValue>(PI));
