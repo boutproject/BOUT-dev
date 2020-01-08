@@ -177,8 +177,8 @@ class FieldPerp : public Field {
       throw BoutException("FieldPerp: () operator on empty data");
     if((jx < 0) || (jx >= nx) || 
        (jz < 0) || (jz >= nz))
-      throw BoutException("FieldPerp: (%d, %d) operator out of bounds (%d, %d)", 
-			  jx, jz, nx, nz);
+      throw BoutException("FieldPerp: ({:d}, {:d}) operator out of bounds ({:d}, {:d})",
+                          jx, jz, nx, nz);
 #endif
     return data[jx*nz + jz];
   }
@@ -193,8 +193,8 @@ class FieldPerp : public Field {
       throw BoutException("FieldPerp: () operator on empty data");
     if((jx < 0) || (jx >= nx) || 
        (jz < 0) || (jz >= nz))
-      throw BoutException("FieldPerp: (%d, %d) operator out of bounds (%d, %d)", 
-			  jx, jz, nx, nz);
+      throw BoutException("FieldPerp: ({:d}, {:d}) operator out of bounds ({:d}, {:d})",
+                          jx, jz, nx, nz);
 #endif
     return data[jx*nz + jz];
   }

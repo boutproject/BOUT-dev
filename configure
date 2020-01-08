@@ -649,6 +649,7 @@ BOUT_VERSION
 PYTHONCONFIGPATH
 IDLCONFIGPATH
 PREFIX
+FMT_INCLUDE_PATH
 MPARK_VARIANT_INCLUDE_PATH
 BOUT_INCLUDE_PATH
 BOUT_LIB_PATH
@@ -14142,6 +14143,39 @@ $as_echo "$as_me: Language support with gettext not available" >&6;}
 fi
 
 #############################################################
+# Sort out fmt
+#############################################################
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for .git" >&5
+$as_echo_n "checking for .git... " >&6; }
+if ${ac_cv_file__git+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r ".git"; then
+  ac_cv_file__git=yes
+else
+  ac_cv_file__git=no
+fi
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_file__git" >&5
+$as_echo "$ac_cv_file__git" >&6; }
+if test "x$ac_cv_file__git" = xyes; then :
+
+  if test "x$BOUT_DONT_UPDATE_GIT_SUBMODULE" == "x"; then :
+
+    git submodule update --init externalpackages/fmt
+
+fi
+
+fi
+
+
+ac_config_links="$ac_config_links src/fmt/format.cxx:externalpackages/fmt/src/format.cc"
+
+
+#############################################################
 # Check environment
 #############################################################
 
@@ -14784,6 +14818,7 @@ esac
 cat >>$CONFIG_STATUS <<_ACEOF || ac_write_fail=1
 # Files that config.status was made for.
 config_files="$ac_config_files"
+config_links="$ac_config_links"
 config_commands="$ac_config_commands"
 
 _ACEOF
@@ -14808,6 +14843,9 @@ Usage: $0 [OPTION]... [TAG]...
 
 Configuration files:
 $config_files
+
+Configuration links:
+$config_links
 
 Configuration commands:
 $config_commands
@@ -14943,6 +14981,7 @@ for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
     "po-directories") CONFIG_COMMANDS="$CONFIG_COMMANDS po-directories" ;;
+    "src/fmt/format.cxx") CONFIG_LINKS="$CONFIG_LINKS src/fmt/format.cxx:externalpackages/fmt/src/format.cc" ;;
     "make.config") CONFIG_FILES="$CONFIG_FILES make.config" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
@@ -14956,6 +14995,7 @@ done
 # bizarre bug on SunOS 4.1.3.
 if $ac_need_defaults; then
   test "${CONFIG_FILES+set}" = set || CONFIG_FILES=$config_files
+  test "${CONFIG_LINKS+set}" = set || CONFIG_LINKS=$config_links
   test "${CONFIG_COMMANDS+set}" = set || CONFIG_COMMANDS=$config_commands
 fi
 
@@ -15145,7 +15185,7 @@ cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
 fi # test -n "$CONFIG_FILES"
 
 
-eval set X "  :F $CONFIG_FILES      :C $CONFIG_COMMANDS"
+eval set X "  :F $CONFIG_FILES    :L $CONFIG_LINKS  :C $CONFIG_COMMANDS"
 shift
 for ac_tag
 do
@@ -15365,7 +15405,38 @@ which seems to be undefined.  Please make sure it is defined" >&2;}
   || as_fn_error $? "could not create $ac_file" "$LINENO" 5
  ;;
 
+  :L)
+  #
+  # CONFIG_LINK
+  #
 
+  if test "$ac_source" = "$ac_file" && test "$srcdir" = '.'; then
+    :
+  else
+    # Prefer the file from the source tree if names are identical.
+    if test "$ac_source" = "$ac_file" || test ! -r "$ac_source"; then
+      ac_source=$srcdir/$ac_source
+    fi
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: linking $ac_source to $ac_file" >&5
+$as_echo "$as_me: linking $ac_source to $ac_file" >&6;}
+
+    if test ! -r "$ac_source"; then
+      as_fn_error $? "$ac_source: file not found" "$LINENO" 5
+    fi
+    rm -f "$ac_file"
+
+    # Try a relative symlink, then a hard link, then a copy.
+    case $ac_source in
+    [\\/$]* | ?:[\\/]* ) ac_rel_source=$ac_source ;;
+	*) ac_rel_source=$ac_top_build_prefix$ac_source ;;
+    esac
+    ln -s "$ac_rel_source" "$ac_file" 2>/dev/null ||
+      ln "$ac_source" "$ac_file" 2>/dev/null ||
+      cp -p "$ac_source" "$ac_file" ||
+      as_fn_error $? "cannot link or copy $ac_source to $ac_file" "$LINENO" 5
+  fi
+ ;;
   :C)  { $as_echo "$as_me:${as_lineno-$LINENO}: executing $ac_file commands" >&5
 $as_echo "$as_me: executing $ac_file commands" >&6;}
  ;;
@@ -15548,6 +15619,8 @@ CONFIG_LDFLAGS=`$MAKE ldflags -f output.make`
 BOUT_LIB_PATH=$PWD/lib
 BOUT_INCLUDE_PATH=$PWD/include
 MPARK_VARIANT_INCLUDE_PATH=$PWD/externalpackages/mpark.variant/include
+FMT_INCLUDE_PATH=$PWD/externalpackages/fmt/include
+
 
 
 
@@ -16153,6 +16226,7 @@ esac
 cat >>$CONFIG_STATUS <<_ACEOF || ac_write_fail=1
 # Files that config.status was made for.
 config_files="$ac_config_files"
+config_links="$ac_config_links"
 config_commands="$ac_config_commands"
 
 _ACEOF
@@ -16177,6 +16251,9 @@ Usage: $0 [OPTION]... [TAG]...
 
 Configuration files:
 $config_files
+
+Configuration links:
+$config_links
 
 Configuration commands:
 $config_commands
@@ -16312,6 +16389,7 @@ for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
     "po-directories") CONFIG_COMMANDS="$CONFIG_COMMANDS po-directories" ;;
+    "src/fmt/format.cxx") CONFIG_LINKS="$CONFIG_LINKS src/fmt/format.cxx:externalpackages/fmt/src/format.cc" ;;
     "make.config") CONFIG_FILES="$CONFIG_FILES make.config" ;;
     "bin/bout-config") CONFIG_FILES="$CONFIG_FILES bin/bout-config" ;;
 
@@ -16326,6 +16404,7 @@ done
 # bizarre bug on SunOS 4.1.3.
 if $ac_need_defaults; then
   test "${CONFIG_FILES+set}" = set || CONFIG_FILES=$config_files
+  test "${CONFIG_LINKS+set}" = set || CONFIG_LINKS=$config_links
   test "${CONFIG_COMMANDS+set}" = set || CONFIG_COMMANDS=$config_commands
 fi
 
@@ -16515,7 +16594,7 @@ cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
 fi # test -n "$CONFIG_FILES"
 
 
-eval set X "  :F $CONFIG_FILES      :C $CONFIG_COMMANDS"
+eval set X "  :F $CONFIG_FILES    :L $CONFIG_LINKS  :C $CONFIG_COMMANDS"
 shift
 for ac_tag
 do
@@ -16735,7 +16814,38 @@ which seems to be undefined.  Please make sure it is defined" >&2;}
   || as_fn_error $? "could not create $ac_file" "$LINENO" 5
  ;;
 
+  :L)
+  #
+  # CONFIG_LINK
+  #
 
+  if test "$ac_source" = "$ac_file" && test "$srcdir" = '.'; then
+    :
+  else
+    # Prefer the file from the source tree if names are identical.
+    if test "$ac_source" = "$ac_file" || test ! -r "$ac_source"; then
+      ac_source=$srcdir/$ac_source
+    fi
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: linking $ac_source to $ac_file" >&5
+$as_echo "$as_me: linking $ac_source to $ac_file" >&6;}
+
+    if test ! -r "$ac_source"; then
+      as_fn_error $? "$ac_source: file not found" "$LINENO" 5
+    fi
+    rm -f "$ac_file"
+
+    # Try a relative symlink, then a hard link, then a copy.
+    case $ac_source in
+    [\\/$]* | ?:[\\/]* ) ac_rel_source=$ac_source ;;
+	*) ac_rel_source=$ac_top_build_prefix$ac_source ;;
+    esac
+    ln -s "$ac_rel_source" "$ac_file" 2>/dev/null ||
+      ln "$ac_source" "$ac_file" 2>/dev/null ||
+      cp -p "$ac_source" "$ac_file" ||
+      as_fn_error $? "cannot link or copy $ac_source to $ac_file" "$LINENO" 5
+  fi
+ ;;
   :C)  { $as_echo "$as_me:${as_lineno-$LINENO}: executing $ac_file commands" >&5
 $as_echo "$as_me: executing $ac_file commands" >&6;}
  ;;

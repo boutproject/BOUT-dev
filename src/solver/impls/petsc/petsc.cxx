@@ -244,7 +244,7 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   OPTION(options, mxstep, 500); // Number of steps between outputs
   mxstep *= NOUT; // Total number of steps
   PetscReal tfinal = simtime + NOUT*TIMESTEP; // Final output time
-  output.write("\tSet mxstep %d, tfinal %g, simtime %g\n",mxstep,tfinal,simtime);
+  output.write("\tSet mxstep {:d}, tfinal {:g}, simtime {:g}\n",mxstep,tfinal,simtime);
 
 #if PETSC_VERSION_GE(3,8,0)
   ierr = TSSetMaxSteps(ts, mxstep); CHKERRQ(ierr);
@@ -350,7 +350,7 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
 
   ierr = PCGetType(pc,&pctype);CHKERRQ(ierr);
   ierr = TSGetType(ts,&tstype);CHKERRQ(ierr);
-  output.write("\tTS type %s, PC type %s\n",tstype,pctype);
+  output.write("\tTS type {:s}, PC type {:s}\n",tstype,pctype);
 
   ierr = PetscObjectTypeCompare(reinterpret_cast<PetscObject>(pc),PCNONE,&pcnone);CHKERRQ(ierr);
   if (pcnone) {
@@ -473,7 +473,7 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
     ierr = TSComputeRHSJacobian(ts,simtime,u,&J,&J,&J_structure);CHKERRQ(ierr);
 #endif
 
-    ierr = PetscSynchronizedPrintf(comm, "[%d] TSComputeRHSJacobian is done\n",rank);CHKERRQ(ierr);
+    ierr = PetscSynchronizedPrintf(comm, "[{:d}] TSComputeRHSJacobian is done\n",rank);CHKERRQ(ierr);
 
 #if PETSC_VERSION_GE(3,5,0)
     ierr = PetscSynchronizedFlush(comm,PETSC_STDOUT);CHKERRQ(ierr);
@@ -521,7 +521,7 @@ PetscErrorCode PetscSolver::run() {
     ierr = PetscFOpen(PETSC_COMM_WORLD, this->output_name, "w", &fp);CHKERRQ(ierr);
     ierr = PetscFPrintf(PETSC_COMM_WORLD, fp, "SNES Iteration, KSP Iterations, Wall Time, Norm\n");CHKERRQ(ierr);
     for (const auto &info : snes_list) {
-      ierr = PetscFPrintf(PETSC_COMM_WORLD, fp, "%i, %i, %e, %e\n", info.it,
+      ierr = PetscFPrintf(PETSC_COMM_WORLD, fp, "{:d}, {:d}, {:e}, {:e}\n", info.it,
                           info.linear_its, info.time, info.norm);
       CHKERRQ(ierr);
     }
@@ -536,7 +536,7 @@ PetscErrorCode PetscSolver::run() {
  **************************************************************************/
 
 PetscErrorCode PetscSolver::rhs(TS UNUSED(ts), BoutReal t, Vec udata, Vec dudata) {
-  TRACE("Running RHS: PetscSolver::rhs(%e)", t);
+  TRACE("Running RHS: PetscSolver::rhs({:e})", t);
 
   const BoutReal *udata_array;
   BoutReal *dudata_array;

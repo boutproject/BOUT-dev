@@ -30,6 +30,8 @@
 #include "bout/format.hxx"
 #include "unused.hxx"
 
+#include "fmt/format.h"
+
 #include <exception>
 #include <list>
 #include <map>
@@ -220,12 +222,17 @@ private:
 
 class ParseException : public std::exception {
 public:
-  ParseException(const char*, ...) BOUT_FORMAT_ARGS(2, 3);
+  ParseException(const std::string& message_) : message(message_) {}
+
+  template <class S, class... Args>
+  ParseException(const S& format, const Args&... args)
+      : message(fmt::format(format, args...)) {}
+
   ~ParseException() override = default;
 
-  const char* what() const noexcept override;
+  const char* what() const noexcept override { return message.c_str(); }
 
-protected:
+private:
   std::string message;
 };
 

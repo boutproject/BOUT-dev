@@ -43,9 +43,8 @@ public:
   FieldGenOneArg(FieldGeneratorPtr g, const std::string& name = "function") : gen(g), name(name) {}
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override {
     if (args.size() != 1) {
-      throw ParseException(
-          "Incorrect number of arguments to %s. Expecting 1, got %lu",
-          name.c_str(), static_cast<unsigned long>(args.size()));
+      throw ParseException("Incorrect number of arguments to {:s}. Expecting 1, got {:d}",
+                           name, args.size());
     }
     return std::make_shared<FieldGenOneArg<Op>>(args.front(), name);
   }
@@ -69,9 +68,8 @@ public:
   FieldGenTwoArg(FieldGeneratorPtr a, FieldGeneratorPtr b, const std::string& name = "function") : A(a), B(b), name(name) {}
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override {
     if (args.size() != 2) {
-      throw ParseException(
-          "Incorrect number of arguments to %s. Expecting 2, got %lu",
-          name.c_str(), static_cast<unsigned long>(args.size()));
+      throw ParseException("Incorrect number of arguments to {:s}. Expecting 2, got {:d}",
+                           name, args.size());
     }
     return std::make_shared<FieldGenTwoArg<Op>>(args.front(), args.back(), name);
   }
@@ -98,8 +96,8 @@ public:
       return std::make_shared<FieldATan>(args.front(), args.back());
     }
     throw ParseException(
-        "Incorrect number of arguments to atan function. Expecting 1 or 2, got %lu",
-        static_cast<unsigned long>(args.size()));
+        "Incorrect number of arguments to atan function. Expecting 1 or 2, got {:d}",
+        args.size());
   }
   BoutReal generate(const bout::generator::Context& pos) override {
     if (B == nullptr)

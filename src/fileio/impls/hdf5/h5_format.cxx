@@ -621,7 +621,7 @@ bool H5Format::write(void *data, hid_t mem_hdf5_type, const char *name, int lx, 
   
   hid_t dataSet = H5Dopen(dataFile, name, H5P_DEFAULT);
   if (dataSet < 0) {
-    output_error.write("ERROR: HDF5 variable '%s' has not been added to file '%s'\n", name, fname);
+    output_error.write("ERROR: HDF5 variable '{:s}' has not been added to file '{:s}'\n", name, fname);
     return false;
   }
   
@@ -687,7 +687,7 @@ bool H5Format::write_perp(BoutReal *data, const std::string& name, int lx, int l
 
   hid_t dataSet = H5Dopen(dataFile, name.c_str(), H5P_DEFAULT);
   if (dataSet < 0) {
-    output_error.write("ERROR: HDF5 variable '%s' has not been added to file '%s'\n", name.c_str(), fname);
+    output_error.write("ERROR: HDF5 variable '{:s}' has not been added to file '{:s}'\n", name, fname);
     return false;
   }
 
@@ -984,7 +984,7 @@ bool H5Format::write_rec(void *data, hid_t mem_hdf5_type, const char *name, int 
     
   }
   else {
-    output_error.write("ERROR: HDF5 variable '%s' has not been added to file '%s'\n", name, fname);
+    output_error.write("ERROR: HDF5 variable '{:s}' has not been added to file '{:s}'\n", name, fname);
     return false;
   }
 
@@ -1076,7 +1076,7 @@ bool H5Format::write_rec_perp(BoutReal *data, const std::string& name, int lx, i
 
   }
   else {
-    output_error.write("ERROR: HDF5 variable '%s' has not been added to file '%s'\n", name.c_str(), fname);
+    output_error.write("ERROR: HDF5 variable '{:s}' has not been added to file '{:s}'\n", name, fname);
     return false;
   }
 
@@ -1114,8 +1114,9 @@ void H5Format::setAttribute(const std::string &varname, const std::string &attrn
   std::string existing_att;
   if (getAttribute(varname, attrname, existing_att)) {
     if (text != existing_att) {
-      output_warn.write("Overwriting attribute '%s' of variable '%s' with '%s', was previously '%s'",
-          attrname.c_str(), varname.c_str(), text.c_str(), existing_att.c_str());
+      output_warn.write("Overwriting attribute '{:s}' of variable '{:s}' with '{:s}', "
+                        "was previously '{:s}'",
+                        attrname, varname, text, existing_att);
     }
   }
   // else: attribute does not exist, so just write it
@@ -1146,8 +1147,7 @@ void H5Format::setAttribute(const std::string &varname, const std::string &attrn
   int existing_att;
   if (getAttribute(varname, attrname, existing_att)) {
     if (value != existing_att) {
-      output_warn.write("Overwriting attribute '%s' of variable '%s' with '%i', was previously '%i'",
-          attrname.c_str(), varname.c_str(), value, existing_att);
+      output_warn.write("Overwriting attribute '{:s}' of variable '{:s}' with '{:d}', was previously '{:d}'", attrname, varname, value, existing_att);
     }
   }
   // else: attribute does not exist, so just write it
@@ -1178,8 +1178,7 @@ void H5Format::setAttribute(const std::string &varname, const std::string &attrn
   BoutReal existing_att;
   if (getAttribute(varname, attrname, existing_att)) {
     if (value != existing_att) {
-      output_warn.write("Overwriting attribute '%s' of variable '%s' with '%f', was previously '%f'",
-          attrname.c_str(), varname.c_str(), value, existing_att);
+      output_warn.write("Overwriting attribute '{:s}' of variable '{:s}' with '{:f}', was previously '{:f}'", attrname, varname, value, existing_att);
     }
   }
   // else: attribute does not exist, so just write it

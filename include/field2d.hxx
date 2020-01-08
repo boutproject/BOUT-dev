@@ -210,8 +210,8 @@ class Field2D : public Field, public FieldData {
     
     if((jx < 0) || (jx >= nx) || 
        (jy < 0) || (jy >= ny) )
-      throw BoutException("Field2D: (%d, %d) index out of bounds (%d , %d)\n", 
-                          jx, jy, nx, ny);
+      throw BoutException("Field2D: ({:d}, {:d}) index out of bounds ({:d} , {:d})\n", jx,
+                          jy, nx, ny);
 #endif
   
     return data[jx*ny + jy];
@@ -223,8 +223,8 @@ class Field2D : public Field, public FieldData {
     
     if((jx < 0) || (jx >= nx) || 
        (jy < 0) || (jy >= ny) )
-      throw BoutException("Field2D: (%d, %d) index out of bounds (%d , %d)\n", 
-                          jx, jy, nx, ny);
+      throw BoutException("Field2D: ({:d}, {:d}) index out of bounds ({:d} , {:d})\n", jx,
+                          jy, nx, ny);
 #endif
   
     return data[jx*ny + jy];

@@ -11,16 +11,17 @@ using bout::generator::Context;
 FieldGeneratorPtr FieldGaussian::clone(const std::list<FieldGeneratorPtr> args) {
   if ((args.size() < 1) || (args.size() > 2)) {
     throw ParseException(
-        "Incorrect number of arguments to gaussian function. Expecting 1 or 2, got %lu",
-        static_cast<unsigned long>(args.size()));
+        "Incorrect number of arguments to gaussian function. Expecting 1 or 2, got {:d}",
+        args.size());
   }
 
   FieldGeneratorPtr xin = args.front();
   FieldGeneratorPtr sin;
-  if(args.size() == 2) {
+  if (args.size() == 2) {
     sin = args.back(); // Optional second argument
-  }else
+  } else {
     sin = std::make_shared<FieldValue>(1.0);
+  }
 
   return std::make_shared<FieldGaussian>(xin, sin);
 }
@@ -33,8 +34,8 @@ BoutReal FieldGaussian::generate(const Context& ctx) {
 FieldGeneratorPtr FieldHeaviside::clone(const std::list<FieldGeneratorPtr> args) {
   if (args.size() != 1) {
     throw ParseException(
-        "Incorrect number of arguments to heaviside function. Expecting 1, got %lu",
-        static_cast<unsigned long>(args.size()));
+        "Incorrect number of arguments to heaviside function. Expecting 1, got {:d}",
+        args.size());
   }
 
   return std::make_shared<FieldHeaviside>(args.front());
@@ -163,8 +164,8 @@ BoutReal FieldMixmode::genRand(BoutReal seed) {
 FieldGeneratorPtr FieldTanhHat::clone(const std::list<FieldGeneratorPtr> args) {
   if (args.size() != 4) {
     throw ParseException(
-        "Incorrect number of arguments to TanhHat function. Expecting 4, got %lu",
-        static_cast<unsigned long>(args.size()));
+        "Incorrect number of arguments to TanhHat function. Expecting 4, got {:d}",
+        args.size());
   }
 
   // As lists are not meant to be indexed, we may use an iterator to get the

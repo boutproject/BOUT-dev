@@ -32,6 +32,8 @@ class MsgStack;
 #include "unused.hxx"
 #include "bout/format.hxx"
 
+#include "fmt/format.h"
+
 #include <exception>
 #include <cstdarg>
 #include <string>
@@ -69,8 +71,17 @@ public:
   ~MsgStack() { clear(); }
 
 #if CHECK > 1
-  int push(const char *s, ...)
-    BOUT_FORMAT_ARGS( 2, 3); ///< Add a message to the stack. Returns a message id
+  /// Add a message to the stack. Returns a message id
+  int push(std::string message);
+  int push() { return push(""); }
+  [[deprecated("Please use `MsgStack::push()` instead")]] int push(std::nullptr_t) {
+    return push("");
+  }
+
+  template <class S, class... Args>
+  int push(const S& format, const Args&... args) {
+    return push(fmt::format(format, args...));
+  }
 
   [[gnu::deprecated("Please use `MsgStack::push` with an empty message instead")]]
   int setPoint(); ///< get a message point
@@ -83,7 +94,11 @@ public:
   std::string getDump(); ///< Write out all messages to a string
 #else
   /// Dummy functions which should be optimised out
-  int push(const char *UNUSED(s), ...) { return 0; }
+  int push(const std::string& message) { return 0; }
+  template <class S, class... Args>
+  int push(const S& format, const Args&... args) {
+    return 0;
+  }
 
   [[gnu::deprecated("Please use `MsgStack::push` with an empty message instead")]]
   int setPoint() { return 0; }
@@ -97,8 +112,6 @@ public:
 #endif
 
 private:
-  char buffer[256]; ///< Buffer for vsnprintf
-
   std::vector<std::string> stack;               ///< Message stack;
   std::vector<std::string>::size_type position{0}; ///< Position in stack
 };
@@ -129,19 +142,18 @@ GLOBAL MsgStack msg_stack;
 class MsgStackItem {
 public:
   // Not currently used anywhere
-  MsgStackItem(const char *msg) { point = msg_stack.push("%s",msg); }
+  MsgStackItem(std::string message) : point(msg_stack.push(std::move(message))) {}
   // Not currently used anywhere
-  MsgStackItem(const char *msg, const char *file, int line) {
-    point = msg_stack.push("%s on line %d of '%s'", msg, line, file);
-  }
-  MsgStackItem(const char *file, int line, const char *msg, ...)
-    BOUT_FORMAT_ARGS( 4, 5) {
-    va_list args;
-    va_start(args, msg);
-    vsnprintf(buffer, MSG_MAX_SIZE, msg, args);
-    point = msg_stack.push("%s on line %d of '%s'", buffer, line, file);
-    va_end(args);
-  }
+  MsgStackItem(const std::string& message, const char* file, int line)
+      : point(msg_stack.push("{:s} on line {:d} of '{:s}'", message, line, file)) {}
+
+  MsgStackItem(const std::string& file, int line, const char* msg)
+      : point(msg_stack.push("{:s} on line {:d} of '{:s}'", msg, line, file)) {}
+
+  template <class S, class... Args>
+  MsgStackItem(const std::string& file, int line, const S& msg, const Args&... args)
+      : point(msg_stack.push("{:s} on line {:d} of '{:s}'", fmt::format(msg, args...),
+                             line, file)) {}
   ~MsgStackItem() {
     // If an exception has occurred, don't pop the message
     if (!std::uncaught_exception()) {
@@ -151,7 +163,6 @@ public:
 
 private:
   int point;
-  char buffer[256];
 };
 
 /// To concatenate strings for a variable name
@@ -206,6 +217,6 @@ private:
  *
  * } // Scope ends, message popped
  */
-#define AUTO_TRACE() TRACE("%s", __thefunc__)
+#define AUTO_TRACE() TRACE(__thefunc__)
 
 #endif // __MSG_STACK_H__

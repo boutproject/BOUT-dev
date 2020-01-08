@@ -94,7 +94,7 @@ void verifyNumPoints(BoundaryRegion* region, int ptsRequired) {
   default: {
 #if CHECK > 2 // Only fail on Unrecognised boundary for extreme checking
     // location is an enum, so cast to int for clarity
-    throw BoutException("Unrecognised boundary region (%d) for verifyNumPoints.",
+    throw BoutException("Unrecognised boundary region ({:d}) for verifyNumPoints.",
                         static_cast<int>(region->location));
 #endif
   }
@@ -103,8 +103,8 @@ void verifyNumPoints(BoundaryRegion* region, int ptsRequired) {
   // Now check we have enough points and if not throw an exception
   if (ptsAvail < ptsRequired) {
     throw BoutException(
-        "Too few %s grid points for %s boundary, have %d but need at least %d",
-        gridType.c_str(), side.c_str(), ptsAvail, ptsRequired);
+        "Too few {:s} grid points for {:s} boundary, have {:d} but need at least {:d}",
+        gridType, side, ptsAvail, ptsRequired);
   }
 }
 #else

@@ -1,7 +1,7 @@
 
 BOUT_TOP	= ..
 
-DIRS			= field fileio invert mesh physics solver sys
+DIRS			= field fileio invert mesh physics solver sys fmt
 
 SOURCEC		= bout++.cxx
 SOURCEH		= bout.hxx
