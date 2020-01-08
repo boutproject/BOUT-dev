@@ -40,7 +40,6 @@ class KarniadakisSolver;
 #include <bout_types.hxx>
 #include <bout/solver.hxx>
 
-#include <bout/solverfactory.hxx>
 namespace {
 RegisterSolver<KarniadakisSolver> registersolverkarniadakis("karniadakis");
 }

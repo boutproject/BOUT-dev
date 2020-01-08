@@ -21,57 +21,28 @@ OptionsReader* OptionsReader::getInstance() {
   return instance;
 }
 
-void OptionsReader::read(Options *options, const char *file, ...) {
-  if (file == nullptr) {
-    throw BoutException("OptionsReader::read passed NULL filename\n");
+void OptionsReader::read(Options *options, const std::string& filename) {
+  TRACE("OptionsReader::read");
+  if (filename.empty()) {
+    throw BoutException("OptionsReader::read passed empty filename\n");
   }
-
-  int buf_len=512;
-  char * filename=new char[buf_len];
-
-  bout_vsnprintf(filename,buf_len, file);
 
   output_info << "Reading options file " << filename << "\n";
 
   // Need to decide what file format to use
-  OptionParser *parser = new OptionINI();
-
-  try {
-    parser->read(options, filename);
-  } catch (BoutException &e) {
-    delete[] filename;
-    delete parser;
-    throw;
-  }
-
-  delete[] filename;
-  delete parser;
+  OptionINI{}.read(options, filename);
 }
 
-void OptionsReader::write(Options *options, const char *file, ...) {
+void OptionsReader::write(Options *options, const std::string& filename) {
   TRACE("OptionsReader::write");
-  ASSERT0(file != nullptr);
-
-  int buf_len=512;
-  char * filename=new char[buf_len];
-
-  bout_vsnprintf(filename,buf_len, file);
-  
-  output_info.write(_("Writing options to file %s\n"),filename);
-
-  // Need to decide what file format to use
-  OptionParser *parser = new OptionINI();
-
-  try {
-    parser->write(options, filename);
-  } catch (BoutException &e) {
-    delete[] filename;
-    delete parser;
-    throw;
+  if (filename.empty()) {
+    throw BoutException("OptionsReader::write passed empty filename\n");
   }
 
-  delete[] filename;
-  delete parser;
+  output_info.write(_("Writing options to file {:s}\n"), filename);
+
+  // Need to decide what file format to use
+  OptionINI{}.write(options, filename);
 }
 
 void OptionsReader::parseCommandLine(Options* options, int argc, char** argv) {
@@ -128,7 +99,10 @@ void OptionsReader::parseCommandLine(Options* options, int argc, char** argv) {
     } else {
       size_t endpos = buffer.find_last_of('=');
 
-      if(startpos != endpos) throw BoutException(_("\tMultiple '=' in command-line argument '%s'\n"), buffer.c_str());
+      if (startpos != endpos) {
+        throw BoutException(_("\tMultiple '=' in command-line argument '{:s}'\n"),
+                            buffer);
+      }
 
       std::string key = trim(buffer.substr(0, startpos));
       std::string value = trim(buffer.substr(startpos+1));
@@ -140,8 +114,10 @@ void OptionsReader::parseCommandLine(Options* options, int argc, char** argv) {
 	key = trim(key.substr(scorepos+1));
 	options = options->getSection(section);
       }
-      
-      if(key.empty() || value.empty()) throw BoutException(_("\tEmpty key or value in command line '%s'\n"), buffer.c_str());
+
+      if (key.empty() || value.empty()) {
+        throw BoutException(_("\tEmpty key or value in command line '{:s}'\n"), buffer);
+      }
 
       options->set(key, value, _("Command line"));
     }

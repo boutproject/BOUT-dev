@@ -14,7 +14,7 @@ template <class T>
 auto getWithDefault(const Options& options, const std::string& name, const T& def) -> T {
   const bool has_var = options.isSet(name);
   if (!has_var) {
-    output_warn.write("Variable '%s' not in mesh options. Setting to ", name.c_str());
+    output_warn.write("Variable '{:s}' not in mesh options. Setting to ", name);
     output_warn << def << "\n";
   }
   // Note! We don't use `Options::withDefault` here because that
@@ -45,7 +45,7 @@ bool GridFromOptions::get(Mesh*, BoutReal& rval, const std::string& name, BoutRe
 
 bool GridFromOptions::get(Mesh* m, Field2D& var, const std::string& name, BoutReal def) {
   if (!hasVar(name)) {
-    output_warn.write("Variable '%s' not in mesh options. Setting to %e\n", name.c_str(),
+    output_warn.write("Variable '{:s}' not in mesh options. Setting to {:e}\n", name,
                       def);
     var = def;
     return false;
@@ -57,7 +57,7 @@ bool GridFromOptions::get(Mesh* m, Field2D& var, const std::string& name, BoutRe
 
 bool GridFromOptions::get(Mesh* m, Field3D& var, const std::string& name, BoutReal def) {
   if (!hasVar(name)) {
-    output_warn.write("Variable '%s' not in mesh options. Setting to %e\n", name.c_str(),
+    output_warn.write("Variable '{:s}' not in mesh options. Setting to {:e}\n", name,
                       def);
     var = def;
     return false;
@@ -74,7 +74,7 @@ bool GridFromOptions::get(Mesh* m, FieldPerp& var, const std::string& name, Bout
   // FieldPerp at a single global y-index).
 
   if (!hasVar(name)) {
-    output_warn.write("Variable '%s' not in mesh options. Setting to %e\n", name.c_str(),
+    output_warn.write("Variable '{:s}' not in mesh options. Setting to {:e}\n", name,
                       def);
     var = def;
     var.setIndex(0);
@@ -92,8 +92,7 @@ bool GridFromOptions::get(Mesh* m, std::vector<int>& var, const std::string& nam
                           GridDataSource::Direction UNUSED(dir)) {
   if (!hasVar(name)) {
     std::vector<int> def{};
-    output_warn.write("Variable '%s' not in mesh options. Setting to empty vector\n",
-                      name.c_str());
+    output_warn.write("Variable '{:s}' not in mesh options. Setting to empty vector\n", name);
     var = def;
     return false;
   }
@@ -111,8 +110,7 @@ bool GridFromOptions::get(Mesh* m, std::vector<BoutReal>& var, const std::string
                           int len, int offset, GridDataSource::Direction dir) {
   if (!hasVar(name)) {
     std::vector<BoutReal> def{};
-    output_warn.write("Variable '%s' not in mesh options. Setting to empty vector\n",
-                      name.c_str());
+    output_warn.write("Variable '{:s}' not in mesh options. Setting to empty vector\n", name);
     var = def;
     return false;
   }

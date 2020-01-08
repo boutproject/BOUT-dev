@@ -180,8 +180,8 @@ const Field3D& Field3D::ynext(int dir) const {
   // Asked for more than yguards
   if (std::abs(dir) > fieldmesh->ystart) {
     throw BoutException(
-        "Field3D: Call to ynext with %d which is more than number of yguards (%d)", dir,
-        fieldmesh->ystart);
+        "Field3D: Call to ynext with {:d} which is more than number of yguards ({:d})",
+        dir, fieldmesh->ystart);
   }
 #endif
 
@@ -227,17 +227,17 @@ const BoutReal &Field3D::operator()(const Ind2D &d, int jz) const {
 
 const Region<Ind3D> &Field3D::getRegion(REGION region) const {
   return fieldmesh->getRegion3D(toString(region));
-};
+}
 const Region<Ind3D> &Field3D::getRegion(const std::string &region_name) const {
   return fieldmesh->getRegion3D(region_name);
-};
+}
 
 const Region<Ind2D> &Field3D::getRegion2D(REGION region) const {
   return fieldmesh->getRegion2D(toString(region));
-};
+}
 const Region<Ind2D> &Field3D::getRegion2D(const std::string &region_name) const {
   return fieldmesh->getRegion2D(region_name);
-};
+}
 
 /***************************************************************
  *                         OPERATORS 
@@ -285,7 +285,11 @@ Field3D & Field3D::operator=(const Field2D &rhs) {
   ASSERT1(areFieldsCompatible(*this, rhs));
 
   /// Copy data
-  BOUT_FOR(i, getRegion("RGN_ALL")) { (*this)[i] = rhs[i]; }
+  BOUT_FOR(i, rhs.getRegion("RGN_ALL")) {
+    for (int iz = 0; iz < nz; iz++) {
+      (*this)(i, iz) = rhs[i];
+    }
+  }
 
   return *this;
 }
@@ -428,7 +432,7 @@ void Field3D::applyBoundary(const std::string &region, const std::string &condit
   }
 
   if (!region_found) {
-    throw BoutException("Region '%s' not found", region.c_str());
+    throw BoutException("Region '{:s}' not found", region);
   }
 
   //Field2D sets the corners to zero here, should we do the same here?
@@ -684,7 +688,7 @@ Field3D filter(const Field3D &var, int N0, const std::string& rgn) {
 
 // Fourier filter in z with zmin
 Field3D lowPass(const Field3D &var, int zmax, bool keep_zonal, const std::string& rgn) {
-  TRACE("lowPass(Field3D, %d, %d)", zmax, keep_zonal);
+  TRACE("lowPass(Field3D, {}, {})", zmax, keep_zonal);
 
   checkData(var);
   int ncz = var.getNz();
@@ -779,7 +783,7 @@ void checkDataIsFiniteOnRegion(const Field3D& f, const std::string& region) {
   // Do full checks
   BOUT_FOR_SERIAL(i, f.getRegion(region)) {
     if (!finite(f[i])) {
-      throw BoutException("Field3D: Operation on non-finite data at [%d][%d][%d]\n",
+      throw BoutException("Field3D: Operation on non-finite data at [{:d}][{:d}][{:d}]\n",
                           i.x(), i.y(), i.z());
     }
   }

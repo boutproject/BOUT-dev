@@ -296,6 +296,13 @@ direction can be specified:
 
     NXPE = 1  # Set number of X processors
 
+Alternatively, the number in the Y direction can be specified (if both are
+given, ``NXPE`` takes precedence and ``NYPE`` is ignored):
+
+.. code-block:: cfg
+
+    NYPE = 1  # Set number of Y processors
+
 If you need to specify complex input values, e.g. numerical values
 from experiment, you may want to use a grid file. The grid file to use
 is specified relative to the root directory where the simulation is
@@ -482,6 +489,10 @@ or just::
 
     options["mysection"]["myswitch"] = true;
 
+Names including sections, subsections, etc. can be specified using ``":"`` as a
+separator, e.g.::
+    options["mysection:mysubsection:myswitch"] = true;
+
 To get options, they can be assigned to a variable::
 
     int nout = options["nout"];
@@ -559,6 +570,16 @@ This string is stored in the attributes of the option::
 
   std::string docstring = options["value"].attributes["doc"];
 
+Overriding library defaults
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+BOUT++ sets defaults for options controlling the mesh, etc. A physics model (or
+other user code) can override these defaults by using the convenience macro
+BOUT_OVERRIDE_DEFAULT_OPTION, for example if you want to change the default
+value of ``mesh::staggergrids`` from false to true, put (outside any
+class/function body)::
+
+    BOUT_OVERRIDE_DEFAULT_OPTION("mesh:staggergrids", true);
 
 Older interface
 ~~~~~~~~~~~~~~~

@@ -312,7 +312,7 @@ private:
       return init_err;                                             \
     try {                                                          \
       auto model = bout::utils::make_unique<ModelClass>();         \
-      auto solver = std::unique_ptr<Solver>(Solver::create());     \
+      auto solver = Solver::create();                              \
       solver->setModel(model.get());                               \
       auto bout_monitor = bout::utils::make_unique<BoutMonitor>(); \
       solver->addMonitor(bout_monitor.get(), Solver::BACK);        \

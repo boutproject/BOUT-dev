@@ -48,6 +48,7 @@ class Mesh;
 #include <bout/deprecated.hxx>
 #include <bout/deriv_store.hxx>
 #include <bout/index_derivs_interface.hxx>
+#include <bout/mpi_wrapper.hxx>
 
 #include "field_data.hxx"
 #include "bout_types.hxx"
@@ -70,10 +71,34 @@ class Mesh;
 #include "unused.hxx"
 
 #include <bout/region.hxx>
+#include "bout/generic_factory.hxx"
 
 #include <list>
 #include <memory>
 #include <map>
+
+class MeshFactory : public Factory<
+  Mesh, MeshFactory,
+  std::function<std::unique_ptr<Mesh>(GridDataSource*, Options*)>> {
+public:
+  static constexpr auto type_name = "Mesh";
+  static constexpr auto section_name = "mesh";
+  static constexpr auto option_name = "type";
+  static constexpr auto default_type = "bout";
+
+  ReturnType create(Options* options = nullptr, GridDataSource* source = nullptr);
+};
+
+template <class DerivedType>
+class RegisterMesh {
+public:
+  RegisterMesh(const std::string& name) {
+    MeshFactory::getInstance().add(
+        name, [](GridDataSource* source, Options* options) -> std::unique_ptr<Mesh> {
+          return std::make_unique<DerivedType>(source, options);
+        });
+  }
+};
 
 /// Type used to return pointers to handles
 using comm_handle = void*;
@@ -216,6 +241,9 @@ class Mesh {
   /// @returns zero always. 
   int get(Vector3D &var, const std::string &name, BoutReal def=0.0);
 
+  /// Test if input source was a grid file
+  bool isDataSourceGridFile() const;
+
   /// Wrapper for GridDataSource::hasVar
   bool sourceHasVar(const std::string &name);
 
@@ -257,7 +285,7 @@ class Mesh {
   /*!
    * Communicate an X-Z field
    */
-  void communicate(FieldPerp &f); 
+  virtual void communicate(FieldPerp& f);
 
   /*!
    * Send a list of FieldData objects
@@ -362,6 +390,10 @@ class Mesh {
   /// \param[in] jx   The local (on this processor) index in X
   /// \param[out] ts  The Twist-Shift angle if periodic
   virtual bool periodicY(int jx, BoutReal &ts) const = 0;
+
+  /// Get number of boundaries in the y-direction, i.e. locations where there are boundary
+  /// cells in the global grid
+  virtual int numberOfYBoundaries() const = 0;
 
   /// Is there a branch cut at this processor's lower y-boundary?
   ///
@@ -484,10 +516,12 @@ class Mesh {
   
   /// Returns the global X index given a local index
   /// If the local index includes the boundary cells, then so does the global.
-  virtual int XGLOBAL(int xloc) const = 0;
+  [[gnu::deprecated("Use getGlobalXIndex instead")]]
+  int XGLOBAL(int xloc) const { return getGlobalXIndex(xloc); }
   /// Returns the global Y index given a local index
   /// The local index must include the boundary, the global index does not.
-  virtual int YGLOBAL(int yloc) const = 0;
+  [[gnu::deprecated("Use getGlobalYIndex or getGlobalYIndexNoBoundaries instead")]]
+  virtual int YGLOBAL(int yloc) const { return getGlobalYIndexNoBoundaries(yloc); }
 
   /// Returns the local X index given a global index
   /// If the global index includes the boundary cells, then so does the local.
@@ -495,6 +529,50 @@ class Mesh {
   /// Returns the local Y index given a global index
   /// If the global index includes the boundary cells, then so does the local.
   virtual int YLOCAL(int yglo) const = 0;
+
+  /// Returns the number of unique cells (i.e., ones not used for
+  /// communication) on this processor for 3D fields. Boundaries
+  /// are only included to a depth of 1.
+  virtual int localSize3D();
+  /// Returns the number of unique cells (i.e., ones not used for
+  /// communication) on this processor for 2D fields. Boundaries
+  /// are only included to a depth of 1.
+  virtual int localSize2D();
+  /// Returns the number of unique cells (i.e., ones not used for
+  /// communication) on this processor for perpendicular fields.
+  /// Boundaries are only included to a depth of 1.
+  virtual int localSizePerp();
+
+  /// Get the value of the first global 3D index on this processor.
+  virtual int globalStartIndex3D();
+  /// Get the value of the first global 2D index on this processor.
+  virtual int globalStartIndex2D();
+  /// Get the value of the first global perpendicular index on this processor.
+  virtual int globalStartIndexPerp();
+
+  /// Returns a global X index given a local index.
+  /// Global index includes boundary cells, local index includes boundary or guard cells.
+  virtual int getGlobalXIndex(int xlocal) const = 0;
+
+  /// Returns a global X index given a local index.
+  /// Global index excludes boundary cells, local index includes boundary or guard cells.
+  virtual int getGlobalXIndexNoBoundaries(int xlocal) const = 0;
+
+  /// Returns a global Y index given a local index.
+  /// Global index includes boundary cells, local index includes boundary or guard cells.
+  virtual int getGlobalYIndex(int ylocal) const = 0;
+
+  /// Returns a global Y index given a local index.
+  /// Global index excludes boundary cells, local index includes boundary or guard cells.
+  virtual int getGlobalYIndexNoBoundaries(int ylocal) const = 0;
+
+  /// Returns a global Z index given a local index.
+  /// Global index includes boundary cells, local index includes boundary or guard cells.
+  virtual int getGlobalZIndex(int zlocal) const = 0;
+
+  /// Returns a global Z index given a local index.
+  /// Global index excludes boundary cells, local index includes boundary or guard cells.
+  virtual int getGlobalZIndexNoBoundaries(int zlocal) const = 0;
 
   /// Size of the mesh on this processor including guard/boundary cells
   int LocalNx, LocalNy, LocalNz;
@@ -895,7 +973,10 @@ protected:
   
   /// Initialise derivatives
   void derivs_init(Options* options);
-  
+
+  /// Pointer to the global MPI wrapper, for convenience
+  MpiWrapper* mpi = nullptr;
+
 private:
 
   /// Allocates default Coordinates objects
@@ -912,6 +993,8 @@ private:
   std::map<std::string, Region<Ind2D>> regionMap2D;
   std::map<std::string, Region<IndPerp>> regionMapPerp;
   Array<int> indexLookup3Dto2D;
+
+  int localNumCells3D = -1, localNumCells2D = -1, localNumCellsPerp = -1;
 };
 
 #endif // __MESH_H__

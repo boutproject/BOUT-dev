@@ -111,6 +111,10 @@ class BoutMesh : public Mesh {
   /// \param[in] jx   The local (on this processor) index in X
   bool periodicY(int jx) const override;
 
+  /// Get number of boundaries in the y-direction, i.e. locations where there are boundary
+  /// cells in the global grid
+  int numberOfYBoundaries() const;
+
   /// Is there a branch cut at this processor's lower boundary?
   ///
   /// @param[in] jx             The local (on this processor) index in X
@@ -175,13 +179,24 @@ class BoutMesh : public Mesh {
 
   void outputVars(Datafile& file) override;
 
-  int XGLOBAL(int xloc) const override;
-  int YGLOBAL(int yloc) const override;
-  int XGLOBAL(BoutReal xloc, BoutReal& xglo) const;
-  int YGLOBAL(BoutReal yloc, BoutReal& yglo) const;
+  int getGlobalXIndex(int xlocal) const override;
+  int getGlobalXIndexNoBoundaries(int xlocal) const override;
+  int getGlobalYIndex(int ylocal) const override;
+  int getGlobalYIndexNoBoundaries(int ylocal) const override;
+  int getGlobalZIndex(int zlocal) const override;
+  int getGlobalZIndexNoBoundaries(int zlocal) const override;
 
   int XLOCAL(int xglo) const override;
   int YLOCAL(int yglo) const override;
+
+protected:
+  BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int nxpe, int nype,
+           int pe_xind, int pe_yind);
+  /// For debugging purposes (when creating fake parallel meshes), make
+  /// the send and receive buffers share memory. This allows for
+  /// communications to be faked between meshes as though they were on
+  /// different processors.
+  void overlapHandleMemory(BoutMesh* yup, BoutMesh* ydown, BoutMesh* xin, BoutMesh* xout);
 
 private:
   std::string gridname;
@@ -199,6 +214,10 @@ private:
   int NZPE;
 
   int MYPE_IN_CORE; // 1 if processor in core
+
+  using Mesh::YGLOBAL;
+  int XGLOBAL(BoutReal xloc, BoutReal& xglo) const;
+  int YGLOBAL(BoutReal yloc, BoutReal& yglo) const;
 
   // Topology
   int ixseps1, ixseps2, jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2;
@@ -295,8 +314,13 @@ private:
   int pack_data(const std::vector<FieldData*>& var_list, int xge, int xlt, int yge,
                 int ylt, BoutReal* buffer);
   /// Copy data from a buffer back into the fields
+
   int unpack_data(const std::vector<FieldData*>& var_list, int xge, int xlt, int yge,
                   int ylt, BoutReal* buffer);
 };
+
+namespace {
+RegisterMesh<BoutMesh> registermeshbout{"bout"};
+}
 
 #endif // __BOUTMESH_H__

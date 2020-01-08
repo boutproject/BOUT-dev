@@ -48,6 +48,7 @@ class GridDataSource;
  */
 class GridDataSource {
 public:
+  GridDataSource(const bool source_is_file = false) : is_file(source_is_file) {}
   virtual ~GridDataSource() = default;
 
   virtual bool hasVar(const std::string &name) = 0; ///< Test if source can supply a variable
@@ -82,6 +83,9 @@ public:
 
   /// Are y-boundary guard cells read from the source?
   virtual bool hasYBoundaryGuards() = 0;
+
+  /// Is the data source a grid file?
+  const bool is_file;
 };
 
 /// Interface to grid data in a file

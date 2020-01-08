@@ -65,7 +65,7 @@ void OptionINI::read(Options *options, const string &filename) {
   fin.open(filename.c_str());
 
   if (!fin.good()) {
-    throw BoutException(_("\tOptions file '%s' not found\n"), filename.c_str());
+    throw BoutException(_("\tOptions file '{:s}' not found\n"), filename);
   }
 
   Options *section = options; // Current section
@@ -82,13 +82,14 @@ void OptionINI::read(Options *options, const string &filename) {
       if (startpos != string::npos) {
         // A section header
         if (endpos == string::npos) {
-          throw BoutException("\t'%s': Missing ']'\n\tLine: %s", filename.c_str(), buffer.c_str());
+          throw BoutException("\t'{:s}': Missing ']'\n\tLine: {:s}", filename, buffer);
         }
 
         buffer = trim(buffer, "[]");
 
         if(buffer.empty()) {
-          throw BoutException("\t'%s': Missing section name\n\tLine: %s", filename.c_str(), buffer.c_str());
+          throw BoutException("\t'{:s}': Missing section name\n\tLine: {:s}", filename,
+                              buffer);
         }
         
         section = options;
@@ -123,7 +124,7 @@ void OptionINI::write(Options *options, const std::string &filename) {
   fout.open(filename, ios::out | ios::trunc);
 
   if (!fout.good()) {
-    throw BoutException(_("Could not open output file '%s'\n"), filename.c_str());
+    throw BoutException(_("Could not open output file '{:s}'\n"), filename);
   }
   
   // Call recursive function to write to file
@@ -164,11 +165,11 @@ void OptionINI::parse(const string &buffer, string &key, string &value) {
   value = trim(buffer.substr(startpos+1), " \t\r\n\"");
   
   if (key.empty()) {
-    throw BoutException(_("\tEmpty key\n\tLine: %s"), buffer.c_str());
+    throw BoutException(_("\tEmpty key\n\tLine: {:s}"), buffer);
   }
 
   if (key.find(':') != std::string::npos) {
-    throw BoutException(_("\tKey must not contain ':' character\n\tLine: %s"), buffer.c_str());
+    throw BoutException(_("\tKey must not contain ':' character\n\tLine: {:s}"), buffer);
   }
 }
 

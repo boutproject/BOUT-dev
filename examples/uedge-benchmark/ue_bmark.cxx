@@ -97,13 +97,13 @@ protected:
 
     BoutReal hthe0;
     if (GRID_LOAD1(hthe0) == 0) {
-      output.write("    ****NOTE: input from BOUT, Z length needs to be divided by %e\n",
+      output.write("    ****NOTE: input from BOUT, Z length needs to be divided by {:e}\n",
                    hthe0 / rho_s);
     }
 
     ///////////// NORMALISE QUANTITIES ////////////////////
     
-    output.write("\tNormalising to rho_s = %e\n", rho_s);
+    output.write("\tNormalising to rho_s = {:e}\n", rho_s);
     
     auto* coords = mesh->getCoordinates();
     // Normalise profiles
@@ -135,7 +135,7 @@ protected:
     D_perp = 0.1;
     mu_perp = 0.1;
 
-    output.write("Diffusion coefficients: chi %e D %e Mu %e\n", chi_perp, D_perp, mu_perp);
+    output.write("Diffusion coefficients: chi {:e} D {:e} Mu {:e}\n", chi_perp, D_perp, mu_perp);
 
     /////////////// CALCULATE METRICS /////////////////
 

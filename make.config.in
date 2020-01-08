@@ -39,14 +39,14 @@ BOUT_LOCALE_PATH=@localedir@
 
 # Created this variable so that a user won't overwrite the CXXFLAGS variable
 # on the command line, just add to this one
-BOUT_FLAGS = $(CXXFLAGS) @CXXFLAGS@ @OPENMP_CXXFLAGS@ @CXX11_FLAGS@ @COVERAGE_FLAGS@
+BOUT_FLAGS = $(CXXFLAGS) @CXXFLAGS@ @OPENMP_CXXFLAGS@ @COVERAGE_FLAGS@
 #Use := here to force a "static" evaluation of the current state of BOUT_FLAGS to
 #avoid infinite recursion that would arise if BOUT_FLAGS appeared on both sides of =
 BOUT_FLAGS := $(BOUT_FLAGS) -DBOUT_FLAGS_STRING="$(BOUT_FLAGS)"
 
 # Specify the MPI C++ compiler in CXX
 
-CXX		= @MPICXX@
+CXX		= @CXX@
 CC      = $(CXX)
 
 AR		= ar
@@ -89,7 +89,8 @@ LIB_SO = $(BOUT_LIB_PATH)/libbout++.so
 endif
 
 MPARK_VARIANT_INCLUDE_PATH=@MPARK_VARIANT_INCLUDE_PATH@
-BOUT_INCLUDE = -I$(BOUT_INCLUDE_PATH) $(CXXINCLUDE) $(EXTRA_INCS) -I$(MPARK_VARIANT_INCLUDE_PATH)
+FMT_INCLUDE_PATH=@FMT_INCLUDE_PATH@
+BOUT_INCLUDE = -I$(BOUT_INCLUDE_PATH) $(CXXINCLUDE) $(EXTRA_INCS) -I$(MPARK_VARIANT_INCLUDE_PATH) -I$(FMT_INCLUDE_PATH)
 BOUT_LIBS    = -lm -L$(BOUT_LIB_PATH) -lbout++ $(EXTRA_LIBS)
 
 CHANGED = $(shell find -f $(BOUT_TOP)/include $(BOUT_TOP)/src -type f \( -name \*.cxx -or -name \*.h \) -newer $(LIB) -print 2> /dev/null)
@@ -167,6 +168,7 @@ install: libfast
 	$(MKDIR) $(DESTDIR)/@datadir@/bout++/pylib/{boutdata,boututils}
 	$(INSTALL_DATA) include/*.hxx $(INSTALL_INCLUDE_PATH)
 	$(INSTALL_DATA) $(MPARK_VARIANT_INCLUDE_PATH)/mpark/*.hpp $(INSTALL_INCLUDE_PATH)/mpark
+	$(INSTALL_DATA) $(FMT_INCLUDE_PATH)/fmt/*.h $(INSTALL_INCLUDE_PATH)/fmt
 	$(INSTALL_DATA) include/pvode/*.h $(INSTALL_INCLUDE_PATH)/pvode/
 	$(INSTALL_DATA) include/bout/*.hxx $(INSTALL_INCLUDE_PATH)/bout/
 	$(INSTALL_DATA) include/bout/sys/*.hxx $(INSTALL_INCLUDE_PATH)/bout/sys/
@@ -191,12 +193,14 @@ install: libfast
 	sed -i "s|^idlpath=.*|idlpath=@datadir@/bout++/idllib/|" $(DESTDIR)@bindir@/bout-config
 	sed -i "s|^pythonpath=.*|pythonpath=@datadir@/bout++/pylib/|" $(DESTDIR)@bindir@/bout-config
 	sed -i "s|^MPARK_VARIANT_INCLUDE_PATH=.*|MPARK_VARIANT_INCLUDE_PATH=@includedir@/bout++|" $(DESTDIR)@bindir@/bout-config
+	sed -i "s|^FMT_INCLUDE_PATH=.*|FMT_INCLUDE_PATH=@includedir@/bout++|" $(DESTDIR)@bindir@/bout-config
 
 	@# Modify paths in the make.config file
 	sed -i "s|^BOUT_INCLUDE_PATH=.*|BOUT_INCLUDE_PATH=@includedir@/bout++|" $(DESTDIR)@datadir@/bout++/make.config
 	sed -i "s|^BOUT_LIB_PATH=.*|BOUT_LIB_PATH=@libdir@|" $(DESTDIR)@datadir@/bout++/make.config
 	sed -i "s|^BOUT_CONFIG_FILE=.*|BOUT_CONFIG_FILE=@datadir@/bout++/make.config|" $(DESTDIR)@datadir@/bout++/make.config
 	sed -i "s|^MPARK_VARIANT_INCLUDE_PATH=.*|MPARK_VARIANT_INCLUDE_PATH=@includedir@/bout++|" $(DESTDIR)@datadir@/bout++/make.config
+	sed -i "s|^FMT_INCLUDE_PATH=.*|FMT_INCLUDE_PATH=@includedir@/bout++|" $(DESTDIR)@datadir@/bout++/make.config
 
 uninstall:
 	$(PRE_UNINSTALL)     # Pre-uninstall commands follow.
@@ -220,7 +224,13 @@ uninstall:
 # Builds the library with $(OBJ) which is defined from the SOURCEC variable
 ####################################################################
 
+MPARK_VARIANT_SENTINEL = $(MPARK_VARIANT_INCLUDE_PATH)/mpark/variant.hpp
+$(MPARK_VARIANT_SENTINEL):
+	@echo "Downloading mpark.variant"
+	git submodule update --init --recursive $(BOUT_TOP)/externalpackages/mpark.variant
+
 ifeq ("$(TARGET)", "libfast")
+libfast: | $(MPARK_VARIANT_SENTINEL)
 libfast: makefile $(BOUT_CONFIG_FILE) $(BOUT_TOP)/include $(OBJ) $(DIRS)
 endif
 
@@ -304,8 +314,8 @@ endif
 # -MT  add a target to the generated dependency
 # Ignore failure, in case some compiler does not support this
 %.o: $(BOUT_CONFIG_FILE) %.cxx
-	@echo "  Compiling " $(@F:.o=.cxx)
-	@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -c $(@F:.o=.cxx) -o $@
+	@echo "  Compiling " $(@:.o=.cxx)
+	@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -c $(@:.o=.cxx) -o $@
 ifeq ("$(TARGET)","libfast")
 	test "$@" = "bout++.o" || touch $(BOUT_TOP)/lib/.last.o.file
 endif

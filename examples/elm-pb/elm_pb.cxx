@@ -236,7 +236,7 @@ private:
     mesh->get(Grid_NX, "nx");
     mesh->get(Jysep, "jyseps1_1");
     Grid_NXlimit = n0_bottom_x * Grid_NX;
-    output.write("Jysep1_1 = %i   Grid number = %e\n", int(Jysep), Grid_NX);
+    output.write("Jysep1_1 = {:d}   Grid number = {:e}\n", int(Jysep), Grid_NX);
 
     if (Jysep > 0.) { // for single null geometry
       BoutReal Jxsep, Jysep2;
@@ -247,9 +247,9 @@ private:
         BoutReal mgx = mesh->GlobalX(i.x());
         BoutReal xgrid_num = (Jxsep + 1.) / Grid_NX;
 
-        int globaly = mesh->YGLOBAL(i.y());
+        int globaly = mesh->getGlobalYIndex(i.y());
 
-        if (mgx > xgrid_num || (globaly <= int(Jysep) - 4) || (globaly > int(Jysep2)))
+        if (mgx > xgrid_num || (globaly <= int(Jysep) - 2) || (globaly > int(Jysep2) + 2))
           mgx = xgrid_num;
         BoutReal rlx = mgx - n0_center;
         BoutReal temp = exp(rlx / n0_width);
@@ -281,8 +281,8 @@ protected:
     Coordinates* metric = mesh->getCoordinates();
 
     output.write("Solving high-beta flute reduced equations\n");
-    output.write("\tFile    : %s\n", __FILE__);
-    output.write("\tCompiled: %s at %s\n", __DATE__, __TIME__);
+    output.write("\tFile    : {:s}\n", __FILE__);
+    output.write("\tCompiled: {:s} at {:s}\n", __DATE__, __TIME__);
 
     //////////////////////////////////////////////////////////////
     // Load data from the grid
@@ -626,10 +626,10 @@ protected:
           int zperiod = globalOptions["zperiod"].withDefault(1);
           if ((rmp_n % zperiod) != 0)
             output_warn.write(
-                "     ***WARNING: rmp_n (%d) not a multiple of zperiod (%d)\n", rmp_n,
+                "     ***WARNING: rmp_n ({:d}) not a multiple of zperiod ({:d})\n", rmp_n,
                 zperiod);
 
-          output.write("\tMagnetic perturbation: n = %d, m = %d, magnitude %e Tm\n",
+          output.write("\tMagnetic perturbation: n = {:d}, m = {:d}, magnitude {:e} Tm\n",
                        rmp_n, rmp_m, rmp_factor);
 
           rmp_Psi0 = 0.0;
@@ -716,22 +716,22 @@ protected:
 
     delta_i = AA * 60.67 * 5.31e5 / sqrt(density / 1e6) / (Lbar * 100.0);
 
-    output.write("Normalisations: Bbar = %e T   Lbar = %e m\n", Bbar, Lbar);
-    output.write("                Va = %e m/s   Tbar = %e s\n", Va, Tbar);
-    output.write("                dnorm = %e\n", dnorm);
+    output.write("Normalisations: Bbar = {:e} T   Lbar = {:e} m\n", Bbar, Lbar);
+    output.write("                Va = {:e} m/s   Tbar = {:e} s\n", Va, Tbar);
+    output.write("                dnorm = {:e}\n", dnorm);
     output.write("    Resistivity\n");
 
     if (gyroviscous) {
       omega_i = 9.58e7 * Zeff * Bbar;
       Upara2 = 0.5 / (Tbar * omega_i);
-      output.write("Upara2 = %e     Omega_i = %e\n", Upara2, omega_i);
+      output.write("Upara2 = {:e}     Omega_i = {:e}\n", Upara2, omega_i);
     }
 
     if (eHall)
-      output.write("                delta_i = %e   AA = %e \n", delta_i, AA);
+      output.write("                delta_i = {:e}   AA = {:e} \n", delta_i, AA);
 
     if (vac_lund > 0.0) {
-      output.write("        Vacuum  Tau_R = %e s   eta = %e Ohm m\n", vac_lund * Tbar,
+      output.write("        Vacuum  Tau_R = {:e} s   eta = {:e} Ohm m\n", vac_lund * Tbar,
                    MU0 * Lbar * Lbar / (vac_lund * Tbar));
       vac_resist = 1. / vac_lund;
     } else {
@@ -739,7 +739,7 @@ protected:
       vac_resist = 0.0;
     }
     if (core_lund > 0.0) {
-      output.write("        Core    Tau_R = %e s   eta = %e Ohm m\n", core_lund * Tbar,
+      output.write("        Core    Tau_R = {:e} s   eta = {:e} Ohm m\n", core_lund * Tbar,
                    MU0 * Lbar * Lbar / (core_lund * Tbar));
       core_resist = 1. / core_lund;
     } else {
@@ -748,55 +748,55 @@ protected:
     }
 
     if (hyperresist > 0.0) {
-      output.write("    Hyper-resistivity coefficient: %e\n", hyperresist);
+      output.write("    Hyper-resistivity coefficient: {:e}\n", hyperresist);
     }
 
     if (ehyperviscos > 0.0) {
-      output.write("    electron Hyper-viscosity coefficient: %e\n", ehyperviscos);
+      output.write("    electron Hyper-viscosity coefficient: {:e}\n", ehyperviscos);
     }
 
     if (hyperviscos > 0.0) {
-      output.write("    Hyper-viscosity coefficient: %e\n", hyperviscos);
+      output.write("    Hyper-viscosity coefficient: {:e}\n", hyperviscos);
       SAVE_ONCE(hyper_mu_x);
     }
 
     if (diffusion_par > 0.0) {
-      output.write("    diffusion_par: %e\n", diffusion_par);
+      output.write("    diffusion_par: {:e}\n", diffusion_par);
       SAVE_ONCE(diffusion_par);
     }
 
     // xqx: parallel hyper-viscous diffusion for pressure
     if (diffusion_p4 > 0.0) {
-      output.write("    diffusion_p4: %e\n", diffusion_p4);
+      output.write("    diffusion_p4: {:e}\n", diffusion_p4);
       SAVE_ONCE(diffusion_p4);
     }
 
     // xqx: parallel hyper-viscous diffusion for vorticity
     if (diffusion_u4 > 0.0) {
-      output.write("    diffusion_u4: %e\n", diffusion_u4);
+      output.write("    diffusion_u4: {:e}\n", diffusion_u4);
       SAVE_ONCE(diffusion_u4)
     }
 
     // xqx: parallel hyper-viscous diffusion for vector potential
     if (diffusion_a4 > 0.0) {
-      output.write("    diffusion_a4: %e\n", diffusion_a4);
+      output.write("    diffusion_a4: {:e}\n", diffusion_a4);
       SAVE_ONCE(diffusion_a4);
     }
 
     if (heating_P > 0.0) {
-      output.write("    heating_P(watts): %e\n", heating_P);
+      output.write("    heating_P(watts): {:e}\n", heating_P);
 
-      output.write("    hp_width(%%): %e\n", hp_width);
+      output.write("    hp_width(%%): {:e}\n", hp_width);
 
-      output.write("    hp_length(%%): %e\n", hp_length);
+      output.write("    hp_length(%%): {:e}\n", hp_length);
 
       SAVE_ONCE(heating_P, hp_width, hp_length);
     }
 
     if (sink_P > 0.0) {
-      output.write("    sink_P(rate): %e\n", sink_P);
-      output.write("    sp_width(%%): %e\n", sp_width);
-      output.write("    sp_length(%%): %e\n", sp_length);
+      output.write("    sink_P(rate): {:e}\n", sink_P);
+      output.write("    sp_width(%%): {:e}\n", sp_width);
+      output.write("    sp_length(%%): {:e}\n", sp_length);
 
       SAVE_ONCE(sink_P, sp_width, sp_length);
     }
@@ -897,12 +897,12 @@ protected:
 
     if (spitzer_resist) {
       // Use Spitzer resistivity
-      output.write("\tTemperature: %e -> %e [eV]\n", min(Te), max(Te));
+      output.write("\tTemperature: {:e} -> {:e} [eV]\n", min(Te), max(Te));
       eta = 0.51 * 1.03e-4 * Zeff * 20.
             * pow(Te, -1.5); // eta in Ohm-m. NOTE: ln(Lambda) = 20
-      output.write("\tSpitzer resistivity: %e -> %e [Ohm m]\n", min(eta), max(eta));
+      output.write("\tSpitzer resistivity: {:e} -> {:e} [Ohm m]\n", min(eta), max(eta));
       eta /= MU0 * Va * Lbar;
-      output.write("\t -> Lundquist %e -> %e\n", 1.0 / max(eta), 1.0 / min(eta));
+      output.write("\t -> Lundquist {:e} -> {:e}\n", 1.0 / max(eta), 1.0 / min(eta));
     } else {
       // transition from 0 for large P0 to resistivity for small P0
       eta = core_resist + (vac_resist - core_resist) * vac_mask;
@@ -926,17 +926,17 @@ protected:
 
       output.write("Including magnetic perturbation\n");
       if (rmp_ramp > 0.0) {
-        output.write("\tRamping up over period t = %e (%e ms)\n", rmp_ramp,
+        output.write("\tRamping up over period t = {:e} ({:e} ms)\n", rmp_ramp,
                      rmp_ramp * Tbar * 1000.);
         apar_changing = true;
       }
       if (rmp_freq > 0.0) {
-        output.write("\tOscillating with frequency f = %e (%e kHz)\n", rmp_freq,
+        output.write("\tOscillating with frequency f = {:e} ({:e} kHz)\n", rmp_freq,
                      rmp_freq / Tbar / 1000.);
         apar_changing = true;
       }
       if (rmp_rotate != 0.0) {
-        output.write("\tRotating with a frequency f = %e (%e kHz)\n", rmp_rotate,
+        output.write("\tRotating with a frequency f = {:e} ({:e} kHz)\n", rmp_rotate,
                      rmp_rotate / Tbar / 1000.);
         apar_changing = true;
       }
@@ -1008,7 +1008,7 @@ protected:
       beta = B0 * B0 / (0.5 + (B0 * B0 / (g * P0)));
       gradparB = Grad_par(B0) / B0;
 
-      output.write("Beta in range %e -> %e\n", min(beta), max(beta));
+      output.write("Beta in range {:e} -> {:e}\n", min(beta), max(beta));
     } else {
       Vpar = 0.0;
     }
@@ -1502,7 +1502,7 @@ protected:
 
       if (first_run) { // Print out maximum values of viscosity used on this processor
         output.write("   Hyper-viscosity values:\n");
-        output.write("      Max mu_x = %e, Max_DC mu_x = %e\n", max(hyper_mu_x),
+        output.write("      Max mu_x = {:e}, Max_DC mu_x = {:e}\n", max(hyper_mu_x),
                      max(DC(hyper_mu_x)));
       }
     }
@@ -1718,7 +1718,7 @@ protected:
     U1 += (gamma * B0 * B0) * Grad_par(Jrhs, CELL_CENTRE) + (gamma * b0xcv) * Grad(P);
 
     // Second matrix, solving Alfven wave dynamics
-    static InvertPar* invU = 0;
+    static std::unique_ptr<InvertPar> invU{nullptr};
     if (!invU)
       invU = InvertPar::Create();
 

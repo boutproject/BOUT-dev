@@ -81,13 +81,13 @@ void HermiteSpline::calcWeights(const Field3D &delta_x, const Field3D &delta_z) 
         // Check that t_x and t_z are in range
         if ((t_x < 0.0) || (t_x > 1.0)) {
           throw BoutException(
-              "t_x=%e out of range at (%d,%d,%d) (delta_x=%e, i_corner=%d)", t_x, x, y,
+              "t_x={:e} out of range at ({:d},{:d},{:d}) (delta_x={:e}, i_corner={:d})", t_x, x, y,
               z, delta_x(x, y, z), i_corner(x, y, z));
         }
 
         if ((t_z < 0.0) || (t_z > 1.0)) {
           throw BoutException(
-              "t_z=%e out of range at (%d,%d,%d) (delta_z=%e, k_corner=%d)", t_z, x, y,
+              "t_z={:e} out of range at ({:d},{:d},{:d}) (delta_z={:e}, k_corner={:d})", t_z, x, y,
               z, delta_z(x, y, z), k_corner(x, y, z));
         }
 
@@ -110,6 +110,56 @@ void HermiteSpline::calcWeights(const Field3D &delta_x, const Field3D &delta_z) 
 void HermiteSpline::calcWeights(const Field3D &delta_x, const Field3D &delta_z, const BoutMask &mask) {
   skip_mask = mask;
   calcWeights(delta_x, delta_z);
+}
+
+/*!
+ * Return position and weight of points needed to approximate the function value at the
+ * point that the field line through (i,j,k) meets the (j+1)-plane. For the case where
+ * only the z-direction is not aligned to grid points, the approximation is: f(i,j+1,k*) =
+ * h00_z * f(i,j+1,k) + h01_z * f(i,j+1,k+1)
+ *                 + h10_z * dfdz(i,j+1,k) + h11_z * dfdz(i,j+1,k+1)
+ *               = h00_z * f(i,j+1,k) + h01_z * f(i,j+1,k+1)
+ *                 + h10_z * ( f(i,j+1,k+1) - f(i,j+1,k-1) ) / 2
+ *                 + h11_z * ( f(i,j+1,k+2) - f(i,j+1,k) ) / 2
+ * for k* a point between k and k+1. Therefore, this function returns
+ *   position 		weight
+ *   (i, j+1, k-1)	- h10_z / 2
+ *   (i, j+1, k)	h00_z - h11_z / 2
+ *   (i, j+1, k+1)	h01_z + h10_z / 2
+ *   (i, j+1, k+2)	h11_z / 2
+ */
+std::vector<ParallelTransform::PositionsAndWeights>
+HermiteSpline::getWeightsForYApproximation(int i, int j, int k, int yoffset) {
+  std::vector<ParallelTransform::PositionsAndWeights> pw;
+  ParallelTransform::PositionsAndWeights p;
+
+  int ncz = localmesh->LocalNz;
+  int k_mod = ((k_corner(i, j, k) % ncz) + ncz) % ncz;
+  int k_mod_m1 = (k_mod > 0) ? (k_mod - 1) : (ncz - 1);
+  int k_mod_p1 = (k_mod + 1) % ncz;
+  int k_mod_p2 = (k_mod + 2) % ncz;
+
+  // Same x, y for all:
+  p.i = i;
+  p.j = j + yoffset;
+
+  p.k = k_mod_m1;
+  p.weight = -0.5 * h10_z(i, j, k);
+  pw.push_back(p);
+
+  p.k = k_mod;
+  p.weight = h00_z(i, j, k) - 0.5 * h11_z(i, j, k);
+  pw.push_back(p);
+
+  p.k = k_mod_p1;
+  p.weight = h01_z(i, j, k) + 0.5 * h10_z(i, j, k);
+  pw.push_back(p);
+
+  p.k = k_mod_p2;
+  p.weight = 0.5 * h11_z(i, j, k);
+  pw.push_back(p);
+
+  return pw;
 }
 
 Field3D HermiteSpline::interpolate(const Field3D &f) const {

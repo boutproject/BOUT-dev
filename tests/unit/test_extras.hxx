@@ -9,10 +9,11 @@
 #include <vector>
 
 #include "boutcomm.hxx"
-#include "bout/mesh.hxx"
-#include "bout/coordinates.hxx"
 #include "field3d.hxx"
 #include "unused.hxx"
+#include "bout/coordinates.hxx"
+#include "bout/mesh.hxx"
+#include "bout/mpi_wrapper.hxx"
 
 static constexpr BoutReal BoutRealTolerance{1e-15};
 // FFTs have a slightly looser tolerance than other functions
@@ -173,6 +174,7 @@ public:
 
     // Need some options for parallelTransform
     options = Options::getRoot();
+    mpi = bout::globals::mpi;
   }
 
   void setCoordinates(std::shared_ptr<Coordinates> coords, CELL_LOC location = CELL_CENTRE) {
@@ -222,10 +224,11 @@ public:
                        int UNUSED(tag)) override {
     return nullptr;
   }
-  MPI_Comm getXcomm(int UNUSED(jy)) const override { return MPI_COMM_NULL; }
-  MPI_Comm getYcomm(int UNUSED(jx)) const override { return MPI_COMM_NULL; }
+  MPI_Comm getXcomm(int UNUSED(jy)) const override { return BoutComm::get(); }
+  MPI_Comm getYcomm(int UNUSED(jx)) const override { return BoutComm::get(); }
   bool periodicY(int UNUSED(jx)) const override { return true; }
   bool periodicY(int UNUSED(jx), BoutReal& UNUSED(ts)) const override { return true; }
+  int numberOfYBoundaries() const { return 1; }
   std::pair<bool, BoutReal> hasBranchCutLower(int UNUSED(jx)) const override {
     return std::make_pair(false, 0.);
   }
@@ -270,8 +273,12 @@ public:
                               int UNUSED(tag)) override {
     return nullptr;
   }
-  const RangeIterator iterateBndryLowerY() const override { return RangeIterator(); }
-  const RangeIterator iterateBndryUpperY() const override { return RangeIterator(); }
+  const RangeIterator iterateBndryLowerY() const override {
+    return RangeIterator(xstart, xend);
+  }
+  const RangeIterator iterateBndryUpperY() const override {
+    return RangeIterator(xstart, xend);
+  }
   const RangeIterator iterateBndryLowerOuterY() const override { return RangeIterator(); }
   const RangeIterator iterateBndryLowerInnerY() const override { return RangeIterator(); }
   const RangeIterator iterateBndryUpperOuterY() const override { return RangeIterator(); }
@@ -285,10 +292,20 @@ public:
   BoutReal GlobalY(int jy) const override { return jy; }
   BoutReal GlobalX(BoutReal jx) const override { return jx; }
   BoutReal GlobalY(BoutReal jy) const override { return jy; }
-  int XGLOBAL(int UNUSED(xloc)) const override { return 0; }
-  int YGLOBAL(int UNUSED(yloc)) const override { return 0; }
+  int getGlobalXIndex(int) const override { return 0; }
+  int getGlobalXIndexNoBoundaries(int) const override { return 0; }
+  int getGlobalYIndex(int) const override { return 0; }
+  int getGlobalYIndexNoBoundaries(int) const override { return 0; }
+  int getGlobalZIndex(int) const override { return 0; }
+  int getGlobalZIndexNoBoundaries(int) const override { return 0; }
   int XLOCAL(int UNUSED(xglo)) const override { return 0; }
   int YLOCAL(int UNUSED(yglo)) const override { return 0; }
+  virtual int localSize3D() override { return LocalNx * LocalNy * LocalNz; }
+  virtual int localSize2D() override { return LocalNx * LocalNy; }
+  virtual int localSizePerp() override { return LocalNx * LocalNz; }
+  virtual int globalStartIndex3D() override { return 0; }
+  virtual int globalStartIndex2D() override { return 0; }
+  virtual int globalStartIndexPerp() override { return 0; }
 
   void initDerivs(Options * opt){
     StaggerGrids=true;
@@ -300,18 +317,33 @@ public:
                 Region<Ind2D>(0, LocalNx - 1, 0, ystart - 1, 0, 0, LocalNy, 1));
     addRegion3D("RGN_LOWER_Y", Region<Ind3D>(0, LocalNx - 1, 0, ystart - 1, 0,
                                              LocalNz - 1, LocalNy, LocalNz));
+    addRegion2D("RGN_LOWER_Y_THIN", getRegion2D("RGN_LOWER_Y"));
+    addRegion3D("RGN_LOWER_Y_THIN", getRegion3D("RGN_LOWER_Y"));
+
     addRegion2D("RGN_UPPER_Y",
                 Region<Ind2D>(0, LocalNx - 1, yend + 1, LocalNy - 1, 0, 0, LocalNy, 1));
     addRegion3D("RGN_UPPER_Y", Region<Ind3D>(0, LocalNx - 1, yend + 1, LocalNy - 1, 0,
                                              LocalNz - 1, LocalNy, LocalNz));
+    addRegion2D("RGN_UPPER_Y_THIN", getRegion2D("RGN_UPPER_Y"));
+    addRegion3D("RGN_UPPER_Y_THIN", getRegion3D("RGN_UPPER_Y"));
+
     addRegion2D("RGN_INNER_X",
-                Region<Ind2D>(0, xstart - 1, 0, LocalNy - 1, 0, 0, LocalNy, 1));
-    addRegion3D("RGN_INNER_X", Region<Ind3D>(0, xstart - 1, 0, LocalNy - 1, 0,
-                                             LocalNz - 1, LocalNy, LocalNz));
+                Region<Ind2D>(0, xstart - 1, ystart, yend, 0, 0, LocalNy, 1));
+    addRegion3D("RGN_INNER_X", Region<Ind3D>(0, xstart - 1, ystart, yend, 0, LocalNz - 1,
+                                             LocalNy, LocalNz));
+    addRegionPerp("RGN_INNER_X_THIN",
+                  Region<IndPerp>(0, xstart - 1, 0, 0, 0, LocalNz - 1, 1, LocalNz));
+    addRegion2D("RGN_INNER_X_THIN", getRegion2D("RGN_INNER_X"));
+    addRegion3D("RGN_INNER_X_THIN", getRegion3D("RGN_INNER_X"));
+
     addRegion2D("RGN_OUTER_X",
-                Region<Ind2D>(xend + 1, LocalNx - 1, 0, LocalNy - 1, 0, 0, LocalNy, 1));
-    addRegion3D("RGN_OUTER_X", Region<Ind3D>(xend + 1, LocalNx - 1, 0, LocalNy - 1, 0,
+                Region<Ind2D>(xend + 1, LocalNx - 1, ystart, yend, 0, 0, LocalNy, 1));
+    addRegion3D("RGN_OUTER_X", Region<Ind3D>(xend + 1, LocalNx - 1, ystart, yend, 0,
                                              LocalNz - 1, LocalNy, LocalNz));
+    addRegionPerp("RGN_OUTER_X_THIN", Region<IndPerp>(xend + 1, LocalNx - 1, 0, 0, 0,
+                                                      LocalNz - 1, 1, LocalNz));
+    addRegion2D("RGN_OUTER_X_THIN", getRegion2D("RGN_OUTER_X"));
+    addRegion3D("RGN_OUTER_X_THIN", getRegion3D("RGN_OUTER_X"));
 
     const auto boundary_names = {"RGN_LOWER_Y", "RGN_UPPER_Y", "RGN_INNER_X",
                                  "RGN_OUTER_X"};
@@ -384,6 +416,7 @@ public:
     WithQuietOutput quiet_warn{output_warn};
 
     delete bout::globals::mesh;
+    bout::globals::mpi = new MpiWrapper();
     bout::globals::mesh = new FakeMesh(nx, ny, nz);
     bout::globals::mesh->createDefaultRegions();
     static_cast<FakeMesh*>(bout::globals::mesh)->setCoordinates(nullptr);
@@ -400,6 +433,7 @@ public:
     // fromFieldAligned
     test_coords->setParallelTransform(
         bout::utils::make_unique<ParallelTransformIdentity>(*bout::globals::mesh));
+    static_cast<FakeMesh*>(bout::globals::mesh)->createBoundaryRegions();
 
     delete mesh_staggered;
     mesh_staggered = new FakeMesh(nx, ny, nz);
@@ -429,6 +463,8 @@ public:
     bout::globals::mesh = nullptr;
     delete mesh_staggered;
     mesh_staggered = nullptr;
+    delete bout::globals::mpi;
+    bout::globals::mpi = nullptr;
   }
 
   static constexpr int nx = 3;

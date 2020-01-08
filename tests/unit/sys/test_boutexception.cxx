@@ -17,10 +17,10 @@ TEST(BoutExceptionTest, What) {
     EXPECT_EQ(e.what(), test_message);
   }
   try {
-    throw BoutException("%s", "second");
+    throw BoutException("this is {}", "second");
   } catch (const BoutException &e) {
     std::string message(e.what());
-    EXPECT_EQ(message, "second");
+    EXPECT_EQ(message, "this is second");
   }
 }
 
