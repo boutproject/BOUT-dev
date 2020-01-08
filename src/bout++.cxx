@@ -642,6 +642,10 @@ int BoutFinalise(bool write_settings) {
     }
   }
 
+  if (Options::root()["write_final_timings"].withDefault(false)) {
+    Timer::listAllInfo();
+  }
+
   // Delete the mesh
   delete bout::globals::mesh;
 
