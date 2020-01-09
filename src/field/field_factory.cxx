@@ -100,7 +100,8 @@ FieldFactory::FieldFactory(Mesh* localmesh, Options* opt)
                                          "recursion; -1 = unlimited")
                                     .withDefault<std::string>("0"));
   } catch (const std::exception&) {
-    throw BoutException("Invalid integer given as input:max_recursion_depth: '%s'", nonconst_options["input"]["max_recursion_depth"].as<std::string>().c_str());
+    throw ParseException("Invalid integer given as input:max_recursion_depth: '{:s}'",
+        nonconst_options["input"]["max_recursion_depth"].as<std::string>());
   }
   
   // Useful values
