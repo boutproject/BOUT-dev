@@ -182,7 +182,7 @@ private:
 
 FieldGeneratorPtr FieldBinary::clone(const list<FieldGeneratorPtr> args) {
   if (args.size() != 2)
-    throw ParseException("Binary operator expecting 2 arguments. Got {}", args.size());
+    throw ParseException("Binary operator expecting 2 arguments. Got {{}}", args.size());
 
   return std::make_shared<FieldBinary>(args.front(), args.back(), op);
 }
@@ -341,7 +341,7 @@ FieldGeneratorPtr ExpressionParser::parseParenExpr(LexInfo& lex) const {
 
   if ((lex.curtok != ')') && (lex.curtok != ']'))
     throw ParseException("Expecting ')' or ']' but got curtok={:d} ({:c})",
-                         lex.curtok, static_cast<char>(lex.curtok));
+                         static_cast<int>(lex.curtok), static_cast<char>(lex.curtok));
 
   lex.nextToken(); // eat ')'
   return g;
@@ -388,7 +388,7 @@ FieldGeneratorPtr ExpressionParser::parseContextExpr(LexInfo& lex) const {
   // Should now be '('
   if (lex.curtok != '(') {
     throw ParseException("Expecting '(' after ] context expression,  but got curtok={:d} ({:c})",
-                         static_cast<int>(lex.curtok), lex.curtok);
+                         static_cast<int>(lex.curtok), static_cast<char>(lex.curtok));
   }
   
   // Get the next expression to evaluate, put into FieldContext
@@ -425,7 +425,7 @@ FieldGeneratorPtr ExpressionParser::parsePrimary(LexInfo& lex) const {
     return parseContextExpr(lex);
   }
   }
-  throw ParseException("Unexpected token {:d} ({:c})", lex.curtok, static_cast<char>(lex.curtok));
+  throw ParseException("Unexpected token {:d} ({:c})", static_cast<int>(lex.curtok), static_cast<char>(lex.curtok));
 }
 
 FieldGeneratorPtr ExpressionParser::parseBinOpRHS(LexInfo& lex, int ExprPrec,
@@ -617,10 +617,10 @@ char ExpressionParser::LexInfo::nextToken() {
       curident += LastChar;
       LastChar = static_cast<signed char>(ss.get());
       if (LastChar == EOF) {
-        throw ParseException("Unexpected end of input; expecting }");
+        throw ParseException("Unexpected end of input; expecting }}");
       }
       if (LastChar == '{') {
-        throw ParseException("Unexpected opening brace {; expecting }");
+        throw ParseException("Unexpected opening brace {{; expecting }}");
       }
     } while (LastChar != '}');
     LastChar = static_cast<signed char>(ss.get());
