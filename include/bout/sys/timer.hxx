@@ -5,7 +5,6 @@
 #include <map>
 #include <string>
 #include <type_traits>
-#include <iomanip>
 
 #include "output.hxx"
 #include "msg_stack.hxx"

@@ -1,5 +1,9 @@
 #include "bout/sys/timer.hxx"
 
+#include "fmt/format.h"
+
+#include <algorithm>
+
 Timer::Timer() : timing(getInfo("")) {
   if (timing.counter == 0) {
     timing.started = clock_type::now();
@@ -60,22 +64,37 @@ double Timer::resetTime(Timer::timer_info& info) {
 }
 
 void Timer::listAllInfo() {
-  const std::string headerOne = "Timer name";
-  const std::string separator = " | ";
-  auto max_width = static_cast<unsigned int>(headerOne.length());
+  const std::string headerName = "Timer name";
+  const std::string headerTime = "Time (s)";
+  const std::string headerHits = "Hits";
 
-  for (const auto& kv : info) {
-    max_width = std::max(max_width, static_cast<unsigned int>(kv.first.length()));
-  }
+  const auto longest_width = [](const std::string& header, const auto& op) {
+    return std::max(header.size(),
+                    op(*std::max_element(std::begin(info), std::end(info),
+                                         [&op](const auto& lhs, const auto& rhs) {
+                                           return op(lhs) < op(rhs);
+                                         })));
+  };
 
-  output << "Timer report \n\n";
-  output << std::setw(max_width) << headerOne << separator << "Time (s)"
-         << "\n";
-  output << std::setw(max_width) << std::string(max_width, '-') << separator
-         << std::string(max_width, '-') << "\n";
+  const auto max_width =
+      longest_width(headerName, [](const auto& it) { return it.first.length(); });
+  const auto time_width = longest_width(headerTime, [](const auto& it) {
+    return fmt::format("{:.9g}", it.second.time.count()).length();
+  });
+  const auto hit_width = longest_width(headerHits, [](const auto& it) {
+    return fmt::format("{}", it.second.ntimes).length();
+  });
+
+  using namespace std::string_literals;
+
+  output.write("\nTimer report \n\n");
+  output.write("{0:<{1}} | {2:<{3}} | {4}\n", headerName, max_width, headerTime,
+               time_width, headerHits);
+  output.write("{0:-<{1}}-|-{0:-<{2}}-|-{0:-<{3}}\n", ""s, max_width, time_width,
+               hit_width);
   for (const auto& kv : info) {
-    output << std::left << std::setw(max_width) << kv.first << " | "
-           << kv.second.time.count() << " (" << kv.second.ntimes << ")\n";
+    output.write("{0:<{1}} | {2:<{3}.9g} | {4:<{5}}\n", kv.first, max_width,
+                 kv.second.time.count(), time_width, kv.second.ntimes, hit_width);
   }
-  output << "\n";
+  output.write("\n");
 }
