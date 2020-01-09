@@ -234,8 +234,12 @@ private:
   int lower_inner_corner_orig, upper_inner_corner_orig, lower_outer_corner_orig,
       upper_outer_corner_orig; // origins for the corner guard cells
   // y-limits of buffers communicated in x-direction. Include y-boundary cells but not
-  // y-guard cells.
-  int IDATA_buff_lowerY, IDATA_buff_upperY, ODATA_buff_lowerY, ODATA_buff_upperY;
+  // y-guard cells. Need different variables for sending and receiving because y-boundary
+  // might be present on sending proc but not receiving proc or vice versa
+  int IDATA_buff_lowerY_send, IDATA_buff_upperY_send, ODATA_buff_lowerY_send,
+      ODATA_buff_upperY_send;
+  int IDATA_buff_lowerY_recv, IDATA_buff_upperY_recv, ODATA_buff_lowerY_recv,
+      ODATA_buff_upperY_recv;
   // x-limits of buffers communicated in y-direction. Include x-boundary cells but not
   // x-guard cells.
   int YDATA_buff_innerX, YDATA_buff_outerX;

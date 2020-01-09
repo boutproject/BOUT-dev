@@ -964,7 +964,8 @@ void BoutMesh::post_receive(CommHandle &ch) {
 
   if (IDATA_DEST != -1) {
     MPI_Irecv(std::begin(ch.imsg_recvbuff),
-              msg_len(ch.var_list.get(), 0, MXG, IDATA_buff_lowerY, IDATA_buff_upperY),
+              msg_len(ch.var_list.get(), 0, MXG, IDATA_buff_lowerY_recv,
+                      IDATA_buff_upperY_recv),
               PVEC_REAL_MPI_TYPE, IDATA_DEST, OUT_SENT_IN, BoutComm::get(),
               &ch.request[4]);
   }
@@ -973,7 +974,8 @@ void BoutMesh::post_receive(CommHandle &ch) {
 
   if (ODATA_DEST != -1) {
     MPI_Irecv(std::begin(ch.omsg_recvbuff),
-              msg_len(ch.var_list.get(), 0, MXG, ODATA_buff_lowerY, ODATA_buff_upperY),
+              msg_len(ch.var_list.get(), 0, MXG, ODATA_buff_lowerY_recv,
+                      ODATA_buff_upperY_recv),
               PVEC_REAL_MPI_TYPE, ODATA_DEST, IN_SENT_OUT, BoutComm::get(),
               &ch.request[5]);
   }
@@ -1012,8 +1014,8 @@ comm_handle BoutMesh::send(FieldGroup &g) {
 
   /// Work out length of buffer needed
   int xlen = msg_len(g.get(), 0, MXG, 0,
-                     std::max(IDATA_buff_upperY - IDATA_buff_lowerY,
-                              ODATA_buff_upperY - ODATA_buff_lowerY));
+                     std::max(IDATA_buff_upperY_send - IDATA_buff_lowerY_send,
+                              ODATA_buff_upperY_send - ODATA_buff_lowerY_send));
   int ylen = msg_len(g.get(), 0, YDATA_buff_outerX - YDATA_buff_innerX, 0, MYG);
   int cornerlen = include_corner_cells ? msg_len(g.get(), 0, MXG, 0, MYG) : 0;
 
@@ -1097,8 +1099,8 @@ comm_handle BoutMesh::send(FieldGroup &g) {
   /// Send to the left (x-1)
 
   if (IDATA_DEST != -1) {
-    len = pack_data(ch->var_list.get(), MXG, 2 * MXG, IDATA_buff_lowerY ,
-                    IDATA_buff_upperY , std::begin(ch->imsg_sendbuff));
+    len = pack_data(ch->var_list.get(), MXG, 2 * MXG, IDATA_buff_lowerY_send,
+                    IDATA_buff_upperY_send, std::begin(ch->imsg_sendbuff));
     if (async_send) {
       MPI_Isend(std::begin(ch->imsg_sendbuff), len, PVEC_REAL_MPI_TYPE, IDATA_DEST,
                 IN_SENT_OUT, BoutComm::get(), &(ch->sendreq[4]));
@@ -1110,8 +1112,8 @@ comm_handle BoutMesh::send(FieldGroup &g) {
   /// Send to the right (x+1)
 
   if (ODATA_DEST != -1) {
-    len = pack_data(ch->var_list.get(), MXSUB, MXSUB + MXG, ODATA_buff_lowerY,
-                    ODATA_buff_upperY, std::begin(ch->omsg_sendbuff));
+    len = pack_data(ch->var_list.get(), MXSUB, MXSUB + MXG, ODATA_buff_lowerY_send,
+                    ODATA_buff_upperY_send, std::begin(ch->omsg_sendbuff));
     if (async_send) {
       MPI_Isend(std::begin(ch->omsg_sendbuff), len, PVEC_REAL_MPI_TYPE, ODATA_DEST,
                 OUT_SENT_IN, BoutComm::get(), &(ch->sendreq[5]));
@@ -1237,13 +1239,14 @@ int BoutMesh::wait(comm_handle handle) {
       break;
     }
     case 4: { // inner
-      unpack_data(ch->var_list.get(), 0, MXG, IDATA_buff_lowerY, IDATA_buff_upperY,
-                  std::begin(ch->imsg_recvbuff));
+      unpack_data(ch->var_list.get(), 0, MXG, IDATA_buff_lowerY_recv,
+                  IDATA_buff_upperY_recv, std::begin(ch->imsg_recvbuff));
       break;
     }
     case 5: { // outer
-      unpack_data(ch->var_list.get(), MXSUB + MXG, MXSUB + 2 * MXG, ODATA_buff_lowerY,
-                  ODATA_buff_upperY, std::begin(ch->omsg_recvbuff));
+      unpack_data(ch->var_list.get(), MXSUB + MXG, MXSUB + 2 * MXG,
+                  ODATA_buff_lowerY_recv, ODATA_buff_upperY_recv,
+                  std::begin(ch->omsg_recvbuff));
       break;
     }
     case 6: { // lower inner corner
@@ -2168,65 +2171,157 @@ void BoutMesh::topology() {
     UDATA_XSPLIT = LocalNx;
 
   if (include_corner_cells) {
-    IDATA_buff_lowerY = (DDATA_INDEST == -1 and DDATA_OUTDEST == -1)
-                        or (DDATA_XSPLIT >= MXG and DDATA_INDEST == -1)
-                        or (DDATA_XSPLIT < MXG and DDATA_OUTDEST == -1)
-                        ? 0 : MYG;
-    if (not (DDATA_INDEST == -1 and DDATA_OUTDEST == -1)
-        and DDATA_XSPLIT < MXG and DDATA_XSPLIT > 0) {
-      // Limiter is in x-guard cells, some points need communicating and some do not.
-      // This is complicated to implement, so do not allow it.
-      throw BoutException("ixseps1 or ixseps2 is in x-guard cells so there are both "
-                          "boundary cells and cells that need to be communicated in "
-                          "x-guard cells. This is not supported. Try changing NXPE.");
+    if ((DDATA_INDEST == -1 and DDATA_OUTDEST == -1)
+        or (DDATA_XSPLIT >= 2*MXG and DDATA_INDEST == -1)
+        or (DDATA_XSPLIT < 2*MXG and DDATA_OUTDEST == -1)) {
+      // Communicate y-boundary cells in x-guards buffer
+      IDATA_buff_lowerY_send = 0;
+      // Don't try to communicate the corner separately
+      lower_inner_corner_dest = -1;
+    } else if (DDATA_XSPLIT < 2*MXG and DDATA_XSPLIT > MXG) {
+      // Limiter is within MXG of the processor boundary, some points need communicating
+      // and some do not.  This is complicated to implement, so do not allow it.
+      throw BoutException("ixseps1 or ixseps2 is not on the processor boundary, but "
+                          "within MXG of the boundary so there are both boundary cells "
+                          "and cells that need to be communicated. This is not "
+                          "supported. Try changing NXPE.");
+    } else {
+      IDATA_buff_lowerY_send = MYG;
     }
 
-    IDATA_buff_upperY = (UDATA_INDEST == -1 and UDATA_OUTDEST == -1)
-                        or (UDATA_XSPLIT >= MXG and UDATA_INDEST == -1)
-                        or (UDATA_XSPLIT < MXG and UDATA_OUTDEST == -1)
-                        ? LocalNy : MYG + MYSUB;
-    if (not (UDATA_INDEST == -1 and UDATA_OUTDEST == -1)
-        and UDATA_XSPLIT < MXG and UDATA_XSPLIT > 0) {
+    if ((DDATA_INDEST == -1 and DDATA_OUTDEST == -1)
+        or (DDATA_XSPLIT >= MXG and DDATA_INDEST == -1)
+        or (DDATA_XSPLIT < MXG and DDATA_OUTDEST == -1)) {
+      // Communicate y-boundary cells in x-guards buffer
+      IDATA_buff_lowerY_recv = 0;
+      // Don't try to communicate the corner separately
+      lower_inner_corner_orig = -1;
+    } else if (DDATA_XSPLIT < MXG and DDATA_XSPLIT > 0) {
       // Limiter is in x-guard cells, some points need communicating and some do not.
       // This is complicated to implement, so do not allow it.
       throw BoutException("ixseps1 or ixseps2 is in x-guard cells so there are both "
                           "boundary cells and cells that need to be communicated in "
                           "x-guard cells. This is not supported. Try changing NXPE.");
+    } else {
+      IDATA_buff_lowerY_recv = MYG;
     }
 
-    ODATA_buff_lowerY = (DDATA_INDEST == -1 and DDATA_OUTDEST == -1)
-                        or (DDATA_XSPLIT > MXG + MXSUB and DDATA_INDEST == -1)
-                        or (DDATA_XSPLIT <= MXG + MXSUB and DDATA_OUTDEST == -1)
-                        ? 0 : MYG;
-    if (not (DDATA_INDEST == -1 and DDATA_OUTDEST == -1)
-        and DDATA_XSPLIT > MXG + MXSUB and DDATA_XSPLIT < LocalNx) {
-      // Limiter is in x-guard cells, some points need communicating and some do not.
-      // This is complicated to implement, so do not allow it.
-      throw BoutException("ixseps1 or ixseps2 is in x-guard cells so there are both "
-                          "boundary cells and cells that need to be communicated in "
-                          "x-guard cells. This is not supported. Try changing NXPE.");
+    if ((UDATA_INDEST == -1 and UDATA_OUTDEST == -1)
+        or (UDATA_XSPLIT >= 2*MXG and UDATA_INDEST == -1)
+        or (UDATA_XSPLIT < 2*MXG and UDATA_OUTDEST == -1)) {
+      // Communicate y-boundary cells in x-guards buffer
+      IDATA_buff_upperY_send = LocalNy;
+      // Don't try to communicate the corner separately
+      upper_inner_corner_dest = -1;
+    } else if (UDATA_XSPLIT < 2*MXG and UDATA_XSPLIT > MXG) {
+      // Limiter is within MXG of the processor boundary, some points need communicating
+      // and some do not.  This is complicated to implement, so do not allow it.
+      throw BoutException("ixseps1 or ixseps2 is not on the processor boundary, but "
+                          "within MXG of the boundary so there are both boundary cells "
+                          "and cells that need to be communicated. This is not "
+                          "supported. Try changing NXPE.");
+    } else {
+      IDATA_buff_upperY_send = MYG + MYSUB;
     }
 
-    ODATA_buff_upperY = (UDATA_INDEST == -1 and UDATA_OUTDEST == -1)
-                        or (UDATA_XSPLIT > MXG + MXSUB and UDATA_INDEST == -1)
-                        or (UDATA_XSPLIT <= MXG + MXSUB and UDATA_OUTDEST == -1)
-                        ? LocalNy : MYG + MYSUB;
-    if (not (UDATA_INDEST == -1 and UDATA_OUTDEST == -1)
-        and UDATA_XSPLIT > MXG + MXSUB and UDATA_XSPLIT < LocalNx) {
+    if ((UDATA_INDEST == -1 and UDATA_OUTDEST == -1)
+        or (UDATA_XSPLIT >= MXG and UDATA_INDEST == -1)
+        or (UDATA_XSPLIT < MXG and UDATA_OUTDEST == -1)) {
+      // Communicate y-boundary cells in x-guards buffer
+      IDATA_buff_upperY_recv = LocalNy;
+      // Don't try to communicate the corner separately
+      upper_inner_corner_orig = -1;
+    } else if (UDATA_XSPLIT < MXG and UDATA_XSPLIT > 0) {
       // Limiter is in x-guard cells, some points need communicating and some do not.
       // This is complicated to implement, so do not allow it.
       throw BoutException("ixseps1 or ixseps2 is in x-guard cells so there are both "
                           "boundary cells and cells that need to be communicated in "
                           "x-guard cells. This is not supported. Try changing NXPE.");
+    } else {
+      IDATA_buff_upperY_recv = MYG + MYSUB;
+    }
+
+    if ((DDATA_INDEST == -1 and DDATA_OUTDEST == -1)
+        or (DDATA_XSPLIT > MXSUB and DDATA_INDEST == -1)
+        or (DDATA_XSPLIT <= MXSUB and DDATA_OUTDEST == -1)) {
+      // Communicate y-boundary cells in x-guards buffer
+      ODATA_buff_lowerY_send = 0;
+      // Don't try to communicate the corner separately
+      lower_outer_corner_dest = -1;
+    } else if (DDATA_XSPLIT > MXSUB and DDATA_XSPLIT < MXG + MXSUB) {
+      // Limiter is within MXG of the processor boundary, some points need communicating
+      // and some do not.  This is complicated to implement, so do not allow it.
+      throw BoutException("ixseps1 or ixseps2 is not on the processor boundary, but "
+                          "within MXG of the boundary so there are both boundary cells "
+                          "and cells that need to be communicated. This is not "
+                          "supported. Try changing NXPE.");
+    } else {
+      ODATA_buff_lowerY_send = MYG;
+    }
+
+    if ((DDATA_INDEST == -1 and DDATA_OUTDEST == -1)
+        or (DDATA_XSPLIT > MXG + MXSUB and DDATA_INDEST == -1)
+        or (DDATA_XSPLIT <= MXG + MXSUB and DDATA_OUTDEST == -1)) {
+      // Communicate y-boundary cells in x-guards buffer
+      ODATA_buff_lowerY_recv = 0;
+      // Don't try to communicate the corner separately
+      lower_outer_corner_orig = -1;
+    } else if (DDATA_XSPLIT > MXG + MXSUB and DDATA_XSPLIT < LocalNx) {
+      // Limiter is in x-guard cells, some points need communicating and some do not.
+      // This is complicated to implement, so do not allow it.
+      throw BoutException("ixseps1 or ixseps2 is in x-guard cells so there are both "
+                          "boundary cells and cells that need to be communicated in "
+                          "x-guard cells. This is not supported. Try changing NXPE.");
+    } else {
+      ODATA_buff_lowerY_recv = MYG;
+    }
+
+    if ((UDATA_INDEST == -1 and UDATA_OUTDEST == -1)
+        or (UDATA_XSPLIT > MXSUB and UDATA_INDEST == -1)
+        or (UDATA_XSPLIT <= MXSUB and UDATA_OUTDEST == -1)) {
+      // Communicate y-boundary cells in x-guards buffer
+      ODATA_buff_upperY_send = LocalNy;
+      // Don't try to communicate the corner separately
+      upper_outer_corner_dest = -1;
+    } else if (UDATA_XSPLIT > MXSUB and UDATA_XSPLIT < MXG + MXSUB) {
+      // Limiter is within MXG of the processor boundary, some points need communicating
+      // and some do not.  This is complicated to implement, so do not allow it.
+      throw BoutException("ixseps1 or ixseps2 is not on the processor boundary, but "
+                          "within MXG of the boundary so there are both boundary cells "
+                          "and cells that need to be communicated. This is not "
+                          "supported. Try changing NXPE.");
+    } else {
+      ODATA_buff_upperY_send = MYG + MYSUB;
+    }
+
+    if ((UDATA_INDEST == -1 and UDATA_OUTDEST == -1)
+        or (UDATA_XSPLIT > MXG + MXSUB and UDATA_INDEST == -1)
+        or (UDATA_XSPLIT <= MXG + MXSUB and UDATA_OUTDEST == -1)) {
+      // Communicate y-boundary cells in x-guards buffer
+      ODATA_buff_upperY_recv = LocalNy;
+      // Don't try to communicate the corner separately
+      upper_outer_corner_orig = -1;
+    } else  if (UDATA_XSPLIT > MXG + MXSUB and UDATA_XSPLIT < LocalNx) {
+      // Limiter is in x-guard cells, some points need communicating and some do not.
+      // This is complicated to implement, so do not allow it.
+      throw BoutException("ixseps1 or ixseps2 is in x-guard cells so there are both "
+                          "boundary cells and cells that need to be communicated in "
+                          "x-guard cells. This is not supported. Try changing NXPE.");
+    } else {
+      ODATA_buff_upperY_recv = MYG + MYSUB;
     }
 
     YDATA_buff_innerX = IDATA_DEST == -1 ? 0 : MXG;
     YDATA_buff_outerX = ODATA_DEST == -1 ? LocalNx : MXG + MXSUB;
   } else {
-    IDATA_buff_lowerY = MYG;
-    IDATA_buff_upperY = MYG + MYSUB;
-    ODATA_buff_lowerY = MYG;
-    ODATA_buff_upperY = MYG + MYSUB;
+    IDATA_buff_lowerY_send = MYG;
+    IDATA_buff_lowerY_recv = MYG;
+    IDATA_buff_upperY_send = MYG + MYSUB;
+    IDATA_buff_upperY_recv = MYG + MYSUB;
+    ODATA_buff_lowerY_send = MYG;
+    ODATA_buff_lowerY_recv = MYG;
+    ODATA_buff_upperY_send = MYG + MYSUB;
+    ODATA_buff_upperY_recv = MYG + MYSUB;
 
     YDATA_buff_innerX = 0;
     YDATA_buff_outerX = LocalNx;
