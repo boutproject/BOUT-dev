@@ -125,18 +125,12 @@ private:
   
   PetscLib lib;     ///< Requires PETSc library
   
-  PetscMatrix<Field2D> matrix; ///< Matrix to be inverted
-  Vec xs, bs;       ///< Solution and RHS vectors
-  KSP ksp;          ///< Krylov Subspace solver
-  PC pc;            ///< Preconditioner
-
   Mesh *localmesh;   ///< The mesh this operates on, provides metrics and communication
   
-  // Preconditioner
-  int xstart, xend;
-  int nloc, nsys;
-  Matrix<BoutReal> acoef, bcoef, ccoef, xvals, bvals;
-  std::unique_ptr<CyclicReduce<BoutReal>> cr; ///< Tridiagonal solver
+  Field2D f2dinit; ///< This is here just to initialise matrix
+  PetscMatrix<Field2D> matrix; ///< Matrix to be inverted
+  KSP ksp;          ///< Krylov Subspace solver
+  PC pc;            ///< Preconditioner
 
   // Y derivatives
   bool include_y_derivs; // Include Y derivative terms?
@@ -148,11 +142,6 @@ private:
 
   // Location of the rhs and solution
   CELL_LOC location;
-  
-  /*!
-   * Number of grid points on this processor
-   */
-  int localSize();
   
   /*!
    * Return the communicator for XY
