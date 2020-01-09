@@ -64,6 +64,9 @@ public:
    */
   double getTime() { return getTime(timing); }
 
+  /// Get the total time in seconds since the very first initialisation
+  double getTotalTime() { return getTotalTime(timing); }
+
   /*!
    * Get the time in seconds, reset timer to zero
    */
@@ -73,6 +76,9 @@ public:
    * The total time in seconds
    */
   static double getTime(const std::string& label) { return getTime(getInfo(label)); }
+
+  /// Total time elapsed since the very first initialisation
+  static double getTotalTime(const std::string& label) { return getTotalTime(getInfo(label)); }
 
   /*!
    * The total time in seconds, resets the timer to zero
@@ -87,12 +93,13 @@ public:
 private:
   /// Structure to contain timing information
   struct timer_info {
-    seconds time;                   ///< Total time
+    seconds time;                   ///< Time of last duration/since last reset
+    seconds total_time;             ///< Total time since initial creation
     bool running;                   ///< Is the timer currently running?
     clock_type::time_point started; ///< Start time
     unsigned int counter;           ///< Number of Timer objects associated with this
                                     ///  timer_info
-    unsigned int ntimes;
+    unsigned int hits;              ///< Number of times this Timer was hit
   };
 
   /// Store of existing timing info objects
@@ -106,6 +113,9 @@ private:
 
   /// Get the elapsed time in seconds for timing info
   static double getTime(const timer_info& info);
+
+  /// Get the total elapsed time in seconds since the first initialisation
+  static double getTotalTime(const timer_info& info);
 
   /// Get the elapsed time, reset timing info to zero
   static double resetTime(timer_info& info);

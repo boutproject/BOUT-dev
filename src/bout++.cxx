@@ -595,7 +595,9 @@ int BoutFinalise(bool write_settings) {
   }
 
   if (Options::root()["write_final_timings"].withDefault(false)) {
+    output.write("\nTimer report \n\n");
     Timer::listAllInfo();
+    output.write("\n");
   }
 
   // Delete the mesh
