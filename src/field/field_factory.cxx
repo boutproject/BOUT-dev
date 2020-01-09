@@ -58,8 +58,8 @@ namespace {
     
     double generate(const Context& ctx) override {
       if (depth_counter == depth_limit) {
-        throw BoutException("Calling %s to recursion depth %d exceeds maximum %d\n",
-                            name.c_str(), depth_counter, depth_limit);
+        throw BoutException("Calling {:s} to recursion depth {:d} exceeds maximum {:d}\n",
+                            name, depth_counter, depth_limit);
       }
       ++depth_counter;
       BoutReal result = target->generate(ctx);
