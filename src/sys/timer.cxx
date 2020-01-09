@@ -70,25 +70,26 @@ double Timer::resetTime(Timer::timer_info& info) {
 }
 
 void Timer::listAllInfo() {
-  const std::string headerOne = "Timer name";
-  const std::string headerTime = "Current time (s)";
+  const std::string headerName = "Timer name";
+  const std::string headerTime = "Total time (s)";
   const std::string headerHits = "Hits";
-  const std::string headerTotal = "Total time (s)";
+  const std::string headerMean = "Mean time/hit (s)";
   const std::string separator = " | ";
 
-  auto max_width = static_cast<unsigned int>(headerTime.length());
+  auto max_width = static_cast<unsigned int>(headerMean.length());
 
   output << "Timer report \n\n";
-  output << std::setw(max_width) << headerOne << separator << headerTime
-         << separator << headerHits << separator << headerTotal << "\n";
+  output << std::setw(max_width) << headerName << separator << headerTime
+         << separator << headerHits << separator << headerMean << "\n";
   output << std::setw(max_width) << std::string(max_width, '-') << separator
           << std::string(max_width, '-') << separator
           << std::string(max_width, '-') << separator
           << std::string(max_width, '-') << "\n";
   for (const auto& kv : info) {
     output << std::left << std::setw(max_width) << kv.first << separator
-           << kv.second.time.count() << separator << << kv.second.hits 
-           << separator << kv.second.total_time.count() << ")\n";
+           << kv.second.total.time.count() << separator << << kv.second.hits
+           << separator << kv.second.total_time.count() / kv.second.hits
+           << "\n";
   }
   output << "\n";
 }
