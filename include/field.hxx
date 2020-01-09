@@ -279,7 +279,7 @@ inline T toFieldAligned(const T& f, const std::string& region = "RGN_ALL") {
   return f.getCoordinates()->getParallelTransform().toFieldAligned(f, region);
 }
 template<typename T>
-[[gnu::deprecated("Please use toFieldAligned(const T& f, "
+[[deprecated("Please use toFieldAligned(const T& f, "
     "const std::string& region = \"RGN_ALL\") instead")]]
 inline T toFieldAligned(const T& f, REGION region) {
   return toFieldAligned(f, toString(region));
@@ -291,7 +291,7 @@ inline T fromFieldAligned(const T& f, const std::string& region = "RGN_ALL") {
   return f.getCoordinates()->getParallelTransform().fromFieldAligned(f, region);
 }
 template<typename T>
-[[gnu::deprecated("Please use fromFieldAligned(const T& f, "
+[[deprecated("Please use fromFieldAligned(const T& f, "
     "const std::string& region = \"RGN_ALL\") instead")]]
 inline T fromFieldAligned(const T& f, REGION region) {
   return fromFieldAligned(f, toString(region));
@@ -321,7 +321,7 @@ inline BoutReal min(const T& f, bool allpe = false, const std::string& rgn = "RG
   return result;
 }
 template<typename T, typename = bout::utils::EnableIfField<T>>
-[[gnu::deprecated("Please use Field3D min(const Field3D& f, bool allpe, "
+[[deprecated("Please use Field3D min(const Field3D& f, bool allpe, "
     "const std::string& region = \"RGN_NOBNDRY\") instead")]]
 inline BoutReal min(const T& f, bool allpe, REGION rgn) {
   return min(f, allpe, toString(rgn));
@@ -351,7 +351,7 @@ inline BoutReal max(const T& f, bool allpe = false, const std::string& rgn = "RG
   return result;
 }
 template<typename T, typename = bout::utils::EnableIfField<T>>
-[[gnu::deprecated("Please use Field3D max(const Field3D& f, bool allpe, "
+[[deprecated("Please use Field3D max(const Field3D& f, bool allpe, "
     "const std::string& region = \"RGN_NOBNDRY\") instead")]]
 inline BoutReal max(const T& f, bool allpe, REGION rgn) {
   return max(f, allpe, toString(rgn));
@@ -384,7 +384,7 @@ inline BoutReal mean(const T &f, bool allpe = false,
   return result / static_cast<BoutReal>(count);
 }
 template<typename T, typename = bout::utils::EnableIfField<T>>
-[[gnu::deprecated("Please use Field3D mean(const Field3D& f, bool allpe, "
+[[deprecated("Please use Field3D mean(const Field3D& f, bool allpe, "
     "const std::string& region = \"RGN_NOBNDRY\") instead")]]
 inline BoutReal mean(const T& f, bool allpe, REGION rgn) {
   return mean(f, allpe, toString(rgn));
@@ -409,7 +409,7 @@ T pow(const T& lhs, const T& rhs, const std::string& rgn = "RGN_ALL") {
   return result;
 }
 template<typename T, typename = bout::utils::EnableIfField<T>>
-[[gnu::deprecated("Please use pow(const T& lhs, const T& rhs"
+[[deprecated("Please use pow(const T& lhs, const T& rhs"
     "const std::string& region = \"RGN_ALL\") instead")]]
 inline T pow(const T& lhs, const T& rhs, REGION rgn) {
   return pow(lhs, rhs, toString(rgn));
@@ -431,7 +431,7 @@ T pow(const T &lhs, BoutReal rhs, const std::string& rgn = "RGN_ALL") {
   return result;
 }
 template<typename T, typename = bout::utils::EnableIfField<T>>
-[[gnu::deprecated("Please use pow(const T& lhs, BoutReal rhs"
+[[deprecated("Please use pow(const T& lhs, BoutReal rhs"
     "const std::string& region = \"RGN_ALL\") instead")]]
 inline T pow(const T& lhs, BoutReal rhs, REGION rgn) {
   return pow(lhs, rhs, toString(rgn));
@@ -454,7 +454,7 @@ T pow(BoutReal lhs, const T &rhs, const std::string& rgn = "RGN_ALL") {
   return result;
 }
 template<typename T, typename = bout::utils::EnableIfField<T>>
-[[gnu::deprecated("Please use pow(BoutReal lhs, const T& rhs"
+[[deprecated("Please use pow(BoutReal lhs, const T& rhs"
     "const std::string& region = \"RGN_ALL\") instead")]]
 inline T pow(BoutReal lhs, const T& rhs, REGION rgn) {
   return pow(lhs, rhs, toString(rgn));
@@ -493,7 +493,7 @@ inline T pow(BoutReal lhs, const T& rhs, REGION rgn) {
     return result;                                                                   \
   }                                                                                  \
   template<typename T, typename = bout::utils::EnableIfField<T>>                     \
-  [[gnu::deprecated("Please use func(const T& f, "                                   \
+  [[deprecated("Please use func(const T& f, "                                   \
       "const std::string& region = \"RGN_ALL\") instead")]]                          \
   inline T name(const T& f, REGION region) {                                         \
     return name(f, toString(region));                                                \
@@ -612,7 +612,7 @@ inline bool finite(const T &f, const std::string& rgn = "RGN_ALL") {
   return true;
 }
 template<typename T, typename = bout::utils::EnableIfField<T>>
-[[gnu::deprecated("Please use bool finite(const Field3D& f, "
+[[deprecated("Please use bool finite(const Field3D& f, "
     "const std::string& region = \"RGN_ALL\") instead")]]
 inline bool finite(const T& f, REGION rgn) {
   return finite(f, toString(rgn));
@@ -647,7 +647,7 @@ inline T floor(const T& var, BoutReal f, const std::string& rgn = "RGN_ALL") {
   return result;
 }
 template<typename T, typename = bout::utils::EnableIfField<T>>
-[[gnu::deprecated("Please use floor(const T& var, BoutReal f, "
+[[deprecated("Please use floor(const T& var, BoutReal f, "
     "const std::string& region = \"RGN_ALL\") instead")]]
 inline T floor(const T& var, BoutReal f, REGION rgn) {
   return floor(var, f, toString(rgn));

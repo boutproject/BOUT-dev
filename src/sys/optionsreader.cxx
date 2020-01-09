@@ -29,7 +29,6 @@ void OptionsReader::read(Options *options, const std::string& filename) {
 
   output_info << "Reading options file " << filename << "\n";
 
-  // Need to decide what file format to use
   OptionINI{}.read(options, filename);
 }
 
@@ -41,7 +40,6 @@ void OptionsReader::write(Options *options, const std::string& filename) {
 
   output_info.write(_("Writing options to file {:s}\n"), filename);
 
-  // Need to decide what file format to use
   OptionINI{}.write(options, filename);
 }
 

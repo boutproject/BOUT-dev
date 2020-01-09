@@ -69,14 +69,15 @@ Datafile::Datafile(Options* opt, Mesh* mesh_in)
   OPTION(opt, flushFrequency, 1); // How frequently do we flush the file
 }
 
-Datafile::Datafile(Datafile &&other) noexcept
-    : parallel(other.parallel), flush(other.flush), guards(other.guards),
-      floats(other.floats), openclose(other.openclose), Lx(other.Lx), Ly(other.Ly),
-      Lz(other.Lz), enabled(other.enabled), shiftOutput(other.shiftOutput),
+Datafile::Datafile(Datafile&& other) noexcept
+    : mesh(other.mesh), parallel(other.parallel), flush(other.flush),
+      guards(other.guards), floats(other.floats), openclose(other.openclose),
+      Lx(other.Lx), Ly(other.Ly), Lz(other.Lz), enabled(other.enabled),
+      init_missing(other.init_missing), shiftOutput(other.shiftOutput),
       shiftInput(other.shiftInput), flushFrequencyCounter(other.flushFrequencyCounter),
       flushFrequency(other.flushFrequency), file(std::move(other.file)),
-      filename(std::move(other.filename)),
-      writable(other.writable), appending(other.appending), first_time(other.first_time),
+      filename(std::move(other.filename)), writable(other.writable),
+      appending(other.appending), first_time(other.first_time),
       int_arr(std::move(other.int_arr)), BoutReal_arr(std::move(other.BoutReal_arr)),
       bool_arr(std::move(other.bool_arr)), f2d_arr(std::move(other.f2d_arr)),
       f3d_arr(std::move(other.f3d_arr)), v2d_arr(std::move(other.v2d_arr)),
@@ -88,8 +89,8 @@ Datafile::Datafile(const Datafile& other)
     : mesh(other.mesh), parallel(other.parallel), flush(other.flush),
       guards(other.guards), floats(other.floats), openclose(other.openclose),
       Lx(other.Lx), Ly(other.Ly), Lz(other.Lz), enabled(other.enabled),
-      shiftOutput(other.shiftOutput), shiftInput(other.shiftInput),
-      flushFrequencyCounter(other.flushFrequencyCounter),
+      init_missing(other.init_missing), shiftOutput(other.shiftOutput),
+      shiftInput(other.shiftInput), flushFrequencyCounter(other.flushFrequencyCounter),
       flushFrequency(other.flushFrequency), file(nullptr), filename(other.filename),
       writable(other.writable), appending(other.appending), first_time(other.first_time),
       int_arr(other.int_arr), BoutReal_arr(other.BoutReal_arr), bool_arr(other.bool_arr),
@@ -1314,7 +1315,7 @@ void Datafile::setAttribute(const std::string &varname, const std::string &attrn
 bool Datafile::read_f2d(const std::string &name, Field2D *f, bool save_repeat) {
   try {
     file->readFieldAttributes(name, *f);
-  } catch (const BoutException &e) {
+  } catch (const BoutException&) {
     if (init_missing) {
       output_warn.write("\tWARNING: Could not read 2D field {:s} attributes.\n", name);
     } else {
@@ -1356,7 +1357,7 @@ bool Datafile::read_f2d(const std::string &name, Field2D *f, bool save_repeat) {
 bool Datafile::read_f3d(const std::string &name, Field3D *f, bool save_repeat) {
   try {
     file->readFieldAttributes(name, *f);
-  } catch (const BoutException &e) {
+  } catch (const BoutException&) {
     if (init_missing) {
       output_warn.write("\tWARNING: Could not read 3D field {:s} attributes.\n", name);
     } else {
@@ -1404,7 +1405,7 @@ bool Datafile::read_f3d(const std::string &name, Field3D *f, bool save_repeat) {
 bool Datafile::read_fperp(const std::string &name, FieldPerp *f, bool save_repeat) {
   try {
     file->readFieldAttributes(name, *f);
-  } catch (const BoutException &e) {
+  } catch (const BoutException&) {
     if (init_missing) {
       output_warn.write("\tWARNING: Could not read FieldPerp {:s} attributes.\n", name);
     } else {

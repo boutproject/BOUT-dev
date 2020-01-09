@@ -83,7 +83,7 @@ public:
     return push(fmt::format(format, args...));
   }
 
-  [[gnu::deprecated("Please use `MsgStack::push` with an empty message instead")]]
+  [[deprecated("Please use `MsgStack::push` with an empty message instead")]]
   int setPoint(); ///< get a message point
 
   void pop();       ///< Remove the last message
@@ -100,7 +100,7 @@ public:
     return 0;
   }
 
-  [[gnu::deprecated("Please use `MsgStack::push` with an empty message instead")]]
+  [[deprecated("Please use `MsgStack::push` with an empty message instead")]]
   int setPoint() { return 0; }
 
   void pop() {}

@@ -369,7 +369,7 @@ template <> Field3D Options::as<Field3D>(const Field3D& similar_to) const {
     
     // Get metadata from similar_to, fill field with scalar_value
     return filledFrom(similar_to, scalar_value);
-  } catch (const std::bad_cast &e) {
+  } catch (const std::bad_cast&) {
     
     // Convert from a string using FieldFactory
     if (bout::utils::holds_alternative<std::string>(value)) {
@@ -424,7 +424,7 @@ template <> Field2D Options::as<Field2D>(const Field2D& similar_to) const {
 
     // Get metadata from similar_to, fill field with scalar_value
     return filledFrom(similar_to, scalar_value);
-  } catch (const std::bad_cast &e) {
+  } catch (const std::bad_cast&) {
     
     // Convert from a string using FieldFactory
     if (bout::utils::holds_alternative<std::string>(value)) {

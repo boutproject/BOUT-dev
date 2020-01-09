@@ -45,6 +45,12 @@
 #include <algorithm>
 #include <memory>
 
+#ifdef _MSC_VER
+// finite is not actually standard C++, it's a BSD extention for C
+inline auto finite(BoutReal x) -> bool { return std::isfinite(x); }
+inline auto strcasecmp(const char* s1, const char* s2) -> int { return _stricmp(s1, s2); }
+#endif
+
 namespace bout {
 namespace utils {
 #ifndef __cpp_lib_make_unique

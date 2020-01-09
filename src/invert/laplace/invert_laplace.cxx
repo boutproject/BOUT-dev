@@ -180,7 +180,7 @@ Field3D Laplacian::solve(const Field3D& b) {
       // 2. Send it to the solver of the implementation (determined during creation)
       x = solve(sliceXZ(b,jy));
     }
-  } catch (BoutIterationFail &itfail) {
+  } catch (const BoutIterationFail&) {
     status = 1;
   }
   BoutParallelThrowRhsFail(status, "Laplacian inversion took too many iterations.");
@@ -232,7 +232,7 @@ Field3D Laplacian::solve(const Field3D& b, const Field3D& x0) {
       // 2. Send them to the solver of the implementation (determined during creation)
       x = solve(sliceXZ(b,jy), sliceXZ(x0,jy));
     }
-  } catch (BoutIterationFail &itfail) {
+  } catch (const BoutIterationFail&) {
     status = 1;
   }
   BoutParallelThrowRhsFail(status, "Laplacian inversion took too many iterations.");

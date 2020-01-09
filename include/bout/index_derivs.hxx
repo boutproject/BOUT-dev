@@ -183,7 +183,9 @@ struct registerMethod {
     case (DERIV::Upwind):
     case (DERIV::Flux): {
       if (nGuards == 1) {
-        const auto theFunc = std::bind(
+        const std::function<void(const FieldType&, const FieldType&, FieldType&,
+                                 const std::string&)>
+            theFunc = std::bind(
             // Method to store in function
             &Method::template upwindOrFlux<Direction::value, Stagger::value, 1,
                                            FieldType>,
@@ -192,7 +194,9 @@ struct registerMethod {
             method, _1, _2, _3, _4);
         derivativeRegister.registerDerivative(theFunc, Direction{}, Stagger{}, method);
       } else {
-        const auto theFunc = std::bind(
+        const std::function<void(const FieldType&, const FieldType&, FieldType&,
+                                 const std::string&)>
+            theFunc = std::bind(
             // Method to store in function
             &Method::template upwindOrFlux<Direction::value, Stagger::value, 2,
                                            FieldType>,
