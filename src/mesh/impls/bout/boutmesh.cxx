@@ -50,6 +50,14 @@
 /// MPI type of BoutReal for communications
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 
+namespace {
+  // Utility function to get an index forced to be between lower and upper bounds
+  int in_range(int value, int lower, int upper) {
+    ASSERT2(lower <= upper);
+    return std::max(lower, std::min(upper, value));
+  }
+}
+
 BoutMesh::BoutMesh(GridDataSource *s, Options *opt)
   : Mesh(s, opt),
     include_corner_cells((*options)["include_corner_cells"]
@@ -918,14 +926,15 @@ void BoutMesh::post_receive(CommHandle &ch) {
   len = 0;
   if (UDATA_INDEST != -1) {
     len = msg_len(ch.var_list.get(), YDATA_buff_innerX,
-                  std::max(UDATA_XSPLIT, YDATA_buff_outerX), 0, MYG);
+                  in_range(UDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX), 0, MYG);
     MPI_Irecv(std::begin(ch.umsg_recvbuff), len, PVEC_REAL_MPI_TYPE, UDATA_INDEST,
               IN_SENT_DOWN, BoutComm::get(), &ch.request[0]);
   }
   if (UDATA_OUTDEST != -1) {
     inbuff = &ch.umsg_recvbuff[len]; // pointer to second half of the buffer
     MPI_Irecv(inbuff,
-              msg_len(ch.var_list.get(), std::max(UDATA_XSPLIT, YDATA_buff_innerX),
+              msg_len(ch.var_list.get(),
+                      in_range(UDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX),
                       YDATA_buff_outerX, 0, MYG),
               PVEC_REAL_MPI_TYPE, UDATA_OUTDEST, OUT_SENT_DOWN, BoutComm::get(),
               &ch.request[1]);
@@ -937,14 +946,15 @@ void BoutMesh::post_receive(CommHandle &ch) {
 
   if (DDATA_INDEST != -1) { // If sending & recieving data from a processor
     len = msg_len(ch.var_list.get(), YDATA_buff_innerX,
-                  std::min(DDATA_XSPLIT, YDATA_buff_outerX), 0, MYG);
+                  in_range(DDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX), 0, MYG);
     MPI_Irecv(std::begin(ch.dmsg_recvbuff), len, PVEC_REAL_MPI_TYPE, DDATA_INDEST,
               IN_SENT_UP, BoutComm::get(), &ch.request[2]);
   }
   if (DDATA_OUTDEST != -1) {
     inbuff = &ch.dmsg_recvbuff[len];
     MPI_Irecv(inbuff,
-              msg_len(ch.var_list.get(), std::max(DDATA_XSPLIT, YDATA_buff_innerX),
+              msg_len(ch.var_list.get(),
+                      in_range(DDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX),
                       YDATA_buff_outerX, 0, MYG),
               PVEC_REAL_MPI_TYPE, DDATA_OUTDEST, OUT_SENT_UP, BoutComm::get(),
               &ch.request[3]);
@@ -1023,8 +1033,8 @@ comm_handle BoutMesh::send(FieldGroup &g) {
 
   if (UDATA_INDEST != -1) { // If there is a destination for inner x data
     len = pack_data(ch->var_list.get(), YDATA_buff_innerX,
-                    std::min(UDATA_XSPLIT, YDATA_buff_outerX), MYSUB, MYSUB + MYG,
-                    std::begin(ch->umsg_sendbuff));
+                    in_range(UDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX), MYSUB,
+                    MYSUB + MYG, std::begin(ch->umsg_sendbuff));
     // Send the data to processor UDATA_INDEST
 
     if (async_send) {
@@ -1041,7 +1051,8 @@ comm_handle BoutMesh::send(FieldGroup &g) {
   if (UDATA_OUTDEST != -1) {             // if destination for outer x data
     outbuff = &(ch->umsg_sendbuff[len]); // A pointer to the start of the second part
                                          // of the buffer
-    len = pack_data(ch->var_list.get(), std::max(UDATA_XSPLIT, YDATA_buff_innerX),
+    len = pack_data(ch->var_list.get(),
+                    in_range(UDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX),
                     YDATA_buff_outerX, MYSUB, MYSUB + MYG, outbuff);
     // Send the data to processor UDATA_OUTDEST
     if (async_send) {
@@ -1057,8 +1068,8 @@ comm_handle BoutMesh::send(FieldGroup &g) {
   len = 0;
   if (DDATA_INDEST != -1) { // If there is a destination for inner x data
     len = pack_data(ch->var_list.get(), YDATA_buff_innerX,
-                    std::min(DDATA_XSPLIT, YDATA_buff_outerX), MYG, 2 * MYG,
-                    std::begin(ch->dmsg_sendbuff));
+                    in_range(DDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX), MYG,
+                    2 * MYG, std::begin(ch->dmsg_sendbuff));
     // Send the data to processor DDATA_INDEST
     if (async_send) {
       MPI_Isend(std::begin(ch->dmsg_sendbuff), len, PVEC_REAL_MPI_TYPE, DDATA_INDEST,
@@ -1070,7 +1081,8 @@ comm_handle BoutMesh::send(FieldGroup &g) {
   if (DDATA_OUTDEST != -1) {             // if destination for outer x data
     outbuff = &(ch->dmsg_sendbuff[len]); // A pointer to the start of the second part
                                          // of the buffer
-    len = pack_data(ch->var_list.get(), std::max(DDATA_XSPLIT, YDATA_buff_innerX),
+    len = pack_data(ch->var_list.get(),
+                    in_range(DDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX),
                     YDATA_buff_outerX, MYG, 2 * MYG, outbuff);
     // Send the data to processor DDATA_OUTDEST
 
@@ -1197,28 +1209,30 @@ int BoutMesh::wait(comm_handle handle) {
     switch (ind) {
     case 0: { // Up, inner
       unpack_data(ch->var_list.get(), YDATA_buff_innerX,
-                  std::min(UDATA_XSPLIT, YDATA_buff_outerX), MYSUB + MYG, MYSUB + 2 * MYG,
-                  std::begin(ch->umsg_recvbuff));
+                  in_range(UDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX),
+                  MYSUB + MYG, MYSUB + 2 * MYG, std::begin(ch->umsg_recvbuff));
       break;
     }
     case 1: { // Up, outer
       len = msg_len(ch->var_list.get(), YDATA_buff_innerX,
-                    std::min(UDATA_XSPLIT, YDATA_buff_outerX), 0, MYG);
-      unpack_data(ch->var_list.get(), std::max(UDATA_XSPLIT, YDATA_buff_innerX),
+                    in_range(UDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX), 0, MYG);
+      unpack_data(ch->var_list.get(),
+                  in_range(UDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX),
                   YDATA_buff_outerX, MYSUB + MYG, MYSUB + 2 * MYG,
                   &(ch->umsg_recvbuff[len]));
       break;
     }
     case 2: { // Down, inner
       unpack_data(ch->var_list.get(), YDATA_buff_innerX,
-                  std::min(DDATA_XSPLIT, YDATA_buff_outerX), 0, MYG,
+                  in_range(DDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX), 0, MYG,
                   std::begin(ch->dmsg_recvbuff));
       break;
     }
     case 3: { // Down, outer
       len = msg_len(ch->var_list.get(), YDATA_buff_innerX,
-                    std::min(DDATA_XSPLIT, YDATA_buff_outerX), 0, MYG);
-      unpack_data(ch->var_list.get(), std::max(DDATA_XSPLIT, YDATA_buff_innerX),
+                    in_range(DDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX), 0, MYG);
+      unpack_data(ch->var_list.get(),
+                  in_range(DDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX),
                   YDATA_buff_outerX, 0, MYG, &(ch->dmsg_recvbuff[len]));
       break;
     }
