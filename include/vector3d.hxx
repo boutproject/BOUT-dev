@@ -233,7 +233,7 @@ Vector3D toFieldAligned(const Vector3D& v, const std::string& region = "RGN_ALL"
 Vector3D fromFieldAligned(const Vector3D& v, const std::string& region = "RGN_ALL");
 
 /// Create new Vector3D with same attributes as the argument, but uninitialised components
-inline Vector3D emptyFrom(const Vector3D v) {
+inline Vector3D emptyFrom(const Vector3D& v) {
   auto result = Vector3D(v.x.getMesh(), v.covariant, v.getLocation());
   result.x = emptyFrom(v.x);
   result.y = emptyFrom(v.y);
@@ -243,7 +243,7 @@ inline Vector3D emptyFrom(const Vector3D v) {
 }
 
 /// Create new Vector3D with same attributes as the argument, and zero-initialised components
-inline Vector3D zeroFrom(const Vector3D v) {
+inline Vector3D zeroFrom(const Vector3D& v) {
   auto result = Vector3D(v.x.getMesh(), v.covariant, v.getLocation());
   result.x = zeroFrom(v.x);
   result.y = zeroFrom(v.y);

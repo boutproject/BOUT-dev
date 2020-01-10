@@ -198,7 +198,7 @@ inline Vector2D fromFieldAligned(const Vector2D v, const std::string& UNUSED(reg
 }
 
 /// Create new Vector2D with same attributes as the argument, but uninitialised components
-inline Vector2D emptyFrom(const Vector2D v) {
+inline Vector2D emptyFrom(const Vector2D& v) {
   auto result = Vector2D(v.x.getMesh(), v.covariant, v.getLocation());
   result.x = emptyFrom(v.x);
   result.y = emptyFrom(v.y);
@@ -208,7 +208,7 @@ inline Vector2D emptyFrom(const Vector2D v) {
 }
 
 /// Create new Vector2D with same attributes as the argument, and zero-initialised components
-inline Vector2D zeroFrom(const Vector2D v) {
+inline Vector2D zeroFrom(const Vector2D& v) {
   auto result = Vector2D(v.x.getMesh(), v.covariant, v.getLocation());
   result.x = zeroFrom(v.x);
   result.y = zeroFrom(v.y);
