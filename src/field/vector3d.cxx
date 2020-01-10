@@ -610,11 +610,7 @@ const Field3D abs(const Vector3D &v, const std::string& region) {
 }
 
 Vector3D toFieldAligned(const Vector3D& v, const std::string& region) {
-  Vector3D result;
-  result.setLocation(v.getLocation());
-  if (not v.covariant) {
-    result.toContravariant();
-  }
+  Vector3D result{emptyFrom(v)};
 
   result.x = toFieldAligned(v.x, region);
   result.y = toFieldAligned(v.y, region);
@@ -624,11 +620,7 @@ Vector3D toFieldAligned(const Vector3D& v, const std::string& region) {
 }
 
 Vector3D fromFieldAligned(const Vector3D& v, const std::string& region) {
-  Vector3D result;
-  result.setLocation(v.getLocation());
-  if (not v.covariant) {
-    result.toContravariant();
-  }
+  Vector3D result{emptyFrom(v)};
 
   result.x = fromFieldAligned(v.x, region);
   result.y = fromFieldAligned(v.y, region);
