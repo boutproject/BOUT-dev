@@ -1,4 +1,3 @@
-
 #include <bout/invert/laplacexz.hxx>
 #include <cyclic_reduction.hxx>
 #include <dcomplex.hxx>
@@ -26,3 +25,7 @@ private:
   int inner_boundary_flags; ///< Flags to set inner boundary condition
   int outer_boundary_flags; ///< Flags to set outer boundary condition
 };
+
+namespace {
+RegisterLaplaceXZ<LaplaceXZcyclic> registerlaplacexzcylic{"cyclic"};
+} // namespace

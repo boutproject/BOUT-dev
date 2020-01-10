@@ -52,10 +52,17 @@ FUNCTION hypnotoad_version
   ;           and for non-orthogonal grids thetaxy and yxy are different.
   ; 1.2.3   * Rename 'coordinates_type' to 'parallel_transform', 'orthogonal'
   ;           to 'shiftedmetric', and 'field_aligned' to 'identity'
+  ; 1.2.4   * dx was computed as psi(i+1)-psi(i), while now it is computed as
+  ;           psi(i+1/2)-psi(i-1/2).
+  ;           ShiftAngle now computed as a full integral across 0->2pi in
+  ;           poloidal angle - previously was computed only from 'ystart' to
+  ;           'yend' so contribution of the last interval was missed.
+  ;           Fixes some problems that could happen if the separatrix happened
+  ;           to be exactly on a radial grid point.
 
   major_version = 1
   minor_version = 2
-  patch_number = 3
+  patch_number = 4
 
   RETURN, LONG([major_version, minor_version, patch_number])
 

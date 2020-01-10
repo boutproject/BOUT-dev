@@ -2,8 +2,8 @@
 BOUT_TOP = ../../..
 
 DIRS            = impls 
-SOURCEC		= invert_laplace.cxx laplacefactory.cxx
-SOURCEH		= invert_laplace.hxx laplacefactory.hxx
+SOURCEC		= invert_laplace.cxx
+SOURCEH		= invert_laplace.hxx
 TARGET		= lib
 
 include $(BOUT_TOP)/make.config

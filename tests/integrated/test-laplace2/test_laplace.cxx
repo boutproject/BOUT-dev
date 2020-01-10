@@ -26,8 +26,8 @@ int physics_init(bool UNUSED(restarting)) {
   SAVE_ONCE3(input, a, c);
   
   // Create two solvers, using different options
-  Laplacian *solver1 = Laplacian::create(options->getSection("solver1"));
-  Laplacian *solver2 = Laplacian::create(options->getSection("solver2"));
+  auto solver1 = Laplacian::create(options->getSection("solver1"));
+  auto solver2 = Laplacian::create(options->getSection("solver2"));
   
   solver1->setCoefA(a);
   solver1->setCoefC(c);

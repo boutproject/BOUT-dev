@@ -111,6 +111,10 @@ class BoutMesh : public Mesh {
   /// \param[in] jx   The local (on this processor) index in X
   bool periodicY(int jx) const override;
 
+  /// Get number of boundaries in the y-direction, i.e. locations where there are boundary
+  /// cells in the global grid
+  int numberOfYBoundaries() const;
+
   /// Is there a branch cut at this processor's lower boundary?
   ///
   /// @param[in] jx             The local (on this processor) index in X
@@ -188,6 +192,15 @@ class BoutMesh : public Mesh {
   // Switch for communication of corner guard and boundary cells
   const bool include_corner_cells;
 
+protected:
+  BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int nxpe, int nype,
+           int pe_xind, int pe_yind);
+  /// For debugging purposes (when creating fake parallel meshes), make
+  /// the send and receive buffers share memory. This allows for
+  /// communications to be faked between meshes as though they were on
+  /// different processors.
+  void overlapHandleMemory(BoutMesh* yup, BoutMesh* ydown, BoutMesh* xin, BoutMesh* xout);
+
 private:
   std::string gridname;
   int nx, ny, nz; ///< Size of the grid in the input file
@@ -205,6 +218,7 @@ private:
 
   int MYPE_IN_CORE; // 1 if processor in core
 
+  using Mesh::YGLOBAL;
   int XGLOBAL(BoutReal xloc, BoutReal& xglo) const;
   int YGLOBAL(BoutReal yloc, BoutReal& yglo) const;
 
@@ -327,8 +341,13 @@ private:
   int pack_data(const std::vector<FieldData*>& var_list, int xge, int xlt, int yge,
                 int ylt, BoutReal* buffer);
   /// Copy data from a buffer back into the fields
+
   int unpack_data(const std::vector<FieldData*>& var_list, int xge, int xlt, int yge,
                   int ylt, BoutReal* buffer);
 };
+
+namespace {
+RegisterMesh<BoutMesh> registermeshbout{"bout"};
+}
 
 #endif // __BOUTMESH_H__

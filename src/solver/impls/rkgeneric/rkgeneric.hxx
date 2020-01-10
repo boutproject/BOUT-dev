@@ -34,7 +34,6 @@ class RKGenericSolver;
 #include <bout/solver.hxx>
 #include <bout/rkscheme.hxx>
 
-#include <bout/solverfactory.hxx>
 namespace {
 RegisterSolver<RKGenericSolver> registersolverrkgeneric("rkgeneric");
 }
@@ -42,7 +41,7 @@ RegisterSolver<RKGenericSolver> registersolverrkgeneric("rkgeneric");
 class RKGenericSolver : public Solver {
  public:
   RKGenericSolver(Options *options);
-  ~RKGenericSolver();
+  ~RKGenericSolver() = default;
   
   void resetInternalFields() override;
   
@@ -77,7 +76,7 @@ class RKGenericSolver : public Solver {
   int nlocal, neq; // Number of variables on local processor and in total
   
   //Pointer to the actual scheme used
-  RKScheme *scheme;
+  std::unique_ptr<RKScheme> scheme{nullptr};
 
 };
 

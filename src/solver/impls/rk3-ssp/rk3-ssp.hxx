@@ -41,7 +41,6 @@ class RK3SSP;
 #include <bout_types.hxx>
 #include <bout/solver.hxx>
 
-#include <bout/solverfactory.hxx>
 namespace {
 RegisterSolver<RK3SSP> registersolverrk3ssp("rk3ssp");
 }

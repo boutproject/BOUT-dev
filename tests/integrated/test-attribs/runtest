@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-from boututils.run_wrapper import shell, shell_safe
+from boututils.run_wrapper import build_and_log, launch_safe
 
 #requires: all_tests
 
-print("Making test-attribs test")
-shell_safe("make > make.log")
+build_and_log("test-attribs test")
 
-shell_safe("./test-attribs")
+launch_safe("./test-attribs", nproc=1, mthread=1)
 
 # Read the attributes
 

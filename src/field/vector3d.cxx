@@ -385,13 +385,13 @@ Vector3D & Vector3D::operator/=(const Field3D &rhs)
     result.covariant = false;                                           \
                                                                         \
     return result;                                                      \
-  };                                                                    \
+  }                                                                     \
 
 
-CROSS(Vector3D, Vector3D, Vector3D);
-CROSS(Vector3D, Vector3D, Vector2D);
-CROSS(Vector3D, Vector2D, Vector3D);
-CROSS(Vector2D, Vector2D, Vector2D);
+CROSS(Vector3D, Vector3D, Vector3D)
+CROSS(Vector3D, Vector3D, Vector2D)
+CROSS(Vector3D, Vector2D, Vector3D)
+CROSS(Vector2D, Vector2D, Vector2D)
 
 /***************************************************************
  *                      BINARY OPERATORS 

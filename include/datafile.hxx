@@ -20,6 +20,9 @@ class Datafile;
 #include "dataformat.hxx"
 #include "bout/format.hxx"
 
+#include <fmt/core.h>
+#include <fmt/format.h>
+
 #include <cstdarg>
 #include <cstdio>
 class Mesh;
@@ -43,17 +46,35 @@ class Datafile {
  public:
   Datafile(Options *opt = nullptr, Mesh* mesh_in = nullptr);
   Datafile(Datafile &&other) noexcept;
-  ~Datafile(); // need to delete filename
+  ~Datafile() = default;
   
   Datafile& operator=(Datafile &&rhs) noexcept;
   Datafile& operator=(const Datafile &rhs) = delete;
 
-  bool openr(const char *filename, ...)
-    BOUT_FORMAT_ARGS( 2, 3);
-  bool openw(const char *filename, ...)
-    BOUT_FORMAT_ARGS( 2, 3); // Overwrites existing file
-  bool opena(const char *filename, ...)
-    BOUT_FORMAT_ARGS( 2, 3); // Appends if exists
+  /// Open read-only
+  bool openr(const std::string& filename);
+
+  template <class S, class... Args>
+  bool openr(const S& format, const Args&... args) {
+    return openr(fmt::format(format, args...));
+  }
+
+  /// Overwrites existing file
+  bool openw(const std::string& filename);
+
+  template <class S, class... Args>
+  bool openw(const S& format, const Args&... args) {
+    return openw(fmt::format(format, args...));
+  }
+
+  /// Appends if exists
+  bool opena(const std::string& filename);
+
+  template <class S, class... Args>
+  bool opena(const S& format, const Args&... args) {
+    return opena(fmt::format(format, args...));
+  }
+
   
   bool isValid();  // Checks if the data source is valid
 
@@ -81,7 +102,11 @@ class Datafile {
   bool write(); ///< Write added variables
 
   /// Opens, writes, closes file
-  bool write(const char* filename, ...) const BOUT_FORMAT_ARGS(2, 3);
+  bool write(const std::string& filename) const;
+  template <typename S, typename... Args>
+  bool write(const S& format, const Args&... args) const {
+    return write(fmt::format(format, args...));
+  }
 
   void setAttribute(const std::string &varname, const std::string &attrname, const std::string &text);
   void setAttribute(const std::string &varname, const std::string &attrname, int value);
@@ -104,9 +129,7 @@ class Datafile {
   int flushFrequency{1}; // How many write calls do we want between openclose
 
   std::unique_ptr<DataFormat> file;
-  size_t filenamelen;
-  static const size_t FILENAMELEN=512;
-  char *filename;
+  std::string filename;
   bool writable{false}; // is file open for writing?
   bool appending{false};
   bool first_time{true}; // is this the first time the data will be written?
