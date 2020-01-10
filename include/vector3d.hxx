@@ -225,6 +225,7 @@ inline const Field3D abs(const Vector3D& v, REGION region) {
   return abs(v, toString(region));
 }
 
+/// Transform to and from field-aligned coordinates
 Vector3D toFieldAligned(const Vector3D& v, const std::string& region = "RGN_ALL");
 Vector3D fromFieldAligned(const Vector3D& v, const std::string& region = "RGN_ALL");
 

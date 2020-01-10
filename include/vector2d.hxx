@@ -181,6 +181,18 @@ inline const Field2D abs(const Vector2D &v, REGION region) {
   return abs(v, toString(region));
 }
 
+/// Transform to and from field-aligned coordinates
+inline Vector2D toFieldAligned(const Vector2D v, const std::string& UNUSED(region) = "RGN_ALL") {
+  // toFieldAligned is a null operation for the Field2D components of v, so return a copy
+  // of the argument (hence pass-by-value instead of pass-by-reference)
+  return v;
+}
+inline Vector2D fromFieldAligned(const Vector2D v, const std::string& UNUSED(region) = "RGN_ALL") {
+  // fromFieldAligned is a null operation for the Field2D components of v, so return a copy
+  // of the argument (hence pass-by-value instead of pass-by-reference)
+  return v;
+}
+
 /*!
  * @brief Time derivative of 2D vector field
  */
