@@ -84,7 +84,8 @@ void LaplaceParallelTri::resetSolver(){
  */
 void LaplaceParallelTri::ensure_stability(const Array<dcomplex> &avec, const Array<dcomplex> &bvec,
                                               const Array<dcomplex> &cvec, Array<dcomplex> &minvb,
-				              const int ncx, int jy, int kz) {
+				              const int ncx, int jy, int kz,
+					      Matrix<dcomplex> &lowerGuardVector, Matrix<dcomplex> &upperGuardVector) {
 
   //output << jy << " " << kz << endl;
   if(jy==3 && kz ==0){
@@ -114,30 +115,31 @@ void LaplaceParallelTri::ensure_stability(const Array<dcomplex> &avec, const Arr
     for(int i=0; i<ncx; i++){
       evec[i] = 0.0;
     }
-    evec[localmesh->xstart] = 1.0;
+    evec[localmesh->xstart-1] = 1.0;
 
-    sendvec[0] = avec[localmesh->xstart];
     sendvec[1] = bvec[localmesh->xstart];
 
     tridag(std::begin(avec), std::begin(bvec), std::begin(cvec), std::begin(evec),
              std::begin(xvec), ncx);
 
-    sendvec[2] = bvec[localmesh->xstart]*minvb[localmesh->xstart] ; //+ avec[localmesh->xstart]*minvb[localmesh->xstart-1];
+    sendvec[0] = xvec[localmesh->xstart];
+    sendvec[2] = minvb[localmesh->xstart]/bvec[localmesh->xstart] ; //+ avec[localmesh->xstart]*minvb[localmesh->xstart-1];
 
     localmesh->sendXIn(&sendvec[0],3,1);
     localmesh->wait(recv[0]);
 
-    thisEig = sendvec[0].real()*recvec[1].real()/(sendvec[1].real()*recvec[0].real());
+    thisEig = sendvec[0].real()*recvec[0].real();
 
     output <<jy<<" "<<kz<<" "<< sendvec[0].real()<<" "<<sendvec[1].real()<<" "<<sendvec[2].real()<<" "<<recvec[0].real()<<" "<<recvec[1].real()<<" "<<recvec[2].real()<<" "<<thisEig<<endl;
     // Unstable if abs(eigenvalue) > 1. Make stable by manipulating matrix and RHS.
     if(std::abs(thisEig) > 1.0) {
-      output << "sendin " << BoutComm::rank() << " " << jy<<" "<<kz<<" "<<thisEig << " " << minvb[localmesh->xstart] << endl;
+      output << "sendin " << BoutComm::rank() << " " << jy<<" "<<kz<<" "<<thisEig << " " << minvb[localmesh->xstart] << " "<<lowerGuardVector(localmesh->xstart,1)<<endl;
       //output << sendvec[0].real()<<" "<<recvec[1].real()<<" "<<sendvec[1].real()<<" "<<recvec[0].real()<<endl;
       //output << sendvec[0].real()<<" "<<sendvec[1].real()<<" "<<sendvec[2].real()<<" "<<recvec[0].real()<<" "<<recvec[1].real()<<" "<<recvec[2].real()<<endl;
       //minvb[localmesh->xstart] = (recvec[2] - recvec[0]*minvb[localmesh->xstart-1])/recvec[1];
-      minvb[localmesh->xstart] = recvec[2].real()/recvec[1].real();
-      output << "in after " << BoutComm::rank() << " " << jy<<" "<<kz<<" "<<thisEig << " " << minvb[localmesh->xstart] << endl;
+      minvb[localmesh->xstart] = - recvec[2].real();
+      lowerGuardVector(localmesh->xstart,1) = 1.0/recvec[0].real();
+      output << "in after " << BoutComm::rank() << " " << jy<<" "<<kz<<" "<<thisEig << " " << minvb[localmesh->xstart] << " "<<lowerGuardVector(localmesh->xstart,1)<<endl;
 
     }
   }
@@ -152,7 +154,8 @@ void LaplaceParallelTri::ensure_stability(const Array<dcomplex> &avec, const Arr
     for(int i=0; i<ncx; i++){
       evec[i] = 0.0;
     }
-    evec[localmesh->xend] = 1.0; 
+    //evec[localmesh->xend] = 1.0; 
+    evec[localmesh->xend+1] = 1.0; 
     
     sendvec[1] = cvec[localmesh->xend];
 
@@ -160,22 +163,23 @@ void LaplaceParallelTri::ensure_stability(const Array<dcomplex> &avec, const Arr
              std::begin(xvec), ncx);
 
     sendvec[0] = xvec[localmesh->xend];
-    sendvec[2] = xvec[localmesh->xend]*minvb[localmesh->xend] ; //+ cvec[localmesh->xend]*minvb[localmesh->xend+1];
+    sendvec[2] = minvb[localmesh->xend]/xvec[localmesh->xend] ; //+ cvec[localmesh->xend]*minvb[localmesh->xend+1];
 
     localmesh->sendXOut(&sendvec[0],3,0);
     localmesh->wait(recv[0]);
 
-    thisEig = sendvec[1].real()*recvec[0].real()/(sendvec[0].real()*recvec[1].real());
+    thisEig = sendvec[0].real()*recvec[0].real();
 
     // Unstable if abs(eigenvalue) > 1. Make stable by manipulating matrix and RHS.
     output <<jy<<" "<<kz<<" "<< sendvec[0].real()<<" "<<sendvec[1].real()<<" "<<sendvec[2].real()<<" "<<recvec[0].real()<<" "<<recvec[1].real()<<" "<<recvec[2].real()<<" "<<thisEig<<" "<<abs(thisEig)<<" "<<(fabs(thisEig)>1.0)<<endl;
     if(std::abs(thisEig) > 1.0) {
-      output << "sendout " << BoutComm::rank() << " " << thisEig << " " << minvb[localmesh->xend] << endl;
+      output << "sendout " << BoutComm::rank() << " " << thisEig << " " << minvb[localmesh->xend]  << " " << upperGuardVector(localmesh->xend,0)<<endl;
       //maxEig = abs(thisEig);
       //output << maxEig << endl;
       //minvb[localmesh->xend] = (recvec[2] - recvec[1]*minvb[localmesh->xend+1])/recvec[0];
-      minvb[localmesh->xend] = recvec[2].real()/recvec[0].real();
-      output << "out after" << BoutComm::rank() << " " << thisEig << " " << minvb[localmesh->xend] << endl;
+      minvb[localmesh->xend] = - recvec[2].real();
+      upperGuardVector(localmesh->xend,0) = 1.0/recvec[0].real();
+      output << "out after" << BoutComm::rank() << " " << thisEig << " " << minvb[localmesh->xend] << " " << upperGuardVector(localmesh->xend,0)<<endl;
     }
   }
 }
@@ -580,7 +584,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 
 ///	SCOREP_USER_REGION_END(invert);
 
-      ensure_stability(avec,bvec,cvec,minvb,ncx,jy,kz);
+      ensure_stability(avec,bvec,cvec,minvb,ncx,jy,kz,lowerGuardVector,upperGuardVector);
       //check_diagonal_dominance(avec,bvec,cvec,ncx,jy,kz);
       //output << "EIGENVALUE TOO LARGE " << BoutComm::rank() << " " << thisEig << " " << jy << " " << kz << endl;
 
@@ -595,13 +599,17 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 
 	if(not localmesh->lastX()) { 
 	  for(int i=0; i<ncx; i++){
-	    xk1d[i] += upperGuardVector(i,0)*(cvec_eff[localmesh->LocalNx-3]*xk1dlast[localmesh->LocalNx-3] + xk1dlast[localmesh->LocalNx-2]) + upperGuardVector(i,1)*xk1dlast[localmesh->LocalNx-1];
+	    //xk1d[i] += upperGuardVector(i,0)*(cvec_eff[localmesh->LocalNx-3]*xk1dlast[localmesh->LocalNx-3] + xk1dlast[localmesh->LocalNx-2]) + upperGuardVector(i,1)*xk1dlast[localmesh->LocalNx-1];
+	    //xk1d[i] += upperGuardVector(i,0)*(cvec_eff[localmesh->LocalNx-3]*xk1dlast[localmesh->LocalNx-3] + xk1dlast[localmesh->LocalNx-2]) ;
+	    xk1d[i] += upperGuardVector(i,0)*( xk1dlast[localmesh->LocalNx-2]) ;
 	  }
 	}
 
 	if(not localmesh->firstX()) { 
 	  for(int i=0; i<ncx; i++){
-	    xk1d[i] += lowerGuardVector(i,0)*xk1dlast[0] + lowerGuardVector(i,1)*( avec_eff[2]*xk1dlast[2] + xk1dlast[1]);
+	    //xk1d[i] += lowerGuardVector(i,0)*xk1dlast[0] + lowerGuardVector(i,1)*( avec_eff[2]*xk1dlast[2] + xk1dlast[1]);
+	    //xk1d[i] += lowerGuardVector(i,1)*( avec_eff[2]*xk1dlast[2] + xk1dlast[1]);
+	    xk1d[i] += lowerGuardVector(i,1)*( xk1dlast[1]);
 	  }
 	} 
 
