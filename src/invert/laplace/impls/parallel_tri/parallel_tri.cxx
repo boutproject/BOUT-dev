@@ -123,7 +123,7 @@ void LaplaceParallelTri::ensure_stability(const Array<dcomplex> &avec, const Arr
              std::begin(xvec), ncx);
 
     sendvec[0] = xvec[localmesh->xstart];
-    sendvec[2] = minvb[localmesh->xstart]/bvec[localmesh->xstart] ; //+ avec[localmesh->xstart]*minvb[localmesh->xstart-1];
+    sendvec[2] = minvb[localmesh->xstart]/xvec[localmesh->xstart] ; //+ avec[localmesh->xstart]*minvb[localmesh->xstart-1];
 
     localmesh->sendXIn(&sendvec[0],3,1);
     localmesh->wait(recv[0]);
