@@ -80,64 +80,104 @@ void LaplaceParallelTri::resetSolver(){
 }
 
 /*!
- * Stability condition depends on eigenvalues of the matrices we are inverting.
+ * Calcalate stability of the iteration, and amend right-hand side vector minvb to ensure stability.
  */
-BoutReal LaplaceParallelTri::calculate_stability(const Array<dcomplex> &avec, const Array<dcomplex> &bvec, const Array<dcomplex> &cvec, const int ncx) {
+void LaplaceParallelTri::ensure_stability(const Array<dcomplex> &avec, const Array<dcomplex> &bvec,
+                                              const Array<dcomplex> &cvec, Array<dcomplex> &minvb,
+				              const int ncx, int jy, int kz) {
 
+  //output << jy << " " << kz << endl;
+  if(jy==3 && kz ==0){
+    for(int i = 0; i<ncx; i++){
+      output << BoutComm::rank()<<" "<<i<<" "<<jy<<" "<<kz<<" "<<avec[i]<<" "<<bvec[i]<<" "<<cvec[i]<<" "<<minvb[i] << endl;
+    }
+  }
 
-  BoutReal maxEig = 0.0;
   BoutReal thisEig = 0.0;
 
   Array<dcomplex> xvec, evec;
   xvec = Array<dcomplex>(ncx);
   evec = Array<dcomplex>(ncx);
+
+  Array<dcomplex> sendvec, recvec;
+  sendvec = Array<dcomplex>(3);
+  recvec = Array<dcomplex>(3);
+
   // If not on innermost boundary, calculate required matrix element and send up
   if(!localmesh->firstX()) {
+
+    comm_handle recv[1];
+    recv[0] = localmesh->irecvXIn(&recvec[0], 3, 0);
+
     // Need the xend-th element
     evec = Array<dcomplex>(ncx);
     for(int i=0; i<ncx; i++){
       evec[i] = 0.0;
     }
-    evec[localmesh->xstart] = avec[localmesh->xstart];
+    evec[localmesh->xstart] = 1.0;
+
+    sendvec[0] = avec[localmesh->xstart];
+    sendvec[1] = bvec[localmesh->xstart];
 
     tridag(std::begin(avec), std::begin(bvec), std::begin(cvec), std::begin(evec),
              std::begin(xvec), ncx);
 
-    dcomplex eval_self_in = xvec[localmesh->xstart];
-    dcomplex eval_neighbour_out;
-    eval_neighbour_out = localmesh->communicateXIn(eval_self_in);
-    BoutReal thisEig = (eval_self_in*eval_neighbour_out).real();
-    //std::cout << BoutComm::rank() << thisEig << endl;
-    if(abs(thisEig) > maxEig) {
-      maxEig = abs(thisEig);
-      //output << maxEig << endl;
-    }
+    sendvec[2] = bvec[localmesh->xstart]*minvb[localmesh->xstart] ; //+ avec[localmesh->xstart]*minvb[localmesh->xstart-1];
 
+    localmesh->sendXIn(&sendvec[0],3,1);
+    localmesh->wait(recv[0]);
+
+    thisEig = sendvec[0].real()*recvec[1].real()/(sendvec[1].real()*recvec[0].real());
+
+    output <<jy<<" "<<kz<<" "<< sendvec[0].real()<<" "<<sendvec[1].real()<<" "<<sendvec[2].real()<<" "<<recvec[0].real()<<" "<<recvec[1].real()<<" "<<recvec[2].real()<<" "<<thisEig<<endl;
+    // Unstable if abs(eigenvalue) > 1. Make stable by manipulating matrix and RHS.
+    if(std::abs(thisEig) > 1.0) {
+      output << "sendin " << BoutComm::rank() << " " << jy<<" "<<kz<<" "<<thisEig << " " << minvb[localmesh->xstart] << endl;
+      //output << sendvec[0].real()<<" "<<recvec[1].real()<<" "<<sendvec[1].real()<<" "<<recvec[0].real()<<endl;
+      //output << sendvec[0].real()<<" "<<sendvec[1].real()<<" "<<sendvec[2].real()<<" "<<recvec[0].real()<<" "<<recvec[1].real()<<" "<<recvec[2].real()<<endl;
+      //minvb[localmesh->xstart] = (recvec[2] - recvec[0]*minvb[localmesh->xstart-1])/recvec[1];
+      minvb[localmesh->xstart] = recvec[2].real()/recvec[1].real();
+      output << "in after " << BoutComm::rank() << " " << jy<<" "<<kz<<" "<<thisEig << " " << minvb[localmesh->xstart] << endl;
+
+    }
   }
 
   // If not on outermost boundary, calculate required matrix element and send down
   if(!localmesh->lastX()) {
+
+    comm_handle recv[1];
+    recv[0] = localmesh->irecvXOut(&recvec[0], 3, 1);
+
     // Need the xend-th element
     for(int i=0; i<ncx; i++){
       evec[i] = 0.0;
     }
-    evec[localmesh->xend] = cvec[localmesh->xend];
+    evec[localmesh->xend] = 1.0; 
+    
+    sendvec[1] = cvec[localmesh->xend];
 
     tridag(std::begin(avec), std::begin(bvec), std::begin(cvec), std::begin(evec),
              std::begin(xvec), ncx);
 
-    dcomplex eval_self_out = xvec[localmesh->xend];
-    dcomplex eval_neighbour_in;
-    eval_neighbour_in = localmesh->communicateXOut(eval_self_out);
-    thisEig = (eval_self_out*eval_neighbour_in).real();
-    //std::cout << BoutComm::rank() << thisEig << endl;
-    if(abs(thisEig) > maxEig) {
-      maxEig = abs(thisEig);
+    sendvec[0] = xvec[localmesh->xend];
+    sendvec[2] = xvec[localmesh->xend]*minvb[localmesh->xend] ; //+ cvec[localmesh->xend]*minvb[localmesh->xend+1];
+
+    localmesh->sendXOut(&sendvec[0],3,0);
+    localmesh->wait(recv[0]);
+
+    thisEig = sendvec[1].real()*recvec[0].real()/(sendvec[0].real()*recvec[1].real());
+
+    // Unstable if abs(eigenvalue) > 1. Make stable by manipulating matrix and RHS.
+    output <<jy<<" "<<kz<<" "<< sendvec[0].real()<<" "<<sendvec[1].real()<<" "<<sendvec[2].real()<<" "<<recvec[0].real()<<" "<<recvec[1].real()<<" "<<recvec[2].real()<<" "<<thisEig<<" "<<abs(thisEig)<<" "<<(fabs(thisEig)>1.0)<<endl;
+    if(std::abs(thisEig) > 1.0) {
+      output << "sendout " << BoutComm::rank() << " " << thisEig << " " << minvb[localmesh->xend] << endl;
+      //maxEig = abs(thisEig);
       //output << maxEig << endl;
+      //minvb[localmesh->xend] = (recvec[2] - recvec[1]*minvb[localmesh->xend+1])/recvec[0];
+      minvb[localmesh->xend] = recvec[2].real()/recvec[0].real();
+      output << "out after" << BoutComm::rank() << " " << thisEig << " " << minvb[localmesh->xend] << endl;
     }
   }
-
-  return maxEig;
 }
 
 /// Check whether matrix is diagonally dominant, i.e. whether for every row the absolute
@@ -348,6 +388,10 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       neighbour_in = true;
     }
 
+//      for(int ix = 0; ix<localmesh->LocalNx ; ix++) {
+//	output << "before "<<BoutComm::rank()<<" "<<ix<<" "<<jy<<" "<<kz<<" "<<A(ix,jy)<<" "<<bvec[ix]<<endl;//<<" "<<B(ix,kz)<<" "<<C(ix,kz)<<" "<<avec[ix] << " " << bvec[ix] << " " << cvec[ix] << endl;
+//      }
+
     /* Set the matrix A used in the inversion of Ax=b
      * by calling tridagCoef and setting the BC
      *
@@ -369,13 +413,10 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
                  kz * kwaveFactor, global_flags, inner_boundary_flags,
                  outer_boundary_flags, &A, &C, &D);
 
-//    if( BoutComm::rank() == 0 ) {
-//      output << kz << endl;
 //      for(int ix = 0; ix<localmesh->LocalNx ; ix++) {
-//	output << avec[ix] << " " << bvec[ix] << " " << cvec[ix] << endl;
+//	output << "after "<<BoutComm::rank()<<" "<<ix<<" "<<jy<<" "<<kz<<" "<<A(ix,jy)<<" "<<bvec[ix]<<endl;//<<" "<<B(ix,kz)<<" "<<C(ix,kz)<<" "<<avec[ix] << " " << bvec[ix] << " " << cvec[ix] << endl;
 //      }
-//    }
-//
+
 
     ///////// PERFORM INVERSION /////////
     if (!localmesh->periodicX) {
@@ -407,7 +448,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	  avec[ix] = 0;
 	  bvec[ix] = 1;
 	  cvec[ix] = 0;
+	  bk1d[ix] = 0;
 	}
+	avec[localmesh->xend+1] = cvec_eff[localmesh->xend];
       } 
       if(not localmesh->firstX()) { 
 	for(int ix = 0; ix<localmesh->xstart ; ix++) {
@@ -417,52 +460,29 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	  avec[ix] = 0;
 	  bvec[ix] = 1;
 	  cvec[ix] = 0;
-	}
-      }
-
-      BoutReal thisEig = calculate_stability(avec,bvec,cvec,ncx);
-      //check_diagonal_dominance(avec,bvec,cvec,ncx,jy,kz);
-      if( thisEig > 1 ) {
-	output << "EIGENVALUE TOO LARGE " << BoutComm::rank() << " " << thisEig << " " << jy << " " << kz << endl;
-      }
-
-      BoutReal bmin=abs(bvec[localmesh->xstart]);
-      BoutReal bmax=abs(bvec[localmesh->xstart]);
-///      if( BoutComm::rank() == 0 ){
-///        std::cout <<  "0 " << avec[0] << " " << bvec[0] << " " << cvec[0] << endl;
-///      }
-      for(int ix = 1; ix<ncx ; ix++) {
-	if(abs(bvec[ix]) < bmin){
-	  bmin = abs(bvec[ix]);
-	}
-	if(abs(bvec[ix]) > bmax){
-	  bmax = abs(bvec[ix]);
-	}
-///	if( BoutComm::rank() == 0 ){
-///	std::cout << ix << " " << avec[ix] << " " << bvec[ix] << " " << cvec[ix] << endl;
-///	}
-      }
-
-      // Calculate Minv*b
-      // Patch up internal boundaries
-      if(not localmesh->lastX()) { 
-	for(int ix = localmesh->xend+1; ix<localmesh->LocalNx ; ix++) {
-	  avec[ix] = 0;
-	  bvec[ix] = 1;
-	  cvec[ix] = 0;
-	  bk1d[ix] = 0;
-	}
-	avec[localmesh->xend+1] = cvec_eff[localmesh->xend];
-      } 
-      if(not localmesh->firstX()) { 
-	for(int ix = 0; ix<localmesh->xstart ; ix++) {
-	  avec[ix] = 0;
-	  bvec[ix] = 1;
-	  cvec[ix] = 0;
 	  bk1d[ix] = 0;
 	}
 	cvec[localmesh->xstart-1] = avec_eff[localmesh->xstart];
       }
+
+///      BoutReal bmin=abs(bvec[localmesh->xstart]);
+///      BoutReal bmax=abs(bvec[localmesh->xstart]);
+//////      if( BoutComm::rank() == 0 ){
+//////        std::cout <<  "0 " << avec[0] << " " << bvec[0] << " " << cvec[0] << endl;
+//////      }
+///      for(int ix = 1; ix<ncx ; ix++) {
+///	if(abs(bvec[ix]) < bmin){
+///	  bmin = abs(bvec[ix]);
+///	}
+///	if(abs(bvec[ix]) > bmax){
+///	  bmax = abs(bvec[ix]);
+///	}
+//////	if( BoutComm::rank() == 0 ){
+//////	std::cout << ix << " " << avec[ix] << " " << bvec[ix] << " " << cvec[ix] << endl;
+//////	}
+///      }
+
+      // Calculate Minv*b
 ///	SCOREP_USER_REGION_END(setboundaries);
 ///	SCOREP_USER_REGION_DEFINE(subitloop);
 ///	SCOREP_USER_REGION_BEGIN(subitloop, "sub iteration",SCOREP_USER_REGION_TYPE_COMMON);
@@ -560,6 +580,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 
 ///	SCOREP_USER_REGION_END(invert);
 
+      ensure_stability(avec,bvec,cvec,minvb,ncx,jy,kz);
+      //check_diagonal_dominance(avec,bvec,cvec,ncx,jy,kz);
+      //output << "EIGENVALUE TOO LARGE " << BoutComm::rank() << " " << thisEig << " " << jy << " " << kz << endl;
 
 ///      SCOREP_USER_REGION_END(kzinit);
 ///      SCOREP_USER_REGION_DEFINE(whileloop);
@@ -698,8 +721,6 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 //////	SCOREP_USER_REGION_DEFINE(errors);
 //////	SCOREP_USER_REGION_BEGIN(errors, "calculate errors",SCOREP_USER_REGION_TYPE_COMMON);
 //
-
-
 
 	// Calculate errors
 	error_abs = 0.0;
