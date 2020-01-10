@@ -603,7 +603,7 @@ const Field3D abs(const Vector3D &v, const std::string& region) {
   return sqrt(v*v, region);
 }
 
-const Vector3D toFieldAligned(const Vector3D& v, const std::string& region) {
+Vector3D toFieldAligned(const Vector3D& v, const std::string& region) {
   Vector3D result;
   result.setLocation(v.getLocation());
   if (not v.covariant) {
@@ -617,7 +617,7 @@ const Vector3D toFieldAligned(const Vector3D& v, const std::string& region) {
   return result;
 }
 
-const Vector3D fromFieldAligned(const Vector3D& v, const std::string& region) {
+Vector3D fromFieldAligned(const Vector3D& v, const std::string& region) {
   Vector3D result;
   result.setLocation(v.getLocation());
   if (not v.covariant) {
