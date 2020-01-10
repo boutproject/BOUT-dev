@@ -864,16 +864,32 @@ int BoutMesh::load() {
   if (MYG > 0) {
     // Need boundaries in Y
 
-    if ((UDATA_INDEST < 0) && (UDATA_XSPLIT > xstart))
-      boundary.push_back(new BoundaryRegionYUp("upper_target", xstart, UDATA_XSPLIT - 1, this));
-    if ((UDATA_OUTDEST < 0) && (UDATA_XSPLIT <= xend))
-      boundary.push_back(new BoundaryRegionYUp("upper_target", UDATA_XSPLIT, xend, this));
+    // Alter x-limits so that y-boundary conditions set corner-boundary cells
+    // i.e. if there is an x-boundary, include corner cells. If
+    // include_corner_cells==false, this modification is disabled to match the behaviour
+    // of BOUT++ up to v4.
+    // Note that including the corner cells requires that the x-boundary conditions are
+    // applied before the y-boundary conditions. This is ensured here in the
+    // BOUT++-applied boundary conditions because the y-boundaries are added to the
+    // 'boundary' vector after the x-boundaries, but beware **THE ORDER IS IMPORTANT**
+    const int yboundary_xstart = (include_corner_cells and IDATA_DEST == -1) ? 0 : xstart;
+    const int yboundary_xend = (include_corner_cells and ODATA_DEST == -1) ? LocalNx - 1
+                                                                           : xend;
 
-    if ((DDATA_INDEST < 0) && (DDATA_XSPLIT > xstart))
+    if ((UDATA_INDEST < 0) && (UDATA_XSPLIT > yboundary_xstart))
+      boundary.push_back(new BoundaryRegionYUp("upper_target", yboundary_xstart,
+                         UDATA_XSPLIT - 1, this));
+    if ((UDATA_OUTDEST < 0) && (UDATA_XSPLIT <= yboundary_xend))
+      boundary.push_back(new BoundaryRegionYUp("upper_target", UDATA_XSPLIT,
+                         yboundary_xend, this));
+
+    if ((DDATA_INDEST < 0) && (DDATA_XSPLIT > yboundary_xstart))
       boundary.push_back(
-          new BoundaryRegionYDown("lower_target", xstart, DDATA_XSPLIT - 1, this));
-    if ((DDATA_OUTDEST < 0) && (DDATA_XSPLIT <= xend))
-      boundary.push_back(new BoundaryRegionYDown("lower_target", DDATA_XSPLIT, xend, this));
+          new BoundaryRegionYDown("lower_target", yboundary_xstart, DDATA_XSPLIT - 1,
+                                  this));
+    if ((DDATA_OUTDEST < 0) && (DDATA_XSPLIT <= yboundary_xend))
+      boundary.push_back(new BoundaryRegionYDown("lower_target", DDATA_XSPLIT,
+                         yboundary_xend, this));
   }
 
   if (!boundary.empty()) {
