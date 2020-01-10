@@ -194,7 +194,7 @@ class BoutMesh : public Mesh {
 
 protected:
   BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int nxpe, int nype,
-           int pe_xind, int pe_yind);
+           int pe_xind, int pe_yind, bool include_corners=true);
   /// For debugging purposes (when creating fake parallel meshes), make
   /// the send and receive buffers share memory. This allows for
   /// communications to be faked between meshes as though they were on
