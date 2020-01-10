@@ -46,10 +46,11 @@ name in square brackets.
     工作的 = true            # a boolean
     इनपुट = "some text"      # a string
 
-Option names can contain almost any character except ’=’ and ’:’, including unicode.
-If they start with a number or ``.``, contain arithmetic symbols
-(``+-*/^``), brackets (``(){}[]``), whitespace or comma ``,``, then these will need
-to be escaped in expressions. See below for how this is done. 
+Option names can contain almost any character except ’=’ and ’:’,
+including unicode.  If they start with a number or ``.``, contain
+arithmetic symbols (``+-*/^``), brackets (``(){}[]``), equality
+(``=``), whitespace or comma ``,``, then these will need to be escaped
+in expressions. See below for how this is done.
 
 Subsections can also be used, separated by colons ’:’, e.g.
 
@@ -73,7 +74,7 @@ Variables can even reference other variables:
    density = 3
 
 Note that variables can be used before their definition; all variables
-are first read, and then processed afterwards.
+are first read, and then processed afterwards on demand.
 The value ``pi`` is already defined, as is ``π``, and can be used in expressions.
 
 Uses for expressions include initialising variables
@@ -86,14 +87,28 @@ operators, with the usual precedence rules. In addition to ``π``,
 expressions can use predefined variables ``x``, ``y``, ``z`` and ``t``
 to refer to the spatial and time coordinates.
 A number of functions are defined, listed in table
-:numref:`tab-initexprfunc`. One slightly unusual feature is that if a
-number comes before a symbol or an opening bracket (``(``)
+:numref:`tab-initexprfunc`. One slightly unusual feature (borrowed from `Julia <https://julialang.org/>`_)
+is that if a number comes before a symbol or an opening bracket (``(``)
 then a multiplication is assumed: ``2x+3y^2`` is the same as
 ``2*x + 3*y^2``, which with the usual precedence rules is the same as
 ``(2*x) + (3*(y^2))``. 
 
+Expressions can span more than one line, which can make long expressions
+easier to read:
+
+.. code-block:: cfg
+
+   pressure = temperature * ( density0 +
+                              density1 )
+   temperature = 12
+   density0 = 3
+   density1 = 1
+
+The convention is the same as in `Python <https://www.python.org/>`_:
+If brackets are not balanced (closed) then the expression continues on the next line.
+
 All expressions are calculated in floating point and then converted to
-an integer when read inside BOUT++. The conversion is done by rounding
+an integer if needed when read inside BOUT++. The conversion is done by rounding
 to the nearest integer, but throws an error if the floating point
 value is not within :math:`1e-3` of an integer. This is to minimise
 unexpected behaviour. If you want to round any result to an integer,

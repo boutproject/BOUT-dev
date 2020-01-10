@@ -88,6 +88,7 @@ set(BOUT_SOURCES
   ./include/bout/solver.hxx
   ./include/bout/surfaceiter.hxx
   ./include/bout/sys/expressionparser.hxx
+  ./include/bout/sys/generator_context.hxx
   ./include/bout/sys/gettext.hxx
   ./include/bout/sys/range.hxx
   ./include/bout/sys/timer.hxx
@@ -275,6 +276,7 @@ set(BOUT_SOURCES
   ./src/sys/boutexception.cxx
   ./src/sys/derivs.cxx
   ./src/sys/expressionparser.cxx
+  ./src/sys/generator_context.cxx
   ./src/sys/msg_stack.cxx
   ./src/sys/options.cxx
   ./src/sys/options/optionparser.hxx

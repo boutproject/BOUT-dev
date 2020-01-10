@@ -66,7 +66,7 @@ public:
   ~BoundaryRegion() override = default;
 
   int x,y; ///< Indices of the point in the boundary
-  int bx, by; ///< Direction of the boundary [x+dx][y+dy] is going outwards
+  int bx, by; ///< Direction of the boundary [x+bx][y+by] is going outwards
 
   int width; ///< Width of the boundary
 

@@ -7,6 +7,8 @@
 
 #include <vector>
 
+using bout::generator::Context;
+
 // Need to inherit from ExpressionParser in order to expose the
 // protected parseString as a public method
 class ExpressionParserSubClass : public ExpressionParser {
@@ -25,6 +27,10 @@ public:
   WithQuietOutput quiet_warn{output_warn};
 };
 
+Context LegacyContext(BoutReal x, BoutReal y, BoutReal z, BoutReal t) {
+  return Context().set("x", x, "y", y, "z", z, "t", t);
+}
+
 /// For testing, a generator function of two inputs
 class BinaryGenerator : public FieldGenerator {
 public:
@@ -42,9 +48,8 @@ public:
 
     return std::make_shared<BinaryGenerator>(args.front(), args.back());
   }
-
-  BoutReal generate(BoutReal x, BoutReal y, BoutReal z, BoutReal t) override {
-    return a->generate(x, y, z, t) + b->generate(x, y, z, t);
+  BoutReal generate(const Context& ctx) override {
+    return a->generate(ctx) + b->generate(ctx);
   }
   std::string str() const override {
     return std::string{"add(" + a->str() + ", " + b->str() + ")"};
@@ -69,9 +74,8 @@ public:
 
     return std::make_shared<IncrementGenerator>(args.front());
   }
-
-  BoutReal generate(BoutReal x, BoutReal y, BoutReal z, BoutReal t) override {
-    return gen->generate(x, y, z, t) + 1;
+  BoutReal generate(const Context& ctx) override {
+    return gen->generate(ctx) + 1;
   }
   std::string str() const override {
     return std::string{"increment(" + gen->str() + ")"};
@@ -97,8 +101,7 @@ public:
     return std::make_shared<NullaryGenerator>();
   }
 
-  BoutReal generate(BoutReal UNUSED(x), BoutReal UNUSED(y), BoutReal UNUSED(z),
-                    BoutReal UNUSED(t)) override {
+  BoutReal generate(const Context &) override {
     return 4.0;
   }
 };
@@ -111,7 +114,8 @@ TEST_F(ExpressionParserTest, Parse2) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), 2);
+	  auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(ctx), 2);
         }
       }
     }
@@ -126,7 +130,8 @@ TEST_F(ExpressionParserTest, ParseX) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), x);
+	  auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(ctx), x);
         }
       }
     }
@@ -141,7 +146,8 @@ TEST_F(ExpressionParserTest, ParseY) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), y);
+	  auto ctx = LegacyContext(x, y, z, t);
+	  EXPECT_DOUBLE_EQ(fieldgen->generate(ctx), y);
         }
       }
     }
@@ -156,7 +162,8 @@ TEST_F(ExpressionParserTest, ParseZ) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), z);
+	  auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(ctx), z);
         }
       }
     }
@@ -171,7 +178,8 @@ TEST_F(ExpressionParserTest, ParseT) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), t);
+	  auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(ctx), t);
         }
       }
     }
@@ -185,7 +193,8 @@ TEST_F(ExpressionParserTest, ParseXPlus2) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), x + 2);
+	  auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(ctx), x + 2);
         }
       }
     }
@@ -199,7 +208,8 @@ TEST_F(ExpressionParserTest, ParseXTimesMinus4) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), x * (-4));
+	  auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(ctx), x * (-4));
         }
       }
     }
@@ -213,7 +223,8 @@ TEST_F(ExpressionParserTest, ParseXDividedBy3e8) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), x / 3.e8);
+	  auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(ctx), x / 3.e8);
         }
       }
     }
@@ -227,7 +238,8 @@ TEST_F(ExpressionParserTest, ParseXSquared) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), x * x);
+	  auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(ctx), x * x);
         }
       }
     }
@@ -265,11 +277,13 @@ TEST_F(ExpressionParserTest, BadExpressions) {
   EXPECT_THROW(parser.parseString("increment(x"), ParseException);
   EXPECT_THROW(parser.parseString("increment"), ParseException);
   EXPECT_THROW(parser.parseString("2]"), ParseException);
+  EXPECT_THROW(parser.parseString("2)"), ParseException);
   EXPECT_THROW(parser.parseString("4+"), ParseException);
   EXPECT_THROW(parser.parseString("+4"), ParseException);
   EXPECT_THROW(parser.parseString("\n"), ParseException);
   EXPECT_THROW(parser.parseString("(3"), ParseException);
   EXPECT_THROW(parser.parseString("2-3[4"), ParseException);
+  EXPECT_THROW(parser.parseString("[val = 42]{val}"), ParseException);
 }
 
 TEST_F(ExpressionParserTest, AddGenerator) {
@@ -282,7 +296,8 @@ TEST_F(ExpressionParserTest, AddGenerator) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), x + 1);
+	  auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(ctx), x + 1);
         }
       }
     }
@@ -302,7 +317,8 @@ TEST_F(ExpressionParserTest, AddFieldValue) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), 42.0);
+          auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(ctx), 42.0);
         }
       }
     }
@@ -319,7 +335,8 @@ TEST_F(ExpressionParserTest, AddNullaryFunction) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), 4.0);
+          auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(ctx), 4.0);
         }
       }
     }
@@ -340,8 +357,9 @@ TEST_F(ExpressionParserTest, CloneBinaryOp) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          EXPECT_DOUBLE_EQ(actualFieldgen->generate(x, y, z, t),
-                           clonedFieldgen->generate(x, y, z, t));
+  	  auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(actualFieldgen->generate(ctx),
+                           clonedFieldgen->generate(ctx));
         }
       }
     }
@@ -358,7 +376,9 @@ TEST_F(ExpressionParserTest, BadBinaryOp) {
   // Refers to an unrecognised binary operator "?"
   parser.addBinaryOp('&', std::make_shared<FieldBinary>(nullptr, nullptr, '?'), 5);
   auto fieldgen = parser.parseString("2 & x + 3");
-  EXPECT_THROW(fieldgen->generate(0., 0., 0., 0.), ParseException);
+  auto ctx = LegacyContext(0,0,0,0);
+
+  EXPECT_THROW(fieldgen->generate(ctx), ParseException);
 }
 
 TEST_F(ExpressionParserTest, AddBinaryOp) {
@@ -372,7 +392,8 @@ TEST_F(ExpressionParserTest, AddBinaryOp) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), 2 * (x + 3));
+          auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(ctx), 2 * (x + 3));
         }
       }
     }
@@ -396,7 +417,8 @@ TEST_F(ExpressionParserTest, EscapeSymbol) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), x);
+          auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(ctx), x);
         }
       }
     }
@@ -413,7 +435,8 @@ TEST_F(ExpressionParserTest, GeneratorNameEscape) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), x + 1);
+          auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(ctx), x + 1);
         }
       }
     }
@@ -430,7 +453,8 @@ TEST_F(ExpressionParserTest, GeneratorNameLongEscape) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), x + 1);
+          auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(ctx), x + 1);
         }
       }
     }
@@ -447,7 +471,8 @@ TEST_F(ExpressionParserTest, GeneratorNamePartEscape) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), x + 1);
+          auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(ctx), x + 1);
         }
       }
     }
@@ -464,7 +489,8 @@ TEST_F(ExpressionParserTest, AddBinaryGenerator) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), x + y);
+          auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(ctx), x + y);
         }
       }
     }
@@ -479,7 +505,8 @@ TEST_F(ExpressionParserTest, ImplicitMultiply) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), 2*x + 3*y);
+          auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(ctx), 2*x + 3*y);
         }
       }
     }
@@ -494,7 +521,8 @@ TEST_F(ExpressionParserTest, ImplicitMultiplyBracket) {
     for (auto y : y_array) {
       for (auto z : z_array) {
         for (auto t : t_array) {
-          EXPECT_DOUBLE_EQ(fieldgen->generate(x, y, z, t), 2*(x + 3*y));
+          auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(ctx), 2*(x + 3*y));
         }
       }
     }
@@ -505,4 +533,132 @@ TEST_F(ExpressionParserTest, BadImplicitMultiply) {
   EXPECT_THROW(parser.parseString("x2"), ParseException);
   EXPECT_THROW(parser.parseString("(1+x)2"), ParseException);
   EXPECT_THROW(parser.parseString("2 2"), ParseException);
+}
+
+TEST_F(ExpressionParserTest, PassParameter) {
+
+  auto fieldgen = parser.parseString("{value}");
+
+  for (auto x : x_array) {
+    for (auto y : y_array) {
+      for (auto z : z_array) {
+        for (auto t : t_array) {
+          auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(ctx.set("value", y + z)), y + z);
+        }
+      }
+    }
+  }
+}
+
+TEST_F(ExpressionParserTest, MissingBrace) {
+  EXPECT_THROW(parser.parseString("{"), ParseException);
+  EXPECT_THROW(parser.parseString("2 + 3 * {something + 2"), ParseException);
+  EXPECT_THROW(parser.parseString("2 + 3 * {something + {another}"), ParseException);
+  EXPECT_THROW(parser.parseString("2 + 3 * something} + 2"), ParseException);
+}
+
+TEST_F(ExpressionParserTest, PassParameterImplicitMultiply) {
+
+  auto fieldgen = parser.parseString("x - 3{value}");
+
+  for (auto x : x_array) {
+    for (auto y : y_array) {
+      for (auto z : z_array) {
+        for (auto t : t_array) {
+          auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(fieldgen->generate(ctx.set("value", 1 + y + z)), x - 3 * (1 + y + z));
+        }
+      }
+    }
+  }
+}
+
+TEST_F(ExpressionParserTest, PassMultipleParameters) {
+
+  auto fieldgen = parser.parseString("x + {value} - 2*{other}");
+
+  for (auto x : x_array) {
+    for (auto y : y_array) {
+      for (auto z : z_array) {
+        for (auto t : t_array) {
+          auto ctx = LegacyContext(x, y, z, t);
+          EXPECT_DOUBLE_EQ(
+              fieldgen->generate(ctx.set("value", 1 + y + z).set("other", x - y)),
+              x + (1 + y + z) - 2 * (x - y));
+        }
+      }
+    }
+  }
+}
+
+TEST_F(ExpressionParserTest, ContextValue) {
+  auto fieldgen = parser.parseString("[val = 42]({val})");
+  EXPECT_DOUBLE_EQ(fieldgen->generate({}), 42);
+}
+
+TEST_F(ExpressionParserTest, ContextValueReplace) {
+  auto fieldgen = parser.parseString("[val = 42]({val})");
+  EXPECT_DOUBLE_EQ(fieldgen->generate(Context().set("val", 21)), 42);
+}
+
+TEST_F(ExpressionParserTest, ContextValueExpr) {
+  auto fieldgen = parser.parseString("[val = 21]({val} + {val})");
+  EXPECT_DOUBLE_EQ(fieldgen->generate({}), 42);
+}
+
+TEST_F(ExpressionParserTest, ContextValueExprTwoArgs) {
+  auto fieldgen = parser.parseString("[val = 21, val2 = 13]({val} + {val2})");
+  EXPECT_DOUBLE_EQ(fieldgen->generate({}), 34);
+}
+
+class GeneratorCloneCopy : public FieldGenerator {
+public:
+  explicit GeneratorCloneCopy(FieldGeneratorPtr expr) : expr(expr) {}
+  FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> UNUSED(args)) override {
+    return std::make_shared<GeneratorCloneCopy>(expr);
+  }
+  double generate(const Context& ctx) override {
+    return expr->generate(ctx);
+  }
+private:
+  FieldGeneratorPtr expr;
+};
+
+TEST_F(ExpressionParserTest, ContextFunction) {
+  parser.addGenerator("func",
+                      std::make_shared<GeneratorCloneCopy>(parser.parseString("2 * {x}")));
+
+  auto fieldgen = parser.parseString("[x=3](func)");
+  EXPECT_DOUBLE_EQ(fieldgen->generate({}), 6);
+}
+
+TEST_F(ExpressionParserTest, ContextLocal) {
+  auto gen = parser.parseString("[x={x}-1]({x}) + {x}");
+  EXPECT_DOUBLE_EQ(gen->generate(Context().set("x", 5)), 9); // 4 + 5
+}
+
+TEST_F(ExpressionParserTest, ContextTwice) {
+  auto gen = parser.parseString("[x={x}-1]({x}) + [x={x}-2]({x})");
+  EXPECT_DOUBLE_EQ(gen->generate(Context().set("x", 5)), 7); // 4 + 3
+}
+
+TEST_F(ExpressionParserTest, SumNothing) {
+  auto fieldgen = parser.parseString("sum(i, 0, 42)");
+  EXPECT_DOUBLE_EQ(fieldgen->generate({}), 0.0);
+}
+
+TEST_F(ExpressionParserTest, SumOne) {
+  auto fieldgen = parser.parseString("sum(i, 1, 42)");
+  EXPECT_DOUBLE_EQ(fieldgen->generate({}), 42);
+}
+
+TEST_F(ExpressionParserTest, SumExpr) {
+  auto fieldgen = parser.parseString("sum(i, 2 + 1, {i}^2)"); // => 0^2 + 1^2 + 2^2
+  EXPECT_DOUBLE_EQ(fieldgen->generate({}), 5);
+}
+
+TEST_F(ExpressionParserTest, SumNestedScope) {
+  auto fieldgen = parser.parseString("sum(i, 3, sum(i, 2*{i}, {i}+1))"); // => (0) + (1 + 2) + (1 + 2 + 3 + 4) = 13
+  EXPECT_DOUBLE_EQ(fieldgen->generate({}), 13);
 }

@@ -228,7 +228,7 @@ template <> int Options::as<int>(const int& UNUSED(similar_to)) const {
         throw BoutException(_("Couldn't get integer from option {:s} = '{:s}'"),
                             full_name, bout::utils::variantToString(value));
       }
-      rval = gen->generate(0, 0, 0, 0);
+      rval = gen->generate({});
     } else {
       // Another type which can't be converted
       throw BoutException(_("Value for option {:s} is not an integer"), full_name);
@@ -279,7 +279,7 @@ template <> BoutReal Options::as<BoutReal>(const BoutReal& UNUSED(similar_to)) c
       throw BoutException(_("Couldn't get BoutReal from option {:s} = '{:s}'"), full_name,
                           bout::utils::get<std::string>(value));
     }
-    result = gen->generate(0, 0, 0, 0);
+    result = gen->generate({});
   } else {
     throw BoutException(_("Value for option {:s} cannot be converted to a BoutReal"),
                         full_name);

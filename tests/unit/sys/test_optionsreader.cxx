@@ -469,3 +469,29 @@ twopi = 2 * π   # Unicode symbol defined for pi
   EXPECT_DOUBLE_EQ(options["value"].as<BoutReal>(), 1.3*(1+3));
   EXPECT_DOUBLE_EQ(options["twopi"].as<BoutReal>(), 2 * 3.141592653589793);
 }
+
+TEST_F(OptionsReaderTest, ReadMultiLine) {
+  const std::string text = R"(
+
+result = (1 +
+          2 + 
+          3)
+
+value = [a = 1,
+         b = 2 * 2](
+           {a} + {b})
+
+)";
+
+  std::ofstream test_file(filename, std::ios::out);
+  test_file << text;
+  test_file.close();
+
+  OptionsReader reader;
+  reader.read(Options::getRoot(), filename.c_str());
+
+  auto options = Options::root();
+  
+  EXPECT_EQ(options["result"].as<int>(), 6);
+  EXPECT_EQ(options["value"].as<int>(), 5);
+}
