@@ -43,6 +43,12 @@ Vector3D::Vector3D(const Vector3D &f)
     : x(f.x), y(f.y), z(f.z), covariant(f.covariant), deriv(nullptr),
       location(f.getLocation()) {}
 
+Vector3D::Vector3D(Mesh* localmesh, bool covariant, CELL_LOC location)
+  : x(localmesh), y(localmesh), z(localmesh), covariant(covariant) {
+
+    setLocation(location);
+  }
+
 Vector3D::~Vector3D() {
   if (deriv != nullptr) {
     // The ddt of the components (x.ddt) point to the same place as ddt.x

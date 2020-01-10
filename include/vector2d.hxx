@@ -49,6 +49,10 @@ class Vector2D : public FieldData {
 public:
   Vector2D(Mesh * fieldmesh = nullptr);
   Vector2D(const Vector2D &f);
+
+  /// Many-argument constructor for fully specifying the initialisation of a Vector3D
+  Vector2D(Mesh* localmesh, bool covariant, CELL_LOC location);
+
   ~Vector2D() override;
 
   Field2D x, y, z; ///< components
@@ -191,6 +195,26 @@ inline Vector2D fromFieldAligned(const Vector2D v, const std::string& UNUSED(reg
   // fromFieldAligned is a null operation for the Field2D components of v, so return a copy
   // of the argument (hence pass-by-value instead of pass-by-reference)
   return v;
+}
+
+/// Create new Vector2D with same attributes as the argument, but uninitialised components
+inline Vector2D emptyFrom(const Vector2D v) {
+  auto result = Vector2D(v.x.getMesh(), v.covariant, v.getLocation());
+  result.x = emptyFrom(v.x);
+  result.y = emptyFrom(v.y);
+  result.z = emptyFrom(v.z);
+
+  return result;
+}
+
+/// Create new Vector2D with same attributes as the argument, and zero-initialised components
+inline Vector2D zeroFrom(const Vector2D v) {
+  auto result = Vector2D(v.x.getMesh(), v.covariant, v.getLocation());
+  result.x = zeroFrom(v.x);
+  result.y = zeroFrom(v.y);
+  result.z = zeroFrom(v.z);
+
+  return result;
 }
 
 /*!
