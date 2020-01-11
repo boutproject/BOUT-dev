@@ -85,7 +85,7 @@ void LaplaceParallelTri::resetSolver(){
 void LaplaceParallelTri::ensure_stability(const Array<dcomplex> &avec, const Array<dcomplex> &bvec,
                                               const Array<dcomplex> &cvec, Array<dcomplex> &minvb,
 				              const int ncx,
-					      Matrix<dcomplex> &lowerGuardVector, Matrix<dcomplex> &upperGuardVector) {
+					      Array<dcomplex> &lowerGuardVector, Matrix<dcomplex> &upperGuardVector) {
 
   BoutReal thisEig = 0.0;
 
@@ -126,7 +126,7 @@ void LaplaceParallelTri::ensure_stability(const Array<dcomplex> &avec, const Arr
     // Unstable if abs(eigenvalue) > 1. Make stable by manipulating matrix and RHS.
     if(std::abs(thisEig) > 1.0) {
       minvb[localmesh->xstart] = -recvec[1].real();
-      lowerGuardVector(localmesh->xstart,1) = 1.0/recvec[0].real();
+      lowerGuardVector[localmesh->xstart] = 1.0/recvec[0].real();
     }
   }
 
@@ -261,7 +261,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   auto evec = Array<dcomplex>(ncx);
   auto tmp = Array<dcomplex>(ncx);
   auto upperGuardVector = Matrix<dcomplex>(ncx,2);
-  auto lowerGuardVector = Matrix<dcomplex>(ncx,2);
+  auto lowerGuardVector = Array<dcomplex>(ncx);
   auto bk = Matrix<dcomplex>(ncx, ncz / 2 + 1);
   auto bk1d = Array<dcomplex>(ncx);
   auto bk1d_eff = Array<dcomplex>(ncx);
@@ -538,16 +538,6 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 
       // Lower interface (nguard vectors, hard-coded to two for now)
       if(not localmesh->firstX()) { 
-	// Need the xend-th element
-	for(int i=0; i<ncx; i++){
-	  evec[i] = 0.0;
-	}
-	evec[0] = 1;
-	tridag(std::begin(avec), std::begin(bvec), std::begin(cvec), std::begin(evec),
-	     std::begin(tmp), ncx);
-	for(int i=0; i<ncx; i++){
-	  lowerGuardVector(i,0) = tmp[i];
-	}
 
 	for(int i=0; i<ncx; i++){
 	  evec[i] = 0.0;
@@ -556,7 +546,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	tridag(std::begin(avec), std::begin(bvec), std::begin(cvec), std::begin(evec),
 	     std::begin(tmp), ncx);
 	for(int i=0; i<ncx; i++){
-	  lowerGuardVector(i,1) = tmp[i];
+	  lowerGuardVector[i] = tmp[i];
 	}
       } 
 
@@ -582,7 +572,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 
 	if(not localmesh->firstX()) { 
 	  for(int i=0; i<ncx; i++){
-	    xk1d[i] += lowerGuardVector(i,1)*xk1dlast[1];
+	    xk1d[i] += lowerGuardVector[i]*xk1dlast[1];
 	  }
 	} 
 
