@@ -84,7 +84,7 @@ void LaplaceParallelTri::resetSolver(){
  */
 void LaplaceParallelTri::ensure_stability(const Array<dcomplex> &avec, const Array<dcomplex> &bvec,
                                               const Array<dcomplex> &cvec, Array<dcomplex> &minvb,
-				              const int ncx, int jy, int kz,
+				              const int ncx,
 					      Matrix<dcomplex> &lowerGuardVector, Matrix<dcomplex> &upperGuardVector) {
 
   BoutReal thisEig = 0.0;
@@ -562,9 +562,8 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 
 ///	SCOREP_USER_REGION_END(invert);
 
-      ensure_stability(avec,bvec,cvec,minvb,ncx,jy,kz,lowerGuardVector,upperGuardVector);
+      ensure_stability(avec,bvec,cvec,minvb,ncx,lowerGuardVector,upperGuardVector);
       //check_diagonal_dominance(avec,bvec,cvec,ncx,jy,kz);
-      //output << "EIGENVALUE TOO LARGE " << BoutComm::rank() << " " << thisEig << " " << jy << " " << kz << endl;
 
 ///      SCOREP_USER_REGION_END(kzinit);
 ///      SCOREP_USER_REGION_DEFINE(whileloop);
@@ -577,17 +576,13 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 
 	if(not localmesh->lastX()) { 
 	  for(int i=0; i<ncx; i++){
-	    //xk1d[i] += upperGuardVector(i,0)*(cvec_eff[localmesh->LocalNx-3]*xk1dlast[localmesh->LocalNx-3] + xk1dlast[localmesh->LocalNx-2]) + upperGuardVector(i,1)*xk1dlast[localmesh->LocalNx-1];
-	    //xk1d[i] += upperGuardVector(i,0)*(cvec_eff[localmesh->LocalNx-3]*xk1dlast[localmesh->LocalNx-3] + xk1dlast[localmesh->LocalNx-2]) ;
-	    xk1d[i] += upperGuardVector(i,0)*( xk1dlast[localmesh->LocalNx-2]) ;
+	    xk1d[i] += upperGuardVector(i,0)*xk1dlast[localmesh->LocalNx-2];
 	  }
 	}
 
 	if(not localmesh->firstX()) { 
 	  for(int i=0; i<ncx; i++){
-	    //xk1d[i] += lowerGuardVector(i,0)*xk1dlast[0] + lowerGuardVector(i,1)*( avec_eff[2]*xk1dlast[2] + xk1dlast[1]);
-	    //xk1d[i] += lowerGuardVector(i,1)*( avec_eff[2]*xk1dlast[2] + xk1dlast[1]);
-	    xk1d[i] += lowerGuardVector(i,1)*( xk1dlast[1]);
+	    xk1d[i] += lowerGuardVector(i,1)*xk1dlast[1];
 	  }
 	} 
 
