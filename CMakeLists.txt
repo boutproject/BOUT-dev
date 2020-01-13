@@ -66,6 +66,7 @@ set(BOUT_SOURCES
   ./include/bout/globalfield.hxx
   ./include/bout/globalindexer.hxx
   ./include/bout/griddata.hxx
+  ./include/bout/hypre_interface.hxx
   ./include/bout/index_derivs.hxx
   ./include/bout/index_derivs_interface.hxx
   ./include/bout/invert/laplacexy.hxx
@@ -553,6 +554,17 @@ if (USE_NLS)
 endif()
 set(BOUT_HAS_GETTEXT ${USE_NLS})
 
+option(USE_HYPRE "Enable support for HYPRE" OFF)
+if (USE_HYPRE)
+  enable_language(C)
+  find_package(HYPRE REQUIRED)
+  target_compile_definitions(bout++
+    PUBLIC "BOUT_HAS_HYPRE")
+  target_link_libraries(bout++ PUBLIC HYPRE::HYPRE)
+endif()
+message(STATUS "HYPRE support: ${USE_HYPRE}")
+set(BOUT_HAS_HYPRE ${USE_HYPRE})
+
 option(USE_SCOREP "Enable support for Score-P based instrumentation" OFF)
 if (USE_SCOREP)
   target_compile_definitions(bout++
@@ -778,6 +790,7 @@ install(
       "${CMAKE_CURRENT_BINARY_DIR}/bout++ConfigVersion.cmake"
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/CorrectWindowsPaths.cmake"
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindFFTW.cmake"
+      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindHYPRE.cmake"
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindNetCDF.cmake"
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindPackageMultipass.cmake"
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindPETSc.cmake"
@@ -807,6 +820,7 @@ message("
    PETSc support            : ${BOUT_HAS_PETSC}
    SLEPc support            : ${BOUT_HAS_SLEPC}
    SUNDIALS support         : ${BOUT_HAS_SUNDIALS}
+   HYPRE support            : ${BOUT_HAS_HYPRE}
    NetCDF support           : ${BOUT_HAS_NETCDF}
    HDF5 support             : ${BOUT_HAS_HDF5}
    FFTW support             : ${BOUT_HAS_FFTW}
