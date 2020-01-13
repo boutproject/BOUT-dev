@@ -64,6 +64,7 @@ set(BOUT_SOURCES
   ./include/bout/fv_ops.hxx
   ./include/bout/generic_factory.hxx
   ./include/bout/globalfield.hxx
+  ./include/bout/globalindexer.hxx
   ./include/bout/griddata.hxx
   ./include/bout/index_derivs.hxx
   ./include/bout/index_derivs_interface.hxx
@@ -277,6 +278,7 @@ set(BOUT_SOURCES
   ./src/sys/derivs.cxx
   ./src/sys/expressionparser.cxx
   ./src/sys/generator_context.cxx
+  ./src/sys/globalindexer.cxx
   ./src/sys/msg_stack.cxx
   ./src/sys/options.cxx
   ./src/sys/options/optionparser.hxx
@@ -286,7 +288,6 @@ set(BOUT_SOURCES
   ./src/sys/optionsreader.cxx
   ./src/sys/output.cxx
   ./src/sys/petsclib.cxx
-  ./src/sys/petsc_interface.cxx
   ./src/sys/range.cxx
   ./src/sys/slepclib.cxx
   ./src/sys/timer.cxx
