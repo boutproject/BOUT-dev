@@ -81,6 +81,7 @@ void GlobalIndexer::registerFieldForTest(FieldPerp& UNUSED(f)) {
   return;
 }
 
+// FIXME: Modifies mesh
 GlobalIndexer::GlobalIndexer(Mesh* localmesh)
     : fieldmesh(localmesh), indices3D(-1., localmesh), indices2D(-1., localmesh),
       indicesPerp(-1., localmesh) {
