@@ -8,6 +8,7 @@
 #include "fieldperp.hxx"
 #include "bout/petsc_interface.hxx"
 #include "bout/region.hxx"
+#include "bout/operatorstencil.hxx"
 
 #ifdef BOUT_HAS_PETSC
 
@@ -26,9 +27,16 @@ using namespace bout::globals;
 template <typename F>
 class PetscVectorTest : public FakeMeshFixture {
 public:
+  using ind_type = typename F::ind_type;
   WithQuietOutput all{output};
   F field;
-  PetscVectorTest() : FakeMeshFixture(), field(bout::globals::mesh) {
+  OperatorStencil<ind_type> stencil;
+  IndexerPtr<F> indexer;
+  
+  PetscVectorTest() : FakeMeshFixture(), field(bout::globals::mesh),
+		      stencil(squareStencil<ind_type>(bout::globals::mesh)),
+  		      indexer(std::make_shared<GlobalIndexer<F>>(bout::globals::mesh, stencil))
+  {
     field.allocate();
     field = 1.5;
     PetscErrorPrintf = PetscErrorPrintfNone;
@@ -36,7 +44,6 @@ public:
 
   virtual ~PetscVectorTest() {
     PetscErrorPrintf = PetscErrorPrintfDefault;
-    GlobalIndexer::recreateGlobalInstance();
   }
 };
 
@@ -65,7 +72,7 @@ TYPED_TEST(PetscVectorTest, FieldConstructor) {
   BOUT_FOR(i, this->field.getRegion("RGN_ALL")) {
     this->field[i] = static_cast<BoutReal>(i.ind);
   }
-  PetscVector<TypeParam> vector(this->field);
+  PetscVector<TypeParam> vector(this->field, this->indexer);
   Vec* vectorPtr = vector.get();
   PetscScalar* vecContents;
   PetscInt n;
@@ -79,7 +86,7 @@ TYPED_TEST(PetscVectorTest, FieldConstructor) {
 // Test copy constructor
 TYPED_TEST(PetscVectorTest, CopyConstructor) {
   SCOPED_TRACE("CopyConstructor");
-  PetscVector<TypeParam> vector(this->field);
+  PetscVector<TypeParam> vector(this->field, this->indexer);
   PetscVector<TypeParam> copy(vector);
   Vec *vectorPtr = vector.get(), *copyPtr = copy.get();
   EXPECT_NE(vectorPtr, copyPtr);
@@ -88,7 +95,7 @@ TYPED_TEST(PetscVectorTest, CopyConstructor) {
 
 // Test move constructor
 TYPED_TEST(PetscVectorTest, MoveConstructor) {
-  PetscVector<TypeParam> vector(this->field);
+  PetscVector<TypeParam> vector(this->field, this->indexer);
   Vec vectorPtr = *vector.get();
   EXPECT_NE(vectorPtr, nullptr);
   PetscVector<TypeParam> moved(std::move(vector));
@@ -99,7 +106,7 @@ TYPED_TEST(PetscVectorTest, MoveConstructor) {
 // Test assignment from field
 TYPED_TEST(PetscVectorTest, FieldAssignment) {
   SCOPED_TRACE("FieldAssignment");
-  PetscVector<TypeParam> vector(this->field);
+  PetscVector<TypeParam> vector(this->field, this->indexer);
   const TypeParam val(-10.);
   vector = val;
   Vec* vectorPtr = vector.get();
@@ -115,7 +122,7 @@ TYPED_TEST(PetscVectorTest, FieldAssignment) {
 // Test copy assignment
 TYPED_TEST(PetscVectorTest, CopyAssignment) {
   SCOPED_TRACE("CopyAssignment");
-  PetscVector<TypeParam> vector(this->field);
+  PetscVector<TypeParam> vector(this->field, this->indexer);
   PetscVector<TypeParam> copy = vector;
   Vec *vectorPtr = vector.get(), *copyPtr = copy.get();
   EXPECT_NE(vectorPtr, copyPtr);
@@ -124,7 +131,7 @@ TYPED_TEST(PetscVectorTest, CopyAssignment) {
 
 // Test move assignment
 TYPED_TEST(PetscVectorTest, MoveAssignment) {
-  PetscVector<TypeParam> vector(this->field);
+  PetscVector<TypeParam> vector(this->field, this->indexer);
   Vec vectorPtr = *vector.get();
   EXPECT_NE(vectorPtr, nullptr);
   PetscVector<TypeParam> moved = std::move(vector);
@@ -134,7 +141,7 @@ TYPED_TEST(PetscVectorTest, MoveAssignment) {
 
 // Test getting elements
 TYPED_TEST(PetscVectorTest, TestGetElements) {
-  PetscVector<TypeParam> vector(this->field);
+  PetscVector<TypeParam> vector(this->field, this->indexer);
   BOUT_FOR(i, this->field.getRegion("RGN_NOBNDRY")) {
     vector(i) = (2.5 * this->field[i] - 1.0);
   }
@@ -151,7 +158,7 @@ TYPED_TEST(PetscVectorTest, TestGetElements) {
 
 // Test assemble
 TYPED_TEST(PetscVectorTest, TestAssemble) {
-  PetscVector<TypeParam> vector(this->field);
+  PetscVector<TypeParam> vector(this->field, this->indexer);
   Vec* rawvec = vector.get();
   const PetscInt i = 4;
   const PetscScalar r = 3.141592;
@@ -174,7 +181,7 @@ TYPED_TEST(PetscVectorTest, TestGetUninitialised) {
 #if CHECKLEVEL >= 3
 // Test trying to get an element that is out of bounds
 TYPED_TEST(PetscVectorTest, TestGetOutOfBounds) {
-  PetscVector<TypeParam> vector(this->field);
+  PetscVector<TypeParam> vector(this->field, this->indexer);
   typename TypeParam::ind_type index1(this->field.getNx() * this->field.getNy()
                                       * this->field.getNz());
   EXPECT_THROW(vector(index1), BoutException);
@@ -187,7 +194,7 @@ TYPED_TEST(PetscVectorTest, TestGetOutOfBounds) {
 
 // Test trying to use both INSERT_VALUES and ADD_VALUES
 TYPED_TEST(PetscVectorTest, TestMixedSetting) {
-  PetscVector<TypeParam> vector(this->field);
+  PetscVector<TypeParam> vector(this->field, this->indexer);
   typename TypeParam::ind_type i = *(this->field.getRegion("RGN_NOBNDRY").begin());
   typename TypeParam::ind_type j(i.ind + 1);
   const PetscScalar r = 3.141592;
@@ -197,7 +204,7 @@ TYPED_TEST(PetscVectorTest, TestMixedSetting) {
 
 // Test destroy
 TYPED_TEST(PetscVectorTest, TestDestroy) {
-  PetscVector<TypeParam> vector(this->field);
+  PetscVector<TypeParam> vector(this->field, this->indexer);
   Vec oldVec = *vector.get();
   Vec newVec;
   PetscErrorCode err;
@@ -211,7 +218,7 @@ TYPED_TEST(PetscVectorTest, TestDestroy) {
 
 // Test swap
 TYPED_TEST(PetscVectorTest, TestSwap) {
-  PetscVector<TypeParam> lhs(this->field), rhs(this->field);
+  PetscVector<TypeParam> lhs(this->field, this->indexer), rhs(this->field, this->indexer);
   Vec l0 = *lhs.get(), r0 = *rhs.get();
   EXPECT_NE(l0, nullptr);
   EXPECT_NE(r0, nullptr);

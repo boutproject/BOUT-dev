@@ -169,6 +169,25 @@ public:
                          MPI_Comm UNUSED(comm)) override {
       return 0;
     }
+    virtual int MPI_Scan(const void* sendbuf, void* recvbuf, int count,
+			 MPI_Datatype datatype, MPI_Op op,
+			 MPI_Comm UNUSED(comm)) override {
+      // Fake calculating the cummulative size of the mesh on all
+      // processors.
+      if (count == 1 && datatype == MPI_INT && op == MPI_SUM) {
+	if (*static_cast<const int*>(sendbuf) == local3D) {
+	  *static_cast<int*>(recvbuf) = start3D + local3D;
+	} else if (*static_cast<const int*>(sendbuf) == local2D) {
+	  *static_cast<int*>(recvbuf) = start2D + local2D;
+	} else if (*static_cast<const int*>(sendbuf) == localPerp) {
+	  *static_cast<int*>(recvbuf) = startPerp + localPerp;
+	} else {
+	  throw BoutException("Trying to use MPI_Scan with unrecognised input %d",
+			      *static_cast<const int*>(sendbuf));
+	}
+      }
+      return 0;
+    }
     virtual int MPI_Wait(MPI_Request* UNUSED(request),
                          MPI_Status* UNUSED(status)) override {
       return 0;
@@ -194,6 +213,9 @@ public:
       return 0;
     }
 
+    int local3D, local2D, localPerp;
+    int start3D, start2D, startPerp;
+
   private:
     int wait_any_count;
   };
@@ -205,9 +227,6 @@ private:
   std::map<FieldPerp*, int> registeredFieldPerps;
   std::map<int, FieldPerp*> registeredFieldPerpIds;
   std::unique_ptr<FakeMpiWrapper> mpiSmart;
-
-  int local3D, local2D, localPerp;
-  int start3D, start2D, startPerp;
 
   comm_handle parentSend(FieldGroup& g) { return BoutMesh::send(g); }
 
@@ -251,39 +270,39 @@ std::vector<FakeParallelMesh> createFakeProcessors(int nx, int ny, int nz, int n
       // the correct one.
       meshes.at(j + i * nype).mpiSmart->mesh = &meshes.at(j + i * nype);
 
-      meshes.at(j + i * nype).local3D = (nx - 2) * ny * nz;
-      meshes.at(j + i * nype).local2D = (nx - 2) * ny;
-      meshes.at(j + i * nype).localPerp = (nx - 2) * nz;
+      meshes.at(j + i * nype).mpiSmart->local3D = (nx - 2) * ny * nz;
+      meshes.at(j + i * nype).mpiSmart->local2D = (nx - 2) * ny;
+      meshes.at(j + i * nype).mpiSmart->localPerp = (nx - 2) * nz;
       if (i == 0) {
-        meshes.at(j + i * nype).local3D += ny * nz;
-        meshes.at(j + i * nype).local2D += ny;
-        meshes.at(j + i * nype).localPerp += nz;
+        meshes.at(j + i * nype).mpiSmart->local3D += ny * nz;
+        meshes.at(j + i * nype).mpiSmart->local2D += ny;
+        meshes.at(j + i * nype).mpiSmart->localPerp += nz;
       } else {
         meshes.at(j + i * nype).xInMesh = &meshes.at(j + (i - 1) * nype);
       }
       if (i == nxpe - 1) {
-        meshes.at(j + i * nype).local3D += ny * nz;
-        meshes.at(j + i * nype).local2D += ny;
-        meshes.at(j + i * nype).localPerp += nz;
+        meshes.at(j + i * nype).mpiSmart->local3D += ny * nz;
+        meshes.at(j + i * nype).mpiSmart->local2D += ny;
+        meshes.at(j + i * nype).mpiSmart->localPerp += nz;
       } else {
         meshes.at(j + i * nype).xOutMesh = &meshes.at(j + (i + 1) * nype);
       }
       if (j == 0) {
-        meshes.at(j + i * nype).local3D += (nx - 2) * nz;
+        meshes.at(j + i * nype).yUpMesh = &meshes.at(nype - 1 + i * nype);
       } else {
         meshes.at(j + i * nype).yDownMesh = &meshes.at(j - 1 + i * nype);
       }
       if (j == nype - 1) {
-        meshes.at(j + i * nype).local3D += (nx - 2) * nz;
+        meshes.at(j + i * nype).yUpMesh = &meshes.at(0 + i * nype);
       } else {
         meshes.at(j + i * nype).yUpMesh = &meshes.at(j + 1 + i * nype);
       }
-      meshes.at(j + i * nype).start3D = start3;
-      meshes.at(j + i * nype).start2D = start2;
-      meshes.at(j + i * nype).startPerp = startP;
-      start3 += meshes.at(j + i * nype).local3D;
-      start2 += meshes.at(j + i * nype).local2D;
-      startP += meshes.at(j + i * nype).localPerp;
+      meshes.at(j + i * nype).mpiSmart->start3D = start3;
+      meshes.at(j + i * nype).mpiSmart->start2D = start2;
+      meshes.at(j + i * nype).mpiSmart->startPerp = startP;
+      start3 += meshes.at(j + i * nype).mpiSmart->local3D;
+      start2 += meshes.at(j + i * nype).mpiSmart->local2D;
+      startP += meshes.at(j + i * nype).mpiSmart->localPerp;
     }
     meshes.at(nype - 1 + i * nype).yUpMesh = &meshes.at(i * nype);
     meshes.at(i * nype).yDownMesh = &meshes.at(nype - 1 + i * nype);

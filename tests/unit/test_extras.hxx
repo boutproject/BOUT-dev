@@ -14,6 +14,7 @@
 #include "bout/coordinates.hxx"
 #include "bout/mesh.hxx"
 #include "bout/mpi_wrapper.hxx"
+#include "bout/operatorstencil.hxx"
 
 static constexpr BoutReal BoutRealTolerance{1e-15};
 // FFTs have a slightly looser tolerance than other functions
@@ -311,33 +312,23 @@ public:
                 Region<Ind2D>(0, LocalNx - 1, 0, ystart - 1, 0, 0, LocalNy, 1));
     addRegion3D("RGN_LOWER_Y", Region<Ind3D>(0, LocalNx - 1, 0, ystart - 1, 0,
                                              LocalNz - 1, LocalNy, LocalNz));
-    addRegion2D("RGN_LOWER_Y_THIN", getRegion2D("RGN_LOWER_Y"));
-    addRegion3D("RGN_LOWER_Y_THIN", getRegion3D("RGN_LOWER_Y"));
-
     addRegion2D("RGN_UPPER_Y",
                 Region<Ind2D>(0, LocalNx - 1, yend + 1, LocalNy - 1, 0, 0, LocalNy, 1));
     addRegion3D("RGN_UPPER_Y", Region<Ind3D>(0, LocalNx - 1, yend + 1, LocalNy - 1, 0,
                                              LocalNz - 1, LocalNy, LocalNz));
-    addRegion2D("RGN_UPPER_Y_THIN", getRegion2D("RGN_UPPER_Y"));
-    addRegion3D("RGN_UPPER_Y_THIN", getRegion3D("RGN_UPPER_Y"));
 
     addRegion2D("RGN_INNER_X",
                 Region<Ind2D>(0, xstart - 1, ystart, yend, 0, 0, LocalNy, 1));
     addRegion3D("RGN_INNER_X", Region<Ind3D>(0, xstart - 1, ystart, yend, 0, LocalNz - 1,
                                              LocalNy, LocalNz));
-    addRegionPerp("RGN_INNER_X_THIN",
-                  Region<IndPerp>(0, xstart - 1, 0, 0, 0, LocalNz - 1, 1, LocalNz));
-    addRegion2D("RGN_INNER_X_THIN", getRegion2D("RGN_INNER_X"));
-    addRegion3D("RGN_INNER_X_THIN", getRegion3D("RGN_INNER_X"));
-
+    addRegionPerp("RGN_INNER_X", Region<IndPerp>(0, xstart - 1, 0, 0, 0, LocalNz - 1,
+						 1, LocalNz));
     addRegion2D("RGN_OUTER_X",
                 Region<Ind2D>(xend + 1, LocalNx - 1, ystart, yend, 0, 0, LocalNy, 1));
     addRegion3D("RGN_OUTER_X", Region<Ind3D>(xend + 1, LocalNx - 1, ystart, yend, 0,
                                              LocalNz - 1, LocalNy, LocalNz));
-    addRegionPerp("RGN_OUTER_X_THIN", Region<IndPerp>(xend + 1, LocalNx - 1, 0, 0, 0,
-                                                      LocalNz - 1, 1, LocalNz));
-    addRegion2D("RGN_OUTER_X_THIN", getRegion2D("RGN_OUTER_X"));
-    addRegion3D("RGN_OUTER_X_THIN", getRegion3D("RGN_OUTER_X"));
+    addRegionPerp("RGN_OUTER_X", Region<IndPerp>(xend + 1, LocalNx - 1, 0, 0, 0,
+						 LocalNz - 1, 1, LocalNz));
 
     const auto boundary_names = {"RGN_LOWER_Y", "RGN_UPPER_Y", "RGN_INNER_X",
                                  "RGN_OUTER_X"};
@@ -358,6 +349,8 @@ public:
                                   return a + getRegion3D(b);
                                 })
                     .unique());
+    addRegionPerp("RGN_BNDRY", getRegionPerp("RGN_INNER_X")
+		  + getRegionPerp("RGN_OUTER_X"));
   }
 
 private:
@@ -470,5 +463,89 @@ public:
   std::shared_ptr<Coordinates> test_coords{nullptr};
   std::shared_ptr<Coordinates> test_coords_staggered{nullptr};
 };
+
+
+/// Returns a stencil object which indicates that non-boundary cells
+/// depend on all of their neighbours to a depth of one, including
+/// corners.
+template<class T>
+OperatorStencil<T> squareStencil(Mesh* localmesh) {
+  OperatorStencil<T> stencil;
+  IndexOffset<T> zero;
+  std::set<IndexOffset<T>> offsets = {
+    zero,
+    zero.xp(),
+    zero.xm(),
+  };
+  if (!std::is_same<T, IndPerp>::value) {
+    offsets.insert(zero.yp());
+    offsets.insert(zero.ym());
+    offsets.insert(zero.xp().yp());
+    offsets.insert(zero.xp().ym());
+    offsets.insert(zero.xm().yp());
+    offsets.insert(zero.xm().ym());
+  }
+  if (!std::is_same<T, Ind2D>::value) {
+    offsets.insert(zero.zp());
+    offsets.insert(zero.zm());
+    offsets.insert(zero.xp().zp());
+    offsets.insert(zero.xp().zm());
+    offsets.insert(zero.xm().zp());
+    offsets.insert(zero.xm().zm());
+  }
+  if (std::is_same<T, Ind3D>::value) {
+    offsets.insert(zero.yp().zp());
+    offsets.insert(zero.yp().zm());
+    offsets.insert(zero.ym().zp());
+    offsets.insert(zero.ym().zm());
+  }
+  std::vector<IndexOffset<T>> offsetsVec(offsets.begin(), offsets.end());
+  stencil.add([localmesh](T ind) -> bool {
+		return (localmesh->xstart <= ind.x() &&
+			ind.x() <= localmesh->xend &&
+			(std::is_same<T, IndPerp>::value ||
+			 (localmesh->ystart <= ind.y() &&
+			  ind.y() <= localmesh->yend)) &&
+			(std::is_same<T, Ind2D>::value ||
+			 (localmesh->zstart <= ind.z() &&
+			  ind.z() <= localmesh->zend))); }, offsetsVec);
+  stencil.add([](T UNUSED(ind)) -> bool { return true; }, {zero});
+  return stencil;
+}
+
+
+/// Returns a stencil object which indicates that non-boundary cells
+/// depend on all of their neighbours to a depth of one, excluding
+/// corners.
+template<class T>
+OperatorStencil<T> starStencil(Mesh* localmesh) {
+  OperatorStencil<T> stencil;
+  IndexOffset<T> zero;
+  std::set<IndexOffset<T>> offsets = {
+    zero,
+    zero.xp(),
+    zero.xm(),
+  };
+  if (!std::is_same<T, IndPerp>::value) {
+    offsets.insert(zero.yp());
+    offsets.insert(zero.ym());
+  }
+  if (!std::is_same<T, Ind2D>::value) {
+    offsets.insert(zero.zp());
+    offsets.insert(zero.zm());
+  }
+  std::vector<IndexOffset<T>> offsetsVec(offsets.begin(), offsets.end());
+  stencil.add([localmesh](T ind) -> bool {
+		return (localmesh->xstart <= ind.x() &&
+			ind.x() <= localmesh->xend &&
+			(std::is_same<T, IndPerp>::value ||
+			 (localmesh->ystart <= ind.y() &&
+			  ind.y() <= localmesh->yend)) &&
+			(std::is_same<T, Ind2D>::value ||
+			 (localmesh->zstart <= ind.z() &&
+			  ind.z() <= localmesh->zend))); }, offsetsVec);
+  stencil.add([](T UNUSED(ind)) -> bool { return true; }, {zero});
+  return stencil;
+}
 
 #endif //  TEST_EXTRAS_H__
