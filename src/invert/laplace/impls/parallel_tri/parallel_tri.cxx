@@ -43,40 +43,16 @@
 #include <bout/scorepwrapper.hxx>
 
 LaplaceParallelTri::LaplaceParallelTri(Options *opt, CELL_LOC loc, Mesh *mesh_in)
-    : Laplacian(opt, loc, mesh_in), A(0.0), C(1.0), D(1.0), ipt_mean_its(0.), ncalls(0), Borig(50.), Bvals(1000.) {
+    : Laplacian(opt, loc, mesh_in), A(0.0), C(1.0), D(1.0) {
   A.setLocation(location);
   C.setLocation(location);
   D.setLocation(location);
-
-  OPTION(opt, rtol, 1.e-7);
-  OPTION(opt, atol, 1.e-20);
-  OPTION(opt, maxits, 100);
-  OPTION(opt, B, 1000.0);
-  OPTION(opt, om, 1.0);
-
-  static int ipt_solver_count = 1;
-  bout::globals::dump.addRepeat(ipt_mean_its,
-      "ipt_solver"+std::to_string(ipt_solver_count)+"_mean_its");
-  ++ipt_solver_count;
-
-  Borig = B;
-
-  first_call = Matrix<bool>(localmesh->LocalNy,localmesh->LocalNz);
-  for(int jy=0; jy<localmesh->LocalNy; jy++){
-    for(int jz=0; jz<localmesh->LocalNz; jz++){
-      first_call(jy,jz) = true;
-    }
-  }
-
-  x0saved = Tensor<dcomplex>(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
 
   resetSolver();
 
 }
 
 void LaplaceParallelTri::resetSolver(){
-  x0saved = 0.0;
-  resetMeanIterations();
 }
 
 /*!
@@ -149,30 +125,6 @@ void LaplaceParallelTri::ensure_stability(const Array<dcomplex> &avec, const Arr
   }
 }
 
-/// Check whether matrix is diagonally dominant, i.e. whether for every row the absolute
-/// value of the diagonal element is greater-or-equal-to the sum of the absolute values
-/// of the other elements. Being diagonally dominant is sufficient (but necessary) for
-/// the Jacobi iteration to converge.
-void LaplaceParallelTri::check_diagonal_dominance(const Array<dcomplex> &avec, const Array<dcomplex> &bvec, const Array<dcomplex> &cvec, const int ncx, const int jy, const int kz) {
-
-    BoutReal on_diag;
-    BoutReal off_diag;
-
-    for(int i=0; i<ncx; i++){
-      on_diag = abs(bvec[i]);
-      off_diag = 0.0;
-      if(i > 0){
-	off_diag = abs(avec[i-1]);
-      }
-      if(i < ncx-1){
-	off_diag = off_diag + abs(cvec[i]);
-      }
-      if( off_diag > on_diag){
-	output << "Not diagonally dominant on row "<<i<<" jy "<<jy<<" kz "<<kz<<" of proc "<<BoutComm::rank()<<endl;
-      }
-    }
-}
-
 FieldPerp LaplaceParallelTri::solve(const FieldPerp& b) { return solve(b, b); }
 
 /*!
@@ -201,8 +153,8 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   SCOREP0();
   Timer timer("invert"); ///< Start timer
 
-///  SCOREP_USER_REGION_DEFINE(initvars);
-///  SCOREP_USER_REGION_BEGIN(initvars, "init vars",SCOREP_USER_REGION_TYPE_COMMON);
+  SCOREP_USER_REGION_DEFINE(initvars);
+  SCOREP_USER_REGION_BEGIN(initvars, "init vars",SCOREP_USER_REGION_TYPE_COMMON);
 
   ASSERT1(localmesh == b.getMesh() && localmesh == x0.getMesh());
   ASSERT1(b.getLocation() == location);
@@ -210,12 +162,6 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   TRACE("LaplaceParallelTri::solve(const, const)");
 
   FieldPerp x{emptyFrom(b)};
-
-  // Convergence flags
-  bool self_in = false;
-  bool self_out = false;
-  bool neighbour_in = false;
-  bool neighbour_out = false;
 
   int jy = b.getIndex();
 
@@ -254,13 +200,10 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   auto bk1d_eff = Array<dcomplex>(ncx);
   auto xk = Matrix<dcomplex>(ncx, ncz / 2 + 1);
   auto xk1d = Array<dcomplex>(ncx);
-  auto xk1dlast = Array<dcomplex>(ncx);
-  auto error = Array<dcomplex>(ncx);
-  BoutReal error_rel = 1e20, error_abs=1e20, last_error=error_abs;
 
-///  SCOREP_USER_REGION_END(initvars);
-///  SCOREP_USER_REGION_DEFINE(initloop);
-///  SCOREP_USER_REGION_BEGIN(initloop, "init xk loop",SCOREP_USER_REGION_TYPE_COMMON);
+  SCOREP_USER_REGION_END(initvars);
+  SCOREP_USER_REGION_DEFINE(initloop);
+  SCOREP_USER_REGION_BEGIN(initloop, "init xk loop",SCOREP_USER_REGION_TYPE_COMMON);
 
   // Initialise xk to 0 as we only visit 0<= kz <= maxmode in solve
   for (int ix = 0; ix < ncx; ix++) {
@@ -268,9 +211,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       xk(ix, kz) = 0.0;
     }
   }
-///  SCOREP_USER_REGION_END(initloop);
-///  SCOREP_USER_REGION_DEFINE(fftloop);
-///  SCOREP_USER_REGION_BEGIN(fftloop, "init fft loop",SCOREP_USER_REGION_TYPE_COMMON);
+  SCOREP_USER_REGION_END(initloop);
+  SCOREP_USER_REGION_DEFINE(fftloop);
+  SCOREP_USER_REGION_BEGIN(fftloop, "init fft loop",SCOREP_USER_REGION_TYPE_COMMON);
 
   /* Coefficents in the tridiagonal solver matrix
    * Following the notation in "Numerical recipes"
@@ -312,9 +255,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       //rfft(x0[ix], ncz, &xk(ix, 0));
     }
   }
-///  SCOREP_USER_REGION_END(fftloop);
-///  SCOREP_USER_REGION_DEFINE(mainloop);
-///  SCOREP_USER_REGION_BEGIN(mainloop, "main loop",SCOREP_USER_REGION_TYPE_COMMON);
+  SCOREP_USER_REGION_END(fftloop);
+  SCOREP_USER_REGION_DEFINE(mainloop);
+  SCOREP_USER_REGION_BEGIN(mainloop, "main loop",SCOREP_USER_REGION_TYPE_COMMON);
 
   /* Solve differential equation in x for each fourier mode
    * Note that only the non-degenerate fourier modes are being used (i.e. the
@@ -322,41 +265,13 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
    */
   for (int kz = 0; kz <= maxmode; kz++) {
 
-///    SCOREP_USER_REGION_DEFINE(kzinit);
-///    SCOREP_USER_REGION_BEGIN(kzinit, "kz init",SCOREP_USER_REGION_TYPE_COMMON);
+    SCOREP_USER_REGION_DEFINE(kzinit);
+    SCOREP_USER_REGION_BEGIN(kzinit, "kz init",SCOREP_USER_REGION_TYPE_COMMON);
     // set bk1d
     for (int ix = 0; ix < ncx; ix++) {
       // Get bk of the current fourier mode
       bk1d[ix] = bk(ix, kz);
-
-      //xk1d[ix] = xk(ix, kz);
-      //xk1dlast[ix] = xk(ix, kz);
-
-      //output << "start1 "<<ix<<" "<<jy<<" "<<kz<<" "<<x0saved(ix,jy,kz)<<endl;
-      xk1d[ix] = x0saved(ix, jy, kz);
     }
-
-    int count = 0;
-
-    // Set all convergence flags to false
-    self_in = false;
-    self_out = false;
-    neighbour_in = false;
-    neighbour_out = false;
-
-    // Boundary values are "converged" at the start
-    // Note: set neighbour's flag (not self's flag) to ensure we do at least
-    // one iteration
-    if(localmesh->lastX()) { 
-      neighbour_out = true;
-    }
-    if(localmesh->firstX()) { 
-      neighbour_in = true;
-    }
-
-//      for(int ix = 0; ix<localmesh->LocalNx ; ix++) {
-//	output << "before "<<BoutComm::rank()<<" "<<ix<<" "<<jy<<" "<<kz<<" "<<A(ix,jy)<<" "<<bvec[ix]<<endl;//<<" "<<B(ix,kz)<<" "<<C(ix,kz)<<" "<<avec[ix] << " " << bvec[ix] << " " << cvec[ix] << endl;
-//      }
 
     /* Set the matrix A used in the inversion of Ax=b
      * by calling tridagCoef and setting the BC
@@ -379,31 +294,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
                  kz * kwaveFactor, global_flags, inner_boundary_flags,
                  outer_boundary_flags, &A, &C, &D);
 
-//      for(int ix = 0; ix<localmesh->LocalNx ; ix++) {
-//	output << "after "<<BoutComm::rank()<<" "<<ix<<" "<<jy<<" "<<kz<<" "<<A(ix,jy)<<" "<<bvec[ix]<<endl;//<<" "<<B(ix,kz)<<" "<<C(ix,kz)<<" "<<avec[ix] << " " << bvec[ix] << " " << cvec[ix] << endl;
-//      }
-
 
     ///////// PERFORM INVERSION /////////
     if (!localmesh->periodicX) {
-
-      // Call tridiagonal solver
-      //for(int it = 0; it < maxits; it++){ 
-      BoutReal error_last = 1e20;
-///      int sub_it = 0;
-///      auto lh = Matrix<dcomplex>(3,ncx);
-///      auto rh = Matrix<dcomplex>(3,ncx);
-
-///      if( first_call ) {
-///	B = Borig;
-///      }
-///      else {
-///	B = Bvals(0,jy,kz);
-///      }
-      bool allow_B_change = true;
-
-      if( !first_call(jy,0) ) allow_B_change = false;
-      //output << first_call << " " << allow_B_change << endl;
 
       // Patch up internal boundaries
       if(not localmesh->lastX()) { 
@@ -503,13 +396,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       }
     }
 
-///    SCOREP_USER_REGION_DEFINE(afterloop);
-///    SCOREP_USER_REGION_BEGIN(afterloop, "after faff",SCOREP_USER_REGION_TYPE_COMMON);
-    ++ncalls;
-    ipt_mean_its = (ipt_mean_its * BoutReal(ncalls-1)
-	+ BoutReal(count))/BoutReal(ncalls);
-    //output<<"jy="<<jy<<" kz="<<kz<<" count="<<count<<" ncalls="<<ncalls<<" ipt_mean_its="<<ipt_mean_its<<" B="<<B<< endl;
-    //Bvals(0,jy,kz) = B;
+    SCOREP_USER_REGION_END(kzinit);
+    SCOREP_USER_REGION_DEFINE(afterloop);
+    SCOREP_USER_REGION_BEGIN(afterloop, "after faff",SCOREP_USER_REGION_TYPE_COMMON);
 
     // If the global flag is set to INVERT_KX_ZERO
     if ((global_flags & INVERT_KX_ZERO) && (kz == 0)) {
@@ -526,13 +415,10 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
     // Store the solution xk for the current fourier mode in a 2D array
     for (int ix = 0; ix < ncx; ix++) {
       xk(ix, kz) = xk1d[ix];
-      x0saved(ix, jy, kz) = xk(ix, kz);
     }
-///    SCOREP_USER_REGION_END(afterloop);
+    SCOREP_USER_REGION_END(afterloop);
   }
-///  SCOREP_USER_REGION_END(mainloop);
-
-  //std::cout<<"end"<<endl;
+  SCOREP_USER_REGION_END(mainloop);
 
   // Done inversion, transform back
   for (int ix = 0; ix < ncx; ix++) {
@@ -548,11 +434,6 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
         throw BoutException("Non-finite at %d, %d, %d", ix, jy, kz);
 #endif
   }
-
-  //if( first_call ){
-  //  bout::globals::dump.add(Bvals, "exponents", false);
-  //}
-  first_call(jy,0) = false;
 
   return x; // Result of the inversion
 }

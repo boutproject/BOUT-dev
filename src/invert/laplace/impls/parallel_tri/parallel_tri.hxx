@@ -70,13 +70,8 @@ public:
   FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override;
   //FieldPerp solve(const FieldPerp &b, const FieldPerp &x0, const FieldPerp &b0 = 0.0);
 
-  BoutReal getMeanIterations() const { return ipt_mean_its; }
-  void resetMeanIterations() { ipt_mean_its = 0; }
-
   void ensure_stability(const Array<dcomplex> &a, const Array<dcomplex> &b,
       const Array<dcomplex> &c, const Array<dcomplex> &r, const int ncx, Array<dcomplex> &xk1d);
-  void check_diagonal_dominance(const Array<dcomplex> &a, const Array<dcomplex> &b,
-      const Array<dcomplex> &c, const int ncx, const int jy, const int kz);
 
   void resetSolver();
 
@@ -84,28 +79,6 @@ private:
   // The coefficents in
   // D*grad_perp^2(x) + (1/C)*(grad_perp(C))*grad_perp(x) + A*x = b
   Field2D A, C, D;
-
-  BoutReal om;
-  BoutReal Borig;
-  Field3D Bvals;
-  Matrix<bool> first_call;
-  // Save previous x in Fourier space
-  Tensor<dcomplex> x0saved;
-
-  /// Solver tolerances
-  BoutReal rtol, atol;
-
-  /// Maximum number of iterations
-  int maxits;
-
-  /// Kludge factor
-  BoutReal B;
-
-  /// Mean number of iterations taken by the solver
-  BoutReal ipt_mean_its;
-
-  /// Counter for the number of times the solver has been called
-  int ncalls;
 
 };
 
