@@ -293,7 +293,6 @@ set(BOUT_SOURCES
   ./src/sys/optionsreader.cxx
   ./src/sys/output.cxx
   ./src/sys/petsclib.cxx
-  ./src/sys/petsc_interface.cxx
   ./src/sys/range.cxx
   ./src/sys/slepclib.cxx
   ./src/sys/timer.cxx

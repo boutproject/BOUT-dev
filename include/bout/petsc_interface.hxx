@@ -45,8 +45,12 @@
 #include <bout/operatorstencil.hxx>
 
 #ifdef BOUT_HAS_PETSC
+template <class T>
 class GlobalIndexer;
-using IndexerPtr = std::shared_ptr<GlobalIndexer>;
+
+template <class T>
+using IndexerPtr = std::shared_ptr<GlobalIndexer<T>>;
+
 using InterpolationWeights = std::vector<ParallelTransform::PositionsAndWeights>;
 
 /*!
@@ -54,64 +58,206 @@ using InterpolationWeights = std::vector<ParallelTransform::PositionsAndWeights>
  * fields and returns a global index. This index can be used when
  * constructing PETSc arrays. Guard regions used for communication
  * between processes will have the indices of the part of the interior
- * region they are mirroring. Boundaries will have unique indices, but
- * are only included to a depth of 1.
+ * region they are mirroring. Boundaries required by the stencil will
+ * have unique indices. If no stencil is provided then only the
+ * interior region will be assigned global indices. By default, the
+ * indexer is fully initialised so that guard cells are communicated
+ * (ensuring they hold the appropriate global indices). However, by
+ * passing `autoInitialise = false` this behaviour can be turned off
+ * and the user can then manually call the `initialise()` method
+ * later. This can be useful for mocking/faking the class when
+ * testing.
  */
+template<class T>
 class GlobalIndexer {
 public:
-  /// If \p localmesh is the same as the global one, return a pointer
-  /// to the global instance. Otherwise create a new one.
-  static IndexerPtr getInstance(Mesh* localmesh);
+  static_assert(bout::utils::is_Field<T>::value, "GlobalIndexer only works with Fields");
+  using ind_type = typename T::ind_type;
+
+  GlobalIndexer() = default;
+  
+  GlobalIndexer(Mesh* localmesh,
+                OperatorStencil<ind_type> stencil = OperatorStencil<ind_type>(),
+		bool autoInitialise = true)
+    : fieldmesh(localmesh), indices(-1., localmesh), stencils(std::move(stencil)) {
+
+    Region<ind_type> allCandidate, bndryCandidate;
+    if (stencils.getNumParts() > 0) {
+      std::set<ind_type> allIndices(getRegionNobndry().getIndices().begin(),
+				    getRegionNobndry().getIndices().end()),
+	newIndices;
+      BOUT_FOR_SERIAL(i, getRegionNobndry()) {
+	for (const IndexOffset<ind_type> j : stencils.getStencilPart(i)) {
+	  insertIndex(i+j, allIndices, newIndices);
+	}
+      }
+      std::set<ind_type> candidateIndices = newIndices;
+      while (candidateIndices.size() > 0) {
+	newIndices.clear();
+        for (const ind_type i : candidateIndices) {
+	  insertIndex(i, allIndices, newIndices);
+        }
+	candidateIndices = newIndices;
+      }
+      std::vector<ind_type> allIndicesVec(allIndices.begin(), allIndices.end());
+      allCandidate = Region<ind_type>(allIndicesVec);
+    } else {
+      regionAll = getRegionNobndry();
+    }
+
+    bndryCandidate = mask(allCandidate, getRegionNobndry());
+
+    regionInnerX = getUnion(bndryCandidate, indices.getRegion("RGN_INNER_X"));
+    regionOuterX = getUnion(bndryCandidate, indices.getRegion("RGN_OUTER_X"));
+    if (std::is_same<T, FieldPerp>::value) {
+      regionLowerY = Region<ind_type>({});
+      regionUpperY = Region<ind_type>({});
+    } else {
+      regionLowerY = getUnion(bndryCandidate, indices.getRegion("RGN_LOWER_Y"));
+      regionUpperY = getUnion(bndryCandidate, indices.getRegion("RGN_UPPER_Y"));
+    }
+    regionBndry = regionLowerY + regionInnerX + regionOuterX + regionUpperY;
+    regionAll = getRegionNobndry() + regionBndry;
+    regionBndry.sort();
+    regionAll.sort();
+  
+    int localSize = size();
+    MPI_Comm comm = std::is_same<T, FieldPerp>::value ?
+      fieldmesh->getXcomm() : BoutComm::get();
+    fieldmesh->getMpi()->MPI_Scan(&localSize, &globalEnd, 1, MPI_INT, MPI_SUM,
+				  comm);
+    globalEnd--;
+    int counter = globalStart = globalEnd - size() + 1;
+    
+    BOUT_FOR_SERIAL(i, regionAll) {
+      indices[i] = counter++;
+    }
+
+    if (autoInitialise) {
+      initialise();
+    }
+  }
+
   /// Call this immediately after construction when running unit tests.
-  void initialiseTest();
-  /// Finish setting up the indexer, communicating indices across processes.
-  void initialise();
+  void initialiseTest() {}
+
+  /// Finish setting up the indexer, communicating indices across
+  /// processes and, if possible, calculating the sparsity pattern of
+  /// any matrices.
+  void initialise() {
+    fieldmesh->communicate(indices);
+    fieldmesh->communicate(indices);
+  }
+
   Mesh* getMesh() { return fieldmesh; }
 
   /// Convert the local index object to a global index which can be
   /// used in PETSc vectors and matrices.
-  PetscInt getGlobal(const Ind2D &ind);
-  PetscInt getGlobal(const Ind3D &ind);
-  PetscInt getGlobal(const IndPerp &ind);
+  PetscInt getGlobal(const ind_type &ind) {
+    return static_cast<PetscInt>(std::round(indices[ind]));
+  }
 
   /// Check whether the local index corresponds to an element which is
   /// stored locally.
-  bool isLocal(const Ind2D &ind);
-  bool isLocal(const Ind3D &ind);
-  bool isLocal(const IndPerp &ind);
+  bool isLocal(const ind_type &ind) {
+    if (ind.ind < 0) {
+      return false;
+    }
+    PetscInt index = getGlobal(ind);
+    return (globalStart <= index) && (index <= globalEnd);
+  }
 
-  PetscInt getGlobalStart3D() { return globalStart3D; }
-  PetscInt getGlobalStart2D() { return globalStart2D; }
-  PetscInt getGlobalStartPerp() { return globalStartPerp; }
+  PetscInt getGlobalStart() { return globalStart; }
 
-  // Mark the globalIndexer instance to be recreated next time it is
-  // requested (useful for unit tests)
-  static void recreateGlobalInstance();
+  const Region<ind_type>& getRegionAll() const { return regionAll; }
+  const Region<ind_type>& getRegionNobndry() const { return indices.getRegion("RGN_NOBNDRY"); }
+  const Region<ind_type>& getRegionBndry() const { return regionBndry; }
+  const Region<ind_type>& getRegionLowerY() const { return regionLowerY; }
+  const Region<ind_type>& getRegionUpperY() const { return regionUpperY; }
+  const Region<ind_type>& getRegionInnerX() const { return regionInnerX; }
+  const Region<ind_type>& getRegionOuterX() const { return regionOuterX; }
+
+  bool sparsityPatternAvailable() const {
+    return stencils.getNumParts() > 0;
+  }
+  
+  std::vector<int> getNumDiagonal() {
+    ASSERT2(sparsityPatternAvailable());
+    if (!sparsityCalculated) {
+      calculateSparsity();
+    }
+    return numDiagonal;
+  }
+
+  std::vector<int> getNumOffDiagonal() {
+    ASSERT2(sparsityPatternAvailable());
+    if (!sparsityCalculated) {
+      calculateSparsity();
+    }
+    return numOffDiagonal;
+  }
+
+  int size() const {
+    return regionAll.size();
+  }
 
 protected:
-  GlobalIndexer(Mesh* localmesh);
-  Field3D& getIndices3D() { return indices3D; }
-  Field2D& getIndices2D() { return indices2D; }
-  FieldPerp& getIndicesPerp() { return indicesPerp; }
+  T& getIndices() { return indices; }
 
 private:
+  void insertIndex(const ind_type i, std::set<ind_type> &allInds,
+		   std::set<ind_type> &newInds) {
+    auto result = allInds.insert(i);
+    if (result.second) {
+      newInds.insert(i);
+    }
+  }
+
   /// This gets called by initialiseTest and is used to register
   /// fields with fake parallel meshes.
-  virtual void registerFieldForTest(FieldData& f);
-  virtual void registerFieldForTest(FieldPerp& f);
+  virtual void registerFieldForTest(T& UNUSED(f)) {
+    // This is a place-holder which does nothing. It can be overridden
+    // by descendent classes if necessary to set up testing.
+    return;
+  }
+  
+  void calculateSparsity() {
+    numDiagonal = std::vector<int>(size());
+    numOffDiagonal = std::vector<int>(size(), 0);
+
+    // Set initial guess for number of on-diagonal elements
+    BOUT_FOR(i, regionAll) {
+    	numDiagonal[getGlobal(i) - globalStart] = stencils.getStencilSize(i);
+    }
+
+    BOUT_FOR_SERIAL(i, regionBndry) {
+      if (!isLocal(i)) {
+	for (const auto &j: stencils.getIndicesWithStencilIncluding(i)) {
+          if (isLocal(j)) {
+            const int n = getGlobal(j) - globalStart;
+            numDiagonal[n] -= 1;
+            numOffDiagonal[n] += 1;
+          }
+        }
+      }
+    }
+  }
 
   Mesh* fieldmesh;
 
   /// Fields containing the indices for each element (as reals)
-  Field3D indices3D;
-  Field2D indices2D;
-  FieldPerp indicesPerp;
-  PetscInt globalStart3D, globalEnd3D, globalStart2D, globalEnd2D,
-    globalStartPerp, globalEndPerp;
+  T indices;
+  PetscInt globalStart, globalEnd;
 
-  /// The only instance of this class acting on the global Mesh
-  static IndexerPtr globalInstance;
-  static bool initialisedGlobal;
+  /// Stencil for which this indexer has been configured
+  OperatorStencil<ind_type> stencils;
+
+  /// Regions containing the elements for which there are global indices
+  Region<ind_type> regionAll, regionLowerY, regionUpperY,
+    regionInnerX, regionOuterX, regionBndry;
+
+  bool sparsityCalculated = false;
+  std::vector<PetscInt> numDiagonal, numOffDiagonal;
 };
 
 /*!
@@ -159,50 +305,23 @@ public:
   }
 
   /// Construct from a field, copying over the field values
-  PetscVector(const T& f) : vector(new Vec(), VectorDeleter()) {
+  PetscVector(const T& f, IndexerPtr<T> indConverter) :
+    vector(new Vec(), VectorDeleter()), indexConverter(indConverter) {
+    ASSERT1(indConverter->getMesh() == f.getMesh());
     const MPI_Comm comm =
         std::is_same<T, FieldPerp>::value ? f.getMesh()->getXcomm() : BoutComm::get();
-    indexConverter = GlobalIndexer::getInstance(f.getMesh());
-    const auto size = [&f]() {
-      if (std::is_same<T, FieldPerp>::value) {
-        return f.getMesh()->localSizePerp();
-      } else if (std::is_same<T, Field2D>::value) {
-        return f.getMesh()->localSize2D();
-      } else if (std::is_same<T, Field3D>::value) {
-        return f.getMesh()->localSize3D();
-      } else {
-        throw BoutException("PetscVector initialised for non-field type.");
-      }
-    }();
+    const int size = indexConverter->size();
     VecCreateMPI(comm, size, PETSC_DECIDE, vector.get());
     location = f.getLocation();
     initialised = true;
-    BOUT_FOR_SERIAL(i, f.getRegion("RGN_ALL_THIN")) {
-      const PetscInt ind = indexConverter->getGlobal(i);
-      if (ind != -1) {
-        // TODO: consider how VecSetValues() could be used where there
-        // are continuous stretches of field data which should be
-        // copied into the vector.
-        VecSetValue(*vector, ind, f[i], INSERT_VALUES);
-      }
-    }
-    assemble();
+    *this = f;
   }
-
+  
   /// Construct a vector like v, but using data from a raw PETSc
   /// Vec. That Vec (not a copy) will then be owned by the new object.
   PetscVector(const PetscVector<T>& v, Vec* vec) {
 #if CHECKLEVEL >= 2
-    int fsize, msize;
-    if (std::is_same<T, FieldPerp>::value) {
-      fsize = v.indexConverter->getMesh()->localSizePerp();
-    } else if (std::is_same<T, Field2D>::value) {
-      fsize = v.indexConverter->getMesh()->localSize2D();
-    } else if (std::is_same<T, Field3D>::value) {
-      fsize = v.indexConverter->getMesh()->localSize3D();
-    } else {
-      throw BoutException("PetscVector initialised for non-field type.");
-    }
+    int fsize = v.indexConverter->size(), msize;
     VecGetSize(*vec, &msize);
     ASSERT2(fsize == msize);
 #endif
@@ -220,6 +339,20 @@ public:
   /// Move assignment
   PetscVector<T>& operator=(PetscVector<T>&& rhs) {
     swap(*this, rhs);
+    return *this;
+  }
+
+  PetscVector<T>& operator=(const T& f) {
+    BOUT_FOR_SERIAL(i, indexConverter->getRegionAll()) {
+      const PetscInt ind = indexConverter->getGlobal(i);
+      if (ind != -1) {
+        // TODO: consider how VecSetValues() could be used where there
+        // are continuous stretches of field data which should be
+        // copied into the vector.
+        VecSetValue(*vector, ind, f[i], INSERT_VALUES);
+      }
+    }
+    assemble();
     return *this;
   }
 
@@ -311,7 +444,7 @@ public:
     result.allocate();
     result.setLocation(location);
     // Note that this only populates boundaries to a depth of 1
-    BOUT_FOR_SERIAL(i, result.getRegion("RGN_ALL_THIN")) {
+    BOUT_FOR_SERIAL(i, indexConverter->getRegionAll()) {
       PetscInt ind = indexConverter->getGlobal(i);
       PetscScalar val;
       VecGetValues(*vector, 1, &ind, &val);
@@ -327,7 +460,7 @@ public:
 private:
   PetscLib lib;
   std::unique_ptr<Vec, VectorDeleter> vector = nullptr;
-  IndexerPtr indexConverter;
+  IndexerPtr<T> indexConverter;
   CELL_LOC location;
   bool initialised = false;
 };
@@ -375,85 +508,24 @@ public:
     m.initialised = false;
   }
 
-  // Construct a matrix capable of operating on the specified field
-  PetscMatrix(T& f, const OperatorStencil<ind_type>& stencils = {})
-      : matrix(new Mat(), MatrixDeleter()) {
+  // Construct a matrix capable of operating on the specified field,
+  // preallocating memory if requeted and possible.
+  PetscMatrix(T& f, IndexerPtr<T> indConverter, bool preallocate = true) :
+      matrix(new Mat(), MatrixDeleter()), indexConverter(indConverter) {
+    ASSERT1(indConverter->getMesh() == f.getMesh());
     const MPI_Comm comm =
         std::is_same<T, FieldPerp>::value ? f.getMesh()->getXcomm() : BoutComm::get();
-    indexConverter = GlobalIndexer::getInstance(f.getMesh());
     pt = &f.getMesh()->getCoordinates()->getParallelTransform();
-    const int size = [&f]() {
-      if (std::is_same<T, FieldPerp>::value) {
-        return f.getMesh()->localSizePerp();
-      } else if (std::is_same<T, Field2D>::value) {
-        return f.getMesh()->localSize2D();
-      } else if (std::is_same<T, Field3D>::value) {
-        return f.getMesh()->localSize3D();
-      } else {
-        throw BoutException("PetscVector initialised for non-field type.");
-      }
-    }();
+    const int size = indexConverter->size();
 
     MatCreate(comm, matrix.get());
     MatSetSizes(*matrix, size, size, PETSC_DECIDE, PETSC_DECIDE);
     MatSetType(*matrix, MATMPIAIJ);
 
     // If a stencil has been provided, preallocate memory
-    if (stencils.getNumParts() > 0) {
-      const int start = [this, &f]() {
-			  if (std::is_same<T, FieldPerp>::value) {
-			    return this->indexConverter->getGlobalStartPerp();
-			  } else if (std::is_same<T, Field2D>::value) {
-			    return this->indexConverter->getGlobalStart2D();
-			  } else {
-			    return this->indexConverter->getGlobalStart3D();
-			  }
-			}();
-      // Set interior
-      std::vector<int> numDiagonal(size), numOffDiagonal(size, 0);
-
-      // Set initial guess for number of on-diagonal elements
-      BOUT_FOR(i, f.getRegion("RGN_ALL_THIN")) {
-	numDiagonal[indexConverter->getGlobal(i) - start] = stencils.getStencilSize(i);
-      }
-
-      // Adjust at boundaries
-      const int maxblocksize = indexConverter->getMesh()->maxregionblocksize,
-	xstart = indexConverter->getMesh()->xstart,
-	xend = indexConverter->getMesh()->xend;
-      const int ystart =
-	std::is_same<T, FieldPerp>::value ? 0 : indexConverter->getMesh()->ystart;
-      const int yend =
-	std::is_same<T, FieldPerp>::value ? 0 : indexConverter->getMesh()->yend;
-      const int zstart = 0;
-      const int zend =
-	std::is_same<T, Field2D>::value ? 0 : indexConverter->getMesh()->LocalNz - 1;
-      const int ny =
-          std::is_same<T, FieldPerp>::value ? 1 : indexConverter->getMesh()->LocalNy;
-      const int nz =
-          std::is_same<T, Field2D>::value ? 1 : indexConverter->getMesh()->LocalNz;
-      const Region<ind_type> bounds =
-          Region<ind_type>(xstart - 1, xstart - 1, ystart, yend, zstart, zend, ny, nz,
-                           maxblocksize)
-	+ Region<ind_type>(xend + 1, xend + 1, ystart, yend, zstart, zend, ny, nz, maxblocksize)
-          + (std::is_same<T, FieldPerp>::value ? Region<ind_type>() 
-                 : Region<ind_type>(xstart - 1, xend + 1, ystart - 1, ystart - 1, zstart, zend,
-                                    ny, nz, maxblocksize)
-	     + Region<ind_type>(xstart - 1, xend + 1, yend + 1, yend + 1,
-				zstart, zend, ny, nz, maxblocksize));
-      BOUT_FOR_SERIAL(i, bounds) {
-	if (!indexConverter->isLocal(i)) {
-	  for (const auto &j: stencils.getIndicesWithStencilIncluding(i)) {
-	    if (indexConverter->isLocal(j)) {
-	      int n = indexConverter->getGlobal(j) - start;
-	      numDiagonal[n] -= 1;
-	      numOffDiagonal[n] += 1;
-	    }
-	  }
-	}
-      }
-      
-      MatMPIAIJSetPreallocation(*matrix, 0, numDiagonal.data(), 0, numOffDiagonal.data());
+    if (preallocate && indexConverter->sparsityPatternAvailable()) {
+      MatMPIAIJSetPreallocation(*matrix, 0, indexConverter->getNumDiagonal().data(),
+				0, indexConverter->getNumOffDiagonal().data());
     }
 
     MatSetUp(*matrix);
@@ -639,7 +711,7 @@ public:
 private:
   PetscLib lib;
   std::shared_ptr<Mat> matrix = nullptr;
-  IndexerPtr indexConverter;
+  IndexerPtr<T> indexConverter;
   ParallelTransform* pt;
   int yoffset = 0;
   bool initialised = false;
