@@ -129,18 +129,6 @@ public:
     }
   }
 
-  virtual int localSize3D() override { return local3D; }
-
-  virtual int localSize2D() override { return local2D; }
-
-  virtual int localSizePerp() override { return localPerp; }
-
-  virtual int globalStartIndex3D() override { return start3D; }
-
-  virtual int globalStartIndex2D() override { return start2D; }
-
-  virtual int globalStartIndexPerp() override { return startPerp; }
-
   /// Use these methods to let the mesh know that this field has been
   /// created with it. It can then check in with its sibling meshes
   /// (representing other processors) to see if a corresponding field

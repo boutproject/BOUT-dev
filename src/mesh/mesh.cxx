@@ -367,39 +367,6 @@ bool Mesh::hasBndryUpperY() {
   return answer;
 }
 
-int Mesh::localSize3D() {
-  return getRegion3D("RGN_ALL_THIN").size();
-}
-
-int Mesh::localSize2D() {
-  return getRegion2D("RGN_ALL_THIN").size();
-}
-
-int Mesh::localSizePerp() {
-  return getRegionPerp("RGN_ALL_THIN").size();
-}
-
-int Mesh::globalStartIndex3D() {
-  int localSize = localSize3D();
-  int cumulativeSize;
-  mpi->MPI_Scan(&localSize, &cumulativeSize, 1, MPI_INT, MPI_SUM, BoutComm::get());
-  return cumulativeSize - localSize;
-}
-
-int Mesh::globalStartIndex2D() {
-  int localSize = localSize2D();
-  int cumulativeSize;
-  mpi->MPI_Scan(&localSize, &cumulativeSize, 1, MPI_INT, MPI_SUM, BoutComm::get());
-  return cumulativeSize - localSize;
-}
-
-int Mesh::globalStartIndexPerp() {
-  int localSize = localSizePerp();
-  int cumulativeSize;
-  mpi->MPI_Scan(&localSize, &cumulativeSize, 1, MPI_INT, MPI_SUM, getXcomm());
-  return cumulativeSize - localSize;
-}
-
 const std::vector<int> Mesh::readInts(const std::string &name, int n) {
   TRACE("Mesh::readInts(%s)", name.c_str());
 
