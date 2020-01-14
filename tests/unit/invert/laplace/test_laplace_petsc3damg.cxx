@@ -146,7 +146,6 @@ public:
   ~Petsc3dAmgTest() {
     Options::cleanup();
     PetscErrorPrintf = PetscErrorPrintfDefault;
-    GlobalIndexer::recreateGlobalInstance();
   }
 
   const BoutReal sigmasq = 0.02;
@@ -166,7 +165,7 @@ INSTANTIATE_TEST_SUITE_P(LaplacePetsc3dAmgTest, Petsc3dAmgTest,
 
 TEST_P(Petsc3dAmgTest, TestMatrixConstruction3D){
   PetscMatrix<Field3D> &matrix = solver->getMatrix3D();
-  PetscVector<Field3D> vector(f3);
+  PetscVector<Field3D> vector(f3, solver->getIndexer());
   Field3D expected = forward(f3);
   Field3D actual = (matrix * vector).toField();
   BOUT_FOR(i, mesh->getRegion3D("RGN_ALL")) {
@@ -177,7 +176,7 @@ TEST_P(Petsc3dAmgTest, TestMatrixConstruction3D){
 TEST_P(Petsc3dAmgTest, TestSetCoefA_2D){
   solver->setCoefA(coef2);
   PetscMatrix<Field3D> &matrix = solver->getMatrix3D();
-  PetscVector<Field3D> vector(f3);
+  PetscVector<Field3D> vector(f3, solver->getIndexer());
   forward.a = coef2;
   Field3D expected = forward(f3);
   Field3D actual = (matrix * vector).toField();
@@ -189,7 +188,7 @@ TEST_P(Petsc3dAmgTest, TestSetCoefA_2D){
 TEST_P(Petsc3dAmgTest, TestSetCoefA_3D){
   solver->setCoefA(coef3);
   PetscMatrix<Field3D> &matrix = solver->getMatrix3D();
-  PetscVector<Field3D> vector(f3);
+  PetscVector<Field3D> vector(f3, solver->getIndexer());
   forward.a = coef3;
   Field3D expected = forward(f3);
   Field3D actual = (matrix * vector).toField();
@@ -201,7 +200,7 @@ TEST_P(Petsc3dAmgTest, TestSetCoefA_3D){
 TEST_P(Petsc3dAmgTest, TestSetCoefC_2D){
   solver->setCoefC(coef2);
   PetscMatrix<Field3D> &matrix = solver->getMatrix3D();
-  PetscVector<Field3D> vector(f3);
+  PetscVector<Field3D> vector(f3, solver->getIndexer());
   forward.c1 = coef2;
   forward.c2 = coef2;
   Field3D expected = forward(f3);
@@ -214,7 +213,7 @@ TEST_P(Petsc3dAmgTest, TestSetCoefC_2D){
 TEST_P(Petsc3dAmgTest, TestSetCoefC_3D){
   solver->setCoefC(coef3);
   PetscMatrix<Field3D> &matrix = solver->getMatrix3D();
-  PetscVector<Field3D> vector(f3);
+  PetscVector<Field3D> vector(f3, solver->getIndexer());
   forward.c1 = coef3;
   forward.c2 = coef3;
   Field3D expected = forward(f3);
@@ -228,7 +227,7 @@ TEST_P(Petsc3dAmgTest, TestSetCoefC_3D){
 TEST_P(Petsc3dAmgTest, TestSetCoefC1_2D){
   solver->setCoefC1(coef2);
   PetscMatrix<Field3D> &matrix = solver->getMatrix3D();
-  PetscVector<Field3D> vector(f3);
+  PetscVector<Field3D> vector(f3, solver->getIndexer());
   forward.c1 = coef2;
   Field3D expected = forward(f3);
   Field3D actual = (matrix * vector).toField();
@@ -240,7 +239,7 @@ TEST_P(Petsc3dAmgTest, TestSetCoefC1_2D){
 TEST_P(Petsc3dAmgTest, TestSetCoefC1_3D){
   solver->setCoefC1(coef3);
   PetscMatrix<Field3D> &matrix = solver->getMatrix3D();
-  PetscVector<Field3D> vector(f3);
+  PetscVector<Field3D> vector(f3, solver->getIndexer());
   forward.c1 = coef3;
   Field3D expected = forward(f3);
   Field3D actual = (matrix * vector).toField();
@@ -253,7 +252,7 @@ TEST_P(Petsc3dAmgTest, TestSetCoefC1_3D){
 TEST_P(Petsc3dAmgTest, TestSetCoefC2_2D){
   solver->setCoefC2(coef2);
   PetscMatrix<Field3D> &matrix = solver->getMatrix3D();
-  PetscVector<Field3D> vector(f3);
+  PetscVector<Field3D> vector(f3, solver->getIndexer());
   forward.c2 = coef2;
   Field3D expected = forward(f3);
   Field3D actual = (matrix * vector).toField();
@@ -265,7 +264,7 @@ TEST_P(Petsc3dAmgTest, TestSetCoefC2_2D){
 TEST_P(Petsc3dAmgTest, TestSetCoefC2_3D){
   solver->setCoefC2(coef3);
   PetscMatrix<Field3D> &matrix = solver->getMatrix3D();
-  PetscVector<Field3D> vector(f3);
+  PetscVector<Field3D> vector(f3, solver->getIndexer());
   forward.c2 = coef3;
   Field3D expected = forward(f3);
   Field3D actual = (matrix * vector).toField();
@@ -277,7 +276,7 @@ TEST_P(Petsc3dAmgTest, TestSetCoefC2_3D){
 TEST_P(Petsc3dAmgTest, TestSetCoefD_2D){
   solver->setCoefD(coef2);
   PetscMatrix<Field3D> &matrix = solver->getMatrix3D();
-  PetscVector<Field3D> vector(f3);
+  PetscVector<Field3D> vector(f3, solver->getIndexer());
   forward.d = coef2;
   Field3D expected = forward(f3);
   Field3D actual = (matrix * vector).toField();
@@ -289,7 +288,7 @@ TEST_P(Petsc3dAmgTest, TestSetCoefD_2D){
 TEST_P(Petsc3dAmgTest, TestSetCoefD_3D){
   solver->setCoefD(coef3);
   PetscMatrix<Field3D> &matrix = solver->getMatrix3D();
-  PetscVector<Field3D> vector(f3);
+  PetscVector<Field3D> vector(f3, solver->getIndexer());
   forward.d = coef3;
   Field3D expected = forward(f3);
   Field3D actual = (matrix * vector).toField();
@@ -301,7 +300,7 @@ TEST_P(Petsc3dAmgTest, TestSetCoefD_3D){
 TEST_P(Petsc3dAmgTest, TestSetCoefEx_2D){
   solver->setCoefEx(coef2);
   PetscMatrix<Field3D> &matrix = solver->getMatrix3D();
-  PetscVector<Field3D> vector(f3);
+  PetscVector<Field3D> vector(f3, solver->getIndexer());
   forward.ex = coef2;
   Field3D expected = forward(f3);
   Field3D actual = (matrix * vector).toField();
@@ -313,7 +312,7 @@ TEST_P(Petsc3dAmgTest, TestSetCoefEx_2D){
 TEST_P(Petsc3dAmgTest, TestSetCoefEx_3D){
   solver->setCoefEx(coef3);
   PetscMatrix<Field3D> &matrix = solver->getMatrix3D();
-  PetscVector<Field3D> vector(f3);
+  PetscVector<Field3D> vector(f3, solver->getIndexer());
   forward.ex = coef3;
   Field3D expected = forward(f3);
   Field3D actual = (matrix * vector).toField();
@@ -325,7 +324,7 @@ TEST_P(Petsc3dAmgTest, TestSetCoefEx_3D){
 TEST_P(Petsc3dAmgTest, TestSetCoefEz_2D){
   solver->setCoefEz(coef2);
   PetscMatrix<Field3D> &matrix = solver->getMatrix3D();
-  PetscVector<Field3D> vector(f3);
+  PetscVector<Field3D> vector(f3, solver->getIndexer());
   forward.ez = coef2;
   Field3D expected = forward(f3);
   Field3D actual = (matrix * vector).toField();
@@ -337,7 +336,7 @@ TEST_P(Petsc3dAmgTest, TestSetCoefEz_2D){
 TEST_P(Petsc3dAmgTest, TestSetCoefEz_3D){
   solver->setCoefEz(coef3);
   PetscMatrix<Field3D> &matrix = solver->getMatrix3D();
-  PetscVector<Field3D> vector(f3);
+  PetscVector<Field3D> vector(f3, solver->getIndexer());
   forward.ez = coef3;
   Field3D expected = forward(f3);
   Field3D actual = (matrix * vector).toField();

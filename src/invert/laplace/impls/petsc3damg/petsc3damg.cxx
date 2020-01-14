@@ -54,7 +54,9 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mes
   A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
   issetD(false), issetC(false), issetE(false), updateRequired(true), 
   lowerY(localmesh->iterateBndryLowerY()), upperY(localmesh->iterateBndryUpperY()),
-  operator3D(A, getStencil(localmesh, lowerY, upperY)), kspInitialised(false)
+  indexer(std::make_shared<GlobalIndexer<Field3D>>(localmesh,
+						   getStencil(localmesh, lowerY, upperY))),
+  operator3D(A, indexer), kspInitialised(false)
 {
   // Provide basic initialisation of field coefficients, etc.
   // Get relevent options from user input
@@ -131,7 +133,7 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mes
   }
 
   // Set up boundary conditions in operator
-  BOUT_FOR(i, localmesh->getRegion3D("RGN_INNER_X_THIN")) {
+  BOUT_FOR(i, indexer->getRegionInnerX()) {
     if(inner_boundary_flags & INVERT_AC_GRAD) {
       // Neumann on inner X boundary
       operator3D(i, i) = -1./coords->dx[i]/sqrt(coords->g_11[i]);
@@ -143,7 +145,7 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mes
     }
   }
 
-  BOUT_FOR(i, localmesh->getRegion3D("RGN_OUTER_X_THIN")) {
+  BOUT_FOR(i, indexer->getRegionOuterX()) {
     if(outer_boundary_flags & INVERT_AC_GRAD) {
       // Neumann on outer X boundary
       operator3D(i, i) = 1./coords->dx[i]/sqrt(coords->g_11[i]);
@@ -155,7 +157,7 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mes
     }
   }
 
-  BOUT_FOR(i, localmesh->getRegion3D("RGN_LOWER_Y_THIN")) {
+  BOUT_FOR(i, indexer->getRegionLowerY()) {
     if(lower_boundary_flags & INVERT_AC_GRAD) {
       // Neumann on lower Y boundary
       operator3D(i, i) = -1./coords->dy[i]/sqrt(coords->g_22[i]);
@@ -167,7 +169,7 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mes
     }
   }
 
-  BOUT_FOR(i, localmesh->getRegion3D("RGN_UPPER_Y_THIN")) {
+  BOUT_FOR(i, indexer->getRegionUpperY()) {
     if(upper_boundary_flags & INVERT_AC_GRAD) {
       // Neumann on upper Y boundary
       operator3D(i, i) = 1./coords->dy[i]/sqrt(coords->g_22[i]);
@@ -190,11 +192,11 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D &b_in, const Field3D &x0) {
   // If necessary, update the values in the matrix operator and initialise
   // the Krylov solver
   if (updateRequired) updateMatrix3D();
-  PetscVector<Field3D> rhs(b_in), guess(x0);
+  PetscVector<Field3D> rhs(b_in, indexer), guess(x0, indexer);
   
   // Adjust vectors to represent boundary conditions and check that
   // boundary cells are finite
-  BOUT_FOR(i, localmesh->getRegion3D("RGN_INNER_X_THIN")) {
+  BOUT_FOR(i, indexer->getRegionInnerX()) {
     const BoutReal val = (inner_boundary_flags & INVERT_SET) ? x0[i] : 0.;
     ASSERT1(finite(x0[i]));
     if (!(inner_boundary_flags & INVERT_RHS)) {
@@ -207,7 +209,7 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D &b_in, const Field3D &x0) {
 #endif
   }
 
-  BOUT_FOR(i, localmesh->getRegion3D("RGN_OUTER_X_THIN")) {
+  BOUT_FOR(i, indexer->getRegionOuterX()) {
     const BoutReal val = (outer_boundary_flags & INVERT_SET) ? x0[i] : 0.;
     ASSERT1(finite(x0[i]));
     if (!(outer_boundary_flags & INVERT_RHS)) {
@@ -220,7 +222,7 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D &b_in, const Field3D &x0) {
 #endif
   }
 
-  BOUT_FOR(i, localmesh->getRegion3D("RGN_LOWER_Y_THIN")) {
+  BOUT_FOR(i, indexer->getRegionLowerY()) {
     const BoutReal val = (lower_boundary_flags & INVERT_SET) ? x0[i] : 0.;
     ASSERT1(finite(x0[i]));
     if (!(lower_boundary_flags & INVERT_RHS)) {
@@ -233,7 +235,7 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D &b_in, const Field3D &x0) {
 #endif
   }
 
-  BOUT_FOR(i, localmesh->getRegion3D("RGN_UPPER_Y_THIN")) {
+  BOUT_FOR(i, indexer->getRegionUpperY()) {
     const BoutReal val = (upper_boundary_flags & INVERT_SET) ? x0[i] : 0.;
     ASSERT1(finite(x0[i]));
     if (!(upper_boundary_flags & INVERT_RHS)) {
@@ -268,10 +270,10 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D &b_in, const Field3D &x0) {
   // Create field from result
   Field3D solution = guess.toField();
   localmesh->communicate(solution);
-  BOUT_FOR(i, localmesh->getRegion3D("RGN_LOWER_Y_THIN")) {
+  BOUT_FOR(i, indexer->getRegionLowerY()) {
     solution.ydown()[i] = solution[i];
   }
-  BOUT_FOR(i, localmesh->getRegion3D("RGN_UPPER_Y_THIN")) {
+  BOUT_FOR(i, indexer->getRegionUpperY()) {
     solution.yup()[i] = solution[i];
   }
   return solution;
@@ -294,7 +296,7 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
   
   // Set up the matrix for the internal points on the grid.
   // Boundary conditions were set in the constructor.
-  BOUT_FOR(l, localmesh->getRegion3D("RGN_NOBNDRY")) {
+  BOUT_FOR(l, indexer->getRegionNobndry()) {
     // Index is called l for "location". It is not called i so as to
     // avoid confusing it with the x-index.
 
@@ -331,18 +333,18 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
   
     // Adjust the coefficients to include finite-difference factors
     if (nonuniform) {
-      C_df_dx -= C_d2f_dx2*coords->d1_dx[l];
+      C_df_dx -= C_d2f_dx2 * coords->d1_dx[l];
     }
-    C_df_dx /= 2*coords->dx[l];
-    C_df_dz /= 2*coords->dz;
-    
+    C_df_dx /= 2 * coords->dx[l];
+    C_df_dz /= 2 * coords->dz;
+
     C_d2f_dx2 /= SQ(coords->dx[l]);
     C_d2f_dy2 /= SQ(coords->dy[l]);
     C_d2f_dz2 /= SQ(coords->dz);
-    
-    C_d2f_dxdz /= 4*coords->dx[l]*coords->dz;
 
-    operator3D(l, l) = -2*(C_d2f_dx2 + C_d2f_dy2 + C_d2f_dz2) + A[l];
+    C_d2f_dxdz /= 4 * coords->dx[l] * coords->dz;
+
+    operator3D(l, l) = -2 * (C_d2f_dx2 + C_d2f_dy2 + C_d2f_dz2) + A[l];
     operator3D(l, l.xp()) = C_df_dx + C_d2f_dx2;
     operator3D(l, l.xm()) = -C_df_dx + C_d2f_dx2;
     operator3D(l, l.zp()) = C_df_dz + C_d2f_dz2;
@@ -355,7 +357,7 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
     // up/down, so we don't want the matrix to do any such
     // interpolation there.
     const int yup = (l.y() == localmesh->yend && upperY.intersects(l.x())) ? -1 : 0,
-      ydown = (l.y() == localmesh->ystart && lowerY.intersects(l.x())) ? -1 : 0;
+              ydown = (l.y() == localmesh->ystart && lowerY.intersects(l.x())) ? -1 : 0;
     operator3D.yup(yup)(l, l.yp()) = 0.0;
     operator3D.ydown(ydown)(l, l.ym()) = 0.0;
     operator3D.yup(yup)(l, l.xp().yp()) = 0.0;
@@ -371,7 +373,7 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
 
   // Must add these (rather than assign) so that elements used in
   // interpolation don't overwrite each other.
-  BOUT_FOR(l, localmesh->getRegion3D("RGN_NOBNDRY")) {
+  BOUT_FOR(l, indexer->getRegionNobndry()) {
     BoutReal C_df_dy = (coords->G2[l] - dJ_dy[l]/coords->J[l]);
     if (issetD) {
       C_df_dy *= D[l];

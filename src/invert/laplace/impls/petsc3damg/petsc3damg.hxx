@@ -145,6 +145,7 @@ public:
   // Return a reference to the matrix objects representing the Laplace
   // operator. These will be (re)construct if necessary.
   PetscMatrix<Field3D>& getMatrix3D();
+  IndexerPtr<Field3D> getIndexer() { return indexer; }
 
   virtual Field2D solve(const Field2D &b) override;
 
@@ -209,6 +210,7 @@ private:
 
   RangeIterator lowerY, upperY;
 
+  IndexerPtr<Field3D> indexer;
   PetscMatrix<Field3D> operator3D;
   KSP ksp;
   bool kspInitialised;
