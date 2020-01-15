@@ -153,7 +153,10 @@ public:
   }
 
   HYPRE_IJVector get() { return hypre_vector; }
-  const HYPRE_IJVector get() const { return hypre_vector; }
+  const HYPRE_IJVector& get() const { return hypre_vector; }
+
+  HYPRE_ParVector getParallel() { return parallel_vector; }
+  const HYPRE_ParVector& getParallel() const { return parallel_vector; }
 
   class Element {
     HYPRE_IJVector vector{nullptr};
@@ -491,7 +494,10 @@ public:
   }
 
   HYPRE_IJMatrix get() { return *hypre_matrix; }
-  const HYPRE_IJMatrix get() const { return *hypre_matrix; }
+  const HYPRE_IJMatrix& get() const { return *hypre_matrix; }
+
+  HYPRE_ParCSRMatrix getParallel() { return parallel_matrix; }
+  const HYPRE_ParCSRMatrix& getParallel() const { return parallel_matrix; }
 };
 
 } // namespace bout
