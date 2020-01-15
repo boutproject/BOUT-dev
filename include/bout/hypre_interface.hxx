@@ -469,6 +469,7 @@ public:
 
   void assemble() {
     HYPRE_IJMatrixAssemble(*hypre_matrix);
+    HYPRE_IJMatrixGetObject(*hypre_matrix, reinterpret_cast<void**>(&parallel_matrix));
     assembled = true;
   }
 
