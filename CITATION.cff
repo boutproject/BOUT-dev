@@ -6,7 +6,7 @@
 cff-version: 1.0.3-1
 message: If you use BOUT++ in your work, please cite it using the following metadata,
   or the two papers in the reference section
-title: BOUT++
+title: "BOUT++"
 authors:
   - family-names: Dudson
     given-names: Benjamin Daniel
