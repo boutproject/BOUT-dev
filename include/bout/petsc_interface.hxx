@@ -146,7 +146,6 @@ public:
   /// any matrices.
   void initialise() {
     fieldmesh->communicate(indices);
-    fieldmesh->communicate(indices);
   }
 
   Mesh* getMesh() { return fieldmesh; }

@@ -199,7 +199,11 @@ protected:
   /// the send and receive buffers share memory. This allows for
   /// communications to be faked between meshes as though they were on
   /// different processors.
-  void overlapHandleMemory(BoutMesh* yup, BoutMesh* ydown, BoutMesh* xin, BoutMesh* xout);
+  void overlapHandleMemory(BoutMesh* yup, BoutMesh* ydown, BoutMesh* xin,
+			   BoutMesh* xout, BoutMesh* xinyup, BoutMesh* xinydown,
+			   BoutMesh* xoutyup, BoutMesh* xoutydown,
+			   bool xinyupSendsInner, bool xinydownSendsInner,
+			   bool xoutyupSendsInner, bool xoutydownSendsInner);
 
 private:
   std::string gridname;
