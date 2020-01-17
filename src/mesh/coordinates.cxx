@@ -1471,50 +1471,57 @@ Field3D Coordinates::Laplace(const Field3D& f, CELL_LOC outloc,
 }
 
 // Full perpendicular Laplacian, in form of inverse of Laplacian operator in LaplaceXY solver
-const Field2D Coordinates::Laplace_perpXY(const Field2D &A, const Field2D &f) {
+Field2D Coordinates::Laplace_perpXY(const Field2D &A, const Field2D &f) {
   TRACE("Coordinates::Laplace_perpXY( Field2D )");
 
   Field2D result;
   result.allocate();
-  BoutReal thisA, thisJ, thisg11, thisdx, thisg_22, thisg23, thisg_23, thisdy, val;
   for (auto i : result.getRegion(RGN_NOBNDRY)) {
     result[i] = 0.;
 
     // outer x boundary
-    thisA = 0.5*(A[i]+A[i.xp()]);
-    thisJ = 0.5*(J[i]+J[i.xp()]);
-    thisg11 = 0.5*(g11[i]+g11[i.xp()]);
-    thisdx = 0.5*(dx[i]+dx[i.xp()]);
-    val = thisA * thisJ * thisg11 / (J[i] * thisdx * dx[i]);
-    result[i] += val*(f[i.xp()]-f[i]);
+    const auto outer_x_avg = [&i](const auto& f) { return 0.5 * (f[i] + f[i.xp()]); };
+    const BoutReal outer_x_A = outer_x_avg(A);
+    const BoutReal outer_x_J = outer_x_avg(J);
+    const BoutReal outer_x_g11 = outer_x_avg(g11);
+    const BoutReal outer_x_dx = outer_x_avg(dx);
+    const BoutReal outer_x_value = outer_x_A * outer_x_J * outer_x_g11 /
+      (J[i] * outer_x_dx * dx[i]);
+    result[i] += outer_x_value * (f[i.xp()] - f[i]);
 
     // inner x boundary
-    thisA = 0.5*(A[i]+A[i.xm()]);
-    thisJ = 0.5*(J[i]+J[i.xm()]);
-    thisg11 = 0.5*(g11[i]+g11[i.xm()]);
-    thisdx = 0.5*(dx[i]+dx[i.xm()]);
-    val = thisA * thisJ * thisg11 / (J[i] * thisdx * dx[i]);
-    result[i] += val*(f[i.xm()]-f[i]);
+    const auto inner_x_avg = [&i](const auto& f) { return 0.5 * (f[i] -+f[i.xm()]); };
+    const BoutReal inner_x_A = inner_x_avg(A);
+    const BoutReal inner_x_J = inner_x_avg(J);
+    const BoutReal inner_x_g11 = inner_x_avg(g11);
+    const BoutReal inner_x_dx = inner_x_avg(dx);
+    const BoutReal inner_x_value = inner_x_A * inner_x_J * inner_x_g11 /
+      (J[i] * inner_x_dx * dx[i]);
+    result[i] += inner_x_value * (f[i.xm()] - f[i]);
 
     // upper y boundary
-    thisA = 0.5*(A[i]+A[i.yp()]);
-    thisJ = 0.5*(J[i]+J[i.yp()]);
-    thisg_22 = 0.5*(g_22[i]+g_22[i.yp()]);
-    thisg23 = 0.5*(g23[i]+g23[i.yp()]);
-    thisg_23 = 0.5*(g_23[i]+g_23[i.yp()]);
-    thisdy = 0.5*(dy[i]+dy[i.yp()]);
-    val = -thisA * thisJ * thisg23 * thisg_23 / (thisg_22 * J[i] * thisdy * dy[i]);
-    result[i] += val*(f[i.yp()]-f[i]);
+    const auto upper_y_avg = [&i](const auto& f) { return 0.5 * (f[i] + f[i.yp()]); };
+    const BoutReal upper_y_A = upper_y_avg(A);
+    const BoutReal upper_y_J = upper_y_avg(J);
+    const BoutReal upper_y_g_22 = upper_y_avg(g_22);
+    const BoutReal upper_y_g23 = upper_y_avg(g23);
+    const BoutReal upper_y_g_23 = upper_y_avg(g_23);
+    const BoutReal upper_y_dx = upper_y_avg(dx);
+    const BoutReal upper_y_value = -upper_y_A * upper_y_J * upper_y_g23 *upper_y_g_23 /
+      (upper_y_g_22 * J[i] * upper_y_dx * dy[i]);
+    result[i] += upper_y_value * (f[i.yp()] - f[i]);
 
     // lower y boundary
-    thisA = 0.5*(A[i]+A[i.ym()]);
-    thisJ = 0.5*(J[i]+J[i.ym()]);
-    thisg_22 = 0.5*(g_22[i]+g_22[i.ym()]);
-    thisg23 = 0.5*(g23[i]+g23[i.ym()]);
-    thisg_23 = 0.5*(g_23[i]+g_23[i.ym()]);
-    thisdy = 0.5*(dy[i]+dy[i.ym()]);
-    val = -thisA * thisJ * thisg23 * thisg_23 / (thisg_22 * J[i] * thisdy * dy[i]);
-    result[i] += val*(f[i.ym()]-f[i]);
+    const auto lower_y_avg = [&i](const auto& f) { return 0.5 * (f[i] + f[i.ym()]); };
+    const BoutReal lower_y_A = lower_y_avg(A);
+    const BoutReal lower_y_J = lower_y_avg(J);
+    const BoutReal lower_y_g_22 = lower_y_avg(g_22);
+    const BoutReal lower_y_g23 = lower_y_avg(g23);
+    const BoutReal lower_y_g_23 = lower_y_avg(g_23);
+    const BoutReal lower_y_dx = lower_y_avg(dx);
+    const BoutReal lower_y_value = -lower_y_A * lower_y_J * lower_y_g23 * lower_y_g_23 /
+      (lower_y_g_22 * J[i] * lower_y_dx * dy[i]);
+    result[i] += lower_y_value * (f[i.ym()] - f[i]);
   }
 
   return result;

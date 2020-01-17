@@ -51,7 +51,7 @@ RegisterLaplace<LaplacePetsc3dAmg> registerlaplacepetsc3damg(LAPLACE_PETSC3DAMG)
 class LaplacePetsc3dAmg : public Laplacian {
 public:
   LaplacePetsc3dAmg(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr);
-  virtual ~LaplacePetsc3dAmg() override;
+  ~LaplacePetsc3dAmg() override;
 
   void setCoefA(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
@@ -182,10 +182,10 @@ private:
    * See LaplacePetsc::Coeffs for details an potential pit falls
    */
   Field3D A, C1, C2, D, Ex, Ez;
-  bool issetD;
-  bool issetC;
-  bool issetE;
-  bool updateRequired;
+  bool issetD = false;
+  bool issetC = false;
+  bool issetE = false;
+  bool updateRequired = true;
   int lastflag;               // The flag used to construct the matrix
   int lower_boundary_flags;
   int upper_boundary_flags;
@@ -219,10 +219,9 @@ private:
   bool use_precon;  // Switch for preconditioning
   bool rightprec;   // Right preconditioning
 
-  #if CHECK > 0
-    int implemented_flags;
-    int implemented_boundary_flags;
-  #endif
+  // These are the implemented flags
+  static constexpr int implemented_flags = INVERT_START_NEW,
+    implemented_boundary_flags = INVERT_AC_GRAD + INVERT_SET + INVERT_RHS;
 };
 
 #endif //BOUT_HAS_PETSC

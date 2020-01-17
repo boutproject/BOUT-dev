@@ -256,7 +256,7 @@ public:
 		  const std::string& dfdy_boundary_conditions="free_o3",
 		  const std::string& dfdy_dy_region = "");
   // Full perpendicular Laplacian, in form of inverse of Laplacian operator in LaplaceXY solver
-  const Field2D Laplace_perpXY(const Field2D &A, const Field2D &f);
+  Field2D Laplace_perpXY(const Field2D &A, const Field2D &f);
   
 private:
   int nz; // Size of mesh in Z. This is mesh->ngz-1

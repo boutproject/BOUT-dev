@@ -52,7 +52,6 @@ constexpr auto KSP_PREONLY    = "preonly";
 LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mesh_in) :
   Laplacian(opt, loc, mesh_in),
   A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
-  issetD(false), issetC(false), issetE(false), updateRequired(true), 
   lowerY(localmesh->iterateBndryLowerY()), upperY(localmesh->iterateBndryUpperY()),
   indexer(std::make_shared<GlobalIndexer<Field3D>>(localmesh,
 						   getStencil(localmesh, lowerY, upperY))),
@@ -80,16 +79,10 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mes
   upper_boundary_flags = (*opts)["upper_boundary_flags"].withDefault(0);
 
   #if CHECK > 0
-    // These are the implemented flags
-    implemented_flags = INVERT_START_NEW;
-    implemented_boundary_flags = INVERT_AC_GRAD
-                                 + INVERT_SET
-                                 + INVERT_RHS
-                                 ;
     // Checking flags are set to something which is not implemented
     // This is done binary (which is possible as each flag is a power of 2)
     if ( global_flags & ~implemented_flags ) {
-      if (global_flags&INVERT_4TH_ORDER) output<<"For PETSc based Laplacian inverter, use 'fourth_order=true' instead of setting INVERT_4TH_ORDER flag"<<endl;
+      if (global_flags&INVERT_4TH_ORDER) output<<"For PETSc based Laplacian inverter, use 'fourth_order=true' instead of setting INVERT_4TH_ORDER flag"<<"\n";
       throw BoutException("Attempted to set Laplacian inversion flag that is not implemented in petsc_laplace.cxx");
     }
     if ( inner_boundary_flags & ~implemented_boundary_flags ) {
@@ -129,7 +122,7 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mes
   // Get direct solver switch
   direct = (*opts)["direct"].doc("Use direct (LU) solver?").withDefault(false);
   if (direct) {
-    output << endl << "Using LU decompostion for direct solution of system" << endl << endl;
+    output << "\n" << "Using LU decompostion for direct solution of system" << "\n" << "\n";
   }
 
   // Set up boundary conditions in operator
@@ -202,11 +195,9 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D &b_in, const Field3D &x0) {
     if (!(inner_boundary_flags & INVERT_RHS)) {
       rhs(i) = val;
     }
-#if CHECK >= 1
     else {
       ASSERT1(finite(b_in[i]));
     }
-#endif
   }
 
   BOUT_FOR(i, indexer->getRegionOuterX()) {
@@ -215,11 +206,9 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D &b_in, const Field3D &x0) {
     if (!(outer_boundary_flags & INVERT_RHS)) {
       rhs(i) = val;
     }
-#if CHECK >= 1
     else {
       ASSERT1(finite(b_in[i]));
     }
-#endif
   }
 
   BOUT_FOR(i, indexer->getRegionLowerY()) {
@@ -228,11 +217,9 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D &b_in, const Field3D &x0) {
     if (!(lower_boundary_flags & INVERT_RHS)) {
       rhs(i) = val;
     }
-#if CHECK >= 1
     else {
       ASSERT1(finite(b_in[i]));
     }
-#endif
   }
 
   BOUT_FOR(i, indexer->getRegionUpperY()) {
@@ -241,11 +228,9 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D &b_in, const Field3D &x0) {
     if (!(upper_boundary_flags & INVERT_RHS)) {
       rhs(i) = val;
     }
-#if CHECK >= 1
     else {
       ASSERT1(finite(b_in[i]));
     }
-#endif
   }
 
   rhs.assemble();
@@ -259,11 +244,12 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D &b_in, const Field3D &x0) {
   // Check for convergence
   KSPConvergedReason reason;
   KSPGetConvergedReason( ksp, &reason );
-  if (reason==-3) { // Too many iterations, might be fixed by taking smaller timestep
+  if (reason == KSP_DIVERGED_ITS) {
+    // Too many iterations, might be fixed by taking smaller timestep
     throw BoutIterationFail("Petsc3dAmg: too many iterations");
   }
   else if (reason<=0) {
-    output << "KSPConvergedReason is " << reason << endl;
+    output << "KSPConvergedReason is " << reason << "\n";
     throw BoutException("Petsc3dAmg: inversion failed to converge.");
   }
 
@@ -289,10 +275,10 @@ PetscMatrix<Field3D>& LaplacePetsc3dAmg::getMatrix3D() {
 }
 
 void LaplacePetsc3dAmg::updateMatrix3D() {
-  const Field3D dc_dx = issetC ? DDX(C2) : Field3D(),
-    dc_dy = issetC ? DDY(C2) : Field3D(),
-    dc_dz = issetC ? DDZ(C2) : Field3D(),
-    dJ_dy = DDY(coords->J/coords->g_22);
+  const Field3D dc_dx = issetC ? DDX(C2) : Field3D();
+  const Field3D dc_dy = issetC ? DDY(C2) : Field3D();
+  const Field3D dc_dz = issetC ? DDZ(C2) : Field3D();
+  const Field3D dJ_dy = DDY(coords->J/coords->g_22);
   
   // Set up the matrix for the internal points on the grid.
   // Boundary conditions were set in the constructor.
@@ -401,8 +387,9 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
     }
     C_df_dy /= 2*coords->dy[l];
     C_d2f_dy2 /= SQ(coords->dy[l]);
-    C_d2f_dxdy /= 4*coords->dy[l]; // NOTE: This is unfinished; will also need to
-                                   // divide by dx(i +/- 1, j, k) when using
+    C_d2f_dxdy /= 4*coords->dy[l]; // NOTE: This value is not completed here. It needs to
+                                   // be divide by dx(i +/- 1, j, k) when using to set a
+                                   // matrix element
     C_d2f_dydz /= 4*coords->dy[l]*coords->dz;
 
     // The values stored in the y-boundary are already interpolated
@@ -523,16 +510,16 @@ OperatorStencil<Ind3D> LaplacePetsc3dAmg::getStencil(Mesh* localmesh,
   // If there is a lower y-boundary then create a part of the stencil
   // for cells immediately adjacent to it.
   if (lowerYBound.max() - lowerYBound.min() > 0) {
-    stencil.add([localmesh, &lowerYBound](Ind3D ind) -> bool {
-		  return localmesh->ystart == ind.y() && lowerYBound.intersects(ind.x()); },
+    stencil.add([index = localmesh->ystart, &lowerYBound](Ind3D ind) -> bool {
+		  return index == ind.y() && lowerYBound.intersects(ind.x()); },
       lowerEdgeStencilVector);
   }
 
   // If there is an upper y-boundary then create a part of the stencil
   // for cells immediately adjacent to it.
   if (upperYBound.max() - upperYBound.min() > 0) {
-    stencil.add([localmesh, &upperYBound](Ind3D ind) -> bool {
-		  return localmesh->yend == ind.y() && upperYBound.intersects(ind.x()); },
+    stencil.add([index = localmesh->yend, &upperYBound](Ind3D ind) -> bool {
+		  return index == ind.y() && upperYBound.intersects(ind.x()); },
       upperEdgeStencilVector);
   }
 
@@ -560,22 +547,22 @@ OperatorStencil<Ind3D> LaplacePetsc3dAmg::getStencil(Mesh* localmesh,
   // pre-allocated.
   
   // Add lower Y boundary.
-  stencil.add([localmesh](Ind3D ind) -> bool {
-		return ind.y() == localmesh->ystart - 1;
+  stencil.add([index = localmesh->ystart - 1](Ind3D ind) -> bool {
+		return ind.y() == index;
 	      }, {zero, zero.yp()});
   // Add upper Y boundary
-  stencil.add([localmesh](Ind3D ind) -> bool {
-		return ind.y() == localmesh->yend + 1;
+  stencil.add([index = localmesh->yend + 1](Ind3D ind) -> bool {
+		return ind.y() == index;
 	      }, {zero, zero.ym()});
   // Add inner X boundary
   if (localmesh->firstX()) {
     stencil.add(
-        [localmesh](Ind3D ind) -> bool { return ind.x() == localmesh->xstart - 1; },
+        [index = localmesh->xstart - 1](Ind3D ind) -> bool { return ind.x() == index; },
         {zero, zero.xp()});
   }
   // Add outer X boundary
   if (localmesh->lastX()) {
-    stencil.add([localmesh](Ind3D ind) -> bool { return ind.x() == localmesh->xend + 1; },
+    stencil.add([index = localmesh->xend + 1](Ind3D ind) -> bool { return ind.x() == index; },
                 {zero, zero.xm()});
   }
 
