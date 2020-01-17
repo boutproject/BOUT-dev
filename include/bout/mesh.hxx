@@ -379,7 +379,7 @@ class Mesh {
   MPI_Comm getXcomm() {return getXcomm(0);} ///< Return communicator containing all processors in X
   virtual MPI_Comm getXcomm(int jy) const = 0; ///< Return X communicator
   virtual MPI_Comm getYcomm(int jx) const = 0; ///< Return Y communicator
-  MpiWrapper* getMpi() { return mpi; } ///< Return pointer to the mesh's MPI Wrapper object
+  MpiWrapper& getMpi() { return *mpi; } ///< Return pointer to the mesh's MPI Wrapper object
 
   /// Is local X index \p jx periodic in Y?
   ///

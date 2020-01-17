@@ -605,8 +605,8 @@ public:
     return *this;
   }
 
-  /// Updates the region so that indices contained in mask Region are
-  /// removed
+  /// Return a new region equivalent to *this but with indices contained
+  /// in mask Region removed
   Region<T> mask(const Region<T> & maskRegion){
     // Get mask indices and sort as we're going to be searching through
     // this vector so if it's sorted we can be more efficient
@@ -636,8 +636,8 @@ public:
     return *this; // To allow command chaining
   };
 
-  /// Updates the region to only include indices also contained in the
-  /// other Region
+  /// Returns a new region including only indices contained in both
+  /// this region and the other.
   Region<T> getUnion(const Region<T> & otherRegion) {
     // Get other indices and sort as we're going to be searching through
     // this vector so if it's sorted we can be more efficient

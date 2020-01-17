@@ -397,7 +397,7 @@ public:
     yend = meshes[0].yend;
     localmesh = &meshes[pe_yind + pe_xind * nype];
 
-    bout::globals::mpi = localmesh->getMpi();
+    bout::globals::mpi = &localmesh->getMpi();
   }
 
   virtual ~ParallelIndexerTest() {

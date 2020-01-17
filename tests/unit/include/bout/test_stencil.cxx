@@ -154,7 +154,7 @@ TYPED_TEST(IndexOffsetStructTests, SubtractFromIndex) {
     EXPECT_EQ(this->zero - offset3, this->zero.zm(11));
   }
   if (std::is_same<TypeParam, Ind3D>::value) {
-    EXPECT_EQ(this->zero - offset4, this->zero.xm(2).ym(3).zp(2));
+    EXPECT_EQ(this->zero - offset4, this->zero.zp(2).xm(2).ym(3));
   }
 }
 
@@ -265,7 +265,7 @@ TYPED_TEST(StencilUnitTests, GetIndicesWithStencilIncluding) {
 TYPED_TEST(StencilUnitTests, Iterator) {
   int i = 0;
   for(auto& item : this->stencil) {
-    EXPECT_EQ(item.second.size(), static_cast<int>(this->sizes[i]));
+    EXPECT_EQ(item.part.size(), static_cast<int>(this->sizes[i]));
     i++;
   }
   EXPECT_EQ(i, static_cast<int>(this->sizes.size()));
