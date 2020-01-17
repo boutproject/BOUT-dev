@@ -194,17 +194,6 @@ public:
 
   int size() const { return regionAll.size(); }
 
-  void writeOut() const {
-    std::cout << "=====================================================\n";
-    for (int y = fieldmesh->LocalNy; y > 0; y--) {
-      for (int x = 0; x < fieldmesh->LocalNx; x++) {
-        std::cout << "\t" << indices(x, y - 1, 0);
-      }
-      std::cout << "\n";
-    }
-    std::cout << "=====================================================\n";
-  }
-
 protected:
   T& getIndices() { return indices; }
 
