@@ -78,6 +78,17 @@ void Timer::listAllInfo() {
 
   auto max_width = static_cast<unsigned int>(headerMean.length());
 
+  // To sort the map by the total time, we need to copy the key-value
+  // pairs into another container that we can sort ourselves
+  std::vector<std::pair<std::string, timer_info>> sorted_info;
+  sorted_info.reserve(info.size());
+  std::transform(begin(info), end(info), std::back_inserter(sorted_info),
+                 [](const auto& it) { return it; });
+  // Sort so that the largest total time is first
+  std::sort(begin(sorted_info), end(sorted_info), [](const auto& a, const auto& b) {
+    return a.second.total_time > b.second.total_time;
+  });
+
   output << "Timer report \n\n";
   output << std::setw(max_width) << headerName << separator << headerTime
          << separator << headerHits << separator << headerMean << "\n";
@@ -85,7 +96,7 @@ void Timer::listAllInfo() {
           << std::string(max_width, '-') << separator
           << std::string(max_width, '-') << separator
           << std::string(max_width, '-') << "\n";
-  for (const auto& kv : info) {
+  for (const auto& kv : sorted_info) {
     output << std::left << std::setw(max_width) << kv.first << separator
            << kv.second.total.time.count() << separator << << kv.second.hits
            << separator << kv.second.total_time.count() / kv.second.hits
