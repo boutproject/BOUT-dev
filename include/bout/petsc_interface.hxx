@@ -439,7 +439,8 @@ public:
     }
 #endif
     BoutReal value;
-    BOUT_OMP(critical) int status = VecGetValues(*get(), 1, &global, &value);
+    int status;
+    BOUT_OMP(critical) status = VecGetValues(*get(), 1, &global, &value);
     if (status != 0) {
       throw BoutException("Error when getting element of a PETSc vector.");
     }
@@ -702,8 +703,9 @@ public:
     }
 #endif
     BoutReal value;
+    int status;
     BOUT_OMP(critical)
-    int status = MatGetValues(*get(), 1, &global1, 1, &global2, &value);
+    status = MatGetValues(*get(), 1, &global1, 1, &global2, &value);
     if (status != 0) {
       throw BoutException("Error when setting elements of a PETSc matrix.");
     }
