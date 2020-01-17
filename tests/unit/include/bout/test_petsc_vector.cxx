@@ -156,6 +156,15 @@ TYPED_TEST(PetscVectorTest, TestGetElements) {
   }
 }
 
+// Test getting constant elements
+TYPED_TEST(PetscVectorTest, TestGetElementsConst) {
+  const PetscVector<TypeParam> vector(this->field, this->indexer);
+  BOUT_FOR(i, this->field.getRegion("RGN_NOBNDRY")) {
+    const BoutReal element = vector(i);
+    EXPECT_EQ(element, this->field[i]);
+  }
+}
+
 // Test assemble
 TYPED_TEST(PetscVectorTest, TestAssemble) {
   PetscVector<TypeParam> vector(this->field, this->indexer);
