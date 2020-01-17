@@ -321,14 +321,14 @@ public:
                 Region<Ind2D>(0, xstart - 1, ystart, yend, 0, 0, LocalNy, 1));
     addRegion3D("RGN_INNER_X", Region<Ind3D>(0, xstart - 1, ystart, yend, 0, LocalNz - 1,
                                              LocalNy, LocalNz));
-    addRegionPerp("RGN_INNER_X", Region<IndPerp>(0, xstart - 1, 0, 0, 0, LocalNz - 1,
-						 1, LocalNz));
+    addRegionPerp("RGN_INNER_X",
+                  Region<IndPerp>(0, xstart - 1, 0, 0, 0, LocalNz - 1, 1, LocalNz));
     addRegion2D("RGN_OUTER_X",
                 Region<Ind2D>(xend + 1, LocalNx - 1, ystart, yend, 0, 0, LocalNy, 1));
     addRegion3D("RGN_OUTER_X", Region<Ind3D>(xend + 1, LocalNx - 1, ystart, yend, 0,
                                              LocalNz - 1, LocalNy, LocalNz));
     addRegionPerp("RGN_OUTER_X", Region<IndPerp>(xend + 1, LocalNx - 1, 0, 0, 0,
-						 LocalNz - 1, 1, LocalNz));
+                                                 LocalNz - 1, 1, LocalNz));
 
     const auto boundary_names = {"RGN_LOWER_Y", "RGN_UPPER_Y", "RGN_INNER_X",
                                  "RGN_OUTER_X"};
@@ -349,8 +349,8 @@ public:
                                   return a + getRegion3D(b);
                                 })
                     .unique());
-    addRegionPerp("RGN_BNDRY", getRegionPerp("RGN_INNER_X")
-		  + getRegionPerp("RGN_OUTER_X"));
+    addRegionPerp("RGN_BNDRY",
+                  getRegionPerp("RGN_INNER_X") + getRegionPerp("RGN_OUTER_X"));
   }
 
 private:
@@ -464,18 +464,17 @@ public:
   std::shared_ptr<Coordinates> test_coords_staggered{nullptr};
 };
 
-
 /// Returns a stencil object which indicates that non-boundary cells
 /// depend on all of their neighbours to a depth of one, including
 /// corners.
-template<class T>
+template <class T>
 OperatorStencil<T> squareStencil(Mesh* localmesh) {
   OperatorStencil<T> stencil;
   IndexOffset<T> zero;
   std::set<IndexOffset<T>> offsets = {
-    zero,
-    zero.xp(),
-    zero.xm(),
+      zero,
+      zero.xp(),
+      zero.xm(),
   };
   if (!std::is_same<T, IndPerp>::value) {
     offsets.insert(zero.yp());
@@ -500,31 +499,30 @@ OperatorStencil<T> squareStencil(Mesh* localmesh) {
     offsets.insert(zero.ym().zm());
   }
   std::vector<IndexOffset<T>> offsetsVec(offsets.begin(), offsets.end());
-  stencil.add([localmesh](T ind) -> bool {
-		return (localmesh->xstart <= ind.x() &&
-			ind.x() <= localmesh->xend &&
-			(std::is_same<T, IndPerp>::value ||
-			 (localmesh->ystart <= ind.y() &&
-			  ind.y() <= localmesh->yend)) &&
-			(std::is_same<T, Ind2D>::value ||
-			 (localmesh->zstart <= ind.z() &&
-			  ind.z() <= localmesh->zend))); }, offsetsVec);
+  stencil.add(
+      [localmesh](T ind) -> bool {
+        return (localmesh->xstart <= ind.x() && ind.x() <= localmesh->xend
+                && (std::is_same<T, IndPerp>::value
+                    || (localmesh->ystart <= ind.y() && ind.y() <= localmesh->yend))
+                && (std::is_same<T, Ind2D>::value
+                    || (localmesh->zstart <= ind.z() && ind.z() <= localmesh->zend)));
+      },
+      offsetsVec);
   stencil.add([](T UNUSED(ind)) -> bool { return true; }, {zero});
   return stencil;
 }
 
-
 /// Returns a stencil object which indicates that non-boundary cells
 /// depend on all of their neighbours to a depth of one, excluding
 /// corners.
-template<class T>
+template <class T>
 OperatorStencil<T> starStencil(Mesh* localmesh) {
   OperatorStencil<T> stencil;
   IndexOffset<T> zero;
   std::set<IndexOffset<T>> offsets = {
-    zero,
-    zero.xp(),
-    zero.xm(),
+      zero,
+      zero.xp(),
+      zero.xm(),
   };
   if (!std::is_same<T, IndPerp>::value) {
     offsets.insert(zero.yp());
@@ -535,15 +533,15 @@ OperatorStencil<T> starStencil(Mesh* localmesh) {
     offsets.insert(zero.zm());
   }
   std::vector<IndexOffset<T>> offsetsVec(offsets.begin(), offsets.end());
-  stencil.add([localmesh](T ind) -> bool {
-		return (localmesh->xstart <= ind.x() &&
-			ind.x() <= localmesh->xend &&
-			(std::is_same<T, IndPerp>::value ||
-			 (localmesh->ystart <= ind.y() &&
-			  ind.y() <= localmesh->yend)) &&
-			(std::is_same<T, Ind2D>::value ||
-			 (localmesh->zstart <= ind.z() &&
-			  ind.z() <= localmesh->zend))); }, offsetsVec);
+  stencil.add(
+      [localmesh](T ind) -> bool {
+        return (localmesh->xstart <= ind.x() && ind.x() <= localmesh->xend
+                && (std::is_same<T, IndPerp>::value
+                    || (localmesh->ystart <= ind.y() && ind.y() <= localmesh->yend))
+                && (std::is_same<T, Ind2D>::value
+                    || (localmesh->zstart <= ind.z() && ind.z() <= localmesh->zend)));
+      },
+      offsetsVec);
   stencil.add([](T UNUSED(ind)) -> bool { return true; }, {zero});
   return stencil;
 }

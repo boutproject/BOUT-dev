@@ -170,21 +170,21 @@ public:
       return 0;
     }
     virtual int MPI_Scan(const void* sendbuf, void* recvbuf, int count,
-			 MPI_Datatype datatype, MPI_Op op,
-			 MPI_Comm UNUSED(comm)) override {
+                         MPI_Datatype datatype, MPI_Op op,
+                         MPI_Comm UNUSED(comm)) override {
       // Fake calculating the cummulative size of the mesh on all
       // processors.
       if (count == 1 && datatype == MPI_INT && op == MPI_SUM) {
-	if (*static_cast<const int*>(sendbuf) == local3D) {
-	  *static_cast<int*>(recvbuf) = start3D + local3D;
-	} else if (*static_cast<const int*>(sendbuf) == local2D) {
-	  *static_cast<int*>(recvbuf) = start2D + local2D;
-	} else if (*static_cast<const int*>(sendbuf) == localPerp) {
-	  *static_cast<int*>(recvbuf) = startPerp + localPerp;
-	} else {
-	  throw BoutException("Trying to use MPI_Scan with unrecognised input %d",
-			      *static_cast<const int*>(sendbuf));
-	}
+        if (*static_cast<const int*>(sendbuf) == local3D) {
+          *static_cast<int*>(recvbuf) = start3D + local3D;
+        } else if (*static_cast<const int*>(sendbuf) == local2D) {
+          *static_cast<int*>(recvbuf) = start2D + local2D;
+        } else if (*static_cast<const int*>(sendbuf) == localPerp) {
+          *static_cast<int*>(recvbuf) = startPerp + localPerp;
+        } else {
+          throw BoutException("Trying to use MPI_Scan with unrecognised input %d",
+                              *static_cast<const int*>(sendbuf));
+        }
       }
       return 0;
     }

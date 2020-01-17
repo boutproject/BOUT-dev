@@ -2487,9 +2487,8 @@ void BoutMesh::addBoundaryRegions() {
                                              LocalNy, LocalNz, maxregionblocksize));
     addRegion2D("RGN_INNER_X", Region<Ind2D>(0, xstart-1, ystart, yend, 0, 0,
                                              LocalNy, 1, maxregionblocksize));
-    addRegionPerp("RGN_INNER_X",
-                  Region<IndPerp>(0, xstart - 1, 0, 0, 0, LocalNz - 1, 1,
-                                  LocalNz, maxregionblocksize));
+    addRegionPerp("RGN_INNER_X", Region<IndPerp>(0, xstart - 1, 0, 0, 0, LocalNz - 1, 1,
+                                                 LocalNz, maxregionblocksize));
     all_boundaries.emplace_back("RGN_INNER_X");
     
     output_info.write("\tBoundary region inner X\n");

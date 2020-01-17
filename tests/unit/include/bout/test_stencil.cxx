@@ -1,28 +1,27 @@
-#include <type_traits>
 #include <algorithm>
+#include <type_traits>
 
 #include "test_extras.hxx"
 #include "gtest/gtest.h"
 
-#include <bout/region.hxx>
 #include <bout/operatorstencil.hxx>
+#include <bout/region.hxx>
 
 template <typename T>
 class IndexOffsetStructTests : public ::testing::Test {
 public:
   IndexOffsetStructTests() {
     zero = T(0, std::is_same<T, IndPerp>::value ? 1 : 5,
-	     std::is_same<T, Ind2D>::value ? 1 : 7);
+             std::is_same<T, Ind2D>::value ? 1 : 7);
   }
-  
+
   IndexOffset<T> noOffset;
   T zero;
 };
 
-template<class T>
+template <class T>
 std::ostream& operator<<(std::ostream& os, const IndexOffset<T>& offset) {
-  return os << "{" << offset.dx << ", " << offset.dy << ", "
-	    << offset.dz << "}";
+  return os << "{" << offset.dx << ", " << offset.dy << ", " << offset.dz << "}";
 }
 
 using IndTypes = ::testing::Types<Ind3D, Ind2D, IndPerp>;
@@ -158,25 +157,23 @@ TYPED_TEST(IndexOffsetStructTests, SubtractFromIndex) {
   }
 }
 
-
 template <typename T>
-class StencilUnitTests :  public ::testing::Test {
+class StencilUnitTests : public ::testing::Test {
 public:
-  //WithQuietOutput all{output};
+  // WithQuietOutput all{output};
   StencilUnitTests() {
     zero = T(0, std::is_same<T, IndPerp>::value ? 1 : 5,
-	     std::is_same<T, Ind2D>::value ? 1 : 7);
+             std::is_same<T, Ind2D>::value ? 1 : 7);
     for (int i = 0; i < static_cast<int>(sizes.size()); i++) {
       std::vector<IndexOffset<T>> part;
       for (int j = 0; j < sizes[i]; j++) {
-	part.push_back(noOffset.xp(j));
+        part.push_back(noOffset.xp(j));
       }
       stencil.add([i](T ind) -> bool { return ind.x() == i; }, part);
     }
   }
 
-  virtual ~StencilUnitTests() {
-  }
+  virtual ~StencilUnitTests() {}
 
   IndexOffset<T> noOffset;
   T zero;
@@ -185,7 +182,6 @@ public:
 };
 
 TYPED_TEST_SUITE(StencilUnitTests, IndTypes);
-
 
 // Test get by integer
 TYPED_TEST(StencilUnitTests, GetByInteger) {
@@ -196,7 +192,7 @@ TYPED_TEST(StencilUnitTests, GetByInteger) {
       EXPECT_EQ(off, this->noOffset.xp(j));
       j++;
     }
-    EXPECT_EQ(this->sizes[i], j);    
+    EXPECT_EQ(this->sizes[i], j);
   }
 }
 
@@ -258,13 +254,13 @@ TYPED_TEST(StencilUnitTests, GetIndicesWithStencilIncluding) {
       EXPECT_EQ(indicesList[j].y(), 0);
       EXPECT_EQ(indicesList[j].z(), 0);
     }
-  }  
+  }
 }
 
 // Test iterator
 TYPED_TEST(StencilUnitTests, Iterator) {
   int i = 0;
-  for(auto& item : this->stencil) {
+  for (auto& item : this->stencil) {
     EXPECT_EQ(item.part.size(), static_cast<int>(this->sizes[i]));
     i++;
   }

@@ -8,9 +8,9 @@
 #include "field2d.hxx"
 #include "field3d.hxx"
 #include "fieldperp.hxx"
+#include "bout/operatorstencil.hxx"
 #include "bout/petsc_interface.hxx"
 #include "bout/region.hxx"
-#include "bout/operatorstencil.hxx"
 
 #ifdef BOUT_HAS_PETSC
 
@@ -48,10 +48,10 @@ public:
   std::vector<ParallelTransform::PositionsAndWeights> yUpWeights, yDownWeights;
   typename F::ind_type indexA, indexB, iWU0, iWU1, iWU2, iWD0, iWD1, iWD2;
 
-  PetscMatrixTest() : FakeMeshFixture(), field(bout::globals::mesh),
-		      stencil(squareStencil<ind_type>(bout::globals::mesh)),
-		      indexer(std::make_shared<GlobalIndexer<F>>(bout::globals::mesh,
-								 stencil)) {
+  PetscMatrixTest()
+      : FakeMeshFixture(), field(bout::globals::mesh),
+        stencil(squareStencil<ind_type>(bout::globals::mesh)),
+        indexer(std::make_shared<GlobalIndexer<F>>(bout::globals::mesh, stencil)) {
     indexA = ind_type(field.getNy() * field.getNz() + 1, field.getNy(), field.getNz());
     if (std::is_same<F, FieldPerp>::value) {
       indexB = indexA.zp();
@@ -247,7 +247,7 @@ TYPED_TEST(PetscMatrixTest, TestDestroy) {
 // Test getting yup
 TYPED_TEST(PetscMatrixTest, TestYUp) {
   PetscMatrix<TypeParam> matrix(this->field, this->indexer, false),
-    expected(this->field, this->indexer, false);
+      expected(this->field, this->indexer, false);
   MockTransform* transform = this->pt;
   SCOPED_TRACE("YUp");
   if (std::is_same<TypeParam, FieldPerp>::value) {
@@ -277,7 +277,7 @@ TYPED_TEST(PetscMatrixTest, TestYUp) {
 // Test getting ydown
 TYPED_TEST(PetscMatrixTest, TestYDown) {
   PetscMatrix<TypeParam> matrix(this->field, this->indexer, false),
-    expected(this->field, this->indexer, false);
+      expected(this->field, this->indexer, false);
   BoutReal val = 3.141592;
   MockTransform* transform = this->pt;
   SCOPED_TRACE("YDown");
@@ -307,7 +307,7 @@ TYPED_TEST(PetscMatrixTest, TestYDown) {
 // Test getting ynext(0)
 TYPED_TEST(PetscMatrixTest, TestYNext0) {
   PetscMatrix<TypeParam> matrix(this->field, this->indexer),
-    expected(this->field, this->indexer);
+      expected(this->field, this->indexer);
   BoutReal val = 3.141592;
   SCOPED_TRACE("YNext0");
   matrix.ynext(0)(this->indexA, this->indexB) = val;
@@ -323,7 +323,7 @@ TYPED_TEST(PetscMatrixTest, TestYNext0) {
 // Test getting ynext(1)
 TYPED_TEST(PetscMatrixTest, TestYNextPos) {
   PetscMatrix<TypeParam> matrix(this->field, this->indexer, false),
-    expected(this->field, this->indexer, false);
+      expected(this->field, this->indexer, false);
   BoutReal val = 3.141592;
   MockTransform* transform = this->pt;
   SCOPED_TRACE("YNextPos");
@@ -350,7 +350,7 @@ TYPED_TEST(PetscMatrixTest, TestYNextPos) {
 // Test getting ynext(-1)
 TYPED_TEST(PetscMatrixTest, TestYNextNeg) {
   PetscMatrix<TypeParam> matrix(this->field, this->indexer, false),
-    expected(this->field, this->indexer, false);
+      expected(this->field, this->indexer, false);
   BoutReal val = 3.141592;
   MockTransform* transform = this->pt;
   SCOPED_TRACE("YNextNeg");
@@ -376,8 +376,7 @@ TYPED_TEST(PetscMatrixTest, TestYNextNeg) {
 
 // Test swap
 TYPED_TEST(PetscMatrixTest, TestSwap) {
-  PetscMatrix<TypeParam> lhs(this->field, this->indexer),
-    rhs(this->field, this->indexer);
+  PetscMatrix<TypeParam> lhs(this->field, this->indexer), rhs(this->field, this->indexer);
   Mat l0 = *lhs.get(), r0 = *rhs.get();
   EXPECT_NE(l0, nullptr);
   EXPECT_NE(r0, nullptr);
