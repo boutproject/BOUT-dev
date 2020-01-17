@@ -304,6 +304,7 @@ add_library(bout++::bout++ ALIAS bout++)
 target_link_libraries(bout++ PUBLIC MPI::MPI_CXX mpark_variant)
 target_include_directories(bout++ PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
   $<INSTALL_INTERFACE:include>
   )
 
@@ -435,11 +436,11 @@ message(STATUS "Enable OpenMP: ${ENABLE_OPENMP}")
 set(BOUT_USE_OPENMP ${ENABLE_OPENMP})
 
 include(GetGitRevisionDescription)
-get_git_head_revision(GIT_REFSPEC GIT_SHA1)
-message(STATUS "Git revision: ${GIT_SHA1}")
-target_compile_definitions(bout++
-  PUBLIC "REVISION=${GIT_SHA1}")
-set(BOUT_GIT_REVISION ${GIT_SHA1})
+get_git_head_revision(GIT_REFSPEC BOUT_REVISION)
+message(STATUS "Git revision: ${BOUT_REVISION}")
+configure_file(
+  "${PROJECT_SOURCE_DIR}/include/bout/revision.hxx.in"
+  "${PROJECT_BINARY_DIR}/include/bout/revision.hxx")
 
 # Optional dependencies
 
@@ -756,7 +757,12 @@ install(TARGETS bout++
   RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
   INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
   )
-install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+# Repo files
+install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  FILES_MATCHING PATTERN "*.hxx")
+# Generated headers
+install(DIRECTORY "${PROJECT_BINARY_DIR}/include/"
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(

@@ -86,6 +86,13 @@ inline auto getpid() -> int { return GetCurrentProcessId(); }
 #include <fenv.h>
 #endif
 
+// Might come from the command line, if using configure, otherwise use
+// CMake generated header. Should be last include to avoid needing to
+// rebuild other files
+#ifndef BOUT_REVISION
+#  include "bout/revision.hxx"
+#endif
+
 using std::string;
 
 BoutReal simtime{0.0};
@@ -423,8 +430,8 @@ void savePIDtoFile(const std::string& data_dir, int MYPE) {
 
 void printStartupHeader(int MYPE, int NPES) {
   output_progress.write(_("BOUT++ version {:s}\n"), BOUT_VERSION_STRING);
-#ifdef REVISION
-  output_progress.write(_("Revision: {:s}\n"), BUILDFLAG(REVISION));
+#ifdef BOUT_REVISION
+  output_progress.write(_("Revision: {:s}\n"), BUILDFLAG(BOUT_REVISION));
 #endif
 #ifdef MD5SUM
   output_progress.write("MD5 checksum: {:s}\n", BUILDFLAG(MD5SUM));
