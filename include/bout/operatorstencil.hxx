@@ -169,11 +169,11 @@ public:
   }
 
   /// Get the number of elements in the ith stencil-part
-  int getStencilSize(const int i) const { return getStencilPart(i).size(); }
+  int getStencilSize(int i) const { return getStencilPart(i).size(); }
 
   /// Get the number of elements in the stencil part to be used at
   /// this index.
-  int getStencilSize(const T i) const { return getStencilPart(i).size(); }
+  int getStencilSize(const T &i) const { return getStencilPart(i).size(); }
 
   /// Get the number of stencil-parts to have been added
   int getNumParts() const { return stencils.size(); }
