@@ -594,7 +594,7 @@ int BoutFinalise(bool write_settings) {
     }
   }
 
-  if (Options::root()["write_final_timings"].withDefault(false)) {
+  if (Options::root()["time_report:show"].withDefault(false)) {
     output.write("\nTimer report \n\n");
     Timer::listAllInfo();
     output.write("\n");
