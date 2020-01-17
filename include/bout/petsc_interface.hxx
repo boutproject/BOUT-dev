@@ -36,13 +36,13 @@
 #include <vector>
 
 #include <bout/mesh.hxx>
+#include <bout/operatorstencil.hxx>
 #include <bout/paralleltransform.hxx>
 #include <bout/petsclib.hxx>
 #include <bout/region.hxx>
 #include <bout/traits.hxx>
 #include <bout_types.hxx>
 #include <boutcomm.hxx>
-#include <bout/operatorstencil.hxx>
 
 #ifdef BOUT_HAS_PETSC
 template <class T>
@@ -68,36 +68,36 @@ using InterpolationWeights = std::vector<ParallelTransform::PositionsAndWeights>
  * later. This can be useful for mocking/faking the class when
  * testing.
  */
-template<class T>
+template <class T>
 class GlobalIndexer {
 public:
   static_assert(bout::utils::is_Field<T>::value, "GlobalIndexer only works with Fields");
   using ind_type = typename T::ind_type;
 
   GlobalIndexer() = default;
-  
+
   GlobalIndexer(Mesh* localmesh,
                 OperatorStencil<ind_type> stencil = OperatorStencil<ind_type>(),
-		bool autoInitialise = true)
-    : fieldmesh(localmesh), indices(-1., localmesh), stencils(std::move(stencil)) {
+                bool autoInitialise = true)
+      : fieldmesh(localmesh), indices(-1., localmesh), stencils(std::move(stencil)) {
 
     Region<ind_type> allCandidate, bndryCandidate;
     if (stencils.getNumParts() > 0) {
       std::set<ind_type> allIndices(getRegionNobndry().getIndices().begin(),
-				    getRegionNobndry().getIndices().end()),
-	newIndices;
+                                    getRegionNobndry().getIndices().end()),
+          newIndices;
       BOUT_FOR_SERIAL(i, getRegionNobndry()) {
-	for (const IndexOffset<ind_type> j : stencils.getStencilPart(i)) {
-	  insertIndex(i+j, allIndices, newIndices);
-	}
+        for (const IndexOffset<ind_type> j : stencils.getStencilPart(i)) {
+          insertIndex(i + j, allIndices, newIndices);
+        }
       }
       std::set<ind_type> candidateIndices = newIndices;
       while (candidateIndices.size() > 0) {
-	newIndices.clear();
+        newIndices.clear();
         for (const ind_type i : candidateIndices) {
-	  insertIndex(i, allIndices, newIndices);
+          insertIndex(i, allIndices, newIndices);
         }
-	candidateIndices = newIndices;
+        candidateIndices = newIndices;
       }
       std::vector<ind_type> allIndicesVec(allIndices.begin(), allIndices.end());
       allCandidate = Region<ind_type>(allIndicesVec);
@@ -118,18 +118,15 @@ public:
     regionAll = getRegionNobndry() + regionBndry;
     regionBndry.sort();
     regionAll.sort();
-  
+
     int localSize = size();
-    MPI_Comm comm = std::is_same<T, FieldPerp>::value ?
-      fieldmesh->getXcomm() : BoutComm::get();
-    fieldmesh->getMpi().MPI_Scan(&localSize, &globalEnd, 1, MPI_INT, MPI_SUM,
-				 comm);
+    MPI_Comm comm =
+        std::is_same<T, FieldPerp>::value ? fieldmesh->getXcomm() : BoutComm::get();
+    fieldmesh->getMpi().MPI_Scan(&localSize, &globalEnd, 1, MPI_INT, MPI_SUM, comm);
     globalEnd--;
     int counter = globalStart = globalEnd - size() + 1;
-    
-    BOUT_FOR_SERIAL(i, regionAll) {
-      indices[i] = counter++;
-    }
+
+    BOUT_FOR_SERIAL(i, regionAll) { indices[i] = counter++; }
 
     if (autoInitialise) {
       initialise();
@@ -150,13 +147,13 @@ public:
 
   /// Convert the local index object to a global index which can be
   /// used in PETSc vectors and matrices.
-  PetscInt getGlobal(const ind_type &ind) const {
+  PetscInt getGlobal(const ind_type& ind) const {
     return static_cast<PetscInt>(std::round(indices[ind]));
   }
 
   /// Check whether the local index corresponds to an element which is
   /// stored locally.
-  bool isLocal(const ind_type &ind) const {
+  bool isLocal(const ind_type& ind) const {
     if (ind.ind < 0) {
       return false;
     }
@@ -167,17 +164,17 @@ public:
   PetscInt getGlobalStart() const { return globalStart; }
 
   const Region<ind_type>& getRegionAll() const { return regionAll; }
-  const Region<ind_type>& getRegionNobndry() const { return indices.getRegion("RGN_NOBNDRY"); }
+  const Region<ind_type>& getRegionNobndry() const {
+    return indices.getRegion("RGN_NOBNDRY");
+  }
   const Region<ind_type>& getRegionBndry() const { return regionBndry; }
   const Region<ind_type>& getRegionLowerY() const { return regionLowerY; }
   const Region<ind_type>& getRegionUpperY() const { return regionUpperY; }
   const Region<ind_type>& getRegionInnerX() const { return regionInnerX; }
   const Region<ind_type>& getRegionOuterX() const { return regionOuterX; }
 
-  bool sparsityPatternAvailable() const {
-    return stencils.getNumParts() > 0;
-  }
-  
+  bool sparsityPatternAvailable() const { return stencils.getNumParts() > 0; }
+
   std::vector<int> getNumDiagonal() {
     ASSERT2(sparsityPatternAvailable());
     if (!sparsityCalculated) {
@@ -194,15 +191,13 @@ public:
     return numOffDiagonal;
   }
 
-  int size() const {
-    return regionAll.size();
-  }
+  int size() const { return regionAll.size(); }
 
   void writeOut() const {
     std::cout << "=====================================================\n";
     for (int y = fieldmesh->LocalNy; y > 0; y--) {
       for (int x = 0; x < fieldmesh->LocalNx; x++) {
-	std::cout << "\t" << indices(x, y - 1, 0);
+        std::cout << "\t" << indices(x, y - 1, 0);
       }
       std::cout << "\n";
     }
@@ -213,8 +208,8 @@ protected:
   T& getIndices() { return indices; }
 
 private:
-  static void insertIndex(const ind_type i, std::set<ind_type> &allInds,
-		   std::set<ind_type> &newInds) {
+  static void insertIndex(const ind_type i, std::set<ind_type>& allInds,
+                          std::set<ind_type>& newInds) {
     auto result = allInds.insert(i);
     if (result.second) {
       newInds.insert(i);
@@ -228,19 +223,19 @@ private:
     // by descendent classes if necessary to set up testing.
     return;
   }
-  
+
   void calculateSparsity() {
     numDiagonal = std::vector<int>(size());
     numOffDiagonal = std::vector<int>(size(), 0);
 
     // Set initial guess for number of on-diagonal elements
     BOUT_FOR(i, regionAll) {
-    	numDiagonal[getGlobal(i) - globalStart] = stencils.getStencilSize(i);
+      numDiagonal[getGlobal(i) - globalStart] = stencils.getStencilSize(i);
     }
 
     BOUT_FOR_SERIAL(i, regionBndry) {
       if (!isLocal(i)) {
-	for (const auto &j: stencils.getIndicesWithStencilIncluding(i)) {
+        for (const auto& j : stencils.getIndicesWithStencilIncluding(i)) {
           if (isLocal(j)) {
             const int n = getGlobal(j) - globalStart;
             numDiagonal[n] -= 1;
@@ -263,8 +258,8 @@ private:
   OperatorStencil<ind_type> stencils;
 
   /// Regions containing the elements for which there are global indices
-  Region<ind_type> regionAll, regionLowerY, regionUpperY,
-    regionInnerX, regionOuterX, regionBndry;
+  Region<ind_type> regionAll, regionLowerY, regionUpperY, regionInnerX, regionOuterX,
+      regionBndry;
 
   bool sparsityCalculated = false;
   std::vector<PetscInt> numDiagonal, numOffDiagonal;
@@ -315,8 +310,8 @@ public:
   }
 
   /// Construct from a field, copying over the field values
-  PetscVector(const T& f, IndexerPtr<T> indConverter) :
-    vector(new Vec(), VectorDeleter()), indexConverter(indConverter) {
+  PetscVector(const T& f, IndexerPtr<T> indConverter)
+      : vector(new Vec(), VectorDeleter()), indexConverter(indConverter) {
     ASSERT1(indConverter->getMesh() == f.getMesh());
     const MPI_Comm comm =
         std::is_same<T, FieldPerp>::value ? f.getMesh()->getXcomm() : BoutComm::get();
@@ -326,7 +321,7 @@ public:
     initialised = true;
     *this = f;
   }
-  
+
   /// Construct a vector like v, but using data from a raw PETSc
   /// Vec. That Vec (not a copy) will then be owned by the new object.
   PetscVector(const PetscVector<T>& v, Vec* vec) {
@@ -520,8 +515,8 @@ public:
 
   // Construct a matrix capable of operating on the specified field,
   // preallocating memory if requeted and possible.
-  PetscMatrix(T& f, IndexerPtr<T> indConverter, bool preallocate = true) :
-      matrix(new Mat(), MatrixDeleter()), indexConverter(indConverter) {
+  PetscMatrix(T& f, IndexerPtr<T> indConverter, bool preallocate = true)
+      : matrix(new Mat(), MatrixDeleter()), indexConverter(indConverter) {
     ASSERT1(indConverter->getMesh() == f.getMesh());
     const MPI_Comm comm =
         std::is_same<T, FieldPerp>::value ? f.getMesh()->getXcomm() : BoutComm::get();
@@ -534,8 +529,8 @@ public:
 
     // If a stencil has been provided, preallocate memory
     if (preallocate && indexConverter->sparsityPatternAvailable()) {
-      MatMPIAIJSetPreallocation(*matrix, 0, indexConverter->getNumDiagonal().data(),
-				0, indexConverter->getNumOffDiagonal().data());
+      MatMPIAIJSetPreallocation(*matrix, 0, indexConverter->getNumDiagonal().data(), 0,
+                                indexConverter->getNumOffDiagonal().data());
     }
 
     MatSetUp(*matrix);

@@ -6,9 +6,9 @@
 #include "field2d.hxx"
 #include "field3d.hxx"
 #include "fieldperp.hxx"
+#include "bout/operatorstencil.hxx"
 #include "bout/petsc_interface.hxx"
 #include "bout/region.hxx"
-#include "bout/operatorstencil.hxx"
 
 #ifdef BOUT_HAS_PETSC
 
@@ -32,11 +32,11 @@ public:
   F field;
   OperatorStencil<ind_type> stencil;
   IndexerPtr<F> indexer;
-  
-  PetscVectorTest() : FakeMeshFixture(), field(bout::globals::mesh),
-		      stencil(squareStencil<ind_type>(bout::globals::mesh)),
-  		      indexer(std::make_shared<GlobalIndexer<F>>(bout::globals::mesh, stencil))
-  {
+
+  PetscVectorTest()
+      : FakeMeshFixture(), field(bout::globals::mesh),
+        stencil(squareStencil<ind_type>(bout::globals::mesh)),
+        indexer(std::make_shared<GlobalIndexer<F>>(bout::globals::mesh, stencil)) {
     field.allocate();
     field = 1.5;
     PetscErrorPrintf = PetscErrorPrintfNone;
