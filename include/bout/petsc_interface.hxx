@@ -101,8 +101,6 @@ public:
       }
       std::vector<ind_type> allIndicesVec(allIndices.begin(), allIndices.end());
       allCandidate = Region<ind_type>(allIndicesVec);
-    } else {
-      regionAll = getRegionNobndry();
     }
 
     bndryCandidate = mask(allCandidate, getRegionNobndry());
@@ -124,8 +122,8 @@ public:
     int localSize = size();
     MPI_Comm comm = std::is_same<T, FieldPerp>::value ?
       fieldmesh->getXcomm() : BoutComm::get();
-    fieldmesh->getMpi()->MPI_Scan(&localSize, &globalEnd, 1, MPI_INT, MPI_SUM,
-				  comm);
+    fieldmesh->getMpi().MPI_Scan(&localSize, &globalEnd, 1, MPI_INT, MPI_SUM,
+				 comm);
     globalEnd--;
     int counter = globalStart = globalEnd - size() + 1;
     
@@ -153,13 +151,13 @@ public:
 
   /// Convert the local index object to a global index which can be
   /// used in PETSc vectors and matrices.
-  PetscInt getGlobal(const ind_type &ind) {
+  PetscInt getGlobal(const ind_type &ind) const {
     return static_cast<PetscInt>(std::round(indices[ind]));
   }
 
   /// Check whether the local index corresponds to an element which is
   /// stored locally.
-  bool isLocal(const ind_type &ind) {
+  bool isLocal(const ind_type &ind) const {
     if (ind.ind < 0) {
       return false;
     }
@@ -167,7 +165,7 @@ public:
     return (globalStart <= index) && (index <= globalEnd);
   }
 
-  PetscInt getGlobalStart() { return globalStart; }
+  PetscInt getGlobalStart() const { return globalStart; }
 
   const Region<ind_type>& getRegionAll() const { return regionAll; }
   const Region<ind_type>& getRegionNobndry() const { return indices.getRegion("RGN_NOBNDRY"); }
@@ -201,11 +199,22 @@ public:
     return regionAll.size();
   }
 
+  void writeOut() const {
+    std::cout << "=====================================================\n";
+    for (int y = fieldmesh->LocalNy; y > 0; y--) {
+      for (int x = 0; x < fieldmesh->LocalNx; x++) {
+	std::cout << "\t" << indices(x, y - 1, 0);
+      }
+      std::cout << "\n";
+    }
+    std::cout << "=====================================================\n";
+  }
+
 protected:
   T& getIndices() { return indices; }
 
 private:
-  void insertIndex(const ind_type i, std::set<ind_type> &allInds,
+  static void insertIndex(const ind_type i, std::set<ind_type> &allInds,
 		   std::set<ind_type> &newInds) {
     auto result = allInds.insert(i);
     if (result.second) {
@@ -248,6 +257,8 @@ private:
 
   /// Fields containing the indices for each element (as reals)
   T indices;
+  /// The first and last global index on this processor (inclusive in
+  /// both cases)
   PetscInt globalStart, globalEnd;
 
   /// Stencil for which this indexer has been configured

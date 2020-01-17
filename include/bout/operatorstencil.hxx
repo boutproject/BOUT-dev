@@ -101,13 +101,7 @@ const inline IndexOffset<T> operator-(IndexOffset<T> lhs, const IndexOffset<T> &
 
 template<class T>
 const inline T operator+(const T &lhs, const IndexOffset<T> &rhs) {
-  // If CHECKLEVEL >= 3 then SpecificInd<N>.zp() complains about
-  // negative values.
-  if (rhs.dz >= 0) {
-    return lhs.xp(rhs.dx).yp(rhs.dy).zp(rhs.dz);
-  } else {
-    return lhs.xp(rhs.dx).yp(rhs.dy).zm(-rhs.dz);
-  }
+  return lhs.offset(rhs.dx, rhs.dy, rhs.dz);
 }
 template<class T>
 const inline T operator+(const IndexOffset<T> &lhs, const T &rhs) {
@@ -117,11 +111,7 @@ template<class T>
 const inline T operator-(const T &lhs, const IndexOffset<T> &rhs) {
   // If CHECKLEVEL >= 3 then SpecificInd<N>.zm() complains about
   // negative values.
-  if (rhs.dz >= 0) {
-    return lhs.xm(rhs.dx).ym(rhs.dy).zm(rhs.dz);
-  } else {
-    return lhs.xm(rhs.dx).ym(rhs.dy).zp(-rhs.dz);
-  }
+  return lhs.offset(-rhs.dx, -rhs.dy, -rhs.dz);
 }
 
 using OffsetInd3D = IndexOffset<Ind3D>;
@@ -150,28 +140,32 @@ public:
   using stencil_part = std::vector<offset>;
   using stencil_test = std::function<bool(T)>;
 
+  struct Stencil {
+    stencil_test test;
+    stencil_part part;
+  };
+
   /// Add a stencil test/part pair
   void add(stencil_test test, stencil_part stencil) {
     stencils.push_back({test, stencil});
   }
 
   /// Get the ith stencil-part to have been added
-  const stencil_part& getStencilPart(const int i) const { return stencils[i].second; }
+  const stencil_part& getStencilPart(int i) const { return stencils[i].part; }
 
   /// Get the stencil-part to be used on this index. The method will
   /// iterate through the part/test pairs in the order which they were
   /// added, returning the first stencil-part with a test that
   /// passes. If no stencil-part is found with a passing test, then an
   /// error is thrown.
-  const stencil_part& getStencilPart(const T i) const {
-    for (const auto& item : stencils) {
-      const stencil_test& test = item.first;
-      const stencil_part& part = item.second;
-      if (test(i)) {
-        return part;
-      }
+  const stencil_part& getStencilPart(const T &i) const {
+    const auto& result = std::find_if(std::begin(stencils), std::end(stencils),
+				      [&i](const auto& stencil) -> bool {
+					return stencil.test(i); });
+    if (result == std::end(stencils)) {
+      throw BoutException("No stencil was specified for element " + toString(i));
     }
-    throw BoutException("No stencil was specified for element " + toString(i));
+    return result->part;
   }
 
   /// Get the number of elements in the ith stencil-part
@@ -190,7 +184,7 @@ public:
     std::vector<T> indices;
     int count = 0;
     for (const auto& item : stencils) {
-      for (const auto& j : item.second) {
+      for (const auto& j : item.part) {
 	T ind = i - j;
 	if (getStencilNumber(ind) == count) {
 	  indices.push_back(ind);
@@ -200,16 +194,16 @@ public:
     }
     return indices;
   }
-  
-  /// Iterators for the underlying vector data type
-  using iterator = typename std::vector<std::pair<stencil_test, stencil_part>>::iterator;
-  using const_iterator =
-      typename std::vector<std::pair<stencil_test, stencil_part>>::const_iterator;
-  using reverse_iterator =
-      typename std::vector<std::pair<stencil_test, stencil_part>>::reverse_iterator;
-  using const_reverse_iterator =
-      typename std::vector<std::pair<stencil_test, stencil_part>>::const_reverse_iterator;
 
+  /// Iterators for the underlying vector data type
+  using iterator = typename std::vector<Stencil>::iterator;
+  using const_iterator =
+      typename std::vector<Stencil>::const_iterator;
+  using reverse_iterator =
+      typename std::vector<Stencil>::reverse_iterator;
+  using const_reverse_iterator =
+      typename std::vector<Stencil>::const_reverse_iterator;
+  
   iterator begin() { return std::begin(stencils); }
   const_iterator begin() const { return std::begin(stencils); }
   const_iterator cbegin() const { return std::cbegin(stencils); }
@@ -224,17 +218,17 @@ public:
   const_reverse_iterator crend() const { return std::crend(stencils); }
 
 private:
-  std::vector<std::pair<stencil_test, stencil_part>> stencils = {};
+  std::vector<Stencil> stencils = {};
 
   /// Returns the position of the first passing stencil test for this
   /// index, or -1 if no test passes.
   int getStencilNumber(const T &i) const {
-    for (int j = 0; j < static_cast<int>(stencils.size()); j++) {
-      if (stencils[j].first(i)) {
-	return j;
-      }
+    auto result = std::find_if(std::begin(stencils), std::end(stencils),
+			       [&i](const auto& stencil) { return stencil.test(i); });
+    if (result == std::end(stencils)) {
+      return -1;
     }
-    return -1;
+    return std::distance(std::begin(stencils), result);
   }
 };  
 
