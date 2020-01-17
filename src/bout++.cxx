@@ -596,7 +596,7 @@ int BoutFinalise(bool write_settings) {
 
   if (Options::root()["time_report:show"].withDefault(false)) {
     output.write("\nTimer report \n\n");
-    Timer::listAllInfo();
+    Timer::printTimeReport();
     output.write("\n");
   }
 

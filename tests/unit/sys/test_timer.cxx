@@ -248,7 +248,7 @@ TEST(TimerTest, ListAllInfo) {
   std::stringstream cout_capture;
   std::cout.rdbuf(cout_capture.rdbuf());
 
-  Timer::listAllInfo();
+  Timer::printTimeReport();
 
   std::cout.rdbuf(old_cout_rdbuf);
 

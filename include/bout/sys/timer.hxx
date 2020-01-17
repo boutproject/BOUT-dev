@@ -124,8 +124,12 @@ public:
   /// Return the map of all the individual timers
   static std::map<std::string, timer_info> getAllInfo() { return info; }
 
-  /// Print all the timers
-  static void listAllInfo();
+  /// Print a table listing all known timers to `output`
+  ///
+  /// Table is sorted by descending largest total time and has columns
+  /// for total time, percentage of largest total time, total number
+  /// of hits, and mean time per hit
+  static void printTimeReport();
 };
 
 #define AUTO_TIME() Timer CONCATENATE(time_,__LINE__)(__thefunc__)

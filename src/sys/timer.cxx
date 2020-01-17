@@ -69,7 +69,7 @@ double Timer::resetTime(Timer::timer_info& info) {
   return seconds{current_duration}.count();
 }
 
-void Timer::listAllInfo() {
+void Timer::printTimeReport() {
   const std::string headerName = "Timer name";
   const std::string headerTime = "Total time (s)";
   const std::string headerHits = "Hits";
