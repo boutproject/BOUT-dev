@@ -702,14 +702,14 @@ public:
     }
 #endif
     BoutReal value;
-    BOUT_OMP(critical) int status =
-      MatGetValues(*get(), 1, &global1, 1, &global2, &value);
+    BOUT_OMP(critical)
+    int status = MatGetValues(*get(), 1, &global1, 1, &global2, &value);
     if (status != 0) {
       throw BoutException("Error when setting elements of a PETSc matrix.");
     }
     return value;
   }
-  
+
   // Assemble the matrix prior to use
   void assemble() {
     MatAssemblyBegin(*matrix, MAT_FINAL_ASSEMBLY);

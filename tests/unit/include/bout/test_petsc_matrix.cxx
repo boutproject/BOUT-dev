@@ -190,7 +190,8 @@ TYPED_TEST(PetscMatrixTest, TestGetElementsConst) {
   PetscMatrix<TypeParam> matrix(this->field, this->indexer);
   Mat* rawmat = matrix.get();
   typename TypeParam::ind_type ind = *std::begin(this->field.getRegion("RGN_NOBNDRY"));
-  const PetscInt i = this->indexer->getGlobal(ind), j = this->indexer->getGlobal(ind.xp());
+  const PetscInt i = this->indexer->getGlobal(ind),
+                 j = this->indexer->getGlobal(ind.xp());
   const PetscScalar r = 3.141592;
   MatSetValues(*rawmat, 1, &i, 1, &j, &r, INSERT_VALUES);
   MatAssemblyBegin(*rawmat, MAT_FINAL_ASSEMBLY);
