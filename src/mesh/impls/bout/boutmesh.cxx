@@ -1781,8 +1781,8 @@ int BoutMesh::XPROC(int xind) { return (xind >= MXG) ? (xind - MXG) / MXSUB : 0;
 /// one processor, even though it's actually being run in serial.
 BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int nxpe,
                    int nype, int pe_xind, int pe_yind, bool include_corners)
-    : nx(input_nx), ny(input_ny), nz(input_nz), MXG(mxg), MYG(myg), MZG(0),
-      include_corner_cells(include_corners) {
+    : include_corner_cells(include_corners), nx(input_nx), ny(input_ny), nz(input_nz),
+      MXG(mxg), MYG(myg), MZG(0) {
   maxregionblocksize = MAXREGIONBLOCKSIZE;
   symmetricGlobalX = true;
   symmetricGlobalY = true;
