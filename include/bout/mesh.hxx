@@ -340,8 +340,8 @@ class Mesh {
   virtual int getYProcIndex() = 0; ///< This processor's index in Y direction
   
   // X communications
-  virtual bool firstX() = 0;  ///< Is this processor first in X? i.e. is there a boundary to the left in X?
-  virtual bool lastX() = 0; ///< Is this processor last in X? i.e. is there a boundary to the right in X?
+  virtual bool firstX() const = 0;  ///< Is this processor first in X? i.e. is there a boundary to the left in X?
+  virtual bool lastX() const = 0; ///< Is this processor last in X? i.e. is there a boundary to the right in X?
 
   /// Domain is periodic in X?
   bool periodicX{false};

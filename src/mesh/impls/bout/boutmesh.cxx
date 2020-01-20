@@ -1477,9 +1477,9 @@ int BoutMesh::getYProcIndex() { return PE_YIND; }
  * Intended mainly to handle the perpendicular inversion operators
  ****************************************************************/
 
-bool BoutMesh::firstX() { return PE_XIND == 0; }
+bool BoutMesh::firstX() const { return PE_XIND == 0; }
 
-bool BoutMesh::lastX() { return PE_XIND == NXPE - 1; }
+bool BoutMesh::lastX() const { return PE_XIND == NXPE - 1; }
 
 int BoutMesh::sendXOut(BoutReal *buffer, int size, int tag) {
   if (PE_XIND == NXPE - 1)
