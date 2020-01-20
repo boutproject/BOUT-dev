@@ -339,6 +339,7 @@ TYPED_TEST(IndexerTest, TestSize) {
 template <class T>
 class FakeParallelIndexer : public GlobalIndexer<T> {
 public:
+  ~FakeParallelIndexer() override {}
   FakeParallelIndexer(Mesh* localmesh, OperatorStencil<typename T::ind_type> stencil)
       : GlobalIndexer<T>(localmesh, stencil, false) {}
   void initialiseTest() { registerFieldForTest(this->getIndices()); }

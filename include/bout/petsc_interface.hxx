@@ -133,6 +133,8 @@ public:
     }
   }
 
+  virtual ~GlobalIndexer() {}
+  
   /// Call this immediately after construction when running unit tests.
   void initialiseTest() {}
 
@@ -677,7 +679,7 @@ public:
 
       std::transform(
           pw.begin(), pw.end(), std::back_inserter(positions),
-          [this, &ny, &nz](ParallelTransform::PositionsAndWeights p) -> PetscInt {
+          [this, ny, nz](ParallelTransform::PositionsAndWeights p) -> PetscInt {
             return this->indexConverter->getGlobal(
                 ind_type(p.i * ny * nz + p.j * nz + p.k, ny, nz));
           });
