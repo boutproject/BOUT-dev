@@ -3113,11 +3113,11 @@ const RangeIterator BoutMesh::iterateBndryLowerInnerY() const {
     if (xe > xend)
       xe = xend;
 
-    if (firstX() and xs == xstart and xe > xstart) {
+    if (include_corner_cells and firstX() and xs == xstart and xe > xstart) {
       // Include corner cells on x-boundary
       xs = 0;
     }
-    if (lastX() and xe == xend and xs < xend) {
+    if (include_corner_cells and lastX() and xe == xend and xs < xend) {
       // Include corner cells on x-boundary
       xe = LocalNx - 1;
     }
@@ -3140,11 +3140,11 @@ const RangeIterator BoutMesh::iterateBndryLowerOuterY() const {
     if (xe > xend)
       xe = xend;
 
-    if (firstX() and xs == xstart and xe > xstart) {
+    if (include_corner_cells and firstX() and xs == xstart and xe > xstart) {
       // Include corner cells on x-boundary
       xs = 0;
     }
-    if (lastX() and xe == xend and xs < xend) {
+    if (include_corner_cells and lastX() and xe == xend and xs < xend) {
       // Include corner cells on x-boundary
       xe = LocalNx - 1;
     }
@@ -3168,11 +3168,11 @@ const RangeIterator BoutMesh::iterateBndryLowerY() const {
   if (xe > xend)
     xe = xend;
 
-  if (firstX() and xs == xstart and xe > xstart) {
+  if (include_corner_cells and firstX() and xs == xstart and xe > xstart) {
     // Include corner cells on x-boundary
     xs = 0;
   }
-  if (lastX() and xe == xend and xs < xend) {
+  if (include_corner_cells and lastX() and xe == xend and xs < xend) {
     // Include corner cells on x-boundary
     xe = LocalNx - 1;
   }
@@ -3195,11 +3195,11 @@ const RangeIterator BoutMesh::iterateBndryUpperInnerY() const {
     if (xe > xend)
       xe = xend;
 
-    if (firstX() and xs == xstart and xe > xstart) {
+    if (include_corner_cells and firstX() and xs == xstart and xe > xstart) {
       // Include corner cells on x-boundary
       xs = 0;
     }
-    if (lastX() and xe == xend and xs < xend) {
+    if (include_corner_cells and lastX() and xe == xend and xs < xend) {
       // Include corner cells on x-boundary
       xe = LocalNx - 1;
     }
@@ -3228,11 +3228,11 @@ const RangeIterator BoutMesh::iterateBndryUpperOuterY() const {
     if (xe > xend)
       xe = xend;
 
-    if (firstX() and xs == xstart and xe > xstart) {
+    if (include_corner_cells and firstX() and xs == xstart and xe > xstart) {
       // Include corner cells on x-boundary
       xs = 0;
     }
-    if (lastX() and xe == xend and xs < xend) {
+    if (include_corner_cells and lastX() and xe == xend and xs < xend) {
       // Include corner cells on x-boundary
       xe = LocalNx - 1;
     }
@@ -3253,11 +3253,11 @@ const RangeIterator BoutMesh::iterateBndryUpperY() const {
   if (xe > xend)
     xe = xend;
 
-  if (firstX() and xs == xstart and xe > xstart) {
+  if (include_corner_cells and firstX() and xs == xstart and xe > xstart) {
     // Include corner cells on x-boundary
     xs = 0;
   }
-  if (lastX() and xe == xend and xs < xend) {
+  if (include_corner_cells and lastX() and xe == xend and xs < xend) {
     // Include corner cells on x-boundary
     xe = LocalNx - 1;
   }
