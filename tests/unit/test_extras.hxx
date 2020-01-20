@@ -208,8 +208,8 @@ public:
   int getNYPE() override { return 1; }
   int getXProcIndex() override { return 1; }
   int getYProcIndex() override { return 1; }
-  bool firstX() override { return true; }
-  bool lastX() override { return true; }
+  bool firstX() const override { return true; }
+  bool lastX() const override { return true; }
   int sendXOut(BoutReal* UNUSED(buffer), int UNUSED(size), int UNUSED(tag)) override {
     return 0;
   }
