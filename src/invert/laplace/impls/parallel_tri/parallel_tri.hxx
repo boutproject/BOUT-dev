@@ -70,9 +70,9 @@ public:
   FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override;
   //FieldPerp solve(const FieldPerp &b, const FieldPerp &x0, const FieldPerp &b0 = 0.0);
 
-  void ensure_stability(const Array<dcomplex> &a, const Array<dcomplex> &b,
+  void ensure_stability(int jy, int kz, const Array<dcomplex> &a, const Array<dcomplex> &b,
       const Array<dcomplex> &c, const int ncx, Array<dcomplex> &xk1d,
-      Array<dcomplex> &lowerGuardVector, Array<dcomplex> &upperGuardVector);
+      const Tensor<dcomplex> &lowerGuardVector, const Tensor<dcomplex> &upperGuardVector);
 
   void resetSolver();
 
@@ -80,6 +80,7 @@ private:
   // The coefficents in
   // D*grad_perp^2(x) + (1/C)*(grad_perp(C))*grad_perp(x) + A*x = b
   Field2D A, C, D;
+  bool initialized;
 
 };
 
