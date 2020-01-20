@@ -511,6 +511,8 @@ class Mesh {
   //////////////////////////////////////////////////////////
   
   int GlobalNx, GlobalNy, GlobalNz; ///< Size of the global arrays. Note: can have holes
+  /// Size of the global arrays excluding boundary points.
+  int GlobalNxNoBoundaries, GlobalNyNoBoundaries, GlobalNzNoBoundaries;
   int OffsetX, OffsetY, OffsetZ;    ///< Offset of this mesh within the global array
                                     ///< so startx on this processor is OffsetX in global
   

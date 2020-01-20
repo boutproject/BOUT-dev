@@ -192,6 +192,11 @@ int BoutMesh::load() {
     GlobalNy += 2*MYG;
   }
 
+  // Set global grid sizes, excluding boundary points
+  GlobalNxNoBoundaries = nx - 2*MXG;
+  GlobalNyNoBoundaries = ny;
+  GlobalNzNoBoundaries = nz;
+
   /// Check inputs
   if (jyseps1_1 < -1) {
     output_warn.write("\tWARNING: jyseps1_1 ({:d}) must be >= -1. Setting to -1\n",
