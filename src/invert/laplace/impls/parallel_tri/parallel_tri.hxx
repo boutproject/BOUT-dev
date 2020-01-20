@@ -71,7 +71,8 @@ public:
   //FieldPerp solve(const FieldPerp &b, const FieldPerp &x0, const FieldPerp &b0 = 0.0);
 
   void ensure_stability(const Array<dcomplex> &a, const Array<dcomplex> &b,
-      const Array<dcomplex> &c, const Array<dcomplex> &r, const int ncx, Array<dcomplex> &xk1d);
+      const Array<dcomplex> &c, const Array<dcomplex> &r, const int ncx, Array<dcomplex> &xk1d,
+      Array<dcomplex> &lowerGuardVector, Array<dcomplex> &upperGuardVector);
 
   void resetSolver();
 

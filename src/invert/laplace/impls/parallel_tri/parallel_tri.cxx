@@ -60,12 +60,9 @@ void LaplaceParallelTri::resetSolver(){
  */
 void LaplaceParallelTri::ensure_stability(const Array<dcomplex> &avec, const Array<dcomplex> &bvec,
                                               const Array<dcomplex> &cvec, const Array<dcomplex> &minvb,
-				              const int ncx, Array<dcomplex> &xk1d) {
+				              const int ncx, Array<dcomplex> &xk1d,
+					      Array<dcomplex> &lowerGuardVector, Array<dcomplex> &upperGuardVector) {
   SCOREP0();
-
-  Array<dcomplex> xvec, evec;
-  xvec = Array<dcomplex>(ncx);
-  evec = Array<dcomplex>(ncx);
 
   Array<dcomplex> sendvec, recvec;
   sendvec = Array<dcomplex>(2);
@@ -78,17 +75,7 @@ void LaplaceParallelTri::ensure_stability(const Array<dcomplex> &avec, const Arr
     comm_handle recv[1];
     recv[0] = localmesh->irecvXIn(&recvec[0], 2, 0);
 
-    // Need the (xstart-1)-th element
-    evec = Array<dcomplex>(ncx);
-    for(int i=0; i<ncx; i++){
-      evec[i] = 0.0;
-    }
-    evec[localmesh->xstart-1] = 1.0;
-
-    tridag(std::begin(avec), std::begin(bvec), std::begin(cvec), std::begin(evec),
-             std::begin(xvec), ncx);
-
-    sendvec[0] = xvec[localmesh->xstart];  // element from operator inverse required by neighbour
+    sendvec[0] = lowerGuardVector[localmesh->xstart];  // element from operator inverse required by neighbour
     sendvec[1] = minvb[localmesh->xstart]; // element from RHS required by neighbour
 
     localmesh->sendXIn(&sendvec[0],2,1);
@@ -105,16 +92,7 @@ void LaplaceParallelTri::ensure_stability(const Array<dcomplex> &avec, const Arr
     comm_handle recv[1];
     recv[0] = localmesh->irecvXOut(&recvec[0], 2, 1);
 
-    // Need the (xend+1)-th element
-    for(int i=0; i<ncx; i++){
-      evec[i] = 0.0;
-    }
-    evec[localmesh->xend+1] = 1.0; 
-
-    tridag(std::begin(avec), std::begin(bvec), std::begin(cvec), std::begin(evec),
-             std::begin(xvec), ncx);
-
-    sendvec[0] = xvec[localmesh->xend];
+    sendvec[0] = upperGuardVector[localmesh->xend];
     sendvec[1] = minvb[localmesh->xend];
 
     localmesh->sendXOut(&sendvec[0],2,0);
@@ -351,7 +329,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	}
       } 
 
-      ensure_stability(avec,bvec,cvec,minvb,ncx,xk1d);
+      ensure_stability(avec,bvec,cvec,minvb,ncx,xk1d,lowerGuardVector,upperGuardVector);
 
       dcomplex lfac = xk1d[localmesh->xstart-1];
       dcomplex ufac = xk1d[localmesh->xend+1];
