@@ -25,21 +25,11 @@
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  *
  **************************************************************************/
-#include "mpi.h"
+
 #include <memory>
 #include <vector>
 
-#include <bout/mesh.hxx>
-#include <bout/paralleltransform.hxx>
-#include <bout/petsc_interface.hxx>
-#include <bout/petsclib.hxx>
-#include <bout/region.hxx>
-#include <bout_types.hxx>
-#include <boutcomm.hxx>
-
-#ifdef BOUT_HAS_PETSC
-
-// GlobalIndexer implementation
+#include <bout/globalindexer.hxx>
 
 bool GlobalIndexer::initialisedGlobal = false;
 IndexerPtr GlobalIndexer::globalInstance;
@@ -67,16 +57,16 @@ void GlobalIndexer::initialise() {
   fieldmesh->communicate(indicesPerp);
 }
 
-PetscInt GlobalIndexer::getGlobal(Ind2D ind) {
-  return static_cast<PetscInt>(std::round(indices2D[ind]));
+int GlobalIndexer::getGlobal(Ind2D ind) const {
+  return static_cast<int>(std::round(indices2D[ind]));
 }
 
-PetscInt GlobalIndexer::getGlobal(Ind3D ind) {
-  return static_cast<PetscInt>(std::round(indices3D[ind]));
+int GlobalIndexer::getGlobal(Ind3D ind) const {
+  return static_cast<int>(std::round(indices3D[ind]));
 }
 
-PetscInt GlobalIndexer::getGlobal(IndPerp ind) {
-  return static_cast<PetscInt>(std::round(indicesPerp[ind]));
+int GlobalIndexer::getGlobal(IndPerp ind) const {
+  return static_cast<int>(std::round(indicesPerp[ind]));
 }
 
 void GlobalIndexer::registerFieldForTest(FieldData& UNUSED(f)) {
@@ -91,6 +81,7 @@ void GlobalIndexer::registerFieldForTest(FieldPerp& UNUSED(f)) {
   return;
 }
 
+// FIXME: Modifies mesh
 GlobalIndexer::GlobalIndexer(Mesh* localmesh)
     : fieldmesh(localmesh), indices3D(-1., localmesh), indices2D(-1., localmesh),
       indicesPerp(-1., localmesh) {
@@ -137,4 +128,4 @@ GlobalIndexer::GlobalIndexer(Mesh* localmesh)
 
 void GlobalIndexer::recreateGlobalInstance() { initialisedGlobal = false; }
 
-#endif // BOUT_HAS_PETSC
+void GlobalIndexer::cleanup() { globalInstance.reset(); }

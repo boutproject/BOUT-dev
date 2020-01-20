@@ -482,6 +482,14 @@ public:
   /// Collection of contiguous regions
   using ContiguousBlocks = std::vector<ContiguousBlock>;
 
+  // Type aliases for STL-container compatibility
+  using value_type = T;
+  using reference = value_type&;
+  using const_reference = const value_type&;
+  using size_type = typename RegionIndices::size_type;
+  using iterator = typename RegionIndices::iterator;
+  using const_iterator = typename RegionIndices::const_iterator;
+
   // NOTE::
   // Probably want to require a mesh in constructor, both to know nx/ny/nz
   // but also to ensure consistency etc.

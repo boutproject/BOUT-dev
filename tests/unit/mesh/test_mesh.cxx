@@ -1,4 +1,5 @@
 #include "gtest/gtest.h"
+#include "gmock/gmock.h"
 
 #include "bout/mesh.hxx"
 #include "bout/region.hxx"
@@ -52,6 +53,23 @@ TEST_F(MeshTest, GetRegionPerpFromMesh) {
   EXPECT_NO_THROW(localmesh.getRegionPerp("RGN_ALL"));
   EXPECT_NO_THROW(localmesh.getRegionPerp("RGN_NOBNDRY"));
   EXPECT_THROW(localmesh.getRegionPerp("SOME_MADE_UP_REGION_NAME"), BoutException);
+}
+
+TEST_F(MeshTest, GetRegionTemplatedFromMesh) {
+  using namespace ::testing;
+  localmesh.createDefaultRegions();
+
+  const auto& region3d = localmesh.getRegion3D("RGN_ALL");
+  const auto& regionT_3d = localmesh.getRegion<Field3D>("RGN_ALL");
+  EXPECT_THAT(regionT_3d, ElementsAreArray(region3d));
+
+  const auto& region2d = localmesh.getRegion2D("RGN_ALL");
+  const auto& regionT_2d = localmesh.getRegion<Field2D>("RGN_ALL");
+  EXPECT_THAT(regionT_2d, ElementsAreArray(region2d));
+
+  const auto& regionPerp = localmesh.getRegionPerp("RGN_ALL");
+  const auto& regionT_Perp = localmesh.getRegion<FieldPerp>("RGN_ALL");
+  EXPECT_THAT(regionT_Perp, ElementsAreArray(regionPerp));
 }
 
 TEST_F(MeshTest, AddRegionToMesh) {

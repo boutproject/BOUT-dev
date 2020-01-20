@@ -898,6 +898,9 @@ class Mesh {
   /// Get the named region from the region_map for the data iterator
   ///
   /// Throws if region_name not found
+  template <class T>
+  const Region<typename T::ind_type>& getRegion(const std::string &region_name) const;
+
   const Region<> &getRegion(const std::string &region_name) const{
     return getRegion3D(region_name);
   }
@@ -996,5 +999,18 @@ private:
 
   int localNumCells3D = -1, localNumCells2D = -1, localNumCellsPerp = -1;
 };
+
+template <>
+inline const Region<Ind3D>& Mesh::getRegion<Field3D>(const std::string& region_name) const {
+  return getRegion3D(region_name);
+}
+template <>
+inline const Region<Ind2D>& Mesh::getRegion<Field2D>(const std::string& region_name) const {
+  return getRegion2D(region_name);
+}
+template <>
+inline const Region<IndPerp>& Mesh::getRegion<FieldPerp>(const std::string& region_name) const {
+  return getRegionPerp(region_name);
+}
 
 #endif // __MESH_H__
