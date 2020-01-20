@@ -179,7 +179,7 @@ public:
 
   bool sparsityPatternAvailable() const { return stencils.getNumParts() > 0; }
 
-  const std::vector<int>& getNumDiagonal() {
+  const std::vector<int>& getNumDiagonal() const {
     ASSERT2(sparsityPatternAvailable());
     if (!sparsityCalculated) {
       calculateSparsity();
@@ -187,7 +187,7 @@ public:
     return numDiagonal;
   }
 
-  const std::vector<int>& getNumOffDiagonal() {
+  const std::vector<int>& getNumOffDiagonal() const {
     ASSERT2(sparsityPatternAvailable());
     if (!sparsityCalculated) {
       calculateSparsity();
@@ -219,7 +219,7 @@ private:
     return;
   }
 
-  void calculateSparsity() {
+  void calculateSparsity() const {
     numDiagonal = std::vector<int>(size());
     numOffDiagonal = std::vector<int>(size(), 0);
 
@@ -258,7 +258,7 @@ private:
       regionBndry;
 
   bool sparsityCalculated = false;
-  std::vector<PetscInt> numDiagonal, numOffDiagonal;
+  mutable std::vector<PetscInt> numDiagonal, numOffDiagonal;
 };
 
 /*!
@@ -461,7 +461,7 @@ public:
   }
 
   /// Returns a field constructed from the contents of this vector
-  const T toField() const {
+  T toField() const {
     T result(indexConverter->getMesh());
     result.allocate();
     result.setLocation(location);
