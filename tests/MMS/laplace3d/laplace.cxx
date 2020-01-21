@@ -12,24 +12,26 @@ int main(int argc, char **argv) {
     return init_err;
   }
 
-  // Create a Laplacian inversion solver
-  auto lap = Laplacian::create();
+  {
+    // Create a Laplacian inversion solver
+    auto lap = Laplacian::create();
 
-  FieldFactory fact(mesh);
+    FieldFactory fact(mesh);
 
-  std::shared_ptr<FieldGenerator> gen = fact.parse("input");
-  output << "GEN = " << gen->str() << endl;
+    std::shared_ptr<FieldGenerator> gen = fact.parse("input");
+    output << "GEN = " << gen->str() << endl;
 
-  Field3D input = fact.create3D("input");
+    Field3D input = fact.create3D("input");
 
-  Field3D result = lap->solve(input);
+    Field3D result = lap->solve(input);
 
-  Field3D solution = fact.create3D("solution");
+    Field3D solution = fact.create3D("solution");
 
-  Field3D error = result - solution;
+    Field3D error = result - solution;
 
-  SAVE_ONCE4(input, result, solution, error);
-  dump.write();
+    SAVE_ONCE4(input, result, solution, error);
+    dump.write();
+  }
 
   BoutFinalise();
   return 0;
