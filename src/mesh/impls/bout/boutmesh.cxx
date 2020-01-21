@@ -1741,26 +1741,6 @@ void BoutMesh::default_connections() {
   IDATA_DEST = PROC_NUM(PE_XIND - 1, PE_YIND);
   ODATA_DEST = PROC_NUM(PE_XIND + 1, PE_YIND);
 
-  if (include_corner_cells) {
-    lower_inner_corner_dest = PROC_NUM(PE_XIND - 1, PE_YIND - 1);
-    upper_inner_corner_dest = PROC_NUM(PE_XIND - 1, PE_YIND + 1);
-    lower_outer_corner_dest = PROC_NUM(PE_XIND + 1, PE_YIND - 1);
-    upper_outer_corner_dest = PROC_NUM(PE_XIND + 1, PE_YIND + 1);
-    lower_inner_corner_orig = PROC_NUM(PE_XIND - 1, PE_YIND - 1);
-    upper_inner_corner_orig = PROC_NUM(PE_XIND - 1, PE_YIND + 1);
-    lower_outer_corner_orig = PROC_NUM(PE_XIND + 1, PE_YIND - 1);
-    upper_outer_corner_orig = PROC_NUM(PE_XIND + 1, PE_YIND + 1);
-  } else {
-    lower_inner_corner_dest = -1;
-    upper_inner_corner_dest = -1;
-    lower_outer_corner_dest = -1;
-    upper_outer_corner_dest = -1;
-    lower_inner_corner_orig = -1;
-    upper_inner_corner_orig = -1;
-    lower_outer_corner_orig = -1;
-    upper_outer_corner_orig = -1;
-  }
-
   TS_up_in = TS_up_out = TS_down_in = TS_down_out = false; // No twist-shifts
 
   /// Check if X is periodic
@@ -1852,9 +1832,8 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
       /* Connect on the inside */
       UDATA_XSPLIT = xlt;
       UDATA_INDEST = PROC_NUM(PE_XIND, ypedown);
-      if (UDATA_XSPLIT == LocalNx) {
+      if (UDATA_XSPLIT == LocalNx)
         UDATA_OUTDEST = -1;
-      }
 
       TS_up_in = ts; // Twist-shift
 
@@ -1865,33 +1844,11 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
         UDATA_INDEST = UDATA_OUTDEST;
       UDATA_XSPLIT = xge;
       UDATA_OUTDEST = PROC_NUM(PE_XIND, ypedown);
-      if (UDATA_XSPLIT <= 0) {
+      if (UDATA_XSPLIT <= 0)
         UDATA_INDEST = -1;
-      }
 
       TS_up_out = ts;
       output_info.write("=> This processor sending out up\n");
-    }
-
-    if (include_corner_cells) {
-      // Connect corners as if communicating all guard cells first in y, then in x
-      if (xge < MXG and xlt > MXG) {
-        upper_inner_corner_dest = PROC_NUM(PE_XIND - 1, ypedown);
-        upper_inner_corner_orig = PROC_NUM(PE_XIND - 1, ypedown);
-      } else if (xge == MXG) {
-        upper_inner_corner_dest = PROC_NUM(PE_XIND - 1, ypedown);
-      } else if (xlt == MXG) {
-        upper_inner_corner_orig = PROC_NUM(PE_XIND - 1, ypedown);
-      }
-      if (xlt > MXG + MXSUB and xge < MXG + MXSUB) {
-        upper_outer_corner_dest = PROC_NUM(PE_XIND + 1, ypedown);
-        upper_outer_corner_orig = PROC_NUM(PE_XIND + 1, ypedown);
-      } else if (xlt == MXG + MXSUB) {
-        upper_outer_corner_dest = PROC_NUM(PE_XIND + 1, ypedown);
-      }
-      if (xge == MXG + MXSUB) {
-        upper_outer_corner_orig = PROC_NUM(PE_XIND + 1, ypedown);
-      }
     }
   }
 
@@ -1919,25 +1876,6 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
       TS_down_out = ts;
 
       output_info.write("=> This processor sending out down\n");
-    }
-
-    // Connect corners as if communicating all guard cells first in y, then in x
-    if (xge < MXG and xlt > MXG) {
-      lower_inner_corner_dest = PROC_NUM(PE_XIND - 1, ypeup);
-      lower_inner_corner_orig = PROC_NUM(PE_XIND - 1, ypeup);
-    } else if (xge == MXG) {
-      lower_inner_corner_dest = PROC_NUM(PE_XIND - 1, ypeup);
-    } else if (xlt == MXG) {
-      lower_inner_corner_orig = PROC_NUM(PE_XIND - 1, ypeup);
-    }
-    if (xlt > MXG + MXSUB and xge < MXG + MXSUB) {
-      lower_outer_corner_dest = PROC_NUM(PE_XIND + 1, ypeup);
-      lower_outer_corner_orig = PROC_NUM(PE_XIND + 1, ypeup);
-    } else if (xlt == MXG + MXSUB) {
-      lower_outer_corner_dest = PROC_NUM(PE_XIND + 1, ypeup);
-    }
-    if (xge == MXG + MXSUB) {
-      lower_outer_corner_orig = PROC_NUM(PE_XIND + 1, ypeup);
     }
   }
 }
@@ -1994,27 +1932,6 @@ void BoutMesh::add_target(int ypos, int xge, int xlt) {
         UDATA_INDEST = -1;
       output_info.write("=> This processor has target upper outer\n");
     }
-
-    if (include_corner_cells) {
-      // Connect corners as if communicating all guard cells first in y, then in x
-      if (xge < MXG and xlt > MXG) {
-        upper_inner_corner_dest = -1;
-        upper_inner_corner_orig = -1;
-      } else if (xge == MXG) {
-        upper_inner_corner_dest = -1;
-      } else if (xlt == MXG) {
-        upper_inner_corner_orig = -1;
-      }
-      if (xlt > MXG + MXSUB and xge < MXG + MXSUB) {
-        upper_outer_corner_dest = -1;
-        upper_outer_corner_orig = -1;
-      } else if (xlt == MXG + MXSUB) {
-        upper_outer_corner_dest = -1;
-      }
-      if (xge == MXG + MXSUB) {
-        upper_outer_corner_orig = -1;
-      }
-    }
   }
   if (MYPE == PROC_NUM(PE_XIND, ypedown)) {
     // Target on upper processor boundary
@@ -2034,27 +1951,6 @@ void BoutMesh::add_target(int ypos, int xge, int xlt) {
       if (xge <= 0)
         DDATA_INDEST = -1;
       output_info.write("=> This processor has target lower outer\n");
-    }
-
-    if (include_corner_cells) {
-      // Connect corners as if communicating all guard cells first in y, then in x
-      if (xge < MXG and xlt > MXG) {
-        lower_inner_corner_dest = -1;
-        lower_inner_corner_orig = -1;
-      } else if (xge == MXG) {
-        lower_inner_corner_dest = -1;
-      } else if (xlt == MXG) {
-        lower_inner_corner_orig = -1;
-      }
-      if (xlt > MXG + MXSUB and xge < MXG + MXSUB) {
-        lower_outer_corner_dest = -1;
-        lower_outer_corner_orig = -1;
-      } else if (xlt == MXG + MXSUB) {
-        lower_outer_corner_dest = -1;
-      }
-      if (xge == MXG + MXSUB) {
-        lower_outer_corner_orig = -1;
-      }
     }
   }
 }
