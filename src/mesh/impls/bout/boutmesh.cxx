@@ -1073,8 +1073,8 @@ comm_handle BoutMesh::send(FieldGroup &g) {
   /// Send to the left (x-1)
 
   if (IDATA_DEST != -1) {
-    len = pack_data(ch->var_list.get(), MXG, 2 * MXG, IDATA_buff_lowerY ,
-                    IDATA_buff_upperY , std::begin(ch->imsg_sendbuff));
+    len = pack_data(ch->var_list.get(), MXG, 2 * MXG, MYG, MYG + MYSUB,
+                    std::begin(ch->imsg_sendbuff));
     if (async_send) {
       mpi->MPI_Isend(std::begin(ch->imsg_sendbuff), len, PVEC_REAL_MPI_TYPE, IDATA_DEST,
                      IN_SENT_OUT, BoutComm::get(), &(ch->sendreq[4]));
@@ -1086,8 +1086,8 @@ comm_handle BoutMesh::send(FieldGroup &g) {
   /// Send to the right (x+1)
 
   if (ODATA_DEST != -1) {
-    len = pack_data(ch->var_list.get(), MXSUB, MXSUB + MXG, ODATA_buff_lowerY,
-                    ODATA_buff_upperY, std::begin(ch->omsg_sendbuff));
+    len = pack_data(ch->var_list.get(), MXSUB, MXSUB + MXG, MYG, MYG + MYSUB,
+                    std::begin(ch->omsg_sendbuff));
     if (async_send) {
       mpi->MPI_Isend(std::begin(ch->omsg_sendbuff), len, PVEC_REAL_MPI_TYPE, ODATA_DEST,
                      OUT_SENT_IN, BoutComm::get(), &(ch->sendreq[5]));
@@ -2048,65 +2048,6 @@ void BoutMesh::topology() {
     DDATA_XSPLIT = LocalNx;
   if (UDATA_XSPLIT > LocalNx)
     UDATA_XSPLIT = LocalNx;
-
-  if (include_corner_cells) {
-    IDATA_buff_lowerY = (DDATA_INDEST == -1 and DDATA_OUTDEST == -1)
-                        or (DDATA_XSPLIT >= MXG and DDATA_INDEST == -1)
-                        or (DDATA_XSPLIT < MXG and DDATA_OUTDEST == -1)
-                        ? 0 : MYG;
-    if (not (DDATA_INDEST == -1 and DDATA_OUTDEST == -1)
-        and DDATA_XSPLIT < MXG and DDATA_XSPLIT > 0) {
-      // Limiter is in x-guard cells, some points need communicating and some do not.
-      // This is complicated to implement, so do not allow it.
-      throw BoutException("ixseps1 or ixseps2 is in x-guard cells so there are both "
-                          "boundary cells and cells that need to be communicated in "
-                          "x-guard cells. This is not supported. Try changing NXPE.");
-    }
-
-    IDATA_buff_upperY = (UDATA_INDEST == -1 and UDATA_OUTDEST == -1)
-                        or (UDATA_XSPLIT >= MXG and UDATA_INDEST == -1)
-                        or (UDATA_XSPLIT < MXG and UDATA_OUTDEST == -1)
-                        ? LocalNy : MYG + MYSUB;
-    if (not (UDATA_INDEST == -1 and UDATA_OUTDEST == -1)
-        and UDATA_XSPLIT < MXG and UDATA_XSPLIT > 0) {
-      // Limiter is in x-guard cells, some points need communicating and some do not.
-      // This is complicated to implement, so do not allow it.
-      throw BoutException("ixseps1 or ixseps2 is in x-guard cells so there are both "
-                          "boundary cells and cells that need to be communicated in "
-                          "x-guard cells. This is not supported. Try changing NXPE.");
-    }
-
-    ODATA_buff_lowerY = (DDATA_INDEST == -1 and DDATA_OUTDEST == -1)
-                        or (DDATA_XSPLIT > MXG + MXSUB and DDATA_INDEST == -1)
-                        or (DDATA_XSPLIT <= MXG + MXSUB and DDATA_OUTDEST == -1)
-                        ? 0 : MYG;
-    if (not (DDATA_INDEST == -1 and DDATA_OUTDEST == -1)
-        and DDATA_XSPLIT > MXG + MXSUB and DDATA_XSPLIT < LocalNx) {
-      // Limiter is in x-guard cells, some points need communicating and some do not.
-      // This is complicated to implement, so do not allow it.
-      throw BoutException("ixseps1 or ixseps2 is in x-guard cells so there are both "
-                          "boundary cells and cells that need to be communicated in "
-                          "x-guard cells. This is not supported. Try changing NXPE.");
-    }
-
-    ODATA_buff_upperY = (UDATA_INDEST == -1 and UDATA_OUTDEST == -1)
-                        or (UDATA_XSPLIT > MXG + MXSUB and UDATA_INDEST == -1)
-                        or (UDATA_XSPLIT <= MXG + MXSUB and UDATA_OUTDEST == -1)
-                        ? LocalNy : MYG + MYSUB;
-    if (not (UDATA_INDEST == -1 and UDATA_OUTDEST == -1)
-        and UDATA_XSPLIT > MXG + MXSUB and UDATA_XSPLIT < LocalNx) {
-      // Limiter is in x-guard cells, some points need communicating and some do not.
-      // This is complicated to implement, so do not allow it.
-      throw BoutException("ixseps1 or ixseps2 is in x-guard cells so there are both "
-                          "boundary cells and cells that need to be communicated in "
-                          "x-guard cells. This is not supported. Try changing NXPE.");
-    }
-  } else {
-    IDATA_buff_lowerY = MYG;
-    IDATA_buff_upperY = MYG + MYSUB;
-    ODATA_buff_lowerY = MYG;
-    ODATA_buff_upperY = MYG + MYSUB;
-  }
 
   // Print out settings
   output_info.write("\tMYPE_IN_CORE = {:d}\n", MYPE_IN_CORE);

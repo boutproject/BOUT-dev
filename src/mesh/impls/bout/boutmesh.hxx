@@ -243,9 +243,6 @@ private:
   int UDATA_INDEST, UDATA_OUTDEST, UDATA_XSPLIT;
   int DDATA_INDEST, DDATA_OUTDEST, DDATA_XSPLIT;
   int IDATA_DEST, ODATA_DEST; // X inner and outer destinations
-  // y-limits of buffers communicated in x-direction. Include y-boundary cells but not
-  // y-guard cells.
-  int IDATA_buff_lowerY, IDATA_buff_upperY, ODATA_buff_lowerY, ODATA_buff_upperY;
 
   // Settings
   bool TwistShift; // Use a twist-shift condition in core?
