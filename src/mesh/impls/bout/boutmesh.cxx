@@ -2119,7 +2119,8 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
       }
       if (xlt == MXG + MXSUB) {
         lower_outer_corner_dest = PROC_NUM(PE_XIND + 1, ypeup);
-      } else if (xlt >= MXG + MXSUB and xge < MXG + MXSUB) {
+      }
+      if (xlt >= MXG + MXSUB and xge < MXG + MXSUB) {
         lower_outer_corner_dest = PROC_NUM(PE_XIND + 1, ypeup);
         lower_outer_corner_orig = PROC_NUM(PE_XIND + 1, ypeup);
       } else if (xge == MXG + MXSUB) {
