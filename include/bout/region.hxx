@@ -636,6 +636,35 @@ public:
     return *this; // To allow command chaining
   };
 
+  /// Returns a new region including only indices contained in both
+  /// this region and the other.
+  Region<T> getUnion(const Region<T>& otherRegion) {
+    // Get other indices and sort as we're going to be searching through
+    // this vector so if it's sorted we can be more efficient
+    auto otherIndices = otherRegion.getIndices();
+    std::sort(std::begin(otherIndices), std::end(otherIndices));
+
+    // Get the current set of indices that we're going to get the
+    // union with and then use to create the result region.
+    auto currentIndices = getIndices();
+
+    // Lambda that returns true/false depending if the passed value is in otherIndices
+    // With C++14 T can be auto instead
+    auto notInVector = [&](T val) {
+      return !std::binary_search(std::begin(otherIndices), std::end(otherIndices), val);
+    };
+
+    // Erase elements of currentIndices that are in maskIndices
+    currentIndices.erase(
+        std::remove_if(std::begin(currentIndices), std::end(currentIndices), notInVector),
+        std::end(currentIndices));
+
+    // Update indices
+    setIndices(currentIndices);
+
+    return *this; // To allow command chaining
+  }
+
   /// Accumulate operator
   Region<T> & operator+=(const Region<T> &rhs){
     (*this) = (*this) + rhs;
@@ -861,6 +890,13 @@ template<typename T>
 Region<T> mask(const Region<T> &region, const Region<T> &mask) {
   auto result = region;
   return result.mask(mask);
+}
+
+/// Return the union of two regions
+template <typename T>
+Region<T> getUnion(const Region<T>& region, const Region<T>& otherRegion) {
+  auto result = region;
+  return result.getUnion(otherRegion);
 }
 
 /// Return a new region with combined indices from two Regions
