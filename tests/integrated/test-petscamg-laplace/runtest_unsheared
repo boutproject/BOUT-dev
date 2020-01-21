@@ -4,12 +4,6 @@
 # Run the test, check the error
 #
 
-from __future__ import print_function
-try:
-    from builtins import str
-except:
-    pass
-
 tol = 1e-9 # Absolute tolerance
 numTests = 4 # We test 4 different boundary conditions (with slightly different inputs for each)
 

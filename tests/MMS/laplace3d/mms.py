@@ -1,5 +1,3 @@
-from __future__ import print_function
-from builtins import str
 from sympy import symbols, cos, sin, tan, exp, log, pi
 from boutdata.mms_alternate import *
 from sys import exit

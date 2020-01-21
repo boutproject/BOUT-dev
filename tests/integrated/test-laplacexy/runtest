@@ -4,12 +4,6 @@
 # Run the test, compare results against the benchmark
 #
 
-from __future__ import print_function
-try:
-  from builtins import str
-except:
-  pass
-
 # Variables to compare
 tol = 4e-12                  # Absolute tolerance
 
