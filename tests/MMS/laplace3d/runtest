@@ -3,14 +3,13 @@
 # Python script to run and analyse MMS test
 
 from __future__ import division
-from __future__ import print_function
-from builtins import str
 from sys import argv
 
 from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
 from boutdata.collect import collect
 
 from numpy import sqrt, max, abs, mean, array, log, concatenate
+import matplotlib.pyplot as plt
 
 import matplotlib
 matplotlib.use("Agg")
@@ -55,9 +54,8 @@ for nx in nxlist:
     s, out = launch_safe(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
 
     # Save output to log file
-    f = open("run.log."+str(nx), "w")
-    f.write(out)
-    f.close()
+    with open("run.log."+str(nx), "w") as f:
+        f.write(out)
 
     # Collect data
     E = collect("error", tind=[nout,nout], path="data")
@@ -73,60 +71,54 @@ for nx in nxlist:
 
     if plotChecks:
         # some plots for debugging
-        from matplotlib import pyplot
         jy = E.shape[1]-1
         result = collect("result", path="data")[:,jy,:]
         solution = collect("solution", path="data")[:,jy,:]
-        pyplot.figure()
-        pyplot.subplot(131)
-        pyplot.contourf(result,100)
-        pyplot.colorbar()
-        pyplot.title("result")
-        pyplot.subplot(132)
-        pyplot.contourf(solution,100)
-        pyplot.colorbar()
-        pyplot.title("solution")
-        pyplot.subplot(133)
-        pyplot.contourf(E[:,jy,:],100)
-        pyplot.colorbar()
-        pyplot.title("error")
+        plt.figure()
+        plt.subplot(131)
+        plt.contourf(result,100)
+        plt.colorbar()
+        plt.title("result")
+        plt.subplot(132)
+        plt.contourf(solution,100)
+        plt.colorbar()
+        plt.title("solution")
+        plt.subplot(133)
+        plt.contourf(E[:,jy,:],100)
+        plt.colorbar()
+        plt.title("error")
 
-        pyplot.tight_layout()
-        pyplot.savefig("error"+str(nx)+".pdf")
-        pyplot.clf()
+        plt.tight_layout()
+        plt.savefig("error"+str(nx)+".pdf")
+        plt.clf()
 
 # Calculate grid spacing
 dx = 1. / (array(nxlist) - 2.)
 
 order = log(error_2[-1] / error_2[-2]) / log(dx[-1] / dx[-2])
 # plot errors
-try:
-    import matplotlib.pyplot as plt
+plt.figure()
 
-    plt.figure()
+plt.plot(dx, error_2, '-o', label=r'$l^2$')
+plt.plot(dx, error_inf, '-x', label=r'$l^\infty$')
 
-    plt.plot(dx, error_2, '-o', label=r'$l^2$')
-    plt.plot(dx, error_inf, '-x', label=r'$l^\infty$')
+print("Convergence order = %f" % (order))
 
-    print("Convergence order = %f" % (order))
+plt.plot(dx, error_2[-1]*(dx/dx[-1])**order, '--', label="Order %.1f"%(order))
 
-    plt.plot(dx, error_2[-1]*(dx/dx[-1])**order, '--', label="Order %.1f"%(order))
+plt.legend(loc="upper left")
+plt.grid()
 
-    plt.legend(loc="upper left")
-    plt.grid()
+plt.yscale('log')
+plt.xscale('log')
 
-    plt.yscale('log')
-    plt.xscale('log')
+plt.xlabel(r'Mesh spacing $\delta x$')
+plt.ylabel("Error norm")
 
-    plt.xlabel(r'Mesh spacing $\delta x$')
-    plt.ylabel("Error norm")
+plt.savefig("norm.pdf")
 
-    plt.savefig("norm.pdf")
-
-    #plt.show()
-    pyplot.clf()
-except:
-    pass
+#plt.show()
+plt.clf()
 
 if order < 1.9:
     print("MMS test failed")

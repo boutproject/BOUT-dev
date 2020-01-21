@@ -25,13 +25,6 @@ void LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
     output << "\tUsing dx as the x grid spacing\n";
   }
   Field2D qinty;
-  //if(!mesh->get(qinty, "qinty")) {
-  //  output << "\tUsing qinty as the Z shift\n";
-  //  mesh->getParallelTransform().zShift = qinty;
-  //}else {
-  //  // Keep zShift
-  //  output << "\tUsing zShift as the Z shift\n";
-  //}
 
   Rxy      /= Lnorm;
   hthe     /= Lnorm;

@@ -3,11 +3,8 @@
 #include "../../../src/mesh/parallel/shiftedmetricinterp.hxx"
 
 // Y derivative using yup() and ydown() fields
-const Field3D DDY_yud(const Field3D &f) {
-  Field3D result;
-  result.allocate();
-
-  result = 0.0;
+Field3D DDY_yud(const Field3D &f) {
+  Field3D result{0.0};
   
   for(int i=0;i<mesh->LocalNx;i++)
     for(int j=mesh->ystart;j<=mesh->yend;j++)
@@ -18,13 +15,10 @@ const Field3D DDY_yud(const Field3D &f) {
 }
 
 // Y derivative constructed from interpolation weights
-const Field3D DDY_weights(const Field3D &f) {
+Field3D DDY_weights(const Field3D &f) {
 
   ParallelTransform& pt = f.getCoordinates()->getParallelTransform();
-  Field3D result;
-  result.allocate();
-
-  result = 0.0;
+  Field3D result{0.0};
   
   for(int i=0;i<mesh->LocalNx;i++){
     for(int j=mesh->ystart;j<=mesh->yend;j++){

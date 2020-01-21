@@ -98,7 +98,8 @@ class Petsc3dAmgTest : public FakeMeshFixture,
 								     bool, bool > > {
 public:
   WithQuietOutput info{output_info}, warn{output_warn}, progress{output_progress}, all{output};
-  Petsc3dAmgTest() : FakeMeshFixture() {
+  Petsc3dAmgTest() : FakeMeshFixture(), solver(getOptions(GetParam()))
+ {
     PetscErrorPrintf = PetscErrorPrintfNone;
     int nx = mesh->GlobalNx,
         ny = mesh->GlobalNy,
@@ -125,6 +126,23 @@ public:
     auto param = GetParam();
     forward = ForwardOperator(std::get<0>(param), std::get<1>(param),
 			      std::get<2>(param), std::get<3>(param));
+  }
+
+  ~Petsc3dAmgTest() {
+    Options::cleanup();
+    PetscErrorPrintf = PetscErrorPrintfDefault;
+  }
+
+  const BoutReal sigmasq = 0.02;
+  LaplacePetsc3dAmg solver;
+  Field2D coef2;
+  Field3D f3, coef3;
+  static constexpr BoutReal tol = 1e-8;
+  ForwardOperator forward;
+
+private:
+
+  static Options* getOptions(std::tuple<bool, bool, bool, bool> param) {
     Options *options = Options::getRoot()->getSection("laplace");
     (*options)["type"] = "petsc3damg";
     (*options)["inner_boundary_flags"] = (std::get<0>(param) ? INVERT_AC_GRAD : 0) + INVERT_RHS;
@@ -140,20 +158,9 @@ public:
     //    (*options)["chebyshev_max"] = 100.0;
     //    (*options)["chebyshev_min"] = 0.01;
     //    (*options)["gmres_max_steps"] = 30;
-    solver = std::unique_ptr<LaplacePetsc3dAmg>(static_cast<LaplacePetsc3dAmg*>(Laplacian::create().release()));
+    return options;
   }
 
-  ~Petsc3dAmgTest() {
-    Options::cleanup();
-    PetscErrorPrintf = PetscErrorPrintfDefault;
-  }
-
-  const BoutReal sigmasq = 0.02;
-  std::unique_ptr<LaplacePetsc3dAmg> solver;
-  Field2D coef2;
-  Field3D f3, coef3;
-  const BoutReal tol = 1e-8;
-  ForwardOperator forward;
 };
 
 INSTANTIATE_TEST_SUITE_P(LaplacePetsc3dAmgTest, Petsc3dAmgTest,
@@ -164,8 +171,8 @@ INSTANTIATE_TEST_SUITE_P(LaplacePetsc3dAmgTest, Petsc3dAmgTest,
 					 std::make_tuple(true, false, false, false)));
 
 TEST_P(Petsc3dAmgTest, TestMatrixConstruction3D){
-  PetscMatrix<Field3D> &matrix = solver->getMatrix3D();
-  PetscVector<Field3D> vector(f3, solver->getIndexer());
+  PetscMatrix<Field3D> &matrix = solver.getMatrix3D();
+  PetscVector<Field3D> vector(f3, solver.getIndexer());
   Field3D expected = forward(f3);
   Field3D actual = (matrix * vector).toField();
   BOUT_FOR(i, mesh->getRegion3D("RGN_ALL")) {
@@ -174,9 +181,9 @@ TEST_P(Petsc3dAmgTest, TestMatrixConstruction3D){
 }
 
 TEST_P(Petsc3dAmgTest, TestSetCoefA_2D){
-  solver->setCoefA(coef2);
-  PetscMatrix<Field3D> &matrix = solver->getMatrix3D();
-  PetscVector<Field3D> vector(f3, solver->getIndexer());
+  solver.setCoefA(coef2);
+  PetscMatrix<Field3D> &matrix = solver.getMatrix3D();
+  PetscVector<Field3D> vector(f3, solver.getIndexer());
   forward.a = coef2;
   Field3D expected = forward(f3);
   Field3D actual = (matrix * vector).toField();
@@ -186,9 +193,9 @@ TEST_P(Petsc3dAmgTest, TestSetCoefA_2D){
 }
 
 TEST_P(Petsc3dAmgTest, TestSetCoefA_3D){
-  solver->setCoefA(coef3);
-  PetscMatrix<Field3D> &matrix = solver->getMatrix3D();
-  PetscVector<Field3D> vector(f3, solver->getIndexer());
+  solver.setCoefA(coef3);
+  PetscMatrix<Field3D> &matrix = solver.getMatrix3D();
+  PetscVector<Field3D> vector(f3, solver.getIndexer());
   forward.a = coef3;
   Field3D expected = forward(f3);
   Field3D actual = (matrix * vector).toField();
@@ -198,9 +205,9 @@ TEST_P(Petsc3dAmgTest, TestSetCoefA_3D){
 }
 
 TEST_P(Petsc3dAmgTest, TestSetCoefC_2D){
-  solver->setCoefC(coef2);
-  PetscMatrix<Field3D> &matrix = solver->getMatrix3D();
-  PetscVector<Field3D> vector(f3, solver->getIndexer());
+  solver.setCoefC(coef2);
+  PetscMatrix<Field3D> &matrix = solver.getMatrix3D();
+  PetscVector<Field3D> vector(f3, solver.getIndexer());
   forward.c1 = coef2;
   forward.c2 = coef2;
   Field3D expected = forward(f3);
@@ -211,9 +218,9 @@ TEST_P(Petsc3dAmgTest, TestSetCoefC_2D){
 }
 
 TEST_P(Petsc3dAmgTest, TestSetCoefC_3D){
-  solver->setCoefC(coef3);
-  PetscMatrix<Field3D> &matrix = solver->getMatrix3D();
-  PetscVector<Field3D> vector(f3, solver->getIndexer());
+  solver.setCoefC(coef3);
+  PetscMatrix<Field3D> &matrix = solver.getMatrix3D();
+  PetscVector<Field3D> vector(f3, solver.getIndexer());
   forward.c1 = coef3;
   forward.c2 = coef3;
   Field3D expected = forward(f3);
@@ -225,9 +232,9 @@ TEST_P(Petsc3dAmgTest, TestSetCoefC_3D){
 }
 
 TEST_P(Petsc3dAmgTest, TestSetCoefC1_2D){
-  solver->setCoefC1(coef2);
-  PetscMatrix<Field3D> &matrix = solver->getMatrix3D();
-  PetscVector<Field3D> vector(f3, solver->getIndexer());
+  solver.setCoefC1(coef2);
+  PetscMatrix<Field3D> &matrix = solver.getMatrix3D();
+  PetscVector<Field3D> vector(f3, solver.getIndexer());
   forward.c1 = coef2;
   Field3D expected = forward(f3);
   Field3D actual = (matrix * vector).toField();
@@ -237,9 +244,9 @@ TEST_P(Petsc3dAmgTest, TestSetCoefC1_2D){
 }
 
 TEST_P(Petsc3dAmgTest, TestSetCoefC1_3D){
-  solver->setCoefC1(coef3);
-  PetscMatrix<Field3D> &matrix = solver->getMatrix3D();
-  PetscVector<Field3D> vector(f3, solver->getIndexer());
+  solver.setCoefC1(coef3);
+  PetscMatrix<Field3D> &matrix = solver.getMatrix3D();
+  PetscVector<Field3D> vector(f3, solver.getIndexer());
   forward.c1 = coef3;
   Field3D expected = forward(f3);
   Field3D actual = (matrix * vector).toField();
@@ -250,9 +257,9 @@ TEST_P(Petsc3dAmgTest, TestSetCoefC1_3D){
 }
 
 TEST_P(Petsc3dAmgTest, TestSetCoefC2_2D){
-  solver->setCoefC2(coef2);
-  PetscMatrix<Field3D> &matrix = solver->getMatrix3D();
-  PetscVector<Field3D> vector(f3, solver->getIndexer());
+  solver.setCoefC2(coef2);
+  PetscMatrix<Field3D> &matrix = solver.getMatrix3D();
+  PetscVector<Field3D> vector(f3, solver.getIndexer());
   forward.c2 = coef2;
   Field3D expected = forward(f3);
   Field3D actual = (matrix * vector).toField();
@@ -262,9 +269,9 @@ TEST_P(Petsc3dAmgTest, TestSetCoefC2_2D){
 }
 
 TEST_P(Petsc3dAmgTest, TestSetCoefC2_3D){
-  solver->setCoefC2(coef3);
-  PetscMatrix<Field3D> &matrix = solver->getMatrix3D();
-  PetscVector<Field3D> vector(f3, solver->getIndexer());
+  solver.setCoefC2(coef3);
+  PetscMatrix<Field3D> &matrix = solver.getMatrix3D();
+  PetscVector<Field3D> vector(f3, solver.getIndexer());
   forward.c2 = coef3;
   Field3D expected = forward(f3);
   Field3D actual = (matrix * vector).toField();
@@ -274,9 +281,9 @@ TEST_P(Petsc3dAmgTest, TestSetCoefC2_3D){
 }
 
 TEST_P(Petsc3dAmgTest, TestSetCoefD_2D){
-  solver->setCoefD(coef2);
-  PetscMatrix<Field3D> &matrix = solver->getMatrix3D();
-  PetscVector<Field3D> vector(f3, solver->getIndexer());
+  solver.setCoefD(coef2);
+  PetscMatrix<Field3D> &matrix = solver.getMatrix3D();
+  PetscVector<Field3D> vector(f3, solver.getIndexer());
   forward.d = coef2;
   Field3D expected = forward(f3);
   Field3D actual = (matrix * vector).toField();
@@ -286,9 +293,9 @@ TEST_P(Petsc3dAmgTest, TestSetCoefD_2D){
 }
 
 TEST_P(Petsc3dAmgTest, TestSetCoefD_3D){
-  solver->setCoefD(coef3);
-  PetscMatrix<Field3D> &matrix = solver->getMatrix3D();
-  PetscVector<Field3D> vector(f3, solver->getIndexer());
+  solver.setCoefD(coef3);
+  PetscMatrix<Field3D> &matrix = solver.getMatrix3D();
+  PetscVector<Field3D> vector(f3, solver.getIndexer());
   forward.d = coef3;
   Field3D expected = forward(f3);
   Field3D actual = (matrix * vector).toField();
@@ -298,9 +305,9 @@ TEST_P(Petsc3dAmgTest, TestSetCoefD_3D){
 }
 
 TEST_P(Petsc3dAmgTest, TestSetCoefEx_2D){
-  solver->setCoefEx(coef2);
-  PetscMatrix<Field3D> &matrix = solver->getMatrix3D();
-  PetscVector<Field3D> vector(f3, solver->getIndexer());
+  solver.setCoefEx(coef2);
+  PetscMatrix<Field3D> &matrix = solver.getMatrix3D();
+  PetscVector<Field3D> vector(f3, solver.getIndexer());
   forward.ex = coef2;
   Field3D expected = forward(f3);
   Field3D actual = (matrix * vector).toField();
@@ -310,9 +317,9 @@ TEST_P(Petsc3dAmgTest, TestSetCoefEx_2D){
 }
 
 TEST_P(Petsc3dAmgTest, TestSetCoefEx_3D){
-  solver->setCoefEx(coef3);
-  PetscMatrix<Field3D> &matrix = solver->getMatrix3D();
-  PetscVector<Field3D> vector(f3, solver->getIndexer());
+  solver.setCoefEx(coef3);
+  PetscMatrix<Field3D> &matrix = solver.getMatrix3D();
+  PetscVector<Field3D> vector(f3, solver.getIndexer());
   forward.ex = coef3;
   Field3D expected = forward(f3);
   Field3D actual = (matrix * vector).toField();
@@ -322,9 +329,9 @@ TEST_P(Petsc3dAmgTest, TestSetCoefEx_3D){
 }
 
 TEST_P(Petsc3dAmgTest, TestSetCoefEz_2D){
-  solver->setCoefEz(coef2);
-  PetscMatrix<Field3D> &matrix = solver->getMatrix3D();
-  PetscVector<Field3D> vector(f3, solver->getIndexer());
+  solver.setCoefEz(coef2);
+  PetscMatrix<Field3D> &matrix = solver.getMatrix3D();
+  PetscVector<Field3D> vector(f3, solver.getIndexer());
   forward.ez = coef2;
   Field3D expected = forward(f3);
   Field3D actual = (matrix * vector).toField();
@@ -334,9 +341,9 @@ TEST_P(Petsc3dAmgTest, TestSetCoefEz_2D){
 }
 
 TEST_P(Petsc3dAmgTest, TestSetCoefEz_3D){
-  solver->setCoefEz(coef3);
-  PetscMatrix<Field3D> &matrix = solver->getMatrix3D();
-  PetscVector<Field3D> vector(f3, solver->getIndexer());
+  solver.setCoefEz(coef3);
+  PetscMatrix<Field3D> &matrix = solver.getMatrix3D();
+  PetscVector<Field3D> vector(f3, solver.getIndexer());
   forward.ez = coef3;
   Field3D expected = forward(f3);
   Field3D actual = (matrix * vector).toField();
@@ -347,7 +354,7 @@ TEST_P(Petsc3dAmgTest, TestSetCoefEz_3D){
 
 TEST_P(Petsc3dAmgTest, TestSolve3D){
   Field3D expected = f3;
-  const Field3D actual = solver->solve(forward(f3));
+  const Field3D actual = solver.solve(forward(f3));
   BOUT_FOR(i, mesh->getRegion3D("RGN_ALL")) {
     EXPECT_NEAR(expected[i], actual[i], tol);
   }
@@ -355,7 +362,7 @@ TEST_P(Petsc3dAmgTest, TestSolve3D){
 
 TEST_P(Petsc3dAmgTest, TestSolve3DGuess){
   Field3D expected = f3, guess = f3;// + 0.1;
-  const Field3D actual = solver->solve(forward(f3), guess);
+  const Field3D actual = solver.solve(forward(f3), guess);
   BOUT_FOR(i, mesh->getRegion3D("RGN_ALL")) {
     EXPECT_NEAR(expected[i], actual[i], tol);
   }
@@ -363,7 +370,7 @@ TEST_P(Petsc3dAmgTest, TestSolve3DGuess){
 
 TEST_P(Petsc3dAmgTest, TestSolvePerp){
   FieldPerp f(1.0);
-  EXPECT_THROW(solver->solve(f), BoutException);
+  EXPECT_THROW(solver.solve(f), BoutException);
 }
 
 #endif // BOUT_HAS_PETSC
