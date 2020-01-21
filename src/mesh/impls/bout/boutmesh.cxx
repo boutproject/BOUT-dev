@@ -951,16 +951,14 @@ void BoutMesh::post_receive(CommHandle &ch) {
 
   len = 0;
   if (UDATA_INDEST != -1) {
-    len = msg_len(ch.var_list.get(), YDATA_buff_innerX,
-                  std::max(UDATA_XSPLIT, YDATA_buff_outerX), 0, MYG);
+    len = msg_len(ch.var_list.get(), YDATA_buff_innerX, UDATA_XSPLIT, 0, MYG);
     mpi->MPI_Irecv(std::begin(ch.umsg_recvbuff), len, PVEC_REAL_MPI_TYPE, UDATA_INDEST,
                    IN_SENT_DOWN, BoutComm::get(), &ch.request[0]);
   }
   if (UDATA_OUTDEST != -1) {
     inbuff = &ch.umsg_recvbuff[len]; // pointer to second half of the buffer
     mpi->MPI_Irecv(inbuff,
-                   msg_len(ch.var_list.get(), std::max(UDATA_XSPLIT, YDATA_buff_innerX),
-                           YDATA_buff_outerX, 0, MYG),
+                   msg_len(ch.var_list.get(), UDATA_XSPLIT, YDATA_buff_outerX, 0, MYG),
                    PVEC_REAL_MPI_TYPE, UDATA_OUTDEST, OUT_SENT_DOWN, BoutComm::get(),
                    &ch.request[1]);
   }
@@ -970,16 +968,14 @@ void BoutMesh::post_receive(CommHandle &ch) {
   len = 0;
 
   if (DDATA_INDEST != -1) { // If sending & recieving data from a processor
-    len = msg_len(ch.var_list.get(), YDATA_buff_innerX,
-                  std::min(DDATA_XSPLIT, YDATA_buff_outerX), 0, MYG);
+    len = msg_len(ch.var_list.get(), YDATA_buff_innerX, DDATA_XSPLIT, 0, MYG);
     mpi->MPI_Irecv(std::begin(ch.dmsg_recvbuff), len, PVEC_REAL_MPI_TYPE, DDATA_INDEST,
                    IN_SENT_UP, BoutComm::get(), &ch.request[2]);
   }
   if (DDATA_OUTDEST != -1) {
     inbuff = &ch.dmsg_recvbuff[len];
     mpi->MPI_Irecv(inbuff,
-                   msg_len(ch.var_list.get(), std::max(DDATA_XSPLIT, YDATA_buff_innerX),
-                           YDATA_buff_outerX, 0, MYG),
+                   msg_len(ch.var_list.get(), DDATA_XSPLIT, YDATA_buff_outerX, 0, MYG),
                    PVEC_REAL_MPI_TYPE, DDATA_OUTDEST, OUT_SENT_UP, BoutComm::get(),
                    &ch.request[3]);
   }
@@ -1056,9 +1052,8 @@ comm_handle BoutMesh::send(FieldGroup &g) {
   BoutReal *outbuff;
 
   if (UDATA_INDEST != -1) { // If there is a destination for inner x data
-    len = pack_data(ch->var_list.get(), YDATA_buff_innerX,
-                    std::min(UDATA_XSPLIT, YDATA_buff_outerX), MYSUB, MYSUB + MYG,
-                    std::begin(ch->umsg_sendbuff));
+    len = pack_data(ch->var_list.get(), YDATA_buff_innerX, UDATA_XSPLIT, MYSUB,
+                    MYSUB + MYG, std::begin(ch->umsg_sendbuff));
     // Send the data to processor UDATA_INDEST
 
     if (async_send) {
@@ -1075,8 +1070,9 @@ comm_handle BoutMesh::send(FieldGroup &g) {
   if (UDATA_OUTDEST != -1) {             // if destination for outer x data
     outbuff = &(ch->umsg_sendbuff[len]); // A pointer to the start of the second part
                                          // of the buffer
-    len = pack_data(ch->var_list.get(), std::max(UDATA_XSPLIT, YDATA_buff_innerX),
-                    YDATA_buff_outerX, MYSUB, MYSUB + MYG, outbuff);
+    len =
+        pack_data(ch->var_list.get(), UDATA_XSPLIT, YDATA_buff_outerX, MYSUB, MYSUB + MYG,
+                  outbuff);
     // Send the data to processor UDATA_OUTDEST
     if (async_send) {
       mpi->MPI_Isend(outbuff, len, PVEC_REAL_MPI_TYPE, UDATA_OUTDEST, OUT_SENT_UP,
@@ -1090,8 +1086,7 @@ comm_handle BoutMesh::send(FieldGroup &g) {
 
   len = 0;
   if (DDATA_INDEST != -1) { // If there is a destination for inner x data
-    len = pack_data(ch->var_list.get(), YDATA_buff_innerX,
-                    std::min(DDATA_XSPLIT, YDATA_buff_outerX), MYG, 2 * MYG,
+    len = pack_data(ch->var_list.get(), YDATA_buff_innerX, DDATA_XSPLIT, MYG, 2 * MYG,
                     std::begin(ch->dmsg_sendbuff));
     // Send the data to processor DDATA_INDEST
     if (async_send) {
@@ -1104,8 +1099,8 @@ comm_handle BoutMesh::send(FieldGroup &g) {
   if (DDATA_OUTDEST != -1) {             // if destination for outer x data
     outbuff = &(ch->dmsg_sendbuff[len]); // A pointer to the start of the second part
                                          // of the buffer
-    len = pack_data(ch->var_list.get(), std::max(DDATA_XSPLIT, YDATA_buff_innerX),
-                    YDATA_buff_outerX, MYG, 2 * MYG, outbuff);
+    len = pack_data(ch->var_list.get(), DDATA_XSPLIT, YDATA_buff_outerX, MYG, 2 * MYG,
+                    outbuff);
     // Send the data to processor DDATA_OUTDEST
 
     if (async_send) {
@@ -1230,40 +1225,35 @@ int BoutMesh::wait(comm_handle handle) {
     mpi->MPI_Waitany(10, ch->request, &ind, &status);
     switch (ind) {
     case 0: { // Up, inner
-      unpack_data(ch->var_list.get(), YDATA_buff_innerX,
-                  std::min(UDATA_XSPLIT, YDATA_buff_outerX), MYSUB + MYG, MYSUB + 2 * MYG,
+      unpack_data(ch->var_list.get(), 0, UDATA_XSPLIT, MYSUB + MYG, MYSUB + 2 * MYG,
                   std::begin(ch->umsg_recvbuff));
       break;
     }
     case 1: { // Up, outer
-      len = msg_len(ch->var_list.get(), YDATA_buff_innerX,
-                    std::min(UDATA_XSPLIT, YDATA_buff_outerX), 0, MYG);
-      unpack_data(ch->var_list.get(), std::max(UDATA_XSPLIT, YDATA_buff_innerX),
-                  YDATA_buff_outerX, MYSUB + MYG, MYSUB + 2 * MYG,
+      len = msg_len(ch->var_list.get(), 0, UDATA_XSPLIT, 0, MYG);
+      unpack_data(ch->var_list.get(), UDATA_XSPLIT, LocalNx, MYSUB + MYG, MYSUB + 2 * MYG,
                   &(ch->umsg_recvbuff[len]));
       break;
     }
     case 2: { // Down, inner
-      unpack_data(ch->var_list.get(), YDATA_buff_innerX,
-                  std::min(DDATA_XSPLIT, YDATA_buff_outerX), 0, MYG,
+      unpack_data(ch->var_list.get(), 0, DDATA_XSPLIT, 0, MYG,
                   std::begin(ch->dmsg_recvbuff));
       break;
     }
     case 3: { // Down, outer
-      len = msg_len(ch->var_list.get(), YDATA_buff_innerX,
-                    std::min(DDATA_XSPLIT, YDATA_buff_outerX), 0, MYG);
-      unpack_data(ch->var_list.get(), std::max(DDATA_XSPLIT, YDATA_buff_innerX),
-                  YDATA_buff_outerX, 0, MYG, &(ch->dmsg_recvbuff[len]));
+      len = msg_len(ch->var_list.get(), 0, DDATA_XSPLIT, 0, MYG);
+      unpack_data(ch->var_list.get(), DDATA_XSPLIT, LocalNx, 0, MYG,
+                  &(ch->dmsg_recvbuff[len]));
       break;
     }
     case 4: { // inner
-      unpack_data(ch->var_list.get(), 0, MXG, IDATA_buff_lowerY, IDATA_buff_upperY,
+      unpack_data(ch->var_list.get(), 0, MXG, MYG, MYG + MYSUB,
                   std::begin(ch->imsg_recvbuff));
       break;
     }
     case 5: { // outer
-      unpack_data(ch->var_list.get(), MXSUB + MXG, MXSUB + 2 * MXG, ODATA_buff_lowerY,
-                  ODATA_buff_upperY, std::begin(ch->omsg_recvbuff));
+      unpack_data(ch->var_list.get(), MXSUB + MXG, MXSUB + 2 * MXG, MYG, MYG + MYSUB,
+                  std::begin(ch->omsg_recvbuff));
       break;
     }
     case 6: { // lower inner corner
