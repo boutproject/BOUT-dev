@@ -246,9 +246,6 @@ private:
   // y-limits of buffers communicated in x-direction. Include y-boundary cells but not
   // y-guard cells.
   int IDATA_buff_lowerY, IDATA_buff_upperY, ODATA_buff_lowerY, ODATA_buff_upperY;
-  // x-limits of buffers communicated in y-direction. Include x-boundary cells but not
-  // x-guard cells.
-  int YDATA_buff_innerX, YDATA_buff_outerX;
 
   // Settings
   bool TwistShift; // Use a twist-shift condition in core?

@@ -996,7 +996,7 @@ comm_handle BoutMesh::send(FieldGroup &g) {
 
   /// Work out length of buffer needed
   int xlen = msg_len(g.get(), 0, MXG, 0, MYSUB);
-  int ylen = msg_len(g.get(), 0, include_corner_cells ? MXSUB : LocalNx, 0, MYG);
+  int ylen = msg_len(g.get(), 0, LocalNx, 0, MYG);
 
   /// Get a communications handle of (at least) the needed size
   CommHandle *ch = get_handle(xlen, ylen);
@@ -1013,8 +1013,8 @@ comm_handle BoutMesh::send(FieldGroup &g) {
   BoutReal *outbuff;
 
   if (UDATA_INDEST != -1) { // If there is a destination for inner x data
-    len = pack_data(ch->var_list.get(), YDATA_buff_innerX, UDATA_XSPLIT, MYSUB,
-                    MYSUB + MYG, std::begin(ch->umsg_sendbuff));
+    len = pack_data(ch->var_list.get(), 0, UDATA_XSPLIT, MYSUB, MYSUB + MYG,
+                    std::begin(ch->umsg_sendbuff));
     // Send the data to processor UDATA_INDEST
 
     if (async_send) {
@@ -1032,8 +1032,7 @@ comm_handle BoutMesh::send(FieldGroup &g) {
     outbuff = &(ch->umsg_sendbuff[len]); // A pointer to the start of the second part
                                          // of the buffer
     len =
-        pack_data(ch->var_list.get(), UDATA_XSPLIT, YDATA_buff_outerX, MYSUB, MYSUB + MYG,
-                  outbuff);
+        pack_data(ch->var_list.get(), UDATA_XSPLIT, LocalNx, MYSUB, MYSUB + MYG, outbuff);
     // Send the data to processor UDATA_OUTDEST
     if (async_send) {
       mpi->MPI_Isend(outbuff, len, PVEC_REAL_MPI_TYPE, UDATA_OUTDEST, OUT_SENT_UP,
@@ -1047,7 +1046,7 @@ comm_handle BoutMesh::send(FieldGroup &g) {
 
   len = 0;
   if (DDATA_INDEST != -1) { // If there is a destination for inner x data
-    len = pack_data(ch->var_list.get(), YDATA_buff_innerX, DDATA_XSPLIT, MYG, 2 * MYG,
+    len = pack_data(ch->var_list.get(), 0, DDATA_XSPLIT, MYG, 2 * MYG,
                     std::begin(ch->dmsg_sendbuff));
     // Send the data to processor DDATA_INDEST
     if (async_send) {
@@ -1060,8 +1059,7 @@ comm_handle BoutMesh::send(FieldGroup &g) {
   if (DDATA_OUTDEST != -1) {             // if destination for outer x data
     outbuff = &(ch->dmsg_sendbuff[len]); // A pointer to the start of the second part
                                          // of the buffer
-    len = pack_data(ch->var_list.get(), DDATA_XSPLIT, YDATA_buff_outerX, MYG, 2 * MYG,
-                    outbuff);
+    len = pack_data(ch->var_list.get(), DDATA_XSPLIT, LocalNx, MYG, 2 * MYG, outbuff);
     // Send the data to processor DDATA_OUTDEST
 
     if (async_send) {
@@ -1732,7 +1730,7 @@ BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, i
 
 /// Connection initialisation: Set processors in a simple 2D grid
 void BoutMesh::default_connections() {
-  DDATA_XSPLIT = UDATA_XSPLIT = include_corner_cells ? MXG : 0;  // everything by default outside (arb. choice)
+  DDATA_XSPLIT = UDATA_XSPLIT = 0;  // everything by default outside (arb. choice)
   DDATA_INDEST = UDATA_INDEST = -1; // since nothing inside
 
   DDATA_OUTDEST = PROC_NUM(PE_XIND, PE_YIND - 1);
@@ -1817,14 +1815,10 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
     return; // Not in this x domain
   }
 
-  const int xge_min = include_corner_cells ? MXG : 0;
-  if (xge < xge_min) {
-    xge = xge_min;
-  }
-  const int xlt_max = include_corner_cells ? MXG + MXSUB : LocalNx;
-  if (xlt > xlt_max) {
-    xlt = xlt_max;
-  }
+  if (xge < 0)
+    xge = 0;
+  if (xlt > LocalNx)
+    xlt = LocalNx;
 
   if (MYPE == PROC_NUM(PE_XIND, ypeup)) { /* PROCESSOR SENDING +VE Y */
     /* Set the branch cut x position */
@@ -2050,14 +2044,10 @@ void BoutMesh::topology() {
     MYPE_IN_CORE = 1; /* processor is in the core */
   }
 
-  const int xsplit_max = include_corner_cells and ODATA_DEST != -1
-                         ? MXG + MXSUB : LocalNx;
-  if (DDATA_XSPLIT > xsplit_max) {
-    DDATA_XSPLIT = xsplit_max;
-  }
-  if (UDATA_XSPLIT > xsplit_max) {
-    UDATA_XSPLIT = xsplit_max;
-  }
+  if (DDATA_XSPLIT > LocalNx)
+    DDATA_XSPLIT = LocalNx;
+  if (UDATA_XSPLIT > LocalNx)
+    UDATA_XSPLIT = LocalNx;
 
   if (include_corner_cells) {
     IDATA_buff_lowerY = (DDATA_INDEST == -1 and DDATA_OUTDEST == -1)
@@ -2111,17 +2101,11 @@ void BoutMesh::topology() {
                           "boundary cells and cells that need to be communicated in "
                           "x-guard cells. This is not supported. Try changing NXPE.");
     }
-
-    YDATA_buff_innerX = IDATA_DEST == -1 ? 0 : MXG;
-    YDATA_buff_outerX = ODATA_DEST == -1 ? LocalNx : MXG + MXSUB;
   } else {
     IDATA_buff_lowerY = MYG;
     IDATA_buff_upperY = MYG + MYSUB;
     ODATA_buff_lowerY = MYG;
     ODATA_buff_upperY = MYG + MYSUB;
-
-    YDATA_buff_innerX = 0;
-    YDATA_buff_outerX = LocalNx;
   }
 
   // Print out settings
