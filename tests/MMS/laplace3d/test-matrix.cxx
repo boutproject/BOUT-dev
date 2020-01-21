@@ -62,16 +62,17 @@ int main(int argc, char **argv) {
 // Delp2 uses FFT z-derivatives and Laplace includes y-derivatives, so can't use those
 // The function is a copy of Laplace() with the y-derivatives deleted
 Field3D this_Grad_perp2(const Field3D &f) {
-  Field3D result = mesh->coordinates()->G1 * ::DDX(f) +  mesh->coordinates()->G3 * ::DDZ(f) +
-                   mesh->coordinates()->g11 * ::D2DX2(f) + mesh->coordinates()->g33 * ::D2DZ2(f) +
-                   2.0 * mesh->coordinates()->g13 * ::D2DXDZ(f);
+  auto coord = f.getCoordinates();
+  Field3D result = coord->G1 * ::DDX(f) +  coord->G3 * ::DDZ(f) + coord->g11 * ::D2DX2(f)
+                   + coord->g33 * ::D2DZ2(f) + 2.0 * coord->g13 * ::D2DXDZ(f);
 
   return result;
 }
 
 Field3D this_Grad_perp_dot_Grad_perp(const Field3D &f, const Field3D &g) {
-  Field3D result = mesh->coordinates()->g11 * ::DDX(f) * ::DDX(g) + mesh->coordinates()->g33 * ::DDZ(f) * ::DDZ(g)
-                   + mesh->coordinates()->g13 * (DDX(f)*DDZ(g) + DDZ(f)*DDX(g));
+  auto coord = f.getCoordinates();
+  Field3D result = coord->g11 * ::DDX(f) * ::DDX(g) + coord->g33 * ::DDZ(f) * ::DDZ(g)
+                   + coord->g13 * (DDX(f)*DDZ(g) + DDZ(f)*DDX(g));
   
   return result;
 }
