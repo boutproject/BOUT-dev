@@ -1194,7 +1194,7 @@ comm_handle BoutMesh::send(FieldGroup &g) {
 
   /// Send corners
   if (lower_inner_corner_dest != -1) {
-    len = pack_data(ch->var_list.get(), MXG, 2*MXG, MYG, 2*MYG,
+    len = pack_data(ch->var_list.get(), 0, MXG, 0, MYG,
                     std::begin(ch->lowin_corner_sendbuff));
     if (async_send) {
       mpi->MPI_Isend(std::begin(ch->lowin_corner_sendbuff), len, PVEC_REAL_MPI_TYPE,
@@ -1206,7 +1206,7 @@ comm_handle BoutMesh::send(FieldGroup &g) {
     }
   }
   if (upper_inner_corner_dest != -1) {
-    len = pack_data(ch->var_list.get(), MXG, 2*MXG, MYSUB, MYG + MYSUB,
+    len = pack_data(ch->var_list.get(), 0, MXG, MYG + MYSUB, LocalNy,
                     std::begin(ch->upin_corner_sendbuff));
     if (async_send) {
       mpi->MPI_Isend(std::begin(ch->upin_corner_sendbuff), len, PVEC_REAL_MPI_TYPE,
@@ -1218,7 +1218,7 @@ comm_handle BoutMesh::send(FieldGroup &g) {
     }
   }
   if (lower_outer_corner_dest != -1) {
-    len = pack_data(ch->var_list.get(), MXSUB, MXG + MXSUB, MYG, 2*MYG,
+    len = pack_data(ch->var_list.get(), MXG + MXSUB, LocalNx, 0, MYG,
                     std::begin(ch->lowout_corner_sendbuff));
     if (async_send) {
       mpi->MPI_Isend(std::begin(ch->lowout_corner_sendbuff), len, PVEC_REAL_MPI_TYPE,
@@ -1230,7 +1230,7 @@ comm_handle BoutMesh::send(FieldGroup &g) {
     }
   }
   if (upper_outer_corner_dest != -1) {
-    len = pack_data(ch->var_list.get(), MXSUB, MXG + MXSUB, MYSUB, MYG + MYSUB,
+    len = pack_data(ch->var_list.get(), MXG + MXSUB, LocalNx, MYG + MYSUB, LocalNy,
                     std::begin(ch->upout_corner_sendbuff));
     if (async_send) {
       mpi->MPI_Isend(std::begin(ch->upout_corner_sendbuff), len, PVEC_REAL_MPI_TYPE,
