@@ -1048,10 +1048,8 @@ comm_handle BoutMesh::send(FieldGroup &g) {
 
   /// Work out length of buffer needed
   int xlen = msg_len(g.get(), 0, MXG, 0,
-                     std::max({IDATA_buff_upperY_send - IDATA_buff_lowerY_send,
-                               IDATA_buff_upperY_recv - IDATA_buff_lowerY_recv,
-                               ODATA_buff_upperY_send - ODATA_buff_lowerY_send,
-                               ODATA_buff_upperY_recv - ODATA_buff_lowerY_recv}));
+                     std::max(IDATA_buff_upperY_send - IDATA_buff_lowerY_send,
+                              ODATA_buff_upperY_send - ODATA_buff_lowerY_send));
   int ylen = msg_len(g.get(), 0, YDATA_buff_outerX - YDATA_buff_innerX, 0, MYG);
   int cornerlen = include_corner_cells ? msg_len(g.get(), 0, MXG, 0, MYG) : 0;
 
