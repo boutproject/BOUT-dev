@@ -103,7 +103,8 @@ private:
   /******* Start implementation ********/
   int mgplag,cftype,pcheck,tcheck;
   int xNP,xProcI,zNP,zProcI,xgstart,xgend,zgstart,zgend;
-  int mgcount,mgmpi;
+  int mgcount{0};
+  int mgmpi;
 
   /* Options for solver */
   Options *opts;
