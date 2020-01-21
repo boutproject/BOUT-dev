@@ -937,11 +937,6 @@ const int OUT_SENT_DOWN = 3; ///< Data higher in X than branch-cut, at lower bou
 // X communication signals
 const int IN_SENT_OUT = 4; ///< Data going in positive X direction (in to out)
 const int OUT_SENT_IN = 5; ///< Data going in negative X direction (out to in)
-// corner communication signals
-const int LOWIN_SEND = 6;
-const int UPIN_SEND = 7;
-const int LOWOUT_SEND = 8;
-const int UPOUT_SEND = 9;
 
 void BoutMesh::post_receive(CommHandle &ch) {
   BoutReal *inbuff;
@@ -951,14 +946,13 @@ void BoutMesh::post_receive(CommHandle &ch) {
 
   len = 0;
   if (UDATA_INDEST != -1) {
-    len = msg_len(ch.var_list.get(), YDATA_buff_innerX, UDATA_XSPLIT, 0, MYG);
+    len = msg_len(ch.var_list.get(), 0, UDATA_XSPLIT, 0, MYG);
     mpi->MPI_Irecv(std::begin(ch.umsg_recvbuff), len, PVEC_REAL_MPI_TYPE, UDATA_INDEST,
                    IN_SENT_DOWN, BoutComm::get(), &ch.request[0]);
   }
   if (UDATA_OUTDEST != -1) {
     inbuff = &ch.umsg_recvbuff[len]; // pointer to second half of the buffer
-    mpi->MPI_Irecv(inbuff,
-                   msg_len(ch.var_list.get(), UDATA_XSPLIT, YDATA_buff_outerX, 0, MYG),
+    mpi->MPI_Irecv(inbuff, msg_len(ch.var_list.get(), UDATA_XSPLIT, LocalNx, 0, MYG),
                    PVEC_REAL_MPI_TYPE, UDATA_OUTDEST, OUT_SENT_DOWN, BoutComm::get(),
                    &ch.request[1]);
   }
@@ -968,14 +962,13 @@ void BoutMesh::post_receive(CommHandle &ch) {
   len = 0;
 
   if (DDATA_INDEST != -1) { // If sending & recieving data from a processor
-    len = msg_len(ch.var_list.get(), YDATA_buff_innerX, DDATA_XSPLIT, 0, MYG);
+    len = msg_len(ch.var_list.get(), 0, DDATA_XSPLIT, 0, MYG);
     mpi->MPI_Irecv(std::begin(ch.dmsg_recvbuff), len, PVEC_REAL_MPI_TYPE, DDATA_INDEST,
                    IN_SENT_UP, BoutComm::get(), &ch.request[2]);
   }
   if (DDATA_OUTDEST != -1) {
     inbuff = &ch.dmsg_recvbuff[len];
-    mpi->MPI_Irecv(inbuff,
-                   msg_len(ch.var_list.get(), DDATA_XSPLIT, YDATA_buff_outerX, 0, MYG),
+    mpi->MPI_Irecv(inbuff, msg_len(ch.var_list.get(), DDATA_XSPLIT, LocalNx, 0, MYG),
                    PVEC_REAL_MPI_TYPE, DDATA_OUTDEST, OUT_SENT_UP, BoutComm::get(),
                    &ch.request[3]);
   }
@@ -983,8 +976,7 @@ void BoutMesh::post_receive(CommHandle &ch) {
   /// Post receive data from left (x-1)
 
   if (IDATA_DEST != -1) {
-    mpi->MPI_Irecv(std::begin(ch.imsg_recvbuff),
-                   msg_len(ch.var_list.get(), 0, MXG, IDATA_buff_lowerY, IDATA_buff_upperY),
+    mpi->MPI_Irecv(std::begin(ch.imsg_recvbuff), msg_len(ch.var_list.get(), 0, MXG, 0, MYSUB),
                    PVEC_REAL_MPI_TYPE, IDATA_DEST, OUT_SENT_IN, BoutComm::get(),
                    &ch.request[4]);
   }
@@ -992,37 +984,9 @@ void BoutMesh::post_receive(CommHandle &ch) {
   // Post receive data from right (x+1)
 
   if (ODATA_DEST != -1) {
-    mpi->MPI_Irecv(std::begin(ch.omsg_recvbuff),
-                   msg_len(ch.var_list.get(), 0, MXG, ODATA_buff_lowerY, ODATA_buff_upperY),
+    mpi->MPI_Irecv(std::begin(ch.omsg_recvbuff), msg_len(ch.var_list.get(), 0, MXG, 0, MYSUB),
                    PVEC_REAL_MPI_TYPE, ODATA_DEST, IN_SENT_OUT, BoutComm::get(),
                    &ch.request[5]);
-  }
-
-  // Post receive data from corners
-
-  if (lower_inner_corner_orig != -1) {
-    mpi->MPI_Irecv(std::begin(ch.lowin_corner_recvbuff),
-                   msg_len(ch.var_list.get(), 0, MXG, 0, MYG),
-                   PVEC_REAL_MPI_TYPE, lower_inner_corner_orig,
-                   UPOUT_SEND, BoutComm::get(), &ch.request[6]);
-  }
-  if (upper_inner_corner_orig != -1) {
-    mpi->MPI_Irecv(std::begin(ch.upin_corner_recvbuff),
-                   msg_len(ch.var_list.get(), 0, MXG, 0, MYG),
-                   PVEC_REAL_MPI_TYPE, upper_inner_corner_orig,
-                   LOWOUT_SEND, BoutComm::get(), &ch.request[7]);
-  }
-  if (lower_outer_corner_orig != -1) {
-    mpi->MPI_Irecv(std::begin(ch.lowout_corner_recvbuff),
-                   msg_len(ch.var_list.get(), 0, MXG, 0, MYG),
-                   PVEC_REAL_MPI_TYPE, lower_outer_corner_orig,
-                   UPIN_SEND, BoutComm::get(), &ch.request[8]);
-  }
-  if (upper_outer_corner_orig != -1) {
-    mpi->MPI_Irecv(std::begin(ch.upout_corner_recvbuff),
-                   msg_len(ch.var_list.get(), 0, MXG, 0, MYG),
-                   PVEC_REAL_MPI_TYPE, upper_outer_corner_orig,
-                   LOWIN_SEND, BoutComm::get(), &ch.request[9]);
   }
 }
 
@@ -1031,14 +995,11 @@ comm_handle BoutMesh::send(FieldGroup &g) {
   Timer timer("comms");
 
   /// Work out length of buffer needed
-  int xlen = msg_len(g.get(), 0, MXG, 0,
-                     std::max(IDATA_buff_upperY - IDATA_buff_lowerY,
-                              ODATA_buff_upperY - ODATA_buff_lowerY));
-  int ylen = msg_len(g.get(), 0, YDATA_buff_outerX - YDATA_buff_innerX, 0, MYG);
-  int cornerlen = include_corner_cells ? msg_len(g.get(), 0, MXG, 0, MYG) : 0;
+  int xlen = msg_len(g.get(), 0, MXG, 0, MYSUB);
+  int ylen = msg_len(g.get(), 0, include_corner_cells ? MXSUB : LocalNx, 0, MYG);
 
   /// Get a communications handle of (at least) the needed size
-  CommHandle *ch = get_handle(xlen, ylen, cornerlen);
+  CommHandle *ch = get_handle(xlen, ylen);
   ch->var_list = g; // Group of fields to send
 
   /// Post receives
@@ -1137,56 +1098,6 @@ comm_handle BoutMesh::send(FieldGroup &g) {
                     OUT_SENT_IN, BoutComm::get());
   }
 
-  /// Send corners
-  if (lower_inner_corner_dest != -1) {
-    len = pack_data(ch->var_list.get(), 0, MXG, 0, MYG,
-                    std::begin(ch->lowin_corner_sendbuff));
-    if (async_send) {
-      mpi->MPI_Isend(std::begin(ch->lowin_corner_sendbuff), len, PVEC_REAL_MPI_TYPE,
-                                lower_inner_corner_dest, LOWIN_SEND, BoutComm::get(),
-                                &(ch->sendreq[6]));
-    } else {
-      mpi->MPI_Send(std::begin(ch->lowin_corner_sendbuff), len, PVEC_REAL_MPI_TYPE,
-                               lower_inner_corner_dest, LOWIN_SEND, BoutComm::get());
-    }
-  }
-  if (upper_inner_corner_dest != -1) {
-    len = pack_data(ch->var_list.get(), 0, MXG, MYG + MYSUB, LocalNy,
-                    std::begin(ch->upin_corner_sendbuff));
-    if (async_send) {
-      mpi->MPI_Isend(std::begin(ch->upin_corner_sendbuff), len, PVEC_REAL_MPI_TYPE,
-                                upper_inner_corner_dest, UPIN_SEND, BoutComm::get(),
-                                &(ch->sendreq[7]));
-    } else {
-      mpi->MPI_Send(std::begin(ch->upin_corner_sendbuff), len, PVEC_REAL_MPI_TYPE,
-                               upper_inner_corner_dest, UPIN_SEND, BoutComm::get());
-    }
-  }
-  if (lower_outer_corner_dest != -1) {
-    len = pack_data(ch->var_list.get(), MXG + MXSUB, LocalNx, 0, MYG,
-                    std::begin(ch->lowout_corner_sendbuff));
-    if (async_send) {
-      mpi->MPI_Isend(std::begin(ch->lowout_corner_sendbuff), len, PVEC_REAL_MPI_TYPE,
-                                lower_outer_corner_dest, LOWOUT_SEND, BoutComm::get(),
-                                &(ch->sendreq[8]));
-    } else {
-      mpi->MPI_Send(std::begin(ch->lowout_corner_sendbuff), len, PVEC_REAL_MPI_TYPE,
-                               lower_outer_corner_dest, LOWOUT_SEND, BoutComm::get());
-    }
-  }
-  if (upper_outer_corner_dest != -1) {
-    len = pack_data(ch->var_list.get(), MXG + MXSUB, LocalNx, MYG + MYSUB, LocalNy,
-                    std::begin(ch->upout_corner_sendbuff));
-    if (async_send) {
-      mpi->MPI_Isend(std::begin(ch->upout_corner_sendbuff), len, PVEC_REAL_MPI_TYPE,
-                                upper_outer_corner_dest, UPOUT_SEND, BoutComm::get(),
-                                &(ch->sendreq[9]));
-    } else {
-      mpi->MPI_Send(std::begin(ch->upout_corner_sendbuff), len, PVEC_REAL_MPI_TYPE,
-                               upper_outer_corner_dest, UPOUT_SEND, BoutComm::get());
-    }
-  }
-
   /// Mark communication handle as in progress
   ch->in_progress = true;
 
@@ -1222,7 +1133,7 @@ int BoutMesh::wait(comm_handle handle) {
   }
 
   do {
-    mpi->MPI_Waitany(10, ch->request, &ind, &status);
+    mpi->MPI_Waitany(6, ch->request, &ind, &status);
     switch (ind) {
     case 0: { // Up, inner
       unpack_data(ch->var_list.get(), 0, UDATA_XSPLIT, MYSUB + MYG, MYSUB + 2 * MYG,
@@ -1256,66 +1167,27 @@ int BoutMesh::wait(comm_handle handle) {
                   std::begin(ch->omsg_recvbuff));
       break;
     }
-    case 6: { // lower inner corner
-      unpack_data(ch->var_list.get(), 0, MXG, 0, MYG,
-                  std::begin(ch->lowin_corner_recvbuff));
-      break;
     }
-    case 7: { // upper inner corner
-      unpack_data(ch->var_list.get(), 0, MXG, MYG + MYSUB, LocalNy,
-                  std::begin(ch->upin_corner_recvbuff));
-      break;
-    }
-    case 8: { // lower outer corner
-      unpack_data(ch->var_list.get(), MXG + MXSUB, LocalNx, 0, MYG,
-                  std::begin(ch->lowout_corner_recvbuff));
-      break;
-    }
-    case 9: { // upper outer corner
-      unpack_data(ch->var_list.get(), MXG + MXSUB, LocalNx, MYG + MYSUB, LocalNy,
-                  std::begin(ch->upout_corner_recvbuff));
-      break;
-    }
-    }
-    if (ind != MPI_UNDEFINED) {
+    if (ind != MPI_UNDEFINED)
       ch->request[ind] = MPI_REQUEST_NULL;
-    }
   } while (ind != MPI_UNDEFINED);
 
   if (async_send) {
     /// Asyncronous sending: Need to check if sends have completed (frees MPI memory)
     MPI_Status async_status;
 
-    if (UDATA_INDEST != -1) {
+    if (UDATA_INDEST != -1)
       mpi->MPI_Wait(ch->sendreq, &async_status);
-    }
-    if (UDATA_OUTDEST != -1) {
+    if (UDATA_OUTDEST != -1)
       mpi->MPI_Wait(ch->sendreq + 1, &async_status);
-    }
-    if (DDATA_INDEST != -1) {
+    if (DDATA_INDEST != -1)
       mpi->MPI_Wait(ch->sendreq + 2, &async_status);
-    }
-    if (DDATA_OUTDEST != -1) {
+    if (DDATA_OUTDEST != -1)
       mpi->MPI_Wait(ch->sendreq + 3, &async_status);
-    }
-    if (IDATA_DEST != -1) {
+    if (IDATA_DEST != -1)
       mpi->MPI_Wait(ch->sendreq + 4, &async_status);
-    }
-    if (ODATA_DEST != -1) {
+    if (ODATA_DEST != -1)
       mpi->MPI_Wait(ch->sendreq + 5, &async_status);
-    }
-    if (lower_inner_corner_dest != -1) {
-      mpi->MPI_Wait(ch->sendreq + 6, &async_status);
-    }
-    if (upper_inner_corner_dest != -1) {
-      mpi->MPI_Wait(ch->sendreq + 7, &async_status);
-    }
-    if (lower_outer_corner_dest != -1) {
-      mpi->MPI_Wait(ch->sendreq + 8, &async_status);
-    }
-    if (upper_outer_corner_dest != -1) {
-      mpi->MPI_Wait(ch->sendreq + 9, &async_status);
-    }
   }
 
   // TWIST-SHIFT CONDITION
@@ -1860,7 +1732,7 @@ BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, i
 
 /// Connection initialisation: Set processors in a simple 2D grid
 void BoutMesh::default_connections() {
-  DDATA_XSPLIT = UDATA_XSPLIT = 0;  // everything by default outside (arb. choice)
+  DDATA_XSPLIT = UDATA_XSPLIT = include_corner_cells ? MXG : 0;  // everything by default outside (arb. choice)
   DDATA_INDEST = UDATA_INDEST = -1; // since nothing inside
 
   DDATA_OUTDEST = PROC_NUM(PE_XIND, PE_YIND - 1);
@@ -1965,10 +1837,14 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
     return; // Not in this x domain
   }
 
-  if (xge < 0)
-    xge = 0;
-  if (xlt > LocalNx)
-    xlt = LocalNx;
+  const int xge_min = include_corner_cells ? MXG : 0;
+  if (xge < xge_min) {
+    xge = xge_min;
+  }
+  const int xlt_max = include_corner_cells ? MXG + MXSUB : LocalNx;
+  if (xlt > xlt_max) {
+    xlt = xlt_max;
+  }
 
   if (MYPE == PROC_NUM(PE_XIND, ypeup)) { /* PROCESSOR SENDING +VE Y */
     /* Set the branch cut x position */
@@ -1999,20 +1875,21 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
 
     if (include_corner_cells) {
       // Connect corners as if communicating all guard cells first in y, then in x
-      if (xge == MXG) {
-        upper_inner_corner_dest = PROC_NUM(PE_XIND - 1, ypedown);
-      } else if (xge <= MXG and xlt > MXG) {
+      if (xge < MXG and xlt > MXG) {
         upper_inner_corner_dest = PROC_NUM(PE_XIND - 1, ypedown);
         upper_inner_corner_orig = PROC_NUM(PE_XIND - 1, ypedown);
+      } else if (xge == MXG) {
+        upper_inner_corner_dest = PROC_NUM(PE_XIND - 1, ypedown);
       } else if (xlt == MXG) {
         upper_inner_corner_orig = PROC_NUM(PE_XIND - 1, ypedown);
       }
-      if (xlt == MXG + MXSUB) {
-        upper_outer_corner_dest = PROC_NUM(PE_XIND + 1, ypedown);
-      } else if (xlt >= MXG + MXSUB and xge < MXG + MXSUB) {
+      if (xlt > MXG + MXSUB and xge < MXG + MXSUB) {
         upper_outer_corner_dest = PROC_NUM(PE_XIND + 1, ypedown);
         upper_outer_corner_orig = PROC_NUM(PE_XIND + 1, ypedown);
-      } else if (xge == MXG + MXSUB) {
+      } else if (xlt == MXG + MXSUB) {
+        upper_outer_corner_dest = PROC_NUM(PE_XIND + 1, ypedown);
+      }
+      if (xge == MXG + MXSUB) {
         upper_outer_corner_orig = PROC_NUM(PE_XIND + 1, ypedown);
       }
     }
@@ -2044,25 +1921,23 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
       output_info.write("=> This processor sending out down\n");
     }
 
-    if (include_corner_cells) {
-      // Connect corners as if communicating all guard cells first in y, then in x
-      if (xge == MXG) {
-        lower_inner_corner_dest = PROC_NUM(PE_XIND - 1, ypeup);
-      } else if (xge <= MXG and xlt > MXG) {
-        lower_inner_corner_dest = PROC_NUM(PE_XIND - 1, ypeup);
-        lower_inner_corner_orig = PROC_NUM(PE_XIND - 1, ypeup);
-      } else if (xlt == MXG) {
-        lower_inner_corner_orig = PROC_NUM(PE_XIND - 1, ypeup);
-      }
-      if (xlt == MXG + MXSUB) {
-        lower_outer_corner_dest = PROC_NUM(PE_XIND + 1, ypeup);
-      }
-      if (xlt >= MXG + MXSUB and xge < MXG + MXSUB) {
-        lower_outer_corner_dest = PROC_NUM(PE_XIND + 1, ypeup);
-        lower_outer_corner_orig = PROC_NUM(PE_XIND + 1, ypeup);
-      } else if (xge == MXG + MXSUB) {
-        lower_outer_corner_orig = PROC_NUM(PE_XIND + 1, ypeup);
-      }
+    // Connect corners as if communicating all guard cells first in y, then in x
+    if (xge < MXG and xlt > MXG) {
+      lower_inner_corner_dest = PROC_NUM(PE_XIND - 1, ypeup);
+      lower_inner_corner_orig = PROC_NUM(PE_XIND - 1, ypeup);
+    } else if (xge == MXG) {
+      lower_inner_corner_dest = PROC_NUM(PE_XIND - 1, ypeup);
+    } else if (xlt == MXG) {
+      lower_inner_corner_orig = PROC_NUM(PE_XIND - 1, ypeup);
+    }
+    if (xlt > MXG + MXSUB and xge < MXG + MXSUB) {
+      lower_outer_corner_dest = PROC_NUM(PE_XIND + 1, ypeup);
+      lower_outer_corner_orig = PROC_NUM(PE_XIND + 1, ypeup);
+    } else if (xlt == MXG + MXSUB) {
+      lower_outer_corner_dest = PROC_NUM(PE_XIND + 1, ypeup);
+    }
+    if (xge == MXG + MXSUB) {
+      lower_outer_corner_orig = PROC_NUM(PE_XIND + 1, ypeup);
     }
   }
 }
@@ -2279,10 +2154,14 @@ void BoutMesh::topology() {
     MYPE_IN_CORE = 1; /* processor is in the core */
   }
 
-  if (DDATA_XSPLIT > LocalNx)
-    DDATA_XSPLIT = LocalNx;
-  if (UDATA_XSPLIT > LocalNx)
-    UDATA_XSPLIT = LocalNx;
+  const int xsplit_max = include_corner_cells and ODATA_DEST != -1
+                         ? MXG + MXSUB : LocalNx;
+  if (DDATA_XSPLIT > xsplit_max) {
+    DDATA_XSPLIT = xsplit_max;
+  }
+  if (UDATA_XSPLIT > xsplit_max) {
+    UDATA_XSPLIT = xsplit_max;
+  }
 
   if (include_corner_cells) {
     IDATA_buff_lowerY = (DDATA_INDEST == -1 and DDATA_OUTDEST == -1)
@@ -2373,7 +2252,7 @@ void BoutMesh::topology() {
  *                     Communication handles
  ****************************************************************/
 
-BoutMesh::CommHandle *BoutMesh::get_handle(int xlen, int ylen, int cornerlen) {
+BoutMesh::CommHandle *BoutMesh::get_handle(int xlen, int ylen) {
   if (comm_list.empty()) {
     // Allocate a new CommHandle
 
@@ -2395,20 +2274,8 @@ BoutMesh::CommHandle *BoutMesh::get_handle(int xlen, int ylen, int cornerlen) {
       ch->omsg_recvbuff.reallocate(xlen);
     }
 
-    if (include_corner_cells and cornerlen > 0) {
-      ch->lowin_corner_sendbuff.reallocate(cornerlen);
-      ch->upin_corner_sendbuff.reallocate(cornerlen);
-      ch->lowout_corner_sendbuff.reallocate(cornerlen);
-      ch->upout_corner_sendbuff.reallocate(cornerlen);
-      ch->lowin_corner_recvbuff.reallocate(cornerlen);
-      ch->upin_corner_recvbuff.reallocate(cornerlen);
-      ch->lowout_corner_recvbuff.reallocate(cornerlen);
-      ch->upout_corner_recvbuff.reallocate(cornerlen);
-    }
-
     ch->xbufflen = xlen;
     ch->ybufflen = ylen;
-    ch->cornerbufflen = cornerlen;
 
     ch->in_progress = false;
 
@@ -2435,16 +2302,6 @@ BoutMesh::CommHandle *BoutMesh::get_handle(int xlen, int ylen, int cornerlen) {
     ch->omsg_recvbuff.reallocate(xlen);
 
     ch->xbufflen = xlen;
-  }
-  if (include_corner_cells and ch->cornerbufflen < cornerlen) {
-    ch->lowin_corner_sendbuff.reallocate(cornerlen);
-    ch->upin_corner_sendbuff.reallocate(cornerlen);
-    ch->lowout_corner_sendbuff.reallocate(cornerlen);
-    ch->upout_corner_sendbuff.reallocate(cornerlen);
-    ch->lowin_corner_recvbuff.reallocate(cornerlen);
-    ch->upin_corner_recvbuff.reallocate(cornerlen);
-    ch->lowout_corner_recvbuff.reallocate(cornerlen);
-    ch->upout_corner_recvbuff.reallocate(cornerlen);
   }
 
   ch->in_progress = false;

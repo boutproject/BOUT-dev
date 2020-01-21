@@ -284,34 +284,24 @@ private:
   /// Used to keep track of communications between send and receive
   struct CommHandle {
     /// Array of receive requests. One for each possible neighbour; one each way in X, two
-    /// each way in Y. Plus four for the corners.
-    MPI_Request request[10] = {MPI_REQUEST_NULL, MPI_REQUEST_NULL, MPI_REQUEST_NULL,
-                               MPI_REQUEST_NULL, MPI_REQUEST_NULL, MPI_REQUEST_NULL,
-                               MPI_REQUEST_NULL, MPI_REQUEST_NULL, MPI_REQUEST_NULL,
-                               MPI_REQUEST_NULL};
+    /// each way in Y
+    MPI_Request request[6];
     /// Array of send requests (for non-blocking send). One for each possible neighbour;
-    /// one each way in X, two each way in Y. Plus four for the corners.
-    MPI_Request sendreq[10] = {MPI_REQUEST_NULL, MPI_REQUEST_NULL, MPI_REQUEST_NULL,
-                               MPI_REQUEST_NULL, MPI_REQUEST_NULL, MPI_REQUEST_NULL,
-                               MPI_REQUEST_NULL, MPI_REQUEST_NULL, MPI_REQUEST_NULL,
-                               MPI_REQUEST_NULL};
+    /// one each way in X, two each way in Y
+    MPI_Request sendreq[6];
     /// Length of the buffers used to send/receive (in BoutReals)
-    int xbufflen, ybufflen, cornerbufflen;
+    int xbufflen, ybufflen;
     /// Sending buffers
-    Array<BoutReal> umsg_sendbuff, dmsg_sendbuff, imsg_sendbuff, omsg_sendbuff,
-                    lowin_corner_sendbuff, upin_corner_sendbuff, lowout_corner_sendbuff,
-                    upout_corner_sendbuff;
+    Array<BoutReal> umsg_sendbuff, dmsg_sendbuff, imsg_sendbuff, omsg_sendbuff;
     /// Receiving buffers
-    Array<BoutReal> umsg_recvbuff, dmsg_recvbuff, imsg_recvbuff, omsg_recvbuff,
-                    lowin_corner_recvbuff, upin_corner_recvbuff, lowout_corner_recvbuff,
-                    upout_corner_recvbuff;
+    Array<BoutReal> umsg_recvbuff, dmsg_recvbuff, imsg_recvbuff, omsg_recvbuff;
     /// Is the communication still going?
     bool in_progress;
     /// List of fields being communicated
     FieldGroup var_list;
   };
   void free_handle(CommHandle* h);
-  CommHandle* get_handle(int xlen, int ylen, int cornerlen = 0);
+  CommHandle* get_handle(int xlen, int ylen);
   void clear_handles();
   std::list<CommHandle*> comm_list; // List of allocated communication handles
 
