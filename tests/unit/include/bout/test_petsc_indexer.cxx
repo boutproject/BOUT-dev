@@ -207,12 +207,12 @@ TYPED_TEST(IndexerTest, TestGetRegionNobndry) {
 
 TYPED_TEST(IndexerTest, TestGetRegionBndry) {
   Region<typename TypeParam::ind_type> bounds;
-  for (auto& indexer : {this->globalSquareIndexer, this->globalStarIndexer,
-                        this->globalDefaultIndexer, this->localIndexer}) {
-    bounds = indexer.getRegionLowerY() + indexer.getRegionUpperY()
-             + indexer.getRegionInnerX() + indexer.getRegionOuterX();
+  for (auto* indexer : {&this->globalSquareIndexer, &this->globalStarIndexer,
+                        &this->globalDefaultIndexer, &this->localIndexer}) {
+    bounds = indexer->getRegionLowerY() + indexer->getRegionUpperY()
+             + indexer->getRegionInnerX() + indexer->getRegionOuterX();
     bounds.sort();
-    EXPECT_EQ(indexer.getRegionBndry().getIndices(), bounds.getIndices());
+    EXPECT_EQ(indexer->getRegionBndry().getIndices(), bounds.getIndices());
   }
 }
 
