@@ -961,22 +961,17 @@ void BoutMesh::post_receive(CommHandle &ch) {
   if (UDATA_INDEST != -1) {
     len = msg_len(ch.var_list.get(), YDATA_buff_innerX,
                   in_range(UDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX), 0, MYG);
-    if (len > 0) {
-      mpi->MPI_Irecv(std::begin(ch.umsg_recvbuff), len, PVEC_REAL_MPI_TYPE, UDATA_INDEST,
-                     IN_SENT_DOWN, BoutComm::get(), &ch.request[0]);
-    }
+    mpi->MPI_Irecv(std::begin(ch.umsg_recvbuff), len, PVEC_REAL_MPI_TYPE, UDATA_INDEST,
+                   IN_SENT_DOWN, BoutComm::get(), &ch.request[0]);
   }
   if (UDATA_OUTDEST != -1) {
-    // check length of this receive is greater than 0, otherwise the receive buffer will
-    // not have an element at [len]
-    int recv_len = msg_len(ch.var_list.get(),
+    inbuff = &ch.umsg_recvbuff[len]; // pointer to second half of the buffer
+    mpi->MPI_Irecv(inbuff,
+                   msg_len(ch.var_list.get(),
                            in_range(UDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX),
-                           YDATA_buff_outerX, 0, MYG);
-    if (recv_len > 0) {
-      inbuff = &ch.umsg_recvbuff[len]; // pointer to second half of the buffer
-      mpi->MPI_Irecv(inbuff, recv_len, PVEC_REAL_MPI_TYPE, UDATA_OUTDEST, OUT_SENT_DOWN,
-                     BoutComm::get(), &ch.request[1]);
-    }
+                           YDATA_buff_outerX, 0, MYG),
+                   PVEC_REAL_MPI_TYPE, UDATA_OUTDEST, OUT_SENT_DOWN, BoutComm::get(),
+                   &ch.request[1]);
   }
 
   /// Post receive data from below (y-1)
@@ -986,23 +981,17 @@ void BoutMesh::post_receive(CommHandle &ch) {
   if (DDATA_INDEST != -1) { // If sending & recieving data from a processor
     len = msg_len(ch.var_list.get(), YDATA_buff_innerX,
                   in_range(DDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX), 0, MYG);
-    if (len > 0) {
-      mpi->MPI_Irecv(std::begin(ch.dmsg_recvbuff), len, PVEC_REAL_MPI_TYPE, DDATA_INDEST,
-                     IN_SENT_UP, BoutComm::get(), &ch.request[2]);
-    }
+    mpi->MPI_Irecv(std::begin(ch.dmsg_recvbuff), len, PVEC_REAL_MPI_TYPE, DDATA_INDEST,
+                   IN_SENT_UP, BoutComm::get(), &ch.request[2]);
   }
   if (DDATA_OUTDEST != -1) {
-    // check length of this receive is greater than 0, otherwise the receive buffer will
-    // not have an element at [len]
-    int recv_len = msg_len(ch.var_list.get(),
+    inbuff = &ch.dmsg_recvbuff[len];
+    mpi->MPI_Irecv(inbuff,
+                   msg_len(ch.var_list.get(),
                            in_range(DDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX),
-                           YDATA_buff_outerX, 0, MYG);
-
-    if (recv_len > 0) {
-      inbuff = &ch.dmsg_recvbuff[len];
-      mpi->MPI_Irecv(inbuff, recv_len, PVEC_REAL_MPI_TYPE, DDATA_OUTDEST, OUT_SENT_UP,
-                     BoutComm::get(), &ch.request[3]);
-    }
+                           YDATA_buff_outerX, 0, MYG),
+                   PVEC_REAL_MPI_TYPE, DDATA_OUTDEST, OUT_SENT_UP, BoutComm::get(),
+                   &ch.request[3]);
   }
 
   /// Post receive data from left (x-1)
@@ -1086,41 +1075,30 @@ comm_handle BoutMesh::send(FieldGroup &g) {
                     MYSUB + MYG, std::begin(ch->umsg_sendbuff));
     // Send the data to processor UDATA_INDEST
 
-    if (len > 0) {
-      if (async_send) {
-        mpi->MPI_Isend(std::begin(ch->umsg_sendbuff), // Buffer to send
-                       len,                           // Length of buffer in BoutReals
-                       PVEC_REAL_MPI_TYPE,            // Real variable type
-                       UDATA_INDEST,                  // Destination processor
-                       IN_SENT_UP,                    // Label (tag) for the message
-                       BoutComm::get(), &(ch->sendreq[0]));
-      } else {
-        mpi->MPI_Send(std::begin(ch->umsg_sendbuff), len, PVEC_REAL_MPI_TYPE,
-                      UDATA_INDEST, IN_SENT_UP, BoutComm::get());
-      }
-    }
+    if (async_send) {
+      mpi->MPI_Isend(std::begin(ch->umsg_sendbuff), // Buffer to send
+                     len,                           // Length of buffer in BoutReals
+                     PVEC_REAL_MPI_TYPE,            // Real variable type
+                     UDATA_INDEST,                  // Destination processor
+                     IN_SENT_UP,                    // Label (tag) for the message
+                     BoutComm::get(), &(ch->sendreq[0]));
+    } else
+      mpi->MPI_Send(std::begin(ch->umsg_sendbuff), len, PVEC_REAL_MPI_TYPE, UDATA_INDEST,
+                    IN_SENT_UP, BoutComm::get());
   }
   if (UDATA_OUTDEST != -1) {             // if destination for outer x data
-    // check length of this send is greater than 0, otherwise the receive buffer will not
-    // have an element at [len]
-    int send_len = msg_len(ch->var_list.get(),
-                           in_range(UDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX),
-                           YDATA_buff_outerX, MYSUB, MYSUB + MYG);
-    if (send_len > 0) {
-      outbuff = &(ch->umsg_sendbuff[len]); // A pointer to the start of the second part
-                                           // of the buffer
-      len = pack_data(ch->var_list.get(),
-                      in_range(UDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX),
-                      YDATA_buff_outerX, MYSUB, MYSUB + MYG, outbuff);
-      // Send the data to processor UDATA_OUTDEST
-      if (async_send) {
-        mpi->MPI_Isend(outbuff, send_len, PVEC_REAL_MPI_TYPE, UDATA_OUTDEST, OUT_SENT_UP,
-                       BoutComm::get(), &(ch->sendreq[1]));
-      } else {
-        mpi->MPI_Send(outbuff, send_len, PVEC_REAL_MPI_TYPE, UDATA_OUTDEST, OUT_SENT_UP,
-                      BoutComm::get());
-      }
-    }
+    outbuff = &(ch->umsg_sendbuff[len]); // A pointer to the start of the second part
+                                         // of the buffer
+    len = pack_data(ch->var_list.get(),
+                    in_range(UDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX),
+                    YDATA_buff_outerX, MYSUB, MYSUB + MYG, outbuff);
+    // Send the data to processor UDATA_OUTDEST
+    if (async_send) {
+      mpi->MPI_Isend(outbuff, len, PVEC_REAL_MPI_TYPE, UDATA_OUTDEST, OUT_SENT_UP,
+                     BoutComm::get(), &(ch->sendreq[1]));
+    } else
+      mpi->MPI_Send(outbuff, len, PVEC_REAL_MPI_TYPE, UDATA_OUTDEST, OUT_SENT_UP,
+                    BoutComm::get());
   }
 
   /// Send data going down (y-1)
@@ -1130,40 +1108,28 @@ comm_handle BoutMesh::send(FieldGroup &g) {
     len = pack_data(ch->var_list.get(), YDATA_buff_innerX,
                     in_range(DDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX), MYG,
                     2 * MYG, std::begin(ch->dmsg_sendbuff));
-
-    if (len > 0) {
-      // Send the data to processor DDATA_INDEST
-      if (async_send) {
-        mpi->MPI_Isend(std::begin(ch->dmsg_sendbuff), len, PVEC_REAL_MPI_TYPE,
-                       DDATA_INDEST, IN_SENT_DOWN, BoutComm::get(), &(ch->sendreq[2]));
-      } else {
-        mpi->MPI_Send(std::begin(ch->dmsg_sendbuff), len, PVEC_REAL_MPI_TYPE,
-                      DDATA_INDEST, IN_SENT_DOWN, BoutComm::get());
-      }
-    }
+    // Send the data to processor DDATA_INDEST
+    if (async_send) {
+      mpi->MPI_Isend(std::begin(ch->dmsg_sendbuff), len, PVEC_REAL_MPI_TYPE, DDATA_INDEST,
+                     IN_SENT_DOWN, BoutComm::get(), &(ch->sendreq[2]));
+    } else
+      mpi->MPI_Send(std::begin(ch->dmsg_sendbuff), len, PVEC_REAL_MPI_TYPE, DDATA_INDEST,
+                    IN_SENT_DOWN, BoutComm::get());
   }
   if (DDATA_OUTDEST != -1) {             // if destination for outer x data
-    // check length of this send is greater than 0, otherwise the receive buffer will not
-    // have an element at [len]
-    int send_len = msg_len(ch->var_list.get(),
-                           in_range(DDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX),
-                           YDATA_buff_outerX, MYG, 2 * MYG);
+    outbuff = &(ch->dmsg_sendbuff[len]); // A pointer to the start of the second part
+                                         // of the buffer
+    len = pack_data(ch->var_list.get(),
+                    in_range(DDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX),
+                    YDATA_buff_outerX, MYG, 2 * MYG, outbuff);
+    // Send the data to processor DDATA_OUTDEST
 
-    if (send_len > 0) {
-      outbuff = &(ch->dmsg_sendbuff[len]); // A pointer to the start of the second part
-                                           // of the buffer
-      len = pack_data(ch->var_list.get(),
-                      in_range(DDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX),
-                      YDATA_buff_outerX, MYG, 2 * MYG, outbuff);
-      // Send the data to processor DDATA_OUTDEST
-      if (async_send) {
-        mpi->MPI_Isend(outbuff, send_len, PVEC_REAL_MPI_TYPE, DDATA_OUTDEST, OUT_SENT_DOWN,
-                       BoutComm::get(), &(ch->sendreq[3]));
-      } else {
-        mpi->MPI_Send(outbuff, send_len, PVEC_REAL_MPI_TYPE, DDATA_OUTDEST, OUT_SENT_DOWN,
-                      BoutComm::get());
-      }
-    }
+    if (async_send) {
+      mpi->MPI_Isend(outbuff, len, PVEC_REAL_MPI_TYPE, DDATA_OUTDEST, OUT_SENT_DOWN,
+                     BoutComm::get(), &(ch->sendreq[3]));
+    } else
+      mpi->MPI_Send(outbuff, len, PVEC_REAL_MPI_TYPE, DDATA_OUTDEST, OUT_SENT_DOWN,
+                    BoutComm::get());
   }
 
   /// Send to the left (x-1)
