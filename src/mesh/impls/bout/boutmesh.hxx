@@ -62,9 +62,9 @@ class BoutMesh : public Mesh {
   /////////////////////////////////////////////
   // X communications
 
-  bool firstX() override; ///< Is this processor the first in X? i.e. is there a boundary
+  bool firstX() const override; ///< Is this processor the first in X? i.e. is there a boundary
                           ///< to the left in X?
-  bool lastX() override; ///< Is this processor last in X? i.e. is there a boundary to the
+  bool lastX() const override; ///< Is this processor last in X? i.e. is there a boundary to the
                          ///< right in X?
 
   /// Send a buffer of data to processor at X index +1

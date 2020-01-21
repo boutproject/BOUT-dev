@@ -192,6 +192,11 @@ int BoutMesh::load() {
     GlobalNy += 2*MYG;
   }
 
+  // Set global grid sizes, excluding boundary points
+  GlobalNxNoBoundaries = nx - 2*MXG;
+  GlobalNyNoBoundaries = ny;
+  GlobalNzNoBoundaries = nz;
+
   /// Check inputs
   if (jyseps1_1 < -1) {
     output_warn.write("\tWARNING: jyseps1_1 ({:d}) must be >= -1. Setting to -1\n",
@@ -956,17 +961,22 @@ void BoutMesh::post_receive(CommHandle &ch) {
   if (UDATA_INDEST != -1) {
     len = msg_len(ch.var_list.get(), YDATA_buff_innerX,
                   in_range(UDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX), 0, MYG);
-    mpi->MPI_Irecv(std::begin(ch.umsg_recvbuff), len, PVEC_REAL_MPI_TYPE, UDATA_INDEST,
-                   IN_SENT_DOWN, BoutComm::get(), &ch.request[0]);
+    if (len > 0) {
+      mpi->MPI_Irecv(std::begin(ch.umsg_recvbuff), len, PVEC_REAL_MPI_TYPE, UDATA_INDEST,
+                     IN_SENT_DOWN, BoutComm::get(), &ch.request[0]);
+    }
   }
   if (UDATA_OUTDEST != -1) {
-    inbuff = &ch.umsg_recvbuff[len]; // pointer to second half of the buffer
-    mpi->MPI_Irecv(inbuff,
-                   msg_len(ch.var_list.get(),
+    // check length of this receive is greater than 0, otherwise the receive buffer will
+    // not have an element at [len]
+    int recv_len = msg_len(ch.var_list.get(),
                            in_range(UDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX),
-                           YDATA_buff_outerX, 0, MYG),
-                   PVEC_REAL_MPI_TYPE, UDATA_OUTDEST, OUT_SENT_DOWN, BoutComm::get(),
-                   &ch.request[1]);
+                           YDATA_buff_outerX, 0, MYG);
+    if (recv_len > 0) {
+      inbuff = &ch.umsg_recvbuff[len]; // pointer to second half of the buffer
+      mpi->MPI_Irecv(inbuff, recv_len, PVEC_REAL_MPI_TYPE, UDATA_OUTDEST, OUT_SENT_DOWN,
+                     BoutComm::get(), &ch.request[1]);
+    }
   }
 
   /// Post receive data from below (y-1)
@@ -976,17 +986,23 @@ void BoutMesh::post_receive(CommHandle &ch) {
   if (DDATA_INDEST != -1) { // If sending & recieving data from a processor
     len = msg_len(ch.var_list.get(), YDATA_buff_innerX,
                   in_range(DDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX), 0, MYG);
-    mpi->MPI_Irecv(std::begin(ch.dmsg_recvbuff), len, PVEC_REAL_MPI_TYPE, DDATA_INDEST,
-                   IN_SENT_UP, BoutComm::get(), &ch.request[2]);
+    if (len > 0) {
+      mpi->MPI_Irecv(std::begin(ch.dmsg_recvbuff), len, PVEC_REAL_MPI_TYPE, DDATA_INDEST,
+                     IN_SENT_UP, BoutComm::get(), &ch.request[2]);
+    }
   }
   if (DDATA_OUTDEST != -1) {
-    inbuff = &ch.dmsg_recvbuff[len];
-    mpi->MPI_Irecv(inbuff,
-                   msg_len(ch.var_list.get(),
+    // check length of this receive is greater than 0, otherwise the receive buffer will
+    // not have an element at [len]
+    int recv_len = msg_len(ch.var_list.get(),
                            in_range(DDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX),
-                           YDATA_buff_outerX, 0, MYG),
-                   PVEC_REAL_MPI_TYPE, DDATA_OUTDEST, OUT_SENT_UP, BoutComm::get(),
-                   &ch.request[3]);
+                           YDATA_buff_outerX, 0, MYG);
+
+    if (recv_len > 0) {
+      inbuff = &ch.dmsg_recvbuff[len];
+      mpi->MPI_Irecv(inbuff, recv_len, PVEC_REAL_MPI_TYPE, DDATA_OUTDEST, OUT_SENT_UP,
+                     BoutComm::get(), &ch.request[3]);
+    }
   }
 
   /// Post receive data from left (x-1)
@@ -1070,30 +1086,41 @@ comm_handle BoutMesh::send(FieldGroup &g) {
                     MYSUB + MYG, std::begin(ch->umsg_sendbuff));
     // Send the data to processor UDATA_INDEST
 
-    if (async_send) {
-      mpi->MPI_Isend(std::begin(ch->umsg_sendbuff), // Buffer to send
-                     len,                           // Length of buffer in BoutReals
-                     PVEC_REAL_MPI_TYPE,            // Real variable type
-                     UDATA_INDEST,                  // Destination processor
-                     IN_SENT_UP,                    // Label (tag) for the message
-                     BoutComm::get(), &(ch->sendreq[0]));
-    } else
-      mpi->MPI_Send(std::begin(ch->umsg_sendbuff), len, PVEC_REAL_MPI_TYPE, UDATA_INDEST,
-                    IN_SENT_UP, BoutComm::get());
+    if (len > 0) {
+      if (async_send) {
+        mpi->MPI_Isend(std::begin(ch->umsg_sendbuff), // Buffer to send
+                       len,                           // Length of buffer in BoutReals
+                       PVEC_REAL_MPI_TYPE,            // Real variable type
+                       UDATA_INDEST,                  // Destination processor
+                       IN_SENT_UP,                    // Label (tag) for the message
+                       BoutComm::get(), &(ch->sendreq[0]));
+      } else {
+        mpi->MPI_Send(std::begin(ch->umsg_sendbuff), len, PVEC_REAL_MPI_TYPE,
+                      UDATA_INDEST, IN_SENT_UP, BoutComm::get());
+      }
+    }
   }
   if (UDATA_OUTDEST != -1) {             // if destination for outer x data
-    outbuff = &(ch->umsg_sendbuff[len]); // A pointer to the start of the second part
-                                         // of the buffer
-    len = pack_data(ch->var_list.get(),
-                    in_range(UDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX),
-                    YDATA_buff_outerX, MYSUB, MYSUB + MYG, outbuff);
-    // Send the data to processor UDATA_OUTDEST
-    if (async_send) {
-      mpi->MPI_Isend(outbuff, len, PVEC_REAL_MPI_TYPE, UDATA_OUTDEST, OUT_SENT_UP,
-                     BoutComm::get(), &(ch->sendreq[1]));
-    } else
-      mpi->MPI_Send(outbuff, len, PVEC_REAL_MPI_TYPE, UDATA_OUTDEST, OUT_SENT_UP,
-                    BoutComm::get());
+    // check length of this send is greater than 0, otherwise the receive buffer will not
+    // have an element at [len]
+    int send_len = msg_len(ch->var_list.get(),
+                           in_range(UDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX),
+                           YDATA_buff_outerX, MYSUB, MYSUB + MYG);
+    if (send_len > 0) {
+      outbuff = &(ch->umsg_sendbuff[len]); // A pointer to the start of the second part
+                                           // of the buffer
+      len = pack_data(ch->var_list.get(),
+                      in_range(UDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX),
+                      YDATA_buff_outerX, MYSUB, MYSUB + MYG, outbuff);
+      // Send the data to processor UDATA_OUTDEST
+      if (async_send) {
+        mpi->MPI_Isend(outbuff, send_len, PVEC_REAL_MPI_TYPE, UDATA_OUTDEST, OUT_SENT_UP,
+                       BoutComm::get(), &(ch->sendreq[1]));
+      } else {
+        mpi->MPI_Send(outbuff, send_len, PVEC_REAL_MPI_TYPE, UDATA_OUTDEST, OUT_SENT_UP,
+                      BoutComm::get());
+      }
+    }
   }
 
   /// Send data going down (y-1)
@@ -1103,28 +1130,40 @@ comm_handle BoutMesh::send(FieldGroup &g) {
     len = pack_data(ch->var_list.get(), YDATA_buff_innerX,
                     in_range(DDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX), MYG,
                     2 * MYG, std::begin(ch->dmsg_sendbuff));
-    // Send the data to processor DDATA_INDEST
-    if (async_send) {
-      mpi->MPI_Isend(std::begin(ch->dmsg_sendbuff), len, PVEC_REAL_MPI_TYPE, DDATA_INDEST,
-                     IN_SENT_DOWN, BoutComm::get(), &(ch->sendreq[2]));
-    } else
-      mpi->MPI_Send(std::begin(ch->dmsg_sendbuff), len, PVEC_REAL_MPI_TYPE, DDATA_INDEST,
-                    IN_SENT_DOWN, BoutComm::get());
+
+    if (len > 0) {
+      // Send the data to processor DDATA_INDEST
+      if (async_send) {
+        mpi->MPI_Isend(std::begin(ch->dmsg_sendbuff), len, PVEC_REAL_MPI_TYPE,
+                       DDATA_INDEST, IN_SENT_DOWN, BoutComm::get(), &(ch->sendreq[2]));
+      } else {
+        mpi->MPI_Send(std::begin(ch->dmsg_sendbuff), len, PVEC_REAL_MPI_TYPE,
+                      DDATA_INDEST, IN_SENT_DOWN, BoutComm::get());
+      }
+    }
   }
   if (DDATA_OUTDEST != -1) {             // if destination for outer x data
-    outbuff = &(ch->dmsg_sendbuff[len]); // A pointer to the start of the second part
-                                         // of the buffer
-    len = pack_data(ch->var_list.get(),
-                    in_range(DDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX),
-                    YDATA_buff_outerX, MYG, 2 * MYG, outbuff);
-    // Send the data to processor DDATA_OUTDEST
+    // check length of this send is greater than 0, otherwise the receive buffer will not
+    // have an element at [len]
+    int send_len = msg_len(ch->var_list.get(),
+                           in_range(DDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX),
+                           YDATA_buff_outerX, MYG, 2 * MYG);
 
-    if (async_send) {
-      mpi->MPI_Isend(outbuff, len, PVEC_REAL_MPI_TYPE, DDATA_OUTDEST, OUT_SENT_DOWN,
-                     BoutComm::get(), &(ch->sendreq[3]));
-    } else
-      mpi->MPI_Send(outbuff, len, PVEC_REAL_MPI_TYPE, DDATA_OUTDEST, OUT_SENT_DOWN,
-                    BoutComm::get());
+    if (send_len > 0) {
+      outbuff = &(ch->dmsg_sendbuff[len]); // A pointer to the start of the second part
+                                           // of the buffer
+      len = pack_data(ch->var_list.get(),
+                      in_range(DDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX),
+                      YDATA_buff_outerX, MYG, 2 * MYG, outbuff);
+      // Send the data to processor DDATA_OUTDEST
+      if (async_send) {
+        mpi->MPI_Isend(outbuff, send_len, PVEC_REAL_MPI_TYPE, DDATA_OUTDEST, OUT_SENT_DOWN,
+                       BoutComm::get(), &(ch->sendreq[3]));
+      } else {
+        mpi->MPI_Send(outbuff, send_len, PVEC_REAL_MPI_TYPE, DDATA_OUTDEST, OUT_SENT_DOWN,
+                      BoutComm::get());
+      }
+    }
   }
 
   /// Send to the left (x-1)
@@ -1155,7 +1194,7 @@ comm_handle BoutMesh::send(FieldGroup &g) {
 
   /// Send corners
   if (lower_inner_corner_dest != -1) {
-    len = pack_data(ch->var_list.get(), 0, MXG, 0, MYG,
+    len = pack_data(ch->var_list.get(), MXG, 2*MXG, MYG, 2*MYG,
                     std::begin(ch->lowin_corner_sendbuff));
     if (async_send) {
       mpi->MPI_Isend(std::begin(ch->lowin_corner_sendbuff), len, PVEC_REAL_MPI_TYPE,
@@ -1167,7 +1206,7 @@ comm_handle BoutMesh::send(FieldGroup &g) {
     }
   }
   if (upper_inner_corner_dest != -1) {
-    len = pack_data(ch->var_list.get(), 0, MXG, MYG + MYSUB, LocalNy,
+    len = pack_data(ch->var_list.get(), MXG, 2*MXG, MYSUB, MYG + MYSUB,
                     std::begin(ch->upin_corner_sendbuff));
     if (async_send) {
       mpi->MPI_Isend(std::begin(ch->upin_corner_sendbuff), len, PVEC_REAL_MPI_TYPE,
@@ -1179,7 +1218,7 @@ comm_handle BoutMesh::send(FieldGroup &g) {
     }
   }
   if (lower_outer_corner_dest != -1) {
-    len = pack_data(ch->var_list.get(), MXG + MXSUB, LocalNx, 0, MYG,
+    len = pack_data(ch->var_list.get(), MXSUB, MXG + MXSUB, MYG, 2*MYG,
                     std::begin(ch->lowout_corner_sendbuff));
     if (async_send) {
       mpi->MPI_Isend(std::begin(ch->lowout_corner_sendbuff), len, PVEC_REAL_MPI_TYPE,
@@ -1191,7 +1230,7 @@ comm_handle BoutMesh::send(FieldGroup &g) {
     }
   }
   if (upper_outer_corner_dest != -1) {
-    len = pack_data(ch->var_list.get(), MXG + MXSUB, LocalNx, MYG + MYSUB, LocalNy,
+    len = pack_data(ch->var_list.get(), MXSUB, MXG + MXSUB, MYSUB, MYG + MYSUB,
                     std::begin(ch->upout_corner_sendbuff));
     if (async_send) {
       mpi->MPI_Isend(std::begin(ch->upout_corner_sendbuff), len, PVEC_REAL_MPI_TYPE,
@@ -1438,9 +1477,9 @@ int BoutMesh::getYProcIndex() { return PE_YIND; }
  * Intended mainly to handle the perpendicular inversion operators
  ****************************************************************/
 
-bool BoutMesh::firstX() { return PE_XIND == 0; }
+bool BoutMesh::firstX() const { return PE_XIND == 0; }
 
-bool BoutMesh::lastX() { return PE_XIND == NXPE - 1; }
+bool BoutMesh::lastX() const { return PE_XIND == NXPE - 1; }
 
 int BoutMesh::sendXOut(BoutReal *buffer, int size, int tag) {
   if (PE_XIND == NXPE - 1)
@@ -1781,8 +1820,8 @@ int BoutMesh::XPROC(int xind) { return (xind >= MXG) ? (xind - MXG) / MXSUB : 0;
 /// one processor, even though it's actually being run in serial.
 BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int nxpe,
                    int nype, int pe_xind, int pe_yind, bool include_corners)
-    : nx(input_nx), ny(input_ny), nz(input_nz), MXG(mxg), MYG(myg), MZG(0),
-      include_corner_cells(include_corners) {
+    : include_corner_cells(include_corners), nx(input_nx), ny(input_ny), nz(input_nz),
+      MXG(mxg), MYG(myg), MZG(0) {
   maxregionblocksize = MAXREGIONBLOCKSIZE;
   symmetricGlobalX = true;
   symmetricGlobalY = true;
@@ -2081,8 +2120,7 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
       }
       if (xlt == MXG + MXSUB) {
         lower_outer_corner_dest = PROC_NUM(PE_XIND + 1, ypeup);
-      }
-      if (xlt >= MXG + MXSUB and xge < MXG + MXSUB) {
+      } else if (xlt >= MXG + MXSUB and xge < MXG + MXSUB) {
         lower_outer_corner_dest = PROC_NUM(PE_XIND + 1, ypeup);
         lower_outer_corner_orig = PROC_NUM(PE_XIND + 1, ypeup);
       } else if (xge == MXG + MXSUB) {
@@ -3114,6 +3152,15 @@ const RangeIterator BoutMesh::iterateBndryLowerInnerY() const {
       xs = xstart;
     if (xe > xend)
       xe = xend;
+
+    if (include_corner_cells and firstX() and xs == xstart and xe > xstart) {
+      // Include corner cells on x-boundary
+      xs = 0;
+    }
+    if (include_corner_cells and lastX() and xe == xend and xs < xend) {
+      // Include corner cells on x-boundary
+      xe = LocalNx - 1;
+    }
   }
   return RangeIterator(xs, xe);
 }
@@ -3132,6 +3179,15 @@ const RangeIterator BoutMesh::iterateBndryLowerOuterY() const {
       xs = xstart;
     if (xe > xend)
       xe = xend;
+
+    if (include_corner_cells and firstX() and xs == xstart and xe > xstart) {
+      // Include corner cells on x-boundary
+      xs = 0;
+    }
+    if (include_corner_cells and lastX() and xe == xend and xs < xend) {
+      // Include corner cells on x-boundary
+      xe = LocalNx - 1;
+    }
   } else {
     xs = -1;
     xe = -2;
@@ -3152,6 +3208,15 @@ const RangeIterator BoutMesh::iterateBndryLowerY() const {
   if (xe > xend)
     xe = xend;
 
+  if (include_corner_cells and firstX() and xs == xstart and xe > xstart) {
+    // Include corner cells on x-boundary
+    xs = 0;
+  }
+  if (include_corner_cells and lastX() and xe == xend and xs < xend) {
+    // Include corner cells on x-boundary
+    xe = LocalNx - 1;
+  }
+
   return RangeIterator(xs, xe);
 }
 
@@ -3169,6 +3234,15 @@ const RangeIterator BoutMesh::iterateBndryUpperInnerY() const {
       xs = xstart;
     if (xe > xend)
       xe = xend;
+
+    if (include_corner_cells and firstX() and xs == xstart and xe > xstart) {
+      // Include corner cells on x-boundary
+      xs = 0;
+    }
+    if (include_corner_cells and lastX() and xe == xend and xs < xend) {
+      // Include corner cells on x-boundary
+      xe = LocalNx - 1;
+    }
   } else {
     xs = -1;
     xe = -2;
@@ -3193,6 +3267,15 @@ const RangeIterator BoutMesh::iterateBndryUpperOuterY() const {
       xs = xstart;
     if (xe > xend)
       xe = xend;
+
+    if (include_corner_cells and firstX() and xs == xstart and xe > xstart) {
+      // Include corner cells on x-boundary
+      xs = 0;
+    }
+    if (include_corner_cells and lastX() and xe == xend and xs < xend) {
+      // Include corner cells on x-boundary
+      xe = LocalNx - 1;
+    }
   }
   return RangeIterator(xs, xe);
 }
@@ -3209,6 +3292,15 @@ const RangeIterator BoutMesh::iterateBndryUpperY() const {
     xs = xstart;
   if (xe > xend)
     xe = xend;
+
+  if (include_corner_cells and firstX() and xs == xstart and xe > xstart) {
+    // Include corner cells on x-boundary
+    xs = 0;
+  }
+  if (include_corner_cells and lastX() and xe == xend and xs < xend) {
+    // Include corner cells on x-boundary
+    xe = LocalNx - 1;
+  }
 
   return RangeIterator(xs, xe);
 }

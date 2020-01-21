@@ -340,8 +340,8 @@ class Mesh {
   virtual int getYProcIndex() = 0; ///< This processor's index in Y direction
   
   // X communications
-  virtual bool firstX() = 0;  ///< Is this processor first in X? i.e. is there a boundary to the left in X?
-  virtual bool lastX() = 0; ///< Is this processor last in X? i.e. is there a boundary to the right in X?
+  virtual bool firstX() const = 0;  ///< Is this processor first in X? i.e. is there a boundary to the left in X?
+  virtual bool lastX() const = 0; ///< Is this processor last in X? i.e. is there a boundary to the right in X?
 
   /// Domain is periodic in X?
   bool periodicX{false};
@@ -512,6 +512,8 @@ class Mesh {
   //////////////////////////////////////////////////////////
   
   int GlobalNx, GlobalNy, GlobalNz; ///< Size of the global arrays. Note: can have holes
+  /// Size of the global arrays excluding boundary points.
+  int GlobalNxNoBoundaries, GlobalNyNoBoundaries, GlobalNzNoBoundaries;
   int OffsetX, OffsetY, OffsetZ;    ///< Offset of this mesh within the global array
                                     ///< so startx on this processor is OffsetX in global
   
