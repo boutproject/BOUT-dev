@@ -13,7 +13,7 @@ int main(int argc, char **argv) {
   }
 
   // Create a Laplacian inversion solver
-  Laplacian *lap = Laplacian::create();
+  auto lap = Laplacian::create();
 
   FieldFactory fact(mesh);
 
