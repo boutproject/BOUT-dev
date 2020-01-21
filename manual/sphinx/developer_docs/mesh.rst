@@ -158,55 +158,14 @@ In `BoutMesh`, the communication is controlled by the variables::
     int UDATA_INDEST, UDATA_OUTDEST, UDATA_XSPLIT;
     int DDATA_INDEST, DDATA_OUTDEST, DDATA_XSPLIT;
     int IDATA_DEST, ODATA_DEST;
-    int lower_inner_corner_dest, upper_inner_corner_dest, lower_outer_corner_dest,
-        upper_outer_corner_dest; // destinations for the corner cells
-    int lower_inner_corner_orig, upper_inner_corner_orig, lower_outer_corner_orig,
-        upper_outer_corner_orig; // origins for the corner guard cells
-    // y-limits of buffers communicated in x-direction. Include y-boundary cells but not
-    // y-guard cells. Need different variables for sending and receiving because y-boundary
-    // might be present on sending proc but not receiving proc or vice versa
-    int IDATA_buff_lowerY_send, IDATA_buff_upperY_send, ODATA_buff_lowerY_send,
-        ODATA_buff_upperY_send;
-    int IDATA_buff_lowerY_recv, IDATA_buff_upperY_recv, ODATA_buff_lowerY_recv,
-        ODATA_buff_upperY_recv;
-    // x-limits of buffers communicated in y-direction. Include x-boundary cells but not
-    // x-guard cells.
-    int YDATA_buff_innerX, YDATA_buff_outerX;
 
 In the Y direction, each boundary region (**U**\ p and **D**\ own in Y)
-can be split into two, with ``x < UDATA_XSPLIT`` going to the
-processor index ``UDATA_INDEST``, and ``UDATA_INDEST <= x`` going
+can be split into two, with ``0 <= x < UDATA_XSPLIT`` going to the
+processor index ``UDATA_INDEST``, and ``UDATA_INDEST <= x < LocalNx`` going
 to ``UDATA_OUTDEST``. Similarly for the Down boundary. Since there are
 no branch-cuts in the X direction, there is just one destination for the
 **I**\ nner and **O**\ uter boundaries. In all cases a negative
 processor number means that there’s a domain boundary.
-
-The corners (cells that are both x-guards and y-guards) are handled specially.  Away from
-the boundaries the MXG*MYG cells at the corner of the processor's grid are sent to
-``*_corner_dest``, and the corner cells are received from ``*_corner_orig``; the two may
-not be the same at X-points, if the separatrix location it at a processor boundary. The
-sending and receiving locations are set to be consistent with the behaviour if the
-separatrix is in the interior of a processor's grid, which means communication as if all
-guard cells were first communicated in y, and then communicated in x (this is not actually
-done so that all the communications can be done at the same time, reducing latency).
-
-Where there is a physical boundary (where boundary conditions are applied), the boundary
-cells should be communicated to fill the corner cells. Since the communication pattern is
-different from the one for the corner cells in the interior, the simplest implementation
-is:
-* add x-boundary cells to the y-communications
-* add y-boundary cells to the x-communications
-* set the ``*_corner_dest`` and ``*_corner_orig`` corresponding to the boundary to -1 so
-  that the 'corner communications' are not used for boundaries.
-
-If the option ``mesh::include_corner_cells`` is set to ``false`` (default is ``true``),
-then the previous behaviour (up to BOUT++ v4) is restored:
-* In the y-direction
-     * [0,UDATA_XSPLIT) is communicated to UDATA_INDEST at the upper boundary
-     * [UDATA_XSPLIT, LocalNy) is communicated to UDATA_OUTDEST at the upper boundary
-     * [0,DDATA_XSPLIT) is communicated to DDATA_INDEST at the lower boundary
-     * [DDATA_XSPLIT, LocalNy) is communicated to DDATA_OUTDEST at the lower boundary
-* in the x-direction [MYG, MYG + MYSUB) is communicated at both boundaries
 
 X communications
 ----------------
