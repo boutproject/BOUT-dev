@@ -241,6 +241,8 @@ private:
         }
       }
     }
+
+    sparsityCalculated = true;
   }
 
   PetscLib lib;
@@ -259,7 +261,7 @@ private:
   Region<ind_type> regionAll, regionLowerY, regionUpperY, regionInnerX, regionOuterX,
       regionBndry;
 
-  bool sparsityCalculated = false;
+  mutable bool sparsityCalculated = false;
   mutable std::vector<PetscInt> numDiagonal, numOffDiagonal;
 };
 
