@@ -278,7 +278,7 @@ void Mesh::communicateXZ(FieldGroup &g) {
   TRACE("Mesh::communicate(FieldGroup&)");
 
   // Send data
-  comm_handle h = send(g);
+  comm_handle h = sendX(g);
 
   // Wait for data from other processors
   wait(h);
