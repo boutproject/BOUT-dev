@@ -215,6 +215,10 @@ public:
     }
     virtual int MPI_Waitany(int UNUSED(count), MPI_Request UNUSED(array_of_requests[]),
                             int* indx, MPI_Status* UNUSED(status)) override {
+      // If this mesh should be receiving data from another one,
+      // return the appropriate index. Some corners cells are actually
+      // sent along with the rest of the edge. This can be predicted
+      // based on teh value of xy[In|Out][Up|Down]Mesh_SendsInner.
       if (mesh->yUpMesh && wait_any_count < 0 && mesh->UpXSplitIndex() > 0) {
         *indx = wait_any_count = 0;
       } else if (mesh->yDownMesh && wait_any_count < 1 && mesh->UpXSplitIndex() == 0) {
@@ -227,13 +231,17 @@ public:
         *indx = wait_any_count = 4;
       } else if (mesh->xOutMesh && wait_any_count < 5) {
         *indx = wait_any_count = 5;
-      } else if (mesh->xyInDownMesh && wait_any_count < 6) {
+      } else if (mesh->xyInDownMesh && !mesh->xyInDownMesh_SendsInner &&
+		 wait_any_count < 6) {
         *indx = wait_any_count = 6;
-      } else if (mesh->xyInUpMesh && wait_any_count < 7) {
+      } else if (mesh->xyInUpMesh && !mesh->xyInUpMesh_SendsInner &&
+		 wait_any_count < 7) {
         *indx = wait_any_count = 7;
-      } else if (mesh->xyOutDownMesh && wait_any_count < 8) {
+      } else if (mesh->xyOutDownMesh && mesh->xyOutDownMesh_SendsInner &&
+		 wait_any_count < 8) {
         *indx = wait_any_count = 8;
-      } else if (mesh->xyOutUpMesh && wait_any_count < 9) {
+      } else if (mesh->xyOutUpMesh && mesh->xyOutUpMesh_SendsInner &&
+		 wait_any_count < 9) {
         *indx = wait_any_count = 9;
       } else {
         *indx = MPI_UNDEFINED;
