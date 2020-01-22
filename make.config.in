@@ -84,6 +84,9 @@ BOUT_VERSION  = @PACKAGE_VERSION@
 
 OBJ    = $(SOURCEC:%.cxx=%.o)
 ifndef RELEASED
+# If this is part of an packaged and installed installation, the user cannot
+# write these files, so they shouldn't be changed. Thus only set this, in
+# the non installed case.
 LIB    = $(BOUT_LIB_PATH)/libbout++.a
 LIB_SO = $(BOUT_LIB_PATH)/libbout++.so
 endif
