@@ -928,16 +928,13 @@ const int OUT_SENT_DOWN = 3; ///< Data higher in X than branch-cut, at lower bou
 const int IN_SENT_OUT = 4; ///< Data going in positive X direction (in to out)
 const int OUT_SENT_IN = 5; ///< Data going in negative X direction (out to in)
 
-void BoutMesh::post_receive(CommHandle &ch) {
-  post_receiveX(ch);
-  post_receiveY(ch);
-}
-
 void BoutMesh::post_receiveX(CommHandle &ch) {
   /// Post receive data from left (x-1)
 
   if (IDATA_DEST != -1) {
-    mpi->MPI_Irecv(std::begin(ch.imsg_recvbuff), msg_len(ch.var_list.get(), 0, MXG, 0, MYSUB),
+    mpi->MPI_Irecv(std::begin(ch.imsg_recvbuff),
+                   msg_len(ch.var_list.get(), 0, MXG, 0,
+                           ch.include_x_corners ? LocalNy : MYSUB),
                    PVEC_REAL_MPI_TYPE, IDATA_DEST, OUT_SENT_IN, BoutComm::get(),
                    &ch.request[4]);
   }
@@ -945,7 +942,9 @@ void BoutMesh::post_receiveX(CommHandle &ch) {
   // Post receive data from right (x+1)
 
   if (ODATA_DEST != -1) {
-    mpi->MPI_Irecv(std::begin(ch.omsg_recvbuff), msg_len(ch.var_list.get(), 0, MXG, 0, MYSUB),
+    mpi->MPI_Irecv(std::begin(ch.omsg_recvbuff),
+                   msg_len(ch.var_list.get(), 0, MXG, 0,
+                           ch.include_x_corners ? LocalNy : MYSUB),
                    PVEC_REAL_MPI_TYPE, ODATA_DEST, IN_SENT_OUT, BoutComm::get(),
                    &ch.request[5]);
   }
@@ -1029,6 +1028,8 @@ comm_handle BoutMesh::sendX(FieldGroup &g, comm_handle handle, bool disable_corn
     ch = static_cast<CommHandle*>(handle);
   }
 
+  ch->include_x_corners = with_corners;
+
   /// Post receives
   post_receiveX(*ch);
 
@@ -1037,8 +1038,8 @@ comm_handle BoutMesh::sendX(FieldGroup &g, comm_handle handle, bool disable_corn
   /// Send to the left (x-1)
 
   if (IDATA_DEST != -1) {
-    int len = pack_data(ch->var_list.get(), MXG, 2 * MXG, with_corners ? 0 : MYG,
-                        with_corners ? LocalNy : MYG + MYSUB,
+    int len = pack_data(ch->var_list.get(), MXG, 2 * MXG, ch->include_x_corners ? 0 : MYG,
+                        ch->include_x_corners ? LocalNy : MYG + MYSUB,
                         std::begin(ch->imsg_sendbuff));
     if (async_send) {
       mpi->MPI_Isend(std::begin(ch->imsg_sendbuff), len, PVEC_REAL_MPI_TYPE, IDATA_DEST,
@@ -1051,8 +1052,8 @@ comm_handle BoutMesh::sendX(FieldGroup &g, comm_handle handle, bool disable_corn
   /// Send to the right (x+1)
 
   if (ODATA_DEST != -1) {
-    int len = pack_data(ch->var_list.get(), MXSUB, MXSUB + MXG, with_corners ? 0 :
-                        MYG, with_corners ? LocalNy : MYG + MYSUB,
+    int len = pack_data(ch->var_list.get(), MXSUB, MXSUB + MXG, ch->include_x_corners ? 0 :
+                        MYG, ch->include_x_corners ? LocalNy : MYG + MYSUB,
                         std::begin(ch->omsg_sendbuff));
     if (async_send) {
       mpi->MPI_Isend(std::begin(ch->omsg_sendbuff), len, PVEC_REAL_MPI_TYPE, ODATA_DEST,
@@ -1215,12 +1216,15 @@ int BoutMesh::wait(comm_handle handle) {
       break;
     }
     case 4: { // inner
-      unpack_data(ch->var_list.get(), 0, MXG, MYG, MYG + MYSUB,
+      unpack_data(ch->var_list.get(), 0, MXG, ch->include_x_corners ? 0 : MYG,
+                  ch->include_x_corners ? LocalNy : MYG + MYSUB,
                   std::begin(ch->imsg_recvbuff));
       break;
     }
     case 5: { // outer
-      unpack_data(ch->var_list.get(), MXSUB + MXG, MXSUB + 2 * MXG, MYG, MYG + MYSUB,
+      unpack_data(ch->var_list.get(), MXSUB + MXG, MXSUB + 2 * MXG,
+                  ch->include_x_corners ? 0 : MYG,
+                  ch->include_x_corners ? LocalNy : MYG + MYSUB,
                   std::begin(ch->omsg_recvbuff));
       break;
     }
@@ -2186,6 +2190,7 @@ BoutMesh::CommHandle *BoutMesh::get_handle(int xlen, int ylen) {
   }
 
   ch->in_progress = false;
+  ch->include_x_corners = false;
   ch->has_y_communication = false;
 
   ch->var_list.clear();

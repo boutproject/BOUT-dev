@@ -291,6 +291,8 @@ private:
     Array<BoutReal> umsg_recvbuff, dmsg_recvbuff, imsg_recvbuff, omsg_recvbuff;
     /// Is the communication still going?
     bool in_progress;
+    /// Are corner cells included in x-communication?
+    bool include_x_corners;
     /// Is there a y-communication
     bool has_y_communication;
     /// List of fields being communicated
@@ -315,9 +317,6 @@ private:
 
   //////////////////////////////////////////////////
   // Communication routines
-
-  /// Create the MPI requests to receive data. Non-blocking call.
-  void post_receive(CommHandle& ch);
 
   /// Create the MPI requests to receive data in the x-direction. Non-blocking call.
   void post_receiveX(CommHandle& ch);
