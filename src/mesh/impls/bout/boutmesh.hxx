@@ -42,6 +42,12 @@ class BoutMesh : public Mesh {
   ///
   comm_handle send(FieldGroup& g) override;
 
+  /// Send only in the x-direction
+  comm_handle sendX(FieldGroup& g, comm_handle handle = nullptr) override;
+
+  /// Send only in the y-direction
+  comm_handle sendY(FieldGroup& g, comm_handle handle = nullptr) override;
+
   /// Wait for a send operation to complete
   /// @param[in] handle  The handle returned by send()
   int wait(comm_handle handle) override;
@@ -189,12 +195,9 @@ class BoutMesh : public Mesh {
   int XLOCAL(int xglo) const override;
   int YLOCAL(int yglo) const override;
 
-  // Switch for communication of corner guard and boundary cells
-  const bool include_corner_cells;
-
 protected:
   BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int nxpe, int nype,
-           int pe_xind, int pe_yind, bool include_corners=true);
+           int pe_xind, int pe_yind);
   /// For debugging purposes (when creating fake parallel meshes), make
   /// the send and receive buffers share memory. This allows for
   /// communications to be faked between meshes as though they were on
@@ -312,6 +315,12 @@ private:
 
   /// Create the MPI requests to receive data. Non-blocking call.
   void post_receive(CommHandle& ch);
+
+  /// Create the MPI requests to receive data in the x-direction. Non-blocking call.
+  void post_receiveX(CommHandle& ch);
+
+  /// Create the MPI requests to receive data in the y-direction. Non-blocking call.
+  void post_receiveY(CommHandle& ch);
 
   /// Take data from objects and put into a buffer
   int pack_data(const std::vector<FieldData*>& var_list, int xge, int xlt, int yge,

@@ -49,7 +49,16 @@ Mesh* Mesh::create(GridDataSource *s, Options *opt) {
 
 Mesh *Mesh::create(Options *opt) { return create(nullptr, opt); }
 
-Mesh::Mesh(GridDataSource *s, Options* opt) : source(s), options(opt) {
+Mesh::Mesh(GridDataSource *s, Options* opt)
+  : source(s), options(opt),
+    include_corner_cells((*opt)["include_corner_cells"]
+                         .doc("Communicate corner guard and boundary cells. Can be set "
+                               "to false if you are sure that you will not need these "
+                               "cells, for mixed derivatives D2DXDY (or anything else), "
+                               "for example if your grid has orthogonal x- and "
+                               "y-directions.  This might slightly reduce communication "
+                               "time.")
+                         .withDefault(true)) {
   if(s == nullptr)
     throw BoutException("GridDataSource passed to Mesh::Mesh() is NULL");
   
@@ -278,11 +287,25 @@ void Mesh::communicateXZ(FieldGroup &g) {
 void Mesh::communicate(FieldGroup &g) {
   TRACE("Mesh::communicate(FieldGroup&)");
 
-  // Send data
-  comm_handle h = send(g);
+  if (include_corner_cells) {
+    // Send data in y-direction
+    comm_handle h = sendY(g);
 
-  // Wait for data from other processors
-  wait(h);
+    // Wait for data from other processors
+    wait(h);
+
+    // Send data in x-direction
+    h = sendX(g);
+
+    // Wait for data from other processors
+    wait(h);
+  } else {
+    // Send data
+    comm_handle h = send(g);
+
+    // Wait for data from other processors
+    wait(h);
+  }
 
   // Calculate yup and ydown fields for 3D fields
   if (calcParallelSlices_on_communicate) {

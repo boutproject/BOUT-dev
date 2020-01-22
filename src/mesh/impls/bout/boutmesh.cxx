@@ -50,17 +50,7 @@
 /// MPI type of BoutReal for communications
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 
-BoutMesh::BoutMesh(GridDataSource *s, Options *opt)
-  : Mesh(s, opt),
-    include_corner_cells((*options)["include_corner_cells"]
-                         .doc("Communicate corner guard and boundary cells. Can be set "
-                               "to false if you are sure that you will not need these "
-                               "cells, for mixed derivatives D2DXDY (or anything else), "
-                               "for example if your grid has orthogonal x- and "
-                               "y-directions.  This might slightly reduce communication "
-                               "time.")
-                         .withDefault(true)) {
-
+BoutMesh::BoutMesh(GridDataSource *s, Options *opt) : Mesh(s, opt) {
   OPTION(options, symmetricGlobalX, true);
   if (!options->isSet("symmetricGlobalY")) {
     std::string optionfile = Options::root()["optionfile"].withDefault("");
@@ -939,6 +929,29 @@ const int IN_SENT_OUT = 4; ///< Data going in positive X direction (in to out)
 const int OUT_SENT_IN = 5; ///< Data going in negative X direction (out to in)
 
 void BoutMesh::post_receive(CommHandle &ch) {
+  post_receiveX(ch);
+  post_receiveY(ch);
+}
+
+void BoutMesh::post_receiveX(CommHandle &ch) {
+  /// Post receive data from left (x-1)
+
+  if (IDATA_DEST != -1) {
+    mpi->MPI_Irecv(std::begin(ch.imsg_recvbuff), msg_len(ch.var_list.get(), 0, MXG, 0, MYSUB),
+                   PVEC_REAL_MPI_TYPE, IDATA_DEST, OUT_SENT_IN, BoutComm::get(),
+                   &ch.request[4]);
+  }
+
+  // Post receive data from right (x+1)
+
+  if (ODATA_DEST != -1) {
+    mpi->MPI_Irecv(std::begin(ch.omsg_recvbuff), msg_len(ch.var_list.get(), 0, MXG, 0, MYSUB),
+                   PVEC_REAL_MPI_TYPE, ODATA_DEST, IN_SENT_OUT, BoutComm::get(),
+                   &ch.request[5]);
+  }
+}
+
+void BoutMesh::post_receiveY(CommHandle &ch) {
   BoutReal *inbuff;
   int len;
 
@@ -972,27 +985,17 @@ void BoutMesh::post_receive(CommHandle &ch) {
                    PVEC_REAL_MPI_TYPE, DDATA_OUTDEST, OUT_SENT_UP, BoutComm::get(),
                    &ch.request[3]);
   }
-
-  /// Post receive data from left (x-1)
-
-  if (IDATA_DEST != -1) {
-    mpi->MPI_Irecv(std::begin(ch.imsg_recvbuff), msg_len(ch.var_list.get(), 0, MXG, 0, MYSUB),
-                   PVEC_REAL_MPI_TYPE, IDATA_DEST, OUT_SENT_IN, BoutComm::get(),
-                   &ch.request[4]);
-  }
-
-  // Post receive data from right (x+1)
-
-  if (ODATA_DEST != -1) {
-    mpi->MPI_Irecv(std::begin(ch.omsg_recvbuff), msg_len(ch.var_list.get(), 0, MXG, 0, MYSUB),
-                   PVEC_REAL_MPI_TYPE, ODATA_DEST, IN_SENT_OUT, BoutComm::get(),
-                   &ch.request[5]);
-  }
 }
 
 comm_handle BoutMesh::send(FieldGroup &g) {
   /// Start timer
   Timer timer("comms");
+
+  if (include_corner_cells) {
+    throw BoutException("Cannot use send() when include_corner_cells==true as it sends "
+                        "in x- and y-directions simultaneously. Use sendX() and sendY() "
+                        "instead.");
+  }
 
   /// Work out length of buffer needed
   int xlen = msg_len(g.get(), 0, MXG, 0, MYSUB);
@@ -1002,8 +1005,83 @@ comm_handle BoutMesh::send(FieldGroup &g) {
   CommHandle *ch = get_handle(xlen, ylen);
   ch->var_list = g; // Group of fields to send
 
+  sendX(g, ch);
+  sendY(g, ch);
+
+  return static_cast<void *>(ch);
+}
+
+comm_handle BoutMesh::sendX(FieldGroup &g, comm_handle handle) {
+  /// Start timer
+  Timer timer("comms");
+
+  CommHandle* ch;
+  if (handle == nullptr) {
+    /// Work out length of buffer needed
+    int xlen = msg_len(g.get(), 0, MXG, 0, MYSUB);
+
+    /// Get a communications handle of (at least) the needed size
+    ch = get_handle(xlen, 0);
+    ch->var_list = g; // Group of fields to send
+  } else {
+    ch = static_cast<CommHandle*>(handle);
+  }
+
   /// Post receives
-  post_receive(*ch);
+  post_receiveX(*ch);
+
+  //////////////////////////////////////////////////
+
+  /// Send to the left (x-1)
+
+  if (IDATA_DEST != -1) {
+    int len = pack_data(ch->var_list.get(), MXG, 2 * MXG, MYG, MYG + MYSUB,
+                        std::begin(ch->imsg_sendbuff));
+    if (async_send) {
+      mpi->MPI_Isend(std::begin(ch->imsg_sendbuff), len, PVEC_REAL_MPI_TYPE, IDATA_DEST,
+                     IN_SENT_OUT, BoutComm::get(), &(ch->sendreq[4]));
+    } else
+      mpi->MPI_Send(std::begin(ch->imsg_sendbuff), len, PVEC_REAL_MPI_TYPE, IDATA_DEST,
+                    IN_SENT_OUT, BoutComm::get());
+  }
+
+  /// Send to the right (x+1)
+
+  if (ODATA_DEST != -1) {
+    int len = pack_data(ch->var_list.get(), MXSUB, MXSUB + MXG, MYG, MYG + MYSUB,
+                        std::begin(ch->omsg_sendbuff));
+    if (async_send) {
+      mpi->MPI_Isend(std::begin(ch->omsg_sendbuff), len, PVEC_REAL_MPI_TYPE, ODATA_DEST,
+                     OUT_SENT_IN, BoutComm::get(), &(ch->sendreq[5]));
+    } else
+      mpi->MPI_Send(std::begin(ch->omsg_sendbuff), len, PVEC_REAL_MPI_TYPE, ODATA_DEST,
+                    OUT_SENT_IN, BoutComm::get());
+  }
+
+  /// Mark communication handle as in progress
+  ch->in_progress = true;
+
+  return static_cast<void *>(ch);
+}
+
+comm_handle BoutMesh::sendY(FieldGroup &g, comm_handle handle) {
+  /// Start timer
+  Timer timer("comms");
+
+  CommHandle* ch;
+  if (handle == nullptr) {
+    /// Work out length of buffer needed
+    int ylen = msg_len(g.get(), 0, LocalNx, 0, MYG);
+
+    /// Get a communications handle of (at least) the needed size
+    ch = get_handle(0, ylen);
+    ch->var_list = g; // Group of fields to send
+  } else {
+    ch = static_cast<CommHandle*>(handle);
+  }
+
+  /// Post receives
+  post_receiveY(*ch);
 
   //////////////////////////////////////////////////
 
@@ -1068,32 +1146,6 @@ comm_handle BoutMesh::send(FieldGroup &g) {
     } else
       mpi->MPI_Send(outbuff, len, PVEC_REAL_MPI_TYPE, DDATA_OUTDEST, OUT_SENT_DOWN,
                     BoutComm::get());
-  }
-
-  /// Send to the left (x-1)
-
-  if (IDATA_DEST != -1) {
-    len = pack_data(ch->var_list.get(), MXG, 2 * MXG, MYG, MYG + MYSUB,
-                    std::begin(ch->imsg_sendbuff));
-    if (async_send) {
-      mpi->MPI_Isend(std::begin(ch->imsg_sendbuff), len, PVEC_REAL_MPI_TYPE, IDATA_DEST,
-                     IN_SENT_OUT, BoutComm::get(), &(ch->sendreq[4]));
-    } else
-      mpi->MPI_Send(std::begin(ch->imsg_sendbuff), len, PVEC_REAL_MPI_TYPE, IDATA_DEST,
-                    IN_SENT_OUT, BoutComm::get());
-  }
-
-  /// Send to the right (x+1)
-
-  if (ODATA_DEST != -1) {
-    len = pack_data(ch->var_list.get(), MXSUB, MXSUB + MXG, MYG, MYG + MYSUB,
-                    std::begin(ch->omsg_sendbuff));
-    if (async_send) {
-      mpi->MPI_Isend(std::begin(ch->omsg_sendbuff), len, PVEC_REAL_MPI_TYPE, ODATA_DEST,
-                     OUT_SENT_IN, BoutComm::get(), &(ch->sendreq[5]));
-    } else
-      mpi->MPI_Send(std::begin(ch->omsg_sendbuff), len, PVEC_REAL_MPI_TYPE, ODATA_DEST,
-                    OUT_SENT_IN, BoutComm::get());
   }
 
   /// Mark communication handle as in progress
@@ -1626,9 +1678,8 @@ int BoutMesh::XPROC(int xind) { return (xind >= MXG) ? (xind - MXG) / MXSUB : 0;
 /// will make a mesh which thinks it corresponds to the subdomain on
 /// one processor, even though it's actually being run in serial.
 BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int nxpe,
-                   int nype, int pe_xind, int pe_yind, bool include_corners)
-    : include_corner_cells(include_corners), nx(input_nx), ny(input_ny), nz(input_nz),
-      MXG(mxg), MYG(myg), MZG(0) {
+                   int nype, int pe_xind, int pe_yind)
+    : nx(input_nx), ny(input_ny), nz(input_nz), MXG(mxg), MYG(myg), MZG(0) {
   maxregionblocksize = MAXREGIONBLOCKSIZE;
   symmetricGlobalX = true;
   symmetricGlobalY = true;
