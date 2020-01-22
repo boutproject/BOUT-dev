@@ -284,6 +284,23 @@ void Mesh::communicateXZ(FieldGroup &g) {
   wait(h);
 }
 
+void Mesh::communicateYZ(FieldGroup &g) {
+  TRACE("Mesh::communicate(FieldGroup&)");
+
+  // Send data
+  comm_handle h = sendY(g);
+
+  // Wait for data from other processors
+  wait(h);
+
+  // Calculate yup and ydown fields for 3D fields
+  if (calcParallelSlices_on_communicate) {
+    for(const auto& fptr : g.field3d()) {
+      fptr->calcParallelSlices();
+    }
+  }
+}
+
 void Mesh::communicate(FieldGroup &g) {
   TRACE("Mesh::communicate(FieldGroup&)");
 

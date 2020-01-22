@@ -290,6 +290,8 @@ private:
     Array<BoutReal> umsg_recvbuff, dmsg_recvbuff, imsg_recvbuff, omsg_recvbuff;
     /// Is the communication still going?
     bool in_progress;
+    /// Is there a y-communication
+    bool has_y_communication;
     /// List of fields being communicated
     FieldGroup var_list;
   };

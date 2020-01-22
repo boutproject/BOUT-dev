@@ -272,6 +272,12 @@ class Mesh {
     communicateXZ(g);
   }
 
+  template <typename... Ts>
+  void communicateYZ(Ts&... ts) {
+    FieldGroup g(ts...);
+    communicateYZ(g);
+  }
+
   /*!
    * Communicate a group of fields
    */
@@ -282,6 +288,12 @@ class Mesh {
   ///
   /// @param g  The group of fields to communicate. Guard cells will be modified
   void communicateXZ(FieldGroup &g);
+
+  /// Communcate guard cells in YZ only
+  /// i.e. no X communication
+  ///
+  /// @param g  The group of fields to communicate. Guard cells will be modified
+  void communicateYZ(FieldGroup &g);
 
   /*!
    * Communicate an X-Z field

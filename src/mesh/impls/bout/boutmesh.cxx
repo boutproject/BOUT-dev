@@ -1153,6 +1153,9 @@ comm_handle BoutMesh::sendY(FieldGroup &g, comm_handle handle) {
   /// Mark communication handle as in progress
   ch->in_progress = true;
 
+  /// Mark as y-communication
+  ch->has_y_communication = true;
+
   return static_cast<void *>(ch);
 }
 
@@ -1242,41 +1245,43 @@ int BoutMesh::wait(comm_handle handle) {
       mpi->MPI_Wait(ch->sendreq + 5, &async_status);
   }
 
-  // TWIST-SHIFT CONDITION
-  // Loop over 3D fields
-  for (const auto &var : ch->var_list.field3d()) {
-    if (var->requiresTwistShift(TwistShift)) {
+  if (ch->has_y_communication) {
+    // TWIST-SHIFT CONDITION
+    // Loop over 3D fields
+    for (const auto &var : ch->var_list.field3d()) {
+      if (var->requiresTwistShift(TwistShift)) {
 
-      // Twist-shift only needed for field-aligned fields
-      int jx, jy;
+        // Twist-shift only needed for field-aligned fields
+        int jx, jy;
 
-      // Perform Twist-shift using shifting method
-      if (var->getDirectionY() == YDirectionType::Aligned) {
-        // Only variables in field-aligned coordinates need the twist-shift boundary
-        // condition to be applied
+        // Perform Twist-shift using shifting method
+        if (var->getDirectionY() == YDirectionType::Aligned) {
+          // Only variables in field-aligned coordinates need the twist-shift boundary
+          // condition to be applied
 
-        // Lower boundary
-        if (TS_down_in && (DDATA_INDEST != -1)) {
-          for (jx = 0; jx < DDATA_XSPLIT; jx++)
-            for (jy = 0; jy != MYG; jy++)
-              shiftZ(*var, jx, jy, ShiftAngle[jx]);
-        }
-        if (TS_down_out && (DDATA_OUTDEST != -1)) {
-          for (jx = DDATA_XSPLIT; jx < LocalNx; jx++)
-            for (jy = 0; jy != MYG; jy++)
-              shiftZ(*var, jx, jy, ShiftAngle[jx]);
-        }
+          // Lower boundary
+          if (TS_down_in && (DDATA_INDEST != -1)) {
+            for (jx = 0; jx < DDATA_XSPLIT; jx++)
+              for (jy = 0; jy != MYG; jy++)
+                shiftZ(*var, jx, jy, ShiftAngle[jx]);
+          }
+          if (TS_down_out && (DDATA_OUTDEST != -1)) {
+            for (jx = DDATA_XSPLIT; jx < LocalNx; jx++)
+              for (jy = 0; jy != MYG; jy++)
+                shiftZ(*var, jx, jy, ShiftAngle[jx]);
+          }
 
-        // Upper boundary
-        if (TS_up_in && (UDATA_INDEST != -1)) {
-          for (jx = 0; jx < UDATA_XSPLIT; jx++)
-            for (jy = LocalNy - MYG; jy != LocalNy; jy++)
-              shiftZ(*var, jx, jy, -ShiftAngle[jx]);
-        }
-        if (TS_up_out && (UDATA_OUTDEST != -1)) {
-          for (jx = UDATA_XSPLIT; jx < LocalNx; jx++)
-            for (jy = LocalNy - MYG; jy != LocalNy; jy++)
-              shiftZ(*var, jx, jy, -ShiftAngle[jx]);
+          // Upper boundary
+          if (TS_up_in && (UDATA_INDEST != -1)) {
+            for (jx = 0; jx < UDATA_XSPLIT; jx++)
+              for (jy = LocalNy - MYG; jy != LocalNy; jy++)
+                shiftZ(*var, jx, jy, -ShiftAngle[jx]);
+          }
+          if (TS_up_out && (UDATA_OUTDEST != -1)) {
+            for (jx = UDATA_XSPLIT; jx < LocalNx; jx++)
+              for (jy = LocalNy - MYG; jy != LocalNy; jy++)
+                shiftZ(*var, jx, jy, -ShiftAngle[jx]);
+          }
         }
       }
     }
@@ -2179,6 +2184,7 @@ BoutMesh::CommHandle *BoutMesh::get_handle(int xlen, int ylen) {
   }
 
   ch->in_progress = false;
+  ch->has_y_communication = false;
 
   ch->var_list.clear();
 
