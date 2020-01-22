@@ -50,8 +50,8 @@ Mesh* Mesh::create(GridDataSource *s, Options *opt) {
 Mesh *Mesh::create(Options *opt) { return create(nullptr, opt); }
 
 Mesh::Mesh(GridDataSource *s, Options* opt)
-  : source(s), options(opt),
-    include_corner_cells((*opt)["include_corner_cells"]
+  : source(s), options(opt == nullptr ? Options::getRoot()->getSection("mesh") : opt),
+    include_corner_cells((*options)["include_corner_cells"]
                          .doc("Communicate corner guard and boundary cells. Can be set "
                                "to false if you are sure that you will not need these "
                                "cells, for mixed derivatives D2DXDY (or anything else), "
@@ -62,10 +62,6 @@ Mesh::Mesh(GridDataSource *s, Options* opt)
   if(s == nullptr)
     throw BoutException("GridDataSource passed to Mesh::Mesh() is NULL");
   
-  if (options == nullptr) {
-    options = Options::getRoot()->getSection("mesh");
-  }
-
   /// Get mesh options
   OPTION(options, StaggerGrids,   false); // Stagger grids
   OPTION(options, maxregionblocksize, MAXREGIONBLOCKSIZE);
