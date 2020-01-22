@@ -327,7 +327,7 @@ std::vector<FakeParallelMesh> createFakeProcessors(int nx, int ny, int nz, int n
         meshes.at(j + i * nype).xOutMesh = &meshes.at(j + (i + 1) * nype);
       }
       if (j == 0) {
-        meshes.at(j + i * nype).yDownMesh = &meshes.at(nype - 1 + i * nype);
+        meshes.at(j + i * nype).yUpMesh = &meshes.at(nype - 1 + i * nype);
 	if (i == 0) {
 	  meshes.at(j + i * nype).xyInDownMesh = &meshes.at(nype - 1 + i * nype);
 	  meshes.at(j + i * nype).xyInDownMesh_SendsInner = true;

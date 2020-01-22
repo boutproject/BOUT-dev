@@ -94,9 +94,9 @@ public:
   std::string getDump(); ///< Write out all messages to a string
 #else
   /// Dummy functions which should be optimised out
-  int push(const std::string& message) { return 0; }
+  int push(const std::string&) { return 0; }
   template <class S, class... Args>
-  int push(const S& format, const Args&... args) {
+  int push(const S&, const Args&...) {
     return 0;
   }
 

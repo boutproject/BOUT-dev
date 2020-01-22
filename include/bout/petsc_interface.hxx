@@ -133,6 +133,8 @@ public:
     }
   }
 
+  virtual ~GlobalIndexer() {}
+  
   /// Call this immediately after construction when running unit tests.
   void initialiseTest() {}
 
@@ -143,7 +145,7 @@ public:
     fieldmesh->communicate(indices);
   }
 
-  Mesh* getMesh() { return fieldmesh; }
+  Mesh* getMesh() const { return fieldmesh; }
 
   /// Convert the local index object to a global index which can be
   /// used in PETSc vectors and matrices.
@@ -175,7 +177,7 @@ public:
 
   bool sparsityPatternAvailable() const { return stencils.getNumParts() > 0; }
 
-  std::vector<int> getNumDiagonal() {
+  const std::vector<int>& getNumDiagonal() const {
     ASSERT2(sparsityPatternAvailable());
     if (!sparsityCalculated) {
       calculateSparsity();
@@ -183,7 +185,7 @@ public:
     return numDiagonal;
   }
 
-  std::vector<int> getNumOffDiagonal() {
+  const std::vector<int>& getNumOffDiagonal() const {
     ASSERT2(sparsityPatternAvailable());
     if (!sparsityCalculated) {
       calculateSparsity();
@@ -193,18 +195,9 @@ public:
 
   int size() const { return regionAll.size(); }
 
-  void writeOut() const {
-    std::cout << "=====================================================\n";
-    for (int y = fieldmesh->LocalNy; y > 0; y--) {
-      for (int x = 0; x < fieldmesh->LocalNx; x++) {
-        std::cout << "\t" << indices(x, y - 1, 0);
-      }
-      std::cout << "\n";
-    }
-    std::cout << "=====================================================\n";
-  }
-
 protected:
+  // Must not be const as the index field needs to be mutable in order
+  // to fake parallel communication in the unit tests.
   T& getIndices() { return indices; }
 
 private:
@@ -224,7 +217,7 @@ private:
     return;
   }
 
-  void calculateSparsity() {
+  void calculateSparsity() const {
     numDiagonal = std::vector<int>(size());
     numOffDiagonal = std::vector<int>(size(), 0);
 
@@ -244,6 +237,8 @@ private:
         }
       }
     }
+
+    sparsityCalculated = true;
   }
 
   Mesh* fieldmesh;
@@ -261,8 +256,8 @@ private:
   Region<ind_type> regionAll, regionLowerY, regionUpperY, regionInnerX, regionOuterX,
       regionBndry;
 
-  bool sparsityCalculated = false;
-  std::vector<PetscInt> numDiagonal, numOffDiagonal;
+  mutable bool sparsityCalculated = false;
+  mutable std::vector<PetscInt> numDiagonal, numOffDiagonal;
 };
 
 /*!
@@ -430,6 +425,27 @@ public:
     return Element(vector.get(), global);
   }
 
+  BoutReal operator()(const ind_type& index) const {
+#if CHECKLEVEL >= 1
+    if (!initialised) {
+      throw BoutException("Can not return element of uninitialised vector");
+    }
+#endif
+    const int global = indexConverter->getGlobal(index);
+#if CHECKLEVEL >= 1
+    if (global == -1) {
+      throw BoutException("Request to return invalid vector element");
+    }
+#endif
+    BoutReal value;
+    int status;
+    BOUT_OMP(critical) status = VecGetValues(*get(), 1, &global, &value);
+    if (status != 0) {
+      throw BoutException("Error when getting element of a PETSc vector.");
+    }
+    return value;
+  }
+
   void assemble() {
     VecAssemblyBegin(*vector);
     VecAssemblyEnd(*vector);
@@ -444,7 +460,7 @@ public:
   }
 
   /// Returns a field constructed from the contents of this vector
-  const T toField() {
+  T toField() const {
     T result(indexConverter->getMesh());
     result.allocate();
     result.setLocation(location);
@@ -625,7 +641,7 @@ public:
     std::vector<PetscInt> positions;
     std::vector<BoutReal> weights;
   };
-  
+
   Element operator()(const ind_type& index1, const ind_type& index2) {
     const int global1 = indexConverter->getGlobal(index1),
               global2 = indexConverter->getGlobal(index2);
@@ -660,7 +676,7 @@ public:
 
       std::transform(
           pw.begin(), pw.end(), std::back_inserter(positions),
-          [this, &ny, &nz](ParallelTransform::PositionsAndWeights p) -> PetscInt {
+          [this, ny, nz](ParallelTransform::PositionsAndWeights p) -> PetscInt {
             return this->indexConverter->getGlobal(
                 ind_type(p.i * ny * nz + p.j * nz + p.k, ny, nz));
           });
@@ -670,6 +686,29 @@ public:
                      });
     }
     return Element(matrix.get(), global1, global2, positions, weights);
+  }
+
+  BoutReal operator()(const ind_type& index1, const ind_type& index2) const {
+    ASSERT2(yoffset == 0);
+    const int global1 = indexConverter->getGlobal(index1),
+              global2 = indexConverter->getGlobal(index2);
+#if CHECKLEVEL >= 1
+    if (!initialised) {
+      throw BoutException("Can not return element of uninitialised matrix");
+    } else if (global1 == -1 || global2 == -1) {
+      std::cout << "(" << index1.x() << ", " << index1.y() << ", " << index1.z() << ")  ";
+      std::cout << "(" << index2.x() << ", " << index2.y() << ", " << index2.z() << ")\n";
+      throw BoutException("Request to return invalid matrix element");
+    }
+#endif
+    BoutReal value;
+    int status;
+    BOUT_OMP(critical)
+    status = MatGetValues(*get(), 1, &global1, 1, &global2, &value);
+    if (status != 0) {
+      throw BoutException("Error when setting elements of a PETSc matrix.");
+    }
+    return value;
   }
 
   // Assemble the matrix prior to use

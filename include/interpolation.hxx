@@ -334,7 +334,7 @@ public:
                       const BoutMask &mask,
                       const std::string& region = "RGN_NOBNDRY") override;
   std::vector<ParallelTransform::PositionsAndWeights>
-  getWeightsForYApproximation(int i, int j, int k, int yoffset);
+  getWeightsForYApproximation(int i, int j, int k, int yoffset) override;
 };
 
 
