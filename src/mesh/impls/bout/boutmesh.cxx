@@ -2863,6 +2863,15 @@ void BoutMesh::addBoundaryRegions() {
       xs = xstart;
     if (xe > xend)
       xe = xend;
+
+    if (include_corner_cells and firstX() and xs == xstart and xe > xstart) {
+      // Include corner cells on x-boundary
+      xs = 0;
+    }
+    if (include_corner_cells and lastX() and xe == xend and xs < xend) {
+      // Include corner cells on x-boundary
+      xe = LocalNx - 1;
+    }
   }
   
   addRegion3D("RGN_LOWER_INNER_Y", Region<Ind3D>(xs, xe, 0, ystart-1, 0, LocalNz-1,
@@ -2886,6 +2895,15 @@ void BoutMesh::addBoundaryRegions() {
       xs = xstart;
     if (xe > xend)
       xe = xend;
+
+    if (include_corner_cells and firstX() and xs == xstart and xe > xstart) {
+      // Include corner cells on x-boundary
+      xs = 0;
+    }
+    if (include_corner_cells and lastX() and xe == xend and xs < xend) {
+      // Include corner cells on x-boundary
+      xe = LocalNx - 1;
+    }
   } else {
     xs = -1;
     xe = -2;
@@ -2911,6 +2929,15 @@ void BoutMesh::addBoundaryRegions() {
   if (xe > xend)
     xe = xend + 1;
 
+  if (include_corner_cells and firstX() and xs == xstart and xe > xstart) {
+    // Include corner cells on x-boundary
+    xs = 0;
+  }
+  if (include_corner_cells and lastX() and xe == xend and xs < xend) {
+    // Include corner cells on x-boundary
+    xe = LocalNx - 1;
+  }
+
   addRegion3D("RGN_LOWER_Y_THIN",
               Region<Ind3D>(xs, xe, ystart - 1, ystart - 1, 0, LocalNz - 1, LocalNy,
                             LocalNz, maxregionblocksize));
@@ -2921,6 +2948,15 @@ void BoutMesh::addBoundaryRegions() {
     xs = xstart;
   if (xe > xend)
     xe = xend;
+
+  if (include_corner_cells and firstX() and xs == xstart and xe > xstart) {
+    // Include corner cells on x-boundary
+    xs = 0;
+  }
+  if (include_corner_cells and lastX() and xe == xend and xs < xend) {
+    // Include corner cells on x-boundary
+    xe = LocalNx - 1;
+  }
 
   addRegion3D("RGN_LOWER_Y", Region<Ind3D>(xs, xe, 0, ystart-1, 0, LocalNz-1,
                                            LocalNy, LocalNz, maxregionblocksize));
@@ -2947,6 +2983,15 @@ void BoutMesh::addBoundaryRegions() {
     xs = -1;
     xe = -2;
   }
+
+  if (include_corner_cells and firstX() and xs == xstart and xe > xstart) {
+    // Include corner cells on x-boundary
+    xs = 0;
+  }
+  if (include_corner_cells and lastX() and xe == xend and xs < xend) {
+    // Include corner cells on x-boundary
+    xe = LocalNx - 1;
+  }
   
   addRegion3D("RGN_UPPER_INNER_Y", Region<Ind3D>(xs, xe, yend+1, LocalNy-1, 0, LocalNz-1,
                                                  LocalNy, LocalNz, maxregionblocksize));
@@ -2972,6 +3017,15 @@ void BoutMesh::addBoundaryRegions() {
       xs = xstart;
     if (xe > xend)
       xe = xend;
+
+    if (include_corner_cells and firstX() and xs == xstart and xe > xstart) {
+      // Include corner cells on x-boundary
+      xs = 0;
+    }
+    if (include_corner_cells and lastX() and xe == xend and xs < xend) {
+      // Include corner cells on x-boundary
+      xe = LocalNx - 1;
+    }
   }
 
   addRegion3D("RGN_UPPER_OUTER_Y", Region<Ind3D>(xs, xe, yend+1, LocalNy-1, 0, LocalNz-1,
@@ -2994,6 +3048,15 @@ void BoutMesh::addBoundaryRegions() {
   if (xe > xend)
     xe = xend + 1;
 
+  if (include_corner_cells and firstX() and xs == xstart and xe > xstart) {
+    // Include corner cells on x-boundary
+    xs = 0;
+  }
+  if (include_corner_cells and lastX() and xe == xend and xs < xend) {
+    // Include corner cells on x-boundary
+    xe = LocalNx - 1;
+  }
+
   addRegion3D("RGN_UPPER_Y_THIN",
               Region<Ind3D>(xs, xe, yend + 1, yend + 1, 0, LocalNz - 1, LocalNy, LocalNz,
                             maxregionblocksize));
@@ -3004,6 +3067,15 @@ void BoutMesh::addBoundaryRegions() {
     xs = xstart;
   if (xe > xend)
     xe = xend;
+
+  if (include_corner_cells and firstX() and xs == xstart and xe > xstart) {
+    // Include corner cells on x-boundary
+    xs = 0;
+  }
+  if (include_corner_cells and lastX() and xe == xend and xs < xend) {
+    // Include corner cells on x-boundary
+    xe = LocalNx - 1;
+  }
 
   addRegion3D("RGN_UPPER_Y", Region<Ind3D>(xs, xe, yend+1, LocalNy-1, 0, LocalNz-1,
                                            LocalNy, LocalNz, maxregionblocksize));
