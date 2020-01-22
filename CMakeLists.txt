@@ -87,6 +87,7 @@ set(BOUT_SOURCES
   ./include/bout/snb.hxx
   ./include/bout/solver.hxx
   ./include/bout/surfaceiter.hxx
+  ./include/bout/operatorstencil.hxx
   ./include/bout/sys/expressionparser.hxx
   ./include/bout/sys/generator_context.hxx
   ./include/bout/sys/gettext.hxx
@@ -286,7 +287,6 @@ set(BOUT_SOURCES
   ./src/sys/optionsreader.cxx
   ./src/sys/output.cxx
   ./src/sys/petsclib.cxx
-  ./src/sys/petsc_interface.cxx
   ./src/sys/range.cxx
   ./src/sys/slepclib.cxx
   ./src/sys/timer.cxx

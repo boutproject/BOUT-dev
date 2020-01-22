@@ -120,7 +120,7 @@ class BoutMesh : public Mesh {
 
   /// Get number of boundaries in the y-direction, i.e. locations where there are boundary
   /// cells in the global grid
-  int numberOfYBoundaries() const;
+  int numberOfYBoundaries() const override;
 
   /// Is there a branch cut at this processor's lower boundary?
   ///

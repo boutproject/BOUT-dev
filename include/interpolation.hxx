@@ -324,7 +324,7 @@ public:
   Field3D interpolate(const Field3D &f, const Field3D &delta_x, const Field3D &delta_z,
                       const BoutMask &mask) override;
   std::vector<ParallelTransform::PositionsAndWeights>
-  getWeightsForYApproximation(int i, int j, int k, int yoffset);
+  getWeightsForYApproximation(int i, int j, int k, int yoffset) override;
 };
 
 
