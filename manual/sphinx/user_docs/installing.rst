@@ -194,7 +194,7 @@ Arch Linux
 
 ::
 
-   $ pacman -S openmpi fftw netcdf-cxx 
+   $ pacman -S openmpi fftw netcdf-cxx make gcc
 
 
 Fedora
