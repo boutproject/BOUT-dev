@@ -335,7 +335,8 @@ class Mesh {
   virtual comm_handle send(FieldGroup &g) = 0;  
 
   /// Send only the x-guard cells
-  virtual comm_handle sendX(FieldGroup &g, comm_handle handle = nullptr) = 0;
+  virtual comm_handle sendX(FieldGroup &g, comm_handle handle = nullptr,
+                            bool disable_corners = false) = 0;
 
   /// Send only the y-guard cells
   virtual comm_handle sendY(FieldGroup &g, comm_handle handle = nullptr) = 0;

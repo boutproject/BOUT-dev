@@ -43,7 +43,8 @@ class BoutMesh : public Mesh {
   comm_handle send(FieldGroup& g) override;
 
   /// Send only in the x-direction
-  comm_handle sendX(FieldGroup& g, comm_handle handle = nullptr) override;
+  comm_handle sendX(FieldGroup& g, comm_handle handle = nullptr,
+                    bool disable_corners = false) override;
 
   /// Send only in the y-direction
   comm_handle sendY(FieldGroup& g, comm_handle handle = nullptr) override;

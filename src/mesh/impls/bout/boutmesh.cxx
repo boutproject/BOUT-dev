@@ -1005,20 +1005,22 @@ comm_handle BoutMesh::send(FieldGroup &g) {
   CommHandle *ch = get_handle(xlen, ylen);
   ch->var_list = g; // Group of fields to send
 
-  sendX(g, ch);
+  sendX(g, ch, true);
   sendY(g, ch);
 
   return static_cast<void *>(ch);
 }
 
-comm_handle BoutMesh::sendX(FieldGroup &g, comm_handle handle) {
+comm_handle BoutMesh::sendX(FieldGroup &g, comm_handle handle, bool disable_corners) {
   /// Start timer
   Timer timer("comms");
+
+  const bool with_corners = include_corner_cells and not disable_corners;
 
   CommHandle* ch;
   if (handle == nullptr) {
     /// Work out length of buffer needed
-    int xlen = msg_len(g.get(), 0, MXG, 0, include_corner_cells ? LocalNy : MYSUB);
+    int xlen = msg_len(g.get(), 0, MXG, 0, with_corners ? LocalNy : MYSUB);
 
     /// Get a communications handle of (at least) the needed size
     ch = get_handle(xlen, 0);
@@ -1035,8 +1037,8 @@ comm_handle BoutMesh::sendX(FieldGroup &g, comm_handle handle) {
   /// Send to the left (x-1)
 
   if (IDATA_DEST != -1) {
-    int len = pack_data(ch->var_list.get(), MXG, 2 * MXG, include_corner_cells ? 0 : MYG,
-                        include_corner_cells ? LocalNy : MYG + MYSUB,
+    int len = pack_data(ch->var_list.get(), MXG, 2 * MXG, with_corners ? 0 : MYG,
+                        with_corners ? LocalNy : MYG + MYSUB,
                         std::begin(ch->imsg_sendbuff));
     if (async_send) {
       mpi->MPI_Isend(std::begin(ch->imsg_sendbuff), len, PVEC_REAL_MPI_TYPE, IDATA_DEST,
@@ -1049,8 +1051,8 @@ comm_handle BoutMesh::sendX(FieldGroup &g, comm_handle handle) {
   /// Send to the right (x+1)
 
   if (ODATA_DEST != -1) {
-    int len = pack_data(ch->var_list.get(), MXSUB, MXSUB + MXG, include_corner_cells ? 0 :
-                        MYG, include_corner_cells ? LocalNy : MYG + MYSUB,
+    int len = pack_data(ch->var_list.get(), MXSUB, MXSUB + MXG, with_corners ? 0 :
+                        MYG, with_corners ? LocalNy : MYG + MYSUB,
                         std::begin(ch->omsg_sendbuff));
     if (async_send) {
       mpi->MPI_Isend(std::begin(ch->omsg_sendbuff), len, PVEC_REAL_MPI_TYPE, ODATA_DEST,
