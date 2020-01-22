@@ -82,7 +82,7 @@ inline std::string toString(enumname e) {                                  \
   return found->second;                                                    \
 }                                                                          \
                                                                            \
-inline enumname _MAKE_FROMSTRING_NAME(enumname)(std::string s) {           \
+inline enumname _MAKE_FROMSTRING_NAME(enumname)(const std::string& s) {    \
   AUTO_TRACE();                                                            \
   const static std::map<std::string, enumname> fromString_map = {          \
     _BOUT_ENUM_CLASS_MAP_ARGS(_STR_ENUM_CLASS, enumname, __VA_ARGS__)      \
