@@ -781,3 +781,47 @@ FFTs take, and tries to find the optimal method.
 
 
 .. _FFTW FAQ: http://www.fftw.org/faq/section3.html#nondeterministic
+
+
+Types for multi-valued options
+------------------------------
+
+An ``enum class`` can be a useful construct for options in a physics model. It
+can have an arbitrary number of user-defined, named values (although the code
+in ``include/bout/bout_enum_class.hxx`` needs extending for more than 10
+values). The advantage over using a ``std::string`` for an option is that a
+typo cannot produce an unexpected value: in C++ code it is a compile-time error
+and reading from ``BOUT.inp`` it is a run-time exception. We provide a utility
+macro ``BOUT_ENUM_CLASS`` to define an ``enum class`` with some extra
+convenience methods. For example, after defining ``myoption`` like::
+
+    BOUT_ENUM_TYPE(myoption, foo, bar, baz);
+
+it is possible not only to test for a value, e.g.::
+
+    myoption x = <something>;
+    ...
+    if (x == myoption::foo) {
+      do a foo thing
+    }
+
+but also to convert the option to a string::
+
+    std::string s = toString(x);
+
+pass it to a stream::
+
+    output << x;
+
+or get an option like ``myinput=baz`` from an input file or the command line as
+a ``myoption``::
+
+    myoption y = Options::root()["myinput"].as<myoption>();
+
+or with a default value::
+
+    myoption y = Options::root()["myinput"].withDefault(myoption::bar);
+
+Only strings exactly (but case-insensitively) matching the name of one of the
+defined ``myoption`` values are allowed, anything else results in an exception
+being thrown.
