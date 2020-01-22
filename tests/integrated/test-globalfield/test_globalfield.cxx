@@ -38,7 +38,7 @@ int physics_init(bool UNUSED(restarting)) {
     for(int x=0;x<gX.xSize();x++)
       for(int y=0;y<gX.ySize();y++) {
         if( (ROUND(gX(x,y)) != x) || (ROUND(gY(x,y)) != y) ) {
-          output.write("%d, %d :  %e, %e\n", x,y, gX(x,y), gY(x,y));
+          output.write("{:d}, {:d} :  {:e}, {:e}\n", x,y, gX(x,y), gY(x,y));
           gather_pass = false;
         }
       }
@@ -53,7 +53,7 @@ int physics_init(bool UNUSED(restarting)) {
   for(int x=mesh->xstart;x<=mesh->xend;x++)
     for(int y=mesh->ystart;y<=mesh->yend;y++) {
       if( (localX(x,y) != scatX(x,y)) || (localY(x,y) != scatY(x,y)) ) {
-        output.write("%d, %d :  (%e, %e) (%e, %e)", x, y,
+        output.write("{:d}, {:d} :  ({:e}, {:e}) ({:e}, {:e})", x, y,
                    localX(x,y), localY(x,y), scatX(x,y), scatY(x,y));
         scatter_pass = false;
       }
@@ -90,7 +90,7 @@ int physics_init(bool UNUSED(restarting)) {
       for(int y=0;y<gX3D.ySize();y++) 
         for(int z=0;z<gX3D.zSize();z++) {
           if( (ROUND(gX3D(x,y,z)) != x + z) || (ROUND(gY3D(x,y,z)) != y + z) ) {
-            output.write("%d, %d, %d :  %e, %e\n", x,y,z, gX3D(x,y,z), gY3D(x,y,z));
+            output.write("{:d}, {:d}, {:d} :  {:e}, {:e}\n", x,y,z, gX3D(x,y,z), gY3D(x,y,z));
             gather_pass3D = false;
           }
       }
@@ -106,7 +106,7 @@ int physics_init(bool UNUSED(restarting)) {
     for(int y=mesh->ystart;y<=mesh->yend;y++)
       for(int z=0;z<mesh->LocalNz;z++) {
         if( (localX3D(x,y,z) != scatX3D(x,y,z)) || (localY3D(x,y,z) != scatY3D(x,y,z)) ) {
-          output.write("%d, %d, %d :  (%e, %e) (%e, %e)", x, y, z,
+          output.write("{:d}, {:d}, {:d} :  ({:e}, {:e}) ({:e}, {:e})", x, y, z,
                        localX3D(x,y,z), localY3D(x,y,z), scatX3D(x,y,z), scatY3D(x,y,z));
           scatter_pass3D = false;
         }

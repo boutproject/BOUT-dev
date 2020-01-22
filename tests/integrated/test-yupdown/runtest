@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe
+from boututils.run_wrapper import build_and_log, launch_safe
 from boutdata.collect import collect
 from sys import exit
 
@@ -16,6 +16,7 @@ failed = False
 for shifttype in ["shifted", "shiftedinterp"]:
 
     s, out = launch_safe("./test_yupdown mesh:paralleltransform="+shifttype, nproc=1, pipe=True, verbose=True)
+    build_and_log("parallel slices test")
 
     with open("run.log", "w") as f:
       f.write(out)

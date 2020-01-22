@@ -353,7 +353,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
     J = interpolateAndExtrapolate(J, location, extrapolate_x, extrapolate_y);
 
     // Compare calculated and loaded values
-    output_warn.write("\tMaximum difference in J is %e\n", max(abs(J - Jcalc)));
+    output_warn.write("\tMaximum difference in J is {:e}\n", max(abs(J - Jcalc)));
 
     // Re-evaluate Bxy using new J
     Bxy = sqrt(g_22) / J;
@@ -368,7 +368,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   } else {
     Bxy = interpolateAndExtrapolate(Bxy, location, extrapolate_x, extrapolate_y);
 
-    output_warn.write("\tMaximum difference in Bxy is %e\n", max(abs(Bxy - Bcalc)));
+    output_warn.write("\tMaximum difference in Bxy is {:e}\n", max(abs(Bxy - Bcalc)));
     // Check Bxy
     bout::checkFinite(Bxy, "Bxy", "RGN_NOCORNERS");
     bout::checkPositive(Bxy, "Bxy", "RGN_NOCORNERS");
@@ -930,7 +930,7 @@ int Coordinates::calcCovariant(const std::string& region) {
     a(0, 2) = a(2, 0) = g13[i];
 
     if (invert3x3(a)) {
-      output_error.write("\tERROR: metric tensor is singular at (%d, %d)\n", i.x(), i.y());
+      output_error.write("\tERROR: metric tensor is singular at ({:d}, {:d})\n", i.x(), i.y());
       return 1;
     }
 
@@ -948,13 +948,13 @@ int Coordinates::calcCovariant(const std::string& region) {
                    max(abs((g_12 * g12 + g_22 * g22 + g_23 * g23) - 1)),
                    max(abs((g_13 * g13 + g_23 * g23 + g_33 * g33) - 1)));
 
-  output_info.write("\tLocal maximum error in diagonal inversion is %e\n", maxerr);
+  output_info.write("\tLocal maximum error in diagonal inversion is {:e}\n", maxerr);
 
   maxerr = BOUTMAX(max(abs(g_11 * g12 + g_12 * g22 + g_13 * g23)),
                    max(abs(g_11 * g13 + g_12 * g23 + g_13 * g33)),
                    max(abs(g_12 * g13 + g_22 * g23 + g_23 * g33)));
 
-  output_info.write("\tLocal maximum error in off-diagonal inversion is %e\n", maxerr);
+  output_info.write("\tLocal maximum error in off-diagonal inversion is {:e}\n", maxerr);
 
   return 0;
 }
@@ -985,7 +985,7 @@ int Coordinates::calcContravariant(const std::string& region) {
     a(0, 2) = a(2, 0) = g_13[i];
 
     if (invert3x3(a)) {
-      output_error.write("\tERROR: metric tensor is singular at (%d, %d)\n", i.x(), i.y());
+      output_error.write("\tERROR: metric tensor is singular at ({:d}, {:d})\n", i.x(), i.y());
       return 1;
     }
 
@@ -1003,13 +1003,13 @@ int Coordinates::calcContravariant(const std::string& region) {
                    max(abs((g_12 * g12 + g_22 * g22 + g_23 * g23) - 1)),
                    max(abs((g_13 * g13 + g_23 * g23 + g_33 * g33) - 1)));
 
-  output_info.write("\tMaximum error in diagonal inversion is %e\n", maxerr);
+  output_info.write("\tMaximum error in diagonal inversion is {:e}\n", maxerr);
 
   maxerr = BOUTMAX(max(abs(g_11 * g12 + g_12 * g22 + g_13 * g23)),
                    max(abs(g_11 * g13 + g_12 * g23 + g_13 * g33)),
                    max(abs(g_12 * g13 + g_22 * g23 + g_23 * g33)));
 
-  output_info.write("\tMaximum error in off-diagonal inversion is %e\n", maxerr);
+  output_info.write("\tMaximum error in off-diagonal inversion is {:e}\n", maxerr);
   return 0;
 }
 

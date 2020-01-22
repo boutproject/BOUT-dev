@@ -89,6 +89,7 @@ set(BOUT_SOURCES
   ./include/bout/surfaceiter.hxx
   ./include/bout/operatorstencil.hxx
   ./include/bout/sys/expressionparser.hxx
+  ./include/bout/sys/generator_context.hxx
   ./include/bout/sys/gettext.hxx
   ./include/bout/sys/range.hxx
   ./include/bout/sys/timer.hxx
@@ -284,6 +285,7 @@ set(BOUT_SOURCES
   ./src/sys/boutexception.cxx
   ./src/sys/derivs.cxx
   ./src/sys/expressionparser.cxx
+  ./src/sys/generator_context.cxx
   ./src/sys/msg_stack.cxx
   ./src/sys/options.cxx
   ./src/sys/options/optionparser.hxx
@@ -317,6 +319,17 @@ target_compile_definitions(bout++
 
 target_compile_features(bout++ PUBLIC cxx_std_14)
 set_target_properties(bout++ PROPERTIES CXX_EXTENSIONS OFF)
+
+option(EXTERNAL_FMT "Use external installation of fmt" OFF)
+if(EXTERNAL_FMT)
+  find_package(fmt 6 REQUIRED)
+else()
+  # Need to install fmt alongside BOUT++
+  set(FMT_INSTALL ON CACHE BOOL "")
+  add_subdirectory(externalpackages/fmt)
+  message(STATUS "Using fmt submodule")
+endif()
+target_link_libraries(bout++ PUBLIC fmt::fmt)
 
 option(ENABLE_WARNINGS "Enable compiler warnings" ON)
 if (ENABLE_WARNINGS)
@@ -531,19 +544,21 @@ message(STATUS "SUNDIALS support: ${USE_SUNDIALS}")
 set(BOUT_HAS_SUNDIALS ${USE_SUNDIALS})
 
 option(USE_NLS "Enable Native Language Support" ON)
-find_package(Gettext)
-if (GETTEXT_FOUND)
-  target_compile_definitions(bout++
-    PUBLIC "BOUT_HAS_GETTEXT")
-  find_package(Intl)
-  if (Intl_FOUND)
-    target_link_libraries(bout++
-      PUBLIC ${Intl_LIBRARIES})
-    target_include_directories(bout++
-      PUBLIC ${Intl_INCLUDE_DIRS})
+if (USE_NLS)
+  find_package(Gettext)
+  if (GETTEXT_FOUND)
+	target_compile_definitions(bout++
+	  PUBLIC "BOUT_HAS_GETTEXT")
+	find_package(Intl)
+	if (Intl_FOUND)
+	  target_link_libraries(bout++
+		PUBLIC ${Intl_LIBRARIES})
+	  target_include_directories(bout++
+		PUBLIC ${Intl_INCLUDE_DIRS})
+	endif()
   endif()
 endif()
-set(BOUT_HAS_GETTEXT ${GETTEXT_FOUND})
+set(BOUT_HAS_GETTEXT ${USE_NLS})
 
 option(USE_SCOREP "Enable support for Score-P based instrumentation" OFF)
 if (USE_SCOREP)

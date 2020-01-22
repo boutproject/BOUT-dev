@@ -273,7 +273,7 @@ public:
   const inline SpecificInd yp(int dy = 1) const {
 #if CHECK >= 4
     if (y() + dy < 0 or y() + dy >= ny) {
-      throw BoutException("Offset in y (%d) would go out of bounds at %d", dy, ind);
+      throw BoutException("Offset in y ({:d}) would go out of bounds at {:d}", dy, ind);
     }
 #endif
     ASSERT3(std::abs(dy) < ny);
@@ -501,21 +501,29 @@ public:
 #if CHECK > 1
     if (std::is_base_of<Ind2D, T>::value) {
       if (nz != 1)
-	throw BoutException("Trying to make Region<Ind2D> with nz = %d, but expected nz = 1", nz);
+        throw BoutException(
+            "Trying to make Region<Ind2D> with nz = {:d}, but expected nz = 1", nz);
       if (zstart != 0)
-	throw BoutException("Trying to make Region<Ind2D> with zstart = %d, but expected zstart = 0", zstart);
+        throw BoutException(
+            "Trying to make Region<Ind2D> with zstart = {:d}, but expected zstart = 0",
+            zstart);
       if (zstart != 0)
-	throw BoutException("Trying to make Region<Ind2D> with zend = %d, but expected zend = 0", zend);
-
+        throw BoutException(
+            "Trying to make Region<Ind2D> with zend = {:d}, but expected zend = 0", zend);
     }
 
     if (std::is_base_of<IndPerp, T>::value) {
       if (ny != 1)
-	throw BoutException("Trying to make Region<IndPerp> with ny = %d, but expected ny = 1", ny);
+        throw BoutException(
+            "Trying to make Region<IndPerp> with ny = {:d}, but expected ny = 1", ny);
       if (ystart != 0)
-	throw BoutException("Trying to make Region<IndPerp> with ystart = %d, but expected ystart = 0", ystart);
+        throw BoutException(
+            "Trying to make Region<IndPerp> with ystart = {:d}, but expected ystart = 0",
+            ystart);
       if (ystart != 0)
-	throw BoutException("Trying to make Region<IndPerp> with yend = %d, but expected yend = 0", yend);
+        throw BoutException(
+            "Trying to make Region<IndPerp> with yend = {:d}, but expected yend = 0",
+            yend);
     }
 #endif
     

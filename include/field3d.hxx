@@ -227,8 +227,8 @@ class Field3D : public Field, public FieldData {
   int getNz() const override {return nz;};
 
   // these methods return Field3D to allow method chaining
-  Field3D& setLocation(CELL_LOC location) {
-    Field::setLocation(location);
+  Field3D& setLocation(CELL_LOC new_location) {
+    Field::setLocation(new_location);
     return *this;
   }
   Field3D& setDirectionY(YDirectionType d) {
@@ -242,7 +242,7 @@ class Field3D : public Field, public FieldData {
    */
   void splitParallelSlices();
 
-  [[gnu::deprecated("Please use Field3D::splitParallelSlices instead")]]
+  [[deprecated("Please use Field3D::splitParallelSlices instead")]]
   void splitYupYdown() {
     splitParallelSlices();
   }
@@ -252,7 +252,7 @@ class Field3D : public Field, public FieldData {
    */
   void clearParallelSlices();
   
-  [[gnu::deprecated("Please use Field3D::clearParallelSlices instead")]]
+  [[deprecated("Please use Field3D::clearParallelSlices instead")]]
   void mergeYupYdown() {
     clearParallelSlices();
   }
@@ -262,7 +262,7 @@ class Field3D : public Field, public FieldData {
     return !yup_fields.empty() and !ydown_fields.empty();
   }
 
-  [[gnu::deprecated("Please use Field3D::hasParallelSlices instead")]]
+  [[deprecated("Please use Field3D::hasParallelSlices instead")]]
   bool hasYupYdown() const {
     return hasParallelSlices();
   }
@@ -363,8 +363,9 @@ class Field3D : public Field, public FieldData {
     if((jx < 0) || (jx >= nx) || 
        (jy < 0) || (jy >= ny) || 
        (jz < 0) || (jz >= nz))
-      throw BoutException("Field3D: (%d, %d, %d) operator out of bounds (%d, %d, %d)", 
-			  jx, jy, jz, nx, ny, nz);
+      throw BoutException(
+          "Field3D: ({:d}, {:d}, {:d}) operator out of bounds ({:d}, {:d}, {:d})", jx, jy,
+          jz, nx, ny, nz);
 #endif
     return data[(jx*ny +jy)*nz + jz];
   }
@@ -377,8 +378,9 @@ class Field3D : public Field, public FieldData {
     if((jx < 0) || (jx >= nx) || 
        (jy < 0) || (jy >= ny) || 
        (jz < 0) || (jz >= nz))
-      throw BoutException("Field3D: (%d, %d, %d) operator out of bounds (%d, %d, %d)", 
-			  jx, jy, jz, nx, ny, nz);
+      throw BoutException(
+          "Field3D: ({:d}, {:d}, {:d}) operator out of bounds ({:d}, {:d}, {:d})", jx, jy,
+          jz, nx, ny, nz);
 #endif
     return data[(jx*ny +jy)*nz + jz];
   }
@@ -397,8 +399,8 @@ class Field3D : public Field, public FieldData {
 
     if((jx < 0) || (jx >= nx) ||
        (jy < 0) || (jy >= ny))
-      throw BoutException("Field3D: (%d, %d) operator out of bounds (%d, %d)",
-                          jx, jy, nx, ny);
+      throw BoutException("Field3D: ({:d}, {:d}) operator out of bounds ({:d}, {:d})", jx,
+                          jy, nx, ny);
 #endif
     return &data[(jx*ny +jy)*nz];
   }
@@ -410,8 +412,8 @@ class Field3D : public Field, public FieldData {
 
     if((jx < 0) || (jx >= nx) ||
        (jy < 0) || (jy >= ny))
-      throw BoutException("Field3D: (%d, %d) operator out of bounds (%d, %d)",
-                          jx, jy, nx, ny);
+      throw BoutException("Field3D: ({:d}, {:d}) operator out of bounds ({:d}, {:d})", jx,
+                          jy, nx, ny);
 #endif
     return &data[(jx*ny +jy)*nz];
   }
@@ -580,13 +582,13 @@ Field3D operator-(const Field3D &f);
 /// default (can be changed using the \p rgn argument).
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
 Field3D pow(const Field3D& lhs, const Field2D& rhs, const std::string& rgn = "RGN_ALL");
-[[gnu::deprecated("Please use pow(const Field3D& lhs, const Field2D& rhs"
+[[deprecated("Please use pow(const Field3D& lhs, const Field2D& rhs"
     "const std::string& region = \"RGN_ALL\") instead")]]
 inline Field3D pow(const Field3D &lhs, const Field2D &rhs, REGION rgn) {
   return pow(lhs, rhs, toString(rgn));
 }
 FieldPerp pow(const Field3D& lhs, const FieldPerp& rhs, const std::string& rgn = "RGN_ALL");
-[[gnu::deprecated("Please use pow(const Field3D& lhs, const FieldPerp& rhs"
+[[deprecated("Please use pow(const Field3D& lhs, const FieldPerp& rhs"
     "const std::string& region = \"RGN_ALL\") instead")]]
 inline FieldPerp pow(const Field3D& lhs, const FieldPerp& rhs, REGION rgn) {
   return pow(lhs, rhs, toString(rgn));
@@ -598,7 +600,7 @@ inline FieldPerp pow(const Field3D& lhs, const FieldPerp& rhs, REGION rgn) {
 /// Loops over all points including the boundaries by
 /// default (can be changed using the \p rgn argument
 void checkData(const Field3D& f, const std::string& region = "RGN_NOBNDRY");
-[[gnu::deprecated("Please use checkData(const Field3D& f, "
+[[deprecated("Please use checkData(const Field3D& f, "
     "const std::string& region = \"RGN_NOBNDRY\") instead")]]
 inline void checkData(const Field3D &f, REGION region) {
   return checkData(f, toString(region));
@@ -607,7 +609,7 @@ inline void checkData(const Field3D &f, REGION region) {
 /// Ignored with disabled CHECK; Throw an exception if \p f is not
 /// allocated or if any elements are non-finite (for CHECK > 2)
 inline void checkData(const Field3D& UNUSED(f), const std::string& UNUSED(region) = "RGN_NOBNDRY") {};
-[[gnu::deprecated("Please use checkData(const Field3D& f, "
+[[deprecated("Please use checkData(const Field3D& f, "
     "const std::string& region = \"RGN_NOBNDRY\") instead")]]
 inline void checkData(const Field3D &UNUSED(f), REGION UNUSED(region)) {}
 #endif
@@ -618,7 +620,7 @@ inline void checkData(const Field3D &UNUSED(f), REGION UNUSED(region)) {}
 /// @param[in] N0  The component to keep
 /// @param[in] rgn The region to calculate the result over
 Field3D filter(const Field3D& var, int N0, const std::string& rgn = "RGN_ALL");
-[[gnu::deprecated("Please use filter(const Field3D& var, int N0, "
+[[deprecated("Please use filter(const Field3D& var, int N0, "
     "const std::string& region = \"RGN_ALL\") instead")]]
 inline Field3D filter(const Field3D& var, int N0, REGION rgn) {
   return filter(var, N0, toString(rgn));
@@ -633,7 +635,7 @@ inline Field3D filter(const Field3D& var, int N0, REGION rgn) {
 /// @param[in] rgn   The region to calculate the result over
 Field3D lowPass(const Field3D& var, int zmax, bool keep_zonal,
     const std::string& rgn = "RGN_ALL");
-[[gnu::deprecated("Please use lowpass(const Field3D& var, int zmax, bool keep_zonal, "
+[[deprecated("Please use lowpass(const Field3D& var, int zmax, bool keep_zonal, "
     "const std::string& region = \"RGN_ALL\") instead")]]
 inline Field3D lowPass(const Field3D& var, int zmax, bool keep_zonal, REGION rgn) {
   return lowPass(var, zmax, keep_zonal, toString(rgn));
@@ -655,7 +657,7 @@ DEPRECATED(inline Field3D lowPass(const Field3D& var, int zmax, int keep_zonal,
 inline Field3D lowPass(const Field3D &var, int zmax, const std::string rgn = "RGN_ALL") {
   return lowPass(var, zmax, true, rgn);
 }
-[[gnu::deprecated("Please use lowpass(const Field3D& var, int zmax, "
+[[deprecated("Please use lowpass(const Field3D& var, int zmax, "
     "const std::string& region = \"RGN_ALL\") instead")]]
 inline Field3D lowPass(const Field3D &var, int zmax, REGION rgn) {
   return lowPass(var, zmax, toString(rgn));
@@ -675,7 +677,7 @@ void shiftZ(Field3D &var, int jx, int jy, double zangle);
 /// @param[in] zangle  The angle to shift by in Z
 /// @param[in] rgn     The region to calculate the result over
 void shiftZ(Field3D &var, BoutReal zangle, const std::string& rgn="RGN_ALL");
-[[gnu::deprecated("Please use shiftZ(const Field3D& var, BoutReal zangle, "
+[[deprecated("Please use shiftZ(const Field3D& var, BoutReal zangle, "
     "const std::string& region = \"RGN_ALL\") instead")]]
 inline void shiftZ(Field3D &var, BoutReal zangle, REGION rgn) {
   return shiftZ(var, zangle, toString(rgn));
@@ -686,7 +688,7 @@ inline void shiftZ(Field3D &var, BoutReal zangle, REGION rgn) {
 /// @param[in] f     Variable to average
 /// @param[in] rgn   The region to calculate the result over
 Field2D DC(const Field3D &f, const std::string& rgn = "RGN_ALL");
-[[gnu::deprecated("Please use DC(const Field3D& f, "
+[[deprecated("Please use DC(const Field3D& f, "
     "const std::string& region = \"RGN_ALL\") instead")]]
 inline Field2D DC(const Field3D &f, REGION rgn) {
   return DC(f, toString(rgn));

@@ -182,7 +182,7 @@ Field3D Laplacian::solve(const Field3D& b) {
       // 2. Send it to the solver of the implementation (determined during creation)
       x = solve(sliceXZ(b,jy));
     }
-  } catch (BoutIterationFail &itfail) {
+  } catch (const BoutIterationFail&) {
     status = 1;
   }
   BoutParallelThrowRhsFail(status, "Laplacian inversion took too many iterations.");
@@ -234,7 +234,7 @@ Field3D Laplacian::solve(const Field3D& b, const Field3D& x0) {
       // 2. Send them to the solver of the implementation (determined during creation)
       x = solve(sliceXZ(b,jy), sliceXZ(x0,jy));
     }
-  } catch (BoutIterationFail &itfail) {
+  } catch (const BoutIterationFail&) {
     status = 1;
   }
   BoutParallelThrowRhsFail(status, "Laplacian inversion took too many iterations.");
@@ -736,3 +736,8 @@ void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcom
                           const Field2D *ccoef, const Field2D *d, CELL_LOC loc) {
   Laplacian::defaultInstance()->tridagCoefs(jx,jy, jz, a, b, c, ccoef, d, loc);
 }
+
+constexpr decltype(LaplaceFactory::type_name) LaplaceFactory::type_name;
+constexpr decltype(LaplaceFactory::section_name) LaplaceFactory::section_name;
+constexpr decltype(LaplaceFactory::option_name) LaplaceFactory::option_name;
+constexpr decltype(LaplaceFactory::default_type) LaplaceFactory::default_type;

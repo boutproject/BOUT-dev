@@ -275,7 +275,7 @@ int SlepcSolver::init(int NOUT, BoutReal TIMESTEP) {
     throw BoutException("MPI_Allreduce failed in SlepcSolver::init");
   }
 
-  output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n", n3Dvars(),
+  output.write("\t3d fields = {:d}, 2d fields = {:d} neq={:d}, local_N={:d}\n", n3Dvars(),
                n2Dvars(), neq, localSize);
 
   // Create EPS solver

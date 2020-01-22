@@ -206,7 +206,7 @@ int ArkodeSolver::init(int nout, BoutReal tstep) {
     throw BoutException("Allreduce localN -> GlobalN failed!\n");
   }
 
-  output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n", n3Dvars(),
+  output.write("\t3d fields = {:d}, 2d fields = {:d} neq={:d}, local_N={:d}\n", n3Dvars(),
                n2Dvars(), neq, local_N);
 
   // Allocate memory
@@ -514,15 +514,15 @@ int ArkodeSolver::run() {
       ARKStepGetNumPrecEvals(arkode_mem, &npevals);
       ARKStepGetNumLinIters(arkode_mem, &nliters);
 
-      output.write("\nARKODE: nsteps %ld, nfe_evals %ld, nfi_evals %ld, nniters %ld, "
-                   "npevals %ld, nliters %ld\n",
+      output.write("\nARKODE: nsteps {:d}, nfe_evals {:d}, nfi_evals {:d}, nniters {:d}, "
+                   "npevals {:d}, nliters {:d}\n",
                    nsteps, nfe_evals, nfi_evals, nniters, npevals, nliters);
 
-      output.write("    -> Newton iterations per step: %e\n",
+      output.write("    -> Newton iterations per step: {:e}\n",
                    static_cast<BoutReal>(nniters) / static_cast<BoutReal>(nsteps));
-      output.write("    -> Linear iterations per Newton iteration: %e\n",
+      output.write("    -> Linear iterations per Newton iteration: {:e}\n",
                    static_cast<BoutReal>(nliters) / static_cast<BoutReal>(nniters));
-      output.write("    -> Preconditioner evaluations per Newton: %e\n",
+      output.write("    -> Preconditioner evaluations per Newton: {:e}\n",
                    static_cast<BoutReal>(npevals) / static_cast<BoutReal>(nniters));
     }
 
@@ -538,7 +538,7 @@ int ArkodeSolver::run() {
 }
 
 BoutReal ArkodeSolver::run(BoutReal tout) {
-  TRACE("Running solver: solver::run(%e)", tout);
+  TRACE("Running solver: solver::run({:e})", tout);
 
   bout::globals::mpi->MPI_Barrier(BoutComm::get());
 
@@ -559,7 +559,7 @@ BoutReal ArkodeSolver::run(BoutReal tout) {
       flag = ARKStepEvolve(arkode_mem, tout, uvec, &internal_time, ARK_ONE_STEP);
 
       if (flag != ARK_SUCCESS) {
-        output_error.write("ERROR ARKODE solve failed at t = %e, flag = %d\n",
+        output_error.write("ERROR ARKODE solve failed at t = {:e}, flag = {:d}\n",
                            internal_time, flag);
         return -1.0;
       }
@@ -578,7 +578,7 @@ BoutReal ArkodeSolver::run(BoutReal tout) {
   run_rhs(simtime);
   // run_diffusive(simtime);
   if (flag != ARK_SUCCESS) {
-    output_error.write("ERROR ARKODE solve failed at t = %e, flag = %d\n", simtime, flag);
+    output_error.write("ERROR ARKODE solve failed at t = {:e}, flag = {:d}\n", simtime, flag);
     return -1.0;
   }
 
@@ -590,7 +590,7 @@ BoutReal ArkodeSolver::run(BoutReal tout) {
  **************************************************************************/
 
 void ArkodeSolver::rhs_e(BoutReal t, BoutReal* udata, BoutReal* dudata) {
-  TRACE("Running RHS: ArkodeSolver::rhs_e(%e)", t);
+  TRACE("Running RHS: ArkodeSolver::rhs_e({:e})", t);
 
   // Load state from udata
   load_vars(udata);
@@ -611,7 +611,7 @@ void ArkodeSolver::rhs_e(BoutReal t, BoutReal* udata, BoutReal* dudata) {
  **************************************************************************/
 
 void ArkodeSolver::rhs_i(BoutReal t, BoutReal* udata, BoutReal* dudata) {
-  TRACE("Running RHS: ArkodeSolver::rhs_i(%e)", t);
+  TRACE("Running RHS: ArkodeSolver::rhs_i({:e})", t);
 
   load_vars(udata);
   ARKStepGetLastStep(arkode_mem, &hcur);
@@ -624,7 +624,7 @@ void ArkodeSolver::rhs_i(BoutReal t, BoutReal* udata, BoutReal* dudata) {
  *   Full  RHS function du = F(t, u)
  **************************************************************************/
 void ArkodeSolver::rhs(BoutReal t, BoutReal* udata, BoutReal* dudata) {
-  TRACE("Running RHS: ArkodeSolver::rhs(%e)", t);
+  TRACE("Running RHS: ArkodeSolver::rhs({:e})", t);
 
   load_vars(udata);
   ARKStepGetLastStep(arkode_mem, &hcur);
@@ -639,7 +639,7 @@ void ArkodeSolver::rhs(BoutReal t, BoutReal* udata, BoutReal* dudata) {
 
 void ArkodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* udata,
                        BoutReal* rvec, BoutReal* zvec) {
-  TRACE("Running preconditioner: ArkodeSolver::pre(%e)", t);
+  TRACE("Running preconditioner: ArkodeSolver::pre({:e})", t);
 
   const BoutReal tstart = bout::globals::mpi->MPI_Wtime();
 
@@ -670,7 +670,7 @@ void ArkodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal* uda
  **************************************************************************/
 
 void ArkodeSolver::jac(BoutReal t, BoutReal* ydata, BoutReal* vdata, BoutReal* Jvdata) {
-  TRACE("Running Jacobian: ArkodeSolver::jac(%e)", t);
+  TRACE("Running Jacobian: ArkodeSolver::jac({:e})", t);
 
   if (jacfunc == nullptr)
     throw BoutException("No jacobian function supplied!\n");

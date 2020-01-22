@@ -50,7 +50,25 @@
 /// MPI type of BoutReal for communications
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 
-BoutMesh::BoutMesh(GridDataSource *s, Options *opt) : Mesh(s, opt) {
+namespace {
+  // Utility function to get an index forced to be between lower and upper bounds
+  int in_range(int value, int lower, int upper) {
+    ASSERT2(lower <= upper);
+    return std::max(lower, std::min(upper, value));
+  }
+}
+
+BoutMesh::BoutMesh(GridDataSource *s, Options *opt)
+  : Mesh(s, opt),
+    include_corner_cells((*options)["include_corner_cells"]
+                         .doc("Communicate corner guard and boundary cells. Can be set "
+                               "to false if you are sure that you will not need these "
+                               "cells, for mixed derivatives D2DXDY (or anything else), "
+                               "for example if your grid has orthogonal x- and "
+                               "y-directions.  This might slightly reduce communication "
+                               "time.")
+                         .withDefault(true)) {
+
   OPTION(options, symmetricGlobalX, true);
   if (!options->isSet("symmetricGlobalY")) {
     std::string optionfile = Options::root()["optionfile"].withDefault("");
@@ -119,7 +137,7 @@ int BoutMesh::load() {
       // Should be a power of 2 for efficient FFTs
       output_warn.write(
           _("WARNING: Number of toroidal points should be 2^n for efficient "
-            "FFT performance -- consider changing MZ (%d) if using FFTs\n"),
+            "FFT performance -- consider changing MZ ({:d}) if using FFTs\n"),
           nz);
     }
   } else {
@@ -152,7 +170,7 @@ int BoutMesh::load() {
 
   // Check that nx is large enough
   if (nx <= 2 * MXG) {
-    throw BoutException(_("Error: nx must be greater than 2 times MXG (2 * %d)"), MXG);
+    throw BoutException(_("Error: nx must be greater than 2 times MXG (2 * {:d})"), MXG);
   }
 
   // Set global x- and z-grid sizes
@@ -176,33 +194,33 @@ int BoutMesh::load() {
 
   /// Check inputs
   if (jyseps1_1 < -1) {
-    output_warn.write("\tWARNING: jyseps1_1 (%d) must be >= -1. Setting to -1\n",
+    output_warn.write("\tWARNING: jyseps1_1 ({:d}) must be >= -1. Setting to -1\n",
                       jyseps1_1);
     jyseps1_1 = -1;
   }
 
   if (jyseps2_1 < jyseps1_1) {
     output_warn.write(
-        "\tWARNING: jyseps2_1 (%d) must be >= jyseps1_1 (%d). Setting to %d\n", jyseps2_1,
+        "\tWARNING: jyseps2_1 ({:d}) must be >= jyseps1_1 ({:d}). Setting to {:d}\n", jyseps2_1,
         jyseps1_1, jyseps1_1 + 1);
     jyseps2_1 = jyseps1_1 + 1;
   }
   if (jyseps1_2 < jyseps2_1) {
     output_warn.write(
-        "\tWARNING: jyseps1_2 (%d) must be >= jyseps2_1 (%d). Setting to %d\n", jyseps1_2,
+        "\tWARNING: jyseps1_2 ({:d}) must be >= jyseps2_1 ({:d}). Setting to {:d}\n", jyseps1_2,
         jyseps2_1, jyseps2_1);
     jyseps1_2 = jyseps2_1;
   }
   if (jyseps2_2 >= ny) {
-    output_warn.write("\tWARNING: jyseps2_2 (%d) must be < ny (%d). Setting to %d\n",
+    output_warn.write("\tWARNING: jyseps2_2 ({:d}) must be < ny ({:d}). Setting to {:d}\n",
                       jyseps2_2, ny, ny - 1);
     jyseps2_2 = ny - 1;
   }
   if (jyseps2_2 < jyseps1_2) {
     if (jyseps1_2 >= ny) {
-      throw BoutException("jyseps1_2 (%d) must be < ny (%d).", jyseps1_2, ny);
+      throw BoutException("jyseps1_2 ({:d}) must be < ny ({:d}).", jyseps1_2, ny);
     }
-    output_warn.write("\tWARNING: jyseps2_2 (%d) must be >= jyseps1_2 (%d). Setting to %d\n",
+    output_warn.write("\tWARNING: jyseps2_2 ({:d}) must be >= jyseps1_2 ({:d}). Setting to {:d}\n",
                       jyseps2_2, jyseps1_2, jyseps1_2);
     jyseps2_2 = jyseps1_2;
   }
@@ -226,8 +244,8 @@ int BoutMesh::load() {
                  .withDefault(1);
       if ((NPES % NXPE) != 0) {
         throw BoutException(
-            _("Number of processors (%d) not divisible by NPs in x direction (%d)\n"), NPES,
-            NXPE);
+            _("Number of processors ({:d}) not divisible by NPs in x direction ({:d})\n"),
+            NPES, NXPE);
       }
 
       NYPE = NPES / NXPE;
@@ -239,8 +257,8 @@ int BoutMesh::load() {
                  .withDefault(1);
       if ((NPES % NYPE) != 0) {
         throw BoutException(
-            _("Number of processors (%d) not divisible by NPs in y direction (%d)\n"), NPES,
-            NYPE);
+            _("Number of processors ({:d}) not divisible by NPs in y direction ({:d})\n"),
+            NPES, NYPE);
       }
 
       NXPE = NPES / NYPE;
@@ -250,13 +268,13 @@ int BoutMesh::load() {
 
     // Check size of Y mesh
     if (ysub < MYG) {
-      throw BoutException("\t -> ny/NYPE (%d/%d = %d) must be >= MYG (%d)\n", ny, NYPE,
-                        ysub, MYG);
+      throw BoutException("\t -> ny/NYPE ({:d}/{:d} = {:d}) must be >= MYG ({:d})\n", ny,
+                          NYPE, ysub, MYG);
     }
     // Check branch cuts
     if ((jyseps1_1 + 1) % ysub != 0) {
       throw BoutException(
-          "\t -> Leg region jyseps1_1+1 (%d) must be a multiple of MYSUB (%d)\n",
+          "\t -> Leg region jyseps1_1+1 ({:d}) must be a multiple of MYSUB ({:d})\n",
           jyseps1_1 + 1, ysub);
     }
 
@@ -264,41 +282,47 @@ int BoutMesh::load() {
       // Double Null
 
       if ((jyseps2_1 - jyseps1_1) % ysub != 0) {
-        throw BoutException("\t -> Core region jyseps2_1-jyseps1_1 (%d-%d = %d) must "
-                          "be a multiple of MYSUB (%d)\n",
-                          jyseps2_1, jyseps1_1, jyseps2_1 - jyseps1_1, ysub);
+        throw BoutException(
+            "\t -> Core region jyseps2_1-jyseps1_1 ({:d}-{:d} = {:d}) must "
+            "be a multiple of MYSUB ({:d})\n",
+            jyseps2_1, jyseps1_1, jyseps2_1 - jyseps1_1, ysub);
       }
 
       if ((jyseps2_2 - jyseps1_2) % ysub != 0) {
-        throw BoutException("\t -> Core region jyseps2_2-jyseps1_2 (%d-%d = %d) must "
-                          "be a multiple of MYSUB (%d)\n",
-                          jyseps2_2, jyseps1_2, jyseps2_2 - jyseps1_2, ysub);
+        throw BoutException(
+            "\t -> Core region jyseps2_2-jyseps1_2 ({:d}-{:d} = {:d}) must "
+            "be a multiple of MYSUB ({:d})\n",
+            jyseps2_2, jyseps1_2, jyseps2_2 - jyseps1_2, ysub);
       }
 
       // Check upper legs
       if ((ny_inner - jyseps2_1 - 1) % ysub != 0) {
-        throw BoutException("\t -> leg region ny_inner-jyseps2_1-1 (%d-%d-1 = %d) must "
-                          "be a multiple of MYSUB (%d)\n",
-                          ny_inner, jyseps2_1, ny_inner - jyseps2_1 - 1, ysub);
+        throw BoutException(
+            "\t -> leg region ny_inner-jyseps2_1-1 ({:d}-{:d}-1 = {:d}) must "
+            "be a multiple of MYSUB ({:d})\n",
+            ny_inner, jyseps2_1, ny_inner - jyseps2_1 - 1, ysub);
       }
       if ((jyseps1_2 - ny_inner + 1) % ysub != 0) {
-        throw BoutException("\t -> leg region jyseps1_2-ny_inner+1 (%d-%d+1 = %d) must "
-                          "be a multiple of MYSUB (%d)\n",
-                          jyseps1_2, ny_inner, jyseps1_2 - ny_inner + 1, ysub);
+        throw BoutException(
+            "\t -> leg region jyseps1_2-ny_inner+1 ({:d}-{:d}+1 = {:d}) must "
+            "be a multiple of MYSUB ({:d})\n",
+            jyseps1_2, ny_inner, jyseps1_2 - ny_inner + 1, ysub);
       }
     } else {
       // Single Null
       if ((jyseps2_2 - jyseps1_1) % ysub != 0) {
-        throw BoutException("\t -> Core region jyseps2_2-jyseps1_1 (%d-%d = %d) must "
-                          "be a multiple of MYSUB (%d)\n",
-                          jyseps2_2, jyseps1_1, jyseps2_2 - jyseps1_1, ysub);
+        throw BoutException(
+            "\t -> Core region jyseps2_2-jyseps1_1 ({:d}-{:d} = {:d}) must "
+            "be a multiple of MYSUB ({:d})\n",
+            jyseps2_2, jyseps1_1, jyseps2_2 - jyseps1_1, ysub);
       }
     }
 
     if ((ny - jyseps2_2 - 1) % ysub != 0) {
-      throw BoutException("\t -> leg region ny-jyseps2_2-1 (%d-%d-1 = %d) must be a "
-                        "multiple of MYSUB (%d)\n",
-                        ny, jyseps2_2, ny - jyseps2_2 - 1, ysub);
+      throw BoutException(
+          "\t -> leg region ny-jyseps2_2-1 ({:d}-{:d}-1 = {:d}) must be a "
+          "multiple of MYSUB ({:d})\n",
+          ny, jyseps2_2, ny - jyseps2_2 - 1, ysub);
     }
   } else {
     // Choose NXPE
@@ -310,28 +334,28 @@ int BoutMesh::load() {
     // Results in square domains
     const BoutReal ideal = sqrt(MX * NPES / static_cast<BoutReal>(ny));
 
-    output_info.write(_("Finding value for NXPE (ideal = %f)\n"), ideal);
+    output_info.write(_("Finding value for NXPE (ideal = {:f})\n"), ideal);
 
     for (int i = 1; i <= NPES; i++) { // Loop over all possibilities
       if ((NPES % i == 0) &&          // Processors divide equally
           (MX % i == 0) &&            // Mesh in X divides equally
           (ny % (NPES / i) == 0)) {   // Mesh in Y divides equally
 
-        output_info.write(_("\tCandidate value: %d\n"), i);
+        output_info.write(_("\tCandidate value: {:d}\n"), i);
 
         const int nyp = NPES / i;
         const int ysub = ny / nyp;
 
         // Check size of Y mesh if we've got multiple processors
         if (ysub < MYG and NPES != 1) {
-          output_info.write(_("\t -> ny/NYPE (%d/%d = %d) must be >= MYG (%d)\n"), ny, nyp,
+          output_info.write(_("\t -> ny/NYPE ({:d}/{:d} = {:d}) must be >= MYG ({:d})\n"), ny, nyp,
                             ysub, MYG);
           continue;
         }
         // Check branch cuts
         if ((jyseps1_1 + 1) % ysub != 0) {
           output_info.write(
-			    _("\t -> Leg region jyseps1_1+1 (%d) must be a multiple of MYSUB (%d)\n"),
+			    _("\t -> Leg region jyseps1_1+1 ({:d}) must be a multiple of MYSUB ({:d})\n"),
               jyseps1_1 + 1, ysub);
           continue;
         }
@@ -340,45 +364,45 @@ int BoutMesh::load() {
           // Double Null
 
           if ((jyseps2_1 - jyseps1_1) % ysub != 0) {
-            output_info.write(_("\t -> Core region jyseps2_1-jyseps1_1 (%d-%d = %d) must "
-				"be a multiple of MYSUB (%d)\n"),
+            output_info.write(_("\t -> Core region jyseps2_1-jyseps1_1 ({:d}-{:d} = {:d}) must "
+				"be a multiple of MYSUB ({:d})\n"),
                               jyseps2_1, jyseps1_1, jyseps2_1 - jyseps1_1, ysub);
             continue;
           }
 
           if ((jyseps2_2 - jyseps1_2) % ysub != 0) {
-            output_info.write(_("\t -> Core region jyseps2_2-jyseps1_2 (%d-%d = %d) must "
-				"be a multiple of MYSUB (%d)\n"),
+            output_info.write(_("\t -> Core region jyseps2_2-jyseps1_2 ({:d}-{:d} = {:d}) must "
+				"be a multiple of MYSUB ({:d})\n"),
                               jyseps2_2, jyseps1_2, jyseps2_2 - jyseps1_2, ysub);
             continue;
           }
 
           // Check upper legs
           if ((ny_inner - jyseps2_1 - 1) % ysub != 0) {
-            output_info.write(_("\t -> leg region ny_inner-jyseps2_1-1 (%d-%d-1 = %d) must "
-                              "be a multiple of MYSUB (%d)\n"),
+            output_info.write(_("\t -> leg region ny_inner-jyseps2_1-1 ({:d}-{:d}-1 = {:d}) must "
+                              "be a multiple of MYSUB ({:d})\n"),
                               ny_inner, jyseps2_1, ny_inner - jyseps2_1 - 1, ysub);
             continue;
           }
           if ((jyseps1_2 - ny_inner + 1) % ysub != 0) {
-            output_info.write(_("\t -> leg region jyseps1_2-ny_inner+1 (%d-%d+1 = %d) must "
-				"be a multiple of MYSUB (%d)\n"),
+            output_info.write(_("\t -> leg region jyseps1_2-ny_inner+1 ({:d}-{:d}+1 = {:d}) must "
+				"be a multiple of MYSUB ({:d})\n"),
                               jyseps1_2, ny_inner, jyseps1_2 - ny_inner + 1, ysub);
             continue;
           }
         } else {
           // Single Null
           if ((jyseps2_2 - jyseps1_1) % ysub != 0) {
-            output_info.write(_("\t -> Core region jyseps2_2-jyseps1_1 (%d-%d = %d) must "
-				"be a multiple of MYSUB (%d)\n"),
+            output_info.write(_("\t -> Core region jyseps2_2-jyseps1_1 ({:d}-{:d} = {:d}) must "
+				"be a multiple of MYSUB ({:d})\n"),
                               jyseps2_2, jyseps1_1, jyseps2_2 - jyseps1_1, ysub);
             continue;
           }
         }
 
         if ((ny - jyseps2_2 - 1) % ysub != 0) {
-          output_info.write(_("\t -> leg region ny-jyseps2_2-1 (%d-%d-1 = %d) must be a "
-			      "multiple of MYSUB (%d)\n"),
+          output_info.write(_("\t -> leg region ny-jyseps2_2-1 ({:d}-{:d}-1 = {:d}) must be a "
+			      "multiple of MYSUB ({:d})\n"),
                             ny, jyseps2_2, ny - jyseps2_2 - 1, ysub);
           continue;
         }
@@ -397,7 +421,7 @@ int BoutMesh::load() {
     NYPE = NPES / NXPE;
 
     output_progress.write(
-        _("\tDomain split (NXPE=%d, NYPE=%d) into domains (localNx=%d, localNy=%d)\n"),
+        _("\tDomain split (NXPE={:d}, NYPE={:d}) into domains (localNx={:d}, localNy={:d})\n"),
         NXPE, NYPE, MX / NXPE, ny / NYPE);
   }
 
@@ -413,8 +437,8 @@ int BoutMesh::load() {
   /// Split MX points between NXPE processors
   MXSUB = MX / NXPE;
   if ((MX % NXPE) != 0) {
-    throw BoutException(_("Cannot split %d X points equally between %d processors\n"), MX,
-                        NXPE);
+    throw BoutException(_("Cannot split {:d} X points equally between {:d} processors\n"),
+                        MX, NXPE);
   }
 
   /// NOTE: No grid data reserved for Y boundary cells - copy from neighbours
@@ -422,13 +446,15 @@ int BoutMesh::load() {
   MYSUB = MY / NYPE;
   if ((MY % NYPE) != 0) {
     throw BoutException(
-        _("\tERROR: Cannot split %d Y points equally between %d processors\n"), MY, NYPE);
+        _("\tERROR: Cannot split {:d} Y points equally between {:d} processors\n"), MY,
+        NYPE);
   }
 
   MZSUB = MZ / NZPE;
   if ((MZ % NZPE) != 0) {
     throw BoutException(
-        _("\tERROR: Cannot split %d Z points equally between %d processors\n"), MZ, NZPE);
+        _("\tERROR: Cannot split {:d} Z points equally between {:d} processors\n"), MZ,
+        NZPE);
   }
 
   /// Get mesh options
@@ -522,11 +548,12 @@ int BoutMesh::load() {
 
     if (MPI_Group_range_incl(group_world, 1, &proc, &group) != MPI_SUCCESS)
       throw BoutException(
-          "Could not create X communication group for yp=%d (xind=%d,yind=%d)\n", yp,
-          PE_XIND, PE_YIND);
+          "Could not create X communication group for yp={:d} (xind={:d},yind={:d})\n",
+          yp, PE_XIND, PE_YIND);
     if (MPI_Comm_create(BoutComm::get(), group, &comm_tmp) != MPI_SUCCESS)
-      throw BoutException("Could not create X communicator for yp=%d (xind=%d,yind=%d)\n",
-                          yp, PE_XIND, PE_YIND);
+      throw BoutException(
+          "Could not create X communicator for yp={:d} (xind={:d},yind={:d})\n", yp,
+          PE_XIND, PE_YIND);
     MPI_Group_free(&group);
 
     if (yp == PE_YIND) {
@@ -586,7 +613,7 @@ int BoutMesh::load() {
       output_debug << "Double Null inner SOL " << proc[0] << ", " << proc[1] << endl;
 
       if (MPI_Group_range_incl(group_world, 1, &proc, &group) != MPI_SUCCESS)
-        throw BoutException("MPI_Group_range_incl failed for xp = %d", NXPE);
+        throw BoutException("MPI_Group_range_incl failed for xp = {:d}", NXPE);
       MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
       if (comm_tmp != MPI_COMM_NULL)
         comm_outer = comm_tmp;
@@ -612,7 +639,7 @@ int BoutMesh::load() {
 
     if ((jyseps1_1 >= 0) || (jyseps2_2 + 1 < ny)) {
       // A lower PF region exists
-      TRACE("Creating lower PF communicators for xp=%d", i);
+      TRACE("Creating lower PF communicators for xp={:d}", i);
 
       output_debug << "Creating lower PF communicators for xp = " << i << endl;
 
@@ -671,7 +698,7 @@ int BoutMesh::load() {
     if (jyseps2_1 != jyseps1_2) {
       // Upper PF region
       // Note need to order processors so that a continuous surface is formed
-      TRACE("Creating upper PF communicators for xp=%d", i);
+      TRACE("Creating upper PF communicators for xp={:d}", i);
 
       output_debug << "Creating upper PF communicators for xp = " << i << endl;
 
@@ -850,16 +877,32 @@ int BoutMesh::load() {
   if (MYG > 0) {
     // Need boundaries in Y
 
-    if ((UDATA_INDEST < 0) && (UDATA_XSPLIT > xstart))
-      boundary.push_back(new BoundaryRegionYUp("upper_target", xstart, UDATA_XSPLIT - 1, this));
-    if ((UDATA_OUTDEST < 0) && (UDATA_XSPLIT <= xend))
-      boundary.push_back(new BoundaryRegionYUp("upper_target", UDATA_XSPLIT, xend, this));
+    // Alter x-limits so that y-boundary conditions set corner-boundary cells
+    // i.e. if there is an x-boundary, include corner cells. If
+    // include_corner_cells==false, this modification is disabled to match the behaviour
+    // of BOUT++ up to v4.
+    // Note that including the corner cells requires that the x-boundary conditions are
+    // applied before the y-boundary conditions. This is ensured here in the
+    // BOUT++-applied boundary conditions because the y-boundaries are added to the
+    // 'boundary' vector after the x-boundaries, but beware **THE ORDER IS IMPORTANT**
+    const int yboundary_xstart = (include_corner_cells and IDATA_DEST == -1) ? 0 : xstart;
+    const int yboundary_xend = (include_corner_cells and ODATA_DEST == -1) ? LocalNx - 1
+                                                                           : xend;
 
-    if ((DDATA_INDEST < 0) && (DDATA_XSPLIT > xstart))
+    if ((UDATA_INDEST < 0) && (UDATA_XSPLIT > yboundary_xstart))
+      boundary.push_back(new BoundaryRegionYUp("upper_target", yboundary_xstart,
+                         UDATA_XSPLIT - 1, this));
+    if ((UDATA_OUTDEST < 0) && (UDATA_XSPLIT <= yboundary_xend))
+      boundary.push_back(new BoundaryRegionYUp("upper_target", UDATA_XSPLIT,
+                         yboundary_xend, this));
+
+    if ((DDATA_INDEST < 0) && (DDATA_XSPLIT > yboundary_xstart))
       boundary.push_back(
-          new BoundaryRegionYDown("lower_target", xstart, DDATA_XSPLIT - 1, this));
-    if ((DDATA_OUTDEST < 0) && (DDATA_XSPLIT <= xend))
-      boundary.push_back(new BoundaryRegionYDown("lower_target", DDATA_XSPLIT, xend, this));
+          new BoundaryRegionYDown("lower_target", yboundary_xstart, DDATA_XSPLIT - 1,
+                                  this));
+    if ((DDATA_OUTDEST < 0) && (DDATA_XSPLIT <= yboundary_xend))
+      boundary.push_back(new BoundaryRegionYDown("lower_target", DDATA_XSPLIT,
+                         yboundary_xend, this));
   }
 
   if (!boundary.empty()) {
@@ -897,6 +940,11 @@ const int OUT_SENT_DOWN = 3; ///< Data higher in X than branch-cut, at lower bou
 // X communication signals
 const int IN_SENT_OUT = 4; ///< Data going in positive X direction (in to out)
 const int OUT_SENT_IN = 5; ///< Data going in negative X direction (out to in)
+// corner communication signals
+const int LOWIN_SEND = 6;
+const int UPIN_SEND = 7;
+const int LOWOUT_SEND = 8;
+const int UPOUT_SEND = 9;
 
 void BoutMesh::post_receive(CommHandle &ch) {
   BoutReal *inbuff;
@@ -906,13 +954,17 @@ void BoutMesh::post_receive(CommHandle &ch) {
 
   len = 0;
   if (UDATA_INDEST != -1) {
-    len = msg_len(ch.var_list.get(), 0, UDATA_XSPLIT, 0, MYG);
+    len = msg_len(ch.var_list.get(), YDATA_buff_innerX,
+                  in_range(UDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX), 0, MYG);
     mpi->MPI_Irecv(std::begin(ch.umsg_recvbuff), len, PVEC_REAL_MPI_TYPE, UDATA_INDEST,
                    IN_SENT_DOWN, BoutComm::get(), &ch.request[0]);
   }
   if (UDATA_OUTDEST != -1) {
     inbuff = &ch.umsg_recvbuff[len]; // pointer to second half of the buffer
-    mpi->MPI_Irecv(inbuff, msg_len(ch.var_list.get(), UDATA_XSPLIT, LocalNx, 0, MYG),
+    mpi->MPI_Irecv(inbuff,
+                   msg_len(ch.var_list.get(),
+                           in_range(UDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX),
+                           YDATA_buff_outerX, 0, MYG),
                    PVEC_REAL_MPI_TYPE, UDATA_OUTDEST, OUT_SENT_DOWN, BoutComm::get(),
                    &ch.request[1]);
   }
@@ -922,13 +974,17 @@ void BoutMesh::post_receive(CommHandle &ch) {
   len = 0;
 
   if (DDATA_INDEST != -1) { // If sending & recieving data from a processor
-    len = msg_len(ch.var_list.get(), 0, DDATA_XSPLIT, 0, MYG);
+    len = msg_len(ch.var_list.get(), YDATA_buff_innerX,
+                  in_range(DDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX), 0, MYG);
     mpi->MPI_Irecv(std::begin(ch.dmsg_recvbuff), len, PVEC_REAL_MPI_TYPE, DDATA_INDEST,
                    IN_SENT_UP, BoutComm::get(), &ch.request[2]);
   }
   if (DDATA_OUTDEST != -1) {
     inbuff = &ch.dmsg_recvbuff[len];
-    mpi->MPI_Irecv(inbuff, msg_len(ch.var_list.get(), DDATA_XSPLIT, LocalNx, 0, MYG),
+    mpi->MPI_Irecv(inbuff,
+                   msg_len(ch.var_list.get(),
+                           in_range(DDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX),
+                           YDATA_buff_outerX, 0, MYG),
                    PVEC_REAL_MPI_TYPE, DDATA_OUTDEST, OUT_SENT_UP, BoutComm::get(),
                    &ch.request[3]);
   }
@@ -937,16 +993,47 @@ void BoutMesh::post_receive(CommHandle &ch) {
 
   if (IDATA_DEST != -1) {
     mpi->MPI_Irecv(std::begin(ch.imsg_recvbuff),
-                   msg_len(ch.var_list.get(), 0, MXG, 0, MYSUB), PVEC_REAL_MPI_TYPE,
-                   IDATA_DEST, OUT_SENT_IN, BoutComm::get(), &ch.request[4]);
+                   msg_len(ch.var_list.get(), 0, MXG, IDATA_buff_lowerY_recv,
+                           IDATA_buff_upperY_recv),
+                   PVEC_REAL_MPI_TYPE, IDATA_DEST, OUT_SENT_IN, BoutComm::get(),
+                   &ch.request[4]);
   }
 
   // Post receive data from right (x+1)
 
   if (ODATA_DEST != -1) {
     mpi->MPI_Irecv(std::begin(ch.omsg_recvbuff),
-                   msg_len(ch.var_list.get(), 0, MXG, 0, MYSUB), PVEC_REAL_MPI_TYPE,
-                   ODATA_DEST, IN_SENT_OUT, BoutComm::get(), &ch.request[5]);
+                   msg_len(ch.var_list.get(), 0, MXG, ODATA_buff_lowerY_recv,
+                           ODATA_buff_upperY_recv),
+                   PVEC_REAL_MPI_TYPE, ODATA_DEST, IN_SENT_OUT, BoutComm::get(),
+                   &ch.request[5]);
+  }
+
+  // Post receive data from corners
+
+  if (lower_inner_corner_orig != -1) {
+    mpi->MPI_Irecv(std::begin(ch.lowin_corner_recvbuff),
+                   msg_len(ch.var_list.get(), 0, MXG, 0, MYG),
+                   PVEC_REAL_MPI_TYPE, lower_inner_corner_orig,
+                   UPOUT_SEND, BoutComm::get(), &ch.request[6]);
+  }
+  if (upper_inner_corner_orig != -1) {
+    mpi->MPI_Irecv(std::begin(ch.upin_corner_recvbuff),
+                   msg_len(ch.var_list.get(), 0, MXG, 0, MYG),
+                   PVEC_REAL_MPI_TYPE, upper_inner_corner_orig,
+                   LOWOUT_SEND, BoutComm::get(), &ch.request[7]);
+  }
+  if (lower_outer_corner_orig != -1) {
+    mpi->MPI_Irecv(std::begin(ch.lowout_corner_recvbuff),
+                   msg_len(ch.var_list.get(), 0, MXG, 0, MYG),
+                   PVEC_REAL_MPI_TYPE, lower_outer_corner_orig,
+                   UPIN_SEND, BoutComm::get(), &ch.request[8]);
+  }
+  if (upper_outer_corner_orig != -1) {
+    mpi->MPI_Irecv(std::begin(ch.upout_corner_recvbuff),
+                   msg_len(ch.var_list.get(), 0, MXG, 0, MYG),
+                   PVEC_REAL_MPI_TYPE, upper_outer_corner_orig,
+                   LOWIN_SEND, BoutComm::get(), &ch.request[9]);
   }
 }
 
@@ -955,11 +1042,16 @@ comm_handle BoutMesh::send(FieldGroup &g) {
   Timer timer("comms");
 
   /// Work out length of buffer needed
-  int xlen = msg_len(g.get(), 0, MXG, 0, MYSUB);
-  int ylen = msg_len(g.get(), 0, LocalNx, 0, MYG);
+  int xlen = msg_len(g.get(), 0, MXG, 0,
+                     std::max({IDATA_buff_upperY_send - IDATA_buff_lowerY_send,
+                               IDATA_buff_upperY_recv - IDATA_buff_lowerY_recv,
+                               ODATA_buff_upperY_send - ODATA_buff_lowerY_send,
+                               ODATA_buff_upperY_recv - ODATA_buff_lowerY_recv}));
+  int ylen = msg_len(g.get(), 0, YDATA_buff_outerX - YDATA_buff_innerX, 0, MYG);
+  int cornerlen = include_corner_cells ? msg_len(g.get(), 0, MXG, 0, MYG) : 0;
 
   /// Get a communications handle of (at least) the needed size
-  CommHandle *ch = get_handle(xlen, ylen);
+  CommHandle *ch = get_handle(xlen, ylen, cornerlen);
   ch->var_list = g; // Group of fields to send
 
   /// Post receives
@@ -973,8 +1065,9 @@ comm_handle BoutMesh::send(FieldGroup &g) {
   BoutReal *outbuff;
 
   if (UDATA_INDEST != -1) { // If there is a destination for inner x data
-    len = pack_data(ch->var_list.get(), 0, UDATA_XSPLIT, MYSUB, MYSUB + MYG,
-                    std::begin(ch->umsg_sendbuff));
+    len = pack_data(ch->var_list.get(), YDATA_buff_innerX,
+                    in_range(UDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX), MYSUB,
+                    MYSUB + MYG, std::begin(ch->umsg_sendbuff));
     // Send the data to processor UDATA_INDEST
 
     if (async_send) {
@@ -991,8 +1084,9 @@ comm_handle BoutMesh::send(FieldGroup &g) {
   if (UDATA_OUTDEST != -1) {             // if destination for outer x data
     outbuff = &(ch->umsg_sendbuff[len]); // A pointer to the start of the second part
                                          // of the buffer
-    len =
-        pack_data(ch->var_list.get(), UDATA_XSPLIT, LocalNx, MYSUB, MYSUB + MYG, outbuff);
+    len = pack_data(ch->var_list.get(),
+                    in_range(UDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX),
+                    YDATA_buff_outerX, MYSUB, MYSUB + MYG, outbuff);
     // Send the data to processor UDATA_OUTDEST
     if (async_send) {
       mpi->MPI_Isend(outbuff, len, PVEC_REAL_MPI_TYPE, UDATA_OUTDEST, OUT_SENT_UP,
@@ -1006,8 +1100,9 @@ comm_handle BoutMesh::send(FieldGroup &g) {
 
   len = 0;
   if (DDATA_INDEST != -1) { // If there is a destination for inner x data
-    len = pack_data(ch->var_list.get(), 0, DDATA_XSPLIT, MYG, 2 * MYG,
-                    std::begin(ch->dmsg_sendbuff));
+    len = pack_data(ch->var_list.get(), YDATA_buff_innerX,
+                    in_range(DDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX), MYG,
+                    2 * MYG, std::begin(ch->dmsg_sendbuff));
     // Send the data to processor DDATA_INDEST
     if (async_send) {
       mpi->MPI_Isend(std::begin(ch->dmsg_sendbuff), len, PVEC_REAL_MPI_TYPE, DDATA_INDEST,
@@ -1019,7 +1114,9 @@ comm_handle BoutMesh::send(FieldGroup &g) {
   if (DDATA_OUTDEST != -1) {             // if destination for outer x data
     outbuff = &(ch->dmsg_sendbuff[len]); // A pointer to the start of the second part
                                          // of the buffer
-    len = pack_data(ch->var_list.get(), DDATA_XSPLIT, LocalNx, MYG, 2 * MYG, outbuff);
+    len = pack_data(ch->var_list.get(),
+                    in_range(DDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX),
+                    YDATA_buff_outerX, MYG, 2 * MYG, outbuff);
     // Send the data to processor DDATA_OUTDEST
 
     if (async_send) {
@@ -1033,8 +1130,8 @@ comm_handle BoutMesh::send(FieldGroup &g) {
   /// Send to the left (x-1)
 
   if (IDATA_DEST != -1) {
-    len = pack_data(ch->var_list.get(), MXG, 2 * MXG, MYG, MYG + MYSUB,
-                    std::begin(ch->imsg_sendbuff));
+    len = pack_data(ch->var_list.get(), MXG, 2 * MXG, IDATA_buff_lowerY_send,
+                    IDATA_buff_upperY_send, std::begin(ch->imsg_sendbuff));
     if (async_send) {
       mpi->MPI_Isend(std::begin(ch->imsg_sendbuff), len, PVEC_REAL_MPI_TYPE, IDATA_DEST,
                      IN_SENT_OUT, BoutComm::get(), &(ch->sendreq[4]));
@@ -1046,14 +1143,64 @@ comm_handle BoutMesh::send(FieldGroup &g) {
   /// Send to the right (x+1)
 
   if (ODATA_DEST != -1) {
-    len = pack_data(ch->var_list.get(), MXSUB, MXSUB + MXG, MYG, MYG + MYSUB,
-                    std::begin(ch->omsg_sendbuff));
+    len = pack_data(ch->var_list.get(), MXSUB, MXSUB + MXG, ODATA_buff_lowerY_send,
+                    ODATA_buff_upperY_send, std::begin(ch->omsg_sendbuff));
     if (async_send) {
       mpi->MPI_Isend(std::begin(ch->omsg_sendbuff), len, PVEC_REAL_MPI_TYPE, ODATA_DEST,
                      OUT_SENT_IN, BoutComm::get(), &(ch->sendreq[5]));
     } else
       mpi->MPI_Send(std::begin(ch->omsg_sendbuff), len, PVEC_REAL_MPI_TYPE, ODATA_DEST,
                     OUT_SENT_IN, BoutComm::get());
+  }
+
+  /// Send corners
+  if (lower_inner_corner_dest != -1) {
+    len = pack_data(ch->var_list.get(), 0, MXG, 0, MYG,
+                    std::begin(ch->lowin_corner_sendbuff));
+    if (async_send) {
+      mpi->MPI_Isend(std::begin(ch->lowin_corner_sendbuff), len, PVEC_REAL_MPI_TYPE,
+                                lower_inner_corner_dest, LOWIN_SEND, BoutComm::get(),
+                                &(ch->sendreq[6]));
+    } else {
+      mpi->MPI_Send(std::begin(ch->lowin_corner_sendbuff), len, PVEC_REAL_MPI_TYPE,
+                               lower_inner_corner_dest, LOWIN_SEND, BoutComm::get());
+    }
+  }
+  if (upper_inner_corner_dest != -1) {
+    len = pack_data(ch->var_list.get(), 0, MXG, MYG + MYSUB, LocalNy,
+                    std::begin(ch->upin_corner_sendbuff));
+    if (async_send) {
+      mpi->MPI_Isend(std::begin(ch->upin_corner_sendbuff), len, PVEC_REAL_MPI_TYPE,
+                                upper_inner_corner_dest, UPIN_SEND, BoutComm::get(),
+                                &(ch->sendreq[7]));
+    } else {
+      mpi->MPI_Send(std::begin(ch->upin_corner_sendbuff), len, PVEC_REAL_MPI_TYPE,
+                               upper_inner_corner_dest, UPIN_SEND, BoutComm::get());
+    }
+  }
+  if (lower_outer_corner_dest != -1) {
+    len = pack_data(ch->var_list.get(), MXG + MXSUB, LocalNx, 0, MYG,
+                    std::begin(ch->lowout_corner_sendbuff));
+    if (async_send) {
+      mpi->MPI_Isend(std::begin(ch->lowout_corner_sendbuff), len, PVEC_REAL_MPI_TYPE,
+                                lower_outer_corner_dest, LOWOUT_SEND, BoutComm::get(),
+                                &(ch->sendreq[8]));
+    } else {
+      mpi->MPI_Send(std::begin(ch->lowout_corner_sendbuff), len, PVEC_REAL_MPI_TYPE,
+                               lower_outer_corner_dest, LOWOUT_SEND, BoutComm::get());
+    }
+  }
+  if (upper_outer_corner_dest != -1) {
+    len = pack_data(ch->var_list.get(), MXG + MXSUB, LocalNx, MYG + MYSUB, LocalNy,
+                    std::begin(ch->upout_corner_sendbuff));
+    if (async_send) {
+      mpi->MPI_Isend(std::begin(ch->upout_corner_sendbuff), len, PVEC_REAL_MPI_TYPE,
+                                upper_outer_corner_dest, UPOUT_SEND, BoutComm::get(),
+                                &(ch->sendreq[9]));
+    } else {
+      mpi->MPI_Send(std::begin(ch->upout_corner_sendbuff), len, PVEC_REAL_MPI_TYPE,
+                               upper_outer_corner_dest, UPOUT_SEND, BoutComm::get());
+    }
   }
 
   /// Mark communication handle as in progress
@@ -1091,61 +1238,108 @@ int BoutMesh::wait(comm_handle handle) {
   }
 
   do {
-    mpi->MPI_Waitany(6, ch->request, &ind, &status);
+    mpi->MPI_Waitany(10, ch->request, &ind, &status);
     switch (ind) {
     case 0: { // Up, inner
-      unpack_data(ch->var_list.get(), 0, UDATA_XSPLIT, MYSUB + MYG, MYSUB + 2 * MYG,
-                  std::begin(ch->umsg_recvbuff));
+      unpack_data(ch->var_list.get(), YDATA_buff_innerX,
+                  in_range(UDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX),
+                  MYSUB + MYG, MYSUB + 2 * MYG, std::begin(ch->umsg_recvbuff));
       break;
     }
     case 1: { // Up, outer
-      len = msg_len(ch->var_list.get(), 0, UDATA_XSPLIT, 0, MYG);
-      unpack_data(ch->var_list.get(), UDATA_XSPLIT, LocalNx, MYSUB + MYG, MYSUB + 2 * MYG,
+      len = msg_len(ch->var_list.get(), YDATA_buff_innerX,
+                    in_range(UDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX), 0, MYG);
+      unpack_data(ch->var_list.get(),
+                  in_range(UDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX),
+                  YDATA_buff_outerX, MYSUB + MYG, MYSUB + 2 * MYG,
                   &(ch->umsg_recvbuff[len]));
       break;
     }
     case 2: { // Down, inner
-      unpack_data(ch->var_list.get(), 0, DDATA_XSPLIT, 0, MYG,
+      unpack_data(ch->var_list.get(), YDATA_buff_innerX,
+                  in_range(DDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX), 0, MYG,
                   std::begin(ch->dmsg_recvbuff));
       break;
     }
     case 3: { // Down, outer
-      len = msg_len(ch->var_list.get(), 0, DDATA_XSPLIT, 0, MYG);
-      unpack_data(ch->var_list.get(), DDATA_XSPLIT, LocalNx, 0, MYG,
-                  &(ch->dmsg_recvbuff[len]));
+      len = msg_len(ch->var_list.get(), YDATA_buff_innerX,
+                    in_range(DDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX), 0, MYG);
+      unpack_data(ch->var_list.get(),
+                  in_range(DDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX),
+                  YDATA_buff_outerX, 0, MYG, &(ch->dmsg_recvbuff[len]));
       break;
     }
     case 4: { // inner
-      unpack_data(ch->var_list.get(), 0, MXG, MYG, MYG + MYSUB,
-                  std::begin(ch->imsg_recvbuff));
+      unpack_data(ch->var_list.get(), 0, MXG, IDATA_buff_lowerY_recv,
+                  IDATA_buff_upperY_recv, std::begin(ch->imsg_recvbuff));
       break;
     }
     case 5: { // outer
-      unpack_data(ch->var_list.get(), MXSUB + MXG, MXSUB + 2 * MXG, MYG, MYG + MYSUB,
+      unpack_data(ch->var_list.get(), MXSUB + MXG, MXSUB + 2 * MXG,
+                  ODATA_buff_lowerY_recv, ODATA_buff_upperY_recv,
                   std::begin(ch->omsg_recvbuff));
       break;
     }
+    case 6: { // lower inner corner
+      unpack_data(ch->var_list.get(), 0, MXG, 0, MYG,
+                  std::begin(ch->lowin_corner_recvbuff));
+      break;
     }
-    if (ind != MPI_UNDEFINED)
+    case 7: { // upper inner corner
+      unpack_data(ch->var_list.get(), 0, MXG, MYG + MYSUB, LocalNy,
+                  std::begin(ch->upin_corner_recvbuff));
+      break;
+    }
+    case 8: { // lower outer corner
+      unpack_data(ch->var_list.get(), MXG + MXSUB, LocalNx, 0, MYG,
+                  std::begin(ch->lowout_corner_recvbuff));
+      break;
+    }
+    case 9: { // upper outer corner
+      unpack_data(ch->var_list.get(), MXG + MXSUB, LocalNx, MYG + MYSUB, LocalNy,
+                  std::begin(ch->upout_corner_recvbuff));
+      break;
+    }
+    }
+    if (ind != MPI_UNDEFINED) {
       ch->request[ind] = MPI_REQUEST_NULL;
+    }
   } while (ind != MPI_UNDEFINED);
 
   if (async_send) {
     /// Asyncronous sending: Need to check if sends have completed (frees MPI memory)
     MPI_Status async_status;
 
-    if (UDATA_INDEST != -1)
+    if (UDATA_INDEST != -1) {
       mpi->MPI_Wait(ch->sendreq, &async_status);
-    if (UDATA_OUTDEST != -1)
+    }
+    if (UDATA_OUTDEST != -1) {
       mpi->MPI_Wait(ch->sendreq + 1, &async_status);
-    if (DDATA_INDEST != -1)
+    }
+    if (DDATA_INDEST != -1) {
       mpi->MPI_Wait(ch->sendreq + 2, &async_status);
-    if (DDATA_OUTDEST != -1)
+    }
+    if (DDATA_OUTDEST != -1) {
       mpi->MPI_Wait(ch->sendreq + 3, &async_status);
-    if (IDATA_DEST != -1)
+    }
+    if (IDATA_DEST != -1) {
       mpi->MPI_Wait(ch->sendreq + 4, &async_status);
-    if (ODATA_DEST != -1)
+    }
+    if (ODATA_DEST != -1) {
       mpi->MPI_Wait(ch->sendreq + 5, &async_status);
+    }
+    if (lower_inner_corner_dest != -1) {
+      mpi->MPI_Wait(ch->sendreq + 6, &async_status);
+    }
+    if (upper_inner_corner_dest != -1) {
+      mpi->MPI_Wait(ch->sendreq + 7, &async_status);
+    }
+    if (lower_outer_corner_dest != -1) {
+      mpi->MPI_Wait(ch->sendreq + 8, &async_status);
+    }
+    if (upper_outer_corner_dest != -1) {
+      mpi->MPI_Wait(ch->sendreq + 9, &async_status);
+    }
   }
 
   // TWIST-SHIFT CONDITION
@@ -1586,8 +1780,9 @@ int BoutMesh::XPROC(int xind) { return (xind >= MXG) ? (xind - MXG) / MXSUB : 0;
 /// will make a mesh which thinks it corresponds to the subdomain on
 /// one processor, even though it's actually being run in serial.
 BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int nxpe,
-                   int nype, int pe_xind, int pe_yind)
-    : nx(input_nx), ny(input_ny), nz(input_nz), MXG(mxg), MYG(myg), MZG(0) {
+                   int nype, int pe_xind, int pe_yind, bool include_corners)
+    : nx(input_nx), ny(input_ny), nz(input_nz), MXG(mxg), MYG(myg), MZG(0),
+      include_corner_cells(include_corners) {
   maxregionblocksize = MAXREGIONBLOCKSIZE;
   symmetricGlobalX = true;
   symmetricGlobalY = true;
@@ -1626,8 +1821,8 @@ BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, i
   MX = nx - 2 * MXG;
   MXSUB = MX / NXPE;
   if ((MX % NXPE) != 0) {
-    throw BoutException(_("Cannot split %d X points equally between %d processors\n"), MX,
-                        NXPE);
+    throw BoutException(_("Cannot split {:d} X points equally between {:d} processors\n"),
+                        MX, NXPE);
   }
 
   /// NOTE: No grid data reserved for Y boundary cells - copy from neighbours
@@ -1635,14 +1830,16 @@ BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, i
   MYSUB = MY / NYPE;
   if ((MY % NYPE) != 0) {
     throw BoutException(
-        _("\tERROR: Cannot split %d Y points equally between %d processors\n"), MY, NYPE);
+        _("\tERROR: Cannot split {:d} Y points equally between {:d} processors\n"), MY,
+        NYPE);
   }
 
   MZ = nz;
   MZSUB = MZ / NZPE;
   if ((MZ % NZPE) != 0) {
     throw BoutException(
-        _("\tERROR: Cannot split %d Z points equally between %d processors\n"), MZ, NZPE);
+        _("\tERROR: Cannot split {:d} Z points equally between {:d} processors\n"), MZ,
+        NZPE);
   }
 
   periodicX = false;
@@ -1697,6 +1894,26 @@ void BoutMesh::default_connections() {
   IDATA_DEST = PROC_NUM(PE_XIND - 1, PE_YIND);
   ODATA_DEST = PROC_NUM(PE_XIND + 1, PE_YIND);
 
+  if (include_corner_cells) {
+    lower_inner_corner_dest = PROC_NUM(PE_XIND - 1, PE_YIND - 1);
+    upper_inner_corner_dest = PROC_NUM(PE_XIND - 1, PE_YIND + 1);
+    lower_outer_corner_dest = PROC_NUM(PE_XIND + 1, PE_YIND - 1);
+    upper_outer_corner_dest = PROC_NUM(PE_XIND + 1, PE_YIND + 1);
+    lower_inner_corner_orig = PROC_NUM(PE_XIND - 1, PE_YIND - 1);
+    upper_inner_corner_orig = PROC_NUM(PE_XIND - 1, PE_YIND + 1);
+    lower_outer_corner_orig = PROC_NUM(PE_XIND + 1, PE_YIND - 1);
+    upper_outer_corner_orig = PROC_NUM(PE_XIND + 1, PE_YIND + 1);
+  } else {
+    lower_inner_corner_dest = -1;
+    upper_inner_corner_dest = -1;
+    lower_outer_corner_dest = -1;
+    upper_outer_corner_dest = -1;
+    lower_inner_corner_orig = -1;
+    upper_inner_corner_orig = -1;
+    lower_outer_corner_orig = -1;
+    upper_outer_corner_orig = -1;
+  }
+
   TS_up_in = TS_up_out = TS_down_in = TS_down_out = false; // No twist-shifts
 
   /// Check if X is periodic
@@ -1723,12 +1940,12 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
     return;
 
   if ((ypos1 < 0) || (ypos1 >= MY)) {
-    output_warn.write("WARNING adding connection: poloidal index %d out of range\n",
+    output_warn.write("WARNING adding connection: poloidal index {:d} out of range\n",
                       ypos1);
     return;
   }
   if ((ypos2 < 0) || (ypos2 >= MY)) {
-    output_warn.write("WARNING adding connection: poloidal index %d out of range\n",
+    output_warn.write("WARNING adding connection: poloidal index {:d} out of range\n",
                       ypos2);
     return;
   }
@@ -1749,19 +1966,19 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
     ypedown = ype2;
   } else {
     throw BoutException(
-        "ERROR adding connection: y index %d or %d not on processor boundary\n", ypos1,
-        ypos2);
+        "ERROR adding connection: y index {:d} or {:d} not on processor boundary\n",
+        ypos1, ypos2);
   }
 
   /* check the x ranges are possible */
   if ((xge != 0) && (xlt != MX)) {
     throw BoutException(
-        "ERROR adding connection(%d,%d,%d,%d): can only divide X domain in 2\n", ypos1,
-        ypos2, xge, xlt);
+        "ERROR adding connection({:d},{:d},{:d},{:d}): can only divide X domain in 2\n",
+        ypos1, ypos2, xge, xlt);
   }
 
   output_info.write(
-      "Connection between top of Y processor %d and bottom of %d in range %d <= x < %d\n",
+      "Connection between top of Y processor {:d} and bottom of {:d} in range {:d} <= x < {:d}\n",
       ypeup, ypedown, xge, xlt);
 
   // Convert X coordinates into local indices
@@ -1784,8 +2001,9 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
       /* Connect on the inside */
       UDATA_XSPLIT = xlt;
       UDATA_INDEST = PROC_NUM(PE_XIND, ypedown);
-      if (UDATA_XSPLIT == LocalNx)
+      if (UDATA_XSPLIT == LocalNx) {
         UDATA_OUTDEST = -1;
+      }
 
       TS_up_in = ts; // Twist-shift
 
@@ -1796,11 +2014,32 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
         UDATA_INDEST = UDATA_OUTDEST;
       UDATA_XSPLIT = xge;
       UDATA_OUTDEST = PROC_NUM(PE_XIND, ypedown);
-      if (UDATA_XSPLIT <= 0)
+      if (UDATA_XSPLIT <= 0) {
         UDATA_INDEST = -1;
+      }
 
       TS_up_out = ts;
       output_info.write("=> This processor sending out up\n");
+    }
+
+    if (include_corner_cells) {
+      // Connect corners as if communicating all guard cells first in y, then in x
+      if (xge == MXG) {
+        upper_inner_corner_dest = PROC_NUM(PE_XIND - 1, ypedown);
+      } else if (xge <= MXG and xlt > MXG) {
+        upper_inner_corner_dest = PROC_NUM(PE_XIND - 1, ypedown);
+        upper_inner_corner_orig = PROC_NUM(PE_XIND - 1, ypedown);
+      } else if (xlt == MXG) {
+        upper_inner_corner_orig = PROC_NUM(PE_XIND - 1, ypedown);
+      }
+      if (xlt == MXG + MXSUB) {
+        upper_outer_corner_dest = PROC_NUM(PE_XIND + 1, ypedown);
+      } else if (xlt >= MXG + MXSUB and xge < MXG + MXSUB) {
+        upper_outer_corner_dest = PROC_NUM(PE_XIND + 1, ypedown);
+        upper_outer_corner_orig = PROC_NUM(PE_XIND + 1, ypedown);
+      } else if (xge == MXG + MXSUB) {
+        upper_outer_corner_orig = PROC_NUM(PE_XIND + 1, ypedown);
+      }
     }
   }
 
@@ -1829,6 +2068,27 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
 
       output_info.write("=> This processor sending out down\n");
     }
+
+    if (include_corner_cells) {
+      // Connect corners as if communicating all guard cells first in y, then in x
+      if (xge == MXG) {
+        lower_inner_corner_dest = PROC_NUM(PE_XIND - 1, ypeup);
+      } else if (xge <= MXG and xlt > MXG) {
+        lower_inner_corner_dest = PROC_NUM(PE_XIND - 1, ypeup);
+        lower_inner_corner_orig = PROC_NUM(PE_XIND - 1, ypeup);
+      } else if (xlt == MXG) {
+        lower_inner_corner_orig = PROC_NUM(PE_XIND - 1, ypeup);
+      }
+      if (xlt == MXG + MXSUB) {
+        lower_outer_corner_dest = PROC_NUM(PE_XIND + 1, ypeup);
+      }
+      if (xlt >= MXG + MXSUB and xge < MXG + MXSUB) {
+        lower_outer_corner_dest = PROC_NUM(PE_XIND + 1, ypeup);
+        lower_outer_corner_orig = PROC_NUM(PE_XIND + 1, ypeup);
+      } else if (xge == MXG + MXSUB) {
+        lower_outer_corner_orig = PROC_NUM(PE_XIND + 1, ypeup);
+      }
+    }
   }
 }
 
@@ -1843,18 +2103,19 @@ void BoutMesh::add_target(int ypos, int xge, int xlt) {
     return;
 
   if ((ypos < 0) || (ypos >= MY)) {
-    output_warn.write("WARNING adding target: poloidal index %d out of range\n", ypos);
+    output_warn.write("WARNING adding target: poloidal index {:d} out of range\n", ypos);
     return;
   }
 
   int ypeup = YPROC(ypos);
   int ypedown = YPROC(ypos + 1);
   if (ypeup == ypedown) {
-    throw BoutException("Adding target at y=%d in middle of processor %d\n", ypos, ypeup);
+    throw BoutException("Adding target at y={:d} in middle of processor {:d}\n", ypos,
+                        ypeup);
   }
 
   output_info.write(
-      "Target at top of Y processor %d and bottom of %d in range %d <= x < %d\n", ypeup,
+      "Target at top of Y processor {:d} and bottom of {:d} in range {:d} <= x < {:d}\n", ypeup,
       ypedown, xge, xlt);
 
   // Convert X coordinates into local indices
@@ -1883,6 +2144,27 @@ void BoutMesh::add_target(int ypos, int xge, int xlt) {
         UDATA_INDEST = -1;
       output_info.write("=> This processor has target upper outer\n");
     }
+
+    if (include_corner_cells) {
+      // Connect corners as if communicating all guard cells first in y, then in x
+      if (xge < MXG and xlt > MXG) {
+        upper_inner_corner_dest = -1;
+        upper_inner_corner_orig = -1;
+      } else if (xge == MXG) {
+        upper_inner_corner_dest = -1;
+      } else if (xlt == MXG) {
+        upper_inner_corner_orig = -1;
+      }
+      if (xlt > MXG + MXSUB and xge < MXG + MXSUB) {
+        upper_outer_corner_dest = -1;
+        upper_outer_corner_orig = -1;
+      } else if (xlt == MXG + MXSUB) {
+        upper_outer_corner_dest = -1;
+      }
+      if (xge == MXG + MXSUB) {
+        upper_outer_corner_orig = -1;
+      }
+    }
   }
   if (MYPE == PROC_NUM(PE_XIND, ypedown)) {
     // Target on upper processor boundary
@@ -1903,6 +2185,27 @@ void BoutMesh::add_target(int ypos, int xge, int xlt) {
         DDATA_INDEST = -1;
       output_info.write("=> This processor has target lower outer\n");
     }
+
+    if (include_corner_cells) {
+      // Connect corners as if communicating all guard cells first in y, then in x
+      if (xge < MXG and xlt > MXG) {
+        lower_inner_corner_dest = -1;
+        lower_inner_corner_orig = -1;
+      } else if (xge == MXG) {
+        lower_inner_corner_dest = -1;
+      } else if (xlt == MXG) {
+        lower_inner_corner_orig = -1;
+      }
+      if (xlt > MXG + MXSUB and xge < MXG + MXSUB) {
+        lower_outer_corner_dest = -1;
+        lower_outer_corner_orig = -1;
+      } else if (xlt == MXG + MXSUB) {
+        lower_outer_corner_dest = -1;
+      }
+      if (xge == MXG + MXSUB) {
+        lower_outer_corner_orig = -1;
+      }
+    }
   }
 }
 
@@ -1914,16 +2217,16 @@ void BoutMesh::topology() {
   // Perform checks common to all topologies
 
   if (NPES != NXPE * NYPE) {
-    throw BoutException("\tTopology error: npes=%d is not equal to NXPE*NYPE=%d\n", NPES,
-                        NXPE * NYPE);
+    throw BoutException("\tTopology error: npes={:d} is not equal to NXPE*NYPE={:d}\n",
+                        NPES, NXPE * NYPE);
   }
   if (MYSUB * NYPE != MY) {
-    throw BoutException("\tTopology error: MYSUB[%d] * NYPE[%d] != MY[%d]\n", MYSUB, NYPE,
-                        MY);
+    throw BoutException("\tTopology error: MYSUB[{:d}] * NYPE[{:d}] != MY[{:d}]\n", MYSUB,
+                        NYPE, MY);
   }
   if (MXSUB * NXPE != MX) {
-    throw BoutException("\tTopology error: MXSUB[%d] * NXPE[%d] != MX[%d]\n", MXSUB, NXPE,
-                        MX);
+    throw BoutException("\tTopology error: MXSUB[{:d}] * NXPE[{:d}] != MX[{:d}]\n", MXSUB,
+                        NXPE, MX);
   }
 
   if ((NXPE > 1) && (MXSUB < MXG)) {
@@ -2006,13 +2309,170 @@ void BoutMesh::topology() {
   if (UDATA_XSPLIT > LocalNx)
     UDATA_XSPLIT = LocalNx;
 
+  if (include_corner_cells) {
+    if ((DDATA_INDEST == -1 and DDATA_OUTDEST == -1)
+        or (DDATA_XSPLIT >= 2*MXG and DDATA_INDEST == -1)
+        or (DDATA_XSPLIT < 2*MXG and DDATA_OUTDEST == -1)) {
+      // Communicate y-boundary cells in x-guards buffer
+      IDATA_buff_lowerY_send = 0;
+      // Don't try to communicate the corner separately
+      lower_inner_corner_dest = -1;
+    } else if (DDATA_XSPLIT < 2*MXG and DDATA_XSPLIT > MXG) {
+      // Limiter is within MXG of the processor boundary, some points need communicating
+      // and some do not.  This is complicated to implement, so do not allow it.
+      throw BoutException("ixseps1 or ixseps2 is not on the processor boundary, but "
+                          "within MXG of the boundary so there are both boundary cells "
+                          "and cells that need to be communicated. This is not "
+                          "supported. Try changing NXPE.");
+    } else {
+      IDATA_buff_lowerY_send = MYG;
+    }
+
+    if ((DDATA_INDEST == -1 and DDATA_OUTDEST == -1)
+        or (DDATA_XSPLIT >= MXG and DDATA_INDEST == -1)
+        or (DDATA_XSPLIT < MXG and DDATA_OUTDEST == -1)) {
+      // Communicate y-boundary cells in x-guards buffer
+      IDATA_buff_lowerY_recv = 0;
+      // Don't try to communicate the corner separately
+      lower_inner_corner_orig = -1;
+    } else if (DDATA_XSPLIT < MXG and DDATA_XSPLIT > 0) {
+      // Limiter is in x-guard cells, some points need communicating and some do not.
+      // This is complicated to implement, so do not allow it.
+      throw BoutException("ixseps1 or ixseps2 is in x-guard cells so there are both "
+                          "boundary cells and cells that need to be communicated in "
+                          "x-guard cells. This is not supported. Try changing NXPE.");
+    } else {
+      IDATA_buff_lowerY_recv = MYG;
+    }
+
+    if ((UDATA_INDEST == -1 and UDATA_OUTDEST == -1)
+        or (UDATA_XSPLIT >= 2*MXG and UDATA_INDEST == -1)
+        or (UDATA_XSPLIT < 2*MXG and UDATA_OUTDEST == -1)) {
+      // Communicate y-boundary cells in x-guards buffer
+      IDATA_buff_upperY_send = LocalNy;
+      // Don't try to communicate the corner separately
+      upper_inner_corner_dest = -1;
+    } else if (UDATA_XSPLIT < 2*MXG and UDATA_XSPLIT > MXG) {
+      // Limiter is within MXG of the processor boundary, some points need communicating
+      // and some do not.  This is complicated to implement, so do not allow it.
+      throw BoutException("ixseps1 or ixseps2 is not on the processor boundary, but "
+                          "within MXG of the boundary so there are both boundary cells "
+                          "and cells that need to be communicated. This is not "
+                          "supported. Try changing NXPE.");
+    } else {
+      IDATA_buff_upperY_send = MYG + MYSUB;
+    }
+
+    if ((UDATA_INDEST == -1 and UDATA_OUTDEST == -1)
+        or (UDATA_XSPLIT >= MXG and UDATA_INDEST == -1)
+        or (UDATA_XSPLIT < MXG and UDATA_OUTDEST == -1)) {
+      // Communicate y-boundary cells in x-guards buffer
+      IDATA_buff_upperY_recv = LocalNy;
+      // Don't try to communicate the corner separately
+      upper_inner_corner_orig = -1;
+    } else if (UDATA_XSPLIT < MXG and UDATA_XSPLIT > 0) {
+      // Limiter is in x-guard cells, some points need communicating and some do not.
+      // This is complicated to implement, so do not allow it.
+      throw BoutException("ixseps1 or ixseps2 is in x-guard cells so there are both "
+                          "boundary cells and cells that need to be communicated in "
+                          "x-guard cells. This is not supported. Try changing NXPE.");
+    } else {
+      IDATA_buff_upperY_recv = MYG + MYSUB;
+    }
+
+    if ((DDATA_INDEST == -1 and DDATA_OUTDEST == -1)
+        or (DDATA_XSPLIT > MXSUB and DDATA_INDEST == -1)
+        or (DDATA_XSPLIT <= MXSUB and DDATA_OUTDEST == -1)) {
+      // Communicate y-boundary cells in x-guards buffer
+      ODATA_buff_lowerY_send = 0;
+      // Don't try to communicate the corner separately
+      lower_outer_corner_dest = -1;
+    } else if (DDATA_XSPLIT > MXSUB and DDATA_XSPLIT < MXG + MXSUB) {
+      // Limiter is within MXG of the processor boundary, some points need communicating
+      // and some do not.  This is complicated to implement, so do not allow it.
+      throw BoutException("ixseps1 or ixseps2 is not on the processor boundary, but "
+                          "within MXG of the boundary so there are both boundary cells "
+                          "and cells that need to be communicated. This is not "
+                          "supported. Try changing NXPE.");
+    } else {
+      ODATA_buff_lowerY_send = MYG;
+    }
+
+    if ((DDATA_INDEST == -1 and DDATA_OUTDEST == -1)
+        or (DDATA_XSPLIT > MXG + MXSUB and DDATA_INDEST == -1)
+        or (DDATA_XSPLIT <= MXG + MXSUB and DDATA_OUTDEST == -1)) {
+      // Communicate y-boundary cells in x-guards buffer
+      ODATA_buff_lowerY_recv = 0;
+      // Don't try to communicate the corner separately
+      lower_outer_corner_orig = -1;
+    } else if (DDATA_XSPLIT > MXG + MXSUB and DDATA_XSPLIT < LocalNx) {
+      // Limiter is in x-guard cells, some points need communicating and some do not.
+      // This is complicated to implement, so do not allow it.
+      throw BoutException("ixseps1 or ixseps2 is in x-guard cells so there are both "
+                          "boundary cells and cells that need to be communicated in "
+                          "x-guard cells. This is not supported. Try changing NXPE.");
+    } else {
+      ODATA_buff_lowerY_recv = MYG;
+    }
+
+    if ((UDATA_INDEST == -1 and UDATA_OUTDEST == -1)
+        or (UDATA_XSPLIT > MXSUB and UDATA_INDEST == -1)
+        or (UDATA_XSPLIT <= MXSUB and UDATA_OUTDEST == -1)) {
+      // Communicate y-boundary cells in x-guards buffer
+      ODATA_buff_upperY_send = LocalNy;
+      // Don't try to communicate the corner separately
+      upper_outer_corner_dest = -1;
+    } else if (UDATA_XSPLIT > MXSUB and UDATA_XSPLIT < MXG + MXSUB) {
+      // Limiter is within MXG of the processor boundary, some points need communicating
+      // and some do not.  This is complicated to implement, so do not allow it.
+      throw BoutException("ixseps1 or ixseps2 is not on the processor boundary, but "
+                          "within MXG of the boundary so there are both boundary cells "
+                          "and cells that need to be communicated. This is not "
+                          "supported. Try changing NXPE.");
+    } else {
+      ODATA_buff_upperY_send = MYG + MYSUB;
+    }
+
+    if ((UDATA_INDEST == -1 and UDATA_OUTDEST == -1)
+        or (UDATA_XSPLIT > MXG + MXSUB and UDATA_INDEST == -1)
+        or (UDATA_XSPLIT <= MXG + MXSUB and UDATA_OUTDEST == -1)) {
+      // Communicate y-boundary cells in x-guards buffer
+      ODATA_buff_upperY_recv = LocalNy;
+      // Don't try to communicate the corner separately
+      upper_outer_corner_orig = -1;
+    } else  if (UDATA_XSPLIT > MXG + MXSUB and UDATA_XSPLIT < LocalNx) {
+      // Limiter is in x-guard cells, some points need communicating and some do not.
+      // This is complicated to implement, so do not allow it.
+      throw BoutException("ixseps1 or ixseps2 is in x-guard cells so there are both "
+                          "boundary cells and cells that need to be communicated in "
+                          "x-guard cells. This is not supported. Try changing NXPE.");
+    } else {
+      ODATA_buff_upperY_recv = MYG + MYSUB;
+    }
+
+    YDATA_buff_innerX = IDATA_DEST == -1 ? 0 : MXG;
+    YDATA_buff_outerX = ODATA_DEST == -1 ? LocalNx : MXG + MXSUB;
+  } else {
+    IDATA_buff_lowerY_send = MYG;
+    IDATA_buff_lowerY_recv = MYG;
+    IDATA_buff_upperY_send = MYG + MYSUB;
+    IDATA_buff_upperY_recv = MYG + MYSUB;
+    ODATA_buff_lowerY_send = MYG;
+    ODATA_buff_lowerY_recv = MYG;
+    ODATA_buff_upperY_send = MYG + MYSUB;
+    ODATA_buff_upperY_recv = MYG + MYSUB;
+
+    YDATA_buff_innerX = 0;
+    YDATA_buff_outerX = LocalNx;
+  }
+
   // Print out settings
-  output_info.write("\tMYPE_IN_CORE = %d\n", MYPE_IN_CORE);
-  output_info.write("\tDXS = %d, DIN = %d. DOUT = %d\n", DDATA_XSPLIT, DDATA_INDEST,
+  output_info.write("\tMYPE_IN_CORE = {:d}\n", MYPE_IN_CORE);
+  output_info.write("\tDXS = {:d}, DIN = {:d}. DOUT = {:d}\n", DDATA_XSPLIT, DDATA_INDEST,
                     DDATA_OUTDEST);
-  output_info.write("\tUXS = %d, UIN = %d. UOUT = %d\n", UDATA_XSPLIT, UDATA_INDEST,
+  output_info.write("\tUXS = {:d}, UIN = {:d}. UOUT = {:d}\n", UDATA_XSPLIT, UDATA_INDEST,
                     UDATA_OUTDEST);
-  output_info.write("\tXIN = %d, XOUT = %d\n", IDATA_DEST, ODATA_DEST);
+  output_info.write("\tXIN = {:d}, XOUT = {:d}\n", IDATA_DEST, ODATA_DEST);
 
   output_info.write("\tTwist-shift: ");
   if (TS_down_in)
@@ -2030,7 +2490,7 @@ void BoutMesh::topology() {
  *                     Communication handles
  ****************************************************************/
 
-BoutMesh::CommHandle *BoutMesh::get_handle(int xlen, int ylen) {
+BoutMesh::CommHandle *BoutMesh::get_handle(int xlen, int ylen, int cornerlen) {
   if (comm_list.empty()) {
     // Allocate a new CommHandle
 
@@ -2052,8 +2512,20 @@ BoutMesh::CommHandle *BoutMesh::get_handle(int xlen, int ylen) {
       ch->omsg_recvbuff.reallocate(xlen);
     }
 
+    if (include_corner_cells and cornerlen > 0) {
+      ch->lowin_corner_sendbuff.reallocate(cornerlen);
+      ch->upin_corner_sendbuff.reallocate(cornerlen);
+      ch->lowout_corner_sendbuff.reallocate(cornerlen);
+      ch->upout_corner_sendbuff.reallocate(cornerlen);
+      ch->lowin_corner_recvbuff.reallocate(cornerlen);
+      ch->upin_corner_recvbuff.reallocate(cornerlen);
+      ch->lowout_corner_recvbuff.reallocate(cornerlen);
+      ch->upout_corner_recvbuff.reallocate(cornerlen);
+    }
+
     ch->xbufflen = xlen;
     ch->ybufflen = ylen;
+    ch->cornerbufflen = cornerlen;
 
     ch->in_progress = false;
 
@@ -2080,6 +2552,16 @@ BoutMesh::CommHandle *BoutMesh::get_handle(int xlen, int ylen) {
     ch->omsg_recvbuff.reallocate(xlen);
 
     ch->xbufflen = xlen;
+  }
+  if (include_corner_cells and ch->cornerbufflen < cornerlen) {
+    ch->lowin_corner_sendbuff.reallocate(cornerlen);
+    ch->upin_corner_sendbuff.reallocate(cornerlen);
+    ch->lowout_corner_sendbuff.reallocate(cornerlen);
+    ch->upout_corner_sendbuff.reallocate(cornerlen);
+    ch->lowin_corner_recvbuff.reallocate(cornerlen);
+    ch->upin_corner_recvbuff.reallocate(cornerlen);
+    ch->lowout_corner_recvbuff.reallocate(cornerlen);
+    ch->upout_corner_recvbuff.reallocate(cornerlen);
   }
 
   ch->in_progress = false;

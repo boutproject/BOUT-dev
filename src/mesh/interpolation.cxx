@@ -98,3 +98,8 @@ RegisterInterpolation<HermiteSplineOnlyZ> registerinterphermitesplineonlyz{"herm
 RegisterInterpolation<Lagrange4pt> registerinterplagrange4pt{"lagrange4pt"};
 RegisterInterpolation<Bilinear> registerinterpbilinear{"bilinear"};
 } // namespace
+
+constexpr decltype(InterpolationFactory::type_name) InterpolationFactory::type_name;
+constexpr decltype(InterpolationFactory::section_name) InterpolationFactory::section_name;
+constexpr decltype(InterpolationFactory::option_name) InterpolationFactory::option_name;
+constexpr decltype(InterpolationFactory::default_type) InterpolationFactory::default_type;

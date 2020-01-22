@@ -189,9 +189,12 @@ class BoutMesh : public Mesh {
   int XLOCAL(int xglo) const override;
   int YLOCAL(int yglo) const override;
 
+  // Switch for communication of corner guard and boundary cells
+  const bool include_corner_cells;
+
 protected:
   BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, int nxpe, int nype,
-           int pe_xind, int pe_yind);
+           int pe_xind, int pe_yind, bool include_corners=true);
   /// For debugging purposes (when creating fake parallel meshes), make
   /// the send and receive buffers share memory. This allows for
   /// communications to be faked between meshes as though they were on
@@ -240,6 +243,20 @@ private:
   int UDATA_INDEST, UDATA_OUTDEST, UDATA_XSPLIT;
   int DDATA_INDEST, DDATA_OUTDEST, DDATA_XSPLIT;
   int IDATA_DEST, ODATA_DEST; // X inner and outer destinations
+  int lower_inner_corner_dest, upper_inner_corner_dest, lower_outer_corner_dest,
+      upper_outer_corner_dest; // destinations for the corner cells
+  int lower_inner_corner_orig, upper_inner_corner_orig, lower_outer_corner_orig,
+      upper_outer_corner_orig; // origins for the corner guard cells
+  // y-limits of buffers communicated in x-direction. Include y-boundary cells but not
+  // y-guard cells. Need different variables for sending and receiving because y-boundary
+  // might be present on sending proc but not receiving proc or vice versa
+  int IDATA_buff_lowerY_send, IDATA_buff_upperY_send, ODATA_buff_lowerY_send,
+      ODATA_buff_upperY_send;
+  int IDATA_buff_lowerY_recv, IDATA_buff_upperY_recv, ODATA_buff_lowerY_recv,
+      ODATA_buff_upperY_recv;
+  // x-limits of buffers communicated in y-direction. Include x-boundary cells but not
+  // x-guard cells.
+  int YDATA_buff_innerX, YDATA_buff_outerX;
 
   // Settings
   bool TwistShift; // Use a twist-shift condition in core?
@@ -271,24 +288,34 @@ private:
   /// Used to keep track of communications between send and receive
   struct CommHandle {
     /// Array of receive requests. One for each possible neighbour; one each way in X, two
-    /// each way in Y
-    MPI_Request request[6];
+    /// each way in Y. Plus four for the corners.
+    MPI_Request request[10] = {MPI_REQUEST_NULL, MPI_REQUEST_NULL, MPI_REQUEST_NULL,
+                               MPI_REQUEST_NULL, MPI_REQUEST_NULL, MPI_REQUEST_NULL,
+                               MPI_REQUEST_NULL, MPI_REQUEST_NULL, MPI_REQUEST_NULL,
+                               MPI_REQUEST_NULL};
     /// Array of send requests (for non-blocking send). One for each possible neighbour;
-    /// one each way in X, two each way in Y
-    MPI_Request sendreq[6];
+    /// one each way in X, two each way in Y. Plus four for the corners.
+    MPI_Request sendreq[10] = {MPI_REQUEST_NULL, MPI_REQUEST_NULL, MPI_REQUEST_NULL,
+                               MPI_REQUEST_NULL, MPI_REQUEST_NULL, MPI_REQUEST_NULL,
+                               MPI_REQUEST_NULL, MPI_REQUEST_NULL, MPI_REQUEST_NULL,
+                               MPI_REQUEST_NULL};
     /// Length of the buffers used to send/receive (in BoutReals)
-    int xbufflen, ybufflen;
+    int xbufflen, ybufflen, cornerbufflen;
     /// Sending buffers
-    Array<BoutReal> umsg_sendbuff, dmsg_sendbuff, imsg_sendbuff, omsg_sendbuff;
+    Array<BoutReal> umsg_sendbuff, dmsg_sendbuff, imsg_sendbuff, omsg_sendbuff,
+                    lowin_corner_sendbuff, upin_corner_sendbuff, lowout_corner_sendbuff,
+                    upout_corner_sendbuff;
     /// Receiving buffers
-    Array<BoutReal> umsg_recvbuff, dmsg_recvbuff, imsg_recvbuff, omsg_recvbuff;
+    Array<BoutReal> umsg_recvbuff, dmsg_recvbuff, imsg_recvbuff, omsg_recvbuff,
+                    lowin_corner_recvbuff, upin_corner_recvbuff, lowout_corner_recvbuff,
+                    upout_corner_recvbuff;
     /// Is the communication still going?
     bool in_progress;
     /// List of fields being communicated
     FieldGroup var_list;
   };
   void free_handle(CommHandle* h);
-  CommHandle* get_handle(int xlen, int ylen);
+  CommHandle* get_handle(int xlen, int ylen, int cornerlen = 0);
   void clear_handles();
   std::list<CommHandle*> comm_list; // List of allocated communication handles
 

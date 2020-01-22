@@ -37,7 +37,6 @@ gmres_max_steps=32
 #type=spt
 all_terms=true
 nonuniform=true
-flags=15
 include_yguards=false
 
 #maxits=10000

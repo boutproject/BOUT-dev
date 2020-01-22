@@ -83,8 +83,7 @@ const T interp_to(const T& var, CELL_LOC loc, const std::string region = "RGN_AL
   T result{emptyFrom(var).setLocation(loc)};
 
   // Staggered grids enabled, and need to perform interpolation
-  TRACE("Interpolating %s -> %s", toString(var.getLocation()).c_str(),
-        toString(loc).c_str());
+  TRACE("Interpolating {} -> {}", toString(var.getLocation()), toString(loc));
 
   if (region != "RGN_NOBNDRY") {
     // result is requested in some boundary region(s)
@@ -186,8 +185,8 @@ const T interp_to(const T& var, CELL_LOC loc, const std::string region = "RGN_AL
     default: {
       // This should never happen
       throw BoutException("Unsupported direction of interpolation\n"
-                          " - don't know how to interpolate to %s",
-                          toString(loc).c_str());
+                          " - don't know how to interpolate to {:s}",
+                          toString(loc));
     }
     };
 
@@ -205,17 +204,17 @@ const T interp_to(const T& var, CELL_LOC loc, const std::string region = "RGN_AL
   return result;
 }
 template<typename T>
-[[gnu::deprecated("Please use interp_to(const T& var, CELL_LOC loc, "
+[[deprecated("Please use interp_to(const T& var, CELL_LOC loc, "
     "const std::string& region = \"RGN_ALL\") instead")]]
 const T interp_to(const T& var, CELL_LOC loc, REGION region) {
   return interp_to(var, loc, toString(region));
 }
 
 /// Print out the cell location (for debugging)
-[[gnu::deprecated("Please use `output << toString(var.getLocation())` instead")]]
+[[deprecated("Please use `output << toString(var.getLocation())` instead")]]
 void printLocation(const Field3D& var);
 
-[[gnu::deprecated("Please use `toString(loc)` instead")]]
+[[deprecated("Please use `toString(loc)` instead")]]
 const char* strLocation(CELL_LOC loc);
 
 /// Interpolate a field onto a perturbed set of points

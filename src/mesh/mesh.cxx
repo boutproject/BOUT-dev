@@ -84,7 +84,7 @@ void warn_default_used(const T& value, const std::string& name) {
 } // namespace
 
 int Mesh::get(std::string& sval, const std::string& name, const std::string& def) {
-  TRACE("Mesh::get(sval, %s)", name.c_str());
+  TRACE("Mesh::get(sval, {:s})", name);
 
   if (source == nullptr) {
     warn_default_used(def, name);
@@ -96,7 +96,7 @@ int Mesh::get(std::string& sval, const std::string& name, const std::string& def
 }
 
 int Mesh::get(int &ival, const std::string &name, int def) {
-  TRACE("Mesh::get(ival, %s)", name.c_str());
+  TRACE("Mesh::get(ival, {:s})", name);
 
   if (source == nullptr) {
     warn_default_used(def, name);
@@ -108,7 +108,7 @@ int Mesh::get(int &ival, const std::string &name, int def) {
 }
 
 int Mesh::get(BoutReal& rval, const std::string& name, BoutReal def) {
-  TRACE("Mesh::get(rval, %s)", name.c_str());
+  TRACE("Mesh::get(rval, {:s})", name);
 
   if (source == nullptr) {
     warn_default_used(def, name);
@@ -120,7 +120,7 @@ int Mesh::get(BoutReal& rval, const std::string& name, BoutReal def) {
 }
 
 int Mesh::get(bool &bval, const std::string &name, bool def) {
-  TRACE("Mesh::get(bval, %s)", name.c_str());
+  TRACE("Mesh::get(bval, {:s})", name);
 
   if (source == nullptr) {
     warn_default_used(def, name);
@@ -135,7 +135,7 @@ int Mesh::get(bool &bval, const std::string &name, bool def) {
 }
 
 int Mesh::get(Field2D &var, const std::string &name, BoutReal def) {
-  TRACE("Loading 2D field: Mesh::get(Field2D, %s)", name.c_str());
+  TRACE("Loading 2D field: Mesh::get(Field2D, {:s})", name);
 
   if (source == nullptr or !source->get(this, var, name, def)) {
     // set val to default in source==nullptr too:
@@ -153,7 +153,7 @@ int Mesh::get(Field2D &var, const std::string &name, BoutReal def) {
 }
 
 int Mesh::get(Field3D &var, const std::string &name, BoutReal def, bool communicate) {
-  TRACE("Loading 3D field: Mesh::get(Field3D, %s)", name.c_str());
+  TRACE("Loading 3D field: Mesh::get(Field3D, {:s})", name);
 
   if (source == nullptr or !source->get(this, var, name, def)) {
     // set val to default in source==nullptr too:
@@ -174,7 +174,7 @@ int Mesh::get(Field3D &var, const std::string &name, BoutReal def, bool communic
 
 int Mesh::get(FieldPerp &var, const std::string &name, BoutReal def,
     bool UNUSED(communicate)) {
-  TRACE("Loading FieldPerp: Mesh::get(FieldPerp, %s)", name.c_str());
+  TRACE("Loading FieldPerp: Mesh::get(FieldPerp, {:s})", name);
 
   if (source == nullptr or !source->get(this, var, name, def)) {
     // set val to default in source==nullptr too:
@@ -199,7 +199,7 @@ int Mesh::get(FieldPerp &var, const std::string &name, BoutReal def,
  **************************************************************************/
 
 int Mesh::get(Vector2D &var, const std::string &name, BoutReal def) {
-  TRACE("Loading 2D vector: Mesh::get(Vector2D, %s)", name.c_str());
+  TRACE("Loading 2D vector: Mesh::get(Vector2D, {:s})", name);
 
   if(var.covariant) {
     output << _("\tReading covariant vector ") << name << endl;
@@ -220,7 +220,7 @@ int Mesh::get(Vector2D &var, const std::string &name, BoutReal def) {
 }
 
 int Mesh::get(Vector3D &var, const std::string &name, BoutReal def) {
-  TRACE("Loading 3D vector: Mesh::get(Vector3D, %s)", name.c_str());
+  TRACE("Loading 3D vector: Mesh::get(Vector3D, {:s})", name);
 
   if(var.covariant) {
     output << _("\tReading covariant vector ") << name << endl;
@@ -245,7 +245,7 @@ bool Mesh::isDataSourceGridFile() const {
 }
 
 bool Mesh::sourceHasVar(const std::string &name) {
-  TRACE("Mesh::sourceHasVar(%s)", name.c_str());
+  TRACE("Mesh::sourceHasVar({:s})", name);
   if (source == nullptr)
     return false;
   return source->hasVar(name);
@@ -368,11 +368,11 @@ bool Mesh::hasBndryUpperY() {
 }
 
 const std::vector<int> Mesh::readInts(const std::string &name, int n) {
-  TRACE("Mesh::readInts(%s)", name.c_str());
+  TRACE("Mesh::readInts({:s})", name);
 
   if (source == nullptr) {
-    throw BoutException("Can't read integer array %s as 'Mesh::source' is nullptr\n",
-                        name.c_str());
+    throw BoutException("Can't read integer array {:s} as 'Mesh::source' is nullptr\n",
+                        name);
   }
 
   std::vector<int> result;
@@ -380,11 +380,11 @@ const std::vector<int> Mesh::readInts(const std::string &name, int n) {
   if(source->hasVar(name)) {
     if(!source->get(this, result, name, n, 0)) {
       // Error reading
-      throw BoutException(_("Could not read integer array '%s'\n"), name.c_str());
+      throw BoutException(_("Could not read integer array '{:s}'\n"), name.c_str());
     }
   }else {
     // Not found
-    throw BoutException(_("Missing integer array %s\n"), name.c_str());
+    throw BoutException(_("Missing integer array {:s}\n"), name.c_str());
   }
 
   return result;
@@ -406,7 +406,7 @@ std::shared_ptr<Coordinates> Mesh::createDefaultCoordinates(const CELL_LOC locat
 const Region<>& Mesh::getRegion3D(const std::string& region_name) const {
   const auto found = regionMap3D.find(region_name);
   if (found == end(regionMap3D)) {
-    throw BoutException(_("Couldn't find region %s in regionMap3D"), region_name.c_str());
+    throw BoutException(_("Couldn't find region {:s} in regionMap3D"), region_name);
   }
   return found->second;
 }
@@ -414,7 +414,7 @@ const Region<>& Mesh::getRegion3D(const std::string& region_name) const {
 const Region<Ind2D>& Mesh::getRegion2D(const std::string& region_name) const {
   const auto found = regionMap2D.find(region_name);
   if (found == end(regionMap2D)) {
-    throw BoutException(_("Couldn't find region %s in regionMap2D"), region_name.c_str());
+    throw BoutException(_("Couldn't find region {:s} in regionMap2D"), region_name);
   }
   return found->second;
 }
@@ -422,8 +422,7 @@ const Region<Ind2D>& Mesh::getRegion2D(const std::string& region_name) const {
 const Region<IndPerp>& Mesh::getRegionPerp(const std::string& region_name) const {
   const auto found = regionMapPerp.find(region_name);
   if (found == end(regionMapPerp)) {
-    throw BoutException(_("Couldn't find region %s in regionMapPerp"),
-                        region_name.c_str());
+    throw BoutException(_("Couldn't find region {:s} in regionMapPerp"), region_name);
   }
   return found->second;
 }
@@ -442,28 +441,31 @@ bool Mesh::hasRegionPerp(const std::string& region_name) const {
 
 void Mesh::addRegion3D(const std::string &region_name, const Region<> &region) {
   if (regionMap3D.count(region_name)) {
-    throw BoutException(_("Trying to add an already existing region %s to regionMap3D"), region_name.c_str());
+    throw BoutException(_("Trying to add an already existing region {:s} to regionMap3D"),
+                        region_name);
   }
   regionMap3D[region_name] = region;
-  output_verbose.write(_("Registered region 3D %s"),region_name.c_str());
+  output_verbose.write(_("Registered region 3D {:s}"),region_name);
   output_verbose << "\n:\t" << region.getStats() << "\n";
 }
 
 void Mesh::addRegion2D(const std::string &region_name, const Region<Ind2D> &region) {
   if (regionMap2D.count(region_name)) {
-    throw BoutException(_("Trying to add an already existing region %s to regionMap2D"), region_name.c_str());
+    throw BoutException(_("Trying to add an already existing region {:s} to regionMap2D"),
+                        region_name);
   }
   regionMap2D[region_name] = region;
-  output_verbose.write(_("Registered region 2D %s"),region_name.c_str());
+  output_verbose.write(_("Registered region 2D {:s}"),region_name);
   output_verbose << "\n:\t" << region.getStats() << "\n";
 }
 
 void Mesh::addRegionPerp(const std::string &region_name, const Region<IndPerp> &region) {
   if (regionMapPerp.count(region_name)) {
-    throw BoutException(_("Trying to add an already existing region %s to regionMapPerp"), region_name.c_str());
+    throw BoutException(
+        _("Trying to add an already existing region {:s} to regionMapPerp"), region_name);
   }
   regionMapPerp[region_name] = region;
-  output_verbose.write(_("Registered region Perp %s"),region_name.c_str());
+  output_verbose.write(_("Registered region Perp {:s}"),region_name);
   output_verbose << "\n:\t" << region.getStats() << "\n";
 }
 
@@ -572,3 +574,8 @@ void Mesh::recalculateStaggeredCoordinates() {
     *coords_map[location] = std::move(*createDefaultCoordinates(location, true));
   }
 }
+
+constexpr decltype(MeshFactory::type_name) MeshFactory::type_name;
+constexpr decltype(MeshFactory::section_name) MeshFactory::section_name;
+constexpr decltype(MeshFactory::option_name) MeshFactory::option_name;
+constexpr decltype(MeshFactory::default_type) MeshFactory::default_type;
