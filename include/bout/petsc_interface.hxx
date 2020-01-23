@@ -226,8 +226,8 @@ private:
       numDiagonal[getGlobal(i) - globalStart] = stencils.getStencilSize(i);
     }
 
-    BOUT_FOR_SERIAL(i, regionBndry) {
-      if (!isLocal(i)) {
+    BOUT_FOR_SERIAL(i, indices.getRegion("RGN_GUARDS")) {
+      if (getGlobal(i) >= 0 && !isLocal(i)) {
         for (const auto& j : stencils.getIndicesWithStencilIncluding(i)) {
           if (isLocal(j)) {
             const int n = getGlobal(j) - globalStart;
