@@ -28,7 +28,7 @@
 #define __SHIFTEDINTERP_H__
 
 #include <bout/paralleltransform.hxx>
-#include <interpolation.hxx>
+#include <interpolation_z.hxx>
 
 /*!
  * Shifted metric method
@@ -36,12 +36,13 @@
  * so that the grid is orthogonal in X-Z, but requires interpolation
  * to calculate the values of points along field-lines.
  *
- * In this implementation the interpolation is done using Interpolation objects
+ * In this implementation the interpolation is done using ZInterpolation objects
  */
 class ShiftedMetricInterp : public ParallelTransform {
 public:
   ShiftedMetricInterp() = delete;
-  ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in, Field2D zShift_in);
+  ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in, Field2D zShift_in,
+                      Options* opt = nullptr);
 
   /*!
    * Calculates the yup() and ydown() fields of f
@@ -105,14 +106,11 @@ private:
   /// X-Z orthogonal to field-aligned along Y.
   Field2D zShift;
 
-  /// Interpolation objects for yup and ydown transformations
-  // Interpolation *interp_yup, *interp_ydown;
+  /// ZInterpolation objects for yup and ydown transformations
+  std::unique_ptr<ZInterpolation> interp_yup, interp_ydown;
 
-  /// Interpolation objects for yup and ydown transformations
-  std::unique_ptr<Interpolation> interp_yup, interp_ydown;
-
-  /// Interpolation objects for shifting to and from field-aligned coordinates
-  std::unique_ptr<Interpolation> interp_to_aligned, interp_from_aligned;
+  /// ZInterpolation objects for shifting to and from field-aligned coordinates
+  std::unique_ptr<ZInterpolation> interp_to_aligned, interp_from_aligned;
 };
 
 #endif // __SHIFTEDINTERP_H__
