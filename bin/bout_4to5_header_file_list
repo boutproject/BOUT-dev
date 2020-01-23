@@ -23,6 +23,7 @@ globals.hxx
 gyro_average.hxx
 initialprofiles.hxx
 interpolation.hxx
+interpolation_xz.hxx
 invert_laplace.hxx
 invert_parderiv.hxx
 lapack_routines.hxx
