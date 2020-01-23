@@ -235,7 +235,8 @@ private:
 
     // Check type of parallel transform
     std::string ptstr =
-        Options::root()["mesh"]["paralleltransform"].withDefault<std::string>("identity");
+        Options::root()["mesh"]["paralleltransform"]["type"]
+                       .withDefault<std::string>("identity");
 
     if (lowercase(ptstr) == "shifted") {
       // Dimits style, using local coordinate system

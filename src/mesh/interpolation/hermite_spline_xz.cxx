@@ -21,14 +21,14 @@
  **************************************************************************/
 
 #include "globals.hxx"
-#include "interpolation.hxx"
+#include "interpolation_xz.hxx"
 #include "bout/index_derivs_interface.hxx"
 #include "bout/mesh.hxx"
 
 #include <vector>
 
-HermiteSpline::HermiteSpline(int y_offset, Mesh *mesh)
-    : Interpolation(y_offset, mesh),
+XZHermiteSpline::XZHermiteSpline(int y_offset, Mesh *mesh, Options* opt)
+    : XZInterpolation(y_offset, mesh, opt),
       h00_x(localmesh), h01_x(localmesh), h10_x(localmesh), h11_x(localmesh),
       h00_z(localmesh), h01_z(localmesh), h10_z(localmesh), h11_z(localmesh) {
 
@@ -52,7 +52,7 @@ HermiteSpline::HermiteSpline(int y_offset, Mesh *mesh)
   h11_z.allocate();
 }
 
-void HermiteSpline::calcWeights(const Field3D &delta_x, const Field3D &delta_z,
+void XZHermiteSpline::calcWeights(const Field3D &delta_x, const Field3D &delta_z,
                                 const std::string& region) {
 
   BoutReal t_x, t_z;
@@ -112,8 +112,8 @@ void HermiteSpline::calcWeights(const Field3D &delta_x, const Field3D &delta_z,
   }
 }
 
-void HermiteSpline::calcWeights(const Field3D &delta_x, const Field3D &delta_z,
-                                const BoutMask &mask, const std::string& region) {
+void XZHermiteSpline::calcWeights(const Field3D &delta_x, const Field3D &delta_z,
+                                  const BoutMask &mask, const std::string& region) {
   skip_mask = mask;
   calcWeights(delta_x, delta_z, region);
 }
@@ -135,7 +135,7 @@ void HermiteSpline::calcWeights(const Field3D &delta_x, const Field3D &delta_z,
  *   (i, j+1, k+2)	h11_z / 2
  */
 std::vector<ParallelTransform::PositionsAndWeights>
-HermiteSpline::getWeightsForYApproximation(int i, int j, int k, int yoffset) {
+XZHermiteSpline::getWeightsForYApproximation(int i, int j, int k, int yoffset) {
   std::vector<ParallelTransform::PositionsAndWeights> pw;
   ParallelTransform::PositionsAndWeights p;
 
@@ -168,7 +168,7 @@ HermiteSpline::getWeightsForYApproximation(int i, int j, int k, int yoffset) {
   return pw;
 }
 
-Field3D HermiteSpline::interpolate(const Field3D &f, const std::string& region) const {
+Field3D XZHermiteSpline::interpolate(const Field3D &f, const std::string& region) const {
 
   ASSERT1(f.getMesh() == localmesh);
   Field3D f_interp{emptyFrom(f)};
@@ -232,15 +232,15 @@ Field3D HermiteSpline::interpolate(const Field3D &f, const std::string& region) 
   return f_interp;
 }
 
-Field3D HermiteSpline::interpolate(const Field3D& f, const Field3D &delta_x,
-                                   const Field3D &delta_z, const std::string& region) {
+Field3D XZHermiteSpline::interpolate(const Field3D& f, const Field3D &delta_x,
+                                     const Field3D &delta_z, const std::string& region) {
   calcWeights(delta_x, delta_z, region);
   return interpolate(f, region);
 }
 
-Field3D HermiteSpline::interpolate(const Field3D& f, const Field3D &delta_x,
-                                   const Field3D &delta_z, const BoutMask &mask,
-                                   const std::string& region) {
+Field3D XZHermiteSpline::interpolate(const Field3D& f, const Field3D &delta_x,
+                                     const Field3D &delta_z, const BoutMask &mask,
+                                     const std::string& region) {
   calcWeights(delta_x, delta_z, mask, region);
   return interpolate(f, region);
 }

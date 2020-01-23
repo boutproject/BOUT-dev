@@ -1082,15 +1082,18 @@ void fixZShiftGuards(Field2D& zShift) {
 
 void Coordinates::setParallelTransform(Options* options) {
 
+  auto ptoptions = options->getSection("paralleltransform");
+
   std::string ptstr;
-  options->get("paralleltransform", ptstr, "identity");
+  ptoptions->get("type", ptstr, "identity");
 
   // Convert to lower case for comparison
   ptstr = lowercase(ptstr);
 
   if(ptstr == "identity") {
     // Identity method i.e. no transform needed
-    transform = bout::utils::make_unique<ParallelTransformIdentity>(*localmesh);
+    transform = bout::utils::make_unique<ParallelTransformIdentity>(*localmesh,
+                                                                    ptoptions);
 
   } else if (ptstr == "shifted" or ptstr == "shiftedinterp") {
     // Shifted metric method
@@ -1128,7 +1131,7 @@ void Coordinates::setParallelTransform(Options* options) {
     fixZShiftGuards(zShift);
     if (ptstr == "shifted") {
       transform = bout::utils::make_unique<ShiftedMetric>(*localmesh, location, zShift,
-          zlength());
+                                                          zlength(), ptoptions);
     } else if (ptstr == "shiftedinterp") {
       transform = bout::utils::make_unique<ShiftedMetricInterp>(*localmesh, location,
           zShift);
@@ -1141,8 +1144,7 @@ void Coordinates::setParallelTransform(Options* options) {
     }
 
     // Flux Coordinate Independent method
-    const bool fci_zperiodic = Options::root()["fci"]["z_periodic"].withDefault(true);
-    transform = bout::utils::make_unique<FCITransform>(*localmesh, fci_zperiodic);
+    transform = bout::utils::make_unique<FCITransform>(*localmesh, ptoptions);
 
   } else {
     throw BoutException(_("Unrecognised paralleltransform option.\n"

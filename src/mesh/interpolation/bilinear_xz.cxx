@@ -22,13 +22,13 @@
 
 #include "bout/mesh.hxx"
 #include "globals.hxx"
-#include "interpolation.hxx"
+#include "interpolation_xz.hxx"
 
 #include <string>
 #include <vector>
 
-Bilinear::Bilinear(int y_offset, Mesh *mesh)
-  : Interpolation(y_offset, mesh),
+XZBilinear::XZBilinear(int y_offset, Mesh *mesh, Options* opt)
+  : XZInterpolation(y_offset, mesh, opt),
     w0(localmesh), w1(localmesh), w2(localmesh), w3(localmesh) {
 
   // Index arrays contain guard cells in order to get subscripts right
@@ -42,8 +42,8 @@ Bilinear::Bilinear(int y_offset, Mesh *mesh)
   w3.allocate();
 }
 
-void Bilinear::calcWeights(const Field3D &delta_x, const Field3D &delta_z,
-                           const std::string& region) {
+void XZBilinear::calcWeights(const Field3D &delta_x, const Field3D &delta_z,
+                             const std::string& region) {
 
   BOUT_FOR(i, delta_x.getRegion(region)) {
     const int x = i.x();
@@ -85,13 +85,13 @@ void Bilinear::calcWeights(const Field3D &delta_x, const Field3D &delta_z,
   }
 }
 
-void Bilinear::calcWeights(const Field3D &delta_x, const Field3D &delta_z,
-                           const BoutMask &mask, const std::string& region) {
+void XZBilinear::calcWeights(const Field3D &delta_x, const Field3D &delta_z,
+                             const BoutMask &mask, const std::string& region) {
   skip_mask = mask;
   calcWeights(delta_x, delta_z, region);
 }
 
-Field3D Bilinear::interpolate(const Field3D& f, const std::string& region) const {
+Field3D XZBilinear::interpolate(const Field3D& f, const std::string& region) const {
   ASSERT1(f.getMesh() == localmesh);
   Field3D f_interp{emptyFrom(f)};
 
@@ -117,14 +117,14 @@ Field3D Bilinear::interpolate(const Field3D& f, const std::string& region) const
   return f_interp;
 }
 
-Field3D Bilinear::interpolate(const Field3D& f, const Field3D &delta_x,
-                              const Field3D &delta_z, const std::string& region) {
+Field3D XZBilinear::interpolate(const Field3D& f, const Field3D &delta_x,
+                                const Field3D &delta_z, const std::string& region) {
   calcWeights(delta_x, delta_z, region);
   return interpolate(f, region);
 }
 
-Field3D Bilinear::interpolate(const Field3D& f, const Field3D &delta_x,
-                              const Field3D &delta_z, const BoutMask &mask,
+Field3D XZBilinear::interpolate(const Field3D& f, const Field3D &delta_x,
+                                const Field3D &delta_z, const BoutMask &mask,
                               const std::string& region) {
   calcWeights(delta_x, delta_z, mask, region);
   return interpolate(f, region);

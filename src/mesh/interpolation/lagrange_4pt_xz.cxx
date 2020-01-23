@@ -22,12 +22,12 @@
 
 #include "bout/mesh.hxx"
 #include "globals.hxx"
-#include "interpolation.hxx"
+#include "interpolation_xz.hxx"
 
 #include <vector>
 
-Lagrange4pt::Lagrange4pt(int y_offset, Mesh *mesh)
-    : Interpolation(y_offset, mesh), t_x(localmesh), t_z(localmesh) {
+XZLagrange4pt::XZLagrange4pt(int y_offset, Mesh *mesh, Options* opt)
+    : XZInterpolation(y_offset, mesh, opt), t_x(localmesh), t_z(localmesh) {
 
   // Index arrays contain guard cells in order to get subscripts right
   i_corner.reallocate(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
@@ -37,8 +37,8 @@ Lagrange4pt::Lagrange4pt(int y_offset, Mesh *mesh)
   t_z.allocate();
 }
 
-void Lagrange4pt::calcWeights(const Field3D &delta_x, const Field3D &delta_z,
-                              const std::string& region) {
+void XZLagrange4pt::calcWeights(const Field3D &delta_x, const Field3D &delta_z,
+                                const std::string& region) {
 
   BOUT_FOR(i, delta_x.getRegion(region)) {
     const int x = i.x();
@@ -78,13 +78,13 @@ void Lagrange4pt::calcWeights(const Field3D &delta_x, const Field3D &delta_z,
   }
 }
 
-void Lagrange4pt::calcWeights(const Field3D &delta_x, const Field3D &delta_z,
-                              const BoutMask &mask, const std::string& region) {
+void XZLagrange4pt::calcWeights(const Field3D &delta_x, const Field3D &delta_z,
+                                const BoutMask &mask, const std::string& region) {
   skip_mask = mask;
   calcWeights(delta_x, delta_z, region);
 }
 
-Field3D Lagrange4pt::interpolate(const Field3D &f, const std::string& region) const {
+Field3D XZLagrange4pt::interpolate(const Field3D &f, const std::string& region) const {
 
   ASSERT1(f.getMesh() == localmesh);
   Field3D f_interp{emptyFrom(f)};
@@ -138,30 +138,30 @@ Field3D Lagrange4pt::interpolate(const Field3D &f, const std::string& region) co
   return f_interp;
 }
 
-Field3D Lagrange4pt::interpolate(const Field3D &f, const Field3D &delta_x,
-                                 const Field3D &delta_z, const std::string& region) {
+Field3D XZLagrange4pt::interpolate(const Field3D &f, const Field3D &delta_x,
+                                   const Field3D &delta_z, const std::string& region) {
   calcWeights(delta_x, delta_z, region);
   return interpolate(f, region);
 }
 
-Field3D Lagrange4pt::interpolate(const Field3D &f, const Field3D &delta_x,
-                                 const Field3D &delta_z, const BoutMask &mask,
-                                 const std::string& region) {
+Field3D XZLagrange4pt::interpolate(const Field3D &f, const Field3D &delta_x,
+                                   const Field3D &delta_z, const BoutMask &mask,
+                                   const std::string& region) {
   calcWeights(delta_x, delta_z, mask, region);
   return interpolate(f, region);
 }
 
 // 4-point Lagrangian interpolation
 // offset must be between 0 and 1
-BoutReal Lagrange4pt::lagrange_4pt(const BoutReal v2m, const BoutReal vm,
-                                   const BoutReal vp, const BoutReal v2p,
-                                   const BoutReal offset) const {
+BoutReal XZLagrange4pt::lagrange_4pt(const BoutReal v2m, const BoutReal vm,
+                                     const BoutReal vp, const BoutReal v2p,
+                                     const BoutReal offset) const {
   return -offset * (offset - 1.0) * (offset - 2.0) * v2m / 6.0 +
          0.5 * (offset * offset - 1.0) * (offset - 2.0) * vm -
          0.5 * offset * (offset + 1.0) * (offset - 2.0) * vp +
          offset * (offset * offset - 1.0) * v2p / 6.0;
 }
 
-BoutReal Lagrange4pt::lagrange_4pt(const BoutReal v[], const BoutReal offset) const {
+BoutReal XZLagrange4pt::lagrange_4pt(const BoutReal v[], const BoutReal offset) const {
   return lagrange_4pt(v[0], v[1], v[2], v[3], offset);
 }
