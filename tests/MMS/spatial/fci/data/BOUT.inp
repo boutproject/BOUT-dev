@@ -10,16 +10,14 @@ NXPE = 1
 [mesh]
 symmetricglobalx = true
 
-[mesh:paralleltransform]
-type = fci
-
 [mesh:ddy]
 first = C2
 second = C2
 
-[fci]
+[mesh:paralleltransform]
+type = fci
 y_periodic = true
 z_periodic = true
 
-[interpolation]
+[mesh:paralleltransform:xzinterpolation]
 type = lagrange4pt
