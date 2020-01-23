@@ -118,6 +118,7 @@ set(BOUT_SOURCES
   ./include/gyro_average.hxx
   ./include/initialprofiles.hxx
   ./include/interpolation.hxx
+  ./include/interpolation_xz.hxx
   ./include/invert_laplace.hxx
   ./include/invert_parderiv.hxx
   ./include/lapack_routines.hxx
@@ -220,12 +221,12 @@ set(BOUT_SOURCES
   ./src/mesh/impls/bout/boutmesh.cxx
   ./src/mesh/impls/bout/boutmesh.hxx
   ./src/mesh/index_derivs.cxx
-  ./src/mesh/interpolation.cxx
-  ./src/mesh/interpolation/bilinear.cxx
-  ./src/mesh/interpolation/hermite_spline.cxx
-  ./src/mesh/interpolation/hermite_spline_only_z.cxx
-  ./src/mesh/interpolation/lagrange_4pt.cxx
-  ./src/mesh/interpolation/monotonic_hermite_spline.cxx
+  ./src/mesh/interpolation_xz.cxx
+  ./src/mesh/interpolation/bilinear_xz.cxx
+  ./src/mesh/interpolation/hermite_spline_xz.cxx
+  ./src/mesh/interpolation/lagrange_4pt_xz.cxx
+  ./src/mesh/interpolation/monotonic_hermite_spline_xz.cxx
+  ./src/mesh/interpolation/hermite_spline_z.cxx
   ./src/mesh/mesh.cxx
   ./src/mesh/parallel/fci.cxx
   ./src/mesh/parallel/fci.hxx
