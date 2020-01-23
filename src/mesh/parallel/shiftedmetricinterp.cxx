@@ -38,26 +38,17 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in, Field
 
   // Create the Interpolation objects and set whether they go up or down the
   // magnetic field
-  Options::root()["interpolation"]["type"].overrideDefault("hermitesplineonlyz",
-                                                           "ShiftedMetricInterp default");
-  interp_yup = InterpolationFactory::getInstance().create(&mesh);
+  interp_yup = ZInterpolationFactory::getInstance().create(&mesh);
   interp_yup->setYOffset(1);
 
-  interp_ydown = InterpolationFactory::getInstance().create(&mesh);
+  interp_ydown = ZInterpolationFactory::getInstance().create(&mesh);
   interp_ydown->setYOffset(-1);
 
   // Find the index positions where the magnetic field line intersects the next
   // x-z plane
-  Field3D xt_prime(&mesh), zt_prime_up(&mesh),
-          zt_prime_down(&mesh);
-  xt_prime.allocate();
+  Field3D zt_prime_up(&mesh), zt_prime_down(&mesh);
   zt_prime_up.allocate();
   zt_prime_down.allocate();
-
-  for (const auto &i : xt_prime) {
-    // no interpolation in x, all field lines stay at constant x
-    xt_prime[i] = i.x();
-  }
 
   for (const auto &i : zt_prime_up.getRegion(RGN_NOY)) {
     // Field line moves in z by an angle zShift(i,j+1)-zShift(i,j) when going
@@ -75,12 +66,7 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in, Field
     }
   }
 
-  interp_yup->calcWeights(xt_prime, zt_prime_up, mask_up, "RGN_ALL");
-
-  for (const auto &i : xt_prime) {
-    // no interpolation in x, all field lines stay at constant x
-    xt_prime[i] = i.x();
-  }
+  interp_yup->calcWeights(zt_prime_up, mask_up, "RGN_ALL");
 
   for (const auto &i : zt_prime_down.getRegion(RGN_NOY)) {
     // Field line moves in z by an angle -(zShift(i,j)-zShift(i,j-1)) when going
@@ -96,11 +82,11 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in, Field
     }
   }
 
-  interp_ydown->calcWeights(xt_prime, zt_prime_down, mask_down, "RGN_ALL");
+  interp_ydown->calcWeights(zt_prime_down, mask_down, "RGN_ALL");
 
   // Set up interpolation to/from field-aligned coordinates
-  interp_to_aligned = InterpolationFactory::getInstance().create(&mesh);
-  interp_from_aligned = InterpolationFactory::getInstance().create(&mesh);
+  interp_to_aligned = ZInterpolationFactory::getInstance().create(&mesh);
+  interp_from_aligned = ZInterpolationFactory::getInstance().create(&mesh);
 
   Field3D zt_prime_to(&mesh), zt_prime_from(&mesh);
   zt_prime_to.allocate();
@@ -113,7 +99,7 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in, Field
       + zShift[i]*static_cast<BoutReal>(mesh.GlobalNz)/TWOPI;
   }
 
-  interp_to_aligned->calcWeights(xt_prime, zt_prime_to, "RGN_ALL");
+  interp_to_aligned->calcWeights(zt_prime_to, "RGN_ALL");
 
   for (const auto &i : zt_prime_from) {
     // Field line moves in z by an angle zShift(i,j) when going
@@ -123,7 +109,7 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in, Field
       - zShift[i]*static_cast<BoutReal>(mesh.GlobalNz)/TWOPI;
   }
 
-  interp_from_aligned->calcWeights(xt_prime, zt_prime_from, "RGN_ALL");
+  interp_from_aligned->calcWeights(zt_prime_from, "RGN_ALL");
 
   // Create regions for parallel boundary conditions
   Field2D dy;

@@ -94,7 +94,6 @@ namespace {
 RegisterXZInterpolation<XZHermiteSpline> registerinterphermitespline{"hermitespline"};
 RegisterXZInterpolation<XZMonotonicHermiteSpline> registerinterpmonotonichermitespline{
     "monotonichermitespline"};
-RegisterInterpolation<HermiteSplineOnlyZ> registerinterphermitesplineonlyz{"hermitesplineonlyz"};
 RegisterXZInterpolation<XZLagrange4pt> registerinterplagrange4pt{"lagrange4pt"};
 RegisterXZInterpolation<XZBilinear> registerinterpbilinear{"bilinear"};
 } // namespace
