@@ -322,7 +322,7 @@ public:
   PetscVector(const PetscVector<T>& v, Vec* vec) {
 #if CHECKLEVEL >= 2
     int fsize = v.indexConverter->size(), msize;
-    VecGetSize(*vec, &msize);
+    VecGetLocalSize(*vec, &msize);
     ASSERT2(fsize == msize);
 #endif
     vector.reset(vec);
