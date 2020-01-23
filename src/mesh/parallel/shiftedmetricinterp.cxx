@@ -31,17 +31,19 @@
 #include "mask.hxx"
 #include <bout/constants.hxx>
 
-ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in, Field2D zShift_in)
-  : ParallelTransform(mesh), location(location_in), zShift(std::move(zShift_in)) {
+ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in, Field2D zShift_in,
+                                         Options* opt)
+  : ParallelTransform(mesh, opt), location(location_in), zShift(std::move(zShift_in)) {
   // check the coordinate system used for the grid data source
   ShiftedMetricInterp::checkInputGrid();
 
   // Create the Interpolation objects and set whether they go up or down the
   // magnetic field
-  interp_yup = ZInterpolationFactory::getInstance().create(&mesh);
+  auto interp_options = options["zinterpolation"];
+  interp_yup = ZInterpolationFactory::getInstance().create(&mesh, &interp_options);
   interp_yup->setYOffset(1);
 
-  interp_ydown = ZInterpolationFactory::getInstance().create(&mesh);
+  interp_ydown = ZInterpolationFactory::getInstance().create(&mesh, &interp_options);
   interp_ydown->setYOffset(-1);
 
   // Find the index positions where the magnetic field line intersects the next
@@ -85,8 +87,9 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in, Field
   interp_ydown->calcWeights(zt_prime_down, mask_down, "RGN_ALL");
 
   // Set up interpolation to/from field-aligned coordinates
-  interp_to_aligned = ZInterpolationFactory::getInstance().create(&mesh);
-  interp_from_aligned = ZInterpolationFactory::getInstance().create(&mesh);
+  interp_to_aligned = ZInterpolationFactory::getInstance().create(&mesh, &interp_options);
+  interp_from_aligned = ZInterpolationFactory::getInstance().create(&mesh,
+                                                                    &interp_options);
 
   Field3D zt_prime_to(&mesh), zt_prime_from(&mesh);
   zt_prime_to.allocate();

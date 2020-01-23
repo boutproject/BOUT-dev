@@ -27,8 +27,8 @@
 
 #include <vector>
 
-ZHermiteSpline::ZHermiteSpline(int y_offset, Mesh *mesh)
-    : ZInterpolation(y_offset, mesh),
+ZHermiteSpline::ZHermiteSpline(int y_offset, Mesh *mesh, Options* opt)
+    : ZInterpolation(y_offset, mesh, opt),
       h00(localmesh), h01(localmesh), h10(localmesh), h11(localmesh) {
 
   // Index arrays contain guard cells in order to get subscripts right

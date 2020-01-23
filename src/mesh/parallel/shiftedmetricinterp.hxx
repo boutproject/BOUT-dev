@@ -41,7 +41,8 @@
 class ShiftedMetricInterp : public ParallelTransform {
 public:
   ShiftedMetricInterp() = delete;
-  ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in, Field2D zShift_in);
+  ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in, Field2D zShift_in,
+                      Options* opt = nullptr);
   
   /*!
    * Calculates the yup() and ydown() fields of f

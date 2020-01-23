@@ -1134,7 +1134,7 @@ void Coordinates::setParallelTransform(Options* options) {
                                                           zlength(), ptoptions);
     } else if (ptstr == "shiftedinterp") {
       transform = bout::utils::make_unique<ShiftedMetricInterp>(*localmesh, location,
-          zShift);
+                                                                zShift, ptoptions);
     }
 
   } else if (ptstr == "fci") {
