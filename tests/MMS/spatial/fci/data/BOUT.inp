@@ -8,8 +8,10 @@ MXG = 1
 NXPE = 1
 
 [mesh]
-paralleltransform = fci
 symmetricglobalx = true
+
+[mesh:paralleltransform]
+type = fci
 
 [mesh:ddy]
 first = C2

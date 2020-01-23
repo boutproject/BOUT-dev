@@ -188,8 +188,8 @@ protected:
     coord->Bxy  /= Bnorm;
     
     // Check type of parallel transform
-    std::string ptstr;
-    Options::getRoot()->getSection("mesh")->get("paralleltransform", ptstr, "identity");
+    std::string ptstr = Options::root()["mesh"]["paralleltransform"]["type"]
+                                       .withDefault("identity");
 
     if(lowercase(ptstr) == "shifted") {
       // Using shifted metric method

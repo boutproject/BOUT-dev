@@ -23,8 +23,8 @@ dump_format = "nc"   # Set extension for dump files (nc = NetCDF)
 
 #StaggerGrids = true
 
-[mesh]
-paralleltransform = shifted # Use shifted metric method
+[mesh:paralleltransform]
+type = shifted # Use shifted metric method
 
 ##################################################
 # derivative methods
