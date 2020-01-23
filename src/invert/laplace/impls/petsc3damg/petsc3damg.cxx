@@ -479,7 +479,7 @@ OperatorStencil<Ind3D> LaplacePetsc3dAmg::getStencil(Mesh* localmesh,
   OffsetInd3D zero;
 
   // Add interior cells
-  std::vector<OffsetInd3D> interpolatedUpElements = {zero.yp(), zero.xp().yp(), zero.xm().yp(),
+  const std::vector<OffsetInd3D> interpolatedUpElements = {zero.yp(), zero.xp().yp(), zero.xm().yp(),
 						     zero.yp().zp(), zero.yp().zm()},
     interpolatedDownElements = {zero.ym(), zero.xp().ym(), zero.xm().ym(), zero.ym().zp(),
 				zero.ym().zm()};
@@ -489,21 +489,21 @@ OperatorStencil<Ind3D> LaplacePetsc3dAmg::getStencil(Mesh* localmesh,
 					   zero.xm().zp(), zero.xm().zm()},
     lowerEdgeStencil = interiorStencil, upperEdgeStencil = interiorStencil;
 
-  for (auto& i : interpolatedDownElements) {
+  for (const auto& i : interpolatedDownElements) {
     for (auto& j : interpPattern) {
       interiorStencil.insert(i + j);
       upperEdgeStencil.insert(i + j);
     }
     lowerEdgeStencil.insert(i);
   }
-  for (auto& i : interpolatedUpElements) {
+  for (const auto& i : interpolatedUpElements) {
     for (auto& j : interpPattern) {
       interiorStencil.insert(i + j);
       lowerEdgeStencil.insert(i + j);
     }
     upperEdgeStencil.insert(i);
   }
-  std::vector<OffsetInd3D> interiorStencilVector(interiorStencil.begin(), interiorStencil.end()),
+  const std::vector<OffsetInd3D> interiorStencilVector(interiorStencil.begin(), interiorStencil.end()),
     lowerEdgeStencilVector(lowerEdgeStencil.begin(), lowerEdgeStencil.end()),
     upperEdgeStencilVector(upperEdgeStencil.begin(), upperEdgeStencil.end());
 
