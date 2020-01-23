@@ -151,6 +151,15 @@ public:
                         DerivedFactory::type_name, name, available);
   }
 
+  /// Create a new object of the type given in options["type"]
+  ///
+  /// @param[in] options  The Options object to get the type to be created from
+  /// @returns the new object
+  template <typename... Args>
+  ReturnType create(Options* options, Args&&... args) const {
+    return create(getType(optionsOrDefaultSection(options)), args...);
+  }
+
   /// List available types that can be created
   ///
   /// @returns a vector of std::string
