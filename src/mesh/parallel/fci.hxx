@@ -44,7 +44,8 @@ class FCIMap {
 
 public:
   FCIMap() = delete;
-  FCIMap(Mesh& mesh, int offset, BoundaryRegionPar* boundary, bool zperiodic);
+  FCIMap(Mesh& mesh, Options& options, int offset, BoundaryRegionPar* boundary, bool
+         zperiodic);
 
   // The mesh this map was created on
   Mesh& map_mesh;
@@ -86,8 +87,8 @@ public:
 
     field_line_maps.reserve(mesh.ystart * 2);
     for (int offset = 1; offset < mesh.ystart + 1; ++offset) {
-      field_line_maps.emplace_back(mesh, offset, forward_boundary, zperiodic);
-      field_line_maps.emplace_back(mesh, -offset, backward_boundary, zperiodic);
+      field_line_maps.emplace_back(mesh, options, offset, forward_boundary, zperiodic);
+      field_line_maps.emplace_back(mesh, options, -offset, backward_boundary, zperiodic);
     }
   }
 

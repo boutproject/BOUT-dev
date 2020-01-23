@@ -47,7 +47,8 @@
 
 #include <string>
 
-FCIMap::FCIMap(Mesh& mesh, int offset_, BoundaryRegionPar* boundary, bool zperiodic)
+FCIMap::FCIMap(Mesh& mesh, Options& options, int offset_, BoundaryRegionPar* boundary,
+               bool zperiodic)
     : map_mesh(mesh), offset(offset_), boundary_mask(map_mesh),
       corner_boundary_mask(map_mesh) {
 
@@ -57,10 +58,13 @@ FCIMap::FCIMap(Mesh& mesh, int offset_, BoundaryRegionPar* boundary, bool zperio
     throw BoutException("FCIMap called with offset = 0; You probably didn't mean to do that");
   }
 
-  interp = XZInterpolationFactory::getInstance().create(&map_mesh);
+  auto interpolation_options = options["xzinterpolation"];
+  interp = XZInterpolationFactory::getInstance().create(&interpolation_options, &map_mesh,
+                                                        &interpolation_options);
   interp->setYOffset(offset);
 
-  interp_corner = XZInterpolationFactory::getInstance().create(&map_mesh);
+  interp_corner = XZInterpolationFactory::getInstance().create(&interpolation_options, &map_mesh,
+                                                               &interpolation_options);
   interp_corner->setYOffset(offset);
 
   // Index arrays contain guard cells in order to get subscripts right
