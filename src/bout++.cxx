@@ -42,7 +42,7 @@ const char DEFAULT_DIR[] = "data";
 #include "boutcomm.hxx"
 #include "boutexception.hxx"
 #include "datafile.hxx"
-#include "interpolation.hxx"
+#include "interpolation_xz.hxx"
 #include "invert_laplace.hxx"
 #include "invert_parderiv.hxx"
 #include "msg_stack.hxx"

@@ -21,7 +21,7 @@
  **************************************************************************/
 
 #include "globals.hxx"
-#include "interpolation.hxx"
+#include "interpolation_xz.hxx"
 #include "output.hxx"
 #include "bout/index_derivs_interface.hxx"
 #include "bout/mesh.hxx"

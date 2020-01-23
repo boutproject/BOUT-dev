@@ -27,7 +27,7 @@
 #define __FCITRANSFORM_H__
 
 #include <bout/paralleltransform.hxx>
-#include <interpolation.hxx>
+#include <interpolation_xz.hxx>
 #include <mask.hxx>
 #include <parallel_boundary_region.hxx>
 #include <unused.hxx>

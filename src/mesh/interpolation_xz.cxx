@@ -24,7 +24,7 @@
  **************************************************************************/
 
 #include <globals.hxx>
-#include <interpolation.hxx>
+#include <interpolation_xz.hxx>
 #include <msg_stack.hxx>
 #include <output.hxx>
 #include <unused.hxx>
