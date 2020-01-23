@@ -39,8 +39,8 @@
 /// Field line map - contains the coefficients for interpolation
 class FCIMap {
   /// Interpolation objects
-  std::unique_ptr<Interpolation> interp;        // Cell centre
-  std::unique_ptr<Interpolation> interp_corner; // Cell corner at (x+1, z+1)
+  std::unique_ptr<XZInterpolation> interp;        // Cell centre
+  std::unique_ptr<XZInterpolation> interp_corner; // Cell corner at (x+1, z+1)
 
 public:
   FCIMap() = delete;

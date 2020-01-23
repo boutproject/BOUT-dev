@@ -28,7 +28,7 @@
 
 #include <vector>
 
-Field3D MonotonicHermiteSpline::interpolate(const Field3D &f) const {
+Field3D XZMonotonicHermiteSpline::interpolate(const Field3D &f) const {
   ASSERT1(f.getMesh() == localmesh);
   Field3D f_interp(f.getMesh());
   f_interp.allocate();

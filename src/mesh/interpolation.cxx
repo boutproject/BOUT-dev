@@ -41,7 +41,7 @@ const char* strLocation(CELL_LOC loc) { return toString(loc).c_str(); }
 const Field3D interpolate(const Field3D &f, const Field3D &delta_x,
                           const Field3D &delta_z) {
   TRACE("Interpolating 3D field");
-  Lagrange4pt interpolateMethod{f.getMesh()};
+  XZLagrange4pt interpolateMethod{f.getMesh()};
   return interpolateMethod.interpolate(f, delta_x, delta_z);
 }
 
@@ -88,17 +88,17 @@ const Field3D interpolate(const Field2D &f, const Field3D &delta_x) {
   return result;
 }
 
-void InterpolationFactory::ensureRegistered() {}
+void XZInterpolationFactory::ensureRegistered() {}
 
 namespace {
-RegisterInterpolation<HermiteSpline> registerinterphermitespline{"hermitespline"};
-RegisterInterpolation<MonotonicHermiteSpline> registerinterpmonotonichermitespline{
+RegisterXZInterpolation<XZHermiteSpline> registerinterphermitespline{"hermitespline"};
+RegisterXZInterpolation<XZMonotonicHermiteSpline> registerinterpmonotonichermitespline{
     "monotonichermitespline"};
-RegisterInterpolation<Lagrange4pt> registerinterplagrange4pt{"lagrange4pt"};
-RegisterInterpolation<Bilinear> registerinterpbilinear{"bilinear"};
+RegisterXZInterpolation<XZLagrange4pt> registerinterplagrange4pt{"lagrange4pt"};
+RegisterXZInterpolation<XZBilinear> registerinterpbilinear{"bilinear"};
 } // namespace
 
-constexpr decltype(InterpolationFactory::type_name) InterpolationFactory::type_name;
-constexpr decltype(InterpolationFactory::section_name) InterpolationFactory::section_name;
-constexpr decltype(InterpolationFactory::option_name) InterpolationFactory::option_name;
-constexpr decltype(InterpolationFactory::default_type) InterpolationFactory::default_type;
+constexpr decltype(XZInterpolationFactory::type_name) XZInterpolationFactory::type_name;
+constexpr decltype(XZInterpolationFactory::section_name) XZInterpolationFactory::section_name;
+constexpr decltype(XZInterpolationFactory::option_name) XZInterpolationFactory::option_name;
+constexpr decltype(XZInterpolationFactory::default_type) XZInterpolationFactory::default_type;

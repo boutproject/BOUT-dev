@@ -227,7 +227,7 @@ const Field3D interpolate(const Field2D &f, const Field3D &delta_x);
 
 ////////////////////////////////////////
 
-class Interpolation {
+class XZInterpolation {
 protected:
   Mesh* localmesh{nullptr};
 
@@ -235,14 +235,14 @@ protected:
   BoutMask skip_mask;
 
 public:
-  Interpolation(int y_offset = 0, Mesh* localmeshIn = nullptr)
+  XZInterpolation(int y_offset = 0, Mesh* localmeshIn = nullptr)
       : localmesh(localmeshIn == nullptr ? bout::globals::mesh : localmeshIn),
         skip_mask(*localmesh, false), y_offset(y_offset) {}
-  Interpolation(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
-      : Interpolation(y_offset, mesh) {
+  XZInterpolation(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
+      : XZInterpolation(y_offset, mesh) {
     skip_mask = mask;
   }
-  virtual ~Interpolation() = default;
+  virtual ~XZInterpolation() = default;
 
   virtual void calcWeights(const Field3D &delta_x, const Field3D &delta_z) = 0;
   virtual void calcWeights(const Field3D &delta_x, const Field3D &delta_z,
@@ -272,11 +272,11 @@ public:
   getWeightsForYApproximation(int UNUSED(i), int UNUSED(j), int UNUSED(k),
                               int UNUSED(yoffset)) {
     throw BoutException(
-        "Interpolation::getWeightsForYApproximation not implemented in this subclass");
+        "XZInterpolation::getWeightsForYApproximation not implemented in this subclass");
   }
 };
 
-class HermiteSpline : public Interpolation {
+class XZHermiteSpline : public XZInterpolation {
 protected:
   /// This is protected rather than private so that it can be
   /// extended and used by HermiteSplineMonotonic
@@ -300,10 +300,10 @@ protected:
   Field3D h11_z;
 
 public:
-  HermiteSpline(Mesh *mesh = nullptr) : HermiteSpline(0, mesh) {}
-  HermiteSpline(int y_offset = 0, Mesh *mesh = nullptr);
-  HermiteSpline(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
-      : HermiteSpline(y_offset, mesh) {
+  XZHermiteSpline(Mesh *mesh = nullptr) : XZHermiteSpline(0, mesh) {}
+  XZHermiteSpline(int y_offset = 0, Mesh *mesh = nullptr);
+  XZHermiteSpline(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
+      : XZHermiteSpline(y_offset, mesh) {
     skip_mask = mask;
   }
 
@@ -325,38 +325,38 @@ public:
 
 /// Monotonic Hermite spline interpolator
 ///
-/// Similar to HermiteSpline, so uses most of the same code.
+/// Similar to XZHermiteSpline, so uses most of the same code.
 /// Forces the interpolated result to be in the range of the
 /// neighbouring cell values. This prevents unphysical overshoots,
 /// but also degrades accuracy near maxima and minima.
 /// Perhaps should only impose near boundaries, since that is where
 /// problems most obviously occur.
-class MonotonicHermiteSpline : public HermiteSpline {
+class XZMonotonicHermiteSpline : public XZHermiteSpline {
 public:
-  MonotonicHermiteSpline(Mesh *mesh = nullptr) : HermiteSpline(0, mesh) {}
-  MonotonicHermiteSpline(int y_offset = 0, Mesh *mesh = nullptr)
-      : HermiteSpline(y_offset, mesh) {}
-  MonotonicHermiteSpline(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
-      : HermiteSpline(mask, y_offset, mesh) {}
+  XZMonotonicHermiteSpline(Mesh *mesh = nullptr) : XZHermiteSpline(0, mesh) {}
+  XZMonotonicHermiteSpline(int y_offset = 0, Mesh *mesh = nullptr)
+      : XZHermiteSpline(y_offset, mesh) {}
+  XZMonotonicHermiteSpline(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
+      : XZHermiteSpline(mask, y_offset, mesh) {}
 
-  using HermiteSpline::interpolate;
+  using XZHermiteSpline::interpolate;
   /// Interpolate using precalculated weights.
   /// This function is called by the other interpolate functions
-  /// in the base class HermiteSpline.
+  /// in the base class XZHermiteSpline.
   Field3D interpolate(const Field3D &f) const override;
 };
 
-class Lagrange4pt : public Interpolation {
+class XZLagrange4pt : public XZInterpolation {
   Tensor<int> i_corner; // x-index of bottom-left grid point
   Tensor<int> k_corner; // z-index of bottom-left grid point
 
   Field3D t_x, t_z;
 
 public:
-  Lagrange4pt(Mesh *mesh = nullptr) : Lagrange4pt(0, mesh) {}
-  Lagrange4pt(int y_offset = 0, Mesh *mesh = nullptr);
-  Lagrange4pt(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
-      : Lagrange4pt(y_offset, mesh) {
+  XZLagrange4pt(Mesh *mesh = nullptr) : XZLagrange4pt(0, mesh) {}
+  XZLagrange4pt(int y_offset = 0, Mesh *mesh = nullptr);
+  XZLagrange4pt(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
+      : XZLagrange4pt(y_offset, mesh) {
     skip_mask = mask;
   }
 
@@ -376,17 +376,17 @@ public:
   BoutReal lagrange_4pt(const BoutReal v[], BoutReal offset) const;
 };
 
-class Bilinear : public Interpolation {
+class XZBilinear : public XZInterpolation {
   Tensor<int> i_corner; // x-index of bottom-left grid point
   Tensor<int> k_corner; // z-index of bottom-left grid point
 
   Field3D w0, w1, w2, w3;
 
 public:
-  Bilinear(Mesh *mesh = nullptr) : Bilinear(0, mesh) {}
-  Bilinear(int y_offset = 0, Mesh *mesh = nullptr);
-  Bilinear(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
-      : Bilinear(y_offset, mesh) {
+  XZBilinear(Mesh *mesh = nullptr) : XZBilinear(0, mesh) {}
+  XZBilinear(int y_offset = 0, Mesh *mesh = nullptr);
+  XZBilinear(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
+      : XZBilinear(y_offset, mesh) {
     skip_mask = mask;
   }
 
@@ -403,11 +403,11 @@ public:
                       const BoutMask &mask) override;
 };
 
-class InterpolationFactory
-    : public Factory<Interpolation, InterpolationFactory,
-                             std::function<std::unique_ptr<Interpolation>(Mesh*)>> {
+class XZInterpolationFactory
+    : public Factory<XZInterpolation, XZInterpolationFactory,
+                             std::function<std::unique_ptr<XZInterpolation>(Mesh*)>> {
 public:
-  static constexpr auto type_name = "Interpolation";
+  static constexpr auto type_name = "XZInterpolation";
   static constexpr auto section_name = "interpolation";
   static constexpr auto option_name = "type";
   static constexpr auto default_type = "hermitespline";
@@ -421,11 +421,11 @@ public:
 };
 
 template <class DerivedType>
-class RegisterInterpolation {
+class RegisterXZInterpolation {
 public:
-  RegisterInterpolation(const std::string& name) {
-    InterpolationFactory::getInstance().add(
-        name, [](Mesh* mesh) -> std::unique_ptr<Interpolation> {
+  RegisterXZInterpolation(const std::string& name) {
+    XZInterpolationFactory::getInstance().add(
+        name, [](Mesh* mesh) -> std::unique_ptr<XZInterpolation> {
           return std::make_unique<DerivedType>(mesh);
         });
   }

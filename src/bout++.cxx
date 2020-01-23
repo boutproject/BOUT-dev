@@ -308,9 +308,9 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
       }
       std::exit(EXIT_SUCCESS);
     }
-    if (current_arg == "--list-interpolations") {
+    if (current_arg == "--list-xzinterpolations") {
       for (const auto& interpolation :
-           InterpolationFactory::getInstance().listAvailable()) {
+           XZInterpolationFactory::getInstance().listAvailable()) {
         std::cout << interpolation << "\n";
       }
       std::exit(EXIT_SUCCESS);

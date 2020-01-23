@@ -86,7 +86,7 @@ int main(int argc, char **argv) {
   }
 
   // Create the interpolation object from the input options
-  auto interp = InterpolationFactory::getInstance().create();
+  auto interp = XZInterpolationFactory::getInstance().create();
 
   // Interpolate the analytic functions at the displacements
   a_interp = interp->interpolate(a, deltax, deltaz);
