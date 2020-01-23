@@ -39,14 +39,15 @@ class Options;
 ///
 /// - Only a simple, rectangular topology is available
 ///
+/// - It does not work when include_corner_cells == false
+///
 class FakeParallelMesh : public BoutMesh {
 public:
   FakeParallelMesh(int nx, int ny, int nz, int nxpe, int nype, int pe_xind, int pe_yind)
       : BoutMesh((nxpe * (nx - 2)) + 2, nype * ny, nz, 1, 1, nxpe, nype, pe_xind,
                  pe_yind),
         yUpMesh(nullptr), yDownMesh(nullptr), xInMesh(nullptr), xOutMesh(nullptr),
-	xyInUpMesh(nullptr), xyInDownMesh(nullptr), xyOutUpMesh(nullptr),
-	xyOutDownMesh(nullptr), mpiSmart(new FakeMpiWrapper(this)) {
+	mpiSmart(new FakeMpiWrapper(this)) {
     StaggerGrids = false;
     periodicX = false;
     IncIntShear = false;
@@ -75,11 +76,40 @@ public:
     addBoundary(new BoundaryRegionYDown("lower_target", xstart, xend, this));
   }
 
-  comm_handle send(FieldGroup& g) override {
-    overlapHandleMemory(yUpMesh, yDownMesh, xInMesh, xOutMesh, xyInUpMesh,
-			xyInDownMesh, xyOutUpMesh, xyOutDownMesh,
-			xyInUpMesh_SendsInner, xyInDownMesh_SendsInner,
-			xyOutUpMesh_SendsInner, xyOutDownMesh_SendsInner);
+  comm_handle sendX(FieldGroup& g, comm_handle handle, bool disable_corners) override {
+    communicatingX = true;
+    if (handle == nullptr) {
+      overlapHandleMemory(yUpMesh, yDownMesh, xInMesh, xOutMesh);
+    }
+    std::vector<int> ids;
+    int i = 0;
+    for (auto f : g) {
+      ids.push_back(registeredFields[f]);
+      ASSERT1(registeredFieldIds[ids[i]] == f);
+      i++;
+    }
+    if (xInMesh != nullptr && xInMesh != this) {
+      FieldGroup xInGroup = makeGroup(xInMesh, ids);
+      if (!disable_corners) {
+	xInMesh->wait(xInMesh->sendY(xInGroup, nullptr));
+      }
+      xInMesh->parentSendX(xInGroup, nullptr, disable_corners);
+    }
+    if (xOutMesh != nullptr && xOutMesh != this) {
+      FieldGroup xOutGroup = makeGroup(xOutMesh, ids);
+      if (!disable_corners) {
+	xOutMesh->wait(xOutMesh->sendY(xOutGroup, nullptr));
+      }
+      xOutMesh->parentSendX(xOutGroup, nullptr, disable_corners);
+    }
+    return parentSendX(g, handle, disable_corners);
+  }
+
+  comm_handle sendY(FieldGroup& g, comm_handle handle) override {
+    communicatingY = true;
+    if (handle == nullptr) {
+      overlapHandleMemory(yUpMesh, yDownMesh, xInMesh, xOutMesh);
+    }
     std::vector<int> ids;
     int i = 0;
     for (auto f : g) {
@@ -89,37 +119,13 @@ public:
     }
     if (yUpMesh != nullptr && yUpMesh != this) {
       FieldGroup yUpGroup = makeGroup(yUpMesh, ids);
-      yUpMesh->parentSend(yUpGroup);
+      yUpMesh->parentSendY(yUpGroup, nullptr);
     }
     if (yDownMesh != nullptr && yDownMesh != this) {
       FieldGroup yDownGroup = makeGroup(yDownMesh, ids);
-      yDownMesh->parentSend(yDownGroup);
+      yDownMesh->parentSendY(yDownGroup, nullptr);
     }
-    if (xInMesh != nullptr && xInMesh != this) {
-      FieldGroup xInGroup = makeGroup(xInMesh, ids);
-      xInMesh->parentSend(xInGroup);
-    }
-    if (xOutMesh != nullptr && xOutMesh != this) {
-      FieldGroup xOutGroup = makeGroup(xOutMesh, ids);
-      xOutMesh->parentSend(xOutGroup);
-    }
-    if (xyInDownMesh != nullptr && xyInDownMesh != this) {
-      FieldGroup xyInDownGroup = makeGroup(xyInDownMesh, ids);
-      xyInDownMesh->parentSend(xyInDownGroup);
-    }
-    if (xyInUpMesh != nullptr && xyInUpMesh != this) {
-      FieldGroup xyInUpGroup = makeGroup(xyInUpMesh, ids);
-      xyInUpMesh->parentSend(xyInUpGroup);
-    }
-    if (xyOutDownMesh != nullptr && xyOutDownMesh != this) {
-      FieldGroup xyOutDownGroup = makeGroup(xyOutDownMesh, ids);
-      xyOutDownMesh->parentSend(xyOutDownGroup);
-    }
-    if (xyOutUpMesh != nullptr && xyOutUpMesh != this) {
-      FieldGroup xyOutUpGroup = makeGroup(xyOutUpMesh, ids);
-      xyOutUpMesh->parentSend(xyOutUpGroup);
-    }
-    return parentSend(g);
+    return parentSendY(g, handle);
   }
 
   // Need to override this functions to trick mesh into communicating for
@@ -219,33 +225,27 @@ public:
       // return the appropriate index. Some corners cells are actually
       // sent along with the rest of the edge. This can be predicted
       // based on teh value of xy[In|Out][Up|Down]Mesh_SendsInner.
-      if (mesh->yUpMesh && wait_any_count < 0 && mesh->UpXSplitIndex() > 0) {
+      if (mesh->yUpMesh && wait_any_count < 0 && mesh->communicatingY &&
+	  mesh->UpXSplitIndex() > 0) {
         *indx = wait_any_count = 0;
-      } else if (mesh->yDownMesh && wait_any_count < 1 && mesh->UpXSplitIndex() == 0) {
+      } else if (mesh->yDownMesh && wait_any_count < 1 && mesh->communicatingY &&
+		 mesh->UpXSplitIndex() == 0) {
         *indx = wait_any_count = 1;
-      } else if (mesh->yDownMesh && wait_any_count < 2 && mesh->DownXSplitIndex() > 0) {
+      } else if (mesh->yDownMesh && wait_any_count < 2 && mesh->communicatingY &&
+		 mesh->DownXSplitIndex() > 0) {
         *indx = wait_any_count = 2;
-      } else if (mesh->yDownMesh && wait_any_count < 3 && mesh->DownXSplitIndex() == 0) {
+      } else if (mesh->yDownMesh && wait_any_count < 3 && mesh->communicatingY &&
+		 mesh->DownXSplitIndex() == 0) {
         *indx = wait_any_count = 3;
-      } else if (mesh->xInMesh && wait_any_count < 4) {
+      } else if (mesh->xInMesh && wait_any_count < 4 && mesh->communicatingX) {
         *indx = wait_any_count = 4;
-      } else if (mesh->xOutMesh && wait_any_count < 5) {
+      } else if (mesh->xOutMesh && wait_any_count < 5 && mesh->communicatingX) {
         *indx = wait_any_count = 5;
-      } else if (mesh->xyInDownMesh && !mesh->xyInDownMesh_SendsInner &&
-		 wait_any_count < 6) {
-        *indx = wait_any_count = 6;
-      } else if (mesh->xyInUpMesh && !mesh->xyInUpMesh_SendsInner &&
-		 wait_any_count < 7) {
-        *indx = wait_any_count = 7;
-      } else if (mesh->xyOutDownMesh && mesh->xyOutDownMesh_SendsInner &&
-		 wait_any_count < 8) {
-        *indx = wait_any_count = 8;
-      } else if (mesh->xyOutUpMesh && mesh->xyOutUpMesh_SendsInner &&
-		 wait_any_count < 9) {
-        *indx = wait_any_count = 9;
       } else {
         *indx = MPI_UNDEFINED;
         wait_any_count = -1;
+	mesh->communicatingX = false;
+	mesh->communicatingY = false;
       }
       return 0;
     }
@@ -258,17 +258,20 @@ public:
   };
 
 private:
-  FakeParallelMesh *yUpMesh, *yDownMesh, *xInMesh, *xOutMesh, *xyInUpMesh,
-    *xyInDownMesh, *xyOutUpMesh, *xyOutDownMesh;
-  bool xyInUpMesh_SendsInner, xyInDownMesh_SendsInner, xyOutUpMesh_SendsInner,
-    xyOutDownMesh_SendsInner;
+  FakeParallelMesh *yUpMesh, *yDownMesh, *xInMesh, *xOutMesh;
+  bool communicatingX = false, communicatingY = false;
   std::map<FieldData*, int> registeredFields;
   std::map<int, FieldData*> registeredFieldIds;
   std::map<FieldPerp*, int> registeredFieldPerps;
   std::map<int, FieldPerp*> registeredFieldPerpIds;
   std::unique_ptr<FakeMpiWrapper> mpiSmart;
 
-  comm_handle parentSend(FieldGroup& g) { return BoutMesh::send(g); }
+  comm_handle parentSendX(FieldGroup& g, comm_handle handle, bool disable_corners) {
+    return BoutMesh::sendX(g, handle, disable_corners);
+  }
+  comm_handle parentSendY(FieldGroup& g, comm_handle handle) {
+    return BoutMesh::sendY(g, handle);
+  }
 
   FieldGroup makeGroup(FakeParallelMesh* m, const std::vector<int> ids) {
     FieldGroup g;
@@ -328,69 +331,13 @@ std::vector<FakeParallelMesh> createFakeProcessors(int nx, int ny, int nz, int n
       }
       if (j == 0) {
         meshes.at(j + i * nype).yUpMesh = &meshes.at(nype - 1 + i * nype);
-	if (i == 0) {
-	  meshes.at(j + i * nype).xyInDownMesh = &meshes.at(nype - 1 + i * nype);
-	  meshes.at(j + i * nype).xyInDownMesh_SendsInner = true;
-	} else {
-	  meshes.at(j + i * nype).xyInDownMesh = &meshes.at(nype - 1 + (i - 1) * nype);
-	  meshes.at(j + i * nype).xyInDownMesh_SendsInner = false;
-	}
-	if (i == nxpe - 1) {
-	  meshes.at(j + i * nype).xyOutDownMesh = &meshes.at(nype - 1 + i * nype);
-	  meshes.at(j + i * nype).xyOutDownMesh_SendsInner = false;
-	} else {
-	  meshes.at(j + i * nype).xyOutDownMesh = &meshes.at(nype - 1 + (i + 1) * nype);
-	  meshes.at(j + i * nype).xyOutDownMesh_SendsInner = true;
-	}
       } else {
         meshes.at(j + i * nype).yDownMesh = &meshes.at(j - 1 + i * nype);
-	if (i == 0) {
-	  meshes.at(j + i * nype).xyInDownMesh = &meshes.at(j - 1 + i * nype);
-	  meshes.at(j + i * nype).xyInDownMesh_SendsInner = true;
-	} else {
-	  meshes.at(j + i * nype).xyInDownMesh = &meshes.at(j - 1 + (i - 1) * nype);
-	  meshes.at(j + i * nype).xyInDownMesh_SendsInner = false;
-	}
-	if (i == nxpe - 1) {
-	  meshes.at(j + i * nype).xyOutDownMesh = &meshes.at(j - 1 + i * nype);
-	  meshes.at(j + i * nype).xyOutDownMesh_SendsInner = false;
-	} else {
-	  meshes.at(j + i * nype).xyOutDownMesh = &meshes.at(j - 1 + (i + 1) * nype);
-	  meshes.at(j + i * nype).xyOutDownMesh_SendsInner = true;
-	}
       }
       if (j == nype - 1) {
         meshes.at(j + i * nype).yUpMesh = &meshes.at(0 + i * nype);
-	if (i == 0) {
-	  meshes.at(j + i * nype).xyInUpMesh = &meshes.at(0 + i * nype);
-	  meshes.at(j + i * nype).xyInUpMesh_SendsInner = true;
-	} else {
-	  meshes.at(j + i * nype).xyInUpMesh = &meshes.at(0 + (i - 1) * nype);
-	  meshes.at(j + i * nype).xyInUpMesh_SendsInner = false;
-	}
-	if (i == nxpe - 1) {
-	  meshes.at(j + i * nype).xyOutUpMesh = &meshes.at(0 + i * nype);
-	  meshes.at(j + i * nype).xyOutUpMesh_SendsInner = false;
-	} else {
-	  meshes.at(j + i * nype).xyOutUpMesh = &meshes.at(0 + (i + 1) * nype);
-	  meshes.at(j + i * nype).xyOutUpMesh_SendsInner = true;
-	}
       } else {
         meshes.at(j + i * nype).yUpMesh = &meshes.at(j + 1 + i * nype);
-	if (i == 0) {
-	  meshes.at(j + i * nype).xyInUpMesh = &meshes.at(j + 1 + i * nype);
-	  meshes.at(j + i * nype).xyInUpMesh_SendsInner = true;
-	} else {
-	  meshes.at(j + i * nype).xyInUpMesh = &meshes.at(j + 1 + (i - 1) * nype);
-	  meshes.at(j + i * nype).xyInUpMesh_SendsInner = false;
-	}
-	if (i == nxpe - 1) {
-	  meshes.at(j + i * nype).xyOutUpMesh = &meshes.at(j + 1 + i * nype);
-	  meshes.at(j + i * nype).xyOutUpMesh_SendsInner = false;
-	} else {
-	  meshes.at(j + i * nype).xyOutUpMesh = &meshes.at(j + 1 + (i + 1) * nype);
-	  meshes.at(j + i * nype).xyOutUpMesh_SendsInner = true;
-	}
       }
       meshes.at(j + i * nype).mpiSmart->start3D = start3;
       meshes.at(j + i * nype).mpiSmart->start2D = start2;

@@ -2219,16 +2219,12 @@ void BoutMesh::clear_handles() {
 /// communications to be faked between meshes as though they were on
 /// different processors.
 void BoutMesh::overlapHandleMemory(BoutMesh* yup, BoutMesh* ydown, BoutMesh* xin,
-                                   BoutMesh* xout, BoutMesh* xinyup, BoutMesh* xinydown,
-				   BoutMesh* xoutyup, BoutMesh* xoutydown,
-				   bool xinyupSendsInner, bool xinydownSendsInner,
-				   bool xoutyupSendsInner, bool xoutydownSendsInner) {
-  const int xlen = LocalNy * LocalNz * 5, ylen = LocalNx * LocalNz * 5,
-    cornerlen = include_corner_cells ? MXG * MYG * LocalNz * 5 : 0;
-;
- CommHandle* ch = get_handle(xlen, ylen, cornerlen);
+                                   BoutMesh* xout) {
+  const int xlen = LocalNy * LocalNz * MXG * 5, ylen = LocalNx * LocalNz * MYG * 5;
+
+  CommHandle* ch = get_handle(xlen, ylen);
   if (yup) {
-    CommHandle* other = (yup == this) ? ch : yup->get_handle(xlen, ylen, cornerlen);
+    CommHandle* other = (yup == this) ? ch : yup->get_handle(xlen, ylen);
     if (other->dmsg_sendbuff.unique()) {
       ch->umsg_recvbuff = other->dmsg_sendbuff;
     }
@@ -2236,7 +2232,7 @@ void BoutMesh::overlapHandleMemory(BoutMesh* yup, BoutMesh* ydown, BoutMesh* xin
       yup->free_handle(other);
   }
   if (ydown) {
-    CommHandle* other = (ydown == this) ? ch : ydown->get_handle(xlen, ylen, cornerlen);
+    CommHandle* other = (ydown == this) ? ch : ydown->get_handle(xlen, ylen);
     if (other->umsg_sendbuff.unique()) {
       ch->dmsg_recvbuff = other->umsg_sendbuff;
     }
@@ -2244,7 +2240,7 @@ void BoutMesh::overlapHandleMemory(BoutMesh* yup, BoutMesh* ydown, BoutMesh* xin
       ydown->free_handle(other);
   }
   if (xin) {
-    CommHandle* other = (xin == this) ? ch : xin->get_handle(xlen, ylen, cornerlen);
+    CommHandle* other = (xin == this) ? ch : xin->get_handle(xlen, ylen);
     if (other->omsg_sendbuff.unique()) {
       ch->imsg_recvbuff = other->omsg_sendbuff;
     }
@@ -2252,52 +2248,12 @@ void BoutMesh::overlapHandleMemory(BoutMesh* yup, BoutMesh* ydown, BoutMesh* xin
       xin->free_handle(other);
   }
   if (xout) {
-    CommHandle* other = (xout == this) ? ch : xout->get_handle(xlen, ylen, cornerlen);
+    CommHandle* other = (xout == this) ? ch : xout->get_handle(xlen, ylen);
     if (other->imsg_sendbuff.unique()) {
       ch->omsg_recvbuff = other->imsg_sendbuff;
     }
     if (xout != this)
       xout->free_handle(other);
-  }
-  if (xinyup) {
-    CommHandle* other = (xinyup == this) ? ch : xinyup->get_handle(xlen, ylen, cornerlen);
-    const Array<BoutReal>* sendbuff = xinyupSendsInner ?
-      &other->lowin_corner_sendbuff : &other->lowout_corner_sendbuff;
-    if (sendbuff->unique()) {
-      ch->upin_corner_recvbuff = *sendbuff;
-    }
-    if (xinyup != this)
-      xinyup->free_handle(other);
-  }
-  if (xinydown) {
-    CommHandle* other = (xinydown == this) ? ch : xinydown->get_handle(xlen, ylen, cornerlen);
-    const Array<BoutReal>* sendbuff = xinydownSendsInner ?
-      &other->upin_corner_sendbuff : &other->upout_corner_sendbuff;
-    if (sendbuff->unique()) {
-      ch->lowin_corner_recvbuff = *sendbuff;
-    }
-    if (xinydown != this)
-      xinydown->free_handle(other);
-  }
-  if (xoutyup) {
-    CommHandle* other = (xoutyup == this) ? ch : xoutyup->get_handle(xlen, ylen, cornerlen);
-    const Array<BoutReal>* sendbuff = xoutyupSendsInner ?
-      &other->lowin_corner_sendbuff : &other->lowout_corner_sendbuff;
-    if (sendbuff->unique()) {
-      ch->upout_corner_recvbuff = *sendbuff;
-    }
-    if (xoutyup != this)
-      xoutyup->free_handle(other);
-  }
-  if (xoutydown) {
-    CommHandle* other = (xoutydown == this) ? ch : xoutydown->get_handle(xlen, ylen, cornerlen);
-    const Array<BoutReal>* sendbuff = xoutydownSendsInner ?
-      &other->upin_corner_sendbuff : &other->upout_corner_sendbuff;
-    if (sendbuff->unique()) {
-      ch->lowout_corner_recvbuff = *sendbuff;
-    }
-    if (xoutydown != this)
-      xoutydown->free_handle(other);
   }
   free_handle(ch);
 }

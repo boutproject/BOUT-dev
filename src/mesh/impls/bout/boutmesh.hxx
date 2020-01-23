@@ -204,10 +204,7 @@ protected:
   /// communications to be faked between meshes as though they were on
   /// different processors.
   void overlapHandleMemory(BoutMesh* yup, BoutMesh* ydown, BoutMesh* xin,
-			   BoutMesh* xout, BoutMesh* xinyup, BoutMesh* xinydown,
-			   BoutMesh* xoutyup, BoutMesh* xoutydown,
-			   bool xinyupSendsInner, bool xinydownSendsInner,
-			   bool xoutyupSendsInner, bool xoutydownSendsInner);
+			   BoutMesh* xout);
 
 private:
   std::string gridname;
