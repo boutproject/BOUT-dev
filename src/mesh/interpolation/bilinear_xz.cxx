@@ -27,8 +27,8 @@
 #include <string>
 #include <vector>
 
-XZBilinear::XZBilinear(int y_offset, Mesh *mesh)
-  : XZInterpolation(y_offset, mesh),
+XZBilinear::XZBilinear(int y_offset, Mesh *mesh, Options* opt)
+  : XZInterpolation(y_offset, mesh, opt),
     w0(localmesh), w1(localmesh), w2(localmesh), w3(localmesh) {
 
   // Index arrays contain guard cells in order to get subscripts right

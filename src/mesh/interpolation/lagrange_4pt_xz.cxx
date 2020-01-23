@@ -26,8 +26,8 @@
 
 #include <vector>
 
-XZLagrange4pt::XZLagrange4pt(int y_offset, Mesh *mesh)
-    : XZInterpolation(y_offset, mesh), t_x(localmesh), t_z(localmesh) {
+XZLagrange4pt::XZLagrange4pt(int y_offset, Mesh *mesh, Options* opt)
+    : XZInterpolation(y_offset, mesh, opt), t_x(localmesh), t_z(localmesh) {
 
   // Index arrays contain guard cells in order to get subscripts right
   i_corner.reallocate(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);

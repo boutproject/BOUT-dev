@@ -36,17 +36,21 @@ const Field3D interpolate(const Field2D &f, const Field3D &delta_x);
 
 class XZInterpolation {
 protected:
+  Options& options;
+
   Mesh* localmesh{nullptr};
 
   // 3D vector of points to skip (true -> skip this point)
   BoutMask skip_mask;
 
 public:
-  XZInterpolation(int y_offset = 0, Mesh* localmeshIn = nullptr)
-      : localmesh(localmeshIn == nullptr ? bout::globals::mesh : localmeshIn),
+  XZInterpolation(int y_offset = 0, Mesh* localmeshIn = nullptr, Options* opt = nullptr)
+      : options(opt == nullptr ? Options::root()["xzinterpolation"] : *opt),
+        localmesh(localmeshIn == nullptr ? bout::globals::mesh : localmeshIn),
         skip_mask(*localmesh, false), y_offset(y_offset) {}
-  XZInterpolation(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
-      : XZInterpolation(y_offset, mesh) {
+  XZInterpolation(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr,
+                  Options* opt = nullptr)
+      : XZInterpolation(y_offset, mesh, opt) {
     skip_mask = mask;
   }
   virtual ~XZInterpolation() = default;
@@ -107,10 +111,12 @@ protected:
   Field3D h11_z;
 
 public:
-  XZHermiteSpline(Mesh *mesh = nullptr) : XZHermiteSpline(0, mesh) {}
-  XZHermiteSpline(int y_offset = 0, Mesh *mesh = nullptr);
-  XZHermiteSpline(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
-      : XZHermiteSpline(y_offset, mesh) {
+  XZHermiteSpline(Mesh *mesh = nullptr, Options* opt = nullptr)
+      : XZHermiteSpline(0, mesh, opt) {}
+  XZHermiteSpline(int y_offset = 0, Mesh *mesh = nullptr, Options* opt = nullptr);
+  XZHermiteSpline(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr,
+                  Options* opt = nullptr)
+      : XZHermiteSpline(y_offset, mesh, opt) {
     skip_mask = mask;
   }
 
@@ -140,11 +146,13 @@ public:
 /// problems most obviously occur.
 class XZMonotonicHermiteSpline : public XZHermiteSpline {
 public:
-  XZMonotonicHermiteSpline(Mesh *mesh = nullptr) : XZHermiteSpline(0, mesh) {}
-  XZMonotonicHermiteSpline(int y_offset = 0, Mesh *mesh = nullptr)
-      : XZHermiteSpline(y_offset, mesh) {}
-  XZMonotonicHermiteSpline(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
-      : XZHermiteSpline(mask, y_offset, mesh) {}
+  XZMonotonicHermiteSpline(Mesh *mesh = nullptr, Options* opt = nullptr)
+      : XZHermiteSpline(0, mesh, opt) {}
+  XZMonotonicHermiteSpline(int y_offset = 0, Mesh *mesh = nullptr, Options* opt = nullptr)
+      : XZHermiteSpline(y_offset, mesh, opt) {}
+  XZMonotonicHermiteSpline(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr,
+      Options* opt = nullptr)
+      : XZHermiteSpline(mask, y_offset, mesh, opt) {}
 
   using XZHermiteSpline::interpolate;
   /// Interpolate using precalculated weights.
@@ -160,10 +168,12 @@ class XZLagrange4pt : public XZInterpolation {
   Field3D t_x, t_z;
 
 public:
-  XZLagrange4pt(Mesh *mesh = nullptr) : XZLagrange4pt(0, mesh) {}
-  XZLagrange4pt(int y_offset = 0, Mesh *mesh = nullptr);
-  XZLagrange4pt(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
-      : XZLagrange4pt(y_offset, mesh) {
+  XZLagrange4pt(Mesh *mesh = nullptr, Options* opt = nullptr)
+      : XZLagrange4pt(0, mesh, opt) {}
+  XZLagrange4pt(int y_offset = 0, Mesh *mesh = nullptr, Options* opt = nullptr);
+  XZLagrange4pt(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr,
+                Options* opt = nullptr)
+      : XZLagrange4pt(y_offset, mesh, opt) {
     skip_mask = mask;
   }
 
@@ -190,10 +200,11 @@ class XZBilinear : public XZInterpolation {
   Field3D w0, w1, w2, w3;
 
 public:
-  XZBilinear(Mesh *mesh = nullptr) : XZBilinear(0, mesh) {}
-  XZBilinear(int y_offset = 0, Mesh *mesh = nullptr);
-  XZBilinear(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
-      : XZBilinear(y_offset, mesh) {
+  XZBilinear(Mesh *mesh = nullptr, Options* opt = nullptr) : XZBilinear(0, mesh, opt) {}
+  XZBilinear(int y_offset = 0, Mesh *mesh = nullptr, Options* opt = nullptr);
+  XZBilinear(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr,
+             Options* opt = nullptr)
+      : XZBilinear(y_offset, mesh, opt) {
     skip_mask = mask;
   }
 
@@ -212,16 +223,16 @@ public:
 
 class XZInterpolationFactory
     : public Factory<XZInterpolation, XZInterpolationFactory,
-                             std::function<std::unique_ptr<XZInterpolation>(Mesh*)>> {
+                     std::function<std::unique_ptr<XZInterpolation>(Mesh*, Options*)>> {
 public:
   static constexpr auto type_name = "XZInterpolation";
-  static constexpr auto section_name = "interpolation";
+  static constexpr auto section_name = "xzinterpolation";
   static constexpr auto option_name = "type";
   static constexpr auto default_type = "hermitespline";
 
   using Factory::create;
-  ReturnType create(Mesh* mesh = nullptr) {
-    return Factory::create(getType(nullptr), mesh);
+  ReturnType create(Mesh* mesh = nullptr, Options* opt = nullptr) {
+    return Factory::create(getType(nullptr), mesh, opt);
   }
 
   static void ensureRegistered();
@@ -232,8 +243,8 @@ class RegisterXZInterpolation {
 public:
   RegisterXZInterpolation(const std::string& name) {
     XZInterpolationFactory::getInstance().add(
-        name, [](Mesh* mesh) -> std::unique_ptr<XZInterpolation> {
-          return std::make_unique<DerivedType>(mesh);
+        name, [](Mesh* mesh, Options* opt) -> std::unique_ptr<XZInterpolation> {
+          return std::make_unique<DerivedType>(mesh, opt);
         });
   }
 };
