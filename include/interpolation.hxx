@@ -307,11 +307,6 @@ public:
     skip_mask = mask;
   }
 
-  /// Callback function for InterpolationFactory
-  static Interpolation *CreateHermiteSpline(Mesh *mesh) {
-    return new HermiteSpline(mesh);
-  }
-
   void calcWeights(const Field3D &delta_x, const Field3D &delta_z) override;
   void calcWeights(const Field3D &delta_x, const Field3D &delta_z,
                    const BoutMask &mask) override;
@@ -344,11 +339,6 @@ public:
   MonotonicHermiteSpline(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
       : HermiteSpline(mask, y_offset, mesh) {}
 
-  /// Callback function for InterpolationFactory
-  static Interpolation *CreateMonotonicHermiteSpline(Mesh *mesh) {
-    return new MonotonicHermiteSpline(mesh);
-  }
-  
   using HermiteSpline::interpolate;
   /// Interpolate using precalculated weights.
   /// This function is called by the other interpolate functions
@@ -369,9 +359,6 @@ public:
       : Lagrange4pt(y_offset, mesh) {
     skip_mask = mask;
   }
-
-  /// Callback function for InterpolationFactory
-  static Interpolation *CreateLagrange4pt(Mesh *mesh) { return new Lagrange4pt(mesh); }
 
   void calcWeights(const Field3D &delta_x, const Field3D &delta_z) override;
   void calcWeights(const Field3D &delta_x, const Field3D &delta_z,
@@ -402,9 +389,6 @@ public:
       : Bilinear(y_offset, mesh) {
     skip_mask = mask;
   }
-
-  /// Callback function for InterpolationFactory
-  static Interpolation *CreateBilinear(Mesh *mesh) { return new Bilinear(mesh); }
 
   void calcWeights(const Field3D &delta_x, const Field3D &delta_z) override;
   void calcWeights(const Field3D &delta_x, const Field3D &delta_z,
