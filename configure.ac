@@ -91,7 +91,7 @@ AC_ARG_WITH(openmp_schedule,[AS_HELP_STRING([--with-openmp-schedule=static/dynam
         [Set OpenMP schedule (default: static)])],,[with_openmp_schedule=static])
 AC_ARG_ENABLE(pvode_openmp, [AS_HELP_STRING([--enable-pvode-openmp],
         [Enable building PVODE with OpenMP support])],,[enable_pvode_openmp=no])
-AC_ARG_ENABLE(metric_3d, [AS_HELP_STRING([--enable-metric-3d=no/yes],
+AC_ARG_ENABLE(metric_3d, [AS_HELP_STRING([--enable-metric-3d],
         [If yes use Field3D to store coordinates metric data])],,[enable_metric_3d=no])
 
 AC_ARG_VAR(EXTRA_INCS,[Extra compile flags])
