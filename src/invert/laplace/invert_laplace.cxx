@@ -51,7 +51,6 @@
 #include "impls/pdd/pdd.hxx"
 #include "impls/spt/spt.hxx"
 #include "impls/petsc/petsc_laplace.hxx"
-#include "impls/petscamg/petscamg.hxx"
 #include "impls/petsc3damg/petsc3damg.hxx"
 #include "impls/mumps/mumps_laplace.hxx"
 #include "impls/cyclic/cyclic_laplace.hxx"
