@@ -39,12 +39,6 @@ if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
   endif()
 endif()
 
-if(NOT EXISTS "${PROJECT_SOURCE_DIR}/externalpackages/mpark.variant/CMakeLists.txt")
-  message(FATAL_ERROR "The submodules were not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
-endif()
-
-add_subdirectory(externalpackages/mpark.variant)
-
 set(BOUT_SOURCES
   ./include/boundary_factory.hxx
   ./include/boundary_op.hxx
@@ -298,7 +292,7 @@ add_library(bout++
   ${BOUT_SOURCES}
   )
 add_library(bout++::bout++ ALIAS bout++)
-target_link_libraries(bout++ PUBLIC MPI::MPI_CXX mpark_variant)
+target_link_libraries(bout++ PUBLIC MPI::MPI_CXX)
 target_include_directories(bout++ PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
@@ -311,6 +305,19 @@ target_compile_definitions(bout++
 
 target_compile_features(bout++ PUBLIC cxx_std_14)
 set_target_properties(bout++ PROPERTIES CXX_EXTENSIONS OFF)
+
+option(EXTERNAL_MPARK_VARIANT "Use external installation of mpark.variant" OFF)
+if(EXTERNAL_MPARK_VARIANT)
+  find_package(mpark_variant REQUIRED)
+  message(STATUS "Using external mpark.variant")
+else()
+  if(NOT EXISTS "${PROJECT_SOURCE_DIR}/externalpackages/mpark.variant/CMakeLists.txt")
+    message(FATAL_ERROR "The submodules were not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
+  endif()
+  add_subdirectory(externalpackages/mpark.variant)
+  message(STATUS "Using mpark.variant submodule")
+endif()
+target_link_libraries(bout++ PUBLIC mpark_variant)
 
 option(EXTERNAL_FMT "Use external installation of fmt" OFF)
 if(EXTERNAL_FMT)
