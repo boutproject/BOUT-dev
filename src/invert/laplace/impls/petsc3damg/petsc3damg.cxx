@@ -319,7 +319,7 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
   
     // Adjust the coefficients to include finite-difference factors
     if (nonuniform) {
-      C_df_dx -= C_d2f_dx2 * coords->d1_dx[l];
+      C_df_dx += C_d2f_dx2 * coords->d1_dx[l];
     }
     C_df_dx /= 2 * coords->dx[l];
     C_df_dz /= 2 * coords->dz;
