@@ -72,6 +72,8 @@ int main(int argc, char** argv) {
   // Turn off writing to stdout for the main library
   Output::getInstance()->disable();
 
+  bout::globals::mpi = new MpiWrapper();
+
   bout::globals::mesh = Mesh::create();
   bout::globals::mesh->load();
 

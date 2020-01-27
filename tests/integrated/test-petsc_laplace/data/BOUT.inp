@@ -39,7 +39,8 @@ rightprec=true   # Right precondition
 all_terms  = true
 nonuniform = true
 filter     = 0.    # Must not filter
-flags      = 49152 # Identity in boundary
+inner_boundary_flags = 32 # Identity in boundary
+outer_boundary_flags = 32 # Identity in boundary
 
 #############################################
 
@@ -62,7 +63,8 @@ rightprec=true
 all_terms  = true
 nonuniform = true
 filter     = 0.
-flags      = 49152
+inner_boundary_flags = 32 # Identity in boundary
+outer_boundary_flags = 32 # Identity in boundary
 
 #############################################
 
