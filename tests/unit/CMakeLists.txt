@@ -1,3 +1,4 @@
+bout_update_submodules()
 add_subdirectory("${PROJECT_SOURCE_DIR}/externalpackages/googletest"
   "externalpackages/googletest")
 
