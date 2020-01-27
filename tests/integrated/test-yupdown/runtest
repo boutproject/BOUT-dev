@@ -6,7 +6,7 @@ from sys import exit
 
 from numpy import max, abs
 
-shell_safe("make > make.log")
+build_and_log("parallel slices test")
 
 failed = False
 
