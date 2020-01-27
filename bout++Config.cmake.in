@@ -45,10 +45,15 @@ if(EXISTS "@NetCDF_ROOT@")
   set(NetCDF_ROOT "@NetCDF_ROOT@")
 endif()
 
-set(mpark_variant_DIR "${CMAKE_CURRENT_LIST_DIR}/../../../lib/cmake/mpark_variant")
-set(MPIEXEC_EXECUTABLE @MPIEXEC_EXECUTABLE@)
+if(@EXTERNAL_MPARK_VARIANT@)
+  set(mpark_variant_ROOT "@mpark_variant_ROOT@")
+else()
+  set(mpark_variant_ROOT "${CMAKE_CURRENT_LIST_DIR}/../../../lib/cmake/mpark_variant")
+endif()
 
+set(MPIEXEC_EXECUTABLE @MPIEXEC_EXECUTABLE@)
 find_dependency(MPI @MPI_CXX_VERSION@ EXACT)
+
 if (BOUT_USE_OPENMP)
   find_dependency(OpenMP)
 endif()
