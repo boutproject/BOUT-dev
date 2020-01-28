@@ -351,12 +351,12 @@ BOUT++ bundles some dependencies, currently `mpark.variant
 <https://github.com/mpark/variant>`_, `fmt <https://fmt.dev>`_ and
 `googletest <https://github.com/google/googletest>`_. If you wish to
 use an existing installation of ``mpark.variant``, you can set
-``-DEXTERNAL_MPARK_VARIANT=ON``, and supply the installation path
-using ``mpark_variant_ROOT`` via the command line or environment
-variable. Similarly for ``fmt``, using ``-DEXTERNAL_FMT=ON`` and
-``fmt_ROOT`` respectively. The recommended way to use ``googletest``
-is to compile it at the same time as your project, therefore there is
-no option to use an external installation for that.
+``-DBOUT_USE_SYSTEM_MPARK_VARIANT=ON``, and supply the installation
+path using ``mpark_variant_ROOT`` via the command line or environment
+variable. Similarly for ``fmt``, using ``-DBOUT_USE_SYSTEM_FMT=ON``
+and ``fmt_ROOT`` respectively. The recommended way to use
+``googletest`` is to compile it at the same time as your project,
+therefore there is no option to use an external installation for that.
 
 Using CMake with your physics model
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

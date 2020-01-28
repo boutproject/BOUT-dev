@@ -315,8 +315,8 @@ target_compile_definitions(bout++
 target_compile_features(bout++ PUBLIC cxx_std_11)
 set_target_properties(bout++ PROPERTIES CXX_EXTENSIONS OFF)
 
-option(EXTERNAL_MPARK_VARIANT "Use external installation of mpark.variant" OFF)
-if(EXTERNAL_MPARK_VARIANT)
+option(BOUT_USE_SYSTEM_MPARK_VARIANT "Use external installation of mpark.variant" OFF)
+if(BOUT_USE_SYSTEM_MPARK_VARIANT)
   find_package(mpark_variant REQUIRED)
   message(STATUS "Using external mpark.variant")
 else()
