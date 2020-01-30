@@ -1,6 +1,6 @@
 
 BOUT_TOP	= ../../..
 
-SOURCEC		= test_laplace.cxx
+SOURCEC		= laplace.cxx
 
 include $(BOUT_TOP)/make.config
