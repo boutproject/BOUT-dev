@@ -347,7 +347,7 @@ endif()
 # Compile time features
 
 set(CHECK_LEVELS 0 1 2 3 4)
-set(CHECK 3 CACHE STRING "Set run-time checking level")
+set(CHECK 2 CACHE STRING "Set run-time checking level")
 set_property(CACHE CHECK PROPERTY STRINGS ${CHECK_LEVELS})
 if (NOT CHECK IN_LIST CHECK_LEVELS)
   message(FATAL_ERROR "CHECK must be one of ${CHECK_LEVELS}")
