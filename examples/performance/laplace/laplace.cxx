@@ -38,8 +38,7 @@ int main(int argc, char **argv) {
   // Get options root
   auto globalOptions = Options::root();
   auto modelOpts = globalOptions["LaplaceTest"];
-  int NUM_LOOPS;
-  NUM_LOOPS = modelOpts["NUM_LOOPS"].withDefault(1000);
+  int NUM_LOOPS = modelOpts["NUM_LOOPS"].withDefault(1000);
 
   ConditionalOutput time_output(Output::getInstance());
   time_output.enable(true);
