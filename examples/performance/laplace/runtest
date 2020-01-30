@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# Run the laplace benchmark test on a range of core counts
+
+EXE=laplace
+FLAGS="-q -q -q -q"
+
+for NP in 1 2 4
+do
+    echo "Running laplace benchark on ${NP} cores"
+    mpirun -np ${NP} ./${EXE} ${FLAGS}
+done
+
