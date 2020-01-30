@@ -18,4 +18,3 @@ symmetricGlobalY = false
 [laplace]
 all_terms = false
 include_yguards = false
-filter = 0.2
