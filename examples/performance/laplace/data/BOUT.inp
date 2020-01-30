@@ -7,7 +7,7 @@ NOUT = 0  # No timesteps
 
 MZ = 32    # Z size
 
-grid = "test_laplace.grd.nc"
+grid = "../../../tests/integrated/test-laplace/test_laplace.grd.nc"
 
 dump_format = "nc"  # NetCDF format. Alternative is "pdb"
 
