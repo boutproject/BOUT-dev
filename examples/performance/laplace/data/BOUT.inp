@@ -1,7 +1,4 @@
-# Test of the FieldFactory class 
-#
-# Generates a set of fields and writes them to output file
-#
+# Performance test for Laplace inversion
 
 NOUT = 0  # No timesteps
 
