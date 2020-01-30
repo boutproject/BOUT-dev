@@ -50,7 +50,6 @@ int main(int argc, char **argv) {
   Field2D a = f.create2D("gauss(x) * sin(y)");
   Field2D c = f.create2D("sin(x) * gauss(x-0.5) * gauss(y-pi)");
   Field2D d = f.create2D("y - pi/2");
-  SAVE_ONCE4(input, a, c, d);
 
   auto lap = std::unique_ptr<Laplacian>{Laplacian::create()};
 
@@ -66,7 +65,6 @@ int main(int argc, char **argv) {
   TEST_BLOCK("flag3",
      flag3 = lap->solve(input); 
   );
-  SAVE_ONCE2(flag0, flag3);
 
   lap->setCoefA(a);
   lap->setInnerBoundaryFlags(0);
@@ -79,7 +77,6 @@ int main(int argc, char **argv) {
   TEST_BLOCK("flag3a",
      flag3a = lap->solve(input);
   );
-  SAVE_ONCE2(flag0a, flag3a);
 
   lap->setCoefC(c);
   lap->setInnerBoundaryFlags(0);
@@ -92,7 +89,6 @@ int main(int argc, char **argv) {
   TEST_BLOCK("flag3ac",
      flag3ac = lap->solve(input);
   );
-  SAVE_ONCE2(flag0ac, flag3ac);
 
   lap->setCoefC(1.0);
   lap->setCoefD(d);
@@ -106,12 +102,10 @@ int main(int argc, char **argv) {
   TEST_BLOCK("flag3ad",
      flag3ad = lap->solve(input);
   );
-  SAVE_ONCE2(flag0ad, flag3ad);
 
   /// Test new interface and INVERT_IN/OUT_SET flags
 
   Field2D set_to = f.create2D("cos(2*y)*(x - 0.5)");
-  SAVE_ONCE(set_to);
 
   lap->setCoefA(0.0);
   lap->setCoefC(1.0);
@@ -128,7 +122,6 @@ int main(int argc, char **argv) {
   TEST_BLOCK("flagos",
      flagos = lap->solve(input, set_to);
   );
-  SAVE_ONCE2(flagis, flagos);
 
   lap->setCoefA(a);
   lap->setInnerBoundaryFlags(INVERT_SET);
@@ -144,7 +137,6 @@ int main(int argc, char **argv) {
   TEST_BLOCK("flagosa",
      flagosa = lap->solve(input, set_to);
   );
-  SAVE_ONCE2(flagisa, flagosa);
 
   lap->setCoefC(c);
   lap->setInnerBoundaryFlags(INVERT_SET);
@@ -159,7 +151,6 @@ int main(int argc, char **argv) {
   TEST_BLOCK("flagosac",
      flagosac = lap->solve(input, set_to);
   );
-  SAVE_ONCE2(flagisac, flagosac);
 
   lap->setCoefC(1.0);
   lap->setCoefD(d);
@@ -175,7 +166,6 @@ int main(int argc, char **argv) {
   TEST_BLOCK("flagosad",
      flagosad = lap->solve(input, set_to);
   );
-  SAVE_ONCE2(flagisad, flagosad);
 
   // Write and close the output file
   dump.write();
