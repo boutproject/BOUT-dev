@@ -5,6 +5,8 @@
 EXE=laplace
 FLAGS="-q -q -q -q"
 
+make || exit
+
 for NP in 1 2 4
 do
     echo "Running laplace benchark on ${NP} cores"
