@@ -73,8 +73,7 @@ public:
   BoutReal getMeanIterations() const { return ipt_mean_its; }
   void resetMeanIterations() { ipt_mean_its = 0; }
 
-  void ensure_stability(const int jy, const int kz, const Array<dcomplex> &a, const Array<dcomplex> &b,
-      const Array<dcomplex> &c, Array<dcomplex> &r, const int ncx,
+  void ensure_stability(const int jy, const int kz, Array<dcomplex> &r,
       Tensor<dcomplex> &lowerGuardVector, Tensor<dcomplex> &upperGuardVector);
   void check_diagonal_dominance(const Array<dcomplex> &a, const Array<dcomplex> &b,
       const Array<dcomplex> &c, const int ncx, const int jy, const int kz);

@@ -82,17 +82,11 @@ void LaplaceParallelTri::resetSolver(){
 /*!
  * Calcalate stability of the iteration, and amend right-hand side vector minvb to ensure stability.
  */
-void LaplaceParallelTri::ensure_stability(const int jy, const int kz, const Array<dcomplex> &avec, const Array<dcomplex> &bvec,
-                                              const Array<dcomplex> &cvec, Array<dcomplex> &minvb,
-				              const int ncx,
+void LaplaceParallelTri::ensure_stability(const int jy, const int kz, Array<dcomplex> &minvb,
 					      Tensor<dcomplex> &lowerGuardVector, Tensor<dcomplex> &upperGuardVector) {
   SCOREP0();
 
   BoutReal thisEig = 0.0;
-
-  Array<dcomplex> xvec, evec;
-  xvec = Array<dcomplex>(ncx);
-  evec = Array<dcomplex>(ncx);
 
   Array<dcomplex> sendvec, recvec;
   sendvec = Array<dcomplex>(2);
@@ -104,18 +98,8 @@ void LaplaceParallelTri::ensure_stability(const int jy, const int kz, const Arra
     comm_handle recv[1];
     recv[0] = localmesh->irecvXIn(&recvec[0], 2, 0);
 
-    // Need the xend-th element
-    evec = Array<dcomplex>(ncx);
-    for(int i=0; i<ncx; i++){
-      evec[i] = 0.0;
-    }
-    evec[localmesh->xstart-1] = 1.0;
-
-    tridag(std::begin(avec), std::begin(bvec), std::begin(cvec), std::begin(evec),
-             std::begin(xvec), ncx);
-
-    sendvec[0] = xvec[localmesh->xstart];
-    sendvec[1] = minvb[localmesh->xstart]/xvec[localmesh->xstart];
+    sendvec[0] = lowerGuardVector(localmesh->xstart,jy,kz);
+    sendvec[1] = minvb[localmesh->xstart]/lowerGuardVector(localmesh->xstart,jy,kz);;
 
     localmesh->sendXIn(&sendvec[0],2,1);
     localmesh->wait(recv[0]);
@@ -137,17 +121,8 @@ void LaplaceParallelTri::ensure_stability(const int jy, const int kz, const Arra
     comm_handle recv[1];
     recv[0] = localmesh->irecvXOut(&recvec[0], 2, 1);
 
-    // Need the xend-th element
-    for(int i=0; i<ncx; i++){
-      evec[i] = 0.0;
-    }
-    evec[localmesh->xend+1] = 1.0; 
-
-    tridag(std::begin(avec), std::begin(bvec), std::begin(cvec), std::begin(evec),
-             std::begin(xvec), ncx);
-
-    sendvec[0] = xvec[localmesh->xend];
-    sendvec[1] = minvb[localmesh->xend]/xvec[localmesh->xend];
+    sendvec[0] = upperGuardVector(localmesh->xend,jy,kz);
+    sendvec[1] = minvb[localmesh->xend]/upperGuardVector(localmesh->xend,jy,kz);
 
     localmesh->sendXOut(&sendvec[0],2,0);
     localmesh->wait(recv[0]);
@@ -520,7 +495,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	for(int i=0; i<ncx; i++){
 	  evec[i] = 0.0;
 	}
-	evec[localmesh->LocalNx-2] = 1;
+	evec[localmesh->LocalNx-2] = 1.0;
 	tridag(std::begin(avec), std::begin(bvec), std::begin(cvec), std::begin(evec),
 	     std::begin(tmp), ncx);
 	for(int i=0; i<ncx; i++){
@@ -534,7 +509,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	for(int i=0; i<ncx; i++){
 	  evec[i] = 0.0;
 	}
-	evec[1] = 1;
+	evec[1] = 1.0;
 	tridag(std::begin(avec), std::begin(bvec), std::begin(cvec), std::begin(evec),
 	     std::begin(tmp), ncx);
 	for(int i=0; i<ncx; i++){
@@ -544,7 +519,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 
 ///	SCOREP_USER_REGION_END(invert);
 
-      ensure_stability(jy,kz,avec,bvec,cvec,minvb,ncx,lowerGuardVector,upperGuardVector);
+      ensure_stability(jy,kz,minvb,lowerGuardVector,upperGuardVector);
       //check_diagonal_dominance(avec,bvec,cvec,ncx,jy,kz);
 
 ///      SCOREP_USER_REGION_END(kzinit);
