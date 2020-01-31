@@ -82,10 +82,10 @@ void LaplaceParallelTri::resetSolver(){
 /*!
  * Calcalate stability of the iteration, and amend right-hand side vector minvb to ensure stability.
  */
-void LaplaceParallelTri::ensure_stability(const Array<dcomplex> &avec, const Array<dcomplex> &bvec,
+void LaplaceParallelTri::ensure_stability(const int jy, const int kz, const Array<dcomplex> &avec, const Array<dcomplex> &bvec,
                                               const Array<dcomplex> &cvec, Array<dcomplex> &minvb,
 				              const int ncx,
-					      Array<dcomplex> &lowerGuardVector, Array<dcomplex> &upperGuardVector) {
+					      Tensor<dcomplex> &lowerGuardVector, Tensor<dcomplex> &upperGuardVector) {
   SCOREP0();
 
   BoutReal thisEig = 0.0;
@@ -127,7 +127,7 @@ void LaplaceParallelTri::ensure_stability(const Array<dcomplex> &avec, const Arr
     // Unstable if abs(eigenvalue) > 1. Make stable by manipulating matrix and RHS.
     if(std::abs(thisEig) > 1.0) {
       minvb[localmesh->xstart] = -recvec[1].real();
-      lowerGuardVector[localmesh->xstart] = 1.0/recvec[0].real();
+      lowerGuardVector(localmesh->xstart,jy,kz) = 1.0/recvec[0].real();
     }
   }
 
@@ -158,7 +158,7 @@ void LaplaceParallelTri::ensure_stability(const Array<dcomplex> &avec, const Arr
     //output <<jy<<" "<<kz<<" "<< sendvec[0].real()<<" "<<sendvec[1].real()<<" "<<sendvec[2].real()<<" "<<recvec[0].real()<<" "<<recvec[1].real()<<" "<<recvec[2].real()<<" "<<thisEig<<" "<<abs(thisEig)<<" "<<(fabs(thisEig)>1.0)<<endl;
     if(std::abs(thisEig) > 1.0) {
       minvb[localmesh->xend] = -recvec[1].real();
-      upperGuardVector[localmesh->xend] = 1.0/recvec[0].real();
+      upperGuardVector(localmesh->xend,jy,kz) = 1.0/recvec[0].real();
     }
   }
 }
@@ -232,6 +232,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   bool neighbour_out = false;
 
   int jy = b.getIndex();
+  int ny = b.getMesh()->LocalNy;
 
   int ncz = localmesh->LocalNz; // No of z pnts
   int ncx = localmesh->LocalNx; // No of x pnts
@@ -261,8 +262,8 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
    */
   auto evec = Array<dcomplex>(ncx);
   auto tmp = Array<dcomplex>(ncx);
-  auto upperGuardVector = Array<dcomplex>(ncx);
-  auto lowerGuardVector = Array<dcomplex>(ncx);
+  auto upperGuardVector = Tensor<dcomplex>(ncx, ny, ncz / 2 + 1);
+  auto lowerGuardVector = Tensor<dcomplex>(ncx, ny, ncz / 2 + 1);
   auto bk = Matrix<dcomplex>(ncx, ncz / 2 + 1);
   auto bk1d = Array<dcomplex>(ncx);
   auto bk1d_eff = Array<dcomplex>(ncx);
@@ -523,7 +524,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	tridag(std::begin(avec), std::begin(bvec), std::begin(cvec), std::begin(evec),
 	     std::begin(tmp), ncx);
 	for(int i=0; i<ncx; i++){
-	  upperGuardVector[i] = tmp[i];
+	  upperGuardVector(i,jy,kz) = tmp[i];
 	}
       }
 
@@ -537,13 +538,13 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	tridag(std::begin(avec), std::begin(bvec), std::begin(cvec), std::begin(evec),
 	     std::begin(tmp), ncx);
 	for(int i=0; i<ncx; i++){
-	  lowerGuardVector[i] = tmp[i];
+	  lowerGuardVector(i,jy,kz) = tmp[i];
 	}
       } 
 
 ///	SCOREP_USER_REGION_END(invert);
 
-      ensure_stability(avec,bvec,cvec,minvb,ncx,lowerGuardVector,upperGuardVector);
+      ensure_stability(jy,kz,avec,bvec,cvec,minvb,ncx,lowerGuardVector,upperGuardVector);
       //check_diagonal_dominance(avec,bvec,cvec,ncx,jy,kz);
 
 ///      SCOREP_USER_REGION_END(kzinit);
@@ -559,13 +560,13 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 
 	if(not localmesh->lastX()) { 
 	  for(int i=0; i<ncx; i++){
-	    xk1d[i] += upperGuardVector[i]*xk1dlast[localmesh->LocalNx-2];
+	    xk1d[i] += upperGuardVector(i,jy,kz)*xk1dlast[localmesh->LocalNx-2];
 	  }
 	}
 
 	if(not localmesh->firstX()) { 
 	  for(int i=0; i<ncx; i++){
-	    xk1d[i] += lowerGuardVector[i]*xk1dlast[1];
+	    xk1d[i] += lowerGuardVector(i,jy,kz)*xk1dlast[1];
 	  }
 	} 
 ///	SCOREP_USER_REGION_END(iteration);
