@@ -483,7 +483,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	for(int i=0; i<ncx; i++){
 	  evec[i] = 0.0;
 	}
-	evec[localmesh->LocalNx-2] = 1.0;
+	evec[localmesh->xend+1] = 1.0;
 	tridag(std::begin(avec), std::begin(bvec), std::begin(cvec), std::begin(evec),
 	     std::begin(tmp), ncx);
 	for(int i=0; i<ncx; i++){
@@ -497,7 +497,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	for(int i=0; i<ncx; i++){
 	  evec[i] = 0.0;
 	}
-	evec[1] = 1.0;
+	evec[localmesh->xstart-1] = 1.0;
 	tridag(std::begin(avec), std::begin(bvec), std::begin(cvec), std::begin(evec),
 	     std::begin(tmp), ncx);
 	for(int i=0; i<ncx; i++){
