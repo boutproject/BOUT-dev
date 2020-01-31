@@ -273,10 +273,6 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   auto avec = Array<dcomplex>(ncx);
   auto bvec = Array<dcomplex>(ncx);
   auto cvec = Array<dcomplex>(ncx);
-  auto avec_eff = Array<dcomplex>(ncx);
-  auto bvec_eff = Array<dcomplex>(ncx);
-  auto cvec_eff = Array<dcomplex>(ncx);
-  
   auto minvb = Array<dcomplex>(ncx);
 
   BOUT_OMP(parallel for)
@@ -401,27 +397,19 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       // Patch up internal boundaries
       if(not localmesh->lastX()) { 
 	for(int ix = localmesh->xend+1; ix<localmesh->LocalNx ; ix++) {
-	  avec_eff[ix] = avec[ix];
-	  bvec_eff[ix] = bvec[ix];
-	  cvec_eff[ix] = cvec[ix];
 	  avec[ix] = 0;
 	  bvec[ix] = 1;
 	  cvec[ix] = 0;
 	  bk1d[ix] = 0;
 	}
-	avec[localmesh->xend+1] = cvec_eff[localmesh->xend];
       } 
       if(not localmesh->firstX()) { 
 	for(int ix = 0; ix<localmesh->xstart ; ix++) {
-	  avec_eff[ix] = avec[ix];
-	  bvec_eff[ix] = bvec[ix];
-	  cvec_eff[ix] = cvec[ix];
 	  avec[ix] = 0;
 	  bvec[ix] = 1;
 	  cvec[ix] = 0;
 	  bk1d[ix] = 0;
 	}
-	cvec[localmesh->xstart-1] = avec_eff[localmesh->xstart];
       }
 
 ///      BoutReal bmin=abs(bvec[localmesh->xstart]);
