@@ -193,8 +193,8 @@ void ShiftedMetricInterp::calcParallelSlices(Field3D& f) {
   f.splitParallelSlices();
 
   // Interpolate f onto yup and ydown fields
-  f.yup() = interp_yup->interpolate(f);
-  f.ydown() = interp_ydown->interpolate(f);
+  f.yup() = interp_yup->interpolate(f, "RGN_NOY");
+  f.ydown() = interp_ydown->interpolate(f, "RGN_NOY");
 }
 
 /*!
