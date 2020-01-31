@@ -48,23 +48,22 @@ int main(int argc, char **argv) {
   lap2->setFlags(0);
   Field3D flag0a = lap2->solve(input);
 
-///  lap2->resetSolver();
-///  lap2->setFlags(3);
-///  Field3D flag3a = lap2->solve(input);
-///  SAVE_ONCE2(flag0a, flag3a);
-  SAVE_ONCE(flag0a);
+  lap2->resetSolver();
+  lap2->setFlags(3);
+  Field3D flag3a = lap2->solve(input);
+  SAVE_ONCE2(flag0a, flag3a);
 
 
-///  Field3D res0a  = Delp2(flag0a);
-///  SAVE_ONCE(res0a);
-///
-///  Field3D flag0ac = invert_laplace(input, 0, &a, &c);
-///  Field3D flag3ac = invert_laplace(input, 3, &a, &c);
-///  SAVE_ONCE2(flag0ac, flag3ac);
-///
-///  Field3D flag0ad = invert_laplace(input, 0, &a, nullptr, &d);
-///  Field3D flag3ad = invert_laplace(input, 3, &a, nullptr, &d);
-///  SAVE_ONCE2(flag0ad, flag3ad);
+  Field3D res0a  = Delp2(flag0a);
+  SAVE_ONCE(res0a);
+
+  Field3D flag0ac = invert_laplace(input, 0, &a, &c);
+  Field3D flag3ac = invert_laplace(input, 3, &a, &c);
+  SAVE_ONCE2(flag0ac, flag3ac);
+
+  Field3D flag0ad = invert_laplace(input, 0, &a, nullptr, &d);
+  Field3D flag3ad = invert_laplace(input, 3, &a, nullptr, &d);
+  SAVE_ONCE2(flag0ad, flag3ad);
 
   /// Test new interface and INVERT_IN/OUT_SET flags
 
@@ -79,30 +78,30 @@ int main(int argc, char **argv) {
   Field3D flagos = lap->solve(input, set_to);
   SAVE_ONCE2(flagis, flagos);
 
-//////  lap->setCoefA(a);
-//////  lap->setFlags(4096);
-//////  Field3D flagisa = lap->solve(input, set_to);
-//////  lap->setFlags(8192);
-//////  Field3D flagosa = lap->solve(input, set_to);
-//////  SAVE_ONCE2(flagisa, flagosa);
-//////
-//////  lap->setCoefC(c);
-//////  lap->setFlags(4096);
-//////  Field3D flagisac = lap->solve(input, set_to);
-//////  lap->setFlags(8192);
-//////  Field3D flagosac = lap->solve(input, set_to);
-//////  SAVE_ONCE2(flagisac, flagosac);
-//////
-//////  lap->setCoefC(1.0);
-//////  lap->setCoefD(d);
-//////  lap->setFlags(4096);
-//////  Field3D flagisad = lap->solve(input, set_to);
-//////  lap->setFlags(8192);
-//////  Field3D flagosad = lap->solve(input, set_to);
-//////  SAVE_ONCE2(flagisad, flagosad);
-///
-///  // Delete Laplacian when done
-///  delete lap;
+  lap->setCoefA(a);
+  lap->setFlags(4096);
+  Field3D flagisa = lap->solve(input, set_to);
+  lap->setFlags(8192);
+  Field3D flagosa = lap->solve(input, set_to);
+  SAVE_ONCE2(flagisa, flagosa);
+
+  lap->setCoefC(c);
+  lap->setFlags(4096);
+  Field3D flagisac = lap->solve(input, set_to);
+  lap->setFlags(8192);
+  Field3D flagosac = lap->solve(input, set_to);
+  SAVE_ONCE2(flagisac, flagosac);
+
+  lap->setCoefC(1.0);
+  lap->setCoefD(d);
+  lap->setFlags(4096);
+  Field3D flagisad = lap->solve(input, set_to);
+  lap->setFlags(8192);
+  Field3D flagosad = lap->solve(input, set_to);
+  SAVE_ONCE2(flagisad, flagosad);
+
+  // Delete Laplacian when done
+  delete lap;
 
   // Write and close the output file
 
