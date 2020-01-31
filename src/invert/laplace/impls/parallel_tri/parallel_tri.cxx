@@ -109,7 +109,7 @@ void LaplaceParallelTri::ensure_stability(const int jy, const int kz, Array<dcom
     //output <<jy<<" "<<kz<<" "<< sendvec[0].real()<<" "<<sendvec[1].real()<<" "<<sendvec[2].real()<<" "<<recvec[0].real()<<" "<<recvec[1].real()<<" "<<recvec[2].real()<<" "<<thisEig<<endl;
 
     // Unstable if abs(eigenvalue) > 1. Make stable by manipulating matrix and RHS.
-    if(std::abs(thisEig) > 1.0) {
+    if(std::fabs(thisEig) > 1.0) {
       minvb[localmesh->xstart] = -recvec[1].real();
       lowerGuardVector(localmesh->xstart,jy,kz) = 1.0/recvec[0].real();
     }
@@ -131,7 +131,7 @@ void LaplaceParallelTri::ensure_stability(const int jy, const int kz, Array<dcom
 
     // Unstable if abs(eigenvalue) > 1. Make stable by manipulating matrix and RHS.
     //output <<jy<<" "<<kz<<" "<< sendvec[0].real()<<" "<<sendvec[1].real()<<" "<<sendvec[2].real()<<" "<<recvec[0].real()<<" "<<recvec[1].real()<<" "<<recvec[2].real()<<" "<<thisEig<<" "<<abs(thisEig)<<" "<<(fabs(thisEig)>1.0)<<endl;
-    if(std::abs(thisEig) > 1.0) {
+    if(std::fabs(thisEig) > 1.0) {
       minvb[localmesh->xend] = -recvec[1].real();
       upperGuardVector(localmesh->xend,jy,kz) = 1.0/recvec[0].real();
     }
