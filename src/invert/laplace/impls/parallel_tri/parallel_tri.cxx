@@ -517,21 +517,23 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 
 ///	SCOREP_USER_REGION_DEFINE(iteration);
 ///	SCOREP_USER_REGION_BEGIN(iteration, "iteration",SCOREP_USER_REGION_TYPE_COMMON);
-	for(int i=0; i<ncx; i++){
-	  xk1d[i] = minvb[i];
-	}
+
+	// Only need to update interior points
+	int li = localmesh->xstart;
+	int ui = localmesh->xend;
+	xk1d[li] = minvb[li];
+	xk1d[ui] = minvb[ui];
 
 	if(not localmesh->lastX()) { 
-	  for(int i=0; i<ncx; i++){
-	    xk1d[i] += upperGuardVector(i,jy,kz)*xk1dlast[localmesh->LocalNx-2];
-	  }
+	  xk1d[li] += upperGuardVector(li,jy,kz)*xk1dlast[ui+1];
+	  xk1d[ui] += upperGuardVector(ui,jy,kz)*xk1dlast[ui+1];
 	}
 
 	if(not localmesh->firstX()) { 
-	  for(int i=0; i<ncx; i++){
-	    xk1d[i] += lowerGuardVector(i,jy,kz)*xk1dlast[1];
-	  }
+	  xk1d[li] += lowerGuardVector(li,jy,kz)*xk1dlast[li-1];
+	  xk1d[ui] += lowerGuardVector(ui,jy,kz)*xk1dlast[li-1];
 	} 
+
 ///	SCOREP_USER_REGION_END(iteration);
 
 ///	SCOREP_USER_REGION_DEFINE(setboundaries);
@@ -667,6 +669,8 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 ///	}
 ///        for (int ix = localmesh->xend+1; ix < ncx; ix++) {
         for (int ix = 0; ix < ncx; ix++) {
+	  if( not( ix==li or ix==ui ) ) continue;
+	  //output<<count<<" "<<xk1d[ix]<<" "<<xk1dlast[ix]<<endl;
 	  diff = abs(xk1d[ix] - xk1dlast[ix]);
 	  xabs = abs(xk1d[ix]);
 	  if (diff > error_abs) {
@@ -733,7 +737,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 
 	// Now I've done my communication, exit if I am both in- and out-converged
 	if( self_in and self_out ) {
-          //output<<"Breaking, proc "<< BoutComm::rank() << ", count "<<count<<endl<<std::flush;
+          //output<<"Breaking, proc "<< BoutComm::rank() << ", count "<<count<<" "<<jy<<" "<<kz<<endl<<std::flush;
 	  break;
 	}
 ///	SCOREP_USER_REGION_DEFINE(comms_after_break);
@@ -763,6 +767,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	}
 	error_last = error_abs;
 ///	SCOREP_USER_REGION_END(copylast);
+        //li = localmesh->xstart;
+        //ui = localmesh->xend;
+        //output<<count<<" "<<xk1d[li-1]<<xk1d[li]<<xk1d[ui]<<xk1d[ui+1]<<endl;
 	
       }
 ///      SCOREP_USER_REGION_END(whileloop);
@@ -788,11 +795,25 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
     //output<<"jy="<<jy<<" kz="<<kz<<" count="<<count<<" ncalls="<<ncalls<<" ipt_mean_its="<<ipt_mean_its<<" B="<<B<< endl;
     //Bvals(0,jy,kz) = B;
 
-    // Undo preconditioner's rescaling of xk1d
-	for(int ix = 0; ix<ncx ; ix++) {
-	  const dcomplex b = conj(1.0/sqrt(bvec[ix]));
-	  //xk1d[ix] = b*xk1d[ix];
-	}
+    // Now that halo cells are converged, use these to calculate whole solution
+    int li = localmesh->xstart;
+    int ui = localmesh->xend;
+    for(int i=0; i<ncx; i++){
+      xk1d[i] = minvb[i];
+    }
+
+    if(not localmesh->lastX()) { 
+      for(int i=0; i<ncx; i++){
+        xk1d[i] += upperGuardVector(i,jy,kz)*xk1dlast[ui+1];
+      }
+    }
+
+    if(not localmesh->firstX()) { 
+      for(int i=0; i<ncx; i++){
+        xk1d[i] += lowerGuardVector(i,jy,kz)*xk1dlast[li-1];
+      }
+    } 
+
 
     // If the global flag is set to INVERT_KX_ZERO
     if ((global_flags & INVERT_KX_ZERO) && (kz == 0)) {
