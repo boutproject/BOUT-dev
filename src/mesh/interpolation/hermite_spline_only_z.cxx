@@ -147,9 +147,9 @@ Field3D HermiteSplineOnlyZ::interpolate(const Field3D &f,
 
   // Derivatives are used for tension and need to be on dimensionless
   // coordinates
-  const std::string fz_region = (region == "RGN_NOBNDRY" or region == "RGN_NOX")
-                                ? y_offset == 0 ? "RGN_NOBNDRY" : "RGN_NOX"
-                                : "RGN_ALL";
+  const std::string fz_region = region == "RGN_NOBNDRY" ?
+    (y_offset == 0 ? "RGN_NOBNDRY" : "RGN_NOX") :
+    (region == "RGN_NOX" ? "RGN_NOX" : "RGN_ALL");
   Field3D fz = bout::derivatives::index::DDZ(f, CELL_DEFAULT, "DEFAULT", fz_region);
   localmesh->communicateXZ(fz);
 
