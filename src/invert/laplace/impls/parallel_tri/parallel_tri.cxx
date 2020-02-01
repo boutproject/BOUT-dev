@@ -260,6 +260,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   int ncz = localmesh->LocalNz; // No of z pnts
   int ncx = localmesh->LocalNx; // No of x pnts
 
+  int xs = localmesh->xstart;
+  int xe = localmesh->xend;
+
   BoutReal kwaveFactor = 2.0 * PI / coords->zlength();
 
   // Setting the width of the boundary.
@@ -561,6 +564,14 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       ensure_stability(jy,kz,minvb,lowerGuardVector,upperGuardVector,lowerUnstable,upperUnstable);
       //check_diagonal_dominance(avec,bvec,cvec,ncx,jy,kz);
 
+      // Original method:
+      x_down = xk1d[xs-1];
+      x_low  = xk1d[xs];
+      x_high = xk1d[xe];
+      x_up   = xk1d[xe+1];
+      x_down_last = xk1dlast[xs-1];
+      x_up_last   = xk1dlast[xe+1];
+
 ///      SCOREP_USER_REGION_END(kzinit);
 ///      SCOREP_USER_REGION_DEFINE(whileloop);
 ///      SCOREP_USER_REGION_BEGIN(whileloop, "while loop",SCOREP_USER_REGION_TYPE_COMMON);
@@ -578,12 +589,12 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	if(upperUnstable) uos = 1;
 
 	if(not lowerUnstable){
-	  xk1d[li] = minvb[li];
+	  x_low = minvb[li];
 	  if(not localmesh->lastX()) { 
-	    xk1d[li] += upperGuardVector(li,jy,kz)*xk1dlast[ui+1];
+	    x_low += upperGuardVector(li,jy,kz)*x_up_last;
 	  }
 	  if(not localmesh->firstX()) { 
-	    xk1d[li] += lowerGuardVector(li,jy,kz)*xk1dlast[li-1];
+	    x_low += lowerGuardVector(li,jy,kz)*x_down_last;
 	  } 
 	} else {
 	  xk1d[li-1] = minvb[li];
@@ -596,12 +607,12 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	}
 
 	if(not upperUnstable){
-	  xk1d[ui] = minvb[ui];
+	  x_high = minvb[ui];
 	  if(not localmesh->lastX()) { 
-	    xk1d[ui] += upperGuardVector(ui,jy,kz)*xk1dlast[ui+1];
+	    x_high += upperGuardVector(ui,jy,kz)*x_up_last;
 	  }
 	  if(not localmesh->firstX()) { 
-	    xk1d[ui] += lowerGuardVector(ui,jy,kz)*xk1dlast[li-1];
+	    x_high += lowerGuardVector(ui,jy,kz)*x_down_last;
 	  } 
 	} else {
 	  xk1d[ui+1] = minvb[ui];
