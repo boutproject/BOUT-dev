@@ -74,7 +74,10 @@ public:
   void resetMeanIterations() { ipt_mean_its = 0; }
 
   void ensure_stability(const int jy, const int kz, Array<dcomplex> &r,
-      Tensor<dcomplex> &lowerGuardVector, Tensor<dcomplex> &upperGuardVector);
+      Tensor<dcomplex> &lowerGuardVector, Tensor<dcomplex> &upperGuardVector,
+      bool &lowerUnstable, bool &upperUnstable);
+  void swapHaloInteriorLower(Array<dcomplex> &x);
+  void swapHaloInteriorUpper(Array<dcomplex> &x);
   void check_diagonal_dominance(const Array<dcomplex> &a, const Array<dcomplex> &b,
       const Array<dcomplex> &c, const int ncx, const int jy, const int kz);
 

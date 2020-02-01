@@ -83,7 +83,8 @@ void LaplaceParallelTri::resetSolver(){
  * Calcalate stability of the iteration, and amend right-hand side vector minvb to ensure stability.
  */
 void LaplaceParallelTri::ensure_stability(const int jy, const int kz, Array<dcomplex> &minvb,
-					      Tensor<dcomplex> &lowerGuardVector, Tensor<dcomplex> &upperGuardVector) {
+					      Tensor<dcomplex> &lowerGuardVector, Tensor<dcomplex> &upperGuardVector,
+					      bool &lowerUnstable, bool &upperUnstable) {
   SCOREP0();
 
   BoutReal thisEig = 0.0;
@@ -91,6 +92,8 @@ void LaplaceParallelTri::ensure_stability(const int jy, const int kz, Array<dcom
   Array<dcomplex> sendvec, recvec;
   sendvec = Array<dcomplex>(2);
   recvec = Array<dcomplex>(2);
+  lowerUnstable = false;
+  upperUnstable = false;
 
   // If not on innermost boundary, calculate required matrix element and send up
   if(!localmesh->firstX()) {
@@ -110,8 +113,12 @@ void LaplaceParallelTri::ensure_stability(const int jy, const int kz, Array<dcom
 
     // Unstable if abs(eigenvalue) > 1. Make stable by manipulating matrix and RHS.
     if(std::fabs(thisEig) > 1.0) {
-      minvb[localmesh->xstart] = -recvec[1].real();
-      lowerGuardVector(localmesh->xstart,jy,kz) = 1.0/recvec[0].real();
+      lowerUnstable = true;
+      //minvb[localmesh->xstart] = -recvec[1].real();
+      //lowerGuardVector(localmesh->xstart,jy,kz) = 1.0/recvec[0].real();
+      minvb[localmesh->xstart] /= -lowerGuardVector(localmesh->xstart,jy,kz);
+      upperGuardVector(localmesh->xstart,jy,kz) /= -lowerGuardVector(localmesh->xstart,jy,kz);
+      lowerGuardVector(localmesh->xstart,jy,kz) = 1.0/lowerGuardVector(localmesh->xstart,jy,kz);
     }
   }
 
@@ -132,8 +139,12 @@ void LaplaceParallelTri::ensure_stability(const int jy, const int kz, Array<dcom
     // Unstable if abs(eigenvalue) > 1. Make stable by manipulating matrix and RHS.
     //output <<jy<<" "<<kz<<" "<< sendvec[0].real()<<" "<<sendvec[1].real()<<" "<<sendvec[2].real()<<" "<<recvec[0].real()<<" "<<recvec[1].real()<<" "<<recvec[2].real()<<" "<<thisEig<<" "<<abs(thisEig)<<" "<<(fabs(thisEig)>1.0)<<endl;
     if(std::fabs(thisEig) > 1.0) {
-      minvb[localmesh->xend] = -recvec[1].real();
-      upperGuardVector(localmesh->xend,jy,kz) = 1.0/recvec[0].real();
+      upperUnstable = true;
+      //minvb[localmesh->xend] = -recvec[1].real();
+      //upperGuardVector(localmesh->xend,jy,kz) = 1.0/recvec[0].real();
+      minvb[localmesh->xend] /= -upperGuardVector(localmesh->xend,jy,kz);
+      lowerGuardVector(localmesh->xend,jy,kz) /= -upperGuardVector(localmesh->xend,jy,kz);
+      upperGuardVector(localmesh->xend,jy,kz) = 1.0/upperGuardVector(localmesh->xend,jy,kz);
     }
   }
 }
@@ -160,6 +171,22 @@ void LaplaceParallelTri::check_diagonal_dominance(const Array<dcomplex> &avec, c
 	output << "Not diagonally dominant on row "<<i<<" jy "<<jy<<" kz "<<kz<<" of proc "<<BoutComm::rank()<<endl;
       }
     }
+}
+
+void LaplaceParallelTri::swapHaloInteriorLower(Array<dcomplex> &x){
+  dcomplex t;
+  int xs = localmesh->xstart;
+  t = x[xs];
+  x[xs] = x[xs-1];
+  x[xs-1] = t; 
+}
+
+void LaplaceParallelTri::swapHaloInteriorUpper(Array<dcomplex> &x){
+  dcomplex t;
+  int xe = localmesh->xend;
+  t = x[xe];
+  x[xe] = x[xe+1];
+  x[xe+1] = t; 
 }
 
 FieldPerp LaplaceParallelTri::solve(const FieldPerp& b) { return solve(b, b); }
@@ -246,6 +273,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   auto xk1d = Array<dcomplex>(ncx);
   auto xk1dlast = Array<dcomplex>(ncx);
   auto error = Array<dcomplex>(ncx);
+  dcomplex tmp2;
   BoutReal error_rel = 1e20, error_abs=1e20, last_error=error_abs;
 
 ///  SCOREP_USER_REGION_END(initvars);
@@ -274,6 +302,8 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   auto bvec = Array<dcomplex>(ncx);
   auto cvec = Array<dcomplex>(ncx);
   auto minvb = Array<dcomplex>(ncx);
+  bool lowerUnstable;
+  bool upperUnstable;
 
   BOUT_OMP(parallel for)
   for (int ix = 0; ix < ncx; ix++) {
@@ -507,7 +537,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 
 ///	SCOREP_USER_REGION_END(invert);
 
-      ensure_stability(jy,kz,minvb,lowerGuardVector,upperGuardVector);
+      ensure_stability(jy,kz,minvb,lowerGuardVector,upperGuardVector,lowerUnstable,upperUnstable);
       //check_diagonal_dominance(avec,bvec,cvec,ncx,jy,kz);
 
 ///      SCOREP_USER_REGION_END(kzinit);
@@ -521,18 +551,46 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	// Only need to update interior points
 	int li = localmesh->xstart;
 	int ui = localmesh->xend;
-	xk1d[li] = minvb[li];
-	xk1d[ui] = minvb[ui];
+	int los = 0;
+	if(lowerUnstable) los = 1;
+	int uos = 0;
+	if(upperUnstable) uos = 1;
 
-	if(not localmesh->lastX()) { 
-	  xk1d[li] += upperGuardVector(li,jy,kz)*xk1dlast[ui+1];
-	  xk1d[ui] += upperGuardVector(ui,jy,kz)*xk1dlast[ui+1];
+	if(not lowerUnstable){
+	  xk1d[li] = minvb[li];
+	  if(not localmesh->lastX()) { 
+	    xk1d[li] += upperGuardVector(li,jy,kz)*xk1dlast[ui+1];
+	  }
+	  if(not localmesh->firstX()) { 
+	    xk1d[li] += lowerGuardVector(li,jy,kz)*xk1dlast[li-1];
+	  } 
+	} else {
+	  xk1d[li-1] = minvb[li];
+	  if(not localmesh->lastX()) { 
+	    xk1d[li-1] += upperGuardVector(li,jy,kz)*xk1dlast[ui+1];
+	  }
+	  if(not localmesh->firstX()) { 
+	    xk1d[li-1] += lowerGuardVector(li,jy,kz)*xk1dlast[li-1+1];
+	  } 
 	}
 
-	if(not localmesh->firstX()) { 
-	  xk1d[li] += lowerGuardVector(li,jy,kz)*xk1dlast[li-1];
-	  xk1d[ui] += lowerGuardVector(ui,jy,kz)*xk1dlast[li-1];
-	} 
+	if(not upperUnstable){
+	  xk1d[ui] = minvb[ui];
+	  if(not localmesh->lastX()) { 
+	    xk1d[ui] += upperGuardVector(ui,jy,kz)*xk1dlast[ui+1];
+	  }
+	  if(not localmesh->firstX()) { 
+	    xk1d[ui] += lowerGuardVector(ui,jy,kz)*xk1dlast[li-1];
+	  } 
+	} else {
+	  xk1d[ui+1] = minvb[ui];
+	  if(not localmesh->lastX()) { 
+	    xk1d[ui+1] += upperGuardVector(ui,jy,kz)*xk1dlast[ui+1-1];
+	  }
+	  if(not localmesh->firstX()) { 
+	    xk1d[ui+1] += lowerGuardVector(ui,jy,kz)*xk1dlast[li-1];
+	  } 
+	}
 
 ///	SCOREP_USER_REGION_END(iteration);
 
@@ -686,6 +744,8 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	else{
 	  error_rel = error_abs;
 	}
+	error_rel = 1e20;
+	error_abs = 1e20;
 ///	SCOREP_USER_REGION_END(errors);
 ///	SCOREP_USER_REGION_DEFINE(comms);
 ///	SCOREP_USER_REGION_BEGIN(comms, "communication",SCOREP_USER_REGION_TYPE_COMMON);
@@ -723,7 +783,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	if(!neighbour_in) {
 	  // Communicate in
 	  neighbour_in = localmesh->communicateXIn(self_in);
+	  if(lowerUnstable) swapHaloInteriorLower(xk1d);
 	  localmesh->communicateXIn(xk1d);
+	  if(lowerUnstable) swapHaloInteriorLower(xk1d);
 	}
 
 	// Outward communication
@@ -731,7 +793,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	if(!neighbour_out) {
 	  // Communicate out
 	  neighbour_out = localmesh->communicateXOut(self_out);
+	  if(upperUnstable) swapHaloInteriorUpper(xk1d);
 	  localmesh->communicateXOut(xk1d);
+	  if(upperUnstable) swapHaloInteriorUpper(xk1d);
 	}
 ///	SCOREP_USER_REGION_END(comms);
 
@@ -801,13 +865,11 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
     for(int i=0; i<ncx; i++){
       xk1d[i] = minvb[i];
     }
-
     if(not localmesh->lastX()) { 
       for(int i=0; i<ncx; i++){
         xk1d[i] += upperGuardVector(i,jy,kz)*xk1dlast[ui+1];
       }
     }
-
     if(not localmesh->firstX()) { 
       for(int i=0; i<ncx; i++){
         xk1d[i] += lowerGuardVector(i,jy,kz)*xk1dlast[li-1];
