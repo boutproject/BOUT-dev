@@ -227,6 +227,27 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   FieldPerp x{emptyFrom(b)};
 
+  // Calculation variables
+  // proc:       p-1   |          p          |       p+1
+  // x_var:     x_down | x_low        x_high | x_up    ...
+  // In this method, each processor solves equations on its processor
+  // interfaces.  Its lower interface equation (for x_low) is coupled to
+  // x_down on the processor below and its upper interface variable x_up.
+  // Its upper interface equation (for x_high) is coupled to its lower
+  // interface variable x_lower and x_up processor above.
+  // We use these local variables rather than calculate with xk1d directly
+  // as the meaning of x_lower etc can change depending on the iteration.
+  // For example, in the original iteration we have:
+  // x_down = xk1d[xstart-1], x_low = xk1d[xstart],
+  // x_high = xk1d[xend], x_up = xk1d[xend+1],
+  // but if this is found to be unstable, he must change this to
+  // x_down = xk1d[xstart], x_low = xk1d[xstart-1],
+  // x_high = xk1d[xend+1], x_up = xk1d[xend].
+  // It is easier to change the meaning of local variables than it is to
+  // change the indexing in situ.
+  //
+  dcomplex x_down, x_low, x_high, x_up;
+
   // Convergence flags
   bool self_in = false;
   bool self_out = false;
