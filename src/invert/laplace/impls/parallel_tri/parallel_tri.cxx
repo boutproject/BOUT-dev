@@ -116,9 +116,9 @@ void LaplaceParallelTri::ensure_stability(const int jy, const int kz, Array<dcom
       lowerUnstable = true;
       //minvb[localmesh->xstart] = -recvec[1].real();
       //lowerGuardVector(localmesh->xstart,jy,kz) = 1.0/recvec[0].real();
-      minvb[localmesh->xstart] /= -lowerGuardVector(localmesh->xstart,jy,kz);
-      upperGuardVector(localmesh->xstart,jy,kz) /= -lowerGuardVector(localmesh->xstart,jy,kz);
-      lowerGuardVector(localmesh->xstart,jy,kz) = 1.0/lowerGuardVector(localmesh->xstart,jy,kz);
+      //minvb[localmesh->xstart] /= -lowerGuardVector(localmesh->xstart,jy,kz);
+      //upperGuardVector(localmesh->xstart,jy,kz) /= -lowerGuardVector(localmesh->xstart,jy,kz);
+      //lowerGuardVector(localmesh->xstart,jy,kz) = 1.0/lowerGuardVector(localmesh->xstart,jy,kz);
     }
   }
 
@@ -142,9 +142,9 @@ void LaplaceParallelTri::ensure_stability(const int jy, const int kz, Array<dcom
       upperUnstable = true;
       //minvb[localmesh->xend] = -recvec[1].real();
       //upperGuardVector(localmesh->xend,jy,kz) = 1.0/recvec[0].real();
-      minvb[localmesh->xend] /= -upperGuardVector(localmesh->xend,jy,kz);
-      lowerGuardVector(localmesh->xend,jy,kz) /= -upperGuardVector(localmesh->xend,jy,kz);
-      upperGuardVector(localmesh->xend,jy,kz) = 1.0/upperGuardVector(localmesh->xend,jy,kz);
+      //minvb[localmesh->xend] /= -upperGuardVector(localmesh->xend,jy,kz);
+      //lowerGuardVector(localmesh->xend,jy,kz) /= -upperGuardVector(localmesh->xend,jy,kz);
+      //upperGuardVector(localmesh->xend,jy,kz) = 1.0/upperGuardVector(localmesh->xend,jy,kz);
     }
   }
 }
@@ -250,6 +250,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   //
   auto xloc = Array<dcomplex>(4);
   auto xloclast = Array<dcomplex>(4);
+  dcomplex rl, ru, al, au, bl, bu;
 
   // Convergence flags
   bool self_in = false;
@@ -568,22 +569,40 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       //check_diagonal_dominance(avec,bvec,cvec,ncx,jy,kz);
 
       // Original method:
-      //   Variables:
-      xloc[0] = xk1d[xs-1];
-      xloc[1] = xk1d[xs];
-      xloc[2] = xk1d[xe];
-      xloc[3] = xk1d[xe+1];
-      xloclast[0] = xk1dlast[xs-1];
-      xloclast[1] = xk1dlast[xs];
-      xloclast[2] = xk1dlast[xe];
-      xloclast[3] = xk1dlast[xe+1];
-      //   Equation coefficients:
-      dcomplex rl = minvb[xs];
-      dcomplex ru = minvb[xe];
-      dcomplex al = upperGuardVector(xs,jy,kz);
-      dcomplex au = upperGuardVector(xe,jy,kz);
-      dcomplex bl = lowerGuardVector(xs,jy,kz);
-      dcomplex bu = lowerGuardVector(xe,jy,kz);
+      if(not lowerUnstable) {
+	xloc[0] = xk1d[xs-1];
+	xloc[1] = xk1d[xs];
+	xloclast[0] = xk1dlast[xs-1];
+	xloclast[1] = xk1dlast[xs];
+	rl = minvb[xs];
+	al = upperGuardVector(xs,jy,kz);
+	bl = lowerGuardVector(xs,jy,kz);
+      } else {
+	xloc[0] = xk1d[xs];
+	xloc[1] = xk1d[xs-1];
+	xloclast[0] = xk1dlast[xs];
+	xloclast[1] = xk1dlast[xs-1];
+	rl = -minvb[xs]/lowerGuardVector(xs,jy,kz);
+	al = -upperGuardVector(xs,jy,kz)/lowerGuardVector(xs,jy,kz);
+	bl = 1.0/lowerGuardVector(xs,jy,kz);
+      }
+      if(not upperUnstable) {
+	xloc[2] = xk1d[xe];
+	xloc[3] = xk1d[xe+1];
+	xloclast[2] = xk1dlast[xe];
+	xloclast[3] = xk1dlast[xe+1];
+	ru = minvb[xe];
+	au = upperGuardVector(xe,jy,kz);
+	bu = lowerGuardVector(xe,jy,kz);
+      } else {
+	xloc[2] = xk1d[xe+1];
+	xloc[3] = xk1d[xe];
+	xloclast[2] = xk1dlast[xe+1];
+	xloclast[3] = xk1dlast[xe];
+	ru = -minvb[xe]/upperGuardVector(xe,jy,kz);
+	au = 1.0/upperGuardVector(xe,jy,kz);
+	bu = -lowerGuardVector(xe,jy,kz)/upperGuardVector(xe,jy,kz);
+      }
 
 ///      SCOREP_USER_REGION_END(kzinit);
 ///      SCOREP_USER_REGION_DEFINE(whileloop);
@@ -868,14 +887,28 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
     //Bvals(0,jy,kz) = B;
 
     // Original method:
-    xk1d[xs-1] = xloc[0];
-    xk1d[xs]   = xloc[1];
-    xk1d[xe]   = xloc[2];
-    xk1d[xe+1] = xloc[3];
-    xk1dlast[xs-1] = xloclast[0];
-    xk1dlast[xs]   = xloclast[1];
-    xk1dlast[xe]   = xloclast[2];
-    xk1dlast[xe+1] = xloclast[3];
+    if(not lowerUnstable) {
+      xk1d[xs-1] = xloc[0];
+      xk1d[xs]   = xloc[1];
+      xk1dlast[xs-1] = xloclast[0];
+      xk1dlast[xs]   = xloclast[1];
+    } else {
+      xk1d[xs-1] = xloc[1];
+      xk1d[xs]   = xloc[0];
+      xk1dlast[xs-1] = xloclast[1];
+      xk1dlast[xs]   = xloclast[0];
+    }
+    if(not upperUnstable) {
+      xk1d[xe]   = xloc[2];
+      xk1d[xe+1] = xloc[3];
+      xk1dlast[xe]   = xloclast[2];
+      xk1dlast[xe+1] = xloclast[3];
+    } else {
+      xk1d[xe]   = xloc[3];
+      xk1d[xe+1] = xloc[2];
+      xk1dlast[xe]   = xloclast[3];
+      xk1dlast[xe+1] = xloclast[2];
+    }
 
     // Now that halo cells are converged, use these to calculate whole solution
     for(int i=0; i<ncx; i++){
