@@ -229,24 +229,27 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   // Calculation variables
   // proc:       p-1   |          p          |       p+1
-  // x_var:     x_down | x_low        x_high | x_up    ...
+  // xloc:     xloc[0] | xloc[1]     xloc[2] | xloc[3]    ...
   // In this method, each processor solves equations on its processor
-  // interfaces.  Its lower interface equation (for x_low) is coupled to
-  // x_down on the processor below and its upper interface variable x_up.
-  // Its upper interface equation (for x_high) is coupled to its lower
-  // interface variable x_lower and x_up processor above.
+  // interfaces.  Its lower interface equation (for xloc[1]) is coupled to
+  // xloc[0] on the processor below and its upper interface variable xloc[2].
+  // Its upper interface equation (for xloc[2]) is coupled to its lower
+  // interface variable xloc[1] and xloc[3] processor above.
   // We use these local variables rather than calculate with xk1d directly
-  // as the meaning of x_lower etc can change depending on the iteration.
+  // as the elements of xloc can refer to different elements of xk1d depending
+  // on the method used.
   // For example, in the original iteration we have:
-  // x_down = xk1d[xstart-1], x_low = xk1d[xstart],
-  // x_high = xk1d[xend], x_up = xk1d[xend+1],
+  // xloc[0] = xk1d[xstart-1], xloc[1] = xk1d[xstart],
+  // xloc[2] = xk1d[xend], xloc[3] = xk1d[xend+1],
   // but if this is found to be unstable, he must change this to
-  // x_down = xk1d[xstart], x_low = xk1d[xstart-1],
-  // x_high = xk1d[xend+1], x_up = xk1d[xend].
-  // It is easier to change the meaning of local variables than it is to
-  // change the indexing in situ.
+  // xloc[0] = xk1d[xstart], xloc[1] = xk1d[xstart-1],
+  // xloc[2] = xk1d[xend+1], xloc[3] = xk1d[xend].
+  // It is easier to change the meaning of local variables and keep the
+  // structure of the calculation/communication than it is to change the
+  // indexing of xk1d to cover all possible cases.
   //
-  dcomplex x_down, x_low, x_high, x_up;
+  auto xloc = Array<dcomplex>(4);
+  auto xloclast = Array<dcomplex>(4);
 
   // Convergence flags
   bool self_in = false;
@@ -565,12 +568,14 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       //check_diagonal_dominance(avec,bvec,cvec,ncx,jy,kz);
 
       // Original method:
-      x_down = xk1d[xs-1];
-      x_low  = xk1d[xs];
-      x_high = xk1d[xe];
-      x_up   = xk1d[xe+1];
-      x_down_last = xk1dlast[xs-1];
-      x_up_last   = xk1dlast[xe+1];
+      xloc[0] = xk1d[xs-1];
+      xloc[1] = xk1d[xs];
+      xloc[2] = xk1d[xe];
+      xloc[3] = xk1d[xe+1];
+      xloclast[0] = xk1dlast[xs-1];
+      xloclast[1] = xk1dlast[xs];
+      xloclast[2] = xk1dlast[xe];
+      xloclast[3] = xk1dlast[xe+1];
 
 ///      SCOREP_USER_REGION_END(kzinit);
 ///      SCOREP_USER_REGION_DEFINE(whileloop);
@@ -589,12 +594,12 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	if(upperUnstable) uos = 1;
 
 	if(not lowerUnstable){
-	  x_low = minvb[li];
+	  xloc[1] = minvb[xs];
 	  if(not localmesh->lastX()) { 
-	    x_low += upperGuardVector(li,jy,kz)*x_up_last;
+	    xloc[1] += upperGuardVector(xs,jy,kz)*xloclast[3];
 	  }
 	  if(not localmesh->firstX()) { 
-	    x_low += lowerGuardVector(li,jy,kz)*x_down_last;
+	    xloc[1] += lowerGuardVector(xs,jy,kz)*xloclast[0];
 	  } 
 	} else {
 	  xk1d[li-1] = minvb[li];
@@ -607,12 +612,12 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	}
 
 	if(not upperUnstable){
-	  x_high = minvb[ui];
+	  xloc[2] = minvb[xe];
 	  if(not localmesh->lastX()) { 
-	    x_high += upperGuardVector(ui,jy,kz)*x_up_last;
+	    xloc[2] += upperGuardVector(xe,jy,kz)*xloclast[3];
 	  }
 	  if(not localmesh->firstX()) { 
-	    x_high += lowerGuardVector(ui,jy,kz)*x_down_last;
+	    xloc[2] += lowerGuardVector(xe,jy,kz)*xloclast[0];
 	  } 
 	} else {
 	  xk1d[ui+1] = minvb[ui];
@@ -758,11 +763,10 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 ///	  }
 ///	}
 ///        for (int ix = localmesh->xend+1; ix < ncx; ix++) {
-        for (int ix = 0; ix < ncx; ix++) {
-	  if( not( ix==li or ix==ui ) ) continue;
+        for (int ix = 1; ix < 3; ix++) {
 	  //output<<count<<" "<<xk1d[ix]<<" "<<xk1dlast[ix]<<endl;
-	  diff = abs(xk1d[ix] - xk1dlast[ix]);
-	  xabs = abs(xk1d[ix]);
+	  diff = abs(xloc[ix] - xloclast[ix]);
+	  xabs = abs(xloc[ix]);
 	  if (diff > error_abs) {
 	    error_abs = diff;
 	  }
@@ -815,9 +819,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	if(!neighbour_in) {
 	  // Communicate in
 	  neighbour_in = localmesh->communicateXIn(self_in);
-	  if(lowerUnstable) swapHaloInteriorLower(xk1d);
-	  localmesh->communicateXIn(xk1d);
-	  if(lowerUnstable) swapHaloInteriorLower(xk1d);
+	  xloc[0] = localmesh->communicateXIn(xloc[1]);
 	}
 
 	// Outward communication
@@ -825,9 +827,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	if(!neighbour_out) {
 	  // Communicate out
 	  neighbour_out = localmesh->communicateXOut(self_out);
-	  if(upperUnstable) swapHaloInteriorUpper(xk1d);
-	  localmesh->communicateXOut(xk1d);
-	  if(upperUnstable) swapHaloInteriorUpper(xk1d);
+	  xloc[3] = localmesh->communicateXOut(xloc[2]);
 	}
 ///	SCOREP_USER_REGION_END(comms);
 
@@ -858,8 +858,8 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 
 ///	SCOREP_USER_REGION_DEFINE(copylast);
 ///	SCOREP_USER_REGION_BEGIN(copylast, "copy to last",SCOREP_USER_REGION_TYPE_COMMON);
-        for (int ix = 0; ix < ncx; ix++) {
-	  xk1dlast[ix] = xk1d[ix];
+        for (int ix = 0; ix < 4; ix++) {
+	  xloclast[ix] = xloc[ix];
 	}
 	error_last = error_abs;
 ///	SCOREP_USER_REGION_END(copylast);
@@ -891,20 +891,28 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
     //output<<"jy="<<jy<<" kz="<<kz<<" count="<<count<<" ncalls="<<ncalls<<" ipt_mean_its="<<ipt_mean_its<<" B="<<B<< endl;
     //Bvals(0,jy,kz) = B;
 
+    // Original method:
+    xk1d[xs-1] = xloc[0];
+    xk1d[xs]   = xloc[1];
+    xk1d[xe]   = xloc[2];
+    xk1d[xe+1] = xloc[3];
+    xk1dlast[xs-1] = xloclast[0];
+    xk1dlast[xs]   = xloclast[1];
+    xk1dlast[xe]   = xloclast[2];
+    xk1dlast[xe+1] = xloclast[3];
+
     // Now that halo cells are converged, use these to calculate whole solution
-    int li = localmesh->xstart;
-    int ui = localmesh->xend;
     for(int i=0; i<ncx; i++){
       xk1d[i] = minvb[i];
     }
     if(not localmesh->lastX()) { 
       for(int i=0; i<ncx; i++){
-        xk1d[i] += upperGuardVector(i,jy,kz)*xk1dlast[ui+1];
+        xk1d[i] += upperGuardVector(i,jy,kz)*xk1dlast[xe+1];
       }
     }
     if(not localmesh->firstX()) { 
       for(int i=0; i<ncx; i++){
-        xk1d[i] += lowerGuardVector(i,jy,kz)*xk1dlast[li-1];
+        xk1d[i] += lowerGuardVector(i,jy,kz)*xk1dlast[xs-1];
       }
     } 
 
