@@ -568,6 +568,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       //check_diagonal_dominance(avec,bvec,cvec,ncx,jy,kz);
 
       // Original method:
+      //   Variables:
       xloc[0] = xk1d[xs-1];
       xloc[1] = xk1d[xs];
       xloc[2] = xk1d[xe];
@@ -576,6 +577,13 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       xloclast[1] = xk1dlast[xs];
       xloclast[2] = xk1dlast[xe];
       xloclast[3] = xk1dlast[xe+1];
+      //   Equation coefficients:
+      dcomplex rl = minvb[xs];
+      dcomplex ru = minvb[xe];
+      dcomplex al = upperGuardVector(xs,jy,kz);
+      dcomplex au = upperGuardVector(xe,jy,kz);
+      dcomplex bl = lowerGuardVector(xs,jy,kz);
+      dcomplex bu = lowerGuardVector(xe,jy,kz);
 
 ///      SCOREP_USER_REGION_END(kzinit);
 ///      SCOREP_USER_REGION_DEFINE(whileloop);
@@ -586,47 +594,15 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 ///	SCOREP_USER_REGION_BEGIN(iteration, "iteration",SCOREP_USER_REGION_TYPE_COMMON);
 
 	// Only need to update interior points
-	int li = localmesh->xstart;
-	int ui = localmesh->xend;
-	int los = 0;
-	if(lowerUnstable) los = 1;
-	int uos = 0;
-	if(upperUnstable) uos = 1;
-
-	if(not lowerUnstable){
-	  xloc[1] = minvb[xs];
-	  if(not localmesh->lastX()) { 
-	    xloc[1] += upperGuardVector(xs,jy,kz)*xloclast[3];
-	  }
-	  if(not localmesh->firstX()) { 
-	    xloc[1] += lowerGuardVector(xs,jy,kz)*xloclast[0];
-	  } 
-	} else {
-	  xk1d[li-1] = minvb[li];
-	  if(not localmesh->lastX()) { 
-	    xk1d[li-1] += upperGuardVector(li,jy,kz)*xk1dlast[ui+1];
-	  }
-	  if(not localmesh->firstX()) { 
-	    xk1d[li-1] += lowerGuardVector(li,jy,kz)*xk1dlast[li-1+1];
-	  } 
+	xloc[1] = rl;
+	xloc[2] = ru;
+	if(not localmesh->lastX()) {
+	  xloc[1] += al*xloclast[3];
+	  xloc[2] += au*xloclast[3];
 	}
-
-	if(not upperUnstable){
-	  xloc[2] = minvb[xe];
-	  if(not localmesh->lastX()) { 
-	    xloc[2] += upperGuardVector(xe,jy,kz)*xloclast[3];
-	  }
-	  if(not localmesh->firstX()) { 
-	    xloc[2] += lowerGuardVector(xe,jy,kz)*xloclast[0];
-	  } 
-	} else {
-	  xk1d[ui+1] = minvb[ui];
-	  if(not localmesh->lastX()) { 
-	    xk1d[ui+1] += upperGuardVector(ui,jy,kz)*xk1dlast[ui+1-1];
-	  }
-	  if(not localmesh->firstX()) { 
-	    xk1d[ui+1] += lowerGuardVector(ui,jy,kz)*xk1dlast[li-1];
-	  } 
+	if(not localmesh->firstX()) {
+	  xloc[1] += bl*xloclast[0];
+	  xloc[2] += bu*xloclast[0];
 	}
 
 ///	SCOREP_USER_REGION_END(iteration);
