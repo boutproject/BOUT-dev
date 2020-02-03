@@ -121,6 +121,7 @@ void LaplaceParallelTri::ensure_stability(const int jy, const int kz, Array<dcom
       //lowerGuardVector(localmesh->xstart,jy,kz) = 1.0/lowerGuardVector(localmesh->xstart,jy,kz);
     }
   }
+  output<<BoutComm::rank()<<" "<<jy<<" "<<kz<<" lower ev: "<<thisEig<<" "<<lowerUnstable<<endl;
 
   // If not on outermost boundary, calculate required matrix element and send down
   if(!localmesh->lastX()) {
@@ -147,6 +148,7 @@ void LaplaceParallelTri::ensure_stability(const int jy, const int kz, Array<dcom
       //upperGuardVector(localmesh->xend,jy,kz) = 1.0/upperGuardVector(localmesh->xend,jy,kz);
     }
   }
+  output<<BoutComm::rank()<<" "<<jy<<" "<<kz<<" upper ev: "<<thisEig<<" "<<upperUnstable<<endl;
 }
 
 /// Check whether matrix is diagonally dominant, i.e. whether for every row the absolute
@@ -187,6 +189,17 @@ void LaplaceParallelTri::swapHaloInteriorUpper(Array<dcomplex> &x){
   t = x[xe];
   x[xe] = x[xe+1];
   x[xe+1] = t; 
+}
+
+void get_errors(BoutReal *error_rel,BoutReal *error_abs,const dcomplex x,const dcomplex xlast){
+  *error_abs = abs(x - xlast);
+  BoutReal xabs = abs(x);
+  if( xabs > 0.0 ){
+    *error_rel = *error_abs / xabs;
+  }
+  else{
+    *error_rel = *error_abs;
+  }
 }
 
 FieldPerp LaplaceParallelTri::solve(const FieldPerp& b) { return solve(b, b); }
@@ -303,6 +316,12 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   auto error = Array<dcomplex>(ncx);
   dcomplex tmp2;
   BoutReal error_rel = 1e20, error_abs=1e20, last_error=error_abs;
+  BoutReal error_rel_lower = 1e20, error_abs_lower=1e20;
+  BoutReal error_rel_upper = 1e20, error_abs_upper=1e20;
+  BoutReal error_rel_lower_last = 1e20, error_abs_lower_last=1e20;
+  BoutReal error_rel_upper_last = 1e20, error_abs_upper_last=1e20;
+  BoutReal error_rel_lower_two_old = 1e20, error_abs_lower_two_old=1e20;
+  BoutReal error_rel_upper_two_old = 1e20, error_abs_upper_two_old=1e20;
 
 ///  SCOREP_USER_REGION_END(initvars);
 ///  SCOREP_USER_REGION_DEFINE(initloop);
@@ -603,6 +622,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	au = 1.0/upperGuardVector(xe,jy,kz);
 	bu = -lowerGuardVector(xe,jy,kz)/upperGuardVector(xe,jy,kz);
       }
+      output<<"Coefficients: "<<BoutComm::rank()<<" "<<jy<<" "<<kz<<" "<<" "<<rl<<" "<<al<<" "<<bl<<" "<<ru<<" "<<au<<" "<<bu<<" "<<lowerUnstable<<" "<<upperUnstable<<endl;
 
 ///      SCOREP_USER_REGION_END(kzinit);
 ///      SCOREP_USER_REGION_DEFINE(whileloop);
@@ -739,45 +759,6 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 ///        tridag(std::begin(avec_eff), std::begin(bvec_eff), std::begin(cvec_eff), std::begin(bk1d_eff),
 ///             std::begin(xk1d), ncx);
 ///     SCOREP_USER_REGION_END(invert);
-///	SCOREP_USER_REGION_DEFINE(errors);
-///	SCOREP_USER_REGION_BEGIN(errors, "calculate errors",SCOREP_USER_REGION_TYPE_COMMON);
-//
-
-	// Calculate errors
-	error_abs = 0.0;
-	BoutReal xmax = 0.0;
-	BoutReal diff, xabs;
-///        for (int ix = 0; ix < localmesh->xstart; ix++) {
-///	  diff = abs(xk1d[ix] - xk1dlast[ix]);
-///	  xabs = abs(xk1d[ix]);
-///	  if (diff > error_abs) {
-///	    error_abs = diff;
-///	  }
-///	  if (xabs > xmax) {
-///	    xmax = xabs;
-///	  }
-///	}
-///        for (int ix = localmesh->xend+1; ix < ncx; ix++) {
-        for (int ix = 1; ix < 3; ix++) {
-	  //output<<count<<" "<<xk1d[ix]<<" "<<xk1dlast[ix]<<endl;
-	  diff = abs(xloc[ix] - xloclast[ix]);
-	  xabs = abs(xloc[ix]);
-	  if (diff > error_abs) {
-	    error_abs = diff;
-	  }
-	  if (xabs > xmax) {
-	    xmax = xabs;
-	  }
-	}
-	if( xmax > 0.0 ){
-          error_rel = error_abs / xmax;
-	}
-	else{
-	  error_rel = error_abs;
-	}
-	error_rel = 1e20;
-	error_abs = 1e20;
-///	SCOREP_USER_REGION_END(errors);
 ///	SCOREP_USER_REGION_DEFINE(comms);
 ///	SCOREP_USER_REGION_BEGIN(comms, "communication",SCOREP_USER_REGION_TYPE_COMMON);
 
@@ -851,11 +832,54 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	  //throw BoutException("LaplaceParallelTri error: Not converged within maxits=%i iterations.", maxits);
 	}
 
+///	SCOREP_USER_REGION_DEFINE(errors);
+///	SCOREP_USER_REGION_BEGIN(errors, "calculate errors",SCOREP_USER_REGION_TYPE_COMMON);
+//
+
+	// Calculate errors
+	error_abs = 0.0;
+	error_abs_lower = 0.0;
+	error_abs_upper = 0.0;
+	error_rel_lower = 0.0;
+	error_rel_upper = 0.0;
+	BoutReal xmax = 0.0;
+	BoutReal diff, xabs;
+
+	// Calcalate errors on left halo and right interior point - this means the
+	// errors on neighbouring processors agree exactly without the need for
+	// communication.
+	get_errors(&error_rel_lower,&error_abs_lower,xloc[0],xloclast[0]);
+	get_errors(&error_rel_upper,&error_abs_upper,xloc[2],xloclast[2]);
+        output<<"xvec "<<BoutComm::rank()<<" "<<count<<" "<<xloc[0]<<" "<<xloc[1]<<" "<<xloc[2]<<" "<<xloc[3]<<" "<<error_rel_lower<<" "<<error_abs_lower<<" "<<error_rel_upper<<" "<<error_abs_upper<<endl;
+	if( (error_rel_lower_two_old<error_rel_lower ||
+	     error_abs_lower_two_old<error_abs_lower) &&
+	     count > 20) {
+	  output<<BoutComm::rank()<<" error detected on lower interface at iteration "<<count<<endl;
+	}
+	if( (error_rel_upper_two_old<error_rel_upper ||
+	     error_abs_upper_two_old<error_abs_upper) &&
+	     count > 20) {
+	  output<<BoutComm::rank()<<" error detected on upper interface at iteration "<<count<<endl;
+	}
+	error_rel = 1e20;
+	error_abs = 1e20;
+///	SCOREP_USER_REGION_END(errors);
+
 ///	SCOREP_USER_REGION_DEFINE(copylast);
 ///	SCOREP_USER_REGION_BEGIN(copylast, "copy to last",SCOREP_USER_REGION_TYPE_COMMON);
         for (int ix = 0; ix < 4; ix++) {
 	  xloclast[ix] = xloc[ix];
 	}
+	error_abs_lower_two_old = error_abs_lower_last;
+	error_rel_lower_two_old = error_rel_lower_last;
+	error_abs_upper_two_old = error_abs_upper_last;
+	error_rel_upper_two_old = error_rel_upper_last;
+
+	error_abs_lower_last = error_abs_lower;
+	error_rel_lower_last = error_rel_lower;
+	error_abs_upper_last = error_abs_upper;
+	error_rel_upper_last = error_rel_upper;
+
 	error_last = error_abs;
 ///	SCOREP_USER_REGION_END(copylast);
         //li = localmesh->xstart;
