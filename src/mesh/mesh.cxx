@@ -293,7 +293,6 @@ dcomplex Mesh::communicateXIn(const dcomplex &f) {
   comm_handle recv[1];
   dcomplex g;
 
-  output << "commXIn" << endl;
   // Post receives for guard cell regions
   recv[0] = irecvXIn(&g, 0);
 
