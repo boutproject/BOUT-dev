@@ -4,8 +4,6 @@ NOUT = 0  # No timesteps
 
 MZ = 32    # Z size
 
-grid = "../../../tests/integrated/test-laplace/test_laplace.grd.nc"
-
 dump_format = "nc"  # NetCDF format. Alternative is "pdb"
 
 [LaplaceTest]
@@ -14,6 +12,9 @@ NUM_LOOPS = 1000
 [mesh]
 symmetricGlobalX = false
 symmetricGlobalY = false
+
+nx = 12
+ny = 16
 
 [laplace]
 all_terms = false
