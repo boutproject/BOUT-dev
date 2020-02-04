@@ -1,12 +1,12 @@
 .. _sec-petsc-interface:
 
-PETSc Interface
+PETSc interface
 ===============
 
-The ``Portable, Extensible Toolkit for Scientific Computation (PETSc)
-<https://www.mcs.anl.gov/petsc/>`` provides a large collection of
+The `Portable, Extensible Toolkit for Scientific Computation (PETSc)
+<https://www.mcs.anl.gov/petsc/>`_ provides a large collection of
 numerical routines and solvers. It is used in BOUT++ for
-:ref:`sec-timeoptions` and :ref:`sec-laplacian`. However, it provides
+:ref:`sec-time-integration` and :ref:`sec-laplacian`. However, it provides
 quite a low-level C interface which is often difficult to use and
 bears little resemblance to the data model of BOUT++. This is
 particularly the case when making use of the ``Mat`` and ``Vec`` data-types
@@ -14,13 +14,17 @@ for linear solvers (such as the Laplacian inversions). Doing so
 requires the developer to:
 
 1. Flatten a `Field` into 1-D PETSc ``Vec`` objects.
+   
    - Must decide which guard cells to include in ``Vec``
    - Must convert between  BOUT++ indices (local) and  indices used in
-   PETSc ``Vec`` (global)
+     PETSc ``Vec`` (global)
+   
 2. Use a PETSc ``Mat`` object to represent a finite-difference operator.
+   
    - Again, must convert between local and global indices
    - Must determine sparsity pattern of matrix
    - If taking field-aligned derivatives, must perform interpolation
+     
 3. Call a Krylov solver with a preconditioner.
 4. Convert the resulting ``Vec`` object back into a `Field`.
 
@@ -50,7 +54,7 @@ matrix. `PetscVector` and `PetscMatrix` objects are constructed from a
 respectively. They provide routines for accessing individual elements
 of the vector/matrix using ``PetscVector::Element`` and
 ``PetscMatrix::Element`` objects. All of these classes are
-templates. `OperatorStencil` works for `SpecificInd<>` types (``Ind3D``,
+templates. `OperatorStencil` works for `SpecificInd` types (``Ind3D``,
 ``Ind2D``, ``IndPerp``), while the remaining classes work for the various
 ``Field`` types.
 
@@ -74,7 +78,7 @@ an index which is suitably offset.
 
    UML diagram describing the structure of the OperatorStencil class.
 
-Vectors of ``IndexOffset``s are coupled with tests which take a
+Vectors of ``IndexOffset`` objects are coupled with tests which take a
 ``SpecificInd<>`` as an argument and return a boolean result
 indicating whether the offsets describe the finite difference stencil
 at that location. The ``OperatorStencil`` class contains a vector of
@@ -87,10 +91,12 @@ this class unless you are doing further development work on the PETSc
 interface.
 
 Consider a 2-D Laplacian operator with the discretisation
+
 :math:`\nabla^2 f(i,j) = \frac{f(i+1,j) - 2f(i,j) + f(i-1,j)}{\Delta
-x^2} + \frac{f(i,j+1) - 2f(i,j) + f(i,j-1)}{\Delta y^2}` and Neumann
-boundary conditions. Then an appropriate stencil could be created
-using the following code.
+x^2} + \frac{f(i,j+1) - 2f(i,j) + f(i,j-1)}{\Delta y^2}`
+
+and Neumann boundary conditions. Then an appropriate stencil could be
+created using the following code.
 
 ::
 
@@ -124,7 +130,7 @@ using the following code.
 
 Using an `OperatorStencil`, the `GlobalIndexer` constructor can now
 determine which cells should be included in the PETSc ``Vec`` object
-representing a ``Field``. All interior cells are always
+representing a `Field`. All interior cells are always
 included. Guard cells which are required by the stencil to compute the
 operation on internal cells are also included. A globally-unique index
 is assigned to each cell which is meant to be included and the
@@ -143,16 +149,17 @@ two of which are optional:
 
 - A pointer to the `Mesh` object for the indexer
 - An `OperatorStencil`; if absent then the indexer will not include
-any guard cells in the PETSc objects and will not compute matrix
-sparsity patterns
+  any guard cells in the PETSc objects and will not compute matrix
+  sparsity patterns
 - A boolean specifying whether communication of indices in guard cells
-will be performed in the constructor; defaults to ``true``,
-otherwise will need to call the ``initialise()`` method prior to use
+  will be performed in the constructor; defaults to ``true``,
+  otherwise will need to call the ``initialise()`` method prior to use
 
 An example of creating a ``GlobalIndexer`` with the
 ``OperatorStencil`` created in the previous example is given below.
 
 ::
+   
     IndexerPtr<Field2D> indexer =
         std::make_shared<GlobalIndexer<Field2D>>(localmesh, stencil);
 
@@ -202,6 +209,7 @@ Below is an example of creating a vector which could be used as input
 for a linear solver.
 
 ::
+
     Field2D rhs_vals; // Assume this is initialised with some data
     PetscVector<Field2D> rhs_vec(rhs_vals, indexer);
 
@@ -240,15 +248,15 @@ unlike for a `PetscVector` it would not make sense to copy data from a
 ``Mat`` object will be set. This allows memory to be pre-allocated for
 it by PETSc, which dramatically improved performance.
 
-As with `PetscVector`s, individual elements of a `PetscMatrix` can be
-accessed using BOUT++ indices and the parentheses operator, except
-that now two indices are required (corresponding to the row and column
-of the matrix). These elements can be set using either assignment or
-in-place addition. Once again, these two modes can not be mixed unless
-the matrix is assembled in between, this time using the
-``partialAssemble()`` method. Before using the matrix a call must be
-made to the ``assemble()`` method. This can be used between modes of
-setting matrix elements as well, but is slower than
+As with `PetscVector` objectss, individual elements of a `PetscMatrix`
+can be accessed using BOUT++ indices and the parentheses operator,
+except that now two indices are required (corresponding to the row and
+column of the matrix). These elements can be set using either
+assignment or in-place addition. Once again, these two modes can not
+be mixed unless the matrix is assembled in between, this time using
+the ``partialAssemble()`` method. Before using the matrix a call must
+be made to the ``assemble()`` method. This can be used between modes
+of setting matrix elements as well, but is slower than
 ``partialAssemble()``.
 
 It is possible to use one of these matrix objects to represent
@@ -273,6 +281,7 @@ Putting all of this together, a matrix can be created corresponding to
 the Laplace operator defined in :ref:`sec-operator-stencil`.
 
 ::
+   
     PetscMatrix<Field2D> matrix(indexer);
     Field2D &dx = localmesh->getCoordinates()->dx,
             &dy = localmesh->getCoordinates()->dy;
@@ -325,6 +334,7 @@ linear solver for the problem in previous sections could be done as
 below:
 
 ::
+   
     MatSetBlockSize(*matrix.get(), 1);
     KSP solver;
     KSPSetOperators(solver, *matrix.get(), *matrix.get());
