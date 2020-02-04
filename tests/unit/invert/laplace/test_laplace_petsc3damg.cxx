@@ -361,7 +361,7 @@ TEST_P(Petsc3dAmgTest, TestSolve3D){
 }
 
 TEST_P(Petsc3dAmgTest, TestSolve3DGuess){
-  Field3D expected = f3, guess = f3;// + 0.1;
+  Field3D expected = f3, guess = f3*1.01;
   const Field3D actual = solver.solve(forward(f3), guess);
   BOUT_FOR(i, mesh->getRegion3D("RGN_ALL")) {
     EXPECT_NEAR(expected[i], actual[i], tol);
