@@ -74,11 +74,10 @@ TYPED_TEST(IndexerTest, TestConvertIndex) {
   TypeParam f(bout::globals::mesh);
   std::set<int, std::greater<int>> indicesGlobalSquare, indicesGlobalStar,
       indicesGlobalDefault;
-  int global;
 
   // Check each of the interior global indices is unique
   BOUT_FOR(i, f.getRegion("RGN_NOBNDRY")) {
-    global = this->globalSquareIndexer.getGlobal(i);
+    int global = this->globalSquareIndexer.getGlobal(i);
     EXPECT_GE(global, 0);
     BOUT_OMP(critical) EXPECT_TRUE(indicesGlobalSquare.insert(global).second);
     global = this->globalStarIndexer.getGlobal(i);
@@ -91,7 +90,7 @@ TYPED_TEST(IndexerTest, TestConvertIndex) {
 
   // Check indices of X guard cells are unique
   BOUT_FOR(i, f.getRegion("RGN_XGUARDS")) {
-    global = this->globalSquareIndexer.getGlobal(i);
+    int global = this->globalSquareIndexer.getGlobal(i);
     EXPECT_GE(global, 0);
     BOUT_OMP(critical) EXPECT_TRUE(indicesGlobalSquare.insert(global).second);
     global = this->globalStarIndexer.getGlobal(i);
@@ -103,7 +102,7 @@ TYPED_TEST(IndexerTest, TestConvertIndex) {
   // Check indices of Y guard cells are unique
   if (!std::is_same<TypeParam, FieldPerp>::value) {
     BOUT_FOR(i, f.getRegion("RGN_YGUARDS")) {
-      global = this->globalSquareIndexer.getGlobal(i);
+      int global = this->globalSquareIndexer.getGlobal(i);
       EXPECT_GE(global, 0);
       BOUT_OMP(critical) EXPECT_TRUE(indicesGlobalSquare.insert(global).second);
       global = this->globalStarIndexer.getGlobal(i);

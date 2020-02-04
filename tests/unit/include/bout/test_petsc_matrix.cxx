@@ -164,7 +164,7 @@ TYPED_TEST(PetscMatrixTest, MoveAssignment) {
 // Test getting elements
 TYPED_TEST(PetscMatrixTest, TestGetElements) {
   PetscMatrix<TypeParam> matrix(this->indexer);
-  BOUT_FOR(i, this->field.getRegion("RGN_NOY")) {
+  BOUT_FOR_SERIAL(i, this->field.getRegion("RGN_NOY")) {
     matrix(i, i) = static_cast<BoutReal>(i.ind);
   }
   Mat* rawmat = matrix.get();
