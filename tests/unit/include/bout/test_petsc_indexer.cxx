@@ -127,16 +127,16 @@ TYPED_TEST(IndexerTest, TestConvertIndex) {
 
 TYPED_TEST(IndexerTest, TestIsLocal) {
   BOUT_FOR(i, this->globalSquareIndexer.getRegionAll()) {
-    ASSERT_TRUE(this->globalSquareIndexer.isLocal(i));
+    EXPECT_TRUE(this->globalSquareIndexer.isLocal(i));
   }
   BOUT_FOR(i, this->globalStarIndexer.getRegionAll()) {
-    ASSERT_TRUE(this->globalStarIndexer.isLocal(i));
+    EXPECT_TRUE(this->globalStarIndexer.isLocal(i));
   }
   BOUT_FOR(i, this->globalDefaultIndexer.getRegionAll()) {
-    ASSERT_TRUE(this->globalDefaultIndexer.isLocal(i));
+    EXPECT_TRUE(this->globalDefaultIndexer.isLocal(i));
   }
   BOUT_FOR(i, this->localIndexer.getRegionAll()) {
-    ASSERT_TRUE(this->localIndexer.isLocal(i));
+    EXPECT_TRUE(this->localIndexer.isLocal(i));
   }
 }
 
