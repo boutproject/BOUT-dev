@@ -38,6 +38,9 @@ implementations are listed in table :numref:`tab-laplacetypes`.
    | `petsc                 | Serial/parallel. Lots of methods, no Boussinesq              | PETSc (section :ref:`sec-PETSc-install`) |
    | <sec-petsc-laplace_>`__|                                                              |                                          |
    +------------------------+--------------------------------------------------------------+------------------------------------------+
+   | petsc3damg             | Serial/parallel. Solves full 3D operator (with               | PETSc (section :ref:`sec-PETSc-install`) |
+   |                        | y-derivatives) with algebraic multigrid.                     |                                          |
+   +------------------------+--------------------------------------------------------------+------------------------------------------+
    | multigrid              | Serial/parallel. Geometric multigrid, no Boussinesq          |                                          |
    +------------------------+--------------------------------------------------------------+------------------------------------------+
    | `naulin                | Serial/parallel. Iterative treatment of non-Boussinesq terms |                                          |
