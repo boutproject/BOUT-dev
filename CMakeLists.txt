@@ -21,6 +21,9 @@ project(BOUT++
 find_program(MPIEXEC_EXECUTABLE NAMES mpiexec mpirun)
 find_package(MPI REQUIRED)
 
+# Override default
+option(INSTALL_GTEST "Enable installation of googletest. (Projects embedding googletest may want to turn this OFF.)" OFF)
+
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
 # Taken from https://cliutils.gitlab.io/modern-cmake/chapters/projects/submodule.html
@@ -344,7 +347,7 @@ endif()
 # Compile time features
 
 set(CHECK_LEVELS 0 1 2 3 4)
-set(CHECK 3 CACHE STRING "Set run-time checking level")
+set(CHECK 2 CACHE STRING "Set run-time checking level")
 set_property(CACHE CHECK PROPERTY STRINGS ${CHECK_LEVELS})
 if (NOT CHECK IN_LIST CHECK_LEVELS)
   message(FATAL_ERROR "CHECK must be one of ${CHECK_LEVELS}")
