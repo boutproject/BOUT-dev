@@ -88,7 +88,7 @@ private:
   // D*grad_perp^2(x) + (1/C)*(grad_perp(C))*grad_perp(x) + A*x = b
   Field2D A, C, D;
 
-  BoutReal om;
+  BoutReal omega;
   BoutReal Borig;
   Field3D Bvals;
   Matrix<bool> first_call;

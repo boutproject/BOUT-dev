@@ -52,7 +52,7 @@ LaplaceParallelTri::LaplaceParallelTri(Options *opt, CELL_LOC loc, Mesh *mesh_in
   OPTION(opt, atol, 1.e-20);
   OPTION(opt, maxits, 100);
   OPTION(opt, B, 1000.0);
-  OPTION(opt, om, 1.0);
+  OPTION(opt, omega, 0.0);
 
   static int ipt_solver_count = 1;
   bout::globals::dump.addRepeat(ipt_mean_its,
@@ -253,7 +253,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   // on the method used.
   // For example, in the original iteration we have:
   // xloc[0] = xk1d[xstart-1], xloc[1] = xk1d[xstart],
-  // xloc[2] = xk1d[xend], xloc[3] = xk1d[xend+1],
+  // xloc[2] = xk1d[xend],     xloc[3] = xk1d[xend+1],
   // but if this is found to be unstable, he must change this to
   // xloc[0] = xk1d[xstart], xloc[1] = xk1d[xstart-1],
   // xloc[2] = xk1d[xend+1], xloc[3] = xk1d[xend].
@@ -263,7 +263,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   //
   auto xloc = Array<dcomplex>(4);
   auto xloclast = Array<dcomplex>(4);
-  dcomplex rl, ru, al, au, bl, bu;
+  dcomplex rl, ru, al, au, bl, bu, cl, cu;
 
   // Convergence flags
   bool self_in = false;
@@ -322,6 +322,8 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   BoutReal error_rel_upper_last = 1e20, error_abs_upper_last=1e20;
   BoutReal error_rel_lower_two_old = 1e20, error_abs_lower_two_old=1e20;
   BoutReal error_rel_upper_two_old = 1e20, error_abs_upper_two_old=1e20;
+  bool lower_stable = false;
+  bool upper_stable = false;
 
 ///  SCOREP_USER_REGION_END(initvars);
 ///  SCOREP_USER_REGION_DEFINE(initloop);
@@ -627,6 +629,12 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 ///      SCOREP_USER_REGION_END(kzinit);
 ///      SCOREP_USER_REGION_DEFINE(whileloop);
 ///      SCOREP_USER_REGION_BEGIN(whileloop, "while loop",SCOREP_USER_REGION_TYPE_COMMON);
+//
+      BoutReal om = 0.0;
+      if(kz==0) om = omega;
+
+      int upper_offset = 0;
+      int lower_offset = 0;
       while(true){ 
 
 ///	SCOREP_USER_REGION_DEFINE(iteration);
@@ -636,13 +644,16 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	xloc[1] = rl;
 	xloc[2] = ru;
 	if(not localmesh->lastX()) {
-	  xloc[1] += al*xloclast[3];
+	  xloc[1] += al*xloclast[3-upper_offset];
 	  xloc[2] += au*xloclast[3];
 	}
 	if(not localmesh->firstX()) {
 	  xloc[1] += bl*xloclast[0];
-	  xloc[2] += bu*xloclast[0];
+	  xloc[2] += bu*xloclast[0+lower_offset];
 	}
+
+	xloc[1] = (1.0-omega)*xloc[1] + omega*xloclast[1];
+	xloc[2] = (1.0-omega)*xloc[2] + omega*xloclast[2];
 
 ///	SCOREP_USER_REGION_END(iteration);
 
@@ -850,17 +861,55 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	// communication.
 	get_errors(&error_rel_lower,&error_abs_lower,xloc[0],xloclast[0]);
 	get_errors(&error_rel_upper,&error_abs_upper,xloc[2],xloclast[2]);
-        output<<"xvec "<<BoutComm::rank()<<" "<<count<<" "<<xloc[0]<<" "<<xloc[1]<<" "<<xloc[2]<<" "<<xloc[3]<<" "<<error_rel_lower<<" "<<error_abs_lower<<" "<<error_rel_upper<<" "<<error_abs_upper<<endl;
+        //output<<"xvec "<<BoutComm::rank()<<" "<<count<<" "<<xloc[0]<<" "<<xloc[1]<<" "<<xloc[2]<<" "<<xloc[3]<<" "<<error_rel_lower<<" "<<error_rel_lower_last<<" "<<error_rel_lower_two_old<<" "<<error_abs_lower<<" "<<error_abs_lower_last<<" "<<error_abs_lower_two_old<<" "<<error_rel_upper<<" "<<error_rel_upper_last<<" "<<error_rel_upper_two_old<<" "<<error_abs_upper<<" "<<error_abs_upper_last<<" "<<error_abs_upper_two_old<<endl;
+	
+	/*
 	if( (error_rel_lower_two_old<error_rel_lower ||
 	     error_abs_lower_two_old<error_abs_lower) &&
-	     count > 20) {
+	     count > 10 &&
+	     lower_stable) {
 	  output<<BoutComm::rank()<<" error detected on lower interface at iteration "<<count<<endl;
+	  //xloc[0] = xk1d[xs];
+	  //xloc[1] = xk1d[xs-1];
+	  //xloclast[0] = xk1dlast[xs];
+	  //xloclast[1] = xk1dlast[xs-1];
+	  rl = -minvb[xs]/lowerGuardVector(xs,jy,kz);
+	  al = -upperGuardVector(xs,jy,kz)/lowerGuardVector(xs,jy,kz);
+	  bl = 1.0/lowerGuardVector(xs,jy,kz);
+	  error_abs_lower = 1e10;
+	  error_rel_lower = 1e10;
+	  error_abs_lower_last = 1e15;
+	  error_rel_lower_last = 1e15;
+	  error_abs_lower_two_old = 1e20;
+	  error_rel_lower_two_old = 1e20;
+	  lower_stable = true;
+	  lower_offset = 1;
 	}
 	if( (error_rel_upper_two_old<error_rel_upper ||
 	     error_abs_upper_two_old<error_abs_upper) &&
-	     count > 20) {
+	     count > 10 &&
+	     not upper_stable) {
 	  output<<BoutComm::rank()<<" error detected on upper interface at iteration "<<count<<endl;
+	  //xloc[2] = xk1d[xe+1];
+	  //xloc[3] = xk1d[xe];
+	  //xloclast[2] = xk1dlast[xe+1];
+	  //xloclast[3] = xk1dlast[xe];
+	  ru = -minvb[xe]/upperGuardVector(xe,jy,kz);
+	  au = 1.0/upperGuardVector(xe,jy,kz);
+	  bu = -lowerGuardVector(xe,jy,kz)/upperGuardVector(xe,jy,kz);
+	  error_abs_upper = 1e10;
+	  error_rel_upper = 1e10;
+	  error_abs_upper_last = 1e15;
+	  error_rel_upper_last = 1e15;
+	  error_abs_upper_two_old = 1e20;
+	  error_rel_upper_two_old = 1e20;
+	  upper_stable = true;
+	  upper_offset = 1;
+	  //count = 0;
 	}
+        */
+
+        output<<"xvec "<<BoutComm::rank()<<" "<<count<<" "<<xloc[0]<<" "<<xloc[1]<<" "<<xloc[2]<<" "<<xloc[3]<<" "<<error_rel_lower<<" "<<error_rel_lower_last<<" "<<error_rel_lower_two_old<<" "<<error_abs_lower<<" "<<error_abs_lower_last<<" "<<error_abs_lower_two_old<<" "<<error_rel_upper<<" "<<error_rel_upper_last<<" "<<error_rel_upper_two_old<<" "<<error_abs_upper<<" "<<error_abs_upper_last<<" "<<error_abs_upper_two_old<<endl;
 	error_rel = 1e20;
 	error_abs = 1e20;
 ///	SCOREP_USER_REGION_END(errors);
