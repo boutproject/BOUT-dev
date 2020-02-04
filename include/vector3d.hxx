@@ -66,6 +66,9 @@ class Vector3D : public FieldData {
    */
   Vector3D(const Vector3D &f);
 
+  /// Many-argument constructor for fully specifying the initialisation of a Vector3D
+  Vector3D(Mesh* localmesh, bool covariant, CELL_LOC location);
+
   /*!
    * Destructor. If the time derivative has been
    * used, then some book-keeping is needed to ensure
@@ -223,6 +226,30 @@ const Field3D abs(const Vector3D& v, const std::string& region = "RGN_ALL");
     "const std::string& region = \"RGN_ALL\") instead")]]
 inline const Field3D abs(const Vector3D& v, REGION region) {
   return abs(v, toString(region));
+}
+
+/// Transform to and from field-aligned coordinates
+Vector3D toFieldAligned(const Vector3D& v, const std::string& region = "RGN_ALL");
+Vector3D fromFieldAligned(const Vector3D& v, const std::string& region = "RGN_ALL");
+
+/// Create new Vector3D with same attributes as the argument, but uninitialised components
+inline Vector3D emptyFrom(const Vector3D& v) {
+  auto result = Vector3D(v.x.getMesh(), v.covariant, v.getLocation());
+  result.x = emptyFrom(v.x);
+  result.y = emptyFrom(v.y);
+  result.z = emptyFrom(v.z);
+
+  return result;
+}
+
+/// Create new Vector3D with same attributes as the argument, and zero-initialised components
+inline Vector3D zeroFrom(const Vector3D& v) {
+  auto result = Vector3D(v.x.getMesh(), v.covariant, v.getLocation());
+  result.x = zeroFrom(v.x);
+  result.y = zeroFrom(v.y);
+  result.z = zeroFrom(v.z);
+
+  return result;
 }
 
 /*!
