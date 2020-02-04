@@ -531,12 +531,11 @@ public:
 
   // Construct a matrix capable of operating on the specified field,
   // preallocating memory if requeted and possible.
-  PetscMatrix(T& f, IndexerPtr<T> indConverter, bool preallocate = true)
+  PetscMatrix(IndexerPtr<T> indConverter, bool preallocate = true)
       : matrix(new Mat(), MatrixDeleter()), indexConverter(indConverter) {
-    ASSERT1(indConverter->getMesh() == f.getMesh());
     const MPI_Comm comm =
-        std::is_same<T, FieldPerp>::value ? f.getMesh()->getXcomm() : BoutComm::get();
-    pt = &f.getMesh()->getCoordinates()->getParallelTransform();
+        std::is_same<T, FieldPerp>::value ? indConverter->getMesh()->getXcomm() : BoutComm::get();
+    pt = &indConverter->getMesh()->getCoordinates()->getParallelTransform();
     const int size = indexConverter->size();
 
     MatCreate(comm, matrix.get());

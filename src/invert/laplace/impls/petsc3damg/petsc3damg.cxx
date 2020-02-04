@@ -55,7 +55,7 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mes
   lowerY(localmesh->iterateBndryLowerY()), upperY(localmesh->iterateBndryUpperY()),
   indexer(std::make_shared<GlobalIndexer<Field3D>>(localmesh,
 						   getStencil(localmesh, lowerY, upperY))),
-  operator3D(A, indexer), kspInitialised(false)
+  operator3D(indexer), kspInitialised(false)
 {
   // Provide basic initialisation of field coefficients, etc.
   // Get relevent options from user input
