@@ -669,10 +669,10 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 
       // Original method:
 ///      if(not lowerUnstable) {
-	xloc[0] = xk1d[xs-1];
-	xloc[1] = xk1d[xs];
-	xloclast[0] = xk1dlast[xs-1];
-	xloclast[1] = xk1dlast[xs];
+	// do not initialize xloc[0] = xk1d[xs-1];
+	// xloc[1] = xk1d[xs];
+	xloclast[0] = xk1d[xs-1];
+	xloclast[1] = xk1d[xs];
 	rl = minvb[xs];
 	al = upperGuardVector(xs,jy,kz);
 	bl = lowerGuardVector(xs,jy,kz);
@@ -686,10 +686,10 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 ///	bl = 1.0/lowerGuardVector(xs,jy,kz);
 ///      }
 ///      if(not upperUnstable) {
-	xloc[2] = xk1d[xe];
-	xloc[3] = xk1d[xe+1];
-	xloclast[2] = xk1dlast[xe];
-	xloclast[3] = xk1dlast[xe+1];
+	// do not initialize xloc[2] = xk1d[xe];
+	//xloc[3] = xk1d[xe+1];
+	xloclast[2] = xk1d[xe];
+	xloclast[3] = xk1d[xe+1];
 	ru = minvb[xe];
 	au = upperGuardVector(xe,jy,kz);
 	bu = lowerGuardVector(xe,jy,kz);
@@ -703,7 +703,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 ///	bu = -lowerGuardVector(xe,jy,kz)/upperGuardVector(xe,jy,kz);
 ///      }
       output<<"Coefficients: "<<BoutComm::rank()<<" "<<jy<<" "<<kz<<" "<<" "<<rl<<" "<<al<<" "<<bl<<" "<<ru<<" "<<au<<" "<<bu<<" "<<lowerUnstable<<" "<<upperUnstable<<endl;
-      output<<"xvec "<<BoutComm::rank()<<" "<<"initial"<<" "<<xloc[0]<<" "<<xloc[1]<<" "<<xloc[2]<<" "<<xloc[3]<<" "<<error_rel_lower<<" "<<error_rel_lower_last<<" "<<error_rel_lower_two_old<<" "<<error_abs_lower<<" "<<error_abs_lower_last<<" "<<error_abs_lower_two_old<<" "<<error_rel_upper<<" "<<error_rel_upper_last<<" "<<error_rel_upper_two_old<<" "<<error_abs_upper<<" "<<error_abs_upper_last<<" "<<error_abs_upper_two_old<<endl;
+      output<<"xvec "<<BoutComm::rank()<<" "<<"initial"<<" "<<xloclast[0]<<" "<<xloclast[1]<<" "<<xloclast[2]<<" "<<xloclast[3]<<" "<<error_rel_lower<<" "<<error_rel_lower_last<<" "<<error_rel_lower_two_old<<" "<<error_abs_lower<<" "<<error_abs_lower_last<<" "<<error_abs_lower_two_old<<" "<<error_rel_upper<<" "<<error_rel_upper_last<<" "<<error_rel_upper_two_old<<" "<<error_abs_upper<<" "<<error_abs_upper_last<<" "<<error_abs_upper_two_old<<endl;
 
 ///      SCOREP_USER_REGION_END(kzinit);
 ///      SCOREP_USER_REGION_DEFINE(whileloop);
