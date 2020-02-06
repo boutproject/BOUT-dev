@@ -164,6 +164,9 @@ void LaplaceParallelTri::get_initial_guess(const int jy, const int kz, Array<dco
 
 SCOREP0();
 
+  int ncx = localmesh->LocalNx;
+  int xs = localmesh->xstart;
+  int xe = localmesh->xend;
   Array<dcomplex> sendvec, recvec;
   sendvec = Array<dcomplex>(2);
   recvec = Array<dcomplex>(2);
@@ -208,6 +211,20 @@ SCOREP0();
 
     xk1d[localmesh->xend+1] = ( recvec[1] + recvec[0]*minvb[localmesh->xend] )/(1.0 - sendvec[0]*recvec[0]);
 
+  }
+
+  for(int i=xs; i<xe+1; i++){
+    xk1d[i] = minvb[i];
+  }
+  if(not localmesh->lastX()) {
+    for(int i=xs; i<xe+1; i++){
+      xk1d[i] += upperGuardVector(i,jy,kz)*xk1d[xe+1];
+    }
+  }
+  if(not localmesh->firstX()) {
+    for(int i=xs; i<xe+1; i++){
+      xk1d[i] += lowerGuardVector(i,jy,kz)*xk1d[xs-1];
+    }
   }
 }
 
