@@ -28,6 +28,23 @@
 #include "initialprofiles.hxx"
 #include "invert_laplace.hxx"
 
+// The discretisation used in the solver is subtly different from that
+// in Laplace_perp, which can introduce error with some grids
+Field3D this_Laplace_perp(const Field3D& f) {
+  auto coords = f.getCoordinates();
+
+  // dfdy not divided by dy yet
+  auto dfdy = bout::derivatives::index::DDY(f, CELL_DEFAULT, "DEFAULT", "RGN_NOY");
+
+  return coords->G1*DDX(f)
+         + (coords->G2 - DDY(coords->J/coords->g_22)/coords->J)*DDY(f)
+         + coords->G3*DDZ(f)
+         + coords->g11*D2DX2(f) + (coords->g22 - 1./coords->g_22)*D2DY2(f)
+         + coords->g33*D2DZ2(f)
+         + 2.*(coords->g12*DDX(dfdy)/coords->dy + coords->g13*D2DXDZ(f)
+               + coords->g23*D2DYDZ(f));
+}
+
 int main(int argc, char** argv) {
 
   BoutInitialise(argc, argv);
@@ -35,6 +52,7 @@ int main(int argc, char** argv) {
   ///////////////////////////////////////////////////////////////////////////////////////
   // Initialise input
   ///////////////////////////////////////////////////////////////////////////////////////
+
   Field3D f, rhs;
   mesh->get(rhs, "rhs");
 
@@ -117,13 +135,20 @@ int main(int argc, char** argv) {
   ///////////////////////////////////////////////////////////////////////////////////////
   // Calculate error
   ///////////////////////////////////////////////////////////////////////////////////////
-  Field3D rhs_check = D*Laplace_perp(f) + Grad_perp(C2)*Grad_perp(f)/C1 + A*f;
-  //auto& coords = *mesh->getCoordinates();
-  //auto& g11 = coords.g11;
-  //auto& g33 = coords.g33;
-  //Field3D rhs_check = D*Delp2(f, CELL_DEFAULT, false)
-  //                    + (g11*DDX(C2)*DDX(f) + g33*DDZ(C2)*DDZ(f))/C1
-  //                    + A*f;
+  auto& g_22 = mesh->getCoordinates()->g_22;
+  Field3D rhs_check = D*this_Laplace_perp(f)
+                    + (Grad(f)*Grad(C2)-DDY(C2)*DDY(f)/g_22)/C1 + A*f;
+  // The usual way to do this would be
+  //
+  //     Field3D rhs_check = D*Laplace_perp(f) +
+  //                         Grad_perp(C2)*Grad_perp(f)/C1 +
+  //                         A*f;
+  //
+  // However, while this operation is mathematically identical to the
+  // one above and implemented in the solver, it is not numerically
+  // identical. Some grid geometries can give rise to non-negligible
+  // differences (~1e-4) between the two.
+  //
   Field3D error = rhs_check - rhs;
   BoutReal error_max = max(abs(error), true);
 
