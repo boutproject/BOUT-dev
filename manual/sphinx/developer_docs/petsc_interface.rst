@@ -13,7 +13,7 @@ particularly the case when making use of the ``Mat`` and ``Vec`` data-types
 for linear solvers (such as the Laplacian inversions). Doing so
 requires the developer to:
 
-1. Flatten a `Field` into 1-D PETSc ``Vec`` objects.
+1. Flatten a `Field` into a 1-D PETSc ``Vec`` object.
    
    - Must decide which guard cells to include in ``Vec``
    - Must convert between  BOUT++ indices (local) and  indices used in
@@ -44,19 +44,19 @@ Overall Structure
    A UML diagram showing the design of the PETSc interface and the
    relationships between different components.
 
-An `OperatorStencil` is used to describe the interdependencies
-between cells in the grid, based on the finite difference operator
-being inverted. This is used when constructing a `GlobalIndexer` to
-work out which cells should be included in a ``Vec`` object. If
-needed, it will also be used to work out the sparsity pattern of a
-matrix. `PetscVector` and `PetscMatrix` objects are constructed from a
-`GlobalIndexer` and wrap the PETSc ``Vec`` and ``Mat`` objects,
-respectively. They provide routines for accessing individual elements
-of the vector/matrix using ``PetscVector::Element`` and
-``PetscMatrix::Element`` objects. All of these classes are
-templates. `OperatorStencil` works for `SpecificInd` types (``Ind3D``,
-``Ind2D``, ``IndPerp``), while the remaining classes work for the various
-``Field`` types.
+Based on the finite difference operator being inverted, a user
+constructs an `OperatorStencil` object which is used to describe the
+interdependencies between cells in the grid. This is used when
+constructing a `GlobalIndexer` to work out which cells should be
+included in a ``Vec`` object. If needed, it will also be used to work
+out the sparsity pattern of a matrix. `PetscVector` and `PetscMatrix`
+objects are constructed from a `GlobalIndexer` and wrap the PETSc
+``Vec`` and ``Mat`` objects, respectively. They provide routines for
+accessing individual elements of the vector/matrix using
+``PetscVector::Element`` and ``PetscMatrix::Element`` objects. All of
+these classes are templates. `OperatorStencil` works for `SpecificInd`
+types (``Ind3D``, ``Ind2D``, ``IndPerp``), while the remaining classes
+work for the various ``Field`` types.
 
 
 .. _sec-operator-stencil:
@@ -83,7 +83,7 @@ Vectors of ``IndexOffset`` objects are coupled with tests which take a
 indicating whether the offsets describe the finite difference stencil
 at that location. The ``OperatorStencil`` class contains a vector of
 these pairs. When the stencil is requested for a given index, the
-vector gets traversed in order, with offset returned from the first
+vector gets traversed in order, with offsets returned from the first
 passing test. Pairs of tests and offsets are placed in the
 ``OperatorStencil`` object using the ``add()`` method. It will
 generally not be necessary for you to use any of the other methods on
@@ -108,7 +108,7 @@ created using the following code.
                   ye = localmesh->yend](Ind2D ind) -> bool {
 		    return ind.x() >= xs && ind.x() <= xe &&
 		           ind.y() >= ys && ind.y() <= ye;},
-		 {zero, zero.xp(), zero.xm(), zero.yp(), zero.zm()});
+		 {zero, zero.xp(), zero.xm(), zero.yp(), zero.ym()});
 
      // Add first-order differences for Neumann boundaries
      // Inner X
@@ -128,15 +128,15 @@ created using the following code.
 ``GlobalIndexer``
 -----------------
 
-Using an `OperatorStencil`, the `GlobalIndexer` constructor can now
+Using an `OperatorStencil`, the `GlobalIndexer` constructor can
 determine which cells should be included in the PETSc ``Vec`` object
 representing a `Field`. All interior cells are always
-included. Guard cells which are required by the stencil to compute the
-operation on internal cells are also included. A globally-unique index
-is assigned to each cell which is meant to be included and the
+included. Boundary cells which are required by the stencil to compute
+the operation on internal cells are also included. A globally-unique
+index is assigned to each cell which is meant to be included and the
 communication routines on the `Mesh` type are used to determine the
-indices in guard cells. There will be a unique `GlobalIndexer` object
-for each `Mesh` and `OperatorStencil` pair. You will pass a
+indices in guard cells. There must be a unique `GlobalIndexer` object
+for each `Mesh` and `OperatorStencil` pair. You will need to pass a
 ``std::shared_ptr<GlobalIndexer>`` object (with type-alias
 ``IndexerPtr``) when constructing ``PetscVector`` and ``PetscMatrix``
 objects. As the process of creating a ``GlobalIndexer`` is quite
@@ -154,16 +154,16 @@ two of which are optional:
 - A boolean specifying whether communication of indices in guard cells
   will be performed in the constructor; defaults to ``true``,
   otherwise will need to call the ``initialise()`` method prior to use
+  (you would generally only do that if creating a fake indexer for
+  testing purposes)
 
-An example of creating a ``GlobalIndexer`` with the
-``OperatorStencil`` created in the previous example is given below.
-
-::
+Continuing on from the previous example, the code below shows how to
+create a ``GlobalIndexer``.  ::
    
     IndexerPtr<Field2D> indexer =
         std::make_shared<GlobalIndexer<Field2D>>(localmesh, stencil);
 
-The ``GlobalIndexer`` class provides ``Region<>`` objects which can be
+The `GlobalIndexer` class provides ``Region<>`` objects which can be
 used for iterating over the cells which are included in PETSc ``Vec``
 objects (see :ref:`sec-iterating`). This is useful for setting vector
 and matrix elements. The relevant methods are:
@@ -190,16 +190,17 @@ be used for communication between processors.
 ``PetscVector``
 ---------------
 
-This class wraps PETSc ``Vec`` objects. The constructors/destructors
-ensure memory will be allocated/freed as necessary. To create a new
-vector, pass a `Field` and ``IndexerPtr`` to the constructor. This
-will create a ``Vec`` object which is split between processors. The
-``IndexerPtr`` will be used to convert between the local BOUT++
-coordinate system and the global PETSc indices used to access elements
-of the ``Vec`` object. The values in the ``Field`` will be copied into
-the ``Vec``. The user can set individual elements using local BOUT++
+This class wraps PETSc ``Vec`` objects, split across multiple
+processors. The constructors/destructors ensure memory will be
+allocated/freed as necessary. To create a new vector, pass a `Field`
+and ``IndexerPtr`` to the constructor. This will create a ``Vec``
+object which is split between processors. The ``IndexerPtr`` will be
+used to convert between the local BOUT++ coordinate system and the
+global PETSc indices used to access elements of the ``Vec``
+object. The values in the ``Field`` will be copied into the
+``Vec``. The user can set individual elements using local BOUT++
 indices and the parentheses operator ``()``. Once this is done, call
-the ``assemble()`` method. This can be done using either assignment
+the ``assemble()`` method. Elements can be set using either assignment
 (``=``) or in-place addition (``+=``). However, as in PETSc itself,
 these operations can not be mixed, unless there is call to
 ``assemble()`` in between. A `PetscVector` can be converted back to a
@@ -221,7 +222,8 @@ for a linear solver.
 
 If you plan to do any development of the PETSc interface (or simply
 wish to understand how it works), see the UML sequence diagram in
-:numref:`fig-petsc-vector`.
+:numref:`fig-petsc-vector` for a description of how vector elements
+are set.
 
 .. _fig-petsc-vector:
 .. figure:: ../figs/petsc_vector_set.png
@@ -245,10 +247,11 @@ storage method. It is split across multiple processors. The
 unlike for a `PetscVector` it would not make sense to copy data from a
 `Field` into a `PetscMatrix` object in the constructor. If the
 `GlobalIndexer` has this data available, the sparsity pattern of the
-``Mat`` object will be set. This allows memory to be pre-allocated for
-it by PETSc, which dramatically improved performance.
+``Mat`` object will be passed to PETSc. This allows memory to be
+pre-allocated for it by PETSc, which dramatically improved
+performance.
 
-As with `PetscVector` objectss, individual elements of a `PetscMatrix`
+As with `PetscVector` objects, individual elements of a `PetscMatrix`
 can be accessed using BOUT++ indices and the parentheses operator,
 except that now two indices are required (corresponding to the row and
 column of the matrix). These elements can be set using either
@@ -267,7 +270,7 @@ return a shallow-copy of the matrix object, with a flag indicating it
 is offset up or downwards in the y-direction. When using the
 parentheses operator to get a particular matrix element, the mesh's
 `ParallelTransform` object will be queried to find the positions and
-weights needed to interpolate values along field lines. This
+weights needed to interpolate values onto field lines. This
 information is stored in the ``PetscMatrix::Element`` object which is
 returned. When that object is assigned to, it will set multiple matrix
 elements in the specified row, corresponding to each cell used to
@@ -326,12 +329,11 @@ At present, only the ``Mat`` and ``Vec`` objects in PETSc have been
 wrapped. This is because they are by far the most difficult components
 to use and benefit the most from providing this interface. While in
 future a C++ interface may be provided to other components of PETSc,
-but for the time being it is not too difficult to use the raw C
-API. This can be done by getting a pointer to the raw ``Mat`` and
-``Vec`` objects using the ``PetscMatrix::get()`` and
-``PetscVector::get()`` methods. For example, to set up and use a
-linear solver for the problem in previous sections could be done as
-below:
+for the time being it is not too difficult to use the raw C API. This
+can be done by getting a pointer to the raw ``Mat`` and ``Vec``
+objects using the ``PetscMatrix::get()`` and ``PetscVector::get()``
+methods. For example, to set up and use a linear solver for the
+problem in previous sections could be done as below:
 
 ::
    
@@ -341,7 +343,7 @@ below:
     KSPSetType(solver, "richardson")
     KSPRichardsonSetScale(solver, 1.0)
     KSPSetTolerances(solver, 1e-8, 1e-8, 1e6, 100000);
-    KSPSetinitialGuessNonzero(solver, static_cast<PetscBool>(true));
+    KSPSetInitialGuessNonzero(solver, PETSC_TRUE);
 
     // Set up an algebraic multigrid preconditioner
     PC precond;
@@ -356,7 +358,7 @@ below:
     KSPConvergedReason reason;
     KSPGetConvergedReason(solver, &reason);
     if (reason <= 0) {
-      throw BoutException("PETSc solver failed to converge"):
+      throw BoutException("PETSc solver failed"):
     }
 
     Field2D solution = guess.toField();
