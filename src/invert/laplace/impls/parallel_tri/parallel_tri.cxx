@@ -668,40 +668,32 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       get_initial_guess(jy,kz,minvb,lowerGuardVector,upperGuardVector,xk1d);
 
       // Original method:
-///      if(not lowerUnstable) {
-	// do not initialize xloc[0] = xk1d[xs-1];
-	// xloc[1] = xk1d[xs];
+      if(not lowerUnstable) {
 	xloclast[0] = xk1d[xs-1];
 	xloclast[1] = xk1d[xs];
 	rl = minvb[xs];
 	al = upperGuardVector(xs,jy,kz);
 	bl = lowerGuardVector(xs,jy,kz);
-///      } else {
-///	xloc[0] = xk1d[xs];
-///	xloc[1] = xk1d[xs-1];
-///	xloclast[0] = xk1dlast[xs];
-///	xloclast[1] = xk1dlast[xs-1];
-///	rl = -minvb[xs]/lowerGuardVector(xs,jy,kz);
-///	al = -upperGuardVector(xs,jy,kz)/lowerGuardVector(xs,jy,kz);
-///	bl = 1.0/lowerGuardVector(xs,jy,kz);
-///      }
-///      if(not upperUnstable) {
-	// do not initialize xloc[2] = xk1d[xe];
-	//xloc[3] = xk1d[xe+1];
+      } else {
+	xloclast[0] = xk1d[xs];
+	xloclast[1] = xk1d[xs-1];
+	rl = -minvb[xs]/lowerGuardVector(xs,jy,kz);
+	al = -upperGuardVector(xs,jy,kz)/lowerGuardVector(xs,jy,kz);
+	bl = 1.0/lowerGuardVector(xs,jy,kz);
+      }
+      if(not upperUnstable) {
 	xloclast[2] = xk1d[xe];
 	xloclast[3] = xk1d[xe+1];
 	ru = minvb[xe];
 	au = upperGuardVector(xe,jy,kz);
 	bu = lowerGuardVector(xe,jy,kz);
-///      } else {
-///	xloc[2] = xk1d[xe+1];
-///	xloc[3] = xk1d[xe];
-///	xloclast[2] = xk1dlast[xe+1];
-///	xloclast[3] = xk1dlast[xe];
-///	ru = -minvb[xe]/upperGuardVector(xe,jy,kz);
-///	au = 1.0/upperGuardVector(xe,jy,kz);
-///	bu = -lowerGuardVector(xe,jy,kz)/upperGuardVector(xe,jy,kz);
-///      }
+      } else {
+	xloclast[2] = xk1d[xe+1];
+	xloclast[3] = xk1d[xe];
+	ru = -minvb[xe]/upperGuardVector(xe,jy,kz);
+	au = 1.0/upperGuardVector(xe,jy,kz);
+	bu = -lowerGuardVector(xe,jy,kz)/upperGuardVector(xe,jy,kz);
+      }
       output<<"Coefficients: "<<BoutComm::rank()<<" "<<jy<<" "<<kz<<" "<<" "<<rl<<" "<<al<<" "<<bl<<" "<<ru<<" "<<au<<" "<<bu<<" "<<lowerUnstable<<" "<<upperUnstable<<endl;
       output<<"xvec "<<BoutComm::rank()<<" "<<"initial"<<" "<<xloclast[0]<<" "<<xloclast[1]<<" "<<xloclast[2]<<" "<<xloclast[3]<<" "<<error_rel_lower<<" "<<error_rel_lower_last<<" "<<error_rel_lower_two_old<<" "<<error_abs_lower<<" "<<error_abs_lower_last<<" "<<error_abs_lower_two_old<<" "<<error_rel_upper<<" "<<error_rel_upper_last<<" "<<error_rel_upper_two_old<<" "<<error_abs_upper<<" "<<error_abs_upper_last<<" "<<error_abs_upper_two_old<<endl;
 
@@ -731,8 +723,8 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	  xloc[2] += bu*xloclast[0+lower_offset];
 	}
 
-	xloc[1] = (1.0-omega)*xloc[1] + omega*xloclast[1];
-	xloc[2] = (1.0-omega)*xloc[2] + omega*xloclast[2];
+	xloc[1] = (1.0-om)*xloc[1] + om*xloclast[1];
+	xloc[2] = (1.0-om)*xloc[2] + om*xloclast[2];
 
 ///	SCOREP_USER_REGION_END(iteration);
 
@@ -1038,28 +1030,28 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
     //Bvals(0,jy,kz) = B;
 
     // Original method:
-///    if(not lowerUnstable) {
+    if(not lowerUnstable) {
       xk1d[xs-1] = xloc[0];
       xk1d[xs]   = xloc[1];
       xk1dlast[xs-1] = xloclast[0];
       xk1dlast[xs]   = xloclast[1];
-///    } else {
-///      xk1d[xs-1] = xloc[1];
-///      xk1d[xs]   = xloc[0];
-///      xk1dlast[xs-1] = xloclast[1];
-///      xk1dlast[xs]   = xloclast[0];
-///    }
-///    if(not upperUnstable) {
+    } else {
+      xk1d[xs-1] = xloc[1];
+      xk1d[xs]   = xloc[0];
+      xk1dlast[xs-1] = xloclast[1];
+      xk1dlast[xs]   = xloclast[0];
+    }
+    if(not upperUnstable) {
       xk1d[xe]   = xloc[2];
       xk1d[xe+1] = xloc[3];
       xk1dlast[xe]   = xloclast[2];
       xk1dlast[xe+1] = xloclast[3];
-///    } else {
-///      xk1d[xe]   = xloc[3];
-///      xk1d[xe+1] = xloc[2];
-///      xk1dlast[xe]   = xloclast[3];
-///      xk1dlast[xe+1] = xloclast[2];
-///    }
+    } else {
+      xk1d[xe]   = xloc[3];
+      xk1d[xe+1] = xloc[2];
+      xk1dlast[xe]   = xloclast[3];
+      xk1dlast[xe+1] = xloclast[2];
+    }
 
     // Now that halo cells are converged, use these to calculate whole solution
     for(int i=0; i<ncx; i++){
