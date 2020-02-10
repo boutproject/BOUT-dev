@@ -40,13 +40,12 @@ for directory,nproc in test_directories:
 
         # parallel diffusion
         launch_safe('./create-initial-profiles parallel=true nout=1 timestep=10 -d '
-                    + directory, runcmd="mpirun --oversubscribe -np",
-                    nproc=nproc, output=directory+'/parallel.log 2>&1')
+                    + directory, nproc=nproc, output=directory+'/parallel.log 2>&1')
 
         # perpendicular diffusion
         launch_safe('./create-initial-profiles perpendicular=true nout=1 timestep=1.e-5 -d '
-                    + directory + ' restart append', runcmd="mpirun --oversubscribe -np",
-                    nproc=nproc, output=directory+'/perpendicular.log 2>&1')
+                    + directory + ' restart append', nproc=nproc,
+                    output=directory+'/perpendicular.log 2>&1')
 
         if gridshape[1] == ny:
             yguards = False
@@ -86,8 +85,8 @@ for directory,nproc in test_directories:
 
     # run test
     try:
-        launch_safe('test-laplace3d -d ' + directory, runcmd="mpirun --oversubscribe -np",
-                    nproc=nproc, output=directory+'/output.log 2>&1')
+        launch_safe('test-laplace3d -d ' + directory, nproc=nproc,
+                    output=directory+'/output.log 2>&1')
     except RuntimeError:
         print(directory + ' run crashed')
         success = False
