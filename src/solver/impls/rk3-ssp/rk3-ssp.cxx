@@ -38,12 +38,13 @@ int RK3SSP::init(int nout, BoutReal tstep) {
   
   // Get total problem size
   int ntmp;
-  if(MPI_Allreduce(&nlocal, &ntmp, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
+  if (bout::globals::mpi->MPI_Allreduce(&nlocal, &ntmp, 1, MPI_INT, MPI_SUM,
+                                        BoutComm::get())) {
     throw BoutException("MPI_Allreduce failed!");
   }
   neq = ntmp;
   
-  output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n",
+  output.write("\t3d fields = {:d}, 2d fields = {:d} neq={:d}, local_N={:d}\n",
 	       n3Dvars(), n2Dvars(), neq, nlocal);
   
   // Allocate memory
@@ -83,7 +84,7 @@ int RK3SSP::run() {
         dt = target - simtime; // Make sure the last timestep is on the output 
         running = false;
       }
-      output.write("t = %e, dt = %e\n", simtime, dt);
+      output.write("t = {:e}, dt = {:e}\n", simtime, dt);
       // No adaptive timestepping for now
       take_step(simtime, dt, f, f);
       

@@ -38,15 +38,34 @@ class RKScheme;
 #include <bout_types.hxx>
 #include <options.hxx>
 #include <utils.hxx>
+#include "bout/generic_factory.hxx"
 
 #include <iomanip>
 #include <string>
 
-#define RKSchemeType const char*
-#define RKSCHEME_RKF45       "rkf45"
-#define RKSCHEME_CASHKARP    "cashkarp"
-#define RKSCHEME_RK4         "rk4"
-#define RKSCHEME_RKF34       "rkf34"
+constexpr auto RKSCHEME_RKF45 = "rkf45";
+constexpr auto RKSCHEME_CASHKARP = "cashkarp";
+constexpr auto RKSCHEME_RK4 = "rk4";
+constexpr auto RKSCHEME_RKF34 = "rkf34";
+
+class RKSchemeFactory : public Factory<RKScheme, RKSchemeFactory> {
+public:
+  static constexpr auto type_name = "RKScheme";
+  static constexpr auto section_name = "solver";
+  static constexpr auto option_name = "scheme";
+  static constexpr auto default_type = RKSCHEME_RKF45;
+};
+
+/// Simpler name for Factory registration helper class
+///
+/// Usage:
+///
+///     #include <bout/rkschemefactory.hxx>
+///     namespace {
+///     RegisterRKScheme<MyRKScheme> registerrkschememine("myrkscheme");
+///     }
+template <typename DerivedType>
+using RegisterRKScheme = RegisterInFactory<RKScheme, DerivedType, RKSchemeFactory>;
 
 class RKScheme {
  public:

@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe
+from boututils.run_wrapper import build_and_log, shell, launch_safe
 from boutdata.collect import collect
 from netCDF4 import Dataset
 import numpy
 import os.path
 from sys import stdout, exit
 
-print("Making griddata test")
-shell_safe("make > make.log")
+build_and_log("griddata test")
 
 nx = 4
 ny = 24

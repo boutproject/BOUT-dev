@@ -4,7 +4,6 @@
 #include "gtest/gtest.h"
 
 #include "bout/solver.hxx"
-#include "bout/solverfactory.hxx"
 
 #include <algorithm>
 #include <string>

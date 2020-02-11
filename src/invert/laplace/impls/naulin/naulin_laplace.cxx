@@ -182,10 +182,6 @@ LaplaceNaulin::LaplaceNaulin(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
   ++naulinsolver_count;
 }
 
-LaplaceNaulin::~LaplaceNaulin() {
-  delete delp2solver;
-}
-
 Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
   // Rearrange equation so first term is just Delp2(x):
   //   D*Delp2(x) + 1/C1*Grad_perp(C2).Grad_perp(phi) = rhs
@@ -289,7 +285,8 @@ Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
 
     ++count;
     if (count>maxits) {
-      throw BoutException("LaplaceNaulin error: Not converged within maxits=%i iterations.", maxits);
+      throw BoutException(
+          "LaplaceNaulin error: Not converged within maxits={:d} iterations.", maxits);
     }
 
     while (error_abs > last_error) {
@@ -310,7 +307,8 @@ Field3D LaplaceNaulin::solve(const Field3D& rhs, const Field3D& x0) {
       // effectively another iteration, so increment the counter
       ++count;
       if (count>maxits) {
-        throw BoutException("LaplaceNaulin error: Not converged within maxits=%i iterations.", maxits);
+        throw BoutException(
+            "LaplaceNaulin error: Not converged within maxits={:d} iterations.", maxits);
       }
     }
 

@@ -53,7 +53,7 @@ private:
   BRACKET_METHOD bm = BRACKET_ARAKAWA;
 
   /// Solver for inverting Laplacian
-  Laplacian *phiSolver;
+  std::unique_ptr<Laplacian> phiSolver{nullptr};
   
   int init(bool restarting) override {
 

@@ -7,3 +7,6 @@
 [submodule "mpark.variant"]
 	path = externalpackages/mpark.variant
 	url = https://github.com/mpark/variant.git
+[submodule "externalpackages/fmt"]
+	path = externalpackages/fmt
+	url = https://github.com/fmtlib/fmt.git

@@ -80,13 +80,13 @@ private:
   Coordinates* coord;
 
   // Inverts a Laplacian to get potential
-  Laplacian* phiSolver;
+  std::unique_ptr<Laplacian> phiSolver{nullptr};
 
   int init(bool UNUSED(restarting)) override {
 
     output.write("Solving JOREK-like reduced MHD equations\n");
-    output.write("\tFile    : %s\n", __FILE__);
-    output.write("\tCompiled: %s at %s\n", __DATE__, __TIME__);
+    output.write("\tFile    : {:s}\n", __FILE__);
+    output.write("\tCompiled: {:s} at {:s}\n", __DATE__, __TIME__);
 
     auto globalOptions = Options::root();
     auto options = globalOptions["jorek"];
@@ -116,7 +116,7 @@ private:
 
       Field2D factor = P0 / (Charge * (Ti0 + Te0) * rho0);
 
-      output.write("\tPressure factor %e -> %e\n", min(factor, true), max(factor, true));
+      output.write("\tPressure factor {:e} -> {:e}\n", min(factor, true), max(factor, true));
 
       // Multiply temperatures by this factor
       Te0 *= factor;
@@ -329,7 +329,7 @@ private:
     eta = eta0;
     tau_e = tau_enorm * pow(Te0, 1.5) / rho0;
 
-    output.write("\tNormalised tau_e = %e -> %e\n", min(tau_e, true), max(tau_e, true));
+    output.write("\tNormalised tau_e = {:e} -> {:e}\n", min(tau_e, true), max(tau_e, true));
 
     // Set locations for staggered grids
     vD.setLocation(CELL_VSHIFT);
@@ -391,7 +391,7 @@ private:
   }
 
   int rhs(BoutReal t) override {
-    TRACE("Started physics_run(%e)", t);
+    TRACE("Started physics_run({:e})", t);
 
     // Invert laplacian for phi
     if (vorticity_momentum) {

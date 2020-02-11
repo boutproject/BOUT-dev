@@ -235,8 +235,8 @@ const BoutReal eV_K = 11605.0;   // 1eV = 11605K
 FieldGroup comms;
 
 /// Solver for inverting Laplacian
-Laplacian* phiSolver;
-Laplacian* aparSolver;
+std::unique_ptr<Laplacian> phiSolver{nullptr};
+std::unique_ptr<Laplacian> aparSolver{nullptr};
 
 void advect_tracer(const Field3D& p, // phi (input)
                    const Field3D& delta_x,
@@ -290,7 +290,7 @@ const Field2D N0tanh(BoutReal n0_height, BoutReal n0_ave, BoutReal n0_width,
   mesh->get(Grid_NX, "nx");
   mesh->get(Jysep, "jyseps1_1");
   Grid_NXlimit = n0_bottom_x * Grid_NX;
-  output.write("Jysep1_1 = %i   Grid number = %e\n", int(Jysep), Grid_NX);
+  output.write("Jysep1_1 = {:d}   Grid number = {:e}\n", int(Jysep), Grid_NX);
 
   if (Jysep > 0.) { // for single null geometry
 
@@ -301,10 +301,10 @@ const Field2D N0tanh(BoutReal n0_height, BoutReal n0_ave, BoutReal n0_width,
     for (int jx = 0; jx < mesh->LocalNx; jx++) {
       BoutReal mgx = mesh->GlobalX(jx);
       BoutReal xgrid_num = (Jxsep + 1.) / Grid_NX;
-      // output.write("mgx = %e xgrid_num = %e\n", mgx);
+      // output.write("mgx = {:e} xgrid_num = {:e}\n", mgx);
       for (int jy = 0; jy < mesh->LocalNy; jy++) {
         int globaly = mesh->getGlobalYIndex(jy);
-        // output.write("local y = %i;   global y: %i\n", jy, globaly);
+        // output.write("local y = {:d};   global y: {:d}\n", jy, globaly);
         if (mgx > xgrid_num || (globaly <= int(Jysep) - 2) || (globaly > int(Jysep2) + 2))
           mgx = xgrid_num;
         BoutReal rlx = mgx - n0_center;
@@ -339,8 +339,8 @@ int physics_init(bool restarting) {
   Coordinates* coord = mesh->getCoordinates();
 
   output.write("Solving high-beta flute reduced equations\n");
-  output.write("\tFile    : %s\n", __FILE__);
-  output.write("\tCompiled: %s at %s\n", __DATE__, __TIME__);
+  output.write("\tFile    : {:s}\n", __FILE__);
+  output.write("\tCompiled: {:s} at {:s}\n", __DATE__, __TIME__);
 
   //////////////////////////////////////////////////////////////
   // Load data from the grid
@@ -664,31 +664,31 @@ int physics_init(bool restarting) {
 
   Tbar = Lbar / Va;
 
-  output.write("Normalisations: Bbar = %e T   Lbar = %e m\n", Bbar, Lbar);
-  output.write("                Va = %e m/s   Tbar = %e s\n", Va, Tbar);
-  output.write("                Nbar = %e * %e m^-3\n", Nbar, density);
-  output.write("Tibar = %e eV   Tebar = %e eV    Ti/Te = %e\n", Tibar, Tebar, Tau_ie);
+  output.write("Normalisations: Bbar = {:e} T   Lbar = {:e} m\n", Bbar, Lbar);
+  output.write("                Va = {:e} m/s   Tbar = {:e} s\n", Va, Tbar);
+  output.write("                Nbar = {:e} * {:e} m^-3\n", Nbar, density);
+  output.write("Tibar = {:e} eV   Tebar = {:e} eV    Ti/Te = {:e}\n", Tibar, Tebar, Tau_ie);
   output.write("    Resistivity\n");
 
   Upara0 = KB * Tebar * eV_K / (Zi * ee * Bbar * Va * Lbar);
   Upara1 = KB * Tebar * eV_K / Mi / Va / Va;
-  output.write("vorticity cinstant: Upara0 = %e     Upara1 = %e\n", Upara0, Upara1);
+  output.write("vorticity cinstant: Upara0 = {:e}     Upara1 = {:e}\n", Upara0, Upara1);
 
   if (diamag) {
     Nipara1 = KB * Tibar * eV_K / (Zi * ee * Bbar * Lbar * Va);
     Tipara2 = Nipara1;
     Tepara2 = KB * Tebar * eV_K / (ee * Bbar * Lbar * Va);
     Tepara3 = Bbar / (ee * MU0 * Nbar * density * Lbar * Va);
-    output.write("Nipara1 = %e     Tipara2 = %e\n", Nipara1, Tipara2);
-    output.write("Tepara2 = %e     Tepara3 = %e\n", Tepara2, Tepara3);
+    output.write("Nipara1 = {:e}     Tipara2 = {:e}\n", Nipara1, Tipara2);
+    output.write("Tepara2 = {:e}     Tepara3 = {:e}\n", Tepara2, Tepara3);
   }
 
   if (compress0) {
     output.write("Including compression (Vipar) effects\n");
     Vipara = MU0 * KB * Nbar * density * Tebar * eV_K / (Bbar * Bbar);
     Vepara = Bbar / (MU0 * Zi * ee * Nbar * density * Lbar * Va);
-    output.write("Normalized constant for Vipar :   Vipara = %e\n", Vipara);
-    output.write("Normalized constant for Vepar :   Vepara = %e\n", Vepara);
+    output.write("Normalized constant for Vipar :   Vipara = {:e}\n", Vipara);
+    output.write("Normalized constant for Vepar :   Vepara = {:e}\n", Vepara);
   }
 
   if (diffusion_par > 0.0) {
@@ -697,7 +697,7 @@ int physics_init(bool restarting) {
   }
 
   if (vac_lund > 0.0) {
-    output.write("        Vacuum  Tau_R = %e s   eta = %e Ohm m\n", vac_lund * Tbar,
+    output.write("        Vacuum  Tau_R = {:e} s   eta = {:e} Ohm m\n", vac_lund * Tbar,
                  MU0 * Lbar * Lbar / (vac_lund * Tbar));
     vac_resist = 1. / vac_lund;
   } else {
@@ -705,7 +705,7 @@ int physics_init(bool restarting) {
     vac_resist = 0.0;
   }
   if (core_lund > 0.0) {
-    output.write("        Core    Tau_R = %e s   eta = %e Ohm m\n", core_lund * Tbar,
+    output.write("        Core    Tau_R = {:e} s   eta = {:e} Ohm m\n", core_lund * Tbar,
                  MU0 * Lbar * Lbar / (core_lund * Tbar));
     core_resist = 1. / core_lund;
   } else {
@@ -714,63 +714,63 @@ int physics_init(bool restarting) {
   }
 
   if (hyperresist > 0.0) {
-    output.write("    Hyper-resistivity coefficient: %e\n", hyperresist);
+    output.write("    Hyper-resistivity coefficient: {:e}\n", hyperresist);
     dump.add(hyper_eta_x, "hyper_eta_x", 1);
     dump.add(hyper_eta_z, "hyper_eta_z", 1);
   }
 
   if (ehyperviscos > 0.0) {
-    output.write("    electron Hyper-viscosity coefficient: %e\n", ehyperviscos);
+    output.write("    electron Hyper-viscosity coefficient: {:e}\n", ehyperviscos);
   }
 
   if (hyperviscos > 0.0) {
-    output.write("    Hyper-viscosity coefficient: %e\n", hyperviscos);
+    output.write("    Hyper-viscosity coefficient: {:e}\n", hyperviscos);
     dump.add(hyper_mu_x, "hyper_mu_x", 1);
   }
 
   if (diffusion_par > 0.0) {
-    output.write("    diffusion_par: %e\n", diffusion_par);
+    output.write("    diffusion_par: {:e}\n", diffusion_par);
     dump.add(diffusion_par, "diffusion_par", 0);
   }
 
   // M: 4th order diffusion of p
   if (diffusion_n4 > 0.0) {
-    output.write("    diffusion_n4: %e\n", diffusion_n4);
+    output.write("    diffusion_n4: {:e}\n", diffusion_n4);
     dump.add(diffusion_n4, "diffusion_n4", 0);
   }
 
   // M: 4th order diffusion of Ti
   if (diffusion_ti4 > 0.0) {
-    output.write("    diffusion_ti4: %e\n", diffusion_ti4);
+    output.write("    diffusion_ti4: {:e}\n", diffusion_ti4);
     dump.add(diffusion_ti4, "diffusion_ti4", 0);
   }
 
   // M: 4th order diffusion of Te
   if (diffusion_te4 > 0.0) {
-    output.write("    diffusion_te4: %e\n", diffusion_te4);
+    output.write("    diffusion_te4: {:e}\n", diffusion_te4);
     dump.add(diffusion_te4, "diffusion_te4", 0);
   }
 
   // M: 4th order diffusion of Vipar
   if (diffusion_v4 > 0.0) {
-    output.write("    diffusion_v4: %e\n", diffusion_v4);
+    output.write("    diffusion_v4: {:e}\n", diffusion_v4);
     dump.add(diffusion_v4, "diffusion_v4", 0);
   }
 
   // xqx: parallel hyper-viscous diffusion for vorticity
   if (diffusion_u4 > 0.0) {
-    output.write("    diffusion_u4: %e\n", diffusion_u4);
+    output.write("    diffusion_u4: {:e}\n", diffusion_u4);
     dump.add(diffusion_u4, "diffusion_u4", 0);
   }
 
   if (sink_vp > 0.0) {
-    output.write("    sink_vp(rate): %e\n", sink_vp);
+    output.write("    sink_vp(rate): {:e}\n", sink_vp);
     dump.add(sink_vp, "sink_vp", 1);
 
-    output.write("    sp_width(%%): %e\n", sp_width);
+    output.write("    sp_width(%%): {:e}\n", sp_width);
     dump.add(sp_width, "sp_width", 1);
 
-    output.write("    sp_length(%%): %e\n", sp_length);
+    output.write("    sp_length(%%): {:e}\n", sp_length);
     dump.add(sp_length, "sp_length", 1);
   }
 
@@ -878,48 +878,48 @@ int physics_init(bool restarting) {
         }
       }
     }
-    output.write("\tlocal max q: %e\n", max(q95));
-    output.write("\tlocal min q: %e\n", min(q95));
+    output.write("\tlocal max q: {:e}\n", max(q95));
+    output.write("\tlocal min q: {:e}\n", min(q95));
   }
 
   LnLambda =
       24.0
       - log(pow(Zi * Nbar * density / 1.e6, 0.5) * pow(Tebar, -1.0)); // xia: ln Lambda
-  output.write("\tlog Lambda: %e\n", LnLambda);
+  output.write("\tlog Lambda: {:e}\n", LnLambda);
 
   nu_e = 2.91e-6 * LnLambda * ((N0)*Nbar * density / 1.e6)
          * pow(Te0 * Tebar, -1.5); // nu_e in 1/S.
-  output.write("\telectron collision rate: %e -> %e [1/s]\n", min(nu_e), max(nu_e));
+  output.write("\telectron collision rate: {:e} -> {:e} [1/s]\n", min(nu_e), max(nu_e));
   // nu_e.applyBoundary();
   // mesh->communicate(nu_e);
 
   if (diffusion_par > 0.0) {
 
-    output.write("\tion thermal noramlized constant: Tipara1 = %e\n", Tipara1);
-    output.write("\telectron normalized thermal constant: Tepara1 = %e\n", Tepara1);
+    output.write("\tion thermal noramlized constant: Tipara1 = {:e}\n", Tipara1);
+    output.write("\telectron normalized thermal constant: Tepara1 = {:e}\n", Tepara1);
     // xqx addition, begin
     // Use Spitzer thermal conductivities
     nu_i = 4.80e-8 * (Zi * Zi * Zi * Zi / sqrt(AA)) * LnLambda
            * ((N0)*Nbar * density / 1.e6) * pow(Ti0 * Tibar, -1.5); // nu_i in 1/S.
-    // output.write("\tCoulomb Logarithm: %e \n", max(LnLambda));
-    output.write("\tion collision rate: %e -> %e [1/s]\n", min(nu_i), max(nu_i));
+    // output.write("\tCoulomb Logarithm: {:e} \n", max(LnLambda));
+    output.write("\tion collision rate: {:e} -> {:e} [1/s]\n", min(nu_i), max(nu_i));
 
     // nu_i.applyBoundary();
     // mesh->communicate(nu_i);
 
     vth_i = 9.79e3 * sqrt((Ti0)*Tibar / AA); // vth_i in m/S.
-    output.write("\tion thermal velocity: %e -> %e [m/s]\n", min(vth_i), max(vth_i));
+    output.write("\tion thermal velocity: {:e} -> {:e} [m/s]\n", min(vth_i), max(vth_i));
     // vth_i.applyBoundary();
     // mesh->communicate(vth_i);
     vth_e = 4.19e5 * sqrt((Te0)*Tebar); // vth_e in m/S.
-    output.write("\telectron thermal velocity: %e -> %e [m/s]\n", min(vth_e), max(vth_e));
+    output.write("\telectron thermal velocity: {:e} -> {:e} [m/s]\n", min(vth_e), max(vth_e));
     // vth_e.applyBoundary();
     // mesh->communicate(vth_e);
   }
 
   if (compress0) {
     eta_i0 = 0.96 * Pi0 * Tau_ie * nu_i * Tbar;
-    output.write("\tCoefficients of parallel viscocity: %e -> %e [kg/(m s)]\n",
+    output.write("\tCoefficients of parallel viscocity: {:e} -> {:e} [kg/(m s)]\n",
                  min(eta_i0), max(eta_i0));
   }
 
@@ -927,14 +927,14 @@ int physics_init(bool restarting) {
     kappa_par_i = 3.9 * vth_i * vth_i / nu_i; // * 1.e4;
     kappa_par_e = 3.2 * vth_e * vth_e / nu_e; // * 1.e4;
 
-    output.write("\tion thermal conductivity: %e -> %e [m^2/s]\n", min(kappa_par_i),
+    output.write("\tion thermal conductivity: {:e} -> {:e} [m^2/s]\n", min(kappa_par_i),
                  max(kappa_par_i));
-    output.write("\telectron thermal conductivity: %e -> %e [m^2/s]\n", min(kappa_par_e),
+    output.write("\telectron thermal conductivity: {:e} -> {:e} [m^2/s]\n", min(kappa_par_e),
                  max(kappa_par_e));
 
-    output.write("\tnormalized ion thermal conductivity: %e -> %e \n",
+    output.write("\tnormalized ion thermal conductivity: {:e} -> {:e} \n",
                  min(kappa_par_i * Tipara1), max(kappa_par_i * Tipara1));
-    output.write("\tnormalized electron thermal conductivity: %e -> %e \n",
+    output.write("\tnormalized electron thermal conductivity: {:e} -> {:e} \n",
                  min(kappa_par_e * Tepara1), max(kappa_par_e * Tepara1));
 
     Field3D kappa_par_i_fl, kappa_par_e_fl;
@@ -944,13 +944,13 @@ int physics_init(bool restarting) {
 
     kappa_par_i *= kappa_par_i_fl / (kappa_par_i + kappa_par_i_fl);
     kappa_par_i *= Tipara1 * N0;
-    output.write("\tUsed normalized ion thermal conductivity: %e -> %e \n",
+    output.write("\tUsed normalized ion thermal conductivity: {:e} -> {:e} \n",
                  min(kappa_par_i), max(kappa_par_i));
     // kappa_par_i.applyBoundary();
     // mesh->communicate(kappa_par_i);
     kappa_par_e *= kappa_par_e_fl / (kappa_par_e + kappa_par_e_fl);
     kappa_par_e *= Tepara1 * N0 / Zi;
-    output.write("\tUsed normalized electron thermal conductivity: %e -> %e \n",
+    output.write("\tUsed normalized electron thermal conductivity: {:e} -> {:e} \n",
                  min(kappa_par_e), max(kappa_par_e));
     // kappa_par_e.applyBoundary();
     // mesh->communicate(kappa_par_e);
@@ -962,15 +962,15 @@ int physics_init(bool restarting) {
   if (spitzer_resist) {
     // Use Spitzer resistivity
     output.write("\n\tSpizter parameters");
-    // output.write("\tTemperature: %e -> %e [eV]\n", min(Te), max(Te));
+    // output.write("\tTemperature: {:e} -> {:e} [eV]\n", min(Te), max(Te));
     eta_spitzer = 0.51 * 1.03e-4 * Zi * LnLambda
                   * pow(Te0 * Tebar, -1.5); // eta in Ohm-m. NOTE: ln(Lambda) = 20
-    output.write("\tSpitzer resistivity: %e -> %e [Ohm m]\n", min(eta_spitzer),
+    output.write("\tSpitzer resistivity: {:e} -> {:e} [Ohm m]\n", min(eta_spitzer),
                  max(eta_spitzer));
     eta_spitzer /= MU0 * Va * Lbar;
     // eta_spitzer.applyBoundary();
     // mesh->communicate(eta_spitzer);
-    output.write("\t -> Lundquist %e -> %e\n", 1.0 / max(eta_spitzer),
+    output.write("\t -> Lundquist {:e} -> {:e}\n", 1.0 / max(eta_spitzer),
                  1.0 / min(eta_spitzer));
     dump.add(eta_spitzer, "eta_spitzer", 1);
   } else {
@@ -1479,7 +1479,7 @@ int physics_run(BoutReal UNUSED(t)) {
 
       if (first_run) { // Print out maximum values of viscosity used on this processor
         output.write("   Hyper-viscosity values:\n");
-        output.write("      Max mu_x = %e, Max_DC mu_x = %e\n", max(hyper_mu_x),
+        output.write("      Max mu_x = {:e}, Max_DC mu_x = {:e}\n", max(hyper_mu_x),
                      max(DC(hyper_mu_x)));
       }
     }

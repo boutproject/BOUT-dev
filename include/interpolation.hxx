@@ -32,6 +32,7 @@
 #include "mask.hxx"
 #include "stencils.hxx"
 #include "utils.hxx"
+#include "bout/generic_factory.hxx"
 
 /// Perform interpolation between centre -> shifted or vice-versa
 /*!
@@ -82,8 +83,7 @@ const T interp_to(const T& var, CELL_LOC loc, const std::string region = "RGN_AL
   T result{emptyFrom(var).setLocation(loc)};
 
   // Staggered grids enabled, and need to perform interpolation
-  TRACE("Interpolating %s -> %s", toString(var.getLocation()).c_str(),
-        toString(loc).c_str());
+  TRACE("Interpolating {} -> {}", toString(var.getLocation()), toString(loc));
 
   if (region != "RGN_NOBNDRY") {
     // result is requested in some boundary region(s)
@@ -185,8 +185,8 @@ const T interp_to(const T& var, CELL_LOC loc, const std::string region = "RGN_AL
     default: {
       // This should never happen
       throw BoutException("Unsupported direction of interpolation\n"
-                          " - don't know how to interpolate to %s",
-                          toString(loc).c_str());
+                          " - don't know how to interpolate to {:s}",
+                          toString(loc));
     }
     };
 
@@ -204,17 +204,17 @@ const T interp_to(const T& var, CELL_LOC loc, const std::string region = "RGN_AL
   return result;
 }
 template<typename T>
-[[gnu::deprecated("Please use interp_to(const T& var, CELL_LOC loc, "
+[[deprecated("Please use interp_to(const T& var, CELL_LOC loc, "
     "const std::string& region = \"RGN_ALL\") instead")]]
 const T interp_to(const T& var, CELL_LOC loc, REGION region) {
   return interp_to(var, loc, toString(region));
 }
 
 /// Print out the cell location (for debugging)
-[[gnu::deprecated("Please use `output << toString(var.getLocation())` instead")]]
+[[deprecated("Please use `output << toString(var.getLocation())` instead")]]
 void printLocation(const Field3D& var);
 
-[[gnu::deprecated("Please use `toString(loc)` instead")]]
+[[deprecated("Please use `toString(loc)` instead")]]
 const char* strLocation(CELL_LOC loc);
 
 /// Interpolate a field onto a perturbed set of points
@@ -259,6 +259,21 @@ public:
   // Interpolate using the field at (x,y+y_offset,z), rather than (x,y,z)
   int y_offset;
   void setYOffset(int offset) { y_offset = offset; }
+
+  virtual std::vector<ParallelTransform::PositionsAndWeights>
+  getWeightsForYUpApproximation(int i, int j, int k) {
+    return getWeightsForYApproximation(i, j, k, 1);
+  }
+  virtual std::vector<ParallelTransform::PositionsAndWeights>
+  getWeightsForYDownApproximation(int i, int j, int k) {
+    return getWeightsForYApproximation(i, j, k, -1);
+  }
+  virtual std::vector<ParallelTransform::PositionsAndWeights>
+  getWeightsForYApproximation(int UNUSED(i), int UNUSED(j), int UNUSED(k),
+                              int UNUSED(yoffset)) {
+    throw BoutException(
+        "Interpolation::getWeightsForYApproximation not implemented in this subclass");
+  }
 };
 
 class HermiteSpline : public Interpolation {
@@ -308,6 +323,8 @@ public:
                       const Field3D &delta_z) override;
   Field3D interpolate(const Field3D &f, const Field3D &delta_x, const Field3D &delta_z,
                       const BoutMask &mask) override;
+  std::vector<ParallelTransform::PositionsAndWeights>
+  getWeightsForYApproximation(int i, int j, int k, int yoffset) override;
 };
 
 
@@ -332,6 +349,7 @@ public:
     return new MonotonicHermiteSpline(mesh);
   }
   
+  using HermiteSpline::interpolate;
   /// Interpolate using precalculated weights.
   /// This function is called by the other interpolate functions
   /// in the base class HermiteSpline.
@@ -399,6 +417,34 @@ public:
                       const Field3D &delta_z) override;
   Field3D interpolate(const Field3D &f, const Field3D &delta_x, const Field3D &delta_z,
                       const BoutMask &mask) override;
+};
+
+class InterpolationFactory
+    : public Factory<Interpolation, InterpolationFactory,
+                             std::function<std::unique_ptr<Interpolation>(Mesh*)>> {
+public:
+  static constexpr auto type_name = "Interpolation";
+  static constexpr auto section_name = "interpolation";
+  static constexpr auto option_name = "type";
+  static constexpr auto default_type = "hermitespline";
+
+  using Factory::create;
+  ReturnType create(Mesh* mesh = nullptr) {
+    return Factory::create(getType(nullptr), mesh);
+  }
+
+  static void ensureRegistered();
+};
+
+template <class DerivedType>
+class RegisterInterpolation {
+public:
+  RegisterInterpolation(const std::string& name) {
+    InterpolationFactory::getInstance().add(
+        name, [](Mesh* mesh) -> std::unique_ptr<Interpolation> {
+          return std::make_unique<DerivedType>(mesh);
+        });
+  }
 };
 
 #endif // __INTERP_H__

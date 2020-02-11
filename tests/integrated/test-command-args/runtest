@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from boututils.run_wrapper import shell_safe
+from boututils.run_wrapper import build_and_log, launch_safe
 
 import os
 import shutil
@@ -27,7 +27,7 @@ class TestCommandLineArgs(unittest.TestCase):
 
     def testNoArgumentsNoDirectory(self):
         with self.assertRaises(RuntimeError):
-            shell_safe(self.command, pipe=True)
+            launch_safe(self.command, pipe=True, nproc=1, mthread=1)
         with open("stderr.log") as f:
             contents = f.read()
             self.assertIn('"data" does not exist', contents,
@@ -35,14 +35,14 @@ class TestCommandLineArgs(unittest.TestCase):
 
     def testHelpArgument(self):
         self.makeDirAndCopyInput("data")
-        _, out = shell_safe(self.command + " --help", pipe=True)
+        _, out = launch_safe(self.command + " --help", pipe=True, nproc=1, mthread=1)
         # Not a great test!
         self.assertNotIn("Writing options", out,
                          msg="FAIL: Attempting to write options")
 
     def testNoArgumentsDefaultDirectory(self):
         self.makeDirAndCopyInput("data")
-        shell_safe(self.command, pipe=True)
+        launch_safe(self.command, pipe=True, nproc=1, mthread=1)
         self.assertTrue(os.path.exists("data/BOUT.settings"),
                         msg="FAIL: No BOUT.settings file in data directory")
         self.assertTrue(os.path.exists("data/BOUT.log.0"),
@@ -50,7 +50,7 @@ class TestCommandLineArgs(unittest.TestCase):
 
     def testShortLogArgument(self):
         self.makeDirAndCopyInput("data")
-        shell_safe(self.command + " -l different.log", pipe=True)
+        launch_safe(self.command + " -l different.log", pipe=True, nproc=1, mthread=1)
         self.assertFalse(os.path.exists("data/BOUT.log.0"),
                          msg="FAIL: BOUT.log.0 file in data directory")
         self.assertTrue(os.path.exists("data/different.log.0"),
@@ -58,7 +58,7 @@ class TestCommandLineArgs(unittest.TestCase):
 
     def testLongLogArgument(self):
         self.makeDirAndCopyInput("data")
-        shell_safe(self.command + " --log log", pipe=True)
+        launch_safe(self.command + " --log log", pipe=True, nproc=1, mthread=1)
         self.assertFalse(os.path.exists("data/BOUT.log.0"),
                          msg="FAIL: BOUT.log.0 file in data directory")
         self.assertTrue(os.path.exists("data/log.0"),
@@ -66,18 +66,34 @@ class TestCommandLineArgs(unittest.TestCase):
 
     def testDirectoryArgument(self):
         self.makeDirAndCopyInput("test")
-        shell_safe(self.command + " -d test", pipe=True)
+        launch_safe(self.command + " -d test", pipe=True, nproc=1, mthread=1)
         self.assertTrue(os.path.exists("test/BOUT.settings"),
                         msg="FAIL: No BOUT.settings file in test directory")
         self.assertTrue(os.path.exists("test/BOUT.log.0"),
                         msg="FAIL: No BOUT.log.0 file in data directory")
 
+    def testDirectoryArgumentNonExistentDirectory(self):
+        with self.assertRaises(RuntimeError):
+            launch_safe(self.command + " -d non_existent", pipe=True, nproc=1, mthread=1)
+        with open("stderr.log") as f:
+            contents = f.read()
+            self.assertIn('"non_existent" does not exist', contents,
+                          msg="FAIL: Error message not printed when missing input directory")
+
+    def testDirectoryArgumentNonDirectory(self):
+        with self.assertRaises(RuntimeError):
+            launch_safe(self.command + " -d runtest", pipe=True, nproc=1, mthread=1)
+        with open("stderr.log") as f:
+            contents = f.read()
+            self.assertIn('"runtest" is not a directory', contents,
+                          msg="FAIL: Error message not printed when missing input directory")
+
     def testDirectoryArgumentOldSettingsFile(self):
         self.makeDirAndCopyInput("test")
-        shell_safe(self.command + " -d test", pipe=True)
+        launch_safe(self.command + " -d test", pipe=True, nproc=1, mthread=1)
         shutil.copytree("test", "test_copy")
-        shell_safe(self.command +
-                   " -d test_copy -f BOUT.settings -o testsettings", pipe=True)
+        launch_safe(self.command +
+                   " -d test_copy -f BOUT.settings -o testsettings", pipe=True, nproc=1, mthread=1)
 
         with open("test_copy/testsettings") as f:
             contents = f.readlines()
@@ -94,10 +110,10 @@ class TestCommandLineArgs(unittest.TestCase):
 
     def testShortOptionsAreCleaned(self):
         self.makeDirAndCopyInput("test")
-        shell_safe(self.command + " -d test", pipe=True)
+        launch_safe(self.command + " -d test", pipe=True, nproc=1, mthread=1)
         shutil.copytree("test", "test_copy")
-        shell_safe(self.command +
-                   " -d test_copy -f BOUT.settings -o testsettings", pipe=True)
+        launch_safe(self.command +
+                   " -d test_copy -f BOUT.settings -o testsettings", pipe=True, nproc=1, mthread=1)
 
         with open("test_copy/testsettings") as f:
             contents = f.read()
@@ -106,11 +122,11 @@ class TestCommandLineArgs(unittest.TestCase):
 
     def testCommandLineOptionsArePrinted(self):
         self.makeDirAndCopyInput("test")
-        shell_safe(self.command + " -d test", pipe=True)
+        launch_safe(self.command + " -d test", pipe=True, nproc=1, mthread=1)
         shutil.copytree("test", "test_copy")
         extra_options = ["-d", "test_copy", "-f", "BOUT.settings", "-o",
                          "testsettings", "-l", "bout.log", "--foo_flag", "some:option=value"]
-        _, out = shell_safe(self.command + " " + " ".join(extra_options), pipe=True)
+        _, out = launch_safe(self.command + " " + " ".join(extra_options), pipe=True, nproc=1, mthread=1)
 
         command_line_options = None
         for line in out.splitlines():
@@ -123,5 +139,5 @@ class TestCommandLineArgs(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    shell_safe("make")
+    build_and_log("Command arguments test")
     unittest.main(verbosity=2)

@@ -27,6 +27,8 @@
 ///     void someFunction(int UNUSED(x)) {};
 #if defined(__GNUC__)
 # define UNUSED(x) UNUSED_ ## x __attribute__((unused))
+#elif defined(_MSC_VER)
+#define UNUSED(x) __pragma(warning(suppress : 4100)) UNUSED_ ## x
 #elif defined(__LCLINT__)
 # define UNUSED(x) /*@unused@*/ x
 #elif defined(__cplusplus)
@@ -48,6 +50,8 @@
 #ifndef MAYBE_UNUSED
 #if defined(__GNUC__)
 # define MAYBE_UNUSED(x) [[gnu::unused]] x
+#elif defined(_MSC_VER)
+# define MAYBE_UNUSED(x) __pragma(warning(suppress : 4100)) x
 #else
 # define MAYBE_UNUSED(x) x
 #endif

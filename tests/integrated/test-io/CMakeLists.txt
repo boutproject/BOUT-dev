@@ -1,4 +1,4 @@
-bout_add_integrated_test(test_io
+bout_add_integrated_test(test-io
   SOURCES test_io.cxx
   USE_RUNTEST
   USE_DATA_BOUT_INP

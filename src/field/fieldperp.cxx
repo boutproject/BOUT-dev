@@ -99,10 +99,10 @@ FieldPerp & FieldPerp::operator=(const BoutReal rhs) {
 
 const Region<IndPerp> &FieldPerp::getRegion(REGION region) const {
   return fieldmesh->getRegionPerp(toString(region));
-};
+}
 const Region<IndPerp> &FieldPerp::getRegion(const std::string &region_name) const {
   return fieldmesh->getRegionPerp(region_name);
-};
+}
 
 //////////////// NON-MEMBER FUNCTIONS //////////////////
 
@@ -142,8 +142,8 @@ void checkDataIsFiniteOnRegion(const FieldPerp &f, const std::string& region) {
   // Do full checks
   BOUT_FOR_SERIAL(i, f.getRegion(region)) {
     if (!::finite(f[i])) {
-      throw BoutException("FieldPerp: Operation on non-finite data at [%d][%d]\n", i.x(),
-                          i.z());
+      throw BoutException("FieldPerp: Operation on non-finite data at [{:d}][{:d}]\n",
+                          i.x(), i.z());
     }
   }
 }

@@ -129,12 +129,13 @@ int IdaSolver::init(int nout, BoutReal tstep) {
 
   // Get total problem size
   int neq;
-  if (MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
+  if (bout::globals::mpi->MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM,
+                                        BoutComm::get())) {
     output_error.write("\tERROR: MPI_Allreduce failed!\n");
     return 1;
   }
 
-  output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n", n3d, n2d, neq,
+  output.write("\t3d fields = {:d}, 2d fields = {:d} neq={:d}, local_N={:d}\n", n3d, n2d, neq,
                local_N);
 
   // Allocate memory
@@ -267,7 +268,7 @@ int IdaSolver::run() {
 }
 
 BoutReal IdaSolver::run(BoutReal tout) {
-  TRACE("Running solver: solver::run(%e)", tout);
+  TRACE("Running solver: solver::run({:e})", tout);
 
   if (!initialised)
     throw BoutException("Running IDA solver without initialisation\n");
@@ -284,7 +285,7 @@ BoutReal IdaSolver::run(BoutReal tout) {
   run_rhs(simtime);
 
   if (flag < 0) {
-    output_error.write("ERROR IDA solve failed at t = %e, flag = %d\n", simtime, flag);
+    output_error.write("ERROR IDA solve failed at t = {:e}, flag = {:d}\n", simtime, flag);
     return -1.0;
   }
 
@@ -296,7 +297,7 @@ BoutReal IdaSolver::run(BoutReal tout) {
  **************************************************************************/
 
 void IdaSolver::res(BoutReal t, BoutReal* udata, BoutReal* dudata, BoutReal* rdata) {
-  TRACE("Running RHS: IdaSolver::res(%e)", t);
+  TRACE("Running RHS: IdaSolver::res({:e})", t);
 
   // Load state from udata
   load_vars(udata);
@@ -322,9 +323,9 @@ void IdaSolver::res(BoutReal t, BoutReal* udata, BoutReal* dudata, BoutReal* rda
 
 void IdaSolver::pre(BoutReal t, BoutReal cj, BoutReal delta, BoutReal* udata,
                     BoutReal* rvec, BoutReal* zvec) {
-  TRACE("Running preconditioner: IdaSolver::pre(%e)", t);
+  TRACE("Running preconditioner: IdaSolver::pre({:e})", t);
 
-  const BoutReal tstart = MPI_Wtime();
+  const BoutReal tstart = bout::globals::mpi->MPI_Wtime();
 
   if (!have_user_precon()) {
     // Identity (but should never happen)
@@ -344,7 +345,7 @@ void IdaSolver::pre(BoutReal t, BoutReal cj, BoutReal delta, BoutReal* udata,
   // Save the solution from F_vars
   save_derivs(zvec);
 
-  pre_Wtime += MPI_Wtime() - tstart;
+  pre_Wtime += bout::globals::mpi->MPI_Wtime() - tstart;
   pre_ncalls++;
 }
 
