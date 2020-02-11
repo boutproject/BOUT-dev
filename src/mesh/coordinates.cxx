@@ -256,7 +256,7 @@ void checkStaggeredGet(Mesh* mesh, const std::string& name, const std::string& s
 }
 
 // convenience function for repeated code
-void getAtLoc(Mesh* mesh, Field2D &var, const std::string& name,
+void getAtLoc(Mesh* mesh, Coordinates::metric_field_type &var, const std::string& name,
     const std::string& suffix, CELL_LOC location, BoutReal default_value = 0.) {
 
   checkStaggeredGet(mesh, name, suffix);
