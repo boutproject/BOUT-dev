@@ -26,7 +26,7 @@ namespace {
 /// Boundary guard cells are set by extrapolating from the grid, like
 /// 'free_o3' boundary conditions
 /// Corner guard cells are set to BoutNaN
-Coordinates::metric_field_type interpolateAndExtrapolate(const Coordinates::metric_field_type& f, CELL_LOC location,
+Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
     bool extrapolate_x = true, bool extrapolate_y = true,
     bool no_extra_interpolate = false) {
 
@@ -128,6 +128,123 @@ Coordinates::metric_field_type interpolateAndExtrapolate(const Coordinates::metr
 
   return result;
 }
+
+Field3D interpolateAndExtrapolate(const Field3D& f, CELL_LOC location,
+    bool extrapolate_x = true, bool extrapolate_y = true,
+    bool no_extra_interpolate = false) {
+
+    Mesh* localmesh = f.getMesh();
+  auto result = interp_to(f, location, "RGN_NOBNDRY");
+  // Ensure result's data is unique. Otherwise result might be a duplicate of
+  // f (if no interpolation is needed, e.g. if interpolation is in the
+  // z-direction); then f would be communicated. Since this function is used
+  // on geometrical quantities that might not be periodic in y even on closed
+  // field lines (due to dependence on integrated shear), we don't want to
+  // communicate f. We will sort out result's boundary guard cells below, but
+  // not f's so we don't want to change f.
+  result.allocate();
+  localmesh->communicate(result);
+
+  // Extrapolate into boundaries (if requested) so that differential geometry
+  // terms can be interpolated if necessary
+  // Note: cannot use applyBoundary("free_o3") here because applyBoundary()
+  // would try to create a new Coordinates object since we have not finished
+  // initializing yet, leading to an infinite recursion.
+  // Also, here we interpolate for the boundary points at xstart/ystart and
+  // (xend+1)/(yend+1) instead of extrapolating.
+  for (auto& bndry : localmesh->getBoundaries()) {
+    if ((extrapolate_x and bndry->bx != 0) or (extrapolate_y and bndry->by != 0)) {
+      int extrap_start = 0;
+      if (not no_extra_interpolate) {
+        // Can use no_extra_interpolate argument to skip the extra interpolation when we
+        // want to extrapolate the Christoffel symbol terms which come from derivatives so
+        // don't have the extra point set already
+        if ((location == CELL_XLOW) && (bndry->bx > 0)) {
+          extrap_start = 1;
+        } else if ((location == CELL_YLOW) && (bndry->by > 0)) {
+          extrap_start = 1;
+        }
+      }
+      for (bndry->first(); !bndry->isDone(); bndry->next1d()) {
+        // interpolate extra boundary point that is missed by interp_to, if
+        // necessary.
+        // Only interpolate this point if we are actually changing location. E.g.
+        // when we use this function to extrapolate J and Bxy on staggered grids,
+        // this point should already be set correctly because the metric
+        // components have been interpolated to here.
+        if (extrap_start > 0 and f.getLocation() != location) {
+          ASSERT1(bndry->bx == 0 or localmesh->xstart > 1);
+          ASSERT1(bndry->by == 0 or localmesh->ystart > 1);
+          // note that either bx or by is >0 here
+	  for (int zi=0; zi < localmesh->LocalNz; ++zi){
+	    result(bndry->x, bndry->y, zi) =
+              (9. * (f(bndry->x - bndry->bx, bndry->y - bndry->by, zi) + f(bndry->x, bndry->y, zi))
+               - f(bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, zi)
+               - f(bndry->x + bndry->bx, bndry->y + bndry->by, zi))
+              / 16.;
+        }
+
+        // set boundary guard cells
+        if ((bndry->bx != 0 && localmesh->GlobalNx - 2 * bndry->width >= 3)
+            || (bndry->by != 0
+                && localmesh->GlobalNy - 2 * bndry->width
+                   >= 3))
+        {
+          if (bndry->bx != 0 && localmesh->LocalNx == 1 && bndry->width == 1) {
+            throw BoutException(
+                "Not enough points in the x-direction on this "
+                "processor for extrapolation needed to use staggered grids. "
+                "Increase number of x-guard cells MXG or decrease number of "
+                "processors in the x-direction NXPE.");
+          }
+          if (bndry->by != 0 && localmesh->LocalNy == 1 && bndry->width == 1) {
+            throw BoutException(
+                "Not enough points in the y-direction on this "
+                "processor for extrapolation needed to use staggered grids. "
+                "Increase number of y-guard cells MYG or decrease number of "
+                "processors in the y-direction NYPE.");
+          }
+          // extrapolate into boundary guard cells if there are enough grid points
+          for (int i = extrap_start; i < bndry->width; i++) {
+            int xi = bndry->x + i * bndry->bx;
+            int yi = bndry->y + i * bndry->by;
+	    for (int zi=0; zi <  localmesh->LocalNz; ++zi){
+	      result(xi, yi, zi) = 3.0 * result(xi - bndry->bx, yi - bndry->by, zi)
+		- 3.0 * result(xi - 2 * bndry->bx, yi - 2 * bndry->by, zi)
+		+ result(xi - 3 * bndry->bx, yi - 3 * bndry->by, zi);
+	    }
+          }
+        } else {
+          // not enough grid points to extrapolate, set equal to last grid point
+          for (int i = extrap_start; i < bndry->width; i++) {
+	    for (int zi = 0; zi < localmesh->LocalNz; ++zi){
+	      result(bndry->x + i * bndry->bx, bndry->y + i * bndry->by, zi) =
+		result(bndry->x - bndry->bx, bndry->y - bndry->by, zi);
+	    }
+          }
+        }
+      }
+    }
+  }
+
+  // Set corner guard cells
+  for (int i = 0; i < localmesh->xstart; i++) {
+    for (int j = 0; j < localmesh->ystart; j++) {
+      for (int zi = 0; zi < localmesh->LocalNz; ++zi){
+	result(i, j, zi) = BoutNaN;
+	result(i, localmesh->LocalNy - 1 - j, zi) = BoutNaN;
+	result(localmesh->LocalNx - 1 - i, j, zi) = BoutNaN;
+	result(localmesh->LocalNx - 1 - i, localmesh->LocalNy - 1 - j, zi) = BoutNaN;
+      }
+    }
+  }
+
+  return result;
+  //throw BoutException("NotImplemented (3D)");
+  }
+}
+
+
 
 // If the CELL_CENTRE variable was read, the staggered version is required to
 // also exist for consistency
