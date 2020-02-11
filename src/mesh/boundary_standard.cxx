@@ -2108,9 +2108,9 @@ void BoundaryNeumann::apply(Field3D &f,BoutReal t) {
         BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
                                  + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
 
-        BoutReal delta = bndry->bx*metric->dx(bndry->x,bndry->y)+bndry->by*metric->dy(bndry->x,bndry->y);
 
         for(int zk=0;zk<mesh->LocalNz;zk++) {
+	  BoutReal delta = bndry->bx*metric->dx(bndry->x,bndry->y, zk)+bndry->by*metric->dy(bndry->x,bndry->y, zk);
           if(fg){
             val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*(zk - 0.5)/(mesh->LocalNz),t);
           }
