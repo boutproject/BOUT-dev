@@ -1245,7 +1245,7 @@ Coordinates::metric_field_type Coordinates::DDX(const Field2D& f, CELL_LOC loc,
   ASSERT1(location == loc || loc == CELL_DEFAULT);
   return bout::derivatives::index::DDX(f, loc, method, region) / dx;
 }
-const Field3D Coordinates::DDX(const Field3D& f, CELL_LOC outloc,
+Field3D Coordinates::DDX(const Field3D& f, CELL_LOC outloc,
                                const std::string& method, const std::string& region) {
 
   auto result = bout::derivatives::index::DDX(f, outloc, method, region);
@@ -1266,7 +1266,7 @@ Coordinates::metric_field_type Coordinates::DDY(const Field2D& f, CELL_LOC loc,
   return bout::derivatives::index::DDY(f, loc, method, region) / dy;
 }
 
-const Field3D Coordinates::DDY(const Field3D& f, CELL_LOC outloc,
+Field3D Coordinates::DDY(const Field3D& f, CELL_LOC outloc,
                                const std::string& method, const std::string& region) {
   return bout::derivatives::index::DDY(f, outloc, method, region) / dy;
 };
@@ -1282,7 +1282,7 @@ Coordinates::metric_field_type Coordinates::DDZ(MAYBE_UNUSED(const Field2D& f),
   }
   return zeroFrom(f).setLocation(loc);
 }
-const Field3D Coordinates::DDZ(const Field3D& f, CELL_LOC outloc,
+Field3D Coordinates::DDZ(const Field3D& f, CELL_LOC outloc,
                                const std::string& method, const std::string& region) {
   return bout::derivatives::index::DDZ(f, outloc, method, region) / dz;
 };

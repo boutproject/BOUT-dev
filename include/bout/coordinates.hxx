@@ -196,6 +196,15 @@ public:
       const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
   DERIV_FUNC_REGION_ENUM_TO_STRING(DDZ, metric_field_type, Field2D);
 
+  Field3D DDX(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+      const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+
+  Field3D DDY(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+      const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+
+  Field3D DDZ(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+      const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+
   /// Gradient along magnetic field  b.Grad(f)
   metric_field_type Grad_par(const Field2D& var, CELL_LOC outloc = CELL_DEFAULT,
       const std::string& method = "DEFAULT");
