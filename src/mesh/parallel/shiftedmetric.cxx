@@ -129,7 +129,7 @@ const FieldPerp ShiftedMetric::toFieldAligned(const FieldPerp& f,
                                               const std::string& region) {
   ASSERT2(f.getDirectionY() == YDirectionType::Standard);
   // In principle, other regions are possible, but not yet implemented
-  ASSERT2(region == "RGN_NOX");
+  ASSERT2(region == "RGN_NOX" or region == "RGN_ALL");
   return shiftZ(f, toAlignedPhs, YDirectionType::Aligned, region);
 }
 
@@ -173,9 +173,10 @@ const Field3D ShiftedMetric::shiftZ(const Field3D& f, const Tensor<dcomplex>& ph
 
 const FieldPerp ShiftedMetric::shiftZ(const FieldPerp& f, const Tensor<dcomplex>& phs,
                                       const YDirectionType y_direction_out,
-                                      const std::string& UNUSED(region)) const {
+                                      const std::string& region) const {
   ASSERT1(f.getMesh() == &mesh);
   ASSERT1(f.getLocation() == location);
+  ASSERT1(region == "RGN_NOX" or region == "RGN_ALL");
 
   if (mesh.LocalNz == 1) {
     // Shifting does not change the array values
@@ -185,9 +186,12 @@ const FieldPerp ShiftedMetric::shiftZ(const FieldPerp& f, const Tensor<dcomplex>
 
   FieldPerp result{emptyFrom(f).setDirectionY(y_direction_out)};
 
+  const int xs = (region == "RGN_NOX") ? mesh.xstart : 0;
+  const int xe = (region == "RGN_NOX") ? mesh.xend : mesh.LocalNx - 1;
+
   int y = f.getIndex();
   // Note that this loop is essentially hardcoded to be RGN_NOX
-  for (int i=mesh.xstart; i<=mesh.xend; ++i) {
+  for (int i=xs; i<=xe; ++i) {
     shiftZ(&f(i, 0), &phs(i, y, 0), &result(i, 0));
   }
 
