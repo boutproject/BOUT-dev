@@ -230,7 +230,7 @@ SCOREP0();
 
 /// Check whether matrix is diagonally dominant, i.e. whether for every row the absolute
 /// value of the diagonal element is greater-or-equal-to the sum of the absolute values
-/// of the other elements. Being diagonally dominant is sufficient (but necessary) for
+/// of the other elements. Being diagonally dominant is sufficient (but not necessary) for
 /// the Jacobi iteration to converge.
 void LaplaceParallelTri::check_diagonal_dominance(const Array<dcomplex> &avec, const Array<dcomplex> &bvec, const Array<dcomplex> &cvec, const int ncx, const int jy, const int kz) {
 
@@ -250,6 +250,20 @@ void LaplaceParallelTri::check_diagonal_dominance(const Array<dcomplex> &avec, c
 	output << "Not diagonally dominant on row "<<i<<" jy "<<jy<<" kz "<<kz<<" of proc "<<BoutComm::rank()<<endl;
       }
     }
+}
+
+/// Check whether the reduced matrix is diagonally dominant, i.e. whether for every row the absolute
+/// value of the diagonal element is greater-or-equal-to the sum of the absolute values
+/// of the other elements. Being diagonally dominant is sufficient (but not necessary) for
+/// the Jacobi iteration to converge.
+void LaplaceParallelTri::check_diagonal_dominance(const dcomplex al, const dcomplex au, const dcomplex bl, const dcomplex bu, const int jy, const int kz) {
+
+  if(std::fabs(al)+std::fabs(bl)>1.0){
+    output<<BoutComm::rank()<<" jy="<<jy<<", kz="<<kz<<", lower row not diagonally dominant"<<endl;
+  }
+  if(std::fabs(au)+std::fabs(bu)>1.0){
+    output<<BoutComm::rank()<<" jy="<<jy<<", kz="<<kz<<", upper row not diagonally dominant"<<endl;
+  }
 }
 
 void LaplaceParallelTri::swapHaloInteriorLower(Array<dcomplex> &x){
@@ -694,6 +708,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	au = 1.0/upperGuardVector(xe,jy,kz);
 	bu = -lowerGuardVector(xe,jy,kz)/upperGuardVector(xe,jy,kz);
       }
+      check_diagonal_dominance(al,au,bl,bu,jy,kz);
       output<<"Coefficients: "<<BoutComm::rank()<<" "<<jy<<" "<<kz<<" "<<" "<<rl<<" "<<al<<" "<<bl<<" "<<ru<<" "<<au<<" "<<bu<<" "<<lowerUnstable<<" "<<upperUnstable<<endl;
       output<<"xvec "<<BoutComm::rank()<<" "<<"initial"<<" "<<xloclast[0]<<" "<<xloclast[1]<<" "<<xloclast[2]<<" "<<xloclast[3]<<" "<<error_rel_lower<<" "<<error_rel_lower_last<<" "<<error_rel_lower_two_old<<" "<<error_abs_lower<<" "<<error_abs_lower_last<<" "<<error_abs_lower_two_old<<" "<<error_rel_upper<<" "<<error_rel_upper_last<<" "<<error_rel_upper_two_old<<" "<<error_abs_upper<<" "<<error_abs_upper_last<<" "<<error_abs_upper_two_old<<endl;
 
