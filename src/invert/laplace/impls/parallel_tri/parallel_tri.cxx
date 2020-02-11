@@ -80,78 +80,6 @@ void LaplaceParallelTri::resetSolver(){
 }
 
 /*
- * Calcalate stability of the iteration, and amend right-hand side vector minvb to ensure stability.
- */
-void LaplaceParallelTri::ensure_stability(const int jy, const int kz, Array<dcomplex> &minvb,
-					      Tensor<dcomplex> &lowerGuardVector, Tensor<dcomplex> &upperGuardVector,
-					      bool &lowerUnstable, bool &upperUnstable) {
-  SCOREP0();
-
-  BoutReal thisEig = 0.0;
-
-  Array<dcomplex> sendvec, recvec;
-  sendvec = Array<dcomplex>(2);
-  recvec = Array<dcomplex>(2);
-  lowerUnstable = false;
-  upperUnstable = false;
-
-  // If not on innermost boundary, calculate required matrix element and send up
-  if(!localmesh->firstX()) {
-
-    comm_handle recv[1];
-    recv[0] = localmesh->irecvXIn(&recvec[0], 2, 0);
-
-    sendvec[0] = lowerGuardVector(localmesh->xstart,jy,kz);
-    sendvec[1] = minvb[localmesh->xstart]/lowerGuardVector(localmesh->xstart,jy,kz);;
-
-    localmesh->sendXIn(&sendvec[0],2,1);
-    localmesh->wait(recv[0]);
-
-    thisEig = sendvec[0].real()*recvec[0].real();
-
-    //output <<jy<<" "<<kz<<" "<< sendvec[0].real()<<" "<<sendvec[1].real()<<" "<<sendvec[2].real()<<" "<<recvec[0].real()<<" "<<recvec[1].real()<<" "<<recvec[2].real()<<" "<<thisEig<<endl;
-
-    // Unstable if abs(eigenvalue) > 1. Make stable by manipulating matrix and RHS.
-    if(std::fabs(thisEig) > 1.0) {
-      lowerUnstable = true;
-      //minvb[localmesh->xstart] = -recvec[1].real();
-      //lowerGuardVector(localmesh->xstart,jy,kz) = 1.0/recvec[0].real();
-      //minvb[localmesh->xstart] /= -lowerGuardVector(localmesh->xstart,jy,kz);
-      //upperGuardVector(localmesh->xstart,jy,kz) /= -lowerGuardVector(localmesh->xstart,jy,kz);
-      //lowerGuardVector(localmesh->xstart,jy,kz) = 1.0/lowerGuardVector(localmesh->xstart,jy,kz);
-    }
-  }
-  output<<BoutComm::rank()<<" "<<jy<<" "<<kz<<" lower ev: "<<thisEig<<" "<<lowerUnstable<<endl;
-
-  // If not on outermost boundary, calculate required matrix element and send down
-  if(!localmesh->lastX()) {
-
-    comm_handle recv[1];
-    recv[0] = localmesh->irecvXOut(&recvec[0], 2, 1);
-
-    sendvec[0] = upperGuardVector(localmesh->xend,jy,kz);
-    sendvec[1] = minvb[localmesh->xend]/upperGuardVector(localmesh->xend,jy,kz);
-
-    localmesh->sendXOut(&sendvec[0],2,0);
-    localmesh->wait(recv[0]);
-
-    thisEig = sendvec[0].real()*recvec[0].real();
-
-    // Unstable if abs(eigenvalue) > 1. Make stable by manipulating matrix and RHS.
-    //output <<jy<<" "<<kz<<" "<< sendvec[0].real()<<" "<<sendvec[1].real()<<" "<<sendvec[2].real()<<" "<<recvec[0].real()<<" "<<recvec[1].real()<<" "<<recvec[2].real()<<" "<<thisEig<<" "<<abs(thisEig)<<" "<<(fabs(thisEig)>1.0)<<endl;
-    if(std::fabs(thisEig) > 1.0) {
-      upperUnstable = true;
-      //minvb[localmesh->xend] = -recvec[1].real();
-      //upperGuardVector(localmesh->xend,jy,kz) = 1.0/recvec[0].real();
-      //minvb[localmesh->xend] /= -upperGuardVector(localmesh->xend,jy,kz);
-      //lowerGuardVector(localmesh->xend,jy,kz) /= -upperGuardVector(localmesh->xend,jy,kz);
-      //upperGuardVector(localmesh->xend,jy,kz) = 1.0/upperGuardVector(localmesh->xend,jy,kz);
-    }
-  }
-  output<<BoutComm::rank()<<" "<<jy<<" "<<kz<<" upper ev: "<<thisEig<<" "<<upperUnstable<<endl;
-}
-
-/*
  * Get an initial guess for the solution x by solving the system neglecting
  * coupling terms. This may be considered a form of preconditioning.
  * Note that coupling terms are not neglected when they are known from the
@@ -677,7 +605,6 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 
 ///	SCOREP_USER_REGION_END(invert);
 
-      ensure_stability(jy,kz,minvb,lowerGuardVector,upperGuardVector,lowerUnstable,upperUnstable);
       //check_diagonal_dominance(avec,bvec,cvec,ncx,jy,kz);
       get_initial_guess(jy,kz,minvb,lowerGuardVector,upperGuardVector,xk1d);
 
