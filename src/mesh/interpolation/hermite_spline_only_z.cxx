@@ -152,6 +152,11 @@ Field3D HermiteSplineOnlyZ::interpolate(const Field3D &f,
     (region == "RGN_NOX" ? "RGN_NOX" : "RGN_ALL");
   Field3D fz = bout::derivatives::index::DDZ(f, CELL_DEFAULT, "DEFAULT", fz_region);
   localmesh->communicateXZ(fz);
+  // communicate in y, but do not calculate parallel slices
+  {
+    auto h = localmesh->sendY(fz);
+    localmesh->wait(h);
+  }
 
   BOUT_FOR(i, f.getRegion(region)) {
     const int x = i.x();

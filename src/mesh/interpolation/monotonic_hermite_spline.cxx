@@ -38,10 +38,25 @@ Field3D MonotonicHermiteSpline::interpolate(const Field3D &f,
   // coordinates
   Field3D fx = bout::derivatives::index::DDX(f, CELL_DEFAULT, "DEFAULT");
   localmesh->communicateXZ(fx);
+  // communicate in y, but do not calculate parallel slices
+  {
+    auto h = localmesh->sendY(fx);
+    localmesh->wait(h);
+  }
   Field3D fz = bout::derivatives::index::DDZ(f, CELL_DEFAULT, "DEFAULT", "RGN_WITH_XBNDRIES");
   localmesh->communicateXZ(fz);
+  // communicate in y, but do not calculate parallel slices
+  {
+    auto h = localmesh->sendY(fz);
+    localmesh->wait(h);
+  }
   Field3D fxz = bout::derivatives::index::DDX(fz, CELL_DEFAULT, "DEFAULT");
   localmesh->communicateXZ(fxz);
+  // communicate in y, but do not calculate parallel slices
+  {
+    auto h = localmesh->sendY(fxz);
+    localmesh->wait(h);
+  }
 
   BOUT_FOR(i, f.getRegion(region)) {
     const int x = i.x();
