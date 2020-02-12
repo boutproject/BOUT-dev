@@ -370,8 +370,8 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   auto bvec = Array<dcomplex>(ncx);
   auto cvec = Array<dcomplex>(ncx);
   auto minvb = Array<dcomplex>(ncx);
-  bool lowerUnstable;
-  bool upperUnstable;
+  bool lowerUnstable = false;
+  bool upperUnstable = false;
 
   BOUT_OMP(parallel for)
   for (int ix = 0; ix < ncx; ix++) {
@@ -635,8 +635,11 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	au = 1.0/upperGuardVector(xe,jy,kz);
 	bu = -lowerGuardVector(xe,jy,kz)/upperGuardVector(xe,jy,kz);
       }
+      //if(jy==0 and kz==1){
       check_diagonal_dominance(al,au,bl,bu,jy,kz);
-      //output<<"Coefficients: "<<BoutComm::rank()<<" "<<jy<<" "<<kz<<" "<<" "<<rl<<" "<<al<<" "<<bl<<" "<<ru<<" "<<au<<" "<<bu<<" "<<lowerUnstable<<" "<<upperUnstable<<endl;
+      //output<<"Coefficients: "<<BoutComm::rank()<<" "<<jy<<" "<<kz<<" "<<" "<<rl<<" "<<al<<" "<<bl<<" "<<ru<<" "<<au<<" "<<bu<<endl;
+      //output<<"Coefficients: "<<BoutComm::rank()<<" "<<jy<<" "<<kz<<" "<<" "<<al<<" "<<bl<<" "<<au<<" "<<bu<<endl;
+      //}
       //output<<"xvec "<<BoutComm::rank()<<" "<<"initial"<<" "<<xloc[0]<<" "<<xloc[1]<<" "<<xloc[2]<<" "<<xloc[3]<<" "<<xloclast[0]<<" "<<xloclast[1]<<" "<<xloclast[2]<<" "<<xloclast[3]<<" "<<error_rel_lower<<" "<<error_rel_lower_last<<" "<<error_rel_lower_two_old<<" "<<error_abs_lower<<" "<<error_abs_lower_last<<" "<<error_abs_lower_two_old<<" "<<error_rel_upper<<" "<<error_rel_upper_last<<" "<<error_rel_upper_two_old<<" "<<error_abs_upper<<" "<<error_abs_upper_last<<" "<<error_abs_upper_two_old<<endl;
 
 ///      SCOREP_USER_REGION_END(kzinit);
@@ -853,8 +856,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	++count;
 ///	SCOREP_USER_REGION_END(comms_after_break);
 	if (count>maxits) {
-	  break;
-	  //throw BoutException("LaplaceParallelTri error: Not converged within maxits=%i iterations.", maxits);
+	  throw BoutException("LaplaceParallelTri error: Not converged within maxits=%i iterations.", maxits);
 	}
 
 ///	SCOREP_USER_REGION_DEFINE(errors);
@@ -969,7 +971,10 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
     ++ncalls;
     ipt_mean_its = (ipt_mean_its * BoutReal(ncalls-1)
 	+ BoutReal(count))/BoutReal(ncalls);
+
+    //if(jy==0 and kz==1){
     //output<<"jy="<<jy<<" kz="<<kz<<" count="<<count<<" ncalls="<<ncalls<<" ipt_mean_its="<<ipt_mean_its<<" B="<<B<< endl;
+    //}
     //Bvals(0,jy,kz) = B;
 
     // Original method:
