@@ -77,11 +77,20 @@ public:
     return true;
   }
 
+  std::vector<ParallelTransform::PositionsAndWeights> getWeightsForYApproximation(
+      int i, int j, int k, int yoffset) override {
+    if (yoffset > 0) {
+      return interp_yup[yoffset - 1]->getWeightsForYApproximation(i, j, k, yoffset);
+    } else {
+      ASSERT1(yoffset < 0);
+      return interp_ydown[-yoffset - 1]->getWeightsForYApproximation(i, j, k, yoffset);
+    }
+  }
   std::vector<ParallelTransform::PositionsAndWeights> getWeightsForYUpApproximation(int i, int j, int k) override {
-    return interp_yup->getWeightsForYApproximation(i,j,k,1);
+    return interp_yup[0]->getWeightsForYApproximation(i,j,k,1);
   }
   std::vector<ParallelTransform::PositionsAndWeights> getWeightsForYDownApproximation(int i, int j, int k) override {
-    return interp_ydown->getWeightsForYApproximation(i,j,k,-1);
+    return interp_ydown[0]->getWeightsForYApproximation(i,j,k,-1);
   }
 
   bool requiresTwistShift(bool twist_shift_enabled, YDirectionType ytype) override {
@@ -104,10 +113,7 @@ private:
   Field2D zShift;
 
   /// Interpolation objects for yup and ydown transformations
-  //Interpolation *interp_yup, *interp_ydown;
-
-  /// Interpolation objects for yup and ydown transformations
-  std::unique_ptr<Interpolation> interp_yup, interp_ydown;
+  std::vector<std::unique_ptr<Interpolation>> interp_yup, interp_ydown;
 
   /// Interpolation objects for shifting to and from field-aligned coordinates
   std::unique_ptr<Interpolation> interp_to_aligned, interp_from_aligned;

@@ -40,63 +40,66 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in, Field
   // magnetic field
   Options::root()["interpolation"]["type"].overrideDefault("hermitesplineonlyz",
                                                            "ShiftedMetricInterp default");
-  interp_yup = InterpolationFactory::getInstance().create(&mesh);
-  interp_yup->setYOffset(1);
-
-  interp_ydown = InterpolationFactory::getInstance().create(&mesh);
-  interp_ydown->setYOffset(-1);
-
-  // Find the index positions where the magnetic field line intersects the next
-  // x-z plane
-  Field3D xt_prime(&mesh), zt_prime_up(&mesh),
-          zt_prime_down(&mesh);
+  Field3D xt_prime(&mesh);
   xt_prime.allocate();
-  zt_prime_up.allocate();
-  zt_prime_down.allocate();
-
   for (const auto &i : xt_prime) {
     // no interpolation in x, all field lines stay at constant x
     xt_prime[i] = i.x();
   }
 
-  for (const auto &i : zt_prime_up.getRegion(RGN_NOY)) {
-    // Field line moves in z by an angle zShift(i,j+1)-zShift(i,j) when going
-    // from j to j+1, but we want the shift in index-space
-    zt_prime_up[i] = static_cast<BoutReal>(i.z())
-      + (zShift[i.yp()] - zShift[i])*static_cast<BoutReal>(mesh.GlobalNz)/TWOPI;
-  }
+  interp_yup.reserve(mesh.ystart);
+  interp_ydown.reserve(mesh.ystart);
+  for (int yoffset = 1; yoffset <= mesh.ystart; yoffset++) {
+    interp_yup.emplace_back(InterpolationFactory::getInstance().create(&mesh));
+    interp_yup[yoffset - 1]->setYOffset(yoffset);
 
-  // Make a mask, to skip interpolating to points inside y-boundaries that need to be set
-  // by boundary conditions.
-  auto mask_up = BoutMask(mesh.LocalNx, mesh.LocalNy, mesh.LocalNz);
-  for (auto it = mesh.iterateBndryUpperY(); not it.isDone(); it.next()) {
-    for (int z = mesh.zstart; z <= mesh.zend; z++) {
-      mask_up(it.ind, mesh.yend, z) = true;
+    interp_ydown.emplace_back(InterpolationFactory::getInstance().create(&mesh));
+    interp_ydown[yoffset - 1]->setYOffset(-yoffset);
+
+    // Find the index positions where the magnetic field line intersects the next
+    // x-z plane
+    Field3D zt_prime_up(&mesh), zt_prime_down(&mesh);
+    zt_prime_up.allocate();
+    zt_prime_down.allocate();
+
+    for (const auto &i : zt_prime_up.getRegion(RGN_NOY)) {
+      // Field line moves in z by an angle zShift(i,j+1)-zShift(i,j) when going
+      // from j to j+1, but we want the shift in index-space
+      zt_prime_up[i] = static_cast<BoutReal>(i.z())
+        + (zShift[i.yp(yoffset)] - zShift[i])*static_cast<BoutReal>(mesh.GlobalNz)/TWOPI;
     }
-  }
 
-  interp_yup->calcWeights(xt_prime, zt_prime_up, mask_up, "RGN_NOY");
-
-  for (const auto &i : xt_prime) {
-    // no interpolation in x, all field lines stay at constant x
-    xt_prime[i] = i.x();
-  }
-
-  for (const auto &i : zt_prime_down.getRegion(RGN_NOY)) {
-    // Field line moves in z by an angle -(zShift(i,j)-zShift(i,j-1)) when going
-    // from j to j-1, but we want the shift in index-space
-    zt_prime_down[i] = static_cast<BoutReal>(i.z())
-      - (zShift[i] - zShift[i.ym()])*static_cast<BoutReal>(mesh.GlobalNz)/TWOPI;
-  }
-
-  auto mask_down = BoutMask(mesh.LocalNx, mesh.LocalNy, mesh.LocalNz);
-  for (auto it = mesh.iterateBndryLowerY(); not it.isDone(); it.next()) {
-    for (int z = mesh.zstart; z <= mesh.zend; z++) {
-      mask_down(it.ind, mesh.ystart, z) = true;
+    // Make a mask, to skip interpolating to points inside y-boundaries that need to be set
+    // by boundary conditions.
+    auto mask_up = BoutMask(mesh.LocalNx, mesh.LocalNy, mesh.LocalNz);
+    for (auto it = mesh.iterateBndryUpperY(); not it.isDone(); it.next()) {
+      for (int y = mesh.yend; y > mesh.yend - yoffset; y--) {
+        for (int z = mesh.zstart; z <= mesh.zend; z++) {
+          mask_up(it.ind, y, z) = true;
+        }
+      }
     }
-  }
 
-  interp_ydown->calcWeights(xt_prime, zt_prime_down, mask_down, "RGN_NOY");
+    interp_yup[yoffset - 1]->calcWeights(xt_prime, zt_prime_up, mask_up, "RGN_NOY");
+
+    for (const auto &i : zt_prime_down.getRegion(RGN_NOY)) {
+      // Field line moves in z by an angle -(zShift(i,j)-zShift(i,j-1)) when going
+      // from j to j-1, but we want the shift in index-space
+      zt_prime_down[i] = static_cast<BoutReal>(i.z())
+        - (zShift[i] - zShift[i.ym(yoffset)])*static_cast<BoutReal>(mesh.GlobalNz)/TWOPI;
+    }
+
+    auto mask_down = BoutMask(mesh.LocalNx, mesh.LocalNy, mesh.LocalNz);
+    for (auto it = mesh.iterateBndryLowerY(); not it.isDone(); it.next()) {
+      for (int y = mesh.ystart; y < mesh.ystart + yoffset; y++) {
+        for (int z = mesh.zstart; z <= mesh.zend; z++) {
+          mask_down(it.ind, y, z) = true;
+        }
+      }
+    }
+
+    interp_ydown[yoffset - 1]->calcWeights(xt_prime, zt_prime_down, mask_down, "RGN_NOY");
+  }
 
   // Set up interpolation to/from field-aligned coordinates
   interp_to_aligned = InterpolationFactory::getInstance().create(&mesh);
@@ -188,8 +191,10 @@ void ShiftedMetricInterp::calcParallelSlices(Field3D &f) {
   f.splitParallelSlices();
 
   // Interpolate f onto yup and ydown fields
-  f.yup() = interp_yup->interpolate(f, "RGN_NOY");
-  f.ydown() = interp_ydown->interpolate(f, "RGN_NOY");
+  for (int yoffset = 1; yoffset <= mesh.ystart; yoffset++) {
+    f.yup(yoffset) = interp_yup[yoffset - 1]->interpolate(f, "RGN_NOY");
+    f.ydown(yoffset) = interp_ydown[yoffset - 1]->interpolate(f, "RGN_NOY");
+  }
 }
 
 /*!
