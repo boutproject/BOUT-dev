@@ -17,7 +17,6 @@ MPIRUN = getmpirun()
 vars = ["check", "check2"]
 
 print("Making LaplaceXY inversion test")
-shell("rm test-laplacexy")
 shell_safe("make > make.log")
 
 print("Running LaplaceXY inversion test")
