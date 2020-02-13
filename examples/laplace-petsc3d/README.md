@@ -24,3 +24,10 @@ Note that the way BOUT++ handles the topology means that some grid
 files may need at least 12 processes to run (the `run` script is set
 up to use 12). It still manages to run OK on a 4-core desktop. It is
 recommended to use an optimized build to generate the initial data.
+
+The plotcheck.py script may be used to plot the function, original rhs,
+recalculated rhs and error at a certain y-index, in order to search for any
+problems. The first argument is the data directory, and the second is the
+y-index to plot. For example::
+
+    $ ./plotcheck.py data 8
