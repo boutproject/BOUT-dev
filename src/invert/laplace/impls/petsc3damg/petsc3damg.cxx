@@ -64,16 +64,16 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mes
       if (global_flags&INVERT_4TH_ORDER) output<<"For PETSc based Laplacian inverter, use 'fourth_order=true' instead of setting INVERT_4TH_ORDER flag"<<"\n";
       throw BoutException("Attempted to set Laplacian inversion flag that is not implemented in petsc_laplace.cxx");
     }
-    if ( inner_boundary_flags & ~implemented_boundary_flags ) {
+    if ( inner_boundary_flags & ~implemented_x_boundary_flags ) {
       throw BoutException("Attempted to set Laplacian inversion boundary flag that is not implemented in petsc_laplace.cxx");
     }
-    if ( outer_boundary_flags & ~implemented_boundary_flags ) {
+    if ( outer_boundary_flags & ~implemented_x_boundary_flags ) {
       throw BoutException("Attempted to set Laplacian inversion boundary flag that is not implemented in petsc_laplace.cxx");
     }
-    if ( lower_boundary_flags & ~implemented_boundary_flags ) {
+    if ( lower_boundary_flags & ~implemented_y_boundary_flags ) {
       throw BoutException("Attempted to set Laplacian inversion boundary flag that is not implemented in petsc_laplace.cxx");
     }
-    if ( upper_boundary_flags & ~implemented_boundary_flags ) {
+    if ( upper_boundary_flags & ~implemented_y_boundary_flags ) {
       throw BoutException("Attempted to set Laplacian inversion boundary flag that is not implemented in petsc_laplace.cxx");
     }    
     if(localmesh->periodicX) {
@@ -140,6 +140,12 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mes
       // Neumann on lower Y boundary
       operator3D(i, i) = -1./coords->dy[i]/sqrt(coords->g_22[i]);
       operator3D(i, i.yp()) = 1./coords->dy[i]/sqrt(coords->g_22[i]);
+    } else if (lower_boundary_flags & 2048) {
+      // free_o3 (extrapolating) boundary condition on lower Y boundary
+      operator3D(i, i) = 1.;
+      operator3D(i, i.yp()) = -3.;
+      operator3D(i, i.yp(2)) = 3.;
+      operator3D(i, i.yp(3)) = 1.;
     } else {
       // Dirichlet on lower Y boundary
       operator3D(i, i) = 0.5;
@@ -152,6 +158,12 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mes
       // Neumann on upper Y boundary
       operator3D(i, i) = 1./coords->dy[i]/sqrt(coords->g_22[i]);
       operator3D(i, i.ym()) = -1./coords->dy[i]/sqrt(coords->g_22[i]);
+    } else if (lower_boundary_flags & 2048) {
+      // free_o3 (extrapolating) boundary condition on upper Y boundary
+      operator3D(i, i) = 1.;
+      operator3D(i, i.ym()) = -3.;
+      operator3D(i, i.ym(2)) = 3.;
+      operator3D(i, i.ym(3)) = 1.;
     } else {
       // Dirichlet on upper Y boundary
       operator3D(i, i) = 0.5;
@@ -534,13 +546,26 @@ OperatorStencil<Ind3D> LaplacePetsc3dAmg::getStencil(Mesh* localmesh,
   // pre-allocated.
   
   // Add lower Y boundary.
-  stencil.add([index = localmesh->ystart - 1](Ind3D ind) -> bool {
-		return ind.y() == index;
-	      }, {zero, zero.yp()});
+  if (lower_boundary_flags & INVERT_FREE_O3) {
+    // extrapolating boundary condition
+    stencil.add([index = localmesh->ystart - 1](Ind3D ind) -> bool {
+                  return ind.y() == index;
+                }, {zero, zero.yp(), zero.yp(2), zero.yp(3)});
+  } else {
+    stencil.add([index = localmesh->ystart - 1](Ind3D ind) -> bool {
+                  return ind.y() == index;
+                }, {zero, zero.yp()});
+  }
   // Add upper Y boundary
-  stencil.add([index = localmesh->yend + 1](Ind3D ind) -> bool {
-		return ind.y() == index;
-	      }, {zero, zero.ym()});
+  if (upper_boundary_flags & INVERT_FREE_O3) {
+    stencil.add([index = localmesh->yend + 1](Ind3D ind) -> bool {
+                  return ind.y() == index;
+                }, {zero, zero.ym(), zero.ym(2), zero.ym(3)});
+  } else {
+    stencil.add([index = localmesh->yend + 1](Ind3D ind) -> bool {
+                  return ind.y() == index;
+                }, {zero, zero.ym()});
+  }
   // Add inner X boundary
   if (localmesh->firstX()) {
     stencil.add(

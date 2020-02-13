@@ -172,8 +172,8 @@ private:
   // The interpolation done to get along-field values in y makes this
   // tricky. For now we will just assume that the footprint of cells
   // used for interpolation is the same everywhere.
-  static OperatorStencil<Ind3D> getStencil(Mesh* localmesh, RangeIterator lowerYBound,
-					   RangeIterator upperYBound);
+  OperatorStencil<Ind3D> getStencil(Mesh* localmesh, RangeIterator lowerYBound,
+                                    RangeIterator upperYBound);
   
   Options *opts;              // Laplace Section Options Object
 
@@ -221,7 +221,8 @@ private:
 
   // These are the implemented flags
   static constexpr int implemented_flags = INVERT_START_NEW,
-    implemented_boundary_flags = INVERT_AC_GRAD + INVERT_SET + INVERT_RHS;
+    implemented_x_boundary_flags = INVERT_AC_GRAD + INVERT_SET + INVERT_RHS,
+    implemented_y_boundary_flags = INVERT_AC_GRAD + INVERT_SET + INVERT_RHS + INVERT_FREE_O3;
 };
 
 #endif //BOUT_HAS_PETSC

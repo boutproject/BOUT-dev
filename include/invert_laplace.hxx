@@ -82,6 +82,8 @@ constexpr int INVERT_DC_GRADPAR = 256;
 constexpr int INVERT_DC_GRADPARINV = 512;
 /// For use in cylindrical coordiate system.
 constexpr int INVERT_IN_CYLINDER = 1024;
+/// 'free' extrapolating boundary conditions
+constexpr int INVERT_FREE_O3 = 2048;
 
 // Global flags
 /// Zero the DC (constant in Z) component of the solution
