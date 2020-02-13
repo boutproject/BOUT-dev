@@ -687,6 +687,51 @@ public:
     return Element(matrix.get(), global1, global2, positions, weights);
   }
 
+  Element forcedOffset(const ind_type& index1, const ind_type& index2) {
+    const int global1 = indexConverter->getGlobal(index1),
+              global2 = indexConverter->getGlobal(index2);
+#if CHECKLEVEL >= 1
+    if (!initialised) {
+      throw BoutException("Can not return element of uninitialised matrix");
+    } else if (global1 == -1 || global2 == -1) {
+      std::cout << "(" << index1.x() << ", " << index1.y() << ", " << index1.z() << ")  ";
+      std::cout << "(" << index2.x() << ", " << index2.y() << ", " << index2.z() << ")\n";
+      throw BoutException("Request to return invalid matrix element");
+    }
+#endif
+    std::vector<PetscInt> positions;
+    std::vector<PetscScalar> weights;
+    if (yoffset != 0) {
+      const auto pw = [this, &index1, &index2]() {
+        if (this->yoffset == -1) {
+          return pt->getWeightsForYDownApproximation(index2.x(), index2.y() - yoffset, index2.z());
+        } else if (this->yoffset == 1) {
+          return pt->getWeightsForYUpApproximation(index2.x(), index2.y() - yoffset, index2.z());
+        } else {
+          return pt->getWeightsForYApproximation(index2.x(), index2.y() - yoffset, index2.z(),
+                                                 this->yoffset);
+        }
+      }();
+
+      const int ny =
+          std::is_same<T, FieldPerp>::value ? 1 : indexConverter->getMesh()->LocalNy;
+      const int nz =
+          std::is_same<T, Field2D>::value ? 1 : indexConverter->getMesh()->LocalNz;
+
+      std::transform(
+          pw.begin(), pw.end(), std::back_inserter(positions),
+          [this, ny, nz](ParallelTransform::PositionsAndWeights p) -> PetscInt {
+            return this->indexConverter->getGlobal(
+                ind_type(p.i * ny * nz + p.j * nz + p.k, ny, nz));
+          });
+      std::transform(pw.begin(), pw.end(), std::back_inserter(weights),
+                     [](ParallelTransform::PositionsAndWeights p) -> PetscScalar {
+                       return p.weight;
+                     });
+    }
+    return Element(matrix.get(), global1, global2, positions, weights);
+  }
+
   BoutReal operator()(const ind_type& index1, const ind_type& index2) const {
     ASSERT2(yoffset == 0);
     const int global1 = indexConverter->getGlobal(index1),
