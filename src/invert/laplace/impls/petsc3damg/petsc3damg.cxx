@@ -38,7 +38,10 @@
 
 LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mesh_in) :
   Laplacian(opt, loc, mesh_in),
+  opts(opt == nullptr ? Options::getRoot()->getSection("laplace") : opt),
   A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
+  lower_boundary_flags((*opts)["lower_boundary_flags"].withDefault(0)),
+  upper_boundary_flags((*opts)["upper_boundary_flags"].withDefault(0)),
   lowerY(localmesh->iterateBndryLowerY()), upperY(localmesh->iterateBndryUpperY()),
   indexer(std::make_shared<GlobalIndexer<Field3D>>(localmesh,
 						   getStencil(localmesh, lowerY, upperY))),
@@ -53,17 +56,6 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mes
   D.setLocation(location);
   Ex.setLocation(location);
   Ez.setLocation(location);
-
-  // Get Options in Laplace Section
-  if (!opt) {
-    opts = Options::getRoot()->getSection("laplace");
-  } else {
-    opts=opt;
-  }
-
-  // Get y boundary flags
-  lower_boundary_flags = (*opts)["lower_boundary_flags"].withDefault(0);
-  upper_boundary_flags = (*opts)["upper_boundary_flags"].withDefault(0);
 
   #if CHECK > 0
     // Checking flags are set to something which is not implemented

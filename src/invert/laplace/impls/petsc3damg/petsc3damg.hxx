@@ -175,6 +175,8 @@ private:
   static OperatorStencil<Ind3D> getStencil(Mesh* localmesh, RangeIterator lowerYBound,
 					   RangeIterator upperYBound);
   
+  Options *opts;              // Laplace Section Options Object
+
   /* Ex and Ez
    * Additional 1st derivative terms to allow for solution field to be
    * components of a vector
@@ -192,7 +194,6 @@ private:
 
   int meshx, meshz, size, localN; // Mesh sizes, total size, no of points on this processor
 
-  Options *opts;              // Laplace Section Options Object
   std::string ksptype; ///< KSP solver type
   std::string pctype;  ///< Preconditioner type
 
