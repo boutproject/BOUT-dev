@@ -36,19 +36,6 @@
 #include <bout/petsc_interface.hxx>
 #include <bout/operatorstencil.hxx>
 
-constexpr auto KSP_RICHARDSON = "richardson";
-constexpr auto KSP_CHEBYSHEV  = "chebyshev";
-constexpr auto KSP_CG         = "cg";
-constexpr auto KSP_GMRES      = "gmres";
-constexpr auto KSP_TCQMR      = "tcqmr";
-constexpr auto KSP_BCGS       = "bcgs";
-constexpr auto KSP_CGS        = "cgs";
-constexpr auto KSP_TFQMR      = "tfqmr";
-constexpr auto KSP_CR         = "cr";
-constexpr auto KSP_LSQR       = "lsqr";
-constexpr auto KSP_BICG       = "bicg";
-constexpr auto KSP_PREONLY    = "preonly";
-
 LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mesh_in) :
   Laplacian(opt, loc, mesh_in),
   A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
@@ -102,9 +89,6 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mes
     }
   #endif
 
-  // Get 4th order solver switch
-  fourth_order = (*opts)["fourth_order"].withDefault(false);
-
   // Get Tolerances for KSP solver
   rtol = (*opts)["rtol"].doc("Relative tolerance for KSP solver").withDefault(1e-5);
   atol = (*opts)["atol"].doc("Absolute tolerance for KSP solver").withDefault(1e-5);
@@ -117,7 +101,10 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mes
   gmres_max_steps = (*opts)["gmres_max_steps"].withDefault(30);
 
   // Get KSP Solver Type (Generalizes Minimal RESidual is the default)
-  ksptype = (*opts)["ksptype"].doc("KSP solver type").withDefault(KSP_GMRES);
+  ksptype = (*opts)["ksptype"].doc("KSP solver type").withDefault(KSPGMRES);
+
+  // Get preconditioner type
+  pctype = (*opts)["pctype"].doc("PC type").withDefault(PCHYPRE);
 
   // Get direct solver switch
   direct = (*opts)["direct"].doc("Use direct (LU) solver?").withDefault(false);
@@ -429,7 +416,7 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
   if (direct) {
   // Set the type of the preconditioner
     PCSetType(pc, PCLU);
-    KSPSetType(ksp, KSP_PREONLY);
+    KSPSetType(ksp, KSPPREONLY);
 #if PETSC_VERSION_GE(3,9,0)
     PCFactorSetMatSolverType(pc,"mumps");
 #else
@@ -451,12 +438,9 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
     if (!(global_flags & INVERT_START_NEW)) KSPSetInitialGuessNonzero(ksp, (PetscBool) true);
     
     // Set the relative and absolute tolerances
-    KSPSetFromOptions(ksp);
-    PCSetType(pc, PCGAMG);
-    PCGAMGSetType(pc, PCGAMGAGG); //TODO: DETERMINE IF THIS IS MOST APPROPRIATE TYPE OF SOLVER
-    PCGAMGSetSymGraph(pc, PETSC_TRUE);
+    PCSetType(pc, pctype.c_str());
   }
-  KSPSetPCSide(ksp, PC_LEFT);
+  KSPSetFromOptions(ksp);
 
   updateRequired = false;
 }

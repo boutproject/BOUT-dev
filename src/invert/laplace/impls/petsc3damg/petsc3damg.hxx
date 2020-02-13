@@ -206,7 +206,6 @@ private:
   BoutReal rtol, atol, dtol;
   int maxits; // Maximum number of iterations in solver.
   bool direct; //Use direct LU solver if true.
-  bool fourth_order;
 
   RangeIterator lowerY, upperY;
 
