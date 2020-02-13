@@ -104,7 +104,13 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mes
   ksptype = (*opts)["ksptype"].doc("KSP solver type").withDefault(KSPGMRES);
 
   // Get preconditioner type
+#ifdef PETSC_HAVE_HYPRE
+  // PETSc was compiled with Hypre
   pctype = (*opts)["pctype"].doc("PC type").withDefault(PCHYPRE);
+#else
+  // Hypre not available
+  pctype = (*opts)["pctype"].doc("PC type").withDefault(PCGAMG);
+#endif // PETSC_HAVE_HYPRE
 
   // Get direct solver switch
   direct = (*opts)["direct"].doc("Use direct (LU) solver?").withDefault(false);
@@ -417,11 +423,15 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
   // Set the type of the preconditioner
     PCSetType(pc, PCLU);
     KSPSetType(ksp, KSPPREONLY);
+#ifdef PETSC_HAVE_MUMPS
 #if PETSC_VERSION_GE(3,9,0)
     PCFactorSetMatSolverType(pc,"mumps");
 #else
     PCFactorSetMatSolverPackage(pc,"mumps");
 #endif
+#else
+    // MUMPS not available, hope that PETSc has a working default option
+#endif // PETSC_HAVE_MUMPS
   } else {
     KSPSetType(ksp, ksptype.c_str()); // Set the type of the solver
   
