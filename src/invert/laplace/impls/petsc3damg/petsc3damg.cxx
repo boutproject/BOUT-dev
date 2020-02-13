@@ -144,8 +144,8 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mes
       // free_o3 (extrapolating) boundary condition on lower Y boundary
       operator3D(i, i) = 1.;
       operator3D(i, i.yp()) = -3.;
-      operator3D(i, i.yp(2)) = 3.;
-      operator3D(i, i.yp(3)) = 1.;
+      operator3D.yup(1).forcedOffset(i, i.yp(2)) = 3.;
+      operator3D.yup(2).forcedOffset(i, i.yp(3)) = 1.;
     } else {
       // Dirichlet on lower Y boundary
       operator3D(i, i) = 0.5;
@@ -162,8 +162,8 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mes
       // free_o3 (extrapolating) boundary condition on upper Y boundary
       operator3D(i, i) = 1.;
       operator3D(i, i.ym()) = -3.;
-      operator3D(i, i.ym(2)) = 3.;
-      operator3D(i, i.ym(3)) = 1.;
+      operator3D.ydown(1).forcedOffset(i, i.ym(2)) = 3.;
+      operator3D.ydown(2).forcedOffset(i, i.ym(3)) = 1.;
     } else {
       // Dirichlet on upper Y boundary
       operator3D(i, i) = 0.5;
