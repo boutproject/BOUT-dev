@@ -75,7 +75,7 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in, Field
     }
   }
 
-  interp_yup->calcWeights(xt_prime, zt_prime_up, mask_up, "RGN_ALL");
+  interp_yup->calcWeights(xt_prime, zt_prime_up, mask_up, "RGN_NOY");
 
   for (const auto &i : xt_prime) {
     // no interpolation in x, all field lines stay at constant x
@@ -96,7 +96,7 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in, Field
     }
   }
 
-  interp_ydown->calcWeights(xt_prime, zt_prime_down, mask_down, "RGN_ALL");
+  interp_ydown->calcWeights(xt_prime, zt_prime_down, mask_down, "RGN_NOY");
 
   // Set up interpolation to/from field-aligned coordinates
   interp_to_aligned = InterpolationFactory::getInstance().create(&mesh);
