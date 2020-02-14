@@ -52,7 +52,6 @@ for nproc in [1,2,4]:
                 extra_args = ""
 
             cmd = "./test_io" + extra_args
-            # TODO: INDENT BELOW
 
             # On some machines need to delete dmp files first
             # or data isn't written correctly
@@ -76,40 +75,39 @@ for nproc in [1,2,4]:
 
             # Collect output data
             for v in vars:
-              stdout.write("      Checking variable "+v+" ... ")
-              result = collect(v, path="data", info=False)
-    
-              # Compare benchmark and output
-              if np.shape(bmk[v]) != np.shape(result):
-                if not (
-                    (v.startswith("v2d_")) and
-                    np.shape(bmk[v]) == np.shape(result[:,:,:,0]) ):
-                  
-                  print("Fail, wrong shape")
-                  success = False
-                  continue
-                else:
-                  result = result[:,:,:,0]
-    
-            diff =  np.max(np.abs(bmk[v] - result))
-            if diff > tol:
-              print("Fail, maximum difference = "+str(diff))
-              success = False
-              continue
+                stdout.write("      Checking variable "+v+" ... ")
+                result = collect(v, path="data", info=False)
 
-            if v in field_vars:
-              # Check cell location
-              if "cell_location" not in result.attributes:
-                print("Fail: {0} has no cell_location attribute".format(v))
-                success = False
-                continue
-    
-              if result.attributes["cell_location"] != "CELL_CENTRE":
-                print("Fail: Expecting cell_location == CELL_CENTRE, but got {0}".format(result.attributes["cell_location"]))
-              success = False
-              continue
-    
-            print("Pass")
+                # Compare benchmark and output
+                if np.shape(bmk[v]) != np.shape(result):
+                    if not (
+                            (v.startswith("v2d_")) and
+                            np.shape(bmk[v]) == np.shape(result[:,:,:,0]) ):
+                        print("Fail, wrong shape")
+                        success = False
+                        continue
+                    else:
+                        result = result[:,:,:,0]
+
+                diff =  np.max(np.abs(bmk[v] - result))
+                if diff > tol:
+                    print("Fail, maximum difference = "+str(diff))
+                    success = False
+                    continue
+
+                if v in field_vars:
+                    # Check cell location
+                    if "cell_location" not in result.attributes:
+                        print("Fail: {0} has no cell_location attribute".format(v))
+                        success = False
+                        continue
+
+                    if result.attributes["cell_location"] != "CELL_CENTRE":
+                        print("Fail: Expecting cell_location == CELL_CENTRE, but got {0}".format(result.attributes["cell_location"]))
+                        success = False
+                        continue
+
+                print("Pass")
 
 if success:
   print(" => All I/O tests passed")
