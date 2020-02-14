@@ -19,8 +19,10 @@ paralleltransform = shifted
 type = petsc   # Use PETSc implementation
 
 ksptype = gmres   # Linear iterative method
+rtol = 1.e-14
+atol = 1.e-16
 
-pctype  = lu   # Preconditioner. Direct "lu" or "ilu"; iterative "jacobi", "sor"
+pctype  = sor   # Preconditioner. Direct "lu" or "ilu"; iterative "jacobi", "sor"
 
 # Set package to perform factorisation for direct solves
 # "petsc" built-in solver only serial
