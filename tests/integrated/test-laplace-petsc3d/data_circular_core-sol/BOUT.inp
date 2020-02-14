@@ -72,8 +72,8 @@ type = hermitesplineonlyz
 #################################################################################
 [laplace]
 type = petsc3damg
-rtol = 1.e-8
-atol = 1.e-12
+rtol = 1.e-10
+atol = 1.e-13
 
 [input]
 transform_from_field_aligned = false
