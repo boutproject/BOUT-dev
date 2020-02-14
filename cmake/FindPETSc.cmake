@@ -307,7 +307,9 @@ int main(int argc,char *argv[]) {
     message (STATUS "Minimal PETSc includes and libraries work.  This probably means we are building with shared libs.")
     set (petsc_includes_needed "${petsc_includes_minimal}")
   else (petsc_works_minimal)     # Minimal includes fail, see if just adding full includes fixes it
-    petsc_test_runs ("${petsc_includes_all}" "${PETSC_LIBRARIES_TS}" petsc_works_allincludes)
+    petsc_test_runs ("${petsc_includes_all}"
+      "${PETSC_LIBRARIES_TS};MPI::MPI_${PETSC_LANGUAGE_BINDINGS}"
+      petsc_works_allincludes)
     if (petsc_works_allincludes) # It does, we just need all the includes (
       message (STATUS "PETSc requires extra include paths, but links correctly with only interface libraries.  This is an unexpected configuration (but it seems to work fine).")
       set (petsc_includes_needed ${petsc_includes_all})
@@ -316,14 +318,18 @@ int main(int argc,char *argv[]) {
       foreach (pkg SYS VEC MAT DM KSP SNES TS ALL)
         list (APPEND PETSC_LIBRARIES_${pkg}  ${petsc_libraries_external})
       endforeach (pkg)
-      petsc_test_runs ("${petsc_includes_minimal}" "${PETSC_LIBRARIES_TS}" petsc_works_alllibraries)
+      petsc_test_runs ("${petsc_includes_minimal}"
+        "${PETSC_LIBRARIES_TS};MPI::MPI_${PETSC_LANGUAGE_BINDINGS}"
+        petsc_works_alllibraries)
       if (petsc_works_alllibraries)
          message (STATUS "PETSc only need minimal includes, but requires explicit linking to all dependencies.  This is expected when PETSc is built with static libraries.")
         set (petsc_includes_needed ${petsc_includes_minimal})
       else (petsc_works_alllibraries)
         # It looks like we really need everything, should have listened to Matt
         set (petsc_includes_needed ${petsc_includes_all})
-        petsc_test_runs ("${petsc_includes_all}" "${PETSC_LIBRARIES_TS}" petsc_works_all)
+        petsc_test_runs ("${petsc_includes_all}"
+          "${PETSC_LIBRARIES_TS};MPI::MPI_${PETSC_LANGUAGE_BINDINGS}"
+          petsc_works_all)
         if (petsc_works_all) # We fail anyways
           message (STATUS "PETSc requires extra include paths and explicit linking to all dependencies.  This probably means you have static libraries and something unexpected in PETSc headers.")
         else (petsc_works_all) # We fail anyways
@@ -359,8 +365,10 @@ find_package_handle_standard_args (PETSc
 if (PETSC_FOUND)
   if (NOT TARGET PETSc::PETSc)
     add_library(PETSc::PETSc UNKNOWN IMPORTED)
+    list(GET PETSC_LIBRARIES 0 PETSC_LIBRARY)
+    target_link_libraries(PETSc::PETSc INTERFACE "${PETSC_LIBRARIES}")
     set_target_properties(PETSc::PETSc PROPERTIES
-      IMPORTED_LOCATION "${PETSC_LIBRARIES}"
+      IMPORTED_LOCATION "${PETSC_LIBRARY}"
       INTERFACE_INCLUDE_DIRECTORIES "${PETSC_INCLUDES}"
       )
   endif()
