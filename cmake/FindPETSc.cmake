@@ -350,7 +350,7 @@ int main(int argc,char *argv[]) {
   mark_as_advanced (PETSC_INCLUDES PETSC_LIBRARIES PETSC_COMPILER PETSC_DEFINITIONS PETSC_MPIEXEC PETSC_EXECUTABLE_RUNS)
 endif ()
 
-if (NOT PETSC_FOUND)
+if (NOT PETSC_INCLUDES)
   include(FindPkgConfig)
   pkg_check_modules(PkgPETSC petsc>3.4.0)
   set (PETSC_LIBRARIES ${PkgPETSC_LINK_LIBRARIES} CACHE STRING "PETSc libraries" FORCE)
