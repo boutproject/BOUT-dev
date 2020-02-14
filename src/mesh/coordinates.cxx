@@ -1449,7 +1449,8 @@ Field2D Coordinates::Laplace(const Field2D& f, CELL_LOC outloc,
 
   Field2D result = G1 * DDX(f, outloc) + G2 * DDY(f, outloc) + g11 * D2DX2(f, outloc)
                    + g22 * D2DY2(f, outloc)
-                   + 2.0 * g12 * D2DXDY(f, outloc, dfdy_boundary_conditions, dfdy_dy_region);
+                   + 2.0 * g12 * D2DXDY(f, outloc, "DEFAULT", "RGN_NOBNDRY",
+                                        dfdy_boundary_conditions, dfdy_dy_region);
 
   return result;
 }
