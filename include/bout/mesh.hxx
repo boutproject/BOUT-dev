@@ -1000,6 +1000,7 @@ protected:
   /// Pointer to the global MPI wrapper, for convenience
   MpiWrapper* mpi = nullptr;
 
+public:
   // Switch for communication of corner guard and boundary cells
   const bool include_corner_cells;
 

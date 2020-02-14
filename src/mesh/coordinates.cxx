@@ -119,13 +119,15 @@ Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
     }
   }
 
-  // Set corner guard cells
-  for (int i = 0; i < localmesh->xstart; i++) {
-    for (int j = 0; j < localmesh->ystart; j++) {
-      result(i, j) = BoutNaN;
-      result(i, localmesh->LocalNy - 1 - j) = BoutNaN;
-      result(localmesh->LocalNx - 1 - i, j) = BoutNaN;
-      result(localmesh->LocalNx - 1 - i, localmesh->LocalNy - 1 - j) = BoutNaN;
+  if (not localmesh->include_corner_cells) {
+    // Set corner guard cells
+    for (int i = 0; i < localmesh->xstart; i++) {
+      for (int j = 0; j < localmesh->ystart; j++) {
+        result(i, j) = BoutNaN;
+        result(i, localmesh->LocalNy - 1 - j) = BoutNaN;
+        result(localmesh->LocalNx - 1 - i, j) = BoutNaN;
+        result(localmesh->LocalNx - 1 - i, localmesh->LocalNy - 1 - j) = BoutNaN;
+      }
     }
   }
 
