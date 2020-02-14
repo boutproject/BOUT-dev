@@ -1491,7 +1491,7 @@ Field2D Coordinates::Laplace_perpXY(const Field2D &A, const Field2D &f) {
     result[i] += outer_x_value * (f[i.xp()] - f[i]);
 
     // inner x boundary
-    const auto inner_x_avg = [&i](const auto& f) { return 0.5 * (f[i] -+f[i.xm()]); };
+    const auto inner_x_avg = [&i](const auto& f) { return 0.5 * (f[i] + f[i.xm()]); };
     const BoutReal inner_x_A = inner_x_avg(A);
     const BoutReal inner_x_J = inner_x_avg(J);
     const BoutReal inner_x_g11 = inner_x_avg(g11);
@@ -1507,9 +1507,9 @@ Field2D Coordinates::Laplace_perpXY(const Field2D &A, const Field2D &f) {
     const BoutReal upper_y_g_22 = upper_y_avg(g_22);
     const BoutReal upper_y_g23 = upper_y_avg(g23);
     const BoutReal upper_y_g_23 = upper_y_avg(g_23);
-    const BoutReal upper_y_dx = upper_y_avg(dx);
+    const BoutReal upper_y_dy = upper_y_avg(dy);
     const BoutReal upper_y_value = -upper_y_A * upper_y_J * upper_y_g23 *upper_y_g_23 /
-      (upper_y_g_22 * J[i] * upper_y_dx * dy[i]);
+      (upper_y_g_22 * J[i] * upper_y_dy * dy[i]);
     result[i] += upper_y_value * (f[i.yp()] - f[i]);
 
     // lower y boundary
@@ -1519,9 +1519,9 @@ Field2D Coordinates::Laplace_perpXY(const Field2D &A, const Field2D &f) {
     const BoutReal lower_y_g_22 = lower_y_avg(g_22);
     const BoutReal lower_y_g23 = lower_y_avg(g23);
     const BoutReal lower_y_g_23 = lower_y_avg(g_23);
-    const BoutReal lower_y_dx = lower_y_avg(dx);
+    const BoutReal lower_y_dy = lower_y_avg(dy);
     const BoutReal lower_y_value = -lower_y_A * lower_y_J * lower_y_g23 * lower_y_g_23 /
-      (lower_y_g_22 * J[i] * lower_y_dx * dy[i]);
+      (lower_y_g_22 * J[i] * lower_y_dy * dy[i]);
     result[i] += lower_y_value * (f[i.ym()] - f[i]);
   }
 
