@@ -448,10 +448,6 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       neighbour_in = true;
     }
 
-//      for(int ix = 0; ix<localmesh->LocalNx ; ix++) {
-//	output << "before "<<BoutComm::rank()<<" "<<ix<<" "<<jy<<" "<<kz<<" "<<A(ix,jy)<<" "<<bvec[ix]<<endl;//<<" "<<B(ix,kz)<<" "<<C(ix,kz)<<" "<<avec[ix] << " " << bvec[ix] << " " << cvec[ix] << endl;
-//      }
-
     /* Set the matrix A used in the inversion of Ax=b
      * by calling tridagCoef and setting the BC
      *
@@ -472,11 +468,6 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
                  // of the z-domain [and not from 0 to 2*pi])
                  kz * kwaveFactor, global_flags, inner_boundary_flags,
                  outer_boundary_flags, &A, &C, &D);
-
-//      for(int ix = 0; ix<localmesh->LocalNx ; ix++) {
-//	output << "after "<<BoutComm::rank()<<" "<<ix<<" "<<jy<<" "<<kz<<" "<<A(ix,jy)<<" "<<bvec[ix]<<endl;//<<" "<<B(ix,kz)<<" "<<C(ix,kz)<<" "<<avec[ix] << " " << bvec[ix] << " " << cvec[ix] << endl;
-//      }
-
 
     ///////// PERFORM INVERSION /////////
     if (!localmesh->periodicX) {
@@ -517,65 +508,11 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	}
       }
 
-///      BoutReal bmin=abs(bvec[localmesh->xstart]);
-///      BoutReal bmax=abs(bvec[localmesh->xstart]);
-//////      if( BoutComm::rank() == 0 ){
-//////        std::cout <<  "0 " << avec[0] << " " << bvec[0] << " " << cvec[0] << endl;
-//////      }
-///      for(int ix = 1; ix<ncx ; ix++) {
-///	if(abs(bvec[ix]) < bmin){
-///	  bmin = abs(bvec[ix]);
-///	}
-///	if(abs(bvec[ix]) > bmax){
-///	  bmax = abs(bvec[ix]);
-///	}
-//////	if( BoutComm::rank() == 0 ){
-//////	std::cout << ix << " " << avec[ix] << " " << bvec[ix] << " " << cvec[ix] << endl;
-//////	}
-///      }
-
-      // Calculate Minv*b
 ///	SCOREP_USER_REGION_END(setboundaries);
-///	SCOREP_USER_REGION_DEFINE(subitloop);
-///	SCOREP_USER_REGION_BEGIN(subitloop, "sub iteration",SCOREP_USER_REGION_TYPE_COMMON);
-//
-//    Precondition
-//    Jacobi
-//      avec[0] and cvec[ncx-1] ignored as not in matrix
-///	for(int ix = 0; ix<ncx ; ix++) {
-///	  const dcomplex b = 1.0/bvec[ix];
-///	  avec[ix] = b*avec[ix];
-///	  cvec[ix] = b*cvec[ix];
-///	  bk1d[ix] = b*bk1d[ix];
-///	  bvec[ix] = 1;
-///	}
-//    Symmetric
-//      Premultiply by 1/sqrt(bvec)
-///	for(int ix = 0; ix<ncx ; ix++) {
-///	  const dcomplex b = 1.0/sqrt(bvec[ix]);
-///	  //output<<b<<endl;
-///	  avec[ix] = b*avec[ix];
-///	  cvec[ix] = b*cvec[ix];
-///	  bk1d[ix] = b*bk1d[ix];
-///	  //xk1d[ix] = xk1d[ix]*conj(sqrt(bvec[ix]));
-///	}
-/////      Postmultiply by 1/sqrt(bvec)
-///	for(int ix = 0; ix<ncx ; ix++) {
-///	  const dcomplex b = conj(1.0/sqrt(bvec[ix]));
-///	  if(ix<ncx-1){
-///	    avec[ix+1] = b*avec[ix+1];
-///	  }
-///	  if(ix>0){
-///	    cvec[ix-1] = b*cvec[ix-1];
-///	  }
-///	}
-///	for(int ix = 0; ix<ncx ; ix++) {
-///	  bvec[ix] = bvec[ix]/abs(bvec[ix]);
-///	}
-
 ///	SCOREP_USER_REGION_DEFINE(invert);
 ///	SCOREP_USER_REGION_BEGIN(invert, "invert local matrices",SCOREP_USER_REGION_TYPE_COMMON);
       // Invert local matrices
+      // Calculate Minv*b
       tridag(std::begin(avec), std::begin(bvec), std::begin(cvec), std::begin(bk1d),
 	   std::begin(minvb), ncx);
       // Now minvb is a constant vector throughout the iterations
