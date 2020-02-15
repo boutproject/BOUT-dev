@@ -92,6 +92,12 @@ void LaplaceParallelTri::get_initial_guess(const int jy, const int kz, Array<dco
 
 SCOREP0();
 
+  int xs = localmesh->xstart;
+  int xe = localmesh->xend;
+  xk1d[xs] = minvb[xs]/(1.0+upperGuardVector(xs,jy,kz)+lowerGuardVector(xs,jy,kz));
+  xk1d[xe] = minvb[xe]/(1.0+upperGuardVector(xe,jy,kz)+lowerGuardVector(xe,jy,kz));
+
+  /*
   int ncx = localmesh->LocalNx;
   int xs = localmesh->xstart;
   int xe = localmesh->xend;
@@ -154,6 +160,7 @@ SCOREP0();
       xk1d[i] += lowerGuardVector(i,jy,kz)*xk1d[xs-1];
     }
   }
+ */
 }
 
 /// Check whether matrix is diagonally dominant, i.e. whether for every row the absolute
@@ -600,6 +607,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	     std::begin(tmp), ncx);
 	for(int i=0; i<ncx; i++){
 	  lowerGuardVector(i,jy,kz) = tmp[i];
+	  //output<<i<<" "<<jy<<" "<<kz<<" "<<xs<<" "<<xe<<" "<<lowerGuardVector(i,jy,kz)<<endl;
 	}
       } 
 
