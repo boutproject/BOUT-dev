@@ -677,60 +677,6 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 //////	  }
 //////	}
 //////	SCOREP_USER_REGION_END(subitloop);
-//////	SCOREP_USER_REGION_DEFINE(invert);
-//////	SCOREP_USER_REGION_BEGIN(invert, "invert local matrices",SCOREP_USER_REGION_TYPE_COMMON);
-/////
-///        // Adjust rows to allow over-relaxation
-//////	for(int ix = 0; ix<localmesh->xstart ; ix++) {
-//////	  avec_eff[ix] = avec[ix];
-//////	  bvec_eff[ix] = bvec[ix];
-//////	  cvec_eff[ix] = cvec[ix];
-//////	  bk1d_eff[ix] = bk1d[ix];
-//////	}
-//////	for(int ix = localmesh->xstart; ix<localmesh->xend+1 ; ix++) {
-///	for(int ix = 0; ix<ncx ; ix++) {
-///	  avec_eff[ix] = om*avec[ix];
-///	  bvec_eff[ix] = bvec[ix];
-///	  cvec_eff[ix] = 0.0; //om*cvec[ix];
-///	  bk1d_eff[ix] = om*bk1d[ix] - (om-1)*bvec[ix]*xk1d[ix] ;
-///	  if(ix<ncx-1){
-///	    bk1d_eff[ix] = bk1d_eff[ix] - om*cvec[ix]*xk1d[ix+1];
-///	  }
-///	}
-//////	for(int ix = localmesh->xend+1; ix<ncx ; ix++) {
-//////	  avec_eff[ix] = avec[ix];
-//////	  bvec_eff[ix] = bvec[ix];
-//////	  cvec_eff[ix] = cvec[ix];
-//////	  bk1d_eff[ix] = bk1d[ix];
-//////	}
-//////	// Patch up internal boundaries
-//////	if(not localmesh->lastX()) { 
-//////	  for(int ix = localmesh->xend+1; ix<localmesh->LocalNx ; ix++) {
-//////	    avec_eff[ix] = 0;
-//////	    bvec_eff[ix] = 1;
-//////	    cvec_eff[ix] = 0;
-//////	    bk1d[ix] = xk1d[ix];
-//////	  }
-//////	} 
-//////	if(not localmesh->firstX()) { 
-//////	  for(int ix = 0; ix<localmesh->xstart ; ix++) {
-//////	    avec_eff[ix] = 0;
-//////	    bvec_eff[ix] = 1;
-//////	    cvec_eff[ix] = 0;
-//////	    bk1d[ix] = xk1d[ix];
-//////	  }
-//////	}
-///
-///	if( BoutComm::rank() == 0) { // and jy == 55 and kz == 0){
-///	  for(int ix = 0; ix<ncx ; ix++) {
-///	    std::cout << ix << " " << jy << " " << kz << " " << xk1d[ix] << endl;
-///	  }
-///	}
-///
-///	// Invert local matrices
-///        tridag(std::begin(avec_eff), std::begin(bvec_eff), std::begin(cvec_eff), std::begin(bk1d_eff),
-///             std::begin(xk1d), ncx);
-///     SCOREP_USER_REGION_END(invert);
 ///	SCOREP_USER_REGION_DEFINE(comms);
 ///	SCOREP_USER_REGION_BEGIN(comms, "communication",SCOREP_USER_REGION_TYPE_COMMON);
 
