@@ -76,7 +76,7 @@ const Field3D Grad_par(const Field3D &var, const std::string &method, CELL_LOC o
 
 const Field3D Grad_parP(const Field3D &apar, const Field3D &f) {
 #ifndef COORDINATES_USE_3D
-  ASSERT1(areFieldsCompatible(apar, f));
+  ASSERT1_FIELDS_COMPATIBLE(apar, f);
   ASSERT1(f.hasParallelSlices());
 
   Mesh *mesh = apar.getMesh();
@@ -213,7 +213,7 @@ const Field3D Div_par(const Field3D &f, const std::string &method, CELL_LOC outl
 }
 
 const Field3D Div_par(const Field3D& f, const Field3D& v) {
-  ASSERT1(areFieldsCompatible(f, v));
+  ASSERT1_FIELDS_COMPATIBLE(f, v);
   ASSERT1(f.hasParallelSlices());
   ASSERT1(v.hasParallelSlices());
 
@@ -616,7 +616,7 @@ const Coordinates::metric_field_type bracket(const Field2D& f, const Field2D& g,
                                              Solver* UNUSED(solver)) {
   TRACE("bracket(Field2D, Field2D)");
 
-  ASSERT1(areFieldsCompatible(f, g));
+  ASSERT1_FIELDS_COMPATIBLE(f, g);
   if (outloc == CELL_DEFAULT) {
     outloc = g.getLocation();
   }
@@ -639,7 +639,7 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
                       CELL_LOC outloc, Solver *solver) {
   TRACE("bracket(Field3D, Field2D)");
 
-  ASSERT1(areFieldsCompatible(f, g));
+  ASSERT1_FIELDS_COMPATIBLE(f, g);
   if (outloc == CELL_DEFAULT) {
     outloc = g.getLocation();
   }
@@ -827,7 +827,7 @@ const Field3D bracket(const Field2D &f, const Field3D &g, BRACKET_METHOD method,
                       CELL_LOC outloc, Solver *solver) {
   TRACE("bracket(Field2D, Field3D)");
 
-  ASSERT1(areFieldsCompatible(f, g));
+  ASSERT1_FIELDS_COMPATIBLE(f, g);
   if (outloc == CELL_DEFAULT) {
     outloc = g.getLocation();
   }
@@ -864,7 +864,7 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
                       CELL_LOC outloc, Solver *solver) {
   TRACE("Field3D, Field3D");
 
-  ASSERT1(areFieldsCompatible(f, g));
+  ASSERT1_FIELDS_COMPATIBLE(f, g);
   if (outloc == CELL_DEFAULT) {
     outloc = g.getLocation();
   }

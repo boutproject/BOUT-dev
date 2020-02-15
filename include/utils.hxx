@@ -491,6 +491,10 @@ inline std::string toString(const bool& val) {
   return "false";
 }
 
+inline std::string toString(const DirectionTypes& dir) {
+  return "{"+toString(dir.y)+", "+toString(dir.z)+"}";
+}
+
 /// Convert a time stamp to a string
 /// This uses std::localtime and std::put_time
 std::string toString(const time_t& time);
