@@ -283,6 +283,22 @@ private:
   /// Set the parallel (y) transform from the options file.
   /// Used in the constructor to create the transform object.
   void setParallelTransform(Options* options);
+  template<typename T>
+  inline T maybeFromFieldAligned(const T& f, const std::string& region = "RGN_ALL") {
+    static_assert(bout::utils::is_Field<T>::value, "fromFieldAligned only works on Fields");
+    ASSERT1(location == f.getLocation());
+    ASSERT1(localmesh == f.getMesh());
+    if (f.getDirectionY() != YDirectionType::Standard){
+      return this->getParallelTransform().fromFieldAligned(f, region);
+    }
+    return f;
+  }
+
+  /// A wrapper for index:DDY derivative that is able to tranform
+  /// fields before the constructor is finished.
+  Coordinates::metric_field_type indexDDY(const Coordinates::metric_field_type& f, CELL_LOC outloc = CELL_DEFAULT,
+					  const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+
 };
 
 /*
