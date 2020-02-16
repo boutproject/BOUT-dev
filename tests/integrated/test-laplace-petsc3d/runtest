@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+#requires: petsc
+
 from boutdata import collect
 from boututils.run_wrapper import launch_safe, shell_safe
 from sys import exit
