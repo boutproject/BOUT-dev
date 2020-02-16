@@ -104,7 +104,6 @@ public:
     int nx = mesh->GlobalNx,
         ny = mesh->GlobalNy,
         nz = mesh->GlobalNz;
-    BoutReal x, y, z;
     static_cast<FakeMesh*>(bout::globals::mesh)->setGridDataSource(new GridFromOptions(Options::getRoot()));
     bout::globals::mesh->getCoordinates()->geometry();
     f3.allocate();
@@ -112,14 +111,14 @@ public:
     coef3.allocate();
 
     BOUT_FOR(i, mesh->getRegion2D("RGN_ALL")) {
-      x = i.x()/(BoutReal)nx - 0.5;
-      y = i.y()/(BoutReal)ny - 0.5;
+      BoutReal x = i.x()/(BoutReal)nx - 0.5;
+      BoutReal y = i.y()/(BoutReal)ny - 0.5;
       coef2[i] = x + y;
     }
     BOUT_FOR(i, mesh->getRegion3D("RGN_ALL")) {
-      x = i.x()/(BoutReal)nx - 0.5;
-      y = i.y()/(BoutReal)ny - 0.5;
-      z = i.z()/(BoutReal)nz - 0.5;
+      BoutReal x = i.x()/(BoutReal)nx - 0.5;
+      BoutReal y = i.y()/(BoutReal)ny - 0.5;
+      BoutReal z = i.z()/(BoutReal)nz - 0.5;
       f3[i] = 1e3*exp(-0.5*sqrt(x*x + y*y + z*z)/sigmasq);
       coef3[i] = x + y + sin(2*3.14159265358979323846*z);
     }
