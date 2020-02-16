@@ -55,8 +55,6 @@ HermiteSpline::HermiteSpline(int y_offset, Mesh *mesh)
 void HermiteSpline::calcWeights(const Field3D &delta_x, const Field3D &delta_z,
                                 const std::string& region) {
 
-  BoutReal t_x, t_z;
-
   BOUT_FOR(i, delta_x.getRegion(region)) {
     const int x = i.x();
     const int y = i.y();
@@ -72,8 +70,8 @@ void HermiteSpline::calcWeights(const Field3D &delta_x, const Field3D &delta_z,
 
     // t_x, t_z are the normalised coordinates \in [0,1) within the cell
     // calculated by taking the remainder of the floating point index
-    t_x = delta_x(x, y, z) - static_cast<BoutReal>(i_corner(x, y, z));
-    t_z = delta_z(x, y, z) - static_cast<BoutReal>(k_corner(x, y, z));
+    BoutReal t_x = delta_x(x, y, z) - static_cast<BoutReal>(i_corner(x, y, z));
+    BoutReal t_z = delta_z(x, y, z) - static_cast<BoutReal>(k_corner(x, y, z));
 
     // NOTE: A (small) hack to avoid one-sided differences
     if (i_corner(x, y, z) >= localmesh->xend) {

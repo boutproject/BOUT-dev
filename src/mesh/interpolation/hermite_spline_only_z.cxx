@@ -48,8 +48,6 @@ HermiteSplineOnlyZ::HermiteSplineOnlyZ(int y_offset, Mesh *mesh)
 void HermiteSplineOnlyZ::calcWeights(const Field3D& UNUSED(delta_x),
                                      const Field3D& delta_z, const std::string& region) {
 
-  BoutReal t_z;
-
   BOUT_FOR(i, delta_z.getRegion(region)) {
     const int x = i.x();
     const int y = i.y();
@@ -64,7 +62,7 @@ void HermiteSplineOnlyZ::calcWeights(const Field3D& UNUSED(delta_x),
 
     // t_z is the normalised coordinate \in [0,1) within the cell
     // calculated by taking the remainder of the floating point index
-    t_z = delta_z(x, y, z) - static_cast<BoutReal>(k_corner(x, y, z));
+    BoutReal t_z = delta_z(x, y, z) - static_cast<BoutReal>(k_corner(x, y, z));
 
     // Check that t_z is in range
     if ((t_z < 0.0) || (t_z > 1.0)) {
