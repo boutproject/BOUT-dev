@@ -2,8 +2,7 @@
 #
 # Python script to run and analyse MMS test
 #
-from __future__ import division
-from __future__ import print_function
+#requires not metric_3d
 
 from boututils.run_wrapper import shell_safe, launch_safe
 from boutdata.collect import collect
