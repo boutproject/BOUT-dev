@@ -660,10 +660,11 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
       throw BoutException("CTU method requires access to the solver");
 
 #ifndef COORDINATES_USE_3D
-    
+    const int ncz = mesh->LocalNz;
+
     for(int x=mesh->xstart;x<=mesh->xend;x++)
       for(int y=mesh->ystart;y<=mesh->yend;y++) {
-        for (int z = 0; z < mesh->LocalNz; z++) {
+        for (int z = 0; z < ncz; z++) {
           int zm = (z - 1 + ncz) % ncz;
 	  int zp = (z + 1) % ncz;
           

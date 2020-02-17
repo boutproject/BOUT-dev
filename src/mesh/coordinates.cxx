@@ -564,13 +564,16 @@ interpolateAndNeumann(MAYBE_UNUSED(const Coordinates::metric_field_type& f), MAY
 #endif
   Mesh* localmesh = f.getMesh();
   Coordinates::metric_field_type result;
+#ifdef COORDINATES_USE_3D
   if (location == CELL_YLOW){
     auto f_aligned = f.getCoordinates() == nullptr ?
       pt->toFieldAligned(f, "RGN_NOX") : toFieldAligned(f, "RGN_NOX");
     result = interp_to(f_aligned, location, "RGN_NOBNDRY");
     result = result.getCoordinates() == nullptr ?
       pt->fromFieldAligned(result,  "RGN_NOBNDRY") : fromFieldAligned(result,  "RGN_NOBNDRY");
-  } else {
+  } else
+#endif
+    {
     result = interp_to(f, location, "RGN_NOBNDRY");
   }
   communicate(result);
@@ -584,23 +587,25 @@ interpolateAndNeumann(MAYBE_UNUSED(const Coordinates::metric_field_type& f), MAY
     if (bndry->bx != 0) {
       // If bx!=0 we are on an x-boundary, inner if bx>0 and outer if bx<0
       for (bndry->first(); !bndry->isDone(); bndry->next1d()) {
-        for (int i = 0; i < localmesh->xstart; i++)
+        for (int i = 0; i < localmesh->xstart; i++){
 	  COORDS_ITER_Z
-          {
+	  {
 	    result(bndry->x + i * bndry->bx, bndry->y, z) =
               result(bndry->x + (i - 1) * bndry->bx, bndry->y - bndry->by, z);
 	  }
+	}
       }
     }
     if (bndry->by != 0) {
       // If by!=0 we are on a y-boundary, upper if by>0 and lower if by<0
       for (bndry->first(); !bndry->isDone(); bndry->next1d()) {
-        for (int i = 0; i < localmesh->ystart; i++)
+        for (int i = 0; i < localmesh->ystart; i++) {
 	  COORDS_ITER_Z
           {
 	    result(bndry->x, bndry->y + i * bndry->by, z) =
 	      result(bndry->x - bndry->bx, bndry->y + (i - 1) * bndry->by, z);
 	  }
+	}
       }
     }
   }
@@ -1726,21 +1731,33 @@ Field3D Coordinates::Laplace(const Field3D& f, CELL_LOC outloc) {
   return result;
 }
 
-// must be member function so we use the member to/from field aligned
-Coordinates::metric_field_type Coordinates::indexDDY(const Coordinates::metric_field_type& f, CELL_LOC outloc,
-		   const std::string& method, const std::string& region){
+Coordinates::metric_field_type Coordinates::indexDDY(const Field2D& f, CELL_LOC outloc,
+						     const std::string& method, const std::string& region){
 #ifdef COORDINATES_USE_3D
-    if (!f.hasParallelSlices()){
-      const bool is_unaligned = (f.getDirectionY() == YDirectionType::Standard);
-      const Field3D f_aligned = is_unaligned ? transform->toFieldAligned(f, "RGN_NOX") : f;
-      Field3D result = bout::derivatives::index::DDY(f_aligned, outloc, method, region);
-      return (is_unaligned ? maybeFromFieldAligned(result, region) : result );
-    }
-#endif
-    return bout::derivatives::index::DDY(f, outloc, method, region);
+  if (!f.hasParallelSlices()){
+    const bool is_unaligned = (f.getDirectionY() == YDirectionType::Standard);
+    const Field3D f_aligned = is_unaligned ? transform->toFieldAligned(f, "RGN_NOX") : f;
+    Field3D result = bout::derivatives::index::DDY(f_aligned, outloc, method, region);
+    return (is_unaligned ? maybeFromFieldAligned(result, region) : result );
   }
+#endif
+  return bout::derivatives::index::DDY(f, outloc, method, region);
+}
 
- bool Coordinates::is3D() {
+Field3D Coordinates::indexDDY(const Field3D& f, CELL_LOC outloc,
+			      const std::string& method, const std::string& region){
+#ifdef COORDINATES_USE_3D
+  if (!f.hasParallelSlices()){
+    const bool is_unaligned = (f.getDirectionY() == YDirectionType::Standard);
+    const Field3D f_aligned = is_unaligned ? transform->toFieldAligned(f, "RGN_NOX") : f;
+    Field3D result = bout::derivatives::index::DDY(f_aligned, outloc, method, region);
+    return (is_unaligned ? maybeFromFieldAligned(result, region) : result );
+  }
+#endif
+  return bout::derivatives::index::DDY(f, outloc, method, region);
+}
+
+bool Coordinates::is3D() {
 #ifdef COORDINATES_USE_3D
   return true;
 #else

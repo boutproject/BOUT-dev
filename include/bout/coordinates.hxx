@@ -283,9 +283,8 @@ private:
   /// Set the parallel (y) transform from the options file.
   /// Used in the constructor to create the transform object.
   void setParallelTransform(Options* options);
-  template<typename T>
-  inline T maybeFromFieldAligned(const T& f, const std::string& region = "RGN_ALL") {
-    static_assert(bout::utils::is_Field<T>::value, "fromFieldAligned only works on Fields");
+
+  inline Field3D maybeFromFieldAligned(const Field3D& f, const std::string& region = "RGN_ALL") {
     ASSERT1(location == f.getLocation());
     ASSERT1(localmesh == f.getMesh());
     if (f.getDirectionY() != YDirectionType::Standard){
@@ -294,10 +293,16 @@ private:
     return f;
   }
 
+  inline Field2D maybeFromFieldAligned(const Field2D& f, const std::string& UNUSED(region) = "RGN_ALL") {
+    return f;
+  }
+
   /// A wrapper for index:DDY derivative that is able to tranform
   /// fields before the constructor is finished.
-  Coordinates::metric_field_type indexDDY(const Coordinates::metric_field_type& f, CELL_LOC outloc = CELL_DEFAULT,
+  Coordinates::metric_field_type indexDDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
 					  const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+  Field3D indexDDY(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+		   const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
 
 };
 

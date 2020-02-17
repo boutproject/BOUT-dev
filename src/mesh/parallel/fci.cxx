@@ -264,7 +264,7 @@ FCIMap::FCIMap(Mesh& mesh, int offset_, BoundaryRegionPar* boundary, bool zperio
           BoutReal dz = (dR_dx * dZ - dZ_dx * dR) / det;
           boundary->add_point(x, y, z,
                               x + dx, y + 0.5*offset, z + dz,  // Intersection point in local index space
-                              0.5*(*coord.dy(x,y)), //sqrt( SQ(dR) + SQ(dZ) ),  // Distance to intersection
+                              0.5*coord.dy(x,y,z), //sqrt( SQ(dR) + SQ(dZ) ),  // Distance to intersection
                               PI   // Right-angle intersection
                               );
         }
