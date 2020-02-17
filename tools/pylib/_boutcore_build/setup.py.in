@@ -14,7 +14,6 @@ os.environ["CC"]  = "$(bout-config --cc)"
 
 setup(
     ext_modules = cythonize("boutcore.pyx",
-                            language="c++",             # generate C++ code
                             )
 )
 EOF
