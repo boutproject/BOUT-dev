@@ -256,22 +256,27 @@ TEST_F(SolverTest, AddVector2D) {
 
   Vector2D vector1{}, vector2{};
   EXPECT_NO_THROW(solver.add(vector1, "vector"));
-  EXPECT_EQ(solver.n2Dvars(), 3);
-  EXPECT_EQ(solver.n3Dvars(), 0);
+#ifndef COORDINATES_USE_3D
+  int n2d=3, n3d=0;
+#else
+  int n2d=0, n3d=3;
+#endif
+  EXPECT_EQ(solver.n2Dvars(), n2d);
+  EXPECT_EQ(solver.n3Dvars(), n3d);
   EXPECT_TRUE(IsFieldEqual(vector1.x, 5.0));
   EXPECT_TRUE(IsFieldEqual(vector1.y, 6.0));
   EXPECT_TRUE(IsFieldEqual(vector1.z, 7.0));
 
 #if CHECK > 0
   EXPECT_THROW(solver.add(vector2, "vector"), BoutException);
-  EXPECT_EQ(solver.n2Dvars(), 3);
-  EXPECT_EQ(solver.n3Dvars(), 0);
+  EXPECT_EQ(solver.n2Dvars(), n2d);
+  EXPECT_EQ(solver.n3Dvars(), n3d);
 #endif
 
   vector2.covariant = false;
   EXPECT_NO_THROW(solver.add(vector2, "another_vector"));
-  EXPECT_EQ(solver.n2Dvars(), 6);
-  EXPECT_EQ(solver.n3Dvars(), 0);
+  EXPECT_EQ(solver.n2Dvars(), n2d*2);
+  EXPECT_EQ(solver.n3Dvars(), n3d*2);
   EXPECT_TRUE(IsFieldEqual(vector2.x, 8.0));
   EXPECT_TRUE(IsFieldEqual(vector2.y, 9.0));
   EXPECT_TRUE(IsFieldEqual(vector2.z, 10.0));
@@ -382,29 +387,34 @@ TEST_F(SolverTest, ConstraintVector2D) {
 
   Vector2D vector1{}, vector2{};
   EXPECT_NO_THROW(solver.constraint(vector1, vector1, "vector"));
-  EXPECT_EQ(solver.n2Dvars(), 3);
-  EXPECT_EQ(solver.n3Dvars(), 0);
+#ifndef COORDINATES_USE_3D
+  int n2d=3, n3d=0;
+#else
+  int n2d=0, n3d=3;
+#endif
+  EXPECT_EQ(solver.n2Dvars(), n2d);
+  EXPECT_EQ(solver.n3Dvars(), n3d);
 
 #if CHECK > 0
   EXPECT_THROW(solver.constraint(vector2, vector2, "vector"), BoutException);
-  EXPECT_EQ(solver.n2Dvars(), 3);
-  EXPECT_EQ(solver.n3Dvars(), 0);
+  EXPECT_EQ(solver.n2Dvars(), n2d);
+  EXPECT_EQ(solver.n3Dvars(), n3d);
 
   EXPECT_THROW(solver.constraint(vector2, vector2, ""), BoutException);
-  EXPECT_EQ(solver.n2Dvars(), 3);
-  EXPECT_EQ(solver.n3Dvars(), 0);
+  EXPECT_EQ(solver.n2Dvars(), n2d);
+  EXPECT_EQ(solver.n3Dvars(), n3d);
 
   solver.changeHasConstraints(false);
   EXPECT_THROW(solver.constraint(vector2, vector2, "some_other_name"), BoutException);
-  EXPECT_EQ(solver.n2Dvars(), 3);
-  EXPECT_EQ(solver.n3Dvars(), 0);
+  EXPECT_EQ(solver.n2Dvars(), n2d);
+  EXPECT_EQ(solver.n3Dvars(), n3d);
   solver.changeHasConstraints(true);
 #endif
 
   vector2.covariant = false;
   EXPECT_NO_THROW(solver.constraint(vector2, vector2, "another_vector"));
-  EXPECT_EQ(solver.n2Dvars(), 6);
-  EXPECT_EQ(solver.n3Dvars(), 0);
+  EXPECT_EQ(solver.n2Dvars(), n2d*2);
+  EXPECT_EQ(solver.n3Dvars(), n3d*2);
 
   const auto expected_names = std::vector<std::string>{"vector", "another_vector"};
   EXPECT_EQ(solver.listVector2DNames(), expected_names);

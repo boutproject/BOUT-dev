@@ -62,6 +62,12 @@ public:
           return index.x() + (TWOPI * index.y()) + (TWOPI * index.z() / nz) + 3;
         },
         &mesh_from_options);
+    expected_metric =
+#ifdef COORDINATES_USE_3D
+      expected_3d;
+#else
+      expected_2d;
+#endif
   }
 
   ~GridFromOptionsTest() override {
@@ -82,6 +88,7 @@ public:
   std::string expected_string{"x + y + z + 3"};
   Field2D expected_2d;
   Field3D expected_3d;
+  Coordinates::metric_field_type expected_metric;
   FakeMesh mesh_from_options{nx, ny, nz};
 };
 
@@ -336,12 +343,12 @@ TEST_F(GridFromOptionsTest, CoordinatesCentre) {
 
   mesh_from_options.communicate(expected_2d);
 
-  EXPECT_TRUE(IsFieldEqual(coords->g11, expected_2d + 5.));
-  EXPECT_TRUE(IsFieldEqual(coords->g22, expected_2d + 4.));
-  EXPECT_TRUE(IsFieldEqual(coords->g33, expected_2d + 3.));
-  EXPECT_TRUE(IsFieldEqual(coords->g12, expected_2d + 2.));
-  EXPECT_TRUE(IsFieldEqual(coords->g13, expected_2d + 1.));
-  EXPECT_TRUE(IsFieldEqual(coords->g23, expected_2d));
+  EXPECT_TRUE(IsFieldEqual(coords->g11, expected_metric + 5.));
+  EXPECT_TRUE(IsFieldEqual(coords->g22, expected_metric + 4.));
+  EXPECT_TRUE(IsFieldEqual(coords->g33, expected_metric + 3.));
+  EXPECT_TRUE(IsFieldEqual(coords->g12, expected_metric + 2.));
+  EXPECT_TRUE(IsFieldEqual(coords->g13, expected_metric + 1.));
+  EXPECT_TRUE(IsFieldEqual(coords->g23, expected_metric));
 }
 
 TEST_F(GridFromOptionsTest, CoordinatesZlow) {
@@ -349,12 +356,12 @@ TEST_F(GridFromOptionsTest, CoordinatesZlow) {
 
   mesh_from_options.communicate(expected_2d);
 
-  EXPECT_TRUE(IsFieldEqual(coords->g11, expected_2d + 5.));
-  EXPECT_TRUE(IsFieldEqual(coords->g22, expected_2d + 4.));
-  EXPECT_TRUE(IsFieldEqual(coords->g33, expected_2d + 3.));
-  EXPECT_TRUE(IsFieldEqual(coords->g12, expected_2d + 2.));
-  EXPECT_TRUE(IsFieldEqual(coords->g13, expected_2d + 1.));
-  EXPECT_TRUE(IsFieldEqual(coords->g23, expected_2d));
+  EXPECT_TRUE(IsFieldEqual(coords->g11, expected_metric + 5.));
+  EXPECT_TRUE(IsFieldEqual(coords->g22, expected_metric + 4.));
+  EXPECT_TRUE(IsFieldEqual(coords->g33, expected_metric + 3.));
+  EXPECT_TRUE(IsFieldEqual(coords->g12, expected_metric + 2.));
+  EXPECT_TRUE(IsFieldEqual(coords->g13, expected_metric + 1.));
+  EXPECT_TRUE(IsFieldEqual(coords->g23, expected_metric));
 }
 
 TEST_F(GridFromOptionsTest, CoordinatesXlowInterp) {
@@ -366,8 +373,8 @@ TEST_F(GridFromOptionsTest, CoordinatesXlowInterp) {
 
   auto coords = mesh_from_options.getCoordinates(CELL_XLOW);
 
-  Field2D expected_xlow = makeField<Field2D>(
-      [](Field2D::ind_type& index) {
+  Coordinates::metric_field_type expected_xlow = makeField<Coordinates::metric_field_type>(
+      [](Coordinates::metric_field_type::ind_type& index) {
         return index.x() - 0.5 + (TWOPI * index.y()) + (TWOPI * index.z() / nz) + 3;
       },
       &mesh_from_options);
@@ -419,6 +426,7 @@ TEST_F(GridFromOptionsTest, CoordinatesXlowRead) {
 }
 
 TEST_F(GridFromOptionsTest, CoordinatesYlowInterp) {
+#ifndef COORDINATES_USE_3D
   // *_ylow fields not present in options, Coordinates will be interpolated
   // from CELL_CENTRE
 
@@ -441,9 +449,11 @@ TEST_F(GridFromOptionsTest, CoordinatesYlowInterp) {
   EXPECT_TRUE(IsFieldEqual(coords->g12, expected_ylow + 2., "RGN_NOBNDRY", this_tolerance));
   EXPECT_TRUE(IsFieldEqual(coords->g13, expected_ylow + 1., "RGN_NOBNDRY", this_tolerance));
   EXPECT_TRUE(IsFieldEqual(coords->g23, expected_ylow, "RGN_NOBNDRY", this_tolerance));
+#endif
 }
 
 TEST_F(GridFromOptionsTest, CoordinatesYlowRead) {
+#ifndef COORDINATES_USE_3D
   // *_ylow fields added to options, will be read to initialise Coordinates
 
   // Note '(2*pi*11 - y)' here because FakeMesh::GlobalY(int jy) returns jy, not a
@@ -478,9 +488,11 @@ TEST_F(GridFromOptionsTest, CoordinatesYlowRead) {
   EXPECT_TRUE(IsFieldEqual(coords->g12, expected_ylow + 2., "RGN_ALL", this_tolerance));
   EXPECT_TRUE(IsFieldEqual(coords->g13, expected_ylow + 1., "RGN_ALL", this_tolerance));
   EXPECT_TRUE(IsFieldEqual(coords->g23, expected_ylow, "RGN_ALL", this_tolerance));
+#endif
 }
 
 TEST_F(GridFromOptionsTest, CoordinatesZlowRead) {
+#ifndef COORDINATES_USE_3D
   // Grids are axisymmetric, so CELL_ZLOW Coordinates will be read from
   // CELL_CENTRE variables
 
@@ -492,4 +504,5 @@ TEST_F(GridFromOptionsTest, CoordinatesZlowRead) {
   EXPECT_TRUE(IsFieldEqual(coords->g12, expected_2d + 2.));
   EXPECT_TRUE(IsFieldEqual(coords->g13, expected_2d + 1.));
   EXPECT_TRUE(IsFieldEqual(coords->g23, expected_2d));
+#endif
 }

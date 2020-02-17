@@ -603,7 +603,7 @@ TEST_F(FieldFactoryTest, RequireMesh) {
 
 TEST_F(FieldFactoryTest, CreateOnMeshWithoutCoordinates) {
   static_cast<FakeMesh*>(mesh)->setCoordinates(nullptr);
-  EXPECT_THROW(factory.create3D("x"), BoutException);
+  EXPECT_NO_THROW(factory.create3D("x"));
 }
 
 TEST_F(FieldFactoryTest, CleanCache) {
