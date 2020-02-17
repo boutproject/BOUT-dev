@@ -81,6 +81,10 @@ matrix:
       - *default_env
       - CONFIGURE_OPTIONS="--enable-openmp --with-petsc --with-slepc --with-sundials=$HOME/local"
       - OMP_NUM_THREADS=2
+  - env:
+      - *default_env
+      - CONFIGURE_OPTIONS="--enable-metric-3d --enable-shared"
+      - SCRIPT_FLAGS="-uim -t python -t shared"
 #CMAKE
   - env:
       - *default_env
