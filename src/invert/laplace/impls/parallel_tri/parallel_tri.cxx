@@ -191,14 +191,18 @@ void LaplaceParallelTri::check_diagonal_dominance(const Array<dcomplex> &avec, c
 /// value of the diagonal element is greater-or-equal-to the sum of the absolute values
 /// of the other elements. Being diagonally dominant is sufficient (but not necessary) for
 /// the Jacobi iteration to converge.
-void LaplaceParallelTri::check_diagonal_dominance(const dcomplex al, const dcomplex au, const dcomplex bl, const dcomplex bu, const int jy, const int kz) {
+bool LaplaceParallelTri::is_diagonally_dominant(const dcomplex al, const dcomplex au, const dcomplex bl, const dcomplex bu, const int jy, const int kz) {
 
+  bool is_dd = true;
   if(std::fabs(al)+std::fabs(bl)>1.0){
     output<<BoutComm::rank()<<" jy="<<jy<<", kz="<<kz<<", lower row not diagonally dominant"<<endl;
+    is_dd = false;
   }
   if(std::fabs(au)+std::fabs(bu)>1.0){
     output<<BoutComm::rank()<<" jy="<<jy<<", kz="<<kz<<", upper row not diagonally dominant"<<endl;
+    is_dd = false;
   }
+  return is_dd;
 }
 
 void LaplaceParallelTri::swapHaloInteriorLower(Array<dcomplex> &x){
@@ -581,7 +585,6 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	bu = -lowerGuardVector(xe,jy,kz)/upperGuardVector(xe,jy,kz);
       }
       //if(jy==0 and kz==1){
-      check_diagonal_dominance(al,au,bl,bu,jy,kz);
       //output<<"Coefficients: "<<BoutComm::rank()<<" "<<jy<<" "<<kz<<" "<<" "<<rl<<" "<<al<<" "<<bl<<" "<<ru<<" "<<au<<" "<<bu<<endl;
       //output<<"Coefficients: "<<BoutComm::rank()<<" "<<jy<<" "<<kz<<" "<<" "<<al<<" "<<bl<<" "<<au<<" "<<bu<<endl;
       //}
@@ -747,7 +750,15 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	++count;
 ///	SCOREP_USER_REGION_END(comms_after_break);
 	if (count>maxits) {
-	  throw BoutException("LaplaceParallelTri error: Not converged within maxits=%i iterations.", maxits);
+	  // Maximum number of allowed iterations reached.
+	  // If the iteration matrix is diagonally-dominant, then convergence is guaranteed, so maxits is set too low.
+	  // Otherwise, the method may or may not converge.
+          if(is_diagonally_dominant(al,au,bl,bu,jy,kz)){
+	    throw BoutException("LaplaceParallelTri error: Not converged within maxits=%i iterations. The iteration matrix is diagonally dominant and convergence is guaranteed. Please increase maxits and retry.",maxits);
+	  }
+	  else{
+	    throw BoutException("LaplaceParallelTri error: Not converged within maxits=%i iterations. The iteration matrix is not diagonally dominant, so there is no guarantee this method will converge. Consider increasing maxits or using a different solver.",maxits);
+	  }
 	}
 
 ///	SCOREP_USER_REGION_DEFINE(errors);

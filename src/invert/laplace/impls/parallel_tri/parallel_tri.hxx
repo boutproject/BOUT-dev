@@ -80,7 +80,7 @@ public:
   void swapHaloInteriorUpper(Array<dcomplex> &x);
   void check_diagonal_dominance(const Array<dcomplex> &a, const Array<dcomplex> &b,
       const Array<dcomplex> &c, const int ncx, const int jy, const int kz);
-  void check_diagonal_dominance(const dcomplex al, const dcomplex au, const dcomplex bl, const dcomplex bu, const int jy, const int kz);
+  bool is_diagonally_dominant(const dcomplex al, const dcomplex au, const dcomplex bl, const dcomplex bu, const int jy, const int kz);
 
   void resetSolver();
 
