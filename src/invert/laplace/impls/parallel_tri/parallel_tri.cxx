@@ -205,22 +205,6 @@ bool LaplaceParallelTri::is_diagonally_dominant(const dcomplex al, const dcomple
   return is_dd;
 }
 
-void LaplaceParallelTri::swapHaloInteriorLower(Array<dcomplex> &x){
-  dcomplex t;
-  int xs = localmesh->xstart;
-  t = x[xs];
-  x[xs] = x[xs-1];
-  x[xs-1] = t; 
-}
-
-void LaplaceParallelTri::swapHaloInteriorUpper(Array<dcomplex> &x){
-  dcomplex t;
-  int xe = localmesh->xend;
-  t = x[xe];
-  x[xe] = x[xe+1];
-  x[xe+1] = t; 
-}
-
 void get_errors(BoutReal *error_rel,BoutReal *error_abs,const dcomplex x,const dcomplex xlast){
   *error_abs = abs(x - xlast);
   BoutReal xabs = fabs(x);

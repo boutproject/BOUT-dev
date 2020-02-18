@@ -76,8 +76,6 @@ public:
   void get_initial_guess(const int jy, const int kz, Array<dcomplex> &r,
       Tensor<dcomplex> &lowerGuardVector, Tensor<dcomplex> &upperGuardVector,
       Array<dcomplex> &xk1d);
-  void swapHaloInteriorLower(Array<dcomplex> &x);
-  void swapHaloInteriorUpper(Array<dcomplex> &x);
   void check_diagonal_dominance(const Array<dcomplex> &a, const Array<dcomplex> &b,
       const Array<dcomplex> &c, const int ncx, const int jy, const int kz);
   bool is_diagonally_dominant(const dcomplex al, const dcomplex au, const dcomplex bl, const dcomplex bu, const int jy, const int kz);
