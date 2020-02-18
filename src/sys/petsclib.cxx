@@ -15,7 +15,7 @@ char ***PetscLib::pargv = nullptr;
 PetscLogEvent PetscLib::USER_EVENT = 0;
 
 PetscLib::PetscLib() {
-  BOUT_OMP(critical)
+  BOUT_OMP(critical(PetscLib))
   {
     if(count == 0) {
       // Initialise PETSc
@@ -31,25 +31,29 @@ PetscLib::PetscLib() {
 }
 
 PetscLib::~PetscLib() {
-  BOUT_OMP(critical)
-  count--;
-  if(count == 0) {
-    // Finalise PETSc
-    output << "Finalising PETSc\n";
-    PetscLogEventEnd(USER_EVENT,0,0,0,0);
-    PetscFinalize();
+  BOUT_OMP(critical(PetscLib))
+  {
+    count--;
+    if(count == 0) {
+      // Finalise PETSc
+      output << "Finalising PETSc\n";
+      PetscLogEventEnd(USER_EVENT,0,0,0,0);
+      PetscFinalize();
+    }
   }
 }
 
 void PetscLib::cleanup() {
-  if(count == 0)
-    return; // Either never initialised, or already cleaned up
+  BOUT_OMP(critical(PetscLib))
+  {
+    if(count > 0) {
+      output << "Finalising PETSc. Warning: Instances of PetscLib still exist.\n";
+      PetscLogEventEnd(USER_EVENT,0,0,0,0);
+      PetscFinalize();
 
-  output << "Finalising PETSc. Warning: Instances of PetscLib still exist.\n";
-  PetscLogEventEnd(USER_EVENT,0,0,0,0);
-  PetscFinalize();
-  
-  count = 0; // ensure that finalise is not called again later
+      count = 0; // ensure that finalise is not called again later
+    }
+  }
 }
 
 #endif // BOUT_HAS_PETSC
