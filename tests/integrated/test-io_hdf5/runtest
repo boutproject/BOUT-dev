@@ -7,6 +7,9 @@
 #requires: all_tests
 #Requires: hdf5
 
+# in metric_3d the vector2d contains 3d fields
+#requires: not metric_3d
+
 from boututils.run_wrapper import shell, shell_safe, launch_safe
 from boutdata.collect import collect
 import numpy as np

@@ -5,6 +5,7 @@
 #
 
 #requires: all_tests
+#requires: not metric_3d
 
 # Variables to compare
 from __future__ import print_function

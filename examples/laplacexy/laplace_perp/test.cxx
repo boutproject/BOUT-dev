@@ -57,7 +57,7 @@ int main(int argc, char** argv) {
   mesh->communicate(solved);
   
   // Now differentiate using Laplace_perp
-  Field2D result = Laplace_perp(solved);
+  auto result = Laplace_perp(solved);
 
   // Write fields to output
   SAVE_ONCE3(input, solved, result);

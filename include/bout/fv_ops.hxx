@@ -204,7 +204,7 @@ namespace FV {
     Coordinates *coord = f_in.getCoordinates();
 
     Field3D result{zeroFrom(f)};
-    
+
     // Only need one guard cell, so no need to communicate fluxes
     // Instead calculate in guard cells to preserve fluxes
     int ys = mesh->ystart-1;
@@ -231,11 +231,11 @@ namespace FV {
 
       for (int j = ys; j <= ye; j++) {
         // Pre-calculate factors which multiply fluxes
-
+#ifndef COORDINATES_USE_3D
         // For right cell boundaries
         BoutReal common_factor = (coord->J(i, j) + coord->J(i, j + 1)) /
           (sqrt(coord->g_22(i, j)) + sqrt(coord->g_22(i, j + 1)));
-        
+
         BoutReal flux_factor_rc = common_factor / (coord->dy(i, j) * coord->J(i, j));
         BoutReal flux_factor_rp = common_factor / (coord->dy(i, j + 1) * coord->J(i, j + 1));
 
@@ -245,14 +245,29 @@ namespace FV {
 
         BoutReal flux_factor_lc = common_factor / (coord->dy(i, j) * coord->J(i, j));
         BoutReal flux_factor_lm = common_factor / (coord->dy(i, j - 1) * coord->J(i, j - 1));
-        
+#endif
         for (int k = 0; k < mesh->LocalNz; k++) {
+#ifdef COORDINATES_USE_3D
+          // For right cell boundaries
+          BoutReal common_factor = (coord->J(i, j, k) + coord->J(i, j + 1, k)) /
+            (sqrt(coord->g_22(i, j, k)) + sqrt(coord->g_22(i, j + 1, k)));
+
+        BoutReal flux_factor_rc = common_factor / (coord->dy(i, j, k) * coord->J(i, j, k));
+        BoutReal flux_factor_rp = common_factor / (coord->dy(i, j + 1, k) * coord->J(i, j + 1, k));
+
+        // For left cell boundaries
+        common_factor = (coord->J(i, j, k) + coord->J(i, j - 1, k)) /
+          (sqrt(coord->g_22(i, j, k)) + sqrt(coord->g_22(i, j - 1, k)));
+
+        BoutReal flux_factor_lc = common_factor / (coord->dy(i, j, k) * coord->J(i, j, k));
+        BoutReal flux_factor_lm = common_factor / (coord->dy(i, j - 1, k) * coord->J(i, j - 1, k));
+#endif
 
           ////////////////////////////////////////////
           // Reconstruct f at the cell faces
           // This calculates s.R and s.L for the Right and Left
           // face values on this cell
-          
+
           // Reconstruct f at the cell faces
           Stencil1D s;
           s.c = f(i, j, k);

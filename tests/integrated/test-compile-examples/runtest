@@ -23,9 +23,10 @@ do
 
         if test $ex -gt 0
         then
-            echo $(basename $dir) failed
+            dir=${dir#../../../examples/}
+            echo $dir failed
             error=1
-            failed="$failed\n$(basename $dir) failed"
+            failed="$failed\n$dir failed"
         fi
     fi
 done

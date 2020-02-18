@@ -1,5 +1,6 @@
 #!/bin/sh
 
 #requires: all_tests
+#requires: not metric_3d
 
 ./runtest.py
