@@ -109,6 +109,9 @@ private:
   /// Counter for the number of times the solver has been called
   int ncalls;
 
+  /// Flag for method selection
+  bool new_method;
+
 };
 
 #endif // __PARALLEL_TRI_H__
