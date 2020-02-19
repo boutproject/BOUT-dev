@@ -525,6 +525,10 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	for(int i=0; i<ncx; i++){
 	  upperGuardVector(i,jy,kz) = tmp[i];
 	}
+      } else {
+	for(int i=0; i<ncx; i++){
+	  upperGuardVector(i,jy,kz) = 0.0;
+	}
       }
 
       // Lower interface (nguard vectors, hard-coded to two for now)
@@ -538,9 +542,12 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	     std::begin(tmp), ncx);
 	for(int i=0; i<ncx; i++){
 	  lowerGuardVector(i,jy,kz) = tmp[i];
-	  //output<<i<<" "<<jy<<" "<<kz<<" "<<xs<<" "<<xe<<" "<<lowerGuardVector(i,jy,kz)<<endl;
 	}
-      } 
+      } else {
+	for(int i=0; i<ncx; i++){
+	  lowerGuardVector(i,jy,kz) = 0.0;
+	}
+      }
 
 ///	SCOREP_USER_REGION_END(invert);
 
@@ -645,6 +652,17 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 		 + (auold*blold - alold*buold)*Bd*Ru );
       bu = Delta*( buold + (auold*blold - alold*buold)*Bd )*Bu;
       au = Delta * auold * Ad ;
+
+///      if(jy==0 and kz==0){
+///	output<<alold<<" "<<blold<<" "<<auold<<" "<<buold<<endl;
+///	output<<al<<" "<<bl<<" "<<au<<" "<<bu<<endl;
+//////	for(int ix=0; ix<ncx;ix++){
+/////////	  output<<avec[ix]<<" "<<bvec[ix]<<" "<<cvec[ix]<<endl;
+//////	  output<<lowerGuardVector(ix,jy,kz)<<" "<<upperGuardVector(ix,jy,kz)<<" "<<endl;
+//////	}
+///	output<<" "<<endl;
+///      }
+
       }
 
       //if(jy==0 and kz==1){
@@ -824,6 +842,8 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	++count;
 ///	SCOREP_USER_REGION_END(comms_after_break);
 	if (count>maxits) {
+///	    output<<alold<<" "<<blold<<" "<<auold<<" "<<buold<<endl;
+///	    output<<al<<" "<<bl<<" "<<au<<" "<<bu<<endl;
 	  //break;
 	  // Maximum number of allowed iterations reached.
 	  // If the iteration matrix is diagonally-dominant, then convergence is guaranteed, so maxits is set too low.
@@ -832,6 +852,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	    throw BoutException("LaplaceParallelTri error: Not converged within maxits=%i iterations. The iteration matrix is diagonally dominant on processor %i and convergence is guaranteed (if all processors are diagonally dominant). Please increase maxits and retry.",maxits,BoutComm::rank());
 	  }
 	  else{
+	    output<<alold<<" "<<blold<<" "<<auold<<" "<<buold<<endl;
 	    output<<al<<" "<<bl<<" "<<au<<" "<<bu<<endl;
 	    output<<Ad<<" "<<Bd<<" "<<Au<<" "<<Bu<<endl;
 	    throw BoutException("LaplaceParallelTri error: Not converged within maxits=%i iterations. The iteration matrix is not diagonally dominant on processor %i, so there is no guarantee this method will converge. Consider increasing maxits or using a different solver.",maxits,BoutComm::rank());
