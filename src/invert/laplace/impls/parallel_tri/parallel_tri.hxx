@@ -88,7 +88,7 @@ private:
   Field2D A, C, D;
 
   BoutReal omega;
-  BoutReal Borig;
+  //BoutReal Borig;
   Field3D Bvals;
   Matrix<bool> first_call;
   // Save previous x in Fourier space

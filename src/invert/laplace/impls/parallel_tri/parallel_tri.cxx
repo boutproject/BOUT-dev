@@ -43,7 +43,7 @@
 #include <bout/scorepwrapper.hxx>
 
 LaplaceParallelTri::LaplaceParallelTri(Options *opt, CELL_LOC loc, Mesh *mesh_in)
-    : Laplacian(opt, loc, mesh_in), A(0.0), C(1.0), D(1.0), ipt_mean_its(0.), ncalls(0), Borig(50.), Bvals(1000.) {
+    : Laplacian(opt, loc, mesh_in), A(0.0), C(1.0), D(1.0), ipt_mean_its(0.), ncalls(0) {
   A.setLocation(location);
   C.setLocation(location);
   D.setLocation(location);
@@ -59,8 +59,6 @@ LaplaceParallelTri::LaplaceParallelTri(Options *opt, CELL_LOC loc, Mesh *mesh_in
   bout::globals::dump.addRepeat(ipt_mean_its,
       "ipt_solver"+std::to_string(ipt_solver_count)+"_mean_its");
   ++ipt_solver_count;
-
-  Borig = B;
 
   first_call = Matrix<bool>(localmesh->LocalNy,localmesh->LocalNz);
   for(int jy=0; jy<localmesh->LocalNy; jy++){
@@ -331,15 +329,8 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   auto xk1dlast = Array<dcomplex>(ncx);
   auto error = Array<dcomplex>(ncx);
   dcomplex tmp2;
-  BoutReal error_rel = 1e20, error_abs=1e20, last_error=error_abs;
   BoutReal error_rel_lower = 1e20, error_abs_lower=1e20;
   BoutReal error_rel_upper = 1e20, error_abs_upper=1e20;
-  BoutReal error_rel_lower_last = 1e20, error_abs_lower_last=1e20;
-  BoutReal error_rel_upper_last = 1e20, error_abs_upper_last=1e20;
-  BoutReal error_rel_lower_two_old = 1e20, error_abs_lower_two_old=1e20;
-  BoutReal error_rel_upper_two_old = 1e20, error_abs_upper_two_old=1e20;
-  bool lower_stable = false;
-  bool upper_stable = false;
   // Down and up coefficients
   dcomplex Bd, Ad, Rd;
   dcomplex Bu, Au, Ru;
@@ -465,24 +456,6 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 
     ///////// PERFORM INVERSION /////////
     if (!localmesh->periodicX) {
-
-      // Call tridiagonal solver
-      //for(int it = 0; it < maxits; it++){ 
-      BoutReal error_last = 1e20;
-///      int sub_it = 0;
-///      auto lh = Matrix<dcomplex>(3,ncx);
-///      auto rh = Matrix<dcomplex>(3,ncx);
-
-///      if( first_call ) {
-///	B = Borig;
-///      }
-///      else {
-///	B = Bvals(0,jy,kz);
-///      }
-      bool allow_B_change = true;
-
-      if( !first_call(jy,0) ) allow_B_change = false;
-      //output << first_call << " " << allow_B_change << endl;
 
       // Patch up internal boundaries
       if(not localmesh->lastX()) { 
@@ -678,11 +651,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       SCOREP_USER_REGION_DEFINE(whileloop);
       SCOREP_USER_REGION_BEGIN(whileloop, "while loop",SCOREP_USER_REGION_TYPE_COMMON);
 //
-      BoutReal om = 0.0;
-      if(kz==0) om = omega;
+      //BoutReal om = 0.0;
+      //if(kz==0) om = omega;
 
-      int upper_offset = 0;
-      int lower_offset = 0;
       while(true){ 
 
 	SCOREP_USER_REGION_DEFINE(iteration);
