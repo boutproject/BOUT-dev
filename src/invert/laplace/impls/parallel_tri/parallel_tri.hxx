@@ -112,6 +112,9 @@ private:
   /// Flag for method selection
   bool new_method;
 
+  Tensor<dcomplex> upperGuardVector, lowerGuardVector;
+  bool store_coefficients;
+
 };
 
 #endif // __PARALLEL_TRI_H__

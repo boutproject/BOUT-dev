@@ -66,6 +66,8 @@ LaplaceParallelTri::LaplaceParallelTri(Options *opt, CELL_LOC loc, Mesh *mesh_in
       first_call(jy,jz) = true;
     }
   }
+  upperGuardVector = Tensor<dcomplex>(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
+  lowerGuardVector = Tensor<dcomplex>(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
 
   x0saved = Tensor<dcomplex>(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
 
@@ -296,6 +298,11 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   BoutReal kwaveFactor = 2.0 * PI / coords->zlength();
 
+  // Should we store coefficients?
+  store_coefficients = not (inner_boundary_flags & INVERT_AC_GRAD);
+  store_coefficients = store_coefficients && not (outer_boundary_flags & INVERT_AC_GRAD);
+
+
   // Setting the width of the boundary.
   // NOTE: The default is a width of 2 guard cells
   int inbndry = localmesh->xstart, outbndry=localmesh->xstart;
@@ -319,8 +326,6 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
    */
   auto evec = Array<dcomplex>(ncx);
   auto tmp = Array<dcomplex>(ncx);
-  auto upperGuardVector = Tensor<dcomplex>(ncx, ny, ncz / 2 + 1);
-  auto lowerGuardVector = Tensor<dcomplex>(ncx, ny, ncz / 2 + 1);
   auto bk = Matrix<dcomplex>(ncx, ncz / 2 + 1);
   auto bk1d = Array<dcomplex>(ncx);
   auto bk1d_eff = Array<dcomplex>(ncx);
@@ -483,42 +488,44 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       tridag(std::begin(avec), std::begin(bvec), std::begin(cvec), std::begin(bk1d),
 	   std::begin(minvb), ncx);
       // Now minvb is a constant vector throughout the iterations
-      //
-      // Find edge update vectors
-      //
-      // Upper interface (nguard vectors, hard-coded to two for now)
-      if(not localmesh->lastX()) { 
-	// Need the xend-th element
-	for(int i=0; i<ncx; i++){
-	  evec[i] = 0.0;
-	}
-	evec[localmesh->xend+1] = 1.0;
-	tridag(std::begin(avec), std::begin(bvec), std::begin(cvec), std::begin(evec),
-	     std::begin(tmp), ncx);
-	for(int i=0; i<ncx; i++){
-	  upperGuardVector(i,jy,kz) = tmp[i];
-	}
-      } else {
-	for(int i=0; i<ncx; i++){
-	  upperGuardVector(i,jy,kz) = 0.0;
-	}
-      }
 
-      // Lower interface (nguard vectors, hard-coded to two for now)
-      if(not localmesh->firstX()) { 
+      if(first_call(jy,kz) || not store_coefficients ){
+	// If not already stored, find edge update vectors
+	//
+	// Upper interface (nguard vectors, hard-coded to two for now)
+	if(not localmesh->lastX()) { 
+	  // Need the xend-th element
+	  for(int i=0; i<ncx; i++){
+	    evec[i] = 0.0;
+	  }
+	  evec[localmesh->xend+1] = 1.0;
+	  tridag(std::begin(avec), std::begin(bvec), std::begin(cvec), std::begin(evec),
+	       std::begin(tmp), ncx);
+	  for(int i=0; i<ncx; i++){
+	    upperGuardVector(i,jy,kz) = tmp[i];
+	  }
+	} else {
+	  for(int i=0; i<ncx; i++){
+	    upperGuardVector(i,jy,kz) = 0.0;
+	  }
+	}
 
-	for(int i=0; i<ncx; i++){
-	  evec[i] = 0.0;
-	}
-	evec[localmesh->xstart-1] = 1.0;
-	tridag(std::begin(avec), std::begin(bvec), std::begin(cvec), std::begin(evec),
-	     std::begin(tmp), ncx);
-	for(int i=0; i<ncx; i++){
-	  lowerGuardVector(i,jy,kz) = tmp[i];
-	}
-      } else {
-	for(int i=0; i<ncx; i++){
-	  lowerGuardVector(i,jy,kz) = 0.0;
+	// Lower interface (nguard vectors, hard-coded to two for now)
+	if(not localmesh->firstX()) { 
+
+	  for(int i=0; i<ncx; i++){
+	    evec[i] = 0.0;
+	  }
+	  evec[localmesh->xstart-1] = 1.0;
+	  tridag(std::begin(avec), std::begin(bvec), std::begin(cvec), std::begin(evec),
+	       std::begin(tmp), ncx);
+	  for(int i=0; i<ncx; i++){
+	    lowerGuardVector(i,jy,kz) = tmp[i];
+	  }
+	} else {
+	  for(int i=0; i<ncx; i++){
+	    lowerGuardVector(i,jy,kz) = 0.0;
+	  }
 	}
       }
 
@@ -680,9 +687,10 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 
 	TRACE("set comm flags pack");
 	// Set communication flags
-	if ( count > 2 and
-            (kz==0 or (
-	     (error_rel_lower<rtol or error_abs_lower<atol) and
+	if ( count > 1 and
+            (
+	     //kz==0 or 
+	     ((error_rel_lower<rtol or error_abs_lower<atol) and
              (error_rel_upper<rtol or error_abs_upper<atol) ))) {
 	  // In the next iteration this proc informs its neighbours that its halo cells
 	  // will no longer be updated, then breaks.
@@ -759,7 +767,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	if (count>maxits) {
 	    output<<alold<<" "<<blold<<" "<<auold<<" "<<buold<<endl;
 	    output<<al<<" "<<bl<<" "<<au<<" "<<bu<<endl;
-	  //break;
+	  break;
 	  // Maximum number of allowed iterations reached.
 	  // If the iteration matrix is diagonally-dominant, then convergence is guaranteed, so maxits is set too low.
 	  // Otherwise, the method may or may not converge.
@@ -909,6 +917,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       x0saved(ix, jy, kz) = xk(ix, kz);
     }
     SCOREP_USER_REGION_END(afterloop);
+    first_call(jy,kz) = false;
   }
   SCOREP_USER_REGION_END(mainloop);
 
@@ -927,12 +936,12 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       if(!finite(x(ix,kz)))
         throw BoutException("Non-finite at %d, %d, %d", ix, jy, kz);
 #endif
+
   }
 
   //if( first_call ){
   //  bout::globals::dump.add(Bvals, "exponents", false);
   //}
-  first_call(jy,0) = false;
 
   return x; // Result of the inversion
 }
