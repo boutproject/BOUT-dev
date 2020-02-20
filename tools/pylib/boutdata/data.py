@@ -85,13 +85,13 @@ class BoutOptions(object):
             A new section with the original object as the parent
 
         """
-        name = name.lower()
+        name_lower = name.lower()
 
-        if name in self._sections:
-            return self._sections[name]
+        if name_lower in self._sections:
+            return self._sections[name_lower][1]
         else:
             newsection = BoutOptions(name, self)
-            self._sections[name] = newsection
+            self._sections[name_lower] = (name, newsection)
             return newsection
 
     def __getitem__(self, key):
@@ -100,11 +100,11 @@ class BoutOptions(object):
         """
         key = key.lower()
         if key in self._sections:
-            return self._sections[key]
+            return self._sections[key][1]
 
         if key not in self._keys:
             raise KeyError("Key '%s' not in section '%s'" % (key, self.path()))
-        return self._keys[key]
+        return self._keys[key][1]
 
     def __setitem__(self, key, value):
         """
@@ -112,7 +112,8 @@ class BoutOptions(object):
         """
         if len(key) == 0:
             return
-        self._keys[key.lower()] = value
+        self._keys[key.lower()] = (key, value)
+
 
     def path(self):
         """Returns the path of this section, joining together names of
@@ -157,10 +158,10 @@ class BoutOptions(object):
         """Iterates over all keys. First values, then sections
 
         """
-        for k in self._keys:
-            yield k
-        for s in self._sections:
-            yield s
+        for k in self._keys.values():
+            yield k[0]
+        for s in self._sections.values():
+            yield s[0]
 
     def __str__(self, indent=""):
         """Print a pretty version of the options tree
@@ -169,10 +170,10 @@ class BoutOptions(object):
         text = self._name + "\n"
 
         for k in self._keys:
-            text += indent + " |- " + k + " = " + str(self._keys[k]) + "\n"
+            text += indent + " |- " + k + " = " + str(self._keys[k][1]) + "\n"
 
         for s in self._sections:
-            text += indent + " |- " + self._sections[s].__str__(indent+" |  ")
+            text += indent + " |- " + self._sections[s][1].__str__(indent+" |  ")
         return text
 
     def evaluate_scalar(self, name):
@@ -463,17 +464,17 @@ class BoutOptionsFile(BoutOptions):
         for key, value in opts._keys.items():
             if key in opts.comments:
                 f.write("\n".join(opts.comments[key]) + "\n")
-            f.write("{} = {}".format(key, value))
+            f.write("{} = {}".format(value[0], value[1]))
             if key in opts.inline_comments:
                 f.write(" {}".format(opts.inline_comments[key]))
             f.write("\n")
-        for section in opts.sections():
+        for section, _ in opts._sections.values():
             section_name = basename+":"+section if basename else section
-            if section in opts.comments:
-                f.write("\n".join(opts.comments[section]))
+            if section.lower() in opts.comments:
+                f.write("\n".join(opts.comments[section.lower()]))
             f.write("\n[{}]".format(section_name))
-            if section in opts.inline_comments:
-                f.write(" {}".format(opts.inline_comments[section]))
+            if section.lower() in opts.inline_comments:
+                f.write(" {}".format(opts.inline_comments[section.lower()]))
             f.write("\n")
             self.__str__(section_name, opts[section], f)
         return f.getvalue()
