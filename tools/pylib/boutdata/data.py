@@ -460,12 +460,21 @@ class BoutOptionsFile(BoutOptions):
             f = io.StringIO()
         if opts is None:
             opts = self
-        if basename is not None:
-            f.write("["+basename+"]\n")
         for key, value in opts._keys.items():
-            f.write(key+" = "+str(value)+"\n")
+            if key in opts.comments:
+                f.write("\n".join(opts.comments[key]) + "\n")
+            f.write("{} = {}".format(key, value))
+            if key in opts.inline_comments:
+                f.write(" {}".format(opts.inline_comments[key]))
+            f.write("\n")
         for section in opts.sections():
             section_name = basename+":"+section if basename else section
+            if section in opts.comments:
+                f.write("\n".join(opts.comments[section]))
+            f.write("\n[{}]".format(section_name))
+            if section in opts.inline_comments:
+                f.write(" {}".format(opts.inline_comments[section]))
+            f.write("\n")
             self.__str__(section_name, opts[section], f)
         return f.getvalue()
 
