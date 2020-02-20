@@ -4,6 +4,7 @@ OMFIT
 
 """
 
+import copy
 import io
 import os
 import glob
@@ -66,6 +67,8 @@ class BoutOptions(object):
         self._keys = {}
         self._name = name
         self._parent = parent
+        self.comments = {}
+        self.inline_comments = {}
 
     def getSection(self, name):
         """Return a section object. If the section does not exist then it is
@@ -273,11 +276,22 @@ class BoutOptionsFile(BoutOptions):
         with open(filename, "r") as f:
             # Go through each line in the file
             section = self  # Start with root section
+            comments = []
             for linenr, line in enumerate(f.readlines()):
                 # First remove comments, either # or ;
+                if line.lstrip().startswith("#"):
+                    comments.append(line.strip())
+                    continue
+                if line.strip() == "":
+                    comments.append(line.strip())
+                    continue
+
                 startpos = line.find("#")
                 if startpos != -1:
+                    inline_comment = line[startpos:].strip()
                     line = line[:startpos]
+                else:
+                    inline_comment = None
                 startpos = line.find(";")
                 if startpos != -1:
                     line = line[:startpos]
@@ -291,15 +305,21 @@ class BoutOptionsFile(BoutOptions):
                         raise SyntaxError("Missing ']' on line %d" % (linenr,))
                     line = line[(startpos+1):endpos].strip()
 
-                    section = self
+                    parent_section = self
                     while True:
                         scorepos = line.find(":")
                         if scorepos == -1:
+                            sectionname = line
                             break
                         sectionname = line[0:scorepos]
                         line = line[(scorepos+1):]
-                        section = section.getSection(sectionname)
-                    section = section.getSection(line)
+                        parent_section = parent_section.getSection(sectionname)
+                    section = parent_section.getSection(line)
+                    if comments:
+                        parent_section.comments[sectionname.lower()] = copy.deepcopy(comments)
+                        comments = []
+                    if inline_comment is not None:
+                        parent_section.inline_comments[sectionname.lower()] = inline_comment
                 else:
                     # A key=value pair
 
@@ -307,6 +327,7 @@ class BoutOptionsFile(BoutOptions):
                     if eqpos == -1:
                         # No '=', so just set to true
                         section[line.strip()] = True
+                        value_name = line.strip()
                     else:
                         value = line[(eqpos+1):].strip()
                         try:
@@ -320,7 +341,13 @@ class BoutOptionsFile(BoutOptions):
                                 # Leave as a string
                                 pass
 
-                        section[line[:eqpos].strip()] = value
+                        value_name = line[:eqpos].strip()
+                        section[value_name] = value
+                    if comments:
+                        section.comments[value_name.lower()] = copy.deepcopy(comments)
+                        comments = []
+                    if inline_comment is not None:
+                        section.inline_comments[value_name.lower()] = inline_comment
 
         try:
             # define arrays of x, y, z to be used for substitutions
