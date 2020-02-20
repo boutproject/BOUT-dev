@@ -114,6 +114,60 @@ class BoutOptions(object):
             return
         self._keys[key.lower()] = (key, value)
 
+    def __delitem__(self, key):
+        key = key.lower()
+        if key in self._sections:
+            del self._sections[key]
+        else:
+            del self._keys[key]
+
+    __marker = object()
+
+    def pop(self, key, default=__marker):
+        """options.pop(k[,d]) -> v, remove specified key and return the
+        corresponding value. If key is not found, d is returned if
+        given, otherwise KeyError is raised.
+
+        """
+
+        if key.lower() in self._sections:
+            key_or_section = self._sections
+        elif key.lower() in self._keys:
+            key_or_section = self._keys
+        elif default is self.__marker:
+            raise KeyError(key)
+        else:
+            return default
+
+        self.comments.pop(key, None)
+        self.inline_comments.pop(key, None)
+        self._comment_whitespace.pop(key, None)
+
+        return key_or_section.pop(key)
+
+    def rename(self, old_name, new_name):
+
+        if old_name.lower() in self._sections:
+            key_or_section = self._sections
+            key_or_section[old_name][1]._name = new_name
+            for section in key_or_section[old_name][1]._sections:
+                section._parent = new_name
+        elif old_name.lower() in self._keys:
+            key_or_section = self._keys
+        else:
+            raise KeyError(old_name)
+
+        def try_move_comment(comment_dict, old_name, new_name):
+            try:
+                comment_dict[new_name] = comment_dict.pop(old_name)
+            except KeyError:
+                pass
+
+        try_move_comment(self.comments, old_name, new_name)
+        try_move_comment(self.inline_comments, old_name, new_name)
+        try_move_comment(self._comment_whitespace, old_name, new_name)
+
+        key_or_section[new_name] = (new_name, key_or_section.pop(old_name)[1])
 
     def path(self):
         """Returns the path of this section, joining together names of
