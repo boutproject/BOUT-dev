@@ -56,9 +56,8 @@ class BoutOptions(object):
     To pretty print the options
 
     >>> print(optRoot)
-    root
-     |- test
-     |   |- key = 4
+    [test]
+    key = 4
 
     """
 
@@ -164,8 +163,8 @@ class BoutOptions(object):
         for s in self._sections.values():
             yield s[0]
 
-    def __str__(self, indent=""):
-        """Print a pretty version of the options tree
+    def as_tree(self, indent=""):
+        """Return a string formatted as a pretty version of the options tree
 
         """
         text = self._name + "\n"
@@ -174,8 +173,37 @@ class BoutOptions(object):
             text += indent + " |- " + k + " = " + str(self._keys[k][1]) + "\n"
 
         for s in self._sections:
-            text += indent + " |- " + self._sections[s][1].__str__(indent+" |  ")
+            text += indent + " |- " + self._sections[s][1].print_as_tree(indent+" |  ")
         return text
+
+    def __str__(self, basename=None, opts=None, f=None):
+        if f is None:
+            f = io.StringIO()
+        if opts is None:
+            opts = self
+
+        def format_inline_comment(name, options):
+            if name in options.inline_comments:
+                f.write("{}{}".format(options._comment_whitespace[name],
+                                      options.inline_comments[name]))
+
+        for key, value in opts._keys.items():
+            if key in opts.comments:
+                f.write("\n".join(opts.comments[key]) + "\n")
+            f.write("{} = {}".format(value[0], value[1]))
+            format_inline_comment(key, opts)
+            f.write("\n")
+
+        for section, _ in opts._sections.values():
+            section_name = basename+":"+section if basename else section
+            if section.lower() in opts.comments:
+                f.write("\n".join(opts.comments[section.lower()]))
+            f.write("\n[{}]".format(section_name))
+            format_inline_comment(section.lower(), opts)
+            f.write("\n")
+            self.__str__(section_name, opts[section], f)
+
+        return f.getvalue()
 
     def evaluate_scalar(self, name):
         """
@@ -462,36 +490,6 @@ class BoutOptionsFile(BoutOptions):
             expression = re.sub(r"\b"+coord.lower()+r"\b", "self."+coord, expression)
 
         return eval(expression)
-
-    def __str__(self, basename=None, opts=None, f=None):
-        if f is None:
-            f = io.StringIO()
-        if opts is None:
-            opts = self
-
-        def format_precomment(name, options):
-            if name in options.comments:
-                f.write("\n".join(options.comments[name]) + "\n")
-
-        def format_inline_comment(name, options):
-            if name in options.inline_comments:
-                f.write("{}{}".format(options._comment_whitespace[name],
-                                      options.inline_comments[name]))
-            f.write("\n")
-
-        for key, value in opts._keys.items():
-            format_precomment(key, opts)
-            f.write("{} = {}".format(value[0], value[1]))
-            format_inline_comment(key, opts)
-
-        for section, _ in opts._sections.values():
-            section_name = basename+":"+section if basename else section
-            format_precomment(section.lower(), opts)
-            f.write("[{}]".format(section_name))
-            format_inline_comment(section.lower(), opts)
-            self.__str__(section_name, opts[section], f)
-
-        return f.getvalue()
 
     def write(self, filename=None, overwrite=False):
         """ Write to BOUT++ options file
