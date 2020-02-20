@@ -468,23 +468,29 @@ class BoutOptionsFile(BoutOptions):
             f = io.StringIO()
         if opts is None:
             opts = self
-        for key, value in opts._keys.items():
-            if key in opts.comments:
-                f.write("\n".join(opts.comments[key]) + "\n")
-            f.write("{} = {}".format(value[0], value[1]))
-            if key in opts.inline_comments:
-                f.write("{}{}".format(opts._comment_whitespace[key], opts.inline_comments[key]))
+
+        def format_precomment(name, options):
+            if name in options.comments:
+                f.write("\n".join(options.comments[name]) + "\n")
+
+        def format_inline_comment(name, options):
+            if name in options.inline_comments:
+                f.write("{}{}".format(options._comment_whitespace[name],
+                                      options.inline_comments[name]))
             f.write("\n")
+
+        for key, value in opts._keys.items():
+            format_precomment(key, opts)
+            f.write("{} = {}".format(value[0], value[1]))
+            format_inline_comment(key, opts)
+
         for section, _ in opts._sections.values():
             section_name = basename+":"+section if basename else section
-            if section.lower() in opts.comments:
-                f.write("\n".join(opts.comments[section.lower()]))
-            f.write("\n[{}]".format(section_name))
-            if section.lower() in opts.inline_comments:
-                f.write("{}{}".format(opts._comment_whitespace[section.lower()],
-                                      opts.inline_comments[section.lower()]))
-            f.write("\n")
+            format_precomment(section.lower(), opts)
+            f.write("[{}]".format(section_name))
+            format_inline_comment(section.lower(), opts)
             self.__str__(section_name, opts[section], f)
+
         return f.getvalue()
 
     def write(self, filename=None, overwrite=False):
