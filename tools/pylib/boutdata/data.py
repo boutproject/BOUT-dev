@@ -69,6 +69,7 @@ class BoutOptions(object):
         self._parent = parent
         self.comments = {}
         self.inline_comments = {}
+        self._comment_whitespace = {}
 
     def getSection(self, name):
         """Return a section object. If the section does not exist then it is
@@ -271,6 +272,9 @@ class BoutOptionsFile(BoutOptions):
 
     """
 
+    # Get not just the comment, but also the preceeding whitespace
+    COMMENT_REGEX = re.compile(r"(\s*)(#.*)")
+
     def __init__(self, filename="BOUT.inp", name="root", gridfilename=None, nx=None, ny=None, nz=None):
         BoutOptions.__init__(self, name)
         # Open the file
@@ -287,10 +291,11 @@ class BoutOptionsFile(BoutOptions):
                     comments.append(line.strip())
                     continue
 
-                startpos = line.find("#")
-                if startpos != -1:
-                    inline_comment = line[startpos:].strip()
-                    line = line[:startpos]
+                comment_match = self.COMMENT_REGEX.search(line)
+                if comment_match is not None:
+                    line = line.split("#")[0].strip()
+                    comment_whitespace = comment_match.group(1)
+                    inline_comment = comment_match.group(2).strip()
                 else:
                     inline_comment = None
                 startpos = line.find(";")
@@ -321,6 +326,7 @@ class BoutOptionsFile(BoutOptions):
                         comments = []
                     if inline_comment is not None:
                         parent_section.inline_comments[sectionname.lower()] = inline_comment
+                        parent_section._comment_whitespace[sectionname.lower()] = comment_whitespace
                 else:
                     # A key=value pair
 
@@ -349,6 +355,7 @@ class BoutOptionsFile(BoutOptions):
                         comments = []
                     if inline_comment is not None:
                         section.inline_comments[value_name.lower()] = inline_comment
+                        section._comment_whitespace[value_name.lower()] = comment_whitespace
 
         try:
             # define arrays of x, y, z to be used for substitutions
@@ -466,7 +473,7 @@ class BoutOptionsFile(BoutOptions):
                 f.write("\n".join(opts.comments[key]) + "\n")
             f.write("{} = {}".format(value[0], value[1]))
             if key in opts.inline_comments:
-                f.write(" {}".format(opts.inline_comments[key]))
+                f.write("{}{}".format(opts._comment_whitespace[key], opts.inline_comments[key]))
             f.write("\n")
         for section, _ in opts._sections.values():
             section_name = basename+":"+section if basename else section
@@ -474,7 +481,8 @@ class BoutOptionsFile(BoutOptions):
                 f.write("\n".join(opts.comments[section.lower()]))
             f.write("\n[{}]".format(section_name))
             if section.lower() in opts.inline_comments:
-                f.write(" {}".format(opts.inline_comments[section.lower()]))
+                f.write("{}{}".format(opts._comment_whitespace[section.lower()],
+                                      opts.inline_comments[section.lower()]))
             f.write("\n")
             self.__str__(section_name, opts[section], f)
         return f.getvalue()
