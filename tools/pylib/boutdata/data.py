@@ -353,7 +353,7 @@ class BoutOptionsFile(BoutOptions):
                     try:
                         # get nx, ny, nz from output files
                         from boutdata.collect import findFiles
-                        file_list = findFiles(path=os.path.dirname(), prefix="BOUT.dmp")
+                        file_list = findFiles(path=os.path.dirname("."), prefix="BOUT.dmp")
                         with DataFile(file_list[0]) as f:
                             self.nx = f["nx"]
                             self.ny = f["ny"]
