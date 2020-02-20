@@ -4,6 +4,7 @@ OMFIT
 
 """
 
+import io
 import os
 import glob
 import numpy
@@ -427,6 +428,20 @@ class BoutOptionsFile(BoutOptions):
 
         return eval(expression)
 
+    def __str__(self, basename=None, opts=None, f=None):
+        if f is None:
+            f = io.StringIO()
+        if opts is None:
+            opts = self
+        if basename is not None:
+            f.write("["+basename+"]\n")
+        for key, value in opts._keys.items():
+            f.write(key+" = "+str(value)+"\n")
+        for section in opts.sections():
+            section_name = basename+":"+section if basename else section
+            self.__str__(section_name, opts[section], f)
+        return f.getvalue()
+
     def write(self, filename=None, overwrite=False):
         """ Write to BOUT++ options file
 
@@ -451,17 +466,8 @@ class BoutOptionsFile(BoutOptions):
         if not overwrite and os.path.exists(filename):
             raise ValueError("Not overwriting existing file, cannot write output to "+filename)
 
-        def write_section(basename, opts, f):
-            if basename:
-                f.write("["+basename+"]\n")
-            for key, value in opts._keys.items():
-                f.write(key+" = "+str(value)+"\n")
-            for section in opts.sections():
-                section_name = basename+":"+section if basename else section
-                write_section(section_name, opts[section], f)
-
         with open(filename, "w") as f:
-            write_section("", self, f)
+            f.write(str(self))
 
 
 class BoutOutputs(object):
