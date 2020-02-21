@@ -147,6 +147,17 @@ class BoutOptions(object):
         else:
             raise KeyError(key)
 
+    def __contains__(self, key):
+        key_parts = key.split(":", maxsplit=1)
+
+        if len(key_parts) > 1:
+            if key_parts[0] in self:
+                return key_parts[1] in self[key_parts[0]]
+            else:
+                return False
+
+        return key.lower() in self.keys()
+
     __marker = object()
 
     def pop(self, key, default=__marker):
