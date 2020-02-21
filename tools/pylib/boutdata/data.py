@@ -166,45 +166,97 @@ class BoutOptions(object):
         given, otherwise KeyError is raised.
 
         """
+        return self._pop_impl(key, default)[0]
+
+    def _pop_impl(self, key, default=__marker):
+        """Private implementation of pop; also pops metadata
+
+        """
+        key_parts = key.split(":", maxsplit=1)
+
+        if len(key_parts) > 1:
+            return self[key_parts[0]]._pop_impl(key_parts[1], default)
 
         if key.lower() in self._sections:
-            key_or_section = self._sections
+            value = self._sections.pop(key)[1]
+            name = self._name
+            parent = self._parent
         elif key.lower() in self._keys:
-            key_or_section = self._keys
+            value = self._keys.pop(key)[1]
+            name = None
+            parent = None
         elif default is self.__marker:
             raise KeyError(key)
         else:
             return default
 
-        self.comments.pop(key, None)
-        self.inline_comments.pop(key, None)
-        self._comment_whitespace.pop(key, None)
+        comment = self.comments.pop(key, None)
+        inline_comment = self.inline_comments.pop(key, None)
+        comment_whitespace = self._comment_whitespace.pop(key, None)
 
-        return key_or_section.pop(key)
+        return (value, name, parent, comment,
+                inline_comment, comment_whitespace)
 
     def rename(self, old_name, new_name):
+        """Rename old_name to new_name
+        """
 
-        if old_name.lower() in self._sections:
-            key_or_section = self._sections
-            key_or_section[old_name][1]._name = new_name
-            for section in key_or_section[old_name][1]._sections:
-                section._parent = new_name
-        elif old_name.lower() in self._keys:
-            key_or_section = self._keys
+        def setattr_nested(parent, key, attr, value):
+            """Set one of the comment types on some nested section. Slightly
+            complicated because the comment attributes are dicts, but
+            we need to get the (possibly) nested parent section
+
+            """
+            # Don't set comment if it's None
+            if value is None:
+                return
+
+            key_parts = key.split(":", maxsplit=1)
+            if len(key_parts) > 1:
+                setattr_nested(parent[key_parts[0]], key_parts[1], attr, value)
+            else:
+                getattr(parent, attr)[key] = value
+
+        def ensure_sections(parent, path):
+            """Make sure all the components of path in parent are sections
+            """
+            path_parts = path.split(":", maxsplit=1)
+
+            def check_is_section(parent, path):
+                if path in parent and not isinstance(parent[path], BoutOptions):
+                    raise TypeError("'{}:{}' already exists and is not a section!"
+                                    .format(parent._name, path))
+
+            if len(path_parts) > 1:
+                new_parent_name, child_name = path_parts
+                check_is_section(parent, new_parent_name)
+                parent.getSection(new_parent_name)
+                ensure_sections(parent[new_parent_name], child_name)
+            else:
+                check_is_section(parent, path)
+                parent.getSection(path)
+
+        value = self[old_name]
+
+        if isinstance(value, BoutOptions):
+            # We're moving a section: make sure we don't clobber existing values
+            ensure_sections(self, new_name)
+            # Now we're definitely moving into an existing section, so
+            # update values and comments
+            for key in value:
+                self[new_name][key] = value[key]
+                setattr_nested(self[new_name], key, "comments", value.comments.get(key))
+                setattr_nested(self[new_name], key, "inline_comments", value.inline_comments.get(key))
+                setattr_nested(self[new_name], key, "_comment_whitespace", value._comment_whitespace.get(key))
+            _, _, _, comment, inline_comment, comment_whitespace = self._pop_impl(old_name)
         else:
-            raise KeyError(old_name)
+            _, _, _, comment, inline_comment, comment_whitespace = self._pop_impl(old_name)
+            self[new_name] = value
 
-        def try_move_comment(comment_dict, old_name, new_name):
-            try:
-                comment_dict[new_name] = comment_dict.pop(old_name)
-            except KeyError:
-                pass
-
-        try_move_comment(self.comments, old_name, new_name)
-        try_move_comment(self.inline_comments, old_name, new_name)
-        try_move_comment(self._comment_whitespace, old_name, new_name)
-
-        key_or_section[new_name] = (new_name, key_or_section.pop(old_name)[1])
+        # Update comments on new parent section
+        setattr_nested(self, new_name, "comments", comment)
+        setattr_nested(self, new_name, "inline_comments", inline_comment)
+        setattr_nested(self, new_name, "_comment_whitespace", comment_whitespace)
 
     def path(self):
         """Returns the path of this section, joining together names of
