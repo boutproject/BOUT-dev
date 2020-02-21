@@ -98,6 +98,13 @@ class BoutOptions(object):
         """
         First check if it's a section, then a value
         """
+
+        key_parts = key.split(":", maxsplit=1)
+
+        if len(key_parts) > 1:
+            section = self[key_parts[0]]
+            return section[key_parts[1]]
+
         key = key.lower()
         if key in self._sections:
             return self._sections[key][1]
@@ -112,14 +119,33 @@ class BoutOptions(object):
         """
         if len(key) == 0:
             return
-        self._keys[key.lower()] = (key, value)
+
+        key_parts = key.split(":", maxsplit=1)
+
+        if len(key_parts) > 1:
+            try:
+                section = self[key_parts[0]]
+            except KeyError:
+                section = self.getSection(key_parts[0])
+            section[key_parts[1]] = value
+        else:
+            self._keys[key.lower()] = (key, value)
 
     def __delitem__(self, key):
+        key_parts = key.split(":", maxsplit=1)
+
+        if len(key_parts) > 1:
+            section = self[key_parts[0]]
+            del section[key_parts[1]]
+            return
+
         key = key.lower()
         if key in self._sections:
             del self._sections[key]
-        else:
+        elif key in self._keys:
             del self._keys[key]
+        else:
+            raise KeyError(key)
 
     __marker = object()
 
