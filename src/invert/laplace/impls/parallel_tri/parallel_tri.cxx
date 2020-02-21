@@ -77,6 +77,11 @@ LaplaceParallelTri::LaplaceParallelTri(Options *opt, CELL_LOC loc, Mesh *mesh_in
 
 void LaplaceParallelTri::resetSolver(){
   x0saved = 0.0;
+  for(int jy=0; jy<localmesh->LocalNy; jy++){
+    for(int jz=0; jz<localmesh->LocalNz; jz++){
+      first_call(jy,jz) = true;
+    }
+  }
   resetMeanIterations();
 }
 
