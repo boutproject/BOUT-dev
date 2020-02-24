@@ -5,10 +5,10 @@ OMFIT
 """
 
 import copy
-import io
-import os
 import glob
+import io
 import numpy
+import os
 import re
 
 from boutdata.collect import collect, create_cache
@@ -18,11 +18,31 @@ from boututils.datafile import DataFile
 # These are imported to be used by 'eval' in
 # BoutOptions.evaluate_scalar() and BoutOptionsFile.evaluate().
 # Change the names to match those used by C++/BOUT++
-from numpy import (pi, sin, cos, tan, arccos as acos, arcsin as asin,
-                   arctan as atan, arctan2 as atan2, sinh, cosh, tanh,
-                   arcsinh as asinh, arccosh as acosh, arctanh as atanh,
-                   exp, log, log10, power as pow, sqrt, ceil, floor,
-                   round, abs)
+from numpy import (
+    pi,
+    sin,
+    cos,
+    tan,
+    arccos as acos,
+    arcsin as asin,
+    arctan as atan,
+    arctan2 as atan2,
+    sinh,
+    cosh,
+    tanh,
+    arcsinh as asinh,
+    arccosh as acosh,
+    arctanh as atanh,
+    exp,
+    log,
+    log10,
+    power as pow,
+    sqrt,
+    ceil,
+    floor,
+    round,
+    abs,
+)
 
 
 from collections import UserDict
@@ -216,8 +236,7 @@ class BoutOptions(object):
         inline_comment = self.inline_comments.pop(key, None)
         comment_whitespace = self._comment_whitespace.pop(key, None)
 
-        return (value, name, parent, comment,
-                inline_comment, comment_whitespace)
+        return (value, name, parent, comment, inline_comment, comment_whitespace)
 
     def rename(self, old_name, new_name):
         """Rename old_name to new_name
@@ -246,8 +265,11 @@ class BoutOptions(object):
 
             def check_is_section(parent, path):
                 if path in parent and not isinstance(parent[path], BoutOptions):
-                    raise TypeError("'{}:{}' already exists and is not a section!"
-                                    .format(parent._name, path))
+                    raise TypeError(
+                        "'{}:{}' already exists and is not a section!".format(
+                            parent._name, path
+                        )
+                    )
 
             if len(path_parts) > 1:
                 new_parent_name, child_name = path_parts
@@ -268,11 +290,25 @@ class BoutOptions(object):
             for key in value:
                 self[new_name][key] = value[key]
                 setattr_nested(self[new_name], key, "comments", value.comments.get(key))
-                setattr_nested(self[new_name], key, "inline_comments", value.inline_comments.get(key))
-                setattr_nested(self[new_name], key, "_comment_whitespace", value._comment_whitespace.get(key))
-            _, _, _, comment, inline_comment, comment_whitespace = self._pop_impl(old_name)
+                setattr_nested(
+                    self[new_name],
+                    key,
+                    "inline_comments",
+                    value.inline_comments.get(key),
+                )
+                setattr_nested(
+                    self[new_name],
+                    key,
+                    "_comment_whitespace",
+                    value._comment_whitespace.get(key),
+                )
+            _, _, _, comment, inline_comment, comment_whitespace = self._pop_impl(
+                old_name
+            )
         else:
-            _, _, _, comment, inline_comment, comment_whitespace = self._pop_impl(old_name)
+            _, _, _, comment, inline_comment, comment_whitespace = self._pop_impl(
+                old_name
+            )
             self[new_name] = value
 
         # Update comments on new parent section
@@ -312,8 +348,8 @@ class BoutOptions(object):
         """Return a nested dictionary of all the options.
 
         """
-        dicttree = {name:self[name] for name in self.values()}
-        dicttree.update({name:self[name].as_dict() for name in self.sections()})
+        dicttree = {name: self[name] for name in self.values()}
+        dicttree.update({name: self[name].as_dict() for name in self.sections()})
         return dicttree
 
     def __len__(self):
@@ -338,7 +374,7 @@ class BoutOptions(object):
             text += indent + " |- " + k + " = " + str(self._keys[k]) + "\n"
 
         for s in self._sections:
-            text += indent + " |- " + self._sections[s].as_tree(indent+" |  ")
+            text += indent + " |- " + self._sections[s].as_tree(indent + " |  ")
         return text
 
     def __str__(self, basename=None, opts=None, f=None):
@@ -349,8 +385,11 @@ class BoutOptions(object):
 
         def format_inline_comment(name, options):
             if name in options.inline_comments:
-                f.write("{}{}".format(options._comment_whitespace[name],
-                                      options.inline_comments[name]))
+                f.write(
+                    "{}{}".format(
+                        options._comment_whitespace[name], options.inline_comments[name]
+                    )
+                )
 
         for key, value in opts._keys.items():
             if key in opts.comments:
@@ -360,7 +399,7 @@ class BoutOptions(object):
             f.write("\n")
 
         for section in opts._sections.keys():
-            section_name = basename+":"+section if basename else section
+            section_name = basename + ":" + section if basename else section
             if section in opts.comments:
                 f.write("\n".join(opts.comments[section]))
             if opts[section]._keys:
@@ -407,18 +446,24 @@ class BoutOptions(object):
                 nested_name = nested_sectionname + ":" + var
             else:
                 nested_name = var
-            if re.search(r"(?<!:)\b"+re.escape(nested_name.lower())+r"\b", expression.lower()):
+            if re.search(
+                r"(?<!:)\b" + re.escape(nested_name.lower()) + r"\b", expression.lower()
+            ):
                 # match nested_name only if not preceded by colon (which indicates more nesting)
-                expression = re.sub(r"(?<!:)\b" + re.escape(nested_name.lower()) + r"\b",
-                                    "(" + self._substitute_expressions(var) + ")",
-                                    expression)
+                expression = re.sub(
+                    r"(?<!:)\b" + re.escape(nested_name.lower()) + r"\b",
+                    "(" + self._substitute_expressions(var) + ")",
+                    expression,
+                )
 
         for subsection in self.sections():
             if nested_sectionname != "":
                 nested_name = nested_sectionname + ":" + subsection
             else:
                 nested_name = subsection
-            expression = self.getSection(subsection)._evaluate_section(expression, nested_name)
+            expression = self.getSection(subsection)._evaluate_section(
+                expression, nested_name
+            )
 
         return expression
 
@@ -469,7 +514,15 @@ class BoutOptionsFile(BoutOptions):
     # Get not just the comment, but also the preceeding whitespace
     COMMENT_REGEX = re.compile(r"(\s*)(#.*)")
 
-    def __init__(self, filename="BOUT.inp", name="root", gridfilename=None, nx=None, ny=None, nz=None):
+    def __init__(
+        self,
+        filename="BOUT.inp",
+        name="root",
+        gridfilename=None,
+        nx=None,
+        ny=None,
+        nz=None,
+    ):
         BoutOptions.__init__(self, name)
         # Open the file
         with open(filename, "r") as f:
@@ -503,7 +556,7 @@ class BoutOptionsFile(BoutOptions):
                     # A section heading
                     if endpos == -1:
                         raise SyntaxError("Missing ']' on line %d" % (linenr,))
-                    line = line[(startpos+1):endpos].strip()
+                    line = line[(startpos + 1) : endpos].strip()
 
                     parent_section = self
                     while True:
@@ -512,7 +565,7 @@ class BoutOptionsFile(BoutOptions):
                             sectionname = line
                             break
                         sectionname = line[0:scorepos]
-                        line = line[(scorepos+1):]
+                        line = line[(scorepos + 1) :]
                         parent_section = parent_section.getSection(sectionname)
                     section = parent_section.getSection(line)
                     if comments:
@@ -520,7 +573,9 @@ class BoutOptionsFile(BoutOptions):
                         comments = []
                     if inline_comment is not None:
                         parent_section.inline_comments[sectionname] = inline_comment
-                        parent_section._comment_whitespace[sectionname] = comment_whitespace
+                        parent_section._comment_whitespace[
+                            sectionname
+                        ] = comment_whitespace
                 else:
                     # A key=value pair
 
@@ -530,7 +585,7 @@ class BoutOptionsFile(BoutOptions):
                         section[line.strip()] = True
                         value_name = line.strip()
                     else:
-                        value = line[(eqpos+1):].strip()
+                        value = line[(eqpos + 1) :].strip()
                         try:
                             # Try to convert to an integer
                             value = int(value)
@@ -557,9 +612,11 @@ class BoutOptionsFile(BoutOptions):
             nzfromfile = None
             if gridfilename:
                 if nx is not None or ny is not None:
-                    raise ValueError("nx or ny given as inputs even though "
-                                     "gridfilename was given explicitly, "
-                                     "don't know which parameters to choose")
+                    raise ValueError(
+                        "nx or ny given as inputs even though "
+                        "gridfilename was given explicitly, "
+                        "don't know which parameters to choose"
+                    )
                 with DataFile(gridfilename) as gridfile:
                     self.nx = float(gridfile["nx"])
                     self.ny = float(gridfile["ny"])
@@ -569,9 +626,13 @@ class BoutOptionsFile(BoutOptions):
                         pass
             elif nx or ny:
                 if nx is None:
-                    raise ValueError("nx not specified. If either nx or ny are given, then both must be.")
+                    raise ValueError(
+                        "nx not specified. If either nx or ny are given, then both must be."
+                    )
                 if ny is None:
-                    raise ValueError("ny not specified. If either nx or ny are given, then both must be.")
+                    raise ValueError(
+                        "ny not specified. If either nx or ny are given, then both must be."
+                    )
                 self.nx = nx
                 self.ny = ny
             else:
@@ -582,7 +643,10 @@ class BoutOptionsFile(BoutOptions):
                     try:
                         # get nx, ny, nz from output files
                         from boutdata.collect import findFiles
-                        file_list = findFiles(path=os.path.dirname("."), prefix="BOUT.dmp")
+
+                        file_list = findFiles(
+                            path=os.path.dirname("."), prefix="BOUT.dmp"
+                        )
                         with DataFile(file_list[0]) as f:
                             self.nx = f["nx"]
                             self.ny = f["ny"]
@@ -615,19 +679,34 @@ class BoutOptionsFile(BoutOptions):
 
             # make self.x, self.y, self.z three dimensional now so
             # that expressions broadcast together properly.
-            self.x = numpy.linspace((0.5 - mxg)/(self.nx - 2*mxg),
-                                    1. - (0.5 - mxg)/(self.nx - 2*mxg),
-                                    self.nx)[:, numpy.newaxis, numpy.newaxis]
-            self.y = 2.*numpy.pi*numpy.linspace((0.5 - myg)/self.ny,
-                                                1.-(0.5 - myg)/self.ny,
-                                                self.ny + 2*myg)[numpy.newaxis, :, numpy.newaxis]
-            self.z = 2.*numpy.pi*numpy.linspace(0.5/self.nz,
-                                                1.-0.5/self.nz,
-                                                self.nz)[numpy.newaxis, numpy.newaxis, :]
+            self.x = numpy.linspace(
+                (0.5 - mxg) / (self.nx - 2 * mxg),
+                1.0 - (0.5 - mxg) / (self.nx - 2 * mxg),
+                self.nx,
+            )[:, numpy.newaxis, numpy.newaxis]
+            self.y = (
+                2.0
+                * numpy.pi
+                * numpy.linspace(
+                    (0.5 - myg) / self.ny,
+                    1.0 - (0.5 - myg) / self.ny,
+                    self.ny + 2 * myg,
+                )[numpy.newaxis, :, numpy.newaxis]
+            )
+            self.z = (
+                2.0
+                * numpy.pi
+                * numpy.linspace(0.5 / self.nz, 1.0 - 0.5 / self.nz, self.nz)[
+                    numpy.newaxis, numpy.newaxis, :
+                ]
+            )
         except Exception as e:
-            alwayswarn("While building x, y, z coordinate arrays, an "
-                       "exception occured: " + str(e) +
-                       "\nEvaluating non-scalar options not available")
+            alwayswarn(
+                "While building x, y, z coordinate arrays, an "
+                "exception occured: "
+                + str(e)
+                + "\nEvaluating non-scalar options not available"
+            )
 
     def evaluate(self, name):
         """Evaluate (recursively) expressions
@@ -653,7 +732,9 @@ class BoutOptionsFile(BoutOptions):
 
         # substitute for x, y and z coordinates
         for coord in ["x", "y", "z"]:
-            expression = re.sub(r"\b"+coord.lower()+r"\b", "self."+coord, expression)
+            expression = re.sub(
+                r"\b" + coord.lower() + r"\b", "self." + coord, expression
+            )
 
         return eval(expression)
 
@@ -679,7 +760,9 @@ class BoutOptionsFile(BoutOptions):
             filename = self.filename
 
         if not overwrite and os.path.exists(filename):
-            raise ValueError("Not overwriting existing file, cannot write output to "+filename)
+            raise ValueError(
+                "Not overwriting existing file, cannot write output to " + filename
+            )
 
         with open(filename, "w") as f:
             f.write(str(self))
@@ -739,22 +822,28 @@ class BoutOutputs(object):
 
     """
 
-    def __init__(self, path=".", prefix="BOUT.dmp", suffix=None, caching=False,
-                 DataFileCaching=True, **kwargs):
+    def __init__(
+        self,
+        path=".",
+        prefix="BOUT.dmp",
+        suffix=None,
+        caching=False,
+        DataFileCaching=True,
+        **kwargs
+    ):
         """
         Initialise BoutOutputs object
         """
         self._path = path
         # normalize prefix by removing trailing '.' if present
-        self._prefix = prefix.rstrip('.')
+        self._prefix = prefix.rstrip(".")
         if suffix is None:
-            temp_file_list = glob.glob(
-                os.path.join(self._path, self._prefix + "*"))
+            temp_file_list = glob.glob(os.path.join(self._path, self._prefix + "*"))
             latest_file = max(temp_file_list, key=os.path.getctime)
             self._suffix = latest_file.split(".")[-1]
         else:
             # normalize suffix by removing leading '.' if present
-            self._suffix = suffix.lstrip('.')
+            self._suffix = suffix.lstrip(".")
         self._caching = caching
         self._DataFileCaching = DataFileCaching
         self._kwargs = kwargs
@@ -762,8 +851,9 @@ class BoutOutputs(object):
         # Label for this data
         self.label = path
 
-        self._file_list = glob.glob(os.path.join(
-            path, self._prefix + "*" + self._suffix))
+        self._file_list = glob.glob(
+            os.path.join(path, self._prefix + "*" + self._suffix)
+        )
         if suffix is not None:
             latest_file = max(self._file_list, key=os.path.getctime)
             # if suffix==None we already found latest_file
@@ -778,7 +868,7 @@ class BoutOutputs(object):
         self.evolvingVariableNames = []
 
         with DataFile(latest_file) as f:
-            npes = f.read("NXPE")*f.read("NYPE")
+            npes = f.read("NXPE") * f.read("NYPE")
             if len(self._file_list) != npes:
                 alwayswarn("Too many data files, reading most recent ones")
                 if npes == 1:
@@ -786,8 +876,12 @@ class BoutOutputs(object):
                     # do like this to catch, e.g. either 'BOUT.dmp.nc' or 'BOUT.dmp.0.nc'
                     self._file_list = [latest_file]
                 else:
-                    self._file_list = [os.path.join(
-                        path, self._prefix + "." + str(i) + "." + self._suffix) for i in range(npes)]
+                    self._file_list = [
+                        os.path.join(
+                            path, self._prefix + "." + str(i) + "." + self._suffix
+                        )
+                        for i in range(npes)
+                    ]
 
             # Get variable names
             self.varNames = f.keys()
@@ -800,6 +894,7 @@ class BoutOutputs(object):
         # Private variables
         if self._caching:
             from collections import OrderedDict
+
             self._datacache = OrderedDict()
             if self._caching is not True:
                 # Track the size of _datacache and limit it to a maximum of _caching
@@ -808,9 +903,10 @@ class BoutOutputs(object):
                     float(self._caching)
                 except ValueError:
                     raise ValueError(
-                        "BoutOutputs: Invalid value for caching argument. Caching should be either a number (giving the maximum size of the cache in GB), True for unlimited size or False for no caching.")
+                        "BoutOutputs: Invalid value for caching argument. Caching should be either a number (giving the maximum size of the cache in GB), True for unlimited size or False for no caching."
+                    )
                 self._datacachesize = 0
-                self._datacachemaxsize = self._caching*1.e9
+                self._datacachemaxsize = self._caching * 1.0e9
 
         self._DataFileCache = None
 
@@ -849,12 +945,16 @@ class BoutOutputs(object):
             redistribute the restart files also (default: True)
 
         """
-        from boutdata.processor_rearrange import get_processor_layout, create_processor_layout
+        from boutdata.processor_rearrange import (
+            get_processor_layout,
+            create_processor_layout,
+        )
         from os import rename, path, mkdir
 
         # use get_processor_layout to get nx, ny
         old_processor_layout = get_processor_layout(
-            DataFile(self._file_list[0]), has_t_dimension=True, mxg=mxg, myg=myg)
+            DataFile(self._file_list[0]), has_t_dimension=True, mxg=mxg, myg=myg
+        )
         old_nxpe = old_processor_layout.nxpe
         old_nype = old_processor_layout.nype
         old_npes = old_processor_layout.npes
@@ -868,7 +968,8 @@ class BoutOutputs(object):
 
         # calculate new processor layout
         new_processor_layout = create_processor_layout(
-            old_processor_layout, npes, nxpe=nxpe)
+            old_processor_layout, npes, nxpe=nxpe
+        )
         nxpe = new_processor_layout.nxpe
         nype = new_processor_layout.nype
         mxsub = new_processor_layout.mxsub
@@ -884,16 +985,18 @@ class BoutOutputs(object):
         # create new output files
         outfile_list = []
         this_prefix = self._prefix
-        if not this_prefix[-1] == '.':
+        if not this_prefix[-1] == ".":
             # ensure prefix ends with a '.'
             this_prefix = this_prefix + "."
         for i in range(npes):
             outpath = os.path.join(
-                self._path, this_prefix+str(i)+"."+self._suffix)
+                self._path, this_prefix + str(i) + "." + self._suffix
+            )
             if self._suffix.split(".")[-1] in ["nc", "ncdf", "cdl"]:
                 # set format option to DataFile explicitly to avoid creating netCDF3 files, which can only contain up to 2GB of data
                 outfile_list.append(
-                    DataFile(outpath, write=True, create=True, format='NETCDF4'))
+                    DataFile(outpath, write=True, create=True, format="NETCDF4")
+                )
             else:
                 outfile_list.append(DataFile(outpath, write=True, create=True))
 
@@ -904,15 +1007,22 @@ class BoutOutputs(object):
             DataFileCache = None
         # read and write the data
         for v in self.varNames:
-            print("processing "+v)
-            data = collect(v, path=backupdir, prefix=self._prefix, xguards=True,
-                           yguards=True, info=False, datafile_cache=DataFileCache)
+            print("processing " + v)
+            data = collect(
+                v,
+                path=backupdir,
+                prefix=self._prefix,
+                xguards=True,
+                yguards=True,
+                info=False,
+                datafile_cache=DataFileCache,
+            )
             ndims = len(data.shape)
 
             # write data
             for i in range(npes):
                 ix = i % nxpe
-                iy = int(i/nxpe)
+                iy = int(i / nxpe)
                 outfile = outfile_list[i]
                 if v == "NPES":
                     outfile.write(v, npes)
@@ -932,28 +1042,54 @@ class BoutOutputs(object):
                     outfile.write(v, data)
                 elif ndims == 2:
                     # Field2D
-                    if data.shape != (nx + 2*mxg, ny + 2*myg):
+                    if data.shape != (nx + 2 * mxg, ny + 2 * myg):
                         # FieldPerp?
                         # check is not perfect, fails if ny=nz
                         raise ValueError(
-                            "Error: Found FieldPerp '"+v+"'. This case is not currently handled by BoutOutputs.redistribute().")
+                            "Error: Found FieldPerp '"
+                            + v
+                            + "'. This case is not currently handled by BoutOutputs.redistribute()."
+                        )
                     outfile.write(
-                        v, data[ix*mxsub:(ix+1)*mxsub+2*mxg, iy*mysub:(iy+1)*mysub+2*myg])
+                        v,
+                        data[
+                            ix * mxsub : (ix + 1) * mxsub + 2 * mxg,
+                            iy * mysub : (iy + 1) * mysub + 2 * myg,
+                        ],
+                    )
                 elif ndims == 3:
                     # Field3D
-                    if data.shape[:2] != (nx + 2*mxg, ny + 2*myg):
+                    if data.shape[:2] != (nx + 2 * mxg, ny + 2 * myg):
                         # evolving Field2D, but this case is not handled
                         # check is not perfect, fails if ny=nx and nx=nt
-                        raise ValueError("Error: Found evolving Field2D '"+v +
-                                         "'. This case is not currently handled by BoutOutputs.redistribute().")
+                        raise ValueError(
+                            "Error: Found evolving Field2D '"
+                            + v
+                            + "'. This case is not currently handled by BoutOutputs.redistribute()."
+                        )
                     outfile.write(
-                        v, data[ix*mxsub:(ix+1)*mxsub+2*mxg, iy*mysub:(iy+1)*mysub+2*myg, :])
+                        v,
+                        data[
+                            ix * mxsub : (ix + 1) * mxsub + 2 * mxg,
+                            iy * mysub : (iy + 1) * mysub + 2 * myg,
+                            :,
+                        ],
+                    )
                 elif ndims == 4:
                     outfile.write(
-                        v, data[:, ix*mxsub:(ix+1)*mxsub+2*mxg, iy*mysub:(iy+1)*mysub+2*myg, :])
+                        v,
+                        data[
+                            :,
+                            ix * mxsub : (ix + 1) * mxsub + 2 * mxg,
+                            iy * mysub : (iy + 1) * mysub + 2 * myg,
+                            :,
+                        ],
+                    )
                 else:
                     print(
-                        "ERROR: variable found with unexpected number of dimensions,", ndims)
+                        "ERROR: variable found with unexpected number of dimensions,",
+                        ndims,
+                    )
 
         for outfile in outfile_list:
             outfile.close()
@@ -962,16 +1098,18 @@ class BoutOutputs(object):
             print("processing restarts")
             from boutdata import restart
             from glob import glob
+
             restart_prefix = "BOUT.restart"
-            restarts_list = glob(path.join(self._path, restart_prefix+"*"))
+            restarts_list = glob(path.join(self._path, restart_prefix + "*"))
 
             # Move existing restart files to backup directory
             for f in restarts_list:
                 rename(f, path.join(backupdir, path.basename(f)))
 
             # Redistribute restarts
-            restart.redistribute(npes, path=backupdir,
-                                 nxpe=nxpe, output=self._path, mxg=mxg, myg=myg)
+            restart.redistribute(
+                npes, path=backupdir, nxpe=nxpe, output=self._path, mxg=mxg, myg=myg
+            )
 
     def _collect(self, *args, **kwargs):
         """Wrapper for collect to pass self._DataFileCache if necessary.
@@ -995,8 +1133,9 @@ class BoutOutputs(object):
 
         if self._caching:
             if name not in self._datacache.keys():
-                item = self._collect(name, path=self._path,
-                                     prefix=self._prefix, **self._kwargs)
+                item = self._collect(
+                    name, path=self._path, prefix=self._prefix, **self._kwargs
+                )
                 if self._caching is not True:
                     itemsize = item.nbytes
                     if itemsize > self._datacachemaxsize:
@@ -1012,8 +1151,9 @@ class BoutOutputs(object):
                 return self._datacache[name]
         else:
             # Collect the data from the repository
-            data = self._collect(name, path=self._path,
-                                 prefix=self._prefix, **self._kwargs)
+            data = self._collect(
+                name, path=self._path, prefix=self._prefix, **self._kwargs
+            )
             return data
 
     def _removeFirstFromCache(self):
@@ -1037,7 +1177,7 @@ class BoutOutputs(object):
         """
         text = ""
         for k in self.varNames:
-            text += indent+k+"\n"
+            text += indent + k + "\n"
 
         return text
 
@@ -1102,11 +1242,9 @@ def BoutData(path=".", prefix="BOUT.dmp", caching=False, **kwargs):
     data["path"] = path
 
     # Options from BOUT.inp file
-    data["options"] = BoutOptionsFile(
-        os.path.join(path, "BOUT.inp"), name="options")
+    data["options"] = BoutOptionsFile(os.path.join(path, "BOUT.inp"), name="options")
 
     # Output from .dmp.* files
-    data["outputs"] = BoutOutputs(
-        path, prefix=prefix, caching=caching, **kwargs)
+    data["outputs"] = BoutOutputs(path, prefix=prefix, caching=caching, **kwargs)
 
     return data
