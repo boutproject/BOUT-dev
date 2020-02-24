@@ -12,7 +12,11 @@ from boututils.boutwarnings import AlwaysWarning
 # This should be a list of dicts, each containing exactly two keys:
 # "old" and "new". The values of these keys should be the old/new
 # names of input file values or sections
-REPLACEMENTS = []
+REPLACEMENTS = [
+    {"old": "mesh:paralleltransform", "new": "mesh:paralleltransform:type"},
+    {"old": "fci", "new": "mesh:paralleltransform"},
+    {"old": "interpolation", "new": "mesh:paralleltransform:xzinterpolation"},
+]
 
 
 def fix_replacements(replacements, options_file):
