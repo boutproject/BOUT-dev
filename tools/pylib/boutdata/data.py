@@ -524,6 +524,7 @@ class BoutOptionsFile(BoutOptions):
         nz=None,
     ):
         BoutOptions.__init__(self, name)
+        self.filename = filename
         # Open the file
         with open(filename, "r") as f:
             # Go through each line in the file
