@@ -388,7 +388,7 @@ class BoutOptions(object):
         parent = self._parent
         while parent is not None:
             sectionname = parent._name
-            if sectionname is "root":
+            if sectionname == "root":
                 sectionname = ""
             expression = parent._evaluate_section(expression, sectionname)
             parent = parent._parent
@@ -403,7 +403,7 @@ class BoutOptions(object):
         # 'bar:x' (found traversing the tree starting from 'bar') or
         # 'foo:bar:x' (found when traversing tree starting from 'foo').
         for var in self.values():
-            if nested_sectionname is not "":
+            if nested_sectionname != "":
                 nested_name = nested_sectionname + ":" + var
             else:
                 nested_name = var
@@ -414,7 +414,7 @@ class BoutOptions(object):
                                     expression)
 
         for subsection in self.sections():
-            if nested_sectionname is not "":
+            if nested_sectionname != "":
                 nested_name = nested_sectionname + ":" + subsection
             else:
                 nested_name = subsection
@@ -747,7 +747,7 @@ class BoutOutputs(object):
         self._path = path
         # normalize prefix by removing trailing '.' if present
         self._prefix = prefix.rstrip('.')
-        if suffix == None:
+        if suffix is None:
             temp_file_list = glob.glob(
                 os.path.join(self._path, self._prefix + "*"))
             latest_file = max(temp_file_list, key=os.path.getctime)
@@ -764,7 +764,7 @@ class BoutOutputs(object):
 
         self._file_list = glob.glob(os.path.join(
             path, self._prefix + "*" + self._suffix))
-        if not suffix == None:
+        if suffix is not None:
             latest_file = max(self._file_list, key=os.path.getctime)
             # if suffix==None we already found latest_file
 
