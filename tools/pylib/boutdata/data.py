@@ -341,9 +341,10 @@ class BoutOptions(object):
             section_name = basename+":"+section if basename else section
             if section.lower() in opts.comments:
                 f.write("\n".join(opts.comments[section.lower()]))
-            f.write("\n[{}]".format(section_name))
-            format_inline_comment(section.lower(), opts)
-            f.write("\n")
+            if opts[section]._keys:
+                f.write("\n[{}]".format(section_name))
+                format_inline_comment(section.lower(), opts)
+                f.write("\n")
             self.__str__(section_name, opts[section], f)
 
         return f.getvalue()
