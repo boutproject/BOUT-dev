@@ -25,6 +25,32 @@ from numpy import (pi, sin, cos, tan, arccos as acos, arcsin as asin,
                    round, abs)
 
 
+from collections import UserDict
+
+
+class CaseInsensitiveDict(UserDict):
+    def __missing__(self, key):
+        return CaseInsensitiveDict({key: CaseInsensitiveDict()})
+
+    def __getitem__(self, key):
+        return self.data[key.lower()][1]
+
+    def __setitem__(self, key, value):
+        self.data[key.lower()] = (key, value)
+
+    def __delitem__(self, key):
+        del self.data[key.lower()]
+
+    def __iter__(self):
+        return (key for key, _ in self.data.values())
+
+    def __contains__(self, key):
+        return key.lower() in self.data
+
+    def __repr__(self):
+        return repr({key: value for key, value in self.data.values()})
+
+
 class BoutOptions(object):
     """This class represents a tree structure. Each node (BoutOptions
     object) can have several sub-nodes (sections), and several
@@ -62,13 +88,13 @@ class BoutOptions(object):
     """
 
     def __init__(self, name="root", parent=None):
-        self._sections = {}
-        self._keys = {}
+        self._sections = CaseInsensitiveDict()
+        self._keys = CaseInsensitiveDict()
         self._name = name
         self._parent = parent
-        self.comments = {}
-        self.inline_comments = {}
-        self._comment_whitespace = {}
+        self.comments = CaseInsensitiveDict()
+        self.inline_comments = CaseInsensitiveDict()
+        self._comment_whitespace = CaseInsensitiveDict()
 
     def getSection(self, name):
         """Return a section object. If the section does not exist then it is
@@ -85,13 +111,12 @@ class BoutOptions(object):
             A new section with the original object as the parent
 
         """
-        name_lower = name.lower()
 
-        if name_lower in self._sections:
-            return self._sections[name_lower][1]
+        if name in self._sections:
+            return self._sections[name]
         else:
-            newsection = BoutOptions(name, self)
-            self._sections[name_lower] = (name, newsection)
+            newsection = BoutOptions(name=name, parent=self)
+            self._sections[name] = newsection
             return newsection
 
     def __getitem__(self, key):
@@ -105,13 +130,12 @@ class BoutOptions(object):
             section = self[key_parts[0]]
             return section[key_parts[1]]
 
-        key = key.lower()
         if key in self._sections:
-            return self._sections[key][1]
+            return self._sections[key]
 
         if key not in self._keys:
             raise KeyError("Key '%s' not in section '%s'" % (key, self.path()))
-        return self._keys[key][1]
+        return self._keys[key]
 
     def __setitem__(self, key, value):
         """
@@ -129,7 +153,7 @@ class BoutOptions(object):
                 section = self.getSection(key_parts[0])
             section[key_parts[1]] = value
         else:
-            self._keys[key.lower()] = (key, value)
+            self._keys[key] = value
 
     def __delitem__(self, key):
         key_parts = key.split(":", maxsplit=1)
@@ -139,7 +163,6 @@ class BoutOptions(object):
             del section[key_parts[1]]
             return
 
-        key = key.lower()
         if key in self._sections:
             del self._sections[key]
         elif key in self._keys:
@@ -153,10 +176,9 @@ class BoutOptions(object):
         if len(key_parts) > 1:
             if key_parts[0] in self:
                 return key_parts[1] in self[key_parts[0]]
-            else:
-                return False
+            return False
 
-        return key.lower() in self.keys()
+        return key in self.keys()
 
     __marker = object()
 
@@ -177,12 +199,12 @@ class BoutOptions(object):
         if len(key_parts) > 1:
             return self[key_parts[0]]._pop_impl(key_parts[1], default)
 
-        if key.lower() in self._sections:
-            value = self._sections.pop(key)[1]
+        if key in self._sections:
+            value = self._sections.pop(key)
             name = self._name
             parent = self._parent
-        elif key.lower() in self._keys:
-            value = self._keys.pop(key)[1]
+        elif key in self._keys:
+            value = self._keys.pop(key)
             name = None
             parent = None
         elif default is self.__marker:
@@ -301,10 +323,10 @@ class BoutOptions(object):
         """Iterates over all keys. First values, then sections
 
         """
-        for k in self._keys.values():
-            yield k[0]
-        for s in self._sections.values():
-            yield s[0]
+        for k in self._keys:
+            yield k
+        for s in self._sections:
+            yield s
 
     def as_tree(self, indent=""):
         """Return a string formatted as a pretty version of the options tree
@@ -313,10 +335,10 @@ class BoutOptions(object):
         text = self._name + "\n"
 
         for k in self._keys:
-            text += indent + " |- " + k + " = " + str(self._keys[k][1]) + "\n"
+            text += indent + " |- " + k + " = " + str(self._keys[k]) + "\n"
 
         for s in self._sections:
-            text += indent + " |- " + self._sections[s][1].print_as_tree(indent+" |  ")
+            text += indent + " |- " + self._sections[s].as_tree(indent+" |  ")
         return text
 
     def __str__(self, basename=None, opts=None, f=None):
@@ -333,17 +355,17 @@ class BoutOptions(object):
         for key, value in opts._keys.items():
             if key in opts.comments:
                 f.write("\n".join(opts.comments[key]) + "\n")
-            f.write("{} = {}".format(value[0], value[1]))
+            f.write("{} = {}".format(key, value))
             format_inline_comment(key, opts)
             f.write("\n")
 
-        for section, _ in opts._sections.values():
+        for section in opts._sections.keys():
             section_name = basename+":"+section if basename else section
-            if section.lower() in opts.comments:
-                f.write("\n".join(opts.comments[section.lower()]))
+            if section in opts.comments:
+                f.write("\n".join(opts.comments[section]))
             if opts[section]._keys:
                 f.write("\n[{}]".format(section_name))
-                format_inline_comment(section.lower(), opts)
+                format_inline_comment(section, opts)
                 f.write("\n")
             self.__str__(section_name, opts[section], f)
 
@@ -494,11 +516,11 @@ class BoutOptionsFile(BoutOptions):
                         parent_section = parent_section.getSection(sectionname)
                     section = parent_section.getSection(line)
                     if comments:
-                        parent_section.comments[sectionname.lower()] = copy.deepcopy(comments)
+                        parent_section.comments[sectionname] = copy.deepcopy(comments)
                         comments = []
                     if inline_comment is not None:
-                        parent_section.inline_comments[sectionname.lower()] = inline_comment
-                        parent_section._comment_whitespace[sectionname.lower()] = comment_whitespace
+                        parent_section.inline_comments[sectionname] = inline_comment
+                        parent_section._comment_whitespace[sectionname] = comment_whitespace
                 else:
                     # A key=value pair
 
@@ -523,11 +545,11 @@ class BoutOptionsFile(BoutOptions):
                         value_name = line[:eqpos].strip()
                         section[value_name] = value
                     if comments:
-                        section.comments[value_name.lower()] = copy.deepcopy(comments)
+                        section.comments[value_name] = copy.deepcopy(comments)
                         comments = []
                     if inline_comment is not None:
-                        section.inline_comments[value_name.lower()] = inline_comment
-                        section._comment_whitespace[value_name.lower()] = comment_whitespace
+                        section.inline_comments[value_name] = inline_comment
+                        section._comment_whitespace[value_name] = comment_whitespace
 
         try:
             # define arrays of x, y, z to be used for substitutions
