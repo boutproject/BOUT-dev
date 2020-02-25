@@ -56,6 +56,7 @@ const char DEFAULT_DIR[] = "data";
 #include "bout/slepclib.hxx"
 #include "bout/solver.hxx"
 #include "bout/sys/timer.hxx"
+#include "bout/version.hxx"
 
 #define BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 #include "bout.hxx"
@@ -84,13 +85,6 @@ inline auto getpid() -> int { return GetCurrentProcessId(); }
 
 #ifdef BOUT_FPE
 #include <fenv.h>
-#endif
-
-// Might come from the command line, if using configure, otherwise use
-// CMake generated header. Should be last include to avoid needing to
-// rebuild other files
-#ifndef BOUT_REVISION
-#  include "bout/revision.hxx"
 #endif
 
 using std::string;
@@ -429,10 +423,8 @@ void savePIDtoFile(const std::string& data_dir, int MYPE) {
 }
 
 void printStartupHeader(int MYPE, int NPES) {
-  output_progress.write(_("BOUT++ version {:s}\n"), BOUT_VERSION_STRING);
-#ifdef BOUT_REVISION
-  output_progress.write(_("Revision: {:s}\n"), BUILDFLAG(BOUT_REVISION));
-#endif
+  output_progress.write(_("BOUT++ version {:s}\n"), bout::version::full);
+  output_progress.write(_("Revision: {:s}\n"), bout::version::revision);
 #ifdef MD5SUM
   output_progress.write("MD5 checksum: {:s}\n", BUILDFLAG(MD5SUM));
 #endif
@@ -577,8 +569,8 @@ void setRunStartInfo(Options& options) {
 
   // Note: have to force value, since may already be set if a previously
   // output BOUT.settings file was used as input
-  runinfo["version"].force(BOUT_VERSION_STRING, "");
-  runinfo["revision"].force(BUILDFLAG(REVISION), "");
+  runinfo["version"].force(bout::version::full, "");
+  runinfo["revision"].force(bout::version::revision, "");
 
   time_t start_time = time(nullptr);
   runinfo["started"].force(ctime(&start_time), "");
@@ -609,7 +601,7 @@ Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir
   }
 
   // Add book-keeping variables to the output files
-  dump_file.add(const_cast<BoutReal&>(BOUT_VERSION), "BOUT_VERSION", false);
+  dump_file.add(const_cast<BoutReal&>(bout::version::as_double), "BOUT_VERSION", false);
   // Appends the time of dumps into an array
   dump_file.add(simtime, "t_array", true);
   dump_file.add(iteration, "iteration", false);

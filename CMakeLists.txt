@@ -10,6 +10,7 @@ endif()
 # Set the version here, strip any extra tags to use in `project`
 set(BOUT_FULL_VERSION 5.0.0-alpha)
 string(REGEX REPLACE "^([0-9]+\.[0-9]+\.[0-9]+)-.*" "\\1" BOUT_CMAKE_ACCEPTABLE_VERSION ${BOUT_FULL_VERSION})
+string(REGEX REPLACE "^[0-9]+\.[0-9]+\.[0-9]+-(.*)" "\\1" BOUT_VERSION_TAG ${BOUT_FULL_VERSION})
 
 project(BOUT++
   DESCRIPTION "Fluid PDE solver framework"
@@ -308,13 +309,32 @@ target_include_directories(bout++ PUBLIC
   $<INSTALL_INTERFACE:include>
   )
 
-target_compile_definitions(bout++
-  PUBLIC "BOUT_VERSION_STRING=\"${BOUT_FULL_VERSION}\""
-  PUBLIC "BOUT_VERSION_DOUBLE=${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}${PROJECT_VERSION_PATCH}"
-  )
-
 target_compile_features(bout++ PUBLIC cxx_std_14)
 set_target_properties(bout++ PROPERTIES CXX_EXTENSIONS OFF)
+
+##################################################
+# Components of the version number
+# Pre-release identifier (BOUT_VERSION_TAG) set above
+set(BOUT_VERSION ${BOUT_FULL_VERSION})
+set(BOUT_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
+set(BOUT_VERSION_MINOR ${PROJECT_VERSION_MINOR})
+set(BOUT_VERSION_PATCH ${PROJECT_VERSION_PATCH})
+
+# Get the git commit
+include(GetGitRevisionDescription)
+get_git_head_revision(GIT_REFSPEC BOUT_REVISION)
+if(BOUT_REVISION STREQUAL "GITDIR-NOTFOUND")
+  set(BOUT_REVISION "Unknown")
+endif()
+message(STATUS "Git revision: ${BOUT_REVISION}")
+
+# Build the file containing the version information
+# This will be rebuilt on every commit!
+configure_file(
+  "${PROJECT_SOURCE_DIR}/include/bout/version.hxx.in"
+  "${PROJECT_BINARY_DIR}/include/bout/version.hxx")
+
+##################################################
 
 option(EXTERNAL_FMT "Use external installation of fmt" OFF)
 if(EXTERNAL_FMT)
@@ -434,13 +454,6 @@ if (ENABLE_OPENMP)
 endif()
 message(STATUS "Enable OpenMP: ${ENABLE_OPENMP}")
 set(BOUT_USE_OPENMP ${ENABLE_OPENMP})
-
-include(GetGitRevisionDescription)
-get_git_head_revision(GIT_REFSPEC BOUT_REVISION)
-message(STATUS "Git revision: ${BOUT_REVISION}")
-configure_file(
-  "${PROJECT_SOURCE_DIR}/include/bout/revision.hxx.in"
-  "${PROJECT_BINARY_DIR}/include/bout/revision.hxx")
 
 # Optional dependencies
 

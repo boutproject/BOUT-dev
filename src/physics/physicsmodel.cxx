@@ -33,6 +33,7 @@
 #undef BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 
 #include <bout/mesh.hxx>
+#include <bout/version.hxx>
 
 PhysicsModel::PhysicsModel() : modelMonitor(this) {
 
@@ -128,7 +129,7 @@ int PhysicsModel::postInit(bool restarting) {
   // are not overwritten.
   bout::globals::mesh->outputVars(restart);
   // Version expected by collect routine
-  restart.addOnce(const_cast<BoutReal &>(BOUT_VERSION), "BOUT_VERSION");
+  restart.addOnce(const_cast<BoutReal &>(bout::version::as_double), "BOUT_VERSION");
 
   /// Open the restart file for writing
   if (!restart.openw(filename))

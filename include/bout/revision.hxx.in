@@ -1,7 +1,0 @@
-#ifndef BOUT_REVISION_H
-#define BOUT_REVISION_H
-
-/// The git commit hash
-#define BOUT_REVISION "@BOUT_REVISION@"
-
-#endif // BOUT_REVISION_H
