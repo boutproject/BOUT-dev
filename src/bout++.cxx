@@ -52,6 +52,7 @@ const char DEFAULT_DIR[] = "data";
 #include "bout/mpi_wrapper.hxx"
 #include "bout/openmpwrap.hxx"
 #include "bout/petsclib.hxx"
+#include "bout/revision.hxx"
 #include "bout/rkscheme.hxx"
 #include "bout/slepclib.hxx"
 #include "bout/solver.hxx"

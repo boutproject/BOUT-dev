@@ -33,7 +33,6 @@
 #undef BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 
 #include <bout/mesh.hxx>
-#include <bout/version.hxx>
 
 PhysicsModel::PhysicsModel() : modelMonitor(this) {
 

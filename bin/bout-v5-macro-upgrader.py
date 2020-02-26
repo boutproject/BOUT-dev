@@ -6,35 +6,46 @@ import difflib
 import re
 import textwrap
 
+# List of macros, their replacements and what header to find them
+# in. Each element should be a dict with "old", "new" and "headers"
+# keys, with "old" and "new" values being strings, and "headers" being a
+# list of strings
 MACRO_REPLACEMENTS = [
-    {"old": "REVISION", "new": "bout::version::revision", "header": "bout/version.hxx"},
+    {
+        "old": "REVISION",
+        "new": "bout::version::revision",
+        "headers": ["bout/revision.hxx"],
+    },
     {
         "old": "BOUT_VERSION_DOUBLE",
         "new": "bout::version::as_double",
-        "header": "bout/version.hxx",
+        "headers": ["bout/version.hxx", "bout.hxx"],
     },
     {
         "old": "BOUT_VERSION_STRING",
         "new": "bout::version::full",
-        "header": "bout/version.hxx",
+        "headers": ["bout/version.hxx", "bout.hxx"],
     },
     # Next one is not technically a macro, but near enough
-    {"old": "BOUT_VERSION", "new": "bout::version::full", "header": "bout/version.hxx"},
+    {
+        "old": "BOUT_VERSION",
+        "new": "bout::version::full",
+        "headers": ["bout/version.hxx", "bout.hxx"],
+    },
 ]
 
 
-def fix_include_version_header(old, header, source):
+def fix_include_version_header(old, headers, source):
     """Make sure version.hxx header is included
     """
 
     # If header is already included, we can skip this fix
-    if (
-        re.search(
-            r'^#\s*include.*(<|"){}(>|")'.format(header), source, flags=re.MULTILINE
-        )
-        is not None
-    ):
-        return source
+    for header in headers:
+        if (
+            re.search(r'^#\s*include.*(<|"){}(>|")'.format(header), source, flags=re.M)
+            is not None
+        ):
+            return source
 
     # If the old macro isn't in the file, we can skip this fix
     if re.search(r"\b{}\b".format(old), source) is None:
@@ -55,7 +66,7 @@ def fix_include_version_header(old, header, source):
     else:
         # No suitable includes, so just stick at the top of the file
         last_include = 0
-    source_lines.insert(last_include, '#include "{}"'.format(header))
+    source_lines.insert(last_include, '#include "{}"'.format(headers[0]))
 
     return "\n".join(source_lines)
 
@@ -109,7 +120,7 @@ def apply_fixes(replacements, source):
 
     for replacement in replacements:
         modified = fix_include_version_header(
-            replacement["old"], replacement["header"], modified
+            replacement["old"], replacement["headers"], modified
         )
         modified = fix_ifdefs(replacement["old"], modified)
         modified = fix_replacement(replacement["old"], replacement["new"], modified)

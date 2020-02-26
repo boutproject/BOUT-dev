@@ -329,10 +329,14 @@ endif()
 message(STATUS "Git revision: ${BOUT_REVISION}")
 
 # Build the file containing the version information
-# This will be rebuilt on every commit!
 configure_file(
   "${PROJECT_SOURCE_DIR}/include/bout/version.hxx.in"
   "${PROJECT_BINARY_DIR}/include/bout/version.hxx")
+# Build the file containing just the commit hash
+# This will be rebuilt on every commit!
+configure_file(
+  "${PROJECT_SOURCE_DIR}/include/bout/revision.hxx.in"
+  "${PROJECT_BINARY_DIR}/include/bout/revision.hxx")
 
 ##################################################
 

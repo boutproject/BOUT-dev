@@ -644,7 +644,7 @@ HAS_CVODE
 HAS_IDA
 HAS_PVODE
 CHECK_LEVEL
-GIT_REVISION
+BOUT_REVISION
 BOUT_VERSION_TAG
 BOUT_VERSION_PATCH
 BOUT_VERSION_MINOR
@@ -6144,11 +6144,11 @@ if test $? = 0; then :
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: Git revision: $rev" >&5
 $as_echo "$as_me: Git revision: $rev" >&6;}
-  GIT_REVISION=$rev
+  BOUT_REVISION=$rev
 
 else
 
-  GIT_REVISION=
+  BOUT_REVISION=
 
 fi
 
@@ -16024,6 +16024,8 @@ FMT_INCLUDE_PATH=$PWD/externalpackages/fmt/include
 
 ac_config_files="$ac_config_files include/bout/version.hxx"
 
+ac_config_files="$ac_config_files include/bout/revision.hxx"
+
 ac_config_files="$ac_config_files bin/bout-config"
 
 cat >confcache <<\_ACEOF
@@ -16760,6 +16762,7 @@ do
     "src/fmt/format.cxx") CONFIG_LINKS="$CONFIG_LINKS src/fmt/format.cxx:externalpackages/fmt/src/format.cc" ;;
     "make.config") CONFIG_FILES="$CONFIG_FILES make.config" ;;
     "include/bout/version.hxx") CONFIG_FILES="$CONFIG_FILES include/bout/version.hxx" ;;
+    "include/bout/revision.hxx") CONFIG_FILES="$CONFIG_FILES include/bout/revision.hxx" ;;
     "bin/bout-config") CONFIG_FILES="$CONFIG_FILES bin/bout-config" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;

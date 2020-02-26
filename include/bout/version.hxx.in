@@ -1,8 +1,6 @@
 /// Information about the version of BOUT++
 ///
-/// The build system will update this file on every commit, which may
-/// result in files that include it getting rebuilt. Therefore it
-/// should be included in as few places as possible
+/// The build system will update this file at configure-time
 
 #ifndef BOUT_VERSION_H
 #define BOUT_VERSION_H
@@ -23,12 +21,6 @@ constexpr int patch = @BOUT_VERSION_PATCH@;
 constexpr auto prerelease = "@BOUT_VERSION_TAG@";
 /// The full version number as a double
 constexpr double as_double = @BOUT_VERSION_MAJOR@.@BOUT_VERSION_MINOR@@BOUT_VERSION_PATCH@;
-/// The git commit hash
-#ifndef BOUT_REVISION
-constexpr auto revision = "@BOUT_REVISION@";
-#else
-constexpr auto revision = "BOUT_REVISION";
-#endif
 } // namespace version
 } // namespace bout
 

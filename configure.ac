@@ -405,9 +405,9 @@ AS_IF([test "x$enable_shared" = "xyes"], [
 rev=`git rev-parse HEAD`
 AS_IF([test $? = 0], [
   AC_MSG_NOTICE([Git revision: $rev])
-  GIT_REVISION=$rev
+  BOUT_REVISION=$rev
 ], [
-  GIT_REVISION=
+  BOUT_REVISION=
 ])
 
 #############################################################
@@ -1298,7 +1298,7 @@ AC_SUBST(BOUT_VERSION_MAJOR)
 AC_SUBST(BOUT_VERSION_MINOR)
 AC_SUBST(BOUT_VERSION_PATCH)
 AC_SUBST(BOUT_VERSION_TAG)
-AC_SUBST(GIT_REVISION)
+AC_SUBST(BOUT_REVISION)
 AC_SUBST(CHECK_LEVEL)
 
 AC_SUBST(HAS_PVODE)
@@ -1324,6 +1324,7 @@ AC_SUBST(HAS_NLS)
 AC_SUBST(HAS_FFTW)
 
 AC_CONFIG_FILES([include/bout/version.hxx])
+AC_CONFIG_FILES([include/bout/revision.hxx])
 AC_CONFIG_FILES([bin/bout-config])
 AC_OUTPUT
 chmod a+x bin/bout-config
