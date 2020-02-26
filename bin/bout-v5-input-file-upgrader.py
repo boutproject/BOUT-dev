@@ -42,7 +42,7 @@ def apply_fixes(replacements, options_file):
 
     modified = copy.deepcopy(options_file)
 
-    fix_replacements(replacements, options_file)
+    fix_replacements(replacements, modified)
 
     return modified
 
