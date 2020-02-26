@@ -41,3 +41,8 @@ src/.libfast
 .BOUT.pid.*
 build/
 build*/
+/tests/integrated/test-griddata-yboundary-guards/test_griddata
+/tests/integrated/test-laplacexz/test-laplacexz
+/tests/integrated/test-twistshift-staggered/test-twistshift
+/tests/integrated/test-twistshift/test-twistshift
+/tests/integrated/test-griddata-yboundary-guards/*/*.nc
