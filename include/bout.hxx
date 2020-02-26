@@ -52,7 +52,6 @@
 #include "where.hxx"
 #include "bout/mesh.hxx"
 #include "bout/solver.hxx"
-#include "bout/version.hxx"
 
 #ifndef BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 // Include using statement by default in user code.
