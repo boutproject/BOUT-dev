@@ -1483,8 +1483,7 @@ Optional Features:
   --enable-shared         Enable building bout++ into an shared object
   --enable-openmp         Enable building with OpenMP support
   --enable-pvode-openmp   Enable building PVODE with OpenMP support
-  --enable-metric-3d=no/yes
-                          If yes use Field3D to store coordinates metric data
+  --enable-metric-3d      Use Field3D to store coordinates metric data
   --disable-openmp        do not use OpenMP
   --enable-code-coverage  Whether to enable code coverage support
   --disable-nls           do not use Native Language Support
