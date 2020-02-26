@@ -133,20 +133,35 @@ Field2D _interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
 
   Field3D _interpolateAndExtrapolate(const Field3D& f_, CELL_LOC location,
 				     bool extrapolate_x, bool extrapolate_y,
-				    bool no_extra_interpolate, ParallelTransform* pt) {
+				    bool no_extra_interpolate, ParallelTransform* pt_) {
 
     Mesh* localmesh = f_.getMesh();
     Field3D result;
+    Field3D f = f_;
+    ParallelTransform * pt_f;
+    if (f.getCoordinates() == nullptr) {
+      pt_f = pt_;
+    } else {
+      pt_f = & f.getCoordinates()->getParallelTransform();
+    }
     // Cannot use normal ifs, so that f is const
-    const Field3D f = (f_.getDirectionY() == YDirectionType::Standard ? f_ :
-		       (f_.getCoordinates() == nullptr ? pt->fromFieldAligned(f_) : fromFieldAligned(f_)));
-
+    if (f.getDirectionY() != YDirectionType::Standard) {
+      if (pt_f->canToFromFieldAligned()) {
+	f = pt_f->fromFieldAligned(f);
+      } else {
+	f.setDirectionY(YDirectionType::Standard);
+      }
+    }
     if (location == CELL_YLOW){
-      auto f_aligned = f.getCoordinates() == nullptr ?
-	pt->toFieldAligned(f, "RGN_NOX") : toFieldAligned(f, "RGN_NOX");
+      auto f_aligned = pt_f->toFieldAligned(f, "RGN_NOX");
       result = interp_to(f_aligned, location, "RGN_NOBNDRY");
-      result = result.getCoordinates() == nullptr ?
-	pt->fromFieldAligned(result,  "RGN_NOBNDRY") : fromFieldAligned(result,  "RGN_NOBNDRY");
+      ParallelTransform * pt_result;
+      if (result.getCoordinates() == nullptr){
+	pt_result = pt_;
+      } else {
+	pt_result = & result.getCoordinates()->getParallelTransform();
+      }
+      result = pt_result->fromFieldAligned(result,  "RGN_NOBNDRY");
     } else {
       result = interp_to(f, location, "RGN_NOBNDRY");
     }
@@ -1749,7 +1764,13 @@ Field3D Coordinates::indexDDY(const Field3D& f, CELL_LOC outloc,
 #ifdef COORDINATES_USE_3D
   if (!f.hasParallelSlices()){
     const bool is_unaligned = (f.getDirectionY() == YDirectionType::Standard);
-    const Field3D f_aligned = is_unaligned ? transform->toFieldAligned(f, "RGN_NOX") : f;
+    Field3D f_aligned;
+    if (transform->canToFromFieldAligned()){
+      f_aligned = is_unaligned ? transform->toFieldAligned(f, "RGN_NOX") : f;
+    } else {
+      f_aligned = f;
+      f_aligned.setDirectionY(YDirectionType::Aligned);
+    }
     Field3D result = bout::derivatives::index::DDY(f_aligned, outloc, method, region);
     return (is_unaligned ? maybeFromFieldAligned(result, region) : result );
   }

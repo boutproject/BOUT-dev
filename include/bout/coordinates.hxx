@@ -288,7 +288,13 @@ private:
     ASSERT1(location == f.getLocation());
     ASSERT1(localmesh == f.getMesh());
     if (f.getDirectionY() != YDirectionType::Standard){
-      return this->getParallelTransform().fromFieldAligned(f, region);
+      if (this->getParallelTransform().canToFromFieldAligned()){
+	return this->getParallelTransform().fromFieldAligned(f, region);
+      } else {
+	Field3D f_ = f;
+	f_.setDirectionY(YDirectionType::Standard);
+	return f_;
+      }
     }
     return f;
   }
