@@ -1408,6 +1408,8 @@ AC_SUBST(HAS_NLS)
 AC_SUBST(HAS_FFTW)
 
 AC_CONFIG_FILES([bin/bout-config])
+AC_CONFIG_FILES([src/makefile])
+AC_CONFIG_FILES([tools/pylib/boututils/bout_config.py])
 AC_OUTPUT
 chmod a+x bin/bout-config
 
