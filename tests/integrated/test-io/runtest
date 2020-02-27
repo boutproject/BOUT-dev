@@ -14,6 +14,7 @@ except:
 
 from boututils.run_wrapper import shell, shell_safe, launch_safe
 from boutdata.collect import collect
+import boututils.bout_config as conf
 import numpy as np
 from sys import stdout, exit
 
@@ -35,6 +36,46 @@ print("Reading benchmark data")
 bmk = {}
 for v in vars:
     bmk[v] = collect(v, path="data", prefix="benchmark.out", info=False)
+
+def check_output():
+    success = True
+    for v in vars:
+        stdout.write("      Checking variable "+v+" ... ")
+        result = collect(v, path="data", info=False)
+
+        # Compare benchmark and output
+        if np.shape(bmk[v]) != np.shape(result):
+            if (conf.isMetric3D() and v.startswith('v2d')
+                and bmk[v].shape == result.shape[:-1]):
+                result = result[...,0]
+            else:
+                print("Fail, wrong shape")
+                print(v,bmk[v].shape, result.shape)
+                success = False
+                continue
+
+        diff =  np.max(np.abs(bmk[v] - result))
+        if diff > tol:
+            print("Fail, maximum difference = "+str(diff))
+            success = False
+            continue
+
+        if v in field_vars:
+            # Check cell location
+            if "cell_location" not in result.attributes:
+                print("Fail: {0} has no cell_location attribute".format(v))
+                success = False
+                continue
+
+            if result.attributes["cell_location"] != "CELL_CENTRE":
+                print("Fail: Expecting cell_location == CELL_CENTRE, but got {0}".format(result.attributes["cell_location"]))
+                success = False
+                continue
+
+        print("Pass")
+
+    return success
+
 
 print("Running I/O test")
 success = True
@@ -74,40 +115,7 @@ for nproc in [1,2,4]:
                     print("Pass")
 
             # Collect output data
-            for v in vars:
-                stdout.write("      Checking variable "+v+" ... ")
-                result = collect(v, path="data", info=False)
-
-                # Compare benchmark and output
-                if np.shape(bmk[v]) != np.shape(result):
-                    if not (
-                            (v.startswith("v2d_")) and
-                            np.shape(bmk[v]) == np.shape(result[:,:,:,0]) ):
-                        print("Fail, wrong shape")
-                        success = False
-                        continue
-                    else:
-                        result = result[:,:,:,0]
-
-                diff =  np.max(np.abs(bmk[v] - result))
-                if diff > tol:
-                    print("Fail, maximum difference = "+str(diff))
-                    success = False
-                    continue
-
-                if v in field_vars:
-                    # Check cell location
-                    if "cell_location" not in result.attributes:
-                        print("Fail: {0} has no cell_location attribute".format(v))
-                        success = False
-                        continue
-
-                    if result.attributes["cell_location"] != "CELL_CENTRE":
-                        print("Fail: Expecting cell_location == CELL_CENTRE, but got {0}".format(result.attributes["cell_location"]))
-                        success = False
-                        continue
-
-                print("Pass")
+            success = success and check_output()
 
 if success:
   print(" => All I/O tests passed")

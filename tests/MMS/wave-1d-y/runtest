@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-#requires: not metric_3d
-
 # Python script to run and analyse MMS test
 
 from __future__ import division
