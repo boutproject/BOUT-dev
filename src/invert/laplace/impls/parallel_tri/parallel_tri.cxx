@@ -542,32 +542,16 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       //get_initial_guess(jy,kz,minvb,lowerGuardVector,upperGuardVector,xk1d);
 
       // Original method:
-      if(not lowerUnstable) {
-	xloclast[0] = xk1d[xs-1];
-	xloclast[1] = xk1d[xs];
-	rl = minvb[xs];
-	bl = upperGuardVector(xs,jy,kz);
-	al = lowerGuardVector(xs,jy,kz);
-      } else {
-	xloclast[0] = xk1d[xs];
-	xloclast[1] = xk1d[xs-1];
-	rl = -minvb[xs]/lowerGuardVector(xs,jy,kz);
-	bl = -upperGuardVector(xs,jy,kz)/lowerGuardVector(xs,jy,kz);
-	al = 1.0/lowerGuardVector(xs,jy,kz);
-      }
-      if(not upperUnstable) {
-	xloclast[2] = xk1d[xe];
-	xloclast[3] = xk1d[xe+1];
-	ru = minvb[xe];
-	bu = upperGuardVector(xe,jy,kz);
-	au = lowerGuardVector(xe,jy,kz);
-      } else {
-	xloclast[2] = xk1d[xe+1];
-	xloclast[3] = xk1d[xe];
-	ru = -minvb[xe]/upperGuardVector(xe,jy,kz);
-	bu = 1.0/upperGuardVector(xe,jy,kz);
-	au = -lowerGuardVector(xe,jy,kz)/upperGuardVector(xe,jy,kz);
-      }
+      xloclast[0] = xk1d[xs-1];
+      xloclast[1] = xk1d[xs];
+      rl = minvb[xs];
+      bl = upperGuardVector(xs,jy,kz);
+      al = lowerGuardVector(xs,jy,kz);
+      xloclast[2] = xk1d[xe];
+      xloclast[3] = xk1d[xe+1];
+      ru = minvb[xe];
+      bu = upperGuardVector(xe,jy,kz);
+      au = lowerGuardVector(xe,jy,kz);
 
       alold = al;
       auold = au;
@@ -576,86 +560,21 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       rlold = rl;
       ruold = ru;
 
-      // New method - connect to more distant points
-      if(new_method){
-      xloclast[0] = xk1d[xs-1];
-      xloclast[1] = xk1d[xs];
-      xloclast[2] = xk1d[xe];
-      xloclast[3] = xk1d[xe+1];
-
-      if(not localmesh->firstX()){
-	// Send coefficients down
-	Rtmp = rl;
-	Atmp = al;
-	Btmp = 0.0;
-	if( std::fabs(bu) > 1e-14 ){
-	  Btmp = bl/bu;
-	  Atmp -= Btmp*au;
-	  Rtmp -= Btmp*ru;
-	}
-	// Send these
-	Ad = localmesh->communicateXIn(Atmp);
-	Bd = localmesh->communicateXIn(Btmp);
-	Rd = localmesh->communicateXIn(Rtmp);
+      if( std::fabs(buold) > 1e-14 ){
+	bl = blold/buold;
+	rl = rlold - blold*ruold/buold;
+	al = alold - blold*auold/buold;
       }
-      if(not localmesh->lastX()){
-	// Send coefficients up
-	Rtmp = ru;
-	Atmp = 0.0;
-	Btmp = bu;
-	if( std::fabs(al) > 1e-14 ){
-	  Atmp = au/al;
-	  Btmp -= Atmp*bl;
-	  Rtmp -= Atmp*rl;
-	}
-	// Send these
-	Au = localmesh->communicateXOut(Atmp);
-	Bu = localmesh->communicateXOut(Btmp);
-	Ru = localmesh->communicateXOut(Rtmp);
-      }
-
-      dcomplex Delta;
-
-
-      if(localmesh->firstX()){
-	Ad = 1.0;
-	Rd = 0.0;
-	Bd = 0.0;
-      }
-      if(localmesh->lastX()){
-	Au = 0.0;
-	Ru = 0.0;
-	Bu = 1.0;
-      }
-      Delta = 1.0 - al*Bd - bu*Au + (al*bu - au*bl)*Bd*Au;
-      Delta = 1.0 / Delta;
-      rl = Delta*( (rlold + alold*Rd + blold*Ru) 
-	         + (ruold*blold - rlold*buold)*Au
-		 + (auold*blold - alold*buold)*Au*Rd );
-      al = Delta*( alold + (auold*blold - alold*buold)*Au )*Ad;	
-      bl = Delta * blold * Bu ;	
-      ru = Delta*( (ruold + auold*Rd + buold*Ru)
-	         + (rlold*auold - ruold*alold)*Bd
-		 + (auold*blold - alold*buold)*Bd*Ru );
-      bu = Delta*( buold + (auold*blold - alold*buold)*Bd )*Bu;
-      au = Delta * auold * Ad ;
-
-///      if(jy==0 and kz==0){
-///	output<<alold<<" "<<blold<<" "<<auold<<" "<<buold<<endl;
-///	output<<al<<" "<<bl<<" "<<au<<" "<<bu<<endl;
-//////	for(int ix=0; ix<ncx;ix++){
-/////////	  output<<avec[ix]<<" "<<bvec[ix]<<" "<<cvec[ix]<<endl;
-//////	  output<<lowerGuardVector(ix,jy,kz)<<" "<<upperGuardVector(ix,jy,kz)<<" "<<endl;
-//////	}
-///	output<<" "<<endl;
-///      }
-
+      if( std::fabs(alold) > 1e-14 ){
+	ru = ruold - auold*rlold/alold;
+	au = auold/alold;
+	bu = buold - auold*blold/alold;
       }
 
 	SCOREP_USER_REGION_END(coefs);
       //if(jy==0 and kz==1){
       //output<<"Coefficients: "<<BoutComm::rank()<<" "<<jy<<" "<<kz<<" "<<" "<<rl<<" "<<al<<" "<<bl<<" "<<ru<<" "<<au<<" "<<bu<<endl;
-      //output<<"Coefficients: "<<BoutComm::rank()<<" "<<jy<<" "<<kz<<" "<<" "<<al<<" "<<bl<<" "<<au<<" "<<bu<<endl;
+      output<<"Coefficients: "<<BoutComm::rank()<<" "<<jy<<" "<<kz<<" "<<" "<<al<<" "<<bl<<" "<<au<<" "<<bu<<endl;
       //}
       //output<<"xvec "<<BoutComm::rank()<<" "<<"initial"<<" "<<xloc[0]<<" "<<xloc[1]<<" "<<xloc[2]<<" "<<xloc[3]<<" "<<xloclast[0]<<" "<<xloclast[1]<<" "<<xloclast[2]<<" "<<xloclast[3]<<" "<<error_rel_lower<<" "<<error_rel_lower_last<<" "<<error_rel_lower_two_old<<" "<<error_abs_lower<<" "<<error_abs_lower_last<<" "<<error_abs_lower_two_old<<" "<<error_rel_upper<<" "<<error_rel_upper_last<<" "<<error_rel_upper_two_old<<" "<<error_abs_upper<<" "<<error_abs_upper_last<<" "<<error_abs_upper_two_old<<endl;
 
@@ -663,8 +582,8 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       SCOREP_USER_REGION_DEFINE(whileloop);
       SCOREP_USER_REGION_BEGIN(whileloop, "while loop",SCOREP_USER_REGION_TYPE_COMMON);
 //
-      //BoutReal om = 0.0;
-      //if(kz==0) om = omega;
+      BoutReal om = 0.0;
+      if(kz==0) om = omega;
 
       while(true){ 
 
@@ -672,19 +591,47 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	SCOREP_USER_REGION_BEGIN(iteration, "iteration",SCOREP_USER_REGION_TYPE_COMMON);
 
 	// Only need to update interior points
-	xloc[1] = rl;
-	xloc[2] = ru;
+///	if(count % 2 == 0){
+	  xloc[1] = rl + bl*xloclast[2];
+	  xloc[2] = ru + au*xloc[1];
+///	}
+///	else{
+///	  xloc[2] = ru + au*xloclast[1];
+///	  xloc[1] = rl + bl*xloc[2];
+///	}
 	if(not localmesh->lastX()) {
-	  xloc[1] += bl*xloclast[3];
 	  xloc[2] += bu*xloclast[3];
 	}
 	if(not localmesh->firstX()) {
 	  xloc[1] += al*xloclast[0];
-	  xloc[2] += au*xloclast[0];
+	}
+
+	/*
+	dcomplex xold0, xold1;
+	if(count % 30 == 0){
+
+	  xloc[1] = (2.0*om-1.0)*xloclast[1]/om + rl;
+	  xloc[2] = (2.0*om-1.0)*xloclast[2]/om + ru;
+
+	  //if(not localmesh->lastX()){	
+	    xloc[1] += (1.0-om)*(bl*xloclast[3])/om; 
+	    xloc[2] += (1.0-om)*(bu*xloclast[3])/om; 
+	  //}
+
+	  //if(not localmesh->firstX()){	
+	    xloc[1] += (1.0-om)*(al*xloclast[0])/om; 
+	    xloc[2] += (1.0-om)*(au*xloclast[0])/om; 
+	  //}
+	  xold0 = xloclast[1];
+	  xold1 = xloclast[2];
 	}
 
 	//xloc[1] = (1.0-om)*xloc[1] + om*xloclast[1];
 	//xloc[2] = (1.0-om)*xloc[2] + om*xloclast[2];
+	xloc[1] = (1.0-om)*xloc[1] + om*xold0;
+	xloc[2] = (1.0-om)*xloc[2] + om*xold1;
+	*/
+
 
 	SCOREP_USER_REGION_END(iteration);
 	SCOREP_USER_REGION_DEFINE(comms);
@@ -692,7 +639,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 
 	TRACE("set comm flags pack");
 	// Set communication flags
-	if ( count > 1 and
+	if ( count > 3 and
             (
 	     //kz==0 or 
 	     ((error_rel_lower<rtol or error_abs_lower<atol) and
@@ -772,7 +719,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	if (count>maxits) {
 	    output<<alold<<" "<<blold<<" "<<auold<<" "<<buold<<endl;
 	    output<<al<<" "<<bl<<" "<<au<<" "<<bu<<endl;
-	  break;
+	  //if(not(jy==13 and kz==0)){
+	    //break;
+	  //}
 	  // Maximum number of allowed iterations reached.
 	  // If the iteration matrix is diagonally-dominant, then convergence is guaranteed, so maxits is set too low.
 	  // Otherwise, the method may or may not converge.
@@ -803,7 +752,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	get_errors(&error_rel_lower,&error_abs_lower,xloc[1],xloclast[1]);
 	get_errors(&error_rel_upper,&error_abs_upper,xloc[2],xloclast[2]);
 	
-        //output<<"xvec "<<BoutComm::rank()<<" "<<count<<" "<<xloc[0]<<" "<<xloc[1]<<" "<<xloc[2]<<" "<<xloc[3]<<" "<<xloclast[0]<<" "<<xloclast[1]<<" "<<xloclast[2]<<" "<<xloclast[3]<<" "<<error_rel_lower<<" "<<error_rel_lower_last<<" "<<error_rel_lower_two_old<<" "<<error_abs_lower<<" "<<error_abs_lower_last<<" "<<error_abs_lower_two_old<<" "<<error_rel_upper<<" "<<error_rel_upper_last<<" "<<error_rel_upper_two_old<<" "<<error_abs_upper<<" "<<error_abs_upper_last<<" "<<error_abs_upper_two_old<<endl;
+	//if(jy==13 and kz==0){
+        //output<<"xvec "<<BoutComm::rank()<<" "<<count<<" "<<xloc[0]<<" "<<xloc[1]<<" "<<xloc[2]<<" "<<xloc[3]<<" "<<xloclast[0]<<" "<<xloclast[1]<<" "<<xloclast[2]<<" "<<xloclast[3]<<" "<<error_rel_lower<<" "<<error_abs_lower<<" "<<error_rel_upper<<" "<<error_abs_upper<<endl;
+	//}
 	SCOREP_USER_REGION_END(errors);
 
 	SCOREP_USER_REGION_DEFINE(copylast);
