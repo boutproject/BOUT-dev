@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-#requires: not metric_3d
-
 from __future__ import print_function
 try:
   from builtins import str

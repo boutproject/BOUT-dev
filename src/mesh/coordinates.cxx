@@ -1580,7 +1580,7 @@ Coordinates::metric_field_type Coordinates::Delp2(const Field2D& f,
   return result;
 }
 
-Field3D Coordinates::Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT) {
+Field3D Coordinates::Delp2(const Field3D& f, CELL_LOC outloc, MAYBE_UNUSED(bool useFFT)) {
   TRACE("Coordinates::Delp2( Field3D )");
 
   if (outloc == CELL_DEFAULT) {
@@ -1598,8 +1598,8 @@ Field3D Coordinates::Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT) {
 
   Field3D result{emptyFrom(f).setLocation(outloc)};
 
-  if (useFFT) {
 #ifndef COORDINATES_USE_3D
+  if (useFFT) {
     int ncz = localmesh->LocalNz;
 
     // Allocate memory
@@ -1634,10 +1634,9 @@ Field3D Coordinates::Delp2(const Field3D& f, CELL_LOC outloc, bool useFFT) {
         irfft(&delft(jx, 0), ncz, &result(jx, jy, 0));
       }
     }
-#else
-  throw BoutException("Delp2(Field3D) currently only works when passed useFFT=False.");
+  } else
 #endif
-  } else {
+    {
     result = G1 * ::DDX(f, outloc) + G3 * ::DDZ(f, outloc) + g11 * ::D2DX2(f, outloc)
              + g33 * ::D2DZ2(f, outloc) + 2 * g13 * ::D2DXDZ(f, outloc);
   };
