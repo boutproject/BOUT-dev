@@ -46,3 +46,7 @@ build*/
 /tests/integrated/test-twistshift-staggered/test-twistshift
 /tests/integrated/test-twistshift/test-twistshift
 /tests/integrated/test-griddata-yboundary-guards/*/*.nc
+/tests/integrated/test-options-netcdf/*.nc
+/tests/integrated/test-options-netcdf/test-options-netcdf
+/tests/integrated/test-options-netcdf/*.ini
+/tools/pylib/boututils/bout_config.py
