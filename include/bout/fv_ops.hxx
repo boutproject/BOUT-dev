@@ -457,8 +457,8 @@ namespace FV {
       }
       if(vD < 0.0) {
 	BoutReal flux = vD * s.L;
-	result[i]   -= flux / (coord->J[i]*coord->dz);;
-	result[i.zm()]  += flux / (coord->J[i.zm()]*coord->dz);;
+	result[i]   -= flux / (coord->J[i]*coord->dz);
+	result[i.zm()]  += flux / (coord->J[i.zm()]*coord->dz);
       }   
     }
     
