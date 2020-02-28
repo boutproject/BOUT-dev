@@ -50,3 +50,4 @@ build*/
 /tests/integrated/test-options-netcdf/test-options-netcdf
 /tests/integrated/test-options-netcdf/*.ini
 /tools/pylib/boututils/bout_config.py
+/tests/integrated/test-snb/test_snb
