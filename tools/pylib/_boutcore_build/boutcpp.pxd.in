@@ -82,8 +82,7 @@ cdef extern from "bout/mesh.hxx":
 cdef extern from "bout/coordinates.hxx":
     cppclass Coordinates:
         Coordinates()
-        $metric_field dx, dy
-        double dz
+        $metric_field dx, dy, dz
         $metric_field J
         $metric_field Bxy
         $metric_field g11, g22, g33, g12, g13, g23
