@@ -86,6 +86,223 @@ void LaplaceParallelTri::resetSolver(){
 }
 
 /*
+ * Assemble the reduced system on processor 0 and solve directly.
+ * This is intended as a fallback in the case that the iterative
+ * methods don't converge.
+ */
+void LaplaceParallelTri::solve_global_reduced_system(dcomplex *x, const dcomplex al,
+	const dcomplex au, const dcomplex bl, const dcomplex bu,
+	const dcomplex rl, const dcomplex ru,
+	const dcomplex *av,
+	const dcomplex *bv,
+	const dcomplex *cv,
+	const dcomplex *rv
+	) {
+
+  int nprocs, myproc;
+  MPI_Comm_size(localmesh->getXcomm(), &nprocs);
+  MPI_Comm_rank(localmesh->getXcomm(), &myproc);
+
+  int xs = localmesh->xstart;
+  int xe = localmesh->xend;
+
+  // Two rows for every processor, plus guard cells on boundaries
+  int nx = 2*nprocs + (xs-1) + (localmesh->LocalNx - xe) ;
+  Matrix<dcomplex> recvbuffer(nprocs,1000);
+  Array<dcomplex> coefs(1000);
+  Array<dcomplex> avec(nx);
+  Array<dcomplex> bvec(nx);
+  Array<dcomplex> cvec(nx);
+  Array<dcomplex> rvec(nx);
+  Array<dcomplex> xvec(nx);
+
+  int nxpe = localmesh->getNXPE();
+
+  // Proc 0 posts receives
+  //
+  MPI_Request *req = new MPI_Request[nxpe];
+  if( BoutComm::rank()==0 ){ // probably generalizes to firstX()
+
+    // Post receives from all other processors
+    req[myproc] = MPI_REQUEST_NULL;
+    for (int p = 1; p < nprocs; p++) { // Loop over processor
+      // 2 interface equations per processor + guard cells if lastX
+      // 2 coefficients + 1 RHS value (diagonal element always one)
+      int len;
+      if( p == nxpe-1){
+        len = (6 + 4*(localmesh->LocalNx - xe)) * sizeof(dcomplex); // Length of data in bytes
+      } else {
+        len = 6 * sizeof(dcomplex); // Length of data in bytes
+      }
+
+      //output << "Expecting to receive " << len << " from " << p << endl;
+      MPI_Irecv(&recvbuffer(p, 0), len,
+		MPI_BYTE, // Just sending raw data, unknown type
+		p,        // Source processor
+		p,        // Identifier
+		localmesh->getXcomm(),     // Communicator
+		&req[p]); // Request
+    }
+  }
+  // Procs 1 to NXPE send coefficients
+  else {
+    //output << "Sending from " << myproc << endl;
+    coefs[0] = al;
+    coefs[1] = au;
+    coefs[2] = bl;
+    coefs[3] = bu;
+    coefs[4] = rl;
+    coefs[5] = ru;
+    if(localmesh->lastX()){
+      for(int i=0; i<localmesh->LocalNx-xe-1; i++){
+	coefs[6+4*i] = av[xe+1+i];
+	coefs[6+4*i+1] = bv[xe+1+i];
+	coefs[6+4*i+2] = cv[xe+1+i];
+	coefs[6+4*i+3] = rv[xe+1+i];
+      }
+    }
+    int len;
+    if( myproc == nxpe-1){
+      len = (6 + 4*(localmesh->LocalNx - xe - 1)) * sizeof(dcomplex); // Length of data in bytes
+    } else {
+      len = 6 * sizeof(dcomplex); // Length of data in bytes
+    }
+    //for (int i = 0; i < len/16; i++)
+      //output << "value " << i << " : " << coefs[i] << endl;
+    MPI_Send(std::begin(coefs),        // Data pointer
+	     len,                 // Number
+	     MPI_BYTE,            // Type
+	     0,                   // Destination
+	     myproc,              // Message identifier
+	     localmesh->getXcomm());               // Communicator
+  }
+
+  if( BoutComm::rank() == 0){
+    // Assemble local part of global matrix
+    // NB coefficient a and b here move from rhs to lhs
+
+    // Boundaries
+    for(int i=0; i<xs; i++){
+      avec[i] = av[i];
+      bvec[i] = bv[i];
+      cvec[i] = cv[i];
+      rvec[i] = rv[i];
+    }
+
+    avec[xs] = -al;
+    avec[xs+1] = -au;
+    bvec[xs] = 1.0;
+    bvec[xs+1] = 1.0;
+    cvec[xs] = -bl;
+    cvec[xs+1] = -bu;
+    rvec[xs] = rl;
+    rvec[xs+1] = ru;
+
+    // Proc 0 waits and assembles global tridiagonal matrix
+    int p;
+    do {
+
+      // Don't receive from proc0
+      req[0] = MPI_REQUEST_NULL;
+
+      MPI_Status stat;
+      MPI_Waitany(nprocs, req, &p, &stat);
+
+      if (p != MPI_UNDEFINED) {
+	// p is the processor number. Copy data
+	//output << "Copying received data from " << p << endl;
+	BOUT_OMP(parallel for)
+	//for (int j = 0; j < 6; j++) {
+	  //output << "Value " << p<<" "<<j << " : " << recvbuffer(p, j) << endl;
+	//}
+	// NB coefficient a and b here move from rhs to lhs
+	avec[xs+2*p] = -recvbuffer(p, 0);
+	avec[xs+2*p + 1] = -recvbuffer(p, 1);
+	bvec[xs+2 * p] = 1.0;
+	bvec[xs+2 * p + 1] = 1.0;
+	cvec[xs+2 * p] = -recvbuffer(p, 2);
+	cvec[xs+2 * p + 1] = -recvbuffer(p, 3);
+	rvec[xs+2 * p] = recvbuffer(p, 4);
+	rvec[xs+2 * p + 1] = recvbuffer(p, 5);
+	if( p == nxpe-1 ){ // if p is the lastX
+	  for(int i=0; i<localmesh->LocalNx-xe-1; i++){
+	    avec[xs+2*(p+1)+i] = recvbuffer(p, 6+4*i);
+	    bvec[xs+2*(p+1)+i] = recvbuffer(p, 6+4*i+1);
+	    cvec[xs+2*(p+1)+i] = recvbuffer(p, 6+4*i+2);
+	    rvec[xs+2*(p+1)+i] = recvbuffer(p, 6+4*i+3);
+	  }
+	}
+
+	req[p] = MPI_REQUEST_NULL;
+      }
+    } while (p != MPI_UNDEFINED);
+  //
+  //for (int j = 0; j < ncx; j++) {
+    //output << "Value " << j << " : " << avec[j] << " "<<bvec[j]<<" "<<cvec[j]<<" "<<rvec[j]<< endl;
+  //}
+  //
+  // Solve tridiagonal matrix
+  tridag(std::begin(avec), std::begin(bvec), std::begin(cvec), std::begin(rvec),
+	 std::begin(xvec), nx);
+  }
+  //for (int j = 0; j < ncx; j++) {
+    //output << "Solution " << j << " : " << xvec[j] << endl;
+  //}
+
+  // Procs 1 to NXPE receive
+  if(BoutComm::rank() != 0){
+    req[myproc] = MPI_REQUEST_NULL;
+    // (4 + guards on boundary) x values per proc (xs-1, xs, xe, xe+1)
+    int len; // Length of data in bytes
+    if( myproc == nxpe-1){
+      len = (4 + localmesh->LocalNx - xe - 2) * sizeof(dcomplex); // Length of data in bytes
+    } else {
+      len = 4 * sizeof(dcomplex); // Length of data in bytes
+    }
+    len = 4 * sizeof(dcomplex); // Length of data in bytes
+
+    //output << "Expecting to receive " << len << " from 0 on proc " << myproc << endl;
+    MPI_Status stat;
+    MPI_Recv(&x[0], len,
+	      MPI_BYTE, // Just sending raw data, unknown type
+	      0,        // Source processor
+	      0,        // Identifier
+	      localmesh->getXcomm(),
+	      &stat);     // Communicator
+    //output << "Received on " << myproc << " : " << x[0] << " "<<x[1]<<" "<<x[2]<<" "<<x[3]<< endl;
+  }
+  // Proc 0 sends solution to procs 1 to NXPE
+  else {
+    for (int p = 1; p < nprocs; p++) { // Loop over processor
+      //output << "Sending to " << p << endl;
+      int len; // Length of data
+      if( p == nxpe-1){
+	len = (4 + localmesh->LocalNx - xe - 2);
+      } else {
+	len = 4;
+      }
+      len = 4;
+      for(int i=0; i<len; i++){
+	coefs[i] = xvec[xs-1+2*p+i];
+      }
+      //for (int i = 0; i < len; i++)
+	//output << "value " << i << " : " << coefs[i] << endl;
+      MPI_Send(std::begin(coefs),        // Data pointer
+	       len*sizeof(dcomplex),                 // Number
+	       MPI_BYTE,            // Type
+	       p,                   // Destination
+	       0,                   // Message identifier
+	       localmesh->getXcomm());               // Communicator
+    }
+    x[0] = xvec[xs-1];
+    x[1] = xvec[xs];
+    x[2] = xvec[xs+1];
+    x[3] = xvec[xs+2];
+  }
+  delete[] req;
+}
+
+/*
  * Get an initial guess for the solution x by solving the system neglecting
  * coupling terms. This may be considered a form of preconditioning.
  * Note that coupling terms are not neglected when they are known from the
@@ -250,8 +467,8 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   SCOREP0();
   Timer timer("invert"); ///< Start timer
 
-  SCOREP_USER_REGION_DEFINE(initvars);
-  SCOREP_USER_REGION_BEGIN(initvars, "init vars",SCOREP_USER_REGION_TYPE_COMMON);
+  ///SCOREP_USER_REGION_DEFINE(initvars);
+  ///SCOREP_USER_REGION_BEGIN(initvars, "init vars",SCOREP_USER_REGION_TYPE_COMMON);
 
   ASSERT1(localmesh == b.getMesh() && localmesh == x0.getMesh());
   ASSERT1(b.getLocation() == location);
@@ -346,9 +563,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   dcomplex Bu, Au, Ru;
   dcomplex Btmp, Atmp, Rtmp;
 
-  SCOREP_USER_REGION_END(initvars);
-  SCOREP_USER_REGION_DEFINE(initloop);
-  SCOREP_USER_REGION_BEGIN(initloop, "init xk loop",SCOREP_USER_REGION_TYPE_COMMON);
+  ///SCOREP_USER_REGION_END(initvars);
+  ///SCOREP_USER_REGION_DEFINE(initloop);
+  ///SCOREP_USER_REGION_BEGIN(initloop, "init xk loop",SCOREP_USER_REGION_TYPE_COMMON);
 
   // Initialise xk to 0 as we only visit 0<= kz <= maxmode in solve
   for (int ix = 0; ix < ncx; ix++) {
@@ -356,9 +573,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       xk(ix, kz) = 0.0;
     }
   }
-  SCOREP_USER_REGION_END(initloop);
-  SCOREP_USER_REGION_DEFINE(fftloop);
-  SCOREP_USER_REGION_BEGIN(fftloop, "init fft loop",SCOREP_USER_REGION_TYPE_COMMON);
+  ///SCOREP_USER_REGION_END(initloop);
+  ///SCOREP_USER_REGION_DEFINE(fftloop);
+  ///SCOREP_USER_REGION_BEGIN(fftloop, "init fft loop",SCOREP_USER_REGION_TYPE_COMMON);
 
   /* Coefficents in the tridiagonal solver matrix
    * Following the notation in "Numerical recipes"
@@ -398,9 +615,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       //rfft(x0[ix], ncz, &xk(ix, 0));
     }
   }
-  SCOREP_USER_REGION_END(fftloop);
-  SCOREP_USER_REGION_DEFINE(mainloop);
-  SCOREP_USER_REGION_BEGIN(mainloop, "main loop",SCOREP_USER_REGION_TYPE_COMMON);
+  ///SCOREP_USER_REGION_END(fftloop);
+  ///SCOREP_USER_REGION_DEFINE(mainloop);
+  ///SCOREP_USER_REGION_BEGIN(mainloop, "main loop",SCOREP_USER_REGION_TYPE_COMMON);
 
   /* Solve differential equation in x for each fourier mode
    * Note that only the non-degenerate fourier modes are being used (i.e. the
@@ -408,8 +625,8 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
    */
   for (int kz = 0; kz <= maxmode; kz++) {
 
-    SCOREP_USER_REGION_DEFINE(kzinit);
-    SCOREP_USER_REGION_BEGIN(kzinit, "kz init",SCOREP_USER_REGION_TYPE_COMMON);
+    ///SCOREP_USER_REGION_DEFINE(kzinit);
+    ///SCOREP_USER_REGION_BEGIN(kzinit, "kz init",SCOREP_USER_REGION_TYPE_COMMON);
     // set bk1d
     for (int ix = 0; ix < ncx; ix++) {
       // Get bk of the current fourier mode
@@ -485,9 +702,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	}
       }
 
-	SCOREP_USER_REGION_END(kzinit);
-	SCOREP_USER_REGION_DEFINE(invert);
-	SCOREP_USER_REGION_BEGIN(invert, "invert local matrices",SCOREP_USER_REGION_TYPE_COMMON);
+	///SCOREP_USER_REGION_END(kzinit);
+	///SCOREP_USER_REGION_DEFINE(invert);
+	///SCOREP_USER_REGION_BEGIN(invert, "invert local matrices",SCOREP_USER_REGION_TYPE_COMMON);
       // Invert local matrices
       // Calculate Minv*b
       tridag(std::begin(avec), std::begin(bvec), std::begin(cvec), std::begin(bk1d),
@@ -534,9 +751,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	}
       }
 
-	SCOREP_USER_REGION_END(invert);
-	SCOREP_USER_REGION_DEFINE(coefs);
-	SCOREP_USER_REGION_BEGIN(coefs, "calculate coefs",SCOREP_USER_REGION_TYPE_COMMON);
+	///SCOREP_USER_REGION_END(invert);
+	///SCOREP_USER_REGION_DEFINE(coefs);
+	///SCOREP_USER_REGION_BEGIN(coefs, "calculate coefs",SCOREP_USER_REGION_TYPE_COMMON);
 
       //check_diagonal_dominance(avec,bvec,cvec,ncx,jy,kz);
       //get_initial_guess(jy,kz,minvb,lowerGuardVector,upperGuardVector,xk1d);
@@ -571,24 +788,24 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	bu = buold - auold*blold/alold;
       }
 
-	SCOREP_USER_REGION_END(coefs);
+	///SCOREP_USER_REGION_END(coefs);
       //if(jy==0 and kz==1){
       //output<<"Coefficients: "<<BoutComm::rank()<<" "<<jy<<" "<<kz<<" "<<" "<<rl<<" "<<al<<" "<<bl<<" "<<ru<<" "<<au<<" "<<bu<<endl;
-      output<<"Coefficients: "<<BoutComm::rank()<<" "<<jy<<" "<<kz<<" "<<" "<<al<<" "<<bl<<" "<<au<<" "<<bu<<endl;
+      //output<<"Coefficients: "<<BoutComm::rank()<<" "<<jy<<" "<<kz<<" "<<" "<<al<<" "<<bl<<" "<<au<<" "<<bu<<endl;
       //}
       //output<<"xvec "<<BoutComm::rank()<<" "<<"initial"<<" "<<xloc[0]<<" "<<xloc[1]<<" "<<xloc[2]<<" "<<xloc[3]<<" "<<xloclast[0]<<" "<<xloclast[1]<<" "<<xloclast[2]<<" "<<xloclast[3]<<" "<<error_rel_lower<<" "<<error_rel_lower_last<<" "<<error_rel_lower_two_old<<" "<<error_abs_lower<<" "<<error_abs_lower_last<<" "<<error_abs_lower_two_old<<" "<<error_rel_upper<<" "<<error_rel_upper_last<<" "<<error_rel_upper_two_old<<" "<<error_abs_upper<<" "<<error_abs_upper_last<<" "<<error_abs_upper_two_old<<endl;
 
-///      SCOREP_USER_REGION_END(kzinit);
-      SCOREP_USER_REGION_DEFINE(whileloop);
-      SCOREP_USER_REGION_BEGIN(whileloop, "while loop",SCOREP_USER_REGION_TYPE_COMMON);
+///      ///SCOREP_USER_REGION_END(kzinit);
+      ///SCOREP_USER_REGION_DEFINE(whileloop);
+      ///SCOREP_USER_REGION_BEGIN(whileloop, "while loop",SCOREP_USER_REGION_TYPE_COMMON);
 //
       BoutReal om = 0.0;
       if(kz==0) om = omega;
 
       while(true){ 
 
-	SCOREP_USER_REGION_DEFINE(iteration);
-	SCOREP_USER_REGION_BEGIN(iteration, "iteration",SCOREP_USER_REGION_TYPE_COMMON);
+	///SCOREP_USER_REGION_DEFINE(iteration);
+	///SCOREP_USER_REGION_BEGIN(iteration, "iteration",SCOREP_USER_REGION_TYPE_COMMON);
 
 	// Only need to update interior points
 ///	if(count % 2 == 0){
@@ -633,9 +850,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	*/
 
 
-	SCOREP_USER_REGION_END(iteration);
-	SCOREP_USER_REGION_DEFINE(comms);
-	SCOREP_USER_REGION_BEGIN(comms, "communication",SCOREP_USER_REGION_TYPE_COMMON);
+	///SCOREP_USER_REGION_END(iteration);
+	///SCOREP_USER_REGION_DEFINE(comms);
+	///SCOREP_USER_REGION_BEGIN(comms, "communication",SCOREP_USER_REGION_TYPE_COMMON);
 
 	TRACE("set comm flags pack");
 	// Set communication flags
@@ -694,15 +911,15 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	    xloc[3] = localmesh->communicateXOut(xloc[2]);
 	  }
 	}
-	SCOREP_USER_REGION_END(comms);
+	///SCOREP_USER_REGION_END(comms);
 
 	// Now I've done my communication, exit if I am both in- and out-converged
 	if( self_in and self_out ) {
           //output<<"Breaking, proc "<< BoutComm::rank() << ", count "<<count<<" "<<jy<<" "<<kz<<endl<<std::flush;
 	  break;
 	}
-	SCOREP_USER_REGION_DEFINE(comms_after_break);
-	SCOREP_USER_REGION_BEGIN(comms_after_break, "comms after break",SCOREP_USER_REGION_TYPE_COMMON);
+	///SCOREP_USER_REGION_DEFINE(comms_after_break);
+	///SCOREP_USER_REGION_BEGIN(comms_after_break, "comms after break",SCOREP_USER_REGION_TYPE_COMMON);
 
 	// If my neighbour has converged, I know that I am also converged on that
 	// boundary. Set this flag after the break loop above, to ensure we do one
@@ -715,16 +932,17 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	}
 
 	++count;
-	SCOREP_USER_REGION_END(comms_after_break);
+	///SCOREP_USER_REGION_END(comms_after_break);
 	if (count>maxits) {
-	    output<<alold<<" "<<blold<<" "<<auold<<" "<<buold<<endl;
-	    output<<al<<" "<<bl<<" "<<au<<" "<<bu<<endl;
+	    //output<<alold<<" "<<blold<<" "<<auold<<" "<<buold<<endl;
+	    //output<<al<<" "<<bl<<" "<<au<<" "<<bu<<endl;
 	  //if(not(jy==13 and kz==0)){
 	    //break;
 	  //}
 	  // Maximum number of allowed iterations reached.
 	  // If the iteration matrix is diagonally-dominant, then convergence is guaranteed, so maxits is set too low.
 	  // Otherwise, the method may or may not converge.
+	  /*
           if(is_diagonally_dominant(al,au,bl,bu,jy,kz)){
 	    throw BoutException("LaplaceParallelTri error: Not converged within maxits=%i iterations. The iteration matrix is diagonally dominant on processor %i and convergence is guaranteed (if all processors are diagonally dominant). Please increase maxits and retry.",maxits,BoutComm::rank());
 	  }
@@ -734,10 +952,16 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	    output<<Ad<<" "<<Bd<<" "<<Au<<" "<<Bu<<endl;
 	    throw BoutException("LaplaceParallelTri error: Not converged within maxits=%i iterations. The iteration matrix is not diagonally dominant on processor %i, so there is no guarantee this method will converge. Consider increasing maxits or using a different solver.",maxits,BoutComm::rank());
 	  }
+	  */
+
+	  solve_global_reduced_system(std::begin(xloclast),al,au,bl,bu,rl,ru,std::begin(avec),std::begin(bvec),std::begin(cvec),std::begin(bk1d));
+	  //output<<"solution " << BoutComm::rank()<<" " << xloclast[0] <<" "<< xloclast[1]<<" "<<xloclast[2]<<" "<<xloclast[3]<<endl;
+	  break;
+
 	}
 
-	SCOREP_USER_REGION_DEFINE(errors);
-	SCOREP_USER_REGION_BEGIN(errors, "calculate errors",SCOREP_USER_REGION_TYPE_COMMON);
+	///SCOREP_USER_REGION_DEFINE(errors);
+	///SCOREP_USER_REGION_BEGIN(errors, "calculate errors",SCOREP_USER_REGION_TYPE_COMMON);
 //
 
 	// Calculate errors
@@ -755,17 +979,17 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	//if(jy==13 and kz==0){
         //output<<"xvec "<<BoutComm::rank()<<" "<<count<<" "<<xloc[0]<<" "<<xloc[1]<<" "<<xloc[2]<<" "<<xloc[3]<<" "<<xloclast[0]<<" "<<xloclast[1]<<" "<<xloclast[2]<<" "<<xloclast[3]<<" "<<error_rel_lower<<" "<<error_abs_lower<<" "<<error_rel_upper<<" "<<error_abs_upper<<endl;
 	//}
-	SCOREP_USER_REGION_END(errors);
+	///SCOREP_USER_REGION_END(errors);
 
-	SCOREP_USER_REGION_DEFINE(copylast);
-	SCOREP_USER_REGION_BEGIN(copylast, "copy to last",SCOREP_USER_REGION_TYPE_COMMON);
+	///SCOREP_USER_REGION_DEFINE(copylast);
+	///SCOREP_USER_REGION_BEGIN(copylast, "copy to last",SCOREP_USER_REGION_TYPE_COMMON);
         for (int ix = 0; ix < 4; ix++) {
 	  xloclast[ix] = xloc[ix];
 	}
-	SCOREP_USER_REGION_END(copylast);
+	///SCOREP_USER_REGION_END(copylast);
 	
       }
-      SCOREP_USER_REGION_END(whileloop);
+      ///SCOREP_USER_REGION_END(whileloop);
 
     } else {
       // Periodic in X, so cyclic tridiagonal
@@ -780,8 +1004,8 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       }
     }
 
-    SCOREP_USER_REGION_DEFINE(afterloop);
-    SCOREP_USER_REGION_BEGIN(afterloop, "after faff",SCOREP_USER_REGION_TYPE_COMMON);
+    ///SCOREP_USER_REGION_DEFINE(afterloop);
+    ///SCOREP_USER_REGION_BEGIN(afterloop, "after faff",SCOREP_USER_REGION_TYPE_COMMON);
     ++ncalls;
     ipt_mean_its = (ipt_mean_its * BoutReal(ncalls-1)
 	+ BoutReal(count))/BoutReal(ncalls);
@@ -837,7 +1061,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
     // are already correct
     }
 
-    //output<<"Converged "<<xk1dlast[xs-1]<<" "<<xk1dlast[xs]<<" "<<xk1dlast[xe]<<" "<<xk1dlast[xe+1]<<endl;
+    //output<<"Converged "<<BoutComm::rank()<<" "<<xk1dlast[xs-1]<<" "<<xk1dlast[xs]<<" "<<xk1dlast[xe]<<" "<<xk1dlast[xe+1]<<endl;
 
     // Now that halo cells are converged, use these to calculate whole solution
     for(int i=0; i<ncx; i++){
@@ -854,6 +1078,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       }
     } 
 
+    //for(int i=0; i<ncx; i++){
+      //output<<"Solution i : "<<BoutComm::rank()<<" "<<jy<<" "<<kz<<" "<<i<<" "<<xk1d[i]<<endl;
+    //}
 
     // If the global flag is set to INVERT_KX_ZERO
     if ((global_flags & INVERT_KX_ZERO) && (kz == 0)) {
@@ -872,12 +1099,13 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       xk(ix, kz) = xk1d[ix];
       x0saved(ix, jy, kz) = xk(ix, kz);
     }
-    SCOREP_USER_REGION_END(afterloop);
+    ///SCOREP_USER_REGION_END(afterloop);
     first_call(jy,kz) = false;
+    //output<<"end of (jy,kz,rank) "<<jy<<" "<<kz<<" "<<BoutComm::rank()<<endl;
   }
-  SCOREP_USER_REGION_END(mainloop);
+  ///SCOREP_USER_REGION_END(mainloop);
 
-  //std::cout<<"end"<<endl;
+  //std::cout<<"end "<<BoutComm::rank()<<endl;
 
   // Done inversion, transform back
   for (int ix = 0; ix < ncx; ix++) {
