@@ -1077,11 +1077,11 @@ int Coordinates::geometry(bool recalculate_staggered,
       d1_dy = -d2y / (dy * dy);
     }
 
+#ifdef COORDINATES_USE_3D
     if (localmesh->get(d2z, "d2z"+suffix, 0.0, false)) {
       output_warn.write(
           "\tWARNING: differencing quantity 'd2z' not found. Calculating from dz\n");
       d1_dz = bout::derivatives::index::DDZ(1. / dz); // d/di(1/dy)
-
       communicate(d1_dz);
       d1_dz = interpolateAndExtrapolate(d1_dz, location, true, true, true);
     } else {
@@ -1091,6 +1091,9 @@ int Coordinates::geometry(bool recalculate_staggered,
 
       d1_dz = -d2z / (dz * dz);
     }
+#else
+    d1_dz = 0;
+#endif
   } else {
     if (localmesh->get(d2x, "d2x", 0.0, false)) {
       output_warn.write(
@@ -1120,6 +1123,7 @@ int Coordinates::geometry(bool recalculate_staggered,
       d1_dy = -d2y / (dy * dy);
     }
 
+#ifdef COORDINATES_USE_3D
     if (localmesh->get(d2z, "d2z", 0.0, false)) {
       output_warn.write(
           "\tWARNING: differencing quantity 'd2z' not found. Calculating from dz\n");
@@ -1133,6 +1137,9 @@ int Coordinates::geometry(bool recalculate_staggered,
 
       d1_dz = -d2z / (dz * dz);
     }
+#else
+    d1_dz = 0;
+#endif
   }
   communicate(d1_dx, d1_dy, d1_dz);
 

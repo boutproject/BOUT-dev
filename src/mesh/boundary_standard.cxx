@@ -2574,7 +2574,7 @@ void BoundaryZeroLaplace::apply(Field3D &f) {
       BoutReal coef =
           -1.0 * sqrt(metric->g33(x, y) / metric->g11(x, y)) * metric->dx(x, y);
       for (int jz = 1; jz <= ncz / 2; jz++) {
-        BoutReal kwave = jz * 2.0 * PI / metric->zlength(); // wavenumber in [rad^-1]
+        BoutReal kwave = jz * 2.0 * PI / metric->zlength()(x,y); // wavenumber in [rad^-1]
         c0[jz] *= exp(coef * kwave);                        // The decaying solution only
       }
       // Reverse FFT
@@ -2780,7 +2780,7 @@ void BoundaryConstLaplace::apply(Field3D &f) {
       // kz != 0 solution
       BoutReal coef = -1.0*sqrt(metric->g33(x-bx,y) / metric->g11(x-bx,y))*metric->dx(x-bx,y);
       for(int jz=1;jz<=ncz/2;jz++) {
-	BoutReal kwave=jz*2.0*PI/metric->zlength(); // wavenumber in [rad^-1]
+	BoutReal kwave=jz*2.0*PI/metric->zlength()(x,y); // wavenumber in [rad^-1]
 	c0[jz] *= exp(coef*kwave); // The decaying solution only
 	// Add the particular solution
 	c2[jz] = c0[jz] - c1[jz]/(metric->g33(x-bx,y)*kwave*kwave); 
@@ -2850,7 +2850,7 @@ void BoundaryDivCurl::apply(Vector3D &var) {
       
       // dB_z / dx = dB_x / dz
       
-      tmp = (var.x(jx-1,jy,jzp) - var.x(jx-1,jy,jzm)) / (2.*metric->dz);
+      tmp = (var.x(jx-1,jy,jzp) - var.x(jx-1,jy,jzm)) / (2.*metric->dz(jx-1,jy,jz));
       
       var.z(jx,jy,jz) = var.z(jx-2,jy,jz) + (metric->dx(jx-2,jy) + metric->dx(jx-1,jy)) * tmp;
       if(mesh->xstart == 2)
@@ -2868,7 +2868,7 @@ void BoundaryDivCurl::apply(Vector3D &var) {
 	/ (metric->dy(jx-1,jy-1) + metric->dy(jx-1,jy)); // second (d/dy)
       tmp -= (metric->J(jx-1,jy)*metric->g13(jx-1,jy)*(var.x(jx-1,jy,jzp) - var.x(jx-1,jy,jzm)) +
 	      metric->J(jx-1,jy)*metric->g23(jx-1,jy)*(var.y(jx-1,jy,jzp) - var.y(jx-1,jy,jzm)) +
-	      metric->J(jx-1,jy)*metric->g33(jx-1,jy)*(var.z(jx-1,jy,jzp) - var.z(jx-1,jy,jzm))) / (2.*metric->dz);
+	      metric->J(jx-1,jy)*metric->g33(jx-1,jy)*(var.z(jx-1,jy,jzp) - var.z(jx-1,jy,jzm))) / (2.*metric->dz(jx,jy,jz));
       
       var.x(jx,jy,jz) = ( metric->J(jx-2,jy)*metric->g11(jx-2,jy)*var.x(jx-2,jy,jz) + 
 			  (metric->dx(jx-2,jy) + metric->dx(jx-1,jy)) * tmp ) / metric->J(jx,jy)*metric->g11(jx,jy);

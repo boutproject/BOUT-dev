@@ -96,7 +96,7 @@ namespace FV {
           // Calculate Z derivative at y boundary
           BoutReal dfdz = 0.25 * (fc(i, j, kp) - fc(i, j, km) + fup(i, j + 1, kp) -
                                   fup(i, j + 1, km)) /
-                          coord->dz;
+	    coord->dz(i, j);// is this at right location?
 
           // Y derivative
           BoutReal dfdy = 2. * (fup(i, j + 1, k) - fc(i, j, k)) /
@@ -112,7 +112,7 @@ namespace FV {
           // Calculate flux between j and j-1
           dfdz = 0.25 * (fc(i, j, kp) - fc(i, j, km) + fdown(i, j - 1, kp) -
                          fdown(i, j - 1, km)) /
-                 coord->dz;
+	    coord->dz(i,j);// is this at right location?
 
           dfdy = 2. * (fc(i, j, k) - fdown(i, j - 1, k)) /
                  (coord->dy(i, j) + coord->dy(i, j - 1));
@@ -144,15 +144,15 @@ namespace FV {
           BoutReal fout = 0.5 * (ac(i, j, k) + ac(i, j, kp)) * coord->g33(i, j) *
                           (
                               // df/dz
-                              (fc(i, j, kp) - fc(i, j, k)) / coord->dz
+			   (fc(i, j, kp) - fc(i, j, k)) / coord->dz(i, j, k)
 
                               // - g_yz * df/dy / SQ(J*B)
                               -
                               coef * (fup(i, j + 1, k) + fup(i, j + 1, kp) -
                                       fdown(i, j - 1, k) - fdown(i, j - 1, kp)));
 
-          yzresult(i, j, k) += fout / coord->dz;
-          yzresult(i, j, kp) -= fout / coord->dz;
+          yzresult(i, j, k) += fout / coord->dz(i,j,k);
+          yzresult(i, j, kp) -= fout / coord->dz(i,j,k);
         }
       }
     }

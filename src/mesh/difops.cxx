@@ -667,7 +667,7 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
 	  BoutReal gp, gm;
 	  
           // Vx = DDZ(f)
-          BoutReal vx = (f(x,y,zp) - f(x,y,zm))/(2.*metric->dz);
+          BoutReal vx = (f(x,y,zp) - f(x,y,zm))/(2.*metric->dz(x,y,z));
           
           // Set stability condition
           solver->setMaxTimestep(metric->dx(x, y, z) / (fabs(vx) + 1e-16));
@@ -696,11 +696,11 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
     // Arakawa scheme for perpendicular flow. Here as a test
 
 #ifndef COORDINATES_USE_3D
-    const BoutReal fac = 1.0 / (12 * metric->dz);
     const int ncz = mesh->LocalNz;
 
     BOUT_FOR(j2D, result.getRegion2D("RGN_NOBNDRY")) {
       // Get constants for this iteration
+      const BoutReal fac = 1.0 / (12 * metric->dz[j2D]);
       const BoutReal spacingFactor = fac / metric->dx[j2D];
       const int jy = j2D.y(), jx = j2D.x();
       const int xm = jx - 1, xp = jx + 1;
@@ -769,11 +769,11 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
   case BRACKET_ARAKAWA_OLD: {
 #ifndef COORDINATES_USE_3D
     const int ncz = mesh->LocalNz;
-    const BoutReal partialFactor = 1.0/(12 * metric->dz);
     BOUT_OMP(parallel for)
     for(int jx=mesh->xstart;jx<=mesh->xend;jx++){
       for(int jy=mesh->ystart;jy<=mesh->yend;jy++){
-	const BoutReal spacingFactor = partialFactor / metric->dx(jx,jy);
+	const BoutReal partialFactor = 1.0/(12 * metric->dz(jx,jy));
+    	const BoutReal spacingFactor = partialFactor / metric->dx(jx,jy);
         for (int jz = 0; jz < mesh->LocalNz; jz++) {
           const int jzp = jz+1 < ncz ? jz + 1 : 0;
 	  //Above is alternative to const int jzp = (jz + 1) % ncz;
@@ -904,13 +904,13 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
           int zp = (z + 1) % ncz;
           
           // Vx = DDZ(f)
-          vx(x,z) = (f(x,y,zp) - f(x,y,zm))/(2.*metric->dz);
+          vx(x,z) = (f(x,y,zp) - f(x,y,zm))/(2.*metric->dz(x,y,z));
           // Vz = -DDX(f)
           vz(x,z) = (f(x-1,y,z) - f(x+1,y,z))/(0.5*metric->dx(x-1,y) + metric->dx(x,y) + 0.5*metric->dx(x+1,y));
           
           // Set stability condition
           solver->setMaxTimestep(fabs(metric->dx(x,y)) / (fabs(vx(x,z)) + 1e-16));
-          solver->setMaxTimestep(metric->dz / (fabs(vz(x,z)) + 1e-16));
+          solver->setMaxTimestep(metric->dz(x,y) / (fabs(vz(x,z)) + 1e-16));
         }
       }
       
@@ -926,23 +926,23 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
           // X differencing
           if (vx(x, z) > 0.0) {
             gp = g(x, y, z) +
-                 (0.5 * dt / metric->dz) * ((vz(x, z) > 0)
+                 (0.5 * dt / metric->dz(x,y)) * ((vz(x, z) > 0)
                                                 ? vz(x, z) * (g(x, y, zm) - g(x, y, z))
                                                 : vz(x, z) * (g(x, y, z) - g(x, y, zp)));
 
             gm = g(x - 1, y, z) +
-                 (0.5 * dt / metric->dz) *
+                 (0.5 * dt / metric->dz(x,y)) *
                      ((vz(x, z) > 0) ? vz(x, z) * (g(x - 1, y, zm) - g(x - 1, y, z))
                                      : vz(x, z) * (g(x - 1, y, z) - g(x - 1, y, zp)));
 
           } else {
             gp = g(x + 1, y, z) +
-                 (0.5 * dt / metric->dz) *
+                 (0.5 * dt / metric->dz(x,y)) *
                      ((vz(x, z) > 0) ? vz(x, z) * (g(x + 1, y, zm) - g(x + 1, y, z))
                                      : vz[x][z] * (g(x + 1, y, z) - g(x + 1, y, zp)));
 
             gm = g(x, y, z) +
-                 (0.5 * dt / metric->dz) * ((vz(x, z) > 0)
+                 (0.5 * dt / metric->dz(x,y)) * ((vz(x, z) > 0)
                                                 ? vz(x, z) * (g(x, y, zm) - g(x, y, z))
                                                 : vz(x, z) * (g(x, y, z) - g(x, y, zp)));
           }
@@ -972,7 +972,7 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
                                      : vx(x, z) * (g(x, y, z) - g(x + 1, y, z)));
           }
 
-          result(x, y, z) += vz(x, z) * (gp - gm) / metric->dz;
+          result(x, y, z) += vz(x, z) * (gp - gm) / metric->dz(x,y);
         }
     }
 #else
@@ -984,7 +984,6 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
     // Arakawa scheme for perpendicular flow
 #ifndef COORDINATES_USE_3D
     const int ncz = mesh->LocalNz;
-    const BoutReal partialFactor = 1.0/(12 * metric->dz);
 
     // We need to discard const qualifier in order to manipulate
     // storage array directly
@@ -992,6 +991,7 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
     Field3D g_temp = g;
 
     BOUT_FOR(j2D, result.getRegion2D("RGN_NOBNDRY")) {
+      const BoutReal partialFactor = 1.0/(12 * metric->dz[j2D]);
       const BoutReal spacingFactor = partialFactor / metric->dx[j2D];
       const int jy = j2D.y(), jx = j2D.x();
       const int xm = jx - 1, xp = jx + 1;
@@ -1079,7 +1079,6 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
 #ifndef COORDINATES_USE_3D
 
     const int ncz = mesh->LocalNz;
-    const BoutReal partialFactor = 1.0 / (12 * metric->dz);
 
     // We need to discard const qualifier in order to manipulate
     // storage array directly
@@ -1089,7 +1088,8 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
     BOUT_OMP(parallel for)
     for(int jx=mesh->xstart;jx<=mesh->xend;jx++){
       for(int jy=mesh->ystart;jy<=mesh->yend;jy++){
-        const BoutReal spacingFactor = partialFactor / metric->dx(jx, jy);
+	const BoutReal spacingFactor = 1.0 / (12 * metric->dz(jx,jy)
+					      * metric->dx(jx, jy));
         const BoutReal *Fxm = f_temp(jx-1, jy);
         const BoutReal *Fx  = f_temp(jx,   jy);
         const BoutReal *Fxp = f_temp(jx+1, jy);

@@ -125,11 +125,12 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
     // solve differential equation in x
     
     BoutReal coef1=0.0, coef2=0.0, coef3=0.0, coef4=0.0, 
-      coef5=0.0, coef6=0.0, kwave;
+      coef5=0.0, coef6=0.0;
+    Field2D kwave_;
     ///////// PERFORM INVERSION /////////
       
     // shift freqs according to FFT convention
-    kwave=iz*2.0*PI/coords->zlength(); // wave number is 1/[rad]
+    kwave_=iz*2.0*PI/coords->zlength(); // wave number is 1/[rad]
 
     // set bk1d
     for(int ix=0;ix<localmesh->LocalNx;ix++)
@@ -138,6 +139,7 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
     // Fill in interior points
 
     for(int ix=xstart;ix<=xend;ix++) {
+      BoutReal kwave = kwave_(ix, jy);
 #ifdef SECONDORDER 
       // Use second-order differencing. Useful for testing the tridiagonal solver
       // with different boundary conditions
@@ -199,6 +201,7 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
 
       int ix = 1;
 
+      auto kwave = kwave_(ix,jy);
       coef1=coords->g11(ix,jy)/(SQ(coords->dx(ix,jy)));
       coef2=coords->g33(ix,jy);
       coef3= kwave * coords->g13(ix,jy)/(2. * coords->dx(ix,jy));
@@ -319,7 +322,8 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
         // Enforce zero laplacian for 2nd and 4th-order
 	  
         int ix = 1;
-	  
+
+	auto kwave = kwave_(ix,jy);
         coef1=coords->g11(ix,jy)/(12.* SQ(coords->dx(ix,jy)));
 	
         coef2=coords->g33(ix,jy);
@@ -365,7 +369,8 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
         coef1=coords->g11(ix,jy)/(12.* SQ(coords->dx(ix,jy)));
 	
         coef2=coords->g33(ix,jy);
-	
+
+	auto kwave = kwave_(ix,jy);
         coef3= kwave * coords->g13(ix,jy)/(2. * coords->dx(ix,jy));
         
         coef4 = Acoef(ix,jy);
