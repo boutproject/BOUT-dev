@@ -24,7 +24,7 @@ TEST_F(CoordinatesTest, ZLength) {
       Field2D{1.0}, Field2D{1.0}, Field2D{1.0}, Field2D{0.0},  Field2D{0.0}, Field2D{0.0},
       Field2D{0.0}, Field2D{0.0}, false};
 
-  EXPECT_DOUBLE_EQ(coords.zlength(), 7.0);
+  EXPECT_TRUE(IsFieldEqual(coords.zlength(), 7.0));
 }
 
 TEST_F(CoordinatesTest, Jacobian) {

@@ -88,15 +88,25 @@ public:
    */
   void outputVars(Datafile &file);
 
-  metric_field_type dx, dy; ///< Mesh spacing in x and y
-  BoutReal dz; ///< Mesh spacing in Z
+  metric_field_type dx, dy, dz; ///< Mesh spacing in x and y
+  // BoutReal dz; ///< Mesh spacing in Z
 
-  BoutReal zlength() const { return dz * nz; } ///< Length of the Z domain. Used for FFTs
+  Field2D zlength() const {
+#ifdef COORDINATES_USE_3D
+    Field2D result(0.,(Mesh * ) this);
+    BOUT_FOR_SERIAL(i, dz.getRegion("RGN_ALL")) {
+      result[i] += dz[i];
+    }
+    return result;
+#else
+    return dz * nz;
+#endif
+  } ///< Length of the Z domain. Used for FFTs
 
   /// True if corrections for non-uniform mesh spacing should be included in operators
   bool non_uniform;
   metric_field_type d1_dx,
-      d1_dy; ///< 2nd-order correction for non-uniform meshes d/di(1/dx) and d/di(1/dy)
+    d1_dy, d1_dz; ///< 2nd-order correction for non-uniform meshes d/di(1/dx) and d/di(1/dy)
 
   metric_field_type J; ///< Coordinate system Jacobian, so volume of cell is J*dx*dy*dz
 

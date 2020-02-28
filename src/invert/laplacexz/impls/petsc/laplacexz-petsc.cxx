@@ -418,7 +418,7 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
 	  
 	J = 0.5*(coords->J(x,y,z) + coords->J(x,y,zplus));
 	BoutReal g33 = 0.5*(coords->g33(x,y,z) + coords->g33(x,y,zplus));
-	BoutReal dz = coords->dz;
+	const BoutReal dz = coords->dz(x,y,z);
 	// Metrics on z+1/2 boundary
 	Acoef = 0.5*(A(x,y,z) + A(x,y,zplus));
 	  
@@ -440,10 +440,10 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
 	// x+1/2, z+1/2 
 	J =  0.5*(coords->J(x,y,z) + coords->J(x+1,y,z));
 	BoutReal g13 = 0.5*(coords->g13(x,y,z) + coords->g13(x+1,y,z));
-	dz = 4.0*coords->dz;
+	const BoutReal fourdz= 4.*dz;
 	Acoef = 0.5*(A(x,y,z) + A(x,y,zplus));
 
-	val = Acoef * J * g13 / (coords->J(x,y,z) * dz * coords->dx(x,y,z));
+	val = Acoef * J * g13 / (coords->J(x,y,z) * fourdz * coords->dx(x,y,z));
 	xpzp = val;
 	c -= val;
 
@@ -452,7 +452,7 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
 	// g13 = 0.5*(coords->gxz(x,y,z) + coords->gxz(x+1,y,z));
 	Acoef = 0.5*(A(x,y,z) + A(x,y,zminus));
 
-	val = - Acoef * J * g13 / (coords->J(x,y,z) * dz * coords->dx(x,y,z));
+	val = - Acoef * J * g13 / (coords->J(x,y,z) * fourdz * coords->dx(x,y,z));
 	xpzm = val;
 	c -= val;
 
@@ -461,14 +461,14 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
 	g13 = 0.5*(coords->g13(x,y,z) + coords->g13(x-1,y,z));
 	Acoef = 0.5*(A(x,y,z) + A(x,y,zplus));
 
-	val = - Acoef * J * g13 / (coords->J(x,y,z) * dz * coords->dx(x,y,z));
+	val = - Acoef * J * g13 / (coords->J(x,y,z) * fourdz * coords->dx(x,y,z));
 	xmzp = val;
 	c -= val;
 
 	// x-1/2, z-1/2
 	Acoef = 0.5*(A(x,y,z) + A(x,y,zminus));
 
-	val = Acoef * J * g13 / (coords->J(x,y,z) * dz * coords->dx(x,y,z));
+	val = Acoef * J * g13 / (coords->J(x,y,z) * fourdz * coords->dx(x,y,z));
 	xmzm = val;
 	c -= val;
 
@@ -480,7 +480,7 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
 	dx = 2.0*(coords->dx(x,y,z) + coords->dx(x+1,y,z));
 	Acoef = 0.5*(A(x,y,z) + A(x+1,y,z));
 
-	val = Acoef * J * g13 / (coords->J(x,y,z) * dx * coords->dz);
+	val = Acoef * J * g13 / (coords->J(x,y,z) * dx * dz);
 	zpxp = val;
 	c -= val;
 
@@ -488,7 +488,7 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
 	dx = 2.0*(coords->dx(x,y,z) + coords->dx(x-1,y,z));
 	Acoef = 0.5*(A(x,y,z) + A(x-1,y,z));
 
-	val = - Acoef * J * g13 / (coords->J(x,y,z) * dx * coords->dz);
+	val = - Acoef * J * g13 / (coords->J(x,y,z) * dx * dz);
 	zpxm = val;
 	c -= val;
 
@@ -498,7 +498,7 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
 	dx = 2.0*(coords->dx(x,y,z) + coords->dx(x+1,y,z));
 	Acoef = 0.5*(A(x,y,z) + A(x+1,y,z));
 
-	val = - Acoef * J * g13 / (coords->J(x,y,z) * dx * coords->dz);
+	val = - Acoef * J * g13 / (coords->J(x,y,z) * dx * dz);
 	zmxp = val;
 	c -= val;
 
@@ -506,7 +506,7 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
 	dx = 2.0*(coords->dx(x,y,z) + coords->dx(x-1,y,z));
 	Acoef = 0.5*(A(x,y,z) + A(x-1,y,z));
 
-	val = Acoef * J * g13 / (coords->J(x,y,z) * dx * coords->dz);
+	val = Acoef * J * g13 / (coords->J(x,y,z) * dx * dz);
 	zmxm = val;
 	c -= val;
 

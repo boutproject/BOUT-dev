@@ -756,7 +756,7 @@ void shiftZ(Field3D &var, int jx, int jy, double zangle) {
   
   rfft(&(var(jx,jy,0)), ncz, v.begin()); // Forward FFT
 
-  BoutReal zlength = var.getCoordinates()->zlength();
+  BoutReal zlength = var.getCoordinates()->zlength()(jx, jy);
 
   // Apply phase shift
   for(int jz=1;jz<=ncz/2;jz++) {
@@ -847,4 +847,14 @@ bool operator==(const Field3D &a, const Field3D &b) {
 std::ostream& operator<<(std::ostream &out, const Field3D &value) {
   out << toString(value);
   return out;
+}
+
+bool Field3D::isConst(const std::string & region) const {
+  auto element = (*this)[this->getRegion(region).begin()[0]];
+  BOUT_FOR_SERIAL(i, this->getRegion(region)){
+    if ((*this)[i] != element){
+      return false;
+    }
+  }
+  return true;
 }

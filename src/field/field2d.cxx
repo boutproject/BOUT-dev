@@ -94,6 +94,16 @@ Field2D::Field2D(Array<BoutReal> data_in, Mesh* localmesh, CELL_LOC datalocation
   setLocation(datalocation);
 }
 
+bool Field2D::isConst(const std::string & region) const {
+  auto element = (*this)[this->getRegion(region).begin()[0]];
+  BOUT_FOR_SERIAL(i, this->getRegion(region)){
+    if ((*this)[i] != element){
+      return false;
+    }
+  }
+  return true;
+}
+
 Field2D::~Field2D() { delete deriv; }
 
 Field2D& Field2D::allocate() {

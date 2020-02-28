@@ -260,6 +260,8 @@ class Field2D : public Field, public FieldData {
   int  byteSize() const override { return sizeof(BoutReal); } // Just one BoutReal
   int  BoutRealSize() const override { return 1; }
 
+  bool isConst(const std::string& region) const;
+
 #if CHECK > 0
   void doneComms() override { bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }
 #else

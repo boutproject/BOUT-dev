@@ -34,7 +34,7 @@ int main(int argc, char** argv) {
   Field2D zShift;
   mesh->get(zShift, "zShift");
 
-  ShiftedMetric s(*mesh, CELL_CENTRE, zShift, mesh->getCoordinates()->zlength());
+  ShiftedMetric s(*mesh, CELL_CENTRE, zShift, mesh->getCoordinates()->zlength()(0,0));
 
   // Read variable from mesh
   Field3D var;

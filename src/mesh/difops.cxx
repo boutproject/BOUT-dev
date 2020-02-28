@@ -75,7 +75,6 @@ const Field3D Grad_par(const Field3D &var, const std::string &method, CELL_LOC o
 *******************************************************************************/
 
 const Field3D Grad_parP(const Field3D &apar, const Field3D &f) {
-#ifndef COORDINATES_USE_3D
   ASSERT1_FIELDS_COMPATIBLE(apar, f);
   ASSERT1(f.hasParallelSlices());
 
@@ -93,66 +92,66 @@ const Field3D Grad_parP(const Field3D &apar, const Field3D &f) {
   for(int x=1;x<=mesh->LocalNx-2;x++)
     for(int y=1;y<=mesh->LocalNy-2;y++)
       for(int z=0;z<ncz;z++) {
-        gys(x, y, z) = (f.yup()(x, y+1, z) - f.ydown()(x, y-1, z))/(0.5*metric->dy(x, y+1) + metric->dy(x, y) + 0.5*metric->dy(x, y-1));
+        gys(x, y, z) = (f.yup()(x, y+1, z) - f.ydown()(x, y-1, z))/(0.5*metric->dy(x, y+1, z) + metric->dy(x, y, z) + 0.5*metric->dy(x, y-1, z));
       }
   
   for(int x=1;x<=mesh->LocalNx-2;x++) {
     for(int y=mesh->ystart;y<=mesh->yend;y++) {
-      BoutReal by = 1./sqrt(metric->g_22(x, y));
       for(int z=0;z<ncz;z++) {
+	BoutReal by = 1./sqrt(metric->g_22(x, y, z));
         // Z indices zm and zp
         int zm = (z - 1 + ncz) % ncz;
         int zp = (z + 1) % ncz;
         
         // bx = -DDZ(apar)
-        BoutReal bx = (apar(x, y, zm) - apar(x, y, zp))/(2.*metric->dz);
+        BoutReal bx = (apar(x, y, zm) - apar(x, y, zp))/(0.5*metric->dz(x, y, zm) + metric->dz(x, y, z) + 0.5*metric->dz(x, y, zp));
         // bz = DDX(f)
-        BoutReal bz = (apar(x+1, y, z) - apar(x-1, y, z))/(0.5*metric->dx(x-1, y) + metric->dx(x, y) + 0.5*metric->dx(x+1, y));
+        BoutReal bz = (apar(x+1, y, z) - apar(x-1, y, z))/(0.5*metric->dx(x-1, y, z) + metric->dx(x, y, z) + 0.5*metric->dx(x+1, y, z));
         
 	// Now calculate (bx*d/dx + by*d/dy + bz*d/dz) f
         
         // Length dl for predictor
-        BoutReal dl = fabs(metric->dx(x, y)) / (fabs(bx) + 1e-16);
-        dl = BOUTMIN(dl, fabs(metric->dy(x, y)) / (fabs(by) + 1e-16));
-        dl = BOUTMIN(dl, metric->dz / (fabs(bz) + 1e-16));
+        BoutReal dl = fabs(metric->dx(x, y, z)) / (fabs(bx) + 1e-16);
+        dl = BOUTMIN(dl, fabs(metric->dy(x, y, z)) / (fabs(by) + 1e-16));
+        dl = BOUTMIN(dl, fabs(metric->dz(x, y, z)) / (fabs(bz) + 1e-16));
         
 	BoutReal fp, fm;
         
         // X differencing
         fp = f(x+1, y, z)
-          + (0.25*dl/metric->dz) * bz * (f(x+1, y, zm) - f(x+1, y, zp))
+          + (0.25*dl/metric->dz(x, y, z)) * bz * (f(x+1, y, zm) - f(x+1, y, zp))
           - 0.5*dl * by * gys(x+1, y, z);
         
         fm = f(x-1, y, z)
-          + (0.25*dl/metric->dz) * bz * (f(x-1, y, zm) - f(x-1, y, zp))
+          + (0.25*dl/metric->dz(x, y, z)) * bz * (f(x-1, y, zm) - f(x-1, y, zp))
           - 0.5*dl * by * gys(x-1, y, z);
         
-        result(x, y, z) = bx * (fp - fm) / (0.5*metric->dx(x-1, y) + metric->dx(x, y) + 0.5*metric->dx(x+1, y));
+        result(x, y, z) = bx * (fp - fm) / (0.5*metric->dx(x-1, y, z) + metric->dx(x, y, z) + 0.5*metric->dx(x+1, y, z));
 
 	// Z differencing
         
         fp = f(x, y, zp)
-          + (0.25*dl/metric->dx(x, y)) * bx * (f(x-1, y, zp) - f(x+1, y, zp))
+          + (0.25*dl/metric->dx(x, y, z)) * bx * (f(x-1, y, zp) - f(x+1, y, zp))
           - 0.5*dl * by * gys(x, y, zp);
         
         fm = f(x, y, zm)
-          + (0.25*dl/metric->dx(x, y)) * bx * (f(x-1,y,zm) - f(x+1, y, zm))
+          + (0.25*dl/metric->dx(x, y, z)) * bx * (f(x-1,y,zm) - f(x+1, y, zm))
           - 0.5*dl * by * gys(x, y, zm);
 
-        result(x, y, z) += bz * (fp - fm) / (2.*metric->dz);
+        result(x, y, z) += bz * (fp - fm) / (0.5*metric->dz(x, y, zm) + metric->dz(x, y, z) + 0.5*metric->dz(x, y, zp));
 
         // Y differencing
         
         fp = f.yup()(x,y+1,z)
-          - 0.5*dl * bx * (f.yup()(x+1, y+1, z) - f.yup()(x-1, y+1, z))/(0.5*metric->dx(x-1, y) + metric->dx(x, y) + 0.5*metric->dx(x+1, y))
+          - 0.5*dl * bx * (f.yup()(x+1, y+1, z) - f.yup()(x-1, y+1, z))/(0.5*metric->dx(x-1, y, z) + metric->dx(x, y, z) + 0.5*metric->dx(x+1, y, z))
           
-          + (0.25*dl/metric->dz) * bz * (f.yup()(x,y+1,zm) - f.yup()(x,y+1,zp));
+          + (0.25*dl/metric->dz(x,y,z)) * bz * (f.yup()(x,y+1,zm) - f.yup()(x,y+1,zp));
         
         fm = f.ydown()(x,y-1,z)
-          - 0.5*dl * bx * (f.ydown()(x+1, y-1, z) - f.ydown()(x-1, y-1, z))/(0.5*metric->dx(x-1, y) + metric->dx(x, y) + 0.5*metric->dx(x+1, y))
-          + (0.25*dl/metric->dz) * bz * (f.ydown()(x,y-1,zm) - f.ydown()(x,y-1,zp));
+          - 0.5*dl * bx * (f.ydown()(x+1, y-1, z) - f.ydown()(x-1, y-1, z))/(0.5*metric->dx(x-1, y, z) + metric->dx(x, y, z) + 0.5*metric->dx(x+1, y, z))
+          + (0.25*dl/metric->dz(x,y,z)) * bz * (f.ydown()(x,y-1,zm) - f.ydown()(x,y-1,zp));
 
-        result(x,y,z) += by * (fp - fm) / (0.5*metric->dy(x,y-1) + metric->dy(x,y) + 0.5*metric->dy(x,y+1));
+        result(x,y,z) += by * (fp - fm) / (0.5*metric->dy(x,y-1, z) + metric->dy(x,y,z) + 0.5*metric->dy(x,y+1,z));
       }
     }
   }
@@ -160,9 +159,6 @@ const Field3D Grad_parP(const Field3D &apar, const Field3D &f) {
   ASSERT2(result.getLocation() == f.getLocation());
 
   return result;
-#else
-  return Field3D{};
-#endif
 }
 
 /*******************************************************************************
@@ -572,16 +568,16 @@ const Field3D Div_Perp_Lap_FV(const Field3D &a, const Field3D &f, CELL_LOC outlo
         // Calculate gradients on cell faces -- assumes constant grid spacing
         
         BoutReal gR = (coords->g11(i,j,k) + coords->g11(i+1,j,k)) * (fs(i+1,j,k) - fs(i,j,k))/(coords->dx(i+1,j,k) + coords->dx(i,j,k))
-          + 0.5*(coords->g13(i,j,k) + coords->g13(i+1,j,k))*(fs(i+1,j,kp) - fs(i+1,j,km) + fs(i,j,kp) - fs(i,j,km))/(4.*coords->dz);
+          + 0.5*(coords->g13(i,j,k) + coords->g13(i+1,j,k))*(fs(i+1,j,kp) - fs(i+1,j,km) + fs(i,j,kp) - fs(i,j,km))/(4.*coords->dz(i,j,k));
         
 	BoutReal gL = (coords->g11(i-1,j,k) + coords->g11(i,j,k))*(fs(i,j,k) - fs(i-1,j,k))/(coords->dx(i-1,j,k) + coords->dx(i,j,k))
-	  + 0.5*(coords->g13(i-1,j,k) + coords->g13(i,j,k))*(fs(i-1,j,kp) - fs(i-1,j,km) + f(i,j,kp) - f(i,j,km))/(4.*coords->dz);
+	  + 0.5*(coords->g13(i-1,j,k) + coords->g13(i,j,k))*(fs(i-1,j,kp) - fs(i-1,j,km) + f(i,j,kp) - f(i,j,km))/(4*coords->dz(i,j,k));
 	
 	BoutReal gD = coords->g13(i,j,k)*(fs(i+1,j,km) - fs(i-1,j,km) + fs(i+1,j,k) - fs(i-1,j,k))/(4.*coords->dx(i,j,k))
-	  + coords->g33(i,j,k)*(fs(i,j,k) - fs(i,j,km))/coords->dz;
+	  + coords->g33(i,j,k)*(fs(i,j,k) - fs(i,j,km))/coords->dz(i,j,k);
         
         BoutReal gU = coords->g13(i,j,k)*(fs(i+1,j,kp) - fs(i-1,j,kp) + fs(i+1,j,k) - fs(i-1,j,k))/(4.*coords->dx(i,j,k))
-          + coords->g33(i,j,k)*(fs(i,j,kp) - fs(i,j,k))/coords->dz;
+          + coords->g33(i,j,k)*(fs(i,j,kp) - fs(i,j,k))/coords->dz(i,j,k);
           
         
         // Flow right
@@ -594,12 +590,12 @@ const Field3D Div_Perp_Lap_FV(const Field3D &a, const Field3D &f, CELL_LOC outlo
         
         
         // Flow up
-        flux = gU * 0.5*(as(i,j,k) + as(i,j,kp)) / coords->dz;
-        result(i,j,k) += flux;
+        flux = gU * 0.25*(coords->J(i,j,k) + coords->J(i,j,kp)) *(as(i,j,k) + as(i,j,kp));
+        result(i,j,k) += flux / (coords->dz(i,j,k) * coords->J(i,j,k));
 
 	// Flow down
-        flux = gD * 0.5*(as(i,j,k) + as(i,j,km)) / coords->dz;
-        result(i,j,k) -= flux;
+        flux = gD * 0.25*(coords->J(i,j,km) + coords->J(i,j,k)) *(as(i,j,km) + as(i,j,k));
+        result(i,j,k) += flux / (coords->dz(i,j,k) * coords->J(i,j,k));
       }
 
   return result;

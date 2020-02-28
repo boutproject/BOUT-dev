@@ -165,7 +165,8 @@ void LaplacePDD::start(const FieldPerp &b, PDD_data &data) {
 
   /// Create the matrices to be inverted (one for each z point)
 
-  BoutReal kwaveFactor = 2.0 * PI / coords->zlength();
+  ASSERT1(coords->zlength().isConst("RGN_ALL"));
+  BoutReal kwaveFactor = 2.0 * PI / coords->zlength()(0,0);
 
   /// Set matrix elements
   for (int kz = 0; kz <= maxmode; kz++) {

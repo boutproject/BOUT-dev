@@ -459,6 +459,8 @@ class Field3D : public Field, public FieldData {
   int  byteSize() const override { return sizeof(BoutReal); } // Just one BoutReal
   int  BoutRealSize() const override { return 1; }
 
+  bool isConst(const std::string& region) const;
+
   /// Visitor pattern support
   void accept(FieldVisitor &v) override { v.accept(*this); }
   

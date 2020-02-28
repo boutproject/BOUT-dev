@@ -83,7 +83,8 @@ FieldPerp LaplaceSerialTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   int ncz = localmesh->LocalNz; // No of z pnts
   int ncx = localmesh->LocalNx; // No of x pnts
 
-  BoutReal kwaveFactor = 2.0 * PI / coords->zlength();
+  ASSERT1(coords->zlength().isConst("RGN_ALL"));
+  BoutReal kwaveFactor = 2.0 * PI / coords->zlength()(0,0);
 
   // Setting the width of the boundary.
   // NOTE: The default is a width of 2 guard cells

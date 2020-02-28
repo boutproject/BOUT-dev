@@ -188,16 +188,18 @@ BoutReal FieldBallooning::generate(double x, double y, double z, double t) {
     (mesh->xend - mesh->xstart);
   int jx = ROUND((x - mesh->GlobalX(0)) / dx);
 
+  ASSERT1(coords->zlength().isConst("RGN_ALL"));
+
   if(mesh->periodicY(jx, ts)) {
     // Start with the value at this point
     BoutReal value = arg->generate(x,y,z,t);
 
     for(int i=1; i<= ball_n; i++) {
       // y - i * 2pi
-      value += arg->generate(x,y - i*TWOPI,z + i*ts*TWOPI/coords->zlength(),t);
+      value += arg->generate(x,y - i*TWOPI,z + i*ts*TWOPI/coords->zlength()(0,0),t);
 
       // y + i * 2pi
-      value += arg->generate(x,y + i*TWOPI,z - i*ts*TWOPI/coords->zlength(),t);
+      value += arg->generate(x,y + i*TWOPI,z - i*ts*TWOPI/coords->zlength()(0,0),t);
     }
     return value;
   }

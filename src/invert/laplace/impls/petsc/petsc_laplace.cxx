@@ -473,10 +473,10 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
         Coeffs( x, y, z, A1, A2, A3, A4, A5 );
 
         BoutReal dx   = coords->dx(x,y,z);
-        BoutReal dx2  = SQ(coords->dx(x,y,z));
-        BoutReal dz   = coords->dz;
-        BoutReal dz2  = SQ(coords->dz);
-        BoutReal dxdz = coords->dx(x,y,z) * coords->dz;
+        BoutReal dx2  = SQ(dx);
+        BoutReal dz   = coords->dz(x,y,z);
+        BoutReal dz2  = SQ(dz);
+        BoutReal dxdz = dx * dz;
         
         ASSERT3(finite(A1));
         ASSERT3(finite(A2));
@@ -992,13 +992,13 @@ void LaplacePetsc::Coeffs( int x, int y, int z, BoutReal &coef1, BoutReal &coef2
             // Fourth order discretization of C in x
             ddx_C = (-C2(x+2,y,z) + 8.*C2(x+1,y,z) - 8.*C2(x-1,y,z) + C2(x-2,y,z)) / (12.*coords->dx(x,y,z)*(C1(x,y,z)));
             // Fourth order discretization of C in z
-            ddz_C = (-C2(x,y,zpp) + 8.*C2(x,y,zp) - 8.*C2(x,y,zm) + C2(x,y,zmm)) / (12.*coords->dz*(C1(x,y,z)));
+            ddz_C = (-C2(x,y,zpp) + 8.*C2(x,y,zp) - 8.*C2(x,y,zm) + C2(x,y,zmm)) / (12.*coords->dz(x,y,z)*(C1(x,y,z)));
           }
           else {
             // Second order discretization of C in x
             ddx_C = (C2(x+1,y,z) - C2(x-1,y,z)) / (2.*coords->dx(x,y,z)*(C1(x,y,z)));
             // Second order discretization of C in z
-            ddz_C = (C2(x,y,zp) - C2(x,y,zm)) / (2.*coords->dz*(C1(x,y,z)));
+            ddz_C = (C2(x,y,zp) - C2(x,y,zm)) / (2.*coords->dz(x,y,z)*(C1(x,y,z)));
           }
 
           coef4 += coords->g11(x,y,z) * ddx_C + coords->g13(x,y,z) * ddz_C;

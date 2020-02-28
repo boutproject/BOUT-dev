@@ -347,7 +347,7 @@ Coordinates::Coordinates(Mesh* mesh, Field2D dx, Field2D dy, BoutReal dz, Field2
 }
 
 Coordinates::Coordinates(Mesh* mesh, Options* options)
-    : dx(1, mesh), dy(1, mesh), dz(1), d1_dx(mesh), d1_dy(mesh), J(1, mesh), Bxy(1, mesh),
+  : dx(1., mesh), dy(1., mesh), dz(1., mesh), d1_dx(mesh), d1_dy(mesh), d1_dz(mesh), J(1, mesh), Bxy(1, mesh),
       // Identity metric tensor
       g11(1, mesh), g22(1, mesh), g33(1, mesh), g12(0, mesh), g13(0, mesh), g23(0, mesh),
       g_11(1, mesh), g_22(1, mesh), g_33(1, mesh), g_12(0, mesh), g_13(0, mesh),
@@ -392,12 +392,13 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
 
     const auto default_dz = (zmax - zmin) * TWOPI / nz;
 
-    mesh->get(dz, "dz", default_dz);
+    mesh->get(dz, "dz", default_dz, false);
   }
 
   // required early for differentiation.
   setParallelTransform(options);
 
+  dz = interpolateAndExtrapolate(dz, location, extrapolate_x, extrapolate_y, false);
   dx = interpolateAndExtrapolate(dx, location, extrapolate_x, extrapolate_y, false);
 
   if (mesh->periodicX) {
@@ -644,7 +645,7 @@ interpolateAndNeumann(MAYBE_UNUSED(const Coordinates::metric_field_type& f), MAY
 
 Coordinates::Coordinates(Mesh *mesh, Options* options, const CELL_LOC loc,
       const Coordinates* coords_in, bool force_interpolate_from_centre)
-    : dx(1, mesh), dy(1, mesh), dz(1), d1_dx(mesh), d1_dy(mesh), J(1, mesh), Bxy(1, mesh),
+  : dx(1, mesh), dy(1, mesh), dz(1, mesh), d1_dx(mesh), d1_dy(mesh), d1_dz(mesh), J(1, mesh), Bxy(1, mesh),
       // Identity metric tensor
       g11(1, mesh), g22(1, mesh), g33(1, mesh), g12(0, mesh), g13(0, mesh), g23(0, mesh),
       g_11(1, mesh), g_22(1, mesh), g_33(1, mesh), g_12(0, mesh), g_13(0, mesh),
@@ -657,8 +658,6 @@ Coordinates::Coordinates(Mesh *mesh, Options* options, const CELL_LOC loc,
   std::string suffix = getLocationSuffix(location);
 
   nz = mesh->LocalNz;
-
-  dz = coords_in->dz;
 
   // Default to true in case staggered quantities are not read from file
   bool extrapolate_x = true;
@@ -680,6 +679,9 @@ Coordinates::Coordinates(Mesh *mesh, Options* options, const CELL_LOC loc,
       output_warn.write(_("WARNING: extrapolating input mesh quantities into y-boundary "
             "cells\n"));
     }
+
+    getAtLoc(mesh, dz, "dz", suffix, location, 1.0);
+    dz = interpolateAndExtrapolate(dz, location, extrapolate_x, extrapolate_y, false);
 
     getAtLoc(mesh, dx, "dx", suffix, location, 1.0);
     dx = interpolateAndExtrapolate(dx, location, extrapolate_x, extrapolate_y, false);
@@ -783,6 +785,7 @@ Coordinates::Coordinates(Mesh *mesh, Options* options, const CELL_LOC loc,
 
     dx = interpolateAndExtrapolate(coords_in->dx, location, true, true, false);
     dy = interpolateAndExtrapolate(coords_in->dy, location, true, true, false);
+    dz = interpolateAndExtrapolate(coords_in->dz, location, true, true, false);
 
     // Diagonal components of metric tensor g^{ij}
     g11 = interpolateAndExtrapolate(coords_in->g11, location, true, true, false);
@@ -905,7 +908,7 @@ int Coordinates::geometry(bool recalculate_staggered,
   if (min(abs(dy)) < 1e-8)
     throw BoutException("dy magnitude less than 1e-8");
 
-  if (fabs(dz) < 1e-8)
+  if (min(abs(dz)) < 1e-8)
     throw BoutException("dz magnitude less than 1e-8");
 
   // Check input metrics
@@ -1304,25 +1307,13 @@ namespace {
     const auto lower = localmesh->hasBranchCutLower(x);
     if (lower.first) {
       for (int y = 0; y < localmesh->ystart; y++) {
-	int z=0;
-// #ifdef COORDINATES_USE_3D
-// 	for (;z<localmesh->LocalNz; ++z)
-// #endif
-	{
-	  zShift(x, y, z) -= lower.second;
-	}
+	zShift(x, y) -= lower.second;
       }
     }
     const auto upper = localmesh->hasBranchCutUpper(x);
     if (upper.first) {
       for (int y = localmesh->yend + 1; y < localmesh->LocalNy; y++) {
-	int z=0;
-// #ifdef COORDINATES_USE_3D
-// 	for (;z<localmesh->LocalNz; ++z)
-// #endif
-	{
-	  zShift(x, y, z) += upper.second;
-	}
+	zShift(x, y) += upper.second;
       }
     }
   }
@@ -1376,8 +1367,9 @@ void Coordinates::setParallelTransform(Options* options) {
 
     fixZShiftGuards(zShift);
 
+    ASSERT1(zlength().isConst("RGN_ALL"));
     transform = bout::utils::make_unique<ShiftedMetric>(*localmesh, location, zShift,
-        zlength());
+							zlength()(0,0));
 
   } else if (ptstr == "fci") {
 
