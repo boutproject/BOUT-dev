@@ -29,14 +29,9 @@ static PetscErrorCode laplacePCapply(PC pc,Vec x,Vec y) {
   PetscFunctionReturn(s->precon(x, y));
 }
 
-int LaplaceXY::instance_count = 0;
-
 LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
     : localmesh(m==nullptr ? bout::globals::mesh : m), location(loc), monitor(*this) {
   Timer timer("invert");
-
-  instance_count++;
-  my_id = instance_count;
 
   if (opt == nullptr) {
     // If no options supplied, use default
@@ -77,6 +72,9 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
     throw BoutException("Unrecognized option '%s' for laplacexy:ybndry",
         y_bndry.c_str());
   }
+
+  // Use name of options section as the default prefix for performance logging variables
+  default_prefix = opt->name();
 
   // Get MPI communicator
   auto comm = BoutComm::get();
@@ -1741,10 +1739,7 @@ void LaplaceXY::savePerformance(Datafile& output_file, Solver& solver,
 
   // add values to be saved to the output
   if (name == "") {
-    name = "laplacexy";
-    if (my_id > 1) {
-      name += std::to_string(my_id);
-    }
+    name = default_prefix;
   }
   output_file.addRepeat(output_average_iterations, name + "_average_iterations");
 

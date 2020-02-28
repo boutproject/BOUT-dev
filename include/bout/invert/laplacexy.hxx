@@ -143,9 +143,9 @@ private:
 
   Mesh *localmesh;   ///< The mesh this operates on, provides metrics and communication
 
-  static int instance_count;
-  int my_id = 0;
-  
+  /// default prefix for writing performance logging variables
+  std::string default_prefix;
+
   // Preconditioner
   int xstart, xend;
   int nloc, nsys;
