@@ -121,8 +121,7 @@ void LaplaceParallelTri::solve_global_reduced_system(dcomplex *x, const dcomplex
   // Proc 0 posts receives
   //
   MPI_Request *req = new MPI_Request[nxpe];
-  if( BoutComm::rank()==0 ){ // probably generalizes to firstX()
-
+  if(localmesh->firstX()){
     // Post receives from all other processors
     req[myproc] = MPI_REQUEST_NULL;
     for (int p = 1; p < nprocs; p++) { // Loop over processor
@@ -177,7 +176,7 @@ void LaplaceParallelTri::solve_global_reduced_system(dcomplex *x, const dcomplex
 	     localmesh->getXcomm());               // Communicator
   }
 
-  if( BoutComm::rank() == 0){
+  if(localmesh->firstX()){
     // Assemble local part of global matrix
     // NB coefficient a and b here move from rhs to lhs
 
@@ -250,7 +249,7 @@ void LaplaceParallelTri::solve_global_reduced_system(dcomplex *x, const dcomplex
   //}
 
   // Procs 1 to NXPE receive
-  if(BoutComm::rank() != 0){
+  if( not localmesh->firstX() ){
     req[myproc] = MPI_REQUEST_NULL;
     // (4 + guards on boundary) x values per proc (xs-1, xs, xe, xe+1)
     int len; // Length of data in bytes
