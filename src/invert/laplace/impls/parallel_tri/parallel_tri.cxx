@@ -259,12 +259,13 @@ void LaplaceParallelTri::solve_global_reduced_system(dcomplex *x, const dcomplex
       for(int i=0; i<len; i++){
 	coefs[i] = xvec[xs-1+2*p+i];
       }
-      MPI_Send(std::begin(coefs),        // Data pointer
-	       len*sizeof(dcomplex),                 // Number
-	       MPI_BYTE,            // Type
-	       p,                   // Destination
-	       0,                   // Message identifier
-	       localmesh->getXcomm());               // Communicator
+      MPI_Isend(std::begin(coefs),      // Data pointer
+	       len*sizeof(dcomplex),    // Number
+	       MPI_BYTE,            	// Type
+	       p,                   	// Destination
+	       0,                   	// Message identifier
+	       localmesh->getXcomm(),	// Communicator
+	       &req[p]);             	// Handle
     }
     x[0] = xvec[xs-1];
     x[1] = xvec[xs];
