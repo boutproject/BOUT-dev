@@ -379,7 +379,7 @@ namespace FV {
     
     if(v.covariant) {
       // Got a covariant vector instead
-      throw BoutException("Div_f_v_XPPM passed a covariant v");
+      throw BoutException("Div_f_v passed a covariant v");
     }
     
     Field3D result{zeroFrom(n_in)};
