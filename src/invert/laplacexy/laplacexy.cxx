@@ -52,13 +52,8 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
     x_inner_dirichlet = (*opt)["pf_bndry_dirichlet"].withDefault(true);
   }
   if ((*opt)["y_bndry_dirichlet"].isSet()) {
-    bool y_bndry_dirichlet;
-    y_bndry_dirichlet = (*opt)["y_bndry_dirichlet"].withDefault(false);
-    if (y_bndry_dirichlet) {
-      y_bndry = "dirichlet";
-    } else {
-      y_bndry = "neumann";
-    }
+    throw BoutException("y_bndry_dirichlet has been deprecated. Use y_bndry=dirichlet "
+                        "instead.");
   } else {
     y_bndry = (*opt)["y_bndry"].withDefault("neumann");
   }

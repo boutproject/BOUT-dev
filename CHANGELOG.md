@@ -20,6 +20,9 @@
   `OptionsReader`, and `MsgStack`/`TRACE`. Run
   `bin/bout-v5-format-upgrader.py` on your physics models to update
   them. [\#1847](https://github.com/boutproject/BOUT-dev/pull/1847)
+- The option `laplacexy:y_bndry_dirichlet` has been deprecated. Use
+  `laplacexy:y_bndry=dirichlet` instead.
+  [\#1789](https://github.com/boutproject/BOUT-dev/pull/1789)
 
 ## [v4.3.0](https://github.com/boutproject/BOUT-dev/tree/v4.3.0) (2019-10-24)
 [Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v4.2.3...v4.3.0)
