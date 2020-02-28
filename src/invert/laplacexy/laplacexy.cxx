@@ -165,251 +165,9 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
   PetscMalloc( (localN)*sizeof(PetscInt), &o_nnz );
   
   if (finite_volume) {
-    // This discretisation uses a 5-point stencil
-    for(int i=0;i<localN;i++) {
-      // Non-zero elements on this processor
-      d_nnz[i] = 5; // Star pattern in 2D
-      // Non-zero elements on neighboring processor
-      o_nnz[i] = 0;
-    }
-
-    // X boundaries
-    if(localmesh->firstX()) {
-      // Lower X boundary
-      for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
-        const int localIndex = globalIndex(localmesh->xstart - 1, y);
-        ASSERT1( (localIndex >= 0) && (localIndex < localN) );
-
-        d_nnz[localIndex] = 2; // Diagonal sub-matrix
-        o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
-      }
-    }else {
-      // On another processor
-      for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
-        const int localIndex = globalIndex(localmesh->xstart, y);
-        ASSERT1( (localIndex >= 0) && (localIndex < localN) );
-        d_nnz[localIndex] -= 1;
-        o_nnz[localIndex] += 1;
-      }
-    }
-    if(localmesh->lastX()) {
-      // Upper X boundary
-      for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
-        const int localIndex = globalIndex(localmesh->xend + 1, y);
-        ASSERT1( (localIndex >= 0) && (localIndex < localN) );
-        d_nnz[localIndex] = 2; // Diagonal sub-matrix
-        o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
-      }
-    }else {
-      // On another processor
-      for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
-        const int localIndex = globalIndex(localmesh->xend, y);
-        ASSERT1( (localIndex >= 0) && (localIndex < localN) );
-        d_nnz[localIndex] -= 1;
-        o_nnz[localIndex] += 1;
-      }
-    }
-    // Y boundaries
-
-    for(int x=localmesh->xstart; x <=localmesh->xend; x++) {
-      // Default to no boundary
-      // NOTE: This assumes that communications in Y are to other
-      //   processors. If Y is communicated with this processor (e.g. NYPE=1)
-      //   then this will result in PETSc warnings about out of range allocations
-      {
-        const int localIndex = globalIndex(x, localmesh->ystart);
-        ASSERT1((localIndex >= 0) && (localIndex < localN));
-        // d_nnz[localIndex] -= 1;  // Note: Slightly inefficient
-        o_nnz[localIndex] += 1;
-      }
-      {
-        const int localIndex = globalIndex(x, localmesh->yend);
-        ASSERT1((localIndex >= 0) && (localIndex < localN));
-        // d_nnz[localIndex] -= 1; // Note: Slightly inefficient
-        o_nnz[localIndex] += 1;
-      }
-    }
-
-    for(RangeIterator it=localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
-      {
-        const int localIndex = globalIndex(it.ind, localmesh->ystart - 1);
-        ASSERT1((localIndex >= 0) && (localIndex < localN));
-        d_nnz[localIndex] = 2; // Diagonal sub-matrix
-        o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
-      }
-      {
-        const int localIndex = globalIndex(it.ind, localmesh->ystart);
-        ASSERT1((localIndex >= 0) && (localIndex < localN));
-        d_nnz[localIndex] += 1;
-        o_nnz[localIndex] -= 1;
-      }
-    }
-    for(RangeIterator it=localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
-      {
-        const int localIndex = globalIndex(it.ind, localmesh->yend + 1);
-        ASSERT1((localIndex >= 0) && (localIndex < localN));
-        d_nnz[localIndex] = 2; // Diagonal sub-matrix
-        o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
-      }
-      {
-        const int localIndex = globalIndex(it.ind, localmesh->yend);
-        ASSERT1((localIndex >= 0) && (localIndex < localN));
-        d_nnz[localIndex] += 1;
-        o_nnz[localIndex] -= 1;
-      }
-    }
+    setPreallocationFiniteVolume(d_nnz, o_nnz);
   } else {
-    // This discretisation uses a 9-point stencil
-    for(int i=0;i<localN;i++) {
-      // Non-zero elements on this processor
-      d_nnz[i] = 9; // Square pattern in 2D
-      // Non-zero elements on neighboring processor
-      o_nnz[i] = 0;
-    }
-
-    // X boundaries
-    if(localmesh->firstX()) {
-      // Lower X boundary
-      for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
-        const int localIndex = globalIndex(localmesh->xstart - 1, y);
-        ASSERT1( (localIndex >= 0) && (localIndex < localN) );
-
-        d_nnz[localIndex] = 2; // Diagonal sub-matrix
-        o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
-      }
-    }else {
-      // On another processor
-      for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
-        const int localIndex = globalIndex(localmesh->xstart, y);
-        ASSERT1( (localIndex >= 0) && (localIndex < localN) );
-        d_nnz[localIndex] -= 3;
-        o_nnz[localIndex] += 3;
-      }
-    }
-    if(localmesh->lastX()) {
-      // Upper X boundary
-      for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
-        const int localIndex = globalIndex(localmesh->xend + 1, y);
-        ASSERT1( (localIndex >= 0) && (localIndex < localN) );
-        d_nnz[localIndex] = 2; // Diagonal sub-matrix
-        o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
-      }
-    }else {
-      // On another processor
-      for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
-        const int localIndex = globalIndex(localmesh->xend, y);
-        ASSERT1( (localIndex >= 0) && (localIndex < localN) );
-        d_nnz[localIndex] -= 3;
-        o_nnz[localIndex] += 3;
-      }
-    }
-    // Y boundaries
-    int y_bndry_stencil_size = 2;
-    if (y_bndry == "free_o3") {
-      y_bndry_stencil_size = 4;
-    }
-
-    for(int x=localmesh->xstart; x <=localmesh->xend; x++) {
-      // Default to no boundary
-      // NOTE: This assumes that communications in Y are to other
-      //   processors. If Y is communicated with this processor (e.g. NYPE=1)
-      //   then this will result in PETSc warnings about out of range allocations
-      {
-        const int localIndex = globalIndex(x, localmesh->ystart);
-        ASSERT1((localIndex >= 0) && (localIndex < localN));
-        // d_nnz[localIndex] -= 3;  // Note: Slightly inefficient
-        o_nnz[localIndex] += 3;
-      }
-      {
-        const int localIndex = globalIndex(x, localmesh->yend);
-        ASSERT1((localIndex >= 0) && (localIndex < localN));
-        // d_nnz[localIndex] -= 3; // Note: Slightly inefficient
-        o_nnz[localIndex] += 3;
-      }
-    }
-
-    for(RangeIterator it=localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
-      {
-        const int localIndex = globalIndex(it.ind, localmesh->ystart - 1);
-        ASSERT1((localIndex >= 0) && (localIndex < localN));
-        d_nnz[localIndex] = y_bndry_stencil_size; // Diagonal sub-matrix
-        o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
-      }
-      {
-        const int localIndex = globalIndex(it.ind, localmesh->ystart);
-        ASSERT1((localIndex >= 0) && (localIndex < localN));
-        //d_nnz[localIndex] += 3;
-        o_nnz[localIndex] -= 3;
-      }
-    }
-    if (localmesh->hasBndryLowerY()) {
-      if (y_bndry == "dirichlet") {
-        // special handling for the corners, since we use a free_o3 y-boundary
-        // condition just in the corners when y_bndry=="dirichlet"
-        if (localmesh->firstX()) {
-          const int localIndex = globalIndex(localmesh->xstart-1, localmesh->ystart-1);
-          ASSERT1((localIndex >= 0) && (localIndex < localN));
-          d_nnz[localIndex] = 4;
-        }
-        if (localmesh->lastX()) {
-          const int localIndex = globalIndex(localmesh->xend+1, localmesh->ystart-1);
-          ASSERT1((localIndex >= 0) && (localIndex < localN));
-          d_nnz[localIndex] = 4;
-        }
-      } else {
-        if (localmesh->firstX()) {
-          const int localIndex = globalIndex(localmesh->xstart-1, localmesh->ystart-1);
-          ASSERT1((localIndex >= 0) && (localIndex < localN));
-          d_nnz[localIndex] = y_bndry_stencil_size;
-        }
-        if (localmesh->lastX()) {
-          const int localIndex = globalIndex(localmesh->xend+1, localmesh->ystart-1);
-          ASSERT1((localIndex >= 0) && (localIndex < localN));
-          d_nnz[localIndex] = y_bndry_stencil_size;
-        }
-      }
-    }
-    for(RangeIterator it=localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
-      {
-        const int localIndex = globalIndex(it.ind, localmesh->yend + 1);
-        ASSERT1((localIndex >= 0) && (localIndex < localN));
-        d_nnz[localIndex] = y_bndry_stencil_size; // Diagonal sub-matrix
-        o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
-      }
-      {
-        const int localIndex = globalIndex(it.ind, localmesh->yend);
-        ASSERT1((localIndex >= 0) && (localIndex < localN));
-        //d_nnz[localIndex] += 3;
-        o_nnz[localIndex] -= 3;
-      }
-    }
-    if (localmesh->hasBndryUpperY()) {
-      if (y_bndry == "dirichlet") {
-        // special handling for the corners, since we use a free_o3 y-boundary
-        // condition just in the corners when y_bndry=="dirichlet"
-        if (localmesh->firstX()) {
-          const int localIndex = globalIndex(localmesh->xstart-1, localmesh->yend+1);
-          ASSERT1((localIndex >= 0) && (localIndex < localN));
-          d_nnz[localIndex] = 4;
-        }
-        if (localmesh->lastX()) {
-          const int localIndex = globalIndex(localmesh->xend+1, localmesh->yend+1);
-          ASSERT1((localIndex >= 0) && (localIndex < localN));
-          d_nnz[localIndex] = 4;
-        }
-      } else {
-        if (localmesh->firstX()) {
-          const int localIndex = globalIndex(localmesh->xstart-1, localmesh->yend+1);
-          ASSERT1((localIndex >= 0) && (localIndex < localN));
-          d_nnz[localIndex] = y_bndry_stencil_size;
-        }
-        if (localmesh->lastX()) {
-          const int localIndex = globalIndex(localmesh->xend+1, localmesh->yend+1);
-          ASSERT1((localIndex >= 0) && (localIndex < localN));
-          d_nnz[localIndex] = y_bndry_stencil_size;
-        }
-      }
-    }
+    setPreallocationFiniteDifference(d_nnz, o_nnz);
   }
   // Pre-allocate
   MatMPIAIJSetPreallocation( MatA, 0, d_nnz, 0, o_nnz );
@@ -569,6 +327,260 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
   setCoefs(one, zero);
 }
 
+void LaplaceXY::setPreallocationFiniteVolume(PetscInt* d_nnz, PetscInt* o_nnz) {
+  int localN = localSize();
+
+  // This discretisation uses a 5-point stencil
+  for(int i=0;i<localN;i++) {
+    // Non-zero elements on this processor
+    d_nnz[i] = 5; // Star pattern in 2D
+    // Non-zero elements on neighboring processor
+    o_nnz[i] = 0;
+  }
+
+  // X boundaries
+  if(localmesh->firstX()) {
+    // Lower X boundary
+    for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
+      const int localIndex = globalIndex(localmesh->xstart - 1, y);
+      ASSERT1( (localIndex >= 0) && (localIndex < localN) );
+
+      d_nnz[localIndex] = 2; // Diagonal sub-matrix
+      o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
+    }
+  }else {
+    // On another processor
+    for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
+      const int localIndex = globalIndex(localmesh->xstart, y);
+      ASSERT1( (localIndex >= 0) && (localIndex < localN) );
+      d_nnz[localIndex] -= 1;
+      o_nnz[localIndex] += 1;
+    }
+  }
+  if(localmesh->lastX()) {
+    // Upper X boundary
+    for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
+      const int localIndex = globalIndex(localmesh->xend + 1, y);
+      ASSERT1( (localIndex >= 0) && (localIndex < localN) );
+      d_nnz[localIndex] = 2; // Diagonal sub-matrix
+      o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
+    }
+  }else {
+    // On another processor
+    for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
+      const int localIndex = globalIndex(localmesh->xend, y);
+      ASSERT1( (localIndex >= 0) && (localIndex < localN) );
+      d_nnz[localIndex] -= 1;
+      o_nnz[localIndex] += 1;
+    }
+  }
+  // Y boundaries
+
+  for(int x=localmesh->xstart; x <=localmesh->xend; x++) {
+    // Default to no boundary
+    // NOTE: This assumes that communications in Y are to other
+    //   processors. If Y is communicated with this processor (e.g. NYPE=1)
+    //   then this will result in PETSc warnings about out of range allocations
+    {
+      const int localIndex = globalIndex(x, localmesh->ystart);
+      ASSERT1((localIndex >= 0) && (localIndex < localN));
+      // d_nnz[localIndex] -= 1;  // Note: Slightly inefficient
+      o_nnz[localIndex] += 1;
+    }
+    {
+      const int localIndex = globalIndex(x, localmesh->yend);
+      ASSERT1((localIndex >= 0) && (localIndex < localN));
+      // d_nnz[localIndex] -= 1; // Note: Slightly inefficient
+      o_nnz[localIndex] += 1;
+    }
+  }
+
+  for(RangeIterator it=localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
+    {
+      const int localIndex = globalIndex(it.ind, localmesh->ystart - 1);
+      ASSERT1((localIndex >= 0) && (localIndex < localN));
+      d_nnz[localIndex] = 2; // Diagonal sub-matrix
+      o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
+    }
+    {
+      const int localIndex = globalIndex(it.ind, localmesh->ystart);
+      ASSERT1((localIndex >= 0) && (localIndex < localN));
+      d_nnz[localIndex] += 1;
+      o_nnz[localIndex] -= 1;
+    }
+  }
+  for(RangeIterator it=localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
+    {
+      const int localIndex = globalIndex(it.ind, localmesh->yend + 1);
+      ASSERT1((localIndex >= 0) && (localIndex < localN));
+      d_nnz[localIndex] = 2; // Diagonal sub-matrix
+      o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
+    }
+    {
+      const int localIndex = globalIndex(it.ind, localmesh->yend);
+      ASSERT1((localIndex >= 0) && (localIndex < localN));
+      d_nnz[localIndex] += 1;
+      o_nnz[localIndex] -= 1;
+    }
+  }
+}
+
+void LaplaceXY::setPreallocationFiniteDifference(PetscInt* d_nnz, PetscInt* o_nnz) {
+  int localN = localSize();
+
+  // This discretisation uses a 9-point stencil
+  for(int i=0;i<localN;i++) {
+    // Non-zero elements on this processor
+    d_nnz[i] = 9; // Square pattern in 2D
+    // Non-zero elements on neighboring processor
+    o_nnz[i] = 0;
+  }
+
+  // X boundaries
+  if(localmesh->firstX()) {
+    // Lower X boundary
+    for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
+      const int localIndex = globalIndex(localmesh->xstart - 1, y);
+      ASSERT1( (localIndex >= 0) && (localIndex < localN) );
+
+      d_nnz[localIndex] = 2; // Diagonal sub-matrix
+      o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
+    }
+  }else {
+    // On another processor
+    for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
+      const int localIndex = globalIndex(localmesh->xstart, y);
+      ASSERT1( (localIndex >= 0) && (localIndex < localN) );
+      d_nnz[localIndex] -= 3;
+      o_nnz[localIndex] += 3;
+    }
+  }
+  if(localmesh->lastX()) {
+    // Upper X boundary
+    for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
+      const int localIndex = globalIndex(localmesh->xend + 1, y);
+      ASSERT1( (localIndex >= 0) && (localIndex < localN) );
+      d_nnz[localIndex] = 2; // Diagonal sub-matrix
+      o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
+    }
+  }else {
+    // On another processor
+    for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
+      const int localIndex = globalIndex(localmesh->xend, y);
+      ASSERT1( (localIndex >= 0) && (localIndex < localN) );
+      d_nnz[localIndex] -= 3;
+      o_nnz[localIndex] += 3;
+    }
+  }
+  // Y boundaries
+  int y_bndry_stencil_size = 2;
+  if (y_bndry == "free_o3") {
+    y_bndry_stencil_size = 4;
+  }
+
+  for(int x=localmesh->xstart; x <=localmesh->xend; x++) {
+    // Default to no boundary
+    // NOTE: This assumes that communications in Y are to other
+    //   processors. If Y is communicated with this processor (e.g. NYPE=1)
+    //   then this will result in PETSc warnings about out of range allocations
+    {
+      const int localIndex = globalIndex(x, localmesh->ystart);
+      ASSERT1((localIndex >= 0) && (localIndex < localN));
+      // d_nnz[localIndex] -= 3;  // Note: Slightly inefficient
+      o_nnz[localIndex] += 3;
+    }
+    {
+      const int localIndex = globalIndex(x, localmesh->yend);
+      ASSERT1((localIndex >= 0) && (localIndex < localN));
+      // d_nnz[localIndex] -= 3; // Note: Slightly inefficient
+      o_nnz[localIndex] += 3;
+    }
+  }
+
+  for(RangeIterator it=localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
+    {
+      const int localIndex = globalIndex(it.ind, localmesh->ystart - 1);
+      ASSERT1((localIndex >= 0) && (localIndex < localN));
+      d_nnz[localIndex] = y_bndry_stencil_size; // Diagonal sub-matrix
+      o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
+    }
+    {
+      const int localIndex = globalIndex(it.ind, localmesh->ystart);
+      ASSERT1((localIndex >= 0) && (localIndex < localN));
+      //d_nnz[localIndex] += 3;
+      o_nnz[localIndex] -= 3;
+    }
+  }
+  if (localmesh->hasBndryLowerY()) {
+    if (y_bndry == "dirichlet") {
+      // special handling for the corners, since we use a free_o3 y-boundary
+      // condition just in the corners when y_bndry=="dirichlet"
+      if (localmesh->firstX()) {
+        const int localIndex = globalIndex(localmesh->xstart-1, localmesh->ystart-1);
+        ASSERT1((localIndex >= 0) && (localIndex < localN));
+        d_nnz[localIndex] = 4;
+      }
+      if (localmesh->lastX()) {
+        const int localIndex = globalIndex(localmesh->xend+1, localmesh->ystart-1);
+        ASSERT1((localIndex >= 0) && (localIndex < localN));
+        d_nnz[localIndex] = 4;
+      }
+    } else {
+      if (localmesh->firstX()) {
+        const int localIndex = globalIndex(localmesh->xstart-1, localmesh->ystart-1);
+        ASSERT1((localIndex >= 0) && (localIndex < localN));
+        d_nnz[localIndex] = y_bndry_stencil_size;
+      }
+      if (localmesh->lastX()) {
+        const int localIndex = globalIndex(localmesh->xend+1, localmesh->ystart-1);
+        ASSERT1((localIndex >= 0) && (localIndex < localN));
+        d_nnz[localIndex] = y_bndry_stencil_size;
+      }
+    }
+  }
+  for(RangeIterator it=localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
+    {
+      const int localIndex = globalIndex(it.ind, localmesh->yend + 1);
+      ASSERT1((localIndex >= 0) && (localIndex < localN));
+      d_nnz[localIndex] = y_bndry_stencil_size; // Diagonal sub-matrix
+      o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
+    }
+    {
+      const int localIndex = globalIndex(it.ind, localmesh->yend);
+      ASSERT1((localIndex >= 0) && (localIndex < localN));
+      //d_nnz[localIndex] += 3;
+      o_nnz[localIndex] -= 3;
+    }
+  }
+  if (localmesh->hasBndryUpperY()) {
+    if (y_bndry == "dirichlet") {
+      // special handling for the corners, since we use a free_o3 y-boundary
+      // condition just in the corners when y_bndry=="dirichlet"
+      if (localmesh->firstX()) {
+        const int localIndex = globalIndex(localmesh->xstart-1, localmesh->yend+1);
+        ASSERT1((localIndex >= 0) && (localIndex < localN));
+        d_nnz[localIndex] = 4;
+      }
+      if (localmesh->lastX()) {
+        const int localIndex = globalIndex(localmesh->xend+1, localmesh->yend+1);
+        ASSERT1((localIndex >= 0) && (localIndex < localN));
+        d_nnz[localIndex] = 4;
+      }
+    } else {
+      if (localmesh->firstX()) {
+        const int localIndex = globalIndex(localmesh->xstart-1, localmesh->yend+1);
+        ASSERT1((localIndex >= 0) && (localIndex < localN));
+        d_nnz[localIndex] = y_bndry_stencil_size;
+      }
+      if (localmesh->lastX()) {
+        const int localIndex = globalIndex(localmesh->xend+1, localmesh->yend+1);
+        ASSERT1((localIndex >= 0) && (localIndex < localN));
+        d_nnz[localIndex] = y_bndry_stencil_size;
+      }
+    }
+  }
+}
+
 void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
   Timer timer("invert");
 
@@ -577,235 +589,10 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
   ASSERT1(A.getLocation() == location);
   ASSERT1(B.getLocation() == location);
 
-  Coordinates *coords = localmesh->getCoordinates(location);
-  
   if (finite_volume) {
-    //////////////////////////////////////////////////
-    // Set Matrix elements
-    //
-    // (1/J) d/dx ( J * g11 d/dx ) + (1/J) d/dy ( J * g22 d/dy )
-
-    for(int x=localmesh->xstart; x <= localmesh->xend; x++) {
-      for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
-        // stencil entries
-        PetscScalar c, xm, xp, ym, yp;
-
-        // XX component
-
-        // Metrics on x+1/2 boundary
-        BoutReal J = 0.5*(coords->J(x,y) + coords->J(x+1,y));
-        BoutReal g11 = 0.5*(coords->g11(x,y) + coords->g11(x+1,y));
-        BoutReal dx = 0.5*(coords->dx(x,y) + coords->dx(x+1,y));
-        BoutReal Acoef = 0.5*(A(x,y) + A(x+1,y));
-
-        BoutReal val = Acoef * J * g11 / (coords->J(x,y) * dx * coords->dx(x,y));
-        xp = val;
-        c  = -val;
-
-        // Metrics on x-1/2 boundary
-        J = 0.5*(coords->J(x,y) + coords->J(x-1,y));
-        g11 = 0.5*(coords->g11(x,y) + coords->g11(x-1,y));
-        dx = 0.5*(coords->dx(x,y) + coords->dx(x-1,y));
-        Acoef = 0.5*(A(x,y) + A(x-1,y));
-
-        val = Acoef * J * g11 / (coords->J(x,y) * dx * coords->dx(x,y));
-        xm = val;
-        c  -= val;
-
-        c += B(x,y);
-
-        // Put values into the preconditioner, X derivatives only
-        acoef(y - localmesh->ystart, x - xstart) = xm;
-        bcoef(y - localmesh->ystart, x - xstart) = c;
-        ccoef(y - localmesh->ystart, x - xstart) = xp;
-
-        if( include_y_derivs ) {
-          // YY component
-          // Metrics at y+1/2
-          J = 0.5*(coords->J(x,y) + coords->J(x,y+1));
-          BoutReal g_22 = 0.5*(coords->g_22(x,y) + coords->g_22(x,y+1));
-          BoutReal g23  = 0.5*(coords->g23(x,y) + coords->g23(x,y+1));
-          BoutReal g_23 = 0.5*(coords->g_23(x,y) + coords->g_23(x,y+1));
-          BoutReal dy   = 0.5*(coords->dy(x,y) + coords->dy(x,y+1));
-          Acoef = 0.5*(A(x,y+1) + A(x,y));
-
-          val = -Acoef * J * g23 * g_23 / (g_22 * coords->J(x,y) * dy * coords->dy(x,y));
-          yp = val;
-          c -= val;
-
-          // Metrics at y-1/2
-          J    = 0.5*(coords->J(x,y)    + coords->J(x,y-1));
-          g_22 = 0.5*(coords->g_22(x,y) + coords->g_22(x,y-1));
-          g23  = 0.5*(coords->g23(x,y)  + coords->g23(x,y-1));
-          g_23 = 0.5*(coords->g_23(x,y) + coords->g_23(x,y-1));
-          dy   = 0.5*(coords->dy(x,y)   + coords->dy(x,y-1));
-          Acoef = 0.5*(A(x,y-1) + A(x,y));
-
-          val = -Acoef * J * g23 * g_23 / (g_22 * coords->J(x,y) * dy * coords->dy(x,y));
-          ym = val;
-          c -= val;
-        }
-
-        /////////////////////////////////////////////////
-        // Now have a 5-point stencil for the Laplacian
-
-        int row = globalIndex(x,y);
-
-        // Set the centre (diagonal)
-        MatSetValues(MatA,1,&row,1,&row,&c,INSERT_VALUES);
-
-        // X + 1
-        int col = globalIndex(x+1, y);
-        MatSetValues(MatA,1,&row,1,&col,&xp,INSERT_VALUES);
-
-        // X - 1
-        col = globalIndex(x-1, y);
-        MatSetValues(MatA,1,&row,1,&col,&xm,INSERT_VALUES);
-
-        if( include_y_derivs ) {
-          // Y + 1
-          col = globalIndex(x, y+1);
-          MatSetValues(MatA,1,&row,1,&col,&yp,INSERT_VALUES);
-
-          // Y - 1
-          col = globalIndex(x, y-1);
-          MatSetValues(MatA,1,&row,1,&col,&ym,INSERT_VALUES);
-        }
-      }
-    }
+    setMatrixElementsFiniteVolume(A, B);
   } else {
-    //////////////////////////////////////////////////
-    // Set Matrix elements
-    //
-    // Div(A Grad(f)) + B f
-    // = A Laplace_perp(f) + Grad_perp(A).Grad_perp(f) + B f
-    // = A*(G1*dfdx + (G2-1/J*d/dy(J/g_22))*dfdy
-    //      + g11*d2fdx2 + (g22-1/g_22)*d2fdy2 + 2*g12*d2fdxdy)
-    //   + g11*dAdx*dfdx + (g22-1/g_22)*dAdy*dfdy + g12*(dAdx*dfdy + dAdy*dfdx)
-    //   + B*f
-
-    Field2D coef_dfdy = coords->G2 - DDY(coords->J/coords->g_22)/coords->J;
-
-    for(int x = localmesh->xstart; x <= localmesh->xend; x++) {
-      for(int y = localmesh->ystart; y <= localmesh->yend; y++) {
-        // stencil entries
-        PetscScalar c, xm, xp, ym, yp, xpyp, xpym, xmyp, xmym;
-
-        BoutReal dx = coords->dx(x,y);
-
-        // A*G1*dfdx
-        BoutReal val = A(x, y)*coords->G1(x, y)/(2.*dx);
-        xp = val;
-        xm = -val;
-
-        // A*g11*d2fdx2
-        val = A(x, y)*coords->g11(x, y)/SQ(dx);
-        xp += val;
-        c = -2.*val;
-        xm += val;
-        // Non-uniform grid correction
-        val = A(x, y)*coords->g11(x, y)*coords->d1_dx(x, y)/(2.*dx);
-        xp += val;
-        xm -= val;
-
-        // g11*dAdx*dfdx
-        val = coords->g11(x, y)*(A(x+1, y) - A(x-1, y))/(4.*SQ(dx));
-        xp += val;
-        xm -= val;
-
-        // B*f
-        c += B(x,y);
-
-        // Put values into the preconditioner, X derivatives only
-        acoef(y - localmesh->ystart, x - xstart) = xm;
-        bcoef(y - localmesh->ystart, x - xstart) = c;
-        ccoef(y - localmesh->ystart, x - xstart) = xp;
-
-        if(include_y_derivs) {
-          BoutReal dy = coords->dy(x,y);
-          BoutReal dAdx = (A(x+1, y) - A(x-1, y))/(2.*dx);
-          BoutReal dAdy = (A(x, y+1) - A(x, y-1))/(2.*dy);
-
-          // A*(G2-1/J*d/dy(J/g_22))*dfdy
-          val = A(x, y)*coef_dfdy(x, y)/(2.*dy);
-          yp = val;
-          ym = -val;
-
-          // A*(g22-1/g_22)*d2fdy2
-          val = A(x, y)*(coords->g22(x, y) - 1./coords->g_22(x,y))/SQ(dy);
-          yp += val;
-          c -= 2.*val;
-          ym += val;
-          // Non-uniform mesh correction
-          val = A(x, y)*(coords->g22(x, y) - 1./coords->g_22(x,y))
-                *coords->d1_dy(x, y)/(2.*dy);
-          yp += val;
-          ym -= val;
-
-          // 2*A*g12*d2dfdxdy
-          val = A(x, y)*coords->g12(x, y)/(2.*dx*dy);
-          xpyp = val;
-          xpym = -val;
-          xmyp = -val;
-          xmym = val;
-
-          // g22*dAdy*dfdy
-          val = (coords->g22(x, y) - 1./coords->g_22(x,y))*dAdy/(2.*dy);
-          yp += val;
-          ym -= val;
-
-          // g12*(dAdx*dfdy + dAdy*dfdx)
-          val = coords->g12(x, y)*dAdx/(2.*dy);
-          yp += val;
-          ym -= val;
-          val = coords->g12(x, y)*dAdy/(2.*dx);
-          xp += val;
-          xm -= val;
-        }
-
-        /////////////////////////////////////////////////
-        // Now have a 9-point stencil for the Laplacian
-
-        int row = globalIndex(x,y);
-
-        // Set the centre (diagonal)
-        MatSetValues(MatA,1,&row,1,&row,&c,INSERT_VALUES);
-
-        // X + 1
-        int col = globalIndex(x+1, y);
-        MatSetValues(MatA,1,&row,1,&col,&xp,INSERT_VALUES);
-
-        // X - 1
-        col = globalIndex(x-1, y);
-        MatSetValues(MatA,1,&row,1,&col,&xm,INSERT_VALUES);
-
-        if( include_y_derivs ) {
-          // Y + 1
-          col = globalIndex(x, y+1);
-          MatSetValues(MatA,1,&row,1,&col,&yp,INSERT_VALUES);
-
-          // Y - 1
-          col = globalIndex(x, y-1);
-          MatSetValues(MatA,1,&row,1,&col,&ym,INSERT_VALUES);
-
-          // X + 1, Y + 1
-          col = globalIndex(x+1, y+1);
-          MatSetValues(MatA,1,&row,1,&col,&xpyp,INSERT_VALUES);
-
-          // X + 1, Y - 1
-          col = globalIndex(x+1, y-1);
-          MatSetValues(MatA,1,&row,1,&col,&xpym,INSERT_VALUES);
-
-          // X - 1, Y + 1
-          col = globalIndex(x-1, y+1);
-          MatSetValues(MatA,1,&row,1,&col,&xmyp,INSERT_VALUES);
-
-          // X - 1, Y - 1
-          col = globalIndex(x-1, y-1);
-          MatSetValues(MatA,1,&row,1,&col,&xmym,INSERT_VALUES);
-        }
-      }
-    }
+    setMatrixElementsFiniteDifference(A, B);
   }
   
   // X boundaries
@@ -1113,6 +900,241 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
   
   // Set coefficients for preconditioner
   cr->setCoefs(acoef, bcoef, ccoef);
+}
+
+void LaplaceXY::setMatrixElementsFiniteVolume(const Field2D &A, const Field2D &B) {
+  //////////////////////////////////////////////////
+  // Set Matrix elements
+  //
+  // (1/J) d/dx ( J * g11 d/dx ) + (1/J) d/dy ( J * g22 d/dy )
+
+  auto coords = localmesh->getCoordinates(location);
+
+  for(int x=localmesh->xstart; x <= localmesh->xend; x++) {
+    for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
+      // stencil entries
+      PetscScalar c, xm, xp, ym, yp;
+
+      // XX component
+
+      // Metrics on x+1/2 boundary
+      BoutReal J = 0.5*(coords->J(x,y) + coords->J(x+1,y));
+      BoutReal g11 = 0.5*(coords->g11(x,y) + coords->g11(x+1,y));
+      BoutReal dx = 0.5*(coords->dx(x,y) + coords->dx(x+1,y));
+      BoutReal Acoef = 0.5*(A(x,y) + A(x+1,y));
+
+      BoutReal val = Acoef * J * g11 / (coords->J(x,y) * dx * coords->dx(x,y));
+      xp = val;
+      c  = -val;
+
+      // Metrics on x-1/2 boundary
+      J = 0.5*(coords->J(x,y) + coords->J(x-1,y));
+      g11 = 0.5*(coords->g11(x,y) + coords->g11(x-1,y));
+      dx = 0.5*(coords->dx(x,y) + coords->dx(x-1,y));
+      Acoef = 0.5*(A(x,y) + A(x-1,y));
+
+      val = Acoef * J * g11 / (coords->J(x,y) * dx * coords->dx(x,y));
+      xm = val;
+      c  -= val;
+
+      c += B(x,y);
+
+      // Put values into the preconditioner, X derivatives only
+      acoef(y - localmesh->ystart, x - xstart) = xm;
+      bcoef(y - localmesh->ystart, x - xstart) = c;
+      ccoef(y - localmesh->ystart, x - xstart) = xp;
+
+      if( include_y_derivs ) {
+        // YY component
+        // Metrics at y+1/2
+        J = 0.5*(coords->J(x,y) + coords->J(x,y+1));
+        BoutReal g_22 = 0.5*(coords->g_22(x,y) + coords->g_22(x,y+1));
+        BoutReal g23  = 0.5*(coords->g23(x,y) + coords->g23(x,y+1));
+        BoutReal g_23 = 0.5*(coords->g_23(x,y) + coords->g_23(x,y+1));
+        BoutReal dy   = 0.5*(coords->dy(x,y) + coords->dy(x,y+1));
+        Acoef = 0.5*(A(x,y+1) + A(x,y));
+
+        val = -Acoef * J * g23 * g_23 / (g_22 * coords->J(x,y) * dy * coords->dy(x,y));
+        yp = val;
+        c -= val;
+
+        // Metrics at y-1/2
+        J    = 0.5*(coords->J(x,y)    + coords->J(x,y-1));
+        g_22 = 0.5*(coords->g_22(x,y) + coords->g_22(x,y-1));
+        g23  = 0.5*(coords->g23(x,y)  + coords->g23(x,y-1));
+        g_23 = 0.5*(coords->g_23(x,y) + coords->g_23(x,y-1));
+        dy   = 0.5*(coords->dy(x,y)   + coords->dy(x,y-1));
+        Acoef = 0.5*(A(x,y-1) + A(x,y));
+
+        val = -Acoef * J * g23 * g_23 / (g_22 * coords->J(x,y) * dy * coords->dy(x,y));
+        ym = val;
+        c -= val;
+      }
+
+      /////////////////////////////////////////////////
+      // Now have a 5-point stencil for the Laplacian
+
+      int row = globalIndex(x,y);
+
+      // Set the centre (diagonal)
+      MatSetValues(MatA,1,&row,1,&row,&c,INSERT_VALUES);
+
+      // X + 1
+      int col = globalIndex(x+1, y);
+      MatSetValues(MatA,1,&row,1,&col,&xp,INSERT_VALUES);
+
+      // X - 1
+      col = globalIndex(x-1, y);
+      MatSetValues(MatA,1,&row,1,&col,&xm,INSERT_VALUES);
+
+      if( include_y_derivs ) {
+        // Y + 1
+        col = globalIndex(x, y+1);
+        MatSetValues(MatA,1,&row,1,&col,&yp,INSERT_VALUES);
+
+        // Y - 1
+        col = globalIndex(x, y-1);
+        MatSetValues(MatA,1,&row,1,&col,&ym,INSERT_VALUES);
+      }
+    }
+  }
+}
+
+void LaplaceXY::setMatrixElementsFiniteDifference(const Field2D &A, const Field2D &B) {
+  //////////////////////////////////////////////////
+  // Set Matrix elements
+  //
+  // Div(A Grad(f)) + B f
+  // = A Laplace_perp(f) + Grad_perp(A).Grad_perp(f) + B f
+  // = A*(G1*dfdx + (G2-1/J*d/dy(J/g_22))*dfdy
+  //      + g11*d2fdx2 + (g22-1/g_22)*d2fdy2 + 2*g12*d2fdxdy)
+  //   + g11*dAdx*dfdx + (g22-1/g_22)*dAdy*dfdy + g12*(dAdx*dfdy + dAdy*dfdx)
+  //   + B*f
+
+  auto coords = localmesh->getCoordinates(location);
+
+  Field2D coef_dfdy = coords->G2 - DDY(coords->J/coords->g_22)/coords->J;
+
+  for(int x = localmesh->xstart; x <= localmesh->xend; x++) {
+    for(int y = localmesh->ystart; y <= localmesh->yend; y++) {
+      // stencil entries
+      PetscScalar c, xm, xp, ym, yp, xpyp, xpym, xmyp, xmym;
+
+      BoutReal dx = coords->dx(x,y);
+
+      // A*G1*dfdx
+      BoutReal val = A(x, y)*coords->G1(x, y)/(2.*dx);
+      xp = val;
+      xm = -val;
+
+      // A*g11*d2fdx2
+      val = A(x, y)*coords->g11(x, y)/SQ(dx);
+      xp += val;
+      c = -2.*val;
+      xm += val;
+      // Non-uniform grid correction
+      val = A(x, y)*coords->g11(x, y)*coords->d1_dx(x, y)/(2.*dx);
+      xp += val;
+      xm -= val;
+
+      // g11*dAdx*dfdx
+      val = coords->g11(x, y)*(A(x+1, y) - A(x-1, y))/(4.*SQ(dx));
+      xp += val;
+      xm -= val;
+
+      // B*f
+      c += B(x,y);
+
+      // Put values into the preconditioner, X derivatives only
+      acoef(y - localmesh->ystart, x - xstart) = xm;
+      bcoef(y - localmesh->ystart, x - xstart) = c;
+      ccoef(y - localmesh->ystart, x - xstart) = xp;
+
+      if(include_y_derivs) {
+        BoutReal dy = coords->dy(x,y);
+        BoutReal dAdx = (A(x+1, y) - A(x-1, y))/(2.*dx);
+        BoutReal dAdy = (A(x, y+1) - A(x, y-1))/(2.*dy);
+
+        // A*(G2-1/J*d/dy(J/g_22))*dfdy
+        val = A(x, y)*coef_dfdy(x, y)/(2.*dy);
+        yp = val;
+        ym = -val;
+
+        // A*(g22-1/g_22)*d2fdy2
+        val = A(x, y)*(coords->g22(x, y) - 1./coords->g_22(x,y))/SQ(dy);
+        yp += val;
+        c -= 2.*val;
+        ym += val;
+        // Non-uniform mesh correction
+        val = A(x, y)*(coords->g22(x, y) - 1./coords->g_22(x,y))
+          *coords->d1_dy(x, y)/(2.*dy);
+        yp += val;
+        ym -= val;
+
+        // 2*A*g12*d2dfdxdy
+        val = A(x, y)*coords->g12(x, y)/(2.*dx*dy);
+        xpyp = val;
+        xpym = -val;
+        xmyp = -val;
+        xmym = val;
+
+        // g22*dAdy*dfdy
+        val = (coords->g22(x, y) - 1./coords->g_22(x,y))*dAdy/(2.*dy);
+        yp += val;
+        ym -= val;
+
+        // g12*(dAdx*dfdy + dAdy*dfdx)
+        val = coords->g12(x, y)*dAdx/(2.*dy);
+        yp += val;
+        ym -= val;
+        val = coords->g12(x, y)*dAdy/(2.*dx);
+        xp += val;
+        xm -= val;
+      }
+
+      /////////////////////////////////////////////////
+      // Now have a 9-point stencil for the Laplacian
+
+      int row = globalIndex(x,y);
+
+      // Set the centre (diagonal)
+      MatSetValues(MatA,1,&row,1,&row,&c,INSERT_VALUES);
+
+      // X + 1
+      int col = globalIndex(x+1, y);
+      MatSetValues(MatA,1,&row,1,&col,&xp,INSERT_VALUES);
+
+      // X - 1
+      col = globalIndex(x-1, y);
+      MatSetValues(MatA,1,&row,1,&col,&xm,INSERT_VALUES);
+
+      if( include_y_derivs ) {
+        // Y + 1
+        col = globalIndex(x, y+1);
+        MatSetValues(MatA,1,&row,1,&col,&yp,INSERT_VALUES);
+
+        // Y - 1
+        col = globalIndex(x, y-1);
+        MatSetValues(MatA,1,&row,1,&col,&ym,INSERT_VALUES);
+
+        // X + 1, Y + 1
+        col = globalIndex(x+1, y+1);
+        MatSetValues(MatA,1,&row,1,&col,&xpyp,INSERT_VALUES);
+
+        // X + 1, Y - 1
+        col = globalIndex(x+1, y-1);
+        MatSetValues(MatA,1,&row,1,&col,&xpym,INSERT_VALUES);
+
+        // X - 1, Y + 1
+        col = globalIndex(x-1, y+1);
+        MatSetValues(MatA,1,&row,1,&col,&xmyp,INSERT_VALUES);
+
+        // X - 1, Y - 1
+        col = globalIndex(x-1, y-1);
+        MatSetValues(MatA,1,&row,1,&col,&xmym,INSERT_VALUES);
+      }
+    }
+  }
 }
 
 LaplaceXY::~LaplaceXY() {

@@ -203,6 +203,12 @@ private:
   // Running total of number of calls to the solver in each output timestep
   int n_calls = 0;
 
+  // Utility methods
+  void setPreallocationFiniteVolume(PetscInt* d_nnz, PetscInt* o_nnz);
+  void setPreallocationFiniteDifference(PetscInt* d_nnz, PetscInt* o_nnz);
+  void setMatrixElementsFiniteVolume(const Field2D &A, const Field2D &B);
+  void setMatrixElementsFiniteDifference(const Field2D &A, const Field2D &B);
+
   // Monitor class used to reset performance-monitoring variables for a new
   // output timestep
   friend class LaplaceXYMonitor;
