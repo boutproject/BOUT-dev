@@ -27,8 +27,8 @@
 
 #include <vector>
 
-XZHermiteSpline::XZHermiteSpline(int y_offset, Mesh *mesh, Options* opt)
-    : XZInterpolation(y_offset, mesh, opt),
+XZHermiteSpline::XZHermiteSpline(int y_offset, Mesh *mesh)
+    : XZInterpolation(y_offset, mesh),
       h00_x(localmesh), h01_x(localmesh), h10_x(localmesh), h11_x(localmesh),
       h00_z(localmesh), h01_z(localmesh), h10_z(localmesh), h11_z(localmesh) {
 
