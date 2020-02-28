@@ -62,6 +62,9 @@ import atexit
 cimport resolve_enum as benum
 from libc.stdlib cimport malloc, free
 import copy
+from libcpp.memory cimport unique_ptr
+from cython.operator import dereference as deref
+
 
 cdef extern from "boutexception_helper.hxx":
      cdef void raise_bout_py_error()
@@ -864,7 +867,7 @@ cdef class Laplacian:
 
     Equation solved is: d\\nabla^2_\\perp x + (1/c1)\\nabla_perp c2\\cdot\\nabla_\\perp x + ex\\nabla_x x + ez\\nabla_z x + a x = b
     """
-    cdef c.Laplacian * cobj
+    cdef unique_ptr[c.Laplacian] cobj
     cdef c.bool isSelfOwned
     def __init__(self,section=None):
         """
@@ -898,7 +901,7 @@ cdef class Laplacian:
         Field3D
             the inversion of x, where guess is a guess to start with
         """
-        return f3dFromObj(self.cobj.solve(x.cobj[0],guess.cobj[0]))
+        return f3dFromObj(deref(self.cobj).solve(x.cobj[0],guess.cobj[0]))
 
     def setCoefs(self, **kwargs):
         """
@@ -927,19 +930,11 @@ do
         $coeff : Field3D
             Field to set as coefficient
         """
-        self.cobj.setCoef$coeff($coeff.cobj[0])
+        deref(self.cobj).setCoef$coeff($coeff.cobj[0])
 EOF
 done
 
 cat <<"EOF"
-
-    def __dealloc__(self):
-        self.__mydealloc__()
-
-    def __mydealloc__(self):
-        if self.cobj and self.isSelfOwned:
-            del self.cobj
-            self.cobj = NULL
 
 cdef class FieldFactory:
     cdef c.FieldFactory * cobj
@@ -1194,7 +1189,7 @@ def finalise():
     _isInit = False
     import gc
     objects = gc.get_objects()
-    ourClasses = (Coordinates, Field2D, Field3D, Laplacian, Mesh, Options,
+    ourClasses = (Coordinates, Field2D, Field3D, Mesh, Options,
                   PhysicsModel, PhysicsModelBase, Vector2D, Vector3D,
                   PythonModelCallback)
     for obj in objects:

@@ -123,8 +123,8 @@ class FieldPerp : public Field {
   }
 
   // these methods return FieldPerp to allow method chaining
-  FieldPerp& setLocation(CELL_LOC location) {
-    Field::setLocation(location);
+  FieldPerp& setLocation(CELL_LOC new_location) {
+    Field::setLocation(new_location);
     return *this;
   }
   FieldPerp& setDirectionY(YDirectionType d) {
@@ -177,8 +177,8 @@ class FieldPerp : public Field {
       throw BoutException("FieldPerp: () operator on empty data");
     if((jx < 0) || (jx >= nx) || 
        (jz < 0) || (jz >= nz))
-      throw BoutException("FieldPerp: (%d, %d) operator out of bounds (%d, %d)", 
-			  jx, jz, nx, nz);
+      throw BoutException("FieldPerp: ({:d}, {:d}) operator out of bounds ({:d}, {:d})",
+                          jx, jz, nx, nz);
 #endif
     return data[jx*nz + jz];
   }
@@ -193,8 +193,8 @@ class FieldPerp : public Field {
       throw BoutException("FieldPerp: () operator on empty data");
     if((jx < 0) || (jx >= nx) || 
        (jz < 0) || (jz >= nz))
-      throw BoutException("FieldPerp: (%d, %d) operator out of bounds (%d, %d)", 
-			  jx, jz, nx, nz);
+      throw BoutException("FieldPerp: ({:d}, {:d}) operator out of bounds ({:d}, {:d})",
+                          jx, jz, nx, nz);
 #endif
     return data[jx*nz + jz];
   }
@@ -315,14 +315,14 @@ inline FieldPerp emptyFrom<FieldPerp>(const FieldPerp& f) {
 
 #if CHECK > 0
 void checkData(const FieldPerp &f, const std::string& region = "RGN_NOX");
-[[gnu::deprecated("Please use checkData(const FieldPerp& f, "
+[[deprecated("Please use checkData(const FieldPerp& f, "
     "const std::string& region = \"RGN_NOBNDRY\") instead")]]
 inline void checkData(const FieldPerp &f, REGION region) {
   return checkData(f, toString(region));
 }
 #else
 inline void checkData(const FieldPerp &UNUSED(f), const std::string& UNUSED(region) = "RGN_NOX") {}
-[[gnu::deprecated("Please use checkData(const FieldPerp& f, "
+[[deprecated("Please use checkData(const FieldPerp& f, "
     "const std::string& region = \"RGN_NOBNDRY\") instead")]]
 inline void checkData(const FieldPerp &UNUSED(f), REGION UNUSED(region)) {}
 #endif

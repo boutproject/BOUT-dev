@@ -32,7 +32,7 @@
 #
 
 AC_PREREQ([2.69])
-AC_INIT([BOUT++],[4.3.0],[bd512@york.ac.uk])
+AC_INIT([BOUT++],[5.0.0-alpha],[bd512@york.ac.uk])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -157,9 +157,9 @@ do
 done
 test -z $ARFLAGS && AC_MSG_ERROR([Failed to find suitable flags for ar])
 
-# Check for and enable C++11 support
+# Check for and enable C++14 support
 # Error if not supported
-AX_CXX_COMPILE_STDCXX([11], [noext], [mandatory])
+AX_CXX_COMPILE_STDCXX([14], [noext], [mandatory])
 
 #############################################################
 # STD Library functions
@@ -346,9 +346,10 @@ AS_IF([test "x$enable_sigfpe" = "xyes"], [
 ])
 
 BOUT_VERSION=$PACKAGE_VERSION
-BOUT_VERSION_MAJOR=${PACKAGE_VERSION%%.*}
-BOUT_VERSION_MINOR=${PACKAGE_VERSION#*.}
-BOUT_VERSION_DOUBLE=${BOUT_VERSION_MAJOR}.$(echo ${BOUT_VERSION_MINOR}|tr -d .)
+BOUT_VERSION_MAJOR=$(echo $PACKAGE_VERSION | cut -d. -f1)
+BOUT_VERSION_MINOR=$(echo $PACKAGE_VERSION | cut -d. -f2)
+BOUT_VERSION_PATCH=$(echo ${PACKAGE_VERSION%-alpha} | cut -d. -f3)
+BOUT_VERSION_DOUBLE=${BOUT_VERSION_MAJOR}.${BOUT_VERSION_MINOR}${BOUT_VERSION_PATCH}
 CXXFLAGS="$CXXFLAGS -DBOUT_VERSION_STRING=\"\\\"$BOUT_VERSION\\\"\" -DBOUT_VERSION_DOUBLE=$BOUT_VERSION_DOUBLE "
 #############################################################
 # Enable Backtrace if possible
@@ -1091,7 +1092,7 @@ Please supply the path using --with-scorep=/path/to/scorep])
   ],[
       # Set a compile-time flag
       CXXFLAGS="$CXXFLAGS -DBOUT_HAS_SCOREP"
-      MPICXX="$SCOREPPATH --user --nocompiler $MPICXX"
+      CXX="$SCOREPPATH --user --nocompiler $CXX"
       HAS_SCOREP="yes"
       AC_MSG_NOTICE([Scorep support enabled])
   ])
@@ -1112,25 +1113,25 @@ HAS_PVODE="no"
 AS_IF([test "$with_pvode" != "no"], [
   AS_IF([test "$enable_pvode_openmp" != "no"  ], [
     AS_IF([test "$enable_openmp" != "no" ], [
-      PVODE_FLAGS="$CXXFLAGS $OPENMP_CXXFLAGS $CXX11_FLAGS"
+      PVODE_FLAGS="$CXXFLAGS $OPENMP_CXXFLAGS"
       AC_MSG_NOTICE([PVODE being built with OpenMP support])
     ], [
       AC_MSG_ERROR([Cannot enable openmp in PVODE as configuring with OpenMP disabled])
     ])
   ], [
-    PVODE_FLAGS="$CXXFLAGS $CXX11_FLAGS"
+    PVODE_FLAGS="$CXXFLAGS"
     AC_MSG_NOTICE([PVODE being built without OpenMP support])
   ])
   # Clean PVODE
-  CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-  CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+  CXX="$CXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
+  CXX="$CXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
 
   AC_MSG_NOTICE([Building PVODE])
   echo "* Building PVODE" >> config-build.log
   echo "*************************************************************" >> config-build.log
 
-  CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-  CXX="$MPICXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+  CXX="$CXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
+  CXX="$CXX" CXXFLAGS=$PVODE_FLAGS MKDIR="$MKDIR_P" RANLIB="$RANLIB" $MAKE -C externalpackages/PVODE/source/ >> config-build.log 2>&1
 
   AS_IF([test -f externalpackages/PVODE/lib/libpvode.a && test -f externalpackages/PVODE/lib/libpvpre.a], [
     AC_MSG_NOTICE([Successfully built PVODE])
@@ -1180,6 +1181,20 @@ AS_IF([test "$USE_NLS" = "yes"], [
 ],[
   AC_MSG_NOTICE([Language support with gettext not available])
 ]) 
+
+#############################################################
+# Sort out fmt
+#############################################################
+
+dnl If in a git repo, get submodule, unless BOUT_DONT_UPDATE_GIT_SUBMODULE is set
+AC_CHECK_FILE([.git], [
+  AS_IF([test "x$BOUT_DONT_UPDATE_GIT_SUBMODULE" == "x"], [
+    git submodule update --init externalpackages/fmt
+  ])
+])
+
+dnl Copy the one file we need to somewhere else
+AC_CONFIG_LINKS(src/fmt/format.cxx:externalpackages/fmt/src/format.cc)
 
 #############################################################
 # Check environment
@@ -1268,9 +1283,11 @@ AC_SUBST(CONFIG_LDFLAGS)
 BOUT_LIB_PATH=$PWD/lib
 BOUT_INCLUDE_PATH=$PWD/include
 MPARK_VARIANT_INCLUDE_PATH=$PWD/externalpackages/mpark.variant/include
+FMT_INCLUDE_PATH=$PWD/externalpackages/fmt/include
 AC_SUBST(BOUT_LIB_PATH)
 AC_SUBST(BOUT_INCLUDE_PATH)
 AC_SUBST(MPARK_VARIANT_INCLUDE_PATH)
+AC_SUBST(FMT_INCLUDE_PATH)
 
 AC_SUBST(PREFIX)
 AC_SUBST(IDLCONFIGPATH)

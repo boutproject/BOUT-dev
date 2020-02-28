@@ -16,7 +16,7 @@
 int main(int argc, char** argv) {
   BoutInitialise(argc, argv);
 
-  LaplaceXZ *inv = LaplaceXZ::create(mesh);
+  auto inv = LaplaceXZ::create(mesh);
 
   output.write("Setting coefficients\n");
 
@@ -38,8 +38,6 @@ int main(int argc, char** argv) {
   SAVE_ONCE2(rhs2, x2);
 
   dump.write();
-
-  delete inv;
 
   BoutFinalise();
   return 0;

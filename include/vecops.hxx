@@ -95,11 +95,11 @@ DEPRECATED(inline const Field3D Div(const Vector3D& v, const Field3D& f,
 inline const Field3D Div(const Vector3D& v, const Field3D& f, CELL_LOC outloc,
                          DIFF_METHOD method = DIFF_DEFAULT) {
   return Div(v, f, outloc, toString(method));
-};
+}
 DEPRECATED(inline const Field3D Div(const Vector3D& v, const Field3D& f,
                                     DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT)) {
   return Div(v, f, outloc, toString(method));
-};
+}
 
 /// Curl of a vector
 ///

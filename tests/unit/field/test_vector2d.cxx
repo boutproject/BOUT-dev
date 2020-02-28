@@ -1,13 +1,14 @@
 #include "gtest/gtest.h"
 
-#include "bout/constants.hxx"
-#include "bout/mesh.hxx"
 #include "boutexception.hxx"
 #include "output.hxx"
 #include "test_extras.hxx"
 #include "unused.hxx"
 #include "vector2d.hxx"
 #include "vector3d.hxx"
+#include "bout/constants.hxx"
+#include "bout/mesh.hxx"
+#include "bout/mpi_wrapper.hxx"
 
 /// Global mesh
 namespace bout{
@@ -34,6 +35,7 @@ protected:
       delete mesh;
       mesh = nullptr;
     }
+    bout::globals::mpi = new MpiWrapper();
     mesh = new FakeMesh(nx, ny, nz);
     static_cast<FakeMesh*>(mesh)->setCoordinates(nullptr);
     mesh->createDefaultRegions();
@@ -68,6 +70,8 @@ protected:
     }
     delete mesh_staggered;
     mesh_staggered = nullptr;
+    delete bout::globals::mpi;
+    bout::globals::mpi = nullptr;
   }
 
 public:

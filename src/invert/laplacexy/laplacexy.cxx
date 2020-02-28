@@ -24,7 +24,7 @@ static PetscErrorCode laplacePCapply(PC pc,Vec x,Vec y) {
   
   // Get the context
   LaplaceXY *s;
-  ierr = PCShellGetContext(pc,(void**)&s);CHKERRQ(ierr);
+  ierr = PCShellGetContext(pc, reinterpret_cast<void**>(&s)); CHKERRQ(ierr);
   
   PetscFunctionReturn(s->precon(x, y));
 }
@@ -529,9 +529,9 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
 
     KSPSetType( ksp, ksptype.c_str() );
     KSPSetTolerances( ksp, rtol, atol, dtol, maxits );
-    
-    KSPSetInitialGuessNonzero( ksp, (PetscBool) true );
-    
+
+    KSPSetInitialGuessNonzero(ksp, static_cast<PetscBool>(true));
+
     KSPGetPC(ksp,&pc);
     PCSetType(pc, pctype.c_str());
 
@@ -1517,7 +1517,7 @@ const Field2D LaplaceXY::solve(const Field2D &rhs, const Field2D &x0) {
   KSPGetConvergedReason( ksp, &reason );
   
   if(reason <= 0) {
-    throw BoutException("LaplaceXY failed to converge. Reason %d", reason);
+    throw BoutException("LaplaceXY failed to converge. Reason {:d}", reason);
   }
 
   if (save_performance) {

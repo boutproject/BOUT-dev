@@ -13,15 +13,13 @@ except:
 vars = ['yavg2d', 'yavg3d', 'sm3d']
 tol = 1e-10                  # Absolute tolerance
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe
+from boututils.run_wrapper import build_and_log, shell, launch_safe
 from boutdata.collect import collect
 import numpy as np
 from sys import stdout, exit
 
 
-
-print("Making smoothing operator test")
-shell_safe("make > make.log")
+build_and_log("smoothing operator test")
 
 # Read benchmark values
 print("Reading benchmark data")

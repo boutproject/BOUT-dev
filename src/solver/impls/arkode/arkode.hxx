@@ -33,7 +33,6 @@
 
 #include "bout_types.hxx"
 #include "bout/solver.hxx"
-#include "bout/solverfactory.hxx"
 
 #include <sundials/sundials_config.h>
 #if SUNDIALS_VERSION_MAJOR >= 3

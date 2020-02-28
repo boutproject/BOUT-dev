@@ -25,11 +25,15 @@ add_executable(serial_tests
   ./include/bout/test_generic_factory.cxx
   ./include/bout/test_macro_for_each.cxx
   ./include/bout/test_monitor.cxx
+  ./include/bout/test_petsc_indexer.cxx
+  ./include/bout/test_petsc_matrix.cxx
+  ./include/bout/test_petsc_setters.cxx
+  ./include/bout/test_petsc_vector.cxx
   ./include/bout/test_region.cxx
+  ./include/bout/test_stencil.cxx
   ./include/bout/test_template_combinations.cxx
   ./include/test_cyclic_reduction.cxx
   ./include/test_derivs.cxx
-  ./include/test_interpolation_factory.cxx
   ./include/test_mask.cxx
   ./invert/test_fft.cxx
   ./mesh/data/test_gridfromoptions.cxx
@@ -66,3 +70,4 @@ target_include_directories(serial_tests PUBLIC .)
 target_link_libraries(serial_tests gtest gmock bout++::bout++)
 add_test(NAME serial_tests COMMAND serial_tests)
 set_target_properties(serial_tests PROPERTIES FOLDER tests/unit)
+add_dependencies(build-check-unit-tests serial_tests)

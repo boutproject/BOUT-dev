@@ -35,9 +35,38 @@
 #include "field2d.hxx"
 #include "options.hxx"
 #include "unused.hxx"
+#include "bout/generic_factory.hxx"
 
 // Parderiv implementations
-#define PARDERIVCYCLIC "cyclic"
+constexpr auto PARDERIVCYCLIC = "cyclic";
+
+class InvertPar;
+
+class InvertParFactory
+    : public Factory<InvertPar, InvertParFactory,
+                             std::function<std::unique_ptr<InvertPar>(Options*, Mesh*)>> {
+public:
+  static constexpr auto type_name = "InvertPar";
+  static constexpr auto section_name = "parderiv";
+  static constexpr auto option_name = "type";
+  static constexpr auto default_type = PARDERIVCYCLIC;
+
+  ReturnType create(Options* options = nullptr, Mesh* mesh = nullptr) {
+    return Factory::create(getType(options), options, mesh);
+  }
+  static void ensureRegistered();
+};
+
+template <class DerivedType>
+class RegisterInvertPar {
+public:
+  RegisterInvertPar(const std::string& name) {
+    InvertParFactory::getInstance().add(
+        name, [](Options* options, Mesh* mesh) -> std::unique_ptr<InvertPar> {
+          return std::make_unique<DerivedType>(options, mesh);
+        });
+  }
+};
 
 /// Base class for parallel inversion solvers
 /*!
@@ -49,7 +78,7 @@
  * Example
  * -------
  *
- * InvertPar *inv = InvertPar::Create();
+ * auto inv = InvertPar::Create();
  * inv->setCoefA(1.0);
  * inv->setCoefB(-0.1);
  * 
@@ -72,7 +101,9 @@ public:
    * 
    * Note: For consistency this should be renamed "create" and take an Options* argument
    */
-  static InvertPar* Create(Mesh *mesh_in = nullptr);
+  static std::unique_ptr<InvertPar> Create(Mesh *mesh_in = nullptr) {
+    return InvertParFactory::getInstance().create(nullptr, mesh_in);
+  }
   
   /*!
    * Solve the system of equations

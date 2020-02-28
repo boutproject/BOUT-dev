@@ -14,14 +14,14 @@ public:
 };
 
 int MyOutputMonitor::call(Solver *UNUSED(solver), BoutReal simtime, int iter, int NOUT) {
-  output.write("Output monitor, time = %e, step %d of %d\n",
+  output.write("Output monitor, time = {:e}, step {:d} of {:d}\n",
                simtime, iter, NOUT);
   return 0;
 }
 
 // Create a function to be called every timestep
 int my_timestep_monitor(Solver *UNUSED(solver), BoutReal simtime, BoutReal dt) {
-  output.write("\nTimestep monitor, time = %e, dt = %e\n", 
+  output.write("\nTimestep monitor, time = {:e}, dt = {:e}\n",
                simtime, dt);
   return 0;
 }

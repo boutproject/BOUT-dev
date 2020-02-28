@@ -145,8 +145,8 @@ class GEM : public PhysicsModel {
   FieldGroup comms; // Communications
 
   /// Solver for inverting Laplacian
-  Laplacian *phiSolver;
-  Laplacian *aparSolver;
+  std::unique_ptr<Laplacian> phiSolver{nullptr};
+  std::unique_ptr<Laplacian> aparSolver{nullptr};
   
   ////////////////////////////////////////////////////////////////////////
   // Initialisation
@@ -305,13 +305,13 @@ class GEM : public PhysicsModel {
     t_i = pow(ZZ, -4.) * sqrt(AA) / (4.80e-8 * (Ninorm / 1e6) * Coulomb * pow(Tenorm, -3./2));
     
     output << "\n\tParameters\n";
-    output.write("\tt_e = %e [s], t_i = %e [s]\n", t_e, t_i);
-    output.write("\tLbar = %e [m], Cs = %e [m/s]\n", 
+    output.write("\tt_e = {:e} [s], t_i = {:e} [s]\n", t_e, t_i);
+    output.write("\tLbar = {:e} [m], Cs = {:e} [m/s]\n",
                  Lbar, Cs);
-    output.write("\tTbar = %e [s]\n", Tbar);
+    output.write("\tTbar = {:e} [s]\n", Tbar);
     nu_e = Lbar / (Cs*t_e); SAVE_ONCE(nu_e);
     nu_i = Lbar / (Cs*t_i); SAVE_ONCE(nu_i);
-    output.write("\tNormalised nu_e = %e, nu_i = %e\n", nu_e, nu_i);
+    output.write("\tNormalised nu_e = {:e}, nu_i = {:e}\n", nu_e, nu_i);
     output << "\tbeta_e = " << beta_e << endl;
     output << "\tdelta = " << delta << endl;
     

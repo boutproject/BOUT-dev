@@ -33,6 +33,8 @@
 
 #include "fieldgenerators.hxx"
 
+using bout::generator::Context;
+
 /// Helper function to create a FieldValue generator from a BoutReal
 FieldGeneratorPtr generator(BoutReal value) {
   return std::make_shared<FieldValue>(value);
@@ -41,6 +43,39 @@ FieldGeneratorPtr generator(BoutReal value) {
 /// Helper function to create a FieldValuePtr from a pointer to BoutReal
 FieldGeneratorPtr generator(BoutReal* ptr) {
   return std::make_shared<FieldValuePtr>(ptr);
+}
+
+namespace {
+  /// Provides a placeholder whose target can be changed after creation.
+  /// This enables recursive FieldGenerator expressions to be generated
+  class FieldIndirect : public FieldGenerator {
+  public:
+    /// depth_limit sets the maximum iteration depth. Set to < 0 for no limit
+    FieldIndirect(std::string name, int depth_limit = 0) : name(name), depth_limit(depth_limit) {}
+
+    /// Set the target, to be called when generator is called
+    void setTarget(FieldGeneratorPtr fieldgen) { target = fieldgen; }
+    
+    double generate(const Context& ctx) override {
+      if (depth_counter == depth_limit) {
+        throw BoutException("Calling {:s} to recursion depth {:d} exceeds maximum {:d}\n",
+                            name, depth_counter, depth_limit);
+      }
+      ++depth_counter;
+      BoutReal result = target->generate(ctx);
+      --depth_counter;
+      return result;
+    }
+
+    /// Note: returns the name rather than target->str, to avoid infinite recursion
+    std::string str() const override { return name; }
+  private:
+    std::string name;  ///< Name of the expression being pointed to
+    int depth_counter {0}; ///< Counts the iteration depth, to provide a maximum number of iterations
+    int depth_limit{0};  ///< Maximum call depth. If 0 then no recursion allowed (generate fails first time).
+    
+    FieldGeneratorPtr target;
+  };
 }
 
 //////////////////////////////////////////////////////////
@@ -57,30 +92,42 @@ FieldFactory::FieldFactory(Mesh* localmesh, Options* opt)
   transform_from_field_aligned
     = nonconst_options["input"]["transform_from_field_aligned"].withDefault(true);
 
+  // Convert using stoi rather than Options, or a FieldFactory is used to parse
+  // the string, leading to infinite loop.
+  try {
+    max_recursion_depth = std::stoi(nonconst_options["input"]["max_recursion_depth"]
+                                    .doc("Maximum recursion depth allowed in expressions. 0 = no "
+                                         "recursion; -1 = unlimited")
+                                    .withDefault<std::string>("0"));
+  } catch (const std::exception&) {
+    throw ParseException("Invalid integer given as input:max_recursion_depth: '{:s}'",
+        nonconst_options["input"]["max_recursion_depth"].as<std::string>());
+  }
+  
   // Useful values
   addGenerator("pi", std::make_shared<FieldValue>(PI));
   addGenerator("π", std::make_shared<FieldValue>(PI));
 
   // Some standard functions
-  addGenerator("sin", std::make_shared<FieldSin>(nullptr));
-  addGenerator("cos", std::make_shared<FieldCos>(nullptr));
-  addGenerator("tan", std::make_shared<FieldGenOneArg<tan>>(nullptr));
+  addGenerator("sin", std::make_shared<FieldGenOneArg<sin>>(nullptr, "sin"));
+  addGenerator("cos", std::make_shared<FieldGenOneArg<cos>>(nullptr, "cos"));
+  addGenerator("tan", std::make_shared<FieldGenOneArg<tan>>(nullptr, "tan"));
 
-  addGenerator("acos", std::make_shared<FieldGenOneArg<acos>>(nullptr));
-  addGenerator("asin", std::make_shared<FieldGenOneArg<asin>>(nullptr));
+  addGenerator("acos", std::make_shared<FieldGenOneArg<acos>>(nullptr, "acos"));
+  addGenerator("asin", std::make_shared<FieldGenOneArg<asin>>(nullptr, "asin"));
   addGenerator("atan", std::make_shared<FieldATan>(nullptr));
 
-  addGenerator("sinh", std::make_shared<FieldSinh>(nullptr));
-  addGenerator("cosh", std::make_shared<FieldCosh>(nullptr));
-  addGenerator("tanh", std::make_shared<FieldTanh>());
+  addGenerator("sinh", std::make_shared<FieldGenOneArg<sinh>>(nullptr, "sinh"));
+  addGenerator("cosh", std::make_shared<FieldGenOneArg<cosh>>(nullptr, "cosh"));
+  addGenerator("tanh", std::make_shared<FieldGenOneArg<tanh>>(nullptr, "tanh"));
 
-  addGenerator("exp", std::make_shared<FieldGenOneArg<exp>>(nullptr));
-  addGenerator("log", std::make_shared<FieldGenOneArg<log>>(nullptr));
+  addGenerator("exp", std::make_shared<FieldGenOneArg<exp>>(nullptr, "exp"));
+  addGenerator("log", std::make_shared<FieldGenOneArg<log>>(nullptr, "log"));
   addGenerator("gauss", std::make_shared<FieldGaussian>(nullptr, nullptr));
-  addGenerator("abs", std::make_shared<FieldAbs>(nullptr));
-  addGenerator("sqrt", std::make_shared<FieldSqrt>(nullptr));
+  addGenerator("abs", std::make_shared<FieldGenOneArg<fabs>>(nullptr, "abs"));
+  addGenerator("sqrt", std::make_shared<FieldGenOneArg<sqrt>>(nullptr, "sqrt"));
   addGenerator("h", std::make_shared<FieldHeaviside>(nullptr));
-  addGenerator("erf", std::make_shared<FieldErf>(nullptr));
+  addGenerator("erf", std::make_shared<FieldGenOneArg<erf>>(nullptr, "erf"));
   addGenerator("fmod", std::make_shared<FieldGenTwoArg<fmod>>(nullptr, nullptr));
 
   addGenerator("min", std::make_shared<FieldMin>());
@@ -99,6 +146,9 @@ FieldFactory::FieldFactory(Mesh* localmesh, Options* opt)
   // TanhHat function
   addGenerator("tanhhat",
                std::make_shared<FieldTanhHat>(nullptr, nullptr, nullptr, nullptr));
+
+  // Where switch function
+  addGenerator("where", std::make_shared<FieldWhere>(nullptr, nullptr, nullptr));
 }
 
 Field2D FieldFactory::create2D(const std::string& value, const Options* opt,
@@ -126,30 +176,8 @@ Field2D FieldFactory::create2D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC 
   result.allocate();
   result.setLocation(loc);
 
-  constexpr BoutReal z_position{0.0};
-
-  switch(loc)  {
-  case CELL_XLOW: {
-    BOUT_FOR(i, result.getRegion("RGN_ALL")) {
-      BoutReal xpos = 0.5 * (localmesh->GlobalX(i.x() - 1) + localmesh->GlobalX(i.x()));
-      result[i] = gen->generate(xpos, TWOPI * localmesh->GlobalY(i.y()), z_position, t);
-    }
-    break;
-  }
-  case CELL_YLOW: {
-    BOUT_FOR(i, result.getRegion("RGN_ALL")) {
-      BoutReal ypos =
-          TWOPI * 0.5 * (localmesh->GlobalY(i.y() - 1) + localmesh->GlobalY(i.y()));
-      result[i] = gen->generate(localmesh->GlobalX(i.x()), ypos, z_position, t);
-    }
-    break;
-  }
-  default: { // CELL_CENTRE or CELL_ZLOW
-    BOUT_FOR(i, result.getRegion("RGN_ALL")) {
-      result[i] = gen->generate(localmesh->GlobalX(i.x()),
-                                TWOPI * localmesh->GlobalY(i.y()), z_position, t);
-    }
-  }
+  BOUT_FOR(i, result.getRegion("RGN_ALL")) {
+    result[i] = gen->generate(Context(i, loc, localmesh, t));
   };
 
   return result;
@@ -180,47 +208,8 @@ Field3D FieldFactory::create3D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC 
 
   auto result = Field3D(localmesh).setLocation(loc).setDirectionY(y_direction).allocate();
 
-  switch (loc) {
-  case CELL_XLOW: {
-    BOUT_FOR(i, result.getRegion("RGN_ALL")) {
-      BoutReal xpos = 0.5 * (localmesh->GlobalX(i.x() - 1) + localmesh->GlobalX(i.x()));
-      result[i] = gen->generate(xpos, TWOPI * localmesh->GlobalY(i.y()),
-                                TWOPI * static_cast<BoutReal>(i.z())
-                                    / static_cast<BoutReal>(localmesh->LocalNz),
-                                t);
-    }
-    break;
-  }
-  case CELL_YLOW: {
-    BOUT_FOR(i, result.getRegion("RGN_ALL")) {
-      BoutReal ypos =
-          TWOPI * 0.5 * (localmesh->GlobalY(i.y() - 1) + localmesh->GlobalY(i.y()));
-      result[i] = gen->generate(localmesh->GlobalX(i.x()), ypos,
-                                TWOPI * static_cast<BoutReal>(i.z())
-                                    / static_cast<BoutReal>(localmesh->LocalNz),
-                                t);
-    }
-    break;
-  }
-  case CELL_ZLOW: {
-    BOUT_FOR(i, result.getRegion("RGN_ALL")) {
-      result[i] =
-          gen->generate(localmesh->GlobalX(i.x()), TWOPI * localmesh->GlobalY(i.y()),
-                        TWOPI * (static_cast<BoutReal>(i.z()) - 0.5)
-                            / static_cast<BoutReal>(localmesh->LocalNz),
-                        t);
-    }
-    break;
-  }
-  default: { // CELL_CENTRE
-    BOUT_FOR(i, result.getRegion("RGN_ALL")) {
-      result[i] =
-          gen->generate(localmesh->GlobalX(i.x()), TWOPI * localmesh->GlobalY(i.y()),
-                        TWOPI * static_cast<BoutReal>(i.z())
-                            / static_cast<BoutReal>(localmesh->LocalNz),
-                        t);
-    }
-  }
+  BOUT_FOR(i, result.getRegion("RGN_ALL")) {
+    result[i] = gen->generate(Context(i, loc, localmesh, t));
   };
 
   if (transform_from_field_aligned) {
@@ -265,45 +254,8 @@ FieldPerp FieldFactory::createPerp(FieldGeneratorPtr gen, Mesh* localmesh, CELL_
 
   auto result = FieldPerp(localmesh).setLocation(loc).setDirectionY(y_direction).allocate();
 
-  switch (loc) {
-  case CELL_XLOW: {
-    BOUT_FOR(i, result.getRegion("RGN_ALL")) {
-      BoutReal xpos = 0.5 * (localmesh->GlobalX(i.x() - 1) + localmesh->GlobalX(i.x()));
-      result[i] = gen->generate(xpos, 0.,
-                                TWOPI * static_cast<BoutReal>(i.z())
-                                    / static_cast<BoutReal>(localmesh->LocalNz),
-                                t);
-    }
-    break;
-  }
-  case CELL_YLOW: {
-    BOUT_FOR(i, result.getRegion("RGN_ALL")) {
-      result[i] = gen->generate(localmesh->GlobalX(i.x()), 0.,
-                                TWOPI * static_cast<BoutReal>(i.z())
-                                    / static_cast<BoutReal>(localmesh->LocalNz),
-                                t);
-    }
-    break;
-  }
-  case CELL_ZLOW: {
-    BOUT_FOR(i, result.getRegion("RGN_ALL")) {
-      result[i] =
-          gen->generate(localmesh->GlobalX(i.x()), 0.,
-                        TWOPI * (static_cast<BoutReal>(i.z()) - 0.5)
-                            / static_cast<BoutReal>(localmesh->LocalNz),
-                        t);
-    }
-    break;
-  }
-  default: { // CELL_CENTRE
-    BOUT_FOR(i, result.getRegion("RGN_ALL")) {
-      result[i] =
-          gen->generate(localmesh->GlobalX(i.x()), 0.,
-                        TWOPI * static_cast<BoutReal>(i.z())
-                            / static_cast<BoutReal>(localmesh->LocalNz),
-                        t);
-    }
-  }
+  BOUT_FOR(i, result.getRegion("RGN_ALL")) {
+    result[i] = gen->generate(Context(i, loc, localmesh, t));
   };
 
   if (transform_from_field_aligned) {
@@ -333,7 +285,7 @@ const Options* FieldFactory::findOption(const Options* opt, const std::string& n
     while (!result->isSet(name)) {
       result = result->getParent();
       if (result == nullptr)
-        throw ParseException("Cannot find variable '%s'", name.c_str());
+        throw ParseException("Cannot find variable '{:s}'", name);
     }
     result->get(name, val, "");
 
@@ -356,7 +308,7 @@ const Options* FieldFactory::findOption(const Options* opt, const std::string& n
 
     if (!result->isSet(varname)) {
       // Not in this section
-      throw ParseException("Cannot find variable '%s'", name.c_str());
+      throw ParseException("Cannot find variable '{:s}'", name);
     }
 
     result->get(varname, val, "");
@@ -397,8 +349,8 @@ FieldGeneratorPtr FieldFactory::resolve(std::string& name) const {
           output_error << stack_value << " -> ";
         }
         output_error << name << endl;
-        throw BoutException("ExpressionParser: Infinite recursion in parsing '%s'",
-                            name.c_str());
+        throw BoutException("ExpressionParser: Infinite recursion in parsing '{:s}'",
+                            name);
       }
     }
 
@@ -407,6 +359,23 @@ FieldGeneratorPtr FieldFactory::resolve(std::string& name) const {
     std::string value;
     const Options* section = findOption(options, name, value);
 
+    if (max_recursion_depth != 0) {
+      // Recursion allowed. If < 0 then no limit, if > 0 then recursion limited
+      
+      // Create an object which can be used in FieldGenerator trees.
+      // The target does not yet exist, but will be set after parsing is complete
+      auto indirection = std::make_shared<FieldIndirect>(name, max_recursion_depth);
+      
+      cache[key] = indirection;
+      FieldGeneratorPtr g = parse(value, section);
+      indirection->setTarget(g); // set so that calls to self will point to the right place
+      cache[key] = g;
+      return g;
+    }
+    // Recursion not allowed. Keep track of keys being resolved
+    // This is done so that an error can be printed at parse time rather
+    // than run time (generate call).
+    
     lookup.push_back(key);
 
     FieldGeneratorPtr g = parse(value, section);

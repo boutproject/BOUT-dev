@@ -54,7 +54,7 @@ TEST(MsgStackTest, ReallocStorageTest) {
   std::string expected_dump = "";
 
   for (int i = 0; i < 20; i++) {
-    msg_stack.push("Message %i", i);
+    msg_stack.push("Message {:d}", i);
     expected_dump = " -> Message " + std::to_string(i) + "\n" + expected_dump;
   }
   expected_dump = "====== Back trace ======\n" + expected_dump;
@@ -66,7 +66,7 @@ TEST(MsgStackTest, PushReturnTest) {
   MsgStack msg_stack;
 
   for (int i = 0; i < 6; i++) {
-    EXPECT_EQ(msg_stack.push("Message %i", i), i);
+    EXPECT_EQ(msg_stack.push("Message {:d}", i), i);
   }
 }
 
@@ -84,7 +84,7 @@ TEST(MsgStackTest, SetPointTest) {
 
 TEST(MsgStackTest, NoMessageTest) {
   MsgStack msg_stack;
-  msg_stack.push(nullptr);
+  msg_stack.push();
   auto dump = msg_stack.getDump();
   auto expected_dump = "====== Back trace ======\n";
 
