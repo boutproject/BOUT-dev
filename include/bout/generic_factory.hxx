@@ -157,7 +157,7 @@ public:
   /// @returns the new object
   template <typename... Args>
   ReturnType create(Options* options, Args&&... args) const {
-    return create(getType(optionsOrDefaultSection(options)), args...);
+    return create(getType(options), args...);
   }
 
   /// List available types that can be created
