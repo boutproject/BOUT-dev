@@ -93,7 +93,7 @@ public:
 
   Field2D zlength() const {
 #ifdef COORDINATES_USE_3D
-    Field2D result(0.,(Mesh * ) this);
+    Field2D result(0.,localmesh);
     BOUT_FOR_SERIAL(i, dz.getRegion("RGN_ALL")) {
       result[i] += dz[i];
     }
