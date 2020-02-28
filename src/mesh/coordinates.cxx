@@ -1767,8 +1767,8 @@ Field3D Coordinates::indexDDY(const Field3D& f, CELL_LOC outloc,
     if (transform->canToFromFieldAligned()){
       f_aligned = is_unaligned ? transform->toFieldAligned(f, "RGN_NOX") : f;
     } else {
-      f_aligned = f;
-      f_aligned.setDirectionY(YDirectionType::Aligned);
+      f.calcParallelSlices();
+      return bout::derivatives::index::DDY(f, outloc, method, region);
     }
     Field3D result = bout::derivatives::index::DDY(f_aligned, outloc, method, region);
     return (is_unaligned ? maybeFromFieldAligned(result, region) : result );
