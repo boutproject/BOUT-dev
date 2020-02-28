@@ -59,12 +59,10 @@ FCIMap::FCIMap(Mesh& mesh, Options& options, int offset_, BoundaryRegionPar* bou
   }
 
   auto interpolation_options = options["xzinterpolation"];
-  interp = XZInterpolationFactory::getInstance().create(&interpolation_options, &map_mesh,
-                                                        &interpolation_options);
+  interp = XZInterpolationFactory::getInstance().create(&interpolation_options, &map_mesh);
   interp->setYOffset(offset);
 
-  interp_corner = XZInterpolationFactory::getInstance().create(&interpolation_options, &map_mesh,
-                                                               &interpolation_options);
+  interp_corner = XZInterpolationFactory::getInstance().create(&interpolation_options, &map_mesh);
   interp_corner->setYOffset(offset);
 
   // Index arrays contain guard cells in order to get subscripts right
