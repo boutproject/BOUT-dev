@@ -1038,7 +1038,7 @@ int Coordinates::geometry(bool recalculate_staggered,
 
   OPTION(Options::getRoot(), non_uniform, true);
 
-  Coordinates::metric_field_type d2x(localmesh), d2y(localmesh); // d^2 x / d i^2
+  Coordinates::metric_field_type d2x(localmesh), d2y(localmesh), d2z(localmesh); // d^2 x / d i^2
 
   // Read correction for non-uniform meshes
   std::string suffix = getLocationSuffix(location);
@@ -1076,6 +1076,21 @@ int Coordinates::geometry(bool recalculate_staggered,
 
       d1_dy = -d2y / (dy * dy);
     }
+
+    if (localmesh->get(d2z, "d2z"+suffix, 0.0, false)) {
+      output_warn.write(
+          "\tWARNING: differencing quantity 'd2z' not found. Calculating from dz\n");
+      d1_dz = bout::derivatives::index::DDZ(1. / dz); // d/di(1/dy)
+
+      communicate(d1_dz);
+      d1_dz = interpolateAndExtrapolate(d1_dz, location, true, true, true);
+    } else {
+      d2z.setLocation(location);
+      // set boundary cells if necessary
+      d2z = interpolateAndExtrapolate(d2z, location, extrapolate_x, extrapolate_y, false);
+
+      d1_dz = -d2z / (dz * dz);
+    }
   } else {
     if (localmesh->get(d2x, "d2x", 0.0, false)) {
       output_warn.write(
@@ -1104,8 +1119,22 @@ int Coordinates::geometry(bool recalculate_staggered,
 
       d1_dy = -d2y / (dy * dy);
     }
+
+    if (localmesh->get(d2z, "d2z", 0.0, false)) {
+      output_warn.write(
+          "\tWARNING: differencing quantity 'd2z' not found. Calculating from dz\n");
+      d1_dz = bout::derivatives::index::DDZ(1. / dz); // d/di(1/dy)
+
+      communicate(d1_dz);
+      d1_dz = interpolateAndExtrapolate(d1_dz, location, true, true, true);
+    } else {
+      // Shift d2z to our location
+      d2z = interpolateAndExtrapolate(d2z, location, true, true, false);
+
+      d1_dz = -d2z / (dz * dz);
+    }
   }
-  communicate(d1_dx, d1_dy);
+  communicate(d1_dx, d1_dy, d1_dz);
 
   if (location == CELL_CENTRE && recalculate_staggered) {
     // Re-calculate interpolated Coordinates at staggered locations
