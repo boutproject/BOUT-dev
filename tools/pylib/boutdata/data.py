@@ -535,7 +535,7 @@ class BoutOptionsFile(BoutOptions):
             for linenr, line in enumerate(f.readlines()):
                 # First remove comments, either # or ;
                 if line.lstrip().startswith(self.VALID_COMMENTS):
-                    comments.append(line.strip())
+                    comments.append('#' + line.strip()[1:])
                     continue
                 if line.strip() == "":
                     comments.append(line.strip())
@@ -544,7 +544,7 @@ class BoutOptionsFile(BoutOptions):
                 comment_match = self.COMMENT_REGEX.search(line)
                 if comment_match is not None:
                     line, comment_whitespace, inline_comment = comment_match.groups()
-                    inline_comment = inline_comment.strip()
+                    inline_comment = '#' + inline_comment.strip()[1:]
                 else:
                     inline_comment = None
                     comment_whitespace = None

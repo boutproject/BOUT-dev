@@ -125,6 +125,8 @@ if __name__ == "__main__":
 
               * trailing whitespace will be removed
 
+              * comments will always use '#'
+
             Files that change in this way will have the "canonicalisation" patch
             presented first. If you choose not to apply this patch, the "upgrade
             fixer" patch will still include it."""
