@@ -523,7 +523,8 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   // Should we store coefficients?
   store_coefficients = not (inner_boundary_flags & INVERT_AC_GRAD);
   store_coefficients = store_coefficients && not (outer_boundary_flags & INVERT_AC_GRAD);
-
+  store_coefficients = store_coefficients && not (inner_boundary_flags & INVERT_SET);
+  store_coefficients = store_coefficients && not (outer_boundary_flags & INVERT_SET);
 
   // Setting the width of the boundary.
   // NOTE: The default is a width of 2 guard cells
@@ -599,8 +600,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
      * If the INVERT_SET flag is set (meaning that x0 will be used to set the
      * bounadry values),
      */
-    if (((ix < inbndry) && (inner_boundary_flags & INVERT_SET)) ||
-        ((ncx - 1 - ix < outbndry) && (outer_boundary_flags & INVERT_SET))) {
+    if (((ix < inbndry) && (inner_boundary_flags & INVERT_SET) && localmesh->firstX()) ||
+        ((ncx - ix - 1 < outbndry) && (outer_boundary_flags & INVERT_SET) &&
+             localmesh->lastX())) {
       // Use the values in x0 in the boundary
 
       // x0 is the input
