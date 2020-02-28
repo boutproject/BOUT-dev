@@ -511,8 +511,10 @@ class BoutOptionsFile(BoutOptions):
 
     """
 
+    # Characters that start a comment
+    VALID_COMMENTS = ("#", ";")
     # Get not just the comment, but also the preceeding whitespace
-    COMMENT_REGEX = re.compile(r"(\s*)(#.*)")
+    COMMENT_REGEX = re.compile(r"(.*?)(\s*)([{}].*)".format("".join(VALID_COMMENTS)))
 
     def __init__(
         self,
@@ -532,7 +534,7 @@ class BoutOptionsFile(BoutOptions):
             comments = []
             for linenr, line in enumerate(f.readlines()):
                 # First remove comments, either # or ;
-                if line.lstrip().startswith("#"):
+                if line.lstrip().startswith(self.VALID_COMMENTS):
                     comments.append(line.strip())
                     continue
                 if line.strip() == "":
@@ -541,14 +543,11 @@ class BoutOptionsFile(BoutOptions):
 
                 comment_match = self.COMMENT_REGEX.search(line)
                 if comment_match is not None:
-                    line = line.split("#")[0].strip()
-                    comment_whitespace = comment_match.group(1)
-                    inline_comment = comment_match.group(2).strip()
+                    line, comment_whitespace, inline_comment = comment_match.groups()
+                    inline_comment = inline_comment.strip()
                 else:
                     inline_comment = None
-                startpos = line.find(";")
-                if startpos != -1:
-                    line = line[:startpos]
+                    comment_whitespace = None
 
                 # Check section headers
                 startpos = line.find("[")
