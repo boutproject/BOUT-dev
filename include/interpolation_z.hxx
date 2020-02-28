@@ -28,21 +28,17 @@
 
 class ZInterpolation {
 protected:
-  Options& options;
-
   Mesh* localmesh{nullptr};
 
   // 3D vector of points to skip (true -> skip this point)
   BoutMask skip_mask;
 
 public:
-  ZInterpolation(int y_offset = 0, Mesh* localmeshIn = nullptr, Options* opt = nullptr)
-      : options(opt == nullptr ? Options::root()["zinterpolation"] : *opt),
-        localmesh(localmeshIn == nullptr ? bout::globals::mesh : localmeshIn),
+  ZInterpolation(int y_offset = 0, Mesh* localmeshIn = nullptr)
+      : localmesh(localmeshIn == nullptr ? bout::globals::mesh : localmeshIn),
         skip_mask(*localmesh, false), y_offset(y_offset) {}
-  ZInterpolation(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr,
-                 Options* opt = nullptr)
-      : ZInterpolation(y_offset, mesh, opt) {
+  ZInterpolation(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
+      : ZInterpolation(y_offset, mesh) {
     skip_mask = mask;
   }
   virtual ~ZInterpolation() = default;
@@ -87,7 +83,7 @@ protected:
 
 class ZInterpolationFactory
     : public Factory<ZInterpolation, ZInterpolationFactory,
-                     std::function<std::unique_ptr<ZInterpolation>(Mesh*, Options*)>> {
+                     std::function<std::unique_ptr<ZInterpolation>(Mesh*)>> {
 public:
   static constexpr auto type_name = "ZInterpolation";
   static constexpr auto section_name = "zinterpolation";
@@ -95,8 +91,8 @@ public:
   static constexpr auto default_type = "hermitespline";
 
   using Factory::create;
-  ReturnType create(Mesh* mesh = nullptr, Options* opt = nullptr) {
-    return Factory::create(getType(nullptr), mesh, opt);
+  ReturnType create(Mesh* mesh = nullptr) {
+    return Factory::create(getType(nullptr), mesh);
   }
 
   static void ensureRegistered();
@@ -107,20 +103,19 @@ class RegisterZInterpolation {
 public:
   RegisterZInterpolation(const std::string& name) {
     ZInterpolationFactory::getInstance().add(
-        name, [](Mesh* mesh, Options* opt) -> std::unique_ptr<ZInterpolation> {
-          return std::make_unique<DerivedType>(mesh, opt);
+        name, [](Mesh* mesh) -> std::unique_ptr<ZInterpolation> {
+          return std::make_unique<DerivedType>(mesh);
         });
   }
 };
 
 class ZHermiteSpline : public ZInterpolation {
 public:
-  ZHermiteSpline(Mesh* mesh = nullptr, Options* opt = nullptr)
-      : ZHermiteSpline(0, mesh, opt) {}
-  ZHermiteSpline(int y_offset = 0, Mesh *mesh = nullptr, Options* opt = nullptr);
-  ZHermiteSpline(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr,
-                 Options* opt = nullptr)
-      : ZHermiteSpline(y_offset, mesh, opt) {
+  ZHermiteSpline(Mesh* mesh = nullptr)
+      : ZHermiteSpline(0, mesh) {}
+  ZHermiteSpline(int y_offset = 0, Mesh *mesh = nullptr);
+  ZHermiteSpline(const BoutMask &mask, int y_offset = 0, Mesh *mesh = nullptr)
+      : ZHermiteSpline(y_offset, mesh) {
     skip_mask = mask;
   }
 
