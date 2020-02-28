@@ -51,21 +51,21 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
   // Boundary condititions options
   if (localmesh->periodicY(localmesh->xstart)) {
     // Periodic in Y, so in the core
-    opt->get("core_bndry_dirichlet", x_inner_dirichlet, false);
+    x_inner_dirichlet = (*opt)["core_bndry_dirichlet"].withDefault(false);
   } else {
     // Non-periodic, so in the PF region
-    opt->get("pf_bndry_dirichlet", x_inner_dirichlet, true);
+    x_inner_dirichlet = (*opt)["pf_bndry_dirichlet"].withDefault(true);
   }
   if ((*opt)["y_bndry_dirichlet"].isSet()) {
     bool y_bndry_dirichlet;
-    opt->get("y_bndry_dirichlet", y_bndry_dirichlet, false);
+    y_bndry_dirichlet = (*opt)["y_bndry_dirichlet"].withDefault(false);
     if (y_bndry_dirichlet) {
       y_bndry = "dirichlet";
     } else {
       y_bndry = "neumann";
     }
   } else {
-    opt->get("y_bndry", y_bndry, "neumann");
+    y_bndry = (*opt)["y_bndry"].withDefault("neumann");
   }
 
   // Check value of y_bndry is a supported option
