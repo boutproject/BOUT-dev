@@ -116,16 +116,6 @@ Field2D _interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
     }
   }
 
-  // Set corner guard cells
-  for (int i = 0; i < localmesh->xstart; i++) {
-    for (int j = 0; j < localmesh->ystart; j++) {
-      result(i, j) = BoutNaN;
-      result(i, localmesh->LocalNy - 1 - j) = BoutNaN;
-      result(localmesh->LocalNx - 1 - i, j) = BoutNaN;
-      result(localmesh->LocalNx - 1 - i, localmesh->LocalNy - 1 - j) = BoutNaN;
-    }
-  }
-
   return result;
 }
 
@@ -258,17 +248,6 @@ Field2D _interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
     }
   }
 
-  // Set corner guard cells
-  for (int i = 0; i < localmesh->xstart; i++) {
-    for (int j = 0; j < localmesh->ystart; j++) {
-      for (int zi = 0; zi < localmesh->LocalNz; ++zi){
-	result(i, j, zi) = BoutNaN;
-	result(i, localmesh->LocalNy - 1 - j, zi) = BoutNaN;
-	result(localmesh->LocalNx - 1 - i, j, zi) = BoutNaN;
-	result(localmesh->LocalNx - 1 - i, localmesh->LocalNy - 1 - j, zi) = BoutNaN;
-      }
-    }
-  }
 
   return result;
   //throw BoutException("NotImplemented (3D)");
