@@ -525,6 +525,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   store_coefficients = store_coefficients && not (outer_boundary_flags & INVERT_AC_GRAD);
   store_coefficients = store_coefficients && not (inner_boundary_flags & INVERT_SET);
   store_coefficients = store_coefficients && not (outer_boundary_flags & INVERT_SET);
+  store_coefficients = false;
 
   // Setting the width of the boundary.
   // NOTE: The default is a width of 2 guard cells
