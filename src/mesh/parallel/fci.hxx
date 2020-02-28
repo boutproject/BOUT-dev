@@ -71,7 +71,8 @@ public:
 class FCITransform : public ParallelTransform {
 public:
   FCITransform() = delete;
-  FCITransform(Mesh& mesh, Options* opt = nullptr) : ParallelTransform(mesh, opt) {
+  FCITransform(Mesh& mesh, bool zperiodic = true, Options* opt = nullptr)
+      : ParallelTransform(mesh, opt) {
 
     // check the coordinate system used for the grid data source
     FCITransform::checkInputGrid();
@@ -82,8 +83,6 @@ public:
     // Add the boundary region to the mesh's vector of parallel boundaries
     mesh.addBoundaryPar(forward_boundary);
     mesh.addBoundaryPar(backward_boundary);
-
-    const bool zperiodic = options["z_periodic"].withDefault(true);
 
     field_line_maps.reserve(mesh.ystart * 2);
     for (int offset = 1; offset < mesh.ystart + 1; ++offset) {
