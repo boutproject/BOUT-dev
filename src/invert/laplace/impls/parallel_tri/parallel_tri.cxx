@@ -108,8 +108,8 @@ void LaplaceParallelTri::solve_global_reduced_system(dcomplex *x, const dcomplex
 
   // Two rows for every processor, plus guard cells on boundaries
   int nx = 2*nprocs + (xs-1) + (localmesh->LocalNx - xe) ;
-  Matrix<dcomplex> recvbuffer(nprocs,1000);
-  Array<dcomplex> coefs(1000);
+  Matrix<dcomplex> recvbuffer(nprocs,(6 + 4*(localmesh->LocalNx - xe)));
+  Array<dcomplex> coefs((6 + 4*(localmesh->LocalNx - xe)));
   Array<dcomplex> avec(nx);
   Array<dcomplex> bvec(nx);
   Array<dcomplex> cvec(nx);
@@ -117,30 +117,32 @@ void LaplaceParallelTri::solve_global_reduced_system(dcomplex *x, const dcomplex
   Array<dcomplex> xvec(nx);
 
   int nxpe = localmesh->getNXPE();
+  int len; // length of communication arrays
 
   // Proc 0 posts receives
-  //
   MPI_Request *req = new MPI_Request[nxpe];
   if(localmesh->firstX()){
+
     // Post receives from all other processors
     req[myproc] = MPI_REQUEST_NULL;
-    for (int p = 1; p < nprocs; p++) { // Loop over processor
+
+    for (int p = 1; p < nprocs; p++) {
+
       // 2 interface equations per processor + guard cells if lastX
       // 2 coefficients + 1 RHS value (diagonal element always one)
-      int len;
-      if( p == nxpe-1){
-        len = (6 + 4*(localmesh->LocalNx - xe)) * sizeof(dcomplex); // Length of data in bytes
+      if(p == nxpe-1){
+        len = (6 + 4*(localmesh->LocalNx - xe));
       } else {
-        len = 6 * sizeof(dcomplex); // Length of data in bytes
+        len = 6;
       }
 
-      //output << "Expecting to receive " << len << " from " << p << endl;
-      MPI_Irecv(&recvbuffer(p, 0), len,
-		MPI_BYTE, // Just sending raw data, unknown type
-		p,        // Source processor
-		p,        // Identifier
-		localmesh->getXcomm(),     // Communicator
-		&req[p]); // Request
+      MPI_Irecv(&recvbuffer(p, 0),
+	len*sizeof(dcomplex), 	// Length of data in bytes
+	MPI_BYTE, 		// Just sending raw data, unknown type
+	p,        		// Source processor
+	p,        		// Identifier
+	localmesh->getXcomm(),  // Communicator
+	&req[p]); 		// Request
     }
   }
   // Procs 1 to NXPE send coefficients
@@ -160,20 +162,18 @@ void LaplaceParallelTri::solve_global_reduced_system(dcomplex *x, const dcomplex
 	coefs[6+4*i+3] = rv[xe+1+i];
       }
     }
-    int len;
     if( myproc == nxpe-1){
-      len = (6 + 4*(localmesh->LocalNx - xe - 1)) * sizeof(dcomplex); // Length of data in bytes
+      len = (6 + 4*(localmesh->LocalNx - xe - 1)); // Length of data in bytes
     } else {
-      len = 6 * sizeof(dcomplex); // Length of data in bytes
+      len = 6;
     }
-    //for (int i = 0; i < len/16; i++)
-      //output << "value " << i << " : " << coefs[i] << endl;
-    MPI_Send(std::begin(coefs),        // Data pointer
-	     len,                 // Number
-	     MPI_BYTE,            // Type
-	     0,                   // Destination
-	     myproc,              // Message identifier
-	     localmesh->getXcomm());               // Communicator
+
+    MPI_Send(std::begin(coefs),        	// Data pointer
+	     len*sizeof(dcomplex),	// Number
+	     MPI_BYTE,            	// Type
+	     0,                   	// Destination
+	     myproc,              	// Message identifier
+	     localmesh->getXcomm());    // Communicator
   }
 
   if(localmesh->firstX()){
@@ -209,11 +209,6 @@ void LaplaceParallelTri::solve_global_reduced_system(dcomplex *x, const dcomplex
 
       if (p != MPI_UNDEFINED) {
 	// p is the processor number. Copy data
-	//output << "Copying received data from " << p << endl;
-	BOUT_OMP(parallel for)
-	//for (int j = 0; j < 6; j++) {
-	  //output << "Value " << p<<" "<<j << " : " << recvbuffer(p, j) << endl;
-	//}
 	// NB coefficient a and b here move from rhs to lhs
 	avec[xs+2*p] = -recvbuffer(p, 0);
 	avec[xs+2*p + 1] = -recvbuffer(p, 1);
@@ -223,6 +218,7 @@ void LaplaceParallelTri::solve_global_reduced_system(dcomplex *x, const dcomplex
 	cvec[xs+2 * p + 1] = -recvbuffer(p, 3);
 	rvec[xs+2 * p] = recvbuffer(p, 4);
 	rvec[xs+2 * p + 1] = recvbuffer(p, 5);
+
 	if( p == nxpe-1 ){ // if p is the lastX
 	  for(int i=0; i<localmesh->LocalNx-xe-1; i++){
 	    avec[xs+2*(p+1)+i] = recvbuffer(p, 6+4*i);
@@ -235,57 +231,34 @@ void LaplaceParallelTri::solve_global_reduced_system(dcomplex *x, const dcomplex
 	req[p] = MPI_REQUEST_NULL;
       }
     } while (p != MPI_UNDEFINED);
-  //
-  //for (int j = 0; j < ncx; j++) {
-    //output << "Value " << j << " : " << avec[j] << " "<<bvec[j]<<" "<<cvec[j]<<" "<<rvec[j]<< endl;
-  //}
-  //
+
   // Solve tridiagonal matrix
   tridag(std::begin(avec), std::begin(bvec), std::begin(cvec), std::begin(rvec),
 	 std::begin(xvec), nx);
   }
-  //for (int j = 0; j < ncx; j++) {
-    //output << "Solution " << j << " : " << xvec[j] << endl;
-  //}
 
   // Procs 1 to NXPE receive
   if( not localmesh->firstX() ){
+
     req[myproc] = MPI_REQUEST_NULL;
-    // (4 + guards on boundary) x values per proc (xs-1, xs, xe, xe+1)
-    int len; // Length of data in bytes
-    if( myproc == nxpe-1){
-      len = (4 + localmesh->LocalNx - xe - 2) * sizeof(dcomplex); // Length of data in bytes
-    } else {
-      len = 4 * sizeof(dcomplex); // Length of data in bytes
-    }
+    // 4 x values per proc (xs-1, xs, xe, xe+1)
     len = 4 * sizeof(dcomplex); // Length of data in bytes
 
-    //output << "Expecting to receive " << len << " from 0 on proc " << myproc << endl;
     MPI_Status stat;
     MPI_Recv(&x[0], len,
 	      MPI_BYTE, // Just sending raw data, unknown type
 	      0,        // Source processor
 	      0,        // Identifier
-	      localmesh->getXcomm(),
-	      &stat);     // Communicator
-    //output << "Received on " << myproc << " : " << x[0] << " "<<x[1]<<" "<<x[2]<<" "<<x[3]<< endl;
+	      localmesh->getXcomm(),     // Communicator
+	      &stat);	// Status
   }
   // Proc 0 sends solution to procs 1 to NXPE
   else {
-    for (int p = 1; p < nprocs; p++) { // Loop over processor
-      //output << "Sending to " << p << endl;
-      int len; // Length of data
-      if( p == nxpe-1){
-	len = (4 + localmesh->LocalNx - xe - 2);
-      } else {
-	len = 4;
-      }
+    for (int p = 1; p < nprocs; p++) {
       len = 4;
       for(int i=0; i<len; i++){
 	coefs[i] = xvec[xs-1+2*p+i];
       }
-      //for (int i = 0; i < len; i++)
-	//output << "value " << i << " : " << coefs[i] << endl;
       MPI_Send(std::begin(coefs),        // Data pointer
 	       len*sizeof(dcomplex),                 // Number
 	       MPI_BYTE,            // Type
