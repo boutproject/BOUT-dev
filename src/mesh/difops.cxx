@@ -700,8 +700,7 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
 
     BOUT_FOR(j2D, result.getRegion2D("RGN_NOBNDRY")) {
       // Get constants for this iteration
-      const BoutReal fac = 1.0 / (12 * metric->dz[j2D]);
-      const BoutReal spacingFactor = fac / metric->dx[j2D];
+      const BoutReal spacingFactor = 1.0 / (12 * metric->dz[j2D] * metric->dx[j2D]);
       const int jy = j2D.y(), jx = j2D.x();
       const int xm = jx - 1, xp = jx + 1;
 
@@ -982,7 +981,6 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
   }
   case BRACKET_ARAKAWA: {
     // Arakawa scheme for perpendicular flow
-#ifndef COORDINATES_USE_3D
     const int ncz = mesh->LocalNz;
 
     // We need to discard const qualifier in order to manipulate
@@ -991,8 +989,9 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
     Field3D g_temp = g;
 
     BOUT_FOR(j2D, result.getRegion2D("RGN_NOBNDRY")) {
-      const BoutReal partialFactor = 1.0/(12 * metric->dz[j2D]);
-      const BoutReal spacingFactor = partialFactor / metric->dx[j2D];
+#ifndef COORDINATES_USE_3D
+      const BoutReal spacingFactor = 1.0/(12 * metric->dz[j2D] * metric->dx[j2D]);
+#endif
       const int jy = j2D.y(), jx = j2D.x();
       const int xm = jx - 1, xp = jx + 1;
 
@@ -1007,6 +1006,9 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
         const int jz = 0;
         const int jzp = 1;
         const int jzm = ncz - 1;
+#ifdef COORDINATES_USE_3D
+	const BoutReal spacingFactor = 1.0 / (12 * metric->dz(jx, jy, jz) * metric->dx(jx, jy, jz));
+#endif
 
         // J++ = DDZ(f)*DDX(g) - DDX(f)*DDZ(g)
         const BoutReal Jpp = ((Fx[jzp] - Fx[jzm]) * (Gxp[jz] - Gxm[jz]) -
@@ -1026,6 +1028,9 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
       }
 
       for (int jz = 1; jz < mesh->LocalNz - 1; jz++) {
+#ifdef COORDINATES_USE_3D
+	const BoutReal spacingFactor = 1.0 / (12 * metric->dz(jx, jy, jz) * metric->dx(jx, jy, jz));
+#endif
         const int jzp = jz + 1;
         const int jzm = jz - 1;
 
@@ -1050,6 +1055,9 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
         const int jz = ncz - 1;
         const int jzp = 0;
         const int jzm = ncz - 2;
+#ifdef COORDINATES_USE_3D
+	const BoutReal spacingFactor = 1.0 / (12 * metric->dz(jx, jy, jz) * metric->dx(jx, jy, jz));
+#endif
 
         // J++ = DDZ(f)*DDX(g) - DDX(f)*DDZ(g)
         const BoutReal Jpp = ((Fx[jzp] - Fx[jzm]) * (Gxp[jz] - Gxm[jz]) -
@@ -1068,15 +1076,10 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
         result(jx, jy, jz) = (Jpp + Jpx + Jxp) * spacingFactor;
       }
     }
-#else
-    throw BoutException("BRACKET_ARAKAWA not valid with 3D metrics yet.");
-#endif
-
     break;
   }
   case BRACKET_ARAKAWA_OLD: {
     // Arakawa scheme for perpendicular flow
-#ifndef COORDINATES_USE_3D
 
     const int ncz = mesh->LocalNz;
 
@@ -1088,8 +1091,10 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
     BOUT_OMP(parallel for)
     for(int jx=mesh->xstart;jx<=mesh->xend;jx++){
       for(int jy=mesh->ystart;jy<=mesh->yend;jy++){
+#ifndef COORDINATES_USE_3D
 	const BoutReal spacingFactor = 1.0 / (12 * metric->dz(jx,jy)
 					      * metric->dx(jx, jy));
+#endif
         const BoutReal *Fxm = f_temp(jx-1, jy);
         const BoutReal *Fx  = f_temp(jx,   jy);
         const BoutReal *Fxp = f_temp(jx+1, jy);
@@ -1097,6 +1102,10 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
         const BoutReal *Gx  = g_temp(jx,   jy);
         const BoutReal *Gxp = g_temp(jx+1, jy);
         for (int jz = 0; jz < mesh->LocalNz; jz++) {
+#ifdef COORDINATES_USE_3D
+	  const BoutReal spacingFactor = 1.0 / (12 * metric->dz(jx, jy, jz)
+						* metric->dx(jx, jy, jz));
+#endif
           const int jzp = jz+1 < ncz ? jz + 1 : 0;
 	  //Above is alternative to const int jzp = (jz + 1) % ncz;
 	  const int jzm = jz-1 >=  0 ? jz - 1 : ncz-1;
@@ -1122,9 +1131,7 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
         }
       }
     }
-#else
-    throw BoutException("BRACKET_ARAKAWA_OLD not valid with 3D metrics yet.");
-#endif
+
     break;
   }
   case BRACKET_SIMPLE: {
