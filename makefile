@@ -69,12 +69,17 @@ build-check-unit-tests: libfast
 
 build-check-mms-tests: libfast
 	$(MAKE) --no-print-directory -C tests/MMS
+build-check-mms-tests-all: libfast
+	$(MAKE) --no-print-directory -C tests/MMS allall
 
 build-check-integrated-tests: libfast
 	$(MAKE) --no-print-directory -C tests/integrated
+build-check-integrated-tests-all: libfast
+	$(MAKE) --no-print-directory -C tests/integrated allall
 
 
 build-check: build-check-integrated-tests build-check-mms-tests build-check-unit-tests
+build-check-all: build-check-integrated-tests-all build-check-mms-tests-all build-check-unit-tests
 
 # Build the .mo files needed for Natural Language Support (gettext)
 .PHONY: locale
