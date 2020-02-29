@@ -13,7 +13,6 @@ import numpy as np
 
 #Requires: boutcore
 #requires: not make
-#requires: not metric_3d
 
 import boutcore as bc
 

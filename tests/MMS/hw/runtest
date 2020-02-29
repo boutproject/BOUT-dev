@@ -3,6 +3,7 @@
 # Python script to run and analyse MMS test
 
 #requires: all_tests
+#requires: not metric_3d
 
 from __future__ import division
 from __future__ import print_function
