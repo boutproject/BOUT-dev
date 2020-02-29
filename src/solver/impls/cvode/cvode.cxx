@@ -115,7 +115,7 @@ CvodeSolver::CvodeSolver(Options* opts) : Solver(opts) {
 }
 
 CvodeSolver::~CvodeSolver() {
-  if (initialised) {
+  if (cvode_initialised) {
     N_VDestroy_Parallel(uvec);
     CVodeFree(&cvode_mem);
 #if SUNDIALS_VERSION_MAJOR >= 3
@@ -355,6 +355,8 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
 #endif
   }
 
+  cvode_initialised = true;
+
   return 0;
 }
 
@@ -365,7 +367,7 @@ int CvodeSolver::init(int nout, BoutReal tstep) {
 int CvodeSolver::run() {
   TRACE("CvodeSolver::run()");
 
-  if (!initialised)
+  if (!cvode_initialised)
     throw BoutException("CvodeSolver not initialised\n");
 
   for (int i = 0; i < NOUT; i++) {
