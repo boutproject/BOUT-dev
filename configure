@@ -15788,7 +15788,7 @@ MPARK_VARIANT_INCLUDE_PATH=$PWD/externalpackages/mpark.variant/include
 
 ac_config_files="$ac_config_files bin/bout-config"
 
-ac_config_files="$ac_config_files tools/pylib/boututils/bout_config.py"
+ac_config_files="$ac_config_files tools/pylib/boutconfig/__init__.py"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -16520,7 +16520,7 @@ do
     "po-directories") CONFIG_COMMANDS="$CONFIG_COMMANDS po-directories" ;;
     "make.config") CONFIG_FILES="$CONFIG_FILES make.config" ;;
     "bin/bout-config") CONFIG_FILES="$CONFIG_FILES bin/bout-config" ;;
-    "tools/pylib/boututils/bout_config.py") CONFIG_FILES="$CONFIG_FILES tools/pylib/boututils/bout_config.py" ;;
+    "tools/pylib/boutconfig/__init__.py") CONFIG_FILES="$CONFIG_FILES tools/pylib/boutconfig/__init__.py" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac
