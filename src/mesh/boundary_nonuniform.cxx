@@ -11,30 +11,14 @@
 
 #include "boundary_nonuniform.hxx"
 
-void BoundaryDirichletNonUniform_O2::apply(Field3D& f, BoutReal t) {
-  bndry->first();
-
-  // Decide which generator to use
-  std::shared_ptr<FieldGenerator> fg = gen;
-  if (!fg)
-    fg = f.getBndryGenerator(bndry->location);
-
-  BoutReal val = 0.0;
-
-  Mesh* mesh = f.getMesh();
-  CELL_LOC loc = f.getLocation();
-
-  BoutReal vals[mesh->LocalNz];
+static void update_bx_by_stagger(int& bx, int& by, int& stagger, CELL_LOC loc) {
   // NB: bx is going outwards
-  int bx = bndry->bx;
-  int by = bndry->by;
   // NB: XLOW means shifted in -x direction
   // `stagger` stagger direction with respect to direction of boundary
   //   0 : no stagger or orthogonal to boundary direction
   //   1 : staggerd in direction of boundary
   //  -1 : staggerd in oposite direction of boundary
   // Also note that all offsets are basically half a cell
-  int stagger = 0;
   if (loc == CELL_XLOW) {
     if (bx == 0) {
       bx = -1;
@@ -53,6 +37,26 @@ void BoundaryDirichletNonUniform_O2::apply(Field3D& f, BoutReal t) {
       stagger = 1;
     }
   }
+}
+
+void BoundaryDirichletNonUniform_O2::apply(Field3D& f, BoutReal t) {
+  bndry->first();
+
+  // Decide which generator to use
+  std::shared_ptr<FieldGenerator> fg = gen;
+  if (!fg)
+    fg = f.getBndryGenerator(bndry->location);
+
+  BoutReal val = 0.0;
+
+  Mesh* mesh = f.getMesh();
+  CELL_LOC loc = f.getLocation();
+
+  BoutReal vals[mesh->LocalNz];
+  int bx = bndry->bx;
+  int by = bndry->by;
+  int stagger = 0;
+  update_bx_by_stagger(bx, by, stagger, loc);
   int istart = (stagger == -1) ? -1 : 0;
 
   for (; !bndry->isDone(); bndry->next1d()) {
@@ -161,34 +165,10 @@ void BoundaryNeumannNonUniform_O2::apply(Field3D& f, BoutReal t) {
   CELL_LOC loc = f.getLocation();
 
   BoutReal vals[mesh->LocalNz];
-  // NB: bx is going outwards
   int bx = bndry->bx;
   int by = bndry->by;
-  // NB: XLOW means shifted in -x direction
-  // `stagger` stagger direction with respect to direction of boundary
-  //   0 : no stagger or orthogonal to boundary direction
-  //   1 : staggerd in direction of boundary
-  //  -1 : staggerd in oposite direction of boundary
-  // Also note that all offsets are basically half a cell
   int stagger = 0;
-  if (loc == CELL_XLOW) {
-    if (bx == 0) {
-      bx = -1;
-    } else if (bx < 0) {
-      stagger = -1;
-    } else {
-      stagger = 1;
-    }
-  }
-  if (loc == CELL_YLOW) {
-    if (by == 0) {
-      by = -1;
-    } else if (by < 0) {
-      stagger = -1;
-    } else {
-      stagger = 1;
-    }
-  }
+  update_bx_by_stagger(bx, by, stagger, loc);
 
   for (; !bndry->isDone(); bndry->next1d()) {
     if (fg) {
@@ -293,34 +273,10 @@ void BoundaryFreeNonUniform_O2::apply(Field3D& f, BoutReal t) {
   CELL_LOC loc = f.getLocation();
 
   BoutReal vals[mesh->LocalNz];
-  // NB: bx is going outwards
   int bx = bndry->bx;
   int by = bndry->by;
-  // NB: XLOW means shifted in -x direction
-  // `stagger` stagger direction with respect to direction of boundary
-  //   0 : no stagger or orthogonal to boundary direction
-  //   1 : staggerd in direction of boundary
-  //  -1 : staggerd in oposite direction of boundary
-  // Also note that all offsets are basically half a cell
   int stagger = 0;
-  if (loc == CELL_XLOW) {
-    if (bx == 0) {
-      bx = -1;
-    } else if (bx < 0) {
-      stagger = -1;
-    } else {
-      stagger = 1;
-    }
-  }
-  if (loc == CELL_YLOW) {
-    if (by == 0) {
-      by = -1;
-    } else if (by < 0) {
-      stagger = -1;
-    } else {
-      stagger = 1;
-    }
-  }
+  update_bx_by_stagger(bx, by, stagger, loc);
 
   for (; !bndry->isDone(); bndry->next1d()) {
     if (fg) {
@@ -426,34 +382,10 @@ void BoundaryDirichletNonUniform_O3::apply(Field3D& f, BoutReal t) {
   CELL_LOC loc = f.getLocation();
 
   BoutReal vals[mesh->LocalNz];
-  // NB: bx is going outwards
   int bx = bndry->bx;
   int by = bndry->by;
-  // NB: XLOW means shifted in -x direction
-  // `stagger` stagger direction with respect to direction of boundary
-  //   0 : no stagger or orthogonal to boundary direction
-  //   1 : staggerd in direction of boundary
-  //  -1 : staggerd in oposite direction of boundary
-  // Also note that all offsets are basically half a cell
   int stagger = 0;
-  if (loc == CELL_XLOW) {
-    if (bx == 0) {
-      bx = -1;
-    } else if (bx < 0) {
-      stagger = -1;
-    } else {
-      stagger = 1;
-    }
-  }
-  if (loc == CELL_YLOW) {
-    if (by == 0) {
-      by = -1;
-    } else if (by < 0) {
-      stagger = -1;
-    } else {
-      stagger = 1;
-    }
-  }
+  update_bx_by_stagger(bx, by, stagger, loc);
   int istart = (stagger == -1) ? -1 : 0;
 
   for (; !bndry->isDone(); bndry->next1d()) {
@@ -575,34 +507,10 @@ void BoundaryNeumannNonUniform_O3::apply(Field3D& f, BoutReal t) {
   CELL_LOC loc = f.getLocation();
 
   BoutReal vals[mesh->LocalNz];
-  // NB: bx is going outwards
   int bx = bndry->bx;
   int by = bndry->by;
-  // NB: XLOW means shifted in -x direction
-  // `stagger` stagger direction with respect to direction of boundary
-  //   0 : no stagger or orthogonal to boundary direction
-  //   1 : staggerd in direction of boundary
-  //  -1 : staggerd in oposite direction of boundary
-  // Also note that all offsets are basically half a cell
   int stagger = 0;
-  if (loc == CELL_XLOW) {
-    if (bx == 0) {
-      bx = -1;
-    } else if (bx < 0) {
-      stagger = -1;
-    } else {
-      stagger = 1;
-    }
-  }
-  if (loc == CELL_YLOW) {
-    if (by == 0) {
-      by = -1;
-    } else if (by < 0) {
-      stagger = -1;
-    } else {
-      stagger = 1;
-    }
-  }
+  update_bx_by_stagger(bx, by, stagger, loc);
 
   for (; !bndry->isDone(); bndry->next1d()) {
     if (fg) {
@@ -719,34 +627,10 @@ void BoundaryFreeNonUniform_O3::apply(Field3D& f, BoutReal t) {
   CELL_LOC loc = f.getLocation();
 
   BoutReal vals[mesh->LocalNz];
-  // NB: bx is going outwards
   int bx = bndry->bx;
   int by = bndry->by;
-  // NB: XLOW means shifted in -x direction
-  // `stagger` stagger direction with respect to direction of boundary
-  //   0 : no stagger or orthogonal to boundary direction
-  //   1 : staggerd in direction of boundary
-  //  -1 : staggerd in oposite direction of boundary
-  // Also note that all offsets are basically half a cell
   int stagger = 0;
-  if (loc == CELL_XLOW) {
-    if (bx == 0) {
-      bx = -1;
-    } else if (bx < 0) {
-      stagger = -1;
-    } else {
-      stagger = 1;
-    }
-  }
-  if (loc == CELL_YLOW) {
-    if (by == 0) {
-      by = -1;
-    } else if (by < 0) {
-      stagger = -1;
-    } else {
-      stagger = 1;
-    }
-  }
+  update_bx_by_stagger(bx, by, stagger, loc);
 
   for (; !bndry->isDone(); bndry->next1d()) {
     if (fg) {
@@ -866,34 +750,10 @@ void BoundaryDirichletNonUniform_O4::apply(Field3D& f, BoutReal t) {
   CELL_LOC loc = f.getLocation();
 
   BoutReal vals[mesh->LocalNz];
-  // NB: bx is going outwards
   int bx = bndry->bx;
   int by = bndry->by;
-  // NB: XLOW means shifted in -x direction
-  // `stagger` stagger direction with respect to direction of boundary
-  //   0 : no stagger or orthogonal to boundary direction
-  //   1 : staggerd in direction of boundary
-  //  -1 : staggerd in oposite direction of boundary
-  // Also note that all offsets are basically half a cell
   int stagger = 0;
-  if (loc == CELL_XLOW) {
-    if (bx == 0) {
-      bx = -1;
-    } else if (bx < 0) {
-      stagger = -1;
-    } else {
-      stagger = 1;
-    }
-  }
-  if (loc == CELL_YLOW) {
-    if (by == 0) {
-      by = -1;
-    } else if (by < 0) {
-      stagger = -1;
-    } else {
-      stagger = 1;
-    }
-  }
+  update_bx_by_stagger(bx, by, stagger, loc);
   int istart = (stagger == -1) ? -1 : 0;
 
   for (; !bndry->isDone(); bndry->next1d()) {
@@ -1030,34 +890,10 @@ void BoundaryNeumannNonUniform_O4::apply(Field3D& f, BoutReal t) {
   CELL_LOC loc = f.getLocation();
 
   BoutReal vals[mesh->LocalNz];
-  // NB: bx is going outwards
   int bx = bndry->bx;
   int by = bndry->by;
-  // NB: XLOW means shifted in -x direction
-  // `stagger` stagger direction with respect to direction of boundary
-  //   0 : no stagger or orthogonal to boundary direction
-  //   1 : staggerd in direction of boundary
-  //  -1 : staggerd in oposite direction of boundary
-  // Also note that all offsets are basically half a cell
   int stagger = 0;
-  if (loc == CELL_XLOW) {
-    if (bx == 0) {
-      bx = -1;
-    } else if (bx < 0) {
-      stagger = -1;
-    } else {
-      stagger = 1;
-    }
-  }
-  if (loc == CELL_YLOW) {
-    if (by == 0) {
-      by = -1;
-    } else if (by < 0) {
-      stagger = -1;
-    } else {
-      stagger = 1;
-    }
-  }
+  update_bx_by_stagger(bx, by, stagger, loc);
 
   for (; !bndry->isDone(); bndry->next1d()) {
     if (fg) {
@@ -1199,34 +1035,10 @@ void BoundaryFreeNonUniform_O4::apply(Field3D& f, BoutReal t) {
   CELL_LOC loc = f.getLocation();
 
   BoutReal vals[mesh->LocalNz];
-  // NB: bx is going outwards
   int bx = bndry->bx;
   int by = bndry->by;
-  // NB: XLOW means shifted in -x direction
-  // `stagger` stagger direction with respect to direction of boundary
-  //   0 : no stagger or orthogonal to boundary direction
-  //   1 : staggerd in direction of boundary
-  //  -1 : staggerd in oposite direction of boundary
-  // Also note that all offsets are basically half a cell
   int stagger = 0;
-  if (loc == CELL_XLOW) {
-    if (bx == 0) {
-      bx = -1;
-    } else if (bx < 0) {
-      stagger = -1;
-    } else {
-      stagger = 1;
-    }
-  }
-  if (loc == CELL_YLOW) {
-    if (by == 0) {
-      by = -1;
-    } else if (by < 0) {
-      stagger = -1;
-    } else {
-      stagger = 1;
-    }
-  }
+  update_bx_by_stagger(bx, by, stagger, loc);
 
   for (; !bndry->isDone(); bndry->next1d()) {
     if (fg) {

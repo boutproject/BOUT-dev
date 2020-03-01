@@ -16,6 +16,34 @@ header="""\
 #include <utils.hxx>
 
 #include "boundary_nonuniform.hxx"
+
+static void update_bx_by_stagger(int& bx, int& by, int& stagger, CELL_LOC loc){
+  // NB: bx is going outwards
+  // NB: XLOW means shifted in -x direction
+  // `stagger` stagger direction with respect to direction of boundary
+  //   0 : no stagger or orthogonal to boundary direction
+  //   1 : staggerd in direction of boundary
+  //  -1 : staggerd in oposite direction of boundary
+  // Also note that all offsets are basically half a cell
+  if (loc == CELL_XLOW) {
+    if (bx == 0) {
+      bx = -1;
+    } else if (bx < 0) {
+      stagger = -1;
+    } else {
+      stagger = 1;
+    }
+  }
+  if (loc == CELL_YLOW) {
+    if (by == 0) {
+      by = -1;
+    } else if (by < 0) {
+      stagger = -1;
+    } else {
+      stagger = 1;
+    }
+  }
+}
 """
 
 env=Environment(trim_blocks=True);
@@ -35,34 +63,10 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
   CELL_LOC loc = f.getLocation();
 
   BoutReal vals[mesh->LocalNz];
-  // NB: bx is going outwards
   int bx = bndry->bx;
   int by = bndry->by;
-  // NB: XLOW means shifted in -x direction
-  // `stagger` stagger direction with respect to direction of boundary
-  //   0 : no stagger or orthogonal to boundary direction
-  //   1 : staggerd in direction of boundary
-  //  -1 : staggerd in oposite direction of boundary
-  // Also note that all offsets are basically half a cell
   int stagger = 0;
-  if (loc == CELL_XLOW) {
-    if (bx == 0) {
-      bx = -1;
-    } else if (bx < 0) {
-      stagger = -1;
-    } else {
-      stagger = 1;
-    }
-  }
-  if (loc == CELL_YLOW) {
-    if (by == 0) {
-      by = -1;
-    } else if (by < 0) {
-      stagger = -1;
-    } else {
-      stagger = 1;
-    }
-  }
+  update_bx_by_stagger(bx, by, stagger, loc);
 {% if type == "Dirichlet" %}
   int istart = (stagger == -1) ? -1 : 0;
 {% endif %}
