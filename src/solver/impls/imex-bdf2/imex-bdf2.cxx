@@ -3,6 +3,7 @@
 
 #include "imex-bdf2.hxx"
 
+#include <bout/mesh.hxx>
 #include <boutcomm.hxx>
 #include <utils.hxx>
 #include <boutexception.hxx>
@@ -15,6 +16,9 @@
 
 #include "petscsnes.h"
 #include "petscmat.h"
+
+// Redundent definition because < C++17
+constexpr int IMEXBDF2::MAX_SUPPORTED_ORDER;
 
 IMEXBDF2::IMEXBDF2(Options *opt)
     : Solver(opt), snes_f(nullptr), snes_x(nullptr), snes(nullptr), snesAlt(nullptr),
@@ -75,7 +79,7 @@ static PetscErrorCode imexbdf2PCapply(PC pc,Vec x,Vec y) {
 
   // Get the context
   IMEXBDF2 *s;
-  ierr = PCShellGetContext(pc,(void**)&s);CHKERRQ(ierr);
+  ierr = PCShellGetContext(pc, reinterpret_cast<void**>(&s));CHKERRQ(ierr);
 
   PetscFunctionReturn(s->precon(x, y));
 }
@@ -102,12 +106,13 @@ int IMEXBDF2::init(int nout, BoutReal tstep) {
 
   // Get total problem size
   int ntmp;
-  if(MPI_Allreduce(&nlocal, &ntmp, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
+  if (bout::globals::mpi->MPI_Allreduce(&nlocal, &ntmp, 1, MPI_INT, MPI_SUM,
+                                        BoutComm::get())) {
     throw BoutException("MPI_Allreduce failed!");
   }
   neq = ntmp;
 
-  output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n",
+  output.write("\t3d fields = {:d}, 2d fields = {:d} neq={:d}, local_N={:d}\n",
                n3Dvars(), n2Dvars(), neq, nlocal);
   
   // Check if there are any constraints
@@ -127,7 +132,7 @@ int IMEXBDF2::init(int nout, BoutReal tstep) {
   }
 
   if (have_constraints) {
-    is_dae = Array<BoutReal>{nlocal};
+    is_dae.reallocate(nlocal);
     // Call the Solver function, which sets the array
     // to zero when not a constraint, one for constraint
     set_id(std::begin(is_dae));
@@ -136,24 +141,24 @@ int IMEXBDF2::init(int nout, BoutReal tstep) {
   // Get options
   OPTION(options, timestep, tstep); // Internal timestep
   OPTION(options, mxstep, 100000); //Maximum number of internal iterations
-  ninternal = (int) (out_timestep / timestep);
+  ninternal = static_cast<int>(out_timestep / timestep);
   if((ninternal == 0) || (out_timestep / ninternal > timestep))
     ++ninternal;
   if(ninternal>mxstep){
-    throw BoutException("Error: Number of internal timesteps (%i) exceeds mxstep (%i)", ninternal, mxstep);
+    throw BoutException("Error: Number of internal timesteps ({:d}) exceeds mxstep ({:d})", ninternal, mxstep);
   };
 
   timestep = out_timestep / ninternal;
-  output.write("\tUsing timestep = %e, %d internal steps per output\n", timestep, ninternal);
+  output.write("\tUsing timestep = {:e}, {:d} internal steps per output\n", timestep, ninternal);
 
 
   OPTION(options, maxOrder, 2); //Maximum order of the scheme (1/2/3)
   if(maxOrder > MAX_SUPPORTED_ORDER){
-    throw BoutException("Requested maxOrder greater than MAX_SUPPORTED_ORDER (%i)",MAX_SUPPORTED_ORDER);
+    throw BoutException("Requested maxOrder greater than MAX_SUPPORTED_ORDER ({:d})",MAX_SUPPORTED_ORDER);
   }
 
   // Allocate memory and initialise structures
-  u = Array<BoutReal>{nlocal};
+  u.reallocate(nlocal);
   for(int i=0;i<maxOrder;i++){
     uV.emplace_back(Array<BoutReal>{nlocal});
     fV.emplace_back(Array<BoutReal>{nlocal});
@@ -163,7 +168,7 @@ int IMEXBDF2::init(int nout, BoutReal tstep) {
     gFac.push_back(0.0);
   }
 
-  rhs = Array<BoutReal>{nlocal};
+  rhs.reallocate(nlocal);
 
   OPTION(options, adaptive, true); //Do we try to estimate the error?
   OPTION(options, nadapt, 4); //How often do we check the error
@@ -171,7 +176,7 @@ int IMEXBDF2::init(int nout, BoutReal tstep) {
   OPTION(options, dtMax, out_timestep);
   OPTION(options, dtMin, dtMinFatal);
   if(adaptive){
-    err = Array<BoutReal>{nlocal};
+    err.reallocate(nlocal);
     OPTION(options, adaptRtol, 1.0e-3); //Target relative error
     OPTION(options, mxstepAdapt, mxstep); //Maximum no. consecutive times we try to reduce timestep
     OPTION(options, scaleCushUp, 1.5);
@@ -204,6 +209,9 @@ int IMEXBDF2::init(int nout, BoutReal tstep) {
 
 //Set up a snes object stored at the specified location
 void IMEXBDF2::constructSNES(SNES *snesIn){
+
+  // Use global mesh for now
+  Mesh* mesh = bout::globals::mesh;
 
   // Nonlinear solver interface (SNES)
   SNESCreate(BoutComm::get(),snesIn);
@@ -507,7 +515,7 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
               for(int j=0;j<n2d;j++) {
                 PetscInt col = ind2 + j;
 
-                //output.write("SETTING 1: %d, %d\n", row, col);
+                //output.write("SETTING 1: {:d}, {:d}\n", row, col);
                 MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
               }
             }
@@ -526,7 +534,7 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
               // Depends on 2D fields
               for(int j=0;j<n2d;j++) {
                 PetscInt col = ind0 + j;
-                //output.write("SETTING 2: %d, %d\n", row, col);
+                //output.write("SETTING 2: {:d}, {:d}\n", row, col);
                 MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
               }
               
@@ -549,7 +557,7 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
                 // 3D fields on this cell
                 for(int j=0;j<n3d;j++) {
                   PetscInt col = ind2 + j;
-                  //output.write("SETTING 3: %d, %d\n", row, col);
+                  //output.write("SETTING 3: {:d}, {:d}\n", row, col);
                   MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
                 }
               }
@@ -565,7 +573,7 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
                   ind2 += n2d;
                 for(int j=0;j<n3d;j++) {
                   PetscInt col = ind2 + j;
-                  //output.write("SETTING 4: %d, %d\n", row, col);
+                  //output.write("SETTING 4: {:d}, {:d}\n", row, col);
                   MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
                 }
 
@@ -575,7 +583,7 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
                   ind2 += n2d;
                 for(int j=0;j<n3d;j++) {
                   PetscInt col = ind2 + j;
-                  //output.write("SETTING 5: %d, %d\n", row, col);
+                  //output.write("SETTING 5: {:d}, {:d}\n", row, col);
                   MatSetValues(Jmf, 1, &row, 1, &col, &val, INSERT_VALUES);
                 }
                 
@@ -612,7 +620,9 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
       ISColoringDestroy(&iscoloring);
       // Set the function to difference
       //MatFDColoringSetFunction(fdcoloring,(PetscErrorCode (*)(void))FormFunctionForDifferencing,this);
-      MatFDColoringSetFunction(fdcoloring,(PetscErrorCode (*)(void))FormFunctionForColoring,this);
+      MatFDColoringSetFunction(
+          fdcoloring, reinterpret_cast<PetscErrorCode(*)()>(FormFunctionForColoring),
+          this);
       MatFDColoringSetFromOptions(fdcoloring);
       //MatFDColoringSetUp(Jmf,iscoloring,fdcoloring);
       
@@ -730,7 +740,7 @@ void IMEXBDF2::constructSNES(SNES *snesIn){
     output<<"PC Type : "<<pctype<<endl;
   }
 
-};
+}
 
 int IMEXBDF2::run() {
   TRACE("IMEXBDF2::run()");
@@ -739,7 +749,7 @@ int IMEXBDF2::run() {
   int order = 1;
   int lastOrder = -1;
   BoutReal dt = timestep;
-  vector<BoutReal> lastTimesteps = timesteps;
+  std::vector<BoutReal> lastTimesteps = timesteps;
   BoutReal dtNext = dt; //Timestep to try for next internal iteration
   
   //By default use the main snes object.
@@ -779,7 +789,7 @@ int IMEXBDF2::run() {
 
 	//Validate our desired next timestep
 	if(dtNext<dtMinFatal){ //Don't allow the timestep to go below requested fatal min
-	  throw BoutException("Aborting: Timestep (%f) tried to go below minimum allowed",dtNext);
+	  throw BoutException("Aborting: Timestep ({:f}) tried to go below minimum allowed",dtNext);
 	}else if(dtNext<dtMin){ //Don't allow timestep below requested min
 	  dtNext = dtMin;
 	}else if(dtNext>dtMax){ //Don't allow timestep above request max
@@ -874,15 +884,16 @@ int IMEXBDF2::run() {
 
 	  //Find local data
 	  for(int i=0;i<nlocal;i++){
-	    errTot[0] += abs(err[i]-u[i]);
-	    errTot[1] += abs(u[i]);
-	    errTot[2] += abs(err[i]);
+	    errTot[0] += std::abs(err[i]-u[i]);
+	    errTot[1] += std::abs(u[i]);
+	    errTot[2] += std::abs(err[i]);
 	  };
 
 	  //Now reduce across procs
-	  MPI_Allreduce(&errTot,&errGlobTot,3,MPI_DOUBLE,MPI_SUM,BoutComm::get());
+          bout::globals::mpi->MPI_Allreduce(&errTot, &errGlobTot, 3, MPI_DOUBLE, MPI_SUM,
+                                            BoutComm::get());
 
-	  BoutReal aRtol = errGlobTot[0]/errGlobTot[1];
+          BoutReal aRtol = errGlobTot[0]/errGlobTot[1];
           if(verbose) {
             output<<"The average errors are aerr = "<<errGlobTot[0]<<" and rerr = "<<aRtol<<endl;
             output<<"The err mag is "<<errGlobTot[2]<<" and the sol mag is "<<errGlobTot[1]<<endl;
@@ -930,7 +941,7 @@ int IMEXBDF2::run() {
 	
 	  adaptCounter++;
 	  if(adaptCounter>mxstepAdapt){
-	    throw BoutException("Aborting: Maximum number of adapative iterations (%i) exceeded", mxstepAdapt);
+	    throw BoutException("Aborting: Maximum number of adapative iterations ({:d}) exceeded", mxstepAdapt);
 	  }
 	}else if(artificalLimit) {
           // Reset dtNext if it was artificially limited
@@ -958,13 +969,13 @@ int IMEXBDF2::run() {
       //Increment iteration counter to ensure we don't get an infinite loop
       counter++;
       if(counter>mxstep){
-	throw BoutException("Aborting: Maximum number of internal iterations (%i) exceeded", mxstep);
+	throw BoutException("Aborting: Maximum number of internal iterations ({:d}) exceeded", mxstep);
       };
     }
 
     if(diagnose) {
-      output.write("\n   Last dt = %e, order = %d\n", timesteps[0], lastOrder);
-      output.write("   Linear fails = %d, nonlinear fails = %d\n", linear_fails, nonlinear_fails);
+      output.write("\n   Last dt = {:e}, order = {:d}\n", timesteps[0], lastOrder);
+      output.write("   Linear fails = {:d}, nonlinear fails = {:d}\n", linear_fails, nonlinear_fails);
     }
 
     loadVars(std::begin(u));// Put result into variables
@@ -1121,7 +1132,7 @@ void IMEXBDF2::shuffleState(){
   //here we say lets just use the same timestep as last time by default.
   //That way we only need to fiddle with timesteps if we're adapting.
   timesteps[0] = timesteps[1];
-};
+}
 
 /*
  * Solves u - gamma*G(u) = rhs
@@ -1202,7 +1213,7 @@ PetscErrorCode IMEXBDF2::solve_implicit(BoutReal curtime, BoutReal gamma) {
     if(verbose) {
       output << "SNES failed to converge with reason " << reason << endl;
     }
-    throw BoutException("SNES failed to converge. Reason: %d\n", reason);
+    throw BoutException("SNES failed to converge. Reason: {:d}\n", reason);
   }
 
   int its;
@@ -1310,11 +1321,14 @@ PetscErrorCode IMEXBDF2::precon(Vec x, Vec f) {
  */
 template< class Op >
 void IMEXBDF2::loopVars(BoutReal *u) {
-  // Loop over 2D variables
-  for(vector< VarStr<Field2D> >::const_iterator it = f2d.begin(); it != f2d.end(); ++it) {
-    Op op(it->var, it->F_var); // Initialise the operator
+  // Use global mesh for now
+  Mesh* mesh = bout::globals::mesh;
 
-    if(it->evolve_bndry) {
+  // Loop over 2D variables
+  for(auto & it : f2d) {
+    Op op(it.var, it.F_var); // Initialise the operator
+
+    if(it.evolve_bndry) {
       // Include boundary regions
 
       // Inner X
@@ -1355,9 +1369,9 @@ void IMEXBDF2::loopVars(BoutReal *u) {
   }
 
   // Loop over 3D variables
-  for(vector< VarStr<Field3D> >::const_iterator it = f3d.begin(); it != f3d.end(); ++it) {
-    Op op(it->var, it->F_var); // Initialise the operator
-    if(it->evolve_bndry) {
+  for(auto & it : f3d) {
+    Op op(it.var, it.F_var); // Initialise the operator
+    if(it.evolve_bndry) {
       // Include boundary regions
 
       // Inner X

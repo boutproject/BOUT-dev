@@ -6,34 +6,44 @@ class BoundaryRegion;
 
 #include <string>
 #include <utility>
-using std::string;
 
 class Mesh;
-extern Mesh* mesh;
+namespace bout {
+namespace globals {
+  extern Mesh* mesh; ///< Global mesh
+} // namespace bout
+} // namespace globals
 
 /// Location of boundary
-enum BndryLoc {BNDRY_XIN=1,
-               BNDRY_XOUT=2,
-               BNDRY_YDOWN=4,
-               BNDRY_YUP=8,
-               BNDRY_ALL=15,
-               BNDRY_PAR_FWD=16,   // Don't include parallel boundaries
-               BNDRY_PAR_BKWD=32};
+enum class BndryLoc {xin,
+                     xout,
+                     ydown,
+                     yup,
+                     all,
+                     par_fwd,   // Don't include parallel boundaries
+                     par_bkwd};
+constexpr BndryLoc BNDRY_XIN = BndryLoc::xin;
+constexpr BndryLoc BNDRY_XOUT = BndryLoc::xout;
+constexpr BndryLoc BNDRY_YDOWN = BndryLoc::ydown;
+constexpr BndryLoc BNDRY_YUP = BndryLoc::yup;
+constexpr BndryLoc BNDRY_ALL = BndryLoc::all;
+constexpr BndryLoc BNDRY_PAR_FWD = BndryLoc::par_fwd;
+constexpr BndryLoc BNDRY_PAR_BKWD = BndryLoc::par_bkwd;
 
 class BoundaryRegionBase {
 public:
 
   BoundaryRegionBase() = delete;
   BoundaryRegionBase(std::string name, Mesh *passmesh = nullptr)
-      : localmesh(passmesh ? passmesh : mesh), label(std::move(name)) {}
+      : localmesh(passmesh ? passmesh : bout::globals::mesh), label(std::move(name)) {}
   BoundaryRegionBase(std::string name, BndryLoc loc, Mesh *passmesh = nullptr)
-      : localmesh(passmesh ? passmesh : mesh), label(std::move(name)), location(loc) {}
+      : localmesh(passmesh ? passmesh : bout::globals::mesh), label(std::move(name)), location(loc) {}
 
-  virtual ~BoundaryRegionBase() {}
+  virtual ~BoundaryRegionBase() = default;
 
   Mesh* localmesh; ///< Mesh does this boundary region belongs to
 
-  string label; ///< Label for this boundary region
+  std::string label; ///< Label for this boundary region
 
   BndryLoc location;         ///< Which side of the domain is it on?
   bool isParallel = false;   ///< Is this a parallel boundary?
@@ -53,10 +63,10 @@ public:
       : BoundaryRegionBase(name, loc, passmesh) {}
   BoundaryRegion(std::string name, int xd, int yd, Mesh *passmesh = nullptr)
       : BoundaryRegionBase(name, passmesh), bx(xd), by(yd), width(2) {}
-  ~BoundaryRegion() override {}
+  ~BoundaryRegion() override = default;
 
   int x,y; ///< Indices of the point in the boundary
-  int bx, by; ///< Direction of the boundary [x+dx][y+dy] is going outwards
+  int bx, by; ///< Direction of the boundary [x+bx][y+by] is going outwards
 
   int width; ///< Width of the boundary
 

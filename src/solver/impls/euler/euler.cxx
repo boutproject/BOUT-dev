@@ -41,16 +41,17 @@ int EulerSolver::init(int nout, BoutReal tstep) {
   
   // Get total problem size
   int neq;
-  if(MPI_Allreduce(&nlocal, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
+  if (bout::globals::mpi->MPI_Allreduce(&nlocal, &neq, 1, MPI_INT, MPI_SUM,
+                                        BoutComm::get())) {
     throw BoutException("MPI_Allreduce failed in EulerSolver::init");
   }
   
-  output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n",
+  output.write("\t3d fields = {:d}, 2d fields = {:d} neq={:d}, local_N={:d}\n",
 	       n3Dvars(), n2Dvars(), neq, nlocal);
   
   // Allocate memory
-  f0 = Array<BoutReal>(nlocal);
-  f1 = Array<BoutReal>(nlocal);
+  f0.reallocate(nlocal);
+  f1.reallocate(nlocal);
 
   // Put starting values into f0
   save_vars(std::begin(f0));
@@ -88,7 +89,8 @@ int EulerSolver::run() {
         newdt_local = timestep;
       
       BoutReal newdt;
-      if(MPI_Allreduce(&newdt_local, &newdt, 1, MPI_DOUBLE, MPI_MIN, BoutComm::get())) {
+      if (bout::globals::mpi->MPI_Allreduce(&newdt_local, &newdt, 1, MPI_DOUBLE, MPI_MIN,
+                                            BoutComm::get())) {
         throw BoutException("MPI_Allreduce failed in EulerSolver::run");
       }
 
@@ -106,8 +108,9 @@ int EulerSolver::run() {
 
       internal_steps++;
       if(internal_steps > mxstep)
-        throw BoutException("ERROR: MXSTEP exceeded. simtime=%e, timestep = %e\n", simtime, timestep);
-      
+        throw BoutException("ERROR: MXSTEP exceeded. simtime={:e}, timestep = {:e}\n",
+                            simtime, timestep);
+
       // Call timestep monitors
       call_timestep_monitors(simtime, timestep);
       

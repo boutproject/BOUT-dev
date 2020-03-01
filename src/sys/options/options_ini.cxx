@@ -54,13 +54,9 @@
 #include <msg_stack.hxx>
 #include "options_ini.hxx"
 
+#include <algorithm>
+
 using namespace std;
-
-OptionINI::OptionINI() {
-}
-
-OptionINI::~OptionINI() {
-}
 
 /**************************************************************************
  * Read input file
@@ -71,30 +67,28 @@ void OptionINI::read(Options *options, const string &filename) {
   fin.open(filename.c_str());
 
   if (!fin.good()) {
-    throw BoutException(_("\tOptions file '%s' not found\n"), filename.c_str());
+    throw BoutException(_("\tOptions file '{:s}' not found\n"), filename);
   }
-
+  
   Options *section = options; // Current section
   do {
     string buffer = getNextLine(fin);
-
+    
     if(!buffer.empty()) {
 
-      // Check for section
-      size_t startpos, endpos;
-      startpos = buffer.find_first_of('[');
-      endpos   = buffer.find_last_of(']');
-
-      if (startpos != string::npos) {
+      if (buffer[0] == '[') {
         // A section header
+        
+        auto endpos   = buffer.find_last_of(']');
         if (endpos == string::npos) {
-          throw BoutException("\t'%s': Missing ']'\n\tLine: %s", filename.c_str(), buffer.c_str());
+          throw BoutException("\t'{:s}': Missing ']'\n\tLine: {:s}", filename, buffer);
         }
 
         buffer = trim(buffer, "[]");
 
         if(buffer.empty()) {
-          throw BoutException("\t'%s': Missing section name\n\tLine: %s", filename.c_str(), buffer.c_str());
+          throw BoutException("\t'{:s}': Missing section name\n\tLine: {:s}", filename,
+                              buffer);
         }
         
         section = options;
@@ -113,6 +107,39 @@ void OptionINI::read(Options *options, const string &filename) {
         string key, value;
         // Get a key = value pair
         parse(buffer, key, value);
+
+        // Ensure that brackets '()' and '[]'are balanced
+
+        // Count net number of opening and closing brackets
+        auto count_brackets = [](const string& input) {
+                                int nbracket = 0;
+                                for( auto ch : input) {
+                                  if ((ch == '(') || (ch == '[')) {
+                                    ++nbracket;
+                                  }
+                                  if ((ch == ')') || (ch == ']')) {
+                                    --nbracket;
+                                  }
+                                }
+                                return nbracket;
+                              };
+
+        // Starting count
+        int count = count_brackets(value);
+
+        string firstline = value; // Store the first line for error message
+        
+        while (count % 2 == 1) {
+          // An odd number, so read another line
+
+          if (fin.eof()) {
+            throw BoutException("\t'%s': Unbalanced brackets\n\tStarting line: %s", filename.c_str(), firstline.c_str());
+          }
+          
+          string newline = getNextLine(fin);
+          count += count_brackets(newline);
+          value += newline;
+        }
         // Add this to the current section
         section->set(key, value, filename);
       } // section test
@@ -129,7 +156,7 @@ void OptionINI::write(Options *options, const std::string &filename) {
   fout.open(filename, ios::out | ios::trunc);
 
   if (!fout.good()) {
-    throw BoutException(_("Could not open output file '%s'\n"), filename.c_str());
+    throw BoutException(_("Could not open output file '{:s}'\n"), filename);
   }
   
   // Call recursive function to write to file
@@ -170,11 +197,11 @@ void OptionINI::parse(const string &buffer, string &key, string &value) {
   value = trim(buffer.substr(startpos+1), " \t\r\n\"");
   
   if (key.empty()) {
-    throw BoutException(_("\tEmpty key\n\tLine: %s"), buffer.c_str());
+    throw BoutException(_("\tEmpty key\n\tLine: {:s}"), buffer);
   }
 
   if (key.find(':') != std::string::npos) {
-    throw BoutException(_("\tKey must not contain ':' character\n\tLine: %s"), buffer.c_str());
+    throw BoutException(_("\tKey must not contain ':' character\n\tLine: {:s}"), buffer);
   }
 }
 
@@ -186,19 +213,50 @@ void OptionINI::writeSection(const Options *options, std::ofstream &fout) {
     fout << "[" << section_name << "]" << endl;
   }
   // Iterate over all values
-  for(const auto& it : options->values()) {
-    fout << it.first << " = " << it.second.value;
-    if (it.second.value.empty()) {
-      // Print an empty string as ""
-      fout << "\"\""; 
-    }
-    if (! it.second.used ) {
-      fout << "  # not used , from: "
-	   << it.second.source;
-    }
-    fout << endl;
-  }
+  for(const auto& it : options->getChildren()) {
+    if (it.second.isValue()) {
+      auto value = bout::utils::variantToString(it.second.value);
+      fout << it.first << " = " << value;
 
+      if (value.empty()) {
+        // Print an empty string as ""
+        fout << "\"\""; 
+      }
+      bool in_comment = false; // Has a '#' been printed yet?
+      
+      if (! it.second.valueUsed() ) {
+        fout << "\t\t# not used ";
+        in_comment = true;
+          
+        if (it.second.attributes.count("source")) {
+          fout << ", from: "
+               << it.second.attributes.at("source").as<std::string>();
+        }
+      }
+
+      if (it.second.attributes.count("type")) {
+        if (!in_comment) {
+          fout << "\t\t# type: ";
+          in_comment = true;
+        } else {
+          fout << ", type: ";
+        }
+        fout << it.second.attributes.at("type").as<std::string>();
+      }
+      
+      if (it.second.attributes.count("doc")) {
+        if (!in_comment) {
+          fout << "\t\t# ";
+          in_comment = true;
+        } else {
+          fout << ", doc: ";
+        }
+        fout << it.second.attributes.at("doc").as<std::string>();
+      }
+      fout << endl;
+    }
+  }
+  
   // Iterate over sub-sections
   for(const auto& it : options->subsections()) {
     fout << endl;

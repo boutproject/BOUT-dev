@@ -1,37 +1,27 @@
-/*
- * MMS test of advection operators
- *
- */
+#include "bout.hxx"
+#include "derivs.hxx"
+#include "field_factory.hxx"
 
-#include <bout/physicsmodel.hxx>
-#include <field_factory.hxx>
-#include <derivs.hxx>
+int main(int argc, char** argv) {
+  BoutInitialise(argc, argv);
 
-class AdvectMMS : public PhysicsModel {
-public:
-  int init(bool restarting) {
-    solver->add(f, "f");
-    
-    Options::getRoot()->get("method", method, 0);
-    
-    return 0;
-  }
-  int rhs(BoutReal time) {
-    mesh->communicate(f);
-    Coordinates *coords = mesh->getCoordinates();
-    
-    g = FieldFactory::get()->create3D("g:solution", Options::getRoot(), mesh, CELL_CENTRE, time);
-    
-    ddt(f) = -bracket(g, f, (BRACKET_METHOD) method)
-      - 20.*(SQ(SQ(coords->dx))*D4DX4(f) + SQ(SQ(coords->dz))*D4DZ4(f))
-      //+ 20.*(SQ(coords->dx)*D2DX2(f) + SQ(coords->dz)*D2DZ2(f))
-      ;
+  Field3D g{FieldFactory::get()->create3D("g", Options::getRoot(), mesh)};
+  Field3D f{FieldFactory::get()->create3D("f", Options::getRoot(), mesh)};
+  Field3D solution{FieldFactory::get()->create3D("solution", Options::getRoot(), mesh)};
 
-    return 0;
-  }
-private:
-  int method;
-  Field3D f,g;
-};
+  mesh->communicate(f, g);
 
-BOUTMAIN(AdvectMMS);
+  auto method = static_cast<BRACKET_METHOD>(Options::root()["method"].as<int>());
+
+  Field3D result{bracket(g, f, method)};
+  Field3D error{result - solution};
+  BoutReal l_2{sqrt(mean(SQ(error), true, "RGN_NOBNDRY"))};
+  BoutReal l_inf{max(abs(error), true, "RGN_NOBNDRY")};
+
+  SAVE_ONCE2(f, g);
+  SAVE_ONCE5(solution, result, error, l_2, l_inf);
+
+  dump.write();
+
+  BoutFinalise();
+}

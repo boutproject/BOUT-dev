@@ -3,6 +3,7 @@
 
 #include "gtest/gtest.h"
 #include "msg_stack.hxx"
+#include "test_extras.hxx"
 
 #include <iostream>
 #include <string>
@@ -53,7 +54,7 @@ TEST(MsgStackTest, ReallocStorageTest) {
   std::string expected_dump = "";
 
   for (int i = 0; i < 20; i++) {
-    msg_stack.push("Message %i", i);
+    msg_stack.push("Message {:d}", i);
     expected_dump = " -> Message " + std::to_string(i) + "\n" + expected_dump;
   }
   expected_dump = "====== Back trace ======\n" + expected_dump;
@@ -65,7 +66,7 @@ TEST(MsgStackTest, PushReturnTest) {
   MsgStack msg_stack;
 
   for (int i = 0; i < 6; i++) {
-    EXPECT_EQ(msg_stack.push("Message %i", i), i);
+    EXPECT_EQ(msg_stack.push("Message {:d}", i), i);
   }
 }
 
@@ -83,7 +84,7 @@ TEST(MsgStackTest, SetPointTest) {
 
 TEST(MsgStackTest, NoMessageTest) {
   MsgStack msg_stack;
-  msg_stack.push(nullptr);
+  msg_stack.push();
   auto dump = msg_stack.getDump();
   auto expected_dump = "====== Back trace ======\n";
 
@@ -128,10 +129,9 @@ TEST(MsgStackTest, TraceMacroTest) {
     std::string line = std::to_string(__LINE__ + 1);
     TRACE("Second");
     auto second = msg_stack.getDump();
-    auto second_dump = "====== Back trace ======\n -> Second on line " + line +
-                       " of 'sys/test_msg_stack.cxx'\n -> First\n";
+    auto second_dump = "====== Back trace ======\n -> Second on line " + line;
 
-    EXPECT_EQ(second_dump, second);
+    EXPECT_TRUE(IsSubString(second, second_dump));
   }
 
   // Should now contain only the first message

@@ -77,6 +77,10 @@ As of 20th April 2018, the following configuration should work
     $ module load fftw
     $ module load archer-netcdf/4.1.3
 
+When using CMake on Cray systems like Archer, you need to pass
+``-DCMAKE_SYSTEM_NAME=CrayLinuxEnvironment`` so that the Cray compiler
+wrappers are detected properly.
+
 KNL @ Archer
 ~~~~~~~~~~~~
 
@@ -326,40 +330,33 @@ solver. Currently, BOUT++ also supports the SUNDIALS solvers CVODE, IDA
 and ARKODE which are available from
 https://computation.llnl.gov/casc/sundials/main.html.
 
-.. note:: SUNDIALS is only downloadable from the home page, as submitting your
-   name and e-mail is required for the download. As for the date of this
-   typing, SUNDIALS version :math:`3.0.0` is the newest. In order for a
-   smooth install it is recommended to install SUNDIALS from an install
-   directory. The full installation guide is found in the downloaded
-   ``.tar.gz``, but we will provide a step-by-step guide to install it
-   and make it compatible with BOUT++ here
+.. note:: BOUT++ currently supports SUNDIALS > 2.6, up to 4.1.0 as of
+          March 2019. It is advisable to use the highest possible
+          version
 
-.. warning:: BOUT++ currently only supports SUNDIALS 2.6 - 2.7!
-             Support for versions past 2.7 has yet to be
-             implemented. It is unlikely that we will support versions
-             before 2.6.
-
-::
+In order for a smooth install it is recommended to install SUNDIALS
+from an install directory. The full installation guide is found in the
+downloaded ``.tar.gz``, but we will provide a step-by-step guide to
+install it and make it compatible with BOUT++ here::
 
      $ cd ~
-     $ mkdir -p local/examples
      $ mkdir -p install/sundials-install
      $ cd install/sundials-install
-     $ # Move the downloaded sundials-2.6.0.tar.gz to sundials-install
-     $ tar -xzvf sundials-2.6.0.tar.gz
-     $ mkdir build
-     $ cd build
+     $ # Move the downloaded sundials-4.1.0.tar.gz to sundials-install
+     $ tar -xzvf sundials-4.1.0.tar.gz
+     $ mkdir build && cd build
 
      $ cmake \
        -DCMAKE_INSTALL_PREFIX=$HOME/local \
-       -DEXAMPLES_INSTALL_PATH=$HOME/local/examples \
-       -DCMAKE_LINKER=$HOME/local/lib \
        -DLAPACK_ENABLE=ON \
        -DOPENMP_ENABLE=ON \
        -DMPI_ENABLE=ON \
-       ../sundials-2.6.0
+       -DCMAKE_C_COMPILER=$(which mpicc) \
+       -DCMAKE_CXX_COMPILER=$(which mpicxx) \
+       ../sundials-4.1.0
 
      $ make
+     $ make test
      $ make install
 
 The SUNDIALS IDA solver is a Differential-Algebraic Equation (DAE)
@@ -367,11 +364,11 @@ solver, which evolves a system of the form
 :math:`\mathbf{f}(\mathbf{u},\dot{\mathbf{u}},t) = 0`. This allows
 algebraic constraints on variables to be specified.
 
-To configure BOUT++ with SUNDIALS only (see section :ref:`sec-PETSc-install` on how
-to build PETSc with SUNDIALS), go to the root directory of BOUT++ and
-type::
+To configure BOUT++ with SUNDIALS only (see section
+:ref:`sec-PETSc-install` on how to build PETSc with SUNDIALS), go to
+the root directory of BOUT++ and type::
 
-    $ ./configure --with-sundials
+    $ ./configure --with-sundials=/path/to/sundials/install
 
 SUNDIALS will allow you to select at run-time which solver to use. See
 :ref:`sec-timeoptions` for more details on how to do this.
@@ -417,7 +414,7 @@ debugging.
               --download-mumps \
               --download-scalapack \
               --download-blacs \
-              --download-f-blas-lapack=1 \
+              --download-fblas-lapack=1 \
               --download-parmetis \
               --download-ptscotch \
               --download-metis
@@ -729,6 +726,54 @@ make.config, replacing ``-lnetcdf_c++`` with -lnetcdf64\_c++, and
      sed 's/netcdf/netcdf64/g' make.config > make.config.new
      mv make.config.new make.config
 
+Compiling on Windows
+~~~~~~~~~~~~~~~~~~~~
+
+It is possible to compile BOUT++ on Windows using the CMake
+interface. Support is currently very experimental, and some features do
+not work. Testing has been done with MSVC 19.24 and Visual Studio 16.4,
+although previous versions may still work.
+
+The main difficulty of using BOUT++ on Windows is getting the
+dependencies sorted. The easiest way to install dependencies on Windows
+is using `vcpkg <https://github.com/microsoft/vcpkg/>`_. You may need to
+set the CMake toolchain file if calling ``cmake`` from PowerShell, or on
+older versions of Visual Studio. This will be a file somewhere like
+``C:/vcpkg/scripts/buildsystems/vcpkg.cmake``
+
+The minimal required CMake options are as follows:
+
+.. code-block:: bash
+
+    -DENABLE_BACKTRACE=OFF \
+    -DCMAKE_CXX_FLAGS="/permissive- /EHsc /bigobj" \
+    -DBUILD_SHARED_LIBS=OFF
+
+``ENABLE_BACKTRACE`` must be turned off due to the currently required
+``addr2line`` executable not being available on Windows.
+
+The following flags for the MSVC compiler are required:
+
+- ``/permissive-`` for standards compliance, such as treating the binary
+  operator alternative tokens (``and``, ``or``, etc) as tokens
+- ``/EHsc`` for standard C++ exception handling, and to assume that
+  ``extern "C"`` functions never throw
+- ``/bigobj`` to increase the number of sections in the .obj file,
+  required for the template-heavy derivatives machinery
+
+No modification to the source has been done to export the correct
+symbols for shared libraries on Windows, so you must either specifiy
+``-DBUILD_SHARED_LIBS=OFF`` to only build static libraries, or, if you
+really want shared libraries, ``-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON``.
+The latter is untested, use at your own risk!
+
+The unit tests should all pass, but most of the integrated tests will
+not run work out of the box yet as Windows doesn't understand
+shabangs. That is, without a file extension, it doesn't know what
+program to use to run ``runtest``. The majority of the tests can be
+run manually with ``python.exe runtest``. You will stil need to set
+``PYTHONPATH`` and have a suitable Python environment.
+
 Issues
 ------
 
@@ -775,3 +820,22 @@ to
 .. code-block:: cpp
 
     typedef long CVODEINT;
+
+Compiling with IBM xlC compiler fails
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When using the ``xlC`` compiler, an error may occur::
+
+  variant.hpp(1568) parameter pack "Ts" was referenced but not expanded
+
+
+The workaround is to change line 428 of  ``externalpackages/mpark.variant/include/mpark/lib.hpp`` from::
+  
+  #ifdef MPARK_TYPE_PACK_ELEMENT
+
+to::
+
+  #ifdef CAUSES_ERROR // MPARK_TYPE_PACK_ELEMENT
+
+This will force an alternate implementation of type_pack_element to be defined.
+See also https://software.intel.com/en-us/forums/intel-c-compiler/topic/501502

@@ -17,29 +17,31 @@ Field3D phibdry; // Used for calculating error in the boundary
 
 bool constraint;
 
-int flags;
+std::unique_ptr<Laplacian> phiSolver{nullptr}; ///< Inverts a Laplacian to get phi from U
 
 // Preconditioner
 int precon_phi(BoutReal t, BoutReal cj, BoutReal delta);
 int jacobian(BoutReal t); // Jacobian-vector multiply
 int jacobian_constrain(BoutReal t); // Jacobian-vector multiply
 
-int physics_init(bool restarting) {
+int physics_init(bool UNUSED(restarting)) {
   // Give the solver two RHS functions
   
   // Get options
-  Options *options = Options::getRoot();
-  options = options->getSection("dae");
-  OPTION(options, constraint, true);
-  OPTION(options, flags, 0);
-    
+  auto globalOptions = Options::root();
+  auto options = globalOptions["dae"];
+  constraint = options["constraint"].withDefault(true);
+
+  // Create a solver for the Laplacian
+  phiSolver = Laplacian::create();
+  
   // Just solving one variable, U
   SOLVE_FOR2(U, Apar);
   
   if(constraint) {
-    phi = invert_laplace(U, flags);
+    phi = phiSolver->solve(U);
     // Add phi equation as a constraint
-    if(!bout_constrain(phi, ddt(phi), "phi"))
+    if (!bout_constrain(phi, ddt(phi), "phi"))
       throw BoutException("Solver does not support constraints");
     
     // Set preconditioner
@@ -64,7 +66,7 @@ int physics_init(bool restarting) {
   return 0;
 }
 
-int physics_run(BoutReal time) {
+int physics_run(BoutReal UNUSED(time)) {
 
   if(constraint) {
     mesh->communicate(Apar, phi);
@@ -86,7 +88,7 @@ int physics_run(BoutReal time) {
     
     // Solving for phi here (dense Jacobian)
     output << "U " << max(U) << endl;
-    phi = invert_laplace(U, flags);
+    phi = phiSolver->solve(U);
     phi.applyBoundary();
   }
   
@@ -119,10 +121,10 @@ int physics_run(BoutReal time) {
  * o Return values should be in time derivatives
  *******************************************************************************/
 
-int precon_phi(BoutReal t, BoutReal cj, BoutReal delta) {
+int precon_phi(BoutReal UNUSED(t), BoutReal UNUSED(cj), BoutReal UNUSED(delta)) {
   // Not preconditioning U or Apar equation
   
-  ddt(phi) = invert_laplace(ddt(phi) - ddt(U), flags);
+  ddt(phi) = phiSolver->solve(ddt(phi) - ddt(U));
   
   return 0;
 }
@@ -140,8 +142,8 @@ int precon_phi(BoutReal t, BoutReal cj, BoutReal delta) {
 
 
 /// Jacobian when solving phi in RHS
-int jacobian(BoutReal t) {
-  Field3D Jphi = invert_laplace(ddt(U), flags); // Inversion makes this dense
+int jacobian(BoutReal UNUSED(t)) {
+  Field3D Jphi = phiSolver->solve(ddt(U)); // Inversion makes this dense
   mesh->communicate(Jphi, ddt(Apar));
   Field3D Jjpar = Delp2(ddt(Apar));
   mesh->communicate(Jjpar);
@@ -154,7 +156,7 @@ int jacobian(BoutReal t) {
 
 /// Jacobian when solving phi as a constraint.
 /// No inversion, only sparse Delp2 and Grad_par operators 
-int jacobian_constrain(BoutReal t) {
+int jacobian_constrain(BoutReal UNUSED(t)) {
   
   mesh->communicate(ddt(Apar), ddt(phi));
   Field3D Jjpar = Delp2(ddt(Apar));

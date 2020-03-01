@@ -27,10 +27,14 @@
 #ifndef __GLOBALS_H__
 #define __GLOBALS_H__
 
-#include "bout/mesh.hxx"
 #include "datafile.hxx"
 #include "bout/macro_for_each.hxx"
 
+class Mesh;
+class MpiWrapper;
+
+namespace bout {
+namespace globals {
 #ifndef GLOBALORIGIN
 #define GLOBAL extern
 #define SETTING(name, val) extern name
@@ -40,6 +44,7 @@
 #endif
 
 SETTING(Mesh *mesh, nullptr); ///< The mesh object
+SETTING(MpiWrapper* mpi, nullptr); ///< The MPI wrapper object
 
 /// Define for reading a variable from the grid
 #define GRID_LOAD1(var) mesh->get(var, #var)
@@ -83,5 +88,7 @@ GLOBAL Datafile dump;
 
 #undef GLOBAL
 #undef SETTING
+} // namespace globals
+} // namespace bout
 
 #endif // __GLOBALS_H__

@@ -27,6 +27,7 @@
 
 #include "petsc_laplace.hxx"
 
+#include <bout/mesh.hxx>
 #include <bout/sys/timer.hxx>
 #include <boutcomm.hxx>
 #include <bout/assert.hxx>
@@ -52,7 +53,7 @@ static PetscErrorCode laplacePCapply(PC pc,Vec x,Vec y) {
 
   // Get the context
   LaplacePetsc *s;
-  ierr = PCShellGetContext(pc,(void**)&s);CHKERRQ(ierr);
+  ierr = PCShellGetContext(pc, reinterpret_cast<void**>(&s)); CHKERRQ(ierr);
 
   PetscFunctionReturn(s->precon(x, y));
 }
@@ -109,7 +110,8 @@ LaplacePetsc::LaplacePetsc(Options *opt, const CELL_LOC loc, Mesh *mesh_in) :
     localN += localmesh->xstart * (localmesh->LocalNz);    // If on last processor add on width of boundary region
 
   // Calculate 'size' (the total number of points in physical grid)
-  if(MPI_Allreduce(&localN, &size, 1, MPI_INT, MPI_SUM, comm) != MPI_SUCCESS)
+  if (bout::globals::mpi->MPI_Allreduce(&localN, &size, 1, MPI_INT, MPI_SUM, comm)
+      != MPI_SUCCESS)
     throw BoutException("Error in MPI_Allreduce during LaplacePetsc initialisation");
 
   // Calculate total (physical) grid dimensions
@@ -275,14 +277,15 @@ LaplacePetsc::LaplacePetsc(Options *opt, const CELL_LOC loc, Mesh *mesh_in) :
   KSPCreate( comm, &ksp );
 
   // Get KSP Solver Type (Generalizes Minimal RESidual is the default)
-  string type;
-  opts->get("ksptype", ksptype, KSP_GMRES);
-  
+  ksptype = (*opts)["ksptype"].doc("KSP solver type").withDefault(KSP_GMRES);
+
   // Get preconditioner type
   // WARNING: only a few of these options actually make sense: see the
   // PETSc documentation to work out which they are (possibly
   // pbjacobi, sor might be useful choices?)
-  opts->get("pctype", pctype, "none", true);
+  pctype = (*opts)["pctype"]
+               .doc("Preconditioner type. See the PETSc documentation for options")
+               .withDefault("none");
 
   // Let "user" be a synonym for "shell"
   if (pctype == "user") {
@@ -296,21 +299,20 @@ LaplacePetsc::LaplacePetsc(Options *opt, const CELL_LOC loc, Mesh *mesh_in) :
   opts->get("gmres_max_steps",gmres_max_steps,30,true);
 
   // Get Tolerances for KSP solver
-  opts->get("rtol",rtol,pow(10.0,-5),true);
-  opts->get("atol",atol,pow(10.0,-50),true);
-  opts->get("dtol",dtol,pow(10.0,5),true);
-  opts->get("maxits",maxits,pow(10,5),true);
+  rtol = (*opts)["rtol"].doc("Relative tolerance for KSP solver").withDefault(1e-5);
+  atol = (*opts)["atol"].doc("Absolute tolerance for KSP solver").withDefault(1e-50);
+  dtol = (*opts)["dtol"].doc("Divergence tolerance for KSP solver").withDefault(1e5);
+  maxits = (*opts)["maxits"].doc("Maximum number of KSP iterations").withDefault(100000);
 
   // Get direct solver switch
-  opts->get("direct", direct, false);
+  direct = (*opts)["direct"].doc("Use direct (LU) solver?").withDefault(false);
   if (direct) {
     output << endl << "Using LU decompostion for direct solution of system" << endl << endl;
   }
 
-  pcsolve = nullptr;
   if (pctype == PCSHELL) {
 
-    OPTION(opts, rightprec, true); // Right preconditioning by default
+    rightprec = (*opts)["rightprec"].doc("Right preconditioning?").withDefault(true);
 
     // Options for preconditioner are in a subsection
     pcsolve = Laplacian::create(opts->getSection("precon"));
@@ -321,9 +323,7 @@ LaplacePetsc::LaplacePetsc(Options *opt, const CELL_LOC loc, Mesh *mesh_in) :
   //  lastflag = -1;
 }
 
-const FieldPerp LaplacePetsc::solve(const FieldPerp &b) {
-  return solve(b,b);
-}
+FieldPerp LaplacePetsc::solve(const FieldPerp& b) { return solve(b, b); }
 
 /*!
  * Solves Ax=b for x given a b and an initial guess for x (x0)
@@ -342,10 +342,12 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b) {
  *
  * \returns sol     The solution x of the problem Ax=b.
  */
-const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
+FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
   TRACE("LaplacePetsc::solve");
 
   ASSERT1(localmesh == b.getMesh() && localmesh == x0.getMesh());
+  ASSERT1(b.getLocation() == location);
+  ASSERT1(x0.getLocation() == location);
   
   #if CHECK > 0
     // Checking flags are set to something which is not implemented (see
@@ -757,7 +759,9 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
     KSPSetTolerances( ksp, rtol, atol, dtol, maxits );
 
     // If the initial guess is not set to zero
-    if( !( global_flags & INVERT_START_NEW ) ) KSPSetInitialGuessNonzero( ksp, (PetscBool) true );
+    if (!(global_flags & INVERT_START_NEW)) {
+      KSPSetInitialGuessNonzero(ksp, static_cast<PetscBool>(true));
+    }
 
     // Get the preconditioner
     KSPGetPC(ksp,&pc);
@@ -882,8 +886,8 @@ void LaplacePetsc::Element(int i, int x, int z,
 
 #if CHECK > 2
   if (!finite(ele)) {
-    throw BoutException("Non-finite element at x=%d, z=%d, row=%d, col=%d\n",
-                        x, z, i, index);
+    throw BoutException("Non-finite element at x={:d}, z={:d}, row={:d}, col={:d}\n", x,
+                        z, i, index);
   }
 #endif
   

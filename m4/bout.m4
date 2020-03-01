@@ -44,6 +44,7 @@ AC_DEFUN([BOUT_ADDPATH_CHECK_LIB],[
 
   # Try with no extra libraries first
   AS_IF([test ."$5" = .yes], [extra_prefix=""], [extra_prefix="$5"])
+  LIBS="$save_LIBS $EXTRA_LIBS"
   AC_LINK_IFELSE([AC_LANG_PROGRAM([[
     extern "C"
     char $2();
@@ -51,10 +52,11 @@ AC_DEFUN([BOUT_ADDPATH_CHECK_LIB],[
   [BACL_found=yes
    BOUT_MSG_DEBUG([found $1 without path or library flag])],
   [])
+  LIBS=$save_LIBS
 
   # Now try with explicitly linking library
   AS_IF([test $BACL_found != yes], [
-    LIBS="$save_LIBS -l$1"
+    LIBS="$save_LIBS $EXTRA_LIBS -l$1"
     AS_IF([test ."$5" = .yes], [extra_prefix=""], [extra_prefix="$5"])
     AC_LINK_IFELSE([AC_LANG_PROGRAM([[
       extern "C"
@@ -71,7 +73,7 @@ AC_DEFUN([BOUT_ADDPATH_CHECK_LIB],[
       for path in $search_prefix $search_prefix/lib $search_prefix/lib64 $search_prefix/x86_64-linux-gnu
       do
         AS_IF([test -d $path], [
-          LIBS="$save_LIBS -l$1"
+          LIBS="$save_LIBS $EXTRA_LIBS -l$1"
           LDFLAGS="$save_LDFLAGS -L$path"
           BOUT_MSG_DEBUG([try link $1 with $path])
           AC_LINK_IFELSE([AC_LANG_PROGRAM([[
@@ -169,8 +171,6 @@ AC_DEFUN([BOUT_CHECK_PRETTYFUNCTION], [
 dnl First argument is lower case module name
 dnl Second argument is test program includes
 dnl Third argument is test program main body
-dnl Fourth argument is includes for test program to determine the integer type
-dnl Fifth argument is main body for test program to determine the integer type 
 AC_DEFUN([BOUT_FIND_SUNDIALS_MODULE],[
 
   dnl Slightly complicated as we have to deal with shell indirection
@@ -291,36 +291,4 @@ $2
   AS_VAR_SET([AS_TR_SH([BOUT_HAS_$module_upper])], [yes])
   AS_VAR_SET([AS_TR_SH([${module_upper}LIBS])], ["$SUNDIALS_MODULE_LDFLAGS $sundials_module_libs"])
   AS_VAR_SET([AS_TR_SH([${module_upper}INCS])], ["$sundials_module_includes"])
-
-  # Now we have successfully found the library, we need to determine
-  # whether $module_upper uses int or long. Try to compile a simple
-  # program to check
-  save_CXXFLAGS=$CXXFLAGS
-  AC_MSG_NOTICE(["checking $module_upper types..."])
-  AC_LANG_PUSH([C++])
-
-  for sundials_int_type in int long; do
-    AC_MSG_CHECKING([$sundials_int_type])
-    eval sundials_type_name=AS_TR_SH([${module_upper}INT])
-    CXXFLAGS="$CXXFLAGS $sundials_module_includes -D$sundials_type_name=$sundials_int_type"
-    AC_COMPILE_IFELSE([
-      AC_LANG_PROGRAM([
-$4
-      ], [$5])],
-    [sundials_int_type_found=yes],
-    [sundials_int_type_found=no])
-    AC_MSG_RESULT($sundials_int_type_found)
-    if test "x$sundials_int_type_found" = "xyes"; then
-      break;
-    fi
-    CXXFLAGS=$save_CXXFLAGS
-  done
-
-  AS_IF([test "x$sundials_int_type_found" = "xno"], [
-      AC_MSG_FAILURE([*** Cannot compile $module_upper with either long or int])
-      ])
-  AC_LANG_POP([C++])
-
-  # We can now add that macro definition to the compilation flags
-  CXXFLAGS="$save_CXXFLAGS -D$sundials_type_name=$sundials_int_type"
 ])

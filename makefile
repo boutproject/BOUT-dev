@@ -1,4 +1,3 @@
-
 BOUT_TOP  = .
 
 DIRS      = src
@@ -73,3 +72,37 @@ build-check: build-check-integrated-tests build-check-mms-tests build-check-unit
 .PHONY: locale
 locale:
 	$(MAKE) -C locale
+
+######################################################################
+# Releases
+######################################################################
+
+.PHONY: dist changelog
+
+# Makes the tarball BOUT++-v<version>.tar.gz
+dist:
+	@bin/bout-archive-helper.sh v$(BOUT_VERSION)
+
+CHANGELOG_ERR_MESSAGE := "Run like: make changelog TOKEN=<token> LAST_VERSION=vX.Y.Z RELEASE_BRANCH=master|next"
+
+# Updates CHANGELOG.md, needs some arguments:
+#
+#     make changelog TOKEN=<token> LAST_VERSION=vX.Y.Z RELEASE_BRANCH=master|next
+#
+# Note: You should probably only run this if you are a maintainer (and
+# also know what you're doing)!
+changelog:
+ifndef TOKEN
+	$(error $(CHANGELOG_ERR_MESSAGE))
+endif
+ifndef LAST_VERSION
+	$(error $(CHANGELOG_ERR_MESSAGE))
+endif
+ifndef RELEASE_BRANCH
+	$(error $(CHANGELOG_ERR_MESSAGE))
+endif
+	github_changelog_generator -t $(TOKEN) --since-tag \
+        $(LAST_VERSION) --no-issues --max-issues 700 \
+        --base CHANGELOG.md --future-release v$(BOUT_VERSION) \
+        --release-branch $(RELEASE_BRANCH) \
+        --user boutproject --project BOUT-dev

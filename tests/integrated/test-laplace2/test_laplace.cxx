@@ -8,13 +8,13 @@
 #include <invert_laplace.hxx>
 #include <field_factory.hxx>
 
-int physics_init(bool restarting) {
+int physics_init(bool UNUSED(restarting)) {
   FieldFactory f(mesh);
   
   Options *options = Options::getRoot();
 
   // Read strings containing coefficients
-  string in, acoef, ccoef;
+  std::string in, acoef, ccoef;
   OPTION(options, in, "(1-gauss(x-0.5,0.2))*gauss(z-pi)");
   OPTION(options, acoef, "gauss(x)");
   OPTION(options, ccoef, "sin(x) * gauss(x-0.5)");  
@@ -26,8 +26,8 @@ int physics_init(bool restarting) {
   SAVE_ONCE3(input, a, c);
   
   // Create two solvers, using different options
-  Laplacian *solver1 = Laplacian::create(options->getSection("solver1"));
-  Laplacian *solver2 = Laplacian::create(options->getSection("solver2"));
+  auto solver1 = Laplacian::create(options->getSection("solver1"));
+  auto solver2 = Laplacian::create(options->getSection("solver2"));
   
   solver1->setCoefA(a);
   solver1->setCoefC(c);
@@ -57,7 +57,7 @@ int physics_init(bool restarting) {
   return 1;
 }
 
-int physics_run(BoutReal t) {
+int physics_run(BoutReal UNUSED(t)) {
   // Doesn't do anything
   return 1;
 }

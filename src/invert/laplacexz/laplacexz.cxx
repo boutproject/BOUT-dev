@@ -1,24 +1,12 @@
 #include "impls/cyclic/laplacexz-cyclic.hxx"
 #include "impls/petsc/laplacexz-petsc.hxx"
 
-#include <boutexception.hxx>
 #include <bout/invert/laplacexz.hxx>
 
-#include <strings.h>
+// DO NOT REMOVE: ensures linker keeps all symbols in this TU
+void LaplaceXZFactory::ensureRegistered() {}
 
-LaplaceXZ* LaplaceXZ::create(Mesh *m, Options *options, const CELL_LOC loc) {
-  if (options == nullptr)
-    options = Options::getRoot()->getSection("laplacexz");
-
-  string type;
-  options->get("type", type, "cyclic");
-
-  if(strcasecmp(type.c_str(), "cyclic") == 0) {
-    return new LaplaceXZcyclic(m, options, loc);
-  }else if(strcasecmp(type.c_str(), "petsc") == 0) {
-    return new LaplaceXZpetsc(m, options, loc);
-  }else {
-    throw BoutException("Unknown LaplaceXZ solver type '%s'", type.c_str());
-  }
-  return nullptr;
-}
+constexpr decltype(LaplaceXZFactory::type_name) LaplaceXZFactory::type_name;
+constexpr decltype(LaplaceXZFactory::section_name) LaplaceXZFactory::section_name;
+constexpr decltype(LaplaceXZFactory::option_name) LaplaceXZFactory::option_name;
+constexpr decltype(LaplaceXZFactory::default_type) LaplaceXZFactory::default_type;

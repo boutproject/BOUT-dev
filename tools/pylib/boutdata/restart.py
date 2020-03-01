@@ -15,6 +15,7 @@ from builtins import str, range
 import os
 import glob
 
+from boutdata.collect import collect, create_cache
 from boututils.datafile import DataFile
 from boututils.boutarray import BoutArray
 from boutdata.processor_rearrange import get_processor_layout, create_processor_layout
@@ -29,108 +30,6 @@ try:
     from scipy.interpolate import RegularGridInterpolator
 except ImportError:
     pass
-
-
-def split(nxpe, nype, path="data", output="./", informat="nc", outformat=None, mxg=2, myg=2):
-    """Split restart files across NXPE x NYPE processors.
-
-    Returns True on success
-
-    Parameters
-    ----------
-    nxpe, nype : int
-        The number of processors in x and y
-    path : str, optional
-        Path to original restart files (default: "data")
-    output : str, optional
-        Path to write new restart files (default: current directory)
-    informat : str, optional
-        File extension of original files (default: "nc")
-    outformat : str, optional
-        File extension of new files (default: use the same as `informat`)
-    mxg, myg : int, optional
-        The number of guard cells in x and y
-
-    TODO
-    ----
-    - Replace printing errors with raising `ValueError`
-    - Fix undefined variables!
-    - Make informat work like `redistribute`
-
-    """
-
-    if outformat is None:
-        outformat = informat
-
-    npes = nxpe * nype
-
-    if npes <= 0:
-        print("ERROR: Negative or zero number of processors")
-        return False
-
-    if path == output:
-        print("ERROR: Can't overwrite restart files")
-        return False
-
-    file_list = glob.glob(os.path.join(path, "BOUT.restart.*."+informat))
-    nfiles = len(file_list)
-
-    if nfiles == 0:
-        print("ERROR: No restart files found")
-        return False
-
-    # Read old processor layout
-    f = DataFile(os.path.join(path, file_list[0]))
-    old_layout = get_processor_layout(f, False)
-    f.close()
-
-    if nfiles != old_layout.npes:
-        print("WARNING: Number of restart files inconsistent with NPES")
-        print("Setting nfiles = " + str(old_npes))
-        nfiles = old_layout.npes
-
-    if old_layout.npes % old_layout.nxpe != 0:
-        print("ERROR: Old NPES is not a multiple of old NXPE")
-        return False
-
-    if nype % old_layout.nype != 0:
-        print("SORRY: New nype must be a multiple of old nype")
-        return False
-
-    if nxpe % old_layout.nxpe != 0:
-        print("SORRY: New nxpe must be a multiple of old nxpe")
-        return False
-
-    # Calculate total size of the grid
-    nx = old_layout.mxsub * old_layout.nxpe
-    ny = old_layout.mysub * old_layout.nype
-    print(("Grid sizes: ", nx, ny, mz))
-
-    # Create the new restart files
-    for mype in range(npes):
-        # Calculate X and Y processor numbers
-        pex = mype % nxpe
-        pey = int(mype / nxpe)
-
-        old_pex = int(pex / xs)
-        old_pey = int(pey / ys)
-
-        old_x = pex % xs
-        old_y = pey % ys
-
-        # Old restart file number
-        old_mype = old_layout.nxpe * old_pey + old_pex
-
-        # Calculate indices in old restart file
-        xmin = old_x*mxsub
-        xmax = xmin + mxsub - 1 + 2*mxg
-        ymin = old_y*mysub
-        ymax = ymin + mysub - 1 + 2*myg
-
-        print("New: "+str(mype)+" ("+str(pex)+", "+str(pey)+")")
-        print(" =>  "+str(old_layout.mype)+" ("+str(old_pex)+", " +
-              str(old_pey)+") : ("+str(old_x)+", "+str(old_y)+")")
-
 
 def resize3DField(var, data, coordsAndSizesTuple, method, mute):
     """Resize 3D fields
@@ -689,66 +588,22 @@ def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outfor
     nype = new_processor_layout.nype
     mxsub = new_processor_layout.mxsub
     mysub = new_processor_layout.mysub
+    mzsub = new_processor_layout.mz
 
     outfile_list = []
     for i in range(npes):
         outpath = os.path.join(output, "BOUT.restart."+str(i)+"."+outformat)
         outfile_list.append(DataFile(outpath, write=True, create=True))
-    infile_list = []
-    for i in range(old_npes):
-        inpath = os.path.join(path, "BOUT.restart."+str(i)+"."+outformat)
-        infile_list.append(DataFile(inpath))
+
+    DataFileCache = create_cache(path, "BOUT.restart")
 
     for v in var_list:
-        ndims = f.ndims(v)
+        dimensions = f.dimensions(v)
+        ndims = len(dimensions)
 
         # collect data
-        if ndims == 0:
-            # scalar
-            data = f.read(v)
-        elif ndims == 2:
-            data = np.zeros((nx+2*mxg, ny+2*myg))
-            for i in range(old_npes):
-                ix = i % old_nxpe
-                iy = int(i/old_nxpe)
-                ixstart = mxg
-                if ix == 0:
-                    ixstart = 0
-                ixend = -mxg
-                if ix == old_nxpe-1:
-                    ixend = 0
-                iystart = myg
-                if iy == 0:
-                    iystart = 0
-                iyend = -myg
-                if iy == old_nype-1:
-                    iyend = 0
-                data[ix*old_mxsub+ixstart:(ix+1)*old_mxsub+2*mxg+ixend,
-                     iy*old_mysub+iystart:(iy+1)*old_mysub+2*myg+iyend] = infile_list[i].read(v)[ixstart:old_mxsub+2*mxg+ixend, iystart:old_mysub+2*myg+iyend]
-            data = BoutArray(data, attributes=infile_list[0].attributes(v))
-        elif ndims == 3:
-            data = np.zeros((nx+2*mxg, ny+2*myg, mz))
-            for i in range(old_npes):
-                ix = i % old_nxpe
-                iy = int(i/old_nxpe)
-                ixstart = mxg
-                if ix == 0:
-                    ixstart = 0
-                ixend = -mxg
-                if ix == old_nxpe-1:
-                    ixend = 0
-                iystart = myg
-                if iy == 0:
-                    iystart = 0
-                iyend = -myg
-                if iy == old_nype-1:
-                    iyend = 0
-                data[ix*old_mxsub+ixstart:(ix+1)*old_mxsub+2*mxg+ixend, iy*old_mysub+iystart:(iy+1)*old_mysub+2*myg+iyend,
-                     :] = infile_list[i].read(v)[ixstart:old_mxsub+2*mxg+ixend, iystart:old_mysub+2*myg+iyend, :]
-            data = BoutArray(data, attributes=infile_list[0].attributes(v))
-        else:
-            print("ERROR: variable found with unexpected number of dimensions,", ndims, v)
-            return False
+        data = collect(v, xguards=True, yguards=True, info=False,
+                datafile_cache=DataFileCache)
 
         # write data
         for i in range(npes):
@@ -761,24 +616,36 @@ def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outfor
                 outfile.write(v, nxpe)
             elif v == "NYPE":
                 outfile.write(v, nype)
-            elif ndims == 0:
+            elif v == "MXSUB":
+                outfile.write(v, mxsub)
+            elif v == "MYSUB":
+                outfile.write(v, mysub)
+            elif v == "MZSUB":
+                outfile.write(v, mzsub)
+            elif dimensions == ():
                 # scalar
                 outfile.write(v, data)
-            elif ndims == 2:
+            elif dimensions == ('x', 'y'):
                 # Field2D
                 outfile.write(
                     v, data[ix*mxsub:(ix+1)*mxsub+2*mxg, iy*mysub:(iy+1)*mysub+2*myg])
-            elif ndims == 3:
+            elif dimensions == ('x', 'z'):
+                # FieldPerp
+                yindex_global = data.attributes['yindex_global']
+                if yindex_global + myg >= iy*mysub and yindex_global + myg < (iy+1)*mysub+2*myg:
+                    outfile.write(v, data[ix*mxsub:(ix+1)*mxsub+2*mxg, :])
+                else:
+                    nullarray = BoutArray(np.zeros([mxsub+2*mxg, mysub+2*myg]), attributes={"bout_type":"FieldPerp", "yindex_global":-myg-1})
+                    outfile.write(v, nullarray)
+            elif dimensions == ('x', 'y', 'z'):
                 # Field3D
                 outfile.write(
                     v, data[ix*mxsub:(ix+1)*mxsub+2*mxg, iy*mysub:(iy+1)*mysub+2*myg, :])
             else:
                 print(
-                    "ERROR: variable found with unexpected number of dimensions,", f.ndims(v))
+                    "ERROR: variable found with unexpected dimensions,", dimensions, v)
 
     f.close()
-    for infile in infile_list:
-        infile.close()
     for outfile in outfile_list:
         outfile.close()
 

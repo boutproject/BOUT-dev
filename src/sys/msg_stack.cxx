@@ -24,40 +24,35 @@
  *
  **************************************************************************/
 
+#include "bout/openmpwrap.hxx"
 #include <msg_stack.hxx>
 #include <output.hxx>
-#include <stdarg.h>
+#include <cstdarg>
 #include <string>
 
 #if CHECK > 1
-int MsgStack::push(const char *s, ...) {
-  va_list ap; // List of arguments
+int MsgStack::push(std::string message) {
+  BOUT_OMP(critical(MsgStack_push)) {
+    if (position >= stack.size()) {
+      stack.push_back(std::move(message));
+    } else {
+      stack[position] = message;
+    }
 
-  if (s != nullptr) {
-    va_start(ap, s);
-    vsnprintf(buffer, MSG_MAX_SIZE, s, ap);
-    va_end(ap);
-  } else {
-    buffer[0] = '\0';
-  }
-
-  if (position >= stack.size()) {
-    stack.emplace_back(buffer);
-  } else {
-    stack[position] = buffer;
-  }
-
-  return position++;
+    position++;
+  };
+  return position - 1;
 }
 
 int MsgStack::setPoint() {
   // Create an empty message
-  return push(nullptr);
+  return push();
 }
 
 void MsgStack::pop() {
   if (position <= 0)
     return;
+  BOUT_OMP(atomic)
   --position;
 }
 
@@ -65,18 +60,22 @@ void MsgStack::pop(int id) {
   if (id < 0)
     id = 0;
 
-  if (id > static_cast<int>(position))
-    return;
-
-  position = id;
+  BOUT_OMP(critical(MsgStack_pop)) {
+    if (id <= static_cast<int>(position))
+      position = id;
+  };
 }
 
 void MsgStack::clear() {
-  stack.clear();
-  position = 0;
+  BOUT_OMP(single) {
+    stack.clear();
+    position = 0;
+  }
 }
 
-void MsgStack::dump() { output << this->getDump(); }
+void MsgStack::dump() {
+  BOUT_OMP(single) { output << this->getDump(); }
+}
 
 std::string MsgStack::getDump() {
   std::string res = "====== Back trace ======\n";

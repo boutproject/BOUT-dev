@@ -13,15 +13,15 @@ public:
   int call(Solver *solver, BoutReal simtime, int iter, int NOUT) override;
 };
 
-int MyOutputMonitor::call(Solver *solver, BoutReal simtime, int iter, int NOUT) {
-  output.write("Output monitor, time = %e, step %d of %d\n",
+int MyOutputMonitor::call(Solver *UNUSED(solver), BoutReal simtime, int iter, int NOUT) {
+  output.write("Output monitor, time = {:e}, step {:d} of {:d}\n",
                simtime, iter, NOUT);
   return 0;
 }
 
 // Create a function to be called every timestep
-int my_timestep_monitor(Solver *solver, BoutReal simtime, BoutReal dt) {
-  output.write("\nTimestep monitor, time = %e, dt = %e\n", 
+int my_timestep_monitor(Solver *UNUSED(solver), BoutReal simtime, BoutReal dt) {
+  output.write("\nTimestep monitor, time = {:e}, dt = {:e}\n",
                simtime, dt);
   return 0;
 }
@@ -29,7 +29,7 @@ int my_timestep_monitor(Solver *solver, BoutReal simtime, BoutReal dt) {
 MyOutputMonitor my_output_monitor;
 MyOutputMonitor my_output_monitor_fast(.5);
 
-int physics_init(bool restarting) {
+int physics_init(bool UNUSED(restarting)) {
   solver->addMonitor(&my_output_monitor);
   solver->addMonitor(&my_output_monitor_fast);
   solver->addTimestepMonitor(my_timestep_monitor);
@@ -37,7 +37,7 @@ int physics_init(bool restarting) {
   return 0;
 }
 
-int physics_run(BoutReal t) {
+int physics_run(BoutReal UNUSED(t)) {
   ddt(f) = -f;
   return 0;
 }

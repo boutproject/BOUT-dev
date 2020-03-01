@@ -15,8 +15,14 @@ except ImportError:
     from os import popen4, system
     lib = "system"
 
+if os.name == "nt":
+    # Default on Windows
+    DEFAULT_MPIRUN = "mpiexec.exe -n"
+else:
+    DEFAULT_MPIRUN = "mpirun -np"
 
-def getmpirun(default="mpirun -np"):
+
+def getmpirun(default=DEFAULT_MPIRUN):
   """Return environment variable named MPIRUN, if it exists else return
    a default mpirun command
 
@@ -28,7 +34,7 @@ def getmpirun(default="mpirun -np"):
   """
   MPIRUN = os.getenv("MPIRUN")
 
-  if MPIRUN is None:
+  if MPIRUN is None or MPIRUN == "":
     MPIRUN = default
     print("getmpirun: using the default " + str(default))
 
@@ -184,7 +190,7 @@ def determineNumberOfCPUs():
     raise Exception('Can not determine number of CPUs on this system')
 
 
-def launch(command, runcmd="mpirun -np", nproc=None, mthread=None,
+def launch(command, runcmd=None, nproc=None, mthread=None,
            output=None, pipe=False, verbose=False):
     """Launch parallel MPI jobs
 
@@ -195,7 +201,7 @@ def launch(command, runcmd="mpirun -np", nproc=None, mthread=None,
     command : str
         The command to run
     runcmd : str, optional
-        Command for running parallel job; defaults to "mpirun -np"
+        Command for running parallel job; defaults to what getmpirun() returns"
     nproc : int, optional
         Number of processors (default: all available processors)
     mthread : int, optional
@@ -215,6 +221,9 @@ def launch(command, runcmd="mpirun -np", nproc=None, mthread=None,
 
     """
 
+    if runcmd is None:
+        runcmd = getmpirun()
+
     if nproc is None:
         # Determine number of CPUs on this machine
         nproc = determineNumberOfCPUs()
@@ -225,7 +234,11 @@ def launch(command, runcmd="mpirun -np", nproc=None, mthread=None,
         cmd = cmd + " > "+output
 
     if mthread is not None:
-        cmd = "OMP_NUM_THREADS={j} ".format(j=mthread)+cmd
+        if os.name == "nt":
+            # We're on windows, so we have to do it a little different
+            cmd = 'cmd /C "set OMP_NUM_THREADS={} && {}"'.format(mthread, cmd)
+        else:
+            cmd = "OMP_NUM_THREADS={} {}".format(mthread, cmd)
         
     if verbose == True:
          print(cmd)
@@ -274,3 +287,18 @@ def launch_safe(command, *args, **kwargs):
                            "Output was\n\n%s"%
                            (s,command,out))
     return s, out
+
+
+def build_and_log(test):
+    """Run make and redirect the output to a log file. Prints input
+
+    On Windows, does nothing because executable should have already
+    been built
+
+    """
+
+    if os.name == "nt":
+        return
+
+    print("Making {}".format(test))
+    return shell_safe("make > make.log")

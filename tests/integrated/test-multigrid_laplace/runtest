@@ -13,15 +13,12 @@ except:
 tol = 2e-7 # Absolute tolerance
 numTests = 4 # We test 4 different boundary conditions (with slightly different inputs for each)
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
+from boututils.run_wrapper import build_and_log, shell, launch_safe
 from boutdata.collect import collect
 from sys import exit
 
-MPIRUN = getmpirun()
 
-print("Making multigrid Laplacian inversion test")
-shell("rm test_multigrid_laplace")
-shell_safe("make > make.log")
+build_and_log("multigrid Laplacian inversion test")
 
 print("Running multigrid Laplacian inversion test")
 success = True
@@ -40,7 +37,7 @@ for nproc in [1,3]:
     shell("rm data/BOUT.dmp.*.nc")
 
     print("   %d processors..." %nproc)
-    s, out = launch_safe(cmd, runcmd=MPIRUN, nproc=nproc, mthread=mthread, pipe=True)
+    s, out = launch_safe(cmd, nproc=nproc, mthread=mthread, pipe=True)
     with open("run.log."+str(nproc), "w") as f:
         f.write(out)
 

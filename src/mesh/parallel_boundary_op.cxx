@@ -5,27 +5,24 @@
 #include "output.hxx"
 #include "parallel_boundary_op.hxx"
 
+using bout::generator::Context;
+
 BoutReal BoundaryOpPar::getValue(int x, int y, int z, BoutReal t) {
 
-  BoutReal xnorm;
-  BoutReal ynorm;
-  BoutReal znorm;
+  Mesh* mesh = bndry->localmesh;
 
   BoutReal value;
 
   switch (value_type) {
-  case GEN:
+  case ValueType::GEN:
     // This works but doesn't quite do the right thing... should
     // generate value on the boundary, but that gives wrong
     // answer. This instead generates the value at the gridpoint
-    xnorm = mesh->GlobalX(x);
-    ynorm = mesh->GlobalY(y);
-    znorm = static_cast<BoutReal>(z) / (mesh->LocalNz);
-    return gen_values->generate(xnorm, TWOPI*ynorm, TWOPI*znorm, t);
-  case FIELD:
+    return gen_values->generate(Context(x, y, z, CELL_CENTRE, mesh, t));
+  case ValueType::FIELD:
     value = (*field_values)(x,y,z);
     return value;
-  case REAL:
+  case ValueType::REAL:
     return real_value;
   default:
     throw BoutException("Invalid value_type encountered in BoundaryOpPar::getValue");
@@ -35,24 +32,18 @@ BoutReal BoundaryOpPar::getValue(int x, int y, int z, BoutReal t) {
 
 BoutReal BoundaryOpPar::getValue(const BoundaryRegionPar &bndry, BoutReal t) {
 
-  BoutReal xnorm;
-  BoutReal ynorm;
-  BoutReal znorm;
+  Mesh* mesh = bndry.localmesh;
 
   BoutReal value;
 
   switch (value_type) {
-  case GEN:
-    // Need to use GlobalX, except with BoutReal as argument...
-    xnorm = mesh->GlobalX(bndry.s_x);
-    ynorm = mesh->GlobalY(bndry.s_y);
-    znorm = bndry.s_z/(mesh->LocalNz);
-    return gen_values->generate(xnorm, TWOPI*ynorm, TWOPI*znorm, t);
-  case FIELD:
+  case ValueType::GEN:
+    return gen_values->generate(Context(bndry.s_x, bndry.s_y, bndry.s_z, CELL_CENTRE, mesh, t));
+  case ValueType::FIELD:
     // FIXME: Interpolate to s_x, s_y, s_z...
     value = (*field_values)(bndry.x,bndry.y,bndry.z);
     return value;
-  case REAL:
+  case ValueType::REAL:
     return real_value;
   default:
     throw BoutException("Invalid value_type encountered in BoundaryOpPar::getValue");
@@ -63,12 +54,12 @@ BoutReal BoundaryOpPar::getValue(const BoundaryRegionPar &bndry, BoutReal t) {
 //////////////////////////////////////////
 // Dirichlet boundary
 
-BoundaryOpPar* BoundaryOpPar_dirichlet::clone(BoundaryRegionPar *region, const list<string> &args) {
+BoundaryOpPar* BoundaryOpPar_dirichlet::clone(BoundaryRegionPar *region, const std::list<std::string> &args) {
   if(!args.empty()) {
     try {
       real_value = stringToReal(args.front());
       return new BoundaryOpPar_dirichlet(region, real_value);
-    } catch (BoutException& e) {
+    } catch (const BoutException&) {
       std::shared_ptr<FieldGenerator> newgen = nullptr;
       // First argument should be an expression
       newgen = FieldFactory::get()->parse(args.front());
@@ -108,12 +99,12 @@ void BoundaryOpPar_dirichlet::apply(Field3D &f, BoutReal t) {
 //////////////////////////////////////////
 // Dirichlet boundary - Third order
 
-BoundaryOpPar* BoundaryOpPar_dirichlet_O3::clone(BoundaryRegionPar *region, const list<string> &args) {
+BoundaryOpPar* BoundaryOpPar_dirichlet_O3::clone(BoundaryRegionPar *region, const std::list<std::string> &args) {
   if(!args.empty()) {
     try {
       real_value = stringToReal(args.front());
       return new BoundaryOpPar_dirichlet_O3(region, real_value);
-    } catch (BoutException& e) {
+    } catch (const BoutException&) {
       std::shared_ptr<FieldGenerator> newgen = nullptr;
       // First argument should be an expression
       newgen = FieldFactory::get()->parse(args.front());
@@ -160,12 +151,12 @@ void BoundaryOpPar_dirichlet_O3::apply(Field3D &f, BoutReal t) {
 //////////////////////////////////////////
 // Dirichlet with interpolation
 
-BoundaryOpPar* BoundaryOpPar_dirichlet_interp::clone(BoundaryRegionPar *region, const list<string> &args) {
+BoundaryOpPar* BoundaryOpPar_dirichlet_interp::clone(BoundaryRegionPar *region, const std::list<std::string> &args) {
   if(!args.empty()) {
     try {
       real_value = stringToReal(args.front());
       return new BoundaryOpPar_dirichlet_interp(region, real_value);
-    } catch (BoutException& e) {
+    } catch (const BoutException&) {
       std::shared_ptr<FieldGenerator> newgen = nullptr;
       // First argument should be an expression
       newgen = FieldFactory::get()->parse(args.front());
@@ -209,12 +200,12 @@ void BoundaryOpPar_dirichlet_interp::apply(Field3D &f, BoutReal t) {
 //////////////////////////////////////////
 // Neumann boundary
 
-BoundaryOpPar* BoundaryOpPar_neumann::clone(BoundaryRegionPar *region, const list<string> &args) {
+BoundaryOpPar* BoundaryOpPar_neumann::clone(BoundaryRegionPar *region, const std::list<std::string> &args) {
   if(!args.empty()) {
     try {
       real_value = stringToReal(args.front());
       return new BoundaryOpPar_neumann(region, real_value);
-    } catch (BoutException& e) {
+    } catch (const BoutException&) {
       std::shared_ptr<FieldGenerator> newgen = nullptr;
       // First argument should be an expression
       newgen = FieldFactory::get()->parse(args.front());

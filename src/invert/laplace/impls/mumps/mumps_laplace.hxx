@@ -23,47 +23,24 @@
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  *
  **************************************************************************/
-class LaplaceMumps;
 
 #ifndef __MUMPS_LAPLACE_H__
 #define __MUMPS_LAPLACE_H__
 
+#ifdef BOUT_HAS_MUMPS
+
 #include <invert_laplace.hxx>
-
-#ifndef BOUT_HAS_MUMPS
- 
-#include <boutexception.hxx>
- 
-class LaplaceMumps : public Laplacian {
-public:
-  LaplaceMumps(Options *UNUSED(opt) = nullptr, const CELL_LOC UNUSED(loc) = CELL_CENTRE, Mesh *UNUSED(mesh_in) = mesh) {
-    throw BoutException("Mumps library not available");
-  }
-
-  using Laplacian::setCoefA;
-  void setCoefA(const Field2D &UNUSED(val)) override {}
-  using Laplacian::setCoefC;
-  void setCoefC(const Field2D &UNUSED(val)) override {}
-  using Laplacian::setCoefD;
-  void setCoefD(const Field2D &UNUSED(val)) override {}
-  using Laplacian::setCoefEx;
-  void setCoefEx(const Field2D &UNUSED(val)) override {}
-  using Laplacian::setCoefEz;
-  void setCoefEz(const Field2D &UNUSED(val)) override {}
-
-  using Laplacian::solve;
-  const FieldPerp solve(const FieldPerp &UNUSED(b)) override{
-    throw BoutException("Mumps library not available");
-  }
-};
- 
-#else
-
 #include <globals.hxx>
 #include <output.hxx>
 #include <options.hxx>
 #include <boutexception.hxx>
 #include "dmumps_c.h"
+
+class LaplaceMumps;
+
+namespace {
+RegisterLaplace<LaplaceMumps> registerlaplacemumps(LAPLACE_MUMPS);
+}
 
 #define MUMPS_JOB_INIT -1
 #define MUMPS_JOB_END -2
@@ -76,7 +53,7 @@ public:
 
 class LaplaceMumps : public Laplacian {
 public:
-  LaplaceMumps(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = mesh);
+  LaplaceMumps(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr);
   ~LaplaceMumps() {
     mumps_struc.job = -2;
     dmumps_c(&mumps_struc);
@@ -172,10 +149,12 @@ public:
     issetE = true;
   }
   
+  bool uses3DCoefs() const override { return true; }
+
   void setFlags(int f) {throw BoutException("May not change the value of flags during run in LaplaceMumps as it might change the number of non-zero matrix elements: flags may only be set in the options file.");}
   
-  const FieldPerp solve(const FieldPerp &b) override;
-  const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override;
+  FieldPerp solve(const FieldPerp &b) override;
+  FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override;
 //   const Field3D solve(const Field3D &b);
 //   const Field3D solve(const Field3D &b, const Field3D &x0);
 

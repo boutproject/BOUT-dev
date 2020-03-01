@@ -19,7 +19,7 @@ protected:
     
     // Read initial conditions
     
-    Coordinates *coord = mesh->coordinates();
+    Coordinates *coord = mesh->getCoordinates();
     
     mesh->get(V0, "V0");
     mesh->get(coord->dx,   "dx");
@@ -38,7 +38,7 @@ protected:
     return 0;
   }
   
-  int rhs(BoutReal t) {
+  int rhs(BoutReal UNUSED(t)) {
     // Run communications
     mesh->communicate(V);
     

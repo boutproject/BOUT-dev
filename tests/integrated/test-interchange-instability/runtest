@@ -9,16 +9,14 @@ from __future__ import division
 nproc = 2       # Number of processors to run on
 reltol = 1.e-3  # Allowed relative tolerance in growth-rate
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
+from boututils.run_wrapper import build_and_log, shell, launch_safe
 from boutdata.collect import collect
 import numpy as np
 from sys import stdout, exit
 
 nthreads=1
-MPIRUN = getmpirun()
 
-print("Making interchange instability test")
-shell_safe("make > make.log")
+build_and_log("interchange instability test")
 
 # Delete old output files
 shell("rm data_1/BOUT.dmp.*")
@@ -28,7 +26,7 @@ def growth_rate(path, nproc, log=False):
     pipe = False
     if log != False:
         pipe = True
-    s, out = launch_safe("./2fluid -d "+path, runcmd=MPIRUN, nproc=nproc, mthread=nthreads, pipe=pipe)
+    s, out = launch_safe("./2fluid -d "+path, nproc=nproc, mthread=nthreads, pipe=pipe)
     if pipe:
         f = open(log, "w")
         f.write(out)

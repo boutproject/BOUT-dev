@@ -48,8 +48,9 @@ class IMEXBDF2;
 
 #include <petsc.h>
 #include <petscsnes.h>
+// PETSc creates macros for MPI calls, which interfere with the MpiWrapper class
+#undef MPI_Allreduce
 
-#include <bout/solverfactory.hxx>
 namespace {
 RegisterSolver<IMEXBDF2> registersolverimexbdf2("imexbdf2");
 }
@@ -99,7 +100,7 @@ class IMEXBDF2 : public Solver {
   /// @param[out] f  The result of the operation
   PetscErrorCode precon(Vec x, Vec f);
  private:
-  static const int MAX_SUPPORTED_ORDER = 4; //Should this be #defined instead?
+  static constexpr int MAX_SUPPORTED_ORDER = 4; //Should this be #defined instead?
 
   int maxOrder; ///< Specify the maximum order of the scheme to use (1/2/3)
 
@@ -123,7 +124,7 @@ class IMEXBDF2 : public Solver {
   BoutReal dtMinFatal; ///< If timestep wants to drop below this we abort. Set -ve to deactivate
 
   //Scheme coefficients
-  vector<BoutReal> uFac, fFac, gFac;
+  std::vector<BoutReal> uFac, fFac, gFac;
   BoutReal dtImp;
 
   int nlocal, neq; ///< Number of variables on local processor and in total
@@ -150,9 +151,9 @@ class IMEXBDF2 : public Solver {
 
   // Working memory
   Array<BoutReal> u ; ///< System state at current time
-  vector<Array<BoutReal>> uV; ///< The solution history
-  vector<Array<BoutReal>> fV; ///< The non-stiff solution history
-  vector<BoutReal> timesteps; ///< Timestep history
+  std::vector<Array<BoutReal>> uV; ///< The solution history
+  std::vector<Array<BoutReal>> fV; ///< The non-stiff solution history
+  std::vector<BoutReal> timesteps; ///< Timestep history
   Array<BoutReal> rhs;
   Array<BoutReal> err;
 

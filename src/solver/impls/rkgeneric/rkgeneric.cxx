@@ -1,6 +1,5 @@
 
 #include "rkgeneric.hxx"
-#include "rkschemefactory.hxx"
 #include <bout/rkscheme.hxx>
 
 #include <boutcomm.hxx>
@@ -12,14 +11,9 @@
 
 #include <output.hxx>
 
-RKGenericSolver::RKGenericSolver(Options *options) : Solver(options) {
-  //Create scheme
-  scheme=RKSchemeFactory::getInstance()->createRKScheme(options);
+RKGenericSolver::RKGenericSolver(Options* options) : Solver(options) {
+  scheme = RKSchemeFactory::getInstance().create(options);
   canReset = true;
-}
-
-RKGenericSolver::~RKGenericSolver() {
-  delete scheme;
 }
 
 void RKGenericSolver::setMaxTimestep(BoutReal dt) {
@@ -49,26 +43,27 @@ int RKGenericSolver::init(int nout, BoutReal tstep) {
   
   // Get total problem size
   int ntmp;
-  if(MPI_Allreduce(&nlocal, &ntmp, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
+  if (bout::globals::mpi->MPI_Allreduce(&nlocal, &ntmp, 1, MPI_INT, MPI_SUM,
+                                        BoutComm::get())) {
     throw BoutException("MPI_Allreduce failed!");
   }
   neq = ntmp;
   
-  output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n",
+  output.write("\t3d fields = {:d}, 2d fields = {:d} neq={:d}, local_N={:d}\n",
 	       n3Dvars(), n2Dvars(), neq, nlocal);
   
   // Get options
-  OPTION(options, atol, 1.e-5); // Absolute tolerance
-  OPTION(options, rtol, 1.e-3); // Relative tolerance
-  OPTION(options, max_timestep, tstep); // Maximum timestep
-  OPTION(options, timestep, max_timestep); // Starting timestep
-  OPTION(options, mxstep, 500); // Maximum number of steps between outputs
-  OPTION(options, adaptive, true); // Prefer adaptive scheme
+  atol = (*options)["atol"].doc("Absolute tolerance").withDefault(1.e-5);
+  rtol = (*options)["rtol"].doc("Relative tolerance").withDefault(1.e-3);
+  max_timestep = (*options)["max_timestep"].doc("Maximum timestep").withDefault(tstep);
+  timestep = (*options)["timestep"].doc("Starting timestep").withDefault(max_timestep);
+  mxstep = (*options)["mxstep"].doc("Maximum number of steps between outputs").withDefault(500);
+  adaptive = (*options)["adaptive"].doc("Adapt internal timestep using ATOL and RTOL.").withDefault(true);
 
   // Allocate memory
-  f0 = Array<BoutReal>(nlocal); // Input
-  f2 = Array<BoutReal>(nlocal); // Result--follow order
-  tmpState = Array<BoutReal>(nlocal);
+  f0.reallocate(nlocal); // Input
+  f2.reallocate(nlocal); // Result--follow order
+  tmpState.reallocate(nlocal);
 
   // Put starting values into f0
   save_vars(std::begin(f0));
@@ -123,7 +118,8 @@ int RKGenericSolver::run() {
 	  //to do any solves so could perhaps be check during init instead.
           internal_steps++;
           if(internal_steps > mxstep)
-            throw BoutException("ERROR: MXSTEP exceeded. timestep = %e, err=%e\n", timestep, err);
+            throw BoutException("ERROR: MXSTEP exceeded. timestep = {:e}, err={:e}\n",
+                                timestep, err);
 
 	  //Update the time step if required, note we ignore increases to the timestep
 	  //when on the last internal step as here we may have an artificially small dt

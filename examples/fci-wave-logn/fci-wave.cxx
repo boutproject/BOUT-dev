@@ -16,10 +16,10 @@ private:
   Field3D Div_par_integrate(const Field3D &f) {
     Field3D f_B = f / Bxyz;
     
-    f_B.splitYupYdown();
-    mesh->getParallelTransform().integrateYUpDown(f_B);
+    f_B.splitParallelSlices();
+    mesh->getCoordinates()->getParallelTransform().integrateParallelSlices(f_B);
 
-    // integrateYUpDown replaces all yup/down points, so the boundary conditions
+    // integrateParallelSlices replaces all yup/down points, so the boundary conditions
     // now need to be applied. If Bxyz has neumann parallel boundary conditions
     // then the boundary condition is simpler since f = 0 gives f_B=0 boundary condition.
 
@@ -38,15 +38,15 @@ private:
     Field3D result;
     result.allocate();
     
-    Coordinates *coord = mesh->coordinates();
+    Coordinates *coord = mesh->getCoordinates();
     
-    for(auto i : result.region(RGN_NOBNDRY)) {
+    for(auto i : result.getRegion(RGN_NOBNDRY)) {
       result[i] = Bxyz[i] * (f_B.yup()[i.yp()] - f_B.ydown()[i.ym()])
         / (2.*coord->dy[i] * sqrt(coord->g_22[i]));
 
       if (!finite(result[i])) {
-        output.write("[%d,%d,%d]: %e, %e -> %e\n",
-                     i.x, i.y, i.z,
+        output.write("[{:d},{:d},{:d}]: {:e}, {:e} -> {:e}\n",
+                     i.x(), i.y(), i.z(),
                      f_B.yup()[i.yp()],
                      f_B.ydown()[i.ym()],
                      result[i]);
@@ -58,7 +58,7 @@ private:
   }
   
 protected:
-  int init(bool restarting) override {
+  int init(bool UNUSED(restarting)) override {
 
     // Get the magnetic field
     mesh->get(Bxyz, "B");
@@ -81,7 +81,7 @@ protected:
     return 0;
   }
   
-  int rhs(BoutReal t) override {
+  int rhs(BoutReal UNUSED(t)) override {
     mesh->communicate(logn,v);
 
     // Boundary condition applied to log(n) to prevent negative densities
@@ -106,7 +106,7 @@ protected:
       // Calculate the flux divergence using Div_par_integrate
       
       Field3D nv = n * v;
-      nv.splitYupYdown();
+      nv.splitParallelSlices();
       for (const auto &reg : mesh->getBoundariesPar()) {
         Field3D &nv_next = nv.ynext(reg->dir);
         nv_next.allocate();
@@ -131,7 +131,7 @@ protected:
       
       // Apply a soft floor to the density
       // Hard floors (setting ddt = 0) can slow convergence of solver
-      for (auto i : logn.region(RGN_NOBNDRY)) {
+      for (auto i : logn.getRegion(RGN_NOBNDRY)) {
         if (ddt(logn)[i] < 0.0) {
           ddt(logn)[i] *= (1. - exp(log_background - logn[i]));
         }

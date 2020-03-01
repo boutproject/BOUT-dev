@@ -38,6 +38,7 @@
 #include <globals.hxx>
 #include <dcomplex.hxx>
 #include <boutexception.hxx>
+#include <utils.hxx>
 
 #ifdef LAPACK
 
@@ -259,22 +260,21 @@ void cband_solve(Matrix<dcomplex> &a, int n, int m1, int m2, Array<dcomplex> &b)
 // No LAPACK available. Routines throw exceptions
 
 /// Tri-diagonal complex matrix inversion
-int tridag(const dcomplex *a, const dcomplex *b, const dcomplex *c, const dcomplex *r,
-           dcomplex *u, int n) {
+int tridag(const dcomplex*, const dcomplex*, const dcomplex*, const dcomplex*, dcomplex*, int) {
   throw BoutException("complex tridag function not available. Compile BOUT++ with Lapack support.");
 }
 
 /// Tri-diagonal matrix inversion (BoutReal)
-bool tridag(const BoutReal *a, const BoutReal *b, const BoutReal *c, const BoutReal *r, BoutReal *x, int n) {
+bool tridag(const BoutReal*, const BoutReal*, const BoutReal*, const BoutReal*, BoutReal*, int) {
   throw BoutException("tridag function not available. Compile BOUT++ with Lapack support.");
 }
 
 /// Solve a cyclic tridiagonal matrix
-void cyclic_tridag(BoutReal *a, BoutReal *b, BoutReal *c, BoutReal *r, BoutReal *x, int n) {
+void cyclic_tridag(BoutReal*, BoutReal*, BoutReal*, BoutReal*, BoutReal*, int) {
   throw BoutException("cyclic_tridag function not available. Compile BOUT++ with Lapack support.");
 }
 
-void cband_solve(Matrix<dcomplex> &a, int n, int m1, int m2, Array<dcomplex> &b) {
+void cband_solve(Matrix<dcomplex>&, int, int, int, Array<dcomplex>&) {
   throw BoutException("cband_solve function not available. Compile BOUT++ with Lapack support.");
 }
 

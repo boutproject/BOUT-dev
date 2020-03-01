@@ -87,15 +87,20 @@ private:
   
   int lowPass_z; // Low-pass filter result
   
-  int phi_flags, apar_flags; // Inversion flags
-  
   // Group of objects for communications
   FieldGroup comms;
 
   // Coordinate system metrics
   Coordinates *coord;
+
+  // Inverts a Laplacian to get potential
+  std::unique_ptr<Laplacian> phiSolver;
+
+  // Solves the electromagnetic potential
+  std::unique_ptr<Laplacian> aparSolver;
+  Field2D acoef; // Coefficient in the Helmholtz equation
   
-  int init(bool restarting) override {
+  int init(bool UNUSED(restarting)) override {
     TRACE("int init(bool) ");
     
     Field2D I; // Shear factor 
@@ -151,24 +156,24 @@ private:
     // READ OPTIONS
     
     // Read some parameters
-    Options *globalOptions = Options::getRoot();
-    Options *options = globalOptions->getSection("2fluid");
-    
-    OPTION(options, AA, 2.0);
-    OPTION(options, ZZ, 1.0);
-    
-    OPTION(options, estatic,     false);
-    OPTION(options, ZeroElMass,  false);
-    OPTION(options, zeff,        1.0);
-    OPTION(options, nu_perp,     0.0);
-    OPTION(options, ShearFactor, 1.0);
-    OPTION(options, OhmPe,       true);
-    OPTION(options, bout_jpar,   false);
-    OPTION(options, curv_upwind, false);
-    
+    auto globalOptions = Options::root();
+    auto options = globalOptions["2fluid"];
+
+    AA = options["AA"].withDefault(2.0);
+    ZZ = options["ZZ"].withDefault(1.0);
+
+    estatic = options["estatic"].withDefault(false);
+    ZeroElMass = options["ZeroElMass"].withDefault(false);
+    zeff = options["zeff"].withDefault(1.0);
+    nu_perp = options["nu_perp"].withDefault(0.0);
+    ShearFactor = options["ShearFactor"].withDefault(1.0);
+    OhmPe = options["OhmPe"].withDefault(true);
+    bout_jpar = options["bout_jpar"].withDefault(false);
+    curv_upwind = options["curv_upwind"].withDefault(false);
+
     // Choose method to use for Poisson bracket advection terms
     int bracket_method;
-    OPTION(options, bracket_method, 0);
+    bracket_method = options["bracket_method"].withDefault(0);
     switch(bracket_method) {
     case 0: {
       bm = BRACKET_STD; 
@@ -194,28 +199,24 @@ private:
       output << "ERROR: Invalid choice of bracket method. Must be 0 - 3\n";
       return 1;
     }
-    
-    OPTION(options, nuIonNeutral, -1.); 
-    
-    OPTION(options, bkgd,      2);
-    OPTION(options, iTe_dc,    2);
-    
-    OPTION(options, stagger, false);
-    
-    OPTION(options, laplace_extra_rho_term, false);
-    OPTION(options, vort_include_pi, false);
-    
-    OPTION(options, lowPass_z,  -1);
-  
-    OPTION(options, phi_flags,   0);
-    OPTION(options, apar_flags,  0);
-    
-    (globalOptions->getSection("Ni"))->get("evolve", evolve_ni,    true);
-    (globalOptions->getSection("rho"))->get("evolve", evolve_rho,   true);
-    (globalOptions->getSection("vi"))->get("evolve", evolve_vi,   true);
-    (globalOptions->getSection("te"))->get("evolve", evolve_te,   true);
-    (globalOptions->getSection("ti"))->get("evolve", evolve_ti,   true);
-    (globalOptions->getSection("Ajpar"))->get("evolve", evolve_ajpar, true);
+
+    nuIonNeutral = options["nuIonNeutral"].withDefault(-1.);
+
+    bkgd = options["bkgd"].withDefault(2);
+    iTe_dc = options["iTe_dc"].withDefault(2);
+
+    stagger = options["stagger"].withDefault(false);
+
+    laplace_extra_rho_term = options["laplace_extra_rho_term"].withDefault(false);
+    vort_include_pi = options["vort_include_pi"].withDefault(false);
+
+    lowPass_z = options["lowPass_z"].withDefault(-1);
+
+    evolve_ni = globalOptions["Ni"]["evolve"].withDefault(true);
+    evolve_rho = globalOptions["rho"]["evolve"].withDefault(true);
+    evolve_vi = globalOptions["vi"]["evolve"].withDefault(true);
+    evolve_ti = globalOptions["ti"]["evolve"].withDefault(true);
+    evolve_ajpar = globalOptions["Ajpar"]["evolve"].withDefault(true);
     
     if (ZeroElMass) {
       evolve_ajpar = 0; // Don't need ajpar - calculated from ohm's law
@@ -225,7 +226,7 @@ private:
     // Equation terms
 
     if (evolve_ni) {
-      options = globalOptions->getSection("Ni");
+      Options* options = &globalOptions["Ni"];
       options->get("ni1_phi0", ni_ni1_phi0, false);
       options->get("ni0_phi1", ni_ni0_phi1, false);
       options->get("ni1_phi1", ni_ni1_phi1, false);
@@ -243,7 +244,7 @@ private:
     }    
     
     if (evolve_rho) {
-      options = globalOptions->getSection("rho");
+      Options* options = &globalOptions["rho"];
       options->get("rho0_phi1", rho_rho0_phi1, false);
       options->get("rho1_phi0", rho_rho1_phi0, false);
       options->get("rho1_phi1", rho_rho1_phi1, false);
@@ -256,7 +257,7 @@ private:
     }
     
     if (evolve_vi) {
-      options = globalOptions->getSection("vi");
+      Options* options = &globalOptions["vi"];
       options->get("vi0_phi1", vi_vi0_phi1, false);
       options->get("vi1_phi0", vi_vi1_phi0, false);
       options->get("vi1_phi1", vi_vi1_phi1, false);
@@ -271,14 +272,14 @@ private:
     }
     
     if (evolve_te) {
-      options = globalOptions->getSection("te");
+      Options* options = &globalOptions["te"];
       options->get("te1_phi0", te_te1_phi0, false);
       options->get("te0_phi1", te_te0_phi1, false);
       options->get("te1_phi1", te_te1_phi1, false);
     }
 
     if (evolve_ti) {
-      options = globalOptions->getSection("ti");
+      Options* options = &globalOptions["ti"];
       options->get("ti1_phi0", ti_ti1_phi0, false);
       options->get("ti0_phi1", ti_ti0_phi1, false);
       options->get("ti1_phi1", ti_ti1_phi1, false);
@@ -288,8 +289,7 @@ private:
     // SHIFTED RADIAL COORDINATES
 
     // Check type of parallel transform
-    string ptstr;
-    Options::getRoot()->getSection("mesh")->get("paralleltransform", ptstr, "identity");
+    std::string ptstr = Options::root()["mesh"]["paralleltransform"].withDefault<std::string>("identity");
 
     if (lowercase(ptstr) == "shifted") {
       ShearFactor = 0.0;  // I disappears from metric
@@ -323,14 +323,14 @@ private:
     
     Vi_x = wci * rho_s;
     
-    output.write("Collisions: nueix = %e, nu_hat = %e\n", nueix, nu_hat);
+    output.write("Collisions: nueix = {:e}, nu_hat = {:e}\n", nueix, nu_hat);
     
     ////////////////////////////////////////////////////////
     // PRINT Z INFORMATION
     
     BoutReal hthe0;
     if(mesh->get(hthe0, "hthe0") == 0) {
-      output.write("    ****NOTE: input from BOUT, Z length needs to be divided by %e\n", hthe0/rho_s);
+      output.write("    ****NOTE: input from BOUT, Z length needs to be divided by {:e}\n", hthe0/rho_s);
     }
     
     ////////////////////////////////////////////////////////
@@ -347,7 +347,7 @@ private:
     ////////////////////////////////////////////////////////
     // NORMALISE QUANTITIES
     
-    output.write("\tNormalising to rho_s = %e\n", rho_s);
+    output.write("\tNormalising to rho_s = {:e}\n", rho_s);
     
     // Normalise profiles
     Ni0 /= Ni_x/1.0e14;
@@ -473,27 +473,41 @@ private:
     comms.add(Apar);
     
     // Add any other variables to be dumped to file
-    dump.add(phi,  "phi",  1);
-    dump.add(Apar, "Apar", 1);
-    dump.add(jpar, "jpar", 1);
+    dump.addRepeat(phi,  "phi");
+    dump.addRepeat(Apar, "Apar");
+    dump.addRepeat(jpar, "jpar");
     
-    dump.add(Ni0, "Ni0", 0);
-    dump.add(Te0, "Te0", 0);
-    dump.add(Ti0, "Ti0", 0);
+    dump.addOnce(Ni0, "Ni0");
+    dump.addOnce(Te0, "Te0");
+    dump.addOnce(Ti0, "Ti0");
     
-    dump.add(Te_x,  "Te_x", 0);
-    dump.add(Ti_x,  "Ti_x", 0);
-    dump.add(Ni_x,  "Ni_x", 0);
-    dump.add(rho_s, "rho_s", 0);
-    dump.add(wci,   "wci", 0);
+    dump.addOnce(Te_x,  "Te_x");
+    dump.addOnce(Ti_x,  "Ti_x");
+    dump.addOnce(Ni_x,  "Ni_x");
+    dump.addOnce(rho_s, "rho_s");
+    dump.addOnce(wci,   "wci");
     
-    return(0);
+    // Create a solver for the Laplacian
+    phiSolver = Laplacian::create(&options["phiSolver"]);
+    if (laplace_extra_rho_term) {
+      // Include the first order term Grad_perp Ni dot Grad_perp phi
+      phiSolver->setCoefC(Ni0);
+    }
+
+    if (! (estatic || ZeroElMass)) {
+      // Create a solver for the electromagnetic potential
+      aparSolver = Laplacian::create(&options["aparSolver"]);
+      acoef = (-0.5 * beta_p / fmei) * Ni0;
+      aparSolver->setCoefA(acoef);
+    }
+    
+    return 0;
   }
   
   // ExB terms using Poisson bracket
 #define vE_Grad(f, p) ( bracket(p, f, bm) )
 
-  int rhs(BoutReal t) override {
+  int rhs(BoutReal UNUSED(t)) override {
   
     ////////////////////////////////////////////////////////
     // Invert vorticity to get phi
@@ -504,12 +518,8 @@ private:
     
     {
       TRACE("Solving for phi");
-      if (laplace_extra_rho_term) {
-        // Include the first order term Grad_perp Ni dot Grad_perp phi
-        phi = invert_laplace(rho/Ni0, phi_flags, NULL, &Ni0);
-      } else {
-        phi = invert_laplace(rho/Ni0, phi_flags);
-      }
+      
+      phi = phiSolver->solve(rho/Ni0);
       
       if (vort_include_pi) {
         // Include Pi term in vorticity
@@ -526,14 +536,7 @@ private:
         // Electrostatic operation
         Apar = 0.0;
       } else {
-        static Field2D acoeff;
-        static bool aset = false;
-        
-        if (!aset) // calculate Apar coefficient
-          acoeff = (-0.5*beta_p/fmei)*Ni0;
-        aset = true;
-        
-        Apar = invert_laplace(acoeff*(Vi - Ajpar), apar_flags, &acoeff);
+        Apar = aparSolver->solve(acoef*(Vi - Ajpar));
       }
     }
     

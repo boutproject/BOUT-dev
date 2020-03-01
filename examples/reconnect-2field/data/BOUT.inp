@@ -106,27 +106,12 @@ bracket_method = 2 # Method to use for [f,g] terms
                    # 2 = Arakawa scheme
                    # 3 = Corner Transport Upwind (CTU)
 
-parallel_lc = true # Use quasi-staggered LtoC and CtoL in Y
+parallel_lc = false # Use quasi-staggered LtoC and CtoL in Y
 nonlinear = false   # Include nonlinear terms?
 
 include_jpar0 = false
 
 jpar_bndry = 3
-
-# field inversion flags: Add the following
-#  1 - Zero-gradient DC component on inner boundary
-#  2 - Zero-gradient AC component on inner boundary
-#  4 -      "        DC     "      " outer    "
-#  8 -      "        AC     "      " outer    "
-# 16 - Zero all DC components of the result
-# 32 - Don't use previous solution to start iterations
-#      (iterative methods only)
-# 64 - Set the width of the boundary layer to 1
-# 128 - use 4th order differencing
-# 256 - Laplacian = 0 inner boundary
-# 512 - Laplacian = 0 outer boundary
-
-phi_flags = 0 # 11 #769
 
 [All]
 scale = 0.0 # default size of initial perturbations

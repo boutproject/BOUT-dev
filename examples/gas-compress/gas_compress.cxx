@@ -15,17 +15,14 @@ int GasCompress::init(bool restarting) {
   
   // read options
   
-  Options *options = Options::getRoot();
-  options = options->getSection("gas");
-  options->get("gamma", gamma_ratio, 5./3.);
-  options->get("viscosity", nu, 0.1);
-  options->get("include_viscosity", include_viscosity, false);
+  auto& options = Options::root()["gas"];
+  gamma_ratio = options["gamma"].withDefault(0.1);
+  include_viscosity = options["include_viscosity"].withDefault(false);
   
-  BoutReal v0_multiply;
-  options->get("v0_multiply", v0_multiply, 1.0);
+  BoutReal v0_multiply = options["v0_multiply"].withDefault(1.0);
   V0 *= v0_multiply;
   
-  options->get("sub_initial", sub_initial, false);
+  sub_initial = options["sub_initial"].withDefault(false);
   
   V.y.setLocation(CELL_YLOW); // Stagger
   
@@ -46,23 +43,20 @@ int GasCompress::init(bool restarting) {
   return 0;
 }
 
-int GasCompress::rhs(BoutReal t) {
+int GasCompress::rhs(BoutReal UNUSED(time)) {
   // Run communications
   mesh->communicate(N,P,V);
   
   // Density
-  
-  //ddt(N) = -V_dot_Grad(V, N) - N*Div(V);
   ddt(N) = -Div(V, N);
   
-  // Velocity 
-  
-  
-  if(sub_initial) {
+  // Velocity
+
+  if (sub_initial) {
     // Subtract force balance of initial profiles
-    ddt(V) = -V_dot_Grad(V, V) - Grad(P - P0, CELL_DEFAULT, CELL_YLOW)/N;
-  }else {
-    ddt(V) = -V_dot_Grad(V, V) - Grad(P, CELL_DEFAULT, CELL_YLOW)/N + g;
+    ddt(V) = -V_dot_Grad(V, V) - Grad(P - P0, CELL_VSHIFT) / N;
+  } else {
+    ddt(V) = -V_dot_Grad(V, V) - Grad(P, CELL_VSHIFT) / N + g;
   }
 
   if(include_viscosity) {
@@ -73,8 +67,6 @@ int GasCompress::rhs(BoutReal t) {
   }
   
   // Pressure
-
-  //ddt(P) = -V_dot_Grad(V, P) - gamma_ratio*P*Div(V);
   ddt(P) = -Div(V, P) - (gamma_ratio-1.)*P*Div(V);
   
   return 0;

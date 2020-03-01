@@ -40,6 +40,11 @@ class Mesh;  // #include "bout/mesh.hxx"
 
 #include "bout/field_visitor.hxx"
 
+#include "utils.hxx"
+
+#include <vector>
+
+
 /// Class for 3D X-Y-Z scalar fields
 /*!
   This class represents a scalar field defined over the mesh.
@@ -140,12 +145,12 @@ class Mesh;  // #include "bout/mesh.hxx"
 
       f.yup() // error; f.yup not allocated
 
-      f.mergeYupYdown(); // f.yup() and f.ydown() now point to f
-      f.yup()(0,1,0)  // ok, gives value of f at (0,1,0)
+      f.clearParallelSlices(); // f.yup_fields and f.ydown_fields are now empty
+      f.yup() // error; f.yup not allocated
 
       To have separate fields for yup and ydown, first call
 
-      f.splitYupYdown(); // f.yup() and f.ydown() separate
+      f.splitParallelSlices(); // f.yup() and f.ydown() separate
 
       f.yup(); // ok
       f.yup()(0,1,0) // error; f.yup not allocated
@@ -165,17 +170,25 @@ class Field3D : public Field, public FieldData {
    * Note: the global "mesh" can't be passed here because
    * fields may be created before the mesh is.
    */
-  Field3D(Mesh *localmesh = nullptr);
+  Field3D(Mesh *localmesh = nullptr, CELL_LOC location_in=CELL_CENTRE,
+          DirectionTypes directions_in =
+            {YDirectionType::Standard, ZDirectionType::Standard});
 
   /*!
    * Copy constructor
    */
   Field3D(const Field3D& f);
-  
+
+  /// Move constructor
+  Field3D(Field3D&& f) noexcept { swap(*this, f); }
   /// Constructor from 2D field
   Field3D(const Field2D& f);
   /// Constructor from value
   Field3D(BoutReal val, Mesh *localmesh = nullptr);
+  /// Constructor from Array and Mesh
+  Field3D(Array<BoutReal> data, Mesh* localmesh, CELL_LOC location = CELL_CENTRE,
+          DirectionTypes directions_in = {YDirectionType::Standard,
+                                          ZDirectionType::Standard});
   /// Destructor
   ~Field3D() override;
 
@@ -185,7 +198,7 @@ class Field3D : public Field, public FieldData {
   /*!
    * Ensures that memory is allocated and unique
    */
-  void allocate();
+  Field3D& allocate();
   
   /*!
    * Test if data is allocated
@@ -213,58 +226,81 @@ class Field3D : public Field, public FieldData {
    */
   int getNz() const override {return nz;};
 
+  // these methods return Field3D to allow method chaining
+  Field3D& setLocation(CELL_LOC new_location) {
+    Field::setLocation(new_location);
+    return *this;
+  }
+  Field3D& setDirectionY(YDirectionType d) {
+    directions.y = d;
+    return *this;
+  }
+
   /*!
    * Ensure that this field has separate fields
    * for yup and ydown.
    */
-  void splitYupYdown();
+  void splitParallelSlices();
+
+  [[deprecated("Please use Field3D::splitParallelSlices instead")]]
+  void splitYupYdown() {
+    splitParallelSlices();
+  }
 
   /*!
-   * Ensure that yup and ydown refer to this field
+   * Clear the parallel slices, yup and ydown
    */
-  void mergeYupYdown();
+  void clearParallelSlices();
   
-  /// Check if this field has yup and ydown fields
-  bool hasYupYdown() const {
-    return (yup_field != nullptr) && (ydown_field != nullptr);
+  [[deprecated("Please use Field3D::clearParallelSlices instead")]]
+  void mergeYupYdown() {
+    clearParallelSlices();
   }
 
+  /// Check if this field has yup and ydown fields
+  bool hasParallelSlices() const {
+    return !yup_fields.empty() and !ydown_fields.empty();
+  }
+
+  [[deprecated("Please use Field3D::hasParallelSlices instead")]]
+  bool hasYupYdown() const {
+    return hasParallelSlices();
+  }
+
+  /// Check if this field has yup and ydown fields
   /// Return reference to yup field
-  Field3D& yup() { 
-    ASSERT2(yup_field != nullptr); // Check for communicate
-    return *yup_field; 
+  Field3D &yup(std::vector<Field3D>::size_type index = 0) {
+    ASSERT2(index < yup_fields.size());
+    return yup_fields[index];
   }
   /// Return const reference to yup field
-  const Field3D& yup() const { 
-    ASSERT2(yup_field != nullptr);
-    return *yup_field; 
+  const Field3D &yup(std::vector<Field3D>::size_type index = 0) const {
+    ASSERT2(index < yup_fields.size());
+    return yup_fields[index];
   }
-  
+
   /// Return reference to ydown field
-  Field3D& ydown() { 
-    ASSERT2(ydown_field != nullptr);
-    return *ydown_field;
+  Field3D &ydown(std::vector<Field3D>::size_type index = 0) {
+    ASSERT2(index < ydown_fields.size());
+    return ydown_fields[index];
   }
-  
+
   /// Return const reference to ydown field
-  const Field3D& ydown() const { 
-    ASSERT2(ydown_field != nullptr);
-    return *ydown_field; 
+  const Field3D &ydown(std::vector<Field3D>::size_type index = 0) const {
+    ASSERT2(index < ydown_fields.size());
+    return ydown_fields[index];
   }
 
-  /// Return yup if dir=+1, and ydown if dir=-1
-  Field3D& ynext(int dir);
-  const Field3D& ynext(int dir) const;
-
-  /// Set variable location for staggered grids to @param new_location
+  /// Return the parallel slice at \p offset
   ///
-  /// Throws BoutException if new_location is not `CELL_CENTRE` and
-  /// staggered grids are turned off and checks are on. If checks are
-  /// off, silently sets location to ``CELL_CENTRE`` instead.
-  void setLocation(CELL_LOC new_location) override;
-  /// Get variable location
-  CELL_LOC getLocation() const override;
-  
+  /// \p offset of 0 returns the main field itself
+  Field3D& ynext(int offset);
+  const Field3D& ynext(int offset) const;
+
+  /// If \p twist_shift_enabled is true, does this Field3D require a twist-shift at branch
+  /// cuts on closed field lines?
+  bool requiresTwistShift(bool twist_shift_enabled);
+
   /////////////////////////////////////////////////////////
   // Data access
 
@@ -284,6 +320,11 @@ class Field3D : public Field, public FieldData {
   /// 
   const Region<Ind3D>& getRegion(REGION region) const;  
   const Region<Ind3D>& getRegion(const std::string &region_name) const;
+
+  /// Return a Region<Ind2D> reference to use to iterate over the x- and
+  /// y-indices of this field
+  const Region<Ind2D>& getRegion2D(REGION region) const;
+  const Region<Ind2D>& getRegion2D(const std::string &region_name) const;
   
   Region<Ind3D>::RegionIndices::const_iterator begin() const {return std::begin(getRegion("RGN_ALL"));};
   Region<Ind3D>::RegionIndices::const_iterator end() const {return std::end(getRegion("RGN_ALL"));};
@@ -325,8 +366,9 @@ class Field3D : public Field, public FieldData {
     if((jx < 0) || (jx >= nx) || 
        (jy < 0) || (jy >= ny) || 
        (jz < 0) || (jz >= nz))
-      throw BoutException("Field3D: (%d, %d, %d) operator out of bounds (%d, %d, %d)", 
-			  jx, jy, jz, nx, ny, nz);
+      throw BoutException(
+          "Field3D: ({:d}, {:d}, {:d}) operator out of bounds ({:d}, {:d}, {:d})", jx, jy,
+          jz, nx, ny, nz);
 #endif
     return data[(jx*ny +jy)*nz + jz];
   }
@@ -339,8 +381,9 @@ class Field3D : public Field, public FieldData {
     if((jx < 0) || (jx >= nx) || 
        (jy < 0) || (jy >= ny) || 
        (jz < 0) || (jz >= nz))
-      throw BoutException("Field3D: (%d, %d, %d) operator out of bounds (%d, %d, %d)", 
-			  jx, jy, jz, nx, ny, nz);
+      throw BoutException(
+          "Field3D: ({:d}, {:d}, {:d}) operator out of bounds ({:d}, {:d}, {:d})", jx, jy,
+          jz, nx, ny, nz);
 #endif
     return data[(jx*ny +jy)*nz + jz];
   }
@@ -359,8 +402,8 @@ class Field3D : public Field, public FieldData {
 
     if((jx < 0) || (jx >= nx) ||
        (jy < 0) || (jy >= ny))
-      throw BoutException("Field3D: (%d, %d) operator out of bounds (%d, %d)",
-                          jx, jy, nx, ny);
+      throw BoutException("Field3D: ({:d}, {:d}) operator out of bounds ({:d}, {:d})", jx,
+                          jy, nx, ny);
 #endif
     return &data[(jx*ny +jy)*nz];
   }
@@ -372,8 +415,8 @@ class Field3D : public Field, public FieldData {
 
     if((jx < 0) || (jx >= nx) ||
        (jy < 0) || (jy >= ny))
-      throw BoutException("Field3D: (%d, %d) operator out of bounds (%d, %d)",
-                          jx, jy, nx, ny);
+      throw BoutException("Field3D: ({:d}, {:d}) operator out of bounds ({:d}, {:d})", jx,
+                          jy, nx, ny);
 #endif
     return &data[(jx*ny +jy)*nz];
   }
@@ -436,36 +479,64 @@ class Field3D : public Field, public FieldData {
 
   friend class Vector3D;
 
+  Field3D& calcParallelSlices();
+
   void applyBoundary(bool init=false) override;
   void applyBoundary(BoutReal t);
-  void applyBoundary(const string &condition);
-  void applyBoundary(const char* condition) { applyBoundary(string(condition)); }
-  void applyBoundary(const string &region, const string &condition);
+  void applyBoundary(const std::string &condition);
+  void applyBoundary(const char* condition) { applyBoundary(std::string(condition)); }
+  void applyBoundary(const std::string &region, const std::string &condition);
   void applyTDerivBoundary() override;
-  void setBoundaryTo(const Field3D &f3d); ///< Copy the boundary region
+  
+  /// Copy the boundary values half-way between cells
+  /// This uses 2nd order central differences to set the value
+  /// on the boundary to the value on the boundary in field \p f3d.
+  /// Note: does not just copy values in boundary region.
+  void setBoundaryTo(const Field3D &f3d); 
 
   void applyParallelBoundary();
   void applyParallelBoundary(BoutReal t);
-  void applyParallelBoundary(const string &condition);
-  void applyParallelBoundary(const char* condition) { applyParallelBoundary(string(condition)); }
-  void applyParallelBoundary(const string &region, const string &condition);
-  void applyParallelBoundary(const string &region, const string &condition, Field3D *f);
+  void applyParallelBoundary(const std::string &condition);
+  void applyParallelBoundary(const char* condition) { applyParallelBoundary(std::string(condition)); }
+  void applyParallelBoundary(const std::string &region, const std::string &condition);
+  void applyParallelBoundary(const std::string &region, const std::string &condition, Field3D *f);
+
+  friend void swap(Field3D& first, Field3D& second) noexcept {
+    using std::swap;
+
+    // Swap base class members
+    swap(static_cast<Field&>(first), static_cast<Field&>(second));
+
+    swap(first.data, second.data);
+    swap(first.background, second.background);
+    swap(first.nx, second.nx);
+    swap(first.ny, second.ny);
+    swap(first.nz, second.nz);
+    swap(first.deriv, second.deriv);
+    swap(first.yup_fields, second.yup_fields);
+    swap(first.ydown_fields, second.ydown_fields);
+    swap(first.bndry_op, second.bndry_op);
+    swap(first.boundaryIsCopy, second.boundaryIsCopy);
+    swap(first.boundaryIsSet, second.boundaryIsSet);
+    swap(first.bndry_op_par, second.bndry_op_par);
+    swap(first.bndry_generator, second.bndry_generator);
+  }
   
 private:
   /// Boundary - add a 2D field
-  const Field2D *background;
+  const Field2D *background{nullptr};
 
-  int nx, ny, nz;  ///< Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
-  
+  /// Array sizes (from fieldmesh). These are valid only if fieldmesh is not null
+  int nx{-1}, ny{-1}, nz{-1};
+
   /// Internal data array. Handles allocation/freeing of memory
   Array<BoutReal> data;
-
-  CELL_LOC location = CELL_CENTRE; ///< Location of the variable in the cell
   
-  Field3D *deriv; ///< Time derivative (may be NULL)
+  /// Time derivative (may be nullptr)
+  Field3D *deriv{nullptr};
 
-  /// Pointers to fields containing values along Y
-  Field3D *yup_field, *ydown_field;
+  /// Fields containing values along Y
+  std::vector<Field3D> yup_fields{}, ydown_fields{};
 };
 
 // Non-member overloaded operators
@@ -504,195 +575,94 @@ Field3D operator-(const Field3D &f);
 
 // Non-member functions
 
-/// Calculates the minimum of a field, excluding the boundary/guard
-/// cells by default (can be changed with \p rgn argument).
-///
-/// By default this is only on the local processor, but setting \p
-/// allpe true does a collective Allreduce over all processors.
-///
-/// @param[in] f      The field to loop over
-/// @param[in] allpe  Minimum over all processors?
-/// @param[in] rgn    The region to calculate the result over
-BoutReal min(const Field3D &f, bool allpe=false, REGION rgn=RGN_NOBNDRY);
-
-/// Calculates the maximum of a field, excluding the boundary/guard
-/// cells by default (can be changed with \p rgn argument).
-///
-/// By default this is only on the local processor, but setting \p
-/// allpe to true does a collective Allreduce over all processors.
-///
-/// @param[in] f      The field to loop over
-/// @param[in] allpe  Maximum over all processors?
-/// @param[in] rgn    The region to calculate the result over
-BoutReal max(const Field3D &f, bool allpe=false, REGION rgn=RGN_NOBNDRY);
-
-/// Calculates the mean of a field, excluding the boundary/guard
-/// cells by default (can be changed with \p rgn argument).
-///
-/// By default this is only on the local processor, but setting \p
-/// allpe to true does a collective Allreduce over all processors.
-///
-/// @param[in] f      The field to loop over
-/// @param[in] allpe  Mean over all processors?
-/// @param[in] rgn    The region to calculate the result over
-BoutReal mean(const Field3D &f, bool allpe=false, REGION rgn=RGN_NOBNDRY);
-
 /// Exponent: pow(lhs, lhs) is \p lhs raised to the power of \p rhs
 ///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the \p rgn argument)
-/// If CHECK >= 3 then the result will be checked for non-finite numbers
-Field3D pow(const Field3D &lhs, const Field3D &rhs, REGION rgn = RGN_ALL);
-Field3D pow(const Field3D &lhs, const Field2D &rhs, REGION rgn = RGN_ALL);
-FieldPerp pow(const Field3D &lhs, const FieldPerp &rhs, REGION rgn = RGN_ALL);
-Field3D pow(const Field3D &lhs, BoutReal rhs, REGION rgn = RGN_ALL);
-Field3D pow(BoutReal lhs, const Field3D &rhs, REGION rgn = RGN_ALL);
-
-/// Square root of \p f over region \p rgn
+/// Extra overloads not provided by the templates in field.hxx
 ///
 /// This loops over the entire domain, including guard/boundary cells by
 /// default (can be changed using the \p rgn argument).
 /// If CHECK >= 3 then the result will be checked for non-finite numbers
-const Field3D sqrt(const Field3D &f, REGION rgn = RGN_ALL);
-
-/// Absolute value (modulus, |f|) of \p f over region \p rgn
-///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the \p rgn argument).
-/// If CHECK >= 3 then the result will be checked for non-finite numbers
-const Field3D abs(const Field3D &f, REGION rgn = RGN_ALL);
-
-/// Exponential: \f$\exp(f)\f$ is e to the power of \p f, over region
-/// \p rgn
-///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the \p rgn argument).
-/// If CHECK >= 3 then the result will be checked for non-finite numbers
-const Field3D exp(const Field3D &f, REGION rgn = RGN_ALL);
-
-/// Natural logarithm of \p f over region \p rgn, inverse of
-/// exponential
-///
-///     \f$\ln(\exp(f)) = f\f$
-///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the rgn argument)
-/// If CHECK >= 3 then the result will be checked for non-finite numbers
-///
-const Field3D log(const Field3D &f, REGION rgn = RGN_ALL);
-
-/// Sine trigonometric function.
-///
-/// @param[in] f    Angle in radians
-/// @param[in] rgn  The region to calculate the result over
-///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the \p rgn argument).
-/// If CHECK >= 3 then the result will be checked for non-finite numbers
-const Field3D sin(const Field3D &f, REGION rgn = RGN_ALL);
-
-/// Cosine trigonometric function.
-///
-/// @param[in] f    Angle in radians
-/// @param[in] rgn  The region to calculate the result over
-///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the \p rgn argument).
-/// If CHECK >= 3 then the result will be checked for non-finite numbers
-const Field3D cos(const Field3D &f, REGION rgn = RGN_ALL);
-
-/// Tangent trigonometric function.
-///
-/// @param[in] f    Angle in radians
-/// @param[in] rgn  The region to calculate the result over
-///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the \p rgn argument).
-/// If CHECK >= 3 then the result will be checked for non-finite numbers
-const Field3D tan(const Field3D &f, REGION rgn = RGN_ALL);
-
-/// Hyperbolic sine trigonometric function.
-///
-/// @param[in] f    Angle in radians
-/// @param[in] rgn  The region to calculate the result over
-///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the \p rgn argument).
-/// If CHECK >= 3 then the result will be checked for non-finite numbers
-const Field3D sinh(const Field3D &f, REGION rgn = RGN_ALL);
-
-/// Hyperbolic cosine trigonometric function.
-///
-/// @param[in] f    Angle in radians
-/// @param[in] rgn  The region to calculate the result over
-///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the \p rgn argument).
-/// If CHECK >= 3 then the result will be checked for non-finite numbers
-const Field3D cosh(const Field3D &f, REGION rgn = RGN_ALL);
-
-/// Hyperbolic tangent trigonometric function.
-///
-/// @param[in] f    Angle in radians
-/// @param[in] rgn  The region to calculate the result over
-///
-/// This loops over the entire domain, including guard/boundary cells by
-/// default (can be changed using the \p rgn argument).
-/// If CHECK >= 3 then the result will be checked for non-finite numbers
-const Field3D tanh(const Field3D &f, REGION rgn = RGN_ALL);
-
-/// Check if all values of a field \p var are finite.
-/// Loops over all points including the boundaries by
-/// default (can be changed using the \p rgn argument
-bool finite(const Field3D &var, REGION rgn = RGN_ALL);
-
+Field3D pow(const Field3D& lhs, const Field2D& rhs, const std::string& rgn = "RGN_ALL");
+[[deprecated("Please use pow(const Field3D& lhs, const Field2D& rhs"
+    "const std::string& region = \"RGN_ALL\") instead")]]
+inline Field3D pow(const Field3D &lhs, const Field2D &rhs, REGION rgn) {
+  return pow(lhs, rhs, toString(rgn));
+}
+FieldPerp pow(const Field3D& lhs, const FieldPerp& rhs, const std::string& rgn = "RGN_ALL");
+[[deprecated("Please use pow(const Field3D& lhs, const FieldPerp& rhs"
+    "const std::string& region = \"RGN_ALL\") instead")]]
+inline FieldPerp pow(const Field3D& lhs, const FieldPerp& rhs, REGION rgn) {
+  return pow(lhs, rhs, toString(rgn));
+}
 
 #if CHECK > 0
 /// Throw an exception if \p f is not allocated or if any
 /// elements are non-finite (for CHECK > 2).
 /// Loops over all points including the boundaries by
 /// default (can be changed using the \p rgn argument
-void checkData(const Field3D &f, REGION region = RGN_NOBNDRY);
+void checkData(const Field3D& f, const std::string& region = "RGN_NOBNDRY");
+[[deprecated("Please use checkData(const Field3D& f, "
+    "const std::string& region = \"RGN_NOBNDRY\") instead")]]
+inline void checkData(const Field3D &f, REGION region) {
+  return checkData(f, toString(region));
+}
 #else
 /// Ignored with disabled CHECK; Throw an exception if \p f is not
 /// allocated or if any elements are non-finite (for CHECK > 2)
-inline void checkData(const Field3D &UNUSED(f), REGION UNUSED(region) = RGN_NOBNDRY){};
+inline void checkData(const Field3D& UNUSED(f), const std::string& UNUSED(region) = "RGN_NOBNDRY") {};
+[[deprecated("Please use checkData(const Field3D& f, "
+    "const std::string& region = \"RGN_NOBNDRY\") instead")]]
+inline void checkData(const Field3D &UNUSED(f), REGION UNUSED(region)) {}
 #endif
-
-/// Makes a copy of a field \p f, ensuring that the underlying data is
-/// not shared.
-const Field3D copy(const Field3D &f);
-
-/// Apply a floor value \p f to a field \p var. Any value lower than
-/// the floor is set to the floor.
-///
-/// @param[in] var  Variable to apply floor to
-/// @param[in] f    The floor value
-/// @param[in] rgn  The region to calculate the result over
-const Field3D floor(const Field3D &var, BoutReal f, REGION rgn = RGN_ALL);
 
 /// Fourier filtering, removes all except one mode
 ///
 /// @param[in] var Variable to apply filter to
 /// @param[in] N0  The component to keep
 /// @param[in] rgn The region to calculate the result over
-const Field3D filter(const Field3D &var, int N0, REGION rgn = RGN_ALL);
+Field3D filter(const Field3D& var, int N0, const std::string& rgn = "RGN_ALL");
+[[deprecated("Please use filter(const Field3D& var, int N0, "
+    "const std::string& region = \"RGN_ALL\") instead")]]
+inline Field3D filter(const Field3D& var, int N0, REGION rgn) {
+  return filter(var, N0, toString(rgn));
+}
+
+/// Fourier low pass filtering. Removes modes
+/// higher than \p zmax and optionally the zonal component
+///
+/// @param[in] var   Variable to apply filter to
+/// @param[in] zmax  Maximum mode in Z
+/// @param[in] keep_zonal  Keep the zonal component if true
+/// @param[in] rgn   The region to calculate the result over
+Field3D lowPass(const Field3D& var, int zmax, bool keep_zonal,
+    const std::string& rgn = "RGN_ALL");
+[[deprecated("Please use lowpass(const Field3D& var, int zmax, bool keep_zonal, "
+    "const std::string& region = \"RGN_ALL\") instead")]]
+inline Field3D lowPass(const Field3D& var, int zmax, bool keep_zonal, REGION rgn) {
+  return lowPass(var, zmax, keep_zonal, toString(rgn));
+}
+
+/// The argument \p keep_zonal used to be integer "zmin" -- this was a
+/// misnomer. Please use the version above which uses a bool instead
+DEPRECATED(inline Field3D lowPass(const Field3D& var, int zmax, int keep_zonal,
+                                  REGION rgn = RGN_ALL)) {
+  ASSERT0(static_cast<bool>(keep_zonal) == keep_zonal);
+  return lowPass(var, zmax, static_cast<bool>(keep_zonal), toString(rgn));
+}
 
 /// Fourier low pass filtering. Removes modes higher than \p zmax
 ///
 /// @param[in] var   Variable to apply filter to
 /// @param[in] zmax  Maximum mode in Z
 /// @param[in] rgn   The region to calculate the result over
-const Field3D lowPass(const Field3D &var, int zmax, REGION rgn = RGN_ALL);
-
-/// Fourier low pass filtering. Removes modes
-/// lower than \p zmin and higher than \p zmax
-///
-/// @param[in] var   Variable to apply filter to
-/// @param[in] zmin  Minimum mode in Z
-/// @param[in] zmax  Maximum mode in Z
-/// @param[in] rgn   The region to calculate the result over
-const Field3D lowPass(const Field3D &var, int zmax, int zmin, REGION rgn = RGN_ALL);
+inline Field3D lowPass(const Field3D &var, int zmax, const std::string rgn = "RGN_ALL") {
+  return lowPass(var, zmax, true, rgn);
+}
+[[deprecated("Please use lowpass(const Field3D& var, int zmax, "
+    "const std::string& region = \"RGN_ALL\") instead")]]
+inline Field3D lowPass(const Field3D &var, int zmax, REGION rgn) {
+  return lowPass(var, zmax, toString(rgn));
+}
 
 /// Perform a shift by a given angle in Z
 ///
@@ -707,13 +677,23 @@ void shiftZ(Field3D &var, int jx, int jy, double zangle);
 /// @param[inout] var  The variable to modify in-place
 /// @param[in] zangle  The angle to shift by in Z
 /// @param[in] rgn     The region to calculate the result over
-void shiftZ(Field3D &var, double zangle, REGION rgn=RGN_ALL);
+void shiftZ(Field3D &var, BoutReal zangle, const std::string& rgn="RGN_ALL");
+[[deprecated("Please use shiftZ(const Field3D& var, BoutReal zangle, "
+    "const std::string& region = \"RGN_ALL\") instead")]]
+inline void shiftZ(Field3D &var, BoutReal zangle, REGION rgn) {
+  return shiftZ(var, zangle, toString(rgn));
+}
 
 /// Average in the Z direction
 ///
 /// @param[in] f     Variable to average
 /// @param[in] rgn   The region to calculate the result over
-Field2D DC(const Field3D &f, REGION rgn = RGN_ALL);
+Field2D DC(const Field3D &f, const std::string& rgn = "RGN_ALL");
+[[deprecated("Please use DC(const Field3D& f, "
+    "const std::string& region = \"RGN_ALL\") instead")]]
+inline Field2D DC(const Field3D &f, REGION rgn) {
+  return DC(f, toString(rgn));
+}
 
 /// Force guard cells of passed field \p var to NaN
 #if CHECK > 2
@@ -728,5 +708,19 @@ inline void invalidateGuards(Field3D &UNUSED(var)) {}
 inline Field3D& ddt(Field3D &f) {
   return *(f.timeDeriv());
 }
+
+/// toString template specialisation
+/// Defined in utils.hxx
+template <>
+inline std::string toString<>(const Field3D& UNUSED(val)) {
+  return "<Field3D>";
+}
+
+/// Test if two fields are the same, by calculating
+/// the minimum absolute difference between them
+bool operator==(const Field3D &a, const Field3D &b);
+
+/// Output a string describing a Field3D to a stream
+std::ostream& operator<<(std::ostream &out, const Field3D &value);
 
 #endif /* __FIELD3D_H__ */

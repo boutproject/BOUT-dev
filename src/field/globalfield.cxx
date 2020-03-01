@@ -16,13 +16,9 @@ GlobalField::GlobalField(Mesh *m, int proc, int xsize, int ysize, int zsize)
 
   if(mype == proc) {
     // Allocate memory
-    data = Array<BoutReal>(nx * ny * nz);
+    data.reallocate(nx * ny * nz);
   }
 }
-
-GlobalField::~GlobalField() {
-}
-
 void GlobalField::proc_local_origin(int proc, int *x, int *y, int *z) const {
   
   int nxpe = mesh->getNXPE();
@@ -80,8 +76,10 @@ void GlobalField::proc_size(int proc, int *lx, int *ly, int *lz) const {
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 
-GlobalField2D::GlobalField2D(Mesh *m, int proc) : GlobalField(m, proc, m->GlobalNx, m->GlobalNy-2*m->ystart, 1), 
-  data_valid(false) {
+GlobalField2D::GlobalField2D(Mesh *m, int proc)
+  : GlobalField(m, proc, m->GlobalNx,
+                m->GlobalNy-m->numberOfYBoundaries()*2*m->ystart, 1),
+    data_valid(false) {
   
   if((proc < 0) || (proc >= npes))
     throw BoutException("Processor out of range");
@@ -112,13 +110,15 @@ void GlobalField2D::gather(const Field2D &f) {
   if(mype == data_on_proc) {
     // This processor will receive the data
     
-    MPI_Request* req = new MPI_Request[npes]; // Array of receive handles
+    // Array of receive handles
+    std::vector<MPI_Request> req(npes);
 
     // Post receives
     for(int p = 0; p < npes; p++) {
       if( p != mype ) {
         // Check size of the array
-        MPI_Irecv(buffer[p], msg_len(p), MPI_DOUBLE, p, 3141, comm, &req[p]);
+        bout::globals::mpi->MPI_Irecv(buffer[p], msg_len(p), MPI_DOUBLE, p, 3141, comm,
+                                      &req[p]);
       }
     }
     
@@ -142,7 +142,7 @@ void GlobalField2D::gather(const Field2D &f) {
       int pe;
       MPI_Status status;
       do {
-        MPI_Waitany(npes, req, &pe, &status);
+        bout::globals::mpi->MPI_Waitany(npes, req.data(), &pe, &status);
 
         if(pe != MPI_UNDEFINED) {
           // Unpack data from processor 'pe'
@@ -160,7 +160,6 @@ void GlobalField2D::gather(const Field2D &f) {
         }
       }while(pe != MPI_UNDEFINED);
     }
-    delete[] req;
   }else {
     // Sending data to proc
     
@@ -174,7 +173,8 @@ void GlobalField2D::gather(const Field2D &f) {
         buffer[0][x*ysize + y] = f(local_xorig+x, local_yorig+y);
       }
 
-    MPI_Send(buffer[0], msg_len(mype), MPI_DOUBLE, data_on_proc, 3141, comm);
+    bout::globals::mpi->MPI_Send(buffer[0], msg_len(mype), MPI_DOUBLE, data_on_proc, 3141,
+                                 comm);
   }
   data_valid = true;
 }
@@ -200,8 +200,8 @@ const Field2D GlobalField2D::scatter() const {
         for(int y=0;y<ysize;y++) {
           buffer[p][x*ysize + y] = (*this)(x+xorig,y+yorig);
         }
-      
-      MPI_Send(buffer[p], xsize*ysize, MPI_DOUBLE, p, 1413, comm);
+
+      bout::globals::mpi->MPI_Send(buffer[p], xsize * ysize, MPI_DOUBLE, p, 1413, comm);
     }
 
     int local_xorig, local_yorig;
@@ -218,8 +218,9 @@ const Field2D GlobalField2D::scatter() const {
       }
   }else {
     // Receive data
-    MPI_Recv(buffer[0], msg_len(mype), MPI_DOUBLE, data_on_proc, 1413, comm, &status);
-    
+    bout::globals::mpi->MPI_Recv(buffer[0], msg_len(mype), MPI_DOUBLE, data_on_proc, 1413,
+                                 comm, &status);
+
     int local_xorig, local_yorig;
     proc_local_origin(mype, &local_xorig, &local_yorig);
     int xorig, yorig;
@@ -243,8 +244,10 @@ int GlobalField2D::msg_len(int proc) const {
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 
-GlobalField3D::GlobalField3D(Mesh *m, int proc) : GlobalField(m, proc, m->GlobalNx, m->GlobalNy-2*m->ystart, m->LocalNz), 
-  data_valid(false) {
+GlobalField3D::GlobalField3D(Mesh *m, int proc)
+  : GlobalField(m, proc, m->GlobalNx,
+                m->GlobalNy-m->numberOfYBoundaries()*2*m->ystart, m->LocalNz),
+    data_valid(false) {
   
   if((proc < 0) || (proc >= npes))
     throw BoutException("Processor out of range");
@@ -275,13 +278,15 @@ void GlobalField3D::gather(const Field3D &f) {
   if(mype == data_on_proc) {
     // This processor will receive the data
     
-    MPI_Request* req = new MPI_Request[npes]; // Array of receive handles
+    // Array of receive handles
+    std::vector<MPI_Request> req(npes);
 
     // Post receives
     for(int p = 0; p < npes; p++) {
       if( p != mype ) {
         // Check size of the array
-        MPI_Irecv(buffer[p], msg_len(p), MPI_DOUBLE, p, 3141, comm, &req[p]);
+        bout::globals::mpi->MPI_Irecv(buffer[p], msg_len(p), MPI_DOUBLE, p, 3141, comm,
+                                      &req[p]);
       }
     }
     
@@ -306,7 +311,7 @@ void GlobalField3D::gather(const Field3D &f) {
       int pe;
       MPI_Status status;
       do {
-        MPI_Waitany(npes, req, &pe, &status);
+        bout::globals::mpi->MPI_Waitany(npes, req.data(), &pe, &status);
 
         if(pe != MPI_UNDEFINED) {
           // Unpack data from processor 'pe'
@@ -326,7 +331,6 @@ void GlobalField3D::gather(const Field3D &f) {
         }
       }while(pe != MPI_UNDEFINED);
     }
-    delete[] req;
   }else {
     // Sending data to proc
     
@@ -341,8 +345,9 @@ void GlobalField3D::gather(const Field3D &f) {
         for(int z=0;z<mesh->LocalNz;z++) {
           buffer[0][x*ysize*zsize + y*zsize + z] = f(local_xorig+x, local_yorig+y, z);
         }
-    
-    MPI_Send(buffer[0], msg_len(mype), MPI_DOUBLE, data_on_proc, 3141, comm);
+
+    bout::globals::mpi->MPI_Send(buffer[0], msg_len(mype), MPI_DOUBLE, data_on_proc, 3141,
+                                 comm);
   }
   data_valid = true;
 }
@@ -370,8 +375,9 @@ const Field3D GlobalField3D::scatter() const {
           for(int z=0;z<zsize;z++) {
             buffer[p][x*ysize*zsize + y*zsize + z] = (*this)(x+xorig,y+yorig,z);
           }
-      
-      MPI_Send(buffer[p], xsize*ysize*zsize, MPI_DOUBLE, p, 1413, comm);
+
+      bout::globals::mpi->MPI_Send(buffer[p], xsize * ysize * zsize, MPI_DOUBLE, p, 1413,
+                                   comm);
     }
 
     int local_xorig, local_yorig;
@@ -390,8 +396,9 @@ const Field3D GlobalField3D::scatter() const {
         }
   }else {
     // Receive data
-    MPI_Recv(buffer[0], msg_len(mype), MPI_DOUBLE, data_on_proc, 1413, comm, &status);
-    
+    bout::globals::mpi->MPI_Recv(buffer[0], msg_len(mype), MPI_DOUBLE, data_on_proc, 1413,
+                                 comm, &status);
+
     int local_xorig, local_yorig;
     proc_local_origin(mype, &local_xorig, &local_yorig);
     int xorig, yorig;

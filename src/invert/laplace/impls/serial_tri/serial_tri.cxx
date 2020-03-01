@@ -27,6 +27,7 @@
 #include "globals.hxx"
 #include "serial_tri.hxx"
 
+#include <bout/mesh.hxx>
 #include <boutexception.hxx>
 #include <utils.hxx>
 #include <fft.hxx>
@@ -48,9 +49,7 @@ LaplaceSerialTri::LaplaceSerialTri(Options *opt, CELL_LOC loc, Mesh *mesh_in)
   }
 }
 
-const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b) {
-  return solve(b,b);   // Call the solver below
-}
+FieldPerp LaplaceSerialTri::solve(const FieldPerp& b) { return solve(b, b); }
 
 /*!
  * Solve Ax=b for x given b
@@ -72,14 +71,14 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b) {
  *
  * \return          The inverted variable.
  */
-const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0) {
+FieldPerp LaplaceSerialTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   ASSERT1(localmesh == b.getMesh() && localmesh == x0.getMesh());
+  ASSERT1(b.getLocation() == location);
+  ASSERT1(x0.getLocation() == location);
 
-  FieldPerp x(localmesh);
-  x.allocate();
+  FieldPerp x{emptyFrom(b)};
 
   int jy = b.getIndex();
-  x.setIndex(jy);
 
   int ncz = localmesh->LocalNz; // No of z pnts
   int ncx = localmesh->LocalNx; // No of x pnts
@@ -234,7 +233,7 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
 #if CHECK > 2
     for(int kz=0;kz<ncz;kz++)
       if(!finite(x(ix,kz)))
-        throw BoutException("Non-finite at %d, %d, %d", ix, jy, kz);
+        throw BoutException("Non-finite at {:d}, {:d}, {:d}", ix, jy, kz);
 #endif
   }
 

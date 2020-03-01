@@ -7,22 +7,19 @@ try:
 except:
   pass
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
+from boututils.run_wrapper import build_and_log, shell, launch_safe
 from boutdata.collect import collect
 import numpy as np
 from sys import stdout, exit
 
 
-MPIRUN=getmpirun()
-
-print("Making griddata test")
-shell_safe("make > make.log")
+build_and_log("griddata test")
 
 for nproc in [1]:
   stdout.write("Checking %d processors ... " % (nproc))
 
   shell("rm ./data*nc")
-  s, out = launch_safe("./test_griddata -d screw", runcmd=MPIRUN, nproc=nproc, pipe=True)
+  s, out = launch_safe("./test_griddata -d screw", nproc=nproc, pipe=True)
 
   with open("run.log."+str(nproc), "w") as f:
     f.write(out)
@@ -38,7 +35,7 @@ for nproc in [1]:
   dr = float(rwidth) / nx
 
   # Test value of dx
-  if np.min(np.abs(dx - dr * Bpxy * Rxy)) > 1e-7:
+  if np.max(np.abs(dx - dr * Bpxy * Rxy)) > 1e-7:
     print("Failed: dx does not match")
     exit(1)
 

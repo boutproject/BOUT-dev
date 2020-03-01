@@ -11,6 +11,3 @@ MZ = 4    # Z size
 grid = "test_io.grd.hdf5"
 
 dump_format = "hdf5"  # HDF5 format. Alternative is "pdb" or "nc"
-
-[output]
-floats=true

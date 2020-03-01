@@ -25,38 +25,11 @@
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  *
  **************************************************************************/
-class LaplacePetsc;
 
 #ifndef __PETSC_LAPLACE_H__
 #define __PETSC_LAPLACE_H__
 
-#ifndef BOUT_HAS_PETSC
-
-#include <boutexception.hxx>
-#include <invert_laplace.hxx>
-
-class LaplacePetsc : public Laplacian {
-public:
-  LaplacePetsc(Options *UNUSED(opt) = nullptr, const CELL_LOC UNUSED(loc) = CELL_CENTRE, Mesh *UNUSED(mesh_in) = mesh) {
-    throw BoutException("No PETSc solver available");
-  }
-
-  using Laplacian::setCoefA;
-  void setCoefA(const Field2D &UNUSED(val)) override {}
-  using Laplacian::setCoefC;
-  void setCoefC(const Field2D &UNUSED(val)) override {}
-  using Laplacian::setCoefD;
-  void setCoefD(const Field2D &UNUSED(val)) override {}
-  using Laplacian::setCoefEx;
-  void setCoefEx(const Field2D &UNUSED(val)) override {}
-  using Laplacian::setCoefEz;
-  void setCoefEz(const Field2D &UNUSED(val)) override {}
-
-  using Laplacian::solve;
-  const FieldPerp solve(const FieldPerp &UNUSED(b)) override {throw BoutException("PETSc not available");}
-};
-
-#else
+#ifdef BOUT_HAS_PETSC
 
 #include <globals.hxx>
 #include <output.hxx>
@@ -66,15 +39,41 @@ public:
 #include <bout/petsclib.hxx>
 #include <boutexception.hxx>
 
+// PETSc creates macros for MPI calls, which interfere with the MpiWrapper class
+#undef MPI_Allreduce
+#undef MPI_Gatherv
+#undef MPI_Irecv
+#undef MPI_Isend
+#undef MPI_Recv
+#undef MPI_Scatterv
+#undef MPI_Send
+#undef MPI_Wait
+#undef MPI_Waitall
+#undef MPI_Waitany
+
+class LaplacePetsc;
+
+namespace {
+RegisterLaplace<LaplacePetsc> registerlaplacepetsc(LAPLACE_PETSC);
+}
+
 class LaplacePetsc : public Laplacian {
 public:
-  LaplacePetsc(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = mesh);
+  LaplacePetsc(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr);
   ~LaplacePetsc() {
     KSPDestroy( &ksp );
     VecDestroy( &xs );
     VecDestroy( &bs );
     MatDestroy( &MatA );
   }
+
+  using Laplacian::setCoefA;
+  using Laplacian::setCoefC;
+  using Laplacian::setCoefC1;
+  using Laplacian::setCoefC2;
+  using Laplacian::setCoefD;
+  using Laplacian::setCoefEx;
+  using Laplacian::setCoefEz;
 
   void setCoefA(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
@@ -174,8 +173,9 @@ public:
     if(pcsolve) pcsolve->setCoefEz(val);
   }
 
-  const FieldPerp solve(const FieldPerp &b) override;
-  const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override;
+  using Laplacian::solve;
+  FieldPerp solve(const FieldPerp &b) override;
+  FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override;
 
   int precon(Vec x, Vec y); ///< Preconditioner function
 
@@ -230,7 +230,7 @@ private:
 
   bool use_precon;  // Switch for preconditioning
   bool rightprec;   // Right preconditioning
-  Laplacian *pcsolve; // Laplacian solver for preconditioning
+  std::unique_ptr<Laplacian> pcsolve; // Laplacian solver for preconditioning
 
   void vecToField(Vec x, FieldPerp &f);        // Copy a vector into a fieldperp
   void fieldToVec(const FieldPerp &f, Vec x);  // Copy a fieldperp into a vector

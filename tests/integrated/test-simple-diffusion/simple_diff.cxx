@@ -63,7 +63,7 @@ int physics_init(bool restarting)
   return 0;
 }
 
-int physics_run(BoutReal t)
+int physics_run(BoutReal UNUSED(t))
 {
   // Run communications
   //mesh->communicate(N,P,V);

@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
+from boututils.run_wrapper import build_and_log, shell, launch_safe
 from boutdata.collect import collect
 import numpy as np
 from sys import stdout, exit
 
-MPIRUN=getmpirun()
 
-print("-> Making restart test")
-shell_safe("make > make.log")
+build_and_log("restart test")
 
 # Run once for 10 timesteps
-s, out = launch_safe("./test_restarting nout=10", runcmd=MPIRUN, nproc=1, pipe=True)
+s, out = launch_safe("./test_restarting nout=10", nproc=1, pipe=True)
 
 # Read reference data
 f3d_0 = collect("f3d", path="data", info=False);
@@ -23,8 +21,8 @@ f2d_0 = collect("f2d", path="data", info=False);
 print("-> Testing restart append")
 
 shell("rm data/BOUT.dmp.0.nc")
-s, out = launch_safe("./test_restarting nout=5", runcmd=MPIRUN, nproc=1, pipe=True)
-s, out = launch_safe("./test_restarting nout=5 restart append", runcmd=MPIRUN, nproc=1, pipe=True)
+s, out = launch_safe("./test_restarting nout=5", nproc=1, pipe=True)
+s, out = launch_safe("./test_restarting nout=5 restart append", nproc=1, pipe=True)
 
 f3d_1 = collect("f3d", path="data", info=False);
 f2d_1 = collect("f2d", path="data", info=False);
@@ -50,8 +48,8 @@ if np.max(np.abs(f2d_1 - f2d_0)) > 1e-10:
 print("-> Testing restart")
 
 shell("rm data/BOUT.dmp.0.nc")
-s, out = launch_safe("./test_restarting nout=5", runcmd=MPIRUN, nproc=1, pipe=True)
-s, out = launch_safe("./test_restarting nout=5 restart", runcmd=MPIRUN, nproc=1, pipe=True)
+s, out = launch_safe("./test_restarting nout=5", nproc=1, pipe=True)
+s, out = launch_safe("./test_restarting nout=5 restart", nproc=1, pipe=True)
 
 f3d_1 = collect("f3d", path="data", info=False);
 f2d_1 = collect("f2d", path="data", info=False);

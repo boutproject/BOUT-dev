@@ -106,7 +106,7 @@ def deriv2D(data,axis=-1,dx=1.0,noise_suppression=True):
       raise RuntimeError("Data too small to use 9th order method")
     tmp = array([old_div(1.0,280.0),old_div(-4.0,105.0),old_div(1.0,5.0),old_div(-4.0,5.0),0.0,old_div(4.0,5.0),old_div(-1.0,5.0),old_div(4.0,105.0),old_div(-1.0,280.0)])
     
-  N = old_div((tmp.size-1),2)
+  N = int((tmp.size-1)/2)
   if axis==1:
     W = transpose(tmp[:,None])
     data_deriv = convolve(data,W,mode='same')/dx*-1.0
@@ -122,7 +122,7 @@ def deriv2D(data,axis=-1,dx=1.0,noise_suppression=True):
       data_deriv[s[0]-N:,i] = old_div(deriv(data[s[0]-N:,i]),dx)
   else:
     data_deriv = zeros((s[0],s[1],2))
-    if len(dx)==1:
+    if (not hasattr(dx, '__len__')) or len(dx)==1:
       dx = array([dx,dx])
 
     W = tmp[:,None]#transpose(multiply(tmp,ones((s[1],tmp.size))))

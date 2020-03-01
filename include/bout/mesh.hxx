@@ -45,6 +45,11 @@ class Mesh;
 
 #include "mpi.h"
 
+#include <bout/deprecated.hxx>
+#include <bout/deriv_store.hxx>
+#include <bout/index_derivs_interface.hxx>
+#include <bout/mpi_wrapper.hxx>
+
 #include "field_data.hxx"
 #include "bout_types.hxx"
 #include "field2d.hxx"
@@ -63,18 +68,40 @@ class Mesh;
 
 #include "coordinates.hxx"    // Coordinates class
 
-#include "paralleltransform.hxx" // ParallelTransform class
-
 #include "unused.hxx"
 
 #include <bout/region.hxx>
+#include "bout/generic_factory.hxx"
 
 #include <list>
 #include <memory>
 #include <map>
 
+class MeshFactory : public Factory<
+  Mesh, MeshFactory,
+  std::function<std::unique_ptr<Mesh>(GridDataSource*, Options*)>> {
+public:
+  static constexpr auto type_name = "Mesh";
+  static constexpr auto section_name = "mesh";
+  static constexpr auto option_name = "type";
+  static constexpr auto default_type = "bout";
+
+  ReturnType create(Options* options = nullptr, GridDataSource* source = nullptr);
+};
+
+template <class DerivedType>
+class RegisterMesh {
+public:
+  RegisterMesh(const std::string& name) {
+    MeshFactory::getInstance().add(
+        name, [](GridDataSource* source, Options* options) -> std::unique_ptr<Mesh> {
+          return std::make_unique<DerivedType>(source, options);
+        });
+  }
+};
+
 /// Type used to return pointers to handles
-typedef void* comm_handle;
+using comm_handle = void*;
 
 class Mesh {
  public:
@@ -120,21 +147,41 @@ class Mesh {
   
   // Get routines to request data from mesh file
   
+  /// Get a string from the input source
+  /// 
+  /// @param[out] sval  The value will be put into this variable
+  /// @param[in] name   The name of the variable to read
+  /// @param[in] def    The default value if not found
+  ///
+  /// @returns zero if successful, non-zero on failure
+  int get(std::string& sval, const std::string& name, const std::string& def="");
+
   /// Get an integer from the input source
   /// 
   /// @param[out] ival  The value will be put into this variable
   /// @param[in] name   The name of the variable to read
+  /// @param[in] def    The default value if not found
   ///
   /// @returns zero if successful, non-zero on failure
-  int get(int &ival, const string &name);
+  int get(int &ival, const std::string &name, int def=0);
 
   /// Get a BoutReal from the input source
   /// 
   /// @param[out] rval  The value will be put into this variable
   /// @param[in] name   The name of the variable to read
+  /// @param[in] def    The default value if not found
   ///
   /// @returns zero if successful, non-zero on failure
-  int get(BoutReal &rval, const string &name); 
+  int get(BoutReal& rval, const std::string& name, BoutReal def=0.0);
+
+  /// Get a bool from the input source
+  ///
+  /// @param[out] bval  The value will be put into this variable
+  /// @param[in] name   The name of the variable to read
+  /// @param[in] def    The default value if not found
+  ///
+  /// @returns zero if successful, non-zero on failure
+  int get(bool &bval, const std::string &name, bool def=false);
 
   /// Get a Field2D from the input source
   /// including communicating guard cells
@@ -144,7 +191,7 @@ class Mesh {
   /// @param[in] def    The default value if not found
   ///
   /// @returns zero if successful, non-zero on failure
-  int get(Field2D &var, const string &name, BoutReal def=0.0);
+  int get(Field2D &var, const std::string &name, BoutReal def=0.0);
 
   /// Get a Field3D from the input source
   ///
@@ -154,7 +201,17 @@ class Mesh {
   /// @param[in] communicate  Should the field be communicated to fill guard cells?
   ///
   /// @returns zero if successful, non-zero on failure
-  int get(Field3D &var, const string &name, BoutReal def=0.0, bool communicate=true);
+  int get(Field3D &var, const std::string &name, BoutReal def=0.0, bool communicate=true);
+
+  /// Get a FieldPerp from the input source
+  ///
+  /// @param[out] var   This will be set to the value. Will be allocated if needed
+  /// @param[in] name   Name of the variable to read
+  /// @param[in] def    The default value if not found
+  /// @param[in] communicate  Should the field be communicated to fill guard cells?
+  ///
+  /// @returns zero if successful, non-zero on failure
+  int get(FieldPerp &var, const std::string &name, BoutReal def=0.0, bool communicate=true);
 
   /// Get a Vector2D from the input source.
   /// If \p var is covariant then this gets three
@@ -165,9 +222,10 @@ class Mesh {
   ///
   /// @param[in] var  This will be set to the value read
   /// @param[in] name  The name of the vector. Individual fields are read based on this name by appending. See above
+  /// @param[in] def   The default value if not found (used for all the components)
   ///
   /// @returns zero always. 
-  int get(Vector2D &var, const string &name);
+  int get(Vector2D &var, const std::string &name, BoutReal def=0.0);
 
   /// Get a Vector3D from the input source.
   /// If \p var is covariant then this gets three
@@ -178,12 +236,22 @@ class Mesh {
   ///
   /// @param[in] var  This will be set to the value read
   /// @param[in] name  The name of the vector. Individual fields are read based on this name by appending. See above
+  /// @param[in] def    The default value if not found (used for all the components)
   ///
   /// @returns zero always. 
-  int get(Vector3D &var, const string &name);
+  int get(Vector3D &var, const std::string &name, BoutReal def=0.0);
+
+  /// Test if input source was a grid file
+  bool isDataSourceGridFile() const;
 
   /// Wrapper for GridDataSource::hasVar
-  bool sourceHasVar(const string &name);
+  bool sourceHasVar(const std::string &name);
+
+  /// Wrapper for GridDataSource::hasXBoundaryGuards
+  bool sourceHasXBoundaryGuards();
+
+  /// Wrapper for GridDataSource::hasYBoundaryGuards
+  bool sourceHasYBoundaryGuards();
   
   // Communications
   /*!
@@ -217,7 +285,7 @@ class Mesh {
   /*!
    * Communicate an X-Z field
    */
-  void communicate(FieldPerp &f); 
+  virtual void communicate(FieldPerp& f);
 
   /*!
    * Send a list of FieldData objects
@@ -250,6 +318,7 @@ class Mesh {
   /// @param[in] buffer A buffer of data to send
   /// @param[in] size   The length of \p buffer
   /// @param[in] tag    A label, must be the same at receive
+  [[deprecated("This experimental functionality will be removed in 5.0")]]
   virtual MPI_Request sendToProc(int xproc, int yproc, BoutReal *buffer, int size, int tag) = 0;
 
   /// Low-level communication routine
@@ -262,6 +331,7 @@ class Mesh {
   /// @param[inout] buffer  The buffer to fill with data. Must already be allocated of length \p size
   /// @param[in] size  The length of \p buffer
   /// @param[in] tag   A label, must be the same as send
+  [[deprecated("This experimental functionality will be removed in 5.0")]]
   virtual comm_handle receiveFromProc(int xproc, int yproc, BoutReal *buffer, int size, int tag) = 0;
   
   virtual int getNXPE() = 0; ///< The number of processors in the X direction
@@ -272,7 +342,9 @@ class Mesh {
   // X communications
   virtual bool firstX() = 0;  ///< Is this processor first in X? i.e. is there a boundary to the left in X?
   virtual bool lastX() = 0; ///< Is this processor last in X? i.e. is there a boundary to the right in X?
-  bool periodicX; ///< Domain is periodic in X?
+
+  /// Domain is periodic in X?
+  bool periodicX{false};
 
   int NXPE, PE_XIND; ///< Number of processors in X, and X processor index
 
@@ -307,7 +379,10 @@ class Mesh {
   MPI_Comm getXcomm() {return getXcomm(0);} ///< Return communicator containing all processors in X
   virtual MPI_Comm getXcomm(int jy) const = 0; ///< Return X communicator
   virtual MPI_Comm getYcomm(int jx) const = 0; ///< Return Y communicator
-  
+
+  /// Return pointer to the mesh's MPI Wrapper object
+  MpiWrapper& getMpi() { return *mpi; }
+
   /// Is local X index \p jx periodic in Y?
   ///
   /// \param[in] jx   The local (on this processor) index in X
@@ -318,6 +393,26 @@ class Mesh {
   /// \param[in] jx   The local (on this processor) index in X
   /// \param[out] ts  The Twist-Shift angle if periodic
   virtual bool periodicY(int jx, BoutReal &ts) const = 0;
+
+  /// Get number of boundaries in the y-direction, i.e. locations where there are boundary
+  /// cells in the global grid
+  virtual int numberOfYBoundaries() const = 0;
+
+  /// Is there a branch cut at this processor's lower y-boundary?
+  ///
+  /// @param[in] jx             The local (on this processor) index in X
+  /// @returns pair<bool, BoutReal> - bool is true if there is a branch cut,
+  ///                                 BoutReal gives the total zShift for a 2pi
+  ///                                 poloidal circuit if there is a branch cut
+  virtual std::pair<bool, BoutReal> hasBranchCutLower(int jx) const = 0;
+
+  /// Is there a branch cut at this processor's upper y-boundary?
+  ///
+  /// @param[in] jx             The local (on this processor) index in X
+  /// @returns pair<bool, BoutReal> - bool is true if there is a branch cut,
+  ///                                 BoutReal gives the total zShift for a 2pi
+  ///                                 poloidal circuit if there is a branch cut
+  virtual std::pair<bool, BoutReal> hasBranchCutUpper(int jx) const = 0;
   
   virtual int ySize(int jx) const; ///< The number of points in Y at fixed X index \p jx
 
@@ -326,19 +421,25 @@ class Mesh {
   virtual bool lastY() const = 0; ///< Is this processor last in Y? i.e. is there a boundary at upper Y?
   virtual bool firstY(int xpos) const = 0; ///< Is this processor first in Y? i.e. is there a boundary at lower Y?
   virtual bool lastY(int xpos) const = 0; ///< Is this processor last in Y? i.e. is there a boundary at upper Y?
+  [[deprecated("This experimental functionality will be removed in 5.0")]]
   virtual int UpXSplitIndex() = 0;  ///< If the upper Y guard cells are split in two, return the X index where the split occurs
+  [[deprecated("This experimental functionality will be removed in 5.0")]]
   virtual int DownXSplitIndex() = 0; ///< If the lower Y guard cells are split in two, return the X index where the split occurs
 
   /// Send data
+  [[deprecated("This experimental functionality will be removed in 5.0")]]
   virtual int sendYOutIndest(BoutReal *buffer, int size, int tag) = 0;
 
-  /// 
+  ///
+  [[deprecated("This experimental functionality will be removed in 5.0")]]
   virtual int sendYOutOutdest(BoutReal *buffer, int size, int tag) = 0;
 
   ///
+  [[deprecated("This experimental functionality will be removed in 5.0")]]
   virtual int sendYInIndest(BoutReal *buffer, int size, int tag) = 0;
 
   ///
+  [[deprecated("This experimental functionality will be removed in 5.0")]]
   virtual int sendYInOutdest(BoutReal *buffer, int size, int tag) = 0;
 
   /// Non-blocking receive. Must be followed by a call to wait()
@@ -346,6 +447,7 @@ class Mesh {
   /// @param[out] buffer  A buffer of length \p size which must already be allocated
   /// @param[in] size The number of BoutReals expected
   /// @param[in] tag  The tag number of the expected message
+  [[deprecated("This experimental functionality will be removed in 5.0")]]
   virtual comm_handle irecvYOutIndest(BoutReal *buffer, int size, int tag) = 0;
 
   /// Non-blocking receive. Must be followed by a call to wait()
@@ -353,6 +455,7 @@ class Mesh {
   /// @param[out] buffer  A buffer of length \p size which must already be allocated
   /// @param[in] size The number of BoutReals expected
   /// @param[in] tag  The tag number of the expected message
+  [[deprecated("This experimental functionality will be removed in 5.0")]]
   virtual comm_handle irecvYOutOutdest(BoutReal *buffer, int size, int tag) = 0;
 
   /// Non-blocking receive. Must be followed by a call to wait()
@@ -360,6 +463,7 @@ class Mesh {
   /// @param[out] buffer  A buffer of length \p size which must already be allocated
   /// @param[in] size The number of BoutReals expected
   /// @param[in] tag  The tag number of the expected message
+  [[deprecated("This experimental functionality will be removed in 5.0")]]
   virtual comm_handle irecvYInIndest(BoutReal *buffer, int size, int tag) = 0;
 
   /// Non-blocking receive. Must be followed by a call to wait()
@@ -367,6 +471,7 @@ class Mesh {
   /// @param[out] buffer  A buffer of length \p size which must already be allocated
   /// @param[in] size The number of BoutReals expected
   /// @param[in] tag  The tag number of the expected message
+  [[deprecated("This experimental functionality will be removed in 5.0")]]
   virtual comm_handle irecvYInOutdest(BoutReal *buffer, int size, int tag) = 0;
   
   // Boundary region iteration
@@ -387,13 +492,13 @@ class Mesh {
   // Boundary regions
 
   /// Return a vector containing all the boundary regions on this processor
-  virtual vector<BoundaryRegion*> getBoundaries() = 0;
+  virtual std::vector<BoundaryRegion*> getBoundaries() = 0;
 
   /// Add a boundary region to this processor
   virtual void addBoundary(BoundaryRegion* UNUSED(bndry)) {}
 
   /// Get all the parallel (Y) boundaries on this processor 
-  virtual vector<BoundaryRegionPar*> getBoundariesPar() = 0;
+  virtual std::vector<BoundaryRegionPar*> getBoundariesPar() = 0;
 
   /// Add a parallel(Y) boundary to this processor 
   virtual void addBoundaryPar(BoundaryRegionPar* UNUSED(bndry)) {}
@@ -412,157 +517,249 @@ class Mesh {
   int OffsetX, OffsetY, OffsetZ;    ///< Offset of this mesh within the global array
                                     ///< so startx on this processor is OffsetX in global
   
-  /// Returns the global X index given a local indexs
+  /// Returns the global X index given a local index
   /// If the local index includes the boundary cells, then so does the global.
-  virtual int XGLOBAL(int xloc) const = 0;
+  [[deprecated("Use getGlobalXIndex instead")]]
+  int XGLOBAL(int xloc) const { return getGlobalXIndex(xloc); }
   /// Returns the global Y index given a local index
   /// The local index must include the boundary, the global index does not.
-  virtual int YGLOBAL(int yloc) const = 0;
+  [[deprecated("Use getGlobalYIndex or getGlobalYIndexNoBoundaries instead")]]
+  virtual int YGLOBAL(int yloc) const { return getGlobalYIndexNoBoundaries(yloc); }
+
+  /// Returns the local X index given a global index
+  /// If the global index includes the boundary cells, then so does the local.
+  virtual int XLOCAL(int xglo) const = 0;
+  /// Returns the local Y index given a global index
+  /// If the global index includes the boundary cells, then so does the local.
+  virtual int YLOCAL(int yglo) const = 0;
+
+  /// Returns a global X index given a local index.
+  /// Global index includes boundary cells, local index includes boundary or guard cells.
+  virtual int getGlobalXIndex(int xlocal) const = 0;
+
+  /// Returns a global X index given a local index.
+  /// Global index excludes boundary cells, local index includes boundary or guard cells.
+  virtual int getGlobalXIndexNoBoundaries(int xlocal) const = 0;
+
+  /// Returns a global Y index given a local index.
+  /// Global index includes boundary cells, local index includes boundary or guard cells.
+  virtual int getGlobalYIndex(int ylocal) const = 0;
+
+  /// Returns a global Y index given a local index.
+  /// Global index excludes boundary cells, local index includes boundary or guard cells.
+  virtual int getGlobalYIndexNoBoundaries(int ylocal) const = 0;
+
+  /// Returns a global Z index given a local index.
+  /// Global index includes boundary cells, local index includes boundary or guard cells.
+  virtual int getGlobalZIndex(int zlocal) const = 0;
+
+  /// Returns a global Z index given a local index.
+  /// Global index excludes boundary cells, local index includes boundary or guard cells.
+  virtual int getGlobalZIndexNoBoundaries(int zlocal) const = 0;
 
   /// Size of the mesh on this processor including guard/boundary cells
   int LocalNx, LocalNy, LocalNz;
   
   /// Local ranges of data (inclusive), excluding guard cells
-  int xstart, xend, ystart, yend;
+  int xstart, xend, ystart, yend, zstart, zend;
   
-  bool StaggerGrids;    ///< Enable staggered grids (Centre, Lower). Otherwise all vars are cell centred (default).
+  /// Enable staggered grids (Centre, Lower). Otherwise all vars are
+  /// cell centred (default).
+  bool StaggerGrids{false};
   
-  bool IncIntShear; ///< Include integrated shear (if shifting X)
+  /// Include integrated shear (if shifting X)
+  bool IncIntShear{false};
+
+  int numberOfXPoints{0};
 
   /// Coordinate system
   Coordinates *getCoordinates(const CELL_LOC location = CELL_CENTRE) {
+    return getCoordinatesSmart(location).get();
+  };
+
+  std::shared_ptr<Coordinates>
+  getCoordinatesSmart(const CELL_LOC location = CELL_CENTRE) {
     ASSERT1(location != CELL_DEFAULT);
     ASSERT1(location != CELL_VSHIFT);
 
-    if (coords_map.count(location)) { // True branch most common, returns immediately
-      return coords_map[location].get();
-    } else {
-      // No coordinate system set. Create default
-      // Note that this can't be allocated here due to incomplete type
-      // (circular dependency between Mesh and Coordinates)
-      coords_map.emplace(location, createDefaultCoordinates(location));
-      return coords_map[location].get();
+    auto found = coords_map.find(location);
+    if (found != coords_map.end()) {
+      // True branch most common, returns immediately
+      return found->second;
     }
+
+    // No coordinate system set. Create default
+    // Note that this can't be allocated here due to incomplete type
+    // (circular dependency between Mesh and Coordinates)
+    auto inserted = coords_map.emplace(location, nullptr);
+    inserted.first->second = createDefaultCoordinates(location);
+    return inserted.first->second;
   }
 
-  // First derivatives in index space
-  // Implemented in src/mesh/index_derivs.hxx
+  /// Returns the non-CELL_CENTRE location
+  /// allowed as a staggered location
+  CELL_LOC getAllowedStaggerLoc(DIRECTION direction) const {
+    AUTO_TRACE();
+    switch (direction) {
+    case (DIRECTION::X):
+      return CELL_XLOW;
+    case (DIRECTION::Y):
+    case (DIRECTION::YOrthogonal):
+    case (DIRECTION::YAligned):
+      return CELL_YLOW;
+    case (DIRECTION::Z):
+      return CELL_ZLOW;
+    default:
+      throw BoutException("Unhandled direction encountered in getAllowedStaggerLoc");
+    }
+  };
 
-  BoutReal fft_derivs_filter; ///< Fraction of modes to filter. This is set in derivs_init from option "ddz:fft_filter"
-  /// First derivative in X direction, in index space
-  const Field3D indexDDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
-                         REGION region=RGN_NOBNDRY);
-  /// First derivative in X direction, in index space
-  const Field2D indexDDX(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
-                         DIFF_METHOD method = DIFF_DEFAULT,
-                         REGION region= RGN_NOBNDRY);
-  /// First derivative in Y direction in index space
-  const Field3D indexDDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
-                         REGION region=RGN_NOBNDRY);
-  /// First derivative in Y direction in index space
-  const Field2D indexDDY(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
-                         DIFF_METHOD method = DIFF_DEFAULT,
-                         REGION region=RGN_NOBNDRY);
-  /// First derivative in Z direction in index space
-  const Field3D indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
-                         REGION region=RGN_NOBNDRY);
-  const Field3D indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
-                         bool inc_xbndry) {
-    return indexDDZ(f, outloc, method, inc_xbndry? RGN_NOY : RGN_NOBNDRY);
-  }
-  /// First derivative in Z direction in index space
-  const Field2D indexDDZ(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
-                         DIFF_METHOD method = DIFF_DEFAULT,
-                         REGION region=RGN_NOBNDRY);
+  /// Returns the number of grid points in the
+  /// particular direction
+  int getNpoints(DIRECTION direction) const {
+    AUTO_TRACE();
+    switch (direction) {
+    case (DIRECTION::X):
+      return LocalNx;
+    case (DIRECTION::Y):
+    case (DIRECTION::YOrthogonal):
+    case (DIRECTION::YAligned):
+      return LocalNy;
+    case (DIRECTION::Z):
+      return LocalNz;
+    default:
+      throw BoutException("Unhandled direction encountered in getNpoints");
+    }
+  };
 
-  // Second derivatives in index space
-  // Implemented in src/mesh/index_derivs.hxx
+  /// Returns the number of guard points in the
+  /// particular direction
+  int getNguard(DIRECTION direction) const {
+    AUTO_TRACE();
+    switch (direction) {
+    case (DIRECTION::X):
+      return xstart;
+    case (DIRECTION::Y):
+    case (DIRECTION::YOrthogonal):
+    case (DIRECTION::YAligned):
+      return ystart;
+    case (DIRECTION::Z):
+      return 2;
+    default:
+      throw BoutException("Unhandled direction encountered in getNguard");
+    }
+  };
+
+  /// Re-calculate staggered Coordinates, useful if CELL_CENTRE Coordinates are changed
+  void recalculateStaggeredCoordinates();
+
+  ///////////////////////////////////////////////////////////
+  // INDEX DERIVATIVE OPERATORS
+  ///////////////////////////////////////////////////////////
+
+  ////// Utilties and parameters
   
-  /// Second derivative in X direction in index space
-  ///
-  /// @param[in] f  The field to be differentiated
-  /// @param[in] outloc  The cell location where the result is desired
-  /// @param[in] method  The differencing method to use, overriding default
-  /// @param[in] region  The region of the grid for which the result is calculated.
-  const Field3D indexD2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
-                           REGION region=RGN_NOBNDRY);
-  /// Second derivative in X direction in index space
-  const Field2D indexD2DX2(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
-                           DIFF_METHOD method = DIFF_DEFAULT,
-                           REGION region=RGN_NOBNDRY);
+  /// Fraction of modes to filter. This is set in derivs_init from option "ddz:fft_filter"
+  BoutReal fft_derivs_filter{0.0};
 
-  /// Second derivative in Y direction in index space
-  ///
-  /// @param[in] f  The field to be differentiated
-  /// @param[in] outloc  The cell location where the result is desired
-  /// @param[in] method  The differencing method to use, overriding default
-  /// @param[in] region  The region of the grid for which the result is calculated.
-  const Field3D indexD2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method,
-                           REGION region=RGN_NOBNDRY);
-  /// Second derivative in Y direction in index space
-  const Field2D indexD2DY2(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
-                           DIFF_METHOD method = DIFF_DEFAULT,
-                           REGION region=RGN_NOBNDRY);
+  /// Determines the resultant output stagger location in derivatives
+  /// given the input and output location. Also checks that the
+  /// combination of locations is allowed
+  STAGGER getStagger(const CELL_LOC inloc, const CELL_LOC outloc,
+                     const CELL_LOC allowedloc) const;
 
-  /// Second derivative in Z direction in index space
-  ///
-  /// @param[in] f  The field to be differentiated
-  /// @param[in] outloc  The cell location where the result is desired
-  /// @param[in] method  The differencing method to use, overriding default
-  /// @param[in] region  The region of the grid for which the result is calculated.
-  const Field3D indexD2DZ2(const Field3D &f, CELL_LOC outloc,
-                           DIFF_METHOD method, REGION region);
-  const Field3D indexD2DZ2(const Field3D &f, CELL_LOC outloc,
-                           DIFF_METHOD method, bool inc_xbndry) {
-    return indexD2DZ2(f,outloc, method, inc_xbndry ? RGN_NOY : RGN_NOBNDRY);
+  /// Determines the resultant output stagger location in derivatives
+  /// given the input and output location. Also checks that the
+  /// combination of locations is allowed. This overload also checks
+  /// the location of a second input field (velocity) is consistent.
+  STAGGER getStagger(const CELL_LOC vloc, const CELL_LOC inloc, const CELL_LOC outloc,
+                     const CELL_LOC allowedloc) const;
+
+  // All of these derivative routines should probably be moved out of mesh to become
+  // free functions. As an intermediate step the member routines could just call the
+  // free functions.
+
+  ////// STANDARD OPERATORS
+
+  ////////////// X DERIVATIVE /////////////////
+  template <typename T>
+  DEPRECATED(T indexDDX(const T& f, CELL_LOC outloc = CELL_DEFAULT,
+                        const std::string& method = "DEFAULT",
+                        REGION region = RGN_NOBNDRY) const) {
+    AUTO_TRACE();
+    return bout::derivatives::index::DDX(f, outloc, method, region);
   }
 
-  // Fourth derivatives in index space
-  /// Fourth derivative in X direction in index space
-  const Field3D indexD4DX4(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
-                           DIFF_METHOD method = DIFF_DEFAULT,
-                           REGION region=RGN_NOBNDRY);
-  /// Fourth derivative in X direction in index space
-  const Field2D indexD4DX4(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
-                           DIFF_METHOD method = DIFF_DEFAULT,
-                           REGION region=RGN_NOBNDRY);
-  /// Fourth derivative in Y direction in index space
-  const Field3D indexD4DY4(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
-                           DIFF_METHOD method = DIFF_DEFAULT,
-                           REGION region=RGN_NOBNDRY);
-  /// Fourth derivative in Y direction in index space
-  const Field2D indexD4DY4(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
-                           DIFF_METHOD method = DIFF_DEFAULT,
-                           REGION region=RGN_NOBNDRY);
-  /// Fourth derivative in Z direction in index space
-  const Field3D indexD4DZ4(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT,
-                           DIFF_METHOD method = DIFF_DEFAULT,
-                           REGION region=RGN_NOBNDRY);
-  /// Fourth derivative in Z direction in index space
-  const Field2D indexD4DZ4(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT,
-                           DIFF_METHOD method = DIFF_DEFAULT,
-                           REGION region=RGN_NOBNDRY);
-  
-  // Advection schemes
+  template <typename T>
+  DEPRECATED(T indexD2DX2(const T& f, CELL_LOC outloc = CELL_DEFAULT,
+                          const std::string& method = "DEFAULT",
+                          REGION region = RGN_NOBNDRY) const) {
+    AUTO_TRACE();
+    return bout::derivatives::index::D2DX2(f, outloc, method, region);
+  }
 
-  /// Advection operator in index space in X direction
-  ///
-  /// \f[
-  ///   v \frac{d}{di} f
-  /// \f]
-  ///
-  /// @param[in] v       The velocity in the X direction
-  /// @param[in] f       The field being advected
-  /// @param[in] outloc  The cell location where the result is desired.
-  ///                    The default is the same as \p f
-  /// @param[in] method  The differencing method to use
-  /// @param[in] region  The region of the grid for which the result is calculated
-  const Field2D indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc,
-                          DIFF_METHOD method, REGION region = RGN_NOBNDRY);
-  const Field3D indexVDDX(const Field3D &v, const Field3D &f, CELL_LOC outloc,
-                          DIFF_METHOD method, REGION region = RGN_NOBNDRY);
+  template <typename T>
+  DEPRECATED(T indexD4DX4(const T& f, CELL_LOC outloc = CELL_DEFAULT,
+                          const std::string& method = "DEFAULT",
+                          REGION region = RGN_NOBNDRY) const) {
+    AUTO_TRACE();
+    return bout::derivatives::index::D4DX4(f, outloc, method, region);
+  }
 
-  /// Advection operator in index space in Y direction
+  ////////////// Y DERIVATIVE /////////////////
+
+  template <typename T>
+  DEPRECATED(T indexDDY(const T& f, CELL_LOC outloc = CELL_DEFAULT,
+                        const std::string& method = "DEFAULT",
+                        REGION region = RGN_NOBNDRY) const) {
+    AUTO_TRACE();
+    return bout::derivatives::index::DDY(f, outloc, method, region);
+  }
+
+  template <typename T>
+  DEPRECATED(T indexD2DY2(const T& f, CELL_LOC outloc = CELL_DEFAULT,
+                          const std::string& method = "DEFAULT",
+                          REGION region = RGN_NOBNDRY) const) {
+    AUTO_TRACE();
+    return bout::derivatives::index::D2DY2(f, outloc, method, region);
+  }
+
+  template <typename T>
+  DEPRECATED(T indexD4DY4(const T& f, CELL_LOC outloc = CELL_DEFAULT,
+                          const std::string& method = "DEFAULT",
+                          REGION region = RGN_NOBNDRY) const) {
+    AUTO_TRACE();
+    return bout::derivatives::index::D4DY4(f, outloc, method, region);
+  }
+
+  ////////////// Z DERIVATIVE /////////////////
+  template <typename T>
+  DEPRECATED(T indexDDZ(const T& f, CELL_LOC outloc = CELL_DEFAULT,
+                        const std::string& method = "DEFAULT",
+                        REGION region = RGN_NOBNDRY) const) {
+    AUTO_TRACE();
+    return bout::derivatives::index::DDZ(f, outloc, method, region);
+  }
+
+  template <typename T>
+  DEPRECATED(T indexD2DZ2(const T& f, CELL_LOC outloc = CELL_DEFAULT,
+                          const std::string& method = "DEFAULT",
+                          REGION region = RGN_NOBNDRY) const) {
+    AUTO_TRACE();
+    return bout::derivatives::index::D2DZ2(f, outloc, method, region);
+  }
+
+  template <typename T>
+  DEPRECATED(T indexD4DZ4(const T& f, CELL_LOC outloc = CELL_DEFAULT,
+                          const std::string& method = "DEFAULT",
+                          REGION region = RGN_NOBNDRY) const) {
+    AUTO_TRACE();
+    return bout::derivatives::index::D4DZ4(f, outloc, method, region);
+  }
+
+  ////// ADVECTION AND FLUX OPERATORS
+
+  /// Advection operator in index space in [] direction
   ///
   /// \f[
   ///   v \frac{d}{di} f
@@ -570,78 +767,111 @@ class Mesh {
   ///
   /// @param[in] v  The velocity in the Y direction
   /// @param[in] f  The field being advected
-  /// @param[in] outloc The cell location where the result is desired. The default is the same as \p f
+  /// @param[in] outloc The cell location where the result is desired. The default is the
+  /// same as \p f
   /// @param[in] method  The differencing method to use
   /// @param[in] region  The region of the grid for which the result is calculated.
-  const Field2D indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc,
-                          DIFF_METHOD method, REGION region=RGN_NOBNDRY);
-  const Field3D indexVDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc,
-                          DIFF_METHOD method, REGION region=RGN_NOBNDRY);
 
-  /// Advection operator in index space in Z direction
-  ///
-  /// \f[
-  ///   v \frac{d}{di} f
-  /// \f]
-  ///
-  /// @param[in] v  The velocity in the Z direction
-  /// @param[in] f  The field being advected
-  /// @param[in] outloc The cell location where the result is desired. The default is the same as \p f
-  /// @param[in] method  The differencing method to use
-  /// @param[in] region  The region of the grid for which the result is calculated.
-  const Field3D indexVDDZ(const Field3D &v, const Field3D &f, CELL_LOC outloc,
-                          DIFF_METHOD method, REGION region=RGN_NOBNDRY);
+  ////////////// X DERIVATIVE /////////////////
 
-  const Field2D indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc,
-                          DIFF_METHOD method, REGION region=RGN_NOBNDRY);
-  const Field3D indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outloc,
-                          DIFF_METHOD method, REGION region=RGN_NOBNDRY);
-  const Field2D indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc,
-                          DIFF_METHOD method, REGION region=RGN_NOBNDRY);
-  const Field3D indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc,
-                          DIFF_METHOD method, REGION region=RGN_NOBNDRY);
-  const Field3D indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outloc,
-                          DIFF_METHOD method, REGION region=RGN_NOBNDRY);
-  /// Derivative functions of a single field stencil
-  typedef BoutReal (*deriv_func)(stencil &);
-  /// Derivative functions of a BoutReal velocity, and field stencil
-  typedef BoutReal (*upwind_func)(BoutReal, stencil &);
-  /// Derivative functions of a velocity field, and field stencil v, f
-  typedef BoutReal (*flux_func)(stencil&, stencil &);
-
-  /// Transform a field into field-aligned coordinates
-  const Field3D toFieldAligned(const Field3D &f) {
-    return getParallelTransform().toFieldAligned(f);
-  }
-  /// Convert back into standard form
-  const Field3D fromFieldAligned(const Field3D &f) {
-    return getParallelTransform().fromFieldAligned(f);
+  template <typename T>
+  DEPRECATED(T indexVDDX(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
+                         const std::string& method = "DEFAULT",
+                         REGION region = RGN_NOBNDRY) const) {
+    AUTO_TRACE();
+    return bout::derivatives::index::VDDX(vel, f, outloc, method, region);
   }
 
+  template <typename T>
+  DEPRECATED(T indexFDDX(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
+                         const std::string& method = "DEFAULT",
+                         REGION region = RGN_NOBNDRY) const) {
+    AUTO_TRACE();
+    return bout::derivatives::index::FDDX(vel, f, outloc, method, region);
+  }
+
+  ////////////// Y DERIVATIVE /////////////////
+
+  template <typename T>
+  DEPRECATED(T indexVDDY(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
+                         const std::string& method = "DEFAULT",
+                         REGION region = RGN_NOBNDRY) const) {
+    AUTO_TRACE();
+    return bout::derivatives::index::VDDY(vel, f, outloc, method, region);
+  }
+
+  template <typename T>
+  DEPRECATED(T indexFDDY(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
+                         const std::string& method = "DEFAULT",
+                         REGION region = RGN_NOBNDRY) const) {
+    AUTO_TRACE();
+    return bout::derivatives::index::FDDY(vel, f, outloc, method, region);
+  }
+
+  ////////////// Z DERIVATIVE /////////////////
+
+  template <typename T>
+  DEPRECATED(T indexVDDZ(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
+                         const std::string& method = "DEFAULT",
+                         REGION region = RGN_NOBNDRY) const) {
+    AUTO_TRACE();
+    return bout::derivatives::index::VDDZ(vel, f, outloc, method, region);
+  }
+
+  template <typename T>
+  DEPRECATED(T indexFDDZ(const T& vel, const T& f, CELL_LOC outloc = CELL_DEFAULT,
+                         const std::string& method = "DEFAULT",
+                         REGION region = RGN_NOBNDRY) const) {
+    AUTO_TRACE();
+    return bout::derivatives::index::FDDZ(vel, f, outloc, method, region);
+  }
+
+  [[deprecated("Please use free function toFieldAligned instead")]]
+  const Field3D toFieldAligned(const Field3D &f, const REGION region = RGN_ALL) {
+    return ::toFieldAligned(f, toString(region));
+  }
+
+  [[deprecated("Please use free function fromFieldAligned instead")]]
+  const Field3D fromFieldAligned(const Field3D &f, const REGION region = RGN_ALL) {
+    return ::fromFieldAligned(f, toString(region));
+  }
+
+  [[deprecated("Please use free function toFieldAligned instead")]]
+  const Field2D toFieldAligned(const Field2D &f, const REGION region = RGN_ALL) {
+    return ::toFieldAligned(f, toString(region));
+  }
+
+  [[deprecated("Please use free function fromFieldAligned instead")]]
+  const Field2D fromFieldAligned(const Field2D &f, const REGION region = RGN_ALL) {
+    return ::fromFieldAligned(f, toString(region));
+  }
+
+  [[deprecated("Please use "
+      "Coordinates::getParallelTransform().canToFromFieldAligned instead")]]
   bool canToFromFieldAligned() {
-    return getParallelTransform().canToFromFieldAligned();
+    return getCoordinates()->getParallelTransform().canToFromFieldAligned();
   }
 
-  /*!
-   * Unique pointer to ParallelTransform object
-   */
-  typedef std::unique_ptr<ParallelTransform> PTptr;
-  
-  /*!
-   * Set the parallel (y) transform for this mesh.
-   * Unique pointer used so that ParallelTransform will be deleted
-   */
-  void setParallelTransform(PTptr pt) {
-    transform = std::move(pt);
+  [[deprecated("Please use Coordinates::setParallelTransform instead")]]
+  void setParallelTransform(std::unique_ptr<ParallelTransform> pt) {
+    getCoordinates()->setParallelTransform(std::move(pt));
   }
-  /*!
-   * Set the parallel (y) transform from the options file
-   */
-  void setParallelTransform();
 
-  /////////////////////////
-  // Region related routines
-  /////////////////////////
+  [[deprecated("This call is now unnecessary")]]
+  void setParallelTransform() {
+    // The ParallelTransform is set from options in the Coordinates
+    // constructor, so this method doesn't need to do anything
+  }
+
+  [[deprecated("Please use Coordinates::getParallelTransform instead")]]
+  ParallelTransform& getParallelTransform() {
+    return getCoordinates()->getParallelTransform();
+  }
+
+
+  ///////////////////////////////////////////////////////////
+  // REGION RELATED ROUTINES
+  ///////////////////////////////////////////////////////////
 
   // The maxregionblocksize to use when creating the default regions.
   // Can be set in the input file and the global default is set by,
@@ -657,6 +887,11 @@ class Mesh {
   const Region<Ind3D> &getRegion3D(const std::string &region_name) const;
   const Region<Ind2D> &getRegion2D(const std::string &region_name) const;
   const Region<IndPerp> &getRegionPerp(const std::string &region_name) const;
+
+  /// Indicate if named region has already been defined
+  bool hasRegion3D(const std::string& region_name) const;
+  bool hasRegion2D(const std::string& region_name) const;
+  bool hasRegionPerp(const std::string& region_name) const;
 
   /// Add a new region to the region_map for the data iterator
   ///
@@ -698,63 +933,51 @@ class Mesh {
   ///
   /// Creates RGN_{ALL,NOBNDRY,NOX,NOY}
   void createDefaultRegions();
-  
-  /*!
-   * Return the parallel transform, setting it if need be
-   */
-  ParallelTransform& getParallelTransform();
-  
- protected:
-  
-  GridDataSource *source; ///< Source for grid data
-  
-  std::map<CELL_LOC, std::shared_ptr<Coordinates> > coords_map; ///< Coordinate systems at different CELL_LOCs
+    
+protected:
 
-  Options *options; ///< Mesh options section
-  
+  /// Source for grid data
+  GridDataSource* source{nullptr};
 
-  PTptr transform; ///< Handles calculation of yup and ydown
+  /// Coordinate systems at different CELL_LOCs
+  std::map<CELL_LOC, std::shared_ptr<Coordinates>> coords_map;
+
+  /// Mesh options section
+  Options *options{nullptr};
+
+  /// Set whether to call calcParallelSlices on all communicated fields (true) or not (false)
+  bool calcParallelSlices_on_communicate{true};
 
   /// Read a 1D array of integers
-  const vector<int> readInts(const string &name, int n);
+  const std::vector<int> readInts(const std::string &name, int n);
   
   /// Calculates the size of a message for a given x and y range
-  int msg_len(const vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt);
+  int msg_len(const std::vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt);
   
   /// Initialise derivatives
   void derivs_init(Options* options);
-  
-  /// Loop over mesh, applying a stencil in the X direction
-  const Field2D applyXdiff(const Field2D &var, deriv_func func,
-                           CELL_LOC loc = CELL_DEFAULT,
-                           REGION region = RGN_NOBNDRY);
 
-  const Field3D applyXdiff(const Field3D &var, deriv_func func,
-                           CELL_LOC loc = CELL_DEFAULT,
-                           REGION region = RGN_NOBNDRY);
-
-  const Field2D applyYdiff(const Field2D &var, deriv_func func,
-                           CELL_LOC loc = CELL_DEFAULT,
-                           REGION region = RGN_NOBNDRY);
-
-  const Field3D applyYdiff(const Field3D &var, deriv_func func,
-                           CELL_LOC loc = CELL_DEFAULT,
-                           REGION region = RGN_NOBNDRY);
-
-  const Field3D applyZdiff(const Field3D &var, Mesh::deriv_func func,
-                           CELL_LOC loc = CELL_DEFAULT,
-                           REGION region = RGN_NOBNDRY);
+  /// Pointer to the global MPI wrapper, for convenience
+  MpiWrapper* mpi = nullptr;
 
 private:
+
   /// Allocates default Coordinates objects
-  std::shared_ptr<Coordinates> createDefaultCoordinates(const CELL_LOC location);
+  /// By default attempts to read staggered Coordinates from grid data source,
+  /// interpolating from CELL_CENTRE if not present. Set
+  /// force_interpolate_from_centre argument to true to always interpolate
+  /// (useful if CELL_CENTRE Coordinates have been changed, so reading from file
+  /// would not be correct).
+  std::shared_ptr<Coordinates> createDefaultCoordinates(const CELL_LOC location,
+      bool force_interpolate_from_centre=false);
 
   //Internal region related information
   std::map<std::string, Region<Ind3D>> regionMap3D;
   std::map<std::string, Region<Ind2D>> regionMap2D;
   std::map<std::string, Region<IndPerp>> regionMapPerp;
   Array<int> indexLookup3Dto2D;
+
+  int localNumCells3D = -1, localNumCells2D = -1, localNumCellsPerp = -1;
 };
 
 #endif // __MESH_H__
-

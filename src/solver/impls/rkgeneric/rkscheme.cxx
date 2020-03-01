@@ -1,9 +1,15 @@
-#include "rkschemefactory.hxx"
 #include "unused.hxx"
+#include <bout/mpi_wrapper.hxx>
 #include <bout/rkscheme.hxx>
 #include <boutcomm.hxx>
 #include <cmath>
 #include <output.hxx>
+
+// Implementations
+#include "impls/rkf45/rkf45.hxx"
+#include "impls/cashkarp/cashkarp.hxx"
+#include "impls/rk4simple/rk4simple.hxx"
+#include "impls/rkf34/rkf34.hxx"
 
 ////////////////////
 // PUBLIC
@@ -15,10 +21,6 @@ RKScheme::RKScheme(Options *UNUSED(opts)) {
 
   // Initialise internals
   dtfac = 1.0; // Time step factor
-}
-
-//Cleanup
-RKScheme::~RKScheme(){
 }
 
 //Finish generic initialisation
@@ -37,12 +39,12 @@ void RKScheme::init(const int nlocalIn, const int neqIn, const bool adaptiveIn, 
   adaptive = adaptiveIn;
 
   //Allocate storage for stages
-  steps = Matrix<BoutReal>(getStageCount(), nlocal);
+  steps.reallocate(getStageCount(), nlocal);
   zeroSteps();
 
   //Allocate array for storing alternative order result
   if (adaptive)
-    resultAlt = Array<BoutReal>(nlocal); // Result--alternative order
+    resultAlt.reallocate(nlocal); // Result--alternative order
 
   //Will probably only want the following when debugging, but leave it on for now
   if(diagnose){
@@ -71,7 +73,7 @@ void RKScheme::setCurState(const Array<BoutReal> &start, Array<BoutReal> &out,
   
   //Construct the current state from previous results -- This is expensive
   for(int j=0;j<curStage;j++){
-    if (abs(stageCoeffs(curStage, j)) < atol)
+    if (std::abs(stageCoeffs(curStage, j)) < atol)
       continue;
     BoutReal fac = stageCoeffs(curStage, j) * dt;
 
@@ -148,7 +150,8 @@ BoutReal RKScheme::getErr(Array<BoutReal> &solA, Array<BoutReal> &solB) {
         std::abs(solA[i] - solB[i]) / (std::abs(solA[i]) + std::abs(solB[i]) + atol);
   }
   //Reduce over procs
-  if(MPI_Allreduce(&local_err, &err, 1, MPI_DOUBLE, MPI_SUM, BoutComm::get())) {
+  if (bout::globals::mpi->MPI_Allreduce(&local_err, &err, 1, MPI_DOUBLE, MPI_SUM,
+                                        BoutComm::get())) {
     throw BoutException("MPI_Allreduce failed");
   }
   //Normalise by number of values
@@ -206,32 +209,32 @@ void RKScheme::verifyCoeffs(){
   output<<endl;
 
   //Header
-  output<<string(50,'-')<<endl;
+  output<<std::string(50,'-')<<endl;
   output<<"RK Coefficients consistency check"<<endl;
-  output<<string(50,'-')<<endl;
+  output<<std::string(50,'-')<<endl;
 
   //Check time and stage coefficients
-  output<<setw(10)<<"TimeCoeff"<<" | "<<setw(10)<<"SumStageCoeff"<<endl;
+  output<<std::setw(10)<<"TimeCoeff"<<" | "<<std::setw(10)<<"SumStageCoeff"<<endl;
   bool warn=false;
   for(int i=0;i<getStageCount();i++){
     BoutReal tmp=0;
     for(int j=0;j<i;j++){
       tmp += stageCoeffs(i, j);
     }
-    output<<setw(10)<<timeCoeffs[i]<<" | "<<setw(10)<<tmp<<endl;
-    if(fabs(timeCoeffs[i]-tmp)>atol) warn=true;
+    output<<std::setw(10)<<timeCoeffs[i]<<" | "<<std::setw(10)<<tmp<<endl;
+    if(std::abs(timeCoeffs[i]-tmp)>atol) warn=true;
   }
 
   //Optional warning
   if(warn){
-    output<<string(50,'=')<<endl;
+    output<<std::string(50,'=')<<endl;
     output<<"WARNING: Stage/Time coefficients not consistent"<<endl;
-    output<<string(50,'=')<<endl;
+    output<<std::string(50,'=')<<endl;
     warn=false;
   }
 
   //Check results coefficients
-  output<<string(50,'-')<<endl;
+  output<<std::string(50,'-')<<endl;
   output<<"Results coefficients (should be 1)"<<endl;
   for(int j=0;j<getNumOrders();j++){
     BoutReal tmp=0;
@@ -239,18 +242,18 @@ void RKScheme::verifyCoeffs(){
       tmp += resultCoeffs(i, j);
     }
     output<<"Order : "<<j<<" = "<<tmp<<endl;
-    if(fabs(1.0-tmp)>atol) warn=true;
+    if(std::abs(1.0-tmp)>atol) warn=true;
   }
 
   //Optional warning
   if(warn){
-    output<<string(50,'=')<<endl;
+    output<<std::string(50,'=')<<endl;
     output<<"WARNING: Result coefficients not consistent"<<endl;
-    output<<string(50,'=')<<endl;
+    output<<std::string(50,'=')<<endl;
   }
 
   //Footer
-  output<<string(50,'-')<<endl;
+  output<<std::string(50,'-')<<endl;
   output<<endl;
 }
 
@@ -260,33 +263,33 @@ void RKScheme::printButcherTableau(){
   output<<endl;
   
   //Header
-  output<<string(totalWidth,'-')<<endl;
+  output<<std::string(totalWidth,'-')<<endl;
   output<<"Butcher Tableau"<<endl;
-  output<<string(totalWidth,'-')<<endl;
+  output<<std::string(totalWidth,'-')<<endl;
 
   //Time and stage coeffs
   for(int i=0;i<getStageCount();i++){
-    output<<setw(width)<<timeCoeffs[i]<<" | ";
+    output<<std::setw(width)<<timeCoeffs[i]<<" | ";
     for(int j=0;j<getStageCount();j++){
-      output << setw(width) << stageCoeffs(i, j);
+      output << std::setw(width) << stageCoeffs(i, j);
     }
     output<<endl;
   }
 
   //Divider
-  output<<string(width,'-')<<" | "<<string(width*getStageCount(),'-')<<endl;
+  output<<std::string(width,'-')<<" | "<<std::string(width*getStageCount(),'-')<<endl;
 
   //Result coeffs for each order
   for(int i=0;i<getNumOrders();i++){
-    output<<setw(width)<<i<<" | ";
+    output<<std::setw(width)<<i<<" | ";
     for(int j=0;j<getStageCount();j++){
-      output << setw(width) << resultCoeffs(j, i);
+      output << std::setw(width) << resultCoeffs(j, i);
     }
     output<<endl;
   }
 
   //Footer
-  output<<string(totalWidth,'-')<<endl;
+  output<<std::string(totalWidth,'-')<<endl;
   output<<endl;
 }
 
@@ -298,3 +301,7 @@ void RKScheme::zeroSteps(){
   }
 }
 
+constexpr decltype(RKSchemeFactory::type_name) RKSchemeFactory::type_name;
+constexpr decltype(RKSchemeFactory::section_name) RKSchemeFactory::section_name;
+constexpr decltype(RKSchemeFactory::option_name) RKSchemeFactory::option_name;
+constexpr decltype(RKSchemeFactory::default_type) RKSchemeFactory::default_type;

@@ -9,44 +9,18 @@ class LaplaceXZpetsc;
 #ifndef __LAPLACEXZ_PETSC_H__
 #define __LAPLACEXZ_PETSC_H__
 
+#ifdef BOUT_HAS_PETSC
 #include <bout/invert/laplacexz.hxx>
-
-#ifndef BOUT_HAS_PETSC
-
-#include <boutexception.hxx>
-class LaplaceXZpetsc : public LaplaceXZ {
-public:
-  LaplaceXZpetsc(Mesh *m, Options *options, const CELL_LOC loc) : LaplaceXZ(m, options, loc) {
-    throw BoutException("No PETSc LaplaceXZ solver available");
-  }
-
-  using LaplaceXZ::setCoefs;
-  void setCoefs(const Field2D &UNUSED(A), const Field2D &UNUSED(B)) override {}
-
-  using LaplaceXZ::solve;
-  Field3D solve(const Field3D &UNUSED(b), const Field3D &UNUSED(x0)) override {
-    throw BoutException("No PETSc LaplaceXZ solver available");
-  }
-private:
-};
-
-#else // BOUT_HAS_PETSC
-
 #include <bout/petsclib.hxx>
 
+namespace {
+RegisterLaplaceXZ<LaplaceXZpetsc> registerlaplacexzpetsc{"petsc"};
+}
+
 class LaplaceXZpetsc : public LaplaceXZ {
 public:
-  /*!
-   * Constructor
-   */
-  LaplaceXZpetsc(Mesh *m, Options *options, const CELL_LOC loc);
-
-  /*!
-   * Destructor
-   */
+  LaplaceXZpetsc(Mesh *m = nullptr, Options *options = nullptr, const CELL_LOC loc = CELL_CENTRE);
   ~LaplaceXZpetsc();
-
-
 
   void setCoefs(const Field3D &A, const Field3D &B);
 
@@ -71,11 +45,9 @@ private:
     Mat MatP;  ///< Matrix for preconditioner
     KSP ksp;   ///< Krylov Subspace solver context
   };
-  vector<YSlice> slice;
+  std::vector<YSlice> slice;
 
   Vec xs, bs;        ///< Solution and RHS vectors
-
-  Mesh *mesh;   ///< The mesh this operates on, provides metrics and communication
 
   int reuse_limit; ///< How many times can the preconditioner be reused?
   int reuse_count; ///< How many times has it been reused?

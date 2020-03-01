@@ -8,23 +8,28 @@
 #include <derivs.hxx>
 
 Field3D n, v;
+CELL_LOC maybe_ylow{CELL_CENTRE};
 
-int physics_init(bool restart) {
+int physics_init(bool UNUSED(restart)) {
+
+  if (mesh->StaggerGrids) {
+    maybe_ylow = CELL_YLOW;
+  }
   
-  v.setLocation(CELL_YLOW); // Staggered relative to n
+  v.setLocation(maybe_ylow); // Staggered relative to n
   
   SOLVE_FOR(n, v);
 
   return 0;
 }
 
-int physics_run(BoutReal time) {
+int physics_run(BoutReal UNUSED(time)) {
   mesh->communicate(n, v);
   
   //ddt(n) = -Div_par_flux(v, n, CELL_CENTRE);
   ddt(n) = -n*Grad_par(v, CELL_CENTRE) - Vpar_Grad_par(v, n, CELL_CENTRE);
   
-  ddt(v) = -Grad_par(n, CELL_YLOW);
+  ddt(v) = -Grad_par(n, maybe_ylow);
  
   // Have to manually apply the lower Y boundary region, using a width of 3
   for( RangeIterator rlow = mesh->iterateBndryLowerY(); !rlow.isDone(); rlow++)

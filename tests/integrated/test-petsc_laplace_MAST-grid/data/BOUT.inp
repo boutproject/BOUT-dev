@@ -31,12 +31,12 @@ rtol=1.e-10
 include_yguards=false
 maxits=1000
 fourth_order=true
+gmres_max_steps=32
 
 [SPT]
 #type=spt
 all_terms=true
 nonuniform=true
-flags=15
 include_yguards=false
 
 #maxits=10000

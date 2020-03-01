@@ -32,7 +32,6 @@ class PowerSolver;
 #include <bout_types.hxx>
 #include <bout/solver.hxx>
 
-#include <bout/solverfactory.hxx>
 namespace {
 RegisterSolver<PowerSolver> registersolverpower("power");
 }
@@ -48,6 +47,14 @@ class PowerSolver : public Solver {
   int init(int nout, BoutReal tstep) override;
   
   int run() override;
+
+  void outputVars(Datafile &outputfile, bool save_repeat=true) override {
+    // Include base class functionality
+    this->Solver::outputVars(outputfile, save_repeat);
+
+    // Save the eigenvalue to the output
+    outputfile.add(eigenvalue, "eigenvalue", true);
+  }
  private:
 
   BoutReal curtime; // Current simulation time (fixed)

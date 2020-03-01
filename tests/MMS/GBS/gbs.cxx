@@ -75,7 +75,7 @@ int GBS::init(bool restarting) {
   OPTION(optgbs, Bnorm, 1.0);  // Reference magnetic field [T]
   OPTION(optgbs, AA, 2.0);     // Ion mass
 
-  output.write("Normalisation Te=%e, Ne=%e, B=%e\n", Tnorm, Nnorm, Bnorm);
+  output.write("Normalisation Te={:e}, Ne={:e}, B={:e}\n", Tnorm, Nnorm, Bnorm);
   SAVE_ONCE4(Tnorm, Nnorm, Bnorm, AA); // Save
 
   Cs0      = sqrt(SI::qe*Tnorm / (AA*SI::Mp)); // Reference sound speed [m/s]
@@ -85,10 +85,10 @@ int GBS::init(bool restarting) {
   mi_me  = AA*SI::Mp/SI::Me;
   beta_e = SI::qe*Tnorm*Nnorm / (SQ(Bnorm)/SI::mu0);
   
-  output.write("\tmi_me=%e, beta_e=%e\n", mi_me, beta_e);
+  output.write("\tmi_me={:e}, beta_e={:e}\n", mi_me, beta_e);
   SAVE_ONCE2(mi_me, beta_e);
 
-  output.write("\t Cs=%e, rho_s=%e, Omega_ci=%e\n", Cs0, rho_s0, Omega_ci);
+  output.write("\t Cs={:e}, rho_s={:e}, Omega_ci={:e}\n", Cs0, rho_s0, Omega_ci);
   SAVE_ONCE3(Cs0, rho_s0, Omega_ci);
   
   // Collision times
@@ -96,7 +96,7 @@ int GBS::init(bool restarting) {
   tau_e0 = 1. / (2.91e-6 * (Nnorm / 1e6) * Coulomb * pow(Tnorm, -3./2));
   tau_i0 = sqrt(AA) / (4.80e-8 * (Nnorm / 1e6) * Coulomb * pow(Tnorm, -3./2));
   
-  output.write("\ttau_e0=%e, tau_i0=%e\n", tau_e0, tau_i0);
+  output.write("\ttau_e0={:e}, tau_i0={:e}\n", tau_e0, tau_i0);
   
   // Get switches from each variable section
   Options *optne = opt->getSection("Ne");
@@ -106,7 +106,7 @@ int GBS::init(bool restarting) {
   if(mms) {
     Sn = 0.0;
   }else {
-    string source;
+    std::string source;
     optne->get("source", source, "0.0");
     Sn = FieldFactory::get()->create3D(source, NULL, mesh);
     Sn /= Omega_ci;
@@ -120,7 +120,7 @@ int GBS::init(bool restarting) {
   if(mms) {
     Sp = 0.0;
   }else {
-    string source;
+    std::string source;
     optte->get("source", source, "0.0");
     Sp = FieldFactory::get()->create3D(source, NULL, mesh);
     Sp /= Omega_ci;
@@ -249,6 +249,7 @@ int GBS::init(bool restarting) {
   }
   case 3: { // logB, taken from mesh
     logB = log(coords->Bxy);
+    break;
   }
   default:
     throw BoutException("Invalid value for curv_method");
@@ -265,11 +266,11 @@ int GBS::init(bool restarting) {
 
   SAVE_REPEAT(Ve);
   
-  output.write("dx = %e, dy = %e, dz = %e\n", coords->dx(2,2), coords->dy(2,2), coords->dz);
-  output.write("g11 = %e, g22 = %e, g33 = %e\n", coords->g11(2,2), coords->g22(2,2), coords->g33(2,2));
-  output.write("g12 = %e, g23 = %e\n", coords->g12(2,2), coords->g23(2,2));
-  output.write("g_11 = %e, g_22 = %e, g_33 = %e\n", coords->g_11(2,2), coords->g_22(2,2), coords->g_33(2,2));
-  output.write("g_12 = %e, g_23 = %e\n", coords->g_12(2,2), coords->g_23(2,2));
+  output.write("dx = {:e}, dy = {:e}, dz = {:e}\n", coords->dx(2,2), coords->dy(2,2), coords->dz);
+  output.write("g11 = {:e}, g22 = {:e}, g33 = {:e}\n", coords->g11(2,2), coords->g22(2,2), coords->g33(2,2));
+  output.write("g12 = {:e}, g23 = {:e}\n", coords->g12(2,2), coords->g23(2,2));
+  output.write("g_11 = {:e}, g_22 = {:e}, g_33 = {:e}\n", coords->g_11(2,2), coords->g_22(2,2), coords->g_33(2,2));
+  output.write("g_12 = {:e}, g_23 = {:e}\n", coords->g_12(2,2), coords->g_23(2,2));
 
 
   std::shared_ptr<FieldGenerator> gen = FieldFactory::get()->parse("source", Options::getRoot()->getSection("ne"));
@@ -337,7 +338,7 @@ void GBS::LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
 
 int GBS::rhs(BoutReal t) {
   
-  printf("TIME = %e\r", t); // Bypass logging, only to stdout
+  output.print("TIME = {:e}\r", t); // Bypass logging, only to stdout
   
   // Communicate evolving variables
   mesh->communicate(evars);

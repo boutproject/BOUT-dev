@@ -36,53 +36,53 @@ class EmptyFormat;
 class EmptyFormat {
   EmptyFormat() {throw BoutException("File format not enabled!");}
   
-  bool openr(const string &UNUSED(name)) {return false; }
-  bool openw(const string &UNUSED(name), bool UNUSED(append)) {return false; }
+  bool openr(const std::string &UNUSED(name)) {return false; }
+  bool openw(const std::string &UNUSED(name), bool UNUSED(append)) {return false; }
   
   bool is_valid() {return false;}
   
   void close() {}
   
-  const vector<int> getSize(const char *UNUSED(var)) {vector<int> tmp; return tmp;}
-  const vector<int> getSize(const string &UNUSED(var)) {vector<int> tmp; return tmp;}
+  const std::vector<int> getSize(const char *UNUSED(var)) {std::vector<int> tmp; return tmp;}
+  const std::vector<int> getSize(const std::string &UNUSED(var)) {std::vector<int> tmp; return tmp;}
   
   bool setOrigin(int UNUSED(x) = 0, int UNUSED(y) = 0, int UNUSED(z) = 0) {return false;}
   bool setRecord(int UNUSED(t)) {return false;}
   
   bool read(int *UNUSED(var), const char *UNUSED(name), int UNUSED(lx) = 1,
             int UNUSED(ly) = 0, int UNUSED(lz) = 0)        {return false;}
-  bool read(int *UNUSED(var), const string &UNUSED(name), int UNUSED(lx) = 1,
+  bool read(int *UNUSED(var), const std::string &UNUSED(name), int UNUSED(lx) = 1,
             int UNUSED(ly) = 0, int UNUSED(lz) = 0)      {return false;}
   bool read(BoutReal *UNUSED(var), const char *UNUSED(name), int UNUSED(lx) = 1,
             int UNUSED(ly) = 0, int UNUSED(lz) = 0)   {return false;}
-  bool read(BoutReal *UNUSED(var), const string &UNUSED(name), int UNUSED(lx) = 1,
+  bool read(BoutReal *UNUSED(var), const std::string &UNUSED(name), int UNUSED(lx) = 1,
             int UNUSED(ly) = 0, int UNUSED(lz) = 0) {return false;}
   
   bool write(int *UNUSED(var), const char *UNUSED(name), int UNUSED(lx) = 0,
              int UNUSED(ly) = 0, int UNUSED(lz) = 0) {return false;}
-  bool write(int *UNUSED(var), const string &UNUSED(name), int UNUSED(lx) = 0,
+  bool write(int *UNUSED(var), const std::string &UNUSED(name), int UNUSED(lx) = 0,
              int UNUSED(ly) = 0, int UNUSED(lz) = 0) {return false;}
   bool write(BoutReal *UNUSED(var), const char *UNUSED(name), int UNUSED(lx) = 0,
              int UNUSED(ly) = 0, int UNUSED(lz) = 0) {return false;}
-  bool write(BoutReal *UNUSED(var), const string &UNUSED(name), int UNUSED(lx) = 0,
+  bool write(BoutReal *UNUSED(var), const std::string &UNUSED(name), int UNUSED(lx) = 0,
              int UNUSED(ly) = 0, int UNUSED(lz) = 0) {return false;}
   
   bool read_rec(int *UNUSED(var), const char *UNUSED(name), int UNUSED(lx) = 1,
                 int UNUSED(ly) = 0, int UNUSED(lz) = 0) {return false;}
-  bool read_rec(int *UNUSED(var), const string &UNUSED(name), int UNUSED(lx) = 1,
+  bool read_rec(int *UNUSED(var), const std::string &UNUSED(name), int UNUSED(lx) = 1,
                 int UNUSED(ly) = 0, int UNUSED(lz) = 0) {return false;}
   bool read_rec(BoutReal *UNUSED(var), const char *UNUSED(name), int UNUSED(lx) = 1,
                 int UNUSED(ly) = 0, int UNUSED(lz) = 0) {return false;}
-  bool read_rec(BoutReal *UNUSED(var), const string &UNUSED(name), int UNUSED(lx) = 1,
+  bool read_rec(BoutReal *UNUSED(var), const std::string &UNUSED(name), int UNUSED(lx) = 1,
                 int UNUSED(ly) = 0, int UNUSED(lz) = 0) {return false;}
 
   bool write_rec(int *UNUSED(var), const char *UNUSED(name), int UNUSED(lx) = 0,
                  int UNUSED(ly) = 0, int UNUSED(lz) = 0) {return false;}
-  bool write_rec(int *UNUSED(var), const string &UNUSED(name), int UNUSED(lx) = 0,
+  bool write_rec(int *UNUSED(var), const std::string &UNUSED(name), int UNUSED(lx) = 0,
                  int UNUSED(ly) = 0, int UNUSED(lz) = 0) {return false;}
   bool write_rec(BoutReal *UNUSED(var), const char *UNUSED(name), int UNUSED(lx) = 0,
                  int UNUSED(ly) = 0, int UNUSED(lz) = 0) {return false;}
-  bool write_rec(BoutReal *UNUSED(var), const string &UNUSED(name), int UNUSED(lx) = 0,
+  bool write_rec(BoutReal *UNUSED(var), const std::string &UNUSED(name), int UNUSED(lx) = 0,
                  int UNUSED(ly) = 0, int UNUSED(lz) = 0) {return false;}
 };
 

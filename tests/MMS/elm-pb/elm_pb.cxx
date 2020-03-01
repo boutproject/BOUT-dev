@@ -63,7 +63,8 @@ BoutReal vacuum_pressure;
 BoutReal vacuum_trans; // Transition width
 Field3D vac_mask;
 
-int phi_flags;
+std::unique_ptr<Laplacian> phi_solver{nullptr};
+
 bool nonlinear;
 BoutReal g; // Only if compressible
 bool phi_curv;
@@ -98,9 +99,9 @@ BoutReal AA; // ion mass in units of the proton mass; AA=Mi/Mp
 bool filter_z;
 int filter_z_mode;
 int low_pass_z;
-int zonal_flow;
-int zonal_field;
-int zonal_bkgd;
+bool zonal_flow;
+bool zonal_field;
+bool zonal_bkgd;
 
 BoutReal vac_lund, core_lund;       // Lundquist number S = (Tau_R / Tau_A). -ve -> infty
 BoutReal vac_resist,  core_resist;  // The resistivities (just 1 / S)
@@ -125,8 +126,8 @@ FieldGroup comms;
 
 int physics_init(bool restarting) {
   output.write("Solving high-beta flute reduced equations\n");
-  output.write("\tFile    : %s\n", __FILE__);
-  output.write("\tCompiled: %s at %s\n", __DATE__, __TIME__);
+  output.write("\tFile    : {:s}\n", __FILE__);
+  output.write("\tCompiled: {:s} at {:s}\n", __DATE__, __TIME__);
 
   //////////////////////////////////////////////////////////////
   // Load data from the grid
@@ -244,12 +245,12 @@ int physics_init(bool restarting) {
   OPTION(options, dia_fact,          1.0);    // Scale diamagnetic effects by this factor
 
   // Toroidal filtering
-  OPTION(options, filter_z,          false);  // Filter a single n
+  OPTION(options, filter_z,      false);      // Filter a single n
   OPTION(options, filter_z_mode,     1);
   OPTION(options, low_pass_z,       -1);      // Low-pass filter
-  OPTION(options, zonal_flow,       -1);      // zonal flow filter
-  OPTION(options, zonal_field,      -1);      // zonal field filter
-  OPTION(options, zonal_bkgd,       -1);      // zonal background P filter
+  OPTION(options, zonal_flow,    false);      // zonal flow filter
+  OPTION(options, zonal_field,   false);      // zonal field filter
+  OPTION(options, zonal_bkgd,    false);      // zonal background P filter
 
   // Vacuum region control
   OPTION(options, vacuum_pressure,   0.02);   // Fraction of peak pressure
@@ -273,9 +274,6 @@ int physics_init(bool restarting) {
   OPTION(options, phi_curv,          true);
   options->get("gamma",             g,                 5.0/3.0);
 
-  // Field inversion flags
-  OPTION(options, phi_flags,         0);
-
   OPTION(globalOptions->getSection("solver"), mms, false);
 
   if(!include_curvature)
@@ -283,6 +281,11 @@ int physics_init(bool restarting) {
 
   if(!include_jpar0)
     J0 = 0.0;
+
+  //////////////////////////////////////////////////////////////
+  // INITIALIZE LAPLACIAN SOLVER
+
+  phi_solver = Laplacian::create();
 
   //////////////////////////////////////////////////////////////
   // SHIFTED RADIAL COORDINATES
@@ -318,16 +321,16 @@ int physics_init(bool restarting) {
 
   delta_i = AA*60.67*5.31e5/sqrt(density/1e6)/(Lbar*100.0);
 
-  output.write("Normalisations: Bbar = %e T   Lbar = %e m\n", Bbar, Lbar);
-  output.write("                Va = %e m/s   Tbar = %e s\n", Va, Tbar);
-  output.write("                dnorm = %e\n", dnorm);
+  output.write("Normalisations: Bbar = {:e} T   Lbar = {:e} m\n", Bbar, Lbar);
+  output.write("                Va = {:e} m/s   Tbar = {:e} s\n", Va, Tbar);
+  output.write("                dnorm = {:e}\n", dnorm);
   output.write("    Resistivity\n");
 
   if(eHall)
-    output.write("                delta_i = %e   AA = %e \n", delta_i, AA);
+    output.write("                delta_i = {:e}   AA = {:e} \n", delta_i, AA);
 
   if(vac_lund > 0.0) {
-    output.write("        Vacuum  Tau_R = %e s   eta = %e Ohm m\n", vac_lund * Tbar,
+    output.write("        Vacuum  Tau_R = {:e} s   eta = {:e} Ohm m\n", vac_lund * Tbar,
          MU0 * Lbar * Lbar / (vac_lund * Tbar));
     vac_resist = 1. / vac_lund;
   }else {
@@ -336,7 +339,7 @@ int physics_init(bool restarting) {
   }
 
   if(core_lund > 0.0) {
-    output.write("        Core    Tau_R = %e s   eta = %e Ohm m\n", core_lund * Tbar,
+    output.write("        Core    Tau_R = {:e} s   eta = {:e} Ohm m\n", core_lund * Tbar,
          MU0 * Lbar * Lbar / (core_lund * Tbar));
     core_resist = 1. / core_lund;
   }else {
@@ -345,7 +348,7 @@ int physics_init(bool restarting) {
   }
 
   if(ehyperviscos > 0.0) {
-    output.write("    electron Hyper-viscosity coefficient: %e\n", ehyperviscos);
+    output.write("    electron Hyper-viscosity coefficient: {:e}\n", ehyperviscos);
   }
 
   Field2D Te;
@@ -376,11 +379,11 @@ int physics_init(bool restarting) {
 
   if(spitzer_resist) {
     // Use Spitzer resistivity
-    output.write("\tTemperature: %e -> %e [eV]\n", min(Te), max(Te));
+    output.write("\tTemperature: {:e} -> {:e} [eV]\n", min(Te), max(Te));
     eta = 0.51*1.03e-4*Zeff*20.*pow(Te, -1.5); // eta in Ohm-m. NOTE: ln(Lambda) = 20
-    output.write("\tSpitzer resistivity: %e -> %e [Ohm m]\n", min(eta), max(eta));
+    output.write("\tSpitzer resistivity: {:e} -> {:e} [Ohm m]\n", min(eta), max(eta));
     eta /= MU0 * Va * Lbar;
-    output.write("\t -> Lundquist %e -> %e\n", 1.0/max(eta), 1.0/min(eta));
+    output.write("\t -> Lundquist {:e} -> {:e}\n", 1.0/max(eta), 1.0/min(eta));
   }else {
     // transition from 0 for large P0 to resistivity for small P0
     eta = core_resist + (vac_resist - core_resist) * vac_mask;
@@ -439,7 +442,7 @@ int physics_init(bool restarting) {
     beta = B0*B0 / ( 0.5 + (B0*B0 / (g*P0)));
     gradparB = Grad_par(B0) / B0;
 
-    output.write("Beta in range %e -> %e\n",
+    output.write("Beta in range {:e} -> {:e}\n",
                  min(beta), max(beta));
   }
 
@@ -468,7 +471,7 @@ int physics_init(bool restarting) {
     U = where(P0 - vacuum_pressure, U, 0.0);
 
     // Phi should be consistent with U
-    phi = invert_laplace(U, phi_flags, NULL);
+    phi = phi_solver->solve(U);
 
     //if(diamag) {
     //phi -= 0.5*dnorm * P / B0;
@@ -530,9 +533,9 @@ int physics_run(BoutReal t) {
   if(mms) {
     // Solve for potential, adding a source term
     Field3D phiS = FieldFactory::get()->create3D("phi:source", Options::getRoot(), mesh, CELL_CENTRE, t);
-    phi = invert_laplace(U + phiS, phi_flags, NULL);
+    phi = phi_solver->solve(U + phiS, phi);
   }else {
-    phi = invert_laplace(U, phi_flags, NULL);
+    phi = phi_solver->solve(U, phi);
   }
 
   if(diamag) {

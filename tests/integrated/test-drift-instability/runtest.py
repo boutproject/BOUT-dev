@@ -17,20 +17,18 @@ nproc = 2       # Number of processors to run on
 omega_tol = 1e-2
 gamma_tol = 1e-2
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
+from boututils.run_wrapper import build_and_log, shell, launch_safe
 from boututils.file_import import file_import
 from boututils.calculus import deriv
 from boututils.linear_regression import linear_regression
 
 from boutdata.collect import collect
 import numpy as np
-from sys import exit ,argv
+from sys import exit, argv
 
 nthreads=1
-MPIRUN = getmpirun()
 
-print("Making resistive drift instability test")
-shell_safe("make > make.log")
+build_and_log("resistive drift instability test")
 
 zlist          = [2, 32, 256]  # Just test a few
 
@@ -55,20 +53,12 @@ gamma_orig     = {1:0.0784576199501,
                   128:0.1716229,
                   256:0.12957680451} #0.130220286897} Changed 25th April 2014
 
-#zlist = map(lambda x:2**x, range(9))
-
-# Create a directory for the data
-shell_safe("mkdir -p data")
-
 # Import the grid file
 grid = file_import("uedge.grd_std.cdl")
 
 code = 0 # Return code
 for zeff in zlist:
     # Create the input file, setting Zeff
-    # If we get passed Staggered or something like this, use staggered config file
-    inp='BOUT_stag.inp' if 'stag' in [i.lower()[:4] for i in argv] else 'BOUT.inp'
-    shell_safe("sed 's/Zeff = 128.0/Zeff = "+str(zeff)+"/g' "+inp+" > data/BOUT.inp")
     timestep = 5e3
     if zeff < 128:
         # reduce time-step. At large times these cases produce noise
@@ -80,7 +70,9 @@ for zeff in zlist:
     print("Running drift instability test, zeff = ", zeff)
 
     # Run the case
-    s, out = launch_safe("./2fluid timestep="+str(timestep), runcmd=MPIRUN, nproc=nproc, mthread=nthreads, pipe=True)
+    s, out = launch_safe("./2fluid 2fluid:Zeff={} timestep={}"
+                         .format(zeff, timestep),
+                         nproc=nproc, mthread=nthreads, pipe=True)
     f = open("run.log."+str(zeff), "w")
     f.write(out)
     f.close()

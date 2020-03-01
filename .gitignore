@@ -25,7 +25,6 @@
 autom4te.cache/
 aclocal.m4
 /bin/bout-config
-/externalpackages/
 /include/pvode
 /lib/
 /manual/*.pdf
@@ -39,4 +38,12 @@ bout-coverage/
 src/.libfast
 .*.mk
 *.mo
+.BOUT.pid.*
+build/
+build*/
+/.vs
+/CMakeSettings.json
+/CppProperties.json
 
+# Following is copied in by configure
+src/fmt/format.cxx

@@ -36,12 +36,16 @@
 #include <output.hxx>
 #include <msg_stack.hxx>
 
-#define CHKERR(ret) { if( ret != NC_NOERR ) throw BoutException("pnetcdf line %d: %s", __LINE__, ncmpi_strerror(ret)); }
+#define CHKERR(ret)                                                                  \
+  {                                                                                  \
+    if (ret != NC_NOERR)                                                             \
+      throw BoutException("pnetcdf line {:d}: {:s}", __LINE__, ncmpi_strerror(ret)); \
+  }
 
 // Define this to see loads of info messages
 //#define NCDF_VERBOSE
 
-PncFormat::PncFormat() {
+PncFormat::PncFormat(Mesh* mesh_in) : DataFormat(mesh_in) {
   x0 = y0 = z0 = t0 = 0;
   lowPrecision = false;
   dimList = recDimList+1;
@@ -51,7 +55,7 @@ PncFormat::PncFormat() {
   fname = nullptr;
 }
 
-PncFormat::PncFormat(const char *name) {
+PncFormat::PncFormat(const char *name, Mesh* mesh_in) : DataFormat(mesh_in) {
   x0 = y0 = z0 = t0 = 0;
   lowPrecision = false;
   dimList = recDimList+1;
@@ -138,16 +142,22 @@ bool PncFormat::openw(const char *name, bool append) {
     MPI_Offset len;
     ret = ncmpi_inq_dimlen(ncfile, xDim, &len); CHKERR(ret);
     if(len != mesh->GlobalNx)
-      throw BoutException("ERROR: x dimension length (%d) incompatible with mesh size (%d)", (int) len, mesh->GlobalNx);
+      throw BoutException(
+          "ERROR: x dimension length ({:d}) incompatible with mesh size ({:d})", (int)len,
+          mesh->GlobalNx);
 
     ret = ncmpi_inq_dimlen(ncfile, yDim, &len); CHKERR(ret);
     if(len != mesh->GlobalNy)
-      throw BoutException("ERROR: y dimension length (%d) incompatible with mesh size (%d)", (int) len, mesh->GlobalNy);
-    
+      throw BoutException(
+          "ERROR: y dimension length ({:d}) incompatible with mesh size ({:d})", (int)len,
+          mesh->GlobalNy);
+
     ret = ncmpi_inq_dimlen(ncfile, zDim, &len); CHKERR(ret);
     if(len != mesh->GlobalNz)
-      throw BoutException("ERROR: z dimension length (%d) incompatible with mesh size (%d)", (int) len, mesh->GlobalNz);
-    
+      throw BoutException(
+          "ERROR: z dimension length ({:d}) incompatible with mesh size ({:d})", (int)len,
+          mesh->GlobalNz);
+
     // Get the size of the 't' dimension for records
     ret = ncmpi_inq_dimlen(ncfile, tDim, &len); CHKERR(ret);
     default_rec = (int) len;
@@ -269,7 +279,7 @@ bool PncFormat::read(int *data, const char *name, int lx, int ly, int lz) {
   if(ret = ncmpi_inq_varid(ncfile, name, &var)) {
     // Variable not in file
 #ifdef NCDF_VERBOSE
-    output_info.write("INFO: Parallel NetCDF variable '%s' not found\n", name);
+    output_info.write("INFO: Parallel NetCDF variable '{:s}' not found\n", name);
 #endif
     return false;
   }
@@ -327,7 +337,7 @@ bool PncFormat::read(BoutReal *data, const char *name, int lx, int ly, int lz) {
   if(ret = ncmpi_inq_varid(ncfile, name, &var)) {
     // Variable not in file
 #ifdef NCDF_VERBOSE
-    output_info.write("INFO: Parallel NetCDF variable '%s' not found\n", name);
+    output_info.write("INFO: Parallel NetCDF variable '{:s}' not found\n", name);
 #endif
     return false;
   }
@@ -505,7 +515,7 @@ bool PncFormat::read_rec(int *data, const char *name, int lx, int ly, int lz) {
   if(ret = ncmpi_inq_varid(ncfile, name, &var)) {
     // Variable not in file
 #ifdef NCDF_VERBOSE
-    output_info.write("INFO: Parallel NetCDF variable '%s' not found\n", name);
+    output_info.write("INFO: Parallel NetCDF variable '{:s}' not found\n", name);
 #endif
     return false;
   }
@@ -537,7 +547,7 @@ bool PncFormat::read_rec(BoutReal *data, const char *name, int lx, int ly, int l
   if(ret = ncmpi_inq_varid(ncfile, name, &var)) {
     // Variable not in file
 #ifdef NCDF_VERBOSE
-    output_info.write("INFO: Parallel NetCDF variable '%s' not found\n", name);
+    output_info.write("INFO: Parallel NetCDF variable '{:s}' not found\n", name);
 #endif
     return false;
   }
@@ -643,7 +653,7 @@ bool PncFormat::write_rec(BoutReal *data, const char *name, int lx, int ly, int 
   }
 
 #ifdef NCDF_VERBOSE
-  output_info.write("INFO: NetCDF writing record %d of '%s' in '%s'\n",t, name, fname); 
+  output_info.write("INFO: NetCDF writing record {:d} of '{:s}' in '{:s}'\n",t, name, fname); 
 #endif
 
   if(lowPrecision) {

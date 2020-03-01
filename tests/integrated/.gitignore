@@ -13,6 +13,7 @@ BOUT.settings
 /test-interchange-instability/2fluid
 /test-invpar/test_invpar
 /test-io/test_io
+/test-io_hdf5/test_io_hdf5
 /test-laplace/test_laplace
 /test-restarting/test_restarting
 /test-smooth/test_smooth
@@ -35,3 +36,4 @@ BOUT.settings
 /test-petsc_laplace_MAST-grid/test_petsc_laplace_MAST_grid
 /test-stopCheck/test_stopCheck
 /test-yupdown/test_yupdown
+/test-coordinates-initialization/test-coordinates-initialization

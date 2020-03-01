@@ -8,7 +8,7 @@ do
     end=${file##*/}
 
     # In each file we are checking for enums, and then parse them
-    grep enum $file| \
+    grep -E "^[ \t]*\benum\b" $file| \
 	while read line
 	do
 	    # first remove the start, which is just enum
@@ -84,6 +84,67 @@ EOF
 		test $class &&
 		    echo "        \"${name}_${shrt}\":$res,"
 	    done
+	    if test ${lower} = "cell_loc"
+	    then
+		# CELL_LOCs are renamed by a macro in the C++ code, so need to handle specially here
+		echo "        \"CELL_DEFAULT\":<int>deflt,"
+		echo "        \"DEFAULT\":<int>deflt,"
+		echo "        \"CELL_CENTRE\":<int>centre,"
+		echo "        \"CENTRE\":<int>centre,"
+		echo "        \"CELL_CENTER\":<int>centre,"
+		echo "        \"CENTER\":<int>centre,"
+		echo "        \"CELL_XLOW\":<int>xlow,"
+		echo "        \"XLOW\":<int>xlow,"
+		echo "        \"CELL_YLOW\":<int>ylow,"
+		echo "        \"YLOW\":<int>ylow,"
+		echo "        \"CELL_ZLOW\":<int>zlow,"
+		echo "        \"ZLOW\":<int>zlow,"
+		echo "        \"CELL_VSHIFT\":<int>vshift,"
+		echo "        \"VSHIFT\":<int>vshift,"
+	    elif test ${lower} = "diff_method"
+		then
+		echo "       \"DIFF_DEFAULT\":<int>deflt,"
+		echo "       \"DEFAULT\":<int>deflt,"
+		echo "       \"DIFF_U1\":<int>u1,"
+		echo "       \"U1\":<int>u1,"
+		echo "       \"DIFF_U2\":<int>u2,"
+		echo "       \"U2\":<int>u2,"
+		echo "       \"DIFF_C2\":<int>c2,"
+		echo "       \"C2\":<int>c2,"
+		echo "       \"DIFF_W2\":<int>w2,"
+		echo "       \"W2\":<int>w2,"
+		echo "       \"DIFF_W3\":<int>w3,"
+		echo "       \"W3\":<int>w3,"
+		echo "       \"DIFF_C4\":<int>c4,"
+		echo "       \"C4\":<int>c4,"
+		echo "       \"DIFF_U3\":<int>u3,"
+		echo "       \"U3\":<int>u3,"
+		echo "       \"DIFF_FFT\":<int>fft,"
+		echo "       \"FFT\":<int>fft,"
+		echo "       \"DIFF_SPLIT\":<int>split,"
+		echo "       \"SPLIT\":<int>split,"
+		echo "       \"DIFF_S2\":<int>s2,"
+		echo "       \"S2\":<int>s2,"
+	    elif test ${lower} = "region"
+		then
+		echo "       \"RGN_ALL\":<int>all,"
+		echo "       \"RGN_NOBNDRY\":<int>nobndry,"
+		echo "       \"RGN_NOX\":<int>nox,"
+		echo "       \"RGN_NOY\":<int>noy,"
+		echo "       \"RGN_NOZ\":<int>noz,"
+	    elif test ${lower} = "bracket_method"
+		then
+		echo "       \"BRACKET_STD\":<int>standard,"
+		echo "       \"STD\":<int>standard,"
+		echo "       \"BRACKET_SIMPLE\":<int>simple,"
+		echo "       \"SIMPLE\":<int>simple,"
+		echo "       \"BRACKET_ARAKAWA\":<int>arakawa,"
+		echo "       \"ARAKAWA\":<int>arakawa,"
+		echo "       \"BRACKET_CTU\":<int>ctu,"
+		echo "       \"CTU\":<int>ctu,"
+		echo "       \"BRACKET_ARAKAWA_OLD\":<int>arakawa_old,"
+		echo "       \"ARAKAWA_OLD\":<int>arakawa_old,"
+	    fi
 	    echo "          }"
 	    test $class &&
 		echo "    return <$name><int> opts[str]" ||

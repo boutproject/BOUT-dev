@@ -25,13 +25,15 @@
 
 #include <cmath>
 
-#include <output.hxx>
 #include <bout/constants.hxx>
+#include <output.hxx>
 #include <utils.hxx>
 
 #include "bout/constants.hxx"
 
 #include "fieldgenerators.hxx"
+
+using bout::generator::Context;
 
 /// Helper function to create a FieldValue generator from a BoutReal
 FieldGeneratorPtr generator(BoutReal value) {
@@ -39,42 +41,93 @@ FieldGeneratorPtr generator(BoutReal value) {
 }
 
 /// Helper function to create a FieldValuePtr from a pointer to BoutReal
-FieldGeneratorPtr generator(BoutReal *ptr) {
+FieldGeneratorPtr generator(BoutReal* ptr) {
   return std::make_shared<FieldValuePtr>(ptr);
+}
+
+namespace {
+  /// Provides a placeholder whose target can be changed after creation.
+  /// This enables recursive FieldGenerator expressions to be generated
+  class FieldIndirect : public FieldGenerator {
+  public:
+    /// depth_limit sets the maximum iteration depth. Set to < 0 for no limit
+    FieldIndirect(std::string name, int depth_limit = 0) : name(name), depth_limit(depth_limit) {}
+
+    /// Set the target, to be called when generator is called
+    void setTarget(FieldGeneratorPtr fieldgen) { target = fieldgen; }
+    
+    double generate(const Context& ctx) override {
+      if (depth_counter == depth_limit) {
+        throw BoutException("Calling {:s} to recursion depth {:d} exceeds maximum {:d}\n",
+                            name, depth_counter, depth_limit);
+      }
+      ++depth_counter;
+      BoutReal result = target->generate(ctx);
+      --depth_counter;
+      return result;
+    }
+
+    /// Note: returns the name rather than target->str, to avoid infinite recursion
+    std::string str() const override { return name; }
+  private:
+    std::string name;  ///< Name of the expression being pointed to
+    int depth_counter {0}; ///< Counts the iteration depth, to provide a maximum number of iterations
+    int depth_limit{0};  ///< Maximum call depth. If 0 then no recursion allowed (generate fails first time).
+    
+    FieldGeneratorPtr target;
+  };
 }
 
 //////////////////////////////////////////////////////////
 // FieldFactory public functions
 
-FieldFactory::FieldFactory(Mesh * localmesh, Options *opt) : fieldmesh(localmesh), options(opt) {
+FieldFactory::FieldFactory(Mesh* localmesh, Options* opt)
+    : fieldmesh(localmesh == nullptr ? bout::globals::mesh : localmesh),
+      options(opt == nullptr ? Options::getRoot() : opt) {
 
-  if (options == nullptr)
-    options = Options::getRoot();
+  // Set options
+  // Note: don't use 'options' here because 'options' is a 'const Options*'
+  // pointer, so this would fail if the "input" section is not present.
+  Options& nonconst_options{opt == nullptr ? Options::root() : *opt};
+  transform_from_field_aligned
+    = nonconst_options["input"]["transform_from_field_aligned"].withDefault(true);
 
+  // Convert using stoi rather than Options, or a FieldFactory is used to parse
+  // the string, leading to infinite loop.
+  try {
+    max_recursion_depth = std::stoi(nonconst_options["input"]["max_recursion_depth"]
+                                    .doc("Maximum recursion depth allowed in expressions. 0 = no "
+                                         "recursion; -1 = unlimited")
+                                    .withDefault<std::string>("0"));
+  } catch (const std::exception&) {
+    throw ParseException("Invalid integer given as input:max_recursion_depth: '{:s}'",
+        nonconst_options["input"]["max_recursion_depth"].as<std::string>());
+  }
+  
   // Useful values
   addGenerator("pi", std::make_shared<FieldValue>(PI));
   addGenerator("π", std::make_shared<FieldValue>(PI));
-  
-  // Some standard functions
-  addGenerator("sin", std::make_shared<FieldSin>(nullptr));
-  addGenerator("cos", std::make_shared<FieldCos>(nullptr));
-  addGenerator("tan", std::make_shared<FieldGenOneArg<tan>>(nullptr));
 
-  addGenerator("acos", std::make_shared<FieldGenOneArg<acos>>(nullptr));
-  addGenerator("asin", std::make_shared<FieldGenOneArg<asin>>(nullptr));
+  // Some standard functions
+  addGenerator("sin", std::make_shared<FieldGenOneArg<sin>>(nullptr, "sin"));
+  addGenerator("cos", std::make_shared<FieldGenOneArg<cos>>(nullptr, "cos"));
+  addGenerator("tan", std::make_shared<FieldGenOneArg<tan>>(nullptr, "tan"));
+
+  addGenerator("acos", std::make_shared<FieldGenOneArg<acos>>(nullptr, "acos"));
+  addGenerator("asin", std::make_shared<FieldGenOneArg<asin>>(nullptr, "asin"));
   addGenerator("atan", std::make_shared<FieldATan>(nullptr));
 
-  addGenerator("sinh", std::make_shared<FieldSinh>(nullptr));
-  addGenerator("cosh", std::make_shared<FieldCosh>(nullptr));
-  addGenerator("tanh", std::make_shared<FieldTanh>());
+  addGenerator("sinh", std::make_shared<FieldGenOneArg<sinh>>(nullptr, "sinh"));
+  addGenerator("cosh", std::make_shared<FieldGenOneArg<cosh>>(nullptr, "cosh"));
+  addGenerator("tanh", std::make_shared<FieldGenOneArg<tanh>>(nullptr, "tanh"));
 
-  addGenerator("exp", std::make_shared<FieldGenOneArg<exp>>(nullptr));
-  addGenerator("log", std::make_shared<FieldGenOneArg<log>>(nullptr));
+  addGenerator("exp", std::make_shared<FieldGenOneArg<exp>>(nullptr, "exp"));
+  addGenerator("log", std::make_shared<FieldGenOneArg<log>>(nullptr, "log"));
   addGenerator("gauss", std::make_shared<FieldGaussian>(nullptr, nullptr));
-  addGenerator("abs", std::make_shared<FieldAbs>(nullptr));
-  addGenerator("sqrt", std::make_shared<FieldSqrt>(nullptr));
+  addGenerator("abs", std::make_shared<FieldGenOneArg<fabs>>(nullptr, "abs"));
+  addGenerator("sqrt", std::make_shared<FieldGenOneArg<sqrt>>(nullptr, "sqrt"));
   addGenerator("h", std::make_shared<FieldHeaviside>(nullptr));
-  addGenerator("erf", std::make_shared<FieldErf>(nullptr));
+  addGenerator("erf", std::make_shared<FieldGenOneArg<erf>>(nullptr, "erf"));
   addGenerator("fmod", std::make_shared<FieldGenTwoArg<fmod>>(nullptr, nullptr));
 
   addGenerator("min", std::make_shared<FieldMin>());
@@ -93,185 +146,169 @@ FieldFactory::FieldFactory(Mesh * localmesh, Options *opt) : fieldmesh(localmesh
   // TanhHat function
   addGenerator("tanhhat",
                std::make_shared<FieldTanhHat>(nullptr, nullptr, nullptr, nullptr));
+
+  // Where switch function
+  addGenerator("where", std::make_shared<FieldWhere>(nullptr, nullptr, nullptr));
 }
 
-FieldFactory::~FieldFactory() {
-
+Field2D FieldFactory::create2D(const std::string& value, const Options* opt,
+                               Mesh* localmesh, CELL_LOC loc, BoutReal t) const {
+  return create2D(parse(value, opt), localmesh, loc, t);
 }
 
-const Field2D FieldFactory::create2D(const string &value, const Options *opt,
-                                     Mesh *localmesh, CELL_LOC loc,
-                                     BoutReal t) {
+Field2D FieldFactory::create2D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC loc,
+                               BoutReal t) const {
+  AUTO_TRACE();
 
-  if(localmesh == nullptr)
+  if (localmesh == nullptr) {
+    if (fieldmesh == nullptr) {
+      throw BoutException("FieldFactory not created with mesh and no mesh passed in");
+    }
     localmesh = fieldmesh;
-  if(localmesh == nullptr)
-    throw BoutException("Not a valid mesh");
-
-  Field2D result(0.,localmesh);
-
-  if(localmesh->StaggerGrids == false){
-    loc = CELL_CENTRE ;
-  }
-  result.setLocation(loc);
-
-  FieldGeneratorPtr gen = parse(value, opt);
-  if(!gen) {
-    output << "FieldFactory error: Couldn't create 2D field from '"
-           << value
-           << "'" << endl;
-    return result;
   }
 
-  switch(loc)  {
-  case CELL_XLOW: {
-    BOUT_FOR(i, localmesh->getRegion2D("RGN_ALL")) {
-      BoutReal xpos = 0.5 * (localmesh->GlobalX(i.x() - 1) + localmesh->GlobalX(i.x()));
-      result[i] = gen->generate(xpos, TWOPI * localmesh->GlobalY(i.y()),
-                                0.0, // Z
-                                t);  // T
-    }
-    break;
+  if (!gen) {
+    throw BoutException("Couldn't create 2D field from null generator");
   }
-  case CELL_YLOW: {
-    BOUT_FOR(i, localmesh->getRegion2D("RGN_ALL")) {
-      BoutReal ypos =
-          TWOPI * 0.5 * (localmesh->GlobalY(i.y() - 1) + localmesh->GlobalY(i.y()));
-      result[i] = gen->generate(localmesh->GlobalX(i.x()), ypos,
-                                0.0, // Z
-                                t);  // T
-    }
-    break;
-  }
-  default: {// CELL_CENTRE or CELL_ZLOW
-    BOUT_FOR(i, localmesh->getRegion2D("RGN_ALL")) {
-      result[i] =
-          gen->generate(localmesh->GlobalX(i.x()), TWOPI * localmesh->GlobalY(i.y()),
-                        0.0, // Z
-                        t);  // T
-    }
-  }
-  };
 
-  // Don't delete the generator, as will be cached
+  Field2D result{localmesh};
 
-  return result;
-}
-
-const Field3D FieldFactory::create3D(const string &value, const Options *opt,
-                                     Mesh *localmesh, CELL_LOC loc,
-                                     BoutReal t) {
-
-  if(localmesh == nullptr)
-    localmesh = fieldmesh;
-  if(localmesh == nullptr)
-    throw BoutException("Not a valid mesh");
-
-  // Create a Field3D over mesh "localmesh"
-  Field3D result(localmesh);
-  
-  // Ensure that data is allocated and unique
   result.allocate();
-
   result.setLocation(loc);
 
-  // Parse expression to create a tree of generators
-  FieldGeneratorPtr gen = parse(value, opt);
-  if(!gen) {
-    throw BoutException("FieldFactory error: Couldn't create 3D field from '%s'", value.c_str());
-  }
-
-  switch(loc)  {
-  case CELL_XLOW: {
-    BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")) {
-      BoutReal xpos = 0.5 * (localmesh->GlobalX(i.x() - 1) + localmesh->GlobalX(i.x()));
-      result[i] = gen->generate(xpos, TWOPI * localmesh->GlobalY(i.y()),
-                                TWOPI * static_cast<BoutReal>(i.z()) /
-                                    static_cast<BoutReal>(localmesh->LocalNz), // Z
-                                t);                                            // T
-    }
-    break;
-  }
-  case CELL_YLOW: {
-    BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")) {
-      BoutReal ypos =
-          TWOPI * 0.5 * (localmesh->GlobalY(i.y() - 1) + localmesh->GlobalY(i.y()));
-      result[i] = gen->generate(localmesh->GlobalX(i.x()), ypos,
-                                TWOPI * static_cast<BoutReal>(i.z()) /
-                                    static_cast<BoutReal>(localmesh->LocalNz), // Z
-                                t);                                            // T
-    }
-    break;
-  }
-  case CELL_ZLOW: {
-    BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")) {
-      result[i] =
-          gen->generate(localmesh->GlobalX(i.x()), TWOPI * localmesh->GlobalY(i.y()),
-                        TWOPI * (static_cast<BoutReal>(i.z()) - 0.5) /
-                            static_cast<BoutReal>(localmesh->LocalNz), // Z
-                        t);                                            // T
-    }
-    break;
-  }
-  default: {// CELL_CENTRE
-    BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")) {
-      result[i] =
-          gen->generate(localmesh->GlobalX(i.x()), TWOPI * localmesh->GlobalY(i.y()),
-                        TWOPI * static_cast<BoutReal>(i.z()) /
-                            static_cast<BoutReal>(localmesh->LocalNz), // Z
-                        t);                                            // T
-    }
-  }
+  BOUT_FOR(i, result.getRegion("RGN_ALL")) {
+    result[i] = gen->generate(Context(i, loc, localmesh, t));
   };
 
-  // Don't delete generator
-  
-  if (localmesh->canToFromFieldAligned()){ // Ask wheter it is possible
-    // Transform from field aligned coordinates, to be compatible with
-    // older BOUT++ inputs. This is not a particularly "nice" solution.
-    result = localmesh->fromFieldAligned(result);
+  return result;
+}
+
+Field3D FieldFactory::create3D(const std::string& value, const Options* opt,
+                               Mesh* localmesh, CELL_LOC loc, BoutReal t) const {
+  return create3D(parse(value, opt), localmesh, loc, t);
+}
+
+Field3D FieldFactory::create3D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC loc,
+                               BoutReal t) const {
+  AUTO_TRACE();
+
+  if (localmesh == nullptr) {
+    if (fieldmesh == nullptr) {
+      throw BoutException("FieldFactory not created with mesh and no mesh passed in");
+    }
+    localmesh = fieldmesh;
+  }
+
+  if (!gen) {
+    throw BoutException("Couldn't create 3D field from null generator");
+  }
+
+  const auto y_direction =
+      transform_from_field_aligned ? YDirectionType::Aligned : YDirectionType::Standard;
+
+  auto result = Field3D(localmesh).setLocation(loc).setDirectionY(y_direction).allocate();
+
+  BOUT_FOR(i, result.getRegion("RGN_ALL")) {
+    result[i] = gen->generate(Context(i, loc, localmesh, t));
+  };
+
+  if (transform_from_field_aligned) {
+    auto coords = result.getCoordinates();
+    if (coords == nullptr) {
+      throw BoutException("Unable to transform result: Mesh does not have Coordinates set");
+    }
+    if (coords->getParallelTransform().canToFromFieldAligned()) {
+      // Transform from field aligned coordinates, to be compatible with
+      // older BOUT++ inputs. This is not a particularly "nice" solution.
+      result = fromFieldAligned(result, "RGN_ALL");
+    } else {
+      result.setDirectionY(YDirectionType::Standard);
+    }
   }
 
   return result;
 }
 
-const Options* FieldFactory::findOption(const Options *opt, const string &name, string &val) {
-  // Find an Options object which contains the given name
+FieldPerp FieldFactory::createPerp(const std::string& value, const Options* opt,
+    Mesh* localmesh, CELL_LOC loc, BoutReal t) const {
+  return createPerp(parse(value, opt), localmesh, loc, t);
+}
 
-  const Options *result = opt;
+FieldPerp FieldFactory::createPerp(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC loc,
+                                   BoutReal t) const {
+  AUTO_TRACE();
+
+  if (localmesh == nullptr) {
+    if (fieldmesh == nullptr) {
+      throw BoutException("FieldFactory not created with mesh and no mesh passed in");
+    }
+    localmesh = fieldmesh;
+  }
+
+  if (!gen) {
+    throw BoutException("Couldn't create FieldPerp from null generator");
+  }
+
+  const auto y_direction =
+      transform_from_field_aligned ? YDirectionType::Aligned : YDirectionType::Standard;
+
+  auto result = FieldPerp(localmesh).setLocation(loc).setDirectionY(y_direction).allocate();
+
+  BOUT_FOR(i, result.getRegion("RGN_ALL")) {
+    result[i] = gen->generate(Context(i, loc, localmesh, t));
+  };
+
+  if (transform_from_field_aligned) {
+    auto coords = result.getCoordinates();
+    if (coords == nullptr) {
+      throw BoutException("Unable to transform result: Mesh does not have Coordinates set");
+    }
+    if (coords->getParallelTransform().canToFromFieldAligned()) {
+      // Transform from field aligned coordinates, to be compatible with
+      // older BOUT++ inputs. This is not a particularly "nice" solution.
+      result = fromFieldAligned(result, "RGN_ALL");
+    }
+  }
+
+  return result;
+}
+
+const Options* FieldFactory::findOption(const Options* opt, const std::string& name,
+                                        std::string& val) const {
+  const Options* result = opt;
 
   // Check if name contains a section separator ':'
   size_t pos = name.find(':');
-  if(pos == string::npos) {
+  if (pos == std::string::npos) {
     // No separator. Try this section, and then go through parents
 
-    while(!result->isSet(name)) {
+    while (!result->isSet(name)) {
       result = result->getParent();
       if (result == nullptr)
-        throw ParseException("Cannot find variable '%s'", name.c_str());
+        throw ParseException("Cannot find variable '{:s}'", name);
     }
     result->get(name, val, "");
 
-  }else {
+  } else {
     // Go to the root, and go up through sections
     result = Options::getRoot();
 
     size_t lastpos = 0;
-    while(pos != string::npos) {
-      string sectionname = name.substr(lastpos,pos);
-      if( sectionname.length() > 0 ) {
+    while (pos != std::string::npos) {
+      std::string sectionname = name.substr(lastpos, pos);
+      if (sectionname.length() > 0) {
         result = result->getSection(sectionname);
       }
-      lastpos = pos+1;
+      lastpos = pos + 1;
       pos = name.find(':', lastpos);
     }
     // Now look for the name in this section
 
-    string varname = name.substr(lastpos);
+    std::string varname = name.substr(lastpos);
 
-    if(!result->isSet(varname)) {
+    if (!result->isSet(varname)) {
       // Not in this section
-      throw ParseException("Cannot find variable '%s'", name.c_str());
+      throw ParseException("Cannot find variable '{:s}'", name);
     }
 
     result->get(varname, val, "");
@@ -280,17 +317,18 @@ const Options* FieldFactory::findOption(const Options *opt, const string &name, 
   return result;
 }
 
-FieldGeneratorPtr FieldFactory::resolve(string &name) {
-  if (options) {
+FieldGeneratorPtr FieldFactory::resolve(std::string& name) const {
+  if (options != nullptr) {
     // Check if in cache
-    string key;
-    if(name.find(':') != string::npos) {
+    std::string key;
+    if (name.find(':') != std::string::npos) {
       // Already has section
       key = name;
-    }else {
+    } else {
       key = options->str();
-      if(key.length() > 0)
-        key += string(":");
+      if (key.length() > 0) {
+        key += ":";
+      }
       key += name;
     }
 
@@ -303,34 +341,47 @@ FieldGeneratorPtr FieldFactory::resolve(string &name) {
     // Look up in options
 
     // Check if already looking up this symbol
-    for (const auto &lookup_value : lookup) {
-      if (key.compare(lookup_value) == 0) {
+    for (const auto& lookup_value : lookup) {
+      if (key == lookup_value) {
         // Name matches, so already looking up
-        output << "ExpressionParser lookup stack:\n";
-        for (const auto &stack_value : lookup) {
-          output << stack_value << " -> ";
+        output_error << "ExpressionParser lookup stack:\n";
+        for (const auto& stack_value : lookup) {
+          output_error << stack_value << " -> ";
         }
-        output << name << endl;
-        throw BoutException("ExpressionParser: Infinite recursion in parsing '%s'",
-                            name.c_str());
+        output_error << name << endl;
+        throw BoutException("ExpressionParser: Infinite recursion in parsing '{:s}'",
+                            name);
       }
     }
 
     // Find the option, including traversing sections.
     // Throws exception if not found
-    string value;
-    const Options *section = findOption(options, name, value);
+    std::string value;
+    const Options* section = findOption(options, name, value);
 
-    // Add to lookup list
+    if (max_recursion_depth != 0) {
+      // Recursion allowed. If < 0 then no limit, if > 0 then recursion limited
+      
+      // Create an object which can be used in FieldGenerator trees.
+      // The target does not yet exist, but will be set after parsing is complete
+      auto indirection = std::make_shared<FieldIndirect>(name, max_recursion_depth);
+      
+      cache[key] = indirection;
+      FieldGeneratorPtr g = parse(value, section);
+      indirection->setTarget(g); // set so that calls to self will point to the right place
+      cache[key] = g;
+      return g;
+    }
+    // Recursion not allowed. Keep track of keys being resolved
+    // This is done so that an error can be printed at parse time rather
+    // than run time (generate call).
+    
     lookup.push_back(key);
 
-    // Parse
     FieldGeneratorPtr g = parse(value, section);
 
-    // Cache
     cache[key] = g;
 
-    // Remove from lookup list
     lookup.pop_back();
 
     return g;
@@ -339,33 +390,31 @@ FieldGeneratorPtr FieldFactory::resolve(string &name) {
   return nullptr;
 }
 
-FieldGeneratorPtr FieldFactory::parse(const string &input, const Options *opt) {
+FieldGeneratorPtr FieldFactory::parse(const std::string& input, const Options* opt) const {
 
   // Check if in the cache
-  string key = string("#") + input;
-  if (opt)
+  std::string key = "#" + input;
+  if (opt != nullptr) {
     key = opt->str() + key; // Include options context in key
+  }
 
   auto it = cache.find(key);
   if (it != cache.end()) {
-    // Found in cache
     return it->second;
   }
 
   // Save the current options
-  const Options *oldoptions = options;
+  const Options* oldoptions = options;
 
   // Store the options tree for token lookups
-  if (opt)
+  if (opt != nullptr) {
     options = opt;
+  }
 
-  // Parse
   FieldGeneratorPtr expr = parseString(input);
 
-  // Add to cache
   cache[key] = expr;
 
-  // Restore the old options
   options = oldoptions;
 
   return expr;
@@ -377,6 +426,4 @@ FieldFactory* FieldFactory::get() {
   return &instance;
 }
 
-void FieldFactory::cleanCache() {
-  cache.clear();
-}
+void FieldFactory::cleanCache() { cache.clear(); }

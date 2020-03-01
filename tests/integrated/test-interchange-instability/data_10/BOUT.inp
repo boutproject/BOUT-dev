@@ -51,6 +51,8 @@ upwind = W3
 [laplace]
 include_yguards = true
 all_terms = false
+inner_boundary_flags = 0  # inner boundary inversion flags
+outer_boundary_flags = 0  # outer boundary inversion flags
 
 ##################################################
 # Solver settings
@@ -79,17 +81,6 @@ Zeff = 2.0        # Z effective
 nu_perp = 1.0e-20
 
 ShearFactor = 0.0
-
-# field inversion flags: Add the following
-#  1 - Zero-gradient DC component on inner boundary
-#  2 - Zero-gradient AC component on inner boundary
-#  4 -      "        DC     "      " outer    "
-#  8 -      "        AC     "      " outer    "
-# 16 - Zero all DC components of the result
-# 32 - Don't use previous solution to start iterations
-#      (iterative methods only)
-phi_flags = 0  # inversion flags for phi
-apar_flags = 0 # flags for apar inversion
 
 ##################################################
 # settings for individual variables

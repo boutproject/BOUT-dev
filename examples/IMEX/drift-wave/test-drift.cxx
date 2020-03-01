@@ -5,7 +5,7 @@
 
 class DriftWave : public PhysicsModel { 
 protected:
-  int init(bool restart) {
+  int init(bool) {
     // Specify evolving variables
     solver->add(Vort, "Vort"); // Vorticity
     solver->add(Ne, "Ne");     // Electron density
@@ -13,7 +13,7 @@ protected:
     SAVE_REPEAT(phi);
     
     // Get the normalised resistivity
-    Options::getRoot()->getSection("drift")->get("nu", nu, 1.0);
+    nu = Options::root()["drift"]["nu"].doc("Normalised resistivity").withDefault(1.0);
 
     // Read background profile
     mesh->get(Ne0, "Ne0");
@@ -26,7 +26,7 @@ protected:
     return 0;
   }
   
-  int convective(BoutReal time) {
+  int convective(BoutReal) {
     // Non-stiff parts of the problem here
     // Here just the nonlinear advection
     
@@ -45,7 +45,7 @@ protected:
     return 0;
   }
   
-  int diffusive(BoutReal time) {
+  int diffusive(BoutReal) {
     // Parallel dynamics treated implicitly
     
     // Solve for potential
@@ -69,7 +69,7 @@ private:
   Field3D phi; // Electrostatic potential
   Field3D Ve;  // parallel electron velocity
   
-  Laplacian *phiSolver;
+  std::unique_ptr<Laplacian> phiSolver{nullptr};
 
   BoutReal nu; // Resistivity parameter
 };

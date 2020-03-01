@@ -38,13 +38,13 @@
 
 #include "pdd.hxx"
 
-const FieldPerp LaplacePDD::solve(const FieldPerp &b) {
+FieldPerp LaplacePDD::solve(const FieldPerp& b) {
   ASSERT1(localmesh == b.getMesh());
+  ASSERT1(b.getLocation() == location);
 
   PDD_data data;
 
-  FieldPerp x(localmesh);
-  x.allocate();
+  FieldPerp x{emptyFrom(b)};
   
   start(b, data);
   next(data);
@@ -53,11 +53,11 @@ const FieldPerp LaplacePDD::solve(const FieldPerp &b) {
   return x;
 }
 
-const Field3D LaplacePDD::solve(const Field3D &b) {
+Field3D LaplacePDD::solve(const Field3D& b) {
   ASSERT1(localmesh == b.getMesh());
+  ASSERT1(b.getLocation() == location);
 
-  Field3D x(localmesh);
-  x.allocate();
+  Field3D x{emptyFrom(b)};
   FieldPerp xperp(localmesh);
   xperp.allocate();
   
@@ -114,6 +114,7 @@ const Field3D LaplacePDD::solve(const Field3D &b) {
 /// @param[in] data  Internal data used for multiple calls in parallel mode
 void LaplacePDD::start(const FieldPerp &b, PDD_data &data) {
   ASSERT1(localmesh == b.getMesh());
+  ASSERT1(b.getLocation() == location);
 
   int ix, kz;
 
@@ -132,25 +133,25 @@ void LaplacePDD::start(const FieldPerp &b, PDD_data &data) {
       // Need to allocate working memory
 
       // RHS vector
-      data.bk = Matrix<dcomplex>(maxmode + 1, localmesh->LocalNx);
+      data.bk.reallocate(maxmode + 1, localmesh->LocalNx);
 
       // Matrix to be solved
-      data.avec = Matrix<dcomplex>(maxmode + 1, localmesh->LocalNx);
-      data.bvec = Matrix<dcomplex>(maxmode + 1, localmesh->LocalNx);
-      data.cvec = Matrix<dcomplex>(maxmode + 1, localmesh->LocalNx);
+      data.avec.reallocate(maxmode + 1, localmesh->LocalNx);
+      data.bvec.reallocate(maxmode + 1, localmesh->LocalNx);
+      data.cvec.reallocate(maxmode + 1, localmesh->LocalNx);
 
       // Working vectors
-      data.v = Matrix<dcomplex>(maxmode + 1, localmesh->LocalNx);
-      data.w = Matrix<dcomplex>(maxmode + 1, localmesh->LocalNx);
+      data.v.reallocate(maxmode + 1, localmesh->LocalNx);
+      data.w.reallocate(maxmode + 1, localmesh->LocalNx);
 
       // Result
-      data.xk = Matrix<dcomplex>(maxmode + 1, localmesh->LocalNx);
+      data.xk.reallocate(maxmode + 1, localmesh->LocalNx);
 
       // Communication buffers. Space for 2 complex values for each kz
-      data.snd = Array<BoutReal>(4 * (maxmode + 1));
-      data.rcv = Array<BoutReal>(4 * (maxmode + 1));
+      data.snd.reallocate(4 * (maxmode + 1));
+      data.rcv.reallocate(4 * (maxmode + 1));
 
-      data.y2i = Array<dcomplex>(maxmode + 1);
+      data.y2i.reallocate(maxmode + 1);
   }
 
   /// Take FFTs of data
@@ -302,6 +303,8 @@ void LaplacePDD::next(PDD_data &data) {
 
 /// Last part of the PDD algorithm
 void LaplacePDD::finish(PDD_data &data, FieldPerp &x) {
+  ASSERT1(x.getLocation() == location);
+
   int ix, kz;
 
   x.allocate();

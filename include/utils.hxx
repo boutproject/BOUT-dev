@@ -43,26 +43,121 @@
 #include <cmath>
 #include <ctime>
 #include <algorithm>
+#include <memory>
 
-using std::abs;
-using std::swap;
+#ifdef _MSC_VER
+// finite is not actually standard C++, it's a BSD extention for C
+inline auto finite(BoutReal x) -> bool { return std::isfinite(x); }
+inline auto strcasecmp(const char* s1, const char* s2) -> int { return _stricmp(s1, s2); }
+#endif
+
+namespace bout {
+namespace utils {
+#ifndef __cpp_lib_make_unique
+// Provide our own make_unique if the stl doesn't give us one
+// Implementation from https://isocpp.org/files/papers/N3656.txt
+// i.e. what's already in the stl
+template <class T>
+struct _Unique_if {
+  using _Single_object = std::unique_ptr<T>;
+};
+
+template <class T>
+struct _Unique_if<T[]> {
+  using _Unknown_bound = std::unique_ptr<T[]>;
+};
+
+template <class T, size_t N>
+struct _Unique_if<T[N]> {
+  using _Known_bound = void;
+};
+
+template <class T, class... Args>
+typename _Unique_if<T>::_Single_object make_unique(Args&&... args) {
+  return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+}
+
+template <class T>
+typename _Unique_if<T>::_Unknown_bound make_unique(size_t n) {
+  using U = typename std::remove_extent<T>::type;
+  return std::unique_ptr<T>(new U[n]());
+}
+
+template <class T, class... Args>
+typename _Unique_if<T>::_Known_bound make_unique(Args&&...) = delete;
+#else
+using std::make_unique;
+#endif
+
+template <typename T>
+struct function_traits;
+
+/// Traits class to get the types of function arguments for function pointers
+///
+/// Use like:
+///
+//      // A function signature we'd like to check:
+///     using some_function = int(*)(int, double, std::string);
+///     // Get the type of the first argument:
+///     using first_argument_type =
+///         bout::utils::function_traits<some_function>::arg<1>::type;
+///     // The following prints "true":
+///     std::cout << std::boolalpha
+///         << std::is_same<double, first_argument_type>::value;
+///
+/// Adapted from https://stackoverflow.com/a/9065203/2043465
+template <typename R, typename... Args>
+struct function_traits<R (*)(Args...)> {
+  /// Total number of arguments
+  static constexpr size_t nargs = sizeof...(Args);
+
+  using result_type = R;
+
+  template <size_t i>
+  struct arg {
+    using type = typename std::tuple_element<i, std::tuple<Args...>>::type;
+  };
+
+  template <size_t i>
+  using arg_t = typename arg<i>::type;
+};
+} // namespace utils
+} // namespace bout
 
 /// Helper class for 2D arrays
 ///
 /// Allows bounds checking through `operator()` with CHECK > 1
+///
+/// If either \p n1 or \p n2 are 0, the Matrix is empty and should not
+/// be indexed
 template <typename T>
 class Matrix {
 public:
   using data_type = T;
   using size_type = int;
-  
-  Matrix() : n1(0), n2(0){};
+
+  Matrix() = default;
   Matrix(size_type n1, size_type n2) : n1(n1), n2(n2) {
-    data = Array<T>(n1*n2);
+    ASSERT2(n1 >= 0);
+    ASSERT2(n2 >= 0);
+
+    data.reallocate(n1 * n2);
   }
   Matrix(const Matrix &other) : n1(other.n1), n2(other.n2), data(other.data) {
     // Prevent copy on write for Matrix
     data.ensureUnique();
+  }
+
+  /// Reallocate the Matrix to shape \p new_size_1 by \p new_size_2
+  ///
+  /// Note that this invalidates the existing data!
+  void reallocate(size_type new_size_1, size_type new_size_2) {
+    ASSERT2(new_size_1 >= 0);
+    ASSERT2(new_size_2 >= 0);
+
+    n1 = new_size_1;
+    n2 = new_size_2;
+    data.reallocate(new_size_1 * new_size_2);
   }
 
   Matrix& operator=(const Matrix &other) {
@@ -97,11 +192,9 @@ public:
   T* end() { return std::end(data);};
   const T* end() const { return std::end(data);};
 
-  std::tuple<size_type, size_type> shape() { return std::make_tuple(n1, n2);};
+  std::tuple<size_type, size_type> shape() const { return std::make_tuple(n1, n2); };
 
-  bool empty(){
-    return n1*n2 == 0;
-  }
+  bool empty() const { return n1 * n2 == 0; }
 
   /*!
    * Ensures that this Matrix does not share data with another
@@ -112,27 +205,52 @@ public:
     data.ensureUnique();
   }
   
+  /// Access the underlying storage
+  Array<T>& getData() { return data; }
+  const Array<T>& getData() const { return data; }
+
 private:
-  size_type n1, n2;
+  size_type n1{0}, n2{0};
+  /// Underlying 1D storage array
   Array<T> data;
 };
 
 /// Helper class for 3D arrays
 ///
 /// Allows bounds checking through `operator()` with CHECK > 1
+///
+/// If any of \p n1, \p n2 or \p n3 are 0, the Tensor is empty and
+/// should not be indexed
 template <typename T>
 class Tensor {
 public:
   using data_type = T;
   using size_type = int;
 
-  Tensor() : n1(0), n2(0), n3(0) {};
+  Tensor() = default;
   Tensor(size_type n1, size_type n2, size_type n3) : n1(n1), n2(n2), n3(n3) {
-    data = Array<T>(n1*n2*n3);
+    ASSERT2(n1 >= 0);
+    ASSERT2(n2 >= 0);
+    ASSERT2(n3 >= 0);
+    data.reallocate(n1 * n2 * n3);
   }
   Tensor(const Tensor &other) : n1(other.n1), n2(other.n2), n3(other.n3), data(other.data) {
     // Prevent copy on write for Tensor
     data.ensureUnique();
+  }
+
+  /// Reallocate the Tensor with shape \p new_size_1 by \p new_size_2 by \p new_size_3
+  ///
+  /// Note that this invalidates the existing data!
+  void reallocate(size_type new_size_1, size_type new_size_2, size_type new_size_3) {
+    ASSERT2(new_size_1 >= 0);
+    ASSERT2(new_size_2 >= 0);
+    ASSERT2(new_size_3 >= 0);
+
+    n1 = new_size_1;
+    n2 = new_size_2;
+    n3 = new_size_3;
+    data.reallocate(new_size_1 * new_size_2 * new_size_3);
   }
 
   Tensor& operator=(const Tensor &other) {
@@ -169,13 +287,13 @@ public:
   const T* begin() const { return std::begin(data);};
   T* end() { return std::end(data);};
   const T* end() const { return std::end(data);};
-  
-  std::tuple<size_type, size_type, size_type> shape() { return std::make_tuple(n1, n2, n3);};
-  
-  bool empty(){
-    return n1*n2*n3 == 0;
-  }
-  
+
+  std::tuple<size_type, size_type, size_type> shape() const {
+    return std::make_tuple(n1, n2, n3);
+  };
+
+  bool empty() const { return n1 * n2 * n3 == 0; }
+
   /*!
    * Ensures that this Tensor does not share data with another
    * This should be called before performing any write operations
@@ -184,11 +302,17 @@ public:
   void ensureUnique() {
     data.ensureUnique();
   }
- 
+
+  /// Access the underlying storage
+  Array<T>& getData() { return data; }
+  const Array<T>& getData() const { return data; }
+
 private:
-  size_type n1, n2, n3;
+  size_type n1{0}, n2{0}, n3{0};
+  /// Underlying 1D storage array
   Array<T> data;
 };
+
 
 /**************************************************************************
  * Matrix routines
@@ -210,9 +334,9 @@ template <typename T> int invert3x3(Matrix<T> &a, BoutReal small = 1.0e-15) {
   // Calculate the determinant
   T det = a(0, 0) * A + a(0, 1) * B + a(0, 2) * C;
 
-  if (abs(det) < abs(small)) {
+  if (std::abs(det) < std::abs(small)) {
     if (small >=0 ){
-      throw BoutException("Determinant of matrix < %e --> Poorly conditioned", small);
+      throw BoutException("Determinant of matrix < {:e} --> Poorly conditioned", small);
     } else {
       return 1;
     }      
@@ -240,7 +364,7 @@ template <typename T> int invert3x3(Matrix<T> &a, BoutReal small = 1.0e-15) {
   a(2, 2) = I * detinv;
 
   return 0;
-};
+}
 
 /*!
  * Get Random number between 0 and 1
@@ -313,7 +437,7 @@ T SIGN(T a) { // Return +1 or -1 (0 -> +1)
  * if |a| < |b| then return a, otherwise return b
  */
 inline BoutReal MINMOD(BoutReal a, BoutReal b) {
-  return 0.5*(SIGN(a) + SIGN(b)) * BOUTMIN(fabs(a), fabs(b));
+  return 0.5*(SIGN(a) + SIGN(b)) * BOUTMIN(std::abs(a), std::abs(b));
 }
 
 #if CHECK > 0
@@ -333,31 +457,64 @@ inline void checkData(BoutReal UNUSED(f)){};
  */ 
 char* copy_string(const char* s);
 
-/*!
- * Convert a value to a string
- * by writing to a stringstream
- */
+
+/// Convert a value to a string
+/// by writing to a stringstream
 template <class T>
-const std::string toString(const T& val) {
+std::string toString(const T& val) {
   std::stringstream ss;
   ss << val;
   return ss.str();
 }
 
+/// Simple case where input is already a string
+/// This is so that toString can be used in templates
+/// where the type may be std::string.
+inline std::string toString(const std::string& val) {
+  return val;
+}
+
+template <>
+inline std::string toString<>(const Array<BoutReal>& UNUSED(val)) {
+  return "<Array>";
+}
+
+template <>
+inline std::string toString<>(const Matrix<BoutReal>& UNUSED(val)) {
+  return "<Matrix>";
+}
+
+template <>
+inline std::string toString<>(const Tensor<BoutReal>& UNUSED(val)) {
+  return "<Tensor>";
+}
+
+/// Convert a bool to "true" or "false"
+inline std::string toString(const bool& val) {
+  if (val) {
+    return "true";
+  }
+  return "false";
+}
+
 /// Convert a time stamp to a string
 /// This uses std::localtime and std::put_time
-template <>
-const std::string toString<>(const time_t& time);
+std::string toString(const time_t& time);
 
 /*!
  * Convert a string to lower case
  */
-const string lowercase(const string &str);
+const std::string lowercase(const std::string &str);
+
+/*!
+ * Convert a string to upper case
+ */
+const std::string uppercase(const std::string &str);
 
 /*!
  * Convert to lower case, except inside quotes (" or ')
  */
-const string lowercasequote(const string &str);
+const std::string lowercasequote(const std::string &str);
 
 /*!
  * Convert a string to a BoutReal

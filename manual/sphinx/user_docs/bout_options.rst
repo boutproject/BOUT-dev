@@ -46,10 +46,11 @@ name in square brackets.
     工作的 = true            # a boolean
     इनपुट = "some text"      # a string
 
-Option names can contain almost any character except ’=’ and ’:’, including unicode.
-If they start with a number or ``.``, contain arithmetic symbols
-(``+-*/^``), brackets (``(){}[]``), whitespace or comma ``,``, then these will need
-to be escaped in expressions. See below for how this is done. 
+Option names can contain almost any character except ’=’ and ’:’,
+including unicode.  If they start with a number or ``.``, contain
+arithmetic symbols (``+-*/^``), brackets (``(){}[]``), equality
+(``=``), whitespace or comma ``,``, then these will need to be escaped
+in expressions. See below for how this is done.
 
 Subsections can also be used, separated by colons ’:’, e.g.
 
@@ -73,12 +74,12 @@ Variables can even reference other variables:
    density = 3
 
 Note that variables can be used before their definition; all variables
-are first read, and then processed afterwards.
+are first read, and then processed afterwards on demand.
 The value ``pi`` is already defined, as is ``π``, and can be used in expressions.
 
 Uses for expressions include initialising variables
-:ref:`_sec-expressions` and input sources, defining grids
-:ref:`_sec-gridgen` and MMS convergence tests :ref:`_sec-mms`.
+:ref:`sec-expressions` and input sources, defining grids
+:ref:`sec-gridgen` and MMS convergence tests :ref:`sec-mms`.
 
 Expressions can include addition (``+``), subtraction (``-``),
 multiplication (``*``), division (``/``) and exponentiation (``^``)
@@ -86,14 +87,28 @@ operators, with the usual precedence rules. In addition to ``π``,
 expressions can use predefined variables ``x``, ``y``, ``z`` and ``t``
 to refer to the spatial and time coordinates.
 A number of functions are defined, listed in table
-:numref:`tab-initexprfunc`. One slightly unusual feature is that if a
-number comes before a symbol or an opening bracket (``(``)
+:numref:`tab-initexprfunc`. One slightly unusual feature (borrowed from `Julia <https://julialang.org/>`_)
+is that if a number comes before a symbol or an opening bracket (``(``)
 then a multiplication is assumed: ``2x+3y^2`` is the same as
 ``2*x + 3*y^2``, which with the usual precedence rules is the same as
 ``(2*x) + (3*(y^2))``. 
 
+Expressions can span more than one line, which can make long expressions
+easier to read:
+
+.. code-block:: cfg
+
+   pressure = temperature * ( density0 +
+                              density1 )
+   temperature = 12
+   density0 = 3
+   density1 = 1
+
+The convention is the same as in `Python <https://www.python.org/>`_:
+If brackets are not balanced (closed) then the expression continues on the next line.
+
 All expressions are calculated in floating point and then converted to
-an integer when read inside BOUT++. The conversion is done by rounding
+an integer if needed when read inside BOUT++. The conversion is done by rounding
 to the nearest integer, but throws an error if the floating point
 value is not within :math:`1e-3` of an integer. This is to minimise
 unexpected behaviour. If you want to round any result to an integer,
@@ -105,7 +120,7 @@ use the ``round`` function:
     ok_integer = round(256.4)
 
 Note that it is still possible to read ``bad_integer`` as a real
-number though.
+number, since the type is determined by how it is used.
 
 Have a look through the examples to see how the options are used.
 
@@ -296,6 +311,13 @@ direction can be specified:
 
     NXPE = 1  # Set number of X processors
 
+Alternatively, the number in the Y direction can be specified (if both are
+given, ``NXPE`` takes precedence and ``NYPE`` is ignored):
+
+.. code-block:: cfg
+
+    NYPE = 1  # Set number of Y processors
+
 If you need to specify complex input values, e.g. numerical values
 from experiment, you may want to use a grid file. The grid file to use
 is specified relative to the root directory where the simulation is
@@ -336,11 +358,13 @@ name, e.g. if multiple meshes are used.
 
 -  ``second``, method for second derivatives
 
+-  ``fourth``, method for fourth derivatives
+
 -  ``upwind``, method for upwinding terms
 
 -  ``flux``, for conservation law terms
 
-The methods which can be specified are U1, U4, C2, C4, W2, W3, FFT Apart
+The methods which can be specified include U1, U4, C2, C4, W2, W3, FFT Apart
 from FFT, the first letter gives the type of method (U = upwind, C =
 central, W = WENO), and the number gives the order.
 
@@ -398,7 +422,7 @@ contain a single time-slice, and are controlled by a section called
    +-------------+----------------------------------------------------+--------------+
    | enabled     | Writing is enabled                                 | true         |
    +-------------+----------------------------------------------------+--------------+
-   | floats      | Write floats rather than doubles                   | true (dmp)   |
+   | floats      | Write floats rather than doubles                   | false        |
    +-------------+----------------------------------------------------+--------------+
    | flush       | Flush the file to disk after each write            | true         |
    +-------------+----------------------------------------------------+--------------+
@@ -411,11 +435,10 @@ contain a single time-slice, and are controlled by a section called
 
 |
 
-**enabled** is useful mainly for doing performance or scaling tests,
-where you want to exclude I/O from the timings. **floats** is used to
-reduce the size of the output files: restart files are stored as double
-by default (since these will be used to restart a simulation), but
-output dump files are set to floats by default.
+**enabled** is useful mainly for doing performance or scaling tests, where you
+want to exclude I/O from the timings. **floats** can be used to reduce the size
+of the output files: files are stored as double by default, but setting
+**floats = true** changes the output to single-precision floats.
 
 To enable parallel I/O for either output or restart files, set
 
@@ -442,17 +465,20 @@ tree structure there is the `Options` class defined in
 
 To access the options, there is a static function (singleton)::
 
-    auto options = Options::root();
+    auto& options = Options::root();
 
-which returns a reference (type ``Options&``). Options can be set by
+which returns a reference (type ``Options&``). Note that without
+the ``&`` the options tree will be copied, so any changes made will not
+be retained in the global tree. Options can be set by
 assigning, treating options as a map or dictionary::
 
     options["nout"] = 10;    // Integer
     options["restart"] = true;  // bool
     
-Internally these values are converted to strings. Any type can be
-assigned, so long as it can be streamed to a string (using ``<<``
-operator and a ``std::stringstream``).
+Internally these values are stored in a variant type, which supports commonly
+used types including strings, integers, real numbers and fields (2D and
+3D). Since strings can be stored, any type can be assigned, so long as it can be
+streamed to a string (using ``<<`` operator and a ``std::stringstream``).
 
 Often it’s useful to see where an option setting has come from e.g. the
 name of the options file or “command line”. To specify a source, use
@@ -471,12 +497,16 @@ any)::
 Sub-sections are created as they are accessed, so a value in a
 sub-section could be set using::
 
-    auto section = options["mysection"];
+    auto& section = options["mysection"];
     section["myswitch"] = true;
 
 or just::
 
     options["mysection"]["myswitch"] = true;
+
+Names including sections, subsections, etc. can be specified using ``":"`` as a
+separator, e.g.::
+    options["mysection:mysubsection:myswitch"] = true;
 
 To get options, they can be assigned to a variable::
 
@@ -492,6 +522,20 @@ If ``options`` is not ``const``, then the given default value will be
 cached. If a default value has already been cached for this option,
 then the default values must be consistent: A ``BoutException`` is
 thrown if inconsistent default values are detected.
+
+The default can also be set from another option. This may be useful if two or
+more options should usually be changed together::
+
+    BoutReal value2 = options["value2"].withDefault(options["value1"]);
+
+Note that if the result should be a real number (e.g. ``BoutReal``) then ``withDefault``
+should be given a real. Otherwise it will convert the number to an integer::
+
+  BoutReal value = options["value"].withDefault(42);  // Convert to integer
+
+  BoutReal value = options["value"].withDefault(42.0); // ok
+
+  auto value = options["value"].withDefault<BoutReal>(42); // ok
 
 It is common for BOUT++ models to read in many settings which have the
 same variable name as option setting (e.g. "nout" here). A convenient
@@ -524,11 +568,38 @@ inferred from the argument::
 
     BoutReal nout = options["nout"].withDefault<BoutReal>(1);
 
+Documentation
+~~~~~~~~~~~~~
+
+Options can be given a ``doc`` attribute describing what they do. This documentation
+will then be written to the ``BOUT.settings`` file at the end of a run::
+
+  Te0 = options["Te0"].doc("Temperature in eV").withDefault(30.0);
+
+The ``.doc()`` function returns a reference ``Options&`` so can be chained
+with ``withDefault`` or ``as`` functions, or as part of an assignment::
+
+  options["value"].doc("Useful setting info") = 42;
+
+This string is stored in the attributes of the option::
+
+  std::string docstring = options["value"].attributes["doc"];
+
+Overriding library defaults
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+BOUT++ sets defaults for options controlling the mesh, etc. A physics model (or
+other user code) can override these defaults by using the convenience macro
+BOUT_OVERRIDE_DEFAULT_OPTION, for example if you want to change the default
+value of ``mesh::staggergrids`` from false to true, put (outside any
+class/function body)::
+
+    BOUT_OVERRIDE_DEFAULT_OPTION("mesh:staggergrids", true);
 
 Older interface
 ~~~~~~~~~~~~~~~
 
-Most code in BOUT++ currently uses an older interface to ``Options``
+Some code in BOUT++ currently uses an older interface to ``Options``
 which uses pointers rather than references. Both interfaces are
 currently supported, but use of the newer interface above is
 encouraged.
@@ -617,6 +688,101 @@ has a method::
 
 This is currently quite rudimentary and needs improving.
 
+Reading and writing to NetCDF
+-----------------------------
+
+If NetCDF4 support is enabled, then the ``OptionsNetCDF`` class
+provides an experimental way to read and write options. To use this class::
+
+  #include "options_netcdf.hxx"
+  using bout::experimental::OptionsNetCDF;
+
+Examples are in integrated test ``tests/integrated/test-options-netcdf/``
+
+To write the current ``Options`` tree (e.g. from ``BOUT.inp``) to a
+NetCDF file::
+
+  OptionsNetCDF("settings.nc").write(Options::root());
+
+and to read it in again::
+
+  Options data = OptionsNetCDF("settings.nc").read();
+
+Fields can also be stored and written::
+
+  Options fields;
+  fields["f2d"] = Field2D(1.0);
+  fields["f3d"] = Field3D(2.0);
+  OptionsNetCDF("fields.nc").write(fields);
+
+This should allow the input settings and evolving variables to be
+combined into a single tree (see above on joining trees) and written
+to the output dump or restart files.
+
+Reading fields is a bit more difficult. Currently 1D data is read as
+an ``Array<BoutReal>``, 2D as ``Matrix<BoutReal>`` and 3D as
+``Tensor<BoutReal>``. These can be extracted directly from the
+``Options`` tree, or converted to a Field::
+
+  Options fields_in = OptionsNetCDF("fields.nc").read();
+  Field2D f2d = fields_in["f2d"].as<Field2D>();
+  Field3D f3d = fields_in["f3d"].as<Field3D>();
+
+Note that by default reading as ``Field2D`` or ``Field3D`` will use the global
+``bout::globals::mesh``. To use a different mesh, or different cell location,
+pass a field which the result should be similar to::
+
+  Field3D example = ... // Some existing field
+  
+  Field3D f3d = fields_in["f3d"].as<Field3D>(example);
+
+Meta data like ``Mesh`` pointer, will be taken from ``example``. 
+
+Currently converting from ``Matrix`` or ``Tensor`` types only works if
+the data in the ``Matrix`` or ``Tensor`` is the same size as the
+``Field``. In the case of grid files, the fields only needs a part of
+the global values. Some kind of mapping from the global index to local
+index is needed, probably defined by ``Mesh``. For now it should be
+possible to be compatible with the current system, so that all
+quantities from the grid file are accessed through Mesh::get.
+
+Time dependence
+~~~~~~~~~~~~~~~
+
+When writing NetCDF files, some variables should have a time
+dimension added, and then be added to each time they are written. This
+has been implemented using an attribute: If variables in the ``Options``
+tree have an attribute "time_dimension" then that is used as the name
+of the time dimension in the output file. This allows multiple time
+dimensions e.g. high frequency diagnostics and low frequency outputs,
+to exist in the same file::
+
+  Options data;
+  data["scalar"] = 1.0;
+  data["scalar"].attributes["time_dimension"] = "t";
+  
+  data["field"] = Field3D(2.0);
+  data["field"].attributes["time_dimension"] = "t";
+  
+  OptionsNetCDF("time.nc").write(data);
+  
+  // Update time-dependent values. This can be done without `force` if the time_dimension
+  // attribute is set
+  data["scalar"] = 2.0;
+  data["field"] = Field3D(3.0);
+  
+  // Append data to file
+  OptionsNetCDF("time.nc", OptionsNetCDF::FileMode::append).write(data);
+
+Some issues:
+
+* Currently all variables in the Options tree are written when passed
+  to ``OptionsNetCDF::write``. This means that the variables with
+  different time dimensions should be stored in different Options
+  trees, so they can be written at different times. One possibility is
+  to have an optional argument to write, so that only variables with
+  one specified time dimension are updated.
+
 
 FFT
 ---
@@ -644,3 +810,47 @@ FFTs take, and tries to find the optimal method.
 
 
 .. _FFTW FAQ: http://www.fftw.org/faq/section3.html#nondeterministic
+
+
+Types for multi-valued options
+------------------------------
+
+An ``enum class`` can be a useful construct for options in a physics model. It
+can have an arbitrary number of user-defined, named values (although the code
+in ``include/bout/bout_enum_class.hxx`` needs extending for more than 10
+values). The advantage over using a ``std::string`` for an option is that a
+typo cannot produce an unexpected value: in C++ code it is a compile-time error
+and reading from ``BOUT.inp`` it is a run-time exception. We provide a utility
+macro ``BOUT_ENUM_CLASS`` to define an ``enum class`` with some extra
+convenience methods. For example, after defining ``myoption`` like::
+
+    BOUT_ENUM_TYPE(myoption, foo, bar, baz);
+
+it is possible not only to test for a value, e.g.::
+
+    myoption x = <something>;
+    ...
+    if (x == myoption::foo) {
+      do a foo thing
+    }
+
+but also to convert the option to a string::
+
+    std::string s = toString(x);
+
+pass it to a stream::
+
+    output << x;
+
+or get an option like ``myinput=baz`` from an input file or the command line as
+a ``myoption``::
+
+    myoption y = Options::root()["myinput"].as<myoption>();
+
+or with a default value::
+
+    myoption y = Options::root()["myinput"].withDefault(myoption::bar);
+
+Only strings exactly (but case-insensitively) matching the name of one of the
+defined ``myoption`` values are allowed, anything else results in an exception
+being thrown.

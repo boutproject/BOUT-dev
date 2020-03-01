@@ -31,7 +31,7 @@
 #ifndef __MULTIGRID_LAPLACE_H__
 #define __MULTIGRID_LAPLACE_H__
 
-#include <mpi.h>
+#include <bout/mpi_wrapper.hxx>
 
 #include <globals.hxx>
 #include <output.hxx>
@@ -132,74 +132,87 @@ private:
 
 class LaplaceMultigrid : public Laplacian {
 public:
-  LaplaceMultigrid(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = mesh);
+  LaplaceMultigrid(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE,
+      Mesh *mesh_in = nullptr);
   ~LaplaceMultigrid() {};
   
+  using Laplacian::setCoefA;
+  using Laplacian::setCoefC;
+  using Laplacian::setCoefC1;
+  using Laplacian::setCoefC2;
+  using Laplacian::setCoefD;
+  using Laplacian::setCoefEx;
+  using Laplacian::setCoefEz;
+
   void setCoefA(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
-    ASSERT1(localmesh = val.getMesh());
+    ASSERT1(localmesh == val.getMesh());
     A = val;
   }
   void setCoefC(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
-    ASSERT1(localmesh = val.getMesh());
+    ASSERT1(localmesh == val.getMesh());
     C1 = val;
     C2 = val;
   }
   void setCoefC1(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
-    ASSERT1(localmesh = val.getMesh());
+    ASSERT1(localmesh == val.getMesh());
     C1 = val;
   }
   void setCoefC2(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
-    ASSERT1(localmesh = val.getMesh());
+    ASSERT1(localmesh == val.getMesh());
     C2 = val;
   }
   void setCoefD(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
-    ASSERT1(localmesh = val.getMesh());
+    ASSERT1(localmesh == val.getMesh());
     D = val;
   }
-  void setCoefEx(const Field2D &UNUSED(val)) override { throw BoutException("setCoefEx is not implemented in LaplaceMultigrid"); }
-  void setCoefEz(const Field2D &UNUSED(val)) override { throw BoutException("setCoefEz is not implemented in LaplaceMultigrid"); }
-  
+  void setCoefEx(const Field2D& UNUSED(val)) override {
+    throw BoutException("setCoefEx is not implemented in LaplaceMultigrid");
+  }
+  void setCoefEz(const Field2D& UNUSED(val)) override {
+    throw BoutException("setCoefEz is not implemented in LaplaceMultigrid");
+  }
+
   void setCoefA(const Field3D &val) override {
     ASSERT1(val.getLocation() == location);
-    ASSERT1(localmesh = val.getMesh());
+    ASSERT1(localmesh == val.getMesh());
     A = val;
   }
   void setCoefC(const Field3D &val) override {
     ASSERT1(val.getLocation() == location);
-    ASSERT1(localmesh = val.getMesh());
+    ASSERT1(localmesh == val.getMesh());
     C1 = val;
     C2 = val;
   }
   void setCoefC1(const Field3D &val) override {
     ASSERT1(val.getLocation() == location);
-    ASSERT1(localmesh = val.getMesh());
+    ASSERT1(localmesh == val.getMesh());
     C1 = val;
   }
   void setCoefC2(const Field3D &val) override {
     ASSERT1(val.getLocation() == location);
-    ASSERT1(localmesh = val.getMesh());
+    ASSERT1(localmesh == val.getMesh());
     C2 = val;
   }
   void setCoefD(const Field3D &val) override {
     ASSERT1(val.getLocation() == location);
-    ASSERT1(localmesh = val.getMesh());
+    ASSERT1(localmesh == val.getMesh());
     D = val;
   }
 
-  const FieldPerp solve(const FieldPerp &b) override {
+  bool uses3DCoefs() const override { return true; }
+
+  using Laplacian::solve;
+  FieldPerp solve(const FieldPerp &b) override {
     ASSERT1(localmesh == b.getMesh());
 
-    FieldPerp zero(localmesh);
-    zero = 0.;
-    zero.setIndex(b.getIndex());
-    return solve(b, zero);
+    return solve(b, zeroFrom(b));
   }
-  const FieldPerp solve(const FieldPerp &b_in, const FieldPerp &x0) override;
+  FieldPerp solve(const FieldPerp &b_in, const FieldPerp &x0) override;
 
 private:
   Field3D A,C1,C2,D; // ODE Coefficients
@@ -221,5 +234,9 @@ private:
 
   void generateMatrixF(int);
 };
+
+namespace {
+RegisterLaplace<LaplaceMultigrid> registerlaplacemultigrid(LAPLACE_MULTIGRID);
+}
 
 #endif // __MULTIGRID_LAPLACE_H__

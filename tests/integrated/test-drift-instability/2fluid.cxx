@@ -9,10 +9,11 @@
 #include <initialprofiles.hxx>
 #include <derivs.hxx>
 #include <interpolation.hxx>
+#include <invert_laplace.hxx>
 
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
 
 // 2D initial profiles
 Field2D Ni0, Ti0, Te0, Vi0, phi0, Ve0, rho0, Ajpar0;
@@ -51,12 +52,9 @@ BoutReal zeff, nu_perp;
 bool evolve_rho, evolve_te, evolve_ni, evolve_ajpar, evolve_vi, evolve_ti;
 BoutReal ShearFactor;
 
-int phi_flags, apar_flags; // Inversion flags
-
-// Field routines
-int solve_phi_tridag(Field3D &r, Field3D &p, int flags);
-int solve_apar_tridag(Field3D &aj, Field3D &ap, int flags);
-
+// Inversion objects
+std::unique_ptr<Laplacian> phi_solver;
+std::unique_ptr<Laplacian> apar_solver;
 
 FieldGroup comms; // Group of variables for communications
 
@@ -64,7 +62,7 @@ Coordinates *coord; // Coordinate system
 
 CELL_LOC maybe_ylow;
 
-int physics_init(bool restarting) {
+int physics_init(bool UNUSED(restarting)) {
   Field2D I; // Shear factor 
   
   output.write("Solving 6-variable 2-fluid equations\n");
@@ -119,9 +117,6 @@ int physics_init(bool restarting) {
   OPTION(options, nu_perp,     0.0);
   OPTION(options, ShearFactor, 1.0);
   
-  OPTION(options, phi_flags,   0);
-  OPTION(options, apar_flags,  0);
-  
   (globalOptions->getSection("Ni"))->get("evolve", evolve_ni,    true);
   (globalOptions->getSection("rho"))->get("evolve", evolve_rho,   true);
   (globalOptions->getSection("vi"))->get("evolve", evolve_vi,   true);
@@ -131,6 +126,12 @@ int physics_init(bool restarting) {
   
   if(ZeroElMass)
     evolve_ajpar = false; // Don't need ajpar - calculated from ohm's law
+
+  /*************** INITIALIZE LAPLACIAN SOLVERS ********/
+  phi_solver = Laplacian::create(globalOptions->getSection("phisolver"));
+  if (!estatic && !ZeroElMass) {
+    apar_solver = Laplacian::create(globalOptions->getSection("aparsolver"));
+  }
 
   /************* SHIFTED RADIAL COORDINATES ************/
 
@@ -169,12 +170,12 @@ int physics_init(bool restarting) {
   
   BoutReal hthe0;
   if(mesh->get(hthe0, "hthe0") == 0) {
-    output.write("    ****NOTE: input from BOUT, Z length needs to be divided by %e\n", hthe0/rho_s);
+    output.write("    ****NOTE: input from BOUT, Z length needs to be divided by {:e}\n", hthe0/rho_s);
   }
 
   /************** NORMALISE QUANTITIES *****************/
 
-  output.write("\tNormalising to rho_s = %e\n", rho_s);
+  output.write("\tNormalising to rho_s = {:e}\n", rho_s);
 
   // Normalise profiles
   Ni0 /= Ni_x/1.0e14;
@@ -254,8 +255,9 @@ int physics_init(bool restarting) {
     output.write("ajpar\n");
   }else {
     initial_profile("Ajpar", Ajpar);
-    if(ZeroElMass)
-      dump.add(Ajpar, "Ajpar", 1); // output calculated Ajpar
+    if (ZeroElMass) {
+      SAVE_REPEAT(Ajpar); // output calculated Ajpar
+    }
   }
 
   if(evolve_vi) {
@@ -282,19 +284,8 @@ int physics_init(bool restarting) {
   comms.add(Apar);
 
   // Add any other variables to be dumped to file
-  dump.add(phi,  "phi",  1);
-  dump.add(Apar, "Apar", 1);
-  dump.add(jpar, "jpar", 1);
-
-  dump.add(Ni0, "Ni0", 0);
-  dump.add(Te0, "Te0", 0);
-  dump.add(Ti0, "Ti0", 0);
-
-  dump.add(Te_x,  "Te_x", 0);
-  dump.add(Ti_x,  "Ti_x", 0);
-  dump.add(Ni_x,  "Ni_x", 0);
-  dump.add(rho_s, "rho_s", 0);
-  dump.add(wci,   "wci", 0);
+  SAVE_REPEAT(phi, Apar, jpar);
+  SAVE_ONCE(Ni0, Te0, Ti0, Te_x, Ti_x, Ni_x, rho_s, wci);
 
   if (mesh->StaggerGrids) {
     maybe_ylow = CELL_YLOW;
@@ -302,8 +293,8 @@ int physics_init(bool restarting) {
     maybe_ylow = CELL_CENTRE;
   }
   Vi = interp_to(Vi,maybe_ylow);
-  Ni0_maybe_ylow = interp_to(Ni0, maybe_ylow, RGN_NOBNDRY);
-  Te0_maybe_ylow = interp_to(Te0, maybe_ylow, RGN_NOBNDRY);
+  Ni0_maybe_ylow = interp_to(Ni0, maybe_ylow, "RGN_NOBNDRY");
+  Te0_maybe_ylow = interp_to(Te0, maybe_ylow, "RGN_NOBNDRY");
 
   return(0);
 }
@@ -311,16 +302,16 @@ int physics_init(bool restarting) {
 // just define a macro for V_E dot Grad
 #define vE_Grad(f, p) ( b0xGrad_dot_Grad(p, f) / coord->Bxy )
 
-int physics_run(BoutReal t) {
+int physics_run(BoutReal UNUSED(t)) {
   // Solve EM fields
 
-  solve_phi_tridag(rho, phi, phi_flags);
+  phi = phi_solver->solve(rho, phi);
 
   if(estatic || ZeroElMass) {
     // Electrostatic operation
     Apar = 0.0;
   }else {
-    solve_apar_tridag(Ajpar, Apar, apar_flags); // Linear Apar solver
+    Apar = apar_solver->solve(Ajpar, Apar); // Linear Apar solver
   }
 
   // Communicate variables
@@ -418,42 +409,6 @@ int physics_run(BoutReal t) {
     //ddt(Ajpar) -= (1./fmei)*1.71*Grad_par(Te);
     ddt(Ajpar) += 0.51*interp_to(nu, maybe_ylow)*jpar/Ni0_maybe_ylow;
   }
-
-  return(0);
-}
-
-/*******************************************************************************
- *                       FAST LINEAR FIELD SOLVERS
- *******************************************************************************/
-
-#include <invert_laplace.hxx>
-
-// Performs inversion of rho (r) to get phi (p)
-int solve_phi_tridag(Field3D &r, Field3D &p, int flags) {
-  
-  //output.write("Solving phi: %e, %e -> %e\n", max(abs(r)), min(Ni0), max(abs(r/Ni0)));
-
-  if(invert_laplace(r/Ni0, p, flags, NULL)) {
-    return 1;
-  }
-
-  //Field3D pertPi = Ti*Ni0 + Ni*Ti0;
-  //p -= pertPi/Ni0;
-  return(0);
-}
-
-int solve_apar_tridag(Field3D &aj, Field3D &ap, int flags) {
-  static Field2D a;
-  static int set = 0;
-
-  if(set == 0) {
-    // calculate a
-    a = (-0.5*beta_p/fmei)*Ni0;
-    set = 1;
-  }
-
-  if(invert_laplace(a*(Vi - aj), ap, flags, &a))
-    return 1;
 
   return(0);
 }

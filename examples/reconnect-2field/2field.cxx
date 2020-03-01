@@ -44,18 +44,20 @@ private:
   // Method to use: BRACKET_ARAKAWA, BRACKET_STD or BRACKET_SIMPLE
   BRACKET_METHOD bm; // Bracket method for advection terms
 
-  int phi_flags; // Inversion flags
 
   bool nonlinear;
   bool parallel_lc;
   bool include_jpar0;
   int jpar_bndry;
 
-  InvertPar *inv; // Parallel inversion class used in preconditioner
+  std::unique_ptr<InvertPar> inv{nullptr}; // Parallel inversion class used in preconditioner
 
   // Coordinate system metric
   Coordinates *coord;
 
+  // Inverts a Laplacian to get potential
+  std::unique_ptr<Laplacian> phiSolver{nullptr};
+  
 protected:
   int init(bool UNUSED(restarting)) override {
 
@@ -64,30 +66,25 @@ protected:
     Ni0 *= 1e20; // To m^-3
     
     // Coordinate system
-    coord = mesh->coordinates();
+    coord = mesh->getCoordinates();
 
     // Load metrics
     GRID_LOAD(Rxy, Bpxy, Btxy, hthe);
     mesh->get(coord->Bxy, "Bxy");
 
     // Read some parameters
-    Options *globalOptions = Options::getRoot();
-    Options *options = globalOptions->getSection("2field");
+    auto& options = Options::root()["2field"];
 
     // normalisation values
-    OPTION(options, nonlinear, false);
-    OPTION(options, parallel_lc, true);
-    OPTION(options, include_jpar0, true);
-    OPTION(options, jpar_bndry, 0);
+    nonlinear = options["nonlinear"].withDefault(false);
+    parallel_lc = options["parallel_lc"].withDefault(true);
+    include_jpar0 = options["include_jpar0"].withDefault(true);
+    jpar_bndry = options["jpar_bndry"].withDefault(0);
 
-    OPTION(options, eta, 1e-3); // Normalised resistivity
-    OPTION(options, mu, 1.e-3); // Normalised vorticity
+    eta = options["eta"].doc("Normalised resistivity").withDefault(1e-3);
+    mu = options["mu"].doc("Normalised vorticity").withDefault(1.e-3);
 
-    OPTION(options, phi_flags, 0);
-
-    int bracket_method;
-    OPTION(options, bracket_method, 0);
-    switch (bracket_method) {
+    switch (options["bracket_method"].withDefault(0)) {
     case 0: {
       bm = BRACKET_STD;
       output << "\tBrackets: default differencing\n";
@@ -117,11 +114,15 @@ protected:
     // Normalisation
 
     Tenorm = max(Te0, true);
-    if (Tenorm < 1)
+    if (Tenorm < 1) {
       Tenorm = 1000;
+    }
+    
     Nenorm = max(Ni0, true);
-    if (Nenorm < 1)
+    if (Nenorm < 1) {
       Nenorm = 1.e19;
+    }
+    
     Bnorm = max(coord->Bxy, true);
 
     // Sound speed in m/s
@@ -207,6 +208,9 @@ protected:
     U.setBoundary("U");
     Apar.setBoundary("Apar");
 
+    // Create a solver for the Laplacian
+    phiSolver = Laplacian::create();
+    
     return 0;
   }
 
@@ -247,11 +251,11 @@ protected:
     return result;
   }
 
-  int rhs(BoutReal UNUSED(t)) override {
+  int rhs(BoutReal UNUSED(time)) override {
     // Solve EM fields
 
     // U = (1/B) * Delp2(phi)
-    phi = invert_laplace(coord->Bxy * U, phi_flags);
+    phi = phiSolver->solve(coord->Bxy * U);
     phi.applyBoundary(); // For target plates only
 
     mesh->communicate(U, phi, Apar);
@@ -345,7 +349,7 @@ public:
     ddt(U) = inv->solve(U1);
     ddt(U).applyBoundary();
 
-    Field3D phip = invert_laplace(coord->Bxy * ddt(U), phi_flags);
+    Field3D phip = phiSolver->solve(coord->Bxy * ddt(U));
     mesh->communicate(phip);
 
     ddt(Apar) = ddt(Apar) - (gamma / beta_hat) * Grad_par_CtoL(phip);

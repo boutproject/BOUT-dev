@@ -1,16 +1,14 @@
+. common.sh
+
 cat <<EOF
 #include <field3d.hxx>
 #include <bout_types.hxx>
 
 EOF
-for ftype in "Field3D" "Field2D"
+for ftype in $fields
 do
-  if [ $ftype = "Field3D" ]; then fdd="f3d";
-  elif [ $ftype = "Field2D" ]; then fdd="f2d";
-  else
-    echo "Error, unimplemented ftype"; exit 1
-  fi
-cat <<EOF
+  setvars $ftype
+  cat <<EOF
 void c_get_${fdd}_all(const $ftype * f, double * data);
 void c_set_${fdd}_all($ftype * f, const double * data);
 void c_set_${fdd}_all_($ftype * f, double data);
@@ -33,6 +31,13 @@ do
     fi
 done
     echo "$ftype c_minus($ftype a){return -a;};"
+done
+for vec in $vecs
+do
+    setvars $vec
+    cat <<EOF
+$field c_mul_${vec}_${vec}(const $vec * a, const $vec * b){ return (*a) * (*b) ;};
+EOF
 done
 cat <<EOF
 void c_get_f3d_part(const Field3D * f, double * data,int xs,int xe, int dx,int ys,int ye, int dy,int zs,int ze, int dz);
@@ -88,10 +93,9 @@ public:
     solver->setModel(this);
     bout_monitor = new BoutMonitor();
     solver->addMonitor(bout_monitor, Solver::BACK);
-    solver->outputVars(dump);
+    solver->outputVars(bout::globals::dump);
   };
   void free(){
-    delete solver;
     delete bout_monitor;
   };
   void set_init_func(PythonModelCallback * __init){
@@ -101,18 +105,15 @@ public:
     _rhs=__rhs;
   };
   void solve(){
-    //solver->outputVars(dump);
     solver->solve();
   }
   Solver * getSolver(){
-    return solver;
+    return solver.get();
   };
 private:
-  //void (*init_func)(bool);
-  //void (*rhs_func)(BoutReal time);
   PythonModelCallback * _init;
   PythonModelCallback * _rhs;
-  Solver * solver;
+  std::unique_ptr<Solver> solver{nullptr};
   Monitor * bout_monitor;
 };
 
@@ -121,7 +122,7 @@ void throw_BoutException(std::string err){
 }
 
 Datafile * c_get_global_datafile(){
-  return &dump;
+  return &bout::globals::dump;
 }
 
 EOF

@@ -2,7 +2,7 @@
 
 # Test initial conditions
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
+from boututils.run_wrapper import build_and_log, shell, launch_safe
 from boutdata.collect import collect
 
 import configparser
@@ -120,11 +120,13 @@ def min(*args):
         current = np.minimum(arg, current)
     return current
 
+
 def fmod(x, denominator=1.0):
     """
     Modulo operator using fmod convention, (rem in Matlab)
     """
-    return  np.fmod(x, denominator)
+    return np.fmod(x, denominator)
+
 
 # Rename functions to match BOUT++ naming
 # Mostly just alternative names to numpy functions
@@ -155,7 +157,6 @@ tolerance = 1e-13
 cmd = "./test_initial"
 datadir = "data"
 inputfile = os.path.join(datadir, "BOUT.inp")
-MPIRUN = getmpirun()
 
 # Read the input file
 config = configparser.ConfigParser()
@@ -169,23 +170,11 @@ varlist = [key for key, values in config.items() if 'function' in values]
 for coord in ["var_x", "var_y", "var_z"]:
     varlist.remove(coord)
 
-# Make the test case
-cxx_snippet = """
-  Field3D {name};
-  create_and_dump({name}, "{name}");
-"""
-
-with open("test_functions.cxx", "w") as f:
-    for var in varlist:
-        f.write(cxx_snippet.format(name=var))
-
-print("Making initial conditions test")
-shell_safe("make clean")
-shell_safe("make > make.log")
+build_and_log("initial conditions test")
 
 nprocs = [1, 2, 3, 4]
 for nproc in nprocs:
-    status, out = launch_safe(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True, verbose=True)
+    status, out = launch_safe(cmd, nproc=nproc, pipe=True, verbose=True)
     with open("run.log.{}".format(nproc), "w") as f:
         f.write(out)
 

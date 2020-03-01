@@ -19,31 +19,31 @@ private:
   // Method to use: BRACKET_ARAKAWA, BRACKET_STD or BRACKET_SIMPLE
   BRACKET_METHOD bm; // Bracket method for advection terms
   
-  class Laplacian* phiSolver; // Laplacian solver for vort -> phi
+  std::unique_ptr<Laplacian> phiSolver; // Laplacian solver for vort -> phi
 
   // Simple implementation of 4th order perpendicular Laplacian
   Field3D Delp4(const Field3D &var) {
     Field3D tmp;
-    tmp = Delp2(var, 0.0);
+    tmp = Delp2(var);
     mesh->communicate(tmp);
     tmp.applyBoundary("neumann");
-    return Delp2(tmp, 0.0);
-    
+    return Delp2(tmp);
+
     //return Delp2(var);
   }
   
 protected:
-  int init(bool restart) {
-  
-    Options *options = Options::getRoot()->getSection("hw");
-    OPTION(options, alpha, 1.0);
-    OPTION(options, kappa, 0.1);
-    OPTION(options, Dvort, 1e-2);
-    OPTION(options, Dn,    1e-2);
-  
-    OPTION(options, modified, false);
+  int init(bool UNUSED(restart)) {
 
-    SOLVE_FOR2(n, vort);
+    auto& options = Options::root()["hw"];
+    alpha = options["alpha"].withDefault(1.0);
+    kappa = options["kappa"].withDefault(0.1);
+    Dvort = options["Dvort"].withDefault(1e-2);
+    Dn = options["Dn"].withDefault(1e-2);
+
+    modified = options["modified"].withDefault(false);
+
+    SOLVE_FOR(n, vort);
     SAVE_REPEAT(phi);
 
     // Split into convective and diffusive parts
@@ -55,9 +55,7 @@ protected:
     // Use default flags 
     
     // Choose method to use for Poisson bracket advection terms
-    int bracket;
-    OPTION(options, bracket, 0);
-    switch(bracket) {
+    switch(options["bracket"].withDefault(0)) {
     case 0: {
       bm = BRACKET_STD; 
       output << "\tBrackets: default differencing\n";
@@ -86,7 +84,7 @@ protected:
     return 0;
   }
 
-  int convective(BoutReal time) {
+  int convective(BoutReal UNUSED(time)) {
     // Non-stiff, convective part of the problem
     
     // Solve for potential
@@ -111,7 +109,7 @@ protected:
     return 0;
   }
   
-  int diffusive(BoutReal time) {
+  int diffusive(BoutReal UNUSED(time)) {
     // Diffusive terms
     mesh->communicate(n, vort);
     ddt(n) = -Dn*Delp4(n);

@@ -1,13 +1,14 @@
-
 #include <bout/invert/laplacexz.hxx>
 #include <cyclic_reduction.hxx>
 #include <dcomplex.hxx>
+#include <globals.hxx>
 #include "utils.hxx"
 
 class LaplaceXZcyclic : public LaplaceXZ {
 public:
-  LaplaceXZcyclic(Mesh *m, Options *options, const CELL_LOC loc);
-  ~LaplaceXZcyclic();
+  LaplaceXZcyclic(Mesh *m = nullptr, Options *options = nullptr,
+      const CELL_LOC loc = CELL_CENTRE);
+  ~LaplaceXZcyclic() {}
   
   using LaplaceXZ::setCoefs;
   void setCoefs(const Field2D &A, const Field2D &B) override;
@@ -15,14 +16,16 @@ public:
   using LaplaceXZ::solve;
   Field3D solve(const Field3D &b, const Field3D &x0) override;
 private:
-  Mesh *mesh;   ///< The mesh this operates on, provides metrics and communication
-
   int xstart, xend;
   int nmode, nloc, nsys;
   Matrix<dcomplex> acoef, bcoef, ccoef, xcmplx, rhscmplx;
   Array<dcomplex> k1d, k1d_2;
-  CyclicReduce<dcomplex> *cr; ///< Tridiagonal solver
+  std::unique_ptr<CyclicReduce<dcomplex>> cr; ///< Tridiagonal solver
 
   int inner_boundary_flags; ///< Flags to set inner boundary condition
   int outer_boundary_flags; ///< Flags to set outer boundary condition
 };
+
+namespace {
+RegisterLaplaceXZ<LaplaceXZcyclic> registerlaplacexzcylic{"cyclic"};
+} // namespace

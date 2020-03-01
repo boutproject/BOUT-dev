@@ -31,15 +31,27 @@ class LaplaceNaulin;
 #include <invert_laplace.hxx>
 #include <options.hxx>
 
+namespace {
+RegisterLaplace<LaplaceNaulin> registerlaplacenaulin(LAPLACE_NAULIN);
+}
+
 /// Solves the 2D Laplacian equation
 /*!
  * 
  */
 class LaplaceNaulin : public Laplacian {
 public:
-  LaplaceNaulin(Options *opt = NULL, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = mesh);
-  ~LaplaceNaulin();
+  LaplaceNaulin(Options *opt = NULL, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr);
+  ~LaplaceNaulin() = default;
   
+  using Laplacian::setCoefA;
+  using Laplacian::setCoefC;
+  using Laplacian::setCoefC1;
+  using Laplacian::setCoefC2;
+  using Laplacian::setCoefD;
+  using Laplacian::setCoefEx;
+  using Laplacian::setCoefEz;
+
   // ACoef is not implemented because the delp2solver that we use can probably
   // only handle a Field2D for Acoef, but we would have to pass Acoef/Dcoef,
   // where we allow Dcoef to be a Field3D
@@ -102,18 +114,19 @@ public:
     throw BoutException("LaplaceNaulin does not have Ez coefficient");
   }
 
-  const FieldPerp solve(const FieldPerp &b) override {return solve(b,b);}
-  const FieldPerp solve(const FieldPerp &UNUSED(b),
+  bool uses3DCoefs() const override { return true; }
+
+  using Laplacian::solve;
+
+  FieldPerp solve(const FieldPerp &b) override {return solve(b,b);}
+  FieldPerp solve(const FieldPerp &UNUSED(b),
                         const FieldPerp &UNUSED(x0)) override {
     throw BoutException(
         "LaplaceNaulin has no solve(FieldPerp), must call solve(Field3D)");
   }
-  const Field3D solve(const Field3D &b, const Field3D &x0) override;
-  const Field3D solve(const Field3D &b) override {
-    Field3D x0(b.getMesh());
-    x0 = 0.;
-    x0.setLocation(b.getLocation());
-    return solve(b, Field3D(0.));
+  Field3D solve(const Field3D &b, const Field3D &x0) override;
+  Field3D solve(const Field3D &b) override {
+    return solve(b, zeroFrom(b));
   }
 
   // Override flag-setting methods to set delp2solver's flags as well
@@ -122,16 +135,36 @@ public:
   void setOuterBoundaryFlags(int f) override { Laplacian::setOuterBoundaryFlags(f); delp2solver->setOuterBoundaryFlags(f); }
 
   BoutReal getMeanIterations() const { return naulinsolver_mean_its; }
+  void resetMeanIterations() { naulinsolver_mean_its = 0; }
 private:
   LaplaceNaulin(const LaplaceNaulin&);
   LaplaceNaulin& operator=(const LaplaceNaulin&);
   Field3D Acoef, C1coef, C2coef, Dcoef;
-  Laplacian* delp2solver;
+
+  /// Laplacian solver used to solve the equation with constant-in-z coefficients
+  std::unique_ptr<Laplacian> delp2solver{nullptr};
+
+  /// Solver tolerances
   BoutReal rtol, atol;
+
+  /// Maximum number of iterations
   int maxits;
+
+  /// Initial choice for under-relaxation factor, should be greater than 0 and
+  /// less than or equal to 1. Value of 1 means no underrelaxation
+  BoutReal initial_underrelax_factor{1.};
+
+  /// Mean number of iterations taken by the solver
   BoutReal naulinsolver_mean_its;
+
+  /// Mean number of times the underrelaxation factor is reduced
+  BoutReal naulinsolver_mean_underrelax_counts{0.};
+
+  /// Counter for the number of times the solver has been called
   int ncalls;
 
+  /// Copy the boundary guard cells from the input 'initial guess' x0 into x.
+  /// These may be used to set non-zero-value boundary conditions
   void copy_x_boundaries(Field3D &x, const Field3D &x0, Mesh *mesh);
 };
 

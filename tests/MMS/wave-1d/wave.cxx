@@ -1,9 +1,10 @@
 #include <bout/physicsmodel.hxx>
 #include <initialprofiles.hxx>
 #include <derivs.hxx>
-#include <math.h>
+#include <cmath>
 #include "mathematica.h"
 #include <bout/constants.hxx>
+#include <unused.hxx>
 
 BoutReal MS_f(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  z);
 BoutReal dxMS_f(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  z);
@@ -12,30 +13,6 @@ BoutReal MS_g(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  z);
 BoutReal dxMS_g(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  z);
 
 BoutReal Lx, Ly, Lz; // Size of the domain
-
-
-const Field3D HLL(const Field3D &f, const Field3D &u, BoutReal SL, BoutReal SR) {
-  // A two-wave approximate solver, given left and right wave speeds such that
-  // SL <= 0 <= SR
-  // If SR = -SL  is the CFL limiting fastest wave speed, then this is
-  // equivalent to the local Lax-Friedrichs or Rusanov method
-  // First-order accurate
-  Field3D result;
-  result.allocate();
-  
-  Coordinates *coord = mesh->getCoordinates();
-  
-  for(int i=mesh->xstart;i<=mesh->xend;i++)
-    for(int j=mesh->ystart; j<=mesh->yend; j++)
-      for(int k=0;k<mesh->LocalNz;k++) {
-          
-        BoutReal fp = (SR*f(i,j,k) - SL*f(i+1,j,k) + SL*SR*(u(i+1,j,k) - u(i,j,k)) ) / (SR - SL);
-          BoutReal fm = (SR*f(i-1,j,k) - SL*f(i,j,k) + SL*SR*(u(i,j,k) - u(i-1,j,k)) ) / (SR - SL);
-          
-          result(i,j,k) = (fm - fp) / coord->dx(i,j);
-        }
-  return result;
-}
 
 class Wave1D : public PhysicsModel {
 private:
@@ -50,22 +27,22 @@ private:
   const Field3D solution_g(BoutReal t);
   const Field3D source_g(BoutReal t);
 protected:
-  int init(bool restarting) {
+  int init(bool) override {
     // Coordinate system
     coord = mesh->getCoordinates();
     
     // Get the options
-    Options *meshoptions = Options::getRoot()->getSection("mesh");
+    Options &meshoptions = Options::root()["mesh"];
     
-    meshoptions->get("Lx",Lx,1.0);
-    meshoptions->get("Ly",Ly,1.0);
+    Lx = meshoptions["Lx"].withDefault(1.0);
+    Ly = meshoptions["Ly"].withDefault(1.0);
     
-    /*this assumes equidistant grid*/
+    // this assumes equidistant grid
     int nguard = mesh->xstart;
-    coord->dx = Lx/(mesh->GlobalNx - 2*nguard);
-    coord->dy = Ly/(mesh->GlobalNy - 2*nguard);
-    
-    SAVE_ONCE2(Lx,Ly);
+    coord->dx = Lx / (mesh->GlobalNx - 2 * nguard);
+    coord->dy = Ly / (mesh->GlobalNy - 2 * nguard);
+
+    SAVE_ONCE(Lx, Ly);
     
     //set mesh
     coord->g11 = 1.0;
@@ -85,7 +62,7 @@ protected:
 
     g.setLocation(CELL_XLOW); // g staggered to the left of f
     
-    //Dirichlet everywhere except inner x-boundary Neumann
+    // Dirichlet everywhere except inner x-boundary Neumann
     f.addBndryFunction(MS_f,BNDRY_ALL);
     f.addBndryFunction(dxMS_f,BNDRY_XIN);
 
@@ -93,60 +70,57 @@ protected:
     g.addBndryFunction(dxMS_g,BNDRY_XIN);
     
     // Tell BOUT++ to solve f and g
-    bout_solve(f, "f");
-    bout_solve(g, "g");
+    SOLVE_FOR(f, g);
 
-    //Set initial condition to MS at t = 0.
-    if(mesh->StaggerGrids) {
-      for (int xi = mesh->xstart; xi < mesh->xend +1; xi++){
-	for (int yj = mesh->ystart; yj < mesh->yend + 1; yj++){
+    // Set initial condition to MS at t = 0.
+    if (mesh->StaggerGrids) {
+      for (int xi = mesh->xstart; xi < mesh->xend + 1; xi++) {
+        for (int yj = mesh->ystart; yj < mesh->yend + 1; yj++){
 	  for (int zk = 0; zk < mesh->LocalNz; zk++) {
 	    f(xi, yj, zk) = MS_f(0.,mesh->GlobalX(xi),mesh->GlobalY(yj),coord->dz*zk);
 	    g(xi, yj, zk) = MS_g(0.,0.5*(mesh->GlobalX(xi)+mesh->GlobalX(xi-1)),mesh->GlobalY(yj),coord->dz*zk);
+
+            output.write("%d: %e\n", xi, g(xi, yj, zk));
 	  }
 	}
       }
-    }else {
-      for (int xi = mesh->xstart; xi < mesh->xend +1; xi++){
-	for (int yj = mesh->ystart; yj < mesh->yend + 1; yj++){
-	  for (int zk = 0; zk < mesh->LocalNz; zk++) {
-	    f(xi, yj, zk) = MS_f(0.,mesh->GlobalX(xi),mesh->GlobalY(yj),coord->dz*zk);
-	    g(xi, yj, zk) = MS_g(0.,mesh->GlobalX(xi),mesh->GlobalY(yj),coord->dz*zk);
-	  }
-	}
+    } else {
+      for (int xi = mesh->xstart; xi < mesh->xend + 1; xi++) {
+        for (int yj = mesh->ystart; yj < mesh->yend + 1; yj++) {
+          for (int zk = 0; zk < mesh->LocalNz; zk++) {
+            f(xi, yj, zk) = MS_f(0., mesh->GlobalX(xi), mesh->GlobalY(yj), coord->dz * zk);
+            g(xi, yj, zk) = MS_g(0., mesh->GlobalX(xi), mesh->GlobalY(yj), coord->dz * zk);
+          }
+        }
       }
     }
     E_f.allocate();
     E_g.allocate();
-    SAVE_REPEAT2(E_f, E_g);
+    SAVE_REPEAT(E_f, E_g);
     
     return 0;
   }
-  
-  int rhs(BoutReal t) {
+
+  int rhs(BoutReal t) override {
     mesh->communicate(f,g); // Communicate guard cells
     
     //update time-dependent boundary conditions
     f.applyBoundary(t);
     g.applyBoundary(t);
-    
-    // HLL. Related to Lax-Friedrichs
-    //ddt(f) = HLL(-g, f, -1.0, 1.0);
-    //ddt(g) = HLL(-f, g, -1.0, 1.0);
 
     // Central differencing
     ddt(f) = DDX(g, CELL_CENTRE);// + 20*SQ(coord->dx)*D2DX2(f);
     ddt(g) = DDX(f, CELL_XLOW);// + 20*SQ(coord->dx)*D2DX2(g);
     
-    //add MMS source term
+    // Add MMS source term
     ddt(f) += source_f(t);
     ddt(g) += source_g(t);
     
     return 0;
   }
-  
+
   // This called every output timestep
-  int outputMonitor(BoutReal simtime, int iter, int NOUT) {
+  int outputMonitor(BoutReal simtime, int UNUSED(iter), int UNUSED(NOUT)) override {
 
     Field3D Sf = solution_f(simtime);
     Field3D Sg = solution_g(simtime);
@@ -160,7 +134,7 @@ protected:
           
           E_f(xi,yj,zk) = f(xi,yj,zk) - Sf(xi,yj,zk);
           E_g(xi,yj,zk) = g(xi,yj,zk) - Sg(xi,yj,zk);
-          output_error.write("Error at %d,%d,%d = %e, %e",
+          output_error.write("Error at {:d},{:d},{:d} = {:e}, {:e}",
                        xi, yj, zk, E_f(xi,yj,zk), E_g(xi,yj,zk));
         }
       }
@@ -173,17 +147,15 @@ protected:
 /////////////////// SOLUTION FOR F //////////////////////////////
 
 //Manufactured solution
-BoutReal MS_f(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  z) {
+BoutReal MS_f(BoutReal t, BoutReal  x, BoutReal  UNUSED(y), BoutReal  UNUSED(z)) {
   // Input is in normalised x,y,z location
   x *= Lx;         // X input [0,1]
-  y *= Ly / TWOPI; // Y input [0, 2pi]
   return (BoutReal)0.9 + 0.9*x + 0.2*Cos(10*t)*Sin(5.*Power(x,2));
 }
 
 //x-derivative of MS. For Neumann bnd cond
-BoutReal dxMS_f(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  z) {
+BoutReal dxMS_f(BoutReal t, BoutReal  x, BoutReal  UNUSED(y), BoutReal  UNUSED(z)) {
   x *= Lx;         // X input [0,1]
-  y *= Ly / TWOPI; // Y input [0, 2pi]
   return 0.9 + 2.*x*Cos(10*t)*Cos(5.*Power(x,2));
 }
 
@@ -209,7 +181,7 @@ const Field3D Wave1D::solution_f(BoutReal t) {
 }
 
 const Field3D Wave1D::source_f(BoutReal t) {
-  BoutReal x,y,z;
+  BoutReal x;
   Field3D result;
   result.allocate();
 
@@ -219,8 +191,6 @@ const Field3D Wave1D::source_f(BoutReal t) {
     for(yj=mesh->ystart;yj < mesh->yend+1;yj++){
       for(zk=0;zk<mesh->LocalNz;zk++){
         x = mesh->GlobalX(xi)*Lx;
-        y = mesh->GlobalY(yj)*Ly;
-        z = zk*coord->dz;
         result(xi,yj,zk) = -0.8*x*Cos(7*t)*Cos(2.0*Power(x,2)) - 2.0*Sin(10*t)*Sin(5.0*Power(x,2)) - 0.7;
       }
     }
@@ -230,17 +200,15 @@ const Field3D Wave1D::source_f(BoutReal t) {
 /////////////////// SOLUTION FOR G //////////////////////////////
 
 //Manufactured solution
-BoutReal MS_g(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  z) {
+BoutReal MS_g(BoutReal t, BoutReal  x, BoutReal  UNUSED(y), BoutReal  UNUSED(z)) {
   // Input is in normalised x,y,z location
   x *= Lx;         // X input [0,1]
-  y *= Ly / TWOPI; // Y input [0, 2pi]
   return (BoutReal)0.7*x + 0.2*Sin(2.0*Power(x,2))*Cos(7*t) + 0.9;
 }
 
 //x-derivative of MS. For Neumann bnd cond
-BoutReal dxMS_g(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  z) {
+BoutReal dxMS_g(BoutReal t, BoutReal x, BoutReal  UNUSED(y), BoutReal  UNUSED(z)) {
   x *= Lx;         // X input [0,1]
-  y *= Ly / TWOPI; // Y input [0, 2pi]
   return 0.8*x*Cos(7*t)*Cos(2.0*Power(x,2)) + 0.7;
 }
 
@@ -271,7 +239,7 @@ const Field3D Wave1D::solution_g(BoutReal t) {
 }
 
 const Field3D Wave1D::source_g(BoutReal t) {
-  BoutReal x,y,z;
+  BoutReal x;
   Field3D result;
   result.allocate();
 
@@ -287,8 +255,6 @@ const Field3D Wave1D::source_g(BoutReal t) {
 	}else {
 	  x = mesh->GlobalX(xi)*Lx;
 	}
-        y = mesh->GlobalY(yj)*Ly;
-        z = zk*coord->dz;
         result(xi,yj,zk) = -2.0*x*Cos(10*t)*Cos(5.0*Power(x,2)) - 1.4*Sin(7*t)*Sin(2.0*Power(x,2)) - 0.9;
       }
     }
@@ -300,4 +266,3 @@ const Field3D Wave1D::source_g(BoutReal t) {
 ///////////////////////////////////////////////////////
 
 BOUTMAIN(Wave1D); // Create a main() function
-

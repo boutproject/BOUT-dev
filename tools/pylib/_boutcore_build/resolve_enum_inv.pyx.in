@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# We are trying to parse bout_types, to translate the list of enums to
+# We are trying to parse bout_types.hxx, to translate the list of enums to
 # a python dictionary.
 
 for file in ../../../include/bout_types.hxx other_enums.hxx
@@ -8,7 +8,7 @@ do
     end=${file##*/}
 
     # In each file we are checking for enums, and then parse them
-    grep enum $file| \
+    grep -E "^[ \t]*\benum\b" $file| \
 	while read line
 	do
 	    # first remove the start, which is just enum

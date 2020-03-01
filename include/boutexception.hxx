@@ -6,8 +6,12 @@ class BoutException;
 
 #include <exception>
 #include <string>
+#include <utility>
 
-using std::string;
+#include "bout/deprecated.hxx"
+#include "bout/format.hxx"
+
+#include "fmt/format.h"
 
 /// Throw BoutRhsFail with \p message if any one process has non-zero
 /// \p status
@@ -15,35 +19,52 @@ void BoutParallelThrowRhsFail(int status, const char* message);
 
 class BoutException : public std::exception {
 public:
-  BoutException(const char *, ...);
-  BoutException(const std::string&);
+  BoutException(std::string msg) : message(std::move(msg)) { makeBacktrace(); }
+
+  template <class S, class... Args>
+  BoutException(const S& format, const Args&... args)
+      : BoutException(fmt::format(format, args...)) {}
+
   ~BoutException() override;
 
-  const char* what() const noexcept override;
-  void Backtrace();
+  const char* what() const noexcept override {
+    return message.c_str();
+  }
+  void DEPRECATED(Backtrace()) {};
+
+  /// Return the exception message along with the MsgStack and
+  /// backtrace (if available)
+  std::string getBacktrace() const;
+
+  const std::string header{"====== Exception thrown ======\n"};
+
 protected:
-  char *buffer = nullptr;
-  static const int BUFFER_LEN = 1024; // Length of char buffer for printing
-  int buflen; // Length of char buffer for printing
-  string message;
+  std::string message;
 #ifdef BACKTRACE
-  static const unsigned int TRACE_MAX = 128;
-  void *trace[TRACE_MAX];
-  char **messages;
+  static constexpr unsigned int TRACE_MAX = 128;
+  void* trace[TRACE_MAX];
   int trace_size;
-  mutable std::string _tmp;
+  char** messages;
 #endif
-  std::string BacktraceGenerate() const;
+  std::string backtrace_message{};
+
+  void makeBacktrace();
 };
 
 class BoutRhsFail : public BoutException {
 public:
-  BoutRhsFail(const char *, ...);
+  BoutRhsFail(std::string message) : BoutException(std::move(message)) {}
+  template <class S, class... Args>
+  BoutRhsFail(const S& format, const Args&... args)
+      : BoutRhsFail(fmt::format(format, args...)) {}
 };
 
 class BoutIterationFail : public BoutException {
 public:
-  BoutIterationFail(const char *, ...);
+  BoutIterationFail(std::string message) : BoutException(std::move(message)) {}
+  template <class S, class... Args>
+  BoutIterationFail(const S& format, const Args&... args)
+      : BoutIterationFail(fmt::format(format, args...)) {}
 };
 
 #endif

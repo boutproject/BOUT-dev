@@ -33,7 +33,6 @@
 #include <derivs.hxx>
 
 BoutReal max_error_at_ystart(const Field3D &error);
-Field3D this_Grad_perp2(const Field3D &f);
 Field3D this_Grad_perp_dot_Grad_perp(const Field3D &f, const Field3D &g);
 
 int main(int argc, char** argv) {
@@ -41,16 +40,12 @@ int main(int argc, char** argv) {
   // Initialise BOUT++, setting up mesh
   BoutInitialise(argc, argv);
 
-  class Laplacian* invert = Laplacian::create();
+  auto invert = Laplacian::create();
 
   // Solving equations of the form d*Grad_perp2(f) + 1/c*Grad_perp(c).Grad_perp(f) + a*f = b for various boundary conditions
   Field3D f1,a1,b1,c1,d1,sol1,bcheck1;
   Field3D absolute_error1;
   BoutReal max_error1; //Output of test
-
-  // Use Field3D's, but solver only works on FieldPerp slices, so only use 1 y-point
-  BoutReal nx = mesh->GlobalNx-2*mesh->xstart;
-  BoutReal nz = mesh->GlobalNz;
 
   dump.add(mesh->getCoordinates()->G1,"G1");
   dump.add(mesh->getCoordinates()->G3,"G3");
@@ -62,7 +57,7 @@ int main(int argc, char** argv) {
   c1 = FieldFactory::get()->create3D("c1:function", Options::getRoot(), mesh);
   a1 = FieldFactory::get()->create3D("a1:function", Options::getRoot(), mesh);
 
-  b1 = d1*this_Grad_perp2(f1) + this_Grad_perp_dot_Grad_perp(c1,f1)/c1 + a1*f1;
+  b1 = d1*Delp2(f1, CELL_DEFAULT, false) + this_Grad_perp_dot_Grad_perp(c1,f1)/c1 + a1*f1;
   sol1 = 0.;
 
   invert->setInnerBoundaryFlags(0);
@@ -75,9 +70,9 @@ int main(int argc, char** argv) {
     sol1 = invert->solve(sliceXZ(b1, mesh->ystart));
     mesh->communicate(sol1);
     checkData(sol1);
-    bcheck1 = d1*this_Grad_perp2(sol1) + this_Grad_perp_dot_Grad_perp(c1,sol1)/c1 + a1*sol1;
+    bcheck1 = d1*Delp2(sol1, CELL_DEFAULT, false) + this_Grad_perp_dot_Grad_perp(c1,sol1)/c1 + a1*sol1;
     absolute_error1 = f1-sol1;
-    max_error1 = max_error_at_ystart(abs(absolute_error1, RGN_NOBNDRY));
+    max_error1 = max_error_at_ystart(abs(absolute_error1, "RGN_NOBNDRY"));
   } catch (BoutException &err) {
     output << "BoutException occured in invert->solve(b1): " << err.what() << endl
            << "Laplacian inversion failed to converge (probably)" << endl;
@@ -87,7 +82,7 @@ int main(int argc, char** argv) {
     absolute_error1 = -1.;
   }
 
-  d1 = this_Grad_perp2(f1);
+  d1 = Delp2(f1, CELL_DEFAULT, false);
   c1 = this_Grad_perp_dot_Grad_perp(c1,f1)/c1;
   a1 = a1*f1;
 
@@ -114,7 +109,7 @@ int main(int argc, char** argv) {
   c2 = FieldFactory::get()->create3D("c2:function", Options::getRoot(), mesh);
   a2 = FieldFactory::get()->create3D("a2:function", Options::getRoot(), mesh);
 
-  b2 = d2*this_Grad_perp2(f2) + this_Grad_perp_dot_Grad_perp(c2,f2)/c2 + a2*f2;
+  b2 = d2*Delp2(f2, CELL_DEFAULT, false) + this_Grad_perp_dot_Grad_perp(c2,f2)/c2 + a2*f2;
   sol2 = 0.;
 
   invert->setInnerBoundaryFlags(INVERT_AC_GRAD);
@@ -126,9 +121,9 @@ int main(int argc, char** argv) {
   try {
     sol2 = invert->solve(sliceXZ(b2, mesh->ystart));
     mesh->communicate(sol2);
-    bcheck2 = d2*this_Grad_perp2(sol2) + this_Grad_perp_dot_Grad_perp(c2,sol2)/c2 + a2*sol2;
+    bcheck2 = d2*Delp2(sol2, CELL_DEFAULT, false) + this_Grad_perp_dot_Grad_perp(c2,sol2)/c2 + a2*sol2;
     absolute_error2 = f2-sol2;
-    max_error2 = max_error_at_ystart(abs(absolute_error2, RGN_NOBNDRY));
+    max_error2 = max_error_at_ystart(abs(absolute_error2, "RGN_NOBNDRY"));
   } catch (BoutException &err) {
     output << "BoutException occured in invert->solve(b2): " << err.what() << endl
            << "Laplacian inversion failed to converge (probably)" << endl;
@@ -161,7 +156,7 @@ int main(int argc, char** argv) {
   c3 = FieldFactory::get()->create3D("c3:function", Options::getRoot(), mesh);
   a3 = FieldFactory::get()->create3D("a3:function", Options::getRoot(), mesh);
 
-  b3 = d3*this_Grad_perp2(f3) + this_Grad_perp_dot_Grad_perp(c3,f3)/c3 + a3*f3;
+  b3 = d3*Delp2(f3, CELL_DEFAULT, false) + this_Grad_perp_dot_Grad_perp(c3,f3)/c3 + a3*f3;
   sol3 = 0.;
 
   invert->setInnerBoundaryFlags(INVERT_SET);
@@ -182,9 +177,9 @@ int main(int argc, char** argv) {
   try {
     sol3 = invert->solve(sliceXZ(b3, mesh->ystart), sliceXZ(x0, mesh->ystart));
     mesh->communicate(sol3);
-    bcheck3 = d3*this_Grad_perp2(sol3) + this_Grad_perp_dot_Grad_perp(c3,f3)/c3 + a3*sol3;
+    bcheck3 = d3*Delp2(sol3, CELL_DEFAULT, false) + this_Grad_perp_dot_Grad_perp(c3,f3)/c3 + a3*sol3;
     absolute_error3 = f3-sol3;
-    max_error3 = max_error_at_ystart(abs(absolute_error3, RGN_NOBNDRY));
+    max_error3 = max_error_at_ystart(abs(absolute_error3, "RGN_NOBNDRY"));
   } catch (BoutException &err) {
     output << "BoutException occured in invert->solve(b3): " << err.what() << endl
            << "Laplacian inversion failed to converge (probably)" << endl;
@@ -217,7 +212,7 @@ int main(int argc, char** argv) {
   c4 = FieldFactory::get()->create3D("c4:function", Options::getRoot(), mesh);
   a4 = FieldFactory::get()->create3D("a4:function", Options::getRoot(), mesh);
 
-  b4 = d4*this_Grad_perp2(f4) + this_Grad_perp_dot_Grad_perp(c4,f4)/c4 + a4*f4;
+  b4 = d4*Delp2(f4, CELL_DEFAULT, false) + this_Grad_perp_dot_Grad_perp(c4,f4)/c4 + a4*f4;
   sol4 = 0.;
 
   invert->setInnerBoundaryFlags(INVERT_AC_GRAD+INVERT_SET);
@@ -242,9 +237,9 @@ int main(int argc, char** argv) {
   try {
     sol4 = invert->solve(sliceXZ(b4, mesh->ystart), sliceXZ(x0, mesh->ystart));
     mesh->communicate(sol4);
-    bcheck4 = d4*this_Grad_perp2(sol4) + this_Grad_perp_dot_Grad_perp(c4,sol4)/c4 + a4*sol4;
+    bcheck4 = d4*Delp2(sol4, CELL_DEFAULT, false) + this_Grad_perp_dot_Grad_perp(c4,sol4)/c4 + a4*sol4;
     absolute_error4 = f4-sol4;
-    max_error4 = max_error_at_ystart(abs(absolute_error4, RGN_NOBNDRY));
+    max_error4 = max_error_at_ystart(abs(absolute_error4, "RGN_NOBNDRY"));
   } catch (BoutException &err) {
     output << "BoutException occured in invert->solve(b4): " << err.what() << endl
            << "Laplacian inversion failed to converge (probably)" << endl;
@@ -277,17 +272,6 @@ int main(int argc, char** argv) {
   BoutFinalise();
   return 0;
 
-}
-
-// Need custom version of perpendicular Laplacian operator, which is the inverse of the multigrid solver
-// Delp2 uses FFT z-derivatives and Laplace includes y-derivatives, so can't use those
-// The function is a copy of Laplace() with the y-derivatives deleted
-Field3D this_Grad_perp2(const Field3D &f) {
-  Field3D result = mesh->getCoordinates()->G1 * ::DDX(f) +  mesh->getCoordinates()->G3 * ::DDZ(f) +
-                   mesh->getCoordinates()->g11 * ::D2DX2(f) + mesh->getCoordinates()->g33 * ::D2DZ2(f) +
-                   2.0 * mesh->getCoordinates()->g13 * ::D2DXDZ(f);
-
-  return result;
 }
 
 Field3D this_Grad_perp_dot_Grad_perp(const Field3D &f, const Field3D &g) {

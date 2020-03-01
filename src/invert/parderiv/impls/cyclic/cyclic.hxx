@@ -41,12 +41,12 @@
 
 #include "invert_parderiv.hxx"
 #include "dcomplex.hxx"
+#include <globals.hxx>
 #include "utils.hxx"
 
 class InvertParCR : public InvertPar {
 public:
-  InvertParCR(Options *opt, Mesh *mesh_in = mesh);
-  ~InvertParCR();
+  InvertParCR(Options *opt, Mesh *mesh_in = bout::globals::mesh);
 
   using InvertPar::solve;
   const Field3D solve(const Field3D &f) override;
@@ -81,12 +81,10 @@ private:
   Field2D A, B, C, D, E;
   
   int nsys;
-  
-  Matrix<dcomplex>rhs;
-  Matrix<dcomplex>rhsk;
-  Matrix<dcomplex>xk;
-  Matrix<dcomplex> a, b, c; // Matrix coefficients
 };
 
+namespace {
+RegisterInvertPar<InvertParCR> registerinvertparcyclic{PARDERIVCYCLIC};
+}
 
 #endif // __INV_PAR_CR_H__

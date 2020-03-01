@@ -44,8 +44,8 @@ BreakBeforeBraces: Attach
 BreakBeforeTernaryOperators: true
 BreakConstructorInitializersBeforeComma: false
 # BreakConstructorInitializers: BeforeColon
-BreakAfterJavaFieldAnnotations: false
-BreakStringLiterals: true
+#BreakAfterJavaFieldAnnotations: false
+#BreakStringLiterals: true
 ColumnLimit:     90
 CommentPragmas:  '^ IWYU pragma:'
 # CompactNamespaces: false
@@ -71,7 +71,7 @@ IncludeCategories:
     Priority:        4
   - Regex:           '.*'
     Priority:        1
-IncludeIsMainRegex: '(Test)?$'
+#IncludeIsMainRegex: '(Test)?$'
 IndentCaseLabels: false
 # IndentPPDirectives: None
 IndentWidth:     2
@@ -95,7 +95,7 @@ ReflowComments:  true
 SortIncludes:    true
 # SortUsingDeclarations: true
 SpaceAfterCStyleCast: false
-SpaceAfterTemplateKeyword: true
+#SpaceAfterTemplateKeyword: true
 SpaceBeforeAssignmentOperators: true
 SpaceBeforeParens: ControlStatements
 SpaceInEmptyParentheses: false

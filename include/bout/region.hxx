@@ -226,6 +226,46 @@ public:
   int y() const { return (ind / nz) % ny; }
   int z() const { return (ind % nz); }
 
+  /// Templated routine to return index.?p(offset), where `?` is one of {x,y,z}
+  /// and is determined by the `dir` template argument. The offset corresponds
+  /// to the `dd` template argument.
+  template<int dd, DIRECTION dir>
+  const inline SpecificInd plus() const{
+    static_assert(dir == DIRECTION::X || dir == DIRECTION::Y || dir == DIRECTION::Z
+                      || dir == DIRECTION::YAligned || dir == DIRECTION::YOrthogonal,
+                  "Unhandled DIRECTION in SpecificInd::plus");
+    switch(dir) {
+    case(DIRECTION::X):
+      return xp(dd);
+    case(DIRECTION::Y):
+    case(DIRECTION::YAligned):
+    case(DIRECTION::YOrthogonal):
+      return yp(dd);
+    case(DIRECTION::Z):
+      return zp(dd);
+    }
+  }
+
+  /// Templated routine to return index.?m(offset), where `?` is one of {x,y,z}
+  /// and is determined by the `dir` template argument. The offset corresponds
+  /// to the `dd` template argument.
+  template<int dd, DIRECTION dir>
+  const inline SpecificInd minus() const{
+    static_assert(dir == DIRECTION::X || dir == DIRECTION::Y || dir == DIRECTION::Z
+                      || dir == DIRECTION::YAligned || dir == DIRECTION::YOrthogonal,
+                  "Unhandled DIRECTION in SpecificInd::minus");
+    switch(dir) {
+    case(DIRECTION::X):
+      return xm(dd);
+    case(DIRECTION::Y):
+    case(DIRECTION::YAligned):
+    case(DIRECTION::YOrthogonal):
+      return ym(dd);
+    case(DIRECTION::Z):
+      return zm(dd);
+    }
+  }
+
   const inline SpecificInd xp(int dx = 1) const { return {ind + (dx * ny * nz), ny, nz}; }
   /// The index one point -1 in x
   const inline SpecificInd xm(int dx = 1) const { return xp(-dx); }
@@ -233,7 +273,7 @@ public:
   const inline SpecificInd yp(int dy = 1) const {
 #if CHECK >= 4
     if (y() + dy < 0 or y() + dy >= ny) {
-      throw BoutException("Offset in y (%d) would go out of bounds at %d", dy, ind);
+      throw BoutException("Offset in y ({:d}) would go out of bounds at {:d}", dy, ind);
     }
 #endif
     ASSERT3(std::abs(dy) < ny);
@@ -327,6 +367,23 @@ using Ind3D = SpecificInd<IND_TYPE::IND_3D>;
 using Ind2D = SpecificInd<IND_TYPE::IND_2D>;
 using IndPerp = SpecificInd<IND_TYPE::IND_PERP>;
 
+/// Get string representation of Ind3D
+inline const std::string toString(const Ind3D& i) {
+  return "(" + std::to_string(i.x()) + ", "
+             + std::to_string(i.y()) + ", "
+             + std::to_string(i.z()) + ")";
+}
+/// Get string representation of Ind2D
+inline const std::string toString(const Ind2D& i) {
+  return "(" + std::to_string(i.x()) + ", "
+             + std::to_string(i.y()) + ")";
+}
+/// Get string representation of IndPerp
+inline const std::string toString(const IndPerp& i) {
+  return "(" + std::to_string(i.x()) + ", "
+             + std::to_string(i.z()) + ")";
+}
+
 /// Structure to hold various derived "statistics" from a particular region
 struct RegionStats {
   int numBlocks = 0;           ///< How many blocks
@@ -411,19 +468,19 @@ inline std::ostream &operator<<(std::ostream &out, const RegionStats &stats){
 ///     }
 template <typename T = Ind3D> class Region {
   // Following prevents a Region being created with anything other
-  // than Ind2D or Ind3D as template type
+  // than Ind2D, Ind3D or IndPerp as template type
   static_assert(std::is_base_of<Ind2D, T>::value || std::is_base_of<Ind3D, T>::value || std::is_base_of<IndPerp, T>::value,
                 "Region must be templated with one of IndPerp, Ind2D or Ind3D");
 
 public:
-  typedef T data_type;
+  using data_type = T;
 
   /// Indices to iterate over
-  typedef std::vector<T> RegionIndices;
+  using RegionIndices = std::vector<T>;
   /// Start and end of contiguous region. This describes a range [block.first,block.second)
-  typedef std::pair<T, T> ContiguousBlock;
+  using ContiguousBlock = std::pair<T, T>;
   /// Collection of contiguous regions
-  typedef std::vector<ContiguousBlock> ContiguousBlocks;
+  using ContiguousBlocks = std::vector<ContiguousBlock>;
 
   // NOTE::
   // Probably want to require a mesh in constructor, both to know nx/ny/nz
@@ -436,7 +493,7 @@ public:
 
   // Want to make this private to disable but think it may be needed as we put Regions
   // into maps which seems to need to be able to make "empty" objects.
-  Region<T>(){};
+  Region<T>() = default;
 
   Region<T>(int xstart, int xend, int ystart, int yend, int zstart, int zend, int ny,
             int nz, int maxregionblocksize = MAXREGIONBLOCKSIZE)
@@ -444,21 +501,29 @@ public:
 #if CHECK > 1
     if (std::is_base_of<Ind2D, T>::value) {
       if (nz != 1)
-	throw BoutException("Trying to make Region<Ind2D> with nz = %d, but expected nz = 1", nz);
+        throw BoutException(
+            "Trying to make Region<Ind2D> with nz = {:d}, but expected nz = 1", nz);
       if (zstart != 0)
-	throw BoutException("Trying to make Region<Ind2D> with zstart = %d, but expected zstart = 0", zstart);
+        throw BoutException(
+            "Trying to make Region<Ind2D> with zstart = {:d}, but expected zstart = 0",
+            zstart);
       if (zstart != 0)
-	throw BoutException("Trying to make Region<Ind2D> with zend = %d, but expected zend = 0", zend);
-
+        throw BoutException(
+            "Trying to make Region<Ind2D> with zend = {:d}, but expected zend = 0", zend);
     }
 
     if (std::is_base_of<IndPerp, T>::value) {
       if (ny != 1)
-	throw BoutException("Trying to make Region<IndPerp> with ny = %d, but expected ny = 1", ny);
+        throw BoutException(
+            "Trying to make Region<IndPerp> with ny = {:d}, but expected ny = 1", ny);
       if (ystart != 0)
-	throw BoutException("Trying to make Region<IndPerp> with ystart = %d, but expected ystart = 0", ystart);
+        throw BoutException(
+            "Trying to make Region<IndPerp> with ystart = {:d}, but expected ystart = 0",
+            ystart);
       if (ystart != 0)
-	throw BoutException("Trying to make Region<IndPerp> with yend = %d, but expected yend = 0", yend);
+        throw BoutException(
+            "Trying to make Region<IndPerp> with yend = {:d}, but expected yend = 0",
+            yend);
     }
 #endif
     
@@ -475,7 +540,7 @@ public:
   };
 
   /// Destructor
-  ~Region(){};
+  ~Region() = default;
 
   /// Expose the iterator over indices for use in range-based
   /// for-loops or with STL algorithms, etc.
@@ -513,7 +578,7 @@ public:
   };
 
   /// Sort this Region in place
-  Region<T> sort(){
+  Region<T>& sort() {
     *this = this->asSorted();
     return *this;
   }
@@ -535,7 +600,7 @@ public:
   }
 
   /// Make this Region unique in-place
-  Region<T> unique(){
+  Region<T>& unique() {
     *this = this->asUnique();
     return *this;
   }
@@ -570,6 +635,35 @@ public:
 
     return *this; // To allow command chaining
   };
+
+  /// Returns a new region including only indices contained in both
+  /// this region and the other.
+  Region<T> getUnion(const Region<T>& otherRegion) {
+    // Get other indices and sort as we're going to be searching through
+    // this vector so if it's sorted we can be more efficient
+    auto otherIndices = otherRegion.getIndices();
+    std::sort(std::begin(otherIndices), std::end(otherIndices));
+
+    // Get the current set of indices that we're going to get the
+    // union with and then use to create the result region.
+    auto currentIndices = getIndices();
+
+    // Lambda that returns true/false depending if the passed value is in otherIndices
+    // With C++14 T can be auto instead
+    auto notInVector = [&](T val) {
+      return !std::binary_search(std::begin(otherIndices), std::end(otherIndices), val);
+    };
+
+    // Erase elements of currentIndices that are in maskIndices
+    currentIndices.erase(
+        std::remove_if(std::begin(currentIndices), std::end(currentIndices), notInVector),
+        std::end(currentIndices));
+
+    // Update indices
+    setIndices(currentIndices);
+
+    return *this; // To allow command chaining
+  }
 
   /// Accumulate operator
   Region<T> & operator+=(const Region<T> &rhs){
@@ -661,7 +755,7 @@ public:
     const BoutReal smallSizeFrac = 0.5;
     result.numSmallBlocks =
       std::count_if(std::begin(blockSizes), std::end(blockSizes),
-		    [&blockSizes, &result, smallSizeFrac](int theSize) {
+		    [&result, smallSizeFrac](int theSize) {
 		      return theSize < smallSizeFrac * result.maxBlockSize;
 		    });
 
@@ -783,20 +877,27 @@ private:
 template<typename T>
 Region<T> sort(Region<T> &region) {
   return region.asSorted();
-};
+}
 
 /// Return a new region with unique indices
 template<typename T>
 Region<T> unique(Region<T> &region) {
   return region.asUnique();
-};
+}
 
 /// Return a masked version of a region
 template<typename T>
 Region<T> mask(const Region<T> &region, const Region<T> &mask) {
   auto result = region;
   return result.mask(mask);
-};
+}
+
+/// Return the union of two regions
+template <typename T>
+Region<T> getUnion(const Region<T>& region, const Region<T>& otherRegion) {
+  auto result = region;
+  return result.getUnion(otherRegion);
+}
 
 /// Return a new region with combined indices from two Regions
 /// This doesn't attempt to avoid duplicate elements or enforce

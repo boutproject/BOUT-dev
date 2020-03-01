@@ -28,6 +28,7 @@
  **************************************************************************/
 
 #include "multigrid_laplace.hxx"
+#include <bout/mesh.hxx>
 #include <msg_stack.hxx>
 #include <bout/openmpwrap.hxx>
 
@@ -43,6 +44,9 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt, const CELL_LOC loc, Mesh *mesh_
 
   TRACE("LaplaceMultigrid::LaplaceMultigrid(Options *opt)");
   
+  // periodic x-direction not handled: see MultigridAlg::communications
+  ASSERT1(!localmesh->periodicX);
+
   A.setLocation(location);
   C1.setLocation(location);
   C2.setLocation(location);
@@ -159,8 +163,8 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt, const CELL_LOC loc, Mesh *mesh_
   else aclevel = 1;
   adlevel = mglevel - aclevel;
 
-  kMG = std::unique_ptr<Multigrid1DP>(new Multigrid1DP(
-      aclevel, Nx_local, Nz_local, Nx_global, adlevel, mgmpi, commX, pcheck));
+  kMG = bout::utils::make_unique<Multigrid1DP>(aclevel, Nx_local, Nz_local, Nx_global,
+                                               adlevel, mgmpi, commX, pcheck);
   kMG->mgplag = mgplag;
   kMG->mgsm = mgsm; 
   kMG->cftype = cftype;
@@ -172,8 +176,8 @@ LaplaceMultigrid::LaplaceMultigrid(Options *opt, const CELL_LOC loc, Mesh *mesh_
 
   // Set up Multigrid Cycle
 
-  x = Array<BoutReal>((Nx_local + 2) * (Nz_local + 2));
-  b = Array<BoutReal>((Nx_local + 2) * (Nz_local + 2));
+  x.reallocate((Nx_local + 2) * (Nz_local + 2));
+  b.reallocate((Nx_local + 2) * (Nz_local + 2));
 
   if (mgcount == 0) {  
     output<<" Smoothing type is ";
@@ -197,11 +201,13 @@ BOUT_OMP(master)
   }  
 }
 
-const FieldPerp LaplaceMultigrid::solve(const FieldPerp &b_in, const FieldPerp &x0) {
+FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
 
   TRACE("LaplaceMultigrid::solve(const FieldPerp, const FieldPerp)");
 
   ASSERT1(localmesh == b_in.getMesh() && localmesh == x0.getMesh());
+  ASSERT1(b_in.getLocation() == location);
+  ASSERT1(x0.getLocation() == location);
 
   checkData(b_in);
   checkData(x0);
@@ -355,12 +361,12 @@ BOUT_OMP(for)
       kMG->setPcheck(0);
     }
   }
-  
 
-  t0 = MPI_Wtime();
-  generateMatrixF(level);  
+  t0 = bout::globals::mpi->MPI_Wtime();
+  generateMatrixF(level);
 
-  if (kMG->xNP > 1) MPI_Barrier(commX);
+  if (kMG->xNP > 1)
+    bout::globals::mpi->MPI_Barrier(commX);
 
   if ((pcheck == 3) && (mgcount == 0)) {
     FILE *outf;
@@ -402,18 +408,19 @@ BOUT_OMP(for)
     }
   }
 
-  t1 = MPI_Wtime();
+  t1 = bout::globals::mpi->MPI_Wtime();
   settime += t1-t0;
 
   // Compute solution.
 
   mgcount++;
-  if (pcheck > 0) t0 = MPI_Wtime();
+  if (pcheck > 0)
+    t0 = bout::globals::mpi->MPI_Wtime();
 
   kMG->getSolution(std::begin(x), std::begin(b), 0);
 
   if (pcheck > 0) {
-    t1 = MPI_Wtime();
+    t1 = bout::globals::mpi->MPI_Wtime();
     soltime += t1-t0;
     if(mgcount%300 == 0) {
       output<<"Accumulated execution time at "<<mgcount<<" Sol "<<soltime<<" ( "<<settime<<" )"<<endl;
@@ -422,17 +429,13 @@ BOUT_OMP(for)
     }
   }
 
-  FieldPerp result(localmesh);
-  result.allocate();
-  result.setIndex(yindex);
+  FieldPerp result{emptyFrom(b_in)};
 
-  #if CHECK>2
+#if CHECK > 2
   // Make any unused elements NaN so that user does not try to do calculations with them
-  const auto &region = localmesh->getRegionPerp("RGN_ALL");
-  BOUT_FOR(i, region) {
-    result[i] = BoutNaN;
-  }
-  #endif
+  BOUT_FOR(i, result.getRegion("RGN_ALL")) { result[i] = BoutNaN; }
+#endif
+
   // Copy solution into a FieldPerp to return
 BOUT_OMP(parallel default(shared) )
 BOUT_OMP(for collapse(2))

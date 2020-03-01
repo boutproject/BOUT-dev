@@ -1,50 +1,54 @@
-
-#include <bout/griddata.hxx>
-
-#include <field_factory.hxx>
-
 #include <bout/constants.hxx>
-
+#include <bout/griddata.hxx>
 #include <boutexception.hxx>
-
+#include <field_factory.hxx>
 #include <output.hxx>
-
 #include <unused.hxx>
 
-bool GridFromOptions::hasVar(const string &name) {
-  return options->isSet(name);
-}
+using bout::generator::Context;
 
-bool GridFromOptions::get(Mesh *UNUSED(m), int &ival, const string &name) {
-  if(!hasVar(name)) {
-    ival = 0;
-    return false;
+bool GridFromOptions::hasVar(const std::string& name) { return options->isSet(name); }
+
+namespace {
+/// Return value of \p name in \p options, using \p def as a default
+/// if it doesn't exist
+template <class T>
+auto getWithDefault(const Options& options, const std::string& name, const T& def) -> T {
+  const bool has_var = options.isSet(name);
+  if (!has_var) {
+    output_warn.write("Variable '{:s}' not in mesh options. Setting to ", name);
+    output_warn << def << "\n";
   }
-  
-  options->get(name, ival, 0);
-  return true;
+  // Note! We don't use `Options::withDefault` here because that
+  // records the default in the `Options` object and we don't know if
+  // we'll actually end up using that value. This is because
+  // `GridFromOptions::get` is probably being called via `Mesh::get`,
+  // and the calling site may use the return value of that to set its
+  // own default
+  return has_var ? options[name].as<T>() : def;
+}
+} // namespace
+
+bool GridFromOptions::get(Mesh*, std::string& sval, const std::string& name,
+                          const std::string& def) {
+  sval = getWithDefault(*options, name, def);
+  return hasVar(name);
 }
 
-bool GridFromOptions::get(Mesh *UNUSED(m), BoutReal &rval, const string &name) {
-  if(!hasVar(name)) {
-    rval = 0.0;
-    return false;
-  }
-  
-  // Fetch expression as a string 
-  std::string expr;
-  options->get(name, expr, "0");
-
-  // Parse, and evaluate with x,y,z,t = 0
-  std::shared_ptr<FieldGenerator> gen = FieldFactory::get()->parse(expr, options);
-  rval = gen->generate(0.0, 0.0, 0.0, 0.0);
-
-  return true;
+bool GridFromOptions::get(Mesh*, int& ival, const std::string& name, int def) {
+  ival = getWithDefault(*options, name, def);
+  return hasVar(name);
 }
 
-bool GridFromOptions::get(Mesh *m, Field2D &var, const string &name, BoutReal def) {
+bool GridFromOptions::get(Mesh*, BoutReal& rval, const std::string& name, BoutReal def) {
+  rval = getWithDefault(*options, name, def);
+  return hasVar(name);
+}
+
+bool GridFromOptions::get(Mesh* m, Field2D& var, const std::string& name, BoutReal def) {
   if (!hasVar(name)) {
-    output_warn.write("Variable '%s' not in mesh options. Setting to %e\n", name.c_str(), def);
+    output_warn.write("Variable '{:s}' not in mesh options. Setting to {:e}\n", name,
+                      def);
     var = def;
     return false;
   }
@@ -53,8 +57,10 @@ bool GridFromOptions::get(Mesh *m, Field2D &var, const string &name, BoutReal de
   return true;
 }
 
-bool GridFromOptions::get(Mesh *m, Field3D &var, const string &name, BoutReal def) {
-  if(!hasVar(name)) {
+bool GridFromOptions::get(Mesh* m, Field3D& var, const std::string& name, BoutReal def) {
+  if (!hasVar(name)) {
+    output_warn.write("Variable '{:s}' not in mesh options. Setting to {:e}\n", name,
+                      def);
     var = def;
     return false;
   }
@@ -63,58 +69,84 @@ bool GridFromOptions::get(Mesh *m, Field3D &var, const string &name, BoutReal de
   return true;
 }
 
-bool GridFromOptions::get(Mesh *m, vector<int> &var, const string &name, int len,
-                          int UNUSED(offset), GridDataSource::Direction UNUSED(dir)) {
-  // Integers not expressions yet
+bool GridFromOptions::get(Mesh* m, FieldPerp& var, const std::string& name, BoutReal def) {
+  // Cannot set attributes from options at the moment, so don't know what 'yindex' this
+  // FieldPerp should have: just set to 0 for now, and create FieldPerp on all processors
+  // (note: this is different to behaviour of GridFromFile which will only create the
+  // FieldPerp at a single global y-index).
 
-  int ival;
-  if(!get(m, ival, name))
+  if (!hasVar(name)) {
+    output_warn.write("Variable '{:s}' not in mesh options. Setting to {:e}\n", name,
+                      def);
+    var = def;
+    var.setIndex(0);
     return false;
+  }
 
+  var = FieldFactory::get()->createPerp(name, options, m);
+  var.setIndex(0);
+
+  return true;
+}
+
+bool GridFromOptions::get(Mesh* m, std::vector<int>& var, const std::string& name,
+                          int len, int UNUSED(offset),
+                          GridDataSource::Direction UNUSED(dir)) {
+  if (!hasVar(name)) {
+    std::vector<int> def{};
+    output_warn.write("Variable '{:s}' not in mesh options. Setting to empty vector\n", name);
+    var = def;
+    return false;
+  }
+
+  // FIXME: actually implement this!
+  throw BoutException("not implemented");
+  int ival;
+  get(m, ival, name);
   var.resize(len, ival);
 
   return true;
 }
 
-bool GridFromOptions::get(Mesh *m, vector<BoutReal> &var, const string &name, int len,
-                          int offset, GridDataSource::Direction dir) {
-
-  if(!hasVar(name)) {
+bool GridFromOptions::get(Mesh* m, std::vector<BoutReal>& var, const std::string& name,
+                          int len, int offset, GridDataSource::Direction dir) {
+  if (!hasVar(name)) {
+    std::vector<BoutReal> def{};
+    output_warn.write("Variable '{:s}' not in mesh options. Setting to empty vector\n", name);
+    var = def;
     return false;
   }
 
-  // Fetch expression as a string
-  std::string expr;
-  options->get(name, expr, "0");
-
-  // Parse, and evaluate with x,y,z,t = 0
-  std::shared_ptr<FieldGenerator> gen = FieldFactory::get()->parse(expr, options);
+  auto expr = (*options)[name].withDefault(std::string{"0"});
+  auto gen = FieldFactory::get()->parse(expr, options);
 
   var.resize(len);
 
-  switch(dir) {
+  Context pos(0,0,0,CELL_CENTRE, m, 0.0);
+
+  switch (dir) {
   case GridDataSource::X: {
-    for(int x=0;x<len;x++){
-      var[x] = gen->generate(m->GlobalX(x - m->OffsetX + offset), 0.0, 0.0, 0.0);
+    for (int x = 0; x < len; x++) {
+      pos.set("x", m->GlobalX(x - m->OffsetX + offset));
+      var[x] = gen->generate(pos);
     }
     break;
   }
-  case GridDataSource::Y : {
-    for(int y=0;y<len;y++){
-      var[y] = gen->generate(0.0, TWOPI*m->GlobalY(y - m->OffsetY + offset), 0.0, 0.0);
+  case GridDataSource::Y: {
+    for (int y = 0; y < len; y++){
+      pos.set("y", TWOPI * m->GlobalY(y - m->OffsetY + offset));
+      var[y] = gen->generate(pos);
     }
     break;
   }
-  case GridDataSource::Z : {
-    for(int z=0;z<len;z++){
-      var[z] = gen->generate(0.0, 0.0, TWOPI*(static_cast<BoutReal>(z) + offset) / static_cast<BoutReal>(m->LocalNz), 0.0);
+  case GridDataSource::Z: {
+    for (int z = 0; z < len; z++) {
+      pos.set("z", (TWOPI * (z - m->OffsetZ + offset)) / static_cast<BoutReal>(m->LocalNz));
+      var[z] = gen->generate(pos);
     }
     break;
   }
-  default: {
-    throw BoutException("Invalid direction argument");
-  }
+  default: { throw BoutException("Invalid direction argument"); }
   }
   return true;
 }
-

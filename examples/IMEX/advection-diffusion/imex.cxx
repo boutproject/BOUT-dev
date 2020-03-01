@@ -7,58 +7,46 @@
  *
  * *******************************************************************/
 
-
-#include <bout.hxx>
-#include <boutmain.hxx>
-#include <initialprofiles.hxx>
+#include <bout/physicsmodel.hxx>
 #include <derivs.hxx>
 
+class IMEXexample : public PhysicsModel {
+private:
+  Field3D U;   // Evolving variable and auxilliary variable
+  Field3D Vx, Dz; // Velocity, diffusion
 
-int diffusive(BoutReal time);
-
-Field3D U,Cx,Cz;   // Evolving variable and auxilliary variable
-
-BoutReal cx,cz; //Advection velocity, diffusion rate
-
-int physics_init(bool restarting) {
-
-  // Give the solver two RHS functions
-  // First function is explicit, second is implicit
-  solver->setSplitOperator(physics_run,diffusive);
+protected:
+  int init(bool) {
+    setSplitOperator(); // Split into convective and diffusive
   
-  // Get options
-  Options *options = Options::getRoot();
-  options = options->getSection("imex");
-  OPTION(options, cz, 100.0);
-  OPTION(options, cx, 1.0);
+    // Get options
+    auto& options = Options::root()["imex"];
+    Vx = options["Vx"].doc("Velocity in X").withDefault(Field3D(100.0));
+    Dz = options["Dz"].doc("Diffusion in Z").withDefault(Field3D(1.0));
 
-  SOLVE_FOR(U);
+    SOLVE_FOR(U);
 
-  Cx = cx;
-  Cz = cz;
+    return 0;
+  }
 
-  return 0;
-}
-
-int physics_run(BoutReal time) {
-
-  // Need communication
-  mesh->communicate(U);
+  int convective(BoutReal) {
+    // Need communication
+    mesh->communicate(U);
  
-  //Slow Passive advection
-  ddt(U) = -VDDX(Cx,U);
+    // Passive advection
+    ddt(U) = -VDDX(Vx,U);
    
-  return 0;
-}
-
-int diffusive(BoutReal time) {
-
-  mesh->communicate(U);
-  //Fast passive advection
+    return 0;
+  }
   
-  ddt(U) = -VDDZ(Cz,U);	
-  
-  return 0;
-}
+  int diffusive(BoutReal) {
+    mesh->communicate(U);
 
+    // Diffusion
+    ddt(U) = Dz*D2DZ2(U);	
+    
+    return 0;
+  }
+};
 
+BOUTMAIN(IMEXexample);

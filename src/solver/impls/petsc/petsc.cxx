@@ -33,7 +33,7 @@
 
 #include <boutcomm.hxx>
 
-#include <stdlib.h>
+#include <cstdlib>
 
 #include <interpolation.hxx> // Cell interpolation
 #include <msg_stack.hxx>
@@ -119,17 +119,18 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
 
   ierr = PetscLogEventBegin(init_event,0,0,0,0);CHKERRQ(ierr);
   output.write("Initialising PETSc-dev solver\n");
-  ierr = MPI_Comm_rank(comm, &rank);CHKERRQ(ierr);
+  ierr = bout::globals::mpi->MPI_Comm_rank(comm, &rank);
+  CHKERRQ(ierr);
 
   // Save NOUT and TIMESTEP for use later
   nout = NOUT;
   tstep = TIMESTEP;
 
-  PetscInt n3d = n3Dvars();       // Number of 3D variables
   PetscInt local_N = getLocalN(); // Number of evolving variables on this processor
 
   /********** Get total problem size **********/
-  if(MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
+  if (bout::globals::mpi->MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM,
+                                        BoutComm::get())) {
     output_error.write("\tERROR: MPI_Allreduce failed!\n");
     ierr = PetscLogEventEnd(init_event,0,0,0,0);CHKERRQ(ierr);
     PetscFunctionReturn(1);
@@ -168,15 +169,24 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   // Set user provided RHSFunction
   // Need to duplicate the solution vector for the residual
   Vec rhs_vec;
-  ierr = VecDuplicate(u,&rhs_vec);
+  ierr = VecDuplicate(u,&rhs_vec);CHKERRQ(ierr);
   ierr = TSSetRHSFunction(ts,rhs_vec,solver_f,this);CHKERRQ(ierr);
-  ierr = VecDestroy(&rhs_vec);
+  ierr = VecDestroy(&rhs_vec);CHKERRQ(ierr);
 
   ///////////// GET OPTIONS /////////////
-  int MXSUB = mesh->xend - mesh->xstart + 1;
+  // Compute band_width_default from actually added fields, to allow for multiple Mesh objects
+  //
+  // Previous implementation was equivalent to:
+  //   int MXSUB = mesh->xend - mesh->xstart + 1;
+  //   int band_width_default = n3Dvars()*(MXSUB+2);
+  int band_width_default = 0;
+  for (const auto& fvar : f3d) {
+    Mesh* localmesh = fvar.var->getMesh();
+    band_width_default += localmesh->xend - localmesh->xstart + 3;
+  }
 
-  OPTION(options, mudq, n3d*(MXSUB+2));
-  OPTION(options, mldq, n3d*(MXSUB+2));
+  OPTION(options, mudq, band_width_default);
+  OPTION(options, mldq, band_width_default);
   OPTION(options, mukeep, 0);
   OPTION(options, mlkeep, 0);
   OPTION(options, use_precon, false);
@@ -234,7 +244,7 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   OPTION(options, mxstep, 500); // Number of steps between outputs
   mxstep *= NOUT; // Total number of steps
   PetscReal tfinal = simtime + NOUT*TIMESTEP; // Final output time
-  output.write("\tSet mxstep %d, tfinal %g, simtime %g\n",mxstep,tfinal,simtime);
+  output.write("\tSet mxstep {:d}, tfinal {:g}, simtime {:g}\n",mxstep,tfinal,simtime);
 
 #if PETSC_VERSION_GE(3,8,0)
   ierr = TSSetMaxSteps(ts, mxstep); CHKERRQ(ierr);
@@ -286,7 +296,7 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   if(use_jacobian && (jacfunc != nullptr)) {
     // Use a user-supplied Jacobian function
     ierr = MatCreateShell(comm, local_N, local_N, neq, neq, this, &Jmf); CHKERRQ(ierr);
-    ierr = MatShellSetOperation(Jmf, MATOP_MULT, (void (*)(void)) PhysicsJacobianApply); CHKERRQ(ierr);
+    ierr = MatShellSetOperation(Jmf, MATOP_MULT, reinterpret_cast<void (*)()>(PhysicsJacobianApply)); CHKERRQ(ierr);
     ierr = TSSetIJacobian(ts, Jmf, Jmf, solver_ijacobian, this); CHKERRQ(ierr);
   }else {
     // Use finite difference approximation
@@ -327,7 +337,7 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
     ierr = PCShellSetName(pc,"PhysicsPreconditioner");CHKERRQ(ierr);
 
     // Need a callback for IJacobian to get shift 'alpha'
-    ierr = TSSetIJacobian(ts, Jmf, Jmf, solver_ijacobian, this);
+    ierr = TSSetIJacobian(ts, Jmf, Jmf, solver_ijacobian, this);CHKERRQ(ierr);
 
     // Use right preconditioner
     ierr = KSPSetPCSide(ksp, PC_RIGHT);CHKERRQ(ierr);
@@ -340,14 +350,14 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
 
   ierr = PCGetType(pc,&pctype);CHKERRQ(ierr);
   ierr = TSGetType(ts,&tstype);CHKERRQ(ierr);
-  output.write("\tTS type %s, PC type %s\n",tstype,pctype);
+  output.write("\tTS type {:s}, PC type {:s}\n",tstype,pctype);
 
-  ierr = PetscObjectTypeCompare((PetscObject)pc,PCNONE,&pcnone);CHKERRQ(ierr);
+  ierr = PetscObjectTypeCompare(reinterpret_cast<PetscObject>(pc),PCNONE,&pcnone);CHKERRQ(ierr);
   if (pcnone) {
     ierr = PetscLogEventEnd(init_event,0,0,0,0);CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
-  ierr = PetscObjectTypeCompare((PetscObject)pc,PCSHELL,&pcnone);CHKERRQ(ierr);
+  ierr = PetscObjectTypeCompare(reinterpret_cast<PetscObject>(pc),PCSHELL,&pcnone);CHKERRQ(ierr);
   if (pcnone) {
     ierr = PetscLogEventEnd(init_event,0,0,0,0);CHKERRQ(ierr);
     PetscFunctionReturn(0);
@@ -376,14 +386,14 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
     PetscInt dof = n3Dvars();
 
     // Maximum allowable size of stencil in x is the number of guard cells
-    PetscInt stencil_width = mesh->xstart;
+    PetscInt stencil_width_estimate = options->operator[]("stencil_width_estimate").withDefault(bout::globals::mesh->xstart);
     // This is the stencil in each direction (*2) along each dimension
     // (*3), plus the point itself. Not sure if this is correct
     // though, on several levels:
     //   1. Ignores corner points used in e.g. brackets
     //   2. Could have different stencil widths in each dimension
     //   3. FFTs couple every single point together
-    PetscInt cols = stencil_width*2*3+1;
+    PetscInt cols = stencil_width_estimate*2*3+1;
     PetscInt prealloc; // = cols*dof;
 
     ierr = MatCreate(comm,&J);CHKERRQ(ierr);
@@ -444,7 +454,7 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   
   ierr = MatFDColoringSetFromOptions(matfdcoloring);CHKERRQ(ierr);
   ierr = ISColoringDestroy(&iscoloring);CHKERRQ(ierr);
-  ierr = MatFDColoringSetFunction(matfdcoloring,(PetscErrorCode (*)(void))solver_f,this);CHKERRQ(ierr);
+  ierr = MatFDColoringSetFunction(matfdcoloring, reinterpret_cast<PetscErrorCode (*)()>(solver_f), this);CHKERRQ(ierr);
   ierr = SNESSetJacobian(snes,J,J,SNESComputeJacobianDefaultColor,matfdcoloring);CHKERRQ(ierr);
 
   // Write J in binary for study - see ~petsc/src/mat/examples/tests/ex124.c
@@ -463,7 +473,7 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
     ierr = TSComputeRHSJacobian(ts,simtime,u,&J,&J,&J_structure);CHKERRQ(ierr);
 #endif
 
-    ierr = PetscSynchronizedPrintf(comm, "[%d] TSComputeRHSJacobian is done\n",rank);
+    ierr = PetscSynchronizedPrintf(comm, "[{:d}] TSComputeRHSJacobian is done\n",rank);CHKERRQ(ierr);
 
 #if PETSC_VERSION_GE(3,5,0)
     ierr = PetscSynchronizedFlush(comm,PETSC_STDOUT);CHKERRQ(ierr);
@@ -501,7 +511,7 @@ PetscErrorCode PetscSolver::run() {
 
   if(this->output_flag) {
     prev_linear_its = 0;
-    bout_snes_time = MPI_Wtime();
+    bout_snes_time = bout::globals::mpi->MPI_Wtime();
   }
 
   ierr = TSSolve(ts,u);CHKERRQ(ierr);
@@ -511,7 +521,7 @@ PetscErrorCode PetscSolver::run() {
     ierr = PetscFOpen(PETSC_COMM_WORLD, this->output_name, "w", &fp);CHKERRQ(ierr);
     ierr = PetscFPrintf(PETSC_COMM_WORLD, fp, "SNES Iteration, KSP Iterations, Wall Time, Norm\n");CHKERRQ(ierr);
     for (const auto &info : snes_list) {
-      ierr = PetscFPrintf(PETSC_COMM_WORLD, fp, "%i, %i, %e, %e\n", info.it,
+      ierr = PetscFPrintf(PETSC_COMM_WORLD, fp, "{:d}, {:d}, {:e}, {:e}\n", info.it,
                           info.linear_its, info.time, info.norm);
       CHKERRQ(ierr);
     }
@@ -526,7 +536,7 @@ PetscErrorCode PetscSolver::run() {
  **************************************************************************/
 
 PetscErrorCode PetscSolver::rhs(TS UNUSED(ts), BoutReal t, Vec udata, Vec dudata) {
-  TRACE("Running RHS: PetscSolver::rhs(%e)", t);
+  TRACE("Running RHS: PetscSolver::rhs({:e})", t);
 
   const BoutReal *udata_array;
   BoutReal *dudata_array;
@@ -627,10 +637,8 @@ PetscErrorCode PetscSolver::jac(Vec x, Vec y) {
 #undef __FUNCT__
 #define __FUNCT__ "solver_f"
 PetscErrorCode solver_f(TS ts, BoutReal t, Vec globalin, Vec globalout, void *f_data) {
-  PetscSolver *s;
-
   PetscFunctionBegin;
-  s = (PetscSolver*) f_data;
+  auto* s = static_cast<PetscSolver*>(f_data);
   PetscLogEventBegin(s->solver_event,0,0,0,0);
   s->rhs(ts, t, globalin, globalout);
   PetscLogEventEnd(s->solver_event,0,0,0,0);
@@ -669,13 +677,16 @@ PetscErrorCode solver_rhsjacobian(TS UNUSED(ts), BoutReal UNUSED(t), Vec UNUSED(
   PetscFunctionReturn(0);
 }
 #else
-PetscErrorCode solver_rhsjacobian(TS ts,BoutReal t,Vec globalin,Mat *J,Mat *Jpre,MatStructure *str,void *f_data) {
+PetscErrorCode solver_rhsjacobian(MAYBE_UNUSED(TS ts), MAYBE_UNUSED(BoutReal t),
+                                  MAYBE_UNUSED(Vec globalin), Mat *J, Mat *Jpre,
+                                  MAYBE_UNUSED(MatStructure *str),
+                                  MAYBE_UNUSED(void *f_data)) {
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
   ierr = MatAssemblyBegin(*Jpre, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(*Jpre, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-  if (*J != *Jpre){
+  if (*J != *Jpre) {
     ierr = MatAssemblyBegin(*J, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
     ierr = MatAssemblyEnd(*J, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   }
@@ -697,7 +708,7 @@ PetscErrorCode solver_ijacobian(TS ts, BoutReal t, Vec globalin, Vec UNUSED(glob
   ierr = solver_rhsjacobian(ts, t, globalin, J, Jpre, f_data); CHKERRQ(ierr);
 
   ////// Save data for preconditioner
-  PetscSolver *solver = (PetscSolver*) f_data;
+  auto* solver = static_cast<PetscSolver*>(f_data);
 
   if(solver->diagnose)
     output << "Saving state, t = " << t << ", a = " << a << endl;
@@ -709,20 +720,22 @@ PetscErrorCode solver_ijacobian(TS ts, BoutReal t, Vec globalin, Vec UNUSED(glob
   PetscFunctionReturn(0);
 }
 #else
-PetscErrorCode solver_ijacobian(TS ts,BoutReal t,Vec globalin,Vec globalindot,PetscReal a,Mat *J,Mat *Jpre,MatStructure *str,void *f_data) {
+PetscErrorCode solver_ijacobian(TS ts, BoutReal t, Vec globalin,
+                                MAYBE_UNUSED(Vec globalindot), MAYBE_UNUSED(PetscReal a),
+                                Mat *J, Mat *Jpre, MatStructure *str, void *f_data) {
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
-  ierr = solver_rhsjacobian(ts,t,globalin,J,Jpre,str,(void *)f_data);CHKERRQ(ierr);
+  ierr = solver_rhsjacobian(ts, t, globalin, J, Jpre, str, (void *)f_data);CHKERRQ(ierr);
 
   ////// Save data for preconditioner
-  PetscSolver *solver = (PetscSolver*) f_data;
+  PetscSolver *solver = (PetscSolver *)f_data;
 
-  if(solver->diagnose)
+  if (solver->diagnose)
     output << "Saving state, t = " << t << ", a = " << a << endl;
 
-  solver->shift = a; // Save the shift 'a'
-  solver->state = globalin;  // Save system state
+  solver->shift = a;        // Save the shift 'a'
+  solver->state = globalin; // Save system state
   solver->ts_time = t;
 
   PetscFunctionReturn(0);
@@ -809,7 +822,7 @@ PetscErrorCode PhysicsPCApply(PC pc,Vec x,Vec y) {
 
   // Get the context
   PetscSolver *s;
-  ierr = PCShellGetContext(pc,(void**)&s);CHKERRQ(ierr);
+  ierr = PCShellGetContext(pc, reinterpret_cast<void**>(&s)); CHKERRQ(ierr);
 
   PetscFunctionReturn(s->pre(pc, x, y));
 }
@@ -819,7 +832,7 @@ PetscErrorCode PhysicsPCApply(PC pc,Vec x,Vec y) {
 PetscErrorCode PhysicsJacobianApply(Mat J, Vec x, Vec y) {
   // Get the context
   PetscSolver *s;
-  int ierr = MatShellGetContext(J, (void**)&s); CHKERRQ(ierr);
+  int ierr = MatShellGetContext(J, reinterpret_cast<void**>(&s)); CHKERRQ(ierr);
   PetscFunctionReturn(s->jac(x, y));
 }
 
@@ -827,7 +840,7 @@ PetscErrorCode PhysicsJacobianApply(Mat J, Vec x, Vec y) {
 #define __FUNCT__ "PetscMonitor"
 PetscErrorCode PetscMonitor(TS ts, PetscInt UNUSED(step), PetscReal t, Vec X, void *ctx) {
   PetscErrorCode ierr;
-  PetscSolver *s = (PetscSolver *)ctx;
+  auto* s = static_cast<PetscSolver*>(ctx);
   PetscReal tfinal, dt;
   Vec interpolatedX;
   const PetscScalar *x;
@@ -874,13 +887,13 @@ PetscErrorCode PetscSNESMonitor(SNES snes, PetscInt its, PetscReal norm, void *c
   PetscInt linear_its=0;
   BoutReal tmp = .0;
   snes_info row;
-  PetscSolver *s = (PetscSolver*)ctx;
+  auto *s = static_cast<PetscSolver*>(ctx);
 
   PetscFunctionBegin;
 
   if(!its) s->prev_linear_its = 0;
   ierr = SNESGetLinearSolveIterations(snes, &linear_its);CHKERRQ(ierr);
-  tmp = MPI_Wtime();
+  tmp = bout::globals::mpi->MPI_Wtime();
 
   row.it = its;
   s->prev_linear_its = row.linear_its = linear_its-s->prev_linear_its;

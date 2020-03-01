@@ -60,7 +60,7 @@ Homepage found at [http://boutproject.github.io/](http://boutproject.github.io/)
 
 BOUT++ needs the following:
 
-* A C++11 compiler
+* A C++14 compiler
 * MPI
 * FFTW3
 * Either NetCDF or HDF5
@@ -174,3 +174,15 @@ GNU Lesser General Public License for more details.
 
 A copy of the LGPL license is in [LICENSE](LICENSE). Since this is based
 on (and refers to) the GPL, this is included in [LICENSE.GPL](LICENSE.GPL).
+
+Some of the autoconf macros under [m4](m4) are licensed under
+GPLv3. These are not necessary to either build or run BOUT++, but are
+used in the creation of [configure](configure) from
+[configure.ac](configure.ac), and are provided as a courtesy to
+developers. You are free to substitute them with other autoconf macros
+that provide equivalent functionality.
+
+BOUT++ links by default with some GPL licensed libraries. Thus if you
+compile BOUT++ with any of them, BOUT++ will automatically be licensed
+as GPL. Thus if you want to use BOUT++ with GPL non-compatible code,
+make sure to compile without GPLed code.

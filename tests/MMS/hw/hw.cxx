@@ -12,13 +12,13 @@ Field3D phi;
 BoutReal alpha, kappa, Dvort, Dn;
 bool modified; // Modified H-W equations?
 
-class Laplacian* phiSolver; // Laplacian solver for vort -> phi
+std::unique_ptr<Laplacian> phiSolver{nullptr}; // Laplacian solver for vort -> phi
 
 // Poisson brackets: b0 x Grad(f) dot Grad(g) / B = [f, g]
 // Method to use: BRACKET_ARAKAWA, BRACKET_STD or BRACKET_SIMPLE
 BRACKET_METHOD bm; // Bracket method for advection terms
 
-int physics_init(bool restart) {
+int physics_init(bool UNUSED(restart)) {
   
   Options *options = Options::getRoot()->getSection("hw");
   OPTION(options, alpha, 1.0);

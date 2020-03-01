@@ -31,8 +31,6 @@ class PetscSolver;
 #ifndef __PETSC_SOLVER_H__
 #define __PETSC_SOLVER_H__
 
-#include <petsc.h>
-
 #include <field2d.hxx>
 #include <field3d.hxx>
 #include <vector2d.hxx>
@@ -40,19 +38,22 @@ class PetscSolver;
 
 #include <bout/solver.hxx>
 
+#include <petsc.h>
+// PETSc creates macros for MPI calls, which interfere with the MpiWrapper class
+#undef MPI_Allreduce
+
 #include <bout/petsclib.hxx>
 
 #include <vector>
 
-#include <bout/solverfactory.hxx>
 namespace {
 RegisterSolver<PetscSolver> registersolverpetsc("petsc");
 }
 
-typedef PetscScalar BoutReal;
+using BoutReal = PetscScalar;
 #define OPT_SIZE 40
 
-typedef int (*rhsfunc)(BoutReal);
+using rhsfunc = int (*)(BoutReal);
 
 extern BoutReal simtime;
 
@@ -71,12 +72,12 @@ extern PetscErrorCode solver_ijacobian(TS, PetscReal, Vec, Vec, PetscReal, Mat *
 #endif
 
 /// Data for SNES
-typedef struct snes_info {
+struct snes_info {
   PetscInt it;
   PetscInt linear_its;
   PetscReal time;
   PetscReal norm;
-} snes_info;
+};
 
 class PetscSolver : public Solver {
 public:

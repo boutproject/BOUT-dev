@@ -1,0 +1,23 @@
+grid = fci.grid.nc
+
+input = sin(y - 2*z) + sin(y - z)
+
+solution = (6.28318530717959*(0.01*x + 0.045)*(-2*cos(y - 2*z) - cos(y - z)) + 0.628318530717959*cos(y - 2*z) + 0.628318530717959*cos(y - z))/sqrt((0.01*x + 0.045)^2 + 1.0)
+
+MXG = 1
+NXPE = 1
+
+[mesh]
+paralleltransform = fci
+symmetricglobalx = true
+
+[mesh:ddy]
+first = C2
+second = C2
+
+[fci]
+y_periodic = true
+z_periodic = true
+
+[interpolation]
+type = lagrange4pt

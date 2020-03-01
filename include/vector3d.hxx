@@ -66,6 +66,9 @@ class Vector3D : public FieldData {
    */
   Vector3D(const Vector3D &f);
 
+  /// Many-argument constructor for fully specifying the initialisation of a Vector3D
+  Vector3D(Mesh* localmesh, bool covariant, CELL_LOC location);
+
   /*!
    * Destructor. If the time derivative has been
    * used, then some book-keeping is needed to ensure
@@ -83,7 +86,7 @@ class Vector3D : public FieldData {
   /*!
    * Flag to specify whether the components (x,y,z)
    * are co- or contra-variant.
-   * 
+   *
    * true if the components are covariant (default)
    * false if the components are contravariant
    *
@@ -91,9 +94,9 @@ class Vector3D : public FieldData {
    * the toContravariant and toCovariant methods.
    *
    * Only modify this variable directly if you know what you are doing!
-   * 
-   */ 
-  bool covariant;
+   *
+   */
+  bool covariant{true};
 
   /*!
    * In-place conversion to covariant form. 
@@ -188,16 +191,16 @@ class Vector3D : public FieldData {
   int  BoutRealSize() const override { return 3; }
   
   void applyBoundary(bool init=false) override;
-  void applyBoundary(const string &condition) {
+  void applyBoundary(const std::string &condition) {
     x.applyBoundary(condition);
     y.applyBoundary(condition);
     z.applyBoundary(condition);
   }
-  void applyBoundary(const char* condition) { applyBoundary(string(condition)); }
+  void applyBoundary(const char* condition) { applyBoundary(std::string(condition)); }
   void applyTDerivBoundary() override;
  private:
-  Vector3D *deriv; ///< Time-derivative, can be NULL
-  CELL_LOC location; ///< Location of the variable in the cell
+   Vector3D* deriv{nullptr};       ///< Time-derivative, can be NULL
+   CELL_LOC location{CELL_CENTRE}; ///< Location of the variable in the cell
 };
 
 // Non-member overloaded operators
@@ -218,7 +221,36 @@ const Vector3D cross(const Vector3D & lhs, const Vector2D &rhs);
  * 
  * sqrt( v.x^2 + v.y^2 + v.z^2 )
  */ 
-const Field3D abs(const Vector3D &v, REGION region = RGN_ALL);
+const Field3D abs(const Vector3D& v, const std::string& region = "RGN_ALL");
+[[deprecated("Please use Vector3D abs(const Vector3D& f, "
+    "const std::string& region = \"RGN_ALL\") instead")]]
+inline const Field3D abs(const Vector3D& v, REGION region) {
+  return abs(v, toString(region));
+}
+
+/// Transform to and from field-aligned coordinates
+Vector3D toFieldAligned(const Vector3D& v, const std::string& region = "RGN_ALL");
+Vector3D fromFieldAligned(const Vector3D& v, const std::string& region = "RGN_ALL");
+
+/// Create new Vector3D with same attributes as the argument, but uninitialised components
+inline Vector3D emptyFrom(const Vector3D& v) {
+  auto result = Vector3D(v.x.getMesh(), v.covariant, v.getLocation());
+  result.x = emptyFrom(v.x);
+  result.y = emptyFrom(v.y);
+  result.z = emptyFrom(v.z);
+
+  return result;
+}
+
+/// Create new Vector3D with same attributes as the argument, and zero-initialised components
+inline Vector3D zeroFrom(const Vector3D& v) {
+  auto result = Vector3D(v.x.getMesh(), v.covariant, v.getLocation());
+  result.x = zeroFrom(v.x);
+  result.y = zeroFrom(v.y);
+  result.z = zeroFrom(v.z);
+
+  return result;
+}
 
 /*!
  * @brief Time derivative of 3D vector field

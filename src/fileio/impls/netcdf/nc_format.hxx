@@ -36,7 +36,7 @@
 #ifndef NCDF
 
 #include "../emptyformat.hxx"
-typedef EmptyFormat NcFormat;
+using NcFormat = EmptyFormat;
 
 #else
 
@@ -53,14 +53,12 @@ class NcFormat;
 #include <map>
 #include <string>
 
-using std::string;
-using std::map;
-
 class NcFormat : public DataFormat {
  public:
-  NcFormat();
-  NcFormat(const char *name);
-  NcFormat(const string &name) : NcFormat(name.c_str()) {}
+  NcFormat(Mesh* mesh_in = nullptr);
+  NcFormat(const char *name, Mesh* mesh_in = nullptr);
+  NcFormat(const std::string &name, Mesh* mesh_in = nullptr)
+    : NcFormat(name.c_str(), mesh_in) {}
   ~NcFormat();
 
   using DataFormat::openr;
@@ -76,8 +74,8 @@ class NcFormat : public DataFormat {
 
   const char* filename() { return fname; };
 
-  const vector<int> getSize(const char *var) override;
-  const vector<int> getSize(const string &var) override;
+  const std::vector<int> getSize(const char *var) override;
+  const std::vector<int> getSize(const std::string &var) override;
   
   // Set the origin for all subsequent calls
   bool setGlobalOrigin(int x = 0, int y = 0, int z = 0) override;
@@ -88,34 +86,39 @@ class NcFormat : public DataFormat {
   bool setRecord(int t) override; // negative -> latest
   
   // Add a variable to the file
-  bool addVarInt(const string &name, bool repeat) override;
-  bool addVarBoutReal(const string &name, bool repeat) override;
-  bool addVarField2D(const string &name, bool repeat) override;
-  bool addVarField3D(const string &name, bool repeat) override;
+  bool addVarInt(const std::string &name, bool repeat) override;
+  bool addVarBoutReal(const std::string &name, bool repeat) override;
+  bool addVarField2D(const std::string &name, bool repeat) override;
+  bool addVarField3D(const std::string &name, bool repeat) override;
+  bool addVarFieldPerp(const std::string &name, bool repeat) override;
 
   // Read / Write simple variables up to 3D
 
   bool read(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0) override;
-  bool read(int *var, const string &name, int lx = 1, int ly = 0, int lz = 0) override;
+  bool read(int *var, const std::string &name, int lx = 1, int ly = 0, int lz = 0) override;
   bool read(BoutReal *var, const char *name, int lx = 1, int ly = 0, int lz = 0) override;
-  bool read(BoutReal *var, const string &name, int lx = 1, int ly = 0, int lz = 0) override;
+  bool read(BoutReal *var, const std::string &name, int lx = 1, int ly = 0, int lz = 0) override;
+  bool read_perp(BoutReal *var, const std::string &name, int lx = 1, int lz = 0) override;
 
   bool write(int *var, const char *name, int lx = 0, int ly = 0, int lz = 0) override;
-  bool write(int *var, const string &name, int lx = 0, int ly = 0, int lz = 0) override;
+  bool write(int *var, const std::string &name, int lx = 0, int ly = 0, int lz = 0) override;
   bool write(BoutReal *var, const char *name, int lx = 0, int ly = 0, int lz = 0) override;
-  bool write(BoutReal *var, const string &name, int lx = 0, int ly = 0, int lz = 0) override;
+  bool write(BoutReal *var, const std::string &name, int lx = 0, int ly = 0, int lz = 0) override;
+  bool write_perp(BoutReal *var, const std::string &name, int lx = 0, int lz = 0) override;
 
   // Read / Write record-based variables
 
   bool read_rec(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0) override;
-  bool read_rec(int *var, const string &name, int lx = 1, int ly = 0, int lz = 0) override;
+  bool read_rec(int *var, const std::string &name, int lx = 1, int ly = 0, int lz = 0) override;
   bool read_rec(BoutReal *var, const char *name, int lx = 1, int ly = 0, int lz = 0) override;
-  bool read_rec(BoutReal *var, const string &name, int lx = 1, int ly = 0, int lz = 0) override;
+  bool read_rec(BoutReal *var, const std::string &name, int lx = 1, int ly = 0, int lz = 0) override;
+  bool read_rec_perp(BoutReal *var, const std::string &name, int lx = 1, int lz = 0) override;
 
   bool write_rec(int *var, const char *name, int lx = 0, int ly = 0, int lz = 0) override;
-  bool write_rec(int *var, const string &name, int lx = 0, int ly = 0, int lz = 0) override;
+  bool write_rec(int *var, const std::string &name, int lx = 0, int ly = 0, int lz = 0) override;
   bool write_rec(BoutReal *var, const char *name, int lx = 0, int ly = 0, int lz = 0) override;
-  bool write_rec(BoutReal *var, const string &name, int lx = 0, int ly = 0, int lz = 0) override;
+  bool write_rec(BoutReal *var, const std::string &name, int lx = 0, int ly = 0, int lz = 0) override;
+  bool write_rec_perp(BoutReal *var, const std::string &name, int lx = 0, int lz = 0) override;
   
   void setLowPrecision() override { lowPrecision = true; }
 
@@ -147,7 +150,7 @@ class NcFormat : public DataFormat {
 
   int x0, y0, z0, t0; ///< Data origins
 
-  map<string, int> rec_nr; // Record number for each variable (bit nasty)
+  std::map<std::string, int> rec_nr; // Record number for each variable (bit nasty)
   int default_rec;  // Starting record. Useful when appending to existing file
 
   void checkName(const char* name); ///< Check if a name contains invalid characters

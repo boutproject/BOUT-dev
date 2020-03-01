@@ -34,7 +34,8 @@ BoutReal test_ddy(stencil &s) {
   return (s.p - s.m);
 }
 
-Mesh::deriv_func func_ptr = &test_ddy;
+using deriv_func = BoutReal (*)(stencil &);
+deriv_func func_ptr = &test_ddy;
 
 int main(int argc, char **argv) {
   BoutInitialise(argc, argv);
@@ -42,13 +43,13 @@ int main(int argc, char **argv) {
   std::vector<Duration> times;
 
   //Get options root
-  Options *globalOptions = Options::getRoot();
-  Options *modelOpts = globalOptions->getSection("performanceIterator");
+  auto globalOptions = Options::root();
+  auto modelOpts = globalOptions["performanceIterator"];
   int NUM_LOOPS;
-  OPTION(modelOpts, NUM_LOOPS, 100);
+  NUM_LOOPS = modelOpts["NUM_LOOPS"].withDefault(100);
   bool profileMode, includeHeader;
-  OPTION(modelOpts, profileMode, false);
-  OPTION(modelOpts, includeHeader, false);
+  profileMode = modelOpts["profileMode"].withDefault(false);
+  includeHeader = modelOpts["includeHeader"].withDefault(false);
 
   ConditionalOutput time_output{Output::getInstance()};
   time_output.enable(true);
@@ -86,170 +87,51 @@ int main(int argc, char **argv) {
     }
     );
 
-  // Range based for DataIterator with indices
-  ITERATOR_TEST_BLOCK(
-    "C++11 range-based for (omp)",
-    BOUT_OMP(parallel)
-    for(auto i : result.region(RGN_NOY)){
-      result(i.x,i.y,i.z) = (a(i.x,i.y+1,i.z) - a(i.x,i.y-1,i.z));
-    }
-    );
-
-  // Range based DataIterator
-  ITERATOR_TEST_BLOCK(
-    "C++11 range-based for [i] (omp)",
-    BOUT_OMP(parallel)
-    for(const auto &i : result.region(RGN_NOY)){
-      result[i] = (a[i.yp()] - a[i.ym()]);
-    }
-    );
-
-  ITERATOR_TEST_BLOCK(
-    "C++11 range-based for over Region [i] (omp)",
-    BOUT_OMP(parallel)
-    {
-      for(const auto &i : mesh->getRegion3D("RGN_NOY")){
-        result[i] = (a[i.yp()] - a[i.ym()]);
-      }
-    }
-    );
-
-  ITERATOR_TEST_BLOCK(
-    "C++11 range-based for [i] with stencil (omp)",
-    BOUT_OMP(parallel)
-    {
-      stencil s;
-      for(const auto &i : result.region(RGN_NOY)){
-        s.mm = nan("");
-        s.m = a[i.ym()];
-        s.c = a[i];
-        s.p = a[i.yp()];
-        s.pp = nan("");
-        result[i] = (s.p - s.m);
-      }
-    }
-    );
 #endif
 
+  {
+    auto deriv = DerivativeStore<Field3D>::getInstance().getStandardDerivative("C2",DIRECTION::Y, STAGGER::None);
+    ITERATOR_TEST_BLOCK(
+			"DerivativeStore without fetching",
+			deriv(a, result, "RGN_NOY");
+			);
+  };
+  
   ITERATOR_TEST_BLOCK(
-    "C++11 range-based for [i] with stencil (serial)",
-    stencil s;
-    for(const auto &i : result.region(RGN_NOY)){
-      s.mm = nan("");
-      s.m = a[i.ym()];
-      s.c = a[i];
-      s.p = a[i.yp()];
-      s.pp = nan("");
-      result[i] = (s.p - s.m);
-    }
-    );
-
-  // Region macro
-  ITERATOR_TEST_BLOCK(
-      "Region with stencil (serial)",
-      stencil s;
-      BOUT_FOR_SERIAL(i, mesh->getRegion3D("RGN_NOY")) {
-        s.mm = nan("");
-        s.m = a[i.ym()];
-        s.c = a[i];
-        s.p = a[i.yp()];
-        s.pp = nan("");
-
-        result[i] = (s.p - s.m);
-      }
-    );
-
-#ifdef _OPENMP
+		      "DerivativeStore with fetch",
+		      auto deriv = DerivativeStore<Field3D>::getInstance().getStandardDerivative("C2",DIRECTION::Y, STAGGER::None);    
+		      deriv(a, result, "RGN_NOY");
+		      );
 
   ITERATOR_TEST_BLOCK(
-    "Region with stencil (parallel section nowait omp)",
-    BOUT_OMP(parallel)
-    {
-      stencil s;
-      BOUT_FOR_INNER(i, mesh->getRegion3D("RGN_NOY")) {
-        s.mm = nan("");
-        s.m = a[i.ym()];
-        s.c = a[i];
-        s.p = a[i.yp()];
-        s.pp = nan("");
-
-        result[i] = (s.p - s.m);
-      }
-    }
-    );
-
-   ITERATOR_TEST_BLOCK(
-    "Region with stencil (parallel section wait omp)",
-    BOUT_OMP(parallel)
-    {
-      stencil s;
-      BOUT_FOR_OMP(i, mesh->getRegion3D("RGN_NOY"), for schedule(guided)) {
-        s.mm = nan("");
-        s.m = a[i.ym()];
-        s.c = a[i];
-        s.p = a[i.yp()];
-        s.pp = nan("");
-
-        result[i] = (s.p - s.m);
-      }
-    }
-    );
-
+		      "Region with stencil",
+		      BOUT_OMP(parallel)
+		      {
+			stencil s;
+			BOUT_FOR_INNER(i, mesh->getRegion3D("RGN_NOY")) {
+			  s.m = a[i.ym()];
+			  s.c = a[i];
+			  s.p = a[i.yp()];
+	
+			  result[i] = (s.p - s.m);
+			}
+		      }
+		      );
+  
   ITERATOR_TEST_BLOCK(
-    "Region with stencil & raw ints (parallel section omp)",
-    const auto nz = mesh->LocalNz;
-    BOUT_OMP(parallel)
-    {
-      stencil s;
-      BOUT_FOR_INNER(i, mesh->getRegion3D("RGN_NOY")) {
-        s.mm = nan("");
-        s.m = a[i.ind - (nz)];
-        s.c = a[i.ind];
-        s.p = a[i.ind + (nz)];
-        s.pp = nan("");
+		      "Region with stencil and function pointer",
+		      BOUT_OMP(parallel)
+		      {
+			stencil s;
+			BOUT_FOR_INNER(i, mesh->getRegion3D("RGN_NOY")) {
+			  s.m = a[i.ym()];
+			  s.c = a[i];
+			  s.p = a[i.yp()];
 
-        result[i] = (s.p - s.m);
-      }
-    }
-    );
-
-  ITERATOR_TEST_BLOCK(
-    "Region with stencil (single loop omp)",
-    BOUT_OMP(parallel)
-    {
-      stencil s;
-      const auto &region = mesh->getRegion3D("RGN_NOY").getIndices();
-      BOUT_OMP(for schedule(guided))
-        for (auto i = region.cbegin(); i < region.cend(); ++i) {
-          s.mm = nan("");
-          s.m = a[i->ym()];
-          s.c = a[*i];
-          s.p = a[i->yp()];
-          s.pp = nan("");
-
-          result[*i] = (s.p - s.m);
-        }
-    }
-    );
-
-  ITERATOR_TEST_BLOCK(
-    "Region with stencil and function pointer (parallel section nowait omp)",
-    BOUT_OMP(parallel)
-    {
-      stencil s;
-      BOUT_FOR_INNER(i, mesh->getRegion3D("RGN_NOY")) {
-        s.mm = nan("");
-        s.m = a[i.ym()];
-        s.c = a[i];
-        s.p = a[i.yp()];
-        s.pp = nan("");
-
-        result[i] = func_ptr(s);
-      }
-    }
-    );
-
-#endif
+			  result[i] = func_ptr(s);
+			}
+		      }
+		      );
 
    if (profileMode) {
      int nthreads = 0;

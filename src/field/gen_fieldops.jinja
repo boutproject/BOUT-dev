@@ -1,28 +1,21 @@
 // Provide the C++ wrapper for {{operator_name}} of {{lhs}} and {{rhs}}
 {{out}} operator{{operator}}(const {{lhs.passByReference}}, const {{rhs.passByReference}}) {
-  {% if ((lhs in ["Field3D", "Field2D"]) and (rhs in ["Field3D", "Field2D"])) %}
-#if CHECK > 0
-  if ({{lhs.name}}.getLocation() != {{rhs.name}}.getLocation()) {
-    throw BoutException(
-        "Error in operator{{operator}}({{lhs}}, {{rhs}}): fields at different locations. lhs is at %s, rhs is at %s!",
-        strLocation({{lhs.name}}.getLocation()), strLocation({{rhs.name}}.getLocation()));
-  }
-#endif
-  {% endif %}
-
-  Mesh *localmesh = {{lhs.name if lhs.field_type != "BoutReal" else rhs.name}}.getMesh();
-
   {% if lhs != "BoutReal" and rhs != "BoutReal" %}
-    ASSERT1(localmesh == {{rhs.name}}.getMesh());
+    ASSERT1(areFieldsCompatible(lhs, rhs));
   {% endif %}
 
-  {{out.field_type}} {{out.name}}(localmesh);
-  {{out.name}}.allocate();
+  {{out.field_type}} {{out.name}}{emptyFrom({{lhs.name if lhs.field_type == out.field_type else rhs.name}})};
   checkData({{lhs.name}});
   checkData({{rhs.name}});
 
   {% if (out == "Field3D") and ((lhs == "Field2D") or (rhs =="Field2D")) %}
-    {{region_loop}}({{index_var}}, localmesh->getRegion2D({{region_name}})) {
+    Mesh *localmesh = {{lhs.name if lhs.field_type != "BoutReal" else rhs.name}}.getMesh();
+
+    {% if (lhs == "Field2D") %}
+    {{region_loop}}({{index_var}}, {{lhs.name}}.getRegion({{region_name}})) {
+    {% else %}
+    {{region_loop}}({{index_var}}, {{rhs.name}}.getRegion({{region_name}})) {
+    {% endif %}
 	const auto {{mixed_base_ind}} = localmesh->ind2Dto3D({{index_var}});
 	{% if (operator == "/") and (rhs == "Field2D") %}
            const auto tmp = 1.0 / {{rhs.mixed_index}};
@@ -34,14 +27,27 @@
         {% endif %}
 	}
 	}
+  {% elif out == "FieldPerp" and (lhs == "Field2D" or lhs == "Field3D" or rhs == "Field2D" or rhs == "Field3D")%}
+    Mesh *localmesh = {{lhs.name if lhs.field_type != "BoutReal" else rhs.name}}.getMesh();
+
+    {{region_loop}}({{index_var}}, {{out.name}}.getRegion({{region_name}})) {
+            int yind = {{lhs.name if lhs == "FieldPerp" else rhs.name}}.getIndex();
+            const auto {{mixed_base_ind}} = localmesh->indPerpto3D({{index_var}}, yind);
+            {% if lhs != "FieldPerp" %}
+	    {{out.index}} = {{lhs.base_index}} {{operator}} {{rhs.index}};
+            {% else %}
+	    {{out.index}} = {{lhs.index}} {{operator}} {{rhs.base_index}};
+            {% endif %}
+	}
+  {% elif (operator == "/") and (rhs == "BoutReal") %}
+      const auto tmp = 1.0 / {{rhs.index}};
+      {{region_loop}}({{index_var}}, {{out.name}}.getRegion({{region_name}})) {
+         {{out.index}} = {{lhs.index}} * tmp;
+      }
   {% else %}
-    {{region_loop}}({{index_var}}, localmesh->getRegion{{out.region_type}}({{region_name}})) {
+    {{region_loop}}({{index_var}}, {{out.name}}.getRegion({{region_name}})) {
 	    {{out.index}} = {{lhs.index}} {{operator}} {{rhs.index}};
 	}
-  {% endif %}
-
-  {% if out in ['Field3D','Field2D'] %}
-    {{out.name}}.setLocation({{rhs.name if rhs in ["Field3D","Field2D"] else lhs.name}}.getLocation());
   {% endif %}
 
   checkData({{out.name}});
@@ -54,25 +60,21 @@
   // only if data is unique we update the field
   // otherwise just call the non-inplace version
   if (data.unique()) {
-    {% if ((lhs in ["Field3D", "Field2D"]) and (rhs in ["Field3D", "Field2D"])) %}    
-#if CHECK > 0
-    if (this->getLocation() != rhs.getLocation()) {
-      throw BoutException(
-        "Error in {{lhs}}::operator{{operator}}=({{rhs}}): fields at different locations. lhs is at %s, rhs is at %s!",
-        strLocation(this->getLocation()), strLocation({{rhs.name}}.getLocation()));
-    }
-#endif
-    {% endif %}
-
     {% if lhs != "BoutReal" and rhs != "BoutReal" %}
-      ASSERT1(fieldmesh == {{rhs.name}}.getMesh());
+      ASSERT1(areFieldsCompatible(*this, rhs));
     {% endif %}
 
+    {% if (lhs == "Field3D") %}
+      // Delete existing parallel slices. We don't copy parallel slices, so any
+      // that currently exist will be incorrect.
+      clearParallelSlices();
+
+    {% endif %}
     checkData(*this);
     checkData({{rhs.name}});
 
-  {% if (out == "Field3D") and (rhs =="Field2D") %}  
-    {{region_loop}}({{index_var}}, fieldmesh->getRegion2D({{region_name}})) {
+  {% if (lhs == "Field3D") and (rhs =="Field2D") %}
+    {{region_loop}}({{index_var}}, {{rhs.name}}.getRegion({{region_name}})) {
 	const auto {{mixed_base_ind}} = fieldmesh->ind2Dto3D({{index_var}});
 	{% if (operator == "/") and (rhs == "Field2D") %}
            const auto tmp = 1.0 / {{rhs.mixed_index}};
@@ -84,8 +86,29 @@
         {% endif %}
 	}
 	}
+  {% elif lhs == "FieldPerp" and (rhs == "Field3D" or rhs == "Field2D")%}
+    Mesh *localmesh = this->getMesh();
+
+    {{region_loop}}({{index_var}}, this->getRegion({{region_name}})) {
+            int yind = this->getIndex();
+            const auto {{mixed_base_ind}} = localmesh->indPerpto3D({{index_var}}, yind);
+            (*this)[{{index_var}}] {{operator}}= {{rhs.base_index}};
+	}
+  {% elif rhs == "FieldPerp" and (lhs == "Field3D" or lhs == "Field2D")%}
+    Mesh *localmesh = this->getMesh();
+
+    {{region_loop}}({{index_var}}, {{rhs.name}}.getRegion({{region_name}})) {
+            int yind = {{rhs.name}}.getIndex();
+            const auto {{mixed_base_ind}} = localmesh->indPerpto3D({{index_var}}, yind);
+            (*this)[{{base_ind_var}}] {{operator}}= {{rhs.index}};
+	}
+  {% elif (operator == "/") and (lhs == "Field3D" or lhs == "Field2D") and (rhs =="BoutReal") %}
+    const auto tmp = 1.0 / {{rhs.index}};
+    {{region_loop}}({{index_var}}, this->getRegion({{region_name}})) {
+        (*this)[{{index_var}}] *= tmp;
+    }
   {% else %}
-    {{region_loop}}({{index_var}}, fieldmesh->getRegion{{lhs.region_type}}({{region_name}})) {
+    {{region_loop}}({{index_var}}, this->getRegion({{region_name}})) {
       (*this)[{{index_var}}] {{operator}}= {{rhs.index}};
     }
   {% endif %}

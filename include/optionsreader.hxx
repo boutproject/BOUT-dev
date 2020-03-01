@@ -35,9 +35,11 @@ class OptionsReader;
 #define __OPTIONSREADER_H__
 
 #include "options.hxx"
+#include "bout/format.hxx"
 
-#include <stdarg.h>
-#include <stdio.h>
+#include "fmt/format.h"
+
+#include <string>
 
 /// Class to handle reading options from file
 ///
@@ -64,14 +66,24 @@ class OptionsReader {
   ///
   /// @param[inout] options  The options section to insert values and subsections into
   /// @param[in] file  The name of the file. printf style arguments can be used to create the file name.
-  void read(Options *options, const char *file, ...);
+  void read(Options *options, const std::string& filename);
+
+  template <class S, class... Args>
+  void read(Options* options, const S& format, const Args&... args) {
+    return read(options, fmt::format(format, args...));
+  }
 
   /// Write options to file
   ///
   /// @param[in] options  The options tree to be written
   /// @param[in] file   The name of the file to (over)write
-  void write(Options *options, const char *file, ...);
-  
+  void write(Options *options, const std::string& filename);
+
+  template <class S, class... Args>
+  void write(Options* options, const S& format, const Args&... args) {
+    return write(options, fmt::format(format, args...));
+  }
+
   /// Parse options from the command line
   ///
   /// @param[inout] options The options section to insert values and subsections into
