@@ -844,8 +844,8 @@ configure_package_config_file(bout++Config.cmake.in bout++Config.cmake
   INSTALL_DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/bout++Config.cmake"
   )
 
-configure_package_config_file(tools/pylib/boututils/bout_config.py.cin tools/pylib/boututils/bout_config.py
-  INSTALL_DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/tools/pylib/boututils/bout_config.py"
+configure_package_config_file(tools/pylib/boutconfig/__init__.py.cin tools/pylib/boutconfig/__init__.py
+  INSTALL_DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/tools/pylib/boutconfig/__init__.py"
   )
 install(
   FILES
