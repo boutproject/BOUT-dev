@@ -65,23 +65,21 @@ def integrate(dat,low):
     return ret
 
 
+mesh_cache={}
 def test(bdry, func, loc):
+    print("Testing %s with %s at %s"%(bdry,func,loc),end=' ... ')
     errs=[]
     dy=[]
 
     for ny in np.logspace(start,mmax,num=mmax-start+1,base=2):
-        #try:
-        #    mesh=mesh_cache[ny]
-        #    y=y_cache[ny]
-        #except KeyError:
-        bc.setOption("mesh:ny","%d"%ny,force=True)
-        bc.setOption("mesh:dy","(1+0.8*sin(y))/%d*2*pi"%ny,force=True)
-        #y=
-        mesh=bc.Mesh(section="mesh")
-        #mesh_cache[ny]=mesh
-        #y=bc.create3D("realy",mesh,outloc=loc)
-        #    y_cache[ny]=y
-        #y = create(ny,loc != "CENTRE") # assuming we are not staggering in the 
+        global mesh_cache
+        try:
+            mesh=mesh_cache[ny]
+        except KeyError:
+            bc.setOption("mesh:ny","%d"%ny,force=True)
+            bc.setOption("mesh:dy","(1+0.8*sin(y))/%d*2*pi"%ny,force=True)
+            mesh=bc.Mesh(section="mesh")
+            mesh_cache[ny]=mesh
         mdy = mesh.coordinates.dy.get()[3,:].flatten()
         y=integrate(mdy,loc != "CENTRE")
         fd=func(y)
@@ -91,7 +89,6 @@ def test(bdry, func, loc):
             f[i,:,0] = fds
 
         fo=mget(f)
-        #y=mget(y)
         opt=bc.Options("")
 
         myg=int(opt.get("mesh:myg",0))
@@ -102,27 +99,20 @@ def test(bdry, func, loc):
 
         f.applyBoundary(bdry)
         f=mget(f)
-        #print(np.sum(mdy[2:-2])/np.pi,(y[-2]-y[1])/np.pi)
-        #print(y/np.pi)
         if doPlot > 2:
             plot([y,f,"with bc"],[y,fo,"org"],[y,"numpy"],[integrate(mdy,loc != "CENTRE"),"bc"])
-        #plot([y,f-fo])
         er=np.max(np.abs(f-fo))
         errs.append(er)
         dy.append(1./ny)
 
-    #print(np.max(er))
-
     errc=np.log(errs[-2]/errs[-1])
     difc=np.log(dy[-2]/dy[-1])
-    #print(dy)
-    #print(errs)
     conv=errc/difc
     success= order - .25 < conv < order + .25
     if doPlot > 1 or (not success and doPlot > 0):
         plot([dy,errs,"log","error vs spacing"])
-    #print(conv)
     if success:
+        print("Pass")
         return 0
     else:
         print("Failure: %s %s %s - expected %d, got %g"%(bdry,func,loc,order,conv))
@@ -146,9 +136,9 @@ testdata=[
 ]
 
 code=0
-locs=["CENTRE", "YLOW" ]
+locs=["CENTRE", "YLOW" ]#"XLOW", "YLOW", "ZLOW":]
 for bdry, func, forder in testdata:
-    for loc in locs:#"XLOW", "YLOW", "ZLOW"]:
+    for loc in locs:
         if isinstance(forder,list):
             order=forder[locs.index(loc)]
         else:
