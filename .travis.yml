@@ -91,7 +91,7 @@ jobs:
     env:
       - *default_env
       - OMP_NUM_THREADS=2
-      - PYTHONPATH="${TRAVIS_BUILD_DIR}/tools/pylib:$PYTHONPATH"
+      - PYTHONPATH="${TRAVIS_BUILD_DIR}/tools/pylib:${TRAVIS_BUILD_DIR}/build/tools/pylib:$PYTHONPATH"
     script:
       - ./.build_sundials_for_travis.sh
       - mkdir build && cd build
