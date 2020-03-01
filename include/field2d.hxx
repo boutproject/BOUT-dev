@@ -195,14 +195,6 @@ class Field2D : public Field, public FieldData {
   BoutReal& operator[](const Ind3D &d);
   const BoutReal& operator[](const Ind3D &d) const;
 
-  BoutReal& operator[](const Indices &d) {
-    return operator()(d.x,d.y);
-  }
-  const BoutReal& operator[](const Indices &d) const {
-    return operator()(d.x,d.y);
-  }
-
-
   /*!
    * Access to the underlying data array. 
    * 

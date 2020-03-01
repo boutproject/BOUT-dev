@@ -18,10 +18,12 @@ BoutReal f0, f1;};
 struct fac3{
 BoutReal f0, f1, f2;};
 struct fac4{
-BoutReal f0;
-BoutReal f1;
-BoutReal f2;
-BoutReal f3;};
+BoutReal f0, f1, f2, f3;};
+
+struct Indices{
+  int x,y,z;
+};
+
 """
 
 class_str="""

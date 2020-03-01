@@ -336,13 +336,6 @@ class Field3D : public Field, public FieldData {
     return data[d.ind];
   }
 
-  BoutReal& operator[](const Indices &d) {
-    return operator()(d.x,d.y,d.z);
-  }
-  const BoutReal& operator[](const Indices &d) const {
-    return operator()(d.x,d.y,d.z);
-  }
-
   BoutReal& operator()(const IndPerp &d, int jy);
   const BoutReal& operator()(const IndPerp &d, int jy) const;
 

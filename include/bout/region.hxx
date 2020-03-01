@@ -931,9 +931,4 @@ unsigned int size(const Region<T> &region){
   return region.size();
 }
 
-
-struct Indices{
-  int x,y,z;
-};
-
 #endif /* __REGION_H__ */

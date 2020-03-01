@@ -82,12 +82,12 @@ void BoundaryDirichletNonUniform_O2::apply(Field3D& f, BoutReal t) {
     if (stagger == 0) {
       x0 = 0;
       BoutReal st = 0;
-      t = spacing[i1];
+      t = spacing(i1.x, i1.y);
       x1 = st + t / 2;
       st += t;
     } else {
       x0 = 0; // spacing(bndry->x, bndry->y) / 2;
-      x1 = x0 + spacing[i1];
+      x1 = x0 + spacing(i1.x, i1.y);
     }
     if (stagger == -1) {
       i1 = {bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
@@ -95,7 +95,7 @@ void BoundaryDirichletNonUniform_O2::apply(Field3D& f, BoutReal t) {
     for (int i = istart; i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
       if (stagger == 0) {
-        t = spacing[ic] / 2;
+        t = spacing(ic.x, ic.y) / 2;
         x0 += t;
         x1 += t;
         // printf("%+2d: %d %d %g %g %g %g\n", stagger, ic.x, ic.y, x0, x1, x2, x3);
@@ -103,7 +103,7 @@ void BoundaryDirichletNonUniform_O2::apply(Field3D& f, BoutReal t) {
         x0 += t;
         x1 += t;
       } else {
-        t = spacing[ic];
+        t = spacing(ic.x, ic.y);
         if (stagger == -1 && i != -1) {
           x0 += t;
           x1 += t;
@@ -117,9 +117,9 @@ void BoundaryDirichletNonUniform_O2::apply(Field3D& f, BoutReal t) {
       for (ic.z = 0; ic.z < mesh->LocalNz; ic.z++) {
         i1.z = ic.z;
         val = (fg) ? vals[ic.z] : 0.0;
-        t = facs.f0 * val + facs.f1 * f[i1];
+        t = facs.f0 * val + facs.f1 * f(i1.x, i1.y, i1.z);
 
-        f[ic] = t;
+        f(ic.x, ic.y, ic.z) = t;
       }
     }
   }
@@ -217,17 +217,17 @@ void BoundaryNeumannNonUniform_O2::apply(Field3D& f, BoutReal t) {
     if (stagger == 0) {
       x0 = 0;
       BoutReal st = 0;
-      t = spacing[i1];
+      t = spacing(i1.x, i1.y);
       x1 = st + t / 2;
       st += t;
     } else {
       x0 = 0; // spacing(bndry->x, bndry->y) / 2;
-      x1 = x0 + spacing[i1];
+      x1 = x0 + spacing(i1.x, i1.y);
     }
     for (int i = 0; i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
       if (stagger == 0) {
-        t = spacing[ic] / 2;
+        t = spacing(ic.x, ic.y) / 2;
         x0 += t;
         x1 += t;
         // printf("%+2d: %d %d %g %g %g %g\n", stagger, ic.x, ic.y, x0, x1, x2, x3);
@@ -235,7 +235,7 @@ void BoundaryNeumannNonUniform_O2::apply(Field3D& f, BoutReal t) {
         x0 += t;
         x1 += t;
       } else {
-        t = spacing[ic];
+        t = spacing(ic.x, ic.y);
         if (stagger == -1) {
           x0 += t;
           x1 += t;
@@ -249,9 +249,9 @@ void BoundaryNeumannNonUniform_O2::apply(Field3D& f, BoutReal t) {
       for (ic.z = 0; ic.z < mesh->LocalNz; ic.z++) {
         i1.z = ic.z;
         val = (fg) ? vals[ic.z] : 0.0;
-        t = facs.f0 * val + facs.f1 * f[i1];
+        t = facs.f0 * val + facs.f1 * f(i1.x, i1.y, i1.z);
 
-        f[ic] = t;
+        f(ic.x, ic.y, ic.z) = t;
       }
     }
   }
@@ -348,21 +348,21 @@ void BoundaryFreeNonUniform_O2::apply(Field3D& f, BoutReal t) {
     Indices i1{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
     if (stagger == 0) {
       BoutReal st = 0;
-      t = spacing[i0];
+      t = spacing(i0.x, i0.y);
       x0 = st + t / 2;
       st += t;
-      t = spacing[i1];
+      t = spacing(i1.x, i1.y);
       x1 = st + t / 2;
       st += t;
     } else {
       x0 = 0;
-      x1 = x0 + spacing[i1];
+      x1 = x0 + spacing(i1.x, i1.y);
     }
 
     for (int i = 0; i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
       if (stagger == 0) {
-        t = spacing[ic] / 2;
+        t = spacing(ic.x, ic.y) / 2;
         x0 += t;
         x1 += t;
         // printf("%+2d: %d %d %g %g %g %g\n", stagger, ic.x, ic.y, x0, x1, x2, x3);
@@ -370,7 +370,7 @@ void BoundaryFreeNonUniform_O2::apply(Field3D& f, BoutReal t) {
         x0 += t;
         x1 += t;
       } else {
-        t = spacing[ic];
+        t = spacing(ic.x, ic.y);
         if (stagger == -1) {
           x0 += t;
           x1 += t;
@@ -383,9 +383,9 @@ void BoundaryFreeNonUniform_O2::apply(Field3D& f, BoutReal t) {
       }
       for (ic.z = 0; ic.z < mesh->LocalNz; ic.z++) {
         i1.z = ic.z;
-        t = facs.f0 * f[i0] + facs.f1 * f[i1];
+        t = facs.f0 * f(i0.x, i0.y, i0.z) + facs.f1 * f(i1.x, i1.y, i1.z);
 
-        f[ic] = t;
+        f(ic.x, ic.y, ic.z) = t;
       }
     }
   }
@@ -485,16 +485,16 @@ void BoundaryDirichletNonUniform_O3::apply(Field3D& f, BoutReal t) {
     if (stagger == 0) {
       x0 = 0;
       BoutReal st = 0;
-      t = spacing[i1];
+      t = spacing(i1.x, i1.y);
       x1 = st + t / 2;
       st += t;
-      t = spacing[i2];
+      t = spacing(i2.x, i2.y);
       x2 = st + t / 2;
       st += t;
     } else {
       x0 = 0; // spacing(bndry->x, bndry->y) / 2;
-      x1 = x0 + spacing[i1];
-      x2 = x1 + spacing[i2];
+      x1 = x0 + spacing(i1.x, i1.y);
+      x2 = x1 + spacing(i2.x, i2.y);
     }
     if (stagger == -1) {
       i1 = {bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
@@ -503,7 +503,7 @@ void BoundaryDirichletNonUniform_O3::apply(Field3D& f, BoutReal t) {
     for (int i = istart; i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
       if (stagger == 0) {
-        t = spacing[ic] / 2;
+        t = spacing(ic.x, ic.y) / 2;
         x0 += t;
         x1 += t;
         x2 += t;
@@ -513,7 +513,7 @@ void BoundaryDirichletNonUniform_O3::apply(Field3D& f, BoutReal t) {
         x1 += t;
         x2 += t;
       } else {
-        t = spacing[ic];
+        t = spacing(ic.x, ic.y);
         if (stagger == -1 && i != -1) {
           x0 += t;
           x1 += t;
@@ -530,9 +530,9 @@ void BoundaryDirichletNonUniform_O3::apply(Field3D& f, BoutReal t) {
         i1.z = ic.z;
         i2.z = ic.z;
         val = (fg) ? vals[ic.z] : 0.0;
-        t = facs.f0 * val + facs.f1 * f[i1] + facs.f2 * f[i2];
+        t = facs.f0 * val + facs.f1 * f(i1.x, i1.y, i1.z) + facs.f2 * f(i2.x, i2.y, i2.z);
 
-        f[ic] = t;
+        f(ic.x, ic.y, ic.z) = t;
       }
     }
   }
@@ -633,21 +633,21 @@ void BoundaryNeumannNonUniform_O3::apply(Field3D& f, BoutReal t) {
     if (stagger == 0) {
       x0 = 0;
       BoutReal st = 0;
-      t = spacing[i1];
+      t = spacing(i1.x, i1.y);
       x1 = st + t / 2;
       st += t;
-      t = spacing[i2];
+      t = spacing(i2.x, i2.y);
       x2 = st + t / 2;
       st += t;
     } else {
       x0 = 0; // spacing(bndry->x, bndry->y) / 2;
-      x1 = x0 + spacing[i1];
-      x2 = x1 + spacing[i2];
+      x1 = x0 + spacing(i1.x, i1.y);
+      x2 = x1 + spacing(i2.x, i2.y);
     }
     for (int i = 0; i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
       if (stagger == 0) {
-        t = spacing[ic] / 2;
+        t = spacing(ic.x, ic.y) / 2;
         x0 += t;
         x1 += t;
         x2 += t;
@@ -657,7 +657,7 @@ void BoundaryNeumannNonUniform_O3::apply(Field3D& f, BoutReal t) {
         x1 += t;
         x2 += t;
       } else {
-        t = spacing[ic];
+        t = spacing(ic.x, ic.y);
         if (stagger == -1) {
           x0 += t;
           x1 += t;
@@ -674,9 +674,9 @@ void BoundaryNeumannNonUniform_O3::apply(Field3D& f, BoutReal t) {
         i1.z = ic.z;
         i2.z = ic.z;
         val = (fg) ? vals[ic.z] : 0.0;
-        t = facs.f0 * val + facs.f1 * f[i1] + facs.f2 * f[i2];
+        t = facs.f0 * val + facs.f1 * f(i1.x, i1.y, i1.z) + facs.f2 * f(i2.x, i2.y, i2.z);
 
-        f[ic] = t;
+        f(ic.x, ic.y, ic.z) = t;
       }
     }
   }
@@ -776,25 +776,25 @@ void BoundaryFreeNonUniform_O3::apply(Field3D& f, BoutReal t) {
     Indices i2{bndry->x - 3 * bndry->bx, bndry->y - 3 * bndry->by, 0};
     if (stagger == 0) {
       BoutReal st = 0;
-      t = spacing[i0];
+      t = spacing(i0.x, i0.y);
       x0 = st + t / 2;
       st += t;
-      t = spacing[i1];
+      t = spacing(i1.x, i1.y);
       x1 = st + t / 2;
       st += t;
-      t = spacing[i2];
+      t = spacing(i2.x, i2.y);
       x2 = st + t / 2;
       st += t;
     } else {
       x0 = 0;
-      x1 = x0 + spacing[i1];
-      x2 = x1 + spacing[i2];
+      x1 = x0 + spacing(i1.x, i1.y);
+      x2 = x1 + spacing(i2.x, i2.y);
     }
 
     for (int i = 0; i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
       if (stagger == 0) {
-        t = spacing[ic] / 2;
+        t = spacing(ic.x, ic.y) / 2;
         x0 += t;
         x1 += t;
         x2 += t;
@@ -804,7 +804,7 @@ void BoundaryFreeNonUniform_O3::apply(Field3D& f, BoutReal t) {
         x1 += t;
         x2 += t;
       } else {
-        t = spacing[ic];
+        t = spacing(ic.x, ic.y);
         if (stagger == -1) {
           x0 += t;
           x1 += t;
@@ -820,9 +820,10 @@ void BoundaryFreeNonUniform_O3::apply(Field3D& f, BoutReal t) {
       for (ic.z = 0; ic.z < mesh->LocalNz; ic.z++) {
         i1.z = ic.z;
         i2.z = ic.z;
-        t = facs.f0 * f[i0] + facs.f1 * f[i1] + facs.f2 * f[i2];
+        t = facs.f0 * f(i0.x, i0.y, i0.z) + facs.f1 * f(i1.x, i1.y, i1.z)
+            + facs.f2 * f(i2.x, i2.y, i2.z);
 
-        f[ic] = t;
+        f(ic.x, ic.y, ic.z) = t;
       }
     }
   }
@@ -926,20 +927,20 @@ void BoundaryDirichletNonUniform_O4::apply(Field3D& f, BoutReal t) {
     if (stagger == 0) {
       x0 = 0;
       BoutReal st = 0;
-      t = spacing[i1];
+      t = spacing(i1.x, i1.y);
       x1 = st + t / 2;
       st += t;
-      t = spacing[i2];
+      t = spacing(i2.x, i2.y);
       x2 = st + t / 2;
       st += t;
-      t = spacing[i3];
+      t = spacing(i3.x, i3.y);
       x3 = st + t / 2;
       st += t;
     } else {
       x0 = 0; // spacing(bndry->x, bndry->y) / 2;
-      x1 = x0 + spacing[i1];
-      x2 = x1 + spacing[i2];
-      x3 = x2 + spacing[i3];
+      x1 = x0 + spacing(i1.x, i1.y);
+      x2 = x1 + spacing(i2.x, i2.y);
+      x3 = x2 + spacing(i3.x, i3.y);
     }
     if (stagger == -1) {
       i1 = {bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
@@ -949,7 +950,7 @@ void BoundaryDirichletNonUniform_O4::apply(Field3D& f, BoutReal t) {
     for (int i = istart; i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
       if (stagger == 0) {
-        t = spacing[ic] / 2;
+        t = spacing(ic.x, ic.y) / 2;
         x0 += t;
         x1 += t;
         x2 += t;
@@ -961,7 +962,7 @@ void BoundaryDirichletNonUniform_O4::apply(Field3D& f, BoutReal t) {
         x2 += t;
         x3 += t;
       } else {
-        t = spacing[ic];
+        t = spacing(ic.x, ic.y);
         if (stagger == -1 && i != -1) {
           x0 += t;
           x1 += t;
@@ -981,9 +982,10 @@ void BoundaryDirichletNonUniform_O4::apply(Field3D& f, BoutReal t) {
         i2.z = ic.z;
         i3.z = ic.z;
         val = (fg) ? vals[ic.z] : 0.0;
-        t = facs.f0 * val + facs.f1 * f[i1] + facs.f2 * f[i2] + facs.f3 * f[i3];
+        t = facs.f0 * val + facs.f1 * f(i1.x, i1.y, i1.z) + facs.f2 * f(i2.x, i2.y, i2.z)
+            + facs.f3 * f(i3.x, i3.y, i3.z);
 
-        f[ic] = t;
+        f(ic.x, ic.y, ic.z) = t;
       }
     }
   }
@@ -1088,25 +1090,25 @@ void BoundaryNeumannNonUniform_O4::apply(Field3D& f, BoutReal t) {
     if (stagger == 0) {
       x0 = 0;
       BoutReal st = 0;
-      t = spacing[i1];
+      t = spacing(i1.x, i1.y);
       x1 = st + t / 2;
       st += t;
-      t = spacing[i2];
+      t = spacing(i2.x, i2.y);
       x2 = st + t / 2;
       st += t;
-      t = spacing[i3];
+      t = spacing(i3.x, i3.y);
       x3 = st + t / 2;
       st += t;
     } else {
       x0 = 0; // spacing(bndry->x, bndry->y) / 2;
-      x1 = x0 + spacing[i1];
-      x2 = x1 + spacing[i2];
-      x3 = x2 + spacing[i3];
+      x1 = x0 + spacing(i1.x, i1.y);
+      x2 = x1 + spacing(i2.x, i2.y);
+      x3 = x2 + spacing(i3.x, i3.y);
     }
     for (int i = 0; i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
       if (stagger == 0) {
-        t = spacing[ic] / 2;
+        t = spacing(ic.x, ic.y) / 2;
         x0 += t;
         x1 += t;
         x2 += t;
@@ -1118,7 +1120,7 @@ void BoundaryNeumannNonUniform_O4::apply(Field3D& f, BoutReal t) {
         x2 += t;
         x3 += t;
       } else {
-        t = spacing[ic];
+        t = spacing(ic.x, ic.y);
         if (stagger == -1) {
           x0 += t;
           x1 += t;
@@ -1138,9 +1140,10 @@ void BoundaryNeumannNonUniform_O4::apply(Field3D& f, BoutReal t) {
         i2.z = ic.z;
         i3.z = ic.z;
         val = (fg) ? vals[ic.z] : 0.0;
-        t = facs.f0 * val + facs.f1 * f[i1] + facs.f2 * f[i2] + facs.f3 * f[i3];
+        t = facs.f0 * val + facs.f1 * f(i1.x, i1.y, i1.z) + facs.f2 * f(i2.x, i2.y, i2.z)
+            + facs.f3 * f(i3.x, i3.y, i3.z);
 
-        f[ic] = t;
+        f(ic.x, ic.y, ic.z) = t;
       }
     }
   }
@@ -1255,29 +1258,29 @@ void BoundaryFreeNonUniform_O4::apply(Field3D& f, BoutReal t) {
     Indices i3{bndry->x - 4 * bndry->bx, bndry->y - 4 * bndry->by, 0};
     if (stagger == 0) {
       BoutReal st = 0;
-      t = spacing[i0];
+      t = spacing(i0.x, i0.y);
       x0 = st + t / 2;
       st += t;
-      t = spacing[i1];
+      t = spacing(i1.x, i1.y);
       x1 = st + t / 2;
       st += t;
-      t = spacing[i2];
+      t = spacing(i2.x, i2.y);
       x2 = st + t / 2;
       st += t;
-      t = spacing[i3];
+      t = spacing(i3.x, i3.y);
       x3 = st + t / 2;
       st += t;
     } else {
       x0 = 0;
-      x1 = x0 + spacing[i1];
-      x2 = x1 + spacing[i2];
-      x3 = x2 + spacing[i3];
+      x1 = x0 + spacing(i1.x, i1.y);
+      x2 = x1 + spacing(i2.x, i2.y);
+      x3 = x2 + spacing(i3.x, i3.y);
     }
 
     for (int i = 0; i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
       if (stagger == 0) {
-        t = spacing[ic] / 2;
+        t = spacing(ic.x, ic.y) / 2;
         x0 += t;
         x1 += t;
         x2 += t;
@@ -1289,7 +1292,7 @@ void BoundaryFreeNonUniform_O4::apply(Field3D& f, BoutReal t) {
         x2 += t;
         x3 += t;
       } else {
-        t = spacing[ic];
+        t = spacing(ic.x, ic.y);
         if (stagger == -1) {
           x0 += t;
           x1 += t;
@@ -1308,9 +1311,10 @@ void BoundaryFreeNonUniform_O4::apply(Field3D& f, BoutReal t) {
         i1.z = ic.z;
         i2.z = ic.z;
         i3.z = ic.z;
-        t = facs.f0 * f[i0] + facs.f1 * f[i1] + facs.f2 * f[i2] + facs.f3 * f[i3];
+        t = facs.f0 * f(i0.x, i0.y, i0.z) + facs.f1 * f(i1.x, i1.y, i1.z)
+            + facs.f2 * f(i2.x, i2.y, i2.z) + facs.f3 * f(i3.x, i3.y, i3.z);
 
-        f[ic] = t;
+        f(ic.x, ic.y, ic.z) = t;
       }
     }
   }

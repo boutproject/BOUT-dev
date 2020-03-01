@@ -97,14 +97,14 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
       x0 = 0;
       BoutReal st=0;
 {% for i in range(1,order) %}
-      t = spacing[i{{i}}];
+      t = spacing(i{{i}}.x, i{{i}}.y);
       x{{i}} = st + t / 2;
       st += t;
 {% endfor %}
     } else {
       x0 = 0; // spacing(bndry->x, bndry->y) / 2;
 {% for i in range(1,order) %}
-      x{{i}} = x{{i-1}} + spacing[i{{i}}];
+      x{{i}} = x{{i-1}} + spacing(i{{i}}.x, i{{i}}.y);
 {% endfor %}
     }
 {% if type == "Dirichlet" %}
@@ -121,14 +121,14 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
     if (stagger == 0) {
       BoutReal st=0;
 {% for i in range(order) %}
-      t = spacing[i{{i}}];
+      t = spacing(i{{i}}.x, i{{i}}.y);
       x{{i}} = st + t / 2;
       st += t;
 {% endfor %}
     } else {
       x0 = 0;
 {% for i in range(1,order) %}
-      x{{i}} = x{{i-1}} + spacing[i{{i}}];
+      x{{i}} = x{{i-1}} + spacing(i{{i}}.x, i{{i}}.y);
 {% endfor %}
     }
 
@@ -140,7 +140,7 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
 {% endif %}
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
       if (stagger == 0) {
-        t = spacing[ic] / 2;
+        t = spacing(ic.x, ic.y) / 2;
 {% for i in range(order) %}
         x{{i}} += t;
 {% endfor %}
@@ -151,7 +151,7 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
         x{{i}} += t;
 {% endfor %}
       } else {
-        t = spacing[ic];
+        t = spacing(ic.x, ic.y);
         if (stagger == -1
 {% if type == "Dirichlet" %}
               && i != -1
@@ -177,14 +177,14 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
         val = (fg) ? vals[ic.z] : 0.0;
         t = facs.f0 * val 
 {% else %}
-        t = facs.f0 * f[i0]
+        t = facs.f0 * f(i0.x, i0.y, i0.z)
 {% endif %}
 {% for i in range(1,order) %}
-           + facs.f{{i}} *f[i{{i}}]
+           + facs.f{{i}} *f(i{{i}}.x, i{{i}}.y, i{{i}}.z)
 {% endfor %}
         ;
         
-        f[ic] = t;
+        f(ic.x, ic.y, ic.z) = t;
       }
     }
   }
