@@ -6,7 +6,7 @@ env=Environment(trim_blocks=True);
 
 
 orders=range(2,5)
-whats=["Dirichlet","Neumann","Free"]
+boundaries=["Dirichlet","Neumann","Free"]
 
 header="""
 #include <utility>
@@ -44,10 +44,10 @@ private:
 if __name__ == "__main__":
     print(header)
     for order in orders:
-        for what in whats:
+        for boundary in boundaries:
             args={
                 'order':order,
-                'what':what,
-                'class':"Boundary%sNonUniform_O%d"%(what,order),
+                'boundary':boundary,
+                'class':"Boundary%sNonUniform_O%d"%(boundary,order),
             }
             print(env.from_string(class_str).render(**args))

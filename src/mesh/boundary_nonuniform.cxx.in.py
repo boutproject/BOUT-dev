@@ -35,8 +35,15 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
   CELL_LOC loc = f.getLocation();
 
   BoutReal vals[mesh->LocalNz];
+  // NB: bx is going outwards
   int bx = bndry->bx;
   int by = bndry->by;
+  // NB: XLOW means shifted in -x direction
+  // `stagger` stagger direction with respect to direction of boundary
+  //   0 : no stagger or orthogonal to boundary direction
+  //   1 : staggerd in direction of boundary
+  //  -1 : staggerd in oposite direction of boundary
+  // Also note that all offsets are basically half a cell
   int stagger = 0;
   if (loc == CELL_XLOW) {
     if (bx == 0) {
@@ -79,7 +86,7 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
     BoutReal x{{i}};
 {% endfor %}
 
-    const Field2D &dy =
+    const Field2D &spacing =
         bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
 {% if type != "Free" %}
 {% for i in range(1,order) %}
@@ -90,14 +97,14 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
       x0 = 0;
       BoutReal st=0;
 {% for i in range(1,order) %}
-      t = dy[i{{i}}];
+      t = spacing[i{{i}}];
       x{{i}} = st + t / 2;
       st += t;
 {% endfor %}
     } else {
-      x0 = 0; // dy(bndry->x, bndry->y) / 2;
+      x0 = 0; // spacing(bndry->x, bndry->y) / 2;
 {% for i in range(1,order) %}
-      x{{i}} = x{{i-1}} + dy[i{{i}}];
+      x{{i}} = x{{i-1}} + spacing[i{{i}}];
 {% endfor %}
     }
 {% if type == "Dirichlet" %}
@@ -114,14 +121,14 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
     if (stagger == 0) {
       BoutReal st=0;
 {% for i in range(order) %}
-      t = dy[i{{i}}];
+      t = spacing[i{{i}}];
       x{{i}} = st + t / 2;
       st += t;
 {% endfor %}
     } else {
       x0 = 0;
 {% for i in range(1,order) %}
-      x{{i}} = x{{i-1}} + dy[i{{i}}];
+      x{{i}} = x{{i-1}} + spacing[i{{i}}];
 {% endfor %}
     }
 
@@ -133,7 +140,7 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
 {% endif %}
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
       if (stagger == 0) {
-        t = dy[ic] / 2;
+        t = spacing[ic] / 2;
 {% for i in range(order) %}
         x{{i}} += t;
 {% endfor %}
@@ -145,7 +152,7 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
         x{{i}} += t;
 {% endfor %}
       } else {
-        t = dy[ic];
+        t = spacing[ic];
         if (stagger == -1
 {% if type == "Dirichlet" %}
               && i != -1

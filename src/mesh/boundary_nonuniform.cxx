@@ -25,8 +25,15 @@ void BoundaryDirichletNonUniform_O2::apply(Field3D& f, BoutReal t) {
   CELL_LOC loc = f.getLocation();
 
   BoutReal vals[mesh->LocalNz];
+  // NB: bx is going outwards
   int bx = bndry->bx;
   int by = bndry->by;
+  // NB: XLOW means shifted in -x direction
+  // `stagger` stagger direction with respect to direction of boundary
+  //   0 : no stagger or orthogonal to boundary direction
+  //   1 : staggerd in direction of boundary
+  //  -1 : staggerd in oposite direction of boundary
+  // Also note that all offsets are basically half a cell
   int stagger = 0;
   if (loc == CELL_XLOW) {
     if (bx == 0) {
@@ -69,19 +76,19 @@ void BoundaryDirichletNonUniform_O2::apply(Field3D& f, BoutReal t) {
     BoutReal fac1;
     BoutReal x1;
 
-    const Field2D& dy =
+    const Field2D& spacing =
         bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
     Indices i1{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
     BoutReal t;
     if (stagger == 0) {
       x0 = 0;
       BoutReal st = 0;
-      t = dy[i1];
+      t = spacing[i1];
       x1 = st + t / 2;
       st += t;
     } else {
-      x0 = 0; // dy(bndry->x, bndry->y) / 2;
-      x1 = x0 + dy[i1];
+      x0 = 0; // spacing(bndry->x, bndry->y) / 2;
+      x1 = x0 + spacing[i1];
     }
     if (stagger == -1) {
       i1 = {bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
@@ -89,7 +96,7 @@ void BoundaryDirichletNonUniform_O2::apply(Field3D& f, BoutReal t) {
     for (int i = istart; i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
       if (stagger == 0) {
-        t = dy[ic] / 2;
+        t = spacing[ic] / 2;
         x0 += t;
         x1 += t;
         // printf("%+2d: %d %d %g %g %g %g\n", stagger, ic.x, ic.y, x0, x1, x2, x3);
@@ -97,7 +104,7 @@ void BoundaryDirichletNonUniform_O2::apply(Field3D& f, BoutReal t) {
         x0 += t;
         x1 += t;
       } else {
-        t = dy[ic];
+        t = spacing[ic];
         if (stagger == -1 && i != -1) {
           x0 += t;
           x1 += t;
@@ -153,8 +160,15 @@ void BoundaryNeumannNonUniform_O2::apply(Field3D& f, BoutReal t) {
   CELL_LOC loc = f.getLocation();
 
   BoutReal vals[mesh->LocalNz];
+  // NB: bx is going outwards
   int bx = bndry->bx;
   int by = bndry->by;
+  // NB: XLOW means shifted in -x direction
+  // `stagger` stagger direction with respect to direction of boundary
+  //   0 : no stagger or orthogonal to boundary direction
+  //   1 : staggerd in direction of boundary
+  //  -1 : staggerd in oposite direction of boundary
+  // Also note that all offsets are basically half a cell
   int stagger = 0;
   if (loc == CELL_XLOW) {
     if (bx == 0) {
@@ -196,24 +210,24 @@ void BoundaryNeumannNonUniform_O2::apply(Field3D& f, BoutReal t) {
     BoutReal fac1;
     BoutReal x1;
 
-    const Field2D& dy =
+    const Field2D& spacing =
         bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
     Indices i1{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
     BoutReal t;
     if (stagger == 0) {
       x0 = 0;
       BoutReal st = 0;
-      t = dy[i1];
+      t = spacing[i1];
       x1 = st + t / 2;
       st += t;
     } else {
-      x0 = 0; // dy(bndry->x, bndry->y) / 2;
-      x1 = x0 + dy[i1];
+      x0 = 0; // spacing(bndry->x, bndry->y) / 2;
+      x1 = x0 + spacing[i1];
     }
     for (int i = 0; i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
       if (stagger == 0) {
-        t = dy[ic] / 2;
+        t = spacing[ic] / 2;
         x0 += t;
         x1 += t;
         // printf("%+2d: %d %d %g %g %g %g\n", stagger, ic.x, ic.y, x0, x1, x2, x3);
@@ -221,7 +235,7 @@ void BoundaryNeumannNonUniform_O2::apply(Field3D& f, BoutReal t) {
         x0 += t;
         x1 += t;
       } else {
-        t = dy[ic];
+        t = spacing[ic];
         if (stagger == -1) {
           x0 += t;
           x1 += t;
@@ -277,8 +291,15 @@ void BoundaryFreeNonUniform_O2::apply(Field3D& f, BoutReal t) {
   CELL_LOC loc = f.getLocation();
 
   BoutReal vals[mesh->LocalNz];
+  // NB: bx is going outwards
   int bx = bndry->bx;
   int by = bndry->by;
+  // NB: XLOW means shifted in -x direction
+  // `stagger` stagger direction with respect to direction of boundary
+  //   0 : no stagger or orthogonal to boundary direction
+  //   1 : staggerd in direction of boundary
+  //  -1 : staggerd in oposite direction of boundary
+  // Also note that all offsets are basically half a cell
   int stagger = 0;
   if (loc == CELL_XLOW) {
     if (bx == 0) {
@@ -320,27 +341,27 @@ void BoundaryFreeNonUniform_O2::apply(Field3D& f, BoutReal t) {
     BoutReal fac1;
     BoutReal x1;
 
-    const Field2D& dy =
+    const Field2D& spacing =
         bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
     Indices i0{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
     Indices i1{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
     if (stagger == 0) {
       BoutReal st = 0;
-      t = dy[i0];
+      t = spacing[i0];
       x0 = st + t / 2;
       st += t;
-      t = dy[i1];
+      t = spacing[i1];
       x1 = st + t / 2;
       st += t;
     } else {
       x0 = 0;
-      x1 = x0 + dy[i1];
+      x1 = x0 + spacing[i1];
     }
 
     for (int i = 0; i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
       if (stagger == 0) {
-        t = dy[ic] / 2;
+        t = spacing[ic] / 2;
         x0 += t;
         x1 += t;
         // printf("%+2d: %d %d %g %g %g %g\n", stagger, ic.x, ic.y, x0, x1, x2, x3);
@@ -348,7 +369,7 @@ void BoundaryFreeNonUniform_O2::apply(Field3D& f, BoutReal t) {
         x0 += t;
         x1 += t;
       } else {
-        t = dy[ic];
+        t = spacing[ic];
         if (stagger == -1) {
           x0 += t;
           x1 += t;
@@ -403,8 +424,15 @@ void BoundaryDirichletNonUniform_O3::apply(Field3D& f, BoutReal t) {
   CELL_LOC loc = f.getLocation();
 
   BoutReal vals[mesh->LocalNz];
+  // NB: bx is going outwards
   int bx = bndry->bx;
   int by = bndry->by;
+  // NB: XLOW means shifted in -x direction
+  // `stagger` stagger direction with respect to direction of boundary
+  //   0 : no stagger or orthogonal to boundary direction
+  //   1 : staggerd in direction of boundary
+  //  -1 : staggerd in oposite direction of boundary
+  // Also note that all offsets are basically half a cell
   int stagger = 0;
   if (loc == CELL_XLOW) {
     if (bx == 0) {
@@ -449,7 +477,7 @@ void BoundaryDirichletNonUniform_O3::apply(Field3D& f, BoutReal t) {
     BoutReal fac2;
     BoutReal x2;
 
-    const Field2D& dy =
+    const Field2D& spacing =
         bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
     Indices i1{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
     Indices i2{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
@@ -457,16 +485,16 @@ void BoundaryDirichletNonUniform_O3::apply(Field3D& f, BoutReal t) {
     if (stagger == 0) {
       x0 = 0;
       BoutReal st = 0;
-      t = dy[i1];
+      t = spacing[i1];
       x1 = st + t / 2;
       st += t;
-      t = dy[i2];
+      t = spacing[i2];
       x2 = st + t / 2;
       st += t;
     } else {
-      x0 = 0; // dy(bndry->x, bndry->y) / 2;
-      x1 = x0 + dy[i1];
-      x2 = x1 + dy[i2];
+      x0 = 0; // spacing(bndry->x, bndry->y) / 2;
+      x1 = x0 + spacing[i1];
+      x2 = x1 + spacing[i2];
     }
     if (stagger == -1) {
       i1 = {bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
@@ -475,7 +503,7 @@ void BoundaryDirichletNonUniform_O3::apply(Field3D& f, BoutReal t) {
     for (int i = istart; i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
       if (stagger == 0) {
-        t = dy[ic] / 2;
+        t = spacing[ic] / 2;
         x0 += t;
         x1 += t;
         x2 += t;
@@ -485,7 +513,7 @@ void BoundaryDirichletNonUniform_O3::apply(Field3D& f, BoutReal t) {
         x1 += t;
         x2 += t;
       } else {
-        t = dy[ic];
+        t = spacing[ic];
         if (stagger == -1 && i != -1) {
           x0 += t;
           x1 += t;
@@ -546,8 +574,15 @@ void BoundaryNeumannNonUniform_O3::apply(Field3D& f, BoutReal t) {
   CELL_LOC loc = f.getLocation();
 
   BoutReal vals[mesh->LocalNz];
+  // NB: bx is going outwards
   int bx = bndry->bx;
   int by = bndry->by;
+  // NB: XLOW means shifted in -x direction
+  // `stagger` stagger direction with respect to direction of boundary
+  //   0 : no stagger or orthogonal to boundary direction
+  //   1 : staggerd in direction of boundary
+  //  -1 : staggerd in oposite direction of boundary
+  // Also note that all offsets are basically half a cell
   int stagger = 0;
   if (loc == CELL_XLOW) {
     if (bx == 0) {
@@ -591,7 +626,7 @@ void BoundaryNeumannNonUniform_O3::apply(Field3D& f, BoutReal t) {
     BoutReal fac2;
     BoutReal x2;
 
-    const Field2D& dy =
+    const Field2D& spacing =
         bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
     Indices i1{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
     Indices i2{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
@@ -599,21 +634,21 @@ void BoundaryNeumannNonUniform_O3::apply(Field3D& f, BoutReal t) {
     if (stagger == 0) {
       x0 = 0;
       BoutReal st = 0;
-      t = dy[i1];
+      t = spacing[i1];
       x1 = st + t / 2;
       st += t;
-      t = dy[i2];
+      t = spacing[i2];
       x2 = st + t / 2;
       st += t;
     } else {
-      x0 = 0; // dy(bndry->x, bndry->y) / 2;
-      x1 = x0 + dy[i1];
-      x2 = x1 + dy[i2];
+      x0 = 0; // spacing(bndry->x, bndry->y) / 2;
+      x1 = x0 + spacing[i1];
+      x2 = x1 + spacing[i2];
     }
     for (int i = 0; i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
       if (stagger == 0) {
-        t = dy[ic] / 2;
+        t = spacing[ic] / 2;
         x0 += t;
         x1 += t;
         x2 += t;
@@ -623,7 +658,7 @@ void BoundaryNeumannNonUniform_O3::apply(Field3D& f, BoutReal t) {
         x1 += t;
         x2 += t;
       } else {
-        t = dy[ic];
+        t = spacing[ic];
         if (stagger == -1) {
           x0 += t;
           x1 += t;
@@ -684,8 +719,15 @@ void BoundaryFreeNonUniform_O3::apply(Field3D& f, BoutReal t) {
   CELL_LOC loc = f.getLocation();
 
   BoutReal vals[mesh->LocalNz];
+  // NB: bx is going outwards
   int bx = bndry->bx;
   int by = bndry->by;
+  // NB: XLOW means shifted in -x direction
+  // `stagger` stagger direction with respect to direction of boundary
+  //   0 : no stagger or orthogonal to boundary direction
+  //   1 : staggerd in direction of boundary
+  //  -1 : staggerd in oposite direction of boundary
+  // Also note that all offsets are basically half a cell
   int stagger = 0;
   if (loc == CELL_XLOW) {
     if (bx == 0) {
@@ -729,32 +771,32 @@ void BoundaryFreeNonUniform_O3::apply(Field3D& f, BoutReal t) {
     BoutReal fac2;
     BoutReal x2;
 
-    const Field2D& dy =
+    const Field2D& spacing =
         bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
     Indices i0{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
     Indices i1{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
     Indices i2{bndry->x - 3 * bndry->bx, bndry->y - 3 * bndry->by, 0};
     if (stagger == 0) {
       BoutReal st = 0;
-      t = dy[i0];
+      t = spacing[i0];
       x0 = st + t / 2;
       st += t;
-      t = dy[i1];
+      t = spacing[i1];
       x1 = st + t / 2;
       st += t;
-      t = dy[i2];
+      t = spacing[i2];
       x2 = st + t / 2;
       st += t;
     } else {
       x0 = 0;
-      x1 = x0 + dy[i1];
-      x2 = x1 + dy[i2];
+      x1 = x0 + spacing[i1];
+      x2 = x1 + spacing[i2];
     }
 
     for (int i = 0; i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
       if (stagger == 0) {
-        t = dy[ic] / 2;
+        t = spacing[ic] / 2;
         x0 += t;
         x1 += t;
         x2 += t;
@@ -764,7 +806,7 @@ void BoundaryFreeNonUniform_O3::apply(Field3D& f, BoutReal t) {
         x1 += t;
         x2 += t;
       } else {
-        t = dy[ic];
+        t = spacing[ic];
         if (stagger == -1) {
           x0 += t;
           x1 += t;
@@ -824,8 +866,15 @@ void BoundaryDirichletNonUniform_O4::apply(Field3D& f, BoutReal t) {
   CELL_LOC loc = f.getLocation();
 
   BoutReal vals[mesh->LocalNz];
+  // NB: bx is going outwards
   int bx = bndry->bx;
   int by = bndry->by;
+  // NB: XLOW means shifted in -x direction
+  // `stagger` stagger direction with respect to direction of boundary
+  //   0 : no stagger or orthogonal to boundary direction
+  //   1 : staggerd in direction of boundary
+  //  -1 : staggerd in oposite direction of boundary
+  // Also note that all offsets are basically half a cell
   int stagger = 0;
   if (loc == CELL_XLOW) {
     if (bx == 0) {
@@ -872,7 +921,7 @@ void BoundaryDirichletNonUniform_O4::apply(Field3D& f, BoutReal t) {
     BoutReal fac3;
     BoutReal x3;
 
-    const Field2D& dy =
+    const Field2D& spacing =
         bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
     Indices i1{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
     Indices i2{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
@@ -881,20 +930,20 @@ void BoundaryDirichletNonUniform_O4::apply(Field3D& f, BoutReal t) {
     if (stagger == 0) {
       x0 = 0;
       BoutReal st = 0;
-      t = dy[i1];
+      t = spacing[i1];
       x1 = st + t / 2;
       st += t;
-      t = dy[i2];
+      t = spacing[i2];
       x2 = st + t / 2;
       st += t;
-      t = dy[i3];
+      t = spacing[i3];
       x3 = st + t / 2;
       st += t;
     } else {
-      x0 = 0; // dy(bndry->x, bndry->y) / 2;
-      x1 = x0 + dy[i1];
-      x2 = x1 + dy[i2];
-      x3 = x2 + dy[i3];
+      x0 = 0; // spacing(bndry->x, bndry->y) / 2;
+      x1 = x0 + spacing[i1];
+      x2 = x1 + spacing[i2];
+      x3 = x2 + spacing[i3];
     }
     if (stagger == -1) {
       i1 = {bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
@@ -904,7 +953,7 @@ void BoundaryDirichletNonUniform_O4::apply(Field3D& f, BoutReal t) {
     for (int i = istart; i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
       if (stagger == 0) {
-        t = dy[ic] / 2;
+        t = spacing[ic] / 2;
         x0 += t;
         x1 += t;
         x2 += t;
@@ -916,7 +965,7 @@ void BoundaryDirichletNonUniform_O4::apply(Field3D& f, BoutReal t) {
         x2 += t;
         x3 += t;
       } else {
-        t = dy[ic];
+        t = spacing[ic];
         if (stagger == -1 && i != -1) {
           x0 += t;
           x1 += t;
@@ -980,8 +1029,15 @@ void BoundaryNeumannNonUniform_O4::apply(Field3D& f, BoutReal t) {
   CELL_LOC loc = f.getLocation();
 
   BoutReal vals[mesh->LocalNz];
+  // NB: bx is going outwards
   int bx = bndry->bx;
   int by = bndry->by;
+  // NB: XLOW means shifted in -x direction
+  // `stagger` stagger direction with respect to direction of boundary
+  //   0 : no stagger or orthogonal to boundary direction
+  //   1 : staggerd in direction of boundary
+  //  -1 : staggerd in oposite direction of boundary
+  // Also note that all offsets are basically half a cell
   int stagger = 0;
   if (loc == CELL_XLOW) {
     if (bx == 0) {
@@ -1027,7 +1083,7 @@ void BoundaryNeumannNonUniform_O4::apply(Field3D& f, BoutReal t) {
     BoutReal fac3;
     BoutReal x3;
 
-    const Field2D& dy =
+    const Field2D& spacing =
         bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
     Indices i1{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
     Indices i2{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
@@ -1036,25 +1092,25 @@ void BoundaryNeumannNonUniform_O4::apply(Field3D& f, BoutReal t) {
     if (stagger == 0) {
       x0 = 0;
       BoutReal st = 0;
-      t = dy[i1];
+      t = spacing[i1];
       x1 = st + t / 2;
       st += t;
-      t = dy[i2];
+      t = spacing[i2];
       x2 = st + t / 2;
       st += t;
-      t = dy[i3];
+      t = spacing[i3];
       x3 = st + t / 2;
       st += t;
     } else {
-      x0 = 0; // dy(bndry->x, bndry->y) / 2;
-      x1 = x0 + dy[i1];
-      x2 = x1 + dy[i2];
-      x3 = x2 + dy[i3];
+      x0 = 0; // spacing(bndry->x, bndry->y) / 2;
+      x1 = x0 + spacing[i1];
+      x2 = x1 + spacing[i2];
+      x3 = x2 + spacing[i3];
     }
     for (int i = 0; i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
       if (stagger == 0) {
-        t = dy[ic] / 2;
+        t = spacing[ic] / 2;
         x0 += t;
         x1 += t;
         x2 += t;
@@ -1066,7 +1122,7 @@ void BoundaryNeumannNonUniform_O4::apply(Field3D& f, BoutReal t) {
         x2 += t;
         x3 += t;
       } else {
-        t = dy[ic];
+        t = spacing[ic];
         if (stagger == -1) {
           x0 += t;
           x1 += t;
@@ -1143,8 +1199,15 @@ void BoundaryFreeNonUniform_O4::apply(Field3D& f, BoutReal t) {
   CELL_LOC loc = f.getLocation();
 
   BoutReal vals[mesh->LocalNz];
+  // NB: bx is going outwards
   int bx = bndry->bx;
   int by = bndry->by;
+  // NB: XLOW means shifted in -x direction
+  // `stagger` stagger direction with respect to direction of boundary
+  //   0 : no stagger or orthogonal to boundary direction
+  //   1 : staggerd in direction of boundary
+  //  -1 : staggerd in oposite direction of boundary
+  // Also note that all offsets are basically half a cell
   int stagger = 0;
   if (loc == CELL_XLOW) {
     if (bx == 0) {
@@ -1190,7 +1253,7 @@ void BoundaryFreeNonUniform_O4::apply(Field3D& f, BoutReal t) {
     BoutReal fac3;
     BoutReal x3;
 
-    const Field2D& dy =
+    const Field2D& spacing =
         bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
     Indices i0{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
     Indices i1{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
@@ -1198,29 +1261,29 @@ void BoundaryFreeNonUniform_O4::apply(Field3D& f, BoutReal t) {
     Indices i3{bndry->x - 4 * bndry->bx, bndry->y - 4 * bndry->by, 0};
     if (stagger == 0) {
       BoutReal st = 0;
-      t = dy[i0];
+      t = spacing[i0];
       x0 = st + t / 2;
       st += t;
-      t = dy[i1];
+      t = spacing[i1];
       x1 = st + t / 2;
       st += t;
-      t = dy[i2];
+      t = spacing[i2];
       x2 = st + t / 2;
       st += t;
-      t = dy[i3];
+      t = spacing[i3];
       x3 = st + t / 2;
       st += t;
     } else {
       x0 = 0;
-      x1 = x0 + dy[i1];
-      x2 = x1 + dy[i2];
-      x3 = x2 + dy[i3];
+      x1 = x0 + spacing[i1];
+      x2 = x1 + spacing[i2];
+      x3 = x2 + spacing[i3];
     }
 
     for (int i = 0; i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
       if (stagger == 0) {
-        t = dy[ic] / 2;
+        t = spacing[ic] / 2;
         x0 += t;
         x1 += t;
         x2 += t;
@@ -1232,7 +1295,7 @@ void BoundaryFreeNonUniform_O4::apply(Field3D& f, BoutReal t) {
         x2 += t;
         x3 += t;
       } else {
-        t = dy[ic];
+        t = spacing[ic];
         if (stagger == -1) {
           x0 += t;
           x1 += t;
