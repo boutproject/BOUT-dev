@@ -188,7 +188,7 @@ BoutReal FieldBallooning::generate(double x, double y, double z, double t) {
     (mesh->xend - mesh->xstart);
   int jx = ROUND((x - mesh->GlobalX(0)) / dx);
 
-  ASSERT1(coords->zlength().isConst("RGN_ALL"));
+  ASSERT1(isConst(coords->zlength()));
 
   if(mesh->periodicY(jx, ts)) {
     // Start with the value at this point

@@ -364,7 +364,7 @@ void Laplacian::tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
                              const Field2D *a, const Field2D *ccoef,
                              const Field2D *d) {
 
-  ASSERT3(coords->zlength().isConst("RGN_ALL"));
+  ASSERT3(isConst(coords->zlength()));
   BOUT_OMP(parallel for)
   for(int kz = 0; kz <= maxmode; kz++) {
     BoutReal kwave=kz*2.0*PI/coords->zlength()(0,jy); // wave number is 1/[rad]

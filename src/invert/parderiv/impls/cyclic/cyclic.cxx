@@ -96,7 +96,7 @@ const Field3D InvertParCR::solve(const Field3D &f) {
   auto b = Matrix<dcomplex>(nsys, size);
   auto c = Matrix<dcomplex>(nsys, size);
 
-  ASSERT1(coord->zlength().isConst("RGN_ALL"));
+  ASSERT1(isConst(coord->zlength()));
   // Loop over flux-surfaces
   for (surf.first(); !surf.isDone(); surf.next()) {
     int x = surf.xpos;

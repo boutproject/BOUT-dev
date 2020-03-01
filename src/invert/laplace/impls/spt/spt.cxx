@@ -291,7 +291,7 @@ int LaplaceSPT::start(const FieldPerp &b, SPT_data &data) {
       data.bk(kz, ix) = dc1d[kz];
   }
 
-  ASSERT1(coords->zlength().isConst("RGN_ALL"));
+  ASSERT1(isConst(coords->zlength()));
   BoutReal kwaveFactor = 2.0 * PI / coords->zlength()(0,0);
 
   /// Set matrix elements

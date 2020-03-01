@@ -118,7 +118,7 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
     outbndry = 1;
 
   if(dst) {
-    ASSERT1(coords->dz.isConst("RGN_ALL"));
+    ASSERT1(isConst(coords->dz));
     BOUT_OMP(parallel) {
       /// Create a local thread-scope working array
       auto k1d =

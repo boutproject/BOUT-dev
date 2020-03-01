@@ -359,6 +359,24 @@ inline BoutReal min(const T& f, bool allpe, REGION rgn) {
   return min(f, allpe, toString(rgn));
 }
 
+
+template<typename T, typename = bout::utils::EnableIfField<T>>
+inline bool isConst(const T& f, bool allpe = false, const std::string& region = "RGN_ALL") {
+  bool result = true;
+  auto element = f[*f.getRegion(region).begin()];
+  BOUT_FOR_SERIAL(i, f.getRegion(region)){
+    if (f[i] != element){
+      result=false;
+      break;
+    }
+  }
+  if(allpe) {
+    bool localresult = result;
+    MPI_Allreduce(&localresult, &result, 1, MPI_C_BOOL, MPI_LOR, BoutComm::get());
+  }
+  return result;
+}
+
 template<typename T, typename = bout::utils::EnableIfField<T>>
 inline BoutReal max(const T& f, bool allpe = false, const std::string& rgn = "RGN_NOBNDRY") {
   AUTO_TRACE();

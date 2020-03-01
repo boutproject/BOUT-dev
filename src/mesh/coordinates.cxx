@@ -642,8 +642,6 @@ Coordinates::Coordinates(Mesh *mesh, Options* options, const CELL_LOC loc,
   bool extrapolate_x = true;
   bool extrapolate_y = true;
 
-  setParallelTransform(options);
-
   if (!force_interpolate_from_centre && mesh->sourceHasVar("dx"+suffix)) {
 
     extrapolate_x = not mesh->sourceHasXBoundaryGuards();
@@ -659,7 +657,20 @@ Coordinates::Coordinates(Mesh *mesh, Options* options, const CELL_LOC loc,
             "cells\n"));
     }
 
-    getAtLoc(mesh, dz, "dz", suffix, location, 1.0);
+    {
+      auto& options = Options::root();
+      const bool has_zperiod = options.isSet("zperiod");
+      const auto zmin = has_zperiod ? 0.0 : options["ZMIN"].withDefault(0.0);
+      const auto zmax = has_zperiod ? 1.0 / options["zperiod"].withDefault(1.0)
+                                    : options["ZMAX"].withDefault(1.0);
+
+      const auto default_dz = (zmax - zmin) * TWOPI / nz;
+      printf("getting dz staggered\n");
+      getAtLoc(mesh, dz, "dz", suffix, location, default_dz);
+      printf("dz staggered is %e\n",dz(0,0,0));
+    }
+    setParallelTransform(options);
+
     dz = interpolateAndExtrapolate(dz, location, extrapolate_x, extrapolate_y, false);
 
     getAtLoc(mesh, dx, "dx", suffix, location, 1.0);
@@ -762,8 +773,16 @@ Coordinates::Coordinates(Mesh *mesh, Options* options, const CELL_LOC loc,
   } else {
     // Interpolate fields from coords_in
 
+    if (isConst(coords_in->dz)){
+      dz = coords_in->dz;
+      dz.setLocation(location);
+    } else {
+      throw BoutException("We are asked to transform dz to get dz before we have a transform, which might require dz!\nPlease provide a dz for the staggered quantity!");
+    }
+    setParallelTransform(options);
     dx = interpolateAndExtrapolate(coords_in->dx, location, true, true, false);
     dy = interpolateAndExtrapolate(coords_in->dy, location, true, true, false);
+    // not really needed - we have used dz already ...
     dz = interpolateAndExtrapolate(coords_in->dz, location, true, true, false);
 
     // Diagonal components of metric tensor g^{ij}
@@ -876,7 +895,7 @@ void Coordinates::outputVars(Datafile& file) {
 int Coordinates::geometry(bool recalculate_staggered,
     bool force_interpolate_from_centre) {
   TRACE("Coordinates::geometry");
-  communicate(dx, dy, g11, g22, g33, g12, g13, g23,
+  communicate(dx, dy, dz, g11, g22, g33, g12, g13, g23,
 	      g_11, g_22, g_33, g_12, g_13, g_23, J, Bxy);
 
   output_progress.write("Calculating differential geometry terms\n");
@@ -1382,7 +1401,7 @@ void Coordinates::setParallelTransform(Options* options) {
 
     fixZShiftGuards(zShift);
 
-    ASSERT1(zlength().isConst("RGN_ALL"));
+    ASSERT1(isConst(zlength()));
     transform = bout::utils::make_unique<ShiftedMetric>(*localmesh, location, zShift,
 							zlength()(0,0));
 

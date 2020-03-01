@@ -849,12 +849,3 @@ std::ostream& operator<<(std::ostream &out, const Field3D &value) {
   return out;
 }
 
-bool Field3D::isConst(const std::string & region) const {
-  auto element = (*this)[this->getRegion(region).begin()[0]];
-  BOUT_FOR_SERIAL(i, this->getRegion(region)){
-    if ((*this)[i] != element){
-      return false;
-    }
-  }
-  return true;
-}
