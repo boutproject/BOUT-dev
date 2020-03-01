@@ -779,6 +779,16 @@ if (BOUT_BUILD_DOCS)
   add_subdirectory(manual EXCLUDE_FROM_ALL)
 endif()
 
+option(ENABLE_METRIC_3D "Enable 3D metric support" OFF)
+if(ENABLE_METRIC_3D)
+  set(BOUT_METRIC_TYPE "3D")
+  target_compile_definitions(bout++
+    PUBLIC "COORDINATES_USE_3D")
+  target_link_libraries(bout++ PUBLIC ${CMAKE_DL_LIBS})
+else()
+  set(BOUT_METRIC_TYPE "2D")
+endif()
+set(BOUT_USE_METRIC_3D ${ENABLE_METRIC_3D})
 ##################################################
 # Generate the bout-config script
 
@@ -861,7 +871,9 @@ configure_package_config_file(bout++Config.cmake.in bout++Config.cmake
   INSTALL_DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/bout++Config.cmake"
   )
 
-# CMake configuration files
+configure_package_config_file(tools/pylib/boututils/bout_config.py.cin tools/pylib/boututils/bout_config.py
+  INSTALL_DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/tools/pylib/boututils/bout_config.py"
+  )
 install(
   FILES
       "${CMAKE_CURRENT_BINARY_DIR}/bout++Config.cmake"
@@ -917,6 +929,7 @@ message("
    Field name tracking      : ${BOUT_USE_TRACK}
    Floating point exceptions: ${BOUT_USE_SIGFPE}
    Backtrace enabled        : ${BOUT_USE_BACKTRACE}
+   3D Metric enabled        : ${BOUT_USE_METRIC_3D}
 
    === Python ===
 
