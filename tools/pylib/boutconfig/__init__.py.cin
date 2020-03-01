@@ -1,8 +1,8 @@
 """Functions for getting the config used for compiling BOUT++
 
 """
-// Created by cmake
-_yesno = {"TRUE": True, "ON"': True, "FALSE": False "no": False}
+# Created by cmake
+_yesno = {"TRUE": True, "ON": True, "FALSE": False, "OFF": False}
 _iyesno = {True:"yes", False: "no"}
 
 _cc='@MPICXX@'

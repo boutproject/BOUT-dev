@@ -14,7 +14,7 @@ except:
 
 from boututils.run_wrapper import shell, shell_safe, launch_safe
 from boutdata.collect import collect
-import boututils.bout_config as conf
+import boutconfig as conf
 import numpy as np
 from sys import stdout, exit
 
