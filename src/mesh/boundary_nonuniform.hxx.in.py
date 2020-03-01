@@ -12,6 +12,16 @@ header="""
 #include <utility>
 
 #include "boundary_op.hxx"
+
+struct fac2{
+BoutReal f0, f1;};
+struct fac3{
+BoutReal f0, f1, f2;};
+struct fac4{
+BoutReal f0;
+BoutReal f1;
+BoutReal f2;
+BoutReal f3;};
 """
 
 class_str="""
@@ -34,9 +44,8 @@ public:
   
 private:
   std::shared_ptr<FieldGenerator>  gen; // Generator
-  void calc_interp_to_stencil(
-{% for i in range(order) %}BoutReal x{{i}}, {% endfor %}
-{% for i in range(order) %}BoutReal &fac{{i}}{% if loop.last %}){% else %}, {% endif %}{% endfor %} const ;
+  fac{{order}} calc_interp_to_stencil(
+{% for i in range(order) %}BoutReal x{{i}}{% if loop.last %}){% else %}, {% endif %}{% endfor %} const ;
 };
 """
 

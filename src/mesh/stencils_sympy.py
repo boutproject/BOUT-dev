@@ -37,7 +37,7 @@ def gen_code(order,matrix):
         raise
     ret=""
     for i in range(order):
-        ret+=ccode(simp(iA[0,i]),assign_to="fac%d"%i)
+        ret+=ccode(simp(iA[0,i]),assign_to="facs.f%d"%i)
         ret+="\n"
     return ret
 

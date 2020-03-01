@@ -82,9 +82,9 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
       }
     }
 {% for i in range(order) %}
-    BoutReal fac{{i}};
     BoutReal x{{i}};
 {% endfor %}
+    fac{{order}} facs;
 
     const Field2D &spacing =
         bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
@@ -145,9 +145,8 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
         x{{i}} += t;
 {% endfor %}
         // printf("%+2d: %d %d %g %g %g %g\\n", stagger, ic.x, ic.y, x0, x1, x2, x3);
-        calc_interp_to_stencil(
-{% for i in range(order) %}x{{i}}, {% endfor %}
-{% for i in range(order) %}fac{{i}}{% if not loop.last %}, {% endif %}{% endfor %});
+        facs = calc_interp_to_stencil(
+{% for i in range(order) %}x{{i}}{% if not loop.last %}, {% endif %}{% endfor %});
 {% for i in range(order) %}
         x{{i}} += t;
 {% endfor %}
@@ -162,9 +161,8 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
           x{{i}} += t;
 {% endfor %}
         }
-        calc_interp_to_stencil(
-{% for i in range(order) %}x{{i}}, {% endfor %}
-{% for i in range(order) %}fac{{i}}{% if not loop.last %}, {% endif %}{% endfor %});
+        facs = calc_interp_to_stencil(
+{% for i in range(order) %}x{{i}}{% if not loop.last %}, {% endif %}{% endfor %});
         if (stagger == 1) {
 {% for i in range(order) %}
           x{{i}} += t;
@@ -177,12 +175,12 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
 {% endfor %}
 {% if type != "Free" %}
         val = (fg) ? vals[ic.z] : 0.0;
-        t = fac0 * val 
+        t = facs.f0 * val 
 {% else %}
-        t = fac0 * f[i0]
+        t = facs.f0 * f[i0]
 {% endif %}
 {% for i in range(1,order) %}
-           + fac{{i}} *f[i{{i}}]
+           + facs.f{{i}} *f[i{{i}}]
 {% endfor %}
         ;
         
@@ -206,11 +204,12 @@ BoundaryOp * {{class}}::clone(BoundaryRegion *region,
 }
 """
 stencil_str="""
-void {{class}}::calc_interp_to_stencil(
-{% for i in range(order) %}BoutReal x{{i}}, {% endfor %}
-{% for i in range(order) %}BoutReal &fac{{i}}{% if loop.last %}){% else %}, {% endif %}{% endfor %} const {
+fac{{order}} {{class}}::calc_interp_to_stencil(
+{% for i in range(order) %}BoutReal x{{i}}{% if loop.last %}){% else %}, {% endif %}{% endfor %} const {
+fac{{order}} facs;
 // Stencil Code
 {{stencil_code}}
+return facs;
 }
 """
 
