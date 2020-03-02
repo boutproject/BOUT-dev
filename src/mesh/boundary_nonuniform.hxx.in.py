@@ -13,18 +13,26 @@ header="""
 
 #include "boundary_op.hxx"
 
-struct fac2{
-BoutReal f0, f1;};
-struct fac3{
-BoutReal f0, f1, f2;};
-struct fac4{
-BoutReal f0, f1, f2, f3;};
-
+// Define structs used
 struct Indices{
   int x,y,z;
 };
 
 """
+vecs="""
+struct vec{{order}}{
+{% for i in range(order) %}
+  BoutReal f{{i}};
+{% endfor %}
+  void operator+=(BoutReal v){
+{% for i in range(order) %}
+    f{{i}} += v;
+{% endfor %}
+  }
+};
+
+"""
+
 
 class_str="""
 
@@ -46,14 +54,15 @@ public:
   
 private:
   std::shared_ptr<FieldGenerator>  gen; // Generator
-  fac{{order}} calc_interp_to_stencil(
-{% for i in range(order) %}BoutReal x{{i}}{% if loop.last %}){% else %}, {% endif %}{% endfor %} const ;
+  vec{{order}} calc_interp_to_stencil(const vec{{order}}& spacing) const;
 };
 """
 
 
 if __name__ == "__main__":
     print(header)
+    for order in orders:
+        print(env.from_string(vecs).render(order=order))
     for order in orders:
         for boundary in boundaries:
             args={

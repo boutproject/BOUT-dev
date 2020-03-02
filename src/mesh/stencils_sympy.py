@@ -26,7 +26,7 @@ def gen_code(order,matrix):
     global x
     x=[]
     for i in range(order):
-        x.append(Symbol("x%d"%i))
+        x.append(Symbol("spacing.f%d"%i))
     A=Matrix(order,order,matrix)
 
     try:

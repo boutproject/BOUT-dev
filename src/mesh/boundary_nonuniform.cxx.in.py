@@ -85,12 +85,11 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
         vals[zk] = fg->generate(xnorm, TWOPI * ynorm, TWOPI * zk / (mesh->LocalNz), t);
       }
     }
-{% for i in range(order) %}
-    BoutReal x{{i}};
-{% endfor %}
-    fac{{order}} facs;
 
-    const Field2D &spacing =
+    vec{{order}} spacing;
+    vec{{order}} facs;
+
+    const Field2D &coords_field =
         bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
 {% if type != "Free" %}
 {% for i in range(1,order) %}
@@ -98,17 +97,17 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
 {% endfor %}
     BoutReal t;
     if (stagger == 0) {
-      x0 = 0;
+      spacing.f0 = 0;
       BoutReal st=0;
 {% for i in range(1,order) %}
-      t = spacing(i{{i}}.x, i{{i}}.y);
-      x{{i}} = st + t / 2;
+      t = coords_field(i{{i}}.x, i{{i}}.y);
+      spacing.f{{i}} = st + t / 2;
       st += t;
 {% endfor %}
     } else {
-      x0 = 0; // spacing(bndry->x, bndry->y) / 2;
+      spacing.f0 = 0;
 {% for i in range(1,order) %}
-      x{{i}} = x{{i-1}} + spacing(i{{i}}.x, i{{i}}.y);
+      spacing.f{{i}} = spacing.f{{i-1}} + coords_field(i{{i}}.x, i{{i}}.y);
 {% endfor %}
     }
 {% if type == "Dirichlet" %}
@@ -125,14 +124,14 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
     if (stagger == 0) {
       BoutReal st=0;
 {% for i in range(order) %}
-      t = spacing(i{{i}}.x, i{{i}}.y);
-      x{{i}} = st + t / 2;
+      t = coords_field(i{{i}}.x, i{{i}}.y);
+      spacing.f{{i}} = st + t / 2;
       st += t;
 {% endfor %}
     } else {
-      x0 = 0;
+      spacing.f0 = 0;
 {% for i in range(1,order) %}
-      x{{i}} = x{{i-1}} + spacing(i{{i}}.x, i{{i}}.y);
+      spacing.f{{i}} = spacing.f{{i-1}} + coords_field(i{{i}}.x, i{{i}}.y);
 {% endfor %}
     }
 
@@ -144,33 +143,24 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
 {% endif %}
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
       if (stagger == 0) {
-        t = spacing(ic.x, ic.y) / 2;
+        t = coords_field(ic.x, ic.y) / 2;
 {% for i in range(order) %}
-        x{{i}} += t;
+        spacing.f{{i}} += t;
 {% endfor %}
-        // printf("%+2d: %d %d %g %g %g %g\\n", stagger, ic.x, ic.y, x0, x1, x2, x3);
-        facs = calc_interp_to_stencil(
-{% for i in range(order) %}x{{i}}{% if not loop.last %}, {% endif %}{% endfor %});
-{% for i in range(order) %}
-        x{{i}} += t;
-{% endfor %}
+        facs = calc_interp_to_stencil(spacing);
+        spacing += t;
       } else {
-        t = spacing(ic.x, ic.y);
+        t = coords_field(ic.x, ic.y);
         if (stagger == -1
 {% if type == "Dirichlet" %}
               && i != -1
 {% endif %}
                      ) {
-{% for i in range(order) %}
-          x{{i}} += t;
-{% endfor %}
+          spacing += t;
         }
-        facs = calc_interp_to_stencil(
-{% for i in range(order) %}x{{i}}{% if not loop.last %}, {% endif %}{% endfor %});
+        facs = calc_interp_to_stencil(spacing);
         if (stagger == 1) {
-{% for i in range(order) %}
-          x{{i}} += t;
-{% endfor %}
+          spacing += t;
         }
       }
       for (ic.z = 0; ic.z < mesh->LocalNz; ic.z++) {
@@ -197,7 +187,6 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
 clone_str="""
 BoundaryOp * {{class}}::clone(BoundaryRegion *region,
    const std::list<std::string> &args) {
-  // verifyNumPoints(region, 3);
 
   std::shared_ptr<FieldGenerator> newgen;
   if (!args.empty()) {
@@ -208,9 +197,8 @@ BoundaryOp * {{class}}::clone(BoundaryRegion *region,
 }
 """
 stencil_str="""
-fac{{order}} {{class}}::calc_interp_to_stencil(
-{% for i in range(order) %}BoutReal x{{i}}{% if loop.last %}){% else %}, {% endif %}{% endfor %} const {
-fac{{order}} facs;
+vec{{order}} {{class}}::calc_interp_to_stencil(const vec{{order}} & spacing) const {
+vec{{order}} facs;
 // Stencil Code
 {{stencil_code}}
 return facs;

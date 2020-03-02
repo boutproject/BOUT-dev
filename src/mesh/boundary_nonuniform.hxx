@@ -3,18 +3,42 @@
 
 #include "boundary_op.hxx"
 
-struct fac2 {
-  BoutReal f0, f1;
-};
-struct fac3 {
-  BoutReal f0, f1, f2;
-};
-struct fac4 {
-  BoutReal f0, f1, f2, f3;
-};
-
+// Define structs used
 struct Indices {
   int x, y, z;
+};
+
+struct vec2 {
+  BoutReal f0;
+  BoutReal f1;
+  void operator+=(BoutReal v) {
+    f0 += v;
+    f1 += v;
+  }
+};
+
+struct vec3 {
+  BoutReal f0;
+  BoutReal f1;
+  BoutReal f2;
+  void operator+=(BoutReal v) {
+    f0 += v;
+    f1 += v;
+    f2 += v;
+  }
+};
+
+struct vec4 {
+  BoutReal f0;
+  BoutReal f1;
+  BoutReal f2;
+  BoutReal f3;
+  void operator+=(BoutReal v) {
+    f0 += v;
+    f1 += v;
+    f2 += v;
+    f3 += v;
+  }
 };
 
 class BoundaryDirichletNonUniform_O2 : public BoundaryOp {
@@ -33,7 +57,7 @@ public:
 
 private:
   std::shared_ptr<FieldGenerator> gen; // Generator
-  fac2 calc_interp_to_stencil(BoutReal x0, BoutReal x1) const;
+  vec2 calc_interp_to_stencil(const vec2& spacing) const;
 };
 
 class BoundaryNeumannNonUniform_O2 : public BoundaryOp {
@@ -52,7 +76,7 @@ public:
 
 private:
   std::shared_ptr<FieldGenerator> gen; // Generator
-  fac2 calc_interp_to_stencil(BoutReal x0, BoutReal x1) const;
+  vec2 calc_interp_to_stencil(const vec2& spacing) const;
 };
 
 class BoundaryFreeNonUniform_O2 : public BoundaryOp {
@@ -71,7 +95,7 @@ public:
 
 private:
   std::shared_ptr<FieldGenerator> gen; // Generator
-  fac2 calc_interp_to_stencil(BoutReal x0, BoutReal x1) const;
+  vec2 calc_interp_to_stencil(const vec2& spacing) const;
 };
 
 class BoundaryDirichletNonUniform_O3 : public BoundaryOp {
@@ -90,7 +114,7 @@ public:
 
 private:
   std::shared_ptr<FieldGenerator> gen; // Generator
-  fac3 calc_interp_to_stencil(BoutReal x0, BoutReal x1, BoutReal x2) const;
+  vec3 calc_interp_to_stencil(const vec3& spacing) const;
 };
 
 class BoundaryNeumannNonUniform_O3 : public BoundaryOp {
@@ -109,7 +133,7 @@ public:
 
 private:
   std::shared_ptr<FieldGenerator> gen; // Generator
-  fac3 calc_interp_to_stencil(BoutReal x0, BoutReal x1, BoutReal x2) const;
+  vec3 calc_interp_to_stencil(const vec3& spacing) const;
 };
 
 class BoundaryFreeNonUniform_O3 : public BoundaryOp {
@@ -128,7 +152,7 @@ public:
 
 private:
   std::shared_ptr<FieldGenerator> gen; // Generator
-  fac3 calc_interp_to_stencil(BoutReal x0, BoutReal x1, BoutReal x2) const;
+  vec3 calc_interp_to_stencil(const vec3& spacing) const;
 };
 
 class BoundaryDirichletNonUniform_O4 : public BoundaryOp {
@@ -147,7 +171,7 @@ public:
 
 private:
   std::shared_ptr<FieldGenerator> gen; // Generator
-  fac4 calc_interp_to_stencil(BoutReal x0, BoutReal x1, BoutReal x2, BoutReal x3) const;
+  vec4 calc_interp_to_stencil(const vec4& spacing) const;
 };
 
 class BoundaryNeumannNonUniform_O4 : public BoundaryOp {
@@ -166,7 +190,7 @@ public:
 
 private:
   std::shared_ptr<FieldGenerator> gen; // Generator
-  fac4 calc_interp_to_stencil(BoutReal x0, BoutReal x1, BoutReal x2, BoutReal x3) const;
+  vec4 calc_interp_to_stencil(const vec4& spacing) const;
 };
 
 class BoundaryFreeNonUniform_O4 : public BoundaryOp {
@@ -185,5 +209,5 @@ public:
 
 private:
   std::shared_ptr<FieldGenerator> gen; // Generator
-  fac4 calc_interp_to_stencil(BoutReal x0, BoutReal x1, BoutReal x2, BoutReal x3) const;
+  vec4 calc_interp_to_stencil(const vec4& spacing) const;
 };
