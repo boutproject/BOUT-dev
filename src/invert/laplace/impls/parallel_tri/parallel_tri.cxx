@@ -3,7 +3,7 @@
  * and tridiagonal solver.
  *
  **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ * Copyright 2020 Joseph Parker
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
  *
@@ -60,16 +60,13 @@ LaplaceParallelTri::LaplaceParallelTri(Options *opt, CELL_LOC loc, Mesh *mesh_in
       "ipt_solver"+std::to_string(ipt_solver_count)+"_mean_its");
   ++ipt_solver_count;
 
-  first_call = Matrix<bool>(localmesh->LocalNy,localmesh->LocalNz);
-  for(int jy=0; jy<localmesh->LocalNy; jy++){
-    for(int jz=0; jz<localmesh->LocalNz; jz++){
-      first_call(jy,jz) = true;
-    }
-  }
+  first_call = Matrix<bool>(localmesh->LocalNy,localmesh->LocalNz / 2 + 1);
+  force_direct_solve = Matrix<bool>(localmesh->LocalNy,localmesh->LocalNz / 2 + 1);
+
   upperGuardVector = Tensor<dcomplex>(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
   lowerGuardVector = Tensor<dcomplex>(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
 
-  x0saved = Tensor<dcomplex>(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
+  x0saved = Tensor<dcomplex>(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
 
   resetSolver();
 
@@ -78,8 +75,9 @@ LaplaceParallelTri::LaplaceParallelTri(Options *opt, CELL_LOC loc, Mesh *mesh_in
 void LaplaceParallelTri::resetSolver(){
   x0saved = 0.0;
   for(int jy=0; jy<localmesh->LocalNy; jy++){
-    for(int jz=0; jz<localmesh->LocalNz; jz++){
-      first_call(jy,jz) = true;
+    for(int kz=0; kz<localmesh->LocalNz / 2 + 1; kz++){
+      first_call(jy,kz) = true;
+      force_direct_solve(jy,kz) = false;
     }
   }
   resetMeanIterations();
@@ -778,195 +776,232 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       BoutReal om = 0.0;
       if(kz==0) om = omega;
 
-      while(true){ 
+      // Set convergence flags
+      bool converged = false;
+      bool all_converged = false;
 
-	///SCOREP_USER_REGION_DEFINE(iteration);
-	///SCOREP_USER_REGION_BEGIN(iteration, "iteration",SCOREP_USER_REGION_TYPE_COMMON);
+      if(force_direct_solve(jy,kz)){
+	solve_global_reduced_system(std::begin(xloclast),al,au,bl,bu,rl,ru,std::begin(avec),std::begin(bvec),std::begin(cvec),std::begin(bk1d));
+      }
+      else {
 
-	// Only need to update interior points
-///	if(count % 2 == 0){
-	  xloc[1] = rl + bl*xloclast[2];
-	  xloc[2] = ru + au*xloc[1];
-///	}
-///	else{
-///	  xloc[2] = ru + au*xloclast[1];
-///	  xloc[1] = rl + bl*xloc[2];
-///	}
-	if(not localmesh->lastX()) {
-	  xloc[2] += bu*xloclast[3];
-	}
-	if(not localmesh->firstX()) {
-	  xloc[1] += al*xloclast[0];
-	}
+	while(true){
 
-	/*
-	dcomplex xold0, xold1;
-	if(count % 30 == 0){
+	  ///SCOREP_USER_REGION_DEFINE(iteration);
+	  ///SCOREP_USER_REGION_BEGIN(iteration, "iteration",SCOREP_USER_REGION_TYPE_COMMON);
 
-	  xloc[1] = (2.0*om-1.0)*xloclast[1]/om + rl;
-	  xloc[2] = (2.0*om-1.0)*xloclast[2]/om + ru;
-
-	  //if(not localmesh->lastX()){	
-	    xloc[1] += (1.0-om)*(bl*xloclast[3])/om; 
-	    xloc[2] += (1.0-om)*(bu*xloclast[3])/om; 
-	  //}
-
-	  //if(not localmesh->firstX()){	
-	    xloc[1] += (1.0-om)*(al*xloclast[0])/om; 
-	    xloc[2] += (1.0-om)*(au*xloclast[0])/om; 
-	  //}
-	  xold0 = xloclast[1];
-	  xold1 = xloclast[2];
-	}
-
-	//xloc[1] = (1.0-om)*xloc[1] + om*xloclast[1];
-	//xloc[2] = (1.0-om)*xloc[2] + om*xloclast[2];
-	xloc[1] = (1.0-om)*xloc[1] + om*xold0;
-	xloc[2] = (1.0-om)*xloc[2] + om*xold1;
-	*/
-
-
-	///SCOREP_USER_REGION_END(iteration);
-	///SCOREP_USER_REGION_DEFINE(comms);
-	///SCOREP_USER_REGION_BEGIN(comms, "communication",SCOREP_USER_REGION_TYPE_COMMON);
-
-	TRACE("set comm flags pack");
-	// Set communication flags
-	if ( count > 3 and
-            (
-	     //kz==0 or 
-	     ((error_rel_lower<rtol or error_abs_lower<atol) and
-             (error_rel_upper<rtol or error_abs_upper<atol) ))) {
-	  // In the next iteration this proc informs its neighbours that its halo cells
-	  // will no longer be updated, then breaks.
-	  self_in = true;
-	  self_out = true;
-	}
-
-	// Communication
-	// A proc is finished when it is both in- and out-converged.
-	// Once this happens, that processor communicates once, then breaks.
-	//
-	// A proc can be converged in only one of the directions. This happens
-	// if it has not met the error tolerance, but one of its neighbours has
-	// converged. In this case, that boundary will no longer update (and 
-	// communication in that direction should stop), but the other boundary
-	// may still be changing.
-	//
-	// There are four values to consider:
-	//   neighbour_in  = whether my in-neighbouring proc has out-converged
-	//   self_in       = whether this proc has in-converged
-	//   self_out      = whether this proc has out-converged
-	//   neighbour_out = whether my out-neighbouring proc has in-converged
-	//
-	// If neighbour_in = true, I must have been told this by my neighbour. My
-	// neighbour has therefore done its one post-converged communication. My in-boundary
-	// values are therefore correct, and I am in-converged. My neighbour is not 
-	// expecting us to communicate.
-	if(!neighbour_in) {
-	  // Communicate in
-	  neighbour_in = localmesh->communicateXIn(self_in);
-	  if(new_method){
-	    xloc[0] = localmesh->communicateXIn(xloc[2]);
+	  // Only need to update interior points
+  ///	if(count % 2 == 0){
+	    xloc[1] = rl + bl*xloclast[2];
+	    xloc[2] = ru + au*xloc[1];
+  ///	}
+  ///	else{
+  ///	  xloc[2] = ru + au*xloclast[1];
+  ///	  xloc[1] = rl + bl*xloc[2];
+  ///	}
+	  if(not localmesh->lastX()) {
+	    xloc[2] += bu*xloclast[3];
 	  }
-	  else{
-	    xloc[0] = localmesh->communicateXIn(xloc[1]);
+	  if(not localmesh->firstX()) {
+	    xloc[1] += al*xloclast[0];
 	  }
-	  //output<<BoutComm::rank()<<" "<<xloc[0]<<" "<<xloc[1]<<" "<<xloc[2]<<" "<<xloc[3]<<endl;
-	}
 
-	// Outward communication
-	// See note above for inward communication.
-	if(!neighbour_out) {
-	  // Communicate out
-	  neighbour_out = localmesh->communicateXOut(self_out);
-	  if(new_method){
-	    xloc[3] = localmesh->communicateXOut(xloc[1]);
-	  }
-	  else{
-	    xloc[3] = localmesh->communicateXOut(xloc[2]);
-	  }
-	}
-	///SCOREP_USER_REGION_END(comms);
-
-	// Now I've done my communication, exit if I am both in- and out-converged
-	if( self_in and self_out ) {
-          //output<<"Breaking, proc "<< BoutComm::rank() << ", count "<<count<<" "<<jy<<" "<<kz<<endl<<std::flush;
-	  break;
-	}
-	///SCOREP_USER_REGION_DEFINE(comms_after_break);
-	///SCOREP_USER_REGION_BEGIN(comms_after_break, "comms after break",SCOREP_USER_REGION_TYPE_COMMON);
-
-	// If my neighbour has converged, I know that I am also converged on that
-	// boundary. Set this flag after the break loop above, to ensure we do one
-	// iteration using our neighbour's converged value.
-	if(neighbour_in) {
-	  self_in = true;
-	}
-	if(neighbour_out) {
-	  self_out = true;
-	}
-
-	++count;
-	///SCOREP_USER_REGION_END(comms_after_break);
-	if (count>maxits) {
-	    //output<<alold<<" "<<blold<<" "<<auold<<" "<<buold<<endl;
-	    //output<<al<<" "<<bl<<" "<<au<<" "<<bu<<endl;
-	  //if(not(jy==13 and kz==0)){
-	    //break;
-	  //}
-	  // Maximum number of allowed iterations reached.
-	  // If the iteration matrix is diagonally-dominant, then convergence is guaranteed, so maxits is set too low.
-	  // Otherwise, the method may or may not converge.
 	  /*
-          if(is_diagonally_dominant(al,au,bl,bu,jy,kz)){
-	    throw BoutException("LaplaceParallelTri error: Not converged within maxits=%i iterations. The iteration matrix is diagonally dominant on processor %i and convergence is guaranteed (if all processors are diagonally dominant). Please increase maxits and retry.",maxits,BoutComm::rank());
+	  dcomplex xold0, xold1;
+	  if(count % 30 == 0){
+
+	    xloc[1] = (2.0*om-1.0)*xloclast[1]/om + rl;
+	    xloc[2] = (2.0*om-1.0)*xloclast[2]/om + ru;
+
+	    //if(not localmesh->lastX()){	
+	      xloc[1] += (1.0-om)*(bl*xloclast[3])/om; 
+	      xloc[2] += (1.0-om)*(bu*xloclast[3])/om; 
+	    //}
+
+	    //if(not localmesh->firstX()){	
+	      xloc[1] += (1.0-om)*(al*xloclast[0])/om; 
+	      xloc[2] += (1.0-om)*(au*xloclast[0])/om; 
+	    //}
+	    xold0 = xloclast[1];
+	    xold1 = xloclast[2];
 	  }
-	  else{
-	    output<<alold<<" "<<blold<<" "<<auold<<" "<<buold<<endl;
-	    output<<al<<" "<<bl<<" "<<au<<" "<<bu<<endl;
-	    output<<Ad<<" "<<Bd<<" "<<Au<<" "<<Bu<<endl;
-	    throw BoutException("LaplaceParallelTri error: Not converged within maxits=%i iterations. The iteration matrix is not diagonally dominant on processor %i, so there is no guarantee this method will converge. Consider increasing maxits or using a different solver.",maxits,BoutComm::rank());
-	  }
+
+	  //xloc[1] = (1.0-om)*xloc[1] + om*xloclast[1];
+	  //xloc[2] = (1.0-om)*xloc[2] + om*xloclast[2];
+	  xloc[1] = (1.0-om)*xloc[1] + om*xold0;
+	  xloc[2] = (1.0-om)*xloc[2] + om*xold1;
 	  */
 
-	  solve_global_reduced_system(std::begin(xloclast),al,au,bl,bu,rl,ru,std::begin(avec),std::begin(bvec),std::begin(cvec),std::begin(bk1d));
-	  //output<<"solution " << BoutComm::rank()<<" " << xloclast[0] <<" "<< xloclast[1]<<" "<<xloclast[2]<<" "<<xloclast[3]<<endl;
-	  break;
 
+	  ///SCOREP_USER_REGION_END(iteration);
+	  ///SCOREP_USER_REGION_DEFINE(comms);
+	  ///SCOREP_USER_REGION_BEGIN(comms, "communication",SCOREP_USER_REGION_TYPE_COMMON);
+
+	  TRACE("set comm flags pack");
+	  // Set communication flags
+	  if ( count > 3 and
+	      (
+	       //kz==0 or 
+	       ((error_rel_lower<rtol or error_abs_lower<atol) and
+	       (error_rel_upper<rtol or error_abs_upper<atol) ))) {
+	    // In the next iteration this proc informs its neighbours that its halo cells
+	    // will no longer be updated, then breaks.
+	    self_in = true;
+	    self_out = true;
+	  }
+
+	  // Communication
+	  // A proc is finished when it is both in- and out-converged.
+	  // Once this happens, that processor communicates once, then breaks.
+	  //
+	  // A proc can be converged in only one of the directions. This happens
+	  // if it has not met the error tolerance, but one of its neighbours has
+	  // converged. In this case, that boundary will no longer update (and
+	  // communication in that direction should stop), but the other boundary
+	  // may still be changing.
+	  //
+	  // There are four values to consider:
+	  //   neighbour_in  = whether my in-neighbouring proc has out-converged
+	  //   self_in       = whether this proc has in-converged
+	  //   self_out      = whether this proc has out-converged
+	  //   neighbour_out = whether my out-neighbouring proc has in-converged
+	  //
+	  // If neighbour_in = true, I must have been told this by my neighbour. My
+	  // neighbour has therefore done its one post-converged communication. My in-boundary
+	  // values are therefore correct, and I am in-converged. My neighbour is not
+	  // expecting us to communicate.
+	  if(!neighbour_in) {
+	    // Communicate in
+	    neighbour_in = localmesh->communicateXIn(self_in);
+	    if(new_method){
+	      xloc[0] = localmesh->communicateXIn(xloc[2]);
+	    }
+	    else{
+	      xloc[0] = localmesh->communicateXIn(xloc[1]);
+	    }
+	    //output<<BoutComm::rank()<<" "<<xloc[0]<<" "<<xloc[1]<<" "<<xloc[2]<<" "<<xloc[3]<<endl;
+	  }
+
+	  // Outward communication
+	  // See note above for inward communication.
+	  if(!neighbour_out) {
+	    // Communicate out
+	    neighbour_out = localmesh->communicateXOut(self_out);
+	    if(new_method){
+	      xloc[3] = localmesh->communicateXOut(xloc[1]);
+	    }
+	    else{
+	      xloc[3] = localmesh->communicateXOut(xloc[2]);
+	    }
+	  }
+	  ///SCOREP_USER_REGION_END(comms);
+
+	  // Now I've done my communication, exit if I am both in- and out-converged
+	  if( self_in and self_out ) {
+	    //output<<"Breaking, proc "<< BoutComm::rank() << ", count "<<count<<" "<<jy<<" "<<kz<<endl<<std::flush;
+	    if(not first_call(jy,kz)){
+	      break;
+	    }
+	    else{
+	      // In first run through the algorithm, don't break here. Instead
+	      // sync with other processors to see if any exceed maxit iterations
+	      converged = true;
+	      // Set count to maxits so that this proc now exits through the
+	      // "too many iterations loop"
+	      count = maxits;
+
+	    }
+	  }
+	  ///SCOREP_USER_REGION_DEFINE(comms_after_break);
+	  ///SCOREP_USER_REGION_BEGIN(comms_after_break, "comms after break",SCOREP_USER_REGION_TYPE_COMMON);
+
+	  // If my neighbour has converged, I know that I am also converged on that
+	  // boundary. Set this flag after the break loop above, to ensure we do one
+	  // iteration using our neighbour's converged value.
+	  if(neighbour_in) {
+	    self_in = true;
+	  }
+	  if(neighbour_out) {
+	    self_out = true;
+	  }
+
+	  ++count;
+	  ///SCOREP_USER_REGION_END(comms_after_break);
+	  if (count>maxits) {
+	    //output<<"Attempting global, proc "<< BoutComm::rank() << ", count "<<count<<" "<<jy<<" "<<kz<<endl<<std::flush;
+	      //output<<alold<<" "<<blold<<" "<<auold<<" "<<buold<<endl;
+	      //output<<al<<" "<<bl<<" "<<au<<" "<<bu<<endl;
+	    //if(not(jy==13 and kz==0)){
+	      //break;
+	    //}
+	    // Maximum number of allowed iterations reached.
+	    // If the iteration matrix is diagonally-dominant, then convergence is guaranteed, so maxits is set too low.
+	    // Otherwise, the method may or may not converge.
+	    /*
+	    if(is_diagonally_dominant(al,au,bl,bu,jy,kz)){
+	      throw BoutException("LaplaceParallelTri error: Not converged within maxits=%i iterations. The iteration matrix is diagonally dominant on processor %i and convergence is guaranteed (if all processors are diagonally dominant). Please increase maxits and retry.",maxits,BoutComm::rank());
+	    }
+	    else{
+	      output<<alold<<" "<<blold<<" "<<auold<<" "<<buold<<endl;
+	      output<<al<<" "<<bl<<" "<<au<<" "<<bu<<endl;
+	      output<<Ad<<" "<<Bd<<" "<<Au<<" "<<Bu<<endl;
+	      throw BoutException("LaplaceParallelTri error: Not converged within maxits=%i iterations. The iteration matrix is not diagonally dominant on processor %i, so there is no guarantee this method will converge. Consider increasing maxits or using a different solver.",maxits,BoutComm::rank());
+	    }
+	    */
+
+	    if(first_call(jy,kz)){
+	      // Allreduce to see if any procs are unconverged.
+	      // Note that we set count=maxits once a proc converged, so all
+	      // procs reach this point.
+	      //output << "Before "<<BoutComm::rank()<<" "<<jy<<" "<<kz<<" "<<converged<<" "<<all_converged<<endl;
+	      MPI_Allreduce(
+		  &converged,		// My variable
+		  &all_converged,		// Reduction variable
+		  1,			// Size
+		  MPI::BOOL,		// Mpi type
+		  MPI_LAND,		// logical "and" reduction
+		  localmesh->getXcomm());	// communicator
+	      //output << "After "<<BoutComm::rank()<<" "<<jy<<" "<<kz<<" "<<converged<<" "<<all_converged<<endl;
+	      force_direct_solve(jy,kz) = true;
+	    }
+
+	    solve_global_reduced_system(std::begin(xloclast),al,au,bl,bu,rl,ru,std::begin(avec),std::begin(bvec),std::begin(cvec),std::begin(bk1d));
+	    //output<<"solution " << BoutComm::rank()<<" " << xloclast[0] <<" "<< xloclast[1]<<" "<<xloclast[2]<<" "<<xloclast[3]<<endl;
+	    break;
+	  }
+
+	  ///SCOREP_USER_REGION_DEFINE(errors);
+	  ///SCOREP_USER_REGION_BEGIN(errors, "calculate errors",SCOREP_USER_REGION_TYPE_COMMON);
+  //
+
+	  // Calculate errors
+	  error_abs_lower = 0.0;
+	  error_abs_upper = 0.0;
+	  error_rel_lower = 0.0;
+	  error_rel_upper = 0.0;
+
+	  // Calcalate errors on left halo and right interior point - this means the
+	  // errors on neighbouring processors agree exactly without the need for
+	  // communication.
+	  get_errors(&error_rel_lower,&error_abs_lower,xloc[1],xloclast[1]);
+	  get_errors(&error_rel_upper,&error_abs_upper,xloc[2],xloclast[2]);
+
+	  //if(jy==13 and kz==0){
+	  //output<<"xvec "<<BoutComm::rank()<<" "<<count<<" "<<xloc[0]<<" "<<xloc[1]<<" "<<xloc[2]<<" "<<xloc[3]<<" "<<xloclast[0]<<" "<<xloclast[1]<<" "<<xloclast[2]<<" "<<xloclast[3]<<" "<<error_rel_lower<<" "<<error_abs_lower<<" "<<error_rel_upper<<" "<<error_abs_upper<<endl;
+	  //}
+	  ///SCOREP_USER_REGION_END(errors);
+
+	  ///SCOREP_USER_REGION_DEFINE(copylast);
+	  ///SCOREP_USER_REGION_BEGIN(copylast, "copy to last",SCOREP_USER_REGION_TYPE_COMMON);
+	  for (int ix = 0; ix < 4; ix++) {
+	    xloclast[ix] = xloc[ix];
+	  }
+	  ///SCOREP_USER_REGION_END(copylast);
+	  
 	}
+	///SCOREP_USER_REGION_END(whileloop);
 
-	///SCOREP_USER_REGION_DEFINE(errors);
-	///SCOREP_USER_REGION_BEGIN(errors, "calculate errors",SCOREP_USER_REGION_TYPE_COMMON);
-//
-
-	// Calculate errors
-	error_abs_lower = 0.0;
-	error_abs_upper = 0.0;
-	error_rel_lower = 0.0;
-	error_rel_upper = 0.0;
-
-	// Calcalate errors on left halo and right interior point - this means the
-	// errors on neighbouring processors agree exactly without the need for
-	// communication.
-	get_errors(&error_rel_lower,&error_abs_lower,xloc[1],xloclast[1]);
-	get_errors(&error_rel_upper,&error_abs_upper,xloc[2],xloclast[2]);
-	
-	//if(jy==13 and kz==0){
-        //output<<"xvec "<<BoutComm::rank()<<" "<<count<<" "<<xloc[0]<<" "<<xloc[1]<<" "<<xloc[2]<<" "<<xloc[3]<<" "<<xloclast[0]<<" "<<xloclast[1]<<" "<<xloclast[2]<<" "<<xloclast[3]<<" "<<error_rel_lower<<" "<<error_abs_lower<<" "<<error_rel_upper<<" "<<error_abs_upper<<endl;
-	//}
-	///SCOREP_USER_REGION_END(errors);
-
-	///SCOREP_USER_REGION_DEFINE(copylast);
-	///SCOREP_USER_REGION_BEGIN(copylast, "copy to last",SCOREP_USER_REGION_TYPE_COMMON);
-        for (int ix = 0; ix < 4; ix++) {
-	  xloclast[ix] = xloc[ix];
-	}
-	///SCOREP_USER_REGION_END(copylast);
-	
-      }
-      ///SCOREP_USER_REGION_END(whileloop);
-
+      } 
     } else {
       // Periodic in X, so cyclic tridiagonal
 
@@ -975,8 +1010,8 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 
       // Copy boundary regions
       for (int ix = 0; ix < xs; ix++) {
-        xk1d[ix] = xk1d[ncx - 2 * xs + ix];
-        xk1d[ncx - xs + ix] = xk1d[xs + ix];
+	xk1d[ix] = xk1d[ncx - 2 * xs + ix];
+	xk1d[ncx - xs + ix] = xk1d[xs + ix];
       }
     }
 

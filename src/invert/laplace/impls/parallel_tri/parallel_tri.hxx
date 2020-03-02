@@ -94,6 +94,7 @@ private:
   //BoutReal Borig;
   Field3D Bvals;
   Matrix<bool> first_call;
+  Matrix<bool> force_direct_solve;
   // Save previous x in Fourier space
   Tensor<dcomplex> x0saved;
 
