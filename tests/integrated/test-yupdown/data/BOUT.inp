@@ -9,5 +9,5 @@ ShiftAngle = 2.*pi
 
 var = sin(y - z)
 
-paralleltransform = shifted
-
+[mesh:paralleltransform]
+type = shifted

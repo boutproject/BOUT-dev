@@ -42,7 +42,7 @@ const char DEFAULT_DIR[] = "data";
 #include "boutcomm.hxx"
 #include "boutexception.hxx"
 #include "datafile.hxx"
-#include "interpolation.hxx"
+#include "interpolation_xz.hxx"
 #include "invert_laplace.hxx"
 #include "invert_parderiv.hxx"
 #include "msg_stack.hxx"
@@ -308,9 +308,9 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
       }
       std::exit(EXIT_SUCCESS);
     }
-    if (current_arg == "--list-interpolations") {
+    if (current_arg == "--list-xzinterpolations") {
       for (const auto& interpolation :
-           InterpolationFactory::getInstance().listAvailable()) {
+           XZInterpolationFactory::getInstance().listAvailable()) {
         std::cout << interpolation << "\n";
       }
       std::exit(EXIT_SUCCESS);

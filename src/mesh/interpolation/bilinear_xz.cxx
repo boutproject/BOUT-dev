@@ -22,13 +22,13 @@
 
 #include "bout/mesh.hxx"
 #include "globals.hxx"
-#include "interpolation.hxx"
+#include "interpolation_xz.hxx"
 
 #include <string>
 #include <vector>
 
-Bilinear::Bilinear(int y_offset, Mesh *mesh)
-  : Interpolation(y_offset, mesh),
+XZBilinear::XZBilinear(int y_offset, Mesh *mesh)
+  : XZInterpolation(y_offset, mesh),
     w0(localmesh), w1(localmesh), w2(localmesh), w3(localmesh) {
 
   // Index arrays contain guard cells in order to get subscripts right
@@ -42,7 +42,7 @@ Bilinear::Bilinear(int y_offset, Mesh *mesh)
   w3.allocate();
 }
 
-void Bilinear::calcWeights(const Field3D &delta_x, const Field3D &delta_z) {
+void XZBilinear::calcWeights(const Field3D &delta_x, const Field3D &delta_z) {
   for(int x=localmesh->xstart;x<=localmesh->xend;x++) {
     for(int y=localmesh->ystart; y<=localmesh->yend;y++) {
       for(int z=0;z<localmesh->LocalNz;z++) {
@@ -84,12 +84,13 @@ void Bilinear::calcWeights(const Field3D &delta_x, const Field3D &delta_z) {
   }
 }
 
-void Bilinear::calcWeights(const Field3D &delta_x, const Field3D &delta_z, const BoutMask &mask) {
+void XZBilinear::calcWeights(const Field3D &delta_x, const Field3D &delta_z,
+                             const BoutMask &mask) {
   skip_mask = mask;
   calcWeights(delta_x, delta_z);
 }
 
-Field3D Bilinear::interpolate(const Field3D& f) const {
+Field3D XZBilinear::interpolate(const Field3D& f) const {
   ASSERT1(f.getMesh() == localmesh);
   Field3D f_interp{emptyFrom(f)};
 
@@ -116,12 +117,14 @@ Field3D Bilinear::interpolate(const Field3D& f) const {
   return f_interp;
 }
 
-Field3D Bilinear::interpolate(const Field3D& f, const Field3D &delta_x, const Field3D &delta_z) {
+Field3D XZBilinear::interpolate(const Field3D& f, const Field3D &delta_x,
+                                const Field3D &delta_z) {
   calcWeights(delta_x, delta_z);
   return interpolate(f);
 }
 
-Field3D Bilinear::interpolate(const Field3D& f, const Field3D &delta_x, const Field3D &delta_z, const BoutMask &mask) {
+Field3D XZBilinear::interpolate(const Field3D& f, const Field3D &delta_x,
+                                const Field3D &delta_z, const BoutMask &mask) {
   calcWeights(delta_x, delta_z, mask);
   return interpolate(f);
 }

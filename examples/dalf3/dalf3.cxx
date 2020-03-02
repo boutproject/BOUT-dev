@@ -170,8 +170,8 @@ protected:
     // SHIFTED RADIAL COORDINATES
 
     // Check type of parallel transform
-    std::string ptstr;
-    Options::getRoot()->getSection("mesh")->get("paralleltransform", ptstr, "identity");
+    std::string ptstr = Options::root()["mesh"]["paralleltransform"]["type"]
+                        .withDefault("identity");
 
     if(lowercase(ptstr) == "shifted") {
       // Dimits style, using local coordinate system

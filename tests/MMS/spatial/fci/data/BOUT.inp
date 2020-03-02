@@ -8,16 +8,16 @@ MXG = 1
 NXPE = 1
 
 [mesh]
-paralleltransform = fci
 symmetricglobalx = true
 
 [mesh:ddy]
 first = C2
 second = C2
 
-[fci]
+[mesh:paralleltransform]
+type = fci
 y_periodic = true
 z_periodic = true
 
-[interpolation]
+[mesh:paralleltransform:xzinterpolation]
 type = lagrange4pt

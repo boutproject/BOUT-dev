@@ -21,14 +21,14 @@
  **************************************************************************/
 
 #include "globals.hxx"
-#include "interpolation.hxx"
+#include "interpolation_xz.hxx"
 #include "output.hxx"
 #include "bout/index_derivs_interface.hxx"
 #include "bout/mesh.hxx"
 
 #include <vector>
 
-Field3D MonotonicHermiteSpline::interpolate(const Field3D &f) const {
+Field3D XZMonotonicHermiteSpline::interpolate(const Field3D &f) const {
   ASSERT1(f.getMesh() == localmesh);
   Field3D f_interp(f.getMesh());
   f_interp.allocate();

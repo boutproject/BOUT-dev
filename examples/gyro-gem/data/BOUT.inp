@@ -24,8 +24,8 @@ dump_format = "nc"   # Output format (PDB = "pdb", NetCDF="nc")
 
 periodicX = false  # Make domain periodic in X
 
-[mesh]
-paralleltransform = shifted # Use shifted metric method
+[mesh:paralleltransform]
+type = shifted # Use shifted metric method
 
 ##################################################
 # derivative methods
