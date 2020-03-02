@@ -17,8 +17,6 @@ int BoundaryOp_timing::init(bool UNUSED(restarting)) {
   OPTION(opt, ntests, 10000);
 
 
-  // test Dirichlet_O3
-
   {
     Timer timer("dirichlet_o3");
     for (int i=0; i<ntests; i++) {
@@ -28,8 +26,10 @@ int BoundaryOp_timing::init(bool UNUSED(restarting)) {
 
   std::string name;
   opt->getSection("f")->get("bndry_all",name,"error");
-  std::cout<<name<<":\t"<<ntests<<" iterations took "<<Timer::getTime("dirichlet_o3")<<" s"<<endl;
 
+  double time = Timer::getTime("dirichlet_o3");
+  printf("%-20s | %12.8f s", name.c_str(), time);
+  
   return 0;
 }
 
