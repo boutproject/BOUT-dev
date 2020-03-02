@@ -70,6 +70,8 @@ class PvodeSolver : public Solver {
 
   BoutReal abstol, reltol; // addresses passed in init must be preserved
   pvode::PVBBDData pdata;
+
+  bool pvode_initialised = false;
 };
 
 #endif // __PVODE_SOLVER_H__
