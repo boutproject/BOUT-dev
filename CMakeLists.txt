@@ -209,6 +209,8 @@ set(BOUT_SOURCES
   ./src/mesh/boundary_factory.cxx
   ./src/mesh/boundary_region.cxx
   ./src/mesh/boundary_standard.cxx
+  ./src/mesh/boundary_nonuniform.cxx
+  ./src/mesh/boundary_nonuniform.hxx
   ./src/mesh/coordinates.cxx
   ./src/mesh/data/gridfromfile.cxx
   ./src/mesh/data/gridfromoptions.cxx
