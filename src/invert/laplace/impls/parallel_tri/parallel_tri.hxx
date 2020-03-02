@@ -119,6 +119,9 @@ private:
   Tensor<dcomplex> upperGuardVector, lowerGuardVector;
   bool store_coefficients;
 
+  /// Use a direct solver for kz < kz_direct_solve
+  int kz_direct_solve;
+
 };
 
 #endif // __PARALLEL_TRI_H__

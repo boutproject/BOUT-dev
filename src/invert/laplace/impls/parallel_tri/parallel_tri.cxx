@@ -54,6 +54,7 @@ LaplaceParallelTri::LaplaceParallelTri(Options *opt, CELL_LOC loc, Mesh *mesh_in
   OPTION(opt, B, 1000.0);
   OPTION(opt, omega, 0.0);
   OPTION(opt, new_method, false);
+  OPTION(opt, kz_direct_solve, 0);
 
   static int ipt_solver_count = 1;
   bout::globals::dump.addRepeat(ipt_mean_its,
@@ -77,7 +78,12 @@ void LaplaceParallelTri::resetSolver(){
   for(int jy=0; jy<localmesh->LocalNy; jy++){
     for(int kz=0; kz<localmesh->LocalNz / 2 + 1; kz++){
       first_call(jy,kz) = true;
-      force_direct_solve(jy,kz) = false;
+      if(kz<kz_direct_solve){
+	force_direct_solve(jy,kz) = true;
+      }
+      else {
+	force_direct_solve(jy,kz) = false;
+      }
     }
   }
   resetMeanIterations();
@@ -776,16 +782,12 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       BoutReal om = 0.0;
       if(kz==0) om = omega;
 
-      // Set convergence flags
-      bool converged = false;
-      bool all_converged = false;
-
       if(force_direct_solve(jy,kz)){
 	solve_global_reduced_system(std::begin(xloclast),al,au,bl,bu,rl,ru,std::begin(avec),std::begin(bvec),std::begin(cvec),std::begin(bk1d));
       }
       else {
 
-	//output<<"first_call "<<first_call(jy,kz)<<", proc "<< BoutComm::rank() << ", count "<<count<<" "<<jy<<" "<<kz<<endl<<std::flush;
+	//output<<"first_call "<<first_call(jy,kz)<<", force direct solve "<<force_direct_solve(jy,kz)<<", proc "<< BoutComm::rank() << ", count "<<count<<" "<<jy<<" "<<kz<<endl<<std::flush;
 	while(true){
 
 	  ///SCOREP_USER_REGION_DEFINE(iteration);
@@ -899,19 +901,8 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 
 	  // Now I've done my communication, exit if I am both in- and out-converged
 	  if( self_in and self_out ) {
-	    if(not first_call(jy,kz)){
-	      //output<<"Breaking, proc "<< BoutComm::rank() << ", count "<<count<<" "<<jy<<" "<<kz<<endl<<std::flush;
-	      break;
-	    }
-	    else{
-	      // In first run through the algorithm, don't break here. Instead
-	      // sync with other processors to see if any exceed maxit iterations
-	      converged = true;
-	      // Set count to maxits so that this proc now exits through the
-	      // "too many iterations loop"
-	      count = maxits;
-
-	    }
+	    //output<<"Breaking, proc "<< BoutComm::rank() << ", count "<<count<<" "<<jy<<" "<<kz<<endl<<std::flush;
+	    break;
 	  }
 	  ///SCOREP_USER_REGION_DEFINE(comms_after_break);
 	  ///SCOREP_USER_REGION_BEGIN(comms_after_break, "comms after break",SCOREP_USER_REGION_TYPE_COMMON);
@@ -938,7 +929,6 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	    // Maximum number of allowed iterations reached.
 	    // If the iteration matrix is diagonally-dominant, then convergence is guaranteed, so maxits is set too low.
 	    // Otherwise, the method may or may not converge.
-	    /*
 	    if(is_diagonally_dominant(al,au,bl,bu,jy,kz)){
 	      throw BoutException("LaplaceParallelTri error: Not converged within maxits=%i iterations. The iteration matrix is diagonally dominant on processor %i and convergence is guaranteed (if all processors are diagonally dominant). Please increase maxits and retry.",maxits,BoutComm::rank());
 	    }
@@ -948,27 +938,6 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	      output<<Ad<<" "<<Bd<<" "<<Au<<" "<<Bu<<endl;
 	      throw BoutException("LaplaceParallelTri error: Not converged within maxits=%i iterations. The iteration matrix is not diagonally dominant on processor %i, so there is no guarantee this method will converge. Consider increasing maxits or using a different solver.",maxits,BoutComm::rank());
 	    }
-	    */
-
-	    if(first_call(jy,kz)){
-	      // Allreduce to see if any procs are unconverged.
-	      // Note that we set count=maxits once a proc converged, so all
-	      // procs reach this point.
-	      //output << "Before "<<BoutComm::rank()<<" "<<jy<<" "<<kz<<" "<<converged<<" "<<all_converged<<endl;
-	      MPI_Allreduce(
-		  &converged,			// My variable
-		  &all_converged,		// Reduction variable
-		  1,				// Size
-		  MPI::BOOL,			// Mpi type
-		  MPI_LAND,			// logical "and" reduction
-		  localmesh->getXcomm());	// communicator
-	      //output << "After "<<BoutComm::rank()<<" "<<jy<<" "<<kz<<" "<<converged<<" "<<all_converged<<endl;
-	      force_direct_solve(jy,kz) = not all_converged;
-	    }
-
-	    solve_global_reduced_system(std::begin(xloclast),al,au,bl,bu,rl,ru,std::begin(avec),std::begin(bvec),std::begin(cvec),std::begin(bk1d));
-	    //output<<"solution " << BoutComm::rank()<<" " << xloclast[0] <<" "<< xloclast[1]<<" "<<xloclast[2]<<" "<<xloclast[3]<<endl;
-	    break;
 	  }
 
 	  ///SCOREP_USER_REGION_DEFINE(errors);

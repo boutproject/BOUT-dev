@@ -32,8 +32,10 @@ rtol = 1e-12
 # kz = 0 mode
 #om = 1.19
 #B = 0.55
-om = 1.0
+omega = 0.5
 B = 20
+new_method=false
+kz_direct_solve = 256
 
 [output]
 floats = true
