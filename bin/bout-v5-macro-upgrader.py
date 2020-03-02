@@ -72,39 +72,66 @@ def fix_include_version_header(old, headers, source):
 
 
 def fix_ifdefs(old, source):
-    """Remove any #ifdef/#endif pairs that use the old macro
+    """Remove any code inside #ifdef/#ifndef blocks that would now not be compiled
+
     """
     source_lines = source.splitlines()
 
+    # Something to keep track of nested sections
     in_ifdef = None
-    lines_to_pop = []
+    # List of (#ifdef or #ifndef, dict of start/else/end lines)
+    macro_blocks = []
     for linenumber, line in enumerate(source_lines):
-        if_def = re.match(r"#\s*ifdef\s*(.*)", line)
+        if_def = re.match(r"#\s*(ifn?def)\s*(.*)", line)
+        else_block = re.match(r"#\s*else", line)
         endif = re.match(r"#\s*endif", line)
-        if not (if_def or endif):
+        if not (if_def or else_block or endif):
             continue
         # Now we need to keep track of whether we're inside an
-        # interesting #ifdef, as they might be nested, and we want to
-        # find the matching #endif
+        # interesting #ifdef/ifndef, as they might be nested, and we
+        # want to find the matching #endif and #else
         if endif:
             if in_ifdef is not None:
                 in_ifdef -= 1
             if in_ifdef == 0:
                 in_ifdef = None
-                lines_to_pop.append(linenumber)
+                macro_blocks[-1]["end"] = linenumber
             continue
-        if if_def.group(1) == old:
+        if else_block:
+            if in_ifdef == 1:
+                macro_blocks[-1]["else"] = linenumber
+            continue
+        if if_def.group(2) == old:
             in_ifdef = 1
-            lines_to_pop.append(linenumber)
+            macro_blocks.append({"start": linenumber, "if_def_type": if_def.group(1)})
         elif in_ifdef is not None:
             in_ifdef += 1
 
-    # Go over the source lines in reverse so that we don't need to
-    # recompute indices
-    for line in reversed(lines_to_pop):
-        del source_lines[line]
+    if macro_blocks == []:
+        return source
 
-    return "\n".join(source_lines)
+    # Get all of the lines to be removed
+    lines_to_remove = set()
+    for block in macro_blocks:
+        lines_to_remove |= set(block.values())
+        if block["if_def_type"] == "ifdef":
+            if "else" in block:
+                # Delete the #else block for #ifdef
+                lines_to_remove |= set(range(block["else"], block["end"]))
+        else:
+            # Keep the #else block for #ifndef if there is one, otherwise remove the
+            # whole block
+            lines_to_remove |= set(
+                range(block["start"], block.get("else", block["end"]))
+            )
+
+    # Apparently this is actually the best way of removing a bunch of (possibly)
+    # non-contiguous indices
+    modified_lines = [
+        line for num, line in enumerate(source_lines) if num not in lines_to_remove
+    ]
+
+    return "\n".join(modified_lines)
 
 
 def fix_replacement(old, new, source):
@@ -169,7 +196,8 @@ if __name__ == "__main__":
 
             * replacement of macros with variables
             * inclusion of correct headers for new variables
-            * removal of #ifdef/#endif pairs that do simple checks for the old macro
+            * removal of #if(n)def/#endif blocks that do simple checks for the old
+              macro, keeping the appriopriate part
 
             It will try not to replace quoted macro names.
 
