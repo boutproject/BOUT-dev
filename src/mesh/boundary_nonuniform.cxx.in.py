@@ -57,12 +57,14 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
   if (!fg)
     fg = f.getBndryGenerator(bndry->location);
 
-  BoutReal val = 0.0;
-
   Mesh *mesh = f.getMesh();
   CELL_LOC loc = f.getLocation();
 
+{% if type != "Free" %}
+  BoutReal val = 0.0;
   BoutReal vals[mesh->LocalNz];
+{% endif %}
+
   int x_boundary_offset = bndry->bx;
   int y_boundary_offset = bndry->by;
   int stagger = 0;
@@ -72,6 +74,7 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
 {% endif %}
 
   for (; !bndry->isDone(); bndry->next1d()) {
+{% if type != "Free" %}
     if (fg) {
       for (int zk = 0; zk < mesh->LocalNz; zk++) {
         // Calculate the X and Y normalised values half-way between the guard cell and
@@ -82,9 +85,11 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
         BoutReal ynorm = 0.5 * (mesh->GlobalY(bndry->y)          // In the guard cell
                                 + mesh->GlobalY(bndry->y - y_boundary_offset)); // the grid cell
 
-        vals[zk] = fg->generate(xnorm, TWOPI * ynorm, TWOPI * zk / (mesh->LocalNz), t);
+        vals[zk] = fg->generate(bout::generator::Context().set("x", xnorm, "y", TWOPI * ynorm, "z", TWOPI * zk / (mesh->LocalNz), "t" , t));
       }
     }
+{% endif %}
+
 
     vec{{order}} spacing;
     vec{{order}} facs;

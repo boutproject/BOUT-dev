@@ -48,12 +48,12 @@ void BoundaryDirichletNonUniform_O2::apply(Field3D& f, BoutReal t) {
   if (!fg)
     fg = f.getBndryGenerator(bndry->location);
 
-  BoutReal val = 0.0;
-
   Mesh* mesh = f.getMesh();
   CELL_LOC loc = f.getLocation();
 
+  BoutReal val = 0.0;
   BoutReal vals[mesh->LocalNz];
+
   int x_boundary_offset = bndry->bx;
   int y_boundary_offset = bndry->by;
   int stagger = 0;
@@ -75,7 +75,8 @@ void BoundaryDirichletNonUniform_O2::apply(Field3D& f, BoutReal t) {
             * (mesh->GlobalY(bndry->y)                         // In the guard cell
                + mesh->GlobalY(bndry->y - y_boundary_offset)); // the grid cell
 
-        vals[zk] = fg->generate(xnorm, TWOPI * ynorm, TWOPI * zk / (mesh->LocalNz), t);
+        vals[zk] = fg->generate(bout::generator::Context().set(
+            "x", xnorm, "y", TWOPI * ynorm, "z", TWOPI * zk / (mesh->LocalNz), "t", t));
       }
     }
 
@@ -156,12 +157,12 @@ void BoundaryNeumannNonUniform_O2::apply(Field3D& f, BoutReal t) {
   if (!fg)
     fg = f.getBndryGenerator(bndry->location);
 
-  BoutReal val = 0.0;
-
   Mesh* mesh = f.getMesh();
   CELL_LOC loc = f.getLocation();
 
+  BoutReal val = 0.0;
   BoutReal vals[mesh->LocalNz];
+
   int x_boundary_offset = bndry->bx;
   int y_boundary_offset = bndry->by;
   int stagger = 0;
@@ -182,7 +183,8 @@ void BoundaryNeumannNonUniform_O2::apply(Field3D& f, BoutReal t) {
             * (mesh->GlobalY(bndry->y)                         // In the guard cell
                + mesh->GlobalY(bndry->y - y_boundary_offset)); // the grid cell
 
-        vals[zk] = fg->generate(xnorm, TWOPI * ynorm, TWOPI * zk / (mesh->LocalNz), t);
+        vals[zk] = fg->generate(bout::generator::Context().set(
+            "x", xnorm, "y", TWOPI * ynorm, "z", TWOPI * zk / (mesh->LocalNz), "t", t));
       }
     }
 
@@ -260,35 +262,15 @@ void BoundaryFreeNonUniform_O2::apply(Field3D& f, BoutReal t) {
   if (!fg)
     fg = f.getBndryGenerator(bndry->location);
 
-  BoutReal val = 0.0;
-
   Mesh* mesh = f.getMesh();
   CELL_LOC loc = f.getLocation();
 
-  BoutReal vals[mesh->LocalNz];
   int x_boundary_offset = bndry->bx;
   int y_boundary_offset = bndry->by;
   int stagger = 0;
   update_stagger_offsets(x_boundary_offset, y_boundary_offset, stagger, loc);
 
   for (; !bndry->isDone(); bndry->next1d()) {
-    if (fg) {
-      for (int zk = 0; zk < mesh->LocalNz; zk++) {
-        // Calculate the X and Y normalised values half-way between the guard cell and
-        // grid cell
-        BoutReal xnorm =
-            0.5
-            * (mesh->GlobalX(bndry->x)                         // In the guard cell
-               + mesh->GlobalX(bndry->x - x_boundary_offset)); // the grid cell
-
-        BoutReal ynorm =
-            0.5
-            * (mesh->GlobalY(bndry->y)                         // In the guard cell
-               + mesh->GlobalY(bndry->y - y_boundary_offset)); // the grid cell
-
-        vals[zk] = fg->generate(xnorm, TWOPI * ynorm, TWOPI * zk / (mesh->LocalNz), t);
-      }
-    }
 
     vec2 spacing;
     vec2 facs;
@@ -366,12 +348,12 @@ void BoundaryDirichletNonUniform_O3::apply(Field3D& f, BoutReal t) {
   if (!fg)
     fg = f.getBndryGenerator(bndry->location);
 
-  BoutReal val = 0.0;
-
   Mesh* mesh = f.getMesh();
   CELL_LOC loc = f.getLocation();
 
+  BoutReal val = 0.0;
   BoutReal vals[mesh->LocalNz];
+
   int x_boundary_offset = bndry->bx;
   int y_boundary_offset = bndry->by;
   int stagger = 0;
@@ -393,7 +375,8 @@ void BoundaryDirichletNonUniform_O3::apply(Field3D& f, BoutReal t) {
             * (mesh->GlobalY(bndry->y)                         // In the guard cell
                + mesh->GlobalY(bndry->y - y_boundary_offset)); // the grid cell
 
-        vals[zk] = fg->generate(xnorm, TWOPI * ynorm, TWOPI * zk / (mesh->LocalNz), t);
+        vals[zk] = fg->generate(bout::generator::Context().set(
+            "x", xnorm, "y", TWOPI * ynorm, "z", TWOPI * zk / (mesh->LocalNz), "t", t));
       }
     }
 
@@ -486,12 +469,12 @@ void BoundaryNeumannNonUniform_O3::apply(Field3D& f, BoutReal t) {
   if (!fg)
     fg = f.getBndryGenerator(bndry->location);
 
-  BoutReal val = 0.0;
-
   Mesh* mesh = f.getMesh();
   CELL_LOC loc = f.getLocation();
 
+  BoutReal val = 0.0;
   BoutReal vals[mesh->LocalNz];
+
   int x_boundary_offset = bndry->bx;
   int y_boundary_offset = bndry->by;
   int stagger = 0;
@@ -512,7 +495,8 @@ void BoundaryNeumannNonUniform_O3::apply(Field3D& f, BoutReal t) {
             * (mesh->GlobalY(bndry->y)                         // In the guard cell
                + mesh->GlobalY(bndry->y - y_boundary_offset)); // the grid cell
 
-        vals[zk] = fg->generate(xnorm, TWOPI * ynorm, TWOPI * zk / (mesh->LocalNz), t);
+        vals[zk] = fg->generate(bout::generator::Context().set(
+            "x", xnorm, "y", TWOPI * ynorm, "z", TWOPI * zk / (mesh->LocalNz), "t", t));
       }
     }
 
@@ -600,35 +584,15 @@ void BoundaryFreeNonUniform_O3::apply(Field3D& f, BoutReal t) {
   if (!fg)
     fg = f.getBndryGenerator(bndry->location);
 
-  BoutReal val = 0.0;
-
   Mesh* mesh = f.getMesh();
   CELL_LOC loc = f.getLocation();
 
-  BoutReal vals[mesh->LocalNz];
   int x_boundary_offset = bndry->bx;
   int y_boundary_offset = bndry->by;
   int stagger = 0;
   update_stagger_offsets(x_boundary_offset, y_boundary_offset, stagger, loc);
 
   for (; !bndry->isDone(); bndry->next1d()) {
-    if (fg) {
-      for (int zk = 0; zk < mesh->LocalNz; zk++) {
-        // Calculate the X and Y normalised values half-way between the guard cell and
-        // grid cell
-        BoutReal xnorm =
-            0.5
-            * (mesh->GlobalX(bndry->x)                         // In the guard cell
-               + mesh->GlobalX(bndry->x - x_boundary_offset)); // the grid cell
-
-        BoutReal ynorm =
-            0.5
-            * (mesh->GlobalY(bndry->y)                         // In the guard cell
-               + mesh->GlobalY(bndry->y - y_boundary_offset)); // the grid cell
-
-        vals[zk] = fg->generate(xnorm, TWOPI * ynorm, TWOPI * zk / (mesh->LocalNz), t);
-      }
-    }
 
     vec3 spacing;
     vec3 facs;
@@ -718,12 +682,12 @@ void BoundaryDirichletNonUniform_O4::apply(Field3D& f, BoutReal t) {
   if (!fg)
     fg = f.getBndryGenerator(bndry->location);
 
-  BoutReal val = 0.0;
-
   Mesh* mesh = f.getMesh();
   CELL_LOC loc = f.getLocation();
 
+  BoutReal val = 0.0;
   BoutReal vals[mesh->LocalNz];
+
   int x_boundary_offset = bndry->bx;
   int y_boundary_offset = bndry->by;
   int stagger = 0;
@@ -745,7 +709,8 @@ void BoundaryDirichletNonUniform_O4::apply(Field3D& f, BoutReal t) {
             * (mesh->GlobalY(bndry->y)                         // In the guard cell
                + mesh->GlobalY(bndry->y - y_boundary_offset)); // the grid cell
 
-        vals[zk] = fg->generate(xnorm, TWOPI * ynorm, TWOPI * zk / (mesh->LocalNz), t);
+        vals[zk] = fg->generate(bout::generator::Context().set(
+            "x", xnorm, "y", TWOPI * ynorm, "z", TWOPI * zk / (mesh->LocalNz), "t", t));
       }
     }
 
@@ -853,12 +818,12 @@ void BoundaryNeumannNonUniform_O4::apply(Field3D& f, BoutReal t) {
   if (!fg)
     fg = f.getBndryGenerator(bndry->location);
 
-  BoutReal val = 0.0;
-
   Mesh* mesh = f.getMesh();
   CELL_LOC loc = f.getLocation();
 
+  BoutReal val = 0.0;
   BoutReal vals[mesh->LocalNz];
+
   int x_boundary_offset = bndry->bx;
   int y_boundary_offset = bndry->by;
   int stagger = 0;
@@ -879,7 +844,8 @@ void BoundaryNeumannNonUniform_O4::apply(Field3D& f, BoutReal t) {
             * (mesh->GlobalY(bndry->y)                         // In the guard cell
                + mesh->GlobalY(bndry->y - y_boundary_offset)); // the grid cell
 
-        vals[zk] = fg->generate(xnorm, TWOPI * ynorm, TWOPI * zk / (mesh->LocalNz), t);
+        vals[zk] = fg->generate(bout::generator::Context().set(
+            "x", xnorm, "y", TWOPI * ynorm, "z", TWOPI * zk / (mesh->LocalNz), "t", t));
       }
     }
 
@@ -999,35 +965,15 @@ void BoundaryFreeNonUniform_O4::apply(Field3D& f, BoutReal t) {
   if (!fg)
     fg = f.getBndryGenerator(bndry->location);
 
-  BoutReal val = 0.0;
-
   Mesh* mesh = f.getMesh();
   CELL_LOC loc = f.getLocation();
 
-  BoutReal vals[mesh->LocalNz];
   int x_boundary_offset = bndry->bx;
   int y_boundary_offset = bndry->by;
   int stagger = 0;
   update_stagger_offsets(x_boundary_offset, y_boundary_offset, stagger, loc);
 
   for (; !bndry->isDone(); bndry->next1d()) {
-    if (fg) {
-      for (int zk = 0; zk < mesh->LocalNz; zk++) {
-        // Calculate the X and Y normalised values half-way between the guard cell and
-        // grid cell
-        BoutReal xnorm =
-            0.5
-            * (mesh->GlobalX(bndry->x)                         // In the guard cell
-               + mesh->GlobalX(bndry->x - x_boundary_offset)); // the grid cell
-
-        BoutReal ynorm =
-            0.5
-            * (mesh->GlobalY(bndry->y)                         // In the guard cell
-               + mesh->GlobalY(bndry->y - y_boundary_offset)); // the grid cell
-
-        vals[zk] = fg->generate(xnorm, TWOPI * ynorm, TWOPI * zk / (mesh->LocalNz), t);
-      }
-    }
 
     vec4 spacing;
     vec4 facs;
