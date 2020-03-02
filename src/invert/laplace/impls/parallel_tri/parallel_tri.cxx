@@ -785,6 +785,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       }
       else {
 
+	//output<<"first_call "<<first_call(jy,kz)<<", proc "<< BoutComm::rank() << ", count "<<count<<" "<<jy<<" "<<kz<<endl<<std::flush;
 	while(true){
 
 	  ///SCOREP_USER_REGION_DEFINE(iteration);
@@ -898,8 +899,8 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 
 	  // Now I've done my communication, exit if I am both in- and out-converged
 	  if( self_in and self_out ) {
-	    //output<<"Breaking, proc "<< BoutComm::rank() << ", count "<<count<<" "<<jy<<" "<<kz<<endl<<std::flush;
 	    if(not first_call(jy,kz)){
+	      //output<<"Breaking, proc "<< BoutComm::rank() << ", count "<<count<<" "<<jy<<" "<<kz<<endl<<std::flush;
 	      break;
 	    }
 	    else{
@@ -955,14 +956,14 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	      // procs reach this point.
 	      //output << "Before "<<BoutComm::rank()<<" "<<jy<<" "<<kz<<" "<<converged<<" "<<all_converged<<endl;
 	      MPI_Allreduce(
-		  &converged,		// My variable
+		  &converged,			// My variable
 		  &all_converged,		// Reduction variable
-		  1,			// Size
-		  MPI::BOOL,		// Mpi type
-		  MPI_LAND,		// logical "and" reduction
+		  1,				// Size
+		  MPI::BOOL,			// Mpi type
+		  MPI_LAND,			// logical "and" reduction
 		  localmesh->getXcomm());	// communicator
 	      //output << "After "<<BoutComm::rank()<<" "<<jy<<" "<<kz<<" "<<converged<<" "<<all_converged<<endl;
-	      force_direct_solve(jy,kz) = true;
+	      force_direct_solve(jy,kz) = not all_converged;
 	    }
 
 	    solve_global_reduced_system(std::begin(xloclast),al,au,bl,bu,rl,ru,std::begin(avec),std::begin(bvec),std::begin(cvec),std::begin(bk1d));
