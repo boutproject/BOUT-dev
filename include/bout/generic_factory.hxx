@@ -1,4 +1,4 @@
-/// \file Base type for factories
+/// Base type for factories
 
 #pragma once
 #ifndef __BOUT_GENERIC_FACTORY_H__
