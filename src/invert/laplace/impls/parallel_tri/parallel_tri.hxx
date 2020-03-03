@@ -73,9 +73,6 @@ public:
   BoutReal getMeanIterations() const { return ipt_mean_its; }
   void resetMeanIterations() { ipt_mean_its = 0; }
 
-  void solve_global_reduced_system(dcomplex *x, const dcomplex, const dcomplex,
-     const dcomplex, const dcomplex, const dcomplex, const dcomplex,
-     const dcomplex *av, const dcomplex *bv, const dcomplex *cv, const dcomplex *rv);
   void get_initial_guess(const int jy, const int kz, Array<dcomplex> &r,
       Tensor<dcomplex> &lowerGuardVector, Tensor<dcomplex> &upperGuardVector,
       Array<dcomplex> &xk1d);
@@ -93,8 +90,11 @@ private:
   BoutReal omega;
   //BoutReal Borig;
   Field3D Bvals;
+
+  // Flag to state whether this is the first time the solver is called
+  // on the point (jy,kz).
   Matrix<bool> first_call;
-  Matrix<bool> force_direct_solve;
+
   // Save previous x in Fourier space
   Tensor<dcomplex> x0saved;
 

@@ -41,37 +41,28 @@ int main(int argc, char **argv) {
   lap2->resetSolver();
   lap2->setFlags(3);
   Field3D flag3 = lap2->solve(input);
-  output<<"flag3"<<endl;
   SAVE_ONCE2(flag0, flag3);
 
   lap2->resetSolver();
   lap2->setCoefA(a);
   lap2->setFlags(0);
   Field3D flag0a = lap2->solve(input);
-  output<<"flag0a"<<endl;
 
   lap2->resetSolver();
   lap2->setFlags(3);
   Field3D flag3a = lap2->solve(input);
-  output<<"flag3a"<<endl;
   SAVE_ONCE2(flag0a, flag3a);
 
 
   Field3D res0a  = Delp2(flag0a);
-  output<<"res0a"<<endl;
   SAVE_ONCE(res0a);
 
   Field3D flag0ac = invert_laplace(input, 0, &a, &c);
-  output<<"flag0ac"<<endl;
   Field3D flag3ac = invert_laplace(input, 3, &a, &c);
-  output<<"flag3ac"<<endl;
   SAVE_ONCE2(flag0ac, flag3ac);
 
-  output<<"before flag0ad"<<endl;
   Field3D flag0ad = invert_laplace(input, 0, &a, nullptr, &d);
-  output<<"flag0ad"<<endl;
   Field3D flag3ad = invert_laplace(input, 3, &a, nullptr, &d);
-  output<<"flag3ad"<<endl;
   SAVE_ONCE2(flag0ad, flag3ad);
 
   /// Test new interface and INVERT_IN/OUT_SET flags
@@ -84,8 +75,9 @@ int main(int argc, char **argv) {
   Laplacian *lap = Laplacian::create();
   lap->setFlags(4096);
   Field3D flagis = lap->solve(input, set_to);
-  lap->setFlags(8192);
+
   lap->resetSolver();
+  lap->setFlags(8192);
   Field3D flagos = lap->solve(input, set_to);
   SAVE_ONCE2(flagis, flagos);
 
@@ -93,6 +85,7 @@ int main(int argc, char **argv) {
   lap->setCoefA(a);
   lap->setFlags(4096);
   Field3D flagisa = lap->solve(input, set_to);
+
   lap->resetSolver();
   lap->setFlags(8192);
   Field3D flagosa = lap->solve(input, set_to);
@@ -102,6 +95,7 @@ int main(int argc, char **argv) {
   lap->setCoefC(c);
   lap->setFlags(4096);
   Field3D flagisac = lap->solve(input, set_to);
+
   lap->resetSolver();
   lap->setFlags(8192);
   Field3D flagosac = lap->solve(input, set_to);
@@ -112,6 +106,7 @@ int main(int argc, char **argv) {
   lap->setCoefD(d);
   lap->setFlags(4096);
   Field3D flagisad = lap->solve(input, set_to);
+
   lap->resetSolver();
   lap->setFlags(8192);
   Field3D flagosad = lap->solve(input, set_to);
