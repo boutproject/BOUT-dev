@@ -335,7 +335,7 @@ The current source code files are:
      basic derivative methods such as upwinding, central difference
      and WENO methods. These are then used by
      :doc:`difops.cxx<../_breathe_autogen/file/difops_8cxx>`. Details are
-     given in section :ref:`sec-derivatives`.
+     given in section :ref:`sec-diffops`.
 
    - :doc:`msg_stack.cxx<../_breathe_autogen/file/msg__stack_8cxx>` is
      part of the error handling system. It maintains a stack of
