@@ -2,5 +2,7 @@
 TARGET = bout_mdsplus
 
 $(TARGET).pdf: $(TARGET).tex
-	pdflatex $(TARGET).tex
-	pdflatex $(TARGET).tex
+	latexmk -pdf $(TARGET).tex -interaction=batchmode
+
+clean:
+	latexmk -C
