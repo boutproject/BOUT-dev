@@ -8,7 +8,7 @@ git:
 # Define some aliases for some repeated config variables
 # Note &<name> creates a reference that we can refer to later using
 # *<name>, see https://en.wikipedia.org/wiki/YAML#Syntax
-aliases:
+_aliases:
   - &petsc_vars
     - PETSC_DIR=/usr/lib/petscdir/3.6.2/x86_64-linux-gnu-real
     - PETSC_ARCH=""
