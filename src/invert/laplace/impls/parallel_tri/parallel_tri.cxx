@@ -560,6 +560,81 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       rlold = rl;
       ruold = ru;
 
+      // New method - connect to more distant points
+      if(new_method){
+      xloclast[0] = xk1d[xs-1];
+      xloclast[1] = xk1d[xs];
+      xloclast[2] = xk1d[xe];
+      xloclast[3] = xk1d[xe+1];
+
+      if(not localmesh->firstX()){
+	// Send coefficients down
+	Rtmp = rl;
+	Atmp = al;
+	Btmp = 0.0;
+	if( std::fabs(bu) > 1e-14 ){
+	  Btmp = bl/bu;
+	  Atmp -= Btmp*au;
+	  Rtmp -= Btmp*ru;
+	}
+	// Send these
+	Ad = localmesh->communicateXIn(Atmp);
+	Bd = localmesh->communicateXIn(Btmp);
+	Rd = localmesh->communicateXIn(Rtmp);
+      }
+      if(not localmesh->lastX()){
+	// Send coefficients up
+	Rtmp = ru;
+	Atmp = 0.0;
+	Btmp = bu;
+	if( std::fabs(al) > 1e-14 ){
+	  Atmp = au/al;
+	  Btmp -= Atmp*bl;
+	  Rtmp -= Atmp*rl;
+	}
+	// Send these
+	Au = localmesh->communicateXOut(Atmp);
+	Bu = localmesh->communicateXOut(Btmp);
+	Ru = localmesh->communicateXOut(Rtmp);
+      }
+
+      dcomplex Delta;
+
+
+      if(localmesh->firstX()){
+	Ad = 1.0;
+	Rd = 0.0;
+	Bd = 0.0;
+      }
+      if(localmesh->lastX()){
+	Au = 0.0;
+	Ru = 0.0;
+	Bu = 1.0;
+      }
+      Delta = 1.0 - al*Bd - bu*Au + (al*bu - au*bl)*Bd*Au;
+      Delta = 1.0 / Delta;
+      rl = Delta*( (rlold + alold*Rd + blold*Ru) 
+	         + (ruold*blold - rlold*buold)*Au
+		 + (auold*blold - alold*buold)*Au*Rd );
+      al = Delta*( alold + (auold*blold - alold*buold)*Au )*Ad;	
+      bl = Delta * blold * Bu ;	
+      ru = Delta*( (ruold + auold*Rd + buold*Ru)
+	         + (rlold*auold - ruold*alold)*Bd
+		 + (auold*blold - alold*buold)*Bd*Ru );
+      bu = Delta*( buold + (auold*blold - alold*buold)*Bd )*Bu;
+      au = Delta * auold * Ad ;
+
+///      if(jy==0 and kz==0){
+///	output<<alold<<" "<<blold<<" "<<auold<<" "<<buold<<endl;
+///	output<<al<<" "<<bl<<" "<<au<<" "<<bu<<endl;
+//////	for(int ix=0; ix<ncx;ix++){
+/////////	  output<<avec[ix]<<" "<<bvec[ix]<<" "<<cvec[ix]<<endl;
+//////	  output<<lowerGuardVector(ix,jy,kz)<<" "<<upperGuardVector(ix,jy,kz)<<" "<<endl;
+//////	}
+///	output<<" "<<endl;
+///      }
+
+      }
 
 	///SCOREP_USER_REGION_END(coefs);
       //if(jy==0 and kz==1){
@@ -575,7 +650,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       BoutReal om = 0.0;
       if(kz==0) om = omega;
 
-      //output<<"first_call "<<first_call(jy,kz)<<", proc "<< BoutComm::rank() << ", count "<<count<<" "<<jy<<" "<<kz<<endl<<std::flush;
+      output<<"first_call "<<first_call(jy,kz)<<", proc "<< BoutComm::rank() << ", count "<<count<<" "<<jy<<" "<<kz<<endl<<std::flush;
       while(true){
 
 	///SCOREP_USER_REGION_DEFINE(iteration);
@@ -734,9 +809,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	get_errors(&error_rel_lower,&error_abs_lower,xloc[1],xloclast[1]);
 	get_errors(&error_rel_upper,&error_abs_upper,xloc[2],xloclast[2]);
 
-	//if(jy==13 and kz==0){
-	//output<<"xvec "<<BoutComm::rank()<<" "<<count<<" "<<xloc[0]<<" "<<xloc[1]<<" "<<xloc[2]<<" "<<xloc[3]<<" "<<xloclast[0]<<" "<<xloclast[1]<<" "<<xloclast[2]<<" "<<xloclast[3]<<" "<<error_rel_lower<<" "<<error_abs_lower<<" "<<error_rel_upper<<" "<<error_abs_upper<<endl;
-	//}
+	if(jy==32 and kz==0){
+	  output<<"xvec "<<BoutComm::rank()<<" "<<count<<" "<<xloc[0]<<" "<<xloc[1]<<" "<<xloc[2]<<" "<<xloc[3]<<" "<<xloclast[0]<<" "<<xloclast[1]<<" "<<xloclast[2]<<" "<<xloclast[3]<<" "<<error_rel_lower<<" "<<error_abs_lower<<" "<<error_rel_upper<<" "<<error_abs_upper<<endl;
+	}
 	///SCOREP_USER_REGION_END(errors);
 
 	///SCOREP_USER_REGION_DEFINE(copylast);
@@ -784,28 +859,28 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
     xk1dlast[xe+1] = xloclast[3];
 
     if(new_method){
-    dcomplex d = 1.0/(buold*alold - blold*auold);
-    // If boundary processor, halo cell is already correct, and d is undefined.
-    // Lower boundary proc => al = au = 0
-    // Upper boundary proc => bl = bu = 0
-    if(not localmesh->firstX() and not localmesh->lastX()){
-      // General case
-      xk1dlast[xs-1] =  d*(buold*(xk1dlast[xs]-rlold) - blold*(xk1dlast[xe]-ruold));
-      xk1dlast[xe+1] = -d*(auold*(xk1dlast[xs]-rlold) - alold*(xk1dlast[xe]-ruold));
-    } else if(localmesh->firstX() and not localmesh->lastX()) {
-      // Lower boundary but not upper boundary
-      // xk1dlast[xs-1] = already correct
-      xk1dlast[xe+1] = (xk1dlast[xe]-ruold)/buold;
-    } else if(localmesh->lastX() and not localmesh->firstX()){
-      // Upper boundary but not lower boundary
-      // xk1dlast[xe+1] = already correct
-      xk1dlast[xs-1] = (xk1dlast[xs]-rlold)/alold;
-    } 
-    // No "else" case. If both upper and lower boundaries, both xs-1 and xe+1
-    // are already correct
+      dcomplex d = 1.0/(buold*alold - blold*auold);
+      // If boundary processor, halo cell is already correct, and d is undefined.
+      // Lower boundary proc => al = au = 0
+      // Upper boundary proc => bl = bu = 0
+      if(not localmesh->firstX() and not localmesh->lastX()){
+	// General case
+	xk1dlast[xs-1] =  d*(buold*(xk1dlast[xs]-rlold) - blold*(xk1dlast[xe]-ruold));
+	xk1dlast[xe+1] = -d*(auold*(xk1dlast[xs]-rlold) - alold*(xk1dlast[xe]-ruold));
+      } else if(localmesh->firstX() and not localmesh->lastX()) {
+	// Lower boundary but not upper boundary
+	// xk1dlast[xs-1] = already correct
+	xk1dlast[xe+1] = (xk1dlast[xe]-ruold)/buold;
+      } else if(localmesh->lastX() and not localmesh->firstX()){
+	// Upper boundary but not lower boundary
+	// xk1dlast[xe+1] = already correct
+	xk1dlast[xs-1] = (xk1dlast[xs]-rlold)/alold;
+      } 
+      // No "else" case. If both upper and lower boundaries, both xs-1 and xe+1
+      // are already correct
     }
 
-    //output<<"Converged "<<BoutComm::rank()<<" "<<xk1dlast[xs-1]<<" "<<xk1dlast[xs]<<" "<<xk1dlast[xe]<<" "<<xk1dlast[xe+1]<<endl;
+    output<<"Converged "<<BoutComm::rank()<<" "<<xk1dlast[xs-1]<<" "<<xk1dlast[xs]<<" "<<xk1dlast[xe]<<" "<<xk1dlast[xe+1]<<endl;
 
     // Now that halo cells are converged, use these to calculate whole solution
     for(int i=0; i<ncx; i++){
