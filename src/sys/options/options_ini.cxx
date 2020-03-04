@@ -133,7 +133,8 @@ void OptionINI::read(Options *options, const string &filename) {
           // An odd number, so read another line
 
           if (fin.eof()) {
-            throw BoutException("\t'%s': Unbalanced brackets\n\tStarting line: %s", filename.c_str(), firstline.c_str());
+            throw BoutException("\t'{:s}': Unbalanced brackets\n\tStarting line: {:s}",
+                                filename, firstline);
           }
           
           string newline = getNextLine(fin);
