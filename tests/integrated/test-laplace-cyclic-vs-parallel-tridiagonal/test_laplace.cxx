@@ -176,7 +176,7 @@ int main(int argc, char **argv) {
   int flagosad_error;
   RUN_TEST(flagosad,flagosad_error,
     lap->setCoefA(a); lap->setFlags(8192); lap->setCoefC(1.0); lap->setCoefD(d),
-    flagisad = lap->solve(input, set_to);
+    flagosad = lap->solve(input, set_to);
   );
 
   // Write and close the output file
