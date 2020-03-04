@@ -6,6 +6,7 @@
 #include <bout.hxx>
 #include <invert_laplace.hxx>
 #include <field_factory.hxx>
+#include <cstring>
 
 int main(int argc, char **argv) {
 
@@ -14,106 +15,169 @@ int main(int argc, char **argv) {
 
   FieldFactory f(mesh);
 
-///  Field3D input = f.create3D("(1-gauss(x-0.5,0.2))*gauss(y-pi)*gauss(z-pi)");
-///  Field2D a = f.create2D("gauss(x) * sin(y)");
-///  Field2D c = f.create2D("sin(x) * gauss(x-0.5) * gauss(y-pi)");
-///  Field2D d = f.create2D("y - pi/2");
-///  SAVE_ONCE4(input, a, c, d);
-///
-///  Field3D flag3 = invert_laplace(input, 3);
-///  SAVE_ONCE2(flag0, flag3);
-///
-///  Field3D flag0a = invert_laplace(input, 0, &a);
-///  Field3D flag3a = invert_laplace(input, 3, &a);
-///  SAVE_ONCE2(flag0a, flag3a);
+// String containing "not diagonally dominant" error
+  std::string ndd_message("not diagonally dominant");
+  int local_error=0;
 
-  Laplacian *lap2 = Laplacian::create();
   Field3D input = f.create3D("(1-gauss(x-0.5,0.2))*gauss(y-pi)*gauss(z-pi)");
   Field2D a = f.create2D("gauss(x) * sin(y)");
   Field2D c = f.create2D("sin(x) * gauss(x-0.5) * gauss(y-pi)");
   Field2D d = f.create2D("y - pi/2");
   SAVE_ONCE4(input, a, c, d);
 
-  lap2->setFlags(0);
-  Field3D flag0 = lap2->solve(input);
+#define RUN_TEST(test,error,set_command,test_command) {				\
+  local_error = 0;								\
+  error = 0;									\
+  Laplacian *lap = Laplacian::create();						\
+  lap->resetSolver();								\
+  set_command;									\
+  try {										\
+    test_command;								\
+  } catch (BoutException &e) {							\
+    std::string message(e.what());						\
+    if (message.find(ndd_message) != std::string::npos){			\
+      local_error = 1;								\
+    }										\
+    test = 0.0; 								\
+  }										\
+  SAVE_ONCE(test);								\
+  MPI_Reduce(&local_error,&error,1,MPI_INTEGER,MPI_MAX, 0, MPI_COMM_WORLD);	\
+  SAVE_ONCE(error);								\
+  delete lap;									\
+}
 
-  // Reset stored initial conditions array without creating/destroying solver
-  lap2->resetSolver();
-  lap2->setFlags(3);
-  Field3D flag3 = lap2->solve(input);
-  SAVE_ONCE2(flag0, flag3);
+#define RUN_TEST_OLD_IFACE(test,error,test_command) {				\
+  local_error = 0;								\
+  error = 0;									\
+  try {										\
+    test_command;								\
+  } catch (BoutException &e) {							\
+    std::string message(e.what());						\
+    if (message.find(ndd_message) != std::string::npos){			\
+      local_error = 1;								\
+    }										\
+    test = 0.0; 								\
+  }										\
+  SAVE_ONCE(test);								\
+  MPI_Reduce(&local_error,&error,1,MPI_INTEGER,MPI_MAX, 0, MPI_COMM_WORLD);	\
+  SAVE_ONCE(error);								\
+}
 
-  lap2->resetSolver();
-  lap2->setCoefA(a);
-  lap2->setFlags(0);
-  Field3D flag0a = lap2->solve(input);
+  Field3D flag0;
+  int flag0_error;
+  RUN_TEST(flag0,flag0_error,
+    lap->setFlags(0),
+    flag0 = lap->solve(input)
+  );
 
-  lap2->resetSolver();
-  lap2->setFlags(3);
-  Field3D flag3a = lap2->solve(input);
-  SAVE_ONCE2(flag0a, flag3a);
+  Field3D flag3;
+  int flag3_error;
+  RUN_TEST(flag3,flag3_error,
+    lap->setFlags(3),
+    flag3 = lap->solve(input)
+  );
+  
+  Field3D flag0a;
+  int flag0a_error;
+  RUN_TEST(flag0a,flag0a_error,
+    lap->setCoefA(a); lap->setFlags(0);,
+    flag0a = lap->solve(input)
+  );
 
+  Field3D flag3a;
+  int flag3a_error;
+  RUN_TEST(flag3a,flag3a_error,
+    lap->setCoefA(a); lap->setFlags(3);,
+    flag3a = lap->solve(input)
+  );
 
   Field3D res0a  = Delp2(flag0a);
   SAVE_ONCE(res0a);
 
-  Field3D flag0ac = invert_laplace(input, 0, &a, &c);
-  Field3D flag3ac = invert_laplace(input, 3, &a, &c);
-  SAVE_ONCE2(flag0ac, flag3ac);
+  Field3D flag0ac;
+  int flag0ac_error;
+  RUN_TEST_OLD_IFACE(flag0ac,flag0ac_error,
+    flag0ac = invert_laplace(input, 0, &a, &c);
+  );
 
-  Field3D flag0ad = invert_laplace(input, 0, &a, nullptr, &d);
-  Field3D flag3ad = invert_laplace(input, 3, &a, nullptr, &d);
-  SAVE_ONCE2(flag0ad, flag3ad);
+  Field3D flag3ac;
+  int flag3ac_error;
+  RUN_TEST_OLD_IFACE(flag3ac,flag3ac_error,
+    flag3ac = invert_laplace(input, 3, &a, &c);
+  );
+
+  Field3D flag0ad;
+  int flag0ad_error;
+  RUN_TEST_OLD_IFACE(flag0ad,flag0ad_error,
+    flag0ad = invert_laplace(input, 0, &a, nullptr, &d);
+  );
+
+  Field3D flag3ad;
+  int flag3ad_error;
+  RUN_TEST_OLD_IFACE(flag3ad,flag3ad_error,
+    flag3ad = invert_laplace(input, 3, &a, nullptr, &d);
+  );
 
   /// Test new interface and INVERT_IN/OUT_SET flags
 
   Field2D set_to = f.create2D("cos(2*y)*(x - 0.5)");
   SAVE_ONCE(set_to);
 
-  delete lap2;
+  Field3D flagis;
+  int flagis_error;
+  RUN_TEST(flagis,flagis_error,
+    lap->setFlags(4096);,
+    flagis = lap->solve(input, set_to);
+  );
 
-  Laplacian *lap = Laplacian::create();
-  lap->setFlags(4096);
-  Field3D flagis = lap->solve(input, set_to);
+  Field3D flagos;
+  int flagos_error;
+  RUN_TEST(flagos,flagos_error,
+    lap->setFlags(8192);,
+    flagos = lap->solve(input, set_to);
+  );
 
-  lap->resetSolver();
-  lap->setFlags(8192);
-  Field3D flagos = lap->solve(input, set_to);
-  SAVE_ONCE2(flagis, flagos);
+  Field3D flagisa;
+  int flagisa_error;
+  RUN_TEST(flagisa,flagisa_error,
+    lap->setCoefA(a); lap->setFlags(4096);,
+    flagisa = lap->solve(input, set_to);
+  );
 
-  lap->resetSolver();
-  lap->setCoefA(a);
-  lap->setFlags(4096);
-  Field3D flagisa = lap->solve(input, set_to);
+  Field3D flagosa;
+  int flagosa_error;
+  RUN_TEST(flagosa,flagosa_error,
+    lap->setCoefA(a); lap->setFlags(8192);,
+    flagosa = lap->solve(input, set_to);
+  );
 
-  lap->resetSolver();
-  lap->setFlags(8192);
-  Field3D flagosa = lap->solve(input, set_to);
-  SAVE_ONCE2(flagisa, flagosa);
+  Field3D flagisac;
+  int flagisac_error;
+  RUN_TEST(flagisac,flagisac_error,
+    lap->setCoefA(a); lap->setFlags(4096); lap->setCoefC(c),
+    flagisac = lap->solve(input, set_to);
+  );
 
-  lap->resetSolver();
-  lap->setCoefC(c);
-  lap->setFlags(4096);
-  Field3D flagisac = lap->solve(input, set_to);
+  Field3D flagosac;
+  int flagosac_error;
+  RUN_TEST(flagosac,flagosac_error,
+    lap->setCoefA(a); lap->setFlags(8192); lap->setCoefC(c),
+    flagosac = lap->solve(input, set_to);
+  );
 
-  lap->resetSolver();
-  lap->setFlags(8192);
-  Field3D flagosac = lap->solve(input, set_to);
-  SAVE_ONCE2(flagisac, flagosac);
+  Field3D flagisad;
+  int flagisad_error;
+  RUN_TEST(flagisad,flagisad_error,
+    lap->setCoefA(a); lap->setFlags(4096); lap->setCoefC(1.0); lap->setCoefD(d),
+    flagisad = lap->solve(input, set_to);
+  );
 
-  lap->resetSolver();
-  lap->setCoefC(1.0);
-  lap->setCoefD(d);
-  lap->setFlags(4096);
-  Field3D flagisad = lap->solve(input, set_to);
-
-  lap->resetSolver();
-  lap->setFlags(8192);
-  Field3D flagosad = lap->solve(input, set_to);
-  SAVE_ONCE2(flagisad, flagosad);
-
-  // Delete Laplacian when done
-  delete lap;
+  Field3D flagosad;
+  int flagosad_error;
+  RUN_TEST(flagosad,flagosad_error,
+    lap->setCoefA(a); lap->setFlags(8192); lap->setCoefC(1.0); lap->setCoefD(d),
+    flagisad = lap->solve(input, set_to);
+  );
 
   // Write and close the output file
 
