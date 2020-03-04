@@ -47,7 +47,7 @@ cache:
   directories:
   - $HOME/local
 
-matrix:
+jobs:
   fast_finish: true
   include:
   - env: &default_env
