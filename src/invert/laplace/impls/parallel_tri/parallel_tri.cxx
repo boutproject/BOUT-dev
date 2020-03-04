@@ -632,16 +632,8 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	///SCOREP_USER_REGION_BEGIN(iteration, "iteration",SCOREP_USER_REGION_TYPE_COMMON);
 
 	// Only need to update interior points
-	xloc[1] = rl;
-	xloc[2] = ru;
-	if(not localmesh->lastX()) {
-	  xloc[1] += bl*xloclast[3];
-	  xloc[2] += bu*xloclast[3];
-	}
-	if(not localmesh->firstX()) {
-	  xloc[1] += al*xloclast[0];
-	  xloc[2] += au*xloclast[0];
-	}
+	xloc[1] = rl + al*xloclast[0] + bl*xloclast[3];
+	xloc[2] = ru + au*xloclast[0] + bu*xloclast[3];
 
 	///SCOREP_USER_REGION_END(iteration);
 
