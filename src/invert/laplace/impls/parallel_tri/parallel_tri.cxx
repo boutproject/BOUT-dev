@@ -644,6 +644,14 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	}
 
 	///SCOREP_USER_REGION_END(iteration);
+
+	///SCOREP_USER_REGION_DEFINE(errors);
+	///SCOREP_USER_REGION_BEGIN(errors, "calculate errors",SCOREP_USER_REGION_TYPE_COMMON);
+	// Calcalate errors on interior points only
+	get_errors(&error_rel_lower,&error_abs_lower,xloc[1],xloclast[1]);
+	get_errors(&error_rel_upper,&error_abs_upper,xloc[2],xloclast[2]);
+	///SCOREP_USER_REGION_END(errors);
+
 	///SCOREP_USER_REGION_DEFINE(comms);
 	///SCOREP_USER_REGION_BEGIN(comms, "communication",SCOREP_USER_REGION_TYPE_COMMON);
 
@@ -739,19 +747,6 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	    throw BoutException("LaplaceParallelTri error: Not converged within maxits=%i iterations. The iteration matrix is not diagonally dominant on processor %i, so there is no guarantee this method will converge. Consider increasing maxits or using a different solver.",maxits,BoutComm::rank());
 	  }
 	}
-
-	///SCOREP_USER_REGION_DEFINE(errors);
-	///SCOREP_USER_REGION_BEGIN(errors, "calculate errors",SCOREP_USER_REGION_TYPE_COMMON);
-//
-
-	// Calcalate errors on interior points only
-	get_errors(&error_rel_lower,&error_abs_lower,xloc[1],xloclast[1]);
-	get_errors(&error_rel_upper,&error_abs_upper,xloc[2],xloclast[2]);
-
-	if(jy==32 and kz==0){
-	  output<<"xvec "<<BoutComm::rank()<<" "<<count<<" "<<xloc[0]<<" "<<xloc[1]<<" "<<xloc[2]<<" "<<xloc[3]<<" "<<xloclast[0]<<" "<<xloclast[1]<<" "<<xloclast[2]<<" "<<xloclast[3]<<" "<<error_rel_lower<<" "<<error_abs_lower<<" "<<error_rel_upper<<" "<<error_abs_upper<<endl;
-	}
-	///SCOREP_USER_REGION_END(errors);
 
 	///SCOREP_USER_REGION_DEFINE(copylast);
 	///SCOREP_USER_REGION_BEGIN(copylast, "copy to last",SCOREP_USER_REGION_TYPE_COMMON);
