@@ -562,16 +562,6 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       rlold = rl;
       ruold = ru;
 
-      if( std::fabs(buold) > 1e-14 ){
-	bl = blold/buold;
-	rl = rlold - blold*ruold/buold;
-	al = alold - blold*auold/buold;
-      }
-      if( std::fabs(alold) > 1e-14 ){
-	ru = ruold - auold*rlold/alold;
-	au = auold/alold;
-	bu = buold - auold*blold/alold;
-      }
 
 	///SCOREP_USER_REGION_END(coefs);
       //if(jy==0 and kz==1){
@@ -587,10 +577,6 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       BoutReal om = 0.0;
       if(kz==0) om = omega;
 
-      // Set convergence flags
-      bool converged = false;
-      bool all_converged = false;
-
       //output<<"first_call "<<first_call(jy,kz)<<", proc "<< BoutComm::rank() << ", count "<<count<<" "<<jy<<" "<<kz<<endl<<std::flush;
       while(true){
 
@@ -598,19 +584,15 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	///SCOREP_USER_REGION_BEGIN(iteration, "iteration",SCOREP_USER_REGION_TYPE_COMMON);
 
 	// Only need to update interior points
-///	if(count % 2 == 0){
-	  xloc[1] = rl + bl*xloclast[2];
-	  xloc[2] = ru + au*xloc[1];
-///	}
-///	else{
-///	  xloc[2] = ru + au*xloclast[1];
-///	  xloc[1] = rl + bl*xloc[2];
-///	}
+	xloc[1] = rl;
+	xloc[2] = ru;
 	if(not localmesh->lastX()) {
+	  xloc[1] += bl*xloclast[3];
 	  xloc[2] += bu*xloclast[3];
 	}
 	if(not localmesh->firstX()) {
 	  xloc[1] += al*xloclast[0];
+	  xloc[2] += au*xloclast[0];
 	}
 
 	/*
