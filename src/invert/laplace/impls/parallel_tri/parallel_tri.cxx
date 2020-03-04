@@ -373,8 +373,6 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   auto bvec = Array<dcomplex>(ncx);
   auto cvec = Array<dcomplex>(ncx);
   auto minvb = Array<dcomplex>(ncx);
-  bool lowerUnstable = false;
-  bool upperUnstable = false;
 
   BOUT_OMP(parallel for)
   for (int ix = 0; ix < ncx; ix++) {
@@ -776,28 +774,14 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
     //Bvals(0,jy,kz) = B;
 
     // Original method:
-    if(not lowerUnstable) {
-      xk1d[xs-1] = xloc[0];
-      xk1d[xs]   = xloc[1];
-      xk1dlast[xs-1] = xloclast[0];
-      xk1dlast[xs]   = xloclast[1];
-    } else {
-      xk1d[xs-1] = xloc[1];
-      xk1d[xs]   = xloc[0];
-      xk1dlast[xs-1] = xloclast[1];
-      xk1dlast[xs]   = xloclast[0];
-    }
-    if(not upperUnstable) {
-      xk1d[xe]   = xloc[2];
-      xk1d[xe+1] = xloc[3];
-      xk1dlast[xe]   = xloclast[2];
-      xk1dlast[xe+1] = xloclast[3];
-    } else {
-      xk1d[xe]   = xloc[3];
-      xk1d[xe+1] = xloc[2];
-      xk1dlast[xe]   = xloclast[3];
-      xk1dlast[xe+1] = xloclast[2];
-    }
+    xk1d[xs-1] = xloc[0];
+    xk1d[xs]   = xloc[1];
+    xk1dlast[xs-1] = xloclast[0];
+    xk1dlast[xs]   = xloclast[1];
+    xk1d[xe]   = xloc[2];
+    xk1d[xe+1] = xloc[3];
+    xk1dlast[xe]   = xloclast[2];
+    xk1dlast[xe+1] = xloclast[3];
 
     if(new_method){
     dcomplex d = 1.0/(buold*alold - blold*auold);
