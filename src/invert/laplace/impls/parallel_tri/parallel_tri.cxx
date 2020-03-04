@@ -649,9 +649,8 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 
 	TRACE("set comm flags pack");
 	// Set communication flags
-	if ( count > 1 and
+	if ( count > 0 and
 	    (
-	     //kz==0 or 
 	     ((error_rel_lower<rtol or error_abs_lower<atol) and
 	     (error_rel_upper<rtol or error_abs_upper<atol) ))) {
 	  // In the next iteration this proc informs its neighbours that its halo cells
@@ -745,15 +744,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	///SCOREP_USER_REGION_BEGIN(errors, "calculate errors",SCOREP_USER_REGION_TYPE_COMMON);
 //
 
-	// Calculate errors
-	error_abs_lower = 0.0;
-	error_abs_upper = 0.0;
-	error_rel_lower = 0.0;
-	error_rel_upper = 0.0;
-
-	// Calcalate errors on left halo and right interior point - this means the
-	// errors on neighbouring processors agree exactly without the need for
-	// communication.
+	// Calcalate errors on interior points only
 	get_errors(&error_rel_lower,&error_abs_lower,xloc[1],xloclast[1]);
 	get_errors(&error_rel_upper,&error_abs_upper,xloc[2],xloclast[2]);
 
