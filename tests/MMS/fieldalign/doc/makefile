@@ -6,6 +6,7 @@ DOCS = fieldalign.pdf
 all: $(DOCS)
 
 %.pdf: %.tex 
-	pdflatex $< 
-	pdflatex $<
+	latexmk -pdf $< -interaction=batchmode
 
+clean:
+	latexmk -C
