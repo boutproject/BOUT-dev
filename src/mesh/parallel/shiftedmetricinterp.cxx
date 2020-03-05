@@ -39,7 +39,7 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
 
   // Create the Interpolation objects and set whether they go up or down the
   // magnetic field
-  auto interp_options = options["zinterpolation"];
+  auto& interp_options = options["zinterpolation"];
   interp_yup = ZInterpolationFactory::getInstance().create(&interp_options, &mesh);
   interp_yup->setYOffset(1);
 
