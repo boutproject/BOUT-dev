@@ -107,36 +107,16 @@ void ZHermiteSpline::calcWeights(const Field3D& delta_z, const BoutMask& mask,
 std::vector<ParallelTransform::PositionsAndWeights>
 ZHermiteSpline::getWeightsForYApproximation(int i, int j, int k, int yoffset) const {
 
-  std::vector<ParallelTransform::PositionsAndWeights> pw;
-  ParallelTransform::PositionsAndWeights p;
+  const int ncz = localmesh->LocalNz;
+  const int k_mod = ((k_corner(i, j, k) % ncz) + ncz) % ncz;
+  const int k_mod_m1 = (k_mod > 0) ? (k_mod - 1) : (ncz - 1);
+  const int k_mod_p1 = (k_mod + 1) % ncz;
+  const int k_mod_p2 = (k_mod + 2) % ncz;
 
-  int ncz = localmesh->LocalNz;
-  int k_mod = ((k_corner(i, j, k) % ncz) + ncz) % ncz;
-  int k_mod_m1 = (k_mod > 0) ? (k_mod - 1) : (ncz - 1);
-  int k_mod_p1 = (k_mod + 1) % ncz;
-  int k_mod_p2 = (k_mod + 2) % ncz;
-
-  // Same x, y for all:
-  p.i = i;
-  p.j = j + yoffset;
-
-  p.k = k_mod_m1;
-  p.weight = -0.5 * h10(i, j, k);
-  pw.push_back(p);
-
-  p.k = k_mod;
-  p.weight = h00(i, j, k) - 0.5 * h11(i, j, k);
-  pw.push_back(p);
-
-  p.k = k_mod_p1;
-  p.weight = h01(i, j, k) + 0.5 * h10(i, j, k);
-  pw.push_back(p);
-
-  p.k = k_mod_p2;
-  p.weight = 0.5 * h11(i, j, k);
-  pw.push_back(p);
-
-  return pw;
+  return {{i, j + yoffset, k_mod_m1, -0.5 * h10(i, j, k)},
+          {i, j + yoffset, k_mod,    h00(i, j, k) - 0.5 * h11(i, j, k)},
+          {i, j + yoffset, k_mod_p1, h01(i, j, k) + 0.5 * h10(i, j, k)},
+          {i, j + yoffset, k_mod_p2, 0.5 * h11(i, j, k)}};
 }
 
 Field3D ZHermiteSpline::interpolate(const Field3D& f, const std::string& region) const {
