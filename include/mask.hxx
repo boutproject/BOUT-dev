@@ -53,10 +53,10 @@ public:
     mask(nx, ny, nz) {
     mask = value;
   }
-  BoutMask(Mesh& mesh, bool value=false) :
+  explicit BoutMask(const Mesh& mesh, bool value=false) :
     BoutMask(mesh.LocalNx, mesh.LocalNy, mesh.LocalNz, value) {}
-  // Default constructor uses global mesh
-  BoutMask() : BoutMask(*bout::globals::mesh) {}
+  explicit BoutMask(const Mesh* mesh = nullptr, bool value = false)
+      : BoutMask(mesh == nullptr ? *bout::globals::mesh : *mesh, value) {}
 
   // Assignment from bool
   BoutMask& operator=(bool value) {
