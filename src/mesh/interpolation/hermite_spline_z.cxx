@@ -27,9 +27,9 @@
 
 #include <vector>
 
-ZHermiteSpline::ZHermiteSpline(int y_offset, Mesh* mesh)
-    : ZInterpolation(y_offset, mesh), h00(localmesh), h01(localmesh), h10(localmesh),
-      h11(localmesh) {
+ZHermiteSpline::ZHermiteSpline(BoutMask mask, int y_offset, Mesh* mesh)
+    : ZInterpolation(mask, y_offset, mesh), h00(localmesh), h01(localmesh),
+      h10(localmesh), h11(localmesh) {
 
   // Index arrays contain guard cells in order to get subscripts right
   k_corner.reallocate(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);

@@ -34,13 +34,11 @@ protected:
   BoutMask skip_mask;
 
 public:
-  ZInterpolation(int y_offset = 0, Mesh* localmeshIn = nullptr)
-      : localmesh(localmeshIn == nullptr ? bout::globals::mesh : localmeshIn),
-        skip_mask(*localmesh, false), y_offset(y_offset) {}
-  ZInterpolation(const BoutMask& mask, int y_offset = 0, Mesh* mesh = nullptr)
-      : ZInterpolation(y_offset, mesh) {
-    skip_mask = mask;
-  }
+  explicit ZInterpolation(int y_offset = 0, Mesh* mesh = nullptr)
+      : ZInterpolation(BoutMask{mesh}, y_offset, mesh) {}
+  explicit ZInterpolation(BoutMask mask, int y_offset = 0, Mesh* mesh = nullptr)
+      : localmesh(mesh == nullptr ? bout::globals::mesh : mesh), skip_mask(mask),
+        y_offset(y_offset) {}
   virtual ~ZInterpolation() = default;
 
   virtual void calcWeights(const Field3D& delta_z,
@@ -111,12 +109,11 @@ public:
 
 class ZHermiteSpline : public ZInterpolation {
 public:
-  ZHermiteSpline(Mesh* mesh = nullptr) : ZHermiteSpline(0, mesh) {}
-  ZHermiteSpline(int y_offset = 0, Mesh* mesh = nullptr);
-  ZHermiteSpline(const BoutMask& mask, int y_offset = 0, Mesh* mesh = nullptr)
-      : ZHermiteSpline(y_offset, mesh) {
-    skip_mask = mask;
-  }
+  explicit ZHermiteSpline(Mesh* mesh = nullptr)
+      : ZHermiteSpline(BoutMask{mesh}, 0, mesh) {}
+  explicit ZHermiteSpline(int y_offset = 0, Mesh* mesh = nullptr)
+      : ZHermiteSpline(BoutMask{mesh}, y_offset, mesh) {}
+  explicit ZHermiteSpline(BoutMask mask, int y_offset = 0, Mesh* mesh = nullptr);
 
   void calcWeights(const Field3D& delta_z,
                    const std::string& region = "RGN_NOBNDRY") override;
