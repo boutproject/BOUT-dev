@@ -168,34 +168,12 @@ SCOREP0();
  */
 }
 
-/// Check whether matrix is diagonally dominant, i.e. whether for every row the absolute
-/// value of the diagonal element is greater-or-equal-to the sum of the absolute values
-/// of the other elements. Being diagonally dominant is sufficient (but not necessary) for
-/// the Jacobi iteration to converge.
-void LaplaceParallelTri::check_diagonal_dominance(const Array<dcomplex> &avec, const Array<dcomplex> &bvec, const Array<dcomplex> &cvec, const int ncx, const int jy, const int kz) {
-
-    BoutReal on_diag;
-    BoutReal off_diag;
-
-    for(int i=0; i<ncx; i++){
-      on_diag = abs(bvec[i]);
-      off_diag = 0.0;
-      if(i > 0){
-	off_diag = abs(avec[i-1]);
-      }
-      if(i < ncx-1){
-	off_diag = off_diag + abs(cvec[i]);
-      }
-      if( off_diag > on_diag){
-	output << "Not diagonally dominant on row "<<i<<" jy "<<jy<<" kz "<<kz<<" of proc "<<BoutComm::rank()<<endl;
-      }
-    }
-}
-
-/// Check whether the reduced matrix is diagonally dominant, i.e. whether for every row the absolute
-/// value of the diagonal element is greater-or-equal-to the sum of the absolute values
-/// of the other elements. Being diagonally dominant is sufficient (but not necessary) for
-/// the Jacobi iteration to converge.
+/*
+ * Check whether the reduced matrix is diagonally dominant, i.e. whether for every row the absolute
+ * value of the diagonal element is greater-or-equal-to the sum of the absolute values
+ * of the other elements. Being diagonally dominant is sufficient (but not necessary) for
+ * the Jacobi iteration to converge.
+ */
 bool LaplaceParallelTri::is_diagonally_dominant(const dcomplex al, const dcomplex au, const dcomplex bl, const dcomplex bu, const int jy, const int kz) {
 
   bool is_dd = true;
@@ -210,6 +188,9 @@ bool LaplaceParallelTri::is_diagonally_dominant(const dcomplex al, const dcomple
   return is_dd;
 }
 
+/*
+ * Calculate the absolute and relative errors at an x grid point.
+ */
 void get_errors(BoutReal *error_rel,BoutReal *error_abs,const dcomplex x,const dcomplex xlast){
   *error_abs = abs(x - xlast);
   BoutReal xabs = fabs(x);
@@ -385,7 +366,6 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 
       // x0 is the input
       // bk is the output
-      //output << "here" << endl;
       rfft(x0[ix], ncz, &bk(ix, 0));
 
     } else {
@@ -415,11 +395,8 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       //xk1d[ix] = xk(ix, kz);
       //xk1dlast[ix] = xk(ix, kz);
 
-      //output << "start1 "<<ix<<" "<<jy<<" "<<kz<<" "<<x0saved(ix,jy,kz)<<endl;
       xk1d[ix] = x0saved(ix, jy, kz);
-      //output << "start2 "<<ix<<" "<<jy<<" "<<kz<<endl;
       xk1dlast[ix] = x0saved(ix, jy, kz);
-      //output << "start3 "<<ix<<" "<<jy<<" "<<kz<<endl;
     }
 
     int count = 0;
@@ -461,7 +438,6 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
                  kz * kwaveFactor, global_flags, inner_boundary_flags,
                  outer_boundary_flags, &A, &C, &D);
 
-    ///////// PERFORM INVERSION /////////
     if (!localmesh->periodicX) {
 
       // Patch up internal boundaries
@@ -485,6 +461,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	///SCOREP_USER_REGION_END(kzinit);
 	///SCOREP_USER_REGION_DEFINE(invert);
 	///SCOREP_USER_REGION_BEGIN(invert, "invert local matrices",SCOREP_USER_REGION_TYPE_COMMON);
+
       // Invert local matrices
       // Calculate Minv*b
       tridag(std::begin(avec), std::begin(bvec), std::begin(cvec), std::begin(bk1d),
@@ -494,7 +471,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       if(first_call(jy,kz) || not store_coefficients ){
 	// If not already stored, find edge update vectors
 	//
-	// Upper interface (nguard vectors, hard-coded to two for now)
+	// Upper interface
 	if(not localmesh->lastX()) { 
 	  // Need the xend-th element
 	  for(int i=0; i<ncx; i++){
@@ -512,7 +489,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	  }
 	}
 
-	// Lower interface (nguard vectors, hard-coded to two for now)
+	// Lower interface
 	if(not localmesh->firstX()) { 
 
 	  for(int i=0; i<ncx; i++){
@@ -535,17 +512,18 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	///SCOREP_USER_REGION_DEFINE(coefs);
 	///SCOREP_USER_REGION_BEGIN(coefs, "calculate coefs",SCOREP_USER_REGION_TYPE_COMMON);
 
-      //check_diagonal_dominance(avec,bvec,cvec,ncx,jy,kz);
       //get_initial_guess(jy,kz,minvb,lowerGuardVector,upperGuardVector,xk1d);
 
       // Original method:
       xloclast[0] = xk1d[xs-1];
       xloclast[1] = xk1d[xs];
+      xloclast[2] = xk1d[xe];
+      xloclast[3] = xk1d[xe+1];
+
       rl = minvb[xs];
       bl = upperGuardVector(xs,jy,kz);
       al = lowerGuardVector(xs,jy,kz);
-      xloclast[2] = xk1d[xe];
-      xloclast[3] = xk1d[xe+1];
+
       ru = minvb[xe];
       bu = upperGuardVector(xe,jy,kz);
       au = lowerGuardVector(xe,jy,kz);
@@ -620,12 +598,10 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       }
 
 	///SCOREP_USER_REGION_END(coefs);
-      //output<<"xvec "<<BoutComm::rank()<<" "<<"initial"<<" "<<xloc[0]<<" "<<xloc[1]<<" "<<xloc[2]<<" "<<xloc[3]<<" "<<xloclast[0]<<" "<<xloclast[1]<<" "<<xloclast[2]<<" "<<xloclast[3]<<" "<<error_rel_lower<<" "<<error_rel_lower_last<<" "<<error_rel_lower_two_old<<" "<<error_abs_lower<<" "<<error_abs_lower_last<<" "<<error_abs_lower_two_old<<" "<<error_rel_upper<<" "<<error_rel_upper_last<<" "<<error_rel_upper_two_old<<" "<<error_abs_upper<<" "<<error_abs_upper_last<<" "<<error_abs_upper_two_old<<endl;
 
-///      ///SCOREP_USER_REGION_END(kzinit);
       ///SCOREP_USER_REGION_DEFINE(whileloop);
       ///SCOREP_USER_REGION_BEGIN(whileloop, "while loop",SCOREP_USER_REGION_TYPE_COMMON);
-//
+
       while(true){
 
 	///SCOREP_USER_REGION_DEFINE(iteration);
@@ -636,6 +612,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	xloc[2] = ru + au*xloclast[0] + bu*xloclast[3];
 
 	///SCOREP_USER_REGION_END(iteration);
+	
+	// NB Could start sending xloc[0], xloc[1] now. Received values not required until last
+	// line of while loop.
 
 	///SCOREP_USER_REGION_DEFINE(errors);
 	///SCOREP_USER_REGION_BEGIN(errors, "calculate errors",SCOREP_USER_REGION_TYPE_COMMON);
@@ -647,7 +626,6 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	///SCOREP_USER_REGION_DEFINE(comms);
 	///SCOREP_USER_REGION_BEGIN(comms, "communication",SCOREP_USER_REGION_TYPE_COMMON);
 
-	TRACE("set comm flags pack");
 	// Set communication flags
 	if ( count > 0 and
 	    (
@@ -679,8 +657,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	// neighbour has therefore done its one post-converged communication. My in-boundary
 	// values are therefore correct, and I am in-converged. My neighbour is not
 	// expecting us to communicate.
+	//
+	// Communicate in
 	if(!neighbour_in) {
-	  // Communicate in
 	  neighbour_in = localmesh->communicateXIn(self_in);
 	  if(new_method){
 	    xloc[0] = localmesh->communicateXIn(xloc[2]);
@@ -688,13 +667,11 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	  else{
 	    xloc[0] = localmesh->communicateXIn(xloc[1]);
 	  }
-	  //output<<BoutComm::rank()<<" "<<xloc[0]<<" "<<xloc[1]<<" "<<xloc[2]<<" "<<xloc[3]<<endl;
 	}
 
-	// Outward communication
+	// Communicate out
 	// See note above for inward communication.
 	if(!neighbour_out) {
-	  // Communicate out
 	  neighbour_out = localmesh->communicateXOut(self_out);
 	  if(new_method){
 	    xloc[3] = localmesh->communicateXOut(xloc[1]);
@@ -769,10 +746,6 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
     ipt_mean_its = (ipt_mean_its * BoutReal(ncalls-1)
 	+ BoutReal(count))/BoutReal(ncalls);
 
-    //if(jy==0 and kz==1){
-    //output<<"jy="<<jy<<" kz="<<kz<<" count="<<count<<" ncalls="<<ncalls<<" ipt_mean_its="<<ipt_mean_its<<" B="<<B<< endl;
-    //}
-    //Bvals(0,jy,kz) = B;
 
     // Original method:
     xk1d[xs-1] = xloc[0];
@@ -806,8 +779,6 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       // are already correct
     }
 
-    output<<"Converged "<<BoutComm::rank()<<" "<<xk1dlast[xs-1]<<" "<<xk1dlast[xs]<<" "<<xk1dlast[xe]<<" "<<xk1dlast[xe+1]<<endl;
-
     // Now that halo cells are converged, use these to calculate whole solution
     for(int i=0; i<ncx; i++){
       xk1d[i] = minvb[i];
@@ -822,10 +793,6 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
         xk1d[i] += lowerGuardVector(i,jy,kz)*xk1dlast[xs-1];
       }
     } 
-
-    for(int i=0; i<ncx; i++){
-      output<<"Solution i : "<<BoutComm::rank()<<" "<<jy<<" "<<kz<<" "<<i<<" "<<xk1d[i]<<endl;
-    }
 
     // If the global flag is set to INVERT_KX_ZERO
     if ((global_flags & INVERT_KX_ZERO) && (kz == 0)) {
@@ -846,11 +813,8 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
     }
     ///SCOREP_USER_REGION_END(afterloop);
     first_call(jy,kz) = false;
-    //output<<"end of (jy,kz,rank) "<<jy<<" "<<kz<<" "<<BoutComm::rank()<<endl;
   }
   ///SCOREP_USER_REGION_END(mainloop);
-
-  //std::cout<<"end "<<BoutComm::rank()<<endl;
 
   // Done inversion, transform back
   for (int ix = 0; ix < ncx; ix++) {
@@ -867,10 +831,5 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 #endif
 
   }
-
-  //if( first_call ){
-  //  bout::globals::dump.add(Bvals, "exponents", false);
-  //}
-
   return x; // Result of the inversion
 }
