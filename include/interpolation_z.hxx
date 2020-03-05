@@ -132,7 +132,7 @@ public:
   Field3D interpolate(const Field3D& f, const Field3D& delta_z, const BoutMask& mask,
                       const std::string& region = "RGN_NOBNDRY") override;
   std::vector<ParallelTransform::PositionsAndWeights>
-  getWeightsForYApproximation(int i, int j, int k, int yoffset);
+  getWeightsForYApproximation(int i, int j, int k, int yoffset) override;
 
 private:
   Tensor<int> k_corner; // z-index of left grid point
