@@ -223,7 +223,10 @@ uninstall:
 MPARK_VARIANT_SENTINEL = $(MPARK_VARIANT_INCLUDE_PATH)/mpark/variant.hpp
 $(MPARK_VARIANT_SENTINEL):
 	@echo "Downloading mpark.variant"
-	git submodule update --init --recursive $(BOUT_TOP)/externalpackages/mpark.variant
+	@lock=$(BOUT_TOP)/externalpackages/.get.mpark ;ex=0; mkdir $$lock && ( \
+	       git submodule update --init --recursive $(BOUT_TOP)/externalpackages/mpark.variant \
+	       ;ex=$$? ; rmdir $$lock ) || \
+	       ( while test -d $$lock ; do sleep .1 ; done); exit $$ex
 
 ifeq ("$(TARGET)", "libfast")
 libfast: | $(MPARK_VARIANT_SENTINEL)
