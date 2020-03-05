@@ -105,7 +105,7 @@ void ZHermiteSpline::calcWeights(const Field3D& delta_z, const BoutMask& mask,
  *   (i, j+1, k+2)	h11 / 2
  */
 std::vector<ParallelTransform::PositionsAndWeights>
-ZHermiteSpline::getWeightsForYApproximation(int i, int j, int k, int yoffset) {
+ZHermiteSpline::getWeightsForYApproximation(int i, int j, int k, int yoffset) const {
 
   std::vector<ParallelTransform::PositionsAndWeights> pw;
   ParallelTransform::PositionsAndWeights p;
