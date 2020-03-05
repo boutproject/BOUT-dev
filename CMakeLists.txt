@@ -309,7 +309,12 @@ target_compile_definitions(bout++
 target_compile_features(bout++ PUBLIC cxx_std_14)
 set_target_properties(bout++ PROPERTIES CXX_EXTENSIONS OFF)
 
-option(BOUT_USE_SYSTEM_MPARK_VARIANT "Use external installation of mpark.variant" OFF)
+if(GIT_SUBMODULE OR (EXISTS externalpackages/mpark.variant/CMakeLists.txt))
+  option(BOUT_USE_SYSTEM_MPARK_VARIANT "Use external installation of mpark.variant" OFF)
+else()
+  option(BOUT_USE_SYSTEM_MPARK_VARIANT "Use external installation of mpark.variant" ON)
+endif()
+
 if(BOUT_USE_SYSTEM_MPARK_VARIANT)
   find_package(mpark_variant REQUIRED)
   message(STATUS "Using external mpark.variant")
@@ -324,7 +329,12 @@ else()
 endif()
 target_link_libraries(bout++ PUBLIC mpark_variant)
 
-option(BOUT_USE_SYSTEM_FMT "Use external installation of fmt" OFF)
+if(GIT_SUBMODULE OR (EXISTS externalpackages/fmt/CMakeLists.txt))
+  option(BOUT_USE_SYSTEM_FMT "Use external installation of fmt" OFF)
+else()
+  option(BOUT_USE_SYSTEM_FMT "Use external installation of fmt" ON)
+endif()
+
 if(BOUT_USE_SYSTEM_FMT)
   find_package(fmt 6 REQUIRED)
   message(STATUS "Using external fmt")
