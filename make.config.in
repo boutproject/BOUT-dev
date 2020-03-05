@@ -201,6 +201,9 @@ install: libfast
 	sed -i "s|^BOUT_CONFIG_FILE=.*|BOUT_CONFIG_FILE=@datadir@/bout++/make.config|" $(DESTDIR)@datadir@/bout++/make.config
 	sed -i "s|^MPARK_VARIANT_INCLUDE_PATH=.*|MPARK_VARIANT_INCLUDE_PATH=@includedir@/bout++|" $(DESTDIR)@datadir@/bout++/make.config
 
+#	Set the make.config as released, so the library isn't rebuild. This way the .a file doesn't need to be preserved/installed
+	sed -i '26 i RELEASED                 = yes' $(DESTDIR)@datadir@/bout++/make.config
+
 uninstall:
 	$(PRE_UNINSTALL)     # Pre-uninstall commands follow.
 
