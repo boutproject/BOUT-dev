@@ -47,8 +47,6 @@ ZHermiteSpline::ZHermiteSpline(BoutMask mask, int y_offset, Mesh* mesh)
 
 void ZHermiteSpline::calcWeights(const Field3D& delta_z, const std::string& region) {
 
-  BoutReal t_z;
-
   BOUT_FOR(i, delta_z.getRegion(region)) {
     const int x = i.x();
     const int y = i.y();
@@ -63,7 +61,7 @@ void ZHermiteSpline::calcWeights(const Field3D& delta_z, const std::string& regi
 
     // t_z is the normalised coordinate \in [0,1) within the cell
     // calculated by taking the remainder of the floating point index
-    t_z = delta_z(x, y, z) - static_cast<BoutReal>(k_corner(x, y, z));
+    const BoutReal t_z = delta_z(x, y, z) - static_cast<BoutReal>(k_corner(x, y, z));
 
     // Check that t_z is in range
     if ((t_z < 0.0) || (t_z > 1.0)) {
@@ -73,11 +71,8 @@ void ZHermiteSpline::calcWeights(const Field3D& delta_z, const std::string& regi
     }
 
     h00(x, y, z) = (2. * t_z * t_z * t_z) - (3. * t_z * t_z) + 1.;
-
     h01(x, y, z) = (-2. * t_z * t_z * t_z) + (3. * t_z * t_z);
-
     h10(x, y, z) = t_z * (1. - t_z) * (1. - t_z);
-
     h11(x, y, z) = (t_z * t_z * t_z) - (t_z * t_z);
   }
 }
@@ -142,11 +137,10 @@ Field3D ZHermiteSpline::interpolate(const Field3D& f, const std::string& region)
 
     // Due to lack of guard cells in z-direction, we need to ensure z-index
     // wraps around
-    int ncz = localmesh->LocalNz;
-    int z_mod = ((k_corner(x, y, z) % ncz) + ncz) % ncz;
-    int z_mod_p1 = (z_mod + 1) % ncz;
-
-    int y_next = y + y_offset;
+    const int ncz = localmesh->LocalNz;
+    const int z_mod = ((k_corner(x, y, z) % ncz) + ncz) % ncz;
+    const int z_mod_p1 = (z_mod + 1) % ncz;
+    const int y_next = y + y_offset;
 
     // Interpolate in Z
     f_interp(x, y_next, z) =
