@@ -12,7 +12,7 @@ from __future__ import print_function
 from builtins import zip
 from builtins import str
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe
+from boututils.run_wrapper import shell, shell_safe, launch_safe, build_and_log
 from boututils.datafile import DataFile
 from boutdata.collect import collect
 
@@ -52,9 +52,7 @@ shape.add(J0, "Jpar0")
 shape.add(bxcvz, "bxcvz")
 
 
-
-print("Making MMS elm-pb test")
-shell_safe("make > make.log")
+build_and_log("MMS elm-pb test")
 
 # List of NX values to use
 nxlist = [8, 16, 32, 64]#, 128]#, 256]
