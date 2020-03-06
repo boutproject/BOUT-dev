@@ -292,12 +292,15 @@ def launch_safe(command, *args, **kwargs):
 def build_and_log(test):
     """Run make and redirect the output to a log file. Prints input
 
-    On Windows, does nothing because executable should have already
-    been built
+    When using CMake, or on Windows, does nothing because executable
+    should have already been built
 
     """
 
     if os.name == "nt":
+        return
+
+    if os.path.exists("CMakeFiles"):
         return
 
     print("Making {}".format(test))
