@@ -11,10 +11,7 @@ build_and_log("parallel slices test")
 
 failed = False
 
-# for shifttype in ["shifted", "shiftedinterp"]:
-# Doesn't work with shiftedinterp for now, because ShiftedMetricInterp::toFieldAligned and
-# ShiftedMetricInterp::fromFieldAligned don't set the guard cells.
-for shifttype in ["shifted"]:
+for shifttype in ["shifted", "shiftedinterp"]:
 
     s, out = launch_safe(
         "./test_yupdown mesh:paralleltransform:type=" + shifttype,
@@ -37,7 +34,7 @@ for shifttype in ["shifted"]:
 
         diff = max(abs(ddy - ddy_check))
 
-        if diff < 1e-8:
+        if diff < 2e-5:
             print(shifttype + " passed (Max difference %e)" % (diff))
         else:
             print(shifttype + " failed (Max difference %e)" % (diff))
