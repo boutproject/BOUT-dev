@@ -6,15 +6,14 @@ from __future__ import division
 from __future__ import print_function
 from builtins import str
 
-from boututils.run_wrapper import shell, launch_safe
+from boututils.run_wrapper import shell, launch_safe, build_and_log
 from boutdata.collect import collect
 
 from numpy import sqrt, max, abs, mean, array, log, concatenate
 
 
+build_and_log("MMS test")
 
-print("Making MMS test")
-shell("make > make.log")
 
 # List of NX values to use
 nxlist = [16, 32, 64, 128, 256]
