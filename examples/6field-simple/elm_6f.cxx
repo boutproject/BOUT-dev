@@ -9,7 +9,7 @@
 #include "bout.hxx"
 #include "derivs.hxx"
 #include "initialprofiles.hxx"
-#include "interpolation.hxx"
+#include "interpolation_xz.hxx"
 #include "invert_laplace.hxx"
 #include "invert_parderiv.hxx"
 #include "sourcex.hxx"
