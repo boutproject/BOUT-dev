@@ -119,8 +119,17 @@ Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
     }
   }
 
-  if (not localmesh->include_corner_cells) {
-    // Set corner guard cells
+  if (not (
+            // if include_corner_cells=true, then we extrapolate valid data into the
+            // corner cells if they are not already filled
+            localmesh->include_corner_cells
+
+            // if we are not extrapolating at all, the corner cells should contain valid
+            // data
+            or (not extrapolate_x and not extrapolate_y)
+          )
+     ) {
+    // Invalidate corner guard cells
     for (int i = 0; i < localmesh->xstart; i++) {
       for (int j = 0; j < localmesh->ystart; j++) {
         result(i, j) = BoutNaN;
