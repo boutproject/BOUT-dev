@@ -9,6 +9,7 @@
 #include <bout/physicsmodel.hxx>
 
 #include <initialprofiles.hxx>
+#include <interpolation.hxx>
 #include <invert_laplace.hxx>
 #include <derivs.hxx>
 
@@ -82,6 +83,10 @@ private:
     
     GRID_LOAD(phi0);
     output << "Loaded phi0\n";
+
+    // Set locations of staggered fields
+    Psi.setLocation(CELL_YLOW);
+    Vpar.setLocation(CELL_YLOW);
     
     // options stuff
     
@@ -167,7 +172,7 @@ private:
     mesh->communicate(Jpar);
     
     //Parallel electric field
-    ddt(Psi) = -(1/B0)*Grad_par_CtoL(B0*phi);// + 1e-2*Jpar; 
+    ddt(Psi) = -(1/B0)*Grad_par(B0*phi, CELL_YLOW);// + 1e-2*Jpar;
     
     if (nonlinear) {
       ddt(Psi) += (1/B0)*bracket(Psi, B0*phi, bm)*coord->Bxy;
@@ -175,7 +180,7 @@ private:
     
     //Parallel vorticity
     
-    ddt(U) = (SQ(B0)/rho0)*(Grad_par_LtoC(Jpar/B0) );
+    ddt(U) = (SQ(B0)/rho0)*(Grad_par(Jpar/interp_to(B0, CELL_YLOW), CELL_CENTRE) );
     
     ddt(U) -= (1/rho0)*bracket(G,rho, bm)*coord->Bxy;
     
@@ -199,7 +204,7 @@ private:
     // Parallel velocity
     ddt(Vpar) = bracket(Psi,p0, bm)*coord->Bxy / rho0;
     
-    ddt(Vpar) += -(Grad_par_CtoL(p))/rho0;
+    ddt(Vpar) += -(Grad_par(p, CELL_YLOW))/rho0;
     
     ddt(Vpar) += bracket(G,Psi, bm)*coord->Bxy;
     
@@ -212,7 +217,11 @@ private:
     //Pressure
     ddt(p) = -bracket(phi,p0,bm);
     
-    ddt(p) += -((Gamma*p0)/(1 + Gamma*p0*mu_0/SQ(B0)))*( (rho0*mu_0/SQ(B0))*bracket(G,phi,bm)*coord->Bxy + Grad_par_LtoC(Vpar)  - (Vpar/B0)*Grad_par(B0) );
+    ddt(p) += -((Gamma*p0)/(1 + Gamma*p0*mu_0/SQ(B0)))
+               * (
+                   (rho0*mu_0/SQ(B0))*bracket(G,phi,bm)*coord->Bxy
+                   + Grad_par(Vpar, CELL_CENTRE)  - (Vpar/B0)*Grad_par(B0)
+                 );
     
     if (nonlinear) {
       ddt(p) -= bracket(phi,p,bm)*coord->Bxy;
@@ -222,7 +231,13 @@ private:
     //Density
     ddt(rho) = -bracket(phi, rho0, bm)*coord->Bxy;
     
-    ddt(rho) -= (rho0/(1 + Gamma*p0*mu_0/SQ(B0)))*( (rho0*mu_0/SQ(B0))*bracket(G,phi,bm)*coord->Bxy + Grad_par_LtoC(Vpar) - bracket(Psi,Vpar,bm)*coord->Bxy - (Vpar/B0)*Grad_par(B0) );
+    ddt(rho) -= (rho0/(1 + Gamma*p0*mu_0/SQ(B0)))
+                * (
+                    (rho0*mu_0/SQ(B0))*bracket(G,phi,bm)*coord->Bxy
+                    + Grad_par(Vpar, CELL_CENTRE)
+                    - bracket(Psi,Vpar,bm)*coord->Bxy
+                    - (Vpar/B0)*Grad_par(B0)
+                  );
     
     if (nonlinear) {
       ddt(rho) -= bracket(phi, rho, bm)*coord->Bxy;
