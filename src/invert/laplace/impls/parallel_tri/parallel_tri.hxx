@@ -117,6 +117,10 @@ private:
   bool new_method;
 
   Tensor<dcomplex> upperGuardVector, lowerGuardVector;
+  Matrix<dcomplex> al, bl, au, bu;
+  Matrix<dcomplex> alold, blold, auold, buold;
+  Matrix<dcomplex> Delta;
+  Matrix<dcomplex> r1, r2, r3, r4, r5, r6, r7, r8;
   bool store_coefficients;
 
 };

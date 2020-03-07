@@ -65,6 +65,27 @@ LaplaceParallelTri::LaplaceParallelTri(Options *opt, CELL_LOC loc, Mesh *mesh_in
   upperGuardVector = Tensor<dcomplex>(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
   lowerGuardVector = Tensor<dcomplex>(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
 
+  al = Matrix<dcomplex>(localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
+  bl = Matrix<dcomplex>(localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
+  au = Matrix<dcomplex>(localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
+  bu = Matrix<dcomplex>(localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
+
+  alold = Matrix<dcomplex>(localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
+  blold = Matrix<dcomplex>(localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
+  auold = Matrix<dcomplex>(localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
+  buold = Matrix<dcomplex>(localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
+
+  r1 = Matrix<dcomplex>(localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
+  r2 = Matrix<dcomplex>(localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
+  r3 = Matrix<dcomplex>(localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
+  r4 = Matrix<dcomplex>(localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
+  r5 = Matrix<dcomplex>(localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
+  r6 = Matrix<dcomplex>(localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
+  r7 = Matrix<dcomplex>(localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
+  r8 = Matrix<dcomplex>(localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
+
+  Delta = Matrix<dcomplex>(localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
+
   x0saved = Tensor<dcomplex>(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
 
   resetSolver();
@@ -263,8 +284,8 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   //
   auto xloc = Array<dcomplex>(4);
   auto xloclast = Array<dcomplex>(4);
-  dcomplex rl, ru, al, au, bl, bu, cl, cu;
-  dcomplex alold, auold, blold, buold, rlold, ruold;
+  dcomplex rl, ru;
+  dcomplex rlold, ruold;
 
   // Convergence flags
   bool self_in = false;
@@ -520,18 +541,20 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       xloclast[2] = xk1d[xe];
       xloclast[3] = xk1d[xe+1];
 
+      if( first_call(jy,kz) or not store_coefficients ){
+	bl(jy,kz) = upperGuardVector(xs,jy,kz);
+	al(jy,kz) = lowerGuardVector(xs,jy,kz);
+
+	bu(jy,kz) = upperGuardVector(xe,jy,kz);
+	au(jy,kz) = lowerGuardVector(xe,jy,kz);
+
+	alold(jy,kz) = al(jy,kz);
+	auold(jy,kz) = au(jy,kz);
+	blold(jy,kz) = bl(jy,kz);
+	buold(jy,kz) = bu(jy,kz);
+      }
       rl = minvb[xs];
-      bl = upperGuardVector(xs,jy,kz);
-      al = lowerGuardVector(xs,jy,kz);
-
       ru = minvb[xe];
-      bu = upperGuardVector(xe,jy,kz);
-      au = lowerGuardVector(xe,jy,kz);
-
-      alold = al;
-      auold = au;
-      blold = bl;
-      buold = bu;
       rlold = rl;
       ruold = ru;
 
@@ -541,11 +564,11 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	if(not localmesh->firstX()){
 	  // Send coefficients down
 	  Rtmp = rl;
-	  Atmp = al;
+	  Atmp = al(jy,kz);
 	  Btmp = 0.0;
-	  if( std::fabs(bu) > 1e-14 ){
-	    Btmp = bl/bu;
-	    Atmp -= Btmp*au;
+	  if( std::fabs(bu(jy,kz)) > 1e-14 ){
+	    Btmp = bl(jy,kz)/bu(jy,kz);
+	    Atmp -= Btmp*au(jy,kz);
 	    Rtmp -= Btmp*ru;
 	  }
 	  // Send these
@@ -557,10 +580,10 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	  // Send coefficients up
 	  Rtmp = ru;
 	  Atmp = 0.0;
-	  Btmp = bu;
-	  if( std::fabs(al) > 1e-14 ){
-	    Atmp = au/al;
-	    Btmp -= Atmp*bl;
+	  Btmp = bu(jy,kz);
+	  if( std::fabs(al(jy,kz)) > 1e-14 ){
+	    Atmp = au(jy,kz)/al(jy,kz);
+	    Btmp -= Atmp*bl(jy,kz);
 	    Rtmp -= Atmp*rl;
 	  }
 	  // Send these
@@ -568,9 +591,6 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	  Bu = localmesh->communicateXOut(Btmp);
 	  Ru = localmesh->communicateXOut(Rtmp);
 	}
-
-	dcomplex Delta;
-
 
 	if(localmesh->firstX()){
 	  Ad = 1.0;
@@ -582,19 +602,29 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	  Ru = 0.0;
 	  Bu = 1.0;
 	}
-	Delta = 1.0 - al*Bd - bu*Au + (al*bu - au*bl)*Bd*Au;
-	Delta = 1.0 / Delta;
-	rl = Delta*( (rlold + alold*Rd + blold*Ru) 
-		   + (ruold*blold - rlold*buold)*Au
-		   + (auold*blold - alold*buold)*Au*Rd );
-	al = Delta*( alold + (auold*blold - alold*buold)*Au )*Ad;	
-	bl = Delta * blold * Bu ;	
-	ru = Delta*( (ruold + auold*Rd + buold*Ru)
-		   + (rlold*auold - ruold*alold)*Bd
-		   + (auold*blold - alold*buold)*Bd*Ru );
-	bu = Delta*( buold + (auold*blold - alold*buold)*Bd )*Bu;
-	au = Delta * auold * Ad ;
 
+	if( first_call(jy,kz) or not store_coefficients){
+
+	  Delta(jy,kz) = 1.0 - al(jy,kz)*Bd - bu(jy,kz)*Au + (al(jy,kz)*bu(jy,kz) - au(jy,kz)*bl(jy,kz))*Bd*Au;
+	  Delta(jy,kz) = 1.0 / Delta(jy,kz);
+	  al(jy,kz) = Delta(jy,kz)*( alold(jy,kz) + (auold(jy,kz)*blold(jy,kz) - alold(jy,kz)*buold(jy,kz))*Au )*Ad;	
+	  bl(jy,kz) = Delta(jy,kz) * blold(jy,kz) * Bu ;	
+	  au(jy,kz) = Delta(jy,kz) * auold(jy,kz) * Ad ;
+	  bu(jy,kz) = Delta(jy,kz)*( buold(jy,kz) + (auold(jy,kz)*blold(jy,kz) - alold(jy,kz)*buold(jy,kz))*Bd )*Bu;
+
+	  dcomplex d = auold(jy,kz)*blold(jy,kz) - alold(jy,kz)*buold(jy,kz);
+	  r1(jy,kz) = Delta(jy,kz)*(alold(jy,kz) + d*Au);
+	  r2(jy,kz) = Delta(jy,kz)*( 1.0 - buold(jy,kz)*Au );
+	  r3(jy,kz) = Delta(jy,kz)*blold(jy,kz)*Au;
+	  r4(jy,kz) = Delta(jy,kz)*blold(jy,kz);
+	  r5(jy,kz) = Delta(jy,kz)*auold(jy,kz);
+	  r6(jy,kz) = Delta(jy,kz)*auold(jy,kz)*Bd;
+	  r7(jy,kz) = Delta(jy,kz)*( 1.0 - alold(jy,kz)*Bd );
+	  r8(jy,kz) = Delta(jy,kz)*(buold(jy,kz) + d*Bd);
+
+	}
+	rl = r1(jy,kz)*Rd + r2(jy,kz)*rlold + r3(jy,kz)*ruold + r4(jy,kz)*Ru ;
+	ru = r5(jy,kz)*Rd + r6(jy,kz)*rlold + r7(jy,kz)*ruold + r8(jy,kz)*Ru ;
       }
 
 	///SCOREP_USER_REGION_END(coefs);
@@ -608,8 +638,8 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	///SCOREP_USER_REGION_BEGIN(iteration, "iteration",SCOREP_USER_REGION_TYPE_COMMON);
 
 	// Only need to update interior points
-	xloc[1] = rl + al*xloclast[0] + bl*xloclast[3];
-	xloc[2] = ru + au*xloclast[0] + bu*xloclast[3];
+	xloc[1] = rl + al(jy,kz)*xloclast[0] + bl(jy,kz)*xloclast[3];
+	xloc[2] = ru + au(jy,kz)*xloclast[0] + bu(jy,kz)*xloclast[3];
 
 	///SCOREP_USER_REGION_END(iteration);
 	
@@ -706,12 +736,12 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	  // If the iteration matrix is diagonally-dominant, then convergence is
 	  // guaranteed, so maxits is set too low.
 	  // Otherwise, the method may or may not converge.
-	  if(is_diagonally_dominant(al,au,bl,bu,jy,kz)){
+	  if(is_diagonally_dominant(al(jy,kz),au(jy,kz),bl(jy,kz),bu(jy,kz),jy,kz)){
 	    throw BoutException("LaplaceParallelTri error: Not converged within maxits=%i iterations. The iteration matrix is diagonally dominant on processor %i and convergence is guaranteed (if all processors are diagonally dominant). Please increase maxits and retry.",maxits,BoutComm::rank());
 	  }
 	  else{
-	    output<<alold<<" "<<blold<<" "<<auold<<" "<<buold<<endl;
-	    output<<al<<" "<<bl<<" "<<au<<" "<<bu<<endl;
+	    output<<alold(jy,kz)<<" "<<blold(jy,kz)<<" "<<auold(jy,kz)<<" "<<buold(jy,kz)<<endl;
+	    output<<al(jy,kz)<<" "<<bl(jy,kz)<<" "<<au(jy,kz)<<" "<<bu(jy,kz)<<endl;
 	    output<<Ad<<" "<<Bd<<" "<<Au<<" "<<Bu<<endl;
 	    throw BoutException("LaplaceParallelTri error: Not converged within maxits=%i iterations. The iteration matrix is not diagonally dominant on processor %i, so there is no guarantee this method will converge. Consider increasing maxits or using a different solver.",maxits,BoutComm::rank());
 	  }
@@ -758,22 +788,22 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
     xk1dlast[xe+1] = xloclast[3];
 
     if(new_method){
-      dcomplex d = 1.0/(buold*alold - blold*auold);
+      dcomplex d = 1.0/(buold(jy,kz)*alold(jy,kz) - blold(jy,kz)*auold(jy,kz));
       // If boundary processor, halo cell is already correct, and d is undefined.
       // Lower boundary proc => al = au = 0
       // Upper boundary proc => bl = bu = 0
       if(not localmesh->firstX() and not localmesh->lastX()){
 	// General case
-	xk1dlast[xs-1] =  d*(buold*(xk1dlast[xs]-rlold) - blold*(xk1dlast[xe]-ruold));
-	xk1dlast[xe+1] = -d*(auold*(xk1dlast[xs]-rlold) - alold*(xk1dlast[xe]-ruold));
+	xk1dlast[xs-1] =  d*(buold(jy,kz)*(xk1dlast[xs]-rlold) - blold(jy,kz)*(xk1dlast[xe]-ruold));
+	xk1dlast[xe+1] = -d*(auold(jy,kz)*(xk1dlast[xs]-rlold) - alold(jy,kz)*(xk1dlast[xe]-ruold));
       } else if(localmesh->firstX() and not localmesh->lastX()) {
 	// Lower boundary but not upper boundary
 	// xk1dlast[xs-1] = already correct
-	xk1dlast[xe+1] = (xk1dlast[xe]-ruold)/buold;
+	xk1dlast[xe+1] = (xk1dlast[xe]-ruold)/buold(jy,kz);
       } else if(localmesh->lastX() and not localmesh->firstX()){
 	// Upper boundary but not lower boundary
 	// xk1dlast[xe+1] = already correct
-	xk1dlast[xs-1] = (xk1dlast[xs]-rlold)/alold;
+	xk1dlast[xs-1] = (xk1dlast[xs]-rlold)/alold(jy,kz);
       } 
       // No "else" case. If both upper and lower boundaries, both xs-1 and xe+1
       // are already correct
