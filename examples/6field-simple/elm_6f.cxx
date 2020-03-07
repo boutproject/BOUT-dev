@@ -172,8 +172,6 @@ BoutReal filter_nl;
 
 int jpar_bndry_width; // Zero jpar in a boundary region
 
-bool parallel_lr_diff; // Use left and right shifted stencils for parallel differences
-
 bool parallel_lagrange; // Use (semi-) Lagrangian method for parallel derivatives
 bool parallel_project;  // Use Apar to project field-lines
 
@@ -529,7 +527,6 @@ int physics_init(bool restarting) {
   jpar_bndry_width = options["jpar_bndry_width"].withDefault(-1);
 
   // Parallel differencing
-  parallel_lr_diff = options["parallel_lr_diff"].withDefault(false);
   // Use a (semi-) Lagrangian method for Grad_parP
   OPTION(options, parallel_lagrange, false);
   parallel_project = options["parallel_project"].withDefault(false);
@@ -1210,6 +1207,8 @@ const Field3D Grad_parP(const Field3D& f, CELL_LOC loc = CELL_DEFAULT) {
   if (parallel_lagrange || parallel_project) {
     // Moving stencil locations
 
+    ASSERT2((not mesh->StaggerGrids) or loc == CELL_DEFAULT or loc == f.getLocation());
+
     Field3D fp, fm; // Interpolated on + and - y locations
 
     fp = interpolate(f, Xip_x, Xip_z);
@@ -1222,16 +1221,7 @@ const Field3D Grad_parP(const Field3D& f, CELL_LOC loc = CELL_DEFAULT) {
       result[i] = (fp[i.yp()] - fm[i.ym()]) / (2. * coord->dy[i] * sqrt(coord->g_22[i]));
     }
   } else {
-    if (parallel_lr_diff) {
-      // Use left/right biased stencils. NOTE: First order only!
-      if (loc == CELL_YLOW) {
-        result = Grad_par_CtoL(f);
-      } else {
-        result = Grad_par_LtoC(f);
-      }
-    } else {
-      result = Grad_par(f, loc);
-    }
+    result = Grad_par(f, loc);
 
     if (nonlinear) {
       result -= bracket(Psi, f, bm_mag) * B0;
