@@ -119,6 +119,7 @@ Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
     }
   }
 
+#if CHECK > 0
   if (not (
             // if include_corner_cells=true, then we extrapolate valid data into the
             // corner cells if they are not already filled
@@ -139,6 +140,7 @@ Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
       }
     }
   }
+#endif
 
   return result;
 }
