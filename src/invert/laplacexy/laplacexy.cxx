@@ -64,8 +64,7 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
     or y_bndry == "neumann"
     or y_bndry == "free_o3")) {
 
-    throw BoutException("Unrecognized option '%s' for laplacexy:ybndry",
-        y_bndry.c_str());
+    throw BoutException("Unrecognized option '{}' for laplacexy:ybndry", y_bndry);
   }
 
   // Use name of options section as the default prefix for performance logging variables
