@@ -32,6 +32,7 @@
 
 #if CHECK > 1
 int MsgStack::push(std::string message) {
+  int result;
   BOUT_OMP(critical(MsgStack)) {
     if (position >= stack.size()) {
       stack.push_back(std::move(message));
@@ -40,10 +41,9 @@ int MsgStack::push(std::string message) {
     }
 
     position++;
-  };
-  int result;
-  BOUT_OMP(critical(MsgStack))
-  result = position - 1;
+
+    result = position - 1;
+  }
   return result;
 }
 
