@@ -1127,13 +1127,12 @@ protected:
 
   // Parallel gradient along perturbed field-line
   const Field3D Grad_parP(const Field3D& f, CELL_LOC loc = CELL_DEFAULT) {
-    Field3D result{emptyFrom(f)};
-
+    
     if (loc == CELL_DEFAULT) {
       loc = f.getLocation();
     }
 
-    result = Grad_par(f, loc);
+    Field3D result = Grad_par(f, loc);
 
     if (nonlinear) {
       result -= bracket(interp_to(Psi, loc), f, bm_mag) * B0;
