@@ -54,6 +54,7 @@ LaplaceParallelTri::LaplaceParallelTri(Options *opt, CELL_LOC loc, Mesh *mesh_in
   OPTION(opt, B, 1000.0);
   OPTION(opt, omega, 0.0);
   OPTION(opt, new_method, false);
+  OPTION(opt, use_previous_timestep, false);
 
   static int ipt_solver_count = 1;
   bout::globals::dump.addRepeat(ipt_mean_its,
@@ -121,7 +122,6 @@ SCOREP0();
   int xs = localmesh->xstart;
   int xe = localmesh->xend;
 
-  int ncx = localmesh->LocalNx;
   Array<dcomplex> sendvec, recvec;
   sendvec = Array<dcomplex>(2);
   recvec = Array<dcomplex>(2);
@@ -406,10 +406,6 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
     for (int ix = 0; ix < ncx; ix++) {
       // Get bk of the current fourier mode
       bk1d[ix] = bk(ix, kz);
-
-      //xk1d[ix] = xk(ix, kz);
-      //xk1dlast[ix] = xk(ix, kz);
-
       xk1d[ix] = x0saved(ix, jy, kz);
       xk1dlast[ix] = x0saved(ix, jy, kz);
     }
@@ -527,7 +523,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	SCOREP_USER_REGION_DEFINE(coefs);
 	SCOREP_USER_REGION_BEGIN(coefs, "calculate coefs",SCOREP_USER_REGION_TYPE_COMMON);
 
-      get_initial_guess(jy,kz,minvb,lowerGuardVector,upperGuardVector,xk1d);
+      if( first_call(jy,kz) or not use_previous_timestep ){
+	get_initial_guess(jy,kz,minvb,lowerGuardVector,upperGuardVector,xk1d);
+      }
 
       // Original method:
       xloclast[0] = xk1d[xs-1];
@@ -633,6 +631,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 
 	rl = r1(jy,kz)*Rd + r2(jy,kz)*rlold + r3(jy,kz)*ruold + r4(jy,kz)*Ru ;
 	ru = r5(jy,kz)*Rd + r6(jy,kz)*rlold + r7(jy,kz)*ruold + r8(jy,kz)*Ru ;
+
+	xloclast[0] = localmesh->communicateXIn(xloclast[2]);
+	xloclast[3] = localmesh->communicateXOut(xloclast[1]);
       }
 
 	SCOREP_USER_REGION_END(coefs);

@@ -116,6 +116,12 @@ private:
   /// Flag for method selection
   bool new_method;
 
+  /// If true, use previous timestep's solution as initial guess for next step
+  /// If false, use the approximate solution of the system (neglecting the
+  /// coupling terms between processors) as the initial guess.
+  /// The first timestep always uses the approximate solution.
+  bool use_previous_timestep;
+
   Tensor<dcomplex> upperGuardVector, lowerGuardVector;
   Matrix<dcomplex> al, bl, au, bu;
   Matrix<dcomplex> alold, blold, auold, buold;
