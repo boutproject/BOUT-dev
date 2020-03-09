@@ -230,6 +230,8 @@ set(BOUT_SOURCES
   ./src/mesh/parallel/fci.hxx
   ./src/mesh/parallel/identity.cxx
   ./src/mesh/parallel/shiftedmetric.cxx
+  ./src/mesh/parallel/shiftedmetricinterp.cxx
+  ./src/mesh/parallel/shiftedmetricinterp.hxx
   ./src/mesh/parallel_boundary_op.cxx
   ./src/mesh/parallel_boundary_region.cxx
   ./src/mesh/surfaceiter.cxx
