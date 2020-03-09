@@ -160,7 +160,7 @@ TYPED_TEST(IndexOffsetStructTests, SubtractFromIndex) {
 template <typename T>
 class StencilUnitTests : public ::testing::Test {
 public:
-  // WithQuietOutput all{output};
+  WithQuietOutput all{output};
   StencilUnitTests() {
     zero = T(0, std::is_same<T, IndPerp>::value ? 1 : 5,
              std::is_same<T, Ind2D>::value ? 1 : 7);

@@ -251,7 +251,11 @@ public:
   // Full Laplacian operator on scalar field
   Field2D Laplace(const Field2D &f, CELL_LOC outloc=CELL_DEFAULT);
   Field3D Laplace(const Field3D &f, CELL_LOC outloc=CELL_DEFAULT);
-  
+
+  // Full perpendicular Laplacian, in form of inverse of Laplacian operator in LaplaceXY
+  // solver
+  Field2D Laplace_perpXY(const Field2D& A, const Field2D& f);
+
 private:
   int nz; // Size of mesh in Z. This is mesh->ngz-1
   Mesh * localmesh;
