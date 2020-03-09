@@ -107,24 +107,7 @@ split_n0 = true # Split into n=0 and n != 0
 
 [All]
 scale = 0.0 # default size of initial perturbations
-
-# form of initial profile:
-# 0 - constant
-# 1 - Gaussian
-# 2 - Sinusoidal
-# 3 - Mix of mode numbers (like original BOUT)
-
-xs_opt = 1
-ys_opt = 1
-zs_opt = 2
-
-xs_s0 = 0.5
-xs_wd = 0.1
-
-ys_s0 = 0.5
-ys_wd = 0.3
-
-zs_mode = 1
+function = guass(x - 0.5, 0.1) * guass(y - pi, 0.3) * sin(z)
 
 # boundary conditions
 # -------------------

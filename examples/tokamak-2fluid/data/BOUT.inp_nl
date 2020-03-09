@@ -121,20 +121,8 @@ apar_flags = 0 # flags for apar inversion
 
 [All]
 scale = 0.0 # default size of initial perturbations
+function = gauss(y, 0.5) * sin(z)
 
-# form of initial profile:
-# 0 - constant
-# 1 - Gaussian
-# 2 - Sinusoidal
-# 3 - Mix of mode numbers (like original BOUT)
-
-xs_opt = 0
-ys_opt = 1
-zs_opt = 2
-
-ys_mode = 1 
-ys_wd = 0.5 
-zs_mode = 1 # toroidal mode number
 
 
 # boundary conditions (see boundary.h for values)

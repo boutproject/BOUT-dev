@@ -74,22 +74,7 @@ v0_multiply = -1.0
 
 [All]
 scale = 0.0 # default size of initial perturbations
-
-# form of initial profile:
-# 0 - constant
-# 1 - Gaussian
-# 2 - Sinusoidal
-# 3 - Mix of mode numbers (like original BOUT)
-
-xs_opt = 0
-
-ys_opt = 1
-zs_opt = 2
-
-ys_s0 = 0.5
-ys_wd = 0.1
-
-zs_mode = 1 # toroidal mode number
+function = guass(y - pi, 0.1) * sin(z)
 
 # Boundary conditions
 # dirichlet = zero value
