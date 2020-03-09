@@ -87,10 +87,6 @@ private:
   // D*grad_perp^2(x) + (1/C)*(grad_perp(C))*grad_perp(x) + A*x = b
   Field2D A, C, D;
 
-  BoutReal omega;
-  //BoutReal Borig;
-  Field3D Bvals;
-
   // Flag to state whether this is the first time the solver is called
   // on the point (jy,kz).
   Matrix<bool> first_call;
@@ -103,9 +99,6 @@ private:
 
   /// Maximum number of iterations
   int maxits;
-
-  /// Kludge factor
-  BoutReal B;
 
   /// Mean number of iterations taken by the solver
   BoutReal ipt_mean_its;

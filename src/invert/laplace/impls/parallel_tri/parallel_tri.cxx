@@ -51,8 +51,6 @@ LaplaceParallelTri::LaplaceParallelTri(Options *opt, CELL_LOC loc, Mesh *mesh_in
   OPTION(opt, rtol, 1.e-7);
   OPTION(opt, atol, 1.e-20);
   OPTION(opt, maxits, 100);
-  OPTION(opt, B, 1000.0);
-  OPTION(opt, omega, 0.0);
   OPTION(opt, new_method, false);
   OPTION(opt, use_previous_timestep, false);
 
@@ -288,10 +286,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   bool neighbour_out = false;
 
   int jy = b.getIndex();
-  int ny = b.getMesh()->LocalNy;
 
-  int ncz = localmesh->LocalNz; // No of z pnts
-  int ncx = localmesh->LocalNx; // No of x pnts
+  int ncz = localmesh->LocalNz; // Number of local z points
+  int ncx = localmesh->LocalNx; // Number of local x points
 
   int xs = localmesh->xstart;
   int xe = localmesh->xend;
