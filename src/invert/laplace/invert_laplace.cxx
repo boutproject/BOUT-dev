@@ -769,6 +769,7 @@ int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, const Field2D *a
   ASSERT1(d->getLocation() == CELL_CENTRE);
 
   Laplacian *lap = Laplacian::defaultInstance();
+  lap->resetSolver();
 
   if (a != nullptr) {
     lap->setCoefA(*a);
@@ -799,6 +800,7 @@ int invert_laplace(const Field3D &b, Field3D &x, int flags, const Field2D *a, co
   Timer timer("invert"); ///< Start timer
 
   Laplacian *lap = Laplacian::defaultInstance();
+  lap->resetSolver();
 
   if (a != nullptr) {
     lap->setCoefA(*a);
@@ -830,6 +832,7 @@ const Field3D invert_laplace(const Field3D &b, int flags, const Field2D *a, cons
   Timer timer("invert"); ///< Start timer
 
   Laplacian *lap = Laplacian::defaultInstance();
+  lap->resetSolver();
 
   if (a != nullptr) {
     lap->setCoefA(*a);

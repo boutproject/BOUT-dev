@@ -11,10 +11,10 @@ except:
   pass
 
 # Variables to compare
-vars =  ['flag0', 'flag3', 'flagis', 'flagos'] # pass robust to omega under-relaxation
-vars =  ['flag0a']#, 'flag3a', 'flagisa', 'flagosa',
-         #'flag0ac', 'flag3ac','flagisac', 'flagosac',
-         #'flag0ad', 'flag3ad', 'flagisad', 'flagosad']  
+vars =  ['flag0', 'flag3', 'flagis', 'flagos', # pass robust to omega under-relaxation
+         'flag0a', 'flag3a', 'flagisa', 'flagosa',
+         'flag0ac', 'flag3ac','flagisac', 'flagosac',
+         'flag0ad', 'flag3ad', 'flagisad', 'flagosad']  
 tol = 1e-6                  # Absolute tolerance
 
 from boututils.run_wrapper import shell, shell_safe, launch_safe
@@ -39,7 +39,7 @@ success = True
 
 maxits=1000
 
-for nproc in [2]:
+for nproc in [2,4]:
   nxpe = 1
   if nproc > 1:
     #nxpe = 2
@@ -64,20 +64,24 @@ for nproc in [2]:
     #print(bmk[v][:,2,0])
     #print(result[:,2,0]/bmk[v][:,2,0])
     #np.savetxt("bm.txt",bmk[v][:,2,0])
-    for ix, _ in enumerate(result[:,0,0]):
-        for iy, _ in enumerate(result[0,:,0]):
-            for iz, _ in enumerate(result[0,0,:]):
-                #if iz==0:
-                #    continue
-                if abs(result[ix,iy,iz]-bmk[v][ix,iy,iz]) > 1.0e-6:
-                    #print(ix,iy,iz,result[ix,iy,iz],bmk[v][ix,iy,iz])
-                    pass
+    skipped = collect(v+"_error", path="data", info=False)
+    if skipped:
+        for ix, _ in enumerate(result[:,0,0]):
+            for iy, _ in enumerate(result[0,:,0]):
+                for iz, _ in enumerate(result[0,0,:]):
+                    #if iz==0:
+                    #    continue
+                    if abs(result[ix,iy,iz]-bmk[v][ix,iy,iz]) > 1.0e-6:
+                        #print(ix,iy,iz,result[ix,iy,iz],bmk[v][ix,iy,iz])
+                        pass
     # Compare benchmark and output
     if np.shape(bmk[v]) != np.shape(result):
       print("Fail, wrong shape")
       success = False
     diff = np.max(np.abs(bmk[v][:,:,:] - result[:,:,:]))
-    if diff > tol:
+    if skipped:
+      print("Expected failure")
+    elif diff > tol:
       print("Fail, maximum difference = "+str(diff))
       success = False
     else:

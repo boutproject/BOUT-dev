@@ -70,9 +70,15 @@ public:
   FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override;
   //FieldPerp solve(const FieldPerp &b, const FieldPerp &x0, const FieldPerp &b0 = 0.0);
 
-  void ensure_stability(int jy, int kz, const Array<dcomplex> &a, const Array<dcomplex> &b,
-      const Array<dcomplex> &c, const int ncx, Array<dcomplex> &xk1d,
-      const Tensor<dcomplex> &lowerGuardVector, const Tensor<dcomplex> &upperGuardVector);
+  BoutReal getMeanIterations() const { return ipt_mean_its; }
+  void resetMeanIterations() { ipt_mean_its = 0; }
+
+  void get_initial_guess(const int jy, const int kz, Array<dcomplex> &r,
+      Tensor<dcomplex> &lowerGuardVector, Tensor<dcomplex> &upperGuardVector,
+      Array<dcomplex> &xk1d);
+  void check_diagonal_dominance(const Array<dcomplex> &a, const Array<dcomplex> &b,
+      const Array<dcomplex> &c, const int ncx, const int jy, const int kz);
+  bool is_diagonally_dominant(const dcomplex al, const dcomplex au, const dcomplex bl, const dcomplex bu, const int jy, const int kz);
 
   void resetSolver();
 
@@ -80,7 +86,48 @@ private:
   // The coefficents in
   // D*grad_perp^2(x) + (1/C)*(grad_perp(C))*grad_perp(x) + A*x = b
   Field2D A, C, D;
-  bool initialized;
+
+  BoutReal omega;
+  //BoutReal Borig;
+  Field3D Bvals;
+
+  // Flag to state whether this is the first time the solver is called
+  // on the point (jy,kz).
+  Matrix<bool> first_call;
+
+  // Save previous x in Fourier space
+  Tensor<dcomplex> x0saved;
+
+  /// Solver tolerances
+  BoutReal rtol, atol;
+
+  /// Maximum number of iterations
+  int maxits;
+
+  /// Kludge factor
+  BoutReal B;
+
+  /// Mean number of iterations taken by the solver
+  BoutReal ipt_mean_its;
+
+  /// Counter for the number of times the solver has been called
+  int ncalls;
+
+  /// Flag for method selection
+  bool new_method;
+
+  /// If true, use previous timestep's solution as initial guess for next step
+  /// If false, use the approximate solution of the system (neglecting the
+  /// coupling terms between processors) as the initial guess.
+  /// The first timestep always uses the approximate solution.
+  bool use_previous_timestep;
+
+  Tensor<dcomplex> upperGuardVector, lowerGuardVector;
+  Matrix<dcomplex> al, bl, au, bu;
+  Matrix<dcomplex> alold, blold, auold, buold;
+  Matrix<dcomplex> Delta;
+  Matrix<dcomplex> r1, r2, r3, r4, r5, r6, r7, r8;
+  bool store_coefficients;
 
 };
 
