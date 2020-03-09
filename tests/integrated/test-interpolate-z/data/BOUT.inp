@@ -1,0 +1,38 @@
+# Test of the FieldFactory class 
+#
+# Generates a set of fields and writes them to output file
+#
+
+NOUT = 0  # No timesteps
+
+MZ = 4   # Z size
+NXPE=1
+
+ZMAX = 1
+MXG = 2
+MYG = 0
+
+# grid = "test_interpolate.grd.nc"
+
+[mesh]
+symmetricGlobalX = false
+periodicX = false
+dx = 0.3926990816 # 2pi / 16
+nx = 8
+ny = 1
+
+[mesh:ddz]
+first = "FFT"
+
+[xzinterpolation]
+type = "hermitespline"
+
+[a]
+solution = sin(3*z)
+
+[b]
+solution = exp(cos(2*z))
+
+[c]
+solution = gauss(x-0.5,0.2)*gauss(y)*sin(z)
+

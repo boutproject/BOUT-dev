@@ -211,6 +211,4 @@ void printLocation(const Field3D& var);
 [[deprecated("Please use `toString(loc)` instead")]]
 const char* strLocation(CELL_LOC loc);
 
-////////////////////////////////////////
-
 #endif // __INTERP_H__
