@@ -53,20 +53,22 @@ int MsgStack::setPoint() {
 }
 
 void MsgStack::pop() {
-  if (position <= 0)
+  if (position <= 0) {
     return;
-  BOUT_OMP(atomic)
-  --position;
+  }
+  BOUT_OMP(single) {
+    --position;
+  }
 }
 
 void MsgStack::pop(int id) {
   if (id < 0)
     id = 0;
 
-  BOUT_OMP(critical(MsgStack)) {
+  BOUT_OMP(single) {
     if (id <= static_cast<int>(position))
       position = id;
-  };
+  }
 }
 
 void MsgStack::clear() {
