@@ -21,10 +21,10 @@ grid = "slab_68x32.nc"  # Grid file
 dump_format = "nc"      # Dump file format. "nc" = NetCDF, "pdb" = PDB
 restart_format = "nc"   # Restart file format
 
-StaggerGrids = false    # Use staggered grids (EXPERIMENTAL)
-
 ##################################################
 [mesh]
+StaggerGrids = false    # Use staggered grids (EXPERIMENTAL)
+
 symmetricGlobalX = true
 
 [mesh:paralleltransform]
@@ -108,7 +108,6 @@ bracket_method = 2 # Method to use for [f,g] terms
                    # 2 = Arakawa scheme
                    # 3 = Corner Transport Upwind (CTU)
 
-parallel_lc = false # Use quasi-staggered LtoC and CtoL in Y
 nonlinear = false   # Include nonlinear terms?
 
 include_jpar0 = false

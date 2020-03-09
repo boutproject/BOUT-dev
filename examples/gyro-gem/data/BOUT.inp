@@ -20,9 +20,10 @@ grid="cyclone_68x32.nc"
 
 dump_format = "nc"   # Output format (PDB = "pdb", NetCDF="nc")
 
-#StaggerGrids = true
-
 periodicX = false  # Make domain periodic in X
+
+[mesh]
+StaggerGrids = false # Use staggered grids (EXPERIMENTAL)
 
 [mesh:paralleltransform]
 type = shifted # Use shifted metric method

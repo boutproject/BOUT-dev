@@ -43,6 +43,7 @@ const char DEFAULT_DIR[] = "data";
 #include "boutexception.hxx"
 #include "datafile.hxx"
 #include "interpolation_xz.hxx"
+#include "interpolation_z.hxx"
 #include "invert_laplace.hxx"
 #include "invert_parderiv.hxx"
 #include "msg_stack.hxx"
@@ -52,10 +53,12 @@ const char DEFAULT_DIR[] = "data";
 #include "bout/mpi_wrapper.hxx"
 #include "bout/openmpwrap.hxx"
 #include "bout/petsclib.hxx"
+#include "bout/revision.hxx"
 #include "bout/rkscheme.hxx"
 #include "bout/slepclib.hxx"
 #include "bout/solver.hxx"
 #include "bout/sys/timer.hxx"
+#include "bout/version.hxx"
 
 #define BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 #include "bout.hxx"
@@ -315,6 +318,13 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
       }
       std::exit(EXIT_SUCCESS);
     }
+    if (current_arg == "--list-zinterpolations") {
+      for (const auto& interpolation :
+           ZInterpolationFactory::getInstance().listAvailable()) {
+        std::cout << interpolation << "\n";
+      }
+      std::exit(EXIT_SUCCESS);
+    }
   }
 
   CommandLineArgs args;
@@ -422,10 +432,8 @@ void savePIDtoFile(const std::string& data_dir, int MYPE) {
 }
 
 void printStartupHeader(int MYPE, int NPES) {
-  output_progress.write(_("BOUT++ version {:s}\n"), BOUT_VERSION_STRING);
-#ifdef REVISION
-  output_progress.write(_("Revision: {:s}\n"), BUILDFLAG(REVISION));
-#endif
+  output_progress.write(_("BOUT++ version {:s}\n"), bout::version::full);
+  output_progress.write(_("Revision: {:s}\n"), bout::version::revision);
 #ifdef MD5SUM
   output_progress.write("MD5 checksum: {:s}\n", BUILDFLAG(MD5SUM));
 #endif
@@ -570,8 +578,8 @@ void setRunStartInfo(Options& options) {
 
   // Note: have to force value, since may already be set if a previously
   // output BOUT.settings file was used as input
-  runinfo["version"].force(BOUT_VERSION_STRING, "");
-  runinfo["revision"].force(BUILDFLAG(REVISION), "");
+  runinfo["version"].force(bout::version::full, "");
+  runinfo["revision"].force(bout::version::revision, "");
 
   time_t start_time = time(nullptr);
   runinfo["started"].force(ctime(&start_time), "");
@@ -602,7 +610,7 @@ Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir
   }
 
   // Add book-keeping variables to the output files
-  dump_file.add(const_cast<BoutReal&>(BOUT_VERSION), "BOUT_VERSION", false);
+  dump_file.add(const_cast<BoutReal&>(bout::version::as_double), "BOUT_VERSION", false);
   // Appends the time of dumps into an array
   dump_file.add(simtime, "t_array", true);
   dump_file.add(iteration, "iteration", false);

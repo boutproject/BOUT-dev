@@ -386,8 +386,8 @@ In order to OpenMP parallelise, there must be enough blocks to
 keep all threads busy. In order to vectorise, each of these blocks
 must be larger than the processor vector width, preferably several
 times larger. This can be tuned by setting the maximum block size,
-set at runtime using the `mesh:maxregionblocksize` option on the
-command line or in the `BOUT.inp` input file::
+set at runtime using the ``mesh:maxregionblocksize`` option on the
+command line or in the ``BOUT.inp`` input file::
 
   [mesh]
   maxregionblocksize = 64

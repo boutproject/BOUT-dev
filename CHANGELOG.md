@@ -20,6 +20,13 @@
   `OptionsReader`, and `MsgStack`/`TRACE`. Run
   `bin/bout-v5-format-upgrader.py` on your physics models to update
   them. [\#1847](https://github.com/boutproject/BOUT-dev/pull/1847)
+- The variable `BOUT_VERSION`, and the macros `REVISION`,
+  `BOUT_VERSION_STRING` and `BOUT_VERSION_DOUBLE` have been replaced
+  with `constexpr` variables in the `bout::version`
+  namespace. `REVISION` is found in `include/bout/revision.hxx`, while
+  the rest are in `include/bout/version.hxx`. Both files are generated
+  at configure time. Run `bin/bout-v5-macro-upgrader.py` to
+  update. [\#1920](https://github.com/boutproject/BOUT-dev/pull/1920)
 
 ## [v4.3.0](https://github.com/boutproject/BOUT-dev/tree/v4.3.0) (2019-10-24)
 [Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v4.2.3...v4.3.0)

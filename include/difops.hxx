@@ -347,6 +347,11 @@ const Field3D Laplace(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
                       const std::string& dfdy_region = "");
 
 /*!
+ * Inverse of Laplacian operator in LaplaceXY solver
+ */
+const Field2D Laplace_perpXY(const Field2D& A, const Field2D& f);
+
+/*!
  * Terms of form b0 x Grad(phi) dot Grad(A)
  * 
  */

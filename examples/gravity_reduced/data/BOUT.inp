@@ -32,6 +32,9 @@ dump_format = "nc" # Output format. nc = NetCDF
 
 non_uniform = false
 
+[mesh]
+StaggerGrids = false # Use staggered grids (EXPERIMENTAL)
+
 ##################################################
 # derivative methods
 
