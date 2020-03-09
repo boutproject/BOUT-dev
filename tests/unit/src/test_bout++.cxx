@@ -4,6 +4,7 @@
 #include "boutexception.hxx"
 #include "test_extras.hxx"
 #include "utils.hxx"
+#include "bout/version.hxx"
 
 #include <algorithm>
 #include <csignal>
@@ -290,7 +291,7 @@ public:
 TEST_F(PrintStartupTest, Header) {
   bout::experimental::printStartupHeader(4, 8);
 
-  EXPECT_TRUE(IsSubString(buffer.str(), BOUT_VERSION_STRING));
+  EXPECT_TRUE(IsSubString(buffer.str(), bout::version::full));
   EXPECT_TRUE(IsSubString(buffer.str(), _("4 of 8")));
 }
 

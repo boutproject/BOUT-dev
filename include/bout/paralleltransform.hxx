@@ -8,6 +8,7 @@
 
 #include "bout_types.hxx"
 #include "field3d.hxx"
+#include "options.hxx"
 #include "unused.hxx"
 
 class Mesh;
@@ -22,7 +23,9 @@ class Mesh;
  */
 class ParallelTransform {
 public:
-  ParallelTransform(Mesh& mesh_in) : mesh(mesh_in) {}
+  ParallelTransform(Mesh& mesh_in, Options* opt = nullptr)
+    : mesh(mesh_in),
+      options(opt == nullptr ? Options::root()["mesh:paralleltransform"] : *opt) {}
   virtual ~ParallelTransform() = default;
 
   /// Given a 3D field, calculate and set the Y up down fields
@@ -109,6 +112,7 @@ protected:
   virtual void checkInputGrid() = 0;
 
   Mesh &mesh; ///< The mesh this paralleltransform is part of
+  Options &options; ///< Options for this ParallelTransform
 };
 
 /*!
@@ -118,7 +122,9 @@ protected:
  */
 class ParallelTransformIdentity : public ParallelTransform {
 public:
-  ParallelTransformIdentity(Mesh& mesh_in) : ParallelTransform(mesh_in) {
+  ParallelTransformIdentity(Mesh& mesh_in, Options* opt = nullptr)
+      : ParallelTransform(mesh_in, opt) {
+
     // check the coordinate system used for the grid data source
     ParallelTransformIdentity::checkInputGrid();
   }
@@ -182,7 +188,8 @@ protected:
 class ShiftedMetric : public ParallelTransform {
 public:
   ShiftedMetric() = delete;
-  ShiftedMetric(Mesh& mesh, CELL_LOC location, Field2D zShift, BoutReal zlength_in);
+  ShiftedMetric(Mesh& mesh, CELL_LOC location, Field2D zShift, BoutReal zlength_in,
+                Options* opt = nullptr);
 
   /*!
    * Calculates the yup() and ydown() fields of f

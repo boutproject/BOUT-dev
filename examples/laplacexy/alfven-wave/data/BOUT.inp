@@ -4,10 +4,11 @@ TIMESTEP = 2
 
 grid = "d3d_119919.nc"
 
-[mesh]
-paralleltransform = shifted # Shifted metric method
-
 MZ = 1
+
+[mesh:paralleltransform]
+
+type = shifted # Shifted metric method
 
 [solver]
 

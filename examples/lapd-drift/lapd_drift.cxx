@@ -248,7 +248,8 @@ protected:
     /************* SHIFTED RADIAL COORDINATES ************/
     
     // Check type of parallel transform
-    std::string ptstr = Options::root()["mesh"]["paralleltransform"].withDefault<std::string>("identity");
+    std::string ptstr = Options::root()["mesh"]["paralleltransform"]["type"]
+                                       .withDefault<std::string>("identity");
 
     if (lowercase(ptstr) == "shifted") {
       ShearFactor = 0.0;  // I disappears from metric
@@ -505,7 +506,8 @@ protected:
     
     if (ZeroElMass) {
       // Set jpar,Ve,Ajpar neglecting the electron inertia term
-      jpar = ((Tet*Grad_par_LtoC(ni)) - (Nit*Grad_par_LtoC(phi)))/(fmei*0.51*nu);
+      jpar = (interp_to(Tet, CELL_YLOW)*Grad_par(ni, CELL_YLOW)
+              - interp_to(Nit, CELL_YLOW)*Grad_par(phi, CELL_YLOW))/(fmei*0.51*nu);
       
       // Set boundary condition on jpar
       jpar.applyBoundary();
@@ -513,12 +515,12 @@ protected:
       // Need to communicate jpar
       mesh->communicate(jpar);
       
-      Ve = -jpar/Nit;
+      Ve = -jpar/interp_to(Nit, CELL_YLOW);
       ajpar = Ve;
     } else {
     
       Ve = ajpar;
-      jpar = -Nit*Ve;
+      jpar = -interp_to(Nit, CELL_YLOW)*Ve;
       //jpar = -Ni0*Ve; //Linearize as in BOUT06
     }
     //////////////////////////////////////////////////////////////////////////////////////////
@@ -540,7 +542,7 @@ protected:
       }
       
       if (ni_jpar1) {
-        ddt(ni) += Grad_par_CtoL(jpar); // Left hand differencing
+        ddt(ni) += Grad_par(jpar, CELL_CENTRE); // Left hand differencing
       }
       
       if (ni_src_ni0) {
@@ -569,7 +571,7 @@ protected:
     if (evolve_rho) {
       
       if (rho_jpar1) { 
-        ddt(rho) += Grad_par_CtoL(jpar); // Left hand differencing
+        ddt(rho) += Grad_par(jpar, CELL_CENTRE); // Left hand differencing
       }
       
       if (rho_nuin_rho1) {
@@ -613,28 +615,28 @@ protected:
     if (evolve_ajpar) {
 
       if (ajpar_phi1) {
-        ddt(ajpar) += (1./fmei)*Grad_par_LtoC(phi); // Right-hand deriv with b.c. Necessary for sheath mode
+        ddt(ajpar) += (1./fmei)*Grad_par(phi, CELL_YLOW); // Right-hand deriv with b.c. Necessary for sheath mode
       }
       
       if (ajpar_jpar1) {
-        ddt(ajpar) -= 0.51*nu*ajpar;
+        ddt(ajpar) -= 0.51*interp_to(nu, CELL_YLOW)*ajpar;
       }
       
 
       if (ajpar_te_ni) {
-        ddt(ajpar) -= (1./fmei)*(Tet/Nit)*Grad_par_LtoC(ni);
+        ddt(ajpar) -= (1./fmei)*interp_to(Tet/Nit, CELL_YLOW)*Grad_par(ni, CELL_YLOW);
       }
       
       if (ajpar_te) {
-        ddt(ajpar) -= (1.71/fmei)*Grad_par_LtoC(te);
+        ddt(ajpar) -= (1.71/fmei)*Grad_par(te, CELL_YLOW);
       }
       
       if (ajpar_ajpar1_phi0) {
-        ddt(ajpar) -= vE_Grad(ajpar,phi0);
+        ddt(ajpar) -= vE_Grad(ajpar,interp_to(phi0, CELL_YLOW));
       }
       
       if (ajpar_ajpar1_phi1) {
-        ddt(ajpar) -= vE_Grad(ajpar,phi);
+        ddt(ajpar) -= vE_Grad(ajpar,interp_to(phi, CELL_YLOW));
       }
       
       if (ajpar_ve1_ve1) {
@@ -664,11 +666,11 @@ protected:
       }
       
       if (te_ajpar_te) {
-        ddt(te) -= ajpar * Grad_par_LtoC(te);
+        ddt(te) -= interp_to(ajpar, CELL_CENTRE) * Grad_par(te);
       }
       
       if (te_te_ajpar) {
-        ddt(te) -= 2./3. * Tet * Grad_par_CtoL(ajpar);
+        ddt(te) -= 2./3. * Tet * Grad_par(ajpar, CELL_CENTRE);
       }
       
       if (te_nu_te1) {
@@ -680,7 +682,7 @@ protected:
       }
 
       if (te_jpar) {
-        ddt(te) += 0.71*2./3. * Tet/Nit * Grad_par_CtoL(jpar);
+        ddt(te) += 0.71*2./3. * Tet/Nit * Grad_par(jpar, CELL_CENTRE);
       }
       
       if (te_diff) {

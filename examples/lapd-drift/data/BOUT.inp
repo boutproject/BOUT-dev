@@ -23,6 +23,9 @@ dump_format = "nc"   # Output format (PDB = "pdb", NetCDF="nc")
 
 non_uniform = true
 
+[mesh]
+StaggerGrids = true
+
 ##################################################
 # derivative methods
 

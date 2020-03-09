@@ -1,4 +1,4 @@
-/// \file Base type for factories
+/// Base type for factories
 
 #pragma once
 #ifndef __BOUT_GENERIC_FACTORY_H__
@@ -149,6 +149,15 @@ public:
     throw BoutException("Error when trying to create a {0:s}: Could not find "
                         "'{1:s}'\nAvailable {0:s}s are:\n{2:s}",
                         DerivedFactory::type_name, name, available);
+  }
+
+  /// Create a new object of the type given in options["type"]
+  ///
+  /// @param[in] options  The Options object to get the type to be created from
+  /// @returns the new object
+  template <typename... Args>
+  ReturnType create(Options* options, Args&&... args) const {
+    return create(getType(options), args...);
   }
 
   /// List available types that can be created
