@@ -351,6 +351,9 @@ distclean:: clean clean-tests
 	@echo externalpackages cleaned
 	@touch $(BOUT_TOP)/configure
 	@echo autom4te.cache cleaned
+	-@$(RM) $(BOUT_TOP)/include/bout/version.hxx
+	-@$(RM) $(BOUT_TOP)/include/bout/revision.hxx
+	@echo generated version headers cleaned
 
 clean-tests: clean-unit-tests clean-integrated-tests clean-mms-tests
 
