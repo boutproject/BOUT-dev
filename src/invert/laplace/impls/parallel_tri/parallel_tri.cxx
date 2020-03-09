@@ -83,8 +83,6 @@ LaplaceParallelTri::LaplaceParallelTri(Options *opt, CELL_LOC loc, Mesh *mesh_in
   r7 = Matrix<dcomplex>(localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
   r8 = Matrix<dcomplex>(localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
 
-  Delta = Matrix<dcomplex>(localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
-
   x0saved = Tensor<dcomplex>(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
 
   resetSolver();
@@ -585,22 +583,23 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	    Bu = localmesh->communicateXOut(Btmp);
 	  }
 
-	  Delta(jy,kz) = 1.0 - al(jy,kz)*Bd - bu(jy,kz)*Au + (al(jy,kz)*bu(jy,kz) - au(jy,kz)*bl(jy,kz))*Bd*Au;
-	  Delta(jy,kz) = 1.0 / Delta(jy,kz);
-	  al(jy,kz) = Delta(jy,kz)*( alold(jy,kz) + (auold(jy,kz)*blold(jy,kz) - alold(jy,kz)*buold(jy,kz))*Au )*Ad;	
-	  bl(jy,kz) = Delta(jy,kz) * blold(jy,kz) * Bu ;	
-	  au(jy,kz) = Delta(jy,kz) * auold(jy,kz) * Ad ;
-	  bu(jy,kz) = Delta(jy,kz)*( buold(jy,kz) + (auold(jy,kz)*blold(jy,kz) - alold(jy,kz)*buold(jy,kz))*Bd )*Bu;
+	  dcomplex Delta;
+	  Delta = 1.0 - al(jy,kz)*Bd - bu(jy,kz)*Au + (al(jy,kz)*bu(jy,kz) - au(jy,kz)*bl(jy,kz))*Bd*Au;
+	  Delta = 1.0 / Delta;
+	  al(jy,kz) = Delta*( alold(jy,kz) + (auold(jy,kz)*blold(jy,kz) - alold(jy,kz)*buold(jy,kz))*Au )*Ad;
+	  bl(jy,kz) = Delta * blold(jy,kz) * Bu ;
+	  au(jy,kz) = Delta * auold(jy,kz) * Ad ;
+	  bu(jy,kz) = Delta*( buold(jy,kz) + (auold(jy,kz)*blold(jy,kz) - alold(jy,kz)*buold(jy,kz))*Bd )*Bu;
 
 	  dcomplex d = auold(jy,kz)*blold(jy,kz) - alold(jy,kz)*buold(jy,kz);
-	  r1(jy,kz) = Delta(jy,kz)*(alold(jy,kz) + d*Au);
-	  r2(jy,kz) = Delta(jy,kz)*( 1.0 - buold(jy,kz)*Au );
-	  r3(jy,kz) = Delta(jy,kz)*blold(jy,kz)*Au;
-	  r4(jy,kz) = Delta(jy,kz)*blold(jy,kz);
-	  r5(jy,kz) = Delta(jy,kz)*auold(jy,kz);
-	  r6(jy,kz) = Delta(jy,kz)*auold(jy,kz)*Bd;
-	  r7(jy,kz) = Delta(jy,kz)*( 1.0 - alold(jy,kz)*Bd );
-	  r8(jy,kz) = Delta(jy,kz)*(buold(jy,kz) + d*Bd);
+	  r1(jy,kz) = Delta*(alold(jy,kz) + d*Au);
+	  r2(jy,kz) = Delta*( 1.0 - buold(jy,kz)*Au );
+	  r3(jy,kz) = Delta*blold(jy,kz)*Au;
+	  r4(jy,kz) = Delta*blold(jy,kz);
+	  r5(jy,kz) = Delta*auold(jy,kz);
+	  r6(jy,kz) = Delta*auold(jy,kz)*Bd;
+	  r7(jy,kz) = Delta*( 1.0 - alold(jy,kz)*Bd );
+	  r8(jy,kz) = Delta*(buold(jy,kz) + d*Bd);
 
 	}
 
