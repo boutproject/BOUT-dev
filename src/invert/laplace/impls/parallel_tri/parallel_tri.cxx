@@ -308,7 +308,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   store_coefficients = store_coefficients && not (outer_boundary_flags & INVERT_AC_GRAD);
   store_coefficients = store_coefficients && not (inner_boundary_flags & INVERT_SET);
   store_coefficients = store_coefficients && not (outer_boundary_flags & INVERT_SET);
-  store_coefficients = false;
+  //store_coefficients = false;
 
   // Setting the width of the boundary.
   // NOTE: The default is a width of 2 guard cells
@@ -561,49 +561,39 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       // New method - connect to more distant points
       if(new_method){
 
-	if(not localmesh->firstX()){
-	  // Send coefficients down
-	  Rtmp = rl;
-	  Atmp = al(jy,kz);
-	  Btmp = 0.0;
-	  if( std::fabs(bu(jy,kz)) > 1e-14 ){
-	    Btmp = bl(jy,kz)/bu(jy,kz);
-	    Atmp -= Btmp*au(jy,kz);
-	    Rtmp -= Btmp*ru;
-	  }
-	  // Send these
-	  Ad = localmesh->communicateXIn(Atmp);
-	  Bd = localmesh->communicateXIn(Btmp);
-	  Rd = localmesh->communicateXIn(Rtmp);
-	}
-	if(not localmesh->lastX()){
-	  // Send coefficients up
-	  Rtmp = ru;
-	  Atmp = 0.0;
-	  Btmp = bu(jy,kz);
-	  if( std::fabs(al(jy,kz)) > 1e-14 ){
-	    Atmp = au(jy,kz)/al(jy,kz);
-	    Btmp -= Atmp*bl(jy,kz);
-	    Rtmp -= Atmp*rl;
-	  }
-	  // Send these
-	  Au = localmesh->communicateXOut(Atmp);
-	  Bu = localmesh->communicateXOut(Btmp);
-	  Ru = localmesh->communicateXOut(Rtmp);
-	}
-
-	if(localmesh->firstX()){
-	  Ad = 1.0;
-	  Rd = 0.0;
-	  Bd = 0.0;
-	}
-	if(localmesh->lastX()){
-	  Au = 0.0;
-	  Ru = 0.0;
-	  Bu = 1.0;
-	}
-
+	// First compute coefficients that depend on the matrix to be inverted
+	// and which therefore might be constant throughout a run.
 	if( first_call(jy,kz) or not store_coefficients){
+
+	  // Boundary processor values to be overwritten when relevant
+	  Ad = 1.0;
+	  Bd = 0.0;
+	  Au = 0.0;
+	  Bu = 1.0;
+	  if(not localmesh->firstX()){
+	    // Send coefficients down
+	    Atmp = al(jy,kz);
+	    Btmp = 0.0;
+	    if( std::fabs(bu(jy,kz)) > 1e-14 ){
+	      Btmp = bl(jy,kz)/bu(jy,kz);
+	      Atmp -= Btmp*au(jy,kz);
+	    }
+	    // Send these
+	    Ad = localmesh->communicateXIn(Atmp);
+	    Bd = localmesh->communicateXIn(Btmp);
+	  }
+	  if(not localmesh->lastX()){
+	    // Send coefficients up
+	    Atmp = 0.0;
+	    Btmp = bu(jy,kz);
+	    if( std::fabs(al(jy,kz)) > 1e-14 ){
+	      Atmp = au(jy,kz)/al(jy,kz);
+	      Btmp -= Atmp*bl(jy,kz);
+	    }
+	    // Send these
+	    Au = localmesh->communicateXOut(Atmp);
+	    Bu = localmesh->communicateXOut(Btmp);
+	  }
 
 	  Delta(jy,kz) = 1.0 - al(jy,kz)*Bd - bu(jy,kz)*Au + (al(jy,kz)*bu(jy,kz) - au(jy,kz)*bl(jy,kz))*Bd*Au;
 	  Delta(jy,kz) = 1.0 / Delta(jy,kz);
@@ -623,6 +613,30 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	  r8(jy,kz) = Delta(jy,kz)*(buold(jy,kz) + d*Bd);
 
 	}
+
+	// Now compute coefficients that depend on the right-hand side and
+	// which therefore change every time.
+
+	// Boundary processor values to be overwritten when relevant
+	Rd = 0.0;
+	Ru = 0.0;
+	if(not localmesh->firstX()){
+	  // Send coefficients down
+	  Rtmp = rl;
+	  if( std::fabs(buold(jy,kz)) > 1e-14 ){
+	    Rtmp -= ru*blold(jy,kz)/buold(jy,kz);
+	  }
+	  Rd = localmesh->communicateXIn(Rtmp);
+	}
+	if(not localmesh->lastX()){
+	  // Send coefficients up
+	  Rtmp = ru;
+	  if( std::fabs(alold(jy,kz)) > 1e-14 ){
+	    Rtmp -= rl*auold(jy,kz)/alold(jy,kz);
+	  }
+	  Ru = localmesh->communicateXOut(Rtmp);
+	}
+
 	rl = r1(jy,kz)*Rd + r2(jy,kz)*rlold + r3(jy,kz)*ruold + r4(jy,kz)*Ru ;
 	ru = r5(jy,kz)*Rd + r6(jy,kz)*rlold + r7(jy,kz)*ruold + r8(jy,kz)*Ru ;
       }
