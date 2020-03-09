@@ -108,7 +108,8 @@ class Mesh {
 
   /// Constructor for a "bare", uninitialised Mesh
   /// Only useful for testing
-  Mesh() : source(nullptr), options(nullptr) {}
+  Mesh() : source(nullptr), options(nullptr),
+           include_corner_cells(false) {}
 
   /// Constructor
   /// @param[in] s  The source to be used for loading variables
@@ -271,6 +272,12 @@ class Mesh {
     communicateXZ(g);
   }
 
+  template <typename... Ts>
+  void communicateYZ(Ts&... ts) {
+    FieldGroup g(ts...);
+    communicateYZ(g);
+  }
+
   /*!
    * Communicate a group of fields
    */
@@ -281,6 +288,12 @@ class Mesh {
   ///
   /// @param g  The group of fields to communicate. Guard cells will be modified
   void communicateXZ(FieldGroup &g);
+
+  /// Communcate guard cells in YZ only
+  /// i.e. no X communication
+  ///
+  /// @param g  The group of fields to communicate. Guard cells will be modified
+  void communicateYZ(FieldGroup &g);
 
   /*!
    * Communicate an X-Z field
@@ -298,13 +311,38 @@ class Mesh {
     return send(g);
   }
 
+  /// Send guard cells from a list of FieldData objects in the x-direction
+  /// Packs arguments into a FieldGroup and passes to send(FieldGroup&).
+  template <typename... Ts>
+  comm_handle sendX(Ts&... ts) {
+    FieldGroup g(ts...);
+    return sendX(g);
+  }
+
+  /// Send guard cells from a list of FieldData objects in the y-direction
+  /// Packs arguments into a FieldGroup and passes to send(FieldGroup&).
+  template <typename... Ts>
+  comm_handle sendY(Ts&... ts) {
+    FieldGroup g(ts...);
+    return sendY(g);
+  }
+
   /// Perform communications without waiting for them
   /// to finish. Requires a call to wait() afterwards.
   ///
   /// \param g Group of fields to communicate
   /// \returns handle to be used as input to wait()
   virtual comm_handle send(FieldGroup &g) = 0;  
-  virtual int wait(comm_handle handle) = 0; ///< Wait for the handle, return error code
+
+  /// Send only the x-guard cells
+  virtual comm_handle sendX(FieldGroup &g, comm_handle handle = nullptr,
+                            bool disable_corners = false) = 0;
+
+  /// Send only the y-guard cells
+  virtual comm_handle sendY(FieldGroup &g, comm_handle handle = nullptr) = 0;
+
+  /// Wait for the handle, return error code
+  virtual int wait(comm_handle handle) = 0;
 
   // non-local communications
 
@@ -340,8 +378,8 @@ class Mesh {
   virtual int getYProcIndex() = 0; ///< This processor's index in Y direction
   
   // X communications
-  virtual bool firstX() = 0;  ///< Is this processor first in X? i.e. is there a boundary to the left in X?
-  virtual bool lastX() = 0; ///< Is this processor last in X? i.e. is there a boundary to the right in X?
+  virtual bool firstX() const = 0;  ///< Is this processor first in X? i.e. is there a boundary to the left in X?
+  virtual bool lastX() const = 0; ///< Is this processor last in X? i.e. is there a boundary to the right in X?
 
   /// Domain is periodic in X?
   bool periodicX{false};
@@ -514,6 +552,8 @@ class Mesh {
   //////////////////////////////////////////////////////////
   
   int GlobalNx, GlobalNy, GlobalNz; ///< Size of the global arrays. Note: can have holes
+  /// Size of the global arrays excluding boundary points.
+  int GlobalNxNoBoundaries, GlobalNyNoBoundaries, GlobalNzNoBoundaries;
   int OffsetX, OffsetY, OffsetZ;    ///< Offset of this mesh within the global array
                                     ///< so startx on this processor is OffsetX in global
   
@@ -962,6 +1002,10 @@ protected:
 
   /// Pointer to the global MPI wrapper, for convenience
   MpiWrapper* mpi = nullptr;
+
+public:
+  // Switch for communication of corner guard and boundary cells
+  const bool include_corner_cells;
 
 private:
 

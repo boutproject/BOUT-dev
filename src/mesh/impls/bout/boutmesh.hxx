@@ -42,6 +42,13 @@ class BoutMesh : public Mesh {
   ///
   comm_handle send(FieldGroup& g) override;
 
+  /// Send only in the x-direction
+  comm_handle sendX(FieldGroup& g, comm_handle handle = nullptr,
+                    bool disable_corners = false) override;
+
+  /// Send only in the y-direction
+  comm_handle sendY(FieldGroup& g, comm_handle handle = nullptr) override;
+
   /// Wait for a send operation to complete
   /// @param[in] handle  The handle returned by send()
   int wait(comm_handle handle) override;
@@ -62,9 +69,9 @@ class BoutMesh : public Mesh {
   /////////////////////////////////////////////
   // X communications
 
-  bool firstX() override; ///< Is this processor the first in X? i.e. is there a boundary
+  bool firstX() const override; ///< Is this processor the first in X? i.e. is there a boundary
                           ///< to the left in X?
-  bool lastX() override; ///< Is this processor last in X? i.e. is there a boundary to the
+  bool lastX() const override; ///< Is this processor last in X? i.e. is there a boundary to the
                          ///< right in X?
 
   /// Send a buffer of data to processor at X index +1
@@ -284,6 +291,10 @@ private:
     Array<BoutReal> umsg_recvbuff, dmsg_recvbuff, imsg_recvbuff, omsg_recvbuff;
     /// Is the communication still going?
     bool in_progress;
+    /// Are corner cells included in x-communication?
+    bool include_x_corners;
+    /// Is there a y-communication
+    bool has_y_communication;
     /// List of fields being communicated
     FieldGroup var_list;
   };
@@ -307,8 +318,11 @@ private:
   //////////////////////////////////////////////////
   // Communication routines
 
-  /// Create the MPI requests to receive data. Non-blocking call.
-  void post_receive(CommHandle& ch);
+  /// Create the MPI requests to receive data in the x-direction. Non-blocking call.
+  void post_receiveX(CommHandle& ch);
+
+  /// Create the MPI requests to receive data in the y-direction. Non-blocking call.
+  void post_receiveY(CommHandle& ch);
 
   /// Take data from objects and put into a buffer
   int pack_data(const std::vector<FieldData*>& var_list, int xge, int xlt, int yge,
