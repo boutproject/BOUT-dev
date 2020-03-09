@@ -681,9 +681,9 @@ D2DXDY(const Field3D& f, CELL_LOC outloc, DIFF_METHOD method, REGION region = RG
 /// @param[in] dfdy_boundary_condition Boundary condition to use to set the guard cells of
 ///                                    df/dy, before calculating the x-derivative.
 /// @param[in] dfdy_region Region in which to calculate df/dy. If an empty string
-/// (default)
-///                        then the same as the region for the calculation as a whole.
-///                        If dfdy_region < region in size then this will cause errors.
+///                        (default) then the same as the region for the calculation as a
+///                        whole. If dfdy_region < region in size then this will cause
+///                        errors.
 Field2D D2DXDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                const std::string& method = "DEFAULT",
                const std::string& region = "RGN_NOBNDRY",
