@@ -21,7 +21,8 @@ grid="d3d_119919.nc"
 
 dump_format = "nc"   # Set extension for dump files (nc = NetCDF)
 
-#StaggerGrids = true
+[mesh]
+StaggerGrids = false # Use staggered grids (EXPERIMENTAL)
 
 [mesh:paralleltransform]
 type = shifted # Use shifted metric method
