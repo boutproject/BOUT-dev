@@ -83,7 +83,10 @@ BOUT_VERSION  = @PACKAGE_VERSION@
 # Files that are needed by configure and should be dependencies for 'all'
 
 OBJ    = $(SOURCEC:%.cxx=%.o)
-ifndef RELEASE
+ifndef RELEASED
+# If this is part of an packaged and installed installation, the user cannot
+# write these files, so they shouldn't be changed. Thus only set this, in
+# the non installed case.
 LIB    = $(BOUT_LIB_PATH)/libbout++.a
 LIB_SO = $(BOUT_LIB_PATH)/libbout++.so
 endif
@@ -197,6 +200,9 @@ install: libfast
 	sed -i "s|^BOUT_LIB_PATH=.*|BOUT_LIB_PATH=@libdir@|" $(DESTDIR)@datadir@/bout++/make.config
 	sed -i "s|^BOUT_CONFIG_FILE=.*|BOUT_CONFIG_FILE=@datadir@/bout++/make.config|" $(DESTDIR)@datadir@/bout++/make.config
 	sed -i "s|^MPARK_VARIANT_INCLUDE_PATH=.*|MPARK_VARIANT_INCLUDE_PATH=@includedir@/bout++|" $(DESTDIR)@datadir@/bout++/make.config
+
+#	Set the make.config as released, so the library isn't rebuild. This way the .a file doesn't need to be preserved/installed
+	sed -i '26 i RELEASED                 = yes' $(DESTDIR)@datadir@/bout++/make.config
 
 uninstall:
 	$(PRE_UNINSTALL)     # Pre-uninstall commands follow.
