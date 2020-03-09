@@ -123,15 +123,8 @@ apar_flags = 0 # flags for apar inversion
 scale = 0.0 # default size of initial perturbations
 function = guass(y, 0.1) * sin(z)
 
-# boundary conditions (see boundary.h for values)
-# 0 = none applied
-# 1 = zero value
-# 2 = zero gradient
-# 3 = laplacian
-# 4 = laplacian with zero-gradient
-
-xinner = 2  ## Zero-gradient inner boundary
-xouter = 2  ## Zero-gradient outer boundary
+bndry_xin = neumann  ## Zero-gradient inner boundary
+bndry_xout = neumann  ## Zero-gradient outer boundary
 
 ##################################################
 # DENSITY
