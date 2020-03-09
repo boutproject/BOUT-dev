@@ -280,7 +280,7 @@ public:
   FieldGeneratorPtr clone(const std::list<FieldGeneratorPtr> args) override {
     if (args.size() != 3) {
       throw ParseException("where expects 3 arguments (test, gt0, lt0) but got {:d}",
-                           static_cast<unsigned long>(args.size()));
+                           args.size());
     }
     auto arg_it = std::begin(args);
     auto first = *arg_it++;
