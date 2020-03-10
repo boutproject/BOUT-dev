@@ -208,6 +208,8 @@ private:
   void setPreallocationFiniteDifference(PetscInt* d_nnz, PetscInt* o_nnz);
   void setMatrixElementsFiniteVolume(const Field2D &A, const Field2D &B);
   void setMatrixElementsFiniteDifference(const Field2D &A, const Field2D &B);
+  void solveFiniteVolume(const Field2D &x0);
+  void solveFiniteDifference(const Field2D &x0);
 
   // Monitor class used to reset performance-monitoring variables for a new
   // output timestep
