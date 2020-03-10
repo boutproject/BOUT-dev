@@ -194,7 +194,15 @@ public:
     addBoundary(new BoundaryRegionYDown("lower_target", xstart, xend, this));
   }
 
-  comm_handle send(FieldGroup& UNUSED(g)) override { return nullptr; };
+  comm_handle send(FieldGroup& UNUSED(g)) override { return nullptr; }
+  comm_handle sendX(FieldGroup& UNUSED(g), comm_handle UNUSED(handle) = nullptr,
+                    bool UNUSED(disable_corners) = false) override {
+    return nullptr;
+  }
+  comm_handle sendY(FieldGroup& UNUSED(g), comm_handle UNUSED(handle) = nullptr) override
+  {
+    return nullptr;
+  }
   int wait(comm_handle UNUSED(handle)) override { return 0; }
   MPI_Request sendToProc(int UNUSED(xproc), int UNUSED(yproc), BoutReal* UNUSED(buffer),
                          int UNUSED(size), int UNUSED(tag)) override {
@@ -209,8 +217,8 @@ public:
   int getNYPE() override { return 1; }
   int getXProcIndex() override { return 1; }
   int getYProcIndex() override { return 1; }
-  bool firstX() override { return true; }
-  bool lastX() override { return true; }
+  bool firstX() const override { return true; }
+  bool lastX() const override { return true; }
   int sendXOut(BoutReal* UNUSED(buffer), int UNUSED(size), int UNUSED(tag)) override {
     return 0;
   }

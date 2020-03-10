@@ -12,25 +12,25 @@ from sys import exit
 
 tol = 5.e-8
 
-argslist = ['laplacexy:core_bndry_dirichlet=true laplacexy:pf_bndry_dirichlet=true laplacexy:y_bndry_dirichlet=true '
+argslist = ['laplacexy:core_bndry_dirichlet=true laplacexy:pf_bndry_dirichlet=true laplacexy:y_bndry=dirichlet '
             'f:bndry_xin=dirichlet f:bndry_xout=dirichlet f:bndry_yup=dirichlet f:bndry_ydown=dirichlet',
-            'laplacexy:core_bndry_dirichlet=true laplacexy:pf_bndry_dirichlet=true laplacexy:y_bndry_dirichlet=false '
+            'laplacexy:core_bndry_dirichlet=true laplacexy:pf_bndry_dirichlet=true laplacexy:y_bndry=dirichlet '
             'f:bndry_xin=dirichlet f:bndry_xout=dirichlet f:bndry_yup=neumann f:bndry_ydown=neumann',
-             #'laplacexy:core_bndry_dirichlet=true laplacexy:pf_bndry_dirichlet=false laplacexy:y_bndry_dirichlet=true '
+             #'laplacexy:core_bndry_dirichlet=true laplacexy:pf_bndry_dirichlet=false laplacexy:y_bndry=dirichlet '
              #'f:bndry_xin=dirichlet f:bndry_xout=dirichlet f:bndry_yup=dirichlet f:bndry_ydown=dirichlet',
-             #'laplacexy:core_bndry_dirichlet=true laplacexy:pf_bndry_dirichlet=false laplacexy:y_bndry_dirichlet=false '
+             #'laplacexy:core_bndry_dirichlet=true laplacexy:pf_bndry_dirichlet=false laplacexy:y_bndry=dirichlet '
              #'f:bndry_xin=dirichlet f:bndry_xout=dirichlet f:bndry_yup=neumann f:bndry_ydown=neumann',
-             #'laplacexy:core_bndry_dirichlet=false laplacexy:pf_bndry_dirichlet=true laplacexy:y_bndry_dirichlet=true '
+             #'laplacexy:core_bndry_dirichlet=false laplacexy:pf_bndry_dirichlet=true laplacexy:y_bndry=dirichlet '
              #'f:bndry_xin=dirichlet f:bndry_xout=dirichlet f:bndry_yup=dirichlet f:bndry_ydown=dirichlet',
-             #'laplacexy:core_bndry_dirichlet=false laplacexy:pf_bndry_dirichlet=true laplacexy:y_bndry_dirichlet=false '
+             #'laplacexy:core_bndry_dirichlet=false laplacexy:pf_bndry_dirichlet=true laplacexy:y_bndry=dirichlet '
              #'f:bndry_xin=dirichlet f:bndry_xout=dirichlet f:bndry_yup=neumann f:bndry_ydown=neumann',
-             #'laplacexy:core_bndry_dirichlet=false laplacexy:pf_bndry_dirichlet=false laplacexy:y_bndry_dirichlet=true '
+             #'laplacexy:core_bndry_dirichlet=false laplacexy:pf_bndry_dirichlet=false laplacexy:y_bndry=dirichlet '
              #'f:bndry_xin=neumann f:bndry_xout=neumann f:bndry_yup=dirichlet f:bndry_ydown=dirichlet',
-            'laplacexy:core_bndry_dirichlet=false laplacexy:pf_bndry_dirichlet=false laplacexy:y_bndry_dirichlet=false '
+            'laplacexy:core_bndry_dirichlet=false laplacexy:pf_bndry_dirichlet=false laplacexy:y_bndry=dirichlet '
             'f:bndry_xin=neumann f:bndry_xout=dirichlet f:bndry_yup=neumann f:bndry_ydown=neumann',
-            'laplacexy:core_bndry_dirichlet=true laplacexy:pf_bndry_dirichlet=true laplacexy:y_bndry_dirichlet=false '
+            'laplacexy:core_bndry_dirichlet=true laplacexy:pf_bndry_dirichlet=true laplacexy:y_bndry=dirichlet '
             'f:bndry_xin=dirichlet f:bndry_xout=dirichlet f:bndry_yup=neumann f:bndry_ydown=neumann b:function=.1',
-            'laplacexy:core_bndry_dirichlet=false laplacexy:pf_bndry_dirichlet=false laplacexy:y_bndry_dirichlet=false '
+            'laplacexy:core_bndry_dirichlet=false laplacexy:pf_bndry_dirichlet=false laplacexy:y_bndry=dirichlet '
             'f:bndry_xin=neumann f:bndry_xout=dirichlet f:bndry_yup=neumann f:bndry_ydown=neumann b:function=.1',
            ]
 

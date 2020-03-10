@@ -18,6 +18,7 @@
 #include <globals.hxx>
 
 #include "parallel/fci.hxx"
+#include "parallel/shiftedmetricinterp.hxx"
 
 // use anonymous namespace so this utility function is not available outside this file
 namespace {
@@ -119,15 +120,28 @@ Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
     }
   }
 
-  // Set corner guard cells
-  for (int i = 0; i < localmesh->xstart; i++) {
-    for (int j = 0; j < localmesh->ystart; j++) {
-      result(i, j) = BoutNaN;
-      result(i, localmesh->LocalNy - 1 - j) = BoutNaN;
-      result(localmesh->LocalNx - 1 - i, j) = BoutNaN;
-      result(localmesh->LocalNx - 1 - i, localmesh->LocalNy - 1 - j) = BoutNaN;
+#if CHECK > 0
+  if (not (
+            // if include_corner_cells=true, then we extrapolate valid data into the
+            // corner cells if they are not already filled
+            localmesh->include_corner_cells
+
+            // if we are not extrapolating at all, the corner cells should contain valid
+            // data
+            or (not extrapolate_x and not extrapolate_y)
+          )
+     ) {
+    // Invalidate corner guard cells
+    for (int i = 0; i < localmesh->xstart; i++) {
+      for (int j = 0; j < localmesh->ystart; j++) {
+        result(i, j) = BoutNaN;
+        result(i, localmesh->LocalNy - 1 - j) = BoutNaN;
+        result(localmesh->LocalNx - 1 - i, j) = BoutNaN;
+        result(localmesh->LocalNx - 1 - i, localmesh->LocalNy - 1 - j) = BoutNaN;
+      }
     }
   }
+#endif
 
   return result;
 }
@@ -1094,7 +1108,7 @@ void Coordinates::setParallelTransform(Options* options) {
     transform = bout::utils::make_unique<ParallelTransformIdentity>(*localmesh,
                                                                     ptoptions);
 
-  } else if (ptstr == "shifted") {
+  } else if (ptstr == "shifted" or ptstr == "shiftedinterp") {
     // Shifted metric method
 
     Field2D zShift{localmesh};
@@ -1129,8 +1143,13 @@ void Coordinates::setParallelTransform(Options* options) {
 
     fixZShiftGuards(zShift);
 
-    transform = bout::utils::make_unique<ShiftedMetric>(*localmesh, location, zShift,
-                                                        zlength(), ptoptions);
+    if (ptstr == "shifted") {
+      transform = bout::utils::make_unique<ShiftedMetric>(*localmesh, location, zShift,
+                                                          zlength());
+    } else if (ptstr == "shiftedinterp") {
+      transform =
+          bout::utils::make_unique<ShiftedMetricInterp>(*localmesh, location, zShift);
+    }
 
   } else if (ptstr == "fci") {
 

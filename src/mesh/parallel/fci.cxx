@@ -58,7 +58,7 @@ FCIMap::FCIMap(Mesh& mesh, Options& options, int offset_, BoundaryRegionPar* bou
     throw BoutException("FCIMap called with offset = 0; You probably didn't mean to do that");
   }
 
-  auto interpolation_options = options["xzinterpolation"];
+  auto& interpolation_options = options["xzinterpolation"];
   interp = XZInterpolationFactory::getInstance().create(&interpolation_options, &map_mesh);
   interp->setYOffset(offset);
 

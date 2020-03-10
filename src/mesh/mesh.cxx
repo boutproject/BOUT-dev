@@ -49,14 +49,19 @@ Mesh* Mesh::create(GridDataSource *s, Options *opt) {
 
 Mesh *Mesh::create(Options *opt) { return create(nullptr, opt); }
 
-Mesh::Mesh(GridDataSource *s, Options* opt) : source(s), options(opt) {
+Mesh::Mesh(GridDataSource *s, Options* opt)
+  : source(s), options(opt == nullptr ? Options::getRoot()->getSection("mesh") : opt),
+    include_corner_cells((*options)["include_corner_cells"]
+                         .doc("Communicate corner guard and boundary cells. Can be set "
+                               "to false if you are sure that you will not need these "
+                               "cells, for mixed derivatives D2DXDY (or anything else), "
+                               "for example if your grid has orthogonal x- and "
+                               "y-directions.  This might slightly reduce communication "
+                               "time.")
+                         .withDefault(true)) {
   if(s == nullptr)
     throw BoutException("GridDataSource passed to Mesh::Mesh() is NULL");
   
-  if (options == nullptr) {
-    options = Options::getRoot()->getSection("mesh");
-  }
-
   /// Get mesh options
   OPTION(options, StaggerGrids,   false); // Stagger grids
   OPTION(options, maxregionblocksize, MAXREGIONBLOCKSIZE);
@@ -269,20 +274,51 @@ void Mesh::communicateXZ(FieldGroup &g) {
   TRACE("Mesh::communicate(FieldGroup&)");
 
   // Send data
-  comm_handle h = send(g);
+  comm_handle h = sendX(g);
 
   // Wait for data from other processors
   wait(h);
 }
 
-void Mesh::communicate(FieldGroup &g) {
+void Mesh::communicateYZ(FieldGroup &g) {
   TRACE("Mesh::communicate(FieldGroup&)");
 
   // Send data
-  comm_handle h = send(g);
+  comm_handle h = sendY(g);
 
   // Wait for data from other processors
   wait(h);
+
+  // Calculate yup and ydown fields for 3D fields
+  if (calcParallelSlices_on_communicate) {
+    for(const auto& fptr : g.field3d()) {
+      fptr->calcParallelSlices();
+    }
+  }
+}
+
+void Mesh::communicate(FieldGroup &g) {
+  TRACE("Mesh::communicate(FieldGroup&)");
+
+  if (include_corner_cells) {
+    // Send data in y-direction
+    comm_handle h = sendY(g);
+
+    // Wait for data from other processors
+    wait(h);
+
+    // Send data in x-direction
+    h = sendX(g);
+
+    // Wait for data from other processors
+    wait(h);
+  } else {
+    // Send data
+    comm_handle h = send(g);
+
+    // Wait for data from other processors
+    wait(h);
+  }
 
   // Calculate yup and ydown fields for 3D fields
   if (calcParallelSlices_on_communicate) {
