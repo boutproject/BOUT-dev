@@ -290,6 +290,7 @@ void Mesh::communicateXIn(Array<dcomplex> &f) {
 /// This swaps a dcomplex with the neighbouring X processor in the
 /// inward direction.
 dcomplex Mesh::communicateXIn(const dcomplex &f) {
+  SCOREP0();
   comm_handle recv[1];
   dcomplex g;
 
@@ -308,6 +309,7 @@ dcomplex Mesh::communicateXIn(const dcomplex &f) {
 /// This swaps a bool with the neighbouring X processor in the
 /// inward direction.
 bool Mesh::communicateXIn(const bool &f) {
+  SCOREP0();
   comm_handle recv[1];
   bool g;
 
@@ -366,6 +368,7 @@ void Mesh::communicateXOut(Array<dcomplex>& f) {
 /// This swaps a dcomplex with the neighbouring X processor in the
 /// outward direction.
 dcomplex Mesh::communicateXOut(const dcomplex &f) {
+  SCOREP0();
   comm_handle recv[1];
   dcomplex g;
 
@@ -384,6 +387,7 @@ dcomplex Mesh::communicateXOut(const dcomplex &f) {
 /// This swaps a bool with the neighbouring X processor in the
 /// inward direction.
 bool Mesh::communicateXOut(const bool &f) {
+  SCOREP0();
   comm_handle recv[1];
   bool g;
 

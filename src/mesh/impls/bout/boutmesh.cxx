@@ -1259,6 +1259,7 @@ bool BoutMesh::firstX() { return PE_XIND == 0; }
 bool BoutMesh::lastX() { return PE_XIND == NXPE - 1; }
 
 int BoutMesh::sendXOut(BoutReal *buffer, int size, int tag) {
+  SCOREP0();
   if (PE_XIND == NXPE - 1)
     return 1;
 
@@ -1283,6 +1284,7 @@ int BoutMesh::sendXIn(BoutReal *buffer, int size, int tag) {
 }
 
 comm_handle BoutMesh::irecvXOut(BoutReal *buffer, int size, int tag) {
+  SCOREP0();
   if (PE_XIND == NXPE - 1)
     return nullptr;
 
@@ -1300,6 +1302,7 @@ comm_handle BoutMesh::irecvXOut(BoutReal *buffer, int size, int tag) {
 }
 
 comm_handle BoutMesh::irecvXIn(BoutReal *buffer, int size, int tag) {
+  SCOREP0();
   if (PE_XIND == 0)
     return nullptr;
 
@@ -1317,6 +1320,7 @@ comm_handle BoutMesh::irecvXIn(BoutReal *buffer, int size, int tag) {
 }
 
 comm_handle BoutMesh::isendXOut(const dcomplex *buffer, int size, int tag) {
+  SCOREP0();
   if (PE_XIND == NXPE - 1)
     return nullptr;
 
@@ -1332,6 +1336,7 @@ comm_handle BoutMesh::isendXOut(const dcomplex *buffer, int size, int tag) {
 }
 
 int BoutMesh::sendXOut(const dcomplex *buffer, int size, int tag) {
+  SCOREP0();
   if (PE_XIND == NXPE - 1)
     return 1;
 
@@ -1371,6 +1376,7 @@ int BoutMesh::sendXIn(const dcomplex *buffer, int size, int tag) {
 }
 
 comm_handle BoutMesh::irecvXOut(dcomplex *buffer, int size, int tag) {
+  SCOREP0();
   if (PE_XIND == NXPE - 1)
     return nullptr;
 
@@ -1388,6 +1394,7 @@ comm_handle BoutMesh::irecvXOut(dcomplex *buffer, int size, int tag) {
 }
 
 comm_handle BoutMesh::irecvXIn(dcomplex *buffer, int size, int tag) {
+  SCOREP0();
   if (PE_XIND == 0)
     return nullptr;
 
@@ -1405,6 +1412,7 @@ comm_handle BoutMesh::irecvXIn(dcomplex *buffer, int size, int tag) {
 }
 
 int BoutMesh::sendXOut(const dcomplex *buffer, int tag) {
+  SCOREP0();
   if (PE_XIND == NXPE - 1)
     return 1;
 
@@ -1429,6 +1437,7 @@ int BoutMesh::sendXIn(const dcomplex *buffer, int tag) {
 }
 
 comm_handle BoutMesh::irecvXOut(dcomplex *buffer, int tag) {
+  SCOREP0();
   if (PE_XIND == NXPE - 1)
     return nullptr;
 
@@ -1446,6 +1455,7 @@ comm_handle BoutMesh::irecvXOut(dcomplex *buffer, int tag) {
 }
 
 comm_handle BoutMesh::irecvXIn(dcomplex *buffer, int tag) {
+  SCOREP0();
   if (PE_XIND == 0)
     return nullptr;
 
@@ -1463,6 +1473,7 @@ comm_handle BoutMesh::irecvXIn(dcomplex *buffer, int tag) {
 }
 
 int BoutMesh::sendXOut(const bool *buffer, int tag) {
+  SCOREP0();
   if (PE_XIND == NXPE - 1)
     return 1;
 
@@ -1487,6 +1498,7 @@ int BoutMesh::sendXIn(const bool *buffer, int tag) {
 }
 
 comm_handle BoutMesh::irecvXOut(bool *buffer, int tag) {
+  SCOREP0();
   if (PE_XIND == NXPE - 1)
     return nullptr;
 
@@ -1504,6 +1516,7 @@ comm_handle BoutMesh::irecvXOut(bool *buffer, int tag) {
 }
 
 comm_handle BoutMesh::irecvXIn(bool *buffer, int tag) {
+  SCOREP0();
   if (PE_XIND == 0)
     return nullptr;
 
