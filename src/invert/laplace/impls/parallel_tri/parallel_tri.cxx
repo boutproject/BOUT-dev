@@ -699,25 +699,57 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	//
 	// Communicate in
 	if(!neighbour_in) {
-	  neighbour_in = localmesh->communicateXIn(self_in);
+	  Array<dcomplex> tmpsend, tmprecv;
+	  comm_handle recv[1];
+	  tmpsend = Array<dcomplex>(2);
+	  tmprecv = Array<dcomplex>(2);
+
 	  if(new_method){
-	    xloc[0] = localmesh->communicateXIn(xloc[2]);
+	    //xloc[0] = localmesh->communicateXIn(xloc[2]);
+	    //neighbour_in = localmesh->communicateXIn(self_in);
+	    tmpsend[0] = xloc[2];
 	  }
 	  else{
-	    xloc[0] = localmesh->communicateXIn(xloc[1]);
+	    //xloc[0] = localmesh->communicateXIn(xloc[1]);
+	    tmpsend[0] = xloc[1];
+	    //neighbour_in = localmesh->communicateXIn(self_in);
 	  }
+	  tmpsend[1] = dcomplex(BoutReal(self_in),0.0);
+	  recv[0] = localmesh->irecvXIn(&tmprecv[0], 2, 0);
+	  //output<<"Proc "<<BoutComm::rank()<<" sending "<<tmpsend[0]<<" "<<tmpsend[1]<<" "<<self_in<<endl;
+	  localmesh->sendXIn(&tmpsend[0], 2, 1);
+	  localmesh->wait(recv[0]);
+	  xloc[0] = tmprecv[0];
+	  neighbour_in = static_cast<bool>(tmprecv[1].real());
+	  //output<<"Proc "<<BoutComm::rank()<<" recving "<<tmprecv[0]<<" "<<tmprecv[1]<<" "<<neighbour_in<<endl;
 	}
 
 	// Communicate out
 	// See note above for inward communication.
 	if(!neighbour_out) {
-	  neighbour_out = localmesh->communicateXOut(self_out);
+	  Array<dcomplex> tmpsend, tmprecv;
+	  comm_handle recv[1];
+	  tmpsend = Array<dcomplex>(2);
+	  tmprecv = Array<dcomplex>(2);
 	  if(new_method){
-	    xloc[3] = localmesh->communicateXOut(xloc[1]);
+	    //xloc[3] = localmesh->communicateXOut(xloc[1]);
+	    //neighbour_out = localmesh->communicateXOut(self_out);
+	    tmpsend[0] = xloc[1];
 	  }
 	  else{
-	    xloc[3] = localmesh->communicateXOut(xloc[2]);
+	    //xloc[3] = localmesh->communicateXOut(xloc[2]);
+	    //neighbour_out = localmesh->communicateXOut(self_out);
+	    tmpsend[0] = xloc[2];
 	  }
+
+	  tmpsend[1] = dcomplex(BoutReal(self_out),0.0);
+	  //output<<"Proc "<<BoutComm::rank()<<" sending "<<tmpsend[0]<<" "<<tmpsend[1]<<" "<<self_out<<endl;
+	  recv[0] = localmesh->irecvXOut(&tmprecv[0], 2, 1);
+	  localmesh->sendXOut(&tmpsend[0], 2, 0);
+	  localmesh->wait(recv[0]);
+	  xloc[3] = tmprecv[0];
+	  neighbour_out = static_cast<bool>(tmprecv[1].real());
+	  //output<<"Proc "<<BoutComm::rank()<<" recving "<<tmprecv[0]<<" "<<tmprecv[1]<<" "<<neighbour_out<<endl;
 	}
 	SCOREP_USER_REGION_END(comms);
 

@@ -37,9 +37,9 @@ for v in vars:
 print("Running Laplacian inversion test")
 success = True
 
-maxits=1000
+maxits=2000
 
-for nproc in [2,4]:
+for nproc in [4]:
   nxpe = 1
   if nproc > 1:
     #nxpe = 2
