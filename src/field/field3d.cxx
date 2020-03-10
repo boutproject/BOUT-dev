@@ -154,8 +154,6 @@ void Field3D::splitParallelSlices() {
     // ParallelTransform, so we don't need a full constructor
     yup_fields.emplace_back(fieldmesh);
     ydown_fields.emplace_back(fieldmesh);
-    yup_fields[i].copy_yupdown_fields = false;
-    ydown_fields[i].copy_yupdown_fields = false;
   }
 }
 
@@ -255,15 +253,8 @@ Field3D & Field3D::operator=(const Field3D &rhs) {
   TRACE("Field3D: Assignment from Field3D");
 
   // Copy parallel slices or delete existing ones.
-  if (rhs.yup_fields.size() > 0 && copy_yupdown_fields) {
-    splitParallelSlices();
-    for (int i = 0; i < fieldmesh->ystart; ++i) {
-      yup(i) = rhs.yup(i);
-      ydown(i) = rhs.ydown(i);
-    }
-  } else {
-    clearParallelSlices();
-  }
+  yup_fields = rhs.yup_fields;
+  ydown_fields = rhs.ydown_fields;
 
   copyFieldMembers(rhs);
 
