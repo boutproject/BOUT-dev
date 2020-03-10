@@ -62,7 +62,7 @@ for nproc in [8]:
             if not nonorth:
                 args += ' mesh:g12=0.'
 
-            cmd = './test-laplacexy ' + args + ' -ksp_gmres_restart 500'
+            cmd = './test-laplacexy ' + args
 
             shell('rm data/BOUT.dmp.*.nc > /dev/null 2>&1')
 
