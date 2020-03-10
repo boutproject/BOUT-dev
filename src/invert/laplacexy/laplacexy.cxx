@@ -1386,11 +1386,12 @@ void LaplaceXY::solveFiniteDifference(const Field2D& x0) {
       for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
         int ind = globalIndex(localmesh->xstart - 1, y);
 
-        // Use the value that would be set by applying the boundary condition to the
-        // initial guess
+        // For the boundary value of the initial guess, use the value that would be set by
+        // applying the boundary condition to the initial guess
         PetscScalar val = 2. * x0(localmesh->xstart - 1, y) - x0(localmesh->xstart, y);
         VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
 
+        // Pass the value from boundary cell of x0 as the boundary condition to the rhs
         val = x0(localmesh->xstart - 1, y);
         VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
       }
@@ -1399,8 +1400,8 @@ void LaplaceXY::solveFiniteDifference(const Field2D& x0) {
       for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
         int ind = globalIndex(localmesh->xstart - 1, y);
 
-        // Use the value that would be set by applying the boundary condition to the
-        // initial guess
+        // For the boundary value of the initial guess, use the value that would be set by
+        // applying the boundary condition to the initial guess
         PetscScalar val = x0(localmesh->xstart, y);
         VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
 
@@ -1415,11 +1416,12 @@ void LaplaceXY::solveFiniteDifference(const Field2D& x0) {
     for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
       int ind = globalIndex(localmesh->xend + 1, y);
 
-      // Use the value that would be set by applying the boundary condition to the
-      // initial guess
+      // For the boundary value of the initial guess, use the value that would be set by
+      // applying the boundary condition to the initial guess
       PetscScalar val = 2. * x0(localmesh->xend + 1, y) - x0(localmesh->xend, y);
       VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
 
+      // Pass the value from boundary cell of x0 as the boundary condition to the rhs
       val = x0(localmesh->xend + 1, y);
       VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
     }
@@ -1427,35 +1429,37 @@ void LaplaceXY::solveFiniteDifference(const Field2D& x0) {
 
   if (y_bndry == "dirichlet") {
     for (RangeIterator it = localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
-      // Should not go into corner cells, LaplaceXY stencil does not include them
+      // Should not go into corner cells, they are treated specially below
       if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
         continue;
       }
       int ind = globalIndex(it.ind, localmesh->ystart - 1);
 
-      // Use the value that would be set by applying the boundary condition to the
-      // initial guess
+      // For the boundary value of the initial guess, use the value that would be set by
+      // applying the boundary condition to the initial guess
       PetscScalar val =
           2. * x0(it.ind, localmesh->ystart - 1) - x0(it.ind, localmesh->ystart);
       VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
 
+      // Pass the value from boundary cell of x0 as the boundary condition to the rhs
       val = x0(it.ind, localmesh->ystart - 1);
       VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
     }
 
     for (RangeIterator it = localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
-      // Should not go into corner cells, LaplaceXY stencil does not include them
+      // Should not go into corner cells, they are treated specially below
       if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
         continue;
       }
       int ind = globalIndex(it.ind, localmesh->yend + 1);
 
-      // Use the value that would be set by applying the boundary condition to the
-      // initial guess
+      // For the boundary value of the initial guess, use the value that would be set by
+      // applying the boundary condition to the initial guess
       PetscScalar val =
           2. * x0(it.ind, localmesh->yend + 1) - x0(it.ind, localmesh->yend);
       VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
 
+      // Pass the value from boundary cell of x0 as the boundary condition to the rhs
       val = x0(it.ind, localmesh->yend + 1);
       VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
     }
@@ -1465,22 +1469,28 @@ void LaplaceXY::solveFiniteDifference(const Field2D& x0) {
       if (localmesh->firstX()) {
         int ind = globalIndex(localmesh->xstart - 1, localmesh->ystart - 1);
 
+        // For the boundary value of the initial guess, use the value that would be set by
+        // applying the boundary condition to the initial guess
         PetscScalar val = 3. * x0(localmesh->xstart - 1, localmesh->ystart)
                           - 3. * x0(localmesh->xstart - 1, localmesh->ystart + 1)
                           + x0(localmesh->xstart - 1, localmesh->ystart + 2);
         VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
 
+        // Set the value for the rhs of the boundary condition to zero
         val = 0.0;
         VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
       }
       if (localmesh->lastX()) {
         int ind = globalIndex(localmesh->xend + 1, localmesh->ystart - 1);
 
+        // For the boundary value of the initial guess, use the value that would be set by
+        // applying the boundary condition to the initial guess
         PetscScalar val = 3. * x0(localmesh->xend + 1, localmesh->ystart)
                           - 3. * x0(localmesh->xend + 1, localmesh->ystart + 1)
                           + x0(localmesh->xend + 1, localmesh->ystart + 2);
         VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
 
+        // Set the value for the rhs of the boundary condition to zero
         val = 0.0;
         VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
       }
@@ -1489,22 +1499,28 @@ void LaplaceXY::solveFiniteDifference(const Field2D& x0) {
       if (localmesh->firstX()) {
         int ind = globalIndex(localmesh->xstart - 1, localmesh->yend + 1);
 
+        // For the boundary value of the initial guess, use the value that would be set by
+        // applying the boundary condition to the initial guess
         PetscScalar val = 3. * x0(localmesh->xstart - 1, localmesh->yend)
                           - 3. * x0(localmesh->xstart - 1, localmesh->yend - 1)
                           + x0(localmesh->xstart - 1, localmesh->yend - 2);
         VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
 
+        // Set the value for the rhs of the boundary condition to zero
         val = 0.0;
         VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
       }
       if (localmesh->lastX()) {
         int ind = globalIndex(localmesh->xend + 1, localmesh->yend + 1);
 
+        // For the boundary value of the initial guess, use the value that would be set by
+        // applying the boundary condition to the initial guess
         PetscScalar val = 3. * x0(localmesh->xend + 1, localmesh->yend)
                           - 3. * x0(localmesh->xend + 1, localmesh->yend - 1)
                           + x0(localmesh->xend + 1, localmesh->yend - 2);
         VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
 
+        // Set the value for the rhs of the boundary condition to zero
         val = 0.0;
         VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
       }
@@ -1512,17 +1528,18 @@ void LaplaceXY::solveFiniteDifference(const Field2D& x0) {
   } else if (y_bndry == "neumann") {
     // Y boundaries Neumann
     for (RangeIterator it = localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
-      // Should not go into corner cells, LaplaceXY stencil does not include them
+      // Should not go into corner cells, they are treated specially below
       if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
         continue;
       }
       int ind = globalIndex(it.ind, localmesh->ystart - 1);
 
-      // Use the value that would be set by applying the boundary condition to the
-      // initial guess
+      // For the boundary value of the initial guess, use the value that would be set by
+      // applying the boundary condition to the initial guess
       PetscScalar val = x0(it.ind, localmesh->ystart);
       VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
 
+      // Set the value for the rhs of the boundary condition to zero
       val = 0.0;
       VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
     }
@@ -1530,35 +1547,42 @@ void LaplaceXY::solveFiniteDifference(const Field2D& x0) {
       if (localmesh->firstX()) {
         int ind = globalIndex(localmesh->xstart - 1, localmesh->ystart - 1);
 
+        // For the boundary value of the initial guess, use the value that would be set by
+        // applying the boundary condition to the initial guess
         PetscScalar val = x0(localmesh->xstart - 1, localmesh->ystart);
         VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
 
+        // Set the value for the rhs of the boundary condition to zero
         val = 0.0;
         VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
       }
       if (localmesh->lastX()) {
         int ind = globalIndex(localmesh->xend + 1, localmesh->ystart - 1);
 
+        // For the boundary value of the initial guess, use the value that would be set by
+        // applying the boundary condition to the initial guess
         PetscScalar val = x0(localmesh->xend + 1, localmesh->ystart);
         VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
 
+        // Set the value for the rhs of the boundary condition to zero
         val = 0.0;
         VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
       }
     }
 
     for (RangeIterator it = localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
-      // Should not go into corner cells, LaplaceXY stencil does not include them
+      // Should not go into corner cells, they are treated specially below
       if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
         continue;
       }
       int ind = globalIndex(it.ind, localmesh->yend + 1);
 
-      // Use the value that would be set by applying the boundary condition to the
-      // initial guess
+      // For the boundary value of the initial guess, use the value that would be set by
+      // applying the boundary condition to the initial guess
       PetscScalar val = x0(it.ind, localmesh->yend);
       VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
 
+      // Set the value for the rhs of the boundary condition to zero
       val = 0.0;
       VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
     }
@@ -1566,18 +1590,24 @@ void LaplaceXY::solveFiniteDifference(const Field2D& x0) {
       if (localmesh->firstX()) {
         int ind = globalIndex(localmesh->xstart - 1, localmesh->yend + 1);
 
+        // For the boundary value of the initial guess, use the value that would be set by
+        // applying the boundary condition to the initial guess
         PetscScalar val = x0(localmesh->xstart - 1, localmesh->yend);
         VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
 
+        // Set the value for the rhs of the boundary condition to zero
         val = 0.0;
         VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
       }
       if (localmesh->lastX()) {
         int ind = globalIndex(localmesh->xend + 1, localmesh->yend + 1);
 
+        // For the boundary value of the initial guess, use the value that would be set by
+        // applying the boundary condition to the initial guess
         PetscScalar val = x0(localmesh->xend + 1, localmesh->yend);
         VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
 
+        // Set the value for the rhs of the boundary condition to zero
         val = 0.0;
         VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
       }
@@ -1585,19 +1615,20 @@ void LaplaceXY::solveFiniteDifference(const Field2D& x0) {
   } else if (y_bndry == "free_o3") {
     // Y boundaries free_o3
     for (RangeIterator it = localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
-      // Should not go into corner cells, LaplaceXY stencil does not include them
+      // Should not go into corner cells, they are treated specially below
       if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
         continue;
       }
       int ind = globalIndex(it.ind, localmesh->ystart - 1);
 
-      // Use the value that would be set by applying the boundary condition to the
-      // initial guess
+      // For the boundary value of the initial guess, use the value that would be set by
+      // applying the boundary condition to the initial guess
       PetscScalar val = 3. * x0(it.ind, localmesh->ystart)
                         - 3. * x0(it.ind, localmesh->ystart + 1)
                         + x0(it.ind, localmesh->ystart + 2);
       VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
 
+      // Set the value for the rhs of the boundary condition to zero
       val = 0.0;
       VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
     }
@@ -1605,41 +1636,48 @@ void LaplaceXY::solveFiniteDifference(const Field2D& x0) {
       if (localmesh->firstX()) {
         int ind = globalIndex(localmesh->xstart - 1, localmesh->ystart - 1);
 
+        // For the boundary value of the initial guess, use the value that would be set by
+        // applying the boundary condition to the initial guess
         PetscScalar val = 3. * x0(localmesh->xstart - 1, localmesh->ystart)
                           - 3. * x0(localmesh->xstart - 1, localmesh->ystart + 1)
                           + x0(localmesh->xstart - 1, localmesh->ystart + 2);
         VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
 
+        // Set the value for the rhs of the boundary condition to zero
         val = 0.0;
         VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
       }
       if (localmesh->lastX()) {
         int ind = globalIndex(localmesh->xend + 1, localmesh->ystart - 1);
 
+        // For the boundary value of the initial guess, use the value that would be set by
+        // applying the boundary condition to the initial guess
         PetscScalar val = 3. * x0(localmesh->xend + 1, localmesh->ystart)
                           - 3. * x0(localmesh->xend + 1, localmesh->ystart + 1)
                           + x0(localmesh->xend + 1, localmesh->ystart + 2);
         VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
 
+        // Set the value for the rhs of the boundary condition to zero
         val = 0.0;
         VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
       }
     }
 
     for (RangeIterator it = localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
-      // Should not go into corner cells, LaplaceXY stencil does not include them
+      // Should not go into corner cells, they are treated specially below
       if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
         continue;
       }
       int ind = globalIndex(it.ind, localmesh->yend + 1);
 
-      // Use the value that would be set by applying the boundary condition to the
-      // initial guess
+      // For the boundary value of the initial guess, use the value that would be set by
+      // applying the boundary condition to the initial guess
       PetscScalar val = 3. * x0(it.ind, localmesh->yend)
                         - 3. * x0(it.ind, localmesh->yend - 1)
                         + x0(it.ind, localmesh->yend - 2);
       VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
 
+      // Set the value for the rhs of the boundary condition to zero
       val = 0.0;
       VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
     }
@@ -1647,22 +1685,28 @@ void LaplaceXY::solveFiniteDifference(const Field2D& x0) {
       if (localmesh->firstX()) {
         int ind = globalIndex(localmesh->xstart - 1, localmesh->yend + 1);
 
+        // For the boundary value of the initial guess, use the value that would be set by
+        // applying the boundary condition to the initial guess
         PetscScalar val = 3. * x0(localmesh->xstart - 1, localmesh->yend)
                           - 3. * x0(localmesh->xstart - 1, localmesh->yend - 1)
                           + x0(localmesh->xstart - 1, localmesh->yend - 2);
         VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
 
+        // Set the value for the rhs of the boundary condition to zero
         val = 0.0;
         VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
       }
       if (localmesh->lastX()) {
         int ind = globalIndex(localmesh->xend + 1, localmesh->yend + 1);
 
+        // For the boundary value of the initial guess, use the value that would be set by
+        // applying the boundary condition to the initial guess
         PetscScalar val = 3. * x0(localmesh->xend + 1, localmesh->yend)
                           - 3. * x0(localmesh->xend + 1, localmesh->yend - 1)
                           + x0(localmesh->xend + 1, localmesh->yend - 2);
         VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
 
+        // Set the value for the rhs of the boundary condition to zero
         val = 0.0;
         VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
       }
