@@ -1717,60 +1717,48 @@ void LaplaceXY::solveFiniteDifference(const Field2D& x0) {
 }
 
 /*! Preconditioner
- * NOTE: For efficiency, this routine does not use globalIndex() 
- * in the inner loop. Instead, the indexing must be ordered in
- * exactly the same way as in the construction of indexXY
+ * NOTE: For generality, this routine does use globalIndex() in the inner loop, although
+ * this may be slightly less efficient than incrementing an integer for the global index,
+ * the finite-volume and finite-difference implementations have slightly different
+ * indexing patterns, so incrementing an integer would be tricky.
  */
 int LaplaceXY::precon(Vec input, Vec result) {
   
-  // Starting index
-  int ind = -1;
-  
   RangeIterator itdwn=localmesh->iterateBndryLowerY();
   if(!itdwn.isDone()) {
-    ind = globalIndex(itdwn.ind, localmesh->ystart-1);
     
     for(; !itdwn.isDone(); itdwn++) {
       // Should not go into corner cells, LaplaceXY stencil does not include them
       if (itdwn.ind < localmesh->xstart or itdwn.ind > localmesh->xend) {
         continue;
       }
+      const int ind = globalIndex(itdwn.ind, localmesh->ystart-1);
       PetscScalar val;
       VecGetValues(input, 1, &ind, &val ); 
       VecSetValues(result, 1, &ind, &val, INSERT_VALUES );
-      ind++;
     }
   }
   RangeIterator itup=localmesh->iterateBndryUpperY();
   if(!itup.isDone()) {
-    if(ind == -1) {
-      // No lower boundary
-      ind = globalIndex(itup.ind, localmesh->yend+1);
-    }
     for(; !itup.isDone(); itup++) {
       // Should not go into corner cells, LaplaceXY stencil does not include them
       if (itup.ind < localmesh->xstart or itup.ind > localmesh->xend) {
         continue;
       }
+      const int ind = globalIndex(itup.ind, localmesh->yend+1);
       PetscScalar val;
       VecGetValues(input, 1, &ind, &val ); 
       VecSetValues(result, 1, &ind, &val, INSERT_VALUES );
-      ind++;
     }
   }
-  if(ind == -1) {
-    // No Y boundaries
-    ind = globalIndex(xstart, localmesh->ystart);
-  }
     
-  int ind0 = ind;
   // Load vector x into bvals array
-  for(int x=xstart;x<=xend;x++) {
-    for(int y=localmesh->ystart; y<=localmesh->yend;y++) {
+  for(int x=xstart; x<=xend; x++) {
+    for(int y=localmesh->ystart; y<=localmesh->yend; y++) {
+      const int ind = globalIndex(x, y);
       PetscScalar val;
       VecGetValues(input, 1, &ind, &val );
       bvals(y - localmesh->ystart, x - xstart) = val;
-      ind++;
     }
   }
   
@@ -1778,12 +1766,11 @@ int LaplaceXY::precon(Vec input, Vec result) {
   cr->solve(bvals, xvals);
 
   // Save result xvals into y array
-  ind = ind0;
-  for(int x=xstart;x<=xend;x++) {
-    for(int y=localmesh->ystart; y<=localmesh->yend;y++) {
+  for(int x=xstart; x<=xend; x++) {
+    for(int y=localmesh->ystart; y<=localmesh->yend; y++) {
+      const int ind = globalIndex(x, y);
       PetscScalar val = xvals(y - localmesh->ystart, x - xstart);
       VecSetValues(result, 1, &ind, &val, INSERT_VALUES );
-      ind++;
     }
   }
   VecAssemblyBegin(result);
