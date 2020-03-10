@@ -451,7 +451,7 @@ void LaplaceXY::setPreallocationFiniteDifference(PetscInt* d_nnz, PetscInt* o_nn
   }
 
   for(RangeIterator it=localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
-    // Should not go into corner cells, LaplaceXY stencil does not include them
+    // Should not go into corner cells, they are handled specially below
     if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
       continue;
     }
@@ -496,7 +496,7 @@ void LaplaceXY::setPreallocationFiniteDifference(PetscInt* d_nnz, PetscInt* o_nn
     }
   }
   for(RangeIterator it=localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
-    // Should not go into corner cells, LaplaceXY stencil does not include them
+    // Should not go into corner cells, they are handled specially below
     if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
       continue;
     }
