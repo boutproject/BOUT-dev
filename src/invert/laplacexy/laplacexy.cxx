@@ -1191,9 +1191,9 @@ LaplaceXY::~LaplaceXY() {
   MatDestroy(&MatA);
 }
 
-const Field2D LaplaceXY::solve(const Field2D &rhs, const Field2D &x0) {
+const Field2D LaplaceXY::solve(const Field2D& rhs, const Field2D& x0) {
   Timer timer("invert");
-  
+
   ASSERT1(rhs.getMesh() == localmesh);
   ASSERT1(x0.getMesh() == localmesh);
   ASSERT1(rhs.getLocation() == location);
@@ -1201,15 +1201,15 @@ const Field2D LaplaceXY::solve(const Field2D &rhs, const Field2D &x0) {
 
   // Load initial guess x0 into xs and rhs into bs
 
-  for(int x=localmesh->xstart;x<= localmesh->xend;x++) {
-    for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
-      int ind = globalIndex(x,y);
-      
-      PetscScalar val = x0(x,y);
-      VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
-      
-      val = rhs(x,y);
-      VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
+  for (int x = localmesh->xstart; x <= localmesh->xend; x++) {
+    for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
+      int ind = globalIndex(x, y);
+
+      PetscScalar val = x0(x, y);
+      VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+
+      val = rhs(x, y);
+      VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
     }
   }
 
@@ -1218,7 +1218,7 @@ const Field2D LaplaceXY::solve(const Field2D &rhs, const Field2D &x0) {
   } else {
     solveFiniteDifference(x0);
   }
-  
+
   // Assemble RHS Vector
   VecAssemblyBegin(bs);
   VecAssemblyEnd(bs);
@@ -1226,14 +1226,14 @@ const Field2D LaplaceXY::solve(const Field2D &rhs, const Field2D &x0) {
   // Assemble Trial Solution Vector
   VecAssemblyBegin(xs);
   VecAssemblyEnd(xs);
-  
+
   // Solve the system
-  KSPSolve( ksp, bs, xs );
-  
+  KSPSolve(ksp, bs, xs);
+
   KSPConvergedReason reason;
-  KSPGetConvergedReason( ksp, &reason );
-  
-  if(reason <= 0) {
+  KSPGetConvergedReason(ksp, &reason);
+
+  if (reason <= 0) {
     throw BoutException("LaplaceXY failed to converge. Reason {:d}", reason);
   }
 
@@ -1244,472 +1244,476 @@ const Field2D LaplaceXY::solve(const Field2D &rhs, const Field2D &x0) {
     int iterations = 0;
     KSPGetIterationNumber(ksp, &iterations);
 
-    average_iterations = BoutReal(n_calls - 1)/BoutReal(n_calls)*average_iterations
-                         + BoutReal(iterations)/BoutReal(n_calls);
+    average_iterations = BoutReal(n_calls - 1) / BoutReal(n_calls) * average_iterations
+                         + BoutReal(iterations) / BoutReal(n_calls);
   }
-  
+
   //////////////////////////
   // Copy data into result
-  
+
   Field2D result;
   result.allocate();
   result.setLocation(location);
-  
-  for(int x=localmesh->xstart;x<= localmesh->xend;x++) {
-    for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
-      int ind = globalIndex(x,y);
-      
+
+  for (int x = localmesh->xstart; x <= localmesh->xend; x++) {
+    for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
+      int ind = globalIndex(x, y);
+
       PetscScalar val;
-      VecGetValues(xs, 1, &ind, &val );
-      result(x,y) = val;
+      VecGetValues(xs, 1, &ind, &val);
+      result(x, y) = val;
     }
   }
-  
+
   // Inner X boundary
-  if(localmesh->firstX()) {
-    for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
-      int ind = globalIndex(localmesh->xstart-1,y);
+  if (localmesh->firstX()) {
+    for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
+      int ind = globalIndex(localmesh->xstart - 1, y);
       PetscScalar val;
-      VecGetValues(xs, 1, &ind, &val );
-      for(int x=localmesh->xstart-1; x >= 0; x--)
-        result(x,y) = val;
+      VecGetValues(xs, 1, &ind, &val);
+      for (int x = localmesh->xstart - 1; x >= 0; x--)
+        result(x, y) = val;
     }
   }
 
   // Outer X boundary
-  if(localmesh->lastX()) {
-    for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
-      int ind = globalIndex(localmesh->xend+1,y);
+  if (localmesh->lastX()) {
+    for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
+      int ind = globalIndex(localmesh->xend + 1, y);
       PetscScalar val;
-      VecGetValues(xs, 1, &ind, &val );
-      for(int x=localmesh->xend+1;x < localmesh->LocalNx;x++)
-        result(x,y) = val;
+      VecGetValues(xs, 1, &ind, &val);
+      for (int x = localmesh->xend + 1; x < localmesh->LocalNx; x++)
+        result(x, y) = val;
     }
   }
-  
+
   // Lower Y boundary
-  for(RangeIterator it=localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
+  for (RangeIterator it = localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
     // Should not go into corner cells, LaplaceXY stencil does not include them
     if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
       continue;
     }
-    int ind = globalIndex(it.ind, localmesh->ystart-1);
+    int ind = globalIndex(it.ind, localmesh->ystart - 1);
     PetscScalar val;
-    VecGetValues(xs, 1, &ind, &val );
-    for(int y=localmesh->ystart-1;y>=0;y--)
+    VecGetValues(xs, 1, &ind, &val);
+    for (int y = localmesh->ystart - 1; y >= 0; y--)
       result(it.ind, y) = val;
   }
-  
+
   // Upper Y boundary
-  for(RangeIterator it=localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
+  for (RangeIterator it = localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
     // Should not go into corner cells, LaplaceXY stencil does not include them
     if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
       continue;
     }
-    int ind = globalIndex(it.ind, localmesh->yend+1);
+    int ind = globalIndex(it.ind, localmesh->yend + 1);
     PetscScalar val;
-    VecGetValues(xs, 1, &ind, &val );
-    for(int y=localmesh->yend+1;y<localmesh->LocalNy;y++)
+    VecGetValues(xs, 1, &ind, &val);
+    for (int y = localmesh->yend + 1; y < localmesh->LocalNy; y++)
       result(it.ind, y) = val;
   }
-  
+
   return result;
 }
 
 void LaplaceXY::solveFiniteVolume(const Field2D& x0) {
-    // Use original LaplaceXY implementation of passing boundary values for backward
-    // compatibility
-    if(localmesh->firstX()) {
-      if(x_inner_dirichlet) {
-        for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
-          int ind = globalIndex(localmesh->xstart-1,y);
+  // Use original LaplaceXY implementation of passing boundary values for backward
+  // compatibility
+  if (localmesh->firstX()) {
+    if (x_inner_dirichlet) {
+      for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
+        int ind = globalIndex(localmesh->xstart - 1, y);
 
-          PetscScalar val = x0(localmesh->xstart-1,y);
-          VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
+        PetscScalar val = x0(localmesh->xstart - 1, y);
+        VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
 
-          val = 0.5*(x0(localmesh->xstart-1,y) + x0(localmesh->xstart,y));
-          VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
-        }
-      }else {
-        // Inner X boundary (Neumann)
-        for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
-          int ind = globalIndex(localmesh->xstart-1,y);
-
-          PetscScalar val = x0(localmesh->xstart-1,y);
-          VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
-
-          val = 0.0; //x0(localmesh->xstart-1,y) - x0(localmesh->xstart,y);
-          VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
-        }
-      }
-    }
-
-    // Outer X boundary (Dirichlet)
-    if(localmesh->lastX()) {
-      for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
-        int ind = globalIndex(localmesh->xend+1,y);
-
-        PetscScalar val = x0(localmesh->xend+1,y);
-        VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
-
-        val = 0.5*(x0(localmesh->xend,y) + x0(localmesh->xend+1,y));
-        VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
-      }
-    }
-
-    if(y_bndry == "dirichlet") {
-      for(RangeIterator it=localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
-        // Should not go into corner cells, LaplaceXY stencil does not include them
-        if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
-          continue;
-        }
-        int ind = globalIndex(it.ind, localmesh->ystart-1);
-
-        PetscScalar val = x0(it.ind,localmesh->ystart-1);
-        VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
-
-        val = 0.5*(x0(it.ind, localmesh->ystart-1) + x0(it.ind, localmesh->ystart));
-        VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
-      }
-
-      for(RangeIterator it=localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
-        // Should not go into corner cells, LaplaceXY stencil does not include them
-        if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
-          continue;
-        }
-        int ind = globalIndex(it.ind, localmesh->yend+1);
-
-        PetscScalar val = x0(it.ind,localmesh->yend+1);
-        VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
-
-        val = 0.5*(x0(it.ind, localmesh->yend+1) + x0(it.ind, localmesh->yend));
-        VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
-      }
-    } else if (y_bndry == "neumann" or y_bndry == "free_o3") {
-      // Y boundaries Neumann
-      for(RangeIterator it=localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
-        // Should not go into corner cells, LaplaceXY stencil does not include them
-        if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
-          continue;
-        }
-        int ind = globalIndex(it.ind, localmesh->ystart-1);
-
-        PetscScalar val = x0(it.ind,localmesh->ystart-1);
-        VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
-
-        val = 0.0;
-        VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
-      }
-
-      for(RangeIterator it=localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
-        // Should not go into corner cells, LaplaceXY stencil does not include them
-        if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
-          continue;
-        }
-        int ind = globalIndex(it.ind, localmesh->yend+1);
-
-        PetscScalar val = x0(it.ind,localmesh->yend+1);
-        VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
-
-        val = 0.0;
-        VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
+        val = 0.5 * (x0(localmesh->xstart - 1, y) + x0(localmesh->xstart, y));
+        VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
       }
     } else {
-      throw BoutException("Unsupported option for y_bndry");
+      // Inner X boundary (Neumann)
+      for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
+        int ind = globalIndex(localmesh->xstart - 1, y);
+
+        PetscScalar val = x0(localmesh->xstart - 1, y);
+        VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+
+        val = 0.0; // x0(localmesh->xstart-1,y) - x0(localmesh->xstart,y);
+        VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+      }
     }
   }
+
+  // Outer X boundary (Dirichlet)
+  if (localmesh->lastX()) {
+    for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
+      int ind = globalIndex(localmesh->xend + 1, y);
+
+      PetscScalar val = x0(localmesh->xend + 1, y);
+      VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+
+      val = 0.5 * (x0(localmesh->xend, y) + x0(localmesh->xend + 1, y));
+      VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+    }
+  }
+
+  if (y_bndry == "dirichlet") {
+    for (RangeIterator it = localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
+      // Should not go into corner cells, LaplaceXY stencil does not include them
+      if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
+        continue;
+      }
+      int ind = globalIndex(it.ind, localmesh->ystart - 1);
+
+      PetscScalar val = x0(it.ind, localmesh->ystart - 1);
+      VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+
+      val = 0.5 * (x0(it.ind, localmesh->ystart - 1) + x0(it.ind, localmesh->ystart));
+      VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+    }
+
+    for (RangeIterator it = localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
+      // Should not go into corner cells, LaplaceXY stencil does not include them
+      if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
+        continue;
+      }
+      int ind = globalIndex(it.ind, localmesh->yend + 1);
+
+      PetscScalar val = x0(it.ind, localmesh->yend + 1);
+      VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+
+      val = 0.5 * (x0(it.ind, localmesh->yend + 1) + x0(it.ind, localmesh->yend));
+      VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+    }
+  } else if (y_bndry == "neumann" or y_bndry == "free_o3") {
+    // Y boundaries Neumann
+    for (RangeIterator it = localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
+      // Should not go into corner cells, LaplaceXY stencil does not include them
+      if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
+        continue;
+      }
+      int ind = globalIndex(it.ind, localmesh->ystart - 1);
+
+      PetscScalar val = x0(it.ind, localmesh->ystart - 1);
+      VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+
+      val = 0.0;
+      VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+    }
+
+    for (RangeIterator it = localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
+      // Should not go into corner cells, LaplaceXY stencil does not include them
+      if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
+        continue;
+      }
+      int ind = globalIndex(it.ind, localmesh->yend + 1);
+
+      PetscScalar val = x0(it.ind, localmesh->yend + 1);
+      VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+
+      val = 0.0;
+      VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+    }
+  } else {
+    throw BoutException("Unsupported option for y_bndry");
+  }
+}
 
 void LaplaceXY::solveFiniteDifference(const Field2D& x0) {
-    // For finite-difference implementation pass boundary values in the same way as for
-    // the 'Laplacian' solvers - the value to use (for Dirichlet boundary conditions) on
-    // the boundary (which is half way between grid cell and boundary cell) is passed as
-    // the value in the first boundary cell.
-    if (localmesh->firstX()) {
-      if (x_inner_dirichlet) {
-        for (int y=localmesh->ystart; y<=localmesh->yend; y++) {
-          int ind = globalIndex(localmesh->xstart-1, y);
-
-          // Use the value that would be set by applying the boundary condition to the
-          // initial guess
-          PetscScalar val = 2.*x0(localmesh->xstart-1, y) - x0(localmesh->xstart, y);
-          VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
-
-          val = x0(localmesh->xstart-1, y);
-          VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
-        }
-       } else {
-        // Inner X boundary (Neumann)
-        for(int y=localmesh->ystart; y<=localmesh->yend; y++) {
-          int ind = globalIndex(localmesh->xstart-1, y);
-
-          // Use the value that would be set by applying the boundary condition to the
-          // initial guess
-          PetscScalar val = x0(localmesh->xstart, y);
-          VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
-
-          val = 0.0;
-          VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
-        }
-      }
-    }
-
-    // Outer X boundary (Dirichlet)
-    if (localmesh->lastX()) {
-      for (int y=localmesh->ystart; y<=localmesh->yend; y++) {
-        int ind = globalIndex(localmesh->xend+1, y);
+  // For finite-difference implementation pass boundary values in the same way as for
+  // the 'Laplacian' solvers - the value to use (for Dirichlet boundary conditions) on
+  // the boundary (which is half way between grid cell and boundary cell) is passed as
+  // the value in the first boundary cell.
+  if (localmesh->firstX()) {
+    if (x_inner_dirichlet) {
+      for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
+        int ind = globalIndex(localmesh->xstart - 1, y);
 
         // Use the value that would be set by applying the boundary condition to the
         // initial guess
-        PetscScalar val = 2.*x0(localmesh->xend+1, y) - x0(localmesh->xend, y);
+        PetscScalar val = 2. * x0(localmesh->xstart - 1, y) - x0(localmesh->xstart, y);
         VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
 
-        val = x0(localmesh->xend+1, y);
+        val = x0(localmesh->xstart - 1, y);
         VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
-      }
-    }
-
-    if(y_bndry == "dirichlet") {
-      for(RangeIterator it=localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
-        // Should not go into corner cells, LaplaceXY stencil does not include them
-        if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
-          continue;
-        }
-        int ind = globalIndex(it.ind, localmesh->ystart-1);
-
-        // Use the value that would be set by applying the boundary condition to the
-        // initial guess
-        PetscScalar val = 2.*x0(it.ind,localmesh->ystart-1) - x0(it.ind,localmesh->ystart);
-        VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
-
-        val = x0(it.ind, localmesh->ystart-1);
-        VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
-      }
-
-      for(RangeIterator it=localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
-        // Should not go into corner cells, LaplaceXY stencil does not include them
-        if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
-          continue;
-        }
-        int ind = globalIndex(it.ind, localmesh->yend+1);
-
-        // Use the value that would be set by applying the boundary condition to the
-        // initial guess
-        PetscScalar val = 2.*x0(it.ind,localmesh->yend+1) - x0(it.ind,localmesh->yend);
-        VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
-
-        val = x0(it.ind, localmesh->yend+1);
-        VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
-      }
-
-      // Use free_o3 for the corner boundary cells
-      if (localmesh->hasBndryLowerY()) {
-        if (localmesh->firstX()) {
-          int ind = globalIndex(localmesh->xstart-1, localmesh->ystart-1);
-
-          PetscScalar val = 3.*x0(localmesh->xstart-1, localmesh->ystart)
-            - 3.*x0(localmesh->xstart-1, localmesh->ystart+1)
-            + x0(localmesh->xstart-1, localmesh->ystart+2);
-          VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
-
-          val = 0.0;
-          VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
-        }
-        if (localmesh->lastX()) {
-          int ind = globalIndex(localmesh->xend+1, localmesh->ystart-1);
-
-          PetscScalar val = 3.*x0(localmesh->xend+1, localmesh->ystart)
-            - 3.*x0(localmesh->xend+1, localmesh->ystart+1)
-            + x0(localmesh->xend+1, localmesh->ystart+2);
-          VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
-
-          val = 0.0;
-          VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
-        }
-      }
-      if (localmesh->hasBndryUpperY()) {
-        if (localmesh->firstX()) {
-          int ind = globalIndex(localmesh->xstart-1, localmesh->yend+1);
-
-          PetscScalar val = 3.*x0(localmesh->xstart-1, localmesh->yend)
-            - 3.*x0(localmesh->xstart-1, localmesh->yend-1)
-            + x0(localmesh->xstart-1, localmesh->yend-2);
-          VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
-
-          val = 0.0;
-          VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
-        }
-        if (localmesh->lastX()) {
-          int ind = globalIndex(localmesh->xend+1, localmesh->yend+1);
-
-          PetscScalar val = 3.*x0(localmesh->xend+1, localmesh->yend)
-            - 3.*x0(localmesh->xend+1, localmesh->yend-1)
-            + x0(localmesh->xend+1, localmesh->yend-2);
-          VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
-
-          val = 0.0;
-          VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
-        }
-      }
-    } else if (y_bndry == "neumann") {
-      // Y boundaries Neumann
-      for(RangeIterator it=localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
-        // Should not go into corner cells, LaplaceXY stencil does not include them
-        if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
-          continue;
-        }
-        int ind = globalIndex(it.ind, localmesh->ystart-1);
-
-        // Use the value that would be set by applying the boundary condition to the
-        // initial guess
-        PetscScalar val = x0(it.ind,localmesh->ystart);
-        VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
-
-        val = 0.0;
-        VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
-      }
-      if (localmesh->hasBndryLowerY()) {
-        if (localmesh->firstX()) {
-          int ind = globalIndex(localmesh->xstart-1, localmesh->ystart-1);
-
-          PetscScalar val = x0(localmesh->xstart-1, localmesh->ystart);
-          VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
-
-          val = 0.0;
-          VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
-        }
-        if (localmesh->lastX()) {
-          int ind = globalIndex(localmesh->xend+1, localmesh->ystart-1);
-
-          PetscScalar val = x0(localmesh->xend+1, localmesh->ystart);
-          VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
-
-          val = 0.0;
-          VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
-        }
-      }
-
-      for(RangeIterator it=localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
-        // Should not go into corner cells, LaplaceXY stencil does not include them
-        if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
-          continue;
-        }
-        int ind = globalIndex(it.ind, localmesh->yend+1);
-
-        // Use the value that would be set by applying the boundary condition to the
-        // initial guess
-        PetscScalar val = x0(it.ind,localmesh->yend);
-        VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
-
-        val = 0.0;
-        VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
-      }
-      if (localmesh->hasBndryUpperY()) {
-        if (localmesh->firstX()) {
-          int ind = globalIndex(localmesh->xstart-1, localmesh->yend+1);
-
-          PetscScalar val = x0(localmesh->xstart-1, localmesh->yend);
-          VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
-
-          val = 0.0;
-          VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
-        }
-        if (localmesh->lastX()) {
-          int ind = globalIndex(localmesh->xend+1, localmesh->yend+1);
-
-          PetscScalar val = x0(localmesh->xend+1, localmesh->yend);
-          VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
-
-          val = 0.0;
-          VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
-        }
-      }
-    } else if (y_bndry == "free_o3") {
-      // Y boundaries free_o3
-      for(RangeIterator it=localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
-        // Should not go into corner cells, LaplaceXY stencil does not include them
-        if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
-          continue;
-        }
-        int ind = globalIndex(it.ind, localmesh->ystart-1);
-
-        // Use the value that would be set by applying the boundary condition to the
-        // initial guess
-        PetscScalar val = 3.*x0(it.ind, localmesh->ystart)
-          - 3.*x0(it.ind, localmesh->ystart+1) + x0(it.ind, localmesh->ystart+2);
-        VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
-
-        val = 0.0;
-        VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
-      }
-      if (localmesh->hasBndryLowerY()) {
-        if (localmesh->firstX()) {
-          int ind = globalIndex(localmesh->xstart-1, localmesh->ystart-1);
-
-          PetscScalar val = 3.*x0(localmesh->xstart-1, localmesh->ystart)
-            - 3.*x0(localmesh->xstart-1, localmesh->ystart+1)
-            + x0(localmesh->xstart-1, localmesh->ystart+2);
-          VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
-
-          val = 0.0;
-          VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
-        }
-        if (localmesh->lastX()) {
-          int ind = globalIndex(localmesh->xend+1, localmesh->ystart-1);
-
-          PetscScalar val = 3.*x0(localmesh->xend+1, localmesh->ystart)
-            - 3.*x0(localmesh->xend+1, localmesh->ystart+1)
-            + x0(localmesh->xend+1, localmesh->ystart+2);
-          VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
-
-          val = 0.0;
-          VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
-        }
-      }
-
-      for(RangeIterator it=localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
-        // Should not go into corner cells, LaplaceXY stencil does not include them
-        if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
-          continue;
-        }
-        int ind = globalIndex(it.ind, localmesh->yend+1);
-
-        // Use the value that would be set by applying the boundary condition to the
-        // initial guess
-        PetscScalar val = 3.*x0(it.ind, localmesh->yend)
-          - 3.*x0(it.ind, localmesh->yend-1) + x0(it.ind, localmesh->yend-2);
-        VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
-
-        val = 0.0;
-        VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
-      }
-      if (localmesh->hasBndryUpperY()) {
-        if (localmesh->firstX()) {
-          int ind = globalIndex(localmesh->xstart-1, localmesh->yend+1);
-
-          PetscScalar val = 3.*x0(localmesh->xstart-1, localmesh->yend)
-            - 3.*x0(localmesh->xstart-1, localmesh->yend-1)
-            + x0(localmesh->xstart-1, localmesh->yend-2);
-          VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
-
-          val = 0.0;
-          VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
-        }
-        if (localmesh->lastX()) {
-          int ind = globalIndex(localmesh->xend+1, localmesh->yend+1);
-
-          PetscScalar val = 3.*x0(localmesh->xend+1, localmesh->yend)
-            - 3.*x0(localmesh->xend+1, localmesh->yend-1)
-            + x0(localmesh->xend+1, localmesh->yend-2);
-          VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
-
-          val = 0.0;
-          VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
-        }
       }
     } else {
-      throw BoutException("Unsupported option for y_bndry");
+      // Inner X boundary (Neumann)
+      for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
+        int ind = globalIndex(localmesh->xstart - 1, y);
+
+        // Use the value that would be set by applying the boundary condition to the
+        // initial guess
+        PetscScalar val = x0(localmesh->xstart, y);
+        VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+
+        val = 0.0;
+        VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+      }
     }
   }
+
+  // Outer X boundary (Dirichlet)
+  if (localmesh->lastX()) {
+    for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
+      int ind = globalIndex(localmesh->xend + 1, y);
+
+      // Use the value that would be set by applying the boundary condition to the
+      // initial guess
+      PetscScalar val = 2. * x0(localmesh->xend + 1, y) - x0(localmesh->xend, y);
+      VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+
+      val = x0(localmesh->xend + 1, y);
+      VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+    }
+  }
+
+  if (y_bndry == "dirichlet") {
+    for (RangeIterator it = localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
+      // Should not go into corner cells, LaplaceXY stencil does not include them
+      if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
+        continue;
+      }
+      int ind = globalIndex(it.ind, localmesh->ystart - 1);
+
+      // Use the value that would be set by applying the boundary condition to the
+      // initial guess
+      PetscScalar val =
+          2. * x0(it.ind, localmesh->ystart - 1) - x0(it.ind, localmesh->ystart);
+      VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+
+      val = x0(it.ind, localmesh->ystart - 1);
+      VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+    }
+
+    for (RangeIterator it = localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
+      // Should not go into corner cells, LaplaceXY stencil does not include them
+      if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
+        continue;
+      }
+      int ind = globalIndex(it.ind, localmesh->yend + 1);
+
+      // Use the value that would be set by applying the boundary condition to the
+      // initial guess
+      PetscScalar val =
+          2. * x0(it.ind, localmesh->yend + 1) - x0(it.ind, localmesh->yend);
+      VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+
+      val = x0(it.ind, localmesh->yend + 1);
+      VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+    }
+
+    // Use free_o3 for the corner boundary cells
+    if (localmesh->hasBndryLowerY()) {
+      if (localmesh->firstX()) {
+        int ind = globalIndex(localmesh->xstart - 1, localmesh->ystart - 1);
+
+        PetscScalar val = 3. * x0(localmesh->xstart - 1, localmesh->ystart)
+                          - 3. * x0(localmesh->xstart - 1, localmesh->ystart + 1)
+                          + x0(localmesh->xstart - 1, localmesh->ystart + 2);
+        VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+
+        val = 0.0;
+        VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+      }
+      if (localmesh->lastX()) {
+        int ind = globalIndex(localmesh->xend + 1, localmesh->ystart - 1);
+
+        PetscScalar val = 3. * x0(localmesh->xend + 1, localmesh->ystart)
+                          - 3. * x0(localmesh->xend + 1, localmesh->ystart + 1)
+                          + x0(localmesh->xend + 1, localmesh->ystart + 2);
+        VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+
+        val = 0.0;
+        VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+      }
+    }
+    if (localmesh->hasBndryUpperY()) {
+      if (localmesh->firstX()) {
+        int ind = globalIndex(localmesh->xstart - 1, localmesh->yend + 1);
+
+        PetscScalar val = 3. * x0(localmesh->xstart - 1, localmesh->yend)
+                          - 3. * x0(localmesh->xstart - 1, localmesh->yend - 1)
+                          + x0(localmesh->xstart - 1, localmesh->yend - 2);
+        VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+
+        val = 0.0;
+        VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+      }
+      if (localmesh->lastX()) {
+        int ind = globalIndex(localmesh->xend + 1, localmesh->yend + 1);
+
+        PetscScalar val = 3. * x0(localmesh->xend + 1, localmesh->yend)
+                          - 3. * x0(localmesh->xend + 1, localmesh->yend - 1)
+                          + x0(localmesh->xend + 1, localmesh->yend - 2);
+        VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+
+        val = 0.0;
+        VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+      }
+    }
+  } else if (y_bndry == "neumann") {
+    // Y boundaries Neumann
+    for (RangeIterator it = localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
+      // Should not go into corner cells, LaplaceXY stencil does not include them
+      if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
+        continue;
+      }
+      int ind = globalIndex(it.ind, localmesh->ystart - 1);
+
+      // Use the value that would be set by applying the boundary condition to the
+      // initial guess
+      PetscScalar val = x0(it.ind, localmesh->ystart);
+      VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+
+      val = 0.0;
+      VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+    }
+    if (localmesh->hasBndryLowerY()) {
+      if (localmesh->firstX()) {
+        int ind = globalIndex(localmesh->xstart - 1, localmesh->ystart - 1);
+
+        PetscScalar val = x0(localmesh->xstart - 1, localmesh->ystart);
+        VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+
+        val = 0.0;
+        VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+      }
+      if (localmesh->lastX()) {
+        int ind = globalIndex(localmesh->xend + 1, localmesh->ystart - 1);
+
+        PetscScalar val = x0(localmesh->xend + 1, localmesh->ystart);
+        VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+
+        val = 0.0;
+        VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+      }
+    }
+
+    for (RangeIterator it = localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
+      // Should not go into corner cells, LaplaceXY stencil does not include them
+      if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
+        continue;
+      }
+      int ind = globalIndex(it.ind, localmesh->yend + 1);
+
+      // Use the value that would be set by applying the boundary condition to the
+      // initial guess
+      PetscScalar val = x0(it.ind, localmesh->yend);
+      VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+
+      val = 0.0;
+      VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+    }
+    if (localmesh->hasBndryUpperY()) {
+      if (localmesh->firstX()) {
+        int ind = globalIndex(localmesh->xstart - 1, localmesh->yend + 1);
+
+        PetscScalar val = x0(localmesh->xstart - 1, localmesh->yend);
+        VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+
+        val = 0.0;
+        VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+      }
+      if (localmesh->lastX()) {
+        int ind = globalIndex(localmesh->xend + 1, localmesh->yend + 1);
+
+        PetscScalar val = x0(localmesh->xend + 1, localmesh->yend);
+        VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+
+        val = 0.0;
+        VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+      }
+    }
+  } else if (y_bndry == "free_o3") {
+    // Y boundaries free_o3
+    for (RangeIterator it = localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
+      // Should not go into corner cells, LaplaceXY stencil does not include them
+      if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
+        continue;
+      }
+      int ind = globalIndex(it.ind, localmesh->ystart - 1);
+
+      // Use the value that would be set by applying the boundary condition to the
+      // initial guess
+      PetscScalar val = 3. * x0(it.ind, localmesh->ystart)
+                        - 3. * x0(it.ind, localmesh->ystart + 1)
+                        + x0(it.ind, localmesh->ystart + 2);
+      VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+
+      val = 0.0;
+      VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+    }
+    if (localmesh->hasBndryLowerY()) {
+      if (localmesh->firstX()) {
+        int ind = globalIndex(localmesh->xstart - 1, localmesh->ystart - 1);
+
+        PetscScalar val = 3. * x0(localmesh->xstart - 1, localmesh->ystart)
+                          - 3. * x0(localmesh->xstart - 1, localmesh->ystart + 1)
+                          + x0(localmesh->xstart - 1, localmesh->ystart + 2);
+        VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+
+        val = 0.0;
+        VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+      }
+      if (localmesh->lastX()) {
+        int ind = globalIndex(localmesh->xend + 1, localmesh->ystart - 1);
+
+        PetscScalar val = 3. * x0(localmesh->xend + 1, localmesh->ystart)
+                          - 3. * x0(localmesh->xend + 1, localmesh->ystart + 1)
+                          + x0(localmesh->xend + 1, localmesh->ystart + 2);
+        VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+
+        val = 0.0;
+        VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+      }
+    }
+
+    for (RangeIterator it = localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
+      // Should not go into corner cells, LaplaceXY stencil does not include them
+      if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
+        continue;
+      }
+      int ind = globalIndex(it.ind, localmesh->yend + 1);
+
+      // Use the value that would be set by applying the boundary condition to the
+      // initial guess
+      PetscScalar val = 3. * x0(it.ind, localmesh->yend)
+                        - 3. * x0(it.ind, localmesh->yend - 1)
+                        + x0(it.ind, localmesh->yend - 2);
+      VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+
+      val = 0.0;
+      VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+    }
+    if (localmesh->hasBndryUpperY()) {
+      if (localmesh->firstX()) {
+        int ind = globalIndex(localmesh->xstart - 1, localmesh->yend + 1);
+
+        PetscScalar val = 3. * x0(localmesh->xstart - 1, localmesh->yend)
+                          - 3. * x0(localmesh->xstart - 1, localmesh->yend - 1)
+                          + x0(localmesh->xstart - 1, localmesh->yend - 2);
+        VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+
+        val = 0.0;
+        VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+      }
+      if (localmesh->lastX()) {
+        int ind = globalIndex(localmesh->xend + 1, localmesh->yend + 1);
+
+        PetscScalar val = 3. * x0(localmesh->xend + 1, localmesh->yend)
+                          - 3. * x0(localmesh->xend + 1, localmesh->yend - 1)
+                          + x0(localmesh->xend + 1, localmesh->yend - 2);
+        VecSetValues(xs, 1, &ind, &val, INSERT_VALUES);
+
+        val = 0.0;
+        VecSetValues(bs, 1, &ind, &val, INSERT_VALUES);
+      }
+    }
+  } else {
+    throw BoutException("Unsupported option for y_bndry");
+  }
+}
 
 /*! Preconditioner
  * NOTE: For efficiency, this routine does not use globalIndex() 
