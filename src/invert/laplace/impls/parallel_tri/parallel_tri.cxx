@@ -663,9 +663,9 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	SCOREP_USER_REGION_BEGIN(flags, "set_flags",SCOREP_USER_REGION_TYPE_COMMON);
 
 	// Set communication flags
-	if ( 
+	if ( count > 0 && (
 	     ((error_rel_lower<rtol or error_abs_lower<atol) and
-	     (error_rel_upper<rtol or error_abs_upper<atol) )) {
+	     (error_rel_upper<rtol or error_abs_upper<atol) ))) {
 	  // In the next iteration this proc informs its neighbours that its halo cells
 	  // will no longer be updated, then breaks.
 	  self_in = true;
