@@ -1234,8 +1234,14 @@ const Field2D LaplaceXY::solve(const Field2D& rhs, const Field2D& x0) {
 
   // Lower Y boundary
   for (RangeIterator it = localmesh->iterateBndryLowerY(); !it.isDone(); it++) {
-    // Should not go into corner cells, LaplaceXY stencil does not include them
-    if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
+    if (
+         // Should not go into corner cells, finite-volume LaplaceXY stencil does not include
+         // them
+         (finite_volume and (it.ind < localmesh->xstart or it.ind > localmesh->xend))
+
+         // Only go into first corner cell for finite-difference
+         or (it.ind < localmesh->xstart - 1 or it.ind > localmesh->xend + 1)
+       ) {
       continue;
     }
     int ind = globalIndex(it.ind, localmesh->ystart - 1);
@@ -1247,8 +1253,14 @@ const Field2D LaplaceXY::solve(const Field2D& rhs, const Field2D& x0) {
 
   // Upper Y boundary
   for (RangeIterator it = localmesh->iterateBndryUpperY(); !it.isDone(); it++) {
-    // Should not go into corner cells, LaplaceXY stencil does not include them
-    if (it.ind < localmesh->xstart or it.ind > localmesh->xend) {
+    if (
+         // Should not go into corner cells, finite-volume LaplaceXY stencil does not include
+         // them
+         (finite_volume and (it.ind < localmesh->xstart or it.ind > localmesh->xend))
+
+         // Only go into first corner cell for finite-difference
+         or (it.ind < localmesh->xstart - 1 or it.ind > localmesh->xend + 1)
+       ) {
       continue;
     }
     int ind = globalIndex(it.ind, localmesh->yend + 1);
