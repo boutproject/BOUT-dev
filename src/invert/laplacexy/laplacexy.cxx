@@ -74,7 +74,7 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
   auto comm = BoutComm::get();
   
   // Local size
-  int localN = localSize();
+  const int localN = localSize();
 
   // Create Vectors 
   VecCreate( comm, &xs );
@@ -190,8 +190,8 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
   // This is an arbitrary choice, which makes a difference at the X-point, where taking
   // the x-guard cells from the y-neighbours would give points in different regions.
   auto xcomm = localmesh->getXcomm();
-  int proc_xind = localmesh->getXProcIndex();
-  int tag0 = localmesh->getYProcIndex()*localmesh->getNXPE();
+  const int proc_xind = localmesh->getXProcIndex();
+  const int tag0 = localmesh->getYProcIndex()*localmesh->getNXPE();
   MPI_Request requests[] = {MPI_REQUEST_NULL, MPI_REQUEST_NULL, MPI_REQUEST_NULL,
                             MPI_REQUEST_NULL, MPI_REQUEST_NULL, MPI_REQUEST_NULL,
                             MPI_REQUEST_NULL, MPI_REQUEST_NULL};
@@ -256,7 +256,7 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
   
   // Configure Linear Solver
   
-  bool direct = (*opt)["direct"].doc("Use a direct LU solver").withDefault(false);
+  const bool direct = (*opt)["direct"].doc("Use a direct LU solver").withDefault(false);
   
   if(direct) {
     KSPGetPC(ksp,&pc);
@@ -328,7 +328,7 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
 }
 
 void LaplaceXY::setPreallocationFiniteVolume(PetscInt* d_nnz, PetscInt* o_nnz) {
-  int localN = localSize();
+  const int localN = localSize();
 
   // This discretisation uses a 5-point stencil
   for(int i=0;i<localN;i++) {
@@ -434,7 +434,7 @@ void LaplaceXY::setPreallocationFiniteVolume(PetscInt* d_nnz, PetscInt* o_nnz) {
 }
 
 void LaplaceXY::setPreallocationFiniteDifference(PetscInt* d_nnz, PetscInt* o_nnz) {
-  int localN = localSize();
+  const int localN = localSize();
 
   // This discretisation uses a 9-point stencil
   for(int i=0;i<localN;i++) {
@@ -481,10 +481,7 @@ void LaplaceXY::setPreallocationFiniteDifference(PetscInt* d_nnz, PetscInt* o_nn
     }
   }
   // Y boundaries
-  int y_bndry_stencil_size = 2;
-  if (y_bndry == "free_o3") {
-    y_bndry_stencil_size = 4;
-  }
+  const int y_bndry_stencil_size = (y_bndry == "free_o3") ? 4 : 2;
 
   for(int x=localmesh->xstart; x <=localmesh->xend; x++) {
     // Default to no boundary
@@ -1795,8 +1792,8 @@ int LaplaceXY::precon(Vec input, Vec result) {
 int LaplaceXY::localSize() {
   
   // Bulk of points
-  int nx = localmesh->xend - localmesh->xstart + 1;
-  int ny = localmesh->yend - localmesh->ystart + 1;
+  const int nx = localmesh->xend - localmesh->xstart + 1;
+  const int ny = localmesh->yend - localmesh->ystart + 1;
   
   int n = nx * ny;  
   
