@@ -622,7 +622,8 @@ ac_includes_default="\
 #endif"
 
 gt_needs=
-ac_subst_vars='HAS_FFTW
+ac_subst_vars='BOUT_HAS_HYPRE
+HAS_FFTW
 HAS_NLS
 HAS_OPENMP
 SLEPC_ARCH
@@ -803,6 +804,7 @@ with_pvode
 with_mumps
 with_arkode
 with_scorep
+with_hypre
 enable_warnings
 enable_checks
 enable_signal
@@ -1490,6 +1492,7 @@ Optional Packages:
   --with-mumps            Link with MUMPS library for direct matrix inversions
   --with-arkode           Use the SUNDIALS ARKODE solver
   --with-scorep           Enable support for scorep based instrumentation
+  --with-hypre            Enable support for HYPRE
   --with-openmp-schedule=static/dynamic/guided/auto
                           Set OpenMP schedule (default: static)
   --with-gcov=GCOV        use given GCOV for coverage (GCOV=gcov).
@@ -2628,6 +2631,14 @@ if test "${with_scorep+set}" = set; then :
   withval=$with_scorep;
 else
   with_scorep=no
+fi
+
+
+# Check whether --with-hypre was given.
+if test "${with_hypre+set}" = set; then :
+  withval=$with_hypre;
+else
+  with_hypre=no
 fi
 
 
@@ -11753,6 +11764,264 @@ $as_echo "$as_me: => $module_upper solver enabled" >&6;}
 fi
 
 #############################################################
+# HYPRE
+#############################################################
+
+BOUT_HAS_HYPRE="no"
+if test "$with_hypre" != "no"; then :
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for HYPRE.h" >&5
+$as_echo_n "checking for HYPRE.h... " >&6; }
+
+  save_CPPFLAGS=$CPPFLAGS
+  BACH_found=no
+
+  if test ."$with_hypre
+  " != .yes; then :
+  extra_prefix="$with_hypre
+  "
+else
+  extra_prefix=""
+fi
+
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+    #include <HYPRE.h>
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+  BACH_found=yes
+
+
+        break
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+  if test $BACH_found != yes; then :
+
+    for search_prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local
+    do
+      for path in $search_prefix $search_prefix/include
+      do
+        if test -d $path; then :
+
+          CPPFLAGS="$save_CPPFLAGS -I$path"
+
+
+          cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+              #include <HYPRE.h>
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_compile "$LINENO"; then :
+  BACH_found=yes
+             EXTRA_INCS="$EXTRA_INCS -I$path"
+
+
+             break
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+      done
+      if test .$BACH_found = .yes; then :
+  break;
+fi
+    done
+
+fi
+
+  if test $BACH_found = yes; then :
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+else
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+    CPPFLAGS=$save_CPPFLAGS
+
+fi
+  if test .$BACH_found = .yes; then :
+
+  save_LIBS=$LIBS
+  save_LDFLAGS=$LDFLAGS
+  save_CPPFLAGS=$CPPFLAGS
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libHYPRE" >&5
+$as_echo_n "checking for libHYPRE... " >&6; }
+  ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+  BACL_found=no
+
+  # Try with no extra libraries first
+  if test ."$with_hypre" = .yes; then :
+  extra_prefix=""
+else
+  extra_prefix="$with_hypre"
+fi
+  LIBS="$save_LIBS $EXTRA_LIBS"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+    extern "C"
+    char HYPRE_IJVectorCreate();
+
+int
+main ()
+{
+return HYPRE_IJVectorCreate();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  BACL_found=yes
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+  LIBS=$save_LIBS
+
+  # Now try with explicitly linking library
+  if test $BACL_found != yes; then :
+
+    LIBS="$save_LIBS $EXTRA_LIBS -lHYPRE"
+    if test ."$with_hypre" = .yes; then :
+  extra_prefix=""
+else
+  extra_prefix="$with_hypre"
+fi
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+      extern "C"
+      char HYPRE_IJVectorCreate();
+
+int
+main ()
+{
+return HYPRE_IJVectorCreate();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  BACL_found=yes
+     EXTRA_LIBS="$EXTRA_LIBS -lHYPRE"
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+
+  if test $BACL_found != yes; then :
+
+    for search_prefix in $extra_prefix /usr /opt $HOME $HOME/local /usr/local ; do
+      for path in $search_prefix $search_prefix/lib $search_prefix/lib64 $search_prefix/x86_64-linux-gnu
+      do
+        if test -d $path; then :
+
+          LIBS="$save_LIBS $EXTRA_LIBS -lHYPRE"
+          LDFLAGS="$save_LDFLAGS -L$path"
+
+
+          cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+            extern "C"
+            char HYPRE_IJVectorCreate();
+
+int
+main ()
+{
+return HYPRE_IJVectorCreate();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  BACL_found=yes
+           EXTRA_LIBS="$EXTRA_LIBS -L$path -lHYPRE"
+
+
+           break
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+      done
+      if test .$BACL_found = .yes; then :
+  break;
+fi
+    done
+
+fi
+
+   if test $BACL_found = yes; then :
+
+     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+else
+
+     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+
+   if test $BACL_found = yes; then :
+
+       CXXFLAGS="$CXXFLAGS -DBOUT_HAS_HYPRE"
+       BOUT_HAS_HYPRE="yes"
+
+else
+  as_fn_error $? "HYPRE requested but not found" "$LINENO" 5
+fi
+
+   LIBS=$save_LIBS
+   LDFLAGS=$save_LDFLAGS
+   CPPFLAGS=$save_CPPFLAGS
+   ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+
+else
+  as_fn_error $? "HYPRE requested but not found" "$LINENO" 5
+fi
+
+
+fi
+
+#############################################################
 # Scorep setup
 #############################################################
 
@@ -17046,6 +17315,8 @@ $as_echo "$as_me:   Scorep support          : $HAS_SCOREP" >&6;}
 $as_echo "$as_me:   OpenMP support          : $HAS_OPENMP (schedule: $OPENMP_SCHEDULE)" >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}:   Natural language support: $HAS_NLS (path: $localedir)" >&5
 $as_echo "$as_me:   Natural language support: $HAS_NLS (path: $localedir)" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}:   HYPRE support           : $BOUT_HAS_HYPRE" >&5
+$as_echo "$as_me:   HYPRE support           : $BOUT_HAS_HYPRE" >&6;}
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: " >&5
 $as_echo "$as_me: " >&6;}
