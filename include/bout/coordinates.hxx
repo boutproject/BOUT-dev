@@ -249,8 +249,12 @@ public:
   Field3D Laplace_par(const Field3D &f, CELL_LOC outloc=CELL_DEFAULT);
   
   // Full Laplacian operator on scalar field
-  Field2D Laplace(const Field2D &f, CELL_LOC outloc=CELL_DEFAULT);
-  Field3D Laplace(const Field3D &f, CELL_LOC outloc=CELL_DEFAULT);
+  Field2D Laplace(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+                  const std::string& dfdy_boundary_conditions = "free_o3",
+                  const std::string& dfdy_dy_region = "");
+  Field3D Laplace(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+                  const std::string& dfdy_boundary_conditions = "free_o3",
+                  const std::string& dfdy_dy_region = "");
 
   // Full perpendicular Laplacian, in form of inverse of Laplacian operator in LaplaceXY
   // solver
