@@ -690,10 +690,13 @@ AS_IF([test "x$with_petsc" != "x" && test "$with_petsc" != "no"], [
     AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/lib/petsc/conf, [
       PETSC_CONFDIR=${PETSC_DIR}/lib/petsc/conf
     ], [
-      PKG_CHECK_MODULES(PETSC, petsc >= 3.4.0 ,
+      PKG_CHECK_MODULES(PETSC, PETSc >= 3.4.0 ,
         PETSC_PKGCONF=yes, [
-	AC_MSG_ERROR([--with-petsc was specified but could not find PETSc distribution.
+          PKG_CHECK_MODULES(PETSC, petsc >= 3.4.0 ,
+            PETSC_PKGCONF=yes, [
+	      AC_MSG_ERROR([--with-petsc was specified but could not find PETSc distribution.
 PETSC_ERROR_MESSAGE])
+	])
       ])
     ])
   ])
