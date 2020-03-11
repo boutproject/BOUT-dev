@@ -60,10 +60,10 @@ void XZBilinear::calcWeights(const Field3D& delta_x, const Field3D& delta_z,
 
     // t_x, t_z are the normalised coordinates \in [0,1) within the cell
     // calculated by taking the remainder of the floating point index
-    BoutReal t_x = delta_x(x, y, z) - static_cast<BoutReal>(i_corner(x, y, z));
-    BoutReal t_z = delta_z(x, y, z) - static_cast<BoutReal>(k_corner(x, y, z));
-    BoutReal t_x1 = 1.0 - t_x;
-    BoutReal t_z1 = 1.0 - t_z;
+    const BoutReal t_x = delta_x(x, y, z) - static_cast<BoutReal>(i_corner(x, y, z));
+    const BoutReal t_z = delta_z(x, y, z) - static_cast<BoutReal>(k_corner(x, y, z));
+    const BoutReal t_x1 = 1.0 - t_x;
+    const BoutReal t_z1 = 1.0 - t_z;
 
     // Check that t_x and t_z are in range
     if ((t_x < 0.0) || (t_x > 1.0)) {
@@ -103,12 +103,12 @@ Field3D XZBilinear::interpolate(const Field3D& f, const std::string& region) con
     if (skip_mask(x, y, z))
       continue;
 
-    int y_next = y + y_offset;
+    const int y_next = y + y_offset;
     // Due to lack of guard cells in z-direction, we need to ensure z-index
     // wraps around
-    int ncz = localmesh->LocalNz;
-    int z_mod = ((k_corner(x, y, z) % ncz) + ncz) % ncz;
-    int z_mod_p1 = (z_mod + 1) % ncz;
+    const int ncz = localmesh->LocalNz;
+    const int z_mod = ((k_corner(x, y, z) % ncz) + ncz) % ncz;
+    const int z_mod_p1 = (z_mod + 1) % ncz;
 
     f_interp(x, y_next, z) = f(i_corner(x, y, z), y_next, z_mod) * w0(x, y, z)
                              + f(i_corner(x, y, z) + 1, y_next, z_mod) * w1(x, y, z)

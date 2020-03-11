@@ -97,24 +97,24 @@ Field3D XZLagrange4pt::interpolate(const Field3D& f, const std::string& region) 
     if (skip_mask(x, y, z))
       continue;
 
-    int jx = i_corner(x, y, z);
-    int jx2mnew = (jx == 0) ? 0 : (jx - 1);
-    int jxpnew = jx + 1;
-    int jx2pnew = (jx == (localmesh->LocalNx - 2)) ? jxpnew : (jxpnew + 1);
+    const int jx = i_corner(x, y, z);
+    const int jx2mnew = (jx == 0) ? 0 : (jx - 1);
+    const int jxpnew = jx + 1;
+    const int jx2pnew = (jx == (localmesh->LocalNx - 2)) ? jxpnew : (jxpnew + 1);
 
-    int ncz = localmesh->LocalNz;
+    const int ncz = localmesh->LocalNz;
 
     // Get the 4 Z points
-    int jz = ((k_corner(x, y, z) % ncz) + ncz) % ncz;
+    const int jz = ((k_corner(x, y, z) % ncz) + ncz) % ncz;
 
-    int jzpnew = (jz + 1) % ncz;
-    int jz2pnew = (jz + 2) % ncz;
-    int jz2mnew = (jz - 1 + ncz) % ncz;
+    const int jzpnew = (jz + 1) % ncz;
+    const int jz2pnew = (jz + 2) % ncz;
+    const int jz2mnew = (jz - 1 + ncz) % ncz;
 
     // Interpolate in Z first
     BoutReal xvals[4];
 
-    int y_next = y + y_offset;
+    const int y_next = y + y_offset;
 
     xvals[0] = lagrange_4pt(f(jx2mnew, y_next, jz2mnew), f(jx2mnew, y_next, jz),
                             f(jx2mnew, y_next, jzpnew), f(jx2mnew, y_next, jz2pnew),
