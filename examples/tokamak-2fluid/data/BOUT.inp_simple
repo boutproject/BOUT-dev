@@ -121,7 +121,7 @@ apar_flags = 0 # flags for apar inversion
 
 [All]
 scale = 0.0 # default size of initial perturbations
-function = guass(y, 0.1) * sin(z)
+function = gauss(y, 0.1) * sin(z)
 
 bndry_xin = neumann  ## Zero-gradient inner boundary
 bndry_xout = neumann  ## Zero-gradient outer boundary

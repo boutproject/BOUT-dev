@@ -253,7 +253,7 @@ apar_flags = 769
 
 [All]
 scale = 0.0 # default size of initial perturbations
-function = guass(x - 0.5, 0.1) * gauss(y - pi, 0.3) * sin(z)
+function = gauss(x - 0.5, 0.1) * gauss(y - pi, 0.3) * sin(z)
 
 # boundary conditions
 # -------------------

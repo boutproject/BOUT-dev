@@ -74,7 +74,7 @@ v0_multiply = -1.0
 
 [All]
 scale = 0.0 # default size of initial perturbations
-function = guass(y - pi, 0.1) * sin(z)
+function = gauss(y - pi, 0.1) * sin(z)
 
 # Boundary conditions
 # dirichlet = zero value
