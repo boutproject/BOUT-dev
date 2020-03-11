@@ -268,6 +268,25 @@ Field3D & Field3D::operator=(const Field3D &rhs) {
   return *this;
 }
 
+Field3D& Field3D::operator=(Field3D&& rhs) {
+  TRACE("Field3D: Assignment from Field3D");
+
+  // Copy parallel slices or delete existing ones.
+  yup_fields = std::move(rhs.yup_fields);
+  ydown_fields = std::move(rhs.ydown_fields);
+
+  copyFieldMembers(rhs);
+
+  // Copy the data and data sizes
+  nx = rhs.nx;
+  ny = rhs.ny;
+  nz = rhs.nz;
+
+  data = std::move(rhs.data);
+
+  return *this;
+}
+
 Field3D & Field3D::operator=(const Field2D &rhs) {
   TRACE("Field3D = Field2D");
 
