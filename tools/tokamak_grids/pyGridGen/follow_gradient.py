@@ -6,7 +6,7 @@ from builtins import object
 
 import sys
 import numpy
-from bunch import Bunch
+from boututils.bunch import Bunch
 
 
 try:

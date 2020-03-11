@@ -76,7 +76,9 @@ def elm_size(dcp,p0,uedge,xmin=None,xmax=None,yind=None,Bbar=None):
     E_loss=-Ddcp3*(0.5*Bbar*Bbar/MU0)    #energy loss, unit J
     E_total=Tp03*(0.5*Bbar*Bbar/MU0)     #total energy, unit J
 
-    elmsize=Bunch()
+    class ELM:
+        pass
+    elmsize=ELM()
     elmsize.s1=s1
     elmsize.s2=s2
     elmsize.s3=s3

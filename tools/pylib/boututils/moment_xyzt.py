@@ -3,10 +3,7 @@ from __future__ import division
 from builtins import range
 from past.utils import old_div
 import numpy as np
-
-class Bunch:
-    pass
-
+from boututils.bunch import Bunch
 
 def RMSvalue( vec1d):
 #;
@@ -18,13 +15,9 @@ def RMSvalue( vec1d):
     valrms=np.sqrt(old_div(np.sum((vec1d-valav)**2),nel))
     acvec=vec1d-valav
 
-    ret = Bunch()
-    ret.valrms = valrms
-    ret.valav = valav
-    ret.acvec = acvec
-
-    return ret
- 
+    return Bunch(valrms=valrms,
+                 valav=valav,
+                 acvec=acvec)
 
 
 
