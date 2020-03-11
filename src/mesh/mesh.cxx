@@ -300,25 +300,11 @@ void Mesh::communicateYZ(FieldGroup &g) {
 void Mesh::communicate(FieldGroup &g) {
   TRACE("Mesh::communicate(FieldGroup&)");
 
-  if (include_corner_cells) {
-    // Send data in y-direction
-    comm_handle h = sendY(g);
+  // Send data
+  comm_handle h = send(g);
 
-    // Wait for data from other processors
-    wait(h);
-
-    // Send data in x-direction
-    h = sendX(g);
-
-    // Wait for data from other processors
-    wait(h);
-  } else {
-    // Send data
-    comm_handle h = send(g);
-
-    // Wait for data from other processors
-    wait(h);
-  }
+  // Wait for data from other processors
+  wait(h);
 
   // Calculate yup and ydown fields for 3D fields
   if (calcParallelSlices_on_communicate) {
