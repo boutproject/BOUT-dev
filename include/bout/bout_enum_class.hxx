@@ -77,7 +77,7 @@ inline std::string toString(enumname e) {                                   \
   };                                                                        \
   auto found = toString_map.find(e);                                        \
   if (found == toString_map.end()) {                                        \
-    throw BoutException("Did not find enum %d", static_cast<int>(e));       \
+    throw BoutException("Did not find enum {:d}", static_cast<int>(e));     \
   }                                                                         \
   return found->second;                                                     \
 }                                                                           \
@@ -89,7 +89,7 @@ inline enumname BOUT_MAKE_FROMSTRING_NAME(enumname)(const std::string& s) { \
   };                                                                        \
   auto found = fromString_map.find(s);                                      \
   if (found == fromString_map.end()) {                                      \
-    throw BoutException("Did not find enum %s", s.c_str());                 \
+    throw BoutException("Did not find enum {:s}", s);                       \
   }                                                                         \
   return found->second;                                                     \
 }                                                                           \

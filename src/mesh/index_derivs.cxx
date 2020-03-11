@@ -422,10 +422,6 @@ public:
     ASSERT2(stagger == STAGGER::None);  // Staggering not currently supported
     ASSERT2(bout::utils::is_Field3D<T>::value); // Should never need to call this with Field2D
 
-    // Only allow a whitelist of regions for now
-    ASSERT2(region == "RGN_ALL" || region == "RGN_NOBNDRY"
-            || region == "RGN_NOX" || region == "RGN_NOY");
-
     auto* theMesh = var.getMesh();
 
     // Calculate how many Z wavenumbers will be removed
@@ -489,10 +485,6 @@ public:
     ASSERT2(direction == DIRECTION::Z); // Only in Z for now
     ASSERT2(stagger == STAGGER::None);  // Staggering not currently supported
     ASSERT2(bout::utils::is_Field3D<T>::value); // Should never need to call this with Field2D
-
-    // Only allow a whitelist of regions for now
-    ASSERT2(region == "RGN_ALL" || region == "RGN_NOBNDRY"
-            || region == "RGN_NOX" || region == "RGN_NOY");
 
     auto* theMesh = var.getMesh();
 
