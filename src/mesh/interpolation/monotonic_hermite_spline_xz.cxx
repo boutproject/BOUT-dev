@@ -21,14 +21,14 @@
  **************************************************************************/
 
 #include "globals.hxx"
-#include "interpolation.hxx"
+#include "interpolation_xz.hxx"
 #include "output.hxx"
 #include "bout/index_derivs_interface.hxx"
 #include "bout/mesh.hxx"
 
 #include <vector>
 
-Field3D MonotonicHermiteSpline::interpolate(const Field3D &f) const {
+Field3D XZMonotonicHermiteSpline::interpolate(const Field3D &f) const {
   ASSERT1(f.getMesh() == localmesh);
   Field3D f_interp(f.getMesh());
   f_interp.allocate();
@@ -37,10 +37,25 @@ Field3D MonotonicHermiteSpline::interpolate(const Field3D &f) const {
   // coordinates
   Field3D fx = bout::derivatives::index::DDX(f, CELL_DEFAULT, "DEFAULT");
   localmesh->communicateXZ(fx);
+  // communicate in y, but do not calculate parallel slices
+  {
+    auto h = localmesh->sendY(fx);
+    localmesh->wait(h);
+  }
   Field3D fz = bout::derivatives::index::DDZ(f, CELL_DEFAULT, "DEFAULT", "RGN_ALL");
   localmesh->communicateXZ(fz);
+  // communicate in y, but do not calculate parallel slices
+  {
+    auto h = localmesh->sendY(fz);
+    localmesh->wait(h);
+  }
   Field3D fxz = bout::derivatives::index::DDX(fz, CELL_DEFAULT, "DEFAULT");
   localmesh->communicateXZ(fxz);
+  // communicate in y, but do not calculate parallel slices
+  {
+    auto h = localmesh->sendY(fxz);
+    localmesh->wait(h);
+  }
 
   for (int x = localmesh->xstart; x <= localmesh->xend; x++) {
     for (int y = localmesh->ystart; y <= localmesh->yend; y++) {

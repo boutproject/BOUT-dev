@@ -77,7 +77,7 @@ for nslice in nslices:
         maps = zb.make_maps(grid, field, nslice=nslice, quiet=True)
         zb.write_maps(grid, field, maps, new_names=False, metric2d=True, quiet=True)
 
-        args = (" MZ={} MYG={} fci:y_periodic={} mesh:ddy:first={}"
+        args = (" MZ={} MYG={} mesh:paralleltransform:y_periodic={} mesh:ddy:first={}"
                 .format(n, nslice, yperiodic, method_orders[nslice]["name"]))
 
         # Command to run

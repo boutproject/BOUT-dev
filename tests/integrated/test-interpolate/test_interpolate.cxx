@@ -14,7 +14,7 @@
 #include "bout/constants.hxx"
 #include "field_factory.hxx"
 #include "bout/sys/generator_context.hxx"
-#include "interpolation.hxx"
+#include "interpolation_xz.hxx"
 
 /// Get a FieldGenerator from the options for a variable
 std::shared_ptr<FieldGenerator> getGeneratorFromOptions(const std::string& varname,
@@ -86,7 +86,7 @@ int main(int argc, char **argv) {
   }
 
   // Create the interpolation object from the input options
-  auto interp = InterpolationFactory::getInstance().create();
+  auto interp = XZInterpolationFactory::getInstance().create();
 
   // Interpolate the analytic functions at the displacements
   a_interp = interp->interpolate(a, deltax, deltaz);

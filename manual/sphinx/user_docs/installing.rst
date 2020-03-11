@@ -182,7 +182,7 @@ The first line should be sufficient to install BOUT++, while the 2nd
 and 3rd line make sure that the tests work, and that the python
 interface can be build.
 Further, the encoding for python needs to be utf8 - it may be required
-to set `export LC_CTYPE=C.utf8`.
+to set ``export LC_CTYPE=C.utf8``.
 
 If you do not have administrator rights, so can't install packages, then
 you need to install these libraries from source into your home directory.

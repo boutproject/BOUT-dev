@@ -268,5 +268,5 @@ in the first output file, which `collect` uses to get its type and dimensions.
 .. [2] Actually, the C++ I/O code should work fine even if a `FieldPerp` object is defined
        with different y-indices on different processors. This may be useful for diagnostic
        or debugging purposes. However, Python routines like `collect` and
-       `restart.redistribute` will fail because they find inconsistent `yindex_global`
-       values.
+       `boutdata.restart.redistribute` will fail because they find inconsistent
+       `yindex_global` values.

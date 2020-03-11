@@ -18,6 +18,7 @@
 #include <globals.hxx>
 
 #include "parallel/fci.hxx"
+#include "parallel/shiftedmetricinterp.hxx"
 
 // use anonymous namespace so this utility function is not available outside this file
 namespace {
@@ -119,15 +120,28 @@ Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
     }
   }
 
-  // Set corner guard cells
-  for (int i = 0; i < localmesh->xstart; i++) {
-    for (int j = 0; j < localmesh->ystart; j++) {
-      result(i, j) = BoutNaN;
-      result(i, localmesh->LocalNy - 1 - j) = BoutNaN;
-      result(localmesh->LocalNx - 1 - i, j) = BoutNaN;
-      result(localmesh->LocalNx - 1 - i, localmesh->LocalNy - 1 - j) = BoutNaN;
+#if CHECK > 0
+  if (not (
+            // if include_corner_cells=true, then we extrapolate valid data into the
+            // corner cells if they are not already filled
+            localmesh->include_corner_cells
+
+            // if we are not extrapolating at all, the corner cells should contain valid
+            // data
+            or (not extrapolate_x and not extrapolate_y)
+          )
+     ) {
+    // Invalidate corner guard cells
+    for (int i = 0; i < localmesh->xstart; i++) {
+      for (int j = 0; j < localmesh->ystart; j++) {
+        result(i, j) = BoutNaN;
+        result(i, localmesh->LocalNy - 1 - j) = BoutNaN;
+        result(localmesh->LocalNx - 1 - i, j) = BoutNaN;
+        result(localmesh->LocalNx - 1 - i, localmesh->LocalNy - 1 - j) = BoutNaN;
+      }
     }
   }
+#endif
 
   return result;
 }
@@ -1081,17 +1095,20 @@ void fixZShiftGuards(Field2D& zShift) {
 
 void Coordinates::setParallelTransform(Options* options) {
 
+  auto ptoptions = options->getSection("paralleltransform");
+
   std::string ptstr;
-  options->get("paralleltransform", ptstr, "identity");
+  ptoptions->get("type", ptstr, "identity");
 
   // Convert to lower case for comparison
   ptstr = lowercase(ptstr);
 
   if(ptstr == "identity") {
     // Identity method i.e. no transform needed
-    transform = bout::utils::make_unique<ParallelTransformIdentity>(*localmesh);
+    transform = bout::utils::make_unique<ParallelTransformIdentity>(*localmesh,
+                                                                    ptoptions);
 
-  } else if (ptstr == "shifted") {
+  } else if (ptstr == "shifted" or ptstr == "shiftedinterp") {
     // Shifted metric method
 
     Field2D zShift{localmesh};
@@ -1126,8 +1143,13 @@ void Coordinates::setParallelTransform(Options* options) {
 
     fixZShiftGuards(zShift);
 
-    transform = bout::utils::make_unique<ShiftedMetric>(*localmesh, location, zShift,
-        zlength());
+    if (ptstr == "shifted") {
+      transform = bout::utils::make_unique<ShiftedMetric>(*localmesh, location, zShift,
+                                                          zlength());
+    } else if (ptstr == "shiftedinterp") {
+      transform =
+          bout::utils::make_unique<ShiftedMetricInterp>(*localmesh, location, zShift);
+    }
 
   } else if (ptstr == "fci") {
 
@@ -1136,8 +1158,9 @@ void Coordinates::setParallelTransform(Options* options) {
     }
 
     // Flux Coordinate Independent method
-    const bool fci_zperiodic = Options::root()["fci"]["z_periodic"].withDefault(true);
-    transform = bout::utils::make_unique<FCITransform>(*localmesh, fci_zperiodic);
+    const bool fci_zperiodic = (*ptoptions)["z_periodic"].withDefault(true);
+    transform = bout::utils::make_unique<FCITransform>(*localmesh, fci_zperiodic,
+                                                       ptoptions);
 
   } else {
     throw BoutException(_("Unrecognised paralleltransform option.\n"
@@ -1437,25 +1460,92 @@ Field3D Coordinates::Laplace_par(const Field3D& f, CELL_LOC outloc) {
 
 // Full Laplacian operator on scalar field
 
-Field2D Coordinates::Laplace(const Field2D& f, CELL_LOC outloc) {
+Field2D Coordinates::Laplace(const Field2D& f, CELL_LOC outloc,
+                             const std::string& dfdy_boundary_conditions,
+                             const std::string& dfdy_dy_region) {
   TRACE("Coordinates::Laplace( Field2D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
-  Field2D result = G1 * DDX(f, outloc) + G2 * DDY(f, outloc) + g11 * D2DX2(f, outloc)
-                   + g22 * D2DY2(f, outloc) + 2.0 * g12 * D2DXDY(f, outloc);
+  Field2D result =
+      G1 * DDX(f, outloc) + G2 * DDY(f, outloc) + g11 * D2DX2(f, outloc)
+      + g22 * D2DY2(f, outloc)
+      + 2.0 * g12 * D2DXDY(f, outloc, dfdy_boundary_conditions, dfdy_dy_region);
 
   return result;
 }
 
-Field3D Coordinates::Laplace(const Field3D& f, CELL_LOC outloc) {
+Field3D Coordinates::Laplace(const Field3D& f, CELL_LOC outloc,
+                             const std::string& dfdy_boundary_conditions,
+                             const std::string& dfdy_dy_region) {
   TRACE("Coordinates::Laplace( Field3D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
   Field3D result = G1 * ::DDX(f, outloc) + G2 * ::DDY(f, outloc) + G3 * ::DDZ(f, outloc)
                    + g11 * D2DX2(f, outloc) + g22 * D2DY2(f, outloc)
                    + g33 * D2DZ2(f, outloc)
-                   + 2.0 * (g12 * D2DXDY(f, outloc) + g13 * D2DXDZ(f, outloc)
-                            + g23 * D2DYDZ(f, outloc));
+                   + 2.0
+                         * (g12
+                                * D2DXDY(f, outloc, "DEFAULT", "RGN_NOBNDRY",
+                                         dfdy_boundary_conditions, dfdy_dy_region)
+                            + g13 * D2DXDZ(f, outloc) + g23 * D2DYDZ(f, outloc));
+
+  return result;
+}
+
+// Full perpendicular Laplacian, in form of inverse of Laplacian operator in LaplaceXY
+// solver
+Field2D Coordinates::Laplace_perpXY(const Field2D& A, const Field2D& f) {
+  TRACE("Coordinates::Laplace_perpXY( Field2D )");
+
+  Field2D result;
+  result.allocate();
+  for (auto i : result.getRegion(RGN_NOBNDRY)) {
+    result[i] = 0.;
+
+    // outer x boundary
+    const auto outer_x_avg = [&i](const auto& f) { return 0.5 * (f[i] + f[i.xp()]); };
+    const BoutReal outer_x_A = outer_x_avg(A);
+    const BoutReal outer_x_J = outer_x_avg(J);
+    const BoutReal outer_x_g11 = outer_x_avg(g11);
+    const BoutReal outer_x_dx = outer_x_avg(dx);
+    const BoutReal outer_x_value = outer_x_A * outer_x_J * outer_x_g11 /
+      (J[i] * outer_x_dx * dx[i]);
+    result[i] += outer_x_value * (f[i.xp()] - f[i]);
+
+    // inner x boundary
+    const auto inner_x_avg = [&i](const auto& f) { return 0.5 * (f[i] + f[i.xm()]); };
+    const BoutReal inner_x_A = inner_x_avg(A);
+    const BoutReal inner_x_J = inner_x_avg(J);
+    const BoutReal inner_x_g11 = inner_x_avg(g11);
+    const BoutReal inner_x_dx = inner_x_avg(dx);
+    const BoutReal inner_x_value = inner_x_A * inner_x_J * inner_x_g11 /
+      (J[i] * inner_x_dx * dx[i]);
+    result[i] += inner_x_value * (f[i.xm()] - f[i]);
+
+    // upper y boundary
+    const auto upper_y_avg = [&i](const auto& f) { return 0.5 * (f[i] + f[i.yp()]); };
+    const BoutReal upper_y_A = upper_y_avg(A);
+    const BoutReal upper_y_J = upper_y_avg(J);
+    const BoutReal upper_y_g_22 = upper_y_avg(g_22);
+    const BoutReal upper_y_g23 = upper_y_avg(g23);
+    const BoutReal upper_y_g_23 = upper_y_avg(g_23);
+    const BoutReal upper_y_dy = upper_y_avg(dy);
+    const BoutReal upper_y_value = -upper_y_A * upper_y_J * upper_y_g23 *upper_y_g_23 /
+      (upper_y_g_22 * J[i] * upper_y_dy * dy[i]);
+    result[i] += upper_y_value * (f[i.yp()] - f[i]);
+
+    // lower y boundary
+    const auto lower_y_avg = [&i](const auto& f) { return 0.5 * (f[i] + f[i.ym()]); };
+    const BoutReal lower_y_A = lower_y_avg(A);
+    const BoutReal lower_y_J = lower_y_avg(J);
+    const BoutReal lower_y_g_22 = lower_y_avg(g_22);
+    const BoutReal lower_y_g23 = lower_y_avg(g23);
+    const BoutReal lower_y_g_23 = lower_y_avg(g_23);
+    const BoutReal lower_y_dy = lower_y_avg(dy);
+    const BoutReal lower_y_value = -lower_y_A * lower_y_J * lower_y_g23 * lower_y_g_23 /
+      (lower_y_g_22 * J[i] * lower_y_dy * dy[i]);
+    result[i] += lower_y_value * (f[i.ym()] - f[i]);
+  }
 
   return result;
 }

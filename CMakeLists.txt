@@ -10,6 +10,7 @@ endif()
 # Set the version here, strip any extra tags to use in `project`
 set(BOUT_FULL_VERSION 5.0.0-alpha)
 string(REGEX REPLACE "^([0-9]+\.[0-9]+\.[0-9]+)-.*" "\\1" BOUT_CMAKE_ACCEPTABLE_VERSION ${BOUT_FULL_VERSION})
+string(REGEX REPLACE "^[0-9]+\.[0-9]+\.[0-9]+-(.*)" "\\1" BOUT_VERSION_TAG ${BOUT_FULL_VERSION})
 
 project(BOUT++
   DESCRIPTION "Fluid PDE solver framework"
@@ -20,6 +21,9 @@ project(BOUT++
 # correct MPI, workaround for https://gitlab.kitware.com/cmake/cmake/issues/18895
 find_program(MPIEXEC_EXECUTABLE NAMES mpiexec mpirun)
 find_package(MPI REQUIRED)
+
+# Override default
+option(INSTALL_GTEST "Enable installation of googletest. (Projects embedding googletest may want to turn this OFF.)" OFF)
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
@@ -84,6 +88,7 @@ set(BOUT_SOURCES
   ./include/bout/snb.hxx
   ./include/bout/solver.hxx
   ./include/bout/surfaceiter.hxx
+  ./include/bout/operatorstencil.hxx
   ./include/bout/sys/expressionparser.hxx
   ./include/bout/sys/generator_context.hxx
   ./include/bout/sys/gettext.hxx
@@ -114,6 +119,7 @@ set(BOUT_SOURCES
   ./include/gyro_average.hxx
   ./include/initialprofiles.hxx
   ./include/interpolation.hxx
+  ./include/interpolation_xz.hxx
   ./include/invert_laplace.hxx
   ./include/invert_parderiv.hxx
   ./include/lapack_routines.hxx
@@ -210,16 +216,19 @@ set(BOUT_SOURCES
   ./src/mesh/impls/bout/boutmesh.cxx
   ./src/mesh/impls/bout/boutmesh.hxx
   ./src/mesh/index_derivs.cxx
-  ./src/mesh/interpolation.cxx
-  ./src/mesh/interpolation/bilinear.cxx
-  ./src/mesh/interpolation/hermite_spline.cxx
-  ./src/mesh/interpolation/lagrange_4pt.cxx
-  ./src/mesh/interpolation/monotonic_hermite_spline.cxx
+  ./src/mesh/interpolation_xz.cxx
+  ./src/mesh/interpolation/bilinear_xz.cxx
+  ./src/mesh/interpolation/hermite_spline_xz.cxx
+  ./src/mesh/interpolation/hermite_spline_z.cxx
+  ./src/mesh/interpolation/lagrange_4pt_xz.cxx
+  ./src/mesh/interpolation/monotonic_hermite_spline_xz.cxx
   ./src/mesh/mesh.cxx
   ./src/mesh/parallel/fci.cxx
   ./src/mesh/parallel/fci.hxx
   ./src/mesh/parallel/identity.cxx
   ./src/mesh/parallel/shiftedmetric.cxx
+  ./src/mesh/parallel/shiftedmetricinterp.cxx
+  ./src/mesh/parallel/shiftedmetricinterp.hxx
   ./src/mesh/parallel_boundary_op.cxx
   ./src/mesh/parallel_boundary_region.cxx
   ./src/mesh/surfaceiter.cxx
@@ -283,12 +292,13 @@ set(BOUT_SOURCES
   ./src/sys/optionsreader.cxx
   ./src/sys/output.cxx
   ./src/sys/petsclib.cxx
-  ./src/sys/petsc_interface.cxx
   ./src/sys/range.cxx
   ./src/sys/slepclib.cxx
   ./src/sys/timer.cxx
   ./src/sys/type_name.cxx
   ./src/sys/utils.cxx
+  ${CMAKE_CURRENT_BINARY_DIR}/include/bout/revision.hxx
+  ${CMAKE_CURRENT_BINARY_DIR}/include/bout/version.hxx
   )
 
 add_library(bout++
@@ -298,16 +308,40 @@ add_library(bout++::bout++ ALIAS bout++)
 target_link_libraries(bout++ PUBLIC MPI::MPI_CXX)
 target_include_directories(bout++ PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
   $<INSTALL_INTERFACE:include>
-  )
-
-target_compile_definitions(bout++
-  PUBLIC "BOUT_VERSION_STRING=\"${BOUT_FULL_VERSION}\""
-  PUBLIC "BOUT_VERSION_DOUBLE=${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}${PROJECT_VERSION_PATCH}"
   )
 
 target_compile_features(bout++ PUBLIC cxx_std_14)
 set_target_properties(bout++ PROPERTIES CXX_EXTENSIONS OFF)
+
+##################################################
+# Components of the version number
+# Pre-release identifier (BOUT_VERSION_TAG) set above
+set(BOUT_VERSION ${BOUT_FULL_VERSION})
+set(BOUT_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
+set(BOUT_VERSION_MINOR ${PROJECT_VERSION_MINOR})
+set(BOUT_VERSION_PATCH ${PROJECT_VERSION_PATCH})
+
+# Get the git commit
+include(GetGitRevisionDescription)
+get_git_head_revision(GIT_REFSPEC BOUT_REVISION)
+if(BOUT_REVISION STREQUAL "GITDIR-NOTFOUND")
+  set(BOUT_REVISION "Unknown")
+endif()
+message(STATUS "Git revision: ${BOUT_REVISION}")
+
+# Build the file containing the version information
+configure_file(
+  "${PROJECT_SOURCE_DIR}/include/bout/version.hxx.in"
+  "${PROJECT_BINARY_DIR}/include/bout/version.hxx")
+# Build the file containing just the commit hash
+# This will be rebuilt on every commit!
+configure_file(
+  "${PROJECT_SOURCE_DIR}/include/bout/revision.hxx.in"
+  "${PROJECT_BINARY_DIR}/include/bout/revision.hxx")
+
+##################################################
 
 if(GIT_SUBMODULE OR (EXISTS externalpackages/mpark.variant/CMakeLists.txt))
   option(BOUT_USE_SYSTEM_MPARK_VARIANT "Use external installation of mpark.variant" OFF)
@@ -372,7 +406,7 @@ endif()
 # Compile time features
 
 set(CHECK_LEVELS 0 1 2 3 4)
-set(CHECK 3 CACHE STRING "Set run-time checking level")
+set(CHECK 2 CACHE STRING "Set run-time checking level")
 set_property(CACHE CHECK PROPERTY STRINGS ${CHECK_LEVELS})
 if (NOT CHECK IN_LIST CHECK_LEVELS)
   message(FATAL_ERROR "CHECK must be one of ${CHECK_LEVELS}")
@@ -458,13 +492,6 @@ if (ENABLE_OPENMP)
 endif()
 message(STATUS "Enable OpenMP: ${ENABLE_OPENMP}")
 set(BOUT_USE_OPENMP ${ENABLE_OPENMP})
-
-include(GetGitRevisionDescription)
-get_git_head_revision(GIT_REFSPEC GIT_SHA1)
-message(STATUS "Git revision: ${GIT_SHA1}")
-target_compile_definitions(bout++
-  PUBLIC "REVISION=${GIT_SHA1}")
-set(BOUT_GIT_REVISION ${GIT_SHA1})
 
 # Optional dependencies
 
@@ -781,7 +808,12 @@ install(TARGETS bout++
   RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
   INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
   )
-install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+# Repo files
+install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  FILES_MATCHING PATTERN "*.hxx")
+# Generated headers
+install(DIRECTORY "${PROJECT_BINARY_DIR}/include/"
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(

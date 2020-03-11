@@ -24,7 +24,7 @@ cflags="@CONFIG_CFLAGS@"
 libs="@CONFIG_LDFLAGS@"
 
 version="@BOUT_VERSION@"
-git="@GIT_REVISION@"
+git="@BOUT_REVISION@"
 idlpath="@IDLCONFIGPATH@"
 pythonpath="@PYTHONCONFIGPATH@"
 

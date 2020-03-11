@@ -49,14 +49,19 @@ Mesh* Mesh::create(GridDataSource *s, Options *opt) {
 
 Mesh *Mesh::create(Options *opt) { return create(nullptr, opt); }
 
-Mesh::Mesh(GridDataSource *s, Options* opt) : source(s), options(opt) {
+Mesh::Mesh(GridDataSource *s, Options* opt)
+  : source(s), options(opt == nullptr ? Options::getRoot()->getSection("mesh") : opt),
+    include_corner_cells((*options)["include_corner_cells"]
+                         .doc("Communicate corner guard and boundary cells. Can be set "
+                               "to false if you are sure that you will not need these "
+                               "cells, for mixed derivatives D2DXDY (or anything else), "
+                               "for example if your grid has orthogonal x- and "
+                               "y-directions.  This might slightly reduce communication "
+                               "time.")
+                         .withDefault(true)) {
   if(s == nullptr)
     throw BoutException("GridDataSource passed to Mesh::Mesh() is NULL");
   
-  if (options == nullptr) {
-    options = Options::getRoot()->getSection("mesh");
-  }
-
   /// Get mesh options
   OPTION(options, StaggerGrids,   false); // Stagger grids
   OPTION(options, maxregionblocksize, MAXREGIONBLOCKSIZE);
@@ -269,20 +274,51 @@ void Mesh::communicateXZ(FieldGroup &g) {
   TRACE("Mesh::communicate(FieldGroup&)");
 
   // Send data
-  comm_handle h = send(g);
+  comm_handle h = sendX(g);
 
   // Wait for data from other processors
   wait(h);
 }
 
-void Mesh::communicate(FieldGroup &g) {
+void Mesh::communicateYZ(FieldGroup &g) {
   TRACE("Mesh::communicate(FieldGroup&)");
 
   // Send data
-  comm_handle h = send(g);
+  comm_handle h = sendY(g);
 
   // Wait for data from other processors
   wait(h);
+
+  // Calculate yup and ydown fields for 3D fields
+  if (calcParallelSlices_on_communicate) {
+    for(const auto& fptr : g.field3d()) {
+      fptr->calcParallelSlices();
+    }
+  }
+}
+
+void Mesh::communicate(FieldGroup &g) {
+  TRACE("Mesh::communicate(FieldGroup&)");
+
+  if (include_corner_cells) {
+    // Send data in y-direction
+    comm_handle h = sendY(g);
+
+    // Wait for data from other processors
+    wait(h);
+
+    // Send data in x-direction
+    h = sendX(g);
+
+    // Wait for data from other processors
+    wait(h);
+  } else {
+    // Send data
+    comm_handle h = send(g);
+
+    // Wait for data from other processors
+    wait(h);
+  }
 
   // Calculate yup and ydown fields for 3D fields
   if (calcParallelSlices_on_communicate) {
@@ -365,89 +401,6 @@ bool Mesh::hasBndryUpperY() {
   answer = static_cast<bool>(allbndry);
   calc = true;
   return answer;
-}
-
-int Mesh::localSize3D() {
-  if (localNumCells3D < 0) {
-    const int xs = firstX() ? xstart - 1 : xstart;
-    const int xe = lastX() ? xend + 2 : xend + 1;
-    const int nx = xe - xs;
-    const int ny = yend - ystart + 1;
-    const int nz = LocalNz;
-    localNumCells3D = nx * ny * nz;
-    for (RangeIterator it = iterateBndryLowerY(); !it.isDone(); it++) {
-      if (it.ind == xstart)
-        localNumCells3D += nz;
-      if (it.ind == xend)
-        localNumCells3D += nz;
-      localNumCells3D += nz;
-    }
-    for (RangeIterator it = iterateBndryUpperY(); !it.isDone(); it++) {
-      if (it.ind == xstart)
-        localNumCells3D += nz;
-      if (it.ind == xend)
-        localNumCells3D += nz;
-      localNumCells3D += nz;
-    }
-  }
-  return localNumCells3D;
-}
-
-int Mesh::localSize2D() {
-  if (localNumCells2D < 0) {
-    const int xs = firstX() ? xstart - 1 : xstart;
-    const int xe = lastX() ? xend + 2 : xend + 1;
-    const int nx = xe - xs;
-    const int ny = yend - ystart + 1;
-    localNumCells2D = nx * ny;
-    for (RangeIterator it = iterateBndryLowerY(); !it.isDone(); it++) {
-      if (it.ind == xstart)
-        localNumCells2D += 1;
-      if (it.ind == xend)
-        localNumCells2D += 1;
-      localNumCells2D += 1;
-    }
-    for (RangeIterator it = iterateBndryUpperY(); !it.isDone(); it++) {
-      if (it.ind == xstart)
-        localNumCells2D += 1;
-      if (it.ind == xend)
-        localNumCells2D += 1;
-      localNumCells2D += 1;
-    }
-  }
-  return localNumCells2D;
-}
-
-int Mesh::localSizePerp() {
-  if (localNumCellsPerp < 0) {
-    const int xs = firstX() ? xstart - 1 : xstart;
-    const int xe = lastX() ? xend + 2 : xend + 1;
-    const int nx = xe - xs;
-    const int nz = LocalNz;
-    localNumCellsPerp = nx * nz;
-  }
-  return localNumCellsPerp;
-}
-
-int Mesh::globalStartIndex3D() {
-  int localSize = localSize3D();
-  int cumulativeSize;
-  mpi->MPI_Scan(&localSize, &cumulativeSize, 1, MPI_INT, MPI_SUM, BoutComm::get());
-  return cumulativeSize - localSize;
-}
-
-int Mesh::globalStartIndex2D() {
-  int localSize = localSize2D();
-  int cumulativeSize;
-  mpi->MPI_Scan(&localSize, &cumulativeSize, 1, MPI_INT, MPI_SUM, BoutComm::get());
-  return cumulativeSize - localSize;
-}
-
-int Mesh::globalStartIndexPerp() {
-  int localSize = localSizePerp();
-  int cumulativeSize;
-  mpi->MPI_Scan(&localSize, &cumulativeSize, 1, MPI_INT, MPI_SUM, getXcomm());
-  return cumulativeSize - localSize;
 }
 
 const std::vector<int> Mesh::readInts(const std::string &name, int n) {

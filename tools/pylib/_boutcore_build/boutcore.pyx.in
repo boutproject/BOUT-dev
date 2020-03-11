@@ -1529,7 +1529,7 @@ def setOption(name, value, source="PyInterface", force=False):
     ----------
     name : string
         the name of the value to be set. Can be relative,
-        e.g. `mesh:ddx:first`.
+        e.g. "mesh:ddx:first".
     value : string
         the value to be set
     source : string
@@ -1607,7 +1607,7 @@ cdef class Options:
         ----------
         name : string
              the name of the value to be set. Can be relative,
-             e.g. `mesh:ddx:first`.
+             e.g. "mesh:ddx:first".
         value : string
             the value to be set
         source : string, optional
@@ -1637,7 +1637,7 @@ cdef class Options:
         ----------
         name : string
              the name of the value to get. Can be relative,
-             e.g. `mesh:ddx:first`.
+             e.g. "mesh:ddx:first".
         default : bool or string or float
             Depending on the type of the default, different things will be returned.
             Supported types are bool, string or float
