@@ -3,8 +3,6 @@ from __future__ import division
 from builtins import range
 from past.utils import old_div
 import numpy as np
-from bunch import Bunch
-
 
 def elm_size(dcp,p0,uedge,xmin=None,xmax=None,yind=None,Bbar=None):
   
