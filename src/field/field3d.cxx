@@ -60,7 +60,8 @@ Field3D::Field3D(Mesh* localmesh, CELL_LOC location_in,
 
 /// Doesn't copy any data, just create a new reference to the same data (copy on change
 /// later)
-Field3D::Field3D(const Field3D& f) : Field(f), data(f.data) {
+Field3D::Field3D(const Field3D& f)
+    : Field(f), data(f.data), yup_fields(f.yup_fields), ydown_fields(f.ydown_fields) {
 
   TRACE("Field3D(Field3D&)");
 
