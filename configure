@@ -9439,6 +9439,66 @@ if test -n "$PETSC_CFLAGS"; then
     pkg_cv_PETSC_CFLAGS="$PETSC_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"PETSc >= 3.4.0 \""; } >&5
+  ($PKG_CONFIG --exists --print-errors "PETSc >= 3.4.0 ") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PETSC_CFLAGS=`$PKG_CONFIG --cflags "PETSc >= 3.4.0 " 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$PETSC_LIBS"; then
+    pkg_cv_PETSC_LIBS="$PETSC_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"PETSc >= 3.4.0 \""; } >&5
+  ($PKG_CONFIG --exists --print-errors "PETSc >= 3.4.0 ") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PETSC_LIBS=`$PKG_CONFIG --libs "PETSc >= 3.4.0 " 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        PETSC_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "PETSc >= 3.4.0 " 2>&1`
+        else
+	        PETSC_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "PETSc >= 3.4.0 " 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$PETSC_PKG_ERRORS" >&5
+
+
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for PETSC" >&5
+$as_echo_n "checking for PETSC... " >&6; }
+
+if test -n "$PETSC_CFLAGS"; then
+    pkg_cv_PETSC_CFLAGS="$PETSC_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
     { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"petsc >= 3.4.0 \""; } >&5
   ($PKG_CONFIG --exists --print-errors "petsc >= 3.4.0 ") 2>&5
   ac_status=$?
@@ -9490,7 +9550,7 @@ fi
 	echo "$PETSC_PKG_ERRORS" >&5
 
 
-	as_fn_error $? "--with-petsc was specified but could not find PETSc distribution.
+	      as_fn_error $? "--with-petsc was specified but could not find PETSc distribution.
   You may need to specify PETSC_DIR and PETSC_ARCH like so:
       --with-petsc PETSC_DIR=\$PETSC_DIR PETSC_ARCH=\$PETSC_ARCH
   Also see the help online:
@@ -9501,12 +9561,110 @@ elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
-	as_fn_error $? "--with-petsc was specified but could not find PETSc distribution.
+	      as_fn_error $? "--with-petsc was specified but could not find PETSc distribution.
   You may need to specify PETSC_DIR and PETSC_ARCH like so:
       --with-petsc PETSC_DIR=\$PETSC_DIR PETSC_ARCH=\$PETSC_ARCH
   Also see the help online:
       http://bout-dev.readthedocs.io/en/latest/user_docs/advanced_install.html#petsc
   " "$LINENO" 5
+
+else
+	PETSC_CFLAGS=$pkg_cv_PETSC_CFLAGS
+	PETSC_LIBS=$pkg_cv_PETSC_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	PETSC_PKGCONF=yes
+fi
+
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for PETSC" >&5
+$as_echo_n "checking for PETSC... " >&6; }
+
+if test -n "$PETSC_CFLAGS"; then
+    pkg_cv_PETSC_CFLAGS="$PETSC_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"petsc >= 3.4.0 \""; } >&5
+  ($PKG_CONFIG --exists --print-errors "petsc >= 3.4.0 ") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PETSC_CFLAGS=`$PKG_CONFIG --cflags "petsc >= 3.4.0 " 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$PETSC_LIBS"; then
+    pkg_cv_PETSC_LIBS="$PETSC_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"petsc >= 3.4.0 \""; } >&5
+  ($PKG_CONFIG --exists --print-errors "petsc >= 3.4.0 ") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PETSC_LIBS=`$PKG_CONFIG --libs "petsc >= 3.4.0 " 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        PETSC_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "petsc >= 3.4.0 " 2>&1`
+        else
+	        PETSC_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "petsc >= 3.4.0 " 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$PETSC_PKG_ERRORS" >&5
+
+
+	      as_fn_error $? "--with-petsc was specified but could not find PETSc distribution.
+  You may need to specify PETSC_DIR and PETSC_ARCH like so:
+      --with-petsc PETSC_DIR=\$PETSC_DIR PETSC_ARCH=\$PETSC_ARCH
+  Also see the help online:
+      http://bout-dev.readthedocs.io/en/latest/user_docs/advanced_install.html#petsc
+  " "$LINENO" 5
+
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+	      as_fn_error $? "--with-petsc was specified but could not find PETSc distribution.
+  You may need to specify PETSC_DIR and PETSC_ARCH like so:
+      --with-petsc PETSC_DIR=\$PETSC_DIR PETSC_ARCH=\$PETSC_ARCH
+  Also see the help online:
+      http://bout-dev.readthedocs.io/en/latest/user_docs/advanced_install.html#petsc
+  " "$LINENO" 5
+
+else
+	PETSC_CFLAGS=$pkg_cv_PETSC_CFLAGS
+	PETSC_LIBS=$pkg_cv_PETSC_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	PETSC_PKGCONF=yes
+fi
 
 else
 	PETSC_CFLAGS=$pkg_cv_PETSC_CFLAGS
