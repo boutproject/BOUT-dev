@@ -47,7 +47,11 @@ class BoutMesh : public Mesh {
                     bool disable_corners = false) override;
 
   /// Send only in the y-direction
-  comm_handle sendY(FieldGroup& g, comm_handle handle = nullptr) override;
+  comm_handle sendY(FieldGroup& g, comm_handle handle = nullptr,
+                    bool disable_corners = false) override;
+
+  /// Send only the corners
+  comm_handle sendCorners(FieldGroup& g, comm_handle handle = nullptr) override;
 
   /// Wait for a send operation to complete
   /// @param[in] handle  The handle returned by send()
@@ -315,8 +319,10 @@ private:
                     upout_corner_recvbuff;
     /// Is the communication still going?
     bool in_progress;
-    /// Are corner cells included in x-communication?
-    bool include_x_corners;
+    /// Are corner cells included in x-guards?
+    bool include_corners_in_xguards;
+    /// Are corner cells included in y-guards?
+    bool include_corners_in_yguards;
     /// Is there a y-communication
     bool has_y_communication;
     /// List of fields being communicated
@@ -348,8 +354,8 @@ private:
   /// Create the MPI requests to receive data in the y-direction. Non-blocking call.
   void post_receiveY(CommHandle& ch);
 
-  /// Create the MPI requests to receive data. Non-blocking call.
-  void post_receive(CommHandle& ch);
+  /// Create the MPI requests to receive data in the corner guard cells. Non-blocking call.
+  void post_receiveCorners(CommHandle& ch);
 
   /// Take data from objects and put into a buffer
   int pack_data(const std::vector<FieldData*>& var_list, int xge, int xlt, int yge,

@@ -339,7 +339,11 @@ class Mesh {
                             bool disable_corners = false) = 0;
 
   /// Send only the y-guard cells
-  virtual comm_handle sendY(FieldGroup &g, comm_handle handle = nullptr) = 0;
+  virtual comm_handle sendY(FieldGroup &g, comm_handle handle = nullptr,
+                            bool disable_corners = false) = 0;
+
+  /// Send only the corners
+  virtual comm_handle sendCorners(FieldGroup& g, comm_handle handle = nullptr) = 0;
 
   /// Wait for the handle, return error code
   virtual int wait(comm_handle handle) = 0;

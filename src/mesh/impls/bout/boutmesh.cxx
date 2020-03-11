@@ -941,16 +941,18 @@ const int UPIN_SEND = 7;
 const int LOWOUT_SEND = 8;
 const int UPOUT_SEND = 9;
 
-void BoutMesh::post_receive(CommHandle &ch) {
+void BoutMesh::post_receiveY(CommHandle &ch) {
   BoutReal *inbuff;
   int len;
 
   /// Post receive data from above (y+1)
 
   len = 0;
+  const int xinner = ch.include_corners_in_yguards ? 0 : YDATA_buff_innerX;
+  const int xouter = ch.include_corners_in_yguards ? LocalNx : YDATA_buff_outerX;
   if (UDATA_INDEST != -1) {
-    len = msg_len(ch.var_list.get(), YDATA_buff_innerX,
-                  in_range(UDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX), 0, MYG);
+    len = msg_len(ch.var_list.get(), xinner, in_range(UDATA_XSPLIT, xinner, xouter), 0,
+                  MYG);
     if (len > 0) {
       mpi->MPI_Irecv(std::begin(ch.umsg_recvbuff), len, PVEC_REAL_MPI_TYPE, UDATA_INDEST,
                      IN_SENT_DOWN, BoutComm::get(), &ch.request[0]);
@@ -959,9 +961,8 @@ void BoutMesh::post_receive(CommHandle &ch) {
   if (UDATA_OUTDEST != -1) {
     // check length of this receive is greater than 0, otherwise the receive buffer will
     // not have an element at [len]
-    int recv_len = msg_len(ch.var_list.get(),
-                           in_range(UDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX),
-                           YDATA_buff_outerX, 0, MYG);
+    int recv_len = msg_len(ch.var_list.get(), in_range(UDATA_XSPLIT, xinner, xouter),
+                           xouter, 0, MYG);
     if (recv_len > 0) {
       inbuff = &ch.umsg_recvbuff[len]; // pointer to second half of the buffer
       mpi->MPI_Irecv(inbuff, recv_len, PVEC_REAL_MPI_TYPE, UDATA_OUTDEST, OUT_SENT_DOWN,
@@ -974,8 +975,8 @@ void BoutMesh::post_receive(CommHandle &ch) {
   len = 0;
 
   if (DDATA_INDEST != -1) { // If sending & recieving data from a processor
-    len = msg_len(ch.var_list.get(), YDATA_buff_innerX,
-                  in_range(DDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX), 0, MYG);
+    len = msg_len(ch.var_list.get(), xinner,
+                  in_range(DDATA_XSPLIT, xinner, xouter), 0, MYG);
     if (len > 0) {
       mpi->MPI_Irecv(std::begin(ch.dmsg_recvbuff), len, PVEC_REAL_MPI_TYPE, DDATA_INDEST,
                      IN_SENT_UP, BoutComm::get(), &ch.request[2]);
@@ -985,8 +986,8 @@ void BoutMesh::post_receive(CommHandle &ch) {
     // check length of this receive is greater than 0, otherwise the receive buffer will
     // not have an element at [len]
     int recv_len = msg_len(ch.var_list.get(),
-                           in_range(DDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX),
-                           YDATA_buff_outerX, 0, MYG);
+                           in_range(DDATA_XSPLIT, xinner, xouter),
+                           xouter, 0, MYG);
 
     if (recv_len > 0) {
       inbuff = &ch.dmsg_recvbuff[len];
@@ -994,13 +995,17 @@ void BoutMesh::post_receive(CommHandle &ch) {
                      BoutComm::get(), &ch.request[3]);
     }
   }
+}
 
+void BoutMesh::post_receiveX(CommHandle &ch) {
   /// Post receive data from left (x-1)
 
   if (IDATA_DEST != -1) {
     mpi->MPI_Irecv(std::begin(ch.imsg_recvbuff),
-                   msg_len(ch.var_list.get(), 0, MXG, IDATA_buff_lowerY_recv,
-                           IDATA_buff_upperY_recv),
+                   msg_len(ch.var_list.get(), 0, MXG,
+                           ch.include_corners_in_xguards ? 0 : IDATA_buff_lowerY_recv,
+                           ch.include_corners_in_xguards ? LocalNy
+                                                           : IDATA_buff_upperY_recv),
                    PVEC_REAL_MPI_TYPE, IDATA_DEST, OUT_SENT_IN, BoutComm::get(),
                    &ch.request[4]);
   }
@@ -1009,12 +1014,16 @@ void BoutMesh::post_receive(CommHandle &ch) {
 
   if (ODATA_DEST != -1) {
     mpi->MPI_Irecv(std::begin(ch.omsg_recvbuff),
-                   msg_len(ch.var_list.get(), 0, MXG, ODATA_buff_lowerY_recv,
-                           ODATA_buff_upperY_recv),
+                   msg_len(ch.var_list.get(), 0, MXG,
+                           ch.include_corners_in_xguards ? 0 : ODATA_buff_lowerY_recv,
+                           ch.include_corners_in_xguards ? LocalNy
+                                                           : ODATA_buff_upperY_recv),
                    PVEC_REAL_MPI_TYPE, ODATA_DEST, IN_SENT_OUT, BoutComm::get(),
                    &ch.request[5]);
   }
+}
 
+void BoutMesh::post_receiveCorners(CommHandle &ch) {
   // Post receive data from corners
 
   if (lower_inner_corner_orig != -1) {
@@ -1048,32 +1057,60 @@ comm_handle BoutMesh::send(FieldGroup &g) {
   Timer timer("comms");
 
   /// Work out length of buffer needed
-  int xlen = msg_len(g.get(), 0, MXG, 0,
-                     std::max({IDATA_buff_upperY_send - IDATA_buff_lowerY_send,
-                               IDATA_buff_upperY_recv - IDATA_buff_lowerY_recv,
-                               ODATA_buff_upperY_send - ODATA_buff_lowerY_send,
-                               ODATA_buff_upperY_recv - ODATA_buff_lowerY_recv}));
-  int ylen = msg_len(g.get(), 0, YDATA_buff_outerX - YDATA_buff_innerX, 0, MYG);
-  int cornerlen = include_corner_cells ? msg_len(g.get(), 0, MXG, 0, MYG) : 0;
+  const int xlen = msg_len(g.get(), 0, MXG, 0,
+                           std::max({IDATA_buff_upperY_send - IDATA_buff_lowerY_send,
+                                     IDATA_buff_upperY_recv - IDATA_buff_lowerY_recv,
+                                     ODATA_buff_upperY_send - ODATA_buff_lowerY_send,
+                                     ODATA_buff_upperY_recv - ODATA_buff_lowerY_recv}));
+  const int ylen = msg_len(g.get(), 0, YDATA_buff_outerX - YDATA_buff_innerX, 0, MYG);
+  const int cornerlen = include_corner_cells ? msg_len(g.get(), 0, MXG, 0, MYG) : 0;
 
   /// Get a communications handle of (at least) the needed size
   CommHandle *ch = get_handle(xlen, ylen, cornerlen);
   ch->var_list = g; // Group of fields to send
 
-  /// Post receives
-  post_receive(*ch);
+  sendX(g, ch, true);
+  sendY(g, ch, include_corner_cells);
+  if (include_corner_cells) {
+    sendCorners(g, ch);
+  }
 
-  //////////////////////////////////////////////////
+  return static_cast<void *>(ch);
+}
+
+comm_handle BoutMesh::sendY(FieldGroup &g, comm_handle handle, bool disable_corners) {
+
+  /// Start timer
+  Timer timer("comms");
+
+  const bool with_corners = not disable_corners;
+
+  CommHandle* ch;
+  if (handle == nullptr) {
+    /// Work out length of buffer needed
+    const int ylen = msg_len(g.get(), 0, with_corners ? LocalNx : MXSUB, 0, MYG);
+
+    /// Get a communications handle of (at least) the needed size
+    ch = get_handle(0, ylen);
+    ch->var_list = g; // Group of fields to send
+  } else {
+    ch = static_cast<CommHandle*>(handle);
+  }
+
+  ch->include_corners_in_yguards = with_corners;
+
+  /// Post receives
+  post_receiveY(*ch);
+
+  int len = 0;
 
   /// Send data going up (y+1)
 
-  int len = 0;
-  BoutReal *outbuff;
-
+  const int xinner = with_corners ? 0 : YDATA_buff_innerX;
+  const int xouter = with_corners ? LocalNx : YDATA_buff_outerX;
   if (UDATA_INDEST != -1) { // If there is a destination for inner x data
-    len = pack_data(ch->var_list.get(), YDATA_buff_innerX,
-                    in_range(UDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX), MYSUB,
-                    MYSUB + MYG, std::begin(ch->umsg_sendbuff));
+    len = pack_data(ch->var_list.get(), xinner, in_range(UDATA_XSPLIT, xinner, xouter),
+                    MYSUB, MYSUB + MYG, std::begin(ch->umsg_sendbuff));
     // Send the data to processor UDATA_INDEST
 
     if (len > 0) {
@@ -1093,15 +1130,15 @@ comm_handle BoutMesh::send(FieldGroup &g) {
   if (UDATA_OUTDEST != -1) {             // if destination for outer x data
     // check length of this send is greater than 0, otherwise the receive buffer will not
     // have an element at [len]
-    int send_len = msg_len(ch->var_list.get(),
-                           in_range(UDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX),
-                           YDATA_buff_outerX, MYSUB, MYSUB + MYG);
+    const int send_len = msg_len(ch->var_list.get(),
+                                 in_range(UDATA_XSPLIT, xinner, xouter),
+                                 xouter, MYSUB, MYSUB + MYG);
     if (send_len > 0) {
-      outbuff = &(ch->umsg_sendbuff[len]); // A pointer to the start of the second part
-                                           // of the buffer
-      len = pack_data(ch->var_list.get(),
-                      in_range(UDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX),
-                      YDATA_buff_outerX, MYSUB, MYSUB + MYG, outbuff);
+      // A pointer to the start of the second part of the buffer
+      BoutReal* const outbuff = &(ch->umsg_sendbuff[len]);
+
+      pack_data(ch->var_list.get(), in_range(UDATA_XSPLIT, xinner, xouter), xouter, MYSUB,
+                MYSUB + MYG, outbuff);
       // Send the data to processor UDATA_OUTDEST
       if (async_send) {
         mpi->MPI_Isend(outbuff, send_len, PVEC_REAL_MPI_TYPE, UDATA_OUTDEST, OUT_SENT_UP,
@@ -1117,9 +1154,8 @@ comm_handle BoutMesh::send(FieldGroup &g) {
 
   len = 0;
   if (DDATA_INDEST != -1) { // If there is a destination for inner x data
-    len = pack_data(ch->var_list.get(), YDATA_buff_innerX,
-                    in_range(DDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX), MYG,
-                    2 * MYG, std::begin(ch->dmsg_sendbuff));
+    len = pack_data(ch->var_list.get(), xinner, in_range(DDATA_XSPLIT, xinner, xouter),
+                    MYG, 2 * MYG, std::begin(ch->dmsg_sendbuff));
 
     if (len > 0) {
       // Send the data to processor DDATA_INDEST
@@ -1135,16 +1171,16 @@ comm_handle BoutMesh::send(FieldGroup &g) {
   if (DDATA_OUTDEST != -1) {             // if destination for outer x data
     // check length of this send is greater than 0, otherwise the receive buffer will not
     // have an element at [len]
-    int send_len = msg_len(ch->var_list.get(),
-                           in_range(DDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX),
-                           YDATA_buff_outerX, MYG, 2 * MYG);
+    const int send_len = msg_len(ch->var_list.get(),
+                                 in_range(DDATA_XSPLIT, xinner, xouter),
+                                 xouter, MYG, 2 * MYG);
 
     if (send_len > 0) {
-      outbuff = &(ch->dmsg_sendbuff[len]); // A pointer to the start of the second part
-                                           // of the buffer
-      len = pack_data(ch->var_list.get(),
-                      in_range(DDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX),
-                      YDATA_buff_outerX, MYG, 2 * MYG, outbuff);
+      // A pointer to the start of the second part of the buffer
+      BoutReal* const outbuff = &(ch->dmsg_sendbuff[len]);
+
+      pack_data(ch->var_list.get(), in_range(DDATA_XSPLIT, xinner, xouter), xouter, MYG,
+                2 * MYG, outbuff);
       // Send the data to processor DDATA_OUTDEST
       if (async_send) {
         mpi->MPI_Isend(outbuff, send_len, PVEC_REAL_MPI_TYPE, DDATA_OUTDEST, OUT_SENT_DOWN,
@@ -1156,11 +1192,45 @@ comm_handle BoutMesh::send(FieldGroup &g) {
     }
   }
 
+  /// Mark communication handle as in progress
+  ch->in_progress = true;
+
+  /// Mark as y-communication
+  ch->has_y_communication = true;
+
+  return static_cast<void *>(ch);
+}
+
+comm_handle BoutMesh::sendX(FieldGroup &g, comm_handle handle, bool disable_corners) {
+  /// Start timer
+  Timer timer("comms");
+
+  const bool with_corners = include_corner_cells and not disable_corners;
+
+  CommHandle* ch;
+  if (handle == nullptr) {
+    /// Work out length of buffer needed
+    const int xlen = msg_len(g.get(), 0, MXG, 0, with_corners ? LocalNy : MYSUB);
+
+    /// Get a communications handle of (at least) the needed size
+    ch = get_handle(xlen, 0);
+    ch->var_list = g; // Group of fields to send
+  } else {
+    ch = static_cast<CommHandle*>(handle);
+  }
+
+  ch->include_corners_in_xguards = with_corners;
+
+  /// Post receives
+  post_receiveX(*ch);
+
   /// Send to the left (x-1)
 
   if (IDATA_DEST != -1) {
-    len = pack_data(ch->var_list.get(), MXG, 2 * MXG, IDATA_buff_lowerY_send,
-                    IDATA_buff_upperY_send, std::begin(ch->imsg_sendbuff));
+    const int len = pack_data(ch->var_list.get(), MXG, 2 * MXG,
+                              with_corners ? 0 : IDATA_buff_lowerY_send,
+                              with_corners ? LocalNy : IDATA_buff_upperY_send,
+                              std::begin(ch->imsg_sendbuff));
     if (async_send) {
       mpi->MPI_Isend(std::begin(ch->imsg_sendbuff), len, PVEC_REAL_MPI_TYPE, IDATA_DEST,
                      IN_SENT_OUT, BoutComm::get(), &(ch->sendreq[4]));
@@ -1172,8 +1242,10 @@ comm_handle BoutMesh::send(FieldGroup &g) {
   /// Send to the right (x+1)
 
   if (ODATA_DEST != -1) {
-    len = pack_data(ch->var_list.get(), MXSUB, MXSUB + MXG, ODATA_buff_lowerY_send,
-                    ODATA_buff_upperY_send, std::begin(ch->omsg_sendbuff));
+    const int len = pack_data(ch->var_list.get(), MXSUB, MXSUB + MXG,
+                              with_corners ? 0 : ODATA_buff_lowerY_send,
+                              with_corners ? LocalNy : ODATA_buff_upperY_send,
+                              std::begin(ch->omsg_sendbuff));
     if (async_send) {
       mpi->MPI_Isend(std::begin(ch->omsg_sendbuff), len, PVEC_REAL_MPI_TYPE, ODATA_DEST,
                      OUT_SENT_IN, BoutComm::get(), &(ch->sendreq[5]));
@@ -1182,10 +1254,34 @@ comm_handle BoutMesh::send(FieldGroup &g) {
                     OUT_SENT_IN, BoutComm::get());
   }
 
+  /// Mark communication handle as in progress
+  ch->in_progress = true;
+
+  return static_cast<void *>(ch);
+}
+
+comm_handle BoutMesh::sendCorners(FieldGroup &g, comm_handle handle) {
+  /// Start timer
+  Timer timer("comms");
+
+  CommHandle* ch;
+  if (handle == nullptr) {
+    const int cornerlen = include_corner_cells ? msg_len(g.get(), 0, MXG, 0, MYG) : 0;
+
+    /// Get a communications handle of (at least) the needed size
+    ch = get_handle(0, 0, cornerlen);
+    ch->var_list = g; // Group of fields to send
+  } else {
+    ch = static_cast<CommHandle*>(handle);
+  }
+
+  /// Post receives
+  post_receiveCorners(*ch);
+
   /// Send corners
   if (lower_inner_corner_dest != -1) {
-    len = pack_data(ch->var_list.get(), MXG, 2*MXG, MYG, 2*MYG,
-                    std::begin(ch->lowin_corner_sendbuff));
+    const int len = pack_data(ch->var_list.get(), MXG, 2*MXG, MYG, 2*MYG,
+                              std::begin(ch->lowin_corner_sendbuff));
     if (async_send) {
       mpi->MPI_Isend(std::begin(ch->lowin_corner_sendbuff), len, PVEC_REAL_MPI_TYPE,
                                 lower_inner_corner_dest, LOWIN_SEND, BoutComm::get(),
@@ -1196,8 +1292,8 @@ comm_handle BoutMesh::send(FieldGroup &g) {
     }
   }
   if (upper_inner_corner_dest != -1) {
-    len = pack_data(ch->var_list.get(), MXG, 2*MXG, MYSUB, MYG + MYSUB,
-                    std::begin(ch->upin_corner_sendbuff));
+    const int len = pack_data(ch->var_list.get(), MXG, 2*MXG, MYSUB, MYG + MYSUB,
+                              std::begin(ch->upin_corner_sendbuff));
     if (async_send) {
       mpi->MPI_Isend(std::begin(ch->upin_corner_sendbuff), len, PVEC_REAL_MPI_TYPE,
                                 upper_inner_corner_dest, UPIN_SEND, BoutComm::get(),
@@ -1208,8 +1304,8 @@ comm_handle BoutMesh::send(FieldGroup &g) {
     }
   }
   if (lower_outer_corner_dest != -1) {
-    len = pack_data(ch->var_list.get(), MXSUB, MXG + MXSUB, MYG, 2*MYG,
-                    std::begin(ch->lowout_corner_sendbuff));
+    const int len = pack_data(ch->var_list.get(), MXSUB, MXG + MXSUB, MYG, 2*MYG,
+                              std::begin(ch->lowout_corner_sendbuff));
     if (async_send) {
       mpi->MPI_Isend(std::begin(ch->lowout_corner_sendbuff), len, PVEC_REAL_MPI_TYPE,
                                 lower_outer_corner_dest, LOWOUT_SEND, BoutComm::get(),
@@ -1220,8 +1316,8 @@ comm_handle BoutMesh::send(FieldGroup &g) {
     }
   }
   if (upper_outer_corner_dest != -1) {
-    len = pack_data(ch->var_list.get(), MXSUB, MXG + MXSUB, MYSUB, MYG + MYSUB,
-                    std::begin(ch->upout_corner_sendbuff));
+    const int len = pack_data(ch->var_list.get(), MXSUB, MXG + MXSUB, MYSUB, MYG + MYSUB,
+                              std::begin(ch->upout_corner_sendbuff));
     if (async_send) {
       mpi->MPI_Isend(std::begin(ch->upout_corner_sendbuff), len, PVEC_REAL_MPI_TYPE,
                                 upper_outer_corner_dest, UPOUT_SEND, BoutComm::get(),
@@ -1270,42 +1366,48 @@ int BoutMesh::wait(comm_handle handle) {
     mpi->MPI_Waitany(10, ch->request, &ind, &status);
     switch (ind) {
     case 0: { // Up, inner
-      unpack_data(ch->var_list.get(), YDATA_buff_innerX,
-                  in_range(UDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX),
+      const int xinner = ch->include_corners_in_yguards ? 0 : YDATA_buff_innerX;
+      const int xouter = ch->include_corners_in_yguards ? LocalNx : YDATA_buff_outerX;
+      unpack_data(ch->var_list.get(), xinner, in_range(UDATA_XSPLIT, xinner, xouter),
                   MYSUB + MYG, MYSUB + 2 * MYG, std::begin(ch->umsg_recvbuff));
       break;
     }
     case 1: { // Up, outer
-      len = msg_len(ch->var_list.get(), YDATA_buff_innerX,
-                    in_range(UDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX), 0, MYG);
-      unpack_data(ch->var_list.get(),
-                  in_range(UDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX),
-                  YDATA_buff_outerX, MYSUB + MYG, MYSUB + 2 * MYG,
-                  &(ch->umsg_recvbuff[len]));
+      const int xinner = ch->include_corners_in_yguards ? 0 : YDATA_buff_innerX;
+      const int xouter = ch->include_corners_in_yguards ? LocalNx : YDATA_buff_outerX;
+      len = msg_len(ch->var_list.get(), xinner,
+                    in_range(UDATA_XSPLIT, xinner, xouter), 0, MYG);
+      unpack_data(ch->var_list.get(), in_range(UDATA_XSPLIT, xinner, xouter), xouter,
+                  MYSUB + MYG, MYSUB + 2 * MYG, &(ch->umsg_recvbuff[len]));
       break;
     }
     case 2: { // Down, inner
-      unpack_data(ch->var_list.get(), YDATA_buff_innerX,
-                  in_range(DDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX), 0, MYG,
-                  std::begin(ch->dmsg_recvbuff));
+      const int xinner = ch->include_corners_in_yguards ? 0 : YDATA_buff_innerX;
+      const int xouter = ch->include_corners_in_yguards ? LocalNx : YDATA_buff_outerX;
+      unpack_data(ch->var_list.get(), xinner, in_range(DDATA_XSPLIT, xinner, xouter), 0,
+                  MYG, std::begin(ch->dmsg_recvbuff));
       break;
     }
     case 3: { // Down, outer
-      len = msg_len(ch->var_list.get(), YDATA_buff_innerX,
-                    in_range(DDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX), 0, MYG);
-      unpack_data(ch->var_list.get(),
-                  in_range(DDATA_XSPLIT, YDATA_buff_innerX, YDATA_buff_outerX),
-                  YDATA_buff_outerX, 0, MYG, &(ch->dmsg_recvbuff[len]));
+      const int xinner = ch->include_corners_in_yguards ? 0 : YDATA_buff_innerX;
+      const int xouter = ch->include_corners_in_yguards ? LocalNx : YDATA_buff_outerX;
+      len = msg_len(ch->var_list.get(), xinner, in_range(DDATA_XSPLIT, xinner, xouter), 0,
+                    MYG);
+      unpack_data(ch->var_list.get(), in_range(DDATA_XSPLIT, xinner, xouter), xouter, 0,
+                  MYG, &(ch->dmsg_recvbuff[len]));
       break;
     }
     case 4: { // inner
-      unpack_data(ch->var_list.get(), 0, MXG, IDATA_buff_lowerY_recv,
-                  IDATA_buff_upperY_recv, std::begin(ch->imsg_recvbuff));
+      unpack_data(ch->var_list.get(), 0, MXG,
+                  ch->include_corners_in_xguards ? 0 : IDATA_buff_lowerY_recv,
+                  ch->include_corners_in_xguards ? LocalNy : IDATA_buff_upperY_recv,
+                  std::begin(ch->imsg_recvbuff));
       break;
     }
     case 5: { // outer
       unpack_data(ch->var_list.get(), MXSUB + MXG, MXSUB + 2 * MXG,
-                  ODATA_buff_lowerY_recv, ODATA_buff_upperY_recv,
+                  ch->include_corners_in_xguards ? 0 : ODATA_buff_lowerY_recv,
+                  ch->include_corners_in_xguards ? LocalNy : ODATA_buff_upperY_recv,
                   std::begin(ch->omsg_recvbuff));
       break;
     }
@@ -2593,7 +2695,8 @@ BoutMesh::CommHandle *BoutMesh::get_handle(int xlen, int ylen, int cornerlen) {
   }
 
   ch->in_progress = false;
-  ch->include_x_corners = false;
+  ch->include_corners_in_xguards = false;
+  ch->include_corners_in_yguards = false;
   ch->has_y_communication = false;
 
   ch->var_list.clear();

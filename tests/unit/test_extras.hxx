@@ -199,10 +199,11 @@ public:
                     bool UNUSED(disable_corners) = false) override {
     return nullptr;
   }
-  comm_handle sendY(FieldGroup& UNUSED(g), comm_handle UNUSED(handle) = nullptr) override
-  {
+  comm_handle sendY(FieldGroup& UNUSED(g), comm_handle UNUSED(handle) = nullptr,
+                    bool UNUSED(disable_corners) = false) override {
     return nullptr;
   }
+  comm_handle sendCorners(FieldGroup& UNUSED(g), comm_handle UNUSED(handle)) override { return nullptr; }
   int wait(comm_handle UNUSED(handle)) override { return 0; }
   MPI_Request sendToProc(int UNUSED(xproc), int UNUSED(yproc), BoutReal* UNUSED(buffer),
                          int UNUSED(size), int UNUSED(tag)) override {
