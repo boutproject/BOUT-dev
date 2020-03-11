@@ -61,7 +61,7 @@ v0_multiply = -1.0
 
 [All]
 scale = 0.0 # default size of initial perturbations
-function = gauss(y - pi, 0.1) * sin(z)
+function = gauss(y - pi, 0.1*pi) * sin(z)
 bndry_all = neumann # Set all boundaries to Neumann
 bndry_target = neumann_2ndorder
 
