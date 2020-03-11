@@ -1724,32 +1724,25 @@ void LaplaceXY::solveFiniteDifference(const Field2D& x0) {
  */
 int LaplaceXY::precon(Vec input, Vec result) {
   
-  RangeIterator itdwn=localmesh->iterateBndryLowerY();
-  if(!itdwn.isDone()) {
-    
-    for(; !itdwn.isDone(); itdwn++) {
-      // Should not go into corner cells, LaplaceXY stencil does not include them
-      if (itdwn.ind < localmesh->xstart or itdwn.ind > localmesh->xend) {
-        continue;
-      }
-      const int ind = globalIndex(itdwn.ind, localmesh->ystart-1);
-      PetscScalar val;
-      VecGetValues(input, 1, &ind, &val ); 
-      VecSetValues(result, 1, &ind, &val, INSERT_VALUES );
+  for(auto itdwn=localmesh->iterateBndryLowerY(); !itdwn.isDone(); itdwn++) {
+    // Should not go into corner cells, LaplaceXY stencil does not include them
+    if (itdwn.ind < localmesh->xstart or itdwn.ind > localmesh->xend) {
+      continue;
     }
+    const int ind = globalIndex(itdwn.ind, localmesh->ystart-1);
+    PetscScalar val;
+    VecGetValues(input, 1, &ind, &val );
+    VecSetValues(result, 1, &ind, &val, INSERT_VALUES );
   }
-  RangeIterator itup=localmesh->iterateBndryUpperY();
-  if(!itup.isDone()) {
-    for(; !itup.isDone(); itup++) {
-      // Should not go into corner cells, LaplaceXY stencil does not include them
-      if (itup.ind < localmesh->xstart or itup.ind > localmesh->xend) {
-        continue;
-      }
-      const int ind = globalIndex(itup.ind, localmesh->yend+1);
-      PetscScalar val;
-      VecGetValues(input, 1, &ind, &val ); 
-      VecSetValues(result, 1, &ind, &val, INSERT_VALUES );
+  for(auto itup=localmesh->iterateBndryUpperY(); !itup.isDone(); itup++) {
+    // Should not go into corner cells, LaplaceXY stencil does not include them
+    if (itup.ind < localmesh->xstart or itup.ind > localmesh->xend) {
+      continue;
     }
+    const int ind = globalIndex(itup.ind, localmesh->yend+1);
+    PetscScalar val;
+    VecGetValues(input, 1, &ind, &val );
+    VecSetValues(result, 1, &ind, &val, INSERT_VALUES );
   }
     
   // Load vector x into bvals array
