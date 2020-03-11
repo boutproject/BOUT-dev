@@ -347,6 +347,15 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   dcomplex Bu, Au, Ru;
   dcomplex Btmp, Atmp, Rtmp;
 
+  // Define indexing of xloc that depends on method. Doing this now removes
+  // branch in tight loops
+  int index_in = 1;
+  int index_out = 2;
+  if(new_method){
+    index_in = 2;
+    index_out = 1;
+  }
+
   SCOREP_USER_REGION_END(initvars);
   SCOREP_USER_REGION_DEFINE(initloop);
   SCOREP_USER_REGION_BEGIN(initloop, "init xk loop",SCOREP_USER_REGION_TYPE_COMMON);
@@ -710,35 +719,24 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	//
 	// Communicate in
 	if(!neighbour_in) {
-          int index = 1;
-	  if(new_method){
-            index = 2;
-	  }
-          message_send.value = xloc[index];
+          message_send.value = xloc[index_in];
           message_send.done  = self_in;
           err = MPI_Sendrecv(&message_send, sizeof(Message), MPI_BYTE, proc_in, 1, &message_recv, sizeof(Message), MPI_BYTE, proc_in, 0, comm, MPI_STATUS_IGNORE);
 
 	  xloc[0] = message_recv.value;
 	  neighbour_in = message_recv.done;
-	  //output<<"Proc "<<BoutComm::rank()<<" recving "<<tmprecv[0]<<" "<<tmprecv[1]<<" "<<neighbour_in<<endl;
 	}
 
 	// Communicate out
 	// See note above for inward communication.
 	if(!neighbour_out) {
-          int index = 2;
-	  if(new_method){
-            index = 1;
-	  }
-          message_send.value = xloc[index];
+          message_send.value = xloc[index_out];
           message_send.done  = self_out;
-	  //output<<"Proc "<<BoutComm::rank()<<" sending "<<tmpsend[0]<<" "<<tmpsend[1]<<" "<<self_out<<endl;
 
           err = MPI_Sendrecv(&message_send, sizeof(Message), MPI_BYTE, proc_out, 0, &message_recv, sizeof(Message), MPI_BYTE, proc_out, 1, comm, MPI_STATUS_IGNORE);
 
 	  xloc[3] = message_recv.value;
 	  neighbour_out = message_recv.done;
-	  //output<<"Proc "<<BoutComm::rank()<<" recving "<<tmprecv[0]<<" "<<tmprecv[1]<<" "<<neighbour_out<<endl;
 	}
 	SCOREP_USER_REGION_END(comms);
 
