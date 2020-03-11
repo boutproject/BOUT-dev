@@ -1349,6 +1349,7 @@ int BoutMesh::sendXOut(const dcomplex *buffer, int size, int tag) {
 }
 
 comm_handle BoutMesh::isendXIn(const dcomplex *buffer, int size, int tag) {
+  SCOREP0();
   if (PE_XIND == 0)
     return nullptr;
 
@@ -1364,6 +1365,7 @@ comm_handle BoutMesh::isendXIn(const dcomplex *buffer, int size, int tag) {
 }
 
 int BoutMesh::sendXIn(const dcomplex *buffer, int size, int tag) {
+  SCOREP0();
   if (PE_XIND == 0)
     return 1;
 
@@ -1425,6 +1427,7 @@ int BoutMesh::sendXOut(const dcomplex *buffer, int tag) {
 }
 
 int BoutMesh::sendXIn(const dcomplex *buffer, int tag) {
+  SCOREP0();
   if (PE_XIND == 0)
     return 1;
 
@@ -2124,6 +2127,7 @@ void BoutMesh::topology() {
  ****************************************************************/
 
 BoutMesh::CommHandle *BoutMesh::get_handle(int xlen, int ylen) {
+  SCOREP0();
   if (comm_list.empty()) {
     // Allocate a new CommHandle
 

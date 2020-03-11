@@ -250,6 +250,20 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   TRACE("LaplaceParallelTri::solve(const, const)");
 
   FieldPerp x{emptyFrom(b)};
+  MPI_Comm comm = BoutComm::get();
+  int xproc = localmesh->getXProcIndex();
+  int yproc = localmesh->getYProcIndex();
+  int myproc = yproc * localmesh->getNXPE() + xproc;
+  int proc_in = myproc - 1;
+  int proc_out = myproc + 1;
+  int err;
+
+  Array<dcomplex> tmpsend, tmprecv;
+  tmpsend = Array<dcomplex>(2);
+  tmprecv = Array<dcomplex>(2);
+
+  const dcomplex true_as_dc(1,0), false_as_dc(0,0);
+
 
   // Calculation variables
   // proc:       p-1   |          p          |       p+1
@@ -699,11 +713,6 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	//
 	// Communicate in
 	if(!neighbour_in) {
-	  Array<dcomplex> tmpsend, tmprecv;
-	  comm_handle recv[1];
-	  tmpsend = Array<dcomplex>(2);
-	  tmprecv = Array<dcomplex>(2);
-
 	  if(new_method){
 	    //xloc[0] = localmesh->communicateXIn(xloc[2]);
 	    //neighbour_in = localmesh->communicateXIn(self_in);
@@ -714,11 +723,26 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	    tmpsend[0] = xloc[1];
 	    //neighbour_in = localmesh->communicateXIn(self_in);
 	  }
-	  tmpsend[1] = dcomplex(BoutReal(self_in),0.0);
-	  recv[0] = localmesh->irecvXIn(&tmprecv[0], 2, 0);
+	  //tmpsend[1] = dcomplex(BoutReal(self_in),0.0);
+          if(self_in){
+            tmpsend[1] = true_as_dc;
+          }
+          else {
+            tmpsend[1] = false_as_dc;
+          }
+	  //recv[0] = localmesh->irecvXIn(&tmprecv[0], 2, 0);
+	  //localmesh->sendXIn(&tmpsend[0], 2, 1);
+	  //localmesh->wait(recv[0]);
+
+          /*
+	  MPI_Irecv(&tmprecv[0], 2, MPI_DOUBLE_COMPLEX, proc_in, 0, comm, &request[0]);
+	  MPI_Isend(&tmpsend[0], 2, MPI_DOUBLE_COMPLEX, proc_in, 1, comm, &request[1]);
+	  MPI_Waitall(2,&request[0],MPI_STATUS_IGNORE);
+          */
+
+          err = MPI_Sendrecv(&tmpsend[0], 2, MPI_DOUBLE_COMPLEX, proc_in, 1, &tmprecv[0], 2, MPI_DOUBLE_COMPLEX, proc_in, 0, comm, MPI_STATUS_IGNORE);
+
 	  //output<<"Proc "<<BoutComm::rank()<<" sending "<<tmpsend[0]<<" "<<tmpsend[1]<<" "<<self_in<<endl;
-	  localmesh->sendXIn(&tmpsend[0], 2, 1);
-	  localmesh->wait(recv[0]);
 	  xloc[0] = tmprecv[0];
 	  neighbour_in = static_cast<bool>(tmprecv[1].real());
 	  //output<<"Proc "<<BoutComm::rank()<<" recving "<<tmprecv[0]<<" "<<tmprecv[1]<<" "<<neighbour_in<<endl;
@@ -727,10 +751,6 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	// Communicate out
 	// See note above for inward communication.
 	if(!neighbour_out) {
-	  Array<dcomplex> tmpsend, tmprecv;
-	  comm_handle recv[1];
-	  tmpsend = Array<dcomplex>(2);
-	  tmprecv = Array<dcomplex>(2);
 	  if(new_method){
 	    //xloc[3] = localmesh->communicateXOut(xloc[1]);
 	    //neighbour_out = localmesh->communicateXOut(self_out);
@@ -742,11 +762,25 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	    tmpsend[0] = xloc[2];
 	  }
 
-	  tmpsend[1] = dcomplex(BoutReal(self_out),0.0);
+	  //tmpsend[1] = dcomplex(BoutReal(self_out),0.0);
+          if(self_out){
+            tmpsend[1] = true_as_dc;
+          }
+          else {
+            tmpsend[1] = false_as_dc;
+          }
 	  //output<<"Proc "<<BoutComm::rank()<<" sending "<<tmpsend[0]<<" "<<tmpsend[1]<<" "<<self_out<<endl;
-	  recv[0] = localmesh->irecvXOut(&tmprecv[0], 2, 1);
-	  localmesh->sendXOut(&tmpsend[0], 2, 0);
-	  localmesh->wait(recv[0]);
+	  //recv[0] = localmesh->irecvXOut(&tmprecv[0], 2, 1);
+	  //localmesh->sendXOut(&tmpsend[0], 2, 0);
+	  //localmesh->wait(recv[0]);
+          /*
+	  MPI_Irecv(&tmprecv[0], 2, MPI_DOUBLE_COMPLEX, proc_out, 1, comm, &request[0]);
+	  MPI_Isend(&tmpsend[0], 2, MPI_DOUBLE_COMPLEX, proc_out, 0, comm, &request[1]);
+	  MPI_Waitall(2,&request[0],MPI_STATUS_IGNORE);
+          */
+
+          err = MPI_Sendrecv(&tmpsend[0], 2, MPI_DOUBLE_COMPLEX, proc_out, 0, &tmprecv[0], 2, MPI_DOUBLE_COMPLEX, proc_out, 1, comm, MPI_STATUS_IGNORE);
+
 	  xloc[3] = tmprecv[0];
 	  neighbour_out = static_cast<bool>(tmprecv[1].real());
 	  //output<<"Proc "<<BoutComm::rank()<<" recving "<<tmprecv[0]<<" "<<tmprecv[1]<<" "<<neighbour_out<<endl;
