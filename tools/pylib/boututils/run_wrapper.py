@@ -2,6 +2,7 @@
 
 from builtins import str
 import os
+import pathlib
 import re
 import subprocess
 
@@ -292,16 +293,43 @@ def launch_safe(command, *args, **kwargs):
 def build_and_log(test):
     """Run make and redirect the output to a log file. Prints input
 
-    When using CMake, or on Windows, does nothing because executable
-    should have already been built
+    On Windows, does nothing because executable should have already
+    been built
 
     """
 
     if os.name == "nt":
         return
 
-    if os.path.exists("CMakeFiles"):
-        return
-
     print("Making {}".format(test))
-    return shell_safe("make > make.log")
+
+    if os.path.exists("makefile") or os.path.exists("Makefile"):
+        return shell_safe("make > make.log")
+
+    ctest_filename = "CTestTestfile.cmake"
+    if not os.path.exists(ctest_filename):
+        raise RuntimeError("Could not build: no makefile and no CMake files detected")
+
+    # We're using CMake, but we need to know the target name. If
+    # bout_add_integrated_test was used (which it should have been!),
+    # then the test name is the same as the target name
+    with open(ctest_filename, "r") as f:
+        contents = f.read()
+    match = re.search("add_test.(.*) ", contents)
+    if match is None:
+        raise RuntimeError("Using CMake, but could not determine test name")
+    test_name = match.group(1)
+
+    # Now we need to find the build directory. It'll be the first
+    # parent containing CMakeCache.txt
+    here = pathlib.Path(".").absolute()
+    for parent in here.parents:
+        if (parent / "CMakeCache.txt").exists():
+            return shell_safe(
+                "cmake --build {} --target {} > make.log".format(parent, test_name)
+            )
+
+    # We've just looked up the entire directory structure and not
+    # found the build directory, this could happen if CMakeCache was
+    # deleted, in which case we can't build anyway
+    raise RuntimeError("Using CMake, but could not find build directory")
