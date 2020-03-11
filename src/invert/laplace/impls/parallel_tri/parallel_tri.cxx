@@ -258,11 +258,8 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   int proc_out = myproc + 1;
   int err;
 
-  Array<dcomplex> tmpsend, tmprecv;
-  tmpsend = Array<dcomplex>(2);
-  tmprecv = Array<dcomplex>(2);
-
-  const dcomplex true_as_dc(1,0), false_as_dc(0,0);
+  struct Message { dcomplex value; bool done; };
+  Message message_send, message_recv;
 
 
   // Calculation variables
@@ -713,76 +710,34 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	//
 	// Communicate in
 	if(!neighbour_in) {
+          int index = 1;
 	  if(new_method){
-	    //xloc[0] = localmesh->communicateXIn(xloc[2]);
-	    //neighbour_in = localmesh->communicateXIn(self_in);
-	    tmpsend[0] = xloc[2];
+            index = 2;
 	  }
-	  else{
-	    //xloc[0] = localmesh->communicateXIn(xloc[1]);
-	    tmpsend[0] = xloc[1];
-	    //neighbour_in = localmesh->communicateXIn(self_in);
-	  }
-	  //tmpsend[1] = dcomplex(BoutReal(self_in),0.0);
-          if(self_in){
-            tmpsend[1] = true_as_dc;
-          }
-          else {
-            tmpsend[1] = false_as_dc;
-          }
-	  //recv[0] = localmesh->irecvXIn(&tmprecv[0], 2, 0);
-	  //localmesh->sendXIn(&tmpsend[0], 2, 1);
-	  //localmesh->wait(recv[0]);
+          message_send.value = xloc[index];
+          message_send.done  = self_in;
+          err = MPI_Sendrecv(&message_send, sizeof(Message), MPI_BYTE, proc_in, 1, &message_recv, sizeof(Message), MPI_BYTE, proc_in, 0, comm, MPI_STATUS_IGNORE);
 
-          /*
-	  MPI_Irecv(&tmprecv[0], 2, MPI_DOUBLE_COMPLEX, proc_in, 0, comm, &request[0]);
-	  MPI_Isend(&tmpsend[0], 2, MPI_DOUBLE_COMPLEX, proc_in, 1, comm, &request[1]);
-	  MPI_Waitall(2,&request[0],MPI_STATUS_IGNORE);
-          */
-
-          err = MPI_Sendrecv(&tmpsend[0], 2, MPI_DOUBLE_COMPLEX, proc_in, 1, &tmprecv[0], 2, MPI_DOUBLE_COMPLEX, proc_in, 0, comm, MPI_STATUS_IGNORE);
-
-	  //output<<"Proc "<<BoutComm::rank()<<" sending "<<tmpsend[0]<<" "<<tmpsend[1]<<" "<<self_in<<endl;
-	  xloc[0] = tmprecv[0];
-	  neighbour_in = static_cast<bool>(tmprecv[1].real());
+	  xloc[0] = message_recv.value;
+	  neighbour_in = message_recv.done;
 	  //output<<"Proc "<<BoutComm::rank()<<" recving "<<tmprecv[0]<<" "<<tmprecv[1]<<" "<<neighbour_in<<endl;
 	}
 
 	// Communicate out
 	// See note above for inward communication.
 	if(!neighbour_out) {
+          int index = 2;
 	  if(new_method){
-	    //xloc[3] = localmesh->communicateXOut(xloc[1]);
-	    //neighbour_out = localmesh->communicateXOut(self_out);
-	    tmpsend[0] = xloc[1];
+            index = 1;
 	  }
-	  else{
-	    //xloc[3] = localmesh->communicateXOut(xloc[2]);
-	    //neighbour_out = localmesh->communicateXOut(self_out);
-	    tmpsend[0] = xloc[2];
-	  }
-
-	  //tmpsend[1] = dcomplex(BoutReal(self_out),0.0);
-          if(self_out){
-            tmpsend[1] = true_as_dc;
-          }
-          else {
-            tmpsend[1] = false_as_dc;
-          }
+          message_send.value = xloc[index];
+          message_send.done  = self_out;
 	  //output<<"Proc "<<BoutComm::rank()<<" sending "<<tmpsend[0]<<" "<<tmpsend[1]<<" "<<self_out<<endl;
-	  //recv[0] = localmesh->irecvXOut(&tmprecv[0], 2, 1);
-	  //localmesh->sendXOut(&tmpsend[0], 2, 0);
-	  //localmesh->wait(recv[0]);
-          /*
-	  MPI_Irecv(&tmprecv[0], 2, MPI_DOUBLE_COMPLEX, proc_out, 1, comm, &request[0]);
-	  MPI_Isend(&tmpsend[0], 2, MPI_DOUBLE_COMPLEX, proc_out, 0, comm, &request[1]);
-	  MPI_Waitall(2,&request[0],MPI_STATUS_IGNORE);
-          */
 
-          err = MPI_Sendrecv(&tmpsend[0], 2, MPI_DOUBLE_COMPLEX, proc_out, 0, &tmprecv[0], 2, MPI_DOUBLE_COMPLEX, proc_out, 1, comm, MPI_STATUS_IGNORE);
+          err = MPI_Sendrecv(&message_send, sizeof(Message), MPI_BYTE, proc_out, 0, &message_recv, sizeof(Message), MPI_BYTE, proc_out, 1, comm, MPI_STATUS_IGNORE);
 
-	  xloc[3] = tmprecv[0];
-	  neighbour_out = static_cast<bool>(tmprecv[1].real());
+	  xloc[3] = message_recv.value;
+	  neighbour_out = message_recv.done;
 	  //output<<"Proc "<<BoutComm::rank()<<" recving "<<tmprecv[0]<<" "<<tmprecv[1]<<" "<<neighbour_out<<endl;
 	}
 	SCOREP_USER_REGION_END(comms);
