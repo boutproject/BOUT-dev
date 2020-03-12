@@ -51,16 +51,20 @@ if(EXISTS "@PVODE_ROOT@")
   set(PVODE_ROOT "@PVODE_ROOT@")
 endif()
 
-set(mpark_variant_DIR "${CMAKE_CURRENT_LIST_DIR}/../../../lib/cmake/mpark_variant")
-set(MPIEXEC_EXECUTABLE @MPIEXEC_EXECUTABLE@)
-
-if(@EXTERNAL_FMT@)
-  set(fmt_DIR "@fmt_DIR@")
+if(@BOUT_USE_SYSTEM_MPARK_VARIANT@)
+  set(mpark_variant_ROOT "@mpark_variant_ROOT@")
 else()
-  set(fmt_DIR "${CMAKE_CURRENT_LIST_DIR}/../../../lib/cmake/fmt")
+  # mpark.variant doesn't use GNUInstallDirs, always installs to lib
+  set(mpark_variant_ROOT "${CMAKE_CURRENT_LIST_DIR}/../../../lib/cmake/mpark_variant")
 endif()
 
+if(@BOUT_USE_SYSTEM_FMT@)
+  set(fmt_ROOT "@fmt_ROOT@")
+endif()
+
+set(MPIEXEC_EXECUTABLE @MPIEXEC_EXECUTABLE@)
 find_dependency(MPI @MPI_CXX_VERSION@ EXACT)
+
 if (BOUT_USE_OPENMP)
   find_dependency(OpenMP)
 endif()

@@ -181,8 +181,8 @@ if (NetCDF_DEBUG)
 endif()
 mark_as_advanced(NetCDF_CXX_LIBRARY)
 
-if (NetCDF_C_INCLUDE_DIR)
-  file(STRINGS "${NetCDF_C_INCLUDE_DIR}/netcdf_meta.h" _netcdf_version_lines
+if (NetCDF_CXX_INCLUDE_DIR)
+  file(STRINGS "${NetCDF_CXX_INCLUDE_DIR}/netcdf_meta.h" _netcdf_version_lines
     REGEX "#define[ \t]+NC_VERSION_(MAJOR|MINOR|PATCH|NOTE)")
   string(REGEX REPLACE ".*NC_VERSION_MAJOR *\([0-9]*\).*" "\\1" _netcdf_version_major "${_netcdf_version_lines}")
   string(REGEX REPLACE ".*NC_VERSION_MINOR *\([0-9]*\).*" "\\1" _netcdf_version_minor "${_netcdf_version_lines}")
