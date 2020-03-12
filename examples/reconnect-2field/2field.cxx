@@ -5,6 +5,7 @@
 
 #include <bout/physicsmodel.hxx>
 
+#include <interpolation.hxx>
 #include <invert_laplace.hxx>
 #include <invert_parderiv.hxx>
 #include <initialprofiles.hxx>
@@ -46,14 +47,13 @@ private:
 
 
   bool nonlinear;
-  bool parallel_lc;
   bool include_jpar0;
   int jpar_bndry;
 
   std::unique_ptr<InvertPar> inv{nullptr}; // Parallel inversion class used in preconditioner
 
   // Coordinate system metric
-  Coordinates *coord;
+  Coordinates *coord, *coord_ylow;
 
   // Inverts a Laplacian to get potential
   std::unique_ptr<Laplacian> phiSolver{nullptr};
@@ -67,17 +67,20 @@ protected:
     
     // Coordinate system
     coord = mesh->getCoordinates();
+    coord = mesh->getCoordinates(CELL_YLOW);
 
     // Load metrics
     GRID_LOAD(Rxy, Bpxy, Btxy, hthe);
     mesh->get(coord->Bxy, "Bxy");
+
+    // Set locations of staggered fields
+    Apar.setLocation(CELL_YLOW);
 
     // Read some parameters
     auto& options = Options::root()["2field"];
 
     // normalisation values
     nonlinear = options["nonlinear"].withDefault(false);
-    parallel_lc = options["parallel_lc"].withDefault(true);
     include_jpar0 = options["include_jpar0"].withDefault(true);
     jpar_bndry = options["jpar_bndry"].withDefault(0);
 
@@ -214,41 +217,17 @@ protected:
     return 0;
   }
 
-  const Field3D Grad_parP_LtoC(const Field3D &f) {
+  const Field3D Grad_parP(const Field3D &f, CELL_LOC loc = CELL_DEFAULT) {
     Field3D result;
-    if (parallel_lc) {
-      result = Grad_par_LtoC(f);
-      if (nonlinear) {
-        result -= beta_hat * bracket(Apar_ext + Apar, f, BRACKET_ARAKAWA);
-      } else
-        result -= beta_hat * bracket(Apar_ext, f, BRACKET_ARAKAWA);
+    if (nonlinear) {
+      result = ::Grad_parP((Apar + Apar_ext) * beta_hat, f);
     } else {
-      if (nonlinear) {
-        result = Grad_parP((Apar + Apar_ext) * beta_hat, f);
-      } else {
-        result = Grad_parP(Apar_ext * beta_hat, f);
-      }
+      result = ::Grad_parP(Apar_ext * beta_hat, f);
     }
-    return result;
-  }
-
-  const Field3D Grad_parP_CtoL(const Field3D &f) {
-    Field3D result;
-    if (parallel_lc) {
-      result = Grad_par_CtoL(f);
-      if (nonlinear) {
-        result -= beta_hat * bracket(Apar + Apar_ext, f, BRACKET_ARAKAWA);
-      } else {
-        result -= beta_hat * bracket(Apar_ext, f, BRACKET_ARAKAWA);
-      }
-    } else {
-      if (nonlinear) {
-        result = Grad_parP((Apar + Apar_ext) * beta_hat, f);
-      } else {
-        result = Grad_parP(Apar_ext * beta_hat, f);
-      }
+    if (mesh->StaggerGrids) {
+      mesh->communicate(result);
     }
-    return result;
+    return interp_to(result, loc);
   }
 
   int rhs(BoutReal UNUSED(time)) override {
@@ -283,11 +262,14 @@ protected:
     }
 
     // VORTICITY
-    ddt(U) = SQ(coord->Bxy) * Grad_parP_LtoC(jpar / coord->Bxy);
+    ddt(U) = SQ(coord->Bxy) * Grad_parP(jpar / coord_ylow->Bxy, CELL_CENTRE);
 
     if (include_jpar0) {
       ddt(U) -= SQ(coord->Bxy) * beta_hat *
-                bracket(Apar + Apar_ext, Jpar0 / coord->Bxy, BRACKET_ARAKAWA);
+                interp_to(
+                    bracket(Apar + Apar_ext, Jpar0 / coord_ylow->Bxy, BRACKET_ARAKAWA),
+                    CELL_CENTRE
+                );
     }
 
     ddt(U) -= bracket(Phi0_ext, U, bm); // ExB advection
@@ -301,8 +283,8 @@ protected:
 
     // APAR
 
-    ddt(Apar) = -Grad_parP_CtoL(phi) / beta_hat;
-    ddt(Apar) += -Grad_parP_CtoL(Phi0_ext) / beta_hat;
+    ddt(Apar) = -Grad_parP(phi, CELL_YLOW) / beta_hat;
+    ddt(Apar) += -Grad_parP(Phi0_ext, CELL_YLOW) / beta_hat;
 
     if (eta > 0.)
       ddt(Apar) -= eta * jpar / beta_hat;
@@ -343,7 +325,8 @@ public:
       }
     }
 
-    Field3D U1 = ddt(U) + gamma * SQ(coord->Bxy) * Grad_par_LtoC(Jp / coord->Bxy);
+    Field3D U1 = ddt(U) + gamma * SQ(coord->Bxy)
+                          * Grad_par(Jp / coord_ylow->Bxy, CELL_CENTRE);
 
     inv->setCoefB(-SQ(gamma * coord->Bxy) / beta_hat);
     ddt(U) = inv->solve(U1);
@@ -352,7 +335,7 @@ public:
     Field3D phip = phiSolver->solve(coord->Bxy * ddt(U));
     mesh->communicate(phip);
 
-    ddt(Apar) = ddt(Apar) - (gamma / beta_hat) * Grad_par_CtoL(phip);
+    ddt(Apar) = ddt(Apar) - (gamma / beta_hat) * Grad_par(phip, CELL_YLOW);
     ddt(Apar).applyBoundary();
 
     return 0;

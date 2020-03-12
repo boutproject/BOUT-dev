@@ -13,7 +13,7 @@ from __future__ import division
 from __future__ import print_function
 from builtins import str
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe
+from boututils.run_wrapper import shell, build_and_log, launch_safe
 from boutdata.collect import collect
 
 from numpy import sqrt, max, abs, mean, array, log
@@ -23,9 +23,7 @@ from os.path import join
 import matplotlib.pyplot as plt
 
 
-
-print("Making MMS diffusion test")
-shell_safe("make > make.log")
+build_and_log("MMS diffusion test")
 
 # List of input directories
 inputs = [

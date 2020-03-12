@@ -1,5 +1,10 @@
+bout_update_submodules()
 add_subdirectory("${PROJECT_SOURCE_DIR}/externalpackages/googletest"
   "externalpackages/googletest")
+
+if(NOT TARGET gtest)
+  message(FATAL_ERROR "googletest not found! Have you disabled the git submodules (GIT_SUBMODULE)?")
+endif()
 
 mark_as_advanced(
   BUILD_GMOCK BUILD_GTEST BUILD_SHARED_LIBS

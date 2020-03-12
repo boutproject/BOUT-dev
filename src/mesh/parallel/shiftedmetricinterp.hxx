@@ -28,7 +28,7 @@
 #define __SHIFTEDINTERP_H__
 
 #include <bout/paralleltransform.hxx>
-#include <interpolation.hxx>
+#include <interpolation_z.hxx>
 
 /*!
  * Shifted metric method
@@ -36,27 +36,29 @@
  * so that the grid is orthogonal in X-Z, but requires interpolation
  * to calculate the values of points along field-lines.
  *
- * In this implementation the interpolation is done using Interpolation objects
+ * In this implementation the interpolation is done using ZInterpolation objects
  */
 class ShiftedMetricInterp : public ParallelTransform {
 public:
   ShiftedMetricInterp() = delete;
-  ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in, Field2D zShift_in);
-  
+  ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in, Field2D zShift_in,
+                      Options* opt = nullptr);
+
   /*!
    * Calculates the yup() and ydown() fields of f
    * by interpolating f through a toroidal shift angle
-   */ 
-  void calcParallelSlices(Field3D &f) override;
-  
+   */
+  void calcParallelSlices(Field3D& f) override;
+
   /*!
    * Uses interpolation of f through a toroidal shift angle to align the grid
-   * points with the y coordinate (along magnetic field usually). 
-   * 
+   * points with the y coordinate (along magnetic field usually).
+   *
    * Note that the returned field will no longer be orthogonal in X-Z, and the
    * metric tensor will need to be changed if X derivatives are used.
    */
-  const Field3D toFieldAligned(const Field3D& f, const std::string& region = "RGN_ALL") override;
+  const Field3D toFieldAligned(const Field3D& f,
+                               const std::string& region = "RGN_ALL") override;
   const FieldPerp toFieldAligned(const FieldPerp& UNUSED(f),
                                  const std::string& UNUSED(region) = "RGN_ALL") override {
     throw BoutException("Not implemented yet");
@@ -66,29 +68,30 @@ public:
    * Converts a field back to X-Z orthogonal coordinates
    * from field aligned coordinates.
    */
-  const Field3D fromFieldAligned(const Field3D &f, 
+  const Field3D fromFieldAligned(const Field3D& f,
                                  const std::string& region = "RGN_ALL") override;
-  const FieldPerp fromFieldAligned(const FieldPerp& UNUSED(f),
-				   const std::string& UNUSED(region) = "RGN_ALL") override {
+  const FieldPerp
+  fromFieldAligned(const FieldPerp& UNUSED(f),
+                   const std::string& UNUSED(region) = "RGN_ALL") override {
     throw BoutException("Not implemented yet");
   }
 
-  bool canToFromFieldAligned() override{
-    return true;
-  }
+  bool canToFromFieldAligned() override { return true; }
 
-  std::vector<ParallelTransform::PositionsAndWeights> getWeightsForYUpApproximation(int i, int j, int k) override {
-    return interp_yup->getWeightsForYApproximation(i,j,k,1);
+  std::vector<ParallelTransform::PositionsAndWeights>
+  getWeightsForYUpApproximation(int i, int j, int k) override {
+    return interp_yup->getWeightsForYApproximation(i, j, k, 1);
   }
-  std::vector<ParallelTransform::PositionsAndWeights> getWeightsForYDownApproximation(int i, int j, int k) override {
-    return interp_ydown->getWeightsForYApproximation(i,j,k,-1);
+  std::vector<ParallelTransform::PositionsAndWeights>
+  getWeightsForYDownApproximation(int i, int j, int k) override {
+    return interp_ydown->getWeightsForYApproximation(i, j, k, -1);
   }
 
   bool requiresTwistShift(bool twist_shift_enabled, YDirectionType ytype) override {
     // Twist-shift only if field-aligned
     if (ytype == YDirectionType::Aligned and not twist_shift_enabled) {
       throw BoutException("'TwistShift = true' is required to communicate field-aligned "
-          "Field3Ds when using ShiftedMetric.");
+                          "Field3Ds when using ShiftedMetric.");
     }
     return ytype == YDirectionType::Aligned;
   }
@@ -103,14 +106,11 @@ private:
   /// X-Z orthogonal to field-aligned along Y.
   Field2D zShift;
 
-  /// Interpolation objects for yup and ydown transformations
-  //Interpolation *interp_yup, *interp_ydown;
+  /// ZInterpolation objects for yup and ydown transformations
+  std::unique_ptr<ZInterpolation> interp_yup, interp_ydown;
 
-  /// Interpolation objects for yup and ydown transformations
-  std::unique_ptr<Interpolation> interp_yup, interp_ydown;
-
-  /// Interpolation objects for shifting to and from field-aligned coordinates
-  std::unique_ptr<Interpolation> interp_to_aligned, interp_from_aligned;
+  /// ZInterpolation objects for shifting to and from field-aligned coordinates
+  std::unique_ptr<ZInterpolation> interp_to_aligned, interp_from_aligned;
 };
 
 #endif // __SHIFTEDINTERP_H__

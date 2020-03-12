@@ -209,7 +209,7 @@ public:
         } else if (*static_cast<const int*>(sendbuf) == localPerp) {
           *static_cast<int*>(recvbuf) = startPerp + localPerp;
         } else {
-          throw BoutException("Trying to use MPI_Scan with unrecognised input %d",
+          throw BoutException("Trying to use MPI_Scan with unrecognised input {:d}",
                               *static_cast<const int*>(sendbuf));
         }
       }

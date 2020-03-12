@@ -1,18 +1,6 @@
 #include <bout.hxx>
 #include <derivs.hxx>
 
-// Y derivative using yup() and ydown() fields
-const Field3D DDY_yud(const Field3D& f) {
-  Field3D result = emptyFrom(f);
-
-  for (int i = 0; i < mesh->LocalNx; i++)
-    for (int j = mesh->ystart; j <= mesh->yend; j++)
-      for (int k = 0; k < mesh->LocalNz; k++)
-        result(i, j, k) = 0.5 * (f.yup()(i, j + 1, k) - f.ydown()(i, j - 1, k));
-
-  return result;
-}
-
 // Y derivative assuming field is aligned in Y
 const Field3D DDY_aligned(const Field3D& f) {
   Field3D result = emptyFrom(f);

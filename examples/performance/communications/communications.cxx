@@ -1,25 +1,24 @@
-#include <bout/physicsmodel.hxx>
+#include <bout.hxx>
 #include <bout/sys/timer.hxx>
+#include <initialprofiles.hxx>
 
-class CommsSpeed : public PhysicsModel {
-public:
+int main(int argc, char** argv) {
+
+  BoutInitialise(argc, argv);
+
   Field3D f;
+  initial_profile("f", f);
+  int iterations = Options::root()["iterations"].withDefault(10000);
 
-  int init(bool) {
-
-    SOLVE_FOR(f);
-
-    return 0;
-  }
-
-  int rhs(BoutReal) {
-
+  Timer timer("comms");
+  for (int i = 0; i < iterations; ++i) {
     mesh->communicate(f);
-
-    ddt(f) = 1.;
-
-    return 0;
   }
-};
+  BoutReal run_length = timer.getTime();
 
-BOUTMAIN(CommsSpeed);
+  output << iterations << " iterations took " << run_length << "s";
+
+  BoutFinalise();
+
+  return 0;
+}

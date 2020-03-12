@@ -348,9 +348,9 @@ AS_IF([test "x$enable_sigfpe" = "xyes"], [
 BOUT_VERSION=$PACKAGE_VERSION
 BOUT_VERSION_MAJOR=$(echo $PACKAGE_VERSION | cut -d. -f1)
 BOUT_VERSION_MINOR=$(echo $PACKAGE_VERSION | cut -d. -f2)
-BOUT_VERSION_PATCH=$(echo ${PACKAGE_VERSION%-alpha} | cut -d. -f3)
-BOUT_VERSION_DOUBLE=${BOUT_VERSION_MAJOR}.${BOUT_VERSION_MINOR}${BOUT_VERSION_PATCH}
-CXXFLAGS="$CXXFLAGS -DBOUT_VERSION_STRING=\"\\\"$BOUT_VERSION\\\"\" -DBOUT_VERSION_DOUBLE=$BOUT_VERSION_DOUBLE "
+BOUT_VERSION_PATCH=$(echo ${PACKAGE_VERSION%-*} | cut -d. -f3)
+BOUT_VERSION_TAG=$(echo $PACKAGE_VERSION | cut -d- -f2)
+
 #############################################################
 # Enable Backtrace if possible
 #############################################################
@@ -405,9 +405,9 @@ AS_IF([test "x$enable_shared" = "xyes"], [
 rev=`git rev-parse HEAD`
 AS_IF([test $? = 0], [
   AC_MSG_NOTICE([Git revision: $rev])
-  GIT_REVISION=$rev
+  BOUT_REVISION=$rev
 ], [
-  GIT_REVISION=
+  BOUT_REVISION=
 ])
 
 #############################################################
@@ -1294,7 +1294,11 @@ AC_SUBST(IDLCONFIGPATH)
 AC_SUBST(PYTHONCONFIGPATH)
 
 AC_SUBST(BOUT_VERSION)
-AC_SUBST(GIT_REVISION)
+AC_SUBST(BOUT_VERSION_MAJOR)
+AC_SUBST(BOUT_VERSION_MINOR)
+AC_SUBST(BOUT_VERSION_PATCH)
+AC_SUBST(BOUT_VERSION_TAG)
+AC_SUBST(BOUT_REVISION)
 AC_SUBST(CHECK_LEVEL)
 
 AC_SUBST(HAS_PVODE)
@@ -1319,6 +1323,8 @@ AC_SUBST(HAS_OPENMP)
 AC_SUBST(HAS_NLS)
 AC_SUBST(HAS_FFTW)
 
+AC_CONFIG_FILES([include/bout/version.hxx])
+AC_CONFIG_FILES([include/bout/revision.hxx])
 AC_CONFIG_FILES([bin/bout-config])
 AC_OUTPUT
 chmod a+x bin/bout-config

@@ -21,14 +21,14 @@
  **************************************************************************/
 
 #include "globals.hxx"
-#include "interpolation.hxx"
+#include "interpolation_xz.hxx"
 #include "bout/index_derivs_interface.hxx"
 #include "bout/mesh.hxx"
 
 #include <vector>
 
-HermiteSpline::HermiteSpline(int y_offset, Mesh *mesh)
-    : Interpolation(y_offset, mesh),
+XZHermiteSpline::XZHermiteSpline(int y_offset, Mesh *mesh)
+    : XZInterpolation(y_offset, mesh),
       h00_x(localmesh), h01_x(localmesh), h10_x(localmesh), h11_x(localmesh),
       h00_z(localmesh), h01_z(localmesh), h10_z(localmesh), h11_z(localmesh) {
 
@@ -52,8 +52,8 @@ HermiteSpline::HermiteSpline(int y_offset, Mesh *mesh)
   h11_z.allocate();
 }
 
-void HermiteSpline::calcWeights(const Field3D &delta_x, const Field3D &delta_z,
-                                const std::string& region) {
+void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z,
+                                  const std::string& region) {
 
   BOUT_FOR(i, delta_x.getRegion(region)) {
     const int x = i.x();
@@ -86,14 +86,14 @@ void HermiteSpline::calcWeights(const Field3D &delta_x, const Field3D &delta_z,
     // Check that t_x and t_z are in range
     if ((t_x < 0.0) || (t_x > 1.0)) {
       throw BoutException(
-          "t_x={:e} out of range at ({:d},{:d},{:d}) (delta_x={:e}, i_corner={:d})", t_x, x, y,
-          z, delta_x(x, y, z), i_corner(x, y, z));
+          "t_x={:e} out of range at ({:d},{:d},{:d}) (delta_x={:e}, i_corner={:d})", t_x,
+          x, y, z, delta_x(x, y, z), i_corner(x, y, z));
     }
 
     if ((t_z < 0.0) || (t_z > 1.0)) {
       throw BoutException(
-          "t_z={:e} out of range at ({:d},{:d},{:d}) (delta_z={:e}, k_corner={:d})", t_z, x, y,
-          z, delta_z(x, y, z), k_corner(x, y, z));
+          "t_z={:e} out of range at ({:d},{:d},{:d}) (delta_z={:e}, k_corner={:d})", t_z,
+          x, y, z, delta_z(x, y, z), k_corner(x, y, z));
     }
 
     h00_x(x, y, z) = (2. * t_x * t_x * t_x) - (3. * t_x * t_x) + 1.;
@@ -110,8 +110,8 @@ void HermiteSpline::calcWeights(const Field3D &delta_x, const Field3D &delta_z,
   }
 }
 
-void HermiteSpline::calcWeights(const Field3D &delta_x, const Field3D &delta_z,
-                                const BoutMask &mask, const std::string& region) {
+void XZHermiteSpline::calcWeights(const Field3D& delta_x, const Field3D& delta_z,
+                                  const BoutMask& mask, const std::string& region) {
   skip_mask = mask;
   calcWeights(delta_x, delta_z, region);
 }
@@ -133,40 +133,20 @@ void HermiteSpline::calcWeights(const Field3D &delta_x, const Field3D &delta_z,
  *   (i, j+1, k+2)	h11_z / 2
  */
 std::vector<ParallelTransform::PositionsAndWeights>
-HermiteSpline::getWeightsForYApproximation(int i, int j, int k, int yoffset) {
-  std::vector<ParallelTransform::PositionsAndWeights> pw;
-  ParallelTransform::PositionsAndWeights p;
+XZHermiteSpline::getWeightsForYApproximation(int i, int j, int k, int yoffset) {
+  const int ncz = localmesh->LocalNz;
+  const int k_mod = ((k_corner(i, j, k) % ncz) + ncz) % ncz;
+  const int k_mod_m1 = (k_mod > 0) ? (k_mod - 1) : (ncz - 1);
+  const int k_mod_p1 = (k_mod + 1) % ncz;
+  const int k_mod_p2 = (k_mod + 2) % ncz;
 
-  int ncz = localmesh->LocalNz;
-  int k_mod = ((k_corner(i, j, k) % ncz) + ncz) % ncz;
-  int k_mod_m1 = (k_mod > 0) ? (k_mod - 1) : (ncz - 1);
-  int k_mod_p1 = (k_mod + 1) % ncz;
-  int k_mod_p2 = (k_mod + 2) % ncz;
-
-  // Same x, y for all:
-  p.i = i;
-  p.j = j + yoffset;
-
-  p.k = k_mod_m1;
-  p.weight = -0.5 * h10_z(i, j, k);
-  pw.push_back(p);
-
-  p.k = k_mod;
-  p.weight = h00_z(i, j, k) - 0.5 * h11_z(i, j, k);
-  pw.push_back(p);
-
-  p.k = k_mod_p1;
-  p.weight = h01_z(i, j, k) + 0.5 * h10_z(i, j, k);
-  pw.push_back(p);
-
-  p.k = k_mod_p2;
-  p.weight = 0.5 * h11_z(i, j, k);
-  pw.push_back(p);
-
-  return pw;
+  return {{i, j + yoffset, k_mod_m1, -0.5 * h10_z(i, j, k)},
+          {i, j + yoffset, k_mod,    h00_z(i, j, k) - 0.5 * h11_z(i, j, k)},
+          {i, j + yoffset, k_mod_p1, h01_z(i, j, k) + 0.5 * h10_z(i, j, k)},
+          {i, j + yoffset, k_mod_p2, 0.5 * h11_z(i, j, k)}};
 }
 
-Field3D HermiteSpline::interpolate(const Field3D &f, const std::string& region) const {
+Field3D XZHermiteSpline::interpolate(const Field3D& f, const std::string& region) const {
 
   ASSERT1(f.getMesh() == localmesh);
   Field3D f_interp{emptyFrom(f)};
@@ -180,7 +160,7 @@ Field3D HermiteSpline::interpolate(const Field3D &f, const std::string& region) 
     auto h = localmesh->sendY(fx);
     localmesh->wait(h);
   }
-  Field3D fz = bout::derivatives::index::DDZ(f, CELL_DEFAULT, "DEFAULT", "RGN_WITH_XBNDRIES");
+  Field3D fz = bout::derivatives::index::DDZ(f, CELL_DEFAULT, "DEFAULT", "RGN_ALL");
   localmesh->communicateXZ(fz);
   // communicate in y, but do not calculate parallel slices
   {
@@ -205,55 +185,56 @@ Field3D HermiteSpline::interpolate(const Field3D &f, const std::string& region) 
 
     // Due to lack of guard cells in z-direction, we need to ensure z-index
     // wraps around
-    int ncz = localmesh->LocalNz;
-    int z_mod = ((k_corner(x, y, z) % ncz) + ncz) % ncz;
-    int z_mod_p1 = (z_mod + 1) % ncz;
+    const int ncz = localmesh->LocalNz;
+    const int z_mod = ((k_corner(x, y, z) % ncz) + ncz) % ncz;
+    const int z_mod_p1 = (z_mod + 1) % ncz;
 
-    int y_next = y + y_offset;
+    const int y_next = y + y_offset;
 
     // Interpolate f in X at Z
-    BoutReal f_z = f(i_corner(x, y, z), y_next, z_mod) * h00_x(x, y, z) +
-      f(i_corner(x, y, z) + 1, y_next, z_mod) * h01_x(x, y, z) +
-      fx(i_corner(x, y, z), y_next, z_mod) * h10_x(x, y, z) +
-      fx(i_corner(x, y, z) + 1, y_next, z_mod) * h11_x(x, y, z);
+    const BoutReal f_z = f(i_corner(x, y, z), y_next, z_mod) * h00_x(x, y, z)
+                         + f(i_corner(x, y, z) + 1, y_next, z_mod) * h01_x(x, y, z)
+                         + fx(i_corner(x, y, z), y_next, z_mod) * h10_x(x, y, z)
+                         + fx(i_corner(x, y, z) + 1, y_next, z_mod) * h11_x(x, y, z);
 
     // Interpolate f in X at Z+1
-    BoutReal f_zp1 = f(i_corner(x, y, z), y_next, z_mod_p1) * h00_x(x, y, z) +
-      f(i_corner(x, y, z) + 1, y_next, z_mod_p1) * h01_x(x, y, z) +
-      fx(i_corner(x, y, z), y_next, z_mod_p1) * h10_x(x, y, z) +
-      fx(i_corner(x, y, z) + 1, y_next, z_mod_p1) * h11_x(x, y, z);
+    const BoutReal f_zp1 = f(i_corner(x, y, z), y_next, z_mod_p1) * h00_x(x, y, z)
+                           + f(i_corner(x, y, z) + 1, y_next, z_mod_p1) * h01_x(x, y, z)
+                           + fx(i_corner(x, y, z), y_next, z_mod_p1) * h10_x(x, y, z)
+                           + fx(i_corner(x, y, z) + 1, y_next, z_mod_p1) * h11_x(x, y, z);
 
     // Interpolate fz in X at Z
-    BoutReal fz_z = fz(i_corner(x, y, z), y_next, z_mod) * h00_x(x, y, z) +
-      fz(i_corner(x, y, z) + 1, y_next, z_mod) * h01_x(x, y, z) +
-      fxz(i_corner(x, y, z), y_next, z_mod) * h10_x(x, y, z) +
-      fxz(i_corner(x, y, z) + 1, y_next, z_mod) * h11_x(x, y, z);
+    const BoutReal fz_z = fz(i_corner(x, y, z), y_next, z_mod) * h00_x(x, y, z)
+                          + fz(i_corner(x, y, z) + 1, y_next, z_mod) * h01_x(x, y, z)
+                          + fxz(i_corner(x, y, z), y_next, z_mod) * h10_x(x, y, z)
+                          + fxz(i_corner(x, y, z) + 1, y_next, z_mod) * h11_x(x, y, z);
 
     // Interpolate fz in X at Z+1
-    BoutReal fz_zp1 = fz(i_corner(x, y, z), y_next, z_mod_p1) * h00_x(x, y, z) +
-      fz(i_corner(x, y, z) + 1, y_next, z_mod_p1) * h01_x(x, y, z) +
-      fxz(i_corner(x, y, z), y_next, z_mod_p1) * h10_x(x, y, z) +
-      fxz(i_corner(x, y, z) + 1, y_next, z_mod_p1) * h11_x(x, y, z);
+    const BoutReal fz_zp1 =
+        fz(i_corner(x, y, z), y_next, z_mod_p1) * h00_x(x, y, z)
+        + fz(i_corner(x, y, z) + 1, y_next, z_mod_p1) * h01_x(x, y, z)
+        + fxz(i_corner(x, y, z), y_next, z_mod_p1) * h10_x(x, y, z)
+        + fxz(i_corner(x, y, z) + 1, y_next, z_mod_p1) * h11_x(x, y, z);
 
     // Interpolate in Z
-    f_interp(x, y_next, z) = +f_z * h00_z(x, y, z) + f_zp1 * h01_z(x, y, z) +
-      fz_z * h10_z(x, y, z) + fz_zp1 * h11_z(x, y, z);
+    f_interp(x, y_next, z) = +f_z * h00_z(x, y, z) + f_zp1 * h01_z(x, y, z)
+                             + fz_z * h10_z(x, y, z) + fz_zp1 * h11_z(x, y, z);
 
-    ASSERT2(finite(f_interp(x, y_next, z)) || x < localmesh->xstart ||
-        x > localmesh->xend);
+    ASSERT2(finite(f_interp(x, y_next, z)) || x < localmesh->xstart
+            || x > localmesh->xend);
   }
   return f_interp;
 }
 
-Field3D HermiteSpline::interpolate(const Field3D& f, const Field3D &delta_x,
-                                   const Field3D &delta_z, const std::string& region) {
+Field3D XZHermiteSpline::interpolate(const Field3D& f, const Field3D& delta_x,
+                                     const Field3D& delta_z, const std::string& region) {
   calcWeights(delta_x, delta_z, region);
   return interpolate(f, region);
 }
 
-Field3D HermiteSpline::interpolate(const Field3D& f, const Field3D &delta_x,
-                                   const Field3D &delta_z, const BoutMask &mask,
-                                   const std::string& region) {
+Field3D XZHermiteSpline::interpolate(const Field3D& f, const Field3D& delta_x,
+                                     const Field3D& delta_z, const BoutMask& mask,
+                                     const std::string& region) {
   calcWeights(delta_x, delta_z, mask, region);
   return interpolate(f, region);
 }

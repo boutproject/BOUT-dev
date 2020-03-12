@@ -4,7 +4,7 @@ from boututils.datafile import DataFile
 import itertools
 import time
 import numpy as np
-from boututils.run_wrapper import launch_safe, shell_safe
+from boututils.run_wrapper import launch_safe, shell_safe, build_and_log
 
 #requires: all_tests
 #requires: netcdf
@@ -64,7 +64,7 @@ def verify(f1, f2):
                 raise RuntimeError("data mismatch in ", v, err, d1[v], d2[v])
 
 
-timed_shell_safe("make")
+build_and_log("Squash test")
 
 # Run once to get normal data
 timed_shell_safe("./squash -q -q -q nout=2")

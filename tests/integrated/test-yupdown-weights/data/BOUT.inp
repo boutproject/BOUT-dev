@@ -9,7 +9,8 @@ shiftAngle = 2*pi
 
 var = sin(y - z)
 
-paralleltransform = shiftedinterp
+[mesh:paralleltransform]
+type = shiftedinterp
 
-[interpolation]
+[mesh:paralleltransform:zinterpolation]
 type = hermitespline

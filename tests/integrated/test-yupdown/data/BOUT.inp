@@ -1,15 +1,15 @@
-TwistShift = true
 ShiftWithoutTwist = true
+TwistShift = true
 
 [mesh]
 nx = 12
 ny = 12
-nz = 1024
+nz = 64
 
 zShift = y
 ShiftAngle = 2.*pi
 
 var = sin(y - z)
 
-paralleltransform = shifted
-
+[mesh:paralleltransform]
+type = shifted

@@ -22,13 +22,13 @@
 
 #include "bout/mesh.hxx"
 #include "globals.hxx"
-#include "interpolation.hxx"
+#include "interpolation_xz.hxx"
 
 #include <string>
 #include <vector>
 
-Bilinear::Bilinear(int y_offset, Mesh *mesh)
-  : Interpolation(y_offset, mesh),
+XZBilinear::XZBilinear(int y_offset, Mesh *mesh)
+  : XZInterpolation(y_offset, mesh),
     w0(localmesh), w1(localmesh), w2(localmesh), w3(localmesh) {
 
   // Index arrays contain guard cells in order to get subscripts right
@@ -42,15 +42,16 @@ Bilinear::Bilinear(int y_offset, Mesh *mesh)
   w3.allocate();
 }
 
-void Bilinear::calcWeights(const Field3D &delta_x, const Field3D &delta_z,
-                           const std::string& region) {
+void XZBilinear::calcWeights(const Field3D& delta_x, const Field3D& delta_z,
+                             const std::string& region) {
 
   BOUT_FOR(i, delta_x.getRegion(region)) {
     const int x = i.x();
     const int y = i.y();
     const int z = i.z();
 
-    if (skip_mask(x, y, z)) continue;
+    if (skip_mask(x, y, z))
+      continue;
 
     // The integer part of xt_prime, zt_prime are the indices of the cell
     // containing the field line end-point
@@ -59,39 +60,38 @@ void Bilinear::calcWeights(const Field3D &delta_x, const Field3D &delta_z,
 
     // t_x, t_z are the normalised coordinates \in [0,1) within the cell
     // calculated by taking the remainder of the floating point index
-    BoutReal t_x = delta_x(x, y, z) - static_cast<BoutReal>(i_corner(x, y, z));
-    BoutReal t_z = delta_z(x, y, z) - static_cast<BoutReal>(k_corner(x, y, z));
-    BoutReal t_x1 = 1.0 - t_x;
-    BoutReal t_z1 = 1.0 - t_z;
+    const BoutReal t_x = delta_x(x, y, z) - static_cast<BoutReal>(i_corner(x, y, z));
+    const BoutReal t_z = delta_z(x, y, z) - static_cast<BoutReal>(k_corner(x, y, z));
+    const BoutReal t_x1 = 1.0 - t_x;
+    const BoutReal t_z1 = 1.0 - t_z;
 
     // Check that t_x and t_z are in range
     if ((t_x < 0.0) || (t_x > 1.0)) {
       throw BoutException(
-          "t_x={:e} out of range at ({:d},{:d},{:d}) (delta_x={:e}, i_corner={:d})", t_x, x, y,
-          z, delta_x(x, y, z), i_corner(x, y, z));
+          "t_x={:e} out of range at ({:d},{:d},{:d}) (delta_x={:e}, i_corner={:d})", t_x,
+          x, y, z, delta_x(x, y, z), i_corner(x, y, z));
     }
 
     if ((t_z < 0.0) || (t_z > 1.0)) {
       throw BoutException(
-          "t_z={:e} out of range at ({:d},{:d},{:d}) (delta_z={:e}, k_corner={:d})", t_z, x, y,
-          z, delta_z(x, y, z), k_corner(x, y, z));
+          "t_z={:e} out of range at ({:d},{:d},{:d}) (delta_z={:e}, k_corner={:d})", t_z,
+          x, y, z, delta_z(x, y, z), k_corner(x, y, z));
     }
 
-    w0(x,y,z) = t_x1 * t_z1;
-    w1(x,y,z) = t_x  * t_z1;
-    w2(x,y,z) = t_x1 * t_z;
-    w3(x,y,z) = t_x  * t_z;
-
+    w0(x, y, z) = t_x1 * t_z1;
+    w1(x, y, z) = t_x * t_z1;
+    w2(x, y, z) = t_x1 * t_z;
+    w3(x, y, z) = t_x * t_z;
   }
 }
 
-void Bilinear::calcWeights(const Field3D &delta_x, const Field3D &delta_z,
-                           const BoutMask &mask, const std::string& region) {
+void XZBilinear::calcWeights(const Field3D& delta_x, const Field3D& delta_z,
+                             const BoutMask& mask, const std::string& region) {
   skip_mask = mask;
   calcWeights(delta_x, delta_z, region);
 }
 
-Field3D Bilinear::interpolate(const Field3D& f, const std::string& region) const {
+Field3D XZBilinear::interpolate(const Field3D& f, const std::string& region) const {
   ASSERT1(f.getMesh() == localmesh);
   Field3D f_interp{emptyFrom(f)};
 
@@ -100,32 +100,33 @@ Field3D Bilinear::interpolate(const Field3D& f, const std::string& region) const
     const int y = i.y();
     const int z = i.z();
 
-    if (skip_mask(x, y, z)) continue;
+    if (skip_mask(x, y, z))
+      continue;
 
-    int y_next = y + y_offset;
+    const int y_next = y + y_offset;
     // Due to lack of guard cells in z-direction, we need to ensure z-index
     // wraps around
-    int ncz = localmesh->LocalNz;
-    int z_mod = ((k_corner(x, y, z) % ncz) + ncz) % ncz;
-    int z_mod_p1 = (z_mod + 1) % ncz;
+    const int ncz = localmesh->LocalNz;
+    const int z_mod = ((k_corner(x, y, z) % ncz) + ncz) % ncz;
+    const int z_mod_p1 = (z_mod + 1) % ncz;
 
-    f_interp(x, y_next, z) = f(i_corner(x, y, z), y_next, z_mod) * w0(x, y, z) +
-      f(i_corner(x, y, z) + 1, y_next, z_mod) * w1(x, y, z) +
-      f(i_corner(x, y, z), y_next, z_mod_p1) * w2(x, y, z) +
-      f(i_corner(x, y, z) + 1, y_next, z_mod_p1) * w3(x, y, z);
+    f_interp(x, y_next, z) = f(i_corner(x, y, z), y_next, z_mod) * w0(x, y, z)
+                             + f(i_corner(x, y, z) + 1, y_next, z_mod) * w1(x, y, z)
+                             + f(i_corner(x, y, z), y_next, z_mod_p1) * w2(x, y, z)
+                             + f(i_corner(x, y, z) + 1, y_next, z_mod_p1) * w3(x, y, z);
   }
   return f_interp;
 }
 
-Field3D Bilinear::interpolate(const Field3D& f, const Field3D &delta_x,
-                              const Field3D &delta_z, const std::string& region) {
+Field3D XZBilinear::interpolate(const Field3D& f, const Field3D& delta_x,
+                                const Field3D& delta_z, const std::string& region) {
   calcWeights(delta_x, delta_z, region);
   return interpolate(f, region);
 }
 
-Field3D Bilinear::interpolate(const Field3D& f, const Field3D &delta_x,
-                              const Field3D &delta_z, const BoutMask &mask,
-                              const std::string& region) {
+Field3D XZBilinear::interpolate(const Field3D& f, const Field3D& delta_x,
+                                const Field3D& delta_z, const BoutMask& mask,
+                                const std::string& region) {
   calcWeights(delta_x, delta_z, mask, region);
   return interpolate(f, region);
 }

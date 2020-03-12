@@ -75,7 +75,7 @@ if has_breathe:
             os.makedirs(apidoc_args.destdir)
     apidoc.recurse_tree(apidoc_args)
     for key, value in apidoc.TYPEDICT.items():
-       apidoc.create_modules_toc_file(key, value, apidoc_args)
+        apidoc.create_modules_toc_file(key, value, apidoc_args)
 
     # -- Options for breathe extension ----------------------------------------
 

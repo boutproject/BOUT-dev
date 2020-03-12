@@ -13,14 +13,12 @@ except:
 tol = 1e-9 # Absolute tolerance
 numTests = 4 # We test 4 different boundary conditions (with slightly different inputs for each)
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe
+from boututils.run_wrapper import shell, build_and_log, launch_safe
 from boutdata.collect import collect
 from sys import exit
 
 
-
-print("Making multigrid Laplacian inversion test")
-shell_safe("make > make.log")
+build_and_log("Making multigrid Laplacian inversion test")
 
 print("Running multigrid Laplacian inversion test")
 success = True

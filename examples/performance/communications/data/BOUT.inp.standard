@@ -1,14 +1,9 @@
-nout = 1
-timestep = 10000
+iterations = 10000
 
 [mesh]
 nx = 196
 ny = 128
 nz = 128
-
-[solver]
-type = rk4
-timestep = 1
 
 [f]
 function = mixmode(x)*mixmode(y)*mixmode(z)

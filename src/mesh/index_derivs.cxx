@@ -422,16 +422,6 @@ public:
     ASSERT2(stagger == STAGGER::None);  // Staggering not currently supported
     ASSERT2(bout::utils::is_Field3D<T>::value); // Should never need to call this with Field2D
 
-    // Only allow a whitelist of regions for now
-    ASSERT2(region == "RGN_ALL" || region == "RGN_NOBNDRY"
-            || region == "RGN_NOX" || region == "RGN_NOY"
-            || region == "RGN_INNER_X" || region == "RGN_OUTER_X"
-            || region == "RGN_LOWER_INNER_Y" || region == "RGN_UPPER_INNER_Y"
-            || region == "RGN_LOWER_OUTER_Y" || region == "RGN_UPPER_OUTER_Y"
-            || region == "RGN_LOWER_Y" || region == "RGN_UPPER_Y"
-            || region == "RGN_BNDRY" || region == "RGN_WITH_XBNDRIES"
-            || region == "RGN_WITH_YBNDRIES" || region == "RGN_WITH_BNDRIES");
-
     auto* theMesh = var.getMesh();
 
     // Calculate how many Z wavenumbers will be removed
@@ -495,16 +485,6 @@ public:
     ASSERT2(direction == DIRECTION::Z); // Only in Z for now
     ASSERT2(stagger == STAGGER::None);  // Staggering not currently supported
     ASSERT2(bout::utils::is_Field3D<T>::value); // Should never need to call this with Field2D
-
-    // Only allow a whitelist of regions for now
-    ASSERT2(region == "RGN_ALL" || region == "RGN_NOBNDRY"
-            || region == "RGN_NOX" || region == "RGN_NOY"
-            || region == "RGN_INNER_X" || region == "RGN_OUTER_X"
-            || region == "RGN_LOWER_INNER_Y" || region == "RGN_UPPER_INNER_Y"
-            || region == "RGN_LOWER_OUTER_Y" || region == "RGN_UPPER_OUTER_Y"
-            || region == "RGN_LOWER_Y" || region == "RGN_UPPER_Y"
-            || region == "RGN_BNDRY" || region == "RGN_WITH_XBNDRIES"
-            || region == "RGN_WITH_YBNDRIES" || region == "RGN_WITH_BNDRIES");
 
     auto* theMesh = var.getMesh();
 

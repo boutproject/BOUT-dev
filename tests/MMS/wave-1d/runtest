@@ -10,15 +10,13 @@ try:
 except:
   pass
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe
+from boututils.run_wrapper import shell, build_and_log, launch_safe
 from boutdata.collect import collect
 
 from numpy import sqrt, max, abs, mean, array, log, concatenate
 
 
-
-print("Making MMS wave test")
-shell_safe("make > make.log")
+build_and_log("Making MMS wave test")
 
 # List of NX values to use
 nxlist = [8, 12, 20, 36, 68, 132]

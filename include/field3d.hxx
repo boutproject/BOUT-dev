@@ -424,6 +424,7 @@ class Field3D : public Field, public FieldData {
   /// Assignment operators
   ///@{
   Field3D & operator=(const Field3D &rhs);
+  Field3D & operator=(Field3D&& rhs);
   Field3D & operator=(const Field2D &rhs);
   /// return void, as only part initialised
   void      operator=(const FieldPerp &rhs);

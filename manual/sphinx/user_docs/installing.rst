@@ -182,7 +182,7 @@ The first line should be sufficient to install BOUT++, while the 2nd
 and 3rd line make sure that the tests work, and that the python
 interface can be build.
 Further, the encoding for python needs to be utf8 - it may be required
-to set `export LC_CTYPE=C.utf8`.
+to set ``export LC_CTYPE=C.utf8``.
 
 If you do not have administrator rights, so can't install packages, then
 you need to install these libraries from source into your home directory.
@@ -286,14 +286,15 @@ There is now (experimental) support for `CMake <https://cmake.org/>`_. You will 
 3.9. CMake supports out-of-source builds by default, which are A Good
 Idea. Basic configuration with CMake looks like::
 
-  $ mkdir build && cd build
-  $ cmake ..
+  $ cmake . -B build
 
-You can then run ``make`` as usual.
+which creates a new directory ``build``, which you can then compile with::
+
+  $ cmake --build build
 
 You can see what build options are available with::
 
-  $ cmake .. -LH
+  $ cmake . -B build -LH
   ...
   // Enable backtrace
   ENABLE_BACKTRACE:BOOL=ON
@@ -311,16 +312,20 @@ You can see what build options are available with::
 CMake uses the ``-D<variable>=<choice>`` syntax to control these
 variables. You can set ``<package>_ROOT`` to guide CMake in finding
 the various optional third-party packages (except for PETSc/SLEPc,
-which use ``_DIR``). CMake understands the usual environment variables
-for setting the compiler, compiler/linking flags, as well as having
-built-in options to control them and things like static vs shared
-libraries, etc. See the `CMake documentation
-<https://cmake.org/documentation/>`_ for more infomation.
+which use ``_DIR``). Note that some packages have funny
+captialisation, for example ``NetCDF_ROOT``! Use ``-LH`` to see the
+form that each package expects.
+
+CMake understands the usual environment variables for setting the
+compiler, compiler/linking flags, as well as having built-in options
+to control them and things like static vs shared libraries, etc. See
+the `CMake documentation <https://cmake.org/documentation/>`_ for more
+infomation.
 
 A more complicated CMake configuration command
 might look like::
 
-  $ CC=mpicc CXX=mpic++ cmake .. \
+  $ CC=mpicc CXX=mpic++ cmake . -B build \
       -DUSE_PETSC=ON -DPETSC_DIR=/path/to/petsc/ \
       -DUSE_SLEPC=ON -DSLEPC_DIR=/path/to/slepc/ \
       -DUSE_SUNDIALS=ON -DSUNDIALS_ROOT=/path/to/sundials \
@@ -330,6 +335,30 @@ might look like::
       -DCMAKE_BUILD_TYPE=Debug \
       -DBUILD_SHARED_LIBS=ON
       -DCMAKE_INSTALL_PREFIX=/path/to/install/BOUT++
+
+If you wish to change the configuration after having built ``BOUT++``,
+it's wise to delete the ``CMakeCache.txt`` file in the build
+directory. The equivalent of ``make distclean`` with CMake is to just
+delete the entire build directory and reconfigure.
+
+Bundled Dependencies
+^^^^^^^^^^^^^^^^^^^^
+
+BOUT++ bundles some dependencies, currently `mpark.variant
+<https://github.com/mpark/variant>`_, `fmt <https://fmt.dev>`_ and
+`googletest <https://github.com/google/googletest>`_. If you wish to
+use an existing installation of ``mpark.variant``, you can set
+``-DBOUT_USE_SYSTEM_MPARK_VARIANT=ON``, and supply the installation
+path using ``mpark_variant_ROOT`` via the command line or
+environment variable if it is installed in a non standard
+loction. Similarly for ``fmt``, using ``-DBOUT_USE_SYSTEM_FMT=ON``
+and ``fmt_ROOT`` respectively. The recommended way to use
+``googletest`` is to compile it at the same time as your project,
+therefore there is no option to use an external installation for
+that.
+
+Using CMake with your physics model
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 You can write a CMake configuration file (``CMakeLists.txt``) for your
 physics model in only four lines:
@@ -344,8 +373,7 @@ physics model in only four lines:
 You just need to give CMake the location where you installed BOUT++
 via the ``CMAKE_PREFIX_PATH`` variable::
 
-  $ mkdir build && cd build
-  $ cmake .. -DCMAKE_PREFIX_PATH=/path/to/install/BOUT++
+  $ cmake . -B build -DCMAKE_PREFIX_PATH=/path/to/install/BOUT++
 
 .. _sec-config-nls:
 

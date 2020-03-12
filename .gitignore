@@ -44,6 +44,8 @@ build*/
 /.vs
 /CMakeSettings.json
 /CppProperties.json
+*.fls
+*.fdb_latexmk
 
 # Following is copied in by configure
 src/fmt/format.cxx

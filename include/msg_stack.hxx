@@ -39,9 +39,6 @@ class MsgStack;
 #include <string>
 #include <vector>
 
-/// The maximum length (in chars) of messages, not including terminating '0'
-#define MSG_MAX_SIZE 127
-
 /// The __PRETTY_FUNCTION__ variable is defined by GCC (and some other families) but is not a part 
 /// of the standard. The __func__ variable *is* a part of the c++11 standard so we'd like to fall back
 /// to this if possible. However as these are variables/constants and not macros we can't just

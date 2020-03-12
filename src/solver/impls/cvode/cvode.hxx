@@ -89,6 +89,8 @@ private:
   BoutReal pre_Wtime{0.0}; // Time in preconditioner
   int pre_ncalls{0};       // Number of calls to preconditioner
 
+  bool cvode_initialised = false;
+
   void set_abstol_values(BoutReal* abstolvec_data, std::vector<BoutReal>& f2dtols,
                          std::vector<BoutReal>& f3dtols);
   void loop_abstol_values_op(Ind2D i2d, BoutReal* abstolvec_data, int& p,
