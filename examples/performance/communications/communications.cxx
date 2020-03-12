@@ -16,7 +16,7 @@ int main(int argc, char** argv) {
   }
   BoutReal run_length = timer.getTime();
 
-  output << nout << " iterations took " << run_length << "s";
+  output << iterations << " iterations took " << run_length << "s";
 
   BoutFinalise();
 
