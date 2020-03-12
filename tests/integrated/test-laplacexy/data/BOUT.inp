@@ -10,7 +10,7 @@ dy = 40.*(1.+.1*sin(y))/ny
 g11 = 1. + .1*sin(2.*pi*x)*cos(y)
 g22 = 1. + .05872*sin(2.*pi*x)*cos(y)
 g33 = 1. + .115832*sin(2.*pi*x)*cos(y)
-g12 = 0.0
+g12 = 0.3 + .08363*sin(2.*pi*x)*cos(y)
 g13 = 0.
 g23 = 0.5 + .04672*sin(2.*pi*x)*cos(y)
 
@@ -26,11 +26,12 @@ ixseps2 = 64
 [laplacexy]
 pctype = shell    # Supply a second solver as a preconditioner
 #pctype = hypre    # Algebraic multigrid preconditioner using hypre library
+finite_volume = false
 rtol = 1.e-14
 
 core_bndry_dirichlet = true
 pf_bndry_dirichlet = true
-y_bndry = dirichlet
+y_bndry = neumann
 
 [f]
 # make an input:

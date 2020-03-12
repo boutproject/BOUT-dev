@@ -26,11 +26,12 @@ ixseps2 = 64
 [laplacexy]
 pctype = shell    # Supply a second solver as a preconditioner
 #pctype = hypre    # Algebraic multigrid preconditioner using hypre library
+finite_volume = false
 rtol = 1.e-14
 
 core_bndry_dirichlet = true
 pf_bndry_dirichlet = true
-y_bndry = dirichlet
+y_bndry = neumann
 
 [f]
 # make an input:

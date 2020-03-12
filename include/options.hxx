@@ -584,6 +584,17 @@ public:
    */
   std::string str() const {return full_name;}
 
+  /// Print just the name of this object without parent sections
+  std::string name() const {
+    auto pos = full_name.rfind(":");
+    if (pos == std::string::npos) {
+      // No parent section or sections
+      return full_name;
+    } else {
+      return full_name.substr(pos + 1);
+    }
+  }
+
   /// Print the options which haven't been used
   void printUnused() const;
 
