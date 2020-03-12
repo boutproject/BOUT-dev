@@ -395,5 +395,5 @@ TEST(BoutInitialiseFunctions, SavePIDtoFile) {
 
   std::remove(filename.c_str());
 
-  EXPECT_THROW(bout::experimental::savePIDtoFile("/", 2), BoutException);
+  EXPECT_THROW(bout::experimental::savePIDtoFile("/does/likely/not/exists", 2), BoutException);
 }
