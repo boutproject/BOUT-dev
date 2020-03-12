@@ -60,7 +60,8 @@ Field3D::Field3D(Mesh* localmesh, CELL_LOC location_in,
 
 /// Doesn't copy any data, just create a new reference to the same data (copy on change
 /// later)
-Field3D::Field3D(const Field3D& f) : Field(f), data(f.data) {
+Field3D::Field3D(const Field3D& f)
+    : Field(f), data(f.data), yup_fields(f.yup_fields), ydown_fields(f.ydown_fields) {
 
   TRACE("Field3D(Field3D&)");
 
@@ -252,9 +253,9 @@ Field3D & Field3D::operator=(const Field3D &rhs) {
 
   TRACE("Field3D: Assignment from Field3D");
 
-  // Delete existing parallel slices. We don't copy parallel slices, so any
-  // that currently exist will be incorrect.
-  clearParallelSlices();
+  // Copy parallel slices or delete existing ones.
+  yup_fields = rhs.yup_fields;
+  ydown_fields = rhs.ydown_fields;
 
   copyFieldMembers(rhs);
 
@@ -264,6 +265,25 @@ Field3D & Field3D::operator=(const Field3D &rhs) {
   nz = rhs.nz;
 
   data = rhs.data;
+
+  return *this;
+}
+
+Field3D& Field3D::operator=(Field3D&& rhs) {
+  TRACE("Field3D: Assignment from Field3D");
+
+  // Copy parallel slices or delete existing ones.
+  yup_fields = std::move(rhs.yup_fields);
+  ydown_fields = std::move(rhs.ydown_fields);
+
+  copyFieldMembers(rhs);
+
+  // Copy the data and data sizes
+  nx = rhs.nx;
+  ny = rhs.ny;
+  nz = rhs.nz;
+
+  data = std::move(rhs.data);
 
   return *this;
 }
