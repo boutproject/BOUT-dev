@@ -30,21 +30,28 @@
 #include <cstdarg>
 #include <string>
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 #if CHECK > 1
 int MsgStack::push(std::string message) {
-  int result;
-  BOUT_OMP(single) {
-    if (position >= stack.size()) {
-      stack.push_back(std::move(message));
-    } else {
-      stack[position] = message;
-    }
 
-    position++;
-
-    result = position - 1;
+#ifdef _OPENMP
+  // This is temporary fix: no messages from OMP regions if there's
+  // more than one thread
+  if (omp_get_num_threads() > 1) {
+    return 0;
   }
-  return result;
+#endif
+
+  if (position >= stack.size()) {
+    stack.push_back(std::move(message));
+  } else {
+    stack[position] = message;
+  }
+
+  return position++;
 }
 
 int MsgStack::setPoint() {
@@ -62,11 +69,16 @@ void MsgStack::pop() {
 }
 
 void MsgStack::pop(int id) {
+#ifdef _OPENMP
+  if (omp_get_num_threads() > 1) {
+    return;
+  }
+#endif
+
   if (id < 0)
     id = 0;
 
-  BOUT_OMP(single) {
-    if (id <= static_cast<int>(position))
+  if (id <= static_cast<int>(position)) {
       position = id;
   }
 }
