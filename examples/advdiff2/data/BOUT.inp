@@ -88,25 +88,7 @@ apar_flags = 0 # flags for apar inversion
 
 [All]
 scale = 0.0 # default size of initial perturbations
-
-# form of initial profile:
-# 0 - constant
-# 1 - Gaussian
-# 2 - Sinusoidal
-# 3 - Mix of mode numbers (like original BOUT)
-
-xs_opt = 1
-ys_opt = 1
-zs_opt = 0
-
-
-# boundary conditions (see boundary.h for values)
-# 0 = none applied
-# 1 = zero value
-# 2 = zero gradient
-# 3 = laplacian
-# 4 = laplacian with zero-gradient
-
+function = gauss(x) * gauss(y)
 bndry_all = neumann # Zero-gradient on all boundaries
 
 [V]

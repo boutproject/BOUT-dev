@@ -169,10 +169,6 @@ ni_ni1_phi1 = true
 
 scale = 1.0e-8 # only perturbing Ni
 
-#xinner = 1
-#xouter = 1
-
-
 # Section for only the rho equation
 # Contains switches for terms
 [rho]
