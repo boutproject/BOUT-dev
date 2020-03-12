@@ -41,7 +41,7 @@ int MsgStack::push(std::string message) {
   // This is temporary fix: no messages from OMP regions if there's
   // more than one thread
   if (omp_get_num_threads() > 1) {
-    return 0;
+    return position;
   }
 #endif
 
