@@ -82,6 +82,9 @@ public:
 
   void resetSolver();
 
+  bool all(const Array<bool>);
+  bool any(const Array<bool>);
+
 private:
   // The coefficents in
   // D*grad_perp^2(x) + (1/C)*(grad_perp(C))*grad_perp(x) + A*x = b
