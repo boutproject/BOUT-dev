@@ -202,27 +202,15 @@ bool LaplaceParallelTri::is_diagonally_dominant(const dcomplex al, const dcomple
 /*
  * Calculate the absolute and relative errors at an x grid point.
  */
-bool get_errors(const BoutReal rtol, const BoutReal atol, const dcomplex x,const dcomplex xlast){
-  BoutReal error_abs = abs(x - xlast);
-
-  if( error_abs < atol ){
-    return true;
-  }
-
+void get_errors(BoutReal *error_rel,BoutReal *error_abs,const dcomplex x,const dcomplex xlast){
+  *error_abs = abs(x - xlast);
   BoutReal xabs = fabs(x);
   if( xabs > 0.0 ){
-    // relative error
-    if( error_abs < rtol * xabs ){
-      return true;
-    }
+    *error_rel = *error_abs / xabs;
   }
   else{
-    // x too small, so set error_rel = error_abs
-    if( error_abs < rtol ){
-      return true;
-    }
+    *error_rel = *error_abs;
   }
-  return false;
 }
 
 bool LaplaceParallelTri::all(const Array<bool> a){
@@ -374,6 +362,8 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   auto xk1d = Matrix<dcomplex>(ncz/2+1,ncx);
   auto xk1dlast = Matrix<dcomplex>(ncz/2+1,ncx);
   auto error = Array<dcomplex>(ncx);
+  BoutReal error_rel_lower = 1e20, error_abs_lower=1e20;
+  BoutReal error_rel_upper = 1e20, error_abs_upper=1e20;
   // Down and up coefficients
   dcomplex Bd, Ad;
   dcomplex Bu, Au;
@@ -710,11 +700,17 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
         SCOREP_USER_REGION_DEFINE(errors);
         SCOREP_USER_REGION_BEGIN(errors, "calculate errors",SCOREP_USER_REGION_TYPE_COMMON);
         // Calcalate errors on interior points only
-        if ( count > 0 
-             and get_errors(rtol,atol,xloc(1,kz),xloclast(1,kz))
-             and get_errors(rtol,atol,xloc(2,kz),xloclast(2,kz))) {
-          self_in[kz] = true;
-          self_out[kz] = true;
+        get_errors(&error_rel_lower,&error_abs_lower,xloc(1,kz),xloclast(1,kz));
+        get_errors(&error_rel_upper,&error_abs_upper,xloc(2,kz),xloclast(2,kz));
+
+        // Set communication flags
+        if ( count > 0 && (
+          ((error_rel_lower<rtol or error_abs_lower<atol) and
+          (error_rel_upper<rtol or error_abs_upper<atol) ))) {
+	  // In the next iteration this proc informs its neighbours that its halo cells
+	  // will no longer be updated, then breaks.
+	  self_in[kz] = true;
+	  self_out[kz] = true;
         }
         SCOREP_USER_REGION_END(errors);
       }
