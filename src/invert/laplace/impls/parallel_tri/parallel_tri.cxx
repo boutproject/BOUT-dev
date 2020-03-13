@@ -848,9 +848,11 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
     SCOREP_USER_REGION_BEGIN(copylast, "copy to last",SCOREP_USER_REGION_TYPE_COMMON);
     //output<<"xloc "<<maxmode<<" "<<kz<<" "<<xloc(kz,0)<<" "<<xloc(kz,1)<<" "<<xloc(kz,2)<<" "<<xloc(kz,3)<<endl;
     //output<<"xloclast "<<kz<<" "<<xloclast(kz,0)<<" "<<xloclast(kz,1)<<" "<<xloclast(kz,2)<<" "<<xloclast(kz,3)<<endl;
-    for (int ix = 0; ix < 4; ix++) {
-      for (int kz = 0; kz <= maxmode; kz++) {
-	xloclast(ix,kz) = xloc(ix,kz);
+    for (int kz = 0; kz <= maxmode; kz++) {
+      if(!(self_in[kz] and self_out[kz])){
+        for (int ix = 0; ix < 4; ix++) {
+	  xloclast(ix,kz) = xloc(ix,kz);
+        }
       }
     }
     SCOREP_USER_REGION_END(copylast);
