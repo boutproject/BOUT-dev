@@ -716,6 +716,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   ///SCOREP_USER_REGION_DEFINE(whileloop);
   ///SCOREP_USER_REGION_BEGIN(whileloop, "while loop",SCOREP_USER_REGION_TYPE_COMMON);
 
+  //output<<"before iteration"<<endl;
   int count = 0;
   while(true){
 
@@ -754,6 +755,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       }
     }
 
+    //output<<"after work jy, count "<<jy<<" "<<count<<endl;
     ///SCOREP_USER_REGION_END(workanderror);
     ///SCOREP_USER_REGION_DEFINE(comms);
     ///SCOREP_USER_REGION_BEGIN(comms, "communication",SCOREP_USER_REGION_TYPE_COMMON);
@@ -780,7 +782,14 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
     // expecting us to communicate.
     //
     // Communicate in
+//    if(count>422 and count<428){
+//      for(int kz=0; kz<3;kz++){
+//	output<<"before "<<kz<<" "<<neighbour_in[kz]<<" "<<self_in[kz]<<" "<<self_out[kz]<<" "<<neighbour_out[kz]<<endl;
+//      } 
+//    }
     if(!all(neighbour_in)) {
+      //output<<"neighbour_in proc "<<BoutComm::rank()<<endl;
+
       for (int kz = 0; kz <= maxmode; kz++) {
 	message_send[kz].value = xloc(index_in,kz);
 	message_send[kz].done  = self_in[kz];
@@ -795,6 +804,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
     // Communicate out
     // See note above for inward communication.
     if(!all(neighbour_out)) {
+      //output<<"neighbour_out proc "<<BoutComm::rank()<<endl;
       for (int kz = 0; kz <= maxmode; kz++) {
 	message_send[kz].value = xloc(index_out,kz);
 	message_send[kz].done  = self_out[kz];
@@ -806,6 +816,11 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       }
     }
     ///SCOREP_USER_REGION_END(comms);
+//    if(count>422 and count<428){
+//      for(int kz=0; kz<3;kz++){
+//	output<<"after "<<kz<<" "<<neighbour_in[kz]<<" "<<self_in[kz]<<" "<<self_out[kz]<<" "<<neighbour_out[kz]<<endl;
+//      } 
+//    }
 
     // Now I've done my communication, exit if I am both in- and out-converged
     if( all(self_in) and all(self_out) ) {
@@ -818,12 +833,8 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
     // boundary. Set this flag after the break loop above, to ensure we do one
     // iteration using our neighbour's converged value.
     for (int kz = 0; kz <= maxmode; kz++) {
-      if(neighbour_in[kz]) {
-	self_in[kz] = true;
-      }
-      if(neighbour_out[kz]) {
-	self_out[kz] = true;
-      }
+      self_in[kz] = neighbour_in[kz] = (self_in[kz] or neighbour_in[kz]);
+      self_out[kz] = neighbour_out[kz] = (self_out[kz] or neighbour_out[kz]);
     }
 
     ++count;
@@ -858,6 +869,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
     ///SCOREP_USER_REGION_END(copylast);
 
   }
+//  output<<"after iteration"<<endl;
   ///SCOREP_USER_REGION_END(whileloop);
 
   //throw BoutException("LaplaceParallelTri error: periodic boundary conditions not supported");
@@ -934,6 +946,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
     }
     first_call(jy,kz) = false;
   }
+//  output<<"after loop"<<endl;
   ///SCOREP_USER_REGION_END(afterloop);
 
   ///SCOREP_USER_REGION_DEFINE(fftback);
@@ -952,6 +965,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	throw BoutException("Non-finite at %d, %d, %d", ix, jy, kz);
 #endif
   }
+//  output<<"end"<<endl;
   ///SCOREP_USER_REGION_END(fftback);
   return x; // Result of the inversion
 }
