@@ -1,5 +1,5 @@
 bout_add_integrated_test(test-laplace-petsc3d
-  SOURCES test-laplace3d.cxx
+  SOURCES test-laplace3d-petsc.cxx
   EXTRA_FILES
     data_circular_core/BOUT.inp
     data_circular_core-sol/BOUT.inp

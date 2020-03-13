@@ -18,7 +18,7 @@ build_and_log('Laplace 3D with PETSc')
 success = True
 for directory,nproc in test_directories:
     try:
-        command = 'test-laplace3d -d ' + directory + ' > ' + directory + '/output.log 2>&1'
+        command = 'test-laplace3d-petsc -d ' + directory + ' > ' + directory + '/output.log 2>&1'
         print('running on', nproc, 'processors:', command)
         launch_safe(command, nproc=nproc)
     except RuntimeError:
