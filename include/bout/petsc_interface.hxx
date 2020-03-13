@@ -548,7 +548,14 @@ public:
     initialised = true;
   }
 
-  /// Copy assignment
+  /// Helper struct to create a shared copy of a PetscMatrix
+  struct SharedCopy {};
+
+  /// Copy but share the underlying matrix
+  PetscMatrix(const PetscMatrix<T>& other, int offset, SharedCopy)
+      : matrix(other.matrix), indexConverter(other.indexConverter), pt(other.pt),
+        yoffset(offset), initialised(other.initialised) {}
+
   PetscMatrix<T>& operator=(PetscMatrix<T> rhs) {
     swap(*this, rhs);
     return *this;
@@ -726,25 +733,86 @@ public:
     }
   }
 
-  PetscMatrix<T> yup(int index = 0) { return ynext(index + 1); }
-  PetscMatrix<T> ydown(int index = 0) { return ynext(-index - 1); }
-  PetscMatrix<T> ynext(int dir) {
+  using parallel_slice_size_type = typename std::vector<PetscMatrix<T>>::size_type;
+
+  PetscMatrix<T>& yup(parallel_slice_size_type index = 0) {
+    ASSERT2(index < yup_matrices.size());
+    return yup_matrices[index];
+  }
+  PetscMatrix<T>& ydown(parallel_slice_size_type index = 0) {
+    ASSERT2(index < ydown_matrices.size());
+    return ydown_matrices[index];
+  }
+  PetscMatrix<T>& ynext(int dir) {
     if (std::is_same<T, FieldPerp>::value && yoffset + dir != 0) {
       throw BoutException("Can not get ynext for FieldPerp");
     }
-    PetscMatrix<T> result; // Can't use copy constructor because don't
-                           // want to duplicate the matrix
-    result.matrix = matrix;
-    result.indexConverter = indexConverter;
-    result.pt = pt;
-    result.yoffset = std::is_same<T, Field2D>::value ? 0 : yoffset + dir;
-    result.initialised = initialised;
-    return result;
+#if CHECK > 0
+    // Asked for more than yguards
+    if (std::abs(dir) > indexConverter->getMesh()->ystart) {
+      throw BoutException("PetscMatrix<T>: Call to ynext with {:d} which is more than "
+                          "number of yguards ({:d})",
+                          dir, indexConverter->getMesh()->ystart);
+    }
+#endif
+
+    // ynext uses 1-indexing, but yup wants 0-indexing
+    if (dir > 0) {
+      return yup(dir - 1);
+    } else if (dir < 0) {
+      return ydown(std::abs(dir) - 1);
+    } else {
+      return *this;
+    }
   }
 
   /// Provides a reference to the raw PETSc Mat object.
   Mat* get() { return matrix.get(); }
   const Mat* get() const { return matrix.get(); }
+
+  void splitParallelSlices() {
+    TRACE("PetscMatrix<T>::splitParallelSlices");
+
+#if CHECK > 2
+    if (yup_matrices.size() != ydown_matrices.size()) {
+      throw BoutException("PetscMatrix<T>::splitParallelSlices: forward/backward "
+                          "parallel slices not in sync.\n"
+                          "    This is an internal library error");
+    }
+#endif
+
+    if (not yup_matrices.empty()) {
+      return;
+    }
+
+    yup_matrices.reserve(indexConverter->getMesh()->ystart);
+    ydown_matrices.reserve(indexConverter->getMesh()->ystart);
+
+    const auto is_field2D = std::is_same<T, Field2D>::value;
+    for (int i = 0; i < indexConverter->getMesh()->ystart; ++i) {
+      yup_matrices.emplace_back(*this, is_field2D ? 0 : yoffset + i, SharedCopy{});
+      ydown_matrices.emplace_back(*this, is_field2D ? 0 : yoffset - i, SharedCopy{});
+    }
+  }
+
+  void clearParallelSlices() {
+    TRACE("PetscMatrix<T>::clearParallelSlices");
+
+#if CHECK > 2
+    if (yup_matrices.size() != ydown_matrices.size()) {
+      throw BoutException("PetscMatrix<T>::clearParallelSlices: forward/backward "
+                          "parallel slices not in sync.\n"
+                          "    This is an internal library error");
+    }
+#endif
+
+    if (yup_matrices.empty() && ydown_matrices.empty()) {
+      return;
+    }
+
+    yup_matrices.clear();
+    ydown_matrices.clear();
+  }
 
 private:
   PetscLib lib;
@@ -753,6 +821,8 @@ private:
   ParallelTransform* pt;
   int yoffset = 0;
   bool initialised = false;
+  std::vector<PetscMatrix<T>> yup_matrices{};
+  std::vector<PetscMatrix<T>> ydown_matrices{};
 };
 
 /*!
