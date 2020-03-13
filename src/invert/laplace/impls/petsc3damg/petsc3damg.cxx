@@ -272,7 +272,8 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
   const Field3D dc_dy = issetC ? DDY(C2) : Field3D();
   const Field3D dc_dz = issetC ? DDZ(C2) : Field3D();
   const Field2D dJ_dy = DDY(coords->J/coords->g_22);
-  
+
+  operator3D.splitParallelSlices();
   // Set up the matrix for the internal points on the grid.
   // Boundary conditions were set in the constructor.
   BOUT_FOR_SERIAL(l, indexer->getRegionNobndry()) {
@@ -335,18 +336,20 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
     // The values stored in the y-boundary are already interpolated
     // up/down, so we don't want the matrix to do any such
     // interpolation there.
-    const int yup = (l.y() == localmesh->yend && upperY.intersects(l.x())) ? -1 : 0,
-              ydown = (l.y() == localmesh->ystart && lowerY.intersects(l.x())) ? -1 : 0;
-    operator3D.yup(yup)(l, l.yp()) = 0.0;
-    operator3D.ydown(ydown)(l, l.ym()) = 0.0;
-    operator3D.yup(yup)(l, l.xp().yp()) = 0.0;
-    operator3D.ydown(ydown)(l, l.xp().ym()) = 0.0;
-    operator3D.yup(yup)(l, l.xm().yp()) = 0.0;
-    operator3D.ydown(ydown)(l, l.xm().ym()) = 0.0;
-    operator3D.yup(yup)(l, l.yp().zp()) = 0.0;
-    operator3D.yup(yup)(l, l.yp().zm()) = 0.0;
-    operator3D.ydown(ydown)(l, l.ym().zp()) = 0.0;
-    operator3D.ydown(ydown)(l, l.ym().zm()) = 0.0;
+    const int yup = (l.y() == localmesh->yend && upperY.intersects(l.x())) ? 0 : 1;
+    const int ydown = (l.y() == localmesh->ystart && lowerY.intersects(l.x())) ? 0 : -1;
+    auto& operator3D_yup = operator3D.ynext(yup);
+    auto& operator3D_ydown = operator3D.ynext(ydown);
+    operator3D_yup(l, l.yp()) = 0.0;
+    operator3D_ydown(l, l.ym()) = 0.0;
+    operator3D_yup(l, l.xp().yp()) = 0.0;
+    operator3D_ydown(l, l.xp().ym()) = 0.0;
+    operator3D_yup(l, l.xm().yp()) = 0.0;
+    operator3D_ydown(l, l.xm().ym()) = 0.0;
+    operator3D_yup(l, l.yp().zp()) = 0.0;
+    operator3D_yup(l, l.yp().zm()) = 0.0;
+    operator3D_ydown(l, l.ym().zp()) = 0.0;
+    operator3D_ydown(l, l.ym().zm()) = 0.0;
   }
   operator3D.partialAssemble();
 
@@ -388,19 +391,20 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
     // The values stored in the y-boundary are already interpolated
     // up/down, so we don't want the matrix to do any such
     // interpolation there.
-    const int yup = (l.y() == localmesh->yend && upperY.intersects(l.x())) ? -1 : 0,
-      ydown = (l.y() == localmesh->ystart && lowerY.intersects(l.x())) ? -1 : 0;
-    
-    operator3D.yup(yup)(l, l.yp()) += C_df_dy + C_d2f_dy2;
-    operator3D.ydown(ydown)(l, l.ym()) += -C_df_dy + C_d2f_dy2;
-    operator3D.yup(yup)(l, l.xp().yp()) += C_d2f_dxdy/coords->dy[l.xp()];
-    operator3D.ydown(ydown)(l, l.xp().ym()) += -C_d2f_dxdy/coords->dy[l.xp()];
-    operator3D.yup(yup)(l, l.xm().yp()) += -C_d2f_dxdy/coords->dy[l.xm()];
-    operator3D.ydown(ydown)(l, l.xm().ym()) += C_d2f_dxdy/coords->dy[l.xm()];
-    operator3D.yup(yup)(l, l.yp().zp()) += C_d2f_dydz;
-    operator3D.yup(yup)(l, l.yp().zm()) += -C_d2f_dydz;
-    operator3D.ydown(ydown)(l, l.ym().zp()) += -C_d2f_dydz;
-    operator3D.ydown(ydown)(l, l.ym().zm()) += C_d2f_dydz;    
+    const int yup = (l.y() == localmesh->yend && upperY.intersects(l.x())) ? 0 : 1;
+    const int ydown = (l.y() == localmesh->ystart && lowerY.intersects(l.x())) ? 0 : -1;
+    auto& operator3D_yup = operator3D.ynext(yup);
+    auto& operator3D_ydown = operator3D.ynext(ydown);
+    operator3D_yup(l, l.yp()) += C_df_dy + C_d2f_dy2;
+    operator3D_ydown(l, l.ym()) += -C_df_dy + C_d2f_dy2;
+    operator3D_yup(l, l.xp().yp()) += C_d2f_dxdy / coords->dy[l.xp()];
+    operator3D_ydown(l, l.xp().ym()) += -C_d2f_dxdy / coords->dy[l.xp()];
+    operator3D_yup(l, l.xm().yp()) += -C_d2f_dxdy / coords->dy[l.xm()];
+    operator3D_ydown(l, l.xm().ym()) += C_d2f_dxdy / coords->dy[l.xm()];
+    operator3D_yup(l, l.yp().zp()) += C_d2f_dydz;
+    operator3D_yup(l, l.yp().zm()) += -C_d2f_dydz;
+    operator3D_ydown(l, l.ym().zp()) += -C_d2f_dydz;
+    operator3D_ydown(l, l.ym().zm()) += C_d2f_dydz;
   }
   operator3D.assemble();
   MatSetBlockSize(*operator3D.get(), 1);
