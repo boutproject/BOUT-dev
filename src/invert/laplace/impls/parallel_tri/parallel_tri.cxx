@@ -284,8 +284,8 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   // indexing of xk1d to cover all possible cases.
   //
   int nmode = maxmode + 1;
-  auto xloc = Matrix<dcomplex>(nmode,4);
-  auto xloclast = Matrix<dcomplex>(nmode,4);
+  auto xloc = Matrix<dcomplex>(4,nmode);
+  auto xloclast = Matrix<dcomplex>(4,nmode);
   auto rl = Array<dcomplex>(nmode);
   auto ru = Array<dcomplex>(nmode);
   auto rlold = Array<dcomplex>(nmode);
@@ -551,10 +551,10 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       }
 
       // Original method:
-      xloclast(kz,0) = xk1d(kz,xs-1);
-      xloclast(kz,1) = xk1d(kz,xs);
-      xloclast(kz,2) = xk1d(kz,xe);
-      xloclast(kz,3) = xk1d(kz,xe+1);
+      xloclast(0,kz) = xk1d(kz,xs-1);
+      xloclast(1,kz) = xk1d(kz,xs);
+      xloclast(2,kz) = xk1d(kz,xe);
+      xloclast(3,kz) = xk1d(kz,xe+1);
 
       if( first_call(jy,kz) or not store_coefficients ){
 	bl(jy,kz) = upperGuardVector(xs,jy,kz);
@@ -656,8 +656,8 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	rl[kz] = r1(jy,kz)*Rd[kz] + r2(jy,kz)*rlold[kz] + r3(jy,kz)*ruold[kz] + r4(jy,kz)*Ru[kz] ;
 	ru[kz] = r5(jy,kz)*Rd[kz] + r6(jy,kz)*rlold[kz] + r7(jy,kz)*ruold[kz] + r8(jy,kz)*Ru[kz] ;
 
-	xloclast(kz,0) = localmesh->communicateXIn(xloclast(kz,2));
-	xloclast(kz,3) = localmesh->communicateXOut(xloclast(kz,1));
+	xloclast(0,kz) = localmesh->communicateXIn(xloclast(2,kz));
+	xloclast(3,kz) = localmesh->communicateXOut(xloclast(1,kz));
       }
 
 	///SCOREP_USER_REGION_END(coefs);
@@ -671,8 +671,8 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	///SCOREP_USER_REGION_BEGIN(iteration, "iteration",SCOREP_USER_REGION_TYPE_COMMON);
 
 	// Only need to update interior points
-	xloc(kz,1) = rl[kz] + al(jy,kz)*xloclast(kz,0) + bl(jy,kz)*xloclast(kz,3);
-	xloc(kz,2) = ru[kz] + au(jy,kz)*xloclast(kz,0) + bu(jy,kz)*xloclast(kz,3);
+	xloc(1,kz) = rl[kz] + al(jy,kz)*xloclast(0,kz) + bl(jy,kz)*xloclast(3,kz);
+	xloc(2,kz) = ru[kz] + au(jy,kz)*xloclast(0,kz) + bu(jy,kz)*xloclast(3,kz);
 	//output<<xloc(kz,1)<<" "<<xloc(kz,2)<<endl;
 
 	///SCOREP_USER_REGION_END(iteration);
@@ -683,8 +683,8 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	///SCOREP_USER_REGION_DEFINE(errors);
 	///SCOREP_USER_REGION_BEGIN(errors, "calculate errors",SCOREP_USER_REGION_TYPE_COMMON);
 	// Calcalate errors on interior points only
-	get_errors(&error_rel_lower,&error_abs_lower,xloc(kz,1),xloclast(kz,1));
-	get_errors(&error_rel_upper,&error_abs_upper,xloc(kz,2),xloclast(kz,2));
+	get_errors(&error_rel_lower,&error_abs_lower,xloc(1,kz),xloclast(1,kz));
+	get_errors(&error_rel_upper,&error_abs_upper,xloc(2,kz),xloclast(2,kz));
 	///SCOREP_USER_REGION_END(errors);
 
 	///SCOREP_USER_REGION_DEFINE(flags);
@@ -727,23 +727,23 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	//
 	// Communicate in
 	if(!neighbour_in) {
-          message_send.value = xloc(kz,index_in);
+          message_send.value = xloc(index_in,kz);
           message_send.done  = self_in;
           err = MPI_Sendrecv(&message_send, sizeof(Message), MPI_BYTE, proc_in, 1, &message_recv, sizeof(Message), MPI_BYTE, proc_in, 0, comm, MPI_STATUS_IGNORE);
 
-	  xloc(kz,0) = message_recv.value;
+	  xloc(0,kz) = message_recv.value;
 	  neighbour_in = message_recv.done;
 	}
 
 	// Communicate out
 	// See note above for inward communication.
 	if(!neighbour_out) {
-          message_send.value = xloc(kz,index_out);
+          message_send.value = xloc(index_out,kz);
           message_send.done  = self_out;
 
           err = MPI_Sendrecv(&message_send, sizeof(Message), MPI_BYTE, proc_out, 0, &message_recv, sizeof(Message), MPI_BYTE, proc_out, 1, comm, MPI_STATUS_IGNORE);
 
-	  xloc(kz,3) = message_recv.value;
+	  xloc(3,kz) = message_recv.value;
 	  neighbour_out = message_recv.done;
 	}
 	///SCOREP_USER_REGION_END(comms);
@@ -788,7 +788,7 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 	//output<<"xloc "<<maxmode<<" "<<kz<<" "<<xloc(kz,0)<<" "<<xloc(kz,1)<<" "<<xloc(kz,2)<<" "<<xloc(kz,3)<<endl;
 	//output<<"xloclast "<<kz<<" "<<xloclast(kz,0)<<" "<<xloclast(kz,1)<<" "<<xloclast(kz,2)<<" "<<xloclast(kz,3)<<endl;
 	for (int ix = 0; ix < 4; ix++) {
-	  xloclast(kz,ix) = xloc(kz,ix);
+	  xloclast(ix,kz) = xloc(ix,kz);
 	}
 	///SCOREP_USER_REGION_END(copylast);
 	
@@ -807,14 +807,14 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
 
 
     // Original method:
-    xk1d(kz,xs-1) = xloc(kz,0);
-    xk1d(kz,xs)   = xloc(kz,1);
-    xk1dlast(kz,xs-1) = xloclast(kz,0);
-    xk1dlast(kz,xs)   = xloclast(kz,1);
-    xk1d(kz,xe)   = xloc(kz,2);
-    xk1d(kz,xe+1) = xloc(kz,3);
-    xk1dlast(kz,xe)   = xloclast(kz,2);
-    xk1dlast(kz,xe+1) = xloclast(kz,3);
+    xk1d(kz,xs-1) = xloc(0,kz);
+    xk1d(kz,xs)   = xloc(1,kz);
+    xk1dlast(kz,xs-1) = xloclast(0,kz);
+    xk1dlast(kz,xs)   = xloclast(1,kz);
+    xk1d(kz,xe)   = xloc(2,kz);
+    xk1d(kz,xe+1) = xloc(3,kz);
+    xk1dlast(kz,xe)   = xloclast(2,kz);
+    xk1dlast(kz,xe+1) = xloclast(3,kz);
 
     if(new_method){
       dcomplex d = 1.0/(buold(jy,kz)*alold(jy,kz) - blold(jy,kz)*auold(jy,kz));
