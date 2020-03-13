@@ -509,10 +509,8 @@ public:
     }
   };
 
-  /// Default constructor does nothing
   PetscMatrix() : matrix(new Mat(), MatrixDeleter()) {}
 
-  /// Copy constructor
   PetscMatrix(const PetscMatrix<T>& m) : matrix(new Mat(), MatrixDeleter()), pt(m.pt) {
     MatDuplicate(*m.matrix, MAT_COPY_VALUES, matrix.get());
     indexConverter = m.indexConverter;
@@ -520,12 +518,9 @@ public:
     initialised = m.initialised;
   }
 
-  /// Move constrcutor
-  PetscMatrix(PetscMatrix<T>&& m) : pt(m.pt) {
-    matrix = m.matrix;
-    indexConverter = m.indexConverter;
-    yoffset = m.yoffset;
-    initialised = m.initialised;
+  PetscMatrix(PetscMatrix<T>&& m)
+      : matrix(std::move(m.matrix)), indexConverter(std::move(m.indexConverter)),
+        pt(std::move(m.pt)), yoffset(m.yoffset), initialised(m.initialised) {
     m.initialised = false;
   }
 
@@ -558,11 +553,11 @@ public:
     swap(*this, rhs);
     return *this;
   }
-  /// Move assignment
+
   PetscMatrix<T>& operator=(PetscMatrix<T>&& rhs) {
-    matrix = rhs.matrix;
-    indexConverter = rhs.indexConverter;
-    pt = rhs.pt;
+    matrix = std::move(rhs.matrix);
+    indexConverter = std::move(rhs.indexConverter);
+    pt = std::move(rhs.pt);
     yoffset = rhs.yoffset;
     initialised = rhs.initialised;
     rhs.initialised = false;
