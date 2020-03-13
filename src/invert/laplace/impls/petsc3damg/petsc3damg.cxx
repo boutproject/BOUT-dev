@@ -119,7 +119,7 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mes
   }
 
   // Set up boundary conditions in operator
-  BOUT_FOR(i, indexer->getRegionInnerX()) {
+  BOUT_FOR_SERIAL(i, indexer->getRegionInnerX()) {
     if(inner_boundary_flags & INVERT_AC_GRAD) {
       // Neumann on inner X boundary
       operator3D(i, i) = -1./coords->dx[i]/sqrt(coords->g_11[i]);
@@ -131,7 +131,7 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mes
     }
   }
 
-  BOUT_FOR(i, indexer->getRegionOuterX()) {
+  BOUT_FOR_SERIAL(i, indexer->getRegionOuterX()) {
     if(outer_boundary_flags & INVERT_AC_GRAD) {
       // Neumann on outer X boundary
       operator3D(i, i) = 1./coords->dx[i]/sqrt(coords->g_11[i]);
@@ -143,7 +143,7 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mes
     }
   }
 
-  BOUT_FOR(i, indexer->getRegionLowerY()) {
+  BOUT_FOR_SERIAL(i, indexer->getRegionLowerY()) {
     if(lower_boundary_flags & INVERT_AC_GRAD) {
       // Neumann on lower Y boundary
       operator3D(i, i) = -1./coords->dy[i]/sqrt(coords->g_22[i]);
@@ -155,7 +155,7 @@ LaplacePetsc3dAmg::LaplacePetsc3dAmg(Options *opt, const CELL_LOC loc, Mesh *mes
     }
   }
 
-  BOUT_FOR(i, indexer->getRegionUpperY()) {
+  BOUT_FOR_SERIAL(i, indexer->getRegionUpperY()) {
     if(upper_boundary_flags & INVERT_AC_GRAD) {
       // Neumann on upper Y boundary
       operator3D(i, i) = 1./coords->dy[i]/sqrt(coords->g_22[i]);
@@ -182,7 +182,7 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D &b_in, const Field3D &x0) {
   
   // Adjust vectors to represent boundary conditions and check that
   // boundary cells are finite
-  BOUT_FOR(i, indexer->getRegionInnerX()) {
+  BOUT_FOR_SERIAL(i, indexer->getRegionInnerX()) {
     const BoutReal val = (inner_boundary_flags & INVERT_SET) ? x0[i] : 0.;
     ASSERT1(finite(x0[i]));
     if (!(inner_boundary_flags & INVERT_RHS)) {
@@ -193,7 +193,7 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D &b_in, const Field3D &x0) {
     }
   }
 
-  BOUT_FOR(i, indexer->getRegionOuterX()) {
+  BOUT_FOR_SERIAL(i, indexer->getRegionOuterX()) {
     const BoutReal val = (outer_boundary_flags & INVERT_SET) ? x0[i] : 0.;
     ASSERT1(finite(x0[i]));
     if (!(outer_boundary_flags & INVERT_RHS)) {
@@ -204,7 +204,7 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D &b_in, const Field3D &x0) {
     }
   }
 
-  BOUT_FOR(i, indexer->getRegionLowerY()) {
+  BOUT_FOR_SERIAL(i, indexer->getRegionLowerY()) {
     const BoutReal val = (lower_boundary_flags & INVERT_SET) ? x0[i] : 0.;
     ASSERT1(finite(x0[i]));
     if (!(lower_boundary_flags & INVERT_RHS)) {
@@ -215,7 +215,7 @@ Field3D LaplacePetsc3dAmg::solve(const Field3D &b_in, const Field3D &x0) {
     }
   }
 
-  BOUT_FOR(i, indexer->getRegionUpperY()) {
+  BOUT_FOR_SERIAL(i, indexer->getRegionUpperY()) {
     const BoutReal val = (upper_boundary_flags & INVERT_SET) ? x0[i] : 0.;
     ASSERT1(finite(x0[i]));
     if (!(upper_boundary_flags & INVERT_RHS)) {
@@ -275,7 +275,7 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
   
   // Set up the matrix for the internal points on the grid.
   // Boundary conditions were set in the constructor.
-  BOUT_FOR(l, indexer->getRegionNobndry()) {
+  BOUT_FOR_SERIAL(l, indexer->getRegionNobndry()) {
     // Index is called l for "location". It is not called i so as to
     // avoid confusing it with the x-index.
 
@@ -352,7 +352,7 @@ void LaplacePetsc3dAmg::updateMatrix3D() {
 
   // Must add these (rather than assign) so that elements used in
   // interpolation don't overwrite each other.
-  BOUT_FOR(l, indexer->getRegionNobndry()) {
+  BOUT_FOR_SERIAL(l, indexer->getRegionNobndry()) {
     BoutReal C_df_dy = (coords->G2[l] - dJ_dy[l]/coords->J[l]);
     if (issetD) {
       C_df_dy *= D[l];
