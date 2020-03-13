@@ -370,7 +370,10 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
   dcomplex Btmp, Atmp;
   auto Rd = Array<dcomplex>(ncz/2+1);
   auto Ru = Array<dcomplex>(ncz/2+1);
-  auto Rtmp = Array<dcomplex>(ncz/2+1);
+  auto Rsendup = Array<dcomplex>(ncz+2);
+  auto Rsenddown = Array<dcomplex>(ncz+2);
+  auto Rrecvup = Array<dcomplex>(ncz+2);
+  auto Rrecvdown = Array<dcomplex>(ncz+2);
 
   // Define indexing of xloc that depends on method. Doing this now removes
   // branch in tight loops
@@ -650,30 +653,61 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
       Ru[kz] = 0.0;
       if(not localmesh->firstX()){
 	// Send coefficients down
-	Rtmp[kz] = rl[kz];
+	Rsenddown[kz] = rl[kz];
 	if( std::fabs(buold(jy,kz)) > 1e-14 ){
-	  Rtmp[kz] -= ru[kz]*blold(jy,kz)/buold(jy,kz);
+	  Rsenddown[kz] -= ru[kz]*blold(jy,kz)/buold(jy,kz);
 	}
-	Rd[kz] = localmesh->communicateXIn(Rtmp[kz]);
+	Rd[kz] = localmesh->communicateXIn(Rsenddown[kz]);
       }
       if(not localmesh->lastX()){
 	// Send coefficients up
-	Rtmp[kz] = ru[kz];
+	Rsendup[kz] = ru[kz];
 	if( std::fabs(alold(jy,kz)) > 1e-14 ){
-	  Rtmp[kz] -= rl[kz]*auold(jy,kz)/alold(jy,kz);
+	  Rsendup[kz] -= rl[kz]*auold(jy,kz)/alold(jy,kz);
 	}
-	Ru[kz] = localmesh->communicateXOut(Rtmp[kz]);
+	Ru[kz] = localmesh->communicateXOut(Rsendup[kz]);
       }
+    } // new method
+    SCOREP_USER_REGION_END(coefs);
+  } // end of kz loop
 
+  SCOREP_USER_REGION_DEFINE(comm_coefs);
+  SCOREP_USER_REGION_BEGIN(comm_coefs, "comm coefs",SCOREP_USER_REGION_TYPE_COMMON);
+  // Communicate vector in kz
+  if(new_method){
+    if(not localmesh->firstX()){
+      for (int kz = 0; kz <= maxmode; kz++) {
+        Rsenddown[kz+maxmode] = xloclast(2,kz);
+      }
+    }
+    if(not localmesh->lastX()){
+      for (int kz = 0; kz <= maxmode; kz++) {
+        Rsendup[kz+maxmode] = xloclast(1,kz);
+      }
+    }
+
+    err = MPI_Sendrecv(&Rsenddown[0], 2*nmode, MPI_DOUBLE_COMPLEX, proc_in, 1, &Rrecvdown[0], 2*nmode, MPI_DOUBLE_COMPLEX, proc_in, 0, comm, MPI_STATUS_IGNORE);
+    err = MPI_Sendrecv(&Rsendup[0], 2*nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, &Rrecvup[0], 2*nmode, MPI_DOUBLE_COMPLEX, proc_out, 1, comm, MPI_STATUS_IGNORE);
+
+    if(not localmesh->firstX()){
+      for (int kz = 0; kz <= maxmode; kz++) {
+        Rd[kz] = Rrecvdown[kz];
+        xloclast(0,kz) = Rrecvdown[kz+maxmode];
+      }
+    }
+    if(not localmesh->lastX()){
+      for (int kz = 0; kz <= maxmode; kz++) {
+        Ru[kz] = Rrecvup[kz];
+        xloclast(3,kz) = Rrecvup[kz+maxmode];
+      }
+    }
+
+    for (int kz = 0; kz <= maxmode; kz++) {
       rl[kz] = r1(jy,kz)*Rd[kz] + r2(jy,kz)*rlold[kz] + r3(jy,kz)*ruold[kz] + r4(jy,kz)*Ru[kz] ;
       ru[kz] = r5(jy,kz)*Rd[kz] + r6(jy,kz)*rlold[kz] + r7(jy,kz)*ruold[kz] + r8(jy,kz)*Ru[kz] ;
-
-      xloclast(0,kz) = localmesh->communicateXIn(xloclast(2,kz));
-      xloclast(3,kz) = localmesh->communicateXOut(xloclast(1,kz));
-
     }
-    SCOREP_USER_REGION_END(coefs);
   }
+  SCOREP_USER_REGION_END(comm_coefs);
 
   SCOREP_USER_REGION_DEFINE(whileloop);
   SCOREP_USER_REGION_BEGIN(whileloop, "while loop",SCOREP_USER_REGION_TYPE_COMMON);
