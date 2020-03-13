@@ -271,27 +271,23 @@ class Field3D : public Field, public FieldData {
   /// Return reference to yup field
   Field3D &yup(std::vector<Field3D>::size_type index = 0) {
     ASSERT2(index < yup_fields.size());
-    ASSERT3(!yup_fields[index].copy_yupdown_fields);
     return yup_fields[index];
   }
   /// Return const reference to yup field
   const Field3D &yup(std::vector<Field3D>::size_type index = 0) const {
     ASSERT2(index < yup_fields.size());
-    ASSERT3(!yup_fields[index].copy_yupdown_fields);
     return yup_fields[index];
   }
 
   /// Return reference to ydown field
   Field3D &ydown(std::vector<Field3D>::size_type index = 0) {
     ASSERT2(index < ydown_fields.size());
-    ASSERT3(!ydown_fields[index].copy_yupdown_fields);
     return ydown_fields[index];
   }
 
   /// Return const reference to ydown field
   const Field3D &ydown(std::vector<Field3D>::size_type index = 0) const {
     ASSERT2(index < ydown_fields.size());
-    ASSERT3(!ydown_fields[index].copy_yupdown_fields);
     return ydown_fields[index];
   }
 
@@ -513,7 +509,6 @@ class Field3D : public Field, public FieldData {
     swap(first.deriv, second.deriv);
     swap(first.yup_fields, second.yup_fields);
     swap(first.ydown_fields, second.ydown_fields);
-    swap(first.copy_yupdown_fields, second.copy_yupdown_fields);
     swap(first.bndry_op, second.bndry_op);
     swap(first.boundaryIsCopy, second.boundaryIsCopy);
     swap(first.boundaryIsSet, second.boundaryIsSet);
@@ -536,7 +531,6 @@ private:
 
   /// Fields containing values along Y
   std::vector<Field3D> yup_fields{}, ydown_fields{};
-  bool copy_yupdown_fields = true;
 };
 
 // Non-member overloaded operators
