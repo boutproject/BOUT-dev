@@ -6,7 +6,7 @@
 
 #requires: petsc
 
-from boututils.run_wrapper import build_and_log, shell, shell_safe, launch, launch_safe
+from boututils.run_wrapper import shell, shell_safe, launch, launch_safe
 from boutdata.collect import collect
 from sys import exit
 
