@@ -90,9 +90,9 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, MAYBE_UNUSED(BoutR
     vec{{order}} spacing;
     vec{{order}} facs;
 
+{% if type == "Dirichlet" %}
     const Field2D &coords_field =
         bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
-{% if type != "Free" %}
 {% for i in range(1,order) %}
     Indices i{{i}}{bndry->x - {{i}} * bndry->bx, bndry->y - {{i}} * bndry->by, 0};
 {% endfor %}
@@ -107,7 +107,65 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, MAYBE_UNUSED(BoutR
 {% endfor %}
     } else {
       spacing.f0 = 0;
-{% if type == "Neumann" %}
+{% for i in range(1,order) %}
+        spacing.f{{i}} = spacing.f{{i-1}} + coords_field(i{{i}}.x, i{{i}}.y);
+{% endfor %}
+
+    }
+    if (stagger == -1) {
+{% for i in range(1,order) %}
+      i{{i}} = {bndry->x - {{i+1}} * bndry->bx, bndry->y - {{i+1}} * bndry->by, 0};
+{% endfor %}
+    }
+    // with dirichlet, we specify the value on the boundary, even if
+    // the value is part of the evolving system.
+    for (int i = ((stagger == -1) ? -1 : 0); i < bndry->width; i++) {
+      Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
+      if (stagger == 0) {
+        BoutReal to_add = coords_field(ic.x, ic.y) / 2;
+        spacing += to_add;
+        facs = calc_interp_to_stencil(spacing);
+        spacing += to_add;
+      } else {
+        BoutReal to_add = coords_field(ic.x, ic.y);
+        if (stagger == -1
+              && i != -1) {
+          spacing += to_add;
+        }
+        facs = calc_interp_to_stencil(spacing);
+        if (stagger == 1) {
+          spacing += to_add;
+        }
+      }
+      for (int iz = 0; iz < mesh->LocalNz; iz++) {
+        const BoutReal val = (fg) ? vals[iz] : 0.0;
+        const BoutReal set = facs.f0 * val
+{% for i in range(1,order) %}
+           + facs.f{{i}} *f(i{{i}}.x, i{{i}}.y, iz)
+{% endfor %}
+        ;
+        
+        f(ic.x, ic.y, iz) = set;
+      }
+    }
+  }
+{% elif type == "Neumann" %}
+    const Field2D &coords_field =
+        bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
+{% for i in range(1,order) %}
+    Indices i{{i}}{bndry->x - {{i}} * bndry->bx, bndry->y - {{i}} * bndry->by, 0};
+{% endfor %}
+    if (stagger == 0) {
+      BoutReal t;
+      spacing.f0 = 0;
+      BoutReal st=0;
+{% for i in range(1,order) %}
+      t = coords_field(i{{i}}.x, i{{i}}.y);
+      spacing.f{{i}} = st + t / 2;
+      st += t;
+{% endfor %}
+    } else {
+      spacing.f0 = 0;
       // Check if we are staggered and also boundary in low
       //  direction
       // In the case of Neumann we have in this case two values
@@ -124,21 +182,41 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, MAYBE_UNUSED(BoutR
         spacing.f{{i}} = spacing.f{{i-1}} + coords_field(i{{i}}.x, i{{i}}.y);
 {% endfor %}
       }
-{% else %}
-{% for i in range(1,order) %}
-        spacing.f{{i}} = spacing.f{{i-1}} + coords_field(i{{i}}.x, i{{i}}.y);
-{% endfor %}
-{% endif %} {# end of special case for neuman #}
-
     }
-{% if type == "Dirichlet" %}
-    if (stagger == -1) {
+    // With free and neumann the value is not set if the point is
+    // evolved and it is on the boundary.
+    for (int i = 0; i < bndry->width; i++) {
+      Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
+      if (stagger == 0) {
+        BoutReal to_add = coords_field(ic.x, ic.y) / 2;
+        spacing += to_add;
+        facs = calc_interp_to_stencil(spacing);
+        spacing += to_add;
+      } else {
+        BoutReal to_add = coords_field(ic.x, ic.y);
+        if (stagger == -1) {
+          spacing += to_add;
+        }
+        facs = calc_interp_to_stencil(spacing);
+        if (stagger == 1) {
+          spacing += to_add;
+        }
+      }
+      for (int iz = 0; iz < mesh->LocalNz; iz++) {
+        const BoutReal val = (fg) ? vals[iz] : 0.0;
+        const BoutReal set = facs.f0 * val
 {% for i in range(1,order) %}
-      i{{i}} = {bndry->x - {{i+1}} * bndry->bx, bndry->y - {{i+1}} * bndry->by, 0};
+           + facs.f{{i}} *f(i{{i}}.x, i{{i}}.y, iz)
 {% endfor %}
+        ;
+        
+        f(ic.x, ic.y, iz) = set;
+      }
     }
-{% endif %}
-{% else %} {# type != Free #}
+  }
+{% elif type == "Free" %}
+    const Field2D &coords_field =
+        bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
 {% for i in range(order) %}
     const Indices i{{i}}{bndry->x - {{i+1}} * bndry->bx, bndry->y - {{i+1}} * bndry->by, 0};
 {% endfor %}
@@ -157,16 +235,9 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, MAYBE_UNUSED(BoutR
 {% endfor %}
     }
 
-{% endif %} {# type != Free #}
-{% if type == "Dirichlet" %}
-    // with dirichlet, we specify the value on the boundary, even if
-    // the value is part of the evolving system.
-    for (int i = ((stagger == -1) ? -1 : 0); i < bndry->width; i++) {
-{% else %}
     // With free and neumann the value is not set if the point is
     // evolved and it is on the boundary.
     for (int i = 0; i < bndry->width; i++) {
-{% endif %}
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
       if (stagger == 0) {
         BoutReal to_add = coords_field(ic.x, ic.y) / 2;
@@ -175,33 +246,11 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, MAYBE_UNUSED(BoutR
         spacing += to_add;
       } else {
         BoutReal to_add = coords_field(ic.x, ic.y);
-{% if type == "Free" %}
-{% elif type == "Dirichlet" %}
-        if (stagger == -1
-              && i != -1) {
-          spacing += to_add;
-        }
-{% else %}
-        if (stagger == -1) {
-          spacing += to_add;
-        }
-{% endif %}
         facs = calc_interp_to_stencil(spacing);
-{% if type != "Free" %}
-        if (stagger == 1) {
-          spacing += to_add;
-        }
-{% else %}
         spacing += to_add;
-{% endif %}
       }
       for (int iz = 0; iz < mesh->LocalNz; iz++) {
-{% if type != "Free" %}
-        const BoutReal val = (fg) ? vals[iz] : 0.0;
-        const BoutReal set = facs.f0 * val
-{% else %}
         const BoutReal set = facs.f0 * f(i0.x, i0.y, iz)
-{% endif %}
 {% for i in range(1,order) %}
            + facs.f{{i}} *f(i{{i}}.x, i{{i}}.y, iz)
 {% endfor %}
@@ -211,6 +260,7 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, MAYBE_UNUSED(BoutR
       }
     }
   }
+{% endif %}
 }
 """
 clone_str="""
@@ -257,6 +307,7 @@ if __name__ == "__main__":
                 'type':boundary,
                 'class':"Boundary%sNonUniform_O%d"%(boundary,order),
                 'stencil_code': code,
+                'with_fg' : boundary != "Free",
             }
 
             print(env.from_string(apply_str).render(**args))
