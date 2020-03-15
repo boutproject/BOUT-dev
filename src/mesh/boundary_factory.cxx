@@ -3,6 +3,7 @@
 #include <boundary_standard.hxx>
 #include <options.hxx>
 #include <utils.hxx>
+#include "boundary_nonuniform.hxx"
 
 #include <list>
 #include <string>
@@ -11,8 +12,6 @@ using std::list;
 using std::string;
 
 #include <output.hxx>
-
-#include "boundary_nonuniform.hxx"
 
 BoundaryFactory *BoundaryFactory::instance = nullptr;
 

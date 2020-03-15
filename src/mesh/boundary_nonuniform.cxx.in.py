@@ -61,34 +61,32 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
   CELL_LOC loc = f.getLocation();
 
 {% if type != "Free" %}
-  BoutReal val = 0.0;
-  BoutReal vals[mesh->LocalNz];
+  std::vector<BoutReal> vals;
+  vals.reserve(mesh->LocalNz);
 {% endif %}
 
   int x_boundary_offset = bndry->bx;
   int y_boundary_offset = bndry->by;
   int stagger = 0;
   update_stagger_offsets(x_boundary_offset, y_boundary_offset, stagger, loc);
-{% if type == "Dirichlet" %}
-  int istart = (stagger == -1) ? -1 : 0;
-{% endif %}
 
   for (; !bndry->isDone(); bndry->next1d()) {
 {% if type != "Free" %}
     if (fg) {
+      // Calculate the X and Y normalised values half-way between the guard cell and
+      // grid cell
+      const BoutReal xnorm = 0.5 *
+                     (mesh->GlobalX(bndry->x)          // In the guard cell
+                      + mesh->GlobalX(bndry->x - x_boundary_offset)); // the grid cell
+      const BoutReal ynorm = TWOPI * 0.5 *
+                     (mesh->GlobalY(bndry->y)          // In the guard cell
+                      + mesh->GlobalY(bndry->y - y_boundary_offset)); // the grid cell
+      const BoutReal zfac =  TWOPI / mesh->LocalNz;
       for (int zk = 0; zk < mesh->LocalNz; zk++) {
-        // Calculate the X and Y normalised values half-way between the guard cell and
-        // grid cell
-        BoutReal xnorm = 0.5 * (mesh->GlobalX(bndry->x)          // In the guard cell
-                                + mesh->GlobalX(bndry->x - x_boundary_offset)); // the grid cell
-
-        BoutReal ynorm = 0.5 * (mesh->GlobalY(bndry->y)          // In the guard cell
-                                + mesh->GlobalY(bndry->y - y_boundary_offset)); // the grid cell
-
-        vals[zk] = fg->generate(bout::generator::Context().set("x", xnorm, "y", TWOPI * ynorm, "z", TWOPI * zk / (mesh->LocalNz), "t" , t));
+        vals[zk] = fg->generate(bout::generator::Context().set("x", xnorm, "y", ynorm, "z", zfac * zk, "t" , t));
       }
     }
-{% endif %}
+{% endif %}{# type != Free #}
 
 
     vec{{order}} spacing;
@@ -111,9 +109,29 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
 {% endfor %}
     } else {
       spacing.f0 = 0;
-{% for i in range(1,order) %}
-      spacing.f{{i}} = spacing.f{{i-1}} + coords_field(i{{i}}.x, i{{i}}.y);
+{% if type == "Neumann" %}
+      // Check if we are staggered and also boundary in low
+      //  direction
+      // In the case of Neumann we have in this case two values
+      //  defined at the same point
+      if (stagger == -1 && 
+              (    (bndry->bx && x_boundary_offset == -1)
+                || (bndry->by && y_boundary_offset == -1))){
+        spacing.f1 = spacing.f0;
+{% for i in range(2,order) %}
+        spacing.f{{i}} = spacing.f{{i-1}} + coords_field(i{{i-1}}.x, i{{i-1}}.y);
 {% endfor %}
+      } else {
+{% for i in range(1,order) %}
+        spacing.f{{i}} = spacing.f{{i-1}} + coords_field(i{{i}}.x, i{{i}}.y);
+{% endfor %}
+      }
+{% else %}
+{% for i in range(1,order) %}
+        spacing.f{{i}} = spacing.f{{i-1}} + coords_field(i{{i}}.x, i{{i}}.y);
+{% endfor %}
+{% endif %} {# end of special case for neuman #}
+
     }
 {% if type == "Dirichlet" %}
     if (stagger == -1) {
@@ -122,9 +140,9 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
 {% endfor %}
     }
 {% endif %}
-{% else %}
+{% else %} {# type != Free #}
 {% for i in range(order) %}
-    Indices i{{i}}{bndry->x - {{i+1}} * bndry->bx, bndry->y - {{i+1}} * bndry->by, 0};
+    const Indices i{{i}}{bndry->x - {{i+1}} * bndry->bx, bndry->y - {{i+1}} * bndry->by, 0};
 {% endfor %}
     if (stagger == 0) {
       BoutReal st=0;
@@ -134,56 +152,63 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
       st += t;
 {% endfor %}
     } else {
-      spacing.f0 = 0;
+      spacing.f0 = coords_field(i0.x, i0.y);
 {% for i in range(1,order) %}
       spacing.f{{i}} = spacing.f{{i-1}} + coords_field(i{{i}}.x, i{{i}}.y);
 {% endfor %}
     }
 
-{% endif %}
+{% endif %} {# type != Free #}
 {% if type == "Dirichlet" %}
-    for (int i = istart; i < bndry->width; i++) {
+    // with dirichlet, we specify the value on the boundary, even if
+    // the value is part of the evolving system.
+    for (int i = ((stagger == -1) ? -1 : 0); i < bndry->width; i++) {
 {% else %}
+    // With free and neumann the value is not set if the point is
+    // evolved and it is on the boundary.
     for (int i = 0; i < bndry->width; i++) {
 {% endif %}
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
       if (stagger == 0) {
         t = coords_field(ic.x, ic.y) / 2;
-{% for i in range(order) %}
-        spacing.f{{i}} += t;
-{% endfor %}
+        spacing += t;
         facs = calc_interp_to_stencil(spacing);
         spacing += t;
       } else {
         t = coords_field(ic.x, ic.y);
+{% if type == "Free" %}
+{% elif type == "Dirichlet" %}
         if (stagger == -1
-{% if type == "Dirichlet" %}
-              && i != -1
-{% endif %}
-                     ) {
+              && i != -1) {
           spacing += t;
         }
+{% else %}
+        if (stagger == -1) {
+          spacing += t;
+        }
+{% endif %}
         facs = calc_interp_to_stencil(spacing);
+{% if type != "Free" %}
         if (stagger == 1) {
           spacing += t;
         }
+{% else %}
+        spacing += t;
+{% endif %}
       }
-      for (ic.z = 0; ic.z < mesh->LocalNz; ic.z++) {
-{% for i in range(1,order) %}
-        i{{i}}.z = ic.z;
-{% endfor %}
+      for (int iz = 0; iz < mesh->LocalNz; iz++) {
 {% if type != "Free" %}
-        val = (fg) ? vals[ic.z] : 0.0;
+        const BoutReal val = (fg) ? vals[iz] : 0.0;
         t = facs.f0 * val 
 {% else %}
-        t = facs.f0 * f(i0.x, i0.y, i0.z)
+        t = facs.f0 * f(i0.x, i0.y, iz)
 {% endif %}
 {% for i in range(1,order) %}
-           + facs.f{{i}} *f(i{{i}}.x, i{{i}}.y, i{{i}}.z)
+           + facs.f{{i}} *f(i{{i}}.x, i{{i}}.y, iz)
 {% endfor %}
         ;
         
-        f(ic.x, ic.y, ic.z) = t;
+        f(ic.x, ic.y, iz) = t;
       }
     }
   }
