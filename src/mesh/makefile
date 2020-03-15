@@ -13,7 +13,7 @@ TARGET		= lib
 
 boundary_nonuniform.%: boundary_nonuniform.%.in.py
 	@echo "  Generating $@"
-	@./$< > $@.tmp || (fail=$?; echo "touch $@ to ignore failed generation" ; exit $fail)
+	@./$< > $@.tmp || (fail=$$?; echo "touch $@ to ignore failed generation" ; exit $$fail)
 	@clang-format -i $@.tmp || echo "Formatting failed"
 	@mv $@.tmp $@
 

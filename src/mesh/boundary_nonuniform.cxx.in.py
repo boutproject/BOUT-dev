@@ -90,9 +90,9 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, MAYBE_UNUSED(BoutR
     vec{{order}} spacing;
     vec{{order}} facs;
 
-{% if type == "Dirichlet" %}
     const Field2D &coords_field =
         bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
+{% if type == "Dirichlet" %}
 {% for i in range(1,order) %}
     Indices i{{i}}{bndry->x - {{i}} * bndry->bx, bndry->y - {{i}} * bndry->by, 0};
 {% endfor %}
@@ -139,19 +139,12 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, MAYBE_UNUSED(BoutR
       }
       for (int iz = 0; iz < mesh->LocalNz; iz++) {
         const BoutReal val = (fg) ? vals[iz] : 0.0;
-        const BoutReal set = facs.f0 * val
+        f(ic.x, ic.y, iz) = facs.f0 * val
 {% for i in range(1,order) %}
            + facs.f{{i}} *f(i{{i}}.x, i{{i}}.y, iz)
 {% endfor %}
         ;
-        
-        f(ic.x, ic.y, iz) = set;
-      }
-    }
-  }
 {% elif type == "Neumann" %}
-    const Field2D &coords_field =
-        bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
 {% for i in range(1,order) %}
     Indices i{{i}}{bndry->x - {{i}} * bndry->bx, bndry->y - {{i}} * bndry->by, 0};
 {% endfor %}
@@ -204,19 +197,12 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, MAYBE_UNUSED(BoutR
       }
       for (int iz = 0; iz < mesh->LocalNz; iz++) {
         const BoutReal val = (fg) ? vals[iz] : 0.0;
-        const BoutReal set = facs.f0 * val
+        f(ic.x, ic.y, iz) = facs.f0 * val
 {% for i in range(1,order) %}
            + facs.f{{i}} *f(i{{i}}.x, i{{i}}.y, iz)
 {% endfor %}
         ;
-        
-        f(ic.x, ic.y, iz) = set;
-      }
-    }
-  }
 {% elif type == "Free" %}
-    const Field2D &coords_field =
-        bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
 {% for i in range(order) %}
     const Indices i{{i}}{bndry->x - {{i+1}} * bndry->bx, bndry->y - {{i+1}} * bndry->by, 0};
 {% endfor %}
@@ -250,17 +236,15 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, MAYBE_UNUSED(BoutR
         spacing += to_add;
       }
       for (int iz = 0; iz < mesh->LocalNz; iz++) {
-        const BoutReal set = facs.f0 * f(i0.x, i0.y, iz)
+        f(ic.x, ic.y, iz) = facs.f0 * f(i0.x, i0.y, iz)
 {% for i in range(1,order) %}
            + facs.f{{i}} *f(i{{i}}.x, i{{i}}.y, iz)
 {% endfor %}
         ;
-        
-        f(ic.x, ic.y, iz) = set;
+{% endif %}
       }
     }
   }
-{% endif %}
 }
 """
 clone_str="""
