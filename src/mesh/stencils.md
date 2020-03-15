@@ -1,7 +1,7 @@
 Notes concerning the generation of stencils
 ================
 
-We want to create a Tayler function
+We want to create a Taylor function
 $f(x-x_0)=\sum_i=0^n \frac{1}{i!}f_i(x-x_0)^i$ where $n$
 is the order of the function, $x_0$ is the point in the boundary
 where we want to calculate the function. $f_i$ are some coefficients
@@ -16,7 +16,7 @@ differentiated once.
 stencils_sympy.py calculates the coefficients of the above matrix
 which represents our system of equations. The derivative is simply
 one the factor of the next smaller term (or zero if the there is no
-smaller one). This is what is calculated by `tayler`, `dirichlet`
+smaller one). This is what is calculated by `taylor`, `dirichlet`
 and `neumann`, the respective matrix coefficients.
 
 sympy does all the heavy lifting on analytically inverting the
