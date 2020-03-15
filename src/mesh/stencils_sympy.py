@@ -15,18 +15,19 @@ def pow(a,b):
     else:
         return "%s**%d"%(a,b)
 
-def fac(a):
+def factorial(a):
     if a==0 or a==1:
         return 1
     else:
         assert(a>0)
-        return a*fac(a-1)
+        return a*factorial(a-1)
 
 def gen_code(order,matrix):
-    global x
     x=[]
     for i in range(order):
         x.append(Symbol("spacing.f%d"%i))
+
+    matrix = matrix(x)
     A=Matrix(order,order,matrix)
 
     try:
@@ -41,20 +42,26 @@ def gen_code(order,matrix):
         ret+="\n"
     return ret
 
-def taylor(i,j):
+def taylor(x, i, j):
     if j >=0:
-        return x[i]**j/fac(j)
+        return x[i]**j/factorial(j)
     else:
         return 0
 
-def dirichlet(i,j):
-    return taylor(i,j)
+class dirichlet:
+    def __init__(self, x):
+        self.x = x
+    def __call__(self, i, j):
+        return taylor(self.x, i ,j)
 
-def neumann(i,j):
-    if i ==0:
-        return taylor(i,j-1)
-    else:
-        return taylor(i,j)
+class neumann:
+    def __init__(self, x):
+        self.x = x
+    def __call__(self, i, j):
+        if i ==0:
+            return taylor(self.x, i, j-1)
+        else:
+            return taylor(self.x, i, j)
 
 if __name__ == "__main__":
     print(gen_code(3,dirichlet))
