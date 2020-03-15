@@ -40,7 +40,7 @@ static void update_stagger_offsets(int& x_boundary_offset, int& y_boundary_offse
   }
 }
 
-void BoundaryDirichletNonUniform_O2::apply(Field3D& f, BoutReal t) {
+void BoundaryDirichletNonUniform_O2::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
   bndry->first();
 
   // Decide which generator to use
@@ -84,8 +84,8 @@ void BoundaryDirichletNonUniform_O2::apply(Field3D& f, BoutReal t) {
     const Field2D& coords_field =
         bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
     Indices i1{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
-    BoutReal t;
     if (stagger == 0) {
+      BoutReal t;
       spacing.f0 = 0;
       BoutReal st = 0;
       t = coords_field(i1.x, i1.y);
@@ -103,25 +103,25 @@ void BoundaryDirichletNonUniform_O2::apply(Field3D& f, BoutReal t) {
     for (int i = ((stagger == -1) ? -1 : 0); i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
       if (stagger == 0) {
-        t = coords_field(ic.x, ic.y) / 2;
-        spacing += t;
+        BoutReal to_add = coords_field(ic.x, ic.y) / 2;
+        spacing += to_add;
         facs = calc_interp_to_stencil(spacing);
-        spacing += t;
+        spacing += to_add;
       } else {
-        t = coords_field(ic.x, ic.y);
+        BoutReal to_add = coords_field(ic.x, ic.y);
         if (stagger == -1 && i != -1) {
-          spacing += t;
+          spacing += to_add;
         }
         facs = calc_interp_to_stencil(spacing);
         if (stagger == 1) {
-          spacing += t;
+          spacing += to_add;
         }
       }
       for (int iz = 0; iz < mesh->LocalNz; iz++) {
         const BoutReal val = (fg) ? vals[iz] : 0.0;
-        t = facs.f0 * val + facs.f1 * f(i1.x, i1.y, iz);
+        const BoutReal set = facs.f0 * val + facs.f1 * f(i1.x, i1.y, iz);
 
-        f(ic.x, ic.y, iz) = t;
+        f(ic.x, ic.y, iz) = set;
       }
     }
   }
@@ -147,7 +147,7 @@ vec2 BoundaryDirichletNonUniform_O2::calc_interp_to_stencil(const vec2& spacing)
   return facs;
 }
 
-void BoundaryNeumannNonUniform_O2::apply(Field3D& f, BoutReal t) {
+void BoundaryNeumannNonUniform_O2::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
   bndry->first();
 
   // Decide which generator to use
@@ -191,8 +191,8 @@ void BoundaryNeumannNonUniform_O2::apply(Field3D& f, BoutReal t) {
     const Field2D& coords_field =
         bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
     Indices i1{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
-    BoutReal t;
     if (stagger == 0) {
+      BoutReal t;
       spacing.f0 = 0;
       BoutReal st = 0;
       t = coords_field(i1.x, i1.y);
@@ -217,25 +217,25 @@ void BoundaryNeumannNonUniform_O2::apply(Field3D& f, BoutReal t) {
     for (int i = 0; i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
       if (stagger == 0) {
-        t = coords_field(ic.x, ic.y) / 2;
-        spacing += t;
+        BoutReal to_add = coords_field(ic.x, ic.y) / 2;
+        spacing += to_add;
         facs = calc_interp_to_stencil(spacing);
-        spacing += t;
+        spacing += to_add;
       } else {
-        t = coords_field(ic.x, ic.y);
+        BoutReal to_add = coords_field(ic.x, ic.y);
         if (stagger == -1) {
-          spacing += t;
+          spacing += to_add;
         }
         facs = calc_interp_to_stencil(spacing);
         if (stagger == 1) {
-          spacing += t;
+          spacing += to_add;
         }
       }
       for (int iz = 0; iz < mesh->LocalNz; iz++) {
         const BoutReal val = (fg) ? vals[iz] : 0.0;
-        t = facs.f0 * val + facs.f1 * f(i1.x, i1.y, iz);
+        const BoutReal set = facs.f0 * val + facs.f1 * f(i1.x, i1.y, iz);
 
-        f(ic.x, ic.y, iz) = t;
+        f(ic.x, ic.y, iz) = set;
       }
     }
   }
@@ -261,7 +261,7 @@ vec2 BoundaryNeumannNonUniform_O2::calc_interp_to_stencil(const vec2& spacing) c
   return facs;
 }
 
-void BoundaryFreeNonUniform_O2::apply(Field3D& f, BoutReal t) {
+void BoundaryFreeNonUniform_O2::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
   bndry->first();
 
   // Decide which generator to use
@@ -288,6 +288,7 @@ void BoundaryFreeNonUniform_O2::apply(Field3D& f, BoutReal t) {
     const Indices i1{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
     if (stagger == 0) {
       BoutReal st = 0;
+      BoutReal t;
       t = coords_field(i0.x, i0.y);
       spacing.f0 = st + t / 2;
       st += t;
@@ -304,19 +305,19 @@ void BoundaryFreeNonUniform_O2::apply(Field3D& f, BoutReal t) {
     for (int i = 0; i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
       if (stagger == 0) {
-        t = coords_field(ic.x, ic.y) / 2;
-        spacing += t;
+        BoutReal to_add = coords_field(ic.x, ic.y) / 2;
+        spacing += to_add;
         facs = calc_interp_to_stencil(spacing);
-        spacing += t;
+        spacing += to_add;
       } else {
-        t = coords_field(ic.x, ic.y);
+        BoutReal to_add = coords_field(ic.x, ic.y);
         facs = calc_interp_to_stencil(spacing);
-        spacing += t;
+        spacing += to_add;
       }
       for (int iz = 0; iz < mesh->LocalNz; iz++) {
-        t = facs.f0 * f(i0.x, i0.y, iz) + facs.f1 * f(i1.x, i1.y, iz);
+        const BoutReal set = facs.f0 * f(i0.x, i0.y, iz) + facs.f1 * f(i1.x, i1.y, iz);
 
-        f(ic.x, ic.y, iz) = t;
+        f(ic.x, ic.y, iz) = set;
       }
     }
   }
@@ -342,7 +343,7 @@ vec2 BoundaryFreeNonUniform_O2::calc_interp_to_stencil(const vec2& spacing) cons
   return facs;
 }
 
-void BoundaryDirichletNonUniform_O3::apply(Field3D& f, BoutReal t) {
+void BoundaryDirichletNonUniform_O3::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
   bndry->first();
 
   // Decide which generator to use
@@ -387,8 +388,8 @@ void BoundaryDirichletNonUniform_O3::apply(Field3D& f, BoutReal t) {
         bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
     Indices i1{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
     Indices i2{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
-    BoutReal t;
     if (stagger == 0) {
+      BoutReal t;
       spacing.f0 = 0;
       BoutReal st = 0;
       t = coords_field(i1.x, i1.y);
@@ -411,25 +412,26 @@ void BoundaryDirichletNonUniform_O3::apply(Field3D& f, BoutReal t) {
     for (int i = ((stagger == -1) ? -1 : 0); i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
       if (stagger == 0) {
-        t = coords_field(ic.x, ic.y) / 2;
-        spacing += t;
+        BoutReal to_add = coords_field(ic.x, ic.y) / 2;
+        spacing += to_add;
         facs = calc_interp_to_stencil(spacing);
-        spacing += t;
+        spacing += to_add;
       } else {
-        t = coords_field(ic.x, ic.y);
+        BoutReal to_add = coords_field(ic.x, ic.y);
         if (stagger == -1 && i != -1) {
-          spacing += t;
+          spacing += to_add;
         }
         facs = calc_interp_to_stencil(spacing);
         if (stagger == 1) {
-          spacing += t;
+          spacing += to_add;
         }
       }
       for (int iz = 0; iz < mesh->LocalNz; iz++) {
         const BoutReal val = (fg) ? vals[iz] : 0.0;
-        t = facs.f0 * val + facs.f1 * f(i1.x, i1.y, iz) + facs.f2 * f(i2.x, i2.y, iz);
+        const BoutReal set =
+            facs.f0 * val + facs.f1 * f(i1.x, i1.y, iz) + facs.f2 * f(i2.x, i2.y, iz);
 
-        f(ic.x, ic.y, iz) = t;
+        f(ic.x, ic.y, iz) = set;
       }
     }
   }
@@ -459,7 +461,7 @@ vec3 BoundaryDirichletNonUniform_O3::calc_interp_to_stencil(const vec3& spacing)
   return facs;
 }
 
-void BoundaryNeumannNonUniform_O3::apply(Field3D& f, BoutReal t) {
+void BoundaryNeumannNonUniform_O3::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
   bndry->first();
 
   // Decide which generator to use
@@ -504,8 +506,8 @@ void BoundaryNeumannNonUniform_O3::apply(Field3D& f, BoutReal t) {
         bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
     Indices i1{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
     Indices i2{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
-    BoutReal t;
     if (stagger == 0) {
+      BoutReal t;
       spacing.f0 = 0;
       BoutReal st = 0;
       t = coords_field(i1.x, i1.y);
@@ -535,25 +537,26 @@ void BoundaryNeumannNonUniform_O3::apply(Field3D& f, BoutReal t) {
     for (int i = 0; i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
       if (stagger == 0) {
-        t = coords_field(ic.x, ic.y) / 2;
-        spacing += t;
+        BoutReal to_add = coords_field(ic.x, ic.y) / 2;
+        spacing += to_add;
         facs = calc_interp_to_stencil(spacing);
-        spacing += t;
+        spacing += to_add;
       } else {
-        t = coords_field(ic.x, ic.y);
+        BoutReal to_add = coords_field(ic.x, ic.y);
         if (stagger == -1) {
-          spacing += t;
+          spacing += to_add;
         }
         facs = calc_interp_to_stencil(spacing);
         if (stagger == 1) {
-          spacing += t;
+          spacing += to_add;
         }
       }
       for (int iz = 0; iz < mesh->LocalNz; iz++) {
         const BoutReal val = (fg) ? vals[iz] : 0.0;
-        t = facs.f0 * val + facs.f1 * f(i1.x, i1.y, iz) + facs.f2 * f(i2.x, i2.y, iz);
+        const BoutReal set =
+            facs.f0 * val + facs.f1 * f(i1.x, i1.y, iz) + facs.f2 * f(i2.x, i2.y, iz);
 
-        f(ic.x, ic.y, iz) = t;
+        f(ic.x, ic.y, iz) = set;
       }
     }
   }
@@ -582,7 +585,7 @@ vec3 BoundaryNeumannNonUniform_O3::calc_interp_to_stencil(const vec3& spacing) c
   return facs;
 }
 
-void BoundaryFreeNonUniform_O3::apply(Field3D& f, BoutReal t) {
+void BoundaryFreeNonUniform_O3::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
   bndry->first();
 
   // Decide which generator to use
@@ -610,6 +613,7 @@ void BoundaryFreeNonUniform_O3::apply(Field3D& f, BoutReal t) {
     const Indices i2{bndry->x - 3 * bndry->bx, bndry->y - 3 * bndry->by, 0};
     if (stagger == 0) {
       BoutReal st = 0;
+      BoutReal t;
       t = coords_field(i0.x, i0.y);
       spacing.f0 = st + t / 2;
       st += t;
@@ -630,20 +634,20 @@ void BoundaryFreeNonUniform_O3::apply(Field3D& f, BoutReal t) {
     for (int i = 0; i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
       if (stagger == 0) {
-        t = coords_field(ic.x, ic.y) / 2;
-        spacing += t;
+        BoutReal to_add = coords_field(ic.x, ic.y) / 2;
+        spacing += to_add;
         facs = calc_interp_to_stencil(spacing);
-        spacing += t;
+        spacing += to_add;
       } else {
-        t = coords_field(ic.x, ic.y);
+        BoutReal to_add = coords_field(ic.x, ic.y);
         facs = calc_interp_to_stencil(spacing);
-        spacing += t;
+        spacing += to_add;
       }
       for (int iz = 0; iz < mesh->LocalNz; iz++) {
-        t = facs.f0 * f(i0.x, i0.y, iz) + facs.f1 * f(i1.x, i1.y, iz)
-            + facs.f2 * f(i2.x, i2.y, iz);
+        const BoutReal set = facs.f0 * f(i0.x, i0.y, iz) + facs.f1 * f(i1.x, i1.y, iz)
+                             + facs.f2 * f(i2.x, i2.y, iz);
 
-        f(ic.x, ic.y, iz) = t;
+        f(ic.x, ic.y, iz) = set;
       }
     }
   }
@@ -673,7 +677,7 @@ vec3 BoundaryFreeNonUniform_O3::calc_interp_to_stencil(const vec3& spacing) cons
   return facs;
 }
 
-void BoundaryDirichletNonUniform_O4::apply(Field3D& f, BoutReal t) {
+void BoundaryDirichletNonUniform_O4::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
   bndry->first();
 
   // Decide which generator to use
@@ -719,8 +723,8 @@ void BoundaryDirichletNonUniform_O4::apply(Field3D& f, BoutReal t) {
     Indices i1{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
     Indices i2{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
     Indices i3{bndry->x - 3 * bndry->bx, bndry->y - 3 * bndry->by, 0};
-    BoutReal t;
     if (stagger == 0) {
+      BoutReal t;
       spacing.f0 = 0;
       BoutReal st = 0;
       t = coords_field(i1.x, i1.y);
@@ -748,26 +752,26 @@ void BoundaryDirichletNonUniform_O4::apply(Field3D& f, BoutReal t) {
     for (int i = ((stagger == -1) ? -1 : 0); i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
       if (stagger == 0) {
-        t = coords_field(ic.x, ic.y) / 2;
-        spacing += t;
+        BoutReal to_add = coords_field(ic.x, ic.y) / 2;
+        spacing += to_add;
         facs = calc_interp_to_stencil(spacing);
-        spacing += t;
+        spacing += to_add;
       } else {
-        t = coords_field(ic.x, ic.y);
+        BoutReal to_add = coords_field(ic.x, ic.y);
         if (stagger == -1 && i != -1) {
-          spacing += t;
+          spacing += to_add;
         }
         facs = calc_interp_to_stencil(spacing);
         if (stagger == 1) {
-          spacing += t;
+          spacing += to_add;
         }
       }
       for (int iz = 0; iz < mesh->LocalNz; iz++) {
         const BoutReal val = (fg) ? vals[iz] : 0.0;
-        t = facs.f0 * val + facs.f1 * f(i1.x, i1.y, iz) + facs.f2 * f(i2.x, i2.y, iz)
-            + facs.f3 * f(i3.x, i3.y, iz);
+        const BoutReal set = facs.f0 * val + facs.f1 * f(i1.x, i1.y, iz)
+                             + facs.f2 * f(i2.x, i2.y, iz) + facs.f3 * f(i3.x, i3.y, iz);
 
-        f(ic.x, ic.y, iz) = t;
+        f(ic.x, ic.y, iz) = set;
       }
     }
   }
@@ -803,7 +807,7 @@ vec4 BoundaryDirichletNonUniform_O4::calc_interp_to_stencil(const vec4& spacing)
   return facs;
 }
 
-void BoundaryNeumannNonUniform_O4::apply(Field3D& f, BoutReal t) {
+void BoundaryNeumannNonUniform_O4::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
   bndry->first();
 
   // Decide which generator to use
@@ -849,8 +853,8 @@ void BoundaryNeumannNonUniform_O4::apply(Field3D& f, BoutReal t) {
     Indices i1{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
     Indices i2{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
     Indices i3{bndry->x - 3 * bndry->bx, bndry->y - 3 * bndry->by, 0};
-    BoutReal t;
     if (stagger == 0) {
+      BoutReal t;
       spacing.f0 = 0;
       BoutReal st = 0;
       t = coords_field(i1.x, i1.y);
@@ -885,26 +889,26 @@ void BoundaryNeumannNonUniform_O4::apply(Field3D& f, BoutReal t) {
     for (int i = 0; i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
       if (stagger == 0) {
-        t = coords_field(ic.x, ic.y) / 2;
-        spacing += t;
+        BoutReal to_add = coords_field(ic.x, ic.y) / 2;
+        spacing += to_add;
         facs = calc_interp_to_stencil(spacing);
-        spacing += t;
+        spacing += to_add;
       } else {
-        t = coords_field(ic.x, ic.y);
+        BoutReal to_add = coords_field(ic.x, ic.y);
         if (stagger == -1) {
-          spacing += t;
+          spacing += to_add;
         }
         facs = calc_interp_to_stencil(spacing);
         if (stagger == 1) {
-          spacing += t;
+          spacing += to_add;
         }
       }
       for (int iz = 0; iz < mesh->LocalNz; iz++) {
         const BoutReal val = (fg) ? vals[iz] : 0.0;
-        t = facs.f0 * val + facs.f1 * f(i1.x, i1.y, iz) + facs.f2 * f(i2.x, i2.y, iz)
-            + facs.f3 * f(i3.x, i3.y, iz);
+        const BoutReal set = facs.f0 * val + facs.f1 * f(i1.x, i1.y, iz)
+                             + facs.f2 * f(i2.x, i2.y, iz) + facs.f3 * f(i3.x, i3.y, iz);
 
-        f(ic.x, ic.y, iz) = t;
+        f(ic.x, ic.y, iz) = set;
       }
     }
   }
@@ -957,7 +961,7 @@ vec4 BoundaryNeumannNonUniform_O4::calc_interp_to_stencil(const vec4& spacing) c
   return facs;
 }
 
-void BoundaryFreeNonUniform_O4::apply(Field3D& f, BoutReal t) {
+void BoundaryFreeNonUniform_O4::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
   bndry->first();
 
   // Decide which generator to use
@@ -986,6 +990,7 @@ void BoundaryFreeNonUniform_O4::apply(Field3D& f, BoutReal t) {
     const Indices i3{bndry->x - 4 * bndry->bx, bndry->y - 4 * bndry->by, 0};
     if (stagger == 0) {
       BoutReal st = 0;
+      BoutReal t;
       t = coords_field(i0.x, i0.y);
       spacing.f0 = st + t / 2;
       st += t;
@@ -1010,20 +1015,20 @@ void BoundaryFreeNonUniform_O4::apply(Field3D& f, BoutReal t) {
     for (int i = 0; i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
       if (stagger == 0) {
-        t = coords_field(ic.x, ic.y) / 2;
-        spacing += t;
+        BoutReal to_add = coords_field(ic.x, ic.y) / 2;
+        spacing += to_add;
         facs = calc_interp_to_stencil(spacing);
-        spacing += t;
+        spacing += to_add;
       } else {
-        t = coords_field(ic.x, ic.y);
+        BoutReal to_add = coords_field(ic.x, ic.y);
         facs = calc_interp_to_stencil(spacing);
-        spacing += t;
+        spacing += to_add;
       }
       for (int iz = 0; iz < mesh->LocalNz; iz++) {
-        t = facs.f0 * f(i0.x, i0.y, iz) + facs.f1 * f(i1.x, i1.y, iz)
-            + facs.f2 * f(i2.x, i2.y, iz) + facs.f3 * f(i3.x, i3.y, iz);
+        const BoutReal set = facs.f0 * f(i0.x, i0.y, iz) + facs.f1 * f(i1.x, i1.y, iz)
+                             + facs.f2 * f(i2.x, i2.y, iz) + facs.f3 * f(i3.x, i3.y, iz);
 
-        f(ic.x, ic.y, iz) = t;
+        f(ic.x, ic.y, iz) = set;
       }
     }
   }

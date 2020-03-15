@@ -49,7 +49,7 @@ static void update_stagger_offsets(int& x_boundary_offset, int& y_boundary_offse
 env=Environment(trim_blocks=True);
 
 apply_str="""
-void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
+void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, MAYBE_UNUSED(BoutReal t)) {
   bndry->first();
 
   // Decide which generator to use
@@ -98,8 +98,8 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
 {% for i in range(1,order) %}
     Indices i{{i}}{bndry->x - {{i}} * bndry->bx, bndry->y - {{i}} * bndry->by, 0};
 {% endfor %}
-    BoutReal t;
     if (stagger == 0) {
+      BoutReal t;
       spacing.f0 = 0;
       BoutReal st=0;
 {% for i in range(1,order) %}
@@ -146,6 +146,7 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
 {% endfor %}
     if (stagger == 0) {
       BoutReal st=0;
+      BoutReal t;
 {% for i in range(order) %}
       t = coords_field(i{{i}}.x, i{{i}}.y);
       spacing.f{{i}} = st + t / 2;
@@ -170,45 +171,45 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, BoutReal t) {
 {% endif %}
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
       if (stagger == 0) {
-        t = coords_field(ic.x, ic.y) / 2;
-        spacing += t;
+        BoutReal to_add = coords_field(ic.x, ic.y) / 2;
+        spacing += to_add;
         facs = calc_interp_to_stencil(spacing);
-        spacing += t;
+        spacing += to_add;
       } else {
-        t = coords_field(ic.x, ic.y);
+        BoutReal to_add = coords_field(ic.x, ic.y);
 {% if type == "Free" %}
 {% elif type == "Dirichlet" %}
         if (stagger == -1
               && i != -1) {
-          spacing += t;
+          spacing += to_add;
         }
 {% else %}
         if (stagger == -1) {
-          spacing += t;
+          spacing += to_add;
         }
 {% endif %}
         facs = calc_interp_to_stencil(spacing);
 {% if type != "Free" %}
         if (stagger == 1) {
-          spacing += t;
+          spacing += to_add;
         }
 {% else %}
-        spacing += t;
+        spacing += to_add;
 {% endif %}
       }
       for (int iz = 0; iz < mesh->LocalNz; iz++) {
 {% if type != "Free" %}
         const BoutReal val = (fg) ? vals[iz] : 0.0;
-        t = facs.f0 * val 
+        const BoutReal set = facs.f0 * val
 {% else %}
-        t = facs.f0 * f(i0.x, i0.y, iz)
+        const BoutReal set = facs.f0 * f(i0.x, i0.y, iz)
 {% endif %}
 {% for i in range(1,order) %}
            + facs.f{{i}} *f(i{{i}}.x, i{{i}}.y, iz)
 {% endfor %}
         ;
         
-        f(ic.x, ic.y, iz) = t;
+        f(ic.x, ic.y, iz) = set;
       }
     }
   }
