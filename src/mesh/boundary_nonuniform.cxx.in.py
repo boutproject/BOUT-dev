@@ -51,16 +51,15 @@ env=Environment(trim_blocks=True);
 apply_str="""
 void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, MAYBE_UNUSED(BoutReal t)) {
   bndry->first();
+  Mesh *mesh = f.getMesh();
+  CELL_LOC loc = f.getLocation();
 
+{% if with_fg %}
   // Decide which generator to use
   std::shared_ptr<FieldGenerator> fg = gen;
   if (!fg)
     fg = f.getBndryGenerator(bndry->location);
 
-  Mesh *mesh = f.getMesh();
-  CELL_LOC loc = f.getLocation();
-
-{% if type != "Free" %}
   std::vector<BoutReal> vals;
   vals.reserve(mesh->LocalNz);
 {% endif %}
@@ -71,7 +70,7 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, MAYBE_UNUSED(BoutR
   update_stagger_offsets(x_boundary_offset, y_boundary_offset, stagger, loc);
 
   for (; !bndry->isDone(); bndry->next1d()) {
-{% if type != "Free" %}
+{% if with_fg %}
     if (fg) {
       // Calculate the X and Y normalised values half-way between the guard cell and
       // grid cell
@@ -86,8 +85,7 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, MAYBE_UNUSED(BoutR
         vals[zk] = fg->generate(bout::generator::Context().set("x", xnorm, "y", ynorm, "z", zfac * zk, "t" , t));
       }
     }
-{% endif %}{# type != Free #}
-
+{% endif %}
 
     vec{{order}} spacing;
     vec{{order}} facs;

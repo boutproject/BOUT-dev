@@ -42,14 +42,13 @@ static void update_stagger_offsets(int& x_boundary_offset, int& y_boundary_offse
 
 void BoundaryDirichletNonUniform_O2::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
   bndry->first();
+  Mesh* mesh = f.getMesh();
+  CELL_LOC loc = f.getLocation();
 
   // Decide which generator to use
   std::shared_ptr<FieldGenerator> fg = gen;
   if (!fg)
     fg = f.getBndryGenerator(bndry->location);
-
-  Mesh* mesh = f.getMesh();
-  CELL_LOC loc = f.getLocation();
 
   std::vector<BoutReal> vals;
   vals.reserve(mesh->LocalNz);
@@ -149,14 +148,13 @@ vec2 BoundaryDirichletNonUniform_O2::calc_interp_to_stencil(const vec2& spacing)
 
 void BoundaryNeumannNonUniform_O2::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
   bndry->first();
+  Mesh* mesh = f.getMesh();
+  CELL_LOC loc = f.getLocation();
 
   // Decide which generator to use
   std::shared_ptr<FieldGenerator> fg = gen;
   if (!fg)
     fg = f.getBndryGenerator(bndry->location);
-
-  Mesh* mesh = f.getMesh();
-  CELL_LOC loc = f.getLocation();
 
   std::vector<BoutReal> vals;
   vals.reserve(mesh->LocalNz);
@@ -263,12 +261,6 @@ vec2 BoundaryNeumannNonUniform_O2::calc_interp_to_stencil(const vec2& spacing) c
 
 void BoundaryFreeNonUniform_O2::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
   bndry->first();
-
-  // Decide which generator to use
-  std::shared_ptr<FieldGenerator> fg = gen;
-  if (!fg)
-    fg = f.getBndryGenerator(bndry->location);
-
   Mesh* mesh = f.getMesh();
   CELL_LOC loc = f.getLocation();
 
@@ -345,14 +337,13 @@ vec2 BoundaryFreeNonUniform_O2::calc_interp_to_stencil(const vec2& spacing) cons
 
 void BoundaryDirichletNonUniform_O3::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
   bndry->first();
+  Mesh* mesh = f.getMesh();
+  CELL_LOC loc = f.getLocation();
 
   // Decide which generator to use
   std::shared_ptr<FieldGenerator> fg = gen;
   if (!fg)
     fg = f.getBndryGenerator(bndry->location);
-
-  Mesh* mesh = f.getMesh();
-  CELL_LOC loc = f.getLocation();
 
   std::vector<BoutReal> vals;
   vals.reserve(mesh->LocalNz);
@@ -463,14 +454,13 @@ vec3 BoundaryDirichletNonUniform_O3::calc_interp_to_stencil(const vec3& spacing)
 
 void BoundaryNeumannNonUniform_O3::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
   bndry->first();
+  Mesh* mesh = f.getMesh();
+  CELL_LOC loc = f.getLocation();
 
   // Decide which generator to use
   std::shared_ptr<FieldGenerator> fg = gen;
   if (!fg)
     fg = f.getBndryGenerator(bndry->location);
-
-  Mesh* mesh = f.getMesh();
-  CELL_LOC loc = f.getLocation();
 
   std::vector<BoutReal> vals;
   vals.reserve(mesh->LocalNz);
@@ -587,12 +577,6 @@ vec3 BoundaryNeumannNonUniform_O3::calc_interp_to_stencil(const vec3& spacing) c
 
 void BoundaryFreeNonUniform_O3::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
   bndry->first();
-
-  // Decide which generator to use
-  std::shared_ptr<FieldGenerator> fg = gen;
-  if (!fg)
-    fg = f.getBndryGenerator(bndry->location);
-
   Mesh* mesh = f.getMesh();
   CELL_LOC loc = f.getLocation();
 
@@ -679,14 +663,13 @@ vec3 BoundaryFreeNonUniform_O3::calc_interp_to_stencil(const vec3& spacing) cons
 
 void BoundaryDirichletNonUniform_O4::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
   bndry->first();
+  Mesh* mesh = f.getMesh();
+  CELL_LOC loc = f.getLocation();
 
   // Decide which generator to use
   std::shared_ptr<FieldGenerator> fg = gen;
   if (!fg)
     fg = f.getBndryGenerator(bndry->location);
-
-  Mesh* mesh = f.getMesh();
-  CELL_LOC loc = f.getLocation();
 
   std::vector<BoutReal> vals;
   vals.reserve(mesh->LocalNz);
@@ -809,14 +792,13 @@ vec4 BoundaryDirichletNonUniform_O4::calc_interp_to_stencil(const vec4& spacing)
 
 void BoundaryNeumannNonUniform_O4::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
   bndry->first();
+  Mesh* mesh = f.getMesh();
+  CELL_LOC loc = f.getLocation();
 
   // Decide which generator to use
   std::shared_ptr<FieldGenerator> fg = gen;
   if (!fg)
     fg = f.getBndryGenerator(bndry->location);
-
-  Mesh* mesh = f.getMesh();
-  CELL_LOC loc = f.getLocation();
 
   std::vector<BoutReal> vals;
   vals.reserve(mesh->LocalNz);
@@ -963,12 +945,6 @@ vec4 BoundaryNeumannNonUniform_O4::calc_interp_to_stencil(const vec4& spacing) c
 
 void BoundaryFreeNonUniform_O4::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
   bndry->first();
-
-  // Decide which generator to use
-  std::shared_ptr<FieldGenerator> fg = gen;
-  if (!fg)
-    fg = f.getBndryGenerator(bndry->location);
-
   Mesh* mesh = f.getMesh();
   CELL_LOC loc = f.getLocation();
 
