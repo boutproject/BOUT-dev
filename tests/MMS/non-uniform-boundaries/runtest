@@ -15,8 +15,12 @@ for f in sys.argv[1:]:
 def mget(f):
     return f[3,:,0].flatten()
 
-mmax=10
-start=9
+if doPlot > 2:
+    start=2
+    mmax=4
+else:
+    start=9
+    mmax=10
 
 def plot(*args):
     import matplotlib.pyplot as plt
@@ -81,7 +85,7 @@ def test(bdry, func, loc):
             mesh=bc.Mesh(section="mesh")
             mesh_cache[ny]=mesh
         mdy = mesh.coordinates.dy.get()[3,:].flatten()
-        y=integrate(mdy,loc != "CENTRE")
+        y=integrate(mdy,loc == "YLOW")
         fd=func(y)
         f = bc.create3D("y",mesh,outloc=loc)
         fds= fd.reshape((1,int(ny)+4,1))
@@ -100,7 +104,7 @@ def test(bdry, func, loc):
         f.applyBoundary(bdry)
         f=mget(f)
         if doPlot > 2:
-            plot([y,f,"with bc"],[y,fo,"org"],[y,"numpy"],[integrate(mdy,loc != "CENTRE"),"bc"])
+            plot([y,f,"with bc"],[y,fo,"org"],[y,"numpy"],[integrate(mdy,loc == "YLOW"),"bc"])
         er=np.max(np.abs(f-fo))
         errs.append(er)
         dy.append(1./ny)
@@ -115,7 +119,7 @@ def test(bdry, func, loc):
         print("Pass")
         return 0
     else:
-        print("Failure: %s %s %s - expected %d, got %g"%(bdry,func,loc,order,conv))
+        print("Failure: expected %d, got %g"%(order,conv))
         return 1
 
 
@@ -125,22 +129,22 @@ testdata=[
     ["dirichlet_nu_o3", np.sin, 3],
     ["dirichlet_nu_o2", np.sin, 3],
     ["neumann_nu_o2", np.cos,2],
-    ["neumann_nu_o3", np.cos,[5,2]],
-    ["neumann_nu_o4", np.cos,[4,2]],
+    ["neumann_nu_o3", np.cos,[5,4]],
+    ["neumann_nu_o4", np.cos,4],
     ["free_nu_o2", np.cos,2],
-    ["free_nu_o3", np.cos,[4,2]],
-    ["free_nu_o4", np.cos,[4,2]],
-    ["free_nu_o2", np.sin,[3,1]],
-    ["free_nu_o3", np.sin,[3,1]],
-    ["free_nu_o4", np.sin,[5,1]]
+    ["free_nu_o3", np.cos,4],
+    ["free_nu_o4", np.cos,4],
+    ["free_nu_o2", np.sin,3],
+    ["free_nu_o3", np.sin,3],
+    ["free_nu_o4", np.sin,5],
 ]
 
 code=0
-locs=["CENTRE", "YLOW" ]#"XLOW", "YLOW", "ZLOW":]
+locs=["CENTRE", "XLOW", "YLOW", "ZLOW"]
 for bdry, func, forder in testdata:
     for loc in locs:
         if isinstance(forder,list):
-            order=forder[locs.index(loc)]
+            order=forder[1 if loc == "YLOW" else 0]
         else:
             order=forder
         code += test(bdry, func, loc)
