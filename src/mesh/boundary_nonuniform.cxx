@@ -78,7 +78,6 @@ void BoundaryDirichletNonUniform_O2::apply(Field3D& f, MAYBE_UNUSED(BoutReal t))
     }
 
     vec2 spacing;
-    vec2 facs;
 
     const Field2D& coords_field =
         bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
@@ -101,6 +100,7 @@ void BoundaryDirichletNonUniform_O2::apply(Field3D& f, MAYBE_UNUSED(BoutReal t))
     // the value is part of the evolving system.
     for (int i = ((stagger == -1) ? -1 : 0); i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
+      vec2 facs;
       if (stagger == 0) {
         BoutReal to_add = coords_field(ic.x, ic.y) / 2;
         spacing += to_add;
@@ -181,7 +181,6 @@ void BoundaryNeumannNonUniform_O2::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
     }
 
     vec2 spacing;
-    vec2 facs;
 
     const Field2D& coords_field =
         bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
@@ -211,6 +210,7 @@ void BoundaryNeumannNonUniform_O2::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
     // evolved and it is on the boundary.
     for (int i = 0; i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
+      vec2 facs;
       if (stagger == 0) {
         BoutReal to_add = coords_field(ic.x, ic.y) / 2;
         spacing += to_add;
@@ -266,7 +266,6 @@ void BoundaryFreeNonUniform_O2::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
   for (; !bndry->isDone(); bndry->next1d()) {
 
     vec2 spacing;
-    vec2 facs;
 
     const Field2D& coords_field =
         bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
@@ -290,6 +289,7 @@ void BoundaryFreeNonUniform_O2::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
     // evolved and it is on the boundary.
     for (int i = 0; i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
+      vec2 facs;
       if (stagger == 0) {
         BoutReal to_add = coords_field(ic.x, ic.y) / 2;
         spacing += to_add;
@@ -364,7 +364,6 @@ void BoundaryDirichletNonUniform_O3::apply(Field3D& f, MAYBE_UNUSED(BoutReal t))
     }
 
     vec3 spacing;
-    vec3 facs;
 
     const Field2D& coords_field =
         bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
@@ -393,6 +392,7 @@ void BoundaryDirichletNonUniform_O3::apply(Field3D& f, MAYBE_UNUSED(BoutReal t))
     // the value is part of the evolving system.
     for (int i = ((stagger == -1) ? -1 : 0); i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
+      vec3 facs;
       if (stagger == 0) {
         BoutReal to_add = coords_field(ic.x, ic.y) / 2;
         spacing += to_add;
@@ -478,7 +478,6 @@ void BoundaryNeumannNonUniform_O3::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
     }
 
     vec3 spacing;
-    vec3 facs;
 
     const Field2D& coords_field =
         bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
@@ -514,6 +513,7 @@ void BoundaryNeumannNonUniform_O3::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
     // evolved and it is on the boundary.
     for (int i = 0; i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
+      vec3 facs;
       if (stagger == 0) {
         BoutReal to_add = coords_field(ic.x, ic.y) / 2;
         spacing += to_add;
@@ -573,7 +573,6 @@ void BoundaryFreeNonUniform_O3::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
   for (; !bndry->isDone(); bndry->next1d()) {
 
     vec3 spacing;
-    vec3 facs;
 
     const Field2D& coords_field =
         bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
@@ -602,6 +601,7 @@ void BoundaryFreeNonUniform_O3::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
     // evolved and it is on the boundary.
     for (int i = 0; i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
+      vec3 facs;
       if (stagger == 0) {
         BoutReal to_add = coords_field(ic.x, ic.y) / 2;
         spacing += to_add;
@@ -681,7 +681,6 @@ void BoundaryDirichletNonUniform_O4::apply(Field3D& f, MAYBE_UNUSED(BoutReal t))
     }
 
     vec4 spacing;
-    vec4 facs;
 
     const Field2D& coords_field =
         bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
@@ -716,6 +715,7 @@ void BoundaryDirichletNonUniform_O4::apply(Field3D& f, MAYBE_UNUSED(BoutReal t))
     // the value is part of the evolving system.
     for (int i = ((stagger == -1) ? -1 : 0); i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
+      vec4 facs;
       if (stagger == 0) {
         BoutReal to_add = coords_field(ic.x, ic.y) / 2;
         spacing += to_add;
@@ -807,7 +807,6 @@ void BoundaryNeumannNonUniform_O4::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
     }
 
     vec4 spacing;
-    vec4 facs;
 
     const Field2D& coords_field =
         bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
@@ -849,6 +848,7 @@ void BoundaryNeumannNonUniform_O4::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
     // evolved and it is on the boundary.
     for (int i = 0; i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
+      vec4 facs;
       if (stagger == 0) {
         BoutReal to_add = coords_field(ic.x, ic.y) / 2;
         spacing += to_add;
@@ -932,7 +932,6 @@ void BoundaryFreeNonUniform_O4::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
   for (; !bndry->isDone(); bndry->next1d()) {
 
     vec4 spacing;
-    vec4 facs;
 
     const Field2D& coords_field =
         bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
@@ -966,6 +965,7 @@ void BoundaryFreeNonUniform_O4::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
     // evolved and it is on the boundary.
     for (int i = 0; i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
+      vec4 facs;
       if (stagger == 0) {
         BoutReal to_add = coords_field(ic.x, ic.y) / 2;
         spacing += to_add;

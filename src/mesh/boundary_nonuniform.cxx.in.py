@@ -88,7 +88,6 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, MAYBE_UNUSED(BoutR
 {% endif %}
 
     vec{{order}} spacing;
-    vec{{order}} facs;
 
     const Field2D &coords_field =
         bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
@@ -121,6 +120,7 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, MAYBE_UNUSED(BoutR
     // the value is part of the evolving system.
     for (int i = ((stagger == -1) ? -1 : 0); i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
+      vec{{order}} facs;
       if (stagger == 0) {
         BoutReal to_add = coords_field(ic.x, ic.y) / 2;
         spacing += to_add;
@@ -179,6 +179,7 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, MAYBE_UNUSED(BoutR
     // evolved and it is on the boundary.
     for (int i = 0; i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
+      vec{{order}} facs;
       if (stagger == 0) {
         BoutReal to_add = coords_field(ic.x, ic.y) / 2;
         spacing += to_add;
@@ -223,6 +224,7 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, MAYBE_UNUSED(BoutR
     // evolved and it is on the boundary.
     for (int i = 0; i < bndry->width; i++) {
       Indices ic{bndry->x + i * bndry->bx, bndry->y + i * bndry->by, 0};
+      vec{{order}} facs;
       if (stagger == 0) {
         BoutReal to_add = coords_field(ic.x, ic.y) / 2;
         spacing += to_add;

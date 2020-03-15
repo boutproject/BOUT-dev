@@ -17,6 +17,8 @@ boundary_nonuniform.%: boundary_nonuniform.%.in.py
 	@clang-format -i $@.tmp || echo "Formatting failed"
 	@mv $@.tmp $@
 
+boundary_nonuniform.cxx: stencils_sympy.py
+
 boundary_factory.o: boundary_nonuniform.hxx boundary_nonuniform.cxx
 
 include $(BOUT_TOP)/make.config
