@@ -84,12 +84,12 @@ void BoundaryDirichletNonUniform_O2::apply(Field3D& f, MAYBE_UNUSED(BoutReal t))
         bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
     Indices i1{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
     if (stagger == 0) {
-      BoutReal t;
+      BoutReal offset;
       spacing.f0 = 0;
-      BoutReal st = 0;
-      t = coords_field(i1.x, i1.y);
-      spacing.f1 = st + t / 2;
-      st += t;
+      BoutReal total_offset = 0;
+      offset = coords_field(i1.x, i1.y);
+      spacing.f1 = total_offset + offset / 2;
+      total_offset += offset;
     } else {
       spacing.f0 = 0;
       spacing.f1 = spacing.f0 + coords_field(i1.x, i1.y);
@@ -107,20 +107,17 @@ void BoundaryDirichletNonUniform_O2::apply(Field3D& f, MAYBE_UNUSED(BoutReal t))
         facs = calc_interp_to_stencil(spacing);
         spacing += to_add;
       } else {
-        BoutReal to_add = coords_field(ic.x, ic.y);
         if (stagger == -1 && i != -1) {
-          spacing += to_add;
+          spacing += coords_field(ic.x, ic.y);
         }
         facs = calc_interp_to_stencil(spacing);
         if (stagger == 1) {
-          spacing += to_add;
+          spacing += coords_field(ic.x, ic.y);
         }
       }
       for (int iz = 0; iz < mesh->LocalNz; iz++) {
         const BoutReal val = (fg) ? vals[iz] : 0.0;
-        const BoutReal set = facs.f0 * val + facs.f1 * f(i1.x, i1.y, iz);
-
-        f(ic.x, ic.y, iz) = set;
+        f(ic.x, ic.y, iz) = facs.f0 * val + facs.f1 * f(i1.x, i1.y, iz);
       }
     }
   }
@@ -190,12 +187,12 @@ void BoundaryNeumannNonUniform_O2::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
         bndry->by != 0 ? mesh->getCoordinates()->dy : mesh->getCoordinates()->dx;
     Indices i1{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
     if (stagger == 0) {
-      BoutReal t;
+      BoutReal offset;
       spacing.f0 = 0;
-      BoutReal st = 0;
-      t = coords_field(i1.x, i1.y);
-      spacing.f1 = st + t / 2;
-      st += t;
+      BoutReal total_offset = 0;
+      offset = coords_field(i1.x, i1.y);
+      spacing.f1 = total_offset + offset / 2;
+      total_offset += offset;
     } else {
       spacing.f0 = 0;
       // Check if we are staggered and also boundary in low
@@ -220,20 +217,17 @@ void BoundaryNeumannNonUniform_O2::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
         facs = calc_interp_to_stencil(spacing);
         spacing += to_add;
       } else {
-        BoutReal to_add = coords_field(ic.x, ic.y);
         if (stagger == -1) {
-          spacing += to_add;
+          spacing += coords_field(ic.x, ic.y);
         }
         facs = calc_interp_to_stencil(spacing);
         if (stagger == 1) {
-          spacing += to_add;
+          spacing += coords_field(ic.x, ic.y);
         }
       }
       for (int iz = 0; iz < mesh->LocalNz; iz++) {
         const BoutReal val = (fg) ? vals[iz] : 0.0;
-        const BoutReal set = facs.f0 * val + facs.f1 * f(i1.x, i1.y, iz);
-
-        f(ic.x, ic.y, iz) = set;
+        f(ic.x, ic.y, iz) = facs.f0 * val + facs.f1 * f(i1.x, i1.y, iz);
       }
     }
   }
@@ -279,14 +273,14 @@ void BoundaryFreeNonUniform_O2::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
     const Indices i0{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
     const Indices i1{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
     if (stagger == 0) {
-      BoutReal st = 0;
-      BoutReal t;
-      t = coords_field(i0.x, i0.y);
-      spacing.f0 = st + t / 2;
-      st += t;
-      t = coords_field(i1.x, i1.y);
-      spacing.f1 = st + t / 2;
-      st += t;
+      BoutReal total_offset = 0;
+      BoutReal offset;
+      offset = coords_field(i0.x, i0.y);
+      spacing.f0 = total_offset + offset / 2;
+      total_offset += offset;
+      offset = coords_field(i1.x, i1.y);
+      spacing.f1 = total_offset + offset / 2;
+      total_offset += offset;
     } else {
       spacing.f0 = coords_field(i0.x, i0.y);
       spacing.f1 = spacing.f0 + coords_field(i1.x, i1.y);
@@ -302,14 +296,11 @@ void BoundaryFreeNonUniform_O2::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
         facs = calc_interp_to_stencil(spacing);
         spacing += to_add;
       } else {
-        BoutReal to_add = coords_field(ic.x, ic.y);
         facs = calc_interp_to_stencil(spacing);
-        spacing += to_add;
+        spacing += coords_field(ic.x, ic.y);
       }
       for (int iz = 0; iz < mesh->LocalNz; iz++) {
-        const BoutReal set = facs.f0 * f(i0.x, i0.y, iz) + facs.f1 * f(i1.x, i1.y, iz);
-
-        f(ic.x, ic.y, iz) = set;
+        f(ic.x, ic.y, iz) = facs.f0 * f(i0.x, i0.y, iz) + facs.f1 * f(i1.x, i1.y, iz);
       }
     }
   }
@@ -380,15 +371,15 @@ void BoundaryDirichletNonUniform_O3::apply(Field3D& f, MAYBE_UNUSED(BoutReal t))
     Indices i1{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
     Indices i2{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
     if (stagger == 0) {
-      BoutReal t;
+      BoutReal offset;
       spacing.f0 = 0;
-      BoutReal st = 0;
-      t = coords_field(i1.x, i1.y);
-      spacing.f1 = st + t / 2;
-      st += t;
-      t = coords_field(i2.x, i2.y);
-      spacing.f2 = st + t / 2;
-      st += t;
+      BoutReal total_offset = 0;
+      offset = coords_field(i1.x, i1.y);
+      spacing.f1 = total_offset + offset / 2;
+      total_offset += offset;
+      offset = coords_field(i2.x, i2.y);
+      spacing.f2 = total_offset + offset / 2;
+      total_offset += offset;
     } else {
       spacing.f0 = 0;
       spacing.f1 = spacing.f0 + coords_field(i1.x, i1.y);
@@ -408,21 +399,18 @@ void BoundaryDirichletNonUniform_O3::apply(Field3D& f, MAYBE_UNUSED(BoutReal t))
         facs = calc_interp_to_stencil(spacing);
         spacing += to_add;
       } else {
-        BoutReal to_add = coords_field(ic.x, ic.y);
         if (stagger == -1 && i != -1) {
-          spacing += to_add;
+          spacing += coords_field(ic.x, ic.y);
         }
         facs = calc_interp_to_stencil(spacing);
         if (stagger == 1) {
-          spacing += to_add;
+          spacing += coords_field(ic.x, ic.y);
         }
       }
       for (int iz = 0; iz < mesh->LocalNz; iz++) {
         const BoutReal val = (fg) ? vals[iz] : 0.0;
-        const BoutReal set =
+        f(ic.x, ic.y, iz) =
             facs.f0 * val + facs.f1 * f(i1.x, i1.y, iz) + facs.f2 * f(i2.x, i2.y, iz);
-
-        f(ic.x, ic.y, iz) = set;
       }
     }
   }
@@ -497,15 +485,15 @@ void BoundaryNeumannNonUniform_O3::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
     Indices i1{bndry->x - 1 * bndry->bx, bndry->y - 1 * bndry->by, 0};
     Indices i2{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
     if (stagger == 0) {
-      BoutReal t;
+      BoutReal offset;
       spacing.f0 = 0;
-      BoutReal st = 0;
-      t = coords_field(i1.x, i1.y);
-      spacing.f1 = st + t / 2;
-      st += t;
-      t = coords_field(i2.x, i2.y);
-      spacing.f2 = st + t / 2;
-      st += t;
+      BoutReal total_offset = 0;
+      offset = coords_field(i1.x, i1.y);
+      spacing.f1 = total_offset + offset / 2;
+      total_offset += offset;
+      offset = coords_field(i2.x, i2.y);
+      spacing.f2 = total_offset + offset / 2;
+      total_offset += offset;
     } else {
       spacing.f0 = 0;
       // Check if we are staggered and also boundary in low
@@ -532,21 +520,18 @@ void BoundaryNeumannNonUniform_O3::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
         facs = calc_interp_to_stencil(spacing);
         spacing += to_add;
       } else {
-        BoutReal to_add = coords_field(ic.x, ic.y);
         if (stagger == -1) {
-          spacing += to_add;
+          spacing += coords_field(ic.x, ic.y);
         }
         facs = calc_interp_to_stencil(spacing);
         if (stagger == 1) {
-          spacing += to_add;
+          spacing += coords_field(ic.x, ic.y);
         }
       }
       for (int iz = 0; iz < mesh->LocalNz; iz++) {
         const BoutReal val = (fg) ? vals[iz] : 0.0;
-        const BoutReal set =
+        f(ic.x, ic.y, iz) =
             facs.f0 * val + facs.f1 * f(i1.x, i1.y, iz) + facs.f2 * f(i2.x, i2.y, iz);
-
-        f(ic.x, ic.y, iz) = set;
       }
     }
   }
@@ -596,17 +581,17 @@ void BoundaryFreeNonUniform_O3::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
     const Indices i1{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
     const Indices i2{bndry->x - 3 * bndry->bx, bndry->y - 3 * bndry->by, 0};
     if (stagger == 0) {
-      BoutReal st = 0;
-      BoutReal t;
-      t = coords_field(i0.x, i0.y);
-      spacing.f0 = st + t / 2;
-      st += t;
-      t = coords_field(i1.x, i1.y);
-      spacing.f1 = st + t / 2;
-      st += t;
-      t = coords_field(i2.x, i2.y);
-      spacing.f2 = st + t / 2;
-      st += t;
+      BoutReal total_offset = 0;
+      BoutReal offset;
+      offset = coords_field(i0.x, i0.y);
+      spacing.f0 = total_offset + offset / 2;
+      total_offset += offset;
+      offset = coords_field(i1.x, i1.y);
+      spacing.f1 = total_offset + offset / 2;
+      total_offset += offset;
+      offset = coords_field(i2.x, i2.y);
+      spacing.f2 = total_offset + offset / 2;
+      total_offset += offset;
     } else {
       spacing.f0 = coords_field(i0.x, i0.y);
       spacing.f1 = spacing.f0 + coords_field(i1.x, i1.y);
@@ -623,15 +608,12 @@ void BoundaryFreeNonUniform_O3::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
         facs = calc_interp_to_stencil(spacing);
         spacing += to_add;
       } else {
-        BoutReal to_add = coords_field(ic.x, ic.y);
         facs = calc_interp_to_stencil(spacing);
-        spacing += to_add;
+        spacing += coords_field(ic.x, ic.y);
       }
       for (int iz = 0; iz < mesh->LocalNz; iz++) {
-        const BoutReal set = facs.f0 * f(i0.x, i0.y, iz) + facs.f1 * f(i1.x, i1.y, iz)
-                             + facs.f2 * f(i2.x, i2.y, iz);
-
-        f(ic.x, ic.y, iz) = set;
+        f(ic.x, ic.y, iz) = facs.f0 * f(i0.x, i0.y, iz) + facs.f1 * f(i1.x, i1.y, iz)
+                            + facs.f2 * f(i2.x, i2.y, iz);
       }
     }
   }
@@ -707,18 +689,18 @@ void BoundaryDirichletNonUniform_O4::apply(Field3D& f, MAYBE_UNUSED(BoutReal t))
     Indices i2{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
     Indices i3{bndry->x - 3 * bndry->bx, bndry->y - 3 * bndry->by, 0};
     if (stagger == 0) {
-      BoutReal t;
+      BoutReal offset;
       spacing.f0 = 0;
-      BoutReal st = 0;
-      t = coords_field(i1.x, i1.y);
-      spacing.f1 = st + t / 2;
-      st += t;
-      t = coords_field(i2.x, i2.y);
-      spacing.f2 = st + t / 2;
-      st += t;
-      t = coords_field(i3.x, i3.y);
-      spacing.f3 = st + t / 2;
-      st += t;
+      BoutReal total_offset = 0;
+      offset = coords_field(i1.x, i1.y);
+      spacing.f1 = total_offset + offset / 2;
+      total_offset += offset;
+      offset = coords_field(i2.x, i2.y);
+      spacing.f2 = total_offset + offset / 2;
+      total_offset += offset;
+      offset = coords_field(i3.x, i3.y);
+      spacing.f3 = total_offset + offset / 2;
+      total_offset += offset;
     } else {
       spacing.f0 = 0;
       spacing.f1 = spacing.f0 + coords_field(i1.x, i1.y);
@@ -740,21 +722,18 @@ void BoundaryDirichletNonUniform_O4::apply(Field3D& f, MAYBE_UNUSED(BoutReal t))
         facs = calc_interp_to_stencil(spacing);
         spacing += to_add;
       } else {
-        BoutReal to_add = coords_field(ic.x, ic.y);
         if (stagger == -1 && i != -1) {
-          spacing += to_add;
+          spacing += coords_field(ic.x, ic.y);
         }
         facs = calc_interp_to_stencil(spacing);
         if (stagger == 1) {
-          spacing += to_add;
+          spacing += coords_field(ic.x, ic.y);
         }
       }
       for (int iz = 0; iz < mesh->LocalNz; iz++) {
         const BoutReal val = (fg) ? vals[iz] : 0.0;
-        const BoutReal set = facs.f0 * val + facs.f1 * f(i1.x, i1.y, iz)
-                             + facs.f2 * f(i2.x, i2.y, iz) + facs.f3 * f(i3.x, i3.y, iz);
-
-        f(ic.x, ic.y, iz) = set;
+        f(ic.x, ic.y, iz) = facs.f0 * val + facs.f1 * f(i1.x, i1.y, iz)
+                            + facs.f2 * f(i2.x, i2.y, iz) + facs.f3 * f(i3.x, i3.y, iz);
       }
     }
   }
@@ -836,18 +815,18 @@ void BoundaryNeumannNonUniform_O4::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
     Indices i2{bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, 0};
     Indices i3{bndry->x - 3 * bndry->bx, bndry->y - 3 * bndry->by, 0};
     if (stagger == 0) {
-      BoutReal t;
+      BoutReal offset;
       spacing.f0 = 0;
-      BoutReal st = 0;
-      t = coords_field(i1.x, i1.y);
-      spacing.f1 = st + t / 2;
-      st += t;
-      t = coords_field(i2.x, i2.y);
-      spacing.f2 = st + t / 2;
-      st += t;
-      t = coords_field(i3.x, i3.y);
-      spacing.f3 = st + t / 2;
-      st += t;
+      BoutReal total_offset = 0;
+      offset = coords_field(i1.x, i1.y);
+      spacing.f1 = total_offset + offset / 2;
+      total_offset += offset;
+      offset = coords_field(i2.x, i2.y);
+      spacing.f2 = total_offset + offset / 2;
+      total_offset += offset;
+      offset = coords_field(i3.x, i3.y);
+      spacing.f3 = total_offset + offset / 2;
+      total_offset += offset;
     } else {
       spacing.f0 = 0;
       // Check if we are staggered and also boundary in low
@@ -876,21 +855,18 @@ void BoundaryNeumannNonUniform_O4::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
         facs = calc_interp_to_stencil(spacing);
         spacing += to_add;
       } else {
-        BoutReal to_add = coords_field(ic.x, ic.y);
         if (stagger == -1) {
-          spacing += to_add;
+          spacing += coords_field(ic.x, ic.y);
         }
         facs = calc_interp_to_stencil(spacing);
         if (stagger == 1) {
-          spacing += to_add;
+          spacing += coords_field(ic.x, ic.y);
         }
       }
       for (int iz = 0; iz < mesh->LocalNz; iz++) {
         const BoutReal val = (fg) ? vals[iz] : 0.0;
-        const BoutReal set = facs.f0 * val + facs.f1 * f(i1.x, i1.y, iz)
-                             + facs.f2 * f(i2.x, i2.y, iz) + facs.f3 * f(i3.x, i3.y, iz);
-
-        f(ic.x, ic.y, iz) = set;
+        f(ic.x, ic.y, iz) = facs.f0 * val + facs.f1 * f(i1.x, i1.y, iz)
+                            + facs.f2 * f(i2.x, i2.y, iz) + facs.f3 * f(i3.x, i3.y, iz);
       }
     }
   }
@@ -965,20 +941,20 @@ void BoundaryFreeNonUniform_O4::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
     const Indices i2{bndry->x - 3 * bndry->bx, bndry->y - 3 * bndry->by, 0};
     const Indices i3{bndry->x - 4 * bndry->bx, bndry->y - 4 * bndry->by, 0};
     if (stagger == 0) {
-      BoutReal st = 0;
-      BoutReal t;
-      t = coords_field(i0.x, i0.y);
-      spacing.f0 = st + t / 2;
-      st += t;
-      t = coords_field(i1.x, i1.y);
-      spacing.f1 = st + t / 2;
-      st += t;
-      t = coords_field(i2.x, i2.y);
-      spacing.f2 = st + t / 2;
-      st += t;
-      t = coords_field(i3.x, i3.y);
-      spacing.f3 = st + t / 2;
-      st += t;
+      BoutReal total_offset = 0;
+      BoutReal offset;
+      offset = coords_field(i0.x, i0.y);
+      spacing.f0 = total_offset + offset / 2;
+      total_offset += offset;
+      offset = coords_field(i1.x, i1.y);
+      spacing.f1 = total_offset + offset / 2;
+      total_offset += offset;
+      offset = coords_field(i2.x, i2.y);
+      spacing.f2 = total_offset + offset / 2;
+      total_offset += offset;
+      offset = coords_field(i3.x, i3.y);
+      spacing.f3 = total_offset + offset / 2;
+      total_offset += offset;
     } else {
       spacing.f0 = coords_field(i0.x, i0.y);
       spacing.f1 = spacing.f0 + coords_field(i1.x, i1.y);
@@ -996,15 +972,12 @@ void BoundaryFreeNonUniform_O4::apply(Field3D& f, MAYBE_UNUSED(BoutReal t)) {
         facs = calc_interp_to_stencil(spacing);
         spacing += to_add;
       } else {
-        BoutReal to_add = coords_field(ic.x, ic.y);
         facs = calc_interp_to_stencil(spacing);
-        spacing += to_add;
+        spacing += coords_field(ic.x, ic.y);
       }
       for (int iz = 0; iz < mesh->LocalNz; iz++) {
-        const BoutReal set = facs.f0 * f(i0.x, i0.y, iz) + facs.f1 * f(i1.x, i1.y, iz)
-                             + facs.f2 * f(i2.x, i2.y, iz) + facs.f3 * f(i3.x, i3.y, iz);
-
-        f(ic.x, ic.y, iz) = set;
+        f(ic.x, ic.y, iz) = facs.f0 * f(i0.x, i0.y, iz) + facs.f1 * f(i1.x, i1.y, iz)
+                            + facs.f2 * f(i2.x, i2.y, iz) + facs.f3 * f(i3.x, i3.y, iz);
       }
     }
   }

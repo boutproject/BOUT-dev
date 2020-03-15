@@ -97,13 +97,13 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, MAYBE_UNUSED(BoutR
     Indices i{{i}}{bndry->x - {{i}} * bndry->bx, bndry->y - {{i}} * bndry->by, 0};
 {% endfor %}
     if (stagger == 0) {
-      BoutReal t;
+      BoutReal offset;
       spacing.f0 = 0;
-      BoutReal st=0;
+      BoutReal total_offset=0;
 {% for i in range(1,order) %}
-      t = coords_field(i{{i}}.x, i{{i}}.y);
-      spacing.f{{i}} = st + t / 2;
-      st += t;
+      offset = coords_field(i{{i}}.x, i{{i}}.y);
+      spacing.f{{i}} = total_offset + offset / 2;
+      total_offset += offset;
 {% endfor %}
     } else {
       spacing.f0 = 0;
@@ -127,14 +127,13 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, MAYBE_UNUSED(BoutR
         facs = calc_interp_to_stencil(spacing);
         spacing += to_add;
       } else {
-        BoutReal to_add = coords_field(ic.x, ic.y);
         if (stagger == -1
               && i != -1) {
-          spacing += to_add;
+          spacing += coords_field(ic.x, ic.y);
         }
         facs = calc_interp_to_stencil(spacing);
         if (stagger == 1) {
-          spacing += to_add;
+          spacing += coords_field(ic.x, ic.y);
         }
       }
       for (int iz = 0; iz < mesh->LocalNz; iz++) {
@@ -149,13 +148,13 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, MAYBE_UNUSED(BoutR
     Indices i{{i}}{bndry->x - {{i}} * bndry->bx, bndry->y - {{i}} * bndry->by, 0};
 {% endfor %}
     if (stagger == 0) {
-      BoutReal t;
+      BoutReal offset;
       spacing.f0 = 0;
-      BoutReal st=0;
+      BoutReal total_offset=0;
 {% for i in range(1,order) %}
-      t = coords_field(i{{i}}.x, i{{i}}.y);
-      spacing.f{{i}} = st + t / 2;
-      st += t;
+      offset = coords_field(i{{i}}.x, i{{i}}.y);
+      spacing.f{{i}} = total_offset + offset / 2;
+      total_offset += offset;
 {% endfor %}
     } else {
       spacing.f0 = 0;
@@ -186,13 +185,12 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, MAYBE_UNUSED(BoutR
         facs = calc_interp_to_stencil(spacing);
         spacing += to_add;
       } else {
-        BoutReal to_add = coords_field(ic.x, ic.y);
         if (stagger == -1) {
-          spacing += to_add;
+          spacing += coords_field(ic.x, ic.y);
         }
         facs = calc_interp_to_stencil(spacing);
         if (stagger == 1) {
-          spacing += to_add;
+          spacing += coords_field(ic.x, ic.y);
         }
       }
       for (int iz = 0; iz < mesh->LocalNz; iz++) {
@@ -207,12 +205,12 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, MAYBE_UNUSED(BoutR
     const Indices i{{i}}{bndry->x - {{i+1}} * bndry->bx, bndry->y - {{i+1}} * bndry->by, 0};
 {% endfor %}
     if (stagger == 0) {
-      BoutReal st=0;
-      BoutReal t;
+      BoutReal total_offset = 0;
+      BoutReal offset;
 {% for i in range(order) %}
-      t = coords_field(i{{i}}.x, i{{i}}.y);
-      spacing.f{{i}} = st + t / 2;
-      st += t;
+      offset = coords_field(i{{i}}.x, i{{i}}.y);
+      spacing.f{{i}} = total_offset + offset / 2;
+      total_offset += offset;
 {% endfor %}
     } else {
       spacing.f0 = coords_field(i0.x, i0.y);
@@ -231,9 +229,8 @@ void Boundary{{type}}NonUniform_O{{order}}::apply(Field3D &f, MAYBE_UNUSED(BoutR
         facs = calc_interp_to_stencil(spacing);
         spacing += to_add;
       } else {
-        BoutReal to_add = coords_field(ic.x, ic.y);
         facs = calc_interp_to_stencil(spacing);
-        spacing += to_add;
+        spacing += coords_field(ic.x, ic.y);
       }
       for (int iz = 0; iz < mesh->LocalNz; iz++) {
         f(ic.x, ic.y, iz) = facs.f0 * f(i0.x, i0.y, iz)
