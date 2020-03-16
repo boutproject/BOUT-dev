@@ -19,7 +19,7 @@ aliases:
     - secure: "M5U3I81hzK41Kw7KB+DpEMxP/sgkWkFI4uiRZQDMDFRlhcitsJQQ/YGeBt3a0vo153m2P2PmmeKUl/lTo5WS5SfAVFI8BkcyBjpxZQXV3OD8ru7JsMgVc5pGwl2dvR8Qz02gUIbrIpAlf3YDnNVb6F1C9ofDaCnZU3GUTLH5Fy5z5Z8OpuTaLmTVMMnT2ZEcRawHbmlVhIB/9PUQUa+fM7iC+dtszFxZ2ma5LOHxPS2sGpRCKE5Sae1/xAFWjo4oO0ZqYu5JFvKdb+/2yWKTg/1aTyxCdqAzLg4ldzDlX759zXgtWn+k3TLiVyQ+gsvF8QZkh4BKvl/w2KZ20vRP3blzmxvdsSH+ZP92MZIIK9EkNPGd+UJJd5Hu+zwecEFyfO8bXB9l00kzUsVx+lo7VHbANuNO3b5a6FRiihTCgk+dfOxxrow/fci+lQ9BkmJg0680SIj2e6UM/P9lFgfQLH3IoacN1PtkyqnpJqdHUdbWmpqMtmitmQhXHjnJ+wDb5+i9b1fy5yEsB64rjgF9PBr1/Nos1XD4oGWAknXmQTgWhNyy6f+e0wBNcSUd5nrReLTOAscyXYpcTqONp1W999JSFQEH+YTwBfXytdkWaAGAFEhaaAXQ2jCwHO7jl/TODPfSeZgXkQiT5jgg63i5tlPB4Xn0MTSCX74bYIi16Tk="    
   - &coverage_vars
     - SCRIPT_FLAGS='-cu'
-    - PIP_PACKAGES='gcovr'
+    - PIP_PACKAGES='gcovr sympy'
 
 addons:
   apt:
