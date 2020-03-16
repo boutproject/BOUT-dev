@@ -22,12 +22,9 @@ def factorial(a):
         assert(a>0)
         return a*factorial(a-1)
 
-def gen_code(order,matrix):
-    x=[]
-    for i in range(order):
-        x.append(Symbol("spacing.f%d"%i))
-
-    matrix = matrix(x)
+def gen_code(order,matrix_type):
+    x = [Symbol("spacing.f%d"%i) for i in range(order)]
+    matrix = matrix_type(x)
     A=Matrix(order,order,matrix)
 
     try:
