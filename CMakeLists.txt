@@ -771,6 +771,11 @@ if(PACKAGE_TESTS)
   add_dependencies(check check-unit-tests check-integrated-tests)
 endif()
 
+option(BOUT_BUILD_EXAMPLES "Build the examples" OFF)
+if(BOUT_BUILD_EXAMPLES)
+  add_subdirectory(examples)
+endif()
+
 ##################################################
 # Installation
 
