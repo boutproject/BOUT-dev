@@ -34,7 +34,7 @@ BoutReal test_ddy(stencil &s) {
   return (s.p - s.m);
 }
 
-typedef BoutReal (*deriv_func)(stencil &);
+using deriv_func = BoutReal (*)(stencil &);
 deriv_func func_ptr = &test_ddy;
 
 int main(int argc, char **argv) {
@@ -43,13 +43,13 @@ int main(int argc, char **argv) {
   std::vector<Duration> times;
 
   //Get options root
-  Options *globalOptions = Options::getRoot();
-  Options *modelOpts = globalOptions->getSection("performanceIterator");
+  auto globalOptions = Options::root();
+  auto modelOpts = globalOptions["performanceIterator"];
   int NUM_LOOPS;
-  OPTION(modelOpts, NUM_LOOPS, 100);
+  NUM_LOOPS = modelOpts["NUM_LOOPS"].withDefault(100);
   bool profileMode, includeHeader;
-  OPTION(modelOpts, profileMode, false);
-  OPTION(modelOpts, includeHeader, false);
+  profileMode = modelOpts["profileMode"].withDefault(false);
+  includeHeader = modelOpts["includeHeader"].withDefault(false);
 
   ConditionalOutput time_output{Output::getInstance()};
   time_output.enable(true);
@@ -93,14 +93,14 @@ int main(int argc, char **argv) {
     auto deriv = DerivativeStore<Field3D>::getInstance().getStandardDerivative("C2",DIRECTION::Y, STAGGER::None);
     ITERATOR_TEST_BLOCK(
 			"DerivativeStore without fetching",
-			deriv(a, result, RGN_NOY);
+			deriv(a, result, "RGN_NOY");
 			);
   };
   
   ITERATOR_TEST_BLOCK(
 		      "DerivativeStore with fetch",
 		      auto deriv = DerivativeStore<Field3D>::getInstance().getStandardDerivative("C2",DIRECTION::Y, STAGGER::None);    
-		      deriv(a, result, RGN_NOY);
+		      deriv(a, result, "RGN_NOY");
 		      );
 
   ITERATOR_TEST_BLOCK(

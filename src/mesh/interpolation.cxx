@@ -29,10 +29,14 @@
 #include <output.hxx>
 #include <unused.hxx>
 
-void printLocation(const Field3D &var) { output.write(strLocation(var.getLocation())); }
-void printLocation(const Field2D &var) { output.write(strLocation(var.getLocation())); }
+void printLocation(const Field3D& var) {
+  output << toString(var.getLocation());
+}
+void printLocation(const Field2D& var) {
+  output << toString(var.getLocation());
+}
 
-const char *strLocation(CELL_LOC loc) { return CELL_LOC_STRING(loc).c_str(); }
+const char* strLocation(CELL_LOC loc) { return toString(loc).c_str(); }
 
 const Field3D interpolate(const Field3D &f, const Field3D &delta_x,
                           const Field3D &delta_z) {
@@ -51,8 +55,7 @@ const Field3D interpolate(const Field2D &f, const Field3D &delta_x) {
 
   Mesh *mesh = f.getMesh();
   ASSERT1(mesh == delta_x.getMesh());
-  Field3D result(mesh);
-  result.allocate();
+  Field3D result{emptyFrom(delta_x)};
 
   // Loop over output grid points
   for (int jx = 0; jx < mesh->LocalNx; jx++) {

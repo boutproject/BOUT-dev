@@ -100,16 +100,13 @@ protected:
     // Read some parameters
     auto globalOptions = Options::root();
     auto options = globalOptions["2fluid"];
-    OPTION(options, AA, 2.0);
-    OPTION(options, ZZ, 1.0);
+    AA = options["AA"].withDefault(2.0);
+    ZZ = options["ZZ"].withDefault(1.0);
 
-    OPTION(options, ZeroElMass, false);
-    OPTION(options, zeff, 1.0);
-    OPTION(options, nu_perp, 0.0);
-    OPTION(options, ShearFactor, 1.0);
-
-    OPTION(options, phi_flags, 0);
-    OPTION(options, apar_flags, 0);
+    ZeroElMass = options["ZeroElMass"].withDefault(false);
+    zeff = options["zeff"].withDefault(1.0);
+    nu_perp = options["nu_perp"].withDefault(0.0);
+    ShearFactor = options["ShearFactor"].withDefault(1.0);
 
     /************* SHIFTED RADIAL COORDINATES ************/
 
@@ -226,11 +223,9 @@ protected:
     SAVE_ONCE(Te_x, Ti_x, Ni_x, rho_s, wci);
     
     // Create a solver for the Laplacian
-    phiSolver = Laplacian::create();
-    phiSolver->setFlags(phi_flags);
+    phiSolver = Laplacian::create(&options["phiSolver"]);
 
-    aparSolver = Laplacian::create();
-    aparSolver->setFlags(apar_flags);
+    aparSolver = Laplacian::create(&options["aparSolver"]);
     aparSolver->setCoefA((-0.5 * beta_p / fmei) * Ni0);
 
     return 0;

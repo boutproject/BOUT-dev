@@ -12,7 +12,8 @@ class Mesh;
 class InterpolationFactory {
 public:
   /// Callback function definition for creating Interpolation objects
-  typedef Interpolation* (*CreateInterpCallback)(Mesh*);
+  using CreateInterpCallback = Interpolation* (*)(Mesh*);
+
 private:
   /// Add the available interpolation methods to the internal map
   ///
@@ -30,9 +31,10 @@ private:
   /// @param name Name of the interpolation method
   ///
   /// @return A pointer to the Interpolation object in the map
-  CreateInterpCallback findInterpolation(const std::string &name);
+  CreateInterpCallback findInterpolation(const std::string& name);
+
 public:
-  ~InterpolationFactory() {};
+  ~InterpolationFactory() = default;
 
   /// Create or get the singleton instance of the factory
   static InterpolationFactory* getInstance();
@@ -44,13 +46,8 @@ public:
   inline std::string getDefaultInterpType() { return "hermitespline"; }
 
   /// Create an interpolation object
-  Interpolation *create(Mesh *mesh) {
-    return create(nullptr, mesh);
-  }
-  Interpolation *create(Options *options) {
-    return create(options, nullptr);
-  }
-  Interpolation *create(Options *options = nullptr, Mesh *mesh = nullptr);
+  Interpolation* create(Mesh* mesh) { return create(nullptr, mesh); }
+  Interpolation* create(Options* options = nullptr, Mesh* mesh = nullptr);
 
   /// Create an Interpolation object
   ///
@@ -59,11 +56,11 @@ public:
   /// @param mesh    A Mesh object to construct the interpolation on
   ///
   /// @return A new copy of an Interpolation object
-  Interpolation *create(const std::string &name, Options *options = nullptr,
-                        Mesh *mesh = nullptr);
+  Interpolation* create(const std::string& name, Options* options = nullptr,
+                        Mesh* mesh = nullptr);
 
   /// Add available interpolations to database
-  void add(CreateInterpCallback interp, const std::string &name);
+  void add(CreateInterpCallback interp, const std::string& name);
 };
 
 #endif //__INTERP_FACTORY_H__

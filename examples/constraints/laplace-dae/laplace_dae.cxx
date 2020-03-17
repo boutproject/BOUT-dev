@@ -17,8 +17,6 @@ Field3D phibdry; // Used for calculating error in the boundary
 
 bool constraint;
 
-int flags;
-
 Laplacian *phiSolver; ///< Inverts a Laplacian to get phi from U
 
 // Preconditioner
@@ -30,14 +28,12 @@ int physics_init(bool UNUSED(restarting)) {
   // Give the solver two RHS functions
   
   // Get options
-  Options *options = Options::getRoot();
-  options = options->getSection("dae");
-  OPTION(options, constraint, true);
-  OPTION(options, flags, 0);
+  auto globalOptions = Options::root();
+  auto options = globalOptions["dae"];
+  constraint = options["constraint"].withDefault(true);
 
   // Create a solver for the Laplacian
   phiSolver = Laplacian::create();
-  phiSolver->setFlags(flags);
   
   // Just solving one variable, U
   SOLVE_FOR2(U, Apar);

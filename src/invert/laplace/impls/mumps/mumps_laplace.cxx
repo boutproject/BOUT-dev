@@ -211,21 +211,21 @@ LaplaceMumps::LaplaceMumps(Options *opt, const CELL_LOC loc, Mesh *mesh_in = mes
     localrhssize += localmesh->xstart*(localmesh->LocalNz);
     
     int nxpe = localmesh->NXPE;
-    localrhs_size_array = Array<int>(nxpe);
+    localrhs_size_array.reallocate(nxpe);
     localrhs_size_array[0] = localrhssize;
     if (nxpe>1) {
       for (int i=1; i<nxpe-1; i++)
 	localrhs_size_array[i] = (localmesh->xend-localmesh->xstart+1)*(localmesh->LocalNz);
       localrhs_size_array[nxpe-1] = (localmesh->LocalNx-localmesh->xstart)*(localmesh->LocalNz);
     }
-    rhs_positions = Array<int>(nxpe);
+    rhs_positions.reallocate(nxpe);
     rhs_positions[0] = 0;
     for (int i=1; i<nxpe; i++)
       rhs_positions[i] = rhs_positions[i-1] + localrhs_size_array[i-1];
 
-    rhs = Array<BoutReal>(meshx * meshz);
+    rhs.reallocate(meshx * meshz);
   }
-  localrhs = Array<BoutReal>(localrhssize);
+  localrhs.reallocate(localrhssize);
 
   // Set Arrays of matrix indices, using i (0<=i<nz_loc), and solution indices, using j (0<=j<localN)
   int i=0; //int j=0;
@@ -265,11 +265,11 @@ LaplaceMumps::LaplaceMumps(Options *opt, const CELL_LOC loc, Mesh *mesh_in = mes
       }
   for (int x=localmesh->xstart; x<=localmesh->xend; x++)
     for (int z=0; z<localmesh->LocalNz; z++) {
-      int xmm = localmesh->XGLOBAL(x)-2;
-      int xm = localmesh->XGLOBAL(x)-1;
-      int x0 = localmesh->XGLOBAL(x);
-      int xp = localmesh->XGLOBAL(x)+1;
-      int xpp = localmesh->XGLOBAL(x)+2;
+      int xmm = localmesh->getGlobalXIndex(x)-2;
+      int xm = localmesh->getGlobalXIndex(x)-1;
+      int x0 = localmesh->getGlobalXIndex(x);
+      int xp = localmesh->getGlobalXIndex(x)+1;
+      int xpp = localmesh->getGlobalXIndex(x)+2;
       int zmm = (z-2<0) ? (z-2+meshz) : (z-2);
       int zm = (z-1<0) ? (z-1+meshz) : (z-1);
       int z0 = z;
@@ -387,9 +387,9 @@ LaplaceMumps::LaplaceMumps(Options *opt, const CELL_LOC loc, Mesh *mesh_in = mes
   if (localmesh->lastX())
     for (int x=localmesh->xend+1; x<localmesh->LocalNx; x++)
       for (int z=0; z<localmesh->LocalNz; z++) {
-	int xmm = localmesh->XGLOBAL(localmesh->xend)+x-localmesh->xend-2;
-	int xm = localmesh->XGLOBAL(localmesh->xend)+x-localmesh->xend-1;
-	int x0 = localmesh->XGLOBAL(localmesh->xend)+x-localmesh->xend;
+	int xmm = localmesh->getGlobalXIndex(localmesh->xend)+x-localmesh->xend-2;
+	int xm = localmesh->getGlobalXIndex(localmesh->xend)+x-localmesh->xend-1;
+	int x0 = localmesh->getGlobalXIndex(localmesh->xend)+x-localmesh->xend;
 	int z0 = z;
 	if(outer_boundary_flags & INVERT_AC_GRAD) {
 	  mumps_struc.irn_loc[i] = x0*meshz + z0 + 1; // Indices for fortran arrays that start at 1
@@ -558,11 +558,11 @@ LaplaceMumps::LaplaceMumps(Options *opt, const CELL_LOC loc, Mesh *mesh_in = mes
 // 
 // }
 
-const FieldPerp LaplaceMumps::solve(const FieldPerp &b, const FieldPerp &x0) {
+FieldPerp LaplaceMumps::solve(const FieldPerp& b, const FieldPerp& x0) {
   return solve(b);
 }
 
-const FieldPerp LaplaceMumps::solve(const FieldPerp &b) {
+FieldPerp LaplaceMumps::solve(const FieldPerp& b) {
   ASSERT1(localmesh == b.getMesh());
   ASSERT1(b.getLocation() == location);
 

@@ -51,8 +51,6 @@ if argcomplete:
 
 args = parser.parse_args()
 
-# Late imports to not slow down bash completion
-
 for ind in "txyz":
     args.__dict__[ind + "ind"] = slice(*args.__dict__[ind + "ind"])
 # Call the function, using command line arguments

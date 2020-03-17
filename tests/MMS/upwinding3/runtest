@@ -18,9 +18,9 @@ def runtests(functions,derivatives,directions,stag,msg):
     global passlist    
     for direction in directions:
       direction, fac,guards, diff_func = direction
-      locations=['CENTRE']
+      locations=['centre']
       if stag:
-        locations.append(direction.upper()+"LOW")
+        locations.append(direction.lower()+"low")
       for funcs, derivative , floc, vloc in itertools.product(functions,
                                                                  derivatives, locations,locations):
         vfunc, ffunc, outfunc = funcs
@@ -40,11 +40,10 @@ def runtests(functions,derivatives,directions,stag,msg):
                                 ,outloc=vloc)
             sim=diff_func(v,f,method=diff,outloc=floc)
             if sim.getLocation() != floc:
-                cent=['CENTRE','CENTER']
-                if floc in cent and sim.getLocation() in cent:
+                if floc == 'centre' and sim.getLocation() == 'centre':
                     pass
                 else:
-                    errorlist.append("Location does not match - expected %s but got %s"%(outloc,sim.getLocation()))
+                    errorlist.append("Location does not match - expected %s but got %s"%(floc,sim.getLocation()))
             ana=boutcore.create3D(outfunc.replace("%s",dirnfac),mesh, outloc=floc)
             err=sim-ana
             err=err.getAll().flatten()
@@ -105,6 +104,8 @@ derivatives=[
 ]
 
 runtests(functions,derivatives,directions,stag=True,msg="DD")
+
+boutcore.finalise()
 
 if errorlist:
     for error in errorlist:

@@ -39,22 +39,22 @@ FUNCTION analyse_equil, F, R, Z
   ; and X-points (saddle points)
   ;
   
-  dfdr = FLTARR(nx, ny)
+  dfdr = DBLARR(nx, ny)
   FOR j=0, ny-1 DO BEGIN
     dfdr[*,j] = diff(f[*,j])
   ENDFOR
   
-  dfdz = FLTARR(nx, ny)
+  dfdz = DBLARR(nx, ny)
   FOR i=0, nx-1 DO BEGIN
     dfdz[i,*] = diff(f[i,*])
   ENDFOR
 
   ; Use contour to get crossing-points where dfdr = dfdz = 0
   
-  contour_lines, dfdr, findgen(nx), findgen(ny), levels=[0.0], $
+  contour_lines, dfdr, findgen(nx), findgen(ny), levels=[0.0D], $
     path_info=rinfo, path_xy=rxy
   
-  contour_lines, dfdz, findgen(nx), findgen(ny), levels=[0.0], $
+  contour_lines, dfdz, findgen(nx), findgen(ny), levels=[0.0D], $
     path_info=zinfo, path_xy=zxy
   
   ; Find where these two cross
@@ -109,7 +109,7 @@ FUNCTION analyse_equil, F, R, Z
   zio = [ 0,-1, 0, 1, 0, 1] ; Z index offsets
   
   ; Fitting a + br + cz + drz + er^2 + fz^2
-  A = TRANSPOSE([[FLTARR(6)+1], $
+  A = TRANSPOSE([[DBLARR(6)+1], $
                  [rio], $
                  [zio], $
                  [rio*zio], $
@@ -124,7 +124,7 @@ FUNCTION analyse_equil, F, R, Z
     
     valid = 1
 
-    localf = FLTARR(6)
+    localf = DBLARR(6)
     FOR i=0, 5 DO BEGIN
       ; Get the f value in a stencil around this point
       xi = ((rex[e]+rio[i]) > 0) < (nx-1) ; Zero-gradient at edges
@@ -137,9 +137,9 @@ FUNCTION analyse_equil, F, R, Z
     ;                  [0,1,2,3,4,5]
 
     ; This determines whether saddle or extremum
-    det = 4.*res[4]*res[5] - res[3]^2
+    det = 4.D*res[4]*res[5] - res[3]^2
     
-    IF det LT 0.0 THEN BEGIN
+    IF det LT 0.0D THEN BEGIN
       PRINT, "   X-point"
     ENDIF ELSE BEGIN
       PRINT, "   O-point"
@@ -147,15 +147,15 @@ FUNCTION analyse_equil, F, R, Z
     
     ; Get location (2x2 matrix of coefficients)
     
-    rinew = (res[3]*res[2] - 2.*res[1]*res[5]) / det
-    zinew = (res[3]*res[1] - 2.*res[4]*res[2]) / det
+    rinew = (res[3]*res[2] - 2.D*res[1]*res[5]) / det
+    zinew = (res[3]*res[1] - 2.D*res[4]*res[2]) / det
 
-    IF (ABS(rinew) GT 1.) OR (ABS(zinew) GT 1.0) THEN BEGIN
+    IF (ABS(rinew) GT 1.D) OR (ABS(zinew) GT 1.0D) THEN BEGIN
       ; Method has gone slightly wrong. Try a different method.
       ; Get a contour line starting at this point. Should
       ; produce a circle around the real o-point. 
       PRINT, "   Fitted location deviates too much"
-      IF det LT 0.0 THEN BEGIN
+      IF det LT 0.0D THEN BEGIN
         PRINT, "   => X-point probably not valid"
         PRINT, "      deviation = "+STR(rinew)+","+STR(zinew)
         ;valid = 0
@@ -170,15 +170,15 @@ FUNCTION analyse_equil, F, R, Z
           info = info[ind]
         ENDIF ELSE info = info[0]
         
-        rinew = 0.5*(MAX(xy[0, info.offset:(info.offset + info.n - 1)]) + $
+        rinew = 0.5D*(MAX(xy[0, info.offset:(info.offset + info.n - 1)]) + $
                      MIN(xy[0, info.offset:(info.offset + info.n - 1)])) - rex[e]
-        zinew = 0.5*(MAX(xy[1, info.offset:(info.offset + info.n - 1)]) + $
+        zinew = 0.5D*(MAX(xy[1, info.offset:(info.offset + info.n - 1)]) + $
                      MIN(xy[1, info.offset:(info.offset + info.n - 1)])) - zex[e]
         
-        IF (ABS(rinew) GT 2.) OR (ABS(zinew) GT 2.0) THEN BEGIN
+        IF (ABS(rinew) GT 2.D) OR (ABS(zinew) GT 2.0D) THEN BEGIN
           PRINT, "   Backup method also failed. Keeping initial guess"
-          rinew = 0.
-          zinew = 0.
+          rinew = 0.D
+          zinew = 0.D
         ENDIF
       ENDELSE
     ENDIF
@@ -193,13 +193,13 @@ FUNCTION analyse_equil, F, R, Z
       PRINT, "   Starting index: " + STR(rex[e])+", "+STR(zex[e])
       PRINT, "   Refined  index: " + STR(rinew)+", "+STR(zinew)
       
-      rnew = INTERPOLATE(R, rinew)
-      znew = INTERPOLATE(Z, zinew)
+      rnew = INTERPOLATE(R, rinew, /DOUBLE)
+      znew = INTERPOLATE(Z, zinew, /DOUBLE)
       
       PRINT, "   Position: " + STR(rnew)+", "+STR(znew)
       PRINT, "   F = "+STR(fnew)
       
-      IF det LT 0.0 THEN BEGIN
+      IF det LT 0.0D THEN BEGIN
         
         IF n_xpoint EQ 0 THEN BEGIN
           xpt_ri = [rinew]
@@ -210,7 +210,7 @@ FUNCTION analyse_equil, F, R, Z
           ; Check if this duplicates an existing point
           
           m = MIN((xpt_ri - rinew)^2 + (xpt_zi - zinew)^2, ind)
-          IF m LT 2. THEN BEGIN
+          IF m LT 2.D THEN BEGIN
             PRINT, "   Duplicates existing X-point."
           ENDIF ELSE BEGIN
             xpt_ri = [xpt_ri, rinew]
@@ -231,7 +231,7 @@ FUNCTION analyse_equil, F, R, Z
           ; Check if this duplicates an existing point
           
           m = MIN((opt_ri - rinew)^2 + (opt_zi - zinew)^2, ind)
-          IF m LT 2. THEN BEGIN
+          IF m LT 2.D THEN BEGIN
             PRINT, "   Duplicates existing O-point"
           ENDIF ELSE BEGIN
             opt_ri = [opt_ri, rinew]
@@ -256,10 +256,10 @@ FUNCTION analyse_equil, F, R, Z
   ; Find the O-point closest to the middle of the grid
   dR = R[1] - R[0]
   dZ = Z[1] - Z[0]
-  mind = dR^2 * (opt_ri[0] - (FLOAT(nx)/2.))^2 + dZ^2*(opt_zi[0] - (FLOAT(ny)/2.))^2
+  mind = dR^2 * (opt_ri[0] - (DOUBLE(nx)/2.D))^2 + dZ^2*(opt_zi[0] - (DOUBLE(ny)/2.D))^2
   ind = 0
   FOR i=1, n_opoint-1 DO BEGIN
-    d = dR^2*(opt_ri[i] - (FLOAT(nx)/2.))^2 + dZ^2*(opt_zi[i] - (FLOAT(ny)/2.))^2
+    d = dR^2*(opt_ri[i] - (DOUBLE(nx)/2.D))^2 + dZ^2*(opt_zi[i] - (DOUBLE(ny)/2.D))^2
     IF d LT mind THEN BEGIN
       ind = i
       mind = d
@@ -267,8 +267,8 @@ FUNCTION analyse_equil, F, R, Z
   ENDFOR
   
   primary_opt = ind
-  PRINT, "Primary O-point is at "+STR(INTERPOLATE(R, opt_ri[ind])) + $
-    ", " + STR(INTERPOLATE(Z, opt_zi[ind]))
+  PRINT, "Primary O-point is at "+STR(INTERPOLATE(R, opt_ri[ind], /DOUBLE)) + $
+    ", " + STR(INTERPOLATE(Z, opt_zi[ind], /DOUBLE))
   PRINT, ""
   
   IF n_xpoint GT 0 THEN BEGIN
@@ -281,16 +281,16 @@ FUNCTION analyse_equil, F, R, Z
       ; Draw a line between the O-point and X-point
       
       n = 100 ; Number of points
-      farr = FLTARR(n)
-      dr = (xpt_ri[i] - opt_ri[primary_opt]) / FLOAT(n)
-      dz = (xpt_zi[i] - opt_zi[primary_opt]) / FLOAT(n)
+      farr = DBLARR(n)
+      dr = (xpt_ri[i] - opt_ri[primary_opt]) / DOUBLE(n)
+      dz = (xpt_zi[i] - opt_zi[primary_opt]) / DOUBLE(n)
       FOR j=0, n-1 DO BEGIN
         ; interpolate f at this location
-        farr[j] = INTERPOLATE(F, opt_ri[primary_opt] + dr*FLOAT(j), opt_zi[primary_opt] + dz*FLOAT(j))
+        farr[j] = INTERPOLATE(F, opt_ri[primary_opt] + dr*DOUBLE(j), opt_zi[primary_opt] + dz*DOUBLE(j), /DOUBLE)
       ENDFOR
       
       IF farr[n-1] LT farr[0] THEN BEGIN
-        farr *= -1.0 ; Reverse, so maximum is always at the X-point
+        farr *= -1.0D ; Reverse, so maximum is always at the X-point
       ENDIF
       ; farr should be monotonic, and shouldn't cross any other separatrices
       
@@ -300,8 +300,8 @@ FUNCTION analyse_equil, F, R, Z
       ; Discard if there is more than a 5% discrepancy in normalised
       ; psi between the maximum and the X-point, or the minimum and
       ; the O-point.
-      IF (ma - farr[n-1])/(ma - farr[0]) GT 0.05 THEN continue
-      IF (farr[0] - mi)/(farr[n-1] - mi) GT 0.05 THEN continue
+      IF (ma - farr[n-1])/(ma - farr[0]) GT 0.05D THEN continue
+      IF (farr[0] - mi)/(farr[n-1] - mi) GT 0.05D THEN continue
       
       ; Monotonic, so add this to a list of x-points to keep
       IF nkeep EQ 0 THEN keep = [i] ELSE keep = [keep, i]
@@ -323,7 +323,7 @@ FUNCTION analyse_equil, F, R, Z
       REPEAT BEGIN
         ; note here MIN() sets the value of 'ind' to the index where the minimum was found
         m = MIN((xpt_ri[0:(i-1)] - xpt_ri[i])^2 + (xpt_zi[0:(i-1)] - xpt_zi[i])^2, ind)
-        IF m LT 4. THEN BEGIN
+        IF m LT 4.D THEN BEGIN
           PRINT, "Duplicates: ", i, ind
           
           IF ABS(opt_f[primary_opt] - xpt_f[i]) LT ABS(opt_f[primary_opt] - xpt_f[ind]) THEN BEGIN
@@ -356,7 +356,7 @@ FUNCTION analyse_equil, F, R, Z
   ENDIF ELSE BEGIN
     ; No x-points. Pick mid-point in f
    
-    xpt_f = 0.5*(MAX(F) + MIN(F))
+    xpt_f = 0.5D*(MAX(F) + MIN(F))
     
     PRINT, "WARNING: No X-points. Setting separatrix to F = "+STR(xpt_f)
 

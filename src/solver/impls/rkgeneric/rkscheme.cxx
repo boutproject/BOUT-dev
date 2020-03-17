@@ -17,10 +17,6 @@ RKScheme::RKScheme(Options *UNUSED(opts)) {
   dtfac = 1.0; // Time step factor
 }
 
-//Cleanup
-RKScheme::~RKScheme(){
-}
-
 //Finish generic initialisation
 void RKScheme::init(const int nlocalIn, const int neqIn, const bool adaptiveIn, const BoutReal atolIn, 
 		    const BoutReal rtolIn, Options *options){
@@ -37,12 +33,12 @@ void RKScheme::init(const int nlocalIn, const int neqIn, const bool adaptiveIn, 
   adaptive = adaptiveIn;
 
   //Allocate storage for stages
-  steps = Matrix<BoutReal>(getStageCount(), nlocal);
+  steps.reallocate(getStageCount(), nlocal);
   zeroSteps();
 
   //Allocate array for storing alternative order result
   if (adaptive)
-    resultAlt = Array<BoutReal>(nlocal); // Result--alternative order
+    resultAlt.reallocate(nlocal); // Result--alternative order
 
   //Will probably only want the following when debugging, but leave it on for now
   if(diagnose){

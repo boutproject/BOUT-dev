@@ -74,7 +74,7 @@ class Requirements(object):
 
             # Find all lines starting with '#requires' or '#Requires:'
             match = re.findall(
-                "^\s*\#[Rr]equires:?(.*)", contents, re.MULTILINE)
+                "^\s*\#\s?[Rr]equires:?(.*)", contents, re.MULTILINE)
             # Iterate over all expressions to evaluate
             for expr in match:
                 try:

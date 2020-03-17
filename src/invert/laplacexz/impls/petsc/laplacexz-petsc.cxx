@@ -97,58 +97,67 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt, const CELL_LOC loc)
 
   if (opt == nullptr) {
     // If no options supplied, use default
-    opt = Options::getRoot()->getSection("laplacexz");
+    opt = &(Options::root())["laplacexz"];
   }
 
   // Getting the boundary flags
   OPTION(opt, inner_boundary_flags, 0);
   OPTION(opt, outer_boundary_flags, 0);
-  #if CHECK > 0
-    // Checking flags are set to something which is not implemented
-    // This is done binary (which is possible as each flag is a power of 2)
-    if ( inner_boundary_flags & ~implemented_boundary_flags ) {
-      throw BoutException("Attempted to set LaplaceXZ inversion boundary flag that is not implemented in petsc_laplace.cxx");
-    }
-    if ( outer_boundary_flags & ~implemented_boundary_flags ) {
-      throw BoutException("Attempted to set LaplaceXZ inversion boundary flag that is not implemented in petsc_laplace.cxx");
-    }
-    if(localmesh->periodicX) {
-      throw BoutException("LaplacePetsc does not work with periodicity in the x direction (localmesh->PeriodicX == true). Change boundary conditions or use serial-tri or cyclic solver instead");
-      }
-  #endif
+#if CHECK > 0
+  // Checking flags are set to something which is not implemented
+  // This is done binary (which is possible as each flag is a power of 2)
+  if (inner_boundary_flags & ~implemented_boundary_flags) {
+    throw BoutException("Attempted to set LaplaceXZ inversion boundary flag that is not "
+                        "implemented in petsc_laplace.cxx");
+  }
+  if (outer_boundary_flags & ~implemented_boundary_flags) {
+    throw BoutException("Attempted to set LaplaceXZ inversion boundary flag that is not "
+                        "implemented in petsc_laplace.cxx");
+  }
+  if (localmesh->periodicX) {
+    throw BoutException("LaplacePetsc does not work with periodicity in the x direction "
+                        "(localmesh->PeriodicX == true). Change boundary conditions or "
+                        "use serial-tri or cyclic solver instead");
+  }
+#endif
 
-  OPTION(opt, reuse_limit, 100);
+  reuse_limit = (*opt)["reuse_limit"]
+                    .doc("How many solves can the preconditioner be reused?")
+                    .withDefault(100);
   reuse_count = reuse_limit + 1; // So re-calculates first time
 
   // Convergence Parameters. Solution is considered converged if |r_k| < max( rtol * |b| , atol )
   // where r_k = b - Ax_k. The solution is considered diverged if |r_k| > dtol * |b|.
-  BoutReal rtol, atol, dtol;
-  int maxits; ///< Maximum iterations
-  OPTION(opt, rtol, 1e-5);     // Relative tolerance
-  OPTION(opt, atol, 1e-10);    // Absolute tolerance
-  OPTION(opt, dtol, 1e3);      // Diverged threshold
-  OPTION(opt, maxits, 100000); // Maximum iterations
+
+  const BoutReal rtol = (*opt)["rtol"].doc("Relative tolerance").withDefault(1e-5);
+  const BoutReal atol = (*opt)["atol"]
+          .doc("Absolute tolerance. The solution is considered converged if |Ax-b| "
+               "< max( rtol * |b| , atol )")
+          .withDefault(1e-10);
+  const BoutReal dtol = (*opt)["dtol"]
+                      .doc("The solution is considered diverged if |Ax-b| > dtol * |b|")
+                      .withDefault(1e3);
+  const int maxits = (*opt)["maxits"].doc("Maximum iterations").withDefault(100000);
 
   // Get KSP Solver Type
-  std::string ksptype;
-  opt->get("ksptype", ksptype, "gmres");
-
+  const std::string ksptype = (*opt)["ksptype"].doc("KSP solver type").withDefault("gmres");
+  
   // Get PC type
-  std::string pctype;
-  opt->get("pctype", pctype, "lu", true);
+  const std::string pctype = (*opt)["pctype"].doc("Preconditioner type").withDefault("none");
 
-  std::string factor_package;
-  opt->get("factor_package", factor_package, "petsc", true);
+  const std::string factor_package = (*opt)["factor_package"]
+          .doc("Package to use in preconditioner. Passed to PCFactorSetMatSolver")
+          .withDefault("petsc");
 
   // Get MPI communicator
   MPI_Comm comm = localmesh->getXcomm();
 
   // Local size
   int localN = (localmesh->xend - localmesh->xstart + 1) * (localmesh->LocalNz);
-  if(localmesh->firstX()) {
+  if (localmesh->firstX()) {
     localN += localmesh->LocalNz;
   }
-  if(localmesh->lastX()) {
+  if (localmesh->lastX()) {
     localN += localmesh->LocalNz;
   }
 
@@ -158,7 +167,7 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt, const CELL_LOC loc)
   VecSetFromOptions( xs );
   VecDuplicate( xs , &bs );
 
-  for(int y = localmesh->ystart; y <= localmesh->yend; y++) {
+  for (int y = localmesh->ystart; y <= localmesh->yend; y++) {
     YSlice data;
 
     data.yindex = y;
@@ -175,7 +184,7 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt, const CELL_LOC loc)
     PetscMalloc( (localN)*sizeof(PetscInt), &d_nnz );
     PetscMalloc( (localN)*sizeof(PetscInt), &o_nnz );
 
-    for(int i=0;i<localN;i++) {
+    for (int i=0;i<localN;i++) {
       // Non-zero elements on this processor
       d_nnz[i] = 9; 
       // Non-zero elements on neighboring processor
@@ -183,26 +192,26 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt, const CELL_LOC loc)
     }
 
     // X boundaries
-    if(localmesh->firstX()) {
-      for(int z=0;z<localmesh->LocalNz;z++) {
+    if (localmesh->firstX()) {
+      for (int z = 0; z < localmesh->LocalNz; z++) {
         d_nnz[z] = 2;
       }
-    }else {
+    } else {
       // One point on another processor
-      for(int z=0;z<localmesh->LocalNz;z++) {
+      for (int z = 0; z < localmesh->LocalNz; z++) {
         d_nnz[z] -= 1;
         o_nnz[z] += 1;
       }
     }
 
-    if(localmesh->lastX()) {
-      for(int z=0;z<localmesh->LocalNz;z++) {
+    if (localmesh->lastX()) {
+      for (int z = 0; z < localmesh->LocalNz; z++) {
         int ind = localN - (localmesh->LocalNz) + z;
         d_nnz[ind] = 2;
       }
-    }else {
+    } else {
       // One point on another processor
-      for(int z=0;z<localmesh->LocalNz;z++) {
+      for (int z = 0; z < localmesh->LocalNz; z++) {
         int ind = localN - (localmesh->LocalNz) + z;
         d_nnz[ind] -= 1;
         o_nnz[ind] += 1;
@@ -712,9 +721,7 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
   Field3D b = bin;
   Field3D x0 = x0in;
 
-  Field3D result;
-  result.allocate();
-  result.setLocation(location);
+  Field3D result{emptyFrom(bin)};
 
   for (auto &it : slice) {
     /// Get y index

@@ -53,8 +53,7 @@
 BoutMesh::BoutMesh(GridDataSource *s, Options *opt) : Mesh(s, opt) {
   OPTION(options, symmetricGlobalX, true);
   if (!options->isSet("symmetricGlobalY")) {
-    std::string optionfile;
-    OPTION(Options::getRoot(), optionfile, "");
+    std::string optionfile = Options::root()["optionfile"].withDefault("");
     output_warn << "WARNING: The default of this option has changed in release 4.1.\n\
 If you want the old setting, you have to specify mesh:symmetricGlobalY=false in "
                 << optionfile << "\n";
@@ -91,7 +90,7 @@ int BoutMesh::load() {
   output_progress << _("Loading mesh") << endl;
 
   // Use root level options
-  Options *options = Options::getRoot();
+  auto& options = Options::root();
 
   //////////////
   // Number of processors
@@ -108,39 +107,46 @@ int BoutMesh::load() {
   if (Mesh::get(ny, "ny"))
     throw BoutException(_("Mesh must contain ny"));
 
-  int MZ;
-
-  if (Mesh::get(MZ, "nz")) {
+  if (Mesh::get(nz, "nz")) {
     // No "nz" variable in the grid file. Instead read MZ from options
 
     OPTION(options, MZ, 64);
-    if (!is_pow2(MZ)) {
+    OPTION(options, nz, MZ);
+    ASSERT0(nz == MZ);
+    if (!is_pow2(nz)) {
       // Should be a power of 2 for efficient FFTs
-      output_warn.write(_("WARNING: Number of toroidal points should be 2^n for efficient "
-                          "FFT performance -- consider changing MZ if using FFTs\n"),
-                        MZ);
+      output_warn.write(
+          _("WARNING: Number of toroidal points should be 2^n for efficient "
+            "FFT performance -- consider changing MZ (%d) if using FFTs\n"),
+          nz);
     }
   } else {
+    MZ = nz;
     output_info.write(_("\tRead nz from input grid file\n"));
   }
 
-  output_info << _("\tGrid size: ") << nx << " x " << ny << " x " << MZ << endl;
+  output_info << _("\tGrid size: ") << nx << " x " << ny << " x " << nz << endl;
 
   // Get guard cell sizes
   // Try to read from grid file first, then if not found
   // get from options
   if (Mesh::get(MXG, "MXG")) {
     // Error code returned
-    options->get("MXG", MXG, 2);
+    MXG = options["MXG"].doc("Number of guard cells on each side in X").withDefault(2);
   }
   ASSERT0(MXG >= 0);
 
   if (Mesh::get(MYG, "MYG")) {
-    options->get("MYG", MYG, 2);
+    MYG = options["MYG"].doc("Number of guard cells on each side in Y").withDefault(2);
   }
   ASSERT0(MYG >= 0);
 
-  output_info << _("\tGuard cells (x,y): ") << MXG << ", " << MYG << std::endl;
+  // For now only support no z-guard cells
+  MZG = 0;
+  ASSERT0(MZG >= 0);
+
+  output_info << _("\tGuard cells (x,y,z): ") << MXG << ", " << MYG << ", " << MZG
+              << std::endl;
 
   // Check that nx is large enough
   if (nx <= 2 * MXG) {
@@ -150,49 +156,19 @@ int BoutMesh::load() {
   // Set global grid sizes
   GlobalNx = nx;
   GlobalNy = ny + 2 * MYG;
-  GlobalNz = MZ;
+  GlobalNz = nz;
 
   if (2 * MXG >= nx)
     throw BoutException(_("nx must be greater than 2*MXG"));
 
   // separatrix location
-  if (Mesh::get(ixseps1, "ixseps1")) {
-    ixseps1 = GlobalNx;
-    output_warn.write(
-        "\tWARNING: Separatrix location 'ixseps1' not found. Setting to %d\n", ixseps1);
-  }
-  if (Mesh::get(ixseps2, "ixseps2")) {
-    ixseps2 = GlobalNx;
-    output_warn.write(
-        "\tWARNING: Separatrix location 'ixseps2' not found. Setting to %d\n", ixseps2);
-  }
-  if (Mesh::get(jyseps1_1, "jyseps1_1")) {
-    jyseps1_1 = -1;
-    output_warn.write("\tWARNING: Branch-cut 'jyseps1_1' not found. Setting to %d\n",
-                      jyseps1_1);
-  }
-  if (Mesh::get(jyseps1_2, "jyseps1_2")) {
-    jyseps1_2 = ny / 2;
-    output_warn.write("\tWARNING: Branch-cut 'jyseps1_2' not found. Setting to %d\n",
-                      jyseps1_2);
-  }
-  if (Mesh::get(jyseps2_1, "jyseps2_1")) {
-    jyseps2_1 = jyseps1_2;
-    output_warn.write("\tWARNING: Branch-cut 'jyseps2_1' not found. Setting to %d\n",
-                      jyseps2_1);
-  }
-  if (Mesh::get(jyseps2_2, "jyseps2_2")) {
-    jyseps2_2 = ny - 1;
-    output_warn.write("\tWARNING: Branch-cut 'jyseps2_2' not found. Setting to %d\n",
-                      jyseps2_2);
-  }
-
-  if (Mesh::get(ny_inner, "ny_inner")) {
-    ny_inner = jyseps2_1;
-    output_warn.write(
-        "\tWARNING: Number of inner y points 'ny_inner' not found. Setting to %d\n",
-        ny_inner);
-  }
+  Mesh::get(ixseps1, "ixseps1", GlobalNx);
+  Mesh::get(ixseps2, "ixseps2", GlobalNx);
+  Mesh::get(jyseps1_1, "jyseps1_1", -1);
+  Mesh::get(jyseps1_2, "jyseps1_2", ny / 2);
+  Mesh::get(jyseps2_1, "jyseps2_1", jyseps1_2);
+  Mesh::get(jyseps2_2, "jyseps2_2", ny - 1);
+  Mesh::get(ny_inner, "ny_inner", jyseps2_1);
 
   /// Check inputs
   if (jyseps1_1 < -1) {
@@ -201,9 +177,9 @@ int BoutMesh::load() {
     jyseps1_1 = -1;
   }
 
-  if (jyseps2_1 <= jyseps1_1) {
+  if (jyseps2_1 < jyseps1_1) {
     output_warn.write(
-        "\tWARNING: jyseps2_1 (%d) must be > jyseps1_1 (%d). Setting to %d\n", jyseps2_1,
+        "\tWARNING: jyseps2_1 (%d) must be >= jyseps1_1 (%d). Setting to %d\n", jyseps2_1,
         jyseps1_1, jyseps1_1 + 1);
     jyseps2_1 = jyseps1_1 + 1;
   }
@@ -227,22 +203,50 @@ int BoutMesh::load() {
     jyseps2_2 = jyseps1_2;
   }
 
-  if (options->isSet("NXPE")) {    // Specified NXPE
-    options->get("NXPE", NXPE, 1); // Decomposition in the radial direction
-    if ((NPES % NXPE) != 0) {
-      throw BoutException(
-          _("Number of processors (%d) not divisible by NPs in x direction (%d)\n"), NPES,
-          NXPE);
+  // For now don't parallelise z
+  NZPE = 1;
+
+  if (jyseps1_1 < 0 and jyseps2_2 >= ny - 1) {
+    numberOfXPoints = 0;
+  } else if (jyseps2_1 == jyseps1_2) {
+    numberOfXPoints = 1;
+  } else {
+    numberOfXPoints = 2;
+  }
+
+  if (options.isSet("NXPE") or options.isSet("NYPE")) {    // Specified NXPE
+    if (options.isSet("NXPE")) {
+      NXPE = options["NXPE"]
+                 .doc("Decomposition in the radial direction. If not given then calculated "
+                      "automatically.")
+                 .withDefault(1);
+      if ((NPES % NXPE) != 0) {
+        throw BoutException(
+            _("Number of processors (%d) not divisible by NPs in x direction (%d)\n"), NPES,
+            NXPE);
+      }
+
+      NYPE = NPES / NXPE;
+    } else {
+      // NXPE not set, but NYPE is
+      NYPE = options["NYPE"]
+                 .doc("Decomposition in the parallel direction. Can be given instead of "
+                      "NXPE. If neither is given, then calculated automatically.")
+                 .withDefault(1);
+      if ((NPES % NYPE) != 0) {
+        throw BoutException(
+            _("Number of processors (%d) not divisible by NPs in y direction (%d)\n"), NPES,
+            NYPE);
+      }
+
+      NXPE = NPES / NYPE;
     }
 
-    NYPE = NPES / NXPE;
-
-    int nyp = NPES / NXPE;
     int ysub = ny / NYPE;
 
     // Check size of Y mesh
     if (ysub < MYG) {
-      throw BoutException("\t -> ny/NYPE (%d/%d = %d) must be >= MYG (%d)\n", ny, nyp,
+      throw BoutException("\t -> ny/NYPE (%d/%d = %d) must be >= MYG (%d)\n", ny, NYPE,
                         ysub, MYG);
     }
     // Check branch cuts
@@ -299,9 +303,10 @@ int BoutMesh::load() {
 
     NXPE = -1; // Best option
     
-    BoutReal ideal = sqrt(MX * NPES / static_cast<BoutReal>(ny)); // Results in square domains
+    // Results in square domains
+    const BoutReal ideal = sqrt(MX * NPES / static_cast<BoutReal>(ny));
 
-    output_info.write("Finding value for NXPE (ideal = %f)\n", ideal);
+    output_info.write(_("Finding value for NXPE (ideal = %f)\n"), ideal);
 
     for (int i = 1; i <= NPES; i++) { // Loop over all possibilities
       if ((NPES % i == 0) &&          // Processors divide equally
@@ -310,19 +315,19 @@ int BoutMesh::load() {
 
         output_info.write(_("\tCandidate value: %d\n"), i);
 
-        int nyp = NPES / i;
-        int ysub = ny / nyp;
+        const int nyp = NPES / i;
+        const int ysub = ny / nyp;
 
-        // Check size of Y mesh
-        if (ysub < MYG) {
-          output_info.write("\t -> ny/NYPE (%d/%d = %d) must be >= MYG (%d)\n", ny, nyp,
+        // Check size of Y mesh if we've got multiple processors
+        if (ysub < MYG and NPES != 1) {
+          output_info.write(_("\t -> ny/NYPE (%d/%d = %d) must be >= MYG (%d)\n"), ny, nyp,
                             ysub, MYG);
           continue;
         }
         // Check branch cuts
         if ((jyseps1_1 + 1) % ysub != 0) {
           output_info.write(
-              "\t -> Leg region jyseps1_1+1 (%d) must be a multiple of MYSUB (%d)\n",
+			    _("\t -> Leg region jyseps1_1+1 (%d) must be a multiple of MYSUB (%d)\n"),
               jyseps1_1 + 1, ysub);
           continue;
         }
@@ -331,52 +336,53 @@ int BoutMesh::load() {
           // Double Null
 
           if ((jyseps2_1 - jyseps1_1) % ysub != 0) {
-            output_info.write("\t -> Core region jyseps2_1-jyseps1_1 (%d-%d = %d) must "
-                              "be a multiple of MYSUB (%d)\n",
+            output_info.write(_("\t -> Core region jyseps2_1-jyseps1_1 (%d-%d = %d) must "
+				"be a multiple of MYSUB (%d)\n"),
                               jyseps2_1, jyseps1_1, jyseps2_1 - jyseps1_1, ysub);
             continue;
           }
 
           if ((jyseps2_2 - jyseps1_2) % ysub != 0) {
-            output_info.write("\t -> Core region jyseps2_2-jyseps1_2 (%d-%d = %d) must "
-                              "be a multiple of MYSUB (%d)\n",
+            output_info.write(_("\t -> Core region jyseps2_2-jyseps1_2 (%d-%d = %d) must "
+				"be a multiple of MYSUB (%d)\n"),
                               jyseps2_2, jyseps1_2, jyseps2_2 - jyseps1_2, ysub);
             continue;
           }
 
           // Check upper legs
           if ((ny_inner - jyseps2_1 - 1) % ysub != 0) {
-            output_info.write("\t -> leg region ny_inner-jyseps2_1-1 (%d-%d-1 = %d) must "
-                              "be a multiple of MYSUB (%d)\n",
+            output_info.write(_("\t -> leg region ny_inner-jyseps2_1-1 (%d-%d-1 = %d) must "
+                              "be a multiple of MYSUB (%d)\n"),
                               ny_inner, jyseps2_1, ny_inner - jyseps2_1 - 1, ysub);
             continue;
           }
           if ((jyseps1_2 - ny_inner + 1) % ysub != 0) {
-            output_info.write("\t -> leg region jyseps1_2-ny_inner+1 (%d-%d+1 = %d) must "
-                              "be a multiple of MYSUB (%d)\n",
+            output_info.write(_("\t -> leg region jyseps1_2-ny_inner+1 (%d-%d+1 = %d) must "
+				"be a multiple of MYSUB (%d)\n"),
                               jyseps1_2, ny_inner, jyseps1_2 - ny_inner + 1, ysub);
             continue;
           }
         } else {
           // Single Null
           if ((jyseps2_2 - jyseps1_1) % ysub != 0) {
-            output_info.write("\t -> Core region jyseps2_2-jyseps1_1 (%d-%d = %d) must "
-                              "be a multiple of MYSUB (%d)\n",
+            output_info.write(_("\t -> Core region jyseps2_2-jyseps1_1 (%d-%d = %d) must "
+				"be a multiple of MYSUB (%d)\n"),
                               jyseps2_2, jyseps1_1, jyseps2_2 - jyseps1_1, ysub);
             continue;
           }
         }
 
         if ((ny - jyseps2_2 - 1) % ysub != 0) {
-          output_info.write("\t -> leg region ny-jyseps2_2-1 (%d-%d-1 = %d) must be a "
-                            "multiple of MYSUB (%d)\n",
+          output_info.write(_("\t -> leg region ny-jyseps2_2-1 (%d-%d-1 = %d) must be a "
+			      "multiple of MYSUB (%d)\n"),
                             ny, jyseps2_2, ny - jyseps2_2 - 1, ysub);
           continue;
         }
         output_info.write(_("\t -> Good value\n"));
         // Found an acceptable value
-        if ((NXPE < 1) || (fabs(ideal - i) < fabs(ideal - NXPE)))
+        if ((NXPE < 1) || (fabs(ideal - i) < fabs(ideal - NXPE))) {
           NXPE = i; // Keep value nearest to the ideal
+        }
       }
     }
 
@@ -415,11 +421,19 @@ int BoutMesh::load() {
         _("\tERROR: Cannot split %d Y points equally between %d processors\n"), MY, NYPE);
   }
 
+  MZSUB = MZ / NZPE;
+  if ((MZ % NZPE) != 0) {
+    throw BoutException(
+        _("\tERROR: Cannot split %d Z points equally between %d processors\n"), MZ, NZPE);
+  }
+
   /// Get mesh options
   OPTION(options, IncIntShear, false);
-  OPTION(options, periodicX, false); // Periodic in X
+  periodicX = options["periodicX"].doc("Make grid periodic in X?").withDefault(false);
 
-  OPTION(options, async_send, false); // Whether to use asyncronous sends
+  async_send = options["async_send"]
+                   .doc("Whether to use asyncronous MPI sends")
+                   .withDefault(false);
 
   // Set global offsets
 
@@ -427,7 +441,7 @@ int BoutMesh::load() {
   OffsetY = PE_YIND * MYSUB;
   OffsetZ = 0;
 
-  if (options->isSet("zperiod")) {
+  if (options.isSet("zperiod")) {
     OPTION(options, zperiod, 1);
     ZMIN = 0.0;
     ZMAX = 1.0 / static_cast<BoutReal>(zperiod);
@@ -441,9 +455,12 @@ int BoutMesh::load() {
   /// Number of grid cells is ng* = M*SUB + guard/boundary cells
   LocalNx = MXSUB + 2 * MXG;
   LocalNy = MYSUB + 2 * MYG;
-  LocalNz = MZ;
+  LocalNz = MZSUB + 2 * MZG;
 
   // Set local index ranges
+
+  zstart = MZG;
+  zend = MZG + MZSUB - 1;
 
   xstart = MXG;
   xend = MXG + MXSUB - 1;
@@ -455,18 +472,26 @@ int BoutMesh::load() {
   /// Call topology to set layout of grid
   topology();
 
-  OPTION(options, TwistShift, false);
+  TwistShift = options["TwistShift"]
+                   .doc("Apply a Twist-Shift boundary using ShiftAngle?")
+                   .withDefault(false);
+
+  // Try to read the shift angle from the grid file
+  // NOTE: All processors should know the twist-shift angle (for invert_parderiv)
+  // NOTE: Always read ShiftAngle as Coordinates will use hasBranchCutLower and
+  //       hasBranchCutUpper to set zShift for ShiftedMetric
+
+  ShiftAngle.resize(LocalNx);
+
+  if (!source->get(this, ShiftAngle, "ShiftAngle", LocalNx, getGlobalXIndex(0))) {
+    ShiftAngle.clear();
+  }
 
   if (TwistShift) {
     output_info.write("Applying Twist-Shift condition. Interpolation: FFT\n");
-
-    // Try to read the shift angle from the grid file
-    // NOTE: All processors should know the twist-shift angle (for invert_parderiv)
-
-    ShiftAngle.resize(LocalNx);
-
-    if (!source->get(this, ShiftAngle, "ShiftAngle", LocalNx, XGLOBAL(0))) {
-      throw BoutException("ERROR: Twist-shift angle 'ShiftAngle' not found.");
+    if (ShiftAngle.empty()) {
+      throw BoutException("ERROR: Twist-shift angle 'ShiftAngle' not found. "
+          "Required when TwistShift==true.");
     }
   }
 
@@ -689,24 +714,34 @@ int BoutMesh::load() {
 
     // Core region
     TRACE("Creating core communicators");
-    proc[0] = PROC_NUM(i, YPROC(jyseps1_1 + 1));
-    proc[1] = PROC_NUM(i, YPROC(jyseps2_1));
+    if (jyseps2_1 > jyseps1_1) {
+      proc[0] = PROC_NUM(i, YPROC(jyseps1_1 + 1));
+      proc[1] = PROC_NUM(i, YPROC(jyseps2_1));
 
-    output_debug << "CORE1 " << proc[0] << ", " << proc[1] << endl;
+      output_debug << "CORE1 " << proc[0] << ", " << proc[1] << endl;
 
-    if ((proc[0] < 0) || (proc[1] < 0))
-      throw BoutException("Invalid processor range for core processors");
-    MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
-
-    proc[0] = PROC_NUM(i, YPROC(jyseps1_2 + 1));
-    proc[1] = PROC_NUM(i, YPROC(jyseps2_2));
-
-    output_debug << "CORE2 " << proc[0] << ", " << proc[1] << endl;
-
-    if ((proc[0] < 0) || (proc[1] < 0)) {
-      group_tmp2 = MPI_GROUP_EMPTY;
+      if ((proc[0] < 0) || (proc[1] < 0))
+        throw BoutException("Invalid processor range for core processors");
+      MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
     } else {
-      MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
+      // no core region between jyseps1_1 and jyseps2_1
+      group_tmp1 = MPI_GROUP_EMPTY;
+    }
+
+    if (jyseps2_2 > jyseps1_2) {
+      proc[0] = PROC_NUM(i, YPROC(jyseps1_2 + 1));
+      proc[1] = PROC_NUM(i, YPROC(jyseps2_2));
+
+      output_debug << "CORE2 " << proc[0] << ", " << proc[1] << endl;
+
+      if ((proc[0] < 0) || (proc[1] < 0)) {
+        group_tmp2 = MPI_GROUP_EMPTY;
+      } else {
+        MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
+      }
+    } else {
+      // no core region between jyseps1_2 and jyseps2_2
+      group_tmp2 = MPI_GROUP_EMPTY;
     }
 
     MPI_Group_union(group_tmp1, group_tmp2, &group);
@@ -791,7 +826,7 @@ int BoutMesh::load() {
     if (PE_XIND == 0) {
       // Inner either core or PF
 
-      int yg = YGLOBAL(MYG); // Get a global index in this processor
+      int yg = getGlobalYIndexNoBoundaries(MYG); // Get a global index in this processor
 
       if (((yg > jyseps1_1) && (yg <= jyseps2_1)) ||
           ((yg > jyseps1_2) && (yg <= jyseps2_2))) {
@@ -839,20 +874,8 @@ int BoutMesh::load() {
   // Add boundary regions
   addBoundaryRegions();
 
-  // Initialize Coordinates at all locations, temporary fix for bug causing
-  // BOUT++ to hang
-  getCoordinates(CELL_CENTRE);
-  if (StaggerGrids) {
-    if (xstart >= 2) {
-      getCoordinates(CELL_XLOW);
-    }
-    if (ystart >= 2) {
-      getCoordinates(CELL_YLOW);
-    }
-    if (LocalNz > 3) {
-      getCoordinates(CELL_ZLOW);
-    }
-  }
+  // Initialize default coordinates
+  getCoordinates();
 
   output_info.write(_("\tdone\n"));
 
@@ -1041,7 +1064,7 @@ int BoutMesh::wait(comm_handle handle) {
   if (handle == nullptr)
     return 1;
 
-  CommHandle *ch = static_cast<CommHandle *>(handle);
+  auto* ch = static_cast<CommHandle*>(handle);
 
   if (!ch->in_progress)
     return 2;
@@ -1122,34 +1145,41 @@ int BoutMesh::wait(comm_handle handle) {
   }
 
   // TWIST-SHIFT CONDITION
-  if (TwistShift) {
-    int jx, jy;
+  // Loop over 3D fields
+  for (const auto &var : ch->var_list.field3d()) {
+    if (var->requiresTwistShift(TwistShift)) {
 
-    // Perform Twist-shift using shifting method
-    // Loop over 3D fields
-    for (const auto &var : ch->var_list.field3d()) {
-      // Lower boundary
-      if (TS_down_in && (DDATA_INDEST != -1)) {
-        for (jx = 0; jx < DDATA_XSPLIT; jx++)
-          for (jy = 0; jy != MYG; jy++)
-            shiftZ(*var, jx, jy, ShiftAngle[jx]);
-      }
-      if (TS_down_out && (DDATA_OUTDEST != -1)) {
-        for (jx = DDATA_XSPLIT; jx < LocalNx; jx++)
-          for (jy = 0; jy != MYG; jy++)
-            shiftZ(*var, jx, jy, ShiftAngle[jx]);
-      }
+      // Twist-shift only needed for field-aligned fields
+      int jx, jy;
 
-      // Upper boundary
-      if (TS_up_in && (UDATA_INDEST != -1)) {
-        for (jx = 0; jx < UDATA_XSPLIT; jx++)
-          for (jy = LocalNy - MYG; jy != LocalNy; jy++)
-            shiftZ(*var, jx, jy, -ShiftAngle[jx]);
-      }
-      if (TS_up_out && (UDATA_OUTDEST != -1)) {
-        for (jx = UDATA_XSPLIT; jx < LocalNx; jx++)
-          for (jy = LocalNy - MYG; jy != LocalNy; jy++)
-            shiftZ(*var, jx, jy, -ShiftAngle[jx]);
+      // Perform Twist-shift using shifting method
+      if (var->getDirectionY() == YDirectionType::Aligned) {
+        // Only variables in field-aligned coordinates need the twist-shift boundary
+        // condition to be applied
+
+        // Lower boundary
+        if (TS_down_in && (DDATA_INDEST != -1)) {
+          for (jx = 0; jx < DDATA_XSPLIT; jx++)
+            for (jy = 0; jy != MYG; jy++)
+              shiftZ(*var, jx, jy, ShiftAngle[jx]);
+        }
+        if (TS_down_out && (DDATA_OUTDEST != -1)) {
+          for (jx = DDATA_XSPLIT; jx < LocalNx; jx++)
+            for (jy = 0; jy != MYG; jy++)
+              shiftZ(*var, jx, jy, ShiftAngle[jx]);
+        }
+
+        // Upper boundary
+        if (TS_up_in && (UDATA_INDEST != -1)) {
+          for (jx = 0; jx < UDATA_XSPLIT; jx++)
+            for (jy = LocalNy - MYG; jy != LocalNy; jy++)
+              shiftZ(*var, jx, jy, -ShiftAngle[jx]);
+        }
+        if (TS_up_out && (UDATA_OUTDEST != -1)) {
+          for (jx = UDATA_XSPLIT; jx < LocalNx; jx++)
+            for (jy = LocalNy - MYG; jy != LocalNy; jy++)
+              shiftZ(*var, jx, jy, -ShiftAngle[jx]);
+        }
       }
     }
   }
@@ -1283,7 +1313,7 @@ bool BoutMesh::firstY() const { return PE_YIND == 0; }
 bool BoutMesh::lastY() const { return PE_YIND == NYPE - 1; }
 
 bool BoutMesh::firstY(int xpos) const {
-  int xglobal = XGLOBAL(xpos);
+  int xglobal = getGlobalXIndex(xpos);
   int rank;
 
   if (xglobal < ixseps_inner) {
@@ -1297,7 +1327,7 @@ bool BoutMesh::firstY(int xpos) const {
 }
 
 bool BoutMesh::lastY(int xpos) const {
-  int xglobal = XGLOBAL(xpos);
+  int xglobal = getGlobalXIndex(xpos);
   int rank;
   int size;
 
@@ -1476,24 +1506,45 @@ int BoutMesh::PROC_NUM(int xind, int yind) {
 }
 
 /// Returns the global X index given a local index
-int BoutMesh::XGLOBAL(int xloc) const { return xloc + PE_XIND * MXSUB; }
-
-/// Returns the global X index given a local index
 int BoutMesh::XGLOBAL(BoutReal xloc, BoutReal &xglo) const {
   xglo = xloc + PE_XIND * MXSUB;
   return static_cast<int>(xglo);
+}
+
+/// Returns a global X index given a local index.
+/// Global index includes boundary cells, local index includes boundary or guard cells.
+int BoutMesh::getGlobalXIndex(int xlocal) const { return xlocal + PE_XIND * MXSUB; }
+
+/// Returns a global X index given a local index.
+/// Global index excludes boundary cells, local index includes boundary or guard cells.
+int BoutMesh::getGlobalXIndexNoBoundaries(int xlocal) const {
+  return xlocal + PE_XIND * MXSUB - MXG;
 }
 
 /// Returns a local X index given a global index
 int BoutMesh::XLOCAL(int xglo) const { return xglo - PE_XIND * MXSUB; }
 
 /// Returns the global Y index given a local index
-int BoutMesh::YGLOBAL(int yloc) const { return yloc + PE_YIND * MYSUB - MYG; }
-
-/// Returns the global Y index given a local index
 int BoutMesh::YGLOBAL(BoutReal yloc, BoutReal &yglo) const {
   yglo = yloc + PE_YIND * MYSUB - MYG;
   return static_cast<int>(yglo);
+}
+
+/// Returns a global Y index given a local index.
+/// Global index includes boundary cells, local index includes boundary or guard cells.
+int BoutMesh::getGlobalYIndex(int ylocal) const {
+  int yglobal =  ylocal + PE_YIND * MYSUB;
+  if (jyseps1_2 > jyseps2_1 and PE_YIND*MYSUB + 2*MYG + 1 > ny_inner) {
+    // Double null, and we are past the upper target
+    yglobal += 2*MYG;
+  }
+  return yglobal;
+}
+
+/// Returns a global Y index given a local index.
+/// Global index excludes boundary cells, local index includes boundary or guard cells.
+int BoutMesh::getGlobalYIndexNoBoundaries(int ylocal) const {
+  return ylocal + PE_YIND * MYSUB - MYG;
 }
 
 /// Global Y index given local index and processor
@@ -1503,6 +1554,15 @@ int BoutMesh::YGLOBAL(int yloc, int yproc) const { return yloc + yproc * MYSUB -
 int BoutMesh::YLOCAL(int yglo) const { return yglo - PE_YIND * MYSUB + MYG; }
 
 int BoutMesh::YLOCAL(int yglo, int yproc) const { return yglo - yproc * MYSUB + MYG; }
+
+/// Returns a global Z index given a local index.
+/// Global index includes boundary cells, local index includes boundary or guard cells.
+int BoutMesh::getGlobalZIndex(int zlocal) const { return zlocal; }
+
+/// Returns a global Z index given a local index.
+/// Global index excludes boundary cells, local index includes boundary or guard cells.
+/// Note: at the moment z-direction is always periodic, so has zero boundary cells
+int BoutMesh::getGlobalZIndexNoBoundaries(int zlocal) const { return zlocal; }
 
 /// Return the Y processor number given a global Y index
 int BoutMesh::YPROC(int yind) {
@@ -1871,17 +1931,17 @@ BoutMesh::CommHandle *BoutMesh::get_handle(int xlen, int ylen) {
       i = MPI_REQUEST_NULL;
 
     if (ylen > 0) {
-      ch->umsg_sendbuff = Array<BoutReal>(ylen);
-      ch->dmsg_sendbuff = Array<BoutReal>(ylen);
-      ch->umsg_recvbuff = Array<BoutReal>(ylen);
-      ch->dmsg_recvbuff = Array<BoutReal>(ylen);
+      ch->umsg_sendbuff.reallocate(ylen);
+      ch->dmsg_sendbuff.reallocate(ylen);
+      ch->umsg_recvbuff.reallocate(ylen);
+      ch->dmsg_recvbuff.reallocate(ylen);
     }
 
     if (xlen > 0) {
-      ch->imsg_sendbuff = Array<BoutReal>(xlen);
-      ch->omsg_sendbuff = Array<BoutReal>(xlen);
-      ch->imsg_recvbuff = Array<BoutReal>(xlen);
-      ch->omsg_recvbuff = Array<BoutReal>(xlen);
+      ch->imsg_sendbuff.reallocate(xlen);
+      ch->omsg_sendbuff.reallocate(xlen);
+      ch->imsg_recvbuff.reallocate(xlen);
+      ch->omsg_recvbuff.reallocate(xlen);
     }
 
     ch->xbufflen = xlen;
@@ -1898,18 +1958,18 @@ BoutMesh::CommHandle *BoutMesh::get_handle(int xlen, int ylen) {
 
   // Check that the buffers are big enough (NOTE: Could search list for bigger buffers)
   if (ch->ybufflen < ylen) {
-    ch->umsg_sendbuff = Array<BoutReal>(ylen);
-    ch->dmsg_sendbuff = Array<BoutReal>(ylen);
-    ch->umsg_recvbuff = Array<BoutReal>(ylen);
-    ch->dmsg_recvbuff = Array<BoutReal>(ylen);
+    ch->umsg_sendbuff.reallocate(ylen);
+    ch->dmsg_sendbuff.reallocate(ylen);
+    ch->umsg_recvbuff.reallocate(ylen);
+    ch->dmsg_recvbuff.reallocate(ylen);
 
     ch->ybufflen = ylen;
   }
   if (ch->xbufflen < xlen) {
-    ch->imsg_sendbuff = Array<BoutReal>(xlen);
-    ch->omsg_sendbuff = Array<BoutReal>(xlen);
-    ch->imsg_recvbuff = Array<BoutReal>(xlen);
-    ch->omsg_recvbuff = Array<BoutReal>(xlen);
+    ch->imsg_sendbuff.reallocate(xlen);
+    ch->omsg_sendbuff.reallocate(xlen);
+    ch->imsg_recvbuff.reallocate(xlen);
+    ch->omsg_recvbuff.reallocate(xlen);
 
     ch->xbufflen = xlen;
   }
@@ -2009,12 +2069,12 @@ int BoutMesh::unpack_data(const std::vector<FieldData *> &var_list, int xge, int
  ****************************************************************/
 
 bool BoutMesh::periodicY(int jx) const {
-  return (XGLOBAL(jx) < ixseps_inner) && MYPE_IN_CORE;
+  return (getGlobalXIndex(jx) < ixseps_inner) && MYPE_IN_CORE;
 }
 
 bool BoutMesh::periodicY(int jx, BoutReal &ts) const {
   ts = 0.;
-  if ((XGLOBAL(jx) < ixseps_inner) && MYPE_IN_CORE) {
+  if ((getGlobalXIndex(jx) < ixseps_inner) && MYPE_IN_CORE) {
     if (TwistShift)
       ts = ShiftAngle[jx];
     return true;
@@ -2022,9 +2082,38 @@ bool BoutMesh::periodicY(int jx, BoutReal &ts) const {
   return false;
 }
 
+std::pair<bool, BoutReal> BoutMesh::hasBranchCutLower(int jx) const {
+  if ( (TS_down_in and DDATA_INDEST != -1 and jx < DDATA_XSPLIT)
+      or (TS_down_out and DDATA_OUTDEST != -1 and jx >= DDATA_XSPLIT) ) {
+    // this processor has branch cut at lower boundary for jx
+    if (ShiftAngle.empty()) {
+      // This function should only be called during initialization, so always check
+      throw BoutException("BoutMesh failed to read ShiftAngle from the grid");
+    }
+    return std::make_pair(true, ShiftAngle[jx]);
+  }
+
+  return std::make_pair(false, 0.);
+}
+
+
+std::pair<bool, BoutReal> BoutMesh::hasBranchCutUpper(int jx) const {
+  if ( (TS_up_in and UDATA_INDEST != -1 and jx < UDATA_XSPLIT)
+      or (TS_up_out and UDATA_OUTDEST != -1 and jx >= UDATA_XSPLIT) ) {
+    // this processor has branch cut at upper boundary for jx
+    if (ShiftAngle.empty()) {
+      // This function should only be called during initialization, so always check
+      throw BoutException("BoutMesh failed to read ShiftAngle from the grid");
+    }
+    return std::make_pair(true, ShiftAngle[jx]);
+  }
+
+  return std::make_pair(false, 0.);
+}
+
 int BoutMesh::ySize(int xpos) const {
-  int xglobal = XGLOBAL(xpos);
-  int yglobal = YGLOBAL(MYG);
+  int xglobal = getGlobalXIndex(xpos);
+  int yglobal = getGlobalYIndexNoBoundaries(MYG);
 
   if ((xglobal < ixseps_lower) && ((yglobal <= jyseps1_1) || (yglobal > jyseps2_2))) {
     // Lower PF region
@@ -2062,7 +2151,7 @@ int BoutMesh::ySize(int xpos) const {
 }
 
 MPI_Comm BoutMesh::getYcomm(int xpos) const {
-  int xglobal = XGLOBAL(xpos);
+  int xglobal = getGlobalXIndex(xpos);
 
   if (xglobal < ixseps_inner) {
     return comm_inner;
@@ -2170,9 +2259,9 @@ void BoutMesh::addBoundaryRegions() {
     xe = -2;
   }
   
-  addRegion3D("RGN_UPPER_INNER_Y", Region<Ind3D>(xs, xe, 0, ystart-1, 0, LocalNz-1,
+  addRegion3D("RGN_UPPER_INNER_Y", Region<Ind3D>(xs, xe, yend+1, LocalNy-1, 0, LocalNz-1,
                                                  LocalNy, LocalNz, maxregionblocksize));
-  addRegion2D("RGN_UPPER_INNER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
+  addRegion2D("RGN_UPPER_INNER_Y", Region<Ind2D>(xs, xe, yend+1, LocalNy-1, 0, 0,
                                                  LocalNy, 1, maxregionblocksize));
   all_boundaries.emplace_back("RGN_UPPER_INNER_Y");
 
@@ -2196,9 +2285,9 @@ void BoutMesh::addBoundaryRegions() {
       xe = xend;
   }
 
-  addRegion3D("RGN_UPPER_OUTER_Y", Region<Ind3D>(xs, xe, 0, ystart-1, 0, LocalNz-1,
+  addRegion3D("RGN_UPPER_OUTER_Y", Region<Ind3D>(xs, xe, yend+1, LocalNy-1, 0, LocalNz-1,
                                                  LocalNy, LocalNz, maxregionblocksize));
-  addRegion2D("RGN_UPPER_OUTER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
+  addRegion2D("RGN_UPPER_OUTER_Y", Region<Ind2D>(xs, xe, yend+1, LocalNy-1, 0, 0,
                                                  LocalNy, 1, maxregionblocksize));
   all_boundaries.emplace_back("RGN_UPPER_OUTER_Y");
 
@@ -2216,14 +2305,14 @@ void BoutMesh::addBoundaryRegions() {
   if (xe > xend)
     xe = xend;
 
-  addRegion3D("RGN_UPPER_Y", Region<Ind3D>(xs, xe, 0, ystart-1, 0, LocalNz-1,
+  addRegion3D("RGN_UPPER_Y", Region<Ind3D>(xs, xe, yend+1, LocalNy-1, 0, LocalNz-1,
                                            LocalNy, LocalNz, maxregionblocksize));
-  addRegion2D("RGN_UPPER_Y", Region<Ind2D>(xs, xe, 0, ystart-1, 0, 0,
+  addRegion2D("RGN_UPPER_Y", Region<Ind2D>(xs, xe, yend+1, LocalNy-1, 0, 0,
                                            LocalNy, 1, maxregionblocksize));
   all_boundaries.emplace_back("RGN_UPPER_Y");
   
   // Inner X
-  if(mesh->firstX() && !mesh->periodicX) {
+  if(firstX() && !periodicX) {
     addRegion3D("RGN_INNER_X", Region<Ind3D>(0, xstart-1, ystart, yend, 0, LocalNz-1,
                                              LocalNy, LocalNz, maxregionblocksize));
     addRegion2D("RGN_INNER_X", Region<Ind2D>(0, xstart-1, ystart, yend, 0, 0,
@@ -2240,7 +2329,7 @@ void BoutMesh::addBoundaryRegions() {
   }
 
   // Outer X
-  if(mesh->firstX() && !mesh->periodicX) {
+  if(lastX() && !periodicX) {
     addRegion3D("RGN_OUTER_X", Region<Ind3D>(xend+1, LocalNx-1, ystart, yend, 0, LocalNz-1,
                                              LocalNy, LocalNz, maxregionblocksize));
     addRegion2D("RGN_OUTER_X", Region<Ind2D>(xend+1, LocalNx-1, ystart, yend, 0, 0,
@@ -2404,9 +2493,8 @@ void BoutMesh::addBoundaryPar(BoundaryRegionPar *bndry) {
 }
 
 const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {
-  Field3D result(f);
+  Field3D result{emptyFrom(f)};
   if ((ixseps_inner > 0) && (ixseps_inner < nx - 1)) {
-    result.allocate();
     if (XPROC(ixseps_inner) == PE_XIND) {
       int x = XLOCAL(ixseps_inner);
       for (int y = 0; y < LocalNy; y++)
@@ -2423,7 +2511,6 @@ const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {
     }
   }
   if ((ixseps_outer > 0) && (ixseps_outer < nx - 1) && (ixseps_outer != ixseps_inner)) {
-    result.allocate();
     if (XPROC(ixseps_outer) == PE_XIND) {
       int x = XLOCAL(ixseps_outer);
       for (int y = 0; y < LocalNy; y++)
@@ -2445,9 +2532,9 @@ const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {
 BoutReal BoutMesh::GlobalX(int jx) const {
   if (symmetricGlobalX) {
     // With this definition the boundary sits dx/2 away form the first/last inner points
-    return (0.5 + XGLOBAL(jx) - (nx - MX) * 0.5) / static_cast<BoutReal>(MX);
+    return (0.5 + getGlobalXIndex(jx) - (nx - MX) * 0.5) / static_cast<BoutReal>(MX);
   }
-  return static_cast<BoutReal>(XGLOBAL(jx)) / static_cast<BoutReal>(MX);
+  return static_cast<BoutReal>(getGlobalXIndex(jx)) / static_cast<BoutReal>(MX);
 }
 
 BoutReal BoutMesh::GlobalX(BoutReal jx) const {
@@ -2465,7 +2552,7 @@ BoutReal BoutMesh::GlobalX(BoutReal jx) const {
 
 BoutReal BoutMesh::GlobalY(int jy) const {
   if (symmetricGlobalY) {
-    BoutReal yi = YGLOBAL(jy);
+    BoutReal yi = getGlobalYIndexNoBoundaries(jy);
     int nycore = (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2);
 
     if (yi < ny_inner) {
@@ -2477,7 +2564,7 @@ BoutReal BoutMesh::GlobalY(int jy) const {
     return yi / nycore;
   }
 
-  int ly = YGLOBAL(jy); // global poloidal index across subdomains
+  int ly = getGlobalYIndexNoBoundaries(jy); // global poloidal index across subdomains
   int nycore = (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2);
 
   if (MYPE_IN_CORE) {
@@ -2552,13 +2639,20 @@ void BoutMesh::outputVars(Datafile &file) {
   file.add(zperiod, "zperiod", false);
   file.add(MXSUB, "MXSUB", false);
   file.add(MYSUB, "MYSUB", false);
+  file.add(MZSUB, "MZSUB", false);
+  file.add(PE_XIND, "PE_XIND", false);
+  file.add(PE_YIND, "PE_YIND", false);
+  file.add(MYPE, "MYPE", false);
   file.add(MXG, "MXG", false);
   file.add(MYG, "MYG", false);
+  file.add(MZG, "MZG", false);
   file.add(nx, "nx", false);
   file.add(ny, "ny", false);
-  file.add(LocalNz, "MZ", false);
+  file.add(nz, "nz", false);
+  file.add(MZ, "MZ", false);
   file.add(NXPE, "NXPE", false);
   file.add(NYPE, "NYPE", false);
+  file.add(NZPE, "NZPE", false);
   file.add(ZMAX, "ZMAX", false);
   file.add(ZMIN, "ZMIN", false);
   file.add(ixseps1, "ixseps1", false);
@@ -2567,6 +2661,7 @@ void BoutMesh::outputVars(Datafile &file) {
   file.add(jyseps1_2, "jyseps1_2", false);
   file.add(jyseps2_1, "jyseps2_1", false);
   file.add(jyseps2_2, "jyseps2_2", false);
+  file.add(ny_inner, "ny_inner", false);
 
   getCoordinates()->outputVars(file);
 }

@@ -3,19 +3,16 @@
 NO_ARGS=0 
 OPTERROR=65
 
-if [ $# -eq "$NO_ARGS" ]  # Script invoked with no command-line args?
-then
-    NP=4
-    MPIEXEC="mpirun -np"
+test ".$MPIRUN" = . && MPIRUN="mpirun -np"
+NP=4
 
-fi  
 # Usage: scriptname -options
 # Note: dash (-) necessary
 
 while getopts ":n:np" Option
 do
   case $Option in
-    n ) MPIEXEC="mpirun -np";NP=$OPTARG;;
+    n ) NP=$OPTARG;;
     * ) ;;   # DEFAULT
   esac
 done
@@ -42,7 +39,7 @@ do
       mv -f data/tmp data/BOUT.inp
   fi
       
-  $MPIEXEC $NP ./2fluid
+  $MPIRUN $NP ./2fluid
   rm -f data
 done
 

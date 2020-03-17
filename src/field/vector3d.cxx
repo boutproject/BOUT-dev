@@ -37,8 +37,7 @@
 #include <bout/scorepwrapper.hxx>
 #include <interpolation.hxx>
 
-Vector3D::Vector3D(Mesh *localmesh)
-    : x(localmesh), y(localmesh), z(localmesh), covariant(true), deriv(nullptr), location(CELL_CENTRE) {}
+Vector3D::Vector3D(Mesh* localmesh) : x(localmesh), y(localmesh), z(localmesh) {}
 
 Vector3D::Vector3D(const Vector3D &f)
     : x(f.x), y(f.y), z(f.z), covariant(f.covariant), deriv(nullptr),
@@ -90,8 +89,7 @@ void Vector3D::toCovariant() {
       const auto metric = localmesh->getCoordinates(location);
 
       // Need to use temporary arrays to store result
-      Field3D gx(localmesh), gy(localmesh), gz(localmesh);
-      gx.allocate(); gy.allocate(); gz.allocate();
+      Field3D gx{emptyFrom(x)}, gy{emptyFrom(y)}, gz{emptyFrom(z)};
 
       BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")){
         gx[i] = metric->g_11[i]*x[i] + metric->g_12[i]*y[i] + metric->g_13[i]*z[i];
@@ -112,7 +110,6 @@ void Vector3D::toContravariant() {
   if(covariant) {
     // multiply by g^{ij}
     Mesh *localmesh = x.getMesh();
-    Field3D gx(localmesh), gy(localmesh), gz(localmesh);
 
     if (location == CELL_VSHIFT) {
       Coordinates *metric_x, *metric_y, *metric_z;
@@ -144,8 +141,7 @@ void Vector3D::toContravariant() {
       const auto metric = localmesh->getCoordinates(location);
 
       // Need to use temporary arrays to store result
-      Field3D gx(localmesh), gy(localmesh), gz(localmesh);
-      gx.allocate(); gy.allocate(); gz.allocate();
+      Field3D gx{emptyFrom(x)}, gy{emptyFrom(y)}, gz{emptyFrom(z)};
 
       BOUT_FOR(i, localmesh->getRegion3D("RGN_ALL")){
         gx[i] = metric->g11[i]*x[i] + metric->g12[i]*y[i] + metric->g13[i]*z[i];
@@ -472,7 +468,9 @@ const Vector3D Vector3D::operator/(const Field3D &rhs) const {
 ////////////////// DOT PRODUCT ///////////////////
 
 const Field3D Vector3D::operator*(const Vector3D &rhs) const {
-  Field3D result(x.getMesh());
+  Mesh* mesh = x.getMesh();
+
+  Field3D result{emptyFrom(x)};
   ASSERT2(location == rhs.getLocation())
 
   if(rhs.covariant ^ covariant) {
@@ -505,7 +503,7 @@ const Field3D Vector3D::operator*(const Vector2D &rhs) const
 {
   ASSERT2(location == rhs.getLocation());
 
-  Field3D result(x.getMesh());
+  Field3D result{emptyFrom(x)};
 
   if(rhs.covariant ^ covariant) {
     // Both different - just multiply components
@@ -601,7 +599,7 @@ const Vector3D operator*(const Field3D &lhs, const Vector3D &rhs)
  ***************************************************************/
 
 // Return the magnitude of a vector
-const Field3D abs(const Vector3D &v, REGION region) {
+const Field3D abs(const Vector3D &v, const std::string& region) {
   return sqrt(v*v, region);
 }
 

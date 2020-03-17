@@ -11,9 +11,9 @@
 #include <interpolation.hxx>
 #include <invert_laplace.hxx>
 
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
 
 // 2D initial profiles
 Field2D Ni0, Ti0, Te0, Vi0, phi0, Ve0, rho0, Ajpar0;
@@ -255,8 +255,9 @@ int physics_init(bool UNUSED(restarting)) {
     output.write("ajpar\n");
   }else {
     initial_profile("Ajpar", Ajpar);
-    if(ZeroElMass)
-      dump.add(Ajpar, "Ajpar", 1); // output calculated Ajpar
+    if (ZeroElMass) {
+      SAVE_REPEAT(Ajpar); // output calculated Ajpar
+    }
   }
 
   if(evolve_vi) {
@@ -283,19 +284,8 @@ int physics_init(bool UNUSED(restarting)) {
   comms.add(Apar);
 
   // Add any other variables to be dumped to file
-  dump.add(phi,  "phi",  1);
-  dump.add(Apar, "Apar", 1);
-  dump.add(jpar, "jpar", 1);
-
-  dump.add(Ni0, "Ni0", 0);
-  dump.add(Te0, "Te0", 0);
-  dump.add(Ti0, "Ti0", 0);
-
-  dump.add(Te_x,  "Te_x", 0);
-  dump.add(Ti_x,  "Ti_x", 0);
-  dump.add(Ni_x,  "Ni_x", 0);
-  dump.add(rho_s, "rho_s", 0);
-  dump.add(wci,   "wci", 0);
+  SAVE_REPEAT(phi, Apar, jpar);
+  SAVE_ONCE(Ni0, Te0, Ti0, Te_x, Ti_x, Ni_x, rho_s, wci);
 
   if (mesh->StaggerGrids) {
     maybe_ylow = CELL_YLOW;
@@ -303,8 +293,8 @@ int physics_init(bool UNUSED(restarting)) {
     maybe_ylow = CELL_CENTRE;
   }
   Vi = interp_to(Vi,maybe_ylow);
-  Ni0_maybe_ylow = interp_to(Ni0, maybe_ylow, RGN_NOBNDRY);
-  Te0_maybe_ylow = interp_to(Te0, maybe_ylow, RGN_NOBNDRY);
+  Ni0_maybe_ylow = interp_to(Ni0, maybe_ylow, "RGN_NOBNDRY");
+  Te0_maybe_ylow = interp_to(Te0, maybe_ylow, "RGN_NOBNDRY");
 
   return(0);
 }

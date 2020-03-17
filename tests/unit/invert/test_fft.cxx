@@ -10,13 +10,11 @@
 #include <iostream>
 #include <numeric>
 
+#ifdef BOUT_HAS_FFTW
 class FFTTest : public ::testing::TestWithParam<int> {
 public:
   FFTTest()
       : size(GetParam()), nmodes((size / 2) + 1), real_signal(size), fft_signal(nmodes) {
-
-    // Make sure fft functions are quiet by setting fft_measure to false
-    bout::fft::fft_init(false);
 
     // Make grid indices from [0, size - 1]
     Array<BoutReal> indices{size};
@@ -34,18 +32,17 @@ public:
     fft_signal[2] = dcomplex{0.5, 0.};
   };
 
+  virtual ~FFTTest() = default;
+
   const int size;
   const int nmodes;
 
   Array<BoutReal> real_signal;
   Array<dcomplex> fft_signal;
-
-  // FFTs have a slightly looser tolerance than other functions
-  static constexpr BoutReal fft_tolerance{1.e-12};
 };
 
 // Test the FFT functions with both even- and odd-length real signals
-INSTANTIATE_TEST_CASE_P(FFTEvenAndOddSamples, FFTTest, ::testing::Values(8, 9));
+INSTANTIATE_TEST_SUITE_P(FFTEvenAndOddSamples, FFTTest, ::testing::Values(8, 9));
 
 TEST_P(FFTTest, rfft) {
 
@@ -57,8 +54,8 @@ TEST_P(FFTTest, rfft) {
   EXPECT_EQ(output.size(), nmodes);
 
   for (int i = 0; i < nmodes; ++i) {
-    EXPECT_NEAR(real(output[i]), real(fft_signal[i]), fft_tolerance);
-    EXPECT_NEAR(imag(output[i]), imag(fft_signal[i]), fft_tolerance);
+    EXPECT_NEAR(real(output[i]), real(fft_signal[i]), FFTTolerance);
+    EXPECT_NEAR(imag(output[i]), imag(fft_signal[i]), FFTTolerance);
   }
 }
 
@@ -72,7 +69,7 @@ TEST_P(FFTTest, irfft) {
   EXPECT_EQ(output.size(), size);
 
   for (int i = 0; i < size; ++i) {
-    EXPECT_NEAR(output[i], real_signal[i], fft_tolerance);
+    EXPECT_NEAR(output[i], real_signal[i], FFTTolerance);
   }
 }
 
@@ -84,8 +81,8 @@ TEST_P(FFTTest, rfftWithArray) {
   EXPECT_EQ(output.size(), nmodes);
 
   for (int i = 0; i < nmodes; ++i) {
-    EXPECT_NEAR(real(output[i]), real(fft_signal[i]), fft_tolerance);
-    EXPECT_NEAR(imag(output[i]), imag(fft_signal[i]), fft_tolerance);
+    EXPECT_NEAR(real(output[i]), real(fft_signal[i]), FFTTolerance);
+    EXPECT_NEAR(imag(output[i]), imag(fft_signal[i]), FFTTolerance);
   }
 }
 
@@ -97,7 +94,7 @@ TEST_P(FFTTest, irfftWithArray) {
   EXPECT_EQ(output.size(), size);
 
   for (int i = 0; i < size; ++i) {
-    EXPECT_NEAR(output[i], real_signal[i], fft_tolerance);
+    EXPECT_NEAR(output[i], real_signal[i], FFTTolerance);
   }
 }
 
@@ -109,6 +106,7 @@ TEST_P(FFTTest, RoundTrip) {
   EXPECT_EQ(output.size(), real_signal.size());
 
   for (int i = 0; i < size; ++i) {
-    EXPECT_NEAR(output[i], real_signal[i], fft_tolerance);
+    EXPECT_NEAR(output[i], real_signal[i], FFTTolerance);
   }
 }
+#endif

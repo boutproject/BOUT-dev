@@ -10,14 +10,14 @@ except:
 
 #requires: fftw
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
+from boututils.run_wrapper import shell, shell_safe, launch_safe
 from boutdata.collect import collect
 import numpy as np
 from sys import stdout, exit
 
 tol = 1e-10                  # Absolute tolerance
 
-MPIRUN=getmpirun()
+
 
 print("Making Delp2 operator test")
 shell_safe("make > make.log")
@@ -38,7 +38,7 @@ for i, opts in enumerate(settings):
   print("Args: " + opts)
   cmd = exefile + " " + opts
   
-  s, out = launch_safe(cmd, runcmd=MPIRUN, nproc=1, pipe=True)
+  s, out = launch_safe(cmd, nproc=1, pipe=True)
   with open("run.log."+str(i)+".1", "w") as f:
     f.write(out)
 
@@ -48,7 +48,7 @@ for i, opts in enumerate(settings):
     shell("rm data/BOUT.dmp.*.nc")
     
     stdout.write("   %d processor...." % (nproc))
-    s, out = launch_safe(cmd, runcmd=MPIRUN, nproc=nproc, mthread=1, pipe=True)
+    s, out = launch_safe(cmd, nproc=nproc, mthread=1, pipe=True)
     with open("run.log."+str(i)+"."+str(nproc), "w") as f:
       f.write(out)
 

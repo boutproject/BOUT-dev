@@ -40,10 +40,15 @@ class DataFormat;
 #include <memory>
 #include <vector>
 
+class Mesh;
+class Field;
+class FieldPerp;
+
 // Can't copy, to control access to file
 class DataFormat {
  public:
-  virtual ~DataFormat() { }
+  DataFormat(Mesh* mesh_in = nullptr);
+  virtual ~DataFormat() = default;
   // File opening routines
   virtual bool openr(const char *name) = 0;
   virtual bool openr(const std::string &name) {
@@ -75,6 +80,7 @@ class DataFormat {
   virtual bool addVarBoutReal(const std::string &name, bool repeat) = 0;
   virtual bool addVarField2D(const std::string &name, bool repeat) = 0;
   virtual bool addVarField3D(const std::string &name, bool repeat) = 0;
+  virtual bool addVarFieldPerp(const std::string &name, bool repeat) = 0;
   
   // Read / Write simple variables up to 3D
 
@@ -82,11 +88,13 @@ class DataFormat {
   virtual bool read(int *var, const std::string &name, int lx = 1, int ly = 0, int lz = 0) = 0;
   virtual bool read(BoutReal *var, const char *name, int lx = 1, int ly = 0, int lz = 0) = 0;
   virtual bool read(BoutReal *var, const std::string &name, int lx = 1, int ly = 0, int lz = 0) = 0;
+  virtual bool read_perp(BoutReal *var, const std::string &name, int lx = 1, int lz = 0) = 0;
 
   virtual bool write(int *var, const char *name, int lx = 0, int ly = 0, int lz = 0) = 0;
   virtual bool write(int *var, const std::string &name, int lx = 0, int ly = 0, int lz = 0) = 0;
   virtual bool write(BoutReal *var, const char *name, int lx = 0, int ly = 0, int lz = 0) = 0;
   virtual bool write(BoutReal *var, const std::string &name, int lx = 0, int ly = 0, int lz = 0) = 0;
+  virtual bool write_perp(BoutReal *var, const std::string &name, int lx = 0, int lz = 0) = 0;
 
   // Read / Write record-based variables
 
@@ -94,11 +102,13 @@ class DataFormat {
   virtual bool read_rec(int *var, const std::string &name, int lx = 1, int ly = 0, int lz = 0) = 0;
   virtual bool read_rec(BoutReal *var, const char *name, int lx = 1, int ly = 0, int lz = 0) = 0;
   virtual bool read_rec(BoutReal *var, const std::string &name, int lx = 1, int ly = 0, int lz = 0) = 0;
+  virtual bool read_rec_perp(BoutReal *var, const std::string &name, int lx = 1, int lz = 0) = 0;
 
   virtual bool write_rec(int *var, const char *name, int lx = 0, int ly = 0, int lz = 0) = 0;
   virtual bool write_rec(int *var, const std::string &name, int lx = 0, int ly = 0, int lz = 0) = 0;
   virtual bool write_rec(BoutReal *var, const char *name, int lx = 0, int ly = 0, int lz = 0) = 0;
   virtual bool write_rec(BoutReal *var, const std::string &name, int lx = 0, int ly = 0, int lz = 0) = 0;
+  virtual bool write_rec_perp(BoutReal *var, const std::string &name, int lx = 0, int lz = 0) = 0;
 
   // Optional functions
   
@@ -195,6 +205,19 @@ class DataFormat {
   /// -------
   /// value                  A BoutReal attribute of the variable
   virtual bool getAttribute(const std::string &varname, const std::string &attrname, BoutReal &value) = 0;
+
+  /// Write out the meta-data of a field as attributes of the variable
+  void writeFieldAttributes(const std::string& name, const Field& f);
+  /// Overload for FieldPerp so we can also write 'yindex'
+  void writeFieldAttributes(const std::string& name, const FieldPerp& f);
+
+  /// Read the attributes of a field
+  void readFieldAttributes(const std::string& name, Field& f);
+  /// Overload for FieldPerp so we can also read 'yindex'
+  void readFieldAttributes(const std::string& name, FieldPerp& f);
+
+ protected:
+  Mesh* mesh;
 };
 
 // For backwards compatability. In formatfactory.cxx

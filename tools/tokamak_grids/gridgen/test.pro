@@ -13,7 +13,7 @@ rz_grid = {nr:g.nx, nz:g.ny, $  ; Number of grid points
                    qpsi:g.qpsi, $ ; q values on uniform flux grid
                    nlim:g.nlim, rlim:g.xlim, zlim:g.ylim} ; Wall boundary
 
-settings = {nrad:64, npol:64, psi_inner:0.8, psi_outer:1.1}
+settings = {nrad:64, npol:64, psi_inner:0.8D, psi_outer:1.1D}
 boundary = TRANSPOSE([[rz_grid.rlim], [rz_grid.zlim]])
 mesh = create_grid(rz_grid.psi, rz_grid.r, rz_grid.z, settings, boundary=boundary, /strict, /simple)
 

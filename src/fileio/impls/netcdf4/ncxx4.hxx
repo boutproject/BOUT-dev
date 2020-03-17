@@ -36,7 +36,7 @@
 #ifndef NCDF4
 
 #include "../emptyformat.hxx"
-typedef EmptyFormat Ncxx4;
+using Ncxx4 = EmptyFormat;
 
 #else
 
@@ -56,9 +56,10 @@ class Ncxx4;
 
 class Ncxx4 : public DataFormat {
  public:
-  Ncxx4();
-  Ncxx4(const char *name);
-  Ncxx4(const std::string &name) : Ncxx4(name.c_str()) {}
+  Ncxx4(Mesh* mesh_in = nullptr);
+  Ncxx4(const char *name, Mesh* mesh_in = nullptr);
+  Ncxx4(const std::string &name, Mesh* mesh_in = nullptr)
+    : Ncxx4(name.c_str(), mesh_in) {}
   ~Ncxx4();
 
   using DataFormat::openr;
@@ -90,6 +91,7 @@ class Ncxx4 : public DataFormat {
   bool addVarBoutReal(const std::string &name, bool repeat) override;
   bool addVarField2D(const std::string &name, bool repeat) override;
   bool addVarField3D(const std::string &name, bool repeat) override;
+  bool addVarFieldPerp(const std::string &name, bool repeat) override;
 
   // Read / Write simple variables up to 3D
 
@@ -97,11 +99,13 @@ class Ncxx4 : public DataFormat {
   bool read(int *var, const std::string &name, int lx = 1, int ly = 0, int lz = 0) override;
   bool read(BoutReal *var, const char *name, int lx = 1, int ly = 0, int lz = 0) override;
   bool read(BoutReal *var, const std::string &name, int lx = 1, int ly = 0, int lz = 0) override;
+  bool read_perp(BoutReal *var, const std::string &name, int lx = 1, int lz = 0) override;
 
   bool write(int *var, const char *name, int lx = 0, int ly = 0, int lz = 0) override;
   bool write(int *var, const std::string &name, int lx = 0, int ly = 0, int lz = 0) override;
   bool write(BoutReal *var, const char *name, int lx = 0, int ly = 0, int lz = 0) override;
   bool write(BoutReal *var, const std::string &name, int lx = 0, int ly = 0, int lz = 0) override;
+  bool write_perp(BoutReal *var, const std::string &name, int lx = 0, int lz = 0) override;
 
   // Read / Write record-based variables
 
@@ -109,11 +113,13 @@ class Ncxx4 : public DataFormat {
   bool read_rec(int *var, const std::string &name, int lx = 1, int ly = 0, int lz = 0) override;
   bool read_rec(BoutReal *var, const char *name, int lx = 1, int ly = 0, int lz = 0) override;
   bool read_rec(BoutReal *var, const std::string &name, int lx = 1, int ly = 0, int lz = 0) override;
+  bool read_rec_perp(BoutReal *var, const std::string &name, int lx = 1, int lz = 0) override;
 
   bool write_rec(int *var, const char *name, int lx = 0, int ly = 0, int lz = 0) override;
   bool write_rec(int *var, const std::string &name, int lx = 0, int ly = 0, int lz = 0) override;
   bool write_rec(BoutReal *var, const char *name, int lx = 0, int ly = 0, int lz = 0) override;
   bool write_rec(BoutReal *var, const std::string &name, int lx = 0, int ly = 0, int lz = 0) override;
+  bool write_rec_perp(BoutReal *var, const std::string &name, int lx = 0, int lz = 0) override;
   
   void setLowPrecision() override { lowPrecision = true; }
 

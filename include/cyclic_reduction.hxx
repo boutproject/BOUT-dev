@@ -56,14 +56,9 @@
 
 template <class T> class CyclicReduce {
 public:
-  CyclicReduce() {
-    nprocs = 0;
-    myproc = -1;
-    N = 0;
-    Nsys = 0;
-  }
+  CyclicReduce() = default;
 
-  CyclicReduce(MPI_Comm c, int size) : comm(c), N(size), Nsys(0), periodic(false) {
+  CyclicReduce(MPI_Comm c, int size) : comm(c), N(size) {
     MPI_Comm_size(c, &nprocs);
     MPI_Comm_rank(c, &myproc);
   }
@@ -85,13 +80,13 @@ public:
     myproc = myp;
   }
 
-  ~CyclicReduce() { N = Nsys = 0; }
+  ~CyclicReduce() = default;
 
   /// Specify that the tridiagonal system is periodic
   /// By default not periodic
   void setPeriodic(bool p = true) { periodic = p; }
 
-  void setCoefs(Array<T> &a, Array<T> &b, Array<T> &c) {
+  void setCoefs(const Array<T> &a, const Array<T> &b, const Array<T> &c) {
     ASSERT2(a.size() == b.size());
     ASSERT2(a.size() == c.size());
     ASSERT2(a.size() == N);
@@ -100,7 +95,6 @@ public:
     Matrix<T> bMatrix(1, N);
     Matrix<T> cMatrix(1, N);
 
-    // Copy data into matrices
     BOUT_OMP(parallel for)    
     for (int i = 0; i < N; ++i) {
       aMatrix(0, i) = a[i];
@@ -109,8 +103,6 @@ public:
     }
 
     setCoefs(aMatrix, bMatrix, cMatrix);
-    // Don't copy ?Matrix back into ? as setCoefs
-    // doesn't modify these. Could copy out if we really wanted.
   }
 
   /// Set the entries in the matrix to be inverted
@@ -119,7 +111,7 @@ public:
   ///                where N is set in the constructor or setup
   /// @param[in] b   Diagonal values. Should have size [nsys][N]
   /// @param[in] c   Right diagonal. Should have size [nsys][N]
-  void setCoefs(Matrix<T> &a, Matrix<T> &b, Matrix<T> &c) {
+  void setCoefs(const Matrix<T>& a, const Matrix<T>& b, const Matrix<T>& c) {
     TRACE("CyclicReduce::setCoefs");
 
     int nsys = std::get<0>(a.shape());
@@ -129,44 +121,40 @@ public:
 
     // Fill coefficient array
     BOUT_OMP(parallel for)
-    for (int j = 0; j < Nsys; j++)
+    for (int j = 0; j < Nsys; j++) {
       for (int i = 0; i < N; i++) {
         coefs(j, 4 * i) = a(j, i);
         coefs(j, 4 * i + 1) = b(j, i);
         coefs(j, 4 * i + 2) = c(j, i);
         // 4*i + 3 will contain RHS
       }
+    }
   }
 
   /// Solve a set of tridiagonal systems
   ///
   /// @param[in] rhs Array storing Values of the rhs for a single system
   /// @param[out] x  Array storing the result for a single system
-  void solve(Array<T> &rhs, Array<T> &x) {
+  void solve(const Array<T> &rhs, Array<T> &x) {
     ASSERT2(rhs.size() == x.size());
     ASSERT2(rhs.size() == N);
 
-    int nrhs = rhs.size();
     Matrix<T> rhsMatrix(1, N);
     Matrix<T> xMatrix(1, N);
 
     // Copy input data into matrix
-    BOUT_OMP(parallel for)    
-    for (int j = 0; j < nrhs; ++j) {
-      for (int i = 0; i < N; ++i) {
-        rhsMatrix(j, i) = rhs[j][i];
-      }
+    BOUT_OMP(parallel for)
+    for (int i = 0; i < N; ++i) {
+      rhsMatrix(0, i) = rhs[i];
     }
 
     // Solve
     solve(rhsMatrix, xMatrix);
 
     // Copy result back into argument
-    BOUT_OMP(parallel for)    
-    for (int j = 0; j < nrhs; ++j) {
-      for (int i = 0; i < N; ++i) {
-        x[j][i] = xMatrix(j, i);
-      }
+    BOUT_OMP(parallel for)
+    for (int i = 0; i < N; ++i) {
+      x[i] = xMatrix(0, i);
     }
   };
 
@@ -174,7 +162,7 @@ public:
   ///
   /// @param[in] rhs Matrix storing Values of the rhs for each system
   /// @param[out] x  Matrix storing the result for each system
-  void solve(Matrix<T> &rhs, Matrix<T> &x) {
+  void solve(const Matrix<T> &rhs, Matrix<T> &x) {
     TRACE("CyclicReduce::solve");
     ASSERT2(static_cast<int>(std::get<0>(rhs.shape())) == Nsys);
     ASSERT2(static_cast<int>(std::get<0>(x.shape())) == Nsys);
@@ -189,11 +177,12 @@ public:
 
     // Insert RHS into coefs array. Ordered to allow efficient partitioning
     // for MPI send/receives
-    BOUT_OMP(parallel for)    
-    for (int j = 0; j < Nsys; j++)
+    BOUT_OMP(parallel for)
+    for (int j = 0; j < Nsys; j++) {
       for (int i = 0; i < N; i++) {
         coefs(j, 4 * i + 3) = rhs(j, i);
       }
+    }
 
     ///////////////////////////////////////
     // Reduce local part of the matrix to interface equations
@@ -221,7 +210,7 @@ public:
     int ns = Nsys / nprocs;      // Number of systems to assign to all processors
     int nsextra = Nsys % nprocs; // Number of processors with 1 extra
 
-    MPI_Request *req = new MPI_Request[nprocs];
+    auto* req = new MPI_Request[nprocs];
 
     if (myns > 0) {
       // Post receives from all other processors
@@ -443,15 +432,15 @@ public:
   }
 
 private:
-  MPI_Comm comm;      ///< Communicator
-  int nprocs, myproc; ///< Number of processors and ID of my processor
+  MPI_Comm comm;             ///< Communicator
+  int nprocs{0}, myproc{-1}; ///< Number of processors and ID of my processor
 
-  int N;    ///< Total size of the problem
-  int Nsys; ///< Number of independent systems to solve
-  int myns; ///< Number of systems for interface solve on this processor
-  int sys0; ///< Starting system index for interface solve
+  int N{0};    ///< Total size of the problem
+  int Nsys{0}; ///< Number of independent systems to solve
+  int myns;    ///< Number of systems for interface solve on this processor
+  int sys0;    ///< Starting system index for interface solve
 
-  bool periodic; ///< Is the domain periodic?
+  bool periodic{false}; ///< Is the domain periodic?
 
   Matrix<T> coefs; ///< Starting coefficients, rhs [Nsys, {3*coef,rhs}*N]
   Matrix<T> myif;  ///< Interface equations for this processor
@@ -488,8 +477,8 @@ private:
       sys0 += nsextra;
     }
 
-    coefs = Matrix<T>(Nsys, 4 * N);
-    myif = Matrix<T>(Nsys, 8);
+    coefs.reallocate(Nsys, 4 * N);
+    myif.reallocate(Nsys, 8);
 
     // Note: The recvbuffer is used to receive data in both stages of the solve:
     //  1. In the gather step, this processor will receive myns interface equations
@@ -498,22 +487,22 @@ private:
     //     from each processor. The number of systems of equations received will
     //     vary from myns to myns+1 (if myproc >= nsextra).
     // The size of the array reserved is therefore (myns+1)
-    recvbuffer =
-        Matrix<T>(nprocs, (myns + 1) * 8); // Buffer for receiving from other processors
+    recvbuffer.reallocate(nprocs, (myns + 1) * 8);
 
     // Some interface systems to be solved on this processor
     // Note that the interface equations are organised by system (myns as first argument)
     // but communication buffers are organised by processor (nprocs first).
-    ifcs = Matrix<T>(myns, 2 * 4 * nprocs); // Coefficients for interface solve
-    if (nprocs > 1)
-      if2x2 = Matrix<T>(myns, 2 * 4);  // 2x2 interface equations on this processor
-    ifx = Matrix<T>(myns, 2 * nprocs); // Solution of interface equations
-    ifp = Array<T>(myns * 2);          // Solution to be sent to processor p
+    ifcs.reallocate(myns, 2 * 4 * nprocs); // Coefficients for interface solve
+    if (nprocs > 1) {
+      if2x2.reallocate(myns, 2 * 4); // 2x2 interface equations on this processor
+    }
+    ifx.reallocate(myns, 2 * nprocs); // Solution of interface equations
+    ifp.reallocate(myns * 2);         // Solution to be sent to processor p
     // Each system to be solved on this processor has two interface equations from each
     // processor
 
-    x1 = Array<T>(Nsys);
-    xn = Array<T>(Nsys);
+    x1.reallocate(Nsys);
+    xn.reallocate(Nsys);
   }
 
   /// Calculate interface equations
@@ -601,8 +590,8 @@ private:
 
   /// Back-solve from x at ends (x1, xn) to obtain remaining values
   /// Coefficients ordered [ns, nloc*(a,b,c,r)]
-  void back_solve(int ns, int nloc, Matrix<T> &co, Array<T> &x1, Array<T> &xn,
-                  Matrix<T> &xa) {
+  void back_solve(int ns, int nloc, const Matrix<T>& co, const Array<T>& x1,
+                  const Array<T>& xn, Matrix<T>& xa) {
 
     xa.ensureUnique(); // Going to be modified, so call this outside parallel region
     

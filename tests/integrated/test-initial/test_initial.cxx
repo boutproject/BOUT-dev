@@ -6,14 +6,13 @@
  *
  */
 
-#include "bout/physicsmodel.hxx"
 #include "initialprofiles.hxx"
+#include "bout/physicsmodel.hxx"
+
+#include <algorithm>
+#include <vector>
 
 void create_and_dump(Field3D& field, const char* name) {
-  initial_profile(name, field);
-  dump.add(field, name, false);
-}
-void create_and_dump(Field2D& field, const char* name) {
   initial_profile(name, field);
   dump.add(field, name, false);
 }
@@ -22,22 +21,26 @@ int main(int argc, char** argv) {
 
   BoutInitialise(argc, argv);
 
-  // Save the coordinate arrays to make the python bit easier
-  Field3D var_x;
-  create_and_dump(var_x, "var_x");
+  const auto& sections = Options::root().subsections();
 
-  Field3D var_y;
-  create_and_dump(var_y, "var_y");
+  // We need a vector of Fields because:
+  //   1) we don't know at compile time how many we need
+  //   2) using a local variable inside the loop causes problems with
+  //      dump when the variable goes out of scope
+  // We also need to reserve the size to avoid allocations
+  // invalidating the pointers the output file has stored. Sections is
+  // too large as it includes sections we don't want, but that's ok
+  std::vector<Field3D> fields(sections.size());
 
-  Field3D var_z;
-  create_and_dump(var_z, "var_z");
-
-  // Include the functions to be tested
-  // ./runtest generates this file by reading the list of variables in
-  // data/BOUT.inp, excluding var_{x,y,z}
-#include "test_functions.cxx"
-
-  dump.write();
+  for (const auto& section : sections) {
+    if (!section.second->isSet("function")) {
+      continue;
+    }
+    fields.emplace_back();
+    auto& field = fields.back();
+    create_and_dump(field, section.first.c_str());
+    dump.write();
+  }
 
   BoutFinalise();
 

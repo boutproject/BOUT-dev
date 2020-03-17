@@ -10,12 +10,20 @@
 
 #include <algorithm>
 #include <list>
-#include <vector>
+#include <random>
 #include <sstream>
 #include <type_traits>
+#include <vector>
 
 /// Global mesh
+namespace bout{
+namespace globals{
 extern Mesh *mesh;
+} // namespace globals
+} // namespace bout
+
+// The unit tests use the global mesh
+using namespace bout::globals;
 
 /// Test fixture to make sure the global mesh is our fake one
 using RegionTest = FakeMeshFixture;
@@ -68,7 +76,7 @@ TEST_F(RegionTest, regionFromIndices) {
     maxContiguousSizeUsed =
         currBlockSize > maxContiguousSizeUsed ? currBlockSize : maxContiguousSizeUsed;
     for (int i = block.first; i <= block.second; i++) {
-      indicesIn.push_back(Ind3D{i});
+      indicesIn.emplace_back(i);
     }
   }
 
@@ -121,7 +129,7 @@ TEST_F(RegionTest, numberOfBlocks) {
   Region<Ind3D> region(0, mesh->LocalNx - 1, 0, mesh->LocalNy - 1, 0, mesh->LocalNz - 1,
                        mesh->LocalNy, mesh->LocalNz);
 
-  auto blocks = region.getBlocks();
+  const auto& blocks = region.getBlocks();
   int nmesh = RegionTest::nx * RegionTest::ny * RegionTest::nz;
   int nblocks = blocks.size();
 
@@ -351,7 +359,7 @@ TEST_F(RegionTest, regionAsSorted) {
   Region<Ind3D>::RegionIndices regionIndicesSortedIn = regionSortedIn.getIndices();
 
   // Now shuffle the order and create a new region
-  std::random_shuffle(std::begin(indicesIn), std::end(indicesIn));
+  std::shuffle(std::begin(indicesIn), std::end(indicesIn), std::mt19937());
   Region<Ind3D> regionShuffledIn(indicesIn);
   Region<Ind3D>::RegionIndices regionIndicesShuffledIn = regionShuffledIn.getIndices();
   // Should we check the shuffle has actually changed the index order?
@@ -405,7 +413,7 @@ TEST_F(RegionTest, regionAsUnique) {
 
   // Now get a unique version of the region
   Region<Ind3D> regionUnique2 = regionIn2.asUnique();
-  Region<Ind3D>::RegionIndices regionIndicesUnique2 = regionUnique2.getIndices();
+  const Region<Ind3D>::RegionIndices& regionIndicesUnique2 = regionUnique2.getIndices();
 
   EXPECT_EQ(regionIndicesUnique2.size(), 8);
 
@@ -470,7 +478,7 @@ TEST_F(RegionTest, regionSetBlocks) {
   Region<Ind3D> region(0, mesh->LocalNx - 1, 0, mesh->LocalNy - 1, 0, mesh->LocalNz - 1,
                        mesh->LocalNy, mesh->LocalNz);
   auto blocks = region.getBlocks();
-  auto indices = region.getIndices();
+  const auto& indices = region.getIndices();
 
   EXPECT_EQ(indices.size(), nmesh);
 
@@ -635,8 +643,8 @@ TEST_F(RegionTest, regionMask) {
   EXPECT_EQ(masked1Indices.size(), indicesIn.size() - indicesMask1.size());
 
   // Check values
-  for (unsigned int i = 0; i < masked1Indices.size(); i++) {
-    EXPECT_EQ((masked1Indices[i] % 2).ind, 0);
+  for (auto& masked1Index : masked1Indices) {
+    EXPECT_EQ((masked1Index % 2).ind, 0);
   }
 
   // Check size of other regions not changed
@@ -695,8 +703,8 @@ TEST_F(RegionTest, regionFriendMask) {
   EXPECT_EQ(masked1Indices.size(), indicesIn.size() - indicesMask1.size());
 
   // Check values
-  for (unsigned int i = 0; i < masked1Indices.size(); i++) {
-    EXPECT_EQ((masked1Indices[i] % 2).ind, 0);
+  for (auto& masked1Index : masked1Indices) {
+    EXPECT_EQ((masked1Index % 2).ind, 0);
   }
 
   // Check size of other regions not changed
@@ -714,7 +722,7 @@ TEST_F(RegionTest, regionFriendMask) {
   }
 
   auto masked2 = mask(regionIn, mask2);
-  auto masked2Indices = masked2.getIndices();
+  const auto& masked2Indices = masked2.getIndices();
   EXPECT_EQ(masked2Indices.size(), indicesIn.size());
 
   // Check size of other regions not changed
@@ -754,7 +762,7 @@ TEST_F(RegionTest, regionOperatorAdd) {
   }
 
   auto region4 = region1 + region2 + region2;
-  auto indices4 = region4.getIndices();
+  const auto& indices4 = region4.getIndices();
   EXPECT_EQ(indices4.size(), indicesIn1.size() + 2 * indicesIn2.size());
   EXPECT_EQ(region1.getIndices().size(), indicesIn1.size());
   EXPECT_EQ(region2.getIndices().size(), indicesIn2.size());
@@ -1161,15 +1169,14 @@ TEST(RegionIndex3DTest, NonMemberSize) {
   EXPECT_EQ(size(region), nmesh);
 }
 
-template <typename T> class RegionIndexTest : public ::testing::Test {
+template <typename T>
+class RegionIndexTest : public ::testing::Test {
 public:
-  typedef std::list<T> List;
-  static T shared_;
-  T value_;
+  ~RegionIndexTest() override = default;
 };
 
-typedef ::testing::Types<Ind2D, Ind3D, IndPerp> RegionIndexTypes;
-TYPED_TEST_CASE(RegionIndexTest, RegionIndexTypes);
+using RegionIndexTypes = ::testing::Types<Ind2D, Ind3D, IndPerp>;
+TYPED_TEST_SUITE(RegionIndexTest, RegionIndexTypes);
 
 TYPED_TEST(RegionIndexTest, Begin) {
   typename Region<TypeParam>::RegionIndices region{
@@ -1483,14 +1490,12 @@ TYPED_TEST(RegionIndexTest, RangeBasedForLoop) {
 
 template <typename T>
 class FieldIndexTest : public ::testing::Test {
- public:
-  typedef std::list<T> List;
-  static T shared_;
-  T value_;
+public:
+  ~FieldIndexTest() override = default;
 };
 
-typedef ::testing::Types<Ind2D, Ind3D> FieldIndexTypes;
-TYPED_TEST_CASE(FieldIndexTest, FieldIndexTypes);
+using FieldIndexTypes = ::testing::Types<Ind2D, Ind3D>;
+TYPED_TEST_SUITE(FieldIndexTest, FieldIndexTypes);
 
 TYPED_TEST(FieldIndexTest, Constructor) {
   TypeParam index(1);
@@ -1658,18 +1663,13 @@ TYPED_TEST(FieldIndexTest, Modulus) {
 class IndexOffsetTest : public ::testing::Test {
 protected:
   IndexOffsetTest() {
-    // Delete any existing mesh
-    if (mesh != nullptr) {
-      delete mesh;
-      mesh = nullptr;
-    }
+    WithQuietOutput quiet{output_info};
+    delete mesh;
     mesh = new FakeMesh(nx, ny, nz);
-    output_info.disable();
     mesh->createDefaultRegions();
-    output_info.enable();
   }
 
-  ~IndexOffsetTest() {
+  ~IndexOffsetTest() override {
     delete mesh;
     mesh = nullptr;
   }

@@ -1,4 +1,5 @@
 
+#include <bout/mesh.hxx>
 #include <globals.hxx>
 #include <field_data.hxx>
 #include <boundary_factory.hxx>
@@ -20,18 +21,18 @@ void FieldData::setBoundary(const std::string &name) {
   
   output_info << "Setting boundary for variable " << name << endl;
   /// Loop over the mesh boundary regions
-  for(const auto& reg : mesh->getBoundaries()) {
-    BoundaryOp* op = static_cast<BoundaryOp*>(bfact->createFromOptions(name, reg));
+  for(const auto& reg : bout::globals::mesh->getBoundaries()) {
+    auto* op = dynamic_cast<BoundaryOp*>(bfact->createFromOptions(name, reg));
     if (op != nullptr)
       bndry_op.push_back(op);
     output_info << endl;
   }
 
   /// Get the mesh boundary regions
-  std::vector<BoundaryRegionPar*> par_reg = mesh->getBoundariesPar();
+  std::vector<BoundaryRegionPar*> par_reg = bout::globals::mesh->getBoundariesPar();
   /// Loop over the mesh parallel boundary regions
-  for(const auto& reg : mesh->getBoundariesPar()) {
-    BoundaryOpPar* op = static_cast<BoundaryOpPar*>(bfact->createFromOptions(name, reg));
+  for(const auto& reg : bout::globals::mesh->getBoundariesPar()) {
+    auto* op = dynamic_cast<BoundaryOpPar*>(bfact->createFromOptions(name, reg));
     if (op != nullptr)
       bndry_op_par.push_back(op);
     output_info << endl;
@@ -43,7 +44,7 @@ void FieldData::setBoundary(const std::string &name) {
 
 void FieldData::setBoundary(const std::string &UNUSED(region), BoundaryOp *op) {
   /// Get the mesh boundary regions
-  std::vector<BoundaryRegion*> reg = mesh->getBoundaries();
+  std::vector<BoundaryRegion*> reg = bout::globals::mesh->getBoundaries();
  
   /// Find the region
   
@@ -72,11 +73,11 @@ void FieldData::addBndryFunction(FuncPtr userfunc, BndryLoc location){
 
 void FieldData::addBndryGenerator(FieldGeneratorPtr gen, BndryLoc location) {
   if(location == BNDRY_ALL){
-    for(const auto& reg : mesh->getBoundaries()) {
+    for(const auto& reg : bout::globals::mesh->getBoundaries()) {
       bndry_generator[reg->location] = gen;
     }
   } else {
-    bndry_generator[location] = gen;
+    bndry_generator[location] = std::move(gen);
   }
 }
 

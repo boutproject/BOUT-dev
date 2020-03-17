@@ -56,6 +56,10 @@ authors:
   - family-names: Breyiannia
     given-names: George
 
+  - family-names: Muhammed
+    given-names: Hasan
+    affiliation: University of York
+
   - family-names: Seto
     given-names: Haruki
 
@@ -90,6 +94,9 @@ authors:
   - family-names: Easy
     given-names: Luke
     orcid: https://orcid.org/0000-0002-9087-9180
+
+  - family-names: Estarellas
+    given-names: Marta
 
   - family-names: Thomas
     given-names: Matt
@@ -142,11 +149,11 @@ authors:
 
   - family-names: Wang
     given-names: Zhanhui
-version: 4.2.1
-date-released: 2019-01-23
+version: 4.3.0
+date-released: 2019-10-25
 repository-code: https://github.com/boutproject/BOUT-dev
 url: http://boutproject.github.io/
-doi: 10.5281/zenodo.2530733
+doi: 10.5281/zenodo.3518905
 license: 'LGPL-3.0-or-later'
 references:
   - type: article

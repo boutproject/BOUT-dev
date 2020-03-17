@@ -32,6 +32,7 @@
  */
 
 #include <bout/constants.hxx>
+#include <bout/mesh.hxx>
 #include <bout/openmpwrap.hxx>
 #include <bout/sys/timer.hxx>
 #include <boutexception.hxx>
@@ -67,7 +68,7 @@ LaplaceSPT::LaplaceSPT(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
 
   // Temporary array for taking FFTs
   int ncz = localmesh->LocalNz;
-  dc1d = Array<dcomplex>(ncz / 2 + 1);
+  dc1d.reallocate(ncz / 2 + 1);
 }
 
 LaplaceSPT::~LaplaceSPT() {
@@ -75,18 +76,14 @@ LaplaceSPT::~LaplaceSPT() {
   delete[] alldata;
 }
 
-const FieldPerp LaplaceSPT::solve(const FieldPerp &b) {
-  return solve(b,b);
-}
+FieldPerp LaplaceSPT::solve(const FieldPerp& b) { return solve(b, b); }
 
-const FieldPerp LaplaceSPT::solve(const FieldPerp &b, const FieldPerp &x0) {
+FieldPerp LaplaceSPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   ASSERT1(localmesh == b.getMesh() && localmesh == x0.getMesh());
   ASSERT1(b.getLocation() == location);
   ASSERT1(x0.getLocation() == location);
 
-  FieldPerp x(localmesh);
-  x.setLocation(location);
-  x.allocate();
+  FieldPerp x{emptyFrom(b)};
   
   if( (inner_boundary_flags & INVERT_SET) || (outer_boundary_flags & INVERT_SET) ) {
     FieldPerp bs = copy(b);
@@ -121,14 +118,13 @@ const FieldPerp LaplaceSPT::solve(const FieldPerp &b, const FieldPerp &x0) {
  * This is done at the expense of more memory useage. Setting low_mem
  * in the config file uses less memory, and less communication overlap
  */
-const Field3D LaplaceSPT::solve(const Field3D &b) {
+Field3D LaplaceSPT::solve(const Field3D& b) {
 
   ASSERT1(b.getLocation() == location);
-  ASSERT1(localmesh = b.getMesh());
+  ASSERT1(localmesh == b.getMesh());
 
   Timer timer("invert");
-  Field3D x(localmesh);
-  x.allocate();
+  Field3D x{emptyFrom(b)};
   
   for(int jy=ys; jy <= ye; jy++) {
     // And start another one going
@@ -156,12 +152,10 @@ const Field3D LaplaceSPT::solve(const Field3D &b) {
     x = xperp;
   }
   
-  x.setLocation(b.getLocation());
-  
   return x;
 }
 
-const Field3D LaplaceSPT::solve(const Field3D &b, const Field3D &x0) {
+Field3D LaplaceSPT::solve(const Field3D& b, const Field3D& x0) {
   ASSERT1(localmesh == b.getMesh() && localmesh == x0.getMesh());
 
   if(  ((inner_boundary_flags & INVERT_SET) && localmesh->firstX()) ||
@@ -510,16 +504,16 @@ void LaplaceSPT::finish(SPT_data &data, FieldPerp &x) {
 // SPT_data helper class
 
 void LaplaceSPT::SPT_data::allocate(int mm, int nx) {
-  bk = Matrix<dcomplex>(mm, nx);
-  xk = Matrix<dcomplex>(mm, nx);
+  bk.reallocate(mm, nx);
+  xk.reallocate(mm, nx);
 
-  gam = Matrix<dcomplex>(mm, nx);
+  gam.reallocate(mm, nx);
 
   // Matrix to be solved
-  avec = Matrix<dcomplex>(mm, nx);
-  bvec = Matrix<dcomplex>(mm, nx);
-  cvec = Matrix<dcomplex>(mm, nx);
+  avec.reallocate(mm, nx);
+  bvec.reallocate(mm, nx);
+  cvec.reallocate(mm, nx);
 
-  buffer = Array<BoutReal>(4 * mm);
+  buffer.reallocate(4 * mm);
 }
 

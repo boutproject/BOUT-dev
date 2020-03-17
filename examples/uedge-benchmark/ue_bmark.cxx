@@ -73,12 +73,12 @@ protected:
     // Read some parameters
     auto& globalOptions = Options::root();
     auto& options = globalOptions["uedge"];
-    OPTION(options, AA, 2.0);
-    OPTION(options, ZZ, 1.0);
+    AA = options["AA"].withDefault(2.0);
+    ZZ = options["ZZ"].withDefault(1.0);
 
-    OPTION(options, chi_perp, 0.6); // Read in m^2 / s
-    OPTION(options, D_perp, 0.6);
-    OPTION(options, mu_perp, 0.6);
+    chi_perp = options["chi_perp"].withDefault(0.6); // Read in m^2 / s
+    D_perp = options["D_perp"].withDefault(0.6);
+    mu_perp = options["mu_perp"].withDefault(0.6);
 
     ////////////// CALCULATE PARAMETERS ///////////////////
 

@@ -140,8 +140,8 @@ to many other situations.
    enabled in the options file or in general the ``TwistShift`` flag in
    ``mesh/impls/bout/boutmesh.hxx`` is enabled by other means. BOUT++
    automatically reads the twist shifts in the gridfile if the shifts
-   are stored in a field in a field ShiftAngle[nx]. If not given, this
-   is set to zero.
+   are stored in a field ShiftAngle[nx]; ShiftAngle must be given in the
+   gridfile or grid-options if ``TwistShift = True``.
 
 The only quantities which are required are the sizes of the grid. If
 these are the only quantities specified, then the coordinates revert to

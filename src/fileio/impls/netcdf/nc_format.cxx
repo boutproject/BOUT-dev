@@ -28,6 +28,7 @@
 #include <utils.hxx>
 #include <cmath>
 
+#include <bout/mesh.hxx>
 #include <output.hxx>
 #include <msg_stack.hxx>
 
@@ -37,7 +38,7 @@ using std::vector;
 // Define this to see loads of info messages
 //#define NCDF_VERBOSE
 
-NcFormat::NcFormat() {
+NcFormat::NcFormat(Mesh* mesh_in) : DataFormat(mesh_in) {
   dataFile = nullptr;
   x0 = y0 = z0 = t0 = 0;
   recDimList = new const NcDim*[4];
@@ -50,7 +51,7 @@ NcFormat::NcFormat() {
   fname = nullptr;
 }
 
-NcFormat::NcFormat(const char *name) {
+NcFormat::NcFormat(const char *name, Mesh* mesh_in) : DataFormat(mesh_in) {
   dataFile = nullptr;
   x0 = y0 = z0 = t0 = 0;
   recDimList = new const NcDim*[4];
@@ -102,8 +103,10 @@ bool NcFormat::openr(const char *name) {
     xDim = nullptr;
   } else if (mesh != nullptr) {
     // Check that the dimension size is correct
-    if(xDim->size() != mesh->LocalNx) {
-      throw BoutException("X dimension incorrect. Expected %d, got %d", mesh->LocalNx, xDim->size());
+    if (xDim->size() != mesh->LocalNx) {
+      throw BoutException("X dimension incorrect. Expected %lu, got %lu",
+                          static_cast<long unsigned>(mesh->LocalNx),
+                          static_cast<long unsigned>(xDim->size()));
     }
   }
   
@@ -118,7 +121,9 @@ bool NcFormat::openr(const char *name) {
   } else if (mesh != nullptr) {
     // Check that the dimension size is correct
     if(yDim->size() != mesh->LocalNy) {
-      throw BoutException("Y dimension incorrect. Expected %d, got %d", mesh->LocalNy, yDim->size());
+      throw BoutException("Y dimension incorrect. Expected %lu, got %lu",
+                          static_cast<long unsigned>(mesh->LocalNy),
+                          static_cast<long unsigned>(yDim->size()));
     }
   }
   
@@ -131,7 +136,9 @@ bool NcFormat::openr(const char *name) {
   } else if (mesh != nullptr) {
     // Check that the dimension size is correct
     if(zDim->size() != mesh->LocalNz) {
-      throw BoutException("Z dimension incorrect. Expected %d, got %d", mesh->LocalNz, zDim->size());
+      throw BoutException("Z dimension incorrect. Expected %lu, got %lu",
+                          static_cast<long unsigned>(mesh->LocalNz),
+                          static_cast<long unsigned>(zDim->size()));
     }
   }
   
@@ -467,6 +474,37 @@ bool NcFormat::addVarField3D(const string &name, bool repeat) {
   return true;
 }
 
+bool NcFormat::addVarFieldPerp(const string &name, bool repeat) {
+  if(!is_valid())
+    return false;
+
+  // Create an error object so netCDF doesn't exit
+#ifdef NCDF_VERBOSE
+  NcError err(NcError::verbose_nonfatal);
+#else
+  NcError err(NcError::silent_nonfatal);
+#endif
+
+  NcVar* var;
+  if (!(var = dataFile->get_var(name.c_str()))) {
+    // Variable not in file, so add it.
+    auto nc_float_type = lowPrecision ? ncFloat : ncDouble;
+    if (repeat){
+      const NcDim * dims[3] = {tDim, xDim, zDim};
+      var = dataFile->add_var(name.c_str(), nc_float_type, 3, dims);
+    } else {
+      const NcDim * dims[2] = {xDim, zDim};
+      var = dataFile->add_var(name.c_str(), nc_float_type, 2, dims);
+    }
+
+    if(!var->is_valid()) {
+      output_error.write("ERROR: NetCDF could not add FieldPerp '%s' to file '%s'\n", name.c_str(), fname);
+      return false;
+    }
+  }
+  return true;
+}
+
 bool NcFormat::read(int *data, const char *name, int lx, int ly, int lz) {
   if(!is_valid())
     return false;
@@ -560,6 +598,43 @@ bool NcFormat::read(BoutReal *data, const char *name, int lx, int ly, int lz) {
 
 bool NcFormat::read(BoutReal *var, const string &name, int lx, int ly, int lz) {
   return read(var, name.c_str(), lx, ly, lz);
+}
+
+bool NcFormat::read_perp(BoutReal *data, const std::string& name, int lx, int lz) {
+  if(!is_valid())
+    return false;
+
+  if((lx < 0) || (lz < 0))
+    return false;
+
+  TRACE("NcFormat::read_perp(BoutReal)");
+
+  // Create an error object so netCDF doesn't exit
+#ifdef NCDF_VERBOSE
+  NcError err(NcError::verbose_nonfatal);
+#else
+  NcError err(NcError::silent_nonfatal);
+#endif
+
+  NcVar *var;
+
+  if(!(var = dataFile->get_var(name.c_str()))) {
+    return false;
+  }
+
+  long cur[2], counts[2];
+  cur[0] = x0;    cur[1] = z0;
+  counts[0] = lx; counts[1] = lz;
+
+  if(!(var->set_cur(cur))) {
+    return false;
+  }
+
+  if(!(var->get(data, counts))) {
+    return false;
+  }
+
+  return true;
 }
 
 bool NcFormat::write(int *data, const char *name, int lx, int ly, int lz) {
@@ -665,6 +740,63 @@ bool NcFormat::write(BoutReal *var, const string &name, int lx, int ly, int lz) 
   return write(var, name.c_str(), lx, ly, lz);
 }
 
+bool NcFormat::write_perp(BoutReal *data, const std::string& name, int lx, int lz) {
+  if(!is_valid())
+    return false;
+
+  if((lx < 0) || (lz < 0))
+    return false;
+
+  // Check for valid name
+  checkName(name.c_str());
+
+  TRACE("NcFormat::write_perp(BoutReal)");
+
+#ifdef NCDF_VERBOSE
+  NcError err(NcError::verbose_nonfatal);
+#else
+  NcError err(NcError::silent_nonfatal);
+#endif
+
+  NcVar *var;
+  if(!(var = dataFile->get_var(name.c_str()))) {
+    output_error.write("ERROR: NetCDF BoutReal variable '%s' has not been added to file '%s'\n", name.c_str(), fname);
+    return false;
+  }
+
+  long cur[2], counts[2];
+  cur[0] = x0;    cur[1] = z0;
+  counts[0] = lx; counts[1] = lz;
+
+  if(!(var->set_cur(cur)))
+    return false;
+
+  if(lowPrecision) {
+    // An out of range value can make the conversion
+    // corrupt the whole dataset. Make sure everything
+    // is in the range of a float
+    int i_max=1;
+    if (lx>0) i_max*=lx;
+    if (lz>0) i_max*=lz;
+    for(int i=0;i<i_max;i++) {
+      if(data[i] > 1e20)
+        data[i] = 1e20;
+      if(data[i] < -1e20)
+        data[i] = -1e20;
+    }
+  }
+
+  for(int i=0;i<lx*lz;i++) {
+    if(!finite(data[i]))
+      data[i] = 0.0;
+  }
+
+  if(!(var->put(data, counts)))
+    return false;
+
+  return true;
+}
+
 /***************************************************************************
  * Record-based (time-dependent) data
  ***************************************************************************/
@@ -749,6 +881,43 @@ bool NcFormat::read_rec(BoutReal *data, const char *name, int lx, int ly, int lz
 
 bool NcFormat::read_rec(BoutReal *var, const string &name, int lx, int ly, int lz) {
   return read_rec(var, name.c_str(), lx, ly, lz);
+}
+
+bool NcFormat::read_rec_perp(BoutReal *data, const std::string& name, int lx, int lz) {
+  if(!is_valid())
+    return false;
+
+  if((lx < 0) || (lz < 0))
+    return false;
+
+  // Check for valid name
+  checkName(name.c_str());
+
+  // Create an error object so netCDF doesn't exit
+#ifdef NCDF_VERBOSE
+  NcError err(NcError::verbose_nonfatal);
+#else
+  NcError err(NcError::silent_nonfatal);
+#endif
+
+  NcVar *var;
+
+  if(!(var = dataFile->get_var(name.c_str())))
+    return false;
+
+  // NOTE: Probably should do something here to check t0
+
+  long cur[3], counts[3];
+  cur[0] = t0; cur[1] = x0; cur[2] = z0;
+  counts[0] = 1; counts[1] = lx; counts[2] = lz;
+
+  if(!(var->set_cur(cur)))
+    return false;
+
+  if(!(var->get(data, counts)))
+    return false;
+
+  return true;
 }
 
 bool NcFormat::write_rec(int *data, const char *name, int lx, int ly, int lz) {
@@ -871,6 +1040,76 @@ bool NcFormat::write_rec(BoutReal *var, const string &name, int lx, int ly, int 
   return write_rec(var, name.c_str(), lx, ly, lz);
 }
 
+bool NcFormat::write_rec_perp(BoutReal *data, const std::string& name, int lx, int lz) {
+  if(!is_valid())
+    return false;
+
+  if((lx < 0) || (lz < 0))
+    return false;
+
+  // Check the name
+  checkName(name.c_str());
+
+  TRACE("NcFormat::write_rec_perp(BoutReal*)");
+
+#ifdef NCDF_VERBOSE
+  NcError err(NcError::verbose_nonfatal);
+#else
+  NcError err(NcError::silent_nonfatal);
+#endif
+
+  NcVar *var;
+
+  // Try to find variable
+  if(!(var = dataFile->get_var(name.c_str()))) {
+    output_error.write("ERROR: NetCDF BoutReal variable '%s' has not been added to file '%s'\n", name.c_str(), fname);
+    return false;
+  }else {
+    // Get record number
+    if(rec_nr.find(name.c_str()) == rec_nr.end()) {
+      // Add to map
+      rec_nr[name] = default_rec;
+    }
+  }
+
+  int t = rec_nr[name];
+
+#ifdef NCDF_VERBOSE
+  output_info.write("INFO: NetCDF writing record %d of '%s' in '%s'\n",t, name.c_str(), fname);
+#endif
+
+  if(lowPrecision) {
+    // An out of range value can make the conversion
+    // corrupt the whole dataset. Make sure everything
+    // is in the range of a float
+
+    for(int i=0;i<lx*lz;i++) {
+      if(data[i] > 1e20)
+        data[i] = 1e20;
+      if(data[i] < -1e20)
+        data[i] = -1e20;
+    }
+  }
+  int i_max=1;
+  if (lx>0) i_max*=lx;
+  if (lz>0) i_max*=lz;
+  for(int i=0;i<i_max;i++) {
+    if(!finite(data[i]))
+      data[i] = 0.0;
+  }
+
+  // Add the record
+  if(!var->put_rec(data, t))
+    return false;
+
+  var->sync();
+
+  // Increment record number
+  rec_nr[name] = rec_nr[name] + 1;
+
+  return true;
+}
+
 /***************************************************************************
  * Attributes
  ***************************************************************************/
@@ -954,8 +1193,8 @@ void NcFormat::setAttribute(const std::string &varname, const std::string &attrn
   int existing_att;
   if (getAttribute(varname, attrname, existing_att)) {
     if (value != existing_att) {
-      output_warn.write("Overwriting attribute '%s' of variable '%s' with '%d', was previously '%d'",
-          attrname.c_str(), varname.c_str(), value, existing_att);
+      output_warn.write("Overwriting attribute '%s' of variable '%s' with '%f', was previously '%d'",
+			attrname.c_str(), varname.c_str(), value, existing_att);
     }
   }
   // else: attribute does not exist, so just write it
@@ -990,7 +1229,11 @@ bool NcFormat::getAttribute(const std::string &varname, const std::string &attrn
       return false;
     }
 
-    text = fileAtt->values()->as_string(0);
+    auto values = fileAtt->values();
+    if (values == nullptr)
+      return false;
+
+    text = values->as_string(0);
 
     return true;
   } else {
@@ -1004,7 +1247,11 @@ bool NcFormat::getAttribute(const std::string &varname, const std::string &attrn
       return false;
     }
 
-    text = varAtt->values()->as_string(0);
+    auto values = varAtt->values();
+    if (values == nullptr)
+      return false;
+
+    text = values->as_string(0);
 
     return true;
   }
@@ -1026,7 +1273,11 @@ bool NcFormat::getAttribute(const std::string &varname, const std::string &attrn
       return false;
     }
 
-    value = fileAtt->values()->as_int(0);
+    auto values = fileAtt->values();
+    if (values == nullptr)
+      return false;
+
+    value = values->as_int(0);
 
     return true;
   } else {
@@ -1040,7 +1291,11 @@ bool NcFormat::getAttribute(const std::string &varname, const std::string &attrn
     if (!(varAtt = var->get_att(attrname.c_str())))
       return false;
 
-    value = varAtt->values()->as_int(0);
+    auto values = varAtt->values();
+    if (values == nullptr)
+      return false;
+
+    value = values->as_int(0);
 
     return true;
   }
@@ -1062,7 +1317,11 @@ bool NcFormat::getAttribute(const std::string &varname, const std::string &attrn
       return false;
     }
 
-    value = fileAtt->values()->as_double(0);
+    auto values = fileAtt->values();
+    if (values == nullptr)
+      return false;
+
+    value = values->as_double(0);
 
     return true;
   } else {
@@ -1076,7 +1335,11 @@ bool NcFormat::getAttribute(const std::string &varname, const std::string &attrn
     if (!(varAtt = var->get_att(attrname.c_str())))
       return false;
 
-    value = varAtt->values()->as_double(0);
+    auto values = varAtt->values();
+    if (values == nullptr)
+      return false;
+
+    value = values->as_double(0);
 
     return true;
   }

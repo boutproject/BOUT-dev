@@ -31,10 +31,8 @@ private:
 
   class Laplacian* laplacianSolver;
 
-  const int nits = 10;
-
 protected:
-  int init(bool restart) {
+  int init(bool) override {
     SOLVE_FOR(n);
     SOLVE_FOR(solutionLap);
     SOLVE_FOR(solutionInv);
@@ -62,7 +60,7 @@ protected:
     return 0;
   }
 
-  int rhs(BoutReal time) {
+  int rhs(BoutReal) override {
     ddt(n) = 0.;
     ddt(solutionInv) = 0.;
     ddt(solutionLap) = 0.;
@@ -71,7 +69,7 @@ protected:
     solutionInv = mySolver.invert(n, 0.0);
     mesh->communicate(solutionInv);
 
-    passVerification = mySolver.verify(n);
+    passVerification = mySolver.verify(n, 1.e-3);
 
     solutionLap = laplacianSolver->solve(n);
 

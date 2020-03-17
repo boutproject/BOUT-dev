@@ -12,7 +12,7 @@ try:
 except:
   pass
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
+from boututils.run_wrapper import shell, shell_safe, launch_safe
 from boutdata.collect import collect
 
 import pickle
@@ -21,7 +21,7 @@ from sys import stdout
 
 from numpy import sqrt, max, abs, mean, array, log, concatenate, pi
 
-MPIRUN = getmpirun()
+
 
 print("Making MMS wave test")
 shell_safe("make > make.log")
@@ -56,7 +56,7 @@ for ny in nylist:
     # Command to run
     cmd = "./wave "+args
     # Launch using MPI
-    s, out = launch_safe(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
+    s, out = launch_safe(cmd, nproc=nproc, pipe=True)
 
     # Save output to log file
     with open("run.log."+str(ny), "w") as f:

@@ -9,7 +9,7 @@
 from __future__ import print_function
 from __future__ import division
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
+from boututils.run_wrapper import shell, shell_safe, launch_safe
 from boutdata.collect import collect
 import numpy as np
 from sys import stdout, exit
@@ -17,7 +17,7 @@ from sys import stdout, exit
 nprocs = [1,2]       # Number of processors to run on
 reltol = 1.e-3  # Allowed relative tolerance
 nthreads=1
-MPIRUN = getmpirun()
+
 
 print("Making invertable operator test")
 shell_safe("make > make.log")
@@ -29,7 +29,7 @@ def run(path, nproc, log=False):
     pipe = False
     if log != False:
         pipe = True
-    s, out = launch_safe("./invertable_operator -d "+path, runcmd=MPIRUN, nproc=nproc, mthread=nthreads, pipe=pipe)
+    s, out = launch_safe("./invertable_operator -d "+path, nproc=nproc, mthread=nthreads, pipe=pipe)
     if pipe:
         f = open(log, "w")
         f.write(out)

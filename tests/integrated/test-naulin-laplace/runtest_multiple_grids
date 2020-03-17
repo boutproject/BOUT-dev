@@ -13,11 +13,11 @@ except:
 tol = 2e-6 # Absolute tolerance
 numTests = 4 # We test 4 different boundary conditions (with slightly different inputs for each)
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
+from boututils.run_wrapper import shell, shell_safe, launch_safe
 from boutdata.collect import collect
 from sys import exit
 
-MPIRUN = getmpirun()
+
 
 print("Making LaplaceNaulin inversion test")
 shell("rm test_naulin_laplace")
@@ -35,7 +35,7 @@ for nproc in [1,2,4]:
         shell("rm data/BOUT.dmp.*.nc")
 
         print("   %d processors, input file is %s" %(nproc,inputfile))
-        s, out = launch_safe(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
+        s, out = launch_safe(cmd, nproc=nproc, pipe=True)
         with open("run.log."+str(nproc), "w") as f:
             f.write(out)
 

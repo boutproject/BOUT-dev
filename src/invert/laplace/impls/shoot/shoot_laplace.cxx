@@ -32,6 +32,7 @@
  */
 
 #include "shoot_laplace.hxx"
+#include <bout/mesh.hxx>
 #include <globals.hxx>
 #include <fft.hxx>
 #include <bout/constants.hxx>
@@ -53,9 +54,9 @@ LaplaceShoot::LaplaceShoot(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
   
   // Allocate memory
   int size = (localmesh->LocalNz)/2 + 1;
-  km = Array<dcomplex>(size);
-  kc = Array<dcomplex>(size);
-  kp = Array<dcomplex>(size);
+  km.reallocate(size);
+  kc.reallocate(size);
+  kp.reallocate(size);
 
   for(int i=0;i<size;i++) {
     km[i] = 0.0;
@@ -63,21 +64,18 @@ LaplaceShoot::LaplaceShoot(Options *opt, const CELL_LOC loc, Mesh *mesh_in)
     kp[i] = 0.0;
   }
 
-  rhsk = Array<dcomplex>(size);
+  rhsk.reallocate(size);
 
-  buffer = Array<BoutReal>(4 * maxmode);
+  buffer.reallocate(4 * maxmode);
 }
 
-const FieldPerp LaplaceShoot::solve(const FieldPerp &rhs) {
-  ASSERT1(localmesh = rhs.getMesh());
+FieldPerp LaplaceShoot::solve(const FieldPerp& rhs) {
+  ASSERT1(localmesh == rhs.getMesh());
   ASSERT1(rhs.getLocation() == location);
 
-  FieldPerp x(localmesh); // Result
-  x.setLocation(location);
-  x.allocate();
+  FieldPerp x{emptyFrom(rhs)}; // Result
   
   int jy = rhs.getIndex();  // Get the Y index
-  x.setIndex(jy);
 
   // Get the width of the boundary
   

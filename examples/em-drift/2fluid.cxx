@@ -43,8 +43,6 @@ private:
   BoutReal ShearFactor;
   BoutReal nu_factor;
 
-  int phi_flags, apar_flags; // Inversion flags
-
   // Communication object
   FieldGroup comms;
 
@@ -91,20 +89,17 @@ private:
     auto globalOptions = Options::root();
     auto options = globalOptions["2fluid"];
 
-    OPTION(options, AA, 2.0);
-    OPTION(options, ZZ, 1.0);
-    
-    OPTION(options, estatic, false);
-    OPTION(options, ZeroElMass, false);
-    OPTION(options, AparInEpar, true);
+    AA = options["AA"].withDefault(2.0);
+    ZZ = options["ZZ"].withDefault(1.0);
 
-    OPTION(options, zeff, 1.0);
-    OPTION(options, nu_perp, 0.0);
-    OPTION(options, ShearFactor, 1.0);
-    OPTION(options, nu_factor, 1.0);
+    estatic = options["estatic"].withDefault(false);
+    ZeroElMass = options["ZeroElMass"].withDefault(false);
+    AparInEpar = options["AparInEpar"].withDefault(true);
 
-    OPTION(options, phi_flags, 0);
-    OPTION(options, apar_flags, 0);
+    zeff = options["zeff"].withDefault(1.0);
+    nu_perp = options["nu_perp"].withDefault(0.0);
+    ShearFactor = options["ShearFactor"].withDefault(1.0);
+    nu_factor = options["nu_factor"].withDefault(1.0);
 
     evolve_ajpar = globalOptions["Ajpar"]["evolve"].withDefault(true);
 
@@ -231,13 +226,11 @@ private:
     SAVE_ONCE(Te_x, Ti_x, Ni_x, rho_s, wci, zeff, AA);
     
     // Create a solver for the Laplacian
-    phiSolver = Laplacian::create();
-    phiSolver->setFlags(phi_flags);
+    phiSolver = Laplacian::create(&options["phiSolver"]);
 
     if (! (estatic || ZeroElMass)) {
       // Create a solver for the electromagnetic potential
-      aparSolver = Laplacian::create();
-      aparSolver->setFlags(apar_flags);
+      aparSolver = Laplacian::create(&options["aparSolver"]);
       acoef = (-0.5 * beta_p / fmei) * Ni0;
       aparSolver->setCoefA(acoef);
     }

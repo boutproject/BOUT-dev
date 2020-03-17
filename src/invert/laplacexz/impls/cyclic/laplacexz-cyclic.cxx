@@ -34,14 +34,14 @@ LaplaceXZcyclic::LaplaceXZcyclic(Mesh *m, Options *options, const CELL_LOC loc) 
   // including boundaries but not guard cells
   nloc = xend - xstart + 1;
 
-  acoef  = Matrix<dcomplex>(nsys, nloc);
-  bcoef  = Matrix<dcomplex>(nsys, nloc);
-  ccoef  = Matrix<dcomplex>(nsys, nloc);
-  xcmplx = Matrix<dcomplex>(nsys, nloc);
-  rhscmplx = Matrix<dcomplex>(nsys, nloc);
+  acoef.reallocate(nsys, nloc);
+  bcoef.reallocate(nsys, nloc);
+  ccoef.reallocate(nsys, nloc);
+  xcmplx.reallocate(nsys, nloc);
+  rhscmplx.reallocate(nsys, nloc);
 
-  k1d = Array<dcomplex>((m->LocalNz) / 2 + 1);
-  k1d_2 = Array<dcomplex>((m->LocalNz) / 2 + 1);
+  k1d.reallocate((m->LocalNz) / 2 + 1);
+  k1d_2.reallocate((m->LocalNz) / 2 + 1);
 
   // Create a cyclic reduction object, operating on dcomplex values
   cr = bout::utils::make_unique<CyclicReduce<dcomplex>>(localmesh->getXcomm(), nloc);
@@ -55,7 +55,7 @@ LaplaceXZcyclic::LaplaceXZcyclic(Mesh *m, Options *options, const CELL_LOC loc) 
   Field2D zero(0., localmesh);
   one.setLocation(location);
   zero.setLocation(location);
-  setCoefs(one, zero);
+  LaplaceXZcyclic::setCoefs(one, zero);
 }
 
 void LaplaceXZcyclic::setCoefs(const Field2D &A2D, const Field2D &B2D) {
@@ -256,9 +256,7 @@ Field3D LaplaceXZcyclic::solve(const Field3D &rhs, const Field3D &x0) {
 
   // FFT back to real space
 
-  Field3D result(localmesh);
-  result.allocate();
-  result.setLocation(location);
+  Field3D result{emptyFrom(rhs)};
 
   ind = 0;
   for(int y=localmesh->ystart; y <= localmesh->yend; y++) {

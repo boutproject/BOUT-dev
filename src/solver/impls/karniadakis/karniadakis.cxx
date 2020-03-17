@@ -50,6 +50,11 @@ KarniadakisSolver::KarniadakisSolver(Options *options) : Solver(options) {
 int KarniadakisSolver::init(int nout, BoutReal tstep) {
   TRACE("Initialising Karniadakis solver");
   
+  output_error << "\nWARNING:\n"
+    "        The Karniadakis solver is now deprecated and will be removed in BOUT++ 5.0!\n"
+    "        Try the \"splitrk\", \"imexbdf2\" (requires PETSc) or \"arkode\" (requires SUNDIALS)\n"
+    "        solvers for other split-schemes\n\n";
+
   /// Call the generic initialisation first
   if (Solver::init(nout, tstep))
     return 1;
@@ -74,16 +79,16 @@ int KarniadakisSolver::init(int nout, BoutReal tstep) {
   
   // Allocate memory
 
-  f1 = Array<BoutReal>(nlocal);
-  f0 = Array<BoutReal>(nlocal);
-  fm1 = Array<BoutReal>(nlocal);
-  fm2 = Array<BoutReal>(nlocal);
+  f1.reallocate(nlocal);
+  f0.reallocate(nlocal);
+  fm1.reallocate(nlocal);
+  fm2.reallocate(nlocal);
 
-  S0 = Array<BoutReal>(nlocal);
-  Sm1 = Array<BoutReal>(nlocal);
-  Sm2 = Array<BoutReal>(nlocal);
+  S0.reallocate(nlocal);
+  Sm1.reallocate(nlocal);
+  Sm2.reallocate(nlocal);
 
-  D0 = Array<BoutReal>(nlocal);
+  D0.reallocate(nlocal);
 
   first_time = true;
 
@@ -96,7 +101,7 @@ int KarniadakisSolver::init(int nout, BoutReal tstep) {
   // Make sure timestep divides into tstep
   
   // Number of sub-steps, rounded up
-  nsubsteps = static_cast<int>(0.5 + tstep / timestep);
+  nsubsteps = static_cast<int>(std::round(tstep / timestep));
 
   output.write("\tNumber of substeps: %e / %e -> %d\n", tstep, timestep, nsubsteps);
 

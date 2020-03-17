@@ -36,8 +36,7 @@
 #include <bout/scorepwrapper.hxx>
 #include <interpolation.hxx>
 
-Vector2D::Vector2D(Mesh *localmesh)
-    : x(localmesh), y(localmesh), z(localmesh), covariant(true), deriv(nullptr), location(CELL_CENTRE) {}
+Vector2D::Vector2D(Mesh* localmesh) : x(localmesh), y(localmesh), z(localmesh) {}
 
 Vector2D::Vector2D(const Vector2D &f)
     : x(f.x), y(f.y), z(f.z), covariant(f.covariant), deriv(nullptr),
@@ -89,8 +88,7 @@ void Vector2D::toCovariant() {
       const auto metric = localmesh->getCoordinates(location);
 
       // Need to use temporary arrays to store result
-      Coordinates::metric_field_type gx(localmesh), gy(localmesh), gz(localmesh);
-      gx.allocate(); gy.allocate(); gz.allocate();
+      Coordinates::metric_field_type gx{emptyFrom(x)}, gy{emptyFrom(y)}, gz{emptyFrom(z)};
 
       BOUT_FOR(i, x.getRegion("RGN_ALL")){
         gx[i] = metric->g_11[i]*x[i] + metric->g_12[i]*y[i] + metric->g_13[i]*z[i];
@@ -111,7 +109,6 @@ void Vector2D::toContravariant() {
   if(covariant) {
     // multiply by g^{ij}
     Mesh *localmesh = x.getMesh();
-    Coordinates::metric_field_type gx(localmesh), gy(localmesh), gz(localmesh);
 
     if (location == CELL_VSHIFT) {
       Coordinates *metric_x, *metric_y, *metric_z;
@@ -143,8 +140,7 @@ void Vector2D::toContravariant() {
       const auto metric = localmesh->getCoordinates(location);
 
       // Need to use temporary arrays to store result
-      Coordinates::metric_field_type gx(localmesh), gy(localmesh), gz(localmesh);
-      gx.allocate(); gy.allocate(); gz.allocate();
+      Coordinates::metric_field_type gx{emptyFrom(x)}, gy{emptyFrom(y)}, gz{emptyFrom(z)};
 
       BOUT_FOR(i, x.getRegion("RGN_ALL")){
         gx[i] = metric->g11[i]*x[i] + metric->g12[i]*y[i] + metric->g13[i]*z[i];
@@ -373,7 +369,7 @@ const Coordinates::metric_field_type Vector2D::operator*(const Vector2D &rhs) co
   ASSERT2(location == rhs.getLocation());
 
   Mesh *localmesh = x.getMesh();
-  Coordinates::metric_field_type result(localmesh);
+  Coordinates::metric_field_type result{emptyFrom(x)};
 
   if(rhs.covariant ^ covariant) {
     // Both different - just multiply components
@@ -472,7 +468,8 @@ const Vector3D operator*(const Field3D &lhs, const Vector2D &rhs) {
  ***************************************************************/
 
 // Return the magnitude of a vector
-const Coordinates::metric_field_type abs(const Vector2D &v, REGION region) {
+const Coordinates::metric_field_type
+abs(const Vector2D &v, const std::string& region) {
   return sqrt(v*v, region);
 }
 

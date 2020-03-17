@@ -17,10 +17,10 @@ private:
   Field3D Div_par_integrate(const Field3D &f) {
     Field3D f_B = f / Bxyz;
 
-    f_B.splitYupYdown();
-    mesh->getParallelTransform().integrateYUpDown(f_B);
+    f_B.splitParallelSlices();
+    mesh->getCoordinates()->getParallelTransform().integrateParallelSlices(f_B);
 
-    // integrateYUpDown replaces all yup/down points, so the boundary conditions
+    // integrateParallelSlices replaces all yup/down points, so the boundary conditions
     // now need to be applied. If Bxyz has neumann parallel boundary conditions
     // then the boundary condition is simpler since f = 0 gives f_B=0 boundary condition.
 
@@ -56,15 +56,15 @@ private:
   }
 
 protected:
-  int init(bool restarting) override {
+  int init(bool UNUSED(restarting)) override {
 
     // Get the magnetic field
     mesh->get(Bxyz, "B");
 
-    auto options = Options::root()["fciwave"];
-    OPTION(options, div_integrate, true);
-    OPTION(options, log_density, false);
-    OPTION(options, background, false);
+    auto& options = Options::root()["fciwave"];
+    div_integrate = options["div_integrate"].withDefault(true);
+    log_density = options["log_density"].withDefault(false);
+    background = options["background"].withDefault(false);
     log_background = log(background);
 
     // Neumann boundaries simplifies parallel derivatives
@@ -85,7 +85,7 @@ protected:
     return 0;
   }
 
-  int rhs(BoutReal t) override {
+  int rhs(BoutReal UNUSED(time)) override {
     if (log_density) {
       mesh->communicate(logn, nv);
       // Apply boundary condition to log(n)
@@ -93,7 +93,7 @@ protected:
       logn.applyParallelBoundary();
 
       n = exp(logn);
-      n.splitYupYdown();
+      n.splitParallelSlices();
       n.yup() = exp(logn.yup());
       n.ydown() = exp(logn.ydown());
     } else {
@@ -107,7 +107,7 @@ protected:
     Field3D momflux = nv * v;
 
     // Apply boundary conditions to v
-    v.splitYupYdown();
+    v.splitParallelSlices();
     v.yup().allocate();
     v.ydown().allocate();
     v.applyParallelBoundary();
@@ -115,7 +115,7 @@ protected:
     // Ensure that boundary conditions are consistent
     // between v, nv and momentum flux
 
-    momflux.splitYupYdown();
+    momflux.splitParallelSlices();
     for (const auto &reg : mesh->getBoundariesPar()) {
       // Using the values of density and velocity on the boundary
       const Field3D &n_next = n.ynext(reg->dir);

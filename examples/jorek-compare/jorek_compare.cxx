@@ -36,8 +36,6 @@ private:
   BoutReal viscos_par, viscos_perp, viscos_coll; // Viscosity coefficients
   BoutReal hyperresist;                          // Hyper-resistivity coefficient
 
-  int phi_flags;
-
   // Constants
   const BoutReal MU0 = 4.0e-7 * PI;
   const BoutReal Charge = 1.60217646e-19;   // electron charge e (C)
@@ -162,7 +160,7 @@ private:
     } else
       mesh->get(viscos_par, "viscos_par");
 
-    OPTION(options, viscos_coll, -1.0);
+    viscos_coll = options["viscos_coll"].withDefault(-1.0);
 
     // Load curvature term
     b0xcv.covariant = false;  // Read contravariant components
@@ -187,26 +185,24 @@ private:
     mesh->get(hthe, "hthe"); // m
     mesh->get(I, "sinty");   // m^-2 T^-1
 
-    OPTION(options, nonlinear, false);
-    OPTION(options, full_bfield, false);
-    OPTION(options, flux_method, false);
+    nonlinear = options["nonlinear"].withDefault(false);
+    full_bfield = options["full_bfield"].withDefault(false);
+    flux_method = options["flux_method"].withDefault(false);
 
-    OPTION(options, jpar_bndry_width, -1);
+    jpar_bndry_width = options["jpar_bndry_width"].withDefault(-1);
 
-    OPTION(options, hyperresist, -1);
+    hyperresist = options["hyperresist"].withDefault(-1);
 
-    OPTION(options, electron_density, false);
-    OPTION(options, vorticity_momentum, false);
-    OPTION(options, include_profiles, false);
-    OPTION(options, parallel_lc, true);
+    electron_density = options["electron_density"].withDefault(false);
+    vorticity_momentum = options["vorticity_momentum"].withDefault(false);
+    include_profiles = options["include_profiles"].withDefault(false);
+    parallel_lc = options["parallel_lc"].withDefault(true);
 
-    OPTION(options, phi_flags, 0);
+    low_pass_z = options["low_pass_z"].withDefault(-1); // Default is no filtering
 
-    OPTION(options, low_pass_z, -1); // Default is no filtering
+    Wei = options["Wei"].withDefault(1.0);
 
-    OPTION(options, Wei, 1.0);
-
-    OPTION(options, ohmic_heating, true);
+    ohmic_heating = options["ohmic_heating"].withDefault(true);
 
     switch (options["bracket_method"].withDefault<int>(0)) {
     case 0: {
@@ -358,7 +354,6 @@ private:
     
     // Create a solver for the Laplacian
     phiSolver = Laplacian::create();
-    phiSolver->setFlags(phi_flags);
     if (vorticity_momentum) {
       phiSolver->setCoefC(rho0);
     }

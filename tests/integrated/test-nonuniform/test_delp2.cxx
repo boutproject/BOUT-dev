@@ -10,7 +10,7 @@
 #include <bout.hxx>
 #include <boutmain.hxx>
 
-int physics_init(bool restarting) {
+int physics_init(bool UNUSED(restarting)) {
   Field3D input, reference, result;
   
   GRID_LOAD(input);                  // Read input from file
@@ -34,7 +34,7 @@ int physics_init(bool restarting) {
   return 1;
 }
 
-int physics_run(BoutReal t) {
+int physics_run(BoutReal UNUSED(t)) {
   // Doesn't do anything
   return 1;
 }

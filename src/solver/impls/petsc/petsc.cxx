@@ -125,7 +125,6 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   nout = NOUT;
   tstep = TIMESTEP;
 
-  PetscInt n3d = n3Dvars();       // Number of 3D variables
   PetscInt local_N = getLocalN(); // Number of evolving variables on this processor
 
   /********** Get total problem size **********/
@@ -168,15 +167,24 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   // Set user provided RHSFunction
   // Need to duplicate the solution vector for the residual
   Vec rhs_vec;
-  ierr = VecDuplicate(u,&rhs_vec);
+  ierr = VecDuplicate(u,&rhs_vec);CHKERRQ(ierr);
   ierr = TSSetRHSFunction(ts,rhs_vec,solver_f,this);CHKERRQ(ierr);
-  ierr = VecDestroy(&rhs_vec);
+  ierr = VecDestroy(&rhs_vec);CHKERRQ(ierr);
 
   ///////////// GET OPTIONS /////////////
-  int MXSUB = mesh->xend - mesh->xstart + 1;
+  // Compute band_width_default from actually added fields, to allow for multiple Mesh objects
+  //
+  // Previous implementation was equivalent to:
+  //   int MXSUB = mesh->xend - mesh->xstart + 1;
+  //   int band_width_default = n3Dvars()*(MXSUB+2);
+  int band_width_default = 0;
+  for (const auto& fvar : f3d) {
+    Mesh* localmesh = fvar.var->getMesh();
+    band_width_default += localmesh->xend - localmesh->xstart + 3;
+  }
 
-  OPTION(options, mudq, n3d*(MXSUB+2));
-  OPTION(options, mldq, n3d*(MXSUB+2));
+  OPTION(options, mudq, band_width_default);
+  OPTION(options, mldq, band_width_default);
   OPTION(options, mukeep, 0);
   OPTION(options, mlkeep, 0);
   OPTION(options, use_precon, false);
@@ -286,7 +294,7 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   if(use_jacobian && (jacfunc != nullptr)) {
     // Use a user-supplied Jacobian function
     ierr = MatCreateShell(comm, local_N, local_N, neq, neq, this, &Jmf); CHKERRQ(ierr);
-    ierr = MatShellSetOperation(Jmf, MATOP_MULT, (void (*)(void)) PhysicsJacobianApply); CHKERRQ(ierr);
+    ierr = MatShellSetOperation(Jmf, MATOP_MULT, (void (*)()) PhysicsJacobianApply); CHKERRQ(ierr);
     ierr = TSSetIJacobian(ts, Jmf, Jmf, solver_ijacobian, this); CHKERRQ(ierr);
   }else {
     // Use finite difference approximation
@@ -327,7 +335,7 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
     ierr = PCShellSetName(pc,"PhysicsPreconditioner");CHKERRQ(ierr);
 
     // Need a callback for IJacobian to get shift 'alpha'
-    ierr = TSSetIJacobian(ts, Jmf, Jmf, solver_ijacobian, this);
+    ierr = TSSetIJacobian(ts, Jmf, Jmf, solver_ijacobian, this);CHKERRQ(ierr);
 
     // Use right preconditioner
     ierr = KSPSetPCSide(ksp, PC_RIGHT);CHKERRQ(ierr);
@@ -376,14 +384,14 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
     PetscInt dof = n3Dvars();
 
     // Maximum allowable size of stencil in x is the number of guard cells
-    PetscInt stencil_width = mesh->xstart;
+    PetscInt stencil_width_estimate = options->operator[]("stencil_width_estimate").withDefault(bout::globals::mesh->xstart);
     // This is the stencil in each direction (*2) along each dimension
     // (*3), plus the point itself. Not sure if this is correct
     // though, on several levels:
     //   1. Ignores corner points used in e.g. brackets
     //   2. Could have different stencil widths in each dimension
     //   3. FFTs couple every single point together
-    PetscInt cols = stencil_width*2*3+1;
+    PetscInt cols = stencil_width_estimate*2*3+1;
     PetscInt prealloc; // = cols*dof;
 
     ierr = MatCreate(comm,&J);CHKERRQ(ierr);
@@ -444,7 +452,7 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   
   ierr = MatFDColoringSetFromOptions(matfdcoloring);CHKERRQ(ierr);
   ierr = ISColoringDestroy(&iscoloring);CHKERRQ(ierr);
-  ierr = MatFDColoringSetFunction(matfdcoloring,(PetscErrorCode (*)(void))solver_f,this);CHKERRQ(ierr);
+  ierr = MatFDColoringSetFunction(matfdcoloring,(PetscErrorCode (*)())solver_f,this);CHKERRQ(ierr);
   ierr = SNESSetJacobian(snes,J,J,SNESComputeJacobianDefaultColor,matfdcoloring);CHKERRQ(ierr);
 
   // Write J in binary for study - see ~petsc/src/mat/examples/tests/ex124.c
@@ -463,7 +471,7 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
     ierr = TSComputeRHSJacobian(ts,simtime,u,&J,&J,&J_structure);CHKERRQ(ierr);
 #endif
 
-    ierr = PetscSynchronizedPrintf(comm, "[%d] TSComputeRHSJacobian is done\n",rank);
+    ierr = PetscSynchronizedPrintf(comm, "[%d] TSComputeRHSJacobian is done\n",rank);CHKERRQ(ierr);
 
 #if PETSC_VERSION_GE(3,5,0)
     ierr = PetscSynchronizedFlush(comm,PETSC_STDOUT);CHKERRQ(ierr);
@@ -627,10 +635,8 @@ PetscErrorCode PetscSolver::jac(Vec x, Vec y) {
 #undef __FUNCT__
 #define __FUNCT__ "solver_f"
 PetscErrorCode solver_f(TS ts, BoutReal t, Vec globalin, Vec globalout, void *f_data) {
-  PetscSolver *s;
-
   PetscFunctionBegin;
-  s = (PetscSolver*) f_data;
+  auto* s = static_cast<PetscSolver*>(f_data);
   PetscLogEventBegin(s->solver_event,0,0,0,0);
   s->rhs(ts, t, globalin, globalout);
   PetscLogEventEnd(s->solver_event,0,0,0,0);
@@ -700,7 +706,7 @@ PetscErrorCode solver_ijacobian(TS ts, BoutReal t, Vec globalin, Vec UNUSED(glob
   ierr = solver_rhsjacobian(ts, t, globalin, J, Jpre, f_data); CHKERRQ(ierr);
 
   ////// Save data for preconditioner
-  PetscSolver *solver = (PetscSolver*) f_data;
+  auto* solver = (PetscSolver*)f_data;
 
   if(solver->diagnose)
     output << "Saving state, t = " << t << ", a = " << a << endl;
@@ -832,7 +838,7 @@ PetscErrorCode PhysicsJacobianApply(Mat J, Vec x, Vec y) {
 #define __FUNCT__ "PetscMonitor"
 PetscErrorCode PetscMonitor(TS ts, PetscInt UNUSED(step), PetscReal t, Vec X, void *ctx) {
   PetscErrorCode ierr;
-  PetscSolver *s = (PetscSolver *)ctx;
+  auto* s = static_cast<PetscSolver*>(ctx);
   PetscReal tfinal, dt;
   Vec interpolatedX;
   const PetscScalar *x;
@@ -879,7 +885,7 @@ PetscErrorCode PetscSNESMonitor(SNES snes, PetscInt its, PetscReal norm, void *c
   PetscInt linear_its=0;
   BoutReal tmp = .0;
   snes_info row;
-  PetscSolver *s = (PetscSolver*)ctx;
+  auto *s = static_cast<PetscSolver*>(ctx);
 
   PetscFunctionBegin;
 

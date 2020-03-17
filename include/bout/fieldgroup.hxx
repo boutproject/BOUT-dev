@@ -18,10 +18,12 @@
 /// however Vector2D and Vector3D are stored by reference to their
 /// components (x,y,z) as Field2D or Field3D objects.
 class FieldGroup {
- public:
-  FieldGroup() {}
-
-  FieldGroup(const FieldGroup &other) : fvec(other.fvec), f3vec(other.f3vec) {}
+public:
+  FieldGroup() = default;
+  FieldGroup(const FieldGroup& other) = default;
+  FieldGroup(FieldGroup&& other) = default;
+  FieldGroup& operator=(const FieldGroup& other) = default;
+  FieldGroup& operator=(FieldGroup&& other) = default;
 
   /// Constructor with a single FieldData \p f
   FieldGroup(FieldData &f) { fvec.push_back(&f); }
@@ -168,7 +170,7 @@ class FieldGroup {
   void clear() {fvec.clear(); f3vec.clear(); }
 
   /// Iteration over all fields
-  typedef std::vector<FieldData*>::iterator iterator;
+  using iterator = std::vector<FieldData*>::iterator;
   iterator begin() {
     return fvec.begin();
   }
@@ -177,7 +179,7 @@ class FieldGroup {
   }
 
   /// Const iteration over all fields
-  typedef std::vector<FieldData*>::const_iterator const_iterator;
+  using const_iterator = std::vector<FieldData*>::const_iterator;
   const_iterator begin() const {
     return fvec.begin();
   }

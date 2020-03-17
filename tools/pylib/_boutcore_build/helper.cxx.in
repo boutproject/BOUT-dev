@@ -6,6 +6,7 @@ cat <<EOF
 #include <globals.hxx>
 #include <derivs.hxx>
 #include <difops.hxx>
+#include <bout/mesh.hxx>
 #include <invert_laplace.hxx>
 EOF
 for ftype in $fields
@@ -163,7 +164,7 @@ void c_set_f2d_part_(Field2D * f2d, const double data,int xs,int xe, int dx,int 
 }
 
 Mesh * c_get_global_mesh(){
-  return mesh;
+  return bout::globals::mesh;
 }
 
 void c_mesh_normalise(Mesh * msh, double norm){

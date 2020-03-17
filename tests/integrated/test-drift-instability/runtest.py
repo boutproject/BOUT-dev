@@ -17,7 +17,7 @@ nproc = 2       # Number of processors to run on
 omega_tol = 1e-2
 gamma_tol = 1e-2
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe, getmpirun
+from boututils.run_wrapper import shell, shell_safe, launch_safe
 from boututils.file_import import file_import
 from boututils.calculus import deriv
 from boututils.linear_regression import linear_regression
@@ -27,7 +27,7 @@ import numpy as np
 from sys import exit ,argv
 
 nthreads=1
-MPIRUN = getmpirun()
+
 
 print("Making resistive drift instability test")
 shell_safe("make > make.log")
@@ -80,7 +80,7 @@ for zeff in zlist:
     print("Running drift instability test, zeff = ", zeff)
 
     # Run the case
-    s, out = launch_safe("./2fluid timestep="+str(timestep), runcmd=MPIRUN, nproc=nproc, mthread=nthreads, pipe=True)
+    s, out = launch_safe("./2fluid timestep="+str(timestep), nproc=nproc, mthread=nthreads, pipe=True)
     f = open("run.log."+str(zeff), "w")
     f.write(out)
     f.close()

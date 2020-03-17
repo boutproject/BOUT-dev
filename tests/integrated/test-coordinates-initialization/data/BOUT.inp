@@ -1,0 +1,9 @@
+
+[mesh]
+staggergrids = true
+nx = 10
+ny = 2
+nz = 1
+
+# include dx to be loaded, forces Coordinates constructor to communicate
+dx = 1.

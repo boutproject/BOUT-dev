@@ -3,6 +3,7 @@
 #include "bout/sys/expressionparser.hxx"
 #include "bout_types.hxx"
 #include "unused.hxx"
+#include "test_extras.hxx"
 
 #include <vector>
 
@@ -15,11 +16,13 @@ public:
 
 class ExpressionParserTest : public ::testing::Test {
 public:
+  ~ExpressionParserTest() override = default;
   ExpressionParserSubClass parser;
   std::vector<double> x_array = {-1., 0., 1., 5., 10., 3.14e8};
   std::vector<double> y_array = {-1., 0., 1., 5., 10., 3.14e8};
   std::vector<double> z_array = {-1., 0., 1., 5., 10., 3.14e8};
   std::vector<double> t_array = {-1., 0., 1., 5., 10., 3.14e8};
+  WithQuietOutput quiet_warn{output_warn};
 };
 
 /// For testing, a generator function of two inputs
@@ -27,23 +30,23 @@ class BinaryGenerator : public FieldGenerator {
 public:
   BinaryGenerator(std::shared_ptr<FieldGenerator> a = nullptr,
                   std::shared_ptr<FieldGenerator> b = nullptr)
-      : a(a), b(b) {}
+      : a(std::move(a)), b(std::move(b)) {}
 
   std::shared_ptr<FieldGenerator>
-  clone(const std::list<std::shared_ptr<FieldGenerator>> args) {
+  clone(const std::list<std::shared_ptr<FieldGenerator>> args) override {
     if (args.size() != 2) {
       throw ParseException(
-          "Incorrect number of arguments to increment function. Expecting 2, got %d",
+          "Incorrect number of arguments to increment function. Expecting 2, got %zu",
           args.size());
     }
 
     return std::make_shared<BinaryGenerator>(args.front(), args.back());
   }
 
-  BoutReal generate(BoutReal x, BoutReal y, BoutReal z, BoutReal t) {
+  BoutReal generate(BoutReal x, BoutReal y, BoutReal z, BoutReal t) override {
     return a->generate(x, y, z, t) + b->generate(x, y, z, t);
   }
-  const std::string str() {
+  std::string str() const override {
     return std::string{"add(" + a->str() + ", " + b->str() + ")"};
   }
 
@@ -53,23 +56,26 @@ private:
 
 class IncrementGenerator : public FieldGenerator {
 public:
-  IncrementGenerator(std::shared_ptr<FieldGenerator> gen = nullptr) : gen(gen) {}
+  IncrementGenerator(std::shared_ptr<FieldGenerator> gen = nullptr)
+      : gen(std::move(gen)) {}
 
   std::shared_ptr<FieldGenerator>
-  clone(const std::list<std::shared_ptr<FieldGenerator>> args) {
+  clone(const std::list<std::shared_ptr<FieldGenerator>> args) override {
     if (args.size() != 1) {
       throw ParseException(
           "Incorrect number of arguments to increment function. Expecting 1, got %d",
-          args.size());
+          static_cast<int>(args.size()));
     }
 
     return std::make_shared<IncrementGenerator>(args.front());
   }
 
-  BoutReal generate(BoutReal x, BoutReal y, BoutReal z, BoutReal t) {
+  BoutReal generate(BoutReal x, BoutReal y, BoutReal z, BoutReal t) override {
     return gen->generate(x, y, z, t) + 1;
   }
-  const std::string str() { return std::string{"increment(" + gen->str() + ")"}; }
+  std::string str() const override {
+    return std::string{"increment(" + gen->str() + ")"};
+  }
 
 private:
   std::shared_ptr<FieldGenerator> gen;
@@ -78,21 +84,21 @@ private:
 // Function that takes no arguments and returns 4.0
 class NullaryGenerator : public FieldGenerator {
 public:
-  NullaryGenerator() {}
+  NullaryGenerator() = default;
 
   std::shared_ptr<FieldGenerator>
-  clone(const std::list<std::shared_ptr<FieldGenerator>> args) {
+  clone(const std::list<std::shared_ptr<FieldGenerator>> args) override {
     if (args.size() != 0) {
       throw ParseException(
           "Incorrect number of arguments to nullary function. Expecting 0, got %d",
-          args.size());
+          static_cast<int>(args.size()));
     }
 
     return std::make_shared<NullaryGenerator>();
   }
 
   BoutReal generate(BoutReal UNUSED(x), BoutReal UNUSED(y), BoutReal UNUSED(z),
-                    BoutReal UNUSED(t)) {
+                    BoutReal UNUSED(t)) override {
     return 4.0;
   }
 };

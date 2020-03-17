@@ -15,8 +15,8 @@
 #include "bout/openmpwrap.hxx"
 #include "bout/region.hxx"
 
-typedef std::chrono::time_point<std::chrono::steady_clock> SteadyClock;
-typedef std::chrono::duration<double> Duration;
+using SteadyClock = std::chrono::time_point<std::chrono::steady_clock>;
+using Duration = std::chrono::duration<double>;
 using namespace std::chrono;
 
 #define ITERATOR_TEST_BLOCK(NAME, ...)		\
@@ -35,13 +35,13 @@ int main(int argc, char **argv) {
   std::vector<Duration> times;
   
   //Get options root
-  Options *globalOptions = Options::getRoot();
-  Options *modelOpts = globalOptions->getSection("performanceIterator");
+  auto globalOptions = Options::root();
+  auto modelOpts = globalOptions["performanceIterator"];
   int NUM_LOOPS;
-  OPTION(modelOpts, NUM_LOOPS, 100);
+  NUM_LOOPS = modelOpts["NUM_LOOPS"].withDefault(100);
   bool profileMode, includeHeader;
-  OPTION(modelOpts, profileMode, false);
-  OPTION(modelOpts, includeHeader, false);
+  profileMode = modelOpts["profileMode"].withDefault(false);
+  includeHeader = modelOpts["includeHeader"].withDefault(false);
 
   ConditionalOutput time_output(Output::getInstance());
   time_output.enable(true);

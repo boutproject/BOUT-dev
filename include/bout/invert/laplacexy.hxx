@@ -55,7 +55,7 @@ public:
   }
   void setCoefs(const Field2D& UNUSED(A), const Field2D& UNUSED(B)) {}
   const Field2D solve(const Field2D& UNUSED(rhs), const Field2D& UNUSED(x0)) {
-    return {};
+    throw BoutException("LaplaceXY requires PETSc. No LaplaceXY available");
   }
 };
 
@@ -157,12 +157,6 @@ private:
    */
   int globalIndex(int x, int y);  
   Field2D indexXY; ///< Global index (integer stored as BoutReal)
-
-  /*!
-   * Round a number to the nearest integer
-   */
-  int roundInt(BoutReal f);
-  
 };
 
 #endif // BOUT_HAS_PETSC

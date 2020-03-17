@@ -99,9 +99,9 @@ BoutReal AA; // ion mass in units of the proton mass; AA=Mi/Mp
 bool filter_z;
 int filter_z_mode;
 int low_pass_z;
-int zonal_flow;
-int zonal_field;
-int zonal_bkgd;
+bool zonal_flow;
+bool zonal_field;
+bool zonal_bkgd;
 
 BoutReal vac_lund, core_lund;       // Lundquist number S = (Tau_R / Tau_A). -ve -> infty
 BoutReal vac_resist,  core_resist;  // The resistivities (just 1 / S)
@@ -245,12 +245,12 @@ int physics_init(bool restarting) {
   OPTION(options, dia_fact,          1.0);    // Scale diamagnetic effects by this factor
 
   // Toroidal filtering
-  OPTION(options, filter_z,          false);  // Filter a single n
+  OPTION(options, filter_z,      false);      // Filter a single n
   OPTION(options, filter_z_mode,     1);
   OPTION(options, low_pass_z,       -1);      // Low-pass filter
-  OPTION(options, zonal_flow,       -1);      // zonal flow filter
-  OPTION(options, zonal_field,      -1);      // zonal field filter
-  OPTION(options, zonal_bkgd,       -1);      // zonal background P filter
+  OPTION(options, zonal_flow,    false);      // zonal flow filter
+  OPTION(options, zonal_field,   false);      // zonal field filter
+  OPTION(options, zonal_bkgd,    false);      // zonal background P filter
 
   // Vacuum region control
   OPTION(options, vacuum_pressure,   0.02);   // Fraction of peak pressure

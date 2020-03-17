@@ -109,7 +109,7 @@ public:
   /*!
    * Create an array of given length
    */
-  Array(int len) {
+  Array(size_type len) {
     ptr = get(len);
   }
   
@@ -146,9 +146,11 @@ public:
   }
 
   /*!
-   * Resize the array to \p new_size
+   * Reallocate the array with size = \p new_size
+   *
+   * Note that this invalidates the existing data!
    */
-  void resize(int new_size) {
+  void reallocate(size_type new_size) {
     release(ptr);
     ptr = get(new_size);
   }
@@ -203,7 +205,7 @@ public:
   /*!
    * Return size of the array. Zero if the array is empty.
    */
-  int size() const noexcept {
+  size_type size() const noexcept {
     if(!ptr)
       return 0;
 
@@ -262,11 +264,11 @@ public:
    * or if ind is out of bounds. For efficiency no checking is performed,
    * so the user should perform checks.
    */
-  T& operator[](int ind) {
+  T& operator[](size_type ind) {
     ASSERT3(0 <= ind && ind < size());
     return ptr->operator[](ind);
   }
-  const T& operator[](int ind) const {
+  const T& operator[](size_type ind) const {
     ASSERT3(0 <= ind && ind < size());
     return ptr->operator[](ind);
   }
@@ -292,11 +294,11 @@ private:
    */
   dataPtrType ptr;
 
-  typedef std::map< int, std::vector<dataPtrType> > storeType;
-  typedef std::vector< storeType > arenaType;
+  using storeType = std::map<size_type, std::vector<dataPtrType>>;
+  using arenaType = std::vector<storeType>;
 
   /*!
-   * This maps from array size (int) to vectors of pointers to dataBlock objects
+   * This maps from array size (size_type) to vectors of pointers to dataBlock objects
    *
    * By putting the static store inside a function it is initialised on first use,
    * and doesn't need to be separately declared for each type T
@@ -346,10 +348,14 @@ private:
   }
   
   /*!
-   * Returns a pointer to an dataBlock object with no
+   * Returns a pointer to a dataBlock object of size \p len with no
    * references. This is either from the store, or newly allocated
+   *
+   * Expects \p len >= 0
    */
-  dataPtrType get(int len) {
+  dataPtrType get(size_type len) {
+    ASSERT3(len >= 0);
+
     dataPtrType p;
 
     auto& st = store()[len];

@@ -12,6 +12,8 @@
 #ifndef __EXPR_H__
 #define __EXPR_H__
 
+#warning expr.hxx is deprecated. Do not use!
+
 #include <field3d.hxx>
 #include <field2d.hxx>
 #include <bout/mesh.hxx>
@@ -19,7 +21,8 @@
 /// Literal class to capture BoutReal values in expressions
 class Literal {
  public:
-  typedef Literal type; ///< Type of this expression
+  /// Type of this expression
+  using type = Literal;
 
   Literal(BoutReal v) : val(v) {}
   ~Literal() {}
@@ -30,20 +33,20 @@ private:
 
 class Field3DExpr {
 public:
-  typedef Field3D type;
+  using type = Field3D;
   
   Field3DExpr(const Field3D &f) : data(&f(0,0,0)) {}
-  const BoutReal& operator()(int x, int y, int z) const { return data[(x*mesh->LocalNy + y)*mesh->LocalNz + z]; }
+  const BoutReal& operator()(int x, int y, int z) const { return data[(x*bout::globals::mesh->LocalNy + y)*bout::globals::mesh->LocalNz + z]; }
 private:
   const BoutReal *data;
 };
 
 class Field2DExpr {
 public:
-  typedef Field2D type;
+  using type = Field2D;
   
   Field2DExpr(const Field2D &f) : data(&f(0,0)) {}
-  const BoutReal& operator()(int x, int y, int z) const { return data[x*mesh->LocalNy + y]; }
+  const BoutReal& operator()(int x, int y, int z) const { return data[x*bout::globals::mesh->LocalNy + y]; }
 private:
   const BoutReal *data;
 };
@@ -52,22 +55,22 @@ private:
 
 template <class ExprT>
 struct exprTraits {
-  typedef ExprT expr_type;
+  using expr_type = ExprT;
 };
 
 template <>
 struct exprTraits<double> {
-  typedef Literal expr_type;
+  using expr_type = Literal;
 };
 
 template <>
 struct exprTraits<float> {
-  typedef Literal expr_type;
+  using expr_type = Literal;
 };
 
 template <>
 struct exprTraits<int> {
-  typedef Literal expr_type;
+  using expr_type = Literal;
 };
 
 ///////////////////////////////////////////////
@@ -75,31 +78,31 @@ struct exprTraits<int> {
 
 template <typename T>
 struct asExpr {
-  typedef T type;
+  using type = T;
   static const T& getExpr(const T& x) {return x;}
 };
 
 template <>
 struct asExpr<int> {
-  typedef Literal type;
+  using type = Literal;
   static const Literal getExpr(const int& x) {return Literal(x);}
 };
 
 template <>
 struct asExpr<double> {
-  typedef Literal type;
+  using type = Literal;
   static const Literal getExpr(const double& x) {return Literal(x);}
 };
 
 template <>
 struct asExpr<float> {
-  typedef Literal type;
+  using type = Literal;
   static const Literal getExpr(const float& x) {return Literal(x);}
 };
 
 template <>
 struct asExpr<Field3D> {
-  typedef Field3DExpr type;
+  using type = Field3DExpr;
   static const Field3DExpr getExpr(const Field3D& x) {return Field3DExpr(x);}
 };
 
@@ -109,7 +112,7 @@ struct asExpr<Field3D> {
 
 template<typename Lhs, typename Rhs> // If in doubt, convert to Field3D
 struct PromoteType {
-  typedef Field3D type;
+  using type = Field3D;
 };
 
 /////////////////////////////////////////////////////////////
@@ -123,11 +126,11 @@ public:
   }
   
   // Work out the type of the inputs
-  typedef typename exprTraits<ExprT1>::expr_type ltype;
-  typedef typename exprTraits<ExprT2>::expr_type rtype;
+  using ltype = typename exprTraits<ExprT1>::expr_type;
+  using rtype = typename exprTraits<ExprT2>::expr_type;
   
   /// Type of the resulting expression
-  typedef typename PromoteType<ltype, rtype>::type type;
+  using type = typename PromoteType<ltype, rtype>::type;
   
   BoutReal operator()(int x, int y, int z) const {
     return BinOp::apply((_expr1)(x,y,z),(_expr2)(x,y,z));
@@ -140,9 +143,9 @@ private:
 
 template<typename ExprT1, typename ExprT2, class name>
 struct BinaryResult {
-  typedef typename asExpr<ExprT1>::type arg1;
-  typedef typename asExpr<ExprT2>::type arg2;
-  typedef BinaryExpr<arg1, arg2,name> type;
+  using arg1 = typename asExpr<ExprT1>::type;
+  using arg2 = typename asExpr<ExprT2>::type;
+  using type = BinaryExpr<arg1, arg2,name>;
 };
 
 /// Binary operator classes
@@ -172,7 +175,7 @@ struct Power {
   template  <typename ExprT1, typename ExprT2>                             \
   typename BinaryResult<ExprT1,ExprT2,name>::type                          \
   func(const ExprT1 &e1, const ExprT2 &e2) {                               \
-    typedef typename BinaryResult<ExprT1,ExprT2,name>::type type;          \
+    using type = typename BinaryResult<ExprT1,ExprT2,name>::type;          \
     return type(asExpr<ExprT1>::getExpr(e1), asExpr<ExprT2>::getExpr(e2)); \
   }
 
@@ -186,9 +189,9 @@ template<typename Expr>
 const Field3D eval3D(Expr e) {
   Field3D result;
   result.allocate();
-  for(int i=0;i<mesh->LocalNx;i++)
-    for(int j=0;j<mesh->LocalNy;j++)
-      for(int k=0;k<mesh->LocalNz;k++)
+  for(int i=0;i<bout::globals::mesh->LocalNx;i++)
+    for(int j=0;j<bout::globals::mesh->LocalNy;j++)
+      for(int k=0;k<bout::globals::mesh->LocalNz;k++)
 	result(i,j,k) = e(i,j,k);
   return result;
 }

@@ -24,7 +24,7 @@ do
     then
         libs+=" ${fl:2}"
     else
-	ldflags+=" $fl"
+        ldflags+=" $fl"
     fi
 done
 
@@ -58,7 +58,7 @@ cat <<EOF
 cimport boutcpp as c
 import numpy as np
 cimport numpy as np
-#import atexit
+import atexit
 cimport resolve_enum as benum
 from libc.stdlib cimport malloc, free
 import copy
@@ -353,7 +353,6 @@ cat <<EOF
         nx=self.cobj.getNx()
         ny=self.cobj.getNy()
         nz=self.cobj.getNz()
-        #print(nx,ny,nz)
         cdef np.ndarray[double, mode="c", ndim=$ndim] data_ = np.ascontiguousarray(np.zeros(($nxlist)))
         c_get_${fdd}_all(self.cobj,&data_[$zeros]);
         return data_
@@ -382,7 +381,7 @@ cat <<EOF
             Representation of the field's location.
         """
         cdef benum.CELL_LOC loc = self.cobj[0].getLocation()
-        return _resolve_inv_cell_loc(loc)
+        return _resolve_inv_cell_loc(<int> loc)
 
     def ddt(self,val=None):
         """
@@ -508,7 +507,6 @@ do
     #o=${f#*:}
     cat <<EOF
     def __${n}__(self,other):
-        #print("call __${n}__")
         fu=$ftype()
         import numbers
         if isinstance(self,$ftype) and isinstance(other,$ftype):
@@ -597,6 +595,9 @@ cat <<EOF
             self.cobj.applyBoundary()
 
     def __dealloc__(self):
+        self.__mydealloc__()
+
+    def __mydealloc__(self):
         if self.isSelfOwned and self.cobj!=NULL:
             del self.cobj
             self.cobj=NULL
@@ -619,6 +620,7 @@ cdef class $vec:
     A vector of $field
     """
     cdef c.$vec * cobj
+    cdef c.bool isSelfOwned
 EOF
     for d in x y z
     do
@@ -641,9 +643,18 @@ EOF
                                       str(type(self))+"' and '"+str(type(rhs))+
                                       "' - not supported (yet?).")
 
+    def __dealloc__(self):
+        self.__mydealloc__()
+
+    def __mydealloc__(self):
+        if self.isSelfOwned and self.cobj!=NULL:
+            del self.cobj
+            self.cobj=NULL
+
 cdef $vec ${vdd}FromObj(c.$vec i):
     v=$vec()
     v.cobj = new c.$vec(<const c.$vec & ?> i)
+    v.isSelfOwned = True
     return v
 EOF
 done
@@ -671,7 +682,8 @@ cdef class Mesh:
     cdef double isNormalised
     cdef FieldFactory factory
     cdef Coordinates _coords
-    #factory=FieldFactory()
+    cdef options
+
     def __init__(self, create=True, section=None, options=None):
         """
         Create a Mesh
@@ -702,6 +714,8 @@ cdef class Mesh:
         if create:
             if options:
                 opt = (<Options?>options).cobj
+                # Safe copy - to prevent GC
+                self.options = options
             if section:
                 if opt == NULL:
                     opt = c.Options.getRoot()
@@ -712,7 +726,6 @@ cdef class Mesh:
             if self.cobj == NULL:
                 raise MemoryError('Not enough memory, allocation failed.')
             self.cobj.load()
-            self.cobj.setParallelTransform()
 
     @classmethod
     def getGlobal(cls):
@@ -731,8 +744,12 @@ cdef class Mesh:
         return msh
 
     def __dealloc__(self):
+        self.__mydealloc__()
+
+    def __mydealloc__(self):
         if self.cobj and not self.isGlobal:
             del self.cobj
+            self.cobj = NULL
 
     cdef getFactory(self):
         """
@@ -789,19 +806,22 @@ cdef class Mesh:
         Get the Coordinates object of this mesh
         """
         if self._coords is None:
-            self._coords = coordsFromObj(self.cobj.getCoordinates())
+            self._coords = coordsFromPtr(self.cobj.getCoordinates())
         return self._coords
 
-cdef Coordinates coordsFromObj(c.Coordinates * obj):
+cdef Coordinates coordsFromPtr(c.Coordinates * obj):
     coords = Coordinates()
     coords.cobj = obj
     coords._setmembers()
+    coords.isSelfOwned = False
     return coords
+
 cdef class Coordinates:
     """
     Contains information about geometry, such as metric tensors
     """
     cdef c.Coordinates * cobj
+    cdef c.bool isSelfOwned
     cdef public Field2D dx, dy
     cdef public double dz
     cdef public Field2D J
@@ -816,19 +836,28 @@ cdef class Coordinates:
     cdef public Field2D IntShiftTorsion
 
     def __init__(self):
-        self.cobj = <c.Coordinates *>0
+        self.cobj = NULL
+        self.isSelfOwned = False
 
     def _setmembers(self):
 EOF
 for f in "dx" "dy" "J" "Bxy" "g11" "g22" "g33" "g12" "g13" "g23" "g_11" "g_22" "g_33" "g_12" "g_13" "g_23" "G1_11" "G1_22" "G1_33" "G1_12" "G1_13" "G1_23" "G2_11" "G2_22" "G2_33" "G2_12" "G2_13" "G2_23" "G3_11" "G3_22" "G3_33" "G3_12" "G3_13" "G3_23" "G1" "G2" "G3" "ShiftTorsion" "IntShiftTorsion"
 do
-    echo "        self.${f} = f2dFromObj(self.cobj.${f})"
+    echo "        self.${f} = f2dFromPtr(&self.cobj.${f})"
 done
 for f in "dz"
 do
     echo "        self.${f} = self.cobj.${f}"
 done
 cat <<"EOF"
+
+    def __dealloc__(self):
+        self.__mydealloc__()
+
+    def __mydealloc__(self):
+        if self.cobj and self.isSelfOwned:
+            del self.cobj
+            self.cobj = NULL
 
 cdef class Laplacian:
     """
@@ -839,6 +868,7 @@ cdef class Laplacian:
     Equation solved is: d\\nabla^2_\\perp x + (1/c1)\\nabla_perp c2\\cdot\\nabla_\\perp x + ex\\nabla_x x + ez\\nabla_z x + a x = b
     """
     cdef c.Laplacian * cobj
+    cdef c.bool isSelfOwned
     def __init__(self,section=None):
         """
         Initialiase a Laplacian solver
@@ -853,7 +883,7 @@ cdef class Laplacian:
            self.cobj = c.Laplacian.create((<Options?>section).cobj)
         else:
            self.cobj = c.Laplacian.create(NULL)
-
+        self.isSelfOwned = True
     def solve(self,Field3D x, Field3D guess):
         """
         Calculate the Laplacian inversion
@@ -905,14 +935,28 @@ EOF
 done
 
 cat <<"EOF"
+
+    def __dealloc__(self):
+        self.__mydealloc__()
+
+    def __mydealloc__(self):
+        if self.cobj and self.isSelfOwned:
+            del self.cobj
+            self.cobj = NULL
+
 cdef class FieldFactory:
     cdef c.FieldFactory * cobj
     def __init__(self):
         checkInit()
         cobj=< c.FieldFactory*>0
     def __dealloc__(self):
-        if self.cobj != <c.FieldFactory*>0:
+        self.__mydealloc__()
+
+    def __mydealloc__(self):
+        if self.cobj != NULL:
             del self.cobj
+            self.cobj = NULL
+
     # @classmethod
     # def fromPtr(cls,FieldFactory * cobj_):
     #     fu=cls()
@@ -946,8 +990,12 @@ cdef class PythonModelCallback:
         self.cobj = new c.PythonModelCallback(callback, <void*>method)
 
     def __dealloc__(self):
-        if self.thisptr:
-            del self.thisptr
+        self.__mydealloc__()
+
+    def __mydealloc__(self):
+        if self.cobj:
+            del self.cobj
+            self.cobj = NULL
 
     cpdef void execute(self, parameter):
         # 'parameter' :: The parameter to be passed to the 'method'
@@ -1015,6 +1063,9 @@ cdef class PhysicsModelBase(object):
         self.cmodel.set_init_func(self.callbackinit)
 
     def __dealloc__(self):
+        self.__mydealloc__()
+
+    def __mydealloc__(self):
         if self.cmodel != <c.PythonModel *> 0:
             self.cmodel.free()
             del self.cmodel
@@ -1065,6 +1116,12 @@ class PhysicsModel(PhysicsModelBase):
         This can be overwritten to do model specific initialization
         """
         pass
+
+    def __dealloc__(self):
+        super(PhysicsModel,self).__dealloc__()
+
+    def __mydealloc__(self):
+        super(PhysicsModel,self).__mydealloc__()
 
 cdef extern from "bout.hxx":
     int BoutInitialise(int&, char **&) except +raise_bout_py_error
@@ -1118,17 +1175,38 @@ def init(args=[]):
         raise RuntimeError("Failed to initialise the BOUT++ Library (Error code %d)"%ret)
     else:
         _isInit=True
-    #atexit.register(finalise)
+    atexit.register(finalise)
 
 def finalise():
     """
     Finalize BOUT++ and also MPI.
     After this most objects and functions are not valid anymore.
+
+    Note that this deallocates the C++ objects, thus the python
+    objects might not work any more.
     """
-    checkInit()
-    BoutFinalise()
+    # Go through all living objects, find the ones from boutcore, so
+    # that we can free them.
+    # We cannot rely on python, as
+    #  * Python does not even garantee that they are freed
+    #  * MPI routines are invalid after finalise, and some destructors
+    #    include calls to MPI
+    # first set _isInit to False, so no further bc objects can be created
     global _isInit
-    _isInit=False
+    wasInit = _isInit
+    _isInit = False
+    import gc
+    objects = gc.get_objects()
+    ourClasses = (Coordinates, Field2D, Field3D, Laplacian, Mesh, Options,
+                  PhysicsModel, PhysicsModelBase, Vector2D, Vector3D,
+                  PythonModelCallback)
+    for obj in objects:
+        if isinstance(obj,ourClasses):
+            obj.__mydealloc__()
+    del objects
+    # Actually finalise
+    if wasInit:
+       BoutFinalise()
 
 def checkInit():
     """
@@ -1482,19 +1560,19 @@ cdef class Options:
 
     def __init__(self,name=""):
         """
-	Get a section from the global options tree
+        Get a section from the global options tree
 
-	Parameters
-	----------
-	name : string, optional
-	    The name of the section. Can contain ':' to specify subsections.
-	    Defaults to the root section ''.
+        Parameters
+        ----------
+        name : string, optional
+            The name of the section. Can contain ':' to specify subsections.
+            Defaults to the root section ''.
 
-	Returns
-	-------
-	Options
-	    The Options object
-	"""
+        Returns
+        -------
+        Options
+            The Options object
+        """
         checkInit()
         self.cobj = c.Options.getRoot()
         cdef c.string sec_
@@ -1525,7 +1603,7 @@ cdef class Options:
         cdef char * file_
         file__=file.encode('ascii')
         file_=file__
-        c.OptionsReader.getInstance().read(opt.cobj, file_)
+        c.OptionsReader.getInstance().read(opt.cobj, "%s", file_)
         return opt
 
 
@@ -1591,49 +1669,55 @@ cdef class Options:
         cdef c.string ret_str
 
         if isinstance(default,bool):
-            #print("isbool")
             opt.get(key,ret_bool, <c.bool> default)
             return ret_bool
         elif isinstance(default,numbers.Number):
-            #print("isreal")
             opt.get(key,ret_real,<double> default)
             return ret_real
         else:
-            #print("isstr")
             default_= str(default).encode('ascii')
             opt.get(key,ret_str, default_)
             return ret_str
 
+    def __dealloc__(self):
+        self.__mydealloc__()
+
+    def __mydealloc__(self):
+        if self.isSelfOwned and self.cobj!=NULL:
+            del self.cobj
+            self.cobj=NULL
+
 cdef class Datafile:
-     cdef c.Datafile * cobj
-     def __init__(self):
-         self.cobj = c_get_global_datafile()
-     def add(self,save_repeat=False,**kwargs):
-         for key in kwargs:
-             self._add(kwargs[key],key,save_repeat)
+    cdef c.Datafile * cobj
 
-     def _add(self,data,name,save_repeat):
-         cdef char * tmp
-         cdef double * dbl
-         cdef c.Field3D * f3d
-         t2=str.encode(name)
-         tmp=t2
-         # import numbers
-         # if isinstance(data,int):
-         #     #c_datafile_add_int(self.cobj,
-         #     self.cobj.add(<int>data,tmp,<c.bool>save_repeat)
-         # elif isinstance(data,numbers.Number):
-         #     self.cobj.add(dbl,tmp,<c.bool>save_repeat)
-         # el
-         if isinstance(data,Field3D):
-             f3d=(<Field3D>data).cobj
-             self.cobj.add(f3d[0],tmp,<c.bool>save_repeat)
-         else:
-             raise TypeError("unsupported datatype")
-     def write(self):
-         self.cobj.write()
+    def __init__(self):
+        self.cobj = c_get_global_datafile()
+
+    def add(self,save_repeat=False,**kwargs):
+        for key in kwargs:
+            self._add(kwargs[key],key,save_repeat)
+
+    def _add(self,data,name,save_repeat):
+        cdef char * tmp
+        cdef double * dbl
+        cdef c.Field3D * f3d
+        t2=str.encode(name)
+        tmp=t2
+        if isinstance(data,Field3D):
+            f3d=(<Field3D>data).cobj
+            self.cobj.add(f3d[0],tmp,<c.bool>save_repeat)
+        else:
+            raise TypeError("unsupported datatype")
+    def write(self):
+        self.cobj.write()
 
 
+    def __dealloc__(self):
+        self.__mydealloc__()
+
+    def __mydealloc__(self):
+        # is never self owned
+        pass
 
 EOF
 
