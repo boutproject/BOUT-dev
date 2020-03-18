@@ -21,9 +21,16 @@ print("Making parallel inversion test")
 
 shell_safe("make > make.log")
 
-flags = ["acoef=1 bcoef=0 ccoef=0 dcoef=0 ecoef=0", "acoef=1.5 'bcoef=2.*sin(2*y)'"]
-flags += ["acoef=1","bcoef=2","ccoef=3","dcoef=4","ecoef=-1"]
-flags += ["'func=ballooning(exp(-y*y)*cos(z)*gauss(x,0.2))'"]
+flags = [
+    "acoef=1 bcoef=0 ccoef=0 dcoef=0 ecoef=0",
+    "acoef=1.5 'bcoef=2.*sin(2*y)'",
+    "acoef=1",
+    "bcoef=2",
+    "ccoef=3",
+    "dcoef=4",
+    "ecoef=-1",
+    "'input=ballooning(exp(-y*y)*cos(z)*gauss(x,0.2))'",
+]
 
 code = 0 # Return code
 for nproc in [1,2,4]:
