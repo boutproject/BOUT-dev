@@ -169,7 +169,7 @@ MPICH2 and the needed libraries by running::
 
 On Ubuntu 16.04::
 
-    $ sudo apt-get libmpich-dev libfftw3-dev libnetcdf-dev libnetcdf-cxx-legacy-dev
+    $ sudo apt-get install libmpich-dev libfftw3-dev libnetcdf-dev libnetcdf-cxx-legacy-dev
 
 On Ubuntu 18.04::
 
