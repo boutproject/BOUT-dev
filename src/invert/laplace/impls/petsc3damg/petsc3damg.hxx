@@ -1,11 +1,11 @@
 /**************************************************************************
- * Perpendicular Laplacian inversion.
- *                           Using PETSc Solvers
+ * 3D Laplace inversion using PETSc solvers with algebraic multigrid
+ *  preconditioning
  *
  * Equation solved is: \f$d\nabla^2_\perp x + (1/c1)\nabla_perp c2\cdot\nabla_\perp x + ex\nabla_x x + ez\nabla_z x + a x = b\f$
  *
  **************************************************************************
- * Copyright 2013 J. Buchanan, J. Omotani
+ * Copyright 2019 J. Buchanan, J. Omotani, C. MacMackin
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
  *
@@ -25,70 +25,46 @@
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  *
  **************************************************************************/
+class LaplacePetsc3dAmg;
 
-#ifndef __PETSC_LAPLACE_H__
-#define __PETSC_LAPLACE_H__
+#ifndef __PETSC_LAPLACE_3DAMG_H__
+#define __PETSC_LAPLACE_3DAMG_H__
 
 #ifdef BOUT_HAS_PETSC
 
 #include <globals.hxx>
 #include <output.hxx>
-#include <petscksp.h>
 #include <options.hxx>
 #include <invert_laplace.hxx>
-#include <bout/petsclib.hxx>
 #include <boutexception.hxx>
+#include <bout/operatorstencil.hxx>
+#include <bout/petsclib.hxx>
+#include <bout/petsc_interface.hxx>
+#include <petscksp.h>
 
-// PETSc creates macros for MPI calls, which interfere with the MpiWrapper class
-#undef MPI_Allreduce
-#undef MPI_Gatherv
-#undef MPI_Irecv
-#undef MPI_Isend
-#undef MPI_Recv
-#undef MPI_Scatterv
-#undef MPI_Send
-#undef MPI_Wait
-#undef MPI_Waitall
-#undef MPI_Waitany
-
-class LaplacePetsc;
+class LaplacePetsc3dAmg;
 
 namespace {
-RegisterLaplace<LaplacePetsc> registerlaplacepetsc(LAPLACE_PETSC);
+RegisterLaplace<LaplacePetsc3dAmg> registerlaplacepetsc3damg(LAPLACE_PETSC3DAMG);
 }
 
-class LaplacePetsc : public Laplacian {
+class LaplacePetsc3dAmg : public Laplacian {
 public:
-  LaplacePetsc(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr);
-  ~LaplacePetsc() {
-    KSPDestroy( &ksp );
-    VecDestroy( &xs );
-    VecDestroy( &bs );
-    MatDestroy( &MatA );
-  }
-
-  using Laplacian::setCoefA;
-  using Laplacian::setCoefC;
-  using Laplacian::setCoefC1;
-  using Laplacian::setCoefC2;
-  using Laplacian::setCoefD;
-  using Laplacian::setCoefEx;
-  using Laplacian::setCoefEz;
+  LaplacePetsc3dAmg(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr);
+  ~LaplacePetsc3dAmg() override;
 
   void setCoefA(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     A = val;
-    /*Acoefchanged = true;*/
-    if(pcsolve) pcsolve->setCoefA(val);
+    updateRequired = true;
   }
   void setCoefC(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     C1 = val;
     C2 = val;
-    issetC = true; /*coefchanged = true;*/
-    if(pcsolve) pcsolve->setCoefC(val);
+    updateRequired = issetC = true;
   }
   void setCoefC1(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
@@ -100,89 +76,105 @@ public:
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     C2 = val;
-    issetC = true;
+    updateRequired = issetC = true;
   }
   void setCoefD(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     D = val;
-    issetD = true; /*coefchanged = true;*/
-    if(pcsolve) pcsolve->setCoefD(val);
+    updateRequired = issetD = true;
   }
   void setCoefEx(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     Ex = val;
-    issetE = true; /*coefchanged = true;*/
-    if(pcsolve) pcsolve->setCoefEx(val);
+    updateRequired = issetE = true;
   }
   void setCoefEz(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     Ez = val;
-    issetE = true; /*coefchanged = true;*/
-    if(pcsolve) pcsolve->setCoefEz(val);
+    updateRequired = issetE = true;
   }
 
   void setCoefA(const Field3D &val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     A = val;
-    /*Acoefchanged = true;*/
-    if(pcsolve) pcsolve->setCoefA(val);
+    updateRequired = true;
   }
   void setCoefC(const Field3D &val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     C1 = val;
     C2 = val;
-    issetC = true; /*coefchanged = true;*/
-    if(pcsolve) pcsolve->setCoefC(val);
+    updateRequired = issetC = true;
   }
   void setCoefC1(const Field3D &val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     C1 = val;
-    issetC = true;
+    updateRequired = issetC = true;
   }
   void setCoefC2(const Field3D &val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     C2 = val;
-    issetC = true;
+    updateRequired = issetC = true;
   }
   void setCoefD(const Field3D &val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     D = val;
-    issetD = true; /*coefchanged = true;*/
-    if(pcsolve) pcsolve->setCoefD(val);
+    updateRequired = issetD = true;
   }
   void setCoefEx(const Field3D &val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     Ex = val;
-    issetE = true; /*coefchanged = true;*/
-    if(pcsolve) pcsolve->setCoefEx(val);
+    updateRequired = issetE = true;
   }
   void setCoefEz(const Field3D &val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     Ez = val;
-    issetE = true; /*coefchanged = true;*/
-    if(pcsolve) pcsolve->setCoefEz(val);
+    updateRequired = issetE = true;
   }
 
-  using Laplacian::solve;
-  FieldPerp solve(const FieldPerp &b) override;
-  FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override;
+  
+  // Return a reference to the matrix objects representing the Laplace
+  // operator. These will be (re)construct if necessary.
+  PetscMatrix<Field3D>& getMatrix3D();
+  IndexerPtr<Field3D> getIndexer() { return indexer; }
 
-  int precon(Vec x, Vec y); ///< Preconditioner function
+  virtual Field2D solve(const Field2D &b) override;
+
+  virtual Field3D solve(const Field3D &b) override {
+    Field3D zero = zeroFrom(b);
+    return solve(b, zero);
+  }
+  virtual Field3D solve(const Field3D &b_in, const Field3D &x0) override;
+
+
+  virtual FieldPerp solve(const FieldPerp& UNUSED(b)) override {
+    throw BoutException("LaplacePetsc3DAmg cannot solve for FieldPerp");
+  }
 
 private:
-  void Element(int i, int x, int z, int xshift, int zshift, PetscScalar ele, Mat &MatA );
-  void Coeffs( int x, int y, int z, BoutReal &A1, BoutReal &A2, BoutReal &A3, BoutReal &A4, BoutReal &A5 );
 
+  // (Re)compute the values of the matrix representing the Laplacian operator
+  void updateMatrix3D();
+
+  // Set up a stencil describing the structure of the operator. This
+  // will be used to preallocate the correct ammount of memory in the
+  // matrix.
+  //
+  // The interpolation done to get along-field values in y makes this
+  // tricky. For now we will just assume that the footprint of cells
+  // used for interpolation is the same everywhere.
+  static OperatorStencil<Ind3D> getStencil(Mesh* localmesh, RangeIterator lowerYBound,
+					   RangeIterator upperYBound);
+  
   /* Ex and Ez
    * Additional 1st derivative terms to allow for solution field to be
    * components of a vector
@@ -190,25 +182,15 @@ private:
    * See LaplacePetsc::Coeffs for details an potential pit falls
    */
   Field3D A, C1, C2, D, Ex, Ez;
-// Metrics are not constant in y-direction, so matrix always changes as you loop over the grid
-// Hence using coefchanged switch to avoid recomputing the mmatrix is not a useful thing to do (unless maybe in a cylindrical machine, but not worth implementing just for that)
-//   bool coefchanged;           // Set to true when C, D, Ex or Ez coefficients are changed
-//   bool Acoefchanged;	      // Set to true when A coefficient is changed
-  bool issetD;
-  bool issetC;
-  bool issetE;
+  bool issetD = false;
+  bool issetC = false;
+  bool issetE = false;
+  bool updateRequired = true;
   int lastflag;               // The flag used to construct the matrix
-
-  FieldPerp sol;              // solution Field
-
-  // Istart is the first row of MatA owned by the process, Iend is 1 greater than the last row.
-  int Istart, Iend;
+  int lower_boundary_flags;
+  int upper_boundary_flags;
 
   int meshx, meshz, size, localN; // Mesh sizes, total size, no of points on this processor
-  MPI_Comm comm;
-  Mat MatA;
-  Vec xs, bs;                 // Solution and RHS vectors
-  KSP ksp;
 
   Options *opts;              // Laplace Section Options Object
   std::string ksptype; ///< KSP solver type
@@ -224,23 +206,23 @@ private:
   BoutReal rtol, atol, dtol;
   int maxits; // Maximum number of iterations in solver.
   bool direct; //Use direct LU solver if true.
-  bool fourth_order;
 
+  RangeIterator lowerY, upperY;
+
+  IndexerPtr<Field3D> indexer;
+  PetscMatrix<Field3D> operator3D;
+  KSP ksp;
+  bool kspInitialised;
   PetscLib lib;
 
   bool use_precon;  // Switch for preconditioning
   bool rightprec;   // Right preconditioning
-  std::unique_ptr<Laplacian> pcsolve; // Laplacian solver for preconditioning
 
-  void vecToField(Vec x, FieldPerp &f);        // Copy a vector into a fieldperp
-  void fieldToVec(const FieldPerp &f, Vec x);  // Copy a fieldperp into a vector
-
-  #if CHECK > 0
-    int implemented_flags;
-    int implemented_boundary_flags;
-  #endif
+  // These are the implemented flags
+  static constexpr int implemented_flags = INVERT_START_NEW,
+    implemented_boundary_flags = INVERT_AC_GRAD + INVERT_SET + INVERT_RHS;
 };
 
 #endif //BOUT_HAS_PETSC
 
-#endif //__PETSC_LAPLACE_H__
+#endif //__PETSC_LAPLACE_3DAMG_H__
