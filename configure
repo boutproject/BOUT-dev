@@ -5928,8 +5928,7 @@ if test "$enable_debug" != ""; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: Enabling all debug options" >&5
 $as_echo "$as_me: Enabling all debug options" >&6;}
   enable_checks="3"
-  # use -Og with available, otherwise fall back to -O0
-  OPT_FLAGS="-g -O0 -Og -fno-inline -hipa1"
+  OPT_FLAGS="-g -O0 -fno-inline -hipa1"
 
 else
 

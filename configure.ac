@@ -262,8 +262,7 @@ OPT_FLAGS=""
 AS_IF([test "$enable_debug" != ""], [
   AC_MSG_NOTICE([Enabling all debug options])
   enable_checks="3"
-  # use -Og with available, otherwise fall back to -O0
-  OPT_FLAGS="-g -O0 -Og -fno-inline -hipa1"
+  OPT_FLAGS="-g -O0 -fno-inline -hipa1"
 ], [
   AS_IF([test "x$enable_optimize" != "xno"], [
     AS_CASE(["$enable_optimize"],
