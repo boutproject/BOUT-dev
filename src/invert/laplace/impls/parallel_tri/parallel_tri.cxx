@@ -790,14 +790,20 @@ FieldPerp LaplaceParallelTri::solve(const FieldPerp& b, const FieldPerp& x0) {
     if(!all(neighbour_in)) {
       //output<<"neighbour_in proc "<<BoutComm::rank()<<endl;
 
+      // TODO These for loops do buffer (un)packing for data we don't care about
+      // Guard? Or move to work loop?
       for (int kz = 0; kz <= maxmode; kz++) {
-	message_send[kz].value = xloc(index_in,kz);
-	message_send[kz].done  = self_in[kz];
+	if(!neighbour_in[kz]){
+	  message_send[kz].value = xloc(index_in,kz);
+	  message_send[kz].done  = self_in[kz];
+	}
       }
       err = MPI_Sendrecv(&message_send[0], nmode*sizeof(Message), MPI_BYTE, proc_in, 1, &message_recv[0], nmode*sizeof(Message), MPI_BYTE, proc_in, 0, comm, MPI_STATUS_IGNORE);
       for (int kz = 0; kz <= maxmode; kz++) {
-	xloc(0,kz) = message_recv[kz].value;
-	neighbour_in[kz] = message_recv[kz].done;
+	if(!self_in[kz]){
+	  xloc(0,kz) = message_recv[kz].value;
+	  neighbour_in[kz] = message_recv[kz].done;
+	}
       }
     }
 
