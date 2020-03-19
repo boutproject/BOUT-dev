@@ -1,4 +1,4 @@
-sudo: required
+os: linux
 dist: xenial
 language: cpp
 compiler: gcc
@@ -9,7 +9,7 @@ git:
 # Define some aliases for some repeated config variables
 # Note &<name> creates a reference that we can refer to later using
 # *<name>, see https://en.wikipedia.org/wiki/YAML#Syntax
-aliases:
+_aliases:
   - &petsc_vars
     - PETSC_DIR=/usr/lib/petscdir/3.6.2/x86_64-linux-gnu-real
     - PETSC_ARCH=""
@@ -48,16 +48,18 @@ cache:
   directories:
   - $HOME/local
 
-matrix:
+jobs:
   fast_finish: true
   include:
-  - env: &default_env
+  - name: "Optimised"
+    env: &default_env
       - CONFIGURE_OPTIONS="--enable-checks=no --enable-optimize=3 --disable-signal --disable-track --disable-backtrace --with-petsc --with-slepc --with-sundials=$HOME/local"
       - SCRIPT_FLAGS='-uim'
       - PIP_PACKAGES='cython==0.29.6 netcdf4==1.4.2 sympy==1.3'
       - LD_LIBRARY_PATH=$HOME/local/lib:$LD_LIBRARY_PATH
       - *petsc_vars
-  - addons:
+  - name: "GCC 7"
+    addons:
       apt:
         sources:
           - ubuntu-toolchain-r-test
@@ -69,20 +71,24 @@ matrix:
       - CONFIGURE_OPTIONS="--enable-sigfpe --enable-debug --with-petsc --with-slepc --with-sundials=$HOME/local"
       - CC=gcc-7 CXX=g++-7
       - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
-  - env:
+  - name: "Shared library + Python"
+    env:
       - *default_env
       - CONFIGURE_OPTIONS="--enable-shared --with-petsc --with-slepc --with-sundials=$HOME/local"
       - SCRIPT_FLAGS="-uim -t python -t shared"
-  - env:
+  - name: "4to5 test"
+    env:
       - *default_env
       - CONFIGURE_OPTIONS="--enable-shared --with-petsc --with-slepc --with-sundials=$HOME/local"
       - SCRIPT_FLAGS="-uim5t python"
-  - env:
+  - name: "OpenMP"
+    env:
       - *default_env
       - CONFIGURE_OPTIONS="--enable-openmp --with-petsc --with-slepc --with-sundials=$HOME/local"
       - OMP_NUM_THREADS=2
 #CMAKE
-  - env:
+  - name: "CMake"
+    env:
       - *default_env
       - OMP_NUM_THREADS=2
       - PYTHONPATH="${TRAVIS_BUILD_DIR}/tools/pylib:$PYTHONPATH"
@@ -90,17 +96,19 @@ matrix:
       - ./.build_sundials_for_travis.sh
       - mkdir build && cd build
       - cmake .. -DUSE_PETSC=ON -DUSE_SLEPC=ON -DUSE_SUNDIALS=ON -DSUNDIALS_ROOT="$HOME/local" -DENABLE_OPENMP=ON
-      - cmake --build .
-      - ctest --output-on-failure
+      - cmake --build . --target build-check -j 2
+      - cmake --build . --target check
 #CLANG
-  - env:
+  - name: "Clang"
+    env:
       - *default_env
       - CONFIGURE_OPTIONS="--enable-debug --with-petsc --with-slepc --with-sundials=$HOME/local"
       - MPICH_CC=clang MPICH_CXX=clang++
       - OMPI_CC=clang OMPI_CXX=clang++
     compiler: clang
 #COVERAGE
-  - if: branch IN (master, next) OR commit_message =~ /build coverage/
+  - name: "Coverage (full)"
+    if: branch IN (master, next) OR commit_message =~ /build coverage/
     addons:
       apt:
         packages:
@@ -113,7 +121,8 @@ matrix:
       - *coverage_vars
       - *petsc_vars
       - *codecov_secure
-  - if: branch IN (master, next) OR commit_message =~ /build coverage/
+  - name: "Coverage (minimal)"
+    if: branch IN (master, next) OR commit_message =~ /build coverage/
     addons:
       apt:
         packages:

@@ -13,7 +13,7 @@ try:
 except:
   pass
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe
+from boututils.run_wrapper import build_and_log, shell, launch_safe
 from boutdata.collect import collect
 from numpy import abs, seterr
 from sys import stdout, exit
@@ -25,13 +25,11 @@ seterr(divide='ignore', invalid='ignore')
 varCorrect="fld1"
 varsComp  = ["fld2", "fld3"]
 name = "FieldGroup comm"
-exeName = "test"
+exeName = "test_fieldgroupcomm"
 tol = 1e-10  # Relative tolerance
 
 
-
-print("Making {nm} test".format(nm=name))
-shell_safe("make > make.log")
+build_and_log("{nm} test".format(nm=name))
 
 print("Running {nm} test".format(nm=name))
 success = True

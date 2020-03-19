@@ -31,31 +31,25 @@
 #include <string>
 
 #if CHECK > 1
-int MsgStack::push(const char *s, ...) {
-  va_list ap; // List of arguments
-  BOUT_OMP(critical(MsgStack_push)) {
-    if (s != nullptr) {
-      va_start(ap, s);
-      vsnprintf(buffer, MSG_MAX_SIZE, s, ap);
-      va_end(ap);
-    } else {
-      buffer[0] = '\0';
-    }
-
+int MsgStack::push(std::string message) {
+  BOUT_OMP(critical(MsgStack)) {
     if (position >= stack.size()) {
-      stack.emplace_back(buffer);
+      stack.push_back(std::move(message));
     } else {
-      stack[position] = buffer;
+      stack[position] = message;
     }
 
     position++;
   };
-  return position - 1;
+  int result;
+  BOUT_OMP(critical(MsgStack))
+  result = position - 1;
+  return result;
 }
 
 int MsgStack::setPoint() {
   // Create an empty message
-  return push(nullptr);
+  return push();
 }
 
 void MsgStack::pop() {
@@ -69,7 +63,7 @@ void MsgStack::pop(int id) {
   if (id < 0)
     id = 0;
 
-  BOUT_OMP(critical(MsgStack_pop)) {
+  BOUT_OMP(critical(MsgStack)) {
     if (id <= static_cast<int>(position))
       position = id;
   };

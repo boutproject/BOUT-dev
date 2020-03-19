@@ -82,7 +82,10 @@ Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
 
         // set boundary guard cells
         if ((bndry->bx != 0 && localmesh->GlobalNx - 2 * bndry->width >= 3)
-            || (bndry->by != 0 && localmesh->GlobalNy - 2 * bndry->width >= 3)) {
+            || (bndry->by != 0
+                && localmesh->GlobalNy - localmesh->numberOfYBoundaries() * bndry->width
+                   >= 3))
+        {
           if (bndry->bx != 0 && localmesh->LocalNx == 1 && bndry->width == 1) {
             throw BoutException(
                 "Not enough points in the x-direction on this "
@@ -351,7 +354,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
     J = interpolateAndExtrapolate(J, location, extrapolate_x, extrapolate_y);
 
     // Compare calculated and loaded values
-    output_warn.write("\tMaximum difference in J is %e\n", max(abs(J - Jcalc)));
+    output_warn.write("\tMaximum difference in J is {:e}\n", max(abs(J - Jcalc)));
 
     // Re-evaluate Bxy using new J
     Bxy = sqrt(g_22) / J;
@@ -366,7 +369,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   } else {
     Bxy = interpolateAndExtrapolate(Bxy, location, extrapolate_x, extrapolate_y);
 
-    output_warn.write("\tMaximum difference in Bxy is %e\n", max(abs(Bxy - Bcalc)));
+    output_warn.write("\tMaximum difference in Bxy is {:e}\n", max(abs(Bxy - Bcalc)));
     // Check Bxy
     bout::checkFinite(Bxy, "Bxy", "RGN_NOCORNERS");
     bout::checkPositive(Bxy, "Bxy", "RGN_NOCORNERS");
@@ -960,7 +963,7 @@ int Coordinates::calcCovariant(const std::string& region) {
     a(0, 2) = a(2, 0) = g13[i];
 
     if (invert3x3(a)) {
-      output_error.write("\tERROR: metric tensor is singular at (%d, %d)\n", i.x(), i.y());
+      output_error.write("\tERROR: metric tensor is singular at ({:d}, {:d})\n", i.x(), i.y());
       return 1;
     }
 
@@ -978,13 +981,13 @@ int Coordinates::calcCovariant(const std::string& region) {
                    max(abs((g_12 * g12 + g_22 * g22 + g_23 * g23) - 1)),
                    max(abs((g_13 * g13 + g_23 * g23 + g_33 * g33) - 1)));
 
-  output_info.write("\tLocal maximum error in diagonal inversion is %e\n", maxerr);
+  output_info.write("\tLocal maximum error in diagonal inversion is {:e}\n", maxerr);
 
   maxerr = BOUTMAX(max(abs(g_11 * g12 + g_12 * g22 + g_13 * g23)),
                    max(abs(g_11 * g13 + g_12 * g23 + g_13 * g33)),
                    max(abs(g_12 * g13 + g_22 * g23 + g_23 * g33)));
 
-  output_info.write("\tLocal maximum error in off-diagonal inversion is %e\n", maxerr);
+  output_info.write("\tLocal maximum error in off-diagonal inversion is {:e}\n", maxerr);
 
   return 0;
 }
@@ -1015,7 +1018,7 @@ int Coordinates::calcContravariant(const std::string& region) {
     a(0, 2) = a(2, 0) = g_13[i];
 
     if (invert3x3(a)) {
-      output_error.write("\tERROR: metric tensor is singular at (%d, %d)\n", i.x(), i.y());
+      output_error.write("\tERROR: metric tensor is singular at ({:d}, {:d})\n", i.x(), i.y());
       return 1;
     }
 
@@ -1033,13 +1036,13 @@ int Coordinates::calcContravariant(const std::string& region) {
                    max(abs((g_12 * g12 + g_22 * g22 + g_23 * g23) - 1)),
                    max(abs((g_13 * g13 + g_23 * g23 + g_33 * g33) - 1)));
 
-  output_info.write("\tMaximum error in diagonal inversion is %e\n", maxerr);
+  output_info.write("\tMaximum error in diagonal inversion is {:e}\n", maxerr);
 
   maxerr = BOUTMAX(max(abs(g_11 * g12 + g_12 * g22 + g_13 * g23)),
                    max(abs(g_11 * g13 + g_12 * g23 + g_13 * g33)),
                    max(abs(g_12 * g13 + g_22 * g23 + g_23 * g33)));
 
-  output_info.write("\tMaximum error in off-diagonal inversion is %e\n", maxerr);
+  output_info.write("\tMaximum error in off-diagonal inversion is {:e}\n", maxerr);
   return 0;
 }
 
@@ -1112,15 +1115,18 @@ void fixZShiftGuards(Field2D& zShift) {
 
 void Coordinates::setParallelTransform(Options* options) {
 
+  auto ptoptions = options->getSection("paralleltransform");
+
   std::string ptstr;
-  options->get("paralleltransform", ptstr, "identity");
+  ptoptions->get("type", ptstr, "identity");
 
   // Convert to lower case for comparison
   ptstr = lowercase(ptstr);
 
   if(ptstr == "identity") {
     // Identity method i.e. no transform needed
-    transform = bout::utils::make_unique<ParallelTransformIdentity>(*localmesh);
+    transform = bout::utils::make_unique<ParallelTransformIdentity>(*localmesh,
+                                                                    ptoptions);
 
   } else if (ptstr == "shifted") {
     // Shifted metric method
@@ -1158,7 +1164,7 @@ void Coordinates::setParallelTransform(Options* options) {
     fixZShiftGuards(zShift);
 
     transform = bout::utils::make_unique<ShiftedMetric>(*localmesh, location, zShift,
-        zlength());
+                                                        zlength(), ptoptions);
 
   } else if (ptstr == "fci") {
 
@@ -1167,8 +1173,9 @@ void Coordinates::setParallelTransform(Options* options) {
     }
 
     // Flux Coordinate Independent method
-    const bool fci_zperiodic = Options::root()["fci"]["z_periodic"].withDefault(true);
-    transform = bout::utils::make_unique<FCITransform>(*localmesh, fci_zperiodic);
+    const bool fci_zperiodic = (*ptoptions)["z_periodic"].withDefault(true);
+    transform = bout::utils::make_unique<FCITransform>(*localmesh, fci_zperiodic,
+                                                       ptoptions);
 
   } else {
     throw BoutException(_("Unrecognised paralleltransform option.\n"

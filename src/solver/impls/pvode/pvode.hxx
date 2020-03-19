@@ -38,7 +38,6 @@ class PvodeSolver;
 #include <pvode/cvode.h>     // main CVODE header file
 #include <pvode/pvbbdpre.h>  // band preconditioner function prototypes
 
-#include <bout/solverfactory.hxx>
 namespace {
 RegisterSolver<PvodeSolver> registersolverpvode("pvode");
 }
@@ -70,6 +69,8 @@ class PvodeSolver : public Solver {
 
   BoutReal abstol, reltol; // addresses passed in init must be preserved
   pvode::PVBBDData pdata;
+
+  bool pvode_initialised = false;
 };
 
 #endif // __PVODE_SOLVER_H__

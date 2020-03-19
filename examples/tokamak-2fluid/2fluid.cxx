@@ -94,10 +94,10 @@ private:
   Coordinates *coord;
 
   // Inverts a Laplacian to get potential
-  Laplacian *phiSolver;
+  std::unique_ptr<Laplacian> phiSolver;
 
   // Solves the electromagnetic potential
-  Laplacian *aparSolver;
+  std::unique_ptr<Laplacian> aparSolver;
   Field2D acoef; // Coefficient in the Helmholtz equation
   
   int init(bool UNUSED(restarting)) override {
@@ -289,7 +289,8 @@ private:
     // SHIFTED RADIAL COORDINATES
 
     // Check type of parallel transform
-    std::string ptstr = Options::root()["mesh"]["paralleltransform"].withDefault<std::string>("identity");
+    std::string ptstr = Options::root()["mesh"]["paralleltransform"]["type"]
+                                       .withDefault<std::string>("identity");
 
     if (lowercase(ptstr) == "shifted") {
       ShearFactor = 0.0;  // I disappears from metric
@@ -323,14 +324,14 @@ private:
     
     Vi_x = wci * rho_s;
     
-    output.write("Collisions: nueix = %e, nu_hat = %e\n", nueix, nu_hat);
+    output.write("Collisions: nueix = {:e}, nu_hat = {:e}\n", nueix, nu_hat);
     
     ////////////////////////////////////////////////////////
     // PRINT Z INFORMATION
     
     BoutReal hthe0;
     if(mesh->get(hthe0, "hthe0") == 0) {
-      output.write("    ****NOTE: input from BOUT, Z length needs to be divided by %e\n", hthe0/rho_s);
+      output.write("    ****NOTE: input from BOUT, Z length needs to be divided by {:e}\n", hthe0/rho_s);
     }
     
     ////////////////////////////////////////////////////////
@@ -347,7 +348,7 @@ private:
     ////////////////////////////////////////////////////////
     // NORMALISE QUANTITIES
     
-    output.write("\tNormalising to rho_s = %e\n", rho_s);
+    output.write("\tNormalising to rho_s = {:e}\n", rho_s);
     
     // Normalise profiles
     Ni0 /= Ni_x/1.0e14;

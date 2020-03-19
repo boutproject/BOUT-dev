@@ -2,7 +2,9 @@
 
 #include "gtest/gtest.h"
 #include "bout/array.hxx"
+#include "bout/petsclib.hxx"
 #include "fft.hxx"
+#include "output.hxx"
 
 GTEST_API_ int main(int argc, char** argv) {
 
@@ -12,7 +14,20 @@ GTEST_API_ int main(int argc, char** argv) {
 
   printf("Running main() from bout_test_main.cxx\n");
   testing::InitGoogleTest(&argc, argv);
+
+  // Explicitly setup and teardown PETSc to avoid reentry problems
+  // with certain MPI implementations (see #1916 for details)
+  output.disable();
+  PetscLib petsclib{};
+  output.enable();
+
   int result = RUN_ALL_TESTS();
+
+  // Explicit cleanup of PetscLib because it might get destroyed
+  // _after_ `output`
+  output.disable();
+  PetscLib::cleanup();
+  output.enable();
 
   // Clean up the array store, so valgrind doesn't report false
   // positives

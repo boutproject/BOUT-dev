@@ -73,8 +73,8 @@ private:
   
   FieldGroup comms;
 
-  Laplacian *phiSolver; // Laplacian solver in X-Z
-  Laplacian *aparSolver; // Laplacian solver in X-Z for Apar
+  std::unique_ptr<Laplacian> phiSolver{nullptr}; // Laplacian solver in X-Z
+  std::unique_ptr<Laplacian> aparSolver{nullptr}; // Laplacian solver in X-Z for Apar
   LaplaceXY *laplacexy; // Laplacian solver in X-Y (n=0)
   Field2D phi2D;   // Axisymmetric potential, used when split_n0=true
 
@@ -170,8 +170,8 @@ protected:
     // SHIFTED RADIAL COORDINATES
 
     // Check type of parallel transform
-    std::string ptstr;
-    Options::getRoot()->getSection("mesh")->get("paralleltransform", ptstr, "identity");
+    std::string ptstr = Options::root()["mesh"]["paralleltransform"]["type"]
+                        .withDefault("identity");
 
     if(lowercase(ptstr) == "shifted") {
       // Dimits style, using local coordinate system

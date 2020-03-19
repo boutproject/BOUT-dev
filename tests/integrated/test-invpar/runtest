@@ -9,15 +9,12 @@ try:
   from builtins import str
 except:
   pass
-from boututils.run_wrapper import shell, shell_safe, launch_safe
+from boututils.run_wrapper import build_and_log, shell, launch_safe
 from boutdata.collect import collect
 from sys import stdout, exit
 
 
-
-print("Making parallel inversion test")
-
-shell_safe("make > make.log")
+build_and_log("parallel inversion test")
 
 flags = ["acoef=1 bcoef=0 ccoef=0 dcoef=0 ecoef=0", "acoef=1.5 'bcoef=2.*sin(2*y)'"]
 flags += ["acoef=1","bcoef=2","ccoef=3","dcoef=4","ecoef=-1"]

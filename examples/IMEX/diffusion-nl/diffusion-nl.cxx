@@ -99,7 +99,7 @@ protected:
   int precon(BoutReal, BoutReal gamma, BoutReal) {
     // Preconditioner
     
-    static InvertPar *inv = NULL;
+    static std::unique_ptr<InvertPar> inv{nullptr};
     if (!inv) {
       // Initialise parallel inversion class
       inv = InvertPar::Create();

@@ -19,9 +19,9 @@ restart_format = "nc"   # Restart file format
 
 StaggerGrids = false    # Use staggered grids (EXPERIMENTAL)
 
-[mesh]
+[mesh:paralleltransform]
 
-paralleltransform = shifted # Use shifted metric method
+type = shifted # Use shifted metric method
 
 ##################################################
 # Communications

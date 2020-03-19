@@ -120,7 +120,7 @@ Installing dependencies
 
 The bare-minimum requirements for compiling and running BOUT++ are:
 
-#. A C++ compiler that supports C++11
+#. A C++ compiler that supports C++14
 
 #. An MPI compiler such as OpenMPI (`www.open-mpi.org/ <www.open-mpi.org/>`__),
    MPICH ( `https://www.mpich.org/ <https://www.mpich.org/>`__) or
@@ -132,7 +132,7 @@ The FFTW-3 library ( `http://www.fftw.org/ <http://www.fftw.org/>`__ ) is also s
 
 .. note::
    If you use an Intel compiler, you must also make sure that you have
-   a version of GCC that supports C++11 (GCC 4.8+).
+   a version of GCC that supports C++14 (GCC 5+).
 
    On supercomputers, or in other environments that use a module
    system, you may need to load modules for both Intel and GCC.
@@ -182,7 +182,7 @@ The first line should be sufficient to install BOUT++, while the 2nd
 and 3rd line make sure that the tests work, and that the python
 interface can be build.
 Further, the encoding for python needs to be utf8 - it may be required
-to set `export LC_CTYPE=C.utf8`.
+to set ``export LC_CTYPE=C.utf8``.
 
 If you do not have administrator rights, so can't install packages, then
 you need to install these libraries from source into your home directory.

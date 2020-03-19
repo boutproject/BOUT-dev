@@ -83,5 +83,8 @@ private:
   int nsys;
 };
 
+namespace {
+RegisterInvertPar<InvertParCR> registerinvertparcyclic{PARDERIVCYCLIC};
+}
 
 #endif // __INV_PAR_CR_H__

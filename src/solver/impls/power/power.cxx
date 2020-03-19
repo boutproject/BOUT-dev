@@ -27,11 +27,12 @@ int PowerSolver::init(int nout, BoutReal tstep) {
   nlocal = getLocalN();
   
   // Get total problem size
-  if(MPI_Allreduce(&nlocal, &nglobal, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
+  if (bout::globals::mpi->MPI_Allreduce(&nlocal, &nglobal, 1, MPI_INT, MPI_SUM,
+                                        BoutComm::get())) {
     throw BoutException("MPI_Allreduce failed in EulerSolver::init");
   }
   
-  output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n",
+  output.write("\t3d fields = {:d}, 2d fields = {:d} neq={:d}, local_N={:d}\n",
 	       n3Dvars(), n2Dvars(), nglobal, nlocal);
   
   // Allocate memory
@@ -85,8 +86,9 @@ BoutReal PowerSolver::norm(Array<BoutReal> &state) {
 
   total /= static_cast<BoutReal>(nglobal);
 
-  MPI_Allreduce(&total, &result, 1, MPI_DOUBLE, MPI_SUM, BoutComm::get());
-  
+  bout::globals::mpi->MPI_Allreduce(&total, &result, 1, MPI_DOUBLE, MPI_SUM,
+                                    BoutComm::get());
+
   return sqrt(result);
 }
 

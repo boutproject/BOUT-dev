@@ -15,8 +15,14 @@ except ImportError:
     from os import popen4, system
     lib = "system"
 
+if os.name == "nt":
+    # Default on Windows
+    DEFAULT_MPIRUN = "mpiexec.exe -n"
+else:
+    DEFAULT_MPIRUN = "mpirun -np"
 
-def getmpirun(default="mpirun -np"):
+
+def getmpirun(default=DEFAULT_MPIRUN):
   """Return environment variable named MPIRUN, if it exists else return
    a default mpirun command
 
@@ -228,7 +234,11 @@ def launch(command, runcmd=None, nproc=None, mthread=None,
         cmd = cmd + " > "+output
 
     if mthread is not None:
-        cmd = "OMP_NUM_THREADS={j} ".format(j=mthread)+cmd
+        if os.name == "nt":
+            # We're on windows, so we have to do it a little different
+            cmd = 'cmd /C "set OMP_NUM_THREADS={} && {}"'.format(mthread, cmd)
+        else:
+            cmd = "OMP_NUM_THREADS={} {}".format(mthread, cmd)
         
     if verbose == True:
          print(cmd)
@@ -277,3 +287,18 @@ def launch_safe(command, *args, **kwargs):
                            "Output was\n\n%s"%
                            (s,command,out))
     return s, out
+
+
+def build_and_log(test):
+    """Run make and redirect the output to a log file. Prints input
+
+    On Windows, does nothing because executable should have already
+    been built
+
+    """
+
+    if os.name == "nt":
+        return
+
+    print("Making {}".format(test))
+    return shell_safe("make > make.log")
