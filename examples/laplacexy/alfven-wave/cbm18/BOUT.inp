@@ -6,8 +6,9 @@ grid = "cbm18_dens8.grid_nx68ny64.nc"
 
 MZ = 1
 
-[mesh]
-paralleltransform = shifted # Shifted metric method
+[mesh:paralleltransform]
+
+type = shifted # Shifted metric method
 
 [solver]
 

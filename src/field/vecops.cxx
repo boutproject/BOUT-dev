@@ -118,6 +118,27 @@ const Vector3D Grad_perp(const Field3D &f, CELL_LOC outloc, const std::string& m
   return result;
 }
 
+const Vector2D Grad_perp(const Field2D &f, CELL_LOC outloc, const std::string& method) {
+  AUTO_TRACE();
+  SCOREP0();
+  ASSERT1(outloc == CELL_DEFAULT || outloc == f.getLocation());
+
+  Coordinates *metric = f.getCoordinates(outloc);
+
+  Vector2D result(f.getMesh());
+
+  result.x = DDX(f, outloc, method)
+             - metric->g_12 * DDY(f, outloc, method) / SQ(metric->J * metric->Bxy);
+  result.y = 0.0;
+  result.z = - metric->g_23 * DDY(f, outloc, method) / SQ(metric->J * metric->Bxy);
+
+  result.setLocation(result.x.getLocation());
+
+  result.covariant = true;
+
+  return result;
+}
+
 /**************************************************************************
  * Divergence operators
  **************************************************************************/
@@ -415,7 +436,7 @@ R V_dot_Grad(const T &v, const F &a) {
 
   return result;
   
-};
+}
 
 // Implement vector-vector operation in terms of templated routine above
 const Vector2D V_dot_Grad(const Vector2D &v, const Vector2D &a) {

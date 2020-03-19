@@ -2,6 +2,7 @@
 
 from builtins import str
 import os
+import pathlib
 import re
 import subprocess
 
@@ -15,8 +16,14 @@ except ImportError:
     from os import popen4, system
     lib = "system"
 
+if os.name == "nt":
+    # Default on Windows
+    DEFAULT_MPIRUN = "mpiexec.exe -n"
+else:
+    DEFAULT_MPIRUN = "mpirun -np"
 
-def getmpirun(default="mpirun -np"):
+
+def getmpirun(default=DEFAULT_MPIRUN):
   """Return environment variable named MPIRUN, if it exists else return
    a default mpirun command
 
@@ -228,7 +235,11 @@ def launch(command, runcmd=None, nproc=None, mthread=None,
         cmd = cmd + " > "+output
 
     if mthread is not None:
-        cmd = "OMP_NUM_THREADS={j} ".format(j=mthread)+cmd
+        if os.name == "nt":
+            # We're on windows, so we have to do it a little different
+            cmd = 'cmd /C "set OMP_NUM_THREADS={} && {}"'.format(mthread, cmd)
+        else:
+            cmd = "OMP_NUM_THREADS={} {}".format(mthread, cmd)
         
     if verbose == True:
          print(cmd)
@@ -277,3 +288,48 @@ def launch_safe(command, *args, **kwargs):
                            "Output was\n\n%s"%
                            (s,command,out))
     return s, out
+
+
+def build_and_log(test):
+    """Run make and redirect the output to a log file. Prints input
+
+    On Windows, does nothing because executable should have already
+    been built
+
+    """
+
+    if os.name == "nt":
+        return
+
+    print("Making {}".format(test))
+
+    if os.path.exists("makefile") or os.path.exists("Makefile"):
+        return shell_safe("make > make.log")
+
+    ctest_filename = "CTestTestfile.cmake"
+    if not os.path.exists(ctest_filename):
+        raise RuntimeError("Could not build: no makefile and no CMake files detected")
+
+    # We're using CMake, but we need to know the target name. If
+    # bout_add_integrated_test was used (which it should have been!),
+    # then the test name is the same as the target name
+    with open(ctest_filename, "r") as f:
+        contents = f.read()
+    match = re.search("add_test.(.*) ", contents)
+    if match is None:
+        raise RuntimeError("Using CMake, but could not determine test name")
+    test_name = match.group(1)
+
+    # Now we need to find the build directory. It'll be the first
+    # parent containing CMakeCache.txt
+    here = pathlib.Path(".").absolute()
+    for parent in here.parents:
+        if (parent / "CMakeCache.txt").exists():
+            return shell_safe(
+                "cmake --build {} --target {} > make.log".format(parent, test_name)
+            )
+
+    # We've just looked up the entire directory structure and not
+    # found the build directory, this could happen if CMakeCache was
+    # deleted, in which case we can't build anyway
+    raise RuntimeError("Using CMake, but could not find build directory")

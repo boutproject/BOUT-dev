@@ -18,6 +18,7 @@
 #include <globals.hxx>
 
 #include "parallel/fci.hxx"
+#include "parallel/shiftedmetricinterp.hxx"
 
 // use anonymous namespace so this utility function is not available outside this file
 namespace {
@@ -82,7 +83,10 @@ Field2D _interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
 
         // set boundary guard cells
         if ((bndry->bx != 0 && localmesh->GlobalNx - 2 * bndry->width >= 3)
-            || (bndry->by != 0 && localmesh->GlobalNy - 2 * bndry->width >= 3)) {
+            || (bndry->by != 0
+                && localmesh->GlobalNy - localmesh->numberOfYBoundaries() * bndry->width
+                   >= 3))
+        {
           if (bndry->bx != 0 && localmesh->LocalNx == 1 && bndry->width == 1) {
             throw BoutException(
                 "Not enough points in the x-direction on this "
@@ -115,6 +119,28 @@ Field2D _interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
       }
     }
   }
+#if CHECK > 0
+  if (not (
+            // if include_corner_cells=true, then we extrapolate valid data into the
+            // corner cells if they are not already filled
+            localmesh->include_corner_cells
+
+            // if we are not extrapolating at all, the corner cells should contain valid
+            // data
+            or (not extrapolate_x and not extrapolate_y)
+          )
+     ) {
+    // Invalidate corner guard cells
+    for (int i = 0; i < localmesh->xstart; i++) {
+      for (int j = 0; j < localmesh->ystart; j++) {
+        result(i, j) = BoutNaN;
+        result(i, localmesh->LocalNy - 1 - j) = BoutNaN;
+        result(localmesh->LocalNx - 1 - i, j) = BoutNaN;
+        result(localmesh->LocalNx - 1 - i, localmesh->LocalNy - 1 - j) = BoutNaN;
+      }
+    }
+  }
+#endif
 
   return result;
 }
@@ -247,10 +273,32 @@ Field2D _interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
       }
     }
   }
+#if CHECK > 0
+  if (not (
+            // if include_corner_cells=true, then we extrapolate valid data into the
+            // corner cells if they are not already filled
+            localmesh->include_corner_cells
 
+            // if we are not extrapolating at all, the corner cells should contain valid
+            // data
+            or (not extrapolate_x and not extrapolate_y)
+          )
+     ) {
+    // Invalidate corner guard cells
+    for (int i = 0; i < localmesh->xstart; i++) {
+      for (int j = 0; j < localmesh->ystart; j++) {
+	for (int k = 0; k < localmesh->LocalNz; ++k) {
+	  result(i, j, k) = BoutNaN;
+	  result(i, localmesh->LocalNy - 1 - j, k) = BoutNaN;
+	  result(localmesh->LocalNx - 1 - i, j, k) = BoutNaN;
+	  result(localmesh->LocalNx - 1 - i, localmesh->LocalNy - 1 - j, k) = BoutNaN;
+	}
+      }
+    }
+  }
+#endif
 
   return result;
-  //throw BoutException("NotImplemented (3D)");
 }
 
 
@@ -491,7 +539,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
     J = interpolateAndExtrapolate(J, location, extrapolate_x, extrapolate_y, false);
 
     // Compare calculated and loaded values
-    output_warn.write("\tMaximum difference in J is %e\n", max(abs(J - Jcalc)));
+    output_warn.write("\tMaximum difference in J is {:e}\n", max(abs(J - Jcalc)));
 
     communicate(J);
 
@@ -508,7 +556,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   } else {
 
     Bxy = interpolateAndExtrapolate(Bxy, location, extrapolate_x, extrapolate_y, false);
-    output_warn.write("\tMaximum difference in Bxy is %e\n", max(abs(Bxy - Bcalc)));
+    output_warn.write("\tMaximum difference in Bxy is {:e}\n", max(abs(Bxy - Bcalc)));
     // Check Bxy
     bout::checkFinite(Bxy, "Bxy", "RGN_NOCORNERS");
     bout::checkPositive(Bxy, "Bxy", "RGN_NOCORNERS");
@@ -1203,7 +1251,7 @@ int Coordinates::calcCovariant(const std::string& region) {
     a(0, 2) = a(2, 0) = g13[i];
 
     if (invert3x3(a)) {
-      output_error.write("\tERROR: metric tensor is singular at (%d, %d)\n", i.x(), i.y());
+      output_error.write("\tERROR: metric tensor is singular at ({:d}, {:d})\n", i.x(), i.y());
       return 1;
     }
 
@@ -1221,13 +1269,13 @@ int Coordinates::calcCovariant(const std::string& region) {
                    max(abs((g_12 * g12 + g_22 * g22 + g_23 * g23) - 1)),
                    max(abs((g_13 * g13 + g_23 * g23 + g_33 * g33) - 1)));
 
-  output_info.write("\tLocal maximum error in diagonal inversion is %e\n", maxerr);
+  output_info.write("\tLocal maximum error in diagonal inversion is {:e}\n", maxerr);
 
   maxerr = BOUTMAX(max(abs(g_11 * g12 + g_12 * g22 + g_13 * g23)),
                    max(abs(g_11 * g13 + g_12 * g23 + g_13 * g33)),
                    max(abs(g_12 * g13 + g_22 * g23 + g_23 * g33)));
 
-  output_info.write("\tLocal maximum error in off-diagonal inversion is %e\n", maxerr);
+  output_info.write("\tLocal maximum error in off-diagonal inversion is {:e}\n", maxerr);
 
   return 0;
 }
@@ -1258,7 +1306,7 @@ int Coordinates::calcContravariant(const std::string& region) {
     a(0, 2) = a(2, 0) = g_13[i];
 
     if (invert3x3(a)) {
-      output_error.write("\tERROR: metric tensor is singular at (%d, %d)\n", i.x(), i.y());
+      output_error.write("\tERROR: metric tensor is singular at ({:d}, {:d})\n", i.x(), i.y());
       return 1;
     }
 
@@ -1276,13 +1324,13 @@ int Coordinates::calcContravariant(const std::string& region) {
                    max(abs((g_12 * g12 + g_22 * g22 + g_23 * g23) - 1)),
                    max(abs((g_13 * g13 + g_23 * g23 + g_33 * g33) - 1)));
 
-  output_info.write("\tMaximum error in diagonal inversion is %e\n", maxerr);
+  output_info.write("\tMaximum error in diagonal inversion is {:e}\n", maxerr);
 
   maxerr = BOUTMAX(max(abs(g_11 * g12 + g_12 * g22 + g_13 * g23)),
                    max(abs(g_11 * g13 + g_12 * g23 + g_13 * g33)),
                    max(abs(g_12 * g13 + g_22 * g23 + g_23 * g33)));
 
-  output_info.write("\tMaximum error in off-diagonal inversion is %e\n", maxerr);
+  output_info.write("\tMaximum error in off-diagonal inversion is {:e}\n", maxerr);
   return 0;
 }
 
@@ -1356,17 +1404,20 @@ namespace {
 
 void Coordinates::setParallelTransform(Options* options) {
 
+  auto ptoptions = options->getSection("paralleltransform");
+
   std::string ptstr;
-  options->get("paralleltransform", ptstr, "identity");
+  ptoptions->get("type", ptstr, "identity");
 
   // Convert to lower case for comparison
   ptstr = lowercase(ptstr);
 
   if(ptstr == "identity") {
     // Identity method i.e. no transform needed
-    transform = bout::utils::make_unique<ParallelTransformIdentity>(*localmesh);
+    transform = bout::utils::make_unique<ParallelTransformIdentity>(*localmesh,
+                                                                    ptoptions);
 
-  } else if (ptstr == "shifted") {
+  } else if (ptstr == "shifted" or ptstr == "shiftedinterp") {
     // Shifted metric method
 
     Field2D zShift{localmesh};
@@ -1401,9 +1452,14 @@ void Coordinates::setParallelTransform(Options* options) {
 
     fixZShiftGuards(zShift);
 
-    ASSERT1(isConst(zlength()));
-    transform = bout::utils::make_unique<ShiftedMetric>(*localmesh, location, zShift,
-							zlength()(0,0));
+    if (ptstr == "shifted") {
+      ASSERT1(isConst(zlength()));
+      transform = bout::utils::make_unique<ShiftedMetric>(*localmesh, location, zShift,
+                                                          zlength()(0,0));
+    } else if (ptstr == "shiftedinterp") {
+      transform =
+          bout::utils::make_unique<ShiftedMetricInterp>(*localmesh, location, zShift);
+    }
 
   } else if (ptstr == "fci") {
 
@@ -1412,8 +1468,9 @@ void Coordinates::setParallelTransform(Options* options) {
     }
 
     // Flux Coordinate Independent method
-    const bool fci_zperiodic = Options::root()["fci"]["z_periodic"].withDefault(true);
-    transform = bout::utils::make_unique<FCITransform>(*localmesh, fci_zperiodic);
+    const bool fci_zperiodic = (*ptoptions)["z_periodic"].withDefault(true);
+    transform = bout::utils::make_unique<FCITransform>(*localmesh, fci_zperiodic,
+                                                       ptoptions);
 
   } else {
     throw BoutException(_("Unrecognised paralleltransform option.\n"
@@ -1747,28 +1804,99 @@ Field3D Coordinates::Laplace_par(const Field3D& f, CELL_LOC outloc) {
 
 // Full Laplacian operator on scalar field
 
-Coordinates::metric_field_type Coordinates::Laplace(const Field2D& f,
-                                                          CELL_LOC outloc) {
+Coordinates::metric_field_type Coordinates::Laplace(const Field2D& f, CELL_LOC outloc,
+                             const std::string& dfdy_boundary_conditions,
+                             const std::string& dfdy_dy_region) {
   TRACE("Coordinates::Laplace( Field2D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
-  auto result = G1 * DDX(f, outloc) + G2 * DDY(f, outloc) + g11 * D2DX2(f, outloc)
-                + g22 * D2DY2(f, outloc) + 2.0 * g12 * D2DXDY(f, outloc);
+  auto result =
+      G1 * DDX(f, outloc) + G2 * DDY(f, outloc) + g11 * D2DX2(f, outloc)
+      + g22 * D2DY2(f, outloc)
+      + 2.0 * g12
+            * D2DXDY(f, outloc, "DEFAULT", "RGN_NOBNDRY",
+                     dfdy_boundary_conditions, dfdy_dy_region);
 
   return result;
 }
 
-Field3D Coordinates::Laplace(const Field3D& f, CELL_LOC outloc) {
+Field3D Coordinates::Laplace(const Field3D& f, CELL_LOC outloc,
+                             const std::string& dfdy_boundary_conditions,
+                             const std::string& dfdy_dy_region) {
   TRACE("Coordinates::Laplace( Field3D )");
   ASSERT1(location == outloc || outloc == CELL_DEFAULT);
 
   Field3D result = G1 * ::DDX(f, outloc) + G2 * ::DDY(f, outloc) + G3 * ::DDZ(f, outloc)
                    + g11 * D2DX2(f, outloc) + g22 * D2DY2(f, outloc)
                    + g33 * D2DZ2(f, outloc)
-                   + 2.0 * (g12 * D2DXDY(f, outloc) + g13 * D2DXDZ(f, outloc)
-                            + g23 * D2DYDZ(f, outloc));
+                   + 2.0
+                         * (g12
+                                * D2DXDY(f, outloc, "DEFAULT", "RGN_NOBNDRY",
+                                         dfdy_boundary_conditions, dfdy_dy_region)
+                            + g13 * D2DXDZ(f, outloc) + g23 * D2DYDZ(f, outloc));
 
   return result;
+}
+
+// Full perpendicular Laplacian, in form of inverse of Laplacian operator in LaplaceXY
+// solver
+Field2D Coordinates::Laplace_perpXY(const Field2D& A, const Field2D& f) {
+  TRACE("Coordinates::Laplace_perpXY( Field2D )");
+#ifndef COORDINATES_USE_3D
+  Field2D result;
+  result.allocate();
+  for (auto i : result.getRegion(RGN_NOBNDRY)) {
+    result[i] = 0.;
+
+    // outer x boundary
+    const auto outer_x_avg = [&i](const auto& f) { return 0.5 * (f[i] + f[i.xp()]); };
+    const BoutReal outer_x_A = outer_x_avg(A);
+    const BoutReal outer_x_J = outer_x_avg(J);
+    const BoutReal outer_x_g11 = outer_x_avg(g11);
+    const BoutReal outer_x_dx = outer_x_avg(dx);
+    const BoutReal outer_x_value = outer_x_A * outer_x_J * outer_x_g11 /
+      (J[i] * outer_x_dx * dx[i]);
+    result[i] += outer_x_value * (f[i.xp()] - f[i]);
+
+    // inner x boundary
+    const auto inner_x_avg = [&i](const auto& f) { return 0.5 * (f[i] + f[i.xm()]); };
+    const BoutReal inner_x_A = inner_x_avg(A);
+    const BoutReal inner_x_J = inner_x_avg(J);
+    const BoutReal inner_x_g11 = inner_x_avg(g11);
+    const BoutReal inner_x_dx = inner_x_avg(dx);
+    const BoutReal inner_x_value = inner_x_A * inner_x_J * inner_x_g11 /
+      (J[i] * inner_x_dx * dx[i]);
+    result[i] += inner_x_value * (f[i.xm()] - f[i]);
+
+    // upper y boundary
+    const auto upper_y_avg = [&i](const auto& f) { return 0.5 * (f[i] + f[i.yp()]); };
+    const BoutReal upper_y_A = upper_y_avg(A);
+    const BoutReal upper_y_J = upper_y_avg(J);
+    const BoutReal upper_y_g_22 = upper_y_avg(g_22);
+    const BoutReal upper_y_g23 = upper_y_avg(g23);
+    const BoutReal upper_y_g_23 = upper_y_avg(g_23);
+    const BoutReal upper_y_dy = upper_y_avg(dy);
+    const BoutReal upper_y_value = -upper_y_A * upper_y_J * upper_y_g23 *upper_y_g_23 /
+      (upper_y_g_22 * J[i] * upper_y_dy * dy[i]);
+    result[i] += upper_y_value * (f[i.yp()] - f[i]);
+
+    // lower y boundary
+    const auto lower_y_avg = [&i](const auto& f) { return 0.5 * (f[i] + f[i.ym()]); };
+    const BoutReal lower_y_A = lower_y_avg(A);
+    const BoutReal lower_y_J = lower_y_avg(J);
+    const BoutReal lower_y_g_22 = lower_y_avg(g_22);
+    const BoutReal lower_y_g23 = lower_y_avg(g23);
+    const BoutReal lower_y_g_23 = lower_y_avg(g_23);
+    const BoutReal lower_y_dy = lower_y_avg(dy);
+    const BoutReal lower_y_value = -lower_y_A * lower_y_J * lower_y_g23 * lower_y_g_23 /
+      (lower_y_g_22 * J[i] * lower_y_dy * dy[i]);
+    result[i] += lower_y_value * (f[i.ym()] - f[i]);
+  }
+
+  return result;
+#else
+  throw BoutException("Coordinates::Laplace_perpXY for 3D metric not implemented");
+#endif
 }
 
 Coordinates::metric_field_type Coordinates::indexDDY(const Field2D& f, CELL_LOC outloc,

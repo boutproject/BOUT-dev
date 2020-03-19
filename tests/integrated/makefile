@@ -3,17 +3,16 @@
 
 BOUT_TOP = ../..
 
-LIST = test_suite_list
-
 BUILD = $(shell PYTHONPATH=../../tools/pylib:$$PYTHONPATH ./test_suite_make --get-list)
 BUILDALL = $(shell PYTHONPATH=../../tools/pylib:$$PYTHONPATH ./test_suite_make --get-list --all)
 
 CHECKING = $(shell PYTHONPATH=../../tools/pylib:$$PYTHONPATH ./test_suite --get-list)
 
-
 include $(BOUT_TOP)/make.config
 
 CHECKING_ = $(CHECKING:%=%_checking)
+
+DIRS_CLEAN = $(BUILD)
 
 .PHONY: $(BUILDALL) $(CHECKING_) check
 

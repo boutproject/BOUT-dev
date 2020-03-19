@@ -282,15 +282,16 @@ Coordinates::metric_field_type D4DZ4(const Field2D& f, CELL_LOC outloc,
  *
  * ** Communicates and applies boundary in X.
  */
-Coordinates::metric_field_type D2DXDY(const Field2D& f, CELL_LOC outloc,
-                                      const std::string& method, const std::string& region,
-                                      const std::string& dfdy_boundary_condition) {
+Coordinates::metric_field_type D2DXDY(const Field2D& f, CELL_LOC outloc, const std::string& method,
+               const std::string& region, const std::string& dfdy_boundary_condition,
+               const std::string& dfdy_region) {
+  std::string dy_region = dfdy_region.empty() ? region : dfdy_region;
 
   // If staggering in x, take y-derivative at f's location.
   const auto y_location =
     (outloc == CELL_XLOW or f.getLocation() == CELL_XLOW) ? CELL_DEFAULT : outloc;
 
-  auto dfdy = DDY(f, y_location, method, region);
+  auto dfdy = DDY(f, y_location, method, dy_region);
 
   // Set x-guard cells and x-boundary cells before calculating DDX
   f.getMesh()->communicate(dfdy);
@@ -307,17 +308,19 @@ Coordinates::metric_field_type D2DXDY(const Field2D& f, CELL_LOC outloc,
  * ** Communicates and applies boundary in X.
  */
 Field3D D2DXDY(const Field3D& f, CELL_LOC outloc, const std::string& method,
-    const std::string& region, const std::string& dfdy_boundary_condition) {
+               const std::string& region, const std::string& dfdy_boundary_condition,
+               const std::string& dfdy_region) {
+  std::string dy_region = dfdy_region.empty() ? region : dfdy_region;
 
   // If staggering in x, take y-derivative at f's location.
   const auto y_location =
     (outloc == CELL_XLOW or f.getLocation() == CELL_XLOW) ? CELL_DEFAULT : outloc;
 
-  Field3D dfdy = DDY(f, y_location, method, region);
+  Field3D dfdy = DDY(f, y_location, method, dy_region);
 
   // Set x-guard cells and x-boundary cells before calculating DDX
-  f.getMesh()->communicate(dfdy);
   dfdy.applyBoundary(dfdy_boundary_condition);
+  f.getMesh()->communicate(dfdy);
 
   return DDX(dfdy, outloc, method, region);
 }

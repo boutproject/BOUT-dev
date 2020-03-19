@@ -97,7 +97,6 @@ public:
     solver->outputVars(bout::globals::dump);
   };
   void free(){
-    delete solver;
     delete bout_monitor;
   };
   void set_init_func(PythonModelCallback * __init){
@@ -110,12 +109,12 @@ public:
     solver->solve();
   }
   Solver * getSolver(){
-    return solver;
+    return solver.get();
   };
 private:
   PythonModelCallback * _init;
   PythonModelCallback * _rhs;
-  Solver * solver;
+  std::unique_ptr<Solver> solver{nullptr};
   Monitor * bout_monitor;
 };
 

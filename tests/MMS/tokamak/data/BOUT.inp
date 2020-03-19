@@ -14,8 +14,10 @@ TwistShift = true
 ShiftXderivs = true
 
 [mesh]
-paralleltransform = shifted
 symmetricGlobalX = true
+
+[mesh:paralleltransform]
+type = shifted
 
 [mesh:ddx]
 upwind = W3

@@ -61,8 +61,6 @@ private:
   int bkgd;   // Profile options for coefficients (same options as BOUT-06)
   int iTe_dc; // Profile evolution options
   
-  bool stagger; // Use CtoL and LtoC for parallel derivs
-  
   // Poisson brackets: b0 x Grad(f) dot Grad(g) / B = [f, g]
   // Method to use: BRACKET_ARAKAWA, BRACKET_STD or BRACKET_SIMPLE
   BRACKET_METHOD bm; // Bracket method for advection terms
@@ -94,10 +92,10 @@ private:
   Coordinates *coord;
 
   // Inverts a Laplacian to get potential
-  Laplacian *phiSolver;
+  std::unique_ptr<Laplacian> phiSolver;
 
   // Solves the electromagnetic potential
-  Laplacian *aparSolver;
+  std::unique_ptr<Laplacian> aparSolver;
   Field2D acoef; // Coefficient in the Helmholtz equation
   
   int init(bool UNUSED(restarting)) override {
@@ -205,8 +203,6 @@ private:
     bkgd = options["bkgd"].withDefault(2);
     iTe_dc = options["iTe_dc"].withDefault(2);
 
-    stagger = options["stagger"].withDefault(false);
-
     laplace_extra_rho_term = options["laplace_extra_rho_term"].withDefault(false);
     vort_include_pi = options["vort_include_pi"].withDefault(false);
 
@@ -289,7 +285,8 @@ private:
     // SHIFTED RADIAL COORDINATES
 
     // Check type of parallel transform
-    std::string ptstr = Options::root()["mesh"]["paralleltransform"].withDefault<std::string>("identity");
+    std::string ptstr = Options::root()["mesh"]["paralleltransform"]["type"]
+                                       .withDefault<std::string>("identity");
 
     if (lowercase(ptstr) == "shifted") {
       ShearFactor = 0.0;  // I disappears from metric
@@ -323,14 +320,14 @@ private:
     
     Vi_x = wci * rho_s;
     
-    output.write("Collisions: nueix = %e, nu_hat = %e\n", nueix, nu_hat);
+    output.write("Collisions: nueix = {:e}, nu_hat = {:e}\n", nueix, nu_hat);
     
     ////////////////////////////////////////////////////////
     // PRINT Z INFORMATION
     
     BoutReal hthe0;
     if(mesh->get(hthe0, "hthe0") == 0) {
-      output.write("    ****NOTE: input from BOUT, Z length needs to be divided by %e\n", hthe0/rho_s);
+      output.write("    ****NOTE: input from BOUT, Z length needs to be divided by {:e}\n", hthe0/rho_s);
     }
     
     ////////////////////////////////////////////////////////
@@ -347,7 +344,7 @@ private:
     ////////////////////////////////////////////////////////
     // NORMALISE QUANTITIES
     
-    output.write("\tNormalising to rho_s = %e\n", rho_s);
+    output.write("\tNormalising to rho_s = {:e}\n", rho_s);
     
     // Normalise profiles
     Ni0 /= Ni_x/1.0e14;
@@ -588,18 +585,10 @@ private:
     if (ZeroElMass) {
       // Set jpar,Ve,Ajpar neglecting the electron inertia term
       // Calculate Jpar, communicating across processors
-      if (!stagger) {
-        jpar = -(Ni0*Grad_par(phi, CELL_YLOW)) / (fmei*0.51*nu);
-        
-        if (OhmPe) {
-          jpar += (Te0*Grad_par(Ni, CELL_YLOW)) / (fmei*0.51*nu);
-        }
-      } else {
-        jpar = -(Ni0*Grad_par_LtoC(phi))/(fmei*0.51*nu);
+      jpar = -(Ni0*Grad_par(phi, CELL_YLOW)) / (fmei*0.51*nu);
       
-        if (OhmPe) {
-          jpar += (Te0*Grad_par_LtoC(Ni)) / (fmei*0.51*nu);
-        }
+      if (OhmPe) {
+        jpar += (Te0*Grad_par(Ni, CELL_YLOW)) / (fmei*0.51*nu);
       }
       
       // Need to communicate jpar
@@ -646,11 +635,7 @@ private:
         ddt(Ni) -= Vpar_Grad_par(Vit, Nit) - Vpar_Grad_par(Vi0, Ni0);
       
       if (ni_jpar1) {
-        if (stagger) {
-          ddt(Ni) += Div_par_CtoL(jpar);
-        } else {
-          ddt(Ni) += Div_par(jpar);
-        }
+        ddt(Ni) += Div_par(jpar, CELL_CENTRE);
       }
       
       if (ni_pe1)
@@ -807,11 +792,7 @@ private:
       }    
       
       if (rho_jpar1) {
-        if (stagger) {
-          ddt(rho) += SQ(coord->Bxy)*Div_par_CtoL(jpar);
-        } else  {
-          ddt(rho) += SQ(coord->Bxy)*Div_par(jpar, CELL_CENTRE);
-        }
+        ddt(rho) += SQ(coord->Bxy)*Div_par(jpar, CELL_CENTRE);
       }
       
       if (rho_rho1)
@@ -829,20 +810,12 @@ private:
       TRACE("Ajpar equation");
       
       //ddt(Ajpar) -= vE_Grad(Ajpar0, phi) + vE_Grad(Ajpar, phi0) + vE_Grad(Ajpar, phi);
-      //ddt(Ajpar) -= (1./fmei)*1.71*Grad_par(Te);
+      //ddt(Ajpar) -= (1./fmei)*1.71*Grad_par(Te, CELL_YLOW);
       
-      if (stagger) {
-        ddt(Ajpar) += (1./fmei)*Grad_par_LtoC(phi); // Right-hand differencing
-      } else {
-        ddt(Ajpar) += (1./fmei)*Grad_par(phi, CELL_YLOW);
-      }
+      ddt(Ajpar) += (1./fmei)*Grad_par(phi, CELL_YLOW);
       
       if (OhmPe) {
-        if (stagger) {
-          ddt(Ajpar) -= (1./fmei)*(Tet/Nit)*Grad_par_LtoC(Ni);
-        } else {
-          ddt(Ajpar) -= (1./fmei)*(Te0/Ni0)*Grad_par(Ni, CELL_YLOW);
-        }
+        ddt(Ajpar) -= (1./fmei)*(Te0/Ni0)*Grad_par(Ni, CELL_YLOW);
       }
       
       ddt(Ajpar) += 0.51*interp_to(nu, CELL_YLOW)*jpar/Ni0;

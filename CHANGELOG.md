@@ -1,5 +1,36 @@
 # Change Log
 
+## [v5.0.0-alpha](https://github.com/boutproject/BOUT-dev/tree/next)
+[Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v4.3.0...next)
+
+### Breaking changes
+
+- `BoutMesh::GlobalNy` now counts points from all y-boundaries. Previously it
+  only counted points from the boundaries at the upper and lower edges of the
+  logical grid, even if there was another boundary in the grid.
+  [\#1829](https://github.com/boutproject/BOUT-dev/pull/1829)
+- `invert_laplace` free function removed
+  [\#1834](https://github.com/boutproject/BOUT-dev/pull/1834)
+- Most factories and `create` methods standardised. Run
+  `bin/bout-v5-factory-upgrader.py` on your physics models to update
+  them [\#1842](https://github.com/boutproject/BOUT-dev/pull/1842)
+- We now use [fmt](https://fmt.dev) for all our string formatting,
+  instead of the printf-style formatting. This affects calls to
+  `Output`, `BoutException`/`ParseException`, `DataFile`,
+  `OptionsReader`, and `MsgStack`/`TRACE`. Run
+  `bin/bout-v5-format-upgrader.py` on your physics models to update
+  them. [\#1847](https://github.com/boutproject/BOUT-dev/pull/1847)
+- The option `laplacexy:y_bndry_dirichlet` has been deprecated. Use
+  `laplacexy:y_bndry=dirichlet` instead.
+  [\#1789](https://github.com/boutproject/BOUT-dev/pull/1789)
+- The variable `BOUT_VERSION`, and the macros `REVISION`,
+  `BOUT_VERSION_STRING` and `BOUT_VERSION_DOUBLE` have been replaced
+  with `constexpr` variables in the `bout::version`
+  namespace. `REVISION` is found in `include/bout/revision.hxx`, while
+  the rest are in `include/bout/version.hxx`. Both files are generated
+  at configure time. Run `bin/bout-v5-macro-upgrader.py` to
+  update. [\#1920](https://github.com/boutproject/BOUT-dev/pull/1920)
+
 ## [v4.3.0](https://github.com/boutproject/BOUT-dev/tree/v4.3.0) (2019-10-24)
 [Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v4.2.3...v4.3.0)
 

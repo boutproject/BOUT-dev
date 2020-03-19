@@ -113,13 +113,13 @@ int PhysicsModel::postInit(bool restarting) {
 
   std::string filename = restart_dir + "/BOUT.restart."+restart_ext;
   if (restarting) {
-    output.write("Loading restart file: %s\n", filename.c_str());
+    output.write("Loading restart file: {:s}\n", filename);
 
     /// Load restart file
-    if (!restart.openr("%s",filename.c_str()))
-      throw BoutException("Error: Could not open restart file %s\n", filename.c_str());
+    if (!restart.openr(filename))
+      throw BoutException("Error: Could not open restart file {:s}\n", filename);
     if (!restart.read())
-      throw BoutException("Error: Could not read restart file %s\n", filename.c_str());
+      throw BoutException("Error: Could not read restart file {:s}\n", filename);
     restart.close();
   }
 
@@ -128,10 +128,10 @@ int PhysicsModel::postInit(bool restarting) {
   // are not overwritten.
   bout::globals::mesh->outputVars(restart);
   // Version expected by collect routine
-  restart.addOnce(const_cast<BoutReal &>(BOUT_VERSION), "BOUT_VERSION");
+  restart.addOnce(const_cast<BoutReal &>(bout::version::as_double), "BOUT_VERSION");
 
   /// Open the restart file for writing
-  if (!restart.openw("%s",filename.c_str()))
+  if (!restart.openw(filename))
     throw BoutException("Error: Could not open restart file for writing\n");
 
   if (restarting) {

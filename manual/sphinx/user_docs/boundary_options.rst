@@ -75,7 +75,9 @@ which has the solution
 
 Assuming that the solution should decay away from the domain, on the
 inner :math:`x` boundary :math:`B = 0`, and on the outer boundary
-:math:`A = 0`. Boundary modifiers change the behaviour of boundary
+:math:`A = 0`.
+
+Boundary modifiers change the behaviour of boundary
 conditions, and more than one modifier can be used. Currently the
 following are available:
 
@@ -88,7 +90,25 @@ following are available:
 -  ``width`` - Modifies the width of the region over which the boundary
    condition is applied
 
-These are described in the following subsections.
+These are described in later subsections.
+
+Boundary conditions for non-orthogonal grids
+--------------------------------------------
+
+If non-orthogonal grids are used (meaning that the x- and y-directions are not orthogonal,
+so ``g12 != 0.``), then corner cells may be required. The boundary conditions are applied
+in corner cells[#disablecorners]_ by applying the y-boundary condition using x-boundary
+values. This requires that x-boundary conditions are applied before y-boundary conditions.
+The ordering is taken care of by the methods described in this section, but also needs to
+be respected by any custom boundary conditions in user code (e.g. sheath boundary
+conditions). Note that the iterators returned by the ``BoutMesh`` methods
+``iterateBndryLowerY``, ``iterateBndryLowerInnerY``, ``iterateBndryLowerOuterY``,
+``iterateBndryUpperY``, ``iterateBndryUpperInnerY``, and ``iterateBndryUpperOuterY``
+do include the corner cells at the domain boundary corners.
+
+.. [#disablecorners] although this may be disabled, reverting to the behaviour of BOUT++
+                     up to v4, by setting the option ``mesh:include_corner_cells =
+                     false``.
 
 Relaxing boundaries
 -------------------

@@ -40,14 +40,14 @@
 #error This utility macro should not clash with another one
 #else
 #define DERIV_FUNC_REGION_ENUM_TO_STRING(func, T, Tr)			\
-[[gnu::deprecated("Please use #func(const #T& f, CELL_LOC outloc = CELL_DEFAULT, " \
+[[deprecated("Please use #func(const #T& f, CELL_LOC outloc = CELL_DEFAULT, " \
     "const std::string& method = \"DEFAULT\", const std::string& region = \"RGN_ALL\") " \
     "instead")]] \
 inline Tr func(const T& f, CELL_LOC outloc, const std::string& method, \
     REGION region) { \
   return func(f, outloc, method, toString(region)); \
 } \
-[[gnu::deprecated("Please use #func(const #T& f, CELL_LOC outloc = CELL_DEFAULT, " \
+[[deprecated("Please use #func(const #T& f, CELL_LOC outloc = CELL_DEFAULT, " \
     "const std::string& method = \"DEFAULT\", const std::string& region = \"RGN_ALL\") " \
     "instead")]] \
 inline Tr func(const T& f, CELL_LOC outloc, DIFF_METHOD method, \
@@ -60,14 +60,14 @@ inline Tr func(const T& f, CELL_LOC outloc, DIFF_METHOD method, \
 #error This utility macro should not clash with another one
 #else
 #define VDERIV_FUNC_REGION_ENUM_TO_STRING(func, T, T1, T2) \
-[[gnu::deprecated("Please use #func(const #T1 v, const #T2& f, " \
+[[deprecated("Please use #func(const #T1 v, const #T2& f, " \
     "CELL_LOC outloc = CELL_DEFAULT, const std::string& method = \"DEFAULT\", const " \
     "std::string& region = \"RGN_ALL\") instead")]] \
 inline T func(const T1& v, const T2& f, CELL_LOC outloc, const std::string& method, \
     REGION region) { \
   return func(v, f, outloc, method, toString(region)); \
 } \
-[[gnu::deprecated("Please use #func(const #T1& v, const #T2& f, " \
+[[deprecated("Please use #func(const #T1& v, const #T2& f, " \
     "CELL_LOC outloc = CELL_DEFAULT, const std::string& method = \"DEFAULT\", " \
     "const std::string& region = \"RGN_ALL\") instead")]] \
 inline T func(const T1& v, const T2& f, CELL_LOC outloc, DIFF_METHOD method, \
@@ -638,25 +638,33 @@ VDERIV_FUNC_REGION_ENUM_TO_STRING(FDDZ, Coordinates::metric_field_type, Field2D,
 ///                    If not given, defaults to RGN_NOBNDRY
 /// @param[in] dfdy_boundary_condition Boundary condition to use to set the guard cells of
 ///                                    df/dy, before calculating the x-derivative.
+/// @param[in] dfdy_region Region in which to calculate df/dy. If an empty string (default)
+///                        then the same as the region for the calculation as a whole.
+///                        If dfdy_region < region in size then this will cause errors.
 Field3D D2DXDY(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
-                     const std::string& method = "DEFAULT",
-                     const std::string& region = "RGN_NOBNDRY",
-                     const std::string& dfdy_boundary_condition = "free_o3");
-[[gnu::deprecated("Please use D2DXDY(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, " 
+               const std::string& method = "DEFAULT",
+               const std::string& region = "RGN_NOBNDRY",
+               const std::string& dfdy_boundary_condition = "free_o3",
+               const std::string& dfdy_region = "");
+[[deprecated(
+    "Please use D2DXDY(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, "
     "const std::string& method = \"DEFAULT\", const std::string& region = \"RGN_ALL\", "
-    "const std::string& dfdy_boundary_condition) instead")]]
-inline Field3D D2DXDY(const Field3D& f, CELL_LOC outloc, const std::string& method,
-                            REGION region,
-                            const std::string& dfdy_boundary_condition = "free_o3") {
-  return D2DXDY(f, outloc, method, toString(region), dfdy_boundary_condition);
+    "const std::string& dfdy_boundary_condition) instead")]] inline Field3D
+D2DXDY(const Field3D& f, CELL_LOC outloc, const std::string& method, REGION region,
+       const std::string& dfdy_boundary_condition = "free_o3",
+       const std::string& dfdy_region = "") {
+  return D2DXDY(f, outloc, method, toString(region), dfdy_boundary_condition,
+                dfdy_region);
 }
-[[gnu::deprecated("Please use D2DXDY(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, " 
+[[deprecated(
+    "Please use D2DXDY(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, "
     "const std::string& method = \"DEFAULT\", const std::string& region = \"RGN_ALL\", "
-    "const std::string& dfdy_boundary_condition) instead")]]
-inline Field3D D2DXDY(const Field3D& f, CELL_LOC outloc, DIFF_METHOD method,
-                            REGION region = RGN_NOBNDRY,
-                            const std::string& dfdy_boundary_condition = "free_o3") {
-  return D2DXDY(f, outloc, toString(method), toString(region), dfdy_boundary_condition);
+    "const std::string& dfdy_boundary_condition) instead")]] inline Field3D
+D2DXDY(const Field3D& f, CELL_LOC outloc, DIFF_METHOD method, REGION region = RGN_NOBNDRY,
+       const std::string& dfdy_boundary_condition = "free_o3",
+       const std::string& dfdy_region = "") {
+  return D2DXDY(f, outloc, toString(method), toString(region), dfdy_boundary_condition,
+                dfdy_region);
 };
 
 /// Calculate mixed partial derivative in x and y
@@ -673,25 +681,34 @@ inline Field3D D2DXDY(const Field3D& f, CELL_LOC outloc, DIFF_METHOD method,
 ///                    If not given, defaults to RGN_NOBNDRY
 /// @param[in] dfdy_boundary_condition Boundary condition to use to set the guard cells of
 ///                                    df/dy, before calculating the x-derivative.
+/// @param[in] dfdy_region Region in which to calculate df/dy. If an empty string
+///                        (default) then the same as the region for the calculation as a
+///                        whole. If dfdy_region < region in size then this will cause
+///                        errors.
 Coordinates::metric_field_type D2DXDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-                     const std::string& method = "DEFAULT",
-                     const std::string& region = "RGN_NOBNDRY",
-                     const std::string& dfdy_boundary_condition = "free_o3");
-[[gnu::deprecated("Please use D2DXDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT, " 
+               const std::string& method = "DEFAULT",
+               const std::string& region = "RGN_NOBNDRY",
+               const std::string& dfdy_boundary_condition = "free_o3",
+               const std::string& dfdy_region = "");
+[[deprecated(
+    "Please use D2DXDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT, "
     "const std::string& method = \"DEFAULT\", const std::string& region = \"RGN_ALL\", "
-    "const std::string& dfdy_boundary_condition) instead")]]
-inline Coordinates::metric_field_type D2DXDY(const Field2D& f, CELL_LOC outloc, const std::string& method,
-                            REGION region,
-                            const std::string& dfdy_boundary_condition = "free_o3") {
-  return D2DXDY(f, outloc, method, toString(region), dfdy_boundary_condition);
+    "const std::string& dfdy_boundary_condition) instead")]] inline Coordinates::metric_field_type
+D2DXDY(const Field2D& f, CELL_LOC outloc, const std::string& method, REGION region,
+       const std::string& dfdy_boundary_condition = "free_o3",
+       const std::string& dfdy_region = "") {
+  return D2DXDY(f, outloc, method, toString(region), dfdy_boundary_condition,
+                dfdy_region);
 }
-[[gnu::deprecated("Please use D2DXDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT, " 
+[[deprecated(
+    "Please use D2DXDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT, "
     "const std::string& method = \"DEFAULT\", const std::string& region = \"RGN_ALL\", "
-    "const std::string& dfdy_boundary_condition) instead")]]
-inline Coordinates::metric_field_type D2DXDY(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method,
-                            REGION region = RGN_NOBNDRY,
-                            const std::string& dfdy_boundary_condition = "free_o3") {
-  return D2DXDY(f, outloc, toString(method), toString(region), dfdy_boundary_condition);
+    "const std::string& dfdy_boundary_condition) instead")]] inline Coordinates::metric_field_type
+D2DXDY(const Field2D& f, CELL_LOC outloc, DIFF_METHOD method, REGION region = RGN_NOBNDRY,
+       const std::string& dfdy_boundary_condition = "free_o3",
+       const std::string& dfdy_region = "") {
+  return D2DXDY(f, outloc, toString(method), toString(region), dfdy_boundary_condition,
+                dfdy_region);
 };
 
 /// Calculate mixed partial derivative in x and z

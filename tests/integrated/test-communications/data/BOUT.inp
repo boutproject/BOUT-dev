@@ -1,0 +1,17 @@
+nout = 0
+
+mxg = 1
+myg = 1
+
+[mesh]
+nx = 8
+ny = 12
+nz = 1
+
+ixseps1 = 3
+ixseps2 = 5
+jyseps1_1 = 1
+jyseps2_1 = 3
+ny_inner = 6
+jyseps1_2 = 7
+jyseps2_2 = 9

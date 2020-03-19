@@ -91,8 +91,8 @@ private:
   BoutReal dz4;
   
   // Laplacian solver
-  Laplacian *phiSolver;
-  Laplacian *aparSolver;
+  std::unique_ptr<Laplacian> phiSolver{nullptr};
+  std::unique_ptr<Laplacian> aparSolver{nullptr};
 };
 
 #endif // __GBS_H__

@@ -24,7 +24,7 @@ int physics_init(bool UNUSED(restarting)) {
   
   coords->dy = Ly/(mesh->GlobalNy - 2*mesh->ystart);
   
-  output.write("SIZES: %d, %d, %e\n", mesh->GlobalNy, (mesh->GlobalNy - 2*mesh->ystart), coords->dy(0,0,0));
+  output.write("SIZES: {:d}, {:d}, {:e}\n", mesh->GlobalNy, (mesh->GlobalNy - 2*mesh->ystart), coords->dy(0,0,0));
 
   SAVE_ONCE2(Lx,Ly);
 

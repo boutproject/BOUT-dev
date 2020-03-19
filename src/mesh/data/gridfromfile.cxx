@@ -30,7 +30,7 @@ GridFile::GridFile(std::unique_ptr<DataFormat> format, std::string gridfilename)
   TRACE("GridFile constructor");
 
   if (! file->openr(filename) ) {
-    throw BoutException("Could not open file '%s'", filename.c_str());
+    throw BoutException("Could not open file '{:s}'", filename);
   }
 
   file->setGlobalOrigin(); // Set default global origin
@@ -206,25 +206,27 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def) 
   AUTO_TRACE();
 
   if (!file->is_valid()) {
-    throw BoutException("Could not read '%s' from file: File cannot be read", name.c_str());
+    throw BoutException("Could not read '{:s}' from file: File cannot be read", name);
   }
   std::vector<int> size = file->getSize(name);
   
   switch(size.size()) {
   case 0: {
     // Variable not found
-    output_warn.write("\tWARNING: Could not read '%s' from grid. Setting to %le\n", name.c_str(), def);
+    output_warn.write("\tWARNING: Could not read '{:s}' from grid. Setting to {:e}\n", name, def);
     var = def;
     return false;
   }
   case 1: {
     // 0 or 1 dimension
     if (size[0] != 1) {
-      throw BoutException("Expecting a 2D variable, but '%s' is 1D with %d elements\n", name.c_str(), size[0]);
+      throw BoutException(
+          "Expecting a 2D variable, but '{:s}' is 1D with {:d} elements\n", name,
+          size[0]);
     }
     BoutReal rval;
     if (!file->read(&rval, name)) {
-      throw BoutException("Couldn't read 0D variable '%s'\n", name.c_str());
+      throw BoutException("Couldn't read 0D variable '{:s}'\n", name);
     }
     var = rval;
     return true;
@@ -236,16 +238,14 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def) 
   case 3: {
     // Check size if getting Field3D
     if (bout::utils::is_Field2D<T>::value or bout::utils::is_FieldPerp<T>::value) {
-      output_warn.write("WARNING: Variable '%s' should be 2D, but has %zu dimensions. Ignored\n",
-                        name.c_str(), size.size());
+      output_warn.write("WARNING: Variable '{:s}' should be 2D, but has {:d} dimensions. Ignored\n", name, size.size());
       var = def;
       return false;
     }
     break;
   }
   default: {
-    output_warn.write("WARNING: Variable '%s' should be 2D or 3D, but has %zu dimensions. Ignored\n",
-                      name.c_str(), size.size());
+    output_warn.write("WARNING: Variable '{:s}' should be 2D or 3D, but has {:d} dimensions. Ignored\n", name, size.size());
     var = def;
     return false;
   }
@@ -304,26 +304,30 @@ bool GridFile::getField(Mesh* m, T& var, const std::string& name, BoutReal def) 
     nx_to_read = m->LocalNx - 2*mxg;
     xd = mxg;
   } else {
-    throw BoutException("Could not read '%s' from file: number of x-boundary guard cells "
-                "in the grid file grid_xguards=%i neither matches grid_xguards >= mxg=%i "
-                "nor grid_xguards = 0", name.c_str(), grid_xguards, mxg);
+    throw BoutException(
+        "Could not read '{:s}' from file: number of x-boundary guard cells "
+        "in the grid file grid_xguards={:d} neither matches grid_xguards >= mxg={:d} "
+        "nor grid_xguards = 0",
+        name, grid_xguards, mxg);
   }
 
   if (not bout::utils::is_FieldPerp<T>::value) {
     ///Check if field dimensions are correct. y-direction
     if (grid_yguards > 0) { ///including ghostpoints
-      ASSERT1(field_dimensions[1] == m->GlobalNy - 2*myg + total_grid_yguards);
+      ASSERT1(field_dimensions[1] == m->GlobalNy);
       ny_to_read = m->LocalNy;
       yd = grid_yguards - myg;
       ASSERT1(yd >= 0);
     } else if (grid_yguards == 0) { ///excluding ghostpoints
-      ASSERT1(field_dimensions[1] == m->GlobalNy - 2*myg);
+      ASSERT1(field_dimensions[1] == m->GlobalNy - m->numberOfYBoundaries()*2*myg);
       ny_to_read = m->LocalNy - 2*myg;
       yd = myg;
     } else {
-      throw BoutException("Could not read '%s' from file: number of y-boundary guard cells "
-                  "in the grid file grid_yguards=%i neither matches grid_yguards >= myg=%i "
-                  "nor grid_yguards = 0", name.c_str(), grid_yguards, myg);
+      throw BoutException(
+          "Could not read '{:s}' from file: number of y-boundary guard cells "
+          "in the grid file grid_yguards={:d} neither matches grid_yguards >= myg={:d} "
+          "nor grid_yguards = 0",
+          name, grid_yguards, myg);
     }
   }
 
@@ -385,7 +389,7 @@ void GridFile::readField(Mesh* UNUSED(m), const std::string& name, int ys, int y
   for(int x = xs; x < xs+nx_to_read; x++) {
     file->setGlobalOrigin(x,ys,0);
     if (!file->read(&var(x-xs+xd, yd), name, 1, ny_to_read) ) {
-      throw BoutException("Could not fetch data for '%s'", name.c_str());
+      throw BoutException("Could not fetch data for '{:s}'", name);
     }
   }
   file->setGlobalOrigin();
@@ -402,8 +406,8 @@ void GridFile::readField(Mesh* m, const std::string& name, int ys, int yd,
   if (hasVar("nz")) {
     // Check the array is the right size
     if (size[2] != m->LocalNz) {
-      throw BoutException("3D variable '%s' has incorrect size %d (expecting %d)",
-          name.c_str(), size[2], m->LocalNz);
+      throw BoutException("3D variable '{:s}' has incorrect size {:d} (expecting {:d})",
+                          name, size[2], m->LocalNz);
     }
 
     if (!readgrid_3dvar_real(name,
@@ -414,8 +418,8 @@ void GridFile::readField(Mesh* m, const std::string& name, int ys, int yd,
           xd,// Insert data starting from x=xd
           nx_to_read, // Length of data in X
           var) ) {
-      throw BoutException("\tWARNING: Could not read '%s' from grid. Setting to zero\n",
-          name.c_str());
+      throw BoutException("\tWARNING: Could not read '{:s}' from grid. Setting to zero\n",
+                          name);
     }
   } else {
     // No Z size specified in file. Assume FFT format
@@ -427,8 +431,8 @@ void GridFile::readField(Mesh* m, const std::string& name, int ys, int yd,
           xd,// Insert data starting from x=xd
           nx_to_read, // Length of data in X
           var) ) {
-      throw BoutException("\tWARNING: Could not read '%s' from grid. Setting to zero\n",
-          name.c_str());
+      throw BoutException("\tWARNING: Could not read '{:s}' from grid. Setting to zero\n",
+                          name);
     }
   }
 }
@@ -450,8 +454,9 @@ void GridFile::readField(Mesh* m, const std::string& name, int UNUSED(ys), int U
     if (hasVar("nz")) {
       // Check the array is the right size
       if (size[2] != m->LocalNz) {
-        throw BoutException("FieldPerp variable '%s' has incorrect size %d (expecting %d)",
-            name.c_str(), size[2], m->LocalNz);
+        throw BoutException(
+            "FieldPerp variable '{:s}' has incorrect size {:d} (expecting {:d})", name,
+            size[2], m->LocalNz);
       }
 
       if (!readgrid_perpvar_real(name,
@@ -459,8 +464,8 @@ void GridFile::readField(Mesh* m, const std::string& name, int UNUSED(ys), int U
             xd,// Insert data starting from x=xd
             nx_to_read, // Length of data in X
             var) ) {
-        throw BoutException("\tWARNING: Could not read '%s' from grid. Setting to zero\n",
-            name.c_str());
+        throw BoutException(
+            "\tWARNING: Could not read '{:s}' from grid. Setting to zero\n", name);
       }
     } else {
       // No Z size specified in file. Assume FFT format
@@ -469,8 +474,8 @@ void GridFile::readField(Mesh* m, const std::string& name, int UNUSED(ys), int U
             xd,// Insert data starting from x=xd
             nx_to_read, // Length of data in X
             var) ) {
-        throw BoutException("\tWARNING: Could not read '%s' from grid. Setting to zero\n",
-            name.c_str());
+        throw BoutException(
+            "\tWARNING: Could not read '{:s}' from grid. Setting to zero\n", name);
       }
     }
   }
@@ -553,7 +558,7 @@ bool GridFile::readgrid_3dvar_fft(Mesh *m, const std::string &name,
   std::vector<int> size = file->getSize(name);
   
   if (size.size() != 3) {
-    output_warn.write("\tWARNING: Number of dimensions of %s incorrect\n", name.c_str());
+    output_warn.write("\tWARNING: Number of dimensions of {:s} incorrect\n", name);
     return false;
   }
 
@@ -574,7 +579,7 @@ bool GridFile::readgrid_3dvar_fft(Mesh *m, const std::string &name,
   // Print out which modes are going to be read in
   if (zperiod > maxmode) {
     // Domain is too small: Only DC
-    output_warn.write("zperiod (%d) > maxmode (%d) => Only reading n = 0 component\n", zperiod, maxmode);
+    output_warn.write("zperiod ({:d}) > maxmode ({:d}) => Only reading n = 0 component\n", zperiod, maxmode);
   } else {
     // Get maximum mode in the input which is a multiple of zperiod
     int mm = (maxmode / zperiod) * zperiod;
@@ -582,9 +587,9 @@ bool GridFile::readgrid_3dvar_fft(Mesh *m, const std::string &name,
       mm = (ncz/2)*zperiod; // Limited by Z resolution
     
     if (mm == zperiod) {
-      output_info.write(" => Reading n = 0, %d\n", zperiod);
+      output_info.write(" => Reading n = 0, {:d}\n", zperiod);
     } else {
-      output_info.write(" => Reading n = 0, %d ... %d\n", zperiod, mm);
+      output_info.write(" => Reading n = 0, {:d} ... {:d}\n", zperiod, mm);
     }
   }
 
@@ -643,7 +648,7 @@ bool GridFile::readgrid_3dvar_real(const std::string &name,
   std::vector<int> size = file->getSize(name);
   
   if (size.size() != 3) {
-    output_warn.write("\tWARNING: Number of dimensions of %s incorrect\n", name.c_str());
+    output_warn.write("\tWARNING: Number of dimensions of {:s} incorrect\n", name);
     return false;
   }
   
@@ -685,7 +690,7 @@ bool GridFile::readgrid_perpvar_fft(Mesh *m, const std::string &name,
   std::vector<int> size = file->getSize(name);
 
   if (size.size() != 2) {
-    output_warn.write("\tWARNING: Number of dimensions of %s incorrect\n", name.c_str());
+    output_warn.write("\tWARNING: Number of dimensions of {:s} incorrect\n", name);
     return false;
   }
 
@@ -706,7 +711,7 @@ bool GridFile::readgrid_perpvar_fft(Mesh *m, const std::string &name,
   // Print out which modes are going to be read in
   if (zperiod > maxmode) {
     // Domain is too small: Only DC
-    output_warn.write("zperiod (%d) > maxmode (%d) => Only reading n = 0 component\n", zperiod, maxmode);
+    output_warn.write("zperiod ({:d}) > maxmode ({:d}) => Only reading n = 0 component\n", zperiod, maxmode);
   } else {
     // Get maximum mode in the input which is a multiple of zperiod
     int mm = (maxmode / zperiod) * zperiod;
@@ -714,9 +719,9 @@ bool GridFile::readgrid_perpvar_fft(Mesh *m, const std::string &name,
       mm = (ncz/2)*zperiod; // Limited by Z resolution
 
     if (mm == zperiod) {
-      output_info.write(" => Reading n = 0, %d\n", zperiod);
+      output_info.write(" => Reading n = 0, {:d}\n", zperiod);
     } else {
-      output_info.write(" => Reading n = 0, %d ... %d\n", zperiod, mm);
+      output_info.write(" => Reading n = 0, {:d} ... {:d}\n", zperiod, mm);
     }
   }
 
@@ -769,7 +774,7 @@ bool GridFile::readgrid_perpvar_real(const std::string &name,
   std::vector<int> size = file->getSize(name);
 
   if (size.size() != 2) {
-    output_warn.write("\tWARNING: Number of dimensions of %s incorrect\n", name.c_str());
+    output_warn.write("\tWARNING: Number of dimensions of {:s} incorrect\n", name);
     return false;
   }
 

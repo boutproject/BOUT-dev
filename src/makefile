@@ -1,18 +1,18 @@
 
 BOUT_TOP	= ..
 
-DIRS			= field fileio invert mesh physics solver sys
+DIRS			= field fileio invert mesh physics solver sys fmt
 
 SOURCEC		= bout++.cxx
 SOURCEH		= bout.hxx
-CXXFLAGS       += -DMD5SUM=$(CHECKSUM) -DREVISION="$(REVISION)"
+CXXFLAGS       += -DMD5SUM=$(CHECKSUM) -DBOUT_REVISION="$(BOUT_REVISION)"
 TARGET	       ?= lib
 
 # Checksum passed to bout++.cxx
 CHECKSUM := $(shell cat $(foreach DIR,$(DIRS),$(wildcard $(DIR)/*.cxx $(DIR)/*.hxx)) | md5sum | head -c 32 )
 
 # Git revision passed to bout++.cxx
-REVISION := $(shell git rev-parse HEAD 2> /dev/null || hg id -n 2> /dev/null || { echo "Unknown"; } )
+BOUT_REVISION := $(shell git rev-parse HEAD 2> /dev/null || hg id -n 2> /dev/null || { echo "Unknown"; } )
 
 # From the legacy build script:
 # This is a little obscure, so here is an explanation:

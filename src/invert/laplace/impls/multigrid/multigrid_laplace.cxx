@@ -365,12 +365,12 @@ BOUT_OMP(for)
       kMG->setPcheck(0);
     }
   }
-  
 
-  t0 = MPI_Wtime();
-  generateMatrixF(level);  
+  t0 = bout::globals::mpi->MPI_Wtime();
+  generateMatrixF(level);
 
-  if (kMG->xNP > 1) MPI_Barrier(commX);
+  if (kMG->xNP > 1)
+    bout::globals::mpi->MPI_Barrier(commX);
 
   if ((pcheck == 3) && (mgcount == 0)) {
     FILE *outf;
@@ -412,18 +412,19 @@ BOUT_OMP(for)
     }
   }
 
-  t1 = MPI_Wtime();
+  t1 = bout::globals::mpi->MPI_Wtime();
   settime += t1-t0;
 
   // Compute solution.
 
   mgcount++;
-  if (pcheck > 0) t0 = MPI_Wtime();
+  if (pcheck > 0)
+    t0 = bout::globals::mpi->MPI_Wtime();
 
   kMG->getSolution(std::begin(x), std::begin(b), 0);
 
   if (pcheck > 0) {
-    t1 = MPI_Wtime();
+    t1 = bout::globals::mpi->MPI_Wtime();
     soltime += t1-t0;
     if(mgcount%300 == 0) {
       output<<"Accumulated execution time at "<<mgcount<<" Sol "<<soltime<<" ( "<<settime<<" )"<<endl;

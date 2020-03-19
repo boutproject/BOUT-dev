@@ -346,12 +346,18 @@ const FieldPerp Delp2(const FieldPerp& f, CELL_LOC outloc, bool useFFT) {
 * Laplace_perp = Laplace - Laplace_par
 *******************************************************************************/
 
-const Coordinates::metric_field_type Laplace_perp(const Field2D& f, CELL_LOC outloc) {
-  return Laplace(f, outloc) - Laplace_par(f, outloc);
+const Coordinates::metric_field_type Laplace_perp(const Field2D& f, CELL_LOC outloc,
+                                                  const std::string& dfdy_boundary_condition,
+                                                  const std::string& dfdy_region) {
+  return Laplace(f, outloc, dfdy_boundary_condition, dfdy_region)
+         - Laplace_par(f, outloc);
 }
 
-const Field3D Laplace_perp(const Field3D &f, CELL_LOC outloc) {
-  return Laplace(f, outloc) - Laplace_par(f, outloc);
+const Field3D Laplace_perp(const Field3D& f, CELL_LOC outloc,
+                           const std::string& dfdy_boundary_condition,
+                           const std::string& dfdy_region) {
+  return Laplace(f, outloc, dfdy_boundary_condition, dfdy_region)
+         - Laplace_par(f, outloc);
 }
 
 /*******************************************************************************
@@ -375,12 +381,27 @@ const Field3D Laplace_par(const Field3D &f, CELL_LOC outloc) {
 * Full Laplacian operator on scalar field
 *******************************************************************************/
 
-const Coordinates::metric_field_type Laplace(const Field2D& f, CELL_LOC outloc) {
-  return f.getCoordinates(outloc)->Laplace(f, outloc);
+const Coordinates::metric_field_type Laplace(const Field2D& f, CELL_LOC outloc,
+                                             const std::string& dfdy_boundary_condition,
+                                             const std::string& dfdy_region) {
+  return f.getCoordinates(outloc)->Laplace(f, outloc, dfdy_boundary_condition,
+                                           dfdy_region);
 }
 
-const Field3D Laplace(const Field3D &f, CELL_LOC outloc) {
-  return f.getCoordinates(outloc)->Laplace(f, outloc);
+const Field3D Laplace(const Field3D& f, CELL_LOC outloc,
+                      const std::string& dfdy_boundary_condition,
+                      const std::string& dfdy_region) {
+  return f.getCoordinates(outloc)->Laplace(f, outloc, dfdy_boundary_condition,
+                                           dfdy_region);
+}
+
+/*******************************************************************************
+ * Laplace_perpXY
+ * Inverse of Laplacian operator in LaplaceXY solver
+ *******************************************************************************/
+
+const Field2D Laplace_perpXY(const Field2D& A, const Field2D& f) {
+  return f.getCoordinates()->Laplace_perpXY(A, f);
 }
 
 /*******************************************************************************

@@ -17,8 +17,7 @@
 int main(int argc, char** argv) {
   BoutInitialise(argc, argv);
 
-  LaplaceXZ *inv = LaplaceXZ::create(mesh);
-  Coordinates *coord = mesh->getCoordinates();
+  auto inv = LaplaceXZ::create(mesh);
 
   coord->g13 = 1.8;  //test off-diagonal components with nonzero value
 
@@ -57,8 +56,6 @@ int main(int argc, char** argv) {
   SAVE_ONCE2(rhs2, x2);
 
   dump.write();
-
-  delete inv;
 
   BoutFinalise();
   return 0;

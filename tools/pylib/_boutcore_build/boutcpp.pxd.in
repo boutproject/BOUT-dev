@@ -6,6 +6,7 @@ cat <<EOF
 # distutils: language=c++
 
 from libcpp cimport bool
+from libcpp.memory cimport unique_ptr
 from libcpp.string cimport string
 
 cimport resolve_enum as benum
@@ -105,9 +106,9 @@ cdef extern from "bout/fieldgroup.hxx":
 cdef extern from "invert_laplace.hxx":
     cppclass Laplacian:
         @staticmethod
-        Laplacian * create()
+        unique_ptr[Laplacian] create()
         @staticmethod
-        Laplacian * create(Options *)
+        unique_ptr[Laplacian] create(Options *)
         Field3D solve(Field3D,Field3D)
         void setCoefA(Field3D)
         void setCoefC(Field3D)

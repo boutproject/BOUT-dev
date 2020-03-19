@@ -166,14 +166,14 @@ public:
 #error This utility macro should not clash with another one
 #else
 #define DERIV_FUNC_REGION_ENUM_TO_STRING(func, Tr, T)		  \
-  [[gnu::deprecated("Please use Coordinates::#func(const #T& f, " \
+  [[deprecated("Please use Coordinates::#func(const #T& f, " \
       "CELL_LOC outloc = CELL_DEFAULT, const std::string& method = \"DEFAULT\", " \
       "const std::string& region = \"RGN_ALL\") instead")]] \
   inline Tr func(const T& f, CELL_LOC outloc, const std::string& method, \
       REGION region) { \
     return func(f, outloc, method, toString(region)); \
   } \
-  [[gnu::deprecated("Please use Coordinates::#func(const #T& f, " \
+  [[deprecated("Please use Coordinates::#func(const #T& f, " \
       "CELL_LOC outloc = CELL_DEFAULT, const std::string& method = \"DEFAULT\", " \
       "const std::string& region = \"RGN_ALL\") instead")]] \
   inline Tr func(const T& f, CELL_LOC outloc, DIFF_METHOD method, \
@@ -186,7 +186,7 @@ public:
 #error This utility macro should not clash with another one
 #else
 #define GRAD_FUNC_REGION_ENUM_TO_STRING(func, Tr, T)		  \
-  [[gnu::deprecated("Please use Coordinates::#func(const #T& f, " \
+  [[deprecated("Please use Coordinates::#func(const #T& f, " \
       "CELL_LOC outloc = CELL_DEFAULT, const std::string& method = \"DEFAULT\") " \
       "instead")]] \
   inline Tr func(const T& f, CELL_LOC outloc, DIFF_METHOD method) { \
@@ -227,7 +227,7 @@ public:
   /// Advection along magnetic field V*b.Grad(f)
   metric_field_type Vpar_Grad_par(const Field2D& v, const Field2D& f,
       CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT");
-  [[gnu::deprecated("Please use Coordinates::Vpar_Grad_par(const Field2D& v, "
+  [[deprecated("Please use Coordinates::Vpar_Grad_par(const Field2D& v, "
       "const Field2D& f, CELL_LOC outloc = CELL_DEFAULT, "
       "const std::string& method = \"DEFAULT\") instead")]]
   inline metric_field_type Vpar_Grad_par(const Field2D& v, const Field2D& f, CELL_LOC outloc,
@@ -237,7 +237,7 @@ public:
 
   Field3D Vpar_Grad_par(const Field3D& v, const Field3D& f,
       CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT");
-  [[gnu::deprecated("Please use Coordinates::Vpar_Grad_par(const Field3D& v, "
+  [[deprecated("Please use Coordinates::Vpar_Grad_par(const Field3D& v, "
       "const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, "
       "const std::string& method = \"DEFAULT\") instead")]]
   inline Field3D Vpar_Grad_par(const Field3D& v, const Field3D& f, CELL_LOC outloc,
@@ -279,9 +279,17 @@ public:
   Field3D Laplace_par(const Field3D &f, CELL_LOC outloc=CELL_DEFAULT);
   
   // Full Laplacian operator on scalar field
-  metric_field_type Laplace(const Field2D &f, CELL_LOC outloc=CELL_DEFAULT);
-  Field3D Laplace(const Field3D &f, CELL_LOC outloc=CELL_DEFAULT);
-  
+  metric_field_type Laplace(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+                  const std::string& dfdy_boundary_conditions = "free_o3",
+                  const std::string& dfdy_dy_region = "");
+  Field3D Laplace(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+                  const std::string& dfdy_boundary_conditions = "free_o3",
+                  const std::string& dfdy_dy_region = "");
+
+  // Full perpendicular Laplacian, in form of inverse of Laplacian operator in LaplaceXY
+  // solver
+  Field2D Laplace_perpXY(const Field2D& A, const Field2D& f);
+
 private:
   int nz; // Size of mesh in Z. This is mesh->ngz-1
   Mesh * localmesh;

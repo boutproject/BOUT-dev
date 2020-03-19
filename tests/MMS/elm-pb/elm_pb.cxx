@@ -63,7 +63,7 @@ BoutReal vacuum_pressure;
 BoutReal vacuum_trans; // Transition width
 Field3D vac_mask;
 
-Laplacian* phi_solver;
+std::unique_ptr<Laplacian> phi_solver{nullptr};
 
 bool nonlinear;
 BoutReal g; // Only if compressible
@@ -126,8 +126,8 @@ FieldGroup comms;
 
 int physics_init(bool restarting) {
   output.write("Solving high-beta flute reduced equations\n");
-  output.write("\tFile    : %s\n", __FILE__);
-  output.write("\tCompiled: %s at %s\n", __DATE__, __TIME__);
+  output.write("\tFile    : {:s}\n", __FILE__);
+  output.write("\tCompiled: {:s} at {:s}\n", __DATE__, __TIME__);
 
   //////////////////////////////////////////////////////////////
   // Load data from the grid
@@ -321,16 +321,16 @@ int physics_init(bool restarting) {
 
   delta_i = AA*60.67*5.31e5/sqrt(density/1e6)/(Lbar*100.0);
 
-  output.write("Normalisations: Bbar = %e T   Lbar = %e m\n", Bbar, Lbar);
-  output.write("                Va = %e m/s   Tbar = %e s\n", Va, Tbar);
-  output.write("                dnorm = %e\n", dnorm);
+  output.write("Normalisations: Bbar = {:e} T   Lbar = {:e} m\n", Bbar, Lbar);
+  output.write("                Va = {:e} m/s   Tbar = {:e} s\n", Va, Tbar);
+  output.write("                dnorm = {:e}\n", dnorm);
   output.write("    Resistivity\n");
 
   if(eHall)
-    output.write("                delta_i = %e   AA = %e \n", delta_i, AA);
+    output.write("                delta_i = {:e}   AA = {:e} \n", delta_i, AA);
 
   if(vac_lund > 0.0) {
-    output.write("        Vacuum  Tau_R = %e s   eta = %e Ohm m\n", vac_lund * Tbar,
+    output.write("        Vacuum  Tau_R = {:e} s   eta = {:e} Ohm m\n", vac_lund * Tbar,
          MU0 * Lbar * Lbar / (vac_lund * Tbar));
     vac_resist = 1. / vac_lund;
   }else {
@@ -339,7 +339,7 @@ int physics_init(bool restarting) {
   }
 
   if(core_lund > 0.0) {
-    output.write("        Core    Tau_R = %e s   eta = %e Ohm m\n", core_lund * Tbar,
+    output.write("        Core    Tau_R = {:e} s   eta = {:e} Ohm m\n", core_lund * Tbar,
          MU0 * Lbar * Lbar / (core_lund * Tbar));
     core_resist = 1. / core_lund;
   }else {
@@ -348,7 +348,7 @@ int physics_init(bool restarting) {
   }
 
   if(ehyperviscos > 0.0) {
-    output.write("    electron Hyper-viscosity coefficient: %e\n", ehyperviscos);
+    output.write("    electron Hyper-viscosity coefficient: {:e}\n", ehyperviscos);
   }
 
   Field2D Te;
@@ -379,11 +379,11 @@ int physics_init(bool restarting) {
 
   if(spitzer_resist) {
     // Use Spitzer resistivity
-    output.write("\tTemperature: %e -> %e [eV]\n", min(Te), max(Te));
+    output.write("\tTemperature: {:e} -> {:e} [eV]\n", min(Te), max(Te));
     eta = 0.51*1.03e-4*Zeff*20.*pow(Te, -1.5); // eta in Ohm-m. NOTE: ln(Lambda) = 20
-    output.write("\tSpitzer resistivity: %e -> %e [Ohm m]\n", min(eta), max(eta));
+    output.write("\tSpitzer resistivity: {:e} -> {:e} [Ohm m]\n", min(eta), max(eta));
     eta /= MU0 * Va * Lbar;
-    output.write("\t -> Lundquist %e -> %e\n", 1.0/max(eta), 1.0/min(eta));
+    output.write("\t -> Lundquist {:e} -> {:e}\n", 1.0/max(eta), 1.0/min(eta));
   }else {
     // transition from 0 for large P0 to resistivity for small P0
     eta = core_resist + (vac_resist - core_resist) * vac_mask;
@@ -442,7 +442,7 @@ int physics_init(bool restarting) {
     beta = B0*B0 / ( 0.5 + (B0*B0 / (g*P0)));
     gradparB = Grad_par(B0) / B0;
 
-    output.write("Beta in range %e -> %e\n",
+    output.write("Beta in range {:e} -> {:e}\n",
                  min(beta), max(beta));
   }
 

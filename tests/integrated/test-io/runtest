@@ -12,16 +12,14 @@ try:
 except:
     pass
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe
+from boututils.run_wrapper import build_and_log, shell, shell_safe, launch_safe
 from boutdata.collect import collect
 import boutconfig as conf
 import numpy as np
 from sys import stdout, exit
 
 
-
-print("Making I/O test")
-shell_safe("make > make.log")
+build_and_log("I/O test")
 
 # Read benchmark values
 
@@ -53,41 +51,6 @@ def check_output():
                 print(v,bmk[v].shape, result.shape)
                 success = False
                 continue
-
-        diff =  np.max(np.abs(bmk[v] - result))
-        if diff > tol:
-            print("Fail, maximum difference = "+str(diff))
-            success = False
-            continue
-
-        if v in field_vars:
-            # Check cell location
-            if "cell_location" not in result.attributes:
-                print("Fail: {0} has no cell_location attribute".format(v))
-                success = False
-                continue
-
-            if result.attributes["cell_location"] != "CELL_CENTRE":
-                print("Fail: Expecting cell_location == CELL_CENTRE, but got {0}".format(result.attributes["cell_location"]))
-                success = False
-                continue
-
-        print("Pass")
-
-    return success
-
-
-def check_output():
-    success = True
-    for v in vars:
-        stdout.write("      Checking variable "+v+" ... ")
-        result = collect(v, path="data", info=False)
-
-        # Compare benchmark and output
-        if np.shape(bmk[v]) != np.shape(result):
-            print("Fail, wrong shape")
-            success = False
-            continue
 
         diff =  np.max(np.abs(bmk[v] - result))
         if diff > tol:

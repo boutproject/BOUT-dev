@@ -333,7 +333,9 @@ BoutReal Vol_Integral(const Field2D &var) {
   auto result = metric->J * var * metric->dx * metric->dy;
 
   Int_Glb = Average_XY(result);
-  Int_Glb *= static_cast<BoutReal>((mesh->GlobalNx-2*mesh->xstart)*mesh->GlobalNy)*PI * 2.;
+  Int_Glb *= static_cast<BoutReal>(
+               (mesh->GlobalNx-2*mesh->xstart)
+               * (mesh->GlobalNy-mesh->numberOfYBoundaries()*2*mesh->ystart)) * PI * 2.;
 
   return Int_Glb;
 }

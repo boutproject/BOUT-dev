@@ -6,9 +6,15 @@ else()
   cmake_policy(VERSION 3.12)
 endif()
 
+# CMake currently doesn't support proper semver
+# Set the version here, strip any extra tags to use in `project`
+set(BOUT_FULL_VERSION 5.0.0-alpha)
+string(REGEX REPLACE "^([0-9]+\.[0-9]+\.[0-9]+)-.*" "\\1" BOUT_CMAKE_ACCEPTABLE_VERSION ${BOUT_FULL_VERSION})
+string(REGEX REPLACE "^[0-9]+\.[0-9]+\.[0-9]+-(.*)" "\\1" BOUT_VERSION_TAG ${BOUT_FULL_VERSION})
+
 project(BOUT++
   DESCRIPTION "Fluid PDE solver framework"
-  VERSION 4.2.2
+  VERSION ${BOUT_CMAKE_ACCEPTABLE_VERSION}
   LANGUAGES CXX)
 
 # This might not be entirely sensible, but helps CMake to find the
@@ -16,29 +22,29 @@ project(BOUT++
 find_program(MPIEXEC_EXECUTABLE NAMES mpiexec mpirun)
 find_package(MPI REQUIRED)
 
+# Override default
+option(INSTALL_GTEST "Enable installation of googletest. (Projects embedding googletest may want to turn this OFF.)" OFF)
+
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
-# Taken from https://cliutils.gitlab.io/modern-cmake/chapters/projects/submodule.html
-find_package(Git QUIET)
-if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
-  # Update submodules as needed
-  option(GIT_SUBMODULE "Check submodules during build" ON)
-  if(GIT_SUBMODULE)
+option(GIT_SUBMODULE "Check submodules during build" ON)
+# Adapted from https://cliutils.gitlab.io/modern-cmake/chapters/projects/submodule.html
+# Update submodules as needed
+function(bout_update_submodules)
+  if(NOT GIT_SUBMODULE)
+    return()
+  endif()
+  find_package(Git QUIET)
+  if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
     message(STATUS "Submodule update")
     execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                    RESULT_VARIABLE GIT_SUBMOD_RESULT)
+      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+      RESULT_VARIABLE GIT_SUBMOD_RESULT)
     if(NOT GIT_SUBMOD_RESULT EQUAL "0")
       message(FATAL_ERROR "git submodule update --init failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
     endif()
   endif()
-endif()
-
-if(NOT EXISTS "${PROJECT_SOURCE_DIR}/externalpackages/mpark.variant/CMakeLists.txt")
-  message(FATAL_ERROR "The submodules were not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
-endif()
-
-add_subdirectory(externalpackages/mpark.variant)
+endfunction()
 
 set(BOUT_SOURCES
   ./include/boundary_factory.hxx
@@ -68,19 +74,23 @@ set(BOUT_SOURCES
   ./include/bout/macro_for_each.hxx
   ./include/bout/mesh.hxx
   ./include/bout/monitor.hxx
+  ./include/bout/mpi_wrapper.hxx
   ./include/bout/openmpwrap.hxx
   ./include/bout/paralleltransform.hxx
   ./include/bout/petsclib.hxx
+  ./include/bout/petsc_interface.hxx
   ./include/bout/physicsmodel.hxx
   ./include/bout/region.hxx
   ./include/bout/rkscheme.hxx
   ./include/bout/rvec.hxx
   ./include/bout/scorepwrapper.hxx
   ./include/bout/slepclib.hxx
+  ./include/bout/snb.hxx
   ./include/bout/solver.hxx
-  ./include/bout/solverfactory.hxx
   ./include/bout/surfaceiter.hxx
+  ./include/bout/operatorstencil.hxx
   ./include/bout/sys/expressionparser.hxx
+  ./include/bout/sys/generator_context.hxx
   ./include/bout/sys/gettext.hxx
   ./include/bout/sys/range.hxx
   ./include/bout/sys/timer.hxx
@@ -109,7 +119,7 @@ set(BOUT_SOURCES
   ./include/gyro_average.hxx
   ./include/initialprofiles.hxx
   ./include/interpolation.hxx
-  ./include/interpolation_factory.hxx
+  ./include/interpolation_xz.hxx
   ./include/invert_laplace.hxx
   ./include/invert_parderiv.hxx
   ./include/lapack_routines.hxx
@@ -186,8 +196,6 @@ set(BOUT_SOURCES
   ./src/invert/laplace/impls/spt/spt.cxx
   ./src/invert/laplace/impls/spt/spt.hxx
   ./src/invert/laplace/invert_laplace.cxx
-  ./src/invert/laplace/laplacefactory.cxx
-  ./src/invert/laplace/laplacefactory.hxx
   ./src/invert/laplacexy/laplacexy.cxx
   ./src/invert/laplacexz/impls/cyclic/laplacexz-cyclic.cxx
   ./src/invert/laplacexz/impls/cyclic/laplacexz-cyclic.hxx
@@ -197,8 +205,6 @@ set(BOUT_SOURCES
   ./src/invert/parderiv/impls/cyclic/cyclic.cxx
   ./src/invert/parderiv/impls/cyclic/cyclic.hxx
   ./src/invert/parderiv/invert_parderiv.cxx
-  ./src/invert/parderiv/parderiv_factory.cxx
-  ./src/invert/parderiv/parderiv_factory.hxx
   ./src/mesh/boundary_factory.cxx
   ./src/mesh/boundary_region.cxx
   ./src/mesh/boundary_standard.cxx
@@ -210,25 +216,26 @@ set(BOUT_SOURCES
   ./src/mesh/impls/bout/boutmesh.cxx
   ./src/mesh/impls/bout/boutmesh.hxx
   ./src/mesh/index_derivs.cxx
-  ./src/mesh/interpolation.cxx
-  ./src/mesh/interpolation/bilinear.cxx
-  ./src/mesh/interpolation/hermite_spline.cxx
-  ./src/mesh/interpolation/interpolation_factory.cxx
-  ./src/mesh/interpolation/lagrange_4pt.cxx
-  ./src/mesh/interpolation/monotonic_hermite_spline.cxx
+  ./src/mesh/interpolation_xz.cxx
+  ./src/mesh/interpolation/bilinear_xz.cxx
+  ./src/mesh/interpolation/hermite_spline_xz.cxx
+  ./src/mesh/interpolation/hermite_spline_z.cxx
+  ./src/mesh/interpolation/lagrange_4pt_xz.cxx
+  ./src/mesh/interpolation/monotonic_hermite_spline_xz.cxx
   ./src/mesh/mesh.cxx
-  ./src/mesh/meshfactory.cxx
-  ./src/mesh/meshfactory.hxx
   ./src/mesh/parallel/fci.cxx
   ./src/mesh/parallel/fci.hxx
   ./src/mesh/parallel/identity.cxx
   ./src/mesh/parallel/shiftedmetric.cxx
+  ./src/mesh/parallel/shiftedmetricinterp.cxx
+  ./src/mesh/parallel/shiftedmetricinterp.hxx
   ./src/mesh/parallel_boundary_op.cxx
   ./src/mesh/parallel_boundary_region.cxx
   ./src/mesh/surfaceiter.cxx
   ./src/physics/gyro_average.cxx
   ./src/physics/physicsmodel.cxx
   ./src/physics/smoothing.cxx
+  ./src/physics/snb.cxx
   ./src/physics/sourcex.cxx
   ./src/solver/impls/arkode/arkode.cxx
   ./src/solver/impls/arkode/arkode.hxx
@@ -263,8 +270,6 @@ set(BOUT_SOURCES
   ./src/solver/impls/rkgeneric/rkgeneric.cxx
   ./src/solver/impls/rkgeneric/rkgeneric.hxx
   ./src/solver/impls/rkgeneric/rkscheme.cxx
-  ./src/solver/impls/rkgeneric/rkschemefactory.cxx
-  ./src/solver/impls/rkgeneric/rkschemefactory.hxx
   ./src/solver/impls/slepc/slepc.cxx
   ./src/solver/impls/slepc/slepc.hxx
   ./src/solver/impls/snes/snes.cxx
@@ -272,12 +277,12 @@ set(BOUT_SOURCES
   ./src/solver/impls/split-rk/split-rk.cxx
   ./src/solver/impls/split-rk/split-rk.hxx
   ./src/solver/solver.cxx
-  ./src/solver/solverfactory.cxx
   ./src/sys/bout_types.cxx
   ./src/sys/boutcomm.cxx
   ./src/sys/boutexception.cxx
   ./src/sys/derivs.cxx
   ./src/sys/expressionparser.cxx
+  ./src/sys/generator_context.cxx
   ./src/sys/msg_stack.cxx
   ./src/sys/options.cxx
   ./src/sys/options/optionparser.hxx
@@ -292,25 +297,93 @@ set(BOUT_SOURCES
   ./src/sys/timer.cxx
   ./src/sys/type_name.cxx
   ./src/sys/utils.cxx
+  ${CMAKE_CURRENT_BINARY_DIR}/include/bout/revision.hxx
+  ${CMAKE_CURRENT_BINARY_DIR}/include/bout/version.hxx
   )
 
 add_library(bout++
   ${BOUT_SOURCES}
   )
 add_library(bout++::bout++ ALIAS bout++)
-target_link_libraries(bout++ PUBLIC MPI::MPI_CXX mpark_variant)
+target_link_libraries(bout++ PUBLIC MPI::MPI_CXX)
 target_include_directories(bout++ PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
   $<INSTALL_INTERFACE:include>
   )
 
-target_compile_definitions(bout++
-  PUBLIC "BOUT_VERSION_STRING=\"${PROJECT_VERSION}\""
-  PUBLIC "BOUT_VERSION_DOUBLE=${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}${PROJECT_VERSION_PATCH}"
-  )
-
-target_compile_features(bout++ PUBLIC cxx_std_11)
+target_compile_features(bout++ PUBLIC cxx_std_14)
 set_target_properties(bout++ PROPERTIES CXX_EXTENSIONS OFF)
+
+##################################################
+# Components of the version number
+# Pre-release identifier (BOUT_VERSION_TAG) set above
+set(BOUT_VERSION ${BOUT_FULL_VERSION})
+set(BOUT_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
+set(BOUT_VERSION_MINOR ${PROJECT_VERSION_MINOR})
+set(BOUT_VERSION_PATCH ${PROJECT_VERSION_PATCH})
+
+# Get the git commit
+include(GetGitRevisionDescription)
+get_git_head_revision(GIT_REFSPEC BOUT_REVISION)
+if(BOUT_REVISION STREQUAL "GITDIR-NOTFOUND")
+  set(BOUT_REVISION "Unknown")
+endif()
+message(STATUS "Git revision: ${BOUT_REVISION}")
+
+# Build the file containing the version information
+configure_file(
+  "${PROJECT_SOURCE_DIR}/include/bout/version.hxx.in"
+  "${PROJECT_BINARY_DIR}/include/bout/version.hxx")
+# Build the file containing just the commit hash
+# This will be rebuilt on every commit!
+configure_file(
+  "${PROJECT_SOURCE_DIR}/include/bout/revision.hxx.in"
+  "${PROJECT_BINARY_DIR}/include/bout/revision.hxx")
+
+##################################################
+
+if(GIT_SUBMODULE OR (EXISTS externalpackages/mpark.variant/CMakeLists.txt))
+  option(BOUT_USE_SYSTEM_MPARK_VARIANT "Use external installation of mpark.variant" OFF)
+else()
+  option(BOUT_USE_SYSTEM_MPARK_VARIANT "Use external installation of mpark.variant" ON)
+endif()
+
+if(BOUT_USE_SYSTEM_MPARK_VARIANT)
+  find_package(mpark_variant REQUIRED)
+  message(STATUS "Using external mpark.variant")
+else()
+  bout_update_submodules()
+  add_subdirectory(externalpackages/mpark.variant)
+  if(TARGET mpark_variant)
+    message(STATUS "Using mpark.variant submodule")
+  else()
+    message(FATAL_ERROR "mpark_variant not found! Have you disabled the git submodules (GIT_SUBMODULE)?")
+  endif()
+endif()
+target_link_libraries(bout++ PUBLIC mpark_variant)
+
+if(GIT_SUBMODULE OR (EXISTS externalpackages/fmt/CMakeLists.txt))
+  option(BOUT_USE_SYSTEM_FMT "Use external installation of fmt" OFF)
+else()
+  option(BOUT_USE_SYSTEM_FMT "Use external installation of fmt" ON)
+endif()
+
+if(BOUT_USE_SYSTEM_FMT)
+  find_package(fmt 6 REQUIRED)
+  message(STATUS "Using external fmt")
+else()
+  bout_update_submodules()
+  # Need to install fmt alongside BOUT++
+  set(FMT_INSTALL ON CACHE BOOL "")
+  add_subdirectory(externalpackages/fmt)
+  if(TARGET fmt::fmt)
+    message(STATUS "Using fmt submodule")
+  else()
+    message(FATAL_ERROR "fmt not found! Have you disabled the git submodules (GIT_SUBMODULE)?")
+  endif()
+endif()
+target_link_libraries(bout++ PUBLIC fmt::fmt)
 
 option(ENABLE_WARNINGS "Enable compiler warnings" ON)
 if (ENABLE_WARNINGS)
@@ -333,7 +406,7 @@ endif()
 # Compile time features
 
 set(CHECK_LEVELS 0 1 2 3 4)
-set(CHECK 3 CACHE STRINGS "Set run-time checking level")
+set(CHECK 2 CACHE STRING "Set run-time checking level")
 set_property(CACHE CHECK PROPERTY STRINGS ${CHECK_LEVELS})
 if (NOT CHECK IN_LIST CHECK_LEVELS)
   message(FATAL_ERROR "CHECK must be one of ${CHECK_LEVELS}")
@@ -408,7 +481,7 @@ if (ENABLE_OPENMP)
   find_package(OpenMP REQUIRED)
   target_link_libraries(bout++ PUBLIC OpenMP::OpenMP_CXX)
   set(possible_openmp_schedules static dynamic guided auto)
-  set(OPENMP_SCHEDULE static CACHE STRINGS "Set OpenMP schedule")
+  set(OPENMP_SCHEDULE static CACHE STRING "Set OpenMP schedule")
   if (NOT OPENMP_SCHEDULE IN_LIST possible_openmp_schedules)
     message(FATAL_ERROR "OPENMP_SCHEDULE must be one of ${possible_openmp_schedules}")
   endif()
@@ -419,13 +492,6 @@ if (ENABLE_OPENMP)
 endif()
 message(STATUS "Enable OpenMP: ${ENABLE_OPENMP}")
 set(BOUT_USE_OPENMP ${ENABLE_OPENMP})
-
-include(GetGitRevisionDescription)
-get_git_head_revision(GIT_REFSPEC GIT_SHA1)
-message(STATUS "Git revision: ${GIT_SHA1}")
-target_compile_definitions(bout++
-  PUBLIC "GIT_REVISION=${GIT_SHA1}")
-set(BOUT_GIT_REVISION ${GIT_SHA1})
 
 # Optional dependencies
 
@@ -525,19 +591,21 @@ message(STATUS "SUNDIALS support: ${USE_SUNDIALS}")
 set(BOUT_HAS_SUNDIALS ${USE_SUNDIALS})
 
 option(USE_NLS "Enable Native Language Support" ON)
-find_package(Gettext)
-if (GETTEXT_FOUND)
-  target_compile_definitions(bout++
-    PUBLIC "BOUT_HAS_GETTEXT")
-  find_package(Intl)
-  if (Intl_FOUND)
-    target_link_libraries(bout++
-      PUBLIC ${Intl_LIBRARIES})
-    target_include_directories(bout++
-      PUBLIC ${Intl_INCLUDE_DIRS})
+if (USE_NLS)
+  find_package(Gettext)
+  if (GETTEXT_FOUND)
+	target_compile_definitions(bout++
+	  PUBLIC "BOUT_HAS_GETTEXT")
+	find_package(Intl)
+	if (Intl_FOUND)
+	  target_link_libraries(bout++
+		PUBLIC ${Intl_LIBRARIES})
+	  target_include_directories(bout++
+		PUBLIC ${Intl_INCLUDE_DIRS})
+	endif()
   endif()
 endif()
-set(BOUT_HAS_GETTEXT ${GETTEXT_FOUND})
+set(BOUT_HAS_GETTEXT ${USE_NLS})
 
 option(USE_SCOREP "Enable support for Score-P based instrumentation" OFF)
 if (USE_SCOREP)
@@ -560,16 +628,64 @@ if (HAS_PRETTY_FUNCTION)
     PUBLIC "BOUT_HAS_PRETTY_FUNCTION")
 endif()
 
+# We want to compile the actual flags used into the library so we can
+# see them at runtime. This needs a few steps:
+
+# 1. Get the macro definitions. They come as a ;-separated list and
+#    without the -D. We also need to also stick a -D on the front of
+#    the first item
+get_property(BOUT_COMPILE_DEFINITIONS
+  TARGET bout++
+  PROPERTY COMPILE_DEFINITIONS)
+string(REPLACE ";" " -D" BOUT_COMPILE_DEFINITIONS "${BOUT_COMPILE_DEFINITIONS}")
+string(CONCAT BOUT_COMPILE_DEFINITIONS " -D" "${BOUT_COMPILE_DEFINITIONS}")
+
+# 2. Get the compiler options. Again, they come as a ;-separated
+#    list. Note that they don't include optimisation or debug flags:
+#    they're in the CMAKE_CXX_FLAGS* variables
+get_property(BOUT_COMPILE_OPTIONS
+  TARGET bout++
+  PROPERTY COMPILE_OPTIONS)
+string(REPLACE ";" " " BOUT_COMPILE_OPTIONS "${BOUT_COMPILE_OPTIONS}")
+
+# 3. The optimisation and/or debug flags are in the CMAKE_CXX_FLAGS*
+#    variables. We need both the common flags as well as those for the
+#    build type actually being used. Note: this might behave weirdly
+#    on Windows. Might need to expand CMAKE_CONFIGURATION_TYPES
+#    instead?
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  set(CMAKE_BUILD_TYPE_UPPER "DEBUG")
+else()
+  string(TOUPPER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE_UPPER)
+endif()
+string(CONCAT BOUT_COMPILE_BUILD_FLAGS
+  " "
+  "${CMAKE_CXX_FLAGS}"
+  "${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE_UPPER}}")
+
+# 4. Now we join all the flags from the first three steps together
+string(CONCAT BOUT_FLAGS_STRING
+  "${BOUT_COMPILE_OPTIONS}"
+  "${BOUT_COMPILE_DEFINITIONS}"
+  "${BOUT_COMPILE_BUILD_FLAGS}")
+
+# 5. Finally actually add the flags as a define
+target_compile_definitions(bout++
+  PRIVATE BOUT_FLAGS_STRING=${BOUT_FLAGS_STRING})
+
+##################################################
+# Tests
+
 # Copy FILENAME from source directory to build directory
-# and add dependency on TARGET
-macro(bout_test_copy_file TARGET FILENAME)
-  add_custom_command(TARGET "${TARGET}" POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy
-    ${CMAKE_CURRENT_SOURCE_DIR}/"${FILENAME}"
-    ${CMAKE_CURRENT_BINARY_DIR}/"${FILENAME}")
+macro(bout_test_copy_file FILENAME)
+  configure_file(
+      ${CMAKE_CURRENT_SOURCE_DIR}/${FILENAME}
+      ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME}
+      COPYONLY)
 endmacro()
 
-# Add a new integrated test
+# Add a new integrated test. By default, the executable is named like
+# the first source, stripped of its file extension.
 #
 # Required arguments:
 #
@@ -587,11 +703,15 @@ endmacro()
 # - EXTRA_FILES: any extra files that are required to run the test
 #
 # - REQUIRES: list of variables that must be truthy to enable test
+#
+# - EXECUTABLE_NAME: name of the executable, if different from the
+#   first source name
 
 function(bout_add_integrated_test TESTNAME)
   set(options USE_RUNTEST USE_DATA_BOUT_INP)
+  set(oneValueArgs EXECUTABLE_NAME)
   set(multiValueArgs SOURCES EXTRA_FILES REQUIRES)
-  cmake_parse_arguments(BOUT_TEST_OPTIONS "${options}" "" "${multiValueArgs}" ${ARGN})
+  cmake_parse_arguments(BOUT_TEST_OPTIONS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
   foreach (REQUIREMENT IN LISTS BOUT_TEST_OPTIONS_REQUIRES)
     if (NOT ${REQUIREMENT})
@@ -604,28 +724,77 @@ function(bout_add_integrated_test TESTNAME)
   target_link_libraries(${TESTNAME} bout++)
   target_include_directories(${TESTNAME} PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 
+  # Set the name of the executable. We either take it as an option,
+  # or use the first source file, stripping the file suffix
+  if (BOUT_TEST_OPTIONS_EXECUTABLE_NAME)
+    set_target_properties(${TESTNAME} PROPERTIES OUTPUT_NAME ${BOUT_TEST_OPTIONS_EXECUTABLE_NAME})
+  else()
+    # If more than one source file, just get the first one
+    list(LENGTH ${BOUT_TEST_OPTIONS_SOURCES} BOUT_SOURCES_LENGTH)
+    if (BOUT_SOURCES_LENGTH GREATER 0)
+      list(GET ${BOUT_TEST_OPTIONS_SOURCES} 0 BOUT_TEST_FIRST_SOURCE)
+    else()
+      set(BOUT_TEST_FIRST_SOURCE ${BOUT_TEST_OPTIONS_SOURCES})
+    endif()
+    # Strip the directory and file extension from the source file
+    get_filename_component(BOUT_TEST_EXECUTABLE_NAME ${BOUT_TEST_FIRST_SOURCE} NAME_WE)
+    set_target_properties(${TESTNAME} PROPERTIES OUTPUT_NAME ${BOUT_TEST_EXECUTABLE_NAME})
+  endif()
+
+  # Set the actual test command
   if (BOUT_TEST_OPTIONS_USE_RUNTEST)
     add_test(NAME ${TESTNAME} COMMAND ./runtest)
-    bout_test_copy_file("${TESTNAME}" runtest)
+    bout_test_copy_file(runtest)
   else()
     add_test(NAME ${TESTNAME} COMMAND ${TESTNAME})
   endif()
+
+  # Copy the input file if needed
   if (BOUT_TEST_OPTIONS_USE_DATA_BOUT_INP)
-    bout_test_copy_file("${TESTNAME}" data/BOUT.inp)
+    bout_test_copy_file(data/BOUT.inp)
   endif()
+
+  # Copy any other needed files
   if (BOUT_TEST_OPTIONS_EXTRA_FILES)
     foreach (FILE ${BOUT_TEST_OPTIONS_EXTRA_FILES})
-      bout_test_copy_file("${TESTNAME}" "${FILE}")
+      bout_test_copy_file("${FILE}")
     endforeach()
   endif()
+
   set_target_properties(${TESTNAME} PROPERTIES FOLDER tests/integrated)
+
+  # Add the test to the build-check-integrated-tests target
+  add_dependencies(build-check-integrated-tests ${TESTNAME})
 endfunction()
 
 option(PACKAGE_TESTS "Build the tests" ON)
 if(PACKAGE_TESTS)
   enable_testing()
-  add_subdirectory(tests/unit)
-  add_subdirectory(tests/integrated)
+
+  # Targets for just building the tests
+  # Tests need to add themselves as dependencies to these targets
+  add_custom_target(build-check-unit-tests)
+  add_custom_target(build-check-integrated-tests)
+
+  # Build all the tests
+  add_custom_target(build-check)
+  add_dependencies(build-check build-check-unit-tests build-check-integrated-tests)
+
+  add_subdirectory(tests/unit EXCLUDE_FROM_ALL)
+  add_subdirectory(tests/integrated EXCLUDE_FROM_ALL)
+
+  # Targets for running the tests
+  add_custom_target(check-unit-tests
+    COMMAND ctest -R serial_tests --output-on-failure)
+  add_dependencies(check-unit-tests build-check-unit-tests)
+
+  add_custom_target(check-integrated-tests
+    COMMAND ctest -R "test-" --output-on-failure)
+  add_dependencies(check-integrated-tests build-check-integrated-tests)
+
+  # Run all the tests
+  add_custom_target(check)
+  add_dependencies(check check-unit-tests check-integrated-tests)
 endif()
 
 option(ENABLE_METRIC_3D "Enable 3D metric support" OFF)
@@ -649,7 +818,12 @@ install(TARGETS bout++
   RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
   INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
   )
-install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+# Repo files
+install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  FILES_MATCHING PATTERN "*.hxx")
+# Generated headers
+install(DIRECTORY "${PROJECT_BINARY_DIR}/include/"
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(

@@ -51,3 +51,11 @@ build*/
 /tests/integrated/test-options-netcdf/*.ini
 /tools/pylib/boututils/bout_config.py
 /tests/integrated/test-snb/test_snb
+/.vs
+/CMakeSettings.json
+/CppProperties.json
+*.fls
+*.fdb_latexmk
+
+# Following is copied in by configure
+src/fmt/format.cxx

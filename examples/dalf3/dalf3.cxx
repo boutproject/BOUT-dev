@@ -21,6 +21,7 @@
 #include <bout/physicsmodel.hxx>
 
 #include <utils.hxx>
+#include <interpolation.hxx>
 #include <invert_laplace.hxx>
 #include <bout/invert/laplacexy.hxx>
 #include <math.h>
@@ -73,8 +74,8 @@ private:
   
   FieldGroup comms;
 
-  Laplacian *phiSolver; // Laplacian solver in X-Z
-  Laplacian *aparSolver; // Laplacian solver in X-Z for Apar
+  std::unique_ptr<Laplacian> phiSolver{nullptr}; // Laplacian solver in X-Z
+  std::unique_ptr<Laplacian> aparSolver{nullptr}; // Laplacian solver in X-Z for Apar
   LaplaceXY *laplacexy; // Laplacian solver in X-Y (n=0)
   Field2D phi2D;   // Axisymmetric potential, used when split_n0=true
 
@@ -113,6 +114,11 @@ protected:
     mesh->get(B0,   "Bxy");  // T
     mesh->get(hthe, "hthe"); // m
     mesh->get(I,    "sinty");// m^-2 T^-1
+
+    // Set locations of staggered variables
+    jpar.setLocation(CELL_YLOW);
+    Ajpar.setLocation(CELL_YLOW);
+    apar.setLocation(CELL_YLOW);
     
     //////////////////////////////////////////////////////////////
     // Options
@@ -170,8 +176,8 @@ protected:
     // SHIFTED RADIAL COORDINATES
 
     // Check type of parallel transform
-    std::string ptstr;
-    Options::getRoot()->getSection("mesh")->get("paralleltransform", ptstr, "identity");
+    std::string ptstr = Options::root()["mesh"]["paralleltransform"]["type"]
+                        .withDefault("identity");
 
     if(lowercase(ptstr) == "shifted") {
       // Dimits style, using local coordinate system
@@ -322,33 +328,19 @@ protected:
     return 2.*bracket(log(B0), f, bm);
   }
   
-  const Field3D Grad_parP_LtoC(const Field3D &f) {
+  const Field3D Grad_parP(const Field3D &f, CELL_LOC loc) {
     Field3D result;
-    if (parallel_lc) {
-      result = Grad_par_LtoC(f);
-      if (nonlinear)
-        result -= beta_hat * bracket(apar, f, BRACKET_ARAKAWA);
-    } else {
+    if (mesh->StaggerGrids) {
+      result = Grad_par(f, loc);
       if (nonlinear) {
-        result = Grad_parP(apar*beta_hat, f);
-      } else {
-        result = Grad_par(f);
+        result -= beta_hat * bracket(interp_to(apar, loc), interp_to(f, loc),
+                                     BRACKET_ARAKAWA);
       }
-    }
-    return result;
-  }
-  
-  const Field3D Grad_parP_CtoL(const Field3D &f) {
-    Field3D result;
-    if (parallel_lc) {
-      result = Grad_par_CtoL(f);
-      if (nonlinear)
-        result -= beta_hat * bracket(apar, f, BRACKET_ARAKAWA);
     } else {
       if (nonlinear) {
-        result = Grad_parP(apar*beta_hat, f);
+        result = ::Grad_parP(apar*beta_hat, f);
       } else {
-        result = Grad_par(f);
+        result = Grad_par(f, loc);
       }
     }
     return result;
@@ -375,7 +367,7 @@ protected:
       apar = 0.;
       if (ZeroElMass) {
         // Not evolving Ajpar
-        jpar = Grad_par_CtoL(Pe - phi) / eta;
+        jpar = Grad_par(Pe - phi, CELL_YLOW) / eta;
         jpar.applyBoundary();
       } else {
         jpar = Ajpar / mu_hat;
@@ -433,7 +425,7 @@ protected:
     
     // Vorticity equation
     ddt(Vort) = 
-      B0*B0*Grad_parP_LtoC(jpar/B0)
+      B0*B0*Grad_parP(jpar/interp_to(B0, CELL_YLOW), CELL_CENTRE)
       - B0*Kappa(Pe)
       ;
     
@@ -459,7 +451,7 @@ protected:
     if (!(estatic && ZeroElMass)) {
       // beta_hat*apar + mu_hat*jpar
       ddt(Ajpar) =
-        Grad_parP_CtoL(Pe - phi)
+        Grad_parP(Pe - phi, CELL_YLOW)
         - beta_hat * bracket(apar, Pe0, BRACKET_ARAKAWA)
         - eta*jpar
         ;
@@ -473,9 +465,9 @@ protected:
     }
     
     // Parallel velocity
-    ddt(Vpar) = 
-      - Grad_parP_CtoL(Pe) 
-      + beta_hat * bracket(apar, Pe0, BRACKET_ARAKAWA)
+    ddt(Vpar) =
+      - Grad_parP(Pe, CELL_YLOW)
+      + beta_hat * bracket(apar, interp_to(Pe0, CELL_YLOW), BRACKET_ARAKAWA)
       ;
     
     if (nonlinear) {
@@ -494,7 +486,7 @@ protected:
       - bracket(phi, Pet, bm)
       + Pet * (
                Kappa(phi - Pe)
-               + B0*Grad_parP_LtoC( (jpar - Vpar)/B0 )
+               + B0*Grad_parP( (jpar - Vpar)/interp_to(B0, CELL_YLOW) , CELL_YLOW)
                )
       ;
     

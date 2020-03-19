@@ -59,8 +59,6 @@ private:
 
   bool include_profiles; // Include zero-order equilibrium terms
 
-  bool parallel_lc; // Use CtoL and LtoC differencing
-
   int low_pass_z; // Toroidal (Z) filtering of all variables
 
   Vector3D vExB, vD; // Velocities
@@ -80,13 +78,13 @@ private:
   Coordinates* coord;
 
   // Inverts a Laplacian to get potential
-  Laplacian* phiSolver;
+  std::unique_ptr<Laplacian> phiSolver{nullptr};
 
   int init(bool UNUSED(restarting)) override {
 
     output.write("Solving JOREK-like reduced MHD equations\n");
-    output.write("\tFile    : %s\n", __FILE__);
-    output.write("\tCompiled: %s at %s\n", __DATE__, __TIME__);
+    output.write("\tFile    : {:s}\n", __FILE__);
+    output.write("\tCompiled: {:s} at {:s}\n", __DATE__, __TIME__);
 
     auto globalOptions = Options::root();
     auto options = globalOptions["jorek"];
@@ -116,7 +114,7 @@ private:
 
       Field2D factor = P0 / (Charge * (Ti0 + Te0) * rho0);
 
-      output.write("\tPressure factor %e -> %e\n", min(factor, true), max(factor, true));
+      output.write("\tPressure factor {:e} -> {:e}\n", min(factor, true), max(factor, true));
 
       // Multiply temperatures by this factor
       Te0 *= factor;
@@ -196,7 +194,6 @@ private:
     electron_density = options["electron_density"].withDefault(false);
     vorticity_momentum = options["vorticity_momentum"].withDefault(false);
     include_profiles = options["include_profiles"].withDefault(false);
-    parallel_lc = options["parallel_lc"].withDefault(true);
 
     low_pass_z = options["low_pass_z"].withDefault(-1); // Default is no filtering
 
@@ -235,7 +232,8 @@ private:
 
     // Check type of parallel transform
     std::string ptstr =
-        Options::root()["mesh"]["paralleltransform"].withDefault<std::string>("identity");
+        Options::root()["mesh"]["paralleltransform"]["type"]
+                       .withDefault<std::string>("identity");
 
     if (lowercase(ptstr) == "shifted") {
       // Dimits style, using local coordinate system
@@ -329,7 +327,7 @@ private:
     eta = eta0;
     tau_e = tau_enorm * pow(Te0, 1.5) / rho0;
 
-    output.write("\tNormalised tau_e = %e -> %e\n", min(tau_e, true), max(tau_e, true));
+    output.write("\tNormalised tau_e = {:e} -> {:e}\n", min(tau_e, true), max(tau_e, true));
 
     // Set locations for staggered grids
     vD.setLocation(CELL_VSHIFT);
@@ -365,13 +363,7 @@ private:
     // Derivative along equilibrium field-line
     Field3D result;
 
-    if (parallel_lc) {
-      if (loc == CELL_YLOW) {
-        result = Grad_par_CtoL(f);
-      } else
-        result = Grad_par_LtoC(f);
-    } else
-      result = Grad_par(f, loc);
+    result = Grad_par(f, loc);
 
     if (nonlinear) {
       if (full_bfield) {
@@ -391,7 +383,7 @@ private:
   }
 
   int rhs(BoutReal t) override {
-    TRACE("Started physics_run(%e)", t);
+    TRACE("Started physics_run({:e})", t);
 
     // Invert laplacian for phi
     if (vorticity_momentum) {
