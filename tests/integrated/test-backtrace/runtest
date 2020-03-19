@@ -1,0 +1,28 @@
+#!/bin/bash
+set -ex
+
+#requires all_tests
+
+e=1
+make || e=$?
+test $e = 1
+
+unset BOUT_SHOW_BACKTRACE
+
+if ./boutexcept 2>&1 | grep troublemaker
+then
+    echo "Did not expect the offending function name in output"
+    exit 2
+fi
+
+export BOUT_SHOW_BACKTRACE=yes
+
+if ./boutexcept 2>&1 | grep troublemaker
+then
+    :
+else
+    echo "Did expect the offending function name in output"
+    exit 2
+fi
+
+exit 0
