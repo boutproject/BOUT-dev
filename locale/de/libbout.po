@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: BOUT++ 4.2.1\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2020-03-19 12:25+0000\n"
-"PO-Revision-Date: 2019-02-06 17:32+0000\n"
+"PO-Revision-Date: 2020-03-19 12:42+0000\n"
 "Last-Translator: David <schword2@mail.dcu.ie>\n"
 "Language-Team: German\n"
 "Language: de\n"
@@ -16,7 +16,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Poedit 2.2.1\n"
+"X-Generator: Poedit 2.3\n"
 
 #: ../src/mesh/impls/bout/boutmesh.cxx:339
 #, c-format
@@ -132,10 +132,10 @@ msgstr ""
 "Prozessen verteilt werden\n"
 
 #: ../src/mesh/impls/bout/boutmesh.cxx:427
-#, fuzzy, c-format
+#, c-format
 msgid "\tERROR: Cannot split %d Z points equally between %d processors\n"
 msgstr ""
-"\tFEHLER: %d Punkte in der Y-Richtung können nicht gleichmässig zwischen %d "
+"\tFEHLER: %d Punkte in der Z-Richtung können nicht gleichmässig zwischen %d "
 "Prozessen verteilt werden\n"
 
 #: ../src/sys/options/options_ini.cxx:167
@@ -157,9 +157,8 @@ msgid "\tGrid size: "
 msgstr "\tGittergröße: "
 
 #: ../src/mesh/impls/bout/boutmesh.cxx:148
-#, fuzzy
 msgid "\tGuard cells (x,y,z): "
-msgstr "\tGuardzellen (x,y): "
+msgstr "\tGuardzellen (x,y,z): "
 
 #: ../src/sys/options/options_ini.cxx:171
 #, c-format
@@ -320,9 +319,8 @@ msgstr ""
 "des Physikmoduls definiert.\n"
 
 #: ../include/options.hxx:638
-#, fuzzy
 msgid ") overwritten with:"
-msgstr ") überschrieben mit %s"
+msgstr ") überschrieben mit:"
 
 #: ../tests/unit/src/test_bout++.cxx:294
 msgid "4 of 8"
@@ -338,9 +336,8 @@ msgid "BOUT++ version %s\n"
 msgstr "BOUT++ Version %s\n"
 
 #: ../src/bout++.cxx:112
-#, fuzzy
 msgid "Bad command line arguments:\n"
-msgstr "\t'=' darf nicht mehrfach vorkommen: '%s'\n"
+msgstr "Fehlerhafte Kommandozeilen Optionen:\n"
 
 #: ../src/mesh/impls/bout/boutmesh.cxx:862
 msgid "Boundary regions in this processor: "
@@ -375,18 +372,17 @@ msgid "Compile-time options:\n"
 msgstr "Kompiliert mit:\n"
 
 #: ../tests/unit/src/test_bout++.cxx:304
-#, fuzzy
 msgid "Compiled with flags"
-msgstr "\tWurde kompiliert mit den Optionen : %s\n"
+msgstr "Wurde mit folgenden Optionen kompiliert"
 
 #: ../src/mesh/impls/bout/boutmesh.cxx:871
 msgid "Constructing default regions"
 msgstr "Standardregionen werden erstellt"
 
 #: ../src/bout++.cxx:349
-#, fuzzy, c-format
+#, c-format
 msgid "Could not create PID file %s"
-msgstr "Die Ausgabedatei '%s' konnte nicht geöffnet werden\n"
+msgstr "Die Ausgabedatei '%s' konnte nicht erstellt werden"
 
 #: ../src/mesh/impls/bout/boutmesh.cxx:390
 msgid ""
@@ -492,7 +488,7 @@ msgstr "Suche NXPE Wert (optimal = %f)\n"
 
 #: ../src/solver/solver.cxx:526
 msgid "Initialising solver\n"
-msgstr "initialisiere den Integrator\n"
+msgstr "Integrator wird initialisiert\n"
 
 #: ../src/bout++.cxx:323
 msgid ""
@@ -548,16 +544,16 @@ msgstr ""
 "Anzahl an Prozessoren (%d) nicht teilbar durch Anzahl in x Richtung (%d)\n"
 
 #: ../src/mesh/impls/bout/boutmesh.cxx:238
-#, fuzzy, c-format
+#, c-format
 msgid "Number of processors (%d) not divisible by NPs in y direction (%d)\n"
 msgstr ""
-"Anzahl an Prozessoren (%d) nicht teilbar durch Anzahl in x Richtung (%d)\n"
+"Anzahl an Prozessoren (%d) nicht teilbar durch Anzahl in y Richtung (%d)\n"
 
 #. Less than 2 time-steps left
 #: ../src/bout++.cxx:739
-#, fuzzy, c-format
+#, c-format
 msgid "Only %e seconds (%.2f steps) left. Quitting\n"
-msgstr "Nur noch %e Sekunden verfügbar. Abbruch\n"
+msgstr "Nur noch %e Sekunden (%.2f Schritte) verfügbar. Abbruch\n"
 
 #: ../src/sys/options.cxx:175 ../src/sys/options.cxx:195
 #: ../src/sys/options.cxx:250 ../src/sys/options.cxx:292
@@ -748,9 +744,8 @@ msgstr ""
 
 #. restart file should be written by physics model
 #: ../src/solver/solver.cxx:700
-#, fuzzy
 msgid "User signalled to quit. Returning\n"
-msgstr "Beendigung durch Monitor\n"
+msgstr "Beendigung durch Benutzer.\n"
 
 #: ../src/sys/options.cxx:231
 #, c-format
@@ -758,30 +753,30 @@ msgid "Value for option %s = %e is not an integer"
 msgstr "Wert der Option %s = %e ist keine Ganzzahl"
 
 #: ../src/sys/options.cxx:273
-#, fuzzy, c-format
+#, c-format
 msgid "Value for option %s cannot be converted to a BoutReal"
-msgstr "Wert der Option %s = %e ist keine Ganzzahl"
+msgstr "Wert der Option %s ist keine Flieskommazahl"
 
 #: ../src/sys/options.cxx:440
-#, fuzzy, c-format
+#, c-format
 msgid "Value for option %s cannot be converted to a Field2D"
-msgstr "Wert der Option %s = %e ist keine Ganzzahl"
+msgstr "Wert der Option %s ist keine Field2D"
 
 #: ../src/sys/options.cxx:390
-#, fuzzy, c-format
+#, c-format
 msgid "Value for option %s cannot be converted to a Field3D"
-msgstr "Wert der Option %s = %e ist keine Ganzzahl"
+msgstr "Wert der Option %s ist keine Field3D"
 
 #: ../src/sys/options.cxx:313
-#, fuzzy, c-format
+#, c-format
 msgid "Value for option %s cannot be converted to a bool"
-msgstr "Wert der Option %s = %e ist keine Ganzzahl"
+msgstr "Wert der Option %s ist keine Boolescher Wert"
 
 #. Another type which can't be converted
 #: ../src/sys/options.cxx:222
-#, fuzzy, c-format
+#, c-format
 msgid "Value for option %s is not an integer"
-msgstr "Wert der Option %s = %e ist keine Ganzzahl"
+msgstr "Wert der Option %s ist keine Ganzzahl"
 
 #: ../src/solver/solver.cxx:996 ../src/solver/solver.cxx:1000
 #, c-format
@@ -789,13 +784,13 @@ msgid "Variable '%s' not initialised"
 msgstr "Variable '%s' ist nicht initialisiert"
 
 #: ../src/mesh/impls/bout/boutmesh.cxx:119
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "WARNING: Number of toroidal points should be 2^n for efficient FFT "
 "performance -- consider changing MZ (%d) if using FFTs\n"
 msgstr ""
 "WARNUNG: Anzahl der toroidalen Punkte sollte 2^n für effiziente FFTs sein. "
-"Ändere MZ falls FFTs verwendet werden\n"
+"Ändere MZ (%d) falls FFTs verwendet werden\n"
 
 #: ../src/mesh/coordinates.cxx:430
 msgid "WARNING: extrapolating input mesh quantities into x-boundary cells\n"
