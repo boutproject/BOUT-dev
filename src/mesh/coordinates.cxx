@@ -713,9 +713,7 @@ Coordinates::Coordinates(Mesh *mesh, Options* options, const CELL_LOC loc,
                                     : options["ZMAX"].withDefault(1.0);
 
       const auto default_dz = (zmax - zmin) * TWOPI / nz;
-      printf("getting dz staggered\n");
       getAtLoc(mesh, dz, "dz", suffix, location, default_dz);
-      printf("dz staggered is %e\n",dz(0,0,0));
     }
     setParallelTransform(options);
 

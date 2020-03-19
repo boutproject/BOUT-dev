@@ -1639,7 +1639,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
                         + g13shift * dfdz(bndry->x - bndry->bx, bndry->y, z);
       if (bndry->bx != 0 && bndry->by == 0) {
         // x boundaries only
-        BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y);
+        BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y, z);
         f(bndry->x, bndry->y, z) =
             f(bndry->x - bndry->bx, bndry->y, z) + delta / g11shift * (val - xshift);
         if (bndry->width == 2) {
@@ -1942,7 +1942,7 @@ void BoundaryNeumann::apply(Field3D& f, BoutReal t) {
         for (; !bndry->isDone(); bndry->next1d()) {
           for (int zk = 0; zk < mesh->LocalNz; zk++) {
             if (fg) {
-              val = fg->generate(Context(bndry, zk, loc, t, mesh)) * metric->dx(bndry->x - bndry->bx, bndry->y);
+              val = fg->generate(Context(bndry, zk, loc, t, mesh)) * metric->dx(bndry->x - bndry->bx, bndry->y, zk);
             }
 
             f(bndry->x - bndry->bx, bndry->y, zk) =
@@ -1967,10 +1967,15 @@ void BoundaryNeumann::apply(Field3D& f, BoutReal t) {
       }
       if (bndry->by != 0) {
         for (; !bndry->isDone(); bndry->next1d()) {
+#ifndef COORDINATES_USE_3D
           BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y)
                            + bndry->by * metric->dy(bndry->x, bndry->y);
-
+#endif
           for (int zk = 0; zk < mesh->LocalNz; zk++) {
+#ifdef COORDINATES_USE_3D
+            BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y, zk)
+                             + bndry->by * metric->dy(bndry->x, bndry->y, zk);
+#endif
             if (fg) {
               val = fg->generate(Context(bndry, zk, loc, t, mesh));
             }
@@ -2019,7 +2024,7 @@ void BoundaryNeumann::apply(Field3D& f, BoutReal t) {
         for (; !bndry->isDone(); bndry->next1d()) {
           for (int zk = 0; zk < mesh->LocalNz; zk++) {
             if (fg) {
-              val = fg->generate(Context(bndry, zk, loc, t, mesh)) * metric->dy(bndry->x, bndry->y - bndry->by);
+              val = fg->generate(Context(bndry, zk, loc, t, mesh)) * metric->dy(bndry->x, bndry->y - bndry->by, zk);
             }
 
             f(bndry->x, bndry->y - bndry->by, zk) =
