@@ -510,14 +510,15 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
 
     /// Calculate Jacobian and Bxy
     if (jacobian()) {
-      throw BoutException("Error in jacobian call while constructing staggered Coordinates");
+      throw BoutException("Error in jacobian call while constructing staggered "
+                          "Coordinates");
     }
 
     // Attempt to read J from the grid file
     Field2D Jcalc = J;
     if (getAtLoc(mesh, J, "J", suffix, location)) {
       output_warn.write(
-          "\tWARNING: Jacobian 'J_{}' not found. Calculating from metric tensor\n",
+          "\tWARNING: Jacobian 'J_%s' not found. Calculating from metric tensor\n",
           suffix);
       J = Jcalc;
     } else {
@@ -533,7 +534,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     // Attempt to read Bxy from the grid file
     Field2D Bcalc = Bxy;
     if (getAtLoc(mesh, Bxy, "Bxy", suffix, location)) {
-      output_warn.write("\tWARNING: Magnitude of B field 'Bxy_{}' not found. Calculating "
+      output_warn.write("\tWARNING: Magnitude of B field 'Bxy_%s' not found. Calculating "
                         " from metric tensor\n", suffix);
       Bxy = Bcalc;
     } else {
