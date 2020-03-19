@@ -139,12 +139,14 @@ void checkStaggeredGet(Mesh* mesh, const std::string& name, const std::string& s
 }
 
 // convenience function for repeated code
-void getAtLoc(Mesh* mesh, Field2D &var, const std::string& name,
+int getAtLoc(Mesh* mesh, Field2D &var, const std::string& name,
     const std::string& suffix, CELL_LOC location, BoutReal default_value = 0.) {
 
   checkStaggeredGet(mesh, name, suffix);
-  mesh->get(var, name+suffix, default_value);
+  int result = mesh->get(var, name+suffix, default_value);
   var.setLocation(location);
+
+  return result;
 }
 
 std::string getLocationSuffix(CELL_LOC location) {
@@ -509,6 +511,38 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     /// Calculate Jacobian and Bxy
     if (jacobian()) {
       throw BoutException("Error in jacobian call while constructing staggered Coordinates");
+    }
+
+    // Attempt to read J from the grid file
+    Field2D Jcalc = J;
+    if (getAtLoc(mesh, J, "J", suffix, location)) {
+      output_warn.write(
+          "\tWARNING: Jacobian 'J_{}' not found. Calculating from metric tensor\n",
+          suffix);
+      J = Jcalc;
+    } else {
+      J = interpolateAndExtrapolate(J, location, extrapolate_x, extrapolate_y);
+
+      // Compare calculated and loaded values
+      output_warn.write("\tMaximum difference in J is %e\n", max(abs(J - Jcalc)));
+
+      // Re-evaluate Bxy using new J
+      Bxy = sqrt(g_22) / J;
+    }
+
+    // Attempt to read Bxy from the grid file
+    Field2D Bcalc = Bxy;
+    if (getAtLoc(mesh, Bxy, "Bxy", suffix, location)) {
+      output_warn.write("\tWARNING: Magnitude of B field 'Bxy_{}' not found. Calculating "
+                        " from metric tensor\n", suffix);
+      Bxy = Bcalc;
+    } else {
+      Bxy = interpolateAndExtrapolate(Bxy, location, extrapolate_x, extrapolate_y);
+
+      output_warn.write("\tMaximum difference in Bxy is %e\n", max(abs(Bxy - Bcalc)));
+      // Check Bxy
+      bout::checkFinite(Bxy, "Bxy" + suffix, "RGN_NOCORNERS");
+      bout::checkPositive(Bxy, "Bxy" + suffix, "RGN_NOCORNERS");
     }
 
     checkStaggeredGet(mesh, "ShiftTorsion", suffix);
