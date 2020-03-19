@@ -131,6 +131,10 @@ The bare-minimum requirements for compiling and running BOUT++ are:
 The FFTW-3 library ( `http://www.fftw.org/ <http://www.fftw.org/>`__ ) is also strongly recommended
 
 .. note::
+   Only GCC versions >= 4.9 are supported. This is due to a bug in
+   previous versions
+
+.. note::
    If you use an Intel compiler, you must also make sure that you have
    a version of GCC that supports C++11 (GCC 4.8+).
 
