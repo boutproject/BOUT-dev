@@ -3,7 +3,7 @@
 class TestCommunications : public PhysicsModel {
 public:
   int init(bool) {
-    SAVE_REPEAT(f);
+    SOLVE_FOR(f);
     f = -1.;
 
     // fill non-guard cells:
@@ -86,7 +86,7 @@ public:
   int rhs(BoutReal) {
     // communicate f to fill guard cells
     mesh->communicate(f);
-
+    ddt(f)=0;
     return 0;
   }
 private:
