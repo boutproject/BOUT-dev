@@ -131,8 +131,6 @@ $(DIRS):
 	@$(MAKE) -s --no-print-directory TARGET=$(TARGET) -C $@ $(TARGET)
 else
 MODULE_DIR?=$(shell pwd)
-## Workaround for different make versions
-H := \#
 $(DIRS):
 # MODULE_DIR: pass the module directory, where the libraries should be
 # created.
@@ -140,7 +138,7 @@ $(DIRS):
 # first a potential trailing slash is removed, and after that the
 # directory name is extracted. This allows to e.g. specify a directory
 # as fuu/bar/ and still get an archive named bar.a
-	@$(MAKE) -s --no-print-directory MODULE_DIR=$(MODULE_DIR) SUB_NAME=$(shell f=$@ ; g=$${f%/} ; echo $${g$H$H*/}) TARGET=sub -C $@
+	@$(MAKE) -s --no-print-directory MODULE_DIR=$(MODULE_DIR) SUB_NAME=$(shell basename $@) TARGET=sub -C $@
 endif
 endif
 
@@ -288,9 +286,7 @@ DIRS_=$(DIRS:%/=%)
 # then we extract the directory name, in case it is a longer path
 # We are not in a recipe, so # needs to be escaped
 # $$ is an escaped $
-## Workaround for different make versions
-H := \#
-DIRS__=$(shell for f in $(DIRS_) ; do echo $${f$H$H*/};done)
+DIRS__=$(shell for d in $(DIRS_) ; do basename $$d;done)
 # now we can generate a list of libraries
 SUB_LIBS=$(DIRS__:%=%.a)
 $(SUB_LIBS):$(DIRS__)
