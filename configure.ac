@@ -89,6 +89,8 @@ AC_ARG_ENABLE(backtrace,    [AS_HELP_STRING([--disable-backtrace],
         [Disable function backtrace])],,[enable_backtrace=maybe])
 AC_ARG_ENABLE(shared,       [AS_HELP_STRING([--enable-shared],
         [Enable building bout++ into an shared object])],,[enable_shared=no])
+AC_ARG_ENABLE(static,       [AS_HELP_STRING([--enable-static],
+        [Enable building bout++ into an static library])],,[enable_static=auto])
 AC_ARG_ENABLE(openmp,       [AS_HELP_STRING([--enable-openmp],
         [Enable building with OpenMP support])],,[enable_openmp=no])
 AC_ARG_WITH(openmp_schedule,[AS_HELP_STRING([--with-openmp-schedule=static/dynamic/guided/auto],
@@ -393,6 +395,7 @@ AS_IF([test "x$enable_backtrace" = "xyes" || test "x$enable_backtrace" = "xmaybe
 # Build into shared object (pic)
 #############################################################
 
+DEFLIB2=''
 AS_IF([test "x$enable_shared" = "xyes"], [
     # compile as position independent code.
     # -fpic is apparently faster then -fPIC, but -fPIC works always.
@@ -403,6 +406,35 @@ AS_IF([test "x$enable_shared" = "xyes"], [
     #  PowerPC and SPARC.
     # Therfore use -fPIC for now
     CXXFLAGS="$CXXFLAGS -fPIC"
+    # for make.config
+    DEFLIB1='$(LIB_SO)'
+    # for src/makefile
+    DEFLIB2+=' ../lib/libbout++.so'
+    AS_IF([test "x$enable_static" = "xauto"], [
+        enable_static=no
+    ])
+    SHARED_EXTRA=':'
+    AS_IF([test "x$enable_static" = "xno"], [
+        SHARED_EXTRA='$(RM) -f ../lib/*.a'
+    ])
+], [
+    AS_IF([test "x$enable_static" = "xauto"], [
+        enable_static=yes
+    ])
+])
+
+AS_IF([test "x$enable_static" = "xyes"], [
+    DEFLIB1='$(LIB_A)'
+    DEFLIB2+=' ../lib/libbout++.a'
+    STATIC_EXTRA=':'
+    # In case we only build static, make sure shared libs are removed
+    AS_IF([! test "x$enable_shared" = "xyes"], [
+        STATIC_EXTRA='$(RM) -f ../lib/*.so*'
+    ])
+])
+
+AS_IF([test "x$DEFLIB2" = x ], [
+    AC_MSG_ERROR([Need to enable at least on of static or shared!])
 ])
 
 #############################################################
@@ -1379,6 +1411,10 @@ AC_SUBST(OWN_MPARK)
 AC_SUBST(PREFIX)
 AC_SUBST(IDLCONFIGPATH)
 AC_SUBST(PYTHONCONFIGPATH)
+AC_SUBST(DEFLIB1)
+AC_SUBST(DEFLIB2)
+AC_SUBST(STATIC_EXTRA)
+AC_SUBST(SHARED_EXTRA)
 
 AC_SUBST(BOUT_VERSION)
 AC_SUBST(GIT_REVISION)

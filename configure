@@ -647,6 +647,10 @@ HAS_PVODE
 CHECK_LEVEL
 GIT_REVISION
 BOUT_VERSION
+SHARED_EXTRA
+STATIC_EXTRA
+DEFLIB2
+DEFLIB1
 PYTHONCONFIGPATH
 IDLCONFIGPATH
 PREFIX
@@ -823,6 +827,7 @@ enable_optimize
 enable_sigfpe
 enable_backtrace
 enable_shared
+enable_static
 enable_openmp
 with_openmp_schedule
 enable_pvode_openmp
@@ -1482,6 +1487,7 @@ Optional Features:
   --enable-sigfpe         Enable FloatingPointExceptions
   --disable-backtrace     Disable function backtrace
   --enable-shared         Enable building bout++ into an shared object
+  --enable-static         Enable building bout++ into an static library
   --enable-openmp         Enable building with OpenMP support
   --enable-pvode-openmp   Enable building PVODE with OpenMP support
   --disable-openmp        do not use OpenMP
@@ -2726,6 +2732,13 @@ if test "${enable_shared+set}" = set; then :
   enableval=$enable_shared;
 else
   enable_shared=no
+fi
+
+# Check whether --enable-static was given.
+if test "${enable_static+set}" = set; then :
+  enableval=$enable_static;
+else
+  enable_static=auto
 fi
 
 # Check whether --enable-openmp was given.
@@ -6343,6 +6356,7 @@ fi
 # Build into shared object (pic)
 #############################################################
 
+DEFLIB2=''
 if test "x$enable_shared" = "xyes"; then :
 
     # compile as position independent code.
@@ -6354,6 +6368,50 @@ if test "x$enable_shared" = "xyes"; then :
     #  PowerPC and SPARC.
     # Therfore use -fPIC for now
     CXXFLAGS="$CXXFLAGS -fPIC"
+    # for make.config
+    DEFLIB1='$(LIB_SO)'
+    # for src/makefile
+    DEFLIB2+=' ../lib/libbout++.so'
+    if test "x$enable_static" = "xauto"; then :
+
+        enable_static=no
+
+fi
+    SHARED_EXTRA=':'
+    if test "x$enable_static" = "xno"; then :
+
+        SHARED_EXTRA='$(RM) -f ../lib/*.a'
+
+fi
+
+
+else
+
+    if test "x$enable_static" = "xauto"; then :
+
+        enable_static=yes
+
+fi
+
+fi
+
+if test "x$enable_static" = "xyes"; then :
+
+    DEFLIB1='$(LIB_A)'
+    DEFLIB2+=' ../lib/libbout++.a'
+    STATIC_EXTRA=':'
+    # In case we only build static, make sure shared libs are removed
+    if ! test "x$enable_shared" = "xyes"; then :
+
+        STATIC_EXTRA='$(RM) -f ../lib/*.so*'
+
+fi
+
+fi
+
+if test "x$DEFLIB2" = x ; then :
+
+    as_fn_error $? "Need to enable at least on of static or shared!" "$LINENO" 5
 
 fi
 
@@ -16984,6 +17042,9 @@ CONFIG_LDFLAGS=`$MAKE ldflags -f output.make`
 # If make install is run then that replaces these paths
 BOUT_LIB_PATH=$PWD/lib
 BOUT_INCLUDE_PATH=$PWD/include
+
+
+
 
 
 
