@@ -519,7 +519,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     if (getAtLoc(mesh, J, "J", suffix, location)) {
       output_warn.write(
           "\tWARNING: Jacobian 'J_%s' not found. Calculating from metric tensor\n",
-          suffix);
+          suffix.c_str());
       J = Jcalc;
     } else {
       J = interpolateAndExtrapolate(J, location, extrapolate_x, extrapolate_y);
@@ -535,7 +535,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     Field2D Bcalc = Bxy;
     if (getAtLoc(mesh, Bxy, "Bxy", suffix, location)) {
       output_warn.write("\tWARNING: Magnitude of B field 'Bxy_%s' not found. Calculating "
-                        " from metric tensor\n", suffix);
+                        " from metric tensor\n", suffix.c_str());
       Bxy = Bcalc;
     } else {
       Bxy = interpolateAndExtrapolate(Bxy, location, extrapolate_x, extrapolate_y);
