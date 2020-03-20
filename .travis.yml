@@ -75,7 +75,7 @@ jobs:
     env:
       - *default_env
       - CONFIGURE_OPTIONS="--enable-shared --with-petsc --with-slepc --with-sundials=$HOME/local CXXFLAGS=-g0"
-      - SCRIPT_FLAGS="-uim -t python -t shared"
+      - SCRIPT_FLAGS="-uim -t python"
   - name: "4to5 test"
     env:
       - *default_env

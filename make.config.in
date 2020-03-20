@@ -84,8 +84,9 @@ BOUT_VERSION  = @PACKAGE_VERSION@
 
 OBJ    = $(SOURCEC:%.cxx=%.o)
 ifndef RELEASE
-LIB    = $(BOUT_LIB_PATH)/libbout++.a
+LIB_A  = $(BOUT_LIB_PATH)/libbout++.a
 LIB_SO = $(BOUT_LIB_PATH)/libbout++.so
+LIB    = @DEFLIB1@
 endif
 
 MPARK_VARIANT_INCLUDE_PATH=@MPARK_VARIANT_INCLUDE_PATH@
