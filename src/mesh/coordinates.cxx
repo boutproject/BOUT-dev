@@ -563,7 +563,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
       J = interpolateAndExtrapolate(J, location, extrapolate_x, extrapolate_y);
 
       // Compare calculated and loaded values
-      output_warn.write("\tMaximum difference in J is %e\n", max(abs(J - Jcalc)));
+      output_warn.write("\tMaximum difference in J is {}\n", max(abs(J - Jcalc)));
 
       // Re-evaluate Bxy using new J
       Bxy = sqrt(g_22) / J;
@@ -585,7 +585,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     } else {
       Bxy = interpolateAndExtrapolate(Bxy, location, extrapolate_x, extrapolate_y);
 
-      output_warn.write("\tMaximum difference in Bxy is %e\n", max(abs(Bxy - Bcalc)));
+      output_warn.write("\tMaximum difference in Bxy is {}\n", max(abs(Bxy - Bcalc)));
     }
 
     // Check Bxy
