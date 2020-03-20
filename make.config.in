@@ -138,9 +138,7 @@ $(DIRS):
 # first a potential trailing slash is removed, and after that the
 # directory name is extracted. This allows to e.g. specify a directory
 # as fuu/bar/ and still get an archive named bar.a
-# The # probably doesn't need to be escaped as everything in the
-# recipy is passed to the shell, even lines starting with #
-	@$(MAKE) -s --no-print-directory MODULE_DIR=$(MODULE_DIR) SUB_NAME=$(shell f=$@ ; g=$${f%/} ; echo $${g##*/}) TARGET=sub -C $@
+	@$(MAKE) -s --no-print-directory MODULE_DIR=$(MODULE_DIR) SUB_NAME=$(shell basename $@) TARGET=sub -C $@
 endif
 endif
 
@@ -287,7 +285,7 @@ DIRS_=$(DIRS:%/=%)
 # then we extract the directory name, in case it is a longer path
 # We are not in a recipe, so # needs to be escaped
 # $$ is an escaped $
-DIRS__=$(shell for f in $(DIRS_) ; do echo $${f\#\#*/};done)
+DIRS__=$(shell for d in $(DIRS_) ; do basename $$d;done)
 # now we can generate a list of libraries
 SUB_LIBS=$(DIRS__:%=%.a)
 $(SUB_LIBS):$(DIRS__)
