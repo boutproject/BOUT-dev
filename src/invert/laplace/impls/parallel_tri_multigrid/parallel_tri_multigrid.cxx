@@ -202,14 +202,20 @@ bool LaplaceParallelTriMG::is_diagonally_dominant(const dcomplex al, const dcomp
 /*
  * Calculate the absolute and relative errors at an x grid point.
  */
-void LaplaceParallelTriMG::get_errors(BoutReal *error_rel,BoutReal *error_abs,const dcomplex x,const dcomplex xlast){
-  *error_abs = abs(x - xlast);
-  BoutReal xabs = fabs(x);
-  if( xabs > 0.0 ){
-    *error_rel = *error_abs / xabs;
-  }
-  else{
-    *error_rel = *error_abs;
+void LaplaceParallelTriMG::get_errors(Array<BoutReal> &error_rel, Array<BoutReal> &error_abs, const Matrix<dcomplex> x, const Matrix<dcomplex> xlast){
+
+  for(int kz = 0; kz < nmode; kz++){
+    error_abs[kz] = abs(x(1,kz) - xlast(1,kz)) + abs(x(2,kz) - xlast(2,kz));
+    BoutReal xabs = fabs(x(1,kz));
+    if( fabs(x(2,kz)) < xabs ){
+      xabs = fabs(x(2,kz));
+    }
+    if( xabs > 0.0 ){
+      error_rel[kz] = error_abs[kz] / xabs;
+    }
+    else{
+      error_rel[kz] = error_abs[kz];
+    }
   }
 }
 
@@ -355,7 +361,8 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   auto xk = Matrix<dcomplex>(ncx, ncz / 2 + 1);
   auto xk1d = Matrix<dcomplex>(ncz/2+1,ncx);
   auto xk1dlast = Matrix<dcomplex>(ncz/2+1,ncx);
-  BoutReal error_rel = 1e20, error_abs = 1e20;
+  auto error_rel = Array<BoutReal>(ncz/2+1);
+  auto error_abs = Array<BoutReal>(ncz/2+1);
   /*
   // Down and up coefficients
   dcomplex Bd, Ad;
@@ -525,7 +532,8 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   while(true){
 
     //output<<count<<" "<<xloc(0,kz)<<" "<<xloc(1,kz)<<" "<<xloc(2,kz)<<" "<<xloc(3,kz)<<endl;
-    jacobi(levels[0], jy, ncx, xloc, xloclast, &error_rel, &error_abs );
+    jacobi(levels[0], jy, ncx, xloc, xloclast, error_rel, error_abs );
+    //output<<count<<" "<<error_rel[0]<<" "<<error_abs[0]<<endl;
 
     ++count;
     ///SCOREP_USER_REGION_END(comms_after_break);
@@ -638,7 +646,6 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
     // Store the solution xk for the current fourier mode in a 2D array
     for (int ix = 0; ix < ncx; ix++) {
       xk(ix, kz) = xk1d(kz,ix);
-      output<<"final "<<xk(ix,kz)<<endl;
     }
     first_call(jy,kz) = false;
   }
@@ -666,7 +673,7 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   return x; // Result of the inversion
 }
 
-void LaplaceParallelTriMG::jacobi(Level &l, const int jy, const int ncx, Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast, BoutReal *error_rel, BoutReal *error_abs){
+void LaplaceParallelTriMG::jacobi(Level &l, const int jy, const int ncx, Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast, Array<BoutReal> &error_rel, Array<BoutReal> &error_abs){
 
   struct Message { dcomplex value; bool done; };
   Array<Message> message_send, message_recv;
@@ -695,10 +702,6 @@ void LaplaceParallelTriMG::jacobi(Level &l, const int jy, const int ncx, Matrix<
 
     ///SCOREP_USER_REGION_DEFINE(errors);
     ///SCOREP_USER_REGION_BEGIN(errors, "calculate errors",SCOREP_USER_REGION_TYPE_COMMON);
-    // Calcalate errors on interior points only
-    // TODO Fix this
-    get_errors(error_rel,error_abs,xloc(1,kz),xloclast(1,kz));
-    get_errors(error_rel,error_abs,xloc(2,kz),xloclast(2,kz));
 
 ///        // Set communication flags
 ///        if ( count > 0 && (
@@ -806,6 +809,10 @@ void LaplaceParallelTriMG::jacobi(Level &l, const int jy, const int ncx, Matrix<
 ///      self_in[kz] = neighbour_in[kz] = (self_in[kz] or neighbour_in[kz]);
 ///      self_out[kz] = neighbour_out[kz] = (self_out[kz] or neighbour_out[kz]);
 ///    }
+//
+  // Calcalate errors on interior points only
+  // TODO Fix this
+  get_errors(error_rel,error_abs,xloc,xloclast);
 
 }  
 

@@ -85,7 +85,7 @@ public:
   bool all(const Array<bool>);
   bool any(const Array<bool>);
 
-  void get_errors(BoutReal *error_rel,BoutReal *error_abs,const dcomplex x,const dcomplex xlast);
+  void get_errors(Array<BoutReal> &error_rel, Array<BoutReal> &error_abs, const Matrix<dcomplex> x,const Matrix<dcomplex> xlast);
 
   struct Level {
 
@@ -112,7 +112,7 @@ public:
   void init(Level &level, const int ncx, const int jy, const Matrix<dcomplex> avec, const Matrix<dcomplex> bvec, const Matrix<dcomplex> cvec, const Matrix<dcomplex> bcmplx);
 
   void jacobi(Level &level, const int jy, const int ncx, Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast,
-     BoutReal *error_rel, BoutReal *error_abs);
+     Array<BoutReal> &error_rel, Array<BoutReal> &error_abs);
 
 
 private:
