@@ -87,6 +87,9 @@ public:
 
   void get_errors(Array<BoutReal> &error_rel, Array<BoutReal> &error_abs, const Matrix<dcomplex> x,const Matrix<dcomplex> xlast);
 
+
+  void refine(Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast);
+
   struct Level {
 
   public:
@@ -112,7 +115,9 @@ public:
   void init(Level &level, const int ncx, const int jy, const Matrix<dcomplex> avec, const Matrix<dcomplex> bvec, const Matrix<dcomplex> cvec, const Matrix<dcomplex> bcmplx);
 
   void jacobi(Level &level, const int jy, const int ncx, Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast,
-     Array<BoutReal> &error_rel, Array<BoutReal> &error_abs);
+     Array<BoutReal> &error_rel, Array<BoutReal> &error_abs, int xs, int xe);
+
+  void coarsen(const Level level, Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast, int jy, int xs, int xe);
 
 
 private:
@@ -148,7 +153,7 @@ private:
   /// The first timestep always uses the approximate solution.
   bool use_previous_timestep;
 
-  Tensor<dcomplex> upperGuardVector, lowerGuardVector;
+  //Tensor<dcomplex> upperGuardVector, lowerGuardVector;
 ///  Matrix<dcomplex> al, bl, au, bu;
 ///  Matrix<dcomplex> alold, blold, auold, buold;
 ///  Matrix<dcomplex> r1, r2, r3, r4, r5, r6, r7, r8;
