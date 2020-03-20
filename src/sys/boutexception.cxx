@@ -51,8 +51,8 @@ std::string BoutException::getBacktrace() const {
     void * ptr=trace[i];
     if (dladdr(trace[i],&info)){
       // Additionally, check whether this is the default offset for an executable
-      if (info.dli_fbase != (void*)0x400000)
-        ptr=(void*) ((size_t)trace[i]-(size_t)info.dli_fbase);
+      if (info.dli_fbase != reinterpret_cast<void*>(0x400000))
+        ptr=reinterpret_cast<void*>(reinterpret_cast<size_t>(trace[i])-reinterpret_cast<size_t>(info.dli_fbase));
     }
 
     // Pipe stderr to /dev/null to avoid cluttering output
