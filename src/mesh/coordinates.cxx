@@ -360,6 +360,13 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
     Bxy = sqrt(g_22) / J;
   }
 
+  // Check jacobian
+  bout::checkFinite(J, "J", "RGN_NOCORNERS");
+  bout::checkPositive(J, "J", "RGN_NOCORNERS");
+  if (min(abs(J)) < 1.0e-10) {
+    throw BoutException("\tERROR: Jacobian becomes very small\n");
+  }
+
   // Attempt to read Bxy from the grid file
   auto Bcalc = Bxy;
   if (mesh->get(Bxy, "Bxy")) {
@@ -370,10 +377,11 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
     Bxy = interpolateAndExtrapolate(Bxy, location, extrapolate_x, extrapolate_y);
 
     output_warn.write("\tMaximum difference in Bxy is {:e}\n", max(abs(Bxy - Bcalc)));
-    // Check Bxy
-    bout::checkFinite(Bxy, "Bxy", "RGN_NOCORNERS");
-    bout::checkPositive(Bxy, "Bxy", "RGN_NOCORNERS");
   }
+
+  // Check Bxy
+  bout::checkFinite(Bxy, "Bxy", "RGN_NOCORNERS");
+  bout::checkPositive(Bxy, "Bxy", "RGN_NOCORNERS");
 
   //////////////////////////////////////////////////////
   /// Calculate Christoffel symbols. Needs communication
@@ -561,6 +569,13 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
       Bxy = sqrt(g_22) / J;
     }
 
+    // Check jacobian
+    bout::checkFinite(J, "J" + suffix, "RGN_NOCORNERS");
+    bout::checkPositive(J, "J" + suffix, "RGN_NOCORNERS");
+    if (min(abs(J)) < 1.0e-10) {
+      throw BoutException("\tERROR: Jacobian{} becomes very small\n", suffix);
+    }
+
     // Attempt to read Bxy from the grid file
     auto Bcalc = Bxy;
     if (getAtLoc(mesh, Bxy, "Bxy", suffix, location)) {
@@ -571,10 +586,11 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
       Bxy = interpolateAndExtrapolate(Bxy, location, extrapolate_x, extrapolate_y);
 
       output_warn.write("\tMaximum difference in Bxy is %e\n", max(abs(Bxy - Bcalc)));
-      // Check Bxy
-      bout::checkFinite(Bxy, "Bxy" + suffix, "RGN_NOCORNERS");
-      bout::checkPositive(Bxy, "Bxy" + suffix, "RGN_NOCORNERS");
     }
+
+    // Check Bxy
+    bout::checkFinite(Bxy, "Bxy" + suffix, "RGN_NOCORNERS");
+    bout::checkPositive(Bxy, "Bxy" + suffix, "RGN_NOCORNERS");
 
     checkStaggeredGet(mesh, "ShiftTorsion", suffix);
     if (mesh->get(ShiftTorsion, "ShiftTorsion"+suffix)) {
@@ -1092,20 +1108,8 @@ int Coordinates::jacobian() {
   // deriving from extrapolated covariant metric components
   J = interpolateAndExtrapolate(J, location, extrapolate_x, extrapolate_y);
 
-  // Check jacobian
-  bout::checkFinite(J, "The Jacobian", "RGN_NOCORNERS");
-  bout::checkPositive(J, "The Jacobian", "RGN_NOCORNERS");
-  if (min(abs(J)) < 1.0e-10) {
-    throw BoutException("\tERROR: Jacobian becomes very small\n");
-  }
-
-  bout::checkPositive(g_22, "g_22", "RGN_NOCORNERS");
-
   Bxy = sqrt(g_22) / J;
   Bxy = interpolateAndExtrapolate(Bxy, location, extrapolate_x, extrapolate_y);
-
-  bout::checkFinite(Bxy, "Bxy", "RGN_NOCORNERS");
-  bout::checkPositive(Bxy, "Bxy", "RGN_NOCORNERS");
 
   return 0;
 }
