@@ -345,7 +345,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
     throw BoutException("Error in jacobian call");
 
   // Attempt to read J from the grid file
-  Field2D Jcalc = J;
+  auto Jcalc = J;
   if (mesh->get(J, "J")) {
     output_warn.write(
         "\tWARNING: Jacobian 'J' not found. Calculating from metric tensor\n");
@@ -361,7 +361,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   }
 
   // Attempt to read Bxy from the grid file
-  Field2D Bcalc = Bxy;
+  auto Bcalc = Bxy;
   if (mesh->get(Bxy, "Bxy")) {
     output_warn.write("\tWARNING: Magnitude of B field 'Bxy' not found. Calculating from "
                       "metric tensor\n");
@@ -517,7 +517,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     }
 
     // Attempt to read J from the grid file
-    Field2D Jcalc = J;
+    auto Jcalc = J;
     if (getAtLoc(mesh, J, "J", suffix, location)) {
       output_warn.write(
           "\tWARNING: Jacobian 'J_{}' not found. Calculating from metric tensor\n",
@@ -534,7 +534,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     }
 
     // Attempt to read Bxy from the grid file
-    Field2D Bcalc = Bxy;
+    auto Bcalc = Bxy;
     if (getAtLoc(mesh, Bxy, "Bxy", suffix, location)) {
       output_warn.write("\tWARNING: Magnitude of B field 'Bxy_{}' not found. Calculating "
                         " from metric tensor\n", suffix);
