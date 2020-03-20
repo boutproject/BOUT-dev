@@ -128,7 +128,11 @@ The bare-minimum requirements for compiling and running BOUT++ are:
    
 #. The NetCDF library ( `https://www.unidata.ucar.edu/downloads/netcdf <https://www.unidata.ucar.edu/downloads/netcdf>`__ )
    
-The FFTW-3 library ( `http://www.fftw.org/ <http://www.fftw.org/>`__ ) is also strongly recommended
+The FFTW-3 library (`http://www.fftw.org/ <http://www.fftw.org/>`__)
+is also strongly recommended. Fourier transforms are used for some
+derivative methods, as well as the `ShiftedMetric` parallel transform
+which is used in the majority of BOUT++ tokamak simulations. Without
+FFTW-3, these options will not be available.
 
 .. note::
    Only GCC versions >= 4.9 are supported. This is due to a bug in
