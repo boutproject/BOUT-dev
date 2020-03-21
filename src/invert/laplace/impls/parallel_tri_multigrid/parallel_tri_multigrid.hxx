@@ -101,6 +101,7 @@ public:
     Array<dcomplex> rl, ru;
     Array<dcomplex> rlold, ruold;
     Matrix<dcomplex> minvb;
+    Matrix<dcomplex> avec, bvec, cvec, rvec;
 
     int index_in;
     int index_out;
@@ -109,15 +110,18 @@ public:
     int xproc;
     int yproc;
     int myproc;
+    int xs, xe;
 
   };
 
   void init(Level &level, const int ncx, const int jy, const Matrix<dcomplex> avec, const Matrix<dcomplex> bvec, const Matrix<dcomplex> cvec, const Matrix<dcomplex> bcmplx);
 
   void jacobi(Level &level, const int jy, const int ncx, Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast,
-     Array<BoutReal> &error_rel, Array<BoutReal> &error_abs, int xs, int xe);
+     Array<BoutReal> &error_rel, Array<BoutReal> &error_abs);
+  void jacobi_full_system(Level &level, const int jy, const int ncx, Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast,
+     Array<BoutReal> &error_rel, Array<BoutReal> &error_abs);
 
-  void coarsen(const Level level, Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast, int jy, int xs, int xe);
+  void coarsen(const Level level, Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast, int jy);
 
 
 private:
