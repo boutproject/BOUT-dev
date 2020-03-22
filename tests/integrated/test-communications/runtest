@@ -33,12 +33,17 @@ s, out = launch_safe(command, nproc=nxpe*nype, pipe=True)
 with open('run.log.'+str(nxpe), 'w') as f:
     f.write(out)
 
+def realtest(faillist,actual, expected, procnum, region, boundary):
+    if not np.all(np.array(np.rint(actual).astype(int)) == np.array(expected)):
+        msg=('failed in '+boundary+' boundary of region '+str(procnum)
+             +' ('+region+'). Expected: '+str(expected)+'  Actual: '
+             +str(actual))
+        faillist.append(msg)
+        print(msg)
+
 failures18 = []
 def test(actual, expected, procnum, region, boundary):
-    if not np.all(np.array(np.rint(actual).astype(int)) == np.array(expected)):
-        failures18.append('failed in '+boundary+' boundary of region '+str(procnum)
-                        +' ('+region+'). Expected: '+str(expected)+'  Actual: '
-                        +str(actual))
+    realtest(failures18, actual, expected, procnum, region, boundary)
 
 region = 'lower, inner PF'
 f = DataFile("data/BOUT.dmp.0.nc")['f'][0, :, :, 0]
@@ -184,10 +189,8 @@ with open('run.log.'+str(nxpe), 'w') as f:
 
 failures12 = []
 def test(actual, expected, procnum, region, boundary):
-    if not np.all(np.array(np.rint(actual).astype(int)) == np.array(expected)):
-        failures12.append('failed in '+boundary+' boundary of region '+str(procnum)
-                        +' ('+region+'). Expected: '+str(expected)+'  Actual: '
-                        +str(actual))
+    realtest(failures12, actual, expected, procnum, region, boundary)
+
 
 region = 'lower, inner leg, interior'
 f = DataFile("data/BOUT.dmp.0.nc")['f'][0, :, :, 0]
@@ -290,10 +293,7 @@ with open('run.log.'+str(nxpe), 'w') as f:
 
 failures6 = []
 def test(actual, expected, procnum, region, boundary):
-    if not np.all(np.array(np.rint(actual).astype(int)) == np.array(expected)):
-        failures6.append('failed in '+boundary+' boundary of region '+str(procnum)
-                        +' ('+region+'). Expected: '+str(expected)+'  Actual: '
-                        +str(actual))
+    realtest(failures6, actual, expected, procnum, region, boundary)
 
 region = 'lower, inner leg'
 f = DataFile("data/BOUT.dmp.0.nc")['f'][0, :, :, 0]
@@ -361,10 +361,7 @@ with open('run_limiter.log.'+str(nxpe), 'w') as f:
 
 failures3 = []
 def test(actual, expected, procnum, region, boundary):
-    if not np.all(np.array(np.rint(actual).astype(int)) == np.array(expected)):
-        failures3.append('failed in '+boundary+' boundary of region '+str(procnum)
-                        +' ('+region+'). Expected: '+str(expected)+'  Actual: '
-                        +str(actual))
+    realtest(failures3, actual, expected, procnum, region, boundary)
 
 region = 'core'
 f = DataFile("data_limiter/BOUT.dmp.0.nc")['f'][0, :, :, 0]
@@ -404,10 +401,7 @@ with open('run_limiter.log.'+str(nxpe), 'w') as f:
 
 failures2 = []
 def test(actual, expected, procnum, region, boundary):
-    if not np.all(np.array(np.rint(actual).astype(int)) == np.array(expected)):
-        failures2.append('failed in '+boundary+' boundary of region '+str(procnum)
-                        +' ('+region+'). Expected: '+str(expected)+'  Actual: '
-                        +str(actual))
+    realtest(failures2, actual, expected, procnum, region, boundary)
 
 region = 'interior'
 f = DataFile("data_limiter/BOUT.dmp.0.nc")['f'][0, :, :, 0]
@@ -440,10 +434,7 @@ with open('run_limiter.log.'+str(nxpe), 'w') as f:
 
 failures1 = []
 def test(actual, expected, procnum, region, boundary):
-    if not np.all(np.array(np.rint(actual).astype(int)) == np.array(expected)):
-        failures1.append('failed in '+boundary+' boundary of region '+str(procnum)
-                        +' ('+region+'). Expected: '+str(expected)+'  Actual: '
-                        +str(actual))
+    realtest(failures1, actual, expected, procnum, region, boundary)
 
 region = 'all'
 f = DataFile("data_limiter/BOUT.dmp.0.nc")['f'][0, :, :, 0]
@@ -453,20 +444,14 @@ test(f[:, 0], [13, 1, 3, 19, 20, 21, 22, 23], 0, region, 'lower y')
 test(f[:, -1], [12, 0, 2, 27, 28, 29, 30, 31], 0, region, 'upper y')
 
 
-if failures18 == [] and failures12 == [] and failures6 == [] and failures3 == [] and failures2 == [] and failures1 == []:
+allfail=[failures18, failures12, failures6, failures3, failures2, failures1]
+success=True
+for fail in allfail:
+    for f in fail:
+        print(f)
+        success=False
+if success:
     print('Pass')
     exit(0)
 else:
-    for f in failures18:
-        print(f)
-    for f in failures12:
-        print(f)
-    for f in failures6:
-        print(f)
-    for f in failures3:
-        print(f)
-    for f in failures2:
-        print(f)
-    for f in failures1:
-        print(f)
     exit(1)
