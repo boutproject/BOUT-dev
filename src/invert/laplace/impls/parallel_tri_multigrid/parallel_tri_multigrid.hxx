@@ -110,7 +110,7 @@ public:
     int xproc;
     int yproc;
     int myproc;
-    int xs, xe;
+    int xs, xe, ncx;
 
   };
 
@@ -120,9 +120,12 @@ public:
      Array<BoutReal> &error_rel, Array<BoutReal> &error_abs);
   void jacobi_full_system(Level &level, const int jy, const int ncx, Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast,
      Array<BoutReal> &error_rel, Array<BoutReal> &error_abs);
+  void refine_full_system(Level &level, Matrix<dcomplex> &x1kd, Matrix<dcomplex> &xk1dlast);
 
   void coarsen(const Level level, Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast, int jy);
+  void coarsen_full_system(const Level level, Matrix<dcomplex> &xk1d, Matrix<dcomplex> &xk1dlast, int jy);
 
+  void get_errors_full_system(Array<BoutReal> &error_rel, Array<BoutReal> &error_abs, const Matrix<dcomplex> x,const Matrix<dcomplex> xlast, const int ncx, const Level l);
 
 private:
   // The coefficents in

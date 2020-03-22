@@ -219,6 +219,25 @@ void LaplaceParallelTriMG::get_errors(Array<BoutReal> &error_rel, Array<BoutReal
   }
 }
 
+void LaplaceParallelTriMG::get_errors_full_system(Array<BoutReal> &error_rel, Array<BoutReal> &error_abs, const Matrix<dcomplex> x, const Matrix<dcomplex> xlast, const int ncx, const Level l){
+
+  BoutReal xabs;
+  for(int kz = 0; kz < nmode; kz++){
+    error_abs[kz]=0.0;
+    error_rel[kz]=0.0;
+    for(int ix = l.xs; ix < l.xe+1; ix++){
+      error_abs[kz] += abs(x(kz,ix) - xlast(kz,ix));
+      xabs = fabs(x(kz,ix));
+      if( xabs > 0.0 ){
+	error_rel[kz] += abs(x(kz,ix) - xlast(kz,ix))/xabs;
+      }
+      else{
+	error_rel[kz] += abs(x(kz,ix) - xlast(kz,ix));
+      }
+    }
+  }
+}
+
 bool LaplaceParallelTriMG::all(const Array<bool> a){
   for(int i=0; i<a.size(); i++){
     if(a[i]==false){
@@ -520,11 +539,13 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   levels[0].xs = xs;
   levels[0].xe = xe;
+  levels[0].ncx = ncx;
   init(levels[0], ncx, jy, avec, bvec, cvec, bcmplx);
 
   int ncx_coarse = (xe-xs+1)/2 + xs + ncx - xe - 1;
   levels[1].xs = xs;
   levels[1].xe = ncx_coarse - 2;  //FIXME assumes mgy=2
+  levels[1].ncx = ncx_coarse;
   auto atmp = Matrix<dcomplex>(nmode,ncx_coarse);
   auto btmp = Matrix<dcomplex>(nmode,ncx_coarse);
   auto ctmp = Matrix<dcomplex>(nmode,ncx_coarse);
@@ -609,14 +630,21 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   int current_level = 0;
   while(true){
 
-    int kz=0;
     //jacobi(levels[current_level], jy, ncx, xloc, xloclast, error_rel, error_abs );
     jacobi_full_system(levels[current_level], jy, ncx, xk1d, xk1dlast, error_rel, error_abs );
+    {
+    int kz=0;
     //output<<count<<" "<<current_level<<" "<<error_rel[0]<<" "<<error_abs[0]<<" "<<xloc(0,kz)<<" "<<xloc(1,kz)<<" "<<xloc(2,kz)<<" "<<xloc(3,kz)<<endl;
-    output<<count<<" "<<current_level<<" "<<error_rel[0]<<" "<<error_abs[0]<<" "<<xk1d(kz,0)<<" "<<xk1d(kz,1)<<" "<<xk1d(kz,2)<<" "<<xk1d(kz,3)<<" "<<xk1d(kz,4)<<" "<<xk1d(kz,5)<<" "<<xk1d(kz,6)<<" "<<xk1d(kz,7)<<endl;
+    output<<count<<" "<<current_level<<" "<<error_rel[0]<<" "<<error_abs[0];
+    for(int ix=0; ix<levels[current_level].ncx;ix++){
+      output<<" "<<xk1d(kz,ix);
+    }
+    output<<endl;
+    }
     //
-    if(subcount > 9993){
+    if(subcount > 2){
       if(current_level==0){
+	/*
 	if(kz==0){
       for(int i=0; i<ncx; i++){
 	xk1d(kz,i) = levels[0].minvb(kz,i);
@@ -635,19 +663,39 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
 	output<<i<<" "<<xk1d(kz,i)<<endl;
       }
 	}
+	*/
 	output<<"coarsen!"<<endl;
 	// Coarsening requires data from the grid BEFORE it is made coarser
-	coarsen(levels[current_level],xloc,xloclast,jy);
+	//coarsen(levels[current_level],xloc,xloclast,jy);
 	current_level = 1;
-	output<<"xloc "<<count<<" "<<current_level<<" "<<error_rel[0]<<" "<<error_abs[0]<<" "<<xloc(0,kz)<<" "<<xloc(1,kz)<<" "<<xloc(2,kz)<<" "<<xloc(3,kz)<<endl;
-	output<<"xloclast "<<count<<" "<<current_level<<" "<<error_rel[0]<<" "<<error_abs[0]<<" "<<xloclast(0,kz)<<" "<<xloclast(1,kz)<<" "<<xloclast(2,kz)<<" "<<xloclast(3,kz)<<endl;
+	coarsen_full_system(levels[current_level],xk1d,xk1dlast,jy);
+	get_errors_full_system(error_rel,error_abs,xk1d,xk1dlast,levels[current_level].ncx,levels[current_level]);
+	{
+	int kz=0;
+	//output<<"xloc "<<count<<" "<<current_level<<" "<<error_rel[0]<<" "<<error_abs[0]<<" "<<xloc(0,kz)<<" "<<xloc(1,kz)<<" "<<xloc(2,kz)<<" "<<xloc(3,kz)<<endl;
+	//output<<"xloclast "<<count<<" "<<current_level<<" "<<error_rel[0]<<" "<<error_abs[0]<<" "<<xloclast(0,kz)<<" "<<xloclast(1,kz)<<" "<<xloclast(2,kz)<<" "<<xloclast(3,kz)<<endl;
+      output<<count<<" "<<current_level<<" "<<error_rel[0]<<" "<<error_abs[0];
+      for(int ix=0; ix<levels[current_level].ncx;ix++){
+	output<<" "<<xk1d(kz,ix);
+      }
+      output<<endl;
+	}
       }
       else{
+	//refine(xloc,xloclast);
+	refine_full_system(levels[current_level],xk1d,xk1dlast);
 	current_level = 0;
-	refine(xloc,xloclast);
 	output<<"refine!"<<endl;
-	output<<"xloc "<<count<<" "<<current_level<<" "<<error_rel[0]<<" "<<error_abs[0]<<" "<<xloc(0,kz)<<" "<<xloc(1,kz)<<" "<<xloc(2,kz)<<" "<<xloc(3,kz)<<endl;
-	output<<"xloclast "<<count<<" "<<current_level<<" "<<error_rel[0]<<" "<<error_abs[0]<<" "<<xloclast(0,kz)<<" "<<xloclast(1,kz)<<" "<<xloclast(2,kz)<<" "<<xloclast(3,kz)<<endl;
+	{
+	  int kz=0;
+      output<<count<<" "<<current_level<<" "<<error_rel[0]<<" "<<error_abs[0];
+      for(int ix=0; ix<levels[current_level].ncx;ix++){
+	output<<" "<<xk1d(kz,ix);
+      }
+      output<<endl;
+	//output<<"xloc "<<count<<" "<<current_level<<" "<<error_rel[0]<<" "<<error_abs[0]<<" "<<xloc(0,kz)<<" "<<xloc(1,kz)<<" "<<xloc(2,kz)<<" "<<xloc(3,kz)<<endl;
+	//output<<"xloclast "<<count<<" "<<current_level<<" "<<error_rel[0]<<" "<<error_abs[0]<<" "<<xloclast(0,kz)<<" "<<xloclast(1,kz)<<" "<<xloclast(2,kz)<<" "<<xloclast(3,kz)<<endl;
+	}
       }
       subcount=0;
     }
@@ -944,13 +992,22 @@ void LaplaceParallelTriMG::jacobi_full_system(Level &l, const int jy, const int 
 
   for (int kz = 0; kz <= maxmode; kz++) {
     // TODO guard work for converged kz
-    for (int ix = 1; ix < ncx-1; ix++) {
+    xk1d(kz,0) = ( l.rvec(kz,0) - l.cvec(kz,0)*xk1dlast(kz,1) ) / l.bvec(kz,0);
+    for (int ix = 1; ix < l.ncx-1; ix++) {
       xk1d(kz,ix) = ( l.rvec(kz,ix) - l.avec(kz,ix)*xk1dlast(kz,ix-1) - l.cvec(kz,ix)*xk1dlast(kz,ix+1) ) / l.bvec(kz,ix);
     }
+    xk1d(kz,l.ncx) = ( l.rvec(kz,l.ncx) - l.avec(kz,l.ncx)*xk1dlast(kz,l.ncx-1) ) / l.bvec(kz,l.ncx);
   }
 
   // Calcalate errors on interior points only
-  get_errors(error_rel,error_abs,xk1d,xk1dlast);
+  /*
+  {
+  int kz=0;
+  output<<xk1d(kz,0)<<" "<<xk1d(kz,1)<<" "<<xk1d(kz,2)<<" "<<xk1d(kz,3)<<" "<<xk1d(kz,4)<<" "<<xk1d(kz,5)<<" "<<xk1d(kz,6)<<" "<<xk1d(kz,7)<<endl;
+  output<<xk1dlast(kz,0)<<" "<<xk1dlast(kz,1)<<" "<<xk1dlast(kz,2)<<" "<<xk1dlast(kz,3)<<" "<<xk1dlast(kz,4)<<" "<<xk1dlast(kz,5)<<" "<<xk1dlast(kz,6)<<" "<<xk1dlast(kz,7)<<endl;
+  }
+  */
+  get_errors_full_system(error_rel,error_abs,xk1d,xk1dlast,ncx,l);
 
     if(!localmesh->firstX()){
       for (int kz = 0; kz <= maxmode; kz++) {
@@ -1243,6 +1300,21 @@ void LaplaceParallelTriMG::init(Level &l, const int ncx, const int jy, const Mat
 
 }
 
+void LaplaceParallelTriMG::coarsen_full_system(const Level l, Matrix<dcomplex> &xk1d, Matrix<dcomplex> &xk1dlast, int jy){
+
+  for(int kz=0; kz<nmode; kz++){
+    for(int ix=l.xs; ix<l.xe; ix++){
+      xk1d(kz,ix) = xk1d(kz,2*(ix-l.xs)+l.xs);
+      xk1dlast(kz,ix) = xk1dlast(kz,2*(ix-l.xs)+l.xs);
+    }
+    // FIXME this assumes mgx=2
+    for(int ix=l.xe; ix<l.xe+2; ix++){
+      xk1d(kz,ix) = xk1d(kz,l.xs+2*(l.xe-l.xs)+(ix-l.xe));
+      xk1dlast(kz,ix) = xk1dlast(kz,l.xs+2*(l.xe-l.xs)+(ix-l.xe));
+    }
+  }
+}
+
 void LaplaceParallelTriMG::coarsen(const Level l, Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast, int jy){
 
   MPI_Comm comm = BoutComm::get();
@@ -1290,6 +1362,29 @@ void LaplaceParallelTriMG::coarsen(const Level l, Matrix<dcomplex> &xloc, Matrix
     }
     for(int kz=0; kz<nmode; kz++){
       xloclast(0,kz) = tmprecv[nmode+kz];
+    }
+  }
+}
+
+void LaplaceParallelTriMG::refine_full_system(Level &l, Matrix<dcomplex> &xk1d, Matrix<dcomplex> &xk1dlast){
+
+  for(int kz=0; kz<nmode; kz++){
+    // Must run loops backwards to avoid overwriting data
+    //output<<"ncx "<<l.ncx<<" "<<l.xs<<" "<<l.xe<<endl;
+    for(int ix=l.ncx-1; ix>l.xe-1; ix--){
+      //output<<"1 "<<ix<<" "<<2*(l.xe-l.xs-2)+ix<<endl;
+      xk1d(kz,2*(l.xe-l.xs-2)+ix) = xk1d(kz,ix);
+      xk1dlast(kz,2*(l.xe-l.xs-2)+ix) = xk1dlast(kz,ix);
+    }
+    for(int ix=l.xe-1; ix>l.xs-1; ix--){
+      //output<<"2 "<<ix<<" "<<2*(ix-l.xs)+l.xs<<endl;
+      xk1d(kz,2*(ix-l.xs)+l.xs) = xk1d(kz,ix);
+      xk1dlast(kz,2*(ix-l.xs)+l.xs) = xk1dlast(kz,ix);
+    }
+    for(int ix=l.xe-1; ix>l.xs-1; ix--){
+      //output<<ix<<" "<<2*(ix-l.xs)+l.xs+1<<endl;
+      xk1d(kz,2*(ix-l.xs)+l.xs+1) = 0.5*(xk1d(kz,2*(ix-l.xs)+l.xs)+xk1d(kz,2*(ix-l.xs)+l.xs+2));
+      xk1dlast(kz,2*(ix-l.xs)+l.xs+1) = 0.5*(xk1dlast(kz,2*(ix-l.xs)+l.xs)+xk1dlast(kz,2*(ix-l.xs)+l.xs+2));
     }
   }
 }
