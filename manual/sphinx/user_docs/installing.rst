@@ -373,10 +373,10 @@ physics model in only four lines:
     add_executable(blob2d blob2d.cxx)
     target_link_libraries(blob2d PRIVATE bout++::bout++)
 
-You just need to give CMake the location where you installed BOUT++
-via the ``CMAKE_PREFIX_PATH`` variable::
+You just need to give CMake the location where you built or installed
+BOUT++ via the ``CMAKE_PREFIX_PATH`` variable::
 
-  $ cmake . -B build -DCMAKE_PREFIX_PATH=/path/to/install/BOUT++
+  $ cmake . -B build -DCMAKE_PREFIX_PATH=/path/to/built/BOUT++
 
 .. _sec-config-nls:
 
