@@ -68,7 +68,7 @@ jobs:
           - *standard_packages
     env:
       - *default_env
-      - CONFIGURE_OPTIONS="--enable-sigfpe --enable-debug --with-petsc --with-slepc --with-sundials=$HOME/local CXXFLAGS=-g0"
+      - CONFIGURE_OPTIONS="--enable-shared --enable-sigfpe --enable-debug --with-petsc --with-slepc --with-sundials=$HOME/local CXXFLAGS=-g0"
       - CC=gcc-7 CXX=g++-7
       - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
   - name: "Shared library + Python"
@@ -102,7 +102,7 @@ jobs:
   - name: "Clang"
     env:
       - *default_env
-      - CONFIGURE_OPTIONS="--enable-debug --with-petsc --with-slepc --with-sundials=$HOME/local"
+      - CONFIGURE_OPTIONS="--enable-shared --enable-debug --with-petsc --with-slepc --with-sundials=$HOME/local"
       - MPICH_CC=clang MPICH_CXX=clang++
       - OMPI_CC=clang OMPI_CXX=clang++
     compiler: clang
