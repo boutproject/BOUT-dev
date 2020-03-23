@@ -114,18 +114,18 @@ public:
 
   };
 
-  void init(Level &level, const int ncx, const int jy, const Matrix<dcomplex> avec, const Matrix<dcomplex> bvec, const Matrix<dcomplex> cvec, const Matrix<dcomplex> bcmplx);
+  void init(Level &level, const Level lup, const int ncx, const int xs, const int xe);
+  void init(Level &level, const int ncx, const int jy, const Matrix<dcomplex> avec, const Matrix<dcomplex> bvec, const Matrix<dcomplex> cvec, const Matrix<dcomplex> bcmplx, const int xs, const int xe);
 
   void jacobi(Level &level, const int jy, const int ncx, Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast,
      Array<BoutReal> &error_rel, Array<BoutReal> &error_abs);
-  void jacobi_full_system(Level &level, const int jy, const int ncx, Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast,
-     Array<BoutReal> &error_rel, Array<BoutReal> &error_abs);
-  void refine_full_system(Level &level, Matrix<dcomplex> &x1kd, Matrix<dcomplex> &xk1dlast);
+  void jacobi_full_system(Level &level, Array<BoutReal> &error_rel, Array<BoutReal> &error_abs);
+  void refine_full_system(Level &level, Matrix<dcomplex> &fine_error);
 
   void coarsen(const Level level, Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast, int jy);
   void coarsen_full_system(Level &level, const Matrix<dcomplex> fine_residual);
 
-  void get_errors_full_system(Array<BoutReal> &error_rel, Array<BoutReal> &error_abs, const Matrix<dcomplex> x,const Matrix<dcomplex> xlast, const int ncx, const Level l);
+  void get_errors_full_system(Array<BoutReal> &error_rel, Array<BoutReal> &error_abs, const Matrix<dcomplex> x,const Matrix<dcomplex> xlast, const Level l);
 
   void calculate_residual_full_system(Level &level);
   void update_solution(Level &l, const Matrix<dcomplex> &fine_error);
