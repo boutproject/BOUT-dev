@@ -21,6 +21,14 @@ def str_to_bool(string):
     return string.lower() == "true" or string.lower() == "t"
 
 
+def str_to_maybe_bool(string):
+    if string.lower() == "true" or string.lower() == "t":
+        return True
+    if string.lower() == "false" or string.lower() == "f":
+        return False
+    return string
+
+
 def int_or_none(string):
     try:
         return int(string)
@@ -36,6 +44,8 @@ parser.add_argument("--tind", type=int_or_none, nargs='*', default=[None])
 parser.add_argument("--xind", type=int_or_none, nargs='*', default=[None])
 parser.add_argument("--yind", type=int_or_none, nargs='*', default=[None])
 parser.add_argument("--zind", type=int_or_none, nargs='*', default=[None])
+parser.add_argument("--xguards", type=str_to_bool, default=True)
+parser.add_argument("--yguards", type=str_to_maybe_bool, default="include_upper")
 parser.add_argument("-s", "--singleprecision",
                     action="store_true", default=False)
 parser.add_argument("-c", "--compress", action="store_true", default=False)

@@ -20,9 +20,9 @@ import glob
 
 
 def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=None,
-                 xind=None, yind=None, zind=None, singleprecision=False, compress=False,
-                 least_significant_digit=None, quiet=False, complevel=None, append=False,
-                 delete=False):
+                 xind=None, yind=None, zind=None, xguards=True, yguards="include_upper",
+                 singleprecision=False, compress=False, least_significant_digit=None,
+                 quiet=False, complevel=None, append=False, delete=False):
     """
     Collect all data from BOUT.dmp.* files and create a single output file.
 
@@ -50,6 +50,12 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
     zind : slice, int, or [int, int, int]
         zind argument passed to collect
         default None
+    xguards : bool
+        xguards argument passed to collect
+        default True
+    yguards : bool or "include_upper"
+        yguards argument passed to collect (note different default to collect's)
+        default "include_upper"
     singleprecision : bool
         If true convert data to single-precision floats
         default False
@@ -86,8 +92,8 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
             fullpath + " already exists. Collect may try to read from this file, which is presumably not desired behaviour.")
 
     # useful object from BOUT pylib to access output data
-    outputs = BoutOutputs(datadir, info=False, xguards=True,
-                          yguards=True, tind=tind, xind=xind, yind=yind, zind=zind)
+    outputs = BoutOutputs(datadir, info=False, xguards=xguards,
+                          yguards=yguards, tind=tind, xind=xind, yind=yind, zind=zind)
     outputvars = outputs.keys()
     # Read a value to cache the files
     outputs[outputvars[0]]
