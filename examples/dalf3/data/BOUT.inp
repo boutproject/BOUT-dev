@@ -22,6 +22,8 @@ grid = "cbm18_8_y064_x516_090309.nc"  # Grid file
 dump_format = "nc"      # Dump file format. "nc" = NetCDF, "pdb" = PDB
 restart_format = "nc"   # Restart file format
 
+[mesh]
+
 StaggerGrids = false    # Use staggered grids (EXPERIMENTAL)
 
 ##################################################

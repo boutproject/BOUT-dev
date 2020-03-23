@@ -59,8 +59,6 @@ private:
 
   bool include_profiles; // Include zero-order equilibrium terms
 
-  bool parallel_lc; // Use CtoL and LtoC differencing
-
   int low_pass_z; // Toroidal (Z) filtering of all variables
 
   Vector3D vExB, vD; // Velocities
@@ -196,7 +194,6 @@ private:
     electron_density = options["electron_density"].withDefault(false);
     vorticity_momentum = options["vorticity_momentum"].withDefault(false);
     include_profiles = options["include_profiles"].withDefault(false);
-    parallel_lc = options["parallel_lc"].withDefault(true);
 
     low_pass_z = options["low_pass_z"].withDefault(-1); // Default is no filtering
 
@@ -235,7 +232,8 @@ private:
 
     // Check type of parallel transform
     std::string ptstr =
-        Options::root()["mesh"]["paralleltransform"].withDefault<std::string>("identity");
+        Options::root()["mesh"]["paralleltransform"]["type"]
+                       .withDefault<std::string>("identity");
 
     if (lowercase(ptstr) == "shifted") {
       // Dimits style, using local coordinate system
@@ -365,13 +363,7 @@ private:
     // Derivative along equilibrium field-line
     Field3D result;
 
-    if (parallel_lc) {
-      if (loc == CELL_YLOW) {
-        result = Grad_par_CtoL(f);
-      } else
-        result = Grad_par_LtoC(f);
-    } else
-      result = Grad_par(f, loc);
+    result = Grad_par(f, loc);
 
     if (nonlinear) {
       if (full_bfield) {

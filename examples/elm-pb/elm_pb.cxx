@@ -19,6 +19,8 @@
 
 #include <math.h>
 
+CELL_LOC loc = CELL_CENTRE;
+
 class ELMpb : public PhysicsModel {
 private:
   // 2D inital profiles
@@ -48,7 +50,7 @@ private:
   Vector2D V0net; // net flow
 
   // 3D evolving variables
-  Field3D U, Psi, P, Vpar;
+  Field3D U, Psi, P, Vpar, Psi_loc;
 
   // Derived 3D variables
   Field3D Jpar, phi; // Parallel current, electric potential
@@ -309,6 +311,20 @@ protected:
     mesh->get(Psixy, "psixy");        // get Psi
     mesh->get(Psiaxis, "psi_axis");   // axis flux
     mesh->get(Psibndry, "psi_bndry"); // edge flux
+
+    // Set locations of staggered variables
+    // Note, use of staggered grids in elm-pb is untested and may not be completely
+    // implemented. Parallel boundary conditions are especially likely to be wrong.
+    if (mesh->StaggerGrids){
+      loc = CELL_YLOW;
+    } else {
+      loc = CELL_CENTRE;
+    }
+    Jpar.setLocation(loc);
+    Vpar.setLocation(loc);
+    Psi.setLocation(loc);
+    eta.setLocation(loc);
+    Psi_loc.setBoundary("Psi_loc");
 
     //////////////////////////////////////////////////////////////
     auto& globalOptions = Options::root();
@@ -657,7 +673,7 @@ protected:
           // Need to calculate Psi inside the domain, enforcing j = 0
 
           Jpar = 0.0;
-          auto psiLap = std::unique_ptr<Laplacian>{Laplacian::create()};
+          auto psiLap = std::unique_ptr<Laplacian>{Laplacian::create(nullptr, loc)};
           psiLap->setInnerBoundaryFlags(INVERT_AC_GRAD); // Zero gradient inner BC
           psiLap->setOuterBoundaryFlags(INVERT_SET); // Set to rmp_Psi0 on outer boundary
           rmp_Psi0 = psiLap->solve(Jpar, rmp_Psi0);
@@ -908,6 +924,8 @@ protected:
       eta = core_resist + (vac_resist - core_resist) * vac_mask;
     }
 
+    eta = interp_to(eta, loc);
+
     SAVE_ONCE(eta);
 
     if (include_rmp) {
@@ -1060,7 +1078,7 @@ protected:
     // Create a solver for the Laplacian
     phiSolver = std::unique_ptr<Laplacian>(Laplacian::create(&options["phiSolver"]));
 
-    aparSolver = std::unique_ptr<Laplacian>(Laplacian::create(&options["aparSolver"]));
+    aparSolver = std::unique_ptr<Laplacian>(Laplacian::create(&options["aparSolver"], loc));
 
     /////////////// CHECK VACUUM ///////////////////////
     // In vacuum region, initial vorticity should equal zero
@@ -1109,22 +1127,18 @@ protected:
 
   // Parallel gradient along perturbed field-line
   const Field3D Grad_parP(const Field3D& f, CELL_LOC loc = CELL_DEFAULT) {
-    Field3D result;
+    
+    if (loc == CELL_DEFAULT) {
+      loc = f.getLocation();
+    }
 
-    if (parallel_lr_diff) {
-      // Use left/right biased stencils. NOTE: First order only!
-      if (loc == CELL_YLOW) {
-        result = Grad_par_CtoL(f);
-      } else
-        result = Grad_par_LtoC(f);
-    } else
-      result = Grad_par(f, loc);
+    Field3D result = Grad_par(f, loc);
 
     if (nonlinear) {
-      result -= bracket(Psi, f, bm_mag) * B0;
+      result -= bracket(interp_to(Psi, loc), f, bm_mag) * B0;
 
       if (include_rmp) {
-        result -= bracket(rmp_Psi, f, bm_mag) * B0;
+        result -= bracket(interp_to(rmp_Psi, loc), f, bm_mag) * B0;
       }
     }
 
@@ -1149,13 +1163,20 @@ protected:
         // Use Spitzer formula
         Field3D Te;
         Te = (P0 + P) * Bbar * Bbar / (4. * MU0) / (density * 1.602e-19); // eV
-        eta =
-            0.51 * 1.03e-4 * Zeff * 20. * pow(Te, -1.5); // eta in Ohm-m. ln(Lambda) = 20
-        eta /= MU0 * Va * Lbar;                          // Normalised eta
+
+        // eta in Ohm-m. ln(Lambda) = 20
+        eta = interp_to(
+                          0.51 * 1.03e-4 * Zeff * 20. * pow(Te, -1.5),
+                          loc
+                       );
+
+        // Normalised eta
+        eta /= MU0 * Va * Lbar;
       } else {
         // Use specified core and vacuum Lundquist numbers
         eta = core_resist + (vac_resist - core_resist) * vac_mask;
       }
+      eta = interp_to(eta, loc);
     }
 
     ////////////////////////////////////////////
@@ -1371,6 +1392,8 @@ protected:
             P(r.ind, jy, jz) = P(r.ind, mesh->yend, jz);
             phi(r.ind, jy, jz) = phisheath;
             // Dirichlet condition on Jpar
+            // WARNING: this is not correct if staggered grids are used
+            ASSERT3(not mesh->StaggerGrids);
             Jpar(r.ind, jy, jz) = 2. * jsheath - Jpar(r.ind, mesh->yend, jz);
           }
         }
@@ -1384,7 +1407,7 @@ protected:
       // Jpar
       Field3D B0U = B0 * U;
       mesh->communicate(B0U);
-      ddt(Jpar) = -Grad_parP(B0U, CELL_YLOW) / B0 + eta * Delp2(Jpar);
+      ddt(Jpar) = -Grad_parP(B0U, loc) / B0 + eta * Delp2(Jpar);
 
       if (relax_j_vac) {
         // Make ddt(Jpar) relax to zero.
@@ -1393,16 +1416,17 @@ protected:
       }
     } else {
       // Vector potential
-      ddt(Psi) = -Grad_parP(phi, CELL_CENTRE) + eta * Jpar;
+      ddt(Psi) = -Grad_parP(phi, loc) + eta * Jpar;
 
       if (eHall) {
+        // electron parallel pressure
         ddt(Psi) += 0.25 * delta_i
-                    * (Grad_parP(P, CELL_CENTRE)
-                       + bracket(P0, Psi, bm_mag)); // electron parallel pressure
+                    * (Grad_parP(P, loc)
+                       + bracket(interp_to(P0, loc), Psi, bm_mag));
       }
 
       if (diamag_phi0)
-        ddt(Psi) -= bracket(phi0, Psi, bm_exb); // Equilibrium flow
+        ddt(Psi) -= bracket(interp_to(phi0, loc), Psi, bm_exb); // Equilibrium flow
 
       if (withflow) // net flow
         ddt(Psi) -= V_dot_Grad(V0net, Psi);
@@ -1410,7 +1434,7 @@ protected:
       if (diamag_grad_t) {
         // grad_par(T_e) correction
 
-        ddt(Psi) += 1.71 * dnorm * 0.5 * Grad_parP(P, CELL_YLOW) / B0;
+        ddt(Psi) += 1.71 * dnorm * 0.5 * Grad_parP(P, loc) / B0;
       }
 
       // Hyper-resistivity
@@ -1447,9 +1471,10 @@ protected:
 
     ////////////////////////////////////////////////////
     // Vorticity equation
-
+    Psi_loc = interp_to(Psi, CELL_CENTRE,"RGN_ALL");
+    Psi_loc.applyBoundary();
     // Grad j term
-    ddt(U) = SQ(B0) * b0xGrad_dot_Grad(Psi, J0, CELL_CENTRE);
+    ddt(U) = SQ(B0) * b0xGrad_dot_Grad(Psi_loc, J0, CELL_CENTRE);
     if (include_rmp) {
       ddt(U) += SQ(B0) * b0xGrad_dot_Grad(rmp_Psi, J0, CELL_CENTRE);
     }
@@ -1621,7 +1646,7 @@ protected:
     if (compress) {
 
       // ddt(P) += beta*( - Grad_parP(Vpar, CELL_CENTRE) + Vpar*gradparB );
-      ddt(P) -= beta * Div_par_CtoL(Vpar);
+      ddt(P) -= beta * Div_par(Vpar, CELL_CENTRE);
 
       if (phi_curv) {
         ddt(P) -= 2. * beta * b0xcv * Grad(phi);
@@ -1629,11 +1654,11 @@ protected:
 
       // Vpar equation
 
-      // ddt(Vpar) = -0.5*Grad_parP(P + P0, CELL_YLOW);
-      ddt(Vpar) = -0.5 * (Grad_par_LtoC(P) + Grad_par_LtoC(P0));
+      // ddt(Vpar) = -0.5*Grad_parP(P + P0, loc);
+      ddt(Vpar) = -0.5 * (Grad_par(P, loc) + Grad_par(P0, loc));
 
       if (nonlinear)
-        ddt(Vpar) -= bracket(phi, Vpar, bm_exb) * B0; // Advection
+        ddt(Vpar) -= bracket(interp_to(phi, loc), Vpar, bm_exb) * B0; // Advection
     }
 
     if (filter_z) {
@@ -1733,7 +1758,7 @@ protected:
     phi3.applyBoundary("neumann");
     Field3D B0phi3 = B0 * phi3;
     mesh->communicate(B0phi3);
-    ddt(Psi) = ddt(Psi) - gamma * Grad_par(B0phi3) / B0;
+    ddt(Psi) = ddt(Psi) - gamma * Grad_par(B0phi3, loc) / B0;
     ddt(Psi).applyBoundary();
 
     return 0;
@@ -1769,7 +1794,7 @@ protected:
     JP.applyBoundary();
     Field3D B0phi = B0 * phi;
     mesh->communicate(B0phi);
-    Field3D JPsi = -Grad_par(B0phi, CELL_YLOW) / B0;
+    Field3D JPsi = -Grad_par(B0phi, loc) / B0;
     JPsi.setBoundary("Psi");
     JPsi.applyBoundary();
 

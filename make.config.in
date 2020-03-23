@@ -334,7 +334,7 @@ endif
 
 clean::
 	-@$(RM) -rf $(OBJ) $(DEPS) $(TARGET)
-	@for pp in $(DIRS); do echo "  " $$pp cleaned; $(MAKE) --no-print-directory -C $$pp clean; done
+	@for pp in $(DIRS) $(DIRS_CLEAN); do echo "  " cleaning $$pp; $(MAKE) --no-print-directory -C $$pp clean; done
 	@$(RM) -f $(SUB_LIBS)
 	-@$(RM) .*.mk
 	@test -f make.config && ( find src | grep '\.o$$' && echo "WARNING: Some object files remain - which might cause issues. Clean with $(MAKE) clean-remove-object-files" ) || exit 0
@@ -356,6 +356,9 @@ distclean:: clean clean-tests
 	@echo externalpackages cleaned
 	@touch $(BOUT_TOP)/configure
 	@echo autom4te.cache cleaned
+	-@$(RM) $(BOUT_TOP)/include/bout/version.hxx
+	-@$(RM) $(BOUT_TOP)/include/bout/revision.hxx
+	@echo generated version headers cleaned
 
 clean-tests: clean-unit-tests clean-integrated-tests clean-mms-tests
 

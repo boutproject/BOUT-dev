@@ -174,6 +174,11 @@ int BoutMesh::load() {
     GlobalNy += 2*MYG;
   }
 
+  // Set global grid sizes, excluding boundary points
+  GlobalNxNoBoundaries = nx - 2*MXG;
+  GlobalNyNoBoundaries = ny;
+  GlobalNzNoBoundaries = nz;
+
   /// Check inputs
   if (jyseps1_1 < -1) {
     output_warn.write("\tWARNING: jyseps1_1 ({:d}) must be >= -1. Setting to -1\n",
@@ -859,16 +864,32 @@ int BoutMesh::load() {
   if (MYG > 0) {
     // Need boundaries in Y
 
-    if ((UDATA_INDEST < 0) && (UDATA_XSPLIT > xstart))
-      boundary.push_back(new BoundaryRegionYUp("upper_target", xstart, UDATA_XSPLIT - 1, this));
-    if ((UDATA_OUTDEST < 0) && (UDATA_XSPLIT <= xend))
-      boundary.push_back(new BoundaryRegionYUp("upper_target", UDATA_XSPLIT, xend, this));
+    // Alter x-limits so that y-boundary conditions set corner-boundary cells
+    // i.e. if there is an x-boundary, include corner cells. If
+    // include_corner_cells==false, this modification is disabled to match the behaviour
+    // of BOUT++ up to v4.
+    // Note that including the corner cells requires that the x-boundary conditions are
+    // applied before the y-boundary conditions. This is ensured here in the
+    // BOUT++-applied boundary conditions because the y-boundaries are added to the
+    // 'boundary' vector after the x-boundaries, but beware **THE ORDER IS IMPORTANT**
+    const int yboundary_xstart = (include_corner_cells and IDATA_DEST == -1) ? 0 : xstart;
+    const int yboundary_xend = (include_corner_cells and ODATA_DEST == -1) ? LocalNx - 1
+                                                                           : xend;
 
-    if ((DDATA_INDEST < 0) && (DDATA_XSPLIT > xstart))
+    if ((UDATA_INDEST < 0) && (UDATA_XSPLIT > yboundary_xstart))
+      boundary.push_back(new BoundaryRegionYUp("upper_target", yboundary_xstart,
+                         UDATA_XSPLIT - 1, this));
+    if ((UDATA_OUTDEST < 0) && (UDATA_XSPLIT <= yboundary_xend))
+      boundary.push_back(new BoundaryRegionYUp("upper_target", UDATA_XSPLIT,
+                         yboundary_xend, this));
+
+    if ((DDATA_INDEST < 0) && (DDATA_XSPLIT > yboundary_xstart))
       boundary.push_back(
-          new BoundaryRegionYDown("lower_target", xstart, DDATA_XSPLIT - 1, this));
-    if ((DDATA_OUTDEST < 0) && (DDATA_XSPLIT <= xend))
-      boundary.push_back(new BoundaryRegionYDown("lower_target", DDATA_XSPLIT, xend, this));
+          new BoundaryRegionYDown("lower_target", yboundary_xstart, DDATA_XSPLIT - 1,
+                                  this));
+    if ((DDATA_OUTDEST < 0) && (DDATA_XSPLIT <= yboundary_xend))
+      boundary.push_back(new BoundaryRegionYDown("lower_target", DDATA_XSPLIT,
+                         yboundary_xend, this));
   }
 
   if (!boundary.empty()) {
@@ -907,7 +928,29 @@ const int OUT_SENT_DOWN = 3; ///< Data higher in X than branch-cut, at lower bou
 const int IN_SENT_OUT = 4; ///< Data going in positive X direction (in to out)
 const int OUT_SENT_IN = 5; ///< Data going in negative X direction (out to in)
 
-void BoutMesh::post_receive(CommHandle &ch) {
+void BoutMesh::post_receiveX(CommHandle &ch) {
+  /// Post receive data from left (x-1)
+
+  if (IDATA_DEST != -1) {
+    mpi->MPI_Irecv(std::begin(ch.imsg_recvbuff),
+                   msg_len(ch.var_list.get(), 0, MXG, 0,
+                           ch.include_x_corners ? LocalNy : MYSUB),
+                   PVEC_REAL_MPI_TYPE, IDATA_DEST, OUT_SENT_IN, BoutComm::get(),
+                   &ch.request[4]);
+  }
+
+  // Post receive data from right (x+1)
+
+  if (ODATA_DEST != -1) {
+    mpi->MPI_Irecv(std::begin(ch.omsg_recvbuff),
+                   msg_len(ch.var_list.get(), 0, MXG, 0,
+                           ch.include_x_corners ? LocalNy : MYSUB),
+                   PVEC_REAL_MPI_TYPE, ODATA_DEST, IN_SENT_OUT, BoutComm::get(),
+                   &ch.request[5]);
+  }
+}
+
+void BoutMesh::post_receiveY(CommHandle &ch) {
   BoutReal *inbuff;
   int len;
 
@@ -941,27 +984,17 @@ void BoutMesh::post_receive(CommHandle &ch) {
                    PVEC_REAL_MPI_TYPE, DDATA_OUTDEST, OUT_SENT_UP, BoutComm::get(),
                    &ch.request[3]);
   }
-
-  /// Post receive data from left (x-1)
-
-  if (IDATA_DEST != -1) {
-    mpi->MPI_Irecv(std::begin(ch.imsg_recvbuff),
-                   msg_len(ch.var_list.get(), 0, MXG, 0, MYSUB), PVEC_REAL_MPI_TYPE,
-                   IDATA_DEST, OUT_SENT_IN, BoutComm::get(), &ch.request[4]);
-  }
-
-  // Post receive data from right (x+1)
-
-  if (ODATA_DEST != -1) {
-    mpi->MPI_Irecv(std::begin(ch.omsg_recvbuff),
-                   msg_len(ch.var_list.get(), 0, MXG, 0, MYSUB), PVEC_REAL_MPI_TYPE,
-                   ODATA_DEST, IN_SENT_OUT, BoutComm::get(), &ch.request[5]);
-  }
 }
 
 comm_handle BoutMesh::send(FieldGroup &g) {
   /// Start timer
   Timer timer("comms");
+
+  if (include_corner_cells) {
+    throw BoutException("Cannot use send() when include_corner_cells==true as it sends "
+                        "in x- and y-directions simultaneously. Use sendX() and sendY() "
+                        "instead.");
+  }
 
   /// Work out length of buffer needed
   int xlen = msg_len(g.get(), 0, MXG, 0, MYSUB);
@@ -971,8 +1004,89 @@ comm_handle BoutMesh::send(FieldGroup &g) {
   CommHandle *ch = get_handle(xlen, ylen);
   ch->var_list = g; // Group of fields to send
 
+  sendX(g, ch, true);
+  sendY(g, ch);
+
+  return static_cast<void *>(ch);
+}
+
+comm_handle BoutMesh::sendX(FieldGroup &g, comm_handle handle, bool disable_corners) {
+  /// Start timer
+  Timer timer("comms");
+
+  const bool with_corners = include_corner_cells and not disable_corners;
+
+  CommHandle* ch;
+  if (handle == nullptr) {
+    /// Work out length of buffer needed
+    int xlen = msg_len(g.get(), 0, MXG, 0, with_corners ? LocalNy : MYSUB);
+
+    /// Get a communications handle of (at least) the needed size
+    ch = get_handle(xlen, 0);
+    ch->var_list = g; // Group of fields to send
+  } else {
+    ch = static_cast<CommHandle*>(handle);
+  }
+
+  ch->include_x_corners = with_corners;
+
   /// Post receives
-  post_receive(*ch);
+  post_receiveX(*ch);
+
+  //////////////////////////////////////////////////
+
+  /// Send to the left (x-1)
+
+  if (IDATA_DEST != -1) {
+    int len = pack_data(ch->var_list.get(), MXG, 2 * MXG, ch->include_x_corners ? 0 : MYG,
+                        ch->include_x_corners ? LocalNy : MYG + MYSUB,
+                        std::begin(ch->imsg_sendbuff));
+    if (async_send) {
+      mpi->MPI_Isend(std::begin(ch->imsg_sendbuff), len, PVEC_REAL_MPI_TYPE, IDATA_DEST,
+                     IN_SENT_OUT, BoutComm::get(), &(ch->sendreq[4]));
+    } else
+      mpi->MPI_Send(std::begin(ch->imsg_sendbuff), len, PVEC_REAL_MPI_TYPE, IDATA_DEST,
+                    IN_SENT_OUT, BoutComm::get());
+  }
+
+  /// Send to the right (x+1)
+
+  if (ODATA_DEST != -1) {
+    int len = pack_data(ch->var_list.get(), MXSUB, MXSUB + MXG, ch->include_x_corners ? 0 :
+                        MYG, ch->include_x_corners ? LocalNy : MYG + MYSUB,
+                        std::begin(ch->omsg_sendbuff));
+    if (async_send) {
+      mpi->MPI_Isend(std::begin(ch->omsg_sendbuff), len, PVEC_REAL_MPI_TYPE, ODATA_DEST,
+                     OUT_SENT_IN, BoutComm::get(), &(ch->sendreq[5]));
+    } else
+      mpi->MPI_Send(std::begin(ch->omsg_sendbuff), len, PVEC_REAL_MPI_TYPE, ODATA_DEST,
+                    OUT_SENT_IN, BoutComm::get());
+  }
+
+  /// Mark communication handle as in progress
+  ch->in_progress = true;
+
+  return static_cast<void *>(ch);
+}
+
+comm_handle BoutMesh::sendY(FieldGroup &g, comm_handle handle) {
+  /// Start timer
+  Timer timer("comms");
+
+  CommHandle* ch;
+  if (handle == nullptr) {
+    /// Work out length of buffer needed
+    int ylen = msg_len(g.get(), 0, LocalNx, 0, MYG);
+
+    /// Get a communications handle of (at least) the needed size
+    ch = get_handle(0, ylen);
+    ch->var_list = g; // Group of fields to send
+  } else {
+    ch = static_cast<CommHandle*>(handle);
+  }
+
+  /// Post receives
+  post_receiveY(*ch);
 
   //////////////////////////////////////////////////
 
@@ -1039,34 +1153,11 @@ comm_handle BoutMesh::send(FieldGroup &g) {
                     BoutComm::get());
   }
 
-  /// Send to the left (x-1)
-
-  if (IDATA_DEST != -1) {
-    len = pack_data(ch->var_list.get(), MXG, 2 * MXG, MYG, MYG + MYSUB,
-                    std::begin(ch->imsg_sendbuff));
-    if (async_send) {
-      mpi->MPI_Isend(std::begin(ch->imsg_sendbuff), len, PVEC_REAL_MPI_TYPE, IDATA_DEST,
-                     IN_SENT_OUT, BoutComm::get(), &(ch->sendreq[4]));
-    } else
-      mpi->MPI_Send(std::begin(ch->imsg_sendbuff), len, PVEC_REAL_MPI_TYPE, IDATA_DEST,
-                    IN_SENT_OUT, BoutComm::get());
-  }
-
-  /// Send to the right (x+1)
-
-  if (ODATA_DEST != -1) {
-    len = pack_data(ch->var_list.get(), MXSUB, MXSUB + MXG, MYG, MYG + MYSUB,
-                    std::begin(ch->omsg_sendbuff));
-    if (async_send) {
-      mpi->MPI_Isend(std::begin(ch->omsg_sendbuff), len, PVEC_REAL_MPI_TYPE, ODATA_DEST,
-                     OUT_SENT_IN, BoutComm::get(), &(ch->sendreq[5]));
-    } else
-      mpi->MPI_Send(std::begin(ch->omsg_sendbuff), len, PVEC_REAL_MPI_TYPE, ODATA_DEST,
-                    OUT_SENT_IN, BoutComm::get());
-  }
-
   /// Mark communication handle as in progress
   ch->in_progress = true;
+
+  /// Mark as y-communication
+  ch->has_y_communication = true;
 
   return static_cast<void *>(ch);
 }
@@ -1125,12 +1216,15 @@ int BoutMesh::wait(comm_handle handle) {
       break;
     }
     case 4: { // inner
-      unpack_data(ch->var_list.get(), 0, MXG, MYG, MYG + MYSUB,
+      unpack_data(ch->var_list.get(), 0, MXG, ch->include_x_corners ? 0 : MYG,
+                  ch->include_x_corners ? LocalNy : MYG + MYSUB,
                   std::begin(ch->imsg_recvbuff));
       break;
     }
     case 5: { // outer
-      unpack_data(ch->var_list.get(), MXSUB + MXG, MXSUB + 2 * MXG, MYG, MYG + MYSUB,
+      unpack_data(ch->var_list.get(), MXSUB + MXG, MXSUB + 2 * MXG,
+                  ch->include_x_corners ? 0 : MYG,
+                  ch->include_x_corners ? LocalNy : MYG + MYSUB,
                   std::begin(ch->omsg_recvbuff));
       break;
     }
@@ -1157,41 +1251,43 @@ int BoutMesh::wait(comm_handle handle) {
       mpi->MPI_Wait(ch->sendreq + 5, &async_status);
   }
 
-  // TWIST-SHIFT CONDITION
-  // Loop over 3D fields
-  for (const auto &var : ch->var_list.field3d()) {
-    if (var->requiresTwistShift(TwistShift)) {
+  if (ch->has_y_communication) {
+    // TWIST-SHIFT CONDITION
+    // Loop over 3D fields
+    for (const auto &var : ch->var_list.field3d()) {
+      if (var->requiresTwistShift(TwistShift)) {
 
-      // Twist-shift only needed for field-aligned fields
-      int jx, jy;
+        // Twist-shift only needed for field-aligned fields
+        int jx, jy;
 
-      // Perform Twist-shift using shifting method
-      if (var->getDirectionY() == YDirectionType::Aligned) {
-        // Only variables in field-aligned coordinates need the twist-shift boundary
-        // condition to be applied
+        // Perform Twist-shift using shifting method
+        if (var->getDirectionY() == YDirectionType::Aligned) {
+          // Only variables in field-aligned coordinates need the twist-shift boundary
+          // condition to be applied
 
-        // Lower boundary
-        if (TS_down_in && (DDATA_INDEST != -1)) {
-          for (jx = 0; jx < DDATA_XSPLIT; jx++)
-            for (jy = 0; jy != MYG; jy++)
-              shiftZ(*var, jx, jy, ShiftAngle[jx]);
-        }
-        if (TS_down_out && (DDATA_OUTDEST != -1)) {
-          for (jx = DDATA_XSPLIT; jx < LocalNx; jx++)
-            for (jy = 0; jy != MYG; jy++)
-              shiftZ(*var, jx, jy, ShiftAngle[jx]);
-        }
+          // Lower boundary
+          if (TS_down_in && (DDATA_INDEST != -1)) {
+            for (jx = 0; jx < DDATA_XSPLIT; jx++)
+              for (jy = 0; jy != MYG; jy++)
+                shiftZ(*var, jx, jy, ShiftAngle[jx]);
+          }
+          if (TS_down_out && (DDATA_OUTDEST != -1)) {
+            for (jx = DDATA_XSPLIT; jx < LocalNx; jx++)
+              for (jy = 0; jy != MYG; jy++)
+                shiftZ(*var, jx, jy, ShiftAngle[jx]);
+          }
 
-        // Upper boundary
-        if (TS_up_in && (UDATA_INDEST != -1)) {
-          for (jx = 0; jx < UDATA_XSPLIT; jx++)
-            for (jy = LocalNy - MYG; jy != LocalNy; jy++)
-              shiftZ(*var, jx, jy, -ShiftAngle[jx]);
-        }
-        if (TS_up_out && (UDATA_OUTDEST != -1)) {
-          for (jx = UDATA_XSPLIT; jx < LocalNx; jx++)
-            for (jy = LocalNy - MYG; jy != LocalNy; jy++)
-              shiftZ(*var, jx, jy, -ShiftAngle[jx]);
+          // Upper boundary
+          if (TS_up_in && (UDATA_INDEST != -1)) {
+            for (jx = 0; jx < UDATA_XSPLIT; jx++)
+              for (jy = LocalNy - MYG; jy != LocalNy; jy++)
+                shiftZ(*var, jx, jy, -ShiftAngle[jx]);
+          }
+          if (TS_up_out && (UDATA_OUTDEST != -1)) {
+            for (jx = UDATA_XSPLIT; jx < LocalNx; jx++)
+              for (jy = LocalNy - MYG; jy != LocalNy; jy++)
+                shiftZ(*var, jx, jy, -ShiftAngle[jx]);
+          }
         }
       }
     }
@@ -1253,9 +1349,9 @@ int BoutMesh::getYProcIndex() { return PE_YIND; }
  * Intended mainly to handle the perpendicular inversion operators
  ****************************************************************/
 
-bool BoutMesh::firstX() { return PE_XIND == 0; }
+bool BoutMesh::firstX() const { return PE_XIND == 0; }
 
-bool BoutMesh::lastX() { return PE_XIND == NXPE - 1; }
+bool BoutMesh::lastX() const { return PE_XIND == NXPE - 1; }
 
 int BoutMesh::sendXOut(BoutReal *buffer, int size, int tag) {
   if (PE_XIND == NXPE - 1)
@@ -1689,6 +1785,7 @@ BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, i
 
   ShiftAngle.clear();
 
+  createDefaultRegions();
   addBoundaryRegions();
 }
 
@@ -2094,6 +2191,8 @@ BoutMesh::CommHandle *BoutMesh::get_handle(int xlen, int ylen) {
   }
 
   ch->in_progress = false;
+  ch->include_x_corners = false;
+  ch->has_y_communication = false;
 
   ch->var_list.clear();
 
@@ -2121,7 +2220,8 @@ void BoutMesh::clear_handles() {
 /// different processors.
 void BoutMesh::overlapHandleMemory(BoutMesh* yup, BoutMesh* ydown, BoutMesh* xin,
                                    BoutMesh* xout) {
-  int xlen = LocalNy * LocalNz * 5, ylen = LocalNx * LocalNz * 5;
+  const int xlen = LocalNy * LocalNz * MXG * 5, ylen = LocalNx * LocalNz * MYG * 5;
+
   CommHandle* ch = get_handle(xlen, ylen);
   if (yup) {
     CommHandle* other = (yup == this) ? ch : yup->get_handle(xlen, ylen);
@@ -2355,6 +2455,15 @@ void BoutMesh::addBoundaryRegions() {
       xs = xstart;
     if (xe > xend)
       xe = xend;
+
+    if (include_corner_cells and firstX() and xs == xstart and xe > xstart) {
+      // Include corner cells on x-boundary
+      xs = 0;
+    }
+    if (include_corner_cells and lastX() and xe == xend and xs < xend) {
+      // Include corner cells on x-boundary
+      xe = LocalNx - 1;
+    }
   }
   
   addRegion3D("RGN_LOWER_INNER_Y", Region<Ind3D>(xs, xe, 0, ystart-1, 0, LocalNz-1,
@@ -2378,6 +2487,15 @@ void BoutMesh::addBoundaryRegions() {
       xs = xstart;
     if (xe > xend)
       xe = xend;
+
+    if (include_corner_cells and firstX() and xs == xstart and xe > xstart) {
+      // Include corner cells on x-boundary
+      xs = 0;
+    }
+    if (include_corner_cells and lastX() and xe == xend and xs < xend) {
+      // Include corner cells on x-boundary
+      xe = LocalNx - 1;
+    }
   } else {
     xs = -1;
     xe = -2;
@@ -2402,6 +2520,15 @@ void BoutMesh::addBoundaryRegions() {
     xs = xstart;
   if (xe > xend)
     xe = xend;
+
+  if (include_corner_cells and firstX() and xs == xstart and xe > xstart) {
+    // Include corner cells on x-boundary
+    xs = 0;
+  }
+  if (include_corner_cells and lastX() and xe == xend and xs < xend) {
+    // Include corner cells on x-boundary
+    xe = LocalNx - 1;
+  }
 
   addRegion3D("RGN_LOWER_Y", Region<Ind3D>(xs, xe, 0, ystart-1, 0, LocalNz-1,
                                            LocalNy, LocalNz, maxregionblocksize));
@@ -2428,6 +2555,15 @@ void BoutMesh::addBoundaryRegions() {
     xs = -1;
     xe = -2;
   }
+
+  if (include_corner_cells and firstX() and xs == xstart and xe > xstart) {
+    // Include corner cells on x-boundary
+    xs = 0;
+  }
+  if (include_corner_cells and lastX() and xe == xend and xs < xend) {
+    // Include corner cells on x-boundary
+    xe = LocalNx - 1;
+  }
   
   addRegion3D("RGN_UPPER_INNER_Y", Region<Ind3D>(xs, xe, yend+1, LocalNy-1, 0, LocalNz-1,
                                                  LocalNy, LocalNz, maxregionblocksize));
@@ -2453,6 +2589,15 @@ void BoutMesh::addBoundaryRegions() {
       xs = xstart;
     if (xe > xend)
       xe = xend;
+
+    if (include_corner_cells and firstX() and xs == xstart and xe > xstart) {
+      // Include corner cells on x-boundary
+      xs = 0;
+    }
+    if (include_corner_cells and lastX() and xe == xend and xs < xend) {
+      // Include corner cells on x-boundary
+      xe = LocalNx - 1;
+    }
   }
 
   addRegion3D("RGN_UPPER_OUTER_Y", Region<Ind3D>(xs, xe, yend+1, LocalNy-1, 0, LocalNz-1,
@@ -2474,6 +2619,15 @@ void BoutMesh::addBoundaryRegions() {
     xs = xstart;
   if (xe > xend)
     xe = xend;
+
+  if (include_corner_cells and firstX() and xs == xstart and xe > xstart) {
+    // Include corner cells on x-boundary
+    xs = 0;
+  }
+  if (include_corner_cells and lastX() and xe == xend and xs < xend) {
+    // Include corner cells on x-boundary
+    xe = LocalNx - 1;
+  }
 
   addRegion3D("RGN_UPPER_Y", Region<Ind3D>(xs, xe, yend+1, LocalNy-1, 0, LocalNz-1,
                                            LocalNy, LocalNz, maxregionblocksize));
@@ -2535,6 +2689,23 @@ void BoutMesh::addBoundaryRegions() {
   // Create a region which is all boundaries
   addRegion3D("RGN_BNDRY", bndry3d);
 
+  // Create a region including all x-boundaries
+  bndry3d = getRegion3D("RGN_NOBNDRY") + getRegion3D("RGN_INNER_X")
+            + getRegion3D("RGN_OUTER_X");
+  bndry3d.unique();
+  addRegion3D("RGN_WITH_XBNDRIES", bndry3d);
+
+  // Create a region including all y-boundaries
+  bndry3d = getRegion3D("RGN_NOBNDRY") + getRegion3D("RGN_LOWER_Y")
+            + getRegion3D("RGN_UPPER_Y");
+  bndry3d.unique();
+  addRegion3D("RGN_WITH_YBNDRIES", bndry3d);
+
+  // Create a region including all boundaries
+  bndry3d = getRegion3D("RGN_NOBNDRY") + getRegion3D("RGN_BNDRY");
+  bndry3d.unique();
+  addRegion3D("RGN_WITH_BNDRIES", bndry3d);
+
   Region<Ind2D> bndry2d; // Empty
   for (const auto &region_name : all_boundaries) {
     bndry2d += getRegion2D(region_name);
@@ -2543,6 +2714,23 @@ void BoutMesh::addBoundaryRegions() {
 
   // Create a region which is all boundaries
   addRegion2D("RGN_BNDRY", bndry2d);
+
+  // Create a region including all x-boundaries
+  bndry2d = getRegion2D("RGN_NOBNDRY") + getRegion2D("RGN_INNER_X")
+            + getRegion2D("RGN_OUTER_X");
+  bndry2d.unique();
+  addRegion2D("RGN_WITH_XBNDRIES", bndry2d);
+
+  // Create a region including all y-boundaries
+  bndry2d = getRegion2D("RGN_NOBNDRY") + getRegion2D("RGN_LOWER_Y")
+            + getRegion2D("RGN_UPPER_Y");
+  bndry2d.unique();
+  addRegion2D("RGN_WITH_YBNDRIES", bndry2d);
+
+  // Create a region including all boundaries
+  bndry2d = getRegion2D("RGN_NOBNDRY") + getRegion2D("RGN_BNDRY");
+  bndry2d.unique();
+  addRegion2D("RGN_WITH_BNDRIES", bndry2d);
 }
 
 const RangeIterator BoutMesh::iterateBndryLowerInnerY() const {
@@ -2563,6 +2751,15 @@ const RangeIterator BoutMesh::iterateBndryLowerInnerY() const {
       xs = xstart;
     if (xe > xend)
       xe = xend;
+
+    if (include_corner_cells and firstX() and xs == xstart and xe > xstart) {
+      // Include corner cells on x-boundary
+      xs = 0;
+    }
+    if (include_corner_cells and lastX() and xe == xend and xs < xend) {
+      // Include corner cells on x-boundary
+      xe = LocalNx - 1;
+    }
   }
   return RangeIterator(xs, xe);
 }
@@ -2581,6 +2778,15 @@ const RangeIterator BoutMesh::iterateBndryLowerOuterY() const {
       xs = xstart;
     if (xe > xend)
       xe = xend;
+
+    if (include_corner_cells and firstX() and xs == xstart and xe > xstart) {
+      // Include corner cells on x-boundary
+      xs = 0;
+    }
+    if (include_corner_cells and lastX() and xe == xend and xs < xend) {
+      // Include corner cells on x-boundary
+      xe = LocalNx - 1;
+    }
   } else {
     xs = -1;
     xe = -2;
@@ -2601,6 +2807,15 @@ const RangeIterator BoutMesh::iterateBndryLowerY() const {
   if (xe > xend)
     xe = xend;
 
+  if (include_corner_cells and firstX() and xs == xstart and xe > xstart) {
+    // Include corner cells on x-boundary
+    xs = 0;
+  }
+  if (include_corner_cells and lastX() and xe == xend and xs < xend) {
+    // Include corner cells on x-boundary
+    xe = LocalNx - 1;
+  }
+
   return RangeIterator(xs, xe);
 }
 
@@ -2618,6 +2833,15 @@ const RangeIterator BoutMesh::iterateBndryUpperInnerY() const {
       xs = xstart;
     if (xe > xend)
       xe = xend;
+
+    if (include_corner_cells and firstX() and xs == xstart and xe > xstart) {
+      // Include corner cells on x-boundary
+      xs = 0;
+    }
+    if (include_corner_cells and lastX() and xe == xend and xs < xend) {
+      // Include corner cells on x-boundary
+      xe = LocalNx - 1;
+    }
   } else {
     xs = -1;
     xe = -2;
@@ -2642,6 +2866,15 @@ const RangeIterator BoutMesh::iterateBndryUpperOuterY() const {
       xs = xstart;
     if (xe > xend)
       xe = xend;
+
+    if (include_corner_cells and firstX() and xs == xstart and xe > xstart) {
+      // Include corner cells on x-boundary
+      xs = 0;
+    }
+    if (include_corner_cells and lastX() and xe == xend and xs < xend) {
+      // Include corner cells on x-boundary
+      xe = LocalNx - 1;
+    }
   }
   return RangeIterator(xs, xe);
 }
@@ -2658,6 +2891,15 @@ const RangeIterator BoutMesh::iterateBndryUpperY() const {
     xs = xstart;
   if (xe > xend)
     xe = xend;
+
+  if (include_corner_cells and firstX() and xs == xstart and xe > xstart) {
+    // Include corner cells on x-boundary
+    xs = 0;
+  }
+  if (include_corner_cells and lastX() and xe == xend and xs < xend) {
+    // Include corner cells on x-boundary
+    xe = LocalNx - 1;
+  }
 
   return RangeIterator(xs, xe);
 }

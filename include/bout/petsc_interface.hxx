@@ -6,7 +6,7 @@
  * up a linear system.
  *
  **************************************************************************
- * Copyright 2013 J. Buchanan, J.Omotani
+ * Copyright 2019 C. MacMackin
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
  *
@@ -142,10 +142,6 @@ public:
   /// processes and, if possible, calculating the sparsity pattern of
   /// any matrices.
   void initialise() {
-    // The values communicated to the the corner guard-cells are
-    // out-of-date by one communication, so must call it twice to
-    // ensure they are correct.
-    fieldmesh->communicate(indices);
     fieldmesh->communicate(indices);
   }
 
@@ -230,8 +226,8 @@ private:
       numDiagonal[getGlobal(i) - globalStart] = stencils.getStencilSize(i);
     }
 
-    BOUT_FOR_SERIAL(i, regionBndry) {
-      if (!isLocal(i)) {
+    BOUT_FOR_SERIAL(i, indices.getRegion("RGN_GUARDS")) {
+      if (getGlobal(i) >= 0 && !isLocal(i)) {
         for (const auto& j : stencils.getIndicesWithStencilIncluding(i)) {
           if (isLocal(j)) {
             const int n = getGlobal(j) - globalStart;
@@ -245,7 +241,6 @@ private:
     sparsityCalculated = true;
   }
 
-  PetscLib lib;
   Mesh* fieldmesh;
 
   /// Fields containing the indices for each element (as reals)
@@ -327,7 +322,7 @@ public:
   PetscVector(const PetscVector<T>& v, Vec* vec) {
 #if CHECKLEVEL >= 2
     int fsize = v.indexConverter->size(), msize;
-    VecGetSize(*vec, &msize);
+    VecGetLocalSize(*vec, &msize);
     ASSERT2(fsize == msize);
 #endif
     vector.reset(vec);
@@ -484,11 +479,11 @@ public:
   const Vec* get() const { return vector.get(); }
 
 private:
+  PetscLib lib;
   std::unique_ptr<Vec, VectorDeleter> vector = nullptr;
   IndexerPtr<T> indexConverter;
   CELL_LOC location;
   bool initialised = false;
-  PetscLib lib;
 };
 
 /*!
@@ -536,12 +531,11 @@ public:
 
   // Construct a matrix capable of operating on the specified field,
   // preallocating memory if requeted and possible.
-  PetscMatrix(T& f, IndexerPtr<T> indConverter, bool preallocate = true)
+  PetscMatrix(IndexerPtr<T> indConverter, bool preallocate = true)
       : matrix(new Mat(), MatrixDeleter()), indexConverter(indConverter) {
-    ASSERT1(indConverter->getMesh() == f.getMesh());
     const MPI_Comm comm =
-        std::is_same<T, FieldPerp>::value ? f.getMesh()->getXcomm() : BoutComm::get();
-    pt = &f.getMesh()->getCoordinates()->getParallelTransform();
+        std::is_same<T, FieldPerp>::value ? indConverter->getMesh()->getXcomm() : BoutComm::get();
+    pt = &indConverter->getMesh()->getCoordinates()->getParallelTransform();
     const int size = indexConverter->size();
 
     MatCreate(comm, matrix.get());
@@ -758,12 +752,12 @@ public:
   const Mat* get() const { return matrix.get(); }
 
 private:
+  PetscLib lib;
   std::shared_ptr<Mat> matrix = nullptr;
   IndexerPtr<T> indexConverter;
   ParallelTransform* pt;
   int yoffset = 0;
   bool initialised = false;
-  PetscLib lib;
 };
 
 /*!

@@ -80,8 +80,8 @@ protected:
 	    f(xi, yj, zk) = MS_f(0.,mesh->GlobalX(xi),mesh->GlobalY(yj),coord->dz*zk);
 	    g(xi, yj, zk) = MS_g(0.,0.5*(mesh->GlobalX(xi)+mesh->GlobalX(xi-1)),mesh->GlobalY(yj),coord->dz*zk);
 
-            output.write("%d: %e\n", xi, g(xi, yj, zk));
-	  }
+            output.write("{:d}: {:e}\n", xi, g(xi, yj, zk));
+          }
 	}
       }
     } else {

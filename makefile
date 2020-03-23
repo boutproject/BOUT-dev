@@ -2,6 +2,8 @@ BOUT_TOP  = .
 
 DIRS      = src
 
+DIRS_CLEAN =  tests/integrated tests/unit tests/MMS
+
 TARGET   ?= libfast
 
 include make.config

@@ -2,5 +2,7 @@
 all: gridgen.pdf
 
 %.pdf: %.tex
-	pdflatex $<
-	pdflatex $<
+	latexmk -pdf $< -interaction=batchmode
+
+clean:
+	latexmk -C

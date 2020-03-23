@@ -322,8 +322,12 @@ const FieldPerp Delp2(const FieldPerp& f, CELL_LOC outloc = CELL_DEFAULT,
  *
  * 
  */
-const Field2D Laplace_perp(const Field2D &f, CELL_LOC outloc=CELL_DEFAULT);
-const Field3D Laplace_perp(const Field3D &f, CELL_LOC outloc=CELL_DEFAULT);
+const Field2D Laplace_perp(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+                           const std::string& dfdy_boundary_condition = "free_o3",
+                           const std::string& dfdy_region = "");
+const Field3D Laplace_perp(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+                           const std::string& dfdy_boundary_condition = "free_o3",
+                           const std::string& dfdy_region = "");
 
 /*!
  * Parallel Laplacian operator
@@ -335,8 +339,17 @@ const Field3D Laplace_par(const Field3D &f, CELL_LOC outloc=CELL_DEFAULT);
 /*!
  * Full Laplacian operator (par + perp)
  */
-const Field2D Laplace(const Field2D &f, CELL_LOC outloc=CELL_DEFAULT);
-const Field3D Laplace(const Field3D &f, CELL_LOC outloc=CELL_DEFAULT);
+const Field2D Laplace(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+                      const std::string& dfdy_boundary_condition = "free_o3",
+                      const std::string& dfdy_region = "");
+const Field3D Laplace(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
+                      const std::string& dfdy_boundary_condition = "free_o3",
+                      const std::string& dfdy_region = "");
+
+/*!
+ * Inverse of Laplacian operator in LaplaceXY solver
+ */
+const Field2D Laplace_perpXY(const Field2D& A, const Field2D& f);
 
 /*!
  * Terms of form b0 x Grad(phi) dot Grad(A)
