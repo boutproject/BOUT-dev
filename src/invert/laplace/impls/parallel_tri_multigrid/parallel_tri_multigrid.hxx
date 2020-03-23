@@ -101,7 +101,7 @@ public:
     Array<dcomplex> rl, ru;
     Array<dcomplex> rlold, ruold;
     Matrix<dcomplex> minvb;
-    Matrix<dcomplex> avec, bvec, cvec, rvec;
+    Matrix<dcomplex> avec, bvec, cvec, rvec, residual;
 
     int index_in;
     int index_out;
@@ -126,6 +126,8 @@ public:
   void coarsen_full_system(const Level level, Matrix<dcomplex> &xk1d, Matrix<dcomplex> &xk1dlast, int jy);
 
   void get_errors_full_system(Array<BoutReal> &error_rel, Array<BoutReal> &error_abs, const Matrix<dcomplex> x,const Matrix<dcomplex> xlast, const int ncx, const Level l);
+
+  void calculate_residual_full_system(Level &level, const Matrix<dcomplex> xk1d);
 
 private:
   // The coefficents in

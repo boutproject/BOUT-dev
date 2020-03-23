@@ -632,6 +632,7 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
 
     //jacobi(levels[current_level], jy, ncx, xloc, xloclast, error_rel, error_abs );
     jacobi_full_system(levels[current_level], jy, ncx, xk1d, xk1dlast, error_rel, error_abs );
+    calculate_residual_full_system(levels[current_level],xk1d);
     {
     int kz=0;
     //output<<count<<" "<<current_level<<" "<<error_rel[0]<<" "<<error_abs[0]<<" "<<xloc(0,kz)<<" "<<xloc(1,kz)<<" "<<xloc(2,kz)<<" "<<xloc(3,kz)<<endl;
@@ -1081,6 +1082,7 @@ void LaplaceParallelTriMG::init(Level &l, const int ncx, const int jy, const Mat
   l.bvec = Matrix<dcomplex>(nmode,ncx);
   l.cvec = Matrix<dcomplex>(nmode,ncx);
   l.rvec = Matrix<dcomplex>(nmode,ncx);
+  l.residual = Matrix<dcomplex>(nmode,ncx);
   for(int kz=0; kz<nmode; kz++){
     for(int ix=0; ix<ncx; ix++){
      l.avec(kz,ix) = avec(kz,ix); 
@@ -1298,6 +1300,18 @@ void LaplaceParallelTriMG::init(Level &l, const int ncx, const int jy, const Mat
   }
   */
 
+}
+
+// Calculate residual
+void LaplaceParallelTriMG::calculate_residual_full_system(Level &l, const Matrix<dcomplex> xk1d){
+
+  for(int kz=0; kz<nmode; kz++){
+    l.residual(kz,0) = l.rvec(kz,0) - l.bvec(kz,0)*xk1d(kz,0) - l.cvec(kz,0)*xk1d(kz,1);
+    for(int ix=1; ix<l.ncx-1; ix++){
+      l.residual(kz,ix) = l.rvec(kz,ix) - l.avec(kz,ix)*xk1d(kz,ix-1) - l.bvec(kz,ix)*xk1d(kz,ix) - l.cvec(kz,ix)*xk1d(kz,ix+1);
+    }
+    l.residual(kz,l.ncx-1) = l.rvec(kz,l.ncx-1) - l.avec(kz,l.ncx-1)*xk1d(kz,l.ncx-2) - l.bvec(kz,l.ncx-1)*xk1d(kz,l.ncx-1);
+  }
 }
 
 void LaplaceParallelTriMG::coarsen_full_system(const Level l, Matrix<dcomplex> &xk1d, Matrix<dcomplex> &xk1dlast, int jy){
