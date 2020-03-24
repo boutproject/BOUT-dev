@@ -301,7 +301,7 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   nmode = maxmode + 1;
 
   Array<Level> levels;
-  levels = Array<Level>(3);
+  levels = Array<Level>(4);
 
   // Calculation variables
   // proc:       p-1   |          p          |       p+1
@@ -551,6 +551,10 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   ncx_coarse = (ncx_coarse-4)/2+4;
   init(levels[2], levels[1], ncx_coarse, xs, ncx_coarse-2); //FIXME assumes mgy=2
 
+  output<<"Level 3"<<endl;
+  ncx_coarse = (ncx_coarse-4)/2+4;
+  init(levels[3], levels[2], ncx_coarse, xs, ncx_coarse-2); //FIXME assumes mgy=2
+
   for (int kz = 0; kz <= maxmode; kz++) {
     //if( first_call(jy,kz) or not use_previous_timestep ){
     get_initial_guess(jy,kz,levels[0].minvb,levels[0].lowerGuardVector,levels[0].upperGuardVector,xk1d);
@@ -594,11 +598,17 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
     output<<count<<" "<<current_level;
     total = 0.0;
     for(int ix=0; ix<levels[current_level].ncx;ix++){
-      total += std::abs(levels[current_level].residual(kz,ix).real());
+      //total += std::abs(levels[current_level].residual(kz,ix).real());
+      total += std::abs(levels[current_level].soln(kz,ix).real()-levels[current_level].solnlast(kz,ix).real());
     }
     output<<" "<<total;
-    for(int ix=0; ix<levels[current_level].ncx;ix++){
-      output<<" "<<levels[current_level].residual(kz,ix);
+    for(int ix=0; ix<levels[0].ncx;ix++){
+      if(ix<levels[current_level].ncx){
+	output<<" "<<levels[current_level].residual(kz,ix).real();
+      }
+      else{
+	output<<" "<<0;
+      }
     }
     output<<endl;
     }
@@ -615,7 +625,7 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
     }
     else if( total < rtol ){
       //refine(xloc,xloclast);
-      output<<"Refine"<<endl;
+      //output<<"Refine"<<endl;
       calculate_residual_full_system(levels[current_level]);
       refine_full_system(levels[current_level],fine_error);
       current_level--;
@@ -623,7 +633,7 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       subcount=0;
     }
     else if( total > utol*total_old and current_level < max_level ){
-      output<<"Coarsen"<<endl;
+      //output<<"Coarsen"<<endl;
 
 
       // Coarsening requires data from the grid BEFORE it is made coarser
@@ -639,16 +649,23 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
     {
     int kz=0;
     //output<<count<<" "<<current_level<<" "<<error_rel[0]<<" "<<error_abs[0]<<" "<<xloc(0,kz)<<" "<<xloc(1,kz)<<" "<<xloc(2,kz)<<" "<<xloc(3,kz)<<endl;
+    /*
     output<<count<<" "<<current_level;
     total = 0.0;
     for(int ix=0; ix<levels[current_level].ncx;ix++){
       total += std::abs(levels[current_level].residual(kz,ix).real());
     }
     output<<" "<<total;
-    for(int ix=0; ix<levels[current_level].ncx;ix++){
-      output<<" "<<levels[current_level].residual(kz,ix);
+    for(int ix=0; ix<levels[0].ncx;ix++){
+      if(ix<levels[current_level].ncx){
+	output<<" "<<levels[current_level].residual(kz,ix);
+      }
+      else{
+	output<<" "<<0;
+      }
     }
     output<<endl;
+    */
     }
     }
     // Implicitly, else = carry on doing iterations at this level
@@ -948,11 +965,17 @@ void LaplaceParallelTriMG::jacobi_full_system(Level &l, Array<BoutReal> &error_r
 
   for (int kz = 0; kz <= maxmode; kz++) {
     // TODO guard work for converged kz
-    l.soln(kz,0) = ( l.rvec(kz,0) - l.cvec(kz,0)*l.solnlast(kz,1) ) / l.bvec(kz,0);
-    for (int ix = 1; ix < l.ncx-1; ix++) {
+    for (int ix = l.xs; ix < l.xe; ix++) {
       l.soln(kz,ix) = ( l.rvec(kz,ix) - l.avec(kz,ix)*l.solnlast(kz,ix-1) - l.cvec(kz,ix)*l.solnlast(kz,ix+1) ) / l.bvec(kz,ix);
     }
-    l.soln(kz,l.ncx-1) = ( l.rvec(kz,l.ncx-1) - l.avec(kz,l.ncx-1)*l.solnlast(kz,l.ncx-2) ) / l.bvec(kz,l.ncx-1);
+    for (int ix = l.xs-1; ix > 0; ix--) {
+      l.soln(kz,ix) = ( l.rvec(kz,ix) - l.avec(kz,ix)*l.soln(kz,ix-1) - l.cvec(kz,ix)*l.soln(kz,ix+1) ) / l.bvec(kz,ix);
+    }
+    l.soln(kz,0) = ( l.rvec(kz,0) - l.cvec(kz,0)*l.soln(kz,1) ) / l.bvec(kz,0);
+    for (int ix = l.xe; ix < l.ncx-1; ix++) {
+      l.soln(kz,ix) = ( l.rvec(kz,ix) - l.avec(kz,ix)*l.soln(kz,ix-1) - l.cvec(kz,ix)*l.soln(kz,ix+1) ) / l.bvec(kz,ix);
+    }
+    l.soln(kz,l.ncx-1) = ( l.rvec(kz,l.ncx-1) - l.avec(kz,l.ncx-1)*l.soln(kz,l.ncx-2) ) / l.bvec(kz,l.ncx-1);
   }
 
   get_errors_full_system(error_rel,error_abs,l.soln,l.solnlast,l);
