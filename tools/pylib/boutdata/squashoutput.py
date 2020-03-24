@@ -82,7 +82,7 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
         datadirnew = tempfile.mkdtemp(dir=datadir)
         for f in glob.glob(datadir + "/BOUT.dmp.*.??"):
             if not quiet:
-                print("moving", f)
+                print("moving", f, flush=True)
             shutil.move(f, datadirnew)
         oldfile = datadirnew + "/" + outputname
         datadir = datadirnew
@@ -128,7 +128,7 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
     with DataFile(fullpath, create=True, write=True, format=format, **kwargs) as f:
         for varname in outputvars:
             if not quiet:
-                print(varname)
+                print(varname, flush=True)
 
             var = outputs[varname]
             if append:
@@ -154,7 +154,7 @@ def squashoutput(datadir=".", outputname="BOUT.dmp.nc", format="NETCDF4", tind=N
             os.remove(oldfile)
         for f in glob.glob(datadir + "/BOUT.dmp.*.??"):
             if not quiet:
-                print("Deleting", f)
+                print("Deleting", f, flush=True)
             os.remove(f)
         if append:
             os.rmdir(datadir)
