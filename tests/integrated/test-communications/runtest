@@ -35,8 +35,8 @@ with open('run.log.'+str(nxpe), 'w') as f:
 
 def test(actual, expected, procnum, region, boundary):
     if not np.all(np.array(np.rint(actual).astype(int)) == np.array(expected)):
-        print(f'failed in {boundary} boundary of region {procnum} ({region}). Expected: '
-              f'{expected}  Actual: {actual}')
+        print('failed in {} boundary of region {} ({}). Expected: {}  Actual: {}'
+              .format(boundary, procnum, region, expected, actual))
         exit(1)
 
 region = 'lower, inner PF'
