@@ -52,6 +52,9 @@ upwind = C4
 all_terms = true
 laplace_nonuniform = true
 
+inner_boundary_flags = 2 # INVERT_AC_GRAD
+outer_boundary_flags = 2 # INVERT_AC_GRAD
+
 ##################################################
 # Solver settings
 
@@ -79,10 +82,6 @@ bout_exb = true   # Use the BOUT-06 subset of ExB terms
 
 filter_z = true    # Filter in Z
 filter_z_mode = 1  # Keep this Z harmonic
-
-[laplace]
-inner_boundary_flags = 2 # INVERT_AC_GRAD
-outer_boundary_flags = 2 # INVERT_AC_GRAD
 
 ##################################################
 # settings for individual variables
