@@ -409,13 +409,13 @@ AS_IF([test "x$enable_shared" = "xyes"], [
     # for make.config
     DEFLIB1='$(LIB_SO)'
     # for src/makefile
-    DEFLIB2+=' ../lib/libbout++.so'
+    DEFLIB2+=' $(BOUT_LIB_PATH)/libbout++.so'
     AS_IF([test "x$enable_static" = "xauto"], [
         enable_static=no
     ])
     SHARED_EXTRA=':'
     AS_IF([test "x$enable_static" = "xno"], [
-        SHARED_EXTRA='$(RM) -f ../lib/*.a'
+        SHARED_EXTRA='$(RM) -f $(BOUT_LIB_PATH)/*.a'
     ])
 ], [
     AS_IF([test "x$enable_static" = "xauto"], [
