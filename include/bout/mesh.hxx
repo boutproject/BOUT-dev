@@ -109,7 +109,7 @@ class Mesh {
   /// Constructor for a "bare", uninitialised Mesh
   /// Only useful for testing
   Mesh() : source(nullptr), options(nullptr),
-           include_corner_cells(false) {}
+           include_corner_cells(true) {}
 
   /// Constructor
   /// @param[in] s  The source to be used for loading variables

@@ -1,3 +1,5 @@
+.. _sec-time-integration:
+
 Time integration
 ================
 
