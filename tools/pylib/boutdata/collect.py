@@ -107,9 +107,9 @@ def _convert_to_nice_slice(r, N, name="range"):
     elif len(r) == 2:
         r2 = list(r)
         if r2[0] < 0:
-            r2[0] += N
+            r2[0] = r2[0] + N
         if r2[1] < 0:
-            r2[1] += N
+            r2[1] = r2[1] + N
         if r2[0] > r2[1]:
             raise ValueError("{} start ({}) is larger than end ({})"
                              .format(name, *r2))
@@ -216,7 +216,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
             if yguards == "include_upper" and f["jyseps2_1"] != f["jyseps1_2"]:
                 # Simulation has a second (upper) target, with a second set of y-boundary
                 # points
-                ny += 2*myg
+                ny = ny + 2*myg
         else:
             ny = f["ny"]
         nz = f["MZ"]
@@ -372,7 +372,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
         if yguards == "include_upper" and f["jyseps2_1"] != f["jyseps1_2"]:
             # Simulation has a second (upper) target, with a second set of y-boundary
             # points
-            ny += 2*myg
+            ny = ny + 2*myg
             ny_inner = f["ny_inner"]
             yproc_upper_target = ny_inner // mysub - 1
             if f["ny_inner"] % mysub != 0:
@@ -448,7 +448,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
                     ystart = myg
             # and lower y boundary at upper target
             if yproc_upper_target is not None and pe_yind - 1 == yproc_upper_target:
-                ystart -= myg
+                ystart = ystart - myg
 
             # Upper y boundary
             if pe_yind == (nype - 1):
@@ -464,15 +464,15 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
                     ystop = (mysub + myg)
             # upper y boundary at upper target
             if yproc_upper_target is not None and pe_yind == yproc_upper_target:
-                ystop += myg
+                ystop = ystop + myg
 
             # Calculate global indices
             ygstart = ystart + pe_yind * mysub
             ygstop = ystop + pe_yind * mysub
 
             if yproc_upper_target is not None and pe_yind > yproc_upper_target:
-                ygstart += 2*myg
-                ygstop += 2*myg
+                ygstart = ygstart + 2*myg
+                ygstop = ygstop + 2*myg
 
         else:
             # Get local ranges
