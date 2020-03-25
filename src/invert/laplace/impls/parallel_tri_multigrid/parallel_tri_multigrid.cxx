@@ -577,7 +577,7 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   int current_level = 0;
   BoutReal total=1e20, total_old=1e20;
   BoutReal utol=0.7;
-  int max_level = 2;
+  int max_level = 1;
   bool down = true;
   while(true){
 
@@ -619,7 +619,7 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
     else if( total < rtol and current_level==0 ){
       break;
     }
-    else if( total < rtol or current_level==max_level){
+    else if( total < rtol ){ // or current_level==max_level){
       //refine(xloc,xloclast);
       //output<<"Refine"<<endl;
       calculate_residual_full_system(levels[current_level]);
@@ -963,10 +963,10 @@ void LaplaceParallelTriMG::jacobi_full_system(Level &l, Array<BoutReal> &error_r
 
   for (int kz = 0; kz <= maxmode; kz++) {
     // TODO guard work for converged kz
-    l.soln(kz,l.xs) = 0.0;
-    l.soln(kz,l.xe+1) = 0.0;
-    for (int ix = l.xs+1; ix < l.xe+1; ix++) {
-      l.soln(kz,ix) = ( l.rvec(kz,ix) - l.avec(kz,ix)*l.soln(kz,ix-1) - l.cvec(kz,ix)*l.solnlast(kz,ix+1) ) / l.bvec(kz,ix);
+    l.soln(kz,l.xs-1) = 0.0;
+    l.soln(kz,l.xe+2) = 0.0;
+    for (int ix = l.xs; ix < l.xe+2; ix++) {
+      l.soln(kz,ix) = ( l.rvec(kz,ix) - l.avec(kz,ix)*l.solnlast(kz,ix-1) - l.cvec(kz,ix)*l.solnlast(kz,ix+1) ) / l.bvec(kz,ix);
     }
 
     /*
