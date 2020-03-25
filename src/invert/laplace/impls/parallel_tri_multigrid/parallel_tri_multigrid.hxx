@@ -111,11 +111,13 @@ public:
     int yproc;
     int myproc;
     int xs, xe, ncx;
+    int current_level;
 
   };
 
-  void init(Level &level, const Level lup, const int ncx, const int xs, const int xe);
-  void init(Level &level, const int ncx, const int jy, const Matrix<dcomplex> avec, const Matrix<dcomplex> bvec, const Matrix<dcomplex> cvec, const Matrix<dcomplex> bcmplx, const int xs, const int xe);
+  void levels_info(const Level l);
+  void init(Level &level, const Level lup, const int ncx, const int xs, const int xe, const int current_level);
+  void init(Level &level, const int ncx, const int jy, const Matrix<dcomplex> avec, const Matrix<dcomplex> bvec, const Matrix<dcomplex> cvec, const Matrix<dcomplex> bcmplx, const int xs, const int xe, const int current_level);
 
   void jacobi(Level &level, const int jy, const int ncx, Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast,
      Array<BoutReal> &error_rel, Array<BoutReal> &error_abs);

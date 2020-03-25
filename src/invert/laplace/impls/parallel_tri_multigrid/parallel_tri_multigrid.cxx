@@ -529,7 +529,10 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
     }
   }
 
-  init(levels[0], ncx, jy, avec, bvec, cvec, bcmplx,xs,xe);
+  // xs = xstart, the first interior grid point
+  // xe = xend, the last interior grid point
+
+  init(levels[0], ncx, jy, avec, bvec, cvec, bcmplx,xs,xe,0);
   for(int kz=0; kz<nmode; kz++){
     for(int ix=0; ix<ncx; ix++){
       levels[0].soln(kz,ix) = xk1d(kz,ix);
@@ -537,25 +540,15 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
     levels[0].soln(kz,xs) = 0.0;
     levels[0].soln(kz,xe) = 0.0;
   }
-  output<<"Level 0"<<endl;
-  for(int ix = levels[0].xs; ix<levels[0].xe+2 ; ix++) {
-    int kz=0;
-    if(kz==0){
-      output<<levels[0].avec(kz,ix)<<" "<<levels[0].bvec(kz,ix)<<" "<<levels[0].cvec(kz,ix)<<" "<<levels[0].rvec(kz,ix)<<endl;
-    }
-  }
 
-  output<<"Level 1"<<endl;
   int ncx_coarse = (xe-xs+1)/2 + xs + ncx - xe - 1;
-  init(levels[1], levels[0], ncx_coarse, xs, ncx_coarse-2); //FIXME assumes mgy=2
+  init(levels[1], levels[0], ncx_coarse, xs, ncx_coarse-3,1); //FIXME assumes mgy=2
 
-  output<<"Level 2"<<endl;
   ncx_coarse = (ncx_coarse-4)/2+4;
-  init(levels[2], levels[1], ncx_coarse, xs, ncx_coarse-2); //FIXME assumes mgy=2
+  init(levels[2], levels[1], ncx_coarse, xs, ncx_coarse-3,2); //FIXME assumes mgy=2
 
-  output<<"Level 3"<<endl;
   ncx_coarse = (ncx_coarse-4)/2+4;
-  init(levels[3], levels[2], ncx_coarse, xs, ncx_coarse-2); //FIXME assumes mgy=2
+  init(levels[3], levels[2], ncx_coarse, xs, ncx_coarse-3,3); //FIXME assumes mgy=2
 
   for (int kz = 0; kz <= maxmode; kz++) {
     //if( first_call(jy,kz) or not use_previous_timestep ){
@@ -1029,14 +1022,28 @@ void LaplaceParallelTriMG::jacobi_full_system(Level &l, Array<BoutReal> &error_r
 
 }  
 
+// Write info about levels to screen
+void LaplaceParallelTriMG::levels_info(const Level l){
+
+  output<<endl;
+  output<<"Level "<<l.current_level<<endl;
+  output<<"xs = "<<l.xs<<" , xe = "<<l.xe<<", ncx = "<<l.ncx<<endl;
+
+  int kz = 0;
+  for(int ix = 0; ix<l.ncx; ix++){
+    output<<l.avec(kz,ix)<<" "<<l.bvec(kz,ix)<<" "<<l.cvec(kz,ix)<<endl;
+  }
+}
+
 // Initialization routine for coarser grids. Initialization depends on the grid
 // one step finer, lup.
-void LaplaceParallelTriMG::init(Level &l, const Level lup, int ncx, const int xs, const int xe){
+void LaplaceParallelTriMG::init(Level &l, const Level lup, int ncx, const int xs, const int xe, const int current_level){
 
   // This is a hacked version where we force xs and xe to be boundary points.
   l.xs = xs;
   l.xe = xe;
   l.ncx = ncx;
+  l.current_level = current_level;
 
   l.avec = Matrix<dcomplex>(nmode,ncx);
   l.bvec = Matrix<dcomplex>(nmode,ncx);
@@ -1051,9 +1058,6 @@ void LaplaceParallelTriMG::init(Level &l, const Level lup, int ncx, const int xs
       l.avec(kz,ix) = 0.0; //0.5*lup.avec(kz,ix);
       l.bvec(kz,ix) = 1.0; //0.5*lup.bvec(kz,ix);
       l.cvec(kz,ix) = 0.0; //0.5*lup.cvec(kz,ix);
-      //if(kz==0){
-      //  output<<l.avec(kz,ix)<<" "<<l.bvec(kz,ix)<<" "<<l.cvec(kz,ix)<<endl;
-      //}
     }
     for(int ixc = l.xs; ixc<l.xe; ixc++){
       int ixf = 2*(ixc-l.xs)+l.xs;
@@ -1068,9 +1072,6 @@ void LaplaceParallelTriMG::init(Level &l, const Level lup, int ncx, const int xs
 	l.avec(kz,ixc) = 0.25*lup.avec(kz,ixf-1) + 0.125*lup.bvec(kz,ixf-1) + 0.25*lup.avec(kz,ixf) ;
 	l.bvec(kz,ixc) = 0.125*lup.bvec(kz,ixf-1) + 0.25*lup.cvec(kz,ixf-1) + 0.25*lup.avec(kz,ixf) + 0.5*lup.bvec(kz,ixf) + 0.25*lup.cvec(kz,ixf) + 0.25*lup.avec(kz,ixf+1) + 0.125*lup.bvec(kz,ixf+1);
 	l.cvec(kz,ixc) = 0.25*lup.cvec(kz,ixf) + 0.125*lup.bvec(kz,ixf+1) +  0.25*lup.cvec(kz,ixf+1); 
-      }
-      if(kz==0){
-	output<<l.avec(kz,ixc)<<" "<<l.bvec(kz,ixc)<<" "<<l.cvec(kz,ixc)<<endl;
       }
     }
     for(int ixc = l.xe; ixc<l.ncx; ixc++){
@@ -1088,19 +1089,19 @@ void LaplaceParallelTriMG::init(Level &l, const Level lup, int ncx, const int xs
 	l.bvec(kz,ixc) = 1.0; //0.5*lup.bvec(kz,ixf);
 	l.cvec(kz,ixc) = 0.0; //0.5*lup.cvec(kz,ixf);
       }
-      if(kz==0 and ixc==l.xe){
-	output<<l.avec(kz,ixc)<<" "<<l.bvec(kz,ixc)<<" "<<l.cvec(kz,ixc)<<endl;
-      }
     }
   }
 
+  levels_info(l);
+
 }
 
-void LaplaceParallelTriMG::init(Level &l, const int ncx, const int jy, const Matrix<dcomplex> avec, const Matrix<dcomplex> bvec, const Matrix<dcomplex> cvec, const Matrix<dcomplex> bcmplx, const int xs, const int xe){
+void LaplaceParallelTriMG::init(Level &l, const int ncx, const int jy, const Matrix<dcomplex> avec, const Matrix<dcomplex> bvec, const Matrix<dcomplex> cvec, const Matrix<dcomplex> bcmplx, const int xs, const int xe, const int current_level){
 
   l.xs = xs;
   l.xe = xe;
   l.ncx = ncx;
+  l.current_level = current_level;
 
   auto rlold = Array<dcomplex>(nmode);
   auto ruold = Array<dcomplex>(nmode);
@@ -1369,6 +1370,8 @@ void LaplaceParallelTriMG::init(Level &l, const int ncx, const int jy, const Mat
     }
   }
   */
+
+  levels_info(l);
 
 }
 
