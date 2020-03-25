@@ -1059,7 +1059,8 @@ void LaplaceParallelTriMG::init(Level &l, const Level lup, int ncx, const int xs
       l.bvec(kz,ix) = 1.0; //0.5*lup.bvec(kz,ix);
       l.cvec(kz,ix) = 0.0; //0.5*lup.cvec(kz,ix);
     }
-    for(int ixc = l.xs; ixc<l.xe; ixc++){
+    // interior points
+    for(int ixc = l.xs; ixc<l.xe+1; ixc++){
       int ixf = 2*(ixc-l.xs)+l.xs;
       if(localmesh->firstX() and ixc == l.xs){
 	// No lumping in avec for first interior point:
@@ -1074,10 +1075,10 @@ void LaplaceParallelTriMG::init(Level &l, const Level lup, int ncx, const int xs
 	l.cvec(kz,ixc) = 0.25*lup.cvec(kz,ixf) + 0.125*lup.bvec(kz,ixf+1) +  0.25*lup.cvec(kz,ixf+1); 
       }
     }
-    for(int ixc = l.xe; ixc<l.ncx; ixc++){
+    for(int ixc = l.xe+1; ixc<l.ncx; ixc++){
       // Index on fine grid
       int ixf = ixc + lup.ncx - l.ncx;
-      if( localmesh->lastX() and ixc == l.xe){
+      if( localmesh->lastX() and ixc == l.xe+1){
 	// Lump avec on first physical boundary point:
 	// The grid spacing has been doubled here
 	l.avec(kz,ixc) =  0.25*lup.avec(kz,ixf-1) + 0.125*lup.bvec(kz,ixf-1) + 0.25*lup.avec(kz,ixf);
