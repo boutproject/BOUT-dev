@@ -1484,43 +1484,36 @@ void LaplaceParallelTriMG::update_solution(Level &l, const Matrix<dcomplex> &fin
 
 void LaplaceParallelTriMG::refine_full_system(Level &l, Matrix<dcomplex> &fine_error){
 
-  /*
+  
   output<<"soln ";
   for(int ix=0; ix<l.ncx; ix++){
     output<<l.soln(0,ix)<<" ";
   }
   output<<endl;
-  */
 
   for(int kz=0; kz<nmode; kz++){
-    // Must run loops backwards to avoid overwriting data
-    //output<<"ncx "<<l.ncx<<" "<<l.xs<<" "<<l.xe<<endl;
-    for(int ix=l.ncx-1; ix>l.xe-1; ix--){
-      //output<<"1 "<<ix<<" "<<2*(l.xe-l.xs-2)+ix<<endl;
-      fine_error(kz,2*(l.xe-l.xs-2)+ix) = l.soln(kz,ix);
-      //xk1dlast(kz,2*(l.xe-l.xs-2)+ix) = xk1dlast(kz,ix);
-    }
-    for(int ix=l.xe-1; ix>l.xs-1; ix--){
-      //output<<"2 "<<ix<<" "<<2*(ix-l.xs)+l.xs<<endl;
-      fine_error(kz,2*(ix-l.xs)+l.xs) = l.soln(kz,ix);
-      //xk1dlast(kz,2*(ix-l.xs)+l.xs) = xk1dlast(kz,ix);
-    }
-    for(int ix=l.xe-1; ix>l.xs-1; ix--){
-      //output<<ix<<" "<<2*(ix-l.xs)+l.xs+1<<endl;
-      fine_error(kz,2*(ix-l.xs)+l.xs+1) = 0.5*(fine_error(kz,2*(ix-l.xs)+l.xs)+fine_error(kz,2*(ix-l.xs)+l.xs+2));
-      //xk1dlast(kz,2*(ix-l.xs)+l.xs+1) = 0.5*(xk1dlast(kz,2*(ix-l.xs)+l.xs)+xk1dlast(kz,2*(ix-l.xs)+l.xs+2));
-    }
+    // lower boundary (fine/coarse indices the same)
     for(int ix=0; ix<l.xs; ix++){
       fine_error(kz,ix) = l.soln(kz,ix);
     }
+    // interior points
+    for(int ixc=l.xs; ixc<l.xe+1; ixc++){
+      int ixf = 2*(ixc-l.xs)+l.xs+1;
+      fine_error(kz,ixf) = l.soln(kz,ixc);
+      fine_error(kz,ixf+1) = 0.5*(l.soln(kz,ixc)+l.soln(kz,ixc+1));
+    }
+    // upper boundary
+    for(int ixc=l.xe+1; ixc<l.ncx; ixc++){
+      int ixf = 2*(l.xe-l.xs-2)+ixc;
+      fine_error(kz,ixf) = l.soln(kz,ixc);
+    }
   }
-  /*
+  
   output<<"fine_error ";
   for(int ix=0; ix<2*(l.ncx-4)+4; ix++){
     output<<fine_error(0,ix)<<" ";
   }
   output<<endl;
-  */
 }
 
 void LaplaceParallelTriMG::refine(Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast){
