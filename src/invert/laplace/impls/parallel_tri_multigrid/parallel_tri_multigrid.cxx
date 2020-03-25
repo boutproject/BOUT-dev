@@ -1400,7 +1400,7 @@ void LaplaceParallelTriMG::coarsen_full_system(Level &l, const Matrix<dcomplex> 
     }
     ixc = l.xs;
     ixf = l.xs;
-    l.residual(kz,ixc)   = 0.0; //0.5*fine_residual(kz,ixf)   + 0.25*fine_residual(kz,ixf+1);
+    l.residual(kz,ixc)   = 0.5*fine_residual(kz,ixf) + 0.25*fine_residual(kz,ixf+1);
     for(int ixc=l.xs+1; ixc<l.xe+1; ixc++){
       ixf = 2*(ixc-l.xs)+l.xs;
       l.residual(kz,ixc)   =  0.25*fine_residual(kz,ixf-1) + 0.5*fine_residual(kz,ixf)   + 0.25*fine_residual(kz,ixf+1);
@@ -1408,7 +1408,7 @@ void LaplaceParallelTriMG::coarsen_full_system(Level &l, const Matrix<dcomplex> 
     // first boundary point
     ixc = l.xe+1;
     ixf = l.xs+2*(l.xe+1-l.xs);
-    l.residual(kz,ixc) = 0.0; //0.25*fine_residual(kz,ixf-1) + 0.5*fine_residual(kz,ixf);
+    l.residual(kz,ixc) = 0.25*fine_residual(kz,ixf-1) + 0.5*fine_residual(kz,ixf);
     // FIXME this assumes mgx=2
     for(int ix=l.xe+2; ix<l.ncx; ix++){
       ixf = l.xs+2*(l.xe-l.xs)+(ix-l.xe);
@@ -1419,6 +1419,12 @@ void LaplaceParallelTriMG::coarsen_full_system(Level &l, const Matrix<dcomplex> 
       l.solnlast(kz,ix) = 0.0;
     }
   }
+
+  output<<"coarse residual ";
+  for(int ix=0; ix<l.ncx; ix++){
+    output<<l.rvec(0,ix)<<" ";
+  }
+  output<<endl;
 }
 
 void LaplaceParallelTriMG::coarsen(const Level l, Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast, int jy){
