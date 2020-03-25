@@ -577,7 +577,7 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   int current_level = 0;
   BoutReal total=1e20, total_old=1e20;
   BoutReal utol=0.7;
-  int max_level = 1;
+  int max_level = 2;
   bool down = true;
   while(true){
 
@@ -1397,11 +1397,13 @@ void LaplaceParallelTriMG::calculate_residual_full_system(Level &l){
     l.residual(kz,l.ncx-1) = l.rvec(kz,l.ncx-1) - l.avec(kz,l.ncx-1)*l.soln(kz,l.ncx-2) - l.bvec(kz,l.ncx-1)*l.soln(kz,l.ncx-1);
   }
 
+  /*
   output<<"sll ";
   for(int ix=0; ix<l.ncx; ix++){
     output<<l.soln(0,ix)<<" ";
   }
   output<<endl;
+  */
 }
 
 void LaplaceParallelTriMG::coarsen_full_system(Level &l, const Matrix<dcomplex> fine_residual){
@@ -1505,6 +1507,7 @@ void LaplaceParallelTriMG::coarsen(const Level l, Matrix<dcomplex> &xloc, Matrix
 // Update the solution on the refined grid by adding the error calculated on the coarser grid.
 void LaplaceParallelTriMG::update_solution(Level &l, const Matrix<dcomplex> &fine_error){
 
+  /*
   output<<"sbu ";
   for(int ix=0; ix<l.ncx; ix++){
     output<<l.soln(0,ix)<<" ";
@@ -1515,17 +1518,19 @@ void LaplaceParallelTriMG::update_solution(Level &l, const Matrix<dcomplex> &fin
     output<<fine_error(0,ix)<<" ";
   }
   output<<endl;
+  */
   for(int kz=0; kz<nmode; kz++){
     for(int ix=0; ix<l.ncx; ix++){
       l.soln(kz,ix) += fine_error(kz,ix);
     }
   }
+  /*
   output<<"sau ";
   for(int ix=0; ix<l.ncx; ix++){
     output<<l.soln(0,ix)<<" ";
   }
   output<<endl;
-  
+  */
 }
 
 void LaplaceParallelTriMG::refine_full_system(Level &l, Matrix<dcomplex> &fine_error){
