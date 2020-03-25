@@ -5929,6 +5929,9 @@ if test "$enable_debug" != ""; then :
 $as_echo "$as_me: Enabling all debug options" >&6;}
   enable_checks="3"
   OPT_FLAGS="-g -O0 -fno-inline -hipa1"
+  # Only for not gcc add -Og due to
+  # https://github.com/boutproject/BOUT-dev/issues/1879
+  $MPICXX --version | grep g++ -q || OPT_FLAGS="$OPT_FLAGS -Og"
 
 else
 

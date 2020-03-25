@@ -263,6 +263,9 @@ AS_IF([test "$enable_debug" != ""], [
   AC_MSG_NOTICE([Enabling all debug options])
   enable_checks="3"
   OPT_FLAGS="-g -O0 -fno-inline -hipa1"
+  # Only for not gcc add -Og due to
+  # https://github.com/boutproject/BOUT-dev/issues/1879
+  $MPICXX --version | grep g++ -q || OPT_FLAGS="$OPT_FLAGS -Og"
 ], [
   AS_IF([test "x$enable_optimize" != "xno"], [
     AS_CASE(["$enable_optimize"],
