@@ -598,8 +598,8 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       //total += std::abs(levels[current_level].soln(kz,ix).real()-levels[current_level].solnlast(kz,ix).real());
     }
     output<<" "<<total;
-    for(int ix=xs; ix<levels[0].xe+2;ix++){
-      if(ix<levels[current_level].xe+2){
+    for(int ix=0; ix<levels[0].ncx;ix++){
+      if(ix<levels[current_level].ncx){
 	output<<" "<<levels[current_level].residual(kz,ix).real();
       }
       else{
@@ -629,8 +629,6 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       subcount=0;
     }
     else if( total > utol*total_old and current_level < max_level ){
-      //output<<"Coarsen"<<endl;
-
 
       // Coarsening requires data from the grid BEFORE it is made coarser
       //coarsen(levels[current_level],xloc,xloclast,jy);
@@ -966,8 +964,8 @@ void LaplaceParallelTriMG::jacobi_full_system(Level &l, Array<BoutReal> &error_r
   for (int kz = 0; kz <= maxmode; kz++) {
     // TODO guard work for converged kz
     l.soln(kz,l.xs) = 0.0;
-    l.soln(kz,l.xe) = 0.0;
-    for (int ix = l.xs+1; ix < l.xe; ix++) {
+    l.soln(kz,l.xe+1) = 0.0;
+    for (int ix = l.xs+1; ix < l.xe+1; ix++) {
       l.soln(kz,ix) = ( l.rvec(kz,ix) - l.avec(kz,ix)*l.soln(kz,ix-1) - l.cvec(kz,ix)*l.solnlast(kz,ix+1) ) / l.bvec(kz,ix);
     }
 
@@ -1397,6 +1395,7 @@ void LaplaceParallelTriMG::coarsen_full_system(Level &l, const Matrix<dcomplex> 
     for(int ix=0; ix<l.xs; ix++){
       //l.residual(kz,ix) = 0.5*fine_residual(kz,ix);
       l.residual(kz,ix) = 0.0;
+      //output<<ix<<endl;
     }
     ixc = l.xs;
     ixf = l.xs;
@@ -1404,15 +1403,18 @@ void LaplaceParallelTriMG::coarsen_full_system(Level &l, const Matrix<dcomplex> 
     for(int ixc=l.xs+1; ixc<l.xe+1; ixc++){
       ixf = 2*(ixc-l.xs)+l.xs;
       l.residual(kz,ixc)   =  0.25*fine_residual(kz,ixf-1) + 0.5*fine_residual(kz,ixf)   + 0.25*fine_residual(kz,ixf+1);
+      //output<<ixc<<" "<<ixf<<endl;
     }
     // first boundary point
     ixc = l.xe+1;
     ixf = l.xs+2*(l.xe+1-l.xs);
     l.residual(kz,ixc) = 0.25*fine_residual(kz,ixf-1) + 0.5*fine_residual(kz,ixf);
+    //output<<"fbp "<<ixc<<" "<<ixf<<endl;
     // FIXME this assumes mgx=2
-    for(int ix=l.xe+2; ix<l.ncx; ix++){
-      ixf = l.xs+2*(l.xe-l.xs)+(ix-l.xe);
-      l.residual(kz,ix) = 0.0; //0.5*fine_residual(kz,ixf);
+    for(int ixc=l.xe+2; ixc<l.ncx; ixc++){
+      ixf = l.xs+2*(l.xe-l.xs)+(ixc-l.xe)+1;
+      l.residual(kz,ixc) = 0.0; //0.5*fine_residual(kz,ixf);
+      //output<<ixc<<" "<<ixf<<endl;
     }
     for(int ix=0; ix<l.ncx; ix++){
       l.rvec(kz,ix) = l.residual(kz,ix);
