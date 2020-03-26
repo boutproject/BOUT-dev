@@ -1084,7 +1084,7 @@ void LaplaceParallelTriMG::init(Level &l, const Level lup, int ncx, const int xs
       if(localmesh->firstX() and ixc == l.xs){
 	// No lumping in avec for first interior point:
 	// The gap between this point and the first guard cell is NOT doubled when the mesh is refined. 
-	l.avec(kz,ixc) = 0.0; //0.5*lup.avec(kz,ixf);
+	l.avec(kz,ixc) = 0.5*lup.avec(kz,ixf);
 	l.bvec(kz,ixc) = 0.5*lup.bvec(kz,ixf) + 0.25*lup.cvec(kz,ixf) + 0.25*lup.avec(kz,ixf+1) + 0.125*lup.bvec(kz,ixf+1);
 	l.cvec(kz,ixc) = 0.25*lup.cvec(kz,ixf) + 0.125*lup.bvec(kz,ixf+1) + 0.25*lup.cvec(kz,ixf+1);
       }
@@ -1102,7 +1102,7 @@ void LaplaceParallelTriMG::init(Level &l, const Level lup, int ncx, const int xs
 	// The grid spacing has been doubled here
 	l.avec(kz,ixc) =  0.25*lup.avec(kz,ixf-1) + 0.125*lup.bvec(kz,ixf-1) + 0.25*lup.avec(kz,ixf);
 	l.bvec(kz,ixc) = 0.125*lup.bvec(kz,ixf-1) +  0.25*lup.cvec(kz,ixf-1) + 0.25*lup.avec(kz,ixf) + 0.5*lup.bvec(kz,ixf);
-	l.cvec(kz,ixc) = 0.0; //0.5*lup.cvec(kz,ixf);
+	l.cvec(kz,ixc) = 0.5*lup.cvec(kz,ixf);
       }
       else{
 	l.avec(kz,ixc) = 0.0; //0.5*lup.avec(kz,ixf);
@@ -1428,7 +1428,7 @@ void LaplaceParallelTriMG::coarsen_full_system(Level &l, const Matrix<dcomplex> 
     }
     ixc = l.xs;
     ixf = l.xs;
-    l.residual(kz,ixc)   = 0.0; //0.5*fine_residual(kz,ixf) + 0.25*fine_residual(kz,ixf+1);
+    l.residual(kz,ixc)   = 0.5*fine_residual(kz,ixf) + 0.25*fine_residual(kz,ixf+1);
     for(int ixc=l.xs+1; ixc<l.xe+1; ixc++){
       ixf = 2*(ixc-l.xs)+l.xs;
       l.residual(kz,ixc)   =  0.25*fine_residual(kz,ixf-1) + 0.5*fine_residual(kz,ixf)   + 0.25*fine_residual(kz,ixf+1);
@@ -1437,7 +1437,7 @@ void LaplaceParallelTriMG::coarsen_full_system(Level &l, const Matrix<dcomplex> 
     // first boundary point
     ixc = l.xe+1;
     ixf = l.xs+2*(l.xe+1-l.xs);
-    l.residual(kz,ixc) = 0.0; //0.25*fine_residual(kz,ixf-1) + 0.5*fine_residual(kz,ixf);
+    l.residual(kz,ixc) = 0.25*fine_residual(kz,ixf-1) + 0.5*fine_residual(kz,ixf);
     //output<<"fbp "<<ixc<<" "<<ixf<<endl;
     // FIXME this assumes mgx=2
     for(int ixc=l.xe+2; ixc<l.ncx; ixc++){
