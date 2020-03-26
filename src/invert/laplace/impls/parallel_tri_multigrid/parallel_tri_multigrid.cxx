@@ -576,8 +576,9 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   int subcount = 0;
   int current_level = 0;
   BoutReal total=1e20, total_old=1e20;
-  BoutReal utol=0.1;
-  int max_level = 3;
+  BoutReal utol=0.4;
+  int max_level = 2;
+  int max_cycle = 3;
   bool down = true;
   while(true){
 
@@ -625,13 +626,14 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
     ++subcount;
 
     // Force at least 4 iterations at each level
-    if(subcount < 3 and total>rtol){
+    if(subcount < max_cycle and total>rtol){
       //continue;
     }
     else if( total < rtol and current_level==0 ){
       break;
     }
-    else if( total < rtol or current_level==max_level){
+    //else if( total < rtol or current_level==max_level){
+    else if( not down ){
       //refine(xloc,xloclast);
       //output<<"Refine"<<endl;
       calculate_residual_full_system(levels[current_level]);
@@ -639,8 +641,13 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       current_level--;
       update_solution(levels[current_level],fine_error);
       subcount=0;
+
+      if(current_level==0){
+	down = true;
+      }
     }
-    else if( total > utol*total_old and current_level < max_level ){
+    //else if( current_level < max_level ){
+    else if( down ){
 
       // Coarsening requires data from the grid BEFORE it is made coarser
       //coarsen(levels[current_level],xloc,xloclast,jy);
@@ -980,7 +987,7 @@ void LaplaceParallelTriMG::jacobi_full_system(Level &l, Array<BoutReal> &error_r
     l.solnlast(kz,l.xs-1) = 0.0;
     l.solnlast(kz,l.xe+2) = 0.0;
     for (int ix = l.xs; ix < l.xe+2; ix++) {
-      l.soln(kz,ix) = ( l.rvec(kz,ix) - l.avec(kz,ix)*l.solnlast(kz,ix-1) - l.cvec(kz,ix)*l.solnlast(kz,ix+1) ) / l.bvec(kz,ix);
+      l.soln(kz,ix) = ( l.rvec(kz,ix) - l.avec(kz,ix)*l.soln(kz,ix-1) - l.cvec(kz,ix)*l.solnlast(kz,ix+1) ) / l.bvec(kz,ix);
     }
 
     /*
