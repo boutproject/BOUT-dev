@@ -41,3 +41,8 @@ mo-%:
 
 # Dummy target to force rules to be run
 FORCE:
+
+update-all: libbout.pot
+	for d in */ ; do $(MAKE) --no-print-directory $${d}libbout.po; done
+	for d in */ ; do $(MAKE) --no-print-directory $${d}LC_MESSAGES/libbout.mo; done
+	grep Last-Translator */*.po
