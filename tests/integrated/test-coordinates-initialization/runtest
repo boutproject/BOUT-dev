@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Cores: 3
+
 make || exit
 
 test -z $MPIRUN  && MPIRUN=mpirun

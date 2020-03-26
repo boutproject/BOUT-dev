@@ -14,6 +14,8 @@ import sys
 import time
 import glob
 from boututils.run_wrapper import shell
+import threading
+import re
 
 ##################################################################
 
@@ -29,6 +31,8 @@ parser.add_argument("-b", "--set-bool", nargs="+", metavar=('value1=False', 'val
                     help='Set a bool value for evaluating what scripts can be run.')
 parser.add_argument("-l", "--set-list", nargs="+", metavar=('test1', 'test2'),
                     help='Set the tests that should be run.')
+parser.add_argument("-j", "--jobs", nargs=1, type=int, dest='jobs',
+                    help='Set the number of cores to use in parallel.')
 
 args = parser.parse_args()
 
@@ -58,6 +62,91 @@ try:
 except RuntimeError:
     raise RuntimeError("The all-tests flag needs to be set by passing --all rather then --set-bool all_tests=True")
 
+##################################################################
+# Parallel stuff
+
+# Check what we are supposed to be doing:
+if 'MAKEFLAGS' in os.environ:
+    mf=os.environ['MAKEFLAGS']
+    if mf != "":
+        if mf[0] == "n":
+            # Print recipies:
+            # We ignore this for now ...
+            sys.exit(0)
+        if mf[0] == "q":
+            # Question mode:
+            # We are never up-to-date
+            sys.exit(1)
+        if mf[0] != " ":
+            # Not implemented
+            sys.exit(42)
+else:
+    mf = ""
+
+num_jobs=1
+if args.jobs:
+    num_jobs = args.jobs[0]
+js_read=None
+if "--jobserver-auth=" in mf:
+    # running in parallel
+    offset=mf.index("--jobserver-auth=")
+    file_desc=[int(i) for i in re.findall("\d+",mf[offset:])[0:2]]
+    try:
+        js_read = open(file_desc[0], "r")
+        js_write = open(file_desc[1], "w")
+    except:
+        print("Warning - we are not part of the job pool 😭, running in serial")
+        file_desc = None
+        js_read = None
+    if js_read is not None:
+        js_tokens = js_read.read()
+        num_jobs = len(js_tokens)+1
+
+class Test(threading.Thread):
+    def __init__(self, name, cmd):
+        threading.Thread.__init__(self)
+        self.name = name
+        self.cmd = cmd
+        self.l = threading.local()
+        self.cost = self._cost()
+    def run(self):
+        # Check requirements
+        self.l.req_met, self.l.req_expr = requirements.check(self.name+"/runtest")
+        self.l.start_time = time.time()
+        if not self.l.req_met:
+            print(output % self.name +
+                  "S - {0} => False".format(self.l.req_expr))
+            sys.stdout.flush()
+            self.status = 0
+        else:
+            # Run test, piping stdout so it is not sent to console
+            self.status, self.output = shell("cd "+self.name+";"+self.cmd, pipe=True)
+            print(output % self.name, end='')
+            if self.status != 0:
+                # ❌ Failed
+                print(u"\u274C", end='')  # No newline
+            else:
+                # ✓ Passed
+                print(u"\u2713", end='')  # No newline
+            print(" %7.3f s" % (time.time() - self.l.start_time))
+            sys.stdout.flush()  # Make sure '✓' or '❌' is flushed
+    def _cost(self):
+        if self.cmd == "make":
+            return 1
+        with open(self.name+"/"+self.cmd,"r") as filein:
+            contents = filein.read()
+            # Find all lines starting with '#requires' or '#Requires:'
+            match = re.findall(
+                "^\s*\#\s?[Cc]ores:\s*?(\d+)", contents, re.MULTILINE)
+            if len(match) > 1:
+                raise RuntimeError("Found more then one match for core-count in "+self.name)
+            if len(match) == 0:
+                # default; no mpi
+                return 1
+            c = int(match[0])
+            if not c > 0:
+                raise RuntimeError("Core-count is %d and thus not positive in "%c+self.name)
+            return c
 
 ##################################################################
 
@@ -100,41 +189,72 @@ test_type = "Making" if args.make else "Running"
 
 print("======= {} {} {} tests ========".format(test_type, len(tests), savepath.split("/")[-1]))
 
+avail = num_jobs
+tester = sorted([Test(t, command) for t in tests],
+                key=lambda x: x.cost, reverse=True)
+torun=[i for i in range(len(tests))]
+running=[]
+
 longest = max([len(s) for s in tests])
 output = '%-'+str(longest+1)+'s'
-for t in tests:
-    os.chdir(t)
 
-    print(output % t, end='')
-    sys.stdout.flush()  # Make sure name is flushed
+while len(torun)+len(running):
+    if avail:
+        # See whether we can start one
+        for i in torun:
+            if tester[i].cost <= avail:
+                torun.remove(i)
+                job = tester[i]
+                job.start()
+                running.append(job)
+                avail -= job.cost
+        # if nothing is running, start the first
+        if running == []:
+            tostart = torun.pop(0)
+            job = tester[tostart]
+            job.start()
+            running.append(job)
+            avail -= job.cost
 
-    # Check requirements
-    req_met, req_expr = requirements.check("./runtest")
-    if not req_met:
-        print("S - {0} => False".format(req_expr))
-        sys.stdout.flush()
-        os.chdir(savepath)
-        continue
+    # Are any jobs finished
+    for job in running:
+        job.join(.1)
+        if not job.is_alive():
+            if job.status:
+                failed.append([job.name,job.output])
+            avail += job.cost
+            running.remove(job)
 
-    start_time_ = time.time()
-    # Run test, piping stdout so it is not sent to console
-    status, out = shell(command, pipe=True)
-
-    if status != 0:
-        # ❌ Failed
-        print(u"\u274C", end='')  # No newline
-        failed.append((t, out))
+    # Try to get more jobs
+    if torun:
+        if js_read is not None:
+            try:
+                newt = js_read.read()
+            except TypeError:
+                newt = ""
+            if newt != "":
+                js_tokens += newt
+                avail += len(newt)
+                num_jobs += len(newt)
     else:
-        # ✓ Passed
-        print(u"\u2713", end='')  # No newline
+        # Free not-needed jobs
+        if avail:
+            if js_read:
+                newt = js_tokens[0:avail]
+                js_tokens = js_tokens[avail:]
+                js_write.write(newt)
+                num_jobs -= avail
+                avail = 0
 
-    print(" %7.3f s" % (time.time() - start_time_))
-    sys.stdout.flush()  # Make sure '✓' or '❌' is flushed
-    os.chdir(savepath)
 
 elapsed_time = time.time() - start_time
 
 print("\n")
+
+# Return remaining tokens
+if js_read is not None:
+    if js_tokens != "":
+        js_write.write(t)
 
 if failed:
     print("======= FAILURES ========")
