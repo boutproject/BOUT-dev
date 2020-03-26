@@ -13,6 +13,7 @@ const BoutReal qe = 1.602e-19;      // Electron charge
 const BoutReal Me = 9.109e-31;      // Electron mass
 const BoutReal Mp = 1.67262158e-27; // Proton mass
 
+using bout::globals::mesh;
 
 class Alfven : public PhysicsModel {
 private:

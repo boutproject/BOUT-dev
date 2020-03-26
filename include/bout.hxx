@@ -33,13 +33,6 @@
  *
  **************************************************************************/
 
-#if defined(__BOUT_H__) and not defined(BOUT_NO_USING_NAMESPACE_BOUTGLOBALS)
-// Include using statement by default in user code.
-// Macro allows us to include bout.hxx or physicsmodel.hxx without the using
-// statement in library code.
-using namespace bout::globals;
-#endif
-
 #ifndef __BOUT_H__
 #define __BOUT_H__
 
