@@ -576,8 +576,8 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   int subcount = 0;
   int current_level = 0;
   BoutReal total=1e20, total_old=1e20;
-  BoutReal utol=0.7;
-  int max_level = 2;
+  BoutReal utol=0.1;
+  int max_level = 3;
   bool down = true;
   while(true){
 
@@ -977,6 +977,8 @@ void LaplaceParallelTriMG::jacobi_full_system(Level &l, Array<BoutReal> &error_r
     // TODO guard work for converged kz
     l.soln(kz,l.xs-1) = 0.0;
     l.soln(kz,l.xe+2) = 0.0;
+    l.solnlast(kz,l.xs-1) = 0.0;
+    l.solnlast(kz,l.xe+2) = 0.0;
     for (int ix = l.xs; ix < l.xe+2; ix++) {
       l.soln(kz,ix) = ( l.rvec(kz,ix) - l.avec(kz,ix)*l.solnlast(kz,ix-1) - l.cvec(kz,ix)*l.solnlast(kz,ix+1) ) / l.bvec(kz,ix);
     }
@@ -1419,7 +1421,7 @@ void LaplaceParallelTriMG::coarsen_full_system(Level &l, const Matrix<dcomplex> 
     }
     ixc = l.xs;
     ixf = l.xs;
-    l.residual(kz,ixc)   = 0.5*fine_residual(kz,ixf) + 0.25*fine_residual(kz,ixf+1);
+    l.residual(kz,ixc)   = 0.0; //0.5*fine_residual(kz,ixf) + 0.25*fine_residual(kz,ixf+1);
     for(int ixc=l.xs+1; ixc<l.xe+1; ixc++){
       ixf = 2*(ixc-l.xs)+l.xs;
       l.residual(kz,ixc)   =  0.25*fine_residual(kz,ixf-1) + 0.5*fine_residual(kz,ixf)   + 0.25*fine_residual(kz,ixf+1);
@@ -1428,7 +1430,7 @@ void LaplaceParallelTriMG::coarsen_full_system(Level &l, const Matrix<dcomplex> 
     // first boundary point
     ixc = l.xe+1;
     ixf = l.xs+2*(l.xe+1-l.xs);
-    l.residual(kz,ixc) = 0.25*fine_residual(kz,ixf-1) + 0.5*fine_residual(kz,ixf);
+    l.residual(kz,ixc) = 0.0; //0.25*fine_residual(kz,ixf-1) + 0.5*fine_residual(kz,ixf);
     //output<<"fbp "<<ixc<<" "<<ixf<<endl;
     // FIXME this assumes mgx=2
     for(int ixc=l.xe+2; ixc<l.ncx; ixc++){
@@ -1547,20 +1549,25 @@ void LaplaceParallelTriMG::refine_full_system(Level &l, Matrix<dcomplex> &fine_e
   for(int kz=0; kz<nmode; kz++){
     // lower boundary (fine/coarse indices the same)
     for(int ix=0; ix<l.xs; ix++){
-      fine_error(kz,ix) = l.soln(kz,ix);
+      fine_error(kz,ix) = 0.0; //l.soln(kz,ix);
       //output<<ix<<endl;
     }
     // interior points
     for(int ixc=l.xs; ixc<l.xe+1; ixc++){
       int ixf = 2*(ixc-l.xs)+l.xs;
-      fine_error(kz,ixf) = l.soln(kz,ixc);
+      if(ixc==l.xs){
+	fine_error(kz,ixf) = 0.0; //l.soln(kz,ixc);
+      }
+      else{
+	fine_error(kz,ixf) = l.soln(kz,ixc);
+      }
       fine_error(kz,ixf+1) = 0.5*(l.soln(kz,ixc)+l.soln(kz,ixc+1));
       //output<<ixc<<" "<<ixf<<endl;
     }
     // upper boundary
     for(int ixc=l.xe+1; ixc<l.ncx; ixc++){
       int ixf = l.xs + 2*(l.xe + 1 - l.xs)+ (ixc - l.xe - 1);
-      fine_error(kz,ixf) = l.soln(kz,ixc);
+      fine_error(kz,ixf) = 0.0; //l.soln(kz,ixc);
       //output<<"ub "<<ixc<<" "<<ixf<<endl;
     }
   }
