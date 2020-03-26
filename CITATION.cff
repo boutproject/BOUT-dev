@@ -126,6 +126,11 @@ authors:
   - family-names: Naylor
     given-names: Peter
 
+  - family-names: Riva
+    given-names: Fabio
+    orcid: https://orcid.org/0000-0002-0264-442X
+    affiliation: Culham Centre for Fusion Energy
+
   - family-names: Tiwari
     given-names: Sanat
 
