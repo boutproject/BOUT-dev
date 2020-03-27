@@ -364,6 +364,14 @@ int main(int argc,char *argv[]) {
   mark_as_advanced (PETSC_INCLUDES PETSC_LIBRARIES PETSC_COMPILER PETSC_DEFINITIONS PETSC_MPIEXEC PETSC_EXECUTABLE_RUNS)
 endif ()
 
+if (NOT PETSC_INCLUDES)
+  include(FindPkgConfig)
+  pkg_search_module(PkgPETSC PETSc>3.4.0 petsc>3.4.0)
+  set (PETSC_LIBRARIES ${PkgPETSC_LINK_LIBRARIES} CACHE STRING "PETSc libraries" FORCE)
+  set (PETSC_INCLUDES ${PkgPETSC_INCLUDE_DIRS} CACHE STRING "PETSc include path" FORCE)
+  set (PETSC_EXECUTABLE_RUNS "not-needed")
+endif()
+
 include (FindPackageHandleStandardArgs)
 find_package_handle_standard_args (PETSc
   REQUIRED_VARS PETSC_INCLUDES PETSC_LIBRARIES PETSC_EXECUTABLE_RUNS

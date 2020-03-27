@@ -42,22 +42,6 @@ void FieldData::setBoundary(const std::string &name) {
   boundaryIsCopy = false;
 }
 
-void FieldData::setBoundary(const std::string &UNUSED(region), BoundaryOp *op) {
-  /// Get the mesh boundary regions
-  std::vector<BoundaryRegion*> reg = bout::globals::mesh->getBoundaries();
- 
-  /// Find the region
-  
-
-  /// Find if we're replacing an existing boundary
-  for(const auto& bndry : bndry_op) {
-    if( bndry->bndry == op->bndry ) {
-      // Replacing this boundary
-      output << "Replacing ";
-    }
-  }
-}
-
 void FieldData::copyBoundary(const FieldData &f) {
   bndry_op = f.bndry_op;
   bndry_op_par = f.bndry_op_par;
