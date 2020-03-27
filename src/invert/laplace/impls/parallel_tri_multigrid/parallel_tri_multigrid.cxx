@@ -51,6 +51,8 @@ LaplaceParallelTriMG::LaplaceParallelTriMG(Options *opt, CELL_LOC loc, Mesh *mes
   OPTION(opt, rtol, 1.e-7);
   OPTION(opt, atol, 1.e-20);
   OPTION(opt, maxits, 100);
+  OPTION(opt, max_level, 3);
+  OPTION(opt, max_cycle, 3);
   OPTION(opt, new_method, false);
   OPTION(opt, use_previous_timestep, false);
 
@@ -577,8 +579,6 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   int current_level = 0;
   BoutReal total=1e20, total_old=1e20;
   BoutReal utol=0.4;
-  int max_level = 2;
-  int max_cycle = 4;
   bool down = true;
   while(true){
 

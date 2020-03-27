@@ -150,6 +150,12 @@ private:
   /// Maximum number of iterations
   int maxits;
 
+  /// Maximum number of coarse grids
+  int max_level;
+
+  /// Maximum number of iterations per grid
+  int max_cycle;
+
   /// Mean number of iterations taken by the solver
   BoutReal ipt_mean_its;
 
