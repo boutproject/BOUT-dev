@@ -578,7 +578,7 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   BoutReal total=1e20, total_old=1e20;
   BoutReal utol=0.4;
   int max_level = 2;
-  int max_cycle = 3;
+  int max_cycle = 4;
   bool down = true;
   while(true){
 
@@ -982,15 +982,11 @@ void LaplaceParallelTriMG::jacobi_full_system(Level &l, Array<BoutReal> &error_r
 
   for (int kz = 0; kz <= maxmode; kz++) {
     // TODO guard work for converged kz
-    l.soln(kz,l.xs-1) = 0.0;
-    l.soln(kz,l.xe+2) = 0.0;
-    l.solnlast(kz,l.xs-1) = 0.0;
-    l.solnlast(kz,l.xe+2) = 0.0;
-    for (int ix = l.xs; ix < l.xe+2; ix++) {
+    l.soln(kz,l.xs-1) = l.solnlast(kz,l.xs-1);
+    for (int ix = l.xs; ix < l.xe+1; ix++) {
       l.soln(kz,ix) = ( l.rvec(kz,ix) - l.avec(kz,ix)*l.soln(kz,ix-1) - l.cvec(kz,ix)*l.solnlast(kz,ix+1) ) / l.bvec(kz,ix);
     }
 
-    /*
     // Update guards to match interior points
     for (int ix = l.xs-1; ix > 0; ix--) {
       l.soln(kz,ix) = ( l.rvec(kz,ix) - l.avec(kz,ix)*l.soln(kz,ix-1) - l.cvec(kz,ix)*l.soln(kz,ix+1) ) / l.bvec(kz,ix);
@@ -1000,7 +996,6 @@ void LaplaceParallelTriMG::jacobi_full_system(Level &l, Array<BoutReal> &error_r
       l.soln(kz,ix) = ( l.rvec(kz,ix) - l.avec(kz,ix)*l.soln(kz,ix-1) - l.cvec(kz,ix)*l.soln(kz,ix+1) ) / l.bvec(kz,ix);
     }
     l.soln(kz,l.ncx-1) = ( l.rvec(kz,l.ncx-1) - l.avec(kz,l.ncx-1)*l.soln(kz,l.ncx-2) ) / l.bvec(kz,l.ncx-1);
-    */
   }
 
   get_errors_full_system(error_rel,error_abs,l.soln,l.solnlast,l);
@@ -1074,9 +1069,9 @@ void LaplaceParallelTriMG::init(Level &l, const Level lup, int ncx, const int xs
 
   for(int kz = 0; kz < nmode; kz++){
     for(int ix = 0; ix<l.xs; ix++){
-      l.avec(kz,ix) = 0.0; //0.5*lup.avec(kz,ix);
-      l.bvec(kz,ix) = 1.0; //0.5*lup.bvec(kz,ix);
-      l.cvec(kz,ix) = 0.0; //0.5*lup.cvec(kz,ix);
+      l.avec(kz,ix) = 0.5*lup.avec(kz,ix);
+      l.bvec(kz,ix) = 0.5*lup.bvec(kz,ix);
+      l.cvec(kz,ix) = 0.5*lup.cvec(kz,ix);
     }
     // interior points
     for(int ixc = l.xs; ixc<l.xe+1; ixc++){
@@ -1105,9 +1100,9 @@ void LaplaceParallelTriMG::init(Level &l, const Level lup, int ncx, const int xs
 	l.cvec(kz,ixc) = 0.5*lup.cvec(kz,ixf);
       }
       else{
-	l.avec(kz,ixc) = 0.0; //0.5*lup.avec(kz,ixf);
-	l.bvec(kz,ixc) = 1.0; //0.5*lup.bvec(kz,ixf);
-	l.cvec(kz,ixc) = 0.0; //0.5*lup.cvec(kz,ixf);
+	l.avec(kz,ixc) = 0.5*lup.avec(kz,ixf);
+	l.bvec(kz,ixc) = 0.5*lup.bvec(kz,ixf);
+	l.cvec(kz,ixc) = 0.5*lup.cvec(kz,ixf);
       }
     }
   }
@@ -1168,6 +1163,8 @@ void LaplaceParallelTriMG::init(Level &l, const int ncx, const int jy, const Mat
      l.rvec(kz,ix) = bcmplx(kz,ix); 
     }
   }
+
+  /*
   for(int kz=0; kz<nmode; kz++){
     for(int ix=0; ix<xs+1; ix++){
      l.avec(kz,ix) = 0.0;
@@ -1182,6 +1179,7 @@ void LaplaceParallelTriMG::init(Level &l, const int ncx, const int jy, const Mat
      l.rvec(kz,ix) = 0.0;
     }
   }
+  */
 
   for (int kz = 0; kz <= maxmode; kz++) {
 
@@ -1417,13 +1415,10 @@ void LaplaceParallelTriMG::calculate_residual_full_system(Level &l){
 
 void LaplaceParallelTriMG::coarsen_full_system(Level &l, const Matrix<dcomplex> fine_residual){
 
-  // This is a hacked version of coarsening, where we force xs and xe to be boundary points.
-
   int ixc, ixf;
   for(int kz=0; kz<nmode; kz++){
     for(int ix=0; ix<l.xs; ix++){
-      //l.residual(kz,ix) = 0.5*fine_residual(kz,ix);
-      l.residual(kz,ix) = 0.0;
+      l.residual(kz,ix) = 0.5*fine_residual(kz,ix);
       //output<<ix<<endl;
     }
     ixc = l.xs;
@@ -1442,11 +1437,10 @@ void LaplaceParallelTriMG::coarsen_full_system(Level &l, const Matrix<dcomplex> 
     // FIXME this assumes mgx=2
     for(int ixc=l.xe+2; ixc<l.ncx; ixc++){
       ixf = l.xs+2*(l.xe-l.xs)+(ixc-l.xe)+1;
-      l.residual(kz,ixc) = 0.0; //0.5*fine_residual(kz,ixf);
+      l.residual(kz,ixc) = 0.5*fine_residual(kz,ixf);
       //output<<ixc<<" "<<ixf<<endl;
     }
     for(int ix=0; ix<l.ncx; ix++){
-      //l.residual(kz,ix) *= 4.0;
       l.rvec(kz,ix) = l.residual(kz,ix);
       l.solnlast(kz,ix) = 0.0;
     }
@@ -1556,25 +1550,20 @@ void LaplaceParallelTriMG::refine_full_system(Level &l, Matrix<dcomplex> &fine_e
   for(int kz=0; kz<nmode; kz++){
     // lower boundary (fine/coarse indices the same)
     for(int ix=0; ix<l.xs; ix++){
-      fine_error(kz,ix) = 0.0; //l.soln(kz,ix);
+      fine_error(kz,ix) = l.soln(kz,ix);
       //output<<ix<<endl;
     }
     // interior points
     for(int ixc=l.xs; ixc<l.xe+1; ixc++){
       int ixf = 2*(ixc-l.xs)+l.xs;
-      if(ixc==l.xs){
-	fine_error(kz,ixf) = 0.0; //l.soln(kz,ixc);
-      }
-      else{
-	fine_error(kz,ixf) = l.soln(kz,ixc);
-      }
+      fine_error(kz,ixf) = l.soln(kz,ixc);
       fine_error(kz,ixf+1) = 0.5*(l.soln(kz,ixc)+l.soln(kz,ixc+1));
       //output<<ixc<<" "<<ixf<<endl;
     }
     // upper boundary
     for(int ixc=l.xe+1; ixc<l.ncx; ixc++){
       int ixf = l.xs + 2*(l.xe + 1 - l.xs)+ (ixc - l.xe - 1);
-      fine_error(kz,ixf) = 0.0; //l.soln(kz,ixc);
+      fine_error(kz,ixf) = l.soln(kz,ixc);
       //output<<"ub "<<ixc<<" "<<ixf<<endl;
     }
   }
