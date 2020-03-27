@@ -11,6 +11,8 @@
 #include <interpolation.hxx>
 #include <invert_laplace.hxx>
 
+using bout::globals::mesh;
+
 class CWM : public PhysicsModel {
 private:
   // 2D initial profiles
@@ -224,16 +226,16 @@ private:
     comms.add(phi);
 
     /*************** DUMP VARIABLES TO OUTPUT**********/
-    dump.add(phi, "phi", 1);
+    bout::globals::dump.add(phi, "phi", 1);
 
     SAVE_ONCE(Ni0, Te0, phi0, rho0);
     SAVE_ONCE(Rxy, Bpxy, Btxy, Zxy, hthe);
 
     SAVE_ONCE(Te_x, Ti_x, Ni_x);
     SAVE_ONCE(AA, ZZ, zeff, rho_s, wci, bmag);
-    dump.addOnce(mesh->LocalNx, "ngx");
-    dump.addOnce(mesh->LocalNy, "ngy");
-    dump.addOnce(mesh->LocalNz, "ngz");
+    bout::globals::dump.addOnce(mesh->LocalNx, "ngx");
+    bout::globals::dump.addOnce(mesh->LocalNy, "ngy");
+    bout::globals::dump.addOnce(mesh->LocalNz, "ngz");
     SAVE_ONCE(nu_hat, hthe0);
     
     // Create a solver for the Laplacian
