@@ -23,6 +23,10 @@ releases
     
 Before merging PR:
 
+- [ ] Update locale translation files
+    - `make -C locale update-all`
+    - Be aware that this *will* update the timestamps and *possibly*
+      reorder file paths in the .po and .pot files
 - [ ] Update [`CHANGELOG.md`][changelog]:
     - Install [`github_changelog_generator`][gcg]
         - Make sure it is at least v1.15!

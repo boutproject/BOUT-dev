@@ -682,6 +682,7 @@ cdef class Mesh:
     cdef double isNormalised
     cdef FieldFactory factory
     cdef Coordinates _coords
+    cdef options
 
     def __init__(self, create=True, section=None, options=None):
         """
@@ -713,6 +714,8 @@ cdef class Mesh:
         if create:
             if options:
                 opt = (<Options?>options).cobj
+                # Safe copy - to prevent GC
+                self.options = options
             if section:
                 if opt == NULL:
                     opt = c.Options.getRoot()

@@ -270,14 +270,14 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",
     # Read data from the first file
     f = getDataFile(0)
 
-    dimensions = f.dimensions(varname)
-
     if varname not in f.keys():
         if strict:
             raise ValueError("Variable '{}' not found".format(varname))
         else:
             varname = findVar(varname, f.list())
-
+            
+    dimensions = f.dimensions(varname)
+    
     var_attributes = f.attributes(varname)
     ndims = len(dimensions)
 

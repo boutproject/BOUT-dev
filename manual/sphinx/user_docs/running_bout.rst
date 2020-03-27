@@ -252,34 +252,6 @@ on different machines. To see a list of available locales on your system try run
 If you are missing a locale you need, see your distribution's help, or try this
 `Arch wiki page on locale <https://wiki.archlinux.org/index.php/locale>`__.
 
-Further examples
-----------------
-
-The next example to look at is ``tests/integrated/test-wave``, which
-is solving a wave equation using
-
-.. math::
-
-   \frac{\partial f}{\partial t} = \partial_{||} g \qquad \frac{\partial g}{\partial t} = \partial_{||} f
-
-using two different methods. Other examples contain two scripts: One
-for running the example and then an IDL script to plot the results::
-
-    ./runcase.sh
-    idl runidl.pro
-
-Assuming these examples work (which they should), looking through the
-scripts and code may give you an idea of how BOUT++ works. More
-information on setting up and running BOUT++ is given in
-:ref:`sec-running`, and details of analysing the results using IDL
-are given in :ref:`sec-output`.
-
-Alternatively, one can run BOUT++ with the python wrapper
-``bout_runners``, as explained in section
-:ref:`sec-bout_runners`. Examples of using ``bout_runners`` can be
-found in ``examples/bout_runners_example``.
-
-
 When things go wrong
 --------------------
 
