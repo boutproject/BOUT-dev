@@ -73,12 +73,16 @@ if 'MAKEFLAGS' in os.environ:
             # Print recipies:
             # We ignore this for now ...
             sys.exit(0)
-        if mf[0] == "q":
+        elif mf[0] == "q":
             # Question mode:
             # We are never up-to-date
             sys.exit(1)
-        if mf[0] != " ":
+        elif mf[0] == "k":
+            # ignore, we always keep going
+            pass
+        elif mf[0] != " ":
             # Not implemented
+            print("mode '%s' not implemented"%mf[0])
             sys.exit(42)
 else:
     mf = ""
