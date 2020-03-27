@@ -395,7 +395,7 @@ AS_IF([test "x$enable_backtrace" = "xyes" || test "x$enable_backtrace" = "xmaybe
 # Build into shared object (pic)
 #############################################################
 
-DEFLIB2=''
+LIB_TO_BUILD=''
 AS_IF([test "x$enable_shared" = "xyes"], [
     # compile as position independent code.
     # -fpic is apparently faster then -fPIC, but -fPIC works always.
@@ -406,10 +406,7 @@ AS_IF([test "x$enable_shared" = "xyes"], [
     #  PowerPC and SPARC.
     # Therfore use -fPIC for now
     CXXFLAGS="$CXXFLAGS -fPIC"
-    # for make.config
-    DEFLIB1='$(LIB_SO)'
-    # for src/makefile
-    DEFLIB2+=' $(BOUT_LIB_PATH)/libbout++.so'
+    LIB_TO_BUILD+=' $(BOUT_LIB_PATH)/libbout++.so'
     AS_IF([test "x$enable_static" = "xauto"], [
         enable_static=no
     ])
@@ -424,16 +421,15 @@ AS_IF([test "x$enable_shared" = "xyes"], [
 ])
 
 AS_IF([test "x$enable_static" = "xyes"], [
-    DEFLIB1='$(LIB_A)'
-    DEFLIB2+=' ../lib/libbout++.a'
+    LIB_TO_BUILD+=' $(BOUT_LIB_PATH)/libbout++.a'
     STATIC_EXTRA=':'
     # In case we only build static, make sure shared libs are removed
     AS_IF([! test "x$enable_shared" = "xyes"], [
-        STATIC_EXTRA='$(RM) -f ../lib/*.so*'
+        STATIC_EXTRA='$(RM) -f $(BOUT_LIB_PATH)/*.so*'
     ])
 ])
 
-AS_IF([test "x$DEFLIB2" = x ], [
+AS_IF([test "x$LIB_TO_BUILD" = x ], [
     AC_MSG_ERROR([Need to enable at least on of static or shared!])
 ])
 
@@ -1411,8 +1407,7 @@ AC_SUBST(OWN_MPARK)
 AC_SUBST(PREFIX)
 AC_SUBST(IDLCONFIGPATH)
 AC_SUBST(PYTHONCONFIGPATH)
-AC_SUBST(DEFLIB1)
-AC_SUBST(DEFLIB2)
+AC_SUBST(LIB_TO_BUILD)
 AC_SUBST(STATIC_EXTRA)
 AC_SUBST(SHARED_EXTRA)
 

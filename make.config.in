@@ -86,7 +86,7 @@ OBJ    = $(SOURCEC:%.cxx=%.o)
 ifndef RELEASE
 LIB_A  = $(BOUT_LIB_PATH)/libbout++.a
 LIB_SO = $(BOUT_LIB_PATH)/libbout++.so
-LIB    = @DEFLIB1@
+LIB    = @LIB_TO_BUILD@
 endif
 
 MPARK_VARIANT_INCLUDE_PATH=@MPARK_VARIANT_INCLUDE_PATH@
