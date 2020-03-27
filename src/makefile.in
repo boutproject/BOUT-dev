@@ -53,7 +53,7 @@ $(BOUT_LIB_PATH)/.last.o.file: .dummy
 # rebuild is forced.
 libfast: .libfast
 
-.libfast: @DEFLIB2@
+.libfast: @LIB_TO_BUILD@
 
 $(BOUT_LIB_PATH)/libbout++.a: bout++.o
 	@echo "Recreating libbout++.a"
