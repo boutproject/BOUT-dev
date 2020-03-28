@@ -68,22 +68,27 @@ except RuntimeError:
 # Check what we are supposed to be doing:
 if 'MAKEFLAGS' in os.environ:
     mf=os.environ['MAKEFLAGS']
-    if mf != "":
-        if mf[0] == "n":
+    for token in mf:
+        if token == "n":
             # Print recipies:
             # We ignore this for now ...
             sys.exit(0)
-        elif mf[0] == "q":
+        elif token == "q":
             # Question mode:
             # We are never up-to-date
             sys.exit(1)
-        elif mf[0] == "k":
-            # ignore, we always keep going
+        elif token in "ksBd":
+            # k - keep going
+            # s - silent
+            # B - always build (we do)
+            # d - debug
             pass
-        elif mf[0] != " ":
+        elif token == " ":
+            break
+        else:
             # Not implemented
             print("mode '%s' not implemented"%mf[0])
-            sys.exit(42)
+            #sys.exit(42)
 else:
     mf = ""
 
