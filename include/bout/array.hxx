@@ -8,14 +8,17 @@
  * arrays are released they are put into a store. Rather
  * than allocating memory, objects are retrieved from the
  * store. This minimises new and delete operations.
- * 
- * 
+ *
  * Ben Dudson, University of York, 2015
+ *
+ * If you need custom types, include array_full.hxx
+ * This header is incomplete to improve compilations speed and
+ * decrease file sizes.
  *
  *
  * Changelog
  * ---------
- * 
+ *
  * 2015-03-04  Ben Dudson <bd512@york.ac.uk>
  *     o Initial version
  *
@@ -312,10 +315,6 @@ Array<T, Backing> copy(const Array<T, Backing>& other) {
   a.ensureUnique();
   return a;
 }
-
-extern template class Array<int, ArrayData<int>>;
-extern template class Array<std::complex<BoutReal>, ArrayData<std::complex<BoutReal>>>;
-extern template class Array<BoutReal, ArrayData<BoutReal>>;
 
 
 #endif // __ARRAY_H__
