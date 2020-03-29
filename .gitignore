@@ -49,3 +49,5 @@ build*/
 
 # Following is copied in by configure
 src/fmt/format.cxx
+/include/bout/revision.hxx
+/include/bout/version.hxx
