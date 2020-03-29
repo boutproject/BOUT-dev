@@ -339,86 +339,11 @@ public:
   /// where the Mesh and cell location are taken from this input.
   /// 
   template <typename T>
-  T as(const T& UNUSED(similar_to) = {}) const {
-    if (!is_value) {
-      throw BoutException("Option {:s} has no value", full_name);
-    }
-
-    T val;
-    
-    // Try casting. This will throw std::bad_cast if it can't be done
-    try {
-      val = bout::utils::variantStaticCastOrThrow<ValueType, T>(value);
-    } catch (const std::bad_cast &e) {
-      // If the variant is a string then we may be able to parse it
-      
-      if (bout::utils::holds_alternative<std::string>(value)) {
-        std::stringstream ss(bout::utils::get<std::string>(value));
-        ss >> val;
-        
-        // Check if the parse failed
-        if (ss.fail()) {
-          throw BoutException("Option {:s} could not be parsed ('{:s}')", full_name,
-                              bout::utils::variantToString(value));
-        }
-        
-        // Check if there are characters remaining
-        std::string remainder;
-        std::getline(ss, remainder);
-        for (const char &ch : remainder) {
-          if (!std::isspace(static_cast<unsigned char>(ch))) {
-            // Meaningful character not parsed
-            throw BoutException("Option {:s} could not be parsed", full_name);
-          }
-        }
-      } else {
-        // Another type which can't be casted
-        throw BoutException("Option {:s} could not be converted to type {:s}", full_name,
-                            typeid(T).name());
-      }
-    }
-    
-    // Mark this option as used
-    value_used = true; // Note this is mutable
-
-    output_info << "\tOption " << full_name  << " = " << val;
-    if (attributes.count("source")) {
-      // Specify the source of the setting
-      output_info << " (" << bout::utils::variantToString(attributes.at("source")) << ")";
-    }
-    output_info << endl;
-
-    return val;
-  }
+  T as(const T& UNUSED(similar_to) = {}) const ;
 
   /// Get the value of this option. If not found,
   /// set to the default value
-  template <typename T> T withDefault(T def) {
-
-    // Set the type
-    attributes["type"] = bout::utils::typeName<T>();
-    
-    if (!is_value) {
-      // Option not found
-      assign(def, DEFAULT_SOURCE);
-      value_used = true; // Mark the option as used
-
-      output_info << _("\tOption ") << full_name << " = " << def << " (" << DEFAULT_SOURCE
-                  << ")" << std::endl;
-      return def;
-    }
-    T val = as<T>(def);
-    // Check if this was previously set as a default option
-    if (bout::utils::variantEqualTo(attributes.at("source"), DEFAULT_SOURCE)) {
-      // Check that the default values are the same
-      if (!similar(val, def)) {
-        throw BoutException("Inconsistent default values for '{:s}': '{:s}' then '{:s}'",
-                            full_name, bout::utils::variantToString(value),
-                            toString(def));
-      }
-    }
-    return val;
-  }
+  template <typename T> T withDefault(T def);
 
   /// Overloaded version for const char*
   /// Note: Different from template since return type is different to input
@@ -427,54 +352,11 @@ public:
   }
   
   /// Overloaded version to copy from another option
-  Options& withDefault(const Options& def) {
-    // if def is a section, then it does not make sense to try to use it as a default for
-    // a value
-    ASSERT0(def.is_value);
-
-    if (!is_value) {
-      // Option not found
-      *this = def;
-
-      output_info << _("\tOption ") << full_name << " = " << def.full_name << " ("
-                  << DEFAULT_SOURCE << ")" << std::endl;
-    } else {
-      // Check if this was previously set as a default option
-      if (bout::utils::variantEqualTo(attributes.at("source"), DEFAULT_SOURCE)) {
-        // Check that the default values are the same
-        if (!similar(bout::utils::variantToString(value),
-                     bout::utils::variantToString(def.value))) {
-          throw BoutException(
-              "Inconsistent default values for '{:s}': '{:s}' then '{:s}'", full_name,
-              bout::utils::variantToString(value),
-              bout::utils::variantToString(def.value));
-        }
-      }
-    }
-    return *this;
-  }
+  Options& withDefault(const Options& def);
 
   /// Get the value of this option. If not found,
   /// return the default value but do not set
-  template <typename T> T withDefault(T def) const {
-    if (!is_value) {
-      // Option not found
-      output_info << _("\tOption ") << full_name << " = " << def << " (" << DEFAULT_SOURCE
-                  << ")" << std::endl;
-      return def;
-    }
-    T val = as<T>(def);
-    // Check if this was previously set as a default option
-    if (bout::utils::variantEqualTo(attributes.at("source"), DEFAULT_SOURCE)) {
-      // Check that the default values are the same
-      if (!similar(val, def)) {
-        throw BoutException("Inconsistent default values for '{:s}': '{:s}' then '{:s}'",
-                            full_name, bout::utils::variantToString(value),
-                            toString(def));
-      }
-    }
-    return val;
-  }
+  template <typename T> T withDefault(T def) const;
 
   /// Allow the user to override defaults set later, also used by the
   /// BOUT_OVERRIDE_DEFAULT_OPTION.
