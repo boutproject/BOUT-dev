@@ -116,9 +116,7 @@ public:
   /*!
    * Destructor. Releases the underlying dataBlock
    */
-  ~Array() noexcept {
-    release(ptr);
-  }
+  ~Array() noexcept ;
   
   /*!
    * Copy constructor
@@ -164,15 +162,7 @@ public:
    * but can be set to false by passing "false" as input.
    * Once set to false it can't be changed back to true.
    */
-  static bool useStore( bool keep_using = true ) noexcept {
-    static bool value = true;
-    if (keep_using) {
-      return value; 
-    }
-    // Change to false
-    value = false;
-    return value;
-  }
+  static bool useStore( bool keep_using = true ) noexcept;
   
   /*!
    * Release data. After this the Array is empty and any data access
@@ -187,13 +177,7 @@ public:
    * 
    * Note: After this is called the store cannot be re-enabled
    */
-  static void cleanup() {
-    // Clean the store, deleting data
-    store(true);
-    // Don't use the store anymore. This is so that array releases
-    // after cleanup() get deleted rather than put into the store
-    useStore(false);
-  }
+  static void cleanup();
 
   /*!
    * Returns true if the Array is empty
@@ -228,21 +212,7 @@ public:
    * This should be called before performing any write operations
    * on the data.
    */
-  void ensureUnique() {
-    if(!ptr || unique())
-      return;
-
-    // Get a new (unique) block of data
-    dataPtrType p = get(size());
-
-    //Make copy of the underlying data
-    p->operator=((*ptr));
-
-    //Update the local pointer and release old
-    //Can't just do ptr=p as need to try to add to store.
-    release(ptr);
-    ptr = std::move(p);
-  }
+  void ensureUnique();
 
   //////////////////////////////////////////////////////////
   // Iterators
@@ -308,71 +278,15 @@ private:
    *
    * @param[in] cleanup   If set to true, deletes all dataBlock and clears the store
    */
-  static storeType& store(bool cleanup=false) {
-#ifdef _OPENMP    
-    static arenaType arena(omp_get_max_threads());
-#else
-    static arenaType arena(1);
-#endif
-    
-    if (!cleanup) {
-#ifdef _OPENMP 
-      return arena[omp_get_thread_num()];
-#else
-      return arena[0];
-#endif
-    }
+  static storeType& store(bool cleanup=false);
 
-    // Clean by deleting all data -- possible that just stores.clear() is
-    // sufficient rather than looping over each entry.
-    BOUT_OMP(single)
-    {
-      for (auto &stores : arena) {
-        for (auto &p : stores) {
-          auto &v = p.second;
-          for (dataPtrType a : v) {
-            a.reset();
-          }
-          v.clear();
-        }
-        stores.clear();
-      }
-      // Here we ensure there is exactly one empty map still
-      // left in the arena as we have to return one such item
-      arena.resize(1);
-    }
-
-    //Store should now be empty but we need to return something,
-    //so return an empty storeType from the arena.
-    return arena[0];
-  }
-  
   /*!
    * Returns a pointer to a dataBlock object of size \p len with no
    * references. This is either from the store, or newly allocated
    *
    * Expects \p len >= 0
    */
-  dataPtrType get(size_type len) {
-    ASSERT3(len >= 0);
-
-    dataPtrType p;
-
-    auto& st = store()[len];
-    
-    if (!st.empty()) {
-      p = st.back();
-      st.pop_back();
-    } else {
-      // Ensure that when we release the data block later we'll have
-      // enough space to put it in the store so that `release` can be
-      // noexcept
-      st.reserve(1);
-      p = std::make_shared<dataBlock>(len);
-    }
-
-    return p;
-  }
+  dataPtrType get(size_type len);
 
   /*!
    * Release an dataBlock object, reducing its reference count by one.
@@ -386,22 +300,7 @@ private:
    * one data block. Of course, store() could throw -- in which case
    * we're doomed anyway, so the only thing we can do is abort
    */
-  void release(dataPtrType& d) noexcept {
-    if (!d)
-      return;
-
-    // Reduce reference count, and if zero return to store
-    if (d.use_count() == 1) {
-      if (useStore()) {
-        // Put back into store
-        store()[d->size()].push_back(std::move(d));
-        // Could return here but seems to slow things down a lot
-      }
-    }
-
-    // Finish by setting pointer to nullptr if not putting on store
-    d = nullptr;
-  }
+  void release(dataPtrType& d) noexcept ;
 };
 
 /*!
@@ -413,6 +312,11 @@ Array<T, Backing> copy(const Array<T, Backing>& other) {
   a.ensureUnique();
   return a;
 }
+
+extern template class Array<int, ArrayData<int>>;
+extern template class Array<std::complex<BoutReal>, ArrayData<std::complex<BoutReal>>>;
+extern template class Array<BoutReal, ArrayData<BoutReal>>;
+
 
 #endif // __ARRAY_H__
 
