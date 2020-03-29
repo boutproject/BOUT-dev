@@ -515,3 +515,37 @@ std::map<std::string, const Options *> Options::subsections() const {
   }
   return sections;
 }
+
+template <typename T>
+void Options::_set(T val, std::string source, bool force){
+  // If already set, and not time evolving then check for changing values
+  // If a variable has a "time_dimension" attribute then it is assumed
+  // that updates to the value is ok and don't need to be forced.
+  if (isSet() && (attributes.find("time_dimension") == attributes.end())) {
+    // Check if current value the same as new value
+    if (!bout::utils::variantEqualTo(value, val)) {
+      if (force or !bout::utils::variantEqualTo(attributes["source"], source)) {
+	output_warn << _("\tOption ") << full_name << " = "
+		    << bout::utils::variantToString(value) << " ("
+		    << bout::utils::variantToString(attributes["source"])
+		    << _(") overwritten with:") << "\n"
+		    << "\t\t" << full_name << " = " << toString(val) << " (" << source
+		    << ")\n";
+      } else {
+	throw BoutException(
+              _("Options: Setting a value from same source ({:s}) to new value "
+                "'{:s}' - old value was '{:s}'."),
+              source, toString(val), bout::utils::variantToString(value));
+      }
+    }
+  }
+  value = std::move(val);
+  attributes["source"] = std::move(source);
+  value_used = false;
+  is_value = true;
+}
+
+template void Options::_set<bool>(bool, std::string, bool);
+template void Options::_set<int>(int, std::string, bool);
+template void Options::_set<BoutReal>(BoutReal, std::string, bool);
+template void Options::_set<std::string>(std::string, std::string, bool);
