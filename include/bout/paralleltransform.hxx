@@ -165,6 +165,12 @@ public:
     return result.setDirectionY(YDirectionType::Standard);
   }
 
+  virtual std::vector<PositionsAndWeights> getWeightsForYApproximation(int i,
+      int j, int k, int yoffset) override {
+    return {{i, j + yoffset, k, 1.0}};
+  }
+
+
   bool canToFromFieldAligned() override { return true; }
 
   bool requiresTwistShift(bool twist_shift_enabled, YDirectionType UNUSED(ytype)) override {

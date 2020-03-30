@@ -3,6 +3,18 @@
 This is a slightly more readable, and therefore incomplete, summary of
 the changes from the full [changelog](CHANGELOG.md)
 
+4.3.1 is a bugfix release, with a few minor fixes to library code,
+notably:
+- Fix the creation of the `RGN_OUTER_X` region
+- Several small bugs in the Python API
+- Preserve restart files if there's a crash during initialisation
+- Fix some segfaults in the PvodeSolver
+- Fix some issues with Hypnotoad (see
+  [\#1783](https://github.com/boutproject/BOUT-dev/pull/1783)
+  ([friva000](https://github.com/friva000)))
+
+Other changes are mostly housekeeping changes for the BOUT++ project.
+
 4.3.0 is a big feature release:
 - `Field`s are now "tagged" with their "y-direction": that is, whether
   they are in field-aligned space or not. This allows us to perform

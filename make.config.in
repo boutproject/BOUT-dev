@@ -139,9 +139,7 @@ $(DIRS):
 # first a potential trailing slash is removed, and after that the
 # directory name is extracted. This allows to e.g. specify a directory
 # as fuu/bar/ and still get an archive named bar.a
-# The # probably doesn't need to be escaped as everything in the
-# recipy is passed to the shell, even lines starting with #
-	@$(MAKE) -s --no-print-directory MODULE_DIR=$(MODULE_DIR) SUB_NAME=$(shell f=$@ ; g=$${f%/} ; echo $${g##*/}) TARGET=sub -C $@
+	@$(MAKE) -s --no-print-directory MODULE_DIR=$(MODULE_DIR) SUB_NAME=$(shell basename $@) TARGET=sub -C $@
 endif
 endif
 
@@ -185,34 +183,33 @@ install: libfast
 	$(INSTALL_DATA)  tools/idllib/README $(DESTDIR)@datadir@/bout++/idllib/
 	$(INSTALL_DATA)  tools/pylib/boutdata/*.py $(DESTDIR)@datadir@/bout++/pylib/boutdata/
 	$(INSTALL_DATA)  tools/pylib/boututils/*.py $(DESTDIR)@datadir@/bout++/pylib/boututils/
-	$(INSTALL_DATA)  make.config $(DESTDIR)@datadir@/bout++/
+	$(INSTALL_DATA)  make.config $(INSTALL_INCLUDE_PATH)
 	for mo in $(MO_FILES); do $(MKDIR) $(DESTDIR)@localedir@/`dirname $$mo`; $(INSTALL_DATA) locale/$$mo $(DESTDIR)@localedir@/$$mo; done
 	$(POST_INSTALL)    # Post-install commands follow.
 
 	@# Modify paths in the bout-config script 
 	sed -i "s|^BOUT_INCLUDE_PATH=.*|BOUT_INCLUDE_PATH=@includedir@/bout++|" $(DESTDIR)@bindir@/bout-config 
 	sed -i "s|^BOUT_LIB_PATH=.*|BOUT_LIB_PATH=@libdir@|" $(DESTDIR)@bindir@/bout-config
-	sed -i "s|^BOUT_CONFIG_FILE=.*|BOUT_CONFIG_FILE=@datadir@/bout++/make.config|" $(DESTDIR)@bindir@/bout-config
+	sed -i "s|^BOUT_CONFIG_FILE=.*|BOUT_CONFIG_FILE=@includedir@/bout++/make.config|" $(DESTDIR)@bindir@/bout-config
 	sed -i "s|^idlpath=.*|idlpath=@datadir@/bout++/idllib/|" $(DESTDIR)@bindir@/bout-config
 	sed -i "s|^pythonpath=.*|pythonpath=@datadir@/bout++/pylib/|" $(DESTDIR)@bindir@/bout-config
 	sed -i "s|^MPARK_VARIANT_INCLUDE_PATH=.*|MPARK_VARIANT_INCLUDE_PATH=@includedir@/bout++|" $(DESTDIR)@bindir@/bout-config
 	sed -i "s|^FMT_INCLUDE_PATH=.*|FMT_INCLUDE_PATH=@includedir@/bout++|" $(DESTDIR)@bindir@/bout-config
 
 	@# Modify paths in the make.config file
-	sed -i "s|^BOUT_INCLUDE_PATH=.*|BOUT_INCLUDE_PATH=@includedir@/bout++|" $(DESTDIR)@datadir@/bout++/make.config
-	sed -i "s|^BOUT_LIB_PATH=.*|BOUT_LIB_PATH=@libdir@|" $(DESTDIR)@datadir@/bout++/make.config
-	sed -i "s|^BOUT_CONFIG_FILE=.*|BOUT_CONFIG_FILE=@datadir@/bout++/make.config|" $(DESTDIR)@datadir@/bout++/make.config
-	sed -i "s|^MPARK_VARIANT_INCLUDE_PATH=.*|MPARK_VARIANT_INCLUDE_PATH=@includedir@/bout++|" $(DESTDIR)@datadir@/bout++/make.config
-	sed -i "s|^FMT_INCLUDE_PATH=.*|FMT_INCLUDE_PATH=@includedir@/bout++|" $(DESTDIR)@datadir@/bout++/make.config
+	sed -i "s|^BOUT_INCLUDE_PATH=.*|BOUT_INCLUDE_PATH=@includedir@/bout++|" $(INSTALL_INCLUDE_PATH)/make.config
+	sed -i "s|^BOUT_LIB_PATH=.*|BOUT_LIB_PATH=@libdir@|" $(INSTALL_INCLUDE_PATH)/make.config
+	sed -i "s|^BOUT_CONFIG_FILE=.*|BOUT_CONFIG_FILE=@includedir@/bout++/make.config|" $(INSTALL_INCLUDE_PATH)/make.config
+	sed -i "s|^MPARK_VARIANT_INCLUDE_PATH=.*|MPARK_VARIANT_INCLUDE_PATH=@includedir@/bout++|" $(INSTALL_INCLUDE_PATH)/make.config
+	sed -i "s|^FMT_INCLUDE_PATH=.*|FMT_INCLUDE_PATH=@includedir@/bout++|" $(INSTALL_INCLUDE_PATH)/make.config
 
 #	Set the make.config as released, so the library isn't rebuild. This way the .a file doesn't need to be preserved/installed
-	sed -i '26 i RELEASED                 = yes' $(DESTDIR)@datadir@/bout++/make.config
+	sed -i '26 i RELEASED                 = yes' $(INSTALL_INCLUDE_PATH)/make.config
 
 uninstall:
 	$(PRE_UNINSTALL)     # Pre-uninstall commands follow.
 
 	$(NORMAL_UNINSTALL)  # Normal commands follow.
-	$(RM) $(DESTDIR)@datadir@/bout++/make.config
 	$(RM) -r $(DESTDIR)@datadir@/bout++/pylib/boututils/
 	$(RM) -r $(DESTDIR)@datadir@/bout++/pylib/boutdata/
 	$(RM) -r $(DESTDIR)@datadir@/bout++/idllib/
@@ -292,7 +289,7 @@ DIRS_=$(DIRS:%/=%)
 # then we extract the directory name, in case it is a longer path
 # We are not in a recipe, so # needs to be escaped
 # $$ is an escaped $
-DIRS__=$(shell for f in $(DIRS_) ; do echo $${f\#\#*/};done)
+DIRS__=$(shell for d in $(DIRS_) ; do basename $$d;done)
 # now we can generate a list of libraries
 SUB_LIBS=$(DIRS__:%=%.a)
 $(SUB_LIBS):$(DIRS__)

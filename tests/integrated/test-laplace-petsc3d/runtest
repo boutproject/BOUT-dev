@@ -1,0 +1,36 @@
+#!/usr/bin/env python3
+
+#requires: petsc
+
+from boutdata import collect
+from boututils.run_wrapper import launch_safe, build_and_log
+from sys import exit
+
+test_directories = [('data_slab_core', 1),
+                    ('data_slab_sol', 1),
+                    ('data_circular_core', 1),
+                    ('data_circular_core-sol', 1)]
+
+tolerance = 1.e-6
+
+build_and_log('Laplace 3D with PETSc')
+
+success = True
+for directory,nproc in test_directories:
+    command = './test-laplace3d -d ' + directory
+    print('running on', nproc, 'processors:', command)
+    launch_safe(command, nproc=nproc)
+
+    error_max = collect('error_max', path=directory, info=False)
+
+    if error_max > tolerance:
+        print(directory + ' failed with maximum error {}'.format(error_max))
+        success = False
+    else:
+        print(directory + ' passed with maximum error {}'.format(error_max))
+
+if success:
+    print('All passed')
+    exit(0)
+else:
+    exit(1)

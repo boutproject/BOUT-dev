@@ -1785,6 +1785,7 @@ BoutMesh::BoutMesh(int input_nx, int input_ny, int input_nz, int mxg, int myg, i
 
   ShiftAngle.clear();
 
+  createDefaultRegions();
   addBoundaryRegions();
 }
 
@@ -2219,7 +2220,8 @@ void BoutMesh::clear_handles() {
 /// different processors.
 void BoutMesh::overlapHandleMemory(BoutMesh* yup, BoutMesh* ydown, BoutMesh* xin,
                                    BoutMesh* xout) {
-  int xlen = LocalNy * LocalNz * 5, ylen = LocalNx * LocalNz * 5;
+  const int xlen = LocalNy * LocalNz * MXG * 5, ylen = LocalNx * LocalNz * MYG * 5;
+
   CommHandle* ch = get_handle(xlen, ylen);
   if (yup) {
     CommHandle* other = (yup == this) ? ch : yup->get_handle(xlen, ylen);
@@ -2687,6 +2689,23 @@ void BoutMesh::addBoundaryRegions() {
   // Create a region which is all boundaries
   addRegion3D("RGN_BNDRY", bndry3d);
 
+  // Create a region including all x-boundaries
+  bndry3d = getRegion3D("RGN_NOBNDRY") + getRegion3D("RGN_INNER_X")
+            + getRegion3D("RGN_OUTER_X");
+  bndry3d.unique();
+  addRegion3D("RGN_WITH_XBNDRIES", bndry3d);
+
+  // Create a region including all y-boundaries
+  bndry3d = getRegion3D("RGN_NOBNDRY") + getRegion3D("RGN_LOWER_Y")
+            + getRegion3D("RGN_UPPER_Y");
+  bndry3d.unique();
+  addRegion3D("RGN_WITH_YBNDRIES", bndry3d);
+
+  // Create a region including all boundaries
+  bndry3d = getRegion3D("RGN_NOBNDRY") + getRegion3D("RGN_BNDRY");
+  bndry3d.unique();
+  addRegion3D("RGN_WITH_BNDRIES", bndry3d);
+
   Region<Ind2D> bndry2d; // Empty
   for (const auto &region_name : all_boundaries) {
     bndry2d += getRegion2D(region_name);
@@ -2695,6 +2714,23 @@ void BoutMesh::addBoundaryRegions() {
 
   // Create a region which is all boundaries
   addRegion2D("RGN_BNDRY", bndry2d);
+
+  // Create a region including all x-boundaries
+  bndry2d = getRegion2D("RGN_NOBNDRY") + getRegion2D("RGN_INNER_X")
+            + getRegion2D("RGN_OUTER_X");
+  bndry2d.unique();
+  addRegion2D("RGN_WITH_XBNDRIES", bndry2d);
+
+  // Create a region including all y-boundaries
+  bndry2d = getRegion2D("RGN_NOBNDRY") + getRegion2D("RGN_LOWER_Y")
+            + getRegion2D("RGN_UPPER_Y");
+  bndry2d.unique();
+  addRegion2D("RGN_WITH_YBNDRIES", bndry2d);
+
+  // Create a region including all boundaries
+  bndry2d = getRegion2D("RGN_NOBNDRY") + getRegion2D("RGN_BNDRY");
+  bndry2d.unique();
+  addRegion2D("RGN_WITH_BNDRIES", bndry2d);
 }
 
 const RangeIterator BoutMesh::iterateBndryLowerInnerY() const {

@@ -225,7 +225,7 @@ private:
   int maxits; // Maximum number of iterations in solver.
   bool direct; //Use direct LU solver if true.
   bool fourth_order;
-  
+
   PetscLib lib;
 
   bool use_precon;  // Switch for preconditioning
