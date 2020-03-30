@@ -32,6 +32,7 @@ mask.hxx
 msg_stack.hxx
 multiostream.hxx
 options.hxx
+options_full.hxx
 options_netcdf.hxx
 optionsreader.hxx
 output.hxx
