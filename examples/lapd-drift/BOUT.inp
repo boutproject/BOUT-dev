@@ -125,22 +125,8 @@ apar_flags = 0 # flags for apar inversion
 [All]
 scale = 0.0 # default size of initial perturbations
 
-# form of initial profile:
-# 0 - constant
-# 1 - Gaussian
-# 2 - Sinusoidal
-# 3 - Mix of mode numbers (like original BOUT)
-
-xs_opt = 3
-ys_opt = 3
-zs_opt = 3
-
-xs_mode = 1 # Radial mode number
-
-ys_mode = 1 # Parallel mode number
-
-zs_mode = 1 # asimuthal mode number
-
+# Form of initial profile
+function = mixmode(x)*mixmode(y)*mixmode(z)
 
 # boundary conditions
 # -------------------
@@ -172,10 +158,6 @@ ni_ni1_phi0 = false
 ni_ni1_phi1 = true
 
 scale = 1.0e-8 # only perturbing Ni
-
-#xinner = 1
-#xouter = 1
-
 
 # Section for only the rho equation
 # Contains switches for terms

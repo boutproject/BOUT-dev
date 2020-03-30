@@ -71,10 +71,6 @@ dis = 1
 [all]
 
 scale = 1.0 
-xs_opt = 0
-ys_opt = 0
-zs_opt = 0
-
 
 [N] 
 

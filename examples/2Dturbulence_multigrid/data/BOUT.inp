@@ -57,9 +57,7 @@ bracket = 2              # 0 = std, 1 = simple, 2 = arakawa
 	
 [All]
 scale = 0.0
-xs_opt = 3
-zs_opt = 3
-#bndry_all = neumann
+function = mixmode(x) * mixmode(z)
 
 [n]
 scale = 1.0
@@ -77,8 +75,6 @@ bndry_xout = neumann_o2
 
 [vort]
 scale = 1.e-12
-#xs_opt = 3
-#zs_opt = 3
 function = (sin(x*2*pi+11)+4*sin(2*x*2*pi+22)+9*sin(3*x*2*pi+33)+16*sin(4*x*2*pi+44)+25*sin(5*x*2*pi+55)+36*sin(6*x*2*pi+66)+49*sin(7*x*2*pi+77))*(sin(z+10)+4*sin(2*z+20)+9*sin(3*z+30)+16*sin(4*z+40)+25*sin(5*z+50)+36*sin(6*z+60)+49*sin(7*z+70))
 
 bndry_xin = dirichlet_o2
