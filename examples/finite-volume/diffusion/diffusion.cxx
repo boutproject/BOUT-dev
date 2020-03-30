@@ -8,7 +8,7 @@ class Diffusion : public PhysicsModel {
 protected:
   int init(bool UNUSED(restarting)) override {
     GRID_LOAD(k);
-    mesh->communicate(k);
+    k.getMesh()->communicate(k);
     
     SOLVE_FOR(f);
 
@@ -16,7 +16,7 @@ protected:
   }
 
   int rhs(BoutReal UNUSED(time)) override {
-    mesh->communicate(f);
+    f.getMesh()->communicate(f);
     
     ddt(f) = FV::Div_par_K_Grad_par(k, f);
     

@@ -66,7 +66,7 @@ protected:
       return 1;
     }
 
-    Coordinates* coord = mesh->getCoordinates();
+    Coordinates* coord = sigma_n.getMesh()->getCoordinates();
 
     // generate coordinate system
     coord->Bxy = 1;
@@ -101,19 +101,19 @@ protected:
   Field3D C(const Field3D& f) { return zeta * DDZ(f); }
 
   int rhs(BoutReal UNUSED(time)) {
-    mesh->communicate(N, vort);
+    N.getMesh()->communicate(N, vort);
 
     phiSolver->setCoefC2(N);
     phi = phiSolver->solve(vort, phi);
 
-    mesh->communicate(phi);
+    phi.getMesh()->communicate(phi);
 
     if (test_laplacian) {
 
       Field3D vort2 = D2DX2(phi) + D2DZ2(phi) + DDX(N) * DDX(phi) + DDZ(N) * DDZ(phi);
       vort_error = (vort - vort2);
 
-      dump.write();
+      bout::globals::dump.write();
 
       MPI_Barrier(BoutComm::get());
 

@@ -24,7 +24,7 @@ protected:
   
   int rhs(BoutReal UNUSED(time)) override {
 
-    mesh->communicate(n, p, nv);
+    n.getMesh()->communicate(n, p, nv);
 
     // Calculate velocity from momentum
     Field3D v = nv / n;

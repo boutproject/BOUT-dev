@@ -16,7 +16,7 @@ protected:
     return 0;
   }
   int rhs(BoutReal) override {
-    mesh->communicate(f);
+    f.getMesh()->communicate(f);
     
     ddt(g) = D2DX2(f);
     ddt(f) = g;

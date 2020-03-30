@@ -12,6 +12,8 @@
 #include <initialprofiles.hxx>
 #include <invert_laplace.hxx>
 
+using bout::globals::mesh;
+
 class EMdrift : public PhysicsModel {
 private:
   // 2D initial profiles
@@ -209,7 +211,7 @@ private:
       output.write("=> Not evolving Apar\n");
       initial_profile("Ajpar", Ajpar);
       if (ZeroElMass) {
-        dump.add(Ajpar, "Ajpar", 1); // output calculated Ajpar
+        this->dump.add(Ajpar, "Ajpar", 1); // output calculated Ajpar
       }
     }
 

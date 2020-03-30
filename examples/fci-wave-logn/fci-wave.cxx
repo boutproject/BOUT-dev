@@ -1,5 +1,5 @@
-
 #include "bout/physicsmodel.hxx"
+using bout::globals::mesh;
 
 class FCIwave : public PhysicsModel {
 private:

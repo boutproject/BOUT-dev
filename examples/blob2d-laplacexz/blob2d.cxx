@@ -8,6 +8,8 @@
 #include "bout/invert/laplacexz.hxx" // Laplacian inversion
 #include "derivs.hxx"                // To use DDZ()
 
+using bout::globals::mesh;
+
 class Blob2D : public PhysicsModel {
 private:
   // Evolving variables

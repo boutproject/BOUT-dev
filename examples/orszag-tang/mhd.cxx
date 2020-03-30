@@ -46,7 +46,7 @@ private:
     B.covariant = false; // evolve contravariant components
     bout_solve(B, "B");
 
-    Coordinates *coord = mesh->getCoordinates();
+    Coordinates *coord = B.x.getMesh()->getCoordinates();
     output.write("dx[0,0] = {:e}, dy[0,0] = {:e}, dz = {:e}\n", coord->dx(0, 0),
                  coord->dy(0, 0), coord->dz);
 
@@ -88,7 +88,7 @@ private:
   int rhs(BoutReal UNUSED(time)) override {
     // Communicate variables
 
-    mesh->communicate(v, B, p, rho);
+    v.x.getMesh()->communicate(v, B, p, rho);
 
     {
       TRACE("ddt(rho)");

@@ -31,7 +31,7 @@ protected:
   }
 
   int rhs(BoutReal UNUSED(time)) override {
-    mesh->communicate(T); // Communicate guard cells
+    T.getMesh()->communicate(T); // Communicate guard cells
     
     ddt(T) = Div_par_K_Grad_par(chi, T); // Parallel diffusion Div_{||}( chi * Grad_{||}(T) )
   

@@ -4,6 +4,7 @@
 #include <derivs.hxx>
 
 #include <invert_laplace.hxx>
+using bout::globals::mesh;
 
 class DriftWave : public PhysicsModel { 
 protected:

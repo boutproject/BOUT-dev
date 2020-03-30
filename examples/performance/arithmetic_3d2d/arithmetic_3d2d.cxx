@@ -59,6 +59,7 @@ protected:
       BoutReal *ad = &a(0, 0, 0);
       BoutReal *bd = &b(0, 0, 0);
       BoutReal *cd = &c(0, 0, 0);
+      auto mesh = a.getMesh();
       TIMEIT("C loop",
              for (int i = 0, iend = (mesh->LocalNx * mesh->LocalNy) -1;
                   i != iend; i++) {

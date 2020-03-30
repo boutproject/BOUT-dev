@@ -31,7 +31,7 @@ protected:
 
   int convective(BoutReal) {
     // Need communication
-    mesh->communicate(U);
+    U.getMesh()->communicate(U);
  
     // Passive advection
     ddt(U) = -VDDX(Vx,U);
@@ -40,7 +40,7 @@ protected:
   }
   
   int diffusive(BoutReal) {
-    mesh->communicate(U);
+    U.getMesh()->communicate(U);
 
     // Diffusion
     ddt(U) = Dz*D2DZ2(U);	

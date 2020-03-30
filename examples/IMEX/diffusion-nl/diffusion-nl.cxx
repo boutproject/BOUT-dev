@@ -63,7 +63,7 @@ protected:
    * ddt(f)  = Time derivative of f
    */
   int diffusive(BoutReal, bool linear) {
-    mesh->communicate(f);
+    f.getMesh()->communicate(f);
     if (!linear) {
       // Update diffusion coefficient
       D = pow(f, alpha);

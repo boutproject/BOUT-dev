@@ -43,7 +43,7 @@ int main(int argc, char **argv) {
   ConditionalOutput time_output(Output::getInstance());
   time_output.enable(true);
 
-  FieldFactory f{mesh};
+  FieldFactory f{bout::globals::mesh};
 
   Field3D input = f.create3D("(1-gauss(x-0.5,0.2))*gauss(y-pi)*gauss(z-pi)");
   Field2D a = f.create2D("gauss(x) * sin(y)");
@@ -167,13 +167,13 @@ int main(int argc, char **argv) {
   );
 
   // Write and close the output file
-  dump.write();
-  dump.close();
+  bout::globals::dump.write();
+  bout::globals::dump.close();
 
   MPI_Barrier(BoutComm::get()); // Wait for all processors to write data
 
   // Report
-  int width = 0;
+  uint width = 0;
   for (const auto i : names) {
     width = i.size() > width ? i.size() : width;
   };
@@ -184,7 +184,7 @@ int main(int argc, char **argv) {
               << "\t"
               << "Time per iteration (s)"
               << "\n";
-  for (int i = 0; i < names.size(); i++) {
+  for (uint i = 0; i < names.size(); i++) {
     time_output << std::setw(width) << names[i] << "\t" << times[i].count() << "\t\t" << times[i].count() / NUM_LOOPS 
                 << "\n";
   }

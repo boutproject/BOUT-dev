@@ -8,7 +8,7 @@ int main(int argc, char** argv) {
   
   Field3D f = 0.0;
   
-  mesh->communicate(f);
+  f.getMesh()->communicate(f);
   
   Field3D g = FV::D4DY4_Index(f);
   

@@ -9,6 +9,8 @@
 #include <invert_laplace.hxx>
 #include <derivs.hxx>
 
+using bout::globals::mesh;
+
 class ShearAlfven : public PhysicsModel {
 private:
   // 2D initial profiles

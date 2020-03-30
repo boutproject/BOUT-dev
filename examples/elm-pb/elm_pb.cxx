@@ -20,6 +20,7 @@
 #include <math.h>
 
 CELL_LOC loc = CELL_CENTRE;
+using bout::globals::mesh;
 
 class ELMpb : public PhysicsModel {
 private:

@@ -15,6 +15,7 @@ private:
 
   /// Parallel divergence, using integration over projected cells
   Field3D Div_par_integrate(const Field3D &f) {
+    Mesh * mesh = f.getMesh();
     Field3D f_B = f / Bxyz;
 
     f_B.splitParallelSlices();
@@ -59,7 +60,7 @@ protected:
   int init(bool UNUSED(restarting)) override {
 
     // Get the magnetic field
-    mesh->get(Bxyz, "B");
+    bout::globals::mesh->get(Bxyz, "B");
 
     auto& options = Options::root()["fciwave"];
     div_integrate = options["div_integrate"].withDefault(true);
@@ -87,7 +88,7 @@ protected:
 
   int rhs(BoutReal UNUSED(time)) override {
     if (log_density) {
-      mesh->communicate(logn, nv);
+      logn.getMesh()->communicate(logn, nv);
       // Apply boundary condition to log(n)
       // rather than n to prevent negative densities
       logn.applyParallelBoundary();
@@ -97,7 +98,7 @@ protected:
       n.yup() = exp(logn.yup());
       n.ydown() = exp(logn.ydown());
     } else {
-      mesh->communicate(n, nv);
+      n.getMesh()->communicate(n, nv);
 
       n.applyParallelBoundary();
     }
@@ -116,7 +117,7 @@ protected:
     // between v, nv and momentum flux
 
     momflux.splitParallelSlices();
-    for (const auto &reg : mesh->getBoundariesPar()) {
+    for (const auto &reg : v.getMesh()->getBoundariesPar()) {
       // Using the values of density and velocity on the boundary
       const Field3D &n_next = n.ynext(reg->dir);
       const Field3D &v_next = v.ynext(reg->dir);

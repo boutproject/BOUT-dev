@@ -12,6 +12,7 @@
 
 #include <bout/physicsmodel.hxx>
 
+using bout::globals::mesh;
 
 class WaveTest : public PhysicsModel {
 public:

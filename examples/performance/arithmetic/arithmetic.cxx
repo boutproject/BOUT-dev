@@ -33,6 +33,8 @@ struct Durations {
   int count;
 };
 
+using bout::globals::mesh;
+
 class Arithmetic : public PhysicsModel {
 protected:
   int init(bool restarting) {

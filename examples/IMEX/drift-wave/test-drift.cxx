@@ -2,10 +2,11 @@
 #include <bout/physicsmodel.hxx>
 
 #include <invert_laplace.hxx>
+using bout::globals::mesh;
 
 class DriftWave : public PhysicsModel { 
 protected:
-  int init(bool) {
+  int init(bool UNUSED(restart)) {
     // Specify evolving variables
     solver->add(Vort, "Vort"); // Vorticity
     solver->add(Ne, "Ne");     // Electron density
@@ -18,7 +19,8 @@ protected:
     // Read background profile
     mesh->get(Ne0, "Ne0");
 
-    setSplitOperator(); // Split into convective and diffusive (stiff)
+    // Split into convective and diffusive (stiff)
+    setSplitOperator();
     
     // Laplacian solver for potential
     phiSolver  = Laplacian::create();

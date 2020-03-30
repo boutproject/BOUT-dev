@@ -30,16 +30,18 @@ private:
   bool newXZsolver; 
   std::unique_ptr<Laplacian> phiSolver{nullptr}; // Old Laplacian in X-Z
   std::unique_ptr<LaplaceXZ> newSolver{nullptr}; // New Laplacian in X-Z
+
+  Mesh* mesh;
 protected:
   
-  int init(bool restarting) {
-    
+  int init(bool) {
     // Normalisation
     auto opt = Options::root()["alfven"];
     Tnorm = opt["Tnorm"].withDefault(100);  // Reference temperature [eV]
     Nnorm = opt["Nnorm"].withDefault(1e19); // Reference density [m^-3]
     Bnorm = opt["Bnorm"].withDefault(1.0);  // Reference magnetic field [T]
     AA = opt["AA"].withDefault(2.0);        // Ion mass
+
 
     output.write("Normalisation Te={:e}, Ne={:e}, B={:e}\n", Tnorm, Nnorm, Bnorm);
     SAVE_ONCE4(Tnorm, Nnorm, Bnorm, AA); // Save
@@ -67,6 +69,8 @@ protected:
 
     // Specify evolving variables
     SOLVE_FOR2(Vort, Apar);
+
+    mesh = Vort.getMesh();
    
     //////////////////////////////////////////
     // Solve potential as a constraint
@@ -151,7 +155,7 @@ protected:
    * 
    * ddt(f) = Result of the inversion
    */
-  int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
+  int precon(BoutReal, BoutReal, BoutReal) {
     if(newXZsolver) {
       ddt(phi) = newSolver->solve(ddt(phi) - ddt(Vort), 0.0);
     }else {
