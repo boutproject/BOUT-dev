@@ -102,6 +102,7 @@ public:
     Array<dcomplex> rlold, ruold;
     Matrix<dcomplex> minvb;
     Matrix<dcomplex> avec, bvec, cvec, rvec, residual, soln, solnlast;
+    Array<dcomplex> acomm, bcomm, ccomm;
 
     int index_in;
     int index_out;
