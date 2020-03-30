@@ -1064,7 +1064,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
 
   ; Psi normalisation factors
   faxis = critical.opt_f[critical.primary_opt]
-  fnorm = critical.xpt_f[critical.inner_sep] - critical.opt_f[critical.primary_opt]
+  fnorm = xpt_f[critical.inner_sep] - critical.opt_f[critical.primary_opt]
 
   ; From normalised psi, get range of f
   f_inner = faxis + MIN(settings.psi_inner)*fnorm
@@ -1196,7 +1196,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
     ; Grid contains at least one x-point
 
     ; Normalised psi value of each separatrix
-    xpt_psi = (critical.xpt_f - faxis) / fnorm
+    xpt_psi = (xpt_f - faxis) / fnorm
     
     si = SORT(xpt_psi) ; Sort separatrices from inside out
 
@@ -1206,8 +1206,8 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
     primary_xpt = si[0]
 
     PRINT, "Primary X-point is number "+STR(primary_xpt)
-    PRINT, "   at R = "+STR(INTERPOLATE(R, critical.xpt_ri[primary_xpt], /DOUBLE)) $
-      +" Z = "+STR(INTERPOLATE(Z, critical.xpt_zi[primary_xpt], /DOUBLE))
+    PRINT, "   at R = "+STR(INTERPOLATE(R, xpt_ri[primary_xpt], /DOUBLE)) $
+      +" Z = "+STR(INTERPOLATE(Z, xpt_zi[primary_xpt], /DOUBLE))
     
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ; work out where to put the surfaces
@@ -1258,7 +1258,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       nrad = LONARR(critical.n_xpoint + 1)
       tot = 0
       FOR i=0, critical.n_xpoint-1 DO BEGIN
-        w = WHERE(psi_vals LT xpt_psi[si[i]], count)
+        w = WHERE( (psi_vals - xpt_psi[si[i]]) LT 1.D-12, count)
         nrad[i] = count - tot
         tot = tot + nrad[i]
       ENDFOR
@@ -1267,14 +1267,31 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
     ENDIF ELSE BEGIN 
       IF critical.n_xpoint GT 1 THEN BEGIN
         ; Between separatrices
-        fvals = radial_grid(nrad[1], xpt_f[inner_sep], xpt_f[si[1]], 0, 0, xpt_f, rad_peaking)
+        IF nrad[1] GT 0 THEN BEGIN
+          ; Only if there is at least one point between the two separatrices
+          fvals = radial_grid(nrad[1], xpt_f[inner_sep], xpt_f[si[1]], 0, 0, xpt_f, rad_peaking)
+        ENDIF ELSE BEGIN
+          fvals = []
+        ENDELSE
         
         FOR i=2, critical.n_xpoint-1 DO fvals = [fvals, radial_grid(nrad[i], xpt_f[si[i-1]], xpt_f[si[i]], 0, 0, xpt_f, rad_peaking)]
         ; Core
-        fvals = [radial_grid(nrad[0], f_inner, 2.D*xpt_f[inner_sep]-fvals[0], $
-                             1, 1, xpt_f, rad_peaking, $
-                             out_dp=2.D*(fvals[0]-xpt_f[inner_sep]), $
-                             in_dp=2.D*(fvals[0]-xpt_f[inner_sep])/rad_peaking), fvals]
+        IF N_ELEMENTS(fvals) GT 0 THEN BEGIN
+          ; There are points between the separatrices
+          fvals = [radial_grid(nrad[0], f_inner, 2.D*xpt_f[inner_sep]-fvals[0], $
+                               1, 1, xpt_f, rad_peaking, $
+                               out_dp=2.D*(fvals[0]-xpt_f[inner_sep]), $
+                               in_dp=2.D*(fvals[0]-xpt_f[inner_sep])/rad_peaking), fvals]
+        ENDIF ELSE BEGIN
+          ; There are no points between the separatrices
+          IF xpt_f[inner_sep] GT f_inner THEN BEGIN
+            ; psi is increasing
+            dpsi = 1.05D*(xpt_f[si[1]]-xpt_f[inner_sep]) > (xpt_f[inner_sep]-f_inner)/(DOUBLE(nrad[0])-0.5D)
+          ENDIF ELSE BEGIN
+            dpsi = 1.05D*(xpt_f[si[1]]-xpt_f[inner_sep]) < (xpt_f[inner_sep]-f_inner)/(DOUBLE(nrad[0])-0.5D)
+          ENDELSE         
+          fvals = radial_grid(nrad[0], f_inner, 0.5D*(xpt_f[inner_sep]+xpt_f[si[1]]-dpsi), 1, 1, xpt_f, rad_peaking, out_dp=dpsi)
+        ENDELSE
       ENDIF ELSE BEGIN
         ; Only a single separatrix
         dp0 = (xpt_f[inner_sep] - f_inner)*2.D/ (DOUBLE(nrad[0])*(1.D + rad_peaking))
@@ -1286,10 +1303,18 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
 
       ; SOL
       n = N_ELEMENTS(fvals)
-      dpsi = 2.D*(xpt_f[si[critical.n_xpoint-1]] - fvals[n-1])
-      fvals = [fvals, radial_grid(nrad[critical.n_xpoint], $
-                                  fvals[n-1]+dpsi, f_outer, 1, 1, xpt_f, rad_peaking, $
-                                  in_dp=dpsi, out_dp=dpsi/rad_peaking)]  
+      IF nrad[1] EQ 0 AND critical.n_xpoint EQ 2 THEN BEGIN
+        ; Two separatrices but no points between them
+        dpsi = xpt_f[si[1]]+xpt_f[inner_sep]-2.D*fvals[n-1]
+        fvals = [fvals, radial_grid(nrad[2], $
+                                    0.5D*(xpt_f[inner_sep]+xpt_f[si[1]]+dpsi), f_outer, 1, 1, xpt_f, rad_peaking, $
+                                    in_dp=dpsi, out_dp=dpsi/rad_peaking)]
+      ENDIF ELSE BEGIN
+        dpsi = 2.D*(xpt_f[si[critical.n_xpoint-1]] - fvals[n-1])
+        fvals = [fvals, radial_grid(nrad[critical.n_xpoint], $
+                                    fvals[n-1]+dpsi, f_outer, 1, 1, xpt_f, rad_peaking, $
+                                    in_dp=dpsi, out_dp=dpsi/rad_peaking)]  
+      ENDELSE
     ENDELSE
     
     psi_vals = (fvals - faxis) / fnorm ; Normalised psi
@@ -1484,7 +1509,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       
       ; Plot the line to the x-point
       oplot_line, interp_data, R, Z, $
-        INTERPOLATE(start_ri, mini, /DOUBLE), INTERPOLATE(start_zi, mini, /DOUBLE), critical.xpt_f[i], color=125
+        INTERPOLATE(start_ri, mini, /DOUBLE), INTERPOLATE(start_zi, mini, /DOUBLE), xpt_f[i], color=125
       oplot_line, interp_data, R, Z, $
         INTERPOLATE(start_ri, mini, /DOUBLE), INTERPOLATE(start_zi, mini, /DOUBLE), f_inner, color=125
 
@@ -1611,15 +1636,15 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       xind = si[i]
       
       ; Get number of points in this PF region (npf)
-      w = WHERE(psi_vals LT xpt_psi[xind], npf)
+      w = WHERE( (psi_vals - xpt_psi[xind]) LT 1.D-12, npf)
       w = WHERE(ci EQ xind)
       id = w[0]
       
       IF KEYWORD_SET(single_rad_grid) THEN BEGIN
         ; Gridding as one region
-        IF (npf+1) LT TOTAL(nrad,/int) THEN BEGIN
+        IF npf LT TOTAL(nrad,/int) THEN BEGIN
           dpsi = pf_psi_vals[xind,0,npf+1] - pf_psi_vals[xind,0,npf]
-          pf_psi_out = (pf_psi_vals[xind,0,npf] - 0.5D*dpsi) < xpt_psi[xind]
+          pf_psi_out = pf_psi_vals[xind,0,npf] - 0.5D*dpsi
           pf_psi_vals[xind,0,0:(npf-1)] = radial_grid(npf, psi_inner[id+1], $
                                                       pf_psi_out, $
                                                       1, 0, $
@@ -2317,7 +2342,7 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
                       boundary=gridbndry, $
                       ffirst=ffirst, flast=flast3, fpsi=fpsi, $
                       ydown_dist=xpt_dist[xpt, 3], /oplot, $
-                      vec_in_down=vec_in_down3, vec_out_down=vec_out_down3, sep_down=critical.xpt_f[xpt], $
+                      vec_in_down=vec_in_down3, vec_out_down=vec_out_down3, sep_down=xpt_f[xpt], $
                       vec_in_up=vec_in_up3, vec_out_up=vec_out_up3, $
                       yup_dist=0,orthup=orthup,orthdown=orthdown, $
                       nonorthogonal_weight_decay_power=settings.nonorthogonal_weight_decay_power, $

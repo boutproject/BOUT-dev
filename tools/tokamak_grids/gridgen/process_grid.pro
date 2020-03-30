@@ -311,7 +311,7 @@ FUNCTION my_int_y, var, yaxis, mesh, loop=loop, nosmooth=nosmooth, simple=simple
       ;; Only set loop integral in closed (periodic) domains i.e. the
       ;; core. Otherwise it may be overwritten by values in a PF region
        
-      loop[xi] = f[xi,yi[N_ELEMENTS(yi)-1]] - f[xi,yi[0]]
+      loop[xi] = f[xi,yi[N_ELEMENTS(yi)-1]] - f[xi,yi[0]] + 0.5D*(yaxis[xi,yi[1]]-yaxis[xi,yi[0]])*(var[xi,yi[N_ELEMENTS(yi)-1]] + var[xi,yi[0]])
     ENDIF
   ENDREP UNTIL last
   
@@ -786,7 +786,8 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   ; Grid spacing
   dx = DBLARR(nx, ny_total)
   FOR y=0, ny_total-1 DO BEGIN
-    dx[0:(nx-2),y] = psixy[1:*,y] - psixy[0:(nx-2),y]
+    dx[1:(nx-2),y] = 0.5D*(psixy[2:*,y] - psixy[0:(nx-3),y])
+    dx[0,y] = dx[1,y]
     dx[nx-1,y] = dx[nx-2,y]
   ENDFOR
   
