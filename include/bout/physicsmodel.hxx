@@ -271,6 +271,9 @@ protected:
       return model->outputMonitor(simtime, iter, nout);
     }
 
+    Mesh * mesh = bout::globals::mesh;
+    Datafile & dump = bout::globals::dump;
+
   private:
     PhysicsModel *model;
   };
