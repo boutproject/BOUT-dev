@@ -41,7 +41,10 @@ Field2D _interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
   // communicate f. We will sort out result's boundary guard cells below, but
   // not f's so we don't want to change f.
   result.allocate();
-  localmesh->communicateXZ(result);
+  auto h = localmesh->sendY(result);
+  localmesh->wait(h);
+  h = localmesh->sendX(result);
+  localmesh->wait(h);
 
   // Extrapolate into boundaries (if requested) so that differential geometry
   // terms can be interpolated if necessary
@@ -189,7 +192,10 @@ Field2D _interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
   // communicate f. We will sort out result's boundary guard cells below, but
   // not f's so we don't want to change f.
   result.allocate();
-  localmesh->communicateXZ(result);
+  auto h = localmesh->sendY(result);
+  localmesh->wait(h);
+  h = localmesh->sendX(result);
+  localmesh->wait(h);
 
   // Extrapolate into boundaries (if requested) so that differential geometry
   // terms can be interpolated if necessary
@@ -349,7 +355,11 @@ std::string getLocationSuffix(CELL_LOC location) {
   template <typename T, typename... Ts>
   void communicate(T & t, Ts&... ts) {
     FieldGroup g(t,ts...);
-    t.getMesh()->communicateXZ(g);
+    // emulate full communicate
+    auto h = t.getMesh()->sendY(g);
+    t.getMesh()->wait(h);
+    h = t.getMesh()->sendX(g);
+    t.getMesh()->wait(h);
   }
 
 
