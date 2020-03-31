@@ -584,44 +584,51 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
 
     //jacobi(levels[current_level], jy, ncx, xloc, xloclast, error_rel, error_abs );
     jacobi_full_system(levels[current_level], error_rel, error_abs );
+
+    /*
     output<< "soln ";
     for(int ix=0; ix<levels[current_level].ncx;ix++){
       output<<" "<<levels[current_level].soln(0,ix).real() ;
     }
     output<< endl;
+    */
 
-    // Not necessay, but for diagnostics
-    calculate_residual_full_system(levels[current_level]);
+    if(current_level==0 and subcount==max_cycle-1){
+      // Not necessay, but for diagnostics
+      calculate_residual_full_system(levels[current_level]);
 
-    {
-    int kz=0;
-    //output<<count<<" "<<current_level<<" "<<error_rel[0]<<" "<<error_abs[0]<<" "<<xloc(0,kz)<<" "<<xloc(1,kz)<<" "<<xloc(2,kz)<<" "<<xloc(3,kz)<<endl;
-    output<<count<<" "<<current_level;
-    total = 0.0;
-    subtotal = 0.0;
-    for(int ix=0; ix<levels[current_level].ncx;ix++){
-      if( (ix < levels[current_level].xs and localmesh->firstX()) or
-	  (ix >= levels[current_level].xs and ix <= levels[current_level].xe) or
-	  (ix > levels[current_level].xe and localmesh->lastX()) ){
-	subtotal += std::abs(levels[current_level].residual(kz,ix).real());	
+      {
+      int kz=0;
+      //output<<count<<" "<<current_level<<" "<<error_rel[0]<<" "<<error_abs[0]<<" "<<xloc(0,kz)<<" "<<xloc(1,kz)<<" "<<xloc(2,kz)<<" "<<xloc(3,kz)<<endl;
+      //output<<count<<" "<<current_level;
+      total = 0.0;
+      subtotal = 0.0;
+      for(int ix=0; ix<levels[current_level].ncx;ix++){
+	if( (ix < levels[current_level].xs and localmesh->firstX()) or
+	    (ix >= levels[current_level].xs and ix <= levels[current_level].xe) or
+	    (ix > levels[current_level].xe and localmesh->lastX()) ){
+	  subtotal += std::abs(levels[current_level].residual(kz,ix).real());	
+	}
       }
-    }
 
-    // TODO do this rarely
-    MPI_Comm comm = BoutComm::get();
-    MPI_Allreduce(&subtotal, &total, 1, MPI_DOUBLE, MPI_SUM, comm);
+      // TODO do this rarely
+      MPI_Comm comm = BoutComm::get();
+      MPI_Allreduce(&subtotal, &total, 1, MPI_DOUBLE, MPI_SUM, comm);
 
 
-    output<<" "<<total;
-    for(int ix=0; ix<levels[0].ncx;ix++){
-      if(ix<levels[current_level].ncx){
-	output<<" "<<levels[current_level].residual(kz,ix).real();
+      /*
+      output<<" "<<total;
+      for(int ix=0; ix<levels[0].ncx;ix++){
+	if(ix<levels[current_level].ncx){
+	  output<<" "<<levels[current_level].residual(kz,ix).real();
+	}
+	else{
+	  output<<" "<<0;
+	}
       }
-      else{
-	output<<" "<<0;
+      output<<endl;
+      */
       }
-    }
-    output<<endl;
     }
 
     ++count;
@@ -1531,12 +1538,13 @@ void LaplaceParallelTriMG::coarsen_full_system(Level &l, const Matrix<dcomplex> 
   }
 
   
+  /*
   output<<"coarse residual ";
   for(int ix=0; ix<l.ncx; ix++){
     output<<l.rvec(0,ix)<<" ";
   }
   output<<endl;
-  
+  */
 
 }
 
@@ -1622,13 +1630,13 @@ void LaplaceParallelTriMG::update_solution(Level &l, const Matrix<dcomplex> &fin
 
 void LaplaceParallelTriMG::refine_full_system(Level &l, Matrix<dcomplex> &fine_error){
 
-  
-  
+  /*
   output<<"soln ";
   for(int ix=0; ix<l.ncx; ix++){
     output<<l.soln(0,ix)<<" ";
   }
   output<<endl;
+  */
   
   for(int kz=0; kz<nmode; kz++){
     if(localmesh->firstX()){
@@ -1658,11 +1666,13 @@ void LaplaceParallelTriMG::refine_full_system(Level &l, Matrix<dcomplex> &fine_e
     }
   }
   
+  /*
   output<<"fine_error ";
   for(int ix=0; ix<2*(l.ncx-4)+4; ix++){
     output<<fine_error(0,ix)<<" ";
   }
   output<<endl;
+  */
 }
 
 void LaplaceParallelTriMG::refine(Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast){
