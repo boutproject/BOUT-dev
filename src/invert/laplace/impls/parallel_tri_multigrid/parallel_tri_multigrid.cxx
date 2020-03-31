@@ -242,25 +242,6 @@ void LaplaceParallelTriMG::get_errors(Array<BoutReal> &error_rel, Array<BoutReal
   }
 }
 
-void LaplaceParallelTriMG::get_errors_full_system(Array<BoutReal> &error_rel, Array<BoutReal> &error_abs, const Matrix<dcomplex> x, const Matrix<dcomplex> xlast, const Level l){
-
-  BoutReal xabs;
-  for(int kz = 0; kz < nmode; kz++){
-    error_abs[kz]=0.0;
-    error_rel[kz]=0.0;
-    for(int ix = l.xs; ix < l.xe+1; ix++){
-      error_abs[kz] += abs(x(kz,ix) - xlast(kz,ix));
-      xabs = fabs(x(kz,ix));
-      if( xabs > 0.0 ){
-	error_rel[kz] += abs(x(kz,ix) - xlast(kz,ix))/xabs;
-      }
-      else{
-	error_rel[kz] += abs(x(kz,ix) - xlast(kz,ix));
-      }
-    }
-  }
-}
-
 bool LaplaceParallelTriMG::all(const Array<bool> a){
   for(int i=0; i<a.size(); i++){
     if(a[i]==false){
@@ -689,7 +670,6 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       calculate_residual_full_system(levels[current_level]);
       current_level++;
       coarsen_full_system(levels[current_level],levels[current_level-1].residual);
-      //get_errors_full_system(error_rel,error_abs,xk1d,xk1dlast,levels[current_level]);
       subcount=0;
 
       if(current_level==max_level){
