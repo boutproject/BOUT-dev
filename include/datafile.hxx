@@ -21,7 +21,6 @@ class Datafile;
 #include "bout/format.hxx"
 
 #include <fmt/core.h>
-#include <fmt/format.h>
 
 #include <cstdarg>
 #include <cstdio>

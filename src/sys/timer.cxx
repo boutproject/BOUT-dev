@@ -1,6 +1,6 @@
 #include "bout/sys/timer.hxx"
 
-#include <fmt/format.h>
+#include <fmt/core.h>
 
 #include <algorithm>
 

@@ -37,7 +37,7 @@ class OptionsReader;
 #include "options.hxx"
 #include "bout/format.hxx"
 
-#include "fmt/format.h"
+#include "fmt/core.h"
 
 #include <string>
 
