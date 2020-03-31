@@ -28,3 +28,7 @@ zShift = Btxy * y * L / (2*pi*Rxy * Bpxy)
 
 # Define a twist-shift angle, for periodic in y runs
 ShiftAngle = Btxy * L / (Rxy * Bpxy)   # Should be just a function of x
+
+# With 3D metrics, we can only calcParallelSlice after the coordinates is created.
+# Because we use a custom main, we musn't do this.
+calcParallelSlices_on_communicate = false
