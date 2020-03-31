@@ -202,6 +202,27 @@ bool LaplaceParallelTriMG::is_diagonally_dominant(const dcomplex al, const dcomp
 }
 
 /*
+ * Reconstruct the full solution from the subproblem and the halo cell values
+ */
+void LaplaceParallelTriMG::reconstruct_full_solution(Level &l, const int jy, Matrix<dcomplex> &halos){
+  for (int kz = 0; kz < nmode; kz++) {
+    for(int i=0; i<l.ncx; i++){
+      l.soln(kz,i) = l.minvb(kz,i);
+    }
+    if(not localmesh->lastX()) {
+      for(int i=0; i<l.ncx; i++){
+	l.soln(kz,i) += l.upperGuardVector(i,jy,kz)*halos(kz,l.xe+1);
+      }
+    }
+    if(not localmesh->firstX()) {
+      for(int i=0; i<l.ncx; i++){
+	l.soln(kz,i) += l.lowerGuardVector(i,jy,kz)*halos(kz,l.xs-1);
+      }
+    }
+  }
+}
+
+/*
  * Calculate the absolute and relative errors at an x grid point.
  */
 void LaplaceParallelTriMG::get_errors(Array<BoutReal> &error_rel, Array<BoutReal> &error_abs, const Matrix<dcomplex> x, const Matrix<dcomplex> xlast){
@@ -582,12 +603,12 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   bool down = true;
   while(true){
 
-///    if(current_level==0){
-///      jacobi(levels[current_level], jy, xloc, xloclast);
-///    }
-///    else {
+    if(false){
+      jacobi(levels[current_level], jy, xloc, xloclast);
+    }
+    else {
       jacobi_full_system(levels[current_level] );
-///    }
+    }
 
     /*
     output<< "soln ";
@@ -647,9 +668,8 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
     }
     //else if( total < rtol or current_level==max_level){
     else if( not down ){
-      //refine(xloc,xloclast);
-      //output<<"Refine"<<endl;
       calculate_residual_full_system(levels[current_level]);
+      //refine(xloc,xloclast);
       refine_full_system(levels[current_level],fine_error);
       current_level--;
       update_solution(levels[current_level],fine_error);
@@ -801,21 +821,16 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       // are already correct
     }
     */
+  }
 
-    // Now that halo cells are converged, use these to calculate whole solution
+  // Now that halo cells are converged, use these to calculate whole solution
+  reconstruct_full_solution(levels[0],jy,xk1dlast);
+
+  for(int kz=0; kz<nmode; kz++){
     for(int i=0; i<ncx; i++){
-      xk1d(kz,i) = levels[0].minvb(kz,i);
+      xk1d(kz,i) = levels[0].soln(kz,i);
     }
-    if(not localmesh->lastX()) { 
-      for(int i=0; i<ncx; i++){
-	xk1d(kz,i) += levels[0].upperGuardVector(i,jy,kz)*xk1dlast(kz,xe+1);
-      }
-    }
-    if(not localmesh->firstX()) { 
-      for(int i=0; i<ncx; i++){
-	xk1d(kz,i) += levels[0].lowerGuardVector(i,jy,kz)*xk1dlast(kz,xs-1);
-      }
-    } 
+  }
 
     /*
         for (int ix = 0; ix < ncx; ix++) {
@@ -823,6 +838,7 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
         }
 	*/
 
+  for (int kz = 0; kz <= maxmode; kz++) {
     // If the global flag is set to INVERT_KX_ZERO
     if ((global_flags & INVERT_KX_ZERO) && (kz == 0)) {
       dcomplex offset(0.0);

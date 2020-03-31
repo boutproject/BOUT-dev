@@ -131,6 +131,7 @@ public:
 
   void calculate_residual_full_system(Level &level);
   void update_solution(Level &l, const Matrix<dcomplex> &fine_error);
+  void reconstruct_full_solution(Level &level, const int jy, Matrix<dcomplex> &halos);
 
 private:
   // The coefficents in
