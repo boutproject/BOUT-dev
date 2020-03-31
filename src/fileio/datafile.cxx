@@ -427,7 +427,9 @@ void Datafile::add(int &i, const char *name, bool save_repeat) {
   if (varAdded(name)) {
     // Check if it's the same variable
     if (&i == varPtr(name)) {
-      output_warn.write("WARNING: variable '{:s}' added again to Datafile\n", name);
+      output_warn.write("WARNING: variable '{:s}' already added to Datafile, skipping...\n",
+                        name);
+      return;
     } else {
       throw BoutException("Variable with name '{:s}' already added to Datafile", name);
     }
@@ -482,7 +484,9 @@ void Datafile::add(BoutReal &r, const char *name, bool save_repeat) {
   if (varAdded(name)) {
     // Check if it's the same variable
     if (&r == varPtr(name)) {
-      output_warn.write("WARNING: variable '{:s}' added again to Datafile\n", name);
+      output_warn.write("WARNING: variable '{:s}' already added to Datafile, skipping...\n",
+                        name);
+      return;
     } else {
       throw BoutException("Variable with name '{:s}' already added to Datafile", name);
     }
@@ -539,7 +543,9 @@ void Datafile::add(bool &b, const char *name, bool save_repeat) {
   if (varAdded(name)) {
     // Check if it's the same variable
     if (&b == varPtr(name)) {
-      output_warn.write("WARNING: variable '{:s}' added again to Datafile\n", name);
+      output_warn.write("WARNING: variable '{:s}' already added to Datafile, skipping...\n",
+                        name);
+      return;
     } else {
       throw BoutException("Variable with name '{:s}' already added to Datafile", name);
     }
@@ -594,7 +600,9 @@ void Datafile::add(Field2D &f, const char *name, bool save_repeat) {
   if (varAdded(name)) {
     // Check if it's the same variable
     if (&f == varPtr(name)) {
-      output_warn.write("WARNING: variable '{:s}' added again to Datafile", name);
+      output_warn.write("WARNING: variable '{:s}' already added to Datafile, skipping...\n",
+                        name);
+      return;
     } else {
       throw BoutException("Variable with name '{:s}' already added to Datafile", name);
     }
@@ -651,7 +659,9 @@ void Datafile::add(Field3D &f, const char *name, bool save_repeat) {
   if (varAdded(name)) {
     // Check if it's the same variable
     if (&f == varPtr(name)) {
-      output_warn.write("WARNING: variable '{:s}' added again to Datafile\n", name);
+      output_warn.write("WARNING: variable '{:s}' already added to Datafile, skipping...\n",
+                        name);
+      return;
     } else {
       throw BoutException("Variable with name '{:s}' already added to Datafile", name);
     }
@@ -708,7 +718,9 @@ void Datafile::add(FieldPerp &f, const char *name, bool save_repeat) {
   if (varAdded(name)) {
     // Check if it's the same variable
     if (&f == varPtr(name)) {
-      output_warn.write("WARNING: variable '{:s}' added again to Datafile\n", name);
+      output_warn.write("WARNING: variable '{:s}' already added to Datafile, skipping...\n",
+                        name);
+      return;
     } else {
       throw BoutException("Variable with name '{:s}' already added to Datafile", name);
     }
@@ -765,7 +777,9 @@ void Datafile::add(Vector2D &f, const char *name, bool save_repeat) {
   if (varAdded(name)) {
     // Check if it's the same variable
     if (&f == varPtr(name)) {
-      output_warn.write("WARNING: variable '{:s}' added again to Datafile\n", name);
+      output_warn.write("WARNING: variable '{:s}' already added to Datafile, skipping...\n",
+                        name);
+      return;
     } else {
       throw BoutException("Variable with name '{:s}' already added to Datafile", name);
     }
@@ -829,7 +843,9 @@ void Datafile::add(Vector3D &f, const char *name, bool save_repeat) {
   if (varAdded(name)) {
     // Check if it's the same variable
     if (&f == varPtr(name)) {
-      output_warn.write("WARNING: variable '{:s}' added again to Datafile\n", name);
+      output_warn.write("WARNING: variable '{:s}' already added to Datafile, skipping...\n",
+                        name);
+      return;
     } else {
       throw BoutException("Variable with name '{:s}' already added to Datafile", name);
     }
@@ -1214,6 +1230,10 @@ void Datafile::setAttribute(const std::string &varname, const std::string &attrn
 
   Timer timer("io");
 
+  if (!enabled) {
+    return;
+  }
+
   if(!file)
     throw BoutException("Datafile::write: File is not valid!");
 
@@ -1248,6 +1268,10 @@ void Datafile::setAttribute(const std::string &varname, const std::string &attrn
 
   Timer timer("io");
 
+  if (!enabled) {
+    return;
+  }
+
   if(!file)
     throw BoutException("Datafile::write: File is not valid!");
 
@@ -1281,6 +1305,10 @@ void Datafile::setAttribute(const std::string &varname, const std::string &attrn
   TRACE("Datafile::setAttribute(string, string, BoutReal)");
 
   Timer timer("io");
+
+  if (!enabled) {
+    return;
+  }
 
   if(!file)
     throw BoutException("Datafile::write: File is not valid!");

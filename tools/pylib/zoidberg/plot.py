@@ -89,13 +89,13 @@ def plot_poincare(magnetic_field, xpos, zpos, yperiod, nplot=3, y_slices=None, r
             return
 
         # Middle mouse
-        if event.button is 2:
+        if event.button == 2:
             x_ = []
             z_ = []
         else:
             result = field_tracer.follow_field_lines(event.xdata, event.ydata, y_values)
             # Right mouse
-            if event.button is 3:
+            if event.button == 3:
                 x_, z_ = overplot.get_data()
                 x_ = np.append(x_, result[:,0])
                 z_ = np.append(z_, result[:,1])
