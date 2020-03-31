@@ -582,8 +582,12 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   bool down = true;
   while(true){
 
-    //jacobi(levels[current_level], jy, ncx, xloc, xloclast, error_rel, error_abs );
-    jacobi_full_system(levels[current_level], error_rel, error_abs );
+///    if(current_level==0){
+///      jacobi(levels[current_level], jy, xloc, xloclast);
+///    }
+///    else {
+      jacobi_full_system(levels[current_level] );
+///    }
 
     /*
     output<< "soln ";
@@ -600,7 +604,7 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       {
       int kz=0;
       //output<<count<<" "<<current_level<<" "<<error_rel[0]<<" "<<error_abs[0]<<" "<<xloc(0,kz)<<" "<<xloc(1,kz)<<" "<<xloc(2,kz)<<" "<<xloc(3,kz)<<endl;
-      //output<<count<<" "<<current_level;
+      output<<count<<" "<<current_level;
       total = 0.0;
       subtotal = 0.0;
       for(int ix=0; ix<levels[current_level].ncx;ix++){
@@ -616,7 +620,6 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       MPI_Allreduce(&subtotal, &total, 1, MPI_DOUBLE, MPI_SUM, comm);
 
 
-      /*
       output<<" "<<total;
       for(int ix=0; ix<levels[0].ncx;ix++){
 	if(ix<levels[current_level].ncx){
@@ -627,14 +630,14 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
 	}
       }
       output<<endl;
-      */
       }
     }
 
     ++count;
     ++subcount;
 
-    // Force at least 4 iterations at each level
+    // Force at least max_cycle iterations at each level
+    // Do not skip with tolerence to minimize comms
     //if(subcount < max_cycle and total>rtol){
     if(subcount < max_cycle){
       //continue;
@@ -666,7 +669,7 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       calculate_residual_full_system(levels[current_level]);
       current_level++;
       coarsen_full_system(levels[current_level],levels[current_level-1].residual);
-      get_errors_full_system(error_rel,error_abs,xk1d,xk1dlast,levels[current_level]);
+      //get_errors_full_system(error_rel,error_abs,xk1d,xk1dlast,levels[current_level]);
       subcount=0;
 
       if(current_level==max_level){
@@ -735,9 +738,17 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   }
 
   for (int kz = 0; kz <= maxmode; kz++) {
-    for (int ix = 0; ix < levels[current_level].ncx; ix++) {
-      xk1d(kz,ix) = levels[current_level].soln(kz,ix);
+    for (int ix = 0; ix < levels[0].ncx; ix++) {
+      xk1d(kz,ix) = levels[0].soln(kz,ix);
     }
+    xloclast(0,kz) = levels[0].soln(kz,levels[0].xs-1);
+    xloclast(1,kz) = levels[0].soln(kz,levels[0].xs);
+    xloclast(2,kz) = levels[0].soln(kz,levels[0].xe);
+    xloclast(3,kz) = levels[0].soln(kz,levels[0].xe+1);
+    xloc(0,kz) = levels[0].soln(kz,levels[0].xs-1);
+    xloc(1,kz) = levels[0].soln(kz,levels[0].xs);
+    xloc(2,kz) = levels[0].soln(kz,levels[0].xe);
+    xloc(3,kz) = levels[0].soln(kz,levels[0].xe+1);
   }
 //  output<<"after iteration"<<endl;
   ///SCOREP_USER_REGION_END(whileloop);
@@ -761,9 +772,11 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
     xk1dlast(kz,xe)   = xloclast(2,kz);
     xk1dlast(kz,xe+1) = xloclast(3,kz);
 
+    /*
         for (int ix = 0; ix < 4; ix++) {
 	  output<<"final "<<ix<<" "<<xloclast(ix,0) <<" "<< xloc(ix,0)<<endl;
         }
+	*/
 
     /*
     if(new_method){
@@ -804,9 +817,11 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       }
     } 
 
+    /*
         for (int ix = 0; ix < ncx; ix++) {
 	  output<<"xk1d "<<ix<<" "<<xk1d(0,ix) <<" "<< xk1d(0,ix)<<endl;
         }
+	*/
 
     // If the global flag is set to INVERT_KX_ZERO
     if ((global_flags & INVERT_KX_ZERO) && (kz == 0)) {
@@ -850,7 +865,7 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   return x; // Result of the inversion
 }
 
-void LaplaceParallelTriMG::jacobi(Level &l, const int jy, const int ncx, Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast, Array<BoutReal> &error_rel, Array<BoutReal> &error_abs){
+void LaplaceParallelTriMG::jacobi(Level &l, const int jy, Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast){
 
   struct Message { dcomplex value; bool done; };
   Array<Message> message_send, message_recv;
@@ -871,22 +886,7 @@ void LaplaceParallelTriMG::jacobi(Level &l, const int jy, const int ncx, Matrix<
     if( localmesh->lastX() ){
       xloc(3,kz) = ( l.minvb(kz,l.xe+2) + l.lowerGuardVector(l.xe+2,jy,kz)*xloclast(0,kz) ) / (1.0 - l.upperGuardVector(l.xe+2,jy,kz));
     }
-
-///        // Set communication flags
-///        if ( count > 0 && (
-///          ((error_rel_lower<rtol or error_abs_lower<atol) and
-///          (error_rel_upper<rtol or error_abs_upper<atol) ))) {
-///	  // In the next iteration this proc informs its neighbours that its halo cells
-///	  // will no longer be updated, then breaks.
-///	  self_in[kz] = true;
-///	  self_out[kz] = true;
-///        }
-///        ///SCOREP_USER_REGION_END(errors);
-///      }
   }
-
-  // Calcalate errors on interior points only
-  get_errors(error_rel,error_abs,xloc,xloclast);
 
     //output<<"after work jy, count "<<jy<<" "<<count<<endl;
     ///SCOREP_USER_REGION_END(workanderror);
@@ -961,27 +961,10 @@ void LaplaceParallelTriMG::jacobi(Level &l, const int jy, const int ncx, Matrix<
       }
 ///    }
     ///SCOREP_USER_REGION_END(comms);
-
-    // Now I've done my communication, exit if I am both in- and out-converged
-///    if( all(self_in) and all(self_out) ) {
-///      break;
-///    }
-    ///SCOREP_USER_REGION_DEFINE(comms_after_break);
-    ///SCOREP_USER_REGION_BEGIN(comms_after_break, "comms after break",SCOREP_USER_REGION_TYPE_COMMON);
-
-    // If my neighbour has converged, I know that I am also converged on that
-    // boundary. Set this flag after the break loop above, to ensure we do one
-    // iteration using our neighbour's converged value.
-///    for (int kz = 0; kz <= maxmode; kz++) {
-///      self_in[kz] = neighbour_in[kz] = (self_in[kz] or neighbour_in[kz]);
-///      self_out[kz] = neighbour_out[kz] = (self_out[kz] or neighbour_out[kz]);
-///    }
-//
-
 }  
 
 // Perform a Jacobi iteration explicitly on the full system 
-void LaplaceParallelTriMG::jacobi_full_system(Level &l, Array<BoutReal> &error_rel, Array<BoutReal> &error_abs){
+void LaplaceParallelTriMG::jacobi_full_system(Level &l){
 
   struct Message { dcomplex value; bool done; };
   Array<Message> message_send, message_recv;
@@ -996,8 +979,6 @@ void LaplaceParallelTriMG::jacobi_full_system(Level &l, Array<BoutReal> &error_r
     for (int ix = l.xs; ix < l.xe+1; ix++) {
       l.soln(kz,ix) = ( l.rvec(kz,ix) - l.avec(kz,ix)*l.solnlast(kz,ix-1) - l.cvec(kz,ix)*l.solnlast(kz,ix+1) ) / l.bvec(kz,ix);
     }
-
-  get_errors_full_system(error_rel,error_abs,l.soln,l.solnlast,l);
 
     if(!localmesh->firstX()){
       for (int kz = 0; kz <= maxmode; kz++) {
@@ -1069,7 +1050,6 @@ void LaplaceParallelTriMG::levels_info(const Level l){
 // one step finer, lup.
 void LaplaceParallelTriMG::init(Level &l, const Level lup, int ncx, const int xs, const int xe, const int current_level){
 
-  // This is a hacked version where we force xs and xe to be boundary points.
   l.xs = xs;
   l.xe = xe;
   l.ncx = ncx;
@@ -1083,6 +1063,7 @@ void LaplaceParallelTriMG::init(Level &l, const Level lup, int ncx, const int xs
   l.soln = Matrix<dcomplex>(nmode,ncx);
   l.solnlast = Matrix<dcomplex>(nmode,ncx);
 
+  // For coarsening, need to communicate coefficients for halo cells
   l.acomm = Array<dcomplex>(nmode);
   l.bcomm = Array<dcomplex>(nmode);
   l.ccomm = Array<dcomplex>(nmode);
@@ -1469,8 +1450,8 @@ void LaplaceParallelTriMG::calculate_residual_full_system(Level &l){
 
   struct Message { dcomplex value; bool done; };
   Array<Message> message_send, message_recv;
-  message_send = Array<Message>(2*nmode);
-  message_recv = Array<Message>(2*nmode);
+  message_send = Array<Message>(nmode);
+  message_recv = Array<Message>(nmode);
   MPI_Comm comm = BoutComm::get();
   int err;
   if(!localmesh->firstX()){

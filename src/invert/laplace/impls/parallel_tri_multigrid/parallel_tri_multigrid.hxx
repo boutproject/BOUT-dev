@@ -120,9 +120,8 @@ public:
   void init(Level &level, const Level lup, const int ncx, const int xs, const int xe, const int current_level);
   void init(Level &level, const int ncx, const int jy, const Matrix<dcomplex> avec, const Matrix<dcomplex> bvec, const Matrix<dcomplex> cvec, const Matrix<dcomplex> bcmplx, const int xs, const int xe, const int current_level);
 
-  void jacobi(Level &level, const int jy, const int ncx, Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast,
-     Array<BoutReal> &error_rel, Array<BoutReal> &error_abs);
-  void jacobi_full_system(Level &level, Array<BoutReal> &error_rel, Array<BoutReal> &error_abs);
+  void jacobi(Level &level, const int jy, Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast);
+  void jacobi_full_system(Level &level);
   void refine_full_system(Level &level, Matrix<dcomplex> &fine_error);
 
   void coarsen(const Level level, Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast, int jy);
