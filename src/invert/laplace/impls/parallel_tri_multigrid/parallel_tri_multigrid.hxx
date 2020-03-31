@@ -128,6 +128,8 @@ public:
   void coarsen_full_system(Level &level, const Matrix<dcomplex> fine_residual);
 
   void calculate_residual_full_system(Level &level);
+  void calculate_total_residual(BoutReal &total, const Level level);
+  //void calculate_total_residual(Array<BoutReal> &total, const Level level);
   void update_solution(Level &l, const Matrix<dcomplex> &fine_error);
   void reconstruct_full_solution(Level &level, const int jy, Matrix<dcomplex> &halos);
 

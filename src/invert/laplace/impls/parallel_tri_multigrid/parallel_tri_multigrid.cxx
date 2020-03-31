@@ -579,8 +579,7 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   int count = 0;
   int subcount = 0;
   int current_level = 0;
-  BoutReal total=1e20, subtotal=1e20;
-  BoutReal utol=0.4;
+  BoutReal total=1e20;
   bool down = true;
   while(true){
 
@@ -602,25 +601,11 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
     if(current_level==0 and subcount==max_cycle-1){
       // Not necessay, but for diagnostics
       calculate_residual_full_system(levels[current_level]);
+      calculate_total_residual(total,levels[current_level]);
 
       {
       int kz=0;
-      //output<<count<<" "<<current_level<<" "<<error_rel[0]<<" "<<error_abs[0]<<" "<<xloc(0,kz)<<" "<<xloc(1,kz)<<" "<<xloc(2,kz)<<" "<<xloc(3,kz)<<endl;
       output<<count<<" "<<current_level;
-      total = 0.0;
-      subtotal = 0.0;
-      for(int ix=0; ix<levels[current_level].ncx;ix++){
-	if( (ix < levels[current_level].xs and localmesh->firstX()) or
-	    (ix >= levels[current_level].xs and ix <= levels[current_level].xe) or
-	    (ix > levels[current_level].xe and localmesh->lastX()) ){
-	  subtotal += std::abs(levels[current_level].residual(kz,ix).real());	
-	}
-      }
-
-      // TODO do this rarely
-      MPI_Comm comm = BoutComm::get();
-      MPI_Allreduce(&subtotal, &total, 1, MPI_DOUBLE, MPI_SUM, comm);
-
 
       output<<" "<<total;
       for(int ix=0; ix<levels[0].ncx;ix++){
@@ -1421,6 +1406,38 @@ void LaplaceParallelTriMG::init(Level &l, const int ncx, const int jy, const Mat
   levels_info(l);
 
 }
+
+/*
+ * Sum and communicate total residual
+ */
+void LaplaceParallelTriMG::calculate_total_residual(BoutReal &total, const Level l){
+
+  //Array<BoutReal> subtotal;
+  //subtotal = Array<BoutReal>(nmode);
+  BoutReal subtotal;
+
+  //for(int kz=0; kz<nmode; kz++){
+    int kz = 0;
+    total = 0.0;
+    subtotal = 0.0;
+    for(int ix=0; ix<l.ncx;ix++){
+      // Contributions to total residual from interior points and physical
+      // boundary points only
+      if( (ix < l.xs and localmesh->firstX()) or
+	  (ix >= l.xs and ix <= l.xe) or
+	  (ix > l.xe and localmesh->lastX()) ){
+	  subtotal += std::abs(l.residual(kz,ix).real());	
+      }  
+    }
+  //}
+
+  // Communication needed to ensure processorsbreak iterations at same point
+  // TODO do this rarely
+  MPI_Comm comm = BoutComm::get();
+  MPI_Allreduce(&subtotal, &total, 1, MPI_DOUBLE, MPI_SUM, comm);
+
+}
+
 
 // Calculate residual
 void LaplaceParallelTriMG::calculate_residual_full_system(Level &l){
