@@ -32,7 +32,7 @@ for nproc in [1,3]:
         mthread = 1
   
     # set nxpe on the command line as we only use solution from one point in y, so splitting in y-direction is redundant (and also doesn't help test the solver)
-    cmd = "./test_naulin_laplace nxpe="+str(nproc)
+    cmd = "../../../bin/test_naulin_laplace nxpe="+str(nproc)
     
     shell("rm data/BOUT.dmp.*.nc")
 

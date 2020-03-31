@@ -50,7 +50,7 @@ for nproc in [1,2,4]:
             else:
                 extra_args = ""
 
-            cmd = "./test_io" + extra_args
+            cmd = "../../../bin/test_io" + extra_args
 
             # On some machines need to delete dmp files first
             # or data isn't written correctly

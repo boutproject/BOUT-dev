@@ -26,7 +26,7 @@ def growth_rate(path, nproc, log=False):
     pipe = False
     if log != False:
         pipe = True
-    s, out = launch_safe("./2fluid -d "+path, nproc=nproc, mthread=nthreads, pipe=pipe)
+    s, out = launch_safe("../../../bin/2fluid -d "+path, nproc=nproc, mthread=nthreads, pipe=pipe)
     if pipe:
         f = open(log, "w")
         f.write(out)

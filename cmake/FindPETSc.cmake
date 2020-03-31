@@ -306,7 +306,7 @@ int main(int argc,char *argv[]) {
     set (petsc_openmp_library ";OpenMP::OpenMP_${PETSC_LANGUAGE_BINDINGS}")
   endif()
   set (petsc_mpi_include_dirs "${MPI_${PETSC_LANGUAGE_BINDINGS}_INCLUDE_DIRS}")
-  set (petsc_additional_libraries "MPI::MPI_${PETSC_LANGUAGE_BINDINGS}${petsc_openmp_library}")
+  #set (petsc_additional_libraries "MPI::MPI_${PETSC_LANGUAGE_BINDINGS}${petsc_openmp_library}")
 
   petsc_test_runs ("${petsc_includes_minimal};${petsc_mpi_include_dirs}"
     "${PETSC_LIBRARIES_TS};${petsc_additional_libraries}"

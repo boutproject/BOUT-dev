@@ -39,7 +39,7 @@ for nproc in [1,2,4]:
   if nproc > 2:
     nxpe = 2
   
-  cmd = "./test_laplace nxpe=" + str(nxpe)
+  cmd = "../../../bin/test_laplace nxpe=" + str(nxpe)
   
   shell("rm data/BOUT.dmp.*.nc")
 

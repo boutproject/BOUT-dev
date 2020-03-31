@@ -17,6 +17,47 @@ project(BOUT++
   VERSION ${BOUT_CMAKE_ACCEPTABLE_VERSION}
   LANGUAGES CXX)
 
+
+#------------------------------------------------------------------------------
+# Initialize BLT build system
+#------------------------------------------------------------------------------
+if (DEFINED BLT_SOURCE_DIR)
+
+    # Support a shared BLT outside of the repository if given a BLT_SOURCE_DIR
+    if (NOT EXISTS ${BLT_SOURCE_DIR}/SetupBLT.cmake)
+        message(FATAL_ERROR "Cannot find SetupBLT.cmake in [${BLT_SOURCE_DIR}]")
+    endif()
+
+else()
+
+    # Use internal 'blt' submodule path if BLT_SOURCE_DIR not provided
+    set(BLT_SOURCE_DIR "${PROJECT_SOURCE_DIR}/blt" CACHE PATH "")
+    if (NOT EXISTS ${BLT_SOURCE_DIR}/SetupBLT.cmake)
+         message(FATAL_ERROR "The BLT submodule is not present. \
+                  If in the git repository, please run the following commands:\n \
+                  git submodule init\n \
+                  git submodule update")
+    endif()
+
+endif()
+
+message(STATUS "BLT : ${BLT_SOURCE_DIR} ")
+# BLT Options need to be set in the CACHE
+set(ENABLE_FORTRAN Off CACHE Bool "Enable Fortran")
+set(ENABLE_OPENMP On CACHE Bool "Enable OpenMP")
+set(ENABLE_CUDA Off CACHE Bool "Enable CUDA")
+set(ENABLE_MPI On CACHE Bool "Enable MPI.")
+set(ENABLE_TESTS On CACHE Bool "Enable Tests.")
+set(ENABLE_DOCS Off CACHE Bool "Enable Docs.")
+set(BLT_CXX_STD "c++14" CACHE STRING "Version of C++ standard")
+set(gtest_disable_pthreads ON CACHE BOOL "")
+option(ENABLE_UMPIRE "Enable UMPIRE memory management" On)
+option(ENABLE_RAJA "Enable RAJA" On)
+message(STATUS "Enable Test Flag Top: ${ENABLE_TESTS} " )
+
+include(${BLT_SOURCE_DIR}/SetupBLT.cmake)
+
+
 # This might not be entirely sensible, but helps CMake to find the
 # correct MPI, workaround for https://gitlab.kitware.com/cmake/cmake/issues/18895
 find_program(MPIEXEC_EXECUTABLE NAMES mpiexec mpirun)
@@ -27,7 +68,7 @@ option(INSTALL_GTEST "Enable installation of googletest. (Projects embedding goo
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
-option(GIT_SUBMODULE "Check submodules during build" ON)
+option(GIT_SUBMODULE "Check submodules during build" Off)
 # Adapted from https://cliutils.gitlab.io/modern-cmake/chapters/projects/submodule.html
 # Update submodules as needed
 function(bout_update_submodules)
@@ -303,11 +344,96 @@ set(BOUT_SOURCES
   ${CMAKE_CURRENT_BINARY_DIR}/include/bout/version.hxx
   )
 
-add_library(bout++
-  ${BOUT_SOURCES}
-  )
+set (BOUT_DEPENDS "")
+if (ENABLE_OPENMP)
+   list(APPEND BOUT_DEPENDS openmp)
+endif ()
+
+if (ENABLE_CUDA)
+   if (NOT ENABLE_RAJA)
+      message(FATAL_ERROR "CUDA support requires RAJA")
+   endif ()
+
+   if (NOT ENABLE_UMPIRE)
+      message(FATAL_ERROR "CUDA support requires UMPIRE")
+   endif ()
+   set_source_files_properties(${cuda_sources} PROPERTIES LANGUAGE CUDA)
+
+   if (ENABLE_NVTX_REGIONS)
+      find_package(CUDA REQUIRED)
+
+      find_library(NVTX_LIBRARY
+         NAME libnvToolsExt.so
+         PATHS ${CUDA_TOOLKIT_ROOT_DIR}/lib64 ${CUDA_TOOLKIT_ROOT_DIR}/lib)
+
+      message(STATUS "NVidia tools extension library found in " ${NVTX_LIBRARY})
+      blt_register_library(
+      NAME nvToolsExt
+      LIBRARIES ${NVTX_LIBRARY})
+
+   list(APPEND BOUT_DEPENDS nvToolsExt)
+      message(STATUS "Enable NVTX Regions Detected")
+   endif ()
+   if (CUDA_FOUND)
+      set (HAVE_CUDA True)
+   endif ()
+   list(APPEND BOUT_DEPENDS cuda)
+endif()
+
+# UMPIRE
+if (ENABLE_UMPIRE)
+  find_package(umpire REQUIRED)
+
+  set (HAVE_UMPIRE True)
+
+  blt_register_library(
+    NAME umpire
+    INCLUDES ${UMPIRE_INCLUDE_DIRS}
+    LIBRARIES umpire)
+ list(APPEND BOUT_DEPENDS umpire)
+endif ()
+
+# RAJA
+if (ENABLE_RAJA)
+  if (NOT ENABLE_UMPIRE)
+    message(FATAL_ERROR "RAJA support requires UMPIRE.")
+  endif ()
+
+  find_package(RAJA REQUIRED)
+
+  set (raja_depends_on)
+  if (ENABLE_CUDA)
+    list (APPEND raja_depends cuda)
+  endif ()
+
+  if (ENABLE_OPENMP)
+    list (APPEND raja_depends openmp)
+  endif ()
+
+  if (RAJA_FOUND)
+    set (HAVE_RAJA True)
+
+    blt_register_library(
+      NAME RAJA
+      INCLUDES ${RAJA_INCLUDE_DIR}
+      LIBRARIES RAJA
+      DEPENDS_ON ${raja_depends})
+  endif ()
+  list(APPEND BOUT_DEPENDS RAJA)
+endif ()
+
+message(STATUS "BOUT_DEPENDS: ${BOUT_DEPENDS}")
+blt_add_library(NAME bout++
+   SOURCES ${BOUT_SOURCES}
+   DEPENDS_ON ${BOUT_DEPENDS})
+
+set_target_properties(bout++ PROPERTIES LINKER_LANGUAGE CXX)
+#add_library(bout++
+#  ${BOUT_SOURCES}
+#  )
 add_library(bout++::bout++ ALIAS bout++)
 target_link_libraries(bout++ PUBLIC MPI::MPI_CXX)
+
 target_include_directories(bout++ PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
@@ -316,6 +442,12 @@ target_include_directories(bout++ PUBLIC
 
 target_compile_features(bout++ PUBLIC cxx_std_14)
 set_target_properties(bout++ PROPERTIES CXX_EXTENSIONS OFF)
+
+blt_register_library(
+   NAME BOUT_LIBS
+      LIBRARIES
+         bout++
+)         
 
 ##################################################
 # Components of the version number
@@ -764,6 +896,7 @@ function(bout_add_integrated_test TESTNAME)
   endif()
 
   set_target_properties(${TESTNAME} PROPERTIES FOLDER tests/integrated)
+  #set_target_properties(${TESTNAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY tests/integrated)
 
   # Add the test to the build-check-integrated-tests target
   add_dependencies(build-check-integrated-tests ${TESTNAME})
@@ -782,8 +915,10 @@ if(PACKAGE_TESTS)
   add_custom_target(build-check)
   add_dependencies(build-check build-check-unit-tests build-check-integrated-tests)
 
-  add_subdirectory(tests/unit EXCLUDE_FROM_ALL)
-  add_subdirectory(tests/integrated EXCLUDE_FROM_ALL)
+  #add_subdirectory(tests/unit EXCLUDE_FROM_ALL)
+  #add_subdirectory(tests/integrated EXCLUDE_FROM_ALL)
+  add_subdirectory(tests/unit)
+  add_subdirectory(tests/integrated)
 
   # Targets for running the tests
   add_custom_target(check-unit-tests
@@ -795,8 +930,8 @@ if(PACKAGE_TESTS)
   add_dependencies(check-integrated-tests build-check-integrated-tests)
 
   # Run all the tests
-  add_custom_target(check)
-  add_dependencies(check check-unit-tests check-integrated-tests)
+  add_custom_target(checkall)
+  add_dependencies(checkall check-unit-tests check-integrated-tests)
 endif()
 
 ##################################################

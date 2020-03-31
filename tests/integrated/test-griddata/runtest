@@ -19,7 +19,7 @@ for nproc in [1]:
   stdout.write("Checking %d processors ... " % (nproc))
 
   shell("rm ./data*nc")
-  s, out = launch_safe("./test_griddata -d screw", nproc=nproc, pipe=True)
+  s, out = launch_safe("../../../bin/test_griddata -d screw", nproc=nproc, pipe=True)
 
   with open("run.log."+str(nproc), "w") as f:
     f.write(out)

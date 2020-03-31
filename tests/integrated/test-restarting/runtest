@@ -48,8 +48,8 @@ if np.max(np.abs(f2d_1 - f2d_0)) > 1e-10:
 print("-> Testing restart")
 
 shell("rm data/BOUT.dmp.0.nc")
-s, out = launch_safe("./test_restarting nout=5", nproc=1, pipe=True)
-s, out = launch_safe("./test_restarting nout=5 restart", nproc=1, pipe=True)
+s, out = launch_safe("../../../bin/test_restarting nout=5", nproc=1, pipe=True)
+s, out = launch_safe("../../../bin/test_restarting nout=5 restart", nproc=1, pipe=True)
 
 f3d_1 = collect("f3d", path="data", info=False);
 f2d_1 = collect("f2d", path="data", info=False);

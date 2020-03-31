@@ -17,7 +17,7 @@ build_and_log('Laplace 3D with PETSc')
 
 success = True
 for directory,nproc in test_directories:
-    command = './test-laplace3d -d ' + directory
+    command = '../../../bin/test-laplace3d -d ' + directory
     print('running on', nproc, 'processors:', command)
     launch_safe(command, nproc=nproc)
 

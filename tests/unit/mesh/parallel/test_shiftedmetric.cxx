@@ -166,7 +166,8 @@ TEST_F(ShiftedMetricTest, FromFieldAligned) {
   // Loosen tolerance a bit due to FFTs
   EXPECT_TRUE(IsFieldEqual(result, expected, "RGN_ALL",
                            FFTTolerance));
-  EXPECT_TRUE(IsFieldEqual(toFieldAligned(result), input));
+  //EXPECT_TRUE(IsFieldEqual(toFieldAligned(result), input));
+  EXPECT_TRUE(IsFieldEqual(toFieldAligned(result), input,"RGN_ALL",FFTTolerance));
   EXPECT_TRUE(areFieldsCompatible(result, expected));
   EXPECT_FALSE(areFieldsCompatible(result, input));
 }

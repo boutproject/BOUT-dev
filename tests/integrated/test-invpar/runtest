@@ -22,7 +22,7 @@ flags += ["'func=ballooning(exp(-y*y)*cos(z)*gauss(x,0.2))'"]
 
 code = 0 # Return code
 for nproc in [1,2,4]:
-    cmd = "./test_invpar"
+    cmd = "../../../bin/test_invpar"
     
     print("   %d processors...." % (nproc))
     r = 0

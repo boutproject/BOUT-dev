@@ -70,7 +70,7 @@ for zeff in zlist:
     print("Running drift instability test, zeff = ", zeff)
 
     # Run the case
-    s, out = launch_safe("./2fluid 2fluid:Zeff={} timestep={}"
+    s, out = launch_safe("../../../bin/2fluid 2fluid:Zeff={} timestep={}"
                          .format(zeff, timestep),
                          nproc=nproc, mthread=nthreads, pipe=True)
     f = open("run.log."+str(zeff), "w")

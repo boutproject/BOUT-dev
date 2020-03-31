@@ -107,6 +107,11 @@
 ///     BOUT_FOR(index, region) {
 ///        A[index] = B[index] + C[index];
 ///     }
+//
+
+// the following is temporary
+#define OPENMP_SCHEDULE static 
+
 #define BOUT_FOR_SERIAL(index, region)                                                   \
   for (auto block = region.getBlocks().cbegin(), end = region.getBlocks().cend();        \
        block < end; ++block)                                                             \
