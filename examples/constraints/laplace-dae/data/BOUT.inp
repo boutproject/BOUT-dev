@@ -79,37 +79,12 @@ constraint = true
 [All]
 scale = 0.0 # default size of initial perturbations
 
-# boundary conditions
-# -------------------
-# dirichlet    - Zero value
-# neumann      - Zero gradient
-# zerolaplace  - Laplacian = 0, decaying solution
-# constlaplace - Laplacian = const, decaying solution
-#
-# relax( )   - Make boundary condition relaxing
-
 bndry_all = dirichlet # Default zero value
 
-# form of initial profile:
-# 0 - constant
-# 1 - Gaussian
-# 2 - Sinusoidal
-# 3 - Mix of mode numbers
-
-xs_opt = 2
-ys_opt = 0
-zs_opt = 2
-
 [U]
-scale = 0.
-
-xs_mode = 2 # X mode number
-zs_mode = 3 # Z mode number
+scale = 1.0
+function = sin(4*pi*x) * sin(3*z)
 
 [phi]
-
-scale = 0.
-
-xs_mode = 1 # X mode number
-zs_mode = 1 # Z mode number
-
+scale = 1.0
+function = sin(2*pi*x) * sin(z)

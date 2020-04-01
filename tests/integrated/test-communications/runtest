@@ -33,12 +33,11 @@ s, out = launch_safe(command, nproc=nxpe*nype, pipe=True)
 with open('run.log.'+str(nxpe), 'w') as f:
     f.write(out)
 
-failures18 = []
 def test(actual, expected, procnum, region, boundary):
     if not np.all(np.array(np.rint(actual).astype(int)) == np.array(expected)):
-        failures18.append('failed in '+boundary+' boundary of region '+str(procnum)
-                        +' ('+region+'). Expected: '+str(expected)+'  Actual: '
-                        +str(actual))
+        print('failed in {} boundary of region {} ({}). Expected: {}  Actual: {}'
+              .format(boundary, procnum, region, expected, actual))
+        exit(1)
 
 region = 'lower, inner PF'
 f = DataFile("data/BOUT.dmp.0.nc")['f'][0, :, :, 0]
@@ -182,13 +181,6 @@ s, out = launch_safe(command, nproc=nxpe*nype, pipe=True)
 with open('run.log.'+str(nxpe), 'w') as f:
     f.write(out)
 
-failures12 = []
-def test(actual, expected, procnum, region, boundary):
-    if not np.all(np.array(np.rint(actual).astype(int)) == np.array(expected)):
-        failures12.append('failed in '+boundary+' boundary of region '+str(procnum)
-                        +' ('+region+'). Expected: '+str(expected)+'  Actual: '
-                        +str(actual))
-
 region = 'lower, inner leg, interior'
 f = DataFile("data/BOUT.dmp.0.nc")['f'][0, :, :, 0]
 test(f[0, 1:-1], [72, 73], 0, region, 'inner x')
@@ -288,13 +280,6 @@ s, out = launch_safe(command, nproc=nxpe*nype, pipe=True)
 with open('run.log.'+str(nxpe), 'w') as f:
     f.write(out)
 
-failures6 = []
-def test(actual, expected, procnum, region, boundary):
-    if not np.all(np.array(np.rint(actual).astype(int)) == np.array(expected)):
-        failures6.append('failed in '+boundary+' boundary of region '+str(procnum)
-                        +' ('+region+'). Expected: '+str(expected)+'  Actual: '
-                        +str(actual))
-
 region = 'lower, inner leg'
 f = DataFile("data/BOUT.dmp.0.nc")['f'][0, :, :, 0]
 test(f[0, 1:-1], [72, 73], 0, region, 'inner x')
@@ -359,13 +344,6 @@ s, out = launch_safe(command, nproc=nxpe*nype, pipe=True)
 with open('run_limiter.log.'+str(nxpe), 'w') as f:
     f.write(out)
 
-failures3 = []
-def test(actual, expected, procnum, region, boundary):
-    if not np.all(np.array(np.rint(actual).astype(int)) == np.array(expected)):
-        failures3.append('failed in '+boundary+' boundary of region '+str(procnum)
-                        +' ('+region+'). Expected: '+str(expected)+'  Actual: '
-                        +str(actual))
-
 region = 'core'
 f = DataFile("data_limiter/BOUT.dmp.0.nc")['f'][0, :, :, 0]
 test(f[0, 1:-1], [12, 13], 0, region, 'inner x')
@@ -402,13 +380,6 @@ s, out = launch_safe(command, nproc=nxpe*nype, pipe=True)
 with open('run_limiter.log.'+str(nxpe), 'w') as f:
     f.write(out)
 
-failures2 = []
-def test(actual, expected, procnum, region, boundary):
-    if not np.all(np.array(np.rint(actual).astype(int)) == np.array(expected)):
-        failures2.append('failed in '+boundary+' boundary of region '+str(procnum)
-                        +' ('+region+'). Expected: '+str(expected)+'  Actual: '
-                        +str(actual))
-
 region = 'interior'
 f = DataFile("data_limiter/BOUT.dmp.0.nc")['f'][0, :, :, 0]
 test(f[0, 1:-1], [12, 13], 0, region, 'inner x')
@@ -438,13 +409,6 @@ s, out = launch_safe(command, nproc=nxpe*nype, pipe=True)
 with open('run_limiter.log.'+str(nxpe), 'w') as f:
     f.write(out)
 
-failures1 = []
-def test(actual, expected, procnum, region, boundary):
-    if not np.all(np.array(np.rint(actual).astype(int)) == np.array(expected)):
-        failures1.append('failed in '+boundary+' boundary of region '+str(procnum)
-                        +' ('+region+'). Expected: '+str(expected)+'  Actual: '
-                        +str(actual))
-
 region = 'all'
 f = DataFile("data_limiter/BOUT.dmp.0.nc")['f'][0, :, :, 0]
 test(f[0, 1:-1], [12, 13], 0, region, 'inner x')
@@ -452,21 +416,6 @@ test(f[-1, 1:-1], [14, 15], 0, region, 'outer x')
 test(f[:, 0], [13, 1, 3, 19, 20, 21, 22, 23], 0, region, 'lower y')
 test(f[:, -1], [12, 0, 2, 27, 28, 29, 30, 31], 0, region, 'upper y')
 
-
-if failures18 == [] and failures12 == [] and failures6 == [] and failures3 == [] and failures2 == [] and failures1 == []:
-    print('Pass')
-    exit(0)
-else:
-    for f in failures18:
-        print(f)
-    for f in failures12:
-        print(f)
-    for f in failures6:
-        print(f)
-    for f in failures3:
-        print(f)
-    for f in failures2:
-        print(f)
-    for f in failures1:
-        print(f)
-    exit(1)
+# If we did not exit already, then all tests passed
+print('Pass')
+exit(0)

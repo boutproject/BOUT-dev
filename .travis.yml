@@ -55,7 +55,7 @@ jobs:
     env: &default_env
       - CONFIGURE_OPTIONS="--enable-shared --enable-checks=no --enable-optimize=3 --disable-signal --disable-track --disable-backtrace --with-petsc --with-slepc --with-sundials=$HOME/local"
       - SCRIPT_FLAGS='-uim'
-      - PIP_PACKAGES='cython==0.29.6 netcdf4==1.4.2 sympy==1.3'
+      - PIP_PACKAGES='cython~=0.29 netcdf4~=1.5 sympy~=1.5'
       - LD_LIBRARY_PATH=$HOME/local/lib:$LD_LIBRARY_PATH
       - *petsc_vars
   - name: "GCC 7"
