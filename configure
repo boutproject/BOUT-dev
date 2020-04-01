@@ -6145,7 +6145,6 @@ if test "x$enable_shared" = "xyes"; then :
     #  PowerPC and SPARC.
     # Therfore use -fPIC for now
     CXXFLAGS="$CXXFLAGS -fPIC"
-    # for src/makefile
     LIB_TO_BUILD+=' $(BOUT_LIB_PATH)/libbout++.so'
     if test "x$enable_static" = "xauto"; then :
 
@@ -6155,7 +6154,7 @@ fi
     SHARED_EXTRA=':'
     if test "x$enable_static" = "xno"; then :
 
-        SHARED_EXTRA='$(RM) -f $(BOUT_LIB_PATH)/*.a'
+        SHARED_EXTRA='$(RM) -f $(BOUT_LIB_PATH)/libbout++.a'
 
 fi
 
