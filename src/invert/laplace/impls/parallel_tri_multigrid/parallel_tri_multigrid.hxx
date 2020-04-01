@@ -84,6 +84,7 @@ public:
 
   bool all(const Array<bool>);
   bool any(const Array<bool>);
+  BoutReal max(const Array<BoutReal>);
 
   void get_errors(Array<BoutReal> &error_rel, Array<BoutReal> &error_abs, const Matrix<dcomplex> x,const Matrix<dcomplex> xlast);
 
@@ -123,15 +124,14 @@ public:
   void jacobi(Level &level, const int jy, Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast);
   void jacobi_full_system(Level &level);
   void gauss_seidel_full_system(Level &level);
-  void gauss_seidel_red_black_full_system(Level &level);
+  void gauss_seidel_red_black_full_system(Level &level, const Array<bool> &converged);
   void refine_full_system(Level &level, Matrix<dcomplex> &fine_error);
 
   void coarsen(const Level level, Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast, int jy);
   void coarsen_full_system(Level &level, const Matrix<dcomplex> fine_residual);
 
-  void calculate_residual_full_system(Level &level);
-  void calculate_total_residual(BoutReal &total, const Level level);
-  //void calculate_total_residual(Array<BoutReal> &total, const Level level);
+  void calculate_residual_full_system(Level &level, const Array<bool> &converged);
+  void calculate_total_residual(Array<BoutReal> &total, Array<bool> &converged, const Level level);
   void update_solution(Level &l, const Matrix<dcomplex> &fine_error);
   void reconstruct_full_solution(Level &level, const int jy, Matrix<dcomplex> &halos);
 
