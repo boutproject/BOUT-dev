@@ -76,8 +76,6 @@ public:
   void get_initial_guess(const int jy, const int kz, Matrix<dcomplex> &r,
       Tensor<dcomplex> &lowerGuardVector, Tensor<dcomplex> &upperGuardVector,
       Matrix<dcomplex> &xk1d);
-  void check_diagonal_dominance(const Array<dcomplex> &a, const Array<dcomplex> &b,
-      const Array<dcomplex> &c, const int ncx, const int jy, const int kz);
   bool is_diagonally_dominant(const dcomplex al, const dcomplex au, const dcomplex bl, const dcomplex bu, const int jy, const int kz);
 
   void resetSolver();
@@ -85,9 +83,6 @@ public:
   bool all(const Array<bool>);
   bool any(const Array<bool>);
   BoutReal max(const Array<BoutReal>);
-
-  void get_errors(Array<BoutReal> &error_rel, Array<BoutReal> &error_abs, const Matrix<dcomplex> x,const Matrix<dcomplex> xlast);
-
 
   void refine(Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast);
 
@@ -185,6 +180,10 @@ private:
   int index_out;
   int proc_in;
   int proc_out;
+
+  // Algorithm option:
+  //  0 - normal multigrid
+  int algorithm = 0;
 
 };
 
