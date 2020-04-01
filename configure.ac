@@ -412,7 +412,7 @@ AS_IF([test "x$enable_shared" = "xyes"], [
     ])
     SHARED_EXTRA=':'
     AS_IF([test "x$enable_static" = "xno"], [
-        SHARED_EXTRA='$(RM) -f $(BOUT_LIB_PATH)/*.a'
+        SHARED_EXTRA='$(RM) -f $(BOUT_LIB_PATH)/libbout++.a'
     ])
 ], [
     AS_IF([test "x$enable_static" = "xauto"], [
