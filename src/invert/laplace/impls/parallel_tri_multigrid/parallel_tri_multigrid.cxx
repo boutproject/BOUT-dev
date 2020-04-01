@@ -589,15 +589,22 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
     xloc(3,kz) = xk1d(kz,xe+1);
     //output<<"initial "<<xloclast(0,kz)<<" "<<xloclast(1,kz)<<" "<<xloclast(2,kz)<<" "<<xloclast(3,kz)<<endl;
 
-    for (int ix = 0; ix < ncx; ix++) {
-      for(int il = 0; il < max_level; il++){
-	levels[il].soln = 0.0;
-	levels[il].solnlast = 0.0;
+  }
+
+  SCOREP_USER_REGION_END(ics);
+  SCOREP_USER_REGION_DEFINE(zerosol);
+  SCOREP_USER_REGION_BEGIN(zerosol, "zero soln",SCOREP_USER_REGION_TYPE_COMMON);
+
+  for(int il = 0; il < max_level; il++){
+    for (int kz = 0; kz <= maxmode; kz++) {
+      for (int ix = 0; ix < levels[il].ncx; ix++) {
+	levels[il].soln(kz,ix) = 0.0;
+	levels[il].solnlast(kz,ix) = 0.0;
       }
     }
   }
 
-  SCOREP_USER_REGION_END(ics);
+  SCOREP_USER_REGION_END(zerosol);
   SCOREP_USER_REGION_DEFINE(whileloop);
   SCOREP_USER_REGION_BEGIN(whileloop, "while loop",SCOREP_USER_REGION_TYPE_COMMON);
 
@@ -673,7 +680,7 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       }
     }
     else if( max(total) < rtol and current_level==0 ){
-      output<<jy<<" "<<count<<" "<<total[0]<<endl;
+      //output<<jy<<" "<<count<<" "<<total[0]<<endl;
       /*
       {
       int kz=0;
