@@ -587,7 +587,9 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       jacobi(levels[current_level], jy, xloc, xloclast);
     }
     else {
-      jacobi_full_system(levels[current_level] );
+      //jacobi_full_system(levels[current_level]);
+      //gauss_seidel_full_system(levels[current_level]);
+      gauss_seidel_red_black_full_system(levels[current_level]);
     }
 
     /*
@@ -603,6 +605,7 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       calculate_residual_full_system(levels[current_level]);
       calculate_total_residual(total,levels[current_level]);
 
+      /*
       {
       int kz=0;
       output<<count<<" "<<current_level;
@@ -618,6 +621,7 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       }
       output<<endl;
       }
+      */
     }
 
     ++count;
@@ -630,6 +634,21 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       //continue;
     }
     else if( total < rtol and current_level==0 ){
+      {
+      int kz=0;
+      output<<count<<" "<<current_level;
+
+      output<<" "<<total;
+      for(int ix=0; ix<levels[0].ncx;ix++){
+	if(ix<levels[current_level].ncx){
+	  output<<" "<<levels[current_level].residual(kz,ix).real();
+	}
+	else{
+	  output<<" "<<0;
+	}
+      }
+      output<<endl;
+      }
       break;
     }
     //else if( total < rtol or current_level==max_level){
@@ -944,6 +963,151 @@ void LaplaceParallelTriMG::jacobi(Level &l, const int jy, Matrix<dcomplex> &xloc
     ///SCOREP_USER_REGION_END(comms);
 }  
 
+/*
+ * Perform a Gauss--Seidel iteration with red black colouring explicitly on the full system 
+ * Note that this assumes that each processor has an ever number of points
+ */
+void LaplaceParallelTriMG::gauss_seidel_red_black_full_system(Level &l){
+
+  Array<dcomplex> sendvec, recvec;
+  sendvec = Array<dcomplex>(nmode);
+  recvec = Array<dcomplex>(nmode);
+  comm_handle recv[1];
+
+  for (int kz = 0; kz <= maxmode; kz++) {
+    // TODO guard work for converged kz
+
+    // Red sweep: odd points
+    for (int ix = l.xs; ix < l.xe+1; ix+=2) {
+      l.soln(kz,ix) = ( l.rvec(kz,ix) - l.avec(kz,ix)*l.soln(kz,ix-1) - l.cvec(kz,ix)*l.soln(kz,ix+1) ) / l.bvec(kz,ix);
+    }
+
+    // Communicate: final grid point needs data from proc above
+    if(!localmesh->lastX()){
+      recv[0] = localmesh->irecvXOut(&recvec[0], nmode, 1);
+    }
+    if(!localmesh->firstX()){
+      for(int kz=0; kz < nmode; kz++){
+	sendvec[kz] = l.soln(kz,l.xs);
+      }
+      localmesh->sendXIn(&sendvec[0],nmode,1);
+    }
+    if(!localmesh->lastX()){
+      localmesh->wait(recv[0]);
+      for(int kz=0; kz < nmode; kz++){
+	l.soln(kz,l.xe+1) = recvec[kz];
+      }
+    }
+
+    // Black sweep: even points
+    for (int ix = l.xs+1; ix < l.xe+1; ix+=2) {
+      l.soln(kz,ix) = ( l.rvec(kz,ix) - l.avec(kz,ix)*l.soln(kz,ix-1) - l.cvec(kz,ix)*l.soln(kz,ix+1) ) / l.bvec(kz,ix);
+    }
+
+    // Communicate: to synchronize, first grid point needs data from proc below
+    if(!localmesh->firstX()){
+      recv[0] = localmesh->irecvXIn(&recvec[0], nmode, 1);
+    }
+    if(!localmesh->lastX()){
+      for(int kz=0; kz < nmode; kz++){
+	sendvec[kz] = l.soln(kz,l.xe);
+      }
+      localmesh->sendXOut(&sendvec[0],nmode,1);
+    }
+    if(!localmesh->firstX()){
+      localmesh->wait(recv[0]);
+      for(int kz=0; kz < nmode; kz++){
+	l.soln(kz,l.xs-1) = recvec[kz];
+      }
+    }
+
+    // Update boundaries to match interior points
+    // Do this after communication, otherwise this breaks on 1 interior pt per proc
+    if(localmesh->firstX()){
+      for (int ix = l.xs-1; ix > 0; ix--) {
+	l.soln(kz,ix) = ( l.rvec(kz,ix) - l.avec(kz,ix)*l.soln(kz,ix-1) - l.cvec(kz,ix)*l.soln(kz,ix+1) ) / l.bvec(kz,ix);
+      }
+      l.soln(kz,0) = ( l.rvec(kz,0) - l.cvec(kz,0)*l.soln(kz,1) ) / l.bvec(kz,0);
+    }
+    if(localmesh->lastX()){
+      for (int ix = l.xe; ix < l.ncx-1; ix++) {
+	l.soln(kz,ix) = ( l.rvec(kz,ix) - l.avec(kz,ix)*l.soln(kz,ix-1) - l.cvec(kz,ix)*l.soln(kz,ix+1) ) / l.bvec(kz,ix);
+      }
+      l.soln(kz,l.ncx-1) = ( l.rvec(kz,l.ncx-1) - l.avec(kz,l.ncx-1)*l.soln(kz,l.ncx-2) ) / l.bvec(kz,l.ncx-1);
+    }
+  }
+}  
+
+// Perform a Gauss--Seidel iteration explicitly on the full system 
+void LaplaceParallelTriMG::gauss_seidel_full_system(Level &l){
+
+  struct Message { dcomplex value; bool done; };
+  Array<Message> message_send, message_recv;
+  message_send = Array<Message>(nmode);
+  message_recv = Array<Message>(nmode);
+  MPI_Comm comm = BoutComm::get();
+  int err;
+
+  for (int kz = 0; kz <= maxmode; kz++) {
+    // TODO guard work for converged kz
+    l.soln(kz,l.xs-1) = l.solnlast(kz,l.xs-1);
+    for (int ix = l.xs; ix < l.xe+1; ix++) {
+      l.soln(kz,ix) = ( l.rvec(kz,ix) - l.avec(kz,ix)*l.soln(kz,ix-1) - l.cvec(kz,ix)*l.solnlast(kz,ix+1) ) / l.bvec(kz,ix);
+    }
+
+    if(!localmesh->firstX()){
+      for (int kz = 0; kz <= maxmode; kz++) {
+///	if(!neighbour_in[kz]){
+	  message_send[kz].value = l.soln(kz,l.xs);
+///	  message_send[kz].done  = self_in[kz];
+///	}
+      }
+      err = MPI_Sendrecv(&message_send[0], nmode*sizeof(Message), MPI_BYTE, proc_in, 1, &message_recv[0], nmode*sizeof(Message), MPI_BYTE, proc_in, 0, comm, MPI_STATUS_IGNORE);
+      for (int kz = 0; kz <= maxmode; kz++) {
+///	if(!self_in[kz]){
+	  l.soln(kz,l.xs-1) = message_recv[kz].value;
+///	  neighbour_in[kz] = message_recv[kz].done;
+///	}
+      }
+///    }
+}
+
+    // Communicate out
+    // See note above for inward communication.
+//    TODO Guard comms
+///    if(!all(neighbour_out)) {
+      //output<<"neighbour_out proc "<<BoutComm::rank()<<endl;
+    if(!localmesh->lastX()){
+      for (int kz = 0; kz <= maxmode; kz++) {
+	message_send[kz].value = l.soln(kz,l.xe);
+///	message_send[kz].done  = self_out[kz];
+      }
+      err = MPI_Sendrecv(&message_send[0], nmode*sizeof(Message), MPI_BYTE, proc_out, 0, &message_recv[0], nmode*sizeof(Message), MPI_BYTE, proc_out, 1, comm, MPI_STATUS_IGNORE);
+      for (int kz = 0; kz < nmode; kz++) {
+	l.soln(kz,l.xe+1) = message_recv[kz].value;
+///	neighbour_out[kz] = message_recv[kz].done;
+      }
+      }
+
+
+    // Update boundaries to match interior points
+    // Do this after communication, otherwise this breaks on 1 interior pt per proc
+    if(localmesh->firstX()){
+      for (int ix = l.xs-1; ix > 0; ix--) {
+	l.soln(kz,ix) = ( l.rvec(kz,ix) - l.avec(kz,ix)*l.soln(kz,ix-1) - l.cvec(kz,ix)*l.soln(kz,ix+1) ) / l.bvec(kz,ix);
+      }
+      l.soln(kz,0) = ( l.rvec(kz,0) - l.cvec(kz,0)*l.soln(kz,1) ) / l.bvec(kz,0);
+    }
+    if(localmesh->lastX()){
+      for (int ix = l.xe; ix < l.ncx-1; ix++) {
+	l.soln(kz,ix) = ( l.rvec(kz,ix) - l.avec(kz,ix)*l.soln(kz,ix-1) - l.cvec(kz,ix)*l.soln(kz,ix+1) ) / l.bvec(kz,ix);
+      }
+      l.soln(kz,l.ncx-1) = ( l.rvec(kz,l.ncx-1) - l.avec(kz,l.ncx-1)*l.soln(kz,l.ncx-2) ) / l.bvec(kz,l.ncx-1);
+    }
+  }
+
+}  
+
 // Perform a Jacobi iteration explicitly on the full system 
 void LaplaceParallelTriMG::jacobi_full_system(Level &l){
 
@@ -1024,6 +1188,10 @@ void LaplaceParallelTriMG::levels_info(const Level l){
   int kz = 0;
   for(int ix = 0; ix<l.ncx; ix++){
     output<<l.avec(kz,ix)<<" "<<l.bvec(kz,ix)<<" "<<l.cvec(kz,ix)<<endl;
+  }
+
+  if(!localmesh->firstX() and l.current_level>0){
+    output<<"comm "<<l.acomm[0]<<" "<<l.bcomm[0]<<" "<<l.ccomm[0]<<endl;
   }
 }
 
@@ -1138,7 +1306,7 @@ void LaplaceParallelTriMG::init(Level &l, const Level lup, int ncx, const int xs
     }
   }
 
-  levels_info(l);
+  //levels_info(l);
 
 }
 
@@ -1403,7 +1571,7 @@ void LaplaceParallelTriMG::init(Level &l, const int ncx, const int jy, const Mat
   }
   */
 
-  levels_info(l);
+  //levels_info(l);
 
 }
 

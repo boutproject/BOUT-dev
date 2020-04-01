@@ -122,6 +122,8 @@ public:
 
   void jacobi(Level &level, const int jy, Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast);
   void jacobi_full_system(Level &level);
+  void gauss_seidel_full_system(Level &level);
+  void gauss_seidel_red_black_full_system(Level &level);
   void refine_full_system(Level &level, Matrix<dcomplex> &fine_error);
 
   void coarsen(const Level level, Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast, int jy);
