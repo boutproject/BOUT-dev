@@ -109,17 +109,14 @@ if "--jobserver-auth=" in mf or "--jobserver-fds=" in mf:
     file_desc=[int(i) for i in re.findall("\d+",mf[offset:])[0:2]]
     js_read = file_desc[0]
     js_write = file_desc[1]
-    #try:
-    #    js_read = os.open(file_desc[0], "r")
-    #    js_write = os.open(file_desc[1], "w")
-    #except:
-    #    print("Warning - we are not part of the job pool 😭, running in serial")
-    #    raise
-    #    file_desc = None
-    #    js_read = None
     if js_read is not None:
-        fl = fcntl.fcntl(js_read, fcntl.F_GETFL)
-        fcntl.fcntl(js_read, fcntl.F_SETFL, fl | os.O_NONBLOCK)
+        try:
+            fl = fcntl.fcntl(js_read, fcntl.F_GETFL)
+            fcntl.fcntl(js_read, fcntl.F_SETFL, fl | os.O_NONBLOCK)
+        except OSError:
+            print("Warning - we are not part of the job pool 😭, running in serial")
+            file_desc = None
+            js_read = None
 
 class Test(threading.Thread):
     def __init__(self, name, cmd):
