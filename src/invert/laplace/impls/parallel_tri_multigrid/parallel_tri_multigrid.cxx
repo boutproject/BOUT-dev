@@ -257,8 +257,8 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   SCOREP0();
   Timer timer("invert"); ///< Start timer
 
-  ///SCOREP_USER_REGION_DEFINE(initvars);
-  ///SCOREP_USER_REGION_BEGIN(initvars, "init vars",SCOREP_USER_REGION_TYPE_COMMON);
+  SCOREP_USER_REGION_DEFINE(initvars);
+  SCOREP_USER_REGION_BEGIN(initvars, "init vars",SCOREP_USER_REGION_TYPE_COMMON);
 
   ASSERT1(localmesh == b.getMesh() && localmesh == x0.getMesh());
   ASSERT1(b.getLocation() == location);
@@ -383,9 +383,9 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
     index_out = 1;
   }
 
-  ///SCOREP_USER_REGION_END(initvars);
-  ///SCOREP_USER_REGION_DEFINE(initloop);
-  ///SCOREP_USER_REGION_BEGIN(initloop, "init xk loop",SCOREP_USER_REGION_TYPE_COMMON);
+  SCOREP_USER_REGION_END(initvars);
+  SCOREP_USER_REGION_DEFINE(initloop);
+  SCOREP_USER_REGION_BEGIN(initloop, "init xk loop",SCOREP_USER_REGION_TYPE_COMMON);
 
   // Initialise xk to 0 as we only visit 0<= kz <= maxmode in solve
   for (int ix = 0; ix < ncx; ix++) {
@@ -393,9 +393,9 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       xk(ix, kz) = 0.0;
     }
   }
-  ///SCOREP_USER_REGION_END(initloop);
-  ///SCOREP_USER_REGION_DEFINE(fftloop);
-  ///SCOREP_USER_REGION_BEGIN(fftloop, "init fft loop",SCOREP_USER_REGION_TYPE_COMMON);
+  SCOREP_USER_REGION_END(initloop);
+  SCOREP_USER_REGION_DEFINE(fftloop);
+  SCOREP_USER_REGION_BEGIN(fftloop, "init fft loop",SCOREP_USER_REGION_TYPE_COMMON);
 
   /* Coefficents in the tridiagonal solver matrix
   * Following the notation in "Numerical recipes"
@@ -433,9 +433,9 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       //rfft(x0[ix], ncz, &xk(ix, 0));
     }
   }
-  ///SCOREP_USER_REGION_END(fftloop);
-  ///SCOREP_USER_REGION_DEFINE(kzinit);
-  ///SCOREP_USER_REGION_BEGIN(kzinit, "kz init",SCOREP_USER_REGION_TYPE_COMMON);
+  SCOREP_USER_REGION_END(fftloop);
+  SCOREP_USER_REGION_DEFINE(kzinit);
+  SCOREP_USER_REGION_BEGIN(kzinit, "kz init",SCOREP_USER_REGION_TYPE_COMMON);
 
   /* Solve differential equation in x for each fourier mode
   * Note that only the non-degenerate fourier modes are being used (i.e. the
@@ -506,9 +506,9 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       }
     }
   }
-  ///SCOREP_USER_REGION_END(kzinit);
-  ///SCOREP_USER_REGION_DEFINE(initlevels);
-  ///SCOREP_USER_REGION_BEGIN(initlevels, "init levels",SCOREP_USER_REGION_TYPE_COMMON);
+  SCOREP_USER_REGION_END(kzinit);
+  SCOREP_USER_REGION_DEFINE(initlevels);
+  SCOREP_USER_REGION_BEGIN(initlevels, "init levels",SCOREP_USER_REGION_TYPE_COMMON);
 
 
   // Initialize levels. Note that the finest grid (level 0) has a different
@@ -531,16 +531,16 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   ncx_coarse = (ncx_coarse-4)/2+4;
   init(levels[3], levels[2], ncx_coarse, xs, ncx_coarse-3,3); //FIXME assumes mgy=2
-  ///SCOREP_USER_REGION_END(initlevels);
-  ///SCOREP_USER_REGION_DEFINE(ics);
-  ///SCOREP_USER_REGION_BEGIN(ics, "initial conditions ",SCOREP_USER_REGION_TYPE_COMMON);
+  SCOREP_USER_REGION_END(initlevels);
+  SCOREP_USER_REGION_DEFINE(ics);
+  SCOREP_USER_REGION_BEGIN(ics, "initial conditions ",SCOREP_USER_REGION_TYPE_COMMON);
 
-  for (int kz = 0; kz <= maxmode; kz++) {
-    //if( first_call(jy,kz) or not use_previous_timestep ){
-    get_initial_guess(jy,kz,levels[0].minvb,levels[0].lowerGuardVector,levels[0].upperGuardVector,xk1d);
-    //}
+  if(algorithm!=0){
+    for (int kz = 0; kz <= maxmode; kz++) {
+      //if( first_call(jy,kz) or not use_previous_timestep ){
+      get_initial_guess(jy,kz,levels[0].minvb,levels[0].lowerGuardVector,levels[0].upperGuardVector,xk1d);
+      //}
 
-    if(algorithm!=0){
       // Original method:
       xloclast(0,kz) = xk1d(kz,xs-1);
       xloclast(1,kz) = xk1d(kz,xs);
@@ -556,9 +556,9 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   }
 
-  ///SCOREP_USER_REGION_END(ics);
-  ///SCOREP_USER_REGION_DEFINE(zerosol);
-  ///SCOREP_USER_REGION_BEGIN(zerosol, "zero soln",SCOREP_USER_REGION_TYPE_COMMON);
+  SCOREP_USER_REGION_END(ics);
+  SCOREP_USER_REGION_DEFINE(zerosol);
+  SCOREP_USER_REGION_BEGIN(zerosol, "zero soln",SCOREP_USER_REGION_TYPE_COMMON);
 
   for(int il = 1; il < max_level; il++){
     for (int kz = 0; kz <= maxmode; kz++) {
@@ -569,9 +569,9 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
     }
   }
 
-  ///SCOREP_USER_REGION_END(zerosol);
-  ///SCOREP_USER_REGION_DEFINE(whileloop);
-  ///SCOREP_USER_REGION_BEGIN(whileloop, "while loop",SCOREP_USER_REGION_TYPE_COMMON);
+  SCOREP_USER_REGION_END(zerosol);
+  SCOREP_USER_REGION_DEFINE(whileloop);
+  SCOREP_USER_REGION_BEGIN(whileloop, "while loop",SCOREP_USER_REGION_TYPE_COMMON);
 
   int count = 0;
   int subcount = 0;
@@ -724,7 +724,6 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
     //}
     }
     // Implicitly, else = carry on doing iterations at this level
-    ///SCOREP_USER_REGION_END(comms_after_break);
     if (count>maxits) {
       break;
       /*
@@ -744,8 +743,8 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       */
     }
 
-    ///SCOREP_USER_REGION_DEFINE(copylast);
-    ///SCOREP_USER_REGION_BEGIN(copylast, "copy to last",SCOREP_USER_REGION_TYPE_COMMON);
+    SCOREP_USER_REGION_DEFINE(copylast);
+    SCOREP_USER_REGION_BEGIN(copylast, "copy to last",SCOREP_USER_REGION_TYPE_COMMON);
     //output<<"xloc "<<maxmode<<" "<<kz<<" "<<xloc(kz,0)<<" "<<xloc(kz,1)<<" "<<xloc(kz,2)<<" "<<xloc(kz,3)<<endl;
     //output<<"xloclast "<<kz<<" "<<xloclast(kz,0)<<" "<<xloclast(kz,1)<<" "<<xloclast(kz,2)<<" "<<xloclast(kz,3)<<endl;
     /*
@@ -760,25 +759,27 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       //}
     }
     */
-    ///SCOREP_USER_REGION_END(copylast);
+    SCOREP_USER_REGION_END(copylast);
 
   }
-  ///SCOREP_USER_REGION_END(whileloop);
-  ///SCOREP_USER_REGION_DEFINE(afterloop);
-  ///SCOREP_USER_REGION_BEGIN(afterloop, "after faff",SCOREP_USER_REGION_TYPE_COMMON);
+  SCOREP_USER_REGION_END(whileloop);
+  SCOREP_USER_REGION_DEFINE(afterloop);
+  SCOREP_USER_REGION_BEGIN(afterloop, "after faff",SCOREP_USER_REGION_TYPE_COMMON);
 
-  for (int kz = 0; kz <= maxmode; kz++) {
-    for (int ix = 0; ix < levels[0].ncx; ix++) {
-      xk1d(kz,ix) = levels[0].soln(kz,ix);
+  if(algorithm!=0){
+    for (int kz = 0; kz <= maxmode; kz++) {
+      for (int ix = 0; ix < levels[0].ncx; ix++) {
+	xk1d(kz,ix) = levels[0].soln(kz,ix);
+      }
+      xloclast(0,kz) = levels[0].soln(kz,levels[0].xs-1);
+      xloclast(1,kz) = levels[0].soln(kz,levels[0].xs);
+      xloclast(2,kz) = levels[0].soln(kz,levels[0].xe);
+      xloclast(3,kz) = levels[0].soln(kz,levels[0].xe+1);
+      xloc(0,kz) = levels[0].soln(kz,levels[0].xs-1);
+      xloc(1,kz) = levels[0].soln(kz,levels[0].xs);
+      xloc(2,kz) = levels[0].soln(kz,levels[0].xe);
+      xloc(3,kz) = levels[0].soln(kz,levels[0].xe+1);
     }
-    xloclast(0,kz) = levels[0].soln(kz,levels[0].xs-1);
-    xloclast(1,kz) = levels[0].soln(kz,levels[0].xs);
-    xloclast(2,kz) = levels[0].soln(kz,levels[0].xe);
-    xloclast(3,kz) = levels[0].soln(kz,levels[0].xe+1);
-    xloc(0,kz) = levels[0].soln(kz,levels[0].xs-1);
-    xloc(1,kz) = levels[0].soln(kz,levels[0].xs);
-    xloc(2,kz) = levels[0].soln(kz,levels[0].xe);
-    xloc(3,kz) = levels[0].soln(kz,levels[0].xe+1);
   }
 //  output<<"after iteration"<<endl;
 
@@ -788,50 +789,52 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   ipt_mean_its = (ipt_mean_its * BoutReal(ncalls-1)
   + BoutReal(count))/BoutReal(ncalls);
 
-  for (int kz = 0; kz <= maxmode; kz++) {
-    // Original method:
-    xk1d(kz,xs-1) = xloc(0,kz);
-    xk1d(kz,xs)   = xloc(1,kz);
-    xk1dlast(kz,xs-1) = xloclast(0,kz);
-    xk1dlast(kz,xs)   = xloclast(1,kz);
-    xk1d(kz,xe)   = xloc(2,kz);
-    xk1d(kz,xe+1) = xloc(3,kz);
-    xk1dlast(kz,xe)   = xloclast(2,kz);
-    xk1dlast(kz,xe+1) = xloclast(3,kz);
+  if(algorithm!=0){
+    for (int kz = 0; kz <= maxmode; kz++) {
+      // Original method:
+      xk1d(kz,xs-1) = xloc(0,kz);
+      xk1d(kz,xs)   = xloc(1,kz);
+      xk1dlast(kz,xs-1) = xloclast(0,kz);
+      xk1dlast(kz,xs)   = xloclast(1,kz);
+      xk1d(kz,xe)   = xloc(2,kz);
+      xk1d(kz,xe+1) = xloc(3,kz);
+      xk1dlast(kz,xe)   = xloclast(2,kz);
+      xk1dlast(kz,xe+1) = xloclast(3,kz);
 
-    /*
-        for (int ix = 0; ix < 4; ix++) {
-	  output<<"final "<<ix<<" "<<xloclast(ix,0) <<" "<< xloc(ix,0)<<endl;
-        }
-	*/
+      /*
+	  for (int ix = 0; ix < 4; ix++) {
+	    output<<"final "<<ix<<" "<<xloclast(ix,0) <<" "<< xloc(ix,0)<<endl;
+	  }
+	  */
 
-    /*
-    if(new_method){
-      dcomplex d = 1.0/(buold(jy,kz)*alold(jy,kz) - blold(jy,kz)*auold(jy,kz));
-      // If boundary processor, halo cell is already correct, and d is undefined.
-      // Lower boundary proc => al = au = 0
-      // Upper boundary proc => bl = bu = 0
-      if(not localmesh->firstX() and not localmesh->lastX()){
-	// General case
-	xk1dlast(kz,xs-1) =  d*(buold(jy,kz)*(xk1dlast(kz,xs)-rlold[kz]) - blold(jy,kz)*(xk1dlast(kz,xe)-ruold[kz]));
-	xk1dlast(kz,xe+1) = -d*(auold(jy,kz)*(xk1dlast(kz,xs)-rlold[kz]) - alold(jy,kz)*(xk1dlast(kz,xe)-ruold[kz]));
-      } else if(localmesh->firstX() and not localmesh->lastX()) {
-	// Lower boundary but not upper boundary
-	// xk1dlast[xs-1] = already correct
-	xk1dlast(kz,xe+1) = (xk1dlast(kz,xe)-ruold[kz])/buold(jy,kz);
-      } else if(localmesh->lastX() and not localmesh->firstX()){
-	// Upper boundary but not lower boundary
-	// xk1dlast[xe+1] = already correct
-	xk1dlast(kz,xs-1) = (xk1dlast(kz,xs)-rlold[kz])/alold(jy,kz);
-      } 
-      // No "else" case. If both upper and lower boundaries, both xs-1 and xe+1
-      // are already correct
+      /*
+      if(new_method){
+	dcomplex d = 1.0/(buold(jy,kz)*alold(jy,kz) - blold(jy,kz)*auold(jy,kz));
+	// If boundary processor, halo cell is already correct, and d is undefined.
+	// Lower boundary proc => al = au = 0
+	// Upper boundary proc => bl = bu = 0
+	if(not localmesh->firstX() and not localmesh->lastX()){
+	  // General case
+	  xk1dlast(kz,xs-1) =  d*(buold(jy,kz)*(xk1dlast(kz,xs)-rlold[kz]) - blold(jy,kz)*(xk1dlast(kz,xe)-ruold[kz]));
+	  xk1dlast(kz,xe+1) = -d*(auold(jy,kz)*(xk1dlast(kz,xs)-rlold[kz]) - alold(jy,kz)*(xk1dlast(kz,xe)-ruold[kz]));
+	} else if(localmesh->firstX() and not localmesh->lastX()) {
+	  // Lower boundary but not upper boundary
+	  // xk1dlast[xs-1] = already correct
+	  xk1dlast(kz,xe+1) = (xk1dlast(kz,xe)-ruold[kz])/buold(jy,kz);
+	} else if(localmesh->lastX() and not localmesh->firstX()){
+	  // Upper boundary but not lower boundary
+	  // xk1dlast[xe+1] = already correct
+	  xk1dlast(kz,xs-1) = (xk1dlast(kz,xs)-rlold[kz])/alold(jy,kz);
+	} 
+	// No "else" case. If both upper and lower boundaries, both xs-1 and xe+1
+	// are already correct
+      }
+      */
     }
-    */
-  }
 
-  // Now that halo cells are converged, use these to calculate whole solution
-  reconstruct_full_solution(levels[0],jy,xk1dlast);
+    // Now that halo cells are converged, use these to calculate whole solution
+    reconstruct_full_solution(levels[0],jy,xk1dlast);
+  }
 
   for(int kz=0; kz<nmode; kz++){
     for(int i=0; i<ncx; i++){
@@ -865,10 +868,10 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
     first_call(jy,kz) = false;
   }
 //  output<<"after loop"<<endl;
-  ///SCOREP_USER_REGION_END(afterloop);
+  SCOREP_USER_REGION_END(afterloop);
 
-  ///SCOREP_USER_REGION_DEFINE(fftback);
-  ///SCOREP_USER_REGION_BEGIN(fftback, "fft back",SCOREP_USER_REGION_TYPE_COMMON);
+  SCOREP_USER_REGION_DEFINE(fftback);
+  SCOREP_USER_REGION_BEGIN(fftback, "fft back",SCOREP_USER_REGION_TYPE_COMMON);
   // Done inversion, transform back
   for (int ix = 0; ix < ncx; ix++) {
 
@@ -884,7 +887,7 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
 #endif
   }
 //  output<<"end"<<endl;
-  ///SCOREP_USER_REGION_END(fftback);
+  SCOREP_USER_REGION_END(fftback);
   return x; // Result of the inversion
 }
 
@@ -913,9 +916,8 @@ void LaplaceParallelTriMG::jacobi(Level &l, const int jy, Matrix<dcomplex> &xloc
   }
 
     //output<<"after work jy, count "<<jy<<" "<<count<<endl;
-    ///SCOREP_USER_REGION_END(workanderror);
-    ///SCOREP_USER_REGION_DEFINE(comms);
-    ///SCOREP_USER_REGION_BEGIN(comms, "communication",SCOREP_USER_REGION_TYPE_COMMON);
+    SCOREP_USER_REGION_DEFINE(comms);
+    SCOREP_USER_REGION_BEGIN(comms, "communication",SCOREP_USER_REGION_TYPE_COMMON);
 
     // Communication
     // A proc is finished when it is both in- and out-converged.
@@ -984,7 +986,7 @@ void LaplaceParallelTriMG::jacobi(Level &l, const int jy, Matrix<dcomplex> &xloc
       }
       }
 ///    }
-    ///SCOREP_USER_REGION_END(comms);
+    SCOREP_USER_REGION_END(comms);
 }  
 
 /*
@@ -1357,41 +1359,12 @@ void LaplaceParallelTriMG::init(Level &l, const Level lup, int ncx, const int xs
 
 void LaplaceParallelTriMG::init(Level &l, const int ncx, const int jy, const Matrix<dcomplex> avec, const Matrix<dcomplex> bvec, const Matrix<dcomplex> cvec, const Matrix<dcomplex> bcmplx, const int xs, const int xe, const int current_level){
 
+  // Basic definitions for conventional multigrid
   SCOREP0();
   l.xs = xs;
   l.xe = xe;
   l.ncx = ncx;
   l.current_level = current_level;
-
-  auto rlold = Array<dcomplex>(nmode);
-  auto ruold = Array<dcomplex>(nmode);
-  //auto Rd = Array<dcomplex>(ncz/2+1);
-  //auto Ru = Array<dcomplex>(ncz/2+1);
-  //auto Rsendup = Array<dcomplex>(ncz+2);
-  //auto Rsenddown = Array<dcomplex>(ncz+2);
-  //auto Rrecvup = Array<dcomplex>(ncz+2);
-  //auto Rrecvdown = Array<dcomplex>(ncz+2);
-  auto evec = Array<dcomplex>(ncx);
-  auto tmp = Array<dcomplex>(ncx);
-
-  // Define sizes of local coefficients
-  l.minvb = Matrix<dcomplex>(nmode,ncx);
-  l.upperGuardVector = Tensor<dcomplex>(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
-  l.lowerGuardVector = Tensor<dcomplex>(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
-  l.al = Matrix<dcomplex>(localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
-  l.bl = Matrix<dcomplex>(localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
-  l.au = Matrix<dcomplex>(localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
-  l.bu = Matrix<dcomplex>(localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
-
-  l.alold = Matrix<dcomplex>(localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
-  l.blold = Matrix<dcomplex>(localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
-  l.auold = Matrix<dcomplex>(localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
-  l.buold = Matrix<dcomplex>(localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
-
-  l.rl = Array<dcomplex>(localmesh->LocalNz / 2 + 1);
-  l.ru = Array<dcomplex>(localmesh->LocalNz / 2 + 1);
-  l.rlold = Array<dcomplex>(localmesh->LocalNz / 2 + 1);
-  l.ruold = Array<dcomplex>(localmesh->LocalNz / 2 + 1);
 
   l.avec = Matrix<dcomplex>(nmode,ncx);
   l.bvec = Matrix<dcomplex>(nmode,ncx);
@@ -1408,214 +1381,244 @@ void LaplaceParallelTriMG::init(Level &l, const int ncx, const int jy, const Mat
      l.rvec(kz,ix) = bcmplx(kz,ix); 
     }
   }
+  // end basic definitions
 
-  for (int kz = 0; kz <= maxmode; kz++) {
+  if(algorithm!=0){
+    auto rlold = Array<dcomplex>(nmode);
+    auto ruold = Array<dcomplex>(nmode);
+    //auto Rd = Array<dcomplex>(ncz/2+1);
+    //auto Ru = Array<dcomplex>(ncz/2+1);
+    //auto Rsendup = Array<dcomplex>(ncz+2);
+    //auto Rsenddown = Array<dcomplex>(ncz+2);
+    //auto Rrecvup = Array<dcomplex>(ncz+2);
+    //auto Rrecvdown = Array<dcomplex>(ncz+2);
+    auto evec = Array<dcomplex>(ncx);
+    auto tmp = Array<dcomplex>(ncx);
 
-    ///SCOREP_USER_REGION_END(kzinit);
-    ///SCOREP_USER_REGION_DEFINE(invert);
-    ///SCOREP_USER_REGION_BEGIN(invert, "invert local matrices",SCOREP_USER_REGION_TYPE_COMMON);
+    // Define sizes of local coefficients
+    l.minvb = Matrix<dcomplex>(nmode,ncx);
+    l.upperGuardVector = Tensor<dcomplex>(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
+    l.lowerGuardVector = Tensor<dcomplex>(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
+    l.al = Matrix<dcomplex>(localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
+    l.bl = Matrix<dcomplex>(localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
+    l.au = Matrix<dcomplex>(localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
+    l.bu = Matrix<dcomplex>(localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
 
-    // Invert local matrices
-    // Calculate Minv*b
-    tridag(&avec(kz,0), &bvec(kz,0), &cvec(kz,0), &bcmplx(kz,0),
-    &l.minvb(kz,0), ncx);
-    // Now minvb is a constant vector throughout the iterations
+    l.alold = Matrix<dcomplex>(localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
+    l.blold = Matrix<dcomplex>(localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
+    l.auold = Matrix<dcomplex>(localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
+    l.buold = Matrix<dcomplex>(localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
 
-    // TODO GUARD?
-    //if(first_call(jy,kz) || not store_coefficients ){
-      // If not already stored, find edge update vectors
-      //
-      // Upper interface
-      if(not localmesh->lastX()) { 
-	// Need the xend-th element
-	for(int i=0; i<ncx; i++){
-	  evec[i] = 0.0;
+    l.rl = Array<dcomplex>(localmesh->LocalNz / 2 + 1);
+    l.ru = Array<dcomplex>(localmesh->LocalNz / 2 + 1);
+    l.rlold = Array<dcomplex>(localmesh->LocalNz / 2 + 1);
+    l.ruold = Array<dcomplex>(localmesh->LocalNz / 2 + 1);
+
+    for (int kz = 0; kz <= maxmode; kz++) {
+
+      SCOREP_USER_REGION_DEFINE(invert);
+      SCOREP_USER_REGION_BEGIN(invert, "invert local matrices",SCOREP_USER_REGION_TYPE_COMMON);
+
+      // Invert local matrices
+      // Calculate Minv*b
+      tridag(&avec(kz,0), &bvec(kz,0), &cvec(kz,0), &bcmplx(kz,0),
+      &l.minvb(kz,0), ncx);
+      // Now minvb is a constant vector throughout the iterations
+
+      // TODO GUARD?
+      //if(first_call(jy,kz) || not store_coefficients ){
+	// If not already stored, find edge update vectors
+	//
+	// Upper interface
+	if(not localmesh->lastX()) { 
+	  // Need the xend-th element
+	  for(int i=0; i<ncx; i++){
+	    evec[i] = 0.0;
+	  }
+	  evec[l.xe+1] = 1.0;
+	  tridag(&avec(kz,0), &bvec(kz,0), &cvec(kz,0), std::begin(evec),
+	  std::begin(tmp), ncx);
+	  for(int i=0; i<ncx; i++){
+	    l.upperGuardVector(i,jy,kz) = tmp[i];
+	  }
+	} else {
+	  for(int i=0; i<ncx; i++){
+	    l.upperGuardVector(i,jy,kz) = 0.0;
+	  }
 	}
-	evec[l.xe+1] = 1.0;
-	tridag(&avec(kz,0), &bvec(kz,0), &cvec(kz,0), std::begin(evec),
-	std::begin(tmp), ncx);
-	for(int i=0; i<ncx; i++){
-	  l.upperGuardVector(i,jy,kz) = tmp[i];
+
+	// Lower interface
+	if(not localmesh->firstX()) { 
+	  for(int i=0; i<ncx; i++){
+	    evec[i] = 0.0;
+	  }
+	  evec[l.xs-1] = 1.0;
+	  tridag(&avec(kz,0), &bvec(kz,0), &cvec(kz,0), std::begin(evec),
+	  std::begin(tmp), ncx);
+	  for(int i=0; i<ncx; i++){
+	    l.lowerGuardVector(i,jy,kz) = tmp[i];
+	  }
+	} else {
+	  for(int i=0; i<ncx; i++){
+	    l.lowerGuardVector(i,jy,kz) = 0.0;
+	  }
 	}
-      } else {
-	for(int i=0; i<ncx; i++){
-	  l.upperGuardVector(i,jy,kz) = 0.0;
-	}
-      }
+  ///    }
 
-      // Lower interface
-      if(not localmesh->firstX()) { 
-	for(int i=0; i<ncx; i++){
-	  evec[i] = 0.0;
-	}
-	evec[l.xs-1] = 1.0;
-	tridag(&avec(kz,0), &bvec(kz,0), &cvec(kz,0), std::begin(evec),
-	std::begin(tmp), ncx);
-	for(int i=0; i<ncx; i++){
-	  l.lowerGuardVector(i,jy,kz) = tmp[i];
-	}
-      } else {
-	for(int i=0; i<ncx; i++){
-	  l.lowerGuardVector(i,jy,kz) = 0.0;
-	}
-      }
-///    }
+      SCOREP_USER_REGION_END(invert);
+      SCOREP_USER_REGION_DEFINE(coefs);
+      SCOREP_USER_REGION_BEGIN(coefs, "calculate coefs",SCOREP_USER_REGION_TYPE_COMMON);
 
-    ///SCOREP_USER_REGION_END(invert);
-    ///SCOREP_USER_REGION_DEFINE(coefs);
-    ///SCOREP_USER_REGION_BEGIN(coefs, "calculate coefs",SCOREP_USER_REGION_TYPE_COMMON);
+	// TODO Guard?
+  ///    if( first_call(jy,kz) or not store_coefficients ){
+	l.bl(jy,kz) = l.upperGuardVector(l.xs,jy,kz);
+	l.al(jy,kz) = l.lowerGuardVector(l.xs,jy,kz);
 
-      // TODO Guard?
-///    if( first_call(jy,kz) or not store_coefficients ){
-      l.bl(jy,kz) = l.upperGuardVector(l.xs,jy,kz);
-      l.al(jy,kz) = l.lowerGuardVector(l.xs,jy,kz);
+	l.bu(jy,kz) = l.upperGuardVector(l.xe,jy,kz);
+	l.au(jy,kz) = l.lowerGuardVector(l.xe,jy,kz);
 
-      l.bu(jy,kz) = l.upperGuardVector(l.xe,jy,kz);
-      l.au(jy,kz) = l.lowerGuardVector(l.xe,jy,kz);
+	l.alold(jy,kz) = l.al(jy,kz);
+	l.auold(jy,kz) = l.au(jy,kz);
+	l.blold(jy,kz) = l.bl(jy,kz);
+	l.buold(jy,kz) = l.bu(jy,kz);
+  ///    }
 
-      l.alold(jy,kz) = l.al(jy,kz);
-      l.auold(jy,kz) = l.au(jy,kz);
-      l.blold(jy,kz) = l.bl(jy,kz);
-      l.buold(jy,kz) = l.bu(jy,kz);
-///    }
+      l.rl[kz] = l.minvb(kz,l.xs);
+      l.ru[kz] = l.minvb(kz,l.xe);
+      l.rlold[kz] = l.rl[kz];
+      l.ruold[kz] = l.ru[kz];
 
-    l.rl[kz] = l.minvb(kz,l.xs);
-    l.ru[kz] = l.minvb(kz,l.xe);
-    l.rlold[kz] = l.rl[kz];
-    l.ruold[kz] = l.ru[kz];
+      // New method - connect to more distant points
+      /*
+      if(new_method){
 
-    // New method - connect to more distant points
-    /*
-    if(new_method){
+	// First compute coefficients that depend on the matrix to be inverted
+	// and which therefore might be constant throughout a run.
+	// TODO Guard?
+	//if( first_call(jy,kz) or not store_coefficients){
 
-      // First compute coefficients that depend on the matrix to be inverted
-      // and which therefore might be constant throughout a run.
-      // TODO Guard?
-      //if( first_call(jy,kz) or not store_coefficients){
+	  // Boundary processor values to be overwritten when relevant
+	  Ad = 1.0;
+	  Bd = 0.0;
+	  Au = 0.0;
+	  Bu = 1.0;
+	  if(not localmesh->firstX()){
+	    // Send coefficients down
+	    Atmp = al(jy,kz);
+	    Btmp = 0.0;
+	    if( std::fabs(bu(jy,kz)) > 1e-14 ){
+	      Btmp = bl(jy,kz)/bu(jy,kz);
+	      Atmp -= Btmp*au(jy,kz);
+	    }
+	    // Send these
+	    Ad = localmesh->communicateXIn(Atmp);
+	    Bd = localmesh->communicateXIn(Btmp);
+	  }
+	  if(not localmesh->lastX()){
+	    // Send coefficients up
+	    Atmp = 0.0;
+	    Btmp = bu(jy,kz);
+	    if( std::fabs(al(jy,kz)) > 1e-14 ){
+	      Atmp = au(jy,kz)/al(jy,kz);
+	      Btmp -= Atmp*bl(jy,kz);
+	    }
+	    // Send these
+	    Au = localmesh->communicateXOut(Atmp);
+	    Bu = localmesh->communicateXOut(Btmp);
+	  }
+
+	  dcomplex Delta;
+	  Delta = 1.0 - al(jy,kz)*Bd - bu(jy,kz)*Au + (al(jy,kz)*bu(jy,kz) - au(jy,kz)*bl(jy,kz))*Bd*Au;
+	  Delta = 1.0 / Delta;
+	  al(jy,kz) = Delta*( alold(jy,kz) + (auold(jy,kz)*blold(jy,kz) - alold(jy,kz)*buold(jy,kz))*Au )*Ad;
+	  bl(jy,kz) = Delta * blold(jy,kz) * Bu ;
+	  au(jy,kz) = Delta * auold(jy,kz) * Ad ;
+	  bu(jy,kz) = Delta*( buold(jy,kz) + (auold(jy,kz)*blold(jy,kz) - alold(jy,kz)*buold(jy,kz))*Bd )*Bu;
+
+	  dcomplex d = auold(jy,kz)*blold(jy,kz) - alold(jy,kz)*buold(jy,kz);
+	  r1(jy,kz) = Delta*(alold(jy,kz) + d*Au);
+	  r2(jy,kz) = Delta*( 1.0 - buold(jy,kz)*Au );
+	  r3(jy,kz) = Delta*blold(jy,kz)*Au;
+	  r4(jy,kz) = Delta*blold(jy,kz);
+	  r5(jy,kz) = Delta*auold(jy,kz);
+	  r6(jy,kz) = Delta*auold(jy,kz)*Bd;
+	  r7(jy,kz) = Delta*( 1.0 - alold(jy,kz)*Bd );
+	  r8(jy,kz) = Delta*(buold(jy,kz) + d*Bd);
+
+  ///      }
+
+	// Now compute coefficients that depend on the right-hand side and
+	// which therefore change every time.
 
 	// Boundary processor values to be overwritten when relevant
-	Ad = 1.0;
-	Bd = 0.0;
-	Au = 0.0;
-	Bu = 1.0;
+	Rd[kz] = 0.0;
+	Ru[kz] = 0.0;
 	if(not localmesh->firstX()){
 	  // Send coefficients down
-	  Atmp = al(jy,kz);
-	  Btmp = 0.0;
-	  if( std::fabs(bu(jy,kz)) > 1e-14 ){
-	    Btmp = bl(jy,kz)/bu(jy,kz);
-	    Atmp -= Btmp*au(jy,kz);
+	  Rsenddown[kz] = rl[kz];
+	  if( std::fabs(buold(jy,kz)) > 1e-14 ){
+	    Rsenddown[kz] -= ru[kz]*blold(jy,kz)/buold(jy,kz);
 	  }
-	  // Send these
-	  Ad = localmesh->communicateXIn(Atmp);
-	  Bd = localmesh->communicateXIn(Btmp);
+	  Rd[kz] = localmesh->communicateXIn(Rsenddown[kz]);
 	}
 	if(not localmesh->lastX()){
 	  // Send coefficients up
-	  Atmp = 0.0;
-	  Btmp = bu(jy,kz);
-	  if( std::fabs(al(jy,kz)) > 1e-14 ){
-	    Atmp = au(jy,kz)/al(jy,kz);
-	    Btmp -= Atmp*bl(jy,kz);
+	  Rsendup[kz] = ru[kz];
+	  if( std::fabs(alold(jy,kz)) > 1e-14 ){
+	    Rsendup[kz] -= rl[kz]*auold(jy,kz)/alold(jy,kz);
 	  }
-	  // Send these
-	  Au = localmesh->communicateXOut(Atmp);
-	  Bu = localmesh->communicateXOut(Btmp);
+	  Ru[kz] = localmesh->communicateXOut(Rsendup[kz]);
 	}
+      } // new method
+    */
+      SCOREP_USER_REGION_END(coefs);
+    } // end of kz loop
 
-	dcomplex Delta;
-	Delta = 1.0 - al(jy,kz)*Bd - bu(jy,kz)*Au + (al(jy,kz)*bu(jy,kz) - au(jy,kz)*bl(jy,kz))*Bd*Au;
-	Delta = 1.0 / Delta;
-	al(jy,kz) = Delta*( alold(jy,kz) + (auold(jy,kz)*blold(jy,kz) - alold(jy,kz)*buold(jy,kz))*Au )*Ad;
-	bl(jy,kz) = Delta * blold(jy,kz) * Bu ;
-	au(jy,kz) = Delta * auold(jy,kz) * Ad ;
-	bu(jy,kz) = Delta*( buold(jy,kz) + (auold(jy,kz)*blold(jy,kz) - alold(jy,kz)*buold(jy,kz))*Bd )*Bu;
-
-	dcomplex d = auold(jy,kz)*blold(jy,kz) - alold(jy,kz)*buold(jy,kz);
-	r1(jy,kz) = Delta*(alold(jy,kz) + d*Au);
-	r2(jy,kz) = Delta*( 1.0 - buold(jy,kz)*Au );
-	r3(jy,kz) = Delta*blold(jy,kz)*Au;
-	r4(jy,kz) = Delta*blold(jy,kz);
-	r5(jy,kz) = Delta*auold(jy,kz);
-	r6(jy,kz) = Delta*auold(jy,kz)*Bd;
-	r7(jy,kz) = Delta*( 1.0 - alold(jy,kz)*Bd );
-	r8(jy,kz) = Delta*(buold(jy,kz) + d*Bd);
-
-///      }
-
-      // Now compute coefficients that depend on the right-hand side and
-      // which therefore change every time.
-
-      // Boundary processor values to be overwritten when relevant
-      Rd[kz] = 0.0;
-      Ru[kz] = 0.0;
+    // Communicate vector in kz
+    /*
+    if(new_method){
       if(not localmesh->firstX()){
-	// Send coefficients down
-	Rsenddown[kz] = rl[kz];
-	if( std::fabs(buold(jy,kz)) > 1e-14 ){
-	  Rsenddown[kz] -= ru[kz]*blold(jy,kz)/buold(jy,kz);
+	for (int kz = 0; kz <= maxmode; kz++) {
+	  // TODO
+	  //Rsenddown[kz+maxmode] = xloclast(2,kz);
 	}
-	Rd[kz] = localmesh->communicateXIn(Rsenddown[kz]);
       }
       if(not localmesh->lastX()){
-	// Send coefficients up
-	Rsendup[kz] = ru[kz];
-	if( std::fabs(alold(jy,kz)) > 1e-14 ){
-	  Rsendup[kz] -= rl[kz]*auold(jy,kz)/alold(jy,kz);
+	for (int kz = 0; kz <= maxmode; kz++) {
+	  // TODO
+	  //Rsendup[kz+maxmode] = xloclast(1,kz);
 	}
-	Ru[kz] = localmesh->communicateXOut(Rsendup[kz]);
       }
-    } // new method
-  */
-    ///SCOREP_USER_REGION_END(coefs);
-  } // end of kz loop
 
-  ///SCOREP_USER_REGION_DEFINE(comm_coefs);
-  ///SCOREP_USER_REGION_BEGIN(comm_coefs, "comm coefs",SCOREP_USER_REGION_TYPE_COMMON);
-  // Communicate vector in kz
-  /*
-  if(new_method){
-    if(not localmesh->firstX()){
-      for (int kz = 0; kz <= maxmode; kz++) {
-	// TODO
-        //Rsenddown[kz+maxmode] = xloclast(2,kz);
+      if(not localmesh->firstX()){
+	err = MPI_Sendrecv(&Rsenddown[0], 2*nmode, MPI_DOUBLE_COMPLEX, proc_in, 1, &Rrecvdown[0], 2*nmode, MPI_DOUBLE_COMPLEX, proc_in, 0, comm, MPI_STATUS_IGNORE);
       }
-    }
-    if(not localmesh->lastX()){
-      for (int kz = 0; kz <= maxmode; kz++) {
-	// TODO
-        //Rsendup[kz+maxmode] = xloclast(1,kz);
+      if(not localmesh->lastX()){
+	err = MPI_Sendrecv(&Rsendup[0], 2*nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, &Rrecvup[0], 2*nmode, MPI_DOUBLE_COMPLEX, proc_out, 1, comm, MPI_STATUS_IGNORE);
       }
-    }
 
-    if(not localmesh->firstX()){
-      err = MPI_Sendrecv(&Rsenddown[0], 2*nmode, MPI_DOUBLE_COMPLEX, proc_in, 1, &Rrecvdown[0], 2*nmode, MPI_DOUBLE_COMPLEX, proc_in, 0, comm, MPI_STATUS_IGNORE);
-    }
-    if(not localmesh->lastX()){
-      err = MPI_Sendrecv(&Rsendup[0], 2*nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, &Rrecvup[0], 2*nmode, MPI_DOUBLE_COMPLEX, proc_out, 1, comm, MPI_STATUS_IGNORE);
-    }
+      if(not localmesh->firstX()){
+	for (int kz = 0; kz <= maxmode; kz++) {
+	  Rd[kz] = Rrecvdown[kz];
+	  // TODO
+	  //xloclast(0,kz) = Rrecvdown[kz+maxmode];
+	}
+      }
+      if(not localmesh->lastX()){
+	for (int kz = 0; kz <= maxmode; kz++) {
+	  Ru[kz] = Rrecvup[kz];
+	  // TODO
+	  //xloclast(3,kz) = Rrecvup[kz+maxmode];
+	}
+      }
 
-    if(not localmesh->firstX()){
       for (int kz = 0; kz <= maxmode; kz++) {
-        Rd[kz] = Rrecvdown[kz];
-	// TODO
-        //xloclast(0,kz) = Rrecvdown[kz+maxmode];
+	rl[kz] = r1(jy,kz)*Rd[kz] + r2(jy,kz)*rlold[kz] + r3(jy,kz)*ruold[kz] + r4(jy,kz)*Ru[kz] ;
+	ru[kz] = r5(jy,kz)*Rd[kz] + r6(jy,kz)*rlold[kz] + r7(jy,kz)*ruold[kz] + r8(jy,kz)*Ru[kz] ;
       }
     }
-    if(not localmesh->lastX()){
-      for (int kz = 0; kz <= maxmode; kz++) {
-        Ru[kz] = Rrecvup[kz];
-	// TODO
-        //xloclast(3,kz) = Rrecvup[kz+maxmode];
-      }
-    }
-
-    for (int kz = 0; kz <= maxmode; kz++) {
-      rl[kz] = r1(jy,kz)*Rd[kz] + r2(jy,kz)*rlold[kz] + r3(jy,kz)*ruold[kz] + r4(jy,kz)*Ru[kz] ;
-      ru[kz] = r5(jy,kz)*Rd[kz] + r6(jy,kz)*rlold[kz] + r7(jy,kz)*ruold[kz] + r8(jy,kz)*Ru[kz] ;
-    }
+    */
   }
-  */
 
   //levels_info(l);
 
