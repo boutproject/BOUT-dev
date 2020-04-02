@@ -1618,6 +1618,8 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
   for (bndry->first(); !bndry->isDone(); bndry->next1d()) {
 #ifdef COORDINATES_USE_3D
     for (int z = 0; z < mesh->LocalNz; z++) {
+#else
+      int z=0;
 #endif
     // Interpolate (linearly) metrics to halfway between last cell and boundary cell
     BoutReal g11shift =
@@ -1634,6 +1636,8 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
     // NOTE: should be fixed to interpolate to boundary line
 #ifndef COORDINATES_USE_3D
     for (int z = 0; z < mesh->LocalNz; z++) {
+#else
+      int z=0;
 #endif
       BoutReal xshift = g12shift * dfdy(bndry->x - bndry->bx, bndry->y, z)
                         + g13shift * dfdz(bndry->x - bndry->bx, bndry->y, z);
@@ -2051,6 +2055,7 @@ void BoundaryNeumann::apply(Field3D& f, BoutReal t) {
         // x boundaries.
         for (; !bndry->isDone(); bndry->next1d()) {
 #ifndef COORDINATES_USE_3D
+	  int zk=0;
           BoutReal delta = bndry->bx * metric->dx(bndry->x, bndry->y, zk)
                          + bndry->by * metric->dy(bndry->x, bndry->y, zk);
 #endif
@@ -2348,7 +2353,8 @@ BoundaryOp* BoundaryNeumannPar::clone(BoundaryRegion* region,
 }
 
 void BoundaryNeumannPar::apply(Field2D& f) {
-#ifndef COORDINATES_USE_3D                                                                                                                                     Coordinates* metric = f.getCoordinates();
+#ifndef COORDINATES_USE_3D
+  Coordinates* metric = f.getCoordinates();
   // Loop over all elements and set equal to the next point in
   for (bndry->first(); !bndry->isDone(); bndry->next())
     f(bndry->x, bndry->y) =
@@ -2763,7 +2769,8 @@ void BoundaryConstLaplace::apply(Field3D& f) {
       BoutReal coef = -1.0 * sqrt(metric->g33(x - bx, y) / metric->g11(x - bx, y))
                       * metric->dx(x - bx, y);
       for (int jz = 1; jz <= ncz / 2; jz++) {
-        BoutReal kwave = jz * 2.0 * PI / metric->zlength(); // wavenumber in [rad^-1]
+#warning TODO: fix
+        BoutReal kwave = jz * 2.0 * PI / metric->zlength()(0,0); // wavenumber in [rad^-1]
         c0[jz] *= exp(coef * kwave);                        // The decaying solution only
         // Add the particular solution
         c2[jz] = c0[jz] - c1[jz] / (metric->g33(x - bx, y) * kwave * kwave);
@@ -2838,7 +2845,7 @@ void BoundaryDivCurl::apply(Vector3D& var) {
 
       // dB_z / dx = dB_x / dz
 
-      tmp = (var.x(jx - 1, jy, jzp) - var.x(jx - 1, jy, jzm)) / (2. * metric->dz);
+      tmp = (var.x(jx - 1, jy, jzp) - var.x(jx - 1, jy, jzm)) / (2. * metric->dz(jx - 1, jy));
 
       var.z(jx, jy, jz) =
           var.z(jx - 2, jy, jz) + (metric->dx(jx - 2, jy) + metric->dx(jx - 1, jy)) * tmp;
@@ -2873,7 +2880,7 @@ void BoundaryDivCurl::apply(Vector3D& var) {
                     * (var.y(jx - 1, jy, jzp) - var.y(jx - 1, jy, jzm))
               + metric->J(jx - 1, jy) * metric->g33(jx - 1, jy)
                     * (var.z(jx - 1, jy, jzp) - var.z(jx - 1, jy, jzm)))
-             / (2. * metric->dz);
+             / (2. * metric->dz(jx - 1, jy));
 
       var.x(jx, jy, jz) =
           (metric->J(jx - 2, jy) * metric->g11(jx - 2, jy) * var.x(jx - 2, jy, jz)
