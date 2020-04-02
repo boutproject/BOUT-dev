@@ -544,7 +544,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
 
   // Attempt to read J from the grid file
   auto Jcalc = J;
-  if (mesh->get(J, "J")) {
+  if (mesh->get(J, "J", 0.0, false)) {
     output_warn.write(
         "\tWARNING: Jacobian 'J' not found. Calculating from metric tensor\n");
     J = Jcalc;
@@ -569,7 +569,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
 
   // Attempt to read Bxy from the grid file
   auto Bcalc = Bxy;
-  if (mesh->get(Bxy, "Bxy")) {
+  if (mesh->get(Bxy, "Bxy", 0.0, false)) {
     output_warn.write("\tWARNING: Magnitude of B field 'Bxy' not found. Calculating from "
                       "metric tensor\n");
     Bxy = Bcalc;
