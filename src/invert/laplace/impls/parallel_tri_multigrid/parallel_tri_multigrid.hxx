@@ -97,7 +97,8 @@ public:
     Array<dcomplex> rl, ru;
     Array<dcomplex> rlold, ruold;
     Matrix<dcomplex> minvb;
-    Matrix<dcomplex> avec, bvec, cvec, rvec, residual, soln, solnlast;
+    Matrix<dcomplex> rvec, residual, soln, solnlast;
+    Tensor<dcomplex> avec, bvec, cvec;
     Array<dcomplex> acomm, bcomm, ccomm;
 
     int index_in;
@@ -112,20 +113,19 @@ public:
 
   };
 
-  void levels_info(const Level l);
-  void init(Level &level, const Level lup, const int ncx, const int xs, const int xe, const int current_level);
+  void levels_info(const Level l, const int jy);
+  void init(Level &level, const Level lup, const int ncx, const int xs, const int xe, const int current_level, const int jy);
   void init(Level &level, const int ncx, const int jy, const Matrix<dcomplex> avec, const Matrix<dcomplex> bvec, const Matrix<dcomplex> cvec, const Matrix<dcomplex> bcmplx, const int xs, const int xe, const int current_level);
 
   void jacobi(Level &level, const int jy, Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast);
-  void jacobi_full_system(Level &level);
-  void gauss_seidel_full_system(Level &level);
-  void gauss_seidel_red_black_full_system(Level &level, const Array<bool> &converged);
+  void jacobi_full_system(Level &level,const int jy);
+  void gauss_seidel_red_black_full_system(Level &level, const Array<bool> &converged, const int jy);
   void refine_full_system(Level &level, Matrix<dcomplex> &fine_error);
 
   void coarsen(const Level level, Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast, int jy);
   void coarsen_full_system(Level &level, const Matrix<dcomplex> fine_residual);
 
-  void calculate_residual_full_system(Level &level, const Array<bool> &converged);
+  void calculate_residual_full_system(Level &level, const Array<bool> &converged, const int jy);
   void calculate_total_residual(Array<BoutReal> &total, Array<bool> &converged, const Level level);
   void update_solution(Level &l, const Matrix<dcomplex> &fine_error);
   void reconstruct_full_solution(Level &level, const int jy, Matrix<dcomplex> &halos);
