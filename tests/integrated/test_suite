@@ -86,9 +86,12 @@ if 'MAKEFLAGS' in os.environ:
             pass
         elif token == " ":
             break
+        elif token == "-":
+            # This is not from make
+            break
         else:
             # Not implemented
-            print("mode '%s' not implemented"%mf[0])
+            print("mode '%s' not implemented"%token)
             #sys.exit(42)
 else:
     mf = ""
