@@ -16,6 +16,7 @@ import glob
 from boututils.run_wrapper import shell
 import threading
 import re
+import fcntl
 
 ##################################################################
 
@@ -96,9 +97,12 @@ num_jobs=1
 if args.jobs:
     num_jobs = args.jobs[0]
 js_read=None
-if "--jobserver-auth=" in mf:
+if "--jobserver-auth=" in mf or "--jobserver-fds=" in mf:
     # running in parallel
-    offset=mf.index("--jobserver-auth=")
+    try:
+        offset=mf.index("--jobserver-auth=")
+    except ValueError:
+        offset=mf.index("--jobserver-fds=")
     file_desc=[int(i) for i in re.findall("\d+",mf[offset:])[0:2]]
     try:
         js_read = open(file_desc[0], "r")
@@ -108,6 +112,8 @@ if "--jobserver-auth=" in mf:
         file_desc = None
         js_read = None
     if js_read is not None:
+        fl = fcntl.fcntl(js_read, fcntl.F_GETFL)
+        fcntl.fcntl(js_read, fcntl.F_SETFL, fl | os.O_NONBLOCK)
         js_tokens = js_read.read()
         num_jobs = len(js_tokens)+1
 
