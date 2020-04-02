@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+#requires: not metric_3d
 #requires: petsc
 # travis doesn't have superlu_dist
 #requires: not travis

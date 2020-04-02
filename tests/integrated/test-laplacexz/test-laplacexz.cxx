@@ -19,6 +19,7 @@ int main(int argc, char** argv) {
 
   auto inv = LaplaceXZ::create(mesh);
 
+  auto coord = bout::globals::mesh->getCoordinates();
   coord->g13 = 1.8;  //test off-diagonal components with nonzero value
 
   // create some input field
