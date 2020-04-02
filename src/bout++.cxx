@@ -598,8 +598,11 @@ Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir
                         .withDefault(false);
 
   // Get file extensions
+#if defined(PNCDF) || defined(NCDF4) || defined(NCDF)
   const auto dump_ext = options["dump_format"].withDefault(std::string{"nc"});
-
+#else
+  const auto dump_ext = options["dump_format"].withDefault(std::string{"h5"});
+#endif
   output_progress << "Setting up output (dump) file\n";
 
   auto dump_file = Datafile(&(options["output"]), &mesh);

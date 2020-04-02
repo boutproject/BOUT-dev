@@ -108,7 +108,11 @@ int PhysicsModel::postInit(bool restarting) {
     options->get("datadir", restart_dir, "data");
   }
   /// Get restart file extension
+#if defined(PNCDF) || defined(NCDF4) || defined(NCDF)
   options->get("dump_format", dump_ext, "nc");
+#else
+  options->get("dump_format", dump_ext, "h5");
+#endif
   options->get("restart_format", restart_ext, dump_ext);
 
   std::string filename = restart_dir + "/BOUT.restart."+restart_ext;
