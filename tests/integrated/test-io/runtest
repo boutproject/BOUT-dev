@@ -112,7 +112,7 @@ for nproc in [1,2,4]:
                 success = False
 
 # Test double-adding variables
-s, out = launch_safe("./test_io check_double_add=true", nproc=nproc, pipe=True)
+s, out = launch_safe("../../../bin/test_io check_double_add=true", nproc=nproc, pipe=True)
 print("Checking with variables added twice")
 if not check_output():
     success = False

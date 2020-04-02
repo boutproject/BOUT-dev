@@ -67,6 +67,7 @@ set(serial_tests_sources
   ./sys/test_type_name.cxx
   ./sys/test_utils.cxx
   ./sys/test_variant.cxx
+  ./sys/test_raja.cxx
   ./test_extras.cxx
   ./test_extras.hxx
   ./src/test_bout++.cxx)

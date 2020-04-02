@@ -57,6 +57,10 @@ message(STATUS "Enable Test Flag Top: ${ENABLE_TESTS} " )
 
 include(${BLT_SOURCE_DIR}/SetupBLT.cmake)
 
+include_directories(${CMAKE_BINARY_DIR}/include)
+
+include(cmake/CMakeBasics.cmake)
+
 
 # This might not be entirely sensible, but helps CMake to find the
 # correct MPI, workaround for https://gitlab.kitware.com/cmake/cmake/issues/18895
@@ -138,6 +142,10 @@ set(BOUT_SOURCES
   ./include/bout/sys/type_name.hxx
   ./include/bout/sys/uncopyable.hxx
   ./include/bout/sys/variant.hxx
+  ./include/bout/sys/Collectives.h
+  ./include/bout/sys/ExecutionPolicy.h
+  ./include/bout/sys/ForAll.h
+  ./include/bout/sys/NVTXUtilities.h
   ./include/bout/template_combinations.hxx
   ./include/bout_types.hxx
   ./include/boutcomm.hxx
@@ -420,6 +428,22 @@ if (ENABLE_RAJA)
       DEPENDS_ON ${raja_depends})
   endif ()
   list(APPEND BOUT_DEPENDS RAJA)
+endif ()
+
+#HAVE_HYPRE
+if (ENABLE_HYPRE OR HYPRE_DIR)
+  find_package(HYPRE REQUIRED)
+
+  if(HYPRE_FOUND)
+    set (HAVE_HYPRE True)
+    set (ENABLE_HYPRE ON) 
+
+    blt_register_library(
+      NAME HYPRE
+      INCLUDES ${HYPRE_INCLUDE_DIRS}
+      LIBRARIES ${HYPRE_LIBRARIES})
+  endif ()
+  list(APPEND BOUT_DEPENDS HYPRE)
 endif ()
 
 message(STATUS "BOUT_DEPENDS: ${BOUT_DEPENDS}")
@@ -1017,6 +1041,7 @@ message("
    Field name tracking      : ${BOUT_USE_TRACK}
    Floating point exceptions: ${BOUT_USE_SIGFPE}
    Backtrace enabled        : ${BOUT_USE_BACKTRACE}
+   hypre support            : ${ENABLE_HYPRE}
 
    === Python ===
 
