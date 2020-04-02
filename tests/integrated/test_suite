@@ -152,9 +152,9 @@ class Test(threading.Thread):
     def _cost(self):
         if self.cmd == "make":
             return 1
-        with open(self.name+"/"+self.cmd,"r") as filein:
+        with open(self.name+"/"+self.cmd,"r", encoding='utf8') as filein:
             contents = filein.read()
-            # Find all lines starting with '#requires' or '#Requires:'
+            # Find all lines starting with '#cores' or '#Cores:'
             match = re.findall(
                 "^\s*\#\s?[Cc]ores:\s*?(\d+)", contents, re.MULTILINE)
             if len(match) > 1:
@@ -280,7 +280,7 @@ print("\n")
 # Return remaining tokens
 if js_read is not None:
     if js_tokens != "":
-        js_write.write(t)
+        os.write(js_write, js_tokens)
 
 if failed:
     print("======= FAILURES ========")
