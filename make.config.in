@@ -242,7 +242,7 @@ ifeq ("$(TARGET)", "lib")
 lib: makefile $(BOUT_CONFIG_FILE) $(BOUT_TOP)/include $(BOUT_TOP)/lib $(OBJ)
 ifneq ("$(OBJ)foo", "foo")
 	@echo "  Adding $(OBJ) to libbout++.a"
-	@$(AR) $(ARFLAGS) $(LIB) $(OBJ)
+	@$(AR) $(ARFLAGS) $(LIB_A) $(OBJ)
 	@$(RANLIB) $(LIB)
 endif
 endif
@@ -292,7 +292,7 @@ $(SOURCEC): checklib
 $(SOURCEC:%.cxx=%.o): $(LIB)
 $(TARGET): makefile $(BOUT_CONFIG_FILE) $(OBJ) $(SUB_LIBS)
 	@echo "  Linking" $(TARGET)
-	@$(LD) $(LDFLAGS) -o $(TARGET) $(OBJ) $(SUB_LIBS) $(BOUT_LIBS)
+	@$(LD) -o $(TARGET) $(OBJ) $(SUB_LIBS) $(BOUT_LIBS) $(LDFLAGS)
 
 checklib:
 ifneq ("$(CHANGED)foo", "foo")
