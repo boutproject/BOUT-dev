@@ -1636,8 +1636,6 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
     // NOTE: should be fixed to interpolate to boundary line
 #ifndef COORDINATES_USE_3D
     for (int z = 0; z < mesh->LocalNz; z++) {
-#else
-      int z=0;
 #endif
       BoutReal xshift = g12shift * dfdy(bndry->x - bndry->bx, bndry->y, z)
                         + g13shift * dfdz(bndry->x - bndry->bx, bndry->y, z);
