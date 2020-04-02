@@ -32,27 +32,35 @@ check-unit-tests: libfast
 
 check-mms-tests: libfast
 	+@cd tests/MMS; export LD_LIBRARY_PATH=${PWD}/lib:${LD_LIBRARY_PATH} ; \
-		PYTHONPATH=${PWD}/tools/pylib/:${PYTHONPATH} ./test_suite_make
+		PYTHONPATH=${PWD}/tools/pylib/:${PYTHONPATH} \
+		OMPI_MCA_rmaps_base_oversubscribe=yes ./test_suite_make
 	+@cd tests/MMS; export LD_LIBRARY_PATH=${PWD}/lib:${LD_LIBRARY_PATH} ; \
-		PYTHONPATH=${PWD}/tools/pylib/:${PYTHONPATH} ./test_suite
+		PYTHONPATH=${PWD}/tools/pylib/:${PYTHONPATH} \
+		OMPI_MCA_rmaps_base_oversubscribe=yes ./test_suite
 
 check-mms-tests-all: libfast
 	+@cd tests/MMS; export LD_LIBRARY_PATH=${PWD}/lib:${LD_LIBRARY_PATH} ; \
-		PYTHONPATH=${PWD}/tools/pylib/:${PYTHONPATH} ./test_suite_make --all
+		PYTHONPATH=${PWD}/tools/pylib/:${PYTHONPATH} \
+		OMPI_MCA_rmaps_base_oversubscribe=yes ./test_suite_make --all
 	+@cd tests/MMS; export LD_LIBRARY_PATH=${PWD}/lib:${LD_LIBRARY_PATH} ; \
-		PYTHONPATH=${PWD}/tools/pylib/:${PYTHONPATH} ./test_suite --all
+		PYTHONPATH=${PWD}/tools/pylib/:${PYTHONPATH} \
+		OMPI_MCA_rmaps_base_oversubscribe=yes ./test_suite --all
 
 check-integrated-tests: libfast
 	+@cd tests/integrated; export LD_LIBRARY_PATH=${PWD}/lib:${LD_LIBRARY_PATH} ; \
-		PYTHONPATH=${PWD}/tools/pylib/:${PYTHONPATH} ./test_suite_make
+		PYTHONPATH=${PWD}/tools/pylib/:${PYTHONPATH} \
+		OMPI_MCA_rmaps_base_oversubscribe=yes ./test_suite_make
 	+@cd tests/integrated; export LD_LIBRARY_PATH=${PWD}/lib:${LD_LIBRARY_PATH} ; \
-		PYTHONPATH=${PWD}/tools/pylib/:${PYTHONPATH} ./test_suite
+		PYTHONPATH=${PWD}/tools/pylib/:${PYTHONPATH} \
+		OMPI_MCA_rmaps_base_oversubscribe=yes ./test_suite
 
 check-integrated-tests-all: libfast
 	+@cd tests/integrated; export LD_LIBRARY_PATH=${PWD}/lib:${LD_LIBRARY_PATH} ; \
-		PYTHONPATH=${PWD}/tools/pylib/:${PYTHONPATH} ./test_suite_make --all
+		PYTHONPATH=${PWD}/tools/pylib/:${PYTHONPATH} \
+		OMPI_MCA_rmaps_base_oversubscribe=yes ./test_suite_make --all
 	+@cd tests/integrated; export LD_LIBRARY_PATH=${PWD}/lib:${LD_LIBRARY_PATH} ; \
-		PYTHONPATH=${PWD}/tools/pylib/:${PYTHONPATH} ./test_suite --all
+		PYTHONPATH=${PWD}/tools/pylib/:${PYTHONPATH} \
+		OMPI_MCA_rmaps_base_oversubscribe=yes ./test_suite --all
 
 
 check: check-unit-tests check-integrated-tests check-mms-tests

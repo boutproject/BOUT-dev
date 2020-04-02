@@ -41,7 +41,7 @@ class Output;
 #include "bout/format.hxx"
 #include "bout/sys/gettext.hxx"  // for gettext _() macro
 
-#include "fmt/format.h"
+#include "fmt/core.h"
 
 using std::endl;
 
