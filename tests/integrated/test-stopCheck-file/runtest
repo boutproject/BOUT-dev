@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
-#requires: not travis
+# requires: not travis
+# h5py doesn't load the data as expected
+# requires: netcdf
 # 
 # Run the test, compare results against the benchmark
 #
