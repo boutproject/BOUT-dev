@@ -77,13 +77,25 @@ def determineNumberOfCPUs():
     scaling userspace-only program
 
     Taken from a post on stackoverflow:
-    http://stackoverflow.com/questions/1006289/how-to-find-out-the-number-of-cpus-in-python
+    https://stackoverflow.com/questions/1006289/how-to-find-out-the-number-of-cpus-in-python
 
     Returns
     -------
     int
         The number of CPUs
     """
+
+    # cpuset
+    # cpuset may restrict the number of *available* processors
+    try:
+        m = re.search(r'(?m)^Cpus_allowed:\s*(.*)$',
+                      open('/proc/self/status').read())
+        if m:
+            res = bin(int(m.group(1).replace(',', ''), 16)).count('1')
+            if res > 0:
+                return res
+    except IOError:
+        pass
 
     # Python 2.6+
     try:
