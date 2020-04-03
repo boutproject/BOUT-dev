@@ -1,5 +1,5 @@
 
-#ifdef BOUT_HAS_PETSC
+#if defined(BOUT_HAS_PETSC) and not defined(COORDINATES_USE_3D)
 
 #include <petscksp.h>
 
