@@ -51,6 +51,7 @@ public:
 
   ReturnType create(Mesh* mesh = nullptr, Options* options = nullptr,
                     CELL_LOC loc = CELL_CENTRE) {
+    options = options == nullptr ? Options::getRoot()->getSection(section_name) : options;
     return Factory::create(getType(options), mesh, options, loc);
   }
 
