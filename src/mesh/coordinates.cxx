@@ -1522,9 +1522,8 @@ void Coordinates::setParallelTransform(Options* options) {
     fixZShiftGuards(zShift);
 
     if (ptstr == "shifted") {
-      ASSERT1(isConst(zlength()));
       transform = bout::utils::make_unique<ShiftedMetric>(*localmesh, location, zShift,
-                                                          zlength()(0,0));
+                                                          getConst(zlength()));
     } else if (ptstr == "shiftedinterp") {
       transform =
           bout::utils::make_unique<ShiftedMetricInterp>(*localmesh, location, zShift);

@@ -76,10 +76,10 @@ void LaplaceXZcyclic::setCoefs(const Field2D &A2D, const Field2D &B2D) {
   ASSERT2(max(abs(coord->g13)) < 1e-5);
   
   int ind = 0;
-  ASSERT1(isConst(coord->zlength()));
+  const BoutReal zlength = getConst(coord->zlength());
   for(int y=localmesh->ystart; y <= localmesh->yend; y++) {
     for(int kz = 0; kz < nmode; kz++) {
-      BoutReal kwave=kz*2.0*PI/(coord->zlength()(0,0));
+      BoutReal kwave = kz * 2.0 * PI / zlength;
 
       if(localmesh->firstX()) {
         // Inner X boundary

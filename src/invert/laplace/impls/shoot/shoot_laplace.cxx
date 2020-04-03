@@ -129,12 +129,12 @@ FieldPerp LaplaceShoot::solve(const FieldPerp& rhs) {
   // kc and kp now set to result at x and x+1 respectively
   // Use b at x to get km at x-1
   // Loop inwards from edge
-  ASSERT1(isConst(coords->zlength()));
+  const BoutReal zlength = getConst(coords->zlength());
   for(int ix=xe; ix >= xs; ix--) {
     rfft(rhs[ix], localmesh->LocalNz, std::begin(rhsk));
 
     for(int kz=0; kz<maxmode; kz++) {
-      BoutReal kwave=kz*2.0*PI/(coords->zlength()(0,0)); // wave number is 1/[rad]
+      BoutReal kwave=kz*2.0*PI/zlength; // wave number is 1/[rad]
       
       // Get the coefficients
       dcomplex a,b,c;

@@ -118,7 +118,6 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
     outbndry = 1;
 
   if(dst) {
-    ASSERT1(isConst(coords->dz));
     BOUT_OMP(parallel) {
       /// Create a local thread-scope working array
       auto k1d =
@@ -146,9 +145,9 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
 
       // Get elements of the tridiagonal matrix
       // including boundary conditions
+      BoutReal zlen = getConst(coords->dz) * (localmesh->LocalNz - 3);
       BOUT_OMP(for nowait)
       for (int kz = 0; kz < nmode; kz++) {
-        BoutReal zlen = coords->dz(0,0,0) * (localmesh->LocalNz - 3);
         BoutReal kwave =
             kz * 2.0 * PI / (2. * zlen); // wave number is 1/[rad]; DST has extra 2.
 
@@ -214,9 +213,10 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
 
       // Get elements of the tridiagonal matrix
       // including boundary conditions
+      const BoutReal zlength = getConst(coords->zlength());
       BOUT_OMP(for nowait)
       for (int kz = 0; kz < nmode; kz++) {
-        BoutReal kwave = kz * 2.0 * PI / (coords->zlength()(0,0)); // wave number is 1/[rad]
+        BoutReal kwave = kz * 2.0 * PI / zlength; // wave number is 1/[rad]
         tridagMatrix(&a(kz, 0), &b(kz, 0), &c(kz, 0), &bcmplx(kz, 0), jy,
                      kz,    // True for the component constant (DC) in Z
                      kwave, // Z wave number
@@ -344,13 +344,13 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
 
       // Get elements of the tridiagonal matrix
       // including boundary conditions
+      const BoutReal zlen = getConst(coords->dz) * (localmesh->LocalNz - 3);
       BOUT_OMP(for nowait)
       for (int ind = 0; ind < nsys; ind++) {
         // ind = (iy - ys) * nmode + kz
         int iy = ys + ind / nmode;
         int kz = ind % nmode;
 
-        BoutReal zlen = coords->dz(0,0,0) * (localmesh->LocalNz - 3);
         BoutReal kwave =
             kz * 2.0 * PI / (2. * zlen); // wave number is 1/[rad]; DST has extra 2.
 
@@ -425,13 +425,14 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
 
       // Get elements of the tridiagonal matrix
       // including boundary conditions
+      const BoutReal zlength = getConst(coords->zlength());
       BOUT_OMP(for nowait)
       for (int ind = 0; ind < nsys; ind++) {
         // ind = (iy - ys) * nmode + kz
         int iy = ys + ind / nmode;
         int kz = ind % nmode;
 
-        BoutReal kwave = kz * 2.0 * PI / (coords->zlength()(0,0)); // wave number is 1/[rad]
+        BoutReal kwave = kz * 2.0 * PI / zlength; // wave number is 1/[rad]
         tridagMatrix(&a3D(ind, 0), &b3D(ind, 0), &c3D(ind, 0), &bcmplx3D(ind, 0), iy,
                      kz,    // True for the component constant (DC) in Z
                      kwave, // Z wave number

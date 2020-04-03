@@ -571,8 +571,7 @@ bool GridFile::readgrid_3dvar_fft(Mesh *m, const std::string &name,
   /// but don't do it yet as we don't assert that m == var.getMesh()
   /// Expect the assertion to be true, in which case we probably don't
   /// need to pass m as can just use var.getMesh()
-  ASSERT1(isConst(m->getCoordinates(var.getLocation())->zlength()));
-  BoutReal zlength = m->getCoordinates(var.getLocation())->zlength()(0,0);
+  BoutReal zlength = getConst(m->getCoordinates(var.getLocation())->zlength());
   
   int zperiod = ROUND(TWOPI / zlength); /// Number of periods in 2pi
 
@@ -703,8 +702,7 @@ bool GridFile::readgrid_perpvar_fft(Mesh *m, const std::string &name,
   /// but don't do it yet as we don't assert that m == var.getMesh()
   /// Expect the assertion to be true, in which case we probably don't
   /// need to pass m as can just use var.getMesh()
-  ASSERT1(isConst(m->getCoordinates(var.getLocation())->zlength()));
-  BoutReal zlength = m->getCoordinates(var.getLocation())->zlength()(0,0);
+  BoutReal zlength =getConst(m->getCoordinates(var.getLocation())->zlength());
 
   int zperiod = ROUND(TWOPI / zlength); /// Number of periods in 2pi
 
