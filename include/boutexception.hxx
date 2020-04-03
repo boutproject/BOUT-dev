@@ -11,7 +11,7 @@ class BoutException;
 #include "bout/deprecated.hxx"
 #include "bout/format.hxx"
 
-#include "fmt/format.h"
+#include "fmt/core.h"
 
 /// Throw BoutRhsFail with \p message if any one process has non-zero
 /// \p status

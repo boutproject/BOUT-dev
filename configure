@@ -651,6 +651,9 @@ BOUT_VERSION_PATCH
 BOUT_VERSION_MINOR
 BOUT_VERSION_MAJOR
 BOUT_VERSION
+SHARED_EXTRA
+STATIC_EXTRA
+LIB_TO_BUILD
 PYTHONCONFIGPATH
 IDLCONFIGPATH
 PREFIX
@@ -818,6 +821,7 @@ enable_optimize
 enable_sigfpe
 enable_backtrace
 enable_shared
+enable_static
 enable_openmp
 with_openmp_schedule
 enable_pvode_openmp
@@ -1473,6 +1477,7 @@ Optional Features:
   --enable-sigfpe         Enable FloatingPointExceptions
   --disable-backtrace     Disable function backtrace
   --enable-shared         Enable building bout++ into an shared object
+  --enable-static         Enable building bout++ into an static library
   --enable-openmp         Enable building with OpenMP support
   --enable-pvode-openmp   Enable building PVODE with OpenMP support
   --enable-metric-3d      Use Field3D to store coordinates metric data
@@ -2691,6 +2696,13 @@ if test "${enable_shared+set}" = set; then :
   enableval=$enable_shared;
 else
   enable_shared=no
+fi
+
+# Check whether --enable-static was given.
+if test "${enable_static+set}" = set; then :
+  enableval=$enable_static;
+else
+  enable_static=auto
 fi
 
 # Check whether --enable-openmp was given.
@@ -6146,6 +6158,7 @@ fi
 # Build into shared object (pic)
 #############################################################
 
+LIB_TO_BUILD=''
 if test "x$enable_shared" = "xyes"; then :
 
     # compile as position independent code.
@@ -6157,6 +6170,45 @@ if test "x$enable_shared" = "xyes"; then :
     #  PowerPC and SPARC.
     # Therfore use -fPIC for now
     CXXFLAGS="$CXXFLAGS -fPIC"
+    LIB_TO_BUILD+=' $(BOUT_LIB_PATH)/libbout++.so'
+    if test "x$enable_static" = "xauto"; then :
+
+        enable_static=no
+
+fi
+    SHARED_EXTRA=':'
+    if test "x$enable_static" = "xno"; then :
+
+        SHARED_EXTRA='$(RM) -f $(BOUT_LIB_PATH)/libbout++.a'
+
+fi
+
+else
+
+    if test "x$enable_static" = "xauto"; then :
+
+        enable_static=yes
+
+fi
+
+fi
+
+if test "x$enable_static" = "xyes"; then :
+
+    LIB_TO_BUILD+=' $(BOUT_LIB_PATH)/libbout++.a'
+    STATIC_EXTRA=':'
+    # In case we only build static, make sure shared libs are removed
+    if ! test "x$enable_shared" = "xyes"; then :
+
+        STATIC_EXTRA='$(RM) -f $(BOUT_LIB_PATH)/*.so*'
+
+fi
+
+fi
+
+if test "x$LIB_TO_BUILD" = x ; then :
+
+    as_fn_error $? "Need to enable at least on of static or shared!" "$LINENO" 5
 
 fi
 
@@ -15689,11 +15741,16 @@ FMT_INCLUDE_PATH=$PWD/externalpackages/fmt/include
 
 
 
+
+
+
 ac_config_files="$ac_config_files include/bout/version.hxx"
 
 ac_config_files="$ac_config_files include/bout/revision.hxx"
 
 ac_config_files="$ac_config_files bin/bout-config"
+
+ac_config_files="$ac_config_files src/makefile"
 
 ac_config_files="$ac_config_files tools/pylib/boutconfig/__init__.py"
 
@@ -16434,6 +16491,7 @@ do
     "include/bout/version.hxx") CONFIG_FILES="$CONFIG_FILES include/bout/version.hxx" ;;
     "include/bout/revision.hxx") CONFIG_FILES="$CONFIG_FILES include/bout/revision.hxx" ;;
     "bin/bout-config") CONFIG_FILES="$CONFIG_FILES bin/bout-config" ;;
+    "src/makefile") CONFIG_FILES="$CONFIG_FILES src/makefile" ;;
     "tools/pylib/boutconfig/__init__.py") CONFIG_FILES="$CONFIG_FILES tools/pylib/boutconfig/__init__.py" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;

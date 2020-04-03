@@ -12,6 +12,8 @@
 
 #include <utils.hxx>
 
+#include <fmt/format.h>
+
 void BoutParallelThrowRhsFail(int status, const char *message) {
   int allstatus;
   MPI_Allreduce(&status, &allstatus, 1, MPI_INT, MPI_LOR, BoutComm::get());
