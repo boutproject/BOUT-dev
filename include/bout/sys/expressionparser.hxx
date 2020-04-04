@@ -30,7 +30,7 @@
 #include "bout/format.hxx"
 #include "unused.hxx"
 
-#include "fmt/format.h"
+#include "fmt/core.h"
 
 #include <exception>
 #include <list>

@@ -85,6 +85,8 @@ AC_ARG_ENABLE(backtrace,    [AS_HELP_STRING([--disable-backtrace],
         [Disable function backtrace])],,[enable_backtrace=maybe])
 AC_ARG_ENABLE(shared,       [AS_HELP_STRING([--enable-shared],
         [Enable building bout++ into an shared object])],,[enable_shared=no])
+AC_ARG_ENABLE(static,       [AS_HELP_STRING([--enable-static],
+        [Enable building bout++ into an static library])],,[enable_static=auto])
 AC_ARG_ENABLE(openmp,       [AS_HELP_STRING([--enable-openmp],
         [Enable building with OpenMP support])],,[enable_openmp=no])
 AC_ARG_WITH(openmp_schedule,[AS_HELP_STRING([--with-openmp-schedule=static/dynamic/guided/auto],
@@ -386,6 +388,7 @@ AS_IF([test "x$enable_backtrace" = "xyes" || test "x$enable_backtrace" = "xmaybe
 # Build into shared object (pic)
 #############################################################
 
+LIB_TO_BUILD=''
 AS_IF([test "x$enable_shared" = "xyes"], [
     # compile as position independent code.
     # -fpic is apparently faster then -fPIC, but -fPIC works always.
@@ -396,6 +399,31 @@ AS_IF([test "x$enable_shared" = "xyes"], [
     #  PowerPC and SPARC.
     # Therfore use -fPIC for now
     CXXFLAGS="$CXXFLAGS -fPIC"
+    LIB_TO_BUILD+=' $(BOUT_LIB_PATH)/libbout++.so'
+    AS_IF([test "x$enable_static" = "xauto"], [
+        enable_static=no
+    ])
+    SHARED_EXTRA=':'
+    AS_IF([test "x$enable_static" = "xno"], [
+        SHARED_EXTRA='$(RM) -f $(BOUT_LIB_PATH)/libbout++.a'
+    ])
+], [
+    AS_IF([test "x$enable_static" = "xauto"], [
+        enable_static=yes
+    ])
+])
+
+AS_IF([test "x$enable_static" = "xyes"], [
+    LIB_TO_BUILD+=' $(BOUT_LIB_PATH)/libbout++.a'
+    STATIC_EXTRA=':'
+    # In case we only build static, make sure shared libs are removed
+    AS_IF([! test "x$enable_shared" = "xyes"], [
+        STATIC_EXTRA='$(RM) -f $(BOUT_LIB_PATH)/*.so*'
+    ])
+])
+
+AS_IF([test "x$LIB_TO_BUILD" = x ], [
+    AC_MSG_ERROR([Need to enable at least on of static or shared!])
 ])
 
 #############################################################
@@ -683,24 +711,17 @@ AS_IF([test "x$with_petsc" != "x" && test "$with_petsc" != "no"], [
 
 # PETSc changed the location of the conf directory in 3.5, so we
 # need to check both locations
-# If we find nether, try to fall back to pkg-conf
-  PETSC_PKGCONF=no
   AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/conf, [
     PETSC_CONFDIR=${PETSC_DIR}/conf
   ], [
     AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/lib/petsc/conf, [
       PETSC_CONFDIR=${PETSC_DIR}/lib/petsc/conf
     ], [
-      PKG_CHECK_MODULES(PETSC, petsc >= 3.4.0 ,
-        PETSC_PKGCONF=yes, [
-	AC_MSG_ERROR([--with-petsc was specified but could not find PETSc distribution.
+      AC_MSG_ERROR([--with-petsc was specified but could not find PETSc distribution.
 PETSC_ERROR_MESSAGE])
-      ])
     ])
   ])
 
-  AS_IF([test $PETSC_PKGCONF = no] ,
-    [
 # We've found an installation, need to check we can use it. First we
 # need to be able to check the version number, for which we need
 # petscverion.h
@@ -779,33 +800,7 @@ PETSC_ERROR_MESSAGE])
   CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC"
   EXTRA_INCS="$EXTRA_INCS \$(PETSC_CC_INCLUDES)"
   EXTRA_LIBS="$EXTRA_LIBS \$(PETSC_LIB)"
-  ], [ dnl pkg-config version
 
-  # Check if PETSc was compiled with SUNDIALS
-  save_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="$CPPFLAGS $PETSC_CFLAGS"
-  AC_MSG_CHECKING([PETSc has SUNDIALS support])
-  AC_EGREP_CPP([yes], [
-    #include <petscconf.h>
-    #ifdef PETSC_HAVE_SUNDIALS
-      yes
-    #endif
-  ], [PETSC_HAS_SUNDIALS="yes"],
-     [PETSC_HAS_SUNDIALS="no"])
-  AC_MSG_RESULT([$PETSC_HAS_SUNDIALS])
-  CPPFLAGS="$save_CPPFLAGS"
-
-  AS_IF([test "$PETSC_HAS_SUNDIALS" = "yes"], [
-    CXXFLAGS="$CXXFLAGS -DPETSC_HAS_SUNDIALS "
-  ])
-  PETSC_MAKE_INCLUDE=
-  HAS_PETSC="yes"
-
-  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC"
-
-  EXTRA_INCS="$EXTRA_INCS $PETSC_CFLAGS"
-  EXTRA_LIBS="$EXTRA_LIBS $PETSC_LIBS"
- ])
 ], [
   PETSC_MAKE_INCLUDE=
   HAS_PETSC="no"
@@ -1325,6 +1320,9 @@ AC_SUBST(FMT_INCLUDE_PATH)
 AC_SUBST(PREFIX)
 AC_SUBST(IDLCONFIGPATH)
 AC_SUBST(PYTHONCONFIGPATH)
+AC_SUBST(LIB_TO_BUILD)
+AC_SUBST(STATIC_EXTRA)
+AC_SUBST(SHARED_EXTRA)
 
 AC_SUBST(BOUT_VERSION)
 AC_SUBST(BOUT_VERSION_MAJOR)
@@ -1359,6 +1357,7 @@ AC_SUBST(HAS_FFTW)
 AC_CONFIG_FILES([include/bout/version.hxx])
 AC_CONFIG_FILES([include/bout/revision.hxx])
 AC_CONFIG_FILES([bin/bout-config])
+AC_CONFIG_FILES([src/makefile])
 AC_OUTPUT
 chmod a+x bin/bout-config
 
