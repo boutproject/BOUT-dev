@@ -91,11 +91,11 @@ BoutReal FieldBallooning::generate(const Context& ctx) {
       // y - i * 2pi
       value += arg->generate(Context(ctx).set(
           "y", ctx.y() - i * TWOPI,
-          "z", ctx.z() + i * ts * TWOPI / zlength;
+          "z", ctx.z() + i * ts * TWOPI / zlength));
 
       value += arg->generate(Context(ctx).set(
           "y", ctx.y() + i * TWOPI,
-          "z", ctx.z() - i * ts * TWOPI / zlength;
+          "z", ctx.z() - i * ts * TWOPI / zlength));
     }
     return value;
   }
