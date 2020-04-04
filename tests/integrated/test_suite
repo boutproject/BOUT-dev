@@ -107,18 +107,8 @@ if "--jobserver-auth=" in mf or "--jobserver-fds=" in mf:
     except ValueError:
         offset=mf.index("--jobserver-fds=")
     file_desc=[int(i) for i in re.findall("\d+",mf[offset:])[0:2]]
-    try:
-        js_read = open(file_desc[0], "r")
-        js_write = open(file_desc[1], "w")
-    except:
-        print("Warning - we are not part of the job pool 😭, running in serial")
-        file_desc = None
-        js_read = None
-    if js_read is not None:
-        fl = fcntl.fcntl(js_read, fcntl.F_GETFL)
-        fcntl.fcntl(js_read, fcntl.F_SETFL, fl | os.O_NONBLOCK)
-        js_tokens = js_read.read()
-        num_jobs = len(js_tokens)+1
+    js_read = file_desc[0]
+    js_write = file_desc[1]
 
 class Test(threading.Thread):
     def __init__(self, name, cmd):
@@ -151,9 +141,9 @@ class Test(threading.Thread):
     def _cost(self):
         if self.cmd == "make":
             return 1
-        with open(self.name+"/"+self.cmd,"r") as filein:
+        with open(self.name+"/"+self.cmd,"r", encoding='utf8') as filein:
             contents = filein.read()
-            # Find all lines starting with '#requires' or '#Requires:'
+            # Find all lines starting with '#cores' or '#Cores:'
             match = re.findall(
                 "^\s*\#\s?[Cc]ores:\s*?(\d+)", contents, re.MULTILINE)
             if len(match) > 1:
@@ -193,6 +183,15 @@ if args.get_list:
             print(test)
     sys.exit(0)
 
+if js_read is not None:
+    try:
+        fl = fcntl.fcntl(js_read, fcntl.F_GETFL)
+        fcntl.fcntl(js_read, fcntl.F_SETFL, fl | os.O_NONBLOCK)
+    except OSError:
+        print("Warning - we are not part of the job pool 😭, running in serial")
+        file_desc = None
+        js_read = None
+
 ##################################################################
 # Run the actual test
 
@@ -210,6 +209,11 @@ print("======= {} {} {} tests ========".format(test_type, len(tests), savepath.s
 avail = num_jobs
 tester = sorted([Test(t, command) for t in tests],
                 key=lambda x: x.cost, reverse=True)
+cost_remain = sum(x.cost for x in tester)
+if js_read:
+    js_tokens = os.read(js_read,cost_remain-1)
+    num_jobs = len(js_tokens)+1
+
 torun=[i for i in range(len(tests))]
 running=[]
 
@@ -226,6 +230,7 @@ while len(torun)+len(running):
                 job.start()
                 running.append(job)
                 avail -= job.cost
+                cost_remain -= job.cost
         # if nothing is running, start the first
         if running == []:
             tostart = torun.pop(0)
@@ -233,6 +238,7 @@ while len(torun)+len(running):
             job.start()
             running.append(job)
             avail -= job.cost
+            cost_remain -= job.cost
 
     # Are any jobs finished
     for job in running:
@@ -247,8 +253,8 @@ while len(torun)+len(running):
     if torun:
         if js_read is not None:
             try:
-                newt = js_read.read()
-            except TypeError:
+                newt = os.read(js_read,cost_remain)
+            except BlockingIOError:
                 newt = ""
             if newt != "":
                 js_tokens += newt
@@ -260,7 +266,7 @@ while len(torun)+len(running):
             if js_read:
                 newt = js_tokens[0:avail]
                 js_tokens = js_tokens[avail:]
-                js_write.write(newt)
+                os.write(js_write,newt)
                 num_jobs -= avail
                 avail = 0
 
@@ -272,7 +278,7 @@ print("\n")
 # Return remaining tokens
 if js_read is not None:
     if js_tokens != "":
-        js_write.write(t)
+        os.write(js_write, js_tokens)
 
 if failed:
     print("======= FAILURES ========")
