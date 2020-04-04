@@ -275,7 +275,6 @@ configuration::
       NetCDF support: yes
       Parallel-NetCDF support: no
       HDF5 support: yes (parallel: no)
-      MUMPS support: no
 
 If not, see :ref:`sec-advancedinstall` for some things you can try to
 resolve common problems.
