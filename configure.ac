@@ -85,6 +85,8 @@ AC_ARG_ENABLE(backtrace,    [AS_HELP_STRING([--disable-backtrace],
         [Disable function backtrace])],,[enable_backtrace=maybe])
 AC_ARG_ENABLE(shared,       [AS_HELP_STRING([--enable-shared],
         [Enable building bout++ into an shared object])],,[enable_shared=no])
+AC_ARG_ENABLE(static,       [AS_HELP_STRING([--enable-static],
+        [Enable building bout++ into an static library])],,[enable_static=auto])
 AC_ARG_ENABLE(openmp,       [AS_HELP_STRING([--enable-openmp],
         [Enable building with OpenMP support])],,[enable_openmp=no])
 AC_ARG_WITH(openmp_schedule,[AS_HELP_STRING([--with-openmp-schedule=static/dynamic/guided/auto],
@@ -386,6 +388,7 @@ AS_IF([test "x$enable_backtrace" = "xyes" || test "x$enable_backtrace" = "xmaybe
 # Build into shared object (pic)
 #############################################################
 
+LIB_TO_BUILD=''
 AS_IF([test "x$enable_shared" = "xyes"], [
     # compile as position independent code.
     # -fpic is apparently faster then -fPIC, but -fPIC works always.
@@ -396,6 +399,31 @@ AS_IF([test "x$enable_shared" = "xyes"], [
     #  PowerPC and SPARC.
     # Therfore use -fPIC for now
     CXXFLAGS="$CXXFLAGS -fPIC"
+    LIB_TO_BUILD+=' $(BOUT_LIB_PATH)/libbout++.so'
+    AS_IF([test "x$enable_static" = "xauto"], [
+        enable_static=no
+    ])
+    SHARED_EXTRA=':'
+    AS_IF([test "x$enable_static" = "xno"], [
+        SHARED_EXTRA='$(RM) -f $(BOUT_LIB_PATH)/libbout++.a'
+    ])
+], [
+    AS_IF([test "x$enable_static" = "xauto"], [
+        enable_static=yes
+    ])
+])
+
+AS_IF([test "x$enable_static" = "xyes"], [
+    LIB_TO_BUILD+=' $(BOUT_LIB_PATH)/libbout++.a'
+    STATIC_EXTRA=':'
+    # In case we only build static, make sure shared libs are removed
+    AS_IF([! test "x$enable_shared" = "xyes"], [
+        STATIC_EXTRA='$(RM) -f $(BOUT_LIB_PATH)/*.so*'
+    ])
+])
+
+AS_IF([test "x$LIB_TO_BUILD" = x ], [
+    AC_MSG_ERROR([Need to enable at least on of static or shared!])
 ])
 
 #############################################################
@@ -1292,6 +1320,9 @@ AC_SUBST(FMT_INCLUDE_PATH)
 AC_SUBST(PREFIX)
 AC_SUBST(IDLCONFIGPATH)
 AC_SUBST(PYTHONCONFIGPATH)
+AC_SUBST(LIB_TO_BUILD)
+AC_SUBST(STATIC_EXTRA)
+AC_SUBST(SHARED_EXTRA)
 
 AC_SUBST(BOUT_VERSION)
 AC_SUBST(BOUT_VERSION_MAJOR)
@@ -1326,6 +1357,7 @@ AC_SUBST(HAS_FFTW)
 AC_CONFIG_FILES([include/bout/version.hxx])
 AC_CONFIG_FILES([include/bout/revision.hxx])
 AC_CONFIG_FILES([bin/bout-config])
+AC_CONFIG_FILES([src/makefile])
 AC_OUTPUT
 chmod a+x bin/bout-config
 
