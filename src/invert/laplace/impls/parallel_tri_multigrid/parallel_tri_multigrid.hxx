@@ -131,6 +131,10 @@ public:
   void reconstruct_full_solution(Level &level, const int jy, Matrix<dcomplex> &halos);
 
 private:
+
+  // Information about the grids
+  //Array<Level> levels;
+
   // The coefficents in
   // D*grad_perp^2(x) + (1/C)*(grad_perp(C))*grad_perp(x) + A*x = b
   Field2D A, C, D;
