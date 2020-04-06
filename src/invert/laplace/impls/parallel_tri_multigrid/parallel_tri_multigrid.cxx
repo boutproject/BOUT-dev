@@ -274,7 +274,7 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   proc_in = myproc - 1;
   proc_out = myproc + 1;
 
-  auto levels = Array<Level>(4);
+  auto levels = Array<Level>(10);
 
   nmode = maxmode + 1;
   int jy = b.getIndex();
@@ -522,14 +522,12 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
 
     init(levels[0], ncx, jy, avec, bvec, cvec, bcmplx,xs,xe,0);
 
-    int ncx_coarse = (xe-xs+1)/2 + xs + ncx - xe - 1;
-    init(levels[1], levels[0], ncx_coarse, xs, ncx_coarse-3,1,jy); //FIXME assumes mgy=2
+    int ncx_coarse = ncx; //(xe-xs+1)/2 + xs + ncx - xe - 1;
+    for(int l = 1; l<=max_level; l++){
+      ncx_coarse = (ncx_coarse-4)/2+4;
+      init(levels[l], levels[l-1], ncx_coarse, xs, ncx_coarse-3,l,jy); //FIXME assumes mgy=2
+    }
 
-    ncx_coarse = (ncx_coarse-4)/2+4;
-    init(levels[2], levels[1], ncx_coarse, xs, ncx_coarse-3,2,jy); //FIXME assumes mgy=2
-
-    ncx_coarse = (ncx_coarse-4)/2+4;
-    init(levels[3], levels[2], ncx_coarse, xs, ncx_coarse-3,3,jy); //FIXME assumes mgy=2
   //}
   ///SCOREP_USER_REGION_END(initlevels);
   ///SCOREP_USER_REGION_DEFINE(setsoln);
@@ -1144,17 +1142,19 @@ void LaplaceParallelTriMG::jacobi_full_system(Level &l, const int jy){
 
     // Update boundaries to match interior points
     // Do this after communication, otherwise this breaks on 1 interior pt per proc
-    if(localmesh->firstX()){
-      for (int ix = l.xs-1; ix > 0; ix--) {
-	l.soln(kz,ix) = ( l.rvec(kz,ix) - l.avec(jy,kz,ix)*l.soln(kz,ix-1) - l.cvec(jy,kz,ix)*l.soln(kz,ix+1) ) / l.bvec(jy,kz,ix);
+    if(l.current_level == 0){
+      if(localmesh->firstX()){
+	for (int ix = l.xs-1; ix > 0; ix--) {
+	  l.soln(kz,ix) = ( l.rvec(kz,ix) - l.avec(jy,kz,ix)*l.soln(kz,ix-1) - l.cvec(jy,kz,ix)*l.soln(kz,ix+1) ) / l.bvec(jy,kz,ix);
+	}
+	l.soln(kz,0) = ( l.rvec(kz,0) - l.cvec(jy,kz,0)*l.soln(kz,1) ) / l.bvec(jy,kz,0);
       }
-      l.soln(kz,0) = ( l.rvec(kz,0) - l.cvec(jy,kz,0)*l.soln(kz,1) ) / l.bvec(jy,kz,0);
-    }
-    if(localmesh->lastX()){
-      for (int ix = l.xe; ix < l.ncx-1; ix++) {
-	l.soln(kz,ix) = ( l.rvec(kz,ix) - l.avec(jy,kz,ix)*l.soln(kz,ix-1) - l.cvec(jy,kz,ix)*l.soln(kz,ix+1) ) / l.bvec(jy,kz,ix);
+      if(localmesh->lastX()){
+	for (int ix = l.xe; ix < l.ncx-1; ix++) {
+	  l.soln(kz,ix) = ( l.rvec(kz,ix) - l.avec(jy,kz,ix)*l.soln(kz,ix-1) - l.cvec(jy,kz,ix)*l.soln(kz,ix+1) ) / l.bvec(jy,kz,ix);
+	}
+	l.soln(kz,l.ncx-1) = ( l.rvec(kz,l.ncx-1) - l.avec(jy,kz,l.ncx-1)*l.soln(kz,l.ncx-2) ) / l.bvec(jy,kz,l.ncx-1);
       }
-      l.soln(kz,l.ncx-1) = ( l.rvec(kz,l.ncx-1) - l.avec(jy,kz,l.ncx-1)*l.soln(kz,l.ncx-2) ) / l.bvec(jy,kz,l.ncx-1);
     }
   }
 }  
