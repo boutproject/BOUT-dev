@@ -1678,7 +1678,7 @@ void LaplaceParallelTriMG::calculate_residual_full_system(Level &l, const Array<
   }
 }
 
-void LaplaceParallelTriMG::coarsen_full_system(Level &l, const Matrix<dcomplex> fine_residual, const Array<bool> &converged){
+void LaplaceParallelTriMG::coarsen_full_system(Level &l, const Matrix<dcomplex> &fine_residual, const Array<bool> &converged){
 
   SCOREP0();
   int ixc, ixf;
