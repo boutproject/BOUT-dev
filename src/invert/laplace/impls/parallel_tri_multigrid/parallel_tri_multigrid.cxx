@@ -1658,22 +1658,30 @@ void LaplaceParallelTriMG::calculate_residual_full_system(Level &l, const Array<
   int err;
   if(!localmesh->firstX()){
     for (int kz = 0; kz <= maxmode; kz++) {
-      message_send[kz].value = l.residual(kz,l.xs);
+      if(!converged[kz]){
+	message_send[kz].value = l.residual(kz,l.xs);
+      }
     }
     err = MPI_Sendrecv(&message_send[0], nmode*sizeof(Message), MPI_BYTE, proc_in, 1, &message_recv[0], nmode*sizeof(Message), MPI_BYTE, proc_in, 0, comm, MPI_STATUS_IGNORE);
     for (int kz = 0; kz <= maxmode; kz++) {
-      l.residual(kz,l.xs-1) = message_recv[kz].value;
+      if(!converged[kz]){
+	l.residual(kz,l.xs-1) = message_recv[kz].value;
+      }
     }
   }
 
   // Communicate out
   if(!localmesh->lastX()){
     for (int kz = 0; kz <= maxmode; kz++) {
-      message_send[kz].value = l.residual(kz,l.xe);
+      if(!converged[kz]){
+	message_send[kz].value = l.residual(kz,l.xe);
+      }
     }
     err = MPI_Sendrecv(&message_send[0], nmode*sizeof(Message), MPI_BYTE, proc_out, 0, &message_recv[0], nmode*sizeof(Message), MPI_BYTE, proc_out, 1, comm, MPI_STATUS_IGNORE);
     for (int kz = 0; kz < nmode; kz++) {
-      l.residual(kz,l.xe+1) = message_recv[kz].value;
+      if(!converged[kz]){
+	l.residual(kz,l.xe+1) = message_recv[kz].value;
+      }
     }
   }
 }
