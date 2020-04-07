@@ -66,6 +66,8 @@ LaplaceParallelTriMG::LaplaceParallelTriMG(Options *opt, CELL_LOC loc, Mesh *mes
 
   x0saved = Tensor<dcomplex>(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
 
+  levels = std::vector<Level>(10);
+
   resetSolver();
 
 }
@@ -290,8 +292,6 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   int myproc = yproc * localmesh->getNXPE() + xproc;
   proc_in = myproc - 1;
   proc_out = myproc + 1;
-
-  auto levels = Array<Level>(10);
 
   nmode = maxmode + 1;
   int jy = b.getIndex();
@@ -534,8 +534,7 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   // finer than itself).
   //
   // If using conventional multigrid (algorithm=0), the coefficients a/b/cvec are stored. 
-  
-  //if(first_call(jy,0) || not store_coefficients ){
+  if(first_call(jy,0) || not store_coefficients ){
 
     init(levels[0], ncx, jy, avec, bvec, cvec, bcmplx,xs,xe,0);
 
@@ -545,13 +544,14 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       init(levels[l], levels[l-1], ncx_coarse, xs, ncx_coarse-3,l,jy); //FIXME assumes mgy=2
     }
 
-  //}
+  }
   SCOREP_USER_REGION_END(initlevels);
+
   SCOREP_USER_REGION_DEFINE(setsoln);
   SCOREP_USER_REGION_BEGIN(setsoln, "set level 0 solution",SCOREP_USER_REGION_TYPE_COMMON);
-  // This loop could be avoided
   for(int kz=0; kz<nmode; kz++){
     for(int ix=0; ix<ncx; ix++){
+      levels[0].rvec(kz,ix) = bcmplx(kz,ix);
       levels[0].soln(kz,ix) = xk1d(kz,ix);
       levels[0].solnlast(kz,ix) = xk1d(kz,ix);
     }

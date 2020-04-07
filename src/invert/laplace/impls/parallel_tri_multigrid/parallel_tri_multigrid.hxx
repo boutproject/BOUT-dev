@@ -134,7 +134,7 @@ public:
 private:
 
   // Information about the grids
-  //Array<Level> levels;
+  std::vector<Level> levels;
 
   // The coefficents in
   // D*grad_perp^2(x) + (1/C)*(grad_perp(C))*grad_perp(x) + A*x = b
