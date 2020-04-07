@@ -582,19 +582,6 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   }
 
   SCOREP_USER_REGION_END(ics);
-  SCOREP_USER_REGION_DEFINE(zerosol);
-  SCOREP_USER_REGION_BEGIN(zerosol, "zero soln",SCOREP_USER_REGION_TYPE_COMMON);
-
-  for(int il = 1; il <= max_level; il++){
-    for (int kz = 0; kz <= maxmode; kz++) {
-      for (int ix = 0; ix < levels[il].ncx; ix++) {
-	levels[il].soln(kz,ix) = 0.0;
-	levels[il].solnlast(kz,ix) = 0.0;
-      }
-    }
-  }
-
-  SCOREP_USER_REGION_END(zerosol);
   SCOREP_USER_REGION_DEFINE(initwhileloop);
   SCOREP_USER_REGION_BEGIN(initwhileloop, "init while loop",SCOREP_USER_REGION_TYPE_COMMON);
 
