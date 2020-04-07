@@ -124,7 +124,7 @@ public:
   void refine_full_system(Level &level, Matrix<dcomplex> &fine_error);
 
   void coarsen(const Level level, Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast, int jy);
-  void coarsen_full_system(Level &level, const Matrix<dcomplex> fine_residual);
+  void coarsen_full_system(Level &level, const Matrix<dcomplex> fine_residual, const Array<bool> &converged);
 
   void calculate_residual_full_system(Level &level, const Array<bool> &converged, const int jy);
   void calculate_total_residual(Array<BoutReal> &total, Array<bool> &converged, const Level level);
