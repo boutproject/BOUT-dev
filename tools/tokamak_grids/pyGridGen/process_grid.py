@@ -31,7 +31,7 @@ from past.utils import old_div
 
 import numpy
 import time
-from bunch import Bunch
+from boututils.bunch import Bunch
 import sys
 from netcdf_io import file_open, file_write, file_close
 from scipy.optimize import curve_fit

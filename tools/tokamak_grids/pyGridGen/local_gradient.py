@@ -10,7 +10,7 @@ from __future__ import print_function
 
 import numpy  
 import sys
-from bunch import Bunch
+from boututils.bunch import Bunch
 from scipy.interpolate import RectBivariateSpline
 
 def local_gradient( interp_data, ri, zi, status=0, f=None, dfdr=None, dfdz=None):
