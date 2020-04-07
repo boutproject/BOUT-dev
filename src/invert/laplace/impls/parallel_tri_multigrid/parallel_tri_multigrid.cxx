@@ -595,8 +595,8 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   }
 
   SCOREP_USER_REGION_END(zerosol);
-  SCOREP_USER_REGION_DEFINE(whileloop);
-  SCOREP_USER_REGION_BEGIN(whileloop, "while loop",SCOREP_USER_REGION_TYPE_COMMON);
+  SCOREP_USER_REGION_DEFINE(initwhileloop);
+  SCOREP_USER_REGION_BEGIN(initwhileloop, "init while loop",SCOREP_USER_REGION_TYPE_COMMON);
 
   int count = 0;
   int subcount = 0;
@@ -613,6 +613,10 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   }
   int ml;
 
+  SCOREP_USER_REGION_END(initwhileloop);
+  SCOREP_USER_REGION_DEFINE(whileloop);
+  SCOREP_USER_REGION_BEGIN(whileloop, "while loop",SCOREP_USER_REGION_TYPE_COMMON);
+
   while(true){
 
     /*
@@ -623,20 +627,21 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
     output<< endl;
     */
 
-    if(false){
-      jacobi(levels[current_level], jy, xloc, xloclast);
-    }
-    else {
-      //jacobi_full_system(levels[current_level],jy);
-      gauss_seidel_red_black_full_system(levels[current_level],converged,jy);
-    }
+    //jacobi_full_system(levels[current_level],jy);
+    gauss_seidel_red_black_full_system(levels[current_level],converged,jy);
 
 
+    SCOREP_USER_REGION_DEFINE(l0rescalc);
+    SCOREP_USER_REGION_BEGIN(l0rescalc, "level 0 residual calculation",SCOREP_USER_REGION_TYPE_COMMON);
     if(current_level==0 and subcount==max_cycle-1){
       // Not necessay, but for diagnostics
+      /*
       for(int kz=0; kz<nmode; kz++){
-	totalold[kz] = total[kz];
+	if(!converged[kz]){
+	  totalold[kz] = total[kz];
+	}
       }
+      */
       calculate_residual_full_system(levels[current_level],converged,jy);
       calculate_total_residual(total,converged,levels[current_level]);
 
@@ -661,14 +666,23 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       */
     }
 
+    SCOREP_USER_REGION_END(l0rescalc);
+    SCOREP_USER_REGION_DEFINE(increment);
+    SCOREP_USER_REGION_BEGIN(increment, "increment counters",SCOREP_USER_REGION_TYPE_COMMON);
     ++count;
     ++subcount;
+    SCOREP_USER_REGION_END(increment);
 
+    SCOREP_USER_REGION_DEFINE(solneqsolnlast);
+    SCOREP_USER_REGION_BEGIN(solneqsolnlast, "soln = soln last",SCOREP_USER_REGION_TYPE_COMMON);
     for (int kz = 0; kz <= maxmode; kz++) {
-      for (int ix = 0; ix < levels[current_level].ncx; ix++) {
-	levels[current_level].solnlast(kz,ix) = levels[current_level].soln(kz,ix);
+      if(!converged[kz]){
+	for (int ix = 0; ix < levels[current_level].ncx; ix++) {
+	  levels[current_level].solnlast(kz,ix) = levels[current_level].soln(kz,ix);
+	}
       }
     }
+    SCOREP_USER_REGION_END(solneqsolnlast);
 
     // Force at least max_cycle iterations at each level
     // Do not skip with tolerence to minimize comms
@@ -775,8 +789,8 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       */
     }
 
-    SCOREP_USER_REGION_DEFINE(copylast);
-    SCOREP_USER_REGION_BEGIN(copylast, "copy to last",SCOREP_USER_REGION_TYPE_COMMON);
+    //SCOREP_USER_REGION_DEFINE(copylast);
+    //SCOREP_USER_REGION_BEGIN(copylast, "copy to last",SCOREP_USER_REGION_TYPE_COMMON);
     //output<<"xloc "<<maxmode<<" "<<kz<<" "<<xloc(kz,0)<<" "<<xloc(kz,1)<<" "<<xloc(kz,2)<<" "<<xloc(kz,3)<<endl;
     //output<<"xloclast "<<kz<<" "<<xloclast(kz,0)<<" "<<xloclast(kz,1)<<" "<<xloclast(kz,2)<<" "<<xloclast(kz,3)<<endl;
     /*
@@ -791,7 +805,7 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       //}
     }
     */
-    SCOREP_USER_REGION_END(copylast);
+    //SCOREP_USER_REGION_END(copylast);
 
   }
   SCOREP_USER_REGION_END(whileloop);
