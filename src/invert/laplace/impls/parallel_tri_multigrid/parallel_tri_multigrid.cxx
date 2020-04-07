@@ -229,6 +229,18 @@ BoutReal LaplaceParallelTriMG::max(const Array<BoutReal> a){
   return maxval;
 }
 
+int LaplaceParallelTriMG::maxloc(const Array<BoutReal> a){
+  BoutReal maxval = a[0];
+  int maxloc = 0;
+  for(int i=1; i<a.size(); i++){
+    if(a[i]>maxval){
+      maxloc = i;
+      maxval = a[i];
+    }
+  }
+  return maxloc;
+}
+
 FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b) { return solve(b, b); }
 
 /*!
@@ -588,10 +600,13 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   auto converged = Array<bool>(nmode);
 
   auto total = Array<BoutReal>(nmode);
+  auto totalold = Array<BoutReal>(nmode);
   for(int kz=0; kz<nmode; kz++){
     converged[kz] = false;
     total[kz] = 1e20;
+    totalold[kz] = 1e20;
   }
+  int ml;
 
   while(true){
 
@@ -614,6 +629,9 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
 
     if(current_level==0 and subcount==max_cycle-1){
       // Not necessay, but for diagnostics
+      for(int kz=0; kz<nmode; kz++){
+	totalold[kz] = total[kz];
+      }
       calculate_residual_full_system(levels[current_level],converged,jy);
       calculate_total_residual(total,converged,levels[current_level]);
 
@@ -653,6 +671,8 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
     if(subcount < max_cycle){
     }
     else if( max(total) < rtol and current_level==0 ){
+      ml = maxloc(total);
+      output<<"Exit "<<jy<<" "<<count<<" "<<ml<<" "<<total[ml]<<" "<<total[ml]/totalold[ml]<<endl;
       /*
       output<<jy<<" "<<count<<" ";
       for(int kz=0;kz<nmode;kz++){

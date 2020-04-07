@@ -83,6 +83,7 @@ public:
   bool all(const Array<bool>);
   bool any(const Array<bool>);
   BoutReal max(const Array<BoutReal>);
+  int maxloc(const Array<BoutReal>);
 
   void refine(Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast);
 
