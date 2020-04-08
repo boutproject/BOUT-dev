@@ -1,0 +1,371 @@
+#ifndef INCLUDED_BOUT_CONFIG_H
+#define INCLUDED_BOUT_CONFIG_H
+
+#define BOUT_VERSION_MAJOR @BOUT_VERSION_MAJOR@
+#define BOUT_VERSION_MINOR @BOUT_VERSION_MINOR@
+#define BOUT_VERSION_PATCHLEVEL @BOUT_VERSION_PATCHLEVEL@
+
+/* Define if bool type is not properly supported */
+#undef BOOL_IS_BROKEN
+
+/* Define if std::fill_n returns void */
+#undef CASC_STD_FILL_N_RETURNS_VOID
+
+/* Define if DBL_MAX is not in float.h */
+#undef DBL_MAX_IS_BROKEN
+
+/* Define if DBL_SNAN is not in float.h */
+#undef DBL_SNAN_IS_BROKEN
+
+/* Enable assertion checking */
+#cmakedefine DEBUG_CHECK_ASSERTIONS
+
+/* Enable BOUT developer assertion checking */
+#cmakedefine DEBUG_CHECK_DEV_ASSERTIONS
+
+/* Enable assertion checking for dimensions */
+#cmakedefine DEBUG_CHECK_DIM_ASSERTIONS
+
+/* Initialize new memory to undefined values in debug mode */
+#cmakedefine DEBUG_INITIALIZE_UNDEFINED
+
+/* Define if FLT_MAX is not in float.h */
+#undef FLT_MAX_IS_BROKEN
+
+/* Define if FLT_SNAN is not in float.h */
+#undef FLT_SNAN_IS_BROKEN
+
+/* BLAS library is available so use it */
+#undef HAVE_BLAS
+
+/* HAVE_CMATH */
+#cmakedefine HAVE_CMATH
+
+/* HAVE_CMATH_ISNAN */
+#undef HAVE_CMATH_ISNAN
+
+/* HAVE_CTIME */
+#undef HAVE_CTIME
+
+/* HAVE_EXCEPTION_HANDLING */
+#undef HAVE_EXCEPTION_HANDLING
+
+/* HDF5 library is available so use it */
+#cmakedefine HAVE_HDF5
+
+/* HYPRE library is available so use it */
+#cmakedefine HAVE_HYPRE
+
+/* HAVE_INLINE_ISNAND */
+#undef HAVE_INLINE_ISNAND
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#cmakedefine HAVE_INTTYPES_H
+
+/* HAVE_IOMANIP_LEFT */
+#undef HAVE_IOMANIP_LEFT
+
+/* HAVE_ISNAN */
+#undef HAVE_ISNAN
+
+/* HAVE_ISNAND */
+#undef HAVE_ISNAND
+
+/* HAVE_ISNAN_TEMPLATE */
+#undef HAVE_ISNAN_TEMPLATE
+
+/* HAVE_ISO_SSTREAM */
+#undef HAVE_ISO_SSTREAM
+
+/* LAPACK library is available so use it */
+#undef HAVE_LAPACK
+
+/* Define to 1 if you have the `z' library (-lz). */
+#undef HAVE_LIBZ
+
+/* Define if you have the 'mallinfo' function. */
+#undef HAVE_MALLINFO
+
+/* HAVE_MALLOC_H */
+#cmakedefine HAVE_MALLOC_H
+
+/* HAVE_MEMBER_FUNCTION_SPECIALIZATION */
+#undef HAVE_MEMBER_FUNCTION_SPECIALIZATION
+
+/* Define to 1 if you have the <memory.h> header file. */
+#cmakedefine HAVE_MEMORY_H
+
+/* MPI library is present */
+#cmakedefine HAVE_MPI
+
+/* HAVE_NAMESPACE */
+#undef HAVE_NAMESPACE
+
+/* HAVE_NEW_PLACEMENT_OPERATOR */
+#undef HAVE_NEW_PLACEMENT_OPERATOR
+
+/* OPENMP is available */
+#cmakedefine HAVE_OPENMP
+
+/* Compiling with NVCC for CUDA */
+#cmakedefine HAVE_CUDA
+
+/* Add NVTX regions */
+#cmakedefine ENABLE_NVTX_REGIONS
+
+/* Use RAJA for loop abstractions */
+#cmakedefine HAVE_RAJA
+
+/* Use Umpire for memory management */
+#cmakedefine HAVE_UMPIRE
+
+/* PETSC library is available so use it */
+#cmakedefine HAVE_PETSC
+
+/* HAVE_PRAGMA_STATIC_DATA_SPECIALIZATION */
+#undef HAVE_PRAGMA_STATIC_DATA_SPECIALIZATION
+
+/* SILO library is available so use it */
+#cmakedefine HAVE_SILO
+
+/* HAVE_SSTREAM */
+#undef HAVE_SSTREAM
+
+/* HAVE_STANDARD_STATIC_DATA_SPECIALIZATION */
+#undef HAVE_STANDARD_STATIC_DATA_SPECIALIZATION
+
+/* HAVE_STATIC_DATA_INSTANTIATION */
+#undef HAVE_STATIC_DATA_INSTANTIATION
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#cmakedefine HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#cmakedefine HAVE_STDLIB_H
+
+/* Define to 1 if cpp supports the ANSI # stringizing operator. */
+#undef HAVE_STRINGIZE
+
+/* Define to 1 if you have the <strings.h> header file. */
+#cmakedefine HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#cmakedefine HAVE_STRING_H
+
+/* HAVE_SUNDIALS */
+#cmakedefine HAVE_SUNDIALS
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#cmakedefine HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/times.h> header file. */
+#cmakedefine HAVE_SYS_TIMES_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#cmakedefine HAVE_SYS_TYPES_H
+
+/* HAVE_TAU */
+#undef HAVE_TAU
+
+/* Thread Building Blocks are available to use */
+#undef HAVE_TBB
+
+/* HAVE_TEMPLATE_COMPLEX */
+#undef HAVE_TEMPLATE_COMPLEX
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#cmakedefine HAVE_UNISTD_H
+
+/* HAVE_VAMPIR */
+#undef HAVE_VAMPIR
+
+/* X11 library is present */
+#undef HAVE_X11
+
+/* "Compiling with XDR support" */
+#undef HAVE_XDR
+
+/* Define if the host system is Solaris */
+#undef HOST_OS_IS_SOLARIS
+
+/* Hypre library is configured for sequential mode */
+#undef HYPRE_SEQUENTIAL
+
+/* "Compiling without deprecated features" */
+#cmakedefine INCLUDE_DEPRECATED
+
+/* Header file for iomanip */
+#define IOMANIP_HEADER_FILE <iomanip>
+
+/* The iomanip header file is broken */
+#undef IOMANIP_IS_BROKEN
+
+/* Header file for iostream */
+#undef IOSTREAM_HEADER_FILE
+
+/* The iostream header file is broken */
+#undef IOSTREAM_IS_BROKEN
+
+/* LACKS_CMATH */
+#undef LACKS_CMATH
+
+/* LACKS_CMATH_ISNAN */
+#undef LACKS_CMATH_ISNAN
+
+/* conduit library is available so use it */
+#cmakedefine BOUT_HAVE_CONDUIT
+
+/* LACKS_CTIME */
+#undef LACKS_CTIME
+
+/* LACKS_EXCEPTION_HANDLING */
+#undef LACKS_EXCEPTION_HANDLING
+
+/* Hypre library is missing */
+#undef LACKS_HYPRE
+
+/* LACKS_INLINE_ISNAND */
+#undef LACKS_INLINE_ISNAND
+
+/* LACKS_IOMANIP_LEFT */
+#undef LACKS_IOMANIP_LEFT
+
+/* LACKS_ISNAN */
+#undef LACKS_ISNAN
+
+/* LACKS_ISNAND */
+#undef LACKS_ISNAND
+
+/* LACKS_ISNAN_TEMPLATE */
+#undef LACKS_ISNAN_TEMPLATE
+
+/* LACKS_MEMBER_FUNCTION_SPECIALIZATION */
+#undef LACKS_MEMBER_FUNCTION_SPECIALIZATION
+
+/* MPI library is missing */
+#cmakedefine LACKS_MPI
+
+/* LACKS_NAMESPACE */
+#undef LACKS_NAMESPACE
+
+/* LACKS_NEW_PLACEMENT_OPERATOR */
+#undef LACKS_NEW_PLACEMENT_OPERATOR
+
+/* LACKS_PRAGMA_STATIC_DATA_SPECIALIZATION */
+#undef LACKS_PRAGMA_STATIC_DATA_SPECIALIZATION
+
+/* LACKS_PROPER_XDR_HEADER */
+#undef LACKS_PROPER_XDR_HEADER
+
+/* LACKS_SSTREAM */
+#undef LACKS_SSTREAM
+
+/* LACKS_STANDARD_STATIC_DATA_SPECIALIZATION */
+#undef LACKS_STANDARD_STATIC_DATA_SPECIALIZATION
+
+/* LACKS_STATIC_DATA_INSTANTIATION */
+#undef LACKS_STATIC_DATA_INSTANTIATION
+
+/* LACKS_SUNDIALS */
+#undef LACKS_SUNDIALS
+
+/* LACKS_TAU */
+#undef LACKS_TAU
+
+/* LACKS_TEMPLATE_COMPLEX */
+#undef LACKS_TEMPLATE_COMPLEX
+
+/* LACKS_VAMPIR */
+#undef LACKS_VAMPIR
+
+/* X11 library is missing */
+#undef LACKS_X11
+
+/* LACK_ISO_SSTREAM */
+#undef LACK_ISO_SSTREAM
+
+/* Define if NAN is not in float.h */
+#undef NAN_IS_BROKEN
+
+/* Optimized build */
+#undef OPT_BUILD
+
+/* The type ostringstream is broken */
+#undef OSTRINGSTREAM_TYPE_IS_BROKEN
+
+/* The type ostrstream is broken */
+#define OSTRSTREAM_TYPE_IS_BROKEN
+
+/* Define to the address where bug reports for this package should be sent. */
+// Removed due to name conflict #undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+// Removed due to name conflict #undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+// Removed due to name conflict #undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+// Removed due to name conflict #undef PACKAGE_TARNAME
+
+/* Define to the version of this package. */
+// Removed due to name conflict #undef PACKAGE_VERSION
+
+/* Define if restrict is not properly supported */
+#undef RESTRICT_IS_BROKEN
+
+/* Maximum dimension allowed */
+#define BOUT_MAXIMUM_DIMENSION @BOUT_MAXIMUM_DIMENSION@
+
+/* Define to 1 if you have the ANSI C header files. */
+#undef STDC_HEADERS
+
+/* Header file for stl-sstream */
+#undef STL_SSTREAM_HEADER_FILE
+
+/* The stl-sstream header file is broken */
+#undef STL_SSTREAM_IS_BROKEN
+
+/* Define to 1 if the X Window System is missing or not being used. */
+#undef X_DISPLAY_MISSING
+
+/* Kludgey thing inserted by configure.in */
+#undef _POWER
+
+/* Configure for compiling on BGL family of machines */
+#undef __BGL_FAMILY__
+
+/*
+ * Prevent inclusion of mpi C++ bindings in mpi.h includes.
+ * This is done in here rather than BOUT_MPI.h since other
+ * files include MPI.h, such as PETSc and hypre.
+ */
+#ifndef MPI_NO_CPPBIND
+#define MPI_NO_CPPBIND
+#endif
+
+#ifndef MPICH_SKIP_MPICXX
+#define MPICH_SKIP_MPICXX
+#endif
+
+#ifndef OMPI_SKIP_MPICXX
+#define OMPI_SKIP_MPICXX
+#endif
+
+/********************************************************************/
+/********************* Hardwired defines ****************************/
+/********************************************************************/
+
+/*
+ * Some compilers require cmath to be included before the regular
+ * C math.h and stdlib.h headers are brought in, otherwise
+ * the compiler will get conflicting definitions for the functions.
+ */
+#if defined(__xlC__)
+#define REQUIRES_CMATH 1
+#endif
+
+#define STL_SSTREAM_HEADER_FILE <sstream>
+#define LACKS_STRSTREAM
+
+#endif
