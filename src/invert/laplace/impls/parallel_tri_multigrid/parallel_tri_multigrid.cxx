@@ -1049,7 +1049,9 @@ void LaplaceParallelTriMG::gauss_seidel_red_black_full_system(Level &l, const Ar
   }
   if(!localmesh->firstX()){
     for(int kz=0; kz < nmode; kz++){
-      sendvec[kz] = l.soln(kz,l.xs);
+      if(!converged[kz]){
+        sendvec[kz] = l.soln(kz,l.xs);
+      }
     }
     localmesh->isendXIn(&sendvec[0],nmode,1);
   }
@@ -1085,14 +1087,18 @@ void LaplaceParallelTriMG::gauss_seidel_red_black_full_system(Level &l, const Ar
   }
   if(!localmesh->lastX()){
     for(int kz=0; kz < nmode; kz++){
-      sendvec[kz] = l.soln(kz,l.xe);
+      if(!converged[kz]){
+        sendvec[kz] = l.soln(kz,l.xe);
+      }
     }
     localmesh->sendXOut(&sendvec[0],nmode,1);
   }
   if(!localmesh->firstX()){
     localmesh->wait(recv[0]);
     for(int kz=0; kz < nmode; kz++){
-      l.soln(kz,l.xs-1) = recvec[kz];
+      if(!converged[kz]){
+        l.soln(kz,l.xs-1) = recvec[kz];
+      }
     }
   }
 
