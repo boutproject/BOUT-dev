@@ -1042,6 +1042,8 @@ void LaplaceParallelTriMG::gauss_seidel_red_black_full_system(Level &l, const Ar
   }
 
   // Communicate: final grid point needs data from proc above
+  // Overlap comm/comp by not posting recv until needed in final
+  // loop iteration
   if(!localmesh->lastX()){
     recv[0] = localmesh->irecvXOut(&recvec[0], nmode, 1);
   }
@@ -1049,19 +1051,29 @@ void LaplaceParallelTriMG::gauss_seidel_red_black_full_system(Level &l, const Ar
     for(int kz=0; kz < nmode; kz++){
       sendvec[kz] = l.soln(kz,l.xs);
     }
-    localmesh->sendXIn(&sendvec[0],nmode,1);
-  }
-  if(!localmesh->lastX()){
-    localmesh->wait(recv[0]);
-    for(int kz=0; kz < nmode; kz++){
-      l.soln(kz,l.xe+1) = recvec[kz];
-    }
+    localmesh->isendXIn(&sendvec[0],nmode,1);
   }
 
+  bool waited = false; // have we posted the wait?
   // Black sweep: even points
   for (int kz = 0; kz <= maxmode; kz++) {
     if(!converged[kz]){
-      for (int ix = l.xs+1; ix <= l.xe; ix+=2) {
+      for (int ix = l.xs+1; ix < l.xe; ix+=2) {
+	l.soln(kz,ix) = ( l.rvec(kz,ix) - l.avec(jy,kz,ix)*l.soln(kz,ix-1) - l.cvec(jy,kz,ix)*l.soln(kz,ix+1) ) / l.bvec(jy,kz,ix);
+      }
+    }
+  }
+  for (int kz = 0; kz <= maxmode; kz++) {
+    if(!converged[kz]){
+      if(!localmesh->lastX()){
+        if(not waited){
+          waited = true;
+          localmesh->wait(recv[0]);
+        }
+        l.soln(kz,l.xe+1) = recvec[kz];
+      }
+      {
+        int ix = l.xe;
 	l.soln(kz,ix) = ( l.rvec(kz,ix) - l.avec(jy,kz,ix)*l.soln(kz,ix-1) - l.cvec(jy,kz,ix)*l.soln(kz,ix+1) ) / l.bvec(jy,kz,ix);
       }
     }
