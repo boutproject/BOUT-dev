@@ -869,6 +869,7 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   for(int kz=0; kz<nmode; kz++){
     for(int i=0; i<ncx; i++){
       xk1d(kz,i) = levels[0].soln(kz,i);
+      x0saved(i,jy,kz) = levels[0].soln(kz,i);
     }
   }
 
