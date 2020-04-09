@@ -1027,17 +1027,27 @@ void LaplaceParallelTriMG::jacobi(Level &l, const int jy, Matrix<dcomplex> &xloc
 void LaplaceParallelTriMG::gauss_seidel_red_black_full_system(Level &l, const Array<bool> &converged, const int jy){
 
   SCOREP0();
-  Array<dcomplex> sendvec, recvec;
-  sendvec = Array<dcomplex>(nmode);
+  Array<dcomplex> sendvecred, recvec, sendvecblack;
+  sendvecred = Array<dcomplex>(nmode);
   recvec = Array<dcomplex>(nmode);
-  comm_handle recv[2];
+  sendvecblack = Array<dcomplex>(nmode);
+  //comm_handle recv[1], send[1];
+  MPI_Request rredreq, sredreq, rblackreq, sblackreq;
 
   // Communicate: final grid point needs data from proc above
   // Overlap comm/comp by not posting recv until needed in final
   // loop iteration
   if(!localmesh->lastX()){
-    recv[0] = localmesh->irecvXOut(&recvec[0], nmode, 1);
+    //recv[0] = localmesh->irecvXOut(&recvec[0], nmode, 1);
+    MPI_Irecv(&recvec[0], nmode, MPI_DOUBLE_COMPLEX, proc_out, 1, BoutComm::get(), &rredreq);
   }
+  // Communicate: to synchronize, first grid point needs data from proc below
+  if(!localmesh->firstX()){
+    //recv[0] = localmesh->irecvXIn(&recvec[0], nmode, 1);
+    MPI_Irecv(&recvec[0], nmode, MPI_DOUBLE_COMPLEX, proc_in, 2, BoutComm::get(), &rblackreq);
+  }
+
+  // Red sweep:
 
   // Do ix = xs first, so we can start the send
   for (int kz = 0; kz <= maxmode; kz++) {
@@ -1045,17 +1055,17 @@ void LaplaceParallelTriMG::gauss_seidel_red_black_full_system(Level &l, const Ar
       int ix = l.xs;
       l.soln(kz,ix) = ( l.rvec(kz,ix) - l.avec(jy,kz,ix)*l.soln(kz,ix-1) - l.cvec(jy,kz,ix)*l.soln(kz,ix+1) ) / l.bvec(jy,kz,ix);
       if(!localmesh->firstX()){
-        sendvec[kz] = l.soln(kz,l.xs);
+        sendvecred[kz] = l.soln(kz,l.xs);
       }
     }
   }
 
   // Can send lower guard data now
   if(!localmesh->firstX()){
-    localmesh->isendXIn(&sendvec[0],nmode,1);
+    MPI_Isend(&sendvecred[0], nmode, MPI_DOUBLE_COMPLEX, proc_in, 1, BoutComm::get(), &sredreq);
   }
 
-  // Red sweep: odd points
+  // Red sweep: remaining points
   for (int kz = 0; kz <= maxmode; kz++) {
     if(!converged[kz]){
       for (int ix = l.xs+2; ix < l.xe+1; ix+=2) {
@@ -1064,7 +1074,7 @@ void LaplaceParallelTriMG::gauss_seidel_red_black_full_system(Level &l, const Ar
     }
   }
 
-  bool waited = false; // have we posted the wait?
+  bool wait_red = false; // have we posted the wait?
   // Black sweep: even points
   for (int kz = 0; kz <= maxmode; kz++) {
     if(!converged[kz]){
@@ -1076,9 +1086,10 @@ void LaplaceParallelTriMG::gauss_seidel_red_black_full_system(Level &l, const Ar
   for (int kz = 0; kz <= maxmode; kz++) {
     if(!converged[kz]){
       if(!localmesh->lastX()){
-        if(not waited){
-          waited = true;
-          localmesh->wait(recv[0]);
+        if(not wait_red){
+          wait_red = true;
+          //localmesh->wait(recv[0]);
+	  MPI_Wait(&rredreq,MPI_STATUS_IGNORE);
         }
         l.soln(kz,l.xe+1) = recvec[kz];
       }
@@ -1089,23 +1100,26 @@ void LaplaceParallelTriMG::gauss_seidel_red_black_full_system(Level &l, const Ar
     }
   }
 
-  // Communicate: to synchronize, first grid point needs data from proc below
-  if(!localmesh->firstX()){
-    recv[1] = localmesh->irecvXIn(&recvec[0], nmode, 1);
-  }
   if(!localmesh->lastX()){
     for(int kz=0; kz < nmode; kz++){
       if(!converged[kz]){
-        sendvec[kz] = l.soln(kz,l.xe);
+	sendvecblack[kz] = l.soln(kz,l.xe);
       }
     }
-    localmesh->sendXOut(&sendvec[0],nmode,1);
+    //localmesh->sendXOut(&sendvec[0],nmode,2);
+    MPI_Isend(&sendvecblack[0], nmode, MPI_DOUBLE_COMPLEX, proc_out, 2, BoutComm::get(), &sblackreq);
   }
+
+  bool wait_black = false; // have we posted the wait?
   if(!localmesh->firstX()){
-    localmesh->wait(recv[1]);
     for(int kz=0; kz < nmode; kz++){
       if(!converged[kz]){
-        l.soln(kz,l.xs-1) = recvec[kz];
+        if(not wait_black){
+	  wait_black = true;
+	  //localmesh->wait(recv[0]);
+	  MPI_Wait(&rblackreq,MPI_STATUS_IGNORE);
+	}
+	l.soln(kz,l.xs-1) = recvec[kz];
       }
     }
   }
@@ -1131,6 +1145,12 @@ void LaplaceParallelTriMG::gauss_seidel_red_black_full_system(Level &l, const Ar
     }
   }
 
+  if(!localmesh->lastX()){
+    MPI_Wait(&sblackreq,MPI_STATUS_IGNORE);
+  }
+  if(!localmesh->firstX()){
+    MPI_Wait(&sredreq,MPI_STATUS_IGNORE);
+  }
   /*
   for (int ix = 0; ix < l.ncx; ix++) {
     output << l.soln(0,ix).real()<<" ";
