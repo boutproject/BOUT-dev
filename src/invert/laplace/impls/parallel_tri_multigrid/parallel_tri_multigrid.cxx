@@ -1030,16 +1030,7 @@ void LaplaceParallelTriMG::gauss_seidel_red_black_full_system(Level &l, const Ar
   Array<dcomplex> sendvec, recvec;
   sendvec = Array<dcomplex>(nmode);
   recvec = Array<dcomplex>(nmode);
-  comm_handle recv[1];
-
-  // Red sweep: odd points
-  for (int kz = 0; kz <= maxmode; kz++) {
-    if(!converged[kz]){
-      for (int ix = l.xs; ix < l.xe+1; ix+=2) {
-	l.soln(kz,ix) = ( l.rvec(kz,ix) - l.avec(jy,kz,ix)*l.soln(kz,ix-1) - l.cvec(jy,kz,ix)*l.soln(kz,ix+1) ) / l.bvec(jy,kz,ix);
-      }
-    }
-  }
+  comm_handle recv[2];
 
   // Communicate: final grid point needs data from proc above
   // Overlap comm/comp by not posting recv until needed in final
@@ -1047,13 +1038,30 @@ void LaplaceParallelTriMG::gauss_seidel_red_black_full_system(Level &l, const Ar
   if(!localmesh->lastX()){
     recv[0] = localmesh->irecvXOut(&recvec[0], nmode, 1);
   }
-  if(!localmesh->firstX()){
-    for(int kz=0; kz < nmode; kz++){
-      if(!converged[kz]){
+
+  // Do ix = xs first, so we can start the send
+  for (int kz = 0; kz <= maxmode; kz++) {
+    if(!converged[kz]){
+      int ix = l.xs;
+      l.soln(kz,ix) = ( l.rvec(kz,ix) - l.avec(jy,kz,ix)*l.soln(kz,ix-1) - l.cvec(jy,kz,ix)*l.soln(kz,ix+1) ) / l.bvec(jy,kz,ix);
+      if(!localmesh->firstX()){
         sendvec[kz] = l.soln(kz,l.xs);
       }
     }
+  }
+
+  // Can send lower guard data now
+  if(!localmesh->firstX()){
     localmesh->isendXIn(&sendvec[0],nmode,1);
+  }
+
+  // Red sweep: odd points
+  for (int kz = 0; kz <= maxmode; kz++) {
+    if(!converged[kz]){
+      for (int ix = l.xs+2; ix < l.xe+1; ix+=2) {
+	l.soln(kz,ix) = ( l.rvec(kz,ix) - l.avec(jy,kz,ix)*l.soln(kz,ix-1) - l.cvec(jy,kz,ix)*l.soln(kz,ix+1) ) / l.bvec(jy,kz,ix);
+      }
+    }
   }
 
   bool waited = false; // have we posted the wait?
@@ -1083,7 +1091,7 @@ void LaplaceParallelTriMG::gauss_seidel_red_black_full_system(Level &l, const Ar
 
   // Communicate: to synchronize, first grid point needs data from proc below
   if(!localmesh->firstX()){
-    recv[0] = localmesh->irecvXIn(&recvec[0], nmode, 1);
+    recv[1] = localmesh->irecvXIn(&recvec[0], nmode, 1);
   }
   if(!localmesh->lastX()){
     for(int kz=0; kz < nmode; kz++){
@@ -1094,7 +1102,7 @@ void LaplaceParallelTriMG::gauss_seidel_red_black_full_system(Level &l, const Ar
     localmesh->sendXOut(&sendvec[0],nmode,1);
   }
   if(!localmesh->firstX()){
-    localmesh->wait(recv[0]);
+    localmesh->wait(recv[1]);
     for(int kz=0; kz < nmode; kz++){
       if(!converged[kz]){
         l.soln(kz,l.xs-1) = recvec[kz];
