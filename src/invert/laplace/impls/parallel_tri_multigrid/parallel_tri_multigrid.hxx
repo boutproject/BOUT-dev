@@ -121,14 +121,14 @@ public:
   void jacobi(Level &level, const int jy, Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast);
   void jacobi_full_system(Level &level,const int jy);
   void gauss_seidel_red_black_full_system(Level &level, const Array<bool> &converged, const int jy);
-  void refine_full_system(Level &level, Matrix<dcomplex> &fine_error);
+  void refine_full_system(Level &level, Matrix<dcomplex> &fine_error, const Array<bool> &converged);
 
   void coarsen(const Level level, Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast, int jy);
   void coarsen_full_system(Level &level, const Matrix<dcomplex> &fine_residual, const Array<bool> &converged);
 
   void calculate_residual_full_system(Level &level, const Array<bool> &converged, const int jy);
   void calculate_total_residual(Array<BoutReal> &total, Array<bool> &converged, const Level level);
-  void update_solution(Level &l, const Matrix<dcomplex> &fine_error);
+  void update_solution(Level &l, const Matrix<dcomplex> &fine_error, const Array<bool> &converged);
   void reconstruct_full_solution(Level &level, const int jy, Matrix<dcomplex> &halos);
 
 private:
