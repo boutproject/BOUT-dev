@@ -53,9 +53,6 @@
 /* HDF5 library is available so use it */
 #cmakedefine HAVE_HDF5
 
-/* HYPRE library is available so use it */
-#cmakedefine HAVE_HYPRE
-
 /* HAVE_INLINE_ISNAND */
 #undef HAVE_INLINE_ISNAND
 
@@ -119,8 +116,11 @@
 /* Use Umpire for memory management */
 #cmakedefine HAVE_UMPIRE
 
+/* HYPRE library is available so use it */
+#cmakedefine BOUT_HAS_HYPRE
+
 /* PETSC library is available so use it */
-#cmakedefine HAVE_PETSC
+#cmakedefine BOUT_HAS_PETSC
 
 /* HAVE_PRAGMA_STATIC_DATA_SPECIALIZATION */
 #undef HAVE_PRAGMA_STATIC_DATA_SPECIALIZATION

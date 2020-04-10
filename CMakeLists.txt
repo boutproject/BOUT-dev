@@ -426,22 +426,14 @@ if (ENABLE_RAJA)
   list(APPEND BOUT_DEPENDS RAJA)
 endif ()
 
-# we defer the following to the original cmake file
-#HAVE_HYPRE
-#if (ENABLE_HYPRE OR HYPRE_DIR)
-#  find_package(HYPRE REQUIRED)
+# compile define is set in config.in
+if(BOUT_HAS_PETSC)
+   list(APPEND BOUT_DEPENDS PETSc)
+endif ()
 
-#  if(HYPRE_FOUND)
-#    set (HAVE_HYPRE True)
-#    set (ENABLE_HYPRE ON) 
-
-#    blt_register_library(
-#      NAME HYPRE
-#      INCLUDES ${HYPRE_INCLUDE_DIRS}
-#      LIBRARIES ${HYPRE_LIBRARIES})
-#  endif ()
-#  list(APPEND BOUT_DEPENDS HYPRE)
-#endif ()
+if(BOUT_HAS_HYPRE)
+   list(APPEND BOUT_DEPENDS HYPRE)
+endif ()
 
 message(STATUS "BOUT_DEPENDS: ${BOUT_DEPENDS}")
 blt_add_library(NAME bout++
@@ -468,13 +460,6 @@ target_compile_definitions(bout++
 
 target_compile_features(bout++ PUBLIC cxx_std_14)
 set_target_properties(bout++ PROPERTIES CXX_EXTENSIONS OFF)
-
-blt_register_library(
-   NAME BOUT_LIBS
-      LIBRARIES
-         bout++
-)         
-
 
 option(EXTERNAL_FMT "Use external installation of fmt" OFF)
 if(EXTERNAL_FMT)
@@ -661,18 +646,20 @@ endif()
 message(STATUS "LAPACK support: ${USE_LAPACK}")
 set(BOUT_HAS_LAPACK ${USE_LAPACK})
 
-option(USE_PETSC "Enable support for PETSc time solvers and inversions" OFF)
-if (USE_PETSC)
-  if (NOT CMAKE_SYSTEM_NAME STREQUAL "CrayLinuxEnvironment")
-    # Cray wrappers sort this out for us
-    find_package(PETSc REQUIRED)
-    target_link_libraries(bout++ PUBLIC PETSc::PETSc)
-  endif()
-  target_compile_definitions(bout++
-    PUBLIC "BOUT_HAS_PETSC")
-endif()
-message(STATUS "PETSc support: ${USE_PETSC}")
-set(BOUT_HAS_PETSC ${USE_PETSC})
+#option(USE_PETSC "Enable support for PETSc time solvers and inversions" OFF)
+#if (USE_PETSC)
+#  if (NOT CMAKE_SYSTEM_NAME STREQUAL "CrayLinuxEnvironment")
+   # Cray wrappers sort this out for us
+   #        find_package(PETSc REQUIRED)
+   #    target_link_libraries(bout++ PUBLIC PETSc::PETSc)
+   #    target_include_directories(bout++ SYSTEM BEFORE PUBLIC ${PETSC_INCLUDES})
+        #target_include_directories(bout++ SYSTEM BEFORE INTERFACE ${PETSC_INCLUDES})
+        #  endif()
+        #target_compile_definitions(bout++ PUBLIC "BOUT_HAS_PETSC")
+        #endif()
+        #message(STATUS "PETSc support: ${USE_PETSC}")
+        #message(STATUS "PETSc includes: ${PETSC_INCLUDES}")
+        #set(BOUT_HAS_PETSC ${USE_PETSC})
 
 option(USE_SLEPC "Enable support for SLEPc eigen solver" OFF)
 if (USE_SLEPC)
@@ -716,16 +703,16 @@ if (USE_NLS)
 endif()
 set(BOUT_HAS_GETTEXT ${USE_NLS})
 
-option(USE_HYPRE "Enable support for HYPRE" OFF)
-if (USE_HYPRE)
-  enable_language(C)
-  find_package(HYPRE REQUIRED)
-  target_compile_definitions(bout++
-    PUBLIC "BOUT_HAS_HYPRE")
-  target_link_libraries(bout++ PUBLIC HYPRE::HYPRE)
-endif()
-message(STATUS "HYPRE support: ${USE_HYPRE}")
-set(BOUT_HAS_HYPRE ${USE_HYPRE})
+#option(USE_HYPRE "Enable support for HYPRE" OFF)
+#if (USE_HYPRE)
+#  enable_language(C)
+#  find_package(HYPRE REQUIRED)
+#  target_compile_definitions(bout++
+#    PUBLIC "BOUT_HAS_HYPRE")
+#  target_link_libraries(bout++ PUBLIC HYPRE::HYPRE)
+#endif()
+#message(STATUS "HYPRE support: ${USE_HYPRE}")
+#set(BOUT_HAS_HYPRE ${USE_HYPRE})
 
 option(USE_SCOREP "Enable support for Score-P based instrumentation" OFF)
 if (USE_SCOREP)
@@ -1009,3 +996,59 @@ message("
 
 *** Now run `cmake --build .` to compile BOUT++ ***
 ")
+
+#cmake_print_properties(TARGETS bout++ INTERFACE_INCLUDE_DIRECTORIES)
+# Get all propreties that cmake supports
+execute_process(COMMAND cmake --help-property-list OUTPUT_VARIABLE CMAKE_PROPERTY_LIST)
+
+# Convert command output into a CMake list
+STRING(REGEX REPLACE ";" "\\\\;" CMAKE_PROPERTY_LIST "${CMAKE_PROPERTY_LIST}")
+STRING(REGEX REPLACE "\n" ";" CMAKE_PROPERTY_LIST "${CMAKE_PROPERTY_LIST}")
+# Fix https://stackoverflow.com/questions/32197663/how-can-i-remove-the-the-location-property-may-not-be-read-from-target-error-i
+list(FILTER CMAKE_PROPERTY_LIST EXCLUDE REGEX "^LOCATION$|^LOCATION_|_LOCATION$")
+# For some reason, "TYPE" shows up twice - others might too?
+list(REMOVE_DUPLICATES CMAKE_PROPERTY_LIST)
+
+# build whitelist by filtering down from CMAKE_PROPERTY_LIST in case cmake is
+# a different version, and one of our hardcoded whitelisted properties
+# doesn't exist!
+unset(CMAKE_WHITELISTED_PROPERTY_LIST)
+foreach(prop ${CMAKE_PROPERTY_LIST})
+    if(prop MATCHES "^(INTERFACE|[_a-z]|IMPORTED_LIBNAME_|MAP_IMPORTED_CONFIG_)|^(COMPATIBLE_INTERFACE_(BOOL|NUMBER_MAX|NUMBER_MIN|STRING)|EXPORT_NAME|IMPORTED(_GLOBAL|_CONFIGURATIONS|_LIBNAME)?|NAME|TYPE|NO_SYSTEM_FROM_IMPORTED)$")
+        list(APPEND CMAKE_WHITELISTED_PROPERTY_LIST ${prop})
+    endif()
+endforeach(prop)
+
+function(print_properties)
+    message ("CMAKE_PROPERTY_LIST = ${CMAKE_PROPERTY_LIST}")
+endfunction(print_properties)
+
+function(print_whitelisted_properties)
+    message ("CMAKE_WHITELISTED_PROPERTY_LIST = ${CMAKE_WHITELISTED_PROPERTY_LIST}")
+endfunction(print_whitelisted_properties)
+
+function(print_target_properties tgt)
+    if(NOT TARGET ${tgt})
+      message("There is no target named '${tgt}'")
+      return()
+    endif()
+
+    get_target_property(target_type ${tgt} TYPE)
+    if(target_type STREQUAL "INTERFACE_LIBRARY")
+        set(PROP_LIST ${CMAKE_WHITELISTED_PROPERTY_LIST})
+    else()
+        set(PROP_LIST ${CMAKE_PROPERTY_LIST})
+    endif()
+
+    foreach (prop ${PROP_LIST})
+        string(REPLACE "<CONFIG>" "${CMAKE_BUILD_TYPE}" prop ${prop})
+        # message ("Checking ${prop}")
+        get_property(propval TARGET ${tgt} PROPERTY ${prop} SET)
+        if (propval)
+            get_target_property(propval ${tgt} ${prop})
+            message ("${tgt} ${prop} = ${propval}")
+        endif()
+    endforeach(prop)
+endfunction(print_target_properties)
+
+print_target_properties(bout++)

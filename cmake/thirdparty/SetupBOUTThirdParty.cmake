@@ -112,21 +112,19 @@ if (ENABLE_OPENMP)
   endif ()
 endif ()
 
-#HAVE_PETSC
+#PETSc
 if (ENABLE_PETSC OR PETSC_DIR)
   find_package(PETSc REQUIRED)
 
-  if (PETSC_FOUND)
-    set (HAVE_PETSC True)
+  if (PETSc_FOUND)
+    set (BOUT_HAS_PETSC True)
     set (ENABLE_PETSC ON)
-
     blt_register_library(
-      NAME PETSc
+       NAME PETSc
       INCLUDES ${PETSC_INCLUDE_DIRS}
       LIBRARIES ${PETSC_LIBRARIES})
   endif ()
 endif()
-
 
 #HAVE_SILO
 if (ENABLE_SILO OR SILO_DIR)
@@ -144,19 +142,19 @@ if (ENABLE_SILO OR SILO_DIR)
 endif ()
 
 
-#HAVE_SUNDIALS
-if (ENABLE_SUNDIALS OR SUNDIALS_DIR)
-  find_package(SUNDIALS REQUIRED)
-  if (SUNDIALS_FOUND)
-    set (HAVE_SUNDIALS True)
-    set (ENABLE_SUNDIALS ON)
-
-    blt_register_library(
-      NAME SUNDIALS
-      INCLUDES ${SUNDIALS_INCLUDE_DIRS}
-      LIBRARIES ${SUNDIALS_LIBRARIES})
-  endif ()
-endif ()
+#HAVE_SUNDIALS defer to BOUT
+#if (ENABLE_SUNDIALS OR SUNDIALS_DIR)
+#  find_package(SUNDIALS REQUIRED)
+#  if (SUNDIALS_FOUND)
+#    set (HAVE_SUNDIALS True)
+#    set (ENABLE_SUNDIALS ON)
+#
+#    blt_register_library(
+#      NAME SUNDIALS
+#      INCLUDES ${SUNDIALS_INCLUDE_DIRS}
+#      LIBRARIES ${SUNDIALS_LIBRARIES})
+#  endif ()
+#endif ()
 
 
 #HAVE_CONDUIT
