@@ -799,16 +799,6 @@ if(PACKAGE_TESTS)
   add_dependencies(check check-unit-tests check-integrated-tests)
 endif()
 
-option(ENABLE_METRIC_3D "Enable 3D metric support" OFF)
-if(ENABLE_METRIC_3D)
-  set(BOUT_METRIC_TYPE "3D")
-  target_compile_definitions(bout++
-    PUBLIC "COORDINATES_USE_3D")
-  target_link_libraries(bout++ PUBLIC ${CMAKE_DL_LIBS})
-else()
-  set(BOUT_METRIC_TYPE "2D")
-endif()
-set(BOUT_USE_METRIC_3D ${ENABLE_METRIC_3D})
 ##################################################
 # Installation
 
