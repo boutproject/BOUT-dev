@@ -17,6 +17,7 @@ from boututils.run_wrapper import shell
 import threading
 import re
 import fcntl
+import select
 
 ##################################################################
 
@@ -65,11 +66,21 @@ except RuntimeError:
 
 ##################################################################
 # Parallel stuff
-
+#
+# We can run in parallel. As some checks require several threads to
+# run, we take this into account when we schedule tests. Given a
+# certain amount of threads that we are told to use, we try to run
+# so many tests in parallel, that the total core count is not higher
+# than this number. If this isn't possible because some jobs require
+# more cores than we have threads, we run the remaining tests in
+# serial. The number of parallel threads is called cost of a test.
+#
+# The beginning of MAKEFLAGS has some flags that tell us what we are
+# supposed to be doing. Most of them we can ignore.
 # Check what we are supposed to be doing:
 if 'MAKEFLAGS' in os.environ:
-    mf=os.environ['MAKEFLAGS']
-    for token in mf:
+    makeflags = os.environ['MAKEFLAGS']
+    for token in makeflags:
         if token == "n":
             # Print recipies:
             # We ignore this for now ...
@@ -94,36 +105,41 @@ if 'MAKEFLAGS' in os.environ:
             print("mode '%s' not implemented"%token)
             #sys.exit(42)
 else:
-    mf = ""
-
-num_jobs=1
+    makeflags = ""
+num_threads=1
 if args.jobs:
-    num_jobs = args.jobs[0]
+    num_threads = args.jobs[0]
 js_read=None
-if "--jobserver-auth=" in mf or "--jobserver-fds=" in mf:
-    # running in parallel
+# if we are running under make, we only have one thread (called job
+# in make terms) for sure, but might be able to run more threads
+# (depending what other jobs are currently running)
+# Additional jobs come in form of `tokens` that we need to give
+# back, if we are finished.
+# https://www.gnu.org/software/make/manual/html_node/POSIX-Jobserver.html
+if "--jobserver-auth=" in makeflags or "--jobserver-fds=" in makeflags:
     try:
-        offset=mf.index("--jobserver-auth=")
+        offset=makeflags.index("--jobserver-auth=")
     except ValueError:
-        offset=mf.index("--jobserver-fds=")
-    file_desc=[int(i) for i in re.findall("\d+",mf[offset:])[0:2]]
+        offset=makeflags.index("--jobserver-fds=")
+    file_desc=[int(i) for i in re.findall("\d+",makeflags[offset:])[0:2]]
     js_read = file_desc[0]
     js_write = file_desc[1]
+    js_tokens = b""
 
 class Test(threading.Thread):
     def __init__(self, name, cmd):
         threading.Thread.__init__(self)
         self.name = name
         self.cmd = cmd
-        self.l = threading.local()
+        self.local = threading.local()
         self.cost = self._cost()
     def run(self):
         # Check requirements
-        self.l.req_met, self.l.req_expr = requirements.check(self.name+"/runtest")
-        self.l.start_time = time.time()
-        if not self.l.req_met:
+        self.local.req_met, self.local.req_expr = requirements.check(self.name+"/runtest")
+        self.local.start_time = time.time()
+        if not self.local.req_met:
             print(output % self.name +
-                  "S - {0} => False".format(self.l.req_expr))
+                  "S - {0} => False".format(self.local.req_expr))
             sys.stdout.flush()
             self.status = 0
         else:
@@ -136,25 +152,25 @@ class Test(threading.Thread):
             else:
                 # ✓ Passed
                 print(u"\u2713", end='')  # No newline
-            print(" %7.3f s" % (time.time() - self.l.start_time))
+            print(" %7.3f s" % (time.time() - self.local.start_time))
             sys.stdout.flush()  # Make sure '✓' or '❌' is flushed
     def _cost(self):
         if self.cmd == "make":
             return 1
         with open(self.name+"/"+self.cmd,"r", encoding='utf8') as filein:
             contents = filein.read()
-            # Find all lines starting with '#cores' or '#Cores:'
-            match = re.findall(
-                "^\s*\#\s?[Cc]ores:\s*?(\d+)", contents, re.MULTILINE)
-            if len(match) > 1:
-                raise RuntimeError("Found more then one match for core-count in "+self.name)
-            if len(match) == 0:
-                # default; no mpi
-                return 1
-            c = int(match[0])
-            if not c > 0:
-                raise RuntimeError("Core-count is %d and thus not positive in "%c+self.name)
-            return c
+        # Find all lines starting with '#cores' or '#Cores:'
+        match = re.findall(
+            "^\s*\#\s?[Cc]ores:\s*?(\d+)", contents, re.MULTILINE)
+        if len(match) > 1:
+            raise RuntimeError("Found more then one match for core-count in "+self.name)
+        if len(match) == 0:
+            # default; no mpi
+            return 1
+        c = int(match[0])
+        if c < 0:
+            raise RuntimeError("Core-count is %d and thus not positive in "%c+self.name)
+        return c
 
 ##################################################################
 
@@ -183,14 +199,29 @@ if args.get_list:
             print(test)
     sys.exit(0)
 
-if js_read is not None:
-    try:
-        fl = fcntl.fcntl(js_read, fcntl.F_GETFL)
-        fcntl.fcntl(js_read, fcntl.F_SETFL, fl | os.O_NONBLOCK)
-    except OSError:
-        print("Warning - we are not part of the job pool 😭, running in serial")
-        file_desc = None
-        js_read = None
+# A function to get more threads from the job server
+def get_threads():
+    global js_read
+    if js_read:
+        global cost_remain, js_tokens, avail_threads, num_threads
+        try:
+            fl = fcntl.fcntl(js_read, fcntl.F_GETFL)
+        except OSError:
+            print("Warning - we are not part of the job pool 😭, running in serial")
+            js_read = None
+            return
+        isreadable,_,_ = select.select([js_read],[],[],0)
+        if isreadable != []:
+            # Only set shortly to non-blocking, and only if we
+            # expect we can read. Old make uses blocking pipes, and
+            # assumes if it is non-blocking, a job is available.
+            fcntl.fcntl(js_read, fcntl.F_SETFL, fl | os.O_NONBLOCK)
+            new_token = os.read(js_read, cost_remain - avail_threads)
+            fcntl.fcntl(js_read, fcntl.F_SETFL, fl)
+            num_threads += len(new_token)
+            js_tokens += new_token
+            avail_threads += len(new_token)
+
 
 ##################################################################
 # Run the actual test
@@ -206,13 +237,11 @@ test_type = "Making" if args.make else "Running"
 
 print("======= {} {} {} tests ========".format(test_type, len(tests), savepath.split("/")[-1]))
 
-avail = num_jobs
+avail_threads = num_threads
 tester = sorted([Test(t, command) for t in tests],
                 key=lambda x: x.cost, reverse=True)
 cost_remain = sum(x.cost for x in tester)
-if js_read:
-    js_tokens = os.read(js_read,cost_remain-1)
-    num_jobs = len(js_tokens)+1
+get_threads()
 
 torun=[i for i in range(len(tests))]
 running=[]
@@ -221,15 +250,15 @@ longest = max([len(s) for s in tests])
 output = '%-'+str(longest+1)+'s'
 
 while len(torun)+len(running):
-    if avail:
+    if avail_threads:
         # See whether we can start one
-        for i in torun:
-            if tester[i].cost <= avail:
+        for i in torun[:]:
+            if tester[i].cost <= avail_threads:
                 torun.remove(i)
                 job = tester[i]
                 job.start()
                 running.append(job)
-                avail -= job.cost
+                avail_threads -= job.cost
                 cost_remain -= job.cost
         # if nothing is running, start the first
         if running == []:
@@ -237,7 +266,7 @@ while len(torun)+len(running):
             job = tester[tostart]
             job.start()
             running.append(job)
-            avail -= job.cost
+            avail_threads -= job.cost
             cost_remain -= job.cost
 
     # Are any jobs finished
@@ -246,29 +275,20 @@ while len(torun)+len(running):
         if not job.is_alive():
             if job.status:
                 failed.append([job.name,job.output])
-            avail += job.cost
+            avail_threads += job.cost
             running.remove(job)
 
     # Try to get more jobs
     if torun:
-        if js_read is not None:
-            try:
-                newt = os.read(js_read,cost_remain)
-            except BlockingIOError:
-                newt = ""
-            if newt != "":
-                js_tokens += newt
-                avail += len(newt)
-                num_jobs += len(newt)
+        get_threads()
     else:
         # Free not-needed jobs
-        if avail:
-            if js_read:
-                newt = js_tokens[0:avail]
-                js_tokens = js_tokens[avail:]
-                os.write(js_write,newt)
-                num_jobs -= avail
-                avail = 0
+        if avail_threads and js_read:
+            old_tokens = js_tokens[0:avail_threads]
+            js_tokens = js_tokens[avail_threads:]
+            os.write(js_write,old_tokens)
+            num_threads -= avail_threads
+            avail_threads = 0
 
 
 elapsed_time = time.time() - start_time
