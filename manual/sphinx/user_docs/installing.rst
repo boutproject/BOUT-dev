@@ -89,7 +89,7 @@ the "shared" directory.
 
 If this is successful, then you can skip to section :ref:`sec-running`.
 
- Obtaining BOUT++
+Obtaining BOUT++
 ----------------
 
 .. _sec-obtainbout:
