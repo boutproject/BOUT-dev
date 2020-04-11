@@ -95,7 +95,7 @@ if (ENABLE_HYPRE OR HYPRE_DIR)
   find_package(HYPRE REQUIRED)
 
   if(HYPRE_FOUND)
-    set (HAVE_HYPRE True)
+    set (BOUT_HAS_HYPRE True)
     set (ENABLE_HYPRE ON) 
 
     blt_register_library(
