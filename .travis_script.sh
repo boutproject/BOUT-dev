@@ -46,7 +46,7 @@ do
             ;;
 	s) ### Use specific shell to configure
 	    CONFIGURE_SHELL="$OPTARG"
-	    ;;;
+	    ;;
         *) ### Show usage message
 	    usage
 	    ;;
