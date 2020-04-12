@@ -423,7 +423,7 @@ AS_IF([test "x$enable_static" = "xyes"], [
 ])
 
 AS_IF([test "x$LIB_TO_BUILD" = x ], [
-    AC_MSG_ERROR([Need to enable at least on of static or shared!])
+    AC_MSG_ERROR([Need to enable at least one of static or shared!])
 ])
 
 #############################################################
@@ -1204,11 +1204,11 @@ AS_IF([test "$USE_NLS" = "yes"], [
 
   EXTRA_LIBS="$EXTRA_LIBS $LIBINTL"
 
-  # Set variable substituted into bout-config 
+  # Set variable substituted into bout-config
   HAS_NLS="yes"
 ],[
   AC_MSG_NOTICE([Language support with gettext not available])
-]) 
+])
 
 #############################################################
 # Sort out fmt

@@ -6183,7 +6183,7 @@ fi
 
 if test "x$LIB_TO_BUILD" = x ; then :
 
-    as_fn_error $? "Need to enable at least on of static or shared!" "$LINENO" 5
+    as_fn_error $? "Need to enable at least one of static or shared!" "$LINENO" 5
 
 fi
 
