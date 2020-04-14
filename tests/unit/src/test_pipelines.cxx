@@ -46,3 +46,10 @@ TEST_F(PipelinesTest, AddConstant) {
 
   ASSERT_TRUE(IsFieldEqual(result, 3.0));
 }
+
+TEST_F(PipelinesTest, AddConstantToConstant) {
+  // Create a generator from a constant, add and collect
+  Field3D result = 1.0 | add(2.0) | collect();
+
+  ASSERT_TRUE(IsFieldEqual(result, 3.0));
+}
