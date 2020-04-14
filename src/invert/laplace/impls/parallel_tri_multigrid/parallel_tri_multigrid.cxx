@@ -593,10 +593,12 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   auto total = Array<BoutReal>(nmode);
   auto totalold = Array<BoutReal>(nmode);
+  auto error_rel = Array<BoutReal>(nmode);
   for(int kz=0; kz<nmode; kz++){
     converged[kz] = false;
     total[kz] = 1e20;
     totalold[kz] = 1e20;
+    error_rel[kz] = 0.0;
   }
   int ml;
 
@@ -607,9 +609,9 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   while(true){
 
     /*
-    output<< "soln ";
+    output<< "soln "<<count<<" "<<jy<<" "<<levels[current_level].xs<<" "<<levels[current_level].xe<<" "<<levels[current_level].ncx<<endl;
     for(int ix=0; ix<levels[current_level].ncx;ix++){
-      output<<" "<<levels[current_level].soln(0,ix).real() ;
+      output<<" "<<levels[current_level].soln(2,ix).real() << " "<< levels[current_level].soln(2,ix).imag() <<endl;
     }
     output<< endl;
     */
@@ -622,15 +624,13 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
     ///SCOREP_USER_REGION_BEGIN(l0rescalc, "level 0 residual calculation",SCOREP_USER_REGION_TYPE_COMMON);
     if(current_level==0 and subcount==max_cycle-1){
       // Not necessay, but for diagnostics
-      /*
       for(int kz=0; kz<nmode; kz++){
 	if(!converged[kz]){
 	  totalold[kz] = total[kz];
 	}
       }
-      */
       calculate_residual_full_system(levels[current_level],converged,jy);
-      calculate_total_residual(total,converged,levels[current_level]);
+      calculate_total_residual(total,error_rel,converged,levels[current_level]);
 
       //for(int kz=0; kz<nmode; kz++){
       /*
@@ -670,13 +670,17 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       }
     }
     ///SCOREP_USER_REGION_END(solneqsolnlast);
+    //ml = maxloc(total);
+    //output<<""<<jy<<" "<<count<<" "<<ml<<" "<<total[ml]<<" "<<total[ml]/totalold[ml]<<endl;
+    //output<<current_level<<" "<<jy<<" "<<count<<" "<<2<<" "<<total[2]<<" "<<total[2]/totalold[2]<<endl;
 
     // Force at least max_cycle iterations at each level
     // Do not skip with tolerence to minimize comms
     //if(subcount < max_cycle and total>rtol){
     if(subcount < max_cycle){
     }
-    else if( max(total) < rtol and current_level==0 ){
+    else if( (max(total) < atol or max(error_rel) < rtol) and current_level==0 ){
+    //else if( max(error_rel) < rtol and current_level==0 ){
       //ml = maxloc(total);
       //output<<"Exit "<<jy<<" "<<count<<" "<<ml<<" "<<total[ml]<<" "<<total[ml]/totalold[ml]<<endl;
       /*
@@ -873,10 +877,12 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
     }
   }
 
+  /*
         for (int ix = 0; ix < ncx; ix++) {
 	  output<<xk1d(0,ix).real() <<" ";
         }
 	output<<endl;
+	*/
 
   for (int kz = 0; kz <= maxmode; kz++) {
     // If the global flag is set to INVERT_KX_ZERO
@@ -1026,10 +1032,11 @@ void LaplaceParallelTriMG::jacobi(Level &l, const int jy, Matrix<dcomplex> &xloc
 void LaplaceParallelTriMG::gauss_seidel_red_black_full_system(Level &l, const Array<bool> &converged, const int jy){
 
   SCOREP0();
-  Array<dcomplex> sendvecred, recvec, sendvecblack;
+  Array<dcomplex> sendvecred, recvecred, sendvecblack, recvecblack;
   sendvecred = Array<dcomplex>(nmode);
-  recvec = Array<dcomplex>(nmode);
+  recvecred = Array<dcomplex>(nmode);
   sendvecblack = Array<dcomplex>(nmode);
+  recvecblack = Array<dcomplex>(nmode);
   //comm_handle recv[1], send[1];
   MPI_Request rredreq, sredreq, rblackreq, sblackreq;
 
@@ -1038,12 +1045,12 @@ void LaplaceParallelTriMG::gauss_seidel_red_black_full_system(Level &l, const Ar
   // loop iteration
   if(!localmesh->lastX()){
     //recv[0] = localmesh->irecvXOut(&recvec[0], nmode, 1);
-    MPI_Irecv(&recvec[0], nmode, MPI_DOUBLE_COMPLEX, proc_out, 1, BoutComm::get(), &rredreq);
+    MPI_Irecv(&recvecred[0], nmode, MPI_DOUBLE_COMPLEX, proc_out, 1, BoutComm::get(), &rredreq);
   }
   // Communicate: to synchronize, first grid point needs data from proc below
   if(!localmesh->firstX()){
     //recv[0] = localmesh->irecvXIn(&recvec[0], nmode, 1);
-    MPI_Irecv(&recvec[0], nmode, MPI_DOUBLE_COMPLEX, proc_in, 2, BoutComm::get(), &rblackreq);
+    MPI_Irecv(&recvecblack[0], nmode, MPI_DOUBLE_COMPLEX, proc_in, 2, BoutComm::get(), &rblackreq);
   }
 
   // Red sweep:
@@ -1090,7 +1097,7 @@ void LaplaceParallelTriMG::gauss_seidel_red_black_full_system(Level &l, const Ar
           //localmesh->wait(recv[0]);
 	  MPI_Wait(&rredreq,MPI_STATUS_IGNORE);
         }
-        l.soln(kz,l.xe+1) = recvec[kz];
+        l.soln(kz,l.xe+1) = recvecred[kz];
       }
       {
         int ix = l.xe;
@@ -1118,7 +1125,7 @@ void LaplaceParallelTriMG::gauss_seidel_red_black_full_system(Level &l, const Ar
 	  //localmesh->wait(recv[0]);
 	  MPI_Wait(&rblackreq,MPI_STATUS_IGNORE);
 	}
-	l.soln(kz,l.xs-1) = recvec[kz];
+	l.soln(kz,l.xs-1) = recvecblack[kz];
       }
     }
   }
@@ -1389,6 +1396,7 @@ void LaplaceParallelTriMG::init(Level &l, const int ncx, const int jy, const Mat
      l.bvec(jy,kz,ix) = bvec(kz,ix); 
      l.cvec(jy,kz,ix) = cvec(kz,ix); 
      l.rvec(kz,ix) = bcmplx(kz,ix); 
+     l.residual(kz,ix) = 0.0;
     }
   }
   // end basic definitions
@@ -1637,22 +1645,29 @@ void LaplaceParallelTriMG::init(Level &l, const int ncx, const int jy, const Mat
 /*
  * Sum and communicate total residual
  */
-void LaplaceParallelTriMG::calculate_total_residual(Array<BoutReal> &total, Array<bool> &converged, const Level l){
+void LaplaceParallelTriMG::calculate_total_residual(Array<BoutReal> &total, Array<BoutReal> &error_rel, Array<bool> &converged, const Level l){
 
   SCOREP0();
   auto subtotal = Array<BoutReal>(nmode);
+  auto maxsol = Array<BoutReal>(nmode);
+  auto globalmaxsol = Array<BoutReal>(nmode);
 
   for(int kz=0; kz<nmode; kz++){
     if(!converged[kz]){
       total[kz] = 0.0;
       subtotal[kz] = 0.0;
+      maxsol[kz] = 0.0;
+      globalmaxsol[kz] = 0.0;
       for(int ix=0; ix<l.ncx;ix++){
 	// Contributions to total residual from interior points and physical
 	// boundary points only
 	if( (ix < l.xs and localmesh->firstX()) or
 	    (ix >= l.xs and ix <= l.xe) or
 	    (ix > l.xe and localmesh->lastX()) ){
-	    subtotal[kz] += pow(l.residual(kz,ix).real(),2) + pow(l.residual(kz,ix).imag(),2);
+	  subtotal[kz] += pow(l.residual(kz,ix).real(),2) + pow(l.residual(kz,ix).imag(),2);
+	  if( std::abs(l.soln(kz,ix)) > maxsol[kz] ){
+	    maxsol[kz] = std::abs(l.soln(kz,ix));
+	  }
 	}  
       }
     }
@@ -1660,12 +1675,16 @@ void LaplaceParallelTriMG::calculate_total_residual(Array<BoutReal> &total, Arra
 
   // Communication needed to ensure processorsbreak iterations at same point
   // TODO do this rarely
+  // TODO combine
   MPI_Allreduce(&subtotal[0], &total[0], nmode, MPI_DOUBLE, MPI_SUM, BoutComm::get());
+  MPI_Allreduce(&maxsol[0], &globalmaxsol[0], nmode, MPI_DOUBLE, MPI_MAX, BoutComm::get());
 
   for(int kz=0; kz<nmode; kz++){
     if(!converged[kz]){
       total[kz] = sqrt(total[kz]);
-      if(total[kz] < rtol){
+      error_rel[kz] = total[kz]/globalmaxsol[kz];
+      //if( error_rel[kz] < rtol){
+      if( total[kz] < atol or error_rel[kz] < rtol ){
 	converged[kz] = true;
       }
     }
@@ -1782,7 +1801,7 @@ void LaplaceParallelTriMG::coarsen_full_system(Level &l, const Matrix<dcomplex> 
   /*
   output<<"coarse residual ";
   for(int ix=0; ix<l.ncx; ix++){
-    output<<l.rvec(0,ix)<<" ";
+    output<<l.rvec(2,ix)<<" ";
   }
   output<<endl;
   */
