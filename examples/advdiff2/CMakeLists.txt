@@ -7,7 +7,6 @@ if (NOT TARGET bout++::bout++)
 endif()
 
 add_executable(advdiff2 
-  advdiff.cxx
   globals.cxx
   globals.hxx
   header.hxx
