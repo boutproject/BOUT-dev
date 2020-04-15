@@ -6163,7 +6163,7 @@ if test "x$enable_shared" = "xyes"; then :
     #  PowerPC and SPARC.
     # Therfore use -fPIC for now
     CXXFLAGS="$CXXFLAGS -fPIC"
-    LIB_TO_BUILD+=' $(BOUT_LIB_PATH)/libbout++.so'
+    LIB_TO_BUILD="$LIB_TO_BUILD"' $(BOUT_LIB_PATH)/libbout++.so'
     if test "x$enable_static" = "xauto"; then :
 
         enable_static=no
@@ -6188,7 +6188,7 @@ fi
 
 if test "x$enable_static" = "xyes"; then :
 
-    LIB_TO_BUILD+=' $(BOUT_LIB_PATH)/libbout++.a'
+    LIB_TO_BUILD="$LIB_TO_BUILD"' $(BOUT_LIB_PATH)/libbout++.a'
     STATIC_EXTRA=':'
     # In case we only build static, make sure shared libs are removed
     if ! test "x$enable_shared" = "xyes"; then :
@@ -6201,7 +6201,7 @@ fi
 
 if test "x$LIB_TO_BUILD" = x ; then :
 
-    as_fn_error $? "Need to enable at least on of static or shared!" "$LINENO" 5
+    as_fn_error $? "Need to enable at least one of static or shared!" "$LINENO" 5
 
 fi
 
