@@ -297,6 +297,8 @@ AX_APPEND_COMPILE_FLAGS([ dnl
     $OPT_FLAGS dnl
 ], [CXXFLAGS], [$extra_compiler_flags_test])
 
+CXXFLAGS="$CXXFLAGS $extra_compiler_flags_test"
+
 # Disable checks if optimization > 2 is used
 AS_IF([test -z $enable_checks && test "x$DISABLE_CHECK" = "xprobably"], [
   enable_checks=no

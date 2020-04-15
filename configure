@@ -6049,6 +6049,8 @@ fi
 done
 
 
+CXXFLAGS="$CXXFLAGS $extra_compiler_flags_test"
+
 # Disable checks if optimization > 2 is used
 if test -z $enable_checks && test "x$DISABLE_CHECK" = "xprobably"; then :
 
