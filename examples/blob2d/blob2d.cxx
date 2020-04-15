@@ -138,7 +138,7 @@ protected:
     // Density Evolution
     /////////////////////////////////////////////////////////////////////////////
 
-    ddt(n) = -bracket(phi, n, BRACKET_SIMPLE) // ExB term
+    ddt(n) = -bracket(phi, n, BRACKET_ARAKAWA) // ExB term
              + 2 * DDZ(n) * (rho_s / R_c)     // Curvature term
              + D_n * Delp2(n);                // Diffusion term
     if (compressible) {
@@ -153,7 +153,7 @@ protected:
     // Vorticity evolution
     /////////////////////////////////////////////////////////////////////////////
 
-    ddt(omega) = -bracket(phi, omega, BRACKET_SIMPLE) // ExB term
+    ddt(omega) = -bracket(phi, omega, BRACKET_ARAKAWA) // ExB term
                  + 2 * DDZ(n) * (rho_s / R_c) / n     // Curvature term
                  + D_vort * Delp2(omega) / n          // Viscous diffusion term
         ;
