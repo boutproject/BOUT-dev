@@ -58,8 +58,8 @@ def ask_modpath():
         return mp[0]
 
     print("Several paths found to store module files. Please select one:")
-    for i in range(len(writeable)):
-        print("%3d: %s"%(i, writeable[i]))
+    for index, directory in enumerate(writeable):
+        print(f"{index:3d}: {directory}") 
     select = input("Your choice: ")
     return writeable[int(select)]
 
