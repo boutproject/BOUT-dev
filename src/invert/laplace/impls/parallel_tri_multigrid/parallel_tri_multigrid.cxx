@@ -539,9 +539,11 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
     init(levels[0], ncx, jy, avec, bvec, cvec, bcmplx,xs,xe,0);
 
     int ncx_coarse = ncx; //(xe-xs+1)/2 + xs + ncx - xe - 1;
-    for(int l = 1; l<=max_level; l++){
-      ncx_coarse = (ncx_coarse-4)/2+4;
-      init(levels[l], levels[l-1], ncx_coarse, xs, ncx_coarse-3,l,jy); //FIXME assumes mgy=2
+    if(max_level>0){
+      for(int l = 1; l<=max_level; l++){
+	ncx_coarse = (ncx_coarse-4)/2+4;
+	init(levels[l], levels[l-1], ncx_coarse, xs, ncx_coarse-3,l,jy); //FIXME assumes mgy=2
+      }
     }
 
   }
@@ -726,7 +728,7 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       }
     }
     //else if( current_level < max_level ){
-    else if( down ){
+    else if( down && max_level > 0 ){
 
       // Coarsening requires data from the grid BEFORE it is made coarser
       //coarsen(levels[current_level],xloc,xloclast,jy);
