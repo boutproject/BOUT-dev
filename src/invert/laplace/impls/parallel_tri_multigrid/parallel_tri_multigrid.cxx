@@ -617,7 +617,9 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
     */
 
     //jacobi_full_system(levels[current_level],jy);
-    gauss_seidel_red_black_full_system(levels[current_level],converged,jy);
+    //gauss_seidel_red_black_full_system(levels[current_level],converged,jy);
+    // This version is ~20% faster
+    gauss_seidel_red_black_full_system_comp_comm_overlap(levels[current_level],converged,jy);
 
 
     ///SCOREP_USER_REGION_DEFINE(l0rescalc);
@@ -1744,19 +1746,22 @@ void LaplaceParallelTriMG::init(Level &l, const int ncx, const int jy, const Mat
 /*
  * Sum and communicate total residual
  */
-void LaplaceParallelTriMG::calculate_total_residual(Array<BoutReal> &total, Array<BoutReal> &error_rel, Array<bool> &converged, const Level l){
+void LaplaceParallelTriMG::calculate_total_residual(Array<BoutReal> &error_abs, Array<BoutReal> &error_rel, Array<bool> &converged, const Level l){
 
   SCOREP0();
-  auto subtotal = Array<BoutReal>(nmode);
-  auto maxsol = Array<BoutReal>(nmode);
-  auto globalmaxsol = Array<BoutReal>(nmode);
+  // Communication arrays:
+  // residual in (0 .. nmode-1)
+  // solution in (nmode .. 2*nmode-1)
+  auto subtotal = Array<BoutReal>(2*nmode);
+  auto total = Array<BoutReal>(2*nmode);
 
   for(int kz=0; kz<nmode; kz++){
     if(!converged[kz]){
+      error_abs[kz] = 0.0;
       total[kz] = 0.0;
+      total[kz+nmode] = 0.0;
       subtotal[kz] = 0.0;
-      maxsol[kz] = 0.0;
-      globalmaxsol[kz] = 0.0;
+      subtotal[kz+nmode] = 0.0;
       for(int ix=0; ix<l.ncx;ix++){
 	// Contributions to total residual from interior points and physical
 	// boundary points only
@@ -1764,9 +1769,7 @@ void LaplaceParallelTriMG::calculate_total_residual(Array<BoutReal> &total, Arra
 	    (ix >= l.xs and ix <= l.xe) or
 	    (ix > l.xe and localmesh->lastX()) ){
 	  subtotal[kz] += pow(l.residual(kz,ix).real(),2) + pow(l.residual(kz,ix).imag(),2);
-	  if( std::abs(l.soln(kz,ix)) > maxsol[kz] ){
-	    maxsol[kz] = std::abs(l.soln(kz,ix));
-	  }
+	  subtotal[kz+nmode] += pow(l.soln(kz,ix).real(),2) + pow(l.soln(kz,ix).imag(),2);
 	}  
       }
     }
@@ -1774,16 +1777,14 @@ void LaplaceParallelTriMG::calculate_total_residual(Array<BoutReal> &total, Arra
 
   // Communication needed to ensure processorsbreak iterations at same point
   // TODO do this rarely
-  // TODO combine
   MPI_Allreduce(&subtotal[0], &total[0], nmode, MPI_DOUBLE, MPI_SUM, BoutComm::get());
-  MPI_Allreduce(&maxsol[0], &globalmaxsol[0], nmode, MPI_DOUBLE, MPI_MAX, BoutComm::get());
 
   for(int kz=0; kz<nmode; kz++){
     if(!converged[kz]){
-      total[kz] = sqrt(total[kz]);
-      error_rel[kz] = total[kz]/globalmaxsol[kz];
+      error_abs[kz] = sqrt(total[kz]);
+      error_rel[kz] = error_abs[kz]/total[kz+nmode];
       //if( error_rel[kz] < rtol){
-      if( total[kz] < atol or error_rel[kz] < rtol ){
+      if( error_abs[kz] < atol or error_rel[kz] < rtol ){
 	converged[kz] = true;
       }
     }
