@@ -1777,12 +1777,12 @@ void LaplaceParallelTriMG::calculate_total_residual(Array<BoutReal> &error_abs, 
 
   // Communication needed to ensure processorsbreak iterations at same point
   // TODO do this rarely
-  MPI_Allreduce(&subtotal[0], &total[0], nmode, MPI_DOUBLE, MPI_SUM, BoutComm::get());
+  MPI_Allreduce(&subtotal[0], &total[0], 2*nmode, MPI_DOUBLE, MPI_SUM, BoutComm::get());
 
   for(int kz=0; kz<nmode; kz++){
     if(!converged[kz]){
       error_abs[kz] = sqrt(total[kz]);
-      error_rel[kz] = error_abs[kz]/total[kz+nmode];
+      error_rel[kz] = error_abs[kz]/sqrt(total[kz+nmode]);
       //if( error_rel[kz] < rtol){
       if( error_abs[kz] < atol or error_rel[kz] < rtol ){
 	converged[kz] = true;
