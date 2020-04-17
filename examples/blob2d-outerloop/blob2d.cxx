@@ -137,6 +137,13 @@ protected:
 
     mesh->communicate(phi);
 
+    // Make sure fields have Coordinates
+    // This sets the Field::fast_coords member to a Coordinate*
+    // Not a long-term solution, but here until a better solution is found.
+    n.fast_coords = n.getCoordinates();
+    omega.fast_coords = omega.getCoordinates();
+    phi.fast_coords = phi.getCoordinates();
+    
     // Allocate arrays to store the time derivatives
     ddt(n).allocate();
     ddt(omega).allocate();

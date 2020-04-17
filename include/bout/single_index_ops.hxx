@@ -7,7 +7,7 @@
 
 template<IND_TYPE N>
 BoutReal bracket(const Field3D &f, const Field3D &g, const SpecificInd<N> &ind) {
-  Coordinates *metric = g.getCoordinates(g.getLocation());
+  Coordinates *metric = g.fast_coords;
 
   // Offset indices
   auto ixp = ind.xp();
@@ -37,22 +37,22 @@ BoutReal bracket(const Field3D &f, const Field3D &g, const SpecificInd<N> &ind) 
 
 template<IND_TYPE N>
 BoutReal DDX(const Field3D &f, const SpecificInd<N> &ind) {
-  return (f[ind.xp()] - f[ind.xm()]) / (2.*f.getCoordinates()->dx[ind]);
+  return (f[ind.xp()] - f[ind.xm()]) / (2. * f.fast_coords->dx[ind]);
 }
 
 template<IND_TYPE N>
 BoutReal DDY(const Field3D &f, const SpecificInd<N> &ind) {
-  return (f.yup()[ind.yp()] - f.ydown()[ind.ym()]) / (2.*f.getCoordinates()->dy[ind]);
+  return (f.yup()[ind.yp()] - f.ydown()[ind.ym()]) / (2. * f.fast_coords->dy[ind]);
 }
 
 template<IND_TYPE N>
 BoutReal DDZ(const Field3D &f, const SpecificInd<N> &ind) {
-  return (f[ind.zp()] - f[ind.zm()]) / (2.*f.getCoordinates()->dz);
+  return (f[ind.zp()] - f[ind.zm()]) / (2. * f.fast_coords->dz);
 }
 
 template<IND_TYPE N>
 BoutReal Delp2(const Field3D &f, const SpecificInd<N> &i) {
-  Coordinates *metric = f.getCoordinates();
+  Coordinates *metric = f.fast_coords;
 
   // Index offsets
   auto izm = i.zm();
@@ -69,5 +69,20 @@ BoutReal Delp2(const Field3D &f, const SpecificInd<N> &i) {
     ;
 }
 
+template<IND_TYPE N>
+BoutReal Div_par_Grad_par(const Field3D &f, const SpecificInd<N> &i) {
+  Coordinates *metric = f.fast_coords;
+  // Index offsets
+  auto iyp = i.yp();
+  auto iym = i.ym();
+
+  BoutReal gradient_upper = 2.*(f.yup()[iyp] - f[i]) / (metric->dy[i] + metric->dy[iyp]);
+  BoutReal flux_upper = gradient_upper * (metric->J[i] + metric->J[iyp]) / (metric->g_22[i] + metric->g_22[iyp]);
+  
+  BoutReal gradient_lower = 2.*(f[i] - f.ydown()[iym]) / (metric->dy[i] + metric->dy[iyp]);
+  BoutReal flux_lower = gradient_lower * (metric->J[i] + metric->J[iym]) / (metric->g_22[i] + metric->g_22[iym]);
+
+  return (flux_upper - flux_lower) / (metric->dy[i] * metric->J[i]);
+}
 
 #endif // SINGLE_INDEX_OPS_H
