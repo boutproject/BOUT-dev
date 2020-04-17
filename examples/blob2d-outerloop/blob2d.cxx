@@ -156,16 +156,7 @@ protected:
       ddt(n)[i] = -bracket(phi, n, i)             // ExB term
                   + 2 * DDZ(n, i) * (rho_s / R_c) // Curvature term
                   + D_n * Delp2(n, i);            // Diffusion term
-
-      if (compressible) {
-        ddt(n)[i] -= 2 * n[i] * DDZ(phi, i) * (rho_s / R_c); // ExB Compression term
-      }
-
-      if (sheath) {
-        // Sheath closure
-        ddt(n)[i] += n[i] * phi[i] * (rho_s / L_par);
-      }
-
+      
       // Vorticity evolution
       /////////////////////////////////////////////////////////////////////////////
 
@@ -173,11 +164,22 @@ protected:
                    + 2 * DDZ(n, i) * (rho_s / R_c) / n[i] // Curvature term
                    + D_vort * Delp2(omega, i) / n[i]      // Viscous diffusion term
           ;
+    }
 
-      if (sheath) {
+    if (compressible) {
+      BOUT_FOR(i, n.getRegion("RGN_NOBNDRY")) {
+        ddt(n)[i] -= 2 * n[i] * DDZ(phi, i) * (rho_s / R_c); // ExB Compression term
+      }
+    }
+    
+    if (sheath) {
+      // Sheath closure
+      BOUT_FOR(i, n.getRegion("RGN_NOBNDRY")) {
+        ddt(n)[i] += n[i] * phi[i] * (rho_s / L_par);
         ddt(omega)[i] += phi[i] * (rho_s / L_par);
       }
     }
+    
     return 0;
   }
 };
