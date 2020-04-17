@@ -1370,6 +1370,12 @@ void LaplaceParallelTriMG::init(Level &l, const Level lup, int ncx, const int xs
   l.current_level = current_level;
   int ny = localmesh->LocalNy;
 
+  if(l.xe-l.xs<1){
+    throw BoutException("LaplaceParallelTriMG error: Coarse grids must contain at least two points on every processor. Please set max_level smaller than %i, use fewer processors, or increase x resolution.",l.current_level);
+    // Note: Grids are initialized from finest to coarsest, so l.current_level
+    // is the finest grid that fails.
+  }
+
   l.avec = Tensor<dcomplex>(ny,nmode,ncx);
   l.bvec = Tensor<dcomplex>(ny,nmode,ncx);
   l.cvec = Tensor<dcomplex>(ny,nmode,ncx);
