@@ -39,6 +39,7 @@ TEST_F(SingleIndexOpsTest, DDX) {
 
   // Differentiate using index operations
   Field3D indexops; indexops.allocate();
+  input.fast_coords = input.getCoordinates();
   BOUT_FOR(i, input.getRegion("RGN_NOBNDRY")) {
     indexops[i] = DDX(input, i);
   }
@@ -68,6 +69,7 @@ TEST_F(SingleIndexOpsTest, DDY) {
 
   // Differentiate using index operations
   Field3D indexops; indexops.allocate();
+  input.fast_coords = input.getCoordinates();
   BOUT_FOR(i, input.getRegion("RGN_NOBNDRY")) {
     indexops[i] = DDY(input, i);
   }
@@ -94,6 +96,7 @@ TEST_F(SingleIndexOpsTest, DDZ) {
 
   // Differentiate using index operations
   Field3D indexops; indexops.allocate();
+  input.fast_coords = input.getCoordinates();
   BOUT_FOR(i, input.getRegion("RGN_NOBNDRY")) {
     indexops[i] = DDZ(input, i);
   }
@@ -125,6 +128,8 @@ TEST_F(SingleIndexOpsTest, bracket) {
 
   // Differentiate using index operations
   Field3D indexops; indexops.allocate();
+  input.fast_coords = input.getCoordinates();
+  input2.fast_coords = input2.getCoordinates();
   BOUT_FOR(i, input.getRegion("RGN_NOBNDRY")) {
     indexops[i] = bracket(input, input2, i);
   }
