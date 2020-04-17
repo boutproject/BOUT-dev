@@ -204,6 +204,28 @@ void LaplaceParallelTriMG::reconstruct_full_solution(Level &l, const int jy, Mat
   }
 }
 
+/*
+ * Reconstruct the full solution from the subproblem and the halo cell values
+ */
+void LaplaceParallelTriMG::reconstruct_full_solution(Level &l, const int jy){
+  SCOREP0();
+  for (int kz = 0; kz < nmode; kz++) {
+    for(int i=0; i<l.ncx; i++){
+      l.soln(kz,i) = l.minvb(kz,i);
+    }
+    if(not localmesh->lastX()) {
+      for(int i=0; i<l.ncx; i++){
+	l.soln(kz,i) += l.upperGuardVector(i,jy,kz)*l.xloc(3,kz);
+      }
+    }
+    if(not localmesh->firstX()) {
+      for(int i=0; i<l.ncx; i++){
+	l.soln(kz,i) += l.lowerGuardVector(i,jy,kz)*l.xloc(0,kz);
+      }
+    }
+  }
+}
+
 bool LaplaceParallelTriMG::all(const Array<bool> a){
   SCOREP0();
   for(int i=0; i<a.size(); i++){
@@ -534,6 +556,7 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   // finer than itself).
   //
   // If using conventional multigrid (algorithm=0), the coefficients a/b/cvec are stored. 
+  init(levels[0], ncx, jy, avec, bvec, cvec, bcmplx,xs,xe,0);
   if(first_call(jy,0) || not store_coefficients ){
 
     init(levels[0], ncx, jy, avec, bvec, cvec, bcmplx,xs,xe,0);
@@ -557,11 +580,23 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       levels[0].soln(kz,ix) = xk1d(kz,ix);
       levels[0].solnlast(kz,ix) = xk1d(kz,ix);
     }
+    if(algorithm!=0){
+      levels[0].xloc(0,kz) = xk1d(kz,xs-1);
+      levels[0].xloc(1,kz) = xk1d(kz,xs);
+      levels[0].xloc(2,kz) = xk1d(kz,xe);
+      levels[0].xloc(3,kz) = xk1d(kz,xe+1);
+      levels[0].xloclast(0,kz) = xk1d(kz,xs-1);
+      levels[0].xloclast(1,kz) = xk1d(kz,xs);
+      levels[0].xloclast(2,kz) = xk1d(kz,xe);
+      levels[0].xloclast(3,kz) = xk1d(kz,xe+1);
+    }
   }
   ///SCOREP_USER_REGION_END(setsoln);
   ///SCOREP_USER_REGION_DEFINE(ics);
   ///SCOREP_USER_REGION_BEGIN(ics, "initial conditions ",SCOREP_USER_REGION_TYPE_COMMON);
 
+  // TODO: To delete?
+  /*
   if(algorithm!=0){
     for (int kz = 0; kz <= maxmode; kz++) {
       //if( first_call(jy,kz) or not use_previous_timestep ){
@@ -580,8 +615,8 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       xloc(3,kz) = xk1d(kz,xe+1);
       //output<<"initial "<<xloclast(0,kz)<<" "<<xloclast(1,kz)<<" "<<xloclast(2,kz)<<" "<<xloclast(3,kz)<<endl;
     }
-
   }
+  */
 
   ///SCOREP_USER_REGION_END(ics);
   ///SCOREP_USER_REGION_DEFINE(initwhileloop);
@@ -611,17 +646,37 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   while(true){
 
     /*
-    output<< "soln "<<count<<" "<<jy<<" "<<levels[current_level].xs<<" "<<levels[current_level].xe<<" "<<levels[current_level].ncx<<endl;
-    for(int ix=0; ix<levels[current_level].ncx;ix++){
-      output<<" "<<levels[current_level].soln(2,ix).real() << " "<< levels[current_level].soln(2,ix).imag() <<endl;
+    if(algorithm==0 or current_level!=0){
+      output<< "soln "<<count<<" "<<jy<<" "<<levels[current_level].xs<<" "<<levels[current_level].xe<<" "<<levels[current_level].ncx<<" "<<current_level<<endl;
+      for(int ix=0; ix<levels[current_level].ncx;ix++){
+	output<<" "<<levels[current_level].soln(2,ix).real() << " "<< levels[current_level].soln(2,ix).imag() <<endl;
+      }
+    }
+    else{
+      output<< "xloc "<<count<<" "<<jy<<" "<<levels[current_level].xs<<" "<<levels[current_level].xe<<" "<<levels[current_level].ncx<<current_level<<endl;
+      for(int ix=0; ix<4;ix++){
+	output<<" "<<levels[current_level].xloclast(ix,2).real() << " "<< levels[current_level].xloclast(ix,2).imag() <<endl;
+      }
     }
     output<< endl;
     */
 
-    //jacobi_full_system(levels[current_level],jy);
-    //gauss_seidel_red_black_full_system(levels[current_level],converged,jy);
-    // This version is ~20% faster
-    gauss_seidel_red_black_full_system_comp_comm_overlap(levels[current_level],converged,jy);
+    if(algorithm==0 or current_level!=0){ 
+      //jacobi_full_system(levels[current_level],jy);
+      //gauss_seidel_red_black_full_system(levels[current_level],converged,jy);
+      // This version is ~20% faster
+      gauss_seidel_red_black_full_system_comp_comm_overlap(levels[current_level],converged,jy);
+    }
+    else{
+      jacobi(levels[current_level], jy);
+      /*
+      output<< "xloc "<<count<<" "<<jy<<" "<<levels[current_level].xs<<" "<<levels[current_level].xe<<" "<<levels[current_level].ncx<<current_level<<endl;
+      for(int ix=0; ix<4;ix++){
+	output<<" "<<levels[current_level].xloclast(ix,2).real() << " "<< levels[current_level].xloclast(ix,2).imag() <<endl;
+      }
+      */
+      reconstruct_full_solution(levels[0],jy);
+    }
 
 
     ///SCOREP_USER_REGION_DEFINE(l0rescalc);
@@ -633,8 +688,15 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
 	  totalold[kz] = total[kz];
 	}
       }
-      calculate_residual_full_system(levels[current_level],converged,jy);
-      calculate_total_residual(total,error_rel,converged,levels[current_level]);
+      //if(algorithm==0 or current_level!=0){ 
+      //if(algorithm!=0 and current_level==0){
+      //}
+	calculate_residual_full_system(levels[current_level],converged,jy);
+	calculate_total_residual(total,error_rel,converged,levels[current_level]);
+      //}
+      //else{
+      //  calculate_residual(levels[current_level],converged,jy);
+      //}
 
       //for(int kz=0; kz<nmode; kz++){
       /*
@@ -807,6 +869,25 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   ///SCOREP_USER_REGION_DEFINE(afterloop);
   ///SCOREP_USER_REGION_BEGIN(afterloop, "after faff",SCOREP_USER_REGION_TYPE_COMMON);
 
+    if(algorithm!=0){
+      reconstruct_full_solution(levels[0],jy);
+      /*
+      output<< "soln "<<count<<" "<<jy<<" "<<levels[current_level].xs<<" "<<levels[current_level].xe<<" "<<levels[current_level].ncx<<" "<<current_level<<endl;
+      for(int ix=0; ix<levels[current_level].ncx;ix++){
+	output<<" "<<levels[current_level].soln(2,ix).real() << " "<< levels[current_level].soln(2,ix).imag() <<endl;
+      }
+      */
+    }
+    /*
+    else{
+      output<< "xloc "<<count<<" "<<jy<<" "<<levels[current_level].xs<<" "<<levels[current_level].xe<<" "<<levels[current_level].ncx<<current_level<<endl;
+      for(int ix=0; ix<4;ix++){
+	output<<" "<<levels[current_level].xloclast(ix,2).real() << " "<< levels[current_level].xloclast(ix,2).imag() <<endl;
+      }
+    }
+    output<< endl;
+    */
+
   if(algorithm!=0){
     for (int kz = 0; kz <= maxmode; kz++) {
       xloclast(0,kz) = levels[0].soln(kz,levels[0].xs-1);
@@ -931,7 +1012,7 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   return x; // Result of the inversion
 }
 
-void LaplaceParallelTriMG::jacobi(Level &l, const int jy, Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast){
+void LaplaceParallelTriMG::jacobi(Level &l, const int jy){
 
   SCOREP0();
   struct Message { dcomplex value; bool done; };
@@ -946,12 +1027,12 @@ void LaplaceParallelTriMG::jacobi(Level &l, const int jy, Matrix<dcomplex> &xloc
     //if(not(self_in[kz] and self_out[kz])){
     // TODO guard work for converged kz
     if( localmesh->firstX() ){
-      xloc(0,kz) = ( l.minvb(kz,l.xs-1) + l.upperGuardVector(l.xs-1,jy,kz)*xloclast(3,kz) ) / (1.0 - l.lowerGuardVector(l.xs-1,jy,kz));
+      l.xloc(0,kz) = ( l.minvb(kz,l.xs-1) + l.upperGuardVector(l.xs-1,jy,kz)*l.xloclast(3,kz) ) / (1.0 - l.lowerGuardVector(l.xs-1,jy,kz));
     }
-    xloc(1,kz) = l.rl[kz] + l.al(jy,kz)*xloclast(0,kz) + l.bl(jy,kz)*xloclast(3,kz);
-    xloc(2,kz) = l.ru[kz] + l.au(jy,kz)*xloclast(0,kz) + l.bu(jy,kz)*xloclast(3,kz);
+    l.xloc(1,kz) = l.rl[kz] + l.al(jy,kz)*l.xloclast(0,kz) + l.bl(jy,kz)*l.xloclast(3,kz);
+    l.xloc(2,kz) = l.ru[kz] + l.au(jy,kz)*l.xloclast(0,kz) + l.bu(jy,kz)*l.xloclast(3,kz);
     if( localmesh->lastX() ){
-      xloc(3,kz) = ( l.minvb(kz,l.xe+2) + l.lowerGuardVector(l.xe+2,jy,kz)*xloclast(0,kz) ) / (1.0 - l.upperGuardVector(l.xe+2,jy,kz));
+      l.xloc(3,kz) = ( l.minvb(kz,l.xe+2) + l.lowerGuardVector(l.xe+2,jy,kz)*l.xloclast(0,kz) ) / (1.0 - l.upperGuardVector(l.xe+2,jy,kz));
     }
   }
 
@@ -995,14 +1076,14 @@ void LaplaceParallelTriMG::jacobi(Level &l, const int jy, Matrix<dcomplex> &xloc
       if(!localmesh->firstX()){
       for (int kz = 0; kz <= maxmode; kz++) {
 ///	if(!neighbour_in[kz]){
-	  message_send[kz].value = xloc(index_in,kz);
+	  message_send[kz].value = l.xloc(index_in,kz);
 ///	  message_send[kz].done  = self_in[kz];
 ///	}
       }
       err = MPI_Sendrecv(&message_send[0], nmode*sizeof(Message), MPI_BYTE, proc_in, 1, &message_recv[0], nmode*sizeof(Message), MPI_BYTE, proc_in, 0, comm, MPI_STATUS_IGNORE);
       for (int kz = 0; kz <= maxmode; kz++) {
 ///	if(!self_in[kz]){
-	  xloc(0,kz) = message_recv[kz].value;
+	  l.xloc(0,kz) = message_recv[kz].value;
 ///	  neighbour_in[kz] = message_recv[kz].done;
 ///	}
       }
@@ -1016,12 +1097,12 @@ void LaplaceParallelTriMG::jacobi(Level &l, const int jy, Matrix<dcomplex> &xloc
       //output<<"neighbour_out proc "<<BoutComm::rank()<<endl;
       if(!localmesh->lastX()){
       for (int kz = 0; kz <= maxmode; kz++) {
-	message_send[kz].value = xloc(index_out,kz);
+	message_send[kz].value = l.xloc(index_out,kz);
 ///	message_send[kz].done  = self_out[kz];
       }
       err = MPI_Sendrecv(&message_send[0], nmode*sizeof(Message), MPI_BYTE, proc_out, 0, &message_recv[0], nmode*sizeof(Message), MPI_BYTE, proc_out, 1, comm, MPI_STATUS_IGNORE);
       for (int kz = 0; kz < nmode; kz++) {
-	xloc(3,kz) = message_recv[kz].value;
+	l.xloc(3,kz) = message_recv[kz].value;
 ///	neighbour_out[kz] = message_recv[kz].done;
       }
       }
@@ -1357,6 +1438,12 @@ void LaplaceParallelTriMG::levels_info(const Level l, const int jy){
   if(!localmesh->firstX() and l.current_level>0){
     output<<"comm "<<l.acomm[0]<<" "<<l.bcomm[0]<<" "<<l.ccomm[0]<<endl;
   }
+
+  if(algorithm!=0){
+    output<<"l coefs "<<l.al(jy,kz)<<" "<<l.bl(jy,kz)<<" "<<l.rl[kz]<<endl;
+    output<<"u coefs "<<l.au(jy,kz)<<" "<<l.bu(jy,kz)<<" "<<l.ru[kz]<<endl;
+
+  }
 }
 
 // Initialization routine for coarser grids. Initialization depends on the grid
@@ -1383,6 +1470,10 @@ void LaplaceParallelTriMG::init(Level &l, const Level lup, int ncx, const int xs
   l.residual = Matrix<dcomplex>(nmode,ncx);
   l.soln = Matrix<dcomplex>(nmode,ncx);
   l.solnlast = Matrix<dcomplex>(nmode,ncx);
+  if(algorithm!=0){
+    l.xloc = Matrix<dcomplex>(4,nmode);
+    l.xloclast = Matrix<dcomplex>(4,nmode);
+  }
 
   // For coarsening, need to communicate coefficients for halo cells
   l.acomm = Array<dcomplex>(nmode);
@@ -1499,6 +1590,7 @@ void LaplaceParallelTriMG::init(Level &l, const int ncx, const int jy, const Mat
   l.residual = Matrix<dcomplex>(nmode,ncx);
   l.soln = Matrix<dcomplex>(nmode,ncx);
   l.solnlast = Matrix<dcomplex>(nmode,ncx);
+
   for(int kz=0; kz<nmode; kz++){
     for(int ix=0; ix<ncx; ix++){
      l.avec(jy,kz,ix) = avec(kz,ix); 
@@ -1523,6 +1615,8 @@ void LaplaceParallelTriMG::init(Level &l, const int ncx, const int jy, const Mat
     auto tmp = Array<dcomplex>(ncx);
 
     // Define sizes of local coefficients
+    l.xloc = Matrix<dcomplex>(4,nmode);
+    l.xloclast = Matrix<dcomplex>(4,nmode);
     l.minvb = Matrix<dcomplex>(nmode,ncx);
     l.upperGuardVector = Tensor<dcomplex>(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
     l.lowerGuardVector = Tensor<dcomplex>(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
@@ -1799,8 +1893,68 @@ void LaplaceParallelTriMG::calculate_total_residual(Array<BoutReal> &error_abs, 
   }
 }
 
+// Calculate residual on a reduced x grid. By construction, the residual is 
+// zero, except at the points on the reduced grid.
+void LaplaceParallelTriMG::calculate_residual(Level &l, const Array<bool> &converged,const int jy){
 
-// Calculate residual
+  SCOREP0();
+  for(int kz=0; kz<nmode; kz++){
+    if(!converged[kz]){
+      if(localmesh->firstX()){
+	l.residual(kz,0) = l.rvec(kz,0) - l.bvec(jy,kz,0)*l.soln(kz,0) - l.cvec(jy,kz,0)*l.soln(kz,1);
+	for(int ix=1; ix<l.xs; ix++){
+	  l.residual(kz,ix) = l.rvec(kz,ix) - l.avec(jy,kz,ix)*l.soln(kz,ix-1) - l.bvec(jy,kz,ix)*l.soln(kz,ix) - l.cvec(jy,kz,ix)*l.soln(kz,ix+1);
+	}
+      }
+      for(int ix=l.xs; ix<l.xe+1; ix++){
+	l.residual(kz,ix) = l.rvec(kz,ix) - l.avec(jy,kz,ix)*l.soln(kz,ix-1) - l.bvec(jy,kz,ix)*l.soln(kz,ix) - l.cvec(jy,kz,ix)*l.soln(kz,ix+1);
+      }
+      if(localmesh->lastX()){
+	for(int ix=l.xe+1; ix<l.ncx-1; ix++){
+	  l.residual(kz,ix) = l.rvec(kz,ix) - l.avec(jy,kz,ix)*l.soln(kz,ix-1) - l.bvec(jy,kz,ix)*l.soln(kz,ix) - l.cvec(jy,kz,ix)*l.soln(kz,ix+1);
+	}
+	l.residual(kz,l.ncx-1) = l.rvec(kz,l.ncx-1) - l.avec(jy,kz,l.ncx-1)*l.soln(kz,l.ncx-2) - l.bvec(jy,kz,l.ncx-1)*l.soln(kz,l.ncx-1);
+      }
+    }
+  }
+
+  struct Message { dcomplex value; bool done; };
+  Array<Message> message_send, message_recv;
+  message_send = Array<Message>(nmode);
+  message_recv = Array<Message>(nmode);
+  MPI_Comm comm = BoutComm::get();
+  int err;
+  if(!localmesh->firstX()){
+    for (int kz = 0; kz <= maxmode; kz++) {
+      if(!converged[kz]){
+	message_send[kz].value = l.residual(kz,l.xs);
+      }
+    }
+    err = MPI_Sendrecv(&message_send[0], nmode*sizeof(Message), MPI_BYTE, proc_in, 1, &message_recv[0], nmode*sizeof(Message), MPI_BYTE, proc_in, 0, comm, MPI_STATUS_IGNORE);
+    for (int kz = 0; kz <= maxmode; kz++) {
+      if(!converged[kz]){
+	l.residual(kz,l.xs-1) = message_recv[kz].value;
+      }
+    }
+  }
+
+  // Communicate out
+  if(!localmesh->lastX()){
+    for (int kz = 0; kz <= maxmode; kz++) {
+      if(!converged[kz]){
+	message_send[kz].value = l.residual(kz,l.xe);
+      }
+    }
+    err = MPI_Sendrecv(&message_send[0], nmode*sizeof(Message), MPI_BYTE, proc_out, 0, &message_recv[0], nmode*sizeof(Message), MPI_BYTE, proc_out, 1, comm, MPI_STATUS_IGNORE);
+    for (int kz = 0; kz < nmode; kz++) {
+      if(!converged[kz]){
+	l.residual(kz,l.xe+1) = message_recv[kz].value;
+      }
+    }
+  }
+}
+
+// Calculate residual on a full x grid
 void LaplaceParallelTriMG::calculate_residual_full_system(Level &l, const Array<bool> &converged,const int jy){
 
   SCOREP0();

@@ -94,6 +94,7 @@ public:
     Tensor<dcomplex> upperGuardVector, lowerGuardVector;
     Matrix<dcomplex> al, bl, au, bu;
     Matrix<dcomplex> alold, blold, auold, buold;
+    Matrix<dcomplex> xloc, xloclast;
     Matrix<dcomplex> r1, r2, r3, r4, r5, r6, r7, r8;
     Array<dcomplex> rl, ru;
     Array<dcomplex> rlold, ruold;
@@ -118,7 +119,7 @@ public:
   void init(Level &level, const Level lup, const int ncx, const int xs, const int xe, const int current_level, const int jy);
   void init(Level &level, const int ncx, const int jy, const Matrix<dcomplex> avec, const Matrix<dcomplex> bvec, const Matrix<dcomplex> cvec, const Matrix<dcomplex> bcmplx, const int xs, const int xe, const int current_level);
 
-  void jacobi(Level &level, const int jy, Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast);
+  void jacobi(Level &level, const int jy);
   void jacobi_full_system(Level &level,const int jy);
   void gauss_seidel_red_black_full_system(Level &level, const Array<bool> &converged, const int jy);
   void gauss_seidel_red_black_full_system_comp_comm_overlap(Level &level, const Array<bool> &converged, const int jy);
@@ -127,10 +128,12 @@ public:
   void coarsen(const Level level, Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast, int jy);
   void coarsen_full_system(Level &level, const Matrix<dcomplex> &fine_residual, const Array<bool> &converged);
 
+  void calculate_residual(Level &level, const Array<bool> &converged, const int jy);
   void calculate_residual_full_system(Level &level, const Array<bool> &converged, const int jy);
   void calculate_total_residual(Array<BoutReal> &total, Array<BoutReal> &globalmaxsol, Array<bool> &converged, const Level level);
   void update_solution(Level &l, const Matrix<dcomplex> &fine_error, const Array<bool> &converged);
   void reconstruct_full_solution(Level &level, const int jy, Matrix<dcomplex> &halos);
+  void reconstruct_full_solution(Level &level, const int jy);
 
 private:
 
