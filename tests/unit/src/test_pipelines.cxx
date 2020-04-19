@@ -23,8 +23,8 @@ using namespace bout::experimental;
 TEST_F(PipelinesTest, Identity) {
   Field3D field {1.0};
 
-  // Create a generator, then collect it
-  Field3D result = field | collect();
+  // Create a generator, then convert back to a field
+  Field3D result = field | toField();
 
   ASSERT_TRUE(IsFieldEqual(result, field));
 }
@@ -32,8 +32,8 @@ TEST_F(PipelinesTest, Identity) {
 TEST_F(PipelinesTest, IdentityChain) {
   Field3D field {1.0};
 
-  // Create a generator, collect into a Field, and repeat
-  Field3D result = field | collect() | collect();
+  // Create a generator, convert into a Field, and repeat
+  Field3D result = field | toField() | toField();
 
   ASSERT_TRUE(IsFieldEqual(result, field));
 }
@@ -42,14 +42,21 @@ TEST_F(PipelinesTest, AddConstant) {
   Field3D field {1.0};
 
   // Create a generator, add and collect
-  Field3D result = field | add(2.0) | collect();
+  Field3D result = field | add(2.0) | toField();
 
   ASSERT_TRUE(IsFieldEqual(result, 3.0));
 }
 
 TEST_F(PipelinesTest, AddConstantToConstant) {
-  // Create a generator from a constant, add and collect
-  Field3D result = 1.0 | add(2.0) | collect();
+  // Create a generator from a constant, add and convert to field
+  Field3D result = 1.0 | add(2.0) | toField();
 
   ASSERT_TRUE(IsFieldEqual(result, 3.0));
+}
+TEST_F(PipelinesTest, MakeFieldRegion) {
+  // Only iterate over the core region (no boundaries)
+  Field3D result = 1.0 | toField(mesh->getRegion3D("RGN_NOBNDRY"));
+
+  ASSERT_TRUE(IsFieldEqual(result, 1.0, "RGN_NOBNDRY"));
+  ASSERT_FALSE(IsFieldEqual(result, 1.0));
 }

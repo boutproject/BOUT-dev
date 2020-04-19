@@ -60,23 +60,29 @@ namespace bout {
     ///
     /// Example:
     ///
-    /// Field3D result = 1.0 | add(2.0) | collect();
+    /// Field3D result = 1.0 | add(2.0) | toField();
     ///     -> result is filled with 3.0
     ///
     /// Field3D result = field | slow_operation()
-    ///                        | collect()
+    ///                        | toField()
     ///                        | differentiate()
-    ///                        | collect();
+    ///                        | toField();
     ///
     /// where `differentiate` is an operation which needs to use stencils.
     /// If the first collect were not used, then `slow_operation` would be done
     /// more often than needed, every time a value was accessed.
+    ///
+    /// By default all points are evaluated (region "RGN_ALL"), but a region
+    /// can be provided:
+    ///
+    ///   toField(mesh->getRegion3D("RGN_NOBNDRY"))
     /// 
-    auto collect() {
-      return [](GeneratorFunction func) {
-        Field3D result;
+    template<typename FieldType = Field3D>
+    auto toField(const Region<typename FieldType::ind_type>& region = bout::globals::mesh->getRegion<FieldType>("RGN_ALL")) {
+      return [&](GeneratorFunction func) {
+        FieldType result;
         result.allocate();
-        BOUT_FOR(i, result.getRegion("RGN_ALL")) { result[i] = func(i); }
+        BOUT_FOR(i, region) { result[i] = func(i); }
         return result;
       };
     }
