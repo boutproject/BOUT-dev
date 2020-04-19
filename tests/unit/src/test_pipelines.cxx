@@ -60,3 +60,38 @@ TEST_F(PipelinesTest, MakeFieldRegion) {
   ASSERT_TRUE(IsFieldEqual(result, 1.0, "RGN_NOBNDRY"));
   ASSERT_FALSE(IsFieldEqual(result, 1.0));
 }
+
+TEST_F(PipelinesTest, SubtractConstant) {
+  // Create a generator from a constant, add and convert to field
+  Field3D result = 3.0 | subtract(2.0) | toField();
+
+  ASSERT_TRUE(IsFieldEqual(result, 1.0));
+}
+
+TEST_F(PipelinesTest, MultiplyConstant) {
+  // Create a generator from a constant, add and convert to field
+  Field3D result = 3.0 | multiply(2.0) | toField();
+
+  ASSERT_TRUE(IsFieldEqual(result, 6.0));
+}
+
+TEST_F(PipelinesTest, DivideConstant) {
+  // Create a generator from a constant, add and convert to field
+  Field3D result = 3.0 | divide(2.0) | toField();
+
+  ASSERT_TRUE(IsFieldEqual(result, 1.5));
+}
+
+TEST_F(PipelinesTest, Arithmetic) {
+  // Create a generator from a constant, add and convert to field
+  Field3D result =
+    3.0
+    | divide(2.0
+             | multiply(1.5)
+             | subtract(4.0)
+             | multiply(2.0))
+    | add(5.0 | divide(2.0))
+    | toField();
+  
+  ASSERT_TRUE(IsFieldEqual(result, 3./((2 * 1.5 - 4.)*2) + 5./2));
+}

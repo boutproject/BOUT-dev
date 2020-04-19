@@ -100,6 +100,44 @@ namespace bout {
              };
     }
 
+    template<typename T>
+    auto subtract(const T &value) {
+      // Convert the value into a generator
+      auto subtracting = generate(value);
+      // Function which takes and returns a generator
+      return [subtracting](GeneratorFunction func) {
+               // The function to calculate the combined result
+               return [=](const Ind3D& ind) {
+                        return func(ind) - subtracting(ind);
+                      };
+             };
+    }
+
+    template<typename T>
+    auto multiply(const T &value) {
+      // Convert the value into a generator
+      auto multiplying = generate(value);
+      // Function which takes and returns a generator
+      return [multiplying](GeneratorFunction func) {
+               // The function to calculate the combined result
+               return [=](const Ind3D& ind) {
+                        return func(ind) * multiplying(ind);
+                      };
+             };
+    }
+
+    template<typename T>
+    auto divide(const T &value) {
+      // Convert the value into a generator
+      auto dividing = generate(value);
+      // Function which takes and returns a generator
+      return [dividing](GeneratorFunction func) {
+               // The function to calculate the combined result
+               return [=](const Ind3D& ind) {
+                        return func(ind) / dividing(ind);
+                      };
+             };
+    }
   } // experimental
 } // bout
   
