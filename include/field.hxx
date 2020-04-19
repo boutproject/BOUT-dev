@@ -162,6 +162,11 @@ public:
     swap(first.location, second.location);
     swap(first.directions, second.directions);
   }
+
+  /// This is for fast (inner loop) access to the Coordinates.
+  /// Used in single_index_ops.hxx functions
+  /// It is set when getCoordinates() is called, but otherwise may be null.
+  Coordinates* fast_coords {nullptr};
 protected:
   Mesh* fieldmesh{nullptr};
   mutable std::shared_ptr<Coordinates> fieldCoordinates{nullptr};

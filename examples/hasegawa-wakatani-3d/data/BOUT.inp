@@ -1,0 +1,45 @@
+#
+# Hasegawa-Wakatani test case
+#
+
+timestep = 1.   # Output timestep
+nout = 200      # Number of output steps
+
+[mesh]
+
+nx = 68  # Note 4 guard cells in X
+ny = 16 
+nz = 64  # Periodic, so no guard cells in Z
+
+dx = 0.2
+dy = 1.
+dz = 0.2
+
+# Set periodic boundary condition in y
+ixseps1 = nx
+ixseps2 = nx 
+
+[laplace]
+
+flags = 0   # Flags for Laplacian inversion
+
+[solver]
+
+[hw]
+
+alpha = 1.0    # Adiabaticity (~ conductivity)
+kappa = 0.5    # Density gradient drive
+Dvort = 1e-3   # Vorticity diffusion
+Dn    = 1e-3   # Density diffusion
+
+[All]
+scale = 0.
+
+bndry_all = dirichlet_o2
+
+[vort]
+
+scale = 0.1  # Fluctuation amplitude
+function = mixmode(2*pi*x) * mixmode(z - y)  # Fluctuation function
+
+
