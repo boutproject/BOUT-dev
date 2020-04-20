@@ -117,7 +117,8 @@ public:
 
   void levels_info(const Level l, const int jy);
   void init(Level &level, const Level lup, const int ncx, const int xs, const int xe, const int current_level, const int jy);
-  void init(Level &level, const int ncx, const int jy, const Matrix<dcomplex> avec, const Matrix<dcomplex> bvec, const Matrix<dcomplex> cvec, const Matrix<dcomplex> bcmplx, const int xs, const int xe, const int current_level);
+  void init(Level &level, const int ncx, const int jy, const Matrix<dcomplex> avec, const Matrix<dcomplex> bvec, const Matrix<dcomplex> cvec, const int xs, const int xe);
+  void init_rhs(Level &level, const int jy, const Matrix<dcomplex> bcmplx);
 
   void jacobi(Level &level, const int jy, const Array<bool> &converged);
   void jacobi_full_system(Level &level,const int jy);
