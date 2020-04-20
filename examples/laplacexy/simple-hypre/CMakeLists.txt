@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.13)
 
 #project(test_laplacexy_hypre LANGUAGES CXX C)
 
+set(BLT_CXX_STD "c++14" CACHE STRING "Version of C++ standard")
 #find_package(bout++ REQUIRED)
 if(NOT BOUT_HAS_HYPRE)
   message(FATAL_ERROR "This example requires BOUT++ to have been built with HYPRE")
@@ -15,6 +16,17 @@ set(test_laplacexy_hypre_sources
 
 set(test_laplacexy_hypre_depends bout++ PETSc HYPRE)
 
+set(HYPRE_USING_CUDA_DEFINE "")
+set(HYPRE_USING_CUBLAS_DEFINE "")
+set(MEMORY_DEFINE "")
+if(HAVE_CUDA)
+   list(APPEND test_laplacexy_hypre_depends cuda)
+   set(HYPRE_USING_CUDA_DEFINE "HYPRE_USING_CUDA")
+   set(MEMORY_DEFINE "HYPRE_USING_UNIFIED_MEMORY")
+   set(HYPRE_USING_CUBLAS_DEFINE "HYPRE_USING_CUBLAS")
+endif ()
+
+message(STATUS "test_laplacexy_hypre_depends: ${test_laplacexy_hypre_depends}")
 blt_add_executable(
    NAME test_laplacexy_hypre
    SOURCES ${test_laplacexy_hypre_sources}
@@ -22,11 +34,27 @@ blt_add_executable(
      ${PROJECT_SOURCE_DIR}/include
      ${PROJECT_SOURCE_DIR}/externalpackages/fmt/include
      ${PROJECT_SOURCE_DIR}/externalpackages/mpark.variant/include
+     /usr/tce/packages/cuda/cuda-10.1.243/include
    DEFINES 
       "BOUT_VERSION_STRING=\"${BOUT_FULL_VERSION}\""
       "BOUT_VERSION_DOUBLE=${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}${PROJECT_VERSION_PATCH}"
       BOUT_HAS_HYPRE
+      ${HYPRE_USING_CUDA_DEFINE}
+      ${HYPRE_USING_CUBLAS_DEFINE}
+      ${MEMORY_DEFINE}
    DEPENDS_ON
      ${test_laplacexy_hypre_depends})
+
+
+target_link_libraries(
+   test_laplacexy_hypre PUBLIC 
+   /usr/tce/packages/cuda/cuda-10.1.243/lib64/libcusparse_static.a
+   /usr/tce/packages/cuda/cuda-10.1.243/lib64/libcurand_static.a
+   /usr/tce/packages/cuda/cuda-10.1.243/lib64/libculibos.a
+   /usr/tce/packages/cuda/cuda-10.1.243/lib64/libcublas_static.a
+   /usr/tce/packages/cuda/cuda-10.1.243/lib64/libcublasLt_static.a
+)
+
+  
 
 

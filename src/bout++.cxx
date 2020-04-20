@@ -227,6 +227,7 @@ void setupGetText() {
 
     bindtextdomain(GETTEXT_PACKAGE, BUILDFLAG(BOUT_LOCALE_PATH));
   } catch (const std::runtime_error& e) {
+#if 0     
     fmt::print(
         stderr,
         FMT_STRING(
@@ -235,6 +236,7 @@ void setupGetText() {
             "may be "
             "a problem with the BOUT_LOCALE_PATH={:s} that BOUT++ was compiled with.\n"),
         BUILDFLAG(BOUT_LOCALE_PATH));
+#endif
   }
 #endif // BOUT_HAS_GETTEXT
 }
@@ -829,8 +831,10 @@ void bout_signal_handler(int sig) {
   // Set signal handler back to default to prevent possible infinite loop
   signal(SIGSEGV, SIG_DFL);
   // print number of process to stderr, so the user knows which log to check
-  fmt::print(stderr, FMT_STRING("\nSighandler called on process {:d} with sig {:d}\n"),
-             BoutComm::rank(), sig);
+
+  // disable the following while we debug a cuda based build
+  //fmt::print(stderr, FMT_STRING("\nSighandler called on process {:d} with sig {:d}\n"),
+  //           BoutComm::rank(), sig);
 
   switch (sig) {
   case SIGSEGV:

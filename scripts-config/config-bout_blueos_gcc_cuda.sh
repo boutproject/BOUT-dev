@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 arch=$(uname -m)
 compiler=gcc
-scratch_dir=${HOME}/workspace/BOUT_build_serial/
+scratch_dir=${HOME}/workspace/BOUT_build_cuda/
 build_prefix=${scratch_dir}/build/${arch}-${compiler}/
 install_prefix=${scratch_dir}/install/${arch}-${compiler}/
 source_prefix=${HOME}/workspace/
@@ -54,6 +54,11 @@ module --ignore-cache load py-netcdf4-1.4.2-gcc-8.3.1-t6cuidv
 
 #for PETSC be sure to module load in your .profile to avoid system ambiguities
 # or before typing make -j
+
+#for automake version of hypre be sure to export CC and CXX environment variables as hypre will pick up XL for the default
+# export CC=mpicc
+# export CXX=mpiCC
+# ./configure --prefix=/g/g0/holger/workspace/hypre_automake/install --with-cuda --enable-unified-memory --enable-debug --enable-cublas HYPRE_CUDA_SM=70
 
 pkg=$1
 if [[ "$1" == "-c" ]]; then
@@ -124,7 +129,7 @@ if [ "$pkg" == "raja" ]; then
           -DCMAKE_BUILD_TYPE=RelWithDebInfo \
           -DCMAKE_INSTALL_PREFIX=$install_dir \
           -DENABLE_OPENMP=On \
-          -DENABLE_CUDA=Off \
+          -DENABLE_CUDA=On \
           -DENABLE_TESTS=ON \
           $source_dir
 elif [ "$pkg" == "umpire" ]; then
@@ -134,7 +139,7 @@ elif [ "$pkg" == "umpire" ]; then
           -DCMAKE_C_COMPILER=$cc \
           -DCMAKE_INSTALL_PREFIX=$install_dir \
           -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-          -DENABLE_CUDA=Off \
+          -DENABLE_CUDA=On \
           -DENABLE_TESTS=On \
           -DENABLE_TOOLS=On \
           -DENABLE_NUMA=On \
@@ -152,7 +157,8 @@ elif [ "$pkg" == "hypre" ]; then
           -DENABLE_RAJA=Off \
           -DENABLE_MPI=On \
           -DENABLE_OPENMP=Off \
-          -DENABLE_CUDA=Off \
+          -DENABLE_CUDA=On \
+          -DCUDA_ARCH=sm_70 \
           -DCMAKE_EXPORT_COMPILE_COMMANDS=On \
           -DCMAKE_VERBOSE_MAKEFILE=On \
           -Dgtest_disable_pthreads=ON \
@@ -175,17 +181,17 @@ elif [ "$pkg" == "BOUT-dev" ]; then
           -DUSE_FFTW=On \
           -DUSE_LAPACK=On \
           -DUSE_NLS=On \
-          -DENABLE_PETSC=Off \
+          -DENABLE_PETSC=On \
           -DPETSC_DIR=${HOME}/workspace/spack/opt/spack/linux-rhel7-power9le/gcc-8.3.1/petsc-3.12.3-ut4eyhszto3njzigfesmrfqnbhegp7iu \
           -DUSE_PVODE=On \
           -DUSE_SUNDIALS=On \
           -DENABLE_GTEST_DEATH_TESTS=On \
           -DENABLE_RAJA=Off \
           -DENABLE_MPI=On \
-          -DENABLE_OPENMP=On \
-          -DENABLE_CUDA=Off \
+          -DENABLE_OPENMP=Off \
+          -DENABLE_CUDA=On \
           -DENABLE_HYPRE=On \
-          -DHYPRE_DIR="${install_prefix}/hypre" \
+          -DHYPRE_DIR="${HOME}/workspace/hypre_automake/install" \
           -DBUILD_SHARED_LIBS=Off \
           -DENABLE_GTEST=On \
           -DENABLE_GMOCK=On \
