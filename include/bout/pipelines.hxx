@@ -5,6 +5,8 @@
 
 #include <functional>
 
+#include "single_index_ops.hxx"
+
 #include "../field3d.hxx"
 
 namespace bout {
@@ -138,6 +140,34 @@ namespace bout {
                       };
              };
     }
+    
+    namespace bp {
+      auto bracket(const Field3D &f, const Field3D &g) {
+        return [&](const Ind3D& i) {
+                 return ::bracket(f, g, i);
+               };
+      }
+
+      auto DDZ(const Field3D &f) {
+        return [&](const Ind3D& i) {
+                 return ::DDZ(f, i);
+               };
+      }
+
+      auto Div_par_Grad_par(const Field3D &f) {
+        return [&](const Ind3D& i) {
+                 return ::Div_par_Grad_par(f, i);
+               };
+      }
+      
+      auto Delp2(const Field3D &f) {
+        return [&](const Ind3D& i) {
+                 return ::Delp2(f, i);
+               };
+      }
+      
+    } // bp
+    
   } // experimental
 } // bout
   

@@ -4,6 +4,10 @@
 #include "test_extras.hxx"
 
 #include "bout/pipelines.hxx"
+#include "difops.hxx"
+#include "derivs.hxx"
+
+#include <random>
 
 /// Global mesh
 namespace bout{
@@ -94,4 +98,55 @@ TEST_F(PipelinesTest, Arithmetic) {
     | toField();
   
   ASSERT_TRUE(IsFieldEqual(result, 3./((2 * 1.5 - 4.)*2) + 5./2));
+}
+
+TEST_F(PipelinesTest, bracket) {
+  // Fill a field with random numbers
+  std::uniform_real_distribution<double> unif(-1.0, 1.0);
+  std::default_random_engine re;
+  
+  Field3D input; input.allocate();
+  BOUT_FOR(i, input.getRegion("RGN_ALL")) {
+    input[i] = unif(re);
+  }
+  // Check that the field is not zero
+  EXPECT_FALSE(IsFieldEqual(input, 0.0, "RGN_NOBNDRY"));
+
+  Field3D input2; input2.allocate();
+  BOUT_FOR(i, input.getRegion("RGN_ALL")) {
+    input2[i] = unif(re);
+  }
+  ASSERT_FALSE(IsFieldEqual(input2, 0.0, "RGN_NOBNDRY"));
+  
+  // Differentiate whole field
+  Field3D difops = bracket(input, input2, BRACKET_ARAKAWA);
+
+  input.fast_coords = input.getCoordinates(); // Set coordinates for single-index ops
+  input2.fast_coords = input2.getCoordinates();
+  Field3D pipes = bp::bracket(input, input2) | toField(input.getRegion("RGN_NOBNDRY"));
+
+  // Check the answer is the same
+  ASSERT_TRUE(IsFieldEqual(difops, pipes, "RGN_NOBNDRY"));
+}
+
+TEST_F(PipelinesTest, DDZ) {
+  // Fill a field with random numbers
+  std::uniform_real_distribution<double> unif(-1.0, 1.0);
+  std::default_random_engine re;
+  
+  Field3D input; input.allocate();
+  BOUT_FOR(i, input.getRegion("RGN_ALL")) {
+    input[i] = unif(re);
+  }
+  // Check that the field is not zero
+  EXPECT_FALSE(IsFieldEqual(input, 0.0, "RGN_NOBNDRY"));
+
+  // Differentiate whole field
+  Field3D difops = DDZ(input);
+
+  input.fast_coords = input.getCoordinates(); // Set coordinates for single-index ops
+  Field3D pipes = bp::DDZ(input) | toField(input.getRegion("RGN_NOBNDRY"));
+
+  // Check the answer is the same
+  ASSERT_TRUE(IsFieldEqual(difops, pipes, "RGN_NOBNDRY"));
 }
