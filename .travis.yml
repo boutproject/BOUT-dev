@@ -80,7 +80,7 @@ jobs:
     env:
       - *default_env
       - CONFIGURE_OPTIONS="--enable-shared --with-petsc --with-slepc --with-sundials=$HOME/local"
-      - SCRIPT_FLAGS="-uim5t python"
+      - SCRIPT_FLAGS="-uim5t python -s dash"
   - name: "OpenMP"
     env:
       - *default_env

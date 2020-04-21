@@ -96,7 +96,7 @@ import sys
 #import inspect
 from pylab import figure, show, draw, plot, contour, setp, clabel
 import numpy
-from bunch import Bunch
+from boututils.bunch import Bunch
 from scipy import integrate
 from local_gradient import local_gradient
 from follow_gradient import follow_gradient
