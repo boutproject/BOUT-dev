@@ -878,50 +878,28 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       //output<<Ad<<" "<<Bd<<" "<<Au<<" "<<Bu<<endl;
       */
     }
-
-    //SCOREP_USER_REGION_DEFINE(copylast);
-    //SCOREP_USER_REGION_BEGIN(copylast, "copy to last",SCOREP_USER_REGION_TYPE_COMMON);
-    //output<<"xloc "<<maxmode<<" "<<kz<<" "<<xloc(kz,0)<<" "<<xloc(kz,1)<<" "<<xloc(kz,2)<<" "<<xloc(kz,3)<<endl;
-    //output<<"xloclast "<<kz<<" "<<xloclast(kz,0)<<" "<<xloclast(kz,1)<<" "<<xloclast(kz,2)<<" "<<xloclast(kz,3)<<endl;
-    /*
-    for (int kz = 0; kz <= maxmode; kz++) {
-      //if(!(self_in[kz] and self_out[kz])){
-        for (int ix = 0; ix < 4; ix++) {
-	  xloclast(ix,kz) = xloc(ix,kz);
-        }
-        for (int ix = 0; ix < levels[current_level].ncx; ix++) {
-	  levels[current_level].solnlast(kz,ix) = levels[current_level].soln(kz,ix);
-        }
-      //}
-    }
-    */
-    //SCOREP_USER_REGION_END(copylast);
-
   }
   SCOREP_USER_REGION_END(whileloop);
   SCOREP_USER_REGION_DEFINE(afterloop);
   SCOREP_USER_REGION_BEGIN(afterloop, "after faff",SCOREP_USER_REGION_TYPE_COMMON);
 
-    if(algorithm!=0){
-      reconstruct_full_solution(levels[0],jy);
-      /*
-      output<< "soln "<<count<<" "<<jy<<" "<<levels[current_level].xs<<" "<<levels[current_level].xe<<" "<<levels[current_level].ncx<<" "<<current_level<<endl;
-      for(int ix=0; ix<levels[current_level].ncx;ix++){
-	output<<" "<<levels[current_level].soln(2,ix).real() << " "<< levels[current_level].soln(2,ix).imag() <<endl;
-      }
-      */
-    }
-    /*
-    else{
-      output<< "xloc "<<count<<" "<<jy<<" "<<levels[current_level].xs<<" "<<levels[current_level].xe<<" "<<levels[current_level].ncx<<current_level<<endl;
-      for(int ix=0; ix<4;ix++){
-	output<<" "<<levels[current_level].xloclast(ix,2).real() << " "<< levels[current_level].xloclast(ix,2).imag() <<endl;
-      }
-    }
-    output<< endl;
-    */
-
   if(algorithm!=0){
+    reconstruct_full_solution(levels[0],jy);
+    /*
+    output<< "soln "<<count<<" "<<jy<<" "<<levels[current_level].xs<<" "<<levels[current_level].xe<<" "<<levels[current_level].ncx<<" "<<current_level<<endl;
+    for(int ix=0; ix<levels[current_level].ncx;ix++){
+      output<<" "<<levels[current_level].soln(2,ix).real() << " "<< levels[current_level].soln(2,ix).imag() <<endl;
+    }
+    */
+  /*
+  else{
+    output<< "xloc "<<count<<" "<<jy<<" "<<levels[current_level].xs<<" "<<levels[current_level].xe<<" "<<levels[current_level].ncx<<current_level<<endl;
+    for(int ix=0; ix<4;ix++){
+      output<<" "<<levels[current_level].xloclast(ix,2).real() << " "<< levels[current_level].xloclast(ix,2).imag() <<endl;
+    }
+  }
+  output<< endl;
+  */
     for (int kz = 0; kz <= maxmode; kz++) {
       xloclast(0,kz) = levels[0].soln(kz,levels[0].xs-1);
       xloclast(1,kz) = levels[0].soln(kz,levels[0].xs);
@@ -933,9 +911,6 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       xloc(3,kz) = levels[0].soln(kz,levels[0].xe+1);
     }
   }
-//  output<<"after iteration"<<endl;
-
-  //throw BoutException("LaplaceParallelTriMG error: periodic boundary conditions not supported");
 
   ++ncalls;
   ipt_mean_its = (ipt_mean_its * BoutReal(ncalls-1)
