@@ -676,7 +676,7 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       output<<endl;
       */
 
-      reconstruct_full_solution(levels[0],jy);
+      //reconstruct_full_solution(levels[0],jy);
       /*
       output<< "soln "<<count<<" "<<jy<<" "<<levels[current_level].xs<<" "<<levels[current_level].xe<<" "<<levels[current_level].ncx<<" "<<current_level<<endl;
       for(int ix=0; ix<levels[current_level].ncx;ix++){
@@ -726,23 +726,36 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
         calculate_residual(levels[current_level],converged,jy);
         calculate_total_residual(total,error_rel,converged,levels[current_level]);
 
-	//for(int kz=0; kz<nmode; kz++){
-	//if(jy==3){ 
 	/*
-	output<<"Residual xloc "<<jy<<" "<<count<<" "<<current_level;
-
-	//output<<" "<<converged[kz];
-	output<<" "<<total[kz]<<endl;
-	for(int ix=0; ix<levels[0].ncx;ix++){
-	  if(ix<levels[current_level].ncx){
-	    output<<" "<<levels[current_level].residual(kz,ix).real();
-	  }
-	  else{
-	    output<<" "<<0;
-	  }
+	output<<"Totals "<<endl;
+	for(int kz=0; kz<nmode; kz++){
+	  output<< total[kz]<<" ";
 	}
 	output<<endl;
 	*/
+	//if(jy==3){ 
+	{
+	  /*
+	  int kz=1;
+	  output<<"Residual xloc "<<jy<<" "<<count<<" "<<current_level;
+
+	  //output<<" "<<converged[kz];
+	  output<<" "<<total[kz]<<" "<<error_rel[kz]<<" "
+	    << max(total)<< " "<< atol <<" "<< max(error_rel)<<" "<< rtol <<endl;
+	      //output<<" "<<levels[current_level].residual(kz,ix).real()<<" "<<levels[current_level].residual(kz,ix).imag();
+	  output<<" "<<levels[current_level].residual(kz,levels[current_level].xs-1).real();
+	  output<<" "<<levels[current_level].residual(kz,levels[current_level].xs).real();
+	  output<<" "<<levels[current_level].residual(kz,levels[current_level].xe).real();
+	  output<<" "<<levels[current_level].residual(kz,levels[current_level].xe+1).real();
+	  output<<endl;
+	  */
+	  /*
+	  ml = maxloc(total);
+          output<<"maxloc abs "<<" "<<ml<<" "<<total[ml]<<" "<<total[ml]/totalold[ml]<<" "<<converged[ml]<<" "<<error_rel[ml]<<endl;
+	  ml = maxloc(error_rel);
+          output<<"maxloc rel "<<" "<<ml<<" "<<error_rel[ml]<<" "<<converged[ml]<<" "<<total[ml]<<endl;
+	  */
+	}
 	/*
 	output<<"xloc after correction "<<count<<endl;
 	for(int ix=0; ix<4;ix++){
@@ -755,7 +768,7 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
 	}
 	output<<endl;
 	*/
-	reconstruct_full_solution(levels[0],jy);
+	//reconstruct_full_solution(levels[0],jy);
 	/*
 	output<< "soln "<<count<<" "<<jy<<" "<<levels[current_level].xs<<" "<<levels[current_level].xe<<" "<<levels[current_level].ncx<<" "<<current_level<<endl;
 	for(int ix=0; ix<levels[current_level].ncx;ix++){
@@ -780,17 +793,19 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
 
     SCOREP_USER_REGION_DEFINE(solneqsolnlast);
     SCOREP_USER_REGION_BEGIN(solneqsolnlast, "soln = soln last",SCOREP_USER_REGION_TYPE_COMMON);
-    for (int kz = 0; kz <= maxmode; kz++) {
-      if(!converged[kz]){
-	for (int ix = 0; ix < levels[current_level].ncx; ix++) {
-	  levels[current_level].solnlast(kz,ix) = levels[current_level].soln(kz,ix);
+    if(algorithm==0 or current_level!=0){ 
+      for (int kz = 0; kz <= maxmode; kz++) {
+	if(!converged[kz]){
+	  for (int ix = 0; ix < levels[current_level].ncx; ix++) {
+	    levels[current_level].solnlast(kz,ix) = levels[current_level].soln(kz,ix);
+	  }
+	  /*
+	  levels[current_level].xloclast(0,kz) = levels[current_level].xloc(0,kz);
+	  levels[current_level].xloclast(1,kz) = levels[current_level].xloc(1,kz);
+	  levels[current_level].xloclast(2,kz) = levels[current_level].xloc(2,kz);
+	  levels[current_level].xloclast(3,kz) = levels[current_level].xloc(3,kz);
+	  */
 	}
-	/*
-	levels[current_level].xloclast(0,kz) = levels[current_level].xloc(0,kz);
-	levels[current_level].xloclast(1,kz) = levels[current_level].xloc(1,kz);
-	levels[current_level].xloclast(2,kz) = levels[current_level].xloc(2,kz);
-	levels[current_level].xloclast(3,kz) = levels[current_level].xloc(3,kz);
-	*/
       }
     }
     SCOREP_USER_REGION_END(solneqsolnlast);
@@ -803,7 +818,7 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
     //if(subcount < max_cycle and total>rtol){
     if(subcount < max_cycle){
     }
-    else if( (max(total) < atol or max(error_rel) < rtol) and current_level==0 ){
+    else if( all(converged) and current_level==0 ){
     //else if( max(error_rel) < rtol and current_level==0 ){
       //ml = maxloc(total);
       //output<<"Exit "<<jy<<" "<<count<<" "<<ml<<" "<<total[ml]<<" "<<total[ml]/totalold[ml]<<endl;
@@ -864,6 +879,9 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       //coarsen(levels[current_level],xloc,xloclast,jy);
 
       // Calculate residual on finer grid
+      if(algorithm!=0 and current_level==0){ 
+	reconstruct_full_solution(levels[0],jy);
+      }
       calculate_residual_full_system(levels[current_level],converged,jy);
       current_level++;
       coarsen_full_system(levels[current_level],levels[current_level-1].residual,converged);
@@ -1912,6 +1930,7 @@ void LaplaceParallelTriMG::init_rhs(Level &l, const int jy, const Matrix<dcomple
   SCOREP0();
   int ny = localmesh->LocalNy;
 
+  // TODO delete these loops
   for(int kz=0; kz<nmode; kz++){
     for(int ix=0; ix<l.ncx; ix++){
      l.rvec(kz,ix) = bcmplx(kz,ix); 
@@ -2108,7 +2127,7 @@ void LaplaceParallelTriMG::calculate_total_residual(Array<BoutReal> &error_abs, 
       // Only xs and xe have nonzero residuals
       subtotal[kz] = pow(l.residual(kz,l.xs).real(),2) + pow(l.residual(kz,l.xs).imag(),2) + pow(l.residual(kz,l.xe).real(),2) + pow(l.residual(kz,l.xe).imag(),2);
       // Strictly this should be all contributions to the solution, but this under-approximation saves work. Could multiply by (interior points/2)
-      subtotal[kz+nmode] = pow(l.soln(kz,l.xs).real(),2) + pow(l.soln(kz,l.xs).imag(),2) + pow(l.soln(kz,l.xe).real(),2) + pow(l.soln(kz,l.xe).imag(),2);
+      subtotal[kz+nmode] = pow(l.xloc(1,kz).real(),2) + pow(l.xloc(1,kz).imag(),2) + pow(l.xloc(2,kz).real(),2) + pow(l.xloc(2,kz).imag(),2);
     }
   }
 
@@ -2191,11 +2210,11 @@ void LaplaceParallelTriMG::calculate_residual(Level &l, const Array<bool> &conve
       //if(localmesh->firstX()){
 	l.residual(kz,0) = 0.0;
 	l.residual(kz,1) = 0.0;
-	l.residual(kz,l.xs) = l.avec(jy,kz,l.xs)*(l.soln(kz,l.xs-1)-l.solnlast(kz,l.xs-1));
+	l.residual(kz,l.xs) = l.avec(jy,kz,l.xs)*(l.xloc(0,kz)-l.xloclast(0,kz));
 	for(int ix=l.xs+1; ix<l.xe; ix++){
 	  l.residual(kz,ix) = 0.0;
 	}
-	l.residual(kz,l.xe) = l.cvec(jy,kz,l.xe)*(l.soln(kz,l.xe+1)-l.solnlast(kz,l.xe+1));
+	l.residual(kz,l.xe) = l.cvec(jy,kz,l.xe)*(l.xloc(3,kz)-l.xloclast(3,kz));
 	l.residual(kz,l.xe+1) = 0.0;
 	l.residual(kz,l.xe+2) = 0.0;
       //}
