@@ -1926,18 +1926,7 @@ void LaplaceParallelTriMG::init(Level &l, const int ncx, const int jy, const Mat
 // Init routine for finest level information that cannot be cached
 void LaplaceParallelTriMG::init_rhs(Level &l, const int jy, const Matrix<dcomplex> bcmplx){
 
-  // Basic definitions for conventional multigrid
   SCOREP0();
-  int ny = localmesh->LocalNy;
-
-  // TODO delete these loops
-  for(int kz=0; kz<nmode; kz++){
-    for(int ix=0; ix<l.ncx; ix++){
-     l.rvec(kz,ix) = bcmplx(kz,ix); 
-     l.residual(kz,ix) = 0.0;
-    }
-  }
-  // end basic definitions
 
   if(algorithm!=0){
     auto rlold = Array<dcomplex>(nmode);
