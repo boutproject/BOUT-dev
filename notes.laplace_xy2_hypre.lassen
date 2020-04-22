@@ -1,0 +1,231 @@
+This file describes the steps needed to setup an environment on lassen using gcc (GCC) 8.3.1 20190311
+
+Purpose: BOUT++ environment to support using cuda-enabled hypre solvers (cublas variant)  
+
+A: Setup hypre
+
+1: git clone git@github.com:hypre-space/hypre.git into directory of choice; I used ~/workspace/hypre_automake
+   to differentiate this as an automake vs cmake variant
+   dir structure
+    hypre_automake
+        hypre
+        install
+
+2: module load gcc/8.3.1  and cuda/10.1.243 
+   These are system supported module located in /usr/tcetmp/modulefile/Core
+
+3: export CC and CXX environment variables, else hypre's configure script will use XL by default (first in commpiler list)
+
+   verify mpicc and mpiCC is gcc based
+
+   which mpiCC
+   /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-release-gcc-8.3.1/bin/mpiCC
+
+   export CC=mpicc; export CXX=mpiCC
+
+   4: run configure and build hypre
+   cd into hypre's src directory where you'll find the configure script; note prefix in the following command to specify an out-of-source build
+
+   ./configure --prefix=${HOME}/workspace/hypre_automake/install --with-cuda --enable-unified-memory --enable-cublas HYPRE_CUDA_SM=70
+
+   Note: specify HYPRE_CUDA_SM=70, else sm_60 will be used and you'll have runtime errors deep in thrust/cub 
+         sm_70 allows the use of Universal Malloc (UM); vs you specifying explicit data motion (which could be done with extensive source changes)
+
+   make -j install
+
+   Note: this will build a static library libhypre.a; we'll also have to specify dependencies to cuda static libs when we build the example
+         BOUT++ application
+
+   In this process you should see a bunch of nvcc compilations which look like:
+     nvcc -O2 -lineinfo -ccbin=mpiCC -gencode arch=compute_70,"code=sm_70" -expt-extended-lambda -dc -std=c++11 --x cu -Xcompiler "-O2 " -DHAVE_CONFIG_H -I../.. -I. -I./../.. -I./../../blas -I./../../utilities -I./../../distributed_matrix -I/usr/tce/packages/cuda/cuda-10.1.243/include   -c comm.c
+
+   verify that include and lib directories are populated based on your prefix path
+
+B: Prep spack environment so we can build BOUT++ dependencies
+   Here we'll need to check or edit ~/.spack/linux/compilers.yaml and packages.yaml for gcc8.3.1 and spectrum mpi support respectively
+
+1: In compilers.yaml you should have an entry like
+
+- compiler:
+    spec: gcc@8.3.1
+    paths:
+      cc: /usr/tce/packages/gcc/gcc-8.3.1/bin/gcc
+      cxx: /usr/tce/packages/gcc/gcc-8.3.1/bin/g++
+      f77: /usr/tce/packages/gcc/gcc-8.3.1/bin/gfortran
+      fc: /usr/tce/packages/gcc/gcc-8.3.1/bin/gfortran
+    flags: {}
+    operating_system: rhel7
+    target: ppc64le
+    modules: []
+    environment: {}
+    extra_rpaths: []
+
+2: In packages.yaml you should have:
+
+  At the top of file:
+
+  packages:
+  all:
+    providers:
+       mpi: [spectrum-mpi, mvapich2, openmpi] 
+
+  And entries for spectrum-mpi@rolling-release for each compiler that you'll use below
+ 
+spectrum-mpi:
+    buildable: False
+    paths:
+       spectrum-mpi @2020.03.18 target=ppc64le : /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-release-xl-2020.03.18
+       spectrum-mpi@rolling-release%xl@16.1 target=ppc64le : /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-release-xl-2
+020.03.18
+       spectrum-mpi@rolling-release%xl_r@16.1 target=ppc64le : /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-release-xl
+-2020.03.18
+       spectrum-mpi@rolling-release%gcc@4.9.3 arch=linux-rhel7-ppc64le : /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-
+release-gcc-4.9.3
+       spectrum-mpi@rolling-release%gcc@7.3.1 arch=linux-rhel7-ppc64le : /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-
+release-gcc-7.3.1
+       spectrum-mpi@rolling-release%gcc@8.3.1 arch=linux-rhel7-ppc64le : /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-
+release-gcc-8.3.1
+       spectrum-mpi@rolling-release%clang@9.0.0 arch=linux-rhel7-ppc64le : /usr/tce/packages/spectrum-mpi/spectrum-mpi-rollin
+g-release-clang-ibm-2019.10.03
+
+If you don't specify spectrum-mpi package, spack will by default build or install an openmpi variant for each package that needs mpi.
+This is ok on your personal workstation; but is not appropriate for an lc cluster resource where mpi is system managed
+
+C: spack build/install BOUT++ dependencies
+
+In my environment I load the following modules
+
+# The following modules are provided by the system
+module --ignore-cache load spectrum-mpi/rolling-release
+module --ignore-cache load cmake/3.14.5
+module --ignore-cache load cuda/10.1.243
+module --ignore-cache load gcc/8.3.1
+module --ignore-cache load sundials/4.1.0
+module --ignore-cache load lapack/3.8.0-gcc-4.9.3
+
+# The following modules are provided by your spack environment
+module --ignore-cache load fftw-3.3.8-gcc-8.3.1-vlusxnt
+module --ignore-cache load hdf5-1.10.1-gcc-8.3.1-xkc527f
+module --ignore-cache load python-3.7.6-gcc-8.3.1-usivcqa
+module --ignore-cache load netcdf-c-4.7.3-gcc-8.3.1-usnrhsd # auto installed as part of netcdf-cxx4 install
+module --ignore-cache load netcdf-cxx4-4.3.1-gcc-8.3.1-uj77ss3
+module --ignore-cache load petsc-3.12.3-gcc-8.3.1-ut4eyhs
+module --ignore-cache load py-setuptools-41.4.0-gcc-8.3.1-d4wih3g
+module --ignore-cache load py-cftime-1.0.3.4-gcc-8.3.1-q6ofwn4
+module --ignore-cache load py-cython-0.29.14-gcc-8.3.1-5sfsoak
+module --ignore-cache load py-pybind11-2.5.0-gcc-8.3.1-4hcy5vc
+module --ignore-cache load py-numpy-1.18.2-gcc-8.3.1-6wn32qx
+module --ignore-cache load py-scipy-1.4.1-gcc-8.3.1-cck6efe
+module --ignore-cache load py-netcdf4-1.4.2-gcc-8.3.1-t6cuidv
+
+# Two important spack install signatures; note the use of our aforementioned spectrum-mpi@rolling-release%gcc@8.3.1
+# PETSc spack install signature
+#spack install petsc@3.12.3%gcc@8.3.1 +fftw +metis +superlu-dist ~hypre +mpi ^hdf5@1.10.1+cxx+hl+mpi+pic+shared ^spectrum-mpi@rolling-release%gcc@8.3.1 ^metis%gcc@8.3.1+real64 ^fftw%gcc@8.3.1
+
+The petsc install signature should generate specs for hdf5, metis, and fftw and build those; otherwise you can install those individually.  
+
+Note we can't use the system provided fftw; as we'll get some undefined symbols when we try and link against it.
+
+Note that we specify ~hypre; yes this is a non hypre based build of petsc; since we'll be linking BOUT++ application codes against cudaenabled hypre. Otherwise we'll get symbol conflicts or other weirdness. I imagine you could have a custom install of petsc using the aforementioned cuda-enabled hypre (non spack variant).
+
+#netcdf-cxx4 signature
+#spack install netcdf-cxx4 ^spectrum-mpi@rolling-release%gcc@8.3.1 ^hdf5@1.10.1+cxx+hl+mpi+pic+shared 
+
+You'll want to have a consistent netcdf version and in turn a consistent hdf5 version across BOUT, BOUT's python modules, and petsc
+If you don't you'll get hdf5_check runtime errors when the api inconsistency is detected.
+
+D: Install/Build BOUT++
+1: git clone repo from git@github.com:jonesholger/BOUT-dev.git
+
+2: cd BOUT-dev: Run git submodule init; git submodule update to pick up blt
+
+3: checkout branch hypre-laplacexy-blt
+   
+4: Edit BOUT-dev/scripts-config/config-bout_blueos_gcc_cuda.sh for your environment
+
+   You'll have to edit the lines containing module --ignore-cache load xxxxx for each spack package you built earlier; make sure module avail shows them listed.
+
+   Edit under $pkg == BOUT-dev paths to NCCXX4_CONFIG; NC_CONFIG; PETSC_DIR; HYPRE_DIRand rpaths; 
+
+  You may want ot edit the scratch_dir which in turn sets up build and install prefixes for cmake.
+
+5: Run script edited in step above: config-bout_blueos_gcc_cuda.sh BOUT-dev
+
+   Normally we would run this script in turn "first" for each of raja/umpire/hypre but this installation doesn't rely on those packages; recall hypre is picked up from your automake variant installed earlier. 
+
+Other caveats listed below:
+
+   Caveat 1: BOUT++ source edited to disable certain fmt calls; nvcc has trouble compiling this external package. The project may be deprecating this package in the future since it causes problems elsewhere.
+
+   Caveat 2: Openmp is off. Using nvcc openmp errors are generated with invalid control predicates. To me openmp off is benign since RAJA based policy will be used in the future or you'll be using cuda vs openmp. Mixed policy installation could be pursued later, but this may require edits to the BOUT openmp framework or a compiler swap with it's openmp runtime or both.
+
+6: Prep environment for compilation
+   module load the spack petsc module built earlier; the package sets up some important env variables used when building
+
+module load petsc-3.12.3-gcc-8.3.1-ut4eyhs
+
+module display petsc-3.12.3-gcc-8.3.1-ut4eyhs will show you the environment setup.
+Your module signature may be different than -ut4eyhs hash that I have
+
+Otherwise you likely won't pick up petsc headers; even though cmake listed those directories in it's interface path. 
+
+7: Build BOUT++ and example program  
+
+cd ~/workspace/BOUT_build_cuda/build/ppc64le-gcc/BOUT-dev
+
+make -j
+
+cd bin
+
+Find application test_laplacexy_hypre; copy over it's input deck so it's accessible by the app
+
+cp -r ~/workspace/BOUT-dev/examples/laplacexy/simple-hype/data/ .
+
+run it ./test_laplacexy_hypre or mpiexec -n 1 ./test_laplacexy_hypre
+
+
+You'll get a lot of configuration and runtime output; double check BoomerAMG Solver
+
+AMG SOLUTION INFO:
+                                            relative
+               residual        factor       residual
+               --------        ------       --------
+    Initial    1.131371e+01                 1.000000e+00
+    Cycle  1   1.891502e+00    0.167187     1.671867e-01 
+    Cycle  2   7.573217e-14    0.000000     6.693841e-15 
+
+
+ Average Convergence Factor = 0.000000
+
+     Complexity:    grid = 1.833333
+                operator = 2.321429
+                   cycle = 4.607143
+
+
+--------------------------------------------
+
+nvprof shows (mix of thrust/cub; cusparse; and cublas kernels) most of time moving data back to host or in setup. Of course it's a tiny smoke test.
+
+==111928== Profiling application: ./test_laplacexy_hypre
+==111928== Profiling result:
+            Type  Time(%)      Time     Calls       Avg       Min       Max  Name
+ GPU activities:   34.29%  795.84us        68  11.703us  1.8240us  168.86us  [CUDA memcpy DtoH]
+                   20.85%  483.81us        27  17.918us  4.3840us  128.74us  void csrMv_kernel<double, double, double, int=128, int=2>(cusparseCsrMvParams<double, double, double>)
+                   18.63%  432.26us         8  54.031us  3.5520us  122.02us  void thrust::cuda_cub::core::_kernel_agent<thrust::cuda_cub::__parallel_for::ParallelForAgent<thrust::cuda_cub::__fill::functor<double*, double>, int>, thrust::cuda_cub::__fill::functor<double*, double>, int>(double, thrust::cuda_cub::__fill::functor<double*, double>)
+                   14.82%  343.87us        10  34.387us  3.9040us  128.13us  void thrust::cuda_cub::core::_kernel_agent<thrust::cuda_cub::__parallel_for::ParallelForAgent<thrust::cuda_cub::__transform::unary_transform_f<double*, double*, thrust::cuda_cub::__transform::no_stencil_tag, thrust::identity<double>, thrust::cuda_cub::__transform::always_true_predicate>, long>, thrust::cuda_cub::__transform::unary_transform_f<double*, double*, thrust::cuda_cub::__transform::no_stencil_tag, thrust::identity<double>, thrust::cuda_cub::__transform::always_true_predicate>, long>(double*, thrust::cuda_cub::__transform::no_stencil_tag)
+                    4.46%  103.55us         1  103.55us  103.55us  103.55us  [CUDA memcpy DtoD]
+                    4.44%  103.14us        73  1.4120us  1.2800us  1.6320us  [CUDA memset]
+                    0.93%  21.568us         5  4.3130us  1.7920us  5.0560us  [CUDA memcpy HtoD]
+                    0.80%  18.560us         4  4.6400us  4.2880us  5.6320us  void dot_kernel<double, int=128, int=0, cublasDotParams<cublasGemvTensor<double const >, cublasGemvTensorStridedBatched<double>>>(double const )
+                    0.78%  18.176us         4  4.5440us  4.2560us  5.4080us  void reduce_1Block_kernel<double, int=128, int=7, cublasGemvTensorStridedBatched<double>, cublasGemvTensorStridedBatched<double>>(double const *, double, double, int, double const *, double, cublasGemvTensorStridedBatched<double>, cublasPointerMode_t)
+  
+--------------------------------------------
+
+A final note reguarding the application's CMakeLists.txt
+
+You may have to add other cuda static libs to target_link_libraries if you expand the scope of hypre capabilities used. You'll notice when you get linker symbol undefined errors. The list I provided may not be comprehensive.
+
+
+
+
+
