@@ -26,6 +26,7 @@ if(HAVE_CUDA)
    set(HYPRE_USING_CUBLAS_DEFINE "HYPRE_USING_CUBLAS")
 endif ()
 
+message(STATUS "CUDA_TOOLKIT_ROOT_DIR : ${CUDA_TOOLKIT_ROOT_DIR}")
 message(STATUS "test_laplacexy_hypre_depends: ${test_laplacexy_hypre_depends}")
 blt_add_executable(
    NAME test_laplacexy_hypre
@@ -34,7 +35,7 @@ blt_add_executable(
      ${PROJECT_SOURCE_DIR}/include
      ${PROJECT_SOURCE_DIR}/externalpackages/fmt/include
      ${PROJECT_SOURCE_DIR}/externalpackages/mpark.variant/include
-     /usr/tce/packages/cuda/cuda-10.1.243/include
+     ${CUDA_TOOLKIT_ROOT_DIR}/include
    DEFINES 
       "BOUT_VERSION_STRING=\"${BOUT_FULL_VERSION}\""
       "BOUT_VERSION_DOUBLE=${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}${PROJECT_VERSION_PATCH}"
@@ -48,11 +49,11 @@ blt_add_executable(
 
 target_link_libraries(
    test_laplacexy_hypre PUBLIC 
-   /usr/tce/packages/cuda/cuda-10.1.243/lib64/libcusparse_static.a
-   /usr/tce/packages/cuda/cuda-10.1.243/lib64/libcurand_static.a
-   /usr/tce/packages/cuda/cuda-10.1.243/lib64/libculibos.a
-   /usr/tce/packages/cuda/cuda-10.1.243/lib64/libcublas_static.a
-   /usr/tce/packages/cuda/cuda-10.1.243/lib64/libcublasLt_static.a
+   ${CUDA_TOOLKIT_ROOT_DIR}/lib64/libcusparse_static.a
+   ${CUDA_TOOLKIT_ROOT_DIR}/lib64/libcurand_static.a
+   ${CUDA_TOOLKIT_ROOT_DIR}/lib64/libculibos.a
+   ${CUDA_TOOLKIT_ROOT_DIR}/lib64/libcublas_static.a
+   ${CUDA_TOOLKIT_ROOT_DIR}/lib64/libcublasLt_static.a
 )
 
   
