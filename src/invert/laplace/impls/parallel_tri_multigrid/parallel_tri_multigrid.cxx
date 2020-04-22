@@ -339,10 +339,6 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   //
   auto xloc = Matrix<dcomplex>(4,nmode);
   auto xloclast = Matrix<dcomplex>(4,nmode);
-  auto rl = Array<dcomplex>(nmode);
-  auto ru = Array<dcomplex>(nmode);
-  auto rlold = Array<dcomplex>(nmode);
-  auto ruold = Array<dcomplex>(nmode);
 
   BoutReal kwaveFactor = 2.0 * PI / coords->zlength();
 
@@ -366,7 +362,7 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   if (outer_boundary_flags & INVERT_BNDRY_ONE)
     outbndry = 1;
 
-  /* Allocation fo
+  /* Allocation for
   * bk   = The fourier transformed of b, where b is one of the inputs in
   *        LaplaceParallelTriMG::solve()
   * bk1d = The 1d array of bk
@@ -384,7 +380,7 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   auto fine_error = Matrix<dcomplex>(ncz/2+1,ncx);
 
   // Define indexing of xloc that depends on method. Doing this now removes
-  // branch in tight loops
+  // branching in tight loops
   index_in = 1;
   index_out = 2;
   if(new_method){
@@ -527,7 +523,6 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
 	init(levels[l], levels[l-1], ncx_coarse, xs, ncx_coarse-3,l,jy); //FIXME assumes mgy=2
       }
     }
-
   }
   init_rhs(levels[0], jy, bcmplx);
   SCOREP_USER_REGION_END(initlevels);
@@ -578,7 +573,6 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   while(true){
 
-    /*
     output<<"xloc count "<<count<<" "<<current_level<<endl;
     for(int ix=0; ix<4;ix++){
       output<<" "<<levels[current_level].xloc(ix,1).real() << " ";
@@ -589,7 +583,6 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       output<<" "<<levels[current_level].xloclast(ix,1).real() << " ";
     }
     output<<endl;
-    */
 
     if(algorithm==0 or current_level!=0){ 
       //jacobi_full_system(levels[current_level],jy);
@@ -1026,35 +1019,6 @@ void LaplaceParallelTriMG::jacobi(Level &l, const int jy, const Array<bool> &con
     SCOREP_USER_REGION_BEGIN(comms, "communication",SCOREP_USER_REGION_TYPE_COMMON);
 
     // Communication
-    // A proc is finished when it is both in- and out-converged.
-    // Once this happens, that processor communicates once, then breaks.
-    //
-    // A proc can be converged in only one of the directions. This happens
-    // if it has not met the error tolerance, but one of its neighbours has
-    // converged. In this case, that boundary will no longer update (and
-    // communication in that direction should stop), but the other boundary
-    // may still be changing.
-    //
-    // There are four values to consider:
-    //   neighbour_in  = whether my in-neighbouring proc has out-converged
-    //   self_in       = whether this proc has in-converged
-    //   self_out      = whether this proc has out-converged
-    //   neighbour_out = whether my out-neighbouring proc has in-converged
-    //
-    // If neighbour_in = true, I must have been told this by my neighbour. My
-    // neighbour has therefore done its one post-converged communication. My in-boundary
-    // values are therefore correct, and I am in-converged. My neighbour is not
-    // expecting us to communicate.
-    //
-    // Communicate in
-//    if(count>422 and count<428){
-//      for(int kz=0; kz<3;kz++){
-//	output<<"before "<<kz<<" "<<neighbour_in[kz]<<" "<<self_in[kz]<<" "<<self_out[kz]<<" "<<neighbour_out[kz]<<endl;
-//      } 
-//    }
-//    TODO Guard comms
-///    if(!all(neighbour_in)) {
-      //output<<"neighbour_in proc "<<BoutComm::rank()<<endl;
 
       // TODO These for loops do buffer (un)packing for data we don't care about
       // Guard? Or move to work loop?
