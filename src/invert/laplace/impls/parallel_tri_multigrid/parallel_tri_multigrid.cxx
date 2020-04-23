@@ -205,16 +205,57 @@ void LaplaceParallelTriMG::reconstruct_full_solution(Level &l, const int jy, Mat
 }
 
 /*
- * Reconstruct the full solution from the subproblem and the halo cell values
+ * Reconstruct the full solution from the subproblem and the halo cell values.
+ * Note that this assumes halo cell values are the neighbouring proc's nearest
+ * interior point. In the extended domain method, halo calles are a
+ * neighbouring proc's *furthest* interior point, so there is extra (local)
+ * work to account for this.
  */
 void LaplaceParallelTriMG::reconstruct_full_solution(Level &l, const int jy){
   SCOREP0();
+
+  dcomplex x_lower, x_upper;
+
   for (int kz = 0; kz < nmode; kz++) {
-    l.soln(kz,l.xs-1) = l.xloc(0,kz);
-    for(int i=l.xs; i<l.xe+1; i++){
-      l.soln(kz,i) = l.minvb(kz,i) + l.upperGuardVector(i,jy,kz)*l.xloclast(3,kz) + l.lowerGuardVector(i,jy,kz)*l.xloclast(0,kz);
+
+    x_lower = l.xloc(0,kz);
+    x_upper = l.xloc(3,kz);
+
+    // In extended domain case, need to ammend halo cells values. This requires interior cell values too.
+    if(new_method){
+      SCOREP_USER_REGION_DEFINE(getnewmethodsoln);
+      SCOREP_USER_REGION_BEGIN(getnewmethodsoln, "get new method soln",SCOREP_USER_REGION_TYPE_COMMON);
+
+      dcomplex d = 1.0/(l.buold(jy,kz)*l.alold(jy,kz) - l.blold(jy,kz)*l.auold(jy,kz));
+
+      // If boundary processor, halo cell is already correct, and d is undefined.
+      // Lower boundary proc => al = au = 0
+      // Upper boundary proc => bl = bu = 0
+      if(not localmesh->firstX() and not localmesh->lastX()){
+	// General case
+	x_lower =  d*(l.buold(jy,kz)*(l.xloc(1,kz)-l.rlold[kz]) - l.blold(jy,kz)*(l.xloc(2,kz)-l.ruold[kz]));
+	x_upper = -d*(l.auold(jy,kz)*(l.xloc(1,kz)-l.rlold[kz]) - l.alold(jy,kz)*(l.xloc(2,kz)-l.ruold[kz]));
+      }
+      else if(localmesh->firstX() and not localmesh->lastX()) {
+	// Lower boundary but not upper boundary
+	// xk1d[xs-1] = already correct
+	x_upper = (l.xloc(2,kz)-l.ruold[kz])/l.buold(jy,kz);
+      }
+      else if(localmesh->lastX() and not localmesh->firstX()){
+	// Upper boundary but not lower boundary
+	// xk1d[xe+1] = already correct
+	x_lower = (l.xloc(1,kz)-l.rlold[kz])/l.alold(jy,kz);
+      }
+      // No "else" case. If both upper and lower boundaries, both xs-1 and xe+1
+      // are already correct
+      SCOREP_USER_REGION_END(getnewmethodsoln);
     }
-    l.soln(kz,l.xe+1) = l.xloc(3,kz);
+
+    l.soln(kz,l.xs-1) = x_lower;
+    for(int i=l.xs; i<l.xe+1; i++){
+      l.soln(kz,i) = l.minvb(kz,i) + l.upperGuardVector(i,jy,kz)*x_upper + l.lowerGuardVector(i,jy,kz)*x_lower;
+    }
+    l.soln(kz,l.xe+1) = x_upper;
   }
 }
 
@@ -573,17 +614,6 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   while(true){
 
-    output<<"xloc count "<<count<<" "<<current_level<<endl;
-    for(int ix=0; ix<4;ix++){
-      output<<" "<<levels[current_level].xloc(ix,1).real() << " ";
-    }
-    output<<endl;
-    output<<"xloclast "<<endl;
-    for(int ix=0; ix<4;ix++){
-      output<<" "<<levels[current_level].xloclast(ix,1).real() << " ";
-    }
-    output<<endl;
-
     if(algorithm==0 or current_level!=0){ 
       //jacobi_full_system(levels[current_level],jy);
       //gauss_seidel_red_black_full_system(levels[current_level],converged,jy);
@@ -592,33 +622,7 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
     }
     else{
       jacobi(levels[current_level], jy, converged);
-
-      /*
-      output<<"xloc count "<<count<<endl;
-      for(int ix=0; ix<4;ix++){
-	output<<" "<<levels[current_level].xloc(ix,1).real() << " ";
-      }
-      output<<endl;
-      output<<"xloclast "<<endl;
-      for(int ix=0; ix<4;ix++){
-	output<<" "<<levels[current_level].xloclast(ix,1).real() << " ";
-      }
-      output<<endl;
-      */
-
       //reconstruct_full_solution(levels[0],jy);
-      /*
-      output<< "soln "<<count<<" "<<jy<<" "<<levels[current_level].xs<<" "<<levels[current_level].xe<<" "<<levels[current_level].ncx<<" "<<current_level<<endl;
-      for(int ix=0; ix<levels[current_level].ncx;ix++){
-	output<<" "<<levels[current_level].soln(1,ix).real() << " ";
-      }
-      output<<endl;
-      output<< "solnlast "<<count<<" "<<jy<<" "<<levels[current_level].xs<<" "<<levels[current_level].xe<<" "<<levels[current_level].ncx<<" "<<current_level<<endl;
-      for(int ix=0; ix<levels[current_level].ncx;ix++){
-	output<<" "<<levels[current_level].solnlast(1,ix).real() << " ";
-      }
-      output<<endl;
-      */
     }
 
     SCOREP_USER_REGION_DEFINE(l0rescalc);
@@ -864,12 +868,23 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   SCOREP_USER_REGION_BEGIN(afterloop, "after faff",SCOREP_USER_REGION_TYPE_COMMON);
 
   if(algorithm!=0){
-    reconstruct_full_solution(levels[0],jy);
+
     /*
-    output<< "soln "<<count<<" "<<jy<<" "<<levels[current_level].xs<<" "<<levels[current_level].xe<<" "<<levels[current_level].ncx<<" "<<current_level<<endl;
-    for(int ix=0; ix<levels[current_level].ncx;ix++){
-      output<<" "<<levels[current_level].soln(2,ix).real() << " "<< levels[current_level].soln(2,ix).imag() <<endl;
+    output<< "xloc "<<count<<" "<<jy<<" "<<levels[current_level].xs<<" "<<levels[current_level].xe<<" "<<levels[current_level].ncx<<current_level<<endl;
+    for(int ix=0; ix<4;ix++){
+      output<<" "<<levels[current_level].xloc(ix,1).real() << " "<< levels[current_level].xloc(ix,1).imag() <<endl;
     }
+    output<< "xloclast "<<count<<" "<<jy<<" "<<levels[current_level].xs<<" "<<levels[current_level].xe<<" "<<levels[current_level].ncx<<current_level<<endl;
+    for(int ix=0; ix<4;ix++){
+      output<<" "<<levels[current_level].xloclast(ix,1).real() << " "<< levels[current_level].xloclast(ix,1).imag() <<endl;
+    }
+    */
+    reconstruct_full_solution(levels[0],jy);
+  }
+  /*
+  output<< "soln "<<count<<" "<<jy<<" "<<levels[current_level].xs<<" "<<levels[current_level].xe<<" "<<levels[current_level].ncx<<" "<<current_level<<endl;
+  for(int ix=0; ix<levels[current_level].ncx;ix++){
+    output<<" "<<levels[current_level].soln(1,ix).real() << " "<< levels[current_level].soln(1,ix).imag() <<endl;
     */
   /*
   else{
@@ -879,64 +894,12 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
     }
   }
   output<< endl;
-  */
-    for (int kz = 0; kz <= maxmode; kz++) {
-      xloclast(0,kz) = levels[0].soln(kz,levels[0].xs-1);
-      xloclast(1,kz) = levels[0].soln(kz,levels[0].xs);
-      xloclast(2,kz) = levels[0].soln(kz,levels[0].xe);
-      xloclast(3,kz) = levels[0].soln(kz,levels[0].xe+1);
-      xloc(0,kz) = levels[0].soln(kz,levels[0].xs-1);
-      xloc(1,kz) = levels[0].soln(kz,levels[0].xs);
-      xloc(2,kz) = levels[0].soln(kz,levels[0].xe);
-      xloc(3,kz) = levels[0].soln(kz,levels[0].xe+1);
-    }
   }
+  */
 
   ++ncalls;
   ipt_mean_its = (ipt_mean_its * BoutReal(ncalls-1)
   + BoutReal(count))/BoutReal(ncalls);
-
-  if(algorithm!=0){
-    for (int kz = 0; kz <= maxmode; kz++) {
-      // Original method:
-      xk1d(kz,xs-1) = xloc(0,kz);
-      xk1d(kz,xs)   = xloc(1,kz);
-      xk1dlast(kz,xs-1) = xloclast(0,kz);
-      xk1dlast(kz,xs)   = xloclast(1,kz);
-      xk1d(kz,xe)   = xloc(2,kz);
-      xk1d(kz,xe+1) = xloc(3,kz);
-      xk1dlast(kz,xe)   = xloclast(2,kz);
-      xk1dlast(kz,xe+1) = xloclast(3,kz);
-
-      if(new_method){
-	SCOREP_USER_REGION_DEFINE(getnewmethodsoln);
-	SCOREP_USER_REGION_BEGIN(getnewmethodsoln, "get new method soln",SCOREP_USER_REGION_TYPE_COMMON);
-	dcomplex d = 1.0/(levels[0].buold(jy,kz)*levels[0].alold(jy,kz) - levels[0].blold(jy,kz)*levels[0].auold(jy,kz));
-	// If boundary processor, halo cell is already correct, and d is undefined.
-	// Lower boundary proc => al = au = 0
-	// Upper boundary proc => bl = bu = 0
-	if(not localmesh->firstX() and not localmesh->lastX()){
-	  // General case
-	  xk1dlast(kz,xs-1) =  d*(levels[0].buold(jy,kz)*(xk1dlast(kz,xs)-levels[0].rlold[kz]) - levels[0].blold(jy,kz)*(xk1dlast(kz,xe)-levels[0].ruold[kz]));
-	  xk1dlast(kz,xe+1) = -d*(levels[0].auold(jy,kz)*(xk1dlast(kz,xs)-levels[0].rlold[kz]) - levels[0].alold(jy,kz)*(xk1dlast(kz,xe)-levels[0].ruold[kz]));
-	} else if(localmesh->firstX() and not localmesh->lastX()) {
-	  // Lower boundary but not upper boundary
-	  // xk1dlast[xs-1] = already correct
-	  xk1dlast(kz,xe+1) = (xk1dlast(kz,xe)-levels[0].ruold[kz])/levels[0].buold(jy,kz);
-	} else if(localmesh->lastX() and not localmesh->firstX()){
-	  // Upper boundary but not lower boundary
-	  // xk1dlast[xe+1] = already correct
-	  xk1dlast(kz,xs-1) = (xk1dlast(kz,xs)-levels[0].rlold[kz])/levels[0].alold(jy,kz);
-	} 
-	// No "else" case. If both upper and lower boundaries, both xs-1 and xe+1
-	// are already correct
-	SCOREP_USER_REGION_END(getnewmethodsoln);
-      }
-    }
-
-    // Now that halo cells are converged, use these to calculate whole solution
-    reconstruct_full_solution(levels[0],jy,xk1dlast);
-  }
 
   for(int kz=0; kz<nmode; kz++){
     for(int i=0; i<ncx; i++){
@@ -1003,60 +966,56 @@ void LaplaceParallelTriMG::jacobi(Level &l, const int jy, const Array<bool> &con
       l.xloclast(1,kz) = l.xloc(1,kz);
       l.xloclast(2,kz) = l.xloc(2,kz);
       l.xloclast(3,kz) = l.xloc(3,kz);
-      if( localmesh->firstX() ){
-	l.xloc(0,kz) = ( l.minvb(kz,l.xs-1) + l.upperGuardVector(l.xs-1,jy,kz)*l.xloclast(3,kz) ) / (1.0 - l.lowerGuardVector(l.xs-1,jy,kz));
-      }
       l.xloc(1,kz) = l.rl[kz] + l.al(jy,kz)*l.xloclast(0,kz) + l.bl(jy,kz)*l.xloclast(3,kz);
       l.xloc(2,kz) = l.ru[kz] + l.au(jy,kz)*l.xloclast(0,kz) + l.bu(jy,kz)*l.xloclast(3,kz);
+      if( localmesh->firstX() ){
+	//l.xloc(0,kz) = ( l.minvb(kz,l.xs-1) + l.upperGuardVector(l.xs-1,jy,kz)*l.xloclast(3,kz) ) / (1.0 - l.lowerGuardVector(l.xs-1,jy,kz));
+	l.xloc(0,kz) = -l.cvec(jy,kz,l.xs-1)*l.xloc(1,kz) / l.bvec(jy,kz,l.xs-1);
+      }
       if( localmesh->lastX() ){
-	l.xloc(3,kz) = ( l.minvb(kz,l.xe+1) + l.lowerGuardVector(l.xe+1,jy,kz)*l.xloclast(0,kz) ) / (1.0 - l.upperGuardVector(l.xe+1,jy,kz));
+	//l.xloc(3,kz) = ( l.minvb(kz,l.xe+1) + l.lowerGuardVector(l.xe+1,jy,kz)*l.xloclast(0,kz) ) / (1.0 - l.upperGuardVector(l.xe+1,jy,kz));
+	l.xloc(3,kz) = -l.avec(jy,kz,l.xe+1)*l.xloc(2,kz) / l.bvec(jy,kz,l.xe+1);
       }
     }
   }
 
-    //output<<"after work jy, count "<<jy<<" "<<count<<endl;
-    SCOREP_USER_REGION_DEFINE(comms);
-    SCOREP_USER_REGION_BEGIN(comms, "communication",SCOREP_USER_REGION_TYPE_COMMON);
+  SCOREP_USER_REGION_DEFINE(comms);
+  SCOREP_USER_REGION_BEGIN(comms, "communication",SCOREP_USER_REGION_TYPE_COMMON);
 
-    // Communication
-
-      // TODO These for loops do buffer (un)packing for data we don't care about
-      // Guard? Or move to work loop?
-      if(!localmesh->firstX()){
-      for (int kz = 0; kz <= maxmode; kz++) {
-///	if(!neighbour_in[kz]){
-	  message_send[kz].value = l.xloc(index_in,kz);
+  // Communication receive from left
+  if(!localmesh->firstX()){
+    for (int kz = 0; kz <= maxmode; kz++) {
+      if(!converged[kz]){
+	message_send[kz].value = l.xloc(index_in,kz);
 ///	  message_send[kz].done  = self_in[kz];
-///	}
       }
-      err = MPI_Sendrecv(&message_send[0], nmode*sizeof(Message), MPI_BYTE, proc_in, 1, &message_recv[0], nmode*sizeof(Message), MPI_BYTE, proc_in, 0, comm, MPI_STATUS_IGNORE);
-      for (int kz = 0; kz <= maxmode; kz++) {
-///	if(!self_in[kz]){
-	  l.xloc(0,kz) = message_recv[kz].value;
+    }
+    err = MPI_Sendrecv(&message_send[0], nmode*sizeof(Message), MPI_BYTE, proc_in, 1, &message_recv[0], nmode*sizeof(Message), MPI_BYTE, proc_in, 0, comm, MPI_STATUS_IGNORE);
+    for (int kz = 0; kz <= maxmode; kz++) {
+      if(!converged[kz]){
+	l.xloc(0,kz) = message_recv[kz].value;
 ///	  neighbour_in[kz] = message_recv[kz].done;
-///	}
       }
-///    }
-}
+    }
+  }
 
-    // Communicate out
-    // See note above for inward communication.
-//    TODO Guard comms
-///    if(!all(neighbour_out)) {
-      //output<<"neighbour_out proc "<<BoutComm::rank()<<endl;
-      if(!localmesh->lastX()){
-      for (int kz = 0; kz <= maxmode; kz++) {
+  // Communicate receive from right
+  if(!localmesh->lastX()){
+    for (int kz = 0; kz <= maxmode; kz++) {
+      if(!converged[kz]){
 	message_send[kz].value = l.xloc(index_out,kz);
-///	message_send[kz].done  = self_out[kz];
+///       message_send[kz].done  = self_out[kz];
       }
-      err = MPI_Sendrecv(&message_send[0], nmode*sizeof(Message), MPI_BYTE, proc_out, 0, &message_recv[0], nmode*sizeof(Message), MPI_BYTE, proc_out, 1, comm, MPI_STATUS_IGNORE);
-      for (int kz = 0; kz < nmode; kz++) {
+    }
+    err = MPI_Sendrecv(&message_send[0], nmode*sizeof(Message), MPI_BYTE, proc_out, 0, &message_recv[0], nmode*sizeof(Message), MPI_BYTE, proc_out, 1, comm, MPI_STATUS_IGNORE);
+    for (int kz = 0; kz < nmode; kz++) {
+      if(!converged[kz]){
 	l.xloc(3,kz) = message_recv[kz].value;
-///	neighbour_out[kz] = message_recv[kz].done;
+///	  neighbour_out[kz] = message_recv[kz].done;
       }
-      }
-///    }
-    SCOREP_USER_REGION_END(comms);
+    }
+  }
+  SCOREP_USER_REGION_END(comms);
 }  
 
 void LaplaceParallelTriMG::gauss_seidel_red_black_full_system(Level &l, const Array<bool> &converged, const int jy){
