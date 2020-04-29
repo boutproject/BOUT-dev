@@ -1,6 +1,6 @@
 /**************************************************************************
- * Perpendicular Laplacian inversion. Serial code using FFT
- * and tridiagonal solver.
+ * Perpendicular Laplacian inversion. Parallel code using FFTs in z
+ * and an iterative tridiagonal solver in x.
  *
  **************************************************************************
  * Copyright 2020 Joseph Parker
@@ -232,8 +232,8 @@ void LaplaceParallelTriMG::reconstruct_full_solution(Level &l, const int jy){
 
     // In extended domain case, need to ammend halo cells values. This requires interior cell values too.
     if(new_method){
-      SCOREP_USER_REGION_DEFINE(getnewmethodsoln);
-      SCOREP_USER_REGION_BEGIN(getnewmethodsoln, "get new method soln",SCOREP_USER_REGION_TYPE_COMMON);
+      ///SCOREP_USER_REGION_DEFINE(getnewmethodsoln);
+      ///SCOREP_USER_REGION_BEGIN(getnewmethodsoln, "get new method soln",///SCOREP_USER_REGION_TYPE_COMMON);
 
       dcomplex d = 1.0/(l.buold(jy,kz)*l.alold(jy,kz) - l.blold(jy,kz)*l.auold(jy,kz));
 
@@ -249,12 +249,6 @@ void LaplaceParallelTriMG::reconstruct_full_solution(Level &l, const int jy){
         // Lower boundary but not upper boundary
         // xk1d[xs-1] = already correct
         x_upper[kz] = (l.xloc(2,kz)-l.ruold[kz])/l.buold(jy,kz);
-	//output<<"x_upper1: "<<x_upper.real()<<endl;
-        //x_upper = (l.xloclast(2,kz)-l.ruold[kz]-l.auold(jy,kz)*l.xloclast(0,kz))/l.buold(jy,kz);
-	//output<<"x_upper2: "<<x_upper.real()<<endl;
-        //x_upper = (l.xloclast(1,kz)-l.rlold[kz]-l.alold(jy,kz)*l.xloclast(0,kz))/l.blold(jy,kz);
-	//output<<"x_upper3: "<<x_upper.real()<<endl;
-	// All three identical
       }
       else if(localmesh->lastX() and not localmesh->firstX()){
         // Upper boundary but not lower boundary
@@ -263,13 +257,13 @@ void LaplaceParallelTriMG::reconstruct_full_solution(Level &l, const int jy){
       }
       // No "else" case. If both upper and lower boundaries, both xs-1 and xe+1
       // are already correct
-      SCOREP_USER_REGION_END(getnewmethodsoln);
+      ///SCOREP_USER_REGION_END(getnewmethodsoln);
     }
   }
 
   if(new_method){
-    SCOREP_USER_REGION_DEFINE(getnewmethodhalos);
-    SCOREP_USER_REGION_BEGIN(getnewmethodhalos, "get new method halos",SCOREP_USER_REGION_TYPE_COMMON);
+    ///SCOREP_USER_REGION_DEFINE(getnewmethodhalos);
+    ///SCOREP_USER_REGION_BEGIN(getnewmethodhalos, "get new method halos",///SCOREP_USER_REGION_TYPE_COMMON);
     // Make halos consistent with neighbour's NEAREST interior point
     struct Message { dcomplex value; bool done; };
     Array<Message> message_send, message_recv;
@@ -306,10 +300,8 @@ void LaplaceParallelTriMG::reconstruct_full_solution(Level &l, const int jy){
 	//}
       }
     }
-    SCOREP_USER_REGION_END(getnewmethodhalos);
+    ///SCOREP_USER_REGION_END(getnewmethodhalos);
   }
-
-  //output<<x_lower_halo[0]<<" "<<x_lower[0]<<" "<<x_upper[0]<<" "<<x_upper_halo[0]<<endl;
 
   for (int kz = 0; kz < nmode; kz++) {
     //if(!converged[kz]){
@@ -322,6 +314,10 @@ void LaplaceParallelTriMG::reconstruct_full_solution(Level &l, const int jy){
   }
 }
 
+// TODO Move to Array
+/*
+ * Returns true if all values of bool array are true, otherwise returns false.
+ */
 bool LaplaceParallelTriMG::all(const Array<bool> a){
   SCOREP0();
   for(int i=0; i<a.size(); i++){
@@ -332,6 +328,10 @@ bool LaplaceParallelTriMG::all(const Array<bool> a){
   return true;
 }
 
+// TODO Move to Array
+/*
+ * Returns true if any values of bool array are true, otherwise returns false.
+ */
 bool LaplaceParallelTriMG::any(const Array<bool> a){
   SCOREP0();
   for(int i=0; i<a.size(); i++){
@@ -342,10 +342,14 @@ bool LaplaceParallelTriMG::any(const Array<bool> a){
   return false;
 }
 
+// TODO Move to Array
+/*
+ * Returns maximum value of BoutReal array.
+ */
 BoutReal LaplaceParallelTriMG::max(const Array<BoutReal> a){
   SCOREP0();
-  BoutReal maxval = 0.0;
-  for(int i=0; i<a.size(); i++){
+  BoutReal maxval = a[0];
+  for(int i=1; i<a.size(); i++){
     if(a[i]>maxval){
       maxval = a[i];
     }
@@ -353,6 +357,10 @@ BoutReal LaplaceParallelTriMG::max(const Array<BoutReal> a){
   return maxval;
 }
 
+// TODO Move to Array
+/*
+ * Returns location of maximum value of BoutReal array.
+ */
 int LaplaceParallelTriMG::maxloc(const Array<BoutReal> a){
   SCOREP0();
   BoutReal maxval = a[0];
@@ -394,8 +402,8 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   SCOREP0();
   Timer timer("invert"); ///< Start timer
 
-  SCOREP_USER_REGION_DEFINE(initvars);
-  SCOREP_USER_REGION_BEGIN(initvars, "init vars",SCOREP_USER_REGION_TYPE_COMMON);
+  ///SCOREP_USER_REGION_DEFINE(initvars);
+  ///SCOREP_USER_REGION_BEGIN(initvars, "init vars",///SCOREP_USER_REGION_TYPE_COMMON);
 
   ASSERT1(localmesh == b.getMesh() && localmesh == x0.getMesh());
   ASSERT1(b.getLocation() == location);
@@ -431,18 +439,16 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   // We use these local variables rather than calculate with xk1d directly
   // as the elements of xloc can refer to different elements of xk1d depending
   // on the method used.
-  // For example, in the original iteration we have:
-  // xloc[0] = xk1d[xstart-1], xloc[1] = xk1d[xstart],
-  // xloc[2] = xk1d[xend],     xloc[3] = xk1d[xend+1],
-  // but if this is found to be unstable, he must change this to
-  // xloc[0] = xk1d[xstart], xloc[1] = xk1d[xstart-1],
-  // xloc[2] = xk1d[xend+1], xloc[3] = xk1d[xend].
   // It is easier to change the meaning of local variables and keep the
   // structure of the calculation/communication than it is to change the
   // indexing of xk1d to cover all possible cases.
   //
-  auto xloc = Matrix<dcomplex>(4,nmode);
-  auto xloclast = Matrix<dcomplex>(4,nmode);
+  // In the original iteration we have:
+  // xloc[0] = xk1d[xstart-1], xloc[1] = xk1d[xstart],
+  // xloc[2] = xk1d[xend],     xloc[3] = xk1d[xend+1],
+  //
+  auto xloc = Matrix<dcomplex>(4,nmode); // Values of x at the processor interface
+  auto xloclast = Matrix<dcomplex>(4,nmode); // Values of x at the processor interface from previous iteration 
 
   BoutReal kwaveFactor = 2.0 * PI / coords->zlength();
 
@@ -451,7 +457,6 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   store_coefficients = store_coefficients && not (outer_boundary_flags & INVERT_AC_GRAD);
   store_coefficients = store_coefficients && not (inner_boundary_flags & INVERT_SET);
   store_coefficients = store_coefficients && not (outer_boundary_flags & INVERT_SET);
-  //store_coefficients = false;
 
   // Setting the width of the boundary.
   // NOTE: The default is a width of 2 guard cells
@@ -485,6 +490,11 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   // Define indexing of xloc that depends on method. Doing this now removes
   // branching in tight loops
+  // index_in is the index of the x that a processor sends inwards,
+  // index_out is the index of the x it sends outwards.
+  // In the usual method, these are its values closest to the processor it is
+  // sending to, i.e. 1 in and 2 out. In the extended domain method, we send
+  // the value of x furthest from the neighbouring proc, i.e. 2 in and 1 out.
   index_in = 1;
   index_out = 2;
   if(new_method){
@@ -492,19 +502,21 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
     index_out = 1;
   }
 
-  SCOREP_USER_REGION_END(initvars);
-  SCOREP_USER_REGION_DEFINE(initloop);
-  SCOREP_USER_REGION_BEGIN(initloop, "init xk loop",SCOREP_USER_REGION_TYPE_COMMON);
+  ///SCOREP_USER_REGION_END(initvars);
+  ///SCOREP_USER_REGION_DEFINE(initloop);
+  ///SCOREP_USER_REGION_BEGIN(initloop, "init xk loop",SCOREP_USER_REGION_TYPE_COMMON);
 
   // Initialise xk to 0 as we only visit 0<= kz <= maxmode in solve
   for (int ix = 0; ix < ncx; ix++) {
+    // TODO This looks wrong: should it be kz<ncz?
+    // This came from serial tri
     for (int kz = maxmode + 1; kz < ncz / 2 + 1; kz++) {
       xk(ix, kz) = 0.0;
     }
   }
-  SCOREP_USER_REGION_END(initloop);
-  SCOREP_USER_REGION_DEFINE(fftloop);
-  SCOREP_USER_REGION_BEGIN(fftloop, "init fft loop",SCOREP_USER_REGION_TYPE_COMMON);
+  ///SCOREP_USER_REGION_END(initloop);
+  ///SCOREP_USER_REGION_DEFINE(fftloop);
+  ///SCOREP_USER_REGION_BEGIN(fftloop, "init fft loop",SCOREP_USER_REGION_TYPE_COMMON);
 
   /* Coefficents in the tridiagonal solver matrix
   * Following the notation in "Numerical recipes"
@@ -542,19 +554,19 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       //rfft(x0[ix], ncz, &xk(ix, 0));
     }
   }
-  SCOREP_USER_REGION_END(fftloop);
-  SCOREP_USER_REGION_DEFINE(kzinit);
-  SCOREP_USER_REGION_BEGIN(kzinit, "kz init",SCOREP_USER_REGION_TYPE_COMMON);
+  ///SCOREP_USER_REGION_END(fftloop);
+  ///SCOREP_USER_REGION_DEFINE(kzinit);
+  ///SCOREP_USER_REGION_BEGIN(kzinit, "kz init",///SCOREP_USER_REGION_TYPE_COMMON);
 
   /* Solve differential equation in x for each fourier mode
   * Note that only the non-degenerate fourier modes are being used (i.e. the
   * offset and all the modes up to the Nyquist frequency)
   */
   for (int kz = 0; kz <= maxmode; kz++) {
-    // set bk1d
     for (int ix = 0; ix < ncx; ix++) {
       // Get bk of the current fourier mode
       bcmplx(kz,ix) = bk(ix, kz);
+      // Initialize xk1d with cached values (note: in Fourier space)
       xk1d(kz,ix) = x0saved(ix, jy, kz);
       xk1dlast(kz,ix) = x0saved(ix, jy, kz);
     }
@@ -602,9 +614,9 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       }
     }
   //}
-  SCOREP_USER_REGION_END(kzinit);
-  SCOREP_USER_REGION_DEFINE(initlevels);
-  SCOREP_USER_REGION_BEGIN(initlevels, "init levels",SCOREP_USER_REGION_TYPE_COMMON);
+  ///SCOREP_USER_REGION_END(kzinit);
+  ///SCOREP_USER_REGION_DEFINE(initlevels);
+  ///SCOREP_USER_REGION_BEGIN(initlevels, "init levels",///SCOREP_USER_REGION_TYPE_COMMON);
 
 
   // Initialize levels. Note that the finest grid (level 0) has a different
@@ -628,11 +640,15 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       }
     }
   }
-  init_rhs(levels[0], jy, bcmplx);
-  SCOREP_USER_REGION_END(initlevels);
 
-  SCOREP_USER_REGION_DEFINE(setsoln);
-  SCOREP_USER_REGION_BEGIN(setsoln, "set level 0 solution",SCOREP_USER_REGION_TYPE_COMMON);
+  // Compute coefficients that depend on the right-hand side and which
+  // therefore change every time.
+  init_rhs(levels[0], jy, bcmplx);
+
+  ///SCOREP_USER_REGION_END(initlevels);
+
+  ///SCOREP_USER_REGION_DEFINE(setsoln);
+  ///SCOREP_USER_REGION_BEGIN(setsoln, "set level 0 solution",///SCOREP_USER_REGION_TYPE_COMMON);
   for(int kz=0; kz<nmode; kz++){
     for(int ix=0; ix<ncx; ix++){
       levels[0].rvec(kz,ix) = bcmplx(kz,ix);
@@ -650,9 +666,9 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       levels[0].xloclast(3,kz) = xk1d(kz,xe+1);
     }
   }
-  SCOREP_USER_REGION_END(setsoln);
-  SCOREP_USER_REGION_DEFINE(initwhileloop);
-  SCOREP_USER_REGION_BEGIN(initwhileloop, "init while loop",SCOREP_USER_REGION_TYPE_COMMON);
+  ///SCOREP_USER_REGION_END(setsoln);
+  ///SCOREP_USER_REGION_DEFINE(initwhileloop);
+  ///SCOREP_USER_REGION_BEGIN(initwhileloop, "init while loop",///SCOREP_USER_REGION_TYPE_COMMON);
 
   int count = 0;
   int subcount = 0;
@@ -671,26 +687,11 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   }
   int ml;
 
-  SCOREP_USER_REGION_END(initwhileloop);
-  SCOREP_USER_REGION_DEFINE(whileloop);
-  SCOREP_USER_REGION_BEGIN(whileloop, "while loop",SCOREP_USER_REGION_TYPE_COMMON);
+  ///SCOREP_USER_REGION_END(initwhileloop);
+  ///SCOREP_USER_REGION_DEFINE(whileloop);
+  ///SCOREP_USER_REGION_BEGIN(whileloop, "while loop",///SCOREP_USER_REGION_TYPE_COMMON);
 
-  //int kzp = 1;
-  //output<<"NEW ITERATION"<<endl;
   while(true){
-
-    /*
-    output<<"xloc "<<count<<" "<<converged[kzp]<<" "<<total[kzp]<<" "<<error_rel[kzp]<<" "<<current_level<<endl;
-    for(int ix=0; ix<4;ix++){
-      output<<" "<<levels[current_level].xloc(ix,kzp).real() << " ";
-    }
-    output<<endl;
-    output<<"xloclast "<<endl;
-    for(int ix=0; ix<4;ix++){
-      output<<" "<<levels[current_level].xloclast(ix,kzp).real() << " ";
-    }
-    output<<endl;
-    */
 
     if(algorithm==0 or current_level!=0){ 
       //jacobi_full_system(levels[current_level],jy);
@@ -700,29 +701,10 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
     }
     else{
       jacobi(levels[current_level], jy, converged);
-      //reconstruct_full_solution(levels[0],jy);
     }
 
-    /*
-    output<<"xloc after jacobi "<<count<<" "<<converged[kzp]<<" "<<total[kzp]<<" "<<error_rel[kzp]<<" "<<current_level<<endl;
-    for(int ix=0; ix<4;ix++){
-      output<<" "<<levels[current_level].xloc(ix,kzp).real() << " ";
-    }
-    output<<endl;
-    output<<"xloclast "<<endl;
-    for(int ix=0; ix<4;ix++){
-      output<<" "<<levels[current_level].xloclast(ix,kzp).real() << " ";
-    }
-    output<<endl;
-    output<<"difference "<<endl;
-    for(int ix=0; ix<4;ix++){
-      output<<" "<<levels[current_level].xloc(ix,kzp).real()-levels[current_level].xloclast(ix,kzp).real() << " ";
-    }
-    output<<endl;
-    */
-
-    SCOREP_USER_REGION_DEFINE(l0rescalc);
-    SCOREP_USER_REGION_BEGIN(l0rescalc, "level 0 residual calculation",SCOREP_USER_REGION_TYPE_COMMON);
+    ///SCOREP_USER_REGION_DEFINE(l0rescalc);
+    ///SCOREP_USER_REGION_BEGIN(l0rescalc, "level 0 residual calculation",///SCOREP_USER_REGION_TYPE_COMMON);
     if(current_level==0 and subcount==max_cycle-1){
       // Not necessay, but for diagnostics
       for(int kz=0; kz<nmode; kz++){
@@ -733,180 +715,55 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       if(algorithm==0 or current_level!=0){ 
         calculate_residual_full_system(levels[current_level],converged,jy);
         calculate_total_residual_full_system(total,error_rel,converged,levels[current_level]);
-
-	/*
-	  int kz = 1;
-	  output<<"Residual soln "<<jy<<" "<<count<<" "<<current_level;
-
-	  output<<" "<<converged[kz];
-	  output<<" "<<total[kz]<<endl;
-	  for(int ix=0; ix<levels[0].ncx;ix++){
-	    if(ix<levels[current_level].ncx){
-	      output<<" "<<levels[current_level].residual(kz,ix).real();
-	    }
-	    else{
-	      output<<" "<<0;
-	    }
-	  }
-	  output<<endl;
-	  */
       }
       else{
         calculate_residual(levels[current_level],converged,jy);
         calculate_total_residual(total,error_rel,converged,levels[current_level]);
-
-	/*
-	for(int kz=0; kz<nmode; kz++){
-	  output<< total[kz]<<" ";
-	}
-	output<<endl;
-	*/
-	//if(jy==3){ 
-	{
-	  /*
-	  int kz=1;
-	  output<<"Residual xloc "<<jy<<" "<<count<<" "<<current_level;
-
-	  //output<<" "<<converged[kz];
-	  output<<" "<<total[kz]<<" "<<error_rel[kz]<<" "
-	    << max(total)<< " "<< atol <<" "<< max(error_rel)<<" "<< rtol <<endl;
-	      //output<<" "<<levels[current_level].residual(kz,ix).real()<<" "<<levels[current_level].residual(kz,ix).imag();
-	  output<<" "<<levels[current_level].residual(kz,levels[current_level].xs-1).real();
-	  output<<" "<<levels[current_level].residual(kz,levels[current_level].xs).real();
-	  output<<" "<<levels[current_level].residual(kz,levels[current_level].xe).real();
-	  output<<" "<<levels[current_level].residual(kz,levels[current_level].xe+1).real();
-	  output<<endl;
-	  */
-	  /*
-	  ml = maxloc(total);
-          output<<"maxloc abs "<<" "<<ml<<" "<<total[ml]<<" "<<total[ml]/totalold[ml]<<" "<<converged[ml]<<" "<<error_rel[ml]<<endl;
-	  ml = maxloc(error_rel);
-          output<<"maxloc rel "<<" "<<ml<<" "<<error_rel[ml]<<" "<<converged[ml]<<" "<<total[ml]<<endl;
-	  */
-	}
-	/*
-	output<<"xloc after correction "<<count<<endl;
-	for(int ix=0; ix<4;ix++){
-	  output<<" "<<levels[current_level].xloc(ix,1).real() << " ";
-	}
-	output<<endl;
-	output<<"xloclast "<<endl;
-	for(int ix=0; ix<4;ix++){
-	  output<<" "<<levels[current_level].xloclast(ix,1).real() << " ";
-	}
-	output<<endl;
-	*/
-	//reconstruct_full_solution(levels[0],jy);
-	/*
-	output<< "soln "<<count<<" "<<jy<<" "<<levels[current_level].xs<<" "<<levels[current_level].xe<<" "<<levels[current_level].ncx<<" "<<current_level<<endl;
-	for(int ix=0; ix<levels[current_level].ncx;ix++){
-	  output<<" "<<levels[current_level].soln(1,ix).real() << " ";
-	}
-	output<<endl;
-	output<< "solnlast "<<count<<" "<<jy<<" "<<levels[current_level].xs<<" "<<levels[current_level].xe<<" "<<levels[current_level].ncx<<" "<<current_level<<endl;
-	for(int ix=0; ix<levels[current_level].ncx;ix++){
-	  output<<" "<<levels[current_level].solnlast(1,ix).real() << " ";
-	}
-	output<<endl;
-	*/
       }
     }
 
-    SCOREP_USER_REGION_END(l0rescalc);
-    SCOREP_USER_REGION_DEFINE(increment);
-    SCOREP_USER_REGION_BEGIN(increment, "increment counters",SCOREP_USER_REGION_TYPE_COMMON);
+    ///SCOREP_USER_REGION_END(l0rescalc);
+    ///SCOREP_USER_REGION_DEFINE(increment);
+    ///SCOREP_USER_REGION_BEGIN(increment, "increment counters",///SCOREP_USER_REGION_TYPE_COMMON);
     ++count;
     ++subcount;
-    SCOREP_USER_REGION_END(increment);
+    ///SCOREP_USER_REGION_END(increment);
 
-    SCOREP_USER_REGION_DEFINE(solneqsolnlast);
-    SCOREP_USER_REGION_BEGIN(solneqsolnlast, "soln = soln last",SCOREP_USER_REGION_TYPE_COMMON);
+    ///SCOREP_USER_REGION_DEFINE(solneqsolnlast);
+    ///SCOREP_USER_REGION_BEGIN(solneqsolnlast, "soln = soln last",///SCOREP_USER_REGION_TYPE_COMMON);
     if(algorithm==0 or current_level!=0){ 
       for (int kz = 0; kz <= maxmode; kz++) {
         if(!converged[kz]){
           for (int ix = 0; ix < levels[current_level].ncx; ix++) {
             levels[current_level].solnlast(kz,ix) = levels[current_level].soln(kz,ix);
           }
-	  /*
-	  levels[current_level].xloclast(0,kz) = levels[current_level].xloc(0,kz);
-	  levels[current_level].xloclast(1,kz) = levels[current_level].xloc(1,kz);
-	  levels[current_level].xloclast(2,kz) = levels[current_level].xloc(2,kz);
-	  levels[current_level].xloclast(3,kz) = levels[current_level].xloc(3,kz);
-	  */
 	}
       }
     }
-    SCOREP_USER_REGION_END(solneqsolnlast);
-    //ml = maxloc(total);
-    //output<<""<<jy<<" "<<count<<" "<<ml<<" "<<total[ml]<<" "<<total[ml]/totalold[ml]<<endl;
-    //output<<current_level<<" "<<jy<<" "<<count<<" "<<0<<" "<<total[0]<<" "<<total[0]/totalold[0]<<" "<<error_rel[0]<<endl;
+    ///SCOREP_USER_REGION_END(solneqsolnlast);
 
     // Force at least max_cycle iterations at each level
     // Do not skip with tolerence to minimize comms
-    //if(subcount < max_cycle and total>rtol){
     if(subcount < max_cycle){
     }
     else if( all(converged) and current_level==0 ){
-    //else if( max(error_rel) < rtol and current_level==0 ){
     /*
       ml = maxloc(total);
       output<<"Exit "<<count<<" "<<ml<<" "<<total[ml]<<" "<<total[ml]/totalold[ml]<<endl;
-      for(int kz=0;kz<nmode;kz++){
-	output<<total[kz]<<" ";
-      }
-      output<<endl;
-      //
-      {
-      int kz=0;
-      output<<count<<" "<<current_level;
-
-      output<<" "<<total;
-      for(int ix=0; ix<levels[0].ncx;ix++){
-	if(ix<levels[current_level].ncx){
-	  output<<" "<<levels[current_level].residual(kz,ix).real();
-	}
-	else{
-	  output<<" "<<0;
-	}
-      }
-      output<<endl;
-      }
-      */
+    output<<"xloc final"<<endl;
+    for(int ix=0; ix<4;ix++){
+      output<<" "<<levels[current_level].xloc(ix,kzp).real() << " ";
+    }
+    output<<endl;
+    */
       break;
     }
-    //else if( total < rtol or current_level==max_level){
     else if( not down ){
       calculate_residual_full_system(levels[current_level],converged,jy);
-      //refine(xloc,xloclast);
       refine_full_system(levels[current_level],fine_error,converged);
       current_level--;
       update_solution(levels[current_level],fine_error,converged);
       if(algorithm!=0 and current_level==0){
-	/*
-	for(int kz=0; kz<nmode;kz++){
-	  output<<" "<<converged[kz] << " ";
-	}
-	output<<endl;
-	*/
-	if(not converged[nmode-1]){
-	  /*
-	  output<<"Soln after update"<<endl;
-	  for(int ix=0; ix<levels[current_level].ncx;ix++){
-	    output<<" "<<levels[current_level].soln(0,ix).real() << " ";
-	  }
-	  output<<endl;
-	  output<<"Residual after update"<<endl;
-	  for(int ix=0; ix<levels[current_level].ncx;ix++){
-	    output<<" "<<levels[current_level].residual(kzp,ix).real() << " ";
-	  }
-	  output<<endl;
-	  output<<"fine error"<<endl;
-	  for(int ix=0; ix<levels[current_level].ncx;ix++){
-	    output<<" "<<fine_error(0,ix).real() << " ";
-	  }
-	  output<<endl;
-	  */
-	}
         for(int kz=0; kz<nmode; kz++){
           if(not converged[kz]){
             levels[0].xloc(0,kz) = levels[0].soln(kz,levels[0].xs-1);
@@ -960,20 +817,6 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
             }
           }
 	}
-	/*
-	if(not converged[0]){
-	  output<<"xloc"<<endl;
-	  for(int ix=0; ix<4;ix++){
-	    output<<" "<<levels[0].xloc(ix,0).real() << " ";
-	  }
-	  output<<endl;
-	  output<<"xloclast"<<endl;
-	  for(int ix=0; ix<4;ix++){
-	    output<<" "<<levels[0].xloclast(ix,0).real() << " ";
-	  }
-	  output<<endl;
-	}
-	*/
       }
       subcount=0;
 
@@ -988,36 +831,14 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
 
       // Calculate residual on finer grid
       if(algorithm!=0 and current_level==0){ 
-	/*
-	if(not converged[0]){
-	  output<<"xloc before coarsening"<<endl;
-	  for(int ix=0; ix<4;ix++){
-	    output<<" "<<levels[current_level].xloc(ix,0).real() << " ";
-	  }
-	  output<<endl;
-	  output<<"xloclast before coarsening"<<endl;
-	  for(int ix=0; ix<4;ix++){
-	    output<<" "<<levels[current_level].xloclast(ix,0).real() << " ";
-	  }
-	  output<<endl;
-	}
-	*/
         reconstruct_full_solution(levels[0],jy);
-	/*
-	if(!converged[2]){
-	  output<<"Soln before coarsening"<<endl;
-	  for(int ix=0; ix<levels[current_level].ncx;ix++){
-	    output<<" "<<levels[current_level].soln(2,ix).real() << " ";
-	  }
-	  output<<endl;
-	}
-	*/
       }
       calculate_residual_full_system(levels[current_level],converged,jy);
       current_level++;
       coarsen_full_system(levels[current_level],levels[current_level-1].residual,converged);
       subcount=0;
 
+      // If we are on the coarsest grid, stop trying to coarsen further
       if(current_level==max_level){
         down = false;
       }
@@ -1027,7 +848,8 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       subcount=0;
     }
 
-    // Implicitly, else = carry on doing iterations at this level
+    // Throw error if we are performing too many iterations
+    // TODO Throw error message appropriate for the method
     if (count>maxits) {
       throw BoutException("LaplaceParallelTriMG error: Not converged within maxits=%i iterations. The iteration matrix is not diagonally dominant on processor %i, so there is no guarantee this method will converge. Consider increasing maxits or using a different solver.",maxits,BoutComm::rank());
       //break;
@@ -1048,30 +870,13 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
       */
     }
   }
-  SCOREP_USER_REGION_END(whileloop);
-  SCOREP_USER_REGION_DEFINE(afterloop);
-  SCOREP_USER_REGION_BEGIN(afterloop, "after faff",SCOREP_USER_REGION_TYPE_COMMON);
+  ///SCOREP_USER_REGION_END(whileloop);
+  ///SCOREP_USER_REGION_DEFINE(afterloop);
+  ///SCOREP_USER_REGION_BEGIN(afterloop, "after faff",///SCOREP_USER_REGION_TYPE_COMMON);
 
   if(algorithm!=0){
-
-    /*
-    output<< "xloc "<<count<<" "<<jy<<" "<<levels[current_level].xs<<" "<<levels[current_level].xe<<" "<<levels[current_level].ncx<<current_level<<endl;
-    for(int ix=0; ix<4;ix++){
-      output<<" "<<levels[current_level].xloc(ix,0).real() << " "<< levels[current_level].xloc(ix,0).imag() <<endl;
-    }
-    output<< "xloclast "<<count<<" "<<jy<<" "<<levels[current_level].xs<<" "<<levels[current_level].xe<<" "<<levels[current_level].ncx<<current_level<<endl;
-    for(int ix=0; ix<4;ix++){
-      output<<" "<<levels[current_level].xloclast(ix,0).real() << " "<< levels[current_level].xloclast(ix,0).imag() <<endl;
-    }
-    */
     reconstruct_full_solution(levels[0],jy);
   }
-  /*
-  output<< "soln "<<count<<" "<<jy<<" "<<levels[current_level].xs<<" "<<levels[current_level].xe<<" "<<levels[current_level].ncx<<" "<<current_level<<endl;
-  for(int ix=0; ix<levels[current_level].ncx;ix++){
-    output<<" "<<levels[current_level].soln(0,ix).real() << " "<< levels[current_level].soln(0,ix).imag() <<endl;
-  }
-  */
 
   ++ncalls;
   ipt_mean_its = (ipt_mean_its * BoutReal(ncalls-1)
@@ -1103,10 +908,10 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
     }
     first_call(jy,kz) = false;
   }
-  SCOREP_USER_REGION_END(afterloop);
+  ///SCOREP_USER_REGION_END(afterloop);
 
-  SCOREP_USER_REGION_DEFINE(fftback);
-  SCOREP_USER_REGION_BEGIN(fftback, "fft back",SCOREP_USER_REGION_TYPE_COMMON);
+  ///SCOREP_USER_REGION_DEFINE(fftback);
+  ///SCOREP_USER_REGION_BEGIN(fftback, "fft back",///SCOREP_USER_REGION_TYPE_COMMON);
   // Done inversion, transform back
   for (int ix = 0; ix < ncx; ix++) {
 
@@ -1121,10 +926,13 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
 	throw BoutException("Non-finite at %d, %d, %d", ix, jy, kz);
 #endif
   }
-  SCOREP_USER_REGION_END(fftback);
+  ///SCOREP_USER_REGION_END(fftback);
   return x; // Result of the inversion
 }
 
+/*
+ * Perform an iteration on the reduced grid
+ */
 void LaplaceParallelTriMG::jacobi(Level &l, const int jy, const Array<bool> &converged){
 
   SCOREP0();
@@ -1135,15 +943,20 @@ void LaplaceParallelTriMG::jacobi(Level &l, const int jy, const Array<bool> &con
   MPI_Comm comm = BoutComm::get();
   int err;
 
-  // Only need to update interior points
   for (int kz = 0; kz <= maxmode; kz++) {
     if(!converged[kz]){
+      
+      // Set xloclast to xloc 
       l.xloclast(0,kz) = l.xloc(0,kz);
       l.xloclast(1,kz) = l.xloc(1,kz);
       l.xloclast(2,kz) = l.xloc(2,kz);
       l.xloclast(3,kz) = l.xloc(3,kz);
+
+      // Update my interior points
       l.xloc(1,kz) = l.rl[kz] + l.al(jy,kz)*l.xloclast(0,kz) + l.bl(jy,kz)*l.xloclast(3,kz);
       l.xloc(2,kz) = l.ru[kz] + l.au(jy,kz)*l.xloclast(0,kz) + l.bu(jy,kz)*l.xloclast(3,kz);
+
+      // If I am a boundary processor, apply boundary conditions.
       if( localmesh->firstX() ){
 	//l.xloc(0,kz) = ( l.minvb(kz,l.xs-1) + l.upperGuardVector(l.xs-1,jy,kz)*l.xloclast(3,kz) ) / (1.0 - l.lowerGuardVector(l.xs-1,jy,kz));
         l.xloc(0,kz) = -l.cvec(jy,kz,l.xs-1)*l.xloc(1,kz) / l.bvec(jy,kz,l.xs-1);
@@ -1155,8 +968,8 @@ void LaplaceParallelTriMG::jacobi(Level &l, const int jy, const Array<bool> &con
     }
   }
 
-  SCOREP_USER_REGION_DEFINE(comms);
-  SCOREP_USER_REGION_BEGIN(comms, "communication",SCOREP_USER_REGION_TYPE_COMMON);
+  ///SCOREP_USER_REGION_DEFINE(comms);
+  ///SCOREP_USER_REGION_BEGIN(comms, "communication",SCOREP_USER_REGION_TYPE_COMMON);
 
   // Communication receive from left
   if(!localmesh->firstX()){
@@ -1191,7 +1004,7 @@ void LaplaceParallelTriMG::jacobi(Level &l, const int jy, const Array<bool> &con
       }
     }
   }
-  SCOREP_USER_REGION_END(comms);
+  ///SCOREP_USER_REGION_END(comms);
 }  
 
 void LaplaceParallelTriMG::gauss_seidel_red_black_full_system(Level &l, const Array<bool> &converged, const int jy){
@@ -1282,14 +1095,6 @@ void LaplaceParallelTriMG::gauss_seidel_red_black_full_system(Level &l, const Ar
       }
     }
   }
-
-  /*
-  for (int ix = 0; ix < l.ncx; ix++) {
-    output << l.soln(0,ix).real()<<" ";
-  }
-  output<<endl;
-  */
-
 }  
 
 
@@ -1305,19 +1110,16 @@ void LaplaceParallelTriMG::gauss_seidel_red_black_full_system_comp_comm_overlap(
   recvecred = Array<dcomplex>(nmode);
   sendvecblack = Array<dcomplex>(nmode);
   recvecblack = Array<dcomplex>(nmode);
-  //comm_handle recv[1], send[1];
   MPI_Request rredreq, sredreq, rblackreq, sblackreq;
 
   // Communicate: final grid point needs data from proc above
   // Overlap comm/comp by not posting recv until needed in final
   // loop iteration
   if(!localmesh->lastX()){
-    //recv[0] = localmesh->irecvXOut(&recvec[0], nmode, 1);
     MPI_Irecv(&recvecred[0], nmode, MPI_DOUBLE_COMPLEX, proc_out, 1, BoutComm::get(), &rredreq);
   }
   // Communicate: to synchronize, first grid point needs data from proc below
   if(!localmesh->firstX()){
-    //recv[0] = localmesh->irecvXIn(&recvec[0], nmode, 1);
     MPI_Irecv(&recvecblack[0], nmode, MPI_DOUBLE_COMPLEX, proc_in, 2, BoutComm::get(), &rblackreq);
   }
 
@@ -1362,12 +1164,12 @@ void LaplaceParallelTriMG::gauss_seidel_red_black_full_system_comp_comm_overlap(
       if(!localmesh->lastX()){
         if(not wait_red){
           wait_red = true;
-          //localmesh->wait(recv[0]);
 	  MPI_Wait(&rredreq,MPI_STATUS_IGNORE);
         }
         l.soln(kz,l.xe+1) = recvecred[kz];
       }
       {
+	// TODO replace
         int ix = l.xe;
 	l.soln(kz,ix) = ( l.rvec(kz,ix) - l.avec(jy,kz,ix)*l.soln(kz,ix-1) - l.cvec(jy,kz,ix)*l.soln(kz,ix+1) ) / l.bvec(jy,kz,ix);
       }
@@ -1380,7 +1182,6 @@ void LaplaceParallelTriMG::gauss_seidel_red_black_full_system_comp_comm_overlap(
 	sendvecblack[kz] = l.soln(kz,l.xe);
       }
     }
-    //localmesh->sendXOut(&sendvec[0],nmode,2);
     MPI_Isend(&sendvecblack[0], nmode, MPI_DOUBLE_COMPLEX, proc_out, 2, BoutComm::get(), &sblackreq);
   }
 
@@ -1390,7 +1191,6 @@ void LaplaceParallelTriMG::gauss_seidel_red_black_full_system_comp_comm_overlap(
       if(!converged[kz]){
         if(not wait_black){
 	  wait_black = true;
-	  //localmesh->wait(recv[0]);
 	  MPI_Wait(&rblackreq,MPI_STATUS_IGNORE);
 	}
 	l.soln(kz,l.xs-1) = recvecblack[kz];
@@ -1425,13 +1225,6 @@ void LaplaceParallelTriMG::gauss_seidel_red_black_full_system_comp_comm_overlap(
   if(!localmesh->firstX()){
     MPI_Wait(&sredreq,MPI_STATUS_IGNORE);
   }
-  /*
-  for (int ix = 0; ix < l.ncx; ix++) {
-    output << l.soln(0,ix).real()<<" ";
-  }
-  output<<endl;
-  */
-
 }  
 
 // Perform a Jacobi iteration explicitly on the full system 
@@ -1652,9 +1445,7 @@ void LaplaceParallelTriMG::init(Level &l, const Level lup, int ncx, const int xs
       }
     }
   }
-
   //levels_info(l,jy);
-
 }
 
 // Init routine for finest level
@@ -1689,12 +1480,6 @@ void LaplaceParallelTriMG::init(Level &l, const int ncx, const int jy, const Mat
   if(algorithm!=0){
     auto rlold = Array<dcomplex>(nmode);
     auto ruold = Array<dcomplex>(nmode);
-    //auto Rd = Array<dcomplex>(ncz/2+1);
-    //auto Ru = Array<dcomplex>(ncz/2+1);
-    //auto Rsendup = Array<dcomplex>(ncz+2);
-    //auto Rsenddown = Array<dcomplex>(ncz+2);
-    //auto Rrecvup = Array<dcomplex>(ncz+2);
-    //auto Rrecvdown = Array<dcomplex>(ncz+2);
     auto evec = Array<dcomplex>(ncx);
     auto tmp = Array<dcomplex>(ncx);
 
@@ -1731,8 +1516,8 @@ void LaplaceParallelTriMG::init(Level &l, const int ncx, const int jy, const Mat
 
     for (int kz = 0; kz <= maxmode; kz++) {
 
-      SCOREP_USER_REGION_DEFINE(invert);
-      SCOREP_USER_REGION_BEGIN(invert, "invert local matrices",SCOREP_USER_REGION_TYPE_COMMON);
+      ///SCOREP_USER_REGION_DEFINE(invert);
+      ///SCOREP_USER_REGION_BEGIN(invert, "invert local matrices",///SCOREP_USER_REGION_TYPE_COMMON);
 
       // Invert local matrices to find upper/lower guard vectos.
       // Note Minv*b is calculated in init_rhs.
@@ -1772,9 +1557,9 @@ void LaplaceParallelTriMG::init(Level &l, const int ncx, const int jy, const Mat
 	}
       }
 
-      SCOREP_USER_REGION_END(invert);
-      SCOREP_USER_REGION_DEFINE(coefs);
-      SCOREP_USER_REGION_BEGIN(coefs, "calculate coefs",SCOREP_USER_REGION_TYPE_COMMON);
+      ///SCOREP_USER_REGION_END(invert);
+      ///SCOREP_USER_REGION_DEFINE(coefs);
+      ///SCOREP_USER_REGION_BEGIN(coefs, "calculate coefs",///SCOREP_USER_REGION_TYPE_COMMON);
 
       l.bl(jy,kz) = l.upperGuardVector(l.xs,jy,kz);
       l.al(jy,kz) = l.lowerGuardVector(l.xs,jy,kz);
@@ -1843,12 +1628,10 @@ void LaplaceParallelTriMG::init(Level &l, const int ncx, const int jy, const Mat
 	l.r8(jy,kz) = Delta*(l.buold(jy,kz) + d*Bd);
 
       } // new method
-      SCOREP_USER_REGION_END(coefs);
+      ///SCOREP_USER_REGION_END(coefs);
     } // end of kz loop
   }
-
   //levels_info(l,jy);
-
 }
 
 // Init routine for finest level information that cannot be cached
@@ -1872,8 +1655,8 @@ void LaplaceParallelTriMG::init_rhs(Level &l, const int jy, const Matrix<dcomple
 
     for (int kz = 0; kz <= maxmode; kz++) {
 
-      SCOREP_USER_REGION_DEFINE(invertforrhs);
-      SCOREP_USER_REGION_BEGIN(invertforrhs, "invert local matrices for rhs",SCOREP_USER_REGION_TYPE_COMMON);
+      ///SCOREP_USER_REGION_DEFINE(invertforrhs);
+      ///SCOREP_USER_REGION_BEGIN(invertforrhs, "invert local matrices for rhs",///SCOREP_USER_REGION_TYPE_COMMON);
 
       // Invert local matrices
       // Calculate Minv*b
@@ -1881,9 +1664,9 @@ void LaplaceParallelTriMG::init_rhs(Level &l, const int jy, const Matrix<dcomple
       &l.minvb(kz,0), l.ncx);
       // Now minvb is a constant vector throughout the iterations
 
-      SCOREP_USER_REGION_END(invertforrhs);
-      SCOREP_USER_REGION_DEFINE(coefsforrhs);
-      SCOREP_USER_REGION_BEGIN(coefsforrhs, "calculate coefs for rhs",SCOREP_USER_REGION_TYPE_COMMON);
+      ///SCOREP_USER_REGION_END(invertforrhs);
+      ///SCOREP_USER_REGION_DEFINE(coefsforrhs);
+      ///SCOREP_USER_REGION_BEGIN(coefsforrhs, "calculate coefs for rhs",///SCOREP_USER_REGION_TYPE_COMMON);
 
       l.rl[kz] = l.minvb(kz,l.xs);
       l.ru[kz] = l.minvb(kz,l.xe);
@@ -1892,9 +1675,6 @@ void LaplaceParallelTriMG::init_rhs(Level &l, const int jy, const Matrix<dcomple
 
       // New method - connect to more distant points
       if(new_method){
-
-	// Compute coefficients that depend on the right-hand side and
-	// which therefore change every time.
 
 	// Boundary processor values to be overwritten when relevant
 	Rd[kz] = 0.0;
@@ -1916,7 +1696,7 @@ void LaplaceParallelTriMG::init_rhs(Level &l, const int jy, const Matrix<dcomple
 	  Ru[kz] = localmesh->communicateXOut(Rsendup[kz]);
 	}
       } // new method
-      SCOREP_USER_REGION_END(coefsforrhs);
+      ///SCOREP_USER_REGION_END(coefsforrhs);
     } // end of kz loop
 
     // Communicate vector in kz
@@ -1958,13 +1738,11 @@ void LaplaceParallelTriMG::init_rhs(Level &l, const int jy, const Matrix<dcomple
       }
     }
   }
-
   //levels_info(l,jy);
-
 }
 
 /*
- * Sum and communicate total residual
+ * Sum and communicate total residual for the reduced system
  */
 void LaplaceParallelTriMG::calculate_total_residual(Array<BoutReal> &error_abs, Array<BoutReal> &error_rel, Array<bool> &converged, Level &l){
 
@@ -1972,32 +1750,33 @@ void LaplaceParallelTriMG::calculate_total_residual(Array<BoutReal> &error_abs, 
   // Communication arrays:
   // residual in (0 .. nmode-1)
   // solution in (nmode .. 2*nmode-1)
-  auto subtotal = Array<BoutReal>(2*nmode);
-  auto total = Array<BoutReal>(2*nmode);
+  auto total = Array<BoutReal>(2*nmode); // global summed residual
+  auto subtotal = Array<BoutReal>(2*nmode); // local contribution to residual
 
   for(int kz=0; kz<nmode; kz++){
     if(!converged[kz]){
-      error_abs[kz] = 0.0;
       total[kz] = 0.0;
       total[kz+nmode] = 0.0;
+
       // Only xs and xe have nonzero residuals
       subtotal[kz] = pow(l.residual(kz,l.xs).real(),2) + pow(l.residual(kz,l.xs).imag(),2) + pow(l.residual(kz,l.xe).real(),2) + pow(l.residual(kz,l.xe).imag(),2);
-      // Strictly this should be all contributions to the solution, but this under-approximation saves work. Could multiply by (interior points/2)
+
+      // TODO This approximation will increase iteration count. The alternatives are:
+      // + reconstructing the solution and calculating properly
+      // + multiply approximation by (interior points/2)
+      // Strictly this should be all contributions to the solution, but this under-approximation saves work.
       subtotal[kz+nmode] = pow(l.xloc(1,kz).real(),2) + pow(l.xloc(1,kz).imag(),2) + pow(l.xloc(2,kz).real(),2) + pow(l.xloc(2,kz).imag(),2);
     }
   }
 
-  // Communication needed to ensure processorsbreak iterations at same point
-  // TODO do this rarely
+  // Communication needed to ensure processors break on same iteration
   MPI_Allreduce(&subtotal[0], &total[0], 2*nmode, MPI_DOUBLE, MPI_SUM, BoutComm::get());
 
   for(int kz=0; kz<nmode; kz++){
     if(!converged[kz]){
       error_abs[kz] = sqrt(total[kz]);
       error_rel[kz] = error_abs[kz]/sqrt(total[kz+nmode]);
-      //if( error_rel[kz] < rtol){
       if( error_abs[kz] < atol or error_rel[kz] < rtol ){
-	//output<<"CONVERGED! "<<kz<<" "<<error_abs[kz]<<" "<<error_rel[kz]<<endl;
 	converged[kz] = true;
 	l.xloclast(0,kz) = l.xloc(0,kz);
 	l.xloclast(1,kz) = l.xloc(1,kz);
@@ -2009,7 +1788,7 @@ void LaplaceParallelTriMG::calculate_total_residual(Array<BoutReal> &error_abs, 
 }
 
 /*
- * Sum and communicate total residual
+ * Sum and communicate total residual for the full system
  */
 void LaplaceParallelTriMG::calculate_total_residual_full_system(Array<BoutReal> &error_abs, Array<BoutReal> &error_rel, Array<bool> &converged, const Level l){
 
@@ -2017,17 +1796,16 @@ void LaplaceParallelTriMG::calculate_total_residual_full_system(Array<BoutReal> 
   // Communication arrays:
   // residual in (0 .. nmode-1)
   // solution in (nmode .. 2*nmode-1)
-  auto subtotal = Array<BoutReal>(2*nmode);
-  auto total = Array<BoutReal>(2*nmode);
+  auto total = Array<BoutReal>(2*nmode); // global summed residual
+  auto subtotal = Array<BoutReal>(2*nmode); // local contribution to residual
 
   for(int kz=0; kz<nmode; kz++){
     if(!converged[kz]){
-      error_abs[kz] = 0.0;
       total[kz] = 0.0;
       total[kz+nmode] = 0.0;
       subtotal[kz] = 0.0;
       subtotal[kz+nmode] = 0.0;
-      for(int ix=0; ix<l.ncx;ix++){
+      for(int ix=0; ix<l.ncx; ix++){
 	// Contributions to total residual from interior points and physical
 	// boundary points only
 	if( (ix < l.xs and localmesh->firstX()) or
@@ -2040,15 +1818,13 @@ void LaplaceParallelTriMG::calculate_total_residual_full_system(Array<BoutReal> 
     }
   }
 
-  // Communication needed to ensure processorsbreak iterations at same point
-  // TODO do this rarely
+  // Communication needed to ensure processors break on same iteration
   MPI_Allreduce(&subtotal[0], &total[0], 2*nmode, MPI_DOUBLE, MPI_SUM, BoutComm::get());
 
   for(int kz=0; kz<nmode; kz++){
     if(!converged[kz]){
       error_abs[kz] = sqrt(total[kz]);
       error_rel[kz] = error_abs[kz]/sqrt(total[kz+nmode]);
-      //if( error_rel[kz] < rtol){
       if( error_abs[kz] < atol or error_rel[kz] < rtol ){
 	converged[kz] = true;
       }
@@ -2056,33 +1832,35 @@ void LaplaceParallelTriMG::calculate_total_residual_full_system(Array<BoutReal> 
   }
 }
 
-// Calculate residual on a reduced x grid. By construction, the residual is 
-// zero, except at the points on the reduced grid.
+/*
+ * Calculate residual on a reduced x grid. By construction, the residual is 
+ * zero, except at the points on the reduced grid.
+ */
 void LaplaceParallelTriMG::calculate_residual(Level &l, const Array<bool> &converged,const int jy){
 
   SCOREP0();
   for(int kz=0; kz<nmode; kz++){
     if(!converged[kz]){
-      //if(localmesh->firstX()){
-	l.residual(kz,0) = 0.0;
-	l.residual(kz,1) = 0.0;
-	l.residual(kz,l.xs) = l.avec(jy,kz,l.xs)*(l.xloc(0,kz)-l.xloclast(0,kz));
-	for(int ix=l.xs+1; ix<l.xe; ix++){
-	  l.residual(kz,ix) = 0.0;
-	}
-	l.residual(kz,l.xe) = l.cvec(jy,kz,l.xe)*(l.xloc(3,kz)-l.xloclast(3,kz));
-	l.residual(kz,l.xe+1) = 0.0;
-	l.residual(kz,l.xe+2) = 0.0;
-      //}
+      l.residual(kz,0) = 0.0;
+      l.residual(kz,1) = 0.0;
+      l.residual(kz,l.xs) = l.avec(jy,kz,l.xs)*(l.xloc(0,kz)-l.xloclast(0,kz));
+      for(int ix=l.xs+1; ix<l.xe; ix++){
+	l.residual(kz,ix) = 0.0;
+      }
+      l.residual(kz,l.xe) = l.cvec(jy,kz,l.xe)*(l.xloc(3,kz)-l.xloclast(3,kz));
+      l.residual(kz,l.xe+1) = 0.0;
+      l.residual(kz,l.xe+2) = 0.0;
     }
   }
 
+  // TODO replace message with dcomplex
   struct Message { dcomplex value; bool done; };
   Array<Message> message_send, message_recv;
   message_send = Array<Message>(nmode);
   message_recv = Array<Message>(nmode);
   MPI_Comm comm = BoutComm::get();
   int err;
+  // Communicate in
   if(!localmesh->firstX()){
     for (int kz = 0; kz <= maxmode; kz++) {
       if(!converged[kz]){
@@ -2113,21 +1891,29 @@ void LaplaceParallelTriMG::calculate_residual(Level &l, const Array<bool> &conve
   }
 }
 
-// Calculate residual on a full x grid
+/*
+ * Calculate residual on a full x grid
+ */
 void LaplaceParallelTriMG::calculate_residual_full_system(Level &l, const Array<bool> &converged,const int jy){
 
   SCOREP0();
   for(int kz=0; kz<nmode; kz++){
     if(!converged[kz]){
+
+      // Only calculate residual in the physical boundaries, not the halos
       if(localmesh->firstX()){
 	l.residual(kz,0) = 0.0; //l.rvec(kz,0) - l.bvec(jy,kz,0)*l.soln(kz,0) - l.cvec(jy,kz,0)*l.soln(kz,1);
 	for(int ix=1; ix<l.xs; ix++){
 	  l.residual(kz,ix) = l.rvec(kz,ix) - l.avec(jy,kz,ix)*l.soln(kz,ix-1) - l.bvec(jy,kz,ix)*l.soln(kz,ix) - l.cvec(jy,kz,ix)*l.soln(kz,ix+1);
 	}
       }
+
+      // Calculate residual in interior points
       for(int ix=l.xs; ix<l.xe+1; ix++){
 	l.residual(kz,ix) = l.rvec(kz,ix) - l.avec(jy,kz,ix)*l.soln(kz,ix-1) - l.bvec(jy,kz,ix)*l.soln(kz,ix) - l.cvec(jy,kz,ix)*l.soln(kz,ix+1);
       }
+
+      // Only calculate residual in the physical boundaries, not the halos
       if(localmesh->lastX()){
 	for(int ix=l.xe+1; ix<l.ncx-1; ix++){
 	  l.residual(kz,ix) = l.rvec(kz,ix) - l.avec(jy,kz,ix)*l.soln(kz,ix-1) - l.bvec(jy,kz,ix)*l.soln(kz,ix) - l.cvec(jy,kz,ix)*l.soln(kz,ix+1);
@@ -2137,12 +1923,15 @@ void LaplaceParallelTriMG::calculate_residual_full_system(Level &l, const Array<
     }
   }
 
+  // TODO message to dcomplex
   struct Message { dcomplex value; bool done; };
   Array<Message> message_send, message_recv;
   message_send = Array<Message>(nmode);
   message_recv = Array<Message>(nmode);
   MPI_Comm comm = BoutComm::get();
   int err;
+
+  // Communicate in
   if(!localmesh->firstX()){
     for (int kz = 0; kz <= maxmode; kz++) {
       if(!converged[kz]){
@@ -2173,16 +1962,18 @@ void LaplaceParallelTriMG::calculate_residual_full_system(Level &l, const Array<
   }
 }
 
+/*
+ * Coarsen the fine residual
+ */
 void LaplaceParallelTriMG::coarsen_full_system(Level &l, const Matrix<dcomplex> &fine_residual, const Array<bool> &converged){
 
   SCOREP0();
-  int ixc, ixf;
+  int ixc, ixf; // x indices on the coarse and fine grid
   for(int kz=0; kz<nmode; kz++){
     if(!converged[kz]){
       if(localmesh->firstX()){
 	for(int ix=0; ix<l.xs; ix++){
 	  l.residual(kz,ix) = 0.5*fine_residual(kz,ix);
-	  //output<<ix<<endl;
 	}
       }
       ixc = l.xs;
@@ -2196,19 +1987,16 @@ void LaplaceParallelTriMG::coarsen_full_system(Level &l, const Matrix<dcomplex> 
       for(int ixc=l.xs+1; ixc<l.xe+1; ixc++){
 	ixf = 2*(ixc-l.xs)+l.xs;
 	l.residual(kz,ixc)   =  0.25*fine_residual(kz,ixf-1) + 0.5*fine_residual(kz,ixf)   + 0.25*fine_residual(kz,ixf+1);
-	//output<<ixc<<" "<<ixf<<endl;
       }
       if(localmesh->lastX()){
 	// first boundary point
 	ixc = l.xe+1;
 	ixf = l.xs+2*(l.xe+1-l.xs);
 	l.residual(kz,ixc) = 0.25*fine_residual(kz,ixf-1) + 0.5*fine_residual(kz,ixf);
-	//output<<"fbp "<<ixc<<" "<<ixf<<endl;
 	// FIXME this assumes mgx=2
 	for(int ixc=l.xe+2; ixc<l.ncx; ixc++){
 	  ixf = l.xs+2*(l.xe-l.xs)+(ixc-l.xe)+1;
 	  l.residual(kz,ixc) = 0.5*fine_residual(kz,ixf);
-	  //output<<ixc<<" "<<ixf<<endl;
 	}
       }
       for(int ix=0; ix<l.ncx; ix++){
@@ -2218,15 +2006,6 @@ void LaplaceParallelTriMG::coarsen_full_system(Level &l, const Matrix<dcomplex> 
       }
     }
   }
-
-  /*
-  output<<"coarse residual ";
-  for(int ix=0; ix<l.ncx; ix++){
-    output<<l.rvec(2,ix)<<" ";
-  }
-  output<<endl;
-  */
-
 }
 
 void LaplaceParallelTriMG::coarsen(const Level l, Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast, int jy){
@@ -2281,22 +2060,12 @@ void LaplaceParallelTriMG::coarsen(const Level l, Matrix<dcomplex> &xloc, Matrix
   }
 }
 
-// Update the solution on the refined grid by adding the error calculated on the coarser grid.
+/*
+ * Update the solution on the refined grid by adding the error calculated on the coarser grid.
+ */
 void LaplaceParallelTriMG::update_solution(Level &l, const Matrix<dcomplex> &fine_error, const Array<bool> &converged){
 
   SCOREP0();
-  /*
-  output<<"sbu ";
-  for(int ix=0; ix<l.ncx; ix++){
-    output<<l.soln(0,ix)<<" ";
-  }
-  output<<endl;
-  output<<"fiu ";
-  for(int ix=0; ix<l.ncx; ix++){
-    output<<fine_error(0,ix)<<" ";
-  }
-  output<<endl;
-  */
   for(int kz=0; kz<nmode; kz++){
     if(!converged[kz]){
       for(int ix=0; ix<l.ncx; ix++){
@@ -2304,25 +2073,11 @@ void LaplaceParallelTriMG::update_solution(Level &l, const Matrix<dcomplex> &fin
       }
     }
   }
-  /*
-  output<<"sau ";
-  for(int ix=0; ix<l.ncx; ix++){
-    output<<l.soln(0,ix)<<" ";
-  }
-  output<<endl;
-  */
 }
 
 void LaplaceParallelTriMG::refine_full_system(Level &l, Matrix<dcomplex> &fine_error, const Array<bool> &converged){
 
   SCOREP0();
-  /*
-  output<<"soln ";
-  for(int ix=0; ix<l.ncx; ix++){
-    output<<l.soln(0,ix)<<" ";
-  }
-  output<<endl;
-  */
   
   for(int kz=0; kz<nmode; kz++){
     if(!converged[kz]){
@@ -2330,37 +2085,25 @@ void LaplaceParallelTriMG::refine_full_system(Level &l, Matrix<dcomplex> &fine_e
 	// lower boundary (fine/coarse indices the same)
 	for(int ix=0; ix<l.xs; ix++){
 	  fine_error(kz,ix) = l.soln(kz,ix);
-	  //output<<ix<<endl;
 	}
       }
       else{
 	// guard cells
 	fine_error(kz,l.xs-1) = 0.5*(l.soln(kz,l.xs-1)+l.soln(kz,l.xs));
-	  //output<<ix<<endl;
       }
       // interior points
       for(int ixc=l.xs; ixc<l.xe+1; ixc++){
 	int ixf = 2*(ixc-l.xs)+l.xs;
 	fine_error(kz,ixf) = l.soln(kz,ixc);
 	fine_error(kz,ixf+1) = 0.5*(l.soln(kz,ixc)+l.soln(kz,ixc+1));
-	//output<<ixc<<" "<<ixf<<endl;
       }
       // upper boundary
       for(int ixc=l.xe+1; ixc<l.ncx; ixc++){
 	int ixf = l.xs + 2*(l.xe + 1 - l.xs)+ (ixc - l.xe - 1);
 	fine_error(kz,ixf) = l.soln(kz,ixc);
-	//output<<"ub "<<ixc<<" "<<ixf<<endl;
       }
     }
   }
-  
-  /*
-  output<<"fine_error ";
-  for(int ix=0; ix<2*(l.ncx-4)+4; ix++){
-    output<<fine_error(0,ix)<<" ";
-  }
-  output<<endl;
-  */
 }
 
 void LaplaceParallelTriMG::refine(Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast){
