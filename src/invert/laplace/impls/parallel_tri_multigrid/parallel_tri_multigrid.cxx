@@ -936,11 +936,6 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
 void LaplaceParallelTriMG::jacobi(Level &l, const int jy, const Array<bool> &converged){
 
   SCOREP0();
-  auto sendvec = Array<dcomplex>(nmode);
-  auto recvvec = Array<dcomplex>(nmode);
-  MPI_Comm comm = BoutComm::get();
-  int err;
-
   for (int kz = 0; kz <= maxmode; kz++) {
     if(!converged[kz]){
       
@@ -968,6 +963,12 @@ void LaplaceParallelTriMG::jacobi(Level &l, const int jy, const Array<bool> &con
 
   ///SCOREP_USER_REGION_DEFINE(comms);
   ///SCOREP_USER_REGION_BEGIN(comms, "communication",SCOREP_USER_REGION_TYPE_COMMON);
+
+  // Communication
+  auto sendvec = Array<dcomplex>(nmode);
+  auto recvvec = Array<dcomplex>(nmode);
+  MPI_Comm comm = BoutComm::get();
+  int err;
 
   // Communication receive from left
   if(!localmesh->firstX()){
@@ -1847,24 +1848,23 @@ void LaplaceParallelTriMG::calculate_residual(Level &l, const Array<bool> &conve
     }
   }
 
-  // TODO replace message with dcomplex
-  struct Message { dcomplex value; bool done; };
-  Array<Message> message_send, message_recv;
-  message_send = Array<Message>(nmode);
-  message_recv = Array<Message>(nmode);
+  // Communication
+  auto sendvec = Array<dcomplex>(nmode);
+  auto recvvec = Array<dcomplex>(nmode);
   MPI_Comm comm = BoutComm::get();
   int err;
+
   // Communicate in
   if(!localmesh->firstX()){
     for (int kz = 0; kz <= maxmode; kz++) {
       if(!converged[kz]){
-	message_send[kz].value = l.residual(kz,l.xs);
+	sendvec[kz] = l.residual(kz,l.xs);
       }
     }
-    err = MPI_Sendrecv(&message_send[0], nmode*sizeof(Message), MPI_BYTE, proc_in, 1, &message_recv[0], nmode*sizeof(Message), MPI_BYTE, proc_in, 0, comm, MPI_STATUS_IGNORE);
+    err = MPI_Sendrecv(&sendvec[0], nmode, MPI_DOUBLE_COMPLEX, proc_in, 1, &recvvec[0], nmode, MPI_DOUBLE_COMPLEX, proc_in, 0, comm, MPI_STATUS_IGNORE);
     for (int kz = 0; kz <= maxmode; kz++) {
       if(!converged[kz]){
-	l.residual(kz,l.xs-1) = message_recv[kz].value;
+	l.residual(kz,l.xs-1) = recvvec[kz];
       }
     }
   }
@@ -1873,13 +1873,13 @@ void LaplaceParallelTriMG::calculate_residual(Level &l, const Array<bool> &conve
   if(!localmesh->lastX()){
     for (int kz = 0; kz <= maxmode; kz++) {
       if(!converged[kz]){
-	message_send[kz].value = l.residual(kz,l.xe);
+	sendvec[kz] = l.residual(kz,l.xe);
       }
     }
-    err = MPI_Sendrecv(&message_send[0], nmode*sizeof(Message), MPI_BYTE, proc_out, 0, &message_recv[0], nmode*sizeof(Message), MPI_BYTE, proc_out, 1, comm, MPI_STATUS_IGNORE);
+    err = MPI_Sendrecv(&sendvec[0], nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, &recvvec[0], nmode, MPI_DOUBLE_COMPLEX, proc_out, 1, comm, MPI_STATUS_IGNORE);
     for (int kz = 0; kz < nmode; kz++) {
       if(!converged[kz]){
-	l.residual(kz,l.xe+1) = message_recv[kz].value;
+	l.residual(kz,l.xe+1) = recvvec[kz];
       }
     }
   }
