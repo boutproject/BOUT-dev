@@ -936,10 +936,8 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
 void LaplaceParallelTriMG::jacobi(Level &l, const int jy, const Array<bool> &converged){
 
   SCOREP0();
-  struct Message { dcomplex value; bool done; };
-  Array<Message> message_send, message_recv;
-  message_send = Array<Message>(nmode);
-  message_recv = Array<Message>(nmode);
+  auto sendvec = Array<dcomplex>(nmode);
+  auto recvvec = Array<dcomplex>(nmode);
   MPI_Comm comm = BoutComm::get();
   int err;
 
@@ -975,15 +973,13 @@ void LaplaceParallelTriMG::jacobi(Level &l, const int jy, const Array<bool> &con
   if(!localmesh->firstX()){
     for (int kz = 0; kz <= maxmode; kz++) {
       if(!converged[kz]){
-	message_send[kz].value = l.xloc(index_in,kz);
-///	  message_send[kz].done  = self_in[kz];
+	sendvec[kz] = l.xloc(index_in,kz);
       }
     }
-    err = MPI_Sendrecv(&message_send[0], nmode*sizeof(Message), MPI_BYTE, proc_in, 1, &message_recv[0], nmode*sizeof(Message), MPI_BYTE, proc_in, 0, comm, MPI_STATUS_IGNORE);
+    err = MPI_Sendrecv(&sendvec[0], nmode, MPI_DOUBLE_COMPLEX, proc_in, 1, &recvvec[0], nmode, MPI_DOUBLE_COMPLEX, proc_in, 0, comm, MPI_STATUS_IGNORE);
     for (int kz = 0; kz <= maxmode; kz++) {
       if(!converged[kz]){
-	l.xloc(0,kz) = message_recv[kz].value;
-///	  neighbour_in[kz] = message_recv[kz].done;
+	l.xloc(0,kz) = recvvec[kz];
       }
     }
   }
@@ -992,15 +988,13 @@ void LaplaceParallelTriMG::jacobi(Level &l, const int jy, const Array<bool> &con
   if(!localmesh->lastX()){
     for (int kz = 0; kz <= maxmode; kz++) {
       if(!converged[kz]){
-	message_send[kz].value = l.xloc(index_out,kz);
-///       message_send[kz].done  = self_out[kz];
+	sendvec[kz] = l.xloc(index_out,kz);
       }
     }
-    err = MPI_Sendrecv(&message_send[0], nmode*sizeof(Message), MPI_BYTE, proc_out, 0, &message_recv[0], nmode*sizeof(Message), MPI_BYTE, proc_out, 1, comm, MPI_STATUS_IGNORE);
+    err = MPI_Sendrecv(&sendvec[0], nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, &recvvec[0], nmode, MPI_DOUBLE_COMPLEX, proc_out, 1, comm, MPI_STATUS_IGNORE);
     for (int kz = 0; kz < nmode; kz++) {
       if(!converged[kz]){
-	l.xloc(3,kz) = message_recv[kz].value;
-///	  neighbour_out[kz] = message_recv[kz].done;
+	l.xloc(3,kz) = recvvec[kz];
       }
     }
   }
