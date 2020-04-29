@@ -264,53 +264,43 @@ void LaplaceParallelTriMG::reconstruct_full_solution(Level &l, const int jy){
   if(new_method){
     ///SCOREP_USER_REGION_DEFINE(getnewmethodhalos);
     ///SCOREP_USER_REGION_BEGIN(getnewmethodhalos, "get new method halos",///SCOREP_USER_REGION_TYPE_COMMON);
+
     // Make halos consistent with neighbour's NEAREST interior point
-    struct Message { dcomplex value; bool done; };
-    Array<Message> message_send, message_recv;
-    message_send = Array<Message>(nmode);
-    message_recv = Array<Message>(nmode);
+
+    auto sendvec = Array<dcomplex>(nmode);
+    auto recvvec = Array<dcomplex>(nmode);
     MPI_Comm comm = BoutComm::get();
     int err;
     // Communication receive from left
     if(!localmesh->firstX()){
       for (int kz = 0; kz <= maxmode; kz++) {
-	//if(!converged[kz]){
-	  message_send[kz].value = l.xloc(1,kz);
-	//}
+	sendvec[kz] = l.xloc(1,kz);
       }
-      err = MPI_Sendrecv(&message_send[0], nmode*sizeof(Message), MPI_BYTE, proc_in, 1, &message_recv[0], nmode*sizeof(Message), MPI_BYTE, proc_in, 0, comm, MPI_STATUS_IGNORE);
+      err = MPI_Sendrecv(&sendvec[0], nmode, MPI_DOUBLE_COMPLEX, proc_in, 1, &recvvec[0], nmode, MPI_DOUBLE_COMPLEX, proc_in, 0, comm, MPI_STATUS_IGNORE);
       for (int kz = 0; kz <= maxmode; kz++) {
-	//if(!converged[kz]){
-	  x_lower_halo[kz] = message_recv[kz].value;
-	//}
+        x_lower_halo[kz] = recvvec[kz];
       }
     }
 
     // Communicate receive from right
     if(!localmesh->lastX()){
       for (int kz = 0; kz <= maxmode; kz++) {
-	//if(!converged[kz]){
-	  message_send[kz].value = l.xloc(2,kz);
-	//}
+        sendvec[kz] = l.xloc(2,kz);
       }
-      err = MPI_Sendrecv(&message_send[0], nmode*sizeof(Message), MPI_BYTE, proc_out, 0, &message_recv[0], nmode*sizeof(Message), MPI_BYTE, proc_out, 1, comm, MPI_STATUS_IGNORE);
+      err = MPI_Sendrecv(&sendvec[0], nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, &recvvec[0], nmode, MPI_DOUBLE_COMPLEX, proc_out, 1, comm, MPI_STATUS_IGNORE);
       for (int kz = 0; kz < nmode; kz++) {
-	//if(!converged[kz]){
-	  x_upper_halo[kz] = message_recv[kz].value;
-	//}
+	x_upper_halo[kz] = recvvec[kz];
       }
     }
     ///SCOREP_USER_REGION_END(getnewmethodhalos);
   }
 
   for (int kz = 0; kz < nmode; kz++) {
-    //if(!converged[kz]){
-      l.soln(kz,l.xs-1) = x_lower_halo[kz];
-      for(int i=l.xs; i<l.xe+1; i++){
-	l.soln(kz,i) = l.minvb(kz,i) + l.upperGuardVector(i,jy,kz)*x_upper[kz] + l.lowerGuardVector(i,jy,kz)*x_lower[kz];
-      }
-      l.soln(kz,l.xe+1) = x_upper_halo[kz];
-    //}
+    l.soln(kz,l.xs-1) = x_lower_halo[kz];
+    for(int i=l.xs; i<l.xe+1; i++){
+      l.soln(kz,i) = l.minvb(kz,i) + l.upperGuardVector(i,jy,kz)*x_upper[kz] + l.lowerGuardVector(i,jy,kz)*x_lower[kz];
+    }
+    l.soln(kz,l.xe+1) = x_upper_halo[kz];
   }
 }
 
@@ -1094,7 +1084,7 @@ void LaplaceParallelTriMG::gauss_seidel_red_black_full_system(Level &l, const Ar
 
 /*
  * Perform a Gauss--Seidel iteration with red black colouring explicitly on the full system 
- * Note that this assumes that each processor has an ever number of points
+ * Note that this assumes that each processor has an even number of points
  */
 void LaplaceParallelTriMG::gauss_seidel_red_black_full_system_comp_comm_overlap(Level &l, const Array<bool> &converged, const int jy){
 
@@ -1144,7 +1134,6 @@ void LaplaceParallelTriMG::gauss_seidel_red_black_full_system_comp_comm_overlap(
     }
   }
 
-  bool wait_red = false; // have we posted the wait?
   // Black sweep: even points
   for (int kz = 0; kz <= maxmode; kz++) {
     if(!converged[kz]){
@@ -1153,6 +1142,9 @@ void LaplaceParallelTriMG::gauss_seidel_red_black_full_system_comp_comm_overlap(
       }
     }
   }
+
+  // Black sweep: wait and calculate final interior point
+  bool wait_red = false;
   for (int kz = 0; kz <= maxmode; kz++) {
     if(!converged[kz]){
       if(!localmesh->lastX()){
@@ -1162,11 +1154,7 @@ void LaplaceParallelTriMG::gauss_seidel_red_black_full_system_comp_comm_overlap(
         }
         l.soln(kz,l.xe+1) = recvecred[kz];
       }
-      {
-	// TODO replace
-        int ix = l.xe;
-	l.soln(kz,ix) = ( l.rvec(kz,ix) - l.avec(jy,kz,ix)*l.soln(kz,ix-1) - l.cvec(jy,kz,ix)*l.soln(kz,ix+1) ) / l.bvec(jy,kz,ix);
-      }
+      l.soln(kz,l.xe) = ( l.rvec(kz,l.xe) - l.avec(jy,kz,l.xe)*l.soln(kz,l.xe-1) - l.cvec(jy,kz,l.xe)*l.soln(kz,l.xe+1) ) / l.bvec(jy,kz,l.xe);
     }
   }
 
@@ -1685,7 +1673,8 @@ void LaplaceParallelTriMG::calculate_total_residual(Array<BoutReal> &error_abs, 
 
       // TODO This approximation will increase iteration count. The alternatives are:
       // + reconstructing the solution and calculating properly
-      // + multiply approximation by (interior points/2)
+      // + multiply approximation by (interior points/2) - this can be done 
+      //   at runtime by changing rtol
       // Strictly this should be all contributions to the solution, but this under-approximation saves work.
       subtotal[kz+nmode] = pow(l.xloc(1,kz).real(),2) + pow(l.xloc(1,kz).imag(),2) + pow(l.xloc(2,kz).real(),2) + pow(l.xloc(2,kz).imag(),2);
     }
