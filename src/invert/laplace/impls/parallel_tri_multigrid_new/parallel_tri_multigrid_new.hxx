@@ -121,6 +121,7 @@ public:
   void init_rhs(Level &level, const int jy, const Matrix<dcomplex> bcmplx);
 
   void jacobi(Level &level, const int jy, const Array<bool> &converged);
+  void gauss_seidel_red_black(Level &level, const Array<bool> &converged, const int jy);
   void gauss_seidel_red_black_full_system(Level &level, const Array<bool> &converged, const int jy);
   void gauss_seidel_red_black_full_system_comp_comm_overlap(Level &level, const Array<bool> &converged, const int jy);
   void refine_full_system(Level &level, Matrix<dcomplex> &fine_error, const Array<bool> &converged);

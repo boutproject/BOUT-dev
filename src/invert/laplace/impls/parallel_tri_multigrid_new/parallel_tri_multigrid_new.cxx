@@ -991,6 +991,125 @@ void LaplaceParallelTriMGNew::jacobi(Level &l, const int jy, const Array<bool> &
   ///SCOREP_USER_REGION_END(comms);
 }  
 
+/*
+ * Perform Gauss-Seidel with red-black colouring on the reduced system
+ */
+void LaplaceParallelTriMGNew::gauss_seidel_red_black(Level &l, const Array<bool> &converged, const int jy){
+
+  SCOREP0();
+  Array<dcomplex> sendvec, recvec;
+  sendvec = Array<dcomplex>(nmode);
+  recvec = Array<dcomplex>(nmode);
+  comm_handle recv[1];
+
+  // Red sweep: odd points
+  if( l.myproc%2 == 1){
+    for (int kz = 0; kz <= maxmode; kz++) {
+      if(!converged[kz]){ // TODO is guarding work still worth it without x loops?
+	l.xloc(1,kz) = l.rl[kz] + l.al(jy,kz)*l.xloc(0,kz) + l.bl(jy,kz)*l.xloc(3,kz);
+      }
+    }
+  }
+
+  // Communicate: final grid point needs data from proc above
+  if(!localmesh->lastX()){
+    recv[0] = localmesh->irecvXOut(&recvec[0], nmode, 1);
+  }
+  for(int kz=0; kz < nmode; kz++){
+    if(!converged[kz]){
+      sendvec[kz] = l.xloc(1,kz);
+    }
+  }
+  if(!localmesh->firstX()){
+    localmesh->sendXIn(&sendvec[0],nmode,1);
+  }
+  if(!localmesh->lastX()){
+    localmesh->wait(recv[0]);
+    for(int kz=0; kz < nmode; kz++){
+      if(!converged[kz]){
+	l.xloc(3,kz) = recvec[kz];
+      }
+    }
+  }
+
+  if(!localmesh->firstX()){
+    recv[0] = localmesh->irecvXIn(&recvec[0], nmode, 1);
+  }
+  if(!localmesh->lastX()){
+    localmesh->sendXOut(&sendvec[0],nmode,1);
+  }
+  if(!localmesh->firstX()){
+    localmesh->wait(recv[0]);
+    for(int kz=0; kz < nmode; kz++){
+      if(!converged[kz]){
+	l.xloc(0,kz) = recvec[kz];
+      }
+    }
+  }
+
+  // Black sweep: even processors
+  if( l.myproc%2 == 0){
+    for (int kz = 0; kz <= maxmode; kz++) {
+      if(!converged[kz]){ // TODO worthwhile?
+	if(not localmesh->lastX()){
+	  l.xloc(1,kz) = l.rl[kz] + l.al(jy,kz)*l.xloc(0,kz) + l.bl(jy,kz)*l.xloc(3,kz);
+	}
+	else{
+	  l.xloc(1,kz) = l.rl[kz] + l.al(jy,kz)*l.xloc(0,kz) + l.bl(jy,kz)*l.xloc(2,kz);
+	  l.xloc(2,kz) = l.ru[kz] + l.au(jy,kz)*l.xloc(1,kz) + l.bu(jy,kz)*l.xloc(3,kz);
+	}
+      }
+    }
+  }
+
+  // Communicate: to synchronize, first grid point needs data from proc below
+  if(!localmesh->firstX()){
+    recv[0] = localmesh->irecvXIn(&recvec[0], nmode, 1);
+  }
+  for(int kz=0; kz < nmode; kz++){
+    if(!converged[kz]){
+      sendvec[kz] = l.xloc(1,l.xe);
+    }
+  }
+  if(!localmesh->lastX()){
+    localmesh->sendXOut(&sendvec[0],nmode,1);
+  }
+  if(!localmesh->firstX()){
+    localmesh->wait(recv[0]);
+    for(int kz=0; kz < nmode; kz++){
+      if(!converged[kz]){
+	l.xloc(0,kz) = recvec[kz];
+      }
+    }
+  }
+  if(!localmesh->firstX()){
+    localmesh->sendXIn(&sendvec[0],nmode,1);
+  }
+  if(!localmesh->lastX()){
+    localmesh->wait(recv[0]);
+    for(int kz=0; kz < nmode; kz++){
+      if(!converged[kz]){
+	l.xloc(3,kz) = recvec[kz];
+      }
+    }
+  }
+
+  if(l.current_level==0){
+    // Update boundaries to match interior points
+    // Do this after communication
+    for (int kz = 0; kz <= maxmode; kz++) {
+      if(!converged[kz]){
+	if(localmesh->firstX()){
+	  l.xloc(0,kz) = - l.cvec(jy,kz,l.xs-1)*l.xloc(1,kz) / l.bvec(jy,kz,l.xs-1);
+	}
+	if(localmesh->lastX()){
+	  l.xloc(3,kz) = - l.avec(jy,kz,l.xe+1)*l.xloc(1,kz) / l.bvec(jy,kz,l.xe+1);
+	}
+      }
+    }
+  }
+}  
+
 void LaplaceParallelTriMGNew::gauss_seidel_red_black_full_system(Level &l, const Array<bool> &converged, const int jy){
 
   SCOREP0();
