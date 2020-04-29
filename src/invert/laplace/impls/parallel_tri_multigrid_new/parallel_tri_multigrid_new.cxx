@@ -1524,11 +1524,9 @@ void LaplaceParallelTriMGNew::init(Level &l, const int ncx, const int jy, const 
       l.au(jy,kz) = l.auold(jy,kz)/l.alold(jy,kz);
       l.bu(jy,kz) = l.buold(jy,kz) - l.au(jy,kz) * l.blold(jy,kz); // NB depends on previous line
 
-      l.al(jy,kz) = l.al(jy,kz)*( l.alold(jy,kz)*l.buold(jy,kz) - l.auold(jy,kz)*l.blold(jy,kz) )
-	/ (l.alold(jy,kz)*l.buold(jy,kz) + l.auold(jy,kz)*( l.bl(jy,kz) - l.blold(jy,kz) ) );
-      l.bl(jy,kz) = l.alold(jy,kz)*l.bl(jy,kz) 
-	/ (l.alold(jy,kz)*l.buold(jy,kz) + l.auold(jy,kz)*( l.bl(jy,kz) - l.blold(jy,kz) ) );
-
+      // Use BCs to replace x(xe+1) = -avec(xe+1) x(xe) / bvec(xe+1)
+      //  => only bl changes
+      l.bl(jy,kz) = - l.avec(jy,kz,l.xe+1)*l.bl(jy,kz) / l.bvec(jy,kz,l.xe+1);
     }
 
   ///SCOREP_USER_REGION_END(coefs);
@@ -1541,103 +1539,98 @@ void LaplaceParallelTriMGNew::init_rhs(Level &l, const int jy, const Matrix<dcom
 
   SCOREP0();
 
-  if(algorithm!=0){
-    int ncz = localmesh->LocalNz;
-    auto rlold = Array<dcomplex>(nmode);
-    auto ruold = Array<dcomplex>(nmode);
-    auto Rd = Array<dcomplex>(nmode);
-    auto Ru = Array<dcomplex>(nmode);
-    auto Rsendup = Array<dcomplex>(ncz+2); // 2*nmode?
-    auto Rsenddown = Array<dcomplex>(ncz+2);
-    auto Rrecvup = Array<dcomplex>(ncz+2);
-    auto Rrecvdown = Array<dcomplex>(ncz+2);
-    auto evec = Array<dcomplex>(l.ncx);
-    auto tmp = Array<dcomplex>(l.ncx);
-    int err;
+  int ncz = localmesh->LocalNz;
+  auto rlold = Array<dcomplex>(nmode);
+  auto ruold = Array<dcomplex>(nmode);
+  auto Rd = Array<dcomplex>(nmode);
+  auto Ru = Array<dcomplex>(nmode);
+  auto Rsendup = Array<dcomplex>(ncz+2); // 2*nmode?
+  auto Rsenddown = Array<dcomplex>(ncz+2);
+  auto Rrecvup = Array<dcomplex>(ncz+2);
+  auto Rrecvdown = Array<dcomplex>(ncz+2);
+  auto evec = Array<dcomplex>(l.ncx);
+  auto tmp = Array<dcomplex>(l.ncx);
+  int err;
 
+  for (int kz = 0; kz <= maxmode; kz++) {
+
+    ///SCOREP_USER_REGION_DEFINE(invertforrhs);
+    ///SCOREP_USER_REGION_BEGIN(invertforrhs, "invert local matrices for rhs",///SCOREP_USER_REGION_TYPE_COMMON);
+
+    // Invert local matrices
+    // Calculate Minv*b
+    tridag(&l.avec(jy,kz,0), &l.bvec(jy,kz,0), &l.cvec(jy,kz,0), &bcmplx(kz,0),
+    &l.minvb(kz,0), l.ncx);
+    // Now minvb is a constant vector throughout the iterations
+
+    ///SCOREP_USER_REGION_END(invertforrhs);
+    ///SCOREP_USER_REGION_DEFINE(coefsforrhs);
+    ///SCOREP_USER_REGION_BEGIN(coefsforrhs, "calculate coefs for rhs",///SCOREP_USER_REGION_TYPE_COMMON);
+
+    l.rl[kz] = l.minvb(kz,l.xs);
+    l.ru[kz] = l.minvb(kz,l.xe);
+    l.rlold[kz] = l.rl[kz];
+    l.ruold[kz] = l.ru[kz];
+
+    // Boundary processor values to be overwritten when relevant
+    Rd[kz] = 0.0;
+    Ru[kz] = 0.0;
+    if(not localmesh->firstX()){
+      // Send coefficients down
+      Rsenddown[kz] = l.rl[kz];
+      if( std::fabs(l.buold(jy,kz)) > 1e-14 ){
+	Rsenddown[kz] -= l.ru[kz]*l.blold(jy,kz)/l.buold(jy,kz);
+      }
+      Rd[kz] = localmesh->communicateXIn(Rsenddown[kz]);
+    }
+    if(not localmesh->lastX()){
+      // Send coefficients up
+      Rsendup[kz] = l.ru[kz];
+      if( std::fabs(l.alold(jy,kz)) > 1e-14 ){
+	Rsendup[kz] -= l.rl[kz]*l.auold(jy,kz)/l.alold(jy,kz);
+      }
+      Ru[kz] = localmesh->communicateXOut(Rsendup[kz]);
+    }
+    ///SCOREP_USER_REGION_END(coefsforrhs);
+  } // end of kz loop
+
+  // Communicate vector in kz
+  if(not localmesh->firstX()){
     for (int kz = 0; kz <= maxmode; kz++) {
+      Rsenddown[kz+maxmode] = l.xloclast(2,kz);
+    }
+  }
+  if(not localmesh->lastX()){
+    for (int kz = 0; kz <= maxmode; kz++) {
+      Rsendup[kz+maxmode] = l.xloclast(1,kz);
+    }
+  }
 
-      ///SCOREP_USER_REGION_DEFINE(invertforrhs);
-      ///SCOREP_USER_REGION_BEGIN(invertforrhs, "invert local matrices for rhs",///SCOREP_USER_REGION_TYPE_COMMON);
+  if(not localmesh->firstX()){
+    err = MPI_Sendrecv(&Rsenddown[0], 2*nmode, MPI_DOUBLE_COMPLEX, proc_in, 1, &Rrecvdown[0], 2*nmode, MPI_DOUBLE_COMPLEX, proc_in, 0, BoutComm::get(), MPI_STATUS_IGNORE);
+  }
+  if(not localmesh->lastX()){
+    err = MPI_Sendrecv(&Rsendup[0], 2*nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, &Rrecvup[0], 2*nmode, MPI_DOUBLE_COMPLEX, proc_out, 1, BoutComm::get(), MPI_STATUS_IGNORE);
+  }
 
-      // Invert local matrices
-      // Calculate Minv*b
-      tridag(&l.avec(jy,kz,0), &l.bvec(jy,kz,0), &l.cvec(jy,kz,0), &bcmplx(kz,0),
-      &l.minvb(kz,0), l.ncx);
-      // Now minvb is a constant vector throughout the iterations
+  if(not localmesh->firstX()){
+    for (int kz = 0; kz <= maxmode; kz++) {
+      Rd[kz] = Rrecvdown[kz];
+      l.xloclast(0,kz) = Rrecvdown[kz+maxmode];
+    }
+  }
+  if(not localmesh->lastX()){
+    for (int kz = 0; kz <= maxmode; kz++) {
+      Ru[kz] = Rrecvup[kz];
+      l.xloclast(3,kz) = Rrecvup[kz+maxmode];
+    }
+  }
 
-      ///SCOREP_USER_REGION_END(invertforrhs);
-      ///SCOREP_USER_REGION_DEFINE(coefsforrhs);
-      ///SCOREP_USER_REGION_BEGIN(coefsforrhs, "calculate coefs for rhs",///SCOREP_USER_REGION_TYPE_COMMON);
-
-      l.rl[kz] = l.minvb(kz,l.xs);
-      l.ru[kz] = l.minvb(kz,l.xe);
-      l.rlold[kz] = l.rl[kz];
-      l.ruold[kz] = l.ru[kz];
-
-      // New method - connect to more distant points
-      if(new_method){
-
-	// Boundary processor values to be overwritten when relevant
-	Rd[kz] = 0.0;
-	Ru[kz] = 0.0;
-	if(not localmesh->firstX()){
-	  // Send coefficients down
-	  Rsenddown[kz] = l.rl[kz];
-	  if( std::fabs(l.buold(jy,kz)) > 1e-14 ){
-	    Rsenddown[kz] -= l.ru[kz]*l.blold(jy,kz)/l.buold(jy,kz);
-	  }
-	  Rd[kz] = localmesh->communicateXIn(Rsenddown[kz]);
-	}
-	if(not localmesh->lastX()){
-	  // Send coefficients up
-	  Rsendup[kz] = l.ru[kz];
-	  if( std::fabs(l.alold(jy,kz)) > 1e-14 ){
-	    Rsendup[kz] -= l.rl[kz]*l.auold(jy,kz)/l.alold(jy,kz);
-	  }
-	  Ru[kz] = localmesh->communicateXOut(Rsendup[kz]);
-	}
-      } // new method
-      ///SCOREP_USER_REGION_END(coefsforrhs);
-    } // end of kz loop
-
-    // Communicate vector in kz
-    if(new_method){
-      if(not localmesh->firstX()){
-	for (int kz = 0; kz <= maxmode; kz++) {
-	  Rsenddown[kz+maxmode] = l.xloclast(2,kz);
-	}
-      }
-      if(not localmesh->lastX()){
-	for (int kz = 0; kz <= maxmode; kz++) {
-	  Rsendup[kz+maxmode] = l.xloclast(1,kz);
-	}
-      }
-
-      if(not localmesh->firstX()){
-	err = MPI_Sendrecv(&Rsenddown[0], 2*nmode, MPI_DOUBLE_COMPLEX, proc_in, 1, &Rrecvdown[0], 2*nmode, MPI_DOUBLE_COMPLEX, proc_in, 0, BoutComm::get(), MPI_STATUS_IGNORE);
-      }
-      if(not localmesh->lastX()){
-	err = MPI_Sendrecv(&Rsendup[0], 2*nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, &Rrecvup[0], 2*nmode, MPI_DOUBLE_COMPLEX, proc_out, 1, BoutComm::get(), MPI_STATUS_IGNORE);
-      }
-
-      if(not localmesh->firstX()){
-	for (int kz = 0; kz <= maxmode; kz++) {
-	  Rd[kz] = Rrecvdown[kz];
-	  l.xloclast(0,kz) = Rrecvdown[kz+maxmode];
-	}
-      }
-      if(not localmesh->lastX()){
-	for (int kz = 0; kz <= maxmode; kz++) {
-	  Ru[kz] = Rrecvup[kz];
-	  l.xloclast(3,kz) = Rrecvup[kz+maxmode];
-	}
-      }
-
-      for (int kz = 0; kz <= maxmode; kz++) {
-	l.rl[kz] = l.r1(jy,kz)*Rd[kz] + l.r2(jy,kz)*l.rlold[kz] + l.r3(jy,kz)*l.ruold[kz] + l.r4(jy,kz)*Ru[kz] ;
-	l.ru[kz] = l.r5(jy,kz)*Rd[kz] + l.r6(jy,kz)*l.rlold[kz] + l.r7(jy,kz)*l.ruold[kz] + l.r8(jy,kz)*Ru[kz] ;
-      }
+  for (int kz = 0; kz <= maxmode; kz++) {
+    l.rl[kz] = l.r1(jy,kz)*Rd[kz] + l.r2(jy,kz)*l.rlold[kz];
+    // Special case for multiple points on last proc
+    if(localmesh->lastX()){
+      l.ru[kz] = l.ruold[kz] - l.auold(jy,kz)*rlold[kz]/l.alold(jy,kz);
     }
   }
   //levels_info(l,jy);
