@@ -17,6 +17,7 @@
 #include "impls/naulin/naulin_laplace.hxx"
 #include "impls/parallel_tri/parallel_tri.hxx"
 #include "impls/parallel_tri_multigrid/parallel_tri_multigrid.hxx"
+#include "impls/parallel_tri_multigrid_new/parallel_tri_multigrid_new.hxx"
 
 #define LAPLACE_SPT  "spt"
 #define LAPLACE_PDD  "pdd"
@@ -30,6 +31,7 @@
 #define LAPLACE_NAULIN "naulin"
 #define LAPLACE_PTRI "ptri"
 #define LAPLACE_PTRI_MG "ptri_mg"
+#define LAPLACE_PTRI_MG_NEW "ptri_mg_new"
 
 LaplaceFactory *LaplaceFactory::instance = nullptr;
 
@@ -80,6 +82,8 @@ Laplacian* LaplaceFactory::createLaplacian(Options *options, const CELL_LOC loc,
       return new LaplaceParallelTri(options, loc, mesh_in);
     }else if(strcasecmp(type.c_str(), LAPLACE_PTRI_MG) == 0) {
       return new LaplaceParallelTriMG(options, loc, mesh_in);
+    }else if(strcasecmp(type.c_str(), LAPLACE_PTRI_MG_NEW) == 0) {
+      return new LaplaceParallelTriMGNew(options, loc, mesh_in);
     }else {
       throw BoutException("Unknown serial Laplacian solver type '%s'", type.c_str());
     }
@@ -108,6 +112,8 @@ Laplacian* LaplaceFactory::createLaplacian(Options *options, const CELL_LOC loc,
     return new LaplaceParallelTri(options, loc, mesh_in);
   }else if(strcasecmp(type.c_str(), LAPLACE_PTRI_MG) == 0) {
     return new LaplaceParallelTriMG(options, loc, mesh_in);
+    }else if(strcasecmp(type.c_str(), LAPLACE_PTRI_MG_NEW) == 0) {
+      return new LaplaceParallelTriMGNew(options, loc, mesh_in);
   }else {
     throw BoutException("Unknown parallel Laplacian solver type '%s'", type.c_str());
   }
