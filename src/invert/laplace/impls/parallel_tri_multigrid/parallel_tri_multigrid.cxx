@@ -1917,11 +1917,9 @@ void LaplaceParallelTriMG::calculate_residual_full_system(Level &l, const Array<
     }
   }
 
-  // TODO message to dcomplex
-  struct Message { dcomplex value; bool done; };
-  Array<Message> message_send, message_recv;
-  message_send = Array<Message>(nmode);
-  message_recv = Array<Message>(nmode);
+  // Communication
+  auto sendvec = Array<dcomplex>(nmode);
+  auto recvvec = Array<dcomplex>(nmode);
   MPI_Comm comm = BoutComm::get();
   int err;
 
@@ -1929,13 +1927,13 @@ void LaplaceParallelTriMG::calculate_residual_full_system(Level &l, const Array<
   if(!localmesh->firstX()){
     for (int kz = 0; kz <= maxmode; kz++) {
       if(!converged[kz]){
-	message_send[kz].value = l.residual(kz,l.xs);
+	sendvec[kz] = l.residual(kz,l.xs);
       }
     }
-    err = MPI_Sendrecv(&message_send[0], nmode*sizeof(Message), MPI_BYTE, proc_in, 1, &message_recv[0], nmode*sizeof(Message), MPI_BYTE, proc_in, 0, comm, MPI_STATUS_IGNORE);
+    err = MPI_Sendrecv(&sendvec[0], nmode, MPI_DOUBLE_COMPLEX, proc_in, 1, &recvvec[0], nmode, MPI_DOUBLE_COMPLEX, proc_in, 0, comm, MPI_STATUS_IGNORE);
     for (int kz = 0; kz <= maxmode; kz++) {
       if(!converged[kz]){
-	l.residual(kz,l.xs-1) = message_recv[kz].value;
+	l.residual(kz,l.xs-1) = recvvec[kz];
       }
     }
   }
@@ -1944,13 +1942,13 @@ void LaplaceParallelTriMG::calculate_residual_full_system(Level &l, const Array<
   if(!localmesh->lastX()){
     for (int kz = 0; kz <= maxmode; kz++) {
       if(!converged[kz]){
-	message_send[kz].value = l.residual(kz,l.xe);
+	sendvec[kz] = l.residual(kz,l.xe);
       }
     }
-    err = MPI_Sendrecv(&message_send[0], nmode*sizeof(Message), MPI_BYTE, proc_out, 0, &message_recv[0], nmode*sizeof(Message), MPI_BYTE, proc_out, 1, comm, MPI_STATUS_IGNORE);
+    err = MPI_Sendrecv(&sendvec[0], nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, &recvvec[0], nmode, MPI_DOUBLE_COMPLEX, proc_out, 1, comm, MPI_STATUS_IGNORE);
     for (int kz = 0; kz < nmode; kz++) {
       if(!converged[kz]){
-	l.residual(kz,l.xe+1) = message_recv[kz].value;
+	l.residual(kz,l.xe+1) = recvvec[kz];
       }
     }
   }
