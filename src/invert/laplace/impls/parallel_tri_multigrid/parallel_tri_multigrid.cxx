@@ -694,7 +694,6 @@ FieldPerp LaplaceParallelTriMG::solve(const FieldPerp& b, const FieldPerp& x0) {
   while(true){
 
     if(algorithm==0 or current_level!=0){ 
-      //jacobi_full_system(levels[current_level],jy);
       //gauss_seidel_red_black_full_system(levels[current_level],converged,jy);
       // This version is ~20% faster
       gauss_seidel_red_black_full_system_comp_comm_overlap(levels[current_level],converged,jy);
@@ -1219,78 +1218,6 @@ void LaplaceParallelTriMG::gauss_seidel_red_black_full_system_comp_comm_overlap(
   }
   if(!localmesh->firstX()){
     MPI_Wait(&sredreq,MPI_STATUS_IGNORE);
-  }
-}  
-
-// Perform a Jacobi iteration explicitly on the full system 
-void LaplaceParallelTriMG::jacobi_full_system(Level &l, const int jy){
-
-  SCOREP0();
-  struct Message { dcomplex value; bool done; };
-  Array<Message> message_send, message_recv;
-  message_send = Array<Message>(nmode);
-  message_recv = Array<Message>(nmode);
-  MPI_Comm comm = BoutComm::get();
-  int err;
-
-  for (int kz = 0; kz <= maxmode; kz++) {
-    // TODO guard work for converged kz
-    l.soln(kz,l.xs-1) = l.solnlast(kz,l.xs-1);
-    for (int ix = l.xs; ix < l.xe+1; ix++) {
-      l.soln(kz,ix) = ( l.rvec(kz,ix) - l.avec(jy,kz,ix)*l.solnlast(kz,ix-1) - l.cvec(jy,kz,ix)*l.solnlast(kz,ix+1) ) / l.bvec(jy,kz,ix);
-    }
-
-    if(!localmesh->firstX()){
-      for (int kz = 0; kz <= maxmode; kz++) {
-///	if(!neighbour_in[kz]){
-	  message_send[kz].value = l.soln(kz,l.xs);
-///	  message_send[kz].done  = self_in[kz];
-///	}
-      }
-      err = MPI_Sendrecv(&message_send[0], nmode*sizeof(Message), MPI_BYTE, proc_in, 1, &message_recv[0], nmode*sizeof(Message), MPI_BYTE, proc_in, 0, comm, MPI_STATUS_IGNORE);
-      for (int kz = 0; kz <= maxmode; kz++) {
-///	if(!self_in[kz]){
-	  l.soln(kz,l.xs-1) = message_recv[kz].value;
-///	  neighbour_in[kz] = message_recv[kz].done;
-///	}
-      }
-///    }
-}
-
-    // Communicate out
-    // See note above for inward communication.
-//    TODO Guard comms
-///    if(!all(neighbour_out)) {
-      //output<<"neighbour_out proc "<<BoutComm::rank()<<endl;
-    if(!localmesh->lastX()){
-      for (int kz = 0; kz <= maxmode; kz++) {
-	message_send[kz].value = l.soln(kz,l.xe);
-///	message_send[kz].done  = self_out[kz];
-      }
-      err = MPI_Sendrecv(&message_send[0], nmode*sizeof(Message), MPI_BYTE, proc_out, 0, &message_recv[0], nmode*sizeof(Message), MPI_BYTE, proc_out, 1, comm, MPI_STATUS_IGNORE);
-      for (int kz = 0; kz < nmode; kz++) {
-	l.soln(kz,l.xe+1) = message_recv[kz].value;
-///	neighbour_out[kz] = message_recv[kz].done;
-      }
-      }
-
-
-    // Update boundaries to match interior points
-    // Do this after communication, otherwise this breaks on 1 interior pt per proc
-    if(l.current_level == 0){
-      if(localmesh->firstX()){
-	for (int ix = l.xs-1; ix > 0; ix--) {
-	  l.soln(kz,ix) = ( l.rvec(kz,ix) - l.avec(jy,kz,ix)*l.soln(kz,ix-1) - l.cvec(jy,kz,ix)*l.soln(kz,ix+1) ) / l.bvec(jy,kz,ix);
-	}
-	l.soln(kz,0) = ( l.rvec(kz,0) - l.cvec(jy,kz,0)*l.soln(kz,1) ) / l.bvec(jy,kz,0);
-      }
-      if(localmesh->lastX()){
-	for (int ix = l.xe; ix < l.ncx-1; ix++) {
-	  l.soln(kz,ix) = ( l.rvec(kz,ix) - l.avec(jy,kz,ix)*l.soln(kz,ix-1) - l.cvec(jy,kz,ix)*l.soln(kz,ix+1) ) / l.bvec(jy,kz,ix);
-	}
-	l.soln(kz,l.ncx-1) = ( l.rvec(kz,l.ncx-1) - l.avec(jy,kz,l.ncx-1)*l.soln(kz,l.ncx-2) ) / l.bvec(jy,kz,l.ncx-1);
-      }
-    }
   }
 }  
 
