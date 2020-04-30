@@ -749,7 +749,8 @@ FieldPerp LaplaceParallelTriMGNew::solve(const FieldPerp& b, const FieldPerp& x0
     }
     else if( down && max_level > 0 ){
 
-      calculate_residual_full_system(levels[current_level],converged,jy);
+      // NB no need to calculate residual, as do it in subcount=max_cycle-1
+
       current_level++;
       coarsen(levels[current_level],levels[current_level-1].residual,converged);
       subcount=0;
@@ -1369,7 +1370,10 @@ void LaplaceParallelTriMGNew::init(Level &l, const Level lup, int ncx, const int
   l.xe = xe;
   l.ncx = ncx;
   l.current_level = current_level;
+  l.myproc = lup.myproc;
   int ny = localmesh->LocalNy;
+  // Whether this proc is involved in the multigrid calculation
+  l.included = ( l.myproc%int((pow(2,current_level))) == 0 ) or localmesh->lastX();
 
   // TODO Probably no longer a problem:
   if(l.xe-l.xs<1){
@@ -1956,16 +1960,16 @@ void LaplaceParallelTriMGNew::calculate_residual_full_system(Level &l, const Arr
 void LaplaceParallelTriMGNew::coarsen(Level &l, const Matrix<dcomplex> &fine_residual, const Array<bool> &converged){
 
   SCOREP0();
-  int ixc, ixf; // x indices on the coarse and fine grid
   if(l.included){ // whether this processor is included in multigrid?
+    output<<"included"<<endl;
     for(int kz=0; kz<nmode; kz++){
       if(!converged[kz]){
 	if(not localmesh->lastX()){
-	  l.residual(kz,l.xs) = 0.25*fine_residual(kz,0) + 0.5*fine_residual(kz,1)   + 0.25*fine_residual(kz,3);
+	  l.residual(kz,l.xs) = 0.25*fine_residual(kz,0) + 0.5*fine_residual(kz,1) + 0.25*fine_residual(kz,3);
 	}
 	else{
-	  l.residual(kz,l.xs) = 0.25*fine_residual(kz,0) + 0.5*fine_residual(kz,1)   + 0.25*fine_residual(kz,2);
-	  l.residual(kz,l.xe) = 0.25*fine_residual(kz,1) + 0.5*fine_residual(kz,2)   + 0.25*fine_residual(kz,3);
+	  l.residual(kz,l.xs) = 0.25*fine_residual(kz,0) + 0.5*fine_residual(kz,1) + 0.25*fine_residual(kz,2);
+	  l.residual(kz,l.xe) = 0.25*fine_residual(kz,1) + 0.5*fine_residual(kz,2) + 0.25*fine_residual(kz,3);
 	}
 	for(int ix=0; ix<4; ix++){
 	  l.xloc(kz,ix) = 0.0;
@@ -1979,6 +1983,8 @@ void LaplaceParallelTriMGNew::coarsen(Level &l, const Matrix<dcomplex> &fine_res
       }
     }
   }
+  output<<"residual after coarsening";
+  output<<l.residual(1,l.xs-1)<<" "<<l.residual(1,l.xs)<<" "<<l.residual(1,l.xe)<<" "<<l.residual(1,l.xe+1)<<endl;
 }
 
 /*
