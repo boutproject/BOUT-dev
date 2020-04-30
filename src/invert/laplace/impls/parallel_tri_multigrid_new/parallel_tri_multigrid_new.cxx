@@ -955,6 +955,74 @@ void LaplaceParallelTriMGNew::gauss_seidel_red_black(Level &l, const Array<bool>
 
     //output<<"myproc "<<l.myproc<<" myproc mod 2 = "<<l.myproc%2<<endl;
 
+  // Black sweep: odd processors
+  if( l.myproc%2 == 1){
+    for (int kz = 0; kz <= maxmode; kz++) {
+      if(!converged[kz]){ // TODO worthwhile?
+	if(not localmesh->lastX()){
+	  l.xloc(1,kz) = l.rl[kz] + l.al(jy,kz)*l.xloc(0,kz) + l.bl(jy,kz)*l.xloc(3,kz);
+	}
+	else{
+	  // Due to extra point on final proc, indexing of last term is 2, not 3
+	  // TODO Index is constant, so could remove this branching by defining index_end
+	  l.xloc(1,kz) = l.rl[kz] + l.al(jy,kz)*l.xloc(0,kz) + l.bl(jy,kz)*l.xloc(2,kz);
+	}
+      }
+    }
+  }
+
+  /*
+  output<<"after black"<<endl;
+    for(int i=0;i<4;i++){
+      output<<levels[0].xloc(i,1)<<" ";
+    }
+    output<<endl;
+    */
+
+  // Communicate: to synchronize, first grid point needs data from proc below
+  if(!localmesh->firstX()){
+    recv[0] = localmesh->irecvXIn(&recvecin[0], nmode, 1);
+  }
+  if(!localmesh->lastX()){
+    recv[1] = localmesh->irecvXOut(&recvecout[0], nmode, 1);
+  }
+  for(int kz=0; kz < nmode; kz++){
+    if(!converged[kz]){
+      sendvec[kz] = l.xloc(1,kz);
+    }
+  }
+  if(!localmesh->lastX()){
+    localmesh->sendXOut(&sendvec[0],nmode,1);
+  }
+  if(!localmesh->firstX()){
+    localmesh->sendXIn(&sendvec[0],nmode,1);
+  }
+
+  if(!localmesh->firstX()){
+    localmesh->wait(recv[0]);
+    for(int kz=0; kz < nmode; kz++){
+      if(!converged[kz]){
+	l.xloc(0,kz) = recvecin[kz];
+      }
+    }
+  }
+  if(!localmesh->lastX()){
+    localmesh->wait(recv[1]);
+    for(int kz=0; kz < nmode; kz++){
+      if(!converged[kz]){
+	l.xloc(3,kz) = recvecout[kz];
+      }
+    }
+  }
+
+  /*
+  output<<"after black comm"<<endl;
+    for(int i=0;i<4;i++){
+      output<<levels[0].xloc(i,1)<<" ";
+    }
+    output<<endl;
+    */
+
   // Red sweep: even processors (counting from 0) and the last proc (which is always odd).
   if( l.myproc%2 == 0){
     //output<<"calling red"<<endl;
@@ -1027,73 +1095,6 @@ void LaplaceParallelTriMGNew::gauss_seidel_red_black(Level &l, const Array<bool>
     output<<endl;
     */
 
-  // Black sweep: odd processors
-  if( l.myproc%2 == 1){
-    for (int kz = 0; kz <= maxmode; kz++) {
-      if(!converged[kz]){ // TODO worthwhile?
-	if(not localmesh->lastX()){
-	  l.xloc(1,kz) = l.rl[kz] + l.al(jy,kz)*l.xloc(0,kz) + l.bl(jy,kz)*l.xloc(3,kz);
-	}
-	else{
-	  // Due to extra point on final proc, indexing of last term is 2, not 3
-	  // TODO Index is constant, so could remove this branching by defining index_end
-	  l.xloc(1,kz) = l.rl[kz] + l.al(jy,kz)*l.xloc(0,kz) + l.bl(jy,kz)*l.xloc(2,kz);
-	}
-      }
-    }
-  }
-
-  /*
-  output<<"after black"<<endl;
-    for(int i=0;i<4;i++){
-      output<<levels[0].xloc(i,1)<<" ";
-    }
-    output<<endl;
-    */
-
-  // Communicate: to synchronize, first grid point needs data from proc below
-  if(!localmesh->firstX()){
-    recv[0] = localmesh->irecvXIn(&recvecin[0], nmode, 1);
-  }
-  if(!localmesh->lastX()){
-    recv[1] = localmesh->irecvXOut(&recvecout[0], nmode, 1);
-  }
-  for(int kz=0; kz < nmode; kz++){
-    if(!converged[kz]){
-      sendvec[kz] = l.xloc(1,kz);
-    }
-  }
-  if(!localmesh->lastX()){
-    localmesh->sendXOut(&sendvec[0],nmode,1);
-  }
-  if(!localmesh->firstX()){
-    localmesh->sendXIn(&sendvec[0],nmode,1);
-  }
-
-  if(!localmesh->firstX()){
-    localmesh->wait(recv[0]);
-    for(int kz=0; kz < nmode; kz++){
-      if(!converged[kz]){
-	l.xloc(0,kz) = recvecin[kz];
-      }
-    }
-  }
-  if(!localmesh->lastX()){
-    localmesh->wait(recv[1]);
-    for(int kz=0; kz < nmode; kz++){
-      if(!converged[kz]){
-	l.xloc(3,kz) = recvecout[kz];
-      }
-    }
-  }
-
-  /*
-  output<<"after black comm"<<endl;
-    for(int i=0;i<4;i++){
-      output<<levels[0].xloc(i,1)<<" ";
-    }
-    output<<endl;
-    */
 
   if(l.current_level==0){
     // Update boundaries to match interior points
@@ -1377,6 +1378,7 @@ void LaplaceParallelTriMGNew::init(Level &l, const Level lup, int ncx, const int
   l.current_level = current_level;
   int ny = localmesh->LocalNy;
 
+  // TODO Probably no longer a problem:
   if(l.xe-l.xs<1){
     throw BoutException("LaplaceParallelTriMGNew error: Coarse grids must contain at least two points on every processor. Please set max_level smaller than %i, use fewer processors, or increase x resolution.",l.current_level);
     // Note: Grids are initialized from finest to coarsest, so l.current_level
@@ -1882,8 +1884,10 @@ void LaplaceParallelTriMGNew::calculate_residual(Level &l, const Array<bool> &co
     }
   }
 
-  //output<<"residual ";
-  //output<<l.residual(1,l.xs-1)<<" "<<l.residual(1,l.xs)<<" "<<l.residual(1,l.xe)<<" "<<l.residual(1,l.xe+1)<<endl;
+  /*
+  output<<"residual ";
+  output<<l.residual(1,l.xs-1)<<" "<<l.residual(1,l.xs)<<" "<<l.residual(1,l.xe)<<" "<<l.residual(1,l.xe+1)<<endl;
+  */
 }
 
 /*
