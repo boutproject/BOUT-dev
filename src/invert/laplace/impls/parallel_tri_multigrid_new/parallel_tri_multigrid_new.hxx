@@ -113,6 +113,7 @@ public:
     int proc_in;
     int proc_out;
     bool included;
+    bool included_up;
     int xs, xe, ncx;
     int current_level;
 

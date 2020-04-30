@@ -682,7 +682,7 @@ FieldPerp LaplaceParallelTriMGNew::solve(const FieldPerp& b, const FieldPerp& x0
       break;
     }
     else if( not down ){
-      calculate_residual_full_system(levels[current_level],converged,jy);
+      calculate_residual(levels[current_level],converged,jy);
       refine_full_system(levels[current_level],fine_error,converged);
       current_level--;
       update_solution(levels[current_level],fine_error,converged);
@@ -749,8 +749,7 @@ FieldPerp LaplaceParallelTriMGNew::solve(const FieldPerp& b, const FieldPerp& x0
     }
     else if( down && max_level > 0 ){
 
-      // NB no need to calculate residual, as do it in subcount=max_cycle-1
-
+      calculate_residual(levels[current_level],converged,jy);
       current_level++;
       coarsen(levels[current_level],levels[current_level-1].residual,converged);
       subcount=0;
@@ -933,189 +932,196 @@ void LaplaceParallelTriMGNew::gauss_seidel_red_black(Level &l, const Array<bool>
 
   //output<<"GAUSS SEIDEL BLACK RED"<<endl;
   SCOREP0();
-  Array<dcomplex> sendvec, recvecin, recvecout;
-  sendvec = Array<dcomplex>(nmode);
-  recvecin = Array<dcomplex>(nmode);
-  recvecout = Array<dcomplex>(nmode);
-  comm_handle recv[2];
 
-  /*
-  output<<"before"<<endl;
-    for(int i=0;i<4;i++){
-      output<<levels[0].xloc(i,1)<<" ";
+  if(l.included){
+
+    Array<dcomplex> sendvec, recvecin, recvecout;
+    sendvec = Array<dcomplex>(nmode);
+    recvecin = Array<dcomplex>(nmode);
+    recvecout = Array<dcomplex>(nmode);
+    comm_handle recv[2];
+
+    /*
+    output<<"before"<<endl;
+      for(int i=0;i<4;i++){
+	output<<levels[0].xloc(i,1)<<" ";
+      }
+      output<<endl;
+      */
+
+      //output<<"myproc "<<l.myproc<<" myproc mod 2 = "<<l.myproc%2<<endl;
+
+    // Black sweep: odd processors
+    if( l.myproc%2 == 1){
+      for (int kz = 0; kz <= maxmode; kz++) {
+	if(!converged[kz]){ // TODO worthwhile?
+	  if(not localmesh->lastX()){
+	    l.xloc(1,kz) = l.rl[kz] + l.al(jy,kz)*l.xloc(0,kz) + l.bl(jy,kz)*l.xloc(3,kz);
+	  }
+	  else{
+	    // Due to extra point on final proc, indexing of last term is 2, not 3
+	    // TODO Index is constant, so could remove this branching by defining index_end
+	    l.xloc(1,kz) = l.rl[kz] + l.al(jy,kz)*l.xloc(0,kz) + l.bl(jy,kz)*l.xloc(2,kz);
+	  }
+	}
+      }
     }
-    output<<endl;
-    */
 
-    //output<<"myproc "<<l.myproc<<" myproc mod 2 = "<<l.myproc%2<<endl;
+    /*
+    output<<"after black"<<endl;
+      for(int i=0;i<4;i++){
+	output<<levels[0].xloc(i,1)<<" ";
+      }
+      output<<endl;
+      */
 
-  // Black sweep: odd processors
-  if( l.myproc%2 == 1){
-    for (int kz = 0; kz <= maxmode; kz++) {
-      if(!converged[kz]){ // TODO worthwhile?
-	if(not localmesh->lastX()){
+    // Communicate: to synchronize, first grid point needs data from proc below
+    if(!localmesh->firstX()){
+      recv[0] = localmesh->irecvXIn(&recvecin[0], nmode, 1);
+    }
+    if(!localmesh->lastX()){
+      recv[1] = localmesh->irecvXOut(&recvecout[0], nmode, 1);
+    }
+    for(int kz=0; kz < nmode; kz++){
+      if(!converged[kz]){
+	sendvec[kz] = l.xloc(1,kz);
+      }
+    }
+    if(!localmesh->lastX()){
+      localmesh->sendXOut(&sendvec[0],nmode,1);
+    }
+    if(!localmesh->firstX()){
+      localmesh->sendXIn(&sendvec[0],nmode,1);
+    }
+
+    if(!localmesh->firstX()){
+      localmesh->wait(recv[0]);
+      for(int kz=0; kz < nmode; kz++){
+	if(!converged[kz]){
+	  l.xloc(0,kz) = recvecin[kz];
+	}
+      }
+    }
+    if(!localmesh->lastX()){
+      localmesh->wait(recv[1]);
+      for(int kz=0; kz < nmode; kz++){
+	if(!converged[kz]){
+	  l.xloc(3,kz) = recvecout[kz];
+	}
+      }
+    }
+
+    /*
+    output<<"after black comm"<<endl;
+      for(int i=0;i<4;i++){
+	output<<levels[0].xloc(i,1)<<" ";
+      }
+      output<<endl;
+      */
+
+    // Red sweep: even processors (counting from 0) and the last proc (which is always odd).
+    if( l.myproc%2 == 0){
+      //output<<"calling red"<<endl;
+      for (int kz = 0; kz <= maxmode; kz++) {
+	if(!converged[kz]){ // TODO is guarding work still worth it without x loops?
 	  l.xloc(1,kz) = l.rl[kz] + l.al(jy,kz)*l.xloc(0,kz) + l.bl(jy,kz)*l.xloc(3,kz);
 	}
-	else{
-	  // Due to extra point on final proc, indexing of last term is 2, not 3
-	  // TODO Index is constant, so could remove this branching by defining index_end
-	  l.xloc(1,kz) = l.rl[kz] + l.al(jy,kz)*l.xloc(0,kz) + l.bl(jy,kz)*l.xloc(2,kz);
+      }
+    }
+    if(localmesh->lastX()){
+      //output<<"calling endpoint red"<<endl;
+      for (int kz = 0; kz <= maxmode; kz++) {
+	if(!converged[kz]){ // TODO is guarding work still worth it without x loops?
+	  l.xloc(2,kz) = l.ru[kz] + l.au(jy,kz)*l.xloc(1,kz) + l.bu(jy,kz)*l.xloc(3,kz);
 	}
       }
     }
-  }
 
-  /*
-  output<<"after black"<<endl;
-    for(int i=0;i<4;i++){
-      output<<levels[0].xloc(i,1)<<" ";
+    /*
+    output<<"after red"<<endl;
+      for(int i=0;i<4;i++){
+	output<<levels[0].xloc(i,1)<<" ";
+      }
+      output<<endl;
+      */
+
+
+    // Communicate: final grid point needs data from proc above
+    if(!localmesh->lastX()){
+      recv[0] = localmesh->irecvXOut(&recvecout[0], nmode, 1);
     }
-    output<<endl;
-    */
-
-  // Communicate: to synchronize, first grid point needs data from proc below
-  if(!localmesh->firstX()){
-    recv[0] = localmesh->irecvXIn(&recvecin[0], nmode, 1);
-  }
-  if(!localmesh->lastX()){
-    recv[1] = localmesh->irecvXOut(&recvecout[0], nmode, 1);
-  }
-  for(int kz=0; kz < nmode; kz++){
-    if(!converged[kz]){
-      sendvec[kz] = l.xloc(1,kz);
+    if(!localmesh->firstX()){
+      recv[1] = localmesh->irecvXIn(&recvecin[0], nmode, 1);
     }
-  }
-  if(!localmesh->lastX()){
-    localmesh->sendXOut(&sendvec[0],nmode,1);
-  }
-  if(!localmesh->firstX()){
-    localmesh->sendXIn(&sendvec[0],nmode,1);
-  }
 
-  if(!localmesh->firstX()){
-    localmesh->wait(recv[0]);
     for(int kz=0; kz < nmode; kz++){
       if(!converged[kz]){
-	l.xloc(0,kz) = recvecin[kz];
+	sendvec[kz] = l.xloc(1,kz);
       }
     }
-  }
-  if(!localmesh->lastX()){
-    localmesh->wait(recv[1]);
-    for(int kz=0; kz < nmode; kz++){
-      if(!converged[kz]){
-	l.xloc(3,kz) = recvecout[kz];
-      }
+    if(!localmesh->firstX()){
+      localmesh->sendXIn(&sendvec[0],nmode,1);
     }
-  }
-
-  /*
-  output<<"after black comm"<<endl;
-    for(int i=0;i<4;i++){
-      output<<levels[0].xloc(i,1)<<" ";
+    if(!localmesh->lastX()){
+      localmesh->sendXOut(&sendvec[0],nmode,1);
     }
-    output<<endl;
-    */
 
-  // Red sweep: even processors (counting from 0) and the last proc (which is always odd).
-  if( l.myproc%2 == 0){
-    //output<<"calling red"<<endl;
-    for (int kz = 0; kz <= maxmode; kz++) {
-      if(!converged[kz]){ // TODO is guarding work still worth it without x loops?
-	l.xloc(1,kz) = l.rl[kz] + l.al(jy,kz)*l.xloc(0,kz) + l.bl(jy,kz)*l.xloc(3,kz);
-      }
-    }
-  }
-  if(localmesh->lastX()){
-    //output<<"calling endpoint red"<<endl;
-    for (int kz = 0; kz <= maxmode; kz++) {
-      if(!converged[kz]){ // TODO is guarding work still worth it without x loops?
-	l.xloc(2,kz) = l.ru[kz] + l.au(jy,kz)*l.xloc(1,kz) + l.bu(jy,kz)*l.xloc(3,kz);
-      }
-    }
-  }
-
-  /*
-  output<<"after red"<<endl;
-    for(int i=0;i<4;i++){
-      output<<levels[0].xloc(i,1)<<" ";
-    }
-    output<<endl;
-    */
-
-
-  // Communicate: final grid point needs data from proc above
-  if(!localmesh->lastX()){
-    recv[0] = localmesh->irecvXOut(&recvecout[0], nmode, 1);
-  }
-  if(!localmesh->firstX()){
-    recv[1] = localmesh->irecvXIn(&recvecin[0], nmode, 1);
-  }
-
-  for(int kz=0; kz < nmode; kz++){
-    if(!converged[kz]){
-      sendvec[kz] = l.xloc(1,kz);
-    }
-  }
-  if(!localmesh->firstX()){
-    localmesh->sendXIn(&sendvec[0],nmode,1);
-  }
-  if(!localmesh->lastX()){
-    localmesh->sendXOut(&sendvec[0],nmode,1);
-  }
-
-  if(!localmesh->lastX()){
-    localmesh->wait(recv[0]);
-    for(int kz=0; kz < nmode; kz++){
-      if(!converged[kz]){
-	l.xloc(3,kz) = recvecout[kz];
-      }
-    }
-  }
-  if(!localmesh->firstX()){
-    localmesh->wait(recv[1]);
-    for(int kz=0; kz < nmode; kz++){
-      if(!converged[kz]){
-	l.xloc(0,kz) = recvecin[kz];
-      }
-    }
-  }
-
-  /*
-  output<<"after red comm"<<endl;
-    for(int i=0;i<4;i++){
-      output<<levels[0].xloc(i,1)<<" ";
-    }
-    output<<endl;
-    */
-
-
-  if(l.current_level==0){
-    // Update boundaries to match interior points
-    // Do this after communication
-    for (int kz = 0; kz <= maxmode; kz++) {
-      if(!converged[kz]){
-	if(localmesh->firstX()){
-	  l.xloc(0,kz) = - l.cvec(jy,kz,l.xs-1)*l.xloc(1,kz) / l.bvec(jy,kz,l.xs-1);
-	}
-	if(localmesh->lastX()){
-	  //TODO this is a bug in the mg branch?
-	  //l.xloc(3,kz) = - l.avec(jy,kz,l.xe+1)*l.xloc(1,kz) / l.bvec(jy,kz,l.xe+1);
-	  l.xloc(3,kz) = - l.avec(jy,kz,l.xe+1)*l.xloc(2,kz) / l.bvec(jy,kz,l.xe+1);
+    if(!localmesh->lastX()){
+      localmesh->wait(recv[0]);
+      for(int kz=0; kz < nmode; kz++){
+	if(!converged[kz]){
+	  l.xloc(3,kz) = recvecout[kz];
 	}
       }
     }
-  }
-
-  
-  /*
-  output<<"after GS"<<endl;
-  output<<"xloc ";
-    for(int i=0;i<4;i++){
-      output<<levels[0].xloc(i,1)<<" ";
+    if(!localmesh->firstX()){
+      localmesh->wait(recv[1]);
+      for(int kz=0; kz < nmode; kz++){
+	if(!converged[kz]){
+	  l.xloc(0,kz) = recvecin[kz];
+	}
+      }
     }
-    output<<endl;
-    */
+
+    /*
+    output<<"after red comm"<<endl;
+      for(int i=0;i<4;i++){
+	output<<levels[0].xloc(i,1)<<" ";
+      }
+      output<<endl;
+      */
+
+
+    if(l.current_level==0){
+      // Update boundaries to match interior points
+      // Do this after communication
+      for (int kz = 0; kz <= maxmode; kz++) {
+	if(!converged[kz]){
+	  if(localmesh->firstX()){
+	    l.xloc(0,kz) = - l.cvec(jy,kz,l.xs-1)*l.xloc(1,kz) / l.bvec(jy,kz,l.xs-1);
+	  }
+	  if(localmesh->lastX()){
+	    //TODO this is a bug in the mg branch?
+	    //l.xloc(3,kz) = - l.avec(jy,kz,l.xe+1)*l.xloc(1,kz) / l.bvec(jy,kz,l.xe+1);
+	    l.xloc(3,kz) = - l.avec(jy,kz,l.xe+1)*l.xloc(2,kz) / l.bvec(jy,kz,l.xe+1);
+	  }
+	}
+      }
+    }
+
+    
+    /*
+    output<<"after GS"<<endl;
+    output<<"xloc ";
+      for(int i=0;i<4;i++){
+	output<<levels[0].xloc(i,1)<<" ";
+      }
+      output<<endl;
+      */
+  }
+  else{
+    output<<"skipping GS"<<endl;
+  }
    
 }  
 
@@ -1374,6 +1380,8 @@ void LaplaceParallelTriMGNew::init(Level &l, const Level lup, int ncx, const int
   int ny = localmesh->LocalNy;
   // Whether this proc is involved in the multigrid calculation
   l.included = ( l.myproc%int((pow(2,current_level))) == 0 ) or localmesh->lastX();
+  // Whether this proc is involved in the calculation on the grid one level more refined
+  l.included_up = lup.included;
 
   // TODO Probably no longer a problem:
   if(l.xe-l.xs<1){
@@ -1389,10 +1397,10 @@ void LaplaceParallelTriMGNew::init(Level &l, const Level lup, int ncx, const int
   l.residual = Matrix<dcomplex>(nmode,4);
   l.soln = Matrix<dcomplex>(nmode,ncx);
   l.solnlast = Matrix<dcomplex>(nmode,ncx);
-  if(algorithm!=0){
-    l.xloc = Matrix<dcomplex>(4,nmode);
-    l.xloclast = Matrix<dcomplex>(4,nmode);
-  }
+  l.xloc = Matrix<dcomplex>(4,nmode);
+  l.xloclast = Matrix<dcomplex>(4,nmode);
+  l.rl = Array<dcomplex>(nmode);
+  l.ru = Array<dcomplex>(nmode);
 
   // For coarsening, need to communicate coefficients for halo cells
   l.acomm = Array<dcomplex>(nmode);
@@ -1872,7 +1880,7 @@ void LaplaceParallelTriMGNew::calculate_residual(Level &l, const Array<bool> &co
   if(!localmesh->lastX()){
     for (int kz = 0; kz <= maxmode; kz++) {
       if(!converged[kz]){
-	sendvec[kz] = l.residual(kz,2);
+	sendvec[kz] = l.residual(kz,1);
       }
     }
     err = MPI_Sendrecv(&sendvec[0], nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, &recvvec[0], nmode, MPI_DOUBLE_COMPLEX, proc_out, 1, comm, MPI_STATUS_IGNORE);
@@ -1964,6 +1972,8 @@ void LaplaceParallelTriMGNew::coarsen(Level &l, const Matrix<dcomplex> &fine_res
   SCOREP0();
   if(l.included){ // whether this processor is included in multigrid?
     output<<"included"<<endl;
+    output<<"fine residual";
+    output<<fine_residual(1,0)<<" "<<fine_residual(1,1)<<" "<<fine_residual(1,2)<<" "<<fine_residual(1,3)<<endl;
     for(int kz=0; kz<nmode; kz++){
       if(!converged[kz]){
 	if(not localmesh->lastX()){
@@ -2004,50 +2014,66 @@ void LaplaceParallelTriMGNew::update_solution(Level &l, const Matrix<dcomplex> &
   }
 }
 
+/*
+ * Refine the reduced system.
+ * There are three types of proc to cover:
+ *  + procs included at this level. Calculate error and send contributions to neighbours
+ *  + procs not included at this level but included at the refined level. Receive contributions
+ *  + procs included neither on this level or the level above. Do nothing
+ */
 void LaplaceParallelTriMGNew::refine_full_system(Level &l, Matrix<dcomplex> &fine_error, const Array<bool> &converged){
 
   SCOREP0();
-  
-  for(int kz=0; kz<nmode; kz++){
-    if(!converged[kz]){
-      if(localmesh->firstX()){
-	// lower boundary (fine/coarse indices the same)
-	for(int ix=0; ix<l.xs; ix++){
-	  fine_error(kz,ix) = l.soln(kz,ix);
+  Array<dcomplex> sendvec, recvecin, recvecout;
+  sendvec = Array<dcomplex>(nmode);
+  recvecin = Array<dcomplex>(nmode);
+  recvecout = Array<dcomplex>(nmode);
+  comm_handle recv[2];
+
+  if(l.included){
+    for(int kz=0; kz<nmode; kz++){
+      if(!converged[kz]){
+	fine_error(kz,1) = l.soln(kz,1);
+	sendvec[kz] = l.soln(kz,1);
+	if(localmesh->lastX()){
+	  fine_error(kz,2) = l.soln(kz,2);
 	}
       }
-      else{
-	// guard cells
-	fine_error(kz,l.xs-1) = 0.5*(l.soln(kz,l.xs-1)+l.soln(kz,l.xs));
-      }
-      // interior points
-      for(int ixc=l.xs; ixc<l.xe+1; ixc++){
-	int ixf = 2*(ixc-l.xs)+l.xs;
-	fine_error(kz,ixf) = l.soln(kz,ixc);
-	fine_error(kz,ixf+1) = 0.5*(l.soln(kz,ixc)+l.soln(kz,ixc+1));
-      }
-      // upper boundary
-      for(int ixc=l.xe+1; ixc<l.ncx; ixc++){
-	int ixf = l.xs + 2*(l.xe + 1 - l.xs)+ (ixc - l.xe - 1);
-	fine_error(kz,ixf) = l.soln(kz,ixc);
-      }
     }
-  }
-}
 
-void LaplaceParallelTriMGNew::refine(Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast){
-
-  SCOREP0();
-  // xloc[1] and xloc[3] don't change
-  // xloc[0] unchanged if firstX, otherwise interpolated
-  // xloc[2] always interpolated
-  for(int kz=0; kz<nmode; kz++){
+    if(!localmesh->lastX()){
+      localmesh->sendXOut(&sendvec[0],nmode,0);
+    }
     if(!localmesh->firstX()){
-      xloc(0,kz) = 0.5*(xloc(0,kz)+xloc(1,kz));
-      xloclast(0,kz) = 0.5*(xloclast(0,kz)+xloclast(1,kz));
+      localmesh->sendXIn(&sendvec[0],nmode,1);
     }
-    xloc(2,kz) = 0.5*(xloc(2,kz)+xloc(3,kz));
 
-    xloclast(2,kz) = 0.5*(xloclast(2,kz)+xloclast(3,kz));
   }
+  else if(l.included_up){
+    if(!localmesh->firstX()){
+      recv[0] = localmesh->irecvXIn(&recvecin[0], nmode, 0);
+    }
+    if(!localmesh->lastX()){
+      recv[1] = localmesh->irecvXOut(&recvecout[0], nmode, 1);
+    }
+
+    if(!localmesh->firstX()){
+      localmesh->wait(recv[0]);
+      for(int kz=0; kz < nmode; kz++){
+	if(!converged[kz]){
+	  fine_error(kz,1) = 0.5*recvecin[kz];
+	}
+      }
+    }
+    if(!localmesh->lastX()){
+      localmesh->wait(recv[1]);
+      for(int kz=0; kz < nmode; kz++){
+	if(!converged[kz]){
+	  fine_error(kz,1) += 0.5*recvecout[kz];
+	}
+      }
+    }
+  }
+  output<<"fine error";
+  output<<fine_error(1,0)<<" "<<fine_error(1,1)<<" "<<fine_error(1,2)<<" "<<fine_error(1,3)<<endl;
 }
