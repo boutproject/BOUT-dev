@@ -956,12 +956,14 @@ void LaplaceParallelTriMGNew::gauss_seidel_red_black(Level &l, const Array<bool>
       for (int kz = 0; kz <= maxmode; kz++) {
 	if(!converged[kz]){ // TODO worthwhile?
 	  if(not localmesh->lastX()){
-	    l.xloc(1,kz) = l.rl[kz] + l.al(jy,kz)*l.xloc(0,kz) + l.bl(jy,kz)*l.xloc(3,kz);
+	    //l.xloc(1,kz) = l.rl[kz] + l.al(jy,kz)*l.xloc(0,kz) + l.bl(jy,kz)*l.xloc(3,kz);
+	    l.xloc(1,kz) = ( l.rr(1,kz) - l.ar(jy,1,kz)*l.xloc(0,kz) - l.cr(jy,1,kz)*l.xloc(3,kz) ) / l.br(jy,1,kz);
 	  }
 	  else{
 	    // Due to extra point on final proc, indexing of last term is 2, not 3
 	    // TODO Index is constant, so could remove this branching by defining index_end
-	    l.xloc(1,kz) = l.rl[kz] + l.al(jy,kz)*l.xloc(0,kz) + l.bl(jy,kz)*l.xloc(2,kz);
+	    //l.xloc(1,kz) = l.rl[kz] + l.al(jy,kz)*l.xloc(0,kz) + l.bl(jy,kz)*l.xloc(2,kz);
+	    l.xloc(1,kz) = ( l.rr(1,kz) - l.ar(jy,1,kz)*l.xloc(0,kz) - l.cr(jy,1,kz)*l.xloc(2,kz) ) / l.br(jy,1,kz);
 	  }
 	}
       }
@@ -1024,7 +1026,8 @@ void LaplaceParallelTriMGNew::gauss_seidel_red_black(Level &l, const Array<bool>
       //output<<"calling red"<<endl;
       for (int kz = 0; kz <= maxmode; kz++) {
 	if(!converged[kz]){ // TODO is guarding work still worth it without x loops?
-	  l.xloc(1,kz) = l.rl[kz] + l.al(jy,kz)*l.xloc(0,kz) + l.bl(jy,kz)*l.xloc(3,kz);
+	  //l.xloc(1,kz) = l.rl[kz] + l.al(jy,kz)*l.xloc(0,kz) + l.bl(jy,kz)*l.xloc(3,kz);
+	  l.xloc(1,kz) = ( l.rr(1,kz) - l.ar(jy,1,kz)*l.xloc(0,kz) - l.cr(jy,1,kz)*l.xloc(3,kz) ) / l.br(jy,1,kz);
 	}
       }
     }
@@ -1032,7 +1035,8 @@ void LaplaceParallelTriMGNew::gauss_seidel_red_black(Level &l, const Array<bool>
       //output<<"calling endpoint red"<<endl;
       for (int kz = 0; kz <= maxmode; kz++) {
 	if(!converged[kz]){ // TODO is guarding work still worth it without x loops?
-	  l.xloc(2,kz) = l.ru[kz] + l.au(jy,kz)*l.xloc(1,kz) + l.bu(jy,kz)*l.xloc(3,kz);
+	  //l.xloc(2,kz) = l.ru[kz] + l.au(jy,kz)*l.xloc(1,kz) + l.bu(jy,kz)*l.xloc(3,kz);
+	  l.xloc(2,kz) = ( l.rr(2,kz) - l.ar(jy,2,kz)*l.xloc(1,kz) - l.cr(jy,2,kz)*l.xloc(3,kz) ) / l.br(jy,2,kz);
 	}
       }
     }
@@ -1517,6 +1521,13 @@ void LaplaceParallelTriMGNew::init(Level &l, const int ncx, const int jy, const 
   l.bvec = Tensor<dcomplex>(ny,nmode,ncx);
   l.cvec = Tensor<dcomplex>(ny,nmode,ncx);
   l.rvec = Matrix<dcomplex>(nmode,ncx);
+
+  // Coefficients for the reduced iterations
+  l.ar = Tensor<dcomplex>(ny,4,nmode);
+  l.br = Tensor<dcomplex>(ny,4,nmode);
+  l.cr = Tensor<dcomplex>(ny,4,nmode);
+  l.rr = Matrix<dcomplex>(4,nmode);
+
   l.residual = Matrix<dcomplex>(nmode,4);
   l.soln = Matrix<dcomplex>(nmode,ncx);
   l.solnlast = Matrix<dcomplex>(nmode,ncx);
@@ -1676,6 +1687,16 @@ void LaplaceParallelTriMGNew::init(Level &l, const int ncx, const int jy, const 
       l.bl(jy,kz) = - l.avec(jy,kz,l.xe+1)*l.bl(jy,kz) / l.bvec(jy,kz,l.xe+1);
     }
 
+    // Now set coefficients for reduced iterations (shared by all levels)
+    l.ar(jy,1,kz) = -l.al(jy,kz);
+    l.br(jy,1,kz) = 1.0;
+    l.cr(jy,1,kz) = -l.bl(jy,kz);
+
+    l.ar(jy,2,kz) = -l.au(jy,kz);
+    l.br(jy,2,kz) = 1.0;
+    l.cr(jy,2,kz) = -l.bu(jy,kz);
+
+
   ///SCOREP_USER_REGION_END(coefs);
   } // end of kz loop
   //levels_info(l,jy);
@@ -1776,6 +1797,7 @@ void LaplaceParallelTriMGNew::init_rhs(Level &l, const int jy, const Matrix<dcom
 
   for (int kz = 0; kz <= maxmode; kz++) {
     l.rl[kz] = l.r1(jy,kz)*Rd[kz] + l.r2(jy,kz)*l.rlold[kz];
+    l.rr(1,kz) = l.rl[kz];
 
     // Special case for multiple points on last proc
     // Note that if the first proc is also the last proc, then both alold and
@@ -1783,6 +1805,7 @@ void LaplaceParallelTriMGNew::init_rhs(Level &l, const int jy, const Matrix<dcom
     if(localmesh->lastX() and not localmesh->firstX()){
       l.ru[kz] = l.ruold[kz] - l.auold(jy,kz)*rlold[kz]/l.alold(jy,kz);
     }
+    l.rr(2,kz) = l.ru[kz];
   }
   //levels_info(l,jy);
 }

@@ -101,6 +101,8 @@ public:
     Matrix<dcomplex> minvb;
     Matrix<dcomplex> rvec, residual, soln, solnlast;
     Tensor<dcomplex> avec, bvec, cvec;
+    Tensor<dcomplex> ar, br, cr;
+    Matrix<dcomplex> rr;
     Array<dcomplex> acomm, bcomm, ccomm;
 
     int index_in;
