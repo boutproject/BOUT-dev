@@ -1386,7 +1386,7 @@ void LaplaceParallelTriMGNew::init(Level &l, const Level lup, int ncx, const int
   l.bvec = Tensor<dcomplex>(ny,nmode,ncx);
   l.cvec = Tensor<dcomplex>(ny,nmode,ncx);
   l.rvec = Matrix<dcomplex>(nmode,ncx);
-  l.residual = Matrix<dcomplex>(nmode,ncx);
+  l.residual = Matrix<dcomplex>(nmode,4);
   l.soln = Matrix<dcomplex>(nmode,ncx);
   l.solnlast = Matrix<dcomplex>(nmode,ncx);
   if(algorithm!=0){
@@ -1509,7 +1509,7 @@ void LaplaceParallelTriMGNew::init(Level &l, const int ncx, const int jy, const 
   l.bvec = Tensor<dcomplex>(ny,nmode,ncx);
   l.cvec = Tensor<dcomplex>(ny,nmode,ncx);
   l.rvec = Matrix<dcomplex>(nmode,ncx);
-  l.residual = Matrix<dcomplex>(nmode,ncx);
+  l.residual = Matrix<dcomplex>(nmode,4);
   l.soln = Matrix<dcomplex>(nmode,ncx);
   l.solnlast = Matrix<dcomplex>(nmode,ncx);
 
@@ -1518,7 +1518,9 @@ void LaplaceParallelTriMGNew::init(Level &l, const int ncx, const int jy, const 
      l.avec(jy,kz,ix) = avec(kz,ix); 
      l.bvec(jy,kz,ix) = bvec(kz,ix); 
      l.cvec(jy,kz,ix) = cvec(kz,ix); 
-     l.residual(kz,ix) = 0.0;
+    }
+    for(int ix=0; ix<4; ix++){
+      l.residual(kz,ix) = 0.0;
     }
   }
   // end basic definitions
@@ -1795,7 +1797,7 @@ void LaplaceParallelTriMGNew::calculate_total_residual(Array<BoutReal> &error_ab
       total[kz+nmode] = 0.0;
 
       // Only xs and xe have nonzero residuals
-      subtotal[kz] = pow(l.residual(kz,l.xs).real(),2) + pow(l.residual(kz,l.xs).imag(),2) + pow(l.residual(kz,l.xe).real(),2) + pow(l.residual(kz,l.xe).imag(),2);
+      subtotal[kz] = pow(l.residual(kz,1).real(),2) + pow(l.residual(kz,1).imag(),2) + pow(l.residual(kz,2).real(),2) + pow(l.residual(kz,2).imag(),2);
 
       // TODO This approximation will increase iteration count. The alternatives are:
       // + reconstructing the solution and calculating properly
@@ -1835,12 +1837,12 @@ void LaplaceParallelTriMGNew::calculate_residual(Level &l, const Array<bool> &co
   for(int kz=0; kz<nmode; kz++){
     if(!converged[kz]){
       if(not localmesh->lastX()){
-	l.residual(kz,l.xs) = l.rl[kz] + l.al(jy,kz)*l.xloc(0,kz) - l.xloc(1,kz) + l.bl(jy,kz)*l.xloc(3,kz);
-	l.residual(kz,l.xe) = 0.0; //hack
+	l.residual(kz,1) = l.rl[kz] + l.al(jy,kz)*l.xloc(0,kz) - l.xloc(1,kz) + l.bl(jy,kz)*l.xloc(3,kz);
+	l.residual(kz,2) = 0.0; //hack
       }
       else{
-	l.residual(kz,l.xs) = l.rl[kz] + l.al(jy,kz)*l.xloc(0,kz) - l.xloc(1,kz) + l.bl(jy,kz)*l.xloc(2,kz);
-	l.residual(kz,l.xe) = l.ru[kz] + l.au(jy,kz)*l.xloc(1,kz) - l.xloc(2,kz) + l.bu(jy,kz)*l.xloc(3,kz);
+	l.residual(kz,1) = l.rl[kz] + l.al(jy,kz)*l.xloc(0,kz) - l.xloc(1,kz) + l.bl(jy,kz)*l.xloc(2,kz);
+	l.residual(kz,2) = l.ru[kz] + l.au(jy,kz)*l.xloc(1,kz) - l.xloc(2,kz) + l.bu(jy,kz)*l.xloc(3,kz);
       }
     }
   }
@@ -1855,13 +1857,13 @@ void LaplaceParallelTriMGNew::calculate_residual(Level &l, const Array<bool> &co
   if(!localmesh->firstX()){
     for (int kz = 0; kz <= maxmode; kz++) {
       if(!converged[kz]){
-	sendvec[kz] = l.residual(kz,l.xs);
+	sendvec[kz] = l.residual(kz,1);
       }
     }
     err = MPI_Sendrecv(&sendvec[0], nmode, MPI_DOUBLE_COMPLEX, proc_in, 1, &recvvec[0], nmode, MPI_DOUBLE_COMPLEX, proc_in, 0, comm, MPI_STATUS_IGNORE);
     for (int kz = 0; kz <= maxmode; kz++) {
       if(!converged[kz]){
-	l.residual(kz,l.xs-1) = recvvec[kz];
+	l.residual(kz,0) = recvvec[kz];
       }
     }
   }
@@ -1870,19 +1872,19 @@ void LaplaceParallelTriMGNew::calculate_residual(Level &l, const Array<bool> &co
   if(!localmesh->lastX()){
     for (int kz = 0; kz <= maxmode; kz++) {
       if(!converged[kz]){
-	sendvec[kz] = l.residual(kz,l.xe);
+	sendvec[kz] = l.residual(kz,2);
       }
     }
     err = MPI_Sendrecv(&sendvec[0], nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, &recvvec[0], nmode, MPI_DOUBLE_COMPLEX, proc_out, 1, comm, MPI_STATUS_IGNORE);
     for (int kz = 0; kz < nmode; kz++) {
       if(!converged[kz]){
-	l.residual(kz,l.xe+1) = recvvec[kz];
+	l.residual(kz,3) = recvvec[kz];
       }
     }
   }
 
   output<<"residual ";
-  output<<l.residual(1,l.xs-1)<<" "<<l.residual(1,l.xs)<<" "<<l.residual(1,l.xe)<<" "<<l.residual(1,l.xe+1)<<endl;
+  output<<l.residual(1,0)<<" "<<l.residual(1,1)<<" "<<l.residual(1,2)<<" "<<l.residual(1,3)<<endl;
 }
 
 /*
@@ -1965,26 +1967,26 @@ void LaplaceParallelTriMGNew::coarsen(Level &l, const Matrix<dcomplex> &fine_res
     for(int kz=0; kz<nmode; kz++){
       if(!converged[kz]){
 	if(not localmesh->lastX()){
-	  l.residual(kz,l.xs) = 0.25*fine_residual(kz,0) + 0.5*fine_residual(kz,1) + 0.25*fine_residual(kz,3);
+	  l.residual(kz,1) = 0.25*fine_residual(kz,0) + 0.5*fine_residual(kz,1) + 0.25*fine_residual(kz,3);
 	}
 	else{
-	  l.residual(kz,l.xs) = 0.25*fine_residual(kz,0) + 0.5*fine_residual(kz,1) + 0.25*fine_residual(kz,2);
-	  l.residual(kz,l.xe) = 0.25*fine_residual(kz,1) + 0.5*fine_residual(kz,2) + 0.25*fine_residual(kz,3);
+	  l.residual(kz,1) = 0.25*fine_residual(kz,0) + 0.5*fine_residual(kz,1) + 0.25*fine_residual(kz,2);
+	  l.residual(kz,2) = 0.25*fine_residual(kz,1) + 0.5*fine_residual(kz,2) + 0.25*fine_residual(kz,3);
 	}
 	for(int ix=0; ix<4; ix++){
 	  l.xloc(kz,ix) = 0.0;
 	  l.xloclast(kz,ix) = 0.0;
 	}
 	//l.rvec(kz,ix) = l.residual(kz,ix);
-	l.rl[kz] = l.residual(kz,l.xs);
+	l.rl[kz] = l.residual(kz,1);
 	if(localmesh->lastX()){
-	  l.ru[kz] = l.residual(kz,l.xe);
+	  l.ru[kz] = l.residual(kz,2);
 	}
       }
     }
   }
   output<<"residual after coarsening";
-  output<<l.residual(1,l.xs-1)<<" "<<l.residual(1,l.xs)<<" "<<l.residual(1,l.xe)<<" "<<l.residual(1,l.xe+1)<<endl;
+  output<<l.residual(1,0)<<" "<<l.residual(1,1)<<" "<<l.residual(1,2)<<" "<<l.residual(1,3)<<endl;
 }
 
 /*
