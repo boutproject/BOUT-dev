@@ -683,14 +683,11 @@ FieldPerp LaplaceParallelTriMGNew::solve(const FieldPerp& b, const FieldPerp& x0
 
   while(true){
 
-    if(algorithm==0 or current_level!=0){ 
-      //gauss_seidel_red_black_full_system(levels[current_level],converged,jy);
-      // This version is ~20% faster
-      gauss_seidel_red_black_full_system_comp_comm_overlap(levels[current_level],converged,jy);
+    for(int i=0;i<4;i++){
+      output<<levels[0].xloc(i,1)<<" ";
     }
-    else{
-      jacobi(levels[current_level], jy, converged);
-    }
+    output<<endl;
+    gauss_seidel_red_black(levels[current_level],converged,jy);
 
     ///SCOREP_USER_REGION_DEFINE(l0rescalc);
     ///SCOREP_USER_REGION_BEGIN(l0rescalc, "level 0 residual calculation",///SCOREP_USER_REGION_TYPE_COMMON);
@@ -701,14 +698,8 @@ FieldPerp LaplaceParallelTriMGNew::solve(const FieldPerp& b, const FieldPerp& x0
           totalold[kz] = total[kz];
         }
       }
-      if(algorithm==0 or current_level!=0){ 
-        calculate_residual_full_system(levels[current_level],converged,jy);
-        calculate_total_residual_full_system(total,error_rel,converged,levels[current_level]);
-      }
-      else{
-        calculate_residual(levels[current_level],converged,jy);
-        calculate_total_residual(total,error_rel,converged,levels[current_level]);
-      }
+      calculate_residual(levels[current_level],converged,jy);
+      calculate_total_residual(total,error_rel,converged,levels[current_level]);
     }
 
     ///SCOREP_USER_REGION_END(l0rescalc);
@@ -717,19 +708,6 @@ FieldPerp LaplaceParallelTriMGNew::solve(const FieldPerp& b, const FieldPerp& x0
     ++count;
     ++subcount;
     ///SCOREP_USER_REGION_END(increment);
-
-    ///SCOREP_USER_REGION_DEFINE(solneqsolnlast);
-    ///SCOREP_USER_REGION_BEGIN(solneqsolnlast, "soln = soln last",///SCOREP_USER_REGION_TYPE_COMMON);
-    if(algorithm==0 or current_level!=0){ 
-      for (int kz = 0; kz <= maxmode; kz++) {
-        if(!converged[kz]){
-          for (int ix = 0; ix < levels[current_level].ncx; ix++) {
-            levels[current_level].solnlast(kz,ix) = levels[current_level].soln(kz,ix);
-          }
-	}
-      }
-    }
-    ///SCOREP_USER_REGION_END(solneqsolnlast);
 
     // Force at least max_cycle iterations at each level
     // Do not skip with tolerence to minimize comms
@@ -1003,7 +981,7 @@ void LaplaceParallelTriMGNew::gauss_seidel_red_black(Level &l, const Array<bool>
   comm_handle recv[1];
 
   // Red sweep: odd points
-  if( l.myproc%2 == 1){
+  if( l.myproc%2 == 0){
     for (int kz = 0; kz <= maxmode; kz++) {
       if(!converged[kz]){ // TODO is guarding work still worth it without x loops?
 	l.xloc(1,kz) = l.rl[kz] + l.al(jy,kz)*l.xloc(0,kz) + l.bl(jy,kz)*l.xloc(3,kz);
@@ -1048,7 +1026,7 @@ void LaplaceParallelTriMGNew::gauss_seidel_red_black(Level &l, const Array<bool>
   }
 
   // Black sweep: even processors
-  if( l.myproc%2 == 0){
+  if( l.myproc%2 == 1){
     for (int kz = 0; kz <= maxmode; kz++) {
       if(!converged[kz]){ // TODO worthwhile?
 	if(not localmesh->lastX()){
@@ -1747,8 +1725,11 @@ void LaplaceParallelTriMGNew::init_rhs(Level &l, const int jy, const Matrix<dcom
 
   for (int kz = 0; kz <= maxmode; kz++) {
     l.rl[kz] = l.r1(jy,kz)*Rd[kz] + l.r2(jy,kz)*l.rlold[kz];
+
     // Special case for multiple points on last proc
-    if(localmesh->lastX()){
+    // Note that if the first proc is also the last proc, then both alold and
+    // auold are zero, and l.ru = l.ruold is already correct.
+    if(localmesh->lastX() and not localmesh->firstX()){
       l.ru[kz] = l.ruold[kz] - l.auold(jy,kz)*rlold[kz]/l.alold(jy,kz);
     }
   }
@@ -1792,6 +1773,7 @@ void LaplaceParallelTriMGNew::calculate_total_residual(Array<BoutReal> &error_ab
       error_abs[kz] = sqrt(total[kz]);
       error_rel[kz] = error_abs[kz]/sqrt(total[kz+nmode]);
       if( error_abs[kz] < atol or error_rel[kz] < rtol ){
+	output<<"HERE! kz="<<kz<<endl;
 	converged[kz] = true;
 	l.xloclast(0,kz) = l.xloc(0,kz);
 	l.xloclast(1,kz) = l.xloc(1,kz);
@@ -1856,15 +1838,14 @@ void LaplaceParallelTriMGNew::calculate_residual(Level &l, const Array<bool> &co
   SCOREP0();
   for(int kz=0; kz<nmode; kz++){
     if(!converged[kz]){
-      l.residual(kz,0) = 0.0;
-      l.residual(kz,1) = 0.0;
-      l.residual(kz,l.xs) = l.avec(jy,kz,l.xs)*(l.xloc(0,kz)-l.xloclast(0,kz));
-      for(int ix=l.xs+1; ix<l.xe; ix++){
-	l.residual(kz,ix) = 0.0;
+      if(not localmesh->lastX()){
+	l.residual(kz,l.xs) = l.rl[kz] - l.al(jy,kz)*l.xloc(0,kz) - l.xloc(1,kz) - l.bl(jy,kz)*l.xloc(3,kz);
+	l.residual(kz,l.xe) = 0.0; //hack
       }
-      l.residual(kz,l.xe) = l.cvec(jy,kz,l.xe)*(l.xloc(3,kz)-l.xloclast(3,kz));
-      l.residual(kz,l.xe+1) = 0.0;
-      l.residual(kz,l.xe+2) = 0.0;
+      else{
+	l.residual(kz,l.xs) = l.rl[kz] - l.al(jy,kz)*l.xloc(0,kz) - l.xloc(1,kz) - l.bl(jy,kz)*l.xloc(2,kz);
+	l.residual(kz,l.xe) = l.ru[kz] - l.au(jy,kz)*l.xloc(1,kz) - l.xloc(2,kz) - l.bu(jy,kz)*l.xloc(3,kz);
+      }
     }
   }
 
@@ -1903,6 +1884,8 @@ void LaplaceParallelTriMGNew::calculate_residual(Level &l, const Array<bool> &co
       }
     }
   }
+
+  output<<l.residual(1,l.xs)<<" "<<l.residual(1,l.xe)<<endl;
 }
 
 /*
