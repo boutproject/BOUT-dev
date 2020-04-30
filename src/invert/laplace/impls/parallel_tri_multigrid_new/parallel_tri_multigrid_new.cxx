@@ -749,16 +749,9 @@ FieldPerp LaplaceParallelTriMGNew::solve(const FieldPerp& b, const FieldPerp& x0
     }
     else if( down && max_level > 0 ){
 
-      // Coarsening requires data from the grid BEFORE it is made coarser
-      //coarsen(levels[current_level],xloc,xloclast,jy);
-
-      // Calculate residual on finer grid
-      if(algorithm!=0 and current_level==0){ 
-        reconstruct_full_solution(levels[0],jy);
-      }
       calculate_residual_full_system(levels[current_level],converged,jy);
       current_level++;
-      coarsen_full_system(levels[current_level],levels[current_level-1].residual,converged);
+      coarsen(levels[current_level],levels[current_level-1].residual,converged);
       subcount=0;
 
       // If we are on the coarsest grid, stop trying to coarsen further
@@ -1503,6 +1496,9 @@ void LaplaceParallelTriMGNew::init(Level &l, const int ncx, const int jy, const 
   l.ncx = ncx;
   l.current_level = 0;
   l.myproc = myproc;
+  l.proc_in = myproc-1;
+  l.proc_out = myproc+1;
+  l.included = true;
   int ny = localmesh->LocalNy;
 
   l.avec = Tensor<dcomplex>(ny,nmode,ncx);
@@ -1523,9 +1519,6 @@ void LaplaceParallelTriMGNew::init(Level &l, const int ncx, const int jy, const 
   }
   // end basic definitions
 
-  // TODO delete rlold ruold?
-  auto rlold = Array<dcomplex>(nmode);
-  auto ruold = Array<dcomplex>(nmode);
   auto evec = Array<dcomplex>(ncx);
   auto tmp = Array<dcomplex>(ncx);
 
@@ -1621,7 +1614,7 @@ void LaplaceParallelTriMGNew::init(Level &l, const int ncx, const int jy, const 
     Bd = 0.0;
     Au = 0.0;
     Bu = 1.0;
-    // TODO these are one way sends, not swaps
+    // TODO these should be one way sends, not swaps
     if(not localmesh->firstX()){
       // Send coefficients down
       Atmp = l.al(jy,kz);
@@ -1884,10 +1877,8 @@ void LaplaceParallelTriMGNew::calculate_residual(Level &l, const Array<bool> &co
     }
   }
 
-  /*
   output<<"residual ";
   output<<l.residual(1,l.xs-1)<<" "<<l.residual(1,l.xs)<<" "<<l.residual(1,l.xe)<<" "<<l.residual(1,l.xe+1)<<endl;
-  */
 }
 
 /*
@@ -1962,97 +1953,30 @@ void LaplaceParallelTriMGNew::calculate_residual_full_system(Level &l, const Arr
 /*
  * Coarsen the fine residual
  */
-void LaplaceParallelTriMGNew::coarsen_full_system(Level &l, const Matrix<dcomplex> &fine_residual, const Array<bool> &converged){
+void LaplaceParallelTriMGNew::coarsen(Level &l, const Matrix<dcomplex> &fine_residual, const Array<bool> &converged){
 
   SCOREP0();
   int ixc, ixf; // x indices on the coarse and fine grid
-  for(int kz=0; kz<nmode; kz++){
-    if(!converged[kz]){
-      if(localmesh->firstX()){
-	for(int ix=0; ix<l.xs; ix++){
-	  l.residual(kz,ix) = 0.5*fine_residual(kz,ix);
+  if(l.included){ // whether this processor is included in multigrid?
+    for(int kz=0; kz<nmode; kz++){
+      if(!converged[kz]){
+	if(not localmesh->lastX()){
+	  l.residual(kz,l.xs) = 0.25*fine_residual(kz,0) + 0.5*fine_residual(kz,1)   + 0.25*fine_residual(kz,3);
+	}
+	else{
+	  l.residual(kz,l.xs) = 0.25*fine_residual(kz,0) + 0.5*fine_residual(kz,1)   + 0.25*fine_residual(kz,2);
+	  l.residual(kz,l.xe) = 0.25*fine_residual(kz,1) + 0.5*fine_residual(kz,2)   + 0.25*fine_residual(kz,3);
+	}
+	for(int ix=0; ix<4; ix++){
+	  l.xloc(kz,ix) = 0.0;
+	  l.xloclast(kz,ix) = 0.0;
+	}
+	//l.rvec(kz,ix) = l.residual(kz,ix);
+	l.rl[kz] = l.residual(kz,l.xs);
+	if(localmesh->lastX()){
+	  l.ru[kz] = l.residual(kz,l.xe);
 	}
       }
-      ixc = l.xs;
-      ixf = l.xs;
-      if(localmesh->firstX()){
-	l.residual(kz,ixc)   = 0.5*fine_residual(kz,ixf) + 0.25*fine_residual(kz,ixf+1);
-      }
-      else{
-	l.residual(kz,ixc)   =  0.25*fine_residual(kz,ixf-1) + 0.5*fine_residual(kz,ixf)   + 0.25*fine_residual(kz,ixf+1);
-      }
-      for(int ixc=l.xs+1; ixc<l.xe+1; ixc++){
-	ixf = 2*(ixc-l.xs)+l.xs;
-	l.residual(kz,ixc)   =  0.25*fine_residual(kz,ixf-1) + 0.5*fine_residual(kz,ixf)   + 0.25*fine_residual(kz,ixf+1);
-      }
-      if(localmesh->lastX()){
-	// first boundary point
-	ixc = l.xe+1;
-	ixf = l.xs+2*(l.xe+1-l.xs);
-	l.residual(kz,ixc) = 0.25*fine_residual(kz,ixf-1) + 0.5*fine_residual(kz,ixf);
-	// FIXME this assumes mgx=2
-	for(int ixc=l.xe+2; ixc<l.ncx; ixc++){
-	  ixf = l.xs+2*(l.xe-l.xs)+(ixc-l.xe)+1;
-	  l.residual(kz,ixc) = 0.5*fine_residual(kz,ixf);
-	}
-      }
-      for(int ix=0; ix<l.ncx; ix++){
-	l.rvec(kz,ix) = l.residual(kz,ix);
-	l.soln(kz,ix) = 0.0;
-	l.solnlast(kz,ix) = 0.0;
-      }
-    }
-  }
-}
-
-void LaplaceParallelTriMGNew::coarsen(const Level l, Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast, int jy){
-
-  SCOREP0();
-  MPI_Comm comm = BoutComm::get();
-  Array<dcomplex> tmpsend, tmprecv;
-  MPI_Request request[1];
-  tmpsend = Array<dcomplex>(2*nmode);
-  tmprecv = Array<dcomplex>(2*nmode);
-
-  if(!localmesh->firstX()){
-    MPI_Irecv(&tmprecv[0], 2*nmode, MPI_DOUBLE_COMPLEX, proc_in, 0, comm, &request[0]);
-  }
-
-  for(int kz=0; kz<nmode; kz++){
-
-    // Reconstruct required x point
-    // xloc[1] and xloc[3] are the same point, no manipulation needed
-    // An xloc[0] on a physical boundary does not move, no manipulation
-    // Otherwise xloc[0] must be received from the processor below
-    // xloc[2] always moves 1 (fine) grid point to the left, so must be recalculated and sent upwards
-    xloc(2,kz) = l.minvb(kz,l.xe-1);
-    xloclast(2,kz) = l.minvb(kz,l.xe-1);
-    if(!localmesh->lastX()){
-      xloc(2,kz) += l.upperGuardVector(l.xe-1,jy,kz)*xloc(3,kz);
-      xloclast(2,kz) += l.upperGuardVector(l.xe-1,jy,kz)*xloclast(3,kz);
-    }
-    if(!localmesh->firstX()){
-      xloc(2,kz) += l.lowerGuardVector(l.xe-1,jy,kz)*xloc(0,kz);
-      xloclast(2,kz) += l.lowerGuardVector(l.xe-1,jy,kz)*xloclast(0,kz);
-    }
-  }
-  if(!localmesh->lastX()){
-    // Send upwards
-    for(int kz=0; kz<nmode; kz++){
-      tmpsend[kz] = xloc(2,kz);
-    }
-    for(int kz=0; kz<nmode; kz++){
-      tmpsend[nmode+kz] = xloclast(2,kz);
-    }
-    MPI_Isend(&tmpsend[0], 2*nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, comm, &request[0]);
-  }
-  if(!localmesh->firstX()){
-    MPI_Wait(&request[0],MPI_STATUS_IGNORE);
-    for(int kz=0; kz<nmode; kz++){
-      xloc(0,kz) = tmprecv[kz];
-    }
-    for(int kz=0; kz<nmode; kz++){
-      xloclast(0,kz) = tmprecv[nmode+kz];
     }
   }
 }
