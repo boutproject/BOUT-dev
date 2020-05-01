@@ -1414,6 +1414,11 @@ void LaplaceParallelTriMGNew::init(Level &l, const int ncx, const int jy, const 
   auto evec = Array<dcomplex>(ncx);
   auto tmp = Array<dcomplex>(ncx);
 
+  Array<dcomplex> sendvec, recvecin, recvecout;
+  sendvec = Array<dcomplex>(3*nmode);
+  recvecin = Array<dcomplex>(3*nmode);
+  recvecout = Array<dcomplex>(3*nmode);
+
   // Define sizes of local coefficients
   l.xloc = Matrix<dcomplex>(4,nmode);
   l.xloclast = Matrix<dcomplex>(4,nmode);
@@ -1563,9 +1568,50 @@ void LaplaceParallelTriMGNew::init(Level &l, const int ncx, const int jy, const 
     l.br(jy,2,kz) = 1.0;
     l.cr(jy,2,kz) = -l.bu(jy,kz);
 
+    sendvec[kz] = l.ar(jy,1,kz);
+    sendvec[kz+nmode] = l.br(jy,1,kz);
+    sendvec[kz+2*nmode] = l.cr(jy,1,kz);
+
 
   ///SCOREP_USER_REGION_END(coefs);
   } // end of kz loop
+
+  // Synchonize reduced coefficients with neighbours to allow coarsening
+  if(max_level>0){
+    int kzp=1;
+    //output<<l.cr(jy,0,kzp)<<" "<<l.cr(jy,1,kzp)<<" "<<l.cr(jy,2,kzp)<<" "<<l.cr(jy,3,kzp)<<endl;
+
+    MPI_Comm comm = BoutComm::get();
+    int err;
+
+    // Communicate in
+    if(!localmesh->firstX()){
+      err = MPI_Sendrecv(&sendvec[0], 3*nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 1, &recvecin[0], 3*nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 0, comm, MPI_STATUS_IGNORE);
+    }
+
+    // Communicate out
+    if(!localmesh->lastX()){
+      err = MPI_Sendrecv(&sendvec[0], 3*nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 0, &recvecout[0], 3*nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 1, comm, MPI_STATUS_IGNORE);
+    }
+
+    for(int kz=0; kz<nmode; kz++){
+      if(not localmesh->firstX()){
+	l.ar(jy,0,kz) = recvecin[kz];
+	l.br(jy,0,kz) = recvecin[kz+nmode];
+	l.cr(jy,0,kz) = recvecin[kz+2*nmode];
+      }
+      if(not localmesh->lastX()){
+	l.ar(jy,3,kz) = recvecout[kz];
+	l.br(jy,3,kz) = recvecout[kz+nmode];
+	l.cr(jy,3,kz) = recvecout[kz+2*nmode];
+      }
+    }
+
+    //output<<l.cr(jy,0,kzp)<<" "<<l.cr(jy,1,kzp)<<" "<<l.cr(jy,2,kzp)<<" "<<l.cr(jy,3,kzp)<<endl;
+
+  }
+
+
   //levels_info(l,jy);
 }
 
@@ -1969,4 +2015,40 @@ void LaplaceParallelTriMGNew::refine_full_system(Level &l, Matrix<dcomplex> &fin
   }
   output<<"fine error";
   output<<fine_error(1,0)<<" "<<fine_error(1,1)<<" "<<fine_error(1,2)<<" "<<fine_error(1,3)<<endl;
+}
+
+/*
+ * Synchronize the values of a reduced field(4,nmode) between processors that
+ * are neighbours on level l. This assumes each processor's value of
+ * field(1,:) is correct, and puts the in-neighbour's value into field(0,:)
+ * and out-neighbour's value into field(3,:).
+ * NB We do not skipped converged modes in kz.
+ */
+void LaplaceParallelTriMGNew::synchronize_reduced_field(const Level &l, Matrix<dcomplex> &field){
+
+  if(l.included){
+
+    //Array<dcomplex> sendvec, recvecin, recvecout;
+    //sendvec = Array<dcomplex>(nmode);
+    //recvecin = Array<dcomplex>(nmode);
+    //recvecout = Array<dcomplex>(nmode);
+    //comm_handle recv[2];
+    MPI_Comm comm = BoutComm::get();
+    int err;
+
+    // Communicate in
+    if(!localmesh->firstX()){
+      err = MPI_Sendrecv(&field(1,0), nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 1, &field(3,0), nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 0, comm, MPI_STATUS_IGNORE);
+    }
+
+    // Communicate out
+    if(!localmesh->lastX()){
+      err = MPI_Sendrecv(&field(1,0), nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 0, &field(0,0), nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 1, comm, MPI_STATUS_IGNORE);
+    }
+
+    output<<"field ";
+    int kzp=1;
+    output<<field(kzp,0)<<" "<<field(kzp,1)<<" "<<field(kzp,2)<<" "<<field(kzp,3)<<endl;
+  }
+
 }

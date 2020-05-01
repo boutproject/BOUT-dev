@@ -141,6 +141,8 @@ public:
   void reconstruct_full_solution(Level &level, const int jy, Matrix<dcomplex> &halos);
   void reconstruct_full_solution(Level &level, const int jy);
 
+  void synchronize_reduced_field(const Level &l, Matrix<dcomplex> &field);
+
 private:
 
   // Information about the grids
