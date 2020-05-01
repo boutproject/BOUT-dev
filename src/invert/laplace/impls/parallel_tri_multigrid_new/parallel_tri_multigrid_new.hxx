@@ -116,6 +116,7 @@ public:
     int proc_out;
     bool included;
     bool included_up;
+    bool red, black;
     int xs, xe, ncx;
     int current_level;
 
@@ -130,7 +131,7 @@ public:
   void gauss_seidel_red_black(Level &level, const Array<bool> &converged, const int jy);
   void gauss_seidel_red_black_full_system(Level &level, const Array<bool> &converged, const int jy);
   void gauss_seidel_red_black_full_system_comp_comm_overlap(Level &level, const Array<bool> &converged, const int jy);
-  void refine_full_system(Level &level, Matrix<dcomplex> &fine_error, const Array<bool> &converged);
+  void refine(Level &level, Matrix<dcomplex> &fine_error, const Array<bool> &converged);
 
   void coarsen(Level &level, const Matrix<dcomplex> &fine_residual, const Array<bool> &converged);
 
@@ -198,6 +199,7 @@ private:
   int proc_in;
   int proc_out;
   int myproc;
+  int nproc;
 
   // Algorithm option:
   //  0 - normal multigrid
