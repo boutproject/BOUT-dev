@@ -25,6 +25,8 @@
  *
  **************************************************************************/
 
+#include "bout/build_config.hxx"
+
 const char DEFAULT_DIR[] = "data";
 
 // Value passed at compile time
@@ -86,7 +88,7 @@ inline auto getpid() -> int { return GetCurrentProcessId(); }
 #include <unistd.h>
 #endif
 
-#ifdef BOUT_FPE
+#if BOUT_USE_SIGFPE
 #include <fenv.h>
 #endif
 
@@ -195,10 +197,10 @@ int BoutInitialise(int& argc, char**& argv) {
 namespace bout {
 namespace experimental {
 void setupSignalHandler(SignalHandler signal_handler) {
-#ifdef SIGHANDLE
+#if BOUT_USE_SIGNAL
   std::signal(SIGSEGV, signal_handler);
 #endif
-#ifdef BOUT_FPE
+#if BOUT_USE_SIGFPE
   std::signal(SIGFPE, signal_handler);
   feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 #endif
@@ -262,7 +264,7 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
             "  -l, --log <log filename>\tPrint log to <log filename>\n"
             "  -v, --verbose\t\tIncrease verbosity\n"
             "  -q, --quiet\t\tDecrease verbosity\n"));
-#ifdef LOGCOLOR
+#if BOUT_USE_COLOR
       output.write(_("  -c, --color\t\tColor output using bout-log-color\n"));
 #endif
       output.write(
@@ -456,7 +458,7 @@ void printCompileTimeOptions() {
   output_info.write(_("\tChecking disabled\n"));
 #endif
 
-#ifdef SIGHANDLE
+#if BOUT_USE_SIGNAL
   output_info.write(_("\tSignal handling enabled\n"));
 #else
   output_info.write(_("\tSignal handling disabled\n"));
@@ -465,7 +467,7 @@ void printCompileTimeOptions() {
 #ifdef NCDF
   output_info.write(_("\tnetCDF support enabled\n"));
 #else
-#ifdef NCDF4
+#if BOUT_HAS_NETCDF
   output_info.write(_("\tnetCDF4 support enabled\n"));
 #else
   output_info.write(_("\tnetCDF support disabled\n"));
@@ -489,7 +491,7 @@ void printCompileTimeOptions() {
   output_info.write("\tRUNNING IN 3D-METRIC MODE\n");
 #endif
 
-#ifdef BOUT_FPE
+#if BOUT_USE_SIGFPE
   output_info.write("\tFloatingPointExceptions enabled\n");
 #endif
 
@@ -507,7 +509,7 @@ void printCommandLineArguments(const std::vector<std::string>& original_argv) {
 }
 
 bool setupBoutLogColor(bool color_output, int MYPE) {
-#ifdef LOGCOLOR
+#if BOUT_USE_COLOR
   if (color_output && (MYPE == 0)) {
     // Color stdout by piping through bout-log-color script
     // Only done on processor 0, since this is the only processor which writes to stdout
@@ -541,7 +543,7 @@ bool setupBoutLogColor(bool color_output, int MYPE) {
     }
     return success;
   }
-#endif // LOGCOLOR
+#endif // BOUT_USE_COLOR
   return false;
 }
 

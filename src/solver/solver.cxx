@@ -20,6 +20,8 @@
  *
  **************************************************************************/
 
+#include "bout/build_config.hxx"
+
 #include "bout/solver.hxx"
 #include "boutcomm.hxx"
 #include "boutexception.hxx"
@@ -120,7 +122,7 @@ void Solver::add(Field2D& v, const std::string& name) {
   d.location = v.getLocation();
   d.name = name;
   
-#ifdef TRACK
+#if BOUT_USE_TRACK
   v.name = name;
 #endif
 
@@ -184,7 +186,7 @@ void Solver::add(Field3D& v, const std::string& name) {
   d.location = v.getLocation();
   d.name = name;
   
-#ifdef TRACK
+#if BOUT_USE_TRACK
   v.name = name;
 #endif
 

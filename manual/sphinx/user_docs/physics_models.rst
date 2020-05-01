@@ -1035,10 +1035,9 @@ in the console or log file. Running with ``-q -q`` suppresses
 everything except ``output_warn`` and ``output_error``.
 
 To enable the ``output_debug`` messages, first configure BOUT++ with
-debug messages enabled by adding ``-DDEBUG_ENABLED`` to ``BOUT_FLAGS``
-in ``make.config`` and then recompiling with ``make clean;
-make``. When running BOUT++ add a "-v" flag to see ``output_debug``
-messages.
+``--enable-debug-output`` (for ``./configure``) or
+``-DENABLE_OUTPUT_DEBUG`` (for ``CMake``). When running BOUT++ add a
+``-v`` flag to see ``output_debug`` messages.
 
 .. _sec-3to4:
 

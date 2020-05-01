@@ -1,3 +1,5 @@
+#include "bout/build_config.hxx"
+
 #include <memory>
 #include <utility>
 
@@ -12,7 +14,7 @@
 #include "bout/petsc_interface.hxx"
 #include "bout/region.hxx"
 
-#ifdef BOUT_HAS_PETSC
+#if BOUT_HAS_PETSC
 
 #include <petscconf.h>
 

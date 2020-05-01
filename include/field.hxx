@@ -29,6 +29,8 @@ class Field;
 #ifndef __FIELD_H__
 #define __FIELD_H__
 
+#include "bout/build_config.hxx"
+
 #include <cmath>
 #include <cstdio>
 #include <memory>
@@ -50,7 +52,7 @@ class Field;
 class Mesh;
 class Coordinates;
 
-#ifdef TRACK
+#if BOUT_USE_TRACK
 #include <string>
 #endif
 

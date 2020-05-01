@@ -1,0 +1,70 @@
+/* autoconf_build_config.hxx.in.  Generated from configure.ac by autoheader.  */
+
+/* ARKODE support */
+#undef BOUT_HAS_ARKODE
+
+/* CVODE support */
+#undef BOUT_HAS_CVODE
+
+/* FFTW support */
+#undef BOUT_HAS_FFTW
+
+/* NLS support */
+#undef BOUT_HAS_GETTEXT
+
+/* HDF5 support */
+#undef BOUT_HAS_HDF5
+
+/* IDA support */
+#undef BOUT_HAS_IDA
+
+/* LAPACK support */
+#undef BOUT_HAS_LAPACK
+
+/* NETCDF support */
+#undef BOUT_HAS_NETCDF
+
+/* PETSc support */
+#undef BOUT_HAS_PETSC
+
+/* PNETCDF support */
+#undef BOUT_HAS_PNETCDF
+
+/* Compiler PRETTYFUNCTION support */
+#undef BOUT_HAS_PRETTY_FUNCTION
+
+/* PVODE support */
+#undef BOUT_HAS_PVODE
+
+/* Score-P support */
+#undef BOUT_HAS_SCOREP
+
+/* SLEPc support */
+#undef BOUT_HAS_SLEPC
+
+/* SUNDIALS support */
+#undef BOUT_HAS_SUNDIALS
+
+/* OpenMP schedule */
+#undef BOUT_OPENMP_SCHEDULE
+
+/* Enable backtrace in exceptions */
+#undef BOUT_USE_BACKTRACE
+
+/* Enable color logs option */
+#undef BOUT_USE_COLOR
+
+/* Enable OpenMP */
+#undef BOUT_USE_OPENMP
+
+/* Enabled extra debug output */
+#undef BOUT_USE_OUTPUT_DEBUG
+
+/* Enable floating point exceptions */
+#undef BOUT_USE_SIGFPE
+
+/* Enable signal handlers */
+#undef BOUT_USE_SIGNAL
+
+/* Enable field name tracking */
+#undef BOUT_USE_TRACK

@@ -23,7 +23,9 @@
  *
  **************************************************************************/
 
-#ifdef BOUT_HAS_SLEPC
+#include "bout/build_config.hxx"
+
+#if BOUT_HAS_SLEPC
 
 #include "slepc.hxx"
 #include <boutcomm.hxx>

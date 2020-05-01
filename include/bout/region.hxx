@@ -124,10 +124,10 @@
 #endif
 
 #define BOUT_FOR(index, region)                                                          \
-  BOUT_FOR_OMP(index, region, parallel for schedule(OPENMP_SCHEDULE))
+  BOUT_FOR_OMP(index, region, parallel for schedule(BOUT_OPENMP_SCHEDULE))
 
 #define BOUT_FOR_INNER(index, region)                                                    \
-  BOUT_FOR_OMP(index, region, for schedule(OPENMP_SCHEDULE) nowait)
+  BOUT_FOR_OMP(index, region, for schedule(BOUT_OPENMP_SCHEDULE) nowait)
 
 
 enum class IND_TYPE { IND_3D = 0, IND_2D = 1, IND_PERP = 2 };

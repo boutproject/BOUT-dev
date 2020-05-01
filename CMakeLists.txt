@@ -412,53 +412,26 @@ if (NOT CHECK IN_LIST CHECK_LEVELS)
   message(FATAL_ERROR "CHECK must be one of ${CHECK_LEVELS}")
 endif()
 message(STATUS "Runtime checking level: CHECK=${CHECK}")
-target_compile_definitions(bout++
-  PUBLIC "CHECK=${CHECK}"
-  PUBLIC "BOUT_CHECK=${CHECK}")
+target_compile_definitions(bout++ PUBLIC "CHECK=${CHECK}")
 set(BOUT_CHECK_LEVEL ${CHECK})
 
-option(DEBUG_ENABLED "Enable extra debug output" OFF)
 option(ENABLE_OUTPUT_DEBUG "Enable extra debug output" OFF)
-if (ENABLE_OUTPUT_DEBUG OR DEBUG_ENABLED)
-  target_compile_definitions(bout++
-    PUBLIC "DEBUG_ENABLED"
-    PUBLIC "BOUT_OUTPUT_DEBUG")
-endif()
-message(STATUS "Extra debug output: DEBUG_ENABLED=${DEBUG_ENABLED}")
-set(BOUT_USE_OUTPUT_DEBUG ${DEBUG_ENABLED})
+message(STATUS "Extra debug output: DEBUG_ENABLED=${ENABLE_OUTPUT_DEBUG}")
+set(BOUT_USE_OUTPUT_DEBUG ${ENABLE_OUTPUT_DEBUG})
 
 option(ENABLE_SIGNAL "SegFault handling" ON)
-if (ENABLE_SIGNAL)
-  target_compile_definitions(bout++
-    PUBLIC "SIGHANDLE"
-    PUBLIC "BOUT_SIGHANDLE")
-endif()
-message(STATUS "Signal handling: SIGHANDLE=${ENABLE_SIGNAL}")
+message(STATUS "Signal handling: BOUT_USE_SIGNAL=${ENABLE_SIGNAL}")
 set(BOUT_USE_SIGNAL ${ENABLE_SIGNAL})
 
 option(ENABLE_COLOR "Output coloring" ON)
-if (ENABLE_COLOR)
-  target_compile_definitions(bout++
-    PUBLIC "LOGCOLOR"
-    PUBLIC "BOUT_LOGCOLOR")
-endif()
 message(STATUS "Output coloring: LOGCOLOR=${ENABLE_COLOR}")
 set(BOUT_USE_COLOR ${ENABLE_COLOR})
 
 option(ENABLE_TRACK "Field name tracking" ON)
-if (ENABLE_TRACK)
-  target_compile_definitions(bout++
-    PUBLIC "TRACK"
-    PUBLIC "BOUT_TRACK")
-endif()
 message(STATUS "Field name tracking: TRACK=${ENABLE_TRACK}")
 set(BOUT_USE_TRACK ${ENABLE_TRACK})
 
 option(ENABLE_SIGFPE "Signalling floating point exceptions" OFF)
-if (ENABLE_SIGFPE)
-  target_compile_definitions(bout++
-    PUBLIC "BOUT_FPE")
-endif()
 message(STATUS "Signalling floating point exceptions: BOUT_FPE=${ENABLE_SIGFPE}")
 set(BOUT_USE_SIGFPE ${ENABLE_SIGFPE})
 
@@ -468,9 +441,6 @@ if (ENABLE_BACKTRACE)
   if (NOT ADDR2LINE_FOUND)
     message(FATAL_ERROR "addr2line not found")
   endif()
-  target_compile_definitions(bout++
-    PUBLIC "BACKTRACE"
-    PUBLIC "BOUT_BACKTRACE")
   target_link_libraries(bout++ PUBLIC ${CMAKE_DL_LIBS})
 endif()
 message(STATUS "Enable backtrace: BACKTRACE=${ENABLE_BACKTRACE}")
@@ -481,13 +451,10 @@ if (ENABLE_OPENMP)
   find_package(OpenMP REQUIRED)
   target_link_libraries(bout++ PUBLIC OpenMP::OpenMP_CXX)
   set(possible_openmp_schedules static dynamic guided auto)
-  set(OPENMP_SCHEDULE static CACHE STRING "Set OpenMP schedule")
+  set(BOUT_OPENMP_SCHEDULE static CACHE STRING "Set OpenMP schedule")
   if (NOT OPENMP_SCHEDULE IN_LIST possible_openmp_schedules)
     message(FATAL_ERROR "OPENMP_SCHEDULE must be one of ${possible_openmp_schedules}")
   endif()
-  target_compile_definitions(bout++
-    PUBLIC "OPENMP_SCHEDULE=${OPENMP_SCHEDULE}"
-    PUBLIC "BOUT_OPENMP_SCHEDULE=${OPENMP_SCHEDULE}")
   message(STATUS "OpenMP schedule: ${OPENMP_SCHEDULE}")
 endif()
 message(STATUS "Enable OpenMP: ${ENABLE_OPENMP}")
@@ -499,8 +466,6 @@ option(USE_PVODE "Enable support for bundled PVODE" ON)
 if (USE_PVODE)
   add_subdirectory(externalpackages/PVODE)
   target_link_libraries(bout++ PUBLIC pvode pvpre)
-  target_compile_definitions(bout++
-    PUBLIC "BOUT_HAS_PVODE")
 endif()
 message(STATUS "PVODE support: ${USE_PVODE}")
 set(BOUT_HAS_PVODE ${USE_PVODE})
@@ -508,9 +473,6 @@ set(BOUT_HAS_PVODE ${USE_PVODE})
 option(USE_NETCDF "Enable support for NetCDF output" ON)
 if (USE_NETCDF)
   find_package(NetCDF REQUIRED)
-  target_compile_definitions(bout++
-    PUBLIC "NCDF4"
-    PUBLIC "BOUT_HAS_NETCDF")
   target_link_libraries(bout++ PUBLIC NetCDF::NetCDF_CXX)
 endif()
 message(STATUS "NetCDF support: ${USE_NETCDF}")
@@ -519,9 +481,6 @@ set(BOUT_HAS_NETCDF ${USE_NETCDF})
 option(USE_HDF5 "Enable support for HDF5 output" OFF)
 if (USE_HDF5)
   find_package(HDF5 REQUIRED COMPONENTS CXX)
-  target_compile_definitions(bout++
-    PUBLIC "HDF5"
-    PUBLIC "BOUT_HAS_HDF5")
   target_link_libraries(bout++ PUBLIC "${HDF5_CXX_LIBRARIES}")
   target_include_directories(bout++ PUBLIC "${HDF5_CXX_INCLUDE_DIRS}")
 endif()
@@ -531,8 +490,6 @@ set(BOUT_HAS_HDF5 ${USE_HDF5})
 option(USE_FFTW "Enable support for FFTW" ON)
 if (USE_FFTW)
   find_package(FFTW REQUIRED)
-  target_compile_definitions(bout++
-    PUBLIC "BOUT_HAS_FFTW")
   target_link_libraries(bout++ PUBLIC FFTW::FFTW)
 endif()
 message(STATUS "FFTW support: ${USE_FFTW}")
@@ -545,9 +502,6 @@ if (USE_LAPACK)
     find_package(LAPACK REQUIRED)
     target_link_libraries(bout++ PUBLIC "${LAPACK_LIBRARIES}")
   endif()
-  target_compile_definitions(bout++
-    PUBLIC "LAPACK"
-    PUBLIC "BOUT_HAS_LAPACK")
 endif()
 message(STATUS "LAPACK support: ${USE_LAPACK}")
 set(BOUT_HAS_LAPACK ${USE_LAPACK})
@@ -559,8 +513,6 @@ if (USE_PETSC)
     find_package(PETSc REQUIRED)
     target_link_libraries(bout++ PUBLIC PETSc::PETSc)
   endif()
-  target_compile_definitions(bout++
-    PUBLIC "BOUT_HAS_PETSC")
 endif()
 message(STATUS "PETSc support: ${USE_PETSC}")
 set(BOUT_HAS_PETSC ${USE_PETSC})
@@ -568,8 +520,6 @@ set(BOUT_HAS_PETSC ${USE_PETSC})
 option(USE_SLEPC "Enable support for SLEPc eigen solver" OFF)
 if (USE_SLEPC)
   find_package(SLEPc REQUIRED)
-  target_compile_definitions(bout++
-    PUBLIC "BOUT_HAS_SLEPC")
   target_link_libraries(bout++ PUBLIC SLEPc::SLEPc)
 endif()
 message(STATUS "SLEPc support: ${USE_SLEPC}")
@@ -578,24 +528,20 @@ set(BOUT_HAS_SLEPC ${USE_SLEPC})
 option(USE_SUNDIALS "Enable support for SUNDIALS time solvers" OFF)
 if (USE_SUNDIALS)
   find_package(SUNDIALS REQUIRED)
-  target_compile_definitions(bout++
-    PUBLIC "BOUT_HAS_CVODE"
-    PUBLIC "BOUT_HAS_IDA"
-    PUBLIC "BOUT_HAS_ARKODE"
-    PUBLIC "BOUT_HAS_SUNDIALS")
   target_link_libraries(bout++ PUBLIC SUNDIALS::cvode)
   target_link_libraries(bout++ PUBLIC SUNDIALS::ida)
   target_link_libraries(bout++ PUBLIC SUNDIALS::arkode)
 endif()
 message(STATUS "SUNDIALS support: ${USE_SUNDIALS}")
 set(BOUT_HAS_SUNDIALS ${USE_SUNDIALS})
+set(BOUT_HAS_ARKODE ${USE_SUNDIALS})
+set(BOUT_HAS_CVODE ${USE_SUNDIALS})
+set(BOUT_HAS_IDA ${USE_SUNDIALS})
 
 option(USE_NLS "Enable Native Language Support" ON)
 if (USE_NLS)
   find_package(Gettext)
   if (GETTEXT_FOUND)
-	target_compile_definitions(bout++
-	  PUBLIC "BOUT_HAS_GETTEXT")
 	find_package(Intl)
 	if (Intl_FOUND)
 	  target_link_libraries(bout++
@@ -609,8 +555,6 @@ set(BOUT_HAS_GETTEXT ${USE_NLS})
 
 option(USE_SCOREP "Enable support for Score-P based instrumentation" OFF)
 if (USE_SCOREP)
-  target_compile_definitions(bout++
-    PUBLIC "BOUT_HAS_SCOREP")
   message(STATUS "Score-P support enabled. Please make sure you are calling CMake like so:
 
   SCOREP_WRAPPER=off cmake -DCMAKE_C_COMPILER=scorep-mpicc -DCMAKE_CXX_COMPILER=scorep-mpicxx <other CMake options>
@@ -622,11 +566,6 @@ include(CheckCXXSourceCompiles)
 check_cxx_source_compiles("int main() { const char* name = __PRETTY_FUNCTION__; }"
   HAS_PRETTY_FUNCTION)
 set(BOUT_HAS_PRETTY_FUNCTION ${HAS_PRETTY_FUNCTION})
-if (HAS_PRETTY_FUNCTION)
-  target_compile_definitions(bout++
-    PUBLIC "HAS_PRETTY_FUNCTION"
-    PUBLIC "BOUT_HAS_PRETTY_FUNCTION")
-endif()
 
 # We want to compile the actual flags used into the library so we can
 # see them at runtime. This needs a few steps:
@@ -796,6 +735,11 @@ if(PACKAGE_TESTS)
   add_custom_target(check)
   add_dependencies(check check-unit-tests check-integrated-tests)
 endif()
+
+##################################################
+# Generate the build config header
+
+configure_file(cmake_build_config.hxx.in include/bout/build_config.hxx)
 
 ##################################################
 # Installation

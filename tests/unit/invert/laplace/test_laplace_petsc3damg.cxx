@@ -1,3 +1,5 @@
+#include "bout/build_config.hxx"
+
 #include <math.h>
 #include <tuple>
 
@@ -17,7 +19,7 @@
 #include "bout/petsc_interface.hxx"
 
 
-#ifdef BOUT_HAS_PETSC
+#if BOUT_HAS_PETSC
 
 /// Global mesh
 namespace bout{

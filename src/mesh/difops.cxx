@@ -23,6 +23,8 @@
 * 
 **************************************************************************/
 
+#include "bout/build_config.hxx"
+
 #include <globals.hxx>
 #include <bout/solver.hxx>
 #include <difops.hxx>
@@ -420,7 +422,7 @@ const Field2D b0xGrad_dot_Grad(const Field2D &phi, const Field2D &A, CELL_LOC ou
 
   ASSERT1(result.getLocation() == outloc);
 
-#ifdef TRACK
+#if BOUT_USE_TRACK
   result.name = "b0xGrad_dot_Grad("+phi.name+","+A.name+")";
 #endif
   return result;
@@ -457,7 +459,7 @@ const Field3D b0xGrad_dot_Grad(const Field2D &phi, const Field3D &A, CELL_LOC ou
 
   result /= (metric->J*sqrt(metric->g_22));
 
-#ifdef TRACK
+#if BOUT_USE_TRACK
   result.name = "b0xGrad_dot_Grad("+phi.name+","+A.name+")";
 #endif
 
@@ -490,7 +492,7 @@ const Field3D b0xGrad_dot_Grad(const Field3D &p, const Field2D &A, CELL_LOC outl
 
   result /= (metric->J*sqrt(metric->g_22));
   
-#ifdef TRACK
+#if BOUT_USE_TRACK
   result.name = "b0xGrad_dot_Grad("+p.name+","+A.name+")";
 #endif
   
@@ -529,7 +531,7 @@ const Field3D b0xGrad_dot_Grad(const Field3D &phi, const Field3D &A, CELL_LOC ou
 
   result /=  (metric->J*sqrt(metric->g_22));
 
-#ifdef TRACK
+#if BOUT_USE_TRACK
   result.name = "b0xGrad_dot_Grad("+phi.name+","+A.name+")";
 #endif
 

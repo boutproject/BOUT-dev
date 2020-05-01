@@ -36,6 +36,8 @@
 #ifndef __BOUT_H__
 #define __BOUT_H__
 
+#include "bout/build_config.hxx"
+
 #include "boutcomm.hxx"
 #include "datafile.hxx"
 #include "difops.hxx" // Differential operators

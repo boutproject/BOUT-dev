@@ -1,6 +1,8 @@
 // Test reading and writing to NetCDF
 
-#ifdef NCDF4
+#include "bout/build_config.hxx"
+
+#if BOUT_HAS_NETCDF
 
 #include "gtest/gtest.h"
 
@@ -218,4 +220,4 @@ TEST_F(OptionsNetCDFTest, Field3DWriteCellYLow) {
 }
 
 
-#endif // NCDF4
+#endif // BOUT_HAS_NETCDF

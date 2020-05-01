@@ -1,0 +1,30 @@
+#pragma once
+#ifndef BOUT_BUILD_CONFIG_HXX
+#define BOUT_BUILD_CONFIG_HXX
+
+#cmakedefine BOUT_CHECK_LEVEL @BOUT_CHECK_LEVEL@
+// #cmakedefine BOUT_FLAGS_STRING @BOUT_FLAGS_STRING@
+#cmakedefine BOUT_OPENMP_SCHEDULE @BOUT_OPENMP_SCHEDULE@
+#cmakedefine01 BOUT_HAS_ARKODE
+#cmakedefine01 BOUT_HAS_CVODE
+#cmakedefine01 BOUT_HAS_FFTW
+#cmakedefine01 BOUT_HAS_GETTEXT
+#cmakedefine01 BOUT_HAS_HDF5
+#cmakedefine01 BOUT_HAS_IDA
+#cmakedefine01 BOUT_HAS_LAPACK
+#cmakedefine01 BOUT_HAS_NETCDF
+#cmakedefine01 BOUT_HAS_PETSC
+#cmakedefine01 BOUT_HAS_PRETTY_FUNCTION
+#cmakedefine01 BOUT_HAS_PVODE
+#cmakedefine01 BOUT_HAS_SCOREP
+#cmakedefine01 BOUT_HAS_SLEPC
+#cmakedefine01 BOUT_HAS_SUNDIALS
+#cmakedefine01 BOUT_USE_BACKTRACE
+#cmakedefine01 BOUT_USE_COLOR
+#cmakedefine01 BOUT_USE_OPENMP
+#cmakedefine01 BOUT_USE_OUTPUT_DEBUG
+#cmakedefine01 BOUT_USE_SIGFPE
+#cmakedefine01 BOUT_USE_SIGNAL
+#cmakedefine01 BOUT_USE_TRACK
+
+#endif // BOUT_BUILD_CONFIG_HXX

@@ -33,7 +33,9 @@ class InvertableOperator;
 #ifndef __INVERTABLE_OPERATOR_H__
 #define __INVERTABLE_OPERATOR_H__
 
-#ifdef BOUT_HAS_PETSC
+#include "bout/build_config.hxx"
+
+#if BOUT_HAS_PETSC
 
 #include "bout/traits.hxx"
 #include <bout/mesh.hxx>
@@ -54,7 +56,7 @@ class InvertableOperator;
 namespace bout {
 namespace inversion {
 
-#ifdef BOUT_HAS_PETSC
+#if BOUT_HAS_PETSC
 
 /// No-op function to use as a default -- may wish to remove once testing phase complete
 template <typename T>
