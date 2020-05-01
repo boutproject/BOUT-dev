@@ -56,8 +56,6 @@ AC_ARG_WITH(slepc,        [AS_HELP_STRING([--with-slepc],
         [Enable SLEPc interface])],,[with_slepc=no])
 AC_ARG_WITH(pvode,        [AS_HELP_STRING([--with-pvode],
         [Build and enable PVODE 98 (DEFAULT)])],,[])
-AC_ARG_WITH(mumps,        [AS_HELP_STRING([--with-mumps],
-        [Link with MUMPS library for direct matrix inversions])],,[])
 AC_ARG_WITH(arkode,       [AS_HELP_STRING([--with-arkode],
         [Use the SUNDIALS ARKODE solver])],,[])
 AC_ARG_WITH(scorep,       [AS_HELP_STRING([--with-scorep],
@@ -960,84 +958,6 @@ SLEPC_ERROR_MESSAGE])
 ])
 
 #############################################################
-# MUMPS library
-#############################################################
-
-AS_IF([test "$with_mumps" != "" && test "$with_mumps" != "no"], [
-  MUMPS=""
-  AC_MSG_NOTICE([Searching for MUMPS])
-  AS_IF([test "$with_mumps" != "yes"], [
-    # User specified a directory
-    MUMPS="$with_mumps"
-  ])
-
-  AS_IF([test "$MUMPS" = ""], [
-    # Look in some standard locations
-    AC_CHECK_FILE(/usr/include/dmumps_c.h, MUMPS="/usr/",
-      AC_CHECK_FILE($HOME/local/include/dmumps_c.h, MUMPS="$HOME/local/",))
-  ])
-
-  AS_IF([test "$MUMPS" != ""], [
-    # Check all files needed
-    MUMPS_INC=$MUMPS/include
-    MUMPS_LIB=$MUMPS/lib
-    AC_CHECK_FILES([$MUMPS_INC/dmumps_c.h $MUMPS_LIB/libdmumps.a
-      $MUMPS_LIB/libmumps_common.a $MUMPS_LIB/libpord.a
-      $MUMPS_LIB/libscalapack.a
-      $MUMPS_LIB/libparmetis.a $MUMPS_LIB/libmetis.a
-      $MUMPS_LIB/libptscotch.a $MUMPS_LIB/libptesmumps.a], ,
-    [MUMPS=""
-     MUMPS_INC=""
-     MUMPS_LIB=""
-    ])
-  ])
-
-  save_LIBS=$LIBS
-  save_LDFLAGS=$LDFLAGS
-  save_CPPFLAGS=$CPPFLAGS
-
-  AS_IF([test "x$MUMPS_INC" != "x"], [
-    LIBS="$save_LIBS -ldmumps -lmumps_common -lpord -lscalapack -lparmetis -lmetis -lptscotch -lptesmumps"
-    LDFLAGS="$LDFLAGS -L$MUMPS_LIB"
-    CPPFLAGS="$CPPFLAGS -I$MUMPS_INC"
-    AC_MSG_NOTICE([Trying the following flags for MUMPS:])
-    AC_MSG_NOTICE([   Includes : $CPPFLAGS])
-    AC_MSG_NOTICE([   Libraries: $LDFLAGS $LIBS])
-  ], [
-    AC_MSG_NOTICE([Using user supplied flags for MUMPS])
-  ])
-
-  AC_LANG_PUSH([C++])
-  AC_MSG_CHECKING([if we can compile MUMPS program])
-  AC_LINK_IFELSE(
-    [AC_LANG_PROGRAM([
-       #include <dmumps_c.h>
-       ], [
-       DMUMPS_STRUC_C mumps_struc;
-       dmumps_c(&mumps_struc);])],
-    [AC_MSG_RESULT([yes])
-     AC_MSG_NOTICE([ -> MUMPS support enabled])
-     MUMPS=yes
-     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_MUMPS"],
-    [AC_MSG_RESULT([no])
-     AC_MSG_FAILURE([*** Could not compile MUMPS program! You may need to supply LIBS, LDFLAGS and CPPFLAGS ])])
-  AC_LANG_POP([C++])
-
-  LIBS=$save_LIBS
-  LDFLAGS=$save_LDFLAGS
-  CPPFLAGS=$save_CPPFLAGS
-
-  AS_IF([test "x$MUMPS_INC" != "x"], [
-    AC_MSG_NOTICE([   Includes : $MUMPS_INC])
-    AC_MSG_NOTICE([   Libraries: $MUMPS_LIB])
-
-
-    EXTRA_INCS="$EXTRA_INCS -I$MUMPS_INC"
-    EXTRA_LIBS="$EXTRA_LIBS -L$MUMPS_LIB -ldmumps -lmumps_common -lpord -lscalapack -lparmetis -lmetis -lptscotch -lptesmumps"
-  ])
-])
-
-#############################################################
 # Solver choice: SUNDIALS' IDA, SUNDIALS' CVODE, PVODE
 #############################################################
 
@@ -1315,12 +1235,6 @@ then
   HAS_PNETCDF="no"
 fi
 
-HAS_MUMPS="yes"
-if test "$MUMPS" = ""
-then
-  HAS_MUMPS="no"
-fi
-
 # Only make.config is altered by configure
 AC_CONFIG_FILES([make.config])
 AC_OUTPUT
@@ -1375,7 +1289,6 @@ AC_SUBST(HAS_ARKODE)
 AC_SUBST(HAS_NETCDF)
 AC_SUBST(HAS_PNETCDF)
 AC_SUBST(HAS_HDF5)
-AC_SUBST(HAS_MUMPS)
 AC_SUBST(HAS_LAPACK)
 AC_SUBST(HAS_PETSC)
 AC_SUBST(HAS_SLEPC)
@@ -1414,7 +1327,6 @@ AC_MSG_NOTICE([  FFTW support            : $HAS_FFTW])
 AC_MSG_NOTICE([  NetCDF support          : $HAS_NETCDF])
 AC_MSG_NOTICE([  Parallel-NetCDF support : $HAS_PNETCDF])
 AC_MSG_NOTICE([  HDF5 support            : $HAS_HDF5 (parallel: $HAS_PHDF5)])
-AC_MSG_NOTICE([  MUMPS support           : $HAS_MUMPS])
 AC_MSG_NOTICE([  Lapack support          : $HAS_LAPACK])
 AC_MSG_NOTICE([  Scorep support          : $HAS_SCOREP])
 AC_MSG_NOTICE([  OpenMP support          : $HAS_OPENMP (schedule: $OPENMP_SCHEDULE)])

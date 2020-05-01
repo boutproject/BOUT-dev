@@ -179,8 +179,6 @@ set(BOUT_SOURCES
   ./src/invert/laplace/impls/multigrid/multigrid_laplace.cxx
   ./src/invert/laplace/impls/multigrid/multigrid_laplace.hxx
   ./src/invert/laplace/impls/multigrid/multigrid_solver.cxx
-  ./src/invert/laplace/impls/mumps/mumps_laplace.cxx
-  ./src/invert/laplace/impls/mumps/mumps_laplace.hxx
   ./src/invert/laplace/impls/naulin/naulin_laplace.cxx
   ./src/invert/laplace/impls/naulin/naulin_laplace.hxx
   ./src/invert/laplace/impls/pdd/pdd.cxx
