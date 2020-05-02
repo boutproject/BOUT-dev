@@ -645,9 +645,10 @@ FieldPerp LaplaceParallelTriMGNew::solve(const FieldPerp& b, const FieldPerp& x0
   while(true){
 
     output<<"START OF LOOP "<<count<<" level "<<current_level<<endl;
-    calculate_residual(levels[current_level],converged,jy);
+    //calculate_residual(levels[current_level],converged,jy);
 
     gauss_seidel_red_black(levels[current_level],converged,jy);
+    //calculate_residual(levels[current_level],converged,jy);
     // For debugging:
     //if(current_level==0){
     //}
@@ -677,15 +678,13 @@ FieldPerp LaplaceParallelTriMGNew::solve(const FieldPerp& b, const FieldPerp& x0
     if(subcount < max_cycle){
     }
     else if( all(converged) and current_level==0 ){
-    /*
       ml = maxloc(total);
       output<<"Exit "<<count<<" "<<ml<<" "<<total[ml]<<" "<<total[ml]/totalold[ml]<<endl;
     output<<"xloc final"<<endl;
     for(int ix=0; ix<4;ix++){
-      output<<" "<<levels[current_level].xloc(ix,kzp).real() << " ";
+      output<<" "<<levels[current_level].xloc(ix,1) << " ";
     }
     output<<endl;
-    */
       break;
     }
     else if( not down ){
@@ -1880,7 +1879,6 @@ void LaplaceParallelTriMGNew::calculate_residual(Level &l, const Array<bool> &co
 
   SCOREP0();
   if(l.included){
-    output<<"CALCULATE_RESIDUAL"<<endl;
     for(int kz=0; kz<nmode; kz++){
       if(!converged[kz]){
 	if(not localmesh->lastX()){
@@ -2034,8 +2032,8 @@ void LaplaceParallelTriMGNew::coarsen(Level &l, const Matrix<dcomplex> &fine_res
 	  l.residual(kz,2) = 0.25*fine_residual(kz,1) + 0.5*fine_residual(kz,2) + 0.25*fine_residual(kz,3);
 	}
 	for(int ix=0; ix<4; ix++){
-	  l.xloc(kz,ix) = 0.0;
-	  l.xloclast(kz,ix) = 0.0;
+	  l.xloc(ix,kz) = 0.0;
+	  l.xloclast(ix,kz) = 0.0;
 	}
 	//l.rvec(kz,ix) = l.residual(kz,ix);
 	l.rr(1,kz) = l.residual(kz,1);
@@ -2132,11 +2130,11 @@ void LaplaceParallelTriMGNew::refine(Level &l, Matrix<dcomplex> &fine_error, con
     }
 
     if(!localmesh->lastX()){
-      output<<"sending "<<sendvec[1]<<" to "<<proc_out<<endl;
+      output<<"fe sending "<<sendvec[1]<<" to "<<proc_out<<endl;
       localmesh->sendXOut(&sendvec[0],nmode,0);
     }
     if(!localmesh->firstX()){
-      output<<"sending "<<sendvec[1]<<" to "<<proc_in<<endl;
+      output<<"fe sending "<<sendvec[1]<<" to "<<proc_in<<endl;
       localmesh->sendXIn(&sendvec[0],nmode,1);
     }
 
@@ -2147,11 +2145,9 @@ void LaplaceParallelTriMGNew::refine(Level &l, Matrix<dcomplex> &fine_error, con
   if( (l.included_up and not l.included) or (localmesh->lastX() and l.current_level==1) ){
     if(!localmesh->firstX()){
       recv[0] = localmesh->irecvXIn(&recvecin[0], nmode, 0);
-      output<<"recving "<<recvecin[1]<<" from "<<proc_in<<endl;
     }
     if(!localmesh->lastX()){
       recv[1] = localmesh->irecvXOut(&recvecout[0], nmode, 1);
-      output<<"recving "<<recvecout[1]<<" from "<<proc_out<<endl;
     }
 
     for(int kz=0; kz < nmode; kz++){
@@ -2160,6 +2156,7 @@ void LaplaceParallelTriMGNew::refine(Level &l, Matrix<dcomplex> &fine_error, con
 
     if(!localmesh->firstX()){
       localmesh->wait(recv[0]);
+      output<<"recving "<<recvecin[1]<<" from "<<proc_in<<endl;
       for(int kz=0; kz < nmode; kz++){
 	if(!converged[kz]){
 	  fine_error(1,kz) += 0.5*recvecin[kz];
@@ -2168,6 +2165,7 @@ void LaplaceParallelTriMGNew::refine(Level &l, Matrix<dcomplex> &fine_error, con
     }
     if(!localmesh->lastX()){
       localmesh->wait(recv[1]);
+      output<<"recving "<<recvecout[1]<<" from "<<proc_out<<endl;
       for(int kz=0; kz < nmode; kz++){
 	if(!converged[kz]){
 	  fine_error(1,kz) += 0.5*recvecout[kz];
