@@ -2115,8 +2115,12 @@ void LaplaceParallelTriMGNew::refine(Level &l, Matrix<dcomplex> &fine_error, con
   comm_handle recv[2];
 
   // Need to update this for my actual neighbours!
+  // Should be correct for level 0/1 
 
-  if(l.included){
+  // Included processors send their contribution to procs that are included on
+  // the level above.
+  // Special case: last proc sends if on level > 1, but NOT on level 1
+  if(l.included and (not localmesh->lastX() or l.current_level>1) ){
     for(int kz=0; kz<nmode; kz++){
       if(!converged[kz]){
 	fine_error(1,kz) = l.xloc(1,kz);
@@ -2128,26 +2132,37 @@ void LaplaceParallelTriMGNew::refine(Level &l, Matrix<dcomplex> &fine_error, con
     }
 
     if(!localmesh->lastX()){
+      output<<"sending "<<sendvec[1]<<" to "<<proc_out<<endl;
       localmesh->sendXOut(&sendvec[0],nmode,0);
     }
     if(!localmesh->firstX()){
+      output<<"sending "<<sendvec[1]<<" to "<<proc_in<<endl;
       localmesh->sendXIn(&sendvec[0],nmode,1);
     }
 
   }
-  else if(l.included_up){
+
+  // Receive if proc is included on the level above, but not this level.
+  // Special case: last proc receives if on level 1
+  if( (l.included_up and not l.included) or (localmesh->lastX() and l.current_level==1) ){
     if(!localmesh->firstX()){
       recv[0] = localmesh->irecvXIn(&recvecin[0], nmode, 0);
+      output<<"recving "<<recvecin[1]<<" from "<<proc_in<<endl;
     }
     if(!localmesh->lastX()){
       recv[1] = localmesh->irecvXOut(&recvecout[0], nmode, 1);
+      output<<"recving "<<recvecout[1]<<" from "<<proc_out<<endl;
+    }
+
+    for(int kz=0; kz < nmode; kz++){
+      fine_error(1,kz) = 0.0;
     }
 
     if(!localmesh->firstX()){
       localmesh->wait(recv[0]);
       for(int kz=0; kz < nmode; kz++){
 	if(!converged[kz]){
-	  fine_error(1,kz) = 0.5*recvecin[kz];
+	  fine_error(1,kz) += 0.5*recvecin[kz];
 	}
       }
     }
@@ -2164,7 +2179,7 @@ void LaplaceParallelTriMGNew::refine(Level &l, Matrix<dcomplex> &fine_error, con
   if(localmesh->lastX() and l.current_level==1){
     for(int kz=0; kz < nmode; kz++){
       if(!converged[kz]){
-	fine_error(1,kz) = 0.5*(l.xloc(0,kz) + l.xloc(2,kz));
+	fine_error(1,kz) += 0.5*l.xloc(2,kz);
       }
     }
   }
