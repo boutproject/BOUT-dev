@@ -122,27 +122,18 @@ public:
 
   };
 
-  void levels_info(const Level l, const int jy);
+  void calculate_residual(Level &level, const Array<bool> &converged, const int jy);
+  void calculate_total_residual(Array<BoutReal> &total, Array<BoutReal> &globalmaxsol, Array<bool> &converged, Level &level);
+  void coarsen(Level &level, const Matrix<dcomplex> &fine_residual, const Array<bool> &converged);
+  void gauss_seidel_red_black(Level &level, const Array<bool> &converged, const int jy);
   void init(Level &level, const Level lup, const int ncx, const int xs, const int xe, const int current_level, const int jy);
   void init(Level &level, const int ncx, const int jy, const Matrix<dcomplex> avec, const Matrix<dcomplex> bvec, const Matrix<dcomplex> cvec, const int xs, const int xe);
   void init_rhs(Level &level, const int jy, const Matrix<dcomplex> bcmplx);
-
-  void jacobi(Level &level, const int jy, const Array<bool> &converged);
-  void gauss_seidel_red_black(Level &level, const Array<bool> &converged, const int jy);
-  void gauss_seidel_red_black_full_system(Level &level, const Array<bool> &converged, const int jy);
-  void gauss_seidel_red_black_full_system_comp_comm_overlap(Level &level, const Array<bool> &converged, const int jy);
-  void refine(Level &level, Matrix<dcomplex> &fine_error, const Array<bool> &converged);
-
-  void coarsen(Level &level, const Matrix<dcomplex> &fine_residual, const Array<bool> &converged);
-
-  void calculate_residual(Level &level, const Array<bool> &converged, const int jy);
-  void calculate_residual_full_system(Level &level, const Array<bool> &converged, const int jy);
-  void calculate_total_residual(Array<BoutReal> &total, Array<BoutReal> &globalmaxsol, Array<bool> &converged, Level &level);
-  void update_solution(Level &l, const Matrix<dcomplex> &fine_error, const Array<bool> &converged);
-  void reconstruct_full_solution(Level &level, const int jy, Matrix<dcomplex> &halos);
+  void levels_info(const Level l, const int jy);
   void reconstruct_full_solution(Level &level, const int jy);
-
+  void refine(Level &level, Matrix<dcomplex> &fine_error, const Array<bool> &converged);
   void synchronize_reduced_field(const Level &l, Matrix<dcomplex> &field);
+  void update_solution(Level &l, const Matrix<dcomplex> &fine_error, const Array<bool> &converged);
 
 private:
 
