@@ -162,6 +162,10 @@ SCOREP0();
   }
 }
 
+// TODO Probably delete function... each proc has a row of the reduced system
+// so this can be done, but it's probably not useful in multigrid setting:
+// coarsening moves matrix entries from off- to on-diagonal, so using more
+// levels makes matrices more diagonally dominant.
 /*
  * Check whether the reduced matrix is diagonally dominant, i.e. whether for every row the absolute
  * value of the diagonal element is greater-or-equal-to the sum of the absolute values
@@ -180,28 +184,6 @@ bool LaplaceParallelTriMGNew::is_diagonally_dominant(const dcomplex al, const dc
     is_dd = false;
   }
   return is_dd;
-}
-
-/*
- * Reconstruct the full solution from the subproblem and the halo cell values
- */
-void LaplaceParallelTriMGNew::reconstruct_full_solution(Level &l, const int jy, Matrix<dcomplex> &halos){
-  SCOREP0();
-  for (int kz = 0; kz < nmode; kz++) {
-    for(int i=0; i<l.ncx; i++){
-      l.soln(kz,i) = l.minvb(kz,i);
-    }
-    if(not localmesh->lastX()) {
-      for(int i=0; i<l.ncx; i++){
-        l.soln(kz,i) += l.upperGuardVector(i,jy,kz)*halos(kz,l.xe+1);
-      }
-    }
-    if(not localmesh->firstX()) {
-      for(int i=0; i<l.ncx; i++){
-        l.soln(kz,i) += l.lowerGuardVector(i,jy,kz)*halos(kz,l.xs-1);
-      }
-    }
-  }
 }
 
 /*
@@ -227,9 +209,6 @@ void LaplaceParallelTriMGNew::reconstruct_full_solution(Level &l, const int jy){
 
   for (int kz = 0; kz < nmode; kz++) {
 
-    // Note: Use xloclast to reconstruct interior points, as this mimicks
-    // what the iteration step does, ensuring the constructed solution is
-    // consistent with xloc at the current step.
     x_lower[kz] = l.xloc(0,kz);
     x_upper[kz] = l.xloc(3,kz);
 
@@ -645,13 +624,8 @@ FieldPerp LaplaceParallelTriMGNew::solve(const FieldPerp& b, const FieldPerp& x0
   while(true){
 
     output<<"START OF LOOP "<<count<<" level "<<current_level<<endl;
-    //calculate_residual(levels[current_level],converged,jy);
 
     gauss_seidel_red_black(levels[current_level],converged,jy);
-    //calculate_residual(levels[current_level],converged,jy);
-    // For debugging:
-    //if(current_level==0){
-    //}
 
     ///SCOREP_USER_REGION_DEFINE(l0rescalc);
     ///SCOREP_USER_REGION_BEGIN(l0rescalc, "level 0 residual calculation",///SCOREP_USER_REGION_TYPE_COMMON);
@@ -689,61 +663,10 @@ FieldPerp LaplaceParallelTriMGNew::solve(const FieldPerp& b, const FieldPerp& x0
     }
     else if( not down ){
       output<<"up step"<<endl;
-      //calculate_residual(levels[current_level],converged,jy);
-      refine(levels[current_level],fine_error,converged);
+      refine(levels[current_level],levels[current_level-1],fine_error,converged);
       current_level--;
       update_solution(levels[current_level],fine_error,converged);
 
-      /*
-      if(algorithm!=0 and current_level==0){
-	output<<"Extended domain loop"<<endl;
-	// If extended domain method, need to set xloc(0) and xloc(3) to be the far
-	// interior point of neighbouring domain, which is not local. Therefore get
-	// this now via comms.
-	// Note this is a repeat of code in Jacobi function, and could be encapsulated.
-	if(new_method){
-	  struct Message { dcomplex value; bool done; };
-	  Array<Message> message_send, message_recv;
-	  message_send = Array<Message>(nmode);
-	  message_recv = Array<Message>(nmode);
-	  MPI_Comm comm = BoutComm::get();
-	  int err;
-          // Communication receive from left
-          if(!localmesh->firstX()){
-            for (int kz = 0; kz <= maxmode; kz++) {
-              if(!converged[kz]){
-	        message_send[kz].value = levels[0].xloc(index_in,kz);
-                ///	  message_send[kz].done  = self_in[kz];
-              }
-            }
-            err = MPI_Sendrecv(&message_send[0], nmode*sizeof(Message), MPI_BYTE, proc_in, 1, &message_recv[0], nmode*sizeof(Message), MPI_BYTE, proc_in, 0, comm, MPI_STATUS_IGNORE);
-            for (int kz = 0; kz <= maxmode; kz++) {
-              if(!converged[kz]){
-	        levels[0].xloc(0,kz) = message_recv[kz].value;
-///	        neighbour_in[kz] = message_recv[kz].done;
-              }
-            }
-          }
-
-          // Communicate receive from right
-          if(!localmesh->lastX()){
-            for (int kz = 0; kz <= maxmode; kz++) {
-              if(!converged[kz]){
-	        message_send[kz].value = levels[0].xloc(index_out,kz);
-///             message_send[kz].done  = self_out[kz];
-              }
-            }
-            err = MPI_Sendrecv(&message_send[0], nmode*sizeof(Message), MPI_BYTE, proc_out, 0, &message_recv[0], nmode*sizeof(Message), MPI_BYTE, proc_out, 1, comm, MPI_STATUS_IGNORE);
-            for (int kz = 0; kz < nmode; kz++) {
-              if(!converged[kz]){
-	        levels[0].xloc(3,kz) = message_recv[kz].value;
-///	        neighbour_out[kz] = message_recv[kz].done;
-              }
-            }
-          }
-	}
-      }
-      */
       subcount=0;
 
       if(current_level==0){
@@ -753,6 +676,7 @@ FieldPerp LaplaceParallelTriMGNew::solve(const FieldPerp& b, const FieldPerp& x0
     else if( down && max_level > 0 ){
 
       output<<"down step"<<endl;
+      // TODO don't need to call calculate_residual?
       calculate_residual(levels[current_level],converged,jy);
       current_level++;
       coarsen(levels[current_level],levels[current_level-1].residual,converged);
@@ -859,79 +783,9 @@ FieldPerp LaplaceParallelTriMGNew::solve(const FieldPerp& b, const FieldPerp& x0
 }
 
 /*
- * Perform an iteration on the reduced grid
- */
-void LaplaceParallelTriMGNew::jacobi(Level &l, const int jy, const Array<bool> &converged){
-
-  SCOREP0();
-  for (int kz = 0; kz <= maxmode; kz++) {
-    if(!converged[kz]){
-      
-      // Set xloclast to xloc 
-      l.xloclast(0,kz) = l.xloc(0,kz);
-      l.xloclast(1,kz) = l.xloc(1,kz);
-      l.xloclast(2,kz) = l.xloc(2,kz);
-      l.xloclast(3,kz) = l.xloc(3,kz);
-
-      // Update my interior points
-      l.xloc(1,kz) = l.rl[kz] + l.al(jy,kz)*l.xloclast(0,kz) + l.bl(jy,kz)*l.xloclast(3,kz);
-      l.xloc(2,kz) = l.ru[kz] + l.au(jy,kz)*l.xloclast(0,kz) + l.bu(jy,kz)*l.xloclast(3,kz);
-
-      // If I am a boundary processor, apply boundary conditions.
-      if( localmesh->firstX() ){
-	//l.xloc(0,kz) = ( l.minvb(kz,l.xs-1) + l.upperGuardVector(l.xs-1,jy,kz)*l.xloclast(3,kz) ) / (1.0 - l.lowerGuardVector(l.xs-1,jy,kz));
-        l.xloc(0,kz) = -l.cvec(jy,kz,l.xs-1)*l.xloc(1,kz) / l.bvec(jy,kz,l.xs-1);
-      }
-      if( localmesh->lastX() ){
-	//l.xloc(3,kz) = ( l.minvb(kz,l.xe+1) + l.lowerGuardVector(l.xe+1,jy,kz)*l.xloclast(0,kz) ) / (1.0 - l.upperGuardVector(l.xe+1,jy,kz));
-        l.xloc(3,kz) = -l.avec(jy,kz,l.xe+1)*l.xloc(2,kz) / l.bvec(jy,kz,l.xe+1);
-      }
-    }
-  }
-
-  ///SCOREP_USER_REGION_DEFINE(comms);
-  ///SCOREP_USER_REGION_BEGIN(comms, "communication",SCOREP_USER_REGION_TYPE_COMMON);
-
-  // Communication
-  auto sendvec = Array<dcomplex>(nmode);
-  auto recvvec = Array<dcomplex>(nmode);
-  MPI_Comm comm = BoutComm::get();
-  int err;
-
-  // Communication receive from left
-  if(!localmesh->firstX()){
-    for (int kz = 0; kz <= maxmode; kz++) {
-      if(!converged[kz]){
-	sendvec[kz] = l.xloc(index_in,kz);
-      }
-    }
-    err = MPI_Sendrecv(&sendvec[0], nmode, MPI_DOUBLE_COMPLEX, proc_in, 1, &recvvec[0], nmode, MPI_DOUBLE_COMPLEX, proc_in, 0, comm, MPI_STATUS_IGNORE);
-    for (int kz = 0; kz <= maxmode; kz++) {
-      if(!converged[kz]){
-	l.xloc(0,kz) = recvvec[kz];
-      }
-    }
-  }
-
-  // Communicate receive from right
-  if(!localmesh->lastX()){
-    for (int kz = 0; kz <= maxmode; kz++) {
-      if(!converged[kz]){
-	sendvec[kz] = l.xloc(index_out,kz);
-      }
-    }
-    err = MPI_Sendrecv(&sendvec[0], nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, &recvvec[0], nmode, MPI_DOUBLE_COMPLEX, proc_out, 1, comm, MPI_STATUS_IGNORE);
-    for (int kz = 0; kz < nmode; kz++) {
-      if(!converged[kz]){
-	l.xloc(3,kz) = recvvec[kz];
-      }
-    }
-  }
-  ///SCOREP_USER_REGION_END(comms);
-}  
-
-/*
- * Perform Gauss-Seidel with red-black colouring on the reduced system
+ * Perform Gauss-Seidel with red-black colouring on the reduced system. 
+ * We don't attempt comm/comp overlap, as there is not sigificant work in the
+ * x loop.
  */
 void LaplaceParallelTriMGNew::gauss_seidel_red_black(Level &l, const Array<bool> &converged, const int jy){
 
@@ -970,6 +824,7 @@ void LaplaceParallelTriMGNew::gauss_seidel_red_black(Level &l, const Array<bool>
 
       // Receive and put data in arrays
       if(!localmesh->firstX()){
+	output<<"waiting on "<<l.proc_in<<endl;
 	MPI_Wait(&rreqin,MPI_STATUS_IGNORE);
 	output<<"recv "<<recvecin[1]<<" from  "<<l.proc_in<<endl;
 	for(int kz=0; kz < nmode; kz++){
@@ -979,6 +834,7 @@ void LaplaceParallelTriMGNew::gauss_seidel_red_black(Level &l, const Array<bool>
 	}
       }
       if(!localmesh->lastX()){
+	output<<"waiting on "<<l.proc_out<<endl;
 	MPI_Wait(&rreqout,MPI_STATUS_IGNORE);
 	output<<"recv "<<recvecout[1]<<" from  "<<l.proc_out<<endl;
 	for(int kz=0; kz < nmode; kz++){
@@ -1153,133 +1009,6 @@ void LaplaceParallelTriMGNew::gauss_seidel_red_black(Level &l, const Array<bool>
     output<<"skipping GS"<<endl;
   }
    
-}  
-
-/*
- * Perform a Gauss--Seidel iteration with red black colouring explicitly on the full system 
- * Note that this assumes that each processor has an even number of points
- */
-void LaplaceParallelTriMGNew::gauss_seidel_red_black_full_system_comp_comm_overlap(Level &l, const Array<bool> &converged, const int jy){
-
-  SCOREP0();
-  Array<dcomplex> sendvecred, recvecred, sendvecblack, recvecblack;
-  sendvecred = Array<dcomplex>(nmode);
-  recvecred = Array<dcomplex>(nmode);
-  sendvecblack = Array<dcomplex>(nmode);
-  recvecblack = Array<dcomplex>(nmode);
-  MPI_Request rredreq, sredreq, rblackreq, sblackreq;
-
-  // Communicate: final grid point needs data from proc above
-  // Overlap comm/comp by not posting recv until needed in final
-  // loop iteration
-  if(!localmesh->lastX()){
-    MPI_Irecv(&recvecred[0], nmode, MPI_DOUBLE_COMPLEX, proc_out, 1, BoutComm::get(), &rredreq);
-  }
-  // Communicate: to synchronize, first grid point needs data from proc below
-  if(!localmesh->firstX()){
-    MPI_Irecv(&recvecblack[0], nmode, MPI_DOUBLE_COMPLEX, proc_in, 2, BoutComm::get(), &rblackreq);
-  }
-
-  // Red sweep:
-
-  // Do ix = xs first, so we can start the send
-  for (int kz = 0; kz <= maxmode; kz++) {
-    if(!converged[kz]){
-      int ix = l.xs;
-      l.soln(kz,ix) = ( l.rvec(kz,ix) - l.avec(jy,kz,ix)*l.soln(kz,ix-1) - l.cvec(jy,kz,ix)*l.soln(kz,ix+1) ) / l.bvec(jy,kz,ix);
-      if(!localmesh->firstX()){
-        sendvecred[kz] = l.soln(kz,l.xs);
-      }
-    }
-  }
-
-  // Can send lower guard data now
-  if(!localmesh->firstX()){
-    MPI_Isend(&sendvecred[0], nmode, MPI_DOUBLE_COMPLEX, proc_in, 1, BoutComm::get(), &sredreq);
-  }
-
-  // Red sweep: remaining points
-  for (int kz = 0; kz <= maxmode; kz++) {
-    if(!converged[kz]){
-      for (int ix = l.xs+2; ix < l.xe+1; ix+=2) {
-	l.soln(kz,ix) = ( l.rvec(kz,ix) - l.avec(jy,kz,ix)*l.soln(kz,ix-1) - l.cvec(jy,kz,ix)*l.soln(kz,ix+1) ) / l.bvec(jy,kz,ix);
-      }
-    }
-  }
-
-  // Black sweep: even points
-  for (int kz = 0; kz <= maxmode; kz++) {
-    if(!converged[kz]){
-      for (int ix = l.xs+1; ix < l.xe; ix+=2) {
-	l.soln(kz,ix) = ( l.rvec(kz,ix) - l.avec(jy,kz,ix)*l.soln(kz,ix-1) - l.cvec(jy,kz,ix)*l.soln(kz,ix+1) ) / l.bvec(jy,kz,ix);
-      }
-    }
-  }
-
-  // Black sweep: wait and calculate final interior point
-  bool wait_red = false;
-  for (int kz = 0; kz <= maxmode; kz++) {
-    if(!converged[kz]){
-      if(!localmesh->lastX()){
-        if(not wait_red){
-          wait_red = true;
-	  MPI_Wait(&rredreq,MPI_STATUS_IGNORE);
-        }
-        l.soln(kz,l.xe+1) = recvecred[kz];
-      }
-      l.soln(kz,l.xe) = ( l.rvec(kz,l.xe) - l.avec(jy,kz,l.xe)*l.soln(kz,l.xe-1) - l.cvec(jy,kz,l.xe)*l.soln(kz,l.xe+1) ) / l.bvec(jy,kz,l.xe);
-    }
-  }
-
-  if(!localmesh->lastX()){
-    for(int kz=0; kz < nmode; kz++){
-      if(!converged[kz]){
-	sendvecblack[kz] = l.soln(kz,l.xe);
-      }
-    }
-    MPI_Isend(&sendvecblack[0], nmode, MPI_DOUBLE_COMPLEX, proc_out, 2, BoutComm::get(), &sblackreq);
-  }
-
-  bool wait_black = false; // have we posted the wait?
-  if(!localmesh->firstX()){
-    for(int kz=0; kz < nmode; kz++){
-      if(!converged[kz]){
-        if(not wait_black){
-	  wait_black = true;
-	  MPI_Wait(&rblackreq,MPI_STATUS_IGNORE);
-	}
-	l.soln(kz,l.xs-1) = recvecblack[kz];
-      }
-    }
-  }
-
-  if(l.current_level==0){
-    // Update boundaries to match interior points
-    // Do this after communication, otherwise this breaks on 1 interior pt per proc
-    for (int kz = 0; kz <= maxmode; kz++) {
-      if(!converged[kz]){
-	if(localmesh->firstX()){
-	  for (int ix = l.xs-1; ix > 0; ix--) {
-	    l.soln(kz,ix) = ( l.rvec(kz,ix) - l.avec(jy,kz,ix)*l.soln(kz,ix-1) - l.cvec(jy,kz,ix)*l.soln(kz,ix+1) ) / l.bvec(jy,kz,ix);
-	  }
-	  l.soln(kz,0) = ( l.rvec(kz,0) - l.cvec(jy,kz,0)*l.soln(kz,1) ) / l.bvec(jy,kz,0);
-	}
-	if(localmesh->lastX()){
-	  for (int ix = l.xe; ix < l.ncx-1; ix++) {
-	    l.soln(kz,ix) = ( l.rvec(kz,ix) - l.avec(jy,kz,ix)*l.soln(kz,ix-1) - l.cvec(jy,kz,ix)*l.soln(kz,ix+1) ) / l.bvec(jy,kz,ix);
-	  }
-	  l.soln(kz,l.ncx-1) = ( l.rvec(kz,l.ncx-1) - l.avec(jy,kz,l.ncx-1)*l.soln(kz,l.ncx-2) ) / l.bvec(jy,kz,l.ncx-1);
-	}
-      }
-    }
-  }
-
-  if(!localmesh->lastX()){
-    MPI_Wait(&sblackreq,MPI_STATUS_IGNORE);
-  }
-  if(!localmesh->firstX()){
-    MPI_Wait(&sredreq,MPI_STATUS_IGNORE);
-  }
 }  
 
 // Write info about levels to screen
@@ -1949,75 +1678,6 @@ void LaplaceParallelTriMGNew::calculate_residual(Level &l, const Array<bool> &co
 }
 
 /*
- * Calculate residual on a full x grid
- */
-void LaplaceParallelTriMGNew::calculate_residual_full_system(Level &l, const Array<bool> &converged,const int jy){
-
-  SCOREP0();
-  for(int kz=0; kz<nmode; kz++){
-    if(!converged[kz]){
-
-      // Only calculate residual in the physical boundaries, not the halos
-      if(localmesh->firstX()){
-	l.residual(kz,0) = 0.0; //l.rvec(kz,0) - l.bvec(jy,kz,0)*l.soln(kz,0) - l.cvec(jy,kz,0)*l.soln(kz,1);
-	for(int ix=1; ix<l.xs; ix++){
-	  l.residual(kz,ix) = l.rvec(kz,ix) - l.avec(jy,kz,ix)*l.soln(kz,ix-1) - l.bvec(jy,kz,ix)*l.soln(kz,ix) - l.cvec(jy,kz,ix)*l.soln(kz,ix+1);
-	}
-      }
-
-      // Calculate residual in interior points
-      for(int ix=l.xs; ix<l.xe+1; ix++){
-	l.residual(kz,ix) = l.rvec(kz,ix) - l.avec(jy,kz,ix)*l.soln(kz,ix-1) - l.bvec(jy,kz,ix)*l.soln(kz,ix) - l.cvec(jy,kz,ix)*l.soln(kz,ix+1);
-      }
-
-      // Only calculate residual in the physical boundaries, not the halos
-      if(localmesh->lastX()){
-	for(int ix=l.xe+1; ix<l.ncx-1; ix++){
-	  l.residual(kz,ix) = l.rvec(kz,ix) - l.avec(jy,kz,ix)*l.soln(kz,ix-1) - l.bvec(jy,kz,ix)*l.soln(kz,ix) - l.cvec(jy,kz,ix)*l.soln(kz,ix+1);
-	}
-	l.residual(kz,l.ncx-1) = 0.0; //l.rvec(kz,l.ncx-1) - l.avec(jy,kz,l.ncx-1)*l.soln(kz,l.ncx-2) - l.bvec(jy,kz,l.ncx-1)*l.soln(kz,l.ncx-1);
-      }
-    }
-  }
-
-  // Communication
-  auto sendvec = Array<dcomplex>(nmode);
-  auto recvvec = Array<dcomplex>(nmode);
-  MPI_Comm comm = BoutComm::get();
-  int err;
-
-  // Communicate in
-  if(!localmesh->firstX()){
-    for (int kz = 0; kz <= maxmode; kz++) {
-      if(!converged[kz]){
-	sendvec[kz] = l.residual(kz,l.xs);
-      }
-    }
-    err = MPI_Sendrecv(&sendvec[0], nmode, MPI_DOUBLE_COMPLEX, proc_in, 1, &recvvec[0], nmode, MPI_DOUBLE_COMPLEX, proc_in, 0, comm, MPI_STATUS_IGNORE);
-    for (int kz = 0; kz <= maxmode; kz++) {
-      if(!converged[kz]){
-	l.residual(kz,l.xs-1) = recvvec[kz];
-      }
-    }
-  }
-
-  // Communicate out
-  if(!localmesh->lastX()){
-    for (int kz = 0; kz <= maxmode; kz++) {
-      if(!converged[kz]){
-	sendvec[kz] = l.residual(kz,l.xe);
-      }
-    }
-    err = MPI_Sendrecv(&sendvec[0], nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, &recvvec[0], nmode, MPI_DOUBLE_COMPLEX, proc_out, 1, comm, MPI_STATUS_IGNORE);
-    for (int kz = 0; kz < nmode; kz++) {
-      if(!converged[kz]){
-	l.residual(kz,l.xe+1) = recvvec[kz];
-      }
-    }
-  }
-}
-
-/*
  * Coarsen the fine residual
  */
 void LaplaceParallelTriMGNew::coarsen(Level &l, const Matrix<dcomplex> &fine_residual, const Array<bool> &converged){
@@ -2109,14 +1769,15 @@ void LaplaceParallelTriMGNew::update_solution(Level &l, const Matrix<dcomplex> &
  *  + procs not included at this level but included at the refined level. Receive contributions
  *  + procs included neither on this level or the level above. Do nothing
  */
-void LaplaceParallelTriMGNew::refine(Level &l, Matrix<dcomplex> &fine_error, const Array<bool> &converged){
+void LaplaceParallelTriMGNew::refine(Level &l, Level &lup, Matrix<dcomplex> &fine_error, const Array<bool> &converged){
 
   SCOREP0();
   Array<dcomplex> sendvec, recvecin, recvecout;
   sendvec = Array<dcomplex>(nmode);
   recvecin = Array<dcomplex>(nmode);
   recvecout = Array<dcomplex>(nmode);
-  comm_handle recv[2];
+  //comm_handle recv[2];
+  MPI_Request rreqin, rreqout; //, sreqin, sreqout;
 
   // Need to update this for my actual neighbours!
   // Should be correct for level 0/1 
@@ -2136,12 +1797,14 @@ void LaplaceParallelTriMGNew::refine(Level &l, Matrix<dcomplex> &fine_error, con
     }
 
     if(!localmesh->lastX()){
-      output<<"fe sending "<<sendvec[1]<<" to "<<proc_out<<endl;
-      localmesh->sendXOut(&sendvec[0],nmode,0);
+      output<<"fe sending "<<sendvec[1]<<" to "<<lup.proc_out<<endl;
+      //localmesh->sendXOut(&sendvec[0],nmode,0);
+      MPI_Send(&sendvec[0], nmode, MPI_DOUBLE_COMPLEX, lup.proc_out, 0, BoutComm::get());
     }
     if(!localmesh->firstX()){
-      output<<"fe sending "<<sendvec[1]<<" to "<<proc_in<<endl;
-      localmesh->sendXIn(&sendvec[0],nmode,1);
+      output<<"fe sending "<<sendvec[1]<<" to "<<lup.proc_in<<endl;
+      //localmesh->sendXIn(&sendvec[0],nmode,1);
+      MPI_Send(&sendvec[0], nmode, MPI_DOUBLE_COMPLEX, lup.proc_in, 1, BoutComm::get());
     }
 
   }
@@ -2150,10 +1813,12 @@ void LaplaceParallelTriMGNew::refine(Level &l, Matrix<dcomplex> &fine_error, con
   // Special case: last proc receives if on level 1
   if( (l.included_up and not l.included) or (localmesh->lastX() and l.current_level==1) ){
     if(!localmesh->firstX()){
-      recv[0] = localmesh->irecvXIn(&recvecin[0], nmode, 0);
+      //recv[0] = localmesh->irecvXIn(&recvecin[0], nmode, 0);
+      MPI_Irecv(&recvecin[0], nmode, MPI_DOUBLE_COMPLEX, lup.proc_in, 0, BoutComm::get(), &rreqin);
     }
     if(!localmesh->lastX()){
-      recv[1] = localmesh->irecvXOut(&recvecout[0], nmode, 1);
+      //recv[1] = localmesh->irecvXOut(&recvecout[0], nmode, 1);
+      MPI_Irecv(&recvecout[0], nmode, MPI_DOUBLE_COMPLEX, lup.proc_out, 1, BoutComm::get(), &rreqout);
     }
 
     for(int kz=0; kz < nmode; kz++){
@@ -2161,8 +1826,9 @@ void LaplaceParallelTriMGNew::refine(Level &l, Matrix<dcomplex> &fine_error, con
     }
 
     if(!localmesh->firstX()){
-      localmesh->wait(recv[0]);
-      output<<"recving "<<recvecin[1]<<" from "<<proc_in<<endl;
+      //localmesh->wait(recv[0]);
+      MPI_Wait(&rreqin,MPI_STATUS_IGNORE);
+      output<<"recving "<<recvecin[1]<<" from "<<lup.proc_in<<endl;
       for(int kz=0; kz < nmode; kz++){
 	if(!converged[kz]){
 	  fine_error(1,kz) += 0.5*recvecin[kz];
@@ -2170,8 +1836,9 @@ void LaplaceParallelTriMGNew::refine(Level &l, Matrix<dcomplex> &fine_error, con
       }
     }
     if(!localmesh->lastX()){
-      localmesh->wait(recv[1]);
-      output<<"recving "<<recvecout[1]<<" from "<<proc_out<<endl;
+      //localmesh->wait(recv[1]);
+      MPI_Wait(&rreqout,MPI_STATUS_IGNORE);
+      output<<"recving "<<recvecout[1]<<" from "<<lup.proc_out<<endl;
       for(int kz=0; kz < nmode; kz++){
 	if(!converged[kz]){
 	  fine_error(1,kz) += 0.5*recvecout[kz];
@@ -2192,6 +1859,7 @@ void LaplaceParallelTriMGNew::refine(Level &l, Matrix<dcomplex> &fine_error, con
   output<<fine_error(0,1)<<" "<<fine_error(1,1)<<" "<<fine_error(2,1)<<" "<<fine_error(3,1)<<endl;
 }
 
+// TODO currently unused
 /*
  * Synchronize the values of a reduced field(4,nmode) between processors that
  * are neighbours on level l. This assumes each processor's value of

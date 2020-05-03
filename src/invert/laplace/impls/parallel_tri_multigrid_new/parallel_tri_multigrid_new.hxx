@@ -85,8 +85,6 @@ public:
   BoutReal max(const Array<BoutReal>);
   int maxloc(const Array<BoutReal>);
 
-  void refine(Matrix<dcomplex> &xloc, Matrix<dcomplex> &xloclast);
-
   struct Level {
 
   public:
@@ -131,7 +129,7 @@ public:
   void init_rhs(Level &level, const int jy, const Matrix<dcomplex> bcmplx);
   void levels_info(const Level l, const int jy);
   void reconstruct_full_solution(Level &level, const int jy);
-  void refine(Level &level, Matrix<dcomplex> &fine_error, const Array<bool> &converged);
+  void refine(Level &level, Level &level_up, Matrix<dcomplex> &fine_error, const Array<bool> &converged);
   void synchronize_reduced_field(const Level &l, Matrix<dcomplex> &field);
   void update_solution(Level &l, const Matrix<dcomplex> &fine_error, const Array<bool> &converged);
 
