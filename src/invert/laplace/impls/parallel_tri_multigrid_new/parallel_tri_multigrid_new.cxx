@@ -971,6 +971,7 @@ void LaplaceParallelTriMGNew::gauss_seidel_red_black(Level &l, const Array<bool>
       // Receive and put data in arrays
       if(!localmesh->firstX()){
 	MPI_Wait(&rreqin,MPI_STATUS_IGNORE);
+	output<<"recv "<<recvecin[1]<<" from  "<<l.proc_in<<endl;
 	for(int kz=0; kz < nmode; kz++){
 	  if(!converged[kz]){
 	    l.xloc(0,kz) = recvecin[kz];
@@ -979,6 +980,7 @@ void LaplaceParallelTriMGNew::gauss_seidel_red_black(Level &l, const Array<bool>
       }
       if(!localmesh->lastX()){
 	MPI_Wait(&rreqout,MPI_STATUS_IGNORE);
+	output<<"recv "<<recvecout[1]<<" from  "<<l.proc_out<<endl;
 	for(int kz=0; kz < nmode; kz++){
 	  if(!converged[kz]){
 	    l.xloc(3,kz) = recvecout[kz];
@@ -1007,12 +1009,12 @@ void LaplaceParallelTriMGNew::gauss_seidel_red_black(Level &l, const Array<bool>
       }
       // Send same data up and down
       if(not localmesh->firstX()){
-	//output<<"sending to  "<<l.proc_in<<endl;
+	output<<"sending "<<l.xloc(1,1)<<" to  "<<l.proc_in<<endl;
 	//MPI_Isend(&l.xloc(1,0), nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 1, BoutComm::get(), &sreqin);
 	MPI_Send(&l.xloc(1,0), nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 1, BoutComm::get());
       }
       if(not localmesh->lastX()){
-	//output<<"sending to  "<<l.proc_out<<endl;
+	output<<"sending "<<l.xloc(1,1)<<" to  "<<l.proc_out<<endl;
 	//MPI_Isend(&l.xloc(1,0), nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 0, BoutComm::get(), &sreqout);
 	MPI_Send(&l.xloc(1,0), nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 0, BoutComm::get());
       }
@@ -1036,13 +1038,13 @@ void LaplaceParallelTriMGNew::gauss_seidel_red_black(Level &l, const Array<bool>
 	MPI_Irecv(&recvecin[0], nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 0, BoutComm::get(), &rreqin);
       }
       if(not localmesh->lastX()){ // this is always be true is we force an even core count
-	//output<<"posting recv from  "<<l.proc_out<<endl;
 	MPI_Irecv(&recvecout[0], nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 1, BoutComm::get(), &rreqout);
       }
 
       // Receive and put data in arrays
       if(!localmesh->firstX()){
 	MPI_Wait(&rreqin,MPI_STATUS_IGNORE);
+	output<<"recv "<<recvecin[1]<<" from  "<<l.proc_in<<endl;
 	for(int kz=0; kz < nmode; kz++){
 	  if(!converged[kz]){
 	    l.xloc(0,kz) = recvecin[kz];
@@ -1051,6 +1053,7 @@ void LaplaceParallelTriMGNew::gauss_seidel_red_black(Level &l, const Array<bool>
       }
       if(!localmesh->lastX()){
 	MPI_Wait(&rreqout,MPI_STATUS_IGNORE);
+	output<<"recv "<<recvecout[1]<<" from  "<<l.proc_out<<endl;
 	for(int kz=0; kz < nmode; kz++){
 	  if(!converged[kz]){
 	    l.xloc(3,kz) = recvecout[kz];
@@ -1088,17 +1091,17 @@ void LaplaceParallelTriMGNew::gauss_seidel_red_black(Level &l, const Array<bool>
     if(not l.black){ // red, or last proc when not on level zero
       // Send same data up and down
       if(not localmesh->firstX() and l.red){ // excludes last proc
-	//output<<"sending to  "<<l.proc_in<<endl;
+	output<<"sending "<<l.xloc(1,1)<<" to  "<<l.proc_in<<endl;
 	//MPI_Isend(&l.xloc(1,0), nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 1, BoutComm::get(), &sreqin);
 	MPI_Send(&l.xloc(1,0), nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 1, BoutComm::get());
       }
       else if(not localmesh->firstX()){
-	//output<<"sending to  "<<l.proc_in<<endl;
+	output<<"sending "<<l.xloc(2,1)<<" to  "<<l.proc_in<<endl;
 	//MPI_Isend(&l.xloc(2,0), nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 1, BoutComm::get(), &sreqin);
 	MPI_Send(&l.xloc(2,0), nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 1, BoutComm::get());
       }
       if(not localmesh->lastX()){
-	//output<<"sending to  "<<l.proc_out<<endl;
+	output<<"sending "<<l.xloc(1,1)<<" to  "<<l.proc_out<<endl;
 	//MPI_Isend(&l.xloc(1,0), nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 0, BoutComm::get(), &sreqout);
 	MPI_Send(&l.xloc(1,0), nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 0, BoutComm::get());
       }
@@ -1861,6 +1864,7 @@ void LaplaceParallelTriMGNew::calculate_total_residual(Array<BoutReal> &error_ab
       error_rel[kz] = error_abs[kz]/sqrt(total[kz+nmode]);
       if( error_abs[kz] < atol or error_rel[kz] < rtol ){
 	//output<<"HERE kz "<<kz<<endl;
+	if(kz==1){output<<"CONVERGED!"<<endl;}
 	converged[kz] = true;
 	l.xloclast(0,kz) = l.xloc(0,kz);
 	l.xloclast(1,kz) = l.xloc(1,kz);
@@ -2086,11 +2090,13 @@ void LaplaceParallelTriMGNew::update_solution(Level &l, const Matrix<dcomplex> &
   }
 
   for(int kz=0; kz<nmode; kz++){
-    if(not localmesh->firstX()){
-      l.xloc(0,kz) = recvecin[kz];
-    }
-    if(not localmesh->lastX()){
-      l.xloc(3,kz) = recvecout[kz];
+    if(!converged[kz]){
+      if(not localmesh->firstX()){
+	l.xloc(0,kz) = recvecin[kz];
+      }
+      if(not localmesh->lastX()){
+	l.xloc(3,kz) = recvecout[kz];
+      }
     }
   }
 
