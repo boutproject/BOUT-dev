@@ -92,7 +92,7 @@ public:
     Tensor<dcomplex> upperGuardVector, lowerGuardVector;
     Matrix<dcomplex> al, bl, au, bu;
     Matrix<dcomplex> alold, blold, auold, buold;
-    Matrix<dcomplex> xloc, xloclast;
+    Matrix<dcomplex> xloc;
     Matrix<dcomplex> r1, r2, r3, r4, r5, r6, r7, r8;
     Array<dcomplex> rl, ru;
     Array<dcomplex> rlold, ruold;

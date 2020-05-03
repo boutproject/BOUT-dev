@@ -368,7 +368,6 @@ FieldPerp LaplaceParallelTriMGNew::solve(const FieldPerp& b, const FieldPerp& x0
   // xloc[2] = xk1d[xend],     xloc[3] = xk1d[xend+1],
   //
   auto xloc = Matrix<dcomplex>(4,nmode); // Values of x at the processor interface
-  auto xloclast = Matrix<dcomplex>(4,nmode); // Values of x at the processor interface from previous iteration 
 
   BoutReal kwaveFactor = 2.0 * PI / coords->zlength();
 
@@ -403,7 +402,6 @@ FieldPerp LaplaceParallelTriMGNew::solve(const FieldPerp& b, const FieldPerp& x0
   auto bk1d = Array<dcomplex>(ncx);
   auto xk = Matrix<dcomplex>(ncx, ncz / 2 + 1);
   auto xk1d = Matrix<dcomplex>(ncz/2+1,ncx);
-  auto xk1dlast = Matrix<dcomplex>(ncz/2+1,ncx);
 
   // Error interpolated onto a finer grid
   auto fine_error = Matrix<dcomplex>(4,ncz/2+1);
@@ -474,7 +472,6 @@ FieldPerp LaplaceParallelTriMGNew::solve(const FieldPerp& b, const FieldPerp& x0
       bcmplx(kz,ix) = bk(ix, kz);
       // Initialize xk1d with cached values (note: in Fourier space)
       xk1d(kz,ix) = x0saved(ix, jy, kz);
-      xk1dlast(kz,ix) = x0saved(ix, jy, kz);
     }
   }
 
@@ -564,10 +561,6 @@ FieldPerp LaplaceParallelTriMGNew::solve(const FieldPerp& b, const FieldPerp& x0
     levels[0].xloc(1,kz) = xk1d(kz,xs);
     levels[0].xloc(2,kz) = xk1d(kz,xe);
     levels[0].xloc(3,kz) = xk1d(kz,xe+1);
-    levels[0].xloclast(0,kz) = xk1d(kz,xs-1);
-    levels[0].xloclast(1,kz) = xk1d(kz,xs);
-    levels[0].xloclast(2,kz) = xk1d(kz,xe);
-    levels[0].xloclast(3,kz) = xk1d(kz,xe+1);
   }
   ///SCOREP_USER_REGION_END(setsoln);
   ///SCOREP_USER_REGION_DEFINE(initwhileloop);
@@ -1071,7 +1064,6 @@ void LaplaceParallelTriMGNew::init(Level &l, const Level lup, int ncx, const int
     l.soln = Matrix<dcomplex>(nmode,ncx);
     l.solnlast = Matrix<dcomplex>(nmode,ncx);
     l.xloc = Matrix<dcomplex>(4,nmode);
-    l.xloclast = Matrix<dcomplex>(4,nmode);
     l.rl = Array<dcomplex>(nmode);
     l.ru = Array<dcomplex>(nmode);
 
@@ -1227,7 +1219,6 @@ void LaplaceParallelTriMGNew::init(Level &l, const int ncx, const int jy, const 
 
   // Define sizes of local coefficients
   l.xloc = Matrix<dcomplex>(4,nmode);
-  l.xloclast = Matrix<dcomplex>(4,nmode);
   l.minvb = Matrix<dcomplex>(nmode,ncx);
   l.upperGuardVector = Tensor<dcomplex>(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
   l.lowerGuardVector = Tensor<dcomplex>(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
@@ -1431,10 +1422,10 @@ void LaplaceParallelTriMGNew::init_rhs(Level &l, const int jy, const Matrix<dcom
   auto ruold = Array<dcomplex>(nmode);
   auto Rd = Array<dcomplex>(nmode);
   auto Ru = Array<dcomplex>(nmode);
-  auto Rsendup = Array<dcomplex>(ncz+2); // 2*nmode?
-  auto Rsenddown = Array<dcomplex>(ncz+2);
-  auto Rrecvup = Array<dcomplex>(ncz+2);
-  auto Rrecvdown = Array<dcomplex>(ncz+2);
+  auto Rsendup = Array<dcomplex>(nmode);
+  auto Rsenddown = Array<dcomplex>(nmode);
+  auto Rrecvup = Array<dcomplex>(nmode);
+  auto Rrecvdown = Array<dcomplex>(nmode);
   auto evec = Array<dcomplex>(l.ncx);
   auto tmp = Array<dcomplex>(l.ncx);
   int err;
@@ -1482,35 +1473,21 @@ void LaplaceParallelTriMGNew::init_rhs(Level &l, const int jy, const Matrix<dcom
     ///SCOREP_USER_REGION_END(coefsforrhs);
   } // end of kz loop
 
-  // Communicate vector in kz
   if(not localmesh->firstX()){
-    for (int kz = 0; kz <= maxmode; kz++) {
-      Rsenddown[kz+maxmode] = l.xloclast(2,kz);
-    }
+    err = MPI_Sendrecv(&Rsenddown[0], nmode, MPI_DOUBLE_COMPLEX, proc_in, 1, &Rrecvdown[0], nmode, MPI_DOUBLE_COMPLEX, proc_in, 0, BoutComm::get(), MPI_STATUS_IGNORE);
   }
   if(not localmesh->lastX()){
-    for (int kz = 0; kz <= maxmode; kz++) {
-      Rsendup[kz+maxmode] = l.xloclast(1,kz);
-    }
-  }
-
-  if(not localmesh->firstX()){
-    err = MPI_Sendrecv(&Rsenddown[0], 2*nmode, MPI_DOUBLE_COMPLEX, proc_in, 1, &Rrecvdown[0], 2*nmode, MPI_DOUBLE_COMPLEX, proc_in, 0, BoutComm::get(), MPI_STATUS_IGNORE);
-  }
-  if(not localmesh->lastX()){
-    err = MPI_Sendrecv(&Rsendup[0], 2*nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, &Rrecvup[0], 2*nmode, MPI_DOUBLE_COMPLEX, proc_out, 1, BoutComm::get(), MPI_STATUS_IGNORE);
+    err = MPI_Sendrecv(&Rsendup[0], nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, &Rrecvup[0], nmode, MPI_DOUBLE_COMPLEX, proc_out, 1, BoutComm::get(), MPI_STATUS_IGNORE);
   }
 
   if(not localmesh->firstX()){
     for (int kz = 0; kz <= maxmode; kz++) {
       Rd[kz] = Rrecvdown[kz];
-      l.xloclast(0,kz) = Rrecvdown[kz+maxmode];
     }
   }
   if(not localmesh->lastX()){
     for (int kz = 0; kz <= maxmode; kz++) {
       Ru[kz] = Rrecvup[kz];
-      l.xloclast(3,kz) = Rrecvup[kz+maxmode];
     }
   }
 
@@ -1569,10 +1546,6 @@ void LaplaceParallelTriMGNew::calculate_total_residual(Array<BoutReal> &error_ab
 	//output<<"HERE kz "<<kz<<endl;
 	if(kz==1){output<<"CONVERGED!"<<endl;}
 	converged[kz] = true;
-	l.xloclast(0,kz) = l.xloc(0,kz);
-	l.xloclast(1,kz) = l.xloc(1,kz);
-	l.xloclast(2,kz) = l.xloc(2,kz);
-	l.xloclast(3,kz) = l.xloc(3,kz);
       }
     }
   }
@@ -1671,7 +1644,6 @@ void LaplaceParallelTriMGNew::coarsen(Level &l, const Matrix<dcomplex> &fine_res
 	}
 	for(int ix=0; ix<4; ix++){
 	  l.xloc(ix,kz) = 0.0;
-	  l.xloclast(ix,kz) = 0.0;
 	}
 	//l.rvec(kz,ix) = l.residual(kz,ix);
 	l.rr(1,kz) = l.residual(kz,1);
