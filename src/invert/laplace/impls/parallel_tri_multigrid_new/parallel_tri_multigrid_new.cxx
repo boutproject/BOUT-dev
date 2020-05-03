@@ -53,9 +53,7 @@ LaplaceParallelTriMGNew::LaplaceParallelTriMGNew(Options *opt, CELL_LOC loc, Mes
   OPTION(opt, maxits, 100);
   OPTION(opt, max_level, 3);
   OPTION(opt, max_cycle, 3);
-  OPTION(opt, new_method, false);
   OPTION(opt, use_previous_timestep, false);
-  OPTION(opt, algorithm, 0);
 
   static int ipt_solver_count = 1;
   bout::globals::dump.addRepeat(ipt_mean_its,
@@ -410,20 +408,6 @@ FieldPerp LaplaceParallelTriMGNew::solve(const FieldPerp& b, const FieldPerp& x0
   // Error interpolated onto a finer grid
   auto fine_error = Matrix<dcomplex>(4,ncz/2+1);
 
-  // Define indexing of xloc that depends on method. Doing this now removes
-  // branching in tight loops
-  // index_in is the index of the x that a processor sends inwards,
-  // index_out is the index of the x it sends outwards.
-  // In the usual method, these are its values closest to the processor it is
-  // sending to, i.e. 1 in and 2 out. In the extended domain method, we send
-  // the value of x furthest from the neighbouring proc, i.e. 2 in and 1 out.
-  index_in = 1;
-  index_out = 2;
-  if(new_method){
-    index_in = 2;
-    index_out = 1;
-  }
-
   ///SCOREP_USER_REGION_END(initvars);
   ///SCOREP_USER_REGION_DEFINE(initloop);
   ///SCOREP_USER_REGION_BEGIN(initloop, "init xk loop",SCOREP_USER_REGION_TYPE_COMMON);
@@ -546,10 +530,9 @@ FieldPerp LaplaceParallelTriMGNew::solve(const FieldPerp& b, const FieldPerp& x0
   // finer than itself).
   //
   // If the operator to invert doesn't change from one timestep to another,
-  // much of the information for each level may be stored. In particular,
-  // if using conventional multigrid (algorithm=0), the coefficients a/b/cvec
-  // are stored. Data that cannot be cached (e.g. the changing right-hand
-  // sides) is calculated in init_rhs below.
+  // much of the information for each level may be stored. Data that cannot
+  // be cached (e.g. the changing right-hand sides) is calculated in init_rhs
+  // below.
   if(first_call(jy,0) || not store_coefficients ){
 
     init(levels[0], ncx, jy, avec, bvec, cvec, xs, xe);
@@ -577,16 +560,14 @@ FieldPerp LaplaceParallelTriMGNew::solve(const FieldPerp& b, const FieldPerp& x0
       levels[0].soln(kz,ix) = xk1d(kz,ix);
       levels[0].solnlast(kz,ix) = xk1d(kz,ix);
     }
-    if(algorithm!=0){
-      levels[0].xloc(0,kz) = xk1d(kz,xs-1);
-      levels[0].xloc(1,kz) = xk1d(kz,xs);
-      levels[0].xloc(2,kz) = xk1d(kz,xe);
-      levels[0].xloc(3,kz) = xk1d(kz,xe+1);
-      levels[0].xloclast(0,kz) = xk1d(kz,xs-1);
-      levels[0].xloclast(1,kz) = xk1d(kz,xs);
-      levels[0].xloclast(2,kz) = xk1d(kz,xe);
-      levels[0].xloclast(3,kz) = xk1d(kz,xe+1);
-    }
+    levels[0].xloc(0,kz) = xk1d(kz,xs-1);
+    levels[0].xloc(1,kz) = xk1d(kz,xs);
+    levels[0].xloc(2,kz) = xk1d(kz,xe);
+    levels[0].xloc(3,kz) = xk1d(kz,xe+1);
+    levels[0].xloclast(0,kz) = xk1d(kz,xs-1);
+    levels[0].xloclast(1,kz) = xk1d(kz,xs);
+    levels[0].xloclast(2,kz) = xk1d(kz,xe);
+    levels[0].xloclast(3,kz) = xk1d(kz,xe+1);
   }
   ///SCOREP_USER_REGION_END(setsoln);
   ///SCOREP_USER_REGION_DEFINE(initwhileloop);
@@ -1028,11 +1009,8 @@ void LaplaceParallelTriMGNew::levels_info(const Level l, const int jy){
     output<<"comm "<<l.acomm[0]<<" "<<l.bcomm[0]<<" "<<l.ccomm[0]<<endl;
   }
 
-  if(algorithm!=0){
-    output<<"l coefs "<<l.al(jy,kz)<<" "<<l.bl(jy,kz)<<" "<<l.rl[kz]<<endl;
-    output<<"u coefs "<<l.au(jy,kz)<<" "<<l.bu(jy,kz)<<" "<<l.ru[kz]<<endl;
-
-  }
+  output<<"l coefs "<<l.al(jy,kz)<<" "<<l.bl(jy,kz)<<" "<<l.rl[kz]<<endl;
+  output<<"u coefs "<<l.au(jy,kz)<<" "<<l.bu(jy,kz)<<" "<<l.ru[kz]<<endl;
 }
 
 // Initialization routine for coarser grids. Initialization depends on the grid

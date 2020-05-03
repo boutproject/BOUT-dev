@@ -103,8 +103,6 @@ public:
     Matrix<dcomplex> rr;
     Array<dcomplex> acomm, bcomm, ccomm;
 
-    int index_in;
-    int index_out;
     int err;
     MPI_Comm comm;
     int xproc;
@@ -189,10 +187,6 @@ private:
   int proc_out;
   int myproc;
   int nproc;
-
-  // Algorithm option:
-  //  0 - normal multigrid
-  int algorithm = 0;
 
 };
 
