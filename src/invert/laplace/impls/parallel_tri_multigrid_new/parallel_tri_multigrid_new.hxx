@@ -93,15 +93,14 @@ public:
     Matrix<dcomplex> al, bl, au, bu;
     Matrix<dcomplex> alold, blold, auold, buold;
     Matrix<dcomplex> xloc;
-    Matrix<dcomplex> r1, r2, r3, r4, r5, r6, r7, r8;
+    Matrix<dcomplex> r1, r2;
     Array<dcomplex> rl, ru;
     Array<dcomplex> rlold, ruold;
     Matrix<dcomplex> minvb;
-    Matrix<dcomplex> rvec, residual;
+    Matrix<dcomplex> residual;
     Tensor<dcomplex> avec, bvec, cvec;
     Tensor<dcomplex> ar, br, cr;
     Matrix<dcomplex> rr;
-    Array<dcomplex> acomm, bcomm, ccomm;
 
     int err;
     MPI_Comm comm;
