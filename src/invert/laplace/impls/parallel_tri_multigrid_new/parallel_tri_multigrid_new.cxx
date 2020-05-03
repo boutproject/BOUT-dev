@@ -214,11 +214,9 @@ void LaplaceParallelTriMGNew::reconstruct_full_solution(Matrix<dcomplex> &xk1d, 
   }
 
   for (int kz = 0; kz < nmode; kz++) {
-    xk1d(kz,l.xs-1) = x_lower[kz];
-    for(int i=l.xs; i<l.xe+1; i++){
+    for(int i=0; i<l.ncx; i++){
       xk1d(kz,i) = l.minvb(kz,i) + l.upperGuardVector(i,jy,kz)*x_upper[kz] + l.lowerGuardVector(i,jy,kz)*x_lower[kz];
     }
-    xk1d(kz,l.xe+1) = x_upper[kz];
   }
 
   /*
@@ -994,7 +992,7 @@ void LaplaceParallelTriMGNew::levels_info(const Level l, const int jy){
 // one step finer, lup.
 void LaplaceParallelTriMGNew::init(Level &l, const Level lup, int ncx, const int xs, const int xe, const int current_level, const int jy){
 
-  output<<"INIT level "<<current_level<<endl;
+  //output<<"INIT level "<<current_level<<endl;
   SCOREP0();
   l.xs = xs;
   l.xe = xe;
