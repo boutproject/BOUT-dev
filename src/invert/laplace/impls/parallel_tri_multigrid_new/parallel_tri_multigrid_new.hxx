@@ -97,7 +97,7 @@ public:
     Array<dcomplex> rl, ru;
     Array<dcomplex> rlold, ruold;
     Matrix<dcomplex> minvb;
-    Matrix<dcomplex> rvec, residual, soln, solnlast;
+    Matrix<dcomplex> rvec, residual;
     Tensor<dcomplex> avec, bvec, cvec;
     Tensor<dcomplex> ar, br, cr;
     Matrix<dcomplex> rr;
@@ -126,7 +126,7 @@ public:
   void init(Level &level, const int ncx, const int jy, const Matrix<dcomplex> avec, const Matrix<dcomplex> bvec, const Matrix<dcomplex> cvec, const int xs, const int xe);
   void init_rhs(Level &level, const int jy, const Matrix<dcomplex> bcmplx);
   void levels_info(const Level l, const int jy);
-  void reconstruct_full_solution(Level &level, const int jy);
+  void reconstruct_full_solution(Matrix<dcomplex> &xk1d, const Level &level, const int jy);
   void refine(Level &level, Level &level_up, Matrix<dcomplex> &fine_error, const Array<bool> &converged);
   void synchronize_reduced_field(const Level &l, Matrix<dcomplex> &field);
   void update_solution(Level &l, const Matrix<dcomplex> &fine_error, const Array<bool> &converged);

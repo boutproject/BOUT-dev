@@ -196,14 +196,12 @@ bool LaplaceParallelTriMGNew::is_diagonally_dominant(const dcomplex al, const dc
  * using:
  * my_xk1d(xs) = rlold(xs) + alold(xs)*lower_xk1d(xe) + blold(xs)*upper_xk1d(xs)
  */
-void LaplaceParallelTriMGNew::reconstruct_full_solution(Level &l, const int jy){
+void LaplaceParallelTriMGNew::reconstruct_full_solution(Matrix<dcomplex> &xk1d, const Level &l, const int jy){
   SCOREP0();
 
-  Array<dcomplex> x_lower, x_upper, x_lower_halo, x_upper_halo;
+  Array<dcomplex> x_lower, x_upper;
   x_lower = Array<dcomplex>(nmode);
   x_upper = Array<dcomplex>(nmode);
-  x_lower_halo = Array<dcomplex>(nmode);
-  x_upper_halo = Array<dcomplex>(nmode);
 
   for (int kz = 0; kz < nmode; kz++) {
 
@@ -216,17 +214,17 @@ void LaplaceParallelTriMGNew::reconstruct_full_solution(Level &l, const int jy){
   }
 
   for (int kz = 0; kz < nmode; kz++) {
-    l.soln(kz,l.xs-1) = x_lower[kz];
+    xk1d(kz,l.xs-1) = x_lower[kz];
     for(int i=l.xs; i<l.xe+1; i++){
-      l.soln(kz,i) = l.minvb(kz,i) + l.upperGuardVector(i,jy,kz)*x_upper[kz] + l.lowerGuardVector(i,jy,kz)*x_lower[kz];
+      xk1d(kz,i) = l.minvb(kz,i) + l.upperGuardVector(i,jy,kz)*x_upper[kz] + l.lowerGuardVector(i,jy,kz)*x_lower[kz];
     }
-    l.soln(kz,l.xe+1) = x_upper[kz];
+    xk1d(kz,l.xe+1) = x_upper[kz];
   }
 
   /*
   output<<"full solution ";
   for(int i=0;i<l.ncx;i++){
-    output<<l.soln(1,i)<<" ";
+    output<<xk1d(1,i)<<" ";
   }
   output<<endl;
   */
@@ -554,8 +552,6 @@ FieldPerp LaplaceParallelTriMGNew::solve(const FieldPerp& b, const FieldPerp& x0
   for(int kz=0; kz<nmode; kz++){
     for(int ix=0; ix<ncx; ix++){
       levels[0].rvec(kz,ix) = bcmplx(kz,ix);
-      levels[0].soln(kz,ix) = xk1d(kz,ix);
-      levels[0].solnlast(kz,ix) = xk1d(kz,ix);
     }
     levels[0].xloc(0,kz) = xk1d(kz,xs-1);
     levels[0].xloc(1,kz) = xk1d(kz,xs);
@@ -702,7 +698,7 @@ FieldPerp LaplaceParallelTriMGNew::solve(const FieldPerp& b, const FieldPerp& x0
   output<<endl;
   */
 
-  reconstruct_full_solution(levels[0],jy);
+  reconstruct_full_solution(xk1d,levels[0],jy);
 
   ++ncalls;
   ipt_mean_its = (ipt_mean_its * BoutReal(ncalls-1)
@@ -710,8 +706,7 @@ FieldPerp LaplaceParallelTriMGNew::solve(const FieldPerp& b, const FieldPerp& x0
 
   for(int kz=0; kz<nmode; kz++){
     for(int i=0; i<ncx; i++){
-      xk1d(kz,i) = levels[0].soln(kz,i);
-      x0saved(i,jy,kz) = levels[0].soln(kz,i);
+      x0saved(i,jy,kz) = xk1d(kz,i);
     }
   }
 
@@ -1061,8 +1056,6 @@ void LaplaceParallelTriMGNew::init(Level &l, const Level lup, int ncx, const int
     l.cvec = Tensor<dcomplex>(ny,nmode,ncx);
     l.rvec = Matrix<dcomplex>(nmode,ncx);
     l.residual = Matrix<dcomplex>(nmode,4);
-    l.soln = Matrix<dcomplex>(nmode,ncx);
-    l.solnlast = Matrix<dcomplex>(nmode,ncx);
     l.xloc = Matrix<dcomplex>(4,nmode);
     l.rl = Array<dcomplex>(nmode);
     l.ru = Array<dcomplex>(nmode);
@@ -1194,8 +1187,6 @@ void LaplaceParallelTriMGNew::init(Level &l, const int ncx, const int jy, const 
   l.rr = Matrix<dcomplex>(4,nmode);
 
   l.residual = Matrix<dcomplex>(nmode,4);
-  l.soln = Matrix<dcomplex>(nmode,ncx);
-  l.solnlast = Matrix<dcomplex>(nmode,ncx);
 
   for(int kz=0; kz<nmode; kz++){
     for(int ix=0; ix<ncx; ix++){
