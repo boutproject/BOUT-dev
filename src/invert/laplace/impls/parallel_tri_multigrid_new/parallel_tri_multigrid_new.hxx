@@ -164,9 +164,6 @@ private:
   /// Counter for the number of times the solver has been called
   int ncalls;
 
-  /// Flag for method selection
-  bool new_method;
-
   /// If true, use previous timestep's solution as initial guess for next step
   /// If false, use the approximate solution of the system (neglecting the
   /// coupling terms between processors) as the initial guess.
@@ -180,8 +177,6 @@ private:
   bool store_coefficients;
 
   int nmode;
-  int index_in;
-  int index_out;
   int proc_in;
   int proc_out;
   int myproc;
