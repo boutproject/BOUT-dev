@@ -15,22 +15,149 @@ MACRO_REPLACEMENTS = [
         "old": "REVISION",
         "new": "bout::version::revision",
         "headers": ["bout/revision.hxx"],
+        "macro": False,
+        "always_defined": True,
     },
     {
         "old": "BOUT_VERSION_DOUBLE",
         "new": "bout::version::as_double",
         "headers": ["bout/version.hxx", "bout.hxx"],
+        "macro": False,
+        "always_defined": True,
     },
     {
         "old": "BOUT_VERSION_STRING",
         "new": "bout::version::full",
         "headers": ["bout/version.hxx", "bout.hxx"],
+        "macro": False,
+        "always_defined": True,
     },
     # Next one is not technically a macro, but near enough
     {
         "old": "BOUT_VERSION",
         "new": "bout::version::full",
         "headers": ["bout/version.hxx", "bout.hxx"],
+        "macro": False,
+        "always_defined": True,
+    },
+    {
+        "old": "BACKTRACE",
+        "new": "BOUT_USE_BACKTRACE",
+        "headers": "bout/build_config.hxx",
+        "macro": True,
+        "always_defined": True,
+    },
+    {
+        "old": "HAS_ARKODE",
+        "new": "BOUT_HAS_ARKODE",
+        "headers": "bout/build_config.hxx",
+        "macro": True,
+        "always_defined": True,
+    },
+    {
+        "old": "HAS_CVODE",
+        "new": "BOUT_HAS_CVODE",
+        "headers": "bout/build_config.hxx",
+        "macro": True,
+        "always_defined": True,
+    },
+    {
+        "old": "HAS_HDF5",
+        "new": "BOUT_HAS_HDF5",
+        "headers": "bout/build_config.hxx",
+        "macro": True,
+        "always_defined": True,
+    },
+    {
+        "old": "HAS_IDA",
+        "new": "BOUT_HAS_IDA",
+        "headers": "bout/build_config.hxx",
+        "macro": True,
+        "always_defined": True,
+    },
+    {
+        "old": "HAS_LAPACK",
+        "new": "BOUT_HAS_LAPACK",
+        "headers": "bout/build_config.hxx",
+        "macro": True,
+        "always_defined": True,
+    },
+    {
+        "old": "LAPACK",
+        "new": "BOUT_HAS_LAPACK",
+        "headers": "bout/build_config.hxx",
+        "macro": True,
+        "always_defined": True,
+    },
+    {
+        "old": "HAS_NETCDF",
+        "new": "BOUT_HAS_NETCDF",
+        "headers": "bout/build_config.hxx",
+        "macro": True,
+        "always_defined": True,
+    },
+    {
+        "old": "HAS_PETSC",
+        "new": "BOUT_HAS_PETSC",
+        "headers": "bout/build_config.hxx",
+        "macro": True,
+        "always_defined": True,
+    },
+    {
+        "old": "HAS_PRETTY_FUNCTION",
+        "new": "BOUT_HAS_PRETTY_FUNCTION",
+        "headers": "bout/build_config.hxx",
+        "macro": True,
+        "always_defined": True,
+    },
+    {
+        "old": "HAS_PVODE",
+        "new": "BOUT_HAS_PVODE",
+        "headers": "bout/build_config.hxx",
+        "macro": True,
+        "always_defined": True,
+    },
+    {
+        "old": "TRACK",
+        "new": "BOUT_USE_TRACK",
+        "headers": "bout/build_config.hxx",
+        "macro": True,
+        "always_defined": True,
+    },
+    {
+        "old": "NCDF4",
+        "new": "BOUT_HAS_NETCDF",
+        "headers": "bout/build_config.hxx",
+        "macro": True,
+        "always_defined": True,
+    },
+    {
+        "old": "HDF5",
+        "new": "BOUT_HAS_HDF5",
+        "headers": "bout/build_config.hxx",
+        "macro": True,
+        "always_defined": True,
+    },
+    {
+        "old": "DEBUG_ENABLED",
+        "new": "BOUT_USE_OUTPUT_DEBUG",
+        "headers": "bout/build_config.hxx",
+        "macro": True,
+        "always_defined": True,
+    },
+    {
+        "old": "BOUT_FPE",
+        "new": "BOUT_USE_SIGFPE",
+        "headers": "bout/build_config.hxx",
+        "macro": True,
+        "always_defined": True,
+    },
+    {
+        "old": "LOGCOLOR",
+        "new": "BOUT_USE_COLOR",
+        "headers": "bout/build_config.hxx",
+        "macro": True,
+        "always_defined": True,
     },
 ]
 
@@ -38,6 +165,9 @@ MACRO_REPLACEMENTS = [
 def fix_include_version_header(old, headers, source):
     """Make sure version.hxx header is included
     """
+
+    if not isinstance(headers, list):
+        headers = [headers]
 
     # If header is already included, we can skip this fix
     for header in headers:
@@ -134,6 +264,13 @@ def fix_ifdefs(old, source):
     return "\n".join(modified_lines)
 
 
+def fix_always_defined_macros(old, new, source):
+    """Fix '#ifdef's that should become plain '#if'
+    """
+    new_source = re.sub(r"#ifdef\s+{}".format(old), r"#if {}".format(new), source)
+    return re.sub(r"#ifndef\s+{}".format(old), r"#if !{}".format(new), new_source)
+
+
 def fix_replacement(old, new, source):
     """Straight replacements
     """
@@ -149,7 +286,12 @@ def apply_fixes(replacements, source):
         modified = fix_include_version_header(
             replacement["old"], replacement["headers"], modified
         )
-        modified = fix_ifdefs(replacement["old"], modified)
+        if replacement["macro"] and replacement["always_defined"]:
+            modified = fix_always_defined_macros(
+                replacement["old"], replacement["new"], modified
+            )
+        elif replacement["always_defined"]:
+            modified = fix_ifdefs(replacement["old"], modified)
         modified = fix_replacement(replacement["old"], replacement["new"], modified)
 
     return modified
@@ -194,12 +336,14 @@ if __name__ == "__main__":
             Please note that this is only slightly better than dumb text replacement. It
             will fix the following:
 
-            * replacement of macros with variables
+            * replacement of macros with variables or new names
             * inclusion of correct headers for new variables
             * removal of #if(n)def/#endif blocks that do simple checks for the old
-              macro, keeping the appriopriate part
+              macro, keeping the appriopriate part, if replaced by a variable
+            * change '#if(n)def' for '#if (!)' if the replacment is always defined
 
-            It will try not to replace quoted macro names.
+            It will try not to replace quoted macro names, but may
+            still replace them in strings or comments.
 
             Please check the diff output carefully!
             """
