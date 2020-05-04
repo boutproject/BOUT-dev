@@ -55,6 +55,16 @@ LaplaceParallelTriMGNew::LaplaceParallelTriMGNew(Options *opt, CELL_LOC loc, Mes
   OPTION(opt, max_cycle, 3);
   OPTION(opt, use_previous_timestep, false);
 
+  // Number of procs must be a factor of 2
+  int n = localmesh->NXPE;
+  if(not (n & (n - 1)) == 0){
+    throw BoutException("LaplaceParallelTriMGNew error: nxpe must be a power of 2");
+  }
+  // Number of levels cannot must be such that nproc <= 2^(max_level-1)
+  if(n > 1 and n < pow(2,max_level+1) ){
+    throw BoutException("LaplaceParallelTriMGNew error: number of levels and processors must satisfy nxpe > 2^(max_levels+1).");
+  }
+
   static int ipt_solver_count = 1;
   bout::globals::dump.addRepeat(ipt_mean_its,
       "ipt_solver"+std::to_string(ipt_solver_count)+"_mean_its");
@@ -64,7 +74,7 @@ LaplaceParallelTriMGNew::LaplaceParallelTriMGNew(Options *opt, CELL_LOC loc, Mes
 
   x0saved = Tensor<dcomplex>(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
 
-  levels = std::vector<Level>(10);
+  levels = std::vector<Level>(max_level+1);
 
   resetSolver();
 
