@@ -655,12 +655,8 @@ FieldPerp LaplaceParallelTriMGNew::solve(const FieldPerp& b, const FieldPerp& x0
     }
     else if( down && max_level > 0 ){
 
-      //output<<"down step"<<endl;
-      // TODO don't need to call calculate_residual?
-      calculate_residual(levels[current_level],converged,jy);
       current_level++;
       coarsen(levels[current_level],levels[current_level-1].residual,converged);
-      //output<<"AFTER COARSEN"<<endl;
       subcount=0;
 
       // If we are on the coarsest grid, stop trying to coarsen further
@@ -1550,6 +1546,7 @@ void LaplaceParallelTriMGNew::calculate_residual(Level &l, const Array<bool> &co
       }
     }
 
+    // TODO is this necessary?
     // Communication
     auto sendvec = Array<dcomplex>(nmode);
     auto recvvec = Array<dcomplex>(nmode);
