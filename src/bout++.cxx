@@ -275,6 +275,14 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
 #endif
       output.write(
           _("  --config\t\tPrint the compile-time configuration\n"
+            "  --list-solvers\t\tList the available time solvers\n"
+            "  --list-laplacians\t\tList the available Laplacian inversion solvers\n"
+            "  --list-laplacexz\t\tList the available LaplaceXZ inversion solvers\n"
+            "  --list-invertparts\t\tList the available InvertPar solvers\n"
+            "  --list-rkschemes\t\tList the available Runge-Kutta schemes\n"
+            "  --list-meshes\t\tList the available Meshes\n"
+            "  --list-xzinterpolations\t\tList the available XZInterpolations\n"
+            "  --list-zinterpolations\t\tList the available ZInterpolations\n"
             "  -h, --help\t\tThis message\n"
             "  restart [append]\tRestart the simulation. If append is specified, "
             "append to the existing output files, otherwise overwrite them\n"
