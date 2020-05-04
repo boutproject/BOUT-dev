@@ -51,6 +51,7 @@ const char DEFAULT_DIR[] = "data";
 #include "msg_stack.hxx"
 #include "optionsreader.hxx"
 #include "output.hxx"
+#include "bout/build_options.hxx"
 #include "bout/invert/laplacexz.hxx"
 #include "bout/mpi_wrapper.hxx"
 #include "bout/openmpwrap.hxx"
@@ -101,6 +102,11 @@ bool user_requested_exit = false;
 void bout_signal_handler(int sig);   // Handles signals
 std::string time_to_hms(BoutReal t); // Converts to h:mm:ss.s format
 char get_spin();                     // Produces a spinning bar
+
+// Return the string "enabled" or "disabled"
+namespace {
+constexpr auto is_enabled(bool enabled) { return enabled ? "enabled" : "disabled"; }
+} // namespace
 
 /*!
   Initialise BOUT++
@@ -268,7 +274,8 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
       output.write(_("  -c, --color\t\tColor output using bout-log-color\n"));
 #endif
       output.write(
-          _("  -h, --help\t\tThis message\n"
+          _("  --config\t\tPrint the compile-time configuration\n"
+            "  -h, --help\t\tThis message\n"
             "  restart [append]\tRestart the simulation. If append is specified, "
             "append to the existing output files, otherwise overwrite them\n"
             "  VAR=VALUE\t\tSpecify a VALUE for input parameter VAR\n"
@@ -276,6 +283,10 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
             "physics model source (e.g. {:s}.cxx)\n"),
           argv[0]);
 
+      std::exit(EXIT_SUCCESS);
+    }
+    if (current_arg == "--config") {
+      printCompileTimeOptions();
       std::exit(EXIT_SUCCESS);
     }
     if (current_arg == "--list-solvers") {
@@ -452,17 +463,13 @@ void printStartupHeader(int MYPE, int NPES) {
 void printCompileTimeOptions() {
   output_info.write(_("Compile-time options:\n"));
 
-#if CHECK > 0
-  output_info.write(_("\tChecking enabled, level {:d}\n"), CHECK);
-#else
-  output_info.write(_("\tChecking disabled\n"));
-#endif
+  using namespace bout::build;
 
-#if BOUT_USE_SIGNAL
-  output_info.write(_("\tSignal handling enabled\n"));
-#else
-  output_info.write(_("\tSignal handling disabled\n"));
-#endif
+  output_info.write(_("\tRuntime error checking {}"), is_enabled(check_level > 0));
+  if (check_level > 0) {
+    output_info.write(_(", level {}"), check_level);
+  }
+  output_info.write("\n");
 
 #ifdef NCDF
   output_info.write(_("\tnetCDF support enabled\n"));
@@ -480,20 +487,33 @@ void printCompileTimeOptions() {
   output_info.write(_("\tParallel NetCDF support disabled\n"));
 #endif
 
-#ifdef _OPENMP
-  output_info.write(_("\tOpenMP parallelisation enabled, using {:d} threads\n"),
-                    omp_get_max_threads());
-#else
-  output_info.write(_("\tOpenMP parallelisation disabled\n"));
-#endif
-
 #ifdef METRIC3D
   output_info.write("\tRUNNING IN 3D-METRIC MODE\n");
 #endif
 
-#if BOUT_USE_SIGFPE
-  output_info.write("\tFloatingPointExceptions enabled\n");
+  output_info.write(_("\tFFT support {}\n"), is_enabled(has_fftw));
+  output_info.write(_("\tNatural language support {}\n"), is_enabled(has_gettext));
+  output_info.write(_("\tHDF5 support {}\n"), is_enabled(has_hdf5));
+  output_info.write(_("\tLAPACK support {}\n"), is_enabled(has_lapack));
+  output_info.write(_("\tNetCDF support {}\n"), is_enabled(has_netcdf));
+  output_info.write(_("\tPETSc support {}\n"), is_enabled(has_petsc));
+  output_info.write(_("\tPretty function name support {}\n"),
+                    is_enabled(has_pretty_function));
+  output_info.write(_("\tPVODE support {}\n"), is_enabled(has_pvode));
+  output_info.write(_("\tScore-P support {}\n"), is_enabled(has_scorep));
+  output_info.write(_("\tSLEPc support {}\n"), is_enabled(has_slepc));
+  output_info.write(_("\tSUNDIALS support {}\n"), is_enabled(has_sundials));
+  output_info.write(_("\tBacktrace in exceptions {}\n"), is_enabled(use_backtrace));
+  output_info.write(_("\tColour in logs {}\n"), is_enabled(use_color));
+  output_info.write(_("\tOpenMP parallelisation {}"), is_enabled(use_openmp));
+#ifdef _OPENMP
+  output_info.write(_(", using {} threads"), omp_get_max_threads());
 #endif
+  output_info.write("\n");
+  output_info.write(_("\tExtra debug output {}\n"), is_enabled(use_output_debug));
+  output_info.write(_("\tFloating-point exceptions {}\n"), is_enabled(use_sigfpe));
+  output_info.write(_("\tSignal handling support {}\n"), is_enabled(use_signal));
+  output_info.write(_("\tField name tracking {}\n"), is_enabled(use_track));
 
   // The stringify is needed here as BOUT_FLAGS_STRING may already contain quoted strings
   // which could cause problems (e.g. terminate strings).
