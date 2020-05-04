@@ -1750,6 +1750,7 @@ void LaplaceParallelTriMGNew::refine(Level &l, Level &lup, Matrix<dcomplex> &fin
  */
 void LaplaceParallelTriMGNew::synchronize_reduced_field(const Level &l, Matrix<dcomplex> &field){
 
+  SCOREP0();
   if(l.included){
 
     MPI_Comm comm = BoutComm::get();
