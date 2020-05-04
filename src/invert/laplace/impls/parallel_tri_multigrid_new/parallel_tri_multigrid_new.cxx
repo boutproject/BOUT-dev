@@ -58,11 +58,11 @@ LaplaceParallelTriMGNew::LaplaceParallelTriMGNew(Options *opt, CELL_LOC loc, Mes
   // Number of procs must be a factor of 2
   int n = localmesh->NXPE;
   if(not (n & (n - 1)) == 0){
-    throw BoutException("LaplaceParallelTriMGNew error: nxpe must be a power of 2");
+    throw BoutException("LaplaceParallelTriMGNew error: NXPE must be a power of 2");
   }
   // Number of levels cannot must be such that nproc <= 2^(max_level-1)
   if(n > 1 and n < pow(2,max_level+1) ){
-    throw BoutException("LaplaceParallelTriMGNew error: number of levels and processors must satisfy nxpe > 2^(max_levels+1).");
+    throw BoutException("LaplaceParallelTriMGNew error: number of levels and processors must satisfy NXPE > 2^(max_levels+1).");
   }
 
   static int ipt_solver_count = 1;
@@ -170,26 +170,30 @@ SCOREP0();
   }
 }
 
-// TODO Probably delete function... each proc has a row of the reduced system
-// so this can be done, but it's probably not useful in multigrid setting:
-// coarsening moves matrix entries from off- to on-diagonal, so using more
-// levels makes matrices more diagonally dominant.
 /*
- * Check whether the reduced matrix is diagonally dominant, i.e. whether for every row the absolute
- * value of the diagonal element is greater-or-equal-to the sum of the absolute values
- * of the other elements. Being diagonally dominant is sufficient (but not necessary) for
- * the Jacobi iteration to converge.
+ * Check whether the reduced matrix on the coarsest level is diagonally
+ * dominant, i.e. whether for every row the absolute value of the diagonal
+ * element is greater-or-equal-to the sum of the absolute values of the other
+ * elements. Being diagonally dominant is sufficient (but not necessary) for
+ * the Gauss-Seidel iteration to converge.
  */
-bool LaplaceParallelTriMGNew::is_diagonally_dominant(const dcomplex al, const dcomplex au, const dcomplex bl, const dcomplex bu, const int jy, const int kz) {
+bool LaplaceParallelTriMGNew::is_diagonally_dominant(const Level &l, const int jy, const int kz) {
 
   bool is_dd = true;
-  if(std::fabs(al)+std::fabs(bl)>1.0){
-    output<<BoutComm::rank()<<" jy="<<jy<<", kz="<<kz<<", lower row not diagonally dominant"<<endl;
-    is_dd = false;
+  // Check index 1 on all procs, except: the last proc only has index 1 if the
+  // max_level == 0.
+  if( not localmesh->lastX() or max_level==0 ){
+    if(std::fabs(l.ar(jy,1,kz))+std::fabs(l.cr(jy,1,kz))>std::fabs(l.br(jy,1,kz))){
+      output<<BoutComm::rank()<<" jy="<<jy<<", kz="<<kz<<", lower row not diagonally dominant"<<endl;
+      is_dd = false;
+    }
   }
-  if(std::fabs(au)+std::fabs(bu)>1.0){
-    output<<BoutComm::rank()<<" jy="<<jy<<", kz="<<kz<<", upper row not diagonally dominant"<<endl;
-    is_dd = false;
+  // Check index 2 on final proc only.
+  if( localmesh->lastX()){
+    if(std::fabs(l.ar(jy,2,kz))+std::fabs(l.cr(jy,2,kz))>std::fabs(l.br(jy,2,kz))){
+      output<<BoutComm::rank()<<" jy="<<jy<<", kz="<<kz<<", upper row not diagonally dominant"<<endl;
+      is_dd = false;
+    }
   }
   return is_dd;
 }
@@ -672,23 +676,19 @@ FieldPerp LaplaceParallelTriMGNew::solve(const FieldPerp& b, const FieldPerp& x0
     // Throw error if we are performing too many iterations
     // TODO Throw error message appropriate for the method
     if (count>maxits) {
-      throw BoutException("LaplaceParallelTriMGNew error: Not converged within maxits=%i iterations. The iteration matrix is not diagonally dominant on processor %i, so there is no guarantee this method will converge. Consider increasing maxits or using a different solver.",maxits,BoutComm::rank());
-      //break;
-      /*
       // Maximum number of allowed iterations reached.
-      // If the iteration matrix is diagonally-dominant, then convergence is
-      // guaranteed, so maxits is set too low.
+      // If the coarsest multigrid iteration matrix is diagonally-dominant,
+      // then convergence is guaranteed, so maxits is set too low.
       // Otherwise, the method may or may not converge.
       for (int kz = 0; kz <= maxmode; kz++) {
-	if(!is_diagonally_dominant(al(jy,kz),au(jy,kz),bl(jy,kz),bu(jy,kz),jy,kz)){
-	  throw BoutException("LaplaceParallelTriMGNew error: Not converged within maxits=%i iterations. The iteration matrix is not diagonally dominant on processor %i, so there is no guarantee this method will converge. Consider increasing maxits or using a different solver.",maxits,BoutComm::rank());
+	if(!is_diagonally_dominant(levels[max_level-1],jy,kz)){
+	  throw BoutException("LaplaceParallelTriMGNew error: Not converged within maxits=%i iterations. The coarsest iteration matrix is not diagonally dominant on processor %i, so there is no guarantee this method will converge. Consider (1) increasing maxits; or (2) increasing the number of levels (as grids become more diagonally dominant with coarsening). Using more grids may require larger NXPE.",maxits,BoutComm::rank());
 	}
       }
-      throw BoutException("LaplaceParallelTriMGNew error: Not converged within maxits=%i iterations. The iteration matrix is diagonally dominant on processor %i and convergence is guaranteed (if all processors are diagonally dominant). Please increase maxits and retry.",maxits,BoutComm::rank());
+      throw BoutException("LaplaceParallelTriMGNew error: Not converged within maxits=%i iterations. The coarsest grained iteration matrix is diagonally dominant on processor %i and convergence is guaranteed (if all processors are diagonally dominant). Please increase maxits and retry.",maxits,BoutComm::rank());
       //output<<alold(jy,kz)<<" "<<blold(jy,kz)<<" "<<auold(jy,kz)<<" "<<buold(jy,kz)<<endl;
       //output<<al(jy,kz)<<" "<<bl(jy,kz)<<" "<<au(jy,kz)<<" "<<bu(jy,kz)<<endl;
       //output<<Ad<<" "<<Bd<<" "<<Au<<" "<<Bu<<endl;
-      */
     }
   }
   ///SCOREP_USER_REGION_END(whileloop);

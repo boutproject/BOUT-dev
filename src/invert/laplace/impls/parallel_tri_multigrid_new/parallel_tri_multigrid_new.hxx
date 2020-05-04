@@ -76,7 +76,6 @@ public:
   void get_initial_guess(const int jy, const int kz, Matrix<dcomplex> &r,
       Tensor<dcomplex> &lowerGuardVector, Tensor<dcomplex> &upperGuardVector,
       Matrix<dcomplex> &xk1d);
-  bool is_diagonally_dominant(const dcomplex al, const dcomplex au, const dcomplex bl, const dcomplex bu, const int jy, const int kz);
 
   void resetSolver();
 
@@ -124,6 +123,7 @@ public:
   void init(Level &level, const Level lup, const int ncx, const int xs, const int xe, const int current_level, const int jy);
   void init(Level &level, const int ncx, const int jy, const Matrix<dcomplex> avec, const Matrix<dcomplex> bvec, const Matrix<dcomplex> cvec, const int xs, const int xe);
   void init_rhs(Level &level, const int jy, const Matrix<dcomplex> bcmplx);
+  bool is_diagonally_dominant(const Level &coarsest_level, const int jy, const int kz);
   void levels_info(const Level l, const int jy);
   void reconstruct_full_solution(Matrix<dcomplex> &xk1d, const Level &level, const int jy);
   void refine(Level &level, Level &level_up, Matrix<dcomplex> &fine_error, const Array<bool> &converged);
