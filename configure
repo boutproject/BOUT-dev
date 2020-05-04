@@ -652,7 +652,7 @@ BOUT_HAS_GETTEXT
 BOUT_HAS_FFTW
 BOUT_HAS_CVODE
 BOUT_HAS_ARKODE
-CHECK_LEVEL
+BOUT_CHECK_LEVEL
 BOUT_REVISION
 BOUT_VERSION_TAG
 BOUT_VERSION_PATCH
@@ -5898,7 +5898,7 @@ if test -z $enable_checks && test "x$DISABLE_CHECK" = "xprobably"; then :
 
 fi
 
-CHECK_LEVEL="0"
+BOUT_CHECK_LEVEL=0
 if test "x$enable_checks" != "xno" && test "x$enable_checks" != "x0"; then :
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: Run-time checking enabled" >&5
@@ -5908,17 +5908,17 @@ $as_echo "$as_me: Run-time checking enabled" >&6;}
     { $as_echo "$as_me:${as_lineno-$LINENO}:  -> Level 1 (Basic checking)" >&5
 $as_echo "$as_me:  -> Level 1 (Basic checking)" >&6;}
           CXXFLAGS="$CXXFLAGS -DCHECK=1"
-          CHECK_LEVEL="1" ;; #(
+          BOUT_CHECK_LEVEL=1 ;; #(
   3) :
     { $as_echo "$as_me:${as_lineno-$LINENO}:  -> Level 3 (Full checking + stack tracing)" >&5
 $as_echo "$as_me:  -> Level 3 (Full checking + stack tracing)" >&6;}
           CXXFLAGS="$CXXFLAGS -DCHECK=3"
-          CHECK_LEVEL="3" ;; #(
+          BOUT_CHECK_LEVEL=3 ;; #(
   *) :
     { $as_echo "$as_me:${as_lineno-$LINENO}:  -> Level 2 (Basic checking + stack tracing)" >&5
 $as_echo "$as_me:  -> Level 2 (Basic checking + stack tracing)" >&6;}
      CXXFLAGS="$CXXFLAGS -DCHECK=2"
-     CHECK_LEVEL="2" ;;
+     BOUT_CHECK_LEVEL=2 ;;
 esac
 
 else
@@ -16058,6 +16058,12 @@ FMT_INCLUDE_PATH=$PWD/externalpackages/fmt/include
 
 
 
+
+
+
+cat >>confdefs.h <<_ACEOF
+#define BOUT_CHECK_LEVEL $BOUT_CHECK_LEVEL
+_ACEOF
 
 
 

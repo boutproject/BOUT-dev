@@ -818,7 +818,7 @@ message("
    Natural language support : ${BOUT_HAS_GETTEXT}
    ScoreP support           : ${BOUT_HAS_SCOREP}
    Extra debug output       : ${BOUT_USE_OUTPUT_DEBUG}
-   CHECK level              : ${BOUT_CHECK_LEVEL}
+   Runtime error check level: ${BOUT_CHECK_LEVEL}
    Signal handling          : ${BOUT_USE_SIGNAL}
    Output coloring          : ${BOUT_USE_COLOR}
    Field name tracking      : ${BOUT_USE_TRACK}

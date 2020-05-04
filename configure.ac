@@ -301,19 +301,19 @@ AS_IF([test -z $enable_checks && test "x$DISABLE_CHECK" = "xprobably"], [
   enable_checks=no
 ])
 
-CHECK_LEVEL="0"
+BOUT_CHECK_LEVEL=0
 AS_IF([test "x$enable_checks" != "xno" && test "x$enable_checks" != "x0"], [
   AC_MSG_NOTICE([Run-time checking enabled])
   AS_CASE([$enable_checks],
     [1], [AC_MSG_NOTICE([ -> Level 1 (Basic checking)])
           CXXFLAGS="$CXXFLAGS -DCHECK=1"
-          CHECK_LEVEL="1"],
+          BOUT_CHECK_LEVEL=1],
     [3], [AC_MSG_NOTICE([ -> Level 3 (Full checking + stack tracing)])
           CXXFLAGS="$CXXFLAGS -DCHECK=3"
-          CHECK_LEVEL="3"],
+          BOUT_CHECK_LEVEL=3],
     [AC_MSG_NOTICE([ -> Level 2 (Basic checking + stack tracing)])
      CXXFLAGS="$CXXFLAGS -DCHECK=2"
-     CHECK_LEVEL="2"])
+     BOUT_CHECK_LEVEL=2])
 ], [
   AC_MSG_NOTICE([Run-time checking disabled])
 ])
@@ -1278,7 +1278,9 @@ AC_SUBST(BOUT_VERSION_MINOR)
 AC_SUBST(BOUT_VERSION_PATCH)
 AC_SUBST(BOUT_VERSION_TAG)
 AC_SUBST(BOUT_REVISION)
-AC_SUBST(CHECK_LEVEL)
+
+AC_SUBST(BOUT_CHECK_LEVEL)
+AC_DEFINE_UNQUOTED(BOUT_CHECK_LEVEL, [$BOUT_CHECK_LEVEL], [Runtime error checking level])
 
 BOUT_DEFINE_SUBST(BOUT_HAS_ARKODE, [ARKODE support])
 BOUT_DEFINE_SUBST(BOUT_HAS_CVODE, [CVODE support])

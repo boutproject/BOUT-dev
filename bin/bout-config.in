@@ -19,7 +19,7 @@ BOUT_CONFIG_FILE=@PREFIX@/make.config
 cc="@CXX@"
 cxx="@CXX@"
 ld="@CXX@"
-checks="@CHECK_LEVEL@"
+checks="@BOUT_CHECK_LEVEL@"
 cflags="@CONFIG_CFLAGS@"
 libs="@CONFIG_LDFLAGS@"
 
