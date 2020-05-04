@@ -655,6 +655,10 @@ FieldPerp LaplaceParallelTriMGNew::solve(const FieldPerp& b, const FieldPerp& x0
     }
     else if( down && max_level > 0 ){
 
+      if(current_level!=0){
+	// Prevents double call on level 0 - we just called this to check convergence
+        calculate_residual(levels[current_level],converged,jy);
+      }
       current_level++;
       coarsen(levels[current_level],levels[current_level-1].residual,converged);
       subcount=0;
@@ -1548,39 +1552,20 @@ void LaplaceParallelTriMGNew::calculate_residual(Level &l, const Array<bool> &co
 
     // TODO is this necessary?
     // Communication
-    auto sendvec = Array<dcomplex>(nmode);
-    auto recvvec = Array<dcomplex>(nmode);
     MPI_Comm comm = BoutComm::get();
     int err;
 
     // Communicate in
     if(!localmesh->firstX()){
-      for (int kz = 0; kz <= maxmode; kz++) {
-	if(!converged[kz]){
-	  sendvec[kz] = l.residual(1,kz);
-	}
-      }
-      err = MPI_Sendrecv(&sendvec[0], nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 1, &recvvec[0], nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 0, comm, MPI_STATUS_IGNORE);
-      for (int kz = 0; kz <= maxmode; kz++) {
-	if(!converged[kz]){
-	  l.residual(0,kz) = recvvec[kz];
-	}
-      }
+      // NB: this should actually send (2,0) if we are the last proc and not
+      // on level 0. However, by construction, both (1,0) and (2,0) are zero
+      // in this case.
+      err = MPI_Sendrecv(&l.residual(1,0), nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 1, &l.residual(0,0), nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 0, comm, MPI_STATUS_IGNORE);
     }
 
     // Communicate out
     if(!localmesh->lastX()){
-      for (int kz = 0; kz <= maxmode; kz++) {
-	if(!converged[kz]){
-	  sendvec[kz] = l.residual(1,kz);
-	}
-      }
-      err = MPI_Sendrecv(&sendvec[0], nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 0, &recvvec[0], nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 1, comm, MPI_STATUS_IGNORE);
-      for (int kz = 0; kz < nmode; kz++) {
-	if(!converged[kz]){
-	  l.residual(3,kz) = recvvec[kz];
-	}
-      }
+      err = MPI_Sendrecv(&l.residual(1,0), nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 0, &l.residual(3,0), nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 1, comm, MPI_STATUS_IGNORE);
     }
 
     //output<<"residual ";
