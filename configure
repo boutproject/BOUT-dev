@@ -629,7 +629,6 @@ PETSC_ARCH
 PETSC_DIR
 PETSC_MAKE_INCLUDE
 PETSC_HAS_SUNDIALS
-BOUT_OPENMP_SCHEDULE
 BOUT_USE_TRACK
 BOUT_USE_SIGNAL
 BOUT_USE_SIGFPE
@@ -652,6 +651,7 @@ BOUT_HAS_GETTEXT
 BOUT_HAS_FFTW
 BOUT_HAS_CVODE
 BOUT_HAS_ARKODE
+BOUT_OPENMP_SCHEDULE
 BOUT_CHECK_LEVEL
 BOUT_REVISION
 BOUT_VERSION_TAG
@@ -5018,6 +5018,7 @@ $as_echo "$ac_cv_prog_cxx_openmp" >&6; }
 
 BOUT_USE_OPENMP=$enable_openmp
 
+BOUT_OPENMP_SCHEDULE=""
 if test "x$enable_openmp" = "xyes"; then :
 
   BOUT_OPENMP_SCHEDULE=$with_openmp_schedule
@@ -16067,6 +16068,13 @@ _ACEOF
 
 
 
+
+cat >>confdefs.h <<_ACEOF
+#define BOUT_OPENMP_SCHEDULE $BOUT_OPENMP_SCHEDULE
+_ACEOF
+
+
+
 if test "x$BOUT_HAS_ARKODE" = "xyes"; then :
 
 $as_echo "#define BOUT_HAS_ARKODE 1" >>confdefs.h
@@ -16326,19 +16334,6 @@ $as_echo "#define BOUT_USE_TRACK 1" >>confdefs.h
 else
 
 $as_echo "#define BOUT_USE_TRACK 0" >>confdefs.h
-
-fi
-
-
-
-
-if test "x$BOUT_OPENMP_SCHEDULE" = "xyes"; then :
-
-$as_echo "#define BOUT_OPENMP_SCHEDULE 1" >>confdefs.h
-
-else
-
-$as_echo "#define BOUT_OPENMP_SCHEDULE 0" >>confdefs.h
 
 fi
 
