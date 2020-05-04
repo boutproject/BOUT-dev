@@ -659,6 +659,7 @@ FieldPerp LaplaceParallelTriMGNew::solve(const FieldPerp& b, const FieldPerp& x0
 	// Prevents double call on level 0 - we just called this to check convergence
         calculate_residual(levels[current_level],converged,jy);
       }
+      synchronize_reduced_field(levels[current_level],levels[current_level].residual);
       current_level++;
       coarsen(levels[current_level],levels[current_level-1].residual,converged);
       subcount=0;
@@ -1527,6 +1528,9 @@ void LaplaceParallelTriMGNew::calculate_total_residual(Array<BoutReal> &error_ab
 /*
  * Calculate residual on a reduced x grid. By construction, the residual is 
  * zero, except at the points on the reduced grid.
+ * Note: this does not synchronize the residuals between processors, as we can
+ * calculate the total residual without guard cells. Coarsening requires the
+ * guard cells, and an explicit synchronization is called before coarsening.
  */
 void LaplaceParallelTriMGNew::calculate_residual(Level &l, const Array<bool> &converged,const int jy){
 
@@ -1548,24 +1552,6 @@ void LaplaceParallelTriMGNew::calculate_residual(Level &l, const Array<bool> &co
 	  }
 	}
       }
-    }
-
-    // TODO is this necessary?
-    // Communication
-    MPI_Comm comm = BoutComm::get();
-    int err;
-
-    // Communicate in
-    if(!localmesh->firstX()){
-      // NB: this should actually send (2,0) if we are the last proc and not
-      // on level 0. However, by construction, both (1,0) and (2,0) are zero
-      // in this case.
-      err = MPI_Sendrecv(&l.residual(1,0), nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 1, &l.residual(0,0), nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 0, comm, MPI_STATUS_IGNORE);
-    }
-
-    // Communicate out
-    if(!localmesh->lastX()){
-      err = MPI_Sendrecv(&l.residual(1,0), nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 0, &l.residual(3,0), nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 1, comm, MPI_STATUS_IGNORE);
     }
 
     //output<<"residual ";
@@ -1766,11 +1752,6 @@ void LaplaceParallelTriMGNew::synchronize_reduced_field(const Level &l, Matrix<d
 
   if(l.included){
 
-    //Array<dcomplex> sendvec, recvecin, recvecout;
-    //sendvec = Array<dcomplex>(nmode);
-    //recvecin = Array<dcomplex>(nmode);
-    //recvecout = Array<dcomplex>(nmode);
-    //comm_handle recv[2];
     MPI_Comm comm = BoutComm::get();
     int err;
 
@@ -1783,10 +1764,5 @@ void LaplaceParallelTriMGNew::synchronize_reduced_field(const Level &l, Matrix<d
     if(!localmesh->lastX()){
       err = MPI_Sendrecv(&field(1,0), nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 0, &field(0,0), nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 1, comm, MPI_STATUS_IGNORE);
     }
-
-    output<<"field ";
-    int kzp=1;
-    output<<field(kzp,0)<<" "<<field(kzp,1)<<" "<<field(kzp,2)<<" "<<field(kzp,3)<<endl;
   }
-
 }
