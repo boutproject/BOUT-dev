@@ -5044,7 +5044,6 @@ _ACEOF
 if ac_fn_cxx_try_compile "$LINENO"; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-     CXXFLAGS="$CXXFLAGS -DHAS_PRETTY_FUNCTION"
      BOUT_HAS_PRETTY_FUNCTION=yes
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
@@ -10763,7 +10762,6 @@ fi
 $as_echo "$as_me: => $module_upper solver enabled" >&6;}
   EXTRA_LIBS="$EXTRA_LIBS $SUNDIALS_MODULE_LDFLAGS $sundials_module_libs"
   EXTRA_INCS="$EXTRA_INCS $sundials_module_includes"
-  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_$module_upper"
 
           eval "`$as_echo "BOUT_HAS_$module_upper" | $as_tr_sh`=yes"
   eval "`$as_echo "${module_upper}LIBS" | $as_tr_sh`=\"\$SUNDIALS_MODULE_LDFLAGS \$sundials_module_libs\""
@@ -11285,7 +11283,6 @@ fi
 $as_echo "$as_me: => $module_upper solver enabled" >&6;}
   EXTRA_LIBS="$EXTRA_LIBS $SUNDIALS_MODULE_LDFLAGS $sundials_module_libs"
   EXTRA_INCS="$EXTRA_INCS $sundials_module_includes"
-  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_$module_upper"
 
           eval "`$as_echo "BOUT_HAS_$module_upper" | $as_tr_sh`=yes"
   eval "`$as_echo "${module_upper}LIBS" | $as_tr_sh`=\"\$SUNDIALS_MODULE_LDFLAGS \$sundials_module_libs\""
@@ -11815,7 +11812,6 @@ fi
 $as_echo "$as_me: => $module_upper solver enabled" >&6;}
   EXTRA_LIBS="$EXTRA_LIBS $SUNDIALS_MODULE_LDFLAGS $sundials_module_libs"
   EXTRA_INCS="$EXTRA_INCS $sundials_module_includes"
-  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_$module_upper"
 
           eval "`$as_echo "BOUT_HAS_$module_upper" | $as_tr_sh`=yes"
   eval "`$as_echo "${module_upper}LIBS" | $as_tr_sh`=\"\$SUNDIALS_MODULE_LDFLAGS \$sundials_module_libs\""

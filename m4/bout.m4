@@ -163,7 +163,6 @@ AC_DEFUN([BOUT_CHECK_PRETTYFUNCTION], [
     [AC_LANG_PROGRAM([[]],
                  [[const char* name = __PRETTY_FUNCTION__;]])],
     [AC_MSG_RESULT(yes)
-     CXXFLAGS="$CXXFLAGS -DHAS_PRETTY_FUNCTION"
      BOUT_HAS_PRETTY_FUNCTION=yes],
     [AC_MSG_RESULT(no)
      BOUT_HAS_PRETTY_FUNCTION=no])
@@ -284,7 +283,6 @@ $2
   AC_MSG_NOTICE([=> $module_upper solver enabled])
   EXTRA_LIBS="$EXTRA_LIBS $SUNDIALS_MODULE_LDFLAGS $sundials_module_libs"
   EXTRA_INCS="$EXTRA_INCS $sundials_module_includes"
-  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_$module_upper"
 
   dnl The following is slightly complicated, but basically we use
   dnl AS_TR_SH to construct a shell variable from the variable
