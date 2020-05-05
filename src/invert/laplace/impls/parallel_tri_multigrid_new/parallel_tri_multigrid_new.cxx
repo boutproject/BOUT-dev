@@ -54,6 +54,7 @@ LaplaceParallelTriMGNew::LaplaceParallelTriMGNew(Options *opt, CELL_LOC loc, Mes
   OPTION(opt, max_level, 3);
   OPTION(opt, max_cycle, 3);
   OPTION(opt, use_previous_timestep, false);
+  OPTION(opt, predict_exit, true);
 
   // Number of procs must be a factor of 2
   int n = localmesh->NXPE;
@@ -570,22 +571,26 @@ FieldPerp LaplaceParallelTriMGNew::solve(const FieldPerp& b, const FieldPerp& x0
   ///SCOREP_USER_REGION_DEFINE(initwhileloop);
   ///SCOREP_USER_REGION_BEGIN(initwhileloop, "init while loop",///SCOREP_USER_REGION_TYPE_COMMON);
 
-  int count = 0;
-  int subcount = 0;
+  int count = 0; // Total iteration count
+  int subcount = 0; // Count of iterations on a level
+  int cyclecount = 0; // Number of multigrid cycles
+  int cycle_eta = 0; // Predicted finishing cycle
+  int callcount = 0; // TODO tmp
   int current_level = 0;
   bool down = true;
   auto converged = Array<bool>(nmode);
 
-  auto total = Array<BoutReal>(nmode);
-  auto totalold = Array<BoutReal>(nmode);
+  auto error_abs = Array<BoutReal>(nmode);
+  auto error_abs_old = Array<BoutReal>(nmode);
   auto error_rel = Array<BoutReal>(nmode);
+  auto error_rel_old = Array<BoutReal>(nmode);
   for(int kz=0; kz<nmode; kz++){
     converged[kz] = false;
-    total[kz] = 1e20;
-    totalold[kz] = 1e20;
-    error_rel[kz] = 0.0;
+    error_abs[kz] = 1e20;
+    error_abs_old[kz] = 1e20;
+    error_rel[kz] = 1e20;
+    error_rel_old[kz] = 1e20;
   }
-  int ml;
 
   ///SCOREP_USER_REGION_END(initwhileloop);
   ///SCOREP_USER_REGION_DEFINE(whileloop);
@@ -608,14 +613,48 @@ FieldPerp LaplaceParallelTriMGNew::solve(const FieldPerp& b, const FieldPerp& x0
     ///SCOREP_USER_REGION_DEFINE(l0rescalc);
     ///SCOREP_USER_REGION_BEGIN(l0rescalc, "level 0 residual calculation",///SCOREP_USER_REGION_TYPE_COMMON);
     if(current_level==0 and subcount==max_cycle-1){
-      // Not necessay, but for diagnostics
-      for(int kz=0; kz<nmode; kz++){
-        if(!converged[kz]){
-          totalold[kz] = total[kz];
-        }
+
+      ++cyclecount;
+
+      // The allreduce in calculate_total_residual is expensive at scale. To
+      // minimize calls to this, we estimate when the algorithm will converge
+      // and don't check for convergence until we get near this point.
+      //
+      // Need to do call calculate_residual every time, but everything else can
+      // be called only on the first and second cycle (to set up) and after the
+      // predicted number of iterations has elapsed.
+
+      if( cyclecount < 3 or cyclecount > cycle_eta or not predict_exit ){
+	for(int kz=0; kz<nmode; kz++){
+	  if(!converged[kz]){
+	    error_abs_old[kz] = error_abs[kz];
+	    error_rel_old[kz] = error_rel[kz];
+	  }
+	}
       }
+
       calculate_residual(levels[current_level],converged,jy);
-      calculate_total_residual(total,error_rel,converged,levels[current_level]);
+
+      if( cyclecount < 3 or cyclecount > cycle_eta - 5 or not predict_exit ){
+	//++callcount;
+	calculate_total_residual(error_abs,error_rel,converged,levels[current_level]);
+	//output<<"call count "<<callcount<<" cyclecount "<<cyclecount<<endl;
+
+	if( cyclecount < 3 and predict_exit ){
+	  BoutReal ratio;
+	  int eta;
+	  cycle_eta = 0;
+	  for(int kz=0; kz<nmode; kz++){
+	    ratio = error_abs[kz]/error_abs_old[kz];
+	    eta = ceil(log(atol/error_abs[kz])/log(ratio));
+	    cycle_eta = (cycle_eta > eta) ? cycle_eta : eta;
+
+	    ratio = error_rel[kz]/error_rel_old[kz];
+	    eta = ceil(log(rtol/error_rel[kz])/log(ratio));
+	    cycle_eta = (cycle_eta > eta) ? cycle_eta : eta;
+	  }
+	}
+      }
     }
 
     ///SCOREP_USER_REGION_END(l0rescalc);
@@ -631,8 +670,11 @@ FieldPerp LaplaceParallelTriMGNew::solve(const FieldPerp& b, const FieldPerp& x0
     }
     else if( all(converged) and current_level==0 ){
       /*
-      ml = maxloc(total);
-      output<<"Exit "<<count<<" "<<ml<<" "<<total[ml]<<" "<<total[ml]/totalold[ml]<<endl;
+      int ml;
+      ml = maxloc(error_abs);
+      output<<"Exit abs"<<count<<" "<<cyclecount<<" "<<ml<<" "<<error_abs[ml]<<" "<<error_abs[ml]/error_abs_old[ml]<<endl;
+      ml = maxloc(error_rel);
+      output<<"Exit rel"<<count<<" "<<cyclecount<<" "<<ml<<" "<<error_rel[ml]<<" "<<error_rel[ml]/error_rel_old[ml]<<endl;
       output<<"xloc final"<<endl;
       for(int ix=0; ix<4;ix++){
 	output<<" "<<levels[current_level].xloc(ix,1) << " ";

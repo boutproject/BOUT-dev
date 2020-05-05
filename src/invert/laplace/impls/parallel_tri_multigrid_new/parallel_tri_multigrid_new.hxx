@@ -158,6 +158,10 @@ private:
   /// Maximum number of iterations per grid
   int max_cycle;
 
+  /// Predict when convergence will be reached, and skip expensive convergence
+  /// checks at earlier iterations.
+  bool predict_exit;
+
   /// Mean number of iterations taken by the solver
   BoutReal ipt_mean_its;
 
@@ -170,10 +174,6 @@ private:
   /// The first timestep always uses the approximate solution.
   bool use_previous_timestep;
 
-  //Tensor<dcomplex> upperGuardVector, lowerGuardVector;
-///  Matrix<dcomplex> al, bl, au, bu;
-///  Matrix<dcomplex> alold, blold, auold, buold;
-///  Matrix<dcomplex> r1, r2, r3, r4, r5, r6, r7, r8;
   bool store_coefficients;
 
   int nmode;
