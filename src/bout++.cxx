@@ -263,29 +263,29 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
                    argv[0]);
       output.write(
           _("\n"
-            "  -d <data directory>\tLook in <data directory> for input/output files\n"
-            "  -f <options filename>\tUse OPTIONS given in <options filename>\n"
+            "  -d <data directory>\t\tLook in <data directory> for input/output files\n"
+            "  -f <options filename>\t\tUse OPTIONS given in <options filename>\n"
             "  -o <settings filename>\tSave used OPTIONS given to <options filename>\n"
             "  -l, --log <log filename>\tPrint log to <log filename>\n"
-            "  -v, --verbose\t\tIncrease verbosity\n"
-            "  -q, --quiet\t\tDecrease verbosity\n"));
+            "  -v, --verbose\t\t\tIncrease verbosity\n"
+            "  -q, --quiet\t\t\tDecrease verbosity\n"));
 #if BOUT_USE_COLOR
-      output.write(_("  -c, --color\t\tColor output using bout-log-color\n"));
+      output.write(_("  -c, --color\t\t\tColor output using bout-log-color\n"));
 #endif
       output.write(
-          _("  --config\t\tPrint the compile-time configuration\n"
+          _("  --config\t\t\tPrint the compile-time configuration\n"
             "  --list-solvers\t\tList the available time solvers\n"
             "  --list-laplacians\t\tList the available Laplacian inversion solvers\n"
             "  --list-laplacexz\t\tList the available LaplaceXZ inversion solvers\n"
             "  --list-invertparts\t\tList the available InvertPar solvers\n"
             "  --list-rkschemes\t\tList the available Runge-Kutta schemes\n"
-            "  --list-meshes\t\tList the available Meshes\n"
-            "  --list-xzinterpolations\t\tList the available XZInterpolations\n"
-            "  --list-zinterpolations\t\tList the available ZInterpolations\n"
-            "  -h, --help\t\tThis message\n"
-            "  restart [append]\tRestart the simulation. If append is specified, "
+            "  --list-meshes\t\t\tList the available Meshes\n"
+            "  --list-xzinterpolations\tList the available XZInterpolations\n"
+            "  --list-zinterpolations\tList the available ZInterpolations\n"
+            "  -h, --help\t\t\tThis message\n"
+            "  restart [append]\t\tRestart the simulation. If append is specified, "
             "append to the existing output files, otherwise overwrite them\n"
-            "  VAR=VALUE\t\tSpecify a VALUE for input parameter VAR\n"
+            "  VAR=VALUE\t\t\tSpecify a VALUE for input parameter VAR\n"
             "\nFor all possible input parameters, see the user manual and/or the "
             "physics model source (e.g. {:s}.cxx)\n"),
           argv[0]);
