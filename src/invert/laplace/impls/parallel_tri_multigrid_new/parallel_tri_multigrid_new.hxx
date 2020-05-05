@@ -162,6 +162,10 @@ private:
   /// checks at earlier iterations.
   bool predict_exit;
 
+  /// Only test for convergence every check_freq cycles. This skips expensive
+  /// allreduces in the checks.
+  int check_freq;
+
   /// Mean number of iterations taken by the solver
   BoutReal ipt_mean_its;
 

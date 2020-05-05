@@ -55,6 +55,7 @@ LaplaceParallelTriMGNew::LaplaceParallelTriMGNew(Options *opt, CELL_LOC loc, Mes
   OPTION(opt, max_cycle, 3);
   OPTION(opt, use_previous_timestep, false);
   OPTION(opt, predict_exit, true);
+  OPTION(opt, check_freq, 1);
 
   // Number of procs must be a factor of 2
   int n = localmesh->NXPE;
@@ -616,6 +617,7 @@ FieldPerp LaplaceParallelTriMGNew::solve(const FieldPerp& b, const FieldPerp& x0
 
       ++cyclecount;
 
+      /*
       // The allreduce in calculate_total_residual is expensive at scale. To
       // minimize calls to this, we estimate when the algorithm will converge
       // and don't check for convergence until we get near this point.
@@ -632,9 +634,16 @@ FieldPerp LaplaceParallelTriMGNew::solve(const FieldPerp& b, const FieldPerp& x0
 	  }
 	}
       }
+      */
 
       calculate_residual(levels[current_level],converged,jy);
 
+      if(cyclecount == check_freq){
+	calculate_total_residual(error_abs,error_rel,converged,levels[current_level]);
+	cyclecount = 0;
+      }
+
+      /*
       if( cyclecount < 3 or cyclecount > cycle_eta - 5 or not predict_exit ){
 	//++callcount;
 	calculate_total_residual(error_abs,error_rel,converged,levels[current_level]);
@@ -655,6 +664,7 @@ FieldPerp LaplaceParallelTriMGNew::solve(const FieldPerp& b, const FieldPerp& x0
 	  }
 	}
       }
+      */
     }
 
     ///SCOREP_USER_REGION_END(l0rescalc);
