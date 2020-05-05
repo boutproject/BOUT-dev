@@ -42,7 +42,6 @@ const char DEFAULT_DIR[] = "data";
 #include "msg_stack.hxx"
 #include "optionsreader.hxx"
 #include "output.hxx"
-#include "bout/build_options.hxx"
 #include "bout/invert/laplacexz.hxx"
 #include "bout/mpi_wrapper.hxx"
 #include "bout/openmpwrap.hxx"

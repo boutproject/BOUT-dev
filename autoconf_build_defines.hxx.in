@@ -1,4 +1,4 @@
-/* autoconf_build_config.hxx.in.  Generated from configure.ac by autoheader.  */
+/* autoconf_build_defines.hxx.in.  Generated from configure.ac by autoheader.  */
 
 /* Runtime error checking level */
 #undef BOUT_CHECK_LEVEL

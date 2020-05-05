@@ -1,7 +1,7 @@
 #ifndef BOUT_BUILD_OPTIONS_HXX
 #define BOUT_BUILD_OPTIONS_HXX
 
-#include "bout/build_config.hxx"
+#include "bout/build_defines.hxx"
 
 // Convert macro to a string constant
 #define STRINGIFY1(x) #x

@@ -16343,7 +16343,7 @@ fi
 
 
 
-ac_config_headers="$ac_config_headers include/bout/build_config.hxx:autoconf_build_config.hxx.in"
+ac_config_headers="$ac_config_headers include/bout/build_defines.hxx:autoconf_build_defines.hxx.in"
 
 ac_config_files="$ac_config_files include/bout/version.hxx"
 
@@ -17070,7 +17070,7 @@ do
     "po-directories") CONFIG_COMMANDS="$CONFIG_COMMANDS po-directories" ;;
     "src/fmt/format.cxx") CONFIG_LINKS="$CONFIG_LINKS src/fmt/format.cxx:externalpackages/fmt/src/format.cc" ;;
     "make.config") CONFIG_FILES="$CONFIG_FILES make.config" ;;
-    "include/bout/build_config.hxx") CONFIG_HEADERS="$CONFIG_HEADERS include/bout/build_config.hxx:autoconf_build_config.hxx.in" ;;
+    "include/bout/build_defines.hxx") CONFIG_HEADERS="$CONFIG_HEADERS include/bout/build_defines.hxx:autoconf_build_defines.hxx.in" ;;
     "include/bout/version.hxx") CONFIG_FILES="$CONFIG_FILES include/bout/version.hxx" ;;
     "include/bout/revision.hxx") CONFIG_FILES="$CONFIG_FILES include/bout/revision.hxx" ;;
     "bin/bout-config") CONFIG_FILES="$CONFIG_FILES bin/bout-config" ;;

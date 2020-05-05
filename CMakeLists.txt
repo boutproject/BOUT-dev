@@ -740,11 +740,11 @@ endif()
 ##################################################
 # Generate the build config header
 
-if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/include/bout/build_config.hxx")
-  message(FATAL_ERROR "Generated build_config.hxx header already exists; please remove '${CMAKE_CURRENT_SOURCE_DIR}/include/bout/build_config.hxx' before continuing")
+if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/include/bout/build_defines.hxx")
+  message(FATAL_ERROR "Generated build_defines.hxx header already exists; please remove '${CMAKE_CURRENT_SOURCE_DIR}/include/bout/build_defines.hxx' before continuing")
 endif()
 
-configure_file(cmake_build_config.hxx.in include/bout/build_config.hxx)
+configure_file(cmake_build_defines.hxx.in include/bout/build_defines.hxx)
 
 ##################################################
 # Installation

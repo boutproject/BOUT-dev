@@ -1315,7 +1315,7 @@ AC_SUBST(SLEPC_DIR)
 AC_SUBST(SLEPC_ARCH)
 
 
-AC_CONFIG_HEADERS([include/bout/build_config.hxx:autoconf_build_config.hxx.in])
+AC_CONFIG_HEADERS([include/bout/build_defines.hxx:autoconf_build_defines.hxx.in])
 AC_CONFIG_FILES([include/bout/version.hxx])
 AC_CONFIG_FILES([include/bout/revision.hxx])
 AC_CONFIG_FILES([bin/bout-config])
