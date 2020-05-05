@@ -184,10 +184,7 @@ AC_FUNC_VPRINTF
 AC_OPENMP
 BOUT_USE_OPENMP=$enable_openmp
 
-BOUT_OPENMP_SCHEDULE=""
-AS_IF([test "x$enable_openmp" = "xyes"], [
-  BOUT_OPENMP_SCHEDULE=$with_openmp_schedule
-])
+BOUT_OPENMP_SCHEDULE=$with_openmp_schedule
 
 # Check if we have access to __PRETTY_FUNCTION__
 BOUT_CHECK_PRETTYFUNCTION

@@ -5018,12 +5018,7 @@ $as_echo "$ac_cv_prog_cxx_openmp" >&6; }
 
 BOUT_USE_OPENMP=$enable_openmp
 
-BOUT_OPENMP_SCHEDULE=""
-if test "x$enable_openmp" = "xyes"; then :
-
-  BOUT_OPENMP_SCHEDULE=$with_openmp_schedule
-
-fi
+BOUT_OPENMP_SCHEDULE=$with_openmp_schedule
 
 # Check if we have access to __PRETTY_FUNCTION__
 
