@@ -431,7 +431,7 @@ TYPED_TEST(PetscMatrixTest, TestMatrixVectorMultiplyOnes) {
   PetscVector<TypeParam> vector(this->field, this->indexer);
   BoutReal total = 0.0;
   BOUT_FOR_OMP(i, this->field.getRegion("RGN_NOY"),
-     	       parallel for reduction(+:total) schedule(OPENMP_SCHEDULE)) {
+     	       parallel for reduction(+:total) schedule(BOUT_OPENMP_SCHEDULE)) {
     vector(i) = static_cast<BoutReal>(i.ind);
     total += i.ind;
     BOUT_FOR_SERIAL(j, this->field.getRegion("RGN_NOY")) { matrix(i, j) = 1.0; }

@@ -159,6 +159,13 @@ MACRO_REPLACEMENTS = [
         "macro": True,
         "always_defined": True,
     },
+    {
+        "old": "OPENMP_SCHEDULE",
+        "new": "BOUT_OPENMP_SCHEDULE",
+        "headers": "bout/build_config.hxx",
+        "macro": True,
+        "always_defined": True,
+    },
 ]
 
 
