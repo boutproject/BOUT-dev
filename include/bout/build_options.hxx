@@ -3,10 +3,14 @@
 
 #include "bout/build_config.hxx"
 
+// Convert macro to a string constant
+#define STRINGIFY1(x) #x
+#define STRINGIFY(x) STRINGIFY1(x)
+
 namespace bout {
 namespace build {
 constexpr auto check_level = BOUT_CHECK_LEVEL;
-constexpr auto openmp_schedule = BOUT_OPENMP_SCHEDULE;
+constexpr auto openmp_schedule = STRINGIFY(BOUT_OPENMP_SCHEDULE);
 
 constexpr auto has_fftw = static_cast<bool>(BOUT_HAS_FFTW);
 constexpr auto has_gettext = static_cast<bool>(BOUT_HAS_GETTEXT);
@@ -29,5 +33,8 @@ constexpr auto use_track = static_cast<bool>(BOUT_USE_TRACK);
 
 } // namespace build
 } // namespace bout
+
+#undef STRINGIFY1
+#undef STRINGIFY
 
 #endif // BOUT_BUILD_OPTIONS_HXX

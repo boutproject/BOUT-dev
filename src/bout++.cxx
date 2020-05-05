@@ -29,16 +29,7 @@
 
 const char DEFAULT_DIR[] = "data";
 
-// Value passed at compile time
-// Used for MD5SUM, BOUT_LOCALE_PATH, and REVISION
-#define BUILDFLAG1_(x) #x
-#define BUILDFLAG(x) BUILDFLAG1_(x)
-
 #define GLOBALORIGIN
-
-#define INDIRECT1_BOUTMAIN(a) #a
-#define INDIRECT0_BOUTMAIN(...) INDIRECT1_BOUTMAIN(#__VA_ARGS__)
-#define STRINGIFY(a) INDIRECT0_BOUTMAIN(a)
 
 #include "boundary_factory.hxx"
 #include "boutcomm.hxx"
@@ -74,6 +65,15 @@ const char DEFAULT_DIR[] = "data";
 #include <vector>
 
 #include <sys/stat.h>
+
+// Value passed at compile time
+// Used for MD5SUM, BOUT_LOCALE_PATH, and REVISION
+#define BUILDFLAG1_(x) #x
+#define BUILDFLAG(x) BUILDFLAG1_(x)
+
+#define INDIRECT1_BOUTMAIN(a) #a
+#define INDIRECT0_BOUTMAIN(...) INDIRECT1_BOUTMAIN(#__VA_ARGS__)
+#define STRINGIFY(a) INDIRECT0_BOUTMAIN(a)
 
 // Define S_ISDIR if not defined by system headers (that is, MSVC)
 // Taken from https://github.com/curl/curl/blob/e59540139a398dc70fde6aec487b19c5085105af/lib/curl_setup.h#L748-L751
