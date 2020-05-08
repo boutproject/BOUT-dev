@@ -399,7 +399,93 @@ try:
             self.Bxfunc = lambdify((self.x, self.z, self.phi), Bx, "numpy")
             self.Bzfunc = lambdify((self.x, self.z, self.phi), Bz, "numpy")
 
+    class RotatingEllipse(MagneticField):
+        """A "rotating ellipse" stellarator
+        Parameters
+        ----------
+        xcentre : float, optional
+            Middle of the domain in x [m]
+        zcentre : float, optional
+            Middle of the domain in z [m]
+        radius : float, optional
+            Radius of coils [meters]
+        yperiod : float, optional
+            The period over which the coils return to their original position
+        I_coil : float, optional
+            Current in each coil
+        Btor : float, optional
+            Toroidal magnetic field strength
+        """
 
+        def coil(self, xcentre, zcentre, radius, angle, iota, I):
+            """Defines a single coil
+            Parameters
+            ----------
+            radius : float
+                Radius to coil
+            angle : float
+                Initial angle of coil
+            iota : float
+                Rotational transform of coil
+            I : float
+                Current through coil
+            Returns
+            -------
+            (x, z) - x, z coordinates of coils along phi
+            """
+
+            return (xcentre + radius * cos(angle + iota * self.phi),
+                    zcentre + radius * sin(angle + iota * self.phi), I)
+
+        def __init__(self, xcentre=0.0, zcentre=0.0, radius=0.8, yperiod=np.pi,
+                     I_coil=0.05, Btor=1.0, smooth=False, smooth_args={}):
+            xcentre = float(xcentre)
+            zcentre = float(zcentre)
+            radius = float(radius)
+            yperiod = float(yperiod)
+            Btor = float(Btor)
+
+            iota = 2.*np.pi / yperiod
+
+            self.x = Symbol('x')
+            self.z = Symbol('z')
+            self.y = Symbol('y')
+            self.r = Symbol('r')
+            self.r = (self.x**2 + self.z**2)**(0.5)
+            self.phi = Symbol('phi')
+
+            self.xcentre = xcentre
+            self.zcentre = zcentre
+            self.radius = radius
+
+            # Four coils equally spaced, alternating direction for current
+            self.coil_list = [self.coil(xcentre, zcentre, radius, n*pi, iota, ((-1)**np.mod(i,2))*I_coil)
+                              for i, n in enumerate(np.arange(4)/2.)]
+
+            A = 0.0
+            Bx = 0.0
+            Bz = 0.0
+
+            for c in self.coil_list:
+                xc, zc, Ic = c
+                rc = (xc**2 + zc**2)**(0.5)
+                r2 = (self.x - xc)**2 + (self.z - zc)**2
+                theta = atan2(self.z - zc, self.x - xc) # Angle relative to coil
+
+                A -= Ic * 0.1 * log(r2)
+
+                B = Ic * 0.2/sqrt(r2)
+
+                Bx += B * sin(theta)
+                Bz -= B * cos(theta)
+
+            By = Btor/self.x
+            self.Afunc  = lambdify((self.x, self.z, self.phi), A, "numpy")
+
+            self.Bxfunc = lambdify((self.x, self.z, self.phi), Bx, "numpy")
+            self.Bzfunc = lambdify((self.x, self.z, self.phi), Bz, "numpy")
+            self.Byfunc = lambdify((self.x, self.z, self.phi), By, "numpy")
+            
 except ImportError:
     class StraightStellarator(MagneticField):
         """
@@ -412,7 +498,16 @@ except ImportError:
         def __init__(self, *args, **kwargs):
             raise ImportError("No Sympy module: Can't generate StraightStellarator fields")
 
-
+    class RotatingEllipse(MagneticField):
+        """
+        Invalid RotatingEllipse, since no Sympy module.
+        Rather than printing an error on startup, which may
+        be missed or ignored, this raises
+        an exception if StraightStellarator is ever used.
+        """
+        def __init__(self, *args, **kwargs):
+            raise ImportError("No Sympy module: Can't generate RotatingEllipse fields")
+        
 class VMEC(MagneticField):
     """A numerical magnetic field from a VMEC equilibrium file
 
