@@ -129,7 +129,7 @@ void LaplaceXY2::setCoefs(const Field2D &A, const Field2D &B) {
   // Set Matrix elements
   // 
   // (1/J) d/dx ( J * g11 d/dx ) + (1/J) d/dy ( J * g22 d/dy )
-
+  auto start = std::chrono::system_clock::now();  //AARON
   for (auto& index_const : A.getRegion("RGN_NOBNDRY")) {
     // Note: This is needed for now because PetscMatrix::operator() takes non-const refs
     PetscMatrix<Field2D>::ind_type index = index_const;
@@ -268,9 +268,17 @@ void LaplaceXY2::setCoefs(const Field2D &A, const Field2D &B) {
       matrix(ind_yp, index) = -1.0;
     }
   }
-  
+  auto end = std::chrono::system_clock::now();  //AARON
+  std::chrono::duration<double> dur = end-start;  //AARON
+  std::cout << "*****Matrix set time:  " << dur.count() << std::endl;  
+
+  start = std::chrono::system_clock::now();
   // Assemble Matrix
   matrix.assemble();
+
+  end = std::chrono::system_clock::now();  //AARON
+  dur = end-start;  //AARON
+  std::cout << "*****Matrix asm time:  " << dur.count() << std::endl;      
   
   // Set the operator
 #if PETSC_VERSION_GE(3,5,0)
@@ -368,8 +376,14 @@ const Field2D LaplaceXY2::solve(const Field2D &rhs, const Field2D &x0) {
   // Assemble Trial Solution Vector
   xs.assemble();
   
+  auto start = std::chrono::system_clock::now();  //AARON
+
   // Solve the system
   KSPSolve( ksp, *bs.get(), *xs.get() );
+
+  auto end = std::chrono::system_clock::now();  //AARON
+  std::chrono::duration<double> dur = end-start;  //AARON
+  std::cout << "*****Matrix solve time:  " << dur.count() << std::endl;    
   
   KSPConvergedReason reason;
   KSPGetConvergedReason( ksp, &reason );

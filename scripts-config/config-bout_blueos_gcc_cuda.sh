@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 arch=$(uname -m)
 compiler=gcc
-scratch_dir=${HOME}/workspace/BOUT_build_cuda/
+scratch_dir=${HOME}/bout/BOUT_build_cuda/
 build_prefix=${scratch_dir}/build/${arch}-${compiler}/
 install_prefix=${scratch_dir}/install/${arch}-${compiler}/
-source_prefix=${HOME}/workspace/
+source_prefix=${HOME}/bout/
+
 
 # The following modules are provided by the system
 module --ignore-cache load spectrum-mpi/rolling-release
@@ -16,18 +17,18 @@ module --ignore-cache load lapack/3.8.0-gcc-4.9.3
 
 # The following modules are installed by you using spack
 module --ignore-cache load fftw-3.3.8-gcc-8.3.1-vlusxnt
-module --ignore-cache load hdf5-1.10.1-gcc-8.3.1-xkc527f
-module --ignore-cache load python-3.7.6-gcc-8.3.1-usivcqa
-module --ignore-cache load netcdf-c-4.7.3-gcc-8.3.1-usnrhsd # auto installed as part of netcdf-cxx4 install
-module --ignore-cache load netcdf-cxx4-4.3.1-gcc-8.3.1-uj77ss3
-module --ignore-cache load petsc-3.12.3-gcc-8.3.1-ut4eyhs
-module --ignore-cache load py-setuptools-41.4.0-gcc-8.3.1-d4wih3g
-module --ignore-cache load py-cftime-1.0.3.4-gcc-8.3.1-q6ofwn4
-module --ignore-cache load py-cython-0.29.14-gcc-8.3.1-5sfsoak
-module --ignore-cache load py-pybind11-2.5.0-gcc-8.3.1-4hcy5vc
-module --ignore-cache load py-numpy-1.18.2-gcc-8.3.1-6wn32qx
-module --ignore-cache load py-scipy-1.4.1-gcc-8.3.1-cck6efe
-module --ignore-cache load py-netcdf4-1.4.2-gcc-8.3.1-t6cuidv
+module --ignore-cache load hdf5-1.10.1-gcc-8.3.1-rd54eh6
+module --ignore-cache load python-3.7.7-gcc-8.3.1-4vwg3n5
+module --ignore-cache load netcdf-c-4.7.3-gcc-8.3.1-fpxr24s 
+module --ignore-cache load netcdf-cxx4-4.3.1-gcc-8.3.1-ybne6oo
+module --ignore-cache load petsc-3.12.3-gcc-8.3.1-o4ic636
+module --ignore-cache load py-cftime-1.0.3.4-gcc-8.3.1-bbyzoow
+module --ignore-cache load py-cython-0.29.16-gcc-8.3.1-u4srpzl
+module --ignore-cache load py-pybind11-2.5.0-gcc-8.3.1-tyma4yw
+module --ignore-cache load py-numpy-1.18.3-gcc-8.3.1-uh6npig
+module --ignore-cache load py-scipy-1.4.1-gcc-8.3.1-4qmxxkv
+module --ignore-cache load py-netcdf4-1.4.2-gcc-8.3.1-ujcrt7k
+
 
 # PETSc spack install signature
 #spack install petsc@3.12.3%gcc@8.3.1 +fftw +metis +superlu-dist ~hypre +mpi ^hdf5@1.10.1+cxx+hl+mpi+pic+shared ^spectrum-mpi@rolling-release%gcc@8.3.1 ^metis%gcc@8.3.1+real64 ^fftw%gcc@8.3.1
@@ -175,13 +176,13 @@ elif [ "$pkg" == "BOUT-dev" ]; then
           -DCMAKE_BUILD_TYPE=RelWithDebInfo \
           -DCMAKE_PREFIX_PATH="${install_prefix}/raja/share/raja/cmake;${install_prefix}/HDF5/share/cmake;${install_prefix}/umpire/share/umpire/cmake" \
           -DUSE_NETCDF=On \
-          -DNCXX4_CONFIG:FILEPATH=${HOME}/workspace/spack/opt/spack/linux-rhel7-power9le/gcc-8.3.1/netcdf-cxx4-4.3.1-uj77ss3iyalvvd3mesfvdv5pihxafxap/bin/ncxx4-config \
-          -DNC_CONFIG:FILEPATH=${HOME}/workspace/spack/opt/spack/linux-rhel7-power9le/gcc-8.3.1/netcdf-c-4.7.3-usnrhsddn4n6vko5lvvg63vpwdi25pfg/bin/nc-config \
+          -DNCXX4_CONFIG:FILEPATH=/var/tmp/fisher47/spack-stage/spack-stage-netcdf-cxx4-4.3.1-nh4qne3jjk77a4tmok2xbi57gjhfiohq/bin/ncxx4-config \
+          -DNC_CONFIG:FILEPATH=/var/tmp/fisher47/spack-stage/spack-stage-netcdf-c-4.7.3-y7mfxm7lkqk76k46micqosfnv5oyup4l/bin/nc-config \
           -DUSE_FFTW=On \
           -DUSE_LAPACK=On \
           -DUSE_NLS=On \
           -DENABLE_PETSC=On \
-          -DPETSC_DIR=${HOME}/workspace/spack/opt/spack/linux-rhel7-power9le/gcc-8.3.1/petsc-3.12.3-ut4eyhszto3njzigfesmrfqnbhegp7iu \
+          -DPETSC_DIR=/var/tmp/fisher47/spack-stage/spack-stage-petsc-3.13.0-4273anzwyd5cqhkx6fceninoycg4wo66 \
           -DUSE_PVODE=On \
           -DUSE_SUNDIALS=On \
           -DENABLE_GTEST_DEATH_TESTS=On \
@@ -190,7 +191,7 @@ elif [ "$pkg" == "BOUT-dev" ]; then
           -DENABLE_OPENMP=Off \
           -DENABLE_CUDA=On \
           -DENABLE_HYPRE=On \
-          -DHYPRE_DIR="${HOME}/workspace/hypre_automake/install" \
+          -DHYPRE_DIR="${HOME}/bout/hypre_automake/install" \
           -DBUILD_SHARED_LIBS=Off \
           -DENABLE_GTEST=On \
           -DENABLE_GMOCK=On \
@@ -201,7 +202,7 @@ elif [ "$pkg" == "BOUT-dev" ]; then
           -DCMAKE_EXPORT_COMPILE_COMMANDS=On \
           -DCMAKE_VERBOSE_MAKEFILE=On \
           -Dgtest_disable_pthreads=ON \
-          -DCMAKE_INSTALL_RPATH="${HOME}/workspace/spack/opt/spack/linux-rhel7-power9le/gcc-8.3.1/petsc-3.12.3-ut4eyhszto3njzigfesmrfqnbhegp7iu/lib;${HOME}/workspace/spack/opt/spack/linux-rhel7-power9le/gcc-8.3.1/hdf5-1.10.1-xkc527ftnhfp2zz3j4v7vo5l7ypse6m3/lib" \
-          -DCMAKE_BUILD_RPATH="${HOME}/workspace/spack/opt/spack/linux-rhel7-power9le/gcc-8.3.1/petsc-3.12.3-ut4eyhszto3njzigfesmrfqnbhegp7iu/lib;${HOME}/workspace/spack/opt/spack/linux-rhel7-power9le/gcc-8.3.1/hdf5-1.10.1-xkc527ftnhfp2zz3j4v7vo5l7ypse6m3/lib" \
+          -DCMAKE_INSTALL_RPATH="/var/tmp/fisher47/spack-stage/spack-stage-petsc-3.13.0-4273anzwyd5cqhkx6fceninoycg4wo66/lib;/var/tmp/fisher47/spack-stage/spack-stage-hdf5-1.10.6-6qtujf5zc5iwwyow6ub52jfxyzej5gse/lib" \
+          -DCMAKE_BUILD_RPATH="/var/tmp/fisher47/spack-stage/spack-stage-petsc-3.13.0-4273anzwyd5cqhkx6fceninoycg4wo66/lib;/var/tmp/fisher47/spack-stage/spack-stage-hdf5-1.10.6-6qtujf5zc5iwwyow6ub52jfxyzej5gse/lib" \
           $source_dir
 fi

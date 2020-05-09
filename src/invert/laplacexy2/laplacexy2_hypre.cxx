@@ -109,7 +109,7 @@ void LaplaceXY2Hypre::setCoefs(const Field2D& A, const Field2D& B) {
   // Set Matrix elements
   //
   // (1/J) d/dx ( J * g11 d/dx ) + (1/J) d/dy ( J * g22 d/dy )
-
+  auto start = std::chrono::system_clock::now();  //AARON
   for (auto& index : A.getRegion("RGN_NOBNDRY")) {
     // Index offsets
     auto ind_xp = index.xp();
@@ -247,12 +247,26 @@ void LaplaceXY2Hypre::setCoefs(const Field2D& A, const Field2D& B) {
       matrix(ind_yp, index) = -1.0;
     }
   }
+  auto end = std::chrono::system_clock::now();  //AARON
+  std::chrono::duration<double> dur = end-start;  //AARON
+  std::cout << "*****Matrix set time:  " << dur.count() << std::endl;    
 
+
+  start = std::chrono::system_clock::now();
   // Assemble Matrix
   matrix.assemble();
 
+  end = std::chrono::system_clock::now();  //AARON
+  dur = end-start;  //AARON
+  std::cout << "*****Matrix asm time:  " << dur.count() << std::endl;    
+
+  start = std::chrono::system_clock::now();
   // Set the operator
   HYPRE_BoomerAMGSetup(solver, matrix.getParallel(), nullptr, nullptr);
+
+  end = std::chrono::system_clock::now();  //AARON
+  dur = end-start;  //AARON
+  std::cout << "*****Matrix prec time:  " << dur.count() << std::endl;    
 }
 
 LaplaceXY2Hypre::~LaplaceXY2Hypre() {
@@ -339,8 +353,15 @@ const Field2D LaplaceXY2Hypre::solve(const Field2D& rhs, const Field2D& x0) {
   // Assemble Trial Solution Vector
   xs.assemble();
 
+  auto start = std::chrono::system_clock::now();  //AARON
+
   // Solve the system
   HYPRE_BoomerAMGSolve(solver, matrix.getParallel(), bs.getParallel(), xs.getParallel());
+
+  auto slv = std::chrono::system_clock::now();  //AARON
+  std::chrono::duration<double> slv_dur = slv-start;  //AARON
+
+  std::cout << "*****BoomerAMG solve time:  " << slv_dur.count() << std::endl;  
 
   // Convert result into a Field2D
   return xs.toField();

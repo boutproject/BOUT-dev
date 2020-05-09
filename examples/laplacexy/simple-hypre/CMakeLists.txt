@@ -11,7 +11,7 @@ endif()
 #target_link_libraries(test_laplacexy_hypre PRIVATE bout++::bout++)
 
 set(test_laplacexy_hypre_sources
-   test-laplacexy.cxx
+   test-laplacexy-hypre.cxx
 )
 
 set(test_laplacexy_hypre_depends bout++ PETSc HYPRE)
