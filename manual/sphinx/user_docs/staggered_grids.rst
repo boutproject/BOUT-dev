@@ -77,7 +77,7 @@ given a `CELL_CENTRE` field ``n`` and a `CELL_YLOW` field ``v``, to calculate
 ``n*v`` at `CELL_YLOW`, call ``interp_to(n, CELL_YLOW)*v`` whose result will be
 `CELL_YLOW` as ``n`` is interpolated.
 
-.. note:: The region argument is optional but useful (see :ref:sec_iterating
+.. note:: The region argument is optional but useful (see :ref:`sec-iterating`
           for more on regions). The default `RGN_ALL` reproduces the historical
           behaviour of BOUT++, which communicates before returning the result
           from ``interp_to``. Communication is necessary because the result of
