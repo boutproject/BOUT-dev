@@ -123,3 +123,14 @@ differential operators, the required location of the result can be
 given as an optional argument, but at least for now it is an error for
 this to be different from the location of the field being advected
 (``f`` here).
+
+Laplace solvers (see :ref:`sec-laplacian`) also need a location to be
+set in order not to operate at ``CELL_CENTRE``: this allows the solver
+to check the locations of coefficients and right-hand-side which are
+passed to it, and to return a result at the correct location. For
+example, in an electromagnetic case with staggered grids, the solver
+for the magnetic vector potential :math:`A_\|` is probably defined on
+the staggered grid. The location is set by the second optional
+argument to ``Laplacian::create()``, after the options. For example::
+
+    aparSolver = Laplacian::create(&options["apar_solver"], CELL_YLOW);
