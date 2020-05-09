@@ -106,19 +106,20 @@ the same location as their inputs, so here ``Grad_par(v)`` would be
 `CELL_YLOW` . If this is not what is wanted, give the location of the
 result as an additional argument: ``Grad_par(v, CELL_CENTRE)`` uses
 staggered differencing to produce a result which is defined at the
-cell centres. As with the arithmetic operators, if you ask for the
-result to be staggered in a different direction from the input then
-the differencing will be to cell centre and then be interpolated. For
-example ``Grad_par(v, CELL_XLOW)`` would first perform staggered
-differencing from `CELL_YLOW` to get a result at `CELL_CENTRE` , and
-then interpolate the result to `CELL_XLOW` .
+cell centres. It is an error to ask for the result to be staggered in
+a different direction from the input as the best that could be done
+would be to calculate output at ``CELL_CENTRE`` and then interpolate
+this to the requested location, but the interpolation would in general
+require boundary conditions to be applied first.
 
 Advection operators which take two arguments return a result which is
 defined at the location of the field being advected. For example
 ``Vpar_Grad_par(v, f)`` calculates :math:`v \nabla_{||} f` and returns a
 result at the same location as ``f``. If ``v`` and ``f`` are defined at
 the same locations then centred differencing is used, if one is centred
-and the other staggered then staggered differencing is used, and if both
-are staggered to different locations then the behaviour is less well
-defined (don’t do it). As with other differential operators, the
-required location of the result can be given as an optional argument.
+and the other staggered then staggered differencing is used; it is an
+error for both to be staggered to different locations. As with other
+differential operators, the required location of the result can be
+given as an optional argument, but at least for now it is an error for
+this to be different from the location of the field being advected
+(``f`` here).
