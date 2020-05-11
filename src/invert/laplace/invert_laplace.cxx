@@ -56,6 +56,7 @@
 #include "impls/shoot/shoot_laplace.hxx"
 #include "impls/multigrid/multigrid_laplace.hxx"
 #include "impls/naulin/naulin_laplace.hxx"
+#include "impls/iterative_parallel_tri/iterative_parallel_tri.hxx"
 
 /**********************************************************************************
  *                         INITIALISATION AND CREATION
