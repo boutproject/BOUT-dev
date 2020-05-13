@@ -24,25 +24,25 @@
  *
  **************************************************************************/
 
-#include "globals.hxx"
 #include "iterative_parallel_tri.hxx"
+#include "globals.hxx"
 
+#include <bout/constants.hxx>
 #include <bout/mesh.hxx>
+#include <bout/openmpwrap.hxx>
+#include <bout/sys/timer.hxx>
 #include <boutexception.hxx>
-#include <utils.hxx>
+#include <cmath>
 #include <fft.hxx>
 #include <lapack_routines.hxx>
-#include <bout/constants.hxx>
-#include <bout/openmpwrap.hxx>
-#include <cmath>
-#include <bout/sys/timer.hxx>
+#include <utils.hxx>
 
-#include <output.hxx>
 #include "boutcomm.hxx"
+#include <output.hxx>
 
 #include <bout/scorepwrapper.hxx>
 
-LaplaceIPT::LaplaceIPT(Options *opt, CELL_LOC loc, Mesh *mesh_in)
+LaplaceIPT::LaplaceIPT(Options* opt, CELL_LOC loc, Mesh* mesh_in)
     : Laplacian(opt, loc, mesh_in), A(0.0), C(1.0), D(1.0), ipt_mean_its(0.), ncalls(0) {
   A.setLocation(location);
   C.setLocation(location);
@@ -58,38 +58,38 @@ LaplaceIPT::LaplaceIPT(Options *opt, CELL_LOC loc, Mesh *mesh_in)
 
   // Number of procs must be a factor of 2
   int n = localmesh->NXPE;
-  if(not (n & (n - 1)) == 0){
+  if (not(n & (n - 1)) == 0) {
     throw BoutException("LaplaceIPT error: NXPE must be a power of 2");
   }
   // Number of levels cannot must be such that nproc <= 2^(max_level-1)
-  if(n > 1 and n < pow(2,max_level+1) ){
-    throw BoutException("LaplaceIPT error: number of levels and processors must satisfy NXPE > 2^(max_levels+1).");
+  if (n > 1 and n < pow(2, max_level + 1)) {
+    throw BoutException("LaplaceIPT error: number of levels and processors must satisfy "
+                        "NXPE > 2^(max_levels+1).");
   }
 
   static int ipt_solver_count = 1;
-  bout::globals::dump.addRepeat(ipt_mean_its,
-      "ipt_solver"+std::to_string(ipt_solver_count)+"_mean_its");
+  bout::globals::dump.addRepeat(
+      ipt_mean_its, "ipt_solver" + std::to_string(ipt_solver_count) + "_mean_its");
   ++ipt_solver_count;
 
-  first_call = Matrix<bool>(localmesh->LocalNy,localmesh->LocalNz / 2 + 1);
+  first_call = Matrix<bool>(localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
 
   x0saved = Tensor<dcomplex>(localmesh->LocalNy, 4, localmesh->LocalNz / 2 + 1);
 
-  levels = std::vector<Level>(max_level+1);
+  levels = std::vector<Level>(max_level + 1);
 
   resetSolver();
-
 }
 
 /*
  * Reset the solver to its initial state
  */
-void LaplaceIPT::resetSolver(){
-  for(int jy=0; jy<localmesh->LocalNy; jy++){
-    for(int kz=0; kz<localmesh->LocalNz / 2 + 1; kz++){
-      first_call(jy,kz) = true;
-      for(int ix=0; ix<4; ix++){
-	x0saved(jy,ix,kz) = 0.0;
+void LaplaceIPT::resetSolver() {
+  for (int jy = 0; jy < localmesh->LocalNy; jy++) {
+    for (int kz = 0; kz < localmesh->LocalNz / 2 + 1; kz++) {
+      first_call(jy, kz) = true;
+      for (int ix = 0; ix < 4; ix++) {
+        x0saved(jy, ix, kz) = 0.0;
       }
     }
   }
@@ -105,8 +105,9 @@ void LaplaceIPT::resetSolver(){
  */
 /*
 void LaplaceIPT::get_initial_guess(const int jy, const int kz, Matrix<dcomplex> &minvb,
-					      Tensor<dcomplex> &lowerGuardVector, Tensor<dcomplex> &upperGuardVector,
-					      Matrix<dcomplex> &xk1d) {
+                                              Tensor<dcomplex> &lowerGuardVector,
+Tensor<dcomplex> &upperGuardVector,
+                                              Matrix<dcomplex> &xk1d) {
 
 SCOREP0();
 
@@ -124,7 +125,8 @@ SCOREP0();
     comm_handle recv[1];
     recv[0] = localmesh->irecvXIn(&recvec[0], 2, 0);
 
-    sendvec[0] = lowerGuardVector(xs,jy,kz);  // element from operator inverse required by neighbour
+    sendvec[0] = lowerGuardVector(xs,jy,kz);  // element from operator inverse required by
+neighbour
     sendvec[1] = minvb(kz,xs); // element from RHS required by neighbour
     // If last processor, include known boundary terms
     if(localmesh->lastX()) {
@@ -182,21 +184,25 @@ SCOREP0();
  * elements. Being diagonally dominant is sufficient (but not necessary) for
  * the Gauss-Seidel iteration to converge.
  */
-bool LaplaceIPT::is_diagonally_dominant(const Level &l, const int jy, const int kz) {
+bool LaplaceIPT::is_diagonally_dominant(const Level& l, const int jy, const int kz) {
 
   bool is_dd = true;
   // Check index 1 on all procs, except: the last proc only has index 1 if the
   // max_level == 0.
-  if( not localmesh->lastX() or max_level==0 ){
-    if(std::fabs(l.ar(jy,1,kz))+std::fabs(l.cr(jy,1,kz))>std::fabs(l.br(jy,1,kz))){
-      output<<BoutComm::rank()<<" jy="<<jy<<", kz="<<kz<<", lower row not diagonally dominant"<<endl;
+  if (not localmesh->lastX() or max_level == 0) {
+    if (std::fabs(l.ar(jy, 1, kz)) + std::fabs(l.cr(jy, 1, kz))
+        > std::fabs(l.br(jy, 1, kz))) {
+      output << BoutComm::rank() << " jy=" << jy << ", kz=" << kz
+             << ", lower row not diagonally dominant" << endl;
       is_dd = false;
     }
   }
   // Check index 2 on final proc only.
-  if( localmesh->lastX()){
-    if(std::fabs(l.ar(jy,2,kz))+std::fabs(l.cr(jy,2,kz))>std::fabs(l.br(jy,2,kz))){
-      output<<BoutComm::rank()<<" jy="<<jy<<", kz="<<kz<<", upper row not diagonally dominant"<<endl;
+  if (localmesh->lastX()) {
+    if (std::fabs(l.ar(jy, 2, kz)) + std::fabs(l.cr(jy, 2, kz))
+        > std::fabs(l.br(jy, 2, kz))) {
+      output << BoutComm::rank() << " jy=" << jy << ", kz=" << kz
+             << ", upper row not diagonally dominant" << endl;
       is_dd = false;
     }
   }
@@ -216,7 +222,8 @@ bool LaplaceIPT::is_diagonally_dominant(const Level &l, const int jy, const int 
  * my_xk1d(xs) = rl(xs) + al(xs)*lower_xk1d(xe) + bl(xs)*upper_xk1d(xs)
  *     xloc(1) = rl(xs) + al(xs)*xloc(0) + bl(xs)*xloc(3)
  */
-void LaplaceIPT::reconstruct_full_solution(Matrix<dcomplex> &xk1d, const Level &l, const int jy){
+void LaplaceIPT::reconstruct_full_solution(Matrix<dcomplex>& xk1d, const Level& l,
+                                           const int jy) {
   SCOREP0();
 
   Array<dcomplex> x_lower, x_upper;
@@ -225,17 +232,19 @@ void LaplaceIPT::reconstruct_full_solution(Matrix<dcomplex> &xk1d, const Level &
 
   for (int kz = 0; kz < nmode; kz++) {
 
-    x_lower[kz] = l.xloc(0,kz);
-    x_upper[kz] = l.xloc(3,kz);
+    x_lower[kz] = l.xloc(0, kz);
+    x_upper[kz] = l.xloc(3, kz);
 
-    if(not localmesh->firstX()){
-      x_lower[kz] = (l.xloc(1,kz)-l.rl[kz]-l.bl(jy,kz)*l.xloc(3,kz))/l.al(jy,kz);
+    if (not localmesh->firstX()) {
+      x_lower[kz] =
+          (l.xloc(1, kz) - l.rl[kz] - l.bl(jy, kz) * l.xloc(3, kz)) / l.al(jy, kz);
     }
   }
 
   for (int kz = 0; kz < nmode; kz++) {
-    for(int i=0; i<l.ncx; i++){
-      xk1d(kz,i) = l.minvb(kz,i) + l.upperGuardVector(i,jy,kz)*x_upper[kz] + l.lowerGuardVector(i,jy,kz)*x_lower[kz];
+    for (int i = 0; i < l.ncx; i++) {
+      xk1d(kz, i) = l.minvb(kz, i) + l.upperGuardVector(i, jy, kz) * x_upper[kz]
+                    + l.lowerGuardVector(i, jy, kz) * x_lower[kz];
     }
   }
 }
@@ -244,10 +253,10 @@ void LaplaceIPT::reconstruct_full_solution(Matrix<dcomplex> &xk1d, const Level &
 /*
  * Returns true if all values of bool array are true, otherwise returns false.
  */
-bool LaplaceIPT::all(const Array<bool> a){
+bool LaplaceIPT::all(const Array<bool> a) {
   SCOREP0();
-  for(int i=0; i<a.size(); i++){
-    if(a[i]==false){
+  for (int i = 0; i < a.size(); i++) {
+    if (a[i] == false) {
       return false;
     }
   }
@@ -258,10 +267,10 @@ bool LaplaceIPT::all(const Array<bool> a){
 /*
  * Returns true if any values of bool array are true, otherwise returns false.
  */
-bool LaplaceIPT::any(const Array<bool> a){
+bool LaplaceIPT::any(const Array<bool> a) {
   SCOREP0();
-  for(int i=0; i<a.size(); i++){
-    if(a[i]==true){
+  for (int i = 0; i < a.size(); i++) {
+    if (a[i] == true) {
       return true;
     }
   }
@@ -272,11 +281,11 @@ bool LaplaceIPT::any(const Array<bool> a){
 /*
  * Returns maximum value of BoutReal array.
  */
-BoutReal LaplaceIPT::max(const Array<BoutReal> a){
+BoutReal LaplaceIPT::max(const Array<BoutReal> a) {
   SCOREP0();
   BoutReal maxval = a[0];
-  for(int i=1; i<a.size(); i++){
-    if(a[i]>maxval){
+  for (int i = 1; i < a.size(); i++) {
+    if (a[i] > maxval) {
       maxval = a[i];
     }
   }
@@ -287,12 +296,12 @@ BoutReal LaplaceIPT::max(const Array<BoutReal> a){
 /*
  * Returns location of maximum value of BoutReal array.
  */
-int LaplaceIPT::maxloc(const Array<BoutReal> a){
+int LaplaceIPT::maxloc(const Array<BoutReal> a) {
   SCOREP0();
   BoutReal maxval = a[0];
   int maxloc = 0;
-  for(int i=1; i<a.size(); i++){
-    if(a[i]>maxval){
+  for (int i = 1; i < a.size(); i++) {
+    if (a[i] > maxval) {
       maxloc = i;
       maxval = a[i];
     }
@@ -322,14 +331,15 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b) { return solve(b, b); }
  *
  * \return          The inverted variable.
  */
-//FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0, const FieldPerp& b0) {
+// FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0, const FieldPerp&
+// b0) {
 FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   SCOREP0();
   Timer timer("invert"); ///< Start timer
 
-  ///SCOREP_USER_REGION_DEFINE(initvars);
-  ///SCOREP_USER_REGION_BEGIN(initvars, "init vars",///SCOREP_USER_REGION_TYPE_COMMON);
+  /// SCOREP_USER_REGION_DEFINE(initvars);
+  /// SCOREP_USER_REGION_BEGIN(initvars, "init vars",///SCOREP_USER_REGION_TYPE_COMMON);
 
   ASSERT1(localmesh == b.getMesh() && localmesh == x0.getMesh());
   ASSERT1(b.getLocation() == location);
@@ -353,7 +363,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   int ncx = localmesh->LocalNx; // Number of local x points
 
   int xs = localmesh->xstart; // First interior point
-  int xe = localmesh->xend; // Last interior point
+  int xe = localmesh->xend;   // Last interior point
 
   // Calculation variables
   // proc: |       p-1       |          p          |       p+1
@@ -371,22 +381,22 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   // final processor only to track its value at the last grid point xe. This
   // means we often have special cases of the equations for final processor.
   //
-  auto xloc = Matrix<dcomplex>(4,nmode); // Values of x at the processor interface
+  auto xloc = Matrix<dcomplex>(4, nmode); // Values of x at the processor interface
 
   BoutReal kwaveFactor = 2.0 * PI / coords->zlength();
 
   // Should we store coefficients?
-  store_coefficients = not (inner_boundary_flags & INVERT_AC_GRAD);
-  store_coefficients = store_coefficients && not (outer_boundary_flags & INVERT_AC_GRAD);
-  store_coefficients = store_coefficients && not (inner_boundary_flags & INVERT_SET);
-  store_coefficients = store_coefficients && not (outer_boundary_flags & INVERT_SET);
+  store_coefficients = not(inner_boundary_flags & INVERT_AC_GRAD);
+  store_coefficients = store_coefficients && not(outer_boundary_flags & INVERT_AC_GRAD);
+  store_coefficients = store_coefficients && not(inner_boundary_flags & INVERT_SET);
+  store_coefficients = store_coefficients && not(outer_boundary_flags & INVERT_SET);
 
   // Setting the width of the boundary.
   // NOTE: The default is a width of 2 guard cells
-  int inbndry = localmesh->xstart, outbndry=localmesh->xstart;
+  int inbndry = localmesh->xstart, outbndry = localmesh->xstart;
 
   // If the flags to assign that only one guard cell should be used is set
-  if((global_flags & INVERT_BOTH_BNDRY_ONE) || (localmesh->xstart < 2))  {
+  if ((global_flags & INVERT_BOTH_BNDRY_ONE) || (localmesh->xstart < 2)) {
     inbndry = outbndry = 1;
   }
   if (inner_boundary_flags & INVERT_BNDRY_ONE)
@@ -405,14 +415,14 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   auto bk = Matrix<dcomplex>(ncx, ncz / 2 + 1);
   auto bk1d = Array<dcomplex>(ncx);
   auto xk = Matrix<dcomplex>(ncx, ncz / 2 + 1);
-  auto xk1d = Matrix<dcomplex>(ncz/2+1,ncx);
+  auto xk1d = Matrix<dcomplex>(ncz / 2 + 1, ncx);
 
   // Error interpolated onto a finer grid
-  auto fine_error = Matrix<dcomplex>(4,ncz/2+1);
+  auto fine_error = Matrix<dcomplex>(4, ncz / 2 + 1);
 
-  ///SCOREP_USER_REGION_END(initvars);
-  ///SCOREP_USER_REGION_DEFINE(initloop);
-  ///SCOREP_USER_REGION_BEGIN(initloop, "init xk loop",SCOREP_USER_REGION_TYPE_COMMON);
+  /// SCOREP_USER_REGION_END(initvars);
+  /// SCOREP_USER_REGION_DEFINE(initloop);
+  /// SCOREP_USER_REGION_BEGIN(initloop, "init xk loop",SCOREP_USER_REGION_TYPE_COMMON);
 
   // Initialise xk to 0 as we only visit 0<= kz <= maxmode in solve
   for (int ix = 0; ix < ncx; ix++) {
@@ -422,9 +432,9 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
       xk(ix, kz) = 0.0;
     }
   }
-  ///SCOREP_USER_REGION_END(initloop);
-  ///SCOREP_USER_REGION_DEFINE(fftloop);
-  ///SCOREP_USER_REGION_BEGIN(fftloop, "init fft loop",SCOREP_USER_REGION_TYPE_COMMON);
+  /// SCOREP_USER_REGION_END(initloop);
+  /// SCOREP_USER_REGION_DEFINE(fftloop);
+  /// SCOREP_USER_REGION_BEGIN(fftloop, "init fft loop",SCOREP_USER_REGION_TYPE_COMMON);
 
   /* Coefficents in the tridiagonal solver matrix
   * Following the notation in "Numerical recipes"
@@ -434,10 +444,10 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   * NOTE: Do not confuse avec, bvec and cvec with the A, C, and D coefficients
   *       above
   */
-  auto avec = Matrix<dcomplex>(nmode,ncx);
-  auto bvec = Matrix<dcomplex>(nmode,ncx);
-  auto cvec = Matrix<dcomplex>(nmode,ncx);
-  auto bcmplx = Matrix<dcomplex>(nmode,ncx);
+  auto avec = Matrix<dcomplex>(nmode, ncx);
+  auto bvec = Matrix<dcomplex>(nmode, ncx);
+  auto cvec = Matrix<dcomplex>(nmode, ncx);
+  auto bcmplx = Matrix<dcomplex>(nmode, ncx);
 
   BOUT_OMP(parallel for)
   for (int ix = 0; ix < ncx; ix++) {
@@ -446,9 +456,9 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
     * If the INVERT_SET flag is set (meaning that x0 will be used to set the
     * bounadry values),
     */
-    if (((ix < inbndry) && (inner_boundary_flags & INVERT_SET) && localmesh->firstX()) ||
-    ((ncx - ix - 1 < outbndry) && (outer_boundary_flags & INVERT_SET) &&
-    localmesh->lastX())) {
+    if (((ix < inbndry) && (inner_boundary_flags & INVERT_SET) && localmesh->firstX())
+        || ((ncx - ix - 1 < outbndry) && (outer_boundary_flags & INVERT_SET)
+            && localmesh->lastX())) {
       // Use the values in x0 in the boundary
 
       // x0 is the input
@@ -459,12 +469,12 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
       // b is the input
       // bk is the output
       rfft(b[ix], ncz, &bk(ix, 0));
-      //rfft(x0[ix], ncz, &xk(ix, 0));
+      // rfft(x0[ix], ncz, &xk(ix, 0));
     }
   }
-  ///SCOREP_USER_REGION_END(fftloop);
-  ///SCOREP_USER_REGION_DEFINE(kzinit);
-  ///SCOREP_USER_REGION_BEGIN(kzinit, "kz init",///SCOREP_USER_REGION_TYPE_COMMON);
+  /// SCOREP_USER_REGION_END(fftloop);
+  /// SCOREP_USER_REGION_DEFINE(kzinit);
+  /// SCOREP_USER_REGION_BEGIN(kzinit, "kz init",///SCOREP_USER_REGION_TYPE_COMMON);
 
   /* Solve differential equation in x for each fourier mode
   * Note that only the non-degenerate fourier modes are being used (i.e. the
@@ -473,7 +483,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   for (int kz = 0; kz <= maxmode; kz++) {
     for (int ix = 0; ix < ncx; ix++) {
       // Get bk of the current fourier mode
-      bcmplx(kz,ix) = bk(ix, kz);
+      bcmplx(kz, ix) = bk(ix, kz);
     }
   }
 
@@ -493,36 +503,36 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   for (int kz = 0; kz <= maxmode; kz++) {
     // Note that this is called every time to deal with bcmplx and could mostly
     // be skipped when storing coefficients.
-    tridagMatrix(&avec(kz,0), &bvec(kz,0), &cvec(kz,0), &bcmplx(kz,0),
-    jy,
-    // wave number index
-    kz,
-    // wave number (different from kz only if we are taking a part
-    // of the z-domain [and not from 0 to 2*pi])
-    kz * kwaveFactor, global_flags, inner_boundary_flags,
-    outer_boundary_flags, &A, &C, &D);
+    tridagMatrix(&avec(kz, 0), &bvec(kz, 0), &cvec(kz, 0), &bcmplx(kz, 0), jy,
+                 // wave number index
+                 kz,
+                 // wave number (different from kz only if we are taking a part
+                 // of the z-domain [and not from 0 to 2*pi])
+                 kz * kwaveFactor, global_flags, inner_boundary_flags,
+                 outer_boundary_flags, &A, &C, &D);
 
     // Patch up internal boundaries
-    if(not localmesh->lastX()) { 
-      for(int ix = localmesh->xend+1; ix<localmesh->LocalNx ; ix++) {
-	avec(kz,ix) = 0;
-	bvec(kz,ix) = 1;
-	cvec(kz,ix) = 0;
-	bcmplx(kz,ix) = 0;
+    if (not localmesh->lastX()) {
+      for (int ix = localmesh->xend + 1; ix < localmesh->LocalNx; ix++) {
+        avec(kz, ix) = 0;
+        bvec(kz, ix) = 1;
+        cvec(kz, ix) = 0;
+        bcmplx(kz, ix) = 0;
       }
-    } 
-    if(not localmesh->firstX()) { 
-      for(int ix = 0; ix<localmesh->xstart ; ix++) {
-	avec(kz,ix) = 0;
-	bvec(kz,ix) = 1;
-	cvec(kz,ix) = 0;
-	bcmplx(kz,ix) = 0;
+    }
+    if (not localmesh->firstX()) {
+      for (int ix = 0; ix < localmesh->xstart; ix++) {
+        avec(kz, ix) = 0;
+        bvec(kz, ix) = 1;
+        cvec(kz, ix) = 0;
+        bcmplx(kz, ix) = 0;
       }
     }
   }
-  ///SCOREP_USER_REGION_END(kzinit);
-  ///SCOREP_USER_REGION_DEFINE(initlevels);
-  ///SCOREP_USER_REGION_BEGIN(initlevels, "init levels",///SCOREP_USER_REGION_TYPE_COMMON);
+  /// SCOREP_USER_REGION_END(kzinit);
+  /// SCOREP_USER_REGION_DEFINE(initlevels);
+  /// SCOREP_USER_REGION_BEGIN(initlevels, "init
+  /// levels",///SCOREP_USER_REGION_TYPE_COMMON);
 
   // Initialize levels. Note that the finest grid (level 0) has a different
   // routine to coarse grids (which generally depend on the grid one step
@@ -532,15 +542,16 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   // much of the information for each level may be stored. Data that cannot
   // be cached (e.g. the changing right-hand sides) is calculated in init_rhs
   // below.
-  if(first_call(jy,0) || not store_coefficients ){
+  if (first_call(jy, 0) || not store_coefficients) {
 
     init(levels[0], ncx, jy, avec, bvec, cvec, xs, xe);
 
     int ncx_coarse = ncx; //(xe-xs+1)/2 + xs + ncx - xe - 1;
-    if(max_level>0){
-      for(int l = 1; l<=max_level; l++){
-	ncx_coarse = (ncx_coarse-4)/2+4;
-	init(levels[l], levels[l-1], ncx_coarse, xs, ncx_coarse-3,l,jy); //FIXME assumes mgy=2
+    if (max_level > 0) {
+      for (int l = 1; l <= max_level; l++) {
+        ncx_coarse = (ncx_coarse - 4) / 2 + 4;
+        init(levels[l], levels[l - 1], ncx_coarse, xs, ncx_coarse - 3, l,
+             jy); // FIXME assumes mgy=2
       }
     }
   }
@@ -549,24 +560,26 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   // therefore change every time.
   init_rhs(levels[0], jy, bcmplx);
 
-  ///SCOREP_USER_REGION_END(initlevels);
+  /// SCOREP_USER_REGION_END(initlevels);
 
-  ///SCOREP_USER_REGION_DEFINE(setsoln);
-  ///SCOREP_USER_REGION_BEGIN(setsoln, "set level 0 solution",///SCOREP_USER_REGION_TYPE_COMMON);
+  /// SCOREP_USER_REGION_DEFINE(setsoln);
+  /// SCOREP_USER_REGION_BEGIN(setsoln, "set level 0
+  /// solution",///SCOREP_USER_REGION_TYPE_COMMON);
   // Set initial values with cached values
-  for(int ix=0; ix<4; ix++){
-    for(int kz=0; kz<nmode; kz++){
-      levels[0].xloc(ix,kz) = x0saved(jy, ix, kz);
+  for (int ix = 0; ix < 4; ix++) {
+    for (int kz = 0; kz < nmode; kz++) {
+      levels[0].xloc(ix, kz) = x0saved(jy, ix, kz);
     }
   }
-  ///SCOREP_USER_REGION_END(setsoln);
-  ///SCOREP_USER_REGION_DEFINE(initwhileloop);
-  ///SCOREP_USER_REGION_BEGIN(initwhileloop, "init while loop",///SCOREP_USER_REGION_TYPE_COMMON);
+  /// SCOREP_USER_REGION_END(setsoln);
+  /// SCOREP_USER_REGION_DEFINE(initwhileloop);
+  /// SCOREP_USER_REGION_BEGIN(initwhileloop, "init while
+  /// loop",///SCOREP_USER_REGION_TYPE_COMMON);
 
-  int count = 0; // Total iteration count
-  int subcount = 0; // Count of iterations on a level
+  int count = 0;      // Total iteration count
+  int subcount = 0;   // Count of iterations on a level
   int cyclecount = 0; // Number of multigrid cycles
-  int cycle_eta = 0; // Predicted finishing cycle
+  int cycle_eta = 0;  // Predicted finishing cycle
   int current_level = 0;
   bool down = true;
   auto converged = Array<bool>(nmode);
@@ -575,7 +588,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   auto error_abs_old = Array<BoutReal>(nmode);
   auto error_rel = Array<BoutReal>(nmode);
   auto error_rel_old = Array<BoutReal>(nmode);
-  for(int kz=0; kz<nmode; kz++){
+  for (int kz = 0; kz < nmode; kz++) {
     converged[kz] = false;
     error_abs[kz] = 1e20;
     error_abs_old[kz] = 1e20;
@@ -583,17 +596,18 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
     error_rel_old[kz] = 1e20;
   }
 
-  ///SCOREP_USER_REGION_END(initwhileloop);
-  ///SCOREP_USER_REGION_DEFINE(whileloop);
-  ///SCOREP_USER_REGION_BEGIN(whileloop, "while loop",///SCOREP_USER_REGION_TYPE_COMMON);
+  /// SCOREP_USER_REGION_END(initwhileloop);
+  /// SCOREP_USER_REGION_DEFINE(whileloop);
+  /// SCOREP_USER_REGION_BEGIN(whileloop, "while loop",///SCOREP_USER_REGION_TYPE_COMMON);
 
-  while(true){
+  while (true) {
 
-    gauss_seidel_red_black(levels[current_level],converged,jy);
+    gauss_seidel_red_black(levels[current_level], converged, jy);
 
-    ///SCOREP_USER_REGION_DEFINE(l0rescalc);
-    ///SCOREP_USER_REGION_BEGIN(l0rescalc, "level 0 residual calculation",///SCOREP_USER_REGION_TYPE_COMMON);
-    if(current_level==0 and subcount==max_cycle-1){
+    /// SCOREP_USER_REGION_DEFINE(l0rescalc);
+    /// SCOREP_USER_REGION_BEGIN(l0rescalc, "level 0 residual
+    /// calculation",///SCOREP_USER_REGION_TYPE_COMMON);
+    if (current_level == 0 and subcount == max_cycle - 1) {
 
       ++cyclecount;
 
@@ -612,199 +626,207 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
 
       // Keep the old error values if they are used in the
       // calculations in this cycle.
-      if( cyclecount < 3 or cyclecount > cycle_eta ){
-	for(int kz=0; kz<nmode; kz++){
-	  if(!converged[kz]){
-	    error_abs_old[kz] = error_abs[kz];
-	    error_rel_old[kz] = error_rel[kz];
-	  }
-	}
+      if (cyclecount < 3 or cyclecount > cycle_eta) {
+        for (int kz = 0; kz < nmode; kz++) {
+          if (!converged[kz]) {
+            error_abs_old[kz] = error_abs[kz];
+            error_rel_old[kz] = error_rel[kz];
+          }
+        }
       }
 
-      calculate_residual(levels[current_level],converged,jy);
+      calculate_residual(levels[current_level], converged, jy);
 
-      if( cyclecount < 3 or cyclecount > cycle_eta - 5 or not predict_exit ){
-	// Calculate the total residual. This also marks modes as converged, so the
-	// algorithm cannot exit in cycles where this is not called.
-	calculate_total_residual(error_abs,error_rel,converged,levels[current_level]);
+      if (cyclecount < 3 or cyclecount > cycle_eta - 5 or not predict_exit) {
+        // Calculate the total residual. This also marks modes as converged, so the
+        // algorithm cannot exit in cycles where this is not called.
+        calculate_total_residual(error_abs, error_rel, converged, levels[current_level]);
 
-	// Based the error reduction per V-cycle, error_xxx/error_xxx_old,
-	// predict when the slowest converging mode converges.
-	if( cyclecount < 3 and predict_exit ){
-	  BoutReal ratio;
-	  int eta;
-	  cycle_eta = 0;
-	  for(int kz=0; kz<nmode; kz++){
-	    ratio = error_abs[kz]/error_abs_old[kz];
-	    eta = ceil(log(atol/error_abs[kz])/log(ratio));
-	    cycle_eta = (cycle_eta > eta) ? cycle_eta : eta;
+        // Based the error reduction per V-cycle, error_xxx/error_xxx_old,
+        // predict when the slowest converging mode converges.
+        if (cyclecount < 3 and predict_exit) {
+          BoutReal ratio;
+          int eta;
+          cycle_eta = 0;
+          for (int kz = 0; kz < nmode; kz++) {
+            ratio = error_abs[kz] / error_abs_old[kz];
+            eta = ceil(log(atol / error_abs[kz]) / log(ratio));
+            cycle_eta = (cycle_eta > eta) ? cycle_eta : eta;
 
-	    ratio = error_rel[kz]/error_rel_old[kz];
-	    eta = ceil(log(rtol/error_rel[kz])/log(ratio));
-	    cycle_eta = (cycle_eta > eta) ? cycle_eta : eta;
-	  }
-	}
+            ratio = error_rel[kz] / error_rel_old[kz];
+            eta = ceil(log(rtol / error_rel[kz]) / log(ratio));
+            cycle_eta = (cycle_eta > eta) ? cycle_eta : eta;
+          }
+        }
       }
     }
 
-    ///SCOREP_USER_REGION_END(l0rescalc);
-    ///SCOREP_USER_REGION_DEFINE(increment);
-    ///SCOREP_USER_REGION_BEGIN(increment, "increment counters",///SCOREP_USER_REGION_TYPE_COMMON);
+    /// SCOREP_USER_REGION_END(l0rescalc);
+    /// SCOREP_USER_REGION_DEFINE(increment);
+    /// SCOREP_USER_REGION_BEGIN(increment, "increment
+    /// counters",///SCOREP_USER_REGION_TYPE_COMMON);
     ++count;
     ++subcount;
-    ///SCOREP_USER_REGION_END(increment);
+    /// SCOREP_USER_REGION_END(increment);
 
     // Force at least max_cycle iterations at each level
     // Do not skip with tolerence to minimize comms
-    if(subcount < max_cycle){
-    }
-    else if( all(converged) and current_level==0 ){
+    if (subcount < max_cycle) {
+    } else if (all(converged) and current_level == 0) {
       break;
-    }
-    else if( not down ){
-      refine(levels[current_level],levels[current_level-1],fine_error,converged);
+    } else if (not down) {
+      refine(levels[current_level], levels[current_level - 1], fine_error, converged);
       current_level--;
-      update_solution(levels[current_level],fine_error,converged);
-      synchronize_reduced_field(levels[current_level],levels[current_level].xloc);
+      update_solution(levels[current_level], fine_error, converged);
+      synchronize_reduced_field(levels[current_level], levels[current_level].xloc);
 
-      subcount=0;
+      subcount = 0;
 
-      if(current_level==0){
+      if (current_level == 0) {
         down = true;
       }
-    }
-    else if( down && max_level > 0 ){
+    } else if (down && max_level > 0) {
 
-      if(current_level!=0){
-	// Prevents double call on level 0 - we just called this to check convergence
-        calculate_residual(levels[current_level],converged,jy);
+      if (current_level != 0) {
+        // Prevents double call on level 0 - we just called this to check convergence
+        calculate_residual(levels[current_level], converged, jy);
       }
-      synchronize_reduced_field(levels[current_level],levels[current_level].residual);
+      synchronize_reduced_field(levels[current_level], levels[current_level].residual);
       current_level++;
-      coarsen(levels[current_level],levels[current_level-1].residual,converged);
-      subcount=0;
+      coarsen(levels[current_level], levels[current_level - 1].residual, converged);
+      subcount = 0;
 
       // If we are on the coarsest grid, stop trying to coarsen further
-      if(current_level==max_level){
+      if (current_level == max_level) {
         down = false;
       }
-    }
-    else{
+    } else {
       // When only using one level, need to ensure subcount < max_count
-      subcount=0;
+      subcount = 0;
     }
 
     // Throw error if we are performing too many iterations
-    if (count>maxits) {
+    if (count > maxits) {
       // Maximum number of allowed iterations reached.
       // If the coarsest multigrid iteration matrix is diagonally-dominant,
       // then convergence is guaranteed, so maxits is set too low.
       // Otherwise, the method may or may not converge.
       bool is_dd = true;
       for (int kz = 0; kz < nmode; kz++) {
-	is_dd = is_diagonally_dominant(levels[max_level],jy,kz);
-	if(not is_dd){
-	  break;
-	}
+        is_dd = is_diagonally_dominant(levels[max_level], jy, kz);
+        if (not is_dd) {
+          break;
+        }
       }
 
       bool global_is_dd;
       MPI_Allreduce(&is_dd, &global_is_dd, 1, MPI::BOOL, MPI_LAND, BoutComm::get());
 
-      if(global_is_dd){
-	throw BoutException("LaplaceIPT error: Not converged within maxits=%i iterations. The coarsest grained iteration matrix is diagonally dominant and convergence is guaranteed. Please increase maxits and retry.",maxits);
-      }
-      else{
-	throw BoutException("LaplaceIPT error: Not converged within maxits=%i iterations. The coarsest iteration matrix is not diagonally dominant so there is no guarantee this method will converge. Consider (1) increasing maxits; or (2) increasing the number of levels (as grids become more diagonally dominant with coarsening). Using more grids may require larger NXPE.",maxits);
+      if (global_is_dd) {
+        throw BoutException("LaplaceIPT error: Not converged within maxits=%i "
+                            "iterations. The coarsest grained iteration matrix is "
+                            "diagonally dominant and convergence is guaranteed. Please "
+                            "increase maxits and retry.",
+                            maxits);
+      } else {
+        throw BoutException(
+            "LaplaceIPT error: Not converged within maxits=%i iterations. The coarsest "
+            "iteration matrix is not diagonally dominant so there is no guarantee this "
+            "method will converge. Consider (1) increasing maxits; or (2) increasing the "
+            "number of levels (as grids become more diagonally dominant with "
+            "coarsening). Using more grids may require larger NXPE.",
+            maxits);
       }
     }
   }
-  ///SCOREP_USER_REGION_END(whileloop);
-  ///SCOREP_USER_REGION_DEFINE(afterloop);
-  ///SCOREP_USER_REGION_BEGIN(afterloop, "after faff",///SCOREP_USER_REGION_TYPE_COMMON);
+/// SCOREP_USER_REGION_END(whileloop);
+/// SCOREP_USER_REGION_DEFINE(afterloop);
+/// SCOREP_USER_REGION_BEGIN(afterloop, "after faff",///SCOREP_USER_REGION_TYPE_COMMON);
 
 #if CHECK > 2
-  for(int ix=0;ix<4;ix++){
-    for(int kz=0;kz<nmode;kz++){
-      if(!finite(levels[0].xloc(ix,kz).real()) or !finite(levels[0].xloc(ix,kz).imag()))
-	throw BoutException("Non-finite xloc at %d, %d, %d", ix, jy, kz);
+  for (int ix = 0; ix < 4; ix++) {
+    for (int kz = 0; kz < nmode; kz++) {
+      if (!finite(levels[0].xloc(ix, kz).real())
+          or !finite(levels[0].xloc(ix, kz).imag()))
+        throw BoutException("Non-finite xloc at %d, %d, %d", ix, jy, kz);
     }
   }
 #endif
 
   // Cache solution
-  for(int ix=0; ix<4; ix++){
-    for(int kz=0; kz<nmode; kz++){
-      x0saved(jy,ix,kz) = levels[0].xloc(ix,kz);
+  for (int ix = 0; ix < 4; ix++) {
+    for (int kz = 0; kz < nmode; kz++) {
+      x0saved(jy, ix, kz) = levels[0].xloc(ix, kz);
     }
   }
 
-  reconstruct_full_solution(xk1d,levels[0],jy);
+  reconstruct_full_solution(xk1d, levels[0], jy);
 
 #if CHECK > 2
-  for(int ix=0;ix<ncx;ix++){
-    for(int kz=0;kz<nmode;kz++){
-      if(!finite(xk1d(kz,ix).real()) or !finite(xk1d(kz,ix).imag()))
-	throw BoutException("Non-finite xloc at %d, %d, %d", ix, jy, kz);
+  for (int ix = 0; ix < ncx; ix++) {
+    for (int kz = 0; kz < nmode; kz++) {
+      if (!finite(xk1d(kz, ix).real()) or !finite(xk1d(kz, ix).imag()))
+        throw BoutException("Non-finite xloc at %d, %d, %d", ix, jy, kz);
     }
   }
 #endif
 
   ++ncalls;
-  ipt_mean_its = (ipt_mean_its * BoutReal(ncalls-1)
-  + BoutReal(count))/BoutReal(ncalls);
+  ipt_mean_its =
+      (ipt_mean_its * BoutReal(ncalls - 1) + BoutReal(count)) / BoutReal(ncalls);
 
   for (int kz = 0; kz <= maxmode; kz++) {
     // If the global flag is set to INVERT_KX_ZERO
     if ((global_flags & INVERT_KX_ZERO) && (kz == 0)) {
       dcomplex offset(0.0);
       for (int ix = localmesh->xstart; ix <= localmesh->xend; ix++) {
-	offset += xk1d(kz,ix);
+        offset += xk1d(kz, ix);
       }
       offset /= static_cast<BoutReal>(localmesh->xend - localmesh->xstart + 1);
       for (int ix = localmesh->xstart; ix <= localmesh->xend; ix++) {
-	xk1d(kz,ix) -= offset;
+        xk1d(kz, ix) -= offset;
       }
     }
 
     // Store the solution xk for the current fourier mode in a 2D array
     for (int ix = 0; ix < ncx; ix++) {
-      xk(ix, kz) = xk1d(kz,ix);
+      xk(ix, kz) = xk1d(kz, ix);
     }
-    first_call(jy,kz) = false;
+    first_call(jy, kz) = false;
   }
-  ///SCOREP_USER_REGION_END(afterloop);
+  /// SCOREP_USER_REGION_END(afterloop);
 
-  ///SCOREP_USER_REGION_DEFINE(fftback);
-  ///SCOREP_USER_REGION_BEGIN(fftback, "fft back",///SCOREP_USER_REGION_TYPE_COMMON);
+  /// SCOREP_USER_REGION_DEFINE(fftback);
+  /// SCOREP_USER_REGION_BEGIN(fftback, "fft back",///SCOREP_USER_REGION_TYPE_COMMON);
   // Done inversion, transform back
   for (int ix = 0; ix < ncx; ix++) {
 
-    if(global_flags & INVERT_ZERO_DC)
+    if (global_flags & INVERT_ZERO_DC)
       xk(ix, 0) = 0.0;
 
     irfft(&xk(ix, 0), ncz, x[ix]);
 
 #if CHECK > 2
-    for(int kz=0;kz<ncz;kz++)
-      if(!finite(x(ix,kz)))
-	throw BoutException("Non-finite at %d, %d, %d", ix, jy, kz);
+    for (int kz = 0; kz < ncz; kz++)
+      if (!finite(x(ix, kz)))
+        throw BoutException("Non-finite at %d, %d, %d", ix, jy, kz);
 #endif
   }
-  ///SCOREP_USER_REGION_END(fftback);
+  /// SCOREP_USER_REGION_END(fftback);
   return x; // Result of the inversion
 }
 
 /*
- * Perform Gauss-Seidel with red-black colouring on the reduced system. 
+ * Perform Gauss-Seidel with red-black colouring on the reduced system.
  * We don't attempt comm/comp overlap, as there is not sigificant work in the
  * x loop.
  */
-void LaplaceIPT::gauss_seidel_red_black(Level &l, const Array<bool> &converged, const int jy){
+void LaplaceIPT::gauss_seidel_red_black(Level& l, const Array<bool>& converged,
+                                        const int jy) {
 
   SCOREP0();
 
-  if(l.included){
+  if (l.included) {
 
     Array<dcomplex> sendvec, recvecin, recvecout;
     sendvec = Array<dcomplex>(nmode);
@@ -813,135 +835,152 @@ void LaplaceIPT::gauss_seidel_red_black(Level &l, const Array<bool> &converged, 
     MPI_Request rreqin, rreqout, sreqin, sreqout;
 
     // BLACK SWEEP
-    // 
+    //
     // Red processors communication only
-    if(l.red){
+    if (l.red) {
       // Post receives
-      if(not localmesh->firstX()){
-	MPI_Irecv(&recvecin[0], nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 0, BoutComm::get(), &rreqin);
+      if (not localmesh->firstX()) {
+        MPI_Irecv(&recvecin[0], nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 0, BoutComm::get(),
+                  &rreqin);
       }
-      if(not localmesh->lastX()){ // this is always be true is we force an even core count
-	MPI_Irecv(&recvecout[0], nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 1, BoutComm::get(), &rreqout);
+      if (not localmesh
+                  ->lastX()) { // this is always be true is we force an even core count
+        MPI_Irecv(&recvecout[0], nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 1,
+                  BoutComm::get(), &rreqout);
       }
 
       // Receive and put data in arrays
-      if(!localmesh->firstX()){
-	MPI_Wait(&rreqin,MPI_STATUS_IGNORE);
-	for(int kz=0; kz < nmode; kz++){
-	  if(!converged[kz]){
-	    l.xloc(0,kz) = recvecin[kz];
-	  }
-	}
+      if (!localmesh->firstX()) {
+        MPI_Wait(&rreqin, MPI_STATUS_IGNORE);
+        for (int kz = 0; kz < nmode; kz++) {
+          if (!converged[kz]) {
+            l.xloc(0, kz) = recvecin[kz];
+          }
+        }
       }
-      if(!localmesh->lastX()){
-	MPI_Wait(&rreqout,MPI_STATUS_IGNORE);
-	for(int kz=0; kz < nmode; kz++){
-	  if(!converged[kz]){
-	    l.xloc(3,kz) = recvecout[kz];
-	  }
-	}
+      if (!localmesh->lastX()) {
+        MPI_Wait(&rreqout, MPI_STATUS_IGNORE);
+        for (int kz = 0; kz < nmode; kz++) {
+          if (!converged[kz]) {
+            l.xloc(3, kz) = recvecout[kz];
+          }
+        }
       }
     }
 
     // Black processors: work and communication
-    if(l.black){
+    if (l.black) {
       // Black processors do work
       for (int kz = 0; kz <= maxmode; kz++) {
-	if(!converged[kz]){
-	  // Due to extra point on final proc, indexing of last term is 2, not 3. To remove branching, this is handled by l.index_end
-	  l.xloc(1,kz) = ( l.rr(1,kz) - l.ar(jy,1,kz)*l.xloc(0,kz) - l.cr(jy,1,kz)*l.xloc(l.index_end,kz) ) / l.br(jy,1,kz);
-	}
+        if (!converged[kz]) {
+          // Due to extra point on final proc, indexing of last term is 2, not 3. To
+          // remove branching, this is handled by l.index_end
+          l.xloc(1, kz) = (l.rr(1, kz) - l.ar(jy, 1, kz) * l.xloc(0, kz)
+                           - l.cr(jy, 1, kz) * l.xloc(l.index_end, kz))
+                          / l.br(jy, 1, kz);
+        }
       }
       // Send same data up and down
-      if(not localmesh->firstX()){
-	MPI_Send(&l.xloc(1,0), nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 1, BoutComm::get());
+      if (not localmesh->firstX()) {
+        MPI_Send(&l.xloc(1, 0), nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 1, BoutComm::get());
       }
-      if(not localmesh->lastX()){
-	MPI_Send(&l.xloc(1,0), nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 0, BoutComm::get());
+      if (not localmesh->lastX()) {
+        MPI_Send(&l.xloc(1, 0), nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 0,
+                 BoutComm::get());
       }
     }
 
     // RED SWEEP
     //
     // Black processors only comms
-    if(l.black or localmesh->lastX()){
+    if (l.black or localmesh->lastX()) {
       // Post receives
-      if(not localmesh->firstX()){
-	MPI_Irecv(&recvecin[0], nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 0, BoutComm::get(), &rreqin);
+      if (not localmesh->firstX()) {
+        MPI_Irecv(&recvecin[0], nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 0, BoutComm::get(),
+                  &rreqin);
       }
-      if(not localmesh->lastX()){ // this is always be true is we force an even core count
-	MPI_Irecv(&recvecout[0], nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 1, BoutComm::get(), &rreqout);
+      if (not localmesh
+                  ->lastX()) { // this is always be true is we force an even core count
+        MPI_Irecv(&recvecout[0], nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 1,
+                  BoutComm::get(), &rreqout);
       }
 
       // Receive and put data in arrays
-      if(!localmesh->firstX()){
-	MPI_Wait(&rreqin,MPI_STATUS_IGNORE);
-	for(int kz=0; kz < nmode; kz++){
-	  if(!converged[kz]){
-	    l.xloc(0,kz) = recvecin[kz];
-	  }
-	}
+      if (!localmesh->firstX()) {
+        MPI_Wait(&rreqin, MPI_STATUS_IGNORE);
+        for (int kz = 0; kz < nmode; kz++) {
+          if (!converged[kz]) {
+            l.xloc(0, kz) = recvecin[kz];
+          }
+        }
       }
-      if(!localmesh->lastX()){
-	MPI_Wait(&rreqout,MPI_STATUS_IGNORE);
-	for(int kz=0; kz < nmode; kz++){
-	  if(!converged[kz]){
-	    l.xloc(3,kz) = recvecout[kz];
-	  }
-	}
+      if (!localmesh->lastX()) {
+        MPI_Wait(&rreqout, MPI_STATUS_IGNORE);
+        for (int kz = 0; kz < nmode; kz++) {
+          if (!converged[kz]) {
+            l.xloc(3, kz) = recvecout[kz];
+          }
+        }
       }
     }
 
     // Red processors do work and comms
-    if(l.red){
+    if (l.red) {
       for (int kz = 0; kz <= maxmode; kz++) {
-	if(!converged[kz]){
-	  l.xloc(1,kz) = ( l.rr(1,kz) - l.ar(jy,1,kz)*l.xloc(0,kz) - l.cr(jy,1,kz)*l.xloc(3,kz) ) / l.br(jy,1,kz);
-	}
+        if (!converged[kz]) {
+          l.xloc(1, kz) = (l.rr(1, kz) - l.ar(jy, 1, kz) * l.xloc(0, kz)
+                           - l.cr(jy, 1, kz) * l.xloc(3, kz))
+                          / l.br(jy, 1, kz);
+        }
       }
     }
-    if(localmesh->lastX()){
+    if (localmesh->lastX()) {
       for (int kz = 0; kz <= maxmode; kz++) {
-	if(!converged[kz]){
-	  // index_start removes branches. On level 0, this is 1, otherwise 0
-	  l.xloc(2,kz) = ( l.rr(2,kz) - l.ar(jy,2,kz)*l.xloc(l.index_start,kz) - l.cr(jy,2,kz)*l.xloc(3,kz) ) / l.br(jy,2,kz);
-	}
+        if (!converged[kz]) {
+          // index_start removes branches. On level 0, this is 1, otherwise 0
+          l.xloc(2, kz) = (l.rr(2, kz) - l.ar(jy, 2, kz) * l.xloc(l.index_start, kz)
+                           - l.cr(jy, 2, kz) * l.xloc(3, kz))
+                          / l.br(jy, 2, kz);
+        }
       }
     }
 
-    if(not l.black){ // red, or last proc when not on level zero
+    if (not l.black) { // red, or last proc when not on level zero
       // Send same data up and down
-      if(not localmesh->firstX() and l.red){ // excludes last proc
-	MPI_Send(&l.xloc(1,0), nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 1, BoutComm::get());
+      if (not localmesh->firstX() and l.red) { // excludes last proc
+        MPI_Send(&l.xloc(1, 0), nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 1, BoutComm::get());
+      } else if (not localmesh->firstX()) {
+        MPI_Send(&l.xloc(2, 0), nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 1, BoutComm::get());
       }
-      else if(not localmesh->firstX()){
-	MPI_Send(&l.xloc(2,0), nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 1, BoutComm::get());
-      }
-      if(not localmesh->lastX()){
-	MPI_Send(&l.xloc(1,0), nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 0, BoutComm::get());
+      if (not localmesh->lastX()) {
+        MPI_Send(&l.xloc(1, 0), nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 0,
+                 BoutComm::get());
       }
     }
 
-    if(l.current_level==0){
+    if (l.current_level == 0) {
       // Update boundaries to match interior points
       // Do this after communication
       for (int kz = 0; kz <= maxmode; kz++) {
-	if(!converged[kz]){
-	  if(localmesh->firstX()){
-	    l.xloc(0,kz) = - l.cvec(jy,kz,l.xs-1)*l.xloc(1,kz) / l.bvec(jy,kz,l.xs-1);
-	  }
-	  if(localmesh->lastX()){
-	    l.xloc(3,kz) = - l.avec(jy,kz,l.xe+1)*l.xloc(2,kz) / l.bvec(jy,kz,l.xe+1);
-	  }
-	}
+        if (!converged[kz]) {
+          if (localmesh->firstX()) {
+            l.xloc(0, kz) =
+                -l.cvec(jy, kz, l.xs - 1) * l.xloc(1, kz) / l.bvec(jy, kz, l.xs - 1);
+          }
+          if (localmesh->lastX()) {
+            l.xloc(3, kz) =
+                -l.avec(jy, kz, l.xe + 1) * l.xloc(2, kz) / l.bvec(jy, kz, l.xe + 1);
+          }
+        }
       }
     }
   }
-}  
+}
 
 // Initialization routine for coarser grids. Initialization depends on the grid
 // one step finer, lup.
-void LaplaceIPT::init(Level &l, const Level lup, int ncx, const int xs, const int xe, const int current_level, const int jy){
+void LaplaceIPT::init(Level& l, const Level lup, int ncx, const int xs, const int xe,
+                      const int current_level, const int jy) {
 
   SCOREP0();
   l.xs = xs;
@@ -950,97 +989,104 @@ void LaplaceIPT::init(Level &l, const Level lup, int ncx, const int xs, const in
   int ny = localmesh->LocalNy;
   l.current_level = current_level;
 
-  auto sendvec = Array<dcomplex>(3*nmode);
-  auto recvecin = Array<dcomplex>(3*nmode);
-  auto recvecout = Array<dcomplex>(3*nmode);
+  auto sendvec = Array<dcomplex>(3 * nmode);
+  auto recvecin = Array<dcomplex>(3 * nmode);
+  auto recvecout = Array<dcomplex>(3 * nmode);
 
   // indexing to remove branches in tight loops
-  if(localmesh->lastX()){
+  if (localmesh->lastX()) {
     l.index_end = 2;
-  }
-  else {
+  } else {
     l.index_end = 3;
   }
   l.index_start = 0;
 
   l.myproc = lup.myproc;
   // Whether this proc is involved in the multigrid calculation
-  l.included = ( l.myproc%int((pow(2,current_level))) == 0 ) or localmesh->lastX();
+  l.included = (l.myproc % int((pow(2, current_level))) == 0) or localmesh->lastX();
   // Whether this proc is involved in the calculation on the grid one level more refined
   l.included_up = lup.included;
 
-  if(l.included){
+  if (l.included) {
 
     // Colouring of processor for Gauss-Seidel
-    l.red = ((l.myproc/int((pow(2,l.current_level))))%2 == 0);
-    l.black = ((l.myproc/int((pow(2,l.current_level))))%2 == 1);
+    l.red = ((l.myproc / int((pow(2, l.current_level)))) % 2 == 0);
+    l.black = ((l.myproc / int((pow(2, l.current_level)))) % 2 == 1);
 
     // The last processor is a special case. It is always included because of
     // the final grid point, which is treated explicitly. Otherwise it should
     // not be included in either the red or black work.
-    if(localmesh->lastX()){
+    if (localmesh->lastX()) {
       l.red = false;
       l.black = false;
     }
 
     // My neighbouring procs
-    l.proc_in = l.myproc - int(pow(2,l.current_level));
-    if(localmesh->lastX()){
+    l.proc_in = l.myproc - int(pow(2, l.current_level));
+    if (localmesh->lastX()) {
       l.proc_in += 1;
     }
-    int p = l.myproc + int(pow(2,l.current_level));
-    l.proc_out = (p < nproc-1) ? p : nproc - 1;
+    int p = l.myproc + int(pow(2, l.current_level));
+    l.proc_out = (p < nproc - 1) ? p : nproc - 1;
 
-    l.residual = Matrix<dcomplex>(4,nmode);
-    l.xloc = Matrix<dcomplex>(4,nmode);
+    l.residual = Matrix<dcomplex>(4, nmode);
+    l.xloc = Matrix<dcomplex>(4, nmode);
     l.rl = Array<dcomplex>(nmode);
     l.ru = Array<dcomplex>(nmode);
 
     // Coefficients for the reduced iterations
-    l.ar = Tensor<dcomplex>(ny,4,nmode);
-    l.br = Tensor<dcomplex>(ny,4,nmode);
-    l.cr = Tensor<dcomplex>(ny,4,nmode);
-    l.rr = Matrix<dcomplex>(4,nmode);
+    l.ar = Tensor<dcomplex>(ny, 4, nmode);
+    l.br = Tensor<dcomplex>(ny, 4, nmode);
+    l.cr = Tensor<dcomplex>(ny, 4, nmode);
+    l.rr = Matrix<dcomplex>(4, nmode);
 
-    for(int kz = 0; kz < nmode; kz++){
-      if(localmesh->firstX()){
-	l.ar(jy,1,kz) = 0.5*lup.ar(jy,1,kz);
-	l.br(jy,1,kz) = 0.5*lup.br(jy,1,kz) + 0.25*lup.cr(jy,1,kz) + 0.25*lup.ar(jy,3,kz) + 0.125*lup.br(jy,3,kz);
-	l.cr(jy,1,kz) = 0.25*lup.cr(jy,1,kz) + 0.125*lup.br(jy,3,kz) + 0.25*lup.cr(jy,3,kz);
-      }
-      else{
-	l.ar(jy,1,kz) = 0.25*lup.ar(jy,0,kz) + 0.125*lup.br(jy,0,kz) + 0.25*lup.ar(jy,1,kz);
-	l.br(jy,1,kz) = 0.125*lup.br(jy,0,kz) + 0.25*lup.cr(jy,0,kz) + 0.25*lup.ar(jy,1,kz) + 0.5*lup.br(jy,1,kz) + 0.25*lup.cr(jy,1,kz) + 0.25*lup.ar(jy,3,kz) + 0.125*lup.br(jy,3,kz);
-	l.cr(jy,1,kz) = 0.25*lup.cr(jy,1,kz) + 0.125*lup.br(jy,3,kz) + 0.25*lup.cr(jy,3,kz);
+    for (int kz = 0; kz < nmode; kz++) {
+      if (localmesh->firstX()) {
+        l.ar(jy, 1, kz) = 0.5 * lup.ar(jy, 1, kz);
+        l.br(jy, 1, kz) = 0.5 * lup.br(jy, 1, kz) + 0.25 * lup.cr(jy, 1, kz)
+                          + 0.25 * lup.ar(jy, 3, kz) + 0.125 * lup.br(jy, 3, kz);
+        l.cr(jy, 1, kz) = 0.25 * lup.cr(jy, 1, kz) + 0.125 * lup.br(jy, 3, kz)
+                          + 0.25 * lup.cr(jy, 3, kz);
+      } else {
+        l.ar(jy, 1, kz) = 0.25 * lup.ar(jy, 0, kz) + 0.125 * lup.br(jy, 0, kz)
+                          + 0.25 * lup.ar(jy, 1, kz);
+        l.br(jy, 1, kz) = 0.125 * lup.br(jy, 0, kz) + 0.25 * lup.cr(jy, 0, kz)
+                          + 0.25 * lup.ar(jy, 1, kz) + 0.5 * lup.br(jy, 1, kz)
+                          + 0.25 * lup.cr(jy, 1, kz) + 0.25 * lup.ar(jy, 3, kz)
+                          + 0.125 * lup.br(jy, 3, kz);
+        l.cr(jy, 1, kz) = 0.25 * lup.cr(jy, 1, kz) + 0.125 * lup.br(jy, 3, kz)
+                          + 0.25 * lup.cr(jy, 3, kz);
       }
 
       // Last proc does calculation on index 2 as well as index 1.
       // If current_level=1, the point to my left on the level above it my
-      // index 1. Otherwise, it is my index 0. 
-      if(localmesh->lastX()){
-	if(l.current_level==1){
-	  l.ar(jy,2,kz) = 0.25*lup.ar(jy,1,kz) + 0.125*lup.br(jy,1,kz) + 0.25*lup.ar(jy,2,kz);
-	  l.br(jy,2,kz) = 0.125*lup.br(jy,1,kz) + 0.25*lup.cr(jy,1,kz) + 0.25*lup.ar(jy,2,kz) + 0.5*lup.br(jy,2,kz);
-	  l.cr(jy,2,kz) = 0.5*lup.cr(jy,2,kz);
-	}
-	else{
-	  l.ar(jy,2,kz) = 0.25*lup.ar(jy,0,kz) + 0.125*lup.br(jy,0,kz) + 0.25*lup.ar(jy,2,kz);
-	  l.br(jy,2,kz) = 0.125*lup.br(jy,0,kz) + 0.25*lup.cr(jy,0,kz) + 0.25*lup.ar(jy,2,kz) + 0.5*lup.br(jy,2,kz);
-	  l.cr(jy,2,kz) = 0.5*lup.cr(jy,2,kz);
-	}
+      // index 1. Otherwise, it is my index 0.
+      if (localmesh->lastX()) {
+        if (l.current_level == 1) {
+          l.ar(jy, 2, kz) = 0.25 * lup.ar(jy, 1, kz) + 0.125 * lup.br(jy, 1, kz)
+                            + 0.25 * lup.ar(jy, 2, kz);
+          l.br(jy, 2, kz) = 0.125 * lup.br(jy, 1, kz) + 0.25 * lup.cr(jy, 1, kz)
+                            + 0.25 * lup.ar(jy, 2, kz) + 0.5 * lup.br(jy, 2, kz);
+          l.cr(jy, 2, kz) = 0.5 * lup.cr(jy, 2, kz);
+        } else {
+          l.ar(jy, 2, kz) = 0.25 * lup.ar(jy, 0, kz) + 0.125 * lup.br(jy, 0, kz)
+                            + 0.25 * lup.ar(jy, 2, kz);
+          l.br(jy, 2, kz) = 0.125 * lup.br(jy, 0, kz) + 0.25 * lup.cr(jy, 0, kz)
+                            + 0.25 * lup.ar(jy, 2, kz) + 0.5 * lup.br(jy, 2, kz);
+          l.cr(jy, 2, kz) = 0.5 * lup.cr(jy, 2, kz);
+        }
       }
 
       // Need to communicate my index 1 to this level's neighbours
       // Index 2 if last proc.
-      if(not localmesh->lastX()){
-	sendvec[kz] = l.ar(jy,1,kz);
-	sendvec[kz+nmode] = l.br(jy,1,kz);
-	sendvec[kz+2*nmode] = l.cr(jy,1,kz);
-      }
-      else {
-	sendvec[kz] = l.ar(jy,2,kz);
-	sendvec[kz+nmode] = l.br(jy,2,kz);
-	sendvec[kz+2*nmode] = l.cr(jy,2,kz);
+      if (not localmesh->lastX()) {
+        sendvec[kz] = l.ar(jy, 1, kz);
+        sendvec[kz + nmode] = l.br(jy, 1, kz);
+        sendvec[kz + 2 * nmode] = l.cr(jy, 1, kz);
+      } else {
+        sendvec[kz] = l.ar(jy, 2, kz);
+        sendvec[kz + nmode] = l.br(jy, 2, kz);
+        sendvec[kz + 2 * nmode] = l.cr(jy, 2, kz);
       }
     }
 
@@ -1048,32 +1094,38 @@ void LaplaceIPT::init(Level &l, const Level lup, int ncx, const int xs, const in
     int err;
 
     // Communicate in
-    if(!localmesh->firstX()){
-      err = MPI_Sendrecv(&sendvec[0], 3*nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 1, &recvecin[0], 3*nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 0, comm, MPI_STATUS_IGNORE);
+    if (!localmesh->firstX()) {
+      err = MPI_Sendrecv(&sendvec[0], 3 * nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 1,
+                         &recvecin[0], 3 * nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 0, comm,
+                         MPI_STATUS_IGNORE);
     }
 
     // Communicate out
-    if(!localmesh->lastX()){
-      err = MPI_Sendrecv(&sendvec[0], 3*nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 0, &recvecout[0], 3*nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 1, comm, MPI_STATUS_IGNORE);
+    if (!localmesh->lastX()) {
+      err = MPI_Sendrecv(&sendvec[0], 3 * nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 0,
+                         &recvecout[0], 3 * nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 1,
+                         comm, MPI_STATUS_IGNORE);
     }
 
-    for(int kz=0; kz<nmode; kz++){
-      if(not localmesh->firstX()){
-	l.ar(jy,0,kz) = recvecin[kz];
-	l.br(jy,0,kz) = recvecin[kz+nmode];
-	l.cr(jy,0,kz) = recvecin[kz+2*nmode];
+    for (int kz = 0; kz < nmode; kz++) {
+      if (not localmesh->firstX()) {
+        l.ar(jy, 0, kz) = recvecin[kz];
+        l.br(jy, 0, kz) = recvecin[kz + nmode];
+        l.cr(jy, 0, kz) = recvecin[kz + 2 * nmode];
       }
-      if(not localmesh->lastX()){
-	l.ar(jy,3,kz) = recvecout[kz];
-	l.br(jy,3,kz) = recvecout[kz+nmode];
-	l.cr(jy,3,kz) = recvecout[kz+2*nmode];
+      if (not localmesh->lastX()) {
+        l.ar(jy, 3, kz) = recvecout[kz];
+        l.br(jy, 3, kz) = recvecout[kz + nmode];
+        l.cr(jy, 3, kz) = recvecout[kz + 2 * nmode];
       }
     }
   }
 }
 
 // Init routine for finest level
-void LaplaceIPT::init(Level &l, const int ncx, const int jy, const Matrix<dcomplex> avec, const Matrix<dcomplex> bvec, const Matrix<dcomplex> cvec, const int xs, const int xe){
+void LaplaceIPT::init(Level& l, const int ncx, const int jy, const Matrix<dcomplex> avec,
+                      const Matrix<dcomplex> bvec, const Matrix<dcomplex> cvec,
+                      const int xs, const int xe) {
 
   // Basic definitions for conventional multigrid
   SCOREP0();
@@ -1084,52 +1136,51 @@ void LaplaceIPT::init(Level &l, const int ncx, const int jy, const Matrix<dcompl
   l.current_level = 0;
 
   // Processor information
-  l.myproc = myproc; // unique id
-  l.proc_in = myproc-1; // in-neighbour
-  l.proc_out = myproc+1; // out-neighbour
-  l.included = true; // whether processor is included in this level's calculation
+  l.myproc = myproc;       // unique id
+  l.proc_in = myproc - 1;  // in-neighbour
+  l.proc_out = myproc + 1; // out-neighbour
+  l.included = true;       // whether processor is included in this level's calculation
   // Colouring of processor for Gauss-Seidel
-  l.red = (l.myproc%2 == 0);
-  l.black = (l.myproc%2 == 1);
+  l.red = (l.myproc % 2 == 0);
+  l.black = (l.myproc % 2 == 1);
 
   // indexing to remove branching in tight loops
-  if(localmesh->lastX()){
+  if (localmesh->lastX()) {
     l.index_end = 2;
-  }
-  else {
+  } else {
     l.index_end = 3;
   }
   l.index_start = 1;
 
-  l.avec = Tensor<dcomplex>(ny,nmode,ncx);
-  l.bvec = Tensor<dcomplex>(ny,nmode,ncx);
-  l.cvec = Tensor<dcomplex>(ny,nmode,ncx);
+  l.avec = Tensor<dcomplex>(ny, nmode, ncx);
+  l.bvec = Tensor<dcomplex>(ny, nmode, ncx);
+  l.cvec = Tensor<dcomplex>(ny, nmode, ncx);
 
   // Coefficients for the reduced iterations
-  l.ar = Tensor<dcomplex>(ny,4,nmode);
-  l.br = Tensor<dcomplex>(ny,4,nmode);
-  l.cr = Tensor<dcomplex>(ny,4,nmode);
-  l.rr = Matrix<dcomplex>(4,nmode);
+  l.ar = Tensor<dcomplex>(ny, 4, nmode);
+  l.br = Tensor<dcomplex>(ny, 4, nmode);
+  l.cr = Tensor<dcomplex>(ny, 4, nmode);
+  l.rr = Matrix<dcomplex>(4, nmode);
 
-  l.residual = Matrix<dcomplex>(4,nmode);
+  l.residual = Matrix<dcomplex>(4, nmode);
 
-  for(int kz=0; kz<nmode; kz++){
-    for(int ix=0; ix<ncx; ix++){
-      l.avec(jy,kz,ix) = avec(kz,ix); 
-      l.bvec(jy,kz,ix) = bvec(kz,ix); 
-      l.cvec(jy,kz,ix) = cvec(kz,ix); 
+  for (int kz = 0; kz < nmode; kz++) {
+    for (int ix = 0; ix < ncx; ix++) {
+      l.avec(jy, kz, ix) = avec(kz, ix);
+      l.bvec(jy, kz, ix) = bvec(kz, ix);
+      l.cvec(jy, kz, ix) = cvec(kz, ix);
     }
-    for(int ix=0; ix<4; ix++){
-      l.residual(ix,kz) = 0.0;
+    for (int ix = 0; ix < 4; ix++) {
+      l.residual(ix, kz) = 0.0;
     }
   }
   // end basic definitions
 
   // Define sizes of local coefficients
-  l.xloc = Matrix<dcomplex>(4,nmode); // Reduced grid x values
+  l.xloc = Matrix<dcomplex>(4, nmode); // Reduced grid x values
 
   // Arrays to construct global solution from halo values
-  l.minvb = Matrix<dcomplex>(nmode,ncx); // Local M^{-1} f
+  l.minvb = Matrix<dcomplex>(nmode, ncx);                // Local M^{-1} f
   l.lowerGuardVector = Tensor<dcomplex>(ncx, ny, nmode); // alpha
   l.upperGuardVector = Tensor<dcomplex>(ncx, ny, nmode); // beta
 
@@ -1138,8 +1189,8 @@ void LaplaceIPT::init(Level &l, const int ncx, const int jy, const Matrix<dcompl
   l.bl = Matrix<dcomplex>(ny, nmode); // beta^l
   l.au = Matrix<dcomplex>(ny, nmode); // alpha^u
   l.bu = Matrix<dcomplex>(ny, nmode); // beta^u
-  l.rl = Array<dcomplex>(nmode); // r^l
-  l.ru = Array<dcomplex>(nmode); // r^u
+  l.rl = Array<dcomplex>(nmode);      // r^l
+  l.ru = Array<dcomplex>(nmode);      // r^u
 
   // Coefs used to compute rl from domain below
   l.r1 = Matrix<dcomplex>(ny, nmode);
@@ -1150,125 +1201,126 @@ void LaplaceIPT::init(Level &l, const int ncx, const int jy, const Matrix<dcompl
   auto tmp = Array<dcomplex>(ncx);
 
   // Communication arrays
-  auto sendvec = Array<dcomplex>(3*nmode);
-  auto recvecin = Array<dcomplex>(3*nmode);
-  auto recvecout = Array<dcomplex>(3*nmode);
+  auto sendvec = Array<dcomplex>(3 * nmode);
+  auto recvecin = Array<dcomplex>(3 * nmode);
+  auto recvecout = Array<dcomplex>(3 * nmode);
 
   for (int kz = 0; kz <= maxmode; kz++) {
 
-    ///SCOREP_USER_REGION_DEFINE(invert);
-    ///SCOREP_USER_REGION_BEGIN(invert, "invert local matrices",///SCOREP_USER_REGION_TYPE_COMMON);
+    /// SCOREP_USER_REGION_DEFINE(invert);
+    /// SCOREP_USER_REGION_BEGIN(invert, "invert local
+    /// matrices",///SCOREP_USER_REGION_TYPE_COMMON);
 
     // Invert local matrices to find upper/lower guard vectos.
     // Note Minv*b is calculated in init_rhs.
     //
     // Upper interface
-    if(not localmesh->lastX()) {
+    if (not localmesh->lastX()) {
       // Need the xend-th element
-      for(int i=0; i<ncx; i++){
-	evec[i] = 0.0;
+      for (int i = 0; i < ncx; i++) {
+        evec[i] = 0.0;
       }
-      evec[l.xe+1] = 1.0;
-      tridag(&avec(kz,0), &bvec(kz,0), &cvec(kz,0), std::begin(evec),
-      std::begin(tmp), ncx);
-      for(int i=0; i<ncx; i++){
-	l.upperGuardVector(i,jy,kz) = tmp[i];
+      evec[l.xe + 1] = 1.0;
+      tridag(&avec(kz, 0), &bvec(kz, 0), &cvec(kz, 0), std::begin(evec), std::begin(tmp),
+             ncx);
+      for (int i = 0; i < ncx; i++) {
+        l.upperGuardVector(i, jy, kz) = tmp[i];
       }
-    }
-    else {
-      for(int i=0; i<ncx; i++){
-	l.upperGuardVector(i,jy,kz) = 0.0;
+    } else {
+      for (int i = 0; i < ncx; i++) {
+        l.upperGuardVector(i, jy, kz) = 0.0;
       }
     }
 
     // Lower interface
-    if(not localmesh->firstX()) { 
-      for(int i=0; i<ncx; i++){
-	evec[i] = 0.0;
+    if (not localmesh->firstX()) {
+      for (int i = 0; i < ncx; i++) {
+        evec[i] = 0.0;
       }
-      evec[l.xs-1] = 1.0;
-      tridag(&avec(kz,0), &bvec(kz,0), &cvec(kz,0), std::begin(evec),
-      std::begin(tmp), ncx);
-      for(int i=0; i<ncx; i++){
-	l.lowerGuardVector(i,jy,kz) = tmp[i];
+      evec[l.xs - 1] = 1.0;
+      tridag(&avec(kz, 0), &bvec(kz, 0), &cvec(kz, 0), std::begin(evec), std::begin(tmp),
+             ncx);
+      for (int i = 0; i < ncx; i++) {
+        l.lowerGuardVector(i, jy, kz) = tmp[i];
+      }
+    } else {
+      for (int i = 0; i < ncx; i++) {
+        l.lowerGuardVector(i, jy, kz) = 0.0;
       }
     }
-    else {
-      for(int i=0; i<ncx; i++){
-	l.lowerGuardVector(i,jy,kz) = 0.0;
-      }
-    }
 
-    ///SCOREP_USER_REGION_END(invert);
-    ///SCOREP_USER_REGION_DEFINE(coefs);
-    ///SCOREP_USER_REGION_BEGIN(coefs, "calculate coefs",///SCOREP_USER_REGION_TYPE_COMMON);
+    /// SCOREP_USER_REGION_END(invert);
+    /// SCOREP_USER_REGION_DEFINE(coefs);
+    /// SCOREP_USER_REGION_BEGIN(coefs, "calculate
+    /// coefs",///SCOREP_USER_REGION_TYPE_COMMON);
 
-    l.bl(jy,kz) = l.upperGuardVector(l.xs,jy,kz);
-    l.al(jy,kz) = l.lowerGuardVector(l.xs,jy,kz);
+    l.bl(jy, kz) = l.upperGuardVector(l.xs, jy, kz);
+    l.al(jy, kz) = l.lowerGuardVector(l.xs, jy, kz);
 
-    l.bu(jy,kz) = l.upperGuardVector(l.xe,jy,kz);
-    l.au(jy,kz) = l.lowerGuardVector(l.xe,jy,kz);
+    l.bu(jy, kz) = l.upperGuardVector(l.xe, jy, kz);
+    l.au(jy, kz) = l.lowerGuardVector(l.xe, jy, kz);
 
     // First compute coefficients that depend on the matrix to be inverted
     // and which therefore might be constant throughout a run.
 
     // Boundary processor values to be overwritten when relevant
     MPI_Request req;
-    auto AdBd = Array<dcomplex>(2); // A and B coefficients from proc down
+    auto AdBd = Array<dcomplex>(2);  // A and B coefficients from proc down
     auto ABtmp = Array<dcomplex>(2); // Send array for A and B coefs from proc down
     AdBd[0] = 1.0;
     AdBd[1] = 0.0;
-    if(not localmesh->firstX()){
+    if (not localmesh->firstX()) {
       MPI_Irecv(&AdBd[0], 2, MPI_DOUBLE_COMPLEX, l.proc_in, 0, BoutComm::get(), &req);
     }
-    if(not localmesh->lastX()){
+    if (not localmesh->lastX()) {
       // Send coefficients up
       ABtmp[0] = 0.0;
-      ABtmp[1] = l.bu(jy,kz);
-      if( std::fabs(l.al(jy,kz)) > 1e-14 ){
-	ABtmp[0] = l.au(jy,kz)/l.al(jy,kz);
-	ABtmp[1] -= ABtmp[0]*l.bl(jy,kz);
+      ABtmp[1] = l.bu(jy, kz);
+      if (std::fabs(l.al(jy, kz)) > 1e-14) {
+        ABtmp[0] = l.au(jy, kz) / l.al(jy, kz);
+        ABtmp[1] -= ABtmp[0] * l.bl(jy, kz);
       }
       // Send these
       MPI_Send(&ABtmp[0], 2, MPI_DOUBLE_COMPLEX, l.proc_out, 0, BoutComm::get());
     }
 
-    if(not localmesh->firstX()){
-      MPI_Wait(&req,MPI_STATUS_IGNORE);
+    if (not localmesh->firstX()) {
+      MPI_Wait(&req, MPI_STATUS_IGNORE);
     }
 
     dcomplex Delta;
-    Delta = 1.0 / (1.0 - l.al(jy,kz)*AdBd[1]);
-    l.ar(jy,1,kz) = - Delta * l.al(jy,kz) * AdBd[0];
-    l.cr(jy,1,kz) = - Delta * l.bl(jy,kz);
+    Delta = 1.0 / (1.0 - l.al(jy, kz) * AdBd[1]);
+    l.ar(jy, 1, kz) = -Delta * l.al(jy, kz) * AdBd[0];
+    l.cr(jy, 1, kz) = -Delta * l.bl(jy, kz);
 
-    l.r1(jy,kz) = Delta * l.al(jy,kz);
-    l.r2(jy,kz) = Delta;
+    l.r1(jy, kz) = Delta * l.al(jy, kz);
+    l.r2(jy, kz) = Delta;
 
     // lastX is a special case having two points on the level 0 grid
-    if(localmesh->lastX()){
+    if (localmesh->lastX()) {
       // Note that if the first proc is also the last proc, then both alold and
       // auold are zero, and l.au = l.auold is already correct.
-      if(not localmesh->lastX()){
-	l.ar(jy,2,kz) = - l.au(jy,kz)/l.al(jy,kz);
-	l.cr(jy,2,kz) = -( l.bu(jy,kz) + l.ar(jy,2,kz) * l.bl(jy,kz) ); // NB depends on previous line
+      if (not localmesh->lastX()) {
+        l.ar(jy, 2, kz) = -l.au(jy, kz) / l.al(jy, kz);
+        l.cr(jy, 2, kz) = -(
+            l.bu(jy, kz) + l.ar(jy, 2, kz) * l.bl(jy, kz)); // NB depends on previous line
       }
 
       // Use BCs to replace x(xe+1) = -avec(xe+1) x(xe) / bvec(xe+1)
       //  => only bl changes
-      l.cr(jy,1,kz) = l.avec(jy,kz,l.xe+1)*l.bl(jy,kz) / l.bvec(jy,kz,l.xe+1);
+      l.cr(jy, 1, kz) =
+          l.avec(jy, kz, l.xe + 1) * l.bl(jy, kz) / l.bvec(jy, kz, l.xe + 1);
     }
 
     // Now set coefficients for reduced iterations (shared by all levels)
-    l.br(jy,1,kz) = 1.0;
-    l.br(jy,2,kz) = 1.0;
+    l.br(jy, 1, kz) = 1.0;
+    l.br(jy, 2, kz) = 1.0;
 
-    sendvec[kz] = l.ar(jy,1,kz);
-    sendvec[kz+nmode] = l.br(jy,1,kz);
-    sendvec[kz+2*nmode] = l.cr(jy,1,kz);
+    sendvec[kz] = l.ar(jy, 1, kz);
+    sendvec[kz + nmode] = l.br(jy, 1, kz);
+    sendvec[kz + 2 * nmode] = l.cr(jy, 1, kz);
 
-
-  ///SCOREP_USER_REGION_END(coefs);
+    /// SCOREP_USER_REGION_END(coefs);
   } // end of kz loop
 
   // Synchonize reduced coefficients with neighbours
@@ -1276,31 +1328,35 @@ void LaplaceIPT::init(Level &l, const int ncx, const int jy, const Matrix<dcompl
   int err;
 
   // Communicate in
-  if(!localmesh->firstX()){
-    err = MPI_Sendrecv(&sendvec[0], 3*nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 1, &recvecin[0], 3*nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 0, comm, MPI_STATUS_IGNORE);
+  if (!localmesh->firstX()) {
+    err = MPI_Sendrecv(&sendvec[0], 3 * nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 1,
+                       &recvecin[0], 3 * nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 0, comm,
+                       MPI_STATUS_IGNORE);
   }
 
   // Communicate out
-  if(!localmesh->lastX()){
-    err = MPI_Sendrecv(&sendvec[0], 3*nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 0, &recvecout[0], 3*nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 1, comm, MPI_STATUS_IGNORE);
+  if (!localmesh->lastX()) {
+    err = MPI_Sendrecv(&sendvec[0], 3 * nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 0,
+                       &recvecout[0], 3 * nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 1, comm,
+                       MPI_STATUS_IGNORE);
   }
 
-  for(int kz=0; kz<nmode; kz++){
-    if(not localmesh->firstX()){
-      l.ar(jy,0,kz) = recvecin[kz];
-      l.br(jy,0,kz) = recvecin[kz+nmode];
-      l.cr(jy,0,kz) = recvecin[kz+2*nmode];
+  for (int kz = 0; kz < nmode; kz++) {
+    if (not localmesh->firstX()) {
+      l.ar(jy, 0, kz) = recvecin[kz];
+      l.br(jy, 0, kz) = recvecin[kz + nmode];
+      l.cr(jy, 0, kz) = recvecin[kz + 2 * nmode];
     }
-    if(not localmesh->lastX()){
-      l.ar(jy,3,kz) = recvecout[kz];
-      l.br(jy,3,kz) = recvecout[kz+nmode];
-      l.cr(jy,3,kz) = recvecout[kz+2*nmode];
+    if (not localmesh->lastX()) {
+      l.ar(jy, 3, kz) = recvecout[kz];
+      l.br(jy, 3, kz) = recvecout[kz + nmode];
+      l.cr(jy, 3, kz) = recvecout[kz + 2 * nmode];
     }
   }
 }
 
 // Init routine for finest level information that cannot be cached
-void LaplaceIPT::init_rhs(Level &l, const int jy, const Matrix<dcomplex> bcmplx){
+void LaplaceIPT::init_rhs(Level& l, const int jy, const Matrix<dcomplex> bcmplx) {
 
   SCOREP0();
 
@@ -1310,56 +1366,57 @@ void LaplaceIPT::init_rhs(Level &l, const int jy, const Matrix<dcomplex> bcmplx)
 
   for (int kz = 0; kz <= maxmode; kz++) {
 
-    ///SCOREP_USER_REGION_DEFINE(invertforrhs);
-    ///SCOREP_USER_REGION_BEGIN(invertforrhs, "invert local matrices for rhs",///SCOREP_USER_REGION_TYPE_COMMON);
+    /// SCOREP_USER_REGION_DEFINE(invertforrhs);
+    /// SCOREP_USER_REGION_BEGIN(invertforrhs, "invert local matrices for
+    /// rhs",///SCOREP_USER_REGION_TYPE_COMMON);
 
     // Invert local matrices
     // Calculate Minv*b
-    tridag(&l.avec(jy,kz,0), &l.bvec(jy,kz,0), &l.cvec(jy,kz,0), &bcmplx(kz,0),
-    &l.minvb(kz,0), l.ncx);
+    tridag(&l.avec(jy, kz, 0), &l.bvec(jy, kz, 0), &l.cvec(jy, kz, 0), &bcmplx(kz, 0),
+           &l.minvb(kz, 0), l.ncx);
     // Now minvb is a constant vector throughout the iterations
 
-    ///SCOREP_USER_REGION_END(invertforrhs);
-    ///SCOREP_USER_REGION_DEFINE(coefsforrhs);
-    ///SCOREP_USER_REGION_BEGIN(coefsforrhs, "calculate coefs for rhs",///SCOREP_USER_REGION_TYPE_COMMON);
+    /// SCOREP_USER_REGION_END(invertforrhs);
+    /// SCOREP_USER_REGION_DEFINE(coefsforrhs);
+    /// SCOREP_USER_REGION_BEGIN(coefsforrhs, "calculate coefs for
+    /// rhs",///SCOREP_USER_REGION_TYPE_COMMON);
 
-    l.rl[kz] = l.minvb(kz,l.xs);
-    l.ru[kz] = l.minvb(kz,l.xe);
+    l.rl[kz] = l.minvb(kz, l.xs);
+    l.ru[kz] = l.minvb(kz, l.xe);
 
     // Boundary processor value to be overwritten when relevant
     Rd[kz] = 0.0;
 
-    if(not localmesh->lastX()){
+    if (not localmesh->lastX()) {
       // Send coefficients up
       Rsendup[kz] = l.ru[kz];
-      if( std::fabs(l.al(jy,kz)) > 1e-14 ){
-	Rsendup[kz] -= l.rl[kz]*l.au(jy,kz)/l.al(jy,kz);
+      if (std::fabs(l.al(jy, kz)) > 1e-14) {
+        Rsendup[kz] -= l.rl[kz] * l.au(jy, kz) / l.al(jy, kz);
       }
     }
-    ///SCOREP_USER_REGION_END(coefsforrhs);
+    /// SCOREP_USER_REGION_END(coefsforrhs);
   } // end of kz loop
 
-  if(not localmesh->firstX()){
+  if (not localmesh->firstX()) {
     MPI_Irecv(&Rd[0], nmode, MPI_DOUBLE_COMPLEX, proc_in, 0, BoutComm::get(), &req);
   }
-  if(not localmesh->lastX()){
+  if (not localmesh->lastX()) {
     MPI_Send(&Rsendup[0], nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, BoutComm::get());
   }
-  if(not localmesh->firstX()){
-    MPI_Wait(&req,MPI_STATUS_IGNORE);
+  if (not localmesh->firstX()) {
+    MPI_Wait(&req, MPI_STATUS_IGNORE);
   }
 
   for (int kz = 0; kz <= maxmode; kz++) {
-    l.rr(1,kz) = l.r1(jy,kz)*Rd[kz] + l.r2(jy,kz)*l.rl[kz];
+    l.rr(1, kz) = l.r1(jy, kz) * Rd[kz] + l.r2(jy, kz) * l.rl[kz];
 
     // Special case for multiple points on last proc
     // Note that if the first proc is also the last proc, then both al and
     // au are zero, and l.ru is already correct.
-    if(localmesh->lastX() and not localmesh->firstX()){
-      l.rr(2,kz) = l.ru[kz] - l.au(jy,kz)*l.rl[kz]/l.al(jy,kz);
-    }
-    else{
-      l.rr(2,kz) = l.ru[kz];
+    if (localmesh->lastX() and not localmesh->firstX()) {
+      l.rr(2, kz) = l.ru[kz] - l.au(jy, kz) * l.rl[kz] / l.al(jy, kz);
+    } else {
+      l.rr(2, kz) = l.ru[kz];
     }
   }
 }
@@ -1367,72 +1424,87 @@ void LaplaceIPT::init_rhs(Level &l, const int jy, const Matrix<dcomplex> bcmplx)
 /*
  * Sum and communicate total residual for the reduced system
  */
-void LaplaceIPT::calculate_total_residual(Array<BoutReal> &error_abs, Array<BoutReal> &error_rel, Array<bool> &converged, Level &l){
+void LaplaceIPT::calculate_total_residual(Array<BoutReal>& error_abs,
+                                          Array<BoutReal>& error_rel,
+                                          Array<bool>& converged, Level& l) {
 
   SCOREP0();
   // Communication arrays:
   // residual in (0 .. nmode-1)
   // solution in (nmode .. 2*nmode-1)
-  auto total = Array<BoutReal>(2*nmode); // global summed residual
-  auto subtotal = Array<BoutReal>(2*nmode); // local contribution to residual
+  auto total = Array<BoutReal>(2 * nmode);    // global summed residual
+  auto subtotal = Array<BoutReal>(2 * nmode); // local contribution to residual
 
-  for(int kz=0; kz<nmode; kz++){
-    if(!converged[kz]){
+  for (int kz = 0; kz < nmode; kz++) {
+    if (!converged[kz]) {
       total[kz] = 0.0;
-      total[kz+nmode] = 0.0;
+      total[kz + nmode] = 0.0;
 
       // Only xs and xe have nonzero residuals
-      subtotal[kz] = pow(l.residual(1,kz).real(),2) + pow(l.residual(1,kz).imag(),2) + pow(l.residual(2,kz).real(),2) + pow(l.residual(2,kz).imag(),2);
+      subtotal[kz] = pow(l.residual(1, kz).real(), 2) + pow(l.residual(1, kz).imag(), 2)
+                     + pow(l.residual(2, kz).real(), 2)
+                     + pow(l.residual(2, kz).imag(), 2);
 
       // TODO This approximation will increase iteration count. The alternatives are:
       // + reconstructing the solution and calculating properly
-      // + multiply approximation by (interior points/2) - this can be done 
+      // + multiply approximation by (interior points/2) - this can be done
       //   at runtime by changing rtol
-      // Strictly this should be all contributions to the solution, but this under-approximation saves work.
-      subtotal[kz+nmode] = pow(l.xloc(1,kz).real(),2) + pow(l.xloc(1,kz).imag(),2) + pow(l.xloc(2,kz).real(),2) + pow(l.xloc(2,kz).imag(),2);
+      // Strictly this should be all contributions to the solution, but this
+      // under-approximation saves work.
+      subtotal[kz + nmode] = pow(l.xloc(1, kz).real(), 2) + pow(l.xloc(1, kz).imag(), 2)
+                             + pow(l.xloc(2, kz).real(), 2)
+                             + pow(l.xloc(2, kz).imag(), 2);
     }
   }
 
   // Communication needed to ensure processors break on same iteration
-  MPI_Allreduce(&subtotal[0], &total[0], 2*nmode, MPI_DOUBLE, MPI_SUM, BoutComm::get());
+  MPI_Allreduce(&subtotal[0], &total[0], 2 * nmode, MPI_DOUBLE, MPI_SUM, BoutComm::get());
 
-  for(int kz=0; kz<nmode; kz++){
-    if(!converged[kz]){
+  for (int kz = 0; kz < nmode; kz++) {
+    if (!converged[kz]) {
       error_abs[kz] = sqrt(total[kz]);
-      error_rel[kz] = error_abs[kz]/sqrt(total[kz+nmode]);
-      if( error_abs[kz] < atol or error_rel[kz] < rtol ){
-	converged[kz] = true;
+      error_rel[kz] = error_abs[kz] / sqrt(total[kz + nmode]);
+      if (error_abs[kz] < atol or error_rel[kz] < rtol) {
+        converged[kz] = true;
       }
     }
   }
 }
 
 /*
- * Calculate residual on a reduced x grid. By construction, the residual is 
+ * Calculate residual on a reduced x grid. By construction, the residual is
  * zero, except at the points on the reduced grid.
  * Note: this does not synchronize the residuals between processors, as we can
  * calculate the total residual without guard cells. Coarsening requires the
  * guard cells, and an explicit synchronization is called before coarsening.
  */
-void LaplaceIPT::calculate_residual(Level &l, const Array<bool> &converged,const int jy){
+void LaplaceIPT::calculate_residual(Level& l, const Array<bool>& converged,
+                                    const int jy) {
 
   SCOREP0();
-  if(l.included){
-    for(int kz=0; kz<nmode; kz++){
-      if(!converged[kz]){
-	if(not localmesh->lastX()){
-	  l.residual(1,kz) = l.rr(1,kz) - l.ar(jy,1,kz)*l.xloc(0,kz) - l.br(jy,1,kz)*l.xloc(1,kz) - l.cr(jy,1,kz)*l.xloc(3,kz)  ;
-	  l.residual(2,kz) = 0.0; // Good to ensure this, as this point is included in residual calculations
-	}
-	else{
-	  if(l.current_level==0){
-	    l.residual(1,kz) = l.rr(1,kz) - l.ar(jy,1,kz)*l.xloc(0,kz) - l.br(jy,1,kz)*l.xloc(1,kz) - l.cr(jy,1,kz)*l.xloc(2,kz)  ;
-	    l.residual(2,kz) = l.rr(2,kz) - l.ar(jy,2,kz)*l.xloc(1,kz) - l.br(jy,2,kz)*l.xloc(2,kz) - l.cr(jy,2,kz)*l.xloc(3,kz)  ;
-	  }
-	  else{
-	    l.residual(2,kz) = l.rr(2,kz) - l.ar(jy,2,kz)*l.xloc(0,kz) - l.br(jy,2,kz)*l.xloc(2,kz) - l.cr(jy,2,kz)*l.xloc(3,kz)  ;
-	  }
-	}
+  if (l.included) {
+    for (int kz = 0; kz < nmode; kz++) {
+      if (!converged[kz]) {
+        if (not localmesh->lastX()) {
+          l.residual(1, kz) = l.rr(1, kz) - l.ar(jy, 1, kz) * l.xloc(0, kz)
+                              - l.br(jy, 1, kz) * l.xloc(1, kz)
+                              - l.cr(jy, 1, kz) * l.xloc(3, kz);
+          l.residual(2, kz) = 0.0; // Good to ensure this, as this point is included in
+                                   // residual calculations
+        } else {
+          if (l.current_level == 0) {
+            l.residual(1, kz) = l.rr(1, kz) - l.ar(jy, 1, kz) * l.xloc(0, kz)
+                                - l.br(jy, 1, kz) * l.xloc(1, kz)
+                                - l.cr(jy, 1, kz) * l.xloc(2, kz);
+            l.residual(2, kz) = l.rr(2, kz) - l.ar(jy, 2, kz) * l.xloc(1, kz)
+                                - l.br(jy, 2, kz) * l.xloc(2, kz)
+                                - l.cr(jy, 2, kz) * l.xloc(3, kz);
+          } else {
+            l.residual(2, kz) = l.rr(2, kz) - l.ar(jy, 2, kz) * l.xloc(0, kz)
+                                - l.br(jy, 2, kz) * l.xloc(2, kz)
+                                - l.cr(jy, 2, kz) * l.xloc(3, kz);
+          }
+        }
       }
     }
   }
@@ -1441,48 +1513,53 @@ void LaplaceIPT::calculate_residual(Level &l, const Array<bool> &converged,const
 /*
  * Coarsen the fine residual
  */
-void LaplaceIPT::coarsen(Level &l, const Matrix<dcomplex> &fine_residual, const Array<bool> &converged){
+void LaplaceIPT::coarsen(Level& l, const Matrix<dcomplex>& fine_residual,
+                         const Array<bool>& converged) {
 
   SCOREP0();
-  if(l.included){ // whether this processor is included in multigrid
-    for(int kz=0; kz<nmode; kz++){
-      if(!converged[kz]){
-	if(not localmesh->lastX()){
-	  l.residual(1,kz) = 0.25*fine_residual(0,kz) + 0.5*fine_residual(1,kz) + 0.25*fine_residual(3,kz);
-	}
-	else{
-	  // NB point(1,kz) on last proc only used on level=0
-	  l.residual(2,kz) = 0.25*fine_residual(1,kz) + 0.5*fine_residual(2,kz) + 0.25*fine_residual(3,kz);
-	}
+  if (l.included) { // whether this processor is included in multigrid
+    for (int kz = 0; kz < nmode; kz++) {
+      if (!converged[kz]) {
+        if (not localmesh->lastX()) {
+          l.residual(1, kz) = 0.25 * fine_residual(0, kz) + 0.5 * fine_residual(1, kz)
+                              + 0.25 * fine_residual(3, kz);
+        } else {
+          // NB point(1,kz) on last proc only used on level=0
+          l.residual(2, kz) = 0.25 * fine_residual(1, kz) + 0.5 * fine_residual(2, kz)
+                              + 0.25 * fine_residual(3, kz);
+        }
 
-	// Set initial guess for coarse grid levels to zero
-	for(int ix=0; ix<4; ix++){
-	  l.xloc(ix,kz) = 0.0;
-	}
+        // Set initial guess for coarse grid levels to zero
+        for (int ix = 0; ix < 4; ix++) {
+          l.xloc(ix, kz) = 0.0;
+        }
 
-	// Set RHS equal to residual
-	l.rr(1,kz) = l.residual(1,kz);
-	if(localmesh->lastX()){
-	  l.rr(2,kz) = l.residual(2,kz);
-	}
+        // Set RHS equal to residual
+        l.rr(1, kz) = l.residual(1, kz);
+        if (localmesh->lastX()) {
+          l.rr(2, kz) = l.residual(2, kz);
+        }
       }
     }
   }
 }
 
 /*
- * Update the solution on the refined grid by adding the error calculated on the coarser grid.
- * Note that this does not update guard cells, so we must synchronize xloc before using it.
+ * Update the solution on the refined grid by adding the error calculated on the coarser
+ * grid.
+ * Note that this does not update guard cells, so we must synchronize xloc before using
+ * it.
  */
-void LaplaceIPT::update_solution(Level &l, const Matrix<dcomplex> &fine_error, const Array<bool> &converged){
+void LaplaceIPT::update_solution(Level& l, const Matrix<dcomplex>& fine_error,
+                                 const Array<bool>& converged) {
 
   SCOREP0();
-  if(l.included){
-    for(int kz=0; kz<nmode; kz++){
-      if(!converged[kz]){
-	for(int ix=1; ix<3; ix++){
-	  l.xloc(ix,kz) += fine_error(ix,kz);
-	}
+  if (l.included) {
+    for (int kz = 0; kz < nmode; kz++) {
+      if (!converged[kz]) {
+        for (int ix = 1; ix < 3; ix++) {
+          l.xloc(ix, kz) += fine_error(ix, kz);
+        }
       }
     }
   }
@@ -1492,12 +1569,15 @@ void LaplaceIPT::update_solution(Level &l, const Matrix<dcomplex> &fine_error, c
  * Refine the reduced system.
  * There are three types of proc to cover:
  *  + procs included at this level. Calculate error and send contributions to neighbours
- *  + procs not included at this level but included at the refined level. Receive contributions
+ *  + procs not included at this level but included at the refined level. Receive
+ * contributions
  *  + procs included neither on this level or the level above. Do nothing
- *  Special case: last processor is always included, but must also receives if refining from
+ *  Special case: last processor is always included, but must also receives if refining
+ * from
  *  level 1 to level 0. It only sends if refining from level 0 to level 1.
  */
-void LaplaceIPT::refine(Level &l, Level &lup, Matrix<dcomplex> &fine_error, const Array<bool> &converged){
+void LaplaceIPT::refine(Level& l, Level& lup, Matrix<dcomplex>& fine_error,
+                        const Array<bool>& converged) {
 
   SCOREP0();
   Array<dcomplex> sendvec, recvecin, recvecout;
@@ -1509,62 +1589,64 @@ void LaplaceIPT::refine(Level &l, Level &lup, Matrix<dcomplex> &fine_error, cons
   // Included processors send their contribution to procs that are included on
   // the level above.
   // Special case: last proc sends if on level > 1, but NOT on level 1
-  if(l.included and (not localmesh->lastX() or l.current_level>1) ){
-    for(int kz=0; kz<nmode; kz++){
-      if(!converged[kz]){
-	fine_error(1,kz) = l.xloc(1,kz);
-	sendvec[kz] = l.xloc(1,kz);
-	if(localmesh->lastX()){
-	  fine_error(2,kz) = l.xloc(2,kz);
-	}
+  if (l.included and (not localmesh->lastX() or l.current_level > 1)) {
+    for (int kz = 0; kz < nmode; kz++) {
+      if (!converged[kz]) {
+        fine_error(1, kz) = l.xloc(1, kz);
+        sendvec[kz] = l.xloc(1, kz);
+        if (localmesh->lastX()) {
+          fine_error(2, kz) = l.xloc(2, kz);
+        }
       }
     }
 
-    if(!localmesh->lastX()){
+    if (!localmesh->lastX()) {
       MPI_Send(&sendvec[0], nmode, MPI_DOUBLE_COMPLEX, lup.proc_out, 0, BoutComm::get());
     }
-    if(!localmesh->firstX()){
+    if (!localmesh->firstX()) {
       MPI_Send(&sendvec[0], nmode, MPI_DOUBLE_COMPLEX, lup.proc_in, 1, BoutComm::get());
     }
-
   }
 
   // Receive if proc is included on the level above, but not this level.
   // Special case: last proc receives if on level 1
-  if( (l.included_up and not l.included) or (localmesh->lastX() and l.current_level==1) ){
-    if(!localmesh->firstX()){
-      MPI_Irecv(&recvecin[0], nmode, MPI_DOUBLE_COMPLEX, lup.proc_in, 0, BoutComm::get(), &rreqin);
+  if ((l.included_up and not l.included)
+      or (localmesh->lastX() and l.current_level == 1)) {
+    if (!localmesh->firstX()) {
+      MPI_Irecv(&recvecin[0], nmode, MPI_DOUBLE_COMPLEX, lup.proc_in, 0, BoutComm::get(),
+                &rreqin);
     }
-    if(!localmesh->lastX()){
-      MPI_Irecv(&recvecout[0], nmode, MPI_DOUBLE_COMPLEX, lup.proc_out, 1, BoutComm::get(), &rreqout);
+    if (!localmesh->lastX()) {
+      MPI_Irecv(&recvecout[0], nmode, MPI_DOUBLE_COMPLEX, lup.proc_out, 1,
+                BoutComm::get(), &rreqout);
     }
 
-    for(int kz=0; kz < nmode; kz++){
-      fine_error(1,kz) = 0.0;
+    for (int kz = 0; kz < nmode; kz++) {
+      fine_error(1, kz) = 0.0;
     }
 
-    if(!localmesh->firstX()){
-      MPI_Wait(&rreqin,MPI_STATUS_IGNORE);
-      for(int kz=0; kz < nmode; kz++){
-	if(!converged[kz]){
-	  fine_error(1,kz) += 0.5*recvecin[kz];
-	}
+    if (!localmesh->firstX()) {
+      MPI_Wait(&rreqin, MPI_STATUS_IGNORE);
+      for (int kz = 0; kz < nmode; kz++) {
+        if (!converged[kz]) {
+          fine_error(1, kz) += 0.5 * recvecin[kz];
+        }
       }
     }
-    if(!localmesh->lastX()){
-      MPI_Wait(&rreqout,MPI_STATUS_IGNORE);
-      for(int kz=0; kz < nmode; kz++){
-	if(!converged[kz]){
-	  fine_error(1,kz) += 0.5*recvecout[kz];
-	}
+    if (!localmesh->lastX()) {
+      MPI_Wait(&rreqout, MPI_STATUS_IGNORE);
+      for (int kz = 0; kz < nmode; kz++) {
+        if (!converged[kz]) {
+          fine_error(1, kz) += 0.5 * recvecout[kz];
+        }
       }
     }
   }
   // Special case where we need to fill (1,kz) on final proc
-  if(localmesh->lastX() and l.current_level==1){
-    for(int kz=0; kz < nmode; kz++){
-      if(!converged[kz]){
-	fine_error(1,kz) += 0.5*l.xloc(2,kz);
+  if (localmesh->lastX() and l.current_level == 1) {
+    for (int kz = 0; kz < nmode; kz++) {
+      if (!converged[kz]) {
+        fine_error(1, kz) += 0.5 * l.xloc(2, kz);
       }
     }
   }
@@ -1576,22 +1658,26 @@ void LaplaceIPT::refine(Level &l, Level &lup, Matrix<dcomplex> &fine_error, cons
  * field(1,:) is correct, and puts the in-neighbour's value into field(0,:)
  * and out-neighbour's value into field(3,:).
  */
-void LaplaceIPT::synchronize_reduced_field(const Level &l, Matrix<dcomplex> &field){
+void LaplaceIPT::synchronize_reduced_field(const Level& l, Matrix<dcomplex>& field) {
 
   SCOREP0();
-  if(l.included){
+  if (l.included) {
 
     MPI_Comm comm = BoutComm::get();
     int err;
 
     // Communicate in
-    if(!localmesh->firstX()){
-      err = MPI_Sendrecv(&field(1,0), nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 1, &field(0,0), nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 0, comm, MPI_STATUS_IGNORE);
+    if (!localmesh->firstX()) {
+      err = MPI_Sendrecv(&field(1, 0), nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 1,
+                         &field(0, 0), nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 0, comm,
+                         MPI_STATUS_IGNORE);
     }
 
     // Communicate out
-    if(!localmesh->lastX()){
-      err = MPI_Sendrecv(&field(1,0), nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 0, &field(3,0), nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 1, comm, MPI_STATUS_IGNORE);
+    if (!localmesh->lastX()) {
+      err = MPI_Sendrecv(&field(1, 0), nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 0,
+                         &field(3, 0), nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 1, comm,
+                         MPI_STATUS_IGNORE);
     }
   }
 }
