@@ -648,6 +648,26 @@ Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir
   // Save mesh configuration into output file
   mesh.outputVars(dump_file);
 
+  // Add compile-time options
+  dump_file.addOnce(const_cast<bool&>(bout::build::has_fftw), "has_fftw");
+  dump_file.addOnce(const_cast<bool&>(bout::build::has_gettext), "has_gettext");
+  dump_file.addOnce(const_cast<bool&>(bout::build::has_hdf5), "has_hdf5");
+  dump_file.addOnce(const_cast<bool&>(bout::build::has_lapack), "has_lapack");
+  dump_file.addOnce(const_cast<bool&>(bout::build::has_netcdf), "has_netcdf");
+  dump_file.addOnce(const_cast<bool&>(bout::build::has_petsc), "has_petsc");
+  dump_file.addOnce(const_cast<bool&>(bout::build::has_pretty_function), "has_pretty_function");
+  dump_file.addOnce(const_cast<bool&>(bout::build::has_pvode), "has_pvode");
+  dump_file.addOnce(const_cast<bool&>(bout::build::has_scorep), "has_scorep");
+  dump_file.addOnce(const_cast<bool&>(bout::build::has_slepc), "has_slepc");
+  dump_file.addOnce(const_cast<bool&>(bout::build::has_sundials), "has_sundials");
+  dump_file.addOnce(const_cast<bool&>(bout::build::use_backtrace), "use_backtrace");
+  dump_file.addOnce(const_cast<bool&>(bout::build::use_color), "use_color");
+  dump_file.addOnce(const_cast<bool&>(bout::build::use_openmp), "use_openmp");
+  dump_file.addOnce(const_cast<bool&>(bout::build::use_output_debug), "use_output_debug");
+  dump_file.addOnce(const_cast<bool&>(bout::build::use_sigfpe), "use_sigfpe");
+  dump_file.addOnce(const_cast<bool&>(bout::build::use_signal), "use_signal");
+  dump_file.addOnce(const_cast<bool&>(bout::build::use_track), "use_track");
+
   return dump_file;
 }
 
