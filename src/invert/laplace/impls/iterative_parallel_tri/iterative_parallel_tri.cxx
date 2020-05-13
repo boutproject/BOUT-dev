@@ -337,12 +337,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   * Note that only the non-degenerate fourier modes are being used (i.e. the
   * offset and all the modes up to the Nyquist frequency)
   */
-  for (int kz = 0; kz <= maxmode; kz++) {
-    for (int ix = 0; ix < ncx; ix++) {
-      // Get bk of the current fourier mode
-      bcmplx(kz, ix) = bk(ix, kz);
-    }
-  }
+  transpose(bcmplx, bk, nmode, ncx);
 
   /* Set the matrix A used in the inversion of Ax=b
   * by calling tridagCoef and setting the BC
@@ -644,13 +639,11 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
         xk1d(kz, ix) -= offset;
       }
     }
-
-    // Store the solution xk for the current fourier mode in a 2D array
-    for (int ix = 0; ix < ncx; ix++) {
-      xk(ix, kz) = xk1d(kz, ix);
-    }
     first_call(jy, kz) = false;
   }
+  // Store the solution xk for the current fourier mode in a 2D array
+  transpose(xk, xk1d, ncx, nmode);
+
   /// SCOREP_USER_REGION_END(afterloop);
 
   /// SCOREP_USER_REGION_DEFINE(fftback);
@@ -1529,6 +1522,19 @@ void LaplaceIPT::synchronize_reduced_field(const Level& l, Matrix<dcomplex>& fie
       err = MPI_Sendrecv(&field(1, 0), nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 0,
                          &field(3, 0), nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 1, comm,
                          MPI_STATUS_IGNORE);
+    }
+  }
+}
+
+/*
+ * Returns the transpose of a matrix
+ */
+void LaplaceIPT::transpose(Matrix<dcomplex>& m_t, const Matrix<dcomplex>& m, const int n1,
+                           const int n2) {
+  SCOREP0();
+  for (int i1 = 0; i1 < n1; i1++) {
+    for (int i2 = 0; i2 < n2; i2++) {
+      m_t(i1, i2) = m(i2, i1);
     }
   }
 }

@@ -130,6 +130,7 @@ public:
   void reconstruct_full_solution(Matrix<dcomplex> &xk1d, const Level &level, const int jy);
   void refine(Level &level, Level &level_up, Matrix<dcomplex> &fine_error, const Array<bool> &converged);
   void synchronize_reduced_field(const Level &l, Matrix<dcomplex> &field);
+  void transpose(Matrix<dcomplex> &matrix_transposed, const Matrix<dcomplex> &matrix, const int n1, const int n2);
   void update_solution(Level &l, const Matrix<dcomplex> &fine_error, const Array<bool> &converged);
 
 private:
