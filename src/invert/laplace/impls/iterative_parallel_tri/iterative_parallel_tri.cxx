@@ -57,8 +57,8 @@ LaplaceIPT::LaplaceIPT(Options* opt, CELL_LOC loc, Mesh* mesh_in)
   OPTION(opt, predict_exit, false);
 
   // Number of procs must be a factor of 2
-  int n = localmesh->NXPE;
-  if (not(n & (n - 1)) == 0) {
+  const int n = localmesh->NXPE;
+  if (!is_pow2(n)) {
     throw BoutException("LaplaceIPT error: NXPE must be a power of 2");
   }
   // Number of levels cannot must be such that nproc <= 2^(max_level-1)
