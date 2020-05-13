@@ -85,14 +85,8 @@ LaplaceIPT::LaplaceIPT(Options* opt, CELL_LOC loc, Mesh* mesh_in)
  * Reset the solver to its initial state
  */
 void LaplaceIPT::resetSolver() {
-  for (int jy = 0; jy < localmesh->LocalNy; jy++) {
-    for (int kz = 0; kz < localmesh->LocalNz / 2 + 1; kz++) {
-      first_call(jy, kz) = true;
-      for (int ix = 0; ix < 4; ix++) {
-        x0saved(jy, ix, kz) = 0.0;
-      }
-    }
-  }
+  first_call = true;
+  x0saved = 0.0;
   resetMeanIterations();
 }
 
@@ -226,9 +220,7 @@ void LaplaceIPT::reconstruct_full_solution(Matrix<dcomplex>& xk1d, const Level& 
                                            const int jy) {
   SCOREP0();
 
-  Array<dcomplex> x_lower, x_upper;
-  x_lower = Array<dcomplex>(nmode);
-  x_upper = Array<dcomplex>(nmode);
+  Array<dcomplex> x_lower(nmode), x_upper(nmode);
 
   for (int kz = 0; kz < nmode; kz++) {
 
@@ -828,10 +820,7 @@ void LaplaceIPT::gauss_seidel_red_black(Level& l, const Array<bool>& converged,
 
   if (l.included) {
 
-    Array<dcomplex> sendvec, recvecin, recvecout;
-    sendvec = Array<dcomplex>(nmode);
-    recvecin = Array<dcomplex>(nmode);
-    recvecout = Array<dcomplex>(nmode);
+    Array<dcomplex> sendvec(nmode), recvecin(nmode), recvecout(nmode);
     MPI_Request rreqin, rreqout, sreqin, sreqout;
 
     // BLACK SWEEP
@@ -1580,10 +1569,7 @@ void LaplaceIPT::refine(Level& l, Level& lup, Matrix<dcomplex>& fine_error,
                         const Array<bool>& converged) {
 
   SCOREP0();
-  Array<dcomplex> sendvec, recvecin, recvecout;
-  sendvec = Array<dcomplex>(nmode);
-  recvecin = Array<dcomplex>(nmode);
-  recvecout = Array<dcomplex>(nmode);
+  Array<dcomplex> sendvec(nmode), recvecin(nmode), recvecout(nmode);
   MPI_Request rreqin, rreqout;
 
   // Included processors send their contribution to procs that are included on
