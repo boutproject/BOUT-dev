@@ -273,7 +273,7 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
       output.write(_("  -c, --color\t\t\tColor output using bout-log-color\n"));
 #endif
       output.write(
-          _("  --config\t\t\tPrint the compile-time configuration\n"
+          _("  --print-config\t\tPrint the compile-time configuration\n"
             "  --list-solvers\t\tList the available time solvers\n"
             "  --list-laplacians\t\tList the available Laplacian inversion solvers\n"
             "  --list-laplacexz\t\tList the available LaplaceXZ inversion solvers\n"
@@ -292,7 +292,7 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
 
       std::exit(EXIT_SUCCESS);
     }
-    if (current_arg == "--config") {
+    if (current_arg == "--print-config") {
       printCompileTimeOptions();
       std::exit(EXIT_SUCCESS);
     }
