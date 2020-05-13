@@ -168,8 +168,6 @@ bool LaplaceIPT::all(const Array<bool> a) {
   return std::all_of(a.begin(), a.end(), [](bool v) { return v; });
 }
 
-FieldPerp LaplaceIPT::solve(const FieldPerp& b) { return solve(b, b); }
-
 /*!
  * Solve Ax=b for x given b
  *
