@@ -153,8 +153,8 @@ void LaplaceIPT::reconstruct_full_solution(Matrix<dcomplex>& xk1d, const Level& 
 
   for (int kz = 0; kz < nmode; kz++) {
     for (int i = 0; i < l.ncx; i++) {
-      xk1d(kz, i) = l.minvb(kz, i) + l.upperGuardVector(i, jy, kz) * x_upper[kz]
-                    + l.lowerGuardVector(i, jy, kz) * x_lower[kz];
+      xk1d(kz, i) = l.minvb(kz, i) + l.upperGuardVector(jy, kz, i) * x_upper[kz]
+                    + l.lowerGuardVector(jy, kz, i) * x_lower[kz];
     }
   }
 }
@@ -1027,8 +1027,8 @@ void LaplaceIPT::init(Level& l, const int ncx, const int jy, const Matrix<dcompl
 
   // Arrays to construct global solution from halo values
   l.minvb = Matrix<dcomplex>(nmode, ncx);                // Local M^{-1} f
-  l.lowerGuardVector = Tensor<dcomplex>(ncx, ny, nmode); // alpha
-  l.upperGuardVector = Tensor<dcomplex>(ncx, ny, nmode); // beta
+  l.lowerGuardVector = Tensor<dcomplex>(ny, nmode, ncx); // alpha
+  l.upperGuardVector = Tensor<dcomplex>(ny, nmode, ncx); // beta
 
   // Coefficients of first and last interior rows
   l.al = Matrix<dcomplex>(ny, nmode); // alpha^l
@@ -1070,11 +1070,11 @@ void LaplaceIPT::init(Level& l, const int ncx, const int jy, const Matrix<dcompl
       tridag(&avec(kz, 0), &bvec(kz, 0), &cvec(kz, 0), std::begin(evec), std::begin(tmp),
              ncx);
       for (int i = 0; i < ncx; i++) {
-        l.upperGuardVector(i, jy, kz) = tmp[i];
+        l.upperGuardVector(jy, kz, i) = tmp[i];
       }
     } else {
       for (int i = 0; i < ncx; i++) {
-        l.upperGuardVector(i, jy, kz) = 0.0;
+        l.upperGuardVector(jy, kz, i) = 0.0;
       }
     }
 
@@ -1087,11 +1087,11 @@ void LaplaceIPT::init(Level& l, const int ncx, const int jy, const Matrix<dcompl
       tridag(&avec(kz, 0), &bvec(kz, 0), &cvec(kz, 0), std::begin(evec), std::begin(tmp),
              ncx);
       for (int i = 0; i < ncx; i++) {
-        l.lowerGuardVector(i, jy, kz) = tmp[i];
+        l.lowerGuardVector(jy, kz, i) = tmp[i];
       }
     } else {
       for (int i = 0; i < ncx; i++) {
-        l.lowerGuardVector(i, jy, kz) = 0.0;
+        l.lowerGuardVector(jy, kz, i) = 0.0;
       }
     }
 
@@ -1100,11 +1100,11 @@ void LaplaceIPT::init(Level& l, const int ncx, const int jy, const Matrix<dcompl
     /// SCOREP_USER_REGION_BEGIN(coefs, "calculate
     /// coefs",///SCOREP_USER_REGION_TYPE_COMMON);
 
-    l.bl(jy, kz) = l.upperGuardVector(l.xs, jy, kz);
-    l.al(jy, kz) = l.lowerGuardVector(l.xs, jy, kz);
+    l.bl(jy, kz) = l.upperGuardVector(jy, kz, l.xs);
+    l.al(jy, kz) = l.lowerGuardVector(jy, kz, l.xs);
 
-    l.bu(jy, kz) = l.upperGuardVector(l.xe, jy, kz);
-    l.au(jy, kz) = l.lowerGuardVector(l.xe, jy, kz);
+    l.bu(jy, kz) = l.upperGuardVector(jy, kz, l.xe);
+    l.au(jy, kz) = l.lowerGuardVector(jy, kz, l.xe);
 
     // First compute coefficients that depend on the matrix to be inverted
     // and which therefore might be constant throughout a run.
