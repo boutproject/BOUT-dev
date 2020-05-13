@@ -725,7 +725,7 @@ void LaplaceIPT::gauss_seidel_red_black(Level& l, const Array<bool>& converged,
         // remove branching, this is handled by l.index_end
         l.xloc(1, kz) = (l.rr(1, kz) - l.ar(jy, 1, kz) * l.xloc(0, kz)
                          - l.cr(jy, 1, kz) * l.xloc(l.index_end, kz))
-                        / l.br(jy, 1, kz);
+                        * l.brinv(jy, 1, kz);
       }
     }
     // Send same data up and down
@@ -776,7 +776,7 @@ void LaplaceIPT::gauss_seidel_red_black(Level& l, const Array<bool>& converged,
       if (!converged[kz]) {
         l.xloc(1, kz) = (l.rr(1, kz) - l.ar(jy, 1, kz) * l.xloc(0, kz)
                          - l.cr(jy, 1, kz) * l.xloc(3, kz))
-                        / l.br(jy, 1, kz);
+                        * l.brinv(jy, 1, kz);
       }
     }
   }
@@ -786,7 +786,7 @@ void LaplaceIPT::gauss_seidel_red_black(Level& l, const Array<bool>& converged,
         // index_start removes branches. On level 0, this is 1, otherwise 0
         l.xloc(2, kz) = (l.rr(2, kz) - l.ar(jy, 2, kz) * l.xloc(l.index_start, kz)
                          - l.cr(jy, 2, kz) * l.xloc(3, kz))
-                        / l.br(jy, 2, kz);
+                        * l.brinv(jy, 2, kz);
       }
     }
   }
@@ -885,6 +885,7 @@ void LaplaceIPT::init(Level& l, const Level lup, int ncx, const int xs, const in
   l.br = Tensor<dcomplex>(ny, 4, nmode);
   l.cr = Tensor<dcomplex>(ny, 4, nmode);
   l.rr = Matrix<dcomplex>(4, nmode);
+  l.brinv = Tensor<dcomplex>(ny, 4, nmode);
 
   for (int kz = 0; kz < nmode; kz++) {
     if (localmesh->firstX()) {
@@ -922,6 +923,8 @@ void LaplaceIPT::init(Level& l, const Level lup, int ncx, const int xs, const in
         l.cr(jy, 2, kz) = 0.5 * lup.cr(jy, 2, kz);
       }
     }
+    l.brinv(jy, 1, kz) = 1.0 / l.br(jy, 1, kz);
+    l.brinv(jy, 2, kz) = 1.0 / l.br(jy, 2, kz);
 
     // Need to communicate my index 1 to this level's neighbours
     // Index 2 if last proc.
@@ -1003,6 +1006,7 @@ void LaplaceIPT::init(Level& l, const int ncx, const int jy, const Matrix<dcompl
   l.br = Tensor<dcomplex>(ny, 4, nmode);
   l.cr = Tensor<dcomplex>(ny, 4, nmode);
   l.rr = Matrix<dcomplex>(4, nmode);
+  l.brinv = Tensor<dcomplex>(ny, 4, nmode);
 
   l.residual = Matrix<dcomplex>(4, nmode);
 
@@ -1157,6 +1161,8 @@ void LaplaceIPT::init(Level& l, const int ncx, const int jy, const Matrix<dcompl
     // Now set coefficients for reduced iterations (shared by all levels)
     l.br(jy, 1, kz) = 1.0;
     l.br(jy, 2, kz) = 1.0;
+    l.brinv(jy, 1, kz) = 1.0;
+    l.brinv(jy, 2, kz) = 1.0;
 
     sendvec[kz] = l.ar(jy, 1, kz);
     sendvec[kz + nmode] = l.br(jy, 1, kz);

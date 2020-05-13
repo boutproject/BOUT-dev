@@ -97,7 +97,7 @@ public:
     Matrix<dcomplex> minvb;
     Matrix<dcomplex> residual;
     Tensor<dcomplex> avec, bvec, cvec;
-    Tensor<dcomplex> ar, br, cr;
+    Tensor<dcomplex> ar, br, cr, brinv;
     Matrix<dcomplex> rr;
 
     int err;
