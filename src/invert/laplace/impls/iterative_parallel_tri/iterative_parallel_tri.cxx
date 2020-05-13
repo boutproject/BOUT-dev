@@ -681,7 +681,7 @@ void LaplaceIPT::gauss_seidel_red_black(Level& l, const Array<bool>& converged,
   }
 
   Array<dcomplex> sendvec(nmode), recvecin(nmode), recvecout(nmode);
-  MPI_Request rreqin, rreqout, sreqin, sreqout;
+  MPI_Request rreqin, rreqout;
 
   // BLACK SWEEP
   //
@@ -937,20 +937,17 @@ void LaplaceIPT::init(Level& l, const Level lup, int ncx, const int xs, const in
   }
 
   MPI_Comm comm = BoutComm::get();
-  int err;
 
   // Communicate in
   if (!localmesh->firstX()) {
-    err = MPI_Sendrecv(&sendvec[0], 3 * nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 1,
-                       &recvecin[0], 3 * nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 0, comm,
-                       MPI_STATUS_IGNORE);
+    MPI_Sendrecv(&sendvec[0], 3 * nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 1, &recvecin[0],
+                 3 * nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 0, comm, MPI_STATUS_IGNORE);
   }
 
   // Communicate out
   if (!localmesh->lastX()) {
-    err = MPI_Sendrecv(&sendvec[0], 3 * nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 0,
-                       &recvecout[0], 3 * nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 1, comm,
-                       MPI_STATUS_IGNORE);
+    MPI_Sendrecv(&sendvec[0], 3 * nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 0, &recvecout[0],
+                 3 * nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 1, comm, MPI_STATUS_IGNORE);
   }
 
   for (int kz = 0; kz < nmode; kz++) {
@@ -1170,20 +1167,17 @@ void LaplaceIPT::init(Level& l, const int ncx, const int jy, const Matrix<dcompl
 
   // Synchonize reduced coefficients with neighbours
   MPI_Comm comm = BoutComm::get();
-  int err;
 
   // Communicate in
   if (!localmesh->firstX()) {
-    err = MPI_Sendrecv(&sendvec[0], 3 * nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 1,
-                       &recvecin[0], 3 * nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 0, comm,
-                       MPI_STATUS_IGNORE);
+    MPI_Sendrecv(&sendvec[0], 3 * nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 1, &recvecin[0],
+                 3 * nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 0, comm, MPI_STATUS_IGNORE);
   }
 
   // Communicate out
   if (!localmesh->lastX()) {
-    err = MPI_Sendrecv(&sendvec[0], 3 * nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 0,
-                       &recvecout[0], 3 * nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 1, comm,
-                       MPI_STATUS_IGNORE);
+    MPI_Sendrecv(&sendvec[0], 3 * nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 0, &recvecout[0],
+                 3 * nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 1, comm, MPI_STATUS_IGNORE);
   }
 
   for (int kz = 0; kz < nmode; kz++) {
@@ -1514,20 +1508,17 @@ void LaplaceIPT::synchronize_reduced_field(const Level& l, Matrix<dcomplex>& fie
   }
 
   MPI_Comm comm = BoutComm::get();
-  int err;
 
   // Communicate in
   if (!localmesh->firstX()) {
-    err =
-        MPI_Sendrecv(&field(1, 0), nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 1, &field(0, 0),
-                     nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 0, comm, MPI_STATUS_IGNORE);
+    MPI_Sendrecv(&field(1, 0), nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 1, &field(0, 0),
+                 nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 0, comm, MPI_STATUS_IGNORE);
   }
 
   // Communicate out
   if (!localmesh->lastX()) {
-    err =
-        MPI_Sendrecv(&field(1, 0), nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 0, &field(3, 0),
-                     nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 1, comm, MPI_STATUS_IGNORE);
+    MPI_Sendrecv(&field(1, 0), nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 0, &field(3, 0),
+                 nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 1, comm, MPI_STATUS_IGNORE);
   }
 }
 
