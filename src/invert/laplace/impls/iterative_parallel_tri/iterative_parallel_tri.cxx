@@ -168,52 +168,6 @@ bool LaplaceIPT::all(const Array<bool> a) {
   return std::all_of(a.begin(), a.end(), [](bool v) { return v; });
 }
 
-// TODO Move to Array
-/*
- * Returns true if any values of bool array are true, otherwise returns false.
- */
-bool LaplaceIPT::any(const Array<bool> a) {
-  SCOREP0();
-  for (int i = 0; i < a.size(); i++) {
-    if (a[i] == true) {
-      return true;
-    }
-  }
-  return false;
-}
-
-// TODO Move to Array
-/*
- * Returns maximum value of BoutReal array.
- */
-BoutReal LaplaceIPT::max(const Array<BoutReal> a) {
-  SCOREP0();
-  BoutReal maxval = a[0];
-  for (int i = 1; i < a.size(); i++) {
-    if (a[i] > maxval) {
-      maxval = a[i];
-    }
-  }
-  return maxval;
-}
-
-// TODO Move to Array
-/*
- * Returns location of maximum value of BoutReal array.
- */
-int LaplaceIPT::maxloc(const Array<BoutReal> a) {
-  SCOREP0();
-  BoutReal maxval = a[0];
-  int maxloc = 0;
-  for (int i = 1; i < a.size(); i++) {
-    if (a[i] > maxval) {
-      maxloc = i;
-      maxval = a[i];
-    }
-  }
-  return maxloc;
-}
-
 FieldPerp LaplaceIPT::solve(const FieldPerp& b) { return solve(b, b); }
 
 /*!
