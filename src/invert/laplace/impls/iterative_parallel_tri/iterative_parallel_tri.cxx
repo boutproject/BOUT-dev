@@ -165,12 +165,7 @@ void LaplaceIPT::reconstruct_full_solution(Matrix<dcomplex>& xk1d, const Level& 
  */
 bool LaplaceIPT::all(const Array<bool> a) {
   SCOREP0();
-  for (int i = 0; i < a.size(); i++) {
-    if (a[i] == false) {
-      return false;
-    }
-  }
-  return true;
+  return std::all_of(a.begin(), a.end(), [](bool v) { return v; });
 }
 
 // TODO Move to Array
