@@ -533,7 +533,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
       break;
     } else if (not down) {
       refine(levels[current_level], levels[current_level - 1], fine_error, converged);
-      current_level--;
+      --current_level;
       update_solution(levels[current_level], fine_error, converged);
       synchronize_reduced_field(levels[current_level], levels[current_level].xloc);
 
@@ -549,7 +549,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
         calculate_residual(levels[current_level], converged, jy);
       }
       synchronize_reduced_field(levels[current_level], levels[current_level].residual);
-      current_level++;
+      ++current_level;
       coarsen(levels[current_level], levels[current_level - 1].residual, converged);
       subcount = 0;
 
