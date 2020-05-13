@@ -507,11 +507,11 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
           cycle_eta = 0;
           for (int kz = 0; kz < nmode; kz++) {
             ratio = error_abs[kz] / error_abs_old[kz];
-            eta = ceil(log(atol / error_abs[kz]) / log(ratio));
+            eta = std::ceil(std::log(atol / error_abs[kz]) / std::log(ratio));
             cycle_eta = (cycle_eta > eta) ? cycle_eta : eta;
 
             ratio = error_rel[kz] / error_rel_old[kz];
-            eta = ceil(log(rtol / error_rel[kz]) / log(ratio));
+            eta = std::ceil(std::log(rtol / error_rel[kz]) / std::log(ratio));
             cycle_eta = (cycle_eta > eta) ? cycle_eta : eta;
           }
         }
