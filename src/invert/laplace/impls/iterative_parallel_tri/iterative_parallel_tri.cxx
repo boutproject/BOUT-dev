@@ -53,7 +53,6 @@ LaplaceIPT::LaplaceIPT(Options* opt, CELL_LOC loc, Mesh* mesh_in)
   OPTION(opt, maxits, 100);
   OPTION(opt, max_level, 3);
   OPTION(opt, max_cycle, 3);
-  OPTION(opt, use_previous_timestep, false);
   OPTION(opt, predict_exit, false);
 
   // Number of procs must be a factor of 2
@@ -89,87 +88,6 @@ void LaplaceIPT::resetSolver() {
   x0saved = 0.0;
   resetMeanIterations();
 }
-
-/*
- * Get an initial guess for the solution x by solving the system neglecting
- * coupling terms. This may be considered a form of preconditioning.
- * Note that coupling terms are not neglected when they are known from the
- * boundary conditions; consequently this gives the exact solution when using
- * two processors.
- */
-/*
-void LaplaceIPT::get_initial_guess(const int jy, const int kz, Matrix<dcomplex> &minvb,
-                                              Tensor<dcomplex> &lowerGuardVector,
-Tensor<dcomplex> &upperGuardVector,
-                                              Matrix<dcomplex> &xk1d) {
-
-SCOREP0();
-
-  int xs = localmesh->xstart;
-  int xe = localmesh->xend;
-
-  Array<dcomplex> sendvec, recvec;
-  sendvec = Array<dcomplex>(2);
-  recvec = Array<dcomplex>(2);
-
-  // If not on innermost boundary, get information from neighbouring proc and
-  // calculate value of solution in halo cell
-  if(!localmesh->firstX()) {
-
-    comm_handle recv[1];
-    recv[0] = localmesh->irecvXIn(&recvec[0], 2, 0);
-
-    sendvec[0] = lowerGuardVector(xs,jy,kz);  // element from operator inverse required by
-neighbour
-    sendvec[1] = minvb(kz,xs); // element from RHS required by neighbour
-    // If last processor, include known boundary terms
-    if(localmesh->lastX()) {
-      sendvec[1] += lowerGuardVector(xs,jy,kz)*xk1d(kz,xe+1);
-    }
-
-    localmesh->sendXIn(&sendvec[0],2,1);
-    localmesh->wait(recv[0]);
-
-    xk1d(kz,xs-1) = ( recvec[1] + recvec[0]*minvb(kz,xs) )/(1.0 - sendvec[0]*recvec[0]);
-
-  }
-
-  // If not on outermost boundary, get information from neighbouring proc and
-  // calculate value of solution in halo cell
-  if(!localmesh->lastX()) {
-
-    comm_handle recv[1];
-    recv[0] = localmesh->irecvXOut(&recvec[0], 2, 1);
-
-    sendvec[0] = upperGuardVector(xe,jy,kz);
-    sendvec[1] = minvb(kz,xe);
-    // If first processor, include known boundary terms
-    if(localmesh->firstX()) {
-      sendvec[1] += upperGuardVector(xe,jy,kz)*xk1d(kz,xs-1);
-    }
-
-    localmesh->sendXOut(&sendvec[0],2,0);
-    localmesh->wait(recv[0]);
-
-    xk1d(kz,xe+1) = ( recvec[1] + recvec[0]*minvb(kz,xe) )/(1.0 - sendvec[0]*recvec[0]);
-
-  }
-
-  for(int i=0; i<localmesh->LocalNx; i++){
-    xk1d(kz,i) = minvb(kz,i);
-  }
-  if(not localmesh->lastX()) {
-    for(int i=0; i<localmesh->LocalNx; i++){
-      xk1d(kz,i) += upperGuardVector(i,jy,kz)*xk1d(kz,xe+1);
-    }
-  }
-  if(not localmesh->firstX()) {
-    for(int i=0; i<localmesh->LocalNx; i++){
-      xk1d(kz,i) += lowerGuardVector(i,jy,kz)*xk1d(kz,xs-1);
-    }
-  }
-}
-*/
 
 /*
  * Check whether the reduced matrix on the coarsest level is diagonally
