@@ -66,7 +66,7 @@ protected:
       return 1;
     }
 
-    Coordinates* coord = sigma_n.getMesh()->getCoordinates();
+    Coordinates* coord = sigma_n.getCoordinates();
 
     // generate coordinate system
     coord->Bxy = 1;
