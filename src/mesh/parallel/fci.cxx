@@ -205,10 +205,10 @@ FCIMap::FCIMap(Mesh& mesh, Options& options, int offset_, BoundaryRegionPar* bou
 
         // Check that t_x and t_z are in range
         if ((t_x < 0.0) || (t_x > 1.0))
-          throw BoutException("t_x=%e out of range at (%d,%d,%d)", t_x, x, y, z);
+          throw BoutException("t_x={:e} out of range at ({:d},{:d},{:d})", t_x, x, y, z);
 
         if ((t_z < 0.0) || (t_z > 1.0))
-          throw BoutException("t_z=%e out of range at (%d,%d,%d)", t_z, x, y, z);
+          throw BoutException("t_z={:e} out of range at ({:d},{:d},{:d})", t_z, x, y, z);
 
         
         //----------------------------------------
@@ -221,7 +221,8 @@ FCIMap::FCIMap(Mesh& mesh, Options& options, int offset_, BoundaryRegionPar* bou
         if (xt_prime(x, y, z) < 0.0) {
           // Hit a boundary
 
-          boundary_mask(x, y, z) = false; // true;
+          // Set to false to not skip this point
+          boundary_mask(x, y, z) = false;
 
           // Need to specify the index of the boundary intersection, but
           // this may not be defined in general.

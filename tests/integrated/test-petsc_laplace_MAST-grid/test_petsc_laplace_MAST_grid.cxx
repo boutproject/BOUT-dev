@@ -663,7 +663,7 @@ int main(int argc, char** argv) {
   dump.write();
   dump.close();
   
-  output << "\nFinished running test. Triggering error to quit\n\n";
+  output << "\nFinished running test.\n";
   
   MPI_Barrier(BoutComm::get()); // Wait for all processors to write data
   }
