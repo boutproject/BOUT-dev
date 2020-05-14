@@ -400,25 +400,25 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
               if(inner_boundary_flags & INVERT_AC_GRAD) {
                   // Set values corresponding to nodes adjacent in x
                   if( fourth_order ) {
-                      // Fourth Order Accuracy on Boundary
-		    Element(i,x,z, 0, 0, -25.0 / (12.0*coords->dx(x,y,z)) / sqrt(coords->g_11(x,y,z)), MatA );
-		    Element(i,x,z, 1, 0,   4.0 / coords->dx(x,y,z) / sqrt(coords->g_11(x,y,z)), MatA );
-		    Element(i,x,z, 2, 0,  -3.0 / coords->dx(x,y,z) / sqrt(coords->g_11(x,y,z)), MatA );
-		    Element(i,x,z, 3, 0,   4.0 / (3.0*coords->dx(x,y,z)) / sqrt(coords->g_11(x,y,z)), MatA );
-		    Element(i,x,z, 4, 0,  -1.0 / (4.0*coords->dx(x,y,z)) / sqrt(coords->g_11(x,y,z)), MatA );
+                    // Fourth Order Accuracy on Boundary
+                    Element(i,x,z, 0, 0, -25.0 / (12.0*coords->dx(x,y,z)) / sqrt(coords->g_11(x,y,z)), MatA );
+                    Element(i,x,z, 1, 0,   4.0 / coords->dx(x,y,z) / sqrt(coords->g_11(x,y,z)), MatA );
+                    Element(i,x,z, 2, 0,  -3.0 / coords->dx(x,y,z) / sqrt(coords->g_11(x,y,z)), MatA );
+                    Element(i,x,z, 3, 0,   4.0 / (3.0*coords->dx(x,y,z)) / sqrt(coords->g_11(x,y,z)), MatA );
+                    Element(i,x,z, 4, 0,  -1.0 / (4.0*coords->dx(x,y,z)) / sqrt(coords->g_11(x,y,z)), MatA );
                   } else {
-		    // Second Order Accuracy on Boundary
-		    //   Element(i,x,z, 0, 0, -3.0 / (2.0*coords->dx(x,y)), MatA );
-		    //   Element(i,x,z, 1, 0,  2.0 / coords->dx(x,y), MatA );
-		    //   Element(i,x,z, 2, 0, -1.0 / (2.0*coords->dx(x,y)), MatA );
-		    //   Element(i,x,z, 3, 0, 0.0, MatA );  // Reset these elements to 0 in case 4th order flag was used previously: not allowed now
-		    //   Element(i,x,z, 4, 0, 0.0, MatA );
-		    // Second Order Accuracy on Boundary, set half-way between grid points
-		    Element(i,x,z, 0, 0, -1.0 / coords->dx(x,y,z) / sqrt(coords->g_11(x,y,z)), MatA );
-		    Element(i,x,z, 1, 0,  1.0 / coords->dx(x,y,z) / sqrt(coords->g_11(x,y,z)), MatA );
-		    Element(i,x,z, 2, 0, 0.0, MatA );
-		    //                      Element(i,x,z, 3, 0, 0.0, MatA );  // Reset these elements to 0 in case 4th order flag was used previously: not allowed now
-		    //                      Element(i,x,z, 4, 0, 0.0, MatA );
+                    // Second Order Accuracy on Boundary
+                    //   Element(i,x,z, 0, 0, -3.0 / (2.0*coords->dx(x,y)), MatA );
+                    //   Element(i,x,z, 1, 0,  2.0 / coords->dx(x,y), MatA );
+                    //   Element(i,x,z, 2, 0, -1.0 / (2.0*coords->dx(x,y)), MatA );
+                    //   Element(i,x,z, 3, 0, 0.0, MatA );  // Reset these elements to 0 in case 4th order flag was used previously: not allowed now
+                    //   Element(i,x,z, 4, 0, 0.0, MatA );
+                    // Second Order Accuracy on Boundary, set half-way between grid points
+                    Element(i,x,z, 0, 0, -1.0 / coords->dx(x,y,z) / sqrt(coords->g_11(x,y,z)), MatA );
+                    Element(i,x,z, 1, 0,  1.0 / coords->dx(x,y,z) / sqrt(coords->g_11(x,y,z)), MatA );
+                    Element(i,x,z, 2, 0, 0.0, MatA );
+                    //                      Element(i,x,z, 3, 0, 0.0, MatA );  // Reset these elements to 0 in case 4th order flag was used previously: not allowed now
+                    //                      Element(i,x,z, 4, 0, 0.0, MatA );
                     }
                 } else {
                   if (fourth_order) {
@@ -650,11 +650,11 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
                   // Set values corresponding to nodes adjacent in x
                   if( fourth_order ) {
                       // Fourth Order Accuracy on Boundary
-		    Element(i,x,z,  0, 0, 25.0 / (12.0*coords->dx(x,y,z)) / sqrt(coords->g_11(x,y,z)), MatA );
-		    Element(i,x,z, -1, 0, -4.0 / coords->dx(x,y,z) / sqrt(coords->g_11(x,y,z)), MatA );
-		    Element(i,x,z, -2, 0,  3.0 / coords->dx(x,y,z) / sqrt(coords->g_11(x,y,z)), MatA );
-		    Element(i,x,z, -3, 0, -4.0 / (3.0*coords->dx(x,y,z)) / sqrt(coords->g_11(x,y,z)), MatA );
-		    Element(i,x,z, -4, 0,  1.0 / (4.0*coords->dx(x,y,z)) / sqrt(coords->g_11(x,y,z)), MatA );
+                    Element(i,x,z,  0, 0, 25.0 / (12.0*coords->dx(x,y,z)) / sqrt(coords->g_11(x,y,z)), MatA );
+                    Element(i,x,z, -1, 0, -4.0 / coords->dx(x,y,z) / sqrt(coords->g_11(x,y,z)), MatA );
+                    Element(i,x,z, -2, 0,  3.0 / coords->dx(x,y,z) / sqrt(coords->g_11(x,y,z)), MatA );
+                    Element(i,x,z, -3, 0, -4.0 / (3.0*coords->dx(x,y,z)) / sqrt(coords->g_11(x,y,z)), MatA );
+                    Element(i,x,z, -4, 0,  1.0 / (4.0*coords->dx(x,y,z)) / sqrt(coords->g_11(x,y,z)), MatA );
                     }
                   else {
 //                    // Second Order Accuracy on Boundary
@@ -664,9 +664,9 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
 // //                   Element(i,x,z, -3, 0,  0.0, MatA );  // Reset these elements to 0 in case 4th order flag was used previously: not allowed now
 // //                   Element(i,x,z, -4, 0,  0.0, MatA );
                       // Second Order Accuracy on Boundary, set half-way between grid points
-		    Element(i,x,z,  0, 0,  1.0 / coords->dx(x,y,z) / sqrt(coords->g_11(x,y,z)), MatA );
-		    Element(i,x,z, -1, 0, -1.0 / coords->dx(x,y,z) / sqrt(coords->g_11(x,y,z)), MatA );
-                      Element(i,x,z, -2, 0,  0.0, MatA );
+                    Element(i,x,z,  0, 0,  1.0 / coords->dx(x,y,z) / sqrt(coords->g_11(x,y,z)), MatA );
+                    Element(i,x,z, -1, 0, -1.0 / coords->dx(x,y,z) / sqrt(coords->g_11(x,y,z)), MatA );
+                    Element(i,x,z, -2, 0,  0.0, MatA );
 //                      Element(i,x,z, -3, 0,  0.0, MatA );  // Reset these elements to 0 in case 4th order flag was used previously: not allowed now
 //                      Element(i,x,z, -4, 0,  0.0, MatA );
                     }
