@@ -485,6 +485,9 @@ try:
             self.Bxfunc = lambdify((self.x, self.z, self.phi), Bx, "numpy")
             self.Bzfunc = lambdify((self.x, self.z, self.phi), Bz, "numpy")
             self.Byfunc = lambdify((self.x, self.z, self.phi), By, "numpy")
+
+        def Rfunc(self, x, z, phi):
+            return np.full(x.shape, x)
             
 except ImportError:
     class StraightStellarator(MagneticField):
