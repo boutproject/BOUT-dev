@@ -684,6 +684,13 @@ void LaplaceIPT::gauss_seidel_red_black(Level& l, const Array<bool>& converged,
   Array<dcomplex> sendvec(nmode), recvecin(nmode), recvecout(nmode);
   MPI_Request rreqin, rreqout;
 
+  // Processor colouring. There are p = 2^m processors, labelled 0 to p-1.
+  // On level 0, even procs are coloured red, odd procs are coloured black.
+  // The last proc, p-1, is coloured black, but also has a "red" point, the
+  // final interior point. It does not need to receive during the black
+  // sweep, as the red point only needs data from the first interior point
+  // which is also local.
+
   // BLACK SWEEP
   //
   // Red processors communication only
@@ -693,7 +700,7 @@ void LaplaceIPT::gauss_seidel_red_black(Level& l, const Array<bool>& converged,
       MPI_Irecv(&recvecin[0], nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 0, BoutComm::get(),
                 &rreqin);
     }
-    if (not localmesh->lastX()) { // this is always be true is we force an even core count
+    if (not localmesh->lastX()) {
       MPI_Irecv(&recvecout[0], nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 1, BoutComm::get(),
                 &rreqout);
     }
@@ -730,9 +737,8 @@ void LaplaceIPT::gauss_seidel_red_black(Level& l, const Array<bool>& converged,
       }
     }
     // Send same data up and down
-    if (not localmesh->firstX()) {
-      MPI_Send(&l.xloc(1, 0), nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 1, BoutComm::get());
-    }
+    MPI_Send(&l.xloc(1, 0), nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 1,
+             BoutComm::get()); // black never firstX
     if (not localmesh->lastX()) {
       MPI_Send(&l.xloc(1, 0), nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 0, BoutComm::get());
     }
@@ -741,24 +747,20 @@ void LaplaceIPT::gauss_seidel_red_black(Level& l, const Array<bool>& converged,
   // RED SWEEP
   //
   // Black processors only comms
-  if (l.black or localmesh->lastX()) {
+  if (l.black) {
     // Post receives
-    if (not localmesh->firstX()) {
-      MPI_Irecv(&recvecin[0], nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 0, BoutComm::get(),
-                &rreqin);
-    }
+    MPI_Irecv(&recvecin[0], nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 0, BoutComm::get(),
+              &rreqin);           // black never first
     if (not localmesh->lastX()) { // this is always be true is we force an even core count
       MPI_Irecv(&recvecout[0], nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 1, BoutComm::get(),
                 &rreqout);
     }
 
     // Receive and put data in arrays
-    if (!localmesh->firstX()) {
-      MPI_Wait(&rreqin, MPI_STATUS_IGNORE);
-      for (int kz = 0; kz < nmode; kz++) {
-        if (!converged[kz]) {
-          l.xloc(0, kz) = recvecin[kz];
-        }
+    MPI_Wait(&rreqin, MPI_STATUS_IGNORE);
+    for (int kz = 0; kz < nmode; kz++) {
+      if (!converged[kz]) {
+        l.xloc(0, kz) = recvecin[kz];
       }
     }
     if (!localmesh->lastX()) {
@@ -772,7 +774,7 @@ void LaplaceIPT::gauss_seidel_red_black(Level& l, const Array<bool>& converged,
   }
 
   // Red processors do work and comms
-  if (l.red) {
+  if (l.red and not localmesh->lastX()) {
     for (int kz = 0; kz <= maxmode; kz++) {
       if (!converged[kz]) {
         l.xloc(1, kz) = (l.rr(1, kz) - l.ar(jy, 1, kz) * l.xloc(0, kz)
@@ -792,11 +794,11 @@ void LaplaceIPT::gauss_seidel_red_black(Level& l, const Array<bool>& converged,
     }
   }
 
-  if (not l.black) { // red, or last proc when not on level zero
+  if (l.red or localmesh->lastX()) { // red, or last proc when not on level zero
     // Send same data up and down
-    if (not localmesh->firstX() and l.red) { // excludes last proc
+    if (not localmesh->firstX() and not localmesh->lastX()) { // excludes last proc
       MPI_Send(&l.xloc(1, 0), nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 1, BoutComm::get());
-    } else if (not localmesh->firstX()) {
+    } else if (localmesh->lastX() and l.current_level != 0) { // last proc on level > 0
       MPI_Send(&l.xloc(2, 0), nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 1, BoutComm::get());
     }
     if (not localmesh->lastX()) {
@@ -864,7 +866,7 @@ void LaplaceIPT::init(Level& l, const Level lup, int ncx, const int xs, const in
   // the final grid point, which is treated explicitly. Otherwise it should
   // not be included in either the red or black work.
   if (localmesh->lastX()) {
-    l.red = false;
+    l.red = true;
     l.black = false;
   }
 
