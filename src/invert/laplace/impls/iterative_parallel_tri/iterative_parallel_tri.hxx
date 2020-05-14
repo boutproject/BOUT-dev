@@ -41,7 +41,7 @@ RegisterLaplace<LaplaceIPT> registerlaplaceipt(LAPLACE_IPT);
 class LaplaceIPT : public Laplacian {
 public:
   LaplaceIPT(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr);
-  ~LaplaceIPT(){};
+  ~LaplaceIPT() = default;
 
   using Laplacian::setCoefA;
   void setCoefA(const Field2D &val) override {
