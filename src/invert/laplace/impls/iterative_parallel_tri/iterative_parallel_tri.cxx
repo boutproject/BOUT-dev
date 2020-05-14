@@ -1336,25 +1336,16 @@ void LaplaceIPT::calculate_residual(Level& l, const Array<bool>& converged,
 
   for (int kz = 0; kz < nmode; kz++) {
     if (!converged[kz]) {
+      l.residual(1, kz) = l.rr(1, kz) - l.ar(jy, 1, kz) * l.xloc(0, kz)
+                          - l.br(jy, 1, kz) * l.xloc(1, kz)
+                          - l.cr(jy, 1, kz) * l.xloc(l.index_end, kz);
       if (not localmesh->lastX()) {
-        l.residual(1, kz) = l.rr(1, kz) - l.ar(jy, 1, kz) * l.xloc(0, kz)
-                            - l.br(jy, 1, kz) * l.xloc(1, kz)
-                            - l.cr(jy, 1, kz) * l.xloc(3, kz);
-        l.residual(2, kz) = 0.0; // Good to ensure this, as this point is included in
+        l.residual(2, kz) = 0.0; // Need to ensure this, as this point is included in
                                  // residual calculations
       } else {
-        if (l.current_level == 0) {
-          l.residual(1, kz) = l.rr(1, kz) - l.ar(jy, 1, kz) * l.xloc(0, kz)
-                              - l.br(jy, 1, kz) * l.xloc(1, kz)
-                              - l.cr(jy, 1, kz) * l.xloc(2, kz);
-          l.residual(2, kz) = l.rr(2, kz) - l.ar(jy, 2, kz) * l.xloc(1, kz)
-                              - l.br(jy, 2, kz) * l.xloc(2, kz)
-                              - l.cr(jy, 2, kz) * l.xloc(3, kz);
-        } else {
-          l.residual(2, kz) = l.rr(2, kz) - l.ar(jy, 2, kz) * l.xloc(0, kz)
-                              - l.br(jy, 2, kz) * l.xloc(2, kz)
-                              - l.cr(jy, 2, kz) * l.xloc(3, kz);
-        }
+        l.residual(2, kz) = l.rr(2, kz) - l.ar(jy, 2, kz) * l.xloc(l.index_start, kz)
+                            - l.br(jy, 2, kz) * l.xloc(2, kz)
+                            - l.cr(jy, 2, kz) * l.xloc(3, kz);
       }
     }
   }
