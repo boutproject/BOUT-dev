@@ -140,7 +140,13 @@ public:
   int jacobian(); ///< Calculate J and Bxy
 
   /// Return if the metrics are 3D
-  constexpr bool is3D() const;
+  constexpr bool is3D() const {
+#ifdef COORDINATES_USE_3D
+    return true;
+#else
+    return false;
+#endif
+  }
 
   ///////////////////////////////////////////////////////////
   // Parallel transforms
