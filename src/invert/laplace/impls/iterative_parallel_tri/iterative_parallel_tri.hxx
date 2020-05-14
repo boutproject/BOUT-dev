@@ -135,18 +135,18 @@ public:
 
 private:
 
-  // Information about the grids
+  /// Information about the grids
   std::vector<Level> levels;
 
-  // The coefficents in
-  // D*grad_perp^2(x) + (1/C)*(grad_perp(C))*grad_perp(x) + A*x = b
+  /// The coefficents in
+  /// $D*grad_perp^2(x) + (1/C)*(grad_perp(C))*grad_perp(x) + A*x = b$
   Field2D A, C, D;
 
-  // Flag to state whether this is the first time the solver is called
-  // on the point (jy,kz).
+  /// Flag to state whether this is the first time the solver is called
+  /// on the point (jy,kz).
   Matrix<bool> first_call;
 
-  // Save previous x in Fourier space
+  /// Save previous x in Fourier space
   Tensor<dcomplex> x0saved;
 
   /// Solver tolerances
@@ -171,12 +171,19 @@ private:
   /// Counter for the number of times the solver has been called
   int ncalls;
 
+  /// True when matrix to be inverted is constant, allowing results to be cached and work skipped
   bool store_coefficients;
 
+  /// Number of unfiltered Fourier modes
   int nmode;
-  int proc_in;
-  int proc_out;
+
+  /// Neighbouring processors in the in and out directions
+  int proc_in, proc_out;
+
+  /// This processor's unique ID
   int myproc;
+
+  /// Shorthand for localmesh->NXPE
   int nproc;
 
 };
