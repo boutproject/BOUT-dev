@@ -2000,7 +2000,7 @@ Field3D Coordinates::indexDDY(const Field3D& f, CELL_LOC outloc,
   return bout::derivatives::index::DDY(f, outloc, method, region);
 }
 
-bool Coordinates::is3D() {
+constexpr bool Coordinates::is3D() const {
 #ifdef COORDINATES_USE_3D
   return true;
 #else

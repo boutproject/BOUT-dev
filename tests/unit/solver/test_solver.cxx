@@ -256,9 +256,9 @@ TEST_F(SolverTest, AddVector2D) {
   Vector2D vector1{}, vector2{};
   EXPECT_NO_THROW(solver.add(vector1, "vector"));
 #ifndef COORDINATES_USE_3D
-  int n2d=3, n3d=0;
+  constexpr int n2d=3, n3d=0;
 #else
-  int n2d=0, n3d=3;
+  constexpr int n2d=0, n3d=3;
 #endif
   EXPECT_EQ(solver.n2Dvars(), n2d);
   EXPECT_EQ(solver.n3Dvars(), n3d);
@@ -387,9 +387,9 @@ TEST_F(SolverTest, ConstraintVector2D) {
   Vector2D vector1{}, vector2{};
   EXPECT_NO_THROW(solver.constraint(vector1, vector1, "vector"));
 #ifndef COORDINATES_USE_3D
-  int n2d=3, n3d=0;
+  constexpr int n2d=3, n3d=0;
 #else
-  int n2d=0, n3d=3;
+  constexpr int n2d=0, n3d=3;
 #endif
   EXPECT_EQ(solver.n2Dvars(), n2d);
   EXPECT_EQ(solver.n3Dvars(), n3d);

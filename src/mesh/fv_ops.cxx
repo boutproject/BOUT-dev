@@ -314,24 +314,24 @@ namespace FV {
 
             for (int k = 0; k < mesh->LocalNz; k++) {
               // Right boundary common factors
-              BoutReal common_factor = 0.25
+              const BoutReal common_factor = 0.25
                                        * (coord->dy(i, j, k) + coord->dy(i, j + 1, k))
                                        * (coord->J(i, j, j) + coord->J(i, j + 1, k));
 
-              BoutReal factor_rc =
+              const BoutReal factor_rc =
                   common_factor / (coord->J(i, j, k) * coord->dy(i, j, k));
-              BoutReal factor_rp =
+              const BoutReal factor_rp =
                   common_factor / (coord->J(i, j + 1, k) * coord->dy(i, j + 1, k));
 
               // Not on domain boundary
               // 3rd derivative at right cell boundary
               
-              BoutReal d3fdx3 = (
-                                 f(i,j+2,k)
-                                 - 3.*f(i,j+1,k)
-                                 + 3.*f(i,j,  k)
-                                 -    f(i,j-1,k)
-                                 );
+              const BoutReal d3fdx3 = (
+                                       f(i,j+2,k)
+                                       - 3.*f(i,j+1,k)
+                                       + 3.*f(i,j,  k)
+                                       -    f(i,j-1,k)
+                                       );
               
               result(i,j,  k) += d3fdx3 * factor_rc; 
               result(i,j+1,k) -= d3fdx3 * factor_rp; 
@@ -342,21 +342,21 @@ namespace FV {
             
             for(int k=0;k<mesh->LocalNz;k++) {
               // Right boundary common factors
-              BoutReal common_factor = 0.25
+              const BoutReal common_factor = 0.25
                                        * (coord->dy(i, j, k) + coord->dy(i, j + 1, k))
                                        * (coord->J(i, j, j) + coord->J(i, j + 1, k));
 
-              BoutReal factor_rc =
+              const BoutReal factor_rc =
                   common_factor / (coord->J(i, j, k) * coord->dy(i, j, k));
-              BoutReal factor_rp =
+              const BoutReal factor_rp =
                   common_factor / (coord->J(i, j + 1, k) * coord->dy(i, j + 1, k));
 
-              BoutReal d3fdx3 = -((16. / 5) * 0.5 *
-                                  (f(i, j + 1, k) + f(i, j, k)) // Boundary value f_b
-                                  - 6. * f(i, j, k)                 // f_0
-                                  + 4. * f(i, j - 1, k)             // f_1
-                                  - (6. / 5) * f(i, j - 2, k)       // f_2
-                                  );
+              const BoutReal d3fdx3 = -((16. / 5) * 0.5 *
+                                        (f(i, j + 1, k) + f(i, j, k)) // Boundary value f_b
+                                        - 6. * f(i, j, k)                 // f_0
+                                        + 4. * f(i, j - 1, k)             // f_1
+                                        - (6. / 5) * f(i, j - 2, k)       // f_2
+                                        );
               
               result(i,j,  k) += d3fdx3 * factor_rc; 
               result(i,j+1,k) -= d3fdx3 * factor_rp;
@@ -372,20 +372,20 @@ namespace FV {
             
           if ( j != mesh->ystart || !has_lower_boundary ) {
             for(int k=0;k<mesh->LocalNz;k++) {
-              BoutReal common_factor = 0.25
+              const BoutReal common_factor = 0.25
                                        * (coord->dy(i, j, k) + coord->dy(i, j + 1, k))
                                        * (coord->J(i, j, k) + coord->J(i, j - 1, k));
 
-              BoutReal factor_lc =
+              const BoutReal factor_lc =
                   common_factor / (coord->J(i, j, k) * coord->dy(i, j, k));
-              BoutReal factor_lm =
+              const BoutReal factor_lm =
                   common_factor / (coord->J(i, j - 1, k) * coord->dy(i, j - 1, k));
 
               // Not on a domain boundary
-              BoutReal d3fdx3 = (f(i, j + 1, k)
-                                 - 3. * f(i, j, k)
-                                 + 3. * f(i, j - 1, k)
-                                 - f(i, j - 2, k));
+              const BoutReal d3fdx3 = (f(i, j + 1, k)
+                                       - 3. * f(i, j, k)
+                                       + 3. * f(i, j - 1, k)
+                                       - f(i, j - 2, k));
               
               result(i, j    , k) -= d3fdx3 * factor_lc; 
               result(i, j - 1, k) += d3fdx3 * factor_lm;
@@ -393,15 +393,15 @@ namespace FV {
           } else {
             // On a domain (Y) boundary
             for(int k=0;k<mesh->LocalNz;k++) {
-              BoutReal common_factor = 0.25
+              const BoutReal common_factor = 0.25
                                        * (coord->dy(i, j, k) + coord->dy(i, j + 1, k))
                                        * (coord->J(i, j, k) + coord->J(i, j - 1, k));
 
-              BoutReal factor_lc =
+              const BoutReal factor_lc =
                   common_factor / (coord->J(i, j, k) * coord->dy(i, j, k));
-              BoutReal factor_lm =
+              const BoutReal factor_lm =
                   common_factor / (coord->J(i, j - 1, k) * coord->dy(i, j - 1, k));
-              BoutReal d3fdx3 =
+              const BoutReal d3fdx3 =
                   -(-(16. / 5) * 0.5 * (f(i, j - 1, k) + f(i, j, k)) // Boundary value f_b
                     + 6. * f(i, j, k)                                // f_0
                     - 4. * f(i, j + 1, k)                            // f_1

@@ -126,11 +126,10 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
     
     BoutReal coef1=0.0, coef2=0.0, coef3=0.0, coef4=0.0, 
       coef5=0.0, coef6=0.0;
-    Field2D kwave_;
     ///////// PERFORM INVERSION /////////
       
     // shift freqs according to FFT convention
-    kwave_=iz*2.0*PI/coords->zlength(); // wave number is 1/[rad]
+    const Field2D kwave_ = iz * TWOPI / coords->zlength(); // wave number is 1/[rad]
 
     // set bk1d
     for(int ix=0;ix<localmesh->LocalNx;ix++)
