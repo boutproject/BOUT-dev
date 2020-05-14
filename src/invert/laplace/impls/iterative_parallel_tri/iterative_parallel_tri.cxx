@@ -71,7 +71,7 @@ LaplaceIPT::LaplaceIPT(Options* opt, CELL_LOC loc, Mesh* mesh_in)
       ipt_mean_its, "ipt_solver" + std::to_string(ipt_solver_count) + "_mean_its");
   ++ipt_solver_count;
 
-  first_call = Matrix<bool>(localmesh->LocalNy, localmesh->LocalNz / 2 + 1);
+  first_call = Array<bool>(localmesh->LocalNy);
 
   x0saved = Tensor<dcomplex>(localmesh->LocalNy, 4, localmesh->LocalNz / 2 + 1);
 
@@ -395,7 +395,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   // much of the information for each level may be stored. Data that cannot
   // be cached (e.g. the changing right-hand sides) is calculated in init_rhs
   // below.
-  if (first_call(jy, 0) || not store_coefficients) {
+  if (first_call[jy] || not store_coefficients) {
 
     init(levels[0], ncx, jy, avec, bvec, cvec, xs, xe);
 
@@ -662,9 +662,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
 #endif
   }
 
-  for (int kz = 0; kz <= maxmode; kz++) {
-    first_call(jy, kz) = false;
-  }
+  first_call[jy] = false;
 
   /// SCOREP_USER_REGION_END(fftback);
   return x; // Result of the inversion

@@ -144,7 +144,7 @@ private:
 
   /// Flag to state whether this is the first time the solver is called
   /// on the point (jy,kz).
-  Matrix<bool> first_call;
+  Array<bool> first_call;
 
   /// Save previous x in Fourier space
   Tensor<dcomplex> x0saved;
