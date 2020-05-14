@@ -390,125 +390,148 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
         PetscScalar zpxp, zpxm, zmxp, zmxm;
 
         // XX component
+        {
+          // Metrics on x+1/2 boundary
+          const BoutReal J = 0.5*(coords->J(x,y,z) + coords->J(x+1,y,z));
+          const BoutReal g11 = 0.5*(coords->g11(x,y,z) + coords->g11(x+1,y,z));
+          const BoutReal dx = 0.5*(coords->dx(x,y,z) + coords->dx(x+1,y,z));
+          const BoutReal Acoef = 0.5*(A(x,y,z) + A(x+1,y,z));
 
-        // Metrics on x+1/2 boundary
-        BoutReal J = 0.5*(coords->J(x,y,z) + coords->J(x+1,y,z));
-        BoutReal g11 = 0.5*(coords->g11(x,y,z) + coords->g11(x+1,y,z));
-        BoutReal dx = 0.5*(coords->dx(x,y,z) + coords->dx(x+1,y,z));
-        BoutReal Acoef = 0.5*(A(x,y,z) + A(x+1,y,z));
+          const BoutReal val = Acoef * J * g11 / (coords->J(x,y,z) * dx * coords->dx(x,y,z));
+          xp = val;
+          c  = -val;
+        }
 
-        BoutReal val = Acoef * J * g11 / (coords->J(x,y,z) * dx * coords->dx(x,y,z));
-        xp = val;
-        c  = -val;
+        {
+          // Metrics on x-1/2 boundary
+          const BoutReal J = 0.5*(coords->J(x,y,z) + coords->J(x-1,y,z));
+          const BoutReal g11 = 0.5*(coords->g11(x,y,z) + coords->g11(x-1,y,z));
+          const BoutReal dx = 0.5*(coords->dx(x,y,z) + coords->dx(x-1,y,z));
+          const BoutReal Acoef = 0.5*(A(x,y,z) + A(x-1,y,z));
 
-        // Metrics on x-1/2 boundary
-        J = 0.5*(coords->J(x,y,z) + coords->J(x-1,y,z));
-        g11 = 0.5*(coords->g11(x,y,z) + coords->g11(x-1,y,z));
-        dx = 0.5*(coords->dx(x,y,z) + coords->dx(x-1,y,z));
-        Acoef = 0.5*(A(x,y,z) + A(x-1,y,z));
-
-        val = Acoef * J * g11 / (coords->J(x,y,z) * dx * coords->dx(x,y,z));
-        xm = val;
-        c  -= val;
+          const BoutReal val = Acoef * J * g11 / (coords->J(x,y,z) * dx * coords->dx(x,y,z));
+          xm = val;
+          c  -= val;
+        }
 
         // ZZ component
         // Wrap around z-1 and z+1 indices
-        int zminus = (z - 1 + (localmesh->LocalNz)) % (localmesh->LocalNz);
-        int zplus = (z + 1) % (localmesh->LocalNz);
+        const int zminus = (z - 1 + (localmesh->LocalNz)) % (localmesh->LocalNz);
+        const int zplus = (z + 1) % (localmesh->LocalNz);
 
-        J = 0.5*(coords->J(x,y,z) + coords->J(x,y,zplus));
-        BoutReal g33 = 0.5*(coords->g33(x,y,z) + coords->g33(x,y,zplus));
-        const BoutReal dz = coords->dz(x,y,z);
-        // Metrics on z+1/2 boundary
-        Acoef = 0.5*(A(x,y,z) + A(x,y,zplus));
+        {
+          const BoutReal J = 0.5*(coords->J(x,y,z) + coords->J(x,y,zplus));
+          const BoutReal g33 = 0.5*(coords->g33(x,y,z) + coords->g33(x,y,zplus));
+          const BoutReal dz = coords->dz(x,y,z);
+          // Metrics on z+1/2 boundary
+          const BoutReal Acoef = 0.5*(A(x,y,z) + A(x,y,zplus));
 
-        val = Acoef * J * g33 / (coords->J(x,y,z) * dz * dz);
-        zp = val;
-        c  -= val;
+          const BoutReal val = Acoef * J * g33 / (coords->J(x,y,z) * dz * dz);
+          zp = val;
+          c  -= val;
+        }
+        {
+          // Metrics on z-1/2 boundary
+          const BoutReal J = 0.5*(coords->J(x,y,z) + coords->J(x,y,zminus));
+          const BoutReal g33 = 0.5*(coords->g33(x,y,z) + coords->g33(x,y,zminus));
+          const BoutReal Acoef = 0.5*(A(x,y,z) + A(x,y,zminus));
 
-        // Metrics on z-1/2 boundary
-        J = 0.5*(coords->J(x,y,z) + coords->J(x,y,zminus));
-        g33 = 0.5*(coords->g33(x,y,z) + coords->g33(x,y,zminus));
-        Acoef = 0.5*(A(x,y,z) + A(x,y,zminus));
-
-        val = Acoef * J * g33 / (coords->J(x,y,z) * dz * dz);
-        zm = val;
-        c  -= val;
+          const BoutReal val = Acoef * J * g33 / (coords->J(x,y,z) * dz * dz);
+          zm = val;
+          c  -= val;
+        }
 
         // XZ components
 
-        // x+1/2, z+1/2
-        J =  0.5*(coords->J(x,y,z) + coords->J(x+1,y,z));
-        BoutReal g13 = 0.5*(coords->g13(x,y,z) + coords->g13(x+1,y,z));
-        const BoutReal fourdz= 4.*dz;
-        Acoef = 0.5*(A(x,y,z) + A(x,y,zplus));
+        {
+          // x+1/2, z+1/2
+          const BoutReal J =  0.5*(coords->J(x,y,z) + coords->J(x+1,y,z));
+          const BoutReal g13 = 0.5*(coords->g13(x,y,z) + coords->g13(x+1,y,z));
+          const BoutReal fourdz= 4.*dz;
+          {
+            const BoutReal Acoef = 0.5*(A(x,y,z) + A(x,y,zplus));
 
-        val = Acoef * J * g13 / (coords->J(x,y,z) * fourdz * coords->dx(x,y,z));
-        xpzp = val;
-        c -= val;
+            const BoutReal val = Acoef * J * g13 / (coords->J(x,y,z) * fourdz * coords->dx(x,y,z));
+            xpzp = val;
+            c -= val;
+          }
+          {
+            // x+1/2, z-1/2
+            // J =  0.5*(coords->J(x,y,z) + coords->J(x+1,y,z));
+            // g13 = 0.5*(coords->gxz(x,y,z) + coords->gxz(x+1,y,z));
+            const BoutReal Acoef = 0.5*(A(x,y,z) + A(x,y,zminus));
 
-        // x+1/2, z-1/2
-        // J =  0.5*(coords->J(x,y,z) + coords->J(x+1,y,z));
-        // g13 = 0.5*(coords->gxz(x,y,z) + coords->gxz(x+1,y,z));
-        Acoef = 0.5*(A(x,y,z) + A(x,y,zminus));
+            const BoutReal val = - Acoef * J * g13 / (coords->J(x,y,z) * fourdz * coords->dx(x,y,z));
+            xpzm = val;
+            c -= val;
+          }
 
-        val = - Acoef * J * g13 / (coords->J(x,y,z) * fourdz * coords->dx(x,y,z));
-        xpzm = val;
-        c -= val;
+        {
+          // x-1/2, z+1/2
+          const BoutReal J =  0.5*(coords->J(x,y,z) + coords->J(x-1,y,z));
+          const BoutReal g13 = 0.5*(coords->g13(x,y,z) + coords->g13(x-1,y,z));
+          {
+            const BoutReal Acoef = 0.5*(A(x,y,z) + A(x,y,zplus));
 
-        // x-1/2, z+1/2
-        J =  0.5*(coords->J(x,y,z) + coords->J(x-1,y,z));
-        g13 = 0.5*(coords->g13(x,y,z) + coords->g13(x-1,y,z));
-        Acoef = 0.5*(A(x,y,z) + A(x,y,zplus));
+            const BoutReal val = - Acoef * J * g13 / (coords->J(x,y,z) * fourdz * coords->dx(x,y,z));
+            xmzp = val;
+            c -= val;
+          }
+          {
+            // x-1/2, z-1/2
+            const BoutReal Acoef = 0.5*(A(x,y,z) + A(x,y,zminus));
 
-        val = - Acoef * J * g13 / (coords->J(x,y,z) * fourdz * coords->dx(x,y,z));
-        xmzp = val;
-        c -= val;
+            const BoutReal val = Acoef * J * g13 / (coords->J(x,y,z) * fourdz * coords->dx(x,y,z));
+            xmzm = val;
+            c -= val;
+          }
+        }
 
-        // x-1/2, z-1/2
-        Acoef = 0.5*(A(x,y,z) + A(x,y,zminus));
+        {
+          // ZX components
+          // z+1/2, x+1/2
+          const BoutReal J = 0.5*(coords->J(x,y,z) + coords->J(x,y,zplus));
+          const BoutReal g13 = 0.5*(coords->g13(x,y,z) + coords->g13(x,y,zplus));
+          {
+            const BoutReal dx = 2.0*(coords->dx(x,y,z) + coords->dx(x+1,y,z));
+            const BoutReal Acoef = 0.5*(A(x,y,z) + A(x+1,y,z));
 
-        val = Acoef * J * g13 / (coords->J(x,y,z) * fourdz * coords->dx(x,y,z));
-        xmzm = val;
-        c -= val;
+            const BoutReal val = Acoef * J * g13 / (coords->J(x,y,z) * dx * dz);
+            zpxp = val;
+            c -= val;
+          }
+          {
+            //z+1/2, x-1/2
+            const BoutReal dx = 2.0*(coords->dx(x,y,z) + coords->dx(x-1,y,z));
+            const BoutReal Acoef = 0.5*(A(x,y,z) + A(x-1,y,z));
 
+            const BoutReal val = - Acoef * J * g13 / (coords->J(x,y,z) * dx * dz);
+            zpxm = val;
+            c -= val;
+          }
+        }
+        {
+          // z-1/2, x+1/2
+          const BoutReal J = 0.5*(coords->J(x,y,z) + coords->J(x,y,zminus));
+          const BoutReal g13 = 0.5*(coords->g13(x,y,z) + coords->g13(x,y,zminus));
+          {
+            const BoutReal dx = 2.0*(coords->dx(x,y,z) + coords->dx(x+1,y,z));
+            const BoutReal Acoef = 0.5*(A(x,y,z) + A(x+1,y,z));
 
-        // ZX components
-        // z+1/2, x+1/2
-        J = 0.5*(coords->J(x,y,z) + coords->J(x,y,zplus));
-        g13 = 0.5*(coords->g13(x,y,z) + coords->g13(x,y,zplus));
-        dx = 2.0*(coords->dx(x,y,z) + coords->dx(x+1,y,z));
-        Acoef = 0.5*(A(x,y,z) + A(x+1,y,z));
+            const BoutReal val = - Acoef * J * g13 / (coords->J(x,y,z) * dx * dz);
+            zmxp = val;
+            c -= val;
+          }
+          {
+            // z-1/2, x-1/2
+            const BoutReal dx = 2.0*(coords->dx(x,y,z) + coords->dx(x-1,y,z));
+            const BoutReal Acoef = 0.5*(A(x,y,z) + A(x-1,y,z));
 
-        val = Acoef * J * g13 / (coords->J(x,y,z) * dx * dz);
-        zpxp = val;
-        c -= val;
-
-        //z+1/2, x-1/2
-        dx = 2.0*(coords->dx(x,y,z) + coords->dx(x-1,y,z));
-        Acoef = 0.5*(A(x,y,z) + A(x-1,y,z));
-
-        val = - Acoef * J * g13 / (coords->J(x,y,z) * dx * dz);
-        zpxm = val;
-        c -= val;
-
-        // z-1/2, x+1/2
-        J = 0.5*(coords->J(x,y,z) + coords->J(x,y,zminus));
-        g13 = 0.5*(coords->g13(x,y,z) + coords->g13(x,y,zminus));
-        dx = 2.0*(coords->dx(x,y,z) + coords->dx(x+1,y,z));
-        Acoef = 0.5*(A(x,y,z) + A(x+1,y,z));
-
-        val = - Acoef * J * g13 / (coords->J(x,y,z) * dx * dz);
-        zmxp = val;
-        c -= val;
-
-        // z-1/2, x-1/2
-        dx = 2.0*(coords->dx(x,y,z) + coords->dx(x-1,y,z));
-        Acoef = 0.5*(A(x,y,z) + A(x-1,y,z));
-
-        val = Acoef * J * g13 / (coords->J(x,y,z) * dx * dz);
-        zmxm = val;
-        c -= val;
+            const BoutReal val = Acoef * J * g13 / (coords->J(x,y,z) * dx * dz);
+            zmxm = val;
+            c -= val;
+          }
+        }
 
 
         ///////////// OLDER CODE /////////////////
