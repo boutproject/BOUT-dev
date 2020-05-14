@@ -7,7 +7,7 @@ from sys import exit
 from boututils.run_wrapper import shell
 
 selflocation = os.path.realpath(__file__)
-selflocation = selflocation.rsplit("/", 1)[0]
+selflocation = os.path.dirname(selflocation)
 status, out = shell(selflocation+"/../../bin/bout-config --metric-type", pipe=True)
 
 if "3D" in out:

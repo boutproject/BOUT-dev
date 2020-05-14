@@ -24,9 +24,7 @@ from sys import stdout, exit
 
 MPIRUN = getmpirun()
 
-print("Making LaplaceXZ test")
-shell("rm test-laplacexz")
-shell_safe("make > make.log")
+build_and_log("LaplaceXZ test")
 
 print("Running LaplaceXZ test")
 success = True

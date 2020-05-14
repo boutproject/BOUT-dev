@@ -165,18 +165,18 @@ public:
 #ifdef DERIV_FUNC_REGION_ENUM_TO_STRING
 #error This utility macro should not clash with another one
 #else
-#define DERIV_FUNC_REGION_ENUM_TO_STRING(func, Tr, T)		  \
-  [[deprecated("Please use Coordinates::#func(const #T& f, " \
+#define DERIV_FUNC_REGION_ENUM_TO_STRING(func, ResultType, T)		\
+  [[deprecated("Please use Coordinates::#func(const #T& f, "		\
       "CELL_LOC outloc = CELL_DEFAULT, const std::string& method = \"DEFAULT\", " \
       "const std::string& region = \"RGN_ALL\") instead")]] \
-  inline Tr func(const T& f, CELL_LOC outloc, const std::string& method, \
+  inline ResultType func(const T& f, CELL_LOC outloc, const std::string& method, \
       REGION region) { \
     return func(f, outloc, method, toString(region)); \
   } \
   [[deprecated("Please use Coordinates::#func(const #T& f, " \
       "CELL_LOC outloc = CELL_DEFAULT, const std::string& method = \"DEFAULT\", " \
       "const std::string& region = \"RGN_ALL\") instead")]] \
-  inline Tr func(const T& f, CELL_LOC outloc, DIFF_METHOD method, \
+  inline ResultType func(const T& f, CELL_LOC outloc, DIFF_METHOD method, \
       REGION region = RGN_NOBNDRY) { \
     return func(f, outloc, toString(method), toString(region)); \
   }
@@ -185,11 +185,11 @@ public:
 #ifdef GRAD_FUNC_REGION_ENUM_TO_STRING
 #error This utility macro should not clash with another one
 #else
-#define GRAD_FUNC_REGION_ENUM_TO_STRING(func, Tr, T)		  \
-  [[deprecated("Please use Coordinates::#func(const #T& f, " \
+#define GRAD_FUNC_REGION_ENUM_TO_STRING(func, ResultType, T)		\
+  [[deprecated("Please use Coordinates::#func(const #T& f, "		\
       "CELL_LOC outloc = CELL_DEFAULT, const std::string& method = \"DEFAULT\") " \
       "instead")]] \
-  inline Tr func(const T& f, CELL_LOC outloc, DIFF_METHOD method) { \
+  inline ResultType func(const T& f, CELL_LOC outloc, DIFF_METHOD method) { \
     return func(f, outloc, toString(method)); \
   }
 #endif
