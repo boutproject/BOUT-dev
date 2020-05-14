@@ -333,9 +333,10 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   /// SCOREP_USER_REGION_DEFINE(kzinit);
   /// SCOREP_USER_REGION_BEGIN(kzinit, "kz init",///SCOREP_USER_REGION_TYPE_COMMON);
 
-  /* Solve differential equation in x for each fourier mode
-  * Note that only the non-degenerate fourier modes are being used (i.e. the
-  * offset and all the modes up to the Nyquist frequency)
+  /* Solve differential equation in x for each fourier mode, so transpose to make x the
+  * fastest moving index. Note that only the non-degenerate fourier modes are used (i.e.
+  * the offset and all the modes up to the Nyquist frequency), so we only copy up to
+  * `nmode` in the transpose.
   */
   transpose(bcmplx, bk, nmode, ncx);
 
