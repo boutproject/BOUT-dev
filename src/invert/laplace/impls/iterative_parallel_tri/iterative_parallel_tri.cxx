@@ -1138,8 +1138,7 @@ void LaplaceIPT::init(Level& l, const int ncx, const int jy, const Matrix<dcompl
       MPI_Wait(&req, MPI_STATUS_IGNORE);
     }
 
-    dcomplex Delta;
-    Delta = 1.0 / (1.0 - l.al(jy, kz) * AdBd[1]);
+    const dcomplex Delta = 1.0 / (1.0 - l.al(jy, kz) * AdBd[1]);
     l.ar(jy, 1, kz) = -Delta * l.al(jy, kz) * AdBd[0];
     l.cr(jy, 1, kz) = -Delta * l.bl(jy, kz);
 
