@@ -628,20 +628,18 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   ipt_mean_its =
       (ipt_mean_its * BoutReal(ncalls - 1) + BoutReal(count)) / BoutReal(ncalls);
 
-  for (int kz = 0; kz <= maxmode; kz++) {
-    // If the global flag is set to INVERT_KX_ZERO
-    if ((global_flags & INVERT_KX_ZERO) && (kz == 0)) {
-      dcomplex offset(0.0);
-      for (int ix = localmesh->xstart; ix <= localmesh->xend; ix++) {
-        offset += xk1d(kz, ix);
-      }
-      offset /= static_cast<BoutReal>(localmesh->xend - localmesh->xstart + 1);
-      for (int ix = localmesh->xstart; ix <= localmesh->xend; ix++) {
-        xk1d(kz, ix) -= offset;
-      }
+  // If the global flag is set to INVERT_KX_ZERO
+  if (global_flags & INVERT_KX_ZERO) {
+    dcomplex offset(0.0);
+    for (int ix = localmesh->xstart; ix <= localmesh->xend; ix++) {
+      offset += xk1d(0, ix);
     }
-    first_call(jy, kz) = false;
+    offset /= static_cast<BoutReal>(localmesh->xend - localmesh->xstart + 1);
+    for (int ix = localmesh->xstart; ix <= localmesh->xend; ix++) {
+      xk1d(0, ix) -= offset;
+    }
   }
+
   // Store the solution xk for the current fourier mode in a 2D array
   transpose(xk, xk1d, ncx, nmode);
 
@@ -663,6 +661,11 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
         throw BoutException("Non-finite at %d, %d, %d", ix, jy, kz);
 #endif
   }
+
+  for (int kz = 0; kz <= maxmode; kz++) {
+    first_call(jy, kz) = false;
+  }
+
   /// SCOREP_USER_REGION_END(fftback);
   return x; // Result of the inversion
 }
