@@ -161,7 +161,6 @@ Field2D interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
     } else {
       pt_f = & f.getCoordinates()->getParallelTransform();
     }
-    // Cannot use normal ifs, so that f is const
     if (f.getDirectionY() != YDirectionType::Standard) {
       if (pt_f->canToFromFieldAligned()) {
         f = pt_f->fromFieldAligned(f);
