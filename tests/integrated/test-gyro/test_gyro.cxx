@@ -12,7 +12,7 @@ int main(int argc, char **argv) {
   // Initialise BOUT++, setting up mesh
   BoutInitialise(argc, argv);
 
-  FieldFactory f(mesh);
+  FieldFactory f(bout::globals::mesh);
   
   Field3D input3d = f.create3D("gauss(x-0.5,0.2)*gauss(y-pi)*sin(3*y - z)");
   SAVE_ONCE(input3d);
@@ -23,8 +23,8 @@ int main(int argc, char **argv) {
   SAVE_ONCE2(pade1, pade2);
   
   // Write data
-  dump.write();
-  dump.close();
+  bout::globals::dump.write();
+  bout::globals::dump.close();
   
   output << "\nFinished running test. Triggering error to quit\n\n";
   

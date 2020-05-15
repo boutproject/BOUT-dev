@@ -3,6 +3,7 @@
 #include <boutmain.hxx>
 #include "globals.hxx"
 
+using bout::globals::mesh;
 
 int physics_init(bool restarting)
 {

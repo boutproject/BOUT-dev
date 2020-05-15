@@ -15,6 +15,9 @@
 #include <cstdio>
 #include <cstdlib>
 
+using bout::globals::mesh;
+using bout::globals::dump;
+
 // 2D initial profiles
 Field2D Ni0, Ti0, Te0, Vi0, phi0, Ve0, rho0, Ajpar0;
 // Staggered versions of initial profiles

@@ -17,6 +17,9 @@
 #include <math.h>
 #include <msg_stack.hxx>
 
+using bout::globals::mesh;
+using bout::globals::dump;
+
 BoutReal n0_height, n0_ave, n0_width, n0_center,
     n0_bottom_x; // the total height, average width and center of profile of N0
 BoutReal Tconst; // the ampitude of congstant temperature
