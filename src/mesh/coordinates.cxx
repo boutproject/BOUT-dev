@@ -619,13 +619,6 @@ namespace {
   /// Corner guard cells are set to BoutNaN
 Coordinates::metric_field_type
 interpolateAndNeumann(MAYBE_UNUSED(const Coordinates::metric_field_type& f), MAYBE_UNUSED(CELL_LOC location), MAYBE_UNUSED(ParallelTransform * pt)) {
-#ifndef COORDINATES_USE_3D
-#define COORDS_ITER_Z int z=0;
-#else
-#define COORDS_ITER_Z for (int z=0;z<localmesh->LocalNz;++z)
-  //throw BoutException(
-  //  "Staggered coordinates locations not currently supported with 3D metrics.");
-#endif
   Mesh* localmesh = f.getMesh();
   Coordinates::metric_field_type result;
 #ifdef COORDINATES_USE_3D
@@ -652,8 +645,7 @@ interpolateAndNeumann(MAYBE_UNUSED(const Coordinates::metric_field_type& f), MAY
       // If bx!=0 we are on an x-boundary, inner if bx>0 and outer if bx<0
       for (bndry->first(); !bndry->isDone(); bndry->next1d()) {
         for (int i = 0; i < localmesh->xstart; i++){
-          COORDS_ITER_Z
-          {
+          for (int z=0;z<result.getNx();++z) {
             result(bndry->x + i * bndry->bx, bndry->y, z) =
               result(bndry->x + (i - 1) * bndry->bx, bndry->y - bndry->by, z);
           }
@@ -664,8 +656,7 @@ interpolateAndNeumann(MAYBE_UNUSED(const Coordinates::metric_field_type& f), MAY
       // If by!=0 we are on a y-boundary, upper if by>0 and lower if by<0
       for (bndry->first(); !bndry->isDone(); bndry->next1d()) {
         for (int i = 0; i < localmesh->ystart; i++) {
-          COORDS_ITER_Z
-          {
+          for (int z=0;z<result.getNx();++z) {
             result(bndry->x, bndry->y + i * bndry->by, z) =
               result(bndry->x - bndry->bx, bndry->y + (i - 1) * bndry->by, z);
           }
@@ -677,8 +668,7 @@ interpolateAndNeumann(MAYBE_UNUSED(const Coordinates::metric_field_type& f), MAY
   // Set corner guard cells
   for (int i = 0; i < localmesh->xstart; i++) {
     for (int j = 0; j < localmesh->ystart; j++) {
-      COORDS_ITER_Z
-      {
+         for (int z=0;z<result.getNx();++z) {
         result(i, j, z) = BoutNaN;
         result(i, localmesh->LocalNy - 1 - j, z) = BoutNaN;
         result(localmesh->LocalNx - 1 - i, j, z) = BoutNaN;
