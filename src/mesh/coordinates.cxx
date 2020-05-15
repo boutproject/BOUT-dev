@@ -457,7 +457,12 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   GET(g13, 0.0);
   GET(g23, 0.0);
 
-  communicate(g11, g22, g33, g12, g13, g23);
+  g11 = interpolateAndExtrapolate(g11, location, extrapolate_x, extrapolate_y, false, transform.get());
+  g22 = interpolateAndExtrapolate(g22, location, extrapolate_x, extrapolate_y, false, transform.get());
+  g33 = interpolateAndExtrapolate(g33, location, extrapolate_x, extrapolate_y, false, transform.get());
+  g12 = interpolateAndExtrapolate(g12, location, extrapolate_x, extrapolate_y, false, transform.get());
+  g13 = interpolateAndExtrapolate(g13, location, extrapolate_x, extrapolate_y, false, transform.get());
+  g23 = interpolateAndExtrapolate(g23, location, extrapolate_x, extrapolate_y, false, transform.get());
 
   // Check input metrics
   // Diagonal metric components should be finite
@@ -492,8 +497,6 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
       GET(g_23, 0.0);
 
 #undef GET
-
-      communicate(g_11, g_22, g_33, g_12, g_13, g_23);
 
       output_warn.write("\tWARNING! Covariant components of metric tensor set manually. "
                         "Contravariant components NOT recalculated\n");
