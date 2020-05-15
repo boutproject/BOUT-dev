@@ -383,10 +383,10 @@ Coordinates::Coordinates(Mesh* mesh, Field2D dx, Field2D dy, BoutReal dz, Field2
 }
 
 Coordinates::Coordinates(Mesh* mesh, Options* options)
-  : dx(1., mesh), dy(1., mesh), dz(1., mesh), d1_dx(mesh), d1_dy(mesh), d1_dz(mesh), J(1, mesh), Bxy(1, mesh),
+  : dx(1., mesh), dy(1., mesh), dz(1., mesh), d1_dx(mesh), d1_dy(mesh), d1_dz(mesh), J(1., mesh), Bxy(1., mesh),
       // Identity metric tensor
-      g11(1, mesh), g22(1, mesh), g33(1, mesh), g12(0, mesh), g13(0, mesh), g23(0, mesh),
-      g_11(1, mesh), g_22(1, mesh), g_33(1, mesh), g_12(0, mesh), g_13(0, mesh),
+      g11(1., mesh), g22(1., mesh), g33(1., mesh), g12(0, mesh), g13(0, mesh), g23(0, mesh),
+      g_11(1., mesh), g_22(1., mesh), g_33(1., mesh), g_12(0, mesh), g_13(0, mesh),
       g_23(0, mesh), G1_11(mesh), G1_22(mesh), G1_33(mesh), G1_12(mesh), G1_13(mesh),
       G1_23(mesh), G2_11(mesh), G2_22(mesh), G2_33(mesh), G2_12(mesh), G2_13(mesh),
       G2_23(mesh), G3_11(mesh), G3_22(mesh), G3_33(mesh), G3_12(mesh), G3_13(mesh),
@@ -690,10 +690,10 @@ interpolateAndNeumann(MAYBE_UNUSED(const Coordinates::metric_field_type& f), MAY
 
 Coordinates::Coordinates(Mesh *mesh, Options* options, const CELL_LOC loc,
       const Coordinates* coords_in, bool force_interpolate_from_centre)
-  : dx(1, mesh), dy(1, mesh), dz(1, mesh), d1_dx(mesh), d1_dy(mesh), d1_dz(mesh), J(1, mesh), Bxy(1, mesh),
+  : dx(1., mesh), dy(1., mesh), dz(1., mesh), d1_dx(mesh), d1_dy(mesh), d1_dz(mesh), J(1., mesh), Bxy(1., mesh),
       // Identity metric tensor
-      g11(1, mesh), g22(1, mesh), g33(1, mesh), g12(0, mesh), g13(0, mesh), g23(0, mesh),
-      g_11(1, mesh), g_22(1, mesh), g_33(1, mesh), g_12(0, mesh), g_13(0, mesh),
+      g11(1., mesh), g22(1., mesh), g33(1., mesh), g12(0, mesh), g13(0, mesh), g23(0, mesh),
+      g_11(1., mesh), g_22(1., mesh), g_33(1., mesh), g_12(0, mesh), g_13(0, mesh),
       g_23(0, mesh), G1_11(mesh), G1_22(mesh), G1_33(mesh), G1_12(mesh), G1_13(mesh),
       G1_23(mesh), G2_11(mesh), G2_22(mesh), G2_33(mesh), G2_12(mesh), G2_13(mesh),
       G2_23(mesh), G3_11(mesh), G3_22(mesh), G3_33(mesh), G3_12(mesh), G3_13(mesh),
