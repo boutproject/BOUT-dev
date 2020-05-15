@@ -1,3 +1,4 @@
+# Extremly slow on travis - thus skip
 bout_add_integrated_test(test-petsc-laplace-MAST-grid
   SOURCES test_petsc_laplace_MAST_grid.cxx
   REQUIRES BOUT_HAS_PETSC
