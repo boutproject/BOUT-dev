@@ -28,8 +28,8 @@ namespace {
 /// 'free_o3' boundary conditions
 /// Corner guard cells are set to BoutNaN
 Field2D _interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
-    bool extrapolate_x, bool extrapolate_y,
-				  bool no_extra_interpolate, ParallelTransform* UNUSED(pt) = nullptr) {
+                                   bool extrapolate_x, bool extrapolate_y,
+                                   bool no_extra_interpolate, ParallelTransform* UNUSED(pt) = nullptr) {
 
   Mesh* localmesh = f.getMesh();
   Field2D result = interp_to(f, location, "RGN_NOBNDRY");
@@ -151,8 +151,8 @@ Field2D _interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
 #define interpolateAndExtrapolate(a,b,c,d,e) _interpolateAndExtrapolate(a, b, c, d, e, transform.get())
 
   Field3D _interpolateAndExtrapolate(const Field3D& f_, CELL_LOC location,
-				     bool extrapolate_x, bool extrapolate_y,
-				    bool no_extra_interpolate, ParallelTransform* pt_) {
+                                     bool extrapolate_x, bool extrapolate_y,
+                                     bool no_extra_interpolate, ParallelTransform* pt_) {
 
     Mesh* localmesh = f_.getMesh();
     Field3D result;
@@ -166,9 +166,9 @@ Field2D _interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
     // Cannot use normal ifs, so that f is const
     if (f.getDirectionY() != YDirectionType::Standard) {
       if (pt_f->canToFromFieldAligned()) {
-	f = pt_f->fromFieldAligned(f);
+        f = pt_f->fromFieldAligned(f);
       } else {
-	f.setDirectionY(YDirectionType::Standard);
+        f.setDirectionY(YDirectionType::Standard);
       }
     }
     if (location == CELL_YLOW){
@@ -176,9 +176,9 @@ Field2D _interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
       result = interp_to(f_aligned, location, "RGN_NOBNDRY");
       ParallelTransform * pt_result;
       if (result.getCoordinates() == nullptr){
-	pt_result = pt_;
+        pt_result = pt_;
       } else {
-	pt_result = & result.getCoordinates()->getParallelTransform();
+        pt_result = & result.getCoordinates()->getParallelTransform();
       }
       result = pt_result->fromFieldAligned(result,  "RGN_NOBNDRY");
     } else {
@@ -228,15 +228,15 @@ Field2D _interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
           ASSERT1(bndry->bx == 0 or localmesh->xstart > 1);
           ASSERT1(bndry->by == 0 or localmesh->ystart > 1);
           // note that either bx or by is >0 here
-	  for (int zi=0; zi < localmesh->LocalNz; ++zi){
-	    result(bndry->x, bndry->y, zi) =
+          for (int zi=0; zi < localmesh->LocalNz; ++zi){
+            result(bndry->x, bndry->y, zi) =
               (9. * (f(bndry->x - bndry->bx, bndry->y - bndry->by, zi) + f(bndry->x, bndry->y, zi))
                - f(bndry->x - 2 * bndry->bx, bndry->y - 2 * bndry->by, zi)
                - f(bndry->x + bndry->bx, bndry->y + bndry->by, zi))
               / 16.;
-	  }
+          }
 
-	}
+        }
         // set boundary guard cells
         if ((bndry->bx != 0 && localmesh->GlobalNx - 2 * bndry->width >= 3)
             || (bndry->by != 0
@@ -261,19 +261,19 @@ Field2D _interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
           for (int i = extrap_start; i < bndry->width; i++) {
             int xi = bndry->x + i * bndry->bx;
             int yi = bndry->y + i * bndry->by;
-	    for (int zi=0; zi <  localmesh->LocalNz; ++zi){
-	      result(xi, yi, zi) = 3.0 * result(xi - bndry->bx, yi - bndry->by, zi)
-		- 3.0 * result(xi - 2 * bndry->bx, yi - 2 * bndry->by, zi)
-		+ result(xi - 3 * bndry->bx, yi - 3 * bndry->by, zi);
-	    }
+            for (int zi=0; zi <  localmesh->LocalNz; ++zi){
+              result(xi, yi, zi) = 3.0 * result(xi - bndry->bx, yi - bndry->by, zi)
+                - 3.0 * result(xi - 2 * bndry->bx, yi - 2 * bndry->by, zi)
+                + result(xi - 3 * bndry->bx, yi - 3 * bndry->by, zi);
+            }
           }
         } else {
           // not enough grid points to extrapolate, set equal to last grid point
           for (int i = extrap_start; i < bndry->width; i++) {
-	    for (int zi = 0; zi < localmesh->LocalNz; ++zi){
-	      result(bndry->x + i * bndry->bx, bndry->y + i * bndry->by, zi) =
-		result(bndry->x - bndry->bx, bndry->y - bndry->by, zi);
-	    }
+            for (int zi = 0; zi < localmesh->LocalNz; ++zi){
+              result(bndry->x + i * bndry->bx, bndry->y + i * bndry->by, zi) =
+                result(bndry->x - bndry->bx, bndry->y - bndry->by, zi);
+            }
           }
         }
       }
@@ -293,12 +293,12 @@ Field2D _interpolateAndExtrapolate(const Field2D& f, CELL_LOC location,
     // Invalidate corner guard cells
     for (int i = 0; i < localmesh->xstart; i++) {
       for (int j = 0; j < localmesh->ystart; j++) {
-	for (int k = 0; k < localmesh->LocalNz; ++k) {
-	  result(i, j, k) = BoutNaN;
-	  result(i, localmesh->LocalNy - 1 - j, k) = BoutNaN;
-	  result(localmesh->LocalNx - 1 - i, j, k) = BoutNaN;
-	  result(localmesh->LocalNx - 1 - i, localmesh->LocalNy - 1 - j, k) = BoutNaN;
-	}
+        for (int k = 0; k < localmesh->LocalNz; ++k) {
+          result(i, j, k) = BoutNaN;
+          result(i, localmesh->LocalNy - 1 - j, k) = BoutNaN;
+          result(localmesh->LocalNx - 1 - i, j, k) = BoutNaN;
+          result(localmesh->LocalNx - 1 - i, localmesh->LocalNy - 1 - j, k) = BoutNaN;
+        }
       }
     }
   }
@@ -459,7 +459,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
   GET(g12, 0.0);
   GET(g13, 0.0);
   GET(g23, 0.0);
-  
+
   communicate(g11, g22, g33, g12, g13, g23);
 
   // Check input metrics
@@ -652,24 +652,24 @@ interpolateAndNeumann(MAYBE_UNUSED(const Coordinates::metric_field_type& f), MAY
       // If bx!=0 we are on an x-boundary, inner if bx>0 and outer if bx<0
       for (bndry->first(); !bndry->isDone(); bndry->next1d()) {
         for (int i = 0; i < localmesh->xstart; i++){
-	  COORDS_ITER_Z
-	  {
-	    result(bndry->x + i * bndry->bx, bndry->y, z) =
+          COORDS_ITER_Z
+          {
+            result(bndry->x + i * bndry->bx, bndry->y, z) =
               result(bndry->x + (i - 1) * bndry->bx, bndry->y - bndry->by, z);
-	  }
-	}
+          }
+        }
       }
     }
     if (bndry->by != 0) {
       // If by!=0 we are on a y-boundary, upper if by>0 and lower if by<0
       for (bndry->first(); !bndry->isDone(); bndry->next1d()) {
         for (int i = 0; i < localmesh->ystart; i++) {
-	  COORDS_ITER_Z
+          COORDS_ITER_Z
           {
-	    result(bndry->x, bndry->y + i * bndry->by, z) =
-	      result(bndry->x - bndry->bx, bndry->y + (i - 1) * bndry->by, z);
-	  }
-	}
+            result(bndry->x, bndry->y + i * bndry->by, z) =
+              result(bndry->x - bndry->bx, bndry->y + (i - 1) * bndry->by, z);
+          }
+        }
       }
     }
   }
@@ -679,10 +679,10 @@ interpolateAndNeumann(MAYBE_UNUSED(const Coordinates::metric_field_type& f), MAY
     for (int j = 0; j < localmesh->ystart; j++) {
       COORDS_ITER_Z
       {
-	result(i, j, z) = BoutNaN;
-	result(i, localmesh->LocalNy - 1 - j, z) = BoutNaN;
-	result(localmesh->LocalNx - 1 - i, j, z) = BoutNaN;
-	result(localmesh->LocalNx - 1 - i, localmesh->LocalNy - 1 - j, z) = BoutNaN;
+        result(i, j, z) = BoutNaN;
+        result(i, localmesh->LocalNy - 1 - j, z) = BoutNaN;
+        result(localmesh->LocalNx - 1 - i, j, z) = BoutNaN;
+        result(localmesh->LocalNx - 1 - i, localmesh->LocalNy - 1 - j, z) = BoutNaN;
       }
     }
   }
@@ -1025,7 +1025,7 @@ int Coordinates::geometry(bool recalculate_staggered,
     bool force_interpolate_from_centre) {
   TRACE("Coordinates::geometry");
   communicate(dx, dy, dz, g11, g22, g33, g12, g13, g23,
-	      g_11, g_22, g_33, g_12, g_13, g_23, J, Bxy);
+              g_11, g_22, g_33, g_12, g_13, g_23, J, Bxy);
 
   output_progress.write("Calculating differential geometry terms\n");
 
@@ -1142,9 +1142,9 @@ int Coordinates::geometry(bool recalculate_staggered,
   output_progress.write("\tCommunicating connection terms\n");
 
   communicate(G1_11, G1_22, G1_33, G1_12, G1_13, G1_23,
-	      G2_11, G2_22, G2_33, G2_12, G2_13, G2_23,
-	      G3_11, G3_22, G3_33, G3_12, G3_13, G3_23,
-	      G1, G2, G3);
+              G2_11, G2_22, G2_33, G2_12, G2_13, G2_23,
+              G3_11, G3_22, G3_33, G3_12, G3_13, G3_23,
+              G1, G2, G3);
 
   // Set boundary guard cells of Christoffel symbol terms
   // Ideally, when location is staggered, we would set the upper/outer boundary point
@@ -1448,7 +1448,7 @@ namespace {
   zShift = _interpolateAndExtrapolate(zShift, zShift.getLocation(),
       not localmesh->sourceHasXBoundaryGuards(),
       not localmesh->sourceHasYBoundaryGuards(),
-				      false);
+                                      false);
 
   // make sure zShift has been communicated
   communicate(zShift);
@@ -1458,13 +1458,13 @@ namespace {
     const auto lower = localmesh->hasBranchCutLower(x);
     if (lower.first) {
       for (int y = 0; y < localmesh->ystart; y++) {
-	zShift(x, y) -= lower.second;
+        zShift(x, y) -= lower.second;
       }
     }
     const auto upper = localmesh->hasBranchCutUpper(x);
     if (upper.first) {
       for (int y = localmesh->yend + 1; y < localmesh->LocalNy; y++) {
-	zShift(x, y) += upper.second;
+        zShift(x, y) += upper.second;
       }
     }
   }
@@ -1594,7 +1594,7 @@ Coordinates::metric_field_type Coordinates::DDZ(const Field2D& f, CELL_LOC loc,
   return zeroFrom(f).setLocation(loc);
 }
 Field3D Coordinates::DDZ(const Field3D& f, CELL_LOC outloc,
-			 const std::string& method, const std::string& region) {
+                         const std::string& method, const std::string& region) {
   return bout::derivatives::index::DDZ(f, outloc, method, region) / dz;
 };
 
@@ -1968,7 +1968,7 @@ Field2D Coordinates::Laplace_perpXY(const Field2D& A, const Field2D& f) {
 }
 
 Coordinates::metric_field_type Coordinates::indexDDY(const Field2D& f, CELL_LOC outloc,
-						     const std::string& method, const std::string& region){
+                                                     const std::string& method, const std::string& region){
 #ifdef COORDINATES_USE_3D
   if (!f.hasParallelSlices()){
     const bool is_unaligned = (f.getDirectionY() == YDirectionType::Standard);
@@ -1981,7 +1981,7 @@ Coordinates::metric_field_type Coordinates::indexDDY(const Field2D& f, CELL_LOC 
 }
 
 Field3D Coordinates::indexDDY(const Field3D& f, CELL_LOC outloc,
-			      const std::string& method, const std::string& region){
+                              const std::string& method, const std::string& region){
 #ifdef COORDINATES_USE_3D
   if (!f.hasParallelSlices()){
     const bool is_unaligned = (f.getDirectionY() == YDirectionType::Standard);
@@ -1999,4 +1999,3 @@ Field3D Coordinates::indexDDY(const Field3D& f, CELL_LOC outloc,
 #endif
   return bout::derivatives::index::DDY(f, outloc, method, region);
 }
-
