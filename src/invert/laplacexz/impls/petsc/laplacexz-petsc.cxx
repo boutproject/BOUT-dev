@@ -422,7 +422,7 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
         {
           const BoutReal J = 0.5*(coords->J(x,y,z) + coords->J(x,y,zplus));
           const BoutReal g33 = 0.5*(coords->g33(x,y,z) + coords->g33(x,y,zplus));
-          const BoutReal dz = coords->dz(x,y,z);
+          const BoutReal dz = 0.5 * (coords->dz(x,y,z)+ coords->dz(x,y,zplus));
           // Metrics on z+1/2 boundary
           const BoutReal Acoef = 0.5*(A(x,y,z) + A(x,y,zplus));
 
@@ -435,6 +435,7 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
           const BoutReal J = 0.5*(coords->J(x,y,z) + coords->J(x,y,zminus));
           const BoutReal g33 = 0.5*(coords->g33(x,y,z) + coords->g33(x,y,zminus));
           const BoutReal Acoef = 0.5*(A(x,y,z) + A(x,y,zminus));
+          const BoutReal dz = 0.5 * (coords->dz(x,y,z)+ coords->dz(x,y,zminus));
 
           const BoutReal val = Acoef * J * g33 / (coords->J(x,y,z) * dz * dz);
           zm = val;
@@ -445,9 +446,10 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
 
         {
           // x+1/2, z+1/2
+          // TODOL Should they have a z dependency?
           const BoutReal J =  0.5*(coords->J(x,y,z) + coords->J(x+1,y,z));
           const BoutReal g13 = 0.5*(coords->g13(x,y,z) + coords->g13(x+1,y,z));
-          const BoutReal fourdz= 4.*dz;
+          const BoutReal fourdz = 2 * (coords->dz(x,y,z)+ coords->dz(x+1,y,zplus));
           {
             const BoutReal Acoef = 0.5*(A(x,y,z) + A(x,y,zplus));
 
@@ -465,11 +467,12 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
             xpzm = val;
             c -= val;
           }
-
+        }
         {
           // x-1/2, z+1/2
           const BoutReal J =  0.5*(coords->J(x,y,z) + coords->J(x-1,y,z));
           const BoutReal g13 = 0.5*(coords->g13(x,y,z) + coords->g13(x-1,y,z));
+          const BoutReal fourdz = 2 * (coords->dz(x,y,z)+ coords->dz(x-1,y,z));
           {
             const BoutReal Acoef = 0.5*(A(x,y,z) + A(x,y,zplus));
 
@@ -492,6 +495,8 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
           // z+1/2, x+1/2
           const BoutReal J = 0.5*(coords->J(x,y,z) + coords->J(x,y,zplus));
           const BoutReal g13 = 0.5*(coords->g13(x,y,z) + coords->g13(x,y,zplus));
+          const BoutReal dz = 0.5 * (coords->dz(x,y,z)+ coords->dz(x,y,zplus));
+
           {
             const BoutReal dx = 2.0*(coords->dx(x,y,z) + coords->dx(x+1,y,z));
             const BoutReal Acoef = 0.5*(A(x,y,z) + A(x+1,y,z));
@@ -514,6 +519,7 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
           // z-1/2, x+1/2
           const BoutReal J = 0.5*(coords->J(x,y,z) + coords->J(x,y,zminus));
           const BoutReal g13 = 0.5*(coords->g13(x,y,z) + coords->g13(x,y,zminus));
+          const BoutReal dz = 0.5 * (coords->dz(x,y,z)+ coords->dz(x,y,zminus));
           {
             const BoutReal dx = 2.0*(coords->dx(x,y,z) + coords->dx(x+1,y,z));
             const BoutReal Acoef = 0.5*(A(x,y,z) + A(x+1,y,z));
