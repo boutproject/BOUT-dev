@@ -85,9 +85,12 @@ public:
 
   bool all(const Array<bool>);
 
-  struct Level {
+  class Level {
 
   public:
+
+    friend class LaplaceIPT;
+
 
     Tensor<dcomplex> upperGuardVector, lowerGuardVector;
     Matrix<dcomplex> al, bl, au, bu;
@@ -117,12 +120,13 @@ public:
     int index_start;
     int index_end;
 
+    void calculate_residual(const Array<bool> &converged, const int jy, const int nmode, const Mesh *localmesh);
+    void calculate_total_residual(Array<BoutReal> &total, Array<BoutReal> &globalmaxsol, Array<bool> &converged, const int nmode, const BoutReal atol, const BoutReal rtol);
+    void coarsen(const Matrix<dcomplex> &fine_residual, const Array<bool> &converged, const int nmode, const Mesh *localmesh);
+    void gauss_seidel_red_black(const Array<bool> &converged, const int jy, const int nmode, const Mesh *localmesh);
+
   };
 
-  void calculate_residual(Level &level, const Array<bool> &converged, const int jy);
-  void calculate_total_residual(Array<BoutReal> &total, Array<BoutReal> &globalmaxsol, Array<bool> &converged, Level &level);
-  void coarsen(Level &level, const Matrix<dcomplex> &fine_residual, const Array<bool> &converged);
-  void gauss_seidel_red_black(Level &level, const Array<bool> &converged, const int jy);
   void init(Level &level, const Level lup, const int ncx, const int xs, const int xe, const int current_level, const int jy);
   void init(Level &level, const int ncx, const int jy, const Matrix<dcomplex> avec, const Matrix<dcomplex> bvec, const Matrix<dcomplex> cvec, const int xs, const int xe);
   void init_rhs(Level &level, const int jy, const Matrix<dcomplex> bcmplx);
