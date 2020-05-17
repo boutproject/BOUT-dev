@@ -6,7 +6,7 @@ from builtins import range
 from past.utils import old_div
 # <<<<< for python3 <<<<<
 import numpy as np 
-from bunch import Bunch
+from boututils.bunch import Bunch
 from scipy.interpolate import RectBivariateSpline
 from pylab import contour, scatter, annotate, draw
 from crosslines import find_inter

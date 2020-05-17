@@ -30,7 +30,7 @@ def test1(ylower, yupper):
     if numpy.any(numpy.abs(test_aligned[:, yupper, :] - test_aligned[:, ylower, :]) < 1.e-6):
         success = False
         print("Fail - test_aligned should not be periodic jy=%i and jy=%i should be "
-              "different", yupper, ylower)
+              "different"%( yupper, ylower))
 test1(0,-4)
 test1(1,-3)
 test1(2,-2)
