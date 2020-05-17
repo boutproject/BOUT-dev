@@ -148,8 +148,9 @@ elif [ "$pkg" == "hypre" ]; then
     source_dir=${source_prefix}/${pkg}/src
     mkdir -p $build_dir && cd $build_dir
     cmake -DCMAKE_CXX_COMPILER=$cpp \
+          -DCMAKE_C_COMPILER=$cc \
           -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-          -DCMAKE_PREFIX_PATH="${install_prefix}/raja/share/raja/cmake;${install_prefix}/umpire/share/umpire/cmake" \
+          -DCMAKE_PREFIX_PATH="${install_prefix}/raja/share/raja/cmake" \
           -DCMAKE_INSTALL_PREFIX=$install_dir \
           -DHYPRE_BUILD_TESTS=On \
           -DENABLE_GTEST_DEATH_TESTS=On \

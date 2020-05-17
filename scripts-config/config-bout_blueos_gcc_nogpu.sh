@@ -151,7 +151,7 @@ elif [ "$pkg" == "hypre" ]; then
           -DENABLE_GTEST_DEATH_TESTS=On \
           -DENABLE_RAJA=Off \
           -DENABLE_MPI=On \
-          -DENABLE_OPENMP=Off \
+          -DENABLE_OPENMP=On \
           -DENABLE_CUDA=Off \
           -DCMAKE_EXPORT_COMPILE_COMMANDS=On \
           -DCMAKE_VERBOSE_MAKEFILE=On \
