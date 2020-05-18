@@ -214,7 +214,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   proc_out = myproc + 1;
 
   nmode = maxmode + 1;
-  int jy = b.getIndex();
+  jy = b.getIndex();
 
   int ncz = localmesh->LocalNz; // Number of local z points
   int ncx = localmesh->LocalNx; // Number of local x points
@@ -455,7 +455,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   while (true) {
 
-    levels[current_level].gauss_seidel_red_black(*this, converged, jy);
+    levels[current_level].gauss_seidel_red_black(*this, converged);
 
     /// SCOREP_USER_REGION_DEFINE(l0rescalc);
     /// SCOREP_USER_REGION_BEGIN(l0rescalc, "level 0 residual
@@ -488,7 +488,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
         }
       }
 
-      levels[current_level].calculate_residual(*this, converged, jy);
+      levels[current_level].calculate_residual(*this, converged);
 
       if (cyclecount < 3 or cyclecount > cycle_eta - 5 or not predict_exit) {
         // Calculate the total residual. This also marks modes as converged, so the
@@ -543,7 +543,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
 
       if (current_level != 0) {
         // Prevents double call on level 0 - we just called this to check convergence
-        levels[current_level].calculate_residual(*this, converged, jy);
+        levels[current_level].calculate_residual(*this, converged);
       }
       synchronize_reduced_field(levels[current_level], levels[current_level].residual);
       ++current_level;
@@ -675,8 +675,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
  * x loop.
  */
 void LaplaceIPT::Level::gauss_seidel_red_black(LaplaceIPT& l,
-                                               const Array<bool>& converged,
-                                               const int jy) {
+                                               const Array<bool>& converged) {
 
   SCOREP0();
 
@@ -734,9 +733,9 @@ void LaplaceIPT::Level::gauss_seidel_red_black(LaplaceIPT& l,
       if (!converged[kz]) {
         // Due to extra point on final proc, indexing of last term is 2, not 3. To
         // remove branching, this is handled by l.index_end
-        xloc(1, kz) = (rr(1, kz) - ar(jy, 1, kz) * xloc(0, kz)
-                         - cr(jy, 1, kz) * xloc(index_end, kz))
-                        * brinv(jy, 1, kz);
+        xloc(1, kz) = (rr(1, kz) - ar(l.jy, 1, kz) * xloc(0, kz)
+                       - cr(l.jy, 1, kz) * xloc(index_end, kz))
+                      * brinv(l.jy, 1, kz);
       }
     }
     // Send same data up and down
@@ -781,9 +780,9 @@ void LaplaceIPT::Level::gauss_seidel_red_black(LaplaceIPT& l,
   if (red and not l.localmesh->lastX()) {
     for (int kz = 0; kz < l.nmode; kz++) {
       if (!converged[kz]) {
-        xloc(1, kz) = (rr(1, kz) - ar(jy, 1, kz) * xloc(0, kz)
-                         - cr(jy, 1, kz) * xloc(3, kz))
-                        * brinv(jy, 1, kz);
+        xloc(1, kz) =
+            (rr(1, kz) - ar(l.jy, 1, kz) * xloc(0, kz) - cr(l.jy, 1, kz) * xloc(3, kz))
+            * brinv(l.jy, 1, kz);
       }
     }
   }
@@ -791,9 +790,9 @@ void LaplaceIPT::Level::gauss_seidel_red_black(LaplaceIPT& l,
     for (int kz = 0; kz < l.nmode; kz++) {
       if (!converged[kz]) {
         // index_start removes branches. On level 0, this is 1, otherwise 0
-        xloc(2, kz) = (rr(2, kz) - ar(jy, 2, kz) * xloc(index_start, kz)
-                         - cr(jy, 2, kz) * xloc(3, kz))
-                        * brinv(jy, 2, kz);
+        xloc(2, kz) = (rr(2, kz) - ar(l.jy, 2, kz) * xloc(index_start, kz)
+                       - cr(l.jy, 2, kz) * xloc(3, kz))
+                      * brinv(l.jy, 2, kz);
       }
     }
   }
@@ -816,12 +815,10 @@ void LaplaceIPT::Level::gauss_seidel_red_black(LaplaceIPT& l,
     for (int kz = 0; kz < l.nmode; kz++) {
       if (!converged[kz]) {
         if (l.localmesh->firstX()) {
-          xloc(0, kz) =
-              -cvec(jy, kz, xs - 1) * xloc(1, kz) / bvec(jy, kz, xs - 1);
+          xloc(0, kz) = -cvec(l.jy, kz, xs - 1) * xloc(1, kz) / bvec(l.jy, kz, xs - 1);
         }
         if (l.localmesh->lastX()) {
-          xloc(3, kz) =
-              -avec(jy, kz, xe + 1) * xloc(2, kz) / bvec(jy, kz, xe + 1);
+          xloc(3, kz) = -avec(l.jy, kz, xe + 1) * xloc(2, kz) / bvec(l.jy, kz, xe + 1);
         }
       }
     }
@@ -1331,8 +1328,7 @@ void LaplaceIPT::Level::calculate_total_residual(LaplaceIPT& l,
  * calculate the total residual without guard cells. Coarsening requires the
  * guard cells, and an explicit synchronization is called before coarsening.
  */
-void LaplaceIPT::Level::calculate_residual(LaplaceIPT& l, const Array<bool>& converged,
-                                           const int jy) {
+void LaplaceIPT::Level::calculate_residual(LaplaceIPT& l, const Array<bool>& converged) {
 
   SCOREP0();
   if (not included) {
@@ -1341,16 +1337,15 @@ void LaplaceIPT::Level::calculate_residual(LaplaceIPT& l, const Array<bool>& con
 
   for (int kz = 0; kz < l.nmode; kz++) {
     if (!converged[kz]) {
-      residual(1, kz) = rr(1, kz) - ar(jy, 1, kz) * xloc(0, kz)
-                          - br(jy, 1, kz) * xloc(1, kz)
-                          - cr(jy, 1, kz) * xloc(index_end, kz);
+      residual(1, kz) = rr(1, kz) - ar(l.jy, 1, kz) * xloc(0, kz)
+                        - br(l.jy, 1, kz) * xloc(1, kz)
+                        - cr(l.jy, 1, kz) * xloc(index_end, kz);
       if (not l.localmesh->lastX()) {
         residual(2, kz) = 0.0; // Need to ensure this, as this point is included in
                                  // residual calculations
       } else {
-        residual(2, kz) = rr(2, kz) - ar(jy, 2, kz) * xloc(index_start, kz)
-                            - br(jy, 2, kz) * xloc(2, kz)
-                            - cr(jy, 2, kz) * xloc(3, kz);
+        residual(2, kz) = rr(2, kz) - ar(l.jy, 2, kz) * xloc(index_start, kz)
+                          - br(l.jy, 2, kz) * xloc(2, kz) - cr(l.jy, 2, kz) * xloc(3, kz);
       }
     }
   }

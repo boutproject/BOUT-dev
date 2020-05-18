@@ -119,10 +119,10 @@ public:
     int index_start;
     int index_end;
 
-    void calculate_residual(LaplaceIPT& lap, const Array<bool> &converged, const int jy);
+    void calculate_residual(LaplaceIPT& lap, const Array<bool> &converged);
     void calculate_total_residual(LaplaceIPT& lap, Array<BoutReal> &total, Array<BoutReal> &globalmaxsol, Array<bool> &converged);
     void coarsen(LaplaceIPT& lap, const Matrix<dcomplex> &fine_residual, const Array<bool> &converged);
-    void gauss_seidel_red_black(LaplaceIPT& lap, const Array<bool> &converged, const int jy);
+    void gauss_seidel_red_black(LaplaceIPT& lap, const Array<bool> &converged);
 
     void update_solution(LaplaceIPT& lap, const Matrix<dcomplex> &fine_error, const Array<bool> &converged);
 
@@ -141,6 +141,9 @@ private:
 
   /// Information about the grids
   std::vector<Level> levels;
+
+  /// Current y index
+  int jy;
 
   /// The coefficents in
   /// $D*grad_perp^2(x) + (1/C)*(grad_perp(C))*grad_perp(x) + A*x = b$
