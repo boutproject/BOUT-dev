@@ -79,6 +79,8 @@ LaplaceIPT::LaplaceIPT(Options* opt, CELL_LOC loc, Mesh* mesh_in)
 
   converged = Array<bool>(localmesh->LocalNz / 2 + 1);
 
+  fine_error = Matrix<dcomplex>(4, localmesh->LocalNz / 2 + 1);
+
   resetSolver();
 }
 
@@ -275,9 +277,6 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   auto bk1d = Array<dcomplex>(ncx);
   auto xk = Matrix<dcomplex>(ncx, ncz / 2 + 1);
   auto xk1d = Matrix<dcomplex>(ncz / 2 + 1, ncx);
-
-  // Error interpolated onto a finer grid
-  auto fine_error = Matrix<dcomplex>(4, ncz / 2 + 1);
 
   /// SCOREP_USER_REGION_END(initvars);
   /// SCOREP_USER_REGION_DEFINE(initloop);
@@ -532,7 +531,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
     } else if (not down) {
       refine(levels[current_level], levels[current_level - 1], fine_error, converged);
       --current_level;
-      levels[current_level].update_solution(*this, fine_error, converged);
+      levels[current_level].update_solution(*this);
       synchronize_reduced_field(levels[current_level], levels[current_level].xloc);
 
       subcount = 0;
@@ -1393,8 +1392,7 @@ void LaplaceIPT::Level::coarsen(const LaplaceIPT& l,
  * Note that this does not update guard cells, so we must synchronize xloc before using
  * it.
  */
-void LaplaceIPT::Level::update_solution(LaplaceIPT& l, const Matrix<dcomplex>& fine_error,
-                                        const Array<bool>& converged) {
+void LaplaceIPT::Level::update_solution(const LaplaceIPT& l) {
 
   SCOREP0();
   if (not included) {
@@ -1402,9 +1400,9 @@ void LaplaceIPT::Level::update_solution(LaplaceIPT& l, const Matrix<dcomplex>& f
   }
 
   for (int kz = 0; kz < l.nmode; kz++) {
-    if (!converged[kz]) {
+    if (not l.converged[kz]) {
       for (int ix = 1; ix < 3; ix++) {
-        xloc(ix, kz) += fine_error(ix, kz);
+        xloc(ix, kz) += l.fine_error(ix, kz);
       }
     }
   }

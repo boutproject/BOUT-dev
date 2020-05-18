@@ -124,7 +124,7 @@ public:
     void coarsen(const LaplaceIPT& lap, const Matrix<dcomplex> &fine_residual);
     void gauss_seidel_red_black(const LaplaceIPT& lap);
 
-    void update_solution(LaplaceIPT& lap, const Matrix<dcomplex> &fine_error, const Array<bool> &converged);
+    void update_solution(const LaplaceIPT& lap);
 
   };
 
@@ -195,6 +195,9 @@ private:
 
   /// Array recording whether a kz mode is converged
   Array<bool> converged ;
+
+  /// Error interpolated onto the grid one finer than current grid
+  Matrix<dcomplex> fine_error;
 
 };
 
