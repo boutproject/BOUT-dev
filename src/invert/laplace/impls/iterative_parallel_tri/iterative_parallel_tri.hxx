@@ -119,7 +119,7 @@ public:
     int index_start;
     int index_end;
 
-    void calculate_residual(LaplaceIPT& lap, const Array<bool> &converged);
+    void calculate_residual(const LaplaceIPT& lap);
     void calculate_total_residual(LaplaceIPT& lap, Array<BoutReal> &total, Array<BoutReal> &globalmaxsol, Array<bool> &converged);
     void coarsen(LaplaceIPT& lap, const Matrix<dcomplex> &fine_residual, const Array<bool> &converged);
     void gauss_seidel_red_black(LaplaceIPT& lap, const Array<bool> &converged);
@@ -192,6 +192,9 @@ private:
 
   /// Shorthand for localmesh->NXPE
   int nproc;
+
+  /// Array recording whether a kz mode is converged
+  Array<bool> converged ;
 
 };
 

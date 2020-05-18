@@ -77,6 +77,8 @@ LaplaceIPT::LaplaceIPT(Options* opt, CELL_LOC loc, Mesh* mesh_in)
 
   levels = std::vector<Level>(max_level + 1);
 
+  converged = Array<bool>(localmesh->LocalNz / 2 + 1);
+
   resetSolver();
 }
 
@@ -435,7 +437,6 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   int cycle_eta = 0;  // Predicted finishing cycle
   int current_level = 0;
   bool down = true;
-  auto converged = Array<bool>(nmode);
 
   auto error_abs = Array<BoutReal>(nmode);
   auto error_abs_old = Array<BoutReal>(nmode);
@@ -488,7 +489,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
         }
       }
 
-      levels[current_level].calculate_residual(*this, converged);
+      levels[current_level].calculate_residual(*this);
 
       if (cyclecount < 3 or cyclecount > cycle_eta - 5 or not predict_exit) {
         // Calculate the total residual. This also marks modes as converged, so the
@@ -543,7 +544,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
 
       if (current_level != 0) {
         // Prevents double call on level 0 - we just called this to check convergence
-        levels[current_level].calculate_residual(*this, converged);
+        levels[current_level].calculate_residual(*this);
       }
       synchronize_reduced_field(levels[current_level], levels[current_level].residual);
       ++current_level;
@@ -1328,7 +1329,7 @@ void LaplaceIPT::Level::calculate_total_residual(LaplaceIPT& l,
  * calculate the total residual without guard cells. Coarsening requires the
  * guard cells, and an explicit synchronization is called before coarsening.
  */
-void LaplaceIPT::Level::calculate_residual(LaplaceIPT& l, const Array<bool>& converged) {
+void LaplaceIPT::Level::calculate_residual(const LaplaceIPT& l) {
 
   SCOREP0();
   if (not included) {
@@ -1336,7 +1337,7 @@ void LaplaceIPT::Level::calculate_residual(LaplaceIPT& l, const Array<bool>& con
   }
 
   for (int kz = 0; kz < l.nmode; kz++) {
-    if (!converged[kz]) {
+    if (not l.converged[kz]) {
       residual(1, kz) = rr(1, kz) - ar(l.jy, 1, kz) * xloc(0, kz)
                         - br(l.jy, 1, kz) * xloc(1, kz)
                         - cr(l.jy, 1, kz) * xloc(index_end, kz);
