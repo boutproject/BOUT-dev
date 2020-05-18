@@ -125,6 +125,9 @@ public:
     void calculate_total_residual(LaplaceIPT& lap, Array<BoutReal> &total, Array<BoutReal> &globalmaxsol, Array<bool> &converged);
     void coarsen(const LaplaceIPT& lap, const Matrix<dcomplex> &fine_residual);
     void gauss_seidel_red_black(const LaplaceIPT& lap);
+    void init(LaplaceIPT &lap, const Level lup, const int ncx, const int xs, const int xe, const int current_level, const int jy);
+    void init(LaplaceIPT &lap, const int ncx, const int jy, const Matrix<dcomplex> avec, const Matrix<dcomplex> bvec, const Matrix<dcomplex> cvec, const int xs, const int xe);
+    void init_rhs(LaplaceIPT &lap, const int jy, const Matrix<dcomplex> bcmplx);
 
     bool is_diagonally_dominant(const LaplaceIPT &lap);
     void reconstruct_full_solution(const LaplaceIPT &lap, Matrix<dcomplex> &xk1d);
@@ -132,10 +135,6 @@ public:
     void update_solution(const LaplaceIPT& lap);
 
   };
-
-  void init(Level &level, const Level lup, const int ncx, const int xs, const int xe, const int current_level, const int jy);
-  void init(Level &level, const int ncx, const int jy, const Matrix<dcomplex> avec, const Matrix<dcomplex> bvec, const Matrix<dcomplex> cvec, const int xs, const int xe);
-  void init_rhs(Level &level, const int jy, const Matrix<dcomplex> bcmplx);
 
   void refine(const Level &level, const Level &level_up, Matrix<dcomplex> &fine_error, const Array<bool> &converged);
   void transpose(Matrix<dcomplex> &matrix_transposed, const Matrix<dcomplex> &matrix, const int n1, const int n2);
