@@ -110,23 +110,24 @@
 //
 
 // the following is temporary
-#define OPENMP_SCHEDULE static 
+//#define OPENMP_SCHEDULE static 
 
 #define BOUT_FOR_SERIAL(index, region)                                                   \
   for (auto block = region.getBlocks().cbegin(), end = region.getBlocks().cend();        \
        block < end; ++block)                                                             \
     for (auto index = block->first; index < block->second; ++index)
 
-#ifdef _OPENMP
-#define BOUT_FOR_OMP(index, region, omp_pragmas)                                         \
-  BOUT_OMP(omp_pragmas)                                                                  \
-  for (auto block = region.getBlocks().cbegin(); block < region.getBlocks().cend();      \
-       ++block)                                                                          \
-    for (auto index = block->first; index < block->second; ++index)
-#else
+// temporarily disable openmp setup
+//#ifdef _OPENMP
+//#define BOUT_FOR_OMP(index, region, omp_pragmas)                                //         \
+//  BOUT_OMP(omp_pragmas)                                                         //         \
+//  for (auto block = region.getBlocks().cbegin(); block < region.getBlocks().cend();      \
+//       ++block)                                                                          \
+//    for (auto index = block->first; index < block->second; ++index)
+//#else
 // No OpenMP, so fall back to slightly more efficient serial form
 #define BOUT_FOR_OMP(index, region, omp_pragmas) BOUT_FOR_SERIAL(index, region)
-#endif
+//#endif
 
 #define BOUT_FOR(index, region)                                                          \
   BOUT_FOR_OMP(index, region, parallel for schedule(OPENMP_SCHEDULE))

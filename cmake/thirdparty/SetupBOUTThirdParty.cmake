@@ -91,19 +91,19 @@ endif ()
 
 
 #HAVE_HYPRE
-if (ENABLE_HYPRE OR HYPRE_DIR)
-  find_package(HYPRE REQUIRED)
-
-  if(HYPRE_FOUND)
-    set (HAVE_HYPRE True)
-    set (ENABLE_HYPRE ON) 
-
-    blt_register_library(
-      NAME HYPRE
-      INCLUDES ${HYPRE_INCLUDE_DIRS}
-      LIBRARIES ${HYPRE_LIBRARIES})
-  endif ()
-endif ()
+#if (ENABLE_HYPRE OR HYPRE_DIR)
+#  find_package(HYPRE REQUIRED)
+#
+#  if(HYPRE_FOUND)
+#    set (HAVE_HYPRE True)
+#    set (ENABLE_HYPRE ON) 
+#
+#    blt_register_library(
+#      NAME HYPRE
+#      INCLUDES ${HYPRE_INCLUDE_DIRS}
+#      LIBRARIES ${HYPRE_LIBRARIES})
+#  endif ()
+#endif ()
 
 # OpenMP
 if (ENABLE_OPENMP)
