@@ -100,29 +100,31 @@ void LaplaceIPT::resetSolver() {
  * elements. Being diagonally dominant is sufficient (but not necessary) for
  * the Gauss-Seidel iteration to converge.
  */
-bool LaplaceIPT::is_diagonally_dominant(const Level& l, const int jy, const int kz) {
+bool LaplaceIPT::Level::is_diagonally_dominant(const LaplaceIPT& l) {
 
-  bool is_dd = true;
-  // Check index 1 on all procs, except: the last proc only has index 1 if the
-  // max_level == 0.
-  if (not localmesh->lastX() or max_level == 0) {
-    if (std::fabs(l.ar(jy, 1, kz)) + std::fabs(l.cr(jy, 1, kz))
-        > std::fabs(l.br(jy, 1, kz))) {
-      output << BoutComm::rank() << " jy=" << jy << ", kz=" << kz
-             << ", lower row not diagonally dominant" << endl;
-      is_dd = false;
+  for (int kz = 0; kz < l.nmode; kz++) {
+    // Check index 1 on all procs, except: the last proc only has index 1 if the
+    // max_level == 0.
+    if (not l.localmesh->lastX() or l.max_level == 0) {
+      if (std::fabs(ar(l.jy, 1, kz)) + std::fabs(cr(l.jy, 1, kz))
+          > std::fabs(br(l.jy, 1, kz))) {
+        output << BoutComm::rank() << " jy=" << l.jy << ", kz=" << kz
+               << ", lower row not diagonally dominant" << endl;
+        return false;
+      }
+    }
+    // Check index 2 on final proc only.
+    if (l.localmesh->lastX()) {
+      if (std::fabs(ar(l.jy, 2, kz)) + std::fabs(cr(l.jy, 2, kz))
+          > std::fabs(br(l.jy, 2, kz))) {
+        output << BoutComm::rank() << " jy=" << l.jy << ", kz=" << kz
+               << ", upper row not diagonally dominant" << endl;
+        return false;
+      }
     }
   }
-  // Check index 2 on final proc only.
-  if (localmesh->lastX()) {
-    if (std::fabs(l.ar(jy, 2, kz)) + std::fabs(l.cr(jy, 2, kz))
-        > std::fabs(l.br(jy, 2, kz))) {
-      output << BoutComm::rank() << " jy=" << jy << ", kz=" << kz
-             << ", upper row not diagonally dominant" << endl;
-      is_dd = false;
-    }
-  }
-  return is_dd;
+  // Have checked all modes and all are diagonally dominant
+  return true;
 }
 
 /*
@@ -138,27 +140,26 @@ bool LaplaceIPT::is_diagonally_dominant(const Level& l, const int jy, const int 
  * my_xk1d(xs) = rl(xs) + al(xs)*lower_xk1d(xe) + bl(xs)*upper_xk1d(xs)
  *     xloc(1) = rl(xs) + al(xs)*xloc(0) + bl(xs)*xloc(3)
  */
-void LaplaceIPT::reconstruct_full_solution(Matrix<dcomplex>& xk1d, const Level& l,
-                                           const int jy) {
+void LaplaceIPT::Level::reconstruct_full_solution(const LaplaceIPT& l,
+                                                  Matrix<dcomplex>& xk1d) {
   SCOREP0();
 
-  Array<dcomplex> x_lower(nmode), x_upper(nmode);
+  Array<dcomplex> x_lower(l.nmode), x_upper(l.nmode);
 
-  for (int kz = 0; kz < nmode; kz++) {
+  for (int kz = 0; kz < l.nmode; kz++) {
 
-    x_lower[kz] = l.xloc(0, kz);
-    x_upper[kz] = l.xloc(3, kz);
+    x_lower[kz] = xloc(0, kz);
+    x_upper[kz] = xloc(3, kz);
 
-    if (not localmesh->firstX()) {
-      x_lower[kz] =
-          (l.xloc(1, kz) - l.rl[kz] - l.bl(jy, kz) * l.xloc(3, kz)) / l.al(jy, kz);
+    if (not l.localmesh->firstX()) {
+      x_lower[kz] = (xloc(1, kz) - rl[kz] - bl(l.jy, kz) * xloc(3, kz)) / al(l.jy, kz);
     }
   }
 
-  for (int kz = 0; kz < nmode; kz++) {
+  for (int kz = 0; kz < l.nmode; kz++) {
     for (int i = 0; i < l.ncx; i++) {
-      xk1d(kz, i) = l.minvb(kz, i) + l.upperGuardVector(jy, kz, i) * x_upper[kz]
-                    + l.lowerGuardVector(jy, kz, i) * x_lower[kz];
+      xk1d(kz, i) = minvb(kz, i) + upperGuardVector(l.jy, kz, i) * x_upper[kz]
+                    + lowerGuardVector(l.jy, kz, i) * x_lower[kz];
     }
   }
 }
@@ -221,7 +222,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   jy = b.getIndex();
 
   int ncz = localmesh->LocalNz; // Number of local z points
-  int ncx = localmesh->LocalNx; // Number of local x points
+  ncx = localmesh->LocalNx;     // Number of local x points
 
   int xs = localmesh->xstart; // First interior point
   int xe = localmesh->xend;   // Last interior point
@@ -566,13 +567,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
       // If the coarsest multigrid iteration matrix is diagonally-dominant,
       // then convergence is guaranteed, so maxits is set too low.
       // Otherwise, the method may or may not converge.
-      bool is_dd = true;
-      for (int kz = 0; kz < nmode; kz++) {
-        is_dd = is_diagonally_dominant(levels[max_level], jy, kz);
-        if (not is_dd) {
-          break;
-        }
-      }
+      bool is_dd = levels[max_level].is_diagonally_dominant(*this);
 
       bool global_is_dd;
       MPI_Allreduce(&is_dd, &global_is_dd, 1, MPI::BOOL, MPI_LAND, BoutComm::get());
@@ -615,7 +610,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
     }
   }
 
-  reconstruct_full_solution(xk1d, levels[0], jy);
+  levels[0].reconstruct_full_solution(*this, xk1d);
 
 #if CHECK > 2
   for (int ix = 0; ix < ncx; ix++) {
@@ -1420,7 +1415,7 @@ void LaplaceIPT::Level::update_solution(const LaplaceIPT& l) {
  * from
  *  level 1 to level 0. It only sends if refining from level 0 to level 1.
  */
-void LaplaceIPT::refine(Level& l, Level& lup, Matrix<dcomplex>& fine_error,
+void LaplaceIPT::refine(const Level& l, const Level& lup, Matrix<dcomplex>& fine_error,
                         const Array<bool>& converged) {
 
   SCOREP0();
