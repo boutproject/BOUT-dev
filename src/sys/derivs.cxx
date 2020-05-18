@@ -379,7 +379,7 @@ Field3D D2DYDZ(const Field3D& f, CELL_LOC outloc, MAYBE_UNUSED(const std::string
 
 ////////////// X DERIVATIVE /////////////////
 
-/// Special case where both arguments are 2D. Output location ignored for now
+/// Special case where both arguments are 2D.
 Coordinates::metric_field_type VDDX(const Field2D& v, const Field2D& f,
                                     CELL_LOC outloc, const std::string& method,
                                     const std::string& region) {
@@ -425,7 +425,6 @@ Coordinates::metric_field_type VDDZ(const Field2D &v, const Field2D &f,
 Coordinates::metric_field_type VDDZ(const Field3D &v, const Field2D& f,
                                     CELL_LOC outloc, const std::string& method,
                                     const std::string& region) {
-  // Should we take location from v or f?
 #ifdef COORDINATES_USE_3D
   Field3D tmp{f};
   return bout::derivatives::index::VDDZ(v, tmp, outloc, method, region)
@@ -481,7 +480,6 @@ Field3D FDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc, const std::str
 Coordinates::metric_field_type FDDZ(const Field2D &v, const Field2D &f,
                                     CELL_LOC outloc, const std::string &method,
                                     const std::string& region) {
-  // Should we take location from v or f?
   return bout::derivatives::index::FDDZ(v, f, outloc, method, region)
          / f.getCoordinates(outloc)->dz;
 }
