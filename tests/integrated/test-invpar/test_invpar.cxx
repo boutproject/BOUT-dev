@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
     for (int z = 0; z < mesh->LocalNz; z++) {
       output.write("result: [{:d},{:d}] : {:e}, {:e}, {:e}\n", y, z, input(2, y, z),
                    result(2, y, z), deriv(2, y, z));
-      if (abs(input(2, y, z) - deriv(2, y, z)) > tol)
+      if (std::abs(input(2, y, z) - deriv(2, y, z)) > tol)
         passed = 0;
     }
   }
