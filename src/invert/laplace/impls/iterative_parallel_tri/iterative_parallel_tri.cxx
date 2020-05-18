@@ -456,7 +456,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   while (true) {
 
-    levels[current_level].gauss_seidel_red_black(*this, converged);
+    levels[current_level].gauss_seidel_red_black(*this);
 
     /// SCOREP_USER_REGION_DEFINE(l0rescalc);
     /// SCOREP_USER_REGION_BEGIN(l0rescalc, "level 0 residual
@@ -675,8 +675,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
  * We don't attempt comm/comp overlap, as there is not sigificant work in the
  * x loop.
  */
-void LaplaceIPT::Level::gauss_seidel_red_black(LaplaceIPT& l,
-                                               const Array<bool>& converged) {
+void LaplaceIPT::Level::gauss_seidel_red_black(const LaplaceIPT& l) {
 
   SCOREP0();
 
@@ -712,7 +711,7 @@ void LaplaceIPT::Level::gauss_seidel_red_black(LaplaceIPT& l,
     if (!l.localmesh->firstX()) {
       MPI_Wait(&rreqin, MPI_STATUS_IGNORE);
       for (int kz = 0; kz < l.nmode; kz++) {
-        if (!converged[kz]) {
+        if (not l.converged[kz]) {
           xloc(0, kz) = recvecin[kz];
         }
       }
@@ -720,7 +719,7 @@ void LaplaceIPT::Level::gauss_seidel_red_black(LaplaceIPT& l,
     if (!l.localmesh->lastX()) {
       MPI_Wait(&rreqout, MPI_STATUS_IGNORE);
       for (int kz = 0; kz < l.nmode; kz++) {
-        if (!converged[kz]) {
+        if (not l.converged[kz]) {
           xloc(3, kz) = recvecout[kz];
         }
       }
@@ -731,7 +730,7 @@ void LaplaceIPT::Level::gauss_seidel_red_black(LaplaceIPT& l,
   if (black) {
     // Black processors do work
     for (int kz = 0; kz < l.nmode; kz++) {
-      if (!converged[kz]) {
+      if (not l.converged[kz]) {
         // Due to extra point on final proc, indexing of last term is 2, not 3. To
         // remove branching, this is handled by l.index_end
         xloc(1, kz) = (rr(1, kz) - ar(l.jy, 1, kz) * xloc(0, kz)
@@ -763,14 +762,14 @@ void LaplaceIPT::Level::gauss_seidel_red_black(LaplaceIPT& l,
     // Receive and put data in arrays
     MPI_Wait(&rreqin, MPI_STATUS_IGNORE);
     for (int kz = 0; kz < l.nmode; kz++) {
-      if (!converged[kz]) {
+      if (not l.converged[kz]) {
         xloc(0, kz) = recvecin[kz];
       }
     }
     if (!l.localmesh->lastX()) {
       MPI_Wait(&rreqout, MPI_STATUS_IGNORE);
       for (int kz = 0; kz < l.nmode; kz++) {
-        if (!converged[kz]) {
+        if (not l.converged[kz]) {
           xloc(3, kz) = recvecout[kz];
         }
       }
@@ -780,7 +779,7 @@ void LaplaceIPT::Level::gauss_seidel_red_black(LaplaceIPT& l,
   // Red processors do work and comms
   if (red and not l.localmesh->lastX()) {
     for (int kz = 0; kz < l.nmode; kz++) {
-      if (!converged[kz]) {
+      if (not l.converged[kz]) {
         xloc(1, kz) =
             (rr(1, kz) - ar(l.jy, 1, kz) * xloc(0, kz) - cr(l.jy, 1, kz) * xloc(3, kz))
             * brinv(l.jy, 1, kz);
@@ -789,7 +788,7 @@ void LaplaceIPT::Level::gauss_seidel_red_black(LaplaceIPT& l,
   }
   if (l.localmesh->lastX()) {
     for (int kz = 0; kz < l.nmode; kz++) {
-      if (!converged[kz]) {
+      if (not l.converged[kz]) {
         // index_start removes branches. On level 0, this is 1, otherwise 0
         xloc(2, kz) = (rr(2, kz) - ar(l.jy, 2, kz) * xloc(index_start, kz)
                        - cr(l.jy, 2, kz) * xloc(3, kz))
@@ -814,7 +813,7 @@ void LaplaceIPT::Level::gauss_seidel_red_black(LaplaceIPT& l,
     // Update boundaries to match interior points
     // Do this after communication
     for (int kz = 0; kz < l.nmode; kz++) {
-      if (!converged[kz]) {
+      if (not l.converged[kz]) {
         if (l.localmesh->firstX()) {
           xloc(0, kz) = -cvec(l.jy, kz, xs - 1) * xloc(1, kz) / bvec(l.jy, kz, xs - 1);
         }
