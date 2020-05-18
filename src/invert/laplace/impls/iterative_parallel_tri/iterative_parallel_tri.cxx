@@ -548,7 +548,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
       }
       synchronize_reduced_field(levels[current_level], levels[current_level].residual);
       ++current_level;
-      levels[current_level].coarsen(*this, levels[current_level - 1].residual, converged);
+      levels[current_level].coarsen(*this, levels[current_level - 1].residual);
       subcount = 0;
 
       // If we are on the coarsest grid, stop trying to coarsen further
@@ -1355,8 +1355,7 @@ void LaplaceIPT::Level::calculate_residual(const LaplaceIPT& l) {
 /*
  * Coarsen the fine residual
  */
-void LaplaceIPT::Level::coarsen(LaplaceIPT& l, const Matrix<dcomplex>& fine_residual,
-                                const Array<bool>& converged) {
+void LaplaceIPT::Level::coarsen(LaplaceIPT& l, const Matrix<dcomplex>& fine_residual) {
 
   SCOREP0();
   if (not included) {
@@ -1364,7 +1363,7 @@ void LaplaceIPT::Level::coarsen(LaplaceIPT& l, const Matrix<dcomplex>& fine_resi
   }
 
   for (int kz = 0; kz < l.nmode; kz++) {
-    if (!converged[kz]) {
+    if (not l.converged[kz]) {
       if (not l.localmesh->lastX()) {
         residual(1, kz) = 0.25 * fine_residual(0, kz) + 0.5 * fine_residual(1, kz)
                             + 0.25 * fine_residual(3, kz);
