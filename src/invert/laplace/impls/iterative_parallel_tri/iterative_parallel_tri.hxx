@@ -43,6 +43,8 @@ public:
   LaplaceIPT(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr);
   ~LaplaceIPT() = default;
 
+  friend class Level;
+
   using Laplacian::setCoefA;
   void setCoefA(const Field2D &val) override {
     ASSERT1(val.getLocation() == location);
@@ -89,9 +91,6 @@ public:
 
   public:
 
-    friend class LaplaceIPT;
-
-
     Tensor<dcomplex> upperGuardVector, lowerGuardVector;
     Matrix<dcomplex> al, bl, au, bu;
     Matrix<dcomplex> xloc;
@@ -120,10 +119,12 @@ public:
     int index_start;
     int index_end;
 
-    void calculate_residual(const Array<bool> &converged, const int jy, const int nmode, const Mesh *localmesh);
-    void calculate_total_residual(Array<BoutReal> &total, Array<BoutReal> &globalmaxsol, Array<bool> &converged, const int nmode, const BoutReal atol, const BoutReal rtol);
-    void coarsen(const Matrix<dcomplex> &fine_residual, const Array<bool> &converged, const int nmode, const Mesh *localmesh);
-    void gauss_seidel_red_black(const Array<bool> &converged, const int jy, const int nmode, const Mesh *localmesh);
+    void calculate_residual(LaplaceIPT& lap, const Array<bool> &converged, const int jy);
+    void calculate_total_residual(LaplaceIPT& lap, Array<BoutReal> &total, Array<BoutReal> &globalmaxsol, Array<bool> &converged);
+    void coarsen(LaplaceIPT& lap, const Matrix<dcomplex> &fine_residual, const Array<bool> &converged);
+    void gauss_seidel_red_black(LaplaceIPT& lap, const Array<bool> &converged, const int jy);
+
+    void update_solution(LaplaceIPT& lap, const Matrix<dcomplex> &fine_error, const Array<bool> &converged);
 
   };
 
@@ -135,7 +136,6 @@ public:
   void refine(Level &level, Level &level_up, Matrix<dcomplex> &fine_error, const Array<bool> &converged);
   void synchronize_reduced_field(const Level &l, Matrix<dcomplex> &field);
   void transpose(Matrix<dcomplex> &matrix_transposed, const Matrix<dcomplex> &matrix, const int n1, const int n2);
-  void update_solution(Level &l, const Matrix<dcomplex> &fine_error, const Array<bool> &converged);
 
 private:
 

@@ -455,7 +455,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   while (true) {
 
-    levels[current_level].gauss_seidel_red_black(converged, jy, nmode, localmesh);
+    levels[current_level].gauss_seidel_red_black(*this, converged, jy);
 
     /// SCOREP_USER_REGION_DEFINE(l0rescalc);
     /// SCOREP_USER_REGION_BEGIN(l0rescalc, "level 0 residual
@@ -488,12 +488,13 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
         }
       }
 
-      levels[current_level].calculate_residual(converged, jy, nmode, localmesh);
+      levels[current_level].calculate_residual(*this, converged, jy);
 
       if (cyclecount < 3 or cyclecount > cycle_eta - 5 or not predict_exit) {
         // Calculate the total residual. This also marks modes as converged, so the
         // algorithm cannot exit in cycles where this is not called.
-        levels[current_level].calculate_total_residual(error_abs, error_rel, converged, nmode, atol, rtol);
+        levels[current_level].calculate_total_residual(*this, error_abs, error_rel,
+                                                       converged);
 
         // Based the error reduction per V-cycle, error_xxx/error_xxx_old,
         // predict when the slowest converging mode converges.
@@ -530,7 +531,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
     } else if (not down) {
       refine(levels[current_level], levels[current_level - 1], fine_error, converged);
       --current_level;
-      update_solution(levels[current_level], fine_error, converged);
+      levels[current_level].update_solution(*this, fine_error, converged);
       synchronize_reduced_field(levels[current_level], levels[current_level].xloc);
 
       subcount = 0;
@@ -542,11 +543,11 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
 
       if (current_level != 0) {
         // Prevents double call on level 0 - we just called this to check convergence
-        levels[current_level].calculate_residual(converged, jy, nmode, localmesh);
+        levels[current_level].calculate_residual(*this, converged, jy);
       }
       synchronize_reduced_field(levels[current_level], levels[current_level].residual);
       ++current_level;
-      levels[current_level].coarsen(levels[current_level - 1].residual, converged, nmode, localmesh);
+      levels[current_level].coarsen(*this, levels[current_level - 1].residual, converged);
       subcount = 0;
 
       // If we are on the coarsest grid, stop trying to coarsen further
@@ -673,8 +674,9 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
  * We don't attempt comm/comp overlap, as there is not sigificant work in the
  * x loop.
  */
-void LaplaceIPT::Level::gauss_seidel_red_black(const Array<bool>& converged,
-                                        const int jy, const int nmode, const Mesh *localmesh) {
+void LaplaceIPT::Level::gauss_seidel_red_black(LaplaceIPT& l,
+                                               const Array<bool>& converged,
+                                               const int jy) {
 
   SCOREP0();
 
@@ -682,7 +684,7 @@ void LaplaceIPT::Level::gauss_seidel_red_black(const Array<bool>& converged,
     return;
   }
 
-  Array<dcomplex> sendvec(nmode), recvecin(nmode), recvecout(nmode);
+  Array<dcomplex> sendvec(l.nmode), recvecin(l.nmode), recvecout(l.nmode);
   MPI_Request rreqin, rreqout;
 
   // Processor colouring. There are p = 2^m processors, labelled 0 to p-1.
@@ -697,27 +699,27 @@ void LaplaceIPT::Level::gauss_seidel_red_black(const Array<bool>& converged,
   // Red processors communication only
   if (red) {
     // Post receives
-    if (not localmesh->firstX()) {
-      MPI_Irecv(&recvecin[0], nmode, MPI_DOUBLE_COMPLEX, proc_in, 0, BoutComm::get(),
+    if (not l.localmesh->firstX()) {
+      MPI_Irecv(&recvecin[0], l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 0, BoutComm::get(),
                 &rreqin);
     }
-    if (not localmesh->lastX()) {
-      MPI_Irecv(&recvecout[0], nmode, MPI_DOUBLE_COMPLEX, proc_out, 1, BoutComm::get(),
+    if (not l.localmesh->lastX()) {
+      MPI_Irecv(&recvecout[0], l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 1, BoutComm::get(),
                 &rreqout);
     }
 
     // Receive and put data in arrays
-    if (!localmesh->firstX()) {
+    if (!l.localmesh->firstX()) {
       MPI_Wait(&rreqin, MPI_STATUS_IGNORE);
-      for (int kz = 0; kz < nmode; kz++) {
+      for (int kz = 0; kz < l.nmode; kz++) {
         if (!converged[kz]) {
           xloc(0, kz) = recvecin[kz];
         }
       }
     }
-    if (!localmesh->lastX()) {
+    if (!l.localmesh->lastX()) {
       MPI_Wait(&rreqout, MPI_STATUS_IGNORE);
-      for (int kz = 0; kz < nmode; kz++) {
+      for (int kz = 0; kz < l.nmode; kz++) {
         if (!converged[kz]) {
           xloc(3, kz) = recvecout[kz];
         }
@@ -728,7 +730,7 @@ void LaplaceIPT::Level::gauss_seidel_red_black(const Array<bool>& converged,
   // Black processors: work and communication
   if (black) {
     // Black processors do work
-    for (int kz = 0; kz < nmode; kz++) {
+    for (int kz = 0; kz < l.nmode; kz++) {
       if (!converged[kz]) {
         // Due to extra point on final proc, indexing of last term is 2, not 3. To
         // remove branching, this is handled by l.index_end
@@ -738,10 +740,10 @@ void LaplaceIPT::Level::gauss_seidel_red_black(const Array<bool>& converged,
       }
     }
     // Send same data up and down
-    MPI_Send(&xloc(1, 0), nmode, MPI_DOUBLE_COMPLEX, proc_in, 1,
+    MPI_Send(&xloc(1, 0), l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 1,
              BoutComm::get()); // black never firstX
-    if (not localmesh->lastX()) {
-      MPI_Send(&xloc(1, 0), nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, BoutComm::get());
+    if (not l.localmesh->lastX()) {
+      MPI_Send(&xloc(1, 0), l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, BoutComm::get());
     }
   }
 
@@ -750,23 +752,24 @@ void LaplaceIPT::Level::gauss_seidel_red_black(const Array<bool>& converged,
   // Black processors only comms
   if (black) {
     // Post receives
-    MPI_Irecv(&recvecin[0], nmode, MPI_DOUBLE_COMPLEX, proc_in, 0, BoutComm::get(),
-              &rreqin);           // black never first
-    if (not localmesh->lastX()) { // this is always be true is we force an even core count
-      MPI_Irecv(&recvecout[0], nmode, MPI_DOUBLE_COMPLEX, proc_out, 1, BoutComm::get(),
+    MPI_Irecv(&recvecin[0], l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 0, BoutComm::get(),
+              &rreqin); // black never first
+    if (not l.localmesh
+                ->lastX()) { // this is always be true is we force an even core count
+      MPI_Irecv(&recvecout[0], l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 1, BoutComm::get(),
                 &rreqout);
     }
 
     // Receive and put data in arrays
     MPI_Wait(&rreqin, MPI_STATUS_IGNORE);
-    for (int kz = 0; kz < nmode; kz++) {
+    for (int kz = 0; kz < l.nmode; kz++) {
       if (!converged[kz]) {
         xloc(0, kz) = recvecin[kz];
       }
     }
-    if (!localmesh->lastX()) {
+    if (!l.localmesh->lastX()) {
       MPI_Wait(&rreqout, MPI_STATUS_IGNORE);
-      for (int kz = 0; kz < nmode; kz++) {
+      for (int kz = 0; kz < l.nmode; kz++) {
         if (!converged[kz]) {
           xloc(3, kz) = recvecout[kz];
         }
@@ -775,8 +778,8 @@ void LaplaceIPT::Level::gauss_seidel_red_black(const Array<bool>& converged,
   }
 
   // Red processors do work and comms
-  if (red and not localmesh->lastX()) {
-    for (int kz = 0; kz < nmode; kz++) {
+  if (red and not l.localmesh->lastX()) {
+    for (int kz = 0; kz < l.nmode; kz++) {
       if (!converged[kz]) {
         xloc(1, kz) = (rr(1, kz) - ar(jy, 1, kz) * xloc(0, kz)
                          - cr(jy, 1, kz) * xloc(3, kz))
@@ -784,8 +787,8 @@ void LaplaceIPT::Level::gauss_seidel_red_black(const Array<bool>& converged,
       }
     }
   }
-  if (localmesh->lastX()) {
-    for (int kz = 0; kz < nmode; kz++) {
+  if (l.localmesh->lastX()) {
+    for (int kz = 0; kz < l.nmode; kz++) {
       if (!converged[kz]) {
         // index_start removes branches. On level 0, this is 1, otherwise 0
         xloc(2, kz) = (rr(2, kz) - ar(jy, 2, kz) * xloc(index_start, kz)
@@ -795,28 +798,28 @@ void LaplaceIPT::Level::gauss_seidel_red_black(const Array<bool>& converged,
     }
   }
 
-  if (red or localmesh->lastX()) { // red, or last proc when not on level zero
+  if (red or l.localmesh->lastX()) { // red, or last proc when not on level zero
     // Send same data up and down
-    if (not localmesh->firstX() and not localmesh->lastX()) { // excludes last proc
-      MPI_Send(&xloc(1, 0), nmode, MPI_DOUBLE_COMPLEX, proc_in, 1, BoutComm::get());
-    } else if (localmesh->lastX() and current_level != 0) { // last proc on level > 0
-      MPI_Send(&xloc(2, 0), nmode, MPI_DOUBLE_COMPLEX, proc_in, 1, BoutComm::get());
+    if (not l.localmesh->firstX() and not l.localmesh->lastX()) { // excludes last proc
+      MPI_Send(&xloc(1, 0), l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 1, BoutComm::get());
+    } else if (l.localmesh->lastX() and current_level != 0) { // last proc on level > 0
+      MPI_Send(&xloc(2, 0), l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 1, BoutComm::get());
     }
-    if (not localmesh->lastX()) {
-      MPI_Send(&xloc(1, 0), nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, BoutComm::get());
+    if (not l.localmesh->lastX()) {
+      MPI_Send(&xloc(1, 0), l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, BoutComm::get());
     }
   }
 
   if (current_level == 0) {
     // Update boundaries to match interior points
     // Do this after communication
-    for (int kz = 0; kz < nmode; kz++) {
+    for (int kz = 0; kz < l.nmode; kz++) {
       if (!converged[kz]) {
-        if (localmesh->firstX()) {
+        if (l.localmesh->firstX()) {
           xloc(0, kz) =
               -cvec(jy, kz, xs - 1) * xloc(1, kz) / bvec(jy, kz, xs - 1);
         }
-        if (localmesh->lastX()) {
+        if (l.localmesh->lastX()) {
           xloc(3, kz) =
               -avec(jy, kz, xe + 1) * xloc(2, kz) / bvec(jy, kz, xe + 1);
         }
@@ -1272,21 +1275,22 @@ void LaplaceIPT::init_rhs(Level& l, const int jy, const Matrix<dcomplex> bcmplx)
 /*
  * Sum and communicate total residual for the reduced system
  */
-void LaplaceIPT::Level::calculate_total_residual(Array<BoutReal>& error_abs,
-                                          Array<BoutReal>& error_rel,
-                                          Array<bool>& converged, const int nmode, const BoutReal atol, const BoutReal rtol) {
+void LaplaceIPT::Level::calculate_total_residual(LaplaceIPT& l,
+                                                 Array<BoutReal>& error_abs,
+                                                 Array<BoutReal>& error_rel,
+                                                 Array<bool>& converged) {
 
   SCOREP0();
   // Communication arrays:
   // residual in (0 .. nmode-1)
   // solution in (nmode .. 2*nmode-1)
-  auto total = Array<BoutReal>(2 * nmode);    // global summed residual
-  auto subtotal = Array<BoutReal>(2 * nmode); // local contribution to residual
+  auto total = Array<BoutReal>(2 * l.nmode);    // global summed residual
+  auto subtotal = Array<BoutReal>(2 * l.nmode); // local contribution to residual
 
-  for (int kz = 0; kz < nmode; kz++) {
+  for (int kz = 0; kz < l.nmode; kz++) {
     if (!converged[kz]) {
       total[kz] = 0.0;
-      total[kz + nmode] = 0.0;
+      total[kz + l.nmode] = 0.0;
 
       // TODO add special case for last proc
       // Only xs and xe have nonzero residuals
@@ -1300,20 +1304,20 @@ void LaplaceIPT::Level::calculate_total_residual(Array<BoutReal>& error_abs,
       //   at runtime by changing rtol
       // Strictly this should be all contributions to the solution, but this
       // under-approximation saves work.
-      subtotal[kz + nmode] = pow(xloc(1, kz).real(), 2) + pow(xloc(1, kz).imag(), 2)
-                             + pow(xloc(2, kz).real(), 2)
-                             + pow(xloc(2, kz).imag(), 2);
+      subtotal[kz + l.nmode] = pow(xloc(1, kz).real(), 2) + pow(xloc(1, kz).imag(), 2)
+                               + pow(xloc(2, kz).real(), 2) + pow(xloc(2, kz).imag(), 2);
     }
   }
 
   // Communication needed to ensure processors break on same iteration
-  MPI_Allreduce(&subtotal[0], &total[0], 2 * nmode, MPI_DOUBLE, MPI_SUM, BoutComm::get());
+  MPI_Allreduce(&subtotal[0], &total[0], 2 * l.nmode, MPI_DOUBLE, MPI_SUM,
+                BoutComm::get());
 
-  for (int kz = 0; kz < nmode; kz++) {
+  for (int kz = 0; kz < l.nmode; kz++) {
     if (!converged[kz]) {
       error_abs[kz] = sqrt(total[kz]);
-      error_rel[kz] = error_abs[kz] / sqrt(total[kz + nmode]);
-      if (error_abs[kz] < atol or error_rel[kz] < rtol) {
+      error_rel[kz] = error_abs[kz] / sqrt(total[kz + l.nmode]);
+      if (error_abs[kz] < l.atol or error_rel[kz] < l.rtol) {
         converged[kz] = true;
       }
     }
@@ -1327,19 +1331,20 @@ void LaplaceIPT::Level::calculate_total_residual(Array<BoutReal>& error_abs,
  * calculate the total residual without guard cells. Coarsening requires the
  * guard cells, and an explicit synchronization is called before coarsening.
  */
-void LaplaceIPT::Level::calculate_residual(const Array<bool>& converged, const int jy, const int nmode, const Mesh *localmesh) {
+void LaplaceIPT::Level::calculate_residual(LaplaceIPT& l, const Array<bool>& converged,
+                                           const int jy) {
 
   SCOREP0();
   if (not included) {
     return;
   }
 
-  for (int kz = 0; kz < nmode; kz++) {
+  for (int kz = 0; kz < l.nmode; kz++) {
     if (!converged[kz]) {
       residual(1, kz) = rr(1, kz) - ar(jy, 1, kz) * xloc(0, kz)
                           - br(jy, 1, kz) * xloc(1, kz)
                           - cr(jy, 1, kz) * xloc(index_end, kz);
-      if (not localmesh->lastX()) {
+      if (not l.localmesh->lastX()) {
         residual(2, kz) = 0.0; // Need to ensure this, as this point is included in
                                  // residual calculations
       } else {
@@ -1354,17 +1359,17 @@ void LaplaceIPT::Level::calculate_residual(const Array<bool>& converged, const i
 /*
  * Coarsen the fine residual
  */
-void LaplaceIPT::Level::coarsen(const Matrix<dcomplex>& fine_residual,
-                         const Array<bool>& converged, const int nmode, const Mesh *localmesh) {
+void LaplaceIPT::Level::coarsen(LaplaceIPT& l, const Matrix<dcomplex>& fine_residual,
+                                const Array<bool>& converged) {
 
   SCOREP0();
   if (not included) {
     return;
   }
 
-  for (int kz = 0; kz < nmode; kz++) {
+  for (int kz = 0; kz < l.nmode; kz++) {
     if (!converged[kz]) {
-      if (not localmesh->lastX()) {
+      if (not l.localmesh->lastX()) {
         residual(1, kz) = 0.25 * fine_residual(0, kz) + 0.5 * fine_residual(1, kz)
                             + 0.25 * fine_residual(3, kz);
       } else {
@@ -1380,7 +1385,7 @@ void LaplaceIPT::Level::coarsen(const Matrix<dcomplex>& fine_residual,
 
       // Set RHS equal to residual
       rr(1, kz) = residual(1, kz);
-      if (localmesh->lastX()) {
+      if (l.localmesh->lastX()) {
         rr(2, kz) = residual(2, kz);
       }
     }
@@ -1393,18 +1398,18 @@ void LaplaceIPT::Level::coarsen(const Matrix<dcomplex>& fine_residual,
  * Note that this does not update guard cells, so we must synchronize xloc before using
  * it.
  */
-void LaplaceIPT::update_solution(Level& l, const Matrix<dcomplex>& fine_error,
-                                 const Array<bool>& converged) {
+void LaplaceIPT::Level::update_solution(LaplaceIPT& l, const Matrix<dcomplex>& fine_error,
+                                        const Array<bool>& converged) {
 
   SCOREP0();
-  if (not l.included) {
+  if (not included) {
     return;
   }
 
-  for (int kz = 0; kz < nmode; kz++) {
+  for (int kz = 0; kz < l.nmode; kz++) {
     if (!converged[kz]) {
       for (int ix = 1; ix < 3; ix++) {
-        l.xloc(ix, kz) += fine_error(ix, kz);
+        xloc(ix, kz) += fine_error(ix, kz);
       }
     }
   }
