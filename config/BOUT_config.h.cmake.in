@@ -105,7 +105,7 @@
 #undef HAVE_NEW_PLACEMENT_OPERATOR
 
 /* OPENMP is available */
-#cmakedefine HAVE_OPENMP
+#cmakedefine BOUT_USE_OPENMP
 
 /* Compiling with NVCC for CUDA */
 #cmakedefine HAVE_CUDA
@@ -120,7 +120,7 @@
 #cmakedefine HAVE_UMPIRE
 
 /* PETSC library is available so use it */
-#cmakedefine HAVE_PETSC
+#cmakedefine BOUT_HAS_PETSC
 
 /* HAVE_PRAGMA_STATIC_DATA_SPECIALIZATION */
 #undef HAVE_PRAGMA_STATIC_DATA_SPECIALIZATION

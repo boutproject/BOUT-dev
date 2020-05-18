@@ -69,11 +69,11 @@ include(cmake/CMakeBasics.cmake)
 
 # This might not be entirely sensible, but helps CMake to find the
 # correct MPI, workaround for https://gitlab.kitware.com/cmake/cmake/issues/18895
-find_program(MPIEXEC_EXECUTABLE NAMES mpiexec mpirun)
-find_package(MPI REQUIRED)
+#find_program(MPIEXEC_EXECUTABLE NAMES mpiexec mpirun)
+#find_package(MPI REQUIRED)
 
 # Override default
-option(INSTALL_GTEST "Enable installation of googletest. (Projects embedding googletest may want to turn this OFF.)" OFF)
+#option(INSTALL_GTEST "Enable installation of googletest. (Projects embedding googletest may want to turn this OFF.)" OFF)
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
@@ -95,8 +95,6 @@ function(bout_update_submodules)
     endif()
   endif()
 endfunction()
-
-#add_subdirectory(externalpackages/mpark.variant)
 
 set(BOUT_HEADERS
   ./include/boundary_factory.hxx
@@ -369,19 +367,10 @@ if (HAVE_OPENMP)
 endif ()
 
 if (HAVE_CUDA)
-   if (NOT ENABLE_RAJA)
-      message(FATAL_ERROR "CUDA support requires RAJA")
-   endif ()
-
-   if (NOT ENABLE_UMPIRE)
-      message(FATAL_ERROR "CUDA support requires UMPIRE")
-   endif ()
-   set_source_files_properties(${cuda_sources} PROPERTIES LANGUAGE CUDA)
+     set_source_files_properties(${cuda_sources} PROPERTIES LANGUAGE CUDA)
 
    if (ENABLE_NVTX_REGIONS)
-      find_package(CUDA REQUIRED)
-
-      find_library(NVTX_LIBRARY
+         find_library(NVTX_LIBRARY
          NAME libnvToolsExt.so
          PATHS ${CUDA_TOOLKIT_ROOT_DIR}/lib64 ${CUDA_TOOLKIT_ROOT_DIR}/lib)
 
@@ -390,54 +379,20 @@ if (HAVE_CUDA)
       NAME nvToolsExt
       LIBRARIES ${NVTX_LIBRARY})
 
-   list(APPEND BOUT_DEPENDS nvToolsExt)
+      list(APPEND BOUT_DEPENDS nvToolsExt)
       message(STATUS "Enable NVTX Regions Detected")
    endif ()
-   if (CUDA_FOUND)
-      set (HAVE_CUDA True)
-   endif ()
-   list(APPEND BOUT_DEPENDS cuda)
+
+    list(APPEND BOUT_DEPENDS cuda)
 endif()
 
 # UMPIRE
-if (ENABLE_UMPIRE)
-  find_package(umpire REQUIRED)
-
-  set (HAVE_UMPIRE True)
-
-  blt_register_library(
-    NAME umpire
-    INCLUDES ${UMPIRE_INCLUDE_DIRS}
-    LIBRARIES umpire)
- list(APPEND BOUT_DEPENDS umpire)
+if (HAVE_UMPIRE)
+  list(APPEND BOUT_DEPENDS umpire)
 endif ()
 
 # RAJA
-if (ENABLE_RAJA)
-  if (NOT ENABLE_UMPIRE)
-    message(FATAL_ERROR "RAJA support requires UMPIRE.")
-  endif ()
-
-  find_package(RAJA REQUIRED)
-
-  set (raja_depends_on)
-  if (ENABLE_CUDA)
-    list (APPEND raja_depends cuda)
-  endif ()
-
-  if (ENABLE_OPENMP)
-    list (APPEND raja_depends openmp)
-  endif ()
-
-  if (RAJA_FOUND)
-    set (HAVE_RAJA True)
-
-    blt_register_library(
-      NAME RAJA
-      INCLUDES ${RAJA_INCLUDE_DIR}
-      LIBRARIES RAJA
-      DEPENDS_ON ${raja_depends})
-  endif ()
+if (HAVE_RAJA)
   list(APPEND BOUT_DEPENDS RAJA)
 endif ()
 
@@ -458,6 +413,10 @@ if (ENABLE_HYPRE)
   list(APPEND BOUT_DEPENDS HYPRE)
 endif ()
 
+if(BOUT_HAS_PETSC)
+   list(APPEND BOUT_DEPENDS PETSc)
+endif ()
+
 message(STATUS "BOUT_DEPENDS: ${BOUT_DEPENDS}")
 blt_add_library(NAME bout++
    SOURCES ${BOUT_SOURCES}
@@ -470,9 +429,6 @@ blt_register_library(
          bout++
 )         
 set_target_properties(bout++ PROPERTIES LINKER_LANGUAGE CXX)
-#add_library(bout++
-#  ${BOUT_SOURCES}
-#  )
 add_library(bout++::bout++ ALIAS bout++)
 target_link_libraries(bout++ PUBLIC MPI::MPI_CXX mpark_variant)
 
@@ -729,18 +685,16 @@ endif()
 message(STATUS "LAPACK support: ${USE_LAPACK}")
 set(BOUT_HAS_LAPACK ${USE_LAPACK})
 
-option(USE_PETSC "Enable support for PETSc time solvers and inversions" OFF)
-if (USE_PETSC)
-  if (NOT CMAKE_SYSTEM_NAME STREQUAL "CrayLinuxEnvironment")
+# find setup in cmake/thirdparty/SetupBOUTTHIRDParty.cmake
+if (BOUT_HAS_PETSC)
+#  if (NOT CMAKE_SYSTEM_NAME STREQUAL "CrayLinuxEnvironment")
     # Cray wrappers sort this out for us
-    find_package(PETSc REQUIRED)
-    target_link_libraries(bout++ PUBLIC PETSc::PETSc)
-  endif()
-  target_compile_definitions(bout++
-    PUBLIC "BOUT_HAS_PETSC")
+    #    find_package(PETSc REQUIRED)
+    #target_link_libraries(bout++ PUBLIC PETSc::PETSc)
+    #endif()
+   target_compile_definitions(bout++ PUBLIC "BOUT_HAS_PETSC")
 endif()
-message(STATUS "PETSc support: ${USE_PETSC}")
-set(BOUT_HAS_PETSC ${USE_PETSC})
+message(STATUS "PETSc support: ${BOUT_HAS_PETSC}")
 
 option(USE_SLEPC "Enable support for SLEPc eigen solver" OFF)
 if (USE_SLEPC)

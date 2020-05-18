@@ -65,6 +65,7 @@ int main(int argc, char **argv) {
 			rd[j] = ad[j] + bd[j];
 		      };
 		      );
+#if 0
 #ifdef _OPENMP  
   ITERATOR_TEST_BLOCK("C loop (omp)",
 		      BOUT_OMP(parallel for)
@@ -175,3 +176,4 @@ int main(int argc, char **argv) {
   BoutFinalise();
   return 0;
 }
+#endif

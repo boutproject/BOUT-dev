@@ -20,7 +20,8 @@ module --ignore-cache load hdf5-1.10.1-gcc-8.3.1-xkc527f
 module --ignore-cache load python-3.7.6-gcc-8.3.1-usivcqa
 module --ignore-cache load netcdf-c-4.7.3-gcc-8.3.1-usnrhsd # auto installed as part of netcdf-cxx4 install
 module --ignore-cache load netcdf-cxx4-4.3.1-gcc-8.3.1-uj77ss3
-module --ignore-cache load petsc-3.12.3-gcc-8.3.1-ut4eyhs
+#module --ignore-cache load petsc-3.12.3-gcc-8.3.1-ut4eyhs 
+module --ignore-cache load petsc-3.12.3-gcc-8.3.1-jnsim2o
 module --ignore-cache load py-setuptools-41.4.0-gcc-8.3.1-d4wih3g
 module --ignore-cache load py-cftime-1.0.3.4-gcc-8.3.1-q6ofwn4
 module --ignore-cache load py-cython-0.29.14-gcc-8.3.1-5sfsoak
@@ -29,12 +30,27 @@ module --ignore-cache load py-numpy-1.18.2-gcc-8.3.1-6wn32qx
 module --ignore-cache load py-scipy-1.4.1-gcc-8.3.1-cck6efe
 module --ignore-cache load py-netcdf4-1.4.2-gcc-8.3.1-t6cuidv
 
-# PETSc spack install signature
+# Until we get PETSc linked against cuda-enabled Hypre via autoconf build of PETSc source we rely on two different spack installs of PETSc
+# One with Hypre enabled and the other without.  The version of PETSc without Hypre would allow you to link BOUT++ with cuda-enabled Hypre
+# Use this script to point to the relevant spack module via PETSC_DIR in the BOUT config
+
+
+# PETSc spack install signature without Hypre
 #spack install petsc@3.12.3%gcc@8.3.1 +fftw +metis +superlu-dist ~hypre +mpi ^hdf5@1.10.1+cxx+hl+mpi+pic+shared ^spectrum-mpi@rolling-release%gcc@8.3.1 ^metis%gcc@8.3.1+real64 ^fftw%gcc@8.3.1
+
+# PETSc install with Hypre
+#spack install petsc@3.12.3%gcc@8.3.1 +fftw +metis +superlu-dist +hypre +mpi ^hdf5@1.10.1+cxx+hl+mpi+pic+shared ^spectrum-mpi@rolling-release%gcc@8.3.1 ^metis%gcc@8.3.1+real64 ^fftw%gcc@8.3.1
+
 
 #netcdf-cxx4 signature
 #spack install netcdf-cxx4 ^spectrum-mpi@rolling-release%gcc@8.3.1 ^hdf5@1.10.1+cxx+hl+mpi+pic+shared 
 
+#spack install py-netcdf4  ^hdf5@1.10.1+cxx+hl+mpi+pic+shared ^spectrum-mpi@rolling-release%gcc@8.3.1 ^netcdf-c@4.7.3%gcc@8.3.1
+
+#patchelf --replace-needed libnetcdf.so.7 libnetcdf.so.15 /usr/WS2/holger/spack/opt/spack/linux-rhel7-power9le/gcc-8.3.1/py-netcdf4-1.4.2-t6cuidvypso7wo73jvka25ea3ltv6rs4/lib/python3.7/site-packages/netCDF4/_netCDF4.cpython-37m-powerpc64le-linux-gnu.so
+
+#patchelf --replace-needed libhdf5.so.8 libhdf5.so.101 /usr/WS2/holger/spack/opt/spack/linux-rhel7-power9le/gcc-8.3.1/py-netcdf4-1.4.2-t6cuidvypso7wo73jvka25ea3ltv6rs4/lib/python3.7/site-packages/netCDF4/_netCDF4.cpython-37m-powerpc64le-linux-gnu.so 
+#patchelf --replace-needed libhdf5_hl.so.8 libhdf5_hl.so.100 /usr/WS2/holger/spack/opt/spack/linux-rhel7-power9le/gcc-8.3.1/py-netcdf4-1.4.2-t6cuidvypso7wo73jvka25ea3ltv6rs4/lib/python3.7/site-packages/netCDF4/_netCDF4.cpython-37m-powerpc64le-linux-gnu.so 
 
 # Note spectrum-mpi is picked up by an edit you provide to .spack/linux/packages.yaml which for gcc8.3.1 is
 #packages:
@@ -182,7 +198,7 @@ elif [ "$pkg" == "BOUT-dev" ]; then
           -DUSE_LAPACK=On \
           -DUSE_NLS=On \
           -DENABLE_PETSC=On \
-          -DPETSC_DIR=${HOME}/workspace/spack/opt/spack/linux-rhel7-power9le/gcc-8.3.1/petsc-3.12.3-ut4eyhszto3njzigfesmrfqnbhegp7iu \
+          -DPETSC_DIR=${HOME}/workspace/spack/opt/spack/linux-rhel7-power9le/gcc-8.3.1/petsc-3.12.3-jnsim2ouogo4zbyohdtgw3apmfwcwf5s \
           -DUSE_PVODE=On \
           -DUSE_SUNDIALS=On \
           -DENABLE_GTEST_DEATH_TESTS=On \

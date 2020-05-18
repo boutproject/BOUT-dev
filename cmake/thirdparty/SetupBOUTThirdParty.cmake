@@ -1,14 +1,16 @@
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake/thirdparty/")
 
-if (ENABLE_CUDA)
-  if (NOT ENABLE_RAJA)
-    message(FATAL_ERROR "CUDA support requires RAJA")
-  endif ()
 
-  if (NOT ENABLE_UMPIRE)
-    message(FATAL_ERROR "CUDA support requires UMPIRE")
-  endif ()
-endif ()
+# uncomment the following when you want cuda requiring RAJA and Umpire
+#if (ENABLE_CUDA)
+#  if (NOT ENABLE_RAJA)
+#    message(FATAL_ERROR "CUDA support requires RAJA")
+#  endif ()
+
+#  if (NOT ENABLE_UMPIRE)
+#    message(FATAL_ERROR "CUDA support requires UMPIRE")
+#  endif ()
+#endif ()
 
 # MPI is setup by BLT
 if (MPI_FOUND)
@@ -108,7 +110,7 @@ endif ()
 # OpenMP
 if (ENABLE_OPENMP)
   if (OPENMP_FOUND)
-    set(HAVE_OPENMP True)
+     set(BOUT_USE_OPEMP True)
   endif ()
 endif ()
 
@@ -117,7 +119,7 @@ if (ENABLE_PETSC OR PETSC_DIR)
   find_package(PETSc REQUIRED)
 
   if (PETSC_FOUND)
-    set (HAVE_PETSC True)
+    set (BOUT_HAS_PETSC True)
     set (ENABLE_PETSC ON)
 
     blt_register_library(
