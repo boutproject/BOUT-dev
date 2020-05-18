@@ -124,6 +124,7 @@ public:
     void coarsen(const LaplaceIPT& lap, const Matrix<dcomplex> &fine_residual);
     void gauss_seidel_red_black(const LaplaceIPT& lap);
 
+    void synchronize_reduced_field(const LaplaceIPT &lap, Matrix<dcomplex> &field);
     void update_solution(const LaplaceIPT& lap);
 
   };
@@ -134,7 +135,6 @@ public:
   bool is_diagonally_dominant(const Level &coarsest_level, const int jy, const int kz);
   void reconstruct_full_solution(Matrix<dcomplex> &xk1d, const Level &level, const int jy);
   void refine(Level &level, Level &level_up, Matrix<dcomplex> &fine_error, const Array<bool> &converged);
-  void synchronize_reduced_field(const Level &l, Matrix<dcomplex> &field);
   void transpose(Matrix<dcomplex> &matrix_transposed, const Matrix<dcomplex> &matrix, const int n1, const int n2);
 
 private:

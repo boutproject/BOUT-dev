@@ -532,7 +532,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
       refine(levels[current_level], levels[current_level - 1], fine_error, converged);
       --current_level;
       levels[current_level].update_solution(*this);
-      synchronize_reduced_field(levels[current_level], levels[current_level].xloc);
+      levels[current_level].synchronize_reduced_field(*this, levels[current_level].xloc);
 
       subcount = 0;
 
@@ -545,7 +545,8 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
         // Prevents double call on level 0 - we just called this to check convergence
         levels[current_level].calculate_residual(*this);
       }
-      synchronize_reduced_field(levels[current_level], levels[current_level].residual);
+      levels[current_level].synchronize_reduced_field(*this,
+                                                      levels[current_level].residual);
       ++current_level;
       levels[current_level].coarsen(*this, levels[current_level - 1].residual);
       subcount = 0;
@@ -1498,25 +1499,26 @@ void LaplaceIPT::refine(Level& l, Level& lup, Matrix<dcomplex>& fine_error,
  * field(1,:) is correct, and puts the in-neighbour's value into field(0,:)
  * and out-neighbour's value into field(3,:).
  */
-void LaplaceIPT::synchronize_reduced_field(const Level& l, Matrix<dcomplex>& field) {
+void LaplaceIPT::Level::synchronize_reduced_field(const LaplaceIPT& l,
+                                                  Matrix<dcomplex>& field) {
 
   SCOREP0();
-  if (not l.included) {
+  if (not included) {
     return;
   }
 
   MPI_Comm comm = BoutComm::get();
 
   // Communicate in
-  if (!localmesh->firstX()) {
-    MPI_Sendrecv(&field(1, 0), nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 1, &field(0, 0),
-                 nmode, MPI_DOUBLE_COMPLEX, l.proc_in, 0, comm, MPI_STATUS_IGNORE);
+  if (not l.localmesh->firstX()) {
+    MPI_Sendrecv(&field(1, 0), l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 1, &field(0, 0),
+                 l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 0, comm, MPI_STATUS_IGNORE);
   }
 
   // Communicate out
-  if (!localmesh->lastX()) {
-    MPI_Sendrecv(&field(1, 0), nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 0, &field(3, 0),
-                 nmode, MPI_DOUBLE_COMPLEX, l.proc_out, 1, comm, MPI_STATUS_IGNORE);
+  if (not l.localmesh->lastX()) {
+    MPI_Sendrecv(&field(1, 0), l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, &field(3, 0),
+                 l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 1, comm, MPI_STATUS_IGNORE);
   }
 }
 
