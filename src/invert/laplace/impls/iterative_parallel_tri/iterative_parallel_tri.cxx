@@ -1354,7 +1354,8 @@ void LaplaceIPT::Level::calculate_residual(const LaplaceIPT& l) {
 /*
  * Coarsen the fine residual
  */
-void LaplaceIPT::Level::coarsen(LaplaceIPT& l, const Matrix<dcomplex>& fine_residual) {
+void LaplaceIPT::Level::coarsen(const LaplaceIPT& l,
+                                const Matrix<dcomplex>& fine_residual) {
 
   SCOREP0();
   if (not included) {
