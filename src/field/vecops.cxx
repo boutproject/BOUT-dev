@@ -186,15 +186,11 @@ const Field3D Div(const Vector3D& v, CELL_LOC outloc, const std::string& method)
   Vector3D vcn = v;
   vcn.toContravariant();
 
-  Field3D result = 0.0;
-  
+  Field3D vcnJy = vcn.y.getCoordinates()->J * vcn.y;
   if(!vcn.y.hasParallelSlices()){
-    Field3D vcnJy = vcn.y.getCoordinates()->J * vcn.y;
     localmesh->communicate(vcnJy);
-    result = DDY(vcnJy, outloc, method);
-  }else{
-    result = DDY(vcn.y.getCoordinates()->J * vcn.y, outloc, method);
   }
+  Field3D result = DDY(vcnJy, outloc, method);
 
   result += DDX(vcn.x.getCoordinates()->J * vcn.x, outloc, method);
   result += DDZ(vcn.z.getCoordinates()->J * vcn.z, outloc, method);
