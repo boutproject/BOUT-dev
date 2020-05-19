@@ -399,21 +399,20 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   // below.
   if (first_call[jy] || not store_coefficients) {
 
-    levels[0].init(*this, ncx, jy, avec, bvec, cvec, xs, xe);
+    levels[0].init(*this, ncx, avec, bvec, cvec, xs, xe);
 
     int ncx_coarse = ncx; //(xe-xs+1)/2 + xs + ncx - xe - 1;
     if (max_level > 0) {
       for (int l = 1; l <= max_level; l++) {
         ncx_coarse = (ncx_coarse - 4) / 2 + 4;
-        levels[l].init(*this, levels[l - 1], ncx_coarse, xs, ncx_coarse - 3, l,
-                       jy); // FIXME assumes mgy=2
+        levels[l].init(*this, levels[l - 1], ncx_coarse, xs, ncx_coarse - 3, l); // FIXME assumes mgy=2
       }
     }
   }
 
   // Compute coefficients that depend on the right-hand side and which
   // therefore change every time.
-  levels[0].init_rhs(*this, jy, bcmplx);
+  levels[0].init_rhs(*this, bcmplx);
 
   /// SCOREP_USER_REGION_END(initlevels);
 
@@ -823,7 +822,7 @@ void LaplaceIPT::Level::gauss_seidel_red_black(const LaplaceIPT& l) {
 // Initialization routine for coarser grids. Initialization depends on the grid
 // one step finer, lup.
 void LaplaceIPT::Level::init(LaplaceIPT& l, const Level lup, int ncx_in, const int xs_in,
-                             const int xe_in, const int current_level_in, const int jy) {
+                             const int xe_in, const int current_level_in) {
 
   SCOREP0();
   xs = xs_in;
@@ -967,7 +966,7 @@ void LaplaceIPT::Level::init(LaplaceIPT& l, const Level lup, int ncx_in, const i
 }
 
 // Init routine for finest level
-void LaplaceIPT::Level::init(LaplaceIPT& l, const int ncx_in, const int jy,
+void LaplaceIPT::Level::init(LaplaceIPT& l, const int ncx_in,
                              const Matrix<dcomplex> avec_in,
                              const Matrix<dcomplex> bvec_in,
                              const Matrix<dcomplex> cvec_in, const int xs_in,
@@ -1013,9 +1012,9 @@ void LaplaceIPT::Level::init(LaplaceIPT& l, const int ncx_in, const int jy,
 
   for (int kz = 0; kz < l.nmode; kz++) {
     for (int ix = 0; ix < ncx; ix++) {
-      avec(jy, kz, ix) = avec_in(kz, ix);
-      bvec(jy, kz, ix) = bvec_in(kz, ix);
-      cvec(jy, kz, ix) = cvec_in(kz, ix);
+      avec(l.jy, kz, ix) = avec_in(kz, ix);
+      bvec(l.jy, kz, ix) = bvec_in(kz, ix);
+      cvec(l.jy, kz, ix) = cvec_in(kz, ix);
     }
     for (int ix = 0; ix < 4; ix++) {
       residual(ix, kz) = 0.0;
@@ -1071,11 +1070,11 @@ void LaplaceIPT::Level::init(LaplaceIPT& l, const int ncx_in, const int jy,
       tridag(&avec_in(kz, 0), &bvec_in(kz, 0), &cvec_in(kz, 0), std::begin(evec),
              std::begin(tmp), ncx);
       for (int i = 0; i < ncx; i++) {
-        upperGuardVector(jy, kz, i) = tmp[i];
+        upperGuardVector(l.jy, kz, i) = tmp[i];
       }
     } else {
       for (int i = 0; i < ncx; i++) {
-        upperGuardVector(jy, kz, i) = 0.0;
+        upperGuardVector(l.jy, kz, i) = 0.0;
       }
     }
 
@@ -1088,11 +1087,11 @@ void LaplaceIPT::Level::init(LaplaceIPT& l, const int ncx_in, const int jy,
       tridag(&avec_in(kz, 0), &bvec_in(kz, 0), &cvec_in(kz, 0), std::begin(evec),
              std::begin(tmp), ncx);
       for (int i = 0; i < ncx; i++) {
-        lowerGuardVector(jy, kz, i) = tmp[i];
+        lowerGuardVector(l.jy, kz, i) = tmp[i];
       }
     } else {
       for (int i = 0; i < ncx; i++) {
-        lowerGuardVector(jy, kz, i) = 0.0;
+        lowerGuardVector(l.jy, kz, i) = 0.0;
       }
     }
 
@@ -1101,11 +1100,11 @@ void LaplaceIPT::Level::init(LaplaceIPT& l, const int ncx_in, const int jy,
     /// SCOREP_USER_REGION_BEGIN(coefs, "calculate
     /// coefs",///SCOREP_USER_REGION_TYPE_COMMON);
 
-    bl(jy, kz) = upperGuardVector(jy, kz, xs);
-    al(jy, kz) = lowerGuardVector(jy, kz, xs);
+    bl(l.jy, kz) = upperGuardVector(l.jy, kz, xs);
+    al(l.jy, kz) = lowerGuardVector(l.jy, kz, xs);
 
-    bu(jy, kz) = upperGuardVector(jy, kz, xe);
-    au(jy, kz) = lowerGuardVector(jy, kz, xe);
+    bu(l.jy, kz) = upperGuardVector(l.jy, kz, xe);
+    au(l.jy, kz) = lowerGuardVector(l.jy, kz, xe);
 
     // First compute coefficients that depend on the matrix to be inverted
     // and which therefore might be constant throughout a run.
@@ -1122,10 +1121,10 @@ void LaplaceIPT::Level::init(LaplaceIPT& l, const int ncx_in, const int jy,
     if (not l.localmesh->lastX()) {
       // Send coefficients up
       ABtmp[0] = 0.0;
-      ABtmp[1] = bu(jy, kz);
-      if (std::fabs(al(jy, kz)) > 1e-14) {
-        ABtmp[0] = au(jy, kz) / al(jy, kz);
-        ABtmp[1] -= ABtmp[0] * bl(jy, kz);
+      ABtmp[1] = bu(l.jy, kz);
+      if (std::fabs(al(l.jy, kz)) > 1e-14) {
+        ABtmp[0] = au(l.jy, kz) / al(l.jy, kz);
+        ABtmp[1] -= ABtmp[0] * bl(l.jy, kz);
       }
       // Send these
       MPI_Send(&ABtmp[0], 2, MPI_DOUBLE_COMPLEX, proc_out, 0, BoutComm::get());
@@ -1135,37 +1134,37 @@ void LaplaceIPT::Level::init(LaplaceIPT& l, const int ncx_in, const int jy,
       MPI_Wait(&req, MPI_STATUS_IGNORE);
     }
 
-    const dcomplex Delta = 1.0 / (1.0 - al(jy, kz) * AdBd[1]);
-    ar(jy, 1, kz) = -Delta * al(jy, kz) * AdBd[0];
-    cr(jy, 1, kz) = -Delta * bl(jy, kz);
+    const dcomplex Delta = 1.0 / (1.0 - al(l.jy, kz) * AdBd[1]);
+    ar(l.jy, 1, kz) = -Delta * al(l.jy, kz) * AdBd[0];
+    cr(l.jy, 1, kz) = -Delta * bl(l.jy, kz);
 
-    r1(jy, kz) = Delta * al(jy, kz);
-    r2(jy, kz) = Delta;
+    r1(l.jy, kz) = Delta * al(l.jy, kz);
+    r2(l.jy, kz) = Delta;
 
     // lastX is a special case having two points on the level 0 grid
     if (l.localmesh->lastX()) {
       // Note that if the first proc is also the last proc, then both alold and
       // auold are zero, and l.au = l.auold is already correct.
       if (not l.localmesh->lastX()) {
-        ar(jy, 2, kz) = -au(jy, kz) / al(jy, kz);
-        cr(jy, 2, kz) =
-            -(bu(jy, kz) + ar(jy, 2, kz) * bl(jy, kz)); // NB depends on previous line
+        ar(l.jy, 2, kz) = -au(l.jy, kz) / al(l.jy, kz);
+        cr(l.jy, 2, kz) =
+            -(bu(l.jy, kz) + ar(l.jy, 2, kz) * bl(l.jy, kz)); // NB depends on previous line
       }
 
       // Use BCs to replace x(xe+1) = -avec(xe+1) x(xe) / bvec(xe+1)
       //  => only bl changes
-      cr(jy, 1, kz) = avec(jy, kz, xe + 1) * bl(jy, kz) / bvec(jy, kz, xe + 1);
+      cr(l.jy, 1, kz) = avec(l.jy, kz, xe + 1) * bl(l.jy, kz) / bvec(l.jy, kz, xe + 1);
     }
 
     // Now set coefficients for reduced iterations (shared by all levels)
-    br(jy, 1, kz) = 1.0;
-    br(jy, 2, kz) = 1.0;
-    brinv(jy, 1, kz) = 1.0;
-    brinv(jy, 2, kz) = 1.0;
+    br(l.jy, 1, kz) = 1.0;
+    br(l.jy, 2, kz) = 1.0;
+    brinv(l.jy, 1, kz) = 1.0;
+    brinv(l.jy, 2, kz) = 1.0;
 
-    sendvec[kz] = ar(jy, 1, kz);
-    sendvec[kz + l.nmode] = br(jy, 1, kz);
-    sendvec[kz + 2 * l.nmode] = cr(jy, 1, kz);
+    sendvec[kz] = ar(l.jy, 1, kz);
+    sendvec[kz + l.nmode] = br(l.jy, 1, kz);
+    sendvec[kz + 2 * l.nmode] = cr(l.jy, 1, kz);
 
     /// SCOREP_USER_REGION_END(coefs);
   } // end of kz loop
@@ -1187,21 +1186,20 @@ void LaplaceIPT::Level::init(LaplaceIPT& l, const int ncx_in, const int jy,
 
   for (int kz = 0; kz < l.nmode; kz++) {
     if (not l.localmesh->firstX()) {
-      ar(jy, 0, kz) = recvecin[kz];
-      br(jy, 0, kz) = recvecin[kz + l.nmode];
-      cr(jy, 0, kz) = recvecin[kz + 2 * l.nmode];
+      ar(l.jy, 0, kz) = recvecin[kz];
+      br(l.jy, 0, kz) = recvecin[kz + l.nmode];
+      cr(l.jy, 0, kz) = recvecin[kz + 2 * l.nmode];
     }
     if (not l.localmesh->lastX()) {
-      ar(jy, 3, kz) = recvecout[kz];
-      br(jy, 3, kz) = recvecout[kz + l.nmode];
-      cr(jy, 3, kz) = recvecout[kz + 2 * l.nmode];
+      ar(l.jy, 3, kz) = recvecout[kz];
+      br(l.jy, 3, kz) = recvecout[kz + l.nmode];
+      cr(l.jy, 3, kz) = recvecout[kz + 2 * l.nmode];
     }
   }
 }
 
 // Init routine for finest level information that cannot be cached
-void LaplaceIPT::Level::init_rhs(LaplaceIPT& l, const int jy,
-                                 const Matrix<dcomplex> bcmplx) {
+void LaplaceIPT::Level::init_rhs(LaplaceIPT& l, const Matrix<dcomplex> bcmplx) {
 
   SCOREP0();
 
@@ -1236,7 +1234,7 @@ void LaplaceIPT::Level::init_rhs(LaplaceIPT& l, const int jy,
       // Send coefficients up
       Rsendup[kz] = ru[kz];
       if (std::fabs(al(l.jy, kz)) > 1e-14) {
-        Rsendup[kz] -= rl[kz] * au(jy, kz) / al(jy, kz);
+        Rsendup[kz] -= rl[kz] * au(l.jy, kz) / al(l.jy, kz);
       }
     }
     /// SCOREP_USER_REGION_END(coefsforrhs);
