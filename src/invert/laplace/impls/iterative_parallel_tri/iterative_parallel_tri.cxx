@@ -286,18 +286,6 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   auto xk1d = Matrix<dcomplex>(ncz / 2 + 1, ncx);
 
   /// SCOREP_USER_REGION_END(initvars);
-  /// SCOREP_USER_REGION_DEFINE(initloop);
-  /// SCOREP_USER_REGION_BEGIN(initloop, "init xk loop",SCOREP_USER_REGION_TYPE_COMMON);
-
-  // Initialise xk to 0 as we only visit 0<= kz <= maxmode in solve
-  for (int ix = 0; ix < ncx; ix++) {
-    // TODO This looks wrong: should it be kz<ncz?
-    // This came from serial tri
-    for (int kz = maxmode + 1; kz < ncz / 2 + 1; kz++) {
-      xk(ix, kz) = 0.0;
-    }
-  }
-  /// SCOREP_USER_REGION_END(initloop);
   /// SCOREP_USER_REGION_DEFINE(fftloop);
   /// SCOREP_USER_REGION_BEGIN(fftloop, "init fft loop",SCOREP_USER_REGION_TYPE_COMMON);
 
