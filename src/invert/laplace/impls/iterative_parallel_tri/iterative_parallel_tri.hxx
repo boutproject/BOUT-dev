@@ -91,15 +91,8 @@ public:
 
   public:
 
-    // guard vectors and al bl rl should be in LaplaceIPT rather than all levels, but only defined on level 0
-    Tensor<dcomplex> upperGuardVector, lowerGuardVector;
-    Matrix<dcomplex> al, bl, au, bu;
     Matrix<dcomplex> xloc;
-    Matrix<dcomplex> r1, r2;
-    Array<dcomplex> rl, ru;
-    Matrix<dcomplex> minvb;
     Matrix<dcomplex> residual;
-    Tensor<dcomplex> avec, bvec, cvec;
     Tensor<dcomplex> ar, br, cr, brinv;
     Matrix<dcomplex> rr;
 
@@ -113,8 +106,6 @@ public:
     bool included;
     bool included_up;
     bool red, black;
-    // TODO remove ncx if always using from lap?
-    int xs, xe, ncx;
     int current_level;
 
     // indexing to remove branches from tight loops
@@ -125,8 +116,8 @@ public:
     void calculate_total_residual(LaplaceIPT& lap, Array<BoutReal> &total, Array<BoutReal> &globalmaxsol, Array<bool> &converged);
     void coarsen(const LaplaceIPT& lap, const Matrix<dcomplex> &fine_residual);
     void gauss_seidel_red_black(const LaplaceIPT& lap);
-    void init(LaplaceIPT &lap, const Level lup, const int ncx, const int xs, const int xe, const int current_level);
-    void init(LaplaceIPT &lap, const int ncx, const Matrix<dcomplex> avec, const Matrix<dcomplex> bvec, const Matrix<dcomplex> cvec, const int xs, const int xe);
+    void init(LaplaceIPT &lap, const Level lup, const int current_level);
+    void init(LaplaceIPT &lap);
     void init_rhs(LaplaceIPT &lap, const Matrix<dcomplex> bcmplx);
 
     bool is_diagonally_dominant(const LaplaceIPT &lap);
@@ -150,6 +141,16 @@ private:
   /// The coefficents in
   /// $D*grad_perp^2(x) + (1/C)*(grad_perp(C))*grad_perp(x) + A*x = b$
   Field2D A, C, D;
+
+  /// Lower-, on- and upper-diagonal terms of the operator matrix
+  Tensor<dcomplex> avec, bvec, cvec;
+
+  /// Coefficients for recovering the full solution from guard cells
+  Tensor<dcomplex> upperGuardVector, lowerGuardVector;
+  Matrix<dcomplex> al, bl, au, bu;
+  Matrix<dcomplex> r1, r2;
+  Array<dcomplex> rl, ru;
+  Matrix<dcomplex> minvb;
 
   /// Flag to state whether this is the first time the solver is called
   /// on the point (jy,kz).
@@ -201,8 +202,11 @@ private:
   /// Error interpolated onto the grid one finer than current grid
   Matrix<dcomplex> fine_error;
 
-  /// Number of local x points
-  int ncx;
+  /// Number of local x, y, z points
+  int ncx, ny;
+
+  /// First and last interior points xstart, xend
+  int xs, xe;
 
 };
 

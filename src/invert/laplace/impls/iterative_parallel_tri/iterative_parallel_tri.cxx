@@ -71,15 +71,40 @@ LaplaceIPT::LaplaceIPT(Options* opt, CELL_LOC loc, Mesh* mesh_in)
       ipt_mean_its, "ipt_solver" + std::to_string(ipt_solver_count) + "_mean_its");
   ++ipt_solver_count;
 
-  first_call = Array<bool>(localmesh->LocalNy);
+  ncx = localmesh->LocalNx;
+  ny = localmesh->LocalNy;
+  nmode = maxmode + 1;
 
-  x0saved = Tensor<dcomplex>(localmesh->LocalNy, 4, localmesh->LocalNz / 2 + 1);
+  first_call = Array<bool>(ny);
+
+  x0saved = Tensor<dcomplex>(ny, 4, nmode);
 
   levels = std::vector<Level>(max_level + 1);
 
-  converged = Array<bool>(localmesh->LocalNz / 2 + 1);
+  converged = Array<bool>(nmode);
 
-  fine_error = Matrix<dcomplex>(4, localmesh->LocalNz / 2 + 1);
+  fine_error = Matrix<dcomplex>(4, nmode);
+
+  avec = Tensor<dcomplex>(ny, nmode, ncx);
+  bvec = Tensor<dcomplex>(ny, nmode, ncx);
+  cvec = Tensor<dcomplex>(ny, nmode, ncx);
+
+  // Arrays to construct global solution from halo values
+  minvb = Matrix<dcomplex>(nmode, ncx);                // Local M^{-1} f
+  lowerGuardVector = Tensor<dcomplex>(ny, nmode, ncx); // alpha
+  upperGuardVector = Tensor<dcomplex>(ny, nmode, ncx); // beta
+
+  // Coefficients of first and last interior rows
+  al = Matrix<dcomplex>(ny, nmode); // alpha^l
+  bl = Matrix<dcomplex>(ny, nmode); // beta^l
+  au = Matrix<dcomplex>(ny, nmode); // alpha^u
+  bu = Matrix<dcomplex>(ny, nmode); // beta^u
+  rl = Array<dcomplex>(nmode);      // r^l
+  ru = Array<dcomplex>(nmode);      // r^u
+
+  // Coefs used to compute rl from domain below
+  r1 = Matrix<dcomplex>(ny, nmode);
+  r2 = Matrix<dcomplex>(ny, nmode);
 
   resetSolver();
 }
@@ -152,14 +177,15 @@ void LaplaceIPT::Level::reconstruct_full_solution(const LaplaceIPT& l,
     x_upper[kz] = xloc(3, kz);
 
     if (not l.localmesh->firstX()) {
-      x_lower[kz] = (xloc(1, kz) - rl[kz] - bl(l.jy, kz) * xloc(3, kz)) / al(l.jy, kz);
+      x_lower[kz] =
+          (xloc(1, kz) - l.rl[kz] - l.bl(l.jy, kz) * xloc(3, kz)) / l.al(l.jy, kz);
     }
   }
 
   for (int kz = 0; kz < l.nmode; kz++) {
     for (int i = 0; i < l.ncx; i++) {
-      xk1d(kz, i) = minvb(kz, i) + upperGuardVector(l.jy, kz, i) * x_upper[kz]
-                    + lowerGuardVector(l.jy, kz, i) * x_lower[kz];
+      xk1d(kz, i) = l.minvb(kz, i) + l.upperGuardVector(l.jy, kz, i) * x_upper[kz]
+                    + l.lowerGuardVector(l.jy, kz, i) * x_lower[kz];
     }
   }
 }
@@ -218,32 +244,12 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   proc_in = myproc - 1;
   proc_out = myproc + 1;
 
-  nmode = maxmode + 1;
   jy = b.getIndex();
 
   int ncz = localmesh->LocalNz; // Number of local z points
-  ncx = localmesh->LocalNx;     // Number of local x points
 
-  int xs = localmesh->xstart; // First interior point
-  int xe = localmesh->xend;   // Last interior point
-
-  // Calculation variables
-  // proc: |       p-1       |          p          |       p+1
-  //    x: |            xs-1 | xs      ...      xe | xe+1
-  // xloc: |xloc[0] ...      | xloc[1] ... xloc[2] | xloc[3]
-  //
-  // In this method, we write the original tridiagonal system as a reduced
-  // tridiagonal system whose grid points are the first interior point on each
-  // processor (xs), plus the last interior point on the final processor. Each
-  // processor solves for its local points. Quantities are stored in length 4
-  // arrays where index 1 corresponds to the value at a processor's xs on the
-  // original grid. Indices 0 and 3 correspond to the lower and upper
-  // neighbours' values at their xs respectively, except on physical
-  // boundaries where these are the boundary points. Index 2 is used on the
-  // final processor only to track its value at the last grid point xe. This
-  // means we often have special cases of the equations for final processor.
-  //
-  auto xloc = Matrix<dcomplex>(4, nmode); // Values of x at the processor interface
+  xs = localmesh->xstart; // First interior point
+  xe = localmesh->xend;   // Last interior point
 
   BoutReal kwaveFactor = 2.0 * PI / coords->zlength();
 
@@ -303,9 +309,6 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   * NOTE: Do not confuse avec, bvec and cvec with the A, C, and D coefficients
   *       above
   */
-  auto avec = Matrix<dcomplex>(nmode, ncx);
-  auto bvec = Matrix<dcomplex>(nmode, ncx);
-  auto cvec = Matrix<dcomplex>(nmode, ncx);
   auto bcmplx = Matrix<dcomplex>(nmode, ncx);
 
   BOUT_OMP(parallel for)
@@ -358,7 +361,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   for (int kz = 0; kz < nmode; kz++) {
     // Note that this is called every time to deal with bcmplx and could mostly
     // be skipped when storing coefficients.
-    tridagMatrix(&avec(kz, 0), &bvec(kz, 0), &cvec(kz, 0), &bcmplx(kz, 0), jy,
+    tridagMatrix(&avec(jy, kz, 0), &bvec(jy, kz, 0), &cvec(jy, kz, 0), &bcmplx(kz, 0), jy,
                  // wave number index
                  kz,
                  // wave number (different from kz only if we are taking a part
@@ -369,17 +372,17 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
     // Patch up internal boundaries
     if (not localmesh->lastX()) {
       for (int ix = localmesh->xend + 1; ix < localmesh->LocalNx; ix++) {
-        avec(kz, ix) = 0;
-        bvec(kz, ix) = 1;
-        cvec(kz, ix) = 0;
+        avec(jy, kz, ix) = 0;
+        bvec(jy, kz, ix) = 1;
+        cvec(jy, kz, ix) = 0;
         bcmplx(kz, ix) = 0;
       }
     }
     if (not localmesh->firstX()) {
       for (int ix = 0; ix < localmesh->xstart; ix++) {
-        avec(kz, ix) = 0;
-        bvec(kz, ix) = 1;
-        cvec(kz, ix) = 0;
+        avec(jy, kz, ix) = 0;
+        bvec(jy, kz, ix) = 1;
+        cvec(jy, kz, ix) = 0;
         bcmplx(kz, ix) = 0;
       }
     }
@@ -399,13 +402,11 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   // below.
   if (first_call[jy] || not store_coefficients) {
 
-    levels[0].init(*this, ncx, avec, bvec, cvec, xs, xe);
+    levels[0].init(*this);
 
-    int ncx_coarse = ncx; //(xe-xs+1)/2 + xs + ncx - xe - 1;
     if (max_level > 0) {
       for (int l = 1; l <= max_level; l++) {
-        ncx_coarse = (ncx_coarse - 4) / 2 + 4;
-        levels[l].init(*this, levels[l - 1], ncx_coarse, xs, ncx_coarse - 3, l); // FIXME assumes mgy=2
+        levels[l].init(*this, levels[l - 1], l);
       }
     }
   }
@@ -809,10 +810,12 @@ void LaplaceIPT::Level::gauss_seidel_red_black(const LaplaceIPT& l) {
     for (int kz = 0; kz < l.nmode; kz++) {
       if (not l.converged[kz]) {
         if (l.localmesh->firstX()) {
-          xloc(0, kz) = -cvec(l.jy, kz, xs - 1) * xloc(1, kz) / bvec(l.jy, kz, xs - 1);
+          xloc(0, kz) =
+              -l.cvec(l.jy, kz, l.xs - 1) * xloc(1, kz) / l.bvec(l.jy, kz, l.xs - 1);
         }
         if (l.localmesh->lastX()) {
-          xloc(3, kz) = -avec(l.jy, kz, xe + 1) * xloc(2, kz) / bvec(l.jy, kz, xe + 1);
+          xloc(3, kz) =
+              -l.avec(l.jy, kz, l.xe + 1) * xloc(2, kz) / l.bvec(l.jy, kz, l.xe + 1);
         }
       }
     }
@@ -821,13 +824,9 @@ void LaplaceIPT::Level::gauss_seidel_red_black(const LaplaceIPT& l) {
 
 // Initialization routine for coarser grids. Initialization depends on the grid
 // one step finer, lup.
-void LaplaceIPT::Level::init(LaplaceIPT& l, const Level lup, int ncx_in, const int xs_in,
-                             const int xe_in, const int current_level_in) {
+void LaplaceIPT::Level::init(LaplaceIPT& l, const Level lup, const int current_level_in) {
 
   SCOREP0();
-  xs = xs_in;
-  xe = xe_in;
-  ncx = ncx_in;
   int ny = l.localmesh->LocalNy;
   current_level = current_level_in;
 
@@ -873,10 +872,23 @@ void LaplaceIPT::Level::init(LaplaceIPT& l, const Level lup, int ncx_in, const i
   int p = myproc + int(pow(2, current_level));
   proc_out = (p < l.nproc - 1) ? p : l.nproc - 1;
 
-  residual = Matrix<dcomplex>(4, l.nmode);
+  // Calculation variables
+  // proc: |       p-1       |          p          |       p+1
+  //    x: |            xs-1 | xs      ...      xe | xe+1
+  // xloc: |xloc[0] ...      | xloc[1] ... xloc[2] | xloc[3]
+  //
+  // In this method, we write the original tridiagonal system as a reduced
+  // tridiagonal system whose grid points are the first interior point on each
+  // processor (xs), plus the last interior point on the final processor. Each
+  // processor solves for its local points. Quantities are stored in length 4
+  // arrays where index 1 corresponds to the value at a processor's xs on the
+  // original grid. Indices 0 and 3 correspond to the lower and upper
+  // neighbours' values at their xs respectively, except on physical
+  // boundaries where these are the boundary points. Index 2 is used on the
+  // final processor only to track its value at the last grid point xe. This
+  // means we often have special cases of the equations for final processor.
   xloc = Matrix<dcomplex>(4, l.nmode);
-  rl = Array<dcomplex>(l.nmode);
-  ru = Array<dcomplex>(l.nmode);
+  residual = Matrix<dcomplex>(4, l.nmode);
 
   // Coefficients for the reduced iterations
   ar = Tensor<dcomplex>(ny, 4, l.nmode);
@@ -966,17 +978,10 @@ void LaplaceIPT::Level::init(LaplaceIPT& l, const Level lup, int ncx_in, const i
 }
 
 // Init routine for finest level
-void LaplaceIPT::Level::init(LaplaceIPT& l, const int ncx_in,
-                             const Matrix<dcomplex> avec_in,
-                             const Matrix<dcomplex> bvec_in,
-                             const Matrix<dcomplex> cvec_in, const int xs_in,
-                             const int xe_in) {
+void LaplaceIPT::Level::init(LaplaceIPT& l) {
 
   // Basic definitions for conventional multigrid
   SCOREP0();
-  xs = xs_in;
-  xe = xe_in;
-  ncx = ncx_in;
   int ny = l.localmesh->LocalNy;
   current_level = 0;
 
@@ -997,10 +1002,6 @@ void LaplaceIPT::Level::init(LaplaceIPT& l, const int ncx_in,
   }
   index_start = 1;
 
-  avec = Tensor<dcomplex>(ny, l.nmode, ncx);
-  bvec = Tensor<dcomplex>(ny, l.nmode, ncx);
-  cvec = Tensor<dcomplex>(ny, l.nmode, ncx);
-
   // Coefficients for the reduced iterations
   ar = Tensor<dcomplex>(ny, 4, l.nmode);
   br = Tensor<dcomplex>(ny, 4, l.nmode);
@@ -1011,11 +1012,6 @@ void LaplaceIPT::Level::init(LaplaceIPT& l, const int ncx_in,
   residual = Matrix<dcomplex>(4, l.nmode);
 
   for (int kz = 0; kz < l.nmode; kz++) {
-    for (int ix = 0; ix < ncx; ix++) {
-      avec(l.jy, kz, ix) = avec_in(kz, ix);
-      bvec(l.jy, kz, ix) = bvec_in(kz, ix);
-      cvec(l.jy, kz, ix) = cvec_in(kz, ix);
-    }
     for (int ix = 0; ix < 4; ix++) {
       residual(ix, kz) = 0.0;
     }
@@ -1025,26 +1021,9 @@ void LaplaceIPT::Level::init(LaplaceIPT& l, const int ncx_in,
   // Define sizes of local coefficients
   xloc = Matrix<dcomplex>(4, l.nmode); // Reduced grid x values
 
-  // Arrays to construct global solution from halo values
-  minvb = Matrix<dcomplex>(l.nmode, ncx);                // Local M^{-1} f
-  lowerGuardVector = Tensor<dcomplex>(ny, l.nmode, ncx); // alpha
-  upperGuardVector = Tensor<dcomplex>(ny, l.nmode, ncx); // beta
-
-  // Coefficients of first and last interior rows
-  al = Matrix<dcomplex>(ny, l.nmode); // alpha^l
-  bl = Matrix<dcomplex>(ny, l.nmode); // beta^l
-  au = Matrix<dcomplex>(ny, l.nmode); // alpha^u
-  bu = Matrix<dcomplex>(ny, l.nmode); // beta^u
-  rl = Array<dcomplex>(l.nmode);      // r^l
-  ru = Array<dcomplex>(l.nmode);      // r^u
-
-  // Coefs used to compute rl from domain below
-  r1 = Matrix<dcomplex>(ny, l.nmode);
-  r2 = Matrix<dcomplex>(ny, l.nmode);
-
   // Work arrays
-  auto evec = Array<dcomplex>(ncx);
-  auto tmp = Array<dcomplex>(ncx);
+  auto evec = Array<dcomplex>(l.ncx);
+  auto tmp = Array<dcomplex>(l.ncx);
 
   // Communication arrays
   auto sendvec = Array<dcomplex>(3 * l.nmode);
@@ -1063,35 +1042,35 @@ void LaplaceIPT::Level::init(LaplaceIPT& l, const int ncx_in,
     // Upper interface
     if (not l.localmesh->lastX()) {
       // Need the xend-th element
-      for (int i = 0; i < ncx; i++) {
+      for (int i = 0; i < l.ncx; i++) {
         evec[i] = 0.0;
       }
-      evec[xe + 1] = 1.0;
-      tridag(&avec_in(kz, 0), &bvec_in(kz, 0), &cvec_in(kz, 0), std::begin(evec),
-             std::begin(tmp), ncx);
-      for (int i = 0; i < ncx; i++) {
-        upperGuardVector(l.jy, kz, i) = tmp[i];
+      evec[l.xe + 1] = 1.0;
+      tridag(&l.avec(l.jy, kz, 0), &l.bvec(l.jy, kz, 0), &l.cvec(l.jy, kz, 0),
+             std::begin(evec), std::begin(tmp), l.ncx);
+      for (int i = 0; i < l.ncx; i++) {
+        l.upperGuardVector(l.jy, kz, i) = tmp[i];
       }
     } else {
-      for (int i = 0; i < ncx; i++) {
-        upperGuardVector(l.jy, kz, i) = 0.0;
+      for (int i = 0; i < l.ncx; i++) {
+        l.upperGuardVector(l.jy, kz, i) = 0.0;
       }
     }
 
     // Lower interface
     if (not l.localmesh->firstX()) {
-      for (int i = 0; i < ncx; i++) {
+      for (int i = 0; i < l.ncx; i++) {
         evec[i] = 0.0;
       }
-      evec[xs - 1] = 1.0;
-      tridag(&avec_in(kz, 0), &bvec_in(kz, 0), &cvec_in(kz, 0), std::begin(evec),
-             std::begin(tmp), ncx);
-      for (int i = 0; i < ncx; i++) {
-        lowerGuardVector(l.jy, kz, i) = tmp[i];
+      evec[l.xs - 1] = 1.0;
+      tridag(&l.avec(l.jy, kz, 0), &l.bvec(l.jy, kz, 0), &l.cvec(l.jy, kz, 0),
+             std::begin(evec), std::begin(tmp), l.ncx);
+      for (int i = 0; i < l.ncx; i++) {
+        l.lowerGuardVector(l.jy, kz, i) = tmp[i];
       }
     } else {
-      for (int i = 0; i < ncx; i++) {
-        lowerGuardVector(l.jy, kz, i) = 0.0;
+      for (int i = 0; i < l.ncx; i++) {
+        l.lowerGuardVector(l.jy, kz, i) = 0.0;
       }
     }
 
@@ -1100,11 +1079,11 @@ void LaplaceIPT::Level::init(LaplaceIPT& l, const int ncx_in,
     /// SCOREP_USER_REGION_BEGIN(coefs, "calculate
     /// coefs",///SCOREP_USER_REGION_TYPE_COMMON);
 
-    bl(l.jy, kz) = upperGuardVector(l.jy, kz, xs);
-    al(l.jy, kz) = lowerGuardVector(l.jy, kz, xs);
+    l.bl(l.jy, kz) = l.upperGuardVector(l.jy, kz, l.xs);
+    l.al(l.jy, kz) = l.lowerGuardVector(l.jy, kz, l.xs);
 
-    bu(l.jy, kz) = upperGuardVector(l.jy, kz, xe);
-    au(l.jy, kz) = lowerGuardVector(l.jy, kz, xe);
+    l.bu(l.jy, kz) = l.upperGuardVector(l.jy, kz, l.xe);
+    l.au(l.jy, kz) = l.lowerGuardVector(l.jy, kz, l.xe);
 
     // First compute coefficients that depend on the matrix to be inverted
     // and which therefore might be constant throughout a run.
@@ -1121,10 +1100,10 @@ void LaplaceIPT::Level::init(LaplaceIPT& l, const int ncx_in,
     if (not l.localmesh->lastX()) {
       // Send coefficients up
       ABtmp[0] = 0.0;
-      ABtmp[1] = bu(l.jy, kz);
-      if (std::fabs(al(l.jy, kz)) > 1e-14) {
-        ABtmp[0] = au(l.jy, kz) / al(l.jy, kz);
-        ABtmp[1] -= ABtmp[0] * bl(l.jy, kz);
+      ABtmp[1] = l.bu(l.jy, kz);
+      if (std::fabs(l.al(l.jy, kz)) > 1e-14) {
+        ABtmp[0] = l.au(l.jy, kz) / l.al(l.jy, kz);
+        ABtmp[1] -= ABtmp[0] * l.bl(l.jy, kz);
       }
       // Send these
       MPI_Send(&ABtmp[0], 2, MPI_DOUBLE_COMPLEX, proc_out, 0, BoutComm::get());
@@ -1134,26 +1113,28 @@ void LaplaceIPT::Level::init(LaplaceIPT& l, const int ncx_in,
       MPI_Wait(&req, MPI_STATUS_IGNORE);
     }
 
-    const dcomplex Delta = 1.0 / (1.0 - al(l.jy, kz) * AdBd[1]);
-    ar(l.jy, 1, kz) = -Delta * al(l.jy, kz) * AdBd[0];
-    cr(l.jy, 1, kz) = -Delta * bl(l.jy, kz);
+    const dcomplex Delta = 1.0 / (1.0 - l.al(l.jy, kz) * AdBd[1]);
+    ar(l.jy, 1, kz) = -Delta * l.al(l.jy, kz) * AdBd[0];
+    cr(l.jy, 1, kz) = -Delta * l.bl(l.jy, kz);
 
-    r1(l.jy, kz) = Delta * al(l.jy, kz);
-    r2(l.jy, kz) = Delta;
+    l.r1(l.jy, kz) = Delta * l.al(l.jy, kz);
+    l.r2(l.jy, kz) = Delta;
 
     // lastX is a special case having two points on the level 0 grid
     if (l.localmesh->lastX()) {
       // Note that if the first proc is also the last proc, then both alold and
       // auold are zero, and l.au = l.auold is already correct.
       if (not l.localmesh->lastX()) {
-        ar(l.jy, 2, kz) = -au(l.jy, kz) / al(l.jy, kz);
+        ar(l.jy, 2, kz) = -l.au(l.jy, kz) / l.al(l.jy, kz);
         cr(l.jy, 2, kz) =
-            -(bu(l.jy, kz) + ar(l.jy, 2, kz) * bl(l.jy, kz)); // NB depends on previous line
+            -(l.bu(l.jy, kz)
+              + ar(l.jy, 2, kz) * l.bl(l.jy, kz)); // NB depends on previous line
       }
 
       // Use BCs to replace x(xe+1) = -avec(xe+1) x(xe) / bvec(xe+1)
       //  => only bl changes
-      cr(l.jy, 1, kz) = avec(l.jy, kz, xe + 1) * bl(l.jy, kz) / bvec(l.jy, kz, xe + 1);
+      cr(l.jy, 1, kz) =
+          l.avec(l.jy, kz, l.xe + 1) * l.bl(l.jy, kz) / l.bvec(l.jy, kz, l.xe + 1);
     }
 
     // Now set coefficients for reduced iterations (shared by all levels)
@@ -1215,8 +1196,8 @@ void LaplaceIPT::Level::init_rhs(LaplaceIPT& l, const Matrix<dcomplex> bcmplx) {
 
     // Invert local matrices
     // Calculate Minv*b
-    tridag(&avec(l.jy, kz, 0), &bvec(l.jy, kz, 0), &cvec(l.jy, kz, 0), &bcmplx(kz, 0),
-           &minvb(kz, 0), l.ncx);
+    tridag(&l.avec(l.jy, kz, 0), &l.bvec(l.jy, kz, 0), &l.cvec(l.jy, kz, 0),
+           &bcmplx(kz, 0), &l.minvb(kz, 0), l.ncx);
     // Now minvb is a constant vector throughout the iterations
 
     /// SCOREP_USER_REGION_END(invertforrhs);
@@ -1224,17 +1205,17 @@ void LaplaceIPT::Level::init_rhs(LaplaceIPT& l, const Matrix<dcomplex> bcmplx) {
     /// SCOREP_USER_REGION_BEGIN(coefsforrhs, "calculate coefs for
     /// rhs",///SCOREP_USER_REGION_TYPE_COMMON);
 
-    rl[kz] = minvb(kz, xs);
-    ru[kz] = minvb(kz, xe);
+    l.rl[kz] = l.minvb(kz, l.xs);
+    l.ru[kz] = l.minvb(kz, l.xe);
 
     // Boundary processor value to be overwritten when relevant
     Rd[kz] = 0.0;
 
     if (not l.localmesh->lastX()) {
       // Send coefficients up
-      Rsendup[kz] = ru[kz];
-      if (std::fabs(al(l.jy, kz)) > 1e-14) {
-        Rsendup[kz] -= rl[kz] * au(l.jy, kz) / al(l.jy, kz);
+      Rsendup[kz] = l.ru[kz];
+      if (std::fabs(l.al(l.jy, kz)) > 1e-14) {
+        Rsendup[kz] -= l.rl[kz] * l.au(l.jy, kz) / l.al(l.jy, kz);
       }
     }
     /// SCOREP_USER_REGION_END(coefsforrhs);
@@ -1251,15 +1232,15 @@ void LaplaceIPT::Level::init_rhs(LaplaceIPT& l, const Matrix<dcomplex> bcmplx) {
   }
 
   for (int kz = 0; kz < l.nmode; kz++) {
-    rr(1, kz) = r1(l.jy, kz) * Rd[kz] + r2(l.jy, kz) * rl[kz];
+    rr(1, kz) = l.r1(l.jy, kz) * Rd[kz] + l.r2(l.jy, kz) * l.rl[kz];
 
     // Special case for multiple points on last proc
     // Note that if the first proc is also the last proc, then both al and
     // au are zero, and l.ru is already correct.
     if (l.localmesh->lastX() and not l.localmesh->firstX()) {
-      rr(2, kz) = ru[kz] - au(l.jy, kz) * rl[kz] / al(l.jy, kz);
+      rr(2, kz) = l.ru[kz] - l.au(l.jy, kz) * l.rl[kz] / l.al(l.jy, kz);
     } else {
-      rr(2, kz) = ru[kz];
+      rr(2, kz) = l.ru[kz];
     }
   }
 }
