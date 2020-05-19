@@ -430,12 +430,13 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   auto error_abs_old = Array<BoutReal>(nmode);
   auto error_rel = Array<BoutReal>(nmode);
   auto error_rel_old = Array<BoutReal>(nmode);
+  constexpr BoutReal initial_error = 1e6;
+  error_abs = initial_error;
+  error_abs_old = initial_error;
+  error_rel = initial_error;
+  error_rel_old = initial_error;
   for (int kz = 0; kz < nmode; kz++) {
     converged[kz] = false;
-    error_abs[kz] = 1e20;
-    error_abs_old[kz] = 1e20;
-    error_rel[kz] = 1e20;
-    error_rel_old[kz] = 1e20;
   }
 
   /// SCOREP_USER_REGION_END(initwhileloop);
