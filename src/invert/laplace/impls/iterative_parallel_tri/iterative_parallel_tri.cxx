@@ -530,7 +530,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
     } else if (all(converged) and current_level == 0) {
       break;
     } else if (not down) {
-      refine(levels[current_level], levels[current_level - 1], fine_error, converged);
+      levels[current_level].refine(*this, fine_error);
       --current_level;
       levels[current_level].update_solution(*this);
       levels[current_level].synchronize_reduced_field(*this, levels[current_level].xloc);
@@ -824,10 +824,10 @@ void LaplaceIPT::Level::gauss_seidel_red_black(const LaplaceIPT& l) {
 
 // Initialization routine for coarser grids. Initialization depends on the grid
 // one step finer, lup.
-void LaplaceIPT::Level::init(LaplaceIPT& l, const Level lup, const int current_level_in) {
+void LaplaceIPT::Level::init(const LaplaceIPT& l, const Level lup,
+                             const int current_level_in) {
 
   SCOREP0();
-  int ny = l.localmesh->LocalNy;
   current_level = current_level_in;
 
   auto sendvec = Array<dcomplex>(3 * l.nmode);
@@ -845,8 +845,14 @@ void LaplaceIPT::Level::init(LaplaceIPT& l, const Level lup, const int current_l
   myproc = lup.myproc;
   // Whether this proc is involved in the multigrid calculation
   included = (myproc % int((pow(2, current_level))) == 0) or l.localmesh->lastX();
+
+  // Save some proc properties from the level above - this allows us to NOT pass the level
+  // above as an argument in some functions
   // Whether this proc is involved in the calculation on the grid one level more refined
   included_up = lup.included;
+  // This proc's neighbours on the level above
+  proc_in_up = lup.proc_in;
+  proc_out_up = lup.proc_out;
 
   if (not included) {
     return;
@@ -891,11 +897,11 @@ void LaplaceIPT::Level::init(LaplaceIPT& l, const Level lup, const int current_l
   residual = Matrix<dcomplex>(4, l.nmode);
 
   // Coefficients for the reduced iterations
-  ar = Tensor<dcomplex>(ny, 4, l.nmode);
-  br = Tensor<dcomplex>(ny, 4, l.nmode);
-  cr = Tensor<dcomplex>(ny, 4, l.nmode);
+  ar = Tensor<dcomplex>(l.ny, 4, l.nmode);
+  br = Tensor<dcomplex>(l.ny, 4, l.nmode);
+  cr = Tensor<dcomplex>(l.ny, 4, l.nmode);
   rr = Matrix<dcomplex>(4, l.nmode);
-  brinv = Tensor<dcomplex>(ny, 4, l.nmode);
+  brinv = Tensor<dcomplex>(l.ny, 4, l.nmode);
 
   for (int kz = 0; kz < l.nmode; kz++) {
     if (l.localmesh->firstX()) {
@@ -1396,74 +1402,72 @@ void LaplaceIPT::Level::update_solution(const LaplaceIPT& l) {
  * from
  *  level 1 to level 0. It only sends if refining from level 0 to level 1.
  */
-void LaplaceIPT::refine(const Level& l, const Level& lup, Matrix<dcomplex>& fine_error,
-                        const Array<bool>& converged) {
+void LaplaceIPT::Level::refine(const LaplaceIPT& l, Matrix<dcomplex>& fine_error) {
 
   SCOREP0();
-  Array<dcomplex> sendvec(nmode), recvecin(nmode), recvecout(nmode);
+  Array<dcomplex> sendvec(l.nmode), recvecin(l.nmode), recvecout(l.nmode);
   MPI_Request rreqin, rreqout;
 
   // Included processors send their contribution to procs that are included on
   // the level above.
   // Special case: last proc sends if on level > 1, but NOT on level 1
-  if (l.included and (not localmesh->lastX() or l.current_level > 1)) {
-    for (int kz = 0; kz < nmode; kz++) {
-      if (!converged[kz]) {
-        fine_error(1, kz) = l.xloc(1, kz);
-        sendvec[kz] = l.xloc(1, kz);
-        if (localmesh->lastX()) {
-          fine_error(2, kz) = l.xloc(2, kz);
+  if (included and (not l.localmesh->lastX() or current_level > 1)) {
+    for (int kz = 0; kz < l.nmode; kz++) {
+      if (not l.converged[kz]) {
+        fine_error(1, kz) = xloc(1, kz);
+        sendvec[kz] = xloc(1, kz);
+        if (l.localmesh->lastX()) {
+          fine_error(2, kz) = xloc(2, kz);
         }
       }
     }
 
-    if (!localmesh->lastX()) {
-      MPI_Send(&sendvec[0], nmode, MPI_DOUBLE_COMPLEX, lup.proc_out, 0, BoutComm::get());
+    if (not l.localmesh->lastX()) {
+      MPI_Send(&sendvec[0], l.nmode, MPI_DOUBLE_COMPLEX, proc_out_up, 0, BoutComm::get());
     }
-    if (!localmesh->firstX()) {
-      MPI_Send(&sendvec[0], nmode, MPI_DOUBLE_COMPLEX, lup.proc_in, 1, BoutComm::get());
+    if (not l.localmesh->firstX()) {
+      MPI_Send(&sendvec[0], l.nmode, MPI_DOUBLE_COMPLEX, proc_in_up, 1, BoutComm::get());
     }
   }
 
   // Receive if proc is included on the level above, but not this level.
   // Special case: last proc receives if on level 1
-  if ((l.included_up and not l.included)
-      or (localmesh->lastX() and l.current_level == 1)) {
-    if (!localmesh->firstX()) {
-      MPI_Irecv(&recvecin[0], nmode, MPI_DOUBLE_COMPLEX, lup.proc_in, 0, BoutComm::get(),
+  if ((included_up and not included) or (l.localmesh->lastX() and current_level == 1)) {
+    if (not l.localmesh->firstX()) {
+      MPI_Irecv(&recvecin[0], l.nmode, MPI_DOUBLE_COMPLEX, proc_in_up, 0, BoutComm::get(),
                 &rreqin);
     }
-    if (!localmesh->lastX()) {
-      MPI_Irecv(&recvecout[0], nmode, MPI_DOUBLE_COMPLEX, lup.proc_out, 1,
+    if (not l.localmesh->lastX()) {
+      MPI_Irecv(&recvecout[0], l.nmode, MPI_DOUBLE_COMPLEX, proc_out_up, 1,
                 BoutComm::get(), &rreqout);
     }
 
-    for (int kz = 0; kz < nmode; kz++) {
+    for (int kz = 0; kz < l.nmode; kz++) {
       fine_error(1, kz) = 0.0;
     }
 
-    if (!localmesh->firstX()) {
+    if (not l.localmesh->firstX()) {
       MPI_Wait(&rreqin, MPI_STATUS_IGNORE);
-      for (int kz = 0; kz < nmode; kz++) {
-        if (!converged[kz]) {
+      for (int kz = 0; kz < l.nmode; kz++) {
+        if (not l.converged[kz]) {
           fine_error(1, kz) += 0.5 * recvecin[kz];
         }
       }
     }
-    if (!localmesh->lastX()) {
+    if (not l.localmesh->lastX()) {
       MPI_Wait(&rreqout, MPI_STATUS_IGNORE);
-      for (int kz = 0; kz < nmode; kz++) {
-        if (!converged[kz]) {
+      for (int kz = 0; kz < l.nmode; kz++) {
+        if (not l.converged[kz]) {
           fine_error(1, kz) += 0.5 * recvecout[kz];
         }
       }
     }
   }
   // Special case where we need to fill (1,kz) on final proc
-  if (localmesh->lastX() and l.current_level == 1) {
-    for (int kz = 0; kz < nmode; kz++) {
-      if (!converged[kz]) {
-        fine_error(1, kz) += 0.5 * l.xloc(2, kz);
+  if (l.localmesh->lastX() and current_level == 1) {
+    for (int kz = 0; kz < l.nmode; kz++) {
+      if (not l.converged[kz]) {
+        fine_error(1, kz) += 0.5 * xloc(2, kz);
       }
     }
   }

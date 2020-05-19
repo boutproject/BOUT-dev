@@ -101,8 +101,8 @@ public:
     int xproc;
     int yproc;
     int myproc;
-    int proc_in;
-    int proc_out;
+    int proc_in, proc_out;
+    int proc_in_up, proc_out_up;
     bool included;
     bool included_up;
     bool red, black;
@@ -116,18 +116,17 @@ public:
     void calculate_total_residual(LaplaceIPT& lap, Array<BoutReal> &total, Array<BoutReal> &globalmaxsol, Array<bool> &converged);
     void coarsen(const LaplaceIPT& lap, const Matrix<dcomplex> &fine_residual);
     void gauss_seidel_red_black(const LaplaceIPT& lap);
-    void init(LaplaceIPT &lap, const Level lup, const int current_level);
+    void init(const LaplaceIPT &lap, const Level lup, const int current_level);
     void init(LaplaceIPT &lap);
     void init_rhs(LaplaceIPT &lap, const Matrix<dcomplex> bcmplx);
-
     bool is_diagonally_dominant(const LaplaceIPT &lap);
     void reconstruct_full_solution(const LaplaceIPT &lap, Matrix<dcomplex> &xk1d);
+    void refine(const LaplaceIPT &lap, Matrix<dcomplex> &fine_error);
     void synchronize_reduced_field(const LaplaceIPT &lap, Matrix<dcomplex> &field);
     void update_solution(const LaplaceIPT& lap);
 
   };
 
-  void refine(const Level &level, const Level &level_up, Matrix<dcomplex> &fine_error, const Array<bool> &converged);
   void transpose(Matrix<dcomplex> &matrix_transposed, const Matrix<dcomplex> &matrix, const int n1, const int n2);
 
 private:
