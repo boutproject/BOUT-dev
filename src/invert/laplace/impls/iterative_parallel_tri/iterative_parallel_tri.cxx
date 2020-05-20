@@ -1282,7 +1282,7 @@ void LaplaceIPT::Level::calculate_total_residual(LaplaceIPT& l,
   }
 
   // Communication needed to ensure processors break on same iteration
-  MPI_Allreduce(&subtotal[0], &total[0], 2 * l.nmode, MPI_DOUBLE, MPI_SUM,
+  MPI_Allreduce(&subtotal[0], &total[0], total.size(), MPI_DOUBLE, MPI_SUM,
                 BoutComm::get());
 
   for (int kz = 0; kz < l.nmode; kz++) {
