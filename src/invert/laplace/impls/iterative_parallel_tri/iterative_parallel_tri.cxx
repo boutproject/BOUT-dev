@@ -1246,6 +1246,7 @@ void LaplaceIPT::Level::init_rhs(LaplaceIPT& l, const Matrix<dcomplex> bcmplx) {
 
 /*
  * Sum and communicate total residual for the reduced system
+ * NB This calculation assumes we are using the finest grid, level 0.
  */
 void LaplaceIPT::Level::calculate_total_residual(LaplaceIPT& l,
                                                  Array<BoutReal>& error_abs,
@@ -1253,6 +1254,12 @@ void LaplaceIPT::Level::calculate_total_residual(LaplaceIPT& l,
                                                  Array<bool>& converged) {
 
   SCOREP0();
+
+  if (current_level != 0) {
+    throw BoutException(
+        "LaplaceIPT error: calculate_total_residual can only be called on level 0");
+  }
+
   // Communication arrays:
   // residual in (0, :)
   // solution in (1, :)
@@ -1264,19 +1271,19 @@ void LaplaceIPT::Level::calculate_total_residual(LaplaceIPT& l,
       total(0, kz) = 0.0;
       total(1, kz) = 0.0;
 
-      // TODO add special case for last proc
-      // Only xs and xe have nonzero residuals
-      subtotal(0, kz) = pow(residual(1, kz).real(), 2) + pow(residual(1, kz).imag(), 2)
-                        + pow(residual(2, kz).real(), 2) + pow(residual(2, kz).imag(), 2);
-
+      subtotal(0, kz) = pow(residual(1, kz).real(), 2) + pow(residual(1, kz).imag(), 2);
       // TODO This approximation will increase iteration count. The alternatives are:
       // + reconstructing the solution and calculating properly
       // + multiply approximation by (interior points/2) - this can be done
       //   at runtime by changing rtol
       // Strictly this should be all contributions to the solution, but this
       // under-approximation saves work.
-      subtotal(1, kz) = pow(xloc(1, kz).real(), 2) + pow(xloc(1, kz).imag(), 2)
-                        + pow(xloc(2, kz).real(), 2) + pow(xloc(2, kz).imag(), 2);
+      subtotal(1, kz) = pow(xloc(1, kz).real(), 2) + pow(xloc(1, kz).imag(), 2);
+      if (l.localmesh->lastX()) {
+        subtotal(0, kz) +=
+            pow(residual(2, kz).real(), 2) + pow(residual(2, kz).imag(), 2);
+        subtotal(1, kz) += pow(xloc(2, kz).real(), 2) + pow(xloc(2, kz).imag(), 2);
+      }
     }
   }
 
