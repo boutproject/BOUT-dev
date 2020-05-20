@@ -32,13 +32,14 @@ protected:
 
   // 3D vector of points to skip (true -> skip this point)
   BoutMask skip_mask;
+  bool has_mask = false;
 
 public:
   explicit ZInterpolation(int y_offset = 0, Mesh* mesh = nullptr)
       : ZInterpolation(BoutMask{mesh}, y_offset, mesh) {}
   explicit ZInterpolation(BoutMask mask, int y_offset = 0, Mesh* mesh = nullptr)
-      : localmesh(mesh == nullptr ? bout::globals::mesh : mesh), skip_mask(mask),
-        y_offset(y_offset) {}
+      : localmesh(mesh == nullptr ? bout::globals::mesh : mesh),
+        skip_mask(mask), has_mask(true), y_offset(y_offset) {}
   virtual ~ZInterpolation() = default;
 
   virtual void calcWeights(const Field3D& delta_z,
@@ -54,7 +55,10 @@ public:
                               const BoutMask& mask,
                               const std::string& region = "RGN_NOBNDRY") = 0;
 
-  void setMask(const BoutMask& mask) { skip_mask = mask; }
+  void setMask(const BoutMask& mask) {
+    skip_mask = mask;
+    has_mask = true;
+  }
 
   /// Interpolate using the field at (x,y+y_offset,z), rather than (x,y,z)
   void setYOffset(int offset) { y_offset = offset; }
@@ -132,6 +136,11 @@ public:
   getWeightsForYApproximation(int i, int j, int k, int yoffset) const override;
 
 private:
+  template<bool with_mask>
+  Field3D interpolate_internal(
+    const Field3D& f, const std::string& region = "RGN_NOBNDRY"
+  ) const;
+
   Tensor<int> k_corner; // z-index of left grid point
 
   // Basis functions for cubic Hermite spline interpolation

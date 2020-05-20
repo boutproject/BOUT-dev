@@ -80,6 +80,7 @@ void ZHermiteSpline::calcWeights(const Field3D& delta_z, const std::string& regi
 void ZHermiteSpline::calcWeights(const Field3D& delta_z, const BoutMask& mask,
                                  const std::string& region) {
   skip_mask = mask;
+  has_mask = true;
   calcWeights(delta_z, region);
 }
 
@@ -115,6 +116,14 @@ ZHermiteSpline::getWeightsForYApproximation(int i, int j, int k, int yoffset) co
 }
 
 Field3D ZHermiteSpline::interpolate(const Field3D& f, const std::string& region) const {
+  if (has_mask) {
+    return interpolate_internal<true>(f, region);
+  }
+  return interpolate_internal<false>(f, region);
+}
+
+template<bool with_mask>
+Field3D ZHermiteSpline::interpolate_internal(const Field3D& f, const std::string& region) const {
 
   ASSERT1(f.getMesh() == localmesh);
   Field3D f_interp{emptyFrom(f)};
@@ -139,8 +148,10 @@ Field3D ZHermiteSpline::interpolate(const Field3D& f, const std::string& region)
     const int y = i.y();
     const int z = i.z();
 
-    if (skip_mask(x, y, z))
-      continue;
+    if (with_mask) {
+      if (skip_mask(x, y, z))
+        continue;
+    }
 
     // Due to lack of guard cells in z-direction, we need to ensure z-index
     // wraps around
