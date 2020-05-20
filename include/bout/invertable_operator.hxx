@@ -135,7 +135,7 @@ public:
         opt(optIn == nullptr ? Options::getRoot()->getSection("invertableOperator")
                              : optIn),
         localmesh(localmeshIn == nullptr ? bout::globals::mesh : localmeshIn),
-        lib(&(*opt)["petsc"]) {
+        lib(opt) {
     AUTO_TRACE();
   };
 
