@@ -106,12 +106,11 @@ void PetscLib::setPetscOptions(Options& options, const std::string& prefix) {
     const char* value =
       lowercase(i.second) == "true" ? nullptr : i.second.as<std::string>().c_str();
 
-    PetscErrorCode ierr;
 #if PETSC_VERSION_GE(3, 7, 0)
-    ierr = PetscOptionsSetValue(nullptr, petsc_option_name.c_str(), value);
+    const auto ierr = PetscOptionsSetValue(nullptr, petsc_option_name.c_str(), value);
 #else
 // no PetscOptions as first argument
-    ierr = PetscOptionsSetValue(petsc_option_name.c_str(), value);
+    const auto ierr = PetscOptionsSetValue(petsc_option_name.c_str(), value);
 #endif
     if (ierr) {
       throw BoutException("PetscOptionsSetValue returned error code %i when setting %s",
@@ -120,4 +119,3 @@ void PetscLib::setPetscOptions(Options& options, const std::string& prefix) {
   }
 }
 #endif // BOUT_HAS_PETSC
-

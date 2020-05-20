@@ -63,7 +63,7 @@ public:
   /*!
    * Ensure that PETSc has been initialised
    */
-  PetscLib(Options* opt = nullptr);
+  explicit PetscLib(Options* opt = nullptr);
   
   /*!
    * Calls PetscFinalize when all PetscLib instances are destroyed
@@ -127,12 +127,12 @@ class KSP;
 
 class PetscLib {
 public:
-  PetscLib(Options* UNUSED(opt) = nullptr) {}
+  explicit PetscLib(Options* UNUSED(opt) = nullptr) {}
   ~PetscLib() {}
   
   static void setArgs(int &UNUSED(c), char** &UNUSED(v)) {}
   
-  KSP setOptionsFromInputFile(KSP& ksp) {}
+  void setOptionsFromInputFile(KSP& ksp) {}
 
   static void cleanup() {}
 };
