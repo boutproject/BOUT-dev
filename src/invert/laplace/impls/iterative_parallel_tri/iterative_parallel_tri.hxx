@@ -96,7 +96,6 @@ public:
     Tensor<dcomplex> ar, br, cr, brinv;
     Matrix<dcomplex> rr;
 
-    int err;
     MPI_Comm comm;
     int xproc;
     int yproc;

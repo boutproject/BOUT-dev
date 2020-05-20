@@ -482,13 +482,12 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
         }
       }
 
-      levels[current_level].calculate_residual(*this);
+      levels[0].calculate_residual(*this);
 
       if (cyclecount < 3 or cyclecount > cycle_eta - 5 or not predict_exit) {
         // Calculate the total residual. This also marks modes as converged, so the
         // algorithm cannot exit in cycles where this is not called.
-        levels[current_level].calculate_total_residual(*this, error_abs, error_rel,
-                                                       converged);
+        levels[0].calculate_total_residual(*this, error_abs, error_rel, converged);
 
         // Based the error reduction per V-cycle, error_xxx/error_xxx_old,
         // predict when the slowest converging mode converges.
@@ -1316,19 +1315,22 @@ void LaplaceIPT::Level::calculate_residual(const LaplaceIPT& l) {
     return;
   }
 
+  // The residual should be calculated at index 1
+  //   + for all procs on level 0
+  //   + for all procs, except the last proc on other levels
+  // The residual should be calculated at index 2 on the last proc only on all levels
+  // To remove branching:
+  //   + we calculate something for indices that should be skipped - having a non-zero
+  //   value is "wrong", but the value is never used.
+  //   + we use index_start and index_end variable to index correctly depending on level
+  //   and whether the last processor
   for (int kz = 0; kz < l.nmode; kz++) {
     if (not l.converged[kz]) {
       residual(1, kz) = rr(1, kz) - ar(l.jy, 1, kz) * xloc(0, kz)
                         - br(l.jy, 1, kz) * xloc(1, kz)
                         - cr(l.jy, 1, kz) * xloc(index_end, kz);
-      if (not l.localmesh->lastX()) {
-        residual(2, kz) = 0.0; // Need to ensure this, as this point is included in
-                                 // residual calculations
-        // TODO remove from res calcs
-      } else {
-        residual(2, kz) = rr(2, kz) - ar(l.jy, 2, kz) * xloc(index_start, kz)
-                          - br(l.jy, 2, kz) * xloc(2, kz) - cr(l.jy, 2, kz) * xloc(3, kz);
-      }
+      residual(2, kz) = rr(2, kz) - ar(l.jy, 2, kz) * xloc(index_start, kz)
+                        - br(l.jy, 2, kz) * xloc(2, kz) - cr(l.jy, 2, kz) * xloc(3, kz);
     }
   }
 }
