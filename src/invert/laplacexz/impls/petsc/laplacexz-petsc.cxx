@@ -20,7 +20,7 @@
 
 LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt, const CELL_LOC loc)
   : LaplaceXZ(m, opt, loc),
-    lib(opt==nullptr ? &(Options::root()["laplacexz"]["petsc"]) : &(*opt)["petsc"]),
+    lib(opt==nullptr ? &(Options::root()["laplacexz"]) : opt),
     coefs_set(false) {
 
   /* Constructor: LaplaceXZpetsc

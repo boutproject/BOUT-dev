@@ -41,7 +41,7 @@ PetscLib::PetscLib(Options* opt) {
 
       options_prefix = "boutpetsclib_" + opt->str() + "_";
 
-      setPetscOptions(*opt, options_prefix);
+      setPetscOptions((*opt)["petsc"], options_prefix);
     }
 
     count++;
