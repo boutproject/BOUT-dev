@@ -163,8 +163,8 @@ Field3D ZHermiteSpline::interpolate_internal(const Field3D& f, const std::string
 
     // Interpolate in Z
     f_interp(x, y_next, z) =
-        +f(x, y_next, z_mod) * h00(x, y, z) + f(x, y_next, z_mod_p1) * h01(x, y, z)
-        + fz(x, y_next, z_mod) * h10(x, y, z) + fz(x, y_next, z_mod_p1) * h11(x, y, z);
+        +f(x, y_next, z_mod) * h00[i] + f(x, y_next, z_mod_p1) * h01[i]
+        + fz(x, y_next, z_mod) * h10[i] + fz(x, y_next, z_mod_p1) * h11[i];
 
     ASSERT2(finite(f_interp(x, y_next, z)) || x < localmesh->xstart
             || x > localmesh->xend);
