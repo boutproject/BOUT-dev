@@ -1254,21 +1254,20 @@ void LaplaceIPT::Level::calculate_total_residual(LaplaceIPT& l,
 
   SCOREP0();
   // Communication arrays:
-  // residual in (0 .. nmode-1)
-  // solution in (nmode .. 2*nmode-1)
-  auto total = Array<BoutReal>(2 * l.nmode);    // global summed residual
-  auto subtotal = Array<BoutReal>(2 * l.nmode); // local contribution to residual
+  // residual in (0, :)
+  // solution in (1, :)
+  auto total = Matrix<BoutReal>(2, l.nmode);    // global summed residual
+  auto subtotal = Matrix<BoutReal>(2, l.nmode); // local contribution to residual
 
   for (int kz = 0; kz < l.nmode; kz++) {
     if (!converged[kz]) {
-      total[kz] = 0.0;
-      total[kz + l.nmode] = 0.0;
+      total(0, kz) = 0.0;
+      total(1, kz) = 0.0;
 
       // TODO add special case for last proc
       // Only xs and xe have nonzero residuals
-      subtotal[kz] = pow(residual(1, kz).real(), 2) + pow(residual(1, kz).imag(), 2)
-                     + pow(residual(2, kz).real(), 2)
-                     + pow(residual(2, kz).imag(), 2);
+      subtotal(0, kz) = pow(residual(1, kz).real(), 2) + pow(residual(1, kz).imag(), 2)
+                        + pow(residual(2, kz).real(), 2) + pow(residual(2, kz).imag(), 2);
 
       // TODO This approximation will increase iteration count. The alternatives are:
       // + reconstructing the solution and calculating properly
@@ -1276,19 +1275,19 @@ void LaplaceIPT::Level::calculate_total_residual(LaplaceIPT& l,
       //   at runtime by changing rtol
       // Strictly this should be all contributions to the solution, but this
       // under-approximation saves work.
-      subtotal[kz + l.nmode] = pow(xloc(1, kz).real(), 2) + pow(xloc(1, kz).imag(), 2)
-                               + pow(xloc(2, kz).real(), 2) + pow(xloc(2, kz).imag(), 2);
+      subtotal(1, kz) = pow(xloc(1, kz).real(), 2) + pow(xloc(1, kz).imag(), 2)
+                        + pow(xloc(2, kz).real(), 2) + pow(xloc(2, kz).imag(), 2);
     }
   }
 
   // Communication needed to ensure processors break on same iteration
-  MPI_Allreduce(&subtotal[0], &total[0], total.size(), MPI_DOUBLE, MPI_SUM,
+  MPI_Allreduce(subtotal.begin(), total.begin(), 2 * l.nmode, MPI_DOUBLE, MPI_SUM,
                 BoutComm::get());
 
   for (int kz = 0; kz < l.nmode; kz++) {
     if (!converged[kz]) {
-      error_abs[kz] = sqrt(total[kz]);
-      error_rel[kz] = error_abs[kz] / sqrt(total[kz + l.nmode]);
+      error_abs[kz] = sqrt(total(0, kz));
+      error_rel[kz] = error_abs[kz] / sqrt(total(1, kz));
       if (error_abs[kz] < l.atol or error_rel[kz] < l.rtol) {
         converged[kz] = true;
       }
@@ -1318,6 +1317,7 @@ void LaplaceIPT::Level::calculate_residual(const LaplaceIPT& l) {
       if (not l.localmesh->lastX()) {
         residual(2, kz) = 0.0; // Need to ensure this, as this point is included in
                                  // residual calculations
+        // TODO remove from res calcs
       } else {
         residual(2, kz) = rr(2, kz) - ar(l.jy, 2, kz) * xloc(index_start, kz)
                           - br(l.jy, 2, kz) * xloc(2, kz) - cr(l.jy, 2, kz) * xloc(3, kz);
