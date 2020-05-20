@@ -9,9 +9,9 @@ grid = "tokamak.fci.nc"
 myg = 1
 nxpe=1
 
-[mesh]
+[mesh:paralleltransform]
 
-paralleltransform = fci
+type = fci
 
 [solver]  # Time integration solver
 

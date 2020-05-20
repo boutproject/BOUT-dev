@@ -6,7 +6,7 @@
 cff-version: 1.0.3-1
 message: If you use BOUT++ in your work, please cite it using the following metadata,
   or the two papers in the reference section
-title: BOUT++
+title: "BOUT++"
 authors:
   - family-names: Dudson
     given-names: Benjamin Daniel
@@ -56,6 +56,10 @@ authors:
   - family-names: Breyiannia
     given-names: George
 
+  - family-names: Muhammed
+    given-names: Hasan
+    affiliation: University of York
+
   - family-names: Seto
     given-names: Haruki
 
@@ -91,6 +95,9 @@ authors:
     given-names: Luke
     orcid: https://orcid.org/0000-0002-9087-9180
 
+  - family-names: Estarellas
+    given-names: Marta
+
   - family-names: Thomas
     given-names: Matt
 
@@ -119,6 +126,11 @@ authors:
   - family-names: Naylor
     given-names: Peter
 
+  - family-names: Riva
+    given-names: Fabio
+    orcid: https://orcid.org/0000-0002-0264-442X
+    affiliation: Culham Centre for Fusion Energy
+
   - family-names: Tiwari
     given-names: Sanat
 
@@ -142,11 +154,11 @@ authors:
 
   - family-names: Wang
     given-names: Zhanhui
-version: 4.2.2
-date-released: 2019-03-01
+version: 4.3.1
+date-released: 2020-03-27
 repository-code: https://github.com/boutproject/BOUT-dev
 url: http://boutproject.github.io/
-doi: 10.5281/zenodo.2579077
+doi: 10.5281/zenodo.3727089
 license: 'LGPL-3.0-or-later'
 references:
   - type: article

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from boutdata import collect
-from boututils.run_wrapper import launch_safe, shell_safe
+from boututils.run_wrapper import build_and_log, launch_safe
 import numpy
 from sys import exit
 
@@ -9,8 +9,7 @@ datapath = 'data'
 nproc = 1
 tol = 1.e-13
 
-print('Making twistshift test')
-shell_safe('make > make.log')
+build_and_log('twistshift test')
 
 s, out = launch_safe('./test-twistshift', nproc=nproc, pipe=True)
 with open("run.log."+str(nproc), "w") as f:
@@ -31,7 +30,7 @@ def test1(ylower, yupper):
     if numpy.any(numpy.abs(test_aligned[:, yupper, :] - test_aligned[:, ylower, :]) < 1.e-6):
         success = False
         print("Fail - test_aligned should not be periodic jy=%i and jy=%i should be "
-              "different", yupper, ylower)
+              "different"%( yupper, ylower))
 test1(0,-4)
 test1(1,-3)
 test1(2,-2)

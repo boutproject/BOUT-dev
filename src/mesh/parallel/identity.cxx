@@ -16,22 +16,27 @@ void ParallelTransformIdentity::calcParallelSlices(Field3D& f) {
     return;
   }
 
+  // Make a copy of f without the parallel slices
+  Field3D f_copy = f;
+  f_copy.clearParallelSlices();
+
   f.splitParallelSlices();
 
   for (int i = 0; i < f.getMesh()->ystart; ++i) {
-    f.yup(i) = f;
-    f.ydown(i) = f;
+    f.yup(i) = f_copy;
+    f.ydown(i) = f_copy;
   }
 }
 
 void ParallelTransformIdentity::checkInputGrid() {
   std::string parallel_transform;
-  if (!mesh.get(parallel_transform, "parallel_transform")) {
+  if (mesh.isDataSourceGridFile() and !mesh.get(parallel_transform, "parallel_transform")) {
     if (parallel_transform != "identity") {
       throw BoutException("Incorrect parallel transform type '"+parallel_transform+"' used "
           "to generate metric components for ParallelTransformIdentity. Should be "
           "'identity'.");
     }
   } // else: parallel_transform variable not found in grid input, indicates older input
-    //       file so must rely on the user having ensured the type is correct
+    //       file or grid from options so must rely on the user having ensured the type is
+    //       correct
 }

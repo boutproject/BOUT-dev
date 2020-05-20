@@ -73,7 +73,7 @@ const Field3D Grad_par(const Field3D &var, const std::string &method, CELL_LOC o
 *******************************************************************************/
 
 const Field3D Grad_parP(const Field3D &apar, const Field3D &f) {
-  ASSERT1(areFieldsCompatible(apar, f));
+  ASSERT1_FIELDS_COMPATIBLE(apar, f);
   ASSERT1(f.hasParallelSlices());
 
   Mesh *mesh = apar.getMesh();
@@ -201,7 +201,7 @@ const Field3D Div_par(const Field3D &f, const std::string &method, CELL_LOC outl
 }
 
 const Field3D Div_par(const Field3D& f, const Field3D& v) {
-  ASSERT1(areFieldsCompatible(f, v));
+  ASSERT1_FIELDS_COMPATIBLE(f, v);
   ASSERT1(f.hasParallelSlices());
   ASSERT1(v.hasParallelSlices());
 
@@ -260,219 +260,6 @@ const Field3D Div_par_flux(const Field3D &v, const Field3D &f, CELL_LOC outloc, 
 
 const Field3D Div_par_flux(const Field3D &v, const Field3D &f, const std::string &method, CELL_LOC outloc) {
   return Div_par_flux(v,f, outloc, method);
-}
-
-/*******************************************************************************
-* Parallel derivatives converting between left and cell centred
-* NOTE: These are a quick hack to test if this works. The whole staggered grid
-*       thing needs to be thought through.
-*******************************************************************************/
-
-const Field3D Grad_par_CtoL(const Field3D &var) {
-  ASSERT1(var.getLocation() == CELL_CENTRE);
-
-  Mesh *mesh = var.getMesh();
-  Field3D result{emptyFrom(var).setLocation(CELL_YLOW)};
-
-  Coordinates *metric = var.getCoordinates(CELL_YLOW);
-
-  if (var.hasParallelSlices()) {
-    // NOTE: Need to calculate one more point than centred vars
-    for(int jx=0; jx<mesh->LocalNx;jx++) {
-      for(int jy=1;jy<mesh->LocalNy;jy++) {
-        for(int jz=0;jz<mesh->LocalNz;jz++) {
-          result(jx, jy, jz) = 2.*(var(jx, jy, jz) - var.ydown()(jx, jy-1, jz)) / (metric->dy(jx, jy) * sqrt(metric->g_22(jx, jy)) + metric->dy(jx, jy-1) * sqrt(metric->g_22(jx, jy-1)));
-      }
-      }
-    }
-  } else {
-    // No yup/ydown fields, so transform to cell centred
-    Field3D var_fa = toFieldAligned(var, "RGN_NOX");
-    
-    for(int jx=0; jx<mesh->LocalNx;jx++) {
-      for(int jy=1;jy<mesh->LocalNy;jy++) {
-        for(int jz=0;jz<mesh->LocalNz;jz++) {
-          result(jx, jy, jz) = 2.*(var_fa(jx, jy, jz) - var_fa(jx, jy-1, jz)) / (metric->dy(jx, jy) * sqrt(metric->g_22(jx, jy)) + metric->dy(jx, jy-1) * sqrt(metric->g_22(jx, jy-1)));
-        }
-      }
-    }
-
-    result = fromFieldAligned(result, "RGN_NOBNDRY");
-  }
-
-  return result;
-}
-
-const Field2D Grad_par_CtoL(const Field2D &var) {
-  Field2D result{emptyFrom(var).setLocation(CELL_YLOW)};
-
-  Coordinates *metric = var.getCoordinates(CELL_YLOW);
-
-  BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
-    result[i] = (var[i] - var[i.ym()]) / (metric->dy[i] * sqrt(metric->g_22[i]));
-  }
-
-  return result;
-}
-
-
-const Field3D Vpar_Grad_par_LCtoC(const Field3D &v, const Field3D &f, const std::string& region) {
-  ASSERT1(v.getMesh() == f.getMesh());
-  ASSERT1(v.getLocation() == CELL_YLOW);
-  ASSERT1(f.getLocation() == CELL_CENTRE);
-
-  Field3D result{emptyFrom(f).setLocation(CELL_CENTRE)};
-
-  bool vUseParallelSlices = v.hasParallelSlices();
-  bool fUseParallelSlices = f.hasParallelSlices();
-
-  if (vUseParallelSlices && fUseParallelSlices) {
-    // Both v and f have up/down fields
-    BOUT_OMP(parallel) {
-      stencil fval, vval;
-      BOUT_FOR_INNER(i, result.getRegion(region)) {
-        vval.m = v.ydown()[i.ym()];
-        vval.c = v[i];
-        vval.p = v.yup()[i.yp()];
-
-        fval.m = f.ydown()[i.ym()];
-        fval.c = f[i];
-        fval.p = f.yup()[i.yp()];
-
-        // Left side
-        result[i] = (vval.c >= 0.0) ? vval.c * fval.m : vval.c * fval.c;
-        // Right side
-        result[i] -= (vval.p >= 0.0) ? vval.p * fval.c : vval.p * fval.p;
-      }
-    }
-  }
-  else {
-    // Both must shift to field aligned
-    // (even if one of v and f has yup/ydown fields, it doesn't make sense to
-    // multiply them with one in field-aligned and one in non-field-aligned
-    // coordinates)
-    Field3D v_fa = toFieldAligned(v, "RGN_NOX");
-    Field3D f_fa = toFieldAligned(f, "RGN_NOX");
-
-    BOUT_OMP(parallel) {
-      stencil fval, vval;
-      BOUT_FOR_INNER(i, result.getRegion(region)) {
-        fval.m = f_fa[i.ym()];
-        fval.c = f_fa[i];
-        fval.p = f_fa[i.yp()];
-
-        vval.m = v_fa[i.ym()];
-        vval.c = v_fa[i];
-        vval.p = v_fa[i.yp()];
-
-        // Left side
-        result[i] = (vval.c >= 0.0) ? vval.c * fval.m : vval.c * fval.c;
-        // Right side
-        result[i] -= (vval.p >= 0.0) ? vval.p * fval.c : vval.p * fval.p;
-      }
-
-      result = fromFieldAligned(result, region);
-    }
-  }
-
-  return result;
-}
-
-const Field3D Grad_par_LtoC(const Field3D &var) {
-  const auto varMesh = var.getMesh();
-
-  if (varMesh->StaggerGrids) {
-    ASSERT1(var.getLocation() == CELL_YLOW);
-  }
-
-  Field3D result{emptyFrom(var).setLocation(CELL_CENTRE)};
-
-  Coordinates *metric = var.getCoordinates(CELL_CENTRE);
-
-  if (var.hasParallelSlices()) {
-    BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
-      result[i] = (var.yup()[i.yp()] - var[i]) / (metric->dy[i]*sqrt(metric->g_22[i]));
-    }
-  } else {
-    // No yup/ydown field, so transform to field aligned
-
-    Field3D var_fa = toFieldAligned(var, "RGN_NOX");
-
-    BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
-      result[i] = (var_fa[i.yp()] - var_fa[i]) / (metric->dy[i]*sqrt(metric->g_22[i]));
-    }
-    result = fromFieldAligned(result, "RGN_NOBNDRY");
-  }
-
-  return result;
-}
-
-const Field2D Grad_par_LtoC(const Field2D &var) {
-  Field2D result{emptyFrom(var).setLocation(CELL_CENTRE)};
-
-  Coordinates *metric = var.getCoordinates(CELL_CENTRE);
-
-  BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
-    result[i] = (var[i.yp()] - var[i]) / (metric->dy[i] * sqrt(metric->g_22[i]));
-  }
-
-  return result;
-}
-
-const Field2D Div_par_LtoC(const Field2D &var) {
-  return var.getCoordinates(CELL_CENTRE)->Bxy *
-         Grad_par_LtoC(var / var.getCoordinates(CELL_YLOW)->Bxy);
-}
-
-const Field3D Div_par_LtoC(const Field3D &var) {
-  Mesh* mesh = var.getMesh();
-
-  Field3D result{emptyFrom(var).setLocation(CELL_CENTRE)};
-
-  Coordinates *metric = var.getCoordinates(CELL_CENTRE);
-
-  // NOTE: Need to calculate one more point than centred vars
-  for (int jx = 0; jx < mesh->LocalNx; jx++) {
-    for (int jy = 0; jy < mesh->LocalNy - 1; jy++) {
-      for (int jz = 0; jz < mesh->LocalNz; jz++) {
-        result(jx, jy, jz) = metric->Bxy(jx, jy) * 2. *
-                             (var.yup()(jx, jy + 1, jz) / metric->Bxy(jx, jy + 1) -
-                              var(jx, jy, jz) / metric->Bxy(jx, jy)) /
-                             (metric->dy(jx, jy) * sqrt(metric->g_22(jx, jy)) +
-                              metric->dy(jx, jy - 1) * sqrt(metric->g_22(jx, jy - 1)));
-      }
-    }
-  }
-
-  return result;
-}
-
-const Field2D Div_par_CtoL(const Field2D &var) {
-  return var.getCoordinates(CELL_CENTRE)->Bxy *
-         Grad_par_CtoL(var / var.getCoordinates(CELL_YLOW)->Bxy);
-}
-
-const Field3D Div_par_CtoL(const Field3D &var) {
-  Mesh* mesh = var.getMesh();
-
-  Field3D result{emptyFrom(var).setLocation(CELL_CENTRE)};
-
-  Coordinates *metric = var.getCoordinates(CELL_CENTRE);
-
-  // NOTE: Need to calculate one more point than centred vars
-  for (int jx = 0; jx < mesh->LocalNx; jx++) {
-    for (int jy = 1; jy < mesh->LocalNy; jy++) {
-      for (int jz = 0; jz < mesh->LocalNz; jz++) {
-        result(jx, jy, jz) = metric->Bxy(jx, jy) * 2. *
-                             (var(jx, jy, jz) / metric->Bxy(jx, jy) -
-                              var.ydown()(jx, jy - 1, jz) / metric->Bxy(jx, jy - 1)) /
-                             (metric->dy(jx, jy) * sqrt(metric->g_22(jx, jy)) +
-                              metric->dy(jx, jy - 1) * sqrt(metric->g_22(jx, jy - 1)));
-      }
-    }
-  }
-
-  return result;
 }
 
 /*******************************************************************************
@@ -545,12 +332,18 @@ const FieldPerp Delp2(const FieldPerp& f, CELL_LOC outloc, bool useFFT) {
 * Laplace_perp = Laplace - Laplace_par
 *******************************************************************************/
 
-const Field2D Laplace_perp(const Field2D &f, CELL_LOC outloc) {
-  return Laplace(f, outloc) - Laplace_par(f, outloc);
+const Field2D Laplace_perp(const Field2D& f, CELL_LOC outloc,
+                           const std::string& dfdy_boundary_condition,
+                           const std::string& dfdy_region) {
+  return Laplace(f, outloc, dfdy_boundary_condition, dfdy_region)
+         - Laplace_par(f, outloc);
 }
 
-const Field3D Laplace_perp(const Field3D &f, CELL_LOC outloc) {
-  return Laplace(f, outloc) - Laplace_par(f, outloc);
+const Field3D Laplace_perp(const Field3D& f, CELL_LOC outloc,
+                           const std::string& dfdy_boundary_condition,
+                           const std::string& dfdy_region) {
+  return Laplace(f, outloc, dfdy_boundary_condition, dfdy_region)
+         - Laplace_par(f, outloc);
 }
 
 /*******************************************************************************
@@ -574,12 +367,27 @@ const Field3D Laplace_par(const Field3D &f, CELL_LOC outloc) {
 * Full Laplacian operator on scalar field
 *******************************************************************************/
 
-const Field2D Laplace(const Field2D &f, CELL_LOC outloc) {
-  return f.getCoordinates(outloc)->Laplace(f, outloc);
+const Field2D Laplace(const Field2D& f, CELL_LOC outloc,
+                      const std::string& dfdy_boundary_condition,
+                      const std::string& dfdy_region) {
+  return f.getCoordinates(outloc)->Laplace(f, outloc, dfdy_boundary_condition,
+                                           dfdy_region);
 }
 
-const Field3D Laplace(const Field3D &f, CELL_LOC outloc) {
-  return f.getCoordinates(outloc)->Laplace(f, outloc);
+const Field3D Laplace(const Field3D& f, CELL_LOC outloc,
+                      const std::string& dfdy_boundary_condition,
+                      const std::string& dfdy_region) {
+  return f.getCoordinates(outloc)->Laplace(f, outloc, dfdy_boundary_condition,
+                                           dfdy_region);
+}
+
+/*******************************************************************************
+ * Laplace_perpXY
+ * Inverse of Laplacian operator in LaplaceXY solver
+ *******************************************************************************/
+
+const Field2D Laplace_perpXY(const Field2D& A, const Field2D& f) {
+  return f.getCoordinates()->Laplace_perpXY(A, f);
 }
 
 /*******************************************************************************
@@ -739,7 +547,7 @@ const Field2D bracket(const Field2D &f, const Field2D &g, BRACKET_METHOD method,
                       CELL_LOC outloc, Solver *UNUSED(solver)) {
   TRACE("bracket(Field2D, Field2D)");
 
-  ASSERT1(areFieldsCompatible(f, g));
+  ASSERT1_FIELDS_COMPATIBLE(f, g);
   if (outloc == CELL_DEFAULT) {
     outloc = g.getLocation();
   }
@@ -762,7 +570,7 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
                       CELL_LOC outloc, Solver *solver) {
   TRACE("bracket(Field3D, Field2D)");
 
-  ASSERT1(areFieldsCompatible(f, g));
+  ASSERT1_FIELDS_COMPATIBLE(f, g);
   if (outloc == CELL_DEFAULT) {
     outloc = g.getLocation();
   }
@@ -939,7 +747,7 @@ const Field3D bracket(const Field2D &f, const Field3D &g, BRACKET_METHOD method,
                       CELL_LOC outloc, Solver *solver) {
   TRACE("bracket(Field2D, Field3D)");
 
-  ASSERT1(areFieldsCompatible(f, g));
+  ASSERT1_FIELDS_COMPATIBLE(f, g);
   if (outloc == CELL_DEFAULT) {
     outloc = g.getLocation();
   }
@@ -976,7 +784,7 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
                       CELL_LOC outloc, Solver *solver) {
   TRACE("Field3D, Field3D");
 
-  ASSERT1(areFieldsCompatible(f, g));
+  ASSERT1_FIELDS_COMPATIBLE(f, g);
   if (outloc == CELL_DEFAULT) {
     outloc = g.getLocation();
   }

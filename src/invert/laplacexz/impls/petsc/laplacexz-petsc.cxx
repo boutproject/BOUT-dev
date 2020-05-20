@@ -774,7 +774,7 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
     KSPGetConvergedReason(it.ksp, &reason);
 
     if(reason <= 0) {
-      throw BoutException("LaplaceXZ failed to converge. Reason %d", reason);
+      throw BoutException("LaplaceXZ failed to converge. Reason {:d}", reason);
     }
 
     //////////////////////////

@@ -10,15 +10,13 @@ try:
 except:
   pass
 
-from boututils.run_wrapper import shell, launch, getmpirun
+from boututils.run_wrapper import shell, launch, getmpirun, build_and_log
 from boutdata.collect import collect
 
 from numpy import sqrt, max, abs, mean, array, log, concatenate
 
 
-
-print("Making fluid model MMS test")
-shell("make > make.log")
+build_and_log("Fluid model MMS test")
 
 # List of NY values to use
 nylist = [20, 40, 80, 160, 320, 640, 1280]

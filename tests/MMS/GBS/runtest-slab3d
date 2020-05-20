@@ -7,7 +7,7 @@ from __future__ import print_function
 from builtins import zip
 from builtins import str
 
-from boututils.run_wrapper import shell, launch_safe
+from boututils.run_wrapper import shell, launch_safe, build_and_log
 from boutdata.collect import collect
 
 from numpy import sqrt, max, abs, mean, array, log, concatenate
@@ -15,9 +15,7 @@ from numpy import sqrt, max, abs, mean, array, log, concatenate
 import pickle
 
 
-
-print("Making MMS test")
-shell("make > make.log")
+build_and_log("MMS test")
 
 # List of NX values to use
 nxlist = [8, 16, 32, 64, 128]#, 256]

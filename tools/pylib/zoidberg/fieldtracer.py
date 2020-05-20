@@ -66,9 +66,9 @@ class FieldTracer(object):
 
         if x_values.shape != z_values.shape:
             # Make the scalar the same shape as the array
-            if x_values.size is 1:
+            if x_values.size == 1:
                 x_values = np.zeros(z_values.shape) + x_values
-            elif z_values.size is 1:
+            elif z_values.size == 1:
                 z_values = np.zeros(x_values.shape) + z_values
             else:
                 raise ValueError("x_values and z_values must be the same size, or one must be a scalar")
@@ -213,9 +213,9 @@ class FieldTracerReversible(object):
 
         if x_values.shape != z_values.shape:
             # Make the scalar the same shape as the array
-            if x_values.size is 1:
+            if x_values.size == 1:
                 x_values = np.zeros(z_values.shape) + x_values
-            elif z_values.size is 1:
+            elif z_values.size == 1:
                 z_values = np.zeros(x_values.shape) + z_values
             else:
                 raise ValueError("x_values and z_values must be the same size, or one must be a scalar")

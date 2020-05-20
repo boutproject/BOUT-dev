@@ -27,7 +27,7 @@ PETSc to provide the inversion functionality and hence is not
 available when configuring without PETSc support. It is available in
 the namespace ``bout::inversion``.
 
-There is an example in `examples/invertable_operator` that uses the
+There is an example in ``examples/invertable_operator`` that uses the
 class to solve a simple Laplacian operator and compares to the
 specific Laplacian inversion solvers.
 
@@ -97,8 +97,8 @@ A more complete example is ::
 
 The PETSc backend solver is an iterative solver. It can be controlled
 through the usual PETSc command line options. Note we define the
-options prefix here to be `-invertable`, so instead of `-ksp_type` one
-would use `-invertable_ksp_type` for example.
+options prefix here to be ``-invertable``, so instead of ``-ksp_type``
+one would use ``-invertable_ksp_type`` for example.
 
 By default the solver caches the result to use as the initial guess
 for the next call to ``invert``. There is an overload of ``invert``

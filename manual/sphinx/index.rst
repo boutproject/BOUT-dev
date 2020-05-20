@@ -90,6 +90,7 @@ The documentation is divided into the following sections:
    developer_docs/git_basics
    developer_docs/code_layout
    developer_docs/data_types
+   developer_docs/petsc_interface
    developer_docs/mesh
    developer_docs/file_io
    developer_docs/natural_language

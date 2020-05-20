@@ -2,21 +2,20 @@
 
 from builtins import str
 import os
+import pathlib
 import re
 import subprocess
-
-try:
-    # Python 2.4 onwards
-    from subprocess import call, Popen, STDOUT, PIPE
-    lib = "call"
-except ImportError:
-    # FIXME: drop support for python < 2.4!
-    # Use os.system (depreciated)
-    from os import popen4, system
-    lib = "system"
+from subprocess import call, Popen, STDOUT, PIPE
 
 
-def getmpirun(default="mpirun -np"):
+if os.name == "nt":
+    # Default on Windows
+    DEFAULT_MPIRUN = "mpiexec.exe -n"
+else:
+    DEFAULT_MPIRUN = "mpirun -np"
+
+
+def getmpirun(default=DEFAULT_MPIRUN):
   """Return environment variable named MPIRUN, if it exists else return
    a default mpirun command
 
@@ -53,27 +52,20 @@ def shell(command, pipe=False):
     """
     output = None
     status = 0
-    if lib == "system":
-        if pipe:
-            handle = popen4(command)
-            output = handle[1].read()
-        else:
-            status = system(command)
+    if pipe:
+        child = Popen(command, stderr=STDOUT, stdout=PIPE, shell=True)
+        # This returns a b'string' which is casted to string in
+        # python 2. However, as we want to use f.write() in our
+        # runtest, we cast this to utf-8 here
+        output = child.stdout.read().decode("utf-8", "ignore")
+        # Wait for the process to finish. Note that child.wait()
+        # would have deadlocked the system as stdout is PIPEd, we
+        # therefore use communicate, which in the end also waits for
+        # the process to finish
+        child.communicate()
+        status = child.returncode
     else:
-        if pipe:
-            child = Popen(command, stderr=STDOUT, stdout=PIPE, shell=True)
-            # This returns a b'string' which is casted to string in
-            # python 2. However, as we want to use f.write() in our
-            # runtest, we cast this to utf-8 here
-            output = child.stdout.read().decode("utf-8", "ignore")
-            # Wait for the process to finish. Note that child.wait()
-            # would have deadlocked the system as stdout is PIPEd, we
-            # therefore use communicate, which in the end also waits for
-            # the process to finish
-            child.communicate()
-            status = child.returncode
-        else:
-            status = call(command, shell=True)
+        status = call(command, shell=True)
 
     return status, output
 
@@ -85,13 +77,25 @@ def determineNumberOfCPUs():
     scaling userspace-only program
 
     Taken from a post on stackoverflow:
-    http://stackoverflow.com/questions/1006289/how-to-find-out-the-number-of-cpus-in-python
+    https://stackoverflow.com/questions/1006289/how-to-find-out-the-number-of-cpus-in-python
 
     Returns
     -------
     int
         The number of CPUs
     """
+
+    # cpuset
+    # cpuset may restrict the number of *available* processors
+    try:
+        m = re.search(r'(?m)^Cpus_allowed:\s*(.*)$',
+                      open('/proc/self/status').read())
+        if m:
+            res = bin(int(m.group(1).replace(',', ''), 16)).count('1')
+            if res > 0:
+                return res
+    except IOError:
+        pass
 
     # Python 2.6+
     try:
@@ -228,7 +232,11 @@ def launch(command, runcmd=None, nproc=None, mthread=None,
         cmd = cmd + " > "+output
 
     if mthread is not None:
-        cmd = "OMP_NUM_THREADS={j} ".format(j=mthread)+cmd
+        if os.name == "nt":
+            # We're on windows, so we have to do it a little different
+            cmd = 'cmd /C "set OMP_NUM_THREADS={} && {}"'.format(mthread, cmd)
+        else:
+            cmd = "OMP_NUM_THREADS={} {}".format(mthread, cmd)
         
     if verbose == True:
          print(cmd)
@@ -277,3 +285,48 @@ def launch_safe(command, *args, **kwargs):
                            "Output was\n\n%s"%
                            (s,command,out))
     return s, out
+
+
+def build_and_log(test):
+    """Run make and redirect the output to a log file. Prints input
+
+    On Windows, does nothing because executable should have already
+    been built
+
+    """
+
+    if os.name == "nt":
+        return
+
+    print("Making {}".format(test))
+
+    if os.path.exists("makefile") or os.path.exists("Makefile"):
+        return shell_safe("make > make.log")
+
+    ctest_filename = "CTestTestfile.cmake"
+    if not os.path.exists(ctest_filename):
+        raise RuntimeError("Could not build: no makefile and no CMake files detected")
+
+    # We're using CMake, but we need to know the target name. If
+    # bout_add_integrated_test was used (which it should have been!),
+    # then the test name is the same as the target name
+    with open(ctest_filename, "r") as f:
+        contents = f.read()
+    match = re.search("add_test.(.*) ", contents)
+    if match is None:
+        raise RuntimeError("Using CMake, but could not determine test name")
+    test_name = match.group(1)
+
+    # Now we need to find the build directory. It'll be the first
+    # parent containing CMakeCache.txt
+    here = pathlib.Path(".").absolute()
+    for parent in here.parents:
+        if (parent / "CMakeCache.txt").exists():
+            return shell_safe(
+                "cmake --build {} --target {} > make.log".format(parent, test_name)
+            )
+
+    # We've just looked up the entire directory structure and not
+    # found the build directory, this could happen if CMakeCache was
+    # deleted, in which case we can't build anyway
+    raise RuntimeError("Using CMake, but could not find build directory")

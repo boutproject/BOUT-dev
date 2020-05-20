@@ -218,7 +218,7 @@ BOUT_OMP(for collapse(2))
            - matmg[level][nn*9+2]*x0[nn-mm+1] - matmg[level][nn*9+6]*x0[nn+mm-1]
            - matmg[level][nn*9+8]*x0[nn+mm+1];
           if(fabs(matmg[level][nn*9+4]) <atol)
-            throw BoutException("Error at matmg(%d-%d)",level,nn);
+            throw BoutException("Error at matmg({:d}-{:d})", level, nn);
 
           x[nn] = (1.0-omega)*x[nn] + omega*val/matmg[level][nn*9+4];
         } 
@@ -235,7 +235,7 @@ BOUT_OMP(for collapse(2))
             - matmg[level][nn*9+2]*x[nn-mm+1] - matmg[level][nn*9+6]*x[nn+mm-1]
             - matmg[level][nn*9+8]*x[nn+mm+1];
           if(fabs(matmg[level][nn*9+4]) <atol)
-            throw BoutException("Error at matmg(%d-%d)",level,nn);
+            throw BoutException("Error at matmg({:d}-{:d})", level, nn);
         x[nn] = val/matmg[level][nn*9+4];
       } 
     communications(x,level);
@@ -248,7 +248,7 @@ BOUT_OMP(for collapse(2))
             - matmg[level][nn*9+2]*x[nn-mm+1] - matmg[level][nn*9+6]*x[nn+mm-1]
             - matmg[level][nn*9+8]*x[nn+mm+1];
           if(fabs(matmg[level][nn*9+4]) <atol)
-            throw BoutException("Error at matmg(%d-%d)",level,nn);
+            throw BoutException("Error at matmg({:d}-{:d})", level, nn);
         x[nn] = val/matmg[level][nn*9+4];
       } 
     communications(x,level);
@@ -393,9 +393,11 @@ BOUT_OMP(for)
       error = sqrt(vectorProd(level, std::begin(r), std::begin(r)));
       num += 1;
       if(error > dtol)
-        throw BoutException("GMRES reached dtol with error %16.10f at iteration %d\n",error,num);
+        throw BoutException("GMRES reached dtol with error {:16.10f} at iteration {:d}\n",
+                            error, num);
       if(num > MAXIT)
-        throw BoutException("GMRES reached MAXIT with error %16.10f at iteration %d\n",error,num);
+        throw BoutException(
+            "GMRES reached MAXIT with error {:16.10f} at iteration {:d}\n", error, num);
       if(error <= rtol*ini_e+atol) {
         etest = 0;
         break;
@@ -488,8 +490,8 @@ BOUT_OMP(for reduction(+:ini_e) collapse(2))
       }
     }
   }
-  if(numP > 1) 
-    MPI_Allreduce(&ini_e,&val,1,MPI_DOUBLE,MPI_SUM,commMG);
+  if(numP > 1)
+    bout::globals::mpi->MPI_Allreduce(&ini_e, &val, 1, MPI_DOUBLE, MPI_SUM, commMG);
   else val = ini_e;
 
   return(val);  
@@ -626,28 +628,30 @@ void MultigridAlg::communications(BoutReal* x, int level) {
     
     // Receive from z-
     rtag = zProcM;
-    ierr = MPI_Irecv(&x[lnz[level]+2], 1, xvector, zProcM, rtag, commMG, &requests[2]);
+    ierr = bout::globals::mpi->MPI_Irecv(&x[lnz[level] + 2], 1, xvector, zProcM, rtag,
+                                         commMG, &requests[2]);
     ASSERT1(ierr == MPI_SUCCESS);
 
     // Receive from z+
     rtag = zProcP+numP;
-    ierr = MPI_Irecv(&x[2*(lnz[level]+2)-1], 1, xvector, zProcP, rtag, commMG,
-        &requests[3]);
+    ierr = bout::globals::mpi->MPI_Irecv(&x[2 * (lnz[level] + 2) - 1], 1, xvector, zProcP,
+                                         rtag, commMG, &requests[3]);
     ASSERT1(ierr == MPI_SUCCESS);
 
     // Send to z+
     stag = rProcI;
-    ierr = MPI_Isend(&x[2*(lnz[level]+2)-2], 1, xvector, zProcP, stag, commMG,
-        &requests[0]);
+    ierr = bout::globals::mpi->MPI_Isend(&x[2 * (lnz[level] + 2) - 2], 1, xvector, zProcP,
+                                         stag, commMG, &requests[0]);
     ASSERT1(ierr == MPI_SUCCESS);
 
     // Send to z-
     stag = rProcI+numP;
-    ierr = MPI_Isend(&x[lnz[level]+3], 1, xvector, zProcM, stag, commMG, &requests[1]);
+    ierr = bout::globals::mpi->MPI_Isend(&x[lnz[level] + 3], 1, xvector, zProcM, stag,
+                                         commMG, &requests[1]);
     ASSERT1(ierr == MPI_SUCCESS);
 
     // Wait for communications to complete
-    ierr = MPI_Waitall(4, requests, status);
+    ierr = bout::globals::mpi->MPI_Waitall(4, requests, status);
     ASSERT1(ierr == MPI_SUCCESS);
     
     ierr = MPI_Type_free(&xvector);
@@ -666,34 +670,37 @@ void MultigridAlg::communications(BoutReal* x, int level) {
     if (xProcI > 0) {
       // Receive from x-
       rtag = xProcM;
-      ierr = MPI_Irecv(&x[0], lnz[level]+2, MPI_DOUBLE, xProcM, rtag, commMG, &requests[2]);
+      ierr = bout::globals::mpi->MPI_Irecv(&x[0], lnz[level] + 2, MPI_DOUBLE, xProcM,
+                                           rtag, commMG, &requests[2]);
       ASSERT1(ierr == MPI_SUCCESS);
     }
     
     if (xProcI < xNP - 1) {
       // Receive from x+
       rtag = xProcP+xNP;;
-      ierr = MPI_Irecv(&x[(lnx[level]+1)*(lnz[level]+2)], lnz[level]+2, MPI_DOUBLE, xProcP,
-          rtag, commMG, &requests[3]);
+      ierr = bout::globals::mpi->MPI_Irecv(&x[(lnx[level] + 1) * (lnz[level] + 2)],
+                                           lnz[level] + 2, MPI_DOUBLE, xProcP, rtag,
+                                           commMG, &requests[3]);
       ASSERT1(ierr == MPI_SUCCESS);
 
       // Send to x+
       stag = rProcI;
-      ierr = MPI_Isend(&x[lnx[level]*(lnz[level]+2)], lnz[level]+2, MPI_DOUBLE, xProcP,
-          stag, commMG, &requests[0]);
+      ierr =
+          bout::globals::mpi->MPI_Isend(&x[lnx[level] * (lnz[level] + 2)], lnz[level] + 2,
+                                        MPI_DOUBLE, xProcP, stag, commMG, &requests[0]);
       ASSERT1(ierr == MPI_SUCCESS);
     }
 
     if (xProcI > 0) {
       // Send to x-
       stag = rProcI+xNP;
-      ierr = MPI_Isend(&x[lnz[level]+2], lnz[level]+2, MPI_DOUBLE, xProcM, stag, commMG,
-          &requests[1]);
+      ierr = bout::globals::mpi->MPI_Isend(&x[lnz[level] + 2], lnz[level] + 2, MPI_DOUBLE,
+                                           xProcM, stag, commMG, &requests[1]);
       ASSERT1(ierr == MPI_SUCCESS);
     }
 
     // Wait for communications to complete
-    ierr = MPI_Waitall(4, requests, status);
+    ierr = bout::globals::mpi->MPI_Waitall(4, requests, status);
     ASSERT1(ierr == MPI_SUCCESS);
   } else {
     for (int i=0;i<lnz[level]+2;i++) {
@@ -715,7 +722,7 @@ BOUT_OMP(for)
 
   ini_e = vectorProd(level,rhs,rhs);
   if(ini_e < 0.0)
-    throw BoutException("In MG Initial Error %10.4e \n",ini_e);
+    throw BoutException("In MG Initial Error {:10.4e} \n", ini_e);
   ini_e = sqrt(ini_e);
   if((pcheck == 1) && (rProcI == 0)) 
     printf("%d \n  In MGsolve ini = %24.18f\n",numP,ini_e);
@@ -740,7 +747,7 @@ BOUT_OMP(for)
       printf("%d \n  In MGsolve error = %24.18f\n",m,error);
     if(error < rtol*ini_e+atol) break;
     if((fabs(perror-error)/error <rtol) || (error > dtol))
-      throw BoutException("In MG Limited Error %10.4e \n",error);
+      throw BoutException("In MG Limited Error {:10.4e} \n", error);
     perror = error;
   }
 

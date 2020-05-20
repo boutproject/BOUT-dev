@@ -12,7 +12,7 @@ locale: $(MO_FILES)
 
 # Create the template file, combining all source files
 libbout.pot: FORCE
-	xgettext --keyword=_ --language=c++ --add-comments --sort-output -o $@ `find ../ -name "[^.#]*.[ch]xx"`
+	xgettext --keyword=_ --language=c++ --add-comments --sort-output -o $@ `find ../src ../include ../tests ../examples -name "[^.#]*.[ch]xx"`
 
 # Update a .po file
 # If it doesn't exist then create; if it exists then update
@@ -41,3 +41,8 @@ mo-%:
 
 # Dummy target to force rules to be run
 FORCE:
+
+update-all: libbout.pot
+	for d in */ ; do $(MAKE) --no-print-directory $${d}libbout.po; done
+	for d in */ ; do $(MAKE) --no-print-directory $${d}LC_MESSAGES/libbout.mo; done
+	grep Last-Translator */*.po

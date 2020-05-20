@@ -13,17 +13,3 @@ TwistShift = false
 Ballooning = false
 
 tol = 1e-10
-
-[All]
-# Boundary options
-# 0 - constant
-# 1 - Gaussian
-# 2 - Sinusoidal
-# 3 - Mix of mode numbers (semi-random phase)
-
-scale = 1.0
-
-xs_mode = 1
-ys_mode = 1
-zs_mode = 1
-

@@ -24,7 +24,7 @@ ny = 1
 [mesh:ddz]
 first = "FFT"
 
-[interpolation]
+[xzinterpolation]
 type = "hermitespline"
 
 [a]

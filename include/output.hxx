@@ -33,6 +33,7 @@ class Output;
 #include <iostream>
 #include <fstream>
 #include <functional>
+#include <string>
 
 #include "bout/assert.hxx"
 #include "boutexception.hxx"
@@ -40,13 +41,15 @@ class Output;
 #include "bout/format.hxx"
 #include "bout/sys/gettext.hxx"  // for gettext _() macro
 
+#include "fmt/core.h"
+
 using std::endl;
 
 /// Class for text output to stdout and/or log file
 /*!
-  This class can be used to output either in C printf format:
+  This class can be used to output either in fmt format:
 
-    output.write("A string %s and number %d\n", str, i);
+    output.write("A string {:s} and number {:d}\n", str, i);
 
   or as a C++ stream buffer:
 
@@ -64,42 +67,50 @@ class Output : private multioutbuf_init<char, std::char_traits<char>>,
 
 public:
   Output() : multioutbuf_init(), std::basic_ostream<char, _Tr>(multioutbuf_init::buf()) {
-    buffer_len = BUFFER_LEN;
-    buffer = new char[buffer_len];
     Output::enable();
   }
 
   /// Specify a log file to open
-  Output(const char *fname)
-      : multioutbuf_init(), std::basic_ostream<char, _Tr>(multioutbuf_init::buf()) {
-    buffer_len = BUFFER_LEN;
-    buffer = new char[buffer_len];
+  Output(const std::string& filename) {
     Output::enable();
-    open("%s",fname);
+    open(filename);
   }
+
+  template <class S, class... Args>
+  Output(const S& format, const Args&... args) : Output(fmt::format(format, args...)) {}
+
   ~Output() override {
     close();
-    delete[] buffer;
   }
 
   virtual void enable();  ///< Enables writing to stdout (default)
   virtual void disable(); ///< Disables stdout
 
-  int open(const char *fname, ...)
-    BOUT_FORMAT_ARGS( 2, 3); ///< Open an output log file
-  void close();                     ///< Close the log file
+  /// Open an output log file
+  int open(const std::string& filename);
 
-  virtual void write(const char *string, ...)
-    BOUT_FORMAT_ARGS( 2, 3); ///< Write a string using C printf format
+  template <class S, class... Args>
+  int open(const S& format, const Args&... args) {
+    return open(fmt::format(format, args...));
+  }
 
-  virtual void print(const char *string, ...)
-    BOUT_FORMAT_ARGS( 2, 3); ///< Same as write, but only to screen
+  /// Close the log file
+  void close();
 
-  virtual void vwrite(const char *string,
-                      va_list args); ///< Write a string using C vprintf format
+  /// Write a string using fmt format
+  virtual void write(const std::string& message);
 
-  virtual void vprint(const char *string,
-                      va_list args); ///< Same as vwrite, but only to screen
+  template <class S, class... Args>
+  void write(const S& format, const Args&... args) {
+    write(fmt::format(format, args...));
+  }
+  /// Same as write, but only to screen
+  virtual void print(const std::string& message);
+
+  template <class S, class... Args>
+  void print(const S& format, const Args&... args) {
+    print(fmt::format(format, args...));
+  }
 
   /// Add an output stream. All output will be sent to all streams
   void add(std::basic_ostream<char, _Tr> &str) { multioutbuf_init::buf()->add(str); }
@@ -118,9 +129,6 @@ protected:
 
 private:
   std::ofstream file;                 ///< Log file stream
-  static const int BUFFER_LEN = 1024; ///< default length
-  int buffer_len;                     ///< the current length
-  char *buffer;                       ///< Buffer used for C style output
   bool enabled;                       ///< Whether output to stdout is enabled
 };
 
@@ -130,8 +138,10 @@ private:
 /// 
 class DummyOutput : public Output {
 public:
-  void write(const char *UNUSED(str), ...) override{};
-  void print(const char *UNUSED(str), ...) override{};
+  template <class S, class... Args>
+  void write(const S&, const Args&...) {};
+  template <class S, class... Args>
+  void print(const S&, const Args&...) {};
   void enable() override{};
   void disable() override{};
   void enable(MAYBE_UNUSED(bool enable)){};
@@ -156,26 +166,28 @@ public:
   ConditionalOutput(ConditionalOutput *base)
       : base(base), enabled(base->enabled) {};
 
-  /// If enabled, writes a string using C printf formatting
-  /// by calling base->vwrite
+  /// If enabled, writes a string using fmt formatting
+  /// by calling base->write
   /// This string is then sent to log file and stdout (on processor 0)
-  void write(const char *str, ...) override
-    BOUT_FORMAT_ARGS( 2, 3);
-  void vwrite(const char *str, va_list va) override {
+  void write(const std::string& message) override;
+
+  template <class S, class... Args>
+  void write(const S& format, const Args&... args) {
     if (enabled) {
       ASSERT1(base != nullptr);
-      base->vwrite(str, va);
+      base->write(fmt::format(format, args...));
     }
   }
 
-  /// If enabled, print a string to stdout using C printf formatting
+  /// If enabled, print a string to stdout using fmt formatting
   /// note: unlike write, this is not also sent to log files
-  void print(const char *str, ...) override
-    BOUT_FORMAT_ARGS( 2, 3);
-  void vprint(const char *str, va_list va) override {
+  void print(const std::string& message) override;
+
+  template <class S, class... Args>
+  void print(const S& format, const Args&... args) {
     if (enabled) {
       ASSERT1(base != nullptr);
-      base->vprint(str, va);
+      base->print(fmt::format(format, args...));
     }
   }
 
@@ -233,21 +245,21 @@ inline ConditionalOutput &operator<<(ConditionalOutput &out, stream_manipulator 
     *out.getBase() << pf;
   }
   return out;
-};
+}
 
 template <typename T> ConditionalOutput &operator<<(ConditionalOutput &out, T const &t) {
   if (out.isEnabled()) {
     *out.getBase() << t;
   }
   return out;
-};
+}
 
 template <typename T> ConditionalOutput &operator<<(ConditionalOutput &out, const T *t) {
   if (out.isEnabled()) {
     *out.getBase() << t;
   }
   return out;
-};
+}
 
 /// To allow statements like "output.write(...)" or "output << ..."
 /// Output for debugging

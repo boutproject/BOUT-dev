@@ -38,7 +38,7 @@ PROJECT_NAME           = BOUT++
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 4.2.2
+PROJECT_NUMBER         = 5.0.0-alpha
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -1012,7 +1012,6 @@ PREDEFINED             = BACKTRACE \
                          BOUT_HAS_ARKODE \
                          BOUT_HAS_CVODE \
                          BOUT_HAS_IDA \
-                         BOUT_HAS_MUMPS \
                          BOUT_HAS_PETSC \
                          BOUT_HAS_PETSC_DEV \
                          BOUT_HAS_PVODE \

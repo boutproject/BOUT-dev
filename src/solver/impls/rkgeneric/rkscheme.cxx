@@ -1,9 +1,15 @@
-#include "rkschemefactory.hxx"
 #include "unused.hxx"
+#include <bout/mpi_wrapper.hxx>
 #include <bout/rkscheme.hxx>
 #include <boutcomm.hxx>
 #include <cmath>
 #include <output.hxx>
+
+// Implementations
+#include "impls/rkf45/rkf45.hxx"
+#include "impls/cashkarp/cashkarp.hxx"
+#include "impls/rk4simple/rk4simple.hxx"
+#include "impls/rkf34/rkf34.hxx"
 
 ////////////////////
 // PUBLIC
@@ -144,7 +150,8 @@ BoutReal RKScheme::getErr(Array<BoutReal> &solA, Array<BoutReal> &solB) {
         std::abs(solA[i] - solB[i]) / (std::abs(solA[i]) + std::abs(solB[i]) + atol);
   }
   //Reduce over procs
-  if(MPI_Allreduce(&local_err, &err, 1, MPI_DOUBLE, MPI_SUM, BoutComm::get())) {
+  if (bout::globals::mpi->MPI_Allreduce(&local_err, &err, 1, MPI_DOUBLE, MPI_SUM,
+                                        BoutComm::get())) {
     throw BoutException("MPI_Allreduce failed");
   }
   //Normalise by number of values
@@ -294,3 +301,7 @@ void RKScheme::zeroSteps(){
   }
 }
 
+constexpr decltype(RKSchemeFactory::type_name) RKSchemeFactory::type_name;
+constexpr decltype(RKSchemeFactory::section_name) RKSchemeFactory::section_name;
+constexpr decltype(RKSchemeFactory::option_name) RKSchemeFactory::option_name;
+constexpr decltype(RKSchemeFactory::default_type) RKSchemeFactory::default_type;

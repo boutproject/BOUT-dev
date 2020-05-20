@@ -35,7 +35,6 @@ class RK4Solver;
 #include <bout_types.hxx>
 #include <bout/solver.hxx>
 
-#include <bout/solverfactory.hxx>
 namespace {
 RegisterSolver<RK4Solver> registersolverrk4("rk4");
 }

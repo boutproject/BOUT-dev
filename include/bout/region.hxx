@@ -273,7 +273,7 @@ public:
   const inline SpecificInd yp(int dy = 1) const {
 #if CHECK >= 4
     if (y() + dy < 0 or y() + dy >= ny) {
-      throw BoutException("Offset in y (%d) would go out of bounds at %d", dy, ind);
+      throw BoutException("Offset in y ({:d}) would go out of bounds at {:d}", dy, ind);
     }
 #endif
     ASSERT3(std::abs(dy) < ny);
@@ -482,6 +482,14 @@ public:
   /// Collection of contiguous regions
   using ContiguousBlocks = std::vector<ContiguousBlock>;
 
+  // Type aliases for STL-container compatibility
+  using value_type = T;
+  using reference = value_type&;
+  using const_reference = const value_type&;
+  using size_type = typename RegionIndices::size_type;
+  using iterator = typename RegionIndices::iterator;
+  using const_iterator = typename RegionIndices::const_iterator;
+
   // NOTE::
   // Probably want to require a mesh in constructor, both to know nx/ny/nz
   // but also to ensure consistency etc.
@@ -501,21 +509,29 @@ public:
 #if CHECK > 1
     if (std::is_base_of<Ind2D, T>::value) {
       if (nz != 1)
-	throw BoutException("Trying to make Region<Ind2D> with nz = %d, but expected nz = 1", nz);
+        throw BoutException(
+            "Trying to make Region<Ind2D> with nz = {:d}, but expected nz = 1", nz);
       if (zstart != 0)
-	throw BoutException("Trying to make Region<Ind2D> with zstart = %d, but expected zstart = 0", zstart);
+        throw BoutException(
+            "Trying to make Region<Ind2D> with zstart = {:d}, but expected zstart = 0",
+            zstart);
       if (zstart != 0)
-	throw BoutException("Trying to make Region<Ind2D> with zend = %d, but expected zend = 0", zend);
-
+        throw BoutException(
+            "Trying to make Region<Ind2D> with zend = {:d}, but expected zend = 0", zend);
     }
 
     if (std::is_base_of<IndPerp, T>::value) {
       if (ny != 1)
-	throw BoutException("Trying to make Region<IndPerp> with ny = %d, but expected ny = 1", ny);
+        throw BoutException(
+            "Trying to make Region<IndPerp> with ny = {:d}, but expected ny = 1", ny);
       if (ystart != 0)
-	throw BoutException("Trying to make Region<IndPerp> with ystart = %d, but expected ystart = 0", ystart);
+        throw BoutException(
+            "Trying to make Region<IndPerp> with ystart = {:d}, but expected ystart = 0",
+            ystart);
       if (ystart != 0)
-	throw BoutException("Trying to make Region<IndPerp> with yend = %d, but expected yend = 0", yend);
+        throw BoutException(
+            "Trying to make Region<IndPerp> with yend = {:d}, but expected yend = 0",
+            yend);
     }
 #endif
     
@@ -570,7 +586,7 @@ public:
   };
 
   /// Sort this Region in place
-  Region<T> sort(){
+  Region<T>& sort() {
     *this = this->asSorted();
     return *this;
   }
@@ -592,7 +608,7 @@ public:
   }
 
   /// Make this Region unique in-place
-  Region<T> unique(){
+  Region<T>& unique() {
     *this = this->asUnique();
     return *this;
   }
@@ -627,6 +643,35 @@ public:
 
     return *this; // To allow command chaining
   };
+
+  /// Returns a new region including only indices contained in both
+  /// this region and the other.
+  Region<T> getUnion(const Region<T>& otherRegion) {
+    // Get other indices and sort as we're going to be searching through
+    // this vector so if it's sorted we can be more efficient
+    auto otherIndices = otherRegion.getIndices();
+    std::sort(std::begin(otherIndices), std::end(otherIndices));
+
+    // Get the current set of indices that we're going to get the
+    // union with and then use to create the result region.
+    auto currentIndices = getIndices();
+
+    // Lambda that returns true/false depending if the passed value is in otherIndices
+    // With C++14 T can be auto instead
+    auto notInVector = [&](T val) {
+      return !std::binary_search(std::begin(otherIndices), std::end(otherIndices), val);
+    };
+
+    // Erase elements of currentIndices that are in maskIndices
+    currentIndices.erase(
+        std::remove_if(std::begin(currentIndices), std::end(currentIndices), notInVector),
+        std::end(currentIndices));
+
+    // Update indices
+    setIndices(currentIndices);
+
+    return *this; // To allow command chaining
+  }
 
   /// Accumulate operator
   Region<T> & operator+=(const Region<T> &rhs){
@@ -840,20 +885,27 @@ private:
 template<typename T>
 Region<T> sort(Region<T> &region) {
   return region.asSorted();
-};
+}
 
 /// Return a new region with unique indices
 template<typename T>
 Region<T> unique(Region<T> &region) {
   return region.asUnique();
-};
+}
 
 /// Return a masked version of a region
 template<typename T>
 Region<T> mask(const Region<T> &region, const Region<T> &mask) {
   auto result = region;
   return result.mask(mask);
-};
+}
+
+/// Return the union of two regions
+template <typename T>
+Region<T> getUnion(const Region<T>& region, const Region<T>& otherRegion) {
+  auto result = region;
+  return result.getUnion(otherRegion);
+}
 
 /// Return a new region with combined indices from two Regions
 /// This doesn't attempt to avoid duplicate elements or enforce

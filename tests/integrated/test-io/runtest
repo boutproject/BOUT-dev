@@ -12,15 +12,13 @@ try:
 except:
   pass
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe
+from boututils.run_wrapper import build_and_log, shell, shell_safe, launch_safe
 from boutdata.collect import collect
 import numpy as np
 from sys import stdout, exit
 
 
-
-print("Making I/O test")
-shell_safe("make > make.log")
+build_and_log("I/O test")
 
 # Read benchmark values
 
@@ -37,52 +35,87 @@ bmk = {}
 for v in vars:
   bmk[v] = collect(v, path="data", prefix="benchmark.out", info=False)
 
+def check_output():
+    success = True
+    for v in vars:
+        stdout.write("      Checking variable "+v+" ... ")
+        result = collect(v, path="data", info=False)
+
+        # Compare benchmark and output
+        if np.shape(bmk[v]) != np.shape(result):
+            print("Fail, wrong shape")
+            success = False
+            continue
+
+        diff =  np.max(np.abs(bmk[v] - result))
+        if diff > tol:
+            print("Fail, maximum difference = "+str(diff))
+            success = False
+            continue
+
+        if v in field_vars:
+            # Check cell location
+            if "cell_location" not in result.attributes:
+                print("Fail: {0} has no cell_location attribute".format(v))
+                success = False
+                continue
+
+            if result.attributes["cell_location"] != "CELL_CENTRE":
+                print("Fail: Expecting cell_location == CELL_CENTRE, but got {0}".format(result.attributes["cell_location"]))
+                success = False
+                continue
+
+        print("Pass")
+
+    return success
+
+
 print("Running I/O test")
 success = True
 for nproc in [1,2,4]:
-  cmd = "./test_io"
+    for split in [None, "NXPE", "NYPE"]:
+        if split is not None:
+            npe_max = nproc
+        else:
+            npe_max = 1
+        for np_split in [i for i in [1,2,4] if i<=npe_max]:
 
-  # On some machines need to delete dmp files first
-  # or data isn't written correctly
-  shell("rm data/BOUT.dmp.*.nc")
+            if split is not None:
+                extra_args = " "+split+"="+str(np_split)
+            else:
+                extra_args = ""
 
-  # Run test case
+            cmd = "./test_io" + extra_args
 
-  print("   %d processor...." % (nproc))
-  s, out = launch_safe(cmd, nproc=nproc, pipe=True)
-  with open("run.log."+str(nproc), "w") as f:
-    f.write(out)
+            # On some machines need to delete dmp files first
+            # or data isn't written correctly
+            shell("rm data/BOUT.dmp.*.nc")
 
-  # Collect output data
-  for v in vars:
-    stdout.write("      Checking variable "+v+" ... ")
-    result = collect(v, path="data", info=False)
-    
-    # Compare benchmark and output
-    if np.shape(bmk[v]) != np.shape(result):
-      print("Fail, wrong shape")
-      success = False
-      continue
-    
-    diff =  np.max(np.abs(bmk[v] - result))
-    if diff > tol:
-      print("Fail, maximum difference = "+str(diff))
-      success = False
-      continue
+            # Run test case
+            print("   %d processor...." % (nproc) + extra_args)
+            s, out = launch_safe(cmd, nproc=nproc, pipe=True)
+            with open("run.log."+str(nproc), "w") as f:
+                f.write(out)
 
-    if v in field_vars:
-      # Check cell location
-      if "cell_location" not in result.attributes:
-        print("Fail: {0} has no cell_location attribute".format(v))
-        success = False
-        continue
-    
-      if result.attributes["cell_location"] != "CELL_CENTRE":
-        print("Fail: Expecting cell_location == CELL_CENTRE, but got {0}".format(result.attributes["cell_location"]))
-        success = False
-        continue
-    
-    print("Pass")
+            # Check processor splitting
+            if split is not None:
+                stdout.write("      Checking "+split+" ... ")
+                v = collect(split, path="data", info=False)
+                if v != np_split:
+                    print("Fail, wrong "+split+" expecting %i, got %i" % (np_split, v))
+                    success = False
+                else:
+                    print("Pass")
+
+            # Check output
+            if not check_output():
+                success = False
+
+# Test double-adding variables
+s, out = launch_safe("./test_io check_double_add=true", nproc=nproc, pipe=True)
+print("Checking with variables added twice")
+if not check_output():
+    success = False
 
 if success:
   print(" => All I/O tests passed")

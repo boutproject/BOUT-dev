@@ -133,7 +133,7 @@ public:
                      Options* optIn = nullptr, Mesh* localmeshIn = nullptr)
       : operatorFunction(func), preconditionerFunction(func),
         opt(optIn == nullptr ? Options::getRoot()->getSection("invertableOperator")
-                               : optIn),
+                             : optIn),
         localmesh(localmeshIn == nullptr ? bout::globals::mesh : localmeshIn),
         lib(&(*opt)["petsc"]) {
     AUTO_TRACE();
@@ -419,7 +419,7 @@ public:
     KSPConvergedReason reason;
     ierr = KSPGetConvergedReason(ksp, &reason);
     if (reason <= 0) {
-      throw BoutException("KSPSolve failed with reason %d.", reason);
+      throw BoutException("KSPSolve failed with reason {:d}.", reason);
     }
 
     // Probably want to remove the following in the long run

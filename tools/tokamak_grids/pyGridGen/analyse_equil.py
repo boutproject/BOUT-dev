@@ -24,7 +24,7 @@ from past.utils import old_div
 # 
 
 import numpy 
-from bunch import Bunch
+from boututils.bunch import Bunch
 from scipy.interpolate import RectBivariateSpline
 from pylab import contour, gradient, scatter, annotate, draw
 from crosslines import find_inter

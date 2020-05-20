@@ -1,7 +1,20 @@
+pylib
+--
+Library of Python tools. This is the mainly used interface for post-processing.
 
-pylib -- Library of Python tools
-idllib -- Library of IDL tools
-matlablib -- Library of Matlav tools
-eigensolver - Eigenvalue solver for ITG test case
-pdb2idl     - Library for reading PDB files into IDL
+idllib
+--
+Library of IDL tools
+
+matlablib
+--
+Library of Matlab tools.
+
+eigensolver
+--
+Eigenvalue solver for ITG test case
+
+pdb2idl
+--
+Library for reading PDB files into IDL
 

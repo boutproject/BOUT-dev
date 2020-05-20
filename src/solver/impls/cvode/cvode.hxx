@@ -32,7 +32,6 @@
 
 #include "bout_types.hxx"
 #include "bout/solver.hxx"
-#include "bout/solverfactory.hxx"
 
 #include <sundials/sundials_config.h>
 #if SUNDIALS_VERSION_MAJOR >= 3
@@ -89,6 +88,8 @@ private:
 
   BoutReal pre_Wtime{0.0}; // Time in preconditioner
   int pre_ncalls{0};       // Number of calls to preconditioner
+
+  bool cvode_initialised = false;
 
   void set_abstol_values(BoutReal* abstolvec_data, std::vector<BoutReal>& f2dtols,
                          std::vector<BoutReal>& f3dtols);
