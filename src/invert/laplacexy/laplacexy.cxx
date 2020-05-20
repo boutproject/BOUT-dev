@@ -1,5 +1,4 @@
-
-#if defined(BOUT_HAS_PETSC) and not defined(COORDINATES_USE_3D)
+#ifdef BOUT_HAS_PETSC
 
 #include <petscksp.h>
 
@@ -894,7 +893,14 @@ void LaplaceXY::setMatrixElementsFiniteVolume(const Field2D &A, const Field2D &B
   // (1/J) d/dx ( J * g11 d/dx ) + (1/J) d/dy ( J * g22 d/dy )
 
   auto coords = localmesh->getCoordinates(location);
-
+  Field2D J_DC = DC(coords->J);
+  Field2D g11_DC = DC(coords->g11);
+  Field2D dx_DC = DC(coords->dx);
+  Field2D dy_DC = DC(coords->dy);
+  Field2D g_22_DC = DC(coords->g_22);
+  Field2D g_23_DC = DC(coords->g_23);
+  Field2D g23_DC = DC(coords->g23);
+  
   for(int x=localmesh->xstart; x <= localmesh->xend; x++) {
     for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
       // stencil entries
@@ -903,22 +909,22 @@ void LaplaceXY::setMatrixElementsFiniteVolume(const Field2D &A, const Field2D &B
       // XX component
 
       // Metrics on x+1/2 boundary
-      BoutReal J = 0.5*(coords->J(x,y) + coords->J(x+1,y));
-      BoutReal g11 = 0.5*(coords->g11(x,y) + coords->g11(x+1,y));
-      BoutReal dx = 0.5*(coords->dx(x,y) + coords->dx(x+1,y));
+      BoutReal J = 0.5*(J_DC(x,y) + J_DC(x+1,y));
+      BoutReal g11 = 0.5*(g11_DC(x,y) + g11_DC(x+1,y));
+      BoutReal dx = 0.5*(dx_DC(x,y) + dx_DC(x+1,y));
       BoutReal Acoef = 0.5*(A(x,y) + A(x+1,y));
 
-      BoutReal val = Acoef * J * g11 / (coords->J(x,y) * dx * coords->dx(x,y));
+      BoutReal val = Acoef * J * g11 / (J_DC(x,y) * dx * dx_DC(x,y));
       xp = val;
       c  = -val;
 
       // Metrics on x-1/2 boundary
-      J = 0.5*(coords->J(x,y) + coords->J(x-1,y));
-      g11 = 0.5*(coords->g11(x,y) + coords->g11(x-1,y));
-      dx = 0.5*(coords->dx(x,y) + coords->dx(x-1,y));
+      J = 0.5*(J_DC(x,y) + J_DC(x-1,y));
+      g11 = 0.5*(g11_DC(x,y) + g11_DC(x-1,y));
+      dx = 0.5*(dx_DC(x,y) + dx_DC(x-1,y));
       Acoef = 0.5*(A(x,y) + A(x-1,y));
 
-      val = Acoef * J * g11 / (coords->J(x,y) * dx * coords->dx(x,y));
+      val = Acoef * J * g11 / (J_DC(x,y) * dx * dx_DC(x,y));
       xm = val;
       c  -= val;
 
@@ -932,26 +938,26 @@ void LaplaceXY::setMatrixElementsFiniteVolume(const Field2D &A, const Field2D &B
       if( include_y_derivs ) {
         // YY component
         // Metrics at y+1/2
-        J = 0.5*(coords->J(x,y) + coords->J(x,y+1));
-        BoutReal g_22 = 0.5*(coords->g_22(x,y) + coords->g_22(x,y+1));
-        BoutReal g23  = 0.5*(coords->g23(x,y) + coords->g23(x,y+1));
-        BoutReal g_23 = 0.5*(coords->g_23(x,y) + coords->g_23(x,y+1));
-        BoutReal dy   = 0.5*(coords->dy(x,y) + coords->dy(x,y+1));
+        J = 0.5*(J_DC(x,y) + J_DC(x,y+1));
+        BoutReal g_22 = 0.5*(g_22_DC(x,y) + g_22_DC(x,y+1));
+        BoutReal g23  = 0.5*(g23_DC(x,y) + g23_DC(x,y+1));
+        BoutReal g_23 = 0.5*(g_23_DC(x,y) + g_23_DC(x,y+1));
+        BoutReal dy   = 0.5*(dy_DC(x,y) + dy_DC(x,y+1));
         Acoef = 0.5*(A(x,y+1) + A(x,y));
 
-        val = -Acoef * J * g23 * g_23 / (g_22 * coords->J(x,y) * dy * coords->dy(x,y));
+        val = -Acoef * J * g23 * g_23 / (g_22 * J_DC(x,y) * dy * dy_DC(x,y));
         yp = val;
         c -= val;
 
         // Metrics at y-1/2
-        J    = 0.5*(coords->J(x,y)    + coords->J(x,y-1));
-        g_22 = 0.5*(coords->g_22(x,y) + coords->g_22(x,y-1));
-        g23  = 0.5*(coords->g23(x,y)  + coords->g23(x,y-1));
-        g_23 = 0.5*(coords->g_23(x,y) + coords->g_23(x,y-1));
-        dy   = 0.5*(coords->dy(x,y)   + coords->dy(x,y-1));
+        J    = 0.5*(J_DC(x,y)    + J_DC(x,y-1));
+        g_22 = 0.5*(g_22_DC(x,y) + g_22_DC(x,y-1));
+        g23  = 0.5*(g23_DC(x,y)  + g23_DC(x,y-1));
+        g_23 = 0.5*(g_23_DC(x,y) + g_23_DC(x,y-1));
+        dy   = 0.5*(dy_DC(x,y)   + dy_DC(x,y-1));
         Acoef = 0.5*(A(x,y-1) + A(x,y));
 
-        val = -Acoef * J * g23 * g_23 / (g_22 * coords->J(x,y) * dy * coords->dy(x,y));
+        val = -Acoef * J * g23 * g_23 / (g_22 * J_DC(x,y) * dy * dy_DC(x,y));
         ym = val;
         c -= val;
       }
@@ -997,33 +1003,44 @@ void LaplaceXY::setMatrixElementsFiniteDifference(const Field2D &A, const Field2
   //   + B*f
 
   auto coords = localmesh->getCoordinates(location);
-
-  Field2D coef_dfdy = coords->G2 - DDY(coords->J/coords->g_22)/coords->J;
+  Field2D G1_2D = DC(coords->G1);
+  Field2D G2_2D = DC(coords->G2);
+  Field2D J_2D = DC(coords->J);
+  Field2D g11_2D = DC(coords->g11);
+  Field2D g_22_2D = DC(coords->g_22);
+  Field2D g22_2D = DC(coords->g22);
+  Field2D g12_2D = DC(coords->g12);
+  Field2D d1_dx_2D = DC(coords->d1_dx);
+  Field2D d1_dy_2D = DC(coords->d1_dy);
+  Field2D dx_2D = DC(coords->dx);
+  Field2D dy_2D = DC(coords->dy);
+  
+  Field2D coef_dfdy = G2_2D - DC(DDY(J_2D/g_22_2D)/J_2D);
 
   for(int x = localmesh->xstart; x <= localmesh->xend; x++) {
     for(int y = localmesh->ystart; y <= localmesh->yend; y++) {
       // stencil entries
       PetscScalar c, xm, xp, ym, yp, xpyp, xpym, xmyp, xmym;
 
-      BoutReal dx = coords->dx(x,y);
+      BoutReal dx = dx_2D(x,y);
 
       // A*G1*dfdx
-      BoutReal val = A(x, y)*coords->G1(x, y)/(2.*dx);
+      BoutReal val = A(x, y)*G1_2D(x, y)/(2.*dx);
       xp = val;
       xm = -val;
 
       // A*g11*d2fdx2
-      val = A(x, y)*coords->g11(x, y)/SQ(dx);
+      val = A(x, y)*g11_2D(x, y)/SQ(dx);
       xp += val;
       c = -2.*val;
       xm += val;
       // Non-uniform grid correction
-      val = A(x, y)*coords->g11(x, y)*coords->d1_dx(x, y)/(2.*dx);
+      val = A(x, y)*g11_2D(x, y)*d1_dx_2D(x, y)/(2.*dx);
       xp += val;
       xm -= val;
 
       // g11*dAdx*dfdx
-      val = coords->g11(x, y)*(A(x+1, y) - A(x-1, y))/(4.*SQ(dx));
+      val = g11_2D(x, y)*(A(x+1, y) - A(x-1, y))/(4.*SQ(dx));
       xp += val;
       xm -= val;
 
@@ -1036,7 +1053,7 @@ void LaplaceXY::setMatrixElementsFiniteDifference(const Field2D &A, const Field2
       ccoef(y - localmesh->ystart, x - xstart) = xp;
 
       if(include_y_derivs) {
-        BoutReal dy = coords->dy(x,y);
+        BoutReal dy = dy_2D(x,y);
         BoutReal dAdx = (A(x+1, y) - A(x-1, y))/(2.*dx);
         BoutReal dAdy = (A(x, y+1) - A(x, y-1))/(2.*dy);
 
@@ -1046,33 +1063,33 @@ void LaplaceXY::setMatrixElementsFiniteDifference(const Field2D &A, const Field2
         ym = -val;
 
         // A*(g22-1/g_22)*d2fdy2
-        val = A(x, y)*(coords->g22(x, y) - 1./coords->g_22(x,y))/SQ(dy);
+        val = A(x, y)*(g22_2D(x, y) - 1./g_22_2D(x,y))/SQ(dy);
         yp += val;
         c -= 2.*val;
         ym += val;
         // Non-uniform mesh correction
-        val = A(x, y)*(coords->g22(x, y) - 1./coords->g_22(x,y))
-          *coords->d1_dy(x, y)/(2.*dy);
+        val = A(x, y)*(g22_2D(x, y) - 1./g_22_2D(x,y))
+          *d1_dy_2D(x, y)/(2.*dy);
         yp += val;
         ym -= val;
 
         // 2*A*g12*d2dfdxdy
-        val = A(x, y)*coords->g12(x, y)/(2.*dx*dy);
+        val = A(x, y)*g12_2D(x, y)/(2.*dx*dy);
         xpyp = val;
         xpym = -val;
         xmyp = -val;
         xmym = val;
 
         // g22*dAdy*dfdy
-        val = (coords->g22(x, y) - 1./coords->g_22(x,y))*dAdy/(2.*dy);
+        val = (g22_2D(x, y) - 1./g_22_2D(x,y))*dAdy/(2.*dy);
         yp += val;
         ym -= val;
 
         // g12*(dAdx*dfdy + dAdy*dfdx)
-        val = coords->g12(x, y)*dAdx/(2.*dy);
+        val = g12_2D(x, y)*dAdx/(2.*dy);
         yp += val;
         ym -= val;
-        val = coords->g12(x, y)*dAdy/(2.*dx);
+        val = g12_2D(x, y)*dAdy/(2.*dx);
         xp += val;
         xm -= val;
       }
