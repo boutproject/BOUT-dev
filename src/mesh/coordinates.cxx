@@ -645,7 +645,7 @@ interpolateAndNeumann(MAYBE_UNUSED(const Coordinates::metric_field_type& f), MAY
       // If bx!=0 we are on an x-boundary, inner if bx>0 and outer if bx<0
       for (bndry->first(); !bndry->isDone(); bndry->next1d()) {
         for (int i = 0; i < localmesh->xstart; i++){
-          for (int z=0;z<result.getNx();++z) {
+          for (int z=0;z<result.getNz();++z) {
             result(bndry->x + i * bndry->bx, bndry->y, z) =
               result(bndry->x + (i - 1) * bndry->bx, bndry->y - bndry->by, z);
           }
@@ -656,7 +656,7 @@ interpolateAndNeumann(MAYBE_UNUSED(const Coordinates::metric_field_type& f), MAY
       // If by!=0 we are on a y-boundary, upper if by>0 and lower if by<0
       for (bndry->first(); !bndry->isDone(); bndry->next1d()) {
         for (int i = 0; i < localmesh->ystart; i++) {
-          for (int z=0;z<result.getNx();++z) {
+          for (int z=0;z<result.getNz();++z) {
             result(bndry->x, bndry->y + i * bndry->by, z) =
               result(bndry->x - bndry->bx, bndry->y + (i - 1) * bndry->by, z);
           }
