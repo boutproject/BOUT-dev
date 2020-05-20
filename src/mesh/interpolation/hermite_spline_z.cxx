@@ -125,9 +125,11 @@ Field3D ZHermiteSpline::interpolate(const Field3D& f, const std::string& region)
                                     ? y_offset == 0 ? "RGN_NOBNDRY" : "RGN_NOX"
                                     : "RGN_ALL";
   Field3D fz = bout::derivatives::index::DDZ(f, CELL_DEFAULT, "DEFAULT", fz_region);
-  localmesh->communicateXZ(fz);
-  // communicate in y, but do not calculate parallel slices
-  {
+  if (region != "RGN_NOBNDRY" and region != "RGN_NOX") {
+    localmesh->communicateXZ(fz);
+  }
+  if (y_offset != 0 or (region != "RGN_NOBNDRY" and region != "RGN_NOY")) {
+    // communicate in y, but do not calculate parallel slices
     auto h = localmesh->sendY(fz);
     localmesh->wait(h);
   }
