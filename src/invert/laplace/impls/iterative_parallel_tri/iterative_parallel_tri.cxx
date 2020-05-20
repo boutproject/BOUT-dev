@@ -566,14 +566,14 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
       MPI_Allreduce(&is_dd, &global_is_dd, 1, MPI::BOOL, MPI_LAND, BoutComm::get());
 
       if (global_is_dd) {
-        throw BoutException("LaplaceIPT error: Not converged within maxits=%i "
+        throw BoutException("LaplaceIPT error: Not converged within maxits={:d} "
                             "iterations. The coarsest grained iteration matrix is "
                             "diagonally dominant and convergence is guaranteed. Please "
                             "increase maxits and retry.",
                             maxits);
       } else {
         throw BoutException(
-            "LaplaceIPT error: Not converged within maxits=%i iterations. The coarsest "
+            "LaplaceIPT error: Not converged within maxits={:d} iterations. The coarsest "
             "iteration matrix is not diagonally dominant so there is no guarantee this "
             "method will converge. Consider (1) increasing maxits; or (2) increasing the "
             "number of levels (as grids become more diagonally dominant with "
@@ -591,7 +591,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
     for (int kz = 0; kz < nmode; kz++) {
       if (!finite(levels[0].xloc(ix, kz).real())
           or !finite(levels[0].xloc(ix, kz).imag()))
-        throw BoutException("Non-finite xloc at %d, %d, %d", ix, jy, kz);
+        throw BoutException("Non-finite xloc at {:d}, {:d}, {:d}", ix, jy, kz);
     }
   }
 #endif
@@ -609,7 +609,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   for (int ix = 0; ix < ncx; ix++) {
     for (int kz = 0; kz < nmode; kz++) {
       if (!finite(xk1d(kz, ix).real()) or !finite(xk1d(kz, ix).imag()))
-        throw BoutException("Non-finite xloc at %d, %d, %d", ix, jy, kz);
+        throw BoutException("Non-finite xloc at {:d}, {:d}, {:d}", ix, jy, kz);
     }
   }
 #endif
@@ -648,7 +648,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
 #if CHECK > 2
     for (int kz = 0; kz < ncz; kz++)
       if (!finite(x(ix, kz)))
-        throw BoutException("Non-finite at %d, %d, %d", ix, jy, kz);
+        throw BoutException("Non-finite at {:d}, {:d}, {:d}", ix, jy, kz);
 #endif
   }
 
