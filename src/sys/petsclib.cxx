@@ -10,7 +10,6 @@
 
 // Define all the static member variables
 int PetscLib::count = 0;
-int PetscLib::unique_id = 0;
 char PetscLib::help[] = "BOUT++: Uses finite difference methods to solve plasma fluid problems in curvilinear coordinates";
 int *PetscLib::pargc = nullptr;
 char ***PetscLib::pargv = nullptr;
@@ -28,24 +27,24 @@ PetscLib::PetscLib(Options* opt) {
       PetscLogEventRegister("Total BOUT++",0,&USER_EVENT);
       PetscLogEventBegin(USER_EVENT,0,0,0,0);
 
-    // Load global PETSc options from the [petsc] section of the input
-    setPetscOptions(Options::root()["petsc"], "");
-  }
-
-  if (opt != nullptr and opt->isSection()) {
-    // Use options specific to this PetscLib
-    // Pass options to PETSc's global options database, with a unique prefix, that will be
-    // passed to a KSP later.
-    // (PetscOptions type exists for non-global options, but apparently is only for user
-    // options, and cannot be passed to KSP, etc. Non-global options can be passed by
-    // defining a custom prefix for the options string, and then passing that to the KSP.)
-
-    options_prefix = "boutpetsclib" + std::to_string(unique_id) + "_";
-
-    setPetscOptions(*opt, options_prefix);
+      // Load global PETSc options from the [petsc] section of the input
+      setPetscOptions(Options::root()["petsc"], "");
     }
+
+    if (opt != nullptr and opt->isSection()) {
+      // Use options specific to this PetscLib
+      // Pass options to PETSc's global options database, with a unique prefix, that will be
+      // passed to a KSP later.
+      // (PetscOptions type exists for non-global options, but apparently is only for user
+      // options, and cannot be passed to KSP, etc. Non-global options can be passed by
+      // defining a custom prefix for the options string, and then passing that to the KSP.)
+
+      options_prefix = "boutpetsclib_" + opt->str() + "_";
+
+      setPetscOptions(*opt, options_prefix);
+    }
+
     count++;
-  unique_id++;
   }
 }
 
