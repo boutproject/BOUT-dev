@@ -1490,11 +1490,14 @@ void LaplaceIPT::Level::synchronize_reduced_field(const LaplaceIPT& l,
   }
 
   MPI_Comm comm = BoutComm::get();
+  // Send index 1 to the proc below, unless last proc and not level zero, then send 2
+  const int send_in_index = (l.localmesh->lastX() and current_level != 0) ? 2 : 1;
 
   // Communicate in
   if (not l.localmesh->firstX()) {
-    MPI_Sendrecv(&field(1, 0), l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 1, &field(0, 0),
-                 l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 0, comm, MPI_STATUS_IGNORE);
+    MPI_Sendrecv(&field(send_in_index, 0), l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 1,
+                 &field(0, 0), l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 0, comm,
+                 MPI_STATUS_IGNORE);
   }
 
   // Communicate out
