@@ -668,7 +668,7 @@ interpolateAndNeumann(MAYBE_UNUSED(const Coordinates::metric_field_type& f), MAY
   // Set corner guard cells
   for (int i = 0; i < localmesh->xstart; i++) {
     for (int j = 0; j < localmesh->ystart; j++) {
-         for (int z=0;z<result.getNx();++z) {
+      for (int z=0;z<result.getNz();++z) {
         result(i, j, z) = BoutNaN;
         result(i, localmesh->LocalNy - 1 - j, z) = BoutNaN;
         result(localmesh->LocalNx - 1 - i, j, z) = BoutNaN;
