@@ -893,13 +893,13 @@ void LaplaceXY::setMatrixElementsFiniteVolume(const Field2D &A, const Field2D &B
   // (1/J) d/dx ( J * g11 d/dx ) + (1/J) d/dy ( J * g22 d/dy )
 
   auto coords = localmesh->getCoordinates(location);
-  Field2D J_DC = DC(coords->J);
-  Field2D g11_DC = DC(coords->g11);
-  Field2D dx_DC = DC(coords->dx);
-  Field2D dy_DC = DC(coords->dy);
-  Field2D g_22_DC = DC(coords->g_22);
-  Field2D g_23_DC = DC(coords->g_23);
-  Field2D g23_DC = DC(coords->g23);
+  const Field2D J_DC = DC(coords->J);
+  const Field2D g11_DC = DC(coords->g11);
+  const Field2D dx_DC = DC(coords->dx);
+  const Field2D dy_DC = DC(coords->dy);
+  const Field2D g_22_DC = DC(coords->g_22);
+  const Field2D g_23_DC = DC(coords->g_23);
+  const Field2D g23_DC = DC(coords->g23);
   
   for(int x=localmesh->xstart; x <= localmesh->xend; x++) {
     for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
@@ -1003,19 +1003,19 @@ void LaplaceXY::setMatrixElementsFiniteDifference(const Field2D &A, const Field2
   //   + B*f
 
   auto coords = localmesh->getCoordinates(location);
-  Field2D G1_2D = DC(coords->G1);
-  Field2D G2_2D = DC(coords->G2);
-  Field2D J_2D = DC(coords->J);
-  Field2D g11_2D = DC(coords->g11);
-  Field2D g_22_2D = DC(coords->g_22);
-  Field2D g22_2D = DC(coords->g22);
-  Field2D g12_2D = DC(coords->g12);
-  Field2D d1_dx_2D = DC(coords->d1_dx);
-  Field2D d1_dy_2D = DC(coords->d1_dy);
-  Field2D dx_2D = DC(coords->dx);
-  Field2D dy_2D = DC(coords->dy);
+  const Field2D G1_2D = DC(coords->G1);
+  const Field2D G2_2D = DC(coords->G2);
+  const Field2D J_2D = DC(coords->J);
+  const Field2D g11_2D = DC(coords->g11);
+  const Field2D g_22_2D = DC(coords->g_22);
+  const Field2D g22_2D = DC(coords->g22);
+  const Field2D g12_2D = DC(coords->g12);
+  const Field2D d1_dx_2D = DC(coords->d1_dx);
+  const Field2D d1_dy_2D = DC(coords->d1_dy);
+  const Field2D dx_2D = DC(coords->dx);
+  const Field2D dy_2D = DC(coords->dy);
   
-  Field2D coef_dfdy = G2_2D - DC(DDY(J_2D/g_22_2D)/J_2D);
+  const Field2D coef_dfdy = G2_2D - DC(DDY(J_2D/g_22_2D)/J_2D);
 
   for(int x = localmesh->xstart; x <= localmesh->xend; x++) {
     for(int y = localmesh->ystart; y <= localmesh->yend; y++) {
