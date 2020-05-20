@@ -47,6 +47,8 @@ int main(int argc, char** argv) {
   BoutReal p,q; //Use to set parameters in constructing trial functions
   Field3D error1,absolute_error1; //Absolute value of relative error: abs( (f1-sol1)/f1 )
   BoutReal max_error1; //Output of test
+
+  using bout::globals::mesh;
   
   // Only Neumann x-boundary conditions are implemented so far, so test functions should be Neumann in x and periodic in z.
   // Use Field3D's, but solver only works on FieldPerp slices, so only use 1 y-point
@@ -211,6 +213,7 @@ int main(int argc, char** argv) {
 //   Timer::resetTime("petscsetup");
 //   Timer::resetTime("petscsolve");
   
+  using bout::globals::dump;
   dump.add(a1,"a1");
   dump.add(b1,"b1");
   dump.add(c1,"c1");
@@ -672,7 +675,7 @@ int main(int argc, char** argv) {
 }
 
 BoutReal max_error_at_ystart(const Field3D &error) {
-
+  const auto* mesh = error.getMesh();
   BoutReal local_max_error = error(mesh->xstart, mesh->ystart, 0);
 
   for (int jx = mesh->xstart; jx <= mesh->xend; jx++)

@@ -47,8 +47,8 @@ int main(int argc, char** argv) {
 
   Options fields_in = OptionsNetCDF("fields.nc").read();
   
-  auto f2d = fields_in["f2d"].as<Field2D>(mesh);
-  auto f3d = fields_in["f3d"].as<Field3D>(mesh);
+  auto f2d = fields_in["f2d"].as<Field2D>(bout::globals::mesh);
+  auto f3d = fields_in["f3d"].as<Field3D>(bout::globals::mesh);
 
   Options fields2;
   fields2["f2d"] = f2d;

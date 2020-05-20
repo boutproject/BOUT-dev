@@ -13,7 +13,7 @@ int main(int argc, char **argv) {
   // Initialise BOUT++, setting up mesh
   BoutInitialise(argc, argv);
 
-  FieldFactory f(mesh);
+  FieldFactory f(bout::globals::mesh);
   
   Field2D a = f.create2D("2.");
   Field2D b = f.create2D("1 - x");
@@ -22,8 +22,8 @@ int main(int argc, char **argv) {
   SAVE_ONCE4(a, b, c, d);
 
   // Write data to file
-  dump.write();
-  dump.close();
+  bout::globals::dump.write();
+  bout::globals::dump.close();
   
   // Need to wait for all processes to finish writing
   MPI_Barrier(BoutComm::get());
