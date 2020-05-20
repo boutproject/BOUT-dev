@@ -162,6 +162,7 @@ private:
   bool x_inner_dirichlet; // Dirichlet on inner X boundary?
   bool x_outer_dirichlet; // Dirichlet on outer X boundary?
   std::string y_bndry{"neumann"}; // Boundary condition for y-boundary
+  bool upper_y_extra_guard;
 
   // Location of the rhs and solution
   CELL_LOC location;
