@@ -91,7 +91,6 @@ public:
   static void cleanup(); 
 private:
   static int count; ///< How many instances?
-  static int unique_id; ///< Unique identifier for each created instance
   static char help[]; ///< Help string
   
   // Command-line arguments
