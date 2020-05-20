@@ -64,12 +64,12 @@ PetscLib::~PetscLib() {
 void PetscLib::setOptionsFromInputFile(KSP& ksp) {
   auto ierr = KSPSetOptionsPrefix(ksp, options_prefix.c_str());
   if (ierr) {
-    throw BoutException("KSPSetOptionsPrefix failed with error %i", ierr);
+    throw BoutException("KSPSetOptionsPrefix failed with error {}", ierr);
   }
 
   ierr = KSPSetFromOptions(ksp);
   if (ierr) {
-    throw BoutException("KSPSetFromOptions failed with error %i", ierr);
+    throw BoutException("KSPSetFromOptions failed with error {}", ierr);
   }
 }
 
@@ -90,9 +90,8 @@ void PetscLib::setPetscOptions(Options& options, const std::string& prefix) {
   // Pass all options in the section to PETSc
   for (auto& i : options.getChildren()) {
     if (not i.second.isValue()) {
-      throw BoutException("Found subsection %s in %s when reading PETSc options - only "
-          "values are allowed in the PETSc options, not subsections",
-          i.first.c_str(), options.str().c_str());
+      throw BoutException("Found subsection {} in {} when reading PETSc options - only "
+          "values are allowed in the PETSc options, not subsections", i.first, options.str());
     }
 
     // Note, option names in the input file don't start with "-", but need to be passed
@@ -112,8 +111,7 @@ void PetscLib::setPetscOptions(Options& options, const std::string& prefix) {
     const auto ierr = PetscOptionsSetValue(petsc_option_name.c_str(), value);
 #endif
     if (ierr) {
-      throw BoutException("PetscOptionsSetValue returned error code %i when setting %s",
-                          ierr, petsc_option_name.c_str());
+      throw BoutException("PetscOptionsSetValue returned error code {} when setting {}", ierr, petsc_option_name);
     }
   }
 }
