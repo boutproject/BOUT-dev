@@ -143,6 +143,8 @@ Field3D ZHermiteSpline::interpolate_internal(const Field3D& f, const std::string
     localmesh->wait(h);
   }
 
+  const int ncz = localmesh->LocalNz;
+
   BOUT_FOR(i, f.getRegion(region)) {
     const int x = i.x();
     const int y = i.y();
@@ -155,7 +157,6 @@ Field3D ZHermiteSpline::interpolate_internal(const Field3D& f, const std::string
 
     // Due to lack of guard cells in z-direction, we need to ensure z-index
     // wraps around
-    const int ncz = localmesh->LocalNz;
     const int z_mod = ((k_corner(x, y, z) % ncz) + ncz) % ncz;
     const int z_mod_p1 = (z_mod + 1) % ncz;
     const int y_next = y + y_offset;

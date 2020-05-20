@@ -60,9 +60,6 @@ public:
     has_mask = true;
   }
 
-  /// Interpolate using the field at (x,y+y_offset,z), rather than (x,y,z)
-  void setYOffset(int offset) { y_offset = offset; }
-
   virtual std::vector<ParallelTransform::PositionsAndWeights>
   getWeightsForYUpApproximation(int i, int j, int k) const {
     return getWeightsForYApproximation(i, j, k, 1);
@@ -80,12 +77,12 @@ public:
 
 protected:
   // Interpolate using the field at (x,y+y_offset,z), rather than (x,y,z)
-  int y_offset;
+  const int y_offset;
 };
 
 class ZInterpolationFactory
     : public Factory<ZInterpolation, ZInterpolationFactory,
-                     std::function<std::unique_ptr<ZInterpolation>(Mesh*)>> {
+                     std::function<std::unique_ptr<ZInterpolation>(int, Mesh*)>> {
 public:
   static constexpr auto type_name = "ZInterpolation";
   static constexpr auto section_name = "zinterpolation";
@@ -93,8 +90,8 @@ public:
   static constexpr auto default_type = "hermitespline";
 
   using Factory::create;
-  ReturnType create(Mesh* mesh = nullptr) {
-    return Factory::create(getType(nullptr), mesh);
+  ReturnType create(int y_offset = 0, Mesh* mesh = nullptr) {
+    return Factory::create(getType(nullptr), y_offset, mesh);
   }
 
   static void ensureRegistered();
@@ -105,16 +102,14 @@ class RegisterZInterpolation {
 public:
   RegisterZInterpolation(const std::string& name) {
     ZInterpolationFactory::getInstance().add(
-        name, [](Mesh* mesh) -> std::unique_ptr<ZInterpolation> {
-          return std::make_unique<DerivedType>(mesh);
+        name, [](int y_offset, Mesh* mesh) -> std::unique_ptr<ZInterpolation> {
+          return std::make_unique<DerivedType>(y_offset, mesh);
         });
   }
 };
 
 class ZHermiteSpline : public ZInterpolation {
 public:
-  explicit ZHermiteSpline(Mesh* mesh = nullptr)
-      : ZHermiteSpline(BoutMask{mesh}, 0, mesh) {}
   explicit ZHermiteSpline(int y_offset = 0, Mesh* mesh = nullptr)
       : ZHermiteSpline(BoutMask{mesh}, y_offset, mesh) {}
   explicit ZHermiteSpline(BoutMask mask, int y_offset = 0, Mesh* mesh = nullptr);
