@@ -1835,11 +1835,8 @@ int LaplaceXY::localSize() {
   
   // Bulk of points
   const int nx = localmesh->xend - localmesh->xstart + 1;
-  const int ny = localmesh->yend - localmesh->ystart + 1;
-
-  if (upper_y_extra_guard and localmesh->hasBndryUpperY()) {
-    ny--;
-  }
+  const int ny = localmesh->yend - localmesh->ystart + 1
+                 - ((upper_y_extra_guard and localmesh->hasBndryUpperY()) ? 1 : 0);
   
   int n = nx * ny;  
   
