@@ -299,6 +299,11 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   */
   auto bcmplx = Matrix<dcomplex>(nmode, ncx);
 
+  const bool invert_inner_boundary =
+      (inner_boundary_flags & INVERT_SET) && localmesh->firstX();
+  const bool invert_outer_boundary =
+      (outer_boundary_flags & INVERT_SET) && localmesh->lastX();
+
   BOUT_OMP(parallel for)
   for (int ix = 0; ix < ncx; ix++) {
     /* This for loop will set the bk (initialized by the constructor)
@@ -306,9 +311,8 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
     * If the INVERT_SET flag is set (meaning that x0 will be used to set the
     * bounadry values),
     */
-    if (((ix < inbndry) && (inner_boundary_flags & INVERT_SET) && localmesh->firstX())
-        || ((ncx - ix - 1 < outbndry) && (outer_boundary_flags & INVERT_SET)
-            && localmesh->lastX())) {
+    if ((invert_inner_boundary and (ix < inbndry))
+        or (invert_outer_boundary and (ncx - ix - 1 < outbndry))) {
       // Use the values in x0 in the boundary
 
       // x0 is the input
@@ -489,17 +493,17 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
         // Based the error reduction per V-cycle, error_xxx/error_xxx_old,
         // predict when the slowest converging mode converges.
         if (cyclecount < 3 and predict_exit) {
-          BoutReal ratio;
-          int eta;
           cycle_eta = 0;
           for (int kz = 0; kz < nmode; kz++) {
-            ratio = error_abs[kz] / error_abs_old[kz];
-            eta = std::ceil(std::log(atol / error_abs[kz]) / std::log(ratio));
-            cycle_eta = (cycle_eta > eta) ? cycle_eta : eta;
+            const BoutReal ratio_abs = error_abs[kz] / error_abs_old[kz];
+            const int eta_abs =
+                std::ceil(std::log(atol / error_abs[kz]) / std::log(ratio_abs));
+            cycle_eta = (cycle_eta > eta_abs) ? cycle_eta : eta_abs;
 
-            ratio = error_rel[kz] / error_rel_old[kz];
-            eta = std::ceil(std::log(rtol / error_rel[kz]) / std::log(ratio));
-            cycle_eta = (cycle_eta > eta) ? cycle_eta : eta;
+            const BoutReal ratio_rel = error_rel[kz] / error_rel_old[kz];
+            const int eta_rel =
+                std::ceil(std::log(rtol / error_rel[kz]) / std::log(ratio_rel));
+            cycle_eta = (cycle_eta > eta_rel) ? cycle_eta : eta_rel;
           }
         }
       }
