@@ -127,7 +127,7 @@ public:
 
   };
 
-  void transpose(Matrix<dcomplex> &matrix_transposed, const Matrix<dcomplex> &matrix, const int n1, const int n2);
+  void transpose(Matrix<dcomplex> &matrix_transposed, const Matrix<dcomplex> &matrix);
 
 private:
 

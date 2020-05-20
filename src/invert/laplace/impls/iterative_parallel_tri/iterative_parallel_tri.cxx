@@ -335,7 +335,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   * the offset and all the modes up to the Nyquist frequency), so we only copy up to
   * `nmode` in the transpose.
   */
-  transpose(bcmplx, bk, nmode, ncx);
+  transpose(bcmplx, bk);
 
   /* Set the matrix A used in the inversion of Ax=b
   * by calling tridagCoef and setting the BC
@@ -631,7 +631,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   }
 
   // Store the solution xk for the current fourier mode in a 2D array
-  transpose(xk, xk1d, ncx, nmode);
+  transpose(xk, xk1d);
 
   /// SCOREP_USER_REGION_END(afterloop);
 
@@ -1498,9 +1498,10 @@ void LaplaceIPT::Level::synchronize_reduced_field(const LaplaceIPT& l,
 /*
  * Returns the transpose of a matrix
  */
-void LaplaceIPT::transpose(Matrix<dcomplex>& m_t, const Matrix<dcomplex>& m, const int n1,
-                           const int n2) {
+void LaplaceIPT::transpose(Matrix<dcomplex>& m_t, const Matrix<dcomplex>& m) {
   SCOREP0();
+  const auto n1 = std::get<1>(m.shape());
+  const auto n2 = std::get<0>(m.shape());
   for (int i1 = 0; i1 < n1; i1++) {
     for (int i2 = 0; i2 < n2; i2++) {
       m_t(i1, i2) = m(i2, i1);
