@@ -1419,4 +1419,3 @@ bool H5Format::getAttribute(const hid_t &dataSet, const std::string &attrname, B
 }
 
 #endif // BOUT_HAS_HDF5
-

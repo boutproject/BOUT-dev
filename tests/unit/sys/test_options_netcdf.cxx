@@ -219,5 +219,4 @@ TEST_F(OptionsNetCDFTest, Field3DWriteCellYLow) {
   EXPECT_EQ(data["f3d"].attributes["cell_location"].as<std::string>(), toString(CELL_YLOW));
 }
 
-
 #endif // BOUT_HAS_NETCDF

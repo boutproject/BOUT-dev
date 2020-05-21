@@ -655,7 +655,8 @@ Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir
   dump_file.addOnce(const_cast<bool&>(bout::build::has_lapack), "has_lapack");
   dump_file.addOnce(const_cast<bool&>(bout::build::has_netcdf), "has_netcdf");
   dump_file.addOnce(const_cast<bool&>(bout::build::has_petsc), "has_petsc");
-  dump_file.addOnce(const_cast<bool&>(bout::build::has_pretty_function), "has_pretty_function");
+  dump_file.addOnce(const_cast<bool&>(bout::build::has_pretty_function),
+                    "has_pretty_function");
   dump_file.addOnce(const_cast<bool&>(bout::build::has_pvode), "has_pvode");
   dump_file.addOnce(const_cast<bool&>(bout::build::has_scorep), "has_scorep");
   dump_file.addOnce(const_cast<bool&>(bout::build::has_slepc), "has_slepc");

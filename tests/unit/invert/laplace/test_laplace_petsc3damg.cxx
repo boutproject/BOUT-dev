@@ -18,7 +18,6 @@
 #include "vecops.hxx"
 #include "bout/petsc_interface.hxx"
 
-
 #if BOUT_HAS_PETSC
 
 /// Global mesh

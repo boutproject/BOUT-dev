@@ -12,7 +12,7 @@
 
 #include "laplacexz-petsc.hxx"
 
-#if BOUT_HAS_PETSC  // Requires PETSc
+#if BOUT_HAS_PETSC // Requires PETSc
 
 #include <bout/assert.hxx>
 #include <bout/sys/timer.hxx>

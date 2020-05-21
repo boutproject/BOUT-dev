@@ -34,7 +34,6 @@
  *
  */
 
-
 #include "bout/build_config.hxx"
 
 #include <globals.hxx>

@@ -491,7 +491,7 @@ const Field3D b0xGrad_dot_Grad(const Field3D &p, const Field2D &A, CELL_LOC outl
   Field3D result = VDDX(vx, A, outloc) + VDDY(vy, A, outloc);
 
   result /= (metric->J*sqrt(metric->g_22));
-  
+
 #if BOUT_USE_TRACK
   result.name = "b0xGrad_dot_Grad("+p.name+","+A.name+")";
 #endif

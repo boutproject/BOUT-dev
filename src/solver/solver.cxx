@@ -121,7 +121,7 @@ void Solver::add(Field2D& v, const std::string& name) {
   d.F_var = &ddt(v);
   d.location = v.getLocation();
   d.name = name;
-  
+
 #if BOUT_USE_TRACK
   v.name = name;
 #endif
@@ -185,7 +185,7 @@ void Solver::add(Field3D& v, const std::string& name) {
   d.F_var = &ddt(v);
   d.location = v.getLocation();
   d.name = name;
-  
+
 #if BOUT_USE_TRACK
   v.name = name;
 #endif
