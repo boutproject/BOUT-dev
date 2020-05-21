@@ -63,6 +63,12 @@ void ZHermiteSpline::calcWeights(const Field3D& delta_z, const std::string& regi
     // calculated by taking the remainder of the floating point index
     const BoutReal t_z = delta_z(x, y, z) - static_cast<BoutReal>(k_corner(x, y, z));
 
+    // make k_corner be in the range 0<=k_corner<nz
+    const int ncz = localmesh->LocalNz;
+    BOUT_FOR(i, k_corner) {
+      k_corner[i] = ((k_corner[i] % ncz) + ncz) % ncz;
+    }
+
     // Check that t_z is in range
     if ((t_z < 0.0) || (t_z > 1.0)) {
       throw BoutException(
@@ -104,10 +110,10 @@ std::vector<ParallelTransform::PositionsAndWeights>
 ZHermiteSpline::getWeightsForYApproximation(int i, int j, int k, int yoffset) const {
 
   const int ncz = localmesh->LocalNz;
-  const int k_mod = ((k_corner(i, j, k) % ncz) + ncz) % ncz;
+  const int k_mod = k_corner(i, j, k);
   const int k_mod_m1 = (k_mod > 0) ? (k_mod - 1) : (ncz - 1);
-  const int k_mod_p1 = (k_mod + 1) % ncz;
-  const int k_mod_p2 = (k_mod + 2) % ncz;
+  const int k_mod_p1 = (k_mod < ncz - 1) ? (k_mod + 1) : 0;
+  const int k_mod_p2 = (k_mod < ncz - 2) ? (k_mod + 2) : k_mod + 2 - ncz;
 
   return {{i, j + yoffset, k_mod_m1, -0.5 * h10(i, j, k)},
           {i, j + yoffset, k_mod,    h00(i, j, k) - 0.5 * h11(i, j, k)},
@@ -157,8 +163,8 @@ Field3D ZHermiteSpline::interpolate_internal(const Field3D& f, const std::string
 
     // Due to lack of guard cells in z-direction, we need to ensure z-index
     // wraps around
-    const int z_mod = ((k_corner(x, y, z) % ncz) + ncz) % ncz;
-    const int z_mod_p1 = (z_mod + 1) % ncz;
+    const int z_mod = k_corner[i];
+    const int z_mod_p1 = (z_mod < ncz - 1) ? (z_mod + 1) : 0;
     const int y_next = y + y_offset;
 
     // Interpolate in Z
