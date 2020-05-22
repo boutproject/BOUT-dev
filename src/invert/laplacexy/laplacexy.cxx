@@ -258,7 +258,7 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
     }
   }
   
-  KSPSetFromOptions( ksp );
+  lib.setOptionsFromInputFile(ksp);
 
   ///////////////////////////////////////////////////
   // Including Y derivatives?
