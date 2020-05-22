@@ -131,7 +131,7 @@ public:
   
   static void setArgs(int &UNUSED(c), char** &UNUSED(v)) {}
   
-  void setOptionsFromInputFile(KSP& ksp) {}
+  void setOptionsFromInputFile(KSP& UNUSED(ksp)) {}
 
   static void cleanup() {}
 };
