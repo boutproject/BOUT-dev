@@ -9,13 +9,12 @@ SOURCEC = test.cxx
 OBJ = $(SOURCEC:%.cxx=%.o)
 TARGET ?= $(SOURCEC:%.cxx=%)
 
+ifeq (, $(shell which bout-config))
+$(error No bout-config in $$PATH ($(PATH)))
+endif
+
 # Use the bout-config script to get compiler, flags
 CXX:=$(shell bout-config --cxx)
-
-ifneq "$(.SHELLSTATUS)" "0"
-which=$(shell which bout-config 2>&1 )
-$(error Is bout-config in $$PATH? $(which))
-endif
 
 CFLAGS:=$(shell bout-config --cflags)
 LD:=$(shell bout-config --ld)

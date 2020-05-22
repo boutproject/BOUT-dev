@@ -37,7 +37,6 @@
  **************************************************************************/
 
 #include "fci.hxx"
-#include "interpolation_factory.hxx"
 #include "parallel_boundary_op.hxx"
 #include "parallel_boundary_region.hxx"
 #include <bout/constants.hxx>
@@ -48,22 +47,22 @@
 
 #include <string>
 
-FCIMap::FCIMap(Mesh& mesh, int offset_, BoundaryRegionPar* boundary, bool zperiodic)
+FCIMap::FCIMap(Mesh& mesh, Options& options, int offset_, BoundaryRegionPar* boundary,
+               bool zperiodic)
     : map_mesh(mesh), offset(offset_), boundary_mask(map_mesh),
       corner_boundary_mask(map_mesh) {
 
-  TRACE("Creating FCIMAP for direction %d", offset);
+  TRACE("Creating FCIMAP for direction {:d}", offset);
 
   if (offset == 0) {
     throw BoutException("FCIMap called with offset = 0; You probably didn't mean to do that");
   }
 
-  interp =
-      std::unique_ptr<Interpolation>(InterpolationFactory::getInstance()->create(&map_mesh));
+  auto& interpolation_options = options["xzinterpolation"];
+  interp = XZInterpolationFactory::getInstance().create(&interpolation_options, &map_mesh);
   interp->setYOffset(offset);
 
-  interp_corner =
-      std::unique_ptr<Interpolation>(InterpolationFactory::getInstance()->create(&map_mesh));
+  interp_corner = XZInterpolationFactory::getInstance().create(&interpolation_options, &map_mesh);
   interp_corner->setYOffset(offset);
 
   // Index arrays contain guard cells in order to get subscripts right
@@ -97,24 +96,24 @@ FCIMap::FCIMap(Mesh& mesh, int offset_, BoundaryRegionPar* boundary, bool zperio
   // If we can't read in any of these fields, things will silently not
   // work, so best throw
   if (map_mesh.get(xt_prime, parallel_slice_field_name("xt_prime"), 0.0, false) != 0) {
-    throw BoutException("Could not read %s from grid file!\n"
+    throw BoutException("Could not read {:s} from grid file!\n"
                         "  Either add it to the grid file, or reduce MYG",
-                        parallel_slice_field_name("xt_prime").c_str());
+                        parallel_slice_field_name("xt_prime"));
   }
   if (map_mesh.get(zt_prime, parallel_slice_field_name("zt_prime"), 0.0, false) != 0) {
-    throw BoutException("Could not read %s from grid file!\n"
+    throw BoutException("Could not read {:s} from grid file!\n"
                         "  Either add it to the grid file, or reduce MYG",
-                        parallel_slice_field_name("zt_prime").c_str());
+                        parallel_slice_field_name("zt_prime"));
   }
   if (map_mesh.get(R_prime, parallel_slice_field_name("R"), 0.0, false) != 0) {
-    throw BoutException("Could not read %s from grid file!\n"
+    throw BoutException("Could not read {:s} from grid file!\n"
                         "  Either add it to the grid file, or reduce MYG",
-                        parallel_slice_field_name("R").c_str());
+                        parallel_slice_field_name("R"));
   }
   if (map_mesh.get(Z_prime, parallel_slice_field_name("Z"), 0.0, false) != 0) {
-    throw BoutException("Could not read %s from grid file!\n"
+    throw BoutException("Could not read {:s} from grid file!\n"
                         "  Either add it to the grid file, or reduce MYG",
-                        parallel_slice_field_name("Z").c_str());
+                        parallel_slice_field_name("Z"));
   }
 
   // Cell corners
@@ -192,14 +191,14 @@ FCIMap::FCIMap(Mesh& mesh, int offset_, BoundaryRegionPar* boundary, bool zperio
         // Check that t_x and t_z are in range
         if ((t_x < 0.0) || (t_x > 1.0)) {
           throw BoutException(
-              "t_x=%e out of range at (%d,%d,%d) (xt_prime=%e, i_corner=%d)", t_x, x, y,
-              z, xt_prime(x, y, z), i_corner(x, y, z));
+              "t_x={:e} out of range at ({:d},{:d},{:d}) (xt_prime={:e}, i_corner={:d})",
+              t_x, x, y, z, xt_prime(x, y, z), i_corner(x, y, z));
         }
 
         if ((t_z < 0.0) || (t_z > 1.0)) {
           throw BoutException(
-              "t_z=%e out of range at (%d,%d,%d) (zt_prime=%e, k_corner=%d)", t_z, x, y,
-              z, zt_prime(x, y, z), k_corner(x, y, z));
+              "t_z={:e} out of range at ({:d},{:d},{:d}) (zt_prime={:e}, k_corner={:d})",
+              t_z, x, y, z, zt_prime(x, y, z), k_corner(x, y, z));
         }
 
         //----------------------------------------

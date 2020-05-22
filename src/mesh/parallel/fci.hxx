@@ -27,7 +27,7 @@
 #define __FCITRANSFORM_H__
 
 #include <bout/paralleltransform.hxx>
-#include <interpolation.hxx>
+#include <interpolation_xz.hxx>
 #include <mask.hxx>
 #include <parallel_boundary_region.hxx>
 #include <unused.hxx>
@@ -39,12 +39,13 @@
 /// Field line map - contains the coefficients for interpolation
 class FCIMap {
   /// Interpolation objects
-  std::unique_ptr<Interpolation> interp;        // Cell centre
-  std::unique_ptr<Interpolation> interp_corner; // Cell corner at (x+1, z+1)
+  std::unique_ptr<XZInterpolation> interp;        // Cell centre
+  std::unique_ptr<XZInterpolation> interp_corner; // Cell corner at (x+1, z+1)
 
 public:
   FCIMap() = delete;
-  FCIMap(Mesh& mesh, int offset, BoundaryRegionPar* boundary, bool zperiodic);
+  FCIMap(Mesh& mesh, Options& options, int offset, BoundaryRegionPar* boundary, bool
+         zperiodic);
 
   // The mesh this map was created on
   Mesh& map_mesh;
@@ -70,7 +71,8 @@ public:
 class FCITransform : public ParallelTransform {
 public:
   FCITransform() = delete;
-  FCITransform(Mesh& mesh, bool zperiodic = true) : ParallelTransform(mesh) {
+  FCITransform(Mesh& mesh, bool zperiodic = true, Options* opt = nullptr)
+      : ParallelTransform(mesh, opt) {
 
     // check the coordinate system used for the grid data source
     FCITransform::checkInputGrid();
@@ -84,8 +86,8 @@ public:
 
     field_line_maps.reserve(mesh.ystart * 2);
     for (int offset = 1; offset < mesh.ystart + 1; ++offset) {
-      field_line_maps.emplace_back(mesh, offset, forward_boundary, zperiodic);
-      field_line_maps.emplace_back(mesh, -offset, backward_boundary, zperiodic);
+      field_line_maps.emplace_back(mesh, options, offset, forward_boundary, zperiodic);
+      field_line_maps.emplace_back(mesh, options, -offset, backward_boundary, zperiodic);
     }
   }
 

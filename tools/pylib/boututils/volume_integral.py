@@ -8,17 +8,15 @@ from builtins import range
 from past.utils import old_div
 import numpy as np
 from boututils.calculus import deriv
-from bunch import bunchify
 
-
-def volume_integral(var, g, xr=False):
+def volume_integral(var, grid, xr=False):
     """Integrate a variable over a volume
 
     Parameters
     ----------
     var : array_like
         Variable to integrate
-    g : dict
+    grid : dict
         A dictionary of various grid quantities
     xr : (int, int), optional
         Range of x indices (default: all of x)
@@ -31,9 +29,6 @@ def volume_integral(var, g, xr=False):
     """
 
     s = np.ndim(var)
-
-    grid=bunchify(g)
-
 
     if s == 4 :
         # 4D [t,x,y,z] - integrate for each t
@@ -84,20 +79,20 @@ def volume_integral(var, g, xr=False):
 
         if (xi >= np.min(xr)) & (xi <= np.max(xr)) :
             dtheta = 2.*np.pi / np.float(ny)
-            r = grid.Rxy[xi,yi]
-            z = grid.Zxy[xi,yi]
+            r = grid['Rxy'][xi,yi]
+            z = grid['Zxy'][xi,yi]
             n = np.size(r)
             dl = old_div(np.sqrt( deriv(r)**2 + deriv(z)**2 ), dtheta)
 
       # Area of flux-surface
-            dA = (grid.Bxy[xi,yi]/grid.Bpxy[xi,yi]*dl) * (r*2.*np.pi)
+            dA = (grid['Bxy'][xi,yi]/grid['Bpxy'][xi,yi]*dl) * (r*2.*np.pi)
       # Volume
             if xi == nx-1 :
-                dpsi = (grid.psixy[xi,yi] - grid.psixy[xi-1,yi])
+                dpsi = (grid['psixy'][xi,yi] - grid['psixy'][xi-1,yi])
             else:
-                dpsi = (grid.psixy[xi+1,yi] - grid.psixy[xi,yi])
+                dpsi = (grid['psixy'][xi+1,yi] - grid['psixy'][xi,yi])
 
-            dV = dA * dpsi / (r*(grid.Bpxy[xi,yi])) # May need factor of 2pi
+            dV = dA * dpsi / (r*(grid['Bpxy'][xi,yi])) # May need factor of 2pi
             dV = np.abs(dV)
 
             result = result + np.sum(var[xi,yi] * dV)

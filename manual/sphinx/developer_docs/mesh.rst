@@ -150,6 +150,27 @@ If you want to overlap communications with calculations then use the
     // Calculations which don't need variables in comgrp
     wait(ch); // Wait for all communications to finish
 
+There are also methods that allow communications only in the X or only in Y directions::
+
+    template <typename... Ts>
+    int communicateXZ(Ts&... ts);      // Communicate one or more fields
+    int communicateXZ(FieldGroup);     // Communicate a group of fields
+    comm_handle sendX(FieldGroup);    // Send data
+
+    template <typename... Ts>
+    int communicateYZ(Ts&... ts);      // Communicate one or more fields
+    int communicateYZ(FieldGroup);     // Communicate a group of fields
+    comm_handle sendY(FieldGroup);    // Send data
+
+When the option ``mesh:include_corner_cells`` is set to ``true`` (which is the
+default), the guard cells are communicating first in the y-direction and then in the
+x-direction, so that the corner cells are communicated consistently.
+
+Setting ``mesh:include_corner_cells = false`` turns this off, so that corner cells are
+communicated only in y, and x- and y-direction communications are sent concurrently. This
+was the default behaviour in BOUT++ v4.3 and earlier, and might possibly be faster in some
+cases, when corner cells are not needed.
+
 Implementation: BoutMesh
 ~~~~~~~~~~~~~~~~~~~~~~~~
 

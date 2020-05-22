@@ -45,6 +45,12 @@
 #include <algorithm>
 #include <memory>
 
+#ifdef _MSC_VER
+// finite is not actually standard C++, it's a BSD extention for C
+inline auto finite(BoutReal x) -> bool { return std::isfinite(x); }
+inline auto strcasecmp(const char* s1, const char* s2) -> int { return _stricmp(s1, s2); }
+#endif
+
 namespace bout {
 namespace utils {
 #ifndef __cpp_lib_make_unique
@@ -330,7 +336,7 @@ template <typename T> int invert3x3(Matrix<T> &a, BoutReal small = 1.0e-15) {
 
   if (std::abs(det) < std::abs(small)) {
     if (small >=0 ){
-      throw BoutException("Determinant of matrix < %e --> Poorly conditioned", small);
+      throw BoutException("Determinant of matrix < {:e} --> Poorly conditioned", small);
     } else {
       return 1;
     }      
@@ -358,7 +364,7 @@ template <typename T> int invert3x3(Matrix<T> &a, BoutReal small = 1.0e-15) {
   a(2, 2) = I * detinv;
 
   return 0;
-};
+}
 
 /*!
  * Get Random number between 0 and 1
@@ -489,6 +495,10 @@ inline std::string toString(const bool& val) {
     return "true";
   }
   return "false";
+}
+
+inline std::string toString(const DirectionTypes& dir) {
+  return "{"+toString(dir.y)+", "+toString(dir.z)+"}";
 }
 
 /// Convert a time stamp to a string

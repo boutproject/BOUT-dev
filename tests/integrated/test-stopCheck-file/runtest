@@ -12,7 +12,7 @@ try:
 except:
   pass
 
-from boututils.run_wrapper import shell, launch
+from boututils.run_wrapper import build_and_log, launch
 from boutdata.collect import collect
 import numpy as np
 from sys import stdout, exit
@@ -20,9 +20,7 @@ from sys import stdout, exit
 nproc = 1
 
 
-
-print("Making stopCheck test")
-shell("make > make.log")
+build_and_log("Making stopCheck test")
 
 checkVal=[True,False]
 nstepExpect=[1,11]

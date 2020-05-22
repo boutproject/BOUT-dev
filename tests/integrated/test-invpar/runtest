@@ -9,19 +9,23 @@ try:
   from builtins import str
 except:
   pass
-from boututils.run_wrapper import shell, shell_safe, launch_safe
+from boututils.run_wrapper import build_and_log, shell, launch_safe
 from boutdata.collect import collect
 from sys import stdout, exit
 
 
+build_and_log("parallel inversion test")
 
-print("Making parallel inversion test")
-
-shell_safe("make > make.log")
-
-flags = ["acoef=1 bcoef=0 ccoef=0 dcoef=0 ecoef=0", "acoef=1.5 'bcoef=2.*sin(2*y)'"]
-flags += ["acoef=1","bcoef=2","ccoef=3","dcoef=4","ecoef=-1"]
-flags += ["'func=ballooning(exp(-y*y)*cos(z)*gauss(x,0.2))'"]
+flags = [
+    "acoef=1 bcoef=0 ccoef=0 dcoef=0 ecoef=0",
+    "acoef=1.5 'bcoef=2.*sin(2*y)'",
+    "acoef=1",
+    "bcoef=2",
+    "ccoef=3",
+    "dcoef=4",
+    "ecoef=-1",
+    "'input=ballooning(exp(-y*y)*cos(z)*gauss(x,0.2))'",
+]
 
 code = 0 # Return code
 for nproc in [1,2,4]:

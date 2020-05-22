@@ -153,12 +153,12 @@ public:
 
   /// Return number of fields
   int size() const {
-    return fvec.size();
+    return static_cast<int>(fvec.size());
   }
 
   /// Return number of Field3Ds
   int size_field3d() const {
-    return f3vec.size();
+    return static_cast<int>(f3vec.size());
   }
 
   /// Test whether this group is empty

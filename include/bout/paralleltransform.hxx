@@ -8,6 +8,7 @@
 
 #include "bout_types.hxx"
 #include "field3d.hxx"
+#include "options.hxx"
 #include "unused.hxx"
 
 class Mesh;
@@ -22,13 +23,15 @@ class Mesh;
  */
 class ParallelTransform {
 public:
-  ParallelTransform(Mesh& mesh_in) : mesh(mesh_in) {}
+  ParallelTransform(Mesh& mesh_in, Options* opt = nullptr)
+    : mesh(mesh_in),
+      options(opt == nullptr ? Options::root()["mesh:paralleltransform"] : *opt) {}
   virtual ~ParallelTransform() = default;
 
   /// Given a 3D field, calculate and set the Y up down fields
   virtual void calcParallelSlices(Field3D &f) = 0;
 
-  [[gnu::deprecated("Please use ParallelTransform::calcParallelSlices instead")]]
+  [[deprecated("Please use ParallelTransform::calcParallelSlices instead")]]
   void calcYupYdown(Field3D& f) {
     calcParallelSlices(f);
   }
@@ -39,7 +42,7 @@ public:
     return calcParallelSlices(f);
   }
 
-  [[gnu::deprecated("Please use ParallelTransform::integrateParallelSlices instead")]]
+  [[deprecated("Please use ParallelTransform::integrateParallelSlices instead")]]
   void integrateYupYdown(Field3D& f) {
     integrateParallelSlices(f);
   }
@@ -47,13 +50,13 @@ public:
   /// Convert a field into field-aligned coordinates
   /// so that the y index is along the magnetic field
   virtual const Field3D toFieldAligned(const Field3D &f, const std::string& region = "RGN_ALL") = 0;
-  [[gnu::deprecated("Please use toFieldAligned(const Field3D& f, "
+  [[deprecated("Please use toFieldAligned(const Field3D& f, "
       "const std::string& region = \"RGN_ALL\") instead")]]
   const Field3D toFieldAligned(const Field3D &f, REGION region) {
     return toFieldAligned(f, toString(region));
   }
   virtual const FieldPerp toFieldAligned(const FieldPerp &f, const std::string& region = "RGN_ALL") = 0;
-  [[gnu::deprecated("Please use toFieldAligned(const FieldPerp& f, "
+  [[deprecated("Please use toFieldAligned(const FieldPerp& f, "
       "const std::string& region = \"RGN_ALL\") instead")]]
   const FieldPerp toFieldAligned(const FieldPerp &f, REGION region) {
     return toFieldAligned(f, toString(region));
@@ -62,19 +65,39 @@ public:
   /// Convert back from field-aligned coordinates
   /// into standard form
   virtual const Field3D fromFieldAligned(const Field3D &f, const std::string& region = "RGN_ALL") = 0;
-  [[gnu::deprecated("Please use fromFieldAligned(const Field3D& f, "
+  [[deprecated("Please use fromFieldAligned(const Field3D& f, "
       "const std::string& region = \"RGN_ALL\") instead")]]
   const Field3D fromFieldAligned(const Field3D &f, REGION region) {
     return fromFieldAligned(f, toString(region));
   }
   virtual const FieldPerp fromFieldAligned(const FieldPerp &f, const std::string& region = "RGN_ALL") = 0;
-  [[gnu::deprecated("Please use fromFieldAligned(const FieldPerp& f, "
+  [[deprecated("Please use fromFieldAligned(const FieldPerp& f, "
       "const std::string& region = \"RGN_ALL\") instead")]]
   const FieldPerp fromFieldAligned(const FieldPerp &f, REGION region) {
     return fromFieldAligned(f, toString(region));
   }
 
   virtual bool canToFromFieldAligned() = 0;
+
+  struct PositionsAndWeights {
+    int i, j, k;
+    BoutReal weight;
+  };
+
+  virtual std::vector<PositionsAndWeights> getWeightsForYUpApproximation(int i, int j,
+                                                                         int k) {
+    return getWeightsForYApproximation(i, j, k, 1);
+  }
+  virtual std::vector<PositionsAndWeights> getWeightsForYDownApproximation(int i, int j,
+                                                                           int k) {
+    return getWeightsForYApproximation(i, j, k, -1);
+  }
+  virtual std::vector<PositionsAndWeights>
+  getWeightsForYApproximation(int UNUSED(i), int UNUSED(j), int UNUSED(k),
+                              int UNUSED(yoffset)) {
+    throw BoutException("ParallelTransform::getWeightsForYApproximation not implemented "
+                        "in this subclass");
+  }
 
   /// Output variables used by a ParallelTransform instance to the dump files
   virtual void outputVars(Datafile& UNUSED(file)) {}
@@ -89,6 +112,7 @@ protected:
   virtual void checkInputGrid() = 0;
 
   Mesh &mesh; ///< The mesh this paralleltransform is part of
+  Options &options; ///< Options for this ParallelTransform
 };
 
 /*!
@@ -98,7 +122,9 @@ protected:
  */
 class ParallelTransformIdentity : public ParallelTransform {
 public:
-  ParallelTransformIdentity(Mesh& mesh_in) : ParallelTransform(mesh_in) {
+  ParallelTransformIdentity(Mesh& mesh_in, Options* opt = nullptr)
+      : ParallelTransform(mesh_in, opt) {
+
     // check the coordinate system used for the grid data source
     ParallelTransformIdentity::checkInputGrid();
   }
@@ -139,6 +165,12 @@ public:
     return result.setDirectionY(YDirectionType::Standard);
   }
 
+  virtual std::vector<PositionsAndWeights> getWeightsForYApproximation(int i,
+      int j, int k, int yoffset) override {
+    return {{i, j + yoffset, k, 1.0}};
+  }
+
+
   bool canToFromFieldAligned() override { return true; }
 
   bool requiresTwistShift(bool twist_shift_enabled, YDirectionType UNUSED(ytype)) override {
@@ -162,7 +194,8 @@ protected:
 class ShiftedMetric : public ParallelTransform {
 public:
   ShiftedMetric() = delete;
-  ShiftedMetric(Mesh& mesh, CELL_LOC location, Field2D zShift, BoutReal zlength_in);
+  ShiftedMetric(Mesh& mesh, CELL_LOC location, Field2D zShift, BoutReal zlength_in,
+                Options* opt = nullptr);
 
   /*!
    * Calculates the yup() and ydown() fields of f
@@ -248,7 +281,7 @@ private:
                        const std::string UNUSED(region) = "RGN_NOX") const {
     return f;
   };
-  [[gnu::deprecated("Please use shiftZ(const Field2D& f, const Field2D& zangle, "
+  [[deprecated("Please use shiftZ(const Field2D& f, const Field2D& zangle, "
       "const std::string& region = \"RGN_NOX\") instead")]]
   const Field2D shiftZ(const Field2D& f, const Field2D& UNUSED(zangle),
                        REGION UNUSED(region)) const {
@@ -264,7 +297,7 @@ private:
    */
   const Field3D shiftZ(const Field3D& f, const Field2D& zangle,
                        const std::string& region = "RGN_NOX") const;
-  [[gnu::deprecated("Please use shiftZ(const Field3D& f, const Field2D& zangle, "
+  [[deprecated("Please use shiftZ(const Field3D& f, const Field2D& zangle, "
       "const std::string& region = \"RGN_NOX\") instead")]]
   const Field3D shiftZ(const Field3D& f, const Field2D& zangle,
                        REGION region) const {

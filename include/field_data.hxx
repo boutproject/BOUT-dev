@@ -74,7 +74,6 @@ public:
   
   // Boundary conditions
   void setBoundary(const std::string &name); ///< Set the boundary conditions
-  void setBoundary(const std::string &region, BoundaryOp *op); ///< Manually set
 
   void copyBoundary(const FieldData &f); ///< Copy the boundary conditions from another field
 

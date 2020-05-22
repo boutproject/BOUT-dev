@@ -1,4 +1,4 @@
-bout_add_integrated_test(test_laplace
+bout_add_integrated_test(test-laplace
   SOURCES test_laplace.cxx
   EXTRA_FILES test_laplace.grd.nc data/benchmark.0.nc
   USE_RUNTEST

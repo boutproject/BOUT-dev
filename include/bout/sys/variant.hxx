@@ -78,7 +78,7 @@ struct IsEqual {
 /// has the same type and value as \p t
 ///
 /// Note: Handles the case that \p t is not of a type
-/// which \v can hold.
+/// which \p v can hold.
 template <typename Variant, typename T>
 bool variantEqualTo(const Variant& v, const T& t) {
   return visit(details::IsEqual<T>(t), v);
@@ -115,7 +115,7 @@ struct StaticCastOrThrow {
 /// Cast a variant to a given type using static_cast
 /// If this can't be done then a std::bad_cast exception is thrown
 ///
-/// Note: \p T can be a type which variant \v cannot hold
+/// Note: \p T can be a type which variant \p v cannot hold
 /// in which case std::bad_cast will be thrown at runtime
 template <typename Variant, typename T>
 T variantStaticCastOrThrow(const Variant &v) {

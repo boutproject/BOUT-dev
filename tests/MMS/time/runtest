@@ -9,7 +9,7 @@ from __future__ import division
 from __future__ import print_function
 from builtins import str
 
-from boututils.run_wrapper import shell, shell_safe, launch_safe
+from boututils.run_wrapper import shell, build_and_log, launch_safe
 from boutdata.collect import collect
 
 #requires: all_tests
@@ -28,9 +28,7 @@ except:
     plt=None
 
 
-
-print("Making MMS time integration test")
-shell_safe("make > make.log")
+build_and_log("MMS time integration test")
 
 # List of options to be passed for each test
 if "only_petsc" in sys.argv:

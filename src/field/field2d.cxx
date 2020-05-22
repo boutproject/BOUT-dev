@@ -125,10 +125,10 @@ Field2D* Field2D::timeDeriv() {
 
 const Region<Ind2D> &Field2D::getRegion(REGION region) const {
   return fieldmesh->getRegion2D(toString(region));
-};
+}
 const Region<Ind2D> &Field2D::getRegion(const std::string &region_name) const {
   return fieldmesh->getRegion2D(region_name);
-};
+}
 
 // Not in header because we need to access fieldmesh
 BoutReal& Field2D::operator[](const Ind3D &d) {
@@ -267,7 +267,7 @@ void Field2D::applyBoundary(const std::string &region, const std::string &condit
   }
 
   if (!region_found) {
-    throw BoutException("Region '%s' not found", region.c_str());
+    throw BoutException("Region '{:s}' not found", region);
   }
 
   // Set the corners to zero
@@ -334,8 +334,8 @@ void checkDataIsFiniteOnRegion(const Field2D& f, const std::string& region) {
   // Do full checks
   BOUT_FOR_SERIAL(i, f.getRegion(region)) {
     if (!::finite(f[i])) {
-      throw BoutException("Field2D: Operation on non-finite data at [%d][%d]\n", i.x(),
-                          i.y());
+      throw BoutException("Field2D: Operation on non-finite data at [{:d}][{:d}]\n",
+                          i.x(), i.y());
     }
   }
 }

@@ -1,7 +1,7 @@
 from __future__ import print_function
 from builtins import range
 import numpy
-from bunch import Bunch
+from boututils.bunch import Bunch
 from geqdsk import Geqdsk
 
 def read_geqdsk (file):

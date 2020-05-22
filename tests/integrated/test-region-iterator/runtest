@@ -9,14 +9,12 @@ try:
   from builtins import str
 except:
   pass
-from boututils.run_wrapper import shell, shell_safe, launch_safe
+from boututils.run_wrapper import build_and_log, launch_safe
 from boutdata.collect import collect
 from sys import exit
 
 
-
-print("Making Region Iterator test")
-s, out = shell_safe("make > make.log",pipe=True)
+build_and_log("Region Iterator test")
 
 flags = [""]
 cmd = "./test_region_iterator"

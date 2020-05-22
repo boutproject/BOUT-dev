@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 
 # Note: This test requires NCDF4, whereas on Travis NCDF is used
-#requires: False
+#requires: not travis
 
 from boututils.datafile import DataFile
-from boututils.run_wrapper import shell
+from boututils.run_wrapper import build_and_log, shell, launch
 from boutdata.data import BoutOptionsFile
 
 import math
 import numpy as np
 
-shell("make")
+build_and_log("options-netcdf test")
 shell("rm -f test-out.ini")
 shell("rm -f test-out.nc")
 
@@ -21,7 +21,7 @@ with DataFile("test.nc", create=True, format="NETCDF4") as f:
     f.write("string", "hello");
 
 # run BOUT++
-shell("./test-options-netcdf")
+launch("./test-options-netcdf", nproc=1, mthread=1)
 
 # Check the output INI file
 result = BoutOptionsFile("test-out.ini")

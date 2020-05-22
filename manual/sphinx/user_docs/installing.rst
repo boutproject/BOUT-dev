@@ -89,7 +89,7 @@ the "shared" directory.
 
 If this is successful, then you can skip to section :ref:`sec-running`.
 
- Obtaining BOUT++
+Obtaining BOUT++
 ----------------
 
 .. _sec-obtainbout:
@@ -120,19 +120,28 @@ Installing dependencies
 
 The bare-minimum requirements for compiling and running BOUT++ are:
 
-#. A C++ compiler that supports C++11
+#. A C++ compiler that supports C++14
 
 #. An MPI compiler such as OpenMPI (`www.open-mpi.org/ <www.open-mpi.org/>`__),
    MPICH ( `https://www.mpich.org/ <https://www.mpich.org/>`__) or
    LAM (`www.lam-mpi.org/ <www.lam-mpi.org/>`__)
    
-#. The NetCDF library ( `https://www.unidata.ucar.edu/downloads/netcdf <https://www.unidata.ucar.edu/downloads/netcdf>`__ )
+#. The NetCDF library (`https://www.unidata.ucar.edu/downloads/netcdf
+   <https://www.unidata.ucar.edu/downloads/netcdf>`__)
    
-The FFTW-3 library ( `http://www.fftw.org/ <http://www.fftw.org/>`__ ) is also strongly recommended
+The FFTW-3 library (`http://www.fftw.org/ <http://www.fftw.org/>`__)
+is also strongly recommended. Fourier transforms are used for some
+derivative methods, as well as the `ShiftedMetric` parallel transform
+which is used in the majority of BOUT++ tokamak simulations. Without
+FFTW-3, these options will not be available.
+
+.. note::
+   Only GCC versions >= 4.9 are supported. This is due to a bug in
+   previous versions.
 
 .. note::
    If you use an Intel compiler, you must also make sure that you have
-   a version of GCC that supports C++11 (GCC 4.8+).
+   a version of GCC that supports C++14 (GCC 5+).
 
    On supercomputers, or in other environments that use a module
    system, you may need to load modules for both Intel and GCC.
@@ -169,7 +178,7 @@ MPICH2 and the needed libraries by running::
 
 On Ubuntu 16.04::
 
-    $ sudo apt-get libmpich-dev libfftw3-dev libnetcdf-dev libnetcdf-cxx-legacy-dev
+    $ sudo apt-get install libmpich-dev libfftw3-dev libnetcdf-dev libnetcdf-cxx-legacy-dev
 
 On Ubuntu 18.04::
 
@@ -182,7 +191,7 @@ The first line should be sufficient to install BOUT++, while the 2nd
 and 3rd line make sure that the tests work, and that the python
 interface can be build.
 Further, the encoding for python needs to be utf8 - it may be required
-to set `export LC_CTYPE=C.utf8`.
+to set ``export LC_CTYPE=C.utf8``.
 
 If you do not have administrator rights, so can't install packages, then
 you need to install these libraries from source into your home directory.
@@ -194,7 +203,7 @@ Arch Linux
 
 ::
 
-   $ pacman -S openmpi fftw netcdf-cxx 
+   $ pacman -S openmpi fftw netcdf-cxx make gcc
 
 
 Fedora
@@ -202,25 +211,19 @@ Fedora
 
 On Fedora the required libraries can be installed by running::
 
-   $ sudo dnf install autoconf automake netcdf-cxx4-devel fftw-devel hdf5-devel make python3-jinja2
-   $ sudo dnf install python3 python3-h5py python3-numpy python3-netcdf4 python3-scipy
-   $ sudo dnf install python2 python2-h5py python2-numpy python2-netcdf4 python2-scipy
-   $ sudo dnf install mpich-devel
-   $ sudo dnf install openmpi-devel
+   $ sudo dnf build-dep bout++
 
-Note that the python2/python3 stack is only required for for post
-processing and the tests, so feel free to install only what you
-actually need.
-Further, only either mpich or openmpi is required.
+This will install all the dependencies that are used to install
+BOUT++ for fedora. Feel free to install only a subset of the
+suggested packages. For example, only mpich or openmpi is required.
 To load an mpi implementation type::
 
    $ module load mpi
 
 After that the mpi library is loaded.
 Precompiled binaries are available for fedora as well.
-To get the latest release run::
+To get precompiled BOUT++ run::
 
-   $ sudo dnf copr enable davidsch/bout
    $ # install the mpich version - openmpi is available as well
    $ sudo dnf install bout++-mpich-devel
    $ # get the python3 modules - python2 is available as well
@@ -272,7 +275,6 @@ configuration::
       NetCDF support: yes
       Parallel-NetCDF support: no
       HDF5 support: yes (parallel: no)
-      MUMPS support: no
 
 If not, see :ref:`sec-advancedinstall` for some things you can try to
 resolve common problems.
@@ -286,14 +288,15 @@ There is now (experimental) support for `CMake <https://cmake.org/>`_. You will 
 3.9. CMake supports out-of-source builds by default, which are A Good
 Idea. Basic configuration with CMake looks like::
 
-  $ mkdir build && cd build
-  $ cmake ..
+  $ cmake . -B build
 
-You can then run ``make`` as usual.
+which creates a new directory ``build``, which you can then compile with::
+
+  $ cmake --build build
 
 You can see what build options are available with::
 
-  $ cmake .. -LH
+  $ cmake . -B build -LH
   ...
   // Enable backtrace
   ENABLE_BACKTRACE:BOOL=ON
@@ -311,16 +314,20 @@ You can see what build options are available with::
 CMake uses the ``-D<variable>=<choice>`` syntax to control these
 variables. You can set ``<package>_ROOT`` to guide CMake in finding
 the various optional third-party packages (except for PETSc/SLEPc,
-which use ``_DIR``). CMake understands the usual environment variables
-for setting the compiler, compiler/linking flags, as well as having
-built-in options to control them and things like static vs shared
-libraries, etc. See the `CMake documentation
-<https://cmake.org/documentation/>`_ for more infomation.
+which use ``_DIR``). Note that some packages have funny
+captialisation, for example ``NetCDF_ROOT``! Use ``-LH`` to see the
+form that each package expects.
+
+CMake understands the usual environment variables for setting the
+compiler, compiler/linking flags, as well as having built-in options
+to control them and things like static vs shared libraries, etc. See
+the `CMake documentation <https://cmake.org/documentation/>`_ for more
+infomation.
 
 A more complicated CMake configuration command
 might look like::
 
-  $ CC=mpicc CXX=mpic++ cmake .. \
+  $ CC=mpicc CXX=mpic++ cmake . -B build \
       -DUSE_PETSC=ON -DPETSC_DIR=/path/to/petsc/ \
       -DUSE_SLEPC=ON -DSLEPC_DIR=/path/to/slepc/ \
       -DUSE_SUNDIALS=ON -DSUNDIALS_ROOT=/path/to/sundials \
@@ -330,6 +337,30 @@ might look like::
       -DCMAKE_BUILD_TYPE=Debug \
       -DBUILD_SHARED_LIBS=ON
       -DCMAKE_INSTALL_PREFIX=/path/to/install/BOUT++
+
+If you wish to change the configuration after having built ``BOUT++``,
+it's wise to delete the ``CMakeCache.txt`` file in the build
+directory. The equivalent of ``make distclean`` with CMake is to just
+delete the entire build directory and reconfigure.
+
+Bundled Dependencies
+^^^^^^^^^^^^^^^^^^^^
+
+BOUT++ bundles some dependencies, currently `mpark.variant
+<https://github.com/mpark/variant>`_, `fmt <https://fmt.dev>`_ and
+`googletest <https://github.com/google/googletest>`_. If you wish to
+use an existing installation of ``mpark.variant``, you can set
+``-DBOUT_USE_SYSTEM_MPARK_VARIANT=ON``, and supply the installation
+path using ``mpark_variant_ROOT`` via the command line or
+environment variable if it is installed in a non standard
+loction. Similarly for ``fmt``, using ``-DBOUT_USE_SYSTEM_FMT=ON``
+and ``fmt_ROOT`` respectively. The recommended way to use
+``googletest`` is to compile it at the same time as your project,
+therefore there is no option to use an external installation for
+that.
+
+Using CMake with your physics model
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 You can write a CMake configuration file (``CMakeLists.txt``) for your
 physics model in only four lines:
@@ -344,8 +375,7 @@ physics model in only four lines:
 You just need to give CMake the location where you installed BOUT++
 via the ``CMAKE_PREFIX_PATH`` variable::
 
-  $ mkdir build && cd build
-  $ cmake .. -DCMAKE_PREFIX_PATH=/path/to/install/BOUT++
+  $ cmake . -B build -DCMAKE_PREFIX_PATH=/path/to/install/BOUT++
 
 .. _sec-config-nls:
 
@@ -366,7 +396,10 @@ finishes, the configuration summary should contain a line like::
   configure:   Natural language support: yes (path: /home/user/BOUT-dev/locale)
 
 where the ``path`` is the directory containing the translations.
-  
+
+See :ref:`sec-run-nls` for details of how to switch language when running
+BOUT++ simulations.
+
 .. _sec-configanalysis:
 
 Configuring analysis routines

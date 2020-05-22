@@ -12,7 +12,7 @@
 #define SCOREPLVL 0
 #endif
 
-/// Instrument a region/function with scorep
+/// Instrument a function with scorep
 ///
 /// The scorep call is identical for all levels, so just define it here.
 /// If we don't have scorep support then just define a null function
@@ -46,6 +46,14 @@
 #define SCOREP3(...) SCOREP_BASE_CALL(__VA_ARGS__)
 #else
 #define SCOREP3(...)
+#endif
+
+/// Instrument a region with scorep
+#ifdef BOUT_HAS_SCOREP
+#define BOUT_SCOREP_REGION(...)						\
+  SCOREP_USER_REGION(__VA_ARGS__, SCOREP_USER_REGION_TYPE_COMMON)
+#else
+#define BOUT_SCOREP_REGION(...)
 #endif
 
 #endif

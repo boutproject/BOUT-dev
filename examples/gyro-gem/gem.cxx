@@ -13,6 +13,7 @@
 #include <bout/constants.hxx>
 
 #include <gyro_average.hxx>
+#include <interpolation.hxx>
 #include <invert_laplace.hxx>
 
 /// Fundamental constants
@@ -145,8 +146,8 @@ class GEM : public PhysicsModel {
   FieldGroup comms; // Communications
 
   /// Solver for inverting Laplacian
-  Laplacian *phiSolver;
-  Laplacian *aparSolver;
+  std::unique_ptr<Laplacian> phiSolver{nullptr};
+  std::unique_ptr<Laplacian> aparSolver{nullptr};
   
   ////////////////////////////////////////////////////////////////////////
   // Initialisation
@@ -217,6 +218,12 @@ class GEM : public PhysicsModel {
     if (curv_logB) {
       GRID_LOAD(logB);
     }
+
+    // Set location of staggered fields
+    ApUe.setLocation(CELL_YLOW);
+    ApUi.setLocation(CELL_YLOW);
+    qepar.setLocation(CELL_YLOW);
+    qipar.setLocation(CELL_YLOW);
     
     //////////////////////////////////
     // Pick normalisation factors
@@ -305,13 +312,13 @@ class GEM : public PhysicsModel {
     t_i = pow(ZZ, -4.) * sqrt(AA) / (4.80e-8 * (Ninorm / 1e6) * Coulomb * pow(Tenorm, -3./2));
     
     output << "\n\tParameters\n";
-    output.write("\tt_e = %e [s], t_i = %e [s]\n", t_e, t_i);
-    output.write("\tLbar = %e [m], Cs = %e [m/s]\n", 
+    output.write("\tt_e = {:e} [s], t_i = {:e} [s]\n", t_e, t_i);
+    output.write("\tLbar = {:e} [m], Cs = {:e} [m/s]\n",
                  Lbar, Cs);
-    output.write("\tTbar = %e [s]\n", Tbar);
+    output.write("\tTbar = {:e} [s]\n", Tbar);
     nu_e = Lbar / (Cs*t_e); SAVE_ONCE(nu_e);
     nu_i = Lbar / (Cs*t_i); SAVE_ONCE(nu_i);
-    output.write("\tNormalised nu_e = %e, nu_i = %e\n", nu_e, nu_i);
+    output.write("\tNormalised nu_e = {:e}, nu_i = {:e}\n", nu_e, nu_i);
     output << "\tbeta_e = " << beta_e << endl;
     output << "\tdelta = " << delta << endl;
     
@@ -644,7 +651,7 @@ class GEM : public PhysicsModel {
           ddt(Ne) -= WE_Grad(Teperp, Phi_G);
         
         if (ne_ue)
-          ddt(Ne) -= Div_parP_LtoC(Ue);
+          ddt(Ne) -= Div_parP(Ue, CELL_CENTRE);
         
         if (ne_curv)
           ddt(Ne) += curvature(phi_G + tau_e*Ne + 0.5*(tau_e*Tepar + tau_e*Teperp + Phi_G));
@@ -666,12 +673,13 @@ class GEM : public PhysicsModel {
           ddt(ApUe) -= mu_e*WE_Grad(qeperp, Phi_G);
       
         if (apue_phi1) // Linear term
-          ddt(ApUe) -= Grad_par_CtoL(phi_G);
+          ddt(ApUe) -= Grad_par(phi_G, CELL_YLOW);
         if (apue_apar1_phi1) // Nonlinear term
           ddt(ApUe) += beta_e*bracket(Apar, phi_G, BRACKET_ARAKAWA);
         
         if (apue_pet) // Linear terms
-          ddt(ApUe) -= tau_i*Grad_parP_CtoL(Ne0 + Te0) + tau_i*Grad_par_CtoL(Ne+Tepar);
+          ddt(ApUe) -= tau_i*Grad_parP(Ne0 + Te0, CELL_YLOW)
+                       + tau_i*Grad_par(Ne+Tepar, CELL_YLOW);
         if (apue_apar1_pe1) // Nonlinear terms
           ddt(ApUe) +=  tau_i*beta_e*bracket(Apar, Ne+Tepar, BRACKET_ARAKAWA);
         
@@ -695,10 +703,10 @@ class GEM : public PhysicsModel {
         
         if (nonlinear) {
           ddt(Tepar) += -UE_Grad(Te0 + Tepar, phi_G) 
-            - 2.*Div_parP_LtoC(Ue + qepar);
+            - 2.*Div_parP(Ue + qepar, CELL_CENTRE);
         } else {
           ddt(Tepar) += -UE_Grad(Te0, phi_G)
-            - 2.*Div_par_LtoC(Ue + qepar);
+            - 2.*Div_par(Ue + qepar, CELL_CENTRE);
         }
         
         if (low_pass_z > 0)
@@ -719,12 +727,12 @@ class GEM : public PhysicsModel {
           ddt(Teperp) +=
             - UE_Grad(Te0 + Teperp, phi_G)
             - WE_Grad(Ne0 + Ne + 2.*(Te0 + Teperp), Phi_G)
-            - Div_parP_LtoC(qeperp);
+            - Div_parP(qeperp, CELL_CENTRE);
         } else {
           ddt(Teperp) +=
             - UE_Grad(Te0, phi_G)
             - WE_Grad(Ne0 + 2.*Te0, Phi_G)
-            - Div_par_LtoC(qeperp);
+            - Div_par(qeperp, CELL_CENTRE);
         }
         
         if (low_pass_z > 0)
@@ -736,17 +744,17 @@ class GEM : public PhysicsModel {
       
       if (qepar_ddt) {
         ddt(qepar) = 
-          - 1.5*(1./mu_e)*Grad_parP_CtoL(tau_e*Te0)
+          - 1.5*(1./mu_e)*Grad_parP(tau_e*Te0, CELL_YLOW)
           + 0.5*mu_e*tau_e*curvature(3.*Ue + 8.*qepar)
           ;
         
         if (nonlinear) {
           ddt(qepar) += 
             - UE_Grad(qepar, phi_G)
-            - 1.5*(1./mu_e)*Grad_parP_CtoL(tau_e*Tepar);
+            - 1.5*(1./mu_e)*Grad_parP(tau_e*Tepar, CELL_YLOW);
         } else {
           ddt(qepar) += 
-            - 1.5*(1./mu_e)*Grad_par_CtoL(tau_e*Tepar);
+            - 1.5*(1./mu_e)*Grad_par(tau_e*Tepar, CELL_YLOW);
         }
         
         if (low_pass_z > 0)
@@ -767,10 +775,10 @@ class GEM : public PhysicsModel {
           ddt(qeperp) +=
             - UE_Grad(qeperp, phi_G)
             - WE_Grad(Ue + 2.*qeperp, Phi_G)
-            - (1./mu_e)*Grad_parP_CtoL(Phi_G + tau_e*Teperp);
+            - (1./mu_e)*Grad_parP(Phi_G + tau_e*Teperp, CELL_YLOW);
         } else {
           ddt(qeperp) +=
-            -(1./mu_e)*Grad_par_CtoL(Phi_G + tau_e*Teperp);
+            -(1./mu_e)*Grad_par(Phi_G + tau_e*Teperp, CELL_YLOW);
         }
         
         if (low_pass_z > 0)
@@ -800,7 +808,7 @@ class GEM : public PhysicsModel {
         ddt(Ni) -= WE_Grad(Tiperp, Phi_G);
       
       if (ni_ui)
-        ddt(Ni) -= Div_parP_LtoC(Ui);
+        ddt(Ni) -= Div_parP(Ui, CELL_CENTRE);
       
       if (ni_curv)
         ddt(Ni) += curvature(phi_G + tau_i*Ni + 0.5*(tau_i*Tipar + tau_i*Tiperp + Phi_G));
@@ -822,12 +830,13 @@ class GEM : public PhysicsModel {
         ddt(ApUi) -= mu_i*WE_Grad(qiperp, Phi_G);
     
       if (apui_phi1)
-        ddt(ApUi) -= Grad_par_CtoL(phi_G);
+        ddt(ApUi) -= Grad_par(phi_G, CELL_YLOW);
       if (apui_apar1_phi1) // Nonlinear term
         ddt(ApUi) += beta_e*bracket(Apar, phi_G, BRACKET_ARAKAWA);
       
       if (apui_pit) // Linear terms
-        ddt(ApUi) -= tau_i*Grad_parP_CtoL(Ni0 + Ti0) + tau_i*Grad_par_CtoL(Ni+Tipar);
+        ddt(ApUi) -= tau_i*Grad_parP(Ni0 + Ti0, CELL_YLOW)
+                     + tau_i*Grad_par(Ni+Tipar, CELL_YLOW);
       if (apui_apar1_pi1) // Nonlinear terms
         ddt(ApUi) +=  tau_i*beta_e*bracket(Apar, Ni+Tipar, BRACKET_ARAKAWA);
       
@@ -853,11 +862,11 @@ class GEM : public PhysicsModel {
       if (nonlinear) {
         ddt(Tipar) += 
           -UE_Grad(Ti0 + Tipar, phi_G)
-          - 2.*Div_parP_LtoC(Ui + qipar);
+          - 2.*Div_parP(Ui + qipar, CELL_CENTRE);
       } else {
         ddt(Tipar) += 
           -UE_Grad(Ti0, phi_G)
-          - 2.*Div_par_LtoC(Ui + qipar);
+          - 2.*Div_par(Ui + qipar, CELL_CENTRE);
       }
       
       if (low_pass_z > 0)
@@ -878,12 +887,12 @@ class GEM : public PhysicsModel {
         ddt(Tiperp) +=
           - UE_Grad(Ti0 + Tiperp, phi_G)
           - WE_Grad(Ni0 + Ni + 2.*(Ti0 + Tiperp), Phi_G)
-          - Div_parP_LtoC(qiperp);
+          - Div_parP(qiperp, CELL_CENTRE);
       } else {
         ddt(Tiperp) +=
           - UE_Grad(Ti0, phi_G)
           - WE_Grad(Ni0 + 2.*Ti0, Phi_G)
-          - Div_par_LtoC(qiperp);
+          - Div_par(qiperp, CELL_CENTRE);
       }
       
       if (low_pass_z > 0)
@@ -901,10 +910,10 @@ class GEM : public PhysicsModel {
       if (nonlinear) {
         ddt(qipar) +=
           - UE_Grad(qipar, phi_G)
-          - 1.5*(1./mu_i)*Grad_parP_CtoL(tau_i*Tipar);
+          - 1.5*(1./mu_i)*Grad_parP(tau_i*Tipar, CELL_YLOW);
       } else {
         ddt(qipar) +=
-          - 1.5*(1./mu_i)*Grad_par_CtoL(tau_i*Tipar);
+          - 1.5*(1./mu_i)*Grad_par(tau_i*Tipar, CELL_YLOW);
       }
       
       if (low_pass_z > 0)
@@ -924,10 +933,10 @@ class GEM : public PhysicsModel {
         ddt(qiperp) +=
           - UE_Grad(qiperp, phi_G)
           - WE_Grad(Ui + 2.*qiperp, Phi_G)
-          - (1./mu_i)*Grad_parP_CtoL(Phi_G + tau_i*Tiperp);
+          - (1./mu_i)*Grad_parP(Phi_G + tau_i*Tiperp, CELL_YLOW);
       } else {
         ddt(qiperp) +=
-          - (1./mu_i)*Grad_par_CtoL(Phi_G + tau_i*Tiperp);
+          - (1./mu_i)*Grad_par(Phi_G + tau_i*Tiperp, CELL_YLOW);
       }
       
       if (low_pass_z > 0)
@@ -1098,28 +1107,14 @@ class GEM : public PhysicsModel {
   ////////////////////////////////////////////////////////////////////////
   // Parallel derivative
   
-  const Field3D Grad_parP(const Field3D &f) {
-    return Grad_par(f) - beta_e*bracket(Apar, f, BRACKET_ARAKAWA);
+  const Field3D Grad_parP(const Field3D &f, CELL_LOC loc = CELL_DEFAULT) {
+    return Grad_par(f, loc)
+           - beta_e*bracket(interp_to(Apar, loc), interp_to(f, loc), BRACKET_ARAKAWA);
   }
   
-  const Field3D Grad_parP_CtoL(const Field3D &f) {
-    return Grad_par_CtoL(f) - beta_e*bracket(Apar, f, BRACKET_ARAKAWA);
-  }
-  
-  const Field3D Grad_parP_LtoC(const Field3D &f) {
-    return Grad_par_LtoC(f) - beta_e*bracket(Apar, f, BRACKET_ARAKAWA);
-  }
-  
-  const Field3D Div_parP(const Field3D &f) {
-    return coord->Bxy*Grad_parP(f/coord->Bxy);
-  }
-
-  const Field3D Div_parP_CtoL(const Field3D &f) {
-    return coord->Bxy*Grad_parP_CtoL(f/coord->Bxy);
-  }
-  
-  const Field3D Div_parP_LtoC(const Field3D &f) {
-    return coord->Bxy*Grad_parP_LtoC(f/coord->Bxy);
+  const Field3D Div_parP(const Field3D &f, CELL_LOC loc = CELL_DEFAULT) {
+    return interp_to(coord->Bxy, loc)
+           *Grad_parP(f/interp_to(coord->Bxy, f.getLocation()), loc);
   }
 
 };

@@ -409,7 +409,7 @@ debugging.
           with ``--with-sundials-dir=$HOME/local``
 
 .. note:: It is also possible to get PETSc to download and install
-          MUMPS (see :ref:`sec-MUMPS`), by adding::
+          MUMPS, by adding::
 
               --download-mumps \
               --download-scalapack \
@@ -500,27 +500,6 @@ and to specify a non-standard path::
 
     $ ./configure --with-lapack=/path/to/lapack
 
-.. _sec-mumps:
-
-MUMPS
------
-
-This is still experimental, but does work on at least some systems at
-York. The PETSc library can be used to call MUMPS for directly solving
-matrices (e.g. for Laplacian inversions), or MUMPS can be used directly.
-To enable MUMPS, configure with::
-
-    $ ./configure --with-mumps
-
-MUMPS has many dependencies, including ScaLapack and
-ParMetis. Unfortunately, the exact dependencies and configuration of
-MUMPS varies a lot from system to system. The easiest way to get MUMPS
-installed is to install PETSc with MUMPS, or supply the ``CPPFLAGS``,
-``LDFLAGS`` and ``LIBS`` environment variables to ``configure``::
-
-   $ ./configure --with-mumps CPPFLAGS=-I/path/to/mumps/includes \
-       LDFLAGS=-L/path/to/mumps/libs \
-       LIBS="-ldmumps -lmumps_common -lother_libs_needed_for_mumps"
 
 MPI compilers
 -------------
@@ -725,6 +704,54 @@ make.config, replacing ``-lnetcdf_c++`` with -lnetcdf64\_c++, and
 
      sed 's/netcdf/netcdf64/g' make.config > make.config.new
      mv make.config.new make.config
+
+Compiling on Windows
+~~~~~~~~~~~~~~~~~~~~
+
+It is possible to compile BOUT++ on Windows using the CMake
+interface. Support is currently very experimental, and some features do
+not work. Testing has been done with MSVC 19.24 and Visual Studio 16.4,
+although previous versions may still work.
+
+The main difficulty of using BOUT++ on Windows is getting the
+dependencies sorted. The easiest way to install dependencies on Windows
+is using `vcpkg <https://github.com/microsoft/vcpkg/>`_. You may need to
+set the CMake toolchain file if calling ``cmake`` from PowerShell, or on
+older versions of Visual Studio. This will be a file somewhere like
+``C:/vcpkg/scripts/buildsystems/vcpkg.cmake``
+
+The minimal required CMake options are as follows:
+
+.. code-block:: bash
+
+    -DENABLE_BACKTRACE=OFF \
+    -DCMAKE_CXX_FLAGS="/permissive- /EHsc /bigobj" \
+    -DBUILD_SHARED_LIBS=OFF
+
+``ENABLE_BACKTRACE`` must be turned off due to the currently required
+``addr2line`` executable not being available on Windows.
+
+The following flags for the MSVC compiler are required:
+
+- ``/permissive-`` for standards compliance, such as treating the binary
+  operator alternative tokens (``and``, ``or``, etc) as tokens
+- ``/EHsc`` for standard C++ exception handling, and to assume that
+  ``extern "C"`` functions never throw
+- ``/bigobj`` to increase the number of sections in the .obj file,
+  required for the template-heavy derivatives machinery
+
+No modification to the source has been done to export the correct
+symbols for shared libraries on Windows, so you must either specifiy
+``-DBUILD_SHARED_LIBS=OFF`` to only build static libraries, or, if you
+really want shared libraries, ``-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON``.
+The latter is untested, use at your own risk!
+
+The unit tests should all pass, but most of the integrated tests will
+not run work out of the box yet as Windows doesn't understand
+shabangs. That is, without a file extension, it doesn't know what
+program to use to run ``runtest``. The majority of the tests can be
+run manually with ``python.exe runtest``. You will stil need to set
+``PYTHONPATH`` and have a suitable Python environment.
 
 Issues
 ------
