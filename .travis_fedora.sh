@@ -45,7 +45,6 @@ then
     chown -R test /home/test
     chmod u+rwX /home/test -R
     restorecon -R /home/test || :
-    ls -alZ /home/test
     ls -alZ /home/test/BOUT-dev
     sudo -u test ${0/\/tmp/\/home\/test} $mpi
 ## If we are called as normal user, run test
@@ -53,9 +52,9 @@ else
     . /etc/profile.d/modules.sh
     module load mpi/${1}-x86_64
     export OMPI_MCA_rmaps_base_oversubscribe=yes
+    export TRAVIS=true
     cd
     cd BOUT-dev
-    pwd || :
     echo "starting configure"
     time bash ./configure --with-petsc --enable-shared || cat config.log
     sed -e "s|-L/usr/lib64 ||g" -i make.config
