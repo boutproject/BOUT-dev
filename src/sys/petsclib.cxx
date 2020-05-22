@@ -39,7 +39,7 @@ PetscLib::PetscLib(Options* opt) {
       // options, and cannot be passed to KSP, etc. Non-global options can be passed by
       // defining a custom prefix for the options string, and then passing that to the KSP.)
 
-      options_prefix = "boutpetsclib_" + opt->str() + "_";
+      options_prefix = "boutpetsclib_" + opt->str();
 
       setPetscOptions((*opt)["petsc"], options_prefix);
     }
