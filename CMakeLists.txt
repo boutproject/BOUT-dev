@@ -237,6 +237,8 @@ set(BOUT_SOURCES
   ./src/physics/smoothing.cxx
   ./src/physics/snb.cxx
   ./src/physics/sourcex.cxx
+  ./src/solver/impls/adams_bashforth/adams_bashforth.cxx
+  ./src/solver/impls/adams_bashforth/adams_bashforth.hxx
   ./src/solver/impls/arkode/arkode.cxx
   ./src/solver/impls/arkode/arkode.hxx
   ./src/solver/impls/cvode/cvode.cxx
