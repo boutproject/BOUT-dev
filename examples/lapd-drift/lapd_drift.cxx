@@ -728,8 +728,8 @@ protected:
   
   
   /****************SPECIAL DIFFERENTIAL OPERATORS******************/
-  Coordinates::metric_field_type Perp_Grad_dot_Grad(const Field2D &p, const Field2D &f) {
-    
+  Coordinates::metric_field_type Perp_Grad_dot_Grad(const Field2D& p, const Field2D& f) {
+
     return DDX(p)*DDX(f)*mesh->getCoordinates()->g11;
   }
   
@@ -738,7 +738,7 @@ protected:
   // ExB terms. These routines allow comparisons with BOUT-06
   // if bout_exb=true is set in BOUT.inp
   /////////////////////////////////////////////////////////////////
-  Coordinates::metric_field_type vE_Grad(const Field2D &f, const Field2D &p) {
+  Coordinates::metric_field_type vE_Grad(const Field2D& f, const Field2D& p) {
     Coordinates::metric_field_type result;
     if (bout_exb) {
       // Use a subset of terms for comparison to BOUT-06
@@ -767,25 +767,27 @@ protected:
             int jzm = (jz - 1 + ncz) % ncz;
           
             // J++ = DDZ(p)*DDX(f) - DDX(p)*DDZ(f)
-            BoutReal Jpp = 0.25*( (p(jx,jy,jzp) - p(jx,jy,jzm))*
-                                  (f(jx+1,jy) - f(jx-1,jy)) -
-                                  (p(jx+1,jy,jz) - p(jx-1,jy,jz))*
-                                  (f(jx,jy) - f(jx,jy)) )
-              / (coord->dx(jx,jy, jz) * coord->dz(jx,jy,jz));
-            
+            BoutReal Jpp =
+                0.25
+                * ((p(jx, jy, jzp) - p(jx, jy, jzm)) * (f(jx + 1, jy) - f(jx - 1, jy))
+                   - (p(jx + 1, jy, jz) - p(jx - 1, jy, jz)) * (f(jx, jy) - f(jx, jy)))
+                / (coord->dx(jx, jy, jz) * coord->dz(jx, jy, jz));
+
             // J+x
-            BoutReal Jpx = 0.25*( f(jx+1,jy)*(p(jx+1,jy,jzp)-p(jx+1,jy,jzm)) -
-                                  f(jx-1,jy)*(p(jx-1,jy,jzp)-p(jx-1,jy,jzm)) -
-                                  f(jx,jy)*(p(jx+1,jy,jzp)-p(jx-1,jy,jzp)) +
-                                  f(jx,jy)*(p(jx+1,jy,jzm)-p(jx-1,jy,jzm)))
-              / (coord->dx(jx,jy, jz) * coord->dz(jx,jy,jz));
+            BoutReal Jpx = 0.25
+                           * (f(jx + 1, jy) * (p(jx + 1, jy, jzp) - p(jx + 1, jy, jzm))
+                              - f(jx - 1, jy) * (p(jx - 1, jy, jzp) - p(jx - 1, jy, jzm))
+                              - f(jx, jy) * (p(jx + 1, jy, jzp) - p(jx - 1, jy, jzp))
+                              + f(jx, jy) * (p(jx + 1, jy, jzm) - p(jx - 1, jy, jzm)))
+                           / (coord->dx(jx, jy, jz) * coord->dz(jx, jy, jz));
             // Jx+
-            BoutReal Jxp = 0.25*( f(jx+1,jy)*(p(jx,jy,jzp)-p(jx+1,jy,jz)) -
-                                  f(jx-1,jy)*(p(jx-1,jy,jz)-p(jx,jy,jzm)) -
-                                  f(jx-1,jy)*(p(jx,jy,jzp)-p(jx-1,jy,jz)) +
-                                  f(jx+1,jy)*(p(jx+1,jy,jz)-p(jx,jy,jzm)))
-              / (coord->dx(jx,jy, jz) * coord->dz(jx,jy,jz));
-            
+            BoutReal Jxp = 0.25
+                           * (f(jx + 1, jy) * (p(jx, jy, jzp) - p(jx + 1, jy, jz))
+                              - f(jx - 1, jy) * (p(jx - 1, jy, jz) - p(jx, jy, jzm))
+                              - f(jx - 1, jy) * (p(jx, jy, jzp) - p(jx - 1, jy, jz))
+                              + f(jx + 1, jy) * (p(jx + 1, jy, jz) - p(jx, jy, jzm)))
+                           / (coord->dx(jx, jy, jz) * coord->dz(jx, jy, jz));
+
             result(jx,jy,jz) = (Jpp + Jpx + Jxp) / 3.;
           }
       
@@ -828,25 +830,29 @@ protected:
             int jzm = (jz - 1 + ncz) % ncz;
             
             // J++ = DDZ(p)*DDX(f) - DDX(p)*DDZ(f)
-            BoutReal Jpp = 0.25*( (p(jx,jy,jzp) - p(jx,jy,jzm))*
-                                  (f(jx+1,jy,jz) - f(jx-1,jy,jz)) -
-                                  (p(jx+1,jy,jz) - p(jx-1,jy,jz))*
-                                  (f(jx,jy,jzp) - f(jx,jy,jzm)) )
-              / (coord->dx(jx,jy, jz) * coord->dz(jx,jy,jz));
-            
+            BoutReal Jpp = 0.25
+                           * ((p(jx, jy, jzp) - p(jx, jy, jzm))
+                                  * (f(jx + 1, jy, jz) - f(jx - 1, jy, jz))
+                              - (p(jx + 1, jy, jz) - p(jx - 1, jy, jz))
+                                    * (f(jx, jy, jzp) - f(jx, jy, jzm)))
+                           / (coord->dx(jx, jy, jz) * coord->dz(jx, jy, jz));
+
             // J+x
-            BoutReal Jpx = 0.25*( f(jx+1,jy,jz)*(p(jx+1,jy,jzp)-p(jx+1,jy,jzm)) -
-                                  f(jx-1,jy,jz)*(p(jx-1,jy,jzp)-p(jx-1,jy,jzm)) -
-                                  f(jx,jy,jzp)*(p(jx+1,jy,jzp)-p(jx-1,jy,jzp)) +
-                                  f(jx,jy,jzm)*(p(jx+1,jy,jzm)-p(jx-1,jy,jzm)))
-              / (coord->dx(jx,jy, jz) * coord->dz(jx,jy,jz));
+            BoutReal Jpx =
+                0.25
+                * (f(jx + 1, jy, jz) * (p(jx + 1, jy, jzp) - p(jx + 1, jy, jzm))
+                   - f(jx - 1, jy, jz) * (p(jx - 1, jy, jzp) - p(jx - 1, jy, jzm))
+                   - f(jx, jy, jzp) * (p(jx + 1, jy, jzp) - p(jx - 1, jy, jzp))
+                   + f(jx, jy, jzm) * (p(jx + 1, jy, jzm) - p(jx - 1, jy, jzm)))
+                / (coord->dx(jx, jy, jz) * coord->dz(jx, jy, jz));
             // Jx+
-            BoutReal Jxp = 0.25*( f(jx+1,jy,jzp)*(p(jx,jy,jzp)-p(jx+1,jy,jz)) -
-                                  f(jx-1,jy,jzm)*(p(jx-1,jy,jz)-p(jx,jy,jzm)) -
-                                  f(jx-1,jy,jzp)*(p(jx,jy,jzp)-p(jx-1,jy,jz)) +
-                                  f(jx+1,jy,jzm)*(p(jx+1,jy,jz)-p(jx,jy,jzm)))
-              / (coord->dx(jx,jy, jz) * coord->dz(jx,jy,jz));
-            
+            BoutReal Jxp = 0.25
+                           * (f(jx + 1, jy, jzp) * (p(jx, jy, jzp) - p(jx + 1, jy, jz))
+                              - f(jx - 1, jy, jzm) * (p(jx - 1, jy, jz) - p(jx, jy, jzm))
+                              - f(jx - 1, jy, jzp) * (p(jx, jy, jzp) - p(jx - 1, jy, jz))
+                              + f(jx + 1, jy, jzm) * (p(jx + 1, jy, jz) - p(jx, jy, jzm)))
+                           / (coord->dx(jx, jy, jz) * coord->dz(jx, jy, jz));
+
             result(jx,jy,jz) = (Jpp + Jpx + Jxp) / 3.;
           }
       

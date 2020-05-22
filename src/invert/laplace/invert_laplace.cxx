@@ -259,7 +259,7 @@ void Laplacian::tridagCoefs(int jx, int jy, int jz,
 
   ASSERT1(ccoef == nullptr || ccoef->getLocation() == loc);
   ASSERT1(d == nullptr || d->getLocation() == loc);
-  BoutReal kwave=jz*2.0*PI/coords->zlength()(jx,jy); // wave number is 1/[rad]
+  BoutReal kwave = jz * 2.0 * PI / coords->zlength()(jx, jy); // wave number is 1/[rad]
 
   tridagCoefs(jx, jy, kwave,
               a, b, c,

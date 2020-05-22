@@ -224,7 +224,8 @@ class Mesh {
   /// By default all fields revert to zero
   ///
   /// @param[in] var  This will be set to the value read
-  /// @param[in] name  The name of the vector. Individual fields are read based on this name by appending. See above
+  /// @param[in] name  The name of the vector. Individual fields are read based on this
+  /// name by appending. See above
   /// @param[in] def   The default value if not found (used for all the components)
   /// @param[in] communicate  Should the field be communicated to fill guard cells?
   ///
@@ -240,7 +241,8 @@ class Mesh {
   /// By default all fields revert to zero
   ///
   /// @param[in] var  This will be set to the value read
-  /// @param[in] name  The name of the vector. Individual fields are read based on this name by appending. See above
+  /// @param[in] name  The name of the vector. Individual fields are read based on this
+  /// name by appending. See above
   /// @param[in] def    The default value if not found (used for all the components)
   /// @param[in] communicate  Should the field be communicated to fill guard cells?
   ///

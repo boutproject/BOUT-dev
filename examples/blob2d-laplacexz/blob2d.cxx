@@ -110,7 +110,7 @@ protected:
   }
 
   int rhs(BoutReal UNUSED(t)) {
-    //Coordinates *coord = mesh->getCoordinates();
+    // Coordinates *coord = mesh->getCoordinates();
 
     // Run communications
     ////////////////////////////////////////////////////////////////////////////
@@ -140,15 +140,15 @@ protected:
     /////////////////////////////////////////////////////////////////////////////
 
     ddt(n) = -bracket(phi, n, BRACKET_SIMPLE) // ExB term
-             + 2 * DDZ(n) * (rho_s / R_c);     // Curvature term
-    ddt(n) += D_n*Delp2(n, CELL_DEFAULT, false);
+             + 2 * DDZ(n) * (rho_s / R_c);    // Curvature term
+    ddt(n) += D_n * Delp2(n, CELL_DEFAULT, false);
 
     // if(coord->is3D()){
     //   ddt(n) += Div_Perp_Lap_FV(D_n, n);   // Diffusion term
     // }else{
     //   ddt(n) += D_n*Delp2(n);
     // }
-    
+
     if (compressible) {
       ddt(n) -= 2 * n * DDZ(phi) * (rho_s / R_c); // ExB Compression term
     }
@@ -162,8 +162,9 @@ protected:
     /////////////////////////////////////////////////////////////////////////////
 
     ddt(omega) = -bracket(phi, omega, BRACKET_SIMPLE) // ExB term
-                 + 2 * DDZ(n) * (rho_s / R_c) / n;     // Curvature term
-    ddt(omega) += D_vort * Delp2(omega, CELL_DEFAULT, false)/n; // Viscous diffusion term
+                 + 2 * DDZ(n) * (rho_s / R_c) / n;    // Curvature term
+    ddt(omega) +=
+        D_vort * Delp2(omega, CELL_DEFAULT, false) / n; // Viscous diffusion term
 
     // if(coord->is3D()){
     //   ddt(omega) += Div_Perp_Lap_FV(D_vort ,omega) / n ;  // Viscous diffusion term

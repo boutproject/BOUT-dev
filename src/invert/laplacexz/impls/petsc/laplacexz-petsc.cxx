@@ -392,26 +392,28 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
         // XX component
         {
           // Metrics on x+1/2 boundary
-          const BoutReal J = 0.5*(coords->J(x,y,z) + coords->J(x+1,y,z));
-          const BoutReal g11 = 0.5*(coords->g11(x,y,z) + coords->g11(x+1,y,z));
-          const BoutReal dx = 0.5*(coords->dx(x,y,z) + coords->dx(x+1,y,z));
-          const BoutReal Acoef = 0.5*(A(x,y,z) + A(x+1,y,z));
+          const BoutReal J = 0.5 * (coords->J(x, y, z) + coords->J(x + 1, y, z));
+          const BoutReal g11 = 0.5 * (coords->g11(x, y, z) + coords->g11(x + 1, y, z));
+          const BoutReal dx = 0.5 * (coords->dx(x, y, z) + coords->dx(x + 1, y, z));
+          const BoutReal Acoef = 0.5 * (A(x, y, z) + A(x + 1, y, z));
 
-          const BoutReal val = Acoef * J * g11 / (coords->J(x,y,z) * dx * coords->dx(x,y,z));
+          const BoutReal val =
+              Acoef * J * g11 / (coords->J(x, y, z) * dx * coords->dx(x, y, z));
           xp = val;
-          c  = -val;
+          c = -val;
         }
 
         {
           // Metrics on x-1/2 boundary
-          const BoutReal J = 0.5*(coords->J(x,y,z) + coords->J(x-1,y,z));
-          const BoutReal g11 = 0.5*(coords->g11(x,y,z) + coords->g11(x-1,y,z));
-          const BoutReal dx = 0.5*(coords->dx(x,y,z) + coords->dx(x-1,y,z));
-          const BoutReal Acoef = 0.5*(A(x,y,z) + A(x-1,y,z));
+          const BoutReal J = 0.5 * (coords->J(x, y, z) + coords->J(x - 1, y, z));
+          const BoutReal g11 = 0.5 * (coords->g11(x, y, z) + coords->g11(x - 1, y, z));
+          const BoutReal dx = 0.5 * (coords->dx(x, y, z) + coords->dx(x - 1, y, z));
+          const BoutReal Acoef = 0.5 * (A(x, y, z) + A(x - 1, y, z));
 
-          const BoutReal val = Acoef * J * g11 / (coords->J(x,y,z) * dx * coords->dx(x,y,z));
+          const BoutReal val =
+              Acoef * J * g11 / (coords->J(x, y, z) * dx * coords->dx(x, y, z));
           xm = val;
-          c  -= val;
+          c -= val;
         }
 
         // ZZ component
@@ -420,26 +422,26 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
         const int zplus = (z + 1) % (localmesh->LocalNz);
 
         {
-          const BoutReal J = 0.5*(coords->J(x,y,z) + coords->J(x,y,zplus));
-          const BoutReal g33 = 0.5*(coords->g33(x,y,z) + coords->g33(x,y,zplus));
-          const BoutReal dz = 0.5 * (coords->dz(x,y,z)+ coords->dz(x,y,zplus));
+          const BoutReal J = 0.5 * (coords->J(x, y, z) + coords->J(x, y, zplus));
+          const BoutReal g33 = 0.5 * (coords->g33(x, y, z) + coords->g33(x, y, zplus));
+          const BoutReal dz = 0.5 * (coords->dz(x, y, z) + coords->dz(x, y, zplus));
           // Metrics on z+1/2 boundary
-          const BoutReal Acoef = 0.5*(A(x,y,z) + A(x,y,zplus));
+          const BoutReal Acoef = 0.5 * (A(x, y, z) + A(x, y, zplus));
 
-          const BoutReal val = Acoef * J * g33 / (coords->J(x,y,z) * dz * dz);
+          const BoutReal val = Acoef * J * g33 / (coords->J(x, y, z) * dz * dz);
           zp = val;
-          c  -= val;
+          c -= val;
         }
         {
           // Metrics on z-1/2 boundary
-          const BoutReal J = 0.5*(coords->J(x,y,z) + coords->J(x,y,zminus));
-          const BoutReal g33 = 0.5*(coords->g33(x,y,z) + coords->g33(x,y,zminus));
-          const BoutReal Acoef = 0.5*(A(x,y,z) + A(x,y,zminus));
-          const BoutReal dz = 0.5 * (coords->dz(x,y,z)+ coords->dz(x,y,zminus));
+          const BoutReal J = 0.5 * (coords->J(x, y, z) + coords->J(x, y, zminus));
+          const BoutReal g33 = 0.5 * (coords->g33(x, y, z) + coords->g33(x, y, zminus));
+          const BoutReal Acoef = 0.5 * (A(x, y, z) + A(x, y, zminus));
+          const BoutReal dz = 0.5 * (coords->dz(x, y, z) + coords->dz(x, y, zminus));
 
-          const BoutReal val = Acoef * J * g33 / (coords->J(x,y,z) * dz * dz);
+          const BoutReal val = Acoef * J * g33 / (coords->J(x, y, z) * dz * dz);
           zm = val;
-          c  -= val;
+          c -= val;
         }
 
         // XZ components
@@ -447,13 +449,14 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
         {
           // x+1/2, z+1/2
           // TODOL Should they have a z dependency?
-          const BoutReal J =  0.5*(coords->J(x,y,z) + coords->J(x+1,y,z));
-          const BoutReal g13 = 0.5*(coords->g13(x,y,z) + coords->g13(x+1,y,z));
-          const BoutReal fourdz = 2 * (coords->dz(x,y,z)+ coords->dz(x+1,y,zplus));
+          const BoutReal J = 0.5 * (coords->J(x, y, z) + coords->J(x + 1, y, z));
+          const BoutReal g13 = 0.5 * (coords->g13(x, y, z) + coords->g13(x + 1, y, z));
+          const BoutReal fourdz = 2 * (coords->dz(x, y, z) + coords->dz(x + 1, y, zplus));
           {
-            const BoutReal Acoef = 0.5*(A(x,y,z) + A(x,y,zplus));
+            const BoutReal Acoef = 0.5 * (A(x, y, z) + A(x, y, zplus));
 
-            const BoutReal val = Acoef * J * g13 / (coords->J(x,y,z) * fourdz * coords->dx(x,y,z));
+            const BoutReal val =
+                Acoef * J * g13 / (coords->J(x, y, z) * fourdz * coords->dx(x, y, z));
             xpzp = val;
             c -= val;
           }
@@ -461,30 +464,33 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
             // x+1/2, z-1/2
             // J =  0.5*(coords->J(x,y,z) + coords->J(x+1,y,z));
             // g13 = 0.5*(coords->gxz(x,y,z) + coords->gxz(x+1,y,z));
-            const BoutReal Acoef = 0.5*(A(x,y,z) + A(x,y,zminus));
+            const BoutReal Acoef = 0.5 * (A(x, y, z) + A(x, y, zminus));
 
-            const BoutReal val = - Acoef * J * g13 / (coords->J(x,y,z) * fourdz * coords->dx(x,y,z));
+            const BoutReal val =
+                -Acoef * J * g13 / (coords->J(x, y, z) * fourdz * coords->dx(x, y, z));
             xpzm = val;
             c -= val;
           }
         }
         {
           // x-1/2, z+1/2
-          const BoutReal J =  0.5*(coords->J(x,y,z) + coords->J(x-1,y,z));
-          const BoutReal g13 = 0.5*(coords->g13(x,y,z) + coords->g13(x-1,y,z));
-          const BoutReal fourdz = 2 * (coords->dz(x,y,z)+ coords->dz(x-1,y,z));
+          const BoutReal J = 0.5 * (coords->J(x, y, z) + coords->J(x - 1, y, z));
+          const BoutReal g13 = 0.5 * (coords->g13(x, y, z) + coords->g13(x - 1, y, z));
+          const BoutReal fourdz = 2 * (coords->dz(x, y, z) + coords->dz(x - 1, y, z));
           {
-            const BoutReal Acoef = 0.5*(A(x,y,z) + A(x,y,zplus));
+            const BoutReal Acoef = 0.5 * (A(x, y, z) + A(x, y, zplus));
 
-            const BoutReal val = - Acoef * J * g13 / (coords->J(x,y,z) * fourdz * coords->dx(x,y,z));
+            const BoutReal val =
+                -Acoef * J * g13 / (coords->J(x, y, z) * fourdz * coords->dx(x, y, z));
             xmzp = val;
             c -= val;
           }
           {
             // x-1/2, z-1/2
-            const BoutReal Acoef = 0.5*(A(x,y,z) + A(x,y,zminus));
+            const BoutReal Acoef = 0.5 * (A(x, y, z) + A(x, y, zminus));
 
-            const BoutReal val = Acoef * J * g13 / (coords->J(x,y,z) * fourdz * coords->dx(x,y,z));
+            const BoutReal val =
+                Acoef * J * g13 / (coords->J(x, y, z) * fourdz * coords->dx(x, y, z));
             xmzm = val;
             c -= val;
           }
@@ -493,52 +499,51 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
         {
           // ZX components
           // z+1/2, x+1/2
-          const BoutReal J = 0.5*(coords->J(x,y,z) + coords->J(x,y,zplus));
-          const BoutReal g13 = 0.5*(coords->g13(x,y,z) + coords->g13(x,y,zplus));
-          const BoutReal dz = 0.5 * (coords->dz(x,y,z)+ coords->dz(x,y,zplus));
+          const BoutReal J = 0.5 * (coords->J(x, y, z) + coords->J(x, y, zplus));
+          const BoutReal g13 = 0.5 * (coords->g13(x, y, z) + coords->g13(x, y, zplus));
+          const BoutReal dz = 0.5 * (coords->dz(x, y, z) + coords->dz(x, y, zplus));
 
           {
-            const BoutReal dx = 2.0*(coords->dx(x,y,z) + coords->dx(x+1,y,z));
-            const BoutReal Acoef = 0.5*(A(x,y,z) + A(x+1,y,z));
+            const BoutReal dx = 2.0 * (coords->dx(x, y, z) + coords->dx(x + 1, y, z));
+            const BoutReal Acoef = 0.5 * (A(x, y, z) + A(x + 1, y, z));
 
-            const BoutReal val = Acoef * J * g13 / (coords->J(x,y,z) * dx * dz);
+            const BoutReal val = Acoef * J * g13 / (coords->J(x, y, z) * dx * dz);
             zpxp = val;
             c -= val;
           }
           {
-            //z+1/2, x-1/2
-            const BoutReal dx = 2.0*(coords->dx(x,y,z) + coords->dx(x-1,y,z));
-            const BoutReal Acoef = 0.5*(A(x,y,z) + A(x-1,y,z));
+            // z+1/2, x-1/2
+            const BoutReal dx = 2.0 * (coords->dx(x, y, z) + coords->dx(x - 1, y, z));
+            const BoutReal Acoef = 0.5 * (A(x, y, z) + A(x - 1, y, z));
 
-            const BoutReal val = - Acoef * J * g13 / (coords->J(x,y,z) * dx * dz);
+            const BoutReal val = -Acoef * J * g13 / (coords->J(x, y, z) * dx * dz);
             zpxm = val;
             c -= val;
           }
         }
         {
           // z-1/2, x+1/2
-          const BoutReal J = 0.5*(coords->J(x,y,z) + coords->J(x,y,zminus));
-          const BoutReal g13 = 0.5*(coords->g13(x,y,z) + coords->g13(x,y,zminus));
-          const BoutReal dz = 0.5 * (coords->dz(x,y,z)+ coords->dz(x,y,zminus));
+          const BoutReal J = 0.5 * (coords->J(x, y, z) + coords->J(x, y, zminus));
+          const BoutReal g13 = 0.5 * (coords->g13(x, y, z) + coords->g13(x, y, zminus));
+          const BoutReal dz = 0.5 * (coords->dz(x, y, z) + coords->dz(x, y, zminus));
           {
-            const BoutReal dx = 2.0*(coords->dx(x,y,z) + coords->dx(x+1,y,z));
-            const BoutReal Acoef = 0.5*(A(x,y,z) + A(x+1,y,z));
+            const BoutReal dx = 2.0 * (coords->dx(x, y, z) + coords->dx(x + 1, y, z));
+            const BoutReal Acoef = 0.5 * (A(x, y, z) + A(x + 1, y, z));
 
-            const BoutReal val = - Acoef * J * g13 / (coords->J(x,y,z) * dx * dz);
+            const BoutReal val = -Acoef * J * g13 / (coords->J(x, y, z) * dx * dz);
             zmxp = val;
             c -= val;
           }
           {
             // z-1/2, x-1/2
-            const BoutReal dx = 2.0*(coords->dx(x,y,z) + coords->dx(x-1,y,z));
-            const BoutReal Acoef = 0.5*(A(x,y,z) + A(x-1,y,z));
+            const BoutReal dx = 2.0 * (coords->dx(x, y, z) + coords->dx(x - 1, y, z));
+            const BoutReal Acoef = 0.5 * (A(x, y, z) + A(x - 1, y, z));
 
-            const BoutReal val = Acoef * J * g13 / (coords->J(x,y,z) * dx * dz);
+            const BoutReal val = Acoef * J * g13 / (coords->J(x, y, z) * dx * dz);
             zmxm = val;
             c -= val;
           }
         }
-
 
         ///////////// OLDER CODE /////////////////
         // Note that because metrics are constant in Z many terms cancel
@@ -562,7 +567,6 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
         // c -= val;
         //////////////////////////////////////////
 
-
         // B term
         c += B(x,y,z);
 
@@ -570,45 +574,45 @@ void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
         // Now have a 5-point stencil for the Laplacian
 
         // Set the centre (diagonal)
-        MatSetValues(it.MatA,1,&row,1,&row,&c,INSERT_VALUES);
+        MatSetValues(it.MatA, 1, &row, 1, &row, &c, INSERT_VALUES);
 
         // X + 1
         int col = row + (localmesh->LocalNz);
-        MatSetValues(it.MatA,1,&row,1,&col,&xp,INSERT_VALUES);
+        MatSetValues(it.MatA, 1, &row, 1, &col, &xp, INSERT_VALUES);
 
         // X - 1
         col = row - (localmesh->LocalNz);
-        MatSetValues(it.MatA,1,&row,1,&col,&xm,INSERT_VALUES);
+        MatSetValues(it.MatA, 1, &row, 1, &col, &xm, INSERT_VALUES);
 
         // Z + 1
         col = row + 1;
         if(z == localmesh->LocalNz-1) {
           col -= localmesh->LocalNz;  // Wrap around
         }
-        MatSetValues(it.MatA,1,&row,1,&col,&zp,INSERT_VALUES);
+        MatSetValues(it.MatA, 1, &row, 1, &col, &zp, INSERT_VALUES);
 
         int xzcol = col + (localmesh->LocalNz); // X+1
-        MatSetValues(it.MatA,1,&row,1,&xzcol,&xpzp,INSERT_VALUES);
-        MatSetValues(it.MatA,1,&row,1,&xzcol,&zpxp,INSERT_VALUES);
+        MatSetValues(it.MatA, 1, &row, 1, &xzcol, &xpzp, INSERT_VALUES);
+        MatSetValues(it.MatA, 1, &row, 1, &xzcol, &zpxp, INSERT_VALUES);
 
         xzcol = col - (localmesh->LocalNz); // X-1
-        MatSetValues(it.MatA,1,&row,1,&xzcol,&xmzp,INSERT_VALUES);
-        MatSetValues(it.MatA,1,&row,1,&xzcol,&zpxm,INSERT_VALUES);
+        MatSetValues(it.MatA, 1, &row, 1, &xzcol, &xmzp, INSERT_VALUES);
+        MatSetValues(it.MatA, 1, &row, 1, &xzcol, &zpxm, INSERT_VALUES);
 
         // Z - 1
         col = row - 1;
         if(z == 0) {
           col += localmesh->LocalNz;  // Wrap around
         }
-        MatSetValues(it.MatA,1,&row,1,&col,&zm,INSERT_VALUES);
+        MatSetValues(it.MatA, 1, &row, 1, &col, &zm, INSERT_VALUES);
 
         xzcol = col + (localmesh->LocalNz); // X+1
-        MatSetValues(it.MatA,1,&row,1,&xzcol,&xpzm,INSERT_VALUES);
-        MatSetValues(it.MatA,1,&row,1,&xzcol,&zmxp,INSERT_VALUES);
+        MatSetValues(it.MatA, 1, &row, 1, &xzcol, &xpzm, INSERT_VALUES);
+        MatSetValues(it.MatA, 1, &row, 1, &xzcol, &zmxp, INSERT_VALUES);
 
         xzcol = col - (localmesh->LocalNz); // X-1
-        MatSetValues(it.MatA,1,&row,1,&xzcol,&xmzm,INSERT_VALUES);
-        MatSetValues(it.MatA,1,&row,1,&xzcol,&zmxm,INSERT_VALUES);
+        MatSetValues(it.MatA, 1, &row, 1, &xzcol, &xmzm, INSERT_VALUES);
+        MatSetValues(it.MatA, 1, &row, 1, &xzcol, &zmxm, INSERT_VALUES);
 
         row++;
       }

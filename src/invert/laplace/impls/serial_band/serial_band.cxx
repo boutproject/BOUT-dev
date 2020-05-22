@@ -123,9 +123,8 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   for(int iz=0;iz<=maxmode;iz++) {
     // solve differential equation in x
-    
-    BoutReal coef1=0.0, coef2=0.0, coef3=0.0, coef4=0.0, 
-      coef5=0.0, coef6=0.0;
+
+    BoutReal coef1 = 0.0, coef2 = 0.0, coef3 = 0.0, coef4 = 0.0, coef5 = 0.0, coef6 = 0.0;
     ///////// PERFORM INVERSION /////////
       
     // shift freqs according to FFT convention
@@ -200,7 +199,7 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
 
       int ix = 1;
 
-      auto kwave = kwave_(ix,jy);
+      auto kwave = kwave_(ix, jy);
       coef1=coords->g11(ix,jy)/(SQ(coords->dx(ix,jy)));
       coef2=coords->g33(ix,jy);
       coef3= kwave * coords->g13(ix,jy)/(2. * coords->dx(ix,jy));
@@ -322,7 +321,7 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
 	  
         int ix = 1;
 
-	auto kwave = kwave_(ix,jy);
+        auto kwave = kwave_(ix, jy);
         coef1=coords->g11(ix,jy)/(12.* SQ(coords->dx(ix,jy)));
 	
         coef2=coords->g33(ix,jy);
@@ -369,7 +368,7 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
 	
         coef2=coords->g33(ix,jy);
 
-	auto kwave = kwave_(ix,jy);
+        auto kwave = kwave_(ix, jy);
         coef3= kwave * coords->g13(ix,jy)/(2. * coords->dx(ix,jy));
         
         coef4 = Acoef(ix,jy);

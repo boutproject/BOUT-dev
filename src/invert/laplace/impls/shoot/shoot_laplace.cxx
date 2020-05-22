@@ -134,8 +134,8 @@ FieldPerp LaplaceShoot::solve(const FieldPerp& rhs) {
     rfft(rhs[ix], localmesh->LocalNz, std::begin(rhsk));
 
     for(int kz=0; kz<maxmode; kz++) {
-      BoutReal kwave=kz*2.0*PI/zlength; // wave number is 1/[rad]
-      
+      BoutReal kwave = kz * 2.0 * PI / zlength; // wave number is 1/[rad]
+
       // Get the coefficients
       dcomplex a,b,c;
       tridagCoefs(ix, jy, kwave, a, b, c, &Ccoef, &Dcoef);

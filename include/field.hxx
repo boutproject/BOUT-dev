@@ -297,7 +297,9 @@ inline void checkPositive(const T& f, const std::string& name="field", const std
 
   BOUT_FOR_SERIAL(i, f.getRegion(rgn)) {
     if (f[i] <= 0.) {
-      throw BoutException("{:s} ({:s} {:s}) is {:e} (not positive) at {:s}", name, toString(f.getLocation()), toString(f.getDirections()), f[i], toString(i));
+      throw BoutException("{:s} ({:s} {:s}) is {:e} (not positive) at {:s}", name,
+                          toString(f.getLocation()), toString(f.getDirections()), f[i],
+                          toString(i));
     }
   }
 }
@@ -359,40 +361,41 @@ inline BoutReal min(const T& f, bool allpe, REGION rgn) {
   return min(f, allpe, toString(rgn));
 }
 
-
-template<typename T, typename = bout::utils::EnableIfField<T>>
-inline bool isConst(const T& f, bool allpe = false, const std::string& region = "RGN_ALL") {
+template <typename T, typename = bout::utils::EnableIfField<T>>
+inline bool isConst(const T& f, bool allpe = false,
+                    const std::string& region = "RGN_ALL") {
   bool result = true;
   auto element = f[*f.getRegion(region).begin()];
-  BOUT_FOR_SERIAL(i, f.getRegion(region)){
-    if (f[i] != element){
-      result=false;
+  BOUT_FOR_SERIAL(i, f.getRegion(region)) {
+    if (f[i] != element) {
+      result = false;
       break;
     }
   }
-  if(allpe) {
+  if (allpe) {
     bool localresult = result;
     MPI_Allreduce(&localresult, &result, 1, MPI_C_BOOL, MPI_LOR, BoutComm::get());
   }
   return result;
 }
 
-template<typename T, typename = bout::utils::EnableIfField<T>>
-inline BoutReal getConst(const T& f, bool allpe = false, const std::string& region = "RGN_ALL") {
+template <typename T, typename = bout::utils::EnableIfField<T>>
+inline BoutReal getConst(const T& f, bool allpe = false,
+                         const std::string& region = "RGN_ALL") {
   bool is_const = true;
   auto element = f[*f.getRegion(region).begin()];
 #if CHECK > 1
-  BOUT_FOR_SERIAL(i, f.getRegion(region)){
-    if (f[i] != element){
+  BOUT_FOR_SERIAL(i, f.getRegion(region)) {
+    if (f[i] != element) {
       is_const = false;
       break;
     }
   }
-  if(allpe) {
+  if (allpe) {
     bool local_is_const = is_const;
     MPI_Allreduce(&local_is_const, &is_const, 1, MPI_C_BOOL, MPI_LOR, BoutComm::get());
   }
-  if (! is_const) {
+  if (!is_const) {
     throw BoutException("Requested getConst but Field is not const");
   }
 #endif

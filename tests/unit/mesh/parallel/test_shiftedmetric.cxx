@@ -42,9 +42,8 @@ public:
         Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, Field2D{0.0}, false));
 
     auto coords = mesh->getCoordinates();
-    coords->setParallelTransform(
-        bout::utils::make_unique<ShiftedMetric>(*mesh, CELL_CENTRE, zShift,
-						coords->zlength()(0,0)));
+    coords->setParallelTransform(bout::utils::make_unique<ShiftedMetric>(
+        *mesh, CELL_CENTRE, zShift, coords->zlength()(0, 0)));
 
     Field3D input_temp{mesh};
 

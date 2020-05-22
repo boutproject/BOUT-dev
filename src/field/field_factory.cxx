@@ -222,11 +222,11 @@ Field3D FieldFactory::create3D(FieldGeneratorPtr gen, Mesh* localmesh, CELL_LOC 
       output_warn.write("Skipping parallel transformation - coordinates not set!\n");
     } else {
       if (coords->getParallelTransform().canToFromFieldAligned()) {
-	// Transform from field aligned coordinates, to be compatible with
-	// older BOUT++ inputs. This is not a particularly "nice" solution.
-	result = fromFieldAligned(result, "RGN_ALL");
+        // Transform from field aligned coordinates, to be compatible with
+        // older BOUT++ inputs. This is not a particularly "nice" solution.
+        result = fromFieldAligned(result, "RGN_ALL");
       } else {
-	result.setDirectionY(YDirectionType::Standard);
+        result.setDirectionY(YDirectionType::Standard);
       }
     }
   }
@@ -273,9 +273,9 @@ FieldPerp FieldFactory::createPerp(FieldGeneratorPtr gen, Mesh* localmesh, CELL_
       output_warn.write("Skipping parallel transformation - coordinates not set!\n");
     } else {
       if (coords->getParallelTransform().canToFromFieldAligned()) {
-	// Transform from field aligned coordinates, to be compatible with
-	// older BOUT++ inputs. This is not a particularly "nice" solution.
-	result = fromFieldAligned(result, "RGN_ALL");
+        // Transform from field aligned coordinates, to be compatible with
+        // older BOUT++ inputs. This is not a particularly "nice" solution.
+        result = fromFieldAligned(result, "RGN_ALL");
       }
     }
   }

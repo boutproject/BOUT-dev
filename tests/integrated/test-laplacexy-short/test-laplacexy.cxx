@@ -62,9 +62,10 @@ int main(int argc, char** argv) {
 
   Field2D rhs, rhs_check;
   if (include_y_derivs) {
-    rhs = a*DC(Laplace_perp(f)) + DC(Grad_perp(a)*Grad_perp(f)) + b*f;
+    rhs = a * DC(Laplace_perp(f)) + DC(Grad_perp(a) * Grad_perp(f)) + b * f;
   } else {
-    rhs = a*DC(Delp2(f, CELL_DEFAULT, false)) + DC(coords->g11*DDX(a)*DDX(f)) + b*f;
+    rhs =
+        a * DC(Delp2(f, CELL_DEFAULT, false)) + DC(coords->g11 * DDX(a) * DDX(f)) + b * f;
   }
 
   laplacexy.setCoefs(a, b);
@@ -78,9 +79,10 @@ int main(int argc, char** argv) {
 
   mesh->communicate(sol);
   if (include_y_derivs) {
-    rhs_check = a*DC(Laplace_perp(sol)) + DC(Grad_perp(a)*Grad_perp(sol)) + b*sol;
+    rhs_check = a * DC(Laplace_perp(sol)) + DC(Grad_perp(a) * Grad_perp(sol)) + b * sol;
   } else {
-    rhs_check = a*DC(Delp2(sol, CELL_DEFAULT, false)) + DC(coords->g11*DDX(a)*DDX(sol)) + b*sol;
+    rhs_check = a * DC(Delp2(sol, CELL_DEFAULT, false))
+                + DC(coords->g11 * DDX(a) * DDX(sol)) + b * sol;
   }
 
   dump.add(a, "a");

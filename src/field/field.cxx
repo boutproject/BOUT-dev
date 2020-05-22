@@ -25,13 +25,13 @@
 
 //#include <globals.hxx>
 
-#include <field.hxx>
-#include <output.hxx>
-#include <msg_stack.hxx>
-#include <boutexception.hxx>
-#include <utils.hxx>
-#include <bout/mesh.hxx>
 #include <bout/coordinates.hxx>
+#include <bout/mesh.hxx>
+#include <boutexception.hxx>
+#include <field.hxx>
+#include <msg_stack.hxx>
+#include <output.hxx>
+#include <utils.hxx>
 
 Field::Field(Mesh *localmesh, CELL_LOC location_in,
              DirectionTypes directions_in)

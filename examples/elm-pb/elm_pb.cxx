@@ -26,10 +26,10 @@ private:
   // 2D inital profiles
   Field2D J0, P0;         // Current and pressure
   Vector2D b0xcv;         // Curvature term
-  Field2D beta; // Used for Vpar terms
+  Field2D beta;           // Used for Vpar terms
   Coordinates::metric_field_type gradparB;
   Field2D phi0;           // When diamagnetic terms used
-  Field2D Psixy, x;   // 0th vorticity of equilibrium flow,
+  Field2D Psixy, x;       // 0th vorticity of equilibrium flow,
   Coordinates::metric_field_type U0;
   // radial flux coordinate, normalized radial flux coordinate
 
@@ -657,8 +657,9 @@ protected:
               for (int jy = 0; jy < mesh->LocalNy; jy++)
                 for (int jz = 0; jz < mesh->LocalNz; jz++) {
 
-                  BoutReal angle = rmp_m * pol_angle(jx, jy)
-                                   + rmp_n * ((BoutReal)jz) * mesh->getCoordinates()->dz(jx,jy,jz);
+                  BoutReal angle =
+                      rmp_m * pol_angle(jx, jy)
+                      + rmp_n * ((BoutReal)jz) * mesh->getCoordinates()->dz(jx, jy, jz);
                   rmp_Psi0(jx, jy, jz) =
                       (((BoutReal)(jx - 4)) / ((BoutReal)(mesh->LocalNx - 5)))
                       * rmp_factor * cos(angle);

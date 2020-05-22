@@ -143,7 +143,8 @@ const Vector2D Grad_perp(const Field2D &f, CELL_LOC outloc, const std::string& m
  * Divergence operators
  **************************************************************************/
 
-const Coordinates::metric_field_type Div(const Vector2D &v, CELL_LOC outloc, const std::string& method) {
+const Coordinates::metric_field_type Div(const Vector2D& v, CELL_LOC outloc,
+                                         const std::string& method) {
   TRACE("Div( Vector2D )");
   SCOREP0();
   if (outloc == CELL_DEFAULT) {
@@ -159,8 +160,8 @@ const Coordinates::metric_field_type Div(const Vector2D &v, CELL_LOC outloc, con
   // get contravariant components of v
   Vector2D vcn = v;
   vcn.toContravariant();
-  
-  Coordinates::metric_field_type result = DDX(metric->J*vcn.x, outloc, method);
+
+  Coordinates::metric_field_type result = DDX(metric->J * vcn.x, outloc, method);
   result += DDY(metric->J*vcn.y, outloc, method);
   result += DDZ(metric->J*vcn.z, outloc, method);
   result /= metric->J;
@@ -187,7 +188,7 @@ const Field3D Div(const Vector3D& v, CELL_LOC outloc, const std::string& method)
   vcn.toContravariant();
 
   Field3D vcnJy = vcn.y.getCoordinates()->J * vcn.y;
-  if(!vcn.y.hasParallelSlices()){
+  if (!vcn.y.hasParallelSlices()) {
     localmesh->communicate(vcnJy);
   }
   Field3D result = DDY(vcnJy, outloc, method);
@@ -203,8 +204,8 @@ const Field3D Div(const Vector3D& v, CELL_LOC outloc, const std::string& method)
  * Divergence operators for flux methods
  **************************************************************************/
 
-const Coordinates::metric_field_type Div(const Vector2D &v, const Field2D &f, CELL_LOC outloc,
-                                         const std::string& method) {
+const Coordinates::metric_field_type Div(const Vector2D& v, const Field2D& f,
+                                         CELL_LOC outloc, const std::string& method) {
   TRACE("Div( Vector2D, Field2D )");
   SCOREP0();
   if (outloc == CELL_DEFAULT) {
@@ -221,7 +222,8 @@ const Coordinates::metric_field_type Div(const Vector2D &v, const Field2D &f, CE
   Vector2D vcn = v;
   vcn.toContravariant();
 
-  Coordinates::metric_field_type result = FDDX(vcn.x.getCoordinates()->J * vcn.x, f, outloc, method);
+  Coordinates::metric_field_type result =
+      FDDX(vcn.x.getCoordinates()->J * vcn.x, f, outloc, method);
   result += FDDY(vcn.y.getCoordinates()->J * vcn.y, f, outloc, method);
   result += FDDZ(vcn.z.getCoordinates()->J * vcn.z, f, outloc, method);
   result /= metric->J;
@@ -317,7 +319,7 @@ const Vector3D Curl(const Vector3D &v) {
 /**************************************************************************
  * Upwinding operators
  **************************************************************************/
-const Coordinates::metric_field_type V_dot_Grad(const Vector2D &v, const Field2D &f) {
+const Coordinates::metric_field_type V_dot_Grad(const Vector2D& v, const Field2D& f) {
   TRACE("V_dot_Grad( Vector2D , Field2D )");
   SCOREP0();
 

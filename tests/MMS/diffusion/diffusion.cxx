@@ -77,7 +77,8 @@ int physics_init(bool UNUSED(restarting)) {
     for (int yj = mesh->ystart; yj < mesh->yend + 1; yj++){
       for (int zk = 0; zk < mesh->LocalNz; zk++) {
         output.write("Initial condition at {:d},{:d},{:d}\n", xi, yj, zk);
-        N(xi, yj, zk) = MS(0.,mesh->GlobalX(xi)*Lx,mesh->GlobalY(yj)*Ly,coord->dz(xi, yj, zk)*zk);
+        N(xi, yj, zk) = MS(0., mesh->GlobalX(xi) * Lx, mesh->GlobalY(yj) * Ly,
+                           coord->dz(xi, yj, zk) * zk);
       }
     }
   }
@@ -141,7 +142,7 @@ void solution(Field3D &f, BoutReal t, BoutReal UNUSED(D)) {
       x = mesh->GlobalX(xi);
       y = mesh->GlobalY(yj);//GlobalY not fixed yet
       for (int zk = 0; zk < mesh->LocalNz; zk++) {
-        z = coord->dz(xi, yj, zk)*zk;
+        z = coord->dz(xi, yj, zk) * zk;
         output.write("Solution at {:d},{:d},{:d}\n", xi, yj, zk);
         f(xi, yj, zk) = MS(t,x,y,z);
       }

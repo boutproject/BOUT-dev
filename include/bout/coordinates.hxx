@@ -93,10 +93,8 @@ public:
 
   Field2D zlength() const {
 #ifdef COORDINATES_USE_3D
-    Field2D result(0.,localmesh);
-    BOUT_FOR_SERIAL(i, dz.getRegion("RGN_ALL")) {
-      result[i] += dz[i];
-    }
+    Field2D result(0., localmesh);
+    BOUT_FOR_SERIAL(i, dz.getRegion("RGN_ALL")) { result[i] += dz[i]; }
     return result;
 #else
     return dz * nz;
@@ -105,8 +103,8 @@ public:
 
   /// True if corrections for non-uniform mesh spacing should be included in operators
   bool non_uniform;
-  metric_field_type d1_dx,
-    d1_dy, d1_dz; ///< 2nd-order correction for non-uniform meshes d/di(1/dx) and d/di(1/dy)
+  metric_field_type d1_dx, d1_dy,
+      d1_dz; ///< 2nd-order correction for non-uniform meshes d/di(1/dx) and d/di(1/dy)
 
   metric_field_type J; ///< Coordinate system Jacobian, so volume of cell is J*dx*dy*dz
 
@@ -172,59 +170,66 @@ public:
 #ifdef DERIV_FUNC_REGION_ENUM_TO_STRING
 #error This utility macro should not clash with another one
 #else
-#define DERIV_FUNC_REGION_ENUM_TO_STRING(func, ResultType, T)		\
-  [[deprecated("Please use Coordinates::#func(const #T& f, "		\
-      "CELL_LOC outloc = CELL_DEFAULT, const std::string& method = \"DEFAULT\", " \
-      "const std::string& region = \"RGN_ALL\") instead")]] \
-  inline ResultType func(const T& f, CELL_LOC outloc, const std::string& method, \
-      REGION region) { \
-    return func(f, outloc, method, toString(region)); \
-  } \
-  [[deprecated("Please use Coordinates::#func(const #T& f, " \
-      "CELL_LOC outloc = CELL_DEFAULT, const std::string& method = \"DEFAULT\", " \
-      "const std::string& region = \"RGN_ALL\") instead")]] \
-  inline ResultType func(const T& f, CELL_LOC outloc, DIFF_METHOD method, \
-      REGION region = RGN_NOBNDRY) { \
-    return func(f, outloc, toString(method), toString(region)); \
+#define DERIV_FUNC_REGION_ENUM_TO_STRING(func, ResultType, T)                          \
+  [[deprecated(                                                                        \
+      "Please use Coordinates::#func(const #T& f, "                                    \
+      "CELL_LOC outloc = CELL_DEFAULT, const std::string& method = \"DEFAULT\", "      \
+      "const std::string& region = \"RGN_ALL\") instead")]] inline ResultType          \
+  func(const T& f, CELL_LOC outloc, const std::string& method, REGION region) {        \
+    return func(f, outloc, method, toString(region));                                  \
+  }                                                                                    \
+  [[deprecated(                                                                        \
+      "Please use Coordinates::#func(const #T& f, "                                    \
+      "CELL_LOC outloc = CELL_DEFAULT, const std::string& method = \"DEFAULT\", "      \
+      "const std::string& region = \"RGN_ALL\") instead")]] inline ResultType          \
+  func(const T& f, CELL_LOC outloc, DIFF_METHOD method, REGION region = RGN_NOBNDRY) { \
+    return func(f, outloc, toString(method), toString(region));                        \
   }
 #endif
 
 #ifdef GRAD_FUNC_REGION_ENUM_TO_STRING
 #error This utility macro should not clash with another one
 #else
-#define GRAD_FUNC_REGION_ENUM_TO_STRING(func, ResultType, T)		\
-  [[deprecated("Please use Coordinates::#func(const #T& f, "		\
+#define GRAD_FUNC_REGION_ENUM_TO_STRING(func, ResultType, T)                      \
+  [[deprecated(                                                                   \
+      "Please use Coordinates::#func(const #T& f, "                               \
       "CELL_LOC outloc = CELL_DEFAULT, const std::string& method = \"DEFAULT\") " \
-      "instead")]] \
-  inline ResultType func(const T& f, CELL_LOC outloc, DIFF_METHOD method) { \
-    return func(f, outloc, toString(method)); \
+      "instead")]] inline ResultType                                              \
+  func(const T& f, CELL_LOC outloc, DIFF_METHOD method) {                         \
+    return func(f, outloc, toString(method));                                     \
   }
 #endif
 
   metric_field_type DDX(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-      const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+                        const std::string& method = "DEFAULT",
+                        const std::string& region = "RGN_NOBNDRY");
   DERIV_FUNC_REGION_ENUM_TO_STRING(DDX, metric_field_type, Field2D);
 
   metric_field_type DDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-      const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+                        const std::string& method = "DEFAULT",
+                        const std::string& region = "RGN_NOBNDRY");
   DERIV_FUNC_REGION_ENUM_TO_STRING(DDY, metric_field_type, Field2D);
 
   metric_field_type DDZ(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-      const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+                        const std::string& method = "DEFAULT",
+                        const std::string& region = "RGN_NOBNDRY");
   DERIV_FUNC_REGION_ENUM_TO_STRING(DDZ, metric_field_type, Field2D);
 
   Field3D DDX(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
-      const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+              const std::string& method = "DEFAULT",
+              const std::string& region = "RGN_NOBNDRY");
 
   Field3D DDY(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
-      const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+              const std::string& method = "DEFAULT",
+              const std::string& region = "RGN_NOBNDRY");
 
   Field3D DDZ(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
-      const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+              const std::string& method = "DEFAULT",
+              const std::string& region = "RGN_NOBNDRY");
 
   /// Gradient along magnetic field  b.Grad(f)
   metric_field_type Grad_par(const Field2D& var, CELL_LOC outloc = CELL_DEFAULT,
-      const std::string& method = "DEFAULT");
+                             const std::string& method = "DEFAULT");
   GRAD_FUNC_REGION_ENUM_TO_STRING(Grad_par, metric_field_type, Field2D);
 
   Field3D Grad_par(const Field3D& var, CELL_LOC outloc = CELL_DEFAULT,
@@ -233,12 +238,13 @@ public:
 
   /// Advection along magnetic field V*b.Grad(f)
   metric_field_type Vpar_Grad_par(const Field2D& v, const Field2D& f,
-      CELL_LOC outloc = CELL_DEFAULT, const std::string& method = "DEFAULT");
-  [[deprecated("Please use Coordinates::Vpar_Grad_par(const Field2D& v, "
+                                  CELL_LOC outloc = CELL_DEFAULT,
+                                  const std::string& method = "DEFAULT");
+  [[deprecated(
+      "Please use Coordinates::Vpar_Grad_par(const Field2D& v, "
       "const Field2D& f, CELL_LOC outloc = CELL_DEFAULT, "
-      "const std::string& method = \"DEFAULT\") instead")]]
-  inline metric_field_type Vpar_Grad_par(const Field2D& v, const Field2D& f, CELL_LOC outloc,
-      DIFF_METHOD method) {
+      "const std::string& method = \"DEFAULT\") instead")]] inline metric_field_type
+  Vpar_Grad_par(const Field2D& v, const Field2D& f, CELL_LOC outloc, DIFF_METHOD method) {
     return Vpar_Grad_par(v, f, outloc, toString(method));
   }
 
@@ -254,7 +260,7 @@ public:
 
   /// Divergence along magnetic field  Div(b*f) = B.Grad(f/B)
   metric_field_type Div_par(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-      const std::string& method = "DEFAULT");
+                            const std::string& method = "DEFAULT");
   GRAD_FUNC_REGION_ENUM_TO_STRING(Div_par, metric_field_type, Field2D);
 
   Field3D Div_par(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
@@ -263,7 +269,7 @@ public:
 
   // Second derivative along magnetic field
   metric_field_type Grad2_par2(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-      const std::string& method = "DEFAULT");
+                               const std::string& method = "DEFAULT");
   GRAD_FUNC_REGION_ENUM_TO_STRING(Grad2_par2, metric_field_type, Field2D);
 
   Field3D Grad2_par2(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
@@ -276,19 +282,20 @@ public:
   // Perpendicular Laplacian operator, using only X-Z derivatives
   // NOTE: This might be better bundled with the Laplacian inversion code
   // since it makes use of the same coefficients and FFT routines
-  metric_field_type Delp2(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT, bool useFFT = true);
+  metric_field_type Delp2(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+                          bool useFFT = true);
   Field3D Delp2(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, bool useFFT = true);
   FieldPerp Delp2(const FieldPerp& f, CELL_LOC outloc = CELL_DEFAULT, bool useFFT = true);
 
   // Full parallel Laplacian operator on scalar field
-  // Laplace_par(f) = Div( b (b dot Grad(f)) ) 
-  metric_field_type Laplace_par(const Field2D &f, CELL_LOC outloc=CELL_DEFAULT);
+  // Laplace_par(f) = Div( b (b dot Grad(f)) )
+  metric_field_type Laplace_par(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT);
   Field3D Laplace_par(const Field3D &f, CELL_LOC outloc=CELL_DEFAULT);
   
   // Full Laplacian operator on scalar field
   metric_field_type Laplace(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-                  const std::string& dfdy_boundary_conditions = "free_o3",
-                  const std::string& dfdy_dy_region = "");
+                            const std::string& dfdy_boundary_conditions = "free_o3",
+                            const std::string& dfdy_dy_region = "");
   Field3D Laplace(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
                   const std::string& dfdy_boundary_conditions = "free_o3",
                   const std::string& dfdy_dy_region = "");
@@ -309,32 +316,36 @@ private:
   /// Used in the constructor to create the transform object.
   void setParallelTransform(Options* options);
 
-  inline Field3D maybeFromFieldAligned(const Field3D& f, const std::string& region = "RGN_ALL") {
+  inline Field3D maybeFromFieldAligned(const Field3D& f,
+                                       const std::string& region = "RGN_ALL") {
     ASSERT1(location == f.getLocation());
     ASSERT1(localmesh == f.getMesh());
-    if (f.getDirectionY() != YDirectionType::Standard){
-      if (this->getParallelTransform().canToFromFieldAligned()){
-	return this->getParallelTransform().fromFieldAligned(f, region);
+    if (f.getDirectionY() != YDirectionType::Standard) {
+      if (this->getParallelTransform().canToFromFieldAligned()) {
+        return this->getParallelTransform().fromFieldAligned(f, region);
       } else {
-	Field3D f_ = f;
-	f_.setDirectionY(YDirectionType::Standard);
-	return f_;
+        Field3D f_ = f;
+        f_.setDirectionY(YDirectionType::Standard);
+        return f_;
       }
     }
     return f;
   }
 
-  inline Field2D maybeFromFieldAligned(const Field2D& f, const std::string& UNUSED(region) = "RGN_ALL") {
+  inline Field2D maybeFromFieldAligned(const Field2D& f,
+                                       const std::string& UNUSED(region) = "RGN_ALL") {
     return f;
   }
 
   /// A wrapper for index:DDY derivative that is able to tranform
   /// fields before the constructor is finished.
-  Coordinates::metric_field_type indexDDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
-					  const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
+  Coordinates::metric_field_type indexDDY(const Field2D& f,
+                                          CELL_LOC outloc = CELL_DEFAULT,
+                                          const std::string& method = "DEFAULT",
+                                          const std::string& region = "RGN_NOBNDRY");
   Field3D indexDDY(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
-		   const std::string& method = "DEFAULT", const std::string& region = "RGN_NOBNDRY");
-
+                   const std::string& method = "DEFAULT",
+                   const std::string& region = "RGN_NOBNDRY");
 };
 
 /*

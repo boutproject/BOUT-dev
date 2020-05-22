@@ -380,9 +380,7 @@ inline void invalidateGuards(Field2D &UNUSED(var)) {}
 /// Average in the Z direction
 /// Field2D has no Z direction -- return input
 /// @param[in] f     Variable to average
-inline Field2D DC(const Field2D &f) {
-  return f;
-}
+inline Field2D DC(const Field2D& f) { return f; }
 
 /// Returns a reference to the time-derivative of a field \p f
 ///

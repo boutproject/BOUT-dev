@@ -127,7 +127,7 @@ const Field3D InvertParCR::solve(const Field3D &f) {
 
     // Set up tridiagonal system
     for(int k=0; k<nsys; k++) {
-      BoutReal kwave=k*2.0*PI/zlength; // wave number is 1/[rad]
+      BoutReal kwave = k * 2.0 * PI / zlength; // wave number is 1/[rad]
       for (int y = 0; y < localmesh->LocalNy - 2 * localmesh->ystart; y++) {
 
         BoutReal acoef = A(x, y + localmesh->ystart); // Constant
@@ -138,7 +138,8 @@ const Field3D InvertParCR::solve(const Field3D &f) {
         BoutReal ecoef = E(x, y + localmesh->ystart);                            // ddy
 
         bcoef /= SQ(coord->dy(x, y + localmesh->ystart));
-        ccoef /= coord->dy(x, y + localmesh->ystart) * coord->dz(x, y + localmesh->ystart);
+        ccoef /=
+            coord->dy(x, y + localmesh->ystart) * coord->dz(x, y + localmesh->ystart);
         dcoef /= SQ(coord->dz(x, y + localmesh->ystart));
         ecoef /= coord->dy(x, y + localmesh->ystart);
 
@@ -159,14 +160,14 @@ const Field3D InvertParCR::solve(const Field3D &f) {
       bout::globals::mpi->MPI_Comm_size(surf.communicator(), &np);
       if(rank == 0) {
         for(int k=0; k<nsys; k++) {
-          BoutReal kwave=k*2.0*PI/zlength; // wave number is 1/[rad]
+          BoutReal kwave = k * 2.0 * PI / zlength; // wave number is 1/[rad]
           dcomplex phase(cos(kwave*ts) , -sin(kwave*ts));
           a(k, 0) *= phase;
         }
       }
       if(rank == np-1) {
         for(int k=0; k<nsys; k++) {
-          BoutReal kwave=k*2.0*PI/zlength; // wave number is 1/[rad]
+          BoutReal kwave = k * 2.0 * PI / zlength; // wave number is 1/[rad]
           dcomplex phase(cos(kwave*ts) , sin(kwave*ts));
           c(k, localmesh->LocalNy - 2 * localmesh->ystart - 1) *= phase;
         }
@@ -217,5 +218,3 @@ const Field3D InvertParCR::solve(const Field3D &f) {
   return Field3D{};
 #endif
 };
-
-

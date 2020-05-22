@@ -1030,9 +1030,9 @@ bool Datafile::read() {
   }
 
   // 2D vectors
-#ifdef COORDINATES_USE_3D  
-  for(const auto& var : v2d_arr) {
-    if(var.covar) {
+#ifdef COORDINATES_USE_3D
+  for (const auto& var : v2d_arr) {
+    if (var.covar) {
       // Reading covariant vector
       read_f3d(var.name + "_x", &(var.ptr->x), var.save_repeat);
       read_f3d(var.name + "_y", &(var.ptr->y), var.save_repeat);
@@ -1054,7 +1054,7 @@ bool Datafile::read() {
       read_f2d(var.name + "y", &(var.ptr->y), var.save_repeat);
       read_f2d(var.name + "z", &(var.ptr->z), var.save_repeat);
     }
-#endif    
+#endif
     var.ptr->covariant = var.covar;
   }
 
@@ -1188,24 +1188,24 @@ bool Datafile::write() {
   }
 
   // 2D vectors
-#ifdef COORDINATES_USE_3D    
-  for(const auto& var : v2d_arr) {
-    if(var.covar) {
+#ifdef COORDINATES_USE_3D
+  for (const auto& var : v2d_arr) {
+    if (var.covar) {
       // Writing covariant vector
-      Vector2D v  = *(var.ptr);
+      Vector2D v = *(var.ptr);
       v.toCovariant();
-      
-      write_f3d(var.name+"_x", &(v.x), var.save_repeat);
-      write_f3d(var.name+"_y", &(v.y), var.save_repeat);
-      write_f3d(var.name+"_z", &(v.z), var.save_repeat);
+
+      write_f3d(var.name + "_x", &(v.x), var.save_repeat);
+      write_f3d(var.name + "_y", &(v.y), var.save_repeat);
+      write_f3d(var.name + "_z", &(v.z), var.save_repeat);
     } else {
       // Writing contravariant vector
-      Vector2D v  = *(var.ptr);
+      Vector2D v = *(var.ptr);
       v.toContravariant();
-      
-      write_f3d(var.name+"x", &(v.x), var.save_repeat);
-      write_f3d(var.name+"y", &(v.y), var.save_repeat);
-      write_f3d(var.name+"z", &(v.z), var.save_repeat);
+
+      write_f3d(var.name + "x", &(v.x), var.save_repeat);
+      write_f3d(var.name + "y", &(v.y), var.save_repeat);
+      write_f3d(var.name + "z", &(v.z), var.save_repeat);
     }
   }
 #else
@@ -1227,7 +1227,7 @@ bool Datafile::write() {
     write_f2d(name+"z", &(v.z), var.save_repeat);
   }
 #endif
-  
+
   // 3D vectors
   for(const auto& var : v3d_arr) {
     Vector3D v  = *(var.ptr);

@@ -11,8 +11,8 @@
 #include <bout.hxx>
 
 #include <bout/invert/laplacexz.hxx>
-#include <field_factory.hxx>
 #include <derivs.hxx>
+#include <field_factory.hxx>
 
 int main(int argc, char** argv) {
   BoutInitialise(argc, argv);
@@ -20,21 +20,21 @@ int main(int argc, char** argv) {
   auto inv = LaplaceXZ::create(mesh);
 
   auto coord = bout::globals::mesh->getCoordinates();
-  coord->g13 = 1.8;  //test off-diagonal components with nonzero value
+  coord->g13 = 1.8; // test off-diagonal components with nonzero value
 
   // create some input field
-  Field3D f = FieldFactory::get()->create3D("f", Options::getRoot(), mesh); 
+  Field3D f = FieldFactory::get()->create3D("f", Options::getRoot(), mesh);
 
   // Calculate the Laplacian with non-zero g13
-  Field3D g = coord->g11*D2DX2(f) + coord->g13*D2DXDZ(f) + coord->g33*D2DZ2(f);
+  Field3D g = coord->g11 * D2DX2(f) + coord->g13 * D2DXDZ(f) + coord->g33 * D2DZ2(f);
 
-  inv->setCoefs(Field2D(1.0),Field2D(0.0));
-  
-  Field3D f2 = inv->solve(g,0.0);    // Invert the Laplacian.
-  
-  SAVE_ONCE3(f,f2,g);
+  inv->setCoefs(Field2D(1.0), Field2D(0.0));
 
-  coord->g13 = 0.0;  //reset to 0.0 for original laplacexz test
+  Field3D f2 = inv->solve(g, 0.0); // Invert the Laplacian.
+
+  SAVE_ONCE3(f, f2, g);
+
+  coord->g13 = 0.0; // reset to 0.0 for original laplacexz test
 
   // Now the normal test.
   output.write("Setting coefficients\n");

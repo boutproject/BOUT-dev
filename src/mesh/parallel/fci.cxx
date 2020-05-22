@@ -210,7 +210,6 @@ FCIMap::FCIMap(Mesh& mesh, Options& options, int offset_, BoundaryRegionPar* bou
         if ((t_z < 0.0) || (t_z > 1.0))
           throw BoutException("t_z={:e} out of range at ({:d},{:d},{:d})", t_z, x, y, z);
 
-        
         //----------------------------------------
         // Boundary stuff
         //
@@ -262,11 +261,14 @@ FCIMap::FCIMap(Mesh& mesh, Options& options, int offset_, BoundaryRegionPar* bou
           // Invert 2x2 matrix to get change in index
           BoutReal dx = (dZ_dz * dR - dR_dz * dZ) / det;
           BoutReal dz = (dR_dx * dZ - dZ_dx * dR) / det;
-          boundary->add_point(x, y, z,
-                              x + dx, y + 0.5*offset, z + dz,  // Intersection point in local index space
-                              0.5*coord.dy(x,y,z), //sqrt( SQ(dR) + SQ(dZ) ),  // Distance to intersection
-                              PI   // Right-angle intersection
-                              );
+          boundary->add_point(
+              x, y, z, x + dx, y + 0.5 * offset,
+              z + dz, // Intersection point in local index space
+              0.5
+                  * coord.dy(x, y,
+                             z), // sqrt( SQ(dR) + SQ(dZ) ),  // Distance to intersection
+              PI                 // Right-angle intersection
+          );
         }
       }
     }

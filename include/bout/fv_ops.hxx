@@ -249,18 +249,23 @@ namespace FV {
         for (int k = 0; k < mesh->LocalNz; k++) {
 #ifdef COORDINATES_USE_3D
           // For right cell boundaries
-          BoutReal common_factor = (coord->J(i, j, k) + coord->J(i, j + 1, k)) /
-            (sqrt(coord->g_22(i, j, k)) + sqrt(coord->g_22(i, j + 1, k)));
+          BoutReal common_factor =
+              (coord->J(i, j, k) + coord->J(i, j + 1, k))
+              / (sqrt(coord->g_22(i, j, k)) + sqrt(coord->g_22(i, j + 1, k)));
 
-        BoutReal flux_factor_rc = common_factor / (coord->dy(i, j, k) * coord->J(i, j, k));
-        BoutReal flux_factor_rp = common_factor / (coord->dy(i, j + 1, k) * coord->J(i, j + 1, k));
+          BoutReal flux_factor_rc =
+              common_factor / (coord->dy(i, j, k) * coord->J(i, j, k));
+          BoutReal flux_factor_rp =
+              common_factor / (coord->dy(i, j + 1, k) * coord->J(i, j + 1, k));
 
-        // For left cell boundaries
-        common_factor = (coord->J(i, j, k) + coord->J(i, j - 1, k)) /
-          (sqrt(coord->g_22(i, j, k)) + sqrt(coord->g_22(i, j - 1, k)));
+          // For left cell boundaries
+          common_factor = (coord->J(i, j, k) + coord->J(i, j - 1, k))
+                          / (sqrt(coord->g_22(i, j, k)) + sqrt(coord->g_22(i, j - 1, k)));
 
-        BoutReal flux_factor_lc = common_factor / (coord->dy(i, j, k) * coord->J(i, j, k));
-        BoutReal flux_factor_lm = common_factor / (coord->dy(i, j - 1, k) * coord->J(i, j - 1, k));
+          BoutReal flux_factor_lc =
+              common_factor / (coord->dy(i, j, k) * coord->J(i, j, k));
+          BoutReal flux_factor_lm =
+              common_factor / (coord->dy(i, j - 1, k) * coord->J(i, j - 1, k));
 #endif
 
           ////////////////////////////////////////////

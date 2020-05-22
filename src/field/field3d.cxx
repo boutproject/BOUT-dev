@@ -209,7 +209,7 @@ bool Field3D::requiresTwistShift(bool twist_shift_enabled) {
   // We need to communicate in the coordinates constructure in that
   // case a Field3D, but coordinates isn't valid yet. As such we
   // disable twist-shift in that case.
-  if (getCoordinates() == nullptr){
+  if (getCoordinates() == nullptr) {
     return false;
   }
   return getCoordinates()->getParallelTransform().requiresTwistShift(twist_shift_enabled,
@@ -868,4 +868,3 @@ std::ostream& operator<<(std::ostream &out, const Field3D &value) {
   out << toString(value);
   return out;
 }
-

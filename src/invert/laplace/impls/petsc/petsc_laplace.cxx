@@ -401,23 +401,43 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
                   // Set values corresponding to nodes adjacent in x
                   if( fourth_order ) {
                     // Fourth Order Accuracy on Boundary
-                    Element(i,x,z, 0, 0, -25.0 / (12.0*coords->dx(x,y,z)) / sqrt(coords->g_11(x,y,z)), MatA );
-                    Element(i,x,z, 1, 0,   4.0 / coords->dx(x,y,z) / sqrt(coords->g_11(x,y,z)), MatA );
-                    Element(i,x,z, 2, 0,  -3.0 / coords->dx(x,y,z) / sqrt(coords->g_11(x,y,z)), MatA );
-                    Element(i,x,z, 3, 0,   4.0 / (3.0*coords->dx(x,y,z)) / sqrt(coords->g_11(x,y,z)), MatA );
-                    Element(i,x,z, 4, 0,  -1.0 / (4.0*coords->dx(x,y,z)) / sqrt(coords->g_11(x,y,z)), MatA );
+                    Element(i, x, z, 0, 0,
+                            -25.0 / (12.0 * coords->dx(x, y, z))
+                                / sqrt(coords->g_11(x, y, z)),
+                            MatA);
+                    Element(i, x, z, 1, 0,
+                            4.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)),
+                            MatA);
+                    Element(i, x, z, 2, 0,
+                            -3.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)),
+                            MatA);
+                    Element(i, x, z, 3, 0,
+                            4.0 / (3.0 * coords->dx(x, y, z))
+                                / sqrt(coords->g_11(x, y, z)),
+                            MatA);
+                    Element(i, x, z, 4, 0,
+                            -1.0 / (4.0 * coords->dx(x, y, z))
+                                / sqrt(coords->g_11(x, y, z)),
+                            MatA);
                   } else {
                     // Second Order Accuracy on Boundary
                     //   Element(i,x,z, 0, 0, -3.0 / (2.0*coords->dx(x,y)), MatA );
                     //   Element(i,x,z, 1, 0,  2.0 / coords->dx(x,y), MatA );
                     //   Element(i,x,z, 2, 0, -1.0 / (2.0*coords->dx(x,y)), MatA );
-                    //   Element(i,x,z, 3, 0, 0.0, MatA );  // Reset these elements to 0 in case 4th order flag was used previously: not allowed now
+                    //   Element(i,x,z, 3, 0, 0.0, MatA );  // Reset these elements to 0
+                    //   in case 4th order flag was used previously: not allowed now
                     //   Element(i,x,z, 4, 0, 0.0, MatA );
                     // Second Order Accuracy on Boundary, set half-way between grid points
-                    Element(i,x,z, 0, 0, -1.0 / coords->dx(x,y,z) / sqrt(coords->g_11(x,y,z)), MatA );
-                    Element(i,x,z, 1, 0,  1.0 / coords->dx(x,y,z) / sqrt(coords->g_11(x,y,z)), MatA );
-                    Element(i,x,z, 2, 0, 0.0, MatA );
-                    //                      Element(i,x,z, 3, 0, 0.0, MatA );  // Reset these elements to 0 in case 4th order flag was used previously: not allowed now
+                    Element(i, x, z, 0, 0,
+                            -1.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)),
+                            MatA);
+                    Element(i, x, z, 1, 0,
+                            1.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)),
+                            MatA);
+                    Element(i, x, z, 2, 0, 0.0, MatA);
+                    //                      Element(i,x,z, 3, 0, 0.0, MatA );  // Reset
+                    //                      these elements to 0 in case 4th order flag was
+                    //                      used previously: not allowed now
                     //                      Element(i,x,z, 4, 0, 0.0, MatA );
                     }
                 } else {
@@ -472,12 +492,12 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
         // Set the matrix coefficients
         Coeffs( x, y, z, A1, A2, A3, A4, A5 );
 
-        BoutReal dx   = coords->dx(x,y,z);
-        BoutReal dx2  = SQ(dx);
-        BoutReal dz   = coords->dz(x,y,z);
-        BoutReal dz2  = SQ(dz);
+        BoutReal dx = coords->dx(x, y, z);
+        BoutReal dx2 = SQ(dx);
+        BoutReal dz = coords->dz(x, y, z);
+        BoutReal dz2 = SQ(dz);
         BoutReal dxdz = dx * dz;
-        
+
         ASSERT3(finite(A1));
         ASSERT3(finite(A2));
         ASSERT3(finite(A3));
@@ -650,11 +670,24 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
                   // Set values corresponding to nodes adjacent in x
                   if( fourth_order ) {
                       // Fourth Order Accuracy on Boundary
-                    Element(i,x,z,  0, 0, 25.0 / (12.0*coords->dx(x,y,z)) / sqrt(coords->g_11(x,y,z)), MatA );
-                    Element(i,x,z, -1, 0, -4.0 / coords->dx(x,y,z) / sqrt(coords->g_11(x,y,z)), MatA );
-                    Element(i,x,z, -2, 0,  3.0 / coords->dx(x,y,z) / sqrt(coords->g_11(x,y,z)), MatA );
-                    Element(i,x,z, -3, 0, -4.0 / (3.0*coords->dx(x,y,z)) / sqrt(coords->g_11(x,y,z)), MatA );
-                    Element(i,x,z, -4, 0,  1.0 / (4.0*coords->dx(x,y,z)) / sqrt(coords->g_11(x,y,z)), MatA );
+                      Element(i, x, z, 0, 0,
+                              25.0 / (12.0 * coords->dx(x, y, z))
+                                  / sqrt(coords->g_11(x, y, z)),
+                              MatA);
+                      Element(i, x, z, -1, 0,
+                              -4.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)),
+                              MatA);
+                      Element(i, x, z, -2, 0,
+                              3.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)),
+                              MatA);
+                      Element(i, x, z, -3, 0,
+                              -4.0 / (3.0 * coords->dx(x, y, z))
+                                  / sqrt(coords->g_11(x, y, z)),
+                              MatA);
+                      Element(i, x, z, -4, 0,
+                              1.0 / (4.0 * coords->dx(x, y, z))
+                                  / sqrt(coords->g_11(x, y, z)),
+                              MatA);
                     }
                   else {
 //                    // Second Order Accuracy on Boundary
@@ -664,9 +697,9 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
 // //                   Element(i,x,z, -3, 0,  0.0, MatA );  // Reset these elements to 0 in case 4th order flag was used previously: not allowed now
 // //                   Element(i,x,z, -4, 0,  0.0, MatA );
                       // Second Order Accuracy on Boundary, set half-way between grid points
-                    Element(i,x,z,  0, 0,  1.0 / coords->dx(x,y,z) / sqrt(coords->g_11(x,y,z)), MatA );
-                    Element(i,x,z, -1, 0, -1.0 / coords->dx(x,y,z) / sqrt(coords->g_11(x,y,z)), MatA );
-                    Element(i,x,z, -2, 0,  0.0, MatA );
+Element(i, x, z, 0, 0, 1.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)), MatA);
+Element(i, x, z, -1, 0, -1.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)), MatA);
+Element(i, x, z, -2, 0, 0.0, MatA);
 //                      Element(i,x,z, -3, 0,  0.0, MatA );  // Reset these elements to 0 in case 4th order flag was used previously: not allowed now
 //                      Element(i,x,z, -4, 0,  0.0, MatA );
                     }
@@ -938,16 +971,16 @@ void LaplacePetsc::Element(int i, int x, int z,
  */
 void LaplacePetsc::Coeffs( int x, int y, int z, BoutReal &coef1, BoutReal &coef2, BoutReal &coef3, BoutReal &coef4, BoutReal &coef5 ) {
 
-  coef1 = coords->g11(x,y,z);     // X 2nd derivative coefficient
-  coef2 = coords->g33(x,y,z);     // Z 2nd derivative coefficient
-  coef3 = 2.*coords->g13(x,y,z);  // X-Z mixed derivative coefficient
+  coef1 = coords->g11(x, y, z);      // X 2nd derivative coefficient
+  coef2 = coords->g33(x, y, z);      // Z 2nd derivative coefficient
+  coef3 = 2. * coords->g13(x, y, z); // X-Z mixed derivative coefficient
 
   coef4 = 0.0;
   coef5 = 0.0;
   // If global flag all_terms are set (true by default)
   if (all_terms) {
-    coef4 = coords->G1(x,y,z); // X 1st derivative
-    coef5 = coords->G3(x,y,z); // Z 1st derivative
+    coef4 = coords->G1(x, y, z); // X 1st derivative
+    coef5 = coords->G3(x, y, z); // Z 1st derivative
 
     ASSERT3(finite(coef4));
     ASSERT3(finite(coef5));
@@ -956,13 +989,17 @@ void LaplacePetsc::Coeffs( int x, int y, int z, BoutReal &coef1, BoutReal &coef2
   if(nonuniform) {
     // non-uniform mesh correction
     if((x != 0) && (x != (localmesh->LocalNx-1))) {
-      coef4 -= 0.5 * ( ( coords->dx(x+1,y,z) - coords->dx(x-1,y,z) ) / SQ(coords->dx(x,y,z)) ) * coef1; // BOUT-06 term
+      coef4 -= 0.5
+               * ((coords->dx(x + 1, y, z) - coords->dx(x - 1, y, z))
+                  / SQ(coords->dx(x, y, z)))
+               * coef1; // BOUT-06 term
     }
   }
 
   if(localmesh->IncIntShear) {
     // d2dz2 term
-    coef2 += coords->g11(x,y,z) * coords->IntShiftTorsion(x,y,z) * coords->IntShiftTorsion(x,y,z);
+    coef2 += coords->g11(x, y, z) * coords->IntShiftTorsion(x, y, z)
+             * coords->IntShiftTorsion(x, y, z);
     // Mixed derivative
     coef3 = 0.0; // This cancels out
   }
@@ -992,19 +1029,25 @@ void LaplacePetsc::Coeffs( int x, int y, int z, BoutReal &coef1, BoutReal &coef2
             int zmm = z-2;  // z minus 1 minus 1
             if (zmm<0) zmm += meshz;
             // Fourth order discretization of C in x
-            ddx_C = (-C2(x+2,y,z) + 8.*C2(x+1,y,z) - 8.*C2(x-1,y,z) + C2(x-2,y,z)) / (12.*coords->dx(x,y,z)*(C1(x,y,z)));
+            ddx_C = (-C2(x + 2, y, z) + 8. * C2(x + 1, y, z) - 8. * C2(x - 1, y, z)
+                     + C2(x - 2, y, z))
+                    / (12. * coords->dx(x, y, z) * (C1(x, y, z)));
             // Fourth order discretization of C in z
-            ddz_C = (-C2(x,y,zpp) + 8.*C2(x,y,zp) - 8.*C2(x,y,zm) + C2(x,y,zmm)) / (12.*coords->dz(x,y,z)*(C1(x,y,z)));
+            ddz_C =
+                (-C2(x, y, zpp) + 8. * C2(x, y, zp) - 8. * C2(x, y, zm) + C2(x, y, zmm))
+                / (12. * coords->dz(x, y, z) * (C1(x, y, z)));
           }
           else {
             // Second order discretization of C in x
-            ddx_C = (C2(x+1,y,z) - C2(x-1,y,z)) / (2.*coords->dx(x,y,z)*(C1(x,y,z)));
+            ddx_C = (C2(x + 1, y, z) - C2(x - 1, y, z))
+                    / (2. * coords->dx(x, y, z) * (C1(x, y, z)));
             // Second order discretization of C in z
-            ddz_C = (C2(x,y,zp) - C2(x,y,zm)) / (2.*coords->dz(x,y,z)*(C1(x,y,z)));
+            ddz_C = (C2(x, y, zp) - C2(x, y, zm))
+                    / (2. * coords->dz(x, y, z) * (C1(x, y, z)));
           }
 
-          coef4 += coords->g11(x,y,z) * ddx_C + coords->g13(x,y,z) * ddz_C;
-          coef5 += coords->g13(x,y,z) * ddx_C + coords->g33(x,y,z) * ddz_C;
+          coef4 += coords->g11(x, y, z) * ddx_C + coords->g13(x, y, z) * ddz_C;
+          coef5 += coords->g13(x, y, z) * ddx_C + coords->g33(x, y, z) * ddz_C;
         }
     }
 

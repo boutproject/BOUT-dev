@@ -85,7 +85,7 @@ void Vector2D::toCovariant() {
       const auto y_at_z = interp_to(y, z.getLocation());
 
       // multiply by g_{ij}
-      BOUT_FOR(i, x.getRegion("RGN_ALL")){
+      BOUT_FOR(i, x.getRegion("RGN_ALL")) {
         x[i] = metric_x->g_11[i]*x[i] + metric_x->g_12[i]*y_at_x[i] + metric_x->g_13[i]*z_at_x[i];
         y[i] = metric_y->g_22[i]*y[i] + metric_y->g_12[i]*x_at_y[i] + metric_y->g_23[i]*z_at_y[i];
         z[i] = metric_z->g_33[i]*z[i] + metric_z->g_13[i]*x_at_z[i] + metric_z->g_23[i]*y_at_z[i];
@@ -96,7 +96,7 @@ void Vector2D::toCovariant() {
       // Need to use temporary arrays to store result
       Coordinates::metric_field_type gx{emptyFrom(x)}, gy{emptyFrom(y)}, gz{emptyFrom(z)};
 
-      BOUT_FOR(i, x.getRegion("RGN_ALL")){
+      BOUT_FOR(i, x.getRegion("RGN_ALL")) {
         gx[i] = metric->g_11[i]*x[i] + metric->g_12[i]*y[i] + metric->g_13[i]*z[i];
         gy[i] = metric->g_22[i]*y[i] + metric->g_12[i]*x[i] + metric->g_23[i]*z[i];
         gz[i] = metric->g_33[i]*z[i] + metric->g_13[i]*x[i] + metric->g_23[i]*y[i];
@@ -136,7 +136,7 @@ void Vector2D::toContravariant() {
       const auto y_at_z = interp_to(y, z.getLocation());
 
       // multiply by g_{ij}
-      BOUT_FOR(i, x.getRegion("RGN_ALL")){
+      BOUT_FOR(i, x.getRegion("RGN_ALL")) {
         x[i] = metric_x->g11[i]*x[i] + metric_x->g12[i]*y_at_x[i] + metric_x->g13[i]*z_at_x[i];
         y[i] = metric_y->g22[i]*y[i] + metric_y->g12[i]*x_at_y[i] + metric_y->g23[i]*z_at_y[i];
         z[i] = metric_z->g33[i]*z[i] + metric_z->g13[i]*x_at_z[i] + metric_z->g23[i]*y_at_z[i];
@@ -148,7 +148,7 @@ void Vector2D::toContravariant() {
       // Need to use temporary arrays to store result
       Coordinates::metric_field_type gx{emptyFrom(x)}, gy{emptyFrom(y)}, gz{emptyFrom(z)};
 
-      BOUT_FOR(i, x.getRegion("RGN_ALL")){
+      BOUT_FOR(i, x.getRegion("RGN_ALL")) {
         gx[i] = metric->g11[i]*x[i] + metric->g12[i]*y[i] + metric->g13[i]*z[i];
         gy[i] = metric->g22[i]*y[i] + metric->g12[i]*x[i] + metric->g23[i]*z[i];
         gz[i] = metric->g33[i]*z[i] + metric->g13[i]*x[i] + metric->g23[i]*y[i];
@@ -371,7 +371,7 @@ const Vector3D Vector2D::operator/(const Field3D &rhs) const {
 
 ////////////////// DOT PRODUCT ///////////////////
 
-const Coordinates::metric_field_type Vector2D::operator*(const Vector2D &rhs) const {
+const Coordinates::metric_field_type Vector2D::operator*(const Vector2D& rhs) const {
   ASSERT2(location == rhs.getLocation());
 
   Mesh *localmesh = x.getMesh();
@@ -474,8 +474,7 @@ const Vector3D operator*(const Field3D &lhs, const Vector2D &rhs) {
  ***************************************************************/
 
 // Return the magnitude of a vector
-const Coordinates::metric_field_type
-abs(const Vector2D &v, const std::string& region) {
+const Coordinates::metric_field_type abs(const Vector2D& v, const std::string& region) {
   return sqrt(v*v, region);
 }
 

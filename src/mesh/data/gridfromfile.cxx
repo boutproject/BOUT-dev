@@ -572,7 +572,7 @@ bool GridFile::readgrid_3dvar_fft(Mesh *m, const std::string &name,
   /// Expect the assertion to be true, in which case we probably don't
   /// need to pass m as can just use var.getMesh()
   BoutReal zlength = getConst(m->getCoordinates(var.getLocation())->zlength());
-  
+
   int zperiod = ROUND(TWOPI / zlength); /// Number of periods in 2pi
 
   // Print out which modes are going to be read in
@@ -702,7 +702,7 @@ bool GridFile::readgrid_perpvar_fft(Mesh *m, const std::string &name,
   /// but don't do it yet as we don't assert that m == var.getMesh()
   /// Expect the assertion to be true, in which case we probably don't
   /// need to pass m as can just use var.getMesh()
-  BoutReal zlength =getConst(m->getCoordinates(var.getLocation())->zlength());
+  BoutReal zlength = getConst(m->getCoordinates(var.getLocation())->zlength());
 
   int zperiod = ROUND(TWOPI / zlength); /// Number of periods in 2pi
 
