@@ -127,10 +127,11 @@ if "--jobserver-auth=" in makeflags or "--jobserver-fds=" in makeflags:
     js_tokens = b""
 
 class Test(threading.Thread):
-    def __init__(self, name, cmd):
+    def __init__(self, name, cmd, width):
         threading.Thread.__init__(self)
         self.name = name
         self.cmd = cmd
+        self.width = width
         self.local = threading.local()
         self.cost = self._cost()
     def run(self):
@@ -138,14 +139,14 @@ class Test(threading.Thread):
         self.local.req_met, self.local.req_expr = requirements.check(self.name+"/runtest")
         self.local.start_time = time.time()
         if not self.local.req_met:
-            print(output % self.name +
+            print("{:{width}}".format(self.name, width=self.width) +
                   "S - {0} => False".format(self.local.req_expr))
             sys.stdout.flush()
             self.status = 0
         else:
             # Run test, piping stdout so it is not sent to console
             self.status, self.output = shell("cd "+self.name+";"+self.cmd, pipe=True)
-            print(output % self.name, end='')
+            print("{:{width}}".format(self.name, width=self.width), end='')
             if self.status != 0:
                 # ❌ Failed
                 print(u"\u274C", end='')  # No newline
@@ -237,17 +238,15 @@ test_type = "Making" if args.make else "Running"
 
 print("======= {} {} {} tests ========".format(test_type, len(tests), savepath.split("/")[-1]))
 
+longest = max([len(s) for s in tests])
 avail_threads = num_threads
-tester = sorted([Test(t, command) for t in tests],
+tester = sorted([Test(t, command, longest+1) for t in tests],
                 key=lambda x: x.cost, reverse=True)
 cost_remain = sum(x.cost for x in tester)
 get_threads()
 
 torun=[i for i in range(len(tests))]
 running=[]
-
-longest = max([len(s) for s in tests])
-output = '%-'+str(longest+1)+'s'
 
 while len(torun)+len(running):
     if avail_threads:
