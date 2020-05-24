@@ -38,6 +38,9 @@ implementations are listed in table :numref:`tab-laplacetypes`.
    | `petsc                 | Serial/parallel. Lots of methods, no Boussinesq              | PETSc (section :ref:`sec-PETSc-install`) |
    | <sec-petsc-laplace_>`__|                                                              |                                          |
    +------------------------+--------------------------------------------------------------+------------------------------------------+
+   | petsc3damg             | Serial/parallel. Solves full 3D operator (with               | PETSc (section :ref:`sec-PETSc-install`) |
+   |                        | y-derivatives) with algebraic multigrid.                     |                                          |
+   +------------------------+--------------------------------------------------------------+------------------------------------------+
    | multigrid              | Serial/parallel. Geometric multigrid, no Boussinesq          |                                          |
    +------------------------+--------------------------------------------------------------+------------------------------------------+
    | `naulin                | Serial/parallel. Iterative treatment of non-Boussinesq terms |                                          |
@@ -51,8 +54,6 @@ implementations are listed in table :numref:`tab-laplacetypes`.
    +------------------------+--------------------------------------------------------------+------------------------------------------+
    | `spt                   | Parallel only (NXPE>1). Thomas algorithm.                    |                                          |
    | <sec-spt_>`__          |                                                              |                                          |
-   +------------------------+--------------------------------------------------------------+------------------------------------------+
-   | mumps                  | Serial/parallel. Direct solver                               | MUMPS (section :ref:`sec-mumps`)         |
    +------------------------+--------------------------------------------------------------+------------------------------------------+
    | `pdd                   | Parallel Diagnonally Dominant algorithm. Experimental        |                                          |
    | <sec-pdd_>`__          |                                                              |                                          |
@@ -887,8 +888,33 @@ cell faces.
 
 Notes:
 
--  The ShiftXderivs option must be true for this to work, since it
-   assumes that :math:`g^{xz} = 0`
+-  The ``ShiftedMetric`` or ``FCITransform`` ParallelTransform must be used
+   (i.e. ``mesh:paralleltransform:type = shifted`` or
+   ``mesh:paralleltransform:type = fci``) for this to work, since it assumes that
+   :math:`g^{xz} = 0`
+-  Setting the option ``pctype = hypre`` seems to work well, if PETSc has been
+   compiled with the algebraic multigrid library hypre; this can be included by
+   passing the option ``--download-hypre`` to PETSc's ``configure`` script.
+-  ``LaplaceXY`` (with the default finite-volume discretisation) has a slightly
+   different convention for passing non-zero boundary values than the
+   ``Laplacian`` solvers. ``LaplaceXY`` uses the average of the last grid cell
+   and first boundary cell of the initial guess (second argument to
+   ``solve()``) as the value to impose for the boundary condition.
+
+An alternative discretization is available if the option ``finite_volume =
+false`` is set. Then a finite-difference discretization very close to the one used when
+calling ``A*Laplace_perp(f) + Grad_perp(A)*Grad_perp(f) + B*f`` is used. This also
+supports non-orthogonal grids with :math:`g^{xy} \neq 0`. The difference is that when
+:math:`g^{xy} \neq 0`, ``Laplace_perp`` calls ``D2DXDY(f)`` which applies a boundary
+condition to ``dfdy = DDY(f)`` before calculating ``DDX(dfdy)`` with a slightly different
+result than the way boundary conditions are applied in ``LaplaceXY``.
+
+-  The finite difference implementation of ``LaplaceXY`` passes non-zero values
+   for the boundary conditions in the same way as the ``Laplacian`` solvers.
+   The value in the first boundary cell of the initial guess (second argument
+   to ``solve()``) is used as the boundary value. (Note that this value is
+   imposed as a boundary condition on the returned solution at a location half
+   way between the last grid cell and first boundary cell.)
 
 .. _sec-LaplaceXZ:
 

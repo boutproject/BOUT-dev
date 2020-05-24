@@ -172,29 +172,39 @@ namespace FV {
   /// @param[in] v_in   The advection velocity.
   ///                   This will be interpolated to cell boundaries
   ///                   using linear interpolation
-  /// @param[in] wave_speed  Maximum wave speed in the system
+  /// @param[in] wave_speed_in  Local maximum speed of all waves in the system at each
+  //                            point in space
   /// @param[in] fixflux     Fix the flux at the boundary to be the value at the
   ///                        midpoint (for boundary conditions)
   ///
   /// NB: Uses to/from FieldAligned coordinates
   template<typename CellEdges = MC>
   const Field3D Div_par(const Field3D &f_in, const Field3D &v_in,
-                        const Field3D &wave_speed, bool fixflux=true) {
+                        const Field3D &wave_speed_in, bool fixflux=true) {
 
-    ASSERT1(areFieldsCompatible(f_in, v_in));
-    ASSERT1(areFieldsCompatible(f_in, wave_speed));
+    ASSERT1_FIELDS_COMPATIBLE(f_in, v_in);
+    ASSERT1_FIELDS_COMPATIBLE(f_in, wave_speed_in);
 
     Mesh* mesh = f_in.getMesh();
 
     CellEdges cellboundary;
     
-    Field3D f = toFieldAligned(f_in, "RGN_NOX");
-    Field3D v = toFieldAligned(v_in, "RGN_NOX");
+    ASSERT2(f_in.getDirectionY() == v_in.getDirectionY());
+    ASSERT2(f_in.getDirectionY() == wave_speed_in.getDirectionY());
+    const bool are_unaligned
+      = ((f_in.getDirectionY() == YDirectionType::Standard)
+         and (v_in.getDirectionY() == YDirectionType::Standard)
+         and (wave_speed_in.getDirectionY() == YDirectionType::Standard));
+
+    Field3D f = are_unaligned ? toFieldAligned(f_in, "RGN_NOX") : f_in;
+    Field3D v = are_unaligned ? toFieldAligned(v_in, "RGN_NOX") : v_in;
+    Field3D wave_speed = are_unaligned ? toFieldAligned(wave_speed_in, "RGN_NOX")
+                                       : wave_speed_in;
 
     Coordinates *coord = f_in.getCoordinates();
 
-    Field3D result{zeroFrom(f_in)};
-    
+    Field3D result{zeroFrom(f)};
+
     // Only need one guard cell, so no need to communicate fluxes
     // Instead calculate in guard cells to preserve fluxes
     int ys = mesh->ystart-1;
@@ -242,7 +252,7 @@ namespace FV {
           // Reconstruct f at the cell faces
           // This calculates s.R and s.L for the Right and Left
           // face values on this cell
-          
+
           // Reconstruct f at the cell faces
           Stencil1D s;
           s.c = f(i, j, k);
@@ -326,7 +336,7 @@ namespace FV {
         }
       }
     }
-    return fromFieldAligned(result, "RGN_NOBNDRY");
+    return are_unaligned ? fromFieldAligned(result, "RGN_NOBNDRY") : result;
   }
   
   /*!
@@ -344,7 +354,7 @@ namespace FV {
   template<typename CellEdges = MC>
   const Field3D Div_f_v(const Field3D &n_in, const Vector3D &v, bool bndry_flux) {
     ASSERT1(n_in.getLocation() == v.getLocation());
-    ASSERT1(areFieldsCompatible(n_in, v.x));
+    ASSERT1_FIELDS_COMPATIBLE(n_in, v.x);
 
     Mesh* mesh = n_in.getMesh();
 
@@ -354,7 +364,7 @@ namespace FV {
     
     if(v.covariant) {
       // Got a covariant vector instead
-      throw BoutException("Div_f_v_XPPM passed a covariant v");
+      throw BoutException("Div_f_v passed a covariant v");
     }
     
     Field3D result{zeroFrom(n_in)};
@@ -362,110 +372,98 @@ namespace FV {
     Field3D vx = v.x;
     Field3D vz = v.z;
     Field3D n  = n_in;
-    
-    // X-Z advection
-    for(int i=mesh->xstart;i<=mesh->xend;i++)
-      for(int j=mesh->ystart;j<=mesh->yend;j++)
-        for(int k=0;k<mesh->LocalNz;k++) {
-          int kp = (k+1) % (mesh->LocalNz);
-          int kpp = (kp+1) % (mesh->LocalNz);
-          int km = (k-1+mesh->LocalNz) % (mesh->LocalNz);
-          int kmm = (km-1+mesh->LocalNz) % (mesh->LocalNz);
-          
-          // Calculate velocities
-          BoutReal vU = 0.5*(vz(i,j,kp) + vz(i,j,k))*coord->J(i,j);
-          BoutReal vD = 0.5*(vz(i,j,km) + vz(i,j,k))*coord->J(i,j);
-          BoutReal vL = 0.25*(vx(i-1,j,k) + vx(i,j,k))*(coord->J(i-1,j) + coord->J(i,j));
-          BoutReal vR = 0.25*(vx(i+1,j,k) + vx(i,j,k))*(coord->J(i+1,j) + coord->J(i,j));
-          
-          // X direction
-          Stencil1D s;
-          s.c  = n(i,  j,k);
-          s.m  = n(i-1,j,k);
-          s.mm = n(i-2,j,k);
-          s.p  = n(i+1,j,k);
-          s.pp = n(i+2,j,k);
-          
-          cellboundary(s);
-        
-          if((i==mesh->xend) && (mesh->lastX())) {
-            // At right boundary in X
-          
-            if(bndry_flux) {
-              BoutReal flux;
-              if(vR > 0.0) {
-                // Flux to boundary
-                flux = vR * s.R;
-              }else {
-                // Flux in from boundary
-                flux = vR * 0.5*(n(i+1,j,k) + n(i,j,k));
-              }
-              result(i,j,k)   += flux / (coord->dx(i,j) * coord->J(i,j));
-              result(i+1,j,k) -= flux / (coord->dx(i+1,j) * coord->J(i+1,j));
-            }
-          }else {
-            // Not at a boundary
-            if(vR > 0.0) {
-              // Flux out into next cell
-              BoutReal flux = vR * s.R;
-              result(i,j,k)   += flux / (coord->dx(i,j) * coord->J(i,j));
-              result(i+1,j,k) -= flux / (coord->dx(i+1,j) * coord->J(i+1,j));
-            }
+
+    BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
+      // Calculate velocities
+      BoutReal vU = 0.25 * (vz[i.zp()] + vz[i]) * (coord->J[i.zp()] + coord->J[i]);
+      BoutReal vD = 0.25 * (vz[i.zm()] + vz[i]) * (coord->J[i.zm()] + coord->J[i]);
+      BoutReal vL = 0.25 * (vx[i.xm()] + vx[i]) * (coord->J[i.xm()] + coord->J[i]);
+      BoutReal vR = 0.25 * (vx[i.xp()] + vx[i]) * (coord->J[i.xp()] + coord->J[i]);
+
+      // X direction
+      Stencil1D s;
+      s.c = n[i];
+      s.m = n[i.xm()];
+      s.mm = n[i.xmm()];
+      s.p = n[i.xp()];
+      s.pp = n[i.xpp()];
+
+      cellboundary(s);
+
+      if ((i.x() == mesh->xend) && (mesh->lastX())) {
+        // At right boundary in X
+        if (bndry_flux) {
+          BoutReal flux;
+          if (vR > 0.0) {
+            // Flux to boundary
+            flux = vR * s.R;
+          } else {
+            // Flux in from boundary
+            flux = vR * 0.5 * (n[i.xp()] + n[i]);
           }
-        
-          // Left side
-          
-          if((i==mesh->xstart) && (mesh->firstX())) {
-            // At left boundary in X
-            
-            if(bndry_flux) {
-              BoutReal flux;
-              
-              if(vL < 0.0) {
-                // Flux to boundary
-                flux = vL * s.L;
-                
-              }else {
-                // Flux in from boundary
-                flux = vL * 0.5*(n(i-1,j,k) + n(i,j,k));
-              }
-              result(i,j,k)   -= flux / (coord->dx(i,j) * coord->J(i,j));
-              result(i-1,j,k) += flux / (coord->dx(i-1,j) * coord->J(i-1,j));
-            }
-          }else {
-            // Not at a boundary
-            
-            if(vL < 0.0) {
-              BoutReal flux = vL * s.L;
-              result(i,j,k)   -= flux / (coord->dx(i,j) * coord->J(i,j));
-              result(i-1,j,k) += flux / (coord->dx(i-1,j) * coord->J(i-1,j));
-            }
-          }
-          
-          /// NOTE: Need to communicate fluxes
-          
-          // Z direction
-          s.m  = n(i,j,km);
-          s.mm = n(i,j,kmm);
-          s.p  = n(i,j,kp);
-          s.pp = n(i,j,kpp);
-          
-          cellboundary(s);
-          
-          if(vU > 0.0) {
-            BoutReal flux = vU * s.R / (coord->J(i,j)*coord->dz);
-            result(i,j,k)   += flux;
-            result(i,j,kp)  -= flux;
-          }
-          if(vD < 0.0) {
-            BoutReal flux = vD * s.L / (coord->J(i,j)*coord->dz);
-            result(i,j,k)   -= flux;
-            result(i,j,km)  += flux;
-          }
-          
+          result[i] += flux / (coord->dx[i] * coord->J[i]);
+          result[i.xp()] -= flux / (coord->dx[i.xp()] * coord->J[i.xp()]);
         }
+      } else {
+        // Not at a boundary
+        if (vR > 0.0) {
+          // Flux out into next cell
+          BoutReal flux = vR * s.R;
+          result[i] += flux / (coord->dx[i] * coord->J[i]);
+          result[i.xp()] -= flux / (coord->dx[i.xp()] * coord->J[i.xp()]);
+        }
+      }
+
+      // Left side
+
+      if ((i.x() == mesh->xstart) && (mesh->firstX())) {
+        // At left boundary in X
+
+        if (bndry_flux) {
+          BoutReal flux;
+          if (vL < 0.0) {
+            // Flux to boundary
+            flux = vL * s.L;
+          } else {
+            // Flux in from boundary
+            flux = vL * 0.5 * (n[i.xm()] + n[i]);
+          }
+          result[i] -= flux / (coord->dx[i] * coord->J[i]);
+          result[i.xm()] += flux / (coord->dx[i.xm()] * coord->J[i.xm()]);
+        }
+      } else {
+        // Not at a boundary
+        if (vL < 0.0) {
+          BoutReal flux = vL * s.L;
+          result[i] -= flux / (coord->dx[i] * coord->J[i]);
+          result[i.xm()] += flux / (coord->dx[i.xm()] * coord->J[i.xm()]);
+        }
+      }
+
+      /// NOTE: Need to communicate fluxes
+
+      // Z direction
+      s.m = n[i.zm()];
+      s.mm = n[i.zmm()];
+      s.p = n[i.zp()];
+      s.pp = n[i.zpp()];
+
+      cellboundary(s);
+
+      if (vU > 0.0) {
+        BoutReal flux = vU * s.R;
+        result[i] += flux / (coord->J[i] * coord->dz);
+        result[i.zp()] -= flux / (coord->J[i.zp()] * coord->dz);
+      }
+      if (vD < 0.0) {
+        BoutReal flux = vD * s.L;
+        result[i] -= flux / (coord->J[i] * coord->dz);
+        result[i.zm()] += flux / (coord->J[i.zm()] * coord->dz);
+      }
+    }
+
     communicateFluxes(result);
-    
+
     // Y advection
     // Currently just using simple centered differences
     // so no fluxes need to be exchanged
@@ -474,22 +472,19 @@ namespace FV {
     Field3D vy = toFieldAligned(v.y, "RGN_NOX");
     
     Field3D yresult = 0.0;    
-    for(int i=mesh->xstart;i<=mesh->xend;i++)
-      for(int j=mesh->ystart;j<=mesh->yend;j++)
-        for(int k=0;k<mesh->LocalNz;k++) {
-          
-          // Y velocities on y boundaries
-          BoutReal vU = 0.25*(vy(i,j,k) + vy(i,j+1,k))*(coord->J(i,j) + coord->J(i,j+1));
-          BoutReal vD = 0.25*(vy(i,j,k) + vy(i,j-1,k))*(coord->J(i,j) + coord->J(i,j-1));
-          
-          // n (advected quantity) on y boundaries
-          // Note: Use unshifted n_in variable
-          BoutReal nU = 0.5*(n(i,j,k) + n(i,j+1,k));
-          BoutReal nD = 0.5*(n(i,j,k) + n(i,j-1,k));
-          
-          yresult(i,j,k) = (nU*vU - nD*vD) / (coord->J(i,j)*coord->dy(i,j));
-        }
-    
+    yresult.setDirectionY(YDirectionType::Aligned);
+    BOUT_FOR(i, result.getRegion("RGN_NOBNDRY")) {
+      // Y velocities on y boundaries
+      BoutReal vU = 0.25 * (vy[i] + vy[i.yp()]) * (coord->J[i] + coord->J[i.yp()]);
+      BoutReal vD = 0.25 * (vy[i] + vy[i.ym()]) * (coord->J[i] + coord->J[i.ym()]);
+
+      // n (advected quantity) on y boundaries
+      // Note: Use unshifted n_in variable
+      BoutReal nU = 0.5 * (n[i] + n[i.yp()]);
+      BoutReal nD = 0.5 * (n[i] + n[i.ym()]);
+
+      yresult[i] = (nU * vU - nD * vD) / (coord->J[i] * coord->dy[i]);
+    }
     return result + fromFieldAligned(yresult, "RGN_NOBNDRY");
   }
 }

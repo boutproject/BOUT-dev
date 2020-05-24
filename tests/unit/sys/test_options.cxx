@@ -65,6 +65,28 @@ TEST_F(OptionsTest, IsSectionNotCaseSensitive) {
   ASSERT_TRUE(options.isSection("Subsection"));
 }
 
+TEST_F(OptionsTest, CompoundName) {
+  Options options;
+
+  // make sure options is initialized as a section
+  options["compoundkey"] = 321.;
+
+  ASSERT_TRUE(options.isSection());
+  ASSERT_FALSE(options["compoundkey"].isSection());
+  ASSERT_TRUE(options.isSection(""));
+  ASSERT_FALSE(options.isSection("compoundsubsection"));
+
+  options["compoundsubsection:compoundkey"] = 321.;
+
+  ASSERT_TRUE(options.isSection("compoundsubsection"));
+
+  BoutReal value = options["compoundsubsection"]["compoundkey"];
+  EXPECT_EQ(value, 321.);
+
+  BoutReal value2 = options["compoundsubsection:compoundkey"];
+  EXPECT_EQ(value2, 321.);
+}
+
 TEST_F(OptionsTest, SetGetInt) {
   Options options;
   options.set("int_key", 42, "code");
@@ -365,6 +387,16 @@ TEST_F(OptionsTest, InconsistentDefaultValueOptions) {
       BoutException);
 
   EXPECT_EQ(value, 0);
+}
+
+TEST_F(OptionsTest, OverrideDefaultValueOptions) {
+  Options options;
+
+  options["override_key"].overrideDefault("override_value");
+
+  std::string value = options["override_key"].withDefault("default_value");
+
+  EXPECT_EQ(value, "override_value");
 }
 
 TEST_F(OptionsTest, SingletonTest) {

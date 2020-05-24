@@ -110,7 +110,7 @@ specify
    
 Currently the requirements which can be combined are ``travis``,
 ``netcdf``, ``pnetcdf``, ``hdf5``, ``pvode``, ``cvode``,
-``ida``, ``lapack``, ``petsc``, ``slepc``, ``mumps``, ``arkode``,
+``ida``, ``lapack``, ``petsc``, ``slepc``, ``arkode``,
 ``openmp`` and ``make``. The ``make`` requirement is set to True when
 the tests are being compiled (but not run), and False when the scripts
 are run. It's used for tests which do not have a compilation stage.

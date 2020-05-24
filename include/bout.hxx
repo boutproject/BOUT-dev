@@ -52,8 +52,7 @@
 #include "where.hxx"
 #include "bout/mesh.hxx"
 #include "bout/solver.hxx"
-
-const BoutReal BOUT_VERSION = BOUT_VERSION_DOUBLE; ///< Version number
+#include "bout/version.hxx"
 
 #ifndef BOUT_NO_USING_NAMESPACE_BOUTGLOBALS
 // Include using statement by default in user code.

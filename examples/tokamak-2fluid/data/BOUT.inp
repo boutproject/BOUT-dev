@@ -26,7 +26,8 @@ dump_format = "nc"   # Set extension for dump files (nc = NetCDF)
 
 NXPE = 2
 
-#StaggerGrids = true
+[mesh]
+StaggerGrids = true
 
 ##################################################
 # derivative methods
@@ -85,8 +86,6 @@ estatic = true     # if true, electrostatic (Apar = 0). (BOUT-06 = esop)
 ZeroElMass = true  # Use Ohms law without electron inertia
 bout_jpar = true   # Use BOUT-06 method to calculate ZeroElMass jpar 
 
-stagger = true     # Use CtoL and LtoC parallel differencing
-
 bout_exb = true    # Use the BOUT-06 subset of ExB terms
 
 curv_upwind = false # Use upwinding for b0xkappa_dot_Grad terms
@@ -116,21 +115,7 @@ outer_boundary_flags = 0
 
 [All]
 scale = 0.0 # default size of initial perturbations
-
-# form of initial profile:
-# 0 - constant
-# 1 - Gaussian
-# 2 - Sinusoidal
-# 3 - Mix of mode numbers (like original BOUT)
-
-xs_opt = 0
-ys_opt = 1
-zs_opt = 2
-
-ys_mode = 1 
-ys_wd = 0.1
-zs_mode = 1 # toroidal mode number
-
+function = gauss(y, 0.1) * sin(z)
 
 # boundary conditions 
 #

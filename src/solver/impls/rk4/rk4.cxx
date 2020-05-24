@@ -40,12 +40,13 @@ int RK4Solver::init(int nout, BoutReal tstep) {
   
   // Get total problem size
   int ntmp;
-  if(MPI_Allreduce(&nlocal, &ntmp, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
+  if (bout::globals::mpi->MPI_Allreduce(&nlocal, &ntmp, 1, MPI_INT, MPI_SUM,
+                                        BoutComm::get())) {
     throw BoutException("MPI_Allreduce failed!");
   }
   neq = ntmp;
   
-  output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n",
+  output.write("\t3d fields = {:d}, 2d fields = {:d} neq={:d}, local_N={:d}\n",
 	       n3Dvars(), n2Dvars(), neq, nlocal);
   
   // Allocate memory
@@ -110,7 +111,8 @@ int RK4Solver::run() {
         
           // Average over all processors
           BoutReal err;
-          if(MPI_Allreduce(&local_err, &err, 1, MPI_DOUBLE, MPI_SUM, BoutComm::get())) {
+          if (bout::globals::mpi->MPI_Allreduce(&local_err, &err, 1, MPI_DOUBLE, MPI_SUM,
+                                                BoutComm::get())) {
             throw BoutException("MPI_Allreduce failed");
           }
 
@@ -118,7 +120,8 @@ int RK4Solver::run() {
 
           internal_steps++;
           if(internal_steps > mxstep)
-            throw BoutException("ERROR: MXSTEP exceeded. timestep = %e, err=%e\n", timestep, err);
+            throw BoutException("ERROR: MXSTEP exceeded. timestep = {:e}, err={:e}\n",
+                                timestep, err);
 
           if((err > rtol) || (err < 0.1*rtol)) {
             // Need to change timestep. Error ~ dt^5

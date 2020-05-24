@@ -2,7 +2,7 @@
 BOUT_TOP = ../../../..
 
 DIRS		= impls
-SOURCEC		= rkgeneric.cxx rkscheme.cxx rkschemefactory.cxx
+SOURCEC		= rkgeneric.cxx rkscheme.cxx
 SOURCEH		= $(SOURCEC:%.cxx=%.hxx)
 TARGET		= lib
 

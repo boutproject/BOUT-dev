@@ -75,6 +75,7 @@ namespace FV {
 
       fup = fdown = fc = toFieldAligned(f);
       aup = adown = ac = toFieldAligned(a);
+      yzresult.setDirectionY(YDirectionType::Aligned);
     }
 
     // Y flux
@@ -170,12 +171,13 @@ namespace FV {
     ASSERT2(Kin.getLocation() == fin.getLocation());
 
     Mesh *mesh = Kin.getMesh();
-    Field3D result{zeroFrom(fin)};
 
     bool use_parallel_slices = (Kin.hasParallelSlices() && fin.hasParallelSlices());
 
     const auto& K = use_parallel_slices ? Kin : toFieldAligned(Kin, "RGN_NOX");
     const auto& f = use_parallel_slices ? fin : toFieldAligned(fin, "RGN_NOX");
+
+    Field3D result{zeroFrom(f)};
 
     // K and f fields in yup and ydown directions
     const auto& Kup = use_parallel_slices ? Kin.yup() : K;
@@ -228,17 +230,21 @@ namespace FV {
   }
 
   const Field3D D4DY4(const Field3D &d_in, const Field3D &f_in) {
-    ASSERT1(areFieldsCompatible(d_in, f_in));
+    ASSERT1_FIELDS_COMPATIBLE(d_in, f_in);
 
     Mesh* mesh = d_in.getMesh();
 
-    Field3D result{zeroFrom(f_in)};
-    
     Coordinates *coord = f_in.getCoordinates();
     
+    ASSERT2(d_in.getDirectionY() == f_in.getDirectionY());
+    const bool are_unaligned = ((d_in.getDirectionY() == YDirectionType::Standard)
+                                and (f_in.getDirectionY() == YDirectionType::Standard));
+
     // Convert to field aligned coordinates
-    Field3D d = toFieldAligned(d_in, "RGN_NOX");
-    Field3D f = toFieldAligned(f_in, "RGN_NOX");
+    Field3D d = are_unaligned ? toFieldAligned(d_in, "RGN_NOX") : d_in;
+    Field3D f = are_unaligned ? toFieldAligned(f_in, "RGN_NOX") : f_in;
+
+    Field3D result{zeroFrom(f)};
     
     for(int i=mesh->xstart;i<=mesh->xend;i++)
       for(int j=mesh->ystart;j<=mesh->yend;j++) {
@@ -277,16 +283,17 @@ namespace FV {
       }
     
     // Convert result back to non-aligned coordinates
-    return fromFieldAligned(result, "RGN_NOBNDRY");
+    return are_unaligned ? fromFieldAligned(result, "RGN_NOBNDRY") : result;
   }
 
   const Field3D D4DY4_Index(const Field3D &f_in, bool bndry_flux) {
-    Field3D result{zeroFrom(f_in)};
-    
     Mesh* mesh = f_in.getMesh();
 
     // Convert to field aligned coordinates
-    Field3D f = toFieldAligned(f_in, "RGN_NOX");
+    const bool is_unaligned = (f_in.getDirectionY() == YDirectionType::Standard);
+    Field3D f = is_unaligned ? toFieldAligned(f_in, "RGN_NOX") : f_in;
+
+    Field3D result{zeroFrom(f)};
 
     Coordinates *coord = f_in.getCoordinates();
     
@@ -387,7 +394,7 @@ namespace FV {
     }
     
     // Convert result back to non-aligned coordinates
-    return fromFieldAligned(result, "RGN_NOBNDRY");
+    return is_unaligned ? fromFieldAligned(result, "RGN_NOBNDRY") : result;
   }
 
   void communicateFluxes(Field3D &f) {

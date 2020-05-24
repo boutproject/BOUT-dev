@@ -354,7 +354,7 @@ public:
   template <typename T>
   T as(const T& UNUSED(similar_to) = {}) const {
     if (!is_value) {
-      throw BoutException("Option %s has no value", full_name.c_str());
+      throw BoutException("Option {:s} has no value", full_name);
     }
 
     T val;
@@ -371,8 +371,8 @@ public:
         
         // Check if the parse failed
         if (ss.fail()) {
-          throw BoutException("Option %s could not be parsed ('%s')", full_name.c_str(),
-                              bout::utils::variantToString(value).c_str());
+          throw BoutException("Option {:s} could not be parsed ('{:s}')", full_name,
+                              bout::utils::variantToString(value));
         }
         
         // Check if there are characters remaining
@@ -381,13 +381,13 @@ public:
         for (const char &ch : remainder) {
           if (!std::isspace(static_cast<unsigned char>(ch))) {
             // Meaningful character not parsed
-            throw BoutException("Option %s could not be parsed", full_name.c_str());
+            throw BoutException("Option {:s} could not be parsed", full_name);
           }
         }
       } else {
         // Another type which can't be casted
-        throw BoutException("Option %s could not be converted to type %s",
-                            full_name.c_str(), typeid(T).name());
+        throw BoutException("Option {:s} could not be converted to type {:s}", full_name,
+                            typeid(T).name());
       }
     }
     
@@ -425,8 +425,9 @@ public:
     if (bout::utils::variantEqualTo(attributes.at("source"), DEFAULT_SOURCE)) {
       // Check that the default values are the same
       if (!similar(val, def)) {
-        throw BoutException("Inconsistent default values for '%s': '%s' then '%s'",
-                            full_name.c_str(), bout::utils::variantToString(value).c_str(), toString(def).c_str());
+        throw BoutException("Inconsistent default values for '{:s}': '{:s}' then '{:s}'",
+                            full_name, bout::utils::variantToString(value),
+                            toString(def));
       }
     }
     return val;
@@ -456,9 +457,10 @@ public:
         // Check that the default values are the same
         if (!similar(bout::utils::variantToString(value),
                      bout::utils::variantToString(def.value))) {
-          throw BoutException("Inconsistent default values for '%s': '%s' then '%s'",
-              full_name.c_str(), bout::utils::variantToString(value).c_str(),
-              bout::utils::variantToString(def.value).c_str());
+          throw BoutException(
+              "Inconsistent default values for '{:s}': '{:s}' then '{:s}'", full_name,
+              bout::utils::variantToString(value),
+              bout::utils::variantToString(def.value));
         }
       }
     }
@@ -479,17 +481,41 @@ public:
     if (bout::utils::variantEqualTo(attributes.at("source"), DEFAULT_SOURCE)) {
       // Check that the default values are the same
       if (!similar(val, def)) {
-        throw BoutException("Inconsistent default values for '%s': '%s' then '%s'",
-                            full_name.c_str(), bout::utils::variantToString(value).c_str(), toString(def).c_str());
+        throw BoutException("Inconsistent default values for '{:s}': '{:s}' then '{:s}'",
+                            full_name, bout::utils::variantToString(value),
+                            toString(def));
       }
     }
     return val;
   }
 
+  /// Allow the user to override defaults set later, also used by the
+  /// BOUT_OVERRIDE_DEFAULT_OPTION.
+  template <typename T> T overrideDefault(T def) {
+
+    // Set the type
+    attributes["type"] = bout::utils::typeName<T>();
+
+    if (!is_value) {
+      // Option not found
+      assign(def, "user_default");
+      is_value = true; // Prevent this default being replaced by setDefault()
+      return def;
+    }
+
+    return as<T>();
+  }
+
+  /// Overloaded version for const char*
+  /// Note: Different from template since return type is different to input
+  std::string overrideDefault(const char* def) {
+    return overrideDefault<std::string>(std::string(def));
+  }
+
   /// Get the parent Options object
   Options &parent() {
     if (parent_instance == nullptr) {
-      throw BoutException("Option %s has no parent", full_name.c_str());
+      throw BoutException("Option {:s} has no parent", full_name);
     }
     return *parent_instance;
   }
@@ -570,6 +596,17 @@ public:
    * Print string representation of this object and all sections in a tree structure
    */
   std::string str() const {return full_name;}
+
+  /// Print just the name of this object without parent sections
+  std::string name() const {
+    auto pos = full_name.rfind(":");
+    if (pos == std::string::npos) {
+      // No parent section or sections
+      return full_name;
+    } else {
+      return full_name.substr(pos + 1);
+    }
+  }
 
   /// Print the options which haven't been used
   void printUnused() const;
@@ -653,10 +690,9 @@ public:
                       << ")\n";
         } else {
           throw BoutException(
-              _("Options: Setting a value from same source (%s) to new value "
-                "'%s' - old value was '%s'."),
-              source.c_str(), toString(val).c_str(),
-              bout::utils::variantToString(value).c_str());
+              _("Options: Setting a value from same source ({:s}) to new value "
+                "'{:s}' - old value was '{:s}'."),
+              source, toString(val), bout::utils::variantToString(value));
         }
       }
     }
@@ -736,5 +772,12 @@ template <> Field3D Options::as<Field3D>(const Field3D& similar_to) const;
     } else {								\
       Options::getRoot()->getSection("all")->get(#var, var, def);	\
     }}									\
+
+/// Define for over-riding library defaults for options, should be called in global
+/// namespace so that the new default is set before main() is called.
+#define BOUT_OVERRIDE_DEFAULT_OPTION(name, value)     \
+  namespace {                                         \
+    const auto user_default##__FILE__##__LINE__ =     \
+      Options::root()[name].overrideDefault(value); } \
 
 #endif // __OPTIONS_H__

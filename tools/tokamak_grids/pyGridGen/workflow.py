@@ -3,7 +3,7 @@ from future import standard_library
 standard_library.install_aliases()
 from past.utils import old_div
 import numpy as np
-from bunch import Bunch
+from boututils.bunch import Bunch
 from create_grid  import create_grid
 from process_grid import process_grid
 from analyse_equil_3 import analyse_equil

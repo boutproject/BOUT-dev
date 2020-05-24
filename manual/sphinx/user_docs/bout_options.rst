@@ -46,10 +46,11 @@ name in square brackets.
     工作的 = true            # a boolean
     इनपुट = "some text"      # a string
 
-Option names can contain almost any character except ’=’ and ’:’, including unicode.
-If they start with a number or ``.``, contain arithmetic symbols
-(``+-*/^``), brackets (``(){}[]``), whitespace or comma ``,``, then these will need
-to be escaped in expressions. See below for how this is done. 
+Option names can contain almost any character except ’=’ and ’:’,
+including unicode.  If they start with a number or ``.``, contain
+arithmetic symbols (``+-*/^``), brackets (``(){}[]``), equality
+(``=``), whitespace or comma ``,``, then these will need to be escaped
+in expressions. See below for how this is done.
 
 Subsections can also be used, separated by colons ’:’, e.g.
 
@@ -73,7 +74,7 @@ Variables can even reference other variables:
    density = 3
 
 Note that variables can be used before their definition; all variables
-are first read, and then processed afterwards.
+are first read, and then processed afterwards on demand.
 The value ``pi`` is already defined, as is ``π``, and can be used in expressions.
 
 Uses for expressions include initialising variables
@@ -86,14 +87,28 @@ operators, with the usual precedence rules. In addition to ``π``,
 expressions can use predefined variables ``x``, ``y``, ``z`` and ``t``
 to refer to the spatial and time coordinates.
 A number of functions are defined, listed in table
-:numref:`tab-initexprfunc`. One slightly unusual feature is that if a
-number comes before a symbol or an opening bracket (``(``)
+:numref:`tab-initexprfunc`. One slightly unusual feature (borrowed from `Julia <https://julialang.org/>`_)
+is that if a number comes before a symbol or an opening bracket (``(``)
 then a multiplication is assumed: ``2x+3y^2`` is the same as
 ``2*x + 3*y^2``, which with the usual precedence rules is the same as
 ``(2*x) + (3*(y^2))``. 
 
+Expressions can span more than one line, which can make long expressions
+easier to read:
+
+.. code-block:: cfg
+
+   pressure = temperature * ( density0 +
+                              density1 )
+   temperature = 12
+   density0 = 3
+   density1 = 1
+
+The convention is the same as in `Python <https://www.python.org/>`_:
+If brackets are not balanced (closed) then the expression continues on the next line.
+
 All expressions are calculated in floating point and then converted to
-an integer when read inside BOUT++. The conversion is done by rounding
+an integer if needed when read inside BOUT++. The conversion is done by rounding
 to the nearest integer, but throws an error if the floating point
 value is not within :math:`1e-3` of an integer. This is to minimise
 unexpected behaviour. If you want to round any result to an integer,
@@ -296,6 +311,13 @@ direction can be specified:
 
     NXPE = 1  # Set number of X processors
 
+Alternatively, the number in the Y direction can be specified (if both are
+given, ``NXPE`` takes precedence and ``NYPE`` is ignored):
+
+.. code-block:: cfg
+
+    NYPE = 1  # Set number of Y processors
+
 If you need to specify complex input values, e.g. numerical values
 from experiment, you may want to use a grid file. The grid file to use
 is specified relative to the root directory where the simulation is
@@ -400,7 +422,7 @@ contain a single time-slice, and are controlled by a section called
    +-------------+----------------------------------------------------+--------------+
    | enabled     | Writing is enabled                                 | true         |
    +-------------+----------------------------------------------------+--------------+
-   | floats      | Write floats rather than doubles                   | true (dmp)   |
+   | floats      | Write floats rather than doubles                   | false        |
    +-------------+----------------------------------------------------+--------------+
    | flush       | Flush the file to disk after each write            | true         |
    +-------------+----------------------------------------------------+--------------+
@@ -413,11 +435,10 @@ contain a single time-slice, and are controlled by a section called
 
 |
 
-**enabled** is useful mainly for doing performance or scaling tests,
-where you want to exclude I/O from the timings. **floats** is used to
-reduce the size of the output files: restart files are stored as double
-by default (since these will be used to restart a simulation), but
-output dump files are set to floats by default.
+**enabled** is useful mainly for doing performance or scaling tests, where you
+want to exclude I/O from the timings. **floats** can be used to reduce the size
+of the output files: files are stored as double by default, but setting
+**floats = true** changes the output to single-precision floats.
 
 To enable parallel I/O for either output or restart files, set
 
@@ -482,6 +503,10 @@ sub-section could be set using::
 or just::
 
     options["mysection"]["myswitch"] = true;
+
+Names including sections, subsections, etc. can be specified using ``":"`` as a
+separator, e.g.::
+    options["mysection:mysubsection:myswitch"] = true;
 
 To get options, they can be assigned to a variable::
 
@@ -579,6 +604,17 @@ or using an initializer list::
 These are equivalent, but the initializer list method makes the tree structure clearer.
 Note that the list can contain many of the types which ``Options`` can hold, including
 ``Field2D`` and ``Field3D`` objects.
+
+Overriding library defaults
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+BOUT++ sets defaults for options controlling the mesh, etc. A physics model (or
+other user code) can override these defaults by using the convenience macro
+BOUT_OVERRIDE_DEFAULT_OPTION, for example if you want to change the default
+value of ``mesh::staggergrids`` from false to true, put (outside any
+class/function body)::
+
+    BOUT_OVERRIDE_DEFAULT_OPTION("mesh:staggergrids", true);
 
 Older interface
 ~~~~~~~~~~~~~~~
@@ -794,3 +830,47 @@ FFTs take, and tries to find the optimal method.
 
 
 .. _FFTW FAQ: http://www.fftw.org/faq/section3.html#nondeterministic
+
+
+Types for multi-valued options
+------------------------------
+
+An ``enum class`` can be a useful construct for options in a physics model. It
+can have an arbitrary number of user-defined, named values (although the code
+in ``include/bout/bout_enum_class.hxx`` needs extending for more than 10
+values). The advantage over using a ``std::string`` for an option is that a
+typo cannot produce an unexpected value: in C++ code it is a compile-time error
+and reading from ``BOUT.inp`` it is a run-time exception. We provide a utility
+macro ``BOUT_ENUM_CLASS`` to define an ``enum class`` with some extra
+convenience methods. For example, after defining ``myoption`` like::
+
+    BOUT_ENUM_TYPE(myoption, foo, bar, baz);
+
+it is possible not only to test for a value, e.g.::
+
+    myoption x = <something>;
+    ...
+    if (x == myoption::foo) {
+      do a foo thing
+    }
+
+but also to convert the option to a string::
+
+    std::string s = toString(x);
+
+pass it to a stream::
+
+    output << x;
+
+or get an option like ``myinput=baz`` from an input file or the command line as
+a ``myoption``::
+
+    myoption y = Options::root()["myinput"].as<myoption>();
+
+or with a default value::
+
+    myoption y = Options::root()["myinput"].withDefault(myoption::bar);
+
+Only strings exactly (but case-insensitively) matching the name of one of the
+defined ``myoption`` values are allowed, anything else results in an exception
+being thrown.

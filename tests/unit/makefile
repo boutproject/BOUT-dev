@@ -16,6 +16,7 @@ GTEST_SOURCES = $(GTEST_DIR)/src/gtest-all.cc
 # Set Google Test's header directory as a system directory, such that
 # the compiler doesn't generate warnings in Google Test headers.
 CXXFLAGS += -isystem ${GTEST_DIR}/include -I${GTEST_DIR} -I${BOUT_TEST_DIR}
+CXXFLAGS += -isystem ${GMOCK_DIR}/include -I${GMOCK_DIR}
 
 # Flags passed to the C++ compiler.
 CXXFLAGS += -g -Wall -Wextra -pthread
@@ -60,6 +61,11 @@ gtest-all.o : $(GTEST_SENTINEL)
 	@$(CXX) $(CPPFLAGS) -I$(GTEST_DIR) $(BOUT_FLAGS) -c \
             $(GTEST_DIR)/src/gtest-all.cc
 
+gmock-all.o : $(GTEST_SENTINEL)
+	@echo "  Compiling" $@
+	@$(CXX) $(CPPFLAGS) -I$(GTEST_DIR) $(BOUT_FLAGS) -c \
+	    $(GMOCK_DIR)/src/gmock-all.cc
+
 bout_test_main.o : $(GTEST_SENTINEL) $(BOUT_TEST_DIR)/bout_test_main.cxx
 	@echo "  Compiling" $@
 	@$(CXX) $(CPPFLAGS) -I$(GTEST_DIR) $(BOUT_INCLUDE) $(BOUT_FLAGS) -c $(@:.o=.cxx)
@@ -68,7 +74,11 @@ gtest.a : gtest-all.o
 	@echo "  Linking" $@
 	@$(AR) $(ARFLAGS) $@ $^
 
-bout_test_main.a : gtest-all.o bout_test_main.o
+gmock.a : gmock-all.o
+	@echo "  Linking" $@
+	@$(AR) $(ARFLAGS) $@ $^
+
+bout_test_main.a : gtest-all.o gmock-all.o bout_test_main.o
 	@echo "  Linking" $@
 	@$(AR) $(ARFLAGS) $@ $^
 
@@ -81,7 +91,7 @@ TEST_OBJECTS = $(TEST_SOURCES:%.cxx=%.o)
 
 $(TEST_OBJECTS): | $(GTEST_SENTINEL)
 
-serial_tests: makefile $(BOUT_TOP)/make.config $(OBJ) $(LIB) checklib \
+serial_tests: makefile $(BOUT_TOP)/make.config $(OBJ) $(LIB) \
               $(SUB_LIBS) $(TEST_OBJECTS) bout_test_main.a
 	@echo "  Linking tests"
 	@$(LD) -o $@ $(TEST_OBJECTS) bout_test_main.a $(LDFLAGS) $(BOUT_LIBS) $(SUB_LIBS)

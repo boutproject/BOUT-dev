@@ -38,15 +38,34 @@ class RKScheme;
 #include <bout_types.hxx>
 #include <options.hxx>
 #include <utils.hxx>
+#include "bout/generic_factory.hxx"
 
 #include <iomanip>
 #include <string>
 
-#define RKSchemeType const char*
-#define RKSCHEME_RKF45       "rkf45"
-#define RKSCHEME_CASHKARP    "cashkarp"
-#define RKSCHEME_RK4         "rk4"
-#define RKSCHEME_RKF34       "rkf34"
+constexpr auto RKSCHEME_RKF45 = "rkf45";
+constexpr auto RKSCHEME_CASHKARP = "cashkarp";
+constexpr auto RKSCHEME_RK4 = "rk4";
+constexpr auto RKSCHEME_RKF34 = "rkf34";
+
+class RKSchemeFactory : public Factory<RKScheme, RKSchemeFactory> {
+public:
+  static constexpr auto type_name = "RKScheme";
+  static constexpr auto section_name = "solver";
+  static constexpr auto option_name = "scheme";
+  static constexpr auto default_type = RKSCHEME_RKF45;
+};
+
+/// Simpler name for Factory registration helper class
+///
+/// Usage:
+///
+///     #include <bout/rkschemefactory.hxx>
+///     namespace {
+///     RegisterRKScheme<MyRKScheme> registerrkschememine("myrkscheme");
+///     }
+template <typename DerivedType>
+using RegisterRKScheme = RegisterInFactory<RKScheme, DerivedType, RKSchemeFactory>;
 
 class RKScheme {
  public:
@@ -57,14 +76,14 @@ class RKScheme {
 
   //Finish generic initialisation
   void init(int nlocalIn, int neqIn, bool adaptiveIn, BoutReal atolIn,
-            const BoutReal rtolIn, Options *options = nullptr);
+            BoutReal rtolIn, Options *options = nullptr);
 
   //Get the time at given stage
   BoutReal setCurTime(BoutReal timeIn,BoutReal dt,int curStage);
 
   //Get the state vector at given stage
   virtual void setCurState(const Array<BoutReal> &start, Array<BoutReal> &out,int curStage, 
-			   const BoutReal dt);
+			   BoutReal dt);
 
   //Calculate the output state and return the error estimate (if adaptive)
   virtual BoutReal setOutputStates(const Array<BoutReal> &start,BoutReal dt, Array<BoutReal> &resultFollow);
@@ -110,10 +129,10 @@ class RKScheme {
   virtual BoutReal getErr(Array<BoutReal> &solA, Array<BoutReal> &solB);
 
   virtual void constructOutput(const Array<BoutReal> &start,BoutReal dt, 
-			       const int index, Array<BoutReal> &sol);
+			       int index, Array<BoutReal> &sol);
 
   virtual void constructOutputs(const Array<BoutReal> &start,BoutReal dt, 
-				const int indexFollow,int indexAlt,
+				int indexFollow,int indexAlt,
 				Array<BoutReal> &solFollow, Array<BoutReal> &solAlt);
 
  private:

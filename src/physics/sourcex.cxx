@@ -22,7 +22,6 @@ const Field2D source_tanhx(const Field2D &f, BoutReal swidth, BoutReal slength) 
   Mesh* localmesh = f.getMesh();
 
   Field2D result{emptyFrom(f)};
-  result.allocate();
 
   // create a radial buffer zone to set jpar zero near radial boundary
   BOUT_FOR(i, result.getRegion("RGN_ALL")) {
@@ -43,8 +42,6 @@ const Field2D source_expx2(const Field2D &f, BoutReal swidth, BoutReal slength) 
 
   Field2D result{emptyFrom(f)};
 
-  result.allocate();
-
   // create a radial buffer zone to set jpar zero near radial boundary
   BOUT_FOR(i, result.getRegion("RGN_ALL")) {
     BoutReal lx = localmesh->GlobalX(i.x()) - slength;
@@ -64,7 +61,6 @@ const Field3D sink_tanhx(const Field2D &UNUSED(f0), const Field3D &f, BoutReal s
   Mesh* localmesh = f.getMesh();
 
   Field3D result{emptyFrom(f)};
-  result.allocate();
 
   // create a radial buffer zone to set jpar zero near radial boundary
   BOUT_FOR(i, result.getRegion("RGN_ALL")) {
@@ -86,7 +82,6 @@ const Field3D mask_x(const Field3D &f, bool UNUSED(BoutRealspace)) {
   Mesh* localmesh = f.getMesh();
 
   Field3D result{emptyFrom(f)};
-  result.allocate();
 
   // create a radial buffer zone to set jpar zero near radial boundary
   BOUT_FOR(i, result.getRegion("RGN_ALL")) {
@@ -112,8 +107,6 @@ const Field3D sink_tanhxl(const Field2D &UNUSED(f0), const Field3D &f, BoutReal 
 
   Field3D result{emptyFrom(f)};
 
-  result.allocate();
-
   BOUT_FOR(i, result.getRegion("RGN_ALL")) {
     BoutReal lx = localmesh->GlobalX(i.x()) - slength;
     BoutReal dampl = TanH(lx / swidth);
@@ -135,7 +128,6 @@ const Field3D sink_tanhxr(const Field2D &UNUSED(f0), const Field3D &f, BoutReal 
   Mesh* localmesh = f.getMesh();
 
   Field3D result{emptyFrom(f)};
-  result.allocate();
 
   BOUT_FOR(i, result.getRegion("RGN_ALL")) {
     BoutReal rlx = 1. - localmesh->GlobalX(i.x()) - slength;
@@ -157,7 +149,6 @@ const Field3D buff_x(const Field3D &f, bool UNUSED(BoutRealspace)) {
   Mesh* localmesh = f.getMesh();
 
   Field3D result{emptyFrom(f)};
-  result.allocate();
 
   const BoutReal dampl = 1.e0;
   const BoutReal dampr = 1.e0;

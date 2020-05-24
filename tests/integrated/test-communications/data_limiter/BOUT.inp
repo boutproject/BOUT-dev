@@ -1,0 +1,11 @@
+nout = 0
+
+mxg = 1
+myg = 1
+
+[mesh]
+nx = 8
+ny = 2
+nz = 1
+
+ixseps1 = 3

@@ -1,7 +1,7 @@
 // Provide the C++ wrapper for {{operator_name}} of {{lhs}} and {{rhs}}
 {{out}} operator{{operator}}(const {{lhs.passByReference}}, const {{rhs.passByReference}}) {
   {% if lhs != "BoutReal" and rhs != "BoutReal" %}
-    ASSERT1(areFieldsCompatible(lhs, rhs));
+    ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
   {% endif %}
 
   {{out.field_type}} {{out.name}}{emptyFrom({{lhs.name if lhs.field_type == out.field_type else rhs.name}})};
@@ -39,6 +39,11 @@
 	    {{out.index}} = {{lhs.index}} {{operator}} {{rhs.base_index}};
             {% endif %}
 	}
+  {% elif (operator == "/") and (rhs == "BoutReal") %}
+      const auto tmp = 1.0 / {{rhs.index}};
+      {{region_loop}}({{index_var}}, {{out.name}}.getRegion({{region_name}})) {
+         {{out.index}} = {{lhs.index}} * tmp;
+      }
   {% else %}
     {{region_loop}}({{index_var}}, {{out.name}}.getRegion({{region_name}})) {
 	    {{out.index}} = {{lhs.index}} {{operator}} {{rhs.index}};
@@ -56,7 +61,7 @@
   // otherwise just call the non-inplace version
   if (data.unique()) {
     {% if lhs != "BoutReal" and rhs != "BoutReal" %}
-      ASSERT1(areFieldsCompatible(*this, rhs));
+      ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
     {% endif %}
 
     {% if (lhs == "Field3D") %}
@@ -97,6 +102,11 @@
             const auto {{mixed_base_ind}} = localmesh->indPerpto3D({{index_var}}, yind);
             (*this)[{{base_ind_var}}] {{operator}}= {{rhs.index}};
 	}
+  {% elif (operator == "/") and (lhs == "Field3D" or lhs == "Field2D") and (rhs =="BoutReal") %}
+    const auto tmp = 1.0 / {{rhs.index}};
+    {{region_loop}}({{index_var}}, this->getRegion({{region_name}})) {
+        (*this)[{{index_var}}] *= tmp;
+    }
   {% else %}
     {{region_loop}}({{index_var}}, this->getRegion({{region_name}})) {
       (*this)[{{index_var}}] {{operator}}= {{rhs.index}};

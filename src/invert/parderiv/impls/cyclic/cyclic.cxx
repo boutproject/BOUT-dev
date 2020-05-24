@@ -58,7 +58,7 @@ const Field3D InvertParCR::solve(const Field3D &f) {
   TRACE("InvertParCR::solve(Field3D)");
   ASSERT1(localmesh == f.getMesh());
 
-  Field3D result{emptyFrom(f)};
+  Field3D result = emptyFrom(f).setDirectionY(YDirectionType::Aligned);
   
   Coordinates *coord = f.getCoordinates();
 
@@ -149,8 +149,8 @@ const Field3D InvertParCR::solve(const Field3D &f) {
     if(closed) {
       // Twist-shift
       int rank, np;
-      MPI_Comm_rank(surf.communicator(), &rank);
-      MPI_Comm_size(surf.communicator(), &np);
+      bout::globals::mpi->MPI_Comm_rank(surf.communicator(), &rank);
+      bout::globals::mpi->MPI_Comm_size(surf.communicator(), &np);
       if(rank == 0) {
         for(int k=0; k<nsys; k++) {
           BoutReal kwave=k*2.0*PI/coord->zlength(); // wave number is 1/[rad]

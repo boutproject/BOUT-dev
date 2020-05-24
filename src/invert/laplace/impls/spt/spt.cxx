@@ -121,7 +121,7 @@ FieldPerp LaplaceSPT::solve(const FieldPerp& b, const FieldPerp& x0) {
 Field3D LaplaceSPT::solve(const Field3D& b) {
 
   ASSERT1(b.getLocation() == location);
-  ASSERT1(localmesh = b.getMesh());
+  ASSERT1(localmesh == b.getMesh());
 
   Timer timer("invert");
   Field3D x{emptyFrom(b)};
