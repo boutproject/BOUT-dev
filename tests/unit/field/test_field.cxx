@@ -157,7 +157,8 @@ TEST_F(FieldTest, filledFromAuto) {
                                    return i.x() * i.y();
                                  });
 
-  BOUT_FOR(i, result.getRegion("RGN_ALL")) {
+  // Note: Serial so compiles with OpenMP
+  BOUT_FOR_SERIAL(i, result.getRegion("RGN_ALL")) {
     ASSERT_DOUBLE_EQ( result[i], i.x() * i.y());
   }
 }
@@ -168,7 +169,7 @@ TEST_F(FieldTest, filledFromInd3D) {
                                    return i.x() + i.z() - 2*i.y();
                                  });
 
-  BOUT_FOR(i, result.getRegion("RGN_ALL")) {
+  BOUT_FOR_SERIAL(i, result.getRegion("RGN_ALL")) {
     ASSERT_DOUBLE_EQ( result[i], i.x() + i.z() - 2*i.y());
   }
 }
@@ -179,7 +180,7 @@ TEST_F(FieldTest, filledFromConstInd3D) {
                                    return i.x() * i.y();
                                  });
 
-  BOUT_FOR(i, result.getRegion("RGN_ALL")) {
+  BOUT_FOR_SERIAL(i, result.getRegion("RGN_ALL")) {
     ASSERT_DOUBLE_EQ( result[i], i.x() * i.y());
   }
 }
