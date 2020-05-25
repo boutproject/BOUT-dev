@@ -44,7 +44,7 @@ Options::Options(const char* value) {
   assign<std::string>(value);
 }
 
-Options::Options(std::initializer_list<std::pair<const std::string, const Options>> values) {
+Options::Options(std::initializer_list<std::pair<std::string, Options>> values) {
   for (auto& value : values) {
     (*this)[value.first] = value.second;
   }

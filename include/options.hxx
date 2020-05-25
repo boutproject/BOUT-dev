@@ -175,7 +175,7 @@ public:
   /// This allows Options trees to be constructed, using a mix of types.
   ///
   /// Example:  { {"key1", 42}, {"key2", field} }
-  Options(std::initializer_list<std::pair<const std::string, const Options>> values);
+  Options(std::initializer_list<std::pair<std::string, Options>> values);
   
   /// Copy constructor
   Options(const Options& other);
