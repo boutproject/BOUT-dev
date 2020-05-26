@@ -314,6 +314,7 @@ AS_IF([test "x$enable_checks" != "xno" && test "x$enable_checks" != "x0"], [
           CXXFLAGS="$CXXFLAGS -DCHECK=1"
           CHECK_LEVEL="1"],
     [3], [AC_MSG_NOTICE([ -> Level 3 (Full checking + stack tracing)])
+          enable_output_debug=yes
           CXXFLAGS="$CXXFLAGS -DCHECK=3"
           CHECK_LEVEL="3"],
     [AC_MSG_NOTICE([ -> Level 2 (Basic checking + stack tracing)])

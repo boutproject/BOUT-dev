@@ -371,15 +371,16 @@ target_compile_definitions(bout++
   PUBLIC "BOUT_CHECK=${CHECK}")
 set(BOUT_CHECK_LEVEL ${CHECK})
 
-option(DEBUG_ENABLED "Enable extra debug output" OFF)
-option(ENABLE_OUTPUT_DEBUG "Enable extra debug output" OFF)
-if (ENABLE_OUTPUT_DEBUG OR DEBUG_ENABLED)
+include(CMakeDependentOption)
+cmake_dependent_option(ENABLE_OUTPUT_DEBUG "Enable extra debug output" OFF
+  "CHECK LESS 3" ON)
+message(STATUS "Extra debug output: BOUT_USE_OUTPUT_DEBUG=${ENABLE_OUTPUT_DEBUG}")
+set(BOUT_USE_OUTPUT_DEBUG ${ENABLE_OUTPUT_DEBUG})
+if (BOUT_USE_OUTPUT_DEBUG)
   target_compile_definitions(bout++
     PUBLIC "DEBUG_ENABLED"
     PUBLIC "BOUT_OUTPUT_DEBUG")
 endif()
-message(STATUS "Extra debug output: DEBUG_ENABLED=${DEBUG_ENABLED}")
-set(BOUT_USE_OUTPUT_DEBUG ${DEBUG_ENABLED})
 
 option(ENABLE_SIGNAL "SegFault handling" ON)
 if (ENABLE_SIGNAL)

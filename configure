@@ -6094,6 +6094,7 @@ $as_echo "$as_me:  -> Level 1 (Basic checking)" >&6;}
   3) :
     { $as_echo "$as_me:${as_lineno-$LINENO}:  -> Level 3 (Full checking + stack tracing)" >&5
 $as_echo "$as_me:  -> Level 3 (Full checking + stack tracing)" >&6;}
+          enable_output_debug=yes
           CXXFLAGS="$CXXFLAGS -DCHECK=3"
           CHECK_LEVEL="3" ;; #(
   *) :
