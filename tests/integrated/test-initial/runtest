@@ -13,6 +13,8 @@ import os
 
 #requires not make
 
+#cores: 4
+
 ########################################
 # Implementations of BOUT++ functions
 

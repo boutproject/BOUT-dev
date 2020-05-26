@@ -4,6 +4,8 @@
 # Run the test, check it completed successfully
 #
 
+#cores: 2
+
 from __future__ import print_function
 try:
   from builtins import str
