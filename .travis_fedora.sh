@@ -44,8 +44,6 @@ then
     cp -a /tmp/BOUT-dev /home/test/
     chown -R test /home/test
     chmod u+rwX /home/test -R
-    restorecon -R /home/test || :
-    ls -alZ /home/test/BOUT-dev
     sudo -u test ${0/\/tmp/\/home\/test} $mpi
 ## If we are called as normal user, run test
 else
@@ -56,7 +54,7 @@ else
     cd
     cd BOUT-dev
     echo "starting configure"
-    time bash ./configure --with-petsc --enable-shared || cat config.log
+    time ./configure --with-petsc --enable-shared || cat config.log
     sed -e "s|-L/usr/lib64 ||g" -i make.config
     for f in tests/requirements/*[^y] ; do
 	echo -n "$f: "
