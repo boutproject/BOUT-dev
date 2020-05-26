@@ -128,6 +128,9 @@ ZHermiteSpline::getWeightsForYApproximation(int i, int j, int k, int yoffset) co
 }
 
 Field3D ZHermiteSpline::interpolate(const Field3D& f, const std::string& region) const {
+  // Template with two branches for the body of this method so that if
+  // has_mask=false we can optimize out the conditional with skip_mask from the
+  // tight loop.
   if (has_mask) {
     return interpolate_internal<true>(f, region);
   }
