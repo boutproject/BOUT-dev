@@ -37,9 +37,7 @@ ZHermiteSpline::ZHermiteSpline(BoutMask mask, int y_offset, Mesh* mesh)
 
   // Initialise in order to avoid 'uninitialized value' errors from Valgrind when using
   // guard-cell values
-  for (int i = 0; i < n_total; i++) {
-    k_corner[i] = -1;
-  }
+  std::fill(std::begin(k_corner), std::end(k_corner), -1);
 
   // Allocate Field3D members
   h00.allocate();
