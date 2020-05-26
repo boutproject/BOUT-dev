@@ -69,7 +69,7 @@ class Requirements(object):
         Returns the result (True/False) and the requirements expression.
         """
 
-        with open(script, "r") as filein:
+        with open(script, "r", encoding="utf-8") as filein:
             contents = filein.read()
 
             # Find all lines starting with '#requires' or '#Requires:'
