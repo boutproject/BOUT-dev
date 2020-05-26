@@ -4,6 +4,9 @@
 # Run the test, check the error
 #
 
+# Too slow on travis w. fedora:
+# Requires not (travis and fedora)
+
 # Cores: 3
 
 from __future__ import print_function
