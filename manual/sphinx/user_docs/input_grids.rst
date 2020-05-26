@@ -20,11 +20,12 @@ a simple mesh can be created using options.
     dx = 0.1  # X mesh spacing
     dy = 0.1  # Y mesh spacing
 
-The above options will create a :math:`260\times 256` mesh in X and Y
-(MZ option sets Z resolution), with mesh spacing of :math:`0.1` in both
-directions. By default the coordinate system is Cartesian (metric tensor
-is the identity matrix), but this can be changed by specifying the
-metric tensor components.
+The above options will create a :math:`256\times 256` mesh in X and Y,
+assuming there are 2 guard cells in X direction. The Z resolution can
+be specified with MZ. The mesh spacing of :math:`0.1` in both
+directions. By default the coordinate system is Cartesian (metric
+tensor is the identity matrix), but this can be changed by specifying
+the metric tensor components.
 
 Integer quantities such as ``nx`` can be numbers (like “260”), or
 expressions (like “256 + 2\*MXG”). 
@@ -40,15 +41,15 @@ boundary but ``z`` does not (since it is usually periodic):
     mxg = 2            
 
 
-Note that the variable ``nz`` can be used before its definition; all
-variables are first read, and then processed afterwards.
+Note that the order of the defintion within a section isn't important,
+variables can be used before they are defined. All variables are first
+read, and only processed if they are used.
     
-All expressions are calculated in floating point and then
-converted to an integer. The conversion is 
-done by rounding to the nearest integer, but throws an error if the
-floating point value is not within 1e-3 of an integer. This is to minimise
-unexpected behaviour. If you want to round any result to an integer,
-use the ``round`` function:
+All expressions are calculated in floating point and then converted to
+an integer. The conversion is done by rounding to the nearest integer,
+but throws an error if the floating point value is not within 1e-3 of
+an integer. This is to minimise unexpected behaviour. If you want to
+round any result to an integer, use the ``round`` function:
 
 .. code-block:: cfg
 
@@ -102,15 +103,19 @@ not found, a warning will be printed and the default values used.
 
 -  X and Y grid sizes (integers) ``nx`` and ``ny`` **REQUIRED**
 
--  Differencing quantities in 2D arrays ``dx[nx][ny]`` and
-   ``dy[nx][ny]``. If these are not found they will be set to 1.
+-  Differencing quantities in 2D/3D arrays ``dx(nx,ny[,nz])``,
+   ``dy(nx,ny[,nz])`` and ``dz(nx,ny[,nz])``. If these are not found
+   they will be set to 1. Note that in earlier versions of BOUT++,
+   `dz` was a constant. To allow variation in `z` direction, BOUT++
+   has to be configured `--enable-metric-3d`, otherwise 2D fields are
+   used for the metric fields.
 
--  Diagonal terms of the metric tensor :math:`g^{ij}` ``g11[nx][ny]``,
-   ``g22[nx][ny]``, and ``g33[nx][ny]``. If not found, these will be set
+-  Diagonal terms of the metric tensor :math:`g^{ij}` ``g11(nx,ny[,nz])``,
+   ``g22(nx,ny[,nz])``, and ``g33(nx,ny[,nz])``. If not found, these will be set
    to 1.
 
--  Off-diagonal metric tensor :math:`g^{ij}` elements ``g12[nx][ny]``,
-   ``g13[nx][ny]``, and ``g23[nx][ny]``. If not found, these will be set
+-  Off-diagonal metric tensor :math:`g^{ij}` elements ``g12(nx,ny[,nz])``,
+   ``g13(nx,ny[,nz])``, and ``g23(nx,ny[,nz])``. If not found, these will be set
    to 0.
 
 -  Z shift for interpolation between field-aligned coordinates and
@@ -119,7 +124,7 @@ not found, a warning will be printed and the default values used.
    ``ShiftXderivs`` in ``mesh/mesh.hxx`` is enabled. ``ShiftXderivs``
    can be set in the root section of ``BOUT.inp`` as
    ``ShiftXderivs = true``. The shifts must be provided in the gridfile
-   in a field ``zshift[nx][ny]``. If not found, ``zshift`` is set to
+   in a field ``zshift(nx,ny)``. If not found, ``zshift`` is set to
    zero.
 
 The remaining quantities determine the topology of the grid. These are
@@ -152,8 +157,7 @@ you’re not interested in tokamaks then you can skip to the next section.
 
 The directory ``tokamak_grids`` contains code to generate input grid
 files for tokamaks. These can be used by the ``2fluid`` and
-``highbeta_reduced`` modules, and are (mostly) compatible with inputs to
-the BOUT-06 code.
+``highbeta_reduced`` modules.
 
 .. _sec-bout-topology:
 
