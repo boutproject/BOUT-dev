@@ -37,7 +37,8 @@ ZHermiteSpline::ZHermiteSpline(BoutMask mask, int y_offset, Mesh* mesh)
 
   // Initialise in order to avoid 'uninitialized value' errors from Valgrind when using
   // guard-cell values
-  std::fill(std::begin(k_corner), std::end(k_corner), -1);
+  std::fill(std::begin(k_corner), std::end(k_corner),
+            Ind3D(-1, localmesh->LocalNy, localmesh->LocalNz));
 
   // Allocate Field3D members
   h00.allocate();
@@ -48,6 +49,7 @@ ZHermiteSpline::ZHermiteSpline(BoutMask mask, int y_offset, Mesh* mesh)
 
 void ZHermiteSpline::calcWeights(const Field3D& delta_z, const std::string& region) {
 
+  const int ncy = localmesh->LocalNy;
   const int ncz = localmesh->LocalNz;
 
   BOUT_FOR(i, delta_z.getRegion(region)) {
@@ -60,20 +62,23 @@ void ZHermiteSpline::calcWeights(const Field3D& delta_z, const std::string& regi
 
     // The integer part of zt_prime are the indices of the cell
     // containing the field line end-point
-    k_corner[i.ind] = static_cast<int>(floor(delta_z(x, y, z)));
+    int corner_zind = floor(delta_z(x, y, z));
 
     // t_z is the normalised coordinate \in [0,1) within the cell
     // calculated by taking the remainder of the floating point index
-    const BoutReal t_z = delta_z(x, y, z) - static_cast<BoutReal>(k_corner[i.ind]);
+    const BoutReal t_z = delta_z(x, y, z) - static_cast<BoutReal>(corner_zind);
 
-    // make k_corner be in the range 0<=k_corner<nz
-    k_corner[i.ind] = ((k_corner[i.ind] % ncz) + ncz) % ncz;
+    // make corner_zind be in the range 0<=corner_zind<nz
+    corner_zind = ((corner_zind % ncz) + ncz) % ncz;
+
+    // Convert z-index to Ind3D
+    k_corner[i.ind] = Ind3D((i.x()*ncy + i.y())*ncz + corner_zind, ncy, ncz);
 
     // Check that t_z is in range
     if ((t_z < 0.0) || (t_z > 1.0)) {
       throw BoutException(
           "t_z={:e} out of range at ({:d},{:d},{:d}) (delta_z={:e}, k_corner={:d})", t_z,
-          x, y, z, delta_z(x, y, z), k_corner[i.ind]);
+          x, y, z, delta_z(x, y, z), k_corner[i.ind].ind);
     }
 
     h00(x, y, z) = (2. * t_z * t_z * t_z) - (3. * t_z * t_z) + 1.;
@@ -110,10 +115,11 @@ std::vector<ParallelTransform::PositionsAndWeights>
 ZHermiteSpline::getWeightsForYApproximation(int i, int j, int k, int yoffset) const {
 
   const int ncz = localmesh->LocalNz;
-  const int k_mod = k_corner[(i*localmesh->LocalNy + j)*ncz + k];
-  const int k_mod_m1 = (k_mod > 0) ? (k_mod - 1) : (ncz - 1);
-  const int k_mod_p1 = (k_mod < ncz - 1) ? (k_mod + 1) : 0;
-  const int k_mod_p2 = (k_mod < ncz - 2) ? (k_mod + 2) : k_mod + 2 - ncz;
+  const auto corner = k_corner[(i*localmesh->LocalNy + j)*ncz + k];
+  const int k_mod = corner.z();
+  const int k_mod_m1 = corner.zm().z();
+  const int k_mod_p1 = corner.zp().z();
+  const int k_mod_p2 = corner.zpp().z();
 
   return {{i, j + yoffset, k_mod_m1, -0.5 * h10(i, j, k)},
           {i, j + yoffset, k_mod,    h00(i, j, k) - 0.5 * h11(i, j, k)},
@@ -149,8 +155,6 @@ Field3D ZHermiteSpline::interpolate_internal(const Field3D& f, const std::string
     localmesh->wait(h);
   }
 
-  const int ncz = localmesh->LocalNz;
-
   BOUT_FOR(i, f.getRegion(region)) {
     const int x = i.x();
     const int y = i.y();
@@ -163,16 +167,14 @@ Field3D ZHermiteSpline::interpolate_internal(const Field3D& f, const std::string
 
     // Due to lack of guard cells in z-direction, we need to ensure z-index
     // wraps around
-    const int z_mod = k_corner[i.ind];
-    const int z_mod_p1 = (z_mod < ncz - 1) ? (z_mod + 1) : 0;
-    const int y_next = y + y_offset;
+    const auto corner = k_corner[i.ind].yp(y_offset);
+    const auto corner_zp1 = corner.zp();
 
     // Interpolate in Z
-    f_interp(x, y_next, z) =
-        +f(x, y_next, z_mod) * h00[i] + f(x, y_next, z_mod_p1) * h01[i]
-        + fz(x, y_next, z_mod) * h10[i] + fz(x, y_next, z_mod_p1) * h11[i];
+    f_interp[i.yp(y_offset)] = f[corner] * h00[i] + f[corner_zp1] * h01[i]
+                               + fz[corner] * h10[i] + fz[corner_zp1] * h11[i];
 
-    ASSERT2(finite(f_interp(x, y_next, z)) || x < localmesh->xstart
+    ASSERT2(finite(f_interp[i.yp(y_offset)]) || x < localmesh->xstart
             || x > localmesh->xend);
   }
   return f_interp;

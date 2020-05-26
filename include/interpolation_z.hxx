@@ -136,7 +136,7 @@ private:
     const Field3D& f, const std::string& region = "RGN_NOBNDRY"
   ) const;
 
-  Array<int> k_corner; // z-index of left grid point
+  Array<Ind3D> k_corner; // z-index of left grid point
 
   // Basis functions for cubic Hermite spline interpolation
   //    see http://en.wikipedia.org/wiki/Cubic_Hermite_spline
