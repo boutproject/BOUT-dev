@@ -504,7 +504,7 @@ void setupOutput(const std::string& data_dir, const std::string& log_file, int v
   output_progress.enable(verbosity > 2);
   output_info.enable(verbosity > 3);
   output_verbose.enable(verbosity > 4);
-  // Only actually enabled if also compiled with DEBUG
+  // Only actually enabled if also compiled with BOUT_ENABLE_OUTPUT_DEBUG
   output_debug.enable(verbosity > 5);
 
   // The backward-compatible output object same as output_progress

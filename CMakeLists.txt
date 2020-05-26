@@ -21,17 +21,19 @@ project(BOUT++
 find_program(MPIEXEC_EXECUTABLE NAMES mpiexec mpirun)
 find_package(MPI REQUIRED)
 
+include(CMakeDependentOption)
+
 # Override default
 option(INSTALL_GTEST "Enable installation of googletest. (Projects embedding googletest may want to turn this OFF.)" OFF)
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 include(BOUT++functions)
 
-option(GIT_SUBMODULE "Check submodules during build" ON)
+option(BOUT_USE_GIT_SUBMODULE "Check submodules during build" ON)
 # Adapted from https://cliutils.gitlab.io/modern-cmake/chapters/projects/submodule.html
 # Update submodules as needed
 function(bout_update_submodules)
-  if(NOT GIT_SUBMODULE)
+  if(NOT BOUT_USE_GIT_SUBMODULE)
     return()
   endif()
   find_package(Git QUIET)
@@ -319,11 +321,8 @@ target_compile_definitions(bout++
 target_compile_features(bout++ PUBLIC cxx_std_11)
 set_target_properties(bout++ PROPERTIES CXX_EXTENSIONS OFF)
 
-if(GIT_SUBMODULE OR (EXISTS externalpackages/mpark.variant/CMakeLists.txt))
-  option(BOUT_USE_SYSTEM_MPARK_VARIANT "Use external installation of mpark.variant" OFF)
-else()
-  option(BOUT_USE_SYSTEM_MPARK_VARIANT "Use external installation of mpark.variant" ON)
-endif()
+cmake_dependent_option(BOUT_USE_SYSTEM_MPARK_VARIANT "Use external installation of mpark.variant" OFF
+  "BOUT_USE_GIT_SUBMODULE;EXISTS externalpackages/mpark.variant/CMakeLists.txt" ON)
 
 if(BOUT_USE_SYSTEM_MPARK_VARIANT)
   find_package(mpark_variant REQUIRED)
@@ -334,13 +333,13 @@ else()
   if(TARGET mpark_variant)
     message(STATUS "Using mpark.variant submodule")
   else()
-    message(FATAL_ERROR "mpark_variant not found! Have you disabled the git submodules (GIT_SUBMODULE)?")
+    message(FATAL_ERROR "mpark_variant not found! Have you disabled the git submodules (BOUT_USE_GIT_SUBMODULE)?")
   endif()
 endif()
 target_link_libraries(bout++ PUBLIC mpark_variant)
 
-option(ENABLE_WARNINGS "Enable compiler warnings" ON)
-if (ENABLE_WARNINGS)
+option(BOUT_ENABLE_WARNINGS "Enable compiler warnings" ON)
+if (BOUT_ENABLE_WARNINGS)
   target_compile_options(bout++ PRIVATE
     $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>:
       -Wall -Wextra >
@@ -371,54 +370,53 @@ target_compile_definitions(bout++
   PUBLIC "BOUT_CHECK=${CHECK}")
 set(BOUT_CHECK_LEVEL ${CHECK})
 
-include(CMakeDependentOption)
-cmake_dependent_option(ENABLE_OUTPUT_DEBUG "Enable extra debug output" OFF
+cmake_dependent_option(BOUT_ENABLE_OUTPUT_DEBUG "Enable extra debug output" OFF
   "CHECK LESS 3" ON)
-message(STATUS "Extra debug output: BOUT_USE_OUTPUT_DEBUG=${ENABLE_OUTPUT_DEBUG}")
-set(BOUT_USE_OUTPUT_DEBUG ${ENABLE_OUTPUT_DEBUG})
+message(STATUS "Extra debug output: BOUT_USE_OUTPUT_DEBUG=${BOUT_ENABLE_OUTPUT_DEBUG}")
+set(BOUT_USE_OUTPUT_DEBUG ${BOUT_ENABLE_OUTPUT_DEBUG})
 if (BOUT_USE_OUTPUT_DEBUG)
   target_compile_definitions(bout++
     PUBLIC "DEBUG_ENABLED"
     PUBLIC "BOUT_OUTPUT_DEBUG")
 endif()
 
-option(ENABLE_SIGNAL "SegFault handling" ON)
-if (ENABLE_SIGNAL)
+option(BOUT_ENABLE_SIGNAL "SegFault handling" ON)
+message(STATUS "Signal handling: BOUT_USE_SIGNAL=${BOUT_ENABLE_SIGNAL}")
+set(BOUT_USE_SIGNAL ${BOUT_ENABLE_SIGNAL})
+if (BOUT_USE_SIGNAL)
   target_compile_definitions(bout++
     PUBLIC "SIGHANDLE"
     PUBLIC "BOUT_SIGHANDLE")
 endif()
-message(STATUS "Signal handling: SIGHANDLE=${ENABLE_SIGNAL}")
-set(BOUT_USE_SIGNAL ${ENABLE_SIGNAL})
 
-option(ENABLE_COLOR "Output coloring" ON)
-if (ENABLE_COLOR)
+option(BOUT_ENABLE_COLOR "Output coloring" ON)
+message(STATUS "Output coloring: BOUT_USE_COLOR=${BOUT_ENABLE_COLOR}")
+set(BOUT_USE_COLOR ${BOUT_ENABLE_COLOR})
+if (BOUT_USE_COLOR)
   target_compile_definitions(bout++
     PUBLIC "LOGCOLOR"
     PUBLIC "BOUT_LOGCOLOR")
 endif()
-message(STATUS "Output coloring: LOGCOLOR=${ENABLE_COLOR}")
-set(BOUT_USE_COLOR ${ENABLE_COLOR})
 
-option(ENABLE_TRACK "Field name tracking" ON)
-if (ENABLE_TRACK)
+option(BOUT_ENABLE_TRACK "Field name tracking" ON)
+message(STATUS "Field name tracking: BOUT_USE_TRACK=${BOUT_ENABLE_TRACK}")
+set(BOUT_USE_TRACK ${BOUT_ENABLE_TRACK})
+if (BOUT_USE_TRACK)
   target_compile_definitions(bout++
     PUBLIC "TRACK"
     PUBLIC "BOUT_TRACK")
 endif()
-message(STATUS "Field name tracking: TRACK=${ENABLE_TRACK}")
-set(BOUT_USE_TRACK ${ENABLE_TRACK})
 
-option(ENABLE_SIGFPE "Signalling floating point exceptions" OFF)
-if (ENABLE_SIGFPE)
+option(BOUT_ENABLE_SIGFPE "Signalling floating point exceptions" OFF)
+message(STATUS "Signalling floating point exceptions: BOUT_USE_SIGFPE=${BOUT_ENABLE_SIGFPE}")
+set(BOUT_USE_SIGFPE ${BOUT_ENABLE_SIGFPE})
+if (BOUT_USE_SIGFPE)
   target_compile_definitions(bout++
     PUBLIC "BOUT_FPE")
 endif()
-message(STATUS "Signalling floating point exceptions: BOUT_FPE=${ENABLE_SIGFPE}")
-set(BOUT_USE_SIGFPE ${ENABLE_SIGFPE})
 
-option(ENABLE_BACKTRACE "Enable backtrace" ON)
-if (ENABLE_BACKTRACE)
+option(BOUT_ENABLE_BACKTRACE "Enable backtrace" ON)
+if (BOUT_ENABLE_BACKTRACE)
   find_program(ADDR2LINE_FOUND addr2line)
   if (NOT ADDR2LINE_FOUND)
     message(FATAL_ERROR "addr2line not found")
@@ -428,11 +426,13 @@ if (ENABLE_BACKTRACE)
     PUBLIC "BOUT_BACKTRACE")
   target_link_libraries(bout++ PUBLIC ${CMAKE_DL_LIBS})
 endif()
-message(STATUS "Enable backtrace: BACKTRACE=${ENABLE_BACKTRACE}")
-set(BOUT_USE_BACKTRACE ${ENABLE_BACKTRACE})
+message(STATUS "Enable backtrace: BOUT_USE_BACKTRACE=${BOUT_ENABLE_BACKTRACE}")
+set(BOUT_USE_BACKTRACE ${BOUT_ENABLE_BACKTRACE})
 
-option(ENABLE_OPENMP "Enable OpenMP support" OFF)
-if (ENABLE_OPENMP)
+option(BOUT_ENABLE_OPENMP "Enable OpenMP support" OFF)
+set(BOUT_OPENMP_SCHEDULE static CACHE STRING "Set OpenMP schedule")
+set_property(CACHE BOUT_OPENMP_SCHEDULE PROPERTY STRINGS static dynamic guided auto)
+if (BOUT_ENABLE_OPENMP)
   find_package(OpenMP REQUIRED)
   target_link_libraries(bout++ PUBLIC OpenMP::OpenMP_CXX)
   set(possible_openmp_schedules static dynamic guided auto)
@@ -445,8 +445,8 @@ if (ENABLE_OPENMP)
     PUBLIC "BOUT_OPENMP_SCHEDULE=${OPENMP_SCHEDULE}")
   message(STATUS "OpenMP schedule: ${OPENMP_SCHEDULE}")
 endif()
-message(STATUS "Enable OpenMP: ${ENABLE_OPENMP}")
-set(BOUT_USE_OPENMP ${ENABLE_OPENMP})
+message(STATUS "Enable OpenMP: ${BOUT_ENABLE_OPENMP}")
+set(BOUT_USE_OPENMP ${BOUT_ENABLE_OPENMP})
 
 include(GetGitRevisionDescription)
 get_git_head_revision(GIT_REFSPEC GIT_SHA1)
@@ -457,15 +457,15 @@ set(BOUT_GIT_REVISION ${GIT_SHA1})
 
 # Optional dependencies
 
-option(USE_PVODE "Enable support for bundled PVODE" ON)
-if (USE_PVODE)
+option(BOUT_USE_PVODE "Enable support for bundled PVODE" ON)
+if (BOUT_USE_PVODE)
   add_subdirectory(externalpackages/PVODE)
   target_link_libraries(bout++ PUBLIC pvode pvpre)
   target_compile_definitions(bout++
     PUBLIC "BOUT_HAS_PVODE")
 endif()
-message(STATUS "PVODE support: ${USE_PVODE}")
-set(BOUT_HAS_PVODE ${USE_PVODE})
+message(STATUS "PVODE support: ${BOUT_USE_PVODE}")
+set(BOUT_HAS_PVODE ${BOUT_USE_PVODE})
 
 option(BOUT_USE_NETCDF "Enable support for NetCDF output" ON)
 option(BOUT_DOWNLOAD_NETCDF_CXX4 "Download and build netCDF-cxx4" OFF)
@@ -490,11 +490,11 @@ if (BOUT_USE_NETCDF)
     PUBLIC "NCDF4"
     PUBLIC "BOUT_HAS_NETCDF")
 endif()
-message(STATUS "NetCDF support: ${USE_NETCDF}")
-set(BOUT_HAS_NETCDF ${USE_NETCDF})
+message(STATUS "NetCDF support: ${BOUT_USE_NETCDF}")
+set(BOUT_HAS_NETCDF ${BOUT_USE_NETCDF})
 
-option(USE_HDF5 "Enable support for HDF5 output" OFF)
-if (USE_HDF5)
+option(BOUT_USE_HDF5 "Enable support for HDF5 output" OFF)
+if (BOUT_USE_HDF5)
   find_package(HDF5 REQUIRED COMPONENTS CXX)
   target_compile_definitions(bout++
     PUBLIC "HDF5"
@@ -502,21 +502,21 @@ if (USE_HDF5)
   target_link_libraries(bout++ PUBLIC "${HDF5_CXX_LIBRARIES}")
   target_include_directories(bout++ PUBLIC "${HDF5_CXX_INCLUDE_DIRS}")
 endif()
-message(STATUS "HDF5 support: ${USE_HDF5}")
-set(BOUT_HAS_HDF5 ${USE_HDF5})
+message(STATUS "HDF5 support: ${BOUT_USE_HDF5}")
+set(BOUT_HAS_HDF5 ${BOUT_USE_HDF5})
 
-option(USE_FFTW "Enable support for FFTW" ON)
-if (USE_FFTW)
+option(BOUT_USE_FFTW "Enable support for FFTW" ON)
+if (BOUT_USE_FFTW)
   find_package(FFTW REQUIRED)
   target_compile_definitions(bout++
     PUBLIC "BOUT_HAS_FFTW")
   target_link_libraries(bout++ PUBLIC FFTW::FFTW)
 endif()
-message(STATUS "FFTW support: ${USE_FFTW}")
-set(BOUT_HAS_FFTW ${USE_FFTW})
+message(STATUS "FFTW support: ${BOUT_USE_FFTW}")
+set(BOUT_HAS_FFTW ${BOUT_USE_FFTW})
 
-option(USE_LAPACK "Enable support for LAPACK" ON)
-if (USE_LAPACK)
+option(BOUT_USE_LAPACK "Enable support for LAPACK" ON)
+if (BOUT_USE_LAPACK)
   if (NOT CMAKE_SYSTEM_NAME STREQUAL "CrayLinuxEnvironment")
     # Cray wrappers sort this out for us
     find_package(LAPACK REQUIRED)
@@ -526,11 +526,11 @@ if (USE_LAPACK)
     PUBLIC "LAPACK"
     PUBLIC "BOUT_HAS_LAPACK")
 endif()
-message(STATUS "LAPACK support: ${USE_LAPACK}")
-set(BOUT_HAS_LAPACK ${USE_LAPACK})
+message(STATUS "LAPACK support: ${BOUT_USE_LAPACK}")
+set(BOUT_HAS_LAPACK ${BOUT_USE_LAPACK})
 
-option(USE_PETSC "Enable support for PETSc time solvers and inversions" OFF)
-if (USE_PETSC)
+option(BOUT_USE_PETSC "Enable support for PETSc time solvers and inversions" OFF)
+if (BOUT_USE_PETSC)
   if (NOT CMAKE_SYSTEM_NAME STREQUAL "CrayLinuxEnvironment")
     # Cray wrappers sort this out for us
     find_package(PETSc REQUIRED)
@@ -539,21 +539,21 @@ if (USE_PETSC)
   target_compile_definitions(bout++
     PUBLIC "BOUT_HAS_PETSC")
 endif()
-message(STATUS "PETSc support: ${USE_PETSC}")
-set(BOUT_HAS_PETSC ${USE_PETSC})
+message(STATUS "PETSc support: ${BOUT_USE_PETSC}")
+set(BOUT_HAS_PETSC ${BOUT_USE_PETSC})
 
-option(USE_SLEPC "Enable support for SLEPc eigen solver" OFF)
-if (USE_SLEPC)
+option(BOUT_USE_SLEPC "Enable support for SLEPc eigen solver" OFF)
+if (BOUT_USE_SLEPC)
   find_package(SLEPc REQUIRED)
   target_compile_definitions(bout++
     PUBLIC "BOUT_HAS_SLEPC")
   target_link_libraries(bout++ PUBLIC SLEPc::SLEPc)
 endif()
-message(STATUS "SLEPc support: ${USE_SLEPC}")
-set(BOUT_HAS_SLEPC ${USE_SLEPC})
+message(STATUS "SLEPc support: ${BOUT_USE_SLEPC}")
+set(BOUT_HAS_SLEPC ${BOUT_USE_SLEPC})
 
-option(USE_SUNDIALS "Enable support for SUNDIALS time solvers" OFF)
-if (USE_SUNDIALS)
+option(BOUT_USE_SUNDIALS "Enable support for SUNDIALS time solvers" OFF)
+if (BOUT_USE_SUNDIALS)
   find_package(SUNDIALS REQUIRED)
   target_compile_definitions(bout++
     PUBLIC "BOUT_HAS_CVODE"
@@ -564,11 +564,14 @@ if (USE_SUNDIALS)
   target_link_libraries(bout++ PUBLIC SUNDIALS::ida)
   target_link_libraries(bout++ PUBLIC SUNDIALS::arkode)
 endif()
-message(STATUS "SUNDIALS support: ${USE_SUNDIALS}")
-set(BOUT_HAS_SUNDIALS ${USE_SUNDIALS})
+message(STATUS "SUNDIALS support: ${BOUT_USE_SUNDIALS}")
+set(BOUT_HAS_SUNDIALS ${BOUT_USE_SUNDIALS})
+set(BOUT_HAS_ARKODE ${BOUT_USE_SUNDIALS})
+set(BOUT_HAS_CVODE ${BOUT_USE_SUNDIALS})
+set(BOUT_HAS_IDA ${BOUT_USE_SUNDIALS})
 
-option(USE_NLS "Enable Native Language Support" ON)
-if (USE_NLS)
+option(BOUT_USE_NLS "Enable Native Language Support" ON)
+if (BOUT_USE_NLS)
   find_package(Gettext)
   if (GETTEXT_FOUND)
 	target_compile_definitions(bout++
@@ -582,10 +585,10 @@ if (USE_NLS)
 	endif()
   endif()
 endif()
-set(BOUT_HAS_GETTEXT ${USE_NLS})
+set(BOUT_HAS_GETTEXT ${BOUT_USE_NLS})
 
-option(USE_SCOREP "Enable support for Score-P based instrumentation" OFF)
-if (USE_SCOREP)
+option(BOUT_USE_SCOREP "Enable support for Score-P based instrumentation" OFF)
+if (BOUT_USE_SCOREP)
   target_compile_definitions(bout++
     PUBLIC "BOUT_HAS_SCOREP")
   message(STATUS "Score-P support enabled. Please make sure you are calling CMake like so:
@@ -593,7 +596,7 @@ if (USE_SCOREP)
   SCOREP_WRAPPER=off cmake -DCMAKE_C_COMPILER=scorep-mpicc -DCMAKE_CXX_COMPILER=scorep-mpicxx <other CMake options>
 ")
 endif()
-set(BOUT_HAS_SCOREP ${USE_SCOREP})
+set(BOUT_HAS_SCOREP ${BOUT_USE_SCOREP})
 
 option(BOUT_USE_UUID_SYSTEM_GENERATOR "Enable support for using a system UUID generator" ON)
 if (BOUT_USE_UUID_SYSTEM_GENERATOR)
