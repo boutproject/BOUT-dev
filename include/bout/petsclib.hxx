@@ -45,9 +45,9 @@ class PetscLib;
 #ifndef __PETSCLIB_H__
 #define __PETSCLIB_H__
 
-#ifdef BOUT_HAS_PETSC
-
 class Options;
+
+#ifdef BOUT_HAS_PETSC
 
 #include <petsc.h>
 #include <petscversion.h>
