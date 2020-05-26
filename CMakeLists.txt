@@ -415,8 +415,10 @@ message(STATUS "Runtime checking level: CHECK=${CHECK}")
 target_compile_definitions(bout++ PUBLIC "CHECK=${CHECK}")
 set(BOUT_CHECK_LEVEL ${CHECK})
 
-option(ENABLE_OUTPUT_DEBUG "Enable extra debug output" OFF)
-message(STATUS "Extra debug output: DEBUG_ENABLED=${ENABLE_OUTPUT_DEBUG}")
+include(CMakeDependentOption)
+cmake_dependent_option(ENABLE_OUTPUT_DEBUG "Enable extra debug output" OFF
+  "CHECK LESS 3" ON)
+message(STATUS "Extra debug output: BOUT_USE_OUTPUT_DEBUG=${ENABLE_OUTPUT_DEBUG}")
 set(BOUT_USE_OUTPUT_DEBUG ${ENABLE_OUTPUT_DEBUG})
 
 option(ENABLE_SIGNAL "SegFault handling" ON)
