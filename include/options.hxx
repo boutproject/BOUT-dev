@@ -164,6 +164,19 @@ public:
   Options(Options *parent_instance, std::string full_name)
       : parent_instance(parent_instance), full_name(std::move(full_name)){};
 
+  /// Initialise with a value
+  /// These enable Options to be constructed using initializer lists
+  template <typename T>
+  Options(T value) {
+    assign<T>(value);
+  }
+  
+  /// Construct with a nested initializer list
+  /// This allows Options trees to be constructed, using a mix of types.
+  ///
+  /// Example:  { {"key1", 42}, {"key2", field} }
+  Options(std::initializer_list<std::pair<std::string, Options>> values);
+  
   /// Copy constructor
   Options(const Options& other);
 

@@ -4,6 +4,8 @@
 # Run the test, compare results against the benchmark
 #
 
+# Cores: 4
+
 from __future__ import print_function
 try:
   from builtins import str

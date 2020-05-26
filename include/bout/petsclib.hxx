@@ -47,6 +47,8 @@ class PetscLib;
 
 #include "bout/build_config.hxx"
 
+class Options;
+
 #if BOUT_HAS_PETSC
 
 #include <petsc.h>
@@ -63,7 +65,7 @@ public:
   /*!
    * Ensure that PETSc has been initialised
    */
-  PetscLib();
+  explicit PetscLib(Options* opt = nullptr);
   
   /*!
    * Calls PetscFinalize when all PetscLib instances are destroyed
@@ -77,7 +79,13 @@ public:
    * The arguments will be passed to PetscInitialize()
    */ 
   static void setArgs(int &c, char** &v) { pargc = &c; pargv = &v;}
-  
+
+  /// Set options for a KSP linear solver that uses the options specific to this PetscLib,
+  /// by setting an options prefix for the KSP, and adding that prefix to all the options
+  /// set in the [petsc] section, or [petsc] subsection of the options, if non-null 'opt'
+  /// was passed to the constructor.
+  void setOptionsFromInputFile(KSP& ksp);
+
   /*!
    * Force cleanup. This will call PetscFinalize, printing a warning
    * if any instances of PetscLib still exist
@@ -91,7 +99,12 @@ private:
   static int* pargc;
   static char*** pargv;
   
+  // Prefix for object-specific options
+  std::string options_prefix;
+
   static PetscLogEvent USER_EVENT;
+
+  void setPetscOptions(Options& options, const std::string& pass_options_prefix);
 };
 
 #ifndef PETSC_VERSION_GE
@@ -109,13 +122,19 @@ private:
 
 #include "unused.hxx"
 
+// PETSc not available, so KSP not already defined. KSP should never be called, so forward
+// declaration OK here.
+class KSP;
+
 class PetscLib {
 public:
-  PetscLib() {}
+  explicit PetscLib(Options* UNUSED(opt) = nullptr) {}
   ~PetscLib() {}
   
   static void setArgs(int &UNUSED(c), char** &UNUSED(v)) {}
   
+  void setOptionsFromInputFile(KSP& UNUSED(ksp)) {}
+
   static void cleanup() {}
 };
 

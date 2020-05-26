@@ -4,6 +4,7 @@
 #
 # requires: hdf5
 # requires: all_tests
+# cores: 4
 
 from boutdata import restart
 from boutdata.collect import collect
