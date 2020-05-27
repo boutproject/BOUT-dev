@@ -79,10 +79,6 @@ public:
   BoutReal getMeanIterations() const { return ipt_mean_its; }
   void resetMeanIterations() { ipt_mean_its = 0; }
 
-  void get_initial_guess(int jy, int kz, Matrix<dcomplex> &r,
-      Tensor<dcomplex> &lowerGuardVector, Tensor<dcomplex> &upperGuardVector,
-      Matrix<dcomplex> &xk1d);
-
   void resetSolver();
 
   class Level {
