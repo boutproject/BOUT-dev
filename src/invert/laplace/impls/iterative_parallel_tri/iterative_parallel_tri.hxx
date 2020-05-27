@@ -86,35 +86,46 @@ public:
   void resetSolver();
 
   class Level {
-
   public:
+    // Constructor for zeroth level; needs to modify \p lap
+    Level(LaplaceIPT& lap);
+    // Constructor for all other levels; uses the previous level \p lup
+    Level(const LaplaceIPT& lap, const Level& lup, std::size_t current_level);
 
     Matrix<dcomplex> xloc;
     Matrix<dcomplex> residual;
     Tensor<dcomplex> ar, br, cr, brinv;
     Matrix<dcomplex> rr;
 
-    MPI_Comm comm;
-    int xproc;
-    int yproc;
+    /// Unique ID
     int myproc;
-    int proc_in, proc_out;
-    int proc_in_up, proc_out_up;
+    /// In-neighbour
+    int proc_in;
+    /// Out-neighbour
+    int proc_out;
+    /// Whether this processor is included in this grid level's calculation
     bool included;
-    bool included_up;
+    /// Colouring of processor for Gauss-Seidel
     bool red, black;
-    int current_level;
+    /// Current grid level being solved
+    std::size_t current_level;
 
     // indexing to remove branches from tight loops
     int index_start;
     int index_end;
 
+    // Save some proc properties from the level above - this allows us
+    // to NOT pass the level above as an argument in some functions
+
+    /// Whether this processor is involved in the calculation on the grid one level more refined
+    bool included_up;
+    /// This processor's neighbours on the level above
+    int proc_in_up, proc_out_up;
+
     void calculate_residual(const LaplaceIPT& lap);
     void calculate_total_residual(LaplaceIPT& lap, Array<BoutReal> &total, Array<BoutReal> &globalmaxsol, Array<bool> &converged);
     void coarsen(const LaplaceIPT& lap, const Matrix<dcomplex> &fine_residual);
     void gauss_seidel_red_black(const LaplaceIPT& lap);
-    void init(const LaplaceIPT &lap, const Level lup, int current_level);
-    void init(LaplaceIPT &lap);
     void init_rhs(LaplaceIPT &lap, const Matrix<dcomplex> bcmplx);
     bool is_diagonally_dominant(const LaplaceIPT &lap);
     void reconstruct_full_solution(const LaplaceIPT &lap, Matrix<dcomplex> &xk1d);

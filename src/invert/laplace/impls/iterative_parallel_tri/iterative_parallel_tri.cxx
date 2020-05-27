@@ -56,12 +56,11 @@ LaplaceIPT::LaplaceIPT(Options* opt, CELL_LOC loc, Mesh* mesh_in)
                             "expensive convergence checks at earlier iterations")
                        .withDefault(false)),
       A(0.0, localmesh), C(1.0, localmesh), D(1.0, localmesh), nmode(maxmode + 1),
-      ncx(localmesh->LocalNx), ny(localmesh->LocalNy), levels(max_level + 1),
-      avec(ny, nmode, ncx), bvec(ny, nmode, ncx), cvec(ny, nmode, ncx),
-      upperGuardVector(ny, nmode, ncx), lowerGuardVector(ny, nmode, ncx),
-      minvb(nmode, ncx), al(ny, nmode), bl(ny, nmode), au(ny, nmode), bu(ny, nmode),
-      rl(nmode), ru(nmode), r1(ny, nmode), r2(ny, nmode), first_call(ny),
-      x0saved(ny, 4, nmode), converged(nmode), fine_error(4, nmode) {
+      ncx(localmesh->LocalNx), ny(localmesh->LocalNy), avec(ny, nmode, ncx),
+      bvec(ny, nmode, ncx), cvec(ny, nmode, ncx), upperGuardVector(ny, nmode, ncx),
+      lowerGuardVector(ny, nmode, ncx), minvb(nmode, ncx), al(ny, nmode), bl(ny, nmode),
+      au(ny, nmode), bu(ny, nmode), rl(nmode), ru(nmode), r1(ny, nmode), r2(ny, nmode),
+      first_call(ny), x0saved(ny, 4, nmode), converged(nmode), fine_error(4, nmode) {
 
   A.setLocation(location);
   C.setLocation(location);
@@ -379,13 +378,14 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   // much of the information for each level may be stored. Data that cannot
   // be cached (e.g. the changing right-hand sides) is calculated in init_rhs
   // below.
+  levels.reserve(max_level + 1);
   if (first_call[jy] || not store_coefficients) {
 
-    levels[0].init(*this);
+    levels.emplace_back(*this);
 
     if (max_level > 0) {
-      for (int l = 1; l <= max_level; l++) {
-        levels[l].init(*this, levels[l - 1], l);
+      for (std::size_t l = 1; l < (static_cast<std::size_t>(max_level) + 1); ++l) {
+        levels.emplace_back(*this, levels[l - 1], l);
       }
     }
   }
@@ -414,7 +414,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   int subcount = 0;   // Count of iterations on a level
   int cyclecount = 0; // Number of multigrid cycles
   int cycle_eta = 0;  // Predicted finishing cycle
-  int current_level = 0;
+  std::size_t current_level = 0;
   bool down = true;
 
   auto error_abs = Array<BoutReal>(nmode);
@@ -534,7 +534,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
       subcount = 0;
 
       // If we are on the coarsest grid, stop trying to coarsen further
-      if (current_level == max_level) {
+      if (current_level == static_cast<std::size_t>(max_level)) {
         down = false;
       }
     } else {
@@ -805,43 +805,27 @@ void LaplaceIPT::Level::gauss_seidel_red_black(const LaplaceIPT& l) {
 
 // Initialization routine for coarser grids. Initialization depends on the grid
 // one step finer, lup.
-void LaplaceIPT::Level::init(const LaplaceIPT& l, const Level lup,
-                             const int current_level_in) {
+LaplaceIPT::Level::Level(const LaplaceIPT& l, const Level& lup,
+                         const std::size_t current_level_in)
+    : myproc(lup.myproc), current_level(current_level_in), index_start(0),
+      index_end(l.localmesh->lastX() ? 2 : 3), included_up(lup.included),
+      proc_in_up(lup.proc_in), proc_out_up(lup.proc_out) {
 
   SCOREP0();
-  current_level = current_level_in;
 
-  auto sendvec = Array<dcomplex>(3 * l.nmode);
-  auto recvecin = Array<dcomplex>(3 * l.nmode);
-  auto recvecout = Array<dcomplex>(3 * l.nmode);
+  // 2^current_level
+  const auto scale = 1 << current_level;
 
-  // indexing to remove branches in tight loops
-  if (l.localmesh->lastX()) {
-    index_end = 2;
-  } else {
-    index_end = 3;
-  }
-  index_start = 0;
-
-  myproc = lup.myproc;
   // Whether this proc is involved in the multigrid calculation
-  included = (myproc % int((pow(2, current_level))) == 0) or l.localmesh->lastX();
-
-  // Save some proc properties from the level above - this allows us to NOT pass the level
-  // above as an argument in some functions
-  // Whether this proc is involved in the calculation on the grid one level more refined
-  included_up = lup.included;
-  // This proc's neighbours on the level above
-  proc_in_up = lup.proc_in;
-  proc_out_up = lup.proc_out;
+  included = (myproc % scale == 0) or l.localmesh->lastX();
 
   if (not included) {
     return;
   }
 
   // Colouring of processor for Gauss-Seidel
-  red = ((myproc / int((pow(2, current_level)))) % 2 == 0);
-  black = ((myproc / int((pow(2, current_level)))) % 2 == 1);
+  red = ((myproc / scale) % 2 == 0);
+  black = ((myproc / scale) % 2 == 1);
 
   // The last processor is a special case. It is always included because of
   // the final grid point, which is treated explicitly. Otherwise it should
@@ -852,11 +836,11 @@ void LaplaceIPT::Level::init(const LaplaceIPT& l, const Level lup,
   }
 
   // My neighbouring procs
-  proc_in = myproc - int(pow(2, current_level));
+  proc_in = myproc - scale;
   if (l.localmesh->lastX()) {
     proc_in += 1;
   }
-  int p = myproc + int(pow(2, current_level));
+  const int p = myproc + scale;
   proc_out = (p < l.nproc - 1) ? p : l.nproc - 1;
 
   // Calculation variables
@@ -874,15 +858,19 @@ void LaplaceIPT::Level::init(const LaplaceIPT& l, const Level lup,
   // boundaries where these are the boundary points. Index 2 is used on the
   // final processor only to track its value at the last grid point xe. This
   // means we often have special cases of the equations for final processor.
-  xloc = Matrix<dcomplex>(4, l.nmode);
-  residual = Matrix<dcomplex>(4, l.nmode);
+  xloc.reallocate(4, l.nmode);
+  residual.reallocate(4, l.nmode);
 
   // Coefficients for the reduced iterations
-  ar = Tensor<dcomplex>(l.ny, 4, l.nmode);
-  br = Tensor<dcomplex>(l.ny, 4, l.nmode);
-  cr = Tensor<dcomplex>(l.ny, 4, l.nmode);
-  rr = Matrix<dcomplex>(4, l.nmode);
-  brinv = Tensor<dcomplex>(l.ny, 4, l.nmode);
+  ar.reallocate(l.ny, 4, l.nmode);
+  br.reallocate(l.ny, 4, l.nmode);
+  cr.reallocate(l.ny, 4, l.nmode);
+  rr.reallocate(4, l.nmode);
+  brinv.reallocate(l.ny, 4, l.nmode);
+
+  auto sendvec = Array<dcomplex>(3 * l.nmode);
+  auto recvecin = Array<dcomplex>(3 * l.nmode);
+  auto recvecout = Array<dcomplex>(3 * l.nmode);
 
   for (int kz = 0; kz < l.nmode; kz++) {
     if (l.localmesh->firstX()) {
@@ -965,48 +953,28 @@ void LaplaceIPT::Level::init(const LaplaceIPT& l, const Level lup,
 }
 
 // Init routine for finest level
-void LaplaceIPT::Level::init(LaplaceIPT& l) {
+LaplaceIPT::Level::Level(LaplaceIPT& l)
+    : myproc(l.myproc), proc_in(myproc - 1), proc_out(myproc + 1), included(true),
+      red(myproc % 2 == 0), black(myproc % 2 == 1), current_level(0), index_start(1),
+      index_end(l.localmesh->lastX() ? 2 : 3) {
 
   // Basic definitions for conventional multigrid
   SCOREP0();
-  int ny = l.localmesh->LocalNy;
-  current_level = 0;
 
-  // Processor information
-  myproc = l.myproc;     // unique id
-  proc_in = myproc - 1;  // in-neighbour
-  proc_out = myproc + 1; // out-neighbour
-  included = true;       // whether processor is included in this level's calculation
-  // Colouring of processor for Gauss-Seidel
-  red = (myproc % 2 == 0);
-  black = (myproc % 2 == 1);
-
-  // indexing to remove branching in tight loops
-  if (l.localmesh->lastX()) {
-    index_end = 2;
-  } else {
-    index_end = 3;
-  }
-  index_start = 1;
+  const int ny = l.localmesh->LocalNy;
 
   // Coefficients for the reduced iterations
-  ar = Tensor<dcomplex>(ny, 4, l.nmode);
-  br = Tensor<dcomplex>(ny, 4, l.nmode);
-  cr = Tensor<dcomplex>(ny, 4, l.nmode);
-  rr = Matrix<dcomplex>(4, l.nmode);
-  brinv = Tensor<dcomplex>(ny, 4, l.nmode);
+  ar.reallocate(ny, 4, l.nmode);
+  br.reallocate(ny, 4, l.nmode);
+  cr.reallocate(ny, 4, l.nmode);
+  rr.reallocate(4, l.nmode);
+  brinv.reallocate(ny, 4, l.nmode);
 
-  residual = Matrix<dcomplex>(4, l.nmode);
-
-  for (int kz = 0; kz < l.nmode; kz++) {
-    for (int ix = 0; ix < 4; ix++) {
-      residual(ix, kz) = 0.0;
-    }
-  }
-  // end basic definitions
+  residual.reallocate(4, l.nmode);
+  residual = 0.0;
 
   // Define sizes of local coefficients
-  xloc = Matrix<dcomplex>(4, l.nmode); // Reduced grid x values
+  xloc.reallocate(4, l.nmode); // Reduced grid x values
 
   // Work arrays
   auto evec = Array<dcomplex>(l.ncx);
