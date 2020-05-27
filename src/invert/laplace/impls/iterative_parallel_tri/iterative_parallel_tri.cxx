@@ -562,15 +562,14 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
                             "diagonally dominant and convergence is guaranteed. Please "
                             "increase maxits and retry.",
                             maxits);
-      } else {
-        throw BoutException(
-            "LaplaceIPT error: Not converged within maxits={:d} iterations. The coarsest "
-            "iteration matrix is not diagonally dominant so there is no guarantee this "
-            "method will converge. Consider (1) increasing maxits; or (2) increasing the "
-            "number of levels (as grids become more diagonally dominant with "
-            "coarsening). Using more grids may require larger NXPE.",
-            maxits);
       }
+      throw BoutException(
+          "LaplaceIPT error: Not converged within maxits={:d} iterations. The coarsest "
+          "iteration matrix is not diagonally dominant so there is no guarantee this "
+          "method will converge. Consider (1) increasing maxits; or (2) increasing the "
+          "number of levels (as grids become more diagonally dominant with "
+          "coarsening). Using more grids may require larger NXPE.",
+          maxits);
     }
   }
 /// SCOREP_USER_REGION_END(whileloop);
