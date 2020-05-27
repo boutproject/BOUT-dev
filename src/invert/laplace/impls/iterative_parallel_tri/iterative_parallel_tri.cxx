@@ -558,7 +558,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
         throw BoutException("LaplaceIPT error: Not converged within maxits={:d} "
                             "iterations. The coarsest grained iteration matrix is "
                             "diagonally dominant and convergence is guaranteed. Please "
-                            "increase maxits and retry.",
+                            "increase maxits, rtol, or atol and retry.",
                             maxits);
       }
       throw BoutException(
