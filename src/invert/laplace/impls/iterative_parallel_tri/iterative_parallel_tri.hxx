@@ -29,8 +29,8 @@ class LaplaceIPT;
 #ifndef __IPT_H__
 #define __IPT_H__
 
-#include <invert_laplace.hxx>
 #include <dcomplex.hxx>
+#include <invert_laplace.hxx>
 #include <options.hxx>
 #include <utils.hxx>
 
@@ -40,41 +40,42 @@ RegisterLaplace<LaplaceIPT> registerlaplaceipt(LAPLACE_IPT);
 
 class LaplaceIPT : public Laplacian {
 public:
-  LaplaceIPT(Options *opt = nullptr, const CELL_LOC loc = CELL_CENTRE, Mesh *mesh_in = nullptr);
+  LaplaceIPT(Options* opt = nullptr, const CELL_LOC loc = CELL_CENTRE,
+             Mesh* mesh_in = nullptr);
   ~LaplaceIPT() = default;
 
   friend class Level;
 
   using Laplacian::setCoefA;
-  void setCoefA(const Field2D &val) override {
+  void setCoefA(const Field2D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     A = val;
   }
   using Laplacian::setCoefC;
-  void setCoefC(const Field2D &val) override {
+  void setCoefC(const Field2D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     C = val;
   }
   using Laplacian::setCoefD;
-  void setCoefD(const Field2D &val) override {
+  void setCoefD(const Field2D& val) override {
     ASSERT1(val.getLocation() == location);
     ASSERT1(localmesh == val.getMesh());
     D = val;
   }
   using Laplacian::setCoefEx;
-  void setCoefEx(const Field2D &UNUSED(val)) override {
+  void setCoefEx(const Field2D& UNUSED(val)) override {
     throw BoutException("LaplaceParallelTriMG does not have Ex coefficient");
   }
   using Laplacian::setCoefEz;
-  void setCoefEz(const Field2D &UNUSED(val)) override {
+  void setCoefEz(const Field2D& UNUSED(val)) override {
     throw BoutException("LaplaceParallelTriMG does not have Ez coefficient");
   }
 
   using Laplacian::solve;
   FieldPerp solve(const FieldPerp& b) override { return solve(b, b); }
-  FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override;
+  FieldPerp solve(const FieldPerp& b, const FieldPerp& x0) override;
 
   BoutReal getMeanIterations() const { return ipt_mean_its; }
   void resetMeanIterations() { ipt_mean_its = 0; }
@@ -113,22 +114,23 @@ public:
     // Save some proc properties from the level above - this allows us
     // to NOT pass the level above as an argument in some functions
 
-    /// Whether this processor is involved in the calculation on the grid one level more refined
+    /// Whether this processor is involved in the calculation on the grid one level more
+    /// refined
     bool included_up;
     /// This processor's neighbours on the level above
     int proc_in_up, proc_out_up;
 
     void calculate_residual(const LaplaceIPT& lap);
-    void calculate_total_residual(LaplaceIPT& lap, Array<BoutReal> &total, Array<BoutReal> &globalmaxsol, Array<bool> &converged);
-    void coarsen(const LaplaceIPT& lap, const Matrix<dcomplex> &fine_residual);
+    void calculate_total_residual(LaplaceIPT& lap, Array<BoutReal>& total,
+                                  Array<BoutReal>& globalmaxsol, Array<bool>& converged);
+    void coarsen(const LaplaceIPT& lap, const Matrix<dcomplex>& fine_residual);
     void gauss_seidel_red_black(const LaplaceIPT& lap);
-    void init_rhs(LaplaceIPT &lap, const Matrix<dcomplex> bcmplx);
-    bool is_diagonally_dominant(const LaplaceIPT &lap) const;
-    void reconstruct_full_solution(const LaplaceIPT &lap, Matrix<dcomplex> &xk1d) const;
-    void refine(const LaplaceIPT &lap, Matrix<dcomplex> &fine_error);
-    void synchronize_reduced_field(const LaplaceIPT &lap, Matrix<dcomplex> &field);
+    void init_rhs(LaplaceIPT& lap, const Matrix<dcomplex> bcmplx);
+    bool is_diagonally_dominant(const LaplaceIPT& lap) const;
+    void reconstruct_full_solution(const LaplaceIPT& lap, Matrix<dcomplex>& xk1d) const;
+    void refine(const LaplaceIPT& lap, Matrix<dcomplex>& fine_error);
+    void synchronize_reduced_field(const LaplaceIPT& lap, Matrix<dcomplex>& field);
     void update_solution(const LaplaceIPT& lap);
-
   };
 
 private:

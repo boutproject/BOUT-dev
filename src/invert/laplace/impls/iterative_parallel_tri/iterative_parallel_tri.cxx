@@ -255,13 +255,13 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
     outbndry = 1;
 
   /* Allocation for
-  * bk   = The fourier transformed of b, where b is one of the inputs in
-  *        LaplaceIPT::solve()
-  * bk1d = The 1d array of bk
-  * xk   = The fourier transformed of x, where x the output of
-  *        LaplaceIPT::solve()
-  * xk1d = The 1d array of xk
-  */
+   * bk   = The fourier transformed of b, where b is one of the inputs in
+   *        LaplaceIPT::solve()
+   * bk1d = The 1d array of bk
+   * xk   = The fourier transformed of x, where x the output of
+   *        LaplaceIPT::solve()
+   * xk1d = The 1d array of xk
+   */
   auto bk = Matrix<dcomplex>(ncx, ncz / 2 + 1);
   auto bk1d = Array<dcomplex>(ncx);
   auto xk = Matrix<dcomplex>(ncx, ncz / 2 + 1);
@@ -272,13 +272,13 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   /// SCOREP_USER_REGION_BEGIN(fftloop, "init fft loop",SCOREP_USER_REGION_TYPE_COMMON);
 
   /* Coefficents in the tridiagonal solver matrix
-  * Following the notation in "Numerical recipes"
-  * avec is the lower diagonal of the matrix
-  * bvec is the diagonal of the matrix
-  * cvec is the upper diagonal of the matrix
-  * NOTE: Do not confuse avec, bvec and cvec with the A, C, and D coefficients
-  *       above
-  */
+   * Following the notation in "Numerical recipes"
+   * avec is the lower diagonal of the matrix
+   * bvec is the diagonal of the matrix
+   * cvec is the upper diagonal of the matrix
+   * NOTE: Do not confuse avec, bvec and cvec with the A, C, and D coefficients
+   *       above
+   */
   auto bcmplx = Matrix<dcomplex>(nmode, ncx);
 
   const bool invert_inner_boundary =
@@ -289,10 +289,10 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   BOUT_OMP(parallel for)
   for (int ix = 0; ix < ncx; ix++) {
     /* This for loop will set the bk (initialized by the constructor)
-    * bk is the z fourier modes of b in z
-    * If the INVERT_SET flag is set (meaning that x0 will be used to set the
-    * bounadry values),
-    */
+     * bk is the z fourier modes of b in z
+     * If the INVERT_SET flag is set (meaning that x0 will be used to set the
+     * boundary values),
+     */
     if ((invert_inner_boundary and (ix < inbndry))
         or (invert_outer_boundary and (ncx - ix - 1 < outbndry))) {
       // Use the values in x0 in the boundary
@@ -313,25 +313,25 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   /// SCOREP_USER_REGION_BEGIN(kzinit, "kz init",///SCOREP_USER_REGION_TYPE_COMMON);
 
   /* Solve differential equation in x for each fourier mode, so transpose to make x the
-  * fastest moving index. Note that only the non-degenerate fourier modes are used (i.e.
-  * the offset and all the modes up to the Nyquist frequency), so we only copy up to
-  * `nmode` in the transpose.
-  */
+   * fastest moving index. Note that only the non-degenerate fourier modes are used (i.e.
+   * the offset and all the modes up to the Nyquist frequency), so we only copy up to
+   * `nmode` in the transpose.
+   */
   transpose(bcmplx, bk);
 
   /* Set the matrix A used in the inversion of Ax=b
-  * by calling tridagCoef and setting the BC
-  *
-  * Note that A, C and D in
-  *
-  * D*Laplace_perp(x) + (1/C)Grad_perp(C)*Grad_perp(x) + Ax = B
-  *
-  * has nothing to do with
-  * avec - the lower diagonal of the tridiagonal matrix
-  * bvec - the main diagonal
-  * cvec - the upper diagonal
-  *
-  */
+   * by calling tridagCoef and setting the BC
+   *
+   * Note that A, C and D in
+   *
+   * D*Laplace_perp(x) + (1/C)Grad_perp(C)*Grad_perp(x) + Ax = B
+   *
+   * has nothing to do with
+   * avec - the lower diagonal of the tridiagonal matrix
+   * bvec - the main diagonal
+   * cvec - the upper diagonal
+   *
+   */
   for (int kz = 0; kz < nmode; kz++) {
     // Note that this is called every time to deal with bcmplx and could mostly
     // be skipped when storing coefficients.
@@ -572,9 +572,9 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
           maxits);
     }
   }
-/// SCOREP_USER_REGION_END(whileloop);
-/// SCOREP_USER_REGION_DEFINE(afterloop);
-/// SCOREP_USER_REGION_BEGIN(afterloop, "after faff",///SCOREP_USER_REGION_TYPE_COMMON);
+  /// SCOREP_USER_REGION_END(whileloop);
+  /// SCOREP_USER_REGION_DEFINE(afterloop);
+  /// SCOREP_USER_REGION_BEGIN(afterloop, "after faff",///SCOREP_USER_REGION_TYPE_COMMON);
 
 #if CHECK > 2
   for (int ix = 0; ix < 4; ix++) {
@@ -1083,9 +1083,8 @@ LaplaceIPT::Level::Level(LaplaceIPT& l)
       // auold are zero, and l.au = l.auold is already correct.
       if (not l.localmesh->lastX()) {
         ar(l.jy, 2, kz) = -l.au(l.jy, kz) / l.al(l.jy, kz);
-        cr(l.jy, 2, kz) =
-            -(l.bu(l.jy, kz)
-              + ar(l.jy, 2, kz) * l.bl(l.jy, kz)); // NB depends on previous line
+        // NB this depends on previous line
+        cr(l.jy, 2, kz) = -(l.bu(l.jy, kz) + ar(l.jy, 2, kz) * l.bl(l.jy, kz));
       }
 
       // Use BCs to replace x(xe+1) = -avec(xe+1) x(xe) / bvec(xe+1)
@@ -1309,11 +1308,11 @@ void LaplaceIPT::Level::coarsen(const LaplaceIPT& l,
     if (not l.converged[kz]) {
       if (not l.localmesh->lastX()) {
         residual(1, kz) = 0.25 * fine_residual(0, kz) + 0.5 * fine_residual(1, kz)
-                            + 0.25 * fine_residual(3, kz);
+                          + 0.25 * fine_residual(3, kz);
       } else {
         // NB point(1,kz) on last proc only used on level=0
         residual(2, kz) = 0.25 * fine_residual(1, kz) + 0.5 * fine_residual(2, kz)
-                            + 0.25 * fine_residual(3, kz);
+                          + 0.25 * fine_residual(3, kz);
       }
 
       // Set initial guess for coarse grid levels to zero
