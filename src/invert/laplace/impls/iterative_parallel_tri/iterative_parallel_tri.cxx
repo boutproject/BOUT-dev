@@ -294,16 +294,9 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
     if ((invert_inner_boundary and (ix < inbndry))
         or (invert_outer_boundary and (ncx - ix - 1 < outbndry))) {
       // Use the values in x0 in the boundary
-
-      // x0 is the input
-      // bk is the output
       rfft(x0[ix], ncz, &bk(ix, 0));
-
     } else {
-      // b is the input
-      // bk is the output
       rfft(b[ix], ncz, &bk(ix, 0));
-      // rfft(x0[ix], ncz, &xk(ix, 0));
     }
   }
   /// SCOREP_USER_REGION_END(fftloop);
