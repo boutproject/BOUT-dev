@@ -113,8 +113,9 @@ bool LaplaceIPT::Level::is_diagonally_dominant(const LaplaceIPT& l) {
     if (not l.localmesh->lastX() or l.max_level == 0) {
       if (std::fabs(ar(l.jy, 1, kz)) + std::fabs(cr(l.jy, 1, kz))
           > std::fabs(br(l.jy, 1, kz))) {
-        output << BoutComm::rank() << " jy=" << l.jy << ", kz=" << kz
-               << ", lower row not diagonally dominant" << endl;
+        output_error.write("Rank {}, jy={}, kz={}, lower row not diagonally dominant\n",
+                           BoutComm::rank(), l.jy, kz);
+        output_error.flush();
         return false;
       }
     }
@@ -122,8 +123,9 @@ bool LaplaceIPT::Level::is_diagonally_dominant(const LaplaceIPT& l) {
     if (l.localmesh->lastX()) {
       if (std::fabs(ar(l.jy, 2, kz)) + std::fabs(cr(l.jy, 2, kz))
           > std::fabs(br(l.jy, 2, kz))) {
-        output << BoutComm::rank() << " jy=" << l.jy << ", kz=" << kz
-               << ", upper row not diagonally dominant" << endl;
+        output_error.write("Rank {}, jy={}, kz={}, upper row not diagonally dominant\n",
+                           BoutComm::rank(), l.jy, kz);
+        output_error.flush();
         return false;
       }
     }
