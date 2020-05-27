@@ -85,8 +85,6 @@ public:
 
   void resetSolver();
 
-  bool all(const Array<bool>);
-
   class Level {
 
   public:
@@ -125,8 +123,6 @@ public:
     void update_solution(const LaplaceIPT& lap);
 
   };
-
-  void transpose(Matrix<dcomplex> &matrix_transposed, const Matrix<dcomplex> &matrix);
 
 private:
 

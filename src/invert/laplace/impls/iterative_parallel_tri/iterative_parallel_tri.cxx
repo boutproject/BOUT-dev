@@ -194,14 +194,19 @@ void LaplaceIPT::Level::reconstruct_full_solution(const LaplaceIPT& l,
   }
 }
 
-// TODO Move to Array
-/*
- * Returns true if all values of bool array are true, otherwise returns false.
- */
-bool LaplaceIPT::all(const Array<bool> a) {
+/// Calculate the transpose of \p m in the pre-allocated \p m_t
+namespace {
+void transpose(Matrix<dcomplex>& m_t, const Matrix<dcomplex>& m) {
   SCOREP0();
-  return std::all_of(a.begin(), a.end(), [](bool v) { return v; });
+  const auto n1 = std::get<1>(m.shape());
+  const auto n2 = std::get<0>(m.shape());
+  for (int i1 = 0; i1 < n1; i1++) {
+    for (int i2 = 0; i2 < n2; i2++) {
+      m_t(i1, i2) = m(i2, i1);
+    }
+  }
 }
+} // namespace
 
 /*!
  * Solve Ax=b for x given b
@@ -519,6 +524,10 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
     ++count;
     ++subcount;
     /// SCOREP_USER_REGION_END(increment);
+
+    const auto all = [](const Array<bool>& a) {
+      return std::all_of(a.begin(), a.end(), [](bool v) { return v; });
+    };
 
     // Force at least max_cycle iterations at each level
     // Do not skip with tolerence to minimize comms
@@ -1508,19 +1517,5 @@ void LaplaceIPT::Level::synchronize_reduced_field(const LaplaceIPT& l,
   if (not l.localmesh->lastX()) {
     MPI_Sendrecv(&field(1, 0), l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, &field(3, 0),
                  l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 1, comm, MPI_STATUS_IGNORE);
-  }
-}
-
-/*
- * Returns the transpose of a matrix
- */
-void LaplaceIPT::transpose(Matrix<dcomplex>& m_t, const Matrix<dcomplex>& m) {
-  SCOREP0();
-  const auto n1 = std::get<1>(m.shape());
-  const auto n2 = std::get<0>(m.shape());
-  for (int i1 = 0; i1 < n1; i1++) {
-    for (int i2 = 0; i2 < n2; i2++) {
-      m_t(i1, i2) = m(i2, i1);
-    }
   }
 }
