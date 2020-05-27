@@ -73,7 +73,7 @@ public:
   }
 
   using Laplacian::solve;
-  FieldPerp solve(const FieldPerp& b) { return solve(b, b); }
+  FieldPerp solve(const FieldPerp& b) override { return solve(b, b); }
   FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) override;
 
   BoutReal getMeanIterations() const { return ipt_mean_its; }
