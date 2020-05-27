@@ -155,10 +155,11 @@ void LaplaceIPT::Level::reconstruct_full_solution(const LaplaceIPT& l,
 
   for (int kz = 0; kz < l.nmode; kz++) {
 
-    x_lower[kz] = xloc(0, kz);
     x_upper[kz] = xloc(3, kz);
 
-    if (not l.localmesh->firstX()) {
+    if (l.localmesh->firstX()) {
+      x_lower[kz] = xloc(0, kz);
+    } else {
       x_lower[kz] =
           (xloc(1, kz) - l.rl[kz] - l.bl(l.jy, kz) * xloc(3, kz)) / l.al(l.jy, kz);
     }
