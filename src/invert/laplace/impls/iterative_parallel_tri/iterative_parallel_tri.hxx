@@ -127,8 +127,8 @@ public:
     void coarsen(const LaplaceIPT& lap, const Matrix<dcomplex> &fine_residual);
     void gauss_seidel_red_black(const LaplaceIPT& lap);
     void init_rhs(LaplaceIPT &lap, const Matrix<dcomplex> bcmplx);
-    bool is_diagonally_dominant(const LaplaceIPT &lap);
-    void reconstruct_full_solution(const LaplaceIPT &lap, Matrix<dcomplex> &xk1d);
+    bool is_diagonally_dominant(const LaplaceIPT &lap) const;
+    void reconstruct_full_solution(const LaplaceIPT &lap, Matrix<dcomplex> &xk1d) const;
     void refine(const LaplaceIPT &lap, Matrix<dcomplex> &fine_error);
     void synchronize_reduced_field(const LaplaceIPT &lap, Matrix<dcomplex> &field);
     void update_solution(const LaplaceIPT& lap);

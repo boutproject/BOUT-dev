@@ -101,7 +101,7 @@ void LaplaceIPT::resetSolver() {
  * elements. Being diagonally dominant is sufficient (but not necessary) for
  * the Gauss-Seidel iteration to converge.
  */
-bool LaplaceIPT::Level::is_diagonally_dominant(const LaplaceIPT& l) {
+bool LaplaceIPT::Level::is_diagonally_dominant(const LaplaceIPT& l) const {
 
   if (not included) {
     return true;
@@ -148,7 +148,7 @@ bool LaplaceIPT::Level::is_diagonally_dominant(const LaplaceIPT& l) {
  *     xloc(1) = rl(xs) + al(xs)*xloc(0) + bl(xs)*xloc(3)
  */
 void LaplaceIPT::Level::reconstruct_full_solution(const LaplaceIPT& l,
-                                                  Matrix<dcomplex>& xk1d) {
+                                                  Matrix<dcomplex>& xk1d) const {
   SCOREP0();
 
   Array<dcomplex> x_lower(l.nmode), x_upper(l.nmode);
@@ -225,8 +225,8 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   FieldPerp x{emptyFrom(b)};
 
   // Info for halo swaps
-  int xproc = localmesh->getXProcIndex();
-  int yproc = localmesh->getYProcIndex();
+  const int xproc = localmesh->getXProcIndex();
+  const int yproc = localmesh->getYProcIndex();
   nproc = localmesh->getNXPE();
   myproc = yproc * nproc + xproc;
   proc_in = myproc - 1;
@@ -234,12 +234,12 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   jy = b.getIndex();
 
-  int ncz = localmesh->LocalNz; // Number of local z points
+  const int ncz = localmesh->LocalNz; // Number of local z points
 
   xs = localmesh->xstart; // First interior point
   xe = localmesh->xend;   // Last interior point
 
-  BoutReal kwaveFactor = 2.0 * PI / coords->zlength();
+  const BoutReal kwaveFactor = 2.0 * PI / coords->zlength();
 
   // Setting the width of the boundary.
   // NOTE: The default is a width of 2 guard cells
@@ -551,7 +551,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
       // If the coarsest multigrid iteration matrix is diagonally-dominant,
       // then convergence is guaranteed, so maxits is set too low.
       // Otherwise, the method may or may not converge.
-      bool is_dd = levels[max_level].is_diagonally_dominant(*this);
+      const bool is_dd = levels[max_level].is_diagonally_dominant(*this);
 
       bool global_is_dd;
       MPI_Allreduce(&is_dd, &global_is_dd, 1, MPI::BOOL, MPI_LAND, BoutComm::get());
