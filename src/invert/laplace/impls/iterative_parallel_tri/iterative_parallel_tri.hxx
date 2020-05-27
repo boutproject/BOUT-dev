@@ -221,6 +221,16 @@ private:
 
   /// First and last interior points xstart, xend
   int xs, xe;
+
+  bool isGlobalFlagSet(int flag) {
+    return (global_flags & flag) != 0;
+  }
+  bool isInnerBoundaryFlagSet(int flag) {
+    return (inner_boundary_flags & flag) != 0;
+  }
+  bool isOuterBoundaryFlagSet(int flag) {
+    return (outer_boundary_flags & flag) != 0;
+  }
 };
 
 #endif // __IPT_H__

@@ -246,13 +246,15 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   int inbndry = localmesh->xstart, outbndry = localmesh->xstart;
 
   // If the flags to assign that only one guard cell should be used is set
-  if ((global_flags & INVERT_BOTH_BNDRY_ONE) || (localmesh->xstart < 2)) {
+  if (isGlobalFlagSet(INVERT_BOTH_BNDRY_ONE) || (localmesh->xstart < 2)) {
     inbndry = outbndry = 1;
   }
-  if (inner_boundary_flags & INVERT_BNDRY_ONE)
+  if (isInnerBoundaryFlagSet(INVERT_BNDRY_ONE)) {
     inbndry = 1;
-  if (outer_boundary_flags & INVERT_BNDRY_ONE)
+  }
+  if (isOuterBoundaryFlagSet(INVERT_BNDRY_ONE)) {
     outbndry = 1;
+  }
 
   /* Allocation for
    * bk   = The fourier transformed of b, where b is one of the inputs in
@@ -282,9 +284,9 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   auto bcmplx = Matrix<dcomplex>(nmode, ncx);
 
   const bool invert_inner_boundary =
-      (inner_boundary_flags & INVERT_SET) && localmesh->firstX();
+      isInnerBoundaryFlagSet(INVERT_SET) and localmesh->firstX();
   const bool invert_outer_boundary =
-      (outer_boundary_flags & INVERT_SET) && localmesh->lastX();
+      isOuterBoundaryFlagSet(INVERT_SET) and localmesh->lastX();
 
   BOUT_OMP(parallel for)
   for (int ix = 0; ix < ncx; ix++) {
@@ -368,10 +370,10 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   // Should we store coefficients? True when matrix to be inverted is
   // constant, allowing results to be cached and work skipped
-  const bool store_coefficients = not(inner_boundary_flags & INVERT_AC_GRAD)
-                                  and not(outer_boundary_flags & INVERT_AC_GRAD)
-                                  and not(inner_boundary_flags & INVERT_SET)
-                                  and not(outer_boundary_flags & INVERT_SET);
+  const bool store_coefficients = not isInnerBoundaryFlagSet(INVERT_AC_GRAD)
+                                  and not isOuterBoundaryFlagSet(INVERT_AC_GRAD)
+                                  and not isInnerBoundaryFlagSet(INVERT_SET)
+                                  and not isOuterBoundaryFlagSet(INVERT_SET);
 
   // Initialize levels. Note that the finest grid (level 0) has a different
   // routine to coarse grids (which generally depend on the grid one step
@@ -609,7 +611,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
       (ipt_mean_its * BoutReal(ncalls - 1) + BoutReal(count)) / BoutReal(ncalls);
 
   // If the global flag is set to INVERT_KX_ZERO
-  if (global_flags & INVERT_KX_ZERO) {
+  if (isGlobalFlagSet(INVERT_KX_ZERO)) {
     dcomplex offset(0.0);
     for (int ix = localmesh->xstart; ix <= localmesh->xend; ix++) {
       offset += xk1d(0, ix);
@@ -630,8 +632,9 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   // Done inversion, transform back
   for (int ix = 0; ix < ncx; ix++) {
 
-    if (global_flags & INVERT_ZERO_DC)
+    if (isGlobalFlagSet(INVERT_ZERO_DC)) {
       xk(ix, 0) = 0.0;
+    }
 
     irfft(&xk(ix, 0), ncz, x[ix]);
 
