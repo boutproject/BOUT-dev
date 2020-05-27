@@ -1136,7 +1136,7 @@ LaplaceIPT::Level::Level(LaplaceIPT& l)
 }
 
 // Init routine for finest level information that cannot be cached
-void LaplaceIPT::Level::init_rhs(LaplaceIPT& l, const Matrix<dcomplex> bcmplx) {
+void LaplaceIPT::Level::init_rhs(LaplaceIPT& l, const Matrix<dcomplex>& bcmplx) {
 
   SCOREP0();
 
@@ -1205,7 +1205,7 @@ void LaplaceIPT::Level::init_rhs(LaplaceIPT& l, const Matrix<dcomplex> bcmplx) {
  * Sum and communicate total residual for the reduced system
  * NB This calculation assumes we are using the finest grid, level 0.
  */
-void LaplaceIPT::Level::calculate_total_residual(LaplaceIPT& l,
+void LaplaceIPT::Level::calculate_total_residual(const LaplaceIPT& l,
                                                  Array<BoutReal>& error_abs,
                                                  Array<BoutReal>& error_rel,
                                                  Array<bool>& converged) {

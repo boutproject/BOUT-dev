@@ -121,11 +121,11 @@ public:
     int proc_in_up, proc_out_up;
 
     void calculate_residual(const LaplaceIPT& lap);
-    void calculate_total_residual(LaplaceIPT& lap, Array<BoutReal>& total,
-                                  Array<BoutReal>& globalmaxsol, Array<bool>& converged);
+    void calculate_total_residual(const LaplaceIPT& lap, Array<BoutReal>& error_abs,
+                                  Array<BoutReal>& error_rel, Array<bool>& converged);
     void coarsen(const LaplaceIPT& lap, const Matrix<dcomplex>& fine_residual);
     void gauss_seidel_red_black(const LaplaceIPT& lap);
-    void init_rhs(LaplaceIPT& lap, const Matrix<dcomplex> bcmplx);
+    void init_rhs(LaplaceIPT& lap, const Matrix<dcomplex>& bcmplx);
     bool is_diagonally_dominant(const LaplaceIPT& lap) const;
     void reconstruct_full_solution(const LaplaceIPT& lap, Matrix<dcomplex>& xk1d) const;
     void refine(const LaplaceIPT& lap, Matrix<dcomplex>& fine_error);
