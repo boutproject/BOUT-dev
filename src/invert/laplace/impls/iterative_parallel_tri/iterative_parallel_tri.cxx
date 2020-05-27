@@ -113,7 +113,7 @@ LaplaceIPT::LaplaceIPT(Options* opt, CELL_LOC loc, Mesh* mesh_in)
  * Reset the solver to its initial state
  */
 void LaplaceIPT::resetSolver() {
-  first_call = true;
+  std::fill(std::begin(first_call), std::end(first_call), true);
   x0saved = 0.0;
   resetMeanIterations();
 }
@@ -448,9 +448,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   error_abs_old = initial_error;
   error_rel = initial_error;
   error_rel_old = initial_error;
-  for (int kz = 0; kz < nmode; kz++) {
-    converged[kz] = false;
-  }
+  std::fill(std::begin(converged), std::end(converged), false);
 
   /// SCOREP_USER_REGION_END(initwhileloop);
   /// SCOREP_USER_REGION_DEFINE(whileloop);
