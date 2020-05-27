@@ -79,7 +79,7 @@ public:
   BoutReal getMeanIterations() const { return ipt_mean_its; }
   void resetMeanIterations() { ipt_mean_its = 0; }
 
-  void get_initial_guess(const int jy, const int kz, Matrix<dcomplex> &r,
+  void get_initial_guess(int jy, int kz, Matrix<dcomplex> &r,
       Tensor<dcomplex> &lowerGuardVector, Tensor<dcomplex> &upperGuardVector,
       Matrix<dcomplex> &xk1d);
 
@@ -113,7 +113,7 @@ public:
     void calculate_total_residual(LaplaceIPT& lap, Array<BoutReal> &total, Array<BoutReal> &globalmaxsol, Array<bool> &converged);
     void coarsen(const LaplaceIPT& lap, const Matrix<dcomplex> &fine_residual);
     void gauss_seidel_red_black(const LaplaceIPT& lap);
-    void init(const LaplaceIPT &lap, const Level lup, const int current_level);
+    void init(const LaplaceIPT &lap, const Level lup, int current_level);
     void init(LaplaceIPT &lap);
     void init_rhs(LaplaceIPT &lap, const Matrix<dcomplex> bcmplx);
     bool is_diagonally_dominant(const LaplaceIPT &lap);
