@@ -125,34 +125,6 @@ public:
   };
 
 private:
-
-  /// Information about the grids
-  std::vector<Level> levels;
-
-  /// Current y index
-  int jy;
-
-  /// The coefficents in
-  /// $D*grad_perp^2(x) + (1/C)*(grad_perp(C))*grad_perp(x) + A*x = b$
-  Field2D A, C, D;
-
-  /// Lower-, on- and upper-diagonal terms of the operator matrix
-  Tensor<dcomplex> avec, bvec, cvec;
-
-  /// Coefficients for recovering the full solution from guard cells
-  Tensor<dcomplex> upperGuardVector, lowerGuardVector;
-  Matrix<dcomplex> al, bl, au, bu;
-  Matrix<dcomplex> r1, r2;
-  Array<dcomplex> rl, ru;
-  Matrix<dcomplex> minvb;
-
-  /// Flag to state whether this is the first time the solver is called
-  /// on the point (jy,kz).
-  Array<bool> first_call;
-
-  /// Save previous x in Fourier space
-  Tensor<dcomplex> x0saved;
-
   /// Solver tolerances
   BoutReal rtol, atol;
 
@@ -169,17 +141,63 @@ private:
   /// checks at earlier iterations.
   bool predict_exit;
 
-  /// Mean number of iterations taken by the solver
-  BoutReal ipt_mean_its;
-
-  /// Counter for the number of times the solver has been called
-  int ncalls;
-
-  /// True when matrix to be inverted is constant, allowing results to be cached and work skipped
-  bool store_coefficients;
+  /// The coefficents in
+  /// $D*grad_perp^2(x) + (1/C)*(grad_perp(C))*grad_perp(x) + A*x = b$
+  Field2D A, C, D;
 
   /// Number of unfiltered Fourier modes
   int nmode;
+
+  /// Number of local x, y points
+  int ncx, ny;
+
+  /// Information about the grids
+  std::vector<Level> levels;
+
+  /// Current y index
+  int jy;
+
+  /// Lower-, on- and upper-diagonal terms of the operator matrix
+  Tensor<dcomplex> avec, bvec, cvec;
+
+  /// Coefficients for recovering the full global solution from guard
+  /// cells
+  Tensor<dcomplex> upperGuardVector; // alpha
+  Tensor<dcomplex> lowerGuardVector; // beta
+  /// Local $M^{-1} f$
+  Matrix<dcomplex> minvb;
+  /// Coefficients of first and last interior rows
+  /// $\alpha^l$
+  Matrix<dcomplex> al;
+  /// $\beta^l$
+  Matrix<dcomplex> bl;
+  /// $\alpha^u$
+  Matrix<dcomplex> au;
+  /// $\beta^u$
+  Matrix<dcomplex> bu;
+  /// $r^l$
+  Array<dcomplex> rl;
+  /// $r^u$
+  Array<dcomplex> ru;
+  /// Coefficients used to compute $r^l$ from domain below
+  Matrix<dcomplex> r1, r2;
+
+  /// Flag to state whether this is the first time the solver is called
+  /// on the point (jy,kz).
+  Array<bool> first_call;
+
+  /// Save previous x in Fourier space
+  Tensor<dcomplex> x0saved;
+
+  /// Mean number of iterations taken by the solver
+  BoutReal ipt_mean_its{0.0};
+
+  /// Counter for the number of times the solver has been called
+  int ncalls{0};
+
+  /// True when matrix to be inverted is constant, allowing results to be cached and work
+  /// skipped
+  bool store_coefficients;
 
   /// Neighbouring processors in the in and out directions
   int proc_in, proc_out;
@@ -191,17 +209,13 @@ private:
   int nproc;
 
   /// Array recording whether a kz mode is converged
-  Array<bool> converged ;
+  Array<bool> converged;
 
   /// Error interpolated onto the grid one finer than current grid
   Matrix<dcomplex> fine_error;
 
-  /// Number of local x, y, z points
-  int ncx, ny;
-
   /// First and last interior points xstart, xend
   int xs, xe;
-
 };
 
 #endif // __IPT_H__

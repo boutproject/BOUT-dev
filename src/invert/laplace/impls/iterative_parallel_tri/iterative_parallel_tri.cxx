@@ -43,17 +43,29 @@
 #include <bout/scorepwrapper.hxx>
 
 LaplaceIPT::LaplaceIPT(Options* opt, CELL_LOC loc, Mesh* mesh_in)
-    : Laplacian(opt, loc, mesh_in), A(0.0), C(1.0), D(1.0), ipt_mean_its(0.), ncalls(0) {
+    : Laplacian(opt, loc, mesh_in),
+      rtol((*opt)["rtol"].doc("Relative tolerance").withDefault(1.e-7)),
+      atol((*opt)["atol"].doc("Absolute tolerance").withDefault(1.e-20)),
+      maxits((*opt)["maxits"].doc("Maximum number of iterations").withDefault(100)),
+      max_level((*opt)["max_level"].doc("Maximum number of coarse grids").withDefault(3)),
+      max_cycle((*opt)["max_cycle"]
+                    .doc("Maximum number of iterations per coarse grid")
+                    .withDefault(3)),
+      predict_exit((*opt)["predict_exit"]
+                       .doc("Predict when convergence will be reached, and skip "
+                            "expensive convergence checks at earlier iterations")
+                       .withDefault(false)),
+      A(0.0, localmesh), C(1.0, localmesh), D(1.0, localmesh), nmode(maxmode + 1),
+      ncx(localmesh->LocalNx), ny(localmesh->LocalNy), levels(max_level + 1),
+      avec(ny, nmode, ncx), bvec(ny, nmode, ncx), cvec(ny, nmode, ncx),
+      upperGuardVector(ny, nmode, ncx), lowerGuardVector(ny, nmode, ncx),
+      minvb(nmode, ncx), al(ny, nmode), bl(ny, nmode), au(ny, nmode), bu(ny, nmode),
+      rl(nmode), ru(nmode), r1(ny, nmode), r2(ny, nmode), first_call(ny),
+      x0saved(ny, 4, nmode), converged(nmode), fine_error(4, nmode) {
+
   A.setLocation(location);
   C.setLocation(location);
   D.setLocation(location);
-
-  OPTION(opt, rtol, 1.e-7);
-  OPTION(opt, atol, 1.e-20);
-  OPTION(opt, maxits, 100);
-  OPTION(opt, max_level, 3);
-  OPTION(opt, max_cycle, 3);
-  OPTION(opt, predict_exit, false);
 
   // Number of procs must be a factor of 2
   const int n = localmesh->NXPE;
@@ -70,41 +82,6 @@ LaplaceIPT::LaplaceIPT(Options* opt, CELL_LOC loc, Mesh* mesh_in)
   bout::globals::dump.addRepeat(
       ipt_mean_its, "ipt_solver" + std::to_string(ipt_solver_count) + "_mean_its");
   ++ipt_solver_count;
-
-  ncx = localmesh->LocalNx;
-  ny = localmesh->LocalNy;
-  nmode = maxmode + 1;
-
-  first_call = Array<bool>(ny);
-
-  x0saved = Tensor<dcomplex>(ny, 4, nmode);
-
-  levels = std::vector<Level>(max_level + 1);
-
-  converged = Array<bool>(nmode);
-
-  fine_error = Matrix<dcomplex>(4, nmode);
-
-  avec = Tensor<dcomplex>(ny, nmode, ncx);
-  bvec = Tensor<dcomplex>(ny, nmode, ncx);
-  cvec = Tensor<dcomplex>(ny, nmode, ncx);
-
-  // Arrays to construct global solution from halo values
-  minvb = Matrix<dcomplex>(nmode, ncx);                // Local M^{-1} f
-  lowerGuardVector = Tensor<dcomplex>(ny, nmode, ncx); // alpha
-  upperGuardVector = Tensor<dcomplex>(ny, nmode, ncx); // beta
-
-  // Coefficients of first and last interior rows
-  al = Matrix<dcomplex>(ny, nmode); // alpha^l
-  bl = Matrix<dcomplex>(ny, nmode); // beta^l
-  au = Matrix<dcomplex>(ny, nmode); // alpha^u
-  bu = Matrix<dcomplex>(ny, nmode); // beta^u
-  rl = Array<dcomplex>(nmode);      // r^l
-  ru = Array<dcomplex>(nmode);      // r^u
-
-  // Coefs used to compute rl from domain below
-  r1 = Matrix<dcomplex>(ny, nmode);
-  r2 = Matrix<dcomplex>(ny, nmode);
 
   resetSolver();
 }
