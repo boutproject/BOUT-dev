@@ -127,6 +127,10 @@ void LaplaceIPT::resetSolver() {
  */
 bool LaplaceIPT::Level::is_diagonally_dominant(const LaplaceIPT& l) {
 
+  if (not included) {
+    return true;
+  }
+
   for (int kz = 0; kz < l.nmode; kz++) {
     // Check index 1 on all procs, except: the last proc only has index 1 if the
     // max_level == 0.
