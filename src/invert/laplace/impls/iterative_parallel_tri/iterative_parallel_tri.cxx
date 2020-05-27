@@ -239,12 +239,6 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   BoutReal kwaveFactor = 2.0 * PI / coords->zlength();
 
-  // Should we store coefficients?
-  store_coefficients = not(inner_boundary_flags & INVERT_AC_GRAD);
-  store_coefficients = store_coefficients && not(outer_boundary_flags & INVERT_AC_GRAD);
-  store_coefficients = store_coefficients && not(inner_boundary_flags & INVERT_SET);
-  store_coefficients = store_coefficients && not(outer_boundary_flags & INVERT_SET);
-
   // Setting the width of the boundary.
   // NOTE: The default is a width of 2 guard cells
   int inbndry = localmesh->xstart, outbndry = localmesh->xstart;
@@ -369,6 +363,13 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   /// SCOREP_USER_REGION_DEFINE(initlevels);
   /// SCOREP_USER_REGION_BEGIN(initlevels, "init
   /// levels",///SCOREP_USER_REGION_TYPE_COMMON);
+
+  // Should we store coefficients? True when matrix to be inverted is
+  // constant, allowing results to be cached and work skipped
+  const bool store_coefficients = not(inner_boundary_flags & INVERT_AC_GRAD)
+                                  and not(outer_boundary_flags & INVERT_AC_GRAD)
+                                  and not(inner_boundary_flags & INVERT_SET)
+                                  and not(outer_boundary_flags & INVERT_SET);
 
   // Initialize levels. Note that the finest grid (level 0) has a different
   // routine to coarse grids (which generally depend on the grid one step

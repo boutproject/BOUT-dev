@@ -195,10 +195,6 @@ private:
   /// Counter for the number of times the solver has been called
   int ncalls{0};
 
-  /// True when matrix to be inverted is constant, allowing results to be cached and work
-  /// skipped
-  bool store_coefficients;
-
   /// Neighbouring processors in the in and out directions
   int proc_in, proc_out;
 
