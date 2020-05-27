@@ -243,18 +243,14 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
 
   // Setting the width of the boundary.
   // NOTE: The default is a width of 2 guard cells
-  int inbndry = localmesh->xstart, outbndry = localmesh->xstart;
-
-  // If the flags to assign that only one guard cell should be used is set
-  if (isGlobalFlagSet(INVERT_BOTH_BNDRY_ONE) || (localmesh->xstart < 2)) {
-    inbndry = outbndry = 1;
-  }
-  if (isInnerBoundaryFlagSet(INVERT_BNDRY_ONE)) {
-    inbndry = 1;
-  }
-  if (isOuterBoundaryFlagSet(INVERT_BNDRY_ONE)) {
-    outbndry = 1;
-  }
+  const bool both_use_one_guard =
+      isGlobalFlagSet(INVERT_BOTH_BNDRY_ONE) || (localmesh->xstart < 2);
+  const int inbndry = (both_use_one_guard or isInnerBoundaryFlagSet(INVERT_BNDRY_ONE))
+                          ? 1
+                          : localmesh->xstart;
+  const int outbndry = (both_use_one_guard or isOuterBoundaryFlagSet(INVERT_BNDRY_ONE))
+                           ? 1
+                           : localmesh->xstart;
 
   /* Allocation for
    * bk   = The fourier transformed of b, where b is one of the inputs in
