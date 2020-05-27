@@ -804,6 +804,49 @@ void LaplaceIPT::Level::gauss_seidel_red_black(const LaplaceIPT& l) {
   }
 }
 
+namespace {
+// Synchonize reduced coefficients with neighbours
+void synchronise_reduced_coefficients(const Matrix<dcomplex>& sendvec,
+                                      LaplaceIPT::Level& level, bool first_x, bool last_x,
+                                      int jy) {
+
+  const auto nmode = std::get<1>(sendvec.shape());
+  const auto size = nmode * std::get<0>(sendvec.shape());
+
+  auto recvecin = Matrix<dcomplex>(3, nmode);
+  auto recvecout = Matrix<dcomplex>(3, nmode);
+
+  MPI_Comm comm = BoutComm::get();
+
+  // Communicate in
+  if (not first_x) {
+    MPI_Sendrecv(std::begin(sendvec), size, MPI_DOUBLE_COMPLEX, level.proc_in, 1,
+                 std::begin(recvecin), size, MPI_DOUBLE_COMPLEX, level.proc_in, 0, comm,
+                 MPI_STATUS_IGNORE);
+  }
+
+  // Communicate out
+  if (not last_x) {
+    MPI_Sendrecv(std::begin(sendvec), size, MPI_DOUBLE_COMPLEX, level.proc_out, 0,
+                 std::begin(recvecout), size, MPI_DOUBLE_COMPLEX, level.proc_out, 1, comm,
+                 MPI_STATUS_IGNORE);
+  }
+
+  for (int kz = 0; kz < nmode; kz++) {
+    if (not first_x) {
+      level.ar(jy, 0, kz) = recvecin(0, kz);
+      level.br(jy, 0, kz) = recvecin(1, kz);
+      level.cr(jy, 0, kz) = recvecin(2, kz);
+    }
+    if (not last_x) {
+      level.ar(jy, 3, kz) = recvecout(0, kz);
+      level.br(jy, 3, kz) = recvecout(1, kz);
+      level.cr(jy, 3, kz) = recvecout(2, kz);
+    }
+  }
+}
+} // namespace
+
 // Initialization routine for coarser grids. Initialization depends on the grid
 // one step finer, lup.
 LaplaceIPT::Level::Level(const LaplaceIPT& l, const Level& lup,
@@ -869,9 +912,7 @@ LaplaceIPT::Level::Level(const LaplaceIPT& l, const Level& lup,
   rr.reallocate(4, l.nmode);
   brinv.reallocate(l.ny, 4, l.nmode);
 
-  auto sendvec = Array<dcomplex>(3 * l.nmode);
-  auto recvecin = Array<dcomplex>(3 * l.nmode);
-  auto recvecout = Array<dcomplex>(3 * l.nmode);
+  auto sendvec = Matrix<dcomplex>(3, l.nmode);
 
   for (int kz = 0; kz < l.nmode; kz++) {
     if (l.localmesh->firstX()) {
@@ -914,43 +955,14 @@ LaplaceIPT::Level::Level(const LaplaceIPT& l, const Level& lup,
 
     // Need to communicate my index 1 to this level's neighbours
     // Index 2 if last proc.
-    if (not l.localmesh->lastX()) {
-      sendvec[kz] = ar(l.jy, 1, kz);
-      sendvec[kz + l.nmode] = br(l.jy, 1, kz);
-      sendvec[kz + 2 * l.nmode] = cr(l.jy, 1, kz);
-    } else {
-      sendvec[kz] = ar(l.jy, 2, kz);
-      sendvec[kz + l.nmode] = br(l.jy, 2, kz);
-      sendvec[kz + 2 * l.nmode] = cr(l.jy, 2, kz);
-    }
+    const int index = l.localmesh->lastX() ? 1 : 2;
+    sendvec(0, kz) = ar(l.jy, index, kz);
+    sendvec(1, kz) = br(l.jy, index, kz);
+    sendvec(2, kz) = cr(l.jy, index, kz);
   }
 
-  MPI_Comm comm = BoutComm::get();
-
-  // Communicate in
-  if (not l.localmesh->firstX()) {
-    MPI_Sendrecv(&sendvec[0], 3 * l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 1, &recvecin[0],
-                 3 * l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 0, comm, MPI_STATUS_IGNORE);
-  }
-
-  // Communicate out
-  if (not l.localmesh->lastX()) {
-    MPI_Sendrecv(&sendvec[0], 3 * l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, &recvecout[0],
-                 3 * l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 1, comm, MPI_STATUS_IGNORE);
-  }
-
-  for (int kz = 0; kz < l.nmode; kz++) {
-    if (not l.localmesh->firstX()) {
-      ar(l.jy, 0, kz) = recvecin[kz];
-      br(l.jy, 0, kz) = recvecin[kz + l.nmode];
-      cr(l.jy, 0, kz) = recvecin[kz + 2 * l.nmode];
-    }
-    if (not l.localmesh->lastX()) {
-      ar(l.jy, 3, kz) = recvecout[kz];
-      br(l.jy, 3, kz) = recvecout[kz + l.nmode];
-      cr(l.jy, 3, kz) = recvecout[kz + 2 * l.nmode];
-    }
-  }
+  synchronise_reduced_coefficients(sendvec, *this, l.localmesh->firstX(),
+                                   l.localmesh->lastX(), l.jy);
 }
 
 // Init routine for finest level
@@ -982,9 +994,7 @@ LaplaceIPT::Level::Level(LaplaceIPT& l)
   auto tmp = Array<dcomplex>(l.ncx);
 
   // Communication arrays
-  auto sendvec = Array<dcomplex>(3 * l.nmode);
-  auto recvecin = Array<dcomplex>(3 * l.nmode);
-  auto recvecout = Array<dcomplex>(3 * l.nmode);
+  auto sendvec = Matrix<dcomplex>(3, l.nmode);
 
   for (int kz = 0; kz < l.nmode; kz++) {
 
@@ -1098,40 +1108,15 @@ LaplaceIPT::Level::Level(LaplaceIPT& l)
     brinv(l.jy, 1, kz) = 1.0;
     brinv(l.jy, 2, kz) = 1.0;
 
-    sendvec[kz] = ar(l.jy, 1, kz);
-    sendvec[kz + l.nmode] = br(l.jy, 1, kz);
-    sendvec[kz + 2 * l.nmode] = cr(l.jy, 1, kz);
+    sendvec(0, kz) = ar(l.jy, 1, kz);
+    sendvec(1, kz) = br(l.jy, 1, kz);
+    sendvec(2, kz) = cr(l.jy, 1, kz);
 
     /// SCOREP_USER_REGION_END(coefs);
   } // end of kz loop
 
-  // Synchonize reduced coefficients with neighbours
-  MPI_Comm comm = BoutComm::get();
-
-  // Communicate in
-  if (not l.localmesh->firstX()) {
-    MPI_Sendrecv(&sendvec[0], 3 * l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 1, &recvecin[0],
-                 3 * l.nmode, MPI_DOUBLE_COMPLEX, proc_in, 0, comm, MPI_STATUS_IGNORE);
-  }
-
-  // Communicate out
-  if (not l.localmesh->lastX()) {
-    MPI_Sendrecv(&sendvec[0], 3 * l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 0, &recvecout[0],
-                 3 * l.nmode, MPI_DOUBLE_COMPLEX, proc_out, 1, comm, MPI_STATUS_IGNORE);
-  }
-
-  for (int kz = 0; kz < l.nmode; kz++) {
-    if (not l.localmesh->firstX()) {
-      ar(l.jy, 0, kz) = recvecin[kz];
-      br(l.jy, 0, kz) = recvecin[kz + l.nmode];
-      cr(l.jy, 0, kz) = recvecin[kz + 2 * l.nmode];
-    }
-    if (not l.localmesh->lastX()) {
-      ar(l.jy, 3, kz) = recvecout[kz];
-      br(l.jy, 3, kz) = recvecout[kz + l.nmode];
-      cr(l.jy, 3, kz) = recvecout[kz + 2 * l.nmode];
-    }
-  }
+  synchronise_reduced_coefficients(sendvec, *this, l.localmesh->firstX(),
+                                   l.localmesh->lastX(), l.jy);
 }
 
 // Init routine for finest level information that cannot be cached
