@@ -134,9 +134,9 @@ int main(int argc, char **argv) {
       time_output << "\n------------------------------------------------\n";
       time_output << "Case legend";
       time_output <<"\n------------------------------------------------\n";
-      
-      for (uint i = 0 ; i < names.size(); i++){	
-	time_output << std::setw(width) << "Case " << i << ".\t" << names[i] << "\n";
+
+      for (std::size_t i = 0; i < names.size(); i++) {
+        time_output << std::setw(width) << "Case " << i << ".\t" << names[i] << "\n";
       }
       time_output << "\n";
       time_output << std::setw(width) << "Nprocs" << "\t";
@@ -146,8 +146,8 @@ int main(int argc, char **argv) {
       time_output << std::setw(width) << "Nx (global)" << "\t";
       time_output << std::setw(width) << "Ny (global)" << "\t";
       time_output << std::setw(width) << "Nz (global)" << "\t";
-      for (uint i = 0 ; i < names.size(); i++){	
-	time_output << std::setw(width) << "Case " << i << "\t";
+      for (std::size_t i = 0; i < names.size(); i++) {
+        time_output << std::setw(width) << "Case " << i << "\t";
       }
       time_output << "\n";
     }
@@ -159,16 +159,16 @@ int main(int argc, char **argv) {
     time_output << std::setw(width) << mesh->GlobalNx << "\t";
     time_output << std::setw(width) << mesh->GlobalNy << "\t";
     time_output << std::setw(width) << mesh->GlobalNz << "\t";
-    for (uint i = 0 ; i < names.size(); i++){	
+    for (std::size_t i = 0; i < names.size(); i++) {
       time_output << std::setw(width) << times[i].count()/NUM_LOOPS << "\t";
     }
     time_output << "\n";
   }else{
-    uint width = 0;
+    std::size_t width = 0;
     for (const auto i: names){ width = i.size() > width ? i.size() : width;};
     width = width + 5;
     time_output << std::setw(width) << "Case name" << "\t" << "Time per iteration (s)" << "\n";
-    for(uint i = 0 ; i < names.size(); i++){
+    for (std::size_t i = 0; i < names.size(); i++) {
       time_output <<  std::setw(width) << names[i] << "\t" << times[i].count()/NUM_LOOPS << "\n";
     }
   };

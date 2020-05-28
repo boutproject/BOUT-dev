@@ -173,7 +173,7 @@ int main(int argc, char **argv) {
   MPI_Barrier(BoutComm::get()); // Wait for all processors to write data
 
   // Report
-  uint width = 0;
+  std::size_t width = 0;
   for (const auto i : names) {
     width = i.size() > width ? i.size() : width;
   };
@@ -184,7 +184,7 @@ int main(int argc, char **argv) {
               << "\t"
               << "Time per iteration (s)"
               << "\n";
-  for (uint i = 0; i < names.size(); i++) {
+  for (std::size_t i = 0; i < names.size(); i++) {
     time_output << std::setw(width) << names[i] << "\t" << times[i].count() << "\t\t" << times[i].count() / NUM_LOOPS 
                 << "\n";
   }
