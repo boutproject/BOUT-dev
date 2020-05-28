@@ -567,7 +567,8 @@ BoutReal AdamsBashforthSolver::take_step(const BoutReal timeIn, const BoutReal d
     constexpr BoutReal firstPart = 0.5;
 
     // Take a small time step - note we don't need to call the rhs again just yet
-    Array<BoutReal> half_update = AB_integrate(nlocal, timeIn + (dt * firstPart), times, history, order);
+    Array<BoutReal> half_update =
+        AB_integrate(nlocal, timeIn + (dt * firstPart), times, history, order);
 
     // -------------------------------------------
     // Now do the second small timestep -- note we need to call rhs again
