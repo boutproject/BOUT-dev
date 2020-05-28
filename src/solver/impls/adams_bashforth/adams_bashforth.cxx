@@ -227,6 +227,32 @@ BoutReal get_timestep_limit(const BoutReal error, const BoutReal tolerance,
   return std::exp(-std::log(error / tolerance) / order);
 };
 
+/// Finds the maximum absolute error, i.e. Max(Abs(stateApprox - stateAccurate))
+/// over all processors.
+BoutReal get_error(const Array<BoutReal>& stateApprox,
+                   const Array<BoutReal>& stateAccurate) {
+  AUTO_TRACE();
+  BoutReal local_result = 0.0;
+  BoutReal err = 0.0;
+
+  const auto nlocal = stateAccurate.size();
+  for (int i = 0; i < nlocal; i++) {
+    local_result = std::max(std::abs(stateAccurate[i] - stateApprox[i]), local_result);
+
+    // The below is the more typical error calculation used in other solvers.
+    // We prefer the above definition as it provides a way to get a reasonable
+    // estimate of the limiting timestep.
+    // local_result = std::max(std::abs(stateAccurate[i] -
+    //                        stateApprox[i]) / (std::abs(stateAccurate[i]) +
+    //                        std::abs(stateApprox[i]) + atol), local_result);
+  }
+
+  // Reduce over procs
+  if (MPI_Allreduce(&local_result, &err, 1, MPI_DOUBLE, MPI_MAX, BoutComm::get()) != 0) {
+    throw BoutException("MPI_Allreduce failed");
+  }
+  return err;
+}
 } // namespace
 
 AdamsBashforthSolver::AdamsBashforthSolver(Options* options) : Solver(options) {
