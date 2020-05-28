@@ -268,7 +268,7 @@ int AdamsBashforthSolver::init(int nout, BoutReal tstep) {
   }
   neq = ntmp;
 
-  output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n", n3Dvars(),
+  output.write("\t3d fields = {:d}, 2d fields = {:d} neq={:d}, local_N={:d}\n", n3Dvars(),
                n2Dvars(), neq, nlocal);
 
   // Get options
@@ -301,7 +301,7 @@ int AdamsBashforthSolver::init(int nout, BoutReal tstep) {
   // effectively violating the MXSTEP specified.
   if (not adaptive and (out_timestep / timestep > mxstep)) {
     throw BoutException("ERROR: Requested timestep would lead to MXSTEP being exceeded. "
-                        "timestep = %e, MXSTEP=%i\n",
+                        "timestep = {:e}, MXSTEP={:d}\n",
                         timestep, mxstep);
   }
 
@@ -397,7 +397,7 @@ int AdamsBashforthSolver::run() {
           // to do any solves so we check during init instead.
           internal_steps++;
           if (internal_steps > mxstep)
-            throw BoutException("ERROR: MXSTEP exceeded. timestep = %e, err=%e\n",
+            throw BoutException("ERROR: MXSTEP exceeded. timestep = {:e}, err={:e}\n",
                                 timestep, err);
 
           // Estimate the limiting timestep and update.  This is
@@ -524,9 +524,8 @@ int AdamsBashforthSolver::run() {
   }
 
 #if CHECK > 4
-  output << "\nNumber of wasted steps = " << nwasted << " and following a fail "
-         << nwasted_following_fail << "\n\n"
-         << endl;
+  output.write("\nNumber of wasted steps = {} and following a fail {}\n\n", nwasted,
+               nwasted_following_fail);
 #endif
   return 0;
 }
