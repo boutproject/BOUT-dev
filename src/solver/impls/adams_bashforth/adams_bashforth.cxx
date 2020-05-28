@@ -187,6 +187,37 @@ std::vector<BoutReal> get_adams_bashforth_coefficients(const BoutReal nextPoint,
 
   return result;
 }
+
+// In-place Adams-Bashforth integration
+void AB_integrate_update(Array<BoutReal>& update, BoutReal timestep,
+                         const std::deque<BoutReal>& times,
+                         const std::deque<Array<BoutReal>>& history, int order) {
+
+  const auto AB_coefficients = get_adams_bashforth_coefficients(timestep, times, order);
+
+  for (std::size_t j = 0; j < static_cast<std::size_t>(order); ++j) {
+    const BoutReal factor = AB_coefficients[j];
+    BOUT_OMP(parallel for);
+    for (std::size_t i = 0; i < static_cast<std::size_t>(update.size()); ++i) {
+      update[i] += history[j][i] * factor;
+    }
+  }
+}
+
+// Integrate \p history with Adams-Bashforth of order \p order
+Array<BoutReal> AB_integrate(int nlocal, BoutReal timestep,
+                             const std::deque<BoutReal>& times,
+                             const std::deque<Array<BoutReal>>& history, int order) {
+  Array<BoutReal> update(nlocal);
+
+  // Zero-initialise to ensure we can operate on the contiguous
+  // history arrays in order
+  std::fill(std::begin(update), std::end(update), 0.0);
+
+  AB_integrate_update(update, timestep, times, history, order);
+  return update;
+}
+
 } // namespace
 
 AdamsBashforthSolver::AdamsBashforthSolver(Options* options) : Solver(options) {
@@ -502,27 +533,7 @@ BoutReal AdamsBashforthSolver::take_step(const BoutReal timeIn, const BoutReal d
   // The initial error is 0.0
   BoutReal err = 0.0;
 
-  // Calculate the coefficients for a single step of size dt
-  const auto coefs = get_adams_bashforth_coefficients(timeIn + dt, times, order);
-
-  // Create some storage for the update to the state (i.e. state(timeIn + dt) = current +
-  // full_update).
-  Array<BoutReal> full_update(nlocal);
-
-  // Note we split the work here into initialisation with std::fill
-  // and a separate double loop to calculate the update. This is
-  // to ensure we can operate on the contiguous arrays in history
-  // in order.
-  std::fill(std::begin(full_update), std::end(full_update), 0.0);
-
-  for (int j = 0; j < order; j++) {
-    const BoutReal factor = coefs[j];
-
-    BOUT_OMP(parallel for);
-    for (int i = 0; i < nlocal; i++) {
-      full_update[i] += history[j][i] * factor;
-    }
-  }
+  Array<BoutReal> full_update = AB_integrate(nlocal, timeIn + dt, times, history, order);
 
   // Calculate the new state given the history and current state.
   // Could possibly skip the following calculation if adaptive and following the high
@@ -536,38 +547,19 @@ BoutReal AdamsBashforthSolver::take_step(const BoutReal timeIn, const BoutReal d
     BOUT_OMP(parallel for);
     for (int i = 0; i < nlocal; i++) {
       result[i] = current[i] + full_update[i];
-    };
+    }
   }
 
   if (adaptive) {
-
-    // Create some storage for the small step update.
-    Array<BoutReal> half_update(nlocal);
 
     // Use this variable to say how big the first small timestep should be as a fraction
     // of the large timestep, dt. Here fixed to 0.5 to take two equally sized half steps
     // but left here to enable developer experimentation.
     constexpr BoutReal firstPart = 0.5;
 
-    // -------------------------------------------
     // Take a small time step - note we don't need to call the rhs again just yet
-    // -------------------------------------------
-
-    // Calculate the coefficients to get to timeIn + dt * firstPart
-    const auto coefsFirstStep =
-        get_adams_bashforth_coefficients(timeIn + dt * firstPart, times, order);
-
-    // Initialise the update array to 0.
-    std::fill(std::begin(half_update), std::end(half_update), 0.0);
-
-    for (int j = 0; j < order; j++) {
-      const BoutReal factor = coefsFirstStep[j];
-
-      BOUT_OMP(parallel for);
-      for (int i = 0; i < nlocal; i++) {
-        half_update[i] += history[j][i] * factor;
-      }
-    }
+    Array<BoutReal> half_update =
+        AB_integrate(nlocal, timeIn + (dt * firstPart), times, history, order);
 
     // -------------------------------------------
     // Now do the second small timestep -- note we need to call rhs again
@@ -603,18 +595,8 @@ BoutReal AdamsBashforthSolver::take_step(const BoutReal timeIn, const BoutReal d
     }
     save_derivs(std::begin(history[0]));
 
-    // Calculate the coefficients to get to timeIn + dt
-    const auto coefsSecondStep =
-        get_adams_bashforth_coefficients(timeIn + dt, times, order);
-
-    for (int j = 0; j < order; j++) {
-      const BoutReal factor = coefsSecondStep[j];
-
-      BOUT_OMP(parallel for);
-      for (int i = 0; i < nlocal; i++) {
-        half_update[i] += history[j][i] * factor;
-      }
-    }
+    // Finish the time step
+    AB_integrate_update(half_update, timeIn + dt, times, history, order);
 
     // Drop the temporary history information
     history.pop_front();
