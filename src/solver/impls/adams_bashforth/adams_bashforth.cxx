@@ -7,6 +7,188 @@
 
 #include <output.hxx>
 
+namespace {
+BoutReal lagrange_at_position_denominator(const std::deque<BoutReal>& grid,
+                                          const int position, const int order) {
+  AUTO_TRACE();
+
+  const auto xj = grid[position];
+
+  BoutReal result = 1.0;
+  for (int i = 0; i < order; i++) {
+    result /= (i != position) ? (xj - grid[i]) : 1.0;
+  }
+  return result;
+}
+
+BoutReal lagrange_at_position_numerator(const BoutReal varX,
+                                        const std::deque<BoutReal>& grid,
+                                        const int position, const int order) {
+  AUTO_TRACE();
+  BoutReal result = 1.0;
+  for (int i = 0; i < order; i++) {
+    result *= (i != position) ? (varX - grid[i]) : 1.0;
+  }
+  return result;
+}
+
+template <std::size_t N>
+BoutReal lagrange_interpolate(BoutReal start, BoutReal end,
+                              const std::deque<BoutReal>& points, const int position,
+                              const std::array<BoutReal, N>& facs) {
+  const BoutReal stepSize = (end - start) / (N - 1.0);
+
+  BoutReal result{0.0};
+  for (std::size_t i = 0; i < N; i++) {
+    result +=
+        facs[i]
+        * lagrange_at_position_numerator(start + i * stepSize, points, position, N - 1);
+  }
+  return stepSize * result * lagrange_at_position_denominator(points, position, N - 1);
+}
+
+// Integrate using newton-cotes 9 rule
+BoutReal integrate_lagrange_curve_nc9(const BoutReal start, const BoutReal end,
+                                      const std::deque<BoutReal>& points,
+                                      const int position) {
+  AUTO_TRACE();
+  constexpr std::size_t size = 9;
+  constexpr BoutReal fac = 4.0 / 14175.0;
+  constexpr std::array<BoutReal, size> facs{989.0 * fac,   5888.0 * fac,  -928.0 * fac,
+                                            10496.0 * fac, -4540.0 * fac, 10496.0 * fac,
+                                            -928.0 * fac,  5888.0 * fac,  989.0 * fac};
+  return lagrange_interpolate(start, end, points, position, facs);
+}
+
+// Integrate using newton-cotes 8 rule
+BoutReal integrate_lagrange_curve_nc8(const BoutReal start, const BoutReal end,
+                                      const std::deque<BoutReal>& points,
+                                      const int position) {
+  AUTO_TRACE();
+  constexpr std::size_t size = 8;
+  constexpr BoutReal fac = 7.0 / 17280.0;
+  constexpr std::array<BoutReal, size> facs{751.0 * fac,  3577.0 * fac, 1323.0 * fac,
+                                            2989.0 * fac, 2989.0 * fac, 1323.0 * fac,
+                                            3577.0 * fac, 751.0 * fac};
+  return lagrange_interpolate(start, end, points, position, facs);
+}
+
+// Integrate using newton-cotes 7 rule
+BoutReal integrate_lagrange_curve_nc7(const BoutReal start, const BoutReal end,
+                                      const std::deque<BoutReal>& points,
+                                      const int position) {
+  AUTO_TRACE();
+  constexpr std::size_t size = 7;
+  constexpr BoutReal fac = 1.0 / 140.0;
+  constexpr std::array<BoutReal, size> facs{41.0 * fac,  216.0 * fac, 27.0 * fac,
+                                            272.0 * fac, 27.0 * fac,  216.0 * fac,
+                                            41.0 * fac};
+  return lagrange_interpolate(start, end, points, position, facs);
+}
+
+// Integrate using newton-cotes 6 rule
+BoutReal integrate_lagrange_curve_nc6(const BoutReal start, const BoutReal end,
+                                      const std::deque<BoutReal>& points,
+                                      const int position) {
+  AUTO_TRACE();
+  constexpr std::size_t size = 6;
+  constexpr BoutReal fac = 5.0 / 288.0;
+  constexpr std::array<BoutReal, size> facs{19.0 * fac, 75.0 * fac, 50.0 * fac,
+                                            50.0 * fac, 75.0 * fac, 19.0 * fac};
+  return lagrange_interpolate(start, end, points, position, facs);
+};
+
+// Integrate using newton-cotes 5 rule (Boole)
+BoutReal integrate_lagrange_curve_nc5(const BoutReal start, const BoutReal end,
+                                      const std::deque<BoutReal>& points,
+                                      const int position) {
+  AUTO_TRACE();
+  constexpr std::size_t size = 5;
+  constexpr BoutReal fac = 2.0 / 45.0;
+  constexpr std::array<BoutReal, size> facs{7.0 * fac, 32.0 * fac, 12.0 * fac, 32.0 * fac,
+                                            7.0 * fac};
+  return lagrange_interpolate(start, end, points, position, facs);
+}
+
+// Integrate using newton-cotes 4 rule (Simpson 3/8)
+BoutReal integrate_lagrange_curve_nc4(const BoutReal start, const BoutReal end,
+                                      const std::deque<BoutReal>& points,
+                                      const int position) {
+  AUTO_TRACE();
+  constexpr std::size_t size = 4;
+  constexpr BoutReal fac = 3.0 / 8.0;
+  constexpr std::array<BoutReal, size> facs{1.0 * fac, 3.0 * fac, 3.0 * fac, 1.0 * fac};
+  return lagrange_interpolate(start, end, points, position, facs);
+}
+
+// Integrate using newton-cotes 3 rule (Simpson)
+BoutReal integrate_lagrange_curve_nc3(const BoutReal start, const BoutReal end,
+                                      const std::deque<BoutReal>& points,
+                                      const int position) {
+  AUTO_TRACE();
+  constexpr std::size_t size = 3;
+  constexpr BoutReal fac = 1.0 / 3.0;
+  constexpr std::array<BoutReal, size> facs{1.0 * fac, 4.0 * fac, 1.0 * fac};
+  return lagrange_interpolate(start, end, points, position, facs);
+}
+
+// Integrate using newton-cotes 2 rule (Trap)
+BoutReal integrate_lagrange_curve_nc2(const BoutReal start, const BoutReal end,
+                                      const std::deque<BoutReal>& points,
+                                      const int position) {
+  AUTO_TRACE();
+  constexpr std::size_t size = 2;
+  constexpr BoutReal fac = 1.0 / 2.0;
+  constexpr std::array<BoutReal, size> facs{1.0 * fac, 1.0 * fac};
+  return lagrange_interpolate(start, end, points, position, facs);
+}
+
+// Integrate lagrange polynomial to find the coefficienst of the requested order
+BoutReal integrate_lagrange_curve(const BoutReal start, const BoutReal end,
+                                  const std::deque<BoutReal>& points, const int position,
+                                  const int order) {
+  AUTO_TRACE();
+
+  switch (order) {
+  case 1:
+    return integrate_lagrange_curve_nc2(start, end, points, position);
+  case 2:
+    return integrate_lagrange_curve_nc3(start, end, points, position);
+  case 3:
+    return integrate_lagrange_curve_nc4(start, end, points, position);
+  case 4:
+    return integrate_lagrange_curve_nc5(start, end, points, position);
+  case 5:
+    return integrate_lagrange_curve_nc6(start, end, points, position);
+  case 6:
+    return integrate_lagrange_curve_nc7(start, end, points, position);
+  case 7:
+    return integrate_lagrange_curve_nc8(start, end, points, position);
+  default:
+    return integrate_lagrange_curve_nc9(start, end, points, position);
+  }
+}
+
+// Calculate the set of Adams-Bashforth coefficients required to get from t = points[0]
+// to t = nextPoint
+// at the requested order.
+std::vector<BoutReal> get_adams_bashforth_coefficients(const BoutReal nextPoint,
+                                                       const std::deque<BoutReal>& points,
+                                                       const int order) {
+  AUTO_TRACE();
+  ASSERT2(order <= points.size());
+
+  std::vector<BoutReal> result;
+  result.reserve(order);
+
+  for (int i = 0; i < order; i++) {
+    result.emplace_back(integrate_lagrange_curve(points[0], nextPoint, points, i, order));
+  }
+
+  return result;
+}
+} // namespace
+
 AdamsBashforthSolver::AdamsBashforthSolver(Options* options) : Solver(options) {
   AUTO_TRACE();
   canReset = true;
@@ -321,8 +503,7 @@ BoutReal AdamsBashforthSolver::take_step(const BoutReal timeIn, const BoutReal d
   BoutReal err = 0.0;
 
   // Calculate the coefficients for a single step of size dt
-  const auto coefs =
-      coefficients_calculator.get_adams_bashforth_coefficients(timeIn + dt, times, order);
+  const auto coefs = get_adams_bashforth_coefficients(timeIn + dt, times, order);
 
   // Create some storage for the update to the state (i.e. state(timeIn + dt) = current +
   // full_update).
@@ -373,8 +554,8 @@ BoutReal AdamsBashforthSolver::take_step(const BoutReal timeIn, const BoutReal d
     // -------------------------------------------
 
     // Calculate the coefficients to get to timeIn + dt * firstPart
-    const auto coefsFirstStep = coefficients_calculator.get_adams_bashforth_coefficients(
-        timeIn + dt * firstPart, times, order);
+    const auto coefsFirstStep =
+        get_adams_bashforth_coefficients(timeIn + dt * firstPart, times, order);
 
     // Initialise the update array to 0.
     std::fill(std::begin(half_update), std::end(half_update), 0.0);
@@ -423,8 +604,8 @@ BoutReal AdamsBashforthSolver::take_step(const BoutReal timeIn, const BoutReal d
     save_derivs(std::begin(history[0]));
 
     // Calculate the coefficients to get to timeIn + dt
-    const auto coefsSecondStep = coefficients_calculator.get_adams_bashforth_coefficients(
-        timeIn + dt, times, order);
+    const auto coefsSecondStep =
+        get_adams_bashforth_coefficients(timeIn + dt, times, order);
 
     for (int j = 0; j < order; j++) {
       const BoutReal factor = coefsSecondStep[j];
