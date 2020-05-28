@@ -31,7 +31,6 @@ class AdamsBashforthSolver;
 #include "mpi.h"
 
 #include <bout/solver.hxx>
-#include <bout/solverfactory.hxx>
 #include <bout_types.hxx>
 
 #include <deque>
