@@ -417,94 +417,93 @@ int AdamsBashforthSolver::run() {
         const BoutReal err = take_step(simtime, dt, current_order, state, nextState);
 
         // Calculate and check error if adaptive
-        if (adaptive) {
-          // Really the following should apply to both adaptive and non-adaptive
-          // approaches, but the non-adaptive can be determined without needing
-          // to do any solves so we check during init instead.
-          internal_steps++;
-          if (internal_steps > mxstep)
-            throw BoutException("ERROR: MXSTEP exceeded. timestep = %e, err=%e\n",
-                                timestep, err);
-
-          // Estimate the limiting timestep and update.  This is
-          // really the estimate of the timestep for this current step
-          // that would just satisfy the tolerance. In cases where we
-          // move to the next step we actually end up using this new
-          // timestep for the next step.
-          BoutReal dt_lim = dt * get_timestep_limit(err, rtol, current_order);
-
-          if (err < rtol) { // Successful step
-
-            // Now we can consider what result we would get at
-            // lower/higher order Our timestep limit gets smaller as
-            // the order increases for fixed error, hence we really
-            // want to use the lowest order that satisfies the
-            // tolerance. Or in other words we want to use the order
-            // that gives us the biggest timestep. For now we just see
-            // what the error is when using one order lower.
-            //
-            // For now we only do this when we've had a successful
-            // step, in general we might want to do this for failing
-            // steps as well, but as the error drops quicker with
-            // higher orders we might hope higher order is better when
-            // the error condition is not met.
-            if (adaptive_order and current_order > 1) {
-              Array<BoutReal> lowerNextState(nlocal);
-              // Currently we just reuse the existing code to take a
-              // step but just do it with lower order
-              // coefficients. This means we have to do another rhs
-              // call. We might be able to get away with reusing the
-              // half point derivatives from the higher order method
-              // here instead, which would save the rhs call. This may
-              // mean we don't trust the error as much and hence have
-              // to scale the timestep more conservatively but this
-              // may be worth it.
-              //
-              // Actually currently we do skip the second rhs call
-              // and instead try to reuse the existing data.
-              const BoutReal lowerErr =
-                  take_step(simtime, dt, current_order - 1, state, lowerNextState);
-
-              const BoutReal lower_dt_lim =
-                  dt * get_timestep_limit(lowerErr, rtol, current_order - 1);
-
-              // Decide if we want to use the lower order method based
-              // on which gives us the biggest timestep.
-              use_lower = lower_dt_lim > dt_lim;
-
-              // If we decide the lower order is better then swap/set
-              // the associated values to use the lower order result.
-              if (use_lower) {
-                dt_lim = lower_dt_lim;
-                swap(nextState, lowerNextState);
-                current_order = current_order - 1;
-              }
-            }
-
-            // Try to limit increases in the timestep to no more than 10%.
-            // We could/should make these numbers runtime to give more
-            // control to the users, just wary of option overload.
-            timestep = std::min(timestep * 1.1, dt_lim);
-
-            // For developers
-            previous_fail = false;
-
-            break;
-
-          } else {
-            // Be more conservative if we've failed;
-            timestep = 0.9 * dt_lim;
-
-            // For developers
-            if (previous_fail) {
-              nwasted_following_fail++;
-            }
-            previous_fail = true;
-            nwasted++;
-          }
-        } else {
+        if (not adaptive) {
           break;
         }
+
+        // Really the following should apply to both adaptive and non-adaptive
+        // approaches, but the non-adaptive can be determined without needing
+        // to do any solves so we check during init instead.
+        ++internal_steps;
+        if (internal_steps > mxstep) {
+          throw BoutException("ERROR: MXSTEP exceeded. timestep = %e, err=%e\n",
+                              timestep, err);
+        }
+
+        // Estimate the limiting timestep and update.  This is
+        // really the estimate of the timestep for this current step
+        // that would just satisfy the tolerance. In cases where we
+        // move to the next step we actually end up using this new
+        // timestep for the next step.
+        BoutReal dt_lim = dt * get_timestep_limit(err, rtol, current_order);
+
+        if (err < rtol) { // Successful step
+
+          // Now we can consider what result we would get at
+          // lower/higher order Our timestep limit gets smaller as
+          // the order increases for fixed error, hence we really
+          // want to use the lowest order that satisfies the
+          // tolerance. Or in other words we want to use the order
+          // that gives us the biggest timestep. For now we just see
+          // what the error is when using one order lower.
+          //
+          // For now we only do this when we've had a successful
+          // step, in general we might want to do this for failing
+          // steps as well, but as the error drops quicker with
+          // higher orders we might hope higher order is better when
+          // the error condition is not met.
+          if (adaptive_order and current_order > 1) {
+            Array<BoutReal> lowerNextState(nlocal);
+            // Currently we just reuse the existing code to take a
+            // step but just do it with lower order
+            // coefficients. This means we have to do another rhs
+            // call. We might be able to get away with reusing the
+            // half point derivatives from the higher order method
+            // here instead, which would save the rhs call. This may
+            // mean we don't trust the error as much and hence have
+            // to scale the timestep more conservatively but this
+            // may be worth it.
+            //
+            // Actually currently we do skip the second rhs call
+            // and instead try to reuse the existing data.
+            const BoutReal lowerErr =
+                take_step(simtime, dt, current_order - 1, state, lowerNextState);
+
+            const BoutReal lower_dt_lim =
+                dt * get_timestep_limit(lowerErr, rtol, current_order - 1);
+
+            // Decide if we want to use the lower order method based
+            // on which gives us the biggest timestep.
+            use_lower = lower_dt_lim > dt_lim;
+
+            // If we decide the lower order is better then swap/set
+            // the associated values to use the lower order result.
+            if (use_lower) {
+              dt_lim = lower_dt_lim;
+              swap(nextState, lowerNextState);
+              current_order = current_order - 1;
+            }
+          }
+
+          // Try to limit increases in the timestep to no more than 10%.
+          // We could/should make these numbers runtime to give more
+          // control to the users, just wary of option overload.
+          timestep = std::min(timestep * 1.1, dt_lim);
+
+          // For developers
+          previous_fail = false;
+
+          break;
+        }
+        // Be more conservative if we've failed;
+        timestep = 0.9 * dt_lim;
+
+        // For developers
+        if (previous_fail) {
+          nwasted_following_fail++;
+        }
+        previous_fail = true;
+        nwasted++;
       }
 
       // Ditch last history point if we have enough
