@@ -29,11 +29,11 @@ option(INSTALL_GTEST "Enable installation of googletest. (Projects embedding goo
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
-option(BOUT_USE_GIT_SUBMODULE "Check submodules during build" ON)
+option(BOUT_UPDATE_GIT_SUBMODULE "Check submodules are up-to-date during build" ON)
 # Adapted from https://cliutils.gitlab.io/modern-cmake/chapters/projects/submodule.html
 # Update submodules as needed
 function(bout_update_submodules)
-  if(NOT BOUT_USE_GIT_SUBMODULE)
+  if(NOT BOUT_UPDATE_GIT_SUBMODULE)
     return()
   endif()
   find_package(Git QUIET)
@@ -346,37 +346,35 @@ configure_file(
 ##################################################
 
 cmake_dependent_option(BOUT_USE_SYSTEM_MPARK_VARIANT "Use external installation of mpark.variant" OFF
-  "BOUT_USE_GIT_SUBMODULE;EXISTS externalpackages/mpark.variant/CMakeLists.txt" ON)
+  "BOUT_UPDATE_GIT_SUBMODULE OR EXISTS externalpackages/mpark.variant/CMakeLists.txt" ON)
 
 if(BOUT_USE_SYSTEM_MPARK_VARIANT)
-  find_package(mpark_variant REQUIRED)
   message(STATUS "Using external mpark.variant")
+  find_package(mpark_variant REQUIRED)
 else()
+  message(STATUS "Using mpark.variant submodule")
   bout_update_submodules()
   add_subdirectory(externalpackages/mpark.variant)
-  if(TARGET mpark_variant)
-    message(STATUS "Using mpark.variant submodule")
-  else()
-    message(FATAL_ERROR "mpark_variant not found! Have you disabled the git submodules (BOUT_USE_GIT_SUBMODULE)?")
+  if(NOT TARGET mpark_variant)
+    message(FATAL_ERROR "mpark_variant not found! Have you disabled the git submodules (BOUT_UPDATE_GIT_SUBMODULE)?")
   endif()
 endif()
 target_link_libraries(bout++ PUBLIC mpark_variant)
 
 cmake_dependent_option(BOUT_USE_SYSTEM_FMT "Use external installation of fmt" OFF
-  "BOUT_USE_GIT_SUBMODULE;EXISTS externalpackages/fmt/CMakeLists.txt" ON)
+  "BOUT_UPDATE_GIT_SUBMODULE OR EXISTS externalpackages/fmt/CMakeLists.txt" ON)
 
 if(BOUT_USE_SYSTEM_FMT)
-  find_package(fmt 6 REQUIRED)
   message(STATUS "Using external fmt")
+  find_package(fmt 6 REQUIRED)
 else()
+  message(STATUS "Using fmt submodule")
   bout_update_submodules()
   # Need to install fmt alongside BOUT++
   set(FMT_INSTALL ON CACHE BOOL "")
   add_subdirectory(externalpackages/fmt)
-  if(TARGET fmt::fmt)
-    message(STATUS "Using fmt submodule")
-  else()
-    message(FATAL_ERROR "fmt not found! Have you disabled the git submodules (BOUT_USE_GIT_SUBMODULE)?")
+  if(NOT TARGET fmt::fmt)
+    message(FATAL_ERROR "fmt not found! Have you disabled the git submodules (BOUT_UPDATE_GIT_SUBMODULE)?")
   endif()
 endif()
 target_link_libraries(bout++ PUBLIC fmt::fmt)
