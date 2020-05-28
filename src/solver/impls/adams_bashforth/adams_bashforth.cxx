@@ -218,6 +218,15 @@ Array<BoutReal> AB_integrate(int nlocal, BoutReal timestep,
   return update;
 }
 
+// Free function to return an estimate of the factor by which a
+// timestep giving aerror = error should be scaled to give aerror =
+// tolerance when using a scheme of order = order, where aerror =
+// abs(soln_accurate - soln_approx)
+BoutReal get_timestep_limit(const BoutReal error, const BoutReal tolerance,
+                            const int order) {
+  return std::exp(-std::log(error / tolerance) / order);
+};
+
 } // namespace
 
 AdamsBashforthSolver::AdamsBashforthSolver(Options* options) : Solver(options) {
@@ -621,11 +630,3 @@ BoutReal AdamsBashforthSolver::take_step(const BoutReal timeIn, const BoutReal d
   return err;
 }
 
-// Free function to return an estimate of the factor by which a
-// timestep giving aerror = error should be scaled to give aerror =
-// tolerance when using a scheme of order = order, where aerror =
-// abs(soln_accurate - soln_approx)
-BoutReal get_timestep_limit(const BoutReal error, const BoutReal tolerance,
-                            const int order) {
-  return exp(-log(error / tolerance) / order);
-};

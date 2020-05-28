@@ -119,11 +119,4 @@ private:
   int nlocal, neq;       // Number of variables on local processor and in total
 };
 
-// Free function to return an estimate of the factor by which a
-// timestep giving aerror = error should be scaled to give aerror =
-// tolerance when using a scheme of order = order, where aerror =
-// abs(soln_accurate - soln_approx)
-BoutReal get_timestep_limit(const BoutReal error, const BoutReal tolerance,
-                            const int order);
-
 #endif // __ADAMSBASHFORTH_SOLVER_H__
