@@ -58,7 +58,7 @@ public:
 private:
   // Take a single timestep of specified order. If adaptive also calculates
   // and returns an error estimate.
-  BoutReal take_step(const BoutReal timeIn, const BoutReal dt, const int order,
+  BoutReal take_step(BoutReal timeIn, BoutReal dt, int order,
                      Array<BoutReal>& current, Array<BoutReal>& result);
 
   // Holds the current/next state
