@@ -354,7 +354,9 @@ TEST(BoutInitialiseFunctions, SetRunStartInfo) {
 
   ASSERT_TRUE(run_section.isSection());
   EXPECT_TRUE(run_section.isSet("version"));
+#ifdef REVISION
   EXPECT_TRUE(run_section.isSet("revision"));
+#endif
   EXPECT_TRUE(run_section.isSet("started"));
 }
 

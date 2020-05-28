@@ -37,7 +37,6 @@ has_ida="@HAS_IDA@"
 has_lapack="@HAS_LAPACK@"
 has_petsc="@HAS_PETSC@"
 has_slepc="@HAS_SLEPC@"
-has_mumps="@HAS_MUMPS@"
 has_arkode="@HAS_ARKODE@"
 has_openmp="@HAS_OPENMP@"
 has_nls="@HAS_NLS@"
@@ -77,7 +76,6 @@ Available values for OPTION include:
   --has-lapack  LAPACK support
   --has-petsc   PETSc support
   --has-slepc   SLEPc support
-  --has-mumps   MUMPS support
   --has-nls     Natural Language Support
 
   --petsc-has-sundials 
@@ -113,7 +111,6 @@ all()
         echo "  --has-lapack  -> $has_lapack"
         echo "  --has-petsc   -> $has_petsc"
         echo "  --has-slepc   -> $has_slepc"
-        echo "  --has-mumps   -> $has_mumps"
         echo "  --has-arkode  -> $has_arkode"
         echo "  --has-nls     -> $has_nls"
         echo
@@ -222,10 +219,6 @@ while test $# -gt 0; do
 
     --has-slepc)
         echo $has_slepc
-        ;;
-
-    --has-mumps)
-        echo $has_mumps
         ;;
 
     --has-arkode)

@@ -1,7 +1,7 @@
 // Provide the C++ wrapper for {{operator_name}} of {{lhs}} and {{rhs}}
 {{out}} operator{{operator}}(const {{lhs.passByReference}}, const {{rhs.passByReference}}) {
   {% if lhs != "BoutReal" and rhs != "BoutReal" %}
-    ASSERT1(areFieldsCompatible(lhs, rhs));
+    ASSERT1_FIELDS_COMPATIBLE(lhs, rhs);
   {% endif %}
 
   {{out.field_type}} {{out.name}}{emptyFrom({{lhs.name if lhs.field_type == out.field_type else rhs.name}})};
@@ -61,7 +61,7 @@
   // otherwise just call the non-inplace version
   if (data.unique()) {
     {% if lhs != "BoutReal" and rhs != "BoutReal" %}
-      ASSERT1(areFieldsCompatible(*this, rhs));
+      ASSERT1_FIELDS_COMPATIBLE(*this, rhs);
     {% endif %}
 
     {% if (lhs == "Field3D") %}

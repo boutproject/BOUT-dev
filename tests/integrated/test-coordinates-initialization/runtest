@@ -1,10 +1,12 @@
 #!/bin/bash
 
+# Cores: 3
+
 make || exit
 
-test -z $MPIRUN  && MPIRUN=mpirun
+test -z $MPIRUN  && MPIRUN='mpirun -np'
 # Kill the test after 3 seconds, if it hasn't already exited
-OMP_NUM_THREADS=1 $MPIRUN -n 3 timeout 3s ./test-coordinates-initialization
+OMP_NUM_THREADS=1 $MPIRUN 3 timeout 3s ./test-coordinates-initialization
 
 e=$?
 

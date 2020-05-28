@@ -4,7 +4,7 @@ from __future__ import division
 from builtins import range
 from past.utils import old_div
 import numpy as np
-from bunch import Bunch
+from boututils.bunch import Bunch
 from .radial_grid import radial_grid
 from .analyse_equil_2 import analyse_equil
 from pylab import (cm, clabel, contour, draw, legend, plot, setp, show,

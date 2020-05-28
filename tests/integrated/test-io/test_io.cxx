@@ -29,6 +29,7 @@ int main(int argc, char **argv) {
   FieldPerp fperp, fperp2, fperp2_evol;
   Vector2D v2d;
   Vector3D v3d;
+  bool check_double_add = Options::root()["check_double_add"].withDefault(false);
 
   f2d = 0.0;
   f3d = 0.0;
@@ -60,6 +61,23 @@ int main(int argc, char **argv) {
   dump.add(v2d, "v2d_evol", true);
   dump.add(v3d, "v3d_evol", true);
   dump.add(fperp2_evol, "fperp2_evol", true);
+
+  if (check_double_add) {
+    // Add all variables twice to check this does not cause an error
+    dump.add(ivar, "ivar", false);
+    dump.add(rvar, "rvar", false);
+    dump.add(bvar, "bvar", false);
+    dump.add(f2d, "f2d", false);
+    dump.add(f3d, "f3d", false);
+    dump.add(fperp, "fperp", false);
+    dump.add(fperp2, "fperp2", false);
+    dump.add(ivar_evol, "ivar_evol", true);
+    dump.add(rvar_evol, "rvar_evol", true);
+    dump.add(bvar_evol, "bvar_evol", true);
+    dump.add(v2d, "v2d_evol", true);
+    dump.add(v3d, "v3d_evol", true);
+    dump.add(fperp2_evol, "fperp2_evol", true);
+  }
 
   int MYPE;
   MPI_Comm_rank(BoutComm::get(), &MYPE);

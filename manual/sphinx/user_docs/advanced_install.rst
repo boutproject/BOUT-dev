@@ -409,7 +409,7 @@ debugging.
           with ``--with-sundials-dir=$HOME/local``
 
 .. note:: It is also possible to get PETSc to download and install
-          MUMPS (see :ref:`sec-MUMPS`), by adding::
+          MUMPS, by adding::
 
               --download-mumps \
               --download-scalapack \
@@ -500,27 +500,6 @@ and to specify a non-standard path::
 
     $ ./configure --with-lapack=/path/to/lapack
 
-.. _sec-mumps:
-
-MUMPS
------
-
-This is still experimental, but does work on at least some systems at
-York. The PETSc library can be used to call MUMPS for directly solving
-matrices (e.g. for Laplacian inversions), or MUMPS can be used directly.
-To enable MUMPS, configure with::
-
-    $ ./configure --with-mumps
-
-MUMPS has many dependencies, including ScaLapack and
-ParMetis. Unfortunately, the exact dependencies and configuration of
-MUMPS varies a lot from system to system. The easiest way to get MUMPS
-installed is to install PETSc with MUMPS, or supply the ``CPPFLAGS``,
-``LDFLAGS`` and ``LIBS`` environment variables to ``configure``::
-
-   $ ./configure --with-mumps CPPFLAGS=-I/path/to/mumps/includes \
-       LDFLAGS=-L/path/to/mumps/libs \
-       LIBS="-ldmumps -lmumps_common -lother_libs_needed_for_mumps"
 
 MPI compilers
 -------------

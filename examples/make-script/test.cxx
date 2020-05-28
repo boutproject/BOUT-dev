@@ -8,12 +8,12 @@ private:
   Field2D f;
   
 public:
-  int init(bool restarting) override {
+  int init(bool) override {
     SOLVE_FOR(f);
     return 0;
   }
   
-  int rhs(BoutReal t) override {
+  int rhs(BoutReal) override {
     ddt(f) = -f;
     return 0;
   }

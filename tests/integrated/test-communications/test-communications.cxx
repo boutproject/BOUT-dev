@@ -1,96 +1,87 @@
-#include <bout/physicsmodel.hxx>
+#include <bout.hxx>
 
-class TestCommunications : public PhysicsModel {
-public:
-  int init(bool) {
-    SAVE_REPEAT(f);
-    f = -1.;
+int main(int argc, char** argv) {
+  BoutInitialise(argc, argv);
 
-    // fill non-guard cells:
+  Field3D f = -1.;
 
-    // interior cells
-    BOUT_FOR(i, f.getRegion("RGN_NOBNDRY")) {
-      f[i] = mesh->GlobalNzNoBoundaries*(
-               mesh->GlobalNyNoBoundaries*mesh->getGlobalXIndexNoBoundaries(i.x())
-               + mesh->getGlobalYIndexNoBoundaries(i.y()))
-             + i.z();
-    }
+  // fill non-guard cells:
 
-    // lower x-boundary cells
-    int startind =
-      mesh->GlobalNxNoBoundaries*mesh->GlobalNyNoBoundaries*mesh->GlobalNzNoBoundaries;
-    if (mesh->firstX()) {
-      for (int x = 0; x < mesh->xstart; x++) {
-        for (int y = mesh->ystart; y <= mesh->yend; y++) {
-          for (int z = mesh->zstart; z <= mesh->zend; z++) {
-            f(x, y, z) =
-              startind
-              + mesh->GlobalNzNoBoundaries*(mesh->GlobalNyNoBoundaries*x +
-                                            mesh->getGlobalYIndexNoBoundaries(y))
-              + z;
-          }
-        }
-      }
-    }
-    startind += mesh->xstart*mesh->GlobalNyNoBoundaries*mesh->GlobalNzNoBoundaries;
+  // interior cells
+  BOUT_FOR(i, f.getRegion("RGN_NOBNDRY")) {
+    f[i] = mesh->GlobalNzNoBoundaries*(
+             mesh->GlobalNyNoBoundaries*mesh->getGlobalXIndexNoBoundaries(i.x())
+             + mesh->getGlobalYIndexNoBoundaries(i.y()))
+           + i.z();
+  }
 
-    // upper x-boundary cells
-    if (mesh->lastX()) {
-      for (int x = 0; x < mesh->xstart; x++) {
-        for (int y = mesh->ystart; y <= mesh->yend; y++) {
-          for (int z = mesh->zstart; z <= mesh->zend; z++) {
-            f(mesh->xend + 1 + x, y, z) =
-              startind
-              + mesh->GlobalNzNoBoundaries*(mesh->GlobalNyNoBoundaries*x +
-                                            mesh->getGlobalYIndexNoBoundaries(y))
-              + z;
-          }
-        }
-      }
-    }
-    startind += mesh->xstart*mesh->GlobalNyNoBoundaries*mesh->GlobalNzNoBoundaries;
-
-    // lower y-boundary cells
-    for (auto it = mesh->iterateBndryLowerY(); !it.isDone(); it++) {
-      int x = it.ind;
-      for (int y = 0; y < mesh->ystart; y++) {
+  // lower x-boundary cells
+  int startind =
+    mesh->GlobalNxNoBoundaries*mesh->GlobalNyNoBoundaries*mesh->GlobalNzNoBoundaries;
+  if (mesh->firstX()) {
+    for (int x = 0; x < mesh->xstart; x++) {
+      for (int y = mesh->ystart; y <= mesh->yend; y++) {
         for (int z = mesh->zstart; z <= mesh->zend; z++) {
           f(x, y, z) =
             startind
-            + mesh->GlobalNzNoBoundaries*(mesh->getGlobalXIndex(x) + y)
+            + mesh->GlobalNzNoBoundaries*(mesh->GlobalNyNoBoundaries*x +
+                                          mesh->getGlobalYIndexNoBoundaries(y))
             + z;
         }
       }
     }
-    startind += mesh->GlobalNx*mesh->ystart*mesh->GlobalNzNoBoundaries;
+  }
+  startind += mesh->xstart*mesh->GlobalNyNoBoundaries*mesh->GlobalNzNoBoundaries;
 
-    // upper y-boundary cells
-    for (auto it = mesh->iterateBndryUpperY(); !it.isDone(); it++) {
-      int x = it.ind;
-      for (int y = 0; y < mesh->ystart; y++) {
+  // upper x-boundary cells
+  if (mesh->lastX()) {
+    for (int x = 0; x < mesh->xstart; x++) {
+      for (int y = mesh->ystart; y <= mesh->yend; y++) {
         for (int z = mesh->zstart; z <= mesh->zend; z++) {
-          f(x, mesh->yend + 1 + y, z) =
+          f(mesh->xend + 1 + x, y, z) =
             startind
-            + mesh->GlobalNzNoBoundaries*(mesh->getGlobalXIndex(x) + y)
+            + mesh->GlobalNzNoBoundaries*(mesh->GlobalNyNoBoundaries*x +
+                                          mesh->getGlobalYIndexNoBoundaries(y))
             + z;
         }
       }
     }
-    startind += mesh->GlobalNx*mesh->ystart*mesh->GlobalNzNoBoundaries;
-
-    // there are no z-boundaries
-
-    return 0;
   }
+  startind += mesh->xstart*mesh->GlobalNyNoBoundaries*mesh->GlobalNzNoBoundaries;
 
-  int rhs(BoutReal) {
-    // communicate f to fill guard cells
-    mesh->communicate(f);
-
-    return 0;
+  // lower y-boundary cells
+  for (auto it = mesh->iterateBndryLowerY(); !it.isDone(); it++) {
+    int x = it.ind;
+    for (int y = 0; y < mesh->ystart; y++) {
+      for (int z = mesh->zstart; z <= mesh->zend; z++) {
+        f(x, y, z) =
+          startind
+          + mesh->GlobalNzNoBoundaries*(mesh->getGlobalXIndex(x) + y)
+          + z;
+      }
+    }
   }
-private:
-  Field3D f;
-};
+  startind += mesh->GlobalNx*mesh->ystart*mesh->GlobalNzNoBoundaries;
 
-BOUTMAIN(TestCommunications);
+  // upper y-boundary cells
+  for (auto it = mesh->iterateBndryUpperY(); !it.isDone(); it++) {
+    int x = it.ind;
+    for (int y = 0; y < mesh->ystart; y++) {
+      for (int z = mesh->zstart; z <= mesh->zend; z++) {
+        f(x, mesh->yend + 1 + y, z) =
+          startind
+          + mesh->GlobalNzNoBoundaries*(mesh->getGlobalXIndex(x) + y)
+          + z;
+      }
+    }
+  }
+  startind += mesh->GlobalNx*mesh->ystart*mesh->GlobalNzNoBoundaries;
+
+  // communicate f to fill guard cells
+  mesh->communicate(f);
+
+  dump.add(f, "f", true);
+  dump.write();
+
+  BoutFinalise();
+}

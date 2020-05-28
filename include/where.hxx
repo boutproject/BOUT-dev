@@ -40,8 +40,8 @@
 template <class T, class U, class V,
           class ResultType = typename bout::utils::EnableIfField<T, U, V>>
 auto where(const T& test, const U& gt0, const V& le0) -> ResultType {
-  ASSERT1(areFieldsCompatible(test, gt0));
-  ASSERT1(areFieldsCompatible(test, le0));
+  ASSERT1_FIELDS_COMPATIBLE(test, gt0);
+  ASSERT1_FIELDS_COMPATIBLE(test, le0);
 
   ResultType result{emptyFrom(test)};
 
@@ -53,7 +53,7 @@ auto where(const T& test, const U& gt0, const V& le0) -> ResultType {
 
 template <class T, class U, class ResultType = typename bout::utils::EnableIfField<T, U>>
 auto where(const T& test, const U& gt0, BoutReal le0) -> ResultType {
-  ASSERT1(areFieldsCompatible(test, gt0));
+  ASSERT1_FIELDS_COMPATIBLE(test, gt0);
 
   ResultType result{emptyFrom(test)};
 
@@ -65,7 +65,7 @@ auto where(const T& test, const U& gt0, BoutReal le0) -> ResultType {
 
 template <class T, class V, class ResultType = typename bout::utils::EnableIfField<T, V>>
 auto where(const T& test, BoutReal gt0, const V& le0) -> ResultType {
-  ASSERT1(areFieldsCompatible(test, le0));
+  ASSERT1_FIELDS_COMPATIBLE(test, le0);
 
   ResultType result{emptyFrom(test)};
 

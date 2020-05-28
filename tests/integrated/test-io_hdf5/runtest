@@ -4,8 +4,9 @@
 # Run the test, compare results against the benchmark
 #
 
-#requires: all_tests
-#Requires: hdf5
+# Requires: all_tests
+# Requires: hdf5
+# Cores: 4
 
 from boututils.run_wrapper import build_and_log, shell, launch_safe
 from boutdata.collect import collect

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -ex
 
 #Default flags
 COVERAGE=0
@@ -10,6 +10,7 @@ MMS=0
 TESTS=0
 MAIN_TARGET=
 UPDATE_SCRIPT=0
+CONFIGURE_SHELL=
 
 usage() {
     echo "$0 options are: "
@@ -19,7 +20,7 @@ usage() {
 }
 
 #Handle input flags
-while getopts "cuimt:5" arg;
+while getopts "cuimt:5s:" arg;
 do
     case $arg in
 	c) ### Run the coverage-post job tasks
@@ -43,6 +44,9 @@ do
         5) ### Run the update to version 5 script
             UPDATE_SCRIPT=1
             ;;
+	s) ### Use specific shell to configure
+	    CONFIGURE_SHELL="$OPTARG"
+	    ;;
         *) ### Show usage message
 	    usage
 	    ;;
@@ -71,7 +75,7 @@ echo "****************************************"
 echo "Configuring with $CONFIGURE_OPTIONS"
 echo "****************************************"
 conf=0
-time ./configure $CONFIGURE_OPTIONS MAKEFLAGS="$MAKEFLAGS" || conf=$?
+time $CONFIGURE_SHELL ./configure $CONFIGURE_OPTIONS MAKEFLAGS="$MAKEFLAGS" || conf=$?
 if test $conf -gt 0
 then
     RED_FG="\033[031m"
@@ -111,11 +115,6 @@ do
 	exit $make_exit
     fi
 done
-
-if [[ ${TESTS} == 1 ]]
-then
-    time make build-check
-fi
 
 if [[ ${UNIT} == 1 ]]
 then

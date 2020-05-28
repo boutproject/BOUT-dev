@@ -25,7 +25,7 @@ from past.utils import old_div
 # 
 
 import numpy 
-from bunch import Bunch
+from boututils.bunch import Bunch
 import local_min_max
 from scipy.interpolate import RectBivariateSpline
 from pylab import contour, gradient,  annotate, plot, draw

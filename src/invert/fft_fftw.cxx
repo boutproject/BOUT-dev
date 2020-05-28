@@ -206,6 +206,8 @@ void rfft(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUS
 #ifndef BOUT_HAS_FFTW
   throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
 #else
+  // ensure we are not nested
+  ASSERT1(omp_get_active_level() < 2);
   static double *finall;
   static fftw_complex *foutall;
   static fftw_plan *p;

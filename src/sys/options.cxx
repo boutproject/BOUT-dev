@@ -39,6 +39,17 @@ Options::Options(const Options& other)
   }
 }
 
+template <>
+Options::Options(const char* value) {
+  assign<std::string>(value);
+}
+
+Options::Options(std::initializer_list<std::pair<std::string, Options>> values) {
+  for (auto& value : values) {
+    (*this)[value.first] = value.second;
+  }
+}
+
 Options &Options::operator[](const std::string &name) {
   // Mark this object as being a section
   is_section = true;
@@ -350,7 +361,7 @@ template <> Field3D Options::as<Field3D>(const Field3D& similar_to) const {
     Field3D stored_value = bout::utils::get<Field3D>(value);
     
     // Check that meta-data is consistent
-    ASSERT1(areFieldsCompatible(stored_value, similar_to));
+    ASSERT1_FIELDS_COMPATIBLE(stored_value, similar_to);
     
     return stored_value;
   }
@@ -359,7 +370,7 @@ template <> Field3D Options::as<Field3D>(const Field3D& similar_to) const {
     const auto& stored_value = bout::utils::get<Field2D>(value);
 
     // Check that meta-data is consistent
-    ASSERT1(areFieldsCompatible(stored_value, similar_to));
+    ASSERT1_FIELDS_COMPATIBLE(stored_value, similar_to);
 
     return Field3D(stored_value);
   }
@@ -414,7 +425,7 @@ template <> Field2D Options::as<Field2D>(const Field2D& similar_to) const {
     Field2D stored_value = bout::utils::get<Field2D>(value);
     
     // Check that meta-data is consistent
-    ASSERT1(areFieldsCompatible(stored_value, similar_to));
+    ASSERT1_FIELDS_COMPATIBLE(stored_value, similar_to);
 
     return stored_value;
   }

@@ -149,3 +149,38 @@ TEST_F(FieldTest, AreFieldsCompatibleFalseYAlignedZAverage2) {
   EXPECT_NE(field.getDirectionY(), field2.getDirectionY());
   EXPECT_NE(field.getDirectionZ(), field2.getDirectionZ());
 }
+
+TEST_F(FieldTest, filledFromAuto) {
+
+  Field3D f;
+  Field3D result = filledFrom(f, [](auto i) {
+                                   return i.x() * i.y();
+                                 });
+
+  // Note: Serial so compiles with OpenMP
+  BOUT_FOR_SERIAL(i, result.getRegion("RGN_ALL")) {
+    ASSERT_DOUBLE_EQ( result[i], i.x() * i.y());
+  }
+}
+
+TEST_F(FieldTest, filledFromInd3D) {
+  Field3D f;
+  Field3D result = filledFrom(f, [](Ind3D& i) {
+                                   return i.x() + i.z() - 2*i.y();
+                                 });
+
+  BOUT_FOR_SERIAL(i, result.getRegion("RGN_ALL")) {
+    ASSERT_DOUBLE_EQ( result[i], i.x() + i.z() - 2*i.y());
+  }
+}
+
+TEST_F(FieldTest, filledFromConstInd3D) {
+  Field3D f;
+  Field3D result = filledFrom(f, [](const Ind3D& i) {
+                                   return i.x() * i.y();
+                                 });
+
+  BOUT_FOR_SERIAL(i, result.getRegion("RGN_ALL")) {
+    ASSERT_DOUBLE_EQ( result[i], i.x() * i.y());
+  }
+}

@@ -1,8 +1,8 @@
 from __future__ import print_function
 from builtins import range
 import numpy
-from bunch import Bunch
 from geqdsk import Geqdsk
+from boututils.bunch import Bunch
 
 def read_geqdsk (file):
     
@@ -67,8 +67,6 @@ def read_geqdsk (file):
         for j in range(0,nyefit):
             r[i,j] = rgrid1 + xdim*i/(nxefit-1)
             z[i,j] = (zmid-0.5*zdim) + zdim*j/(nyefit-1)
-  
-
 
     f=f.T
     
