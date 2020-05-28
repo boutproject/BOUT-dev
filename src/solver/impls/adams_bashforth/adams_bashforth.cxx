@@ -96,7 +96,7 @@ BoutReal integrate_lagrange_curve_nc6(const BoutReal start, const BoutReal end,
   constexpr std::array<BoutReal, size> facs{19.0 * fac, 75.0 * fac, 50.0 * fac,
                                             50.0 * fac, 75.0 * fac, 19.0 * fac};
   return lagrange_interpolate(start, end, points, position, facs);
-};
+}
 
 // Integrate using newton-cotes 5 rule (Boole)
 BoutReal integrate_lagrange_curve_nc5(const BoutReal start, const BoutReal end,
@@ -176,7 +176,7 @@ std::vector<BoutReal> get_adams_bashforth_coefficients(const BoutReal nextPoint,
                                                        const std::deque<BoutReal>& points,
                                                        const int order) {
   AUTO_TRACE();
-  ASSERT2(order <= points.size());
+  ASSERT2(static_cast<std::size_t>(order) <= points.size());
 
   std::vector<BoutReal> result;
   result.reserve(order);
@@ -188,7 +188,7 @@ std::vector<BoutReal> get_adams_bashforth_coefficients(const BoutReal nextPoint,
   return result;
 }
 
-// In-place Adams-Bashforth integration
+/// In-place Adams-Bashforth integration
 void AB_integrate_update(Array<BoutReal>& update, BoutReal timestep,
                          const std::deque<BoutReal>& times,
                          const std::deque<Array<BoutReal>>& history, int order) {
@@ -204,7 +204,7 @@ void AB_integrate_update(Array<BoutReal>& update, BoutReal timestep,
   }
 }
 
-// Integrate \p history with Adams-Bashforth of order \p order
+/// Integrate \p history with Adams-Bashforth of order \p order
 Array<BoutReal> AB_integrate(int nlocal, BoutReal timestep,
                              const std::deque<BoutReal>& times,
                              const std::deque<Array<BoutReal>>& history, int order) {
@@ -218,14 +218,14 @@ Array<BoutReal> AB_integrate(int nlocal, BoutReal timestep,
   return update;
 }
 
-// Free function to return an estimate of the factor by which a
-// timestep giving aerror = error should be scaled to give aerror =
-// tolerance when using a scheme of order = order, where aerror =
-// abs(soln_accurate - soln_approx)
+/// Free function to return an estimate of the factor by which a
+/// timestep giving aerror = error should be scaled to give aerror =
+/// tolerance when using a scheme of order = order, where aerror =
+/// abs(soln_accurate - soln_approx)
 BoutReal get_timestep_limit(const BoutReal error, const BoutReal tolerance,
                             const int order) {
   return std::exp(-std::log(error / tolerance) / order);
-};
+}
 
 /// Finds the maximum absolute error, i.e. Max(Abs(stateApprox - stateAccurate))
 /// over all processors.
@@ -262,21 +262,25 @@ AdamsBashforthSolver::AdamsBashforthSolver(Options* options) : Solver(options) {
 
 void AdamsBashforthSolver::setMaxTimestep(BoutReal dt) {
   AUTO_TRACE();
-  if (dt > timestep)
+  if (dt > timestep) {
     return; // Already less than this
+  }
 
-  if (adaptive) // Should we throw if we're not adaptive as we've tried to set a timestep
-                // limit but couldn't?
+  // Should we throw if we're not adaptive as we've tried to set a
+  // timestep limit but couldn't?
+  if (adaptive) {
     timestep = dt; // Won't be used this time, but next
+  }
 }
 
 int AdamsBashforthSolver::init(int nout, BoutReal tstep) {
 
   TRACE("Initialising AdamsBashforth solver");
 
-  /// Call the generic initialisation first
-  if (Solver::init(nout, tstep))
+  // Call the generic initialisation first
+  if (Solver::init(nout, tstep) != 0) {
     return 1;
+  }
 
   output << "\n\tAdams-Bashforth (explicit) multistep solver\n";
 
@@ -289,7 +293,7 @@ int AdamsBashforthSolver::init(int nout, BoutReal tstep) {
 
   // Get total problem size
   int ntmp;
-  if (MPI_Allreduce(&nlocal, &ntmp, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
+  if (MPI_Allreduce(&nlocal, &ntmp, 1, MPI_INT, MPI_SUM, BoutComm::get()) != 0) {
     throw BoutException("MPI_Allreduce failed!");
   }
   neq = ntmp;
@@ -507,15 +511,18 @@ int AdamsBashforthSolver::run() {
       }
 
       // Ditch last history point if we have enough
-      if (times.size() == maximum_order)
+      if (times.size() == static_cast<std::size_t>(maximum_order)) {
         times.pop_back();
-      if (history.size() == maximum_order)
+      }
+      if (history.size() == static_cast<std::size_t>(maximum_order)) {
         history.pop_back();
+      }
 
       if (current_order < maximum_order) {
         // Don't increase the order if we wanted to use the lower order.
-        if (not use_lower)
+        if (not use_lower) {
           current_order++;
+        }
       }
 
       // Taken an internal step, update times
@@ -529,7 +536,7 @@ int AdamsBashforthSolver::run() {
 
       // Call the per internal timestep monitors
       call_timestep_monitors(simtime, dt);
-    };
+    }
 
     // Put result into variables
     load_vars(std::begin(state));
@@ -544,8 +551,9 @@ int AdamsBashforthSolver::run() {
     iteration++;
 
     // Call the output step monitor function
-    if (call_monitors(simtime, s, nsteps))
+    if (call_monitors(simtime, s, nsteps) != 0) {
       break; // Stop simulation
+    }
   }
 
 #if CHECK > 4
@@ -616,11 +624,10 @@ BoutReal AdamsBashforthSolver::take_step(const BoutReal timeIn, const BoutReal d
       BOUT_OMP(parallel for);
       for (int i = 0; i < nlocal; i++) {
         result2[i] = current[i] + half_update[i];
-      };
+      }
 
       load_vars(std::begin(result2));
       // This is typically the most expensive part of this routine.
-      //
       run_rhs(timeIn + firstPart * dt);
 
       // Restore fields to the original state
@@ -648,10 +655,9 @@ BoutReal AdamsBashforthSolver::take_step(const BoutReal timeIn, const BoutReal d
       BOUT_OMP(parallel for);
       for (int i = 0; i < nlocal; i++) {
         result[i] = current[i] + half_update[i];
-      };
+      }
     }
   }
 
   return err;
 }
-
