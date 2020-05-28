@@ -9,6 +9,8 @@
 #include <field_factory.hxx>
 #include <utils.hxx>
 
+using bout::globals::mesh;
+
 int main(int argc, char **argv) {
 
   // Initialise BOUT++, setting up mesh
@@ -73,8 +75,8 @@ int main(int argc, char **argv) {
   SAVE_ONCE(allpassed);
 
   // Write data to file
-  dump.write();
-  dump.close();
+  bout::globals::dump.write();
+  bout::globals::dump.close();
 
   MPI_Barrier(BoutComm::get());
 

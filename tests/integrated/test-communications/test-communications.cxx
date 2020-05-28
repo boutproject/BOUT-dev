@@ -3,6 +3,8 @@
 int main(int argc, char** argv) {
   BoutInitialise(argc, argv);
 
+  using bout::globals::mesh;
+
   Field3D f = -1.;
 
   // fill non-guard cells:
@@ -80,8 +82,8 @@ int main(int argc, char** argv) {
   // communicate f to fill guard cells
   mesh->communicate(f);
 
-  dump.add(f, "f", true);
-  dump.write();
+  bout::globals::dump.add(f, "f", true);
+  bout::globals::dump.write();
 
   BoutFinalise();
 }

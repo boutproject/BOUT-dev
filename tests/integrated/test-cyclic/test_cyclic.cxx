@@ -117,8 +117,8 @@ int main(int argc, char **argv) {
     output << "FAILED" << endl;
 
   // Write data to file
-  dump.write();
-  dump.close();
+  bout::globals::dump.write();
+  bout::globals::dump.close();
 
   MPI_Barrier(BoutComm::get());
 

@@ -4,14 +4,12 @@
 int main(int argc, char** argv) {
   BoutInitialise(argc, argv);
 
-  Datafile df(Options::getRoot()->getSection("output"));
-
   Field2D test;
-  mesh->get(test, "test");
+  bout::globals::mesh->get(test, "test");
 
-  dump.add(test, "test");
+  bout::globals::dump.add(test, "test");
 
-  dump.write();
+  bout::globals::dump.write();
 
   MPI_Barrier(BoutComm::get());
   
