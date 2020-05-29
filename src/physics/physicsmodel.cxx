@@ -34,7 +34,8 @@
 
 #include <bout/mesh.hxx>
 
-PhysicsModel::PhysicsModel() : modelMonitor(this) {
+PhysicsModel::PhysicsModel()
+    : mesh(bout::globals::mesh), dump(bout::globals::dump), modelMonitor(this) {
 
   // Set up restart file
   restart = Datafile(Options::getRoot()->getSection("restart"));

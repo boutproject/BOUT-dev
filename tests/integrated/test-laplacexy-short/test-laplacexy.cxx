@@ -34,6 +34,7 @@ int main(int argc, char** argv) {
 
   BoutInitialise(argc, argv);
 
+  using bout::globals::mesh;
   auto coords = mesh->getCoordinates();
 
   auto& opt = Options::root();
@@ -83,6 +84,7 @@ int main(int argc, char** argv) {
     rhs_check = a*Delp2(sol, CELL_DEFAULT, false) + coords->g11*DDX(a)*DDX(sol) + b*sol;
   }
 
+  using bout::globals::dump;
   dump.add(a, "a");
   dump.add(b, "b");
   dump.add(f, "f");

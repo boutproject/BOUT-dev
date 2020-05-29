@@ -18,6 +18,7 @@
 using SteadyClock = std::chrono::time_point<std::chrono::steady_clock>;
 using Duration = std::chrono::duration<double>;
 using namespace std::chrono;
+using bout::globals::mesh;
 
 #define ITERATOR_TEST_BLOCK(NAME, ...)		\
   {__VA_ARGS__								\
