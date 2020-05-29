@@ -131,7 +131,7 @@ derivatives = [
 
 direction = ["y", "1", 2, boutcore.DDY]
 
-runtests(functions, derivatives, direction, stag=False, msg="DD", errorlist)
+runtests(functions, derivatives, direction, stag=False, msg="DD", errorlist=errorlist)
 
 derivatives = [
     [2, "C2"],
