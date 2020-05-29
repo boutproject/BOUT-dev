@@ -32,13 +32,14 @@ struct Durations {
   Duration min;
   Duration avg;
   int count;
-  Durations(): min(Duration::max()), max(Duration::min()), avg(Duration::zero()), count(0) {};
+  Durations()
+      : max(Duration::min()), min(Duration::max()), avg(Duration::zero()), count(0){};
 };
 
 class Arithmetic : public PhysicsModel {
 protected:
   std::map<std::string, Durations> elapsedMap;
-  
+
   int init(bool) {
     Field3D a = 1.0;
     Field3D b = 2.0;
