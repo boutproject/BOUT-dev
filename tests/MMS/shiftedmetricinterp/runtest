@@ -15,8 +15,7 @@ errorlist = []
 boutcore.init("-d data -q -q -q".split(" "))
 
 
-def runtests(functions, derivatives, direction, stag, msg, ordertol=0.1):
-    global errorlist
+def runtests(functions, derivatives, direction, stag, msg, errorlist, ordertol=0.1):
     direction, fac, guards, diff_func = direction
     locations = ["centre"]
     if stag:
@@ -128,22 +127,16 @@ functions = [
 
 derivatives = [
     [2, "C2"],
-    # [4,"C4"] ,
-    # [2,"W2"] ,
-    # [3,"W3"] ,
-    # [2,"S2"] ,
 ]
 
 direction = ["y", "1", 2, boutcore.DDY]
 
-runtests(functions, derivatives, direction, stag=False, msg="DD")
+runtests(functions, derivatives, direction, stag=False, msg="DD", errorlist)
 
 derivatives = [
     [2, "C2"],
-    # [4,"C4"],
 ]
 
-# runtests(functions,derivatives,direction,stag=True,msg="DD")
 
 
 functions = [
@@ -151,21 +144,9 @@ functions = [
     ["cos(%s + (z-mesh:zShift))", "-cos(%s + (z-mesh:zShift))"],
 ]
 
-derivatives = [
-    [2, "C2"],
-    # [4,"C4"]
-]
-
 direction = ["y", "1", 2, boutcore.D2DY2]
 
-runtests(functions, derivatives, direction, False, "D2D2", ordertol=0.2)
-
-derivatives = [
-    [2, "C2"],
-]
-
-# runtests(functions,derivatives,direction,True,"D2D2")
-
+runtests(functions, derivatives, direction, False, "D2D2", errorlist, ordertol=0.2)
 
 if errorlist:
     for error in errorlist:
