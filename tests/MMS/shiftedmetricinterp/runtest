@@ -48,6 +48,7 @@ def runtests(functions, derivatives, direction, stag, msg, ordertol=0.1):
             opt["mesh"]["ny"] = nz
             opt["mesh"]["nz"] = nz
             opt.getSection("mms")
+            opt.recalculate_xyz()
 
             # BOUT++'s input expressions translate from field aligned to
             # orthogonal.
