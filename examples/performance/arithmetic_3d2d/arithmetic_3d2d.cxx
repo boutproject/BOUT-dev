@@ -82,7 +82,7 @@ protected:
     }
 
     output.enable();
-    int width = 15; 
+    constexpr int width = 15;
     output<<std::setw(width)<<"TIMING";
     output<<std::setw(width)<<"min";
     output<<std::setw(width)<<"avg";

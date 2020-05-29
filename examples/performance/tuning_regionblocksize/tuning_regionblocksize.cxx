@@ -41,9 +41,8 @@ int main(int argc, char **argv) {
   // Get options root
   auto globalOptions = Options::root();
   auto modelOpts = globalOptions["tuningRegionBlockSize"];
-  int NUM_LOOPS, numSteps;
-  NUM_LOOPS = modelOpts["NUM_LOOPS"].withDefault(100);
-  numSteps = modelOpts["numSteps"].withDefault(16);
+  const int NUM_LOOPS = modelOpts["NUM_LOOPS"].withDefault(100);
+  const int numSteps = modelOpts["numSteps"].withDefault(16);
 
   ConditionalOutput time_output(Output::getInstance());
   time_output.enable(true);
@@ -54,17 +53,15 @@ int main(int argc, char **argv) {
   Field3D result;
   result.allocate();
 
-  int blocksize = 1;
-
   // Time simple task with different blocksizes
-  for (int i = 0; i < numSteps; ++i) {
+  for (int i = 0, blocksize = 1; i < numSteps; ++i, blocksize *= 2) {
     std::string name = "block size : " + std::to_string(blocksize);
     auto region =
         Region<Ind3D>(0, mesh->LocalNx - 1, 0, mesh->LocalNy - 1, 0, mesh->LocalNz - 1,
                       mesh->LocalNy, mesh->LocalNz, blocksize);
 
-    ITERATOR_TEST_BLOCK(name, BOUT_FOR(i, region) { result[i] = a[i] + b[i]; });
-    blocksize *= 2;
+    ITERATOR_TEST_BLOCK(
+        name, BOUT_FOR(i, region) { result[i] = a[i] + b[i]; });
   }
 
   // Report
