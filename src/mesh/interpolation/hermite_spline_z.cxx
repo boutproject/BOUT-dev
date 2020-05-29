@@ -170,8 +170,6 @@ Field3D ZHermiteSpline::interpolate_internal(const Field3D& f, const std::string
         continue;
     }
 
-    // Due to lack of guard cells in z-direction, we need to ensure z-index
-    // wraps around
     const auto corner = k_corner[i.ind].yp(y_offset);
     const auto corner_zp1 = corner.zp();
 
