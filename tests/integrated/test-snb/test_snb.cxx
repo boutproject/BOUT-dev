@@ -65,6 +65,7 @@ bool IsFieldClose(const T& field, const U& reference,
 
 int main(int argc, char** argv) {
   using bout::HeatFluxSNB;
+  using bout::globals::mesh;
 
   BoutInitialise(argc, argv);
 
@@ -76,7 +77,7 @@ int main(int argc, char** argv) {
     auto Te = factory.create3D("5 + cos(y)");
     auto Ne = factory.create3D("1e18 * (1 + 0.5*sin(y))");
 
-    Ne.getMesh()->communicate(Te, Ne);
+    mesh->communicate(Te, Ne);
 
     HeatFluxSNB snb;
 
@@ -96,7 +97,7 @@ int main(int argc, char** argv) {
     auto Te = factory.create3D("1.5");
     auto Ne = factory.create3D("1e18 * (1 + 0.5*sin(y))");
 
-    Ne.getMesh()->communicate(Te, Ne);
+    mesh->communicate(Te, Ne);
 
     HeatFluxSNB snb;
 
@@ -115,7 +116,7 @@ int main(int argc, char** argv) {
     FieldFactory factory;
     auto Te = factory.create3D("1 + 0.01*sin(y)");
     auto Ne = factory.create3D("1e20 * (1 + 0.5*sin(y))");
-    Ne.getMesh()->communicate(Te, Ne);
+    mesh->communicate(Te, Ne);
 
     HeatFluxSNB snb;
 
@@ -133,7 +134,7 @@ int main(int argc, char** argv) {
     FieldFactory factory;
     auto Te = factory.create3D("1e3 + 0.01*sin(y)");
     auto Ne = factory.create3D("1e19 * (1 + 0.5*sin(y))");
-    Ne.getMesh()->communicate(Te, Ne);
+    mesh->communicate(Te, Ne);
 
     HeatFluxSNB snb;
 
@@ -152,7 +153,6 @@ int main(int argc, char** argv) {
 
     FieldFactory factory;
     auto Te = factory.create3D("10 + 0.01*sin(y)");
-    auto* mesh = Te.getMesh();
     mesh->communicate(Te);
 
     HeatFluxSNB snb;
