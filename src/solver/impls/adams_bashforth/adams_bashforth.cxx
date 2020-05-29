@@ -444,7 +444,7 @@ int AdamsBashforthSolver::run() {
         if (err < rtol) { // Successful step
 
           // Now we can consider what result we would get at
-          // lower/higher order Our timestep limit gets smaller as
+          // lower/higher order. Our timestep limit gets smaller as
           // the order increases for fixed error, hence we really
           // want to use the lowest order that satisfies the
           // tolerance. Or in other words we want to use the order
@@ -572,9 +572,6 @@ BoutReal AdamsBashforthSolver::take_step(const BoutReal timeIn, const BoutReal d
                                          Array<BoutReal>& result) {
   AUTO_TRACE();
 
-  // The initial error is 0.0
-  BoutReal err = 0.0;
-
   Array<BoutReal> full_update = AB_integrate(nlocal, timeIn + dt, times, history, order);
 
   // Calculate the new state given the history and current state.
@@ -592,73 +589,72 @@ BoutReal AdamsBashforthSolver::take_step(const BoutReal timeIn, const BoutReal d
     }
   }
 
-  if (adaptive) {
+  if (not adaptive) {
+    return 0.0;
+  }
 
-    // Use this variable to say how big the first small timestep should be as a fraction
-    // of the large timestep, dt. Here fixed to 0.5 to take two equally sized half steps
-    // but left here to enable developer experimentation.
-    constexpr BoutReal firstPart = 0.5;
+  // Use this variable to say how big the first small timestep should be as a fraction
+  // of the large timestep, dt. Here fixed to 0.5 to take two equally sized half steps
+  // but left here to enable developer experimentation.
+  constexpr BoutReal firstPart = 0.5;
 
-    // Take a small time step - note we don't need to call the rhs again just yet
-    Array<BoutReal> half_update =
-        AB_integrate(nlocal, timeIn + (dt * firstPart), times, history, order);
+  // Take a small time step - note we don't need to call the rhs again just yet
+  Array<BoutReal> half_update =
+      AB_integrate(nlocal, timeIn + (dt * firstPart), times, history, order);
 
-    // -------------------------------------------
-    // Now do the second small timestep -- note we need to call rhs again
-    // -------------------------------------------
+  // -------------------------------------------
+  // Now do the second small timestep -- note we need to call rhs again
+  // -------------------------------------------
 
-    // Add storage to history and the current time to times
-    history.emplace_front(nlocal);
-    times.emplace_front(timeIn + dt * firstPart);
+  // Add storage to history and the current time to times
+  history.emplace_front(nlocal);
+  times.emplace_front(timeIn + dt * firstPart);
 
-    // Put intermediate result into variables, call rhs and save the derivatives
-    // Try to cheat for now with this HACK. If the order /=
-    // current_order then call must be part of the adapative_order code
-    // so don't recalculate just reuse stored derivatives.
-    if (order == current_order) {
-      Array<BoutReal> result2(nlocal);
+  // Put intermediate result into variables, call rhs and save the derivatives
+  // Try to cheat for now with this HACK. If the order /=
+  // current_order then call must be part of the adapative_order code
+  // so don't recalculate just reuse stored derivatives.
+  if (order == current_order) {
+    Array<BoutReal> result2(nlocal);
 
-      // Now we have to calculate the state after the first small step as we will need to
-      // use this to calculate the derivatives at this point.
-      // std::transform(std::begin(current), std::end(current), std::begin(half_update),
-      //                std::begin(result2), std::plus<BoutReal>{});
-      BOUT_OMP(parallel for);
-      for (int i = 0; i < nlocal; i++) {
-        result2[i] = current[i] + half_update[i];
-      }
-
-      load_vars(std::begin(result2));
-      // This is typically the most expensive part of this routine.
-      run_rhs(timeIn + firstPart * dt);
-
-      // Restore fields to the original state
-      load_vars(std::begin(current));
+    // Now we have to calculate the state after the first small step as we will need to
+    // use this to calculate the derivatives at this point.
+    // std::transform(std::begin(current), std::end(current), std::begin(half_update),
+    //                std::begin(result2), std::plus<BoutReal>{});
+    BOUT_OMP(parallel for);
+    for (int i = 0; i < nlocal; i++) {
+      result2[i] = current[i] + half_update[i];
     }
-    save_derivs(std::begin(history[0]));
 
-    // Finish the time step
-    AB_integrate_update(half_update, timeIn + dt, times, history, order);
+    load_vars(std::begin(result2));
+    // This is typically the most expensive part of this routine.
+    run_rhs(timeIn + firstPart * dt);
 
-    // Drop the temporary history information
-    history.pop_front();
-    times.pop_front();
+    // Restore fields to the original state
+    load_vars(std::begin(current));
+  }
+  save_derivs(std::begin(history[0]));
 
-    // Here we calculate the error by comparing the updates rather than output states
-    // this is to avoid issues where we have large fields but small derivatives (i.e. to
-    // avoid possible numerical issues at looking at the difference between two large
-    // numbers).
-    err = get_error(full_update, half_update);
+  // Finish the time step
+  AB_integrate_update(half_update, timeIn + dt, times, history, order);
 
-    // Note here we don't add a small change onto result, we recalculate using the
-    // "full" two half step half_update. Rather than using result2 we just replace
-    // result here as we want to use this smaller step result
-    if (followHighOrder) {
-      BOUT_OMP(parallel for);
-      for (int i = 0; i < nlocal; i++) {
-        result[i] = current[i] + half_update[i];
-      }
+  // Drop the temporary history information
+  history.pop_front();
+  times.pop_front();
+
+  // Note here we don't add a small change onto result, we recalculate using the
+  // "full" two half step half_update. Rather than using result2 we just replace
+  // result here as we want to use this smaller step result
+  if (followHighOrder) {
+    BOUT_OMP(parallel for);
+    for (int i = 0; i < nlocal; i++) {
+      result[i] = current[i] + half_update[i];
     }
   }
 
-  return err;
+  // Here we calculate the error by comparing the updates rather than output states
+  // this is to avoid issues where we have large fields but small derivatives (i.e. to
+  // avoid possible numerical issues at looking at the difference between two large
+  // numbers).
+  return get_error(full_update, half_update);
 }
