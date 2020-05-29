@@ -72,27 +72,27 @@ int main(int argc, char **argv) {
 
   ITERATOR_TEST_BLOCK(
 		      "DDX C2",
-		      result = DDX(a, CELL_DEFAULT, DIFF_C2);
+		      result = DDX(a, CELL_DEFAULT, "DIFF_C2");
 		      );
 
   ITERATOR_TEST_BLOCK(
 		      "DDX C4",
-		      result = DDX(a, CELL_DEFAULT, DIFF_C4);
+		      result = DDX(a, CELL_DEFAULT, "DIFF_C4");
 		      );
   
   ITERATOR_TEST_BLOCK(
 		      "DDX S2",
-		      result = DDX(a, CELL_DEFAULT, DIFF_S2);
+		      result = DDX(a, CELL_DEFAULT, "DIFF_S2");
 		      );
 
   ITERATOR_TEST_BLOCK(
 		      "DDX W2",
-		      result = DDX(a, CELL_DEFAULT, DIFF_W2);
+		      result = DDX(a, CELL_DEFAULT, "DIFF_W2");
 		      );
 
   ITERATOR_TEST_BLOCK(
 		      "DDX W3",
-		      result = DDX(a, CELL_DEFAULT, DIFF_W3);
+		      result = DDX(a, CELL_DEFAULT, "DIFF_W3");
 		      );
   
   if (profileMode) {

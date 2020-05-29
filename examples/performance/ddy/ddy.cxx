@@ -72,27 +72,27 @@ int main(int argc, char **argv) {
 
   ITERATOR_TEST_BLOCK(
 		      "DDY C2",
-		      result = DDY(a, CELL_DEFAULT, DIFF_C2);
+		      result = DDY(a, CELL_DEFAULT, "DIFF_C2");
 		      );
 
   ITERATOR_TEST_BLOCK(
 		      "DDY C4",
-		      result = DDY(a, CELL_DEFAULT, DIFF_C4);
+		      result = DDY(a, CELL_DEFAULT, "DIFF_C4");
 		      );
   
   ITERATOR_TEST_BLOCK(
 		      "DDY S2",
-		      result = DDY(a, CELL_DEFAULT, DIFF_S2);
+		      result = DDY(a, CELL_DEFAULT, "DIFF_S2");
 		      );
 
   ITERATOR_TEST_BLOCK(
 		      "DDY W2",
-		      result = DDY(a, CELL_DEFAULT, DIFF_W2);
+		      result = DDY(a, CELL_DEFAULT, "DIFF_W2");
 		      );
 
   ITERATOR_TEST_BLOCK(
 		      "DDY W3",
-		      result = DDY(a, CELL_DEFAULT, DIFF_W3);
+		      result = DDY(a, CELL_DEFAULT, "DIFF_W3");
 		      );
   
   if (profileMode) {
