@@ -23,6 +23,7 @@ twistshift_pf = true # Grid has twist-shift in PF region
 dump_format = "nc"   # Set extension for dump files (nc = NetCDF)
 
 [mesh]
+StaggerGrids = true
 paralleltransform = shifted  # Use shifted metric method
 
 ##################################################
