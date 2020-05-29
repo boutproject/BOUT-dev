@@ -6,6 +6,7 @@
 
 #include <bout.hxx>
 
+#include <algorithm>
 #include <chrono>
 #include <iomanip>
 #include <iostream>
@@ -67,16 +68,17 @@ int main(int argc, char **argv) {
   }
 
   // Report
-  int width = 0;
-  for (const auto i : names) {
-    width = i.size() > width ? i.size() : width;
-  };
-  width = width + 5;
+  constexpr auto min_width = 5;
+  const auto width =
+      min_width
+      + std::max_element(begin(names), end(names), [](const auto& a, const auto& b) {
+          return a.size() < b.size();
+        })->size();
   time_output << std::setw(width) << "Case name"
               << "\t"
               << "Time per iteration (s)"
               << "\n";
-  for (int i = 0; i < names.size(); i++) {
+  for (std::size_t i = 0; i < names.size(); i++) {
     time_output << std::setw(width) << names[i] << "\t" << times[i].count() / NUM_LOOPS
                 << "\n";
   }

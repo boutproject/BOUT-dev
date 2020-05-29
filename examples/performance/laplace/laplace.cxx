@@ -6,12 +6,16 @@
 #include <bout.hxx>
 #include <invert_laplace.hxx>
 #include <field_factory.hxx>
+
+#include <algorithm>
 #include <chrono>
 #include <iomanip>
 #include <iostream>
 #include <iterator>
+#include <numeric>
 #include <time.h>
 #include <vector>
+
 
 using SteadyClock = std::chrono::time_point<std::chrono::steady_clock>;
 using Duration = std::chrono::duration<double>;
@@ -173,28 +177,30 @@ int main(int argc, char **argv) {
   MPI_Barrier(BoutComm::get()); // Wait for all processors to write data
 
   // Report
-  int width = 0;
-  for (const auto i : names) {
-    width = i.size() > width ? i.size() : width;
-  };
-  width = width + 5;
+  constexpr auto min_width = 5;
+  const auto width =
+      min_width
+      + std::max_element(begin(names), end(names), [](const auto& a, const auto& b) {
+          return a.size() < b.size();
+        })->size();
   time_output << std::setw(width) << "Case name"
               << "\t"
               << "Time (s)"
               << "\t"
               << "Time per iteration (s)"
               << "\n";
-  for (int i = 0; i < names.size(); i++) {
-    time_output << std::setw(width) << names[i] << "\t" << times[i].count() << "\t\t" << times[i].count() / NUM_LOOPS 
-                << "\n";
+  for (std::size_t i = 0; i < names.size(); i++) {
+    time_output << std::setw(width) << names[i] << "\t" << times[i].count() << "\t\t"
+                << times[i].count() / NUM_LOOPS << "\n";
   }
-  double sum_of_times = 0.0;
-  for (auto t : times) {
-        sum_of_times += t.count();
-  }
-  time_output << std::setw(width) << "Total" << "\t" << sum_of_times << "\n";
-  time_output << std::setw(width) << "Average" << "\t" << sum_of_times / times.size() << "\t\t" << sum_of_times / NUM_LOOPS / times.size()
-                << "\n";
+  const auto sum_of_times =
+      std::accumulate(begin(times), end(times), 0.0,
+                      [](const auto& sum, const auto& t) { return sum + t.count(); });
+  time_output << std::setw(width) << "Total"
+              << "\t" << sum_of_times << "\n";
+  time_output << std::setw(width) << "Average"
+              << "\t" << sum_of_times / times.size() << "\t\t"
+              << sum_of_times / NUM_LOOPS / times.size() << "\n";
 
   BoutFinalise();
   return 0;
