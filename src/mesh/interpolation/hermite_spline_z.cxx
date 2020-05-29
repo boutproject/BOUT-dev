@@ -68,7 +68,9 @@ void ZHermiteSpline::calcWeights(const Field3D& delta_z, const std::string& regi
     // calculated by taking the remainder of the floating point index
     const BoutReal t_z = delta_z(x, y, z) - static_cast<BoutReal>(corner_zind);
 
-    // make corner_zind be in the range 0<=corner_zind<nz
+    // Make corner_zind be in the range 0<=corner_zind<nz
+    // This needs to be done after calculating t_z (the coordinate within the
+    // cell) because delta_z is allowed to be less than 0 or greater than ncz.
     corner_zind = ((corner_zind % ncz) + ncz) % ncz;
 
     // Convert z-index to Ind3D
