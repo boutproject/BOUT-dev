@@ -72,7 +72,7 @@ void ZHermiteSpline::calcWeights(const Field3D& delta_z, const std::string& regi
     corner_zind = ((corner_zind % ncz) + ncz) % ncz;
 
     // Convert z-index to Ind3D
-    k_corner[i.ind] = Ind3D((i.x()*ncy + i.y())*ncz + corner_zind, ncy, ncz);
+    k_corner[i.ind] = Ind3D((x*ncy + y)*ncz + corner_zind, ncy, ncz);
 
     // Check that t_z is in range
     if ((t_z < 0.0) || (t_z > 1.0)) {
