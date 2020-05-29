@@ -197,7 +197,7 @@ void AB_integrate_update(Array<BoutReal>& update, BoutReal timestep,
 
   for (std::size_t j = 0; j < static_cast<std::size_t>(order); ++j) {
     const BoutReal factor = AB_coefficients[j];
-    BOUT_OMP(parallel for);
+    BOUT_OMP(parallel for)
     for (std::size_t i = 0; i < static_cast<std::size_t>(update.size()); ++i) {
       update[i] += history[j][i] * factor;
     }
@@ -583,7 +583,7 @@ BoutReal AdamsBashforthSolver::take_step(const BoutReal timeIn, const BoutReal d
   // std::transform(std::begin(current), std::end(current), std::begin(full_update),
   //                std::begin(result), std::plus<BoutReal>{});
   if (not(adaptive and followHighOrder)) {
-    BOUT_OMP(parallel for);
+    BOUT_OMP(parallel for)
     for (int i = 0; i < nlocal; i++) {
       result[i] = current[i] + full_update[i];
     }
@@ -621,7 +621,7 @@ BoutReal AdamsBashforthSolver::take_step(const BoutReal timeIn, const BoutReal d
     // use this to calculate the derivatives at this point.
     // std::transform(std::begin(current), std::end(current), std::begin(half_update),
     //                std::begin(result2), std::plus<BoutReal>{});
-    BOUT_OMP(parallel for);
+    BOUT_OMP(parallel for)
     for (int i = 0; i < nlocal; i++) {
       result2[i] = current[i] + half_update[i];
     }
@@ -646,7 +646,7 @@ BoutReal AdamsBashforthSolver::take_step(const BoutReal timeIn, const BoutReal d
   // "full" two half step half_update. Rather than using result2 we just replace
   // result here as we want to use this smaller step result
   if (followHighOrder) {
-    BOUT_OMP(parallel for);
+    BOUT_OMP(parallel for)
     for (int i = 0; i < nlocal; i++) {
       result[i] = current[i] + half_update[i];
     }
