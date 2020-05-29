@@ -33,7 +33,7 @@ using namespace bout::globals;
     times.push_back(steady_clock::now() - start);                                        \
   }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   BoutInitialise(argc, argv);
   std::vector<std::string> names;
   std::vector<Duration> times;

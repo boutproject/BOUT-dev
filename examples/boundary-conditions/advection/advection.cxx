@@ -16,7 +16,7 @@ protected:
     SOLVE_FOR(f);
     return 0;
   }
-  
+
   /// Calculate time derivatives
   /// 
   /// df/dt = 1 * df/dy

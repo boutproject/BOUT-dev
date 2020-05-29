@@ -7,6 +7,7 @@
 
 #include <bout/expr.hxx>
 
+#include <algorithm>
 #include <chrono>
 #include <iomanip>
 
@@ -14,17 +15,17 @@ using SteadyClock = std::chrono::time_point<std::chrono::steady_clock>;
 using Duration = std::chrono::duration<double>;
 using namespace std::chrono;
 
-#define TIMEIT(NAME, ...)                                                             \
-  {                                                                                      \
-    SteadyClock start = steady_clock::now();                                             \
-    __VA_ARGS__                                                                          \
-    Duration diff = steady_clock::now() - start;                                         \
-    auto elapsed = elapsedMap[NAME];\
-    elapsed.min = diff > elapsed.min ? elapsed.min : diff;                               \
-    elapsed.max = diff < elapsed.max ? elapsed.max : diff;                               \
-    elapsed.count++;                                                                     \
-    elapsed.avg = elapsed.avg * (1 - 1. / elapsed.count) + diff / elapsed.count;         \
-    elapsedMap[NAME] = elapsed;						\
+#define TIMEIT(NAME, ...)                                                        \
+  {                                                                              \
+    SteadyClock start = steady_clock::now();                                     \
+    __VA_ARGS__                                                                  \
+    Duration diff = steady_clock::now() - start;                                 \
+    auto elapsed = elapsedMap[NAME];                                             \
+    elapsed.min = std::min(diff, elapsed.min);                                   \
+    elapsed.max = std::max(diff, elapsed.max);                                   \
+    elapsed.count++;                                                             \
+    elapsed.avg = elapsed.avg * (1 - 1. / elapsed.count) + diff / elapsed.count; \
+    elapsedMap[NAME] = elapsed;                                                  \
   }
 
 struct Durations {
@@ -102,7 +103,7 @@ protected:
     SOLVE_FOR(n);
     return 0;
   }
-  
+
   int rhs(BoutReal) {
     ddt(n) = 0;
     return 0;

@@ -92,7 +92,7 @@ protected:
     SOLVE_FOR(n);
     return 0;
   }
-  
+
   int rhs(BoutReal) {
     ddt(n) = 0;
     return 0;

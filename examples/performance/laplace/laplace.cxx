@@ -16,7 +16,6 @@
 #include <time.h>
 #include <vector>
 
-
 using SteadyClock = std::chrono::time_point<std::chrono::steady_clock>;
 using Duration = std::chrono::duration<double>;
 using namespace std::chrono;
@@ -32,7 +31,7 @@ using namespace std::chrono;
     times.push_back(steady_clock::now() - start);                                        \
   }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
 
   // Initialise BOUT++, setting up mesh
   BoutInitialise(argc, argv);
@@ -60,51 +59,35 @@ int main(int argc, char **argv) {
   lap->setCoefC(1.0);
   lap->setCoefD(1.0);
   Field3D flag0;
-  TEST_BLOCK("flag0",
-     flag0 = lap->solve(input); 
-  );
+  TEST_BLOCK("flag0", flag0 = lap->solve(input););
   lap->setInnerBoundaryFlags(INVERT_DC_GRAD + INVERT_AC_GRAD);
   Field3D flag3;
-  TEST_BLOCK("flag3",
-     flag3 = lap->solve(input); 
-  );
+  TEST_BLOCK("flag3", flag3 = lap->solve(input););
 
   lap->setCoefA(a);
   lap->setInnerBoundaryFlags(0);
   Field3D flag0a;
-  TEST_BLOCK("flag0a",
-     flag0a = lap->solve(input);
-  );
+  TEST_BLOCK("flag0a", flag0a = lap->solve(input););
   lap->setInnerBoundaryFlags(INVERT_DC_GRAD + INVERT_AC_GRAD);
   Field3D flag3a = lap->solve(input);
-  TEST_BLOCK("flag3a",
-     flag3a = lap->solve(input);
-  );
+  TEST_BLOCK("flag3a", flag3a = lap->solve(input););
 
   lap->setCoefC(c);
   lap->setInnerBoundaryFlags(0);
   Field3D flag0ac;
-  TEST_BLOCK("flag0ac",
-     flag0ac = lap->solve(input);
-  );
+  TEST_BLOCK("flag0ac", flag0ac = lap->solve(input););
   lap->setInnerBoundaryFlags(INVERT_DC_GRAD + INVERT_AC_GRAD);
   Field3D flag3ac;
-  TEST_BLOCK("flag3ac",
-     flag3ac = lap->solve(input);
-  );
+  TEST_BLOCK("flag3ac", flag3ac = lap->solve(input););
 
   lap->setCoefC(1.0);
   lap->setCoefD(d);
   lap->setInnerBoundaryFlags(0);
   Field3D flag0ad;
-  TEST_BLOCK("flag0ad",
-     flag0ad = lap->solve(input);
-  );
+  TEST_BLOCK("flag0ad", flag0ad = lap->solve(input););
   lap->setInnerBoundaryFlags(INVERT_DC_GRAD + INVERT_AC_GRAD);
   Field3D flag3ad;
-  TEST_BLOCK("flag3ad",
-     flag3ad = lap->solve(input);
-  );
+  TEST_BLOCK("flag3ad", flag3ad = lap->solve(input););
 
   /// Test new interface and INVERT_IN/OUT_SET flags
 
@@ -116,59 +99,43 @@ int main(int argc, char **argv) {
 
   lap->setInnerBoundaryFlags(INVERT_SET);
   Field3D flagis;
-  TEST_BLOCK("flagis",
-     flagis = lap->solve(input, set_to);
-  );
+  TEST_BLOCK("flagis", flagis = lap->solve(input, set_to););
   lap->setInnerBoundaryFlags(0);
   lap->setOuterBoundaryFlags(INVERT_SET);
   Field3D flagos;
-  TEST_BLOCK("flagos",
-     flagos = lap->solve(input, set_to);
-  );
+  TEST_BLOCK("flagos", flagos = lap->solve(input, set_to););
 
   lap->setCoefA(a);
   lap->setInnerBoundaryFlags(INVERT_SET);
   lap->setOuterBoundaryFlags(0);
   lap->setOuterBoundaryFlags(0);
   Field3D flagisa;
-  TEST_BLOCK("flagisa",
-     flagisa = lap->solve(input, set_to);
-  );
+  TEST_BLOCK("flagisa", flagisa = lap->solve(input, set_to););
   lap->setInnerBoundaryFlags(0);
   lap->setOuterBoundaryFlags(INVERT_SET);
   Field3D flagosa;
-  TEST_BLOCK("flagosa",
-     flagosa = lap->solve(input, set_to);
-  );
+  TEST_BLOCK("flagosa", flagosa = lap->solve(input, set_to););
 
   lap->setCoefC(c);
   lap->setInnerBoundaryFlags(INVERT_SET);
   lap->setOuterBoundaryFlags(0);
   Field3D flagisac;
-  TEST_BLOCK("flagisac",
-     flagisac = lap->solve(input, set_to);
-  );
+  TEST_BLOCK("flagisac", flagisac = lap->solve(input, set_to););
   lap->setInnerBoundaryFlags(0);
   lap->setOuterBoundaryFlags(INVERT_SET);
   Field3D flagosac;
-  TEST_BLOCK("flagosac",
-     flagosac = lap->solve(input, set_to);
-  );
+  TEST_BLOCK("flagosac", flagosac = lap->solve(input, set_to););
 
   lap->setCoefC(1.0);
   lap->setCoefD(d);
   lap->setInnerBoundaryFlags(INVERT_SET);
   lap->setOuterBoundaryFlags(0);
   Field3D flagisad;
-  TEST_BLOCK("flagisad",
-     flagisad = lap->solve(input, set_to);
-  );
+  TEST_BLOCK("flagisad", flagisad = lap->solve(input, set_to););
   lap->setInnerBoundaryFlags(0);
   lap->setOuterBoundaryFlags(INVERT_SET);
   Field3D flagosad;
-  TEST_BLOCK("flagosad",
-     flagosad = lap->solve(input, set_to);
-  );
+  TEST_BLOCK("flagosad", flagosad = lap->solve(input, set_to););
 
   // Write and close the output file
   bout::globals::dump.write();
