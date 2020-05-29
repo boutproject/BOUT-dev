@@ -53,7 +53,6 @@ int main(int argc, char **argv) {
   Field3D result;
   result.allocate();
 
-  const int len = mesh->LocalNx * mesh->LocalNy * mesh->LocalNz;
   int blocksize = 1;
 
   // Time simple task with different blocksizes

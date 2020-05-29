@@ -39,7 +39,7 @@ class Arithmetic : public PhysicsModel {
 protected:
   std::map<std::string, Durations> elapsedMap;
   
-  int init(bool restarting) {
+  int init(bool) {
     Field3D a = 1.0;
     Field3D b = 2.0;
     Field2D c = 3.0;

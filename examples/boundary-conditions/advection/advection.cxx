@@ -11,7 +11,7 @@ private:
   
 protected:
   /// Initialise, specify evolving variables
-  int init(bool restarting) {
+  int init(bool) {
     // Solve for a single variable (f)
     SOLVE_FOR(f);
     return 0;
@@ -23,7 +23,7 @@ protected:
   ///
   /// Implemented using Vpar_Grad_par so 
   /// the method can be changed in the input
-  int rhs(BoutReal t) {
+  int rhs(BoutReal) {
     mesh->communicate(f);
     
     ddt(f) = -Vpar_Grad_par(Field2D(1.0), f);

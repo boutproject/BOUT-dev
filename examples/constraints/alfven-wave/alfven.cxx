@@ -32,8 +32,7 @@ private:
   std::unique_ptr<LaplaceXZ> newSolver{nullptr}; // New Laplacian in X-Z
 protected:
   
-  int init(bool restarting) {
-    
+  int init(bool) {
     // Normalisation
     auto opt = Options::root()["alfven"];
     Tnorm = opt["Tnorm"].withDefault(100);  // Reference temperature [eV]
@@ -151,7 +150,7 @@ protected:
    * 
    * ddt(f) = Result of the inversion
    */
-  int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
+  int precon(BoutReal, BoutReal, BoutReal) {
     if(newXZsolver) {
       ddt(phi) = newSolver->solve(ddt(phi) - ddt(Vort), 0.0);
     }else {

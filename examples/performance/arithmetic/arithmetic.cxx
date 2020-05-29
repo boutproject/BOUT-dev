@@ -35,7 +35,7 @@ struct Durations {
 
 class Arithmetic : public PhysicsModel {
 protected:
-  int init(bool restarting) {
+  int init(bool) {
 
     Field3D a = 1.0;
     Field3D b = 2.0;
