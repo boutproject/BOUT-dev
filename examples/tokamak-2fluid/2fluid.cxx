@@ -572,7 +572,7 @@ private:
     
     ////////////////////////////////////////////////////////
     // Update non-linear coefficients on the mesh
-    nu      = nu_hat * Nit / pow(Tet,1.5);
+    nu      = nu_hat * interp_to(Nit / pow(Tet,1.5), CELL_YLOW);
     mu_i    = mui_hat * Nit / sqrt(Tit);
     kapa_Te = 3.2*(1./fmei)*(wci/nueix)*pow(Tet,2.5);
     kapa_Ti = 3.9*(wci/nuiix)*pow(Tit,2.5);
@@ -585,22 +585,22 @@ private:
     if (ZeroElMass) {
       // Set jpar,Ve,Ajpar neglecting the electron inertia term
       // Calculate Jpar, communicating across processors
-      jpar = -(Ni0*Grad_par(phi, CELL_YLOW)) / (fmei*0.51*nu);
+      jpar = -(interp_to(Ni0, CELL_YLOW)*Grad_par(phi, CELL_YLOW)) / (fmei*0.51*nu);
       
       if (OhmPe) {
-        jpar += (Te0*Grad_par(Ni, CELL_YLOW)) / (fmei*0.51*nu);
+        jpar += (interp_to(Te0, CELL_YLOW)*Grad_par(Ni, CELL_YLOW)) / (fmei*0.51*nu);
       }
       
       // Need to communicate jpar
       mesh->communicate(jpar);
       jpar.applyBoundary();
       
-      Ve = Vi - jpar/Ni0;
+      Ve = Vi - jpar/interp_to(Ni0, CELL_YLOW);
       Ajpar = Ve;
     } else {
     
       Ve = Ajpar + Apar;
-      jpar = Ni0*(Vi - Ve);
+      jpar = interp_to(Ni0, CELL_YLOW)*(Vi - Ve);
     }
     
     ////////////////////////////////////////////////////////
