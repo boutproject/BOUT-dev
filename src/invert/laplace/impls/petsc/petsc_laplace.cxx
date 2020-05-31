@@ -690,19 +690,19 @@ FieldPerp LaplacePetsc::solve(const FieldPerp& b, const FieldPerp& x0) {
                               MatA);
                     }
                   else {
-//                    // Second Order Accuracy on Boundary
-//                    Element(i,x,z,  0, 0,  3.0 / (2.0*coords->dx(x,y)), MatA );
-//                    Element(i,x,z, -1, 0, -2.0 / coords->dx(x,y), MatA );
-//                    Element(i,x,z, -2, 0,  1.0 / (2.0*coords->dx(x,y)), MatA );
-// //                   Element(i,x,z, -3, 0,  0.0, MatA );  // Reset these elements to 0 in case 4th order flag was used previously: not allowed now
-// //                   Element(i,x,z, -4, 0,  0.0, MatA );
-                      // Second Order Accuracy on Boundary, set half-way between grid points
-Element(i, x, z, 0, 0, 1.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)), MatA);
-Element(i, x, z, -1, 0, -1.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)), MatA);
-Element(i, x, z, -2, 0, 0.0, MatA);
-//                      Element(i,x,z, -3, 0,  0.0, MatA );  // Reset these elements to 0 in case 4th order flag was used previously: not allowed now
-//                      Element(i,x,z, -4, 0,  0.0, MatA );
-                    }
+                    // // Second Order Accuracy on Boundary
+                    // Element(i,x,z,  0, 0,  3.0 / (2.0*coords->dx(x,y)), MatA );
+                    // Element(i,x,z, -1, 0, -2.0 / coords->dx(x,y), MatA );
+                    // Element(i,x,z, -2, 0,  1.0 / (2.0*coords->dx(x,y)), MatA );
+                    // Element(i,x,z, -3, 0,  0.0, MatA );  // Reset these elements to 0 in case 4th order flag was used previously: not allowed now
+                    // Element(i,x,z, -4, 0,  0.0, MatA );
+                    // Second Order Accuracy on Boundary, set half-way between grid points
+                    Element(i, x, z, 0, 0, 1.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)), MatA);
+                    Element(i, x, z, -1, 0, -1.0 / coords->dx(x, y, z) / sqrt(coords->g_11(x, y, z)), MatA);
+                    Element(i, x, z, -2, 0, 0.0, MatA);
+                    // Element(i,x,z, -3, 0,  0.0, MatA );  // Reset these elements to 0 in case 4th order flag was used previously: not allowed now
+                    // Element(i,x,z, -4, 0,  0.0, MatA );
+                  }
                 }
               else {
                 if (fourth_order) {
