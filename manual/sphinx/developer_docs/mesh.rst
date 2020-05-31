@@ -314,35 +314,3 @@ because they are needed in a lot of the code. They shouldn’t change
 after initialisation, unless the physics model starts doing fancy
 things with deforming meshes. In that case it is up to the user to
 ensure they are updated.
-
-Miscellaneous
--------------
-
-TODO: Check this is up-to-date!
-There are some public members of `Mesh` which are there for some
-specific task and don’t really go anywhere else (yet).
-
-To perform radial derivatives in tokamak geometry, interpolation is
-needed in the Z direction. This is done by shifting in Z by a phase
-factor, performing the derivatives, then shifting back. The following
-public variables are currently used for this::
-
-    bool ShiftXderivs; // Use shifted X derivatives
-    int  ShiftOrder;   // Order of shifted X derivative interpolation
-    Field2D zShift;    // Z shift for each point (radians)
-
-    Field2D ShiftTorsion; // d <pitch angle> / dx. Needed for vector differentials (Curl)
-    Field2D IntShiftTorsion; // Integrated shear (I in BOUT notation)
-    bool IncIntShear; // Include integrated shear (if shifting X)
-
-    int  TwistOrder;   // Order of twist-shift interpolation
-
-This determines what order method to use for the interpolation at the
-twist-shift location, with ``0`` meaning FFT during communication. Since
-this must be 0 at the moment it’s fairly redundant and should be
-removed.
-
-A feature is::
-
-    bool StaggerGrids;    ///< Enable staggered grids (Centre, Lower). Otherwise all vars are cell centred (default).
-
