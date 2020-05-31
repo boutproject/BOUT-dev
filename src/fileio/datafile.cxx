@@ -1188,27 +1188,6 @@ bool Datafile::write() {
   }
 
   // 2D vectors
-#ifdef COORDINATES_USE_3D
-  for (const auto& var : v2d_arr) {
-    if (var.covar) {
-      // Writing covariant vector
-      Vector2D v = *(var.ptr);
-      v.toCovariant();
-
-      write_f3d(var.name + "_x", &(v.x), var.save_repeat);
-      write_f3d(var.name + "_y", &(v.y), var.save_repeat);
-      write_f3d(var.name + "_z", &(v.z), var.save_repeat);
-    } else {
-      // Writing contravariant vector
-      Vector2D v = *(var.ptr);
-      v.toContravariant();
-
-      write_f3d(var.name + "x", &(v.x), var.save_repeat);
-      write_f3d(var.name + "y", &(v.y), var.save_repeat);
-      write_f3d(var.name + "z", &(v.z), var.save_repeat);
-    }
-  }
-#else
   for(const auto& var : v2d_arr) {
     Vector2D v  = *(var.ptr);
     auto name = var.name;
@@ -1222,11 +1201,16 @@ bool Datafile::write() {
       v.toContravariant();
     }
 
+#ifdef COORDINATES_USE_3D
+    write_f3d(name+"x", &(v.x), var.save_repeat);
+    write_f3d(name+"y", &(v.y), var.save_repeat);
+    write_f3d(name+"z", &(v.z), var.save_repeat);
+#else
     write_f2d(name+"x", &(v.x), var.save_repeat);
     write_f2d(name+"y", &(v.y), var.save_repeat);
     write_f2d(name+"z", &(v.z), var.save_repeat);
-  }
 #endif
+  }
 
   // 3D vectors
   for(const auto& var : v3d_arr) {
