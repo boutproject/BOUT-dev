@@ -871,8 +871,8 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     auto Jcalc = J;
     if (getAtLoc(mesh, J, "J", suffix, location)) {
       output_warn.write(
-          "\tWARNING: Jacobian 'J_%s' not found. Calculating from metric tensor\n",
-          suffix.c_str());
+          "\tWARNING: Jacobian 'J_{:s}' not found. Calculating from metric tensor\n",
+          suffix);
       J = Jcalc;
     } else {
       J = interpolateAndExtrapolate(J, location, extrapolate_x, extrapolate_y, false,
@@ -889,14 +889,14 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     bout::checkFinite(J, "J" + suffix, "RGN_NOCORNERS");
     bout::checkPositive(J, "J" + suffix, "RGN_NOCORNERS");
     if (min(abs(J)) < 1.0e-10) {
-      throw BoutException("\tERROR: Jacobian%s becomes very small\n", suffix.c_str());
+      throw BoutException("\tERROR: Jacobian{:s} becomes very small\n", suffix);
     }
 
     // Attempt to read Bxy from the grid file
     auto Bcalc = Bxy;
     if (getAtLoc(mesh, Bxy, "Bxy", suffix, location)) {
-      output_warn.write("\tWARNING: Magnitude of B field 'Bxy_%s' not found. Calculating "
-                        " from metric tensor\n", suffix.c_str());
+      output_warn.write("\tWARNING: Magnitude of B field 'Bxy_{:s}' not found. Calculating "
+                        " from metric tensor\n", suffix);
       Bxy = Bcalc;
     } else {
       Bxy = interpolateAndExtrapolate(Bxy, location, extrapolate_x, extrapolate_y, false,

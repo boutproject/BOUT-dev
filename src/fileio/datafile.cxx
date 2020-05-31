@@ -818,20 +818,20 @@ void Datafile::add(Vector2D &f, const char *name, bool save_repeat) {
     if(floats)
       file->setLowPrecision();
 
-#ifdef COORDINATES_USE_3D
-    // Add variables to file
-    if (!file->addVarField3D(d.name + "_x", save_repeat)) {
-      throw BoutException("Failed to add Vector2D variable %s to Datafile", name);
-    }
-    if (!file->addVarField3D(d.name + "_y", save_repeat)) {
-      throw BoutException("Failed to add Vector2D variable %s to Datafile", name);
-    }
-    if (!file->addVarField3D(d.name + "_z", save_repeat)) {
-      throw BoutException("Failed to add Vector2D variable %s to Datafile", name);
-    }
-#else
     // Add variables to file
     auto dname = d.covar ? d.name + "_" : d.name;
+#ifdef COORDINATES_USE_3D
+    // Add variables to file
+    if (!file->addVarField3D(dname + "x", save_repeat)) {
+      throw BoutException("Failed to add Vector2D variable {:s} to Datafile", dname);
+    }
+    if (!file->addVarField3D(dname + "y", save_repeat)) {
+      throw BoutException("Failed to add Vector2D variable {:s} to Datafile", dname);
+    }
+    if (!file->addVarField3D(dname + "z", save_repeat)) {
+      throw BoutException("Failed to add Vector2D variable {:s} to Datafile", dname);
+    }
+#else
     if (!file->addVarField2D(dname + "x", save_repeat)) {
       throw BoutException("Failed to add Vector2D variable {:s} to Datafile", dname);
     }
