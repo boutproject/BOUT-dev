@@ -119,13 +119,11 @@ not found, a warning will be printed and the default values used.
    to 0.
 
 -  Z shift for interpolation between field-aligned coordinates and
-   shifted coordinates (see ``manual/coordinates.pdf``). Perpendicular
-   differential operators are calculated in shifted coordinates when
-   ``ShiftXderivs`` in ``mesh/mesh.hxx`` is enabled. ``ShiftXderivs``
-   can be set in the root section of ``BOUT.inp`` as
-   ``ShiftXderivs = true``. The shifts must be provided in the gridfile
-   in a field ``zshift(nx,ny)``. If not found, ``zshift`` is set to
-   zero.
+   non-aligned coordinates (see ``manual/coordinates.pdf``). Parallel
+   differential operators are calculated using a shift to field-aligned
+   values when `paralleltransform:type = shifted` (or `shiftedinterp`).
+   The shifts must be provided in the gridfile in a field ``zshift(nx,ny)``.
+   If not found, ``zshift`` is set to zero.
 
 The remaining quantities determine the topology of the grid. These are
 based on tokamak single/double-null configurations, but can be adapted
