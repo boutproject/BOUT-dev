@@ -103,8 +103,8 @@ public:
 
   /// True if corrections for non-uniform mesh spacing should be included in operators
   bool non_uniform;
-  metric_field_type d1_dx, d1_dy,
-      d1_dz; ///< 2nd-order correction for non-uniform meshes d/di(1/dx) and d/di(1/dy)
+  /// 2nd-order correction for non-uniform meshes d/di(1/dx), d/di(1/dy) and d/di(1/dz)
+  metric_field_type d1_dx, d1_dy, d1_dz;
 
   metric_field_type J; ///< Coordinate system Jacobian, so volume of cell is J*dx*dy*dz
 
@@ -123,8 +123,8 @@ public:
 
   metric_field_type G1, G2, G3;
 
-  metric_field_type
-      ShiftTorsion; ///< d pitch angle / dx. Needed for vector differentials (Curl)
+  /// d pitch angle / dx. Needed for vector differentials (Curl)
+  metric_field_type ShiftTorsion;
 
   metric_field_type IntShiftTorsion; ///< Integrated shear (I in BOUT notation)
 

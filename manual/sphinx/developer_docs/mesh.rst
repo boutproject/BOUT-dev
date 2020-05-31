@@ -261,7 +261,7 @@ index.
 Differencing
 ------------
 
-The mesh spacing is given by the public members `Coorinates::dx`,
+The mesh spacing is given by the public members `Coordinates::dx`,
 `Coordinates::dy` and `Coordinates::dz`::
 
     // These used for differential operators
@@ -345,4 +345,3 @@ removed.
 A feature is::
 
     bool StaggerGrids;    ///< Enable staggered grids (Centre, Lower). Otherwise all vars are cell centred (default).
-

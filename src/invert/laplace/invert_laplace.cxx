@@ -270,7 +270,9 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
                             dcomplex &a, dcomplex &b, dcomplex &c,
                             const Field2D *c1coef, const Field2D *c2coef,
                             const Field2D *d, CELL_LOC loc) {
-#ifndef COORDINATES_USE_3D
+#ifdef COORDINATES_USE_3D
+  throw BoutException("Laplacian::tridagCoefs() does not support 3d metrics.");
+#else
   /* Function: Laplacian::tridagCoef
    * Purpose:  - Set the matrix components of A in Ax=b, solving
    *

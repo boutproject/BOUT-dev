@@ -626,7 +626,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options)
 
 // use anonymous namespace so this utility function is not available outside this file
 namespace {
-/// Interpolate a Field2D to a new CELL_LOC with interp_to.
+/// Interpolate a metric_field_type to a new CELL_LOC with interp_to.
 /// Communicates to set internal guard cells.
 /// Boundary guard cells are set equal to the nearest grid point (equivalent to
 /// 2nd order accurate Neumann boundary condition).
