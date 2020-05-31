@@ -121,6 +121,7 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
     xend = localmesh->LocalNx-2;
   }
 
+  const auto kwave_fac = TWOPI / coords->zlength(); // wave number is 1/[rad]
   for(int iz=0;iz<=maxmode;iz++) {
     // solve differential equation in x
 
@@ -128,7 +129,7 @@ FieldPerp LaplaceSerialBand::solve(const FieldPerp& b, const FieldPerp& x0) {
     ///////// PERFORM INVERSION /////////
       
     // shift freqs according to FFT convention
-    const Field2D kwave_ = iz * TWOPI / coords->zlength(); // wave number is 1/[rad]
+    const Field2D kwave_ = iz * kwave_fac;
 
     // set bk1d
     for(int ix=0;ix<localmesh->LocalNx;ix++)
