@@ -100,7 +100,7 @@ for nproc in [1,2,4]:
             print("   %d processor...." % (nproc) + extra_args)
             s, out = launch_safe(cmd, nproc=nproc, pipe=True)
             with open("run.log."+str(nproc), "w") as f:
-              f.write(out)
+                f.write(out)
 
             # Check processor splitting
             if split is not None:

@@ -206,7 +206,7 @@ Field3D &Field3D::ynext(int dir) {
 
 bool Field3D::requiresTwistShift(bool twist_shift_enabled) {
   // Workaround for 3D coordinates.
-  // We need to communicate in the coordinates constructure in that
+  // We need to communicate in the coordinates constructor in that
   // case a Field3D, but coordinates isn't valid yet. As such we
   // disable twist-shift in that case.
   if (getCoordinates() == nullptr) {

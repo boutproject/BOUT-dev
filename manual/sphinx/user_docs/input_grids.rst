@@ -22,7 +22,7 @@ a simple mesh can be created using options.
 
 The above options will create a :math:`256\times 256` mesh in X and Y,
 assuming there are 2 guard cells in X direction. The Z resolution can
-be specified with MZ. The mesh spacing of :math:`0.1` in both
+be specified with MZ. The mesh spacing is :math:`0.1` in both
 directions. By default the coordinate system is Cartesian (metric
 tensor is the identity matrix), but this can be changed by specifying
 the metric tensor components.
@@ -154,7 +154,7 @@ This section describes how to generate inputs for tokamak equilibria. If
 you’re not interested in tokamaks then you can skip to the next section.
 
 The directory ``tokamak_grids`` contains code to generate input grid
-files for tokamaks. These can be used by the ``2fluid`` and
+files for tokamaks. These can be used by, for example, the ``2fluid`` and
 ``highbeta_reduced`` modules.
 
 .. _sec-bout-topology:
@@ -763,4 +763,3 @@ with the following formula:
 
 where :math:`R_0` is the major radius, :math:`a` is the minor radius,
 :math:`\epsilon` is the elongation (``elong``), :math:`\delta` the triangularity (``triang``), and :math:`b` the indentation (``indent``).
-

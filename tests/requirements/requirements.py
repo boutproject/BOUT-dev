@@ -37,7 +37,6 @@ class Requirements(object):
         requirements_list = [x for x in os.listdir(path)
                              if not (("#" in x) or ("~" in x)
                                      or (x[0] == ".") or (".py" in x))]
-        
         if verbose:
             print("======= Requirement checks ========")
 

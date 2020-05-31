@@ -261,7 +261,7 @@ index.
 Differencing
 ------------
 
-The mesh spacing is given by the public members `Coorinates::dx`,
+The mesh spacing is given by the public members `Coordinates::dx`,
 `Coordinates::dy` and `Coordinates::dz`::
 
     // These used for differential operators
