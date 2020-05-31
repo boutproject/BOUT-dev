@@ -895,8 +895,10 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     // Attempt to read Bxy from the grid file
     auto Bcalc = Bxy;
     if (getAtLoc(mesh, Bxy, "Bxy", suffix, location)) {
-      output_warn.write("\tWARNING: Magnitude of B field 'Bxy_{:s}' not found. Calculating "
-                        " from metric tensor\n", suffix);
+      output_warn.write(
+          "\tWARNING: Magnitude of B field 'Bxy_{:s}' not found. Calculating "
+          " from metric tensor\n",
+          suffix);
       Bxy = Bcalc;
     } else {
       Bxy = interpolateAndExtrapolate(Bxy, location, extrapolate_x, extrapolate_y, false,

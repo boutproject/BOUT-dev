@@ -782,11 +782,11 @@ Field3D bracket(const Field3D& f, const Field2D& g, BRACKET_METHOD method,
           result(jx,jy,jz) = (Jpp + Jpx + Jxp) * spacingFactor;
         }
       }
-      }
+    }
 #else
     throw BoutException("BRACKET_ARAKAWA_OLD not valid with 3D metrics yet.");
 #endif
-      break;
+    break;
   }
   case BRACKET_SIMPLE: {
     // Use a subset of terms for comparison to BOUT-06

@@ -592,7 +592,7 @@ BOUT_OMP(for collapse(2))
           D(i2, yindex, k2) * 2. * coords->g13(i2, yindex) / coords->dx(i2, yindex) / dz;
       // coefficient of mixed derivative stencil (could assume zero, at least initially,
       // if easier; then check this is true in constructor)
-      
+
       BoutReal dxd = (D(i2, yindex, k2)*coords->G1(i2, yindex)
         + coords->g11(i2, yindex)*ddx_C
         + coords->g13(i2, yindex)*ddz_C // (could assume zero, at least initially, if easier; then check this is true in constructor)

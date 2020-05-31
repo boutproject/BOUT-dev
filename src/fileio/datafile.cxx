@@ -1202,9 +1202,9 @@ bool Datafile::write() {
     }
 
 #ifdef COORDINATES_USE_3D
-    write_f3d(name+"x", &(v.x), var.save_repeat);
-    write_f3d(name+"y", &(v.y), var.save_repeat);
-    write_f3d(name+"z", &(v.z), var.save_repeat);
+    write_f3d(name + "x", &(v.x), var.save_repeat);
+    write_f3d(name + "y", &(v.y), var.save_repeat);
+    write_f3d(name + "z", &(v.z), var.save_repeat);
 #else
     write_f2d(name+"x", &(v.x), var.save_repeat);
     write_f2d(name+"y", &(v.y), var.save_repeat);
