@@ -508,5 +508,11 @@ namespace FV {
     }
     return result + fromFieldAligned(yresult, "RGN_NOBNDRY");
   }
+
+  /*!
+   * X-Z Finite Volume diffusion operator
+   */
+  Field3D Div_Perp_Lap(const Field3D& a, const Field3D& f,
+                       CELL_LOC outloc = CELL_DEFAULT);
 }
 #endif // __FV_OPS_H__

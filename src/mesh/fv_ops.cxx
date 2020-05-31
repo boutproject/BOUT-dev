@@ -465,4 +465,87 @@ namespace FV {
     }
   }
 
+  Field3D Div_Perp_Lap(const Field3D& a, const Field3D& f, CELL_LOC outloc) {
+
+    Field3D result = 0.0;
+
+    //////////////////////////////////////////
+    // X-Z diffusion
+    //
+    //            Z
+    //            |
+    //
+    //     o --- gU --- o
+    //     |     nU     |
+    //     |            |
+    //    gL nL      nR gR    -> X
+    //     |            |
+    //     |     nD     |
+    //     o --- gD --- o
+    //
+    Coordinates* coords = a.getCoordinates(outloc);
+    Mesh* mesh = f.getMesh();
+
+    for (int i = mesh->xstart; i <= mesh->xend; i++)
+      for (int j = mesh->ystart; j <= mesh->yend; j++)
+        for (int k = 0; k < mesh->LocalNz; k++) {
+
+          // wrap k-index around as Z is (currently) periodic.
+          int kp = (k + 1) % (mesh->LocalNz);
+          int km = (k - 1 + mesh->LocalNz) % (mesh->LocalNz);
+
+          // Calculate gradients on cell faces -- assumes constant grid spacing
+
+          BoutReal gR =
+              (coords->g11(i, j, k) + coords->g11(i + 1, j, k))
+                  * (f(i + 1, j, k) - f(i, j, k))
+                  / (coords->dx(i + 1, j, k) + coords->dx(i, j, k))
+              + 0.5 * (coords->g13(i, j, k) + coords->g13(i + 1, j, k))
+                    * (f(i + 1, j, kp) - f(i + 1, j, km) + f(i, j, kp) - f(i, j, km))
+                    / (4. * coords->dz(i, j, k));
+
+          BoutReal gL =
+              (coords->g11(i - 1, j, k) + coords->g11(i, j, k))
+                  * (f(i, j, k) - f(i - 1, j, k))
+                  / (coords->dx(i - 1, j, k) + coords->dx(i, j, k))
+              + 0.5 * (coords->g13(i - 1, j, k) + coords->g13(i, j, k))
+                    * (f(i - 1, j, kp) - f(i - 1, j, km) + f(i, j, kp) - f(i, j, km))
+                    / (4 * coords->dz(i, j, k));
+
+          BoutReal gD =
+              coords->g13(i, j, k)
+                  * (f(i + 1, j, km) - f(i - 1, j, km) + f(i + 1, j, k) - f(i - 1, j, k))
+                  / (4. * coords->dx(i, j, k))
+              + coords->g33(i, j, k) * (f(i, j, k) - f(i, j, km)) / coords->dz(i, j, k);
+
+          BoutReal gU =
+              coords->g13(i, j, k)
+                  * (f(i + 1, j, kp) - f(i - 1, j, kp) + f(i + 1, j, k) - f(i - 1, j, k))
+                  / (4. * coords->dx(i, j, k))
+              + coords->g33(i, j, k) * (f(i, j, kp) - f(i, j, k)) / coords->dz(i, j, k);
+
+          // Flow right
+          BoutReal flux = gR * 0.25 * (coords->J(i + 1, j, k) + coords->J(i, j, k))
+                          * (a(i + 1, j, k) + a(i, j, k));
+          result(i, j, k) += flux / (coords->dx(i, j, k) * coords->J(i, j, k));
+
+          // Flow left
+          flux = gL * 0.25 * (coords->J(i - 1, j, k) + coords->J(i, j, k))
+                 * (a(i - 1, j, k) + a(i, j, k));
+          result(i, j, k) -= flux / (coords->dx(i, j, k) * coords->J(i, j, k));
+
+          // Flow up
+          flux = gU * 0.25 * (coords->J(i, j, k) + coords->J(i, j, kp))
+                 * (a(i, j, k) + a(i, j, kp));
+          result(i, j, k) += flux / (coords->dz(i, j, k) * coords->J(i, j, k));
+
+          // Flow down
+          flux = gD * 0.25 * (coords->J(i, j, km) + coords->J(i, j, k))
+                 * (a(i, j, km) + a(i, j, k));
+          result(i, j, k) += flux / (coords->dz(i, j, k) * coords->J(i, j, k));
+        }
+
+    return result;
+  }
+
 } // Namespace FV

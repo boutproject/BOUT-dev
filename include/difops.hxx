@@ -392,12 +392,6 @@ Field3D b0xGrad_dot_Grad(const Field3D& phi, const Field3D& A,
                          CELL_LOC outloc = CELL_DEFAULT);
 
 /*!
- * X-Z Finite Volume diffusion operator
- */
-Field3D Div_Perp_Lap_FV(const Field3D& a, const Field3D& f,
-                        CELL_LOC outloc = CELL_DEFAULT);
-
-/*!
  * Poisson bracket methods
  */
 enum class BRACKET_METHOD {
