@@ -12,7 +12,7 @@ from sys import exit
 
 errorlist = []
 
-boutcore.init("-d data -q -q -q".split(" "))
+boutcore.init("-d data -q -q -q")
 
 
 def runtests(functions, derivatives, direction, stag, msg, errorlist, ordertol=0.1):
