@@ -9,12 +9,12 @@ NOUT = 50    # number of time-steps
 TIMESTEP = 1e2  # time between outputs
 
 MXG = 2
-MYG = 2      # No y derivatives, so no guard cells needed in y
+MYG = 0      # No y derivatives, so no guard cells needed in y
 
 [mesh]
 
 nx = 68
-ny = 2
+ny = 1
 nz = 64
 
 dx = 2.0
@@ -70,7 +70,6 @@ factor_package = superlu_dist
 [phiBoussinesq]
 type = petsc
 inner_boundary_flags=2
-
 
 ##################################################
 # general settings for the model
