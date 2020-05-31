@@ -39,6 +39,17 @@ Options::Options(const Options& other)
   }
 }
 
+template <>
+Options::Options(const char* value) {
+  assign<std::string>(value);
+}
+
+Options::Options(std::initializer_list<std::pair<std::string, Options>> values) {
+  for (auto& value : values) {
+    (*this)[value.first] = value.second;
+  }
+}
+
 Options &Options::operator[](const std::string &name) {
   // Mark this object as being a section
   is_section = true;

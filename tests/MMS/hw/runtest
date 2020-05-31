@@ -4,6 +4,7 @@
 
 #requires: all_tests
 #requires: not metric_3d
+#cores: 4
 
 from __future__ import division
 from __future__ import print_function

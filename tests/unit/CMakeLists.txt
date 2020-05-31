@@ -26,6 +26,7 @@ add_executable(serial_tests
   ./field/test_where.cxx
   ./include/bout/test_array.cxx
   ./include/bout/test_assert.cxx
+  ./include/bout/test_bout_enum_class.cxx
   ./include/bout/test_deriv_store.cxx
   ./include/bout/test_generic_factory.cxx
   ./include/bout/test_macro_for_each.cxx

@@ -7,6 +7,8 @@
 #include <bout/constants.hxx>
 #include <unused.hxx>
 
+using bout::globals::mesh;
+
 void solution(Field3D &f, BoutReal t, BoutReal D);
 class ErrorMonitor: public Monitor{
 public:

@@ -4,6 +4,8 @@
 #include <derivs.hxx>
 #include <field_factory.hxx>
 
+using bout::globals::mesh;
+
 int main(int argc, char** argv) {
   BoutInitialise(argc, argv);
   
@@ -61,8 +63,8 @@ int main(int argc, char** argv) {
 
   // Write fields to output
   SAVE_ONCE3(input, solved, result);
-  dump.write();
-  
+  bout::globals::dump.write();
+
   BoutFinalise();
   return 0;
 }

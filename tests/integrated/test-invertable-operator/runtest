@@ -2,6 +2,7 @@
 
 #requires: petsc
 #requires: not metric_3d
+#cores: 2
 
 # 
 # Run the test, compare results against expected value

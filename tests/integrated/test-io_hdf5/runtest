@@ -4,8 +4,9 @@
 # Run the test, compare results against the benchmark
 #
 
-#requires: all_tests
-#Requires: hdf5
+# Requires: all_tests
+# Requires: hdf5
+# Cores: 4
 
 # in metric_3d the vector2d contains 3d fields
 #requires: not metric_3d

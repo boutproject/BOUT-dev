@@ -3,6 +3,10 @@
 # Python script to run and analyse MMS test
 #
 
+# Cores: 2
+from __future__ import division
+from __future__ import print_function
+
 from boututils.run_wrapper import build_and_log, launch_safe
 from boutdata.collect import collect
 import boutconfig as conf

@@ -34,10 +34,6 @@ int main(int argc, char** argv) {
 
   BoutInitialise(argc, argv);
 
-  auto coords = mesh->getCoordinates();
-
-  auto& opt = Options::root();
-
   LaplaceXY laplacexy;
 
   // Solving equations of the form
@@ -70,8 +66,10 @@ int main(int argc, char** argv) {
 
   output<<"Magnitude of maximum absolute error is "<<max_error<<endl;
 
-  mesh->communicate(sol);
+  sol.getMesh()->communicate(sol);
   rhs_check = Laplace_perpXY(a, sol);
+
+  using bout::globals::dump;
 
   dump.add(a, "a");
   dump.add(b, "b");

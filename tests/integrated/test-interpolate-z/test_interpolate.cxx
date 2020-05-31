@@ -16,6 +16,8 @@
 #include "bout/sys/generator_context.hxx"
 #include "interpolation_z.hxx"
 
+using bout::globals::mesh;
+
 /// Get a FieldGenerator from the options for a variable
 std::shared_ptr<FieldGenerator> getGeneratorFromOptions(const std::string& varname,
                                                         std::string& func) {
@@ -89,7 +91,7 @@ int main(int argc, char **argv) {
   SAVE_ONCE3(b, b_interp, b_solution);
   SAVE_ONCE3(c, c_interp, c_solution);
 
-  dump.write();
+  bout::globals::dump.write();
 
   BoutFinalise();
 

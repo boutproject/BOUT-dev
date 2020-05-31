@@ -40,11 +40,8 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
   // Create the Interpolation objects and set whether they go up or down the
   // magnetic field
   auto& interp_options = options["zinterpolation"];
-  interp_yup = ZInterpolationFactory::getInstance().create(&interp_options, &mesh);
-  interp_yup->setYOffset(1);
-
-  interp_ydown = ZInterpolationFactory::getInstance().create(&interp_options, &mesh);
-  interp_ydown->setYOffset(-1);
+  interp_yup = ZInterpolationFactory::getInstance().create(&interp_options, 1, &mesh);
+  interp_ydown = ZInterpolationFactory::getInstance().create(&interp_options, -1, &mesh);
 
   // Find the index positions where the magnetic field line intersects the next
   // x-z plane
@@ -89,9 +86,9 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
   interp_ydown->calcWeights(zt_prime_down, mask_down, "RGN_NOY");
 
   // Set up interpolation to/from field-aligned coordinates
-  interp_to_aligned = ZInterpolationFactory::getInstance().create(&interp_options, &mesh);
+  interp_to_aligned = ZInterpolationFactory::getInstance().create(&interp_options, 0, &mesh);
   interp_from_aligned =
-      ZInterpolationFactory::getInstance().create(&interp_options, &mesh);
+      ZInterpolationFactory::getInstance().create(&interp_options, 0, &mesh);
 
   Field3D zt_prime_to(&mesh), zt_prime_from(&mesh);
   zt_prime_to.allocate();

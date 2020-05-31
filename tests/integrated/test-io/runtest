@@ -4,6 +4,7 @@
 # Run the test, compare results against the benchmark
 #
 # requires: netcdf
+# cores: 4
 
 from __future__ import print_function
 

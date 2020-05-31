@@ -39,6 +39,9 @@ int main(int argc, char** argv) {
 
   // initial profile of f only used to set boundary values
   initial_profile("f", f);
+
+  auto* mesh = f.getMesh();
+
   // Copy boundary values into boundary cells
   for (auto it = mesh->iterateBndryLowerY(); !it.isDone(); it.next()) {
     int x = it.ind;
@@ -121,7 +124,7 @@ int main(int argc, char** argv) {
   BoutReal error_max = max(abs(error), true);
 
   SAVE_ONCE(f, rhs, rhs_check, error, error_max);
-  dump.write();
+  bout::globals::dump.write();
 
   laplace_solver.reset(nullptr);
   BoutFinalise();

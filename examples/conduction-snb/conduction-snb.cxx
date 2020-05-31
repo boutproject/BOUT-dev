@@ -14,7 +14,7 @@ int main(int argc, char** argv) {
   Field3D Ne = opt["Ne"].doc("Electron density in m^-3").as<Field3D>();
   Field3D Te = opt["Te"].doc("Electron temperature in eV").as<Field3D>();
 
-  mesh->communicate(Ne, Te);
+  bout::globals::mesh->communicate(Ne, Te);
 
   // Calculate divergence of heat flux
   HeatFluxSNB snb;
@@ -23,7 +23,7 @@ int main(int argc, char** argv) {
 
   // Save to the output
   SAVE_ONCE(Ne, Te, Div_Q, Div_Q_SH);
-  dump.write();
+  bout::globals::dump.write();
 
   BoutFinalise();
   return 0;
