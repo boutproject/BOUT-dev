@@ -27,9 +27,17 @@
 
 #include <vector>
 
-ZHermiteSpline::ZHermiteSpline(BoutMask mask, int y_offset, Mesh* mesh)
-    : ZInterpolation(mask, y_offset, mesh), h00(localmesh), h01(localmesh),
-      h10(localmesh), h11(localmesh) {
+ZHermiteSpline::ZHermiteSpline(int y_offset, Mesh* mesh, Region<Ind3D>* region_ptr)
+    : ZInterpolation(y_offset, mesh, region_ptr),
+      fz_region(region_ptr != nullptr ? "RGN_ALL"
+                                      : y_offset == 0 ? "RGN_NOBNDRY" : "RGN_NOX"),
+      h00(localmesh), h01(localmesh), h10(localmesh), h11(localmesh) {
+
+  if (region_ptr != nullptr) {
+    output_warn << "Custom region passed to ZInterpolation. ZHermiteSpline requires an "
+                << "offset region for calculating DDZ(f): using RGN_ALL, which may not "
+                << "be optimal." << endl;
+  }
 
   // Index arrays contain guard cells in order to get subscripts right
   const int n_total = localmesh->LocalNx*localmesh->LocalNy*localmesh->LocalNz;
@@ -47,18 +55,19 @@ ZHermiteSpline::ZHermiteSpline(BoutMask mask, int y_offset, Mesh* mesh)
   h11.allocate();
 }
 
-void ZHermiteSpline::calcWeights(const Field3D& delta_z, const std::string& region) {
+void ZHermiteSpline::calcWeights(const Field3D& delta_z) {
 
   const int ncy = localmesh->LocalNy;
   const int ncz = localmesh->LocalNz;
 
-  BOUT_FOR(i, delta_z.getRegion(region)) {
+  // Calculate weights for all points if y_offset==0 in case they are needed, otherwise
+  // only calculate weights for 'region'
+  const auto local_region = (y_offset == 0) ? delta_z.getRegion("RGN_ALL") : *region;
+
+  BOUT_FOR(i, local_region) {
     const int x = i.x();
     const int y = i.y();
     const int z = i.z();
-
-    if (skip_mask(x, y, z))
-      continue;
 
     // The integer part of zt_prime are the indices of the cell
     // containing the field line end-point
@@ -88,13 +97,6 @@ void ZHermiteSpline::calcWeights(const Field3D& delta_z, const std::string& regi
     h10(x, y, z) = t_z * (1. - t_z) * (1. - t_z);
     h11(x, y, z) = (t_z * t_z * t_z) - (t_z * t_z);
   }
-}
-
-void ZHermiteSpline::calcWeights(const Field3D& delta_z, const BoutMask& mask,
-                                 const std::string& region) {
-  skip_mask = mask;
-  has_mask = true;
-  calcWeights(delta_z, region);
 }
 
 /*!
@@ -129,47 +131,27 @@ ZHermiteSpline::getWeightsForYApproximation(int i, int j, int k, int yoffset) co
           {i, j + yoffset, k_mod_p2, 0.5 * h11(i, j, k)}};
 }
 
-Field3D ZHermiteSpline::interpolate(const Field3D& f, const std::string& region) const {
-  // Template with two branches for the body of this method so that if
-  // has_mask=false we can optimize out the conditional with skip_mask from the
-  // tight loop.
-  if (has_mask) {
-    return interpolate_internal<true>(f, region);
-  }
-  return interpolate_internal<false>(f, region);
-}
-
-template<bool with_mask>
-Field3D ZHermiteSpline::interpolate_internal(const Field3D& f, const std::string& region) const {
+Field3D ZHermiteSpline::interpolate(const Field3D& f, const std::string& region_str) const {
 
   ASSERT1(f.getMesh() == localmesh);
   Field3D f_interp{emptyFrom(f)};
 
+  std::string local_fz_region;
+  if (region_str == "DEFAULT") {
+    local_fz_region = fz_region;
+  } else {
+    // Cannot use non-default regions when y_offset!=0 as calcWeights() used the default
+    // region
+    ASSERT1(y_offset == 0);
+    local_fz_region = region_str;
+  }
+  const auto local_region = (region_str == "DEFAULT") ? *region : f.getRegion(region_str);
+
   // Derivatives are used for tension and need to be on dimensionless
   // coordinates
-  const std::string fz_region = (region == "RGN_NOBNDRY" or region == "RGN_NOX")
-                                    ? y_offset == 0 ? "RGN_NOBNDRY" : "RGN_NOX"
-                                    : "RGN_ALL";
-  Field3D fz = bout::derivatives::index::DDZ(f, CELL_DEFAULT, "DEFAULT", fz_region);
-  if (region != "RGN_NOBNDRY" and region != "RGN_NOX") {
-    localmesh->communicateXZ(fz);
-  }
-  if (y_offset != 0 or (region != "RGN_NOBNDRY" and region != "RGN_NOY")) {
-    // communicate in y, but do not calculate parallel slices
-    auto h = localmesh->sendY(fz);
-    localmesh->wait(h);
-  }
+  Field3D fz = bout::derivatives::index::DDZ(f, CELL_DEFAULT, "DEFAULT", local_fz_region);
 
-  BOUT_FOR(i, f.getRegion(region)) {
-    const int x = i.x();
-    const int y = i.y();
-    const int z = i.z();
-
-    if (with_mask) {
-      if (skip_mask(x, y, z))
-        continue;
-    }
-
+  BOUT_FOR(i, local_region) {
     const auto corner = k_corner[i.ind].yp(y_offset);
     const auto corner_zp1 = corner.zp();
 
@@ -177,22 +159,16 @@ Field3D ZHermiteSpline::interpolate_internal(const Field3D& f, const std::string
     f_interp[i.yp(y_offset)] = f[corner] * h00[i] + f[corner_zp1] * h01[i]
                                + fz[corner] * h10[i] + fz[corner_zp1] * h11[i];
 
-    ASSERT2(finite(f_interp[i.yp(y_offset)]) || x < localmesh->xstart
-            || x > localmesh->xend);
+    ASSERT2(finite(f_interp[i.yp(y_offset)]) || i.x() < localmesh->xstart
+            || i.x() > localmesh->xend);
   }
   return f_interp;
 }
 
 Field3D ZHermiteSpline::interpolate(const Field3D& f, const Field3D& delta_z,
-                                    const std::string& region) {
-  calcWeights(delta_z, region);
-  return interpolate(f, region);
-}
-
-Field3D ZHermiteSpline::interpolate(const Field3D& f, const Field3D& delta_z,
-                                    const BoutMask& mask, const std::string& region) {
-  calcWeights(delta_z, mask, region);
-  return interpolate(f, region);
+                                    const std::string& region_str) {
+  calcWeights(delta_z);
+  return interpolate(f, region_str);
 }
 
 void ZInterpolationFactory::ensureRegistered() {}

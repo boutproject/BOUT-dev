@@ -57,16 +57,7 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
         + (zShift[i.yp()] - zShift[i]) * static_cast<BoutReal>(mesh.GlobalNz) / TWOPI;
   }
 
-  // Make a mask, to skip interpolating to points inside y-boundaries that need to be set
-  // by boundary conditions.
-  auto mask_up = BoutMask(mesh.LocalNx, mesh.LocalNy, mesh.LocalNz);
-  for (auto it = mesh.iterateBndryUpperY(); not it.isDone(); it.next()) {
-    for (int z = mesh.zstart; z <= mesh.zend; z++) {
-      mask_up(it.ind, mesh.yend, z) = true;
-    }
-  }
-
-  interp_yup->calcWeights(zt_prime_up, mask_up, "RGN_NOY");
+  interp_yup->calcWeights(zt_prime_up);
 
   for (const auto& i : zt_prime_down.getRegion(RGN_NOY)) {
     // Field line moves in z by an angle -(zShift(i,j)-zShift(i,j-1)) when going
@@ -76,14 +67,7 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
         - (zShift[i] - zShift[i.ym()]) * static_cast<BoutReal>(mesh.GlobalNz) / TWOPI;
   }
 
-  auto mask_down = BoutMask(mesh.LocalNx, mesh.LocalNy, mesh.LocalNz);
-  for (auto it = mesh.iterateBndryLowerY(); not it.isDone(); it.next()) {
-    for (int z = mesh.zstart; z <= mesh.zend; z++) {
-      mask_down(it.ind, mesh.ystart, z) = true;
-    }
-  }
-
-  interp_ydown->calcWeights(zt_prime_down, mask_down, "RGN_NOY");
+  interp_ydown->calcWeights(zt_prime_down);
 
   // Set up interpolation to/from field-aligned coordinates
   interp_to_aligned = ZInterpolationFactory::getInstance().create(&interp_options, 0, &mesh);
@@ -101,7 +85,7 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
                      + zShift[i] * static_cast<BoutReal>(mesh.GlobalNz) / TWOPI;
   }
 
-  interp_to_aligned->calcWeights(zt_prime_to, "RGN_ALL");
+  interp_to_aligned->calcWeights(zt_prime_to);
 
   for (const auto& i : zt_prime_from) {
     // Field line moves in z by an angle zShift(i,j) when going
@@ -111,7 +95,7 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
                        - zShift[i] * static_cast<BoutReal>(mesh.GlobalNz) / TWOPI;
   }
 
-  interp_from_aligned->calcWeights(zt_prime_from, "RGN_ALL");
+  interp_from_aligned->calcWeights(zt_prime_from);
 
   // Create regions for parallel boundary conditions
   Field2D dy;
@@ -178,8 +162,8 @@ void ShiftedMetricInterp::calcParallelSlices(Field3D& f) {
   f.splitParallelSlices();
 
   // Interpolate f onto yup and ydown fields
-  f.yup() = interp_yup->interpolate(f, "RGN_NOY");
-  f.ydown() = interp_ydown->interpolate(f, "RGN_NOY");
+  f.yup() = interp_yup->interpolate(f);
+  f.ydown() = interp_ydown->interpolate(f);
 }
 
 /*!
