@@ -213,7 +213,7 @@ elif [ "$pkg" == "BOUT-dev" ]; then
     source_dir=${source_prefix}/${pkg}
     cd $source_dir && {
         branch=$(git rev-parse --abbrev-ref HEAD)
-        [[ "$branch" != "feature/uvm-raja-next" ]] && exit 1
+        [[ "$branch" != "next-outerloop-blt" ]] && exit 1
     }
     mkdir -p $build_dir && cd $build_dir
     cmake -DCMAKE_CXX_COMPILER=$cpp \

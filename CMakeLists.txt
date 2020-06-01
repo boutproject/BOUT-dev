@@ -104,6 +104,7 @@ set(BOUT_HEADERS
   ./include/bout.hxx
   ./include/bout/array.hxx
   ./include/bout/assert.hxx
+  ./include/bout/bout_enum_class.hxx
   ./include/bout/constants.hxx
   ./include/bout/coordinates.hxx
   ./include/bout/deprecated.hxx
@@ -126,6 +127,7 @@ set(BOUT_HEADERS
   ./include/bout/monitor.hxx
   ./include/bout/mpi_wrapper.hxx
   ./include/bout/openmpwrap.hxx
+  ./include/bout/operatorstencil.hxx
   ./include/bout/paralleltransform.hxx
   ./include/bout/petsclib.hxx
   ./include/bout/petsc_interface.hxx
@@ -134,11 +136,12 @@ set(BOUT_HEADERS
   ./include/bout/rkscheme.hxx
   ./include/bout/rvec.hxx
   ./include/bout/scorepwrapper.hxx
+  ./include/bout/single_index_ops.hxx
   ./include/bout/slepclib.hxx
   ./include/bout/snb.hxx
   ./include/bout/solver.hxx
+  ./include/bout/solverfactory.hxx
   ./include/bout/surfaceiter.hxx
-  ./include/bout/operatorstencil.hxx
   ./include/bout/sys/expressionparser.hxx
   ./include/bout/sys/generator_context.hxx
   ./include/bout/sys/gettext.hxx
@@ -152,6 +155,7 @@ set(BOUT_HEADERS
   ./include/bout/sys/ForAll.h
   ./include/bout/sys/NVTXUtilities.h
   ./include/bout/template_combinations.hxx
+  ./include/bout/traits.hxx
   ./include/bout_types.hxx
   ./include/boutcomm.hxx
   ./include/boutexception.hxx
@@ -174,6 +178,7 @@ set(BOUT_HEADERS
   ./include/initialprofiles.hxx
   ./include/interpolation.hxx
   ./include/interpolation_xz.hxx
+  ./include/interpolation_z.hxx
   ./include/invert_laplace.hxx
   ./include/invert_parderiv.hxx
   ./include/lapack_routines.hxx
@@ -267,6 +272,7 @@ set(BOUT_SOURCES
   ./src/fileio/impls/pnetcdf/pnetcdf.cxx
   ./src/fileio/impls/netcdf/nc_format.cxx
   ./src/fileio/impls/netcdf4/ncxx4.cxx
+  ./src/fileio/impls/pnetcdf/pnetcdf.cxx
   ./src/invert/fft_fftw.cxx
   ./src/invert/lapack_routines.cxx
   ./src/invert/laplace/impls/cyclic/cyclic_laplace.cxx
@@ -277,7 +283,7 @@ set(BOUT_SOURCES
   ./src/invert/laplace/impls/pdd/pdd.cxx
   ./src/invert/laplace/impls/petsc/petsc_laplace.cxx
   ./src/invert/laplace/impls/petsc3damg/petsc3damg.cxx
- ./src/invert/laplace/impls/serial_band/serial_band.cxx
+  ./src/invert/laplace/impls/serial_band/serial_band.cxx
   ./src/invert/laplace/impls/serial_tri/serial_tri.cxx
   ./src/invert/laplace/impls/shoot/shoot_laplace.cxx
   ./src/invert/laplace/impls/spt/spt.cxx
@@ -930,6 +936,10 @@ if(PACKAGE_TESTS)
   add_custom_target(checkall)
   add_dependencies(checkall check-unit-tests check-integrated-tests)
 endif()
+
+# build examples
+add_subdirectory(examples/hasegawa-wakatani-3d)
+
 
 ##################################################
 # Installation
