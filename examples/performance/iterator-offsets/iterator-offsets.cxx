@@ -73,8 +73,7 @@ int main(int argc, char **argv) {
       }
     }
     );
-#if 0
-#ifdef _OPENMP
+#if BOUT_USE_OPENMP 
   ITERATOR_TEST_BLOCK(
     "Nested loop (omp)",
     BOUT_OMP(parallel for)
@@ -87,7 +86,6 @@ int main(int argc, char **argv) {
     }
     );
 
-#endif
 #endif
 
   {
@@ -136,9 +134,9 @@ int main(int argc, char **argv) {
 
    if (profileMode) {
      int nthreads = 0;
-//#ifdef _OPENMP
-//     nthreads = omp_get_max_threads();
-//#endif
+#if BOUT_USE_OPENMP 
+     nthreads = omp_get_max_threads();
+#endif
 
      int width = 12;
      if (includeHeader) {

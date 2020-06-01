@@ -11,17 +11,23 @@ module --ignore-cache load spectrum-mpi/rolling-release
 module --ignore-cache load cmake/3.14.5
 module --ignore-cache load cuda/10.1.243
 module --ignore-cache load gcc/8.3.1
-module --ignore-cache load sundials/4.1.0
+#module --ignore-cache load sundials/4.1.0
+module --ignore-cache load sundials-5.1.0-gcc-8.3.1-g7h45nh
 module --ignore-cache load lapack/3.8.0-gcc-4.9.3
 
 # The following modules are installed by you using spack
+module --ignore-cache load openblas-0.3.9-gcc-8.3.1-hx4gart
 module --ignore-cache load fftw-3.3.8-gcc-8.3.1-vlusxnt
 module --ignore-cache load hdf5-1.10.1-gcc-8.3.1-xkc527f
+module --ignore-cache load metis-5.1.0-gcc-8.3.1-wbsy3pr
+module --ignore-cache load parmetis-4.0.3-gcc-8.3.1-7lwyokt
+module --ignore-cache load superlu-dist-6.1.1-gcc-8.3.1-43evi4b
 module --ignore-cache load python-3.7.6-gcc-8.3.1-usivcqa
 module --ignore-cache load netcdf-c-4.7.3-gcc-8.3.1-usnrhsd # auto installed as part of netcdf-cxx4 install
+module --ignore-cache load zlib-1.2.11-gcc-8.3.1-drkbhfs
 module --ignore-cache load netcdf-cxx4-4.3.1-gcc-8.3.1-uj77ss3
 #module --ignore-cache load petsc-3.12.3-gcc-8.3.1-ut4eyhs 
-module --ignore-cache load petsc-3.12.3-gcc-8.3.1-jnsim2o
+#module --ignore-cache load petsc-3.12.3-gcc-8.3.1-jnsim2o
 module --ignore-cache load py-setuptools-41.4.0-gcc-8.3.1-d4wih3g
 module --ignore-cache load py-cftime-1.0.3.4-gcc-8.3.1-q6ofwn4
 module --ignore-cache load py-cython-0.29.14-gcc-8.3.1-5sfsoak
@@ -135,6 +141,9 @@ else
     exit 1
 fi
 
+###          --with-netcdf-dir="/usr/WS2/holger/spack/opt/spack/linux-rhel7-power9le/gcc-8.3.1/netcdf-c-4.7.3-usnrhsddn4n6vko5lvvg63vpwdi25pfg/" \
+###          --with-hypre-include="${HOME}/workspace/hypre_automake/install/include" \
+###          --with-hypre-lib=[${HOME}/workspace/hypre_automake/install/lib/libHYPRE.a,libHYPRE.a] \
 build_dir=${build_prefix}/${pkg}
 install_dir=${install_prefix}/${pkg}
 if [ "$pkg" == "raja" ]; then
@@ -179,6 +188,27 @@ elif [ "$pkg" == "hypre" ]; then
           -DCMAKE_VERBOSE_MAKEFILE=On \
           -Dgtest_disable_pthreads=ON \
           $source_dir
+elif [ "$pkg" == "petsc" ]; then
+    source_dir=${source_prefix}/${pkg}
+    cd $source_dir
+    mkdir -p $install_dir
+    ./configure --prefix=${install_dir} \
+          --CXX=$cpp \
+          --CC=$cc \
+          --FC=$fc \
+          --with-cuda=0 \
+          --with-blaslapack-dir="${LAPACK_DIR}/.." \
+          --with-openblas-dir="/usr/WS2/holger/spack/opt/spack/linux-rhel7-power9le/gcc-8.3.1/openblas-0.3.9-hx4garttzvdqltwiclgkfguqfpmkjnyi/" \
+          --with-hdf5-dir="/usr/WS2/holger/spack/opt/spack/linux-rhel7-power9le/gcc-8.3.1/hdf5-1.10.1-xkc527ftnhfp2zz3j4v7vo5l7ypse6m3/" \
+          --download-netcdf \
+          --download-mumps \
+          --download-hypre \
+          --download-scalapack \
+          --with-metis-dir="/usr/WS2/holger/spack/opt/spack/linux-rhel7-power9le/gcc-8.3.1/metis-5.1.0-wbsy3praw43mfeyat3x7jz2dym3bifsl/" \
+          --with-parmetis-dir="/usr/WS2/holger/spack/opt/spack/linux-rhel7-power9le/gcc-8.3.1/parmetis-4.0.3-7lwyokt7zd2cbvxl2mglmoho5xmnze4c/" \
+          --with-superlu_dist-dir="/usr/WS2/holger/spack/opt/spack/linux-rhel7-power9le/gcc-8.3.1/superlu-dist-6.1.1-43evi4baw2e7hkrgecwvtspvomo4wltw/" \
+          --with-fftw-dir="/usr/WS2/holger/spack/opt/spack/linux-rhel7-power9le/gcc-8.3.1/fftw-3.3.8-vlusxntezsqbongx3pyjwlfg6ddjbbxw/"  \
+          --with-zlib-dir="/usr/WS2/holger/spack/opt/spack/linux-rhel7-power9le/gcc-8.3.1/zlib-1.2.11-drkbhfszh6qdkeofmyrnbil3kgfnfz4s/" 
 elif [ "$pkg" == "BOUT-dev" ]; then
     source_dir=${source_prefix}/${pkg}
     cd $source_dir && {

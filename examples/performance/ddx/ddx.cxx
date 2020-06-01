@@ -96,9 +96,9 @@ int main(int argc, char **argv) {
   
   if (profileMode) {
      int nthreads = 0;
-//#ifdef _OPENMP
-//     nthreads = omp_get_max_threads();
-//#endif
+#if BOUT_USE_OPENMP 
+     nthreads = omp_get_max_threads();
+#endif
 
      int width = 12;
      if (includeHeader) {

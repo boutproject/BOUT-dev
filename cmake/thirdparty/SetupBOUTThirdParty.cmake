@@ -108,10 +108,14 @@ endif ()
 #endif ()
 
 # OpenMP
+set(BOUT_USE_OPENMP False)
 if (ENABLE_OPENMP)
   if (OPENMP_FOUND)
-     set(BOUT_USE_OPEMP True)
-  endif ()
+     set(BOUT_USE_OPENMP True)
+  else()
+    message(WARNING "OpenMP NOT FOUND")
+    set(ENABLE_OPENMP Off)
+  endif()
 endif ()
 
 #HAVE_PETSC

@@ -478,12 +478,12 @@ void printCompileTimeOptions() {
   output_info.write(_("\tParallel NetCDF support disabled\n"));
 #endif
 
-//#ifdef _OPENMP
-//  output_info.write(_("\tOpenMP parallelisation enabled, using {:d} threads\n"),
-//                    omp_get_max_threads());
-//#else
+#if BOUT_USE_OPENMP 
+  output_info.write(_("\tOpenMP parallelisation enabled, using {:d} threads\n"),
+                    omp_get_max_threads());
+#else
   output_info.write(_("\tOpenMP parallelisation disabled\n"));
-//#endif
+#endif
 
 #ifdef METRIC3D
   output_info.write("\tRUNNING IN 3D-METRIC MODE\n");

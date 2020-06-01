@@ -35,11 +35,11 @@
 
 //Define a macro wrapper to the use of `#pragma omp` to avoid unknown pragma
 //warnings when compiling without openmp support.
-//#ifdef _OPENMP
-//#define BOUT_OMP(...) _Pragma(INDIRECT2(__VA_ARGS__))
-//#else
+#if BOUT_USE_OPENMP 
+#define BOUT_OMP(...) _Pragma(INDIRECT2(__VA_ARGS__))
+#else
 #define BOUT_OMP(...)
-//#endif
+#endif
 
 //Perhaps want to cleanup local helpers with below, but DON'T!
 //This would cause uses of BOUT_OMP to break

@@ -37,9 +37,9 @@
 #include <fftw3.h>
 #include <cmath>
 
-//#ifdef _OPENMP
-//#include <omp.h>
-//#endif
+#if BOUT_USE_OPENMP 
+#include <omp.h>
+#endif
 #else
 #include <boutexception.hxx>
 #endif
@@ -73,7 +73,7 @@ void fft_init(bool fft_measure) {
  * Real FFTs
  ***********************************************************/
 
-//#ifndef _OPENMP
+#if ! BOUT_USE_OPENMP
 // Serial code
 void rfft(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(dcomplex *out)) {
 #ifndef BOUT_HAS_FFTW
@@ -199,8 +199,7 @@ void irfft(MAYBE_UNUSED(const dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNU
     out[i] = fout[i];
 #endif
 }
-#if 0
-//#else
+#else
 // Parallel thread-safe version of rfft and irfft
 void rfft(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(dcomplex *out)) {
 #ifndef BOUT_HAS_FFTW
@@ -351,7 +350,6 @@ void irfft(MAYBE_UNUSED(const dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNU
     out[i] = fout[i];
 #endif
 }
-//#endif
 #endif
 //  Discrete sine transforms (B Shanahan)
 

@@ -609,22 +609,23 @@ endif()
 message(STATUS "Enable backtrace: BACKTRACE=${ENABLE_BACKTRACE}")
 set(BOUT_USE_BACKTRACE ${ENABLE_BACKTRACE})
 
-option(ENABLE_OPENMP "Enable OpenMP support" OFF)
-if (ENABLE_OPENMP)
-  find_package(OpenMP REQUIRED)
-  target_link_libraries(bout++ PUBLIC OpenMP::OpenMP_CXX)
+#option(ENABLE_OPENMP "Enable OpenMP support" OFF)
+# we defer to BLT for actual dependency setup but add defines here
+if (BOUT_USE_OPENMP)
+   #find_package(OpenMP REQUIRED)
+   #target_link_libraries(bout++ PUBLIC OpenMP::OpenMP_CXX)
   set(possible_openmp_schedules static dynamic guided auto)
   set(OPENMP_SCHEDULE static CACHE STRING "Set OpenMP schedule")
   if (NOT OPENMP_SCHEDULE IN_LIST possible_openmp_schedules)
     message(FATAL_ERROR "OPENMP_SCHEDULE must be one of ${possible_openmp_schedules}")
   endif()
   target_compile_definitions(bout++
+    PUBLIC "BOUT_USE_OPENMP"
     PUBLIC "OPENMP_SCHEDULE=${OPENMP_SCHEDULE}"
     PUBLIC "BOUT_OPENMP_SCHEDULE=${OPENMP_SCHEDULE}")
   message(STATUS "OpenMP schedule: ${OPENMP_SCHEDULE}")
 endif()
-message(STATUS "Enable OpenMP: ${ENABLE_OPENMP}")
-set(BOUT_USE_OPENMP ${ENABLE_OPENMP})
+message(STATUS "BOUT_USE_OPENMP: ${BOUT_USE_OPENMP}")
 
 # Optional dependencies
 
