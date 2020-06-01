@@ -34,7 +34,7 @@ success = True
 
 for j, dat in enumerate(dats):
   for i, check in enumerate(checkVal):
-    cmd = "./test_stopCheck"
+    cmd = "../../../bin/test_stopCheck"
 
     s, out = launch(cmd+" -d "+dat+" stopCheck="+str(check)+" stopCheckName="+datStopFiles[j], nproc=nproc, pipe=True)
     f = open("run.log."+dat+"."+str(check).lower(), "w")

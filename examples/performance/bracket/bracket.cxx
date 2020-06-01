@@ -99,7 +99,7 @@ int main(int argc, char **argv) {
 
   if (profileMode) {
     int nthreads = 0;
-#ifdef _OPENMP
+#if BOUT_USE_OPENMP 
     nthreads = omp_get_max_threads();
 #endif
 

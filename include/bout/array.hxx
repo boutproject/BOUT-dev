@@ -30,7 +30,7 @@
 #include <vector>
 #include <memory>
 
-#ifdef _OPENMP
+#if BOUT_USE_OPENMP 
 #include <omp.h>
 #endif
 
@@ -309,14 +309,14 @@ private:
    * @param[in] cleanup   If set to true, deletes all dataBlock and clears the store
    */
   static storeType& store(bool cleanup=false) {
-#ifdef _OPENMP    
+#if BOUT_USE_OPENMP     
     static arenaType arena(omp_get_max_threads());
 #else
     static arenaType arena(1);
 #endif
     
     if (!cleanup) {
-#ifdef _OPENMP 
+#if BOUT_USE_OPENMP 
       return arena[omp_get_thread_num()];
 #else
       return arena[0];

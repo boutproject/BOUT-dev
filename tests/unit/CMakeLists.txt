@@ -1,6 +1,6 @@
-bout_update_submodules()
-add_subdirectory("${PROJECT_SOURCE_DIR}/externalpackages/googletest"
-  "externalpackages/googletest")
+#bout_update_submodules()
+#add_subdirectory("${PROJECT_SOURCE_DIR}/externalpackages/googletest"
+#  "externalpackages/googletest")
 
 if(NOT TARGET gtest)
   message(FATAL_ERROR "googletest not found! Have you disabled the git submodules (GIT_SUBMODULE)?")
@@ -12,7 +12,7 @@ mark_as_advanced(
   gtest_disable_pthreads gtest_force_shared_crt gtest_hide_internal_symbols
   )
 
-add_executable(serial_tests
+set(serial_tests_sources
   ./bout_test_main.cxx
   ./field/test_field.cxx
   ./field/test_field2d.cxx
@@ -67,13 +67,44 @@ add_executable(serial_tests
   ./sys/test_type_name.cxx
   ./sys/test_utils.cxx
   ./sys/test_variant.cxx
+  ./sys/test_raja.cxx
   ./test_extras.cxx
   ./test_extras.hxx
-  ./src/test_bout++.cxx
+  ./src/test_bout++.cxx)
+
+set(serial_tests_depends bout++ gtest gmock)
+if (ENABLE_OPENMP)
+  set(serial_tests_depends ${serial_tests_depends} openmp)
+  set(OPENMP_SCHEDULE static CACHE STRING "Set OpenMP schedule")
+endif ()
+
+if (ENABLE_CUDA)
+  set(serial_tests_depends ${serial_tests_depends} cuda)
+endif ()
+
+message(STATUS "serial_tests depends ${serial_tests_depends}")
+blt_add_executable(
+  NAME serial_tests
+  SOURCES ${serial_tests_sources}
+  DEPENDS_ON ${serial_tests_depends})
+
+
+target_include_directories(serial_tests PUBLIC .
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../include>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../externalpackages/fmt/include>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../externalpackages/mpark.variant/include>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/../../include>
+  $<INSTALL_INTERFACE:include>
   )
 
-target_include_directories(serial_tests PUBLIC .)
-target_link_libraries(serial_tests gtest gmock bout++::bout++)
-add_test(NAME serial_tests COMMAND serial_tests)
+target_compile_definitions(bout++
+    PUBLIC "OPENMP_SCHEDULE=${OPENMP_SCHEDULE}"
+    PUBLIC "BOUT_OPENMP_SCHEDULE=${OPENMP_SCHEDULE}")
+set_target_properties(serial_tests PROPERTIES LINKER_LANGUAGE CXX)
+#target_link_libraries(serial_tests gtest gmock bout++::bout++)
+#add_test(NAME serial_tests COMMAND serial_tests)
 set_target_properties(serial_tests PROPERTIES FOLDER tests/unit)
 add_dependencies(build-check-unit-tests serial_tests)
+blt_add_test(
+  NAME serial_tests
+  COMMAND serial_tests)

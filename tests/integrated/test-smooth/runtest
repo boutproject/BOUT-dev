@@ -33,7 +33,7 @@ success = True
 for nype in [1,2]:
   for nxpe in [1,2]:
     nproc = nxpe * nype
-    cmd = "./test_smooth"
+    cmd = "../../../bin/test_smooth"
     
     shell("rm data/BOUT.dmp.*.nc")
 

@@ -107,12 +107,15 @@
 ///     BOUT_FOR(index, region) {
 ///        A[index] = B[index] + C[index];
 ///     }
+//
+
+
 #define BOUT_FOR_SERIAL(index, region)                                                   \
   for (auto block = region.getBlocks().cbegin(), end = region.getBlocks().cend();        \
        block < end; ++block)                                                             \
     for (auto index = block->first; index < block->second; ++index)
 
-#ifdef _OPENMP
+#if BOUT_USE_OPENMP 
 #define BOUT_FOR_OMP(index, region, omp_pragmas)                                         \
   BOUT_OMP(omp_pragmas)                                                                  \
   for (auto block = region.getBlocks().cbegin(); block < region.getBlocks().cend();      \

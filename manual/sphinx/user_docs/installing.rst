@@ -89,7 +89,7 @@ the "shared" directory.
 
 If this is successful, then you can skip to section :ref:`sec-running`.
 
- Obtaining BOUT++
+Obtaining BOUT++
 ----------------
 
 .. _sec-obtainbout:
@@ -275,7 +275,6 @@ configuration::
       NetCDF support: yes
       Parallel-NetCDF support: no
       HDF5 support: yes (parallel: no)
-      MUMPS support: no
 
 If not, see :ref:`sec-advancedinstall` for some things you can try to
 resolve common problems.

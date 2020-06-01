@@ -20,7 +20,7 @@ flags = ["", "nsys=2", "nsys=5 periodic", "nsys=7 n=10"]
 
 code = 0 # Return code
 for nproc in [1,2,4]:
-    cmd = "./test_cyclic"
+    cmd = "../../../bin/test_cyclic"
 
     print("   %d processors...." % (nproc))
     r = 0

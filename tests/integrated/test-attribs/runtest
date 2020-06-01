@@ -5,7 +5,7 @@ from boututils.run_wrapper import build_and_log, launch_safe
 
 build_and_log("test-attribs test")
 
-launch_safe("./test-attribs", nproc=1, mthread=1)
+launch_safe("../../../bin/test-attribs", nproc=1, mthread=1)
 
 # Read the attributes
 

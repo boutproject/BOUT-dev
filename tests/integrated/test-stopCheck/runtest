@@ -2,7 +2,7 @@
 
 make || exit
 
-./test_stopCheck nout=10000  > run.log.signal 2>&1 &
+../../../bin/test_stopCheck nout=10000  > run.log.signal 2>&1 &
 
 # stop backgroud process
 kill -s USR1 $!

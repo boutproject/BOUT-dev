@@ -65,7 +65,7 @@ int main(int argc, char **argv) {
 			rd[j] = ad[j] + bd[j];
 		      };
 		      );
-#ifdef _OPENMP  
+#if BOUT_USE_OPENMP   
   ITERATOR_TEST_BLOCK("C loop (omp)",
 		      BOUT_OMP(parallel for)
 		      for(int j=0;j<len;++j) {
@@ -85,7 +85,7 @@ int main(int argc, char **argv) {
 		    }
 		    );
 
-#ifdef _OPENMP  
+#if BOUT_USE_OPENMP   
   ITERATOR_TEST_BLOCK("Nested loop (omp)",
 		      BOUT_OMP(parallel for)
 		      for(int i=0;i<mesh->LocalNx;++i) {
@@ -113,7 +113,7 @@ int main(int argc, char **argv) {
     }
     );
 
-#ifdef _OPENMP
+#if BOUT_USE_OPENMP 
   ITERATOR_TEST_BLOCK(
     "Region (omp)",
     BOUT_FOR(i, mesh->getRegion("RGN_ALL")) {
@@ -124,7 +124,7 @@ int main(int argc, char **argv) {
   
   if(profileMode){
     int nthreads=0;
-#ifdef _OPENMP
+#if BOUT_USE_OPENMP 
     nthreads = omp_get_max_threads();
 #endif
 

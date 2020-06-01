@@ -29,7 +29,7 @@ flags = [
 
 code = 0 # Return code
 for nproc in [1,2,4]:
-    cmd = "./test_invpar"
+    cmd = "../../../bin/test_invpar"
     
     print("   %d processors...." % (nproc))
     r = 0
