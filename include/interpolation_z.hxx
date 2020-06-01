@@ -64,7 +64,6 @@ public:
         "ZInterpolation::getWeightsForYApproximation not implemented in this subclass");
   }
 
-protected:
   // Interpolate using the field at (x,y+y_offset,z), rather than (x,y,z)
   const int y_offset;
 };

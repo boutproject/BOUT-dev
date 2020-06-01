@@ -28,6 +28,7 @@
 #define __SHIFTEDINTERP_H__
 
 #include <bout/paralleltransform.hxx>
+#include <bout/mesh.hxx>
 #include <interpolation_z.hxx>
 
 /*!
@@ -80,11 +81,12 @@ public:
 
   std::vector<ParallelTransform::PositionsAndWeights>
   getWeightsForYUpApproximation(int i, int j, int k) override {
-    return interp_yup->getWeightsForYApproximation(i, j, k, 1);
+    return parallel_slice_interpolators[0]->getWeightsForYApproximation(i, j, k, 1);
   }
   std::vector<ParallelTransform::PositionsAndWeights>
   getWeightsForYDownApproximation(int i, int j, int k) override {
-    return interp_ydown->getWeightsForYApproximation(i, j, k, -1);
+    return parallel_slice_interpolators[mesh.ystart]->getWeightsForYApproximation(i, j, k,
+                                                                                  -1);
   }
 
   bool requiresTwistShift(bool twist_shift_enabled, YDirectionType ytype) override {
@@ -106,11 +108,18 @@ private:
   /// X-Z orthogonal to field-aligned along Y.
   Field2D zShift;
 
-  /// ZInterpolation objects for yup and ydown transformations
-  std::unique_ptr<ZInterpolation> interp_yup, interp_ydown;
+  /// Cache of interpolators for the parallel slices. Slices are stored
+  /// in the following order:
+  ///     {+1, ..., +n, -1, ..., -n}
+  /// parallel_slice_interpolator[i] stores interpolator for slice i+1
+  /// parallel_slice_interpolator[n + i] stores offset -(i+1)
+  /// where i goes from 0 to (n-1), with n the number of y guard cells
+  std::vector<std::unique_ptr<ZInterpolation>> parallel_slice_interpolators;
 
   /// ZInterpolation objects for shifting to and from field-aligned coordinates
   std::unique_ptr<ZInterpolation> interp_to_aligned, interp_from_aligned;
+
+  Mesh& mesh;
 };
 
 #endif // __SHIFTEDINTERP_H__
