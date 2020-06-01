@@ -336,8 +336,8 @@ Field3D D2DXDY(const Field3D& f, CELL_LOC outloc, const std::string& method,
 }
 
 Coordinates::metric_field_type D2DXDZ(const Field2D& f, CELL_LOC outloc,
-                                      const std::string& method,
-                                      const std::string& region) {
+                                      MAYBE_UNUSED(const std::string& method),
+                                      MAYBE_UNUSED(const std::string& region)) {
 #ifdef COORDINATES_USE_3D
   Field3D tmp{f};
   return D2DXDZ(tmp, outloc, method, region);
@@ -361,8 +361,8 @@ Field3D D2DXDZ(const Field3D &f, CELL_LOC outloc, const std::string &method,
 }
 
 Coordinates::metric_field_type D2DYDZ(const Field2D& f, CELL_LOC outloc,
-                                      const std::string& method,
-                                      const std::string& region) {
+                                      MAYBE_UNUSED(const std::string& method),
+                                      MAYBE_UNUSED(const std::string& region)) {
 #ifdef COORDINATES_USE_3D
   Field3D tmp{f};
   return D2DYDZ(tmp, outloc, method, region);
@@ -434,9 +434,10 @@ Coordinates::metric_field_type VDDZ(const Field2D& v, const Field2D& f, CELL_LOC
 }
 
 // Note that this is zero because no compression is included
-Coordinates::metric_field_type VDDZ(const Field3D& v, const Field2D& f, CELL_LOC outloc,
-                                    const std::string& method,
-                                    const std::string& region) {
+Coordinates::metric_field_type VDDZ(MAYBE_UNUSED(const Field3D& v), const Field2D& f,
+                                    CELL_LOC outloc,
+                                    MAYBE_UNUSED(const std::string& method),
+                                    MAYBE_UNUSED(const std::string& region)) {
 #ifdef COORDINATES_USE_3D
   Field3D tmp{f};
   return bout::derivatives::index::VDDZ(v, tmp, outloc, method, region)
