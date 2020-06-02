@@ -153,7 +153,7 @@ if [ "$pkg" == "raja" ]; then
           -DCMAKE_C_COMPILER=$cc \
           -DCMAKE_BUILD_TYPE=RelWithDebInfo \
           -DCMAKE_INSTALL_PREFIX=$install_dir \
-          -DENABLE_OPENMP=On \
+          -DENABLE_OPENMP=Off \
           -DENABLE_CUDA=On \
           -DENABLE_TESTS=ON \
           $source_dir

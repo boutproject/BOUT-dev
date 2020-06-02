@@ -17,7 +17,7 @@
 
 #include "RAJA/RAJA.hpp" // using RAJA lib
 #include <cuda_profiler_api.h>
-#include "memoryManager.hpp"
+//#include "memoryManager.hpp"
 
 
 #define BOUT_ENABLE_NVTX
@@ -62,8 +62,7 @@ private:
 
 //  CUDA settings
 #define BOUT_ENABLE_CUDA
-
-//#define BOUT_DEVICE RAJA_DEVICE
+#define BOUT_DEVICE RAJA_DEVICE
 #ifdef BOUT_ENABLE_CUDA
 const int CUDA_BLOCK_SIZE = 256;  // TODO: Make configurable
 using EXEC_POL = RAJA::cuda_exec<CUDA_BLOCK_SIZE>;
@@ -328,10 +327,10 @@ inline void BOUT_DEVICE calcTimeDerivatives(const int i) {
 */
 
  
-RAJA::forall<RAJA::loop_exec>(*indices, [=] BOUT_DEVICE (int i) {         
+//RAJA::forall<RAJA::loop_exec>(*indices, [=] BOUT_DEVICE (int i) {         
   //
 //RAJA::forall<RAJA::cuda_exec<CUDA_BLOCK_SIZE>>(*indices, [=] BOUT_DEVICE (int i) {
-//  RAJA::forall<EXEC_POL>(*indices, [=] BOUT_DEVICE (int i) {
+  RAJA::forall<EXEC_POL>(*indices, [=] BOUT_DEVICE (int i) {
               
          calcTimeDerivatives(i);
               });
