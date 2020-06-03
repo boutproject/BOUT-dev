@@ -5,6 +5,7 @@
 #
 
 #requires: all_tests
+#cores: 4
 
 # Variables to compare
 from __future__ import print_function

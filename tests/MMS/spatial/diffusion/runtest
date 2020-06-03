@@ -7,7 +7,7 @@
 # Exits with status 1 if any test failed
 
 #requires: all_tests
-
+#cores: 2
 
 from __future__ import division
 from __future__ import print_function

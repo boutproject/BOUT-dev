@@ -2,6 +2,8 @@
 #
 # Python script to run and analyse MMS test
 #
+
+# Cores: 2
 from __future__ import division
 from __future__ import print_function
 

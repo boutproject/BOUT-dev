@@ -1,5 +1,6 @@
+#include "bout/build_config.hxx"
 
-#ifdef BOUT_HAS_PETSC
+#if BOUT_HAS_PETSC
 
 #include <petscksp.h>
 
@@ -30,7 +31,8 @@ static PetscErrorCode laplacePCapply(PC pc,Vec x,Vec y) {
 }
 
 LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
-    : localmesh(m==nullptr ? bout::globals::mesh : m), location(loc), monitor(*this) {
+    : lib(opt==nullptr ? &(Options::root()["laplacexy"]) : opt),
+      localmesh(m==nullptr ? bout::globals::mesh : m), location(loc), monitor(*this) {
   Timer timer("invert");
 
   if (opt == nullptr) {
@@ -257,7 +259,7 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt, const CELL_LOC loc)
     }
   }
   
-  KSPSetFromOptions( ksp );
+  lib.setOptionsFromInputFile(ksp);
 
   ///////////////////////////////////////////////////
   // Including Y derivatives?

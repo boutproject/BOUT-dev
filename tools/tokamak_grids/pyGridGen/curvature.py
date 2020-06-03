@@ -5,7 +5,7 @@ from past.utils import old_div
 #; Calculates curvature from GATO grid
 #; adapted from M.Umansky's code
 import numpy
-from bunch import Bunch
+from boututils.bunch import Bunch
 from gen_surface import gen_surface
 from boututils.calculus import deriv
 from boututils.fft_deriv import fft_deriv

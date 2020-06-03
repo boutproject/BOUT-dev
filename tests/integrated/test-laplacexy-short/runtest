@@ -5,6 +5,7 @@
 #
 
 #requires: petsc
+#cores: 8
 
 from boututils.run_wrapper import build_and_log, shell, shell_safe, launch, launch_safe
 from boutdata.collect import collect

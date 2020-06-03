@@ -20,6 +20,8 @@
  *
  **************************************************************************/
 
+#include "bout/build_config.hxx"
+
 #include "bout/solver.hxx"
 #include "boutcomm.hxx"
 #include "boutexception.hxx"
@@ -119,8 +121,8 @@ void Solver::add(Field2D& v, const std::string& name) {
   d.F_var = &ddt(v);
   d.location = v.getLocation();
   d.name = name;
-  
-#ifdef TRACK
+
+#if BOUT_USE_TRACK
   v.name = name;
 #endif
 
@@ -183,8 +185,8 @@ void Solver::add(Field3D& v, const std::string& name) {
   d.F_var = &ddt(v);
   d.location = v.getLocation();
   d.name = name;
-  
-#ifdef TRACK
+
+#if BOUT_USE_TRACK
   v.name = name;
 #endif
 
@@ -1294,7 +1296,7 @@ void Solver::post_rhs(BoutReal UNUSED(t)) {
 
   // Make sure 3D fields are at the correct cell location, etc.
   for (MAYBE_UNUSED(const auto& f) : f3d) {
-    ASSERT1(areFieldsCompatible(*f.var, *f.F_var));
+    ASSERT1_FIELDS_COMPATIBLE(*f.var, *f.F_var);
   }
 
   // Apply boundary conditions to the time-derivatives

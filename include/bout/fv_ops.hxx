@@ -182,8 +182,8 @@ namespace FV {
   const Field3D Div_par(const Field3D &f_in, const Field3D &v_in,
                         const Field3D &wave_speed_in, bool fixflux=true) {
 
-    ASSERT1(areFieldsCompatible(f_in, v_in));
-    ASSERT1(areFieldsCompatible(f_in, wave_speed_in));
+    ASSERT1_FIELDS_COMPATIBLE(f_in, v_in);
+    ASSERT1_FIELDS_COMPATIBLE(f_in, wave_speed_in);
 
     Mesh* mesh = f_in.getMesh();
 
@@ -354,7 +354,7 @@ namespace FV {
   template<typename CellEdges = MC>
   const Field3D Div_f_v(const Field3D &n_in, const Vector3D &v, bool bndry_flux) {
     ASSERT1(n_in.getLocation() == v.getLocation());
-    ASSERT1(areFieldsCompatible(n_in, v.x));
+    ASSERT1_FIELDS_COMPATIBLE(n_in, v.x);
 
     Mesh* mesh = n_in.getMesh();
 
@@ -364,7 +364,7 @@ namespace FV {
     
     if(v.covariant) {
       // Got a covariant vector instead
-      throw BoutException("Div_f_v_XPPM passed a covariant v");
+      throw BoutException("Div_f_v passed a covariant v");
     }
     
     Field3D result{zeroFrom(n_in)};

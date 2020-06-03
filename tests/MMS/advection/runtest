@@ -7,6 +7,7 @@
 
 #requires: all_tests
 #requires: make
+#cores: 8
 
 from boututils.run_wrapper import shell, shell_safe, launch_safe
 from boutdata.collect import collect

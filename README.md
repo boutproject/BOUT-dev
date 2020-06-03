@@ -75,7 +75,6 @@ BOUT++ has the following optional dependencies:
 * ARKODE
 * IDA
 * CVODE
-* MUMPS
 * LAPACK
 * Score-p (for performance diagnostics)
 
