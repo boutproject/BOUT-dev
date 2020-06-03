@@ -277,7 +277,7 @@ auto parseCommandLineArgs(int argc, char** argv) -> CommandLineArgs {
             "  --list-solvers\t\tList the available time solvers\n"
             "  --list-laplacians\t\tList the available Laplacian inversion solvers\n"
             "  --list-laplacexz\t\tList the available LaplaceXZ inversion solvers\n"
-            "  --list-invertparts\t\tList the available InvertPar solvers\n"
+            "  --list-invertpars\t\tList the available InvertPar solvers\n"
             "  --list-rkschemes\t\tList the available Runge-Kutta schemes\n"
             "  --list-meshes\t\t\tList the available Meshes\n"
             "  --list-xzinterpolations\tList the available XZInterpolations\n"
