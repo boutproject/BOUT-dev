@@ -52,10 +52,10 @@ def isMetric2D():
     """Is the metric 2D?
 
     """
-    return _metric_type == "2D"
+    return config["metric_type"] == "2D"
 
 def isMetric3D():
     """Is the metric 3D?
 
     """
-    return _metric_type == "3D"
+    return config["metric_type"] == "3D"
