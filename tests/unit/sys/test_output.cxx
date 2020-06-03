@@ -201,7 +201,7 @@ TEST_F(OutputTest, ConditionalJustStdOutGlobalInstances) {
   buffer.str("");
   output_debug.enable();
   output_debug << "debug output\n";
-#ifdef DEBUG_ENABLED
+#ifdef BOUT_USE_OUTPUT_DEBUG
   EXPECT_EQ(buffer.str(), "debug output\n");
 #else
   EXPECT_EQ(buffer.str(), "");

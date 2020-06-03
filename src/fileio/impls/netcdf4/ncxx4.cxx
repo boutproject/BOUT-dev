@@ -20,9 +20,11 @@
  *
  **************************************************************************/
 
+#include "bout/build_config.hxx"
+
 #include "ncxx4.hxx"
 
-#ifdef NCDF4
+#if BOUT_HAS_NETCDF
 
 #include <bout/mesh.hxx>
 #include <globals.hxx>

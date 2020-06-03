@@ -25,6 +25,8 @@
  *
  **************************************************************************/
 
+#include "bout/build_config.hxx"
+
 #include <boutcomm.hxx>
 #include <bout/rvec.hxx>
 
@@ -55,7 +57,7 @@ Field2D::Field2D(Mesh* localmesh, CELL_LOC location_in,
     ny = fieldmesh->LocalNy;
   }
 
-#ifdef TRACK
+#if BOUT_USE_TRACK
   name = "<F2D>";
 #endif
 }
@@ -63,7 +65,7 @@ Field2D::Field2D(Mesh* localmesh, CELL_LOC location_in,
 Field2D::Field2D(const Field2D& f) : Field(f), data(f.data) {
   TRACE("Field2D(Field2D&)");
 
-#ifdef TRACK
+#if BOUT_USE_TRACK
   name = f.name;
 #endif
 
@@ -148,7 +150,7 @@ Field2D &Field2D::operator=(const Field2D &rhs) {
 
   TRACE("Field2D: Assignment from Field2D");
 
-#ifdef TRACK
+#if BOUT_USE_TRACK
   name = rhs.name;
 #endif
 
@@ -165,7 +167,7 @@ Field2D &Field2D::operator=(const Field2D &rhs) {
 }
 
 Field2D &Field2D::operator=(const BoutReal rhs) {
-#ifdef TRACK
+#if BOUT_USE_TRACK
   name = "<r2D>";
 #endif
 

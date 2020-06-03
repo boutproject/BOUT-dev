@@ -28,7 +28,9 @@
 #ifndef __SUNDIAL_SOLVER_H__
 #define __SUNDIAL_SOLVER_H__
 
-#ifdef BOUT_HAS_CVODE
+#include "bout/build_config.hxx"
+
+#if BOUT_HAS_CVODE
 
 #include "bout_types.hxx"
 #include "bout/solver.hxx"

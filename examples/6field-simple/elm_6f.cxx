@@ -274,7 +274,7 @@ const Field3D Grad2_par2new(const Field3D& f) {
 
   Field3D result = D2DY2(f);
 
-#ifdef TRACK
+#if BOUT_USE_TRACK
   result.name = "Grad2_par2new(" + f.name + ")";
 #endif
 

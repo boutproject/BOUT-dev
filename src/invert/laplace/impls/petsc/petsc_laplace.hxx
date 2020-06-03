@@ -26,10 +26,12 @@
  *
  **************************************************************************/
 
+#include "bout/build_config.hxx"
+
 #ifndef __PETSC_LAPLACE_H__
 #define __PETSC_LAPLACE_H__
 
-#ifdef BOUT_HAS_PETSC
+#if BOUT_HAS_PETSC
 
 #include <globals.hxx>
 #include <output.hxx>

@@ -36,6 +36,8 @@
 #ifndef __SOLVER_H__
 #define __SOLVER_H__
 
+#include "bout/build_config.hxx"
+
 #include "bout_types.hxx"
 #include "boutexception.hxx"
 #include "datafile.hxx"
@@ -103,9 +105,9 @@ public:
   static constexpr auto section_name = "solver";
   static constexpr auto option_name = "type";
   static constexpr auto default_type =
-#if defined BOUT_HAS_CVODE
+#if BOUT_HAS_CVODE
       SOLVERCVODE;
-#elif defined BOUT_HAS_IDA
+#elif BOUT_HAS_IDA
       SOLVERIDA;
 #else
       SOLVERPVODE;

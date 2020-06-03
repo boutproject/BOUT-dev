@@ -95,7 +95,9 @@ jobs:
     script:
       - ./.build_sundials_for_travis.sh
       - mkdir build && cd build
-      - cmake .. -DUSE_PETSC=ON -DUSE_SLEPC=ON -DUSE_SUNDIALS=ON -DSUNDIALS_ROOT="$HOME/local" -DENABLE_OPENMP=ON -DBUILD_SHARED_LIBS=ON
+      - |
+        cmake .. -DBOUT_USE_PETSC=ON -DBOUT_USE_SLEPC=ON -DBOUT_USE_SUNDIALS=ON \
+        -DSUNDIALS_ROOT="$HOME/local" -DBOUT_ENABLE_OPENMP=ON -DBUILD_SHARED_LIBS=ON
       - cmake --build . --target build-check -j 2
       - cmake --build . --target check
 #CLANG

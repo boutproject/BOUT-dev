@@ -33,7 +33,9 @@
  *
  */
 
-#ifndef HDF5
+#include "bout/build_config.hxx"
+
+#if !BOUT_HAS_HDF5
 
 #include "../emptyformat.hxx"
 using H5Format = EmptyFormat;
@@ -167,4 +169,4 @@ class H5Format : public DataFormat {
 
 #endif // __H5FORMAT_H__
 
-#endif // HDF5
+#endif // BOUT_HAS_HDF5
