@@ -52,6 +52,11 @@ protected:
     vort.fast_coords = vort.getCoordinates();
     phi.fast_coords = phi.getCoordinates();
     phi_minus_n.fast_coords = phi_minus_n.getCoordinates();
+
+    // To take derivatives along the magnetic field, yup and ydown fields are needed
+    // To avoid repeated lookups of these
+    phi_minus_n.fast_yup = &phi_minus_n.yup();
+    phi_minus_n.fast_ydown = &phi_minus_n.ydown();
     
     BOUT_FOR(i, n.getRegion("RGN_NOBNDRY")) {
 

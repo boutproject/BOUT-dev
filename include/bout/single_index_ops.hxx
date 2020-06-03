@@ -76,13 +76,22 @@ BoutReal Div_par_Grad_par(const Field3D &f, const SpecificInd<N> &i) {
   auto iyp = i.yp();
   auto iym = i.ym();
 
-  BoutReal gradient_upper = 2.*(f.yup()[iyp] - f[i]) / (metric->dy[i] + metric->dy[iyp]);
-  BoutReal flux_upper = gradient_upper * (metric->J[i] + metric->J[iyp]) / (metric->g_22[i] + metric->g_22[iyp]);
-  
-  BoutReal gradient_lower = 2.*(f[i] - f.ydown()[iym]) / (metric->dy[i] + metric->dy[iyp]);
-  BoutReal flux_lower = gradient_lower * (metric->J[i] + metric->J[iym]) / (metric->g_22[i] + metric->g_22[iym]);
+  // Use the raw pointers to yup/ydown fields. These must have been set before calling
+  const Field3D &yup = *f.fast_yup;
+  const Field3D &ydown = *f.fast_ydown;
 
-  return (flux_upper - flux_lower) / (metric->dy[i] * metric->J[i]);
+  // Fetch values used more than once
+  BoutReal dy = metric->dy[i];
+  BoutReal J = metric->J[i];
+  BoutReal g_22 = metric->g_22[i];
+  
+  BoutReal gradient_upper = 2.*(yup[iyp] - f[i]) / (dy + metric->dy[iyp]);
+  BoutReal flux_upper = gradient_upper * (J + metric->J[iyp]) / (g_22 + metric->g_22[iyp]);
+  
+  BoutReal gradient_lower = 2.*(f[i] - ydown[iym]) / (dy + metric->dy[iyp]);
+  BoutReal flux_lower = gradient_lower * (J + metric->J[iym]) / (g_22 + metric->g_22[iym]);
+
+  return (flux_upper - flux_lower) / (dy * J);
 }
 
 #endif // SINGLE_INDEX_OPS_H
