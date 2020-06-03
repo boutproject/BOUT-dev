@@ -87,8 +87,9 @@ ifndef RELEASED
 # If this is part of an packaged and installed installation, the user cannot
 # write these files, so they shouldn't be changed. Thus only set this, in
 # the non installed case.
-LIB    = $(BOUT_LIB_PATH)/libbout++.a
+LIB_A  = $(BOUT_LIB_PATH)/libbout++.a
 LIB_SO = $(BOUT_LIB_PATH)/libbout++.so
+LIB    = @LIB_TO_BUILD@
 endif
 
 MPARK_VARIANT_INCLUDE_PATH=@MPARK_VARIANT_INCLUDE_PATH@
@@ -244,7 +245,7 @@ ifeq ("$(TARGET)", "lib")
 lib: makefile $(BOUT_CONFIG_FILE) $(BOUT_TOP)/include $(BOUT_TOP)/lib $(OBJ)
 ifneq ("$(OBJ)foo", "foo")
 	@echo "  Adding $(OBJ) to libbout++.a"
-	@$(AR) $(ARFLAGS) $(LIB) $(OBJ)
+	@$(AR) $(ARFLAGS) $(LIB_A) $(OBJ)
 	@$(RANLIB) $(LIB)
 endif
 endif
@@ -299,7 +300,7 @@ $(SOURCEC:%.cxx=%.o): $(LIB)
 $(TARGET): | $(DIRS)
 $(TARGET): makefile $(BOUT_CONFIG_FILE) $(OBJ) $(SUB_LIBS)
 	@echo "  Linking" $(TARGET)
-	@$(LD) $(LDFLAGS) -o $(TARGET) $(OBJ) $(SUB_LIBS) $(BOUT_LIBS)
+	@$(LD) -o $(TARGET) $(OBJ) $(SUB_LIBS) $(BOUT_LIBS) $(LDFLAGS)
 
 checklib:
 ifneq ("$(CHANGED)foo", "foo")

@@ -230,7 +230,7 @@ namespace FV {
   }
 
   const Field3D D4DY4(const Field3D &d_in, const Field3D &f_in) {
-    ASSERT1(areFieldsCompatible(d_in, f_in));
+    ASSERT1_FIELDS_COMPATIBLE(d_in, f_in);
 
     Mesh* mesh = d_in.getMesh();
 

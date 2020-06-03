@@ -4,7 +4,7 @@
 // Y derivative assuming field is aligned in Y
 const Field3D DDY_aligned(const Field3D& f) {
   Field3D result = emptyFrom(f);
-
+  const auto* mesh = f.getMesh();
   for (int i = 0; i < mesh->LocalNx; i++)
     for (int j = mesh->ystart; j <= mesh->yend; j++)
       for (int k = 0; k < mesh->LocalNz; k++)
@@ -16,6 +16,7 @@ const Field3D DDY_aligned(const Field3D& f) {
 int main(int argc, char** argv) {
 
   BoutInitialise(argc, argv);
+  using bout::globals::mesh;
 
   // Read variable from mesh
   Field3D var;
@@ -48,7 +49,7 @@ int main(int argc, char** argv) {
   mesh->communicate(ddy_check);
 
   SAVE_ONCE3(ddy, ddy2, ddy_check);
-  dump.write();
+  bout::globals::dump.write();
 
   BoutFinalise();
 

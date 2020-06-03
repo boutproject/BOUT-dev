@@ -4,6 +4,8 @@ class BoutException;
 #ifndef __BOUT_EXCEPTION_H__
 #define __BOUT_EXCEPTION_H__
 
+#include "bout/build_config.hxx"
+
 #include <exception>
 #include <string>
 #include <utility>
@@ -40,7 +42,7 @@ public:
 
 protected:
   std::string message;
-#ifdef BACKTRACE
+#if BOUT_USE_BACKTRACE
   static constexpr unsigned int TRACE_MAX = 128;
   void* trace[TRACE_MAX];
   int trace_size;

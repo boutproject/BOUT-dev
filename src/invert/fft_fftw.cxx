@@ -25,12 +25,14 @@
  *
  **************************************************************************/
 
+#include "bout/build_config.hxx"
+
 #include <globals.hxx>
 #include <options.hxx>
 #include <fft.hxx>
 #include <unused.hxx>
 
-#ifdef BOUT_HAS_FFTW
+#if BOUT_HAS_FFTW
 #include <bout/constants.hxx>
 #include <bout/openmpwrap.hxx>
 
@@ -76,7 +78,7 @@ void fft_init(bool fft_measure) {
 #ifndef _OPENMP
 // Serial code
 void rfft(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(dcomplex *out)) {
-#ifndef BOUT_HAS_FFTW
+#if !BOUT_HAS_FFTW
   throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
 #else
   // static variables initialized once
@@ -139,7 +141,7 @@ void rfft(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUS
 }
 
 void irfft(MAYBE_UNUSED(const dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(BoutReal *out)) {
-#ifndef BOUT_HAS_FFTW
+#if !BOUT_HAS_FFTW
   throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
 #else
   // static variables initialized once
@@ -203,9 +205,11 @@ void irfft(MAYBE_UNUSED(const dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNU
 #else
 // Parallel thread-safe version of rfft and irfft
 void rfft(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(dcomplex *out)) {
-#ifndef BOUT_HAS_FFTW
+#if !BOUT_HAS_FFTW
   throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
 #else
+  // ensure we are not nested
+  ASSERT1(omp_get_active_level() < 2);
   static double *finall;
   static fftw_complex *foutall;
   static fftw_plan *p;
@@ -278,7 +282,7 @@ void rfft(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUS
 }
 
 void irfft(MAYBE_UNUSED(const dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(BoutReal *out)) {
-#ifndef BOUT_HAS_FFTW
+#if !BOUT_HAS_FFTW
   throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
 #else
   static fftw_complex *finall;
@@ -354,7 +358,7 @@ void irfft(MAYBE_UNUSED(const dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNU
 //  Discrete sine transforms (B Shanahan)
 
 void DST(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(dcomplex *out)) {
-#ifndef BOUT_HAS_FFTW
+#if !BOUT_HAS_FFTW
   throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
 #else
   static double *fin;
@@ -412,7 +416,7 @@ void DST(MAYBE_UNUSED(const BoutReal *in), MAYBE_UNUSED(int length), MAYBE_UNUSE
 }
 
 void DST_rev(MAYBE_UNUSED(dcomplex *in), MAYBE_UNUSED(int length), MAYBE_UNUSED(BoutReal *out)) {
-#ifndef BOUT_HAS_FFTW
+#if !BOUT_HAS_FFTW
   throw BoutException("This instance of BOUT++ has been compiled without fftw support.");
 #else
   static fftw_complex *fin;

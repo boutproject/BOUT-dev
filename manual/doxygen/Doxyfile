@@ -2052,7 +2052,6 @@ PREDEFINED             = BACKTRACE \
                          BOUT_HAS_ARKODE \
                          BOUT_HAS_CVODE \
                          BOUT_HAS_IDA \
-                         BOUT_HAS_MUMPS \
                          BOUT_HAS_PETSC \
                          BOUT_HAS_PETSC_DEV \
                          BOUT_HAS_PVODE \

@@ -14,7 +14,7 @@
 
 void create_and_dump(Field3D& field, const char* name) {
   initial_profile(name, field);
-  dump.add(field, name, false);
+  bout::globals::dump.add(field, name, false);
 }
 
 int main(int argc, char** argv) {
@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
     fields.emplace_back();
     auto& field = fields.back();
     create_and_dump(field, section.first.c_str());
-    dump.write();
+    bout::globals::dump.write();
   }
 
   BoutFinalise();

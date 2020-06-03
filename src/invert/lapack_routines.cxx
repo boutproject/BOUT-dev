@@ -34,13 +34,14 @@
  *
  */
 
+#include "bout/build_config.hxx"
 
 #include <globals.hxx>
 #include <dcomplex.hxx>
 #include <boutexception.hxx>
 #include <utils.hxx>
 
-#ifdef LAPACK
+#if BOUT_HAS_LAPACK
 
 // LAPACK prototypes
 extern "C" {
@@ -278,7 +279,7 @@ void cband_solve(Matrix<dcomplex>&, int, int, int, Array<dcomplex>&) {
   throw BoutException("cband_solve function not available. Compile BOUT++ with Lapack support.");
 }
 
-#endif // LAPACK
+#endif // BOUT_HAS_LAPACK
 
 // Common functions
 

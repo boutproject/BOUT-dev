@@ -15,7 +15,7 @@ int physics_init(bool UNUSED(restarting)) {
 }
 
 int physics_run(BoutReal UNUSED(t)) {
-  mesh->communicate(N);
+  bout::globals::mesh->communicate(N);
   ddt(N) = 0.;
   return 0;
 }

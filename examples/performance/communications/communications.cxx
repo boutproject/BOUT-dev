@@ -12,7 +12,7 @@ int main(int argc, char** argv) {
 
   Timer timer("comms");
   for (int i = 0; i < iterations; ++i) {
-    mesh->communicate(f);
+    f.getMesh()->communicate(f);
   }
   BoutReal run_length = timer.getTime();
 
