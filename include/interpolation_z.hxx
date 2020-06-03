@@ -31,11 +31,11 @@ class ZInterpolation {
 protected:
   Mesh* localmesh{nullptr};
 
-  std::unique_ptr<Region<Ind3D>> region;
+  Region<Ind3D> region;
 
 public:
   explicit ZInterpolation(int y_offset = 0, Mesh* mesh = nullptr,
-                          Region<Ind3D>* region = nullptr);
+                          Region<Ind3D> region_in = {});
   virtual ~ZInterpolation() = default;
 
   virtual void calcWeights(const Field3D& delta_z) = 0;
@@ -45,8 +45,8 @@ public:
   virtual Field3D interpolate(const Field3D& f, const Field3D& delta_z,
                               const std::string& region_str = "DEFAULT") = 0;
 
-  void setRegion(Region<Ind3D>* new_region) {
-    region = std::unique_ptr<Region<Ind3D>>(new_region);
+  void setRegion(Region<Ind3D> new_region) {
+    region = new_region;
   }
 
   virtual std::vector<ParallelTransform::PositionsAndWeights>
@@ -71,7 +71,7 @@ public:
 class ZInterpolationFactory
     : public Factory<ZInterpolation, ZInterpolationFactory,
                      std::function<std::unique_ptr<ZInterpolation>(
-                         int, Mesh*, Region<Ind3D>*)>> {
+                         int, Mesh*, Region<Ind3D>)>> {
 public:
   static constexpr auto type_name = "ZInterpolation";
   static constexpr auto section_name = "zinterpolation";
@@ -80,12 +80,12 @@ public:
 
   using Factory::create;
   ReturnType create(Options* options, int y_offset = 0, Mesh* mesh = nullptr,
-                    Region<Ind3D>* region = nullptr) {
-    return Factory::create(options, y_offset, mesh, region);
+                    Region<Ind3D> region_in = {}) {
+    return Factory::create(options, y_offset, mesh, region_in);
   }
   ReturnType create(int y_offset = 0, Mesh* mesh = nullptr,
-                    Region<Ind3D>* region = nullptr) {
-    return Factory::create(getType(nullptr), y_offset, mesh, region);
+                    Region<Ind3D> region_in = {}) {
+    return Factory::create(getType(nullptr), y_offset, mesh, region_in);
   }
 
   static void ensureRegistered();
@@ -97,9 +97,9 @@ public:
   RegisterZInterpolation(const std::string& name) {
     ZInterpolationFactory::getInstance().add(
         name,
-        [](int y_offset, Mesh* mesh, Region<Ind3D>* region)
+        [](int y_offset, Mesh* mesh, Region<Ind3D> region_in)
             -> std::unique_ptr<ZInterpolation> {
-          return std::make_unique<DerivedType>(y_offset, mesh, region);
+          return std::make_unique<DerivedType>(y_offset, mesh, region_in);
         });
   }
 };
@@ -107,7 +107,7 @@ public:
 class ZHermiteSpline : public ZInterpolation {
 public:
   explicit ZHermiteSpline(int y_offset = 0, Mesh* mesh = nullptr,
-                          Region<Ind3D>* region = nullptr);
+                          Region<Ind3D> region_in = {});
 
   void calcWeights(const Field3D& delta_z) override;
 

@@ -27,13 +27,13 @@
 
 #include <vector>
 
-ZHermiteSpline::ZHermiteSpline(int y_offset, Mesh* mesh, Region<Ind3D>* region_ptr)
-    : ZInterpolation(y_offset, mesh, region_ptr),
-      fz_region(region_ptr != nullptr ? "RGN_ALL"
+ZHermiteSpline::ZHermiteSpline(int y_offset, Mesh* mesh, Region<Ind3D> region_in)
+    : ZInterpolation(y_offset, mesh, region_in),
+      fz_region(region_in.size() != 0 ? "RGN_ALL"
                                       : y_offset == 0 ? "RGN_NOBNDRY" : "RGN_NOX"),
       h00(localmesh), h01(localmesh), h10(localmesh), h11(localmesh) {
 
-  if (region_ptr != nullptr) {
+  if (region_in.size() != 0) {
     output_warn << "Custom region passed to ZInterpolation. ZHermiteSpline requires an "
                 << "offset region for calculating DDZ(f): using RGN_ALL, which may not "
                 << "be optimal." << endl;
@@ -62,7 +62,7 @@ void ZHermiteSpline::calcWeights(const Field3D& delta_z) {
 
   // Calculate weights for all points if y_offset==0 in case they are needed, otherwise
   // only calculate weights for 'region'
-  const auto local_region = (y_offset == 0) ? delta_z.getRegion("RGN_ALL") : *region;
+  const auto& local_region = (y_offset == 0) ? delta_z.getRegion("RGN_ALL") : region;
 
   BOUT_FOR(i, local_region) {
     const int x = i.x();
@@ -145,7 +145,7 @@ Field3D ZHermiteSpline::interpolate(const Field3D& f, const std::string& region_
     ASSERT1(y_offset == 0);
     local_fz_region = region_str;
   }
-  const auto local_region = (region_str == "DEFAULT") ? *region : f.getRegion(region_str);
+  const auto& local_region = (region_str == "DEFAULT") ? region : f.getRegion(region_str);
 
   // Derivatives are used for tension and need to be on dimensionless
   // coordinates

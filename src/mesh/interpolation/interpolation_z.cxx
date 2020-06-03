@@ -23,14 +23,14 @@
 #include <bout/mesh.hxx>
 #include <interpolation_z.hxx>
 
-ZInterpolation::ZInterpolation(int y_offset, Mesh* mesh, Region<Ind3D>* region_ptr)
+ZInterpolation::ZInterpolation(int y_offset, Mesh* mesh, Region<Ind3D> region_in)
     : localmesh(mesh == nullptr ? bout::globals::mesh : mesh),
-      region(region_ptr), y_offset(y_offset) {
-  if (region == nullptr) {
+      region(region_in), y_offset(y_offset) {
+  if (region.size() == 0) {
     // Construct region that skips calculating interpolation in y-boundary regions that
     // should be filled by boundary conditions
 
-    region = std::make_unique<Region<Ind3D>>(localmesh->getRegion3D("RGN_NOBNDRY"));
+    region = localmesh->getRegion3D("RGN_NOBNDRY");
 
     const int ny = localmesh->LocalNy;
     const int nz = localmesh->LocalNz;
@@ -51,6 +51,6 @@ ZInterpolation::ZInterpolation(int y_offset, Mesh* mesh, Region<Ind3D>* region_p
       }
     }
 
-    region->mask(mask_region);
+    region.mask(mask_region);
   }
 }
