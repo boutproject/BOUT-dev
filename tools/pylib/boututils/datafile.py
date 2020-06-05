@@ -729,11 +729,12 @@ class DataFile_HDF5(DataFile):
             if var is None:
                 return None
 
-        if asBoutArray:
-            attributes = self.attributes(n)
+        attributes = self.attributes(n) if asBoutArray else {}
+
+        time_dependent = attributes.get("bout_type", "none").endswith("_t")
 
         ndims = len(var.shape)
-        if ndims == 1 and var.shape[0] == 1:
+        if ndims == 1 and var.shape[0] == 1 and not time_dependent:
             data = var
             if asBoutArray:
                 data = BoutArray(data, attributes=attributes)
