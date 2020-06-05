@@ -34,7 +34,7 @@
 ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
                                          Field2D zShift_in, Options* opt)
     : ParallelTransform(mesh, opt), location(location_in), zShift(std::move(zShift_in)),
-      mesh(mesh) {
+      ydown_index(mesh.ystart) {
   // check the coordinate system used for the grid data source
   ShiftedMetricInterp::checkInputGrid();
 
@@ -51,9 +51,9 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
   // Once parallel_slice_interpolators is initialised though, each interpolator stores its
   // offset, so we don't need to faff about after this
   for (int y_offset = 0; y_offset < mesh.ystart; ++y_offset) {
-    parallel_slice_interpolators[y_offset] =
+    parallel_slice_interpolators[yup_index + y_offset] =
       ZInterpolationFactory::getInstance().create(&interp_options, y_offset + 1, &mesh);
-    parallel_slice_interpolators[mesh.ystart + y_offset] =
+    parallel_slice_interpolators[ydown_index + y_offset] =
       ZInterpolationFactory::getInstance().create(&interp_options, -y_offset - 1, &mesh);
 
     // Find the index positions where the magnetic field line intersects the x-z plane
@@ -71,7 +71,7 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
             * static_cast<BoutReal>(mesh.GlobalNz) / TWOPI;
     }
 
-    parallel_slice_interpolators[y_offset]->calcWeights(zt_prime_up);
+    parallel_slice_interpolators[yup_index + y_offset]->calcWeights(zt_prime_up);
 
     for (const auto& i : zt_prime_down.getRegion(RGN_NOY)) {
       // Field line moves in z by an angle -(zShift(i,j)-zShift(i,j-1)) when going
@@ -82,7 +82,7 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
             * static_cast<BoutReal>(mesh.GlobalNz) / TWOPI;
     }
 
-    parallel_slice_interpolators[mesh.ystart + y_offset]->calcWeights(zt_prime_down);
+    parallel_slice_interpolators[ydown_index + y_offset]->calcWeights(zt_prime_down);
   }
 
   // Set up interpolation to/from field-aligned coordinates

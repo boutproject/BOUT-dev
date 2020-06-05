@@ -28,7 +28,6 @@
 #define __SHIFTEDINTERP_H__
 
 #include <bout/paralleltransform.hxx>
-#include <bout/mesh.hxx>
 #include <interpolation_z.hxx>
 
 /*!
@@ -81,11 +80,12 @@ public:
 
   std::vector<ParallelTransform::PositionsAndWeights>
   getWeightsForYUpApproximation(int i, int j, int k) override {
-    return parallel_slice_interpolators[0]->getWeightsForYApproximation(i, j, k, 1);
+    return parallel_slice_interpolators[yup_index]->getWeightsForYApproximation(i, j, k,
+                                                                                1);
   }
   std::vector<ParallelTransform::PositionsAndWeights>
   getWeightsForYDownApproximation(int i, int j, int k) override {
-    return parallel_slice_interpolators[mesh.ystart]->getWeightsForYApproximation(i, j, k,
+    return parallel_slice_interpolators[ydown_index]->getWeightsForYApproximation(i, j, k,
                                                                                   -1);
   }
 
@@ -119,7 +119,8 @@ private:
   /// ZInterpolation objects for shifting to and from field-aligned coordinates
   std::unique_ptr<ZInterpolation> interp_to_aligned, interp_from_aligned;
 
-  Mesh& mesh;
+  static constexpr std::size_t yup_index = 0;
+  const std::size_t ydown_index;
 };
 
 #endif // __SHIFTEDINTERP_H__
