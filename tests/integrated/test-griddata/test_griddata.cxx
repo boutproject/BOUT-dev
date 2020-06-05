@@ -17,7 +17,7 @@ int main(int argc, char** argv) {
   df.add(Rxy, "Rxy");
   df.add(Bpxy, "Bpxy");
 
-  df.write("data.{:s}", options["dump_format"]);
+  df.write("data.{:s}", options["dump_format"].as<std::string>());
   
   BoutFinalise();
   return 0;
