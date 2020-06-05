@@ -24,10 +24,8 @@ success = True
 for data_dir, stop_file in zip(data_dirs, stop_files):
     for check, expected in zip(check_values, expected_steps):
         executable = "./test_stopCheck"
-        command = (
-            "{} -d {} stopCheck={} stopCheckName={}".format(
-                executable, data_dir, check, stop_file
-            ),
+        command = "{} -d {} stopCheck={} stopCheckName={}".format(
+            executable, data_dir, check, stop_file
         )
 
         s, out = launch(command, nproc=nproc, pipe=True,)
