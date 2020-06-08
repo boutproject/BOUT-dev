@@ -51,8 +51,8 @@ LaplaceIPT::LaplaceIPT(Options* opt, CELL_LOC loc, Mesh* mesh_in)
   OPTION(opt, rtol, 1.e-7);
   OPTION(opt, atol, 1.e-20);
   OPTION(opt, maxits, 100);
-  OPTION(opt, max_level, 3);
-  OPTION(opt, max_cycle, 3);
+  OPTION(opt, max_level, 0);
+  OPTION(opt, max_cycle, 1);
   OPTION(opt, predict_exit, false);
 
   // Number of procs must be a factor of 2
@@ -64,6 +64,10 @@ LaplaceIPT::LaplaceIPT(Options* opt, CELL_LOC loc, Mesh* mesh_in)
   if (n > 1 and n < pow(2, max_level + 1)) {
     throw BoutException("LaplaceIPT error: number of levels and processors must satisfy "
                         "NXPE > 2^(max_levels+1).");
+  }
+  // Cannot use multigrid on 1 core
+  if (n == 1 and max_level != 0) {
+    throw BoutException("LaplaceIPT error: must have max_level=0 if using one processor. ");
   }
 
   static int ipt_solver_count = 1;
