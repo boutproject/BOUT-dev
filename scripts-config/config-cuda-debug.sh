@@ -173,7 +173,7 @@ elif [ "$pkg" == "BOUT-dev" ]; then
     cmake -DCMAKE_CXX_COMPILER=$cpp \
           -DCMAKE_C_COMPILER=$cc \
           -DCMAKE_INSTALL_PREFIX=$install_dir \
-          -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+          -DCMAKE_BUILD_TYPE=Debug \
           -DCMAKE_PREFIX_PATH="${install_prefix}/raja/share/raja/cmake;${install_prefix}/HDF5/share/cmake;${install_prefix}/umpire/share/umpire/cmake" \
           -DUSE_NETCDF=On \
           -DNCXX4_CONFIG:FILEPATH=/var/tmp/fisher47/spack-stage/spack-stage-netcdf-cxx4-4.3.1-nh4qne3jjk77a4tmok2xbi57gjhfiohq/bin/ncxx4-config \
