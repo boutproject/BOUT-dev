@@ -112,7 +112,7 @@ public:
     int index_end;
 
     void calculate_residual(const LaplaceIPT& lap);
-    void calculate_total_residual(LaplaceIPT& lap, Array<BoutReal> &total, Array<BoutReal> &globalmaxsol, Array<bool> &converged);
+    void calculate_total_residual(LaplaceIPT& lap, Array<BoutReal> &total, Array<BoutReal> &globalmaxsol, Array<bool> &converged, const Matrix<dcomplex> &bcmplx);
     void coarsen(const LaplaceIPT& lap, const Matrix<dcomplex> &fine_residual);
     void gauss_seidel_red_black(const LaplaceIPT& lap);
     void init(const LaplaceIPT &lap, const Level lup, const int current_level);
