@@ -543,7 +543,7 @@ AS_IF([test "x$with_netcdf" != "xno"],
         AC_LANG_POP([C++])
         LIBS=$save_LIBS
         LDFLAGS=$save_LDFLAGS
-        CXXFLAGS="$save_CXXFLAGS -DBOUT_HAS_NCDF"
+        CXXFLAGS="$save_CXXFLAGS -DNCDF"
        ])
       EXTRA_LIBS="$EXTRA_LIBS $NCLIB"
 
@@ -564,7 +564,7 @@ AS_IF([test "x$with_netcdf" != "xno"],
          file_formats="$file_formats netCDF"
          AC_MSG_NOTICE([ -> Legacy NetCDF support enabled])
          NCPATH="found"
-         CXXFLAGS="$CXXFLAGS -DBOUT_HAS_NCDF"
+         CXXFLAGS="$CXXFLAGS -DNCDF"
         ], [])
   ])
 
