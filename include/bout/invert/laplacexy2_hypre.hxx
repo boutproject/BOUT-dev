@@ -115,10 +115,13 @@ public:
 
 private:
   Mesh* localmesh; ///< The mesh this operates on, provides metrics and communication
-
   Field2D f2dinit;                   ///< This is here just to initialise matrix
-  bout::HypreMatrix<Field2D> matrix; ///< Matrix to be inverted
+  IndexerPtr indexConverter;
+  bout::HypreMatrix<Field2D> *matrix; ///< Matrix to be inverted
   HYPRE_Solver solver;               ///< Solver
+  HYPRE_IJMatrix ij_matrix;
+  HYPRE_ParCSRMatrix parcsr_matrix;
+
 
   // Y derivatives
   bool include_y_derivs; // Include Y derivative terms?

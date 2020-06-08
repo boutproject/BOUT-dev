@@ -33,6 +33,8 @@ class HypreVector {
   IndexerPtr indexConverter;
   CELL_LOC location;
   bool initialised{false};
+  HYPRE_BigInt *manI;
+  HYPRE_Complex *manV;
 
 public:
   static_assert(bout::utils::is_Field<T>::value, "HypreVector only works with Fields");
@@ -46,6 +48,8 @@ public:
     }
     // Also destroys parallel_vector
     HYPRE_IJVectorDestroy(hypre_vector);
+    cudaFree(manI);
+    cudaFree(manV);
   }
 
   // Disable copy, at least for now: not clear that HYPRE_IJVector is
@@ -90,10 +94,14 @@ public:
     location = f.getLocation();
     initialised = true;
 
+    cudaMallocManaged(&manI, sizeof(HYPRE_BigInt));
+    cudaMallocManaged(&manV, sizeof(HYPRE_Complex));
     BOUT_FOR_SERIAL(i, region) {
       const auto index = static_cast<HYPRE_BigInt>(indexConverter->getGlobal(i));
       if (index != -1) {
-        HYPRE_IJVectorSetValues(hypre_vector, static_cast<HYPRE_Int>(1), &index, &f[i]);
+        manI[0] = index;    //We need these to be in managed memory for this to work
+        manV[0] = f[i];
+        HYPRE_IJVectorSetValues(hypre_vector, static_cast<HYPRE_Int>(1), manI, manV);
       }
     }
 
@@ -293,6 +301,10 @@ public:
         static_cast<HYPRE_BigInt>(index_converter->getGlobal(*std::begin(region)));
     const auto iupper =
         static_cast<HYPRE_BigInt>(index_converter->getGlobal(*--std::end(region)));
+
+    int rank = -1;
+    MPI_Comm_rank(comm, &rank);
+    std::cout << "***** Matrix rows:  " << rank << ", " << ilower << ", " << iupper << std::endl;
 
     HYPRE_IJMatrixCreate(comm, ilower, iupper, ilower, iupper, &*hypre_matrix);
     HYPRE_IJMatrixSetObjectType(*hypre_matrix, HYPRE_PARCSR);
@@ -494,6 +506,7 @@ public:
   }
 
   HYPRE_IJMatrix get() { return *hypre_matrix; }
+  HYPRE_IJMatrix* get_ptr() { return hypre_matrix.get(); }
   const HYPRE_IJMatrix& get() const { return *hypre_matrix; }
 
   HYPRE_ParCSRMatrix getParallel() { return parallel_matrix; }

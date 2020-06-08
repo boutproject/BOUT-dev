@@ -318,7 +318,7 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
   // Set Matrix elements
   // 
   // (1/J) d/dx ( J * g11 d/dx ) + (1/J) d/dy ( J * g22 d/dy )
-  
+  auto start = std::chrono::system_clock::now();  //AARON
   for(int x=localmesh->xstart; x <= localmesh->xend; x++) {
     for(int y=localmesh->ystart;y<=localmesh->yend;y++) {
       // stencil entries
@@ -504,10 +504,18 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
       MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
     }
   }
+  auto end = std::chrono::system_clock::now();  //AARON
+  std::chrono::duration<double> dur = end-start;  //AARON
+  std::cout << "*****Matrix set time:  " << dur.count() << std::endl;  
   
+  start = std::chrono::system_clock::now();
   // Assemble Matrix
   MatAssemblyBegin( MatA, MAT_FINAL_ASSEMBLY );
   MatAssemblyEnd( MatA, MAT_FINAL_ASSEMBLY );
+
+  end = std::chrono::system_clock::now();  //AARON
+  dur = end-start;  //AARON
+  std::cout << "*****Matrix asm time:  " << dur.count() << std::endl;    
 
   // Set the operator
 #if PETSC_VERSION_GE(3,5,0)
@@ -516,8 +524,15 @@ void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
   KSPSetOperators( ksp,MatA,MatA,DIFFERENT_NONZERO_PATTERN );
 #endif
   
+
+  start = std::chrono::system_clock::now();
+
   // Set coefficients for preconditioner
   cr->setCoefs(acoef, bcoef, ccoef);
+
+  end = std::chrono::system_clock::now();  //AARON
+  dur = end-start;  //AARON
+  std::cout << "*****Matrix prec time:  " << dur.count() << std::endl;      
 }
 
 LaplaceXY::~LaplaceXY() {
@@ -644,10 +659,18 @@ const Field2D LaplaceXY::solve(const Field2D &rhs, const Field2D &x0) {
   // Assemble Trial Solution Vector
   VecAssemblyBegin(xs);
   VecAssemblyEnd(xs);
-  
+
+  std::cout << "*****Solving the system" << std::endl;  
+  auto start = std::chrono::system_clock::now();  //AARON
+
   // Solve the system
   KSPSolve( ksp, bs, xs );
   
+  auto end = std::chrono::system_clock::now();  //AARON
+  std::chrono::duration<double> dur = end-start;  //AARON
+
+  std::cout << "*****std laplacexy solve time:  " << dur.count() << std::endl;
+
   KSPConvergedReason reason;
   KSPGetConvergedReason( ksp, &reason );
   
@@ -765,8 +788,12 @@ int LaplaceXY::precon(Vec input, Vec result) {
     }
   }
   
+  auto start = std::chrono::system_clock::now();  //AARON
+
   // Solve tridiagonal systems using CR solver
   cr->solve(bvals, xvals);
+
+  auto end = std::chrono::system_clock::now();  //AARON
 
   // Save result xvals into y array
   ind = ind0;

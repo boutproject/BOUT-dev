@@ -878,6 +878,7 @@ endif()
 
 # build examples
 add_subdirectory(examples/laplacexy/simple-hypre)
+add_subdirectory(examples/laplacexy/simple)
 
 ##################################################
 # Installation
