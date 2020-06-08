@@ -131,6 +131,12 @@ void LaplaceIPT::resetSolver() {
  */
 bool LaplaceIPT::Level::is_diagonally_dominant(const LaplaceIPT& l) {
 
+  if (not included) {
+    // Return true, as this contributes to an all_reduce over AND.  True here means that
+    // skipped procs do not affect the result.
+    return true;
+  }
+
   for (int kz = 0; kz < l.nmode; kz++) {
     // Check index 1 on all procs, except: the last proc only has index 1 if the
     // max_level == 0.
@@ -491,7 +497,8 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
       if (cyclecount < 3 or cyclecount > cycle_eta - 5 or not predict_exit) {
         // Calculate the total residual. This also marks modes as converged, so the
         // algorithm cannot exit in cycles where this is not called.
-        levels[0].calculate_total_residual(*this, error_abs, error_rel, converged);
+        levels[0].calculate_total_residual(*this, error_abs, error_rel, converged,
+                                           bcmplx);
 
         // Based the error reduction per V-cycle, error_xxx/error_xxx_old,
         // predict when the slowest converging mode converges.
@@ -1254,7 +1261,8 @@ void LaplaceIPT::Level::init_rhs(LaplaceIPT& l, const Matrix<dcomplex> bcmplx) {
 void LaplaceIPT::Level::calculate_total_residual(LaplaceIPT& l,
                                                  Array<BoutReal>& error_abs,
                                                  Array<BoutReal>& error_rel,
-                                                 Array<bool>& converged) {
+                                                 Array<bool>& converged,
+                                                 const Matrix<dcomplex>& bcmplx) {
 
   SCOREP0();
 
@@ -1281,11 +1289,17 @@ void LaplaceIPT::Level::calculate_total_residual(LaplaceIPT& l,
       //   at runtime by changing rtol
       // Strictly this should be all contributions to the solution, but this
       // under-approximation saves work.
-      subtotal(1, kz) = pow(xloc(1, kz).real(), 2) + pow(xloc(1, kz).imag(), 2);
+      //
+      // subtotal(1, kz) = pow(xloc(1, kz).real(), 2) + pow(xloc(1, kz).imag(), 2);
       if (l.localmesh->lastX()) {
         subtotal(0, kz) +=
             pow(residual(2, kz).real(), 2) + pow(residual(2, kz).imag(), 2);
-        subtotal(1, kz) += pow(xloc(2, kz).real(), 2) + pow(xloc(2, kz).imag(), 2);
+        // subtotal(1, kz) += pow(xloc(2, kz).real(), 2) + pow(xloc(2, kz).imag(), 2);
+      }
+      // Replace xloc calculation with a once-calculated norm of the RHS
+      subtotal(1, kz) = 0.0;
+      for (int i = 0; i < l.ncx; i++) {
+        subtotal(1, kz) += pow(bcmplx(kz, i).real(), 2) + pow(bcmplx(kz, i).imag(), 2);
       }
     }
   }
