@@ -43,6 +43,9 @@ LEGACY_MODEL_INCLUDE_RE = re.compile(
     r'^#\s*include.*(<|")boutmain.hxx(>|")', re.MULTILINE
 )
 
+BOUT_CONSTRAIN_RE = re.compile(r"bout_constrain\(([^,)]+,\s*[^,)]+,\s*[^,)]+)\)")
+BOUT_SOLVE_RE = re.compile(r"bout_solve\(([^,)]+,\s*[^,)]+)\)")
+
 
 def is_legacy_model(source):
     """Return true if the source is a legacy physics model
@@ -101,7 +104,10 @@ def convert_legacy_model(source, name):
         r"int {}::rhs(BoutReal\1)".format(name), fixed_init
     )
 
-    added_main = fixed_run + BOUTMAIN.format(name)
+    fixed_constraint = BOUT_CONSTRAIN_RE.sub(r"solver->constraint(\1)", fixed_run)
+    fixed_solve = BOUT_CONSTRAIN_RE.sub(r"solver->add(\1)", fixed_constraint)
+
+    added_main = fixed_solve + BOUTMAIN.format(name)
     return added_main
 
 
