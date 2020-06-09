@@ -188,7 +188,14 @@ if __name__ == "__main__":
 
         original = copy.deepcopy(contents)
 
-        new_name = args.name or pathlib.Path(filename).stem.capitalize()
+        new_name = args.name or pathlib.Path(filename).stem.capitalize().replace(
+            " ", "_"
+        )
+
+        if re.match(r"^[0-9]+.*", new_name):
+            raise ValueError(
+                f"Invalid name: '{new_name}'. Use --name to specify a valid C++ identifier"
+            )
 
         modified = convert_legacy_model(original, new_name)
         patch = create_patch(filename, original, modified)
