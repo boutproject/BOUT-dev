@@ -1,13 +1,12 @@
 #include <bout.hxx>
 #include <derivs.hxx>
-#include "globals.hxx"
 
+#include "header.hxx"
 
-int physics_run(BoutReal UNUSED(t)) {
+int AdvDiff::rhs(BoutReal UNUSED(t)) {
   // Run communications
   mesh->communicate(V);
 
-  //ddt(V) = D2DX2(V) + 0.5*DDX(V) + D2DY2(V);
   ddt(V) = DDX(V);
 
   return 0;
