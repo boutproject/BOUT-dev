@@ -501,7 +501,7 @@ else()
 endif()
 target_link_libraries(bout++ PUBLIC mpark_variant)
 
-if(GIT_SUBMODULE OR (EXISTS externalpackages/fmt/CMakeLists.txt))
+if(GIT_SUBMODULE OR (EXISTS  ${PROJECT_SOURCE_DIR}/externalpackages/fmt/CMakeLists.txt))
   option(BOUT_USE_SYSTEM_FMT "Use external installation of fmt" OFF)
 else()
   option(BOUT_USE_SYSTEM_FMT "Use external installation of fmt" ON)
