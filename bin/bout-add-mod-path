@@ -22,8 +22,8 @@ choose. If non are writeabel, and you can or want not to run as
 root, you can extend this. Create a new folder and at it to your
 `.bashrc` e.g. with:
 ```
- mkdir ~/.module
- echo 'export MODULEPATH=$HOME/.module:$MODULEPATH'>> ~/.bashrc
+ mkdir ~/.module || :
+ echo 'export MODULEPATH="$HOME/.module:$MODULEPATH"' >> ~/.bashrc
  source ~/.bashrc
 ```"""
 
@@ -106,18 +106,6 @@ prepend-path  IDL_PATH        +{top}/tools/idllib:'<IDL_DEFAULT>'
 """)
     print(f"created `{filename}`")
 
-
-def writeable_dir(prospective_dir):
-    if not os.path.isdir(prospective_dir):
-        raise Exception(
-            "readable_dir:{0} is not a valid path".format(prospective_dir))
-    if os.access(prospective_dir, os.W_OK):
-        return prospective_dir
-    else:
-        raise Exception(
-            "readable_dir:{0} is not a writeable dir".format(prospective_dir))
-
-
 class writeable_dir(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         prospective_dir = values
@@ -137,7 +125,7 @@ if __name__ == "__main__":
     parser.add_argument('--modpath', '-m', action=writeable_dir, nargs=1,
                         help='The modulepath to install the bout++ module')
     parser.add_argument('--name', '-n', nargs=1,
-                        help='''can by any name by which you will be later able to recognice
+                        help='''Can by any name by which you will be later able to recognise
                         this specific bout++ installation, e.g. `3d-metrics`. You can later
                         load the module with `module load bout++/name` e.g. `module load
                         bout++/3d-metrics`.''')
@@ -145,7 +133,7 @@ if __name__ == "__main__":
                         help="""bout-top is the root directory of the BOUT++ installation. Note that
                         it only works with in-source-builds.""")
     args = parser.parse_args()
-    modpath = args.modpath
+    modulepath = args.modpath
     name = args.name
     top = args.bout_top
 
