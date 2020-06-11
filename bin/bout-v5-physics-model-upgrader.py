@@ -38,6 +38,8 @@ LEGACY_MODEL_INCLUDE_RE = re.compile(
     r'^#\s*include.*(<|")boutmain.hxx(>|")', re.MULTILINE
 )
 
+BOUT_SOLVE_RE = re.compile(r"bout_solve\(([^,)]+,\s*[^,)]+)\)", re.MULTILINE)
+
 SPLIT_OPERATOR_RE = re.compile(
     r"solver\s*->\s*setSplitOperator\(([a-zA-Z0-9_]+),\s*([a-zA-Z0-9_]+)\s*\)"
 )
@@ -115,12 +117,69 @@ def fix_model_operator(source, model_name, operator_name, operator_type, new_nam
     )
 
 
-def convert_legacy_model(source, name):
+def fix_bout_constrain(source, error_on_warning):
+    """Fix uses of bout_constrain. This is complicated because it might be
+    in a conditional, and Solver::constraint returns void
+
+    """
+
+    if "bout_constrain" not in source:
+        return source
+
+    modified = re.sub(
+        r"""if\s*\(\s*(?:!|not)\s*                   # in a conditional, checking for false
+            bout_constrain\(([^;]+,[^;]+,[^;]+)\)        # actual function call
+            \s*\)                                        # end of conditional
+            (?P<brace>\s*{\s*)?                          # possible open brace
+            (?:\s*\n)?                                   # possible newline
+            \s*throw\s+BoutException\(.*\);(?:\s*\n)?    # throwing an exception
+            (?(brace)\s*})?                              # consume matching closing brace
+            """,
+        r"solver->constraint(\1);\n",
+        source,
+        flags=re.VERBOSE | re.MULTILINE,
+    )
+
+    remaining_matches = list(re.finditer("bout_constrain", modified))
+    if remaining_matches == []:
+        # We fixed everything!
+        return modified
+
+    # Construct a useful error message
+    source_lines = source.splitlines()
+    lines_context = []
+    for match in remaining_matches:
+        bad_line = source[: match.end()].count("\n")
+        line_range = range(max(0, bad_line - 1), min(len(source_lines), bad_line + 2))
+        lines_context.append(
+            "\n  ".join(["{}:{}".format(i, source_lines[i]) for i in line_range])
+        )
+
+    message = textwrap.dedent(
+        """\
+        Some uses of `bout_constrain` remain, but we could not automatically
+        convert them to use `Solver::constraint`. Please fix them before
+        continuing:
+        """
+    )
+    message += "  " + "\n  ".join(lines_context)
+
+    if error_on_warning:
+        raise RuntimeError(message)
+    print(message)
+    return modified
+
+
+def convert_legacy_model(source, name, error_on_warning):
     """Convert a legacy physics model to a PhysicsModel
     """
 
     if not is_legacy_model(source):
         return source
+
+    source = fix_bout_constrain(source, error_on_warning)
+
+    source = BOUT_SOLVE_RE.sub(r"solver->add(\1)", source)
 
     # Replace legacy header
     source = LEGACY_MODEL_INCLUDE_RE.sub(r"#include \1bout/physicsmodel.hxx\2", source)
@@ -254,12 +313,22 @@ if __name__ == "__main__":
             " ", "_"
         )
 
-        if re.match(r"^[0-9]+.*", new_name):
-            raise ValueError(
-                f"Invalid name: '{new_name}'. Use --name to specify a valid C++ identifier"
-            )
+        try:
+            if re.match(r"^[0-9]+.*", new_name) and not args.force:
+                raise ValueError(
+                    f"Invalid name: '{new_name}'. Use --name to specify a valid C++ identifier"
+                )
 
-        modified = convert_legacy_model(original, new_name)
+            modified = convert_legacy_model(
+                original, new_name, not (args.force or args.patch_only)
+            )
+        except (RuntimeError, ValueError) as e:
+            error_message = textwrap.indent(f"{e}", " ")
+            print(
+                f"There was a problem applying automatic fixes to {filename}:\n\n{error_message}"
+            )
+            continue
+
         patch = create_patch(filename, original, modified)
 
         if args.patch_only:
