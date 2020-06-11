@@ -6,6 +6,7 @@ import difflib
 import pathlib
 import re
 import textwrap
+import warnings
 
 
 PHYSICS_MODEL_INCLUDE = '#include "bout/physicsmodel.hxx"'
@@ -13,10 +14,11 @@ PHYSICS_MODEL_INCLUDE = '#include "bout/physicsmodel.hxx"'
 PHYSICS_MODEL_SKELETON = """
 class {name} : public PhysicsModel {{
 protected:
-  int init(bool{restarting}) override;
-  int rhs(BoutReal{time}) override;
+  {methods}
 }};
 """
+
+PHYSICS_MODEL_RHS_SKELETON = "int {function}({arg_type}{time}) override;"
 
 BOUTMAIN = "\n\nBOUTMAIN({})\n"
 
@@ -24,7 +26,7 @@ BOUTMAIN = "\n\nBOUTMAIN({})\n"
 PHYSICS_MODEL_RE = re.compile(r":\s*public\s*PhysicsModel")
 
 # Regular expressions for a legacy physics model
-LEGACY_MODEL_RE_TEMPLATE = r"""int\s+physics_{}\s*\({}
+LEGACY_MODEL_RE_TEMPLATE = r"""int\s+{}\s*\({}
     (\s+                           # Require spaces only if the argument is named
     (?P<unused>UNUSED\()?          # Possible UNUSED macro
     [a-zA-Z_0-9]*                  # Argument name
@@ -32,19 +34,25 @@ LEGACY_MODEL_RE_TEMPLATE = r"""int\s+physics_{}\s*\({}
     )?
     \)"""
 
-LEGACY_MODEL_INIT_RE = re.compile(
-    LEGACY_MODEL_RE_TEMPLATE.format("init", "bool"), re.VERBOSE | re.MULTILINE
-)
-LEGACY_MODEL_RUN_RE = re.compile(
-    LEGACY_MODEL_RE_TEMPLATE.format("run", "BoutReal"), re.VERBOSE | re.MULTILINE
-)
-
 LEGACY_MODEL_INCLUDE_RE = re.compile(
     r'^#\s*include.*(<|")boutmain.hxx(>|")', re.MULTILINE
 )
 
-BOUT_CONSTRAIN_RE = re.compile(r"bout_constrain\(([^,)]+,\s*[^,)]+,\s*[^,)]+)\)")
-BOUT_SOLVE_RE = re.compile(r"bout_solve\(([^,)]+,\s*[^,)]+)\)")
+SPLIT_OPERATOR_RE = re.compile(
+    r"solver\s*->\s*setSplitOperator\(([a-zA-Z0-9_]+),\s*([a-zA-Z0-9_]+)\s*\)"
+)
+
+
+def has_split_operator(source):
+    """Return the names of the split operator functions if set, otherwise False
+
+    """
+
+    match = SPLIT_OPERATOR_RE.search(source)
+    if not match:
+        return False
+
+    return match.group(1), match.group(2)
 
 
 def is_legacy_model(source):
@@ -63,6 +71,50 @@ def find_last_include(source_lines):
     return 0
 
 
+def fix_model_operator(source, model_name, operator_name, operator_type, new_name):
+    """Fix any definitions of the operator, and return the new declaration
+
+    May modify source
+    """
+
+    operator_re = re.compile(
+        LEGACY_MODEL_RE_TEMPLATE.format(operator_name, operator_type),
+        re.VERBOSE | re.MULTILINE,
+    )
+
+    matches = list(operator_re.finditer(source))
+    if matches == []:
+        warnings.warn(
+            f"Could not find {operator_name}; is it defined in another file? If so, you will need to fix it manually"
+        )
+        return source, False
+
+    if len(matches) > 1:
+        source = re.sub(
+            LEGACY_MODEL_RE_TEMPLATE.format(operator_name, operator_type) + r"\s*;",
+            "",
+            source,
+            flags=re.VERBOSE | re.MULTILINE,
+        )
+
+        arg_name = operator_re.search(source).group(1)
+    else:
+        arg_name = matches[0].group(1)
+
+    # Fix definition and any existing declarations
+    modified = operator_re.sub(
+        fr"int {model_name}::{new_name}({operator_type}\1)", source
+    )
+
+    # Create the declaration
+    return (
+        modified,
+        PHYSICS_MODEL_RHS_SKELETON.format(
+            function=new_name, arg_type=operator_type, time=arg_name
+        ),
+    )
+
+
 def convert_legacy_model(source, name):
     """Convert a legacy physics model to a PhysicsModel
     """
@@ -71,44 +123,48 @@ def convert_legacy_model(source, name):
         return source
 
     # Replace legacy header
-    replaced_header = LEGACY_MODEL_INCLUDE_RE.sub(
-        r"#include \1bout/physicsmodel.hxx\2", source
-    )
+    source = LEGACY_MODEL_INCLUDE_RE.sub(r"#include \1bout/physicsmodel.hxx\2", source)
 
-    source_lines = replaced_header.splitlines()
+    method_decls = []
+
+    source, decl = fix_model_operator(source, name, "physics_init", "bool", "init")
+    if decl:
+        method_decls.append(decl)
+
+    split_operators = has_split_operator(source)
+    if split_operators:
+        source = SPLIT_OPERATOR_RE.sub(r"setSplitOperator(true)", source)
+
+        convective, diffusive = split_operators
+        # Fix the free functions
+        source, decl = fix_model_operator(
+            source, name, convective, "BoutReal", "convective"
+        )
+        if decl:
+            method_decls.append(decl)
+        source, decl = fix_model_operator(
+            source, name, diffusive, "BoutReal", "diffusive"
+        )
+        if decl:
+            method_decls.append(decl)
+    else:
+        # Fix the rhs free function
+        source, decl = fix_model_operator(
+            source, name, "physics_run", "BoutReal", "rhs"
+        )
+        if decl:
+            method_decls.append(decl)
+
+    source_lines = source.splitlines()
     last_include = find_last_include(source_lines)
 
-    init_function = LEGACY_MODEL_INIT_RE.search(source)
-    if init_function is not None:
-        restarting = init_function.group(1)
-    else:
-        restarting = ""
+    methods = "\n  ".join(method_decls)
+    physics_model = PHYSICS_MODEL_SKELETON.format(methods=methods, name=name)
 
-    run_function = LEGACY_MODEL_RUN_RE.search(source)
-    if run_function is not None:
-        time = run_function.group(1)
-    else:
-        time = ""
+    source_lines.insert(last_include, physics_model)
+    source_lines.append(BOUTMAIN.format(name))
 
-    source_lines.insert(
-        last_include,
-        PHYSICS_MODEL_SKELETON.format(name=name, restarting=restarting, time=time),
-    )
-
-    added_class = "\n".join(source_lines)
-
-    fixed_init = LEGACY_MODEL_INIT_RE.sub(
-        r"int {}::init(bool\1)".format(name), added_class
-    )
-    fixed_run = LEGACY_MODEL_RUN_RE.sub(
-        r"int {}::rhs(BoutReal\1)".format(name), fixed_init
-    )
-
-    fixed_constraint = BOUT_CONSTRAIN_RE.sub(r"solver->constraint(\1)", fixed_run)
-    fixed_solve = BOUT_CONSTRAIN_RE.sub(r"solver->add(\1)", fixed_constraint)
-
-    added_main = fixed_solve + BOUTMAIN.format(name)
-    return added_main
+    return "\n".join(source_lines)
 
 
 def yes_or_no(question):
