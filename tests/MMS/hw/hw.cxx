@@ -1,10 +1,17 @@
 
-#include <boutmain.hxx>
+#include <bout/physicsmodel.hxx>
 #include <smoothing.hxx>
 #include <invert_laplace.hxx>
 #include <derivs.hxx>
 #include <field_factory.hxx>
 #include <bout/constants.hxx>
+
+class Hw : public PhysicsModel {
+protected:
+  int init(bool UNUSED(restart)) override;
+  int rhs(BoutReal time) override;
+};
+
 
 Field3D n, vort;  // Evolving density and vorticity
 Field3D phi;
@@ -18,7 +25,7 @@ std::unique_ptr<Laplacian> phiSolver{nullptr}; // Laplacian solver for vort -> p
 // Method to use: BRACKET_ARAKAWA, BRACKET_STD or BRACKET_SIMPLE
 BRACKET_METHOD bm; // Bracket method for advection terms
 
-int physics_init(bool UNUSED(restart)) {
+int Hw::init(bool UNUSED(restart)) {
   
   Options *options = Options::getRoot()->getSection("hw");
   OPTION(options, alpha, 1.0);
@@ -80,7 +87,7 @@ int physics_init(bool UNUSED(restart)) {
   return 0;
 }
 
-int physics_run(BoutReal time) {
+int Hw::rhs(BoutReal time) {
   
   // Solve for potential, adding a source term
   Field3D phiS = FieldFactory::get()->create3D("phi:source", Options::getRoot(), mesh, CELL_CENTRE, time);
@@ -114,3 +121,6 @@ int physics_run(BoutReal time) {
   return 0;
 }
 
+
+
+BOUTMAIN(Hw)

@@ -3,7 +3,14 @@
  */
 
 #include <bout.hxx>
-#include <boutmain.hxx>
+#include <bout/physicsmodel.hxx>
+
+class Backtrace : public PhysicsModel {
+protected:
+  int init(bool UNUSED(restarting)) override;
+  int rhs(BoutReal UNUSED(time)) override;
+};
+
 
 
 void f1(){
@@ -22,14 +29,17 @@ int f3(){
   return 0;
 }
 
-int physics_init(bool UNUSED(restarting)) {
+int Backtrace::init(bool UNUSED(restarting)) {
   f3();
   
   return 1;
 }
 
-int physics_run(BoutReal UNUSED(time)) {
+int Backtrace::rhs(BoutReal UNUSED(time)) {
   
   
   return 1;
 }
+
+
+BOUTMAIN(Backtrace)

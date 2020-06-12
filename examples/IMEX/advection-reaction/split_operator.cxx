@@ -20,10 +20,18 @@
  *************************************************************/
 
 #include <bout.hxx>
-#include <boutmain.hxx>
+#include <bout/physicsmodel.hxx>
 #include <initialprofiles.hxx>
 
-int reaction(BoutReal time);
+class Split_operator : public PhysicsModel {
+protected:
+  int init(bool UNUSED(restarting)) override;
+  int convective(BoutReal UNUSED(time)) override;
+  int diffusive(BoutReal UNUSED(time)) override;
+};
+
+
+
 
 Field3D U;   // Evolving variable
 
@@ -31,9 +39,9 @@ Field3D phi; // Potential used for advection
 
 BoutReal rate; // Reaction rate
 
-int physics_init(bool UNUSED(restarting)) {
+int Split_operator::init(bool UNUSED(restarting)) {
   // Give the solver two RHS functions
-  solver->setSplitOperator(physics_run, reaction);
+  setSplitOperator(true);
   
   // Get options
   auto globalOptions = Options::root();
@@ -54,7 +62,7 @@ int physics_init(bool UNUSED(restarting)) {
   return 0;
 }
 
-int physics_run(BoutReal UNUSED(time)) {
+int Split_operator::convective(BoutReal UNUSED(time)) {
   // Need communication
   U.getMesh()->communicate(U);
 
@@ -64,9 +72,12 @@ int physics_run(BoutReal UNUSED(time)) {
   return 0;
 }
 
-int reaction(BoutReal UNUSED(time)) {
+int Split_operator::diffusive(BoutReal UNUSED(time)) {
   // A simple reaction operator. No communication needed
   ddt(U) = rate * (1.-U);
 
   return 0;
 }
+
+
+BOUTMAIN(Split_operator)

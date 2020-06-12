@@ -4,7 +4,7 @@
  *******************************************************************************/
 
 #include <bout.hxx>
-#include <boutmain.hxx>
+#include <bout/physicsmodel.hxx>
 
 #include <initialprofiles.hxx>
 #include <derivs.hxx>
@@ -14,6 +14,13 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+
+class TwoFluid : public PhysicsModel {
+protected:
+  int init(bool UNUSED(restarting)) override;
+  int rhs(BoutReal UNUSED(t)) override;
+};
+
 
 using bout::globals::dump;
 using bout::globals::mesh;
@@ -65,7 +72,7 @@ Coordinates *coord; // Coordinate system
 
 CELL_LOC maybe_ylow;
 
-int physics_init(bool UNUSED(restarting)) {
+int TwoFluid::init(bool UNUSED(restarting)) {
   Field2D I; // Shear factor 
   
   output.write("Solving 6-variable 2-fluid equations\n");
@@ -232,28 +239,28 @@ int physics_init(bool UNUSED(restarting)) {
   // Tell BOUT++ which variables to evolve
   // add evolving variables to the communication object
   if(evolve_rho) {
-    bout_solve(rho, "rho");
+    solver->add(rho, "rho");
     comms.add(rho);
     output.write("rho\n");
   }else
     initial_profile("rho", rho);
 
   if(evolve_ni) {
-    bout_solve(Ni, "Ni");
+    solver->add(Ni, "Ni");
     comms.add(Ni);
     output.write("ni\n");
   }else
     initial_profile("Ni", Ni);
 
   if(evolve_te) {
-    bout_solve(Te, "Te");
+    solver->add(Te, "Te");
     comms.add(Te);
     output.write("te\n");
   }else
     initial_profile("Te", Te);
 
   if(evolve_ajpar) {
-    bout_solve(Ajpar, "Ajpar");
+    solver->add(Ajpar, "Ajpar");
     comms.add(Ajpar);
     output.write("ajpar\n");
   }else {
@@ -264,14 +271,14 @@ int physics_init(bool UNUSED(restarting)) {
   }
 
   if(evolve_vi) {
-    bout_solve(Vi, "Vi");
+    solver->add(Vi, "Vi");
     comms.add(Vi);
     output.write("vi\n");
   }else
     initial_profile("Vi", Vi);
 
   if(evolve_ti) {
-    bout_solve(Ti, "Ti");
+    solver->add(Ti, "Ti");
     comms.add(Ti);
     output.write("ti\n");
   }else
@@ -305,7 +312,7 @@ int physics_init(bool UNUSED(restarting)) {
 // just define a macro for V_E dot Grad
 #define vE_Grad(f, p) ( b0xGrad_dot_Grad(p, f) / coord->Bxy )
 
-int physics_run(BoutReal UNUSED(t)) {
+int TwoFluid::rhs(BoutReal UNUSED(t)) {
   // Solve EM fields
 
   phi = phi_solver->solve(rho, phi);
@@ -415,3 +422,6 @@ int physics_run(BoutReal UNUSED(t)) {
 
   return(0);
 }
+
+
+BOUTMAIN(TwoFluid)

@@ -1,16 +1,23 @@
 #include <bout.hxx>
-#include <boutmain.hxx>
+#include <bout/physicsmodel.hxx>
 #include <initialprofiles.hxx>
 #include <derivs.hxx>
 #include <math.h>
 #include <bout/constants.hxx>
+
+class Diffusion : public PhysicsModel {
+protected:
+  int init(bool UNUSED(restarting)) override;
+  int rhs(BoutReal UNUSED(t)) override;
+};
+
 
 Field3D N;
 
 BoutReal Dx, Dy, Dz;
 BoutReal Lx, Ly, Lz;
 
-int physics_init(bool UNUSED(restarting)) {
+int Diffusion::init(bool UNUSED(restarting)) {
   // Get the options
   Options *meshoptions = Options::getRoot()->getSection("mesh");
   Coordinates *coords = mesh->getCoordinates();
@@ -56,7 +63,7 @@ int physics_init(bool UNUSED(restarting)) {
   return 0;
 }
 
-int physics_run(BoutReal UNUSED(t)) {
+int Diffusion::rhs(BoutReal UNUSED(t)) {
   mesh->communicate(N); // Communicate guard cells
 
   ddt(N) = 0.0;
@@ -73,3 +80,6 @@ int physics_run(BoutReal UNUSED(t)) {
   return 0;
 }
 
+
+
+BOUTMAIN(Diffusion)

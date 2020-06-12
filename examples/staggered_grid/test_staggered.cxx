@@ -3,15 +3,22 @@
  */
 
 #include <bout.hxx>
-#include <boutmain.hxx>
+#include <bout/physicsmodel.hxx>
 #include <derivs.hxx>
+
+class Test_staggered : public PhysicsModel {
+protected:
+  int init(bool UNUSED(restart)) override;
+  int rhs(BoutReal UNUSED(time)) override;
+};
+
 
 using bout::globals::mesh;
 
 Field3D n, v;
 CELL_LOC maybe_ylow{CELL_CENTRE};
 
-int physics_init(bool UNUSED(restart)) {
+int Test_staggered::init(bool UNUSED(restart)) {
 
   if (mesh->StaggerGrids) {
     maybe_ylow = CELL_YLOW;
@@ -24,7 +31,7 @@ int physics_init(bool UNUSED(restart)) {
   return 0;
 }
 
-int physics_run(BoutReal UNUSED(time)) {
+int Test_staggered::rhs(BoutReal UNUSED(time)) {
   mesh->communicate(n, v);
   
   //ddt(n) = -Div_par_flux(v, n, CELL_CENTRE);
@@ -42,3 +49,6 @@ int physics_run(BoutReal UNUSED(time)) {
   return 0;
 }
 
+
+
+BOUTMAIN(Test_staggered)

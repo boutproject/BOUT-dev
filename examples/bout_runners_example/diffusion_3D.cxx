@@ -1,11 +1,18 @@
 // *******  Simulates 3D diffusion  *******
 
 #include <bout.hxx>
-#include <boutmain.hxx>
+#include <bout/physicsmodel.hxx>
 // This gives the Laplace(f) options
 #include <difops.hxx>
 // Gives PI and TWOPI
 #include <bout/constants.hxx>
+
+class Diffusion_3d : public PhysicsModel {
+protected:
+  int init(bool UNUSED(restarting)) override;
+  int rhs(BoutReal UNUSED(t)) override;
+};
+
 
 using bout::globals::mesh;
 
@@ -19,7 +26,7 @@ bool use_grid;    // If the spatial size should be loaded from the grid
 
 // Initialization of the physics
 // ############################################################################
-int physics_init(bool UNUSED(restarting)) {
+int Diffusion_3d::init(bool UNUSED(restarting)) {
 
     // Get the option (before any sections) in the BOUT.inp file
     Options *options   = Options::getRoot();
@@ -81,7 +88,7 @@ int physics_init(bool UNUSED(restarting)) {
 
 // Solving the equations
 // ############################################################################
-int physics_run(BoutReal UNUSED(t)) {
+int Diffusion_3d::rhs(BoutReal UNUSED(t)) {
     mesh->communicate(n); // Communicate guard cells
 
     // Density diffusion
@@ -89,3 +96,6 @@ int physics_run(BoutReal UNUSED(t)) {
     return 0;
 }
 // ############################################################################
+
+
+BOUTMAIN(Diffusion_3d)

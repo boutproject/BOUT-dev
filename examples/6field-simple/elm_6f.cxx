@@ -13,9 +13,16 @@
 #include "invert_laplace.hxx"
 #include "invert_parderiv.hxx"
 #include "sourcex.hxx"
-#include <boutmain.hxx>
+#include <bout/physicsmodel.hxx>
 #include <math.h>
 #include <msg_stack.hxx>
+
+class Elm_6f : public PhysicsModel {
+protected:
+  int init(bool restarting) override;
+  int rhs(BoutReal UNUSED(t)) override;
+};
+
 
 using bout::globals::dump;
 using bout::globals::mesh;
@@ -333,7 +340,7 @@ const Field2D N0tanh(BoutReal n0_height, BoutReal n0_ave, BoutReal n0_width,
   return result;
 }
 
-int physics_init(bool restarting) {
+int Elm_6f::init(bool restarting) {
   bool noshear;
 
   // Get the metric tensor
@@ -1067,11 +1074,11 @@ int physics_init(bool restarting) {
   if (parallel_lagrange) {
     // Evolving the distortion of the flux surfaces (Ideal-MHD only!)
 
-    bout_solve(Xip_x, "Xip_x");
-    bout_solve(Xip_z, "Xip_z");
+    solver->add(Xip_x, "Xip_x");
+    solver->add(Xip_z, "Xip_z");
 
-    bout_solve(Xim_x, "Xim_x");
-    bout_solve(Xim_z, "Xim_z");
+    solver->add(Xim_x, "Xim_x");
+    solver->add(Xim_z, "Xim_z");
   }
 
   if (parallel_project) {
@@ -1093,11 +1100,8 @@ int physics_init(bool restarting) {
   if (phi_constraint) {
     // Implicit Phi solve using IDA
 
-    if (!bout_constrain(phi, C_phi, "phi")) {
-      output_error.write(
-          "ERROR: Cannot constrain. Run again with phi_constraint=false\n");
-      throw BoutException("Aborting.\n");
-    }
+    solver->constraint(phi, C_phi, "phi");
+
 
   } else {
     // Phi solved in RHS (explicitly)
@@ -1236,7 +1240,7 @@ const Field3D Grad_parP(const Field3D& f, CELL_LOC loc = CELL_DEFAULT) {
 
 bool first_run = true; // For printing out some diagnostics first time around
 
-int physics_run(BoutReal UNUSED(t)) {
+int Elm_6f::rhs(BoutReal UNUSED(t)) {
 
   Coordinates* coord = mesh->getCoordinates();
 
@@ -1686,3 +1690,6 @@ int physics_run(BoutReal UNUSED(t)) {
 
   return 0;
 }
+
+
+BOUTMAIN(Elm_6f)
