@@ -6,9 +6,7 @@
 NOUT = 100     # number of time-steps
 TIMESTEP = 1e-2   # time between outputs
 
-MZ = 65     # number of points in z direction (2^n + 1)
-
-ZPERIOD = 6.28319 # Fraction of a torus. 2*PI sets Z length to 1
+MZ = 64     # number of points in z direction (2^n + 1)
 
 grid = "simple_xz.nc"
 
