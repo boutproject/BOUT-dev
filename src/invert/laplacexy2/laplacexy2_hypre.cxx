@@ -16,6 +16,16 @@
 
 #include "_hypre_utilities.h"
 
+#define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
+inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
+{
+   if (code != cudaSuccess) 
+   {
+      fprintf(stderr,"GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+      if (abort) exit(code);
+   }
+}
+
 Ind2D index2d(Mesh* mesh, int x, int y) {
   int ny = mesh->LocalNy;
   return Ind2D(x * ny + y, ny, 1);
@@ -41,7 +51,8 @@ LaplaceXY2Hypre::LaplaceXY2Hypre(Mesh* m, Options* opt, const CELL_LOC loc)
 
   // Declare KSP Context
   HYPRE_Init();
-  hypre_HandleDefaultExecPolicy(hypre_handle()) = HYPRE_EXEC_DEVICE;
+  //hypre_HandleDefaultExecPolicy(hypre_handle()) = HYPRE_EXEC_DEVICE;
+  //hypre_HandleDefaultExecPolicy(hypre_handle()) = HYPRE_EXEC_HOST;
 
   matrix = new bout::HypreMatrix<Field2D>(f2dinit);
 
@@ -53,8 +64,8 @@ LaplaceXY2Hypre::LaplaceXY2Hypre(Mesh* m, Options* opt, const CELL_LOC loc)
   const auto iupper =
       static_cast<HYPRE_BigInt>(indexConverter->getGlobal(*--std::end(region)));
 
-  const MPI_Comm comm = f2dinit.getMesh()->getXcomm();
-  //const MPI_Comm comm = BoutComm::get();
+  //const MPI_Comm comm = f2dinit.getMesh()->getXcomm();
+  const MPI_Comm comm = BoutComm::get();
 
 
   std::cout << "Matrix bounds:  " << ilower << ", " << iupper << std::endl;
@@ -135,6 +146,8 @@ void LaplaceXY2Hypre::setCoefs(const Field2D& A, const Field2D& B) {
   Coordinates* coords = localmesh->getCoordinates(location);
   HYPRE_BigInt *manI, *manXP, *manXM, *manYP, *manYM, *one;
   HYPRE_Complex *manV;
+
+#if 1
   cudaMallocManaged(&manI, sizeof(HYPRE_BigInt));
   cudaMallocManaged(&manXP, sizeof(HYPRE_BigInt));
   cudaMallocManaged(&manXM, sizeof(HYPRE_BigInt));
@@ -142,6 +155,15 @@ void LaplaceXY2Hypre::setCoefs(const Field2D& A, const Field2D& B) {
   cudaMallocManaged(&manYM, sizeof(HYPRE_BigInt));
   cudaMallocManaged(&manV, sizeof(HYPRE_Complex));
   cudaMallocManaged(&one, sizeof(HYPRE_BigInt));
+#else
+  cudaHostAlloc(&manI, sizeof(HYPRE_BigInt),0);
+  cudaHostAlloc(&manXP, sizeof(HYPRE_BigInt),0);
+  cudaHostAlloc(&manXM, sizeof(HYPRE_BigInt),0);
+  cudaHostAlloc(&manYP, sizeof(HYPRE_BigInt),0);
+  cudaHostAlloc(&manYM, sizeof(HYPRE_BigInt),0);
+  cudaHostAlloc(&manV, sizeof(HYPRE_Complex),0);
+  cudaHostAlloc(&one, sizeof(HYPRE_BigInt),0);
+#endif
 
   one[0] = 1;
 
@@ -182,9 +204,9 @@ void LaplaceXY2Hypre::setCoefs(const Field2D& A, const Field2D& B) {
     //matrix(index, ind_xp) = xp;
     //matrix(index, ind_xm) = xm;
     manV[0] = xp;
-    std::cout << one[0] << ", " << manI[0] << ", " << manXP[0] << ", " << manV[0] << std::endl;
+    //std::cout << one[0] << ", " << manI[0] << ", " << manXP[0] << ", " << manV[0] << std::endl;
     HYPRE_IJMatrixSetValues(ij_matrix, 1, one, manI, manXP, manV);
-    std::cout << "matrix(index, ind_xp) = xp" << std::endl;
+    //std::cout << "matrix(index, ind_xp) = xp" << std::endl;
 
     manV[0] = xm;
     HYPRE_IJMatrixSetValues(ij_matrix, 1, one, manI, manXM, manV); 
@@ -358,14 +380,24 @@ void LaplaceXY2Hypre::setCoefs(const Field2D& A, const Field2D& B) {
   end = std::chrono::system_clock::now();  //AARON
   dur = end-start;  //AARON
   std::cout << "*****Matrix prec time:  " << dur.count() << std::endl;
-
-  cudaFree(manI);
-  cudaFree(manXP);
-  cudaFree(manXM);
-  cudaFree(manYP);
-  cudaFree(manYM);
-  cudaFree(manV);
-  cudaFree(one);
+  gpuErrchk( cudaPeekAtLastError() );
+#if 1
+  gpuErrchk(cudaFree(manI) );
+  gpuErrchk(cudaFree(manXP) );
+  gpuErrchk(cudaFree(manXM) );
+  gpuErrchk(cudaFree(manYP) );
+  gpuErrchk(cudaFree(manYM) );
+  gpuErrchk(cudaFree(manV) );
+  gpuErrchk(cudaFree(one) );
+#else
+  gpuErrchk(cudaFreeHost(manI) );
+  gpuErrchk(cudaFreeHost(manXP) );
+  gpuErrchk(cudaFreeHost(manXM) );
+  gpuErrchk(cudaFreeHost(manYP) );
+  gpuErrchk(cudaFreeHost(manYM) );
+  gpuErrchk(cudaFreeHost(manV) );
+  gpuErrchk(cudaFreeHost(one) );
+#endif
 }
 
 LaplaceXY2Hypre::~LaplaceXY2Hypre() {
@@ -405,8 +437,13 @@ const Field2D LaplaceXY2Hypre::solve(const Field2D& rhs, const Field2D& x0) {
 
   HYPRE_BigInt *manI;
   HYPRE_Complex *manV;
+#if 1
   cudaMallocManaged(&manI, sizeof(HYPRE_BigInt));
   cudaMallocManaged(&manV, sizeof(HYPRE_Complex));
+#else
+  cudaHostAlloc(&manI, sizeof(HYPRE_BigInt),0);
+  cudaHostAlloc(&manV, sizeof(HYPRE_Complex),0);
+#endif
   IndexerPtr indexConverter = GlobalIndexer::getInstance(rhs.getMesh());  
 
   if (localmesh->firstX()) {
@@ -501,7 +538,7 @@ const Field2D LaplaceXY2Hypre::solve(const Field2D& rhs, const Field2D& x0) {
   HYPRE_IJVectorAssemble(ij_b);
   HYPRE_IJVectorGetObject(ij_x, reinterpret_cast<void**>(&par_x));
   HYPRE_IJVectorGetObject(ij_b, reinterpret_cast<void**>(&par_b));
-
+  gpuErrchk( cudaPeekAtLastError() );
   auto start = std::chrono::system_clock::now();  //AARON
 
   // Solve the system
@@ -525,9 +562,14 @@ const Field2D LaplaceXY2Hypre::solve(const Field2D& rhs, const Field2D& x0) {
       x[i] = static_cast<BoutReal>(manV[0]);
     }
   }
-
-  cudaFree(manI);
-  cudaFree(manV);  
+  gpuErrchk( cudaPeekAtLastError() );
+#if 1
+  gpuErrchk(cudaFree(manI) );
+  gpuErrchk(cudaFree(manV) );  
+#else
+  gpuErrchk(cudaFreeHost(manI) );
+  gpuErrchk(cudaFreeHost(manV) );  
+#endif
 
   return x;
 }
