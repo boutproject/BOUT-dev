@@ -150,14 +150,8 @@ private:
     (*options)["lower_boundary_flags"] = (std::get<2>(param) ? INVERT_AC_GRAD : 0) + INVERT_RHS;
     (*options)["upper_boundary_flags"] = (std::get<3>(param) ? INVERT_AC_GRAD : 0) + INVERT_RHS;
     (*options)["fourth_order"] = false;
-    (*options)["atol"] = tol/10; // Need to specify smaller than desired tolerance to
-    (*options)["rtol"] = tol/10; // ensure it is satisfied for every element.
-    //    (*options)["dtol"] = 1e5;
-    //    (*options)["maxits"] = 100000;
-    //    (*options)["richardson_damping_factor"] = 1.0;
-    //    (*options)["chebyshev_max"] = 100.0;
-    //    (*options)["chebyshev_min"] = 0.01;
-    //    (*options)["gmres_max_steps"] = 30;
+    (*options)["atol"] = tol/30; // Need to specify smaller than desired tolerance to
+    (*options)["rtol"] = tol/30; // ensure it is satisfied for every element.
     return options;
   }
 
