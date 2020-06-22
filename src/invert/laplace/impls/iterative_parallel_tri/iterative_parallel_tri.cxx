@@ -421,15 +421,11 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
   std::size_t current_level = 0;
   bool down = true;
 
-  auto error_abs = Array<BoutReal>(nmode);
-  auto error_abs_old = Array<BoutReal>(nmode);
-  auto error_rel = Array<BoutReal>(nmode);
-  auto error_rel_old = Array<BoutReal>(nmode);
+  auto errornorm = Array<BoutReal>(nmode);
+  auto errornorm_old = Array<BoutReal>(nmode);
   constexpr BoutReal initial_error = 1e6;
-  error_abs = initial_error;
-  error_abs_old = initial_error;
-  error_rel = initial_error;
-  error_rel_old = initial_error;
+  errornorm = initial_error;
+  errornorm_old = initial_error;
   std::fill(std::begin(converged), std::end(converged), false);
 
   /// SCOREP_USER_REGION_END(initwhileloop);
@@ -465,8 +461,7 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
       if (cyclecount < 3 or cyclecount > cycle_eta) {
         for (int kz = 0; kz < nmode; kz++) {
           if (!converged[kz]) {
-            error_abs_old[kz] = error_abs[kz];
-            error_rel_old[kz] = error_rel[kz];
+            errornorm_old[kz] = errornorm[kz];
           }
         }
       }
@@ -476,23 +471,18 @@ FieldPerp LaplaceIPT::solve(const FieldPerp& b, const FieldPerp& x0) {
       if (cyclecount < 3 or cyclecount > cycle_eta - 5 or not predict_exit) {
         // Calculate the total residual. This also marks modes as converged, so the
         // algorithm cannot exit in cycles where this is not called.
-        levels[0].calculate_total_residual(*this, error_abs, error_rel, converged,
-                                           bcmplx);
+        levels[0].calculate_total_residual(*this, errornorm, converged);
 
-        // Based the error reduction per V-cycle, error_xxx/error_xxx_old,
+        // Based the error reduction per V-cycle, errornorm/errornorm_old,
         // predict when the slowest converging mode converges.
         if (cyclecount < 3 and predict_exit) {
           cycle_eta = 0;
           for (int kz = 0; kz < nmode; kz++) {
-            const BoutReal ratio_abs = error_abs[kz] / error_abs_old[kz];
-            const int eta_abs =
-                std::ceil(std::log(atol / error_abs[kz]) / std::log(ratio_abs));
-            cycle_eta = (cycle_eta > eta_abs) ? cycle_eta : eta_abs;
+            const BoutReal ratio = errornorm[kz] / errornorm_old[kz];
+            const int eta =
+                std::ceil(std::log(1.0 / errornorm[kz]) / std::log(ratio));
+            cycle_eta = (cycle_eta > eta) ? cycle_eta : eta;
 
-            const BoutReal ratio_rel = error_rel[kz] / error_rel_old[kz];
-            const int eta_rel =
-                std::ceil(std::log(rtol / error_rel[kz]) / std::log(ratio_rel));
-            cycle_eta = (cycle_eta > eta_rel) ? cycle_eta : eta_rel;
           }
         }
       }
@@ -1194,10 +1184,8 @@ void LaplaceIPT::Level::init_rhs(LaplaceIPT& l, const Matrix<dcomplex>& bcmplx) 
  * NB This calculation assumes we are using the finest grid, level 0.
  */
 void LaplaceIPT::Level::calculate_total_residual(const LaplaceIPT& l,
-                                                 Array<BoutReal>& error_abs,
-                                                 Array<BoutReal>& error_rel,
-                                                 Array<bool>& converged,
-                                                 const Matrix<dcomplex>& bcmplx) {
+                                                 Array<BoutReal>& errornorm,
+                                                 Array<bool>& converged) {
 
   SCOREP0();
 
@@ -1206,48 +1194,31 @@ void LaplaceIPT::Level::calculate_total_residual(const LaplaceIPT& l,
         "LaplaceIPT error: calculate_total_residual can only be called on level 0");
   }
 
-  // Communication arrays:
-  // residual in (0, :)
-  // solution in (1, :)
-  auto total = Matrix<BoutReal>(2, l.nmode);    // global summed residual
-  auto subtotal = Matrix<BoutReal>(2, l.nmode); // local contribution to residual
+  // Communication arrays
+  auto subtotal = Array<BoutReal>(l.nmode); // local contribution to residual
 
   for (int kz = 0; kz < l.nmode; kz++) {
     if (!converged[kz]) {
-      total(0, kz) = 0.0;
-      total(1, kz) = 0.0;
+      errornorm[kz] = 0.0;
 
-      subtotal(0, kz) = pow(residual(1, kz).real(), 2) + pow(residual(1, kz).imag(), 2);
-      // TODO This approximation will increase iteration count. The alternatives are:
-      // + reconstructing the solution and calculating properly
-      // + multiply approximation by (interior points/2) - this can be done
-      //   at runtime by changing rtol
-      // Strictly this should be all contributions to the solution, but this
-      // under-approximation saves work.
-      //
-      // subtotal(1, kz) = pow(xloc(1, kz).real(), 2) + pow(xloc(1, kz).imag(), 2);
+      BoutReal w = pow( l.rtol*sqrt(pow(xloc(1, kz).real(), 2) + pow(xloc(1, kz).imag(), 2)) + l.atol , 2);
+      subtotal[kz] = ( pow(residual(1, kz).real(), 2) + pow(residual(1, kz).imag(), 2) ) / w;
       if (l.localmesh->lastX()) {
-        subtotal(0, kz) +=
-            pow(residual(2, kz).real(), 2) + pow(residual(2, kz).imag(), 2);
-        // subtotal(1, kz) += pow(xloc(2, kz).real(), 2) + pow(xloc(2, kz).imag(), 2);
-      }
-      // Replace xloc calculation with a once-calculated norm of the RHS
-      subtotal(1, kz) = 0.0;
-      for (int i = 0; i < l.ncx; i++) {
-        subtotal(1, kz) += pow(bcmplx(kz, i).real(), 2) + pow(bcmplx(kz, i).imag(), 2);
+        w = pow( l.rtol*sqrt(pow(xloc(2, kz).real(), 2) + pow(xloc(2, kz).imag(), 2)) + l.atol , 2);
+        subtotal[kz] +=
+            ( pow(residual(2, kz).real(), 2) + pow(residual(2, kz).imag(), 2) ) / w;
       }
     }
   }
 
   // Communication needed to ensure processors break on same iteration
-  MPI_Allreduce(subtotal.begin(), total.begin(), 2 * l.nmode, MPI_DOUBLE, MPI_SUM,
+  MPI_Allreduce(subtotal.begin(), errornorm.begin(), l.nmode, MPI_DOUBLE, MPI_SUM,
                 BoutComm::get());
 
   for (int kz = 0; kz < l.nmode; kz++) {
     if (!converged[kz]) {
-      error_abs[kz] = sqrt(total(0, kz));
-      error_rel[kz] = error_abs[kz] / sqrt(total(1, kz));
-      if (error_abs[kz] < l.atol or error_rel[kz] < l.rtol) {
+      errornorm[kz] = sqrt(errornorm[kz]/BoutReal(l.ncx));
+      if (errornorm[kz] < 1.0) {
         converged[kz] = true;
       }
     }
