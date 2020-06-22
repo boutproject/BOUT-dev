@@ -4,6 +4,7 @@
 # Run the test, check it completed successfully
 #
 
+#requires: netcdf
 #cores: 2
 
 from __future__ import print_function

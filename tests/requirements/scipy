@@ -1,0 +1,11 @@
+#!/usr/bin/env python3
+
+# Tests if scipy is available
+
+from sys import exit
+
+try:
+   import scipy
+   exit(0)
+except ImportError:
+   exit(1)

@@ -7,8 +7,6 @@ NOUT = 0  # No timesteps
 
 MZ = 16    # Z size
 
-dump_format = "nc"  # NetCDF format. Alternative is "pdb"
-
 [mesh]
 nx=52
 ny=32
