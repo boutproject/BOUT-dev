@@ -1,0 +1,147 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import pathlib
+import argparse
+
+_info = f"""{sys.argv[0]} provides a convenient way to create
+modules for the environment module for BOUT++ that sets PYTHONPATH,
+PATH and BOUT_TOP, so that switching between different BOUT++
+installations is easy. {sys.argv[0]} stores the loaded modules as
+prerequisites, so that you don't accidentially mix e.g. mpi
+versions. Feel free to edit the crated module file, if there are
+non-needed dependencies.
+
+{sys.argv[0]} can be used interactively, if the arguments are not
+provided.
+
+If modulepath is not passed, the script checks whether any of the
+paths in $MODULEPATH are writeable, and asks which of them to
+choose. If non are writeabel, and you can or want not to run as
+root, you can extend this. Create a new folder and at it to your
+`.bashrc` e.g. with:
+```
+ mkdir ~/.module || :
+ echo 'export MODULEPATH="$HOME/.module:$MODULEPATH"' >> ~/.bashrc
+ source ~/.bashrc
+```"""
+
+
+def ask_modpath():
+    try:
+        modpath = os.environ['MODULEPATH']
+    except KeyError:
+        raise RuntimeError(
+            "MODULEPATH not set. Please ensure environment modules are loaded.")
+
+    writeable = []
+    for modulepath in modpath.split(':'):
+        if os.access(modulepath, os.W_OK):
+            writeable.append(modulepath)
+
+    if writeable == []:
+        raise RuntimeError(
+            "Did not find a writeable directory in $MODULEPATH.\nPlease append a writable path.")
+
+    if len(writeable) == 1:
+        return modulepath[0]
+
+    print("Several paths found to store module files. Please select one:")
+    for index, directory in enumerate(writeable):
+        print(f"{index:3d}: {directory}")
+    select = input("Your choice: ")
+    return writeable[int(select)]
+
+
+def ask_name():
+    print("The module will be prefixed with `bout++/`")
+    print("Please enter the name of the module.")
+    name = input("bout++/")
+    return name
+
+
+def ask_bouttop():
+    this = os.path.realpath(__file__)
+    top = "/".join(this.split("/")[:-2])
+    print("Do you want to use `%s` as BOUT_TOP?" % top)
+    while True:
+        inp = input("[Y/n/<alt-path>]")
+        if inp in ["", "y", "Y"]:
+            return top
+        if os.path.isdir(inp):
+            return os.path.realpath(inp)
+        if inp not in "nN":
+            print("`%s` is not a valid directory" % inp)
+
+
+def create_mod(modulepath, name, top):
+    pathlib.Path.mkdir(modulepath+"/bout++", parents=True, exist_ok=True)
+    filename = modulepath+"/bout++/"+name
+    if 'LOADEDMODULES' in os.environ:
+        prereq = []
+        for pr in os.environ['LOADEDMODULES'].split(":"):
+            if pr.startswith("bout++/"):
+                continue
+            prereq.append(f"prereq {pr}\n")
+        prereq = "".join(prereq)
+    else:
+        prereq = ""
+    with open(filename, "w") as f:
+        f.write(f"""#%Module 1.0
+#
+#  BOUT++ module for use with 'environment-modules' package
+#  Created by bout-add-mod-path v0.9
+
+# Only allow one bout++ module to be loaded at a time
+conflict bout++
+# Require all modules that where loaded at generation time
+{prereq}
+
+setenv        BOUT_TOP         {top}
+prepend-path  PATH             {top}/bin
+prepend-path  LD_LIBRARY_PATH  {top}/lib
+prepend-path  PYTHONPATH       {top}/tools/pylib
+prepend-path  IDL_PATH        +{top}/tools/idllib:'<IDL_DEFAULT>'
+""")
+    print(f"created `{filename}`")
+
+class writeable_dir(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        prospective_dir = values
+        if not os.path.isdir(prospective_dir):
+            raise argparse.ArgumentTypeError(
+                "writeable_dir:{0} is not a valid path".format(prospective_dir))
+        if os.access(prospective_dir, os.W_OK):
+            setattr(namespace, self.dest, prospective_dir)
+        else:
+            raise argparse.ArgumentTypeError(
+                "writeable_dir:{0} is not a writeable dir".format(prospective_dir))
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=_info,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('--modpath', '-m', action=writeable_dir, nargs=1,
+                        help='The modulepath to install the bout++ module')
+    parser.add_argument('--name', '-n', nargs=1,
+                        help='''Can by any name by which you will be later able to recognise
+                        this specific bout++ installation, e.g. `3d-metrics`. You can later
+                        load the module with `module load bout++/name` e.g. `module load
+                        bout++/3d-metrics`.''')
+    parser.add_argument('--bout-top', '-t', nargs=1,
+                        help="""bout-top is the root directory of the BOUT++ installation. Note that
+                        it only works with in-source-builds.""")
+    args = parser.parse_args()
+    modulepath = args.modpath
+    name = args.name
+    top = args.bout_top
+
+    if modulepath == None:
+        modulepath = ask_modpath()
+    if name == None:
+        name = ask_name()
+    if top == None:
+        top = ask_bouttop()
+
+    create_mod(modulepath, name, top)
