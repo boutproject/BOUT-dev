@@ -565,7 +565,8 @@ constexpr metaData SplitFluxDerivativeType::meta;
 
 produceCombinations<Set<WRAP_ENUM(DIRECTION, X), WRAP_ENUM(DIRECTION, Y),
                         WRAP_ENUM(DIRECTION, YOrthogonal), WRAP_ENUM(DIRECTION, Z)>,
-                    Set<WRAP_ENUM(STAGGER, None)>,
+                    Set<WRAP_ENUM(STAGGER, None), WRAP_ENUM(STAGGER, C2L),
+                        WRAP_ENUM(STAGGER, L2C)>,
                     Set<TypeContainer<Field3D>, TypeContainer<Field2D>>,
                     Set<SplitFluxDerivativeType>>
     registerSplitDerivative(registerMethod{});
