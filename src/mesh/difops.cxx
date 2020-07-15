@@ -336,19 +336,19 @@ Coordinates::metric_field_type Div_par_K_Grad_par(const Field2D& kY, const Field
   return interp_to(kY, outloc)*Grad2_par2(f, outloc) + Div_par(kY, outloc)*Grad_par(f, outloc);
 }
 
-const Field3D Div_par_K_Grad_par(const Field2D &kY, const Field3D &f, CELL_LOC outloc) {
+Field3D Div_par_K_Grad_par(const Field2D &kY, const Field3D &f, CELL_LOC outloc) {
   if (outloc == CELL_DEFAULT) outloc = f.getLocation();
 
   return interp_to(kY, outloc)*Grad2_par2(f, outloc) + Div_par(kY, outloc)*Grad_par(f, outloc);
 }
 
-const Field3D Div_par_K_Grad_par(const Field3D &kY, const Field2D &f, CELL_LOC outloc) {
+Field3D Div_par_K_Grad_par(const Field3D &kY, const Field2D &f, CELL_LOC outloc) {
   if (outloc == CELL_DEFAULT) outloc = f.getLocation();
 
   return interp_to(kY, outloc)*Grad2_par2(f, outloc) + Div_par(kY, outloc)*Grad_par(f, outloc);
 }
 
-const Field3D Div_par_K_Grad_par(const Field3D &kY, const Field3D &f, CELL_LOC outloc) {
+Field3D Div_par_K_Grad_par(const Field3D &kY, const Field3D &f, CELL_LOC outloc) {
   if (outloc == CELL_DEFAULT) outloc = f.getLocation();
 
   return interp_to(kY, outloc)*Grad2_par2(f, outloc) + Div_par(kY, outloc)*Grad_par(f, outloc);
