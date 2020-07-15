@@ -93,7 +93,7 @@ variables are defined doesn’t matter, so ``L`` could be defined below
 ``dy``, but circular dependencies are not allowed. If the variables are
 defined in the same section (as ``dy`` and ``L``) then no section prefix
 is required. To refer to a variable in a different section, prefix the
-variable with the section name e.g. “``section:variable``”.
+variable with the section name e.g. “``mesh:dx``”.
 
 More complex meshes can be created by supplying an input grid file to
 describe the grid points, geometry, and starting profiles. Currently
@@ -105,10 +105,10 @@ not found, a warning will be printed and the default values used.
 
 -  Differencing quantities in 2D/3D arrays ``dx(nx,ny[,nz])``,
    ``dy(nx,ny[,nz])`` and ``dz(nx,ny[,nz])``. If these are not found
-   they will be set to 1. Note that in earlier versions of BOUT++,
-   `dz` was a constant. To allow variation in `z` direction, BOUT++
-   has to be configured `--enable-metric-3d`, otherwise 2D fields are
-   used for the metric fields.
+   they will be set to 1. To allow variation in ``z`` direction, BOUT++
+   has to be configured ``--enable-metric-3d``, otherwise 2D fields are
+   used for the metric fields. Note that prior to BOUT++ version 5
+   ``dz`` was a constant.
 
 -  Diagonal terms of the metric tensor :math:`g^{ij}` ``g11(nx,ny[,nz])``,
    ``g22(nx,ny[,nz])``, and ``g33(nx,ny[,nz])``. If not found, these will be set
@@ -119,9 +119,9 @@ not found, a warning will be printed and the default values used.
    to 0.
 
 -  Z shift for interpolation between field-aligned coordinates and
-   non-aligned coordinates (see ``manual/coordinates.pdf``). Parallel
+   non-aligned coordinates (see :ref:`sec-field-aligned-coordinates`). Parallel
    differential operators are calculated using a shift to field-aligned
-   values when `paralleltransform:type = shifted` (or `shiftedinterp`).
+   values when ``paralleltransform:type = shifted`` (or ``shiftedinterp``).
    The shifts must be provided in the gridfile in a field ``zshift(nx,ny)``.
    If not found, ``zshift`` is set to zero.
 
