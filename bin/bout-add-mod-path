@@ -111,12 +111,12 @@ class writeable_dir(argparse.Action):
         prospective_dir = values
         if not os.path.isdir(prospective_dir):
             raise argparse.ArgumentTypeError(
-                "writeable_dir:{0} is not a valid path".format(prospective_dir))
+                "writeable_dir: {0} is not a valid path".format(prospective_dir))
         if os.access(prospective_dir, os.W_OK):
             setattr(namespace, self.dest, prospective_dir)
         else:
             raise argparse.ArgumentTypeError(
-                "writeable_dir:{0} is not a writeable dir".format(prospective_dir))
+                "writeable_dir: {0} is not a writeable dir".format(prospective_dir))
 
 
 if __name__ == "__main__":
