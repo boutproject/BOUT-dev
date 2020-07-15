@@ -129,7 +129,7 @@ FieldPerp LaplaceShoot::solve(const FieldPerp& rhs) {
   // kc and kp now set to result at x and x+1 respectively
   // Use b at x to get km at x-1
   // Loop inwards from edge
-  const BoutReal zlength = getConst(coords->zlength());
+  const BoutReal zlength = getUniform(coords->zlength());
   for(int ix=xe; ix >= xs; ix--) {
     rfft(rhs[ix], localmesh->LocalNz, std::begin(rhsk));
 

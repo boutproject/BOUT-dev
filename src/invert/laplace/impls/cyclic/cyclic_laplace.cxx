@@ -145,7 +145,7 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
 
       // Get elements of the tridiagonal matrix
       // including boundary conditions
-      BoutReal zlen = getConst(coords->dz) * (localmesh->LocalNz - 3);
+      BoutReal zlen = getUniform(coords->dz) * (localmesh->LocalNz - 3);
       BOUT_OMP(for nowait)
       for (int kz = 0; kz < nmode; kz++) {
         BoutReal kwave =
@@ -213,7 +213,7 @@ FieldPerp LaplaceCyclic::solve(const FieldPerp& rhs, const FieldPerp& x0) {
 
       // Get elements of the tridiagonal matrix
       // including boundary conditions
-      const BoutReal zlength = getConst(coords->zlength());
+      const BoutReal zlength = getUniform(coords->zlength());
       BOUT_OMP(for nowait)
       for (int kz = 0; kz < nmode; kz++) {
         BoutReal kwave = kz * 2.0 * PI / zlength; // wave number is 1/[rad]
@@ -344,7 +344,7 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
 
       // Get elements of the tridiagonal matrix
       // including boundary conditions
-      const BoutReal zlen = getConst(coords->dz) * (localmesh->LocalNz - 3);
+      const BoutReal zlen = getUniform(coords->dz) * (localmesh->LocalNz - 3);
       BOUT_OMP(for nowait)
       for (int ind = 0; ind < nsys; ind++) {
         // ind = (iy - ys) * nmode + kz
@@ -425,7 +425,7 @@ Field3D LaplaceCyclic::solve(const Field3D& rhs, const Field3D& x0) {
 
       // Get elements of the tridiagonal matrix
       // including boundary conditions
-      const BoutReal zlength = getConst(coords->zlength());
+      const BoutReal zlength = getUniform(coords->zlength());
       BOUT_OMP(for nowait)
       for (int ind = 0; ind < nsys; ind++) {
         // ind = (iy - ys) * nmode + kz

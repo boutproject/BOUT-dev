@@ -937,7 +937,7 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
   } else {
     // Interpolate fields from coords_in
 
-    if (isConst(coords_in->dz)) {
+    if (isUniform(coords_in->dz)) {
       dz = coords_in->dz;
       dz.setLocation(location);
     } else {
@@ -1581,7 +1581,7 @@ void Coordinates::setParallelTransform(Options* options) {
 
     if (ptstr == "shifted") {
       transform = bout::utils::make_unique<ShiftedMetric>(*localmesh, location, zShift,
-                                                          getConst(zlength()));
+                                                          getUniform(zlength()));
     } else if (ptstr == "shiftedinterp") {
       transform =
           bout::utils::make_unique<ShiftedMetricInterp>(*localmesh, location, zShift);

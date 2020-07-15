@@ -2811,7 +2811,7 @@ void BoundaryNeumann_NonOrthogonal::apply(Field3D& f) {
                         * metric->dx(x - bx, y);
         for (int jz = 1; jz <= ncz / 2; jz++) {
           BoutReal kwave =
-              jz * 2.0 * PI / getConst(metric->zlength()); // wavenumber in [rad^-1]
+              jz * 2.0 * PI / getUniform(metric->zlength()); // wavenumber in [rad^-1]
           c0[jz] *= exp(coef * kwave);                     // The decaying solution only
           // Add the particular solution
           c2[jz] = c0[jz] - c1[jz] / (metric->g33(x - bx, y) * kwave * kwave);

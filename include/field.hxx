@@ -383,10 +383,11 @@ inline BoutReal min(const T& f, bool allpe, REGION rgn) {
 }
 
 template <typename T, typename = bout::utils::EnableIfField<T>>
-inline bool isConst(const T& f, bool allpe = false,
+inline bool isUniform(const T& f, bool allpe = false,
                     const std::string& region = "RGN_ALL") {
   bool result = true;
   auto element = f[*f.getRegion(region).begin()];
+  // TODO: maybe parallise this loop, as the early return is unlikely
   BOUT_FOR_SERIAL(i, f.getRegion(region)) {
     if (f[i] != element) {
       result = false;
@@ -401,26 +402,14 @@ inline bool isConst(const T& f, bool allpe = false,
 }
 
 template <typename T, typename = bout::utils::EnableIfField<T>>
-inline BoutReal getConst(const T& f, bool allpe = false,
+inline BoutReal getUniform(const T& f, bool allpe = false,
                          const std::string& region = "RGN_ALL") {
-  bool is_const = true;
-  auto element = f[*f.getRegion(region).begin()];
 #if CHECK > 1
-  BOUT_FOR_SERIAL(i, f.getRegion(region)) {
-    if (f[i] != element) {
-      is_const = false;
-      break;
-    }
-  }
-  if (allpe) {
-    bool local_is_const = is_const;
-    MPI_Allreduce(&local_is_const, &is_const, 1, MPI_C_BOOL, MPI_LOR, BoutComm::get());
-  }
-  if (!is_const) {
-    throw BoutException("Requested getConst but Field is not const");
+  if (! isUniform(f, allpe, region)) {
+    throw BoutException("Requested getUniform({}, {}, {}) but Field is not const", f.name, allpe, region);
   }
 #endif
-  return element;
+  return f[*f.getRegion(region).begin()];
 }
 
 template<typename T, typename = bout::utils::EnableIfField<T>>

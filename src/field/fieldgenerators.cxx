@@ -81,7 +81,7 @@ BoutReal FieldBallooning::generate(const Context& ctx) {
                 / (localmesh->xend - localmesh->xstart);
   int jx = ROUND((ctx.x() - localmesh->GlobalX(0)) / dx);
 
-  const BoutReal zlength = getConst(coords->zlength());
+  const BoutReal zlength = getUniform(coords->zlength());
 
   if (localmesh->periodicY(jx, ts)) {
     // Start with the value at this point
