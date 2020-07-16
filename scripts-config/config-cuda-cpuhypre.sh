@@ -21,7 +21,7 @@ module --ignore-cache load hdf5-1.10.1-gcc-8.3.1-rd54eh6
 module --ignore-cache load python-3.7.7-gcc-8.3.1-4vwg3n5
 module --ignore-cache load netcdf-c-4.7.3-gcc-8.3.1-fpxr24s 
 module --ignore-cache load netcdf-cxx4-4.3.1-gcc-8.3.1-ybne6oo
-module --ignore-cache load petsc-3.12.3-gcc-8.3.1-triqq62
+module --ignore-cache load petsc-3.12.3-gcc-8.3.1-o4ic636
 module --ignore-cache load py-cftime-1.0.3.4-gcc-8.3.1-bbyzoow
 module --ignore-cache load py-cython-0.29.16-gcc-8.3.1-u4srpzl
 module --ignore-cache load py-pybind11-2.5.0-gcc-8.3.1-tyma4yw
@@ -149,8 +149,9 @@ elif [ "$pkg" == "hypre" ]; then
     source_dir=${source_prefix}/${pkg}/src
     mkdir -p $build_dir && cd $build_dir
     cmake -DCMAKE_CXX_COMPILER=$cpp \
+          -DCMAKE_C_COMPILER=$cc \
           -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-          -DCMAKE_PREFIX_PATH="${install_prefix}/raja/share/raja/cmake;${install_prefix}/umpire/share/umpire/cmake" \
+          -DCMAKE_PREFIX_PATH="${install_prefix}/raja/share/raja/cmake" \
           -DCMAKE_INSTALL_PREFIX=$install_dir \
           -DHYPRE_BUILD_TESTS=On \
           -DENABLE_GTEST_DEATH_TESTS=On \
@@ -165,7 +166,10 @@ elif [ "$pkg" == "hypre" ]; then
           $source_dir
 elif [ "$pkg" == "BOUT-dev" ]; then
     source_dir=${source_prefix}/${pkg}
-    cd $source_dir 
+    cd $source_dir && {
+        branch=$(git rev-parse --abbrev-ref HEAD)
+        [[ "$branch" != "hypre-laplacexy-blt" ]] && exit 1
+    }
     mkdir -p $build_dir && cd $build_dir
     cmake -DCMAKE_CXX_COMPILER=$cpp \
           -DCMAKE_C_COMPILER=$cc \
@@ -199,6 +203,7 @@ elif [ "$pkg" == "BOUT-dev" ]; then
           -DCMAKE_EXPORT_COMPILE_COMMANDS=On \
           -DCMAKE_VERBOSE_MAKEFILE=On \
           -Dgtest_disable_pthreads=ON \
+          -DCUDA_ARCH=sm_70 \
           -DCMAKE_INSTALL_RPATH="/var/tmp/fisher47/spack-stage/spack-stage-petsc-3.13.0-4273anzwyd5cqhkx6fceninoycg4wo66/lib;/var/tmp/fisher47/spack-stage/spack-stage-hdf5-1.10.6-6qtujf5zc5iwwyow6ub52jfxyzej5gse/lib" \
           -DCMAKE_BUILD_RPATH="/var/tmp/fisher47/spack-stage/spack-stage-petsc-3.13.0-4273anzwyd5cqhkx6fceninoycg4wo66/lib;/var/tmp/fisher47/spack-stage/spack-stage-hdf5-1.10.6-6qtujf5zc5iwwyow6ub52jfxyzej5gse/lib" \
           $source_dir
