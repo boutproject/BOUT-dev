@@ -32,7 +32,7 @@
 #
 
 AC_PREREQ([2.69])
-AC_INIT([BOUT++],[4.3.0],[bd512@york.ac.uk])
+AC_INIT([BOUT++],[4.3.1],[bd512@york.ac.uk])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -262,8 +262,10 @@ OPT_FLAGS=""
 AS_IF([test "$enable_debug" != ""], [
   AC_MSG_NOTICE([Enabling all debug options])
   enable_checks="3"
-  # use -Og with available, otherwise fall back to -O0
-  OPT_FLAGS="-g -O0 -Og -fno-inline -hipa1"
+  OPT_FLAGS="-g -O0 -fno-inline -hipa1"
+  # Only for not gcc add -Og due to
+  # https://github.com/boutproject/BOUT-dev/issues/1879
+  $MPICXX --version | grep g++ -q || OPT_FLAGS="$OPT_FLAGS -Og"
 ], [
   AS_IF([test "x$enable_optimize" != "xno"], [
     AS_CASE(["$enable_optimize"],
@@ -682,17 +684,27 @@ AS_IF([test "x$with_petsc" != "x" && test "$with_petsc" != "no"], [
 
 # PETSc changed the location of the conf directory in 3.5, so we
 # need to check both locations
+# If we find nether, try to fall back to pkg-conf
+  PETSC_PKGCONF=no
   AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/conf, [
     PETSC_CONFDIR=${PETSC_DIR}/conf
   ], [
     AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/lib/petsc/conf, [
       PETSC_CONFDIR=${PETSC_DIR}/lib/petsc/conf
     ], [
-      AC_MSG_ERROR([--with-petsc was specified but could not find PETSc distribution.
+      PKG_CHECK_MODULES(PETSC, PETSc >= 3.4.0 ,
+        PETSC_PKGCONF=yes, [
+          PKG_CHECK_MODULES(PETSC, petsc >= 3.4.0 ,
+            PETSC_PKGCONF=yes, [
+	      AC_MSG_ERROR([--with-petsc was specified but could not find PETSc distribution.
 PETSC_ERROR_MESSAGE])
+	])
+      ])
     ])
   ])
 
+  AS_IF([test $PETSC_PKGCONF = no] ,
+    [
 # We've found an installation, need to check we can use it. First we
 # need to be able to check the version number, for which we need
 # petscverion.h
@@ -771,7 +783,33 @@ PETSC_ERROR_MESSAGE])
   CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC"
   EXTRA_INCS="$EXTRA_INCS \$(PETSC_CC_INCLUDES)"
   EXTRA_LIBS="$EXTRA_LIBS \$(PETSC_LIB)"
+  ], [ dnl pkg-config version
 
+  # Check if PETSc was compiled with SUNDIALS
+  save_CPPFLAGS="$CPPFLAGS"
+  CPPFLAGS="$CPPFLAGS $PETSC_CFLAGS"
+  AC_MSG_CHECKING([PETSc has SUNDIALS support])
+  AC_EGREP_CPP([yes], [
+    #include <petscconf.h>
+    #ifdef PETSC_HAVE_SUNDIALS
+      yes
+    #endif
+  ], [PETSC_HAS_SUNDIALS="yes"],
+     [PETSC_HAS_SUNDIALS="no"])
+  AC_MSG_RESULT([$PETSC_HAS_SUNDIALS])
+  CPPFLAGS="$save_CPPFLAGS"
+
+  AS_IF([test "$PETSC_HAS_SUNDIALS" = "yes"], [
+    CXXFLAGS="$CXXFLAGS -DPETSC_HAS_SUNDIALS "
+  ])
+  PETSC_MAKE_INCLUDE=
+  HAS_PETSC="yes"
+
+  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC"
+
+  EXTRA_INCS="$EXTRA_INCS $PETSC_CFLAGS"
+  EXTRA_LIBS="$EXTRA_LIBS $PETSC_LIBS"
+ ])
 ], [
   PETSC_MAKE_INCLUDE=
   HAS_PETSC="no"

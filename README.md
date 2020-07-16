@@ -60,15 +60,15 @@ Homepage found at [http://boutproject.github.io/](http://boutproject.github.io/)
 
 BOUT++ needs the following:
 
-* A C++11 compiler
+* A C++11 compiler (GCC must be at least 4.9)
 * MPI
-* FFTW3
 * Either NetCDF or HDF5
 
 Note that some of the tests require NetCDF rather than HDF5
 
 BOUT++ has the following optional dependencies:
 
+* FFTW3 (strongly recommended!)
 * OpenMP
 * PETSc
 * SLEPc
