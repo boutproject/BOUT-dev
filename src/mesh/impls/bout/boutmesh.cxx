@@ -2536,14 +2536,6 @@ void BoutMesh::addBoundaryRegions() {
 
   // Outer X
   if(lastX() && !periodicX) {
-    addRegion3D("RGN_OUTER_X_THIN",
-                Region<Ind3D>(xend + 1, xend + 1, ystart, yend, 0, LocalNz - 1, LocalNy,
-                              LocalNz, maxregionblocksize));
-    addRegion2D("RGN_OUTER_X_THIN", Region<Ind2D>(xend + 1, xend + 1, ystart, yend, 0, 0,
-                                                  LocalNy, 1, maxregionblocksize));
-    addRegionPerp("RGN_OUTER_X_THIN",
-                  Region<IndPerp>(xend + 1, xend + 1, 0, 0, 0, LocalNz - 1, 1, LocalNz,
-                                  maxregionblocksize));
     addRegion3D("RGN_OUTER_X", Region<Ind3D>(xend+1, LocalNx-1, ystart, yend, 0, LocalNz-1,
                                              LocalNy, LocalNz, maxregionblocksize));
     addRegion2D("RGN_OUTER_X", Region<Ind2D>(xend+1, LocalNx-1, ystart, yend, 0, 0,

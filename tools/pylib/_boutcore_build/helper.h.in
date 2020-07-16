@@ -77,8 +77,9 @@ class PythonModelCallback{
 class PythonModel: public PhysicsModel{
 protected:
   int init(bool restarting) override{
+    long aligned_restarting = restarting;
     if (_init){
-      _init->cy_execute(&restarting);
+      _init->cy_execute(&aligned_restarting);
     }
     return 0;
   };
@@ -123,6 +124,13 @@ void throw_BoutException(std::string err){
 
 Datafile * c_get_global_datafile(){
   return &bout::globals::dump;
+}
+
+double c_get_dz(Coordinates * coords) {
+  return coords->dz;
+}
+void c_set_dz(Coordinates * coords, double val) {
+  coords->dz = val;
 }
 
 EOF

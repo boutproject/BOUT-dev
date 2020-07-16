@@ -134,6 +134,14 @@ int PhysicsModel::postInit(bool restarting) {
   if (!restart.openw(filename))
     throw BoutException("Error: Could not open restart file for writing\n");
 
+  if (restarting) {
+    // Write variables to the restart files so that the initial data is not lost if there is
+    // a crash before modelMonitor is called for the first time
+    if (!restart.write()) {
+      throw BoutException("Error: Failed to write initial data back to restart file");
+    }
+  }
+
   // Add monitor to the solver which calls restart.write() and
   // PhysicsModel::outputMonitor()
   solver->addMonitor(&modelMonitor);

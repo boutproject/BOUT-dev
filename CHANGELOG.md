@@ -1,25 +1,51 @@
 # Change Log
 
-## [v5.0.0-alpha](https://github.com/boutproject/BOUT-dev/tree/next)
-[Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v4.3.0...next)
+## [v4.3.1](https://github.com/boutproject/BOUT-dev/tree/v4.3.1) (2020-03-27)
 
-### Breaking changes
+[Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v4.3.0...v4.3.1)
 
-- `BoutMesh::GlobalNy` now counts points from all y-boundaries. Previously it
-  only counted points from the boundaries at the upper and lower edges of the
-  logical grid, even if there was another boundary in the grid.
-  [\#1829](https://github.com/boutproject/BOUT-dev/pull/1829)
-- `invert_laplace` free function removed
-  [\#1834](https://github.com/boutproject/BOUT-dev/pull/1834)
-- Most factories and `create` methods standardised. Run
-  `bin/bout-v5-factory-upgrader.py` on your physics models to update
-  them [\#1842](https://github.com/boutproject/BOUT-dev/pull/1842)
-- We now use [fmt](https://fmt.dev) for all our string formatting,
-  instead of the printf-style formatting. This affects calls to
-  `Output`, `BoutException`/`ParseException`, `DataFile`,
-  `OptionsReader`, and `MsgStack`/`TRACE`. Run
-  `bin/bout-v5-format-upgrader.py` on your physics models to update
-  them. [\#1847](https://github.com/boutproject/BOUT-dev/pull/1847)
+**Merged pull requests:**
+
+- Fix examples/make-script [\#1995](https://github.com/boutproject/BOUT-dev/pull/1995) ([ZedThree](https://github.com/ZedThree))
+- Travis: Update pinned pip packages [\#1994](https://github.com/boutproject/BOUT-dev/pull/1994) ([ZedThree](https://github.com/ZedThree))
+- Remove unused VERSIONS file [\#1993](https://github.com/boutproject/BOUT-dev/pull/1993) ([ZedThree](https://github.com/ZedThree))
+- Minor Travis fixes and job names (master) [\#1990](https://github.com/boutproject/BOUT-dev/pull/1990) ([ZedThree](https://github.com/ZedThree))
+- conditionally add -Og for non-gcc [\#1987](https://github.com/boutproject/BOUT-dev/pull/1987) ([dschwoerer](https://github.com/dschwoerer))
+- fix test-laplace-petsc3d [\#1985](https://github.com/boutproject/BOUT-dev/pull/1985) ([dschwoerer](https://github.com/dschwoerer))
+- Use '==' to compare to literals in Python [\#1980](https://github.com/boutproject/BOUT-dev/pull/1980) ([ZedThree](https://github.com/ZedThree))
+- Read staggered J and Bxy from grid if present (master) [\#1975](https://github.com/boutproject/BOUT-dev/pull/1975) ([johnomotani](https://github.com/johnomotani))
+- Remove reference to deleted test in documentation [\#1973](https://github.com/boutproject/BOUT-dev/pull/1973) ([ZedThree](https://github.com/ZedThree))
+- Remove -Og from debug flags [\#1972](https://github.com/boutproject/BOUT-dev/pull/1972) ([ZedThree](https://github.com/ZedThree))
+- Fix documented requirements [\#1971](https://github.com/boutproject/BOUT-dev/pull/1971) ([ZedThree](https://github.com/ZedThree))
+- Compat make.config for make 4.3 [\#1970](https://github.com/boutproject/BOUT-dev/pull/1970) ([dschwoerer](https://github.com/dschwoerer))
+- Install make.config with header files [\#1969](https://github.com/boutproject/BOUT-dev/pull/1969) ([dschwoerer](https://github.com/dschwoerer))
+- Translations 4.3.1 [\#1968](https://github.com/boutproject/BOUT-dev/pull/1968) ([dschwoerer](https://github.com/dschwoerer))
+- Fix collect when given similar name [\#1966](https://github.com/boutproject/BOUT-dev/pull/1966) ([bendudson](https://github.com/bendudson))
+- Fix deprecated initialisation and boundary options [\#1956](https://github.com/boutproject/BOUT-dev/pull/1956) ([ZedThree](https://github.com/ZedThree))
+- make README.md readabile [\#1953](https://github.com/boutproject/BOUT-dev/pull/1953) ([dschwoerer](https://github.com/dschwoerer))
+- Fix lapd\_drift input files [\#1950](https://github.com/boutproject/BOUT-dev/pull/1950) ([bendudson](https://github.com/bendudson))
+- Remove FieldData::setBoundary [\#1949](https://github.com/boutproject/BOUT-dev/pull/1949) ([bendudson](https://github.com/bendudson))
+- Fixes for staggering in lapd-drift example (master) [\#1928](https://github.com/boutproject/BOUT-dev/pull/1928) ([johnomotani](https://github.com/johnomotani))
+- Fix segfaults from PvodeSolver (master) [\#1927](https://github.com/boutproject/BOUT-dev/pull/1927) ([johnomotani](https://github.com/johnomotani))
+- pkg-config petsc (master) [\#1913](https://github.com/boutproject/BOUT-dev/pull/1913) ([dschwoerer](https://github.com/dschwoerer))
+- Fix hypnotoad [\#1911](https://github.com/boutproject/BOUT-dev/pull/1911) ([johnomotani](https://github.com/johnomotani))
+- complete instructions for archlinux [\#1892](https://github.com/boutproject/BOUT-dev/pull/1892) ([dschwoerer](https://github.com/dschwoerer))
+- Petsc interface generalisation [\#1889](https://github.com/boutproject/BOUT-dev/pull/1889) ([cmacmackin](https://github.com/cmacmackin))
+- fix citation [\#1888](https://github.com/boutproject/BOUT-dev/pull/1888) ([dschwoerer](https://github.com/dschwoerer))
+- If variable is added to Datafile twice, do not write twice [\#1876](https://github.com/boutproject/BOUT-dev/pull/1876) ([johnomotani](https://github.com/johnomotani))
+- Fix loss of restart files caused by crash during initialisation [\#1875](https://github.com/boutproject/BOUT-dev/pull/1875) ([johnomotani](https://github.com/johnomotani))
+- Do not include if is released [\#1871](https://github.com/boutproject/BOUT-dev/pull/1871) ([dschwoerer](https://github.com/dschwoerer))
+- Easier instructions for Fedora [\#1870](https://github.com/boutproject/BOUT-dev/pull/1870) ([dschwoerer](https://github.com/dschwoerer))
+- Basic lock for mpark.variant [\#1869](https://github.com/boutproject/BOUT-dev/pull/1869) ([dschwoerer](https://github.com/dschwoerer))
+- Add BOUT\_REVISION (git hash of compiled version) to dump files [\#1867](https://github.com/boutproject/BOUT-dev/pull/1867) ([johnomotani](https://github.com/johnomotani))
+- Mesh requires Option to stay around. [\#1860](https://github.com/boutproject/BOUT-dev/pull/1860) ([dschwoerer](https://github.com/dschwoerer))
+- Try to prevent race condition while building. [\#1856](https://github.com/boutproject/BOUT-dev/pull/1856) ([dschwoerer](https://github.com/dschwoerer))
+- Address needs to be aligned [\#1855](https://github.com/boutproject/BOUT-dev/pull/1855) ([dschwoerer](https://github.com/dschwoerer))
+- set OMPI\_MCA\_rmaps\_base\_oversubscribe=yes for tests [\#1854](https://github.com/boutproject/BOUT-dev/pull/1854) ([dschwoerer](https://github.com/dschwoerer))
+- Loosen tolerance for other arches [\#1853](https://github.com/boutproject/BOUT-dev/pull/1853) ([dschwoerer](https://github.com/dschwoerer))
+- Bugfix: $MPIRUN should include -np [\#1851](https://github.com/boutproject/BOUT-dev/pull/1851) ([dschwoerer](https://github.com/dschwoerer))
+- Add some documentation on setting locales [\#1845](https://github.com/boutproject/BOUT-dev/pull/1845) ([bendudson](https://github.com/bendudson))
+- Fix typo in initialisation of rgn\_outer\_x [\#1838](https://github.com/boutproject/BOUT-dev/pull/1838) ([ZedThree](https://github.com/ZedThree))
 
 ## [v4.3.0](https://github.com/boutproject/BOUT-dev/tree/v4.3.0) (2019-10-24)
 [Full Changelog](https://github.com/boutproject/BOUT-dev/compare/v4.2.3...v4.3.0)

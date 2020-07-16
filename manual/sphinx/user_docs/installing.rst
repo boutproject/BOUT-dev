@@ -126,9 +126,18 @@ The bare-minimum requirements for compiling and running BOUT++ are:
    MPICH ( `https://www.mpich.org/ <https://www.mpich.org/>`__) or
    LAM (`www.lam-mpi.org/ <www.lam-mpi.org/>`__)
    
-#. The NetCDF library ( `https://www.unidata.ucar.edu/downloads/netcdf <https://www.unidata.ucar.edu/downloads/netcdf>`__ )
+#. The NetCDF library (`https://www.unidata.ucar.edu/downloads/netcdf
+   <https://www.unidata.ucar.edu/downloads/netcdf>`__)
    
-The FFTW-3 library ( `http://www.fftw.org/ <http://www.fftw.org/>`__ ) is also strongly recommended
+The FFTW-3 library (`http://www.fftw.org/ <http://www.fftw.org/>`__)
+is also strongly recommended. Fourier transforms are used for some
+derivative methods, as well as the `ShiftedMetric` parallel transform
+which is used in the majority of BOUT++ tokamak simulations. Without
+FFTW-3, these options will not be available.
+
+.. note::
+   Only GCC versions >= 4.9 are supported. This is due to a bug in
+   previous versions.
 
 .. note::
    If you use an Intel compiler, you must also make sure that you have
@@ -194,7 +203,7 @@ Arch Linux
 
 ::
 
-   $ pacman -S openmpi fftw netcdf-cxx 
+   $ pacman -S openmpi fftw netcdf-cxx make gcc
 
 
 Fedora
@@ -202,25 +211,19 @@ Fedora
 
 On Fedora the required libraries can be installed by running::
 
-   $ sudo dnf install autoconf automake netcdf-cxx4-devel fftw-devel hdf5-devel make python3-jinja2
-   $ sudo dnf install python3 python3-h5py python3-numpy python3-netcdf4 python3-scipy
-   $ sudo dnf install python2 python2-h5py python2-numpy python2-netcdf4 python2-scipy
-   $ sudo dnf install mpich-devel
-   $ sudo dnf install openmpi-devel
+   $ sudo dnf build-dep bout++
 
-Note that the python2/python3 stack is only required for for post
-processing and the tests, so feel free to install only what you
-actually need.
-Further, only either mpich or openmpi is required.
+This will install all the dependencies that are used to install
+BOUT++ for fedora. Feel free to install only a subset of the
+suggested packages. For example, only mpich or openmpi is required.
 To load an mpi implementation type::
 
    $ module load mpi
 
 After that the mpi library is loaded.
 Precompiled binaries are available for fedora as well.
-To get the latest release run::
+To get precompiled BOUT++ run::
 
-   $ sudo dnf copr enable davidsch/bout
    $ # install the mpich version - openmpi is available as well
    $ sudo dnf install bout++-mpich-devel
    $ # get the python3 modules - python2 is available as well
@@ -366,7 +369,10 @@ finishes, the configuration summary should contain a line like::
   configure:   Natural language support: yes (path: /home/user/BOUT-dev/locale)
 
 where the ``path`` is the directory containing the translations.
-  
+
+See :ref:`sec-run-nls` for details of how to switch language when running
+BOUT++ simulations.
+
 .. _sec-configanalysis:
 
 Configuring analysis routines
