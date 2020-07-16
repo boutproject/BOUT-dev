@@ -41,7 +41,7 @@ TEST_F(CoordinatesTest, Jacobian) {
 }
 
 /// To do generalise these tests
-#ifndef COORDINATES_USE_3D
+#if not(BOUT_USE_METRIC_3D)
 TEST_F(CoordinatesTest, CalcContravariant) {
   Coordinates coords{
       mesh,         Field2D{1.0}, Field2D{1.0}, BoutReal{1.0}, Field2D{0.0}, Field2D{0.0},

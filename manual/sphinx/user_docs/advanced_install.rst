@@ -728,7 +728,7 @@ The minimal required CMake options are as follows:
 
 .. code-block:: bash
 
-    -DENABLE_BACKTRACE=OFF \
+    -DBOUT_ENABLE_BACKTRACE=OFF \
     -DCMAKE_CXX_FLAGS="/permissive- /EHsc /bigobj" \
     -DBUILD_SHARED_LIBS=OFF
 

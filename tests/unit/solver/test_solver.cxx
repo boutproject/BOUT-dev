@@ -255,7 +255,7 @@ TEST_F(SolverTest, AddVector2D) {
 
   Vector2D vector1{}, vector2{};
   EXPECT_NO_THROW(solver.add(vector1, "vector"));
-#ifndef COORDINATES_USE_3D
+#if not(BOUT_USE_METRIC_3D)
   constexpr int n2d = 3, n3d = 0;
 #else
   constexpr int n2d = 0, n3d = 3;
@@ -386,7 +386,7 @@ TEST_F(SolverTest, ConstraintVector2D) {
 
   Vector2D vector1{}, vector2{};
   EXPECT_NO_THROW(solver.constraint(vector1, vector1, "vector"));
-#ifndef COORDINATES_USE_3D
+#if not(BOUT_USE_METRIC_3D)
   constexpr int n2d = 3, n3d = 0;
 #else
   constexpr int n2d = 0, n3d = 3;

@@ -25,9 +25,11 @@
  *
  **************************************************************************/
 
+#include "bout/build_config.hxx"
+
 #include "arkode.hxx"
 
-#ifdef BOUT_HAS_ARKODE
+#if BOUT_HAS_ARKODE
 
 #include "boutcomm.hxx"
 #include "boutexception.hxx"

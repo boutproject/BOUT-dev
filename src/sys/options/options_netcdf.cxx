@@ -1,5 +1,6 @@
+#include "bout/build_config.hxx"
 
-#ifdef NCDF4
+#if BOUT_HAS_NETCDF
 
 #include "options_netcdf.hxx"
 
@@ -537,4 +538,4 @@ void OptionsNetCDF::write(const Options& options) {
 } // experimental
 } // bout
 
-#endif // NCDF4
+#endif // BOUT_HAS_NETCDF

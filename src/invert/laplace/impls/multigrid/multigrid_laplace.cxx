@@ -41,7 +41,7 @@ BoutReal soltime=0.0,settime=0.0;
 LaplaceMultigrid::LaplaceMultigrid(Options *opt, const CELL_LOC loc, Mesh *mesh_in) :
   Laplacian(opt, loc, mesh_in),
   A(0.0), C1(1.0), C2(1.0), D(1.0) {
-#ifdef COORDINATES_USE_3D
+#if BOUT_USE_METRIC_3D
   throw BoutException("Laplace multigrid solver does not support 3D metric yet.");
 #endif
 
@@ -205,7 +205,7 @@ BOUT_OMP(master)
 }
 
 FieldPerp LaplaceMultigrid::solve(const FieldPerp& b_in, const FieldPerp& x0) {
-#ifndef COORDINATES_USE_3D
+#if not(BOUT_USE_METRIC_3D)
 
   TRACE("LaplaceMultigrid::solve(const FieldPerp, const FieldPerp)");
 
@@ -558,7 +558,7 @@ BOUT_OMP(for)
 }
 
 void LaplaceMultigrid::generateMatrixF(int level) {
-#ifndef COORDINATES_USE_3D
+#if not(BOUT_USE_METRIC_3D)
   TRACE("LaplaceMultigrid::generateMatrixF(int)");
   
   // Set (fine-level) matrix entries

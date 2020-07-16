@@ -45,7 +45,9 @@ class SlepcLib;
 #ifndef __SLEPCLIB_H__
 #define __SLEPCLIB_H__
 
-#ifdef BOUT_HAS_SLEPC
+#include "bout/build_config.hxx"
+
+#if BOUT_HAS_SLEPC
 
 #include <slepc.h>
 

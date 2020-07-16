@@ -50,7 +50,7 @@
 
 InvertParCR::InvertParCR(Options *opt, Mesh *mesh_in)
   : InvertPar(opt, mesh_in), A(1.0), B(0.0), C(0.0), D(0.0), E(0.0) {
-#ifdef COORDINATES_USE_3D
+#if BOUT_USE_METRIC_3D
   throw BoutException("Parallel cyclic solver does not support 3D metric yet.");
 #endif
 
@@ -59,7 +59,7 @@ InvertParCR::InvertParCR(Options *opt, Mesh *mesh_in)
 }
 
 const Field3D InvertParCR::solve(const Field3D &f) {
-#ifndef COORDINATES_USE_3D
+#if not(BOUT_USE_METRIC_3D)
   TRACE("InvertParCR::solve(Field3D)");
   ASSERT1(localmesh == f.getMesh());
 

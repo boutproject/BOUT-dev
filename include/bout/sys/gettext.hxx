@@ -3,6 +3,8 @@
 #ifndef __BOUT_GETTEXT_H__
 #define __BOUT_GETTEXT_H__
 
+#include "bout/build_config.hxx"
+
 #if BOUT_HAS_GETTEXT
 
 #include <clocale>

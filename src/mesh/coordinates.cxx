@@ -637,7 +637,7 @@ interpolateAndNeumann(MAYBE_UNUSED(const Coordinates::metric_field_type& f),
                       MAYBE_UNUSED(ParallelTransform* pt)) {
   Mesh* localmesh = f.getMesh();
   Coordinates::metric_field_type result;
-#ifdef COORDINATES_USE_3D
+#if BOUT_USE_METRIC_3D
   if (location == CELL_YLOW) {
     auto f_aligned = f.getCoordinates() == nullptr ? pt->toFieldAligned(f, "RGN_NOX")
                                                    : toFieldAligned(f, "RGN_NOX");
@@ -1276,7 +1276,7 @@ int Coordinates::geometry(bool recalculate_staggered,
       d1_dy = -d2y / (dy * dy);
     }
 
-#ifdef COORDINATES_USE_3D
+#if BOUT_USE_METRIC_3D
     if (localmesh->get(d2z, "d2z" + suffix, 0.0, false)) {
       output_warn.write(
           "\tWARNING: differencing quantity 'd2z' not found. Calculating from dz\n");
@@ -1326,7 +1326,7 @@ int Coordinates::geometry(bool recalculate_staggered,
       d1_dy = -d2y / (dy * dy);
     }
 
-#ifdef COORDINATES_USE_3D
+#if BOUT_USE_METRIC_3D
     if (localmesh->get(d2z, "d2z", 0.0, false)) {
       output_warn.write(
           "\tWARNING: differencing quantity 'd2z' not found. Calculating from dz\n");
@@ -1807,7 +1807,7 @@ Field3D Coordinates::Delp2(const Field3D& f, CELL_LOC outloc, MAYBE_UNUSED(bool 
 
   Field3D result{emptyFrom(f).setLocation(outloc)};
 
-#ifndef COORDINATES_USE_3D
+#if not(BOUT_USE_METRIC_3D)
   if (useFFT) {
     int ncz = localmesh->LocalNz;
 
@@ -1968,7 +1968,7 @@ Field3D Coordinates::Laplace(const Field3D& f, CELL_LOC outloc,
 // solver
 Field2D Coordinates::Laplace_perpXY(const Field2D& A, const Field2D& f) {
   TRACE("Coordinates::Laplace_perpXY( Field2D )");
-#ifndef COORDINATES_USE_3D
+#if not(BOUT_USE_METRIC_3D)
   Field2D result;
   result.allocate();
   for (auto i : result.getRegion(RGN_NOBNDRY)) {
@@ -2028,7 +2028,7 @@ Field2D Coordinates::Laplace_perpXY(const Field2D& A, const Field2D& f) {
 Coordinates::metric_field_type Coordinates::indexDDY(const Field2D& f, CELL_LOC outloc,
                                                      const std::string& method,
                                                      const std::string& region) {
-#ifdef COORDINATES_USE_3D
+#if BOUT_USE_METRIC_3D
   if (!f.hasParallelSlices()) {
     const bool is_unaligned = (f.getDirectionY() == YDirectionType::Standard);
     const Field3D f_aligned = is_unaligned ? transform->toFieldAligned(f, "RGN_NOX") : f;
@@ -2041,7 +2041,7 @@ Coordinates::metric_field_type Coordinates::indexDDY(const Field2D& f, CELL_LOC 
 
 Field3D Coordinates::indexDDY(const Field3D& f, CELL_LOC outloc,
                               const std::string& method, const std::string& region) {
-#ifdef COORDINATES_USE_3D
+#if BOUT_USE_METRIC_3D
   if (!f.hasParallelSlices()) {
     const bool is_unaligned = (f.getDirectionY() == YDirectionType::Standard);
     Field3D f_aligned;

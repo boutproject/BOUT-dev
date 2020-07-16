@@ -23,6 +23,8 @@
  *
  **************************************************************************/
 
+#include "bout/build_config.hxx"
+
 #include <globals.hxx>
 #include <bout/solver.hxx>
 #include <difops.hxx>
@@ -467,7 +469,7 @@ Coordinates::metric_field_type b0xGrad_dot_Grad(const Field2D& phi, const Field2
 
   ASSERT1(result.getLocation() == outloc);
 
-#ifdef TRACK
+#if BOUT_USE_TRACK
   result.name = "b0xGrad_dot_Grad("+phi.name+","+A.name+")";
 #endif
   return result;
@@ -504,7 +506,7 @@ Field3D b0xGrad_dot_Grad(const Field2D& phi, const Field3D& A, CELL_LOC outloc) 
 
   result /= (metric->J*sqrt(metric->g_22));
 
-#ifdef TRACK
+#if BOUT_USE_TRACK
   result.name = "b0xGrad_dot_Grad("+phi.name+","+A.name+")";
 #endif
 
@@ -537,7 +539,7 @@ Field3D b0xGrad_dot_Grad(const Field3D& p, const Field2D& A, CELL_LOC outloc) {
 
   result /= (metric->J*sqrt(metric->g_22));
 
-#ifdef TRACK
+#if BOUT_USE_TRACK
   result.name = "b0xGrad_dot_Grad("+p.name+","+A.name+")";
 #endif
 
@@ -576,7 +578,7 @@ Field3D b0xGrad_dot_Grad(const Field3D& phi, const Field3D& A, CELL_LOC outloc) 
 
   result /=  (metric->J*sqrt(metric->g_22));
 
-#ifdef TRACK
+#if BOUT_USE_TRACK
   result.name = "b0xGrad_dot_Grad("+phi.name+","+A.name+")";
 #endif
 
@@ -638,7 +640,7 @@ Field3D bracket(const Field3D& f, const Field2D& g, BRACKET_METHOD method,
     if(!solver)
       throw BoutException("CTU method requires access to the solver");
 
-#ifndef COORDINATES_USE_3D
+#if not(BOUT_USE_METRIC_3D)
     const int ncz = mesh->LocalNz;
 
     for(int x=mesh->xstart;x<=mesh->xend;x++)
@@ -678,7 +680,7 @@ Field3D bracket(const Field3D& f, const Field2D& g, BRACKET_METHOD method,
   case BRACKET_ARAKAWA: {
     // Arakawa scheme for perpendicular flow. Here as a test
 
-#ifndef COORDINATES_USE_3D
+#if not(BOUT_USE_METRIC_3D)
     const int ncz = mesh->LocalNz;
 
     BOUT_FOR(j2D, result.getRegion2D("RGN_NOBNDRY")) {
@@ -749,7 +751,7 @@ Field3D bracket(const Field3D& f, const Field2D& g, BRACKET_METHOD method,
     break;
   }
   case BRACKET_ARAKAWA_OLD: {
-#ifndef COORDINATES_USE_3D
+#if not(BOUT_USE_METRIC_3D)
     const int ncz = mesh->LocalNz;
     BOUT_OMP(parallel for)
     for(int jx=mesh->xstart;jx<=mesh->xend;jx++){
@@ -864,7 +866,7 @@ Field3D bracket(const Field3D& f, const Field3D& g, BRACKET_METHOD method,
   case BRACKET_CTU: {
     // First order Corner Transport Upwind method
     // P.Collela JCP 87, 171-200 (1990)
-#ifndef COORDINATES_USE_3D
+#if not(BOUT_USE_METRIC_3D)
     if(!solver)
       throw BoutException("CTU method requires access to the solver");
 
@@ -971,7 +973,7 @@ Field3D bracket(const Field3D& f, const Field3D& g, BRACKET_METHOD method,
     Field3D g_temp = g;
 
     BOUT_FOR(j2D, result.getRegion2D("RGN_NOBNDRY")) {
-#ifndef COORDINATES_USE_3D
+#if not(BOUT_USE_METRIC_3D)
       const BoutReal spacingFactor = 1.0 / (12 * metric->dz[j2D] * metric->dx[j2D]);
 #endif
       const int jy = j2D.y(), jx = j2D.x();
@@ -988,7 +990,7 @@ Field3D bracket(const Field3D& f, const Field3D& g, BRACKET_METHOD method,
         const int jz = 0;
         const int jzp = 1;
         const int jzm = ncz - 1;
-#ifdef COORDINATES_USE_3D
+#if BOUT_USE_METRIC_3D
         const BoutReal spacingFactor =
             1.0 / (12 * metric->dz(jx, jy, jz) * metric->dx(jx, jy, jz));
 #endif
@@ -1011,7 +1013,7 @@ Field3D bracket(const Field3D& f, const Field3D& g, BRACKET_METHOD method,
       }
 
       for (int jz = 1; jz < mesh->LocalNz - 1; jz++) {
-#ifdef COORDINATES_USE_3D
+#if BOUT_USE_METRIC_3D
         const BoutReal spacingFactor =
             1.0 / (12 * metric->dz(jx, jy, jz) * metric->dx(jx, jy, jz));
 #endif
@@ -1039,7 +1041,7 @@ Field3D bracket(const Field3D& f, const Field3D& g, BRACKET_METHOD method,
         const int jz = ncz - 1;
         const int jzp = 0;
         const int jzm = ncz - 2;
-#ifdef COORDINATES_USE_3D
+#if BOUT_USE_METRIC_3D
         const BoutReal spacingFactor =
             1.0 / (12 * metric->dz(jx, jy, jz) * metric->dx(jx, jy, jz));
 #endif
@@ -1076,7 +1078,7 @@ Field3D bracket(const Field3D& f, const Field3D& g, BRACKET_METHOD method,
     BOUT_OMP(parallel for)
     for(int jx=mesh->xstart;jx<=mesh->xend;jx++){
       for(int jy=mesh->ystart;jy<=mesh->yend;jy++){
-#ifndef COORDINATES_USE_3D
+#if not(BOUT_USE_METRIC_3D)
         const BoutReal spacingFactor =
             1.0 / (12 * metric->dz(jx, jy) * metric->dx(jx, jy));
 #endif
@@ -1087,7 +1089,7 @@ Field3D bracket(const Field3D& f, const Field3D& g, BRACKET_METHOD method,
         const BoutReal *Gx  = g_temp(jx,   jy);
         const BoutReal *Gxp = g_temp(jx+1, jy);
         for (int jz = 0; jz < mesh->LocalNz; jz++) {
-#ifdef COORDINATES_USE_3D
+#if BOUT_USE_METRIC_3D
           const BoutReal spacingFactor =
               1.0 / (12 * metric->dz(jx, jy, jz) * metric->dx(jx, jy, jz));
 #endif

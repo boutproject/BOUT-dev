@@ -33,7 +33,9 @@
  *
  */
 
-#ifndef NCDF4
+#include "bout/build_config.hxx"
+
+#if !BOUT_HAS_NETCDF
 
 #include "../emptyformat.hxx"
 using Ncxx4 = EmptyFormat;
@@ -161,4 +163,4 @@ private:
 
 #endif // __NCFORMAT4_H__
 
-#endif // NCDF4
+#endif // BOUT_HAS_NETCDF

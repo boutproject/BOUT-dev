@@ -820,7 +820,7 @@ void Datafile::add(Vector2D &f, const char *name, bool save_repeat) {
 
     // Add variables to file
     auto dname = d.covar ? d.name + "_" : d.name;
-#ifdef COORDINATES_USE_3D
+#if BOUT_USE_METRIC_3D
     // Add variables to file
     if (!file->addVarField3D(dname + "x", save_repeat)) {
       throw BoutException("Failed to add Vector2D variable {:s} to Datafile", dname);
@@ -1030,7 +1030,7 @@ bool Datafile::read() {
   }
 
   // 2D vectors
-#ifdef COORDINATES_USE_3D
+#if BOUT_USE_METRIC_3D
   for (const auto& var : v2d_arr) {
     if (var.covar) {
       // Reading covariant vector
@@ -1201,7 +1201,7 @@ bool Datafile::write() {
       v.toContravariant();
     }
 
-#ifdef COORDINATES_USE_3D
+#if BOUT_USE_METRIC_3D
     write_f3d(name+"x", &(v.x), var.save_repeat);
     write_f3d(name+"y", &(v.y), var.save_repeat);
     write_f3d(name+"z", &(v.z), var.save_repeat);

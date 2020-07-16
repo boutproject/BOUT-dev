@@ -231,7 +231,7 @@ namespace FV {
 
       for (int j = ys; j <= ye; j++) {
         // Pre-calculate factors which multiply fluxes
-#ifndef COORDINATES_USE_3D
+#if not(BOUT_USE_METRIC_3D)
         // For right cell boundaries
         BoutReal common_factor = (coord->J(i, j) + coord->J(i, j + 1)) /
           (sqrt(coord->g_22(i, j)) + sqrt(coord->g_22(i, j + 1)));
@@ -247,7 +247,7 @@ namespace FV {
         BoutReal flux_factor_lm = common_factor / (coord->dy(i, j - 1) * coord->J(i, j - 1));
 #endif
         for (int k = 0; k < mesh->LocalNz; k++) {
-#ifdef COORDINATES_USE_3D
+#if BOUT_USE_METRIC_3D
           // For right cell boundaries
           BoutReal common_factor =
               (coord->J(i, j, k) + coord->J(i, j + 1, k))

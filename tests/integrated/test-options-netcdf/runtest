@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 # Note: This test requires NCDF4, whereas on Travis NCDF is used
+#requires: netcdf
 #requires: not travis or fedora
 
 from boututils.datafile import DataFile

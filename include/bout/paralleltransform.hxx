@@ -269,7 +269,7 @@ private:
   /// in the following order:
   ///     {+1, ..., +n, -1, ..., -n}
   /// slice[i] stores offset i+1
-  /// slice[2*i + 1] stores offset -(i+1)
+  /// slice[n + i] stores offset -(i+1)
   /// where i goes from 0 to (n-1), with n the number of y guard cells
   std::vector<ParallelSlicePhase> parallel_slice_phases;
 

@@ -24,9 +24,11 @@
  *
  **************************************************************************/
 
+#include "bout/build_config.hxx"
+
 #include "cvode.hxx"
 
-#ifdef BOUT_HAS_CVODE
+#if BOUT_HAS_CVODE
 
 #include "boutcomm.hxx"
 #include "boutexception.hxx"

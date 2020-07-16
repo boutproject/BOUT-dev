@@ -1,4 +1,4 @@
-#ifndef COORDINATES_USE_3D
+#if not(BOUT_USE_METRIC_3D)
 #include "gtest/gtest.h"
 
 #include "boutexception.hxx"

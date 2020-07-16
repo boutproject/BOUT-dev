@@ -25,6 +25,8 @@
  *
  **************************************************************************/
 
+#include "bout/build_config.hxx"
+
 #include <boutcomm.hxx>
 #include <globals.hxx>
 
@@ -47,7 +49,7 @@
 Field3D::Field3D(Mesh* localmesh, CELL_LOC location_in,
                  DirectionTypes directions_in)
     : Field(localmesh, location_in, directions_in) {
-#ifdef TRACK
+#if BOUT_USE_TRACK
   name = "<F3D>";
 #endif
 
@@ -705,7 +707,7 @@ Field3D filter(const Field3D &var, int N0, const std::string& rgn) {
     }
   }
 
-#ifdef TRACK
+#if BOUT_USE_TRACK
   result.name = "filter(" + var.name + ")";
 #endif
 

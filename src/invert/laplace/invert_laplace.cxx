@@ -270,7 +270,7 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
                             dcomplex &a, dcomplex &b, dcomplex &c,
                             const Field2D *c1coef, const Field2D *c2coef,
                             const Field2D *d, CELL_LOC loc) {
-#ifdef COORDINATES_USE_3D
+#if BOUT_USE_METRIC_3D
   throw BoutException("Laplacian::tridagCoefs() does not support 3d metrics.");
 #else
   /* Function: Laplacian::tridagCoef
@@ -409,7 +409,7 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
                              const Field2D *a, const Field2D *c1coef, const Field2D *c2coef,
                              const Field2D *d,
                              bool includeguards) {
-#ifndef COORDINATES_USE_3D
+#if not(BOUT_USE_METRIC_3D)
   ASSERT1(a->getLocation() == location);
   ASSERT1(c1coef->getLocation() == location);
   ASSERT1(c2coef->getLocation() == location);

@@ -50,7 +50,7 @@ class Mesh;
  */ 
 class Coordinates {
 public:
-#ifdef COORDINATES_USE_3D
+#if BOUT_USE_METRIC_3D
   using metric_field_type = Field3D;
 #else
   using metric_field_type = Field2D;
@@ -92,7 +92,7 @@ public:
   // BoutReal dz; ///< Mesh spacing in Z
 
   Field2D zlength() const {
-#ifdef COORDINATES_USE_3D
+#if BOUT_USE_METRIC_3D
     Field2D result(0., localmesh);
     BOUT_FOR_SERIAL(i, dz.getRegion("RGN_ALL")) { result[i] += dz[i]; }
     return result;
@@ -140,7 +140,7 @@ public:
   /// Return if the metrics are 3D
   // needs to be static for old gcc
   static constexpr bool is3D() {
-#ifdef COORDINATES_USE_3D
+#if BOUT_USE_METRIC_3D
     return true;
 #else
     return false;

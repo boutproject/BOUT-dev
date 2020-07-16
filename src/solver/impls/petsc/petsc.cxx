@@ -23,10 +23,11 @@
  *
  **************************************************************************/
 
+#include "bout/build_config.hxx"
 
 #include "petsc.hxx"
 
-#ifdef BOUT_HAS_PETSC
+#if BOUT_HAS_PETSC
 
 //#include <private/tsimpl.h>
 #include <petsc.h>
@@ -159,7 +160,7 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   // Create timestepper
   ierr = TSCreate(BoutComm::get(),&ts);CHKERRQ(ierr);
   ierr = TSSetProblemType(ts,TS_NONLINEAR);CHKERRQ(ierr);
-#ifdef PETSC_HAS_SUNDIALS
+#if PETSC_HAS_SUNDIALS
   ierr = TSSetType(ts,TSSUNDIALS);CHKERRQ(ierr);
 #else
   ierr = TSSetType(ts,TSRK);CHKERRQ(ierr);
@@ -216,7 +217,7 @@ int PetscSolver::init(int NOUT, BoutReal TIMESTEP) {
   ierr = TSRKSetTolerance(ts, reltol); CHKERRQ(ierr);
 #endif
 
-#ifdef PETSC_HAS_SUNDIALS
+#if PETSC_HAS_SUNDIALS
   // Set Sundials tolerances
   ierr = TSSundialsSetTolerance(ts, abstol, reltol);CHKERRQ(ierr);
 

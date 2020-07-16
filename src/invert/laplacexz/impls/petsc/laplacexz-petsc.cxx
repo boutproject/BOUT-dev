@@ -8,9 +8,11 @@
  * http://www.mcs.anl.gov/petsc/petsc-current/src/ksp/ksp/examples/tutorials/ex6f.F.html
  */
 
+#include "bout/build_config.hxx"
+
 #include "laplacexz-petsc.hxx"
 
-#ifdef BOUT_HAS_PETSC  // Requires PETSc
+#if BOUT_HAS_PETSC // Requires PETSc
 
 #include <bout/assert.hxx>
 #include <bout/sys/timer.hxx>

@@ -63,7 +63,7 @@ public:
         },
         &mesh_from_options);
     expected_metric =
-#ifdef COORDINATES_USE_3D
+#if BOUT_USE_METRIC_3D
         expected_3d;
 #else
         expected_2d;
@@ -427,7 +427,7 @@ TEST_F(GridFromOptionsTest, CoordinatesXlowRead) {
 }
 
 TEST_F(GridFromOptionsTest, CoordinatesYlowInterp) {
-#ifndef COORDINATES_USE_3D
+#if not(BOUT_USE_METRIC_3D)
   // *_ylow fields not present in options, Coordinates will be interpolated
   // from CELL_CENTRE
 
@@ -454,7 +454,7 @@ TEST_F(GridFromOptionsTest, CoordinatesYlowInterp) {
 }
 
 TEST_F(GridFromOptionsTest, CoordinatesYlowRead) {
-#ifndef COORDINATES_USE_3D
+#if not(BOUT_USE_METRIC_3D)
   // *_ylow fields added to options, will be read to initialise Coordinates
 
   // Note '(2*pi*11 - y)' here because FakeMesh::GlobalY(int jy) returns jy, not a
@@ -493,7 +493,7 @@ TEST_F(GridFromOptionsTest, CoordinatesYlowRead) {
 }
 
 TEST_F(GridFromOptionsTest, CoordinatesZlowRead) {
-#ifndef COORDINATES_USE_3D
+#if not(BOUT_USE_METRIC_3D)
   // Grids are axisymmetric, so CELL_ZLOW Coordinates will be read from
   // CELL_CENTRE variables
 
