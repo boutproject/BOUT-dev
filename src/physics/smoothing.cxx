@@ -320,7 +320,7 @@ BoutReal Average_XY(const Field2D &var) {
   return Vol_Glb;
 }
 
-BoutReal Average_XY(const Field3D& var) {
+BoutReal Average_XY(const Field3D&) {
   AUTO_TRACE();
   throw BoutException("Average_XY(Field3D) not yet implemented.");
 }
