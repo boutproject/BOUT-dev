@@ -4,7 +4,8 @@
 int main(int argc, char** argv) {
   BoutInitialise(argc, argv);
 
-  Datafile df(Options::getRoot()->getSection("output"));
+  auto& options = Options::root();
+  Datafile df(options.getSection("output"));
   df.add(const_cast<BoutReal&>(bout::version::as_double), "BOUT_VERSION", false);
 
   bout::globals::mesh->outputVars(df);
@@ -16,7 +17,7 @@ int main(int argc, char** argv) {
   df.add(Rxy, "Rxy");
   df.add(Bpxy, "Bpxy");
 
-  df.write("data.nc");
+  df.write("data.{:s}", options["dump_format"].as<std::string>());
   
   BoutFinalise();
   return 0;

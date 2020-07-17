@@ -33,57 +33,57 @@
 
 ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
                                          Field2D zShift_in, Options* opt)
-    : ParallelTransform(mesh, opt), location(location_in), zShift(std::move(zShift_in)) {
+    : ParallelTransform(mesh, opt), location(location_in), zShift(std::move(zShift_in)),
+      ydown_index(mesh.ystart) {
   // check the coordinate system used for the grid data source
   ShiftedMetricInterp::checkInputGrid();
+
+  // Allocate space for interpolator cache: y-guard cells in each direction
+  parallel_slice_interpolators.resize(mesh.ystart * 2);
 
   // Create the Interpolation objects and set whether they go up or down the
   // magnetic field
   auto& interp_options = options["zinterpolation"];
-  interp_yup = ZInterpolationFactory::getInstance().create(&interp_options, 1, &mesh);
-  interp_ydown = ZInterpolationFactory::getInstance().create(&interp_options, -1, &mesh);
+  // Careful with the indices/offsets! Offsets are 1-indexed (as 0 would be the original
+  // slice), and Mesh::ystart is the number of guard cells. The parallel slice vector
+  // stores the offsets as
+  //    {+1, ..., +n, -1, ..., -n}
+  // Once parallel_slice_interpolators is initialised though, each interpolator stores its
+  // offset, so we don't need to faff about after this
+  for (int y_offset = 0; y_offset < mesh.ystart; ++y_offset) {
+    parallel_slice_interpolators[yup_index + y_offset] =
+      ZInterpolationFactory::getInstance().create(&interp_options, y_offset + 1, &mesh);
+    parallel_slice_interpolators[ydown_index + y_offset] =
+      ZInterpolationFactory::getInstance().create(&interp_options, -y_offset - 1, &mesh);
 
-  // Find the index positions where the magnetic field line intersects the next
-  // x-z plane
-  Field3D zt_prime_up(&mesh), zt_prime_down(&mesh);
-  zt_prime_up.allocate();
-  zt_prime_down.allocate();
+    // Find the index positions where the magnetic field line intersects the x-z plane
+    // y_offset points up
+    Field3D zt_prime_up(&mesh), zt_prime_down(&mesh);
+    zt_prime_up.allocate();
+    zt_prime_down.allocate();
 
-  for (const auto& i : zt_prime_up.getRegion(RGN_NOY)) {
-    // Field line moves in z by an angle zShift(i,j+1)-zShift(i,j) when going
-    // from j to j+1, but we want the shift in index-space
-    zt_prime_up[i] =
-        static_cast<BoutReal>(i.z())
-        + (zShift[i.yp()] - zShift[i]) * static_cast<BoutReal>(mesh.GlobalNz) / TWOPI;
-  }
-
-  // Make a mask, to skip interpolating to points inside y-boundaries that need to be set
-  // by boundary conditions.
-  auto mask_up = BoutMask(mesh.LocalNx, mesh.LocalNy, mesh.LocalNz);
-  for (auto it = mesh.iterateBndryUpperY(); not it.isDone(); it.next()) {
-    for (int z = mesh.zstart; z <= mesh.zend; z++) {
-      mask_up(it.ind, mesh.yend, z) = true;
+    for (const auto& i : zt_prime_up.getRegion(RGN_NOY)) {
+      // Field line moves in z by an angle zShift(i,j+1)-zShift(i,j) when going
+      // from j to j+1, but we want the shift in index-space
+      zt_prime_up[i] =
+          static_cast<BoutReal>(i.z())
+          + (zShift[i.yp(y_offset + 1)] - zShift[i])
+            * static_cast<BoutReal>(mesh.GlobalNz) / TWOPI;
     }
-  }
 
-  interp_yup->calcWeights(zt_prime_up, mask_up, "RGN_NOY");
+    parallel_slice_interpolators[yup_index + y_offset]->calcWeights(zt_prime_up);
 
-  for (const auto& i : zt_prime_down.getRegion(RGN_NOY)) {
-    // Field line moves in z by an angle -(zShift(i,j)-zShift(i,j-1)) when going
-    // from j to j-1, but we want the shift in index-space
-    zt_prime_down[i] =
-        static_cast<BoutReal>(i.z())
-        - (zShift[i] - zShift[i.ym()]) * static_cast<BoutReal>(mesh.GlobalNz) / TWOPI;
-  }
-
-  auto mask_down = BoutMask(mesh.LocalNx, mesh.LocalNy, mesh.LocalNz);
-  for (auto it = mesh.iterateBndryLowerY(); not it.isDone(); it.next()) {
-    for (int z = mesh.zstart; z <= mesh.zend; z++) {
-      mask_down(it.ind, mesh.ystart, z) = true;
+    for (const auto& i : zt_prime_down.getRegion(RGN_NOY)) {
+      // Field line moves in z by an angle -(zShift(i,j)-zShift(i,j-1)) when going
+      // from j to j-1, but we want the shift in index-space
+      zt_prime_down[i] =
+          static_cast<BoutReal>(i.z())
+          - (zShift[i] - zShift[i.ym(y_offset + 1)])
+            * static_cast<BoutReal>(mesh.GlobalNz) / TWOPI;
     }
-  }
 
-  interp_ydown->calcWeights(zt_prime_down, mask_down, "RGN_NOY");
+    parallel_slice_interpolators[ydown_index + y_offset]->calcWeights(zt_prime_down);
+  }
 
   // Set up interpolation to/from field-aligned coordinates
   interp_to_aligned = ZInterpolationFactory::getInstance().create(&interp_options, 0, &mesh);
@@ -101,7 +101,7 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
                      + zShift[i] * static_cast<BoutReal>(mesh.GlobalNz) / TWOPI;
   }
 
-  interp_to_aligned->calcWeights(zt_prime_to, "RGN_ALL");
+  interp_to_aligned->calcWeights(zt_prime_to);
 
   for (const auto& i : zt_prime_from) {
     // Field line moves in z by an angle zShift(i,j) when going
@@ -111,7 +111,7 @@ ShiftedMetricInterp::ShiftedMetricInterp(Mesh& mesh, CELL_LOC location_in,
                        - zShift[i] * static_cast<BoutReal>(mesh.GlobalNz) / TWOPI;
   }
 
-  interp_from_aligned->calcWeights(zt_prime_from, "RGN_ALL");
+  interp_from_aligned->calcWeights(zt_prime_from);
 
   // Create regions for parallel boundary conditions
   Field2D dy;
@@ -178,8 +178,9 @@ void ShiftedMetricInterp::calcParallelSlices(Field3D& f) {
   f.splitParallelSlices();
 
   // Interpolate f onto yup and ydown fields
-  f.yup() = interp_yup->interpolate(f, "RGN_NOY");
-  f.ydown() = interp_ydown->interpolate(f, "RGN_NOY");
+  for (const auto& interp : parallel_slice_interpolators) {
+    f.ynext(interp->y_offset) = interp->interpolate(f);
+  }
 }
 
 /*!
