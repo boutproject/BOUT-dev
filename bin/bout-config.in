@@ -44,7 +44,7 @@ has_fftw="@BOUT_HAS_FFTW@"
 
 petsc_has_sundials="@PETSC_HAS_SUNDIALS@"
 
-metric_type="@METRIC_TYPE@"
+metric_type="@BOUT_METRIC_TYPE@"
 
 usage()
 {
