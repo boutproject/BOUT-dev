@@ -21,7 +21,7 @@ makelist () {
 
 # What is the metric type?
 coords_is() {
-    if grep ^BOUT_FLAGS ../../../make.config| grep COORDINATES_USE_3D -q
+    if grep '^#define BOUT_USE_METRIC_3D 1' ../../../include/bout/build_defines.hxx -q
     then
 	echo "f3d"
     else
