@@ -321,6 +321,16 @@ int getAtLoc(Mesh* mesh, Coordinates::FieldMetric& var, const std::string& name,
   return result;
 }
 
+int getAtLocAndFillGuards(Mesh* mesh, Coordinates::FieldMetric& var,
+                          const std::string& name, const std::string& suffix,
+                          CELL_LOC location, BoutReal default_value, bool extrapolate_x,
+                          bool extrapolate_y, bool no_extra_interpolate,
+                          ParallelTransform* pt) {
+  auto ret = getAtLoc(mesh, var, name, suffix, location, default_value);
+  var = interpolateAndExtrapolate(var, location, extrapolate_x, extrapolate_y, false, pt);
+  return ret;
+}
+
 std::string getLocationSuffix(CELL_LOC location) {
   switch (location) {
   case CELL_CENTRE: {
@@ -749,38 +759,30 @@ Coordinates::Coordinates(Mesh* mesh, Options* options, const CELL_LOC loc,
     dz = interpolateAndExtrapolate(dz, location, extrapolate_x, extrapolate_y, false,
                                    transform.get());
 
-    getAtLoc(mesh, dx, "dx", suffix, location, 1.0);
-    dx = interpolateAndExtrapolate(dx, location, extrapolate_x, extrapolate_y, false,
+    getAtLocAndFillGuards(mesh, dx, "dx", suffix, location, 1.0, extrapolate_x, extrapolate_y, false,
                                    transform.get());
 
     if (mesh->periodicX) {
       communicate(dx);
     }
 
-    getAtLoc(mesh, dy, "dy", suffix, location, 1.0);
-    dy = interpolateAndExtrapolate(dy, location, extrapolate_x, extrapolate_y, false,
-                                   transform.get());
+    getAtLocAndFillGuards(mesh, dy, "dy", suffix, location, 1.0, extrapolate_x,
+                          extrapolate_y, false, transform.get());
 
     // grid data source has staggered fields, so read instead of interpolating
     // Diagonal components of metric tensor g^{ij} (default to 1)
-    getAtLoc(mesh, g11, "g11", suffix, location, 1.0);
-    g11 = interpolateAndExtrapolate(g11, location, extrapolate_x, extrapolate_y, false,
-                                    transform.get());
-    getAtLoc(mesh, g22, "g22", suffix, location, 1.0);
-    g22 = interpolateAndExtrapolate(g22, location, extrapolate_x, extrapolate_y, false,
-                                    transform.get());
-    getAtLoc(mesh, g33, "g33", suffix, location, 1.0);
-    g33 = interpolateAndExtrapolate(g33, location, extrapolate_x, extrapolate_y, false,
-                                    transform.get());
-    getAtLoc(mesh, g12, "g12", suffix, location, 0.0);
-    g12 = interpolateAndExtrapolate(g12, location, extrapolate_x, extrapolate_y, false,
-                                    transform.get());
-    getAtLoc(mesh, g13, "g13", suffix, location, 0.0);
-    g13 = interpolateAndExtrapolate(g13, location, extrapolate_x, extrapolate_y, false,
-                                    transform.get());
-    getAtLoc(mesh, g23, "g23", suffix, location, 0.0);
-    g23 = interpolateAndExtrapolate(g23, location, extrapolate_x, extrapolate_y, false,
-                                    transform.get());
+    getAtLocAndFillGuards(mesh, g11, "g11", suffix, location, 1.0, extrapolate_x,
+                          extrapolate_y, false, transform.get());
+    getAtLocAndFillGuards(mesh, g22, "g22", suffix, location, 1.0, extrapolate_x,
+                          extrapolate_y, false, transform.get());
+    getAtLocAndFillGuards(mesh, g33, "g33", suffix, location, 1.0, extrapolate_x,
+                          extrapolate_y, false, transform.get());
+    getAtLocAndFillGuards(mesh, g12, "g12", suffix, location, 0.0, extrapolate_x,
+                          extrapolate_y, false, transform.get());
+    getAtLocAndFillGuards(mesh, g13, "g13", suffix, location, 0.0, extrapolate_x,
+                          extrapolate_y, false, transform.get());
+    getAtLocAndFillGuards(mesh, g23, "g23", suffix, location, 0.0, extrapolate_x,
+                          extrapolate_y, false, transform.get());
 
     // Check input metrics
     // Diagonal metric components should be finite
