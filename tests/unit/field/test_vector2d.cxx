@@ -1,7 +1,7 @@
-#if not(BOUT_USE_METRIC_3D)
 #include "gtest/gtest.h"
 
 #include "boutexception.hxx"
+#if not(BOUT_USE_METRIC_3D)
 #include "output.hxx"
 #include "test_extras.hxx"
 #include "unused.hxx"
