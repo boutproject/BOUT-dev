@@ -1760,10 +1760,9 @@ Field3D Coordinates::Grad2_par2(const Field3D& f, CELL_LOC outloc,
   }
   ASSERT1(location == outloc);
 
-  auto sg = sqrt(g_22);
-  auto invSg = 1.0 / sg;
+  auto invSg = 1.0 / sqrt(g_22);
   communicate(invSg);
-  sg = DDY(invSg, outloc, method) * invSg;
+  auto sg = DDY(invSg, outloc, method) * invSg;
 
   Field3D result = ::DDY(f, outloc, method);
 
@@ -1809,8 +1808,7 @@ Field3D Coordinates::Delp2(const Field3D& f, CELL_LOC outloc, MAYBE_UNUSED(bool 
 
   Field3D result{emptyFrom(f).setLocation(outloc)};
 
-#if not(BOUT_USE_METRIC_3D)
-  if (useFFT) {
+  if (useFFT and not bout::build::use_metric_3d) {
     int ncz = localmesh->LocalNz;
 
     // Allocate memory
@@ -1845,9 +1843,7 @@ Field3D Coordinates::Delp2(const Field3D& f, CELL_LOC outloc, MAYBE_UNUSED(bool 
         irfft(&delft(jx, 0), ncz, &result(jx, jy, 0));
       }
     }
-  } else
-#endif
-  {
+  } else {
     result = G1 * ::DDX(f, outloc) + G3 * ::DDZ(f, outloc) + g11 * ::D2DX2(f, outloc)
              + g33 * ::D2DZ2(f, outloc) + 2 * g13 * ::D2DXDZ(f, outloc);
   };

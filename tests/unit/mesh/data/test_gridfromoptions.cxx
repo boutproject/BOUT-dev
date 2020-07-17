@@ -62,12 +62,7 @@ public:
           return index.x() + (TWOPI * index.y()) + (TWOPI * index.z() / nz) + 3;
         },
         &mesh_from_options);
-    expected_metric =
-#if BOUT_USE_METRIC_3D
-        expected_3d;
-#else
-        expected_2d;
-#endif
+    expected_metric = bout::build::use_metric_3d ? expected_3d : expected_2d;
   }
 
   ~GridFromOptionsTest() override {

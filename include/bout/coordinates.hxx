@@ -140,11 +140,7 @@ public:
   /// Return if the metrics are 3D
   // needs to be static for old gcc
   static constexpr bool is3D() {
-#if BOUT_USE_METRIC_3D
-    return true;
-#else
-    return false;
-#endif
+    return bout::build::use_metric_3d;
   }
 
   ///////////////////////////////////////////////////////////
