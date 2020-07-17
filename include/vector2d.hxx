@@ -57,7 +57,7 @@ public:
 
   ~Vector2D() override;
 
-  Coordinates::metric_field_type x, y, z; ///< components
+  Coordinates::FieldMetric x, y, z; ///< components
 
   bool covariant{true}; ///< true if the components are covariant (default)
 
@@ -128,7 +128,7 @@ public:
   const Vector2D operator/(const Field2D &rhs) const; ///< Divides all components by \p rhs
   const Vector3D operator/(const Field3D &rhs) const; ///< Divides all components by \p rhs
 
-  const Coordinates::metric_field_type
+  const Coordinates::FieldMetric
   operator*(const Vector2D& rhs) const;               ///< Dot product
   const Field3D operator*(const Vector3D &rhs) const; ///< Dot product
 
@@ -181,12 +181,12 @@ const Vector3D cross(const Vector2D & lhs, const Vector3D &rhs);
  *
  * |v| = sqrt( v dot v )
  */
-const Coordinates::metric_field_type abs(const Vector2D& v,
+const Coordinates::FieldMetric abs(const Vector2D& v,
                                          const std::string& region = "RGN_ALL");
 [[deprecated(
     "Please use Vector2D abs(const Vector2D& f, "
     "const std::string& region = \"RGN_ALL\") instead")]] inline const Coordinates::
-    metric_field_type
+    FieldMetric
     abs(const Vector2D& v, REGION region) {
   return abs(v, toString(region));
 }

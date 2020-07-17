@@ -21,7 +21,7 @@ class LAPDdrift : public PhysicsModel {
 private:
   // 2D initial profiles
   Field2D Ni0, Ti0, Te0, Vi0, phi0, Ve0, Ajpar0, src_ni0;
-  Coordinates::metric_field_type rho0;
+  Coordinates::FieldMetric rho0;
   Vector2D b0xcv; // for curvature terms
   
   // 3D evolving fields
@@ -728,7 +728,7 @@ protected:
   
   
   /****************SPECIAL DIFFERENTIAL OPERATORS******************/
-  Coordinates::metric_field_type Perp_Grad_dot_Grad(const Field2D& p, const Field2D& f) {
+  Coordinates::FieldMetric Perp_Grad_dot_Grad(const Field2D& p, const Field2D& f) {
 
     return DDX(p)*DDX(f)*mesh->getCoordinates()->g11;
   }
@@ -738,8 +738,8 @@ protected:
   // ExB terms. These routines allow comparisons with BOUT-06
   // if bout_exb=true is set in BOUT.inp
   /////////////////////////////////////////////////////////////////
-  Coordinates::metric_field_type vE_Grad(const Field2D& f, const Field2D& p) {
-    Coordinates::metric_field_type result;
+  Coordinates::FieldMetric vE_Grad(const Field2D& f, const Field2D& p) {
+    Coordinates::FieldMetric result;
     if (bout_exb) {
       // Use a subset of terms for comparison to BOUT-06
       result = 0.0;

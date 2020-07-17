@@ -87,13 +87,13 @@ const Vector2D Grad_perp(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
 /// @param[in] outloc  The cell location where the result is desired
 /// @param[in] method  The method to use. The default is set in the options.
 ///
-const Coordinates::metric_field_type Div(const Vector2D& v,
+const Coordinates::FieldMetric Div(const Vector2D& v,
                                          CELL_LOC outloc = CELL_DEFAULT,
                                          const std::string& method = "DEFAULT");
 const Field3D Div(const Vector3D& v, CELL_LOC outloc = CELL_DEFAULT,
                   const std::string& method = "DEFAULT");
 
-const Coordinates::metric_field_type Div(const Vector2D& v, const Field2D& f,
+const Coordinates::FieldMetric Div(const Vector2D& v, const Field2D& f,
                                          CELL_LOC outloc = CELL_DEFAULT,
                                          const std::string& method = "DEFAULT");
 
@@ -134,7 +134,7 @@ const Vector3D Curl(const Vector3D &v);
 ///
 /// The vector and the field must be at the same location, which
 /// cannot be CELL_VSHIFT
-const Coordinates::metric_field_type V_dot_Grad(const Vector2D& v, const Field2D& f);
+const Coordinates::FieldMetric V_dot_Grad(const Vector2D& v, const Field2D& f);
 const Field3D V_dot_Grad(const Vector2D &v, const Field3D &f);
 const Field3D V_dot_Grad(const Vector3D &v, const Field2D &f);
 const Field3D V_dot_Grad(const Vector3D &v, const Field3D &f);

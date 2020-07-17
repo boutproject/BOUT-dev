@@ -94,7 +94,7 @@ void Vector2D::toCovariant() {
       const auto metric = localmesh->getCoordinates(location);
 
       // Need to use temporary arrays to store result
-      Coordinates::metric_field_type gx{emptyFrom(x)}, gy{emptyFrom(y)}, gz{emptyFrom(z)};
+      Coordinates::FieldMetric gx{emptyFrom(x)}, gy{emptyFrom(y)}, gz{emptyFrom(z)};
 
       BOUT_FOR(i, x.getRegion("RGN_ALL")) {
         gx[i] = metric->g_11[i]*x[i] + metric->g_12[i]*y[i] + metric->g_13[i]*z[i];
@@ -146,7 +146,7 @@ void Vector2D::toContravariant() {
       const auto metric = localmesh->getCoordinates(location);
 
       // Need to use temporary arrays to store result
-      Coordinates::metric_field_type gx{emptyFrom(x)}, gy{emptyFrom(y)}, gz{emptyFrom(z)};
+      Coordinates::FieldMetric gx{emptyFrom(x)}, gy{emptyFrom(y)}, gz{emptyFrom(z)};
 
       BOUT_FOR(i, x.getRegion("RGN_ALL")) {
         gx[i] = metric->g11[i]*x[i] + metric->g12[i]*y[i] + metric->g13[i]*z[i];
@@ -371,11 +371,11 @@ const Vector3D Vector2D::operator/(const Field3D &rhs) const {
 
 ////////////////// DOT PRODUCT ///////////////////
 
-const Coordinates::metric_field_type Vector2D::operator*(const Vector2D& rhs) const {
+const Coordinates::FieldMetric Vector2D::operator*(const Vector2D& rhs) const {
   ASSERT2(location == rhs.getLocation());
 
   Mesh *localmesh = x.getMesh();
-  Coordinates::metric_field_type result{emptyFrom(x)};
+  Coordinates::FieldMetric result{emptyFrom(x)};
 
   if(rhs.covariant ^ covariant) {
     // Both different - just multiply components
@@ -474,7 +474,7 @@ const Vector3D operator*(const Field3D &lhs, const Vector2D &rhs) {
  ***************************************************************/
 
 // Return the magnitude of a vector
-const Coordinates::metric_field_type abs(const Vector2D& v, const std::string& region) {
+const Coordinates::FieldMetric abs(const Vector2D& v, const std::string& region) {
   return sqrt(v*v, region);
 }
 

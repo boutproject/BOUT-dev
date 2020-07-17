@@ -27,10 +27,10 @@ private:
   Field2D J0, P0;         // Current and pressure
   Vector2D b0xcv;         // Curvature term
   Field2D beta;           // Used for Vpar terms
-  Coordinates::metric_field_type gradparB;
+  Coordinates::FieldMetric gradparB;
   Field2D phi0;           // When diamagnetic terms used
   Field2D Psixy, x;
-  Coordinates::metric_field_type U0; // 0th vorticity of equilibrium flow,
+  Coordinates::FieldMetric U0; // 0th vorticity of equilibrium flow,
   // radial flux coordinate, normalized radial flux coordinate
 
   bool constn0;

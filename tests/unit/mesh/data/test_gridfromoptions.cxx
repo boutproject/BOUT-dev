@@ -83,7 +83,7 @@ public:
   std::string expected_string{"x + y + z + 3"};
   Field2D expected_2d;
   Field3D expected_3d;
-  Coordinates::metric_field_type expected_metric;
+  Coordinates::FieldMetric expected_metric;
   FakeMesh mesh_from_options{nx, ny, nz};
 };
 
@@ -368,9 +368,9 @@ TEST_F(GridFromOptionsTest, CoordinatesXlowInterp) {
 
   auto coords = mesh_from_options.getCoordinates(CELL_XLOW);
 
-  Coordinates::metric_field_type expected_xlow =
-      makeField<Coordinates::metric_field_type>(
-          [](Coordinates::metric_field_type::ind_type& index) {
+  Coordinates::FieldMetric expected_xlow =
+      makeField<Coordinates::FieldMetric>(
+          [](Coordinates::FieldMetric::ind_type& index) {
             return index.x() - 0.5 + (TWOPI * index.y()) + (TWOPI * index.z() / nz) + 3;
           },
           &mesh_from_options);

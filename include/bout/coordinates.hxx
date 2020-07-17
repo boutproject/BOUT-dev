@@ -51,9 +51,9 @@ class Mesh;
 class Coordinates {
 public:
 #if BOUT_USE_METRIC_3D
-  using metric_field_type = Field3D;
+  using FieldMetric = Field3D;
 #else
-  using metric_field_type = Field2D;
+  using FieldMetric = Field2D;
 #endif
 
   /// Standard constructor from input
@@ -88,7 +88,7 @@ public:
    */
   void outputVars(Datafile &file);
 
-  metric_field_type dx, dy, dz; ///< Mesh spacing in x and y
+  FieldMetric dx, dy, dz; ///< Mesh spacing in x and y
   // BoutReal dz; ///< Mesh spacing in Z
 
   Field2D zlength() const {
@@ -104,29 +104,29 @@ public:
   /// True if corrections for non-uniform mesh spacing should be included in operators
   bool non_uniform;
   /// 2nd-order correction for non-uniform meshes d/di(1/dx), d/di(1/dy) and d/di(1/dz)
-  metric_field_type d1_dx, d1_dy, d1_dz;
+  FieldMetric d1_dx, d1_dy, d1_dz;
 
-  metric_field_type J; ///< Coordinate system Jacobian, so volume of cell is J*dx*dy*dz
+  FieldMetric J; ///< Coordinate system Jacobian, so volume of cell is J*dx*dy*dz
 
-  metric_field_type Bxy; ///< Magnitude of B = nabla z times nabla x
+  FieldMetric Bxy; ///< Magnitude of B = nabla z times nabla x
 
   /// Contravariant metric tensor (g^{ij})
-  metric_field_type g11, g22, g33, g12, g13, g23;
+  FieldMetric g11, g22, g33, g12, g13, g23;
 
   /// Covariant metric tensor
-  metric_field_type g_11, g_22, g_33, g_12, g_13, g_23;
+  FieldMetric g_11, g_22, g_33, g_12, g_13, g_23;
 
   /// Christoffel symbol of the second kind (connection coefficients)
-  metric_field_type G1_11, G1_22, G1_33, G1_12, G1_13, G1_23;
-  metric_field_type G2_11, G2_22, G2_33, G2_12, G2_13, G2_23;
-  metric_field_type G3_11, G3_22, G3_33, G3_12, G3_13, G3_23;
+  FieldMetric G1_11, G1_22, G1_33, G1_12, G1_13, G1_23;
+  FieldMetric G2_11, G2_22, G2_33, G2_12, G2_13, G2_23;
+  FieldMetric G3_11, G3_22, G3_33, G3_12, G3_13, G3_23;
 
-  metric_field_type G1, G2, G3;
+  FieldMetric G1, G2, G3;
 
   /// d pitch angle / dx. Needed for vector differentials (Curl)
-  metric_field_type ShiftTorsion;
+  FieldMetric ShiftTorsion;
 
-  metric_field_type IntShiftTorsion; ///< Integrated shear (I in BOUT notation)
+  FieldMetric IntShiftTorsion; ///< Integrated shear (I in BOUT notation)
 
   /// Calculate differential geometry quantities from the metric tensor
   int geometry(bool recalculate_staggered = true,
@@ -196,20 +196,20 @@ public:
   }
 #endif
 
-  metric_field_type DDX(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+  FieldMetric DDX(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                         const std::string& method = "DEFAULT",
                         const std::string& region = "RGN_NOBNDRY");
-  DERIV_FUNC_REGION_ENUM_TO_STRING(DDX, metric_field_type, Field2D);
+  DERIV_FUNC_REGION_ENUM_TO_STRING(DDX, FieldMetric, Field2D);
 
-  metric_field_type DDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+  FieldMetric DDY(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                         const std::string& method = "DEFAULT",
                         const std::string& region = "RGN_NOBNDRY");
-  DERIV_FUNC_REGION_ENUM_TO_STRING(DDY, metric_field_type, Field2D);
+  DERIV_FUNC_REGION_ENUM_TO_STRING(DDY, FieldMetric, Field2D);
 
-  metric_field_type DDZ(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+  FieldMetric DDZ(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                         const std::string& method = "DEFAULT",
                         const std::string& region = "RGN_NOBNDRY");
-  DERIV_FUNC_REGION_ENUM_TO_STRING(DDZ, metric_field_type, Field2D);
+  DERIV_FUNC_REGION_ENUM_TO_STRING(DDZ, FieldMetric, Field2D);
 
   Field3D DDX(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
               const std::string& method = "DEFAULT",
@@ -224,22 +224,22 @@ public:
               const std::string& region = "RGN_NOBNDRY");
 
   /// Gradient along magnetic field  b.Grad(f)
-  metric_field_type Grad_par(const Field2D& var, CELL_LOC outloc = CELL_DEFAULT,
+  FieldMetric Grad_par(const Field2D& var, CELL_LOC outloc = CELL_DEFAULT,
                              const std::string& method = "DEFAULT");
-  GRAD_FUNC_REGION_ENUM_TO_STRING(Grad_par, metric_field_type, Field2D);
+  GRAD_FUNC_REGION_ENUM_TO_STRING(Grad_par, FieldMetric, Field2D);
 
   Field3D Grad_par(const Field3D& var, CELL_LOC outloc = CELL_DEFAULT,
       const std::string& method = "DEFAULT");
   GRAD_FUNC_REGION_ENUM_TO_STRING(Grad_par, Field3D, Field3D);
 
   /// Advection along magnetic field V*b.Grad(f)
-  metric_field_type Vpar_Grad_par(const Field2D& v, const Field2D& f,
+  FieldMetric Vpar_Grad_par(const Field2D& v, const Field2D& f,
                                   CELL_LOC outloc = CELL_DEFAULT,
                                   const std::string& method = "DEFAULT");
   [[deprecated(
       "Please use Coordinates::Vpar_Grad_par(const Field2D& v, "
       "const Field2D& f, CELL_LOC outloc = CELL_DEFAULT, "
-      "const std::string& method = \"DEFAULT\") instead")]] inline metric_field_type
+      "const std::string& method = \"DEFAULT\") instead")]] inline FieldMetric
   Vpar_Grad_par(const Field2D& v, const Field2D& f, CELL_LOC outloc, DIFF_METHOD method) {
     return Vpar_Grad_par(v, f, outloc, toString(method));
   }
@@ -255,18 +255,18 @@ public:
   }
 
   /// Divergence along magnetic field  Div(b*f) = B.Grad(f/B)
-  metric_field_type Div_par(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+  FieldMetric Div_par(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                             const std::string& method = "DEFAULT");
-  GRAD_FUNC_REGION_ENUM_TO_STRING(Div_par, metric_field_type, Field2D);
+  GRAD_FUNC_REGION_ENUM_TO_STRING(Div_par, FieldMetric, Field2D);
 
   Field3D Div_par(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
       const std::string& method = "DEFAULT");
   GRAD_FUNC_REGION_ENUM_TO_STRING(Div_par, Field3D, Field3D);
 
   // Second derivative along magnetic field
-  metric_field_type Grad2_par2(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+  FieldMetric Grad2_par2(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                                const std::string& method = "DEFAULT");
-  GRAD_FUNC_REGION_ENUM_TO_STRING(Grad2_par2, metric_field_type, Field2D);
+  GRAD_FUNC_REGION_ENUM_TO_STRING(Grad2_par2, FieldMetric, Field2D);
 
   Field3D Grad2_par2(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
       const std::string& method = "DEFAULT");
@@ -278,18 +278,18 @@ public:
   // Perpendicular Laplacian operator, using only X-Z derivatives
   // NOTE: This might be better bundled with the Laplacian inversion code
   // since it makes use of the same coefficients and FFT routines
-  metric_field_type Delp2(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+  FieldMetric Delp2(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                           bool useFFT = true);
   Field3D Delp2(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT, bool useFFT = true);
   FieldPerp Delp2(const FieldPerp& f, CELL_LOC outloc = CELL_DEFAULT, bool useFFT = true);
 
   // Full parallel Laplacian operator on scalar field
   // Laplace_par(f) = Div( b (b dot Grad(f)) )
-  metric_field_type Laplace_par(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT);
+  FieldMetric Laplace_par(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT);
   Field3D Laplace_par(const Field3D &f, CELL_LOC outloc=CELL_DEFAULT);
   
   // Full Laplacian operator on scalar field
-  metric_field_type Laplace(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
+  FieldMetric Laplace(const Field2D& f, CELL_LOC outloc = CELL_DEFAULT,
                             const std::string& dfdy_boundary_conditions = "free_o3",
                             const std::string& dfdy_dy_region = "");
   Field3D Laplace(const Field3D& f, CELL_LOC outloc = CELL_DEFAULT,
@@ -335,7 +335,7 @@ private:
 
   /// A wrapper for index:DDY derivative that is able to tranform
   /// fields before the constructor is finished.
-  Coordinates::metric_field_type indexDDY(const Field2D& f,
+  Coordinates::FieldMetric indexDDY(const Field2D& f,
                                           CELL_LOC outloc = CELL_DEFAULT,
                                           const std::string& method = "DEFAULT",
                                           const std::string& region = "RGN_NOBNDRY");
