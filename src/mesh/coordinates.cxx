@@ -327,7 +327,7 @@ int getAtLocAndFillGuards(Mesh* mesh, Coordinates::FieldMetric& var,
                           bool extrapolate_y, bool no_extra_interpolate,
                           ParallelTransform* pt) {
   auto ret = getAtLoc(mesh, var, name, suffix, location, default_value);
-  var = interpolateAndExtrapolate(var, location, extrapolate_x, extrapolate_y, false, pt);
+  var = interpolateAndExtrapolate(var, location, extrapolate_x, extrapolate_y, no_extra_interpolate, pt);
   return ret;
 }
 
