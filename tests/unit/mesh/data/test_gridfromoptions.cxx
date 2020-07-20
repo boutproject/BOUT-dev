@@ -351,6 +351,7 @@ TEST_F(GridFromOptionsTest, CoordinatesCentre) {
   EXPECT_TRUE(IsFieldEqual(coords->g23, expected_metric));
 }
 
+#if not(BOUT_USE_METRIC_3D)
 TEST_F(GridFromOptionsTest, CoordinatesZlow) {
   auto coords = mesh_from_options.getCoordinates(CELL_ZLOW);
 
@@ -363,6 +364,9 @@ TEST_F(GridFromOptionsTest, CoordinatesZlow) {
   EXPECT_TRUE(IsFieldEqual(coords->g13, expected_metric + 1.));
   EXPECT_TRUE(IsFieldEqual(coords->g23, expected_metric));
 }
+#else
+// Maybe replace by MMS test, because we need a periodic function in z.
+#endif
 
 TEST_F(GridFromOptionsTest, CoordinatesXlowInterp) {
   // *_xlow fields not present in options, Coordinates will be interpolated
