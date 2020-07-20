@@ -343,9 +343,8 @@ std::string getLocationSuffix(CELL_LOC location) {
       return "_ylow";
     }
   case CELL_ZLOW: {
-      // geometrical quantities are Field2D, so CELL_ZLOW version is the same
-      // as CELL_CENTRE
-      return "";
+      // in 2D metric, same as CELL_CENTRE
+      return bout::build::use_metric_3d ? "_zlow" : "";
     }
   default: {
       throw BoutException("Incorrect location passed to "
