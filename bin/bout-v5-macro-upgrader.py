@@ -274,14 +274,14 @@ def fix_ifdefs(old, source):
 def fix_always_defined_macros(old, new, source):
     """Fix '#ifdef's that should become plain '#if'
     """
-    new_source = re.sub(r"#ifdef\s+{}".format(old), r"#if {}".format(new), source)
-    return re.sub(r"#ifndef\s+{}".format(old), r"#if !{}".format(new), new_source)
+    new_source = re.sub(r"#ifdef\s+{}\b".format(old), r"#if {}".format(new), source)
+    return re.sub(r"#ifndef\s+{}\b".format(old), r"#if !{}".format(new), new_source)
 
 
 def fix_replacement(old, new, source):
     """Straight replacements
     """
-    return re.sub(r'([^"])\b{}\b([^"])'.format(old), r"\1{}\2".format(new), source)
+    return re.sub(r'([^"_])\b{}\b([^"_])'.format(old), r"\1{}\2".format(new), source)
 
 
 def apply_fixes(replacements, source):
