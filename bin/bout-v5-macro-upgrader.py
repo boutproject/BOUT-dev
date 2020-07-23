@@ -132,6 +132,13 @@ MACRO_REPLACEMENTS = [
         "always_defined": True,
     },
     {
+        "old": "NCDF",
+        "new": "BOUT_HAS_LEGACY_NETCDF",
+        "headers": "bout/build_config.hxx",
+        "macro": True,
+        "always_defined": True,
+    },
+    {
         "old": "HDF5",
         "new": "BOUT_HAS_HDF5",
         "headers": "bout/build_config.hxx",
