@@ -7,6 +7,7 @@ except:
   pass
 
 #requires: fftw
+#cores: 4
 
 from boututils.run_wrapper import build_and_log, shell, launch_safe
 from boutdata.collect import collect

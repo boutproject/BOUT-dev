@@ -224,7 +224,7 @@ private:
 /// Catch stream outputs to DummyOutput objects. This is so that
 /// statements like
 ///    output_debug << "debug message";
-/// compile but have no effect if DEBUG_ENABLED is false
+/// compile but have no effect if BOUT_USE_OUTPUT_DEBUG is false
 template <typename T> DummyOutput &operator<<(DummyOutput &out, T const &UNUSED(t)) {
   return out;
 }
@@ -263,7 +263,7 @@ template <typename T> ConditionalOutput &operator<<(ConditionalOutput &out, cons
 
 /// To allow statements like "output.write(...)" or "output << ..."
 /// Output for debugging
-#ifdef DEBUG_ENABLED
+#ifdef BOUT_USE_OUTPUT_DEBUG
 extern ConditionalOutput output_debug;
 #else
 extern DummyOutput output_debug;

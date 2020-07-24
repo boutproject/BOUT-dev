@@ -56,8 +56,6 @@ AC_ARG_WITH(slepc,        [AS_HELP_STRING([--with-slepc],
         [Enable SLEPc interface])],,[with_slepc=no])
 AC_ARG_WITH(pvode,        [AS_HELP_STRING([--with-pvode],
         [Build and enable PVODE 98 (DEFAULT)])],,[])
-AC_ARG_WITH(mumps,        [AS_HELP_STRING([--with-mumps],
-        [Link with MUMPS library for direct matrix inversions])],,[])
 AC_ARG_WITH(arkode,       [AS_HELP_STRING([--with-arkode],
         [Use the SUNDIALS ARKODE solver])],,[])
 AC_ARG_WITH(scorep,       [AS_HELP_STRING([--with-scorep],
@@ -77,6 +75,8 @@ AC_ARG_ENABLE(track,        [AS_HELP_STRING([--enable-track],
         [Enable variable tracking])],,[])
 AC_ARG_ENABLE(debug,        [AS_HELP_STRING([--enable-debug],
         [Enable all debugging flags])],,[])
+AC_ARG_ENABLE(output_debug, [AS_HELP_STRING([--enable-output-debug],
+        [Enable some extra debugging output])],,[])
 AC_ARG_ENABLE(optimize,     [AS_HELP_STRING([--enable-optimize=no/1/2/3/4],
         [Enable optimization])],,[])
 AC_ARG_ENABLE(sigfpe,       [AS_HELP_STRING([--enable-sigfpe],
@@ -182,12 +182,9 @@ AC_FUNC_VPRINTF
 # Check for OpenMP support
 : ${enable_openmp=no}  # Disable by default
 AC_OPENMP
-HAS_OPENMP=$enable_openmp
+BOUT_USE_OPENMP=$enable_openmp
 
-AS_IF([test "x$enable_openmp" = "xyes"], [
-  OPENMP_SCHEDULE=$with_openmp_schedule
-  OPENMP_CXXFLAGS="$OPENMP_CXXFLAGS -DOPENMP_SCHEDULE=$OPENMP_SCHEDULE"
-])
+BOUT_OPENMP_SCHEDULE=$with_openmp_schedule
 
 # Check if we have access to __PRETTY_FUNCTION__
 BOUT_CHECK_PRETTYFUNCTION
@@ -302,49 +299,62 @@ AS_IF([test -z $enable_checks && test "x$DISABLE_CHECK" = "xprobably"], [
   enable_checks=no
 ])
 
-CHECK_LEVEL="0"
+BOUT_CHECK_LEVEL=0
 AS_IF([test "x$enable_checks" != "xno" && test "x$enable_checks" != "x0"], [
   AC_MSG_NOTICE([Run-time checking enabled])
   AS_CASE([$enable_checks],
     [1], [AC_MSG_NOTICE([ -> Level 1 (Basic checking)])
           CXXFLAGS="$CXXFLAGS -DCHECK=1"
-          CHECK_LEVEL="1"],
+          BOUT_CHECK_LEVEL=1],
     [3], [AC_MSG_NOTICE([ -> Level 3 (Full checking + stack tracing)])
+          enable_output_debug=yes
           CXXFLAGS="$CXXFLAGS -DCHECK=3"
-          CHECK_LEVEL="3"],
+          BOUT_CHECK_LEVEL=3],
     [AC_MSG_NOTICE([ -> Level 2 (Basic checking + stack tracing)])
      CXXFLAGS="$CXXFLAGS -DCHECK=2"
-     CHECK_LEVEL="2"])
+     BOUT_CHECK_LEVEL=2])
 ], [
   AC_MSG_NOTICE([Run-time checking disabled])
 ])
 
+BOUT_USE_SIGNAL=no
 AS_IF([test "x$enable_signal" != "xno"], [
   AC_MSG_NOTICE([Segmentation fault handling enabled])
-  CXXFLAGS="$CXXFLAGS -DSIGHANDLE"
+  BOUT_USE_SIGNAL=yes
 ], [
   AC_MSG_NOTICE([Segmentation fault handling disabled])
 ])
 
+BOUT_USE_COLOR=no
 AS_IF([test "x$enable_color" != "xno"], [
   AC_MSG_NOTICE([Output coloring enabled])
-  CXXFLAGS="$CXXFLAGS -DLOGCOLOR"
+  BOUT_USE_COLOR=yes
 ], [
   AC_MSG_NOTICE([Output coloring disabled])
 ])
 
+BOUT_USE_TRACK=no
 AS_IF([test "x$enable_track" = "xyes"], [
   AC_MSG_NOTICE([Field name tracking enabled])
-  CXXFLAGS="$CXXFLAGS -DTRACK"
+  BOUT_USE_TRACK=yes
 ], [
   AC_MSG_NOTICE([Field name tracking disabled])
 ])
 
+BOUT_USE_SIGFPE=no
 AS_IF([test "x$enable_sigfpe" = "xyes"], [
   AC_MSG_NOTICE([Signaling floating point exceptions enabled])
-  CXXFLAGS="$CXXFLAGS -DBOUT_FPE"
+  BOUT_USE_SIGFPE=yes
 ], [
   AC_MSG_NOTICE([Signaling floating point exceptions disabled])
+])
+
+BOUT_USE_OUTPUT_DEBUG=no
+AS_IF([test "x$enable_output_debug" = "xyes"], [
+  AC_MSG_NOTICE([Extra debug output enabled])
+  BOUT_USE_OUTPUT_DEBUG=yes
+], [
+  AC_MSG_NOTICE([Extra debug output disabled])
 ])
 
 BOUT_VERSION=$PACKAGE_VERSION
@@ -357,6 +367,7 @@ BOUT_VERSION_TAG=$(echo $PACKAGE_VERSION | cut -d- -f2)
 # Enable Backtrace if possible
 #############################################################
 
+BOUT_USE_BACKTRACE=no
 AS_IF([test "x$enable_backtrace" = "xyes" || test "x$enable_backtrace" = "xmaybe"], [
   AC_CHECK_PROG([works], [addr2line], [yes], [no])
 
@@ -374,7 +385,7 @@ AS_IF([test "x$enable_backtrace" = "xyes" || test "x$enable_backtrace" = "xmaybe
 
   AS_IF([test $works = yes], [
     AC_MSG_NOTICE([Native backtrace enabled])
-    CXXFLAGS="$CXXFLAGS -DBACKTRACE"
+    BOUT_USE_BACKTRACE=yes
   ], [
     AS_IF([test "x$enable_backtrace" = "xyes"], [
       AC_MSG_ERROR([backtrace requested, but cannot be enabled])
@@ -454,14 +465,11 @@ AC_PATH_PROG([fftw_path], [fftw-wisdom], [no], [$with_fftw$PATH_SEPARATOR$PATH])
   BOUT_ADDPATH_CHECK_HEADER(fftw3.h, ,AC_MSG_ERROR([FFTW3 requested but header not found]), $with_fftw)
   BOUT_ADDPATH_CHECK_LIB(fftw3, fftw_plan_dft_r2c_1d, ,AC_MSG_ERROR([FFTW3 requested but library not found]), $with_fftw)
 
-  #If we've reached this point then we're happy that we have FFTW so
-  #add our define to CXXFLAGS
-  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_FFTW"
-  HAS_FFTW="yes"
+  BOUT_HAS_FFTW="yes"
 ],
 [
 AC_MSG_NOTICE([Configuring without FFTW3 is not recommended])
-HAS_FFTW="no"
+BOUT_HAS_FFTW="no"
 ])
 
 #############################################################
@@ -509,7 +517,7 @@ AS_IF([test "x$with_netcdf" != "xno"],
      AS_IF([test "x$nc_has_cpp4" = "xyes"],
        [
         NCLIB=`$NCCONF --libs`
-        CXXFLAGS="$CXXFLAGS -DNCDF4"
+        BOUT_HAS_NETCDF=yes
         AC_MSG_NOTICE([ -> NetCDF-4 support enabled])
        ], [
         # nc-config might not *say* it has C++ support, but we can try anyway
@@ -617,27 +625,26 @@ AS_IF([test "x$PNCPATH" = "x"], [
 # HDF5 library
 #############################################################
 
-HAS_HDF5="no"
+BOUT_HAS_HDF5="no"
 AX_LIB_HDF5([serial])
 AS_IF([test "$with_hdf5" = "yes"], [
   AC_MSG_NOTICE([Found HDF5])
-  CXXFLAGS="$CXXFLAGS -DHDF5"
   EXTRA_INCS="$EXTRA_INCS $HDF5_CPPFLAGS"
   EXTRA_LIBS="$EXTRA_LIBS $HDF5_LDFLAGS $HDF5_LIBS"
-  HAS_HDF5="yes"
+  BOUT_HAS_HDF5="yes"
   file_formats="$file_formats HDF5"
   ], [
   AC_MSG_NOTICE([Serial HDF5 support disabled])
 ])
 
-HAS_PHDF5="no"
+BOUT_HAS_PHDF5="no"
 AX_LIB_PARALLELHDF5()
 AS_IF([test "$with_parallelhdf5" = "yes"], [
   AC_MSG_NOTICE([Found parallel HDF5])
   CXXFLAGS="$CXXFLAGS -DPHDF5"
   EXTRA_INCS="$EXTRA_INCS $PARALLELHDF5_CPPFLAGS"
   EXTRA_LIBS="$EXTRA_LIBS $PARALLELHDF5_LDFLAGS $PARALLELHDF5_LIBS"
-  HAS_PHDF5="yes"
+  BOUT_HAS_PHDF5="yes"
   file_formats="$file_formats Parallel HDF5"
   ], [
   AC_MSG_NOTICE([Parallel HDF5 support disabled])
@@ -657,7 +664,7 @@ AS_IF([test "x$file_formats" = "x"], [
 # LAPACK routines (Used for tri- and band-diagonal solvers)
 #############################################################
 
-HAS_LAPACK="no"
+BOUT_HAS_LAPACK="no"
 AS_IF([test "x$with_lapack" != "xno"], [
   AS_IF([test "x$with_lapack" = "xguess" || test "x$with_lapack" = "x" ],
     [lapack_path=""],
@@ -667,14 +674,13 @@ AS_IF([test "x$with_lapack" != "xno"], [
        [lapack_path=""])
     ])
   BOUT_ADDPATH_CHECK_LIB(blas, zgemm_,
-    [HAS_BLAS=yes],
+    [BOUT_HAS_BLAS=yes],
     [AS_IF([test "x$with_lapack" = "xyes"],
        AC_MSG_ERROR([LAPACK requested but couldn't find BLAS]))],
     $lapack_path)
   BOUT_ADDPATH_CHECK_LIB(lapack, zgbsv_,
-    [HAS_LAPACK=yes
+    [BOUT_HAS_LAPACK=yes
      AC_MSG_NOTICE([Using LAPACK])
-     CXXFLAGS="$CXXFLAGS -DLAPACK"
     ],
     [AS_IF([test "x$with_lapack" = "xyes"],
        AC_MSG_ERROR([LAPACK requested but not found]))],
@@ -805,9 +811,8 @@ PETSC_ERROR_MESSAGE])
   # Set the line to be included in the make.conf file
   PETSC_MAKE_INCLUDE="include ${PETSC_CONFDIR}/variables"
 
-  HAS_PETSC="yes"
+  BOUT_HAS_PETSC="yes"
 
-  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC"
   EXTRA_INCS="$EXTRA_INCS \$(PETSC_CC_INCLUDES)"
   EXTRA_LIBS="$EXTRA_LIBS \$(PETSC_LIB)"
   ], [ dnl pkg-config version
@@ -830,16 +835,14 @@ PETSC_ERROR_MESSAGE])
     CXXFLAGS="$CXXFLAGS -DPETSC_HAS_SUNDIALS "
   ])
   PETSC_MAKE_INCLUDE=
-  HAS_PETSC="yes"
-
-  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC"
+  BOUT_HAS_PETSC="yes"
 
   EXTRA_INCS="$EXTRA_INCS $PETSC_CFLAGS"
   EXTRA_LIBS="$EXTRA_LIBS $PETSC_LIBS"
  ])
 ], [
   PETSC_MAKE_INCLUDE=
-  HAS_PETSC="no"
+  BOUT_HAS_PETSC="no"
   PETSC_HAS_SUNDIALS="no"
 ])
 
@@ -849,7 +852,7 @@ PETSC_ERROR_MESSAGE])
 
 AS_IF([test "x$with_slepc" != "x" && test "$with_slepc" != "no"], [
 
-  AS_IF([test $HAS_PETSC = "no"], [
+  AS_IF([test $BOUT_HAS_PETSC = "no"], [
     AC_MSG_ERROR([--with-slepc specified, but no PETSc detected. Please reconfigure and specify --with-petsc
 PETSC_ERROR_MESSAGE])
   ])
@@ -948,99 +951,21 @@ SLEPC_ERROR_MESSAGE])
   # Set the line to be included in the make.conf file
   SLEPC_MAKE_INCLUDE="include ${SLEPC_CONFDIR}/slepc_variables"
 
-  HAS_SLEPC="yes"
+  BOUT_HAS_SLEPC="yes"
 
-  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_SLEPC"
   EXTRA_INCS="$EXTRA_INCS \$(SLEPC_INCLUDE)"
   EXTRA_LIBS="$EXTRA_LIBS \$(SLEPC_LIB)"
 
 ], [
   SLEPC_MAKE_INCLUDE=
-  HAS_SLEPC="no"
-])
-
-#############################################################
-# MUMPS library
-#############################################################
-
-AS_IF([test "$with_mumps" != "" && test "$with_mumps" != "no"], [
-  MUMPS=""
-  AC_MSG_NOTICE([Searching for MUMPS])
-  AS_IF([test "$with_mumps" != "yes"], [
-    # User specified a directory
-    MUMPS="$with_mumps"
-  ])
-
-  AS_IF([test "$MUMPS" = ""], [
-    # Look in some standard locations
-    AC_CHECK_FILE(/usr/include/dmumps_c.h, MUMPS="/usr/",
-      AC_CHECK_FILE($HOME/local/include/dmumps_c.h, MUMPS="$HOME/local/",))
-  ])
-
-  AS_IF([test "$MUMPS" != ""], [
-    # Check all files needed
-    MUMPS_INC=$MUMPS/include
-    MUMPS_LIB=$MUMPS/lib
-    AC_CHECK_FILES([$MUMPS_INC/dmumps_c.h $MUMPS_LIB/libdmumps.a
-      $MUMPS_LIB/libmumps_common.a $MUMPS_LIB/libpord.a
-      $MUMPS_LIB/libscalapack.a
-      $MUMPS_LIB/libparmetis.a $MUMPS_LIB/libmetis.a
-      $MUMPS_LIB/libptscotch.a $MUMPS_LIB/libptesmumps.a], ,
-    [MUMPS=""
-     MUMPS_INC=""
-     MUMPS_LIB=""
-    ])
-  ])
-
-  save_LIBS=$LIBS
-  save_LDFLAGS=$LDFLAGS
-  save_CPPFLAGS=$CPPFLAGS
-
-  AS_IF([test "x$MUMPS_INC" != "x"], [
-    LIBS="$save_LIBS -ldmumps -lmumps_common -lpord -lscalapack -lparmetis -lmetis -lptscotch -lptesmumps"
-    LDFLAGS="$LDFLAGS -L$MUMPS_LIB"
-    CPPFLAGS="$CPPFLAGS -I$MUMPS_INC"
-    AC_MSG_NOTICE([Trying the following flags for MUMPS:])
-    AC_MSG_NOTICE([   Includes : $CPPFLAGS])
-    AC_MSG_NOTICE([   Libraries: $LDFLAGS $LIBS])
-  ], [
-    AC_MSG_NOTICE([Using user supplied flags for MUMPS])
-  ])
-
-  AC_LANG_PUSH([C++])
-  AC_MSG_CHECKING([if we can compile MUMPS program])
-  AC_LINK_IFELSE(
-    [AC_LANG_PROGRAM([
-       #include <dmumps_c.h>
-       ], [
-       DMUMPS_STRUC_C mumps_struc;
-       dmumps_c(&mumps_struc);])],
-    [AC_MSG_RESULT([yes])
-     AC_MSG_NOTICE([ -> MUMPS support enabled])
-     MUMPS=yes
-     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_MUMPS"],
-    [AC_MSG_RESULT([no])
-     AC_MSG_FAILURE([*** Could not compile MUMPS program! You may need to supply LIBS, LDFLAGS and CPPFLAGS ])])
-  AC_LANG_POP([C++])
-
-  LIBS=$save_LIBS
-  LDFLAGS=$save_LDFLAGS
-  CPPFLAGS=$save_CPPFLAGS
-
-  AS_IF([test "x$MUMPS_INC" != "x"], [
-    AC_MSG_NOTICE([   Includes : $MUMPS_INC])
-    AC_MSG_NOTICE([   Libraries: $MUMPS_LIB])
-
-
-    EXTRA_INCS="$EXTRA_INCS -I$MUMPS_INC"
-    EXTRA_LIBS="$EXTRA_LIBS -L$MUMPS_LIB -ldmumps -lmumps_common -lpord -lscalapack -lparmetis -lmetis -lptscotch -lptesmumps"
-  ])
+  BOUT_HAS_SLEPC="no"
 ])
 
 #############################################################
 # Solver choice: SUNDIALS' IDA, SUNDIALS' CVODE, PVODE
 #############################################################
 
+BOUT_HAS_SUNDIALS=no
 AS_IF([test "x$with_sundials" != "x" && test "x$with_sundials" != "xno"], [
 
   # Now follows a few different checks for the version of SUNDIALS.
@@ -1093,6 +1018,7 @@ AS_IF([test "x$with_sundials" != "x" && test "x$with_sundials" != "xno"], [
   AS_IF([test "x$with_arkode" = "x"], [
     with_arkode=$with_sundials
   ])
+  BOUT_HAS_SUNDIALS=yes
 ])
 
 AS_IF([test "x$with_ida" != "x" && test "x$with_ida" != "xno"], [
@@ -1139,7 +1065,7 @@ AS_IF([test "x$with_arkode" != "x" && test "x$with_arkode" != "xno"], [
 # Scorep setup
 #############################################################
 
-HAS_SCOREP="no"
+BOUT_HAS_SCOREP="no"
 AS_IF([test "$with_scorep" != "no"], [
 
   AS_IF([test "$with_scorep" != "yes"], [
@@ -1154,10 +1080,8 @@ AS_IF([test "$with_scorep" != "no"], [
       AC_MSG_FAILURE([*** Scorep requested, but executable not found.
 Please supply the path using --with-scorep=/path/to/scorep])
   ],[
-      # Set a compile-time flag
-      CXXFLAGS="$CXXFLAGS -DBOUT_HAS_SCOREP"
       CXX="$SCOREPPATH --user --nocompiler $CXX"
-      HAS_SCOREP="yes"
+      BOUT_HAS_SCOREP="yes"
       AC_MSG_NOTICE([Scorep support enabled])
   ])
 
@@ -1173,7 +1097,7 @@ AS_MKDIR_P(externalpackages)
 AS_MKDIR_P(lib)
 AS_MKDIR_P(include)
 
-HAS_PVODE="no"
+BOUT_HAS_PVODE="no"
 AS_IF([test "$with_pvode" != "no"], [
   AS_IF([test "$enable_pvode_openmp" != "no"  ], [
     AS_IF([test "$enable_openmp" != "no" ], [
@@ -1215,15 +1139,14 @@ AS_IF([test "$with_pvode" != "no"], [
   cp -r externalpackages/PVODE/include/pvode include
   cp externalpackages/PVODE/lib/*.a lib/
   EXTRA_LIBS="$EXTRA_LIBS -L\$(BOUT_LIB_PATH) -lpvode -lpvpre"
-  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PVODE"
-  HAS_PVODE="yes"
+  BOUT_HAS_PVODE="yes"
 ])
 
 #############################################################
 # Localisation (i18n) with gettext
 #############################################################
 
-HAS_NLS="no"
+BOUT_HAS_GETTEXT="no"
 # Use macro to test if Natural Language Support (gettext) is available.
 # If available sets:
 #  - USE_NLS to "yes"
@@ -1236,12 +1159,12 @@ AS_IF([test "$USE_NLS" = "yes"], [
   $MAKE -C locale | tee -a config-build.log 2>&1
 
   # Note: BOUT_LOCALE_PATH is defined in make.config, and may be changed by `make install`.
-  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_GETTEXT -DBOUT_LOCALE_PATH=\$(BOUT_LOCALE_PATH)"
+  CXXFLAGS="$CXXFLAGS -DBOUT_LOCALE_PATH=\$(BOUT_LOCALE_PATH)"
 
   EXTRA_LIBS="$EXTRA_LIBS $LIBINTL"
 
   # Set variable substituted into bout-config
-  HAS_NLS="yes"
+  BOUT_HAS_GETTEXT="yes"
 ],[
   AC_MSG_NOTICE([Language support with gettext not available])
 ])
@@ -1285,40 +1208,28 @@ PREFIX=$PWD
 IDLCONFIGPATH=$PWD/tools/idllib
 PYTHONCONFIGPATH=$PWD/tools/pylib
 
-HAS_IDA="yes"
+BOUT_HAS_IDA="yes"
 if test "$IDALIBS" = ""
 then
-  HAS_IDA="no"
+  BOUT_HAS_IDA="no"
 fi
 
-HAS_CVODE="yes"
+BOUT_HAS_CVODE="yes"
 if test "$CVODELIBS" = ""
 then
-  HAS_CVODE="no"
+  BOUT_HAS_CVODE="no"
 fi
 
-HAS_ARKODE="yes"
+BOUT_HAS_ARKODE="yes"
 if test "$ARKODELIBS" = ""
 then
-  HAS_ARKODE="no"
+  BOUT_HAS_ARKODE="no"
 fi
 
-HAS_NETCDF="yes"
-if test "$NCPATH" = ""
-then
-  HAS_NETCDF="no"
-fi
-
-HAS_PNETCDF="yes"
+BOUT_HAS_PNETCDF="yes"
 if test "$PNCPATH" = ""
 then
-  HAS_PNETCDF="no"
-fi
-
-HAS_MUMPS="yes"
-if test "$MUMPS" = ""
-then
-  HAS_MUMPS="no"
+  BOUT_HAS_PNETCDF="no"
 fi
 
 # Only make.config is altered by configure
@@ -1366,19 +1277,36 @@ AC_SUBST(BOUT_VERSION_MINOR)
 AC_SUBST(BOUT_VERSION_PATCH)
 AC_SUBST(BOUT_VERSION_TAG)
 AC_SUBST(BOUT_REVISION)
-AC_SUBST(CHECK_LEVEL)
 
-AC_SUBST(HAS_PVODE)
-AC_SUBST(HAS_IDA)
-AC_SUBST(HAS_CVODE)
-AC_SUBST(HAS_ARKODE)
-AC_SUBST(HAS_NETCDF)
-AC_SUBST(HAS_PNETCDF)
-AC_SUBST(HAS_HDF5)
-AC_SUBST(HAS_MUMPS)
-AC_SUBST(HAS_LAPACK)
-AC_SUBST(HAS_PETSC)
-AC_SUBST(HAS_SLEPC)
+AC_SUBST(BOUT_CHECK_LEVEL)
+AC_DEFINE_UNQUOTED(BOUT_CHECK_LEVEL, [$BOUT_CHECK_LEVEL], [Runtime error checking level])
+
+AC_SUBST(BOUT_OPENMP_SCHEDULE)
+AC_DEFINE_UNQUOTED(BOUT_OPENMP_SCHEDULE, [$BOUT_OPENMP_SCHEDULE], [OpenMP schedule])
+
+BOUT_DEFINE_SUBST(BOUT_HAS_ARKODE, [ARKODE support])
+BOUT_DEFINE_SUBST(BOUT_HAS_CVODE, [CVODE support])
+BOUT_DEFINE_SUBST(BOUT_HAS_FFTW, [FFTW support])
+BOUT_DEFINE_SUBST(BOUT_HAS_GETTEXT, [NLS support])
+BOUT_DEFINE_SUBST(BOUT_HAS_HDF5, [HDF5 support])
+BOUT_DEFINE_SUBST(BOUT_HAS_IDA, [IDA support])
+BOUT_DEFINE_SUBST(BOUT_HAS_LAPACK, [LAPACK support])
+BOUT_DEFINE_SUBST(BOUT_HAS_NETCDF, [NETCDF support])
+BOUT_DEFINE_SUBST(BOUT_HAS_PETSC, [PETSc support])
+BOUT_DEFINE_SUBST(BOUT_HAS_PNETCDF, [PNETCDF support])
+BOUT_DEFINE_SUBST(BOUT_HAS_PRETTY_FUNCTION, [Compiler PRETTYFUNCTION support])
+BOUT_DEFINE_SUBST(BOUT_HAS_PVODE, [PVODE support])
+BOUT_DEFINE_SUBST(BOUT_HAS_SCOREP, [Score-P support])
+BOUT_DEFINE_SUBST(BOUT_HAS_SLEPC, [SLEPc support])
+BOUT_DEFINE_SUBST(BOUT_HAS_SUNDIALS, [SUNDIALS support])
+BOUT_DEFINE_SUBST(BOUT_USE_BACKTRACE, [Enable backtrace in exceptions])
+BOUT_DEFINE_SUBST(BOUT_USE_COLOR, [Enable color logs option])
+BOUT_DEFINE_SUBST(BOUT_USE_OUTPUT_DEBUG, [Enabled extra debug output])
+BOUT_DEFINE_SUBST(BOUT_USE_OPENMP, [Enable OpenMP])
+BOUT_DEFINE_SUBST(BOUT_USE_SIGFPE, [Enable floating point exceptions])
+BOUT_DEFINE_SUBST(BOUT_USE_SIGNAL, [Enable signal handlers])
+BOUT_DEFINE_SUBST(BOUT_USE_TRACK, [Enable field name tracking])
+
 AC_SUBST(PETSC_HAS_SUNDIALS)
 AC_SUBST(PETSC_MAKE_INCLUDE)
 AC_SUBST(PETSC_DIR)
@@ -1386,10 +1314,9 @@ AC_SUBST(PETSC_ARCH)
 AC_SUBST(SLEPC_MAKE_INCLUDE)
 AC_SUBST(SLEPC_DIR)
 AC_SUBST(SLEPC_ARCH)
-AC_SUBST(HAS_OPENMP)
-AC_SUBST(HAS_NLS)
-AC_SUBST(HAS_FFTW)
 
+
+AC_CONFIG_HEADERS([include/bout/build_defines.hxx:autoconf_build_defines.hxx.in])
 AC_CONFIG_FILES([include/bout/version.hxx])
 AC_CONFIG_FILES([include/bout/revision.hxx])
 AC_CONFIG_FILES([bin/bout-config])
@@ -1405,20 +1332,27 @@ AC_MSG_NOTICE([-------------------------])
 AC_MSG_NOTICE([  Configuration summary  ])
 AC_MSG_NOTICE([-------------------------])
 
-AC_MSG_NOTICE([  PETSc support           : $HAS_PETSC (has SUNDIALS: $PETSC_HAS_SUNDIALS)])
-AC_MSG_NOTICE([  SLEPc support           : $HAS_SLEPC])
-AC_MSG_NOTICE([  IDA support             : $HAS_IDA])
-AC_MSG_NOTICE([  CVODE support           : $HAS_CVODE])
-AC_MSG_NOTICE([  ARKODE support          : $HAS_ARKODE])
-AC_MSG_NOTICE([  FFTW support            : $HAS_FFTW])
-AC_MSG_NOTICE([  NetCDF support          : $HAS_NETCDF])
-AC_MSG_NOTICE([  Parallel-NetCDF support : $HAS_PNETCDF])
-AC_MSG_NOTICE([  HDF5 support            : $HAS_HDF5 (parallel: $HAS_PHDF5)])
-AC_MSG_NOTICE([  MUMPS support           : $HAS_MUMPS])
-AC_MSG_NOTICE([  Lapack support          : $HAS_LAPACK])
-AC_MSG_NOTICE([  Scorep support          : $HAS_SCOREP])
-AC_MSG_NOTICE([  OpenMP support          : $HAS_OPENMP (schedule: $OPENMP_SCHEDULE)])
-AC_MSG_NOTICE([  Natural language support: $HAS_NLS (path: $localedir)])
+AC_MSG_NOTICE([  PETSc support           : $BOUT_HAS_PETSC (has SUNDIALS: $PETSC_HAS_SUNDIALS)])
+AC_MSG_NOTICE([  SLEPc support           : $BOUT_HAS_SLEPC])
+AC_MSG_NOTICE([  IDA support             : $BOUT_HAS_IDA])
+AC_MSG_NOTICE([  CVODE support           : $BOUT_HAS_CVODE])
+AC_MSG_NOTICE([  ARKODE support          : $BOUT_HAS_ARKODE])
+AC_MSG_NOTICE([  FFTW support            : $BOUT_HAS_FFTW])
+AC_MSG_NOTICE([  NetCDF support          : $BOUT_HAS_NETCDF])
+AC_MSG_NOTICE([  Parallel-NetCDF support : $BOUT_HAS_PNETCDF])
+AC_MSG_NOTICE([  HDF5 support            : $BOUT_HAS_HDF5 (parallel: $BOUT_HAS_PHDF5)])
+AC_MSG_NOTICE([  Lapack support          : $BOUT_HAS_LAPACK])
+AC_MSG_NOTICE([  Scorep support          : $BOUT_HAS_SCOREP])
+AC_MSG_NOTICE([  OpenMP support          : $BOUT_USE_OPENMP (schedule: $OPENMP_SCHEDULE)])
+AC_MSG_NOTICE([  Natural language support: $BOUT_HAS_GETTEXT (path: $localedir)])
+AC_MSG_NOTICE([])
+AC_MSG_NOTICE([  Enable backtrace        : $BOUT_USE_BACKTRACE])
+AC_MSG_NOTICE([  Enable color logs       : $BOUT_USE_COLOR])
+AC_MSG_NOTICE([  Enable more debug output: $BOUT_USE_OUTPUT_DEBUG])
+AC_MSG_NOTICE([  Enable OpenMP           : $BOUT_USE_OPENMP])
+AC_MSG_NOTICE([  Enable FP exceptions    : $BOUT_USE_SIGFPE])
+AC_MSG_NOTICE([  Enable signal handlers  : $BOUT_USE_SIGNAL])
+AC_MSG_NOTICE([  Enable field names      : $BOUT_USE_TRACK])
 
 AC_MSG_NOTICE([])
 AC_MSG_NOTICE([-------------------------------])

@@ -45,6 +45,8 @@ class PhysicsModel;
 #include "utils.hxx"
 #include "bout/macro_for_each.hxx"
 
+class Mesh;
+
 /*!
   Base class for physics models
  */
@@ -57,6 +59,9 @@ public:
   
   virtual ~PhysicsModel() = default;
   
+  Mesh* mesh{nullptr};
+  Datafile& dump;
+
   /*!
    * Initialse the model, calling the init() and postInit() methods
    *

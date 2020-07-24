@@ -2,6 +2,8 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
+#include "bout/build_config.hxx"
+
 #include "gtest/gtest.h"
 
 #include "bout/constants.hxx"
@@ -2290,7 +2292,7 @@ TEST_F(Field3DTest, FillField) {
   EXPECT_TRUE(IsFieldEqual(f, g));
 }
 
-#ifdef BOUT_HAS_FFTW
+#if BOUT_HAS_FFTW
 namespace bout {
 namespace testing {
 

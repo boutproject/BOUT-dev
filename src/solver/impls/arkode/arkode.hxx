@@ -29,7 +29,9 @@
 #ifndef __ARKODE_SOLVER_H__
 #define __ARKODE_SOLVER_H__
 
-#ifdef BOUT_HAS_ARKODE
+#include "bout/build_config.hxx"
+
+#if BOUT_HAS_ARKODE
 
 #include "bout_types.hxx"
 #include "bout/solver.hxx"

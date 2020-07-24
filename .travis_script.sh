@@ -116,11 +116,6 @@ do
     fi
 done
 
-if [[ ${TESTS} == 1 ]]
-then
-    time make build-check
-fi
-
 if [[ ${UNIT} == 1 ]]
 then
     time make check-unit-tests

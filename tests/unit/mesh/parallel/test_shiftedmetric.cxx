@@ -1,9 +1,11 @@
+#include "bout/build_config.hxx"
+
 #include "gtest/gtest.h"
 
 #include "fft.hxx"
 #include "test_extras.hxx"
 
-#ifdef BOUT_HAS_FFTW
+#if BOUT_HAS_FFTW
 // The unit tests use the global mesh
 using namespace bout::globals;
 

@@ -8,7 +8,7 @@ from boututils.run_wrapper import launch_safe, shell_safe, build_and_log
 
 #requires: all_tests
 #requires: netcdf
-
+#cores: 4
 
 class timer(object):
     """Context manager for printing how long a command took

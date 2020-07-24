@@ -17,6 +17,8 @@ Field3D phibdry; // Used for calculating error in the boundary
 
 bool constraint;
 
+using bout::globals::mesh;
+
 std::unique_ptr<Laplacian> phiSolver{nullptr}; ///< Inverts a Laplacian to get phi from U
 
 // Preconditioner

@@ -27,16 +27,26 @@
 
 #include <vector>
 
-ZHermiteSpline::ZHermiteSpline(BoutMask mask, int y_offset, Mesh* mesh)
-    : ZInterpolation(mask, y_offset, mesh), h00(localmesh), h01(localmesh),
-      h10(localmesh), h11(localmesh) {
+ZHermiteSpline::ZHermiteSpline(int y_offset, Mesh* mesh, Region<Ind3D> region_in)
+    : ZInterpolation(y_offset, mesh, region_in),
+      fz_region(region_in.size() != 0 ? "RGN_ALL"
+                                      : y_offset == 0 ? "RGN_NOBNDRY" : "RGN_NOX"),
+      h00(localmesh), h01(localmesh), h10(localmesh), h11(localmesh) {
+
+  if (region_in.size() != 0) {
+    output_warn << "Custom region passed to ZInterpolation. ZHermiteSpline requires an "
+                << "offset region for calculating DDZ(f): using RGN_ALL, which may not "
+                << "be optimal." << endl;
+  }
 
   // Index arrays contain guard cells in order to get subscripts right
-  k_corner.reallocate(localmesh->LocalNx, localmesh->LocalNy, localmesh->LocalNz);
+  const int n_total = localmesh->LocalNx*localmesh->LocalNy*localmesh->LocalNz;
+  k_corner.reallocate(n_total);
 
   // Initialise in order to avoid 'uninitialized value' errors from Valgrind when using
   // guard-cell values
-  k_corner = -1;
+  std::fill(std::begin(k_corner), std::end(k_corner),
+            Ind3D(-1, localmesh->LocalNy, localmesh->LocalNz));
 
   // Allocate Field3D members
   h00.allocate();
@@ -45,29 +55,41 @@ ZHermiteSpline::ZHermiteSpline(BoutMask mask, int y_offset, Mesh* mesh)
   h11.allocate();
 }
 
-void ZHermiteSpline::calcWeights(const Field3D& delta_z, const std::string& region) {
+void ZHermiteSpline::calcWeights(const Field3D& delta_z) {
 
-  BOUT_FOR(i, delta_z.getRegion(region)) {
+  const int ncy = localmesh->LocalNy;
+  const int ncz = localmesh->LocalNz;
+
+  // Calculate weights for all points if y_offset==0 in case they are needed, otherwise
+  // only calculate weights for 'region'
+  const auto& local_region = (y_offset == 0) ? delta_z.getRegion("RGN_ALL") : region;
+
+  BOUT_FOR(i, local_region) {
     const int x = i.x();
     const int y = i.y();
     const int z = i.z();
 
-    if (skip_mask(x, y, z))
-      continue;
-
     // The integer part of zt_prime are the indices of the cell
     // containing the field line end-point
-    k_corner(x, y, z) = static_cast<int>(floor(delta_z(x, y, z)));
+    int corner_zind = floor(delta_z(x, y, z));
 
     // t_z is the normalised coordinate \in [0,1) within the cell
     // calculated by taking the remainder of the floating point index
-    const BoutReal t_z = delta_z(x, y, z) - static_cast<BoutReal>(k_corner(x, y, z));
+    const BoutReal t_z = delta_z(x, y, z) - static_cast<BoutReal>(corner_zind);
+
+    // Make corner_zind be in the range 0<=corner_zind<nz
+    // This needs to be done after calculating t_z (the coordinate within the
+    // cell) because delta_z is allowed to be less than 0 or greater than ncz.
+    corner_zind = ((corner_zind % ncz) + ncz) % ncz;
+
+    // Convert z-index to Ind3D
+    k_corner[i.ind] = Ind3D((x*ncy + y)*ncz + corner_zind, ncy, ncz);
 
     // Check that t_z is in range
     if ((t_z < 0.0) || (t_z > 1.0)) {
       throw BoutException(
           "t_z={:e} out of range at ({:d},{:d},{:d}) (delta_z={:e}, k_corner={:d})", t_z,
-          x, y, z, delta_z(x, y, z), k_corner(x, y, z));
+          x, y, z, delta_z(x, y, z), k_corner[i.ind].ind);
     }
 
     h00(x, y, z) = (2. * t_z * t_z * t_z) - (3. * t_z * t_z) + 1.;
@@ -75,12 +97,6 @@ void ZHermiteSpline::calcWeights(const Field3D& delta_z, const std::string& regi
     h10(x, y, z) = t_z * (1. - t_z) * (1. - t_z);
     h11(x, y, z) = (t_z * t_z * t_z) - (t_z * t_z);
   }
-}
-
-void ZHermiteSpline::calcWeights(const Field3D& delta_z, const BoutMask& mask,
-                                 const std::string& region) {
-  skip_mask = mask;
-  calcWeights(delta_z, region);
 }
 
 /*!
@@ -103,10 +119,11 @@ std::vector<ParallelTransform::PositionsAndWeights>
 ZHermiteSpline::getWeightsForYApproximation(int i, int j, int k, int yoffset) const {
 
   const int ncz = localmesh->LocalNz;
-  const int k_mod = ((k_corner(i, j, k) % ncz) + ncz) % ncz;
-  const int k_mod_m1 = (k_mod > 0) ? (k_mod - 1) : (ncz - 1);
-  const int k_mod_p1 = (k_mod + 1) % ncz;
-  const int k_mod_p2 = (k_mod + 2) % ncz;
+  const auto corner = k_corner[(i*localmesh->LocalNy + j)*ncz + k];
+  const int k_mod = corner.z();
+  const int k_mod_m1 = corner.zm().z();
+  const int k_mod_p1 = corner.zp().z();
+  const int k_mod_p2 = corner.zpp().z();
 
   return {{i, j + yoffset, k_mod_m1, -0.5 * h10(i, j, k)},
           {i, j + yoffset, k_mod,    h00(i, j, k) - 0.5 * h11(i, j, k)},
@@ -114,60 +131,44 @@ ZHermiteSpline::getWeightsForYApproximation(int i, int j, int k, int yoffset) co
           {i, j + yoffset, k_mod_p2, 0.5 * h11(i, j, k)}};
 }
 
-Field3D ZHermiteSpline::interpolate(const Field3D& f, const std::string& region) const {
+Field3D ZHermiteSpline::interpolate(const Field3D& f, const std::string& region_str) const {
 
   ASSERT1(f.getMesh() == localmesh);
   Field3D f_interp{emptyFrom(f)};
 
+  std::string local_fz_region;
+  if (region_str == "DEFAULT") {
+    local_fz_region = fz_region;
+  } else {
+    // Cannot use non-default regions when y_offset!=0 as calcWeights() used the default
+    // region
+    ASSERT1(y_offset == 0);
+    local_fz_region = region_str;
+  }
+  const auto& local_region = (region_str == "DEFAULT") ? region : f.getRegion(region_str);
+
   // Derivatives are used for tension and need to be on dimensionless
   // coordinates
-  const std::string fz_region = (region == "RGN_NOBNDRY" or region == "RGN_NOX")
-                                    ? y_offset == 0 ? "RGN_NOBNDRY" : "RGN_NOX"
-                                    : "RGN_ALL";
-  Field3D fz = bout::derivatives::index::DDZ(f, CELL_DEFAULT, "DEFAULT", fz_region);
-  localmesh->communicateXZ(fz);
-  // communicate in y, but do not calculate parallel slices
-  {
-    auto h = localmesh->sendY(fz);
-    localmesh->wait(h);
-  }
+  Field3D fz = bout::derivatives::index::DDZ(f, CELL_DEFAULT, "DEFAULT", local_fz_region);
 
-  BOUT_FOR(i, f.getRegion(region)) {
-    const int x = i.x();
-    const int y = i.y();
-    const int z = i.z();
-
-    if (skip_mask(x, y, z))
-      continue;
-
-    // Due to lack of guard cells in z-direction, we need to ensure z-index
-    // wraps around
-    const int ncz = localmesh->LocalNz;
-    const int z_mod = ((k_corner(x, y, z) % ncz) + ncz) % ncz;
-    const int z_mod_p1 = (z_mod + 1) % ncz;
-    const int y_next = y + y_offset;
+  BOUT_FOR(i, local_region) {
+    const auto corner = k_corner[i.ind].yp(y_offset);
+    const auto corner_zp1 = corner.zp();
 
     // Interpolate in Z
-    f_interp(x, y_next, z) =
-        +f(x, y_next, z_mod) * h00(x, y, z) + f(x, y_next, z_mod_p1) * h01(x, y, z)
-        + fz(x, y_next, z_mod) * h10(x, y, z) + fz(x, y_next, z_mod_p1) * h11(x, y, z);
+    f_interp[i.yp(y_offset)] = f[corner] * h00[i] + f[corner_zp1] * h01[i]
+                               + fz[corner] * h10[i] + fz[corner_zp1] * h11[i];
 
-    ASSERT2(finite(f_interp(x, y_next, z)) || x < localmesh->xstart
-            || x > localmesh->xend);
+    ASSERT2(finite(f_interp[i.yp(y_offset)]) || i.x() < localmesh->xstart
+            || i.x() > localmesh->xend);
   }
   return f_interp;
 }
 
 Field3D ZHermiteSpline::interpolate(const Field3D& f, const Field3D& delta_z,
-                                    const std::string& region) {
-  calcWeights(delta_z, region);
-  return interpolate(f, region);
-}
-
-Field3D ZHermiteSpline::interpolate(const Field3D& f, const Field3D& delta_z,
-                                    const BoutMask& mask, const std::string& region) {
-  calcWeights(delta_z, mask, region);
-  return interpolate(f, region);
+                                    const std::string& region_str) {
+  calcWeights(delta_z);
+  return interpolate(f, region_str);
 }
 
 void ZInterpolationFactory::ensureRegistered() {}

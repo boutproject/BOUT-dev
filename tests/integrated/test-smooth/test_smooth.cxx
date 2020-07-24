@@ -12,8 +12,8 @@ int main(int argc, char **argv) {
   // Initialise BOUT++, setting up mesh
   BoutInitialise(argc, argv);
 
-  FieldFactory f(mesh);
-  
+  FieldFactory f(bout::globals::mesh);
+
   Field2D input2d = f.create2D("1 + sin(2*y)");
   Field3D input3d = f.create3D("gauss(x-0.5,0.2)*gauss(y-pi)*sin(3*y - z)");
   
@@ -30,8 +30,8 @@ int main(int argc, char **argv) {
   SAVE_ONCE(sm3d);
   
   // Output data
-  dump.write();
-  
+  bout::globals::dump.write();
+
   BoutFinalise();
   return 0;
 }

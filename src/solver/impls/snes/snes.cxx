@@ -1,5 +1,6 @@
+#include "bout/build_config.hxx"
 
-#ifdef BOUT_HAS_PETSC
+#if BOUT_HAS_PETSC
 
 #include "snes.hxx"
 

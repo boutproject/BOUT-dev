@@ -20,10 +20,12 @@
  *
  **************************************************************************/
 
+#include "bout/build_config.hxx"
+
 #include <globals.hxx>
 #include "h5_format.hxx"
 
-#ifdef HDF5
+#if BOUT_HAS_HDF5
 
 #include <utils.hxx>
 #include <cmath>
@@ -1416,5 +1418,4 @@ bool H5Format::getAttribute(const hid_t &dataSet, const std::string &attrname, B
   return true;
 }
 
-#endif // HDF5
-
+#endif // BOUT_HAS_HDF5

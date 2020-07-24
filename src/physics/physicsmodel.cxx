@@ -34,7 +34,8 @@
 
 #include <bout/mesh.hxx>
 
-PhysicsModel::PhysicsModel() : modelMonitor(this) {
+PhysicsModel::PhysicsModel()
+    : mesh(bout::globals::mesh), dump(bout::globals::dump), modelMonitor(this) {
 
   // Set up restart file
   restart = Datafile(Options::getRoot()->getSection("restart"));
@@ -108,7 +109,8 @@ int PhysicsModel::postInit(bool restarting) {
     options->get("datadir", restart_dir, "data");
   }
   /// Get restart file extension
-  options->get("dump_format", dump_ext, "nc");
+  const auto default_dump_format = bout::build::has_netcdf ? "nc" : "h5";
+  options->get("dump_format", dump_ext, default_dump_format);
   options->get("restart_format", restart_ext, dump_ext);
 
   std::string filename = restart_dir + "/BOUT.restart."+restart_ext;

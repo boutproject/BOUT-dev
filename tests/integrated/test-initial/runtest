@@ -12,6 +12,8 @@ import numpy as np
 import os
 
 #requires not make
+#requires scipy
+#cores: 4
 
 ########################################
 # Implementations of BOUT++ functions

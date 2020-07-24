@@ -5,7 +5,8 @@
 // Y derivative using yup() and ydown() fields
 Field3D DDY_yud(const Field3D &f) {
   Field3D result{0.0};
-  
+  const auto* mesh = f.getMesh();
+
   for(int i=0;i<mesh->LocalNx;i++)
     for(int j=mesh->ystart;j<=mesh->yend;j++)
       for(int k=0;k<mesh->LocalNz;k++)
@@ -19,8 +20,9 @@ Field3D DDY_weights(const Field3D &f) {
 
   ParallelTransform& pt = f.getCoordinates()->getParallelTransform();
   Field3D result{0.0};
-  
-  for(int i=0;i<mesh->LocalNx;i++){
+  const auto* mesh = f.getMesh();
+
+  for(int i=mesh->xstart;i<=mesh->xend;i++){
     for(int j=mesh->ystart;j<=mesh->yend;j++){
       for(int k=0;k<mesh->LocalNz;k++){
         std::vector<ParallelTransform::PositionsAndWeights> pw_up = pt.getWeightsForYUpApproximation(i,j,k);
@@ -42,6 +44,7 @@ Field3D DDY_weights(const Field3D &f) {
 int main(int argc, char** argv) {
 
   BoutInitialise(argc, argv);
+  using bout::globals::mesh;
 
   // Read variable from mesh
   Field3D var;
@@ -61,7 +64,7 @@ int main(int argc, char** argv) {
   Field3D ddy2 = DDY_weights(var);
   
   SAVE_ONCE2(ddy, ddy2);
-  dump.write();
+  bout::globals::dump.write();
 
   BoutFinalise();
 

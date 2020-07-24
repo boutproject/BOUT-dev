@@ -585,6 +585,26 @@ This string is stored in the attributes of the option::
 
   std::string docstring = options["value"].attributes["doc"];
 
+Creating Options
+~~~~~~~~~~~~~~~~
+
+Options and subsections can be created by setting values, creating subsections as needed::
+
+  Options options;
+  options["value1"] = 42;
+  options["subsection1"]["value2"] = "some string";
+  options["subsection1"]["value3"] = 3.1415;
+
+or using an initializer list::
+
+  Options options {{"value1", 42},
+                   {"subsection1", {{"value2", "some string"},
+                                    {"value3", 3.1415}}}};
+
+These are equivalent, but the initializer list method makes the tree structure clearer.
+Note that the list can contain many of the types which ``Options`` can hold, including
+``Field2D`` and ``Field3D`` objects.
+
 Overriding library defaults
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

@@ -27,9 +27,11 @@
  *
  **************************************************************************/
 
+#include "bout/build_config.hxx"
+
 #include "ida.hxx"
 
-#ifdef BOUT_HAS_IDA
+#if BOUT_HAS_IDA
 
 #include "boutcomm.hxx"
 #include "boutexception.hxx"

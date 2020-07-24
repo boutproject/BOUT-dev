@@ -19,6 +19,7 @@
 using SteadyClock = std::chrono::time_point<std::chrono::steady_clock>;
 using Duration = std::chrono::duration<double>;
 using namespace std::chrono;
+using bout::globals::mesh;
 
 #define ITERATOR_TEST_BLOCK(NAME, ...)                                                   \
   {                                                                                      \
@@ -69,36 +70,18 @@ int main(int argc, char **argv) {
 		      result = DDZ(a);
 		      );
 
-  ITERATOR_TEST_BLOCK(
-		      "DDZ C2",
-		      result = DDZ(a, CELL_DEFAULT, DIFF_C2);
-		      );
+  ITERATOR_TEST_BLOCK("DDZ C2", result = DDZ(a, CELL_DEFAULT, "DIFF_C2"););
 
-  ITERATOR_TEST_BLOCK(
-		      "DDZ C4",
-		      result = DDZ(a, CELL_DEFAULT, DIFF_C4);
-		      );
-  
-  ITERATOR_TEST_BLOCK(
-		      "DDZ S2",
-		      result = DDZ(a, CELL_DEFAULT, DIFF_S2);
-		      );
+  ITERATOR_TEST_BLOCK("DDZ C4", result = DDZ(a, CELL_DEFAULT, "DIFF_C4"););
 
-  ITERATOR_TEST_BLOCK(
-		      "DDZ W2",
-		      result = DDZ(a, CELL_DEFAULT, DIFF_W2);
-		      );
+  ITERATOR_TEST_BLOCK("DDZ S2", result = DDZ(a, CELL_DEFAULT, "DIFF_S2"););
 
-  ITERATOR_TEST_BLOCK(
-		      "DDZ W3",
-		      result = DDZ(a, CELL_DEFAULT, DIFF_W3);
-		      );
+  ITERATOR_TEST_BLOCK("DDZ W2", result = DDZ(a, CELL_DEFAULT, "DIFF_W2"););
 
-  ITERATOR_TEST_BLOCK(
-		      "DDZ FFT",
-		      result = DDZ(a, CELL_DEFAULT, DIFF_FFT);
-		      );
-  
+  ITERATOR_TEST_BLOCK("DDZ W3", result = DDZ(a, CELL_DEFAULT, "DIFF_W3"););
+
+  ITERATOR_TEST_BLOCK("DDZ FFT", result = DDZ(a, CELL_DEFAULT, "DIFF_FFT"););
+
   if (profileMode) {
      int nthreads = 0;
 #ifdef _OPENMP
