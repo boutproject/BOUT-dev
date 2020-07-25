@@ -39,9 +39,9 @@ TEST_F(SingleIndexOpsTest, DDX) {
 
   // Differentiate using index operations
   Field3D indexops; indexops.allocate();
-  input.fast_coords = input.getCoordinates();
+  auto input_acc = FieldAccessor<>(input);
   BOUT_FOR(i, input.getRegion("RGN_NOBNDRY")) {
-    indexops[i] = DDX(input, i);
+    indexops[i] = DDX(input_acc, i);
   }
 
   // Check the answer is the same
@@ -69,9 +69,9 @@ TEST_F(SingleIndexOpsTest, DDY) {
 
   // Differentiate using index operations
   Field3D indexops; indexops.allocate();
-  input.fast_coords = input.getCoordinates();
+  auto input_acc = FieldAccessor<>(input);
   BOUT_FOR(i, input.getRegion("RGN_NOBNDRY")) {
-    indexops[i] = DDY(input, i);
+    indexops[i] = DDY(input_acc, i);
   }
 
   // Check the answer is the same
@@ -96,9 +96,9 @@ TEST_F(SingleIndexOpsTest, DDZ) {
 
   // Differentiate using index operations
   Field3D indexops; indexops.allocate();
-  input.fast_coords = input.getCoordinates();
+  auto input_acc = FieldAccessor<>(input);
   BOUT_FOR(i, input.getRegion("RGN_NOBNDRY")) {
-    indexops[i] = DDZ(input, i);
+    indexops[i] = DDZ(input_acc, i);
   }
 
   // Check the answer is the same
@@ -128,10 +128,10 @@ TEST_F(SingleIndexOpsTest, bracket) {
 
   // Differentiate using index operations
   Field3D indexops; indexops.allocate();
-  input.fast_coords = input.getCoordinates();
-  input2.fast_coords = input2.getCoordinates();
+  auto input_acc = FieldAccessor<>(input);
+  auto input2_acc = FieldAccessor<>(input2);
   BOUT_FOR(i, input.getRegion("RGN_NOBNDRY")) {
-    indexops[i] = bracket(input, input2, i);
+    indexops[i] = bracket(input_acc, input2_acc, i);
   }
 
   // Check the answer is the same

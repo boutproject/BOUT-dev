@@ -3,11 +3,11 @@
 #ifndef SINGLE_INDEX_OPS_H
 #define SINGLE_INDEX_OPS_H
 
-#include "../field3d.hxx"
+#include "field_accessor.hxx"
 
-template<IND_TYPE N>
-BoutReal bracket(const Field3D &f, const Field3D &g, const SpecificInd<N> &ind) {
-  Coordinates *metric = g.fast_coords;
+template<IND_TYPE N, CELL_LOC location>
+BoutReal bracket(const FieldAccessor<location> &f, const FieldAccessor<location> &g, const SpecificInd<N> &ind) {
+  Coordinates *metric = g.coords;
 
   // Offset indices
   auto ixp = ind.xp();
@@ -35,24 +35,24 @@ BoutReal bracket(const Field3D &f, const Field3D &g, const SpecificInd<N> &ind) 
   return (Jpp + Jpx + Jxp) / (12 * metric->dx[ind] * metric->dz);
 }
 
-template<IND_TYPE N>
-BoutReal DDX(const Field3D &f, const SpecificInd<N> &ind) {
-  return (f[ind.xp()] - f[ind.xm()]) / (2. * f.fast_coords->dx[ind]);
+template<IND_TYPE N, CELL_LOC location>
+BoutReal DDX(const FieldAccessor<location> &f, const SpecificInd<N> &ind) {
+  return (f[ind.xp()] - f[ind.xm()]) / (2. * f.coords->dx[ind]);
 }
 
-template<IND_TYPE N>
-BoutReal DDY(const Field3D &f, const SpecificInd<N> &ind) {
-  return (f.yup()[ind.yp()] - f.ydown()[ind.ym()]) / (2. * f.fast_coords->dy[ind]);
+template<IND_TYPE N, CELL_LOC location>
+BoutReal DDY(const FieldAccessor<location> &f, const SpecificInd<N> &ind) {
+  return ( (*f.yup)[ind.yp()] - (*f.ydown)[ind.ym()]) / (2. * f.coords->dy[ind]);
 }
 
-template<IND_TYPE N>
-BoutReal DDZ(const Field3D &f, const SpecificInd<N> &ind) {
-  return (f[ind.zp()] - f[ind.zm()]) / (2. * f.fast_coords->dz);
+template<IND_TYPE N, CELL_LOC location>
+BoutReal DDZ(const FieldAccessor<location> &f, const SpecificInd<N> &ind) {
+  return (f[ind.zp()] - f[ind.zm()]) / (2. * f.coords->dz);
 }
 
-template<IND_TYPE N>
-BoutReal Delp2(const Field3D &f, const SpecificInd<N> &i) {
-  Coordinates *metric = f.fast_coords;
+template<IND_TYPE N, CELL_LOC location>
+BoutReal Delp2(const FieldAccessor<location> &f, const SpecificInd<N> &i) {
+  Coordinates *metric = f.coords;
 
   // Index offsets
   auto izm = i.zm();
@@ -69,16 +69,16 @@ BoutReal Delp2(const Field3D &f, const SpecificInd<N> &i) {
     ;
 }
 
-template<IND_TYPE N>
-BoutReal Div_par_Grad_par(const Field3D &f, const SpecificInd<N> &i) {
-  Coordinates *metric = f.fast_coords;
+template<IND_TYPE N, CELL_LOC location>
+BoutReal Div_par_Grad_par(const FieldAccessor<location> &f, const SpecificInd<N> &i) {
+  Coordinates *metric = f.coords;
   // Index offsets
   auto iyp = i.yp();
   auto iym = i.ym();
 
   // Use the raw pointers to yup/ydown fields. These must have been set before calling
-  const Field3D &yup = *f.fast_yup;
-  const Field3D &ydown = *f.fast_ydown;
+  const Field3D &yup = *f.yup;
+  const Field3D &ydown = *f.ydown;
 
   // Fetch values used more than once
   BoutReal dy = metric->dy[i];
