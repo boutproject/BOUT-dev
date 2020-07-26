@@ -45,33 +45,26 @@ protected:
     // Communicate variables
     mesh->communicate(n, vort, phi, phi_minus_n);
 
-    // Make sure fields have Coordinates
-    // This sets the Field::fast_coords member to a Coordinate*
-    // Not a long-term solution, but here until a better solution is found.
-    n.fast_coords = n.getCoordinates();
-    vort.fast_coords = vort.getCoordinates();
-    phi.fast_coords = phi.getCoordinates();
-    phi_minus_n.fast_coords = phi_minus_n.getCoordinates();
-
-    // To take derivatives along the magnetic field, yup and ydown fields are needed
-    // To avoid repeated lookups of these
-    phi_minus_n.fast_yup = &phi_minus_n.yup();
-    phi_minus_n.fast_ydown = &phi_minus_n.ydown();
+    // Create accessors which enable fast access
+    auto n_acc = FieldAccessor<>(n);
+    auto vort_acc = FieldAccessor<>(vort);
+    auto phi_acc = FieldAccessor<>(phi);
+    auto phi_minus_n_acc = FieldAccessor<>(phi_minus_n);
     
     BOUT_FOR(i, n.getRegion("RGN_NOBNDRY")) {
 
-      BoutReal div_current = alpha * Div_par_Grad_par(phi_minus_n, i);
+      BoutReal div_current = alpha * Div_par_Grad_par(phi_minus_n_acc, i);
 
       // Density equation
-      ddt(n)[i] = -bracket(phi, n, i)
+      ddt(n)[i] = -bracket(phi_acc, n_acc, i)
                   - div_current
-                  - kappa * DDZ(phi, i)
-                  + Dn * Delp2(n, i);
+                  - kappa * DDZ(phi_acc, i)
+                  + Dn * Delp2(n_acc, i);
 
       // Vorticity equation
-      ddt(vort)[i] = -bracket(phi, vort, i)
+      ddt(vort)[i] = -bracket(phi_acc, vort_acc, i)
                      - div_current
-                     + Dvort * Delp2(vort, i);
+                     + Dvort * Delp2(vort_acc, i);
     }
 
     return 0;
