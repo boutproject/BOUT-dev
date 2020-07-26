@@ -137,12 +137,10 @@ protected:
 
     mesh->communicate(phi);
 
-    // Make sure fields have Coordinates
-    // This sets the Field::fast_coords member to a Coordinate*
-    // Not a long-term solution, but here until a better solution is found.
-    n.fast_coords = n.getCoordinates();
-    omega.fast_coords = omega.getCoordinates();
-    phi.fast_coords = phi.getCoordinates();
+    // Create data accessors for fast inner loop
+    auto n_acc = FieldAccessor<>(n);
+    auto omega_acc = FieldAccessor<>(omega);
+    auto phi_acc = FieldAccessor<>(phi);
     
     // Allocate arrays to store the time derivatives
     ddt(n).allocate();
@@ -153,30 +151,30 @@ protected:
       // Density Evolution
       /////////////////////////////////////////////////////////////////////////////
 
-      ddt(n)[i] = -bracket(phi, n, i)             // ExB term
-                  + 2 * DDZ(n, i) * (rho_s / R_c) // Curvature term
-                  + D_n * Delp2(n, i);            // Diffusion term
+      ddt(n)[i] = -bracket(phi_acc, n_acc, i)             // ExB term
+                  + 2 * DDZ(n_acc, i) * (rho_s / R_c) // Curvature term
+                  + D_n * Delp2(n_acc, i);            // Diffusion term
       
       // Vorticity evolution
       /////////////////////////////////////////////////////////////////////////////
 
-      ddt(omega)[i] = -bracket(phi, omega, i)                // ExB term
-                   + 2 * DDZ(n, i) * (rho_s / R_c) / n[i] // Curvature term
-                   + D_vort * Delp2(omega, i) / n[i]      // Viscous diffusion term
+      ddt(omega)[i] = -bracket(phi_acc, omega_acc, i)                // ExB term
+                   + 2 * DDZ(n_acc, i) * (rho_s / R_c) / n_acc[i] // Curvature term
+                   + D_vort * Delp2(omega_acc, i) / n_acc[i]      // Viscous diffusion term
           ;
     }
 
     if (compressible) {
       BOUT_FOR(i, n.getRegion("RGN_NOBNDRY")) {
-        ddt(n)[i] -= 2 * n[i] * DDZ(phi, i) * (rho_s / R_c); // ExB Compression term
+        ddt(n)[i] -= 2 * n_acc[i] * DDZ(phi_acc, i) * (rho_s / R_c); // ExB Compression term
       }
     }
     
     if (sheath) {
       // Sheath closure
       BOUT_FOR(i, n.getRegion("RGN_NOBNDRY")) {
-        ddt(n)[i] += n[i] * phi[i] * (rho_s / L_par);
-        ddt(omega)[i] += phi[i] * (rho_s / L_par);
+        ddt(n)[i] += n_acc[i] * phi_acc[i] * (rho_s / L_par);
+        ddt(omega)[i] += phi_acc[i] * (rho_s / L_par);
       }
     }
     
