@@ -301,11 +301,6 @@ class Field3D : public Field, public FieldData {
   /// cuts on closed field lines?
   bool requiresTwistShift(bool twist_shift_enabled);
 
-
-  /// These are for fast (inner loop) access to yup/ydown
-  /// Used in single_index_ops.hxx functions
-  Field3D *fast_yup{nullptr}, *fast_ydown{nullptr};
-
   /////////////////////////////////////////////////////////
   // Data access
 
