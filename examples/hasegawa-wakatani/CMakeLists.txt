@@ -6,5 +6,4 @@ if (NOT TARGET bout++::bout++)
   find_package(bout++ REQUIRED)
 endif()
 
-add_executable(hasegama-wakatani hw.cxx)
-target_link_libraries(hasegama-wakatani PRIVATE bout++::bout++)
+bout_add_example(hasegama-wakatani SOURCES hw.cxx)

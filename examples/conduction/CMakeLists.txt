@@ -6,5 +6,7 @@ if (NOT TARGET bout++::bout++)
   find_package(bout++ REQUIRED)
 endif()
 
-add_executable(conduction conduction.cxx)
-target_link_libraries(conduction PRIVATE bout++::bout++)
+bout_add_example(conduction
+  SOURCES conduction.cxx
+  DATA_DIRS data fromfile
+  EXTRA_FILES generate.py)

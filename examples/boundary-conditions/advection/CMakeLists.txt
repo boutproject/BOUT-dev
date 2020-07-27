@@ -6,5 +6,9 @@ if (NOT TARGET bout++::bout++)
   find_package(bout++ REQUIRED)
 endif()
 
-add_executable(advection advection.cxx)
-target_link_libraries(advection PRIVATE bout++::bout++)
+bout_add_example(advection
+  SOURCES advection.cxx
+  DATA_DIRS central-dirichlet 
+            central-free 
+            central-free-o3 
+            upwind)

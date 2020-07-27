@@ -6,5 +6,6 @@ if (NOT TARGET bout++::bout++)
   find_package(bout++ REQUIRED)
 endif()
 
-add_executable(gyro-gem gem.cxx)
-target_link_libraries(gyro-gem PRIVATE bout++::bout++)
+bout_add_example(gyro-gem
+  SOURCES gem.cxx
+  EXTRA_FILES cyclone_68x32.nc)

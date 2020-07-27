@@ -6,5 +6,4 @@ if (NOT TARGET bout++::bout++)
   find_package(bout++ REQUIRED)
 endif()
 
-add_executable(finite-volume-test finite_volume.cxx)
-target_link_libraries(finite-volume-test PRIVATE bout++::bout++)
+bout_add_example(finite-volume-test SOURCES finite_volume.cxx)

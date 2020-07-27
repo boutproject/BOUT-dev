@@ -6,5 +6,4 @@ if (NOT TARGET bout++::bout++)
   find_package(bout++ REQUIRED)
 endif()
 
-add_executable(monitor monitor.cxx)
-target_link_libraries(monitor PRIVATE bout++::bout++)
+bout_add_example(monitor SOURCES monitor.cxx)

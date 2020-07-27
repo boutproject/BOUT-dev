@@ -6,5 +6,12 @@ if (NOT TARGET bout++::bout++)
   find_package(bout++ REQUIRED)
 endif()
 
-add_executable(lapd-drift lapd_drift.cxx)
-target_link_libraries(lapd-drift PRIVATE bout++::bout++)
+bout_add_example(lapd-drift
+  SOURCES lapd_drift.cxx
+  DATA_DIRS lapd
+            data
+            pisces
+  EXTRA_FILES BOUT.inp
+              BOUT.inp.nn
+              BOUT.inp.nn_zem
+              uedge.grd.nc)

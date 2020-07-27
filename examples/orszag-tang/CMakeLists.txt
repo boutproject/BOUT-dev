@@ -6,5 +6,6 @@ if (NOT TARGET bout++::bout++)
   find_package(bout++ REQUIRED)
 endif()
 
-add_executable(orszag-tang mhd.cxx)
-target_link_libraries(orszag-tang PRIVATE bout++::bout++)
+bout_add_example(orszag-tang
+  SOURCES mhd.cxx
+  EXTRA_FILES data/otv.grd.nc)

@@ -10,12 +10,12 @@ qe = 1.602176634e-19
 import numpy as np
 import matplotlib.pyplot as plt
 
-from boututils.run_wrapper import shell_safe, launch_safe
+from boututils.run_wrapper import build_and_log, launch_safe
 from boutdata.collect import collect
 
 path = "step"
 
-shell_safe("make > make.log")
+build_and_log("Step SNB")
 # Run the case
 s, out = launch_safe("./conduction-snb -d " + path, nproc=1, mthread=1, pipe=True)
 

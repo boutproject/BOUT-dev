@@ -6,5 +6,7 @@ if (NOT TARGET bout++::bout++)
   find_package(bout++ REQUIRED)
 endif()
 
-add_executable(conduction-snb conduction-snb.cxx)
-target_link_libraries(conduction-snb PRIVATE bout++::bout++)
+bout_add_example(conduction-snb
+  SOURCES conduction-snb.cxx
+  EXTRA_FILES fit_temperature.py sinusoid.py snb.csv spitzer-harm.csv step.py temperature.csv vfp.csv
+  DATA_DIRS data step)

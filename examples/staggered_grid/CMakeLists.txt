@@ -6,5 +6,7 @@ if (NOT TARGET bout++::bout++)
   find_package(bout++ REQUIRED)
 endif()
 
-add_executable(staggered_grid test_staggered.cxx)
-target_link_libraries(staggered_grid PRIVATE bout++::bout++)
+bout_add_example(staggered_grid
+  SOURCES test_staggered.cxx
+  EXTRA_FILES generate.py runandplot test-staggered.nc
+  DATA_DIRS data test)

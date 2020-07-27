@@ -6,5 +6,6 @@ if (NOT TARGET bout++::bout++)
   find_package(bout++ REQUIRED)
 endif()
 
-add_executable(uedge-benchmark ue_bmark.cxx)
-target_link_libraries(uedge-benchmark PRIVATE bout++::bout++)
+bout_add_example(uedge-benchmark
+  SOURCES ue_bmark.cxx
+  EXTRA_FILES uedge.grd_Up_Ni_Tei_2d.nc)

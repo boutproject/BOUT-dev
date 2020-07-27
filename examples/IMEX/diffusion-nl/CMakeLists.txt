@@ -6,5 +6,4 @@ if (NOT TARGET bout++::bout++)
   find_package(bout++ REQUIRED)
 endif()
 
-add_executable(diffusion-nl diffusion-nl.cxx)
-target_link_libraries(diffusion-nl PRIVATE bout++::bout++)
+bout_add_example(diffusion-nl SOURCES diffusion-nl.cxx)

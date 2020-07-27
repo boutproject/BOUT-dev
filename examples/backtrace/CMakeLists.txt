@@ -6,5 +6,4 @@ if (NOT TARGET bout++::bout++)
   find_package(bout++ REQUIRED)
 endif()
 
-add_executable(backtrace backtrace.cxx)
-target_link_libraries(backtrace PRIVATE bout++::bout++)
+bout_add_example(backtrace SOURCES backtrace.cxx)

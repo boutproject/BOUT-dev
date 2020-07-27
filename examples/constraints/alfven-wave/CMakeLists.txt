@@ -6,5 +6,8 @@ if (NOT TARGET bout++::bout++)
   find_package(bout++ REQUIRED)
 endif()
 
-add_executable(constraints-alfven-wave alfven.cxx)
-target_link_libraries(constraints-alfven-wave PRIVATE bout++::bout++)
+bout_add_example(constraints-alfven-wave
+  SOURCES alfven.cxx
+  DATA_DIRS cbm18 data
+  EXTRA_FILES cbm18_dens8.grid_nx68ny64.nc d3d_119919.nc)
+

@@ -6,5 +6,6 @@ if (NOT TARGET bout++::bout++)
   find_package(bout++ REQUIRED)
 endif()
 
-add_executable(finite-volume-diffusion diffusion.cxx)
-target_link_libraries(finite-volume-diffusion PRIVATE bout++::bout++)
+bout_add_example(finite-volume-diffusion
+  SOURCES diffusion.cxx
+  EXTRA_FILES mms.py)

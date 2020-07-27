@@ -6,5 +6,6 @@ if (NOT TARGET bout++::bout++)
   find_package(bout++ REQUIRED)
 endif()
 
-add_executable(split_operator split_operator.cxx)
-target_link_libraries(split_operator PRIVATE bout++::bout++)
+bout_add_example(split_operator
+  SOURCES split_operator.cxx
+  EXTRA_FILES simple_xz.nc)

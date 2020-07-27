@@ -25,6 +25,7 @@ find_package(MPI REQUIRED)
 option(INSTALL_GTEST "Enable installation of googletest. (Projects embedding googletest may want to turn this OFF.)" OFF)
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
+include(BOUT++functions)
 
 option(GIT_SUBMODULE "Check submodules during build" ON)
 # Adapted from https://cliutils.gitlab.io/modern-cmake/chapters/projects/submodule.html
@@ -650,14 +651,6 @@ target_compile_definitions(bout++
 ##################################################
 # Tests
 
-# Copy FILENAME from source directory to build directory
-macro(bout_test_copy_file FILENAME)
-  configure_file(
-      ${CMAKE_CURRENT_SOURCE_DIR}/${FILENAME}
-      ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME}
-      COPYONLY)
-endmacro()
-
 # Add a new integrated test. By default, the executable is named like
 # the first source, stripped of its file extension.
 #
@@ -718,20 +711,20 @@ function(bout_add_integrated_test TESTNAME)
   # Set the actual test command
   if (BOUT_TEST_OPTIONS_USE_RUNTEST)
     add_test(NAME ${TESTNAME} COMMAND ./runtest)
-    bout_test_copy_file(runtest)
+    bout_copy_file(runtest)
   else()
     add_test(NAME ${TESTNAME} COMMAND ${TESTNAME})
   endif()
 
   # Copy the input file if needed
   if (BOUT_TEST_OPTIONS_USE_DATA_BOUT_INP)
-    bout_test_copy_file(data/BOUT.inp)
+    bout_copy_file(data/BOUT.inp)
   endif()
 
   # Copy any other needed files
   if (BOUT_TEST_OPTIONS_EXTRA_FILES)
     foreach (FILE ${BOUT_TEST_OPTIONS_EXTRA_FILES})
-      bout_test_copy_file("${FILE}")
+      bout_copy_file("${FILE}")
     endforeach()
   endif()
 

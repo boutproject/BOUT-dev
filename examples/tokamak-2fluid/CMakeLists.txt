@@ -6,5 +6,11 @@ if (NOT TARGET bout++::bout++)
   find_package(bout++ REQUIRED)
 endif()
 
-add_executable(tokamak-2fluid 2fluid.cxx)
-target_link_libraries(tokamak-2fluid PRIVATE bout++::bout++)
+bout_add_example(tokamak-2fluid
+  SOURCES 2fluid.cxx
+  DATA_DIRS d3d-119919
+            d3d-129131
+            data
+  EXTRA_FILES uedge.grd.nc
+              uedge.grd_129131_newpproc.nc
+              data/uedge.grd.nc)

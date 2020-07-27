@@ -6,5 +6,7 @@ if (NOT TARGET bout++::bout++)
   find_package(bout++ REQUIRED)
 endif()
 
-add_executable(finite-volume-fluid fluid.cxx)
-target_link_libraries(finite-volume-fluid PRIVATE bout++::bout++)
+bout_add_example(finite-volume-fluid
+  SOURCES fluid.cxx
+  DATA_DIRS data mms
+  EXTRA_FILES mms.py)

@@ -6,5 +6,7 @@ if (NOT TARGET bout++::bout++)
   find_package(bout++ REQUIRED)
 endif()
 
-add_executable(dalf3 dalf3.cxx)
-target_link_libraries(dalf3 PRIVATE bout++::bout++)
+
+bout_add_example(dalf3
+  SOURCES dalf3.cxx
+  EXTRA_FILES cbm18_8_y064_x516_090309.nc)
