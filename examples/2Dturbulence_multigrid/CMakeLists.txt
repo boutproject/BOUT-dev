@@ -6,5 +6,4 @@ if (NOT TARGET bout++::bout++)
   find_package(bout++ REQUIRED)
 endif()
 
-add_executable(esel esel.cxx)
-target_link_libraries(esel PRIVATE bout++::bout++)
+bout_add_example(esel SOURCES esel.cxx)

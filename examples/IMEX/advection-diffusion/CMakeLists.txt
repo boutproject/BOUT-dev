@@ -6,5 +6,4 @@ if (NOT TARGET bout++::bout++)
   find_package(bout++ REQUIRED)
 endif()
 
-add_executable(imex imex.cxx)
-target_link_libraries(imex PRIVATE bout++::bout++)
+bout_add_example(imex SOURCES imex.cxx)

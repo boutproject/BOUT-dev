@@ -6,5 +6,6 @@ if (NOT TARGET bout++::bout++)
   find_package(bout++ REQUIRED)
 endif()
 
-add_executable(jorek-compare jorek_compare.cxx)
-target_link_libraries(jorek-compare PRIVATE bout++::bout++)
+bout_add_example(jorek-compare
+  SOURCES jorek_compare.cxx
+  EXTRA_FILES d3d_119919.nc)

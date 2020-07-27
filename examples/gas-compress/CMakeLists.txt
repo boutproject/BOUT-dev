@@ -6,5 +6,7 @@ if (NOT TARGET bout++::bout++)
   find_package(bout++ REQUIRED)
 endif()
 
-add_executable(gas-compress gas_compress.cxx gas_compress.hxx)
-target_link_libraries(gas-compress PRIVATE bout++::bout++)
+bout_add_example(gas-compress
+  SOURCES gas_compress.cxx gas_compress.hxx
+  DATA_DIRS rayleigh-taylor sod-shock
+  EXTRA_FILES rt.grd.nc sod.grd.nc)

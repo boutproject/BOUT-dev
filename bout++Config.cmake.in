@@ -35,6 +35,8 @@ if(EXISTS "@PROJECT_SOURCE_DIR@/cmake")
   list(APPEND CMAKE_MODULE_PATH "@PROJECT_SOURCE_DIR@/cmake")
 endif()
 
+include(BOUT++functions)
+
 if(EXISTS "@PETSC_DIR@")
   set(PETSC_DIR "@PETSC_DIR@")
 endif()

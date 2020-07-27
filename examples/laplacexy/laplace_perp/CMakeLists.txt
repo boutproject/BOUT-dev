@@ -6,5 +6,7 @@ if (NOT TARGET bout++::bout++)
   find_package(bout++ REQUIRED)
 endif()
 
-add_executable(laplacexy-laplace_perp test.cxx)
-target_link_libraries(laplacexy-laplace_perp PRIVATE bout++::bout++)
+bout_add_example(laplacexy-laplace_perp
+  SOURCES test.cxx
+  EXTRA_FILES cbm18_dens8.grid_nx68ny64.nc 
+  DATA_DIRS square torus)

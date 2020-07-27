@@ -6,5 +6,7 @@ if (NOT TARGET bout++::bout++)
   find_package(bout++ REQUIRED)
 endif()
 
-add_executable(subsampling monitor.cxx)
-target_link_libraries(subsampling PRIVATE bout++::bout++)
+bout_add_example(subsampling
+  SOURCES monitor.cxx
+  EXTRA_FILES show.py)
+

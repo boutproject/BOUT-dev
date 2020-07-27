@@ -6,5 +6,6 @@ if (NOT TARGET bout++::bout++)
   find_package(bout++ REQUIRED)
 endif()
 
-add_executable(reconnect-2field 2field.cxx)
-target_link_libraries(reconnect-2field PRIVATE bout++::bout++)
+bout_add_example(reconnect-2field
+  SOURCES 2field.cxx
+  EXTRA_FILES slab_68x32.nc)

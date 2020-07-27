@@ -6,5 +6,6 @@ if (NOT TARGET bout++::bout++)
   find_package(bout++ REQUIRED)
 endif()
 
-add_executable(eigen-box eigen-box.cxx)
-target_link_libraries(eigen-box PRIVATE bout++::bout++)
+bout_add_example(eigen-box
+  SOURCES eigen-box.cxx
+  EXTRA_FILES eigenvals.py)

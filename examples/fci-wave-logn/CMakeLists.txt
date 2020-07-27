@@ -6,5 +6,6 @@ if (NOT TARGET bout++::bout++)
   find_package(bout++ REQUIRED)
 endif()
 
-add_executable(fci-wave-logn fci-wave.cxx)
-target_link_libraries(fci-wave-logn PRIVATE bout++::bout++)
+bout_add_example(fci-wave-logn
+  SOURCES fci-wave.cxx
+  DATA_DIRS boundary div-integrate expanded)

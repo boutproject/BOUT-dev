@@ -6,5 +6,6 @@ if (NOT TARGET bout++::bout++)
   find_package(bout++ REQUIRED)
 endif()
 
-add_executable(elm_pb elm_pb.cxx)
-target_link_libraries(elm_pb PRIVATE bout++::bout++)
+bout_add_example(elm_pb
+  SOURCES elm_pb.cxx
+  EXTRA_FILES cbm18_dens8.grid_nx68ny64.nc)

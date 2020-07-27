@@ -6,5 +6,4 @@ if (NOT TARGET bout++::bout++)
   find_package(bout++ REQUIRED)
 endif()
 
-add_executable(blob2d-laplacexz blob2d.cxx)
-target_link_libraries(blob2d-laplacexz PRIVATE bout++::bout++)
+bout_add_example(blob2d-laplacexz SOURCES blob2d.cxx)

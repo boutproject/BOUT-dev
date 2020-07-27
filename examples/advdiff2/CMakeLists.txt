@@ -6,10 +6,10 @@ if (NOT TARGET bout++::bout++)
   find_package(bout++ REQUIRED)
 endif()
 
-add_executable(advdiff2 
-  globals.cxx
-  globals.hxx
-  header.hxx
-  init.cxx
-  run.cxx)
-target_link_libraries(advdiff2 PRIVATE bout++::bout++)
+bout_add_example(advdiff2 
+  SOURCES globals.cxx
+          globals.hxx
+          header.hxx
+          init.cxx
+          run.cxx
+  EXTRA_FILES slab.grd.nc)

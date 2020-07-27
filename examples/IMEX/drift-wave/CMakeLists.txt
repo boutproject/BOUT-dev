@@ -6,5 +6,4 @@ if (NOT TARGET bout++::bout++)
   find_package(bout++ REQUIRED)
 endif()
 
-add_executable(test-drift test-drift.cxx)
-target_link_libraries(test-drift PRIVATE bout++::bout++)
+bout_add_example(test-drift SOURCES test-drift.cxx)

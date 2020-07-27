@@ -6,5 +6,4 @@ if (NOT TARGET bout++::bout++)
   find_package(bout++ REQUIRED)
 endif()
 
-add_executable(conducting-wall-mode cwm.cxx)
-target_link_libraries(conducting-wall-mode PRIVATE bout++::bout++)
+bout_add_example(conducting-wall-mode SOURCES cwm.cxx)

@@ -6,5 +6,6 @@ if (NOT TARGET bout++::bout++)
   find_package(bout++ REQUIRED)
 endif()
 
-add_executable(constraints-laplace-dae laplace_dae.cxx)
-target_link_libraries(constraints-laplace-dae PRIVATE bout++::bout++)
+bout_add_example(constraints-laplace-dae
+  SOURCES laplace_dae.cxx
+  EXTRA_FILES simple_xz.nc)
