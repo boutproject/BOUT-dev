@@ -118,16 +118,21 @@ CvodeSolver::CvodeSolver(Options* opts) : Solver(opts) {
   // Add diagnostics to output
   // Needs to be in constructor not init() because init() is called after
   // Solver::outputVars()
-  add_int_diagnostic(nsteps, "cvode_nsteps");
-  add_int_diagnostic(nfevals, "cvode_nfevals");
-  add_int_diagnostic(nniters, "cvode_nniters");
-  add_int_diagnostic(npevals, "cvode_npevals");
-  add_int_diagnostic(nliters, "cvode_nliters");
-  add_BoutReal_diagnostic(last_step, "cvode_last_step");
-  add_int_diagnostic(last_order, "cvode_last_order");
-  add_int_diagnostic(num_fails, "cvode_num_fails");
-  add_int_diagnostic(nonlin_fails, "cvode_nonlin_fails");
-  add_int_diagnostic(stab_lims, "cvode_stab_lims");
+  add_int_diagnostic(nsteps, "cvode_nsteps", "Cumulative number of internal steps");
+  add_int_diagnostic(nfevals, "cvode_nfevals", "No. of calls to r.h.s.  function");
+  add_int_diagnostic(nniters, "cvode_nniters", "No. of nonlinear solver iterations");
+  add_int_diagnostic(npevals, "cvode_npevals", "No. of preconditioner solves");
+  add_int_diagnostic(nliters, "cvode_nliters", "No. of linear iterations");
+  add_BoutReal_diagnostic(last_step, "cvode_last_step",
+                          "Step size used for the last step before each output");
+  add_int_diagnostic(last_order, "cvode_last_order",
+                     "Order used during the last step before each output");
+  add_int_diagnostic(num_fails, "cvode_num_fails",
+                     "No. of local error test failures that have occurred");
+  add_int_diagnostic(nonlin_fails, "cvode_nonlin_fails",
+                     "No. of nonlinear convergence failures");
+  add_int_diagnostic(stab_lims, "cvode_stab_lims",
+                     "No. of order reductions due to stability limit detection");
 }
 
 CvodeSolver::~CvodeSolver() {
