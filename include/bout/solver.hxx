@@ -407,6 +407,22 @@ protected:
   std::vector<VarStr<Vector2D>> v2d;
   std::vector<VarStr<Vector3D>> v3d;
 
+  /// Vectors of diagnostic variables to save
+  std::vector<VarStr<int>> diagnostic_int;
+  std::vector<VarStr<BoutReal>> diagnostic_BoutReal;
+  void add_int_diagnostic(int i, std::string name) {
+    VarStr<int> v;
+    v.var = &i;
+    v.name = name;
+    diagnostic_int.emplace_back(std::move(v));
+  };
+  void add_BoutReal_diagnostic(BoutReal r, std::string name) {
+    VarStr<BoutReal> v;
+    v.var = &r;
+    v.name = name;
+    diagnostic_BoutReal.emplace_back(std::move(v));
+  };
+
   /// Can this solver handle constraints? Set to true if so.
   bool has_constraints{false};
   /// Has init been called yet?
