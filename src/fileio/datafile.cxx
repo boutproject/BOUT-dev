@@ -1129,7 +1129,7 @@ bool Datafile::write() {
     for (const auto& var : f2d_arr) {
       file->writeFieldAttributes(var.name, *var.ptr);
       if (not var.description.empty()) {
-        setAttribute(var.name, "description", var.description);
+        file->setAttribute(var.name, "description", var.description);
       }
     }
 
@@ -1137,7 +1137,7 @@ bool Datafile::write() {
     for (const auto& var : f3d_arr) {
       file->writeFieldAttributes(var.name, *var.ptr);
       if (not var.description.empty()) {
-        setAttribute(var.name, "description", var.description);
+        file->setAttribute(var.name, "description", var.description);
       }
     }
 
@@ -1145,7 +1145,7 @@ bool Datafile::write() {
     for (const auto& var : fperp_arr) {
       file->writeFieldAttributes(var.name, *var.ptr);
       if (not var.description.empty()) {
-        setAttribute(var.name, "description", var.description);
+        file->setAttribute(var.name, "description", var.description);
       }
     }
 
@@ -1157,7 +1157,7 @@ bool Datafile::write() {
       file->writeFieldAttributes(name+"y", v.y);
       file->writeFieldAttributes(name+"z", v.z);
       if (not var.description.empty()) {
-        setAttribute(var.name, "description", var.description);
+        file->setAttribute(var.name, "description", var.description);
       }
     }
 
@@ -1169,7 +1169,7 @@ bool Datafile::write() {
       file->writeFieldAttributes(name+"y", v.y);
       file->writeFieldAttributes(name+"z", v.z);
       if (not var.description.empty()) {
-        setAttribute(var.name, "description", var.description);
+        file->setAttribute(var.name, "description", var.description);
       }
     }
   }
