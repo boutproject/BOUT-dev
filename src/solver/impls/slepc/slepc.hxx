@@ -108,28 +108,32 @@ public:
   //////Following overrides all just pass through to advanceSolver
 
   // Override virtual add functions in order to pass through to advanceSolver
-  void add(Field2D& v, const std::string& name) override {
-    Solver::add(v, name);
+  void add(Field2D& v, const std::string& name,
+           const std::string& description = "") override {
+    Solver::add(v, name, description);
     if (!selfSolve) {
-      advanceSolver->add(v, name);
+      advanceSolver->add(v, name, description);
     }
   }
-  void add(Field3D& v, const std::string& name) override {
-    Solver::add(v, name);
+  void add(Field3D& v, const std::string& name,
+           const std::string& description = "") override {
+    Solver::add(v, name, description);
     if (!selfSolve) {
-      advanceSolver->add(v, name);
+      advanceSolver->add(v, name, description);
     }
   }
-  void add(Vector2D& v, const std::string& name) override {
-    Solver::add(v, name);
+  void add(Vector2D& v, const std::string& name,
+           const std::string& description = "") override {
+    Solver::add(v, name, description);
     if (!selfSolve) {
-      advanceSolver->add(v, name);
+      advanceSolver->add(v, name, description);
     }
   }
-  void add(Vector3D& v, const std::string& name) override {
-    Solver::add(v, name);
+  void add(Vector3D& v, const std::string& name,
+           const std::string& description = "") override {
+    Solver::add(v, name, description);
     if (!selfSolve) {
-      advanceSolver->add(v, name);
+      advanceSolver->add(v, name, description);
     }
   }
 
