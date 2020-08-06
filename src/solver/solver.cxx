@@ -546,17 +546,11 @@ void Solver::outputVars(Datafile &outputfile, bool save_repeat) {
   // Add 2D and 3D evolving fields to output file
   for(const auto& f : f2d) {
     // Add to dump file (appending)
-    outputfile.add(*(f.var), f.name.c_str(), save_repeat);
-    if (not f.description.empty()) {
-      outputfile.setAttribute(f.name, "description", f.description);
-    }
+    outputfile.add(*(f.var), f.name.c_str(), save_repeat, f.description);
   }  
   for(const auto& f : f3d) {
     // Add to dump file (appending)
-    outputfile.add(*(f.var), f.name.c_str(), save_repeat);
-    if (not f.description.empty()) {
-      outputfile.setAttribute(f.name, "description", f.description);
-    }
+    outputfile.add(*(f.var), f.name.c_str(), save_repeat, f.description);
     
     if(mms) {
       // Add an error variable
@@ -567,17 +561,11 @@ void Solver::outputVars(Datafile &outputfile, bool save_repeat) {
   // Add solver diagnostics to output file
   for (const auto &d : diagnostic_int) {
     // Add to dump file (appending)
-    outputfile.add(*(d.var), d.name.c_str(), save_repeat);
-    if (not d.description.empty()) {
-      outputfile.setAttribute(d.name, "description", d.description);
-    }
+    outputfile.add(*(d.var), d.name.c_str(), save_repeat, d.description);
   }
   for (const auto &d : diagnostic_BoutReal) {
     // Add to dump file (appending)
-    outputfile.add(*(d.var), d.name.c_str(), save_repeat);
-    if (not d.description.empty()) {
-      outputfile.setAttribute(d.name, "description", d.description);
-    }
+    outputfile.add(*(d.var), d.name.c_str(), save_repeat, d.description);
   }
 }
 

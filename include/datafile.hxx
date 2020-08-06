@@ -68,14 +68,22 @@ class Datafile {
   void addOnce(T& value, std::string name) {
     add(value, name.c_str(), false);
   }
-  void add(int &i, const char *name, bool save_repeat = false);
-  void add(BoutReal &r, const char *name, bool save_repeat = false);
-  void add(bool &b, const char* name, bool save_repeat = false);
-  void add(Field2D &f, const char *name, bool save_repeat = false);
-  void add(Field3D &f, const char *name, bool save_repeat = false);
-  void add(FieldPerp &f, const char *name, bool save_repeat = false);
-  void add(Vector2D &f, const char *name, bool save_repeat = false);
-  void add(Vector3D &f, const char *name, bool save_repeat = false);
+  void add(int &i, const char *name, bool save_repeat = false,
+           const std::string &description = "");
+  void add(BoutReal &r, const char *name, bool save_repeat = false,
+           const std::string &description = "");
+  void add(bool &b, const char* name, bool save_repeat = false,
+           const std::string &description = "");
+  void add(Field2D &f, const char *name, bool save_repeat = false,
+           const std::string &description = "");
+  void add(Field3D &f, const char *name, bool save_repeat = false,
+           const std::string &description = "");
+  void add(FieldPerp &f, const char *name, bool save_repeat = false,
+           const std::string &description = "");
+  void add(Vector2D &f, const char *name, bool save_repeat = false,
+           const std::string &description = "");
+  void add(Vector3D &f, const char *name, bool save_repeat = false,
+           const std::string &description = "");
   
   bool read();  ///< Read data into added variables 
   bool write(); ///< Write added variables
@@ -117,11 +125,12 @@ class Datafile {
   /// A structure to hold a pointer to a class, and associated name and flags
   template <class T>
   struct VarStr {
-    T *ptr;             ///< Pointer to the data.
-                        ///< Note that this may be a user object, not a copy, so must not be destroyed
-    std::string name;        ///< Name as it appears in the output file
-    bool save_repeat;   ///< If true, has a time dimension and is saved every time step
-    bool covar;         ///< For vectors, true if a covariant vector, false if contravariant
+    T *ptr;                       ///< Pointer to the data.
+                                  ///< Note that this may be a user object, not a copy, so must not be destroyed
+    std::string name;             ///< Name as it appears in the output file
+    bool save_repeat;             ///< If true, has a time dimension and is saved every time step
+    bool covar;                   ///< For vectors, true if a covariant vector, false if contravariant
+    std::string description{""};  ///< Documentation of what the variable is
   };
 
   // one set per variable type
