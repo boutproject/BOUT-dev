@@ -93,12 +93,12 @@ private:
   int pre_ncalls{0};       // Number of calls to preconditioner
 
   // Diagnostics from ARKODE
-  int nsteps;
-  int nfe_evals;
-  int nfi_evals;
-  int nniters;
-  int npevals;
-  int nliters;
+  int nsteps{0};
+  int nfe_evals{0};
+  int nfi_evals{0};
+  int nniters{0};
+  int npevals{0};
+  int nliters{0};
 
   void set_abstol_values(BoutReal* abstolvec_data, std::vector<BoutReal>& f2dtols,
                          std::vector<BoutReal>& f3dtols);
