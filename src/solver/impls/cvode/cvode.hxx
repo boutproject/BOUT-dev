@@ -91,6 +91,18 @@ private:
   BoutReal pre_Wtime{0.0}; // Time in preconditioner
   int pre_ncalls{0};       // Number of calls to preconditioner
 
+  // Diagnostics from CVODE
+  int nsteps;
+  int nfevals;
+  int nniters;
+  int npevals;
+  int nliters;
+  BoutReal last_step;
+  int last_order;
+  int num_fails;
+  int nonlin_fails;
+  int stab_lims;
+
   bool cvode_initialised = false;
 
   void set_abstol_values(BoutReal* abstolvec_data, std::vector<BoutReal>& f2dtols,

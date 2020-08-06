@@ -572,6 +572,16 @@ void Solver::outputVars(Datafile &outputfile, bool save_repeat) {
       outputfile.add(*(f.MMS_err), ("E_" + f.name).c_str(), save_repeat);
     }
   }
+
+  // Add solver diagnostics to output file
+  for (const auto &d : diagnostic_int) {
+    // Add to dump file (appending)
+    outputfile.add(*(d.var), d.name.c_str(), save_repeat);
+  }
+  for (const auto &d : diagnostic_BoutReal) {
+    // Add to dump file (appending)
+    outputfile.add(*(d.var), d.name.c_str(), save_repeat);
+  }
 }
 
 /////////////////////////////////////////////////////
