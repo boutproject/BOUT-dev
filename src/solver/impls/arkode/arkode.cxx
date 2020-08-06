@@ -166,6 +166,14 @@ constexpr auto& ARKStepSetUserData = ARKodeSetUserData;
 
 ArkodeSolver::ArkodeSolver(Options* opts) : Solver(opts) {
   has_constraints = false; // This solver doesn't have constraints
+
+  // Add diagnostics to output
+  add_int_diagnostic(nsteps, "arkode_nsteps");
+  add_int_diagnostic(nfe_evals, "arkode_nfe_evals");
+  add_int_diagnostic(nfi_evals, "arkode_nfi_evals");
+  add_int_diagnostic(nniters, "arkode_nniters");
+  add_int_diagnostic(npevals, "arkode_npevals");
+  add_int_diagnostic(nliters, "arkode_nliters");
 }
 
 ArkodeSolver::~ArkodeSolver() {
@@ -506,15 +514,22 @@ int ArkodeSolver::run() {
       throw BoutException("ARKode timestep failed\n");
     }
 
+    // Get additional diagnostics
+    long int temp_long_int, temp_long_int2;
+    ARKStepGetNumSteps(arkode_mem, &temp_long_int);
+    nsteps = int(temp_long_int);
+    ARKStepGetNumRhsEvals(arkode_mem, &temp_long_int, &temp_long_int2);
+    nfe_evals = int(temp_long_int);
+    nfi_evals = int(temp_long_int2);
+    ARKStepGetNumNonlinSolvIters(arkode_mem, &temp_long_int);
+    nniters = int(temp_long_int);
+    ARKStepGetNumPrecEvals(arkode_mem, &temp_long_int);
+    npevals = int(temp_long_int);
+    ARKStepGetNumLinIters(arkode_mem, &temp_long_int);
+    nliters = int(temp_long_int);
+
     if (diagnose) {
       // Print additional diagnostics
-      long int nsteps, nfe_evals, nfi_evals, nniters, npevals, nliters;
-
-      ARKStepGetNumSteps(arkode_mem, &nsteps);
-      ARKStepGetNumRhsEvals(arkode_mem, &nfe_evals, &nfi_evals);
-      ARKStepGetNumNonlinSolvIters(arkode_mem, &nniters);
-      ARKStepGetNumPrecEvals(arkode_mem, &npevals);
-      ARKStepGetNumLinIters(arkode_mem, &nliters);
 
       output.write("\nARKODE: nsteps {:d}, nfe_evals {:d}, nfi_evals {:d}, nniters {:d}, "
                    "npevals {:d}, nliters {:d}\n",
