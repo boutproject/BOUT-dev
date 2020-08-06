@@ -168,12 +168,16 @@ ArkodeSolver::ArkodeSolver(Options* opts) : Solver(opts) {
   has_constraints = false; // This solver doesn't have constraints
 
   // Add diagnostics to output
-  add_int_diagnostic(nsteps, "arkode_nsteps");
-  add_int_diagnostic(nfe_evals, "arkode_nfe_evals");
-  add_int_diagnostic(nfi_evals, "arkode_nfi_evals");
-  add_int_diagnostic(nniters, "arkode_nniters");
-  add_int_diagnostic(npevals, "arkode_npevals");
-  add_int_diagnostic(nliters, "arkode_nliters");
+  add_int_diagnostic(nsteps, "arkode_nsteps", "Cumulative number of internal steps");
+  add_int_diagnostic(nfe_evals, "arkode_nfe_evals",
+                     "No. of calls to fe (explicit portion of the right-hand-side "
+                     "function) function");
+  add_int_diagnostic(nfi_evals, "arkode_nfi_evals",
+                     "No. of calls to fi (implicit portion of the right-hand-side "
+                     "function) function");
+  add_int_diagnostic(nniters, "arkode_nniters", "No. of nonlinear solver iterations");
+  add_int_diagnostic(npevals, "arkode_npevals", "No. of preconditioner evaluations");
+  add_int_diagnostic(nliters, "arkode_nliters", "No. of linear iterations");
 }
 
 ArkodeSolver::~ArkodeSolver() {
