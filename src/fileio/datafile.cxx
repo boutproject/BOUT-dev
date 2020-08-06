@@ -1118,6 +1118,7 @@ bool Datafile::write() {
     // Set the field attributes from field meta-data.
     // Attributes must have been set for all fields before the first time
     // output is written, since this happens after the first rhs evaluation
+
     // Integer variables
     for(const auto& var : int_arr) {
       if (not var.description.empty()) {
