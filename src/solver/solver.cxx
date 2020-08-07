@@ -577,14 +577,20 @@ void Solver::outputVars(Datafile &outputfile, bool save_repeat) {
     }
   }
 
-  // Add solver diagnostics to output file
-  for (const auto &d : diagnostic_int) {
-    // Add to dump file (appending)
-    outputfile.add(*(d.var), d.name.c_str(), save_repeat, d.description);
-  }
-  for (const auto &d : diagnostic_BoutReal) {
-    // Add to dump file (appending)
-    outputfile.add(*(d.var), d.name.c_str(), save_repeat, d.description);
+  if (save_repeat) {
+    // Do not save if save_repeat=false so we avoid adding diagnostic variables to restart
+    // files, otherwise they might cause errors if the solver type is changed before
+    // restarting
+
+    // Add solver diagnostics to output file
+    for (const auto &d : diagnostic_int) {
+      // Add to dump file (appending)
+      outputfile.add(*(d.var), d.name.c_str(), save_repeat, d.description);
+    }
+    for (const auto &d : diagnostic_BoutReal) {
+      // Add to dump file (appending)
+      outputfile.add(*(d.var), d.name.c_str(), save_repeat, d.description);
+    }
   }
 }
 
