@@ -411,14 +411,14 @@ protected:
   /// Vectors of diagnostic variables to save
   std::vector<VarStr<int>> diagnostic_int;
   std::vector<VarStr<BoutReal>> diagnostic_BoutReal;
-  void add_int_diagnostic(int i, std::string name, std::string description = "") {
+  void add_int_diagnostic(int &i, std::string name, std::string description = "") {
     VarStr<int> v;
     v.var = &i;
     v.name = name;
     v.description = description;
     diagnostic_int.emplace_back(std::move(v));
   };
-  void add_BoutReal_diagnostic(BoutReal r, std::string name, std::string description = "") {
+  void add_BoutReal_diagnostic(BoutReal &r, std::string name, std::string description = "") {
     VarStr<BoutReal> v;
     v.var = &r;
     v.name = name;
