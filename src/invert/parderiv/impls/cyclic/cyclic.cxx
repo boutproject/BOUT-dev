@@ -35,6 +35,7 @@
  *
  ************************************************************************/
 
+#include <derivs.hxx>
 #include <globals.hxx>
 #include <utils.hxx>
 #include "cyclic.hxx"
@@ -52,6 +53,9 @@ InvertParCR::InvertParCR(Options *opt, Mesh *mesh_in)
   : InvertPar(opt, mesh_in), A(1.0), B(0.0), C(0.0), D(0.0), E(0.0) {
   // Number of k equations to solve for each x location
   nsys = 1 + (localmesh->LocalNz)/2; 
+
+  sg = sqrt(localmesh->getCoordinates()->g_22);
+  sg = DDY(1. / sg) / sg;
 }
 
 const Field3D InvertParCR::solve(const Field3D &f) {
@@ -135,7 +139,9 @@ const Field3D InvertParCR::solve(const Field3D &f) {
             B(x, y + localmesh->ystart) / coord->g_22(x, y + localmesh->ystart); // d2dy2
         BoutReal ccoef = C(x, y + localmesh->ystart);                            // d2dydz
         BoutReal dcoef = D(x, y + localmesh->ystart);                            // d2dz2
-        BoutReal ecoef = E(x, y + localmesh->ystart);                            // ddy
+        BoutReal ecoef =
+            E(x, y + localmesh->ystart)
+            + sg(x, y + localmesh->ystart)*B(x, y + localmesh->ystart);          // ddy
 
         bcoef /= SQ(coord->dy(x, y + localmesh->ystart));
         ccoef /= coord->dy(x, y + localmesh->ystart) * coord->dz;
