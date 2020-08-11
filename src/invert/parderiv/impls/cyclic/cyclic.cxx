@@ -57,6 +57,12 @@ InvertParCR::InvertParCR(Options *opt, Mesh *mesh_in)
 const Field3D InvertParCR::solve(const Field3D &f) {
   TRACE("InvertParCR::solve(Field3D)");
   ASSERT1(localmesh == f.getMesh());
+  ASSERT1(A.getLocation() == f.getLocation());
+  ASSERT1(B.getLocation() == f.getLocation());
+  ASSERT1(C.getLocation() == f.getLocation());
+  ASSERT1(D.getLocation() == f.getLocation());
+  ASSERT1(E.getLocation() == f.getLocation());
+  ASSERT1(sg.getLocation() == f.getLocation());
 
   Field3D result = emptyFrom(f).setDirectionY(YDirectionType::Aligned);
   
