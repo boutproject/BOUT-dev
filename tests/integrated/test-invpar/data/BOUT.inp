@@ -17,3 +17,7 @@ tol = 1e-10
 [mesh]
 nx = 12
 ny = 12
+
+[mesh:ddz]
+first = fft
+second = fft
