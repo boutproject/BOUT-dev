@@ -36,6 +36,7 @@ class MagneticField(object):
     Slab : A straight field in normal Cartesian coordinates
     CurvedSlab : A field in curvilinear coordinates
     StraightStellarator : A rotating ellipse stellarator without curvature
+    RotatingEllipse : A rotating ellipse stellarator with curvature
     VMEC : A numerical field from a VMEC equilibrium file
     GEQDSK : A numerical field from an EFIT g-file
 
@@ -190,7 +191,7 @@ class MagneticField(object):
             if np.amin(np.abs(By)) < 1e-8:
                 # Very small By
                 print(x,z,ycoord, By)
-                raise ValueError("Small By")
+                # raise ValueError("Small By")
 
             R_By = Rmaj / By
             # Rate of change of x location [m] with y angle [radians]
@@ -913,3 +914,283 @@ class GEQDSK(MagneticField):
             return np.reshape(self.p_spl(np.ravel(psinorm)),psinorm.shape)
 
         return f_spl(psinorm)
+
+class W7X_vacuum(MagneticField):
+    def __init__(self,nx=512,ny=32,nz=512,xmin=4.05,zmin=-1.35, phimax=2.*np.pi, configuration=0, plot_poincare=False,include_plasma_field=False, wout_file='wout_w7x.0972_0926_0880_0852_+0000_+0000.01.00jh.nc'):
+        from scipy.interpolate import griddata, RegularGridInterpolator
+        import numpy as np
+        ## create 1D arrays of cylindrical coordinates
+        r = np.linspace(xmin,xmin+2.5,nx)
+        phi = np.linspace(0,phimax,ny)
+        z = np.linspace(zmin,-zmin,nz)
+
+        ## make those 1D arrays 3D
+        rarray,yarray,zarray = np.meshgrid(r,phi,z,indexing='ij')
+    
+        ## call vacuum field values
+        b_vac  = W7X_vacuum.field_values(rarray,yarray,zarray,configuration,plot_poincare)
+        Bx_vac = b_vac[0]
+        By_vac = b_vac[1]
+        Bz_vac = b_vac[2]
+
+        if(include_plasma_field):
+            b_plasma = W7X_vacuum.plasma_field(rarray,yarray,zarray,wout_file=wout_file)
+            Bx_plasma = b_plasma[0]
+            By_plasma = b_plasma[1]
+            Bz_plasma = b_plasma[2] 
+        else:
+            Bx_plasma = 0
+            By_plasma = 0
+            Bz_plasma = 0
+        
+        Bx = Bx_vac + Bx_plasma
+        By = By_vac + By_plasma
+        Bz = Bz_vac + Bz_plasma
+    
+        # Now we have a field and regular grid in (R,Z,phi) so
+        # we can get an interpolation function in 3D
+        points = (r,phi,z)
+            
+        self.br_interp   = RegularGridInterpolator(points, Bx, bounds_error=False, fill_value=0.0)
+        self.bz_interp   = RegularGridInterpolator(points, Bz, bounds_error=False, fill_value=0.0)
+        self.bphi_interp = RegularGridInterpolator(points, By, bounds_error=False, fill_value=1.0)
+
+        # if you want non-interpolated, 3D arrays, make this your return function:
+        # return Bx,By,Bz
+            
+        # return points, br_interp, bphi_interp, bz_interp
+
+    ################## Vacuum field service ########################
+    # This uses the webservices field line tracer to get           #
+    # the vacuum magnetic field given 3d arrrays for R, phi, and Z #
+    # http://webservices.ipp-hgw.mpg.de/docs/fieldlinetracer.html  #
+    # Only works on IPP network                                    #
+    # Contact brendan.shanahan@ipp.mpg.de for questions            #
+    ################################################################
+
+    def field_values(r, phi, z, configuration=0, plot_poincare=False):
+        from osa import Client
+        import os.path
+        import sys
+        import pickle
+        import matplotlib.pyplot as plt
+
+        tracer = Client('http://esb.ipp-hgw.mpg.de:8280/services/FieldLineProxy?wsdl')
+
+        nx = r.shape[0]
+        ny = phi.shape[1]
+        nz = z.shape[2]
+        
+        ### create (standardized) file name for saving/loading magnetic field.
+        fname = "B.w7x."+str(nx)+"."+str(ny)+"."+str(nz)\
+            +"."+"{:.2f}".format(r[0,0,0])  +"-"+"{:.2f}".format(r[-1,0,0])\
+            +"."+"{:.2f}".format(phi[0,0,0])+"-"+"{:.2f}".format(phi[0,-1,0])\
+            +"."+"{:.2f}".format(z[0,0,0])  +"-"+"{:.2f}".format(z[0,0,-1])+".dat"
+
+        if(os.path.isfile(fname)):
+            if sys.version_info >= (3, 0):
+                print ("Saved field found, loading from: ", fname)
+                f = open(fname, "rb")
+                Br, Bphi, Bz = pickle.load(f)
+                f.close
+            else:
+                print ("Saved field found, loading from: ", fname)
+                f = open(fname, 'r')
+                Br, Bphi, Bz = pickle.load(f) ## error here means you pickled with v3+ re-do.
+                f.close
+        else:
+            print ("No saved field found -- (re)calculating (must be on IPP network for this to work...)")
+            print ("Calculating field for Wendelstein 7-X; nx = ",nx," ny = ",ny," nz = ", nz )
+
+            ## Create configuration objects
+            config = tracer.types.MagneticConfig()
+            config.configIds = configuration
+
+            Br = np.zeros((nx,ny,nz))
+            Bphi = np.ones((nx,ny,nz))
+            Bz = np.zeros((nx,ny,nz))
+            pos = tracer.types.Points3D()
+
+            pos.x1 = np.ndarray.flatten(np.ones((nx,ny,nz))*r*np.cos(phi)) #x in Cartesian (real-space) 
+            pos.x2 = np.ndarray.flatten(np.ones((nx,ny,nz))*r*np.sin(phi)) #y in Cartesian (real-space) 
+            pos.x3 = np.ndarray.flatten(z)                                 #z in Cartesian (real-space) 
+
+            ## Call tracer service
+            res = tracer.service.magneticField(pos, config)
+
+            ## Reshape to 3d array
+            Bx = np.ndarray.reshape(np.asarray(res.field.x1),(nx,ny,nz))
+            By = np.ndarray.reshape(np.asarray(res.field.x2),(nx,ny,nz))
+            Bz = np.ndarray.reshape(np.asarray(res.field.x3), (nx,ny,nz))
+
+            ## Convert to cylindrical coordinates
+            Br = Bx*np.cos(phi) + By*np.sin(phi)
+            Bphi = -Bx*np.sin(phi) + By*np.cos(phi)
+        
+            ## Save so we don't have to do this every time.
+            if sys.version_info >= (3, 0):
+                f = open(fname, "wb")
+                pickle.dump([Br,Bphi,Bz],f)
+                f.close()
+            else:
+                f = open(fname, 'w')
+                pickle.dump([Br,Bphi,Bz],f)
+                f.close()
+            
+        if(plot_poincare):
+            ## Poincare plot as done on the web services
+            ## Independent of the previously-made field.
+        
+            print( "Making poincare plot (only works on IPP network)...")
+            ## Create configuration objects
+            config = tracer.types.MagneticConfig()
+            config.configIds = configuration
+            pos = tracer.types.Points3D()
+            
+            pos.x1 = np.linspace(5.6, 6.2, 80)
+            pos.x2 = np.zeros(80)
+            pos.x3 = np.zeros(80)
+            
+            poincare = tracer.types.PoincareInPhiPlane()
+            poincare.numPoints = 200
+            poincare.phi0 = [0.] ## This is where the poincare plane is (bean=0, triangle = pi/5.)
+
+            task = tracer.types.Task()
+            task.step = 0.2
+            task.poincare = poincare
+
+            res = tracer.service.trace(pos, config, task, None, None)
+
+            for i in range(0, len(res.surfs)):
+                plt.scatter(res.surfs[i].points.x1, res.surfs[i].points.x3, color="black", s=0.1)
+                plt.show()
+            
+        return  Br, Bphi, Bz
+
+
+    ################## Plasma field service ########################
+    # This uses EXTENDER via the webservices to get                #
+    # the magnetic field from the plasma given 3d arrrays          #
+    # for R, phi, and Z                                            #
+    # http://webservices.ipp-hgw.mpg.de/docs/extender.html         #
+    # Only works on IPP network                                    #
+    # Contact brendan.shanahan@ipp.mpg.de for questions            #
+    ################################################################
+
+    def plasma_field(r, phi, z, wout_file='wout.nc'):
+        from osa import Client
+        import os.path
+        import sys
+        import pickle
+        import matplotlib.pyplot as plt
+        from boututils.datafile import DataFile
+        
+        cl = Client('http://esb.ipp-hgw.mpg.de:8280/services/Extender?wsdl')
+        # print (os.path.isfile(wout_file))
+        # if not (os.path.isfile(wout_file)):
+            #vmecURL = 'http://svvmec1.ipp-hgw.mpg.de:8080/vmecrest/v1/run/test42/wout.nc'
+        vmecURL = "http://svvmec1.ipp-hgw.mpg.de:8080/vmecrest/v1/w7x_ref_1/wout.nc"
+        # else:
+        #     f = DataFile(wout_file)
+        #     wout = f
+        #     f.close()
+
+        nx = r.shape[0]
+        ny = phi.shape[1]
+        nz = z.shape[2]
+
+        ### create (standardized) file name for saving/loading magnetic field.
+        fname = "B.w7x_plasma_field."+str(nx)+"."+str(ny)+"."+str(nz)\
+            +"."+"{:.2f}".format(r[0,0,0])  +"-"+"{:.2f}".format(r[-1,0,0])\
+            +"."+"{:.2f}".format(phi[0,0,0])+"-"+"{:.2f}".format(phi[0,-1,0])\
+            +"."+"{:.2f}".format(z[0,0,0])  +"-"+"{:.2f}".format(z[0,0,-1])+".dat"    
+
+        if(os.path.isfile(fname)):
+            if sys.version_info >= (3, 0):
+                print ("Saved field found, loading from: ", fname)
+                f = open(fname, "rb")
+                Br, Bphi, Bz = pickle.load(f)
+                f.close
+            else:
+                print ("Saved field found, loading from: ", fname)
+                f = open(fname, 'r')
+                Br, Bphi, Bz = pickle.load(f) ## error here means you pickled with v3+ re-do.
+                f.close
+        else:
+            print ("No saved plasma field found -- (re)calculating (must be on IPP network for this to work...)")
+            print ("Calculating plasma field for Wendelstein 7-X; nx = ",nx," ny = ",ny," nz = ", nz )
+            print ("This part takes AGES... estimate: ",nx*ny*nz/52380., " minutes.")
+
+            points = cl.types.Points3D()
+
+            ## Extender uses cylindrical coordinates, no need to convert, just flatten.
+            points.x1 = np.ndarray.flatten(r) #x in Cylindrical 
+            points.x2 = np.ndarray.flatten(phi) #y in Cylindrical 
+            points.x3 = np.ndarray.flatten(z)  #z in Cylindrical
+
+            ## call EXTENDER on web services
+            # if not (os.path.isfile(wout_file)):
+            plasmafield = cl.service.getPlasmaField(None, vmecURL, points, None)
+            # else:
+            # plasmafield = cl.service.getPlasmaField(wout, None, points, None)
+                
+            ## Reshape to 3d array
+            Br = np.ndarray.reshape(np.asarray(plasmafield.x1),(nx,ny,nz))
+            Bphi = np.ndarray.reshape(np.asarray(plasmafield.x2),(nx,ny,nz))
+            Bz = np.ndarray.reshape(np.asarray(plasmafield.x3), (nx,ny,nz))
+        
+            ## Save so we don't have to do this every time.
+            if sys.version_info >= (3, 0):
+                f = open(fname, "wb")
+                pickle.dump([Br,Bphi,Bz],f)
+                f.close()
+            else:
+                f = open(fname, 'w')
+                pickle.dump([Br,Bphi,Bz],f)
+                f.close()
+            
+        return  Br, Bphi, Bz
+    
+    def magnetic_axis(self, phi_axis=0,configuration=0):
+        from osa import Client
+        import os.path
+        import sys
+        import pickle
+        import matplotlib.pyplot as plt
+        
+        tracer = Client('http://esb.ipp-hgw.mpg.de:8280/services/FieldLineProxy?wsdl')
+        
+        config = tracer.types.MagneticConfig()
+        config.configIds = configuration
+        settings = tracer.types.AxisSettings()
+        res = tracer.service.findAxis(0.05, config, settings)
+    
+        magnetic_axis_x = np.asarray(res.axis.vertices.x1)# (m) 
+        magnetic_axis_y = np.asarray(res.axis.vertices.x2)# (m) -- REAL SPACE from an arbitrary start point
+        magnetic_axis_z = np.asarray(res.axis.vertices.x3)# (m)
+        magnetic_axis_rmaj = np.sqrt(magnetic_axis_x**2 + magnetic_axis_y**2 + magnetic_axis_z**2)
+
+        magnetic_axis_r = np.sqrt(np.asarray(magnetic_axis_x)**2 + np.asarray(magnetic_axis_y**2))
+        magnetic_axis_phi = np.arctan(magnetic_axis_y/magnetic_axis_x)
+
+        index = np.where((magnetic_axis_phi >= 0.97*phi_axis ) & (magnetic_axis_phi <= 1.03*phi_axis) )
+        index = index[0]
+
+        return np.asarray([magnetic_axis_r[index],magnetic_axis_z[index]])[:,0]
+
+    def Bxfunc(self, x, z, phi):
+        phi = np.mod(phi, 2.*np.pi)
+        return self.br_interp((x,phi,z))
+
+    def Bzfunc(self, x, z, phi):
+        phi = np.mod(phi, 2.*np.pi)
+        return self.bz_interp((x,phi,z))
+
+    def Byfunc(self, x, z, phi):
+        phi = np.mod(phi, 2.*np.pi)
+        # Interpolate to get flux surface normalised psi
+        return self.bphi_interp((x,phi,z))
+    
+    def Rfunc(self, x, z, phi):
+        phi = np.mod(phi, 2.*np.pi)
+        return x

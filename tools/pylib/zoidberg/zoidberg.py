@@ -243,9 +243,9 @@ def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc',
 
     with bdata.DataFile(gridfile, write=True, create=True, format=format) as f:
         ixseps = nx+1
-        f.write('nx', nx)
-        f.write('ny', ny)
-        f.write('nz', nz)
+        f.write("nx", nx)
+        f.write("ny", ny)
+        f.write("nz", nz)
 
         f.write("dx", metric["dx"])
         f.write("dy", metric["dy"])
