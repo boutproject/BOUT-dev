@@ -20,16 +20,15 @@ int main(int argc, char **argv) {
   FieldFactory f(mesh);
 
   // Get options
-  Options *options = Options::getRoot();
+  Options &options = Options::root();
   std::string acoef, bcoef, ccoef, dcoef, ecoef, func;
-  options->get("acoef", acoef, "1.0");
-  options->get("bcoef", bcoef, "-1.0");
-  options->get("ccoef", ccoef, "0.0");
-  options->get("dcoef", dcoef, "0.0");
-  options->get("ecoef", ecoef, "0.0");
-  options->get("input", func, "sin(2*y)*(1. + 0.2*exp(cos(z)))");
-  BoutReal tol;
-  OPTION(options, tol, 1e-10);
+  options.get("acoef", acoef, "1.0");
+  options.get("bcoef", bcoef, "-1.0");
+  options.get("ccoef", ccoef, "0.0");
+  options.get("dcoef", dcoef, "0.0");
+  options.get("ecoef", ecoef, "0.0");
+  options.get("input", func, "sin(2*y)*(1. + 0.2*exp(cos(z)))");
+  BoutReal tol = options["tol"].withDefault(1e-10);
 
   Field2D A = f.create2D(acoef);
   Field2D B = f.create2D(bcoef);
