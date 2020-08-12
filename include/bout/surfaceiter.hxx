@@ -34,7 +34,9 @@ class SurfaceIter {
  public:
   /// Constructor, needs a mesh to iterate over
   /// @param[in] mesh   The mesh to iterate over
-  SurfaceIter(Mesh *mesh) : m(mesh) {}
+  SurfaceIter(Mesh *mesh, bool include_guards=false)
+    : m(mesh), firstpos(include_guards ? 0 : mesh->xstart),
+      lastpos(include_guards ? mesh->LocalNx - 1 : mesh->xend) {}
   
   int xpos;    ///< X position where iteration is currently at
   int ySize(); ///< Return the length of the current surface in Y
@@ -57,6 +59,8 @@ class SurfaceIter {
   bool isDone(); ///< Are we done iterating?
 private:
   Mesh *m; ///< The mesh being iterated over
+  const int firstpos;
+  const int lastpos;
 };
 
 #endif // __SURFACEITER_H__
