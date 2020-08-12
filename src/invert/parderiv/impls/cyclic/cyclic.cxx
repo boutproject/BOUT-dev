@@ -143,6 +143,10 @@ const Field3D InvertParCR::solve(const Field3D &f) {
             E(x, y + localmesh->ystart)
             + sg(x, y + localmesh->ystart)*B(x, y + localmesh->ystart);          // ddy
 
+        if (coord->non_uniform) {
+          ecoef += bcoef * coord->d1_dy(x, y + localmesh->ystart);
+        }
+
         bcoef /= SQ(coord->dy(x, y + localmesh->ystart));
         ccoef /= coord->dy(x, y + localmesh->ystart);
         ecoef /= coord->dy(x, y + localmesh->ystart);
