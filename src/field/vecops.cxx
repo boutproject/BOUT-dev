@@ -188,7 +188,7 @@ const Field3D Div(const Vector3D& v, CELL_LOC outloc, const std::string& method)
   vcn.toContravariant();
 
   Field3D vcnJy = vcn.y.getCoordinates()->J * vcn.y;
-  if (!vcn.y.hasParallelSlices()) {
+  if (!vcnJy.hasParallelSlices()) {
     localmesh->communicate(vcnJy);
   }
   Field3D result = DDY(vcnJy, outloc, method);
