@@ -187,11 +187,14 @@ const Field3D Div(const Vector3D& v, CELL_LOC outloc, const std::string& method)
   Vector3D vcn = v;
   vcn.toContravariant();
 
-  Field3D vcnJy = vcn.y.getCoordinates()->J * vcn.y;
-  if (!vcnJy.hasParallelSlices()) {
-    localmesh->communicate(vcnJy);
+  auto vcnJy = vcn.y.getCoordinates()->J * vcn.y;
+  if (v.y.hasParallelSlices()) {
+    // If v.y has parallel slices then we are using ShiftedMetric (with 
+    // mesh:calcParallelSlices_on_communicate=true) or FCI, so we should calculate
+    // parallel slices for vcnJy in order to calculate the parallel derivative DDY
+    vcnJy.calcParallelSlices();
   }
-  Field3D result = DDY(vcnJy, outloc, method);
+  auto result = DDY(vcnJy, outloc, method);
 
   result += DDX(vcn.x.getCoordinates()->J * vcn.x, outloc, method);
   result += DDZ(vcn.z.getCoordinates()->J * vcn.z, outloc, method);
