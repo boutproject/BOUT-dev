@@ -37,8 +37,10 @@ then
     cat /etc/os-release
     # Ignore weak depencies
     echo "install_weak_deps=False" >> /etc/dnf/dnf.conf
-    time dnf -y upgrade
     time dnf -y install dnf-plugins-core {petsc,hdf5}-${mpi}-devel /usr/lib/rpm/redhat/redhat-hardened-cc1
+    # Allow to override packages - see #2073
+    time dnf copr enable -y davidsch/fixes4bout || :
+    time dnf -y upgrade
     time dnf -y builddep bout++
     useradd test
     cp -a /tmp/BOUT-dev /home/test/
