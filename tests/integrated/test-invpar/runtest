@@ -24,8 +24,9 @@ flags = [
     "acoef=1.5 'bcoef=2.*sin(2*y)'",
     "acoef=1",
     "bcoef=2",
-    "ccoef=3",
-    "dcoef=4",
+    "ccoef=1.793",
+    "ccoef=3 bcoef=0",
+    "dcoef=3.5",
     "ecoef=-1",
     "'input=ballooning(exp(-y*y)*cos(z)*gauss(x,0.2))'",
 ]
