@@ -5,11 +5,23 @@ NOUT = 0  # No timesteps
 
 MZ = 5    # Z size
 
-grid = "test_io.grd.nc"
-
 dump_format = "nc"  # NetCDF format. Alternative is "pdb"
 
 TwistShift = false
 Ballooning = false
 
 tol = 1e-10
+
+[mesh]
+nx = 12
+ny = 12
+
+dz = 0.3
+dy = 1.2 + 0.3*sin(y)
+
+g_22 = 1.1 + 0.2*cos(y)
+g22 = 1 / g_22
+
+[mesh:ddz]
+first = fft
+second = fft
