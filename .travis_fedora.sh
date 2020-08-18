@@ -20,9 +20,8 @@ then
     fi
     test . != ".$2" && mpi="$2" || mpi=openmpi
     test . != ".$3" && version="$3" || version=latest
-    time $cmd pull registry.fedoraproject.org/fedora:$version ||
-	$cmd pull fedora:$version
-    time $cmd create --name mobydick fedora:$version \
+    time $cmd pull registry.fedoraproject.org/fedora:$version
+    time $cmd create --name mobydick registry.fedoraproject.org/fedora:$version \
 	 /tmp/BOUT-dev/.travis_fedora.sh $mpi
     time $cmd cp ${TRAVIS_BUILD_DIR} mobydick:/tmp
     time $cmd start -a mobydick
@@ -37,8 +36,10 @@ then
     cat /etc/os-release
     # Ignore weak depencies
     echo "install_weak_deps=False" >> /etc/dnf/dnf.conf
-    time dnf -y upgrade
     time dnf -y install dnf-plugins-core {petsc,hdf5}-${mpi}-devel /usr/lib/rpm/redhat/redhat-hardened-cc1
+    # Allow to override packages - see #2073
+    time dnf copr enable -y davidsch/fixes4bout || :
+    time dnf -y upgrade
     time dnf -y builddep bout++
     useradd test
     cp -a /tmp/BOUT-dev /home/test/
