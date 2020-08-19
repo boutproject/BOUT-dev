@@ -30,6 +30,15 @@
   the rest are in `include/bout/version.hxx`. Both files are generated
   at configure time. Run `bin/bout-v5-macro-upgrader.py` to
   update. [\#1920](https://github.com/boutproject/BOUT-dev/pull/1920)
+- The `MUMPS` Laplacian inversion wrapper has been removed. It is still possible
+  to use `MUMPS` for Laplacian inversions through the `PETSc`
+  wrapper. [\#2018](https://github.com/boutproject/BOUT-dev/pull/2018)
+- The `using namespace bout::globals` statement has been removed from
+  `physics_model.hxx`, and `PhysicsModel` has gained public `mesh` and
+  `dump` members. Custom `main`s, free functions and legacy models
+  will need to be updated to either use `bout::globals::mesh` or
+  `Field::getMesh()` in free
+  functions. [\#2042](https://github.com/boutproject/BOUT-dev/pull/2042)
 
 
 ## [v4.3.1](https://github.com/boutproject/BOUT-dev/tree/v4.3.1) (2020-03-27)

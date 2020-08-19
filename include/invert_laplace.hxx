@@ -34,7 +34,9 @@ class Laplacian;
 #ifndef __LAPLACE_H__
 #define __LAPLACE_H__
 
-#ifdef BOUT_HAS_PETSC
+#include "bout/build_config.hxx"
+
+#if BOUT_HAS_PETSC
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 #endif
 
@@ -55,7 +57,6 @@ constexpr auto LAPLACE_BAND = "band";
 constexpr auto LAPLACE_PETSC = "petsc";
 constexpr auto LAPLACE_PETSCAMG = "petscamg";
 constexpr auto LAPLACE_PETSC3DAMG = "petsc3damg";
-constexpr auto LAPLACE_MUMPS = "mumps";
 constexpr auto LAPLACE_CYCLIC = "cyclic";
 constexpr auto LAPLACE_SHOOT = "shoot";
 constexpr auto LAPLACE_MULTIGRID = "multigrid";

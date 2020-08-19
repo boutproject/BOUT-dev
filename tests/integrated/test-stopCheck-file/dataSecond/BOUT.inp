@@ -11,7 +11,3 @@ MZ = 8    # Z size
 [mesh]
 NX = 10
 NY = 3
-
-dump_format = "nc"  # NetCDF format. Alternative is "pdb"
-
-

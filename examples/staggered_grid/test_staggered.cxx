@@ -4,8 +4,9 @@
 
 #include <bout.hxx>
 #include <boutmain.hxx>
-
 #include <derivs.hxx>
+
+using bout::globals::mesh;
 
 Field3D n, v;
 CELL_LOC maybe_ylow{CELL_CENTRE};

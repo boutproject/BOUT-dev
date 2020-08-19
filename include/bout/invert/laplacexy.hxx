@@ -33,7 +33,9 @@
 #ifndef __LAPLACE_XY_H__
 #define __LAPLACE_XY_H__
 
-#ifndef BOUT_HAS_PETSC
+#include "bout/build_config.hxx"
+
+#if !BOUT_HAS_PETSC
 // If no PETSc
 
 #warning LaplaceXY requires PETSc. No LaplaceXY available

@@ -91,7 +91,7 @@ TEST_OBJECTS = $(TEST_SOURCES:%.cxx=%.o)
 
 $(TEST_OBJECTS): | $(GTEST_SENTINEL)
 
-serial_tests: makefile $(BOUT_TOP)/make.config $(OBJ) $(LIB) checklib \
+serial_tests: makefile $(BOUT_TOP)/make.config $(OBJ) $(LIB) \
               $(SUB_LIBS) $(TEST_OBJECTS) bout_test_main.a
 	@echo "  Linking tests"
 	@$(LD) -o $@ $(TEST_OBJECTS) bout_test_main.a $(LDFLAGS) $(BOUT_LIBS) $(SUB_LIBS)

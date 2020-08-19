@@ -80,7 +80,7 @@ jobs:
     env:
       - *default_env
       - CONFIGURE_OPTIONS="--enable-shared --with-petsc --with-slepc --with-sundials=$HOME/local"
-      - SCRIPT_FLAGS="-uim5t python"
+      - SCRIPT_FLAGS="-uim5t python -s dash"
   - name: "OpenMP"
     env:
       - *default_env
@@ -95,7 +95,9 @@ jobs:
     script:
       - ./.build_sundials_for_travis.sh
       - mkdir build && cd build
-      - cmake .. -DUSE_PETSC=ON -DUSE_SLEPC=ON -DUSE_SUNDIALS=ON -DSUNDIALS_ROOT="$HOME/local" -DENABLE_OPENMP=ON -DBUILD_SHARED_LIBS=ON
+      - |
+        cmake .. -DBOUT_USE_PETSC=ON -DBOUT_USE_SLEPC=ON -DBOUT_USE_SUNDIALS=ON \
+        -DSUNDIALS_ROOT="$HOME/local" -DBOUT_ENABLE_OPENMP=ON -DBUILD_SHARED_LIBS=ON
       - cmake --build . --target build-check -j 2
       - cmake --build . --target check
 #CLANG
@@ -106,6 +108,28 @@ jobs:
       - MPICH_CC=clang MPICH_CXX=clang++
       - OMPI_CC=clang OMPI_CXX=clang++
     compiler: clang
+
+# Fedora
+  - name: "Fedora (rawhide)"
+    dist: bionic
+    script: ./.travis_fedora.sh setup mpich rawhide
+    addons:
+      apt:
+        sources:
+        packages:
+          - docker
+    sudo: true
+    services:
+      - docker
+    before_install:
+      ##################################################
+      # Job specific setup
+      ##################################################
+      # The following eval is the way to force CC/CXX to desired values as travis forces values
+      # for these in the pre-before_install stage, see https://docs.travis-ci.com/user/languages/cpp/#C11-C%2B%2B11-(and-Beyond)-and-Toolchain-Versioning
+      - eval "${MATRIX_EVAL}"
+      - echo "${CC} $(${CC} --version)"
+
 #COVERAGE
   - name: "Coverage (full)"
     if: branch IN (master, next) OR commit_message =~ /build coverage/
@@ -144,6 +168,7 @@ jobs:
       - *coverage_vars
       - *codecov_secure
     script: wget -q -O ~/codacy-coverage-reporter-assembly-latest.jar https://oss.sonatype.org/service/local/repositories/releases/content/com/codacy/codacy-coverage-reporter/4.0.5/codacy-coverage-reporter-4.0.5-assembly.jar ; java -jar ~/codacy-coverage-reporter-assembly-latest.jar final
+
 
 before_install:
   ##################################################

@@ -54,6 +54,7 @@ int main(int argc, char** argv) {
   ///////////////////////////////////////////////////////////////////////////////////////
 
   Field3D f, rhs;
+  auto* mesh = f.getMesh();
   mesh->get(rhs, "rhs");
 
   // initial profile of f only used to set boundary values
@@ -153,7 +154,7 @@ int main(int argc, char** argv) {
   BoutReal error_max = max(abs(error), true);
 
   SAVE_ONCE(f, rhs, rhs_check, error, error_max);
-  dump.write();
+  bout::globals::dump.write();
 
   laplace_solver.reset(nullptr);
   BoutFinalise();

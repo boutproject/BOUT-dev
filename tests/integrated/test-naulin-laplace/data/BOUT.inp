@@ -1,5 +1,3 @@
-dump_format = "nc"
-
 myg = 0
 
 [mesh]

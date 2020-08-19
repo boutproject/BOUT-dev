@@ -33,7 +33,9 @@ class InvertableOperator;
 #ifndef __INVERTABLE_OPERATOR_H__
 #define __INVERTABLE_OPERATOR_H__
 
-#ifdef BOUT_HAS_PETSC
+#include "bout/build_config.hxx"
+
+#if BOUT_HAS_PETSC
 
 #include "bout/traits.hxx"
 #include <bout/mesh.hxx>
@@ -54,7 +56,7 @@ class InvertableOperator;
 namespace bout {
 namespace inversion {
 
-#ifdef BOUT_HAS_PETSC
+#if BOUT_HAS_PETSC
 
 /// No-op function to use as a default -- may wish to remove once testing phase complete
 template <typename T>
@@ -134,7 +136,8 @@ public:
       : operatorFunction(func), preconditionerFunction(func),
         opt(optIn == nullptr ? Options::getRoot()->getSection("invertableOperator")
                              : optIn),
-        localmesh(localmeshIn == nullptr ? bout::globals::mesh : localmeshIn) {
+        localmesh(localmeshIn == nullptr ? bout::globals::mesh : localmeshIn),
+        lib(opt) {
     AUTO_TRACE();
   };
 
@@ -361,10 +364,9 @@ public:
     ierr = KSPSetInitialGuessNonzero(ksp, PETSC_TRUE);
     CHKERRQ(ierr);
 
-    /// Allow options to be set on command line using a --invertable_ksp_* prefix.
     ierr = KSPSetOptionsPrefix(ksp, "invertable_");
     CHKERRQ(ierr);
-    ierr = KSPSetFromOptions(ksp);
+    lib.setOptionsFromInputFile(ksp);
     CHKERRQ(ierr);
 
     /// Do required setup so solve can proceed in invert

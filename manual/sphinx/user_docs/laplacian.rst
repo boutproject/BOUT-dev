@@ -55,8 +55,6 @@ implementations are listed in table :numref:`tab-laplacetypes`.
    | `spt                   | Parallel only (NXPE>1). Thomas algorithm.                    |                                          |
    | <sec-spt_>`__          |                                                              |                                          |
    +------------------------+--------------------------------------------------------------+------------------------------------------+
-   | mumps                  | Serial/parallel. Direct solver                               | MUMPS (section :ref:`sec-mumps`)         |
-   +------------------------+--------------------------------------------------------------+------------------------------------------+
    | `pdd                   | Parallel Diagnonally Dominant algorithm. Experimental        |                                          |
    | <sec-pdd_>`__          |                                                              |                                          |
    +------------------------+--------------------------------------------------------------+------------------------------------------+

@@ -20,6 +20,8 @@
  *
  **************************************************************************/
 
+#include "bout/build_config.hxx"
+
 #include "bout/solver.hxx"
 #include "boutcomm.hxx"
 #include "boutexception.hxx"
@@ -39,6 +41,7 @@
 #include <numeric>
 
 // Implementations:
+#include "impls/adams_bashforth/adams_bashforth.hxx"
 #include "impls/arkode/arkode.hxx"
 #include "impls/cvode/cvode.hxx"
 #include "impls/euler/euler.hxx"
@@ -119,8 +122,8 @@ void Solver::add(Field2D& v, const std::string& name) {
   d.F_var = &ddt(v);
   d.location = v.getLocation();
   d.name = name;
-  
-#ifdef TRACK
+
+#if BOUT_USE_TRACK
   v.name = name;
 #endif
 
@@ -183,8 +186,8 @@ void Solver::add(Field3D& v, const std::string& name) {
   d.F_var = &ddt(v);
   d.location = v.getLocation();
   d.name = name;
-  
-#ifdef TRACK
+
+#if BOUT_USE_TRACK
   v.name = name;
 #endif
 

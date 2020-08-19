@@ -89,7 +89,7 @@ the "shared" directory.
 
 If this is successful, then you can skip to section :ref:`sec-running`.
 
- Obtaining BOUT++
+Obtaining BOUT++
 ----------------
 
 .. _sec-obtainbout:
@@ -275,7 +275,6 @@ configuration::
       NetCDF support: yes
       Parallel-NetCDF support: no
       HDF5 support: yes (parallel: no)
-      MUMPS support: no
 
 If not, see :ref:`sec-advancedinstall` for some things you can try to
 resolve common problems.
@@ -300,16 +299,16 @@ You can see what build options are available with::
   $ cmake . -B build -LH
   ...
   // Enable backtrace
-  ENABLE_BACKTRACE:BOOL=ON
+  BOUT_ENABLE_BACKTRACE:BOOL=ON
 
   // Output coloring
-  ENABLE_COLOR:BOOL=ON
+  BOUT_ENABLE_COLOR:BOOL=ON
 
   // Enable OpenMP support
-  ENABLE_OPENMP:BOOL=OFF
+  BOUT_ENABLE_OPENMP:BOOL=OFF
 
   // Enable support for PETSc time solvers and inversions
-  USE_PETSC:BOOL=OFF
+  BOUT_USE_PETSC:BOOL=OFF
   ...
 
 CMake uses the ``-D<variable>=<choice>`` syntax to control these
@@ -329,12 +328,12 @@ A more complicated CMake configuration command
 might look like::
 
   $ CC=mpicc CXX=mpic++ cmake . -B build \
-      -DUSE_PETSC=ON -DPETSC_DIR=/path/to/petsc/ \
-      -DUSE_SLEPC=ON -DSLEPC_DIR=/path/to/slepc/ \
-      -DUSE_SUNDIALS=ON -DSUNDIALS_ROOT=/path/to/sundials \
-      -DUSE_NETCDF=ON -DNetCDF_ROOT=/path/to/netcdf \
-      -DENABLE_OPENMP=ON \
-      -DENABLE_SIGFPE=OFF \
+      -DBOUT_USE_PETSC=ON -DPETSC_DIR=/path/to/petsc/ \
+      -DBOUT_USE_SLEPC=ON -DSLEPC_DIR=/path/to/slepc/ \
+      -DBOUT_USE_SUNDIALS=ON -DSUNDIALS_ROOT=/path/to/sundials \
+      -DBOUT_USE_NETCDF=ON -DNetCDF_ROOT=/path/to/netcdf \
+      -DBOUT_ENABLE_OPENMP=ON \
+      -DBOUT_ENABLE_SIGFPE=OFF \
       -DCMAKE_BUILD_TYPE=Debug \
       -DBUILD_SHARED_LIBS=ON
       -DCMAKE_INSTALL_PREFIX=/path/to/install/BOUT++
@@ -352,13 +351,15 @@ BOUT++ bundles some dependencies, currently `mpark.variant
 `googletest <https://github.com/google/googletest>`_. If you wish to
 use an existing installation of ``mpark.variant``, you can set
 ``-DBOUT_USE_SYSTEM_MPARK_VARIANT=ON``, and supply the installation
-path using ``mpark_variant_ROOT`` via the command line or
-environment variable if it is installed in a non standard
-loction. Similarly for ``fmt``, using ``-DBOUT_USE_SYSTEM_FMT=ON``
-and ``fmt_ROOT`` respectively. The recommended way to use
-``googletest`` is to compile it at the same time as your project,
-therefore there is no option to use an external installation for
-that.
+path using ``mpark_variant_ROOT`` via the command line or environment
+variable if it is installed in a non standard loction. Similarly for
+``fmt``, using ``-DBOUT_USE_SYSTEM_FMT=ON`` and ``fmt_ROOT``
+respectively. To turn off both, you can set
+``-DBOUT_USE_GIT_SUBMODULE=OFF``.
+
+The recommended way to use ``googletest`` is to compile it at the same
+time as your project, therefore there is no option to use an external
+installation for that.
 
 Using CMake with your physics model
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

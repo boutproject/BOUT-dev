@@ -30,7 +30,9 @@
 #ifndef __IDA_SOLVER_H__
 #define __IDA_SOLVER_H__
 
-#ifdef BOUT_HAS_IDA
+#include "bout/build_config.hxx"
+
+#if BOUT_HAS_IDA
 
 #include "bout/solver.hxx"
 #include "bout_types.hxx"

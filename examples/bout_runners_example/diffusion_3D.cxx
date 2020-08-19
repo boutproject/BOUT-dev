@@ -7,6 +7,8 @@
 // Gives PI and TWOPI
 #include <bout/constants.hxx>
 
+using bout::globals::mesh;
+
 // Global variable initialization
 // ############################################################################
 Field3D n;               // Evolved variable

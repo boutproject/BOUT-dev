@@ -9,6 +9,8 @@
 #include <field_factory.hxx>
 #include <utils.hxx>
 
+using bout::globals::mesh;
+
 int main(int argc, char **argv) {
 
   // Initialise BOUT++, setting up mesh
@@ -18,16 +20,15 @@ int main(int argc, char **argv) {
   FieldFactory f(mesh);
 
   // Get options
-  Options *options = Options::getRoot();
+  Options &options = Options::root();
   std::string acoef, bcoef, ccoef, dcoef, ecoef, func;
-  options->get("acoef", acoef, "1.0");
-  options->get("bcoef", bcoef, "-1.0");
-  options->get("ccoef", ccoef, "0.0");
-  options->get("dcoef", dcoef, "0.0");
-  options->get("ecoef", ecoef, "0.0");
-  options->get("input", func, "sin(2*y)");
-  BoutReal tol;
-  OPTION(options, tol, 1e-10);
+  options.get("acoef", acoef, "1.0");
+  options.get("bcoef", bcoef, "-1.0");
+  options.get("ccoef", ccoef, "0.0");
+  options.get("dcoef", dcoef, "0.0");
+  options.get("ecoef", ecoef, "0.0");
+  options.get("input", func, "sin(2*y)*(1. + 0.2*exp(cos(z)))");
+  BoutReal tol = options["tol"].withDefault(1e-10);
 
   Field2D A = f.create2D(acoef);
   Field2D B = f.create2D(bcoef);
@@ -54,7 +55,7 @@ int main(int argc, char **argv) {
     for (int z = 0; z < mesh->LocalNz; z++) {
       output.write("result: [{:d},{:d}] : {:e}, {:e}, {:e}\n", y, z, input(2, y, z),
                    result(2, y, z), deriv(2, y, z));
-      if (abs(input(2, y, z) - deriv(2, y, z)) > tol)
+      if (std::abs(input(2, y, z) - deriv(2, y, z)) > tol)
         passed = 0;
     }
   }
@@ -73,8 +74,8 @@ int main(int argc, char **argv) {
   SAVE_ONCE(allpassed);
 
   // Write data to file
-  dump.write();
-  dump.close();
+  bout::globals::dump.write();
+  bout::globals::dump.close();
 
   MPI_Barrier(BoutComm::get());
 
