@@ -29,6 +29,7 @@ add_executable(serial_tests
   ./include/bout/test_bout_enum_class.cxx
   ./include/bout/test_deriv_store.cxx
   ./include/bout/test_generic_factory.cxx
+  ./include/bout/test_hypre_interface.cxx
   ./include/bout/test_macro_for_each.cxx
   ./include/bout/test_monitor.cxx
   ./include/bout/test_petsc_indexer.cxx

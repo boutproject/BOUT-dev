@@ -5,6 +5,7 @@
 #include "bout/petsclib.hxx"
 #include "fft.hxx"
 #include "output.hxx"
+#include "bout/globalindexer.hxx"
 
 GTEST_API_ int main(int argc, char** argv) {
 
@@ -34,5 +35,10 @@ GTEST_API_ int main(int argc, char** argv) {
   Array<double>::cleanup();
   Array<int>::cleanup();
   Array<bool>::cleanup();
+
+  // Required to cleanup the PetscLib instance its holding, if
+  // applicable
+  GlobalIndexer::cleanup();
+
   return result;
 }

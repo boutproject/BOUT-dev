@@ -67,9 +67,13 @@ set(BOUT_SOURCES
   ./include/bout/fv_ops.hxx
   ./include/bout/generic_factory.hxx
   ./include/bout/globalfield.hxx
+  ./include/bout/globalindexer.hxx
   ./include/bout/griddata.hxx
+  ./include/bout/hypre_interface.hxx
   ./include/bout/index_derivs.hxx
   ./include/bout/index_derivs_interface.hxx
+  ./include/bout/invert/laplacexy2_hypre.hxx
+  ./include/bout/invert/laplacexy2.hxx
   ./include/bout/invert/laplacexy.hxx
   ./include/bout/invert/laplacexz.hxx
   ./include/bout/invertable_operator.hxx
@@ -199,6 +203,8 @@ set(BOUT_SOURCES
   ./src/invert/laplace/impls/spt/spt.hxx
   ./src/invert/laplace/invert_laplace.cxx
   ./src/invert/laplacexy/laplacexy.cxx
+  ./src/invert/laplacexy2/laplacexy2.cxx
+  ./src/invert/laplacexy2/laplacexy2_hypre.cxx
   ./src/invert/laplacexz/impls/cyclic/laplacexz-cyclic.cxx
   ./src/invert/laplacexz/impls/cyclic/laplacexz-cyclic.hxx
   ./src/invert/laplacexz/impls/petsc/laplacexz-petsc.cxx
@@ -288,6 +294,7 @@ set(BOUT_SOURCES
   ./src/sys/derivs.cxx
   ./src/sys/expressionparser.cxx
   ./src/sys/generator_context.cxx
+  ./src/sys/globalindexer.cxx
   ./src/sys/msg_stack.cxx
   ./src/sys/options.cxx
   ./src/sys/options/optionparser.hxx
@@ -552,6 +559,17 @@ if (BOUT_USE_NLS)
 endif()
 set(BOUT_HAS_GETTEXT ${BOUT_USE_NLS})
 
+option(USE_HYPRE "Enable support for HYPRE" OFF)
+if (USE_HYPRE)
+  enable_language(C)
+  find_package(HYPRE REQUIRED)
+  target_compile_definitions(bout++
+    PUBLIC "BOUT_HAS_HYPRE")
+  target_link_libraries(bout++ PUBLIC HYPRE::HYPRE)
+endif()
+message(STATUS "HYPRE support: ${USE_HYPRE}")
+set(BOUT_HAS_HYPRE ${USE_HYPRE})
+
 option(BOUT_USE_SCOREP "Enable support for Score-P based instrumentation" OFF)
 if (BOUT_USE_SCOREP)
   message(STATUS "Score-P support enabled. Please make sure you are calling CMake like so:
@@ -784,6 +802,7 @@ install(
       "${CMAKE_CURRENT_BINARY_DIR}/bout++ConfigVersion.cmake"
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/CorrectWindowsPaths.cmake"
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindFFTW.cmake"
+      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindHYPRE.cmake"
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindNetCDF.cmake"
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindPackageMultipass.cmake"
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindPETSc.cmake"
@@ -813,6 +832,7 @@ message("
    PETSc support            : ${BOUT_HAS_PETSC}
    SLEPc support            : ${BOUT_HAS_SLEPC}
    SUNDIALS support         : ${BOUT_HAS_SUNDIALS}
+   HYPRE support            : ${BOUT_HAS_HYPRE}
    NetCDF support           : ${BOUT_HAS_NETCDF}
    HDF5 support             : ${BOUT_HAS_HDF5}
    FFTW support             : ${BOUT_HAS_FFTW}
