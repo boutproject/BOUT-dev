@@ -621,7 +621,9 @@ Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir
 
   // Get file extensions
   constexpr auto default_dump_format = bout::build::has_netcdf ? "nc" : "h5";
-  const auto dump_ext = options["dump_format"].withDefault(default_dump_format);
+  const auto dump_ext = options["dump_format"]
+                            .doc("File extension for output files")
+                            .withDefault(default_dump_format);
   output_progress << "Setting up output (dump) file\n";
 
   auto dump_file = Datafile(&(options["output"]), &mesh);
