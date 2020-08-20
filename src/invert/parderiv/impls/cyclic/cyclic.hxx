@@ -79,7 +79,7 @@ public:
 
 private:
   Field2D A, B, C, D, E;
-  Coordinates::FieldMetric sg; // Coefficient of DDY contribution to Grad2_par2
+  Field2D sg; // Coefficient of DDY contribution to Grad2_par2
   
   int nsys;
 };

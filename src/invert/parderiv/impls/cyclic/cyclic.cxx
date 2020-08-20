@@ -53,13 +53,14 @@ InvertParCR::InvertParCR(Options *opt, Mesh *mesh_in)
   : InvertPar(opt, mesh_in), A(1.0), B(0.0), C(0.0), D(0.0), E(0.0) {
 #if BOUT_USE_METRIC_3D
   throw BoutException("Parallel cyclic solver does not support 3D metric yet.");
-#endif
+#else
 
   // Number of k equations to solve for each x location
   nsys = 1 + (localmesh->LocalNz)/2; 
 
   sg = sqrt(localmesh->getCoordinates()->g_22);
   sg = DDY(1. / sg) / sg;
+#endif
 }
 
 const Field3D InvertParCR::solve(const Field3D &f) {
