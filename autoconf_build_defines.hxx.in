@@ -25,6 +25,9 @@
 #undef BOUT_HAS_LAPACK
 
 /* NETCDF support */
+#undef BOUT_HAS_LEGACY_NETCDF
+
+/* NETCDF support */
 #undef BOUT_HAS_NETCDF
 
 /* PETSc support */

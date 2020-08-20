@@ -496,6 +496,8 @@ BOUT_HAS_FFTW="no"
 
 NCCONF="" # Configuration script
 
+BOUT_HAS_NETCDF=no
+BOUT_HAS_LEGACY_NETCDF=no
 AS_IF([test "x$with_netcdf" != "xno"],
 [
   ##########################################
@@ -561,7 +563,8 @@ AS_IF([test "x$with_netcdf" != "xno"],
         AC_LANG_POP([C++])
         LIBS=$save_LIBS
         LDFLAGS=$save_LDFLAGS
-        CXXFLAGS="$save_CXXFLAGS -DNCDF"
+        CXXFLAGS="$save_CXXFLAGS"
+        BOUT_HAS_LEGACY_NETCDF=yes
        ])
       EXTRA_LIBS="$EXTRA_LIBS $NCLIB"
 
@@ -582,7 +585,7 @@ AS_IF([test "x$with_netcdf" != "xno"],
          file_formats="$file_formats netCDF"
          AC_MSG_NOTICE([ -> Legacy NetCDF support enabled])
          NCPATH="found"
-         CXXFLAGS="$CXXFLAGS -DNCDF"
+         BOUT_HAS_LEGACY_NETCDF=yes
         ], [])
   ])
 
@@ -1310,6 +1313,7 @@ BOUT_DEFINE_SUBST(BOUT_HAS_HDF5, [HDF5 support])
 BOUT_DEFINE_SUBST(BOUT_HAS_IDA, [IDA support])
 BOUT_DEFINE_SUBST(BOUT_HAS_LAPACK, [LAPACK support])
 BOUT_DEFINE_SUBST(BOUT_HAS_NETCDF, [NETCDF support])
+BOUT_DEFINE_SUBST(BOUT_HAS_LEGACY_NETCDF, [NETCDF support])
 BOUT_DEFINE_SUBST(BOUT_HAS_PETSC, [PETSc support])
 BOUT_DEFINE_SUBST(BOUT_HAS_PNETCDF, [PNETCDF support])
 BOUT_DEFINE_SUBST(BOUT_HAS_PRETTY_FUNCTION, [Compiler PRETTYFUNCTION support])
@@ -1361,7 +1365,7 @@ AC_MSG_NOTICE([  IDA support             : $BOUT_HAS_IDA])
 AC_MSG_NOTICE([  CVODE support           : $BOUT_HAS_CVODE])
 AC_MSG_NOTICE([  ARKODE support          : $BOUT_HAS_ARKODE])
 AC_MSG_NOTICE([  FFTW support            : $BOUT_HAS_FFTW])
-AC_MSG_NOTICE([  NetCDF support          : $BOUT_HAS_NETCDF])
+AC_MSG_NOTICE([  NetCDF support          : $BOUT_HAS_NETCDF (legacy: $BOUT_HAS_LEGACY_NETCDF)])
 AC_MSG_NOTICE([  Parallel-NetCDF support : $BOUT_HAS_PNETCDF])
 AC_MSG_NOTICE([  HDF5 support            : $BOUT_HAS_HDF5 (parallel: $BOUT_HAS_PHDF5)])
 AC_MSG_NOTICE([  Lapack support          : $BOUT_HAS_LAPACK])

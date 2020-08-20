@@ -23,12 +23,13 @@
 #include <globals.hxx>
 #include "nc_format.hxx"
 
-#ifdef NCDF
+#if BOUT_HAS_LEGACY_NETCDF
 
 #include <utils.hxx>
 #include <cmath>
 
 #include <bout/mesh.hxx>
+#include "bout/build_config.hxx"
 #include <output.hxx>
 #include <msg_stack.hxx>
 
@@ -1362,5 +1363,4 @@ void NcFormat::checkName(const char* name) {
   }
 }
 
-#endif // NCDF
-
+#endif // BOUT_HAS_LEGACY_NETCDF
