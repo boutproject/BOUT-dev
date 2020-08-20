@@ -494,7 +494,7 @@ void printCompileTimeOptions() {
   output_info.write(_("\tLAPACK support {}\n"), is_enabled(has_lapack));
   // Horrible nested ternary to set this at compile time
   constexpr auto netcdf_flavour =
-      (has_netcdf or has_legacy_netcdf) ? (has_netcdf ? " (NetCDF4)" : " (Legacy)") : "";
+      has_netcdf ? (has_legacy_netcdf ? " (Legacy)" : " (NetCDF4)") : "";
   output_info.write(_("\tNetCDF support {}{}\n"), is_enabled(has_netcdf), netcdf_flavour);
   output_info.write(_("\tPETSc support {}\n"), is_enabled(has_petsc));
   output_info.write(_("\tPretty function name support {}\n"),
@@ -620,8 +620,7 @@ Datafile setupDumpFile(Options& options, Mesh& mesh, const std::string& data_dir
                         .withDefault(false);
 
   // Get file extensions
-  const auto default_dump_format =
-      bout::build::has_netcdf or bout::build::has_legacy_netcdf ? "nc" : "h5";
+  constexpr auto default_dump_format = bout::build::has_netcdf ? "nc" : "h5";
   const auto dump_ext = options["dump_format"].withDefault(default_dump_format);
   output_progress << "Setting up output (dump) file\n";
 
