@@ -820,17 +820,17 @@ values to file. For example::
       Field2D Ni0;
       ...
       GRID_LOAD(Ni0);
-      dump.add(Ni0, "Ni0", 0);
+      dump.add(Ni0, "Ni0", false);
 
-where the ’0’ at the end means the variable should only be written to
-file once at the start of the simulation. For convenience there are
+where the ’false’ at the end means the variable should only be written
+to file once at the start of the simulation. For convenience there are
 some macros e.g.::
 
       SAVE_ONCE(Ni0);
 
 is equivalent to::
 
-      dump.add(Ni0, "Ni0", 0);
+      dump.add(Ni0, "Ni0", false);
 
 (see `Datafile::add`). In some situations you might also want to write
 some data to a different file. To do this, create a `Datafile` object::
@@ -869,7 +869,7 @@ in ``init``, you then:
        // Not evolving. Every time the file is written, this will be overwritten
        mydata.add(variable, "name");
        // Evolving. Will output a sequence of values
-       mydata.add(variable2, "name2", 1);
+       mydata.add(variable2, "name2", true);
 
 Whenever you want to write values to the file, for example in
 ``rhs`` or a monitor, just call::
