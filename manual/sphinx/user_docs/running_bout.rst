@@ -116,6 +116,14 @@ subdirectory and start python or IDL (skip to :ref:`Using IDL <sec-intro-using-i
 Analysing the output Using python
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+The recommended tool for analysing BOUT++ output is xBOUT, a Python library
+that provides analysis, plotting and animation with human-readable syntax (no
+magic numbers!) using [xarray]{http://xarray.pydata.org/en/stable/}. See the
+xBOUT documentation
+[xbout.readthedocs.io]{https://xbout.readthedocs.io/en/latest/}.
+
+There is also an older set of NumPy-based Python tools, described below.
+
 In order to analyse the output of the simulation using Python, you
 will first need to have set up python to use the BOUT++ libraries
 ``boutdata`` and ``boututils``; see section
