@@ -113,8 +113,8 @@ and see the section on options (:ref:`sec-options`).
 To analyse the output of the simulation, cd into the ``data``
 subdirectory and start python or IDL (skip to :ref:`Using IDL <sec-intro-using-idl>` for IDL).
 
-Analysing the output Using python
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Analysing the output using Python
+---------------------------------
 
 The recommended tool for analysing BOUT++ output is xBOUT, a Python library
 that provides analysis, plotting and animation with human-readable syntax (no
