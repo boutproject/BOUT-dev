@@ -118,9 +118,9 @@ Analysing the output using Python
 
 The recommended tool for analysing BOUT++ output is xBOUT, a Python library
 that provides analysis, plotting and animation with human-readable syntax (no
-magic numbers!) using [xarray]{http://xarray.pydata.org/en/stable/}. See the
+magic numbers!) using `xarray <http://xarray.pydata.org/en/stable/>`_. See the
 xBOUT documentation
-[xbout.readthedocs.io]{https://xbout.readthedocs.io/en/latest/}.
+`xbout.readthedocs.io <https://xbout.readthedocs.io/en/latest/>`_.
 
 There is also an older set of NumPy-based Python tools, described below.
 
