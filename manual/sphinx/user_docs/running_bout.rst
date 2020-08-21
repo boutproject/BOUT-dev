@@ -131,7 +131,7 @@ class. This is a wrapper around the various NetCDF and HDF5 libraries for python
     >>> from boututils.datafile import DataFile
     >>> DataFile("BOUT.dmp.0.nc").list()
 
-To collect a variable, reading in the data as a NumPy array:
+To collect a variable, reading in the data as a NumPy-like ``BoutArray`` array:
 
 .. code-block:: pycon
 
@@ -140,8 +140,11 @@ To collect a variable, reading in the data as a NumPy array:
     >>> T.shape
 
 Note that the order of the indices is different in Python and IDL: In
-Python, 4D variables are arranged as ``[t, x, y, z]``. To show an
-animation
+Python, 4D variables are arranged as ``[t, x, y, z]``.
+
+``BoutArray`` as a thin wrapper for ``numpy.ndarray`` which adds BOUT++ attributes.
+
+To show an animation
 
 .. code-block:: pycon
 
