@@ -360,6 +360,13 @@ data files. These will be automatically read and written depending on
 input options (see :ref:`sec-options`). Input options based on these
 names are also used to initialise the variables.
 
+You can add a description of the variable which will be saved as an
+attribute in the output files by adding a third argument to
+``bout_solve()`` e.g.::
+
+    bout_solve(rho, "density", "electron density");
+    bout_solve(B, "B", "total magnetic field strength");
+
 If the name of the variable in the output file is the same as the
 variable name, you can use a shorthand macro. In this case, we could use
 this shorthand for ``v`` and ``B``::
@@ -831,6 +838,12 @@ some macros e.g.::
 is equivalent to::
 
       dump.add(Ni0, "Ni0", false);
+
+Optionally, you can add a description to document what the variable
+represents, which will be saved as an attribute of the variable in the
+output file, e.g.::
+
+      dump.add(Ni0, "Ni0", false, "background density profile");
 
 (see `Datafile::add`). In some situations you might also want to write
 some data to a different file. To do this, create a `Datafile` object::
