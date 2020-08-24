@@ -47,8 +47,7 @@
 #include <bout_types.hxx>
 #include <boutcomm.hxx>
 
-
-#ifdef BOUT_HAS_PETSC
+#if BOUT_HAS_PETSC
 
 /*!
  * A class which wraps PETSc vector objects, allowing them to be
