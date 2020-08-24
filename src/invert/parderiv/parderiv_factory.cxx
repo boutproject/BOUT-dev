@@ -5,7 +5,7 @@
 
 #include <strings.h>
 
-#include "parderiv_factory.hxx"
+#include <invert_parderiv.hxx>
 
 #include "impls/cyclic/cyclic.hxx"
 

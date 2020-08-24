@@ -28,7 +28,6 @@
  ************************************************************************/
 
 #include <invert_parderiv.hxx>
-#include "parderiv_factory.hxx"
 
 InvertPar* InvertPar::Create(Mesh* mesh_in) {
   return ParDerivFactory::getInstance()->createInvertPar(CELL_CENTRE, mesh_in);

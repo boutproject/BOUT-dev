@@ -8,7 +8,6 @@
 #include <invert_parderiv.hxx>
 #include <field_factory.hxx>
 #include <utils.hxx>
-#include <../src/invert/parderiv/parderiv_factory.hxx>
 
 int main(int argc, char **argv) {
 
